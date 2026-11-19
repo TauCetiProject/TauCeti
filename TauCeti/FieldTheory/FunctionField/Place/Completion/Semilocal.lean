@@ -40,9 +40,12 @@ since `F̂_P` is not given an `F`-algebra structure. Its two halves are:
   over `F̂_P`.
 
 Reading the matrix of multiplication by `x ∈ F'` in such a basis gives the **trace formula**
-`Tr_{F'/F} x = ∑_{P' ∣ P} Tr_{F̂'_{P'}/F̂_P} x`, under the same hypotheses as the dimension count,
-which relates the global trace pairing, and so the complementary module of `F' / F` at `P`, to the
-trace pairings of the completed extensions. No hypothesis on the residue fields is needed.
+`Tr_{F'/F} x = ∑_{P' ∣ P} Tr_{F̂'_{P'}/F̂_P} x` and the **norm formula**
+`N_{F'/F} x = ∏_{P' ∣ P} N_{F̂'_{P'}/F̂_P} x`, under the same hypotheses as the dimension count. The
+trace formula relates the global trace pairing, and so the complementary module of `F' / F` at `P`,
+to the trace pairings of the completed extensions. The norm formula reduces the value and the
+residue of a global norm at `P` to norms of finite extensions of the complete discretely valued
+field `F̂_P`. No hypothesis on the residue fields is needed.
 
 The product `∏_{P' ∣ P} F̂'_{P'}` is indexed by the subtype of places over `P`, each carrying its
 proof that it lies over `P`, and is an `F̂_P`-algebra through the family of explicit algebra
@@ -69,6 +72,9 @@ over the completed valuation ring in place of density of `L` in `∏_{w ∣ v} L
 * `TauCeti.Place.completionEmbedding_trace` and
   `TauCeti.Place.completionEmbedding_trace_of_isSeparable`: **the trace formula**
   `Tr_{F'/F} x = ∑_{P' ∣ P} Tr_{F̂'_{P'}/F̂_P} x`.
+* `TauCeti.Place.completionEmbedding_norm` and
+  `TauCeti.Place.completionEmbedding_norm_of_isSeparable`: **the norm formula**
+  `N_{F'/F} x = ∏_{P' ∣ P} N_{F̂'_{P'}/F̂_P} x`.
 
 ## References
 
@@ -202,8 +208,8 @@ end Spanning
 
 section Dimension
 
-/-! The dimension count and the trace formula are first proved from the sum of the local degrees,
-and then specialized through the two forms of the fundamental identity. -/
+/-! The dimension count and the trace and norm formulas are first proved from the sum of the local
+degrees, and then specialized through the two forms of the fundamental identity. -/
 
 /-- The local degrees above `P` add up to `[F' : F]` whenever the fundamental identity holds
 at `P`. -/
@@ -273,6 +279,45 @@ private theorem linearIndependent_completionEmbedding_pi_iff_of_finsum
         fun _ _ hij ↦ hv.injective (congrArg Subtype.val hij)
     simpa only [Function.comp_def, Basis.coe_extend] using h
 
+/-- Whenever the local degrees above `P` add up to `[F' : F]`, the diagonal image of an `F`-basis
+`b` of `F'` is an `F̂_P`-basis of `∏_{P' ∣ P} F̂'_{P'}` in which the diagonal image of `x ∈ F'` acts
+by the matrix of `x` in `b`, mapped to `F̂_P`. Both the trace and the norm formula are read off this
+matrix. -/
+private theorem exists_basis_leftMulMatrix_completionEmbedding_of_finsum
+    (hdeg : ∑ᶠ P' : {P' : Place k' F' // P'.restrict k F = P},
+        (letI := P.completionExtensionAlgebra P'.1 P'.2
+        finrank P.Completion P'.1.Completion) = finrank F F')
+    {ι' : Type*} [Fintype ι'] [DecidableEq ι'] (b : Basis ι' F F') (x : F') :
+    letI := fun P' : {P' : Place k' F' // P'.restrict k F = P} ↦
+      P.completionExtensionAlgebra P'.1 P'.2
+    ∃ B : Basis ι' P.Completion
+        (∀ P' : {P' : Place k' F' // P'.restrict k F = P}, P'.1.Completion),
+      Algebra.leftMulMatrix B (fun P' ↦ P'.1.completionEmbedding x) =
+        (P.completionEmbedding : F →+* P.Completion).mapMatrix (Algebra.leftMulMatrix b x) := by
+  let ι := {P' : Place k' F' // P'.restrict k F = P}
+  let _ := fun P' : ι ↦ P.completionExtensionAlgebra P'.1 P'.2
+  -- The diagonal image `B` of `b` is a basis, in which `x` acts by the matrix it has in `b`.
+  let B : Basis ι' P.Completion (∀ P' : ι, P'.1.Completion) :=
+    .mk (linearIndependent_completionEmbedding_basis_of_finsum k' P hdeg b)
+      (span_completionEmbedding_pi_eq_top k' P b.span_eq).ge
+  have hrepr (y : F') (i) :
+      B.repr (fun P' : ι ↦ P'.1.completionEmbedding y) i = P.completionEmbedding (b.repr y i) := by
+    have hy : (fun P' : ι ↦ P'.1.completionEmbedding y) =
+        ∑ j, P.completionEmbedding (b.repr y j) • B j := by
+      rw [← completionEmbeddingPi_apply]
+      conv_lhs => rw [← b.sum_repr y]
+      simp only [B, Basis.coe_mk, map_sum, LinearMap.map_smulₛₗ, AlgHom.coe_toRingHom,
+        completionEmbeddingPi_apply]
+    rw [hy, B.repr_sum_self]
+  refine ⟨B, ?_⟩
+  ext i j
+  have hmul : (fun P' : ι ↦ P'.1.completionEmbedding x) * B j =
+      fun P' : ι ↦ P'.1.completionEmbedding (x * b j) := by
+    funext P'
+    simp [B]
+  rw [Algebra.leftMulMatrix_eq_repr_mul, RingHom.mapMatrix_apply, Matrix.map_apply,
+    Algebra.leftMulMatrix_eq_repr_mul, hmul, hrepr, AlgHom.coe_toRingHom]
+
 /-- The trace formula at `P`, whenever the local degrees above `P` add up to `[F' : F]`. -/
 private theorem completionEmbedding_trace_of_finsum
     (hdeg : ∑ᶠ P' : {P' : Place k' F' // P'.restrict k F = P},
@@ -289,31 +334,31 @@ private theorem completionEmbedding_trace_of_finsum
   have _ := fun P' : ι ↦ finiteDimensional_completion P P'.1 P'.2
   have := Fintype.ofFinite ι
   let b := Module.finBasis F F'
-  -- The diagonal image `B` of `b` is a basis, in which `x` acts by the matrix it has in `b`.
-  let B : Basis (Fin (finrank F F')) P.Completion (∀ P' : ι, P'.1.Completion) :=
-    .mk (linearIndependent_completionEmbedding_basis_of_finsum k' P hdeg b)
-      (span_completionEmbedding_pi_eq_top k' P b.span_eq).ge
-  have hrepr (y : F') (i) :
-      B.repr (fun P' : ι ↦ P'.1.completionEmbedding y) i = P.completionEmbedding (b.repr y i) := by
-    have hy : (fun P' : ι ↦ P'.1.completionEmbedding y) =
-        ∑ j, P.completionEmbedding (b.repr y j) • B j := by
-      rw [← completionEmbeddingPi_apply]
-      conv_lhs => rw [← b.sum_repr y]
-      simp only [B, Basis.coe_mk, map_sum, LinearMap.map_smulₛₗ, AlgHom.coe_toRingHom,
-        completionEmbeddingPi_apply]
-    rw [hy, B.repr_sum_self]
-  have hmat : Algebra.leftMulMatrix B (fun P' : ι ↦ P'.1.completionEmbedding x) =
-      (P.completionEmbedding : F →+* P.Completion).mapMatrix (Algebra.leftMulMatrix b x) := by
-    ext i j
-    have hmul : (fun P' : ι ↦ P'.1.completionEmbedding x) * B j =
-        fun P' : ι ↦ P'.1.completionEmbedding (x * b j) := by
-      funext P'
-      simp [B]
-    rw [Algebra.leftMulMatrix_eq_repr_mul, RingHom.mapMatrix_apply, Matrix.map_apply,
-      Algebra.leftMulMatrix_eq_repr_mul, hmul, hrepr, AlgHom.coe_toRingHom]
-  rw [finsum_eq_sum_of_fintype, ← TauCeti.Algebra.trace_pi, Algebra.trace_eq_matrix_trace B, hmat,
+  obtain ⟨B, hB⟩ := exists_basis_leftMulMatrix_completionEmbedding_of_finsum k' P hdeg b x
+  rw [finsum_eq_sum_of_fintype, ← TauCeti.Algebra.trace_pi, Algebra.trace_eq_matrix_trace B, hB,
     Algebra.trace_eq_matrix_trace b]
   exact AddMonoidHom.map_trace (P.completionEmbedding : F →+* P.Completion).toAddMonoidHom _
+
+/-- The norm formula at `P`, whenever the local degrees above `P` add up to `[F' : F]`. -/
+private theorem completionEmbedding_norm_of_finsum
+    (hdeg : ∑ᶠ P' : {P' : Place k' F' // P'.restrict k F = P},
+        (letI := P.completionExtensionAlgebra P'.1 P'.2
+        finrank P.Completion P'.1.Completion) = finrank F F')
+    (x : F') :
+    P.completionEmbedding (Algebra.norm F x) =
+      ∏ᶠ P' : {P' : Place k' F' // P'.restrict k F = P},
+        (letI := P.completionExtensionAlgebra P'.1 P'.2
+        Algebra.norm P.Completion (P'.1.completionEmbedding x)) := by
+  classical
+  let ι := {P' : Place k' F' // P'.restrict k F = P}
+  let _ := fun P' : ι ↦ P.completionExtensionAlgebra P'.1 P'.2
+  have _ := fun P' : ι ↦ finiteDimensional_completion P P'.1 P'.2
+  have := Fintype.ofFinite ι
+  let b := Module.finBasis F F'
+  obtain ⟨B, hB⟩ := exists_basis_leftMulMatrix_completionEmbedding_of_finsum k' P hdeg b x
+  rw [finprod_eq_prod_of_fintype, ← TauCeti.Algebra.norm_pi, Algebra.norm_eq_matrix_det B, hB,
+    Algebra.norm_eq_matrix_det b]
+  exact RingHom.map_det _ _
 
 variable [Algebra.IsIntegral k k']
 
@@ -404,6 +449,33 @@ theorem completionEmbedding_trace (hF : IsFunctionField k F) (x : F') :
         (letI := P.completionExtensionAlgebra P'.1 P'.2
         Algebra.trace P.Completion P'.1.Completion (P'.1.completionEmbedding x)) :=
   completionEmbedding_trace_of_finsum k' P (finsum_finrank_completion_eq_finrank k' F' P hF) x
+
+/-- **The norm formula**: for a finite separable extension `F' / F` whose constant field
+extension `k' / k` is integral and a place `P` of `F`, the norm of `x ∈ F'` over `F` is, in the
+completion at `P`, the product of the norms of `x` over the completions `F̂'_{P'} / F̂_P` at the
+places `P'` above `P`. For an algebraic function field `F / k` separability is not needed; that is
+`TauCeti.Place.completionEmbedding_norm`. -/
+theorem completionEmbedding_norm_of_isSeparable [Algebra.IsSeparable F F'] (x : F') :
+    P.completionEmbedding (Algebra.norm F x) =
+      ∏ᶠ P' : {P' : Place k' F' // P'.restrict k F = P},
+        (letI := P.completionExtensionAlgebra P'.1 P'.2
+        Algebra.norm P.Completion (P'.1.completionEmbedding x)) :=
+  completionEmbedding_norm_of_finsum k' P
+    (finsum_finrank_completion_eq_finrank_of_isSeparable k' F' P) x
+
+/-- **The norm formula**: for an algebraic function field `F / k`, a finite extension `F' / F`
+whose constant field extension `k' / k` is integral and a place `P` of `F`, the norm of `x ∈ F'`
+over `F` is, in the completion at `P`, the product of the norms of `x` over the completions
+`F̂'_{P'} / F̂_P` at the places `P'` above `P`. No separability hypothesis is needed, neither on
+`F' / F` nor on the residue field extensions. For a separable `F' / F` this holds without assuming
+that `F / k` is a function field; that is `TauCeti.Place.completionEmbedding_norm_of_isSeparable`.
+-/
+theorem completionEmbedding_norm (hF : IsFunctionField k F) (x : F') :
+    P.completionEmbedding (Algebra.norm F x) =
+      ∏ᶠ P' : {P' : Place k' F' // P'.restrict k F = P},
+        (letI := P.completionExtensionAlgebra P'.1 P'.2
+        Algebra.norm P.Completion (P'.1.completionEmbedding x)) :=
+  completionEmbedding_norm_of_finsum k' P (finsum_finrank_completion_eq_finrank k' F' P hF) x
 
 end Dimension
 
