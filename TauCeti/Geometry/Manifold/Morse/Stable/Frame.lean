@@ -839,8 +839,7 @@ theorem continuousWithinAt_mvfderiv_comp_unstableFrame (hf : IsMorse 𝓘(ℝ, E
   have hdiff : ∀ᶠ y in 𝓝 y₀, DifferentiableAt ℝ (g ∘ e.symm) (e y) :=
     (e.continuousAt hy₀e).eventually ((hge.eventually (by simp)).mono fun z hz ↦
       hz.differentiableAt one_ne_zero)
-  refine hK.continuousWithinAt.congr_of_eventuallyEq ?_
-    (by rw [mvfderiv_comp_unstableFrame_eq hφ hT₀ (hecoe y₀ ▸ hdiff.self_of_nhds), hecoe])
+  refine hK.continuousWithinAt.congr_of_eventuallyEq_of_mem ?_ hy₀
   filter_upwards [nhdsWithin_le_nhds (hT.and hdiff), self_mem_nhdsWithin] with y ⟨hyT, hyd⟩ hy
   rw [mvfderiv_comp_unstableFrame_eq hφ (hyT hy) (hecoe y ▸ hyd), hecoe]
 
