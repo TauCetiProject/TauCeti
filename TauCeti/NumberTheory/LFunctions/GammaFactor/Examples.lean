@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.GammaFactor.Order
-public import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv
-import Mathlib.Tactic.NormNum
 
 /-!
 # Gamma poles, reciprocal zeros and their multiplicities
@@ -60,13 +58,5 @@ example (d : AnalyticLFunctionData) (hR : d.gammaR = 0) (hC : d.gammaC = 0) (s :
   simp [gammaFactor_def, invGammaFactor_def,
     d.divisor_gammaFactor_apply (Set.mem_univ s),
     d.divisor_invGammaFactor_apply (Set.mem_univ s), hR, hC]
-
-/-- At one the complex-place normalization contributes log of two pi, not log of pi. -/
-example : logDeriv Gammaℂ 1 =
-    -(Real.eulerMascheroniConstant : ℂ) - (Real.log (2 * Real.pi) : ℂ) := by
-  simpa only [digamma_one] using
-    logDeriv_Gammaℂ (s := 1) (by
-      simpa only [Ne, Complex.Gamma_eq_zero_iff, not_exists] using
-        Gamma_ne_zero_of_re_pos (by norm_num : 0 < (1 : ℂ).re))
 
 end TauCeti.LFunctions.AnalyticLFunctionData

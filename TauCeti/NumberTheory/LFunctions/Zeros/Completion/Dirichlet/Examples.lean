@@ -34,9 +34,10 @@ example :
         analyticOrderAt (dirichletData χ hχ).entireCompletion 0 := by
   intro _ χ
   have he : χ.Even := by
-    norm_num [χ, DirichletCharacter.Even, MulChar.ringHomComp_apply,
-      quadraticChar_neg_one (F := ZMod 5) (by norm_num [ZMod.ringChar_zmod_n]),
-      ZMod.card, ZMod.χ₄]
+    have hneg : (quadraticChar (ZMod 5)) (-1) = 1 := by
+      rw [quadraticChar_neg_one (F := ZMod 5) (by norm_num [ZMod.ringChar_zmod_n]), ZMod.card]
+      exact ZMod.χ₄_nat_one_mod_four (by norm_num)
+    simp only [χ, DirichletCharacter.Even, MulChar.ringHomComp_apply, hneg, map_one]
   have hne : χ ≠ 1 := quadraticChar_ringHomComp_ne_one
     (by simp [ringChar.eq_zero]) (by norm_num)
   have hprim : χ.IsPrimitive := by

@@ -84,6 +84,14 @@ theorem logDeriv_Gammaℂ {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) :
       (differentiableAt_Gamma _ hs), hlog, ← digamma_def]
   ring
 
+/-- At one the complex-place normalization contributes log of two pi, not log of pi. -/
+example : logDeriv Gammaℂ 1 =
+    -(Real.eulerMascheroniConstant : ℂ) - (Real.log (2 * Real.pi) : ℂ) := by
+  simpa only [digamma_one] using
+    logDeriv_Gammaℂ (s := 1) (by
+      simpa only [Ne, Complex.Gamma_eq_zero_iff, not_exists] using
+        Gamma_ne_zero_of_re_pos (by norm_num : 0 < (1 : ℂ).re))
+
 /-- The logarithmic derivative is analytic off the poles of the real-place gamma factor. -/
 theorem analyticAt_logDeriv_Gammaℝ {s : ℂ} (hs : Gammaℝ s ≠ 0) :
     AnalyticAt ℂ (logDeriv Gammaℝ) s := by
