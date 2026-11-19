@@ -14,11 +14,12 @@ import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 /-!
 # Compactness of Floer pairs of pants on the whole domain
 
-Let `K` be the pair-of-pants perturbation `TauCeti.Floer.pairOfPantsPerturbation` of period-one
-`C³` Hamiltonians `H_q` with `|H_q| ≤ B_q` on the three ends of `S = ℂ ∖ {0, 1}`, with values in a
-symplectic vector space `(V, ω)`, and let `J(z, x)` be a `C²` family of `ω`-tame almost complex
-structures on `S × V` which is cylindrical on the ends: beyond some height `T₀` on the end `q`
-it is `J_q(t, x)` in the end coordinates, for a `C²` family `J_q` of `ω`-tame structures.
+Let `K_H` be the pair-of-pants perturbation `TauCeti.Floer.pairOfPantsPerturbation` of
+period-one `C³` Hamiltonians `H_q` with `|H_q| ≤ B_q` on the three ends of `S = ℂ ∖ {0, 1}`, with
+values in a symplectic vector space `(V, ω)`, and let `J(z, x)` be a `C²` family of `ω`-tame
+almost complex structures on `S × V` which is cylindrical on the ends: beyond some height `T₀` on
+the end `q` it is `J_q(t, x)` in the end coordinates, for a `C²` family `J_q` of `ω`-tame
+structures.
 
 Gromov–Floer compactness off finitely many bubbling points is known on one compact window of `S`
 at a time, and on the translates of one window of an end in its positive end chart, with a
@@ -172,18 +173,6 @@ private theorem iUnion_window {T : ℝ} (hT : 0 ≤ T) :
           (Puncture.ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q) (not_lt.1 hq)
       exact mem_iUnion.2 ⟨some (q, m, b), hzm⟩
 
-/-- Energy at least `δ` over a measurable part `s` of `S ∩ N` makes the energy measure of `N` at
-least `δ`. -/
-private theorem ofReal_le_withDensity_of_le_setIntegral {f : ℝ × ℝ → ℝ} {s N : Set (ℝ × ℝ)}
-    {δ : ℝ} (hs : MeasurableSet s) (hsS : s ⊆ thricePuncturedSphereReal) (hsN : s ⊆ N)
-    (h : δ ≤ ∫ y in s, f y) :
-    ENNReal.ofReal δ ≤ (volume.restrict thricePuncturedSphereReal).withDensity
-      (fun y ↦ ENNReal.ofReal (f y)) N :=
-  calc ENNReal.ofReal δ ≤ ∫⁻ y in s, ENNReal.ofReal (f y) :=
-        (ENNReal.ofReal_le_ofReal h).trans TauCeti.MeasureTheory.ofReal_integral_le_lintegral_ofReal
-    _ = _ := by rw [withDensity_apply _ hs, Measure.restrict_restrict hs, inter_eq_left.2 hsS]
-    _ ≤ _ := measure_mono hsN
-
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {H : Puncture → ℝ → V → ℝ}
 
@@ -279,19 +268,6 @@ private theorem nonneg_and_lintegral_floerEnergyDensity_le (ω : SymplecticForm 
     Puncture.endSign_inf]
   linarith
 
-/-- Energy measure at least `δ` on a measurable set `N` is energy at least `δ` over `N ∩ S`, for an
-energy density integrable and nonnegative on `N ∩ S`. -/
-private theorem le_setIntegral_of_ofReal_le_withDensity {f : ℝ × ℝ → ℝ} {N : Set (ℝ × ℝ)}
-    (hN : MeasurableSet N) (hint : IntegrableOn f (N ∩ thricePuncturedSphereReal))
-    (h0 : ∀ y ∈ N ∩ thricePuncturedSphereReal, 0 ≤ f y) {δ : ℝ}
-    (h : ENNReal.ofReal δ ≤ (volume.restrict thricePuncturedSphereReal).withDensity
-      (fun y ↦ ENNReal.ofReal (f y)) N) :
-    δ ≤ ∫ y in N ∩ thricePuncturedSphereReal, f y := by
-  have hs := hN.inter isOpen_thricePuncturedSphereReal.measurableSet
-  rw [withDensity_apply _ hN, Measure.restrict_restrict hN,
-    ← ofReal_integral_eq_lintegral_ofReal hint (ae_restrict_of_forall_mem hs h0)] at h
-  exact (ENNReal.ofReal_le_ofReal_iff (setIntegral_nonneg hs h0)).1 h
-
 /-- **The windows of the pair of pants, with one threshold.** Under the hypotheses of the main
 theorem below, there is a threshold `δ > 0` such that on every window, every subsequence of a
 sequence of solutions has a further subsequence converging off a set at each point of which the
@@ -355,7 +331,7 @@ private theorem exists_pos_forall_window (ω : SymplecticForm V) (hH : ∀ q, Pe
     refine ⟨φ, hφ, ↑Z, fun z hz N hN ↦ ?_, v, hv⟩
     obtain ⟨ε, hε, hεN⟩ := Metric.mem_nhds_iff.1 hN
     filter_upwards [hc z hz ε hε] with n hn
-    exact ofReal_le_withDensity_of_le_setIntegral
+    exact TauCeti.MeasureTheory.ofReal_le_withDensity_of_le_setIntegral
       (measurableSet_ball.inter (isOpen_window _ none).measurableSet) (fun y hy ↦ hy.2.1)
       (inter_subset_left.trans hεN) ((min_le_left _ _).trans hn)
   · obtain ⟨φ, Z, v, hφ, hZΩ, -, hc, -, -, -, hv⟩ := hconve q b (Ω := endWindow (max T₀ 2) b)
@@ -376,12 +352,12 @@ private theorem exists_pos_forall_window (ω : SymplecticForm V) (hH : ∀ q, Pe
     exact ⟨φ, hφ, _, hc', v', hv'⟩
 
 /-- **Floer pairs of pants with bounded end actions converge off finitely many bubbling points on
-the whole domain.** Let `K` be the pair-of-pants perturbation of period-one `C³` Hamiltonians `H_q`
-with `|H_q| ≤ B_q`, and let `J(z, x)` be a `C²` family of `ω`-tame structures on `S × V`, where
-`S = ℂ ∖ {0, 1}` is read in real coordinates, which beyond `T₀` on each end `q` is a `C²` family
-`J_q(t, x)` of `ω`-tame structures in the end coordinates. Fix a compact `K ⊆ V`. There is a
+the whole domain.** Let `K_H` be the pair-of-pants perturbation of period-one `C³` Hamiltonians
+`H_q` with `|H_q| ≤ B_q`, and let `J(z, x)` be a `C²` family of `ω`-tame structures on `S × V`,
+where `S = ℂ ∖ {0, 1}` is read in real coordinates, which beyond `T₀` on each end `q` is a `C²`
+family `J_q(t, x)` of `ω`-tame structures in the end coordinates. Fix a compact `K ⊆ V`. There is a
 threshold `δ > 0` with the following property. Let `uₖ : S → K` be `C³` solutions of
-`(du - X_K)^{0,1} = 0` on `S` for `J(z, u)`, with limiting end actions `aₖ(q)` satisfying
+`(du - X_{K_H})^{0,1} = 0` on `S` for `J(z, u)`, with limiting end actions `aₖ(q)` satisfying
 `aₖ(0) + aₖ(1) - aₖ(∞) ≤ A`. Then there are a subsequence `φ`, a finite set `Z ⊆ S` with
 `#Z * δ ≤ A + B_0 + B_1 + B_∞`, and a continuous `v : S \ Z → K` such that along `φ` every disc
 about a point of `Z` eventually carries energy at least `δ`, and `u_{φ n} → v` locally uniformly
@@ -444,7 +420,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_thricePunc
         (thricePuncturedSphereReal ×ˢ univ) := fun p hp ↦
       (contDiffAt_uncurry_pairOfPantsPerturbation hH (fun q ↦ (hHs q).of_le (by norm_num)) hp.1
         p.2 w).contDiffWithinAt
-    exact le_setIntegral_of_ofReal_le_withDensity measurableSet_ball
+    exact TauCeti.MeasureTheory.le_setIntegral_of_ofReal_le_withDensity measurableSet_ball
+      isOpen_thricePuncturedSphereReal.measurableSet
       (ω.integrableOn_and_setIntegral_floerEnergyDensity_le isOpen_thricePuncturedSphereReal
         (measurableSet_ball.inter isOpen_thricePuncturedSphereReal.measurableSet)
         inter_subset_right ((hu _).of_le (by norm_num)) (hK' 1) (hK' I) h0 (hE 0).1

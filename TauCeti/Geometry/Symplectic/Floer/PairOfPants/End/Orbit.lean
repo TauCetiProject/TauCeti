@@ -30,13 +30,19 @@ preserve the Floer equation and the energy, `u ∘ φ'_q` solves the Floer equat
 for `H'_q` beyond `T₀`
 (`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart`), and its
 energy over a half-cylinder `(a, ∞) × [0, 1]` with `a ≥ max T₀ 0` is at most the energy of `u`
-over `S` (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le`), as
-is its energy over any measurable part of a band `(max T₀ 0, ∞) × (t₀, t₀ + 1)` of angular width
-one (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset`).
+over `S` (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le`).
+Its energy over any measurable part `s` of a band `(max T₀ 0, ∞) × (t₀, t₀ + 1)` of angular width
+one is the energy of `u` over `φ'_q(s)`
+(`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_eq_of_subset`),
+so it is at most the energy of `u` over `S`
+(`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset`).
 The same holds for the translated ends `z ↦ u(φ'_q(z + (R, 0)))` at every height `R`: they solve
 the Floer equation of the half-cylinder where `z.1 + R > max T₀ 0`
 (`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart_add`), and
-their energy over a set whose translate lies in such a band is at most the energy of `u` over `S`
+their energy over a set `s` whose translate lies in such a band is the energy of `u` over the
+image of `s` under `z ↦ φ'_q(z + (R, 0))`
+(`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_eq`), so it is
+at most the energy of `u` over `S`
 (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_le`).
 If the almost complex structure is cylindrical on the end, `J(φ_q(±s, t)) = J_q(t, u(φ_q(±s, t)))`,
 then in the positive end chart it is `J'_q(t, x) = J_q(±t, x)`

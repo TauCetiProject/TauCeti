@@ -8,7 +8,10 @@ module
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Basic
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
+import TauCeti.Data.Set.Finite
+import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.Order.Filter.AtTopBot
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Bubbling sets on countable unions of windows
@@ -37,9 +40,11 @@ The subsequence is the diagonal of the subsequences chosen successively on the w
 (`TauCeti.extraction_forall`), so it is eventually a subsequence of each of them. The bubbling
 set `Z` is the union of the bubbling sets of the windows. Distinct bubbling points have disjoint
 neighbourhoods, each of which eventually carries energy at least `δ`, so every finite subset of
-`Z` has at most `E / δ` points. Hence `Z` is finite with `#Z * δ ≤ E`, even though the sets `Zᵢ`
-are not assumed to be finite. The uniform quantum `δ` is essential: the thresholds of infinitely
-many windows need not be bounded below otherwise.
+`Z` has at most `E / δ` points (`TauCeti.card_mul_le_of_forall_eventually_le_measure`). Hence `Z`
+is finite with `#Z * δ ≤ E` (`Set.finite_of_forall_finset_card_mul_le`), even though the sets
+`Zᵢ` are not assumed to be finite. The limits on the windows glue to a limit on `(⋃ᵢ Uᵢ) \ Z`
+(`TauCeti.exists_tendstoLocallyUniformlyOn_iUnion_sdiff`). The uniform quantum `δ` is essential:
+the thresholds of infinitely many windows need not be bounded below otherwise.
 
 ## Main results
 
@@ -59,58 +64,7 @@ open scoped ENNReal
 
 namespace TauCeti
 
-variable {X α : Type*}
-
-/-- A set all of whose finite subsets `T` satisfy `#T * δ ≤ E`, for `δ ≠ 0` and `E ≠ ∞`, is
-finite. -/
-private theorem finite_of_forall_finset_card_mul_le {Z : Set X} {δ E : ℝ≥0∞} (hδ : δ ≠ 0)
-    (hE : E ≠ ∞) (h : ∀ T : Finset X, ↑T ⊆ Z → T.card * δ ≤ E) : Z.Finite := by
-  by_contra hinf
-  obtain ⟨k, hk⟩ := ENNReal.exists_nat_mul_gt hδ hE
-  obtain ⟨T, hTZ, hTk⟩ := Set.Infinite.exists_subset_card_eq hinf k
-  exact (h T hTZ).not_gt (hTk ▸ hk)
-
-variable [TopologicalSpace X] [UniformSpace α]
-
-/-- **Gluing the limits of the windows.** If `Fₙ` converges locally uniformly on `Uᵢ \ Zᵢ` for
-every open window `Uᵢ`, then it converges locally uniformly on `(⋃ᵢ Uᵢ) \ Z` for every closed set
-`Z` containing every `Zᵢ ∩ Uᵢ`: the limits of two windows agree where both converge. -/
-private theorem exists_tendstoLocallyUniformlyOn_iUnion_sdiff [T2Space α] {ι : Type*}
-    {U : ι → Set X} (hU : ∀ i, IsOpen (U i)) {F : ℕ → X → α} {Zw : ι → Set X} {Z : Set X}
-    (hZ : IsClosed Z) (hZw : ∀ i, Zw i ∩ U i ⊆ Z) {vw : ι → X → α}
-    (hvw : ∀ i, TendstoLocallyUniformlyOn F (vw i) atTop (U i \ Zw i)) :
-    ∃ v : X → α, TendstoLocallyUniformlyOn F v atTop ((⋃ i, U i) \ Z) := by
-  classical
-  refine ⟨fun x ↦ if hx : ∃ i, x ∈ U i \ Zw i then vw (Classical.choose hx) x else F 0 x, ?_⟩
-  rw [iUnion_sdiff]
-  refine tendstoLocallyUniformlyOn_iUnion (fun i ↦ (hU i).sdiff hZ) fun i ↦ ?_
-  have hsub : U i \ Z ⊆ U i \ Zw i := fun x hx ↦ ⟨hx.1, fun hxi ↦ hx.2 (hZw i ⟨hxi, hx.1⟩)⟩
-  refine ((hvw i).congr_right fun x hx ↦ ?_).mono hsub
-  have hex : ∃ i, x ∈ U i \ Zw i := ⟨i, hx⟩
-  simp only [hex, ↓reduceDIte]
-  exact tendsto_nhds_unique ((hvw i).tendsto_at hx) ((hvw _).tendsto_at (Classical.choose_spec hex))
-
-variable [MeasurableSpace X]
-
-/-- **Every finite set of concentration points has at most `E / δ` points.** If the energy `δ`
-concentrates along `Fₙ` at every point of a finite set `T` of an open set `W` whose energy is at
-most `E` for every `n`, then `#T * δ ≤ E`. -/
-private theorem card_mul_le_of_concentration [T2Space X] [OpensMeasurableSpace X]
-    {μ : ℕ → Measure X} {W : Set X} (hW : IsOpen W) {δ E : ℝ≥0∞} (hμ : ∀ n, μ n W ≤ E)
-    {T : Finset X} (hTW : ↑T ⊆ W) (hT : ∀ z ∈ T, ∀ N ∈ 𝓝 z, ∀ᶠ n in atTop, δ ≤ μ n N) :
-    T.card * δ ≤ E := by
-  -- Separate the points of `T` by disjoint open sets inside `W`.
-  obtain ⟨O, hO, hdisj⟩ := T.finite_toSet.t2_separation
-  have hN (z : X) (hz : z ∈ T) : O z ∩ W ∈ 𝓝 z :=
-    inter_mem ((hO z).2.mem_nhds (hO z).1) (hW.mem_nhds (hTW hz))
-  obtain ⟨n, hn⟩ := ((eventually_all_finset T).2 fun z hz ↦ hT z hz _ (hN z hz)).exists
-  calc (T.card : ℝ≥0∞) * δ = ∑ _z ∈ T, δ := by rw [Finset.sum_const, nsmul_eq_mul]
-    _ ≤ ∑ z ∈ T, μ n (O z ∩ W) := Finset.sum_le_sum hn
-    _ = μ n (⋃ z ∈ T, O z ∩ W) :=
-      (measure_biUnion_finset (hdisj.mono fun _ ↦ inter_subset_left)
-        fun z _ ↦ ((hO z).2.inter hW).measurableSet).symm
-    _ ≤ μ n W := measure_mono (iUnion₂_subset fun _ _ ↦ inter_subset_right)
-    _ ≤ E := hμ n
+variable {X α : Type*} [TopologicalSpace X] [UniformSpace α] [MeasurableSpace X]
 
 /-- **Convergence off finitely many bubbling points on a countable union of windows.** Let
 `Uᵢ` be countably many open sets, `Fₙ : X → α` maps and `μₙ` measures on `X` with
@@ -161,9 +115,9 @@ theorem exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion [T2Space X]
     exact hconcD m z hm.1 N hN
   -- Every finite subset of `Z` has at most `E / δ` points, so `Z` is finite.
   have hcard (T : Finset X) (hT : ↑T ⊆ Z) : T.card * δ ≤ E :=
-    card_mul_le_of_concentration (isOpen_iUnion hU) (fun n ↦ hμ (D n)) (hT.trans hZW)
-      fun z hz ↦ hZconc z (hT hz)
-  have hZf : Z.Finite := finite_of_forall_finset_card_mul_le hδ hE hcard
+    card_mul_le_of_forall_eventually_le_measure (l := atTop) (isOpen_iUnion hU)
+      (fun n ↦ hμ (D n)) (hT.trans hZW) fun z hz ↦ hZconc z (hT hz)
+  have hZf : Z.Finite := Set.finite_of_forall_finset_card_mul_le hδ hE hcard
   obtain ⟨v, hv⟩ := exists_tendstoLocallyUniformlyOn_iUnion_sdiff (fun m ↦ hU (e m))
     hZf.toFinset.finite_toSet.isClosed
     (fun m x hx ↦ by rw [hZf.coe_toFinset]; exact mem_iUnion_of_mem m hx) hvD
