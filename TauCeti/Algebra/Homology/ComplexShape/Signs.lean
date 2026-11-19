@@ -14,6 +14,11 @@ The total-complex shape induced by tensor signs adds the two input indices.
 This characteristic equation is independent of the category or bifunctor
 used to form a total complex.
 
+Mathlib supplies tensor signs for `ComplexShape.down ℕ` and `ComplexShape.up ℤ`; the instance
+`ComplexShape.instTensorSignsDownInt` supplies the sign `ε p = (-1)^p` on `ComplexShape.down ℤ`, so
+that chain complexes indexed by `ℤ`, such as Floer complexes graded by an index, have tensor
+products with the Koszul differential `d (x ⊗ y) = d x ⊗ y + (-1)^p x ⊗ d y`.
+
 The instance `HomologicalComplex₂.totalComplexShapeSymmetryDownNat` identifies the total
 complexes of a first-quadrant bicomplex and of its flip by the Koszul sign `(-1)^(p*q)` in
 bidegree `(p, q)`. It is the natural-number analogue of Mathlib's `TotalComplexShapeSymmetry`
@@ -30,6 +35,25 @@ theorem π_eq_add {I : Type*} [AddMonoid I] (c : ComplexShape I) [c.TensorSigns]
     (p q : I) : π c c c (p, q) = p + q := by
   -- This is the index component of the additive total-complex-shape instance.
   rfl
+
+/-- Chain complexes indexed by `ℤ` carry the tensor signs `ε p = (-1)^p`, as cochain complexes
+indexed by `ℤ` do in Mathlib. -/
+instance instTensorSignsDownInt : TensorSigns (ComplexShape.down ℤ) where
+  ε' :=
+    { toFun n := n.toAdd.negOnePow
+      map_one' := by simp
+      map_mul' a b := by simp [Int.negOnePow_add] }
+  rel_add p q r hpq := by simp only [down_Rel] at hpq ⊢; omega
+  add_rel p q r hpq := by simp only [down_Rel] at hpq ⊢; omega
+  ε'_succ := by
+    rintro _ q rfl
+    -- Unfold `Multiplicative.toAdd` from the `toFun` of `ε'` so that `Int.negOnePow_succ` can
+    -- rewrite the goal.
+    change q.negOnePow = -(q + 1).negOnePow
+    rw [Int.negOnePow_succ, neg_neg]
+
+@[simp]
+theorem ε_down_ℤ (n : ℤ) : (ComplexShape.down ℤ).ε n = n.negOnePow := rfl
 
 end ComplexShape
 
