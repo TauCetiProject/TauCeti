@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Perron.Regular
 import Mathlib.MeasureTheory.Constructions.UnitInterval
+import TauCeti.Analysis.Convex.Segment
 import TauCeti.Analysis.Convex.Topology
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ParametricIntegral
@@ -118,15 +119,15 @@ theorem mem_lebesgueSpineDomain {ρ c : ℝ} {x : E} :
   rw [lebesgueSpineDomain, mem_inter_iff, mem_ball_zero_iff]
   exact Iff.rfl
 
-/-- The segment `[0, e]` is the image of `[0, 1]` under `t ↦ t • e`. -/
-private lemma segment_zero_eq_image : segment ℝ 0 e = (fun t : ℝ ↦ t • e) '' Icc 0 1 := by
-  rw [segment_eq_image']
-  simp
+/-- The origin, an end point of the segment, is not in the domain of Lebesgue's example. -/
+private lemma ne_zero_of_mem_lebesgueSpineDomain {ρ c : ℝ} {x : E}
+    (hx : x ∈ lebesgueSpineDomain e ρ c) : x ≠ 0 :=
+  fun h ↦ (mem_lebesgueSpineDomain.1 hx).2.1 (h ▸ left_mem_segment ℝ 0 e)
 
 /-- Off the segment, `x - t • e` does not vanish for `t ∈ [0, 1]`. -/
 private lemma sub_smul_ne_zero {x : E} (hx : x ∉ segment ℝ 0 e) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
     x - t • e ≠ 0 :=
-  sub_ne_zero.2 fun h ↦ hx (segment_zero_eq_image (e := e) ▸ ⟨t, ht, h.symm⟩)
+  sub_ne_zero.2 fun h ↦ hx (segment_zero_left_eq_image ℝ e ▸ ⟨t, ht, h.symm⟩)
 
 private lemma intervalIntegrable_integrand {x : E} (hx : x ∉ segment ℝ 0 e) :
     IntervalIntegrable (fun t : ℝ ↦ t * ‖x - t • e‖⁻¹) volume 0 1 :=
@@ -160,22 +161,21 @@ private lemma contDiffOn_inv_norm_sub_smul {n : ℕ∞} :
     (contDiff_fst.sub (contDiff_snd.smul contDiff_const)).contDiffAt).inv
       (norm_ne_zero_iff.2 hp)).contDiffWithinAt
 
-private lemma integrable_unitInterval_val : Integrable (fun y : unitInterval ↦ (y : ℝ)) :=
-  Integrable.of_bound (C := 1) continuous_subtype_val.aestronglyMeasurable
-    (Eventually.of_forall fun y ↦ by simpa [abs_of_nonneg y.2.1] using y.2.2)
+/-- A nonzero point of the lower half-space `⟪x, e⟫ ≤ 0` lies off the segment `[0, e]`. -/
+private lemma notMem_segment_of_inner_nonpos (he : ‖e‖ = 1) {x : E} (hx0 : x ≠ 0)
+    (hxe : ⟪x, e⟫ ≤ 0) : x ∉ segment ℝ 0 e := by
+  rw [segment_zero_left_eq_image ℝ e]
+  rintro ⟨t, ht, rfl⟩
+  have : t = 0 := by
+    rw [real_inner_smul_left, real_inner_self_eq_norm_sq, he] at hxe
+    linarith [ht.1]
+  exact hx0 (by simp [this])
 
 /-- On the lower half-space `⟪x, e⟫ ≤ 0` the potential of the segment is at most `1`: there
 `t ≤ ‖x - t e‖` for `t ≥ 0`, so the integrand is at most `1`. -/
 theorem lebesgueSpinePotential_le_one (he : ‖e‖ = 1) {x : E} (hx0 : x ≠ 0)
     (hxe : ⟪x, e⟫ ≤ 0) : lebesgueSpinePotential e x ≤ 1 := by
-  have hxs : x ∉ segment ℝ 0 e := by
-    rw [segment_zero_eq_image (e := e)]
-    rintro ⟨t, ht, rfl⟩
-    have : t = 0 := by
-      have h := hxe
-      rw [real_inner_smul_left, real_inner_self_eq_norm_sq, he] at h
-      linarith [ht.1]
-    exact hx0 (by simp [this])
+  have hxs := notMem_segment_of_inner_nonpos he hx0 hxe
   have hle : ∀ t ∈ Icc (0 : ℝ) 1, t * ‖x - t • e‖⁻¹ ≤ 1 := by
     intro t ht
     rcases ht.1.eq_or_lt with h0 | h0
@@ -276,7 +276,7 @@ theorem tendsto_lebesgueSpinePotential_atTop (he : ‖e‖ = 1) {t₀ : ℝ} (h0
   have hr0 : 0 < r := by
     refine (norm_nonneg _).lt_of_ne fun h ↦ hxs ?_
     rw [eq_comm, norm_eq_zero, sub_eq_zero] at h
-    rw [h, segment_zero_eq_image (e := e)]
+    rw [h, segment_zero_left_eq_image ℝ e]
     exact ⟨z, ⟨by linarith, by linarith⟩, rfl⟩
   -- `r < a exp (-2M / t₀)`, so `log ((r + a) / r) ≥ 2M / t₀`.
   have hexp : Real.exp (2 * M / t₀) ≤ (r + a) / r := by
@@ -304,15 +304,13 @@ theorem isBounded_lebesgueSpineDomain (ρ c : ℝ) :
 the ball lies in the upper half-space `⟪x, e⟫ > 0`, apart from the origin. -/
 theorem mem_lebesgueSpineDomain_of_inner_nonpos (he : ‖e‖ = 1) {ρ c : ℝ} (hc : 0 < c) {x : E}
     (hx : ‖x‖ < ρ) (hx0 : x ≠ 0) (hxe : ⟪x, e⟫ ≤ 0) : x ∈ lebesgueSpineDomain e ρ c := by
-  refine mem_lebesgueSpineDomain.2 ⟨hx, ?_, ?_⟩
-  · rw [segment_zero_eq_image (e := e)]
-    rintro ⟨t, ht, rfl⟩
-    have : t = 0 := by
-      have h := hxe
-      rw [real_inner_smul_left, real_inner_self_eq_norm_sq, he] at h
-      linarith [ht.1]
-    exact hx0 (by simp [this])
-  · linarith [lebesgueSpinePotential_le_one he hx0 hxe]
+  refine mem_lebesgueSpineDomain.2 ⟨hx, notMem_segment_of_inner_nonpos he hx0 hxe, ?_⟩
+  linarith [lebesgueSpinePotential_le_one he hx0 hxe]
+
+/-- The points `-s e`, `s ≥ 0`, lie in the lower half-space `⟪x, e⟫ ≤ 0`. -/
+private lemma inner_neg_smul_self_nonpos {s : ℝ} (hs : 0 ≤ s) : ⟪(-s) • e, e⟫ ≤ 0 := by
+  rw [real_inner_smul_left]
+  exact mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 hs) real_inner_self_nonneg
 
 /-- The points `-s e`, `0 < s < ρ`, lie in the domain of Lebesgue's example. -/
 private lemma neg_smul_mem_lebesgueSpineDomain (he : ‖e‖ = 1) {ρ c : ℝ} (hc : 0 < c) {s : ℝ}
@@ -321,8 +319,7 @@ private lemma neg_smul_mem_lebesgueSpineDomain (he : ‖e‖ = 1) {ρ c : ℝ} (
   · rw [norm_smul, he, mul_one, Real.norm_eq_abs, abs_neg, abs_of_pos hs]
     exact hsρ
   · exact smul_ne_zero (neg_ne_zero.2 hs.ne') (norm_ne_zero_iff.1 (by rw [he]; exact one_ne_zero))
-  · rw [real_inner_smul_left, real_inner_self_eq_norm_sq, he]
-    simp [hs.le]
+  · exact inner_neg_smul_self_nonpos hs.le
 
 private lemma tendsto_neg_smul_nhdsWithin (he : ‖e‖ = 1) {ρ c : ℝ} (hρ : 0 < ρ) (hc : 0 < c) :
     Tendsto (fun s : ℝ ↦ (-s) • e) (𝓝[>] 0) (𝓝[lebesgueSpineDomain e ρ c] 0) := by
@@ -337,10 +334,10 @@ private lemma tendsto_neg_smul_nhdsWithin (he : ‖e‖ = 1) {ρ c : ℝ} (hρ :
 /-- Every point of the closure of the domain other than the origin lies off the segment, since
 the potential blows up at the other points of the segment in the closed ball of radius
 `ρ < 1`. -/
-private lemma not_mem_segment_of_mem_closure (he : ‖e‖ = 1) {ρ c : ℝ} (hρ1 : ρ < 1) {x : E}
+private lemma notMem_segment_of_mem_closure (he : ‖e‖ = 1) {ρ c : ℝ} (hρ1 : ρ < 1) {x : E}
     (hx : x ∈ closure (lebesgueSpineDomain e ρ c)) (hx0 : x ≠ 0) : x ∉ segment ℝ 0 e := by
   intro hxs
-  obtain ⟨t₀, ht₀, rfl⟩ := segment_zero_eq_image (e := e) ▸ hxs
+  obtain ⟨t₀, ht₀, rfl⟩ := segment_zero_left_eq_image ℝ e ▸ hxs
   have ht₀0 : 0 < t₀ := ht₀.1.lt_of_ne fun h ↦ hx0 (by simp [← h])
   have hnorm : ‖t₀ • e‖ ≤ ρ :=
     mem_closedBall_zero_iff.1 (closure_ball_subset_closedBall
@@ -356,7 +353,8 @@ variable (e) in
 /-- The potential of the segment is smooth off the segment. -/
 theorem contDiffOn_lebesgueSpinePotential {n : ℕ∞} :
     ContDiffOn ℝ n (lebesgueSpinePotential e) (segment ℝ 0 e)ᶜ := by
-  have h := contDiffOn_integral_smul_of_contDiffOn integrable_unitInterval_val
+  have h := contDiffOn_integral_smul_of_contDiffOn
+    (continuous_subtype_val.integrable_of_hasCompactSupport (μ := volume) (.of_compactSpace _))
     continuous_subtype_val (isOpen_sub_smul_ne_zero (e := e))
     (contDiffOn_inv_norm_sub_smul (n := n)) (U := (segment ℝ 0 e)ᶜ)
     fun x hx y ↦ sub_smul_ne_zero hx y.2
@@ -379,8 +377,7 @@ theorem isOpen_lebesgueSpineDomain (ρ c : ℝ) : IsOpen (lebesgueSpineDomain e 
 theorem zero_mem_frontier_lebesgueSpineDomain (he : ‖e‖ = 1) {ρ c : ℝ} (hρ : 0 < ρ)
     (hc : 0 < c) : (0 : E) ∈ frontier (lebesgueSpineDomain e ρ c) := by
   rw [(isOpen_lebesgueSpineDomain e ρ c).frontier_eq]
-  refine ⟨mem_closure_iff_nhdsWithin_neBot.2 ?_, fun h ↦ (mem_lebesgueSpineDomain.1 h).2.1
-    (left_mem_segment ℝ 0 e)⟩
+  refine ⟨mem_closure_iff_nhdsWithin_neBot.2 ?_, fun h ↦ ne_zero_of_mem_lebesgueSpineDomain h rfl⟩
   exact (tendsto_neg_smul_nhdsWithin he hρ hc).neBot
 
 /-- At every boundary point of the domain inside the ball other than the origin, the potential
@@ -389,7 +386,7 @@ private lemma lebesgueSpinePotential_eq_of_mem_frontier (he : ‖e‖ = 1) {ρ c
     {x : E} (hx : x ∈ frontier (lebesgueSpineDomain e ρ c)) (hx0 : x ≠ 0) (hxρ : ‖x‖ < ρ) :
     lebesgueSpinePotential e x = 1 + c := by
   rw [(isOpen_lebesgueSpineDomain e ρ c).frontier_eq] at hx
-  have hxs := not_mem_segment_of_mem_closure he hρ1 hx.1 hx0
+  have hxs := notMem_segment_of_mem_closure he hρ1 hx.1 hx0
   refine le_antisymm (ContinuousWithinAt.closure_le hx.1
     (continuousAt_lebesgueSpinePotential e hxs).continuousWithinAt continuousWithinAt_const
     fun y hy ↦ (mem_lebesgueSpineDomain.1 hy).2.2.le) ?_
@@ -414,7 +411,8 @@ variable (e) in
 /-- In dimension `3` the potential of the segment is harmonic off the segment. -/
 theorem harmonicOnNhd_lebesgueSpinePotential (hE : finrank ℝ E = 3) :
     HarmonicOnNhd (lebesgueSpinePotential e) (segment ℝ 0 e)ᶜ := by
-  have h := harmonicOnNhd_integral_smul_of_contDiffOn integrable_unitInterval_val
+  have h := harmonicOnNhd_integral_smul_of_contDiffOn
+    (continuous_subtype_val.integrable_of_hasCompactSupport (μ := volume) (.of_compactSpace _))
     continuous_subtype_val (isOpen_sub_smul_ne_zero (e := e))
     (contDiffOn_inv_norm_sub_smul (n := 2))
     (isCompact_segment ℝ 0 e).isClosed.isOpen_compl (fun x hx y ↦ sub_smul_ne_zero hx y.2)
@@ -484,7 +482,7 @@ private lemma sub_lebesgueSpinePotential_le_add_of_isBarrier (hE : finrank ℝ E
   have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hE
   set Ω := lebesgueSpineDomain e ρ c
   have hΩo : IsOpen Ω := isOpen_lebesgueSpineDomain e ρ c
-  have hx0 : x ≠ 0 := fun h ↦ (mem_lebesgueSpineDomain.1 hx).2.1 (h ▸ left_mem_segment ℝ 0 e)
+  have hx0 := ne_zero_of_mem_lebesgueSpineDomain hx
   set r := min (‖x‖ / 2) (η / (1 + c))
   have hr : 0 < r := lt_min (half_pos (norm_pos_iff.2 hx0)) (by positivity)
   set U := Ω ∩ {y : E | r < ‖y‖}
@@ -501,7 +499,7 @@ private lemma sub_lebesgueSpinePotential_le_add_of_isBarrier (hE : finrank ℝ E
       fun y (hy : y ∈ U) ↦ (mem_lebesgueSpineDomain.1 hy.1).2.1)).subharmonicOn
   have hsubc : ContinuousOn (fun y ↦ 1 + c - lebesgueSpinePotential e y) (closure U) :=
     fun y hy ↦ (continuousAt_const.sub (continuousAt_lebesgueSpinePotential e
-      (not_mem_segment_of_mem_closure he hρ1 (hclU hy).1 (hU0 y hy)))).continuousWithinAt
+      (notMem_segment_of_mem_closure he hρ1 (hclU hy).1 (hU0 y hy)))).continuousWithinAt
   have hsup : SubharmonicOn (-fun y ↦ k * w y + η * ‖y‖⁻¹) U := by
     have h := ((hw.subharmonicOn_neg.mono inter_subset_left).const_smul hk).sub_harmonicOnNhd
       (harmonicOnNhd_const_mul_inv_norm hE η fun h ↦ hU0 0 (subset_closure h) rfl) hUo
@@ -542,8 +540,7 @@ theorem not_isBarrier_lebesgueSpineDomain (hE : finrank ℝ E = 3) (he : ‖e‖
   -- Letting `η → 0` in the comparison step gives `1 + c - u ≤ k w` on `Ω`.
   have hmain : ∀ x ∈ Ω, 1 + c - lebesgueSpinePotential e x ≤ k * w x := by
     intro x hx
-    have hxpos : 0 < ‖x‖ := norm_pos_iff.2 fun h ↦
-      (mem_lebesgueSpineDomain.1 hx).2.1 (h ▸ left_mem_segment ℝ 0 e)
+    have hxpos : 0 < ‖x‖ := norm_pos_iff.2 (ne_zero_of_mem_lebesgueSpineDomain hx)
     refine le_of_forall_pos_le_add fun ε hε ↦ ?_
     have := sub_lebesgueSpinePotential_le_add_of_isBarrier hE he hρ1 hc hw hk
       (fun y hy hy0 ↦ sub_lebesgueSpinePotential_le_of_mem_frontier he hρ1 hc hw hm0 hm hy hy0)
@@ -561,9 +558,7 @@ theorem not_isBarrier_lebesgueSpineDomain (hE : finrank ℝ E = 3) (he : ‖e‖
     (Ioo_mem_nhdsGT hρ0)).exists
   have hsΩ := neg_smul_mem_lebesgueSpineDomain he hc hs.1 hs.2
   have hule : lebesgueSpinePotential e ((-s) • e) ≤ 1 := lebesgueSpinePotential_le_one he
-    (fun h ↦ (mem_lebesgueSpineDomain.1 hsΩ).2.1 (h ▸ left_mem_segment ℝ 0 e)) (by
-      rw [real_inner_smul_left, real_inner_self_eq_norm_sq, he]
-      simp [hs.1.le])
+    (ne_zero_of_mem_lebesgueSpineDomain hsΩ) (inner_neg_smul_self_nonpos hs.1.le)
   linarith [hmain _ hsΩ]
 
 /-- **The Dirichlet problem on Lebesgue's spine domain is not solvable**: in dimension `3`, for
