@@ -114,6 +114,16 @@ private theorem periodic_sub_const {H : Puncture → ℝ → M → ℝ} {c : Pun
     Periodic (fun t x ↦ H q t x - c q t) 1 := fun t ↦ funext fun x ↦
   congrArg₂ (· - ·) (congrFun (hH q t) x) (hc q t)
 
+/-- Periodic normalizations `c_q` give period-one target-independent Hamiltonians. -/
+private theorem periodic_const_target {c : Puncture → ℝ → ℝ} (hc : ∀ q, Periodic (c q) 1)
+    (q : Puncture) : Periodic (fun t (_ : M) ↦ c q t) 1 :=
+  fun t ↦ funext fun _ ↦ hc q t
+
+/-- End Hamiltonians are their normalization by `c` plus `c`. -/
+private theorem sub_const_add_const (H : Puncture → ℝ → M → ℝ) (c : Puncture → ℝ → ℝ) :
+    (fun q t x ↦ H q t x - c q t + c q t) = H :=
+  funext fun _ ↦ funext fun _ ↦ funext fun _ ↦ sub_add_cancel _ _
+
 end Floer
 
 /-! ### Symplectic vector spaces -/
@@ -122,8 +132,15 @@ namespace SymplecticForm
 
 open Floer
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {H : Puncture → ℝ → V → ℝ} {c : Puncture → ℝ → ℝ}
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
+  {c : Puncture → ℝ → ℝ}
+
+/-- `C¹` normalizations `c_q` give `C¹` target-independent Hamiltonians. -/
+private theorem contDiff_uncurry_const_target (hcs : ∀ q, ContDiff ℝ 1 (c q)) (q : Puncture) :
+    ContDiff ℝ 1 (uncurry fun t (_ : V) ↦ c q t) :=
+  (hcs q).comp contDiff_fst
+
+variable [FiniteDimensional ℝ V]
 
 /-- **Normalizing the end Hamiltonians does not change the Floer equation.** The perturbed
 derivative `du - X_K` of any map is the same for the capped perturbations of the end Hamiltonians
@@ -158,6 +175,21 @@ theorem floerEnergyDensity_cappedPerturbation_add_const (ω : SymplecticForm V) 
   rw [cappedPerturbation_add_const_fun H c 0, cappedPerturbation_add_const_fun H c 0,
     floerEnergyDensity_add_const]
 
+/-- Normalizing the end Hamiltonians does not change the energy density of the comparison
+family. -/
+private theorem floerEnergyDensity_cappedComparisonPerturbation_add_const (ω : SymplecticForm V)
+    (H : Puncture → ℝ → V → ℝ) (c : Puncture → ℝ → ℝ) (R : ℝ) (u : ℝ × ℝ → V) :
+    ω.floerEnergyDensity
+        (fun z x ↦ cappedComparisonPerturbation (fun q t y ↦ H q t y + c q t) R
+          (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedComparisonPerturbation (fun q t y ↦ H q t y + c q t) R
+          (Complex.equivRealProdCLM.symm z) x Complex.I) u =
+      ω.floerEnergyDensity
+        (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u := by
+  simp only [cappedComparisonPerturbation_def, floerEnergyDensity_cappedPerturbation_add_const]
+
 /-- The curvature of the capped perturbation of target-independent Hamiltonians does not depend on
 the target point. -/
 theorem hamiltonianCurvature_cappedPerturbation_const_target (ω : SymplecticForm V) (a L : ℝ)
@@ -185,13 +217,11 @@ theorem integrable_hamiltonianCurvature_cappedPerturbation_const (ω : Symplecti
           (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedPerturbation a L (fun q t (_ : V) ↦ c q t)
           (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) := by
-  have hcs' : ∀ q, ContDiff ℝ 1 (uncurry fun t (_ : V) ↦ c q t) :=
-    fun q ↦ (hcs q).comp contDiff_fst
   -- The components of the datum at the target point `0`, as functions of the domain point.
   have hk (v : ℂ) : ContDiff ℝ 1 fun z ↦ cappedPerturbation a L (fun q t (_ : V) ↦ c q t)
       (Complex.equivRealProdCLM.symm z) 0 v :=
-    (contDiff_cappedPerturbation_apply (fun q t ↦ funext fun _ ↦ hc q t) hcs' a L v).comp
-      (contDiff_id.prodMk contDiff_const)
+    (contDiff_cappedPerturbation_apply (periodic_const_target hc)
+      (contDiff_uncurry_const_target hcs) a L v).comp (contDiff_id.prodMk contDiff_const)
   have hks (v : ℂ) (w : ℝ × ℝ) : HasCompactSupport fun z ↦ fderiv ℝ (fun z ↦ cappedPerturbation a L
       (fun q t (_ : V) ↦ c q t) (Complex.equivRealProdCLM.symm z) 0 v) z w :=
     (hasCompactSupport_cappedPerturbation_apply a L (fun _ ↦ (0 : V)) v).fderiv_apply ℝ w
@@ -214,8 +244,6 @@ theorem integral_hamiltonianCurvature_cappedPerturbation_const (ω : SymplecticF
           (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedPerturbation a L (fun q t (_ : V) ↦ c q t)
           (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) = 0 := by
-  have hcs' : ∀ q, ContDiff ℝ 1 (uncurry fun t (_ : V) ↦ c q t) :=
-    fun q ↦ (hcs q).comp contDiff_fst
   -- Along the constant map `0`, the energy density and the area density vanish.
   have hE : ω.floerEnergyDensity
       (fun z x ↦ cappedPerturbation a L (fun q t (_ : V) ↦ c q t)
@@ -228,7 +256,7 @@ theorem integral_hamiltonianCurvature_cappedPerturbation_const (ω : SymplecticF
     simp
   -- The energy identity for the constant map `0` leaves only the curvature.
   have h := ω.setIntegral_floerEnergyDensity_cappedPerturbation
-    (fun q t ↦ funext fun _ ↦ hc q t) hcs' a L isOpen_univ
+    (periodic_const_target hc) (contDiff_uncurry_const_target hcs) a L isOpen_univ
     (subset_univ _) contDiffOn_const MeasurableSet.univ (subset_univ _)
     (by rw [hE]; exact integrableOn_zero)
   rw [hE] at h
@@ -260,6 +288,12 @@ open Floer
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
   {ω : SmoothTwoForm I M} {H : Puncture → ℝ → M → ℝ} {c : Puncture → ℝ → ℝ}
+
+omit [IsManifold I ⊤ M] in
+/-- `C¹` normalizations `c_q` give `C¹` target-independent Hamiltonians on `M`. -/
+private theorem contMDiff_uncurry_const_target (hcs : ∀ q, ContDiff ℝ 1 (c q)) (q : Puncture) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry fun t (_ : M) ↦ c q t) :=
+  (hcs q).contMDiff.comp contMDiff_fst
 
 omit [IsManifold I ⊤ M] in
 /-- A component of the capped perturbation is differentiable in the point of the plane chart. -/
@@ -304,6 +338,21 @@ theorem floerEnergyDensity_cappedPerturbation_add_const (ω : SmoothTwoForm I M)
   rw [cappedPerturbation_add_const_fun H c (u 0), cappedPerturbation_add_const_fun H c (u 0),
     floerEnergyDensity_add_const]
 
+/-- Normalizing the end Hamiltonians does not change the energy density of the comparison family,
+for a manifold target. -/
+private theorem floerEnergyDensity_cappedComparisonPerturbation_add_const (ω : SmoothTwoForm I M)
+    (H : Puncture → ℝ → M → ℝ) (c : Puncture → ℝ → ℝ) (R : ℝ) (u : ℝ × ℝ → M) :
+    ω.floerEnergyDensity
+        (fun z x ↦ cappedComparisonPerturbation (fun q t y ↦ H q t y + c q t) R
+          (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedComparisonPerturbation (fun q t y ↦ H q t y + c q t) R
+          (Complex.equivRealProdCLM.symm z) x Complex.I) u =
+      ω.floerEnergyDensity
+        (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u := by
+  simp only [cappedComparisonPerturbation_def, floerEnergyDensity_cappedPerturbation_add_const]
+
 /-- The curvature of the capped perturbation of target-independent Hamiltonians does not depend on
 the target point, for a manifold target. -/
 theorem hamiltonianCurvature_cappedPerturbation_const_target (ω : SmoothTwoForm I M) (a L : ℝ)
@@ -343,9 +392,8 @@ theorem hamiltonianCurvature_cappedPerturbation_add_const (ω : SmoothTwoForm I 
             (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ cappedPerturbation a L (fun q t (_ : M) ↦ c q t)
             (Complex.equivRealProdCLM.symm z) x Complex.I) z x := by
-  have hc' : ∀ q, Periodic (fun t (_ : M) ↦ c q t) 1 := fun q t ↦ funext fun _ ↦ hc q t
-  have hcs' : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry fun t (_ : M) ↦ c q t) :=
-    fun q ↦ (hcs q).contMDiff.comp contMDiff_fst
+  have hc' := periodic_const_target (M := M) hc
+  have hcs' := contMDiff_uncurry_const_target (I := I) (M := M) hcs
   rw [cappedPerturbation_add_const_fun H c x, cappedPerturbation_add_const_fun H c x,
     hamiltonianCurvature_add_const ω (differentiableAt_cappedPerturbation_domain hH hHs a L z x 1)
       (differentiableAt_cappedPerturbation_domain hH hHs a L z x Complex.I)
@@ -473,6 +521,24 @@ theorem integral_hamiltonianCurvature_cappedComparisonPerturbation_add_const
   simp only [cappedComparisonPerturbation_def] at hu ⊢
   exact ω.integral_hamiltonianCurvature_cappedPerturbation_add_const hH hHs hc hcs _ _ hu
 
+/-- Normalizing the end Hamiltonians does not change the integrability of the curvature of the
+comparison family along a map. -/
+private theorem integrable_hamiltonianCurvature_cappedComparisonPerturbation_add_const_iff
+    (ω : SmoothTwoForm I M) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    (hc : ∀ q, Periodic (c q) 1) (hcs : ∀ q, ContDiff ℝ 1 (c q)) (R : ℝ) (u : ℝ × ℝ → M) :
+    (Integrable fun z ↦ ω.hamiltonianCurvature
+        (fun z x ↦ cappedComparisonPerturbation (fun q t y ↦ H q t y + c q t) R
+          (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedComparisonPerturbation (fun q t y ↦ H q t y + c q t) R
+          (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)) ↔
+      Integrable fun z ↦ ω.hamiltonianCurvature
+        (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x
+          Complex.I) z (u z) := by
+  simp only [cappedComparisonPerturbation_def]
+  exact ω.integrable_hamiltonianCurvature_cappedPerturbation_add_const_iff hH hHs hc hcs _ _ u
+
 namespace IsNondegenerate
 
 /-- **The energy bound of the comparison family for any normalization, for a manifold target.**
@@ -503,17 +569,14 @@ theorem abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le_of_a
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)| ≤ 2 * ∑ q, B q := by
   -- Write `H_q = (H_q - c_q) + c_q`; the datum built from `H_q - c_q` has the same energy density.
-  have hHG : H = fun q t x ↦ (H q t x - c q t) + c q t :=
-    funext fun q ↦ funext fun t ↦ funext fun x ↦ (sub_add_cancel _ _).symm
   have hGp := periodic_sub_const hH hc
   have hGs (q : Puncture) :
       ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry fun t x ↦ H q t x - c q t) :=
-    (hHs q).sub ((hcs q).contMDiff.comp contMDiff_fst)
-  rw [hHG] at hE hR ⊢
-  simp only [cappedComparisonPerturbation_def, floerEnergyDensity_cappedPerturbation_add_const]
-    at hE hR ⊢
-  rw [ω.integrable_hamiltonianCurvature_cappedPerturbation_add_const_iff hGp hGs hc hcs] at hR
-  simp only [← cappedComparisonPerturbation_def] at hE hR ⊢
+    (hHs q).sub (contMDiff_uncurry_const_target hcs q)
+  rw [← sub_const_add_const H c] at hE hR ⊢
+  rw [floerEnergyDensity_cappedComparisonPerturbation_add_const] at hE ⊢
+  rw [ω.integrable_hamiltonianCurvature_cappedComparisonPerturbation_add_const_iff hGp hGs hc hcs]
+    at hR
   exact hω.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le hGp hGs hB hR₀ hu
     hE hR
 
@@ -603,14 +666,9 @@ theorem abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le_of_a
       ∫ z, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)| ≤
         2 * ∑ q, B q := by
   -- Write `H_q = (H_q - c_q) + c_q`; the datum built from `H_q - c_q` has the same energy density.
-  have hHG : H = fun q t x ↦ (H q t x - c q t) + c q t :=
-    funext fun q ↦ funext fun t ↦ funext fun x ↦ (sub_add_cancel _ _).symm
   have hGs (q : Puncture) : ContDiff ℝ 1 (uncurry fun t x ↦ H q t x - c q t) :=
-    (hHs q).sub ((hcs q).comp contDiff_fst)
-  rw [hHG] at hE ⊢
-  simp only [cappedComparisonPerturbation_def, floerEnergyDensity_cappedPerturbation_add_const]
-    at hE ⊢
-  simp only [← cappedComparisonPerturbation_def] at hE ⊢
+    (hHs q).sub (contDiff_uncurry_const_target hcs q)
+  rw [← sub_const_add_const H c, floerEnergyDensity_cappedComparisonPerturbation_add_const] at hE ⊢
   exact ω.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le
     (periodic_sub_const hH hc) hGs hB hR₀ hu hE
 
