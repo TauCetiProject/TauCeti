@@ -75,28 +75,6 @@ namespace TauCeti
 
 variable {Q : Type} [TopologicalSpace Q]
 
-/-- Homotopic maps induce the same map on integral singular homology, read through
-`SSet.homologyMap` as in `TauCeti.LivesOverFundamentalClass`: Mathlib's
-`TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor` in that form. -/
-private lemma homologyMap_eq_of_homotopic {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y]
-    {f g : C(X, Y)} (H : f.Homotopic g) (k : ℕ) :
-    SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) (ModuleCat.of ℤ (ULift.{0} ℤ)) k =
-      SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g)) (ModuleCat.of ℤ (ULift.{0} ℤ)) k :=
-  TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor (C := ModuleCat.{0} ℤ)
-    (f := TopCat.ofHom f) (g := TopCat.ofHom g) H.some _ k
-
-/-- The induced map of a composite, on integral singular homology. -/
-private lemma homologyMap_comp_apply {X Y Z : Type} [TopologicalSpace X] [TopologicalSpace Y]
-    [TopologicalSpace Z] (f : C(X, Y)) (g : C(Y, Z)) (k : ℕ)
-    (x : ((TopCat.toSSet.obj (TopCat.of X)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) k :
-      ModuleCat.{0} ℤ)) :
-    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (g.comp f)))
-        (ModuleCat.of ℤ (ULift.{0} ℤ)) k).hom x =
-      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g)) (ModuleCat.of ℤ (ULift.{0} ℤ)) k).hom
-        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f))
-          (ModuleCat.of ℤ (ULift.{0} ℤ)) k).hom x) := by
-  rw [← ModuleCat.comp_apply, ← SSet.homologyMap_comp, ← Functor.map_comp, ← TopCat.ofHom_comp]
-
 /-- **Abundance is witnessed by a class killed by evaluation.** Let `Q` be a `T₁` space with a
 chart at `b` to a real normed space of dimension `n`, abundant with 2-spheres at `b` in
 dimension `n`. Then abundance is witnessed by a class `α ∈ Hₖ(Map(S², Q); ℤ)` whose image under
@@ -157,41 +135,10 @@ theorem IsAbundantWithTwoSpheres.exists_homologyMap_mappingSpaceEval_eq_zero [T1
     have : PathConnectedSpace Sphere2 :=
       isPathConnected_iff_pathConnectedSpace.1 <| isPathConnected_sphere
         (by rw [← finrank_eq_rank, finrank_euclideanSpace_fin]; norm_num) 0 zero_le_one
-    rw [homologyMap_eq_of_homotopic
-      ⟨mappingSpaceEvalHomotopy (PathConnectedSpace.somePath z Sphere2.north)⟩ k]
+    rw [ContinuousMap.Homotopic.homologyMap_eq ⟨evalHomotopy
+      (PathConnectedSpace.somePath z Sphere2.north) (mappingSpaceEval_apply (X := Q) z)
+      (mappingSpaceEval_apply Sphere2.north)⟩]
     exact homologyMap_sub_homologyMap_section _ _ ContinuousMap.const' hs α
-
-variable (Q) in
-/-- The inclusion `P_{Q→Q} 𝓛₀Q ↪ P_{Q→𝓛₀Q} 𝓛₀Q` of the Moore paths in the contractible loops
-between constant loops into the Moore paths starting at a constant loop. -/
-def constContractibleMoorePathsInclusion :
-    C(ConstContractibleMoorePaths Q,
-      MoorePath.pathsBetween (range (constContractibleLoop (Q := Q))) univ) :=
-  ⟨inclusion fun _ hγ ↦ MoorePath.mem_pathsBetween.2 ⟨(MoorePath.mem_pathsBetween.1 hγ).1,
-    mem_univ _⟩, continuous_inclusion _⟩
-
-@[simp]
-theorem coe_constContractibleMoorePathsInclusion (γ : ConstContractibleMoorePaths Q) :
-    (constContractibleMoorePathsInclusion Q γ : MoorePath (contractibleLoops Q)) = γ :=
-  (rfl)
-
-/-- Reversal of the Moore paths between constant contractible loops. -/
-private def constContractibleMoorePathsSymm :
-    C(ConstContractibleMoorePaths Q, ConstContractibleMoorePaths Q) :=
-  ⟨fun γ ↦ ⟨γ.1.symm, MoorePath.symm_mem_pathsBetween.2 γ.2⟩,
-    (continuous_subtype_val.moorePath_symm).subtype_mk _⟩
-
-private lemma constContractibleMoorePathsSymm_comp_self :
-    (constContractibleMoorePathsSymm (Q := Q)).comp constContractibleMoorePathsSymm =
-      ContinuousMap.id _ :=
-  ContinuousMap.ext fun γ ↦ Subtype.ext (MoorePath.symm_symm γ.1)
-
-/-- A constant contractible loop is the constant loop at its base point. -/
-private lemma constContractibleLoop_basepointContractibleLoop {ℓ : contractibleLoops Q}
-    (hℓ : ℓ ∈ range (constContractibleLoop (Q := Q))) :
-    constContractibleLoop (basepointContractibleLoop ℓ) = ℓ := by
-  obtain ⟨q, rfl⟩ := hℓ
-  rw [basepointContractibleLoop_constContractibleLoop]
 
 /-- **The class of the proof of Theorem 6.12.** Let `Q` be a `T₁` space with a chart at `b` to a
 real normed space of dimension `n`, abundant with 2-spheres at `b` in dimension `n`. Then some
@@ -213,17 +160,17 @@ theorem IsAbundantWithTwoSpheres.exists_livesOverFundamentalClass_homologyMap_eq
   obtain ⟨k, α, hα, -, hev⟩ := h.exists_homologyMap_mappingSpaceEval_eq_zero φ hb hn
   let e := sphere2FiberHomotopyEquivMoorePaths Q
   let ρ : C(ConstContractibleMoorePaths Q, ConstContractibleMoorePaths Q) :=
-    constContractibleMoorePathsSymm
+    MoorePath.pathsBetweenSymm _ _
   refine ⟨k, (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (ρ.comp e.invFun)))
     (ModuleCat.of ℤ (ULift.{0} ℤ)) k).hom α, ?_, ?_⟩
   · -- Going back to `Map(S², Q)` along `e.toFun ∘ ρ`, which lies over `Q`, recovers `α`.
     refine LivesOverFundamentalClass.of_homologyMap _ (e.toFun.comp ρ)
       (p' := mappingSpaceEval Sphere2.north) (funext fun γ ↦ ?_) ?_
     · have h := congrArg Prod.fst (DFunLike.congr_fun e.comp_toFun (ρ γ))
-      simpa [ρ, constContractibleMoorePathsSymm] using h
-    · rw [← homologyMap_comp_apply, ContinuousMap.comp_assoc, ← ContinuousMap.comp_assoc ρ,
-        constContractibleMoorePathsSymm_comp_self,
-        ContinuousMap.id_comp, homologyMap_eq_of_homotopic ⟨e.right_inv.some.toHomotopy⟩ k]
+      simpa [ρ] using h
+    · rw [← ContinuousMap.homologyMap_comp_apply, ContinuousMap.comp_assoc,
+        ← ContinuousMap.comp_assoc ρ, MoorePath.pathsBetweenSymm_comp_pathsBetweenSymm,
+        ContinuousMap.id_comp, ContinuousMap.Homotopic.homologyMap_eq ⟨e.right_inv.some.toHomotopy⟩]
       simpa using hα
   · -- The inclusion is homotopic to the constant paths at the sources, and the source of the
     -- reversed path of a sphere is its value at the south pole.
@@ -238,16 +185,21 @@ theorem IsAbundantWithTwoSpheres.exists_livesOverFundamentalClass_homologyMap_eq
       simp only [ContinuousMap.comp_apply, constContractibleMooreEndpoints_apply,
         sphere2Poles_apply] at hend
       simp only [ContinuousMap.comp_apply, MoorePath.coe_sourceFrom, mappingSpaceEval_apply,
-        ContinuousMap.coe_mk, g]
-      rw [← hend, constContractibleLoop_basepointContractibleLoop
-        (MoorePath.mem_pathsBetween.1 (e.invFun f).2).2]
-      exact MoorePath.source_symm _
-    have H := (MoorePath.truncateFromHomotopy A).compContinuousMap
-      ((constContractibleMoorePathsInclusion Q).comp (ρ.comp e.invFun))
-    rw [← homologyMap_comp_apply, ← ContinuousMap.id_comp
-        ((constContractibleMoorePathsInclusion Q).comp (ρ.comp e.invFun)),
-      ← homologyMap_eq_of_homotopic ⟨H⟩ k, ContinuousMap.comp_assoc,
-      ← ContinuousMap.comp_assoc _ (constContractibleMoorePathsInclusion Q), hfac,
-      ← ContinuousMap.comp_assoc, homologyMap_comp_apply, hev, map_zero]
+        ContinuousMap.coe_mk, g, ρ]
+      rw [coe_constContractibleMoorePathsInclusion, MoorePath.coe_pathsBetweenSymm,
+        MoorePath.source_symm, ← hend, constContractibleLoop_basepointContractibleLoop
+          (MoorePath.mem_pathsBetween.1 (e.invFun f).2).2]
+    -- Truncating paths deforms the constant paths at the sources onto the inclusion.
+    have H : ((MoorePath.constantBetween A (univ : Set (contractibleLoops Q))).comp
+        (g.comp (mappingSpaceEval Sphere2.south))).Homotopic
+          ((constContractibleMoorePathsInclusion Q).comp (ρ.comp e.invFun)) := by
+      have H := (MoorePath.truncateFromHomotopy A).compContinuousMap
+        ((constContractibleMoorePathsInclusion Q).comp (ρ.comp e.invFun))
+      rw [ContinuousMap.id_comp, ContinuousMap.comp_assoc,
+        ← ContinuousMap.comp_assoc (MoorePath.sourceFrom A), hfac] at H
+      exact ⟨H⟩
+    rw [← ContinuousMap.homologyMap_comp_apply, ← H.homologyMap_eq,
+      ContinuousMap.homologyMap_comp_apply, ContinuousMap.homologyMap_comp_apply, hev, map_zero,
+      map_zero]
 
 end TauCeti

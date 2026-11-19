@@ -26,10 +26,11 @@ deformation retracts onto `s` the relative homology of `(t, s)` vanishes
 (`TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel`), as it does whenever a homotopy
 from the identity into `s` keeps `s` inside `s`
 (`TopPair.isZero_singularHomology_ofSubset_of_homotopy`).  In the absolute
-case, a homotopy equivalence of spaces induces an isomorphism on singular homology
-(`ContinuousMap.HomotopyEquiv.singularHomologyIso`), so by the five lemma a map of pairs which is a
-homotopy equivalence on both spaces induces isomorphisms on relative singular homology
-(`TopPair.isIso_singularHomologyMap_of_homotopyEquiv`).
+case, homotopic maps induce the same map on singular homology
+(`ContinuousMap.Homotopic.homologyMap_eq`) and a homotopy equivalence of spaces induces an
+isomorphism on it (`ContinuousMap.HomotopyEquiv.singularHomologyIso`), so by the five lemma a map
+of pairs which is a homotopy equivalence on both spaces induces isomorphisms on relative singular
+homology (`TopPair.isIso_singularHomologyMap_of_homotopyEquiv`).
 
 The homotopy is transported to the singular simplicial sets of the two spaces, where the
 compatibility of the two simplicial homotopies over the inclusion of the subspace descends the
@@ -248,6 +249,28 @@ theorem isIso_singularHomologyMap_of_homotopyEquiv {P P' : TopPair.{w}} (f : P �
 end TopPair
 
 namespace ContinuousMap
+
+variable {X Y Z : Type w} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+
+/-- **Homotopy invariance** in the form `SSet.homologyMap (TopCat.toSSet.map _)` used for the
+homology of pairs: homotopic maps induce the same map on singular homology, with coefficients `R`
+in any category. -/
+theorem Homotopic.homologyMap_eq {f g : C(X, Y)} (H : f.Homotopic g) {C : Type u}
+    [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] [CategoryWithHomology C] (R : C)
+    (n : ℕ) :
+    SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) R n =
+      SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g)) R n :=
+  TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor H.some R n
+
+/-- The map induced by a composite on singular homology, in the form
+`SSet.homologyMap (TopCat.toSSet.map _)`, applied to a class with coefficients in a module. -/
+theorem homologyMap_comp_apply (f : C(X, Y)) (g : C(Y, Z)) {Λ : Type*} [Ring Λ]
+    (R : ModuleCat.{w} Λ) (n : ℕ)
+    (x : ((TopCat.toSSet.obj (TopCat.of X)).homology R n : ModuleCat.{w} Λ)) :
+    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (g.comp f))) R n).hom x =
+      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g)) R n).hom
+        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) R n).hom x) := by
+  rw [← ModuleCat.comp_apply, ← SSet.homologyMap_comp, ← Functor.map_comp, ← TopCat.ofHom_comp]
 
 open TauCeti
 

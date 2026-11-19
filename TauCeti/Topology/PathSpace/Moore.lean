@@ -44,6 +44,7 @@ parametrized by the unit interval: when `X` is a point, the Moore loops at it fo
 * `TauCeti.MoorePath.map`: the image of a Moore path under a continuous map.
 * `TauCeti.MoorePath.pathsBetween A B`: the Moore paths from `A` to `B`, the path space
   `P_{A→B} X`.
+* `TauCeti.MoorePath.pathsBetweenSymm A B`: reversal of paths `P_{A→B} X → P_{B→A} X`.
 * `TauCeti.MooreLoopSpace X x`: the Moore loops at `x`, a monoid under concatenation with unit
   the constant loop of length zero.
 * `TauCeti.MooreLoopSpace.map`: the continuous monoid homomorphism induced by a based map.
@@ -636,6 +637,22 @@ theorem trans_mem_pathsBetween {A B : Set X} {γ δ : MoorePath X} (hγ : γ.sou
 theorem symm_mem_pathsBetween {A B : Set X} {γ : MoorePath X} :
     γ.symm ∈ pathsBetween B A ↔ γ ∈ pathsBetween A B := by
   rw [mem_pathsBetween, mem_pathsBetween, source_symm, target_symm, and_comm]
+
+/-- Reversal of Moore paths, as a map `P_{A→B} X → P_{B→A} X`. -/
+def pathsBetweenSymm (A B : Set X) : C(pathsBetween A B, pathsBetween B A) where
+  toFun γ := ⟨γ.1.symm, symm_mem_pathsBetween.2 γ.2⟩
+  continuous_toFun := continuous_subtype_val.moorePath_symm.subtype_mk _
+
+@[simp]
+theorem coe_pathsBetweenSymm (A B : Set X) (γ : pathsBetween A B) :
+    (pathsBetweenSymm A B γ : MoorePath X) = γ.1.symm :=
+  (rfl)
+
+/-- Reversing a path twice gives back the path. -/
+@[simp]
+theorem pathsBetweenSymm_comp_pathsBetweenSymm (A B : Set X) :
+    (pathsBetweenSymm B A).comp (pathsBetweenSymm A B) = ContinuousMap.id _ :=
+  ContinuousMap.ext fun γ ↦ Subtype.ext (symm_symm γ.1)
 
 theorem map_mem_pathsBetween {A B : Set X} {γ : MoorePath X} (f : C(X, Y))
     (hγ : γ ∈ pathsBetween A B) : γ.map f ∈ pathsBetween (f '' A) (f '' B) :=
