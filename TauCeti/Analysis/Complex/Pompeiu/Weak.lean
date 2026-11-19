@@ -190,10 +190,8 @@ theorem integral_conjWirtingerDeriv_smul_cauchyTransform [CompleteSpace F] {f : 
     ∫ w, conjWirtingerDeriv ψ w 1 • cauchyTransform f w = -∫ z, ψ z • f z := by
   -- this is the operator-valued pairing for the maps `a ↦ a • f z`
   let L : F ≃L[ℂ] (ℂ →L[ℂ] F) := ContinuousLinearMap.toSpanSingletonCLE
-  have hT (w : ℂ) : cauchyTransform (fun z ↦ L (f z)) w = L (cauchyTransform f w) := by
-    simp only [cauchyTransform_apply, ← map_smul, L.integral_comp_comm]
   have h := integral_cauchyTransform_apply_conjWirtingerDeriv (L.integrable_comp_iff.2 hf) hc hψ
-  simp only [hT] at h
+  simp only [L.cauchyTransform_comp_comm] at h
   simpa only [L, ContinuousLinearMap.toSpanSingletonCLE_apply_apply] using h
 
 /-- **Integration by parts against the Cauchy transform.** For integrable `f` and a compactly
