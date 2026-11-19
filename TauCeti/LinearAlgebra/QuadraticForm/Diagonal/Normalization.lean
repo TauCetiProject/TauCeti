@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.BilinearMap.Orthogonal
+public import TauCeti.LinearAlgebra.SesquilinearForm.Orthogonal
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 
 /-!
