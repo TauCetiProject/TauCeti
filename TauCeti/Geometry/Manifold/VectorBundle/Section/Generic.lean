@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Complex.Analytic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.FiniteSpan
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Parametric
 public import TauCeti.Geometry.Manifold.VectorBundle.Translate
@@ -23,10 +22,9 @@ parameters without a topology on the space of all smooth sections.
 For each point where some perturbing section is nonzero, the parameters giving a nonzero value
 form an open dense set. Countable intersections give sections avoiding any prescribed countable
 set, while retaining regular, finitely many zeros when the base and fiber dimensions agree.
-The complex-manifold applications use its underlying real smooth structure: a smooth real bundle
-of matching rank over a compact complex manifold has a continuous section with finitely many zeros
-avoiding any prescribed countable set. This includes a section of a line bundle on a compact
-Riemann surface nonzero at a given point, as used for the Euler number of a point twist.
+On a complex base, the smooth real theorem applies to the underlying real smooth structure via
+`IsManifold.restrictScalars_of_ne_zero`, retaining both smoothness and regularity of the zeros.
+The examples check this on compact complex manifolds and native complex line subbundles.
 
 The density and residual avoidance lemmas require only a nonzero perturbation direction at each
 avoided point. The existence results require a nontrivial model fiber, since every section of a
@@ -364,61 +362,13 @@ theorem exists_contMDiffSection_regular_finite_zero_forall_mem_ne_zero
         {x | s x = 0}.Finite ∧ ∀ x ∈ S, s x ≠ 0 := by
   let : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact X M
   obtain ⟨n, s, hspan⟩ := exists_fin_spanning_contMDiffSection (I := 𝓘(ℝ, X)) (F := F) (V := V)
-  have hdir (x : M) : ∃ i, s i x ≠ 0 := by
-    classical
-    have : Nontrivial (V x) :=
-      ((trivializationAt F V x).continuousLinearEquivAt ℝ x
-        (mem_baseSet_trivializationAt F V x)).toEquiv.nontrivial
-    by_contra! hall
-    have hz : Submodule.span ℝ (range fun i ↦ s i x) = ⊥ :=
-      Submodule.span_eq_bot.mpr (by rintro y ⟨i, rfl⟩; exact hall i)
-    exact top_ne_bot ((hspan x).symm.trans hz)
   obtain ⟨a, ha, hS⟩ := (dense_of_mem_residual
     (inter_mem
       (mem_residual_setOf_regular_and_finite_zero_affineFamily 0 s hspan hdim)
-      (mem_residual_setOf_forall_mem_affineFamily_ne_zero 0 s hS fun x _ ↦ hdir x))).nonempty
+      (mem_residual_setOf_forall_mem_affineFamily_ne_zero 0 s hS fun x _ ↦
+        VectorBundle.exists_ne_zero_of_span_range_eq_top F (hspan x)))).nonempty
   exact ⟨affineFamily 0 s a, TauCeti.isRegularSectionParameter_iff.mp ha.1, ha.2, hS⟩
 
 end Real
-
-section Complex
-
-variable {E X F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-  [TopologicalSpace X] [ChartedSpace E X] [T2Space X] [CompactSpace X] [IsManifold 𝓘(ℂ, E) 1 X]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [Nontrivial F]
-  {L : X → Type*} [∀ z, AddCommGroup (L z)] [∀ z, Module ℝ (L z)] [∀ z, TopologicalSpace (L z)]
-  [TopologicalSpace (TotalSpace F L)] [FiberBundle F L] [VectorBundle ℝ F L]
-  [ContMDiffVectorBundle ∞ F L 𝓘(ℝ, E)]
-
-/-- A real smooth vector bundle over a compact complex manifold, of real rank the real dimension
-of the base and nontrivial model fiber, has a continuous section with finitely many zeros, none of
-them in a given countable set. -/
-theorem exists_continuous_section_finite_zero_forall_mem_ne_zero
-    (hdim : finrank ℝ E = finrank ℝ F) {S : Set X} (hS : S.Countable) :
-    ∃ s : ∀ z, L z, (Continuous fun z ↦ TotalSpace.mk' F z (s z)) ∧ {z | s z = 0}.Finite ∧
-      ∀ y ∈ S, s y ≠ 0 := by
-  have : IsManifold 𝓘(ℝ, E) ∞ X := IsManifold.restrictScalars_of_ne_zero ∞ one_ne_zero ‹_›
-  have : FiniteDimensional ℝ E := .complexToReal E
-  obtain ⟨s, -, hZ, hS⟩ :=
-    exists_contMDiffSection_regular_finite_zero_forall_mem_ne_zero (F := F) (V := L) hdim hS
-  exact ⟨s, s.contMDiff.continuous, hZ, hS⟩
-
-end Complex
-
-variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [T2Space X] [CompactSpace X]
-  [IsManifold 𝓘(ℂ, ℂ) 1 X]
-  {L : X → Type*} [∀ z, AddCommGroup (L z)] [∀ z, Module ℝ (L z)] [∀ z, TopologicalSpace (L z)]
-  [TopologicalSpace (TotalSpace ℂ L)] [FiberBundle ℂ L] [VectorBundle ℝ ℂ L]
-  [ContMDiffVectorBundle ∞ ℂ L 𝓘(ℝ, ℂ)]
-
-/-- A smooth complex line bundle with model fiber `ℂ` over a compact Riemann surface has a
-continuous section with finitely many zeros that does not vanish at a given point. -/
-theorem exists_continuous_section_finite_zero_ne (x : X) :
-    ∃ s : ∀ z, L z, (Continuous fun z ↦ TotalSpace.mk' ℂ z (s z)) ∧ {z | s z = 0}.Finite ∧
-      s x ≠ 0 := by
-  obtain ⟨s, hs, hZ, hx⟩ :=
-    exists_continuous_section_finite_zero_forall_mem_ne_zero (E := ℂ) (F := ℂ) (L := L) rfl
-      (countable_singleton x)
-  exact ⟨s, hs, hZ, hx x rfl⟩
 
 end TauCeti
