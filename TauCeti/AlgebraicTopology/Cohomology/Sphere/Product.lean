@@ -93,11 +93,14 @@ through the isomorphism of these coefficient modules, which is not made here.
 For the circle `S¹` (`d = 0`), with `k = M = ℤ` and `n = 1` this is the integral decomposition
 `H²(S¹ × Y; ℤ) = pr₂^* H²(Y; ℤ) ⊕ (θ ⌣ pr₂^* H¹(Y; ℤ))` of the second cohomology of a product
 with a circle, torsion included; `θ` generates `H¹(S¹; ℤ)`. Under `S¹ ≅ ℝ / ℤ`, `θ` corresponds
-to `±[ds]` for the angular form `ds`, with the sign fixed by orientations; that identification is
-not made here. Its cross quotient `H¹(Y; ℤ)` is torsion-free, which the following makes precise for
-any coefficient change. A map `g : M ⟶ M'` of coefficient modules which is injective induces an
-injective map `H¹(Y; M) → H¹(Y; M')`, because `H₀(Y; k)` is free and so
-`H¹(Y; M) = Hom(H₁(Y; k), M)`
+to `±[ds]` for the angular form `ds`, with the sign fixed by orientations. The module
+`TauCeti.AlgebraicTopology.Cohomology.AddCircle` states the decomposition directly on
+`(ℝ / pℤ) × Y` with the angular class `θ_p = AddCircle.angularClass p` in place of `θ`,
+oriented by `⟨θ_p, [ℝ / pℤ]⟩ = 1` for the circuit class `[ℝ / pℤ]`
+(`TopCat.singularCohomologyAddCircleProdSlantEquiv`). The cross quotient `H¹(Y; ℤ)` is
+torsion-free, which the following makes precise for any coefficient change. A map `g : M ⟶ M'`
+of coefficient modules which is injective induces an injective map `H¹(Y; M) → H¹(Y; M')`,
+because `H₀(Y; k)` is free and so `H¹(Y; M) = Hom(H₁(Y; k), M)`
 (`TopCat.injective_homologyMap_linearYonedaObjMap_one`). Since slant
 products commute with coefficient changes (`TopCat.singularSlant_linearYonedaObjMap`), a class
 `φ ∈ H¹⁺ᵈ⁺¹(Sᵈ⁺¹ × Y; M)` whose image in `H¹⁺ᵈ⁺¹(Sᵈ⁺¹ × Y; M')` is pulled back from `Y` is itself
