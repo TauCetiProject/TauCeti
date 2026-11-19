@@ -22,12 +22,16 @@ inverse families. The difference of two inverses satisfies the resolvent identit
 controls variation of inverse operators by variation of the original operators.
 
 Over a semifield, multiplying a map by a nonzero scalar `c` preserves invertibility, and the inverse
-of `c • f` is `c⁻¹ • f.inverse`; this is how the inverse of a positively homogeneous family of
-maps is seen to be homogeneous of the opposite degree. Scaling the identity by a nonzero scalar `c`
+of `c • f` is `c⁻¹ • f.inverse`, also for `c` from a subfield of the scalars; this is how the
+inverse of a positively homogeneous family of maps is seen to be homogeneous of the opposite
+degree. Scaling the identity by a nonzero scalar `c`
 from a group with zero acting on the space, such as complex multiplication on `ℂ` viewed as a
 real-linear map, is invertible (`ContinuousLinearMap.isUnit_smul_id_of_ne_zero`). On a
 topological semifield, `a ↦ a • c` is invertible exactly when `c ≠ 0`
 (`ContinuousLinearMap.isInvertible_toSpanSingleton_iff`).
+
+A one-sided inverse of an invertible map is its inverse
+(`ContinuousLinearMap.IsInvertible.eq_inverse_of_comp_eq_id_left` and `_right`).
 
 An endomorphism is invertible exactly when it is a unit of the endomorphism ring
 (`ContinuousLinearMap.isInvertible_iff_isUnit`).
@@ -81,6 +85,25 @@ theorem IsInvertible.inverse_sub_inverse {f g : E →L[R] F}
   simp [hf.inverse_apply_self, hg.self_apply_inverse]
 
 end Sub
+
+section OneSided
+
+variable {R M M₂ : Type*} [Semiring R]
+  [TopologicalSpace M] [AddCommMonoid M] [Module R M]
+  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module R M₂]
+  {f : M →L[R] M₂} {g : M₂ →L[R] M}
+
+/-- A left inverse of an invertible continuous linear map is its inverse. -/
+theorem IsInvertible.eq_inverse_of_comp_eq_id_left (hf : f.IsInvertible)
+    (h : g ∘L f = .id R M) : g = f.inverse := by
+  rw [← comp_id g, ← hf.self_comp_inverse, ← comp_assoc, h, id_comp]
+
+/-- A right inverse of an invertible continuous linear map is its inverse. -/
+theorem IsInvertible.eq_inverse_of_comp_eq_id_right (hf : f.IsInvertible)
+    (h : f ∘L g = .id R M₂) : g = f.inverse := by
+  rw [← id_comp g, ← hf.inverse_comp_self, comp_assoc, h, comp_id]
+
+end OneSided
 
 section CompleteSpace
 
@@ -153,6 +176,17 @@ theorem inverse_smul (c : 𝕜) (f : M →L[𝕜] M₂) : (c • f).inverse = c�
   rw [comp_apply, ContinuousLinearEquiv.coe_coe,
     (ContinuousLinearEquiv.symm_apply_eq _ (y := c⁻¹ • y)).2 (by simp [smul_smul, hc]),
     map_smul, smul_apply]
+
+/-- The inverse of `c • f` is `c⁻¹ • f.inverse` also for a scalar `c` from a subfield `S` of the
+scalars of `f`, such as a real multiple of a complex-linear map. -/
+theorem inverse_smul_of_isScalarTower {S : Type*} [Semifield S] [Algebra S 𝕜]
+    [Module S M] [IsScalarTower S 𝕜 M] [ContinuousConstSMul S M]
+    [Module S M₂] [IsScalarTower S 𝕜 M₂] [ContinuousConstSMul S M₂]
+    (c : S) (f : M →L[𝕜] M₂) : (c • f).inverse = c⁻¹ • f.inverse := by
+  have h (d : S) (g : M₂ →L[𝕜] M) : d • g = algebraMap S 𝕜 d • g := by
+    ext; simp [algebraMap_smul]
+  rw [show c • f = algebraMap S 𝕜 c • f by ext; simp [algebraMap_smul], inverse_smul, h,
+    map_inv₀]
 
 end Smul
 
