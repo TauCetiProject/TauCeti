@@ -254,15 +254,10 @@ private theorem differentiable_apply {u : ℂ → EuclideanSpace ℝ (Fin 4)} (h
     (i : Fin 4) : Differentiable ℝ fun w ↦ u w i :=
   (contDiff_apply hu i).differentiable two_ne_zero
 
-/-- The section `α` of a `C²` field is continuous. -/
-private theorem continuous_sectionValue {u : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hu : ContDiff ℝ 2 u) : Continuous (sectionValue u) :=
-  (contDiff_sectionValue (contDiff_apply hu 2) (contDiff_apply hu 3)).continuous
-
 /-- The squared modulus `|α|²` of a `C²` field is continuous. -/
 private theorem continuous_sq_norm_sectionValue {u : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hu : ContDiff ℝ 2 u) : Continuous fun z ↦ ‖sectionValue u z‖ ^ 2 :=
-  (continuous_sectionValue hu).norm.pow 2
+  (continuous_sectionValue hu.continuous).norm.pow 2
 
 /-- The logarithm of `|α|² = 4 (p² + q²)` is `C²` where the section does not vanish. -/
 private theorem contDiffAt_log_normSq {u : ℂ → EuclideanSpace ℝ (Fin 4)} (hu : ContDiff ℝ 2 u)
@@ -301,8 +296,8 @@ private theorem laplacian_log_norm_sq_eq_of_mul {h : ℂ → ℂ} {z : ℂ}
   have hev : (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =ᶠ[𝓝 z]
       ((fun w ↦ Real.log (‖h w‖ ^ 2)) + fun w ↦ Real.log (4 * (y₁ w 2 ^ 2 + y₁ w 3 ^ 2))) +
         fun w ↦ Real.log (4 * (y₂ w 2 ^ 2 + y₂ w 3 ^ 2)) := by
-    filter_upwards [(continuous_sectionValue hy₁).continuousAt.eventually_ne hz₁,
-      (continuous_sectionValue hy₂).continuousAt.eventually_ne hz₂] with w hw₁ hw₂
+    filter_upwards [(continuous_sectionValue hy₁.continuous).continuousAt.eventually_ne hz₁,
+      (continuous_sectionValue hy₂.continuous).continuousAt.eventually_ne hz₂] with w hw₁ hw₂
     have hn (c : ℂ) (hc : c ≠ 0) : ‖c‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.2 hc)
     simp only [Pi.add_apply, ← sq_norm_sectionValue, hα w, norm_mul, mul_pow]
     rw [Real.log_mul (hn _ (hh₀ w)) (mul_ne_zero (hn _ hw₁) (hn _ hw₂)),
