@@ -200,10 +200,12 @@ protected theorem one_smul (x : NonabelianH1 G A') : hE.smul 1 x = x := by
 protected theorem mul_smul (c c' : FixedPoints.subgroup G A'') (x : NonabelianH1 G A') :
     hE.smul (c * c') x = hE.smul c (hE.smul c' x) := by
   induction x using induction_on with | mk f =>
-  rw [hE.smul_mk (hE.apply_liftFixed c'), hE.smul_mk (hE.apply_liftFixed c),
-    hE.smul_mk_eq (b := hE.liftFixed c * hE.liftFixed c') (by simp [apply_liftFixed])]
-  intro g
-  simp only [apply_smulCocycle, smul_mul', mul_inv_rev, mul_assoc]
+  rw [hE.smul_mk (hE.apply_liftFixed c'), hE.smul_mk (hE.apply_liftFixed c)]
+  exact hE.smul_mk_eq (b := hE.liftFixed c * hE.liftFixed c')
+    (f' := hE.smulCocycle _ (hE.apply_liftFixed_mem c)
+      (hE.smulCocycle _ (hE.apply_liftFixed_mem c') f))
+    (by simp [apply_liftFixed]) fun g ↦ by
+      simp only [apply_smulCocycle, smul_mul', mul_inv_rev, mul_assoc]
 
 /-- Acting by `c⁻¹` and then by `c` is the identity on `H¹(G, A')`. -/
 @[simp]
@@ -271,7 +273,7 @@ theorem connecting_eq_one_iff {c : FixedPoints.subgroup G A''} :
     rintro ⟨a, ha⟩
     refine ⟨b * (i a)⁻¹, fun g ↦ ?_, by simp [hb, hE.mulExact.apply_apply_eq_one]⟩
     have h := congrArg i (ha g)
-    rw [hf, _root_.map_mul, _root_.map_inv, hE.map_smul_left] at h
+    simp only [hf, _root_.map_mul, _root_.map_inv, hE.map_smul_left] at h
     have hgb : g • b = b * ((i a)⁻¹ * g • i a) := by
       rw [← h]
       group
@@ -281,7 +283,8 @@ theorem connecting_eq_one_iff {c : FixedPoints.subgroup G A''} :
     rintro ⟨a, ha, hac⟩
     obtain ⟨x, hx⟩ := (hE.mulExact (a⁻¹ * b)).mp (by simp [hac, hb])
     refine ⟨x, fun g ↦ hE.isEmbedding.injective ?_⟩
-    rw [hf, _root_.map_mul, _root_.map_inv, hE.map_smul_left, hx, smul_mul', smul_inv', ha g]
+    simp only [hf, _root_.map_mul, _root_.map_inv, hE.map_smul_left, hx, smul_mul', smul_inv',
+      ha g]
     group
 
 /-- **The fibres of the connecting map** are the orbits of `Aᴳ`, acting on `A''ᴳ` by left
@@ -355,8 +358,8 @@ theorem map_eq_one_iff_mem_range_map {x : NonabelianH1 G A} :
     have hmem : ∀ g, f.twist b⁻¹ g ∈ Set.range i := fun g ↦ (hE.mulExact _).mp <| by
       have hpf : p (f g) = (p b)⁻¹ * g • p b := by
         simpa only [Cocycle.map_apply, ContinuousMonoidHom.id_toFun] using ha g
-      rw [Cocycle.twist_apply, inv_inv, _root_.map_mul, _root_.map_mul, hpf, hE.map_smul_right,
-        _root_.map_inv, smul_inv']
+      simp only [Cocycle.twist_apply, inv_inv, _root_.map_mul, _root_.map_inv, hpf,
+        hE.map_smul_right, smul_inv']
       group
     refine ⟨NonabelianH1.mk ((f.twist b⁻¹).liftOfMemRange i hE.isEmbedding hE.compatible_left
       hmem), ?_⟩

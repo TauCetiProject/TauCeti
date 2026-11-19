@@ -354,7 +354,8 @@ noncomputable def Cocycle.liftOfMemRange (φ : A →ₜ* A') (hφ : Topology.IsE
     have hspec (g : G) : φ (Set.mem_range.mp (hf g)).choose = f g :=
       (Set.mem_range.mp (hf g)).choose_spec
     have hφg : ∀ a, φ (g • a) = g • φ a := h g
-    rw [map_mul φ, hφg, hspec, hspec, hspec, f.apply_mul]
+    simp only [map_mul, hφg, hspec]
+    exact f.apply_mul g g'
 
 /-- The lift of a cocycle maps back to it pointwise. -/
 @[simp]
