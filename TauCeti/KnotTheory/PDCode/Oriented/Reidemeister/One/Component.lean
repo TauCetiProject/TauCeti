@@ -64,27 +64,15 @@ private theorem collapseHalfEdge_edgePair (x : Fin (4 * (n + 1))) :
       · simp [collapseHalfEdge, PDCode.reidemeisterOne_edgePair_inl_of_ne, hx, hx']
   · fin_cases s <;> simp [collapseHalfEdge]
 
-private theorem collapseHalfEdge_componentPermOutgoing
-    (x : {x : Fin (4 * (n + 1)) // (D.reidemeisterOne h b).orientation x = true}) :
-    collapseHalfEdge D h ((D.reidemeisterOne h b).componentPermOutgoing x) =
-      collapseHalfEdge D h x := by
-  simp only [componentPermOutgoing_apply, PDCode.componentPerm_apply]
-  rw [collapseHalfEdge_crossingTurn, collapseHalfEdge_edgePair]
-
 private def collapseCrossingComponent : (D.reidemeisterOne h b).CrossingComponent →
     D.CrossingComponent :=
-  Quotient.lift (fun x ↦ collapseHalfEdge D h x.val) fun _ _ hxy ↦
-    hxy.apply_eq_of_apply_eq (f := fun x ↦ collapseHalfEdge D h x.val)
-      (collapseHalfEdge_componentPermOutgoing D h b)
+  CrossingComponent.lift (collapseHalfEdge D h) (collapseHalfEdge_crossingTurn D h b)
+    (collapseHalfEdge_edgePair D h b)
 
 private theorem collapseCrossingComponent_halfEdge (x : Fin (4 * (n + 1))) :
     collapseCrossingComponent D h b ((D.reidemeisterOne h b).crossingComponentOfHalfEdge x) =
-      collapseHalfEdge D h x := by
-  cases hx : (D.reidemeisterOne h b).orientation x with
-  | true => rw [crossingComponentOfHalfEdge_of_outgoing _ x hx]; rfl
-  | false =>
-    rw [crossingComponentOfHalfEdge_of_incoming _ x hx]
-    exact collapseHalfEdge_edgePair D h b x
+      collapseHalfEdge D h x :=
+  CrossingComponent.lift_crossingComponentOfHalfEdge _ _ _ x
 
 private theorem collapseCrossingComponent_surjective :
     Function.Surjective (collapseCrossingComponent D h b) := by
