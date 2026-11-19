@@ -50,8 +50,8 @@ kernel representation of `Op(a)` on Schwartz functions,
 vanishing outside a compact set `s`. On a compact set `A` disjoint from `s`, the kernel cut off to
 `A × B`, for a closed thickening `B` of `s` at positive distance from `A`, is bounded and defines a
 bounded integral operator `R` on `L²`. The smooth approximations of `f` supported in `B`
-(`TauCeti.Lp.exists_seq_contDiff_tsupport_subset_tendsto`) satisfy `T = R` on `A`, and this passes
-to the limit.
+(`MeasureTheory.Lp.exists_seq_contDiff_tsupport_subset_tendsto`) satisfy `T = R` on `A`, and this
+passes to the limit.
 
 The representation of `T†` (`TauCeti.Symbol.IsUniform.adjoint_ae_eq_integral_offDiagonalKernel`)
 follows by duality: on `A`, `T† g` and `R† g` have the same pairing with every `φ ∈ L²` vanishing
@@ -175,6 +175,15 @@ private theorem IsUniform.exists_integralOperator_truncKernel (ha : a.IsUniform)
 
 /-! ### Kernel representation of the `L²` extension and of its adjoint -/
 
+/-- If the `δ`-thickenings of `A` and `s` are disjoint, every point of `A` is at distance at least
+`δ / 2` from the closed `δ / 2`-thickening of `s`. -/
+private theorem half_le_dist_of_disjoint_thickening {X : Type*} [PseudoMetricSpace X]
+    {A s : Set X} {δ : ℝ} (hδ : 0 < δ) (h : Disjoint (thickening δ A) (thickening δ s)) {x y : X}
+    (hx : x ∈ A) (hy : y ∈ cthickening (δ / 2) s) : δ / 2 ≤ dist x y := by
+  by_contra! hxy
+  exact disjoint_left.1 h (mem_thickening_iff.2 ⟨x, hx, by rw [dist_comm]; linarith⟩)
+    (cthickening_subset_thickening' hδ (half_lt_self hδ) s hy)
+
 variable {T : Lp V 2 (volume : Measure (CoordinateSpace n)) →L[ℂ]
   Lp W 2 (volume : Measure (CoordinateSpace n))}
 
@@ -190,10 +199,8 @@ private theorem IsUniform.ae_restrict_eq_integral_offDiagonalKernel (ha : a.IsUn
   -- The closed `δ / 2`-thickening `B` of `s` is at distance at least `δ / 2` from `A`.
   set B := cthickening (δ / 2) s
   have hB : IsCompact B := hs.cthickening
-  have hsep : ∀ x ∈ A, ∀ y ∈ B, δ / 2 ≤ dist x y := fun x hx y hy ↦ by
-    by_contra! h
-    exact disjoint_left.1 hdisj (mem_thickening_iff.2 ⟨x, hx, by rw [dist_comm]; linarith⟩)
-      (cthickening_subset_thickening' hδ (half_lt_self hδ) s hy)
+  have hsep : ∀ x ∈ A, ∀ y ∈ B, δ / 2 ≤ dist x y := fun _ hx _ hy ↦
+    half_le_dist_of_disjoint_thickening hδ hdisj hx hy
   obtain ⟨R, hR, -⟩ := ha.exists_integralOperator_truncKernel hA.measurableSet hA.isBounded
     hB.measurableSet hB.isBounded (half_pos hδ) hsep
   -- On `A`, `R g` is given by the kernel for every `g` vanishing outside `B`.
@@ -261,10 +268,8 @@ private theorem IsUniform.adjoint_ae_restrict_eq_integral_offDiagonalKernel (ha 
   -- The closed `δ / 2`-thickening `B` of `A` is at distance at least `δ / 2` from `s`.
   set B := cthickening (δ / 2) A
   have hB : IsCompact B := hA.cthickening
-  have hsep : ∀ x ∈ s, ∀ y ∈ B, δ / 2 ≤ dist x y := fun x hx y hy ↦ by
-    by_contra! h
-    exact disjoint_left.1 hdisj (cthickening_subset_thickening' hδ (half_lt_self hδ) A hy)
-      (mem_thickening_iff.2 ⟨x, hx, by rw [dist_comm]; linarith⟩)
+  have hsep : ∀ x ∈ s, ∀ y ∈ B, δ / 2 ≤ dist x y := fun _ hx _ hy ↦
+    half_le_dist_of_disjoint_thickening hδ hdisj.symm hx hy
   obtain ⟨R, hR, hR'⟩ := ha.exists_integralOperator_truncKernel hs.measurableSet hs.isBounded
     hB.measurableSet hB.isBounded (half_pos hδ) hsep
   -- `T φ = R φ` on `s` for every `φ` vanishing outside `A`.
@@ -351,13 +356,12 @@ theorem IsUniform.exists_eLpNorm_le_of_ae_eq_quantizeSchwartzValue (ha : a.IsUni
   · rw [norm_restrictScalars, LinearIsometryEquiv.norm_map, hdim, dist_comm,
       Real.coe_toNNReal _ hC₀0]
     exact hC₀ y x (Ne.symm hxy)
-  · rw [← restrictScalars_sub, norm_restrictScalars, hdim, Real.coe_toNNReal _ hC0, dist_eq_norm,
-      dist_eq_norm, ← mul_assoc, ← zero_add (n : ℝ)]
-    exact hC x y y' (by simpa [dist_eq_norm] using h)
-  · rw [← restrictScalars_sub, ← map_sub, norm_restrictScalars, LinearIsometryEquiv.norm_map,
-      hdim, Real.coe_toNNReal _ hC'0, dist_eq_norm, dist_eq_norm, norm_sub_rev x y', ← mul_assoc,
-      ← zero_add (n : ℝ)]
-    exact hC' y y' x (by simpa [dist_eq_norm, norm_sub_rev x y'] using h)
+  · rw [← restrictScalars_sub, norm_restrictScalars]
+    simpa [hdim, Real.coe_toNNReal _ hC0, dist_eq_norm, mul_assoc] using
+      hC x y y' (by simpa [dist_eq_norm] using h)
+  · rw [← restrictScalars_sub, ← map_sub, norm_restrictScalars, LinearIsometryEquiv.norm_map]
+    simpa [hdim, Real.coe_toNNReal _ hC'0, dist_eq_norm, norm_sub_rev x y', mul_assoc] using
+      hC' y y' x (by simpa [dist_eq_norm, norm_sub_rev x y'] using h)
 
 /-- **`Lᵖ` boundedness of uniform symbols of order zero.** For a symbol `a` of order `0` between
 complex Hilbert spaces whose estimates are uniform in the position, and every `1 < p < ∞`, there is

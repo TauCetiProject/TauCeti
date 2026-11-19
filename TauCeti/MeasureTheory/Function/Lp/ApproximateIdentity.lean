@@ -68,8 +68,8 @@ the set where convergence is measured.
   for bounded fields tested against integrable fields through a continuous bilinear map.
 * `TauCeti.tendsto_eLpNorm_normed_convolution_sub_restrict`: finite-`Lᵖ` convergence on a set
   from `Lᵖ` integrability on a positive thickening.
-* `TauCeti.Lp.exists_seq_contDiff_tsupport_subset_tendsto`: an `Lᵖ` function vanishing outside a
-  set `s` is an `Lᵖ` limit of smooth functions supported in any closed thickening of `s`.
+* `MeasureTheory.Lp.exists_seq_contDiff_tsupport_subset_tendsto`: an `Lᵖ` function vanishing
+  outside a set `s` is an `Lᵖ` limit of smooth functions supported in any closed thickening of `s`.
 * `TauCeti.tendsto_lintegral_enorm_normed_convolution_sub`: for an integrable function these
   convolutions converge in `L¹`, written with lower Lebesgue integrals.
 * `TauCeti.tendsto_setLIntegral_enorm_normed_convolution_sub`: for a locally integrable function
@@ -366,8 +366,8 @@ theorem tendsto_eLpNorm_normed_convolution_sub_restrict [CompleteSpace F] {I : T
 smooth functions supported in the closed `ε`-thickening of `s`: its convolutions with normalized
 bumps whose outer radii are at most `ε` and tend to zero. When `s` is bounded these functions
 have compact support. -/
-theorem Lp.exists_seq_contDiff_tsupport_subset_tendsto [CompleteSpace F] (hp : p ≠ ∞)
-    (f : Lp F p mu) {s : Set E} (hf : ∀ᵐ x ∂mu, x ∉ s → f x = 0) {ε : ℝ} (hε : 0 < ε) :
+theorem _root_.MeasureTheory.Lp.exists_seq_contDiff_tsupport_subset_tendsto [CompleteSpace F]
+    (hp : p ≠ ∞) (f : Lp F p mu) {s : Set E} (hf : ∀ᵐ x ∂mu, x ∉ s → f x = 0) {ε : ℝ} (hε : 0 < ε) :
     ∃ (g : ℕ → E → F) (hg : ∀ j, MemLp (g j) p mu), (∀ j, ContDiff ℝ (⊤ : ℕ∞) (g j)) ∧
       (∀ j, tsupport (g j) ⊆ cthickening ε s) ∧
       Tendsto (fun j ↦ (hg j).toLp (g j)) atTop (nhds f) := by
