@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Distribution
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 import TauCeti.Geometry.Manifold.Submersion.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 
@@ -28,12 +29,12 @@ of the base horizontally, which is how a connection transports fibres along path
 Every submersion carries Ehresmann connections. For a Riemannian metric on `P`, the orthogonal
 complements `(ker df_x)ᗮ` of the vertical spaces of a `C^n` submersion form a `C^m` Ehresmann
 connection when `m + 1 ≤ n` and the metric is `C^m`
-(`Manifold.IsSubmersion.isEhresmannConnection_orthogonal_ker`). Its local frames are gradients: in
-normal-form charts the submersion reads as a linear projection `u ↦ (L u).1` onto the model space
-of `B`, and the gradients of the coordinates of this projection span the orthogonal complement of
-its kernel (`TauCeti.isDistributionFrameOn_mgradient_coord`). No metric on `B` is used. As a
-σ-compact Hausdorff smooth manifold carries a smooth Riemannian metric, every submersion from
-such a manifold has an Ehresmann connection
+(`Manifold.IsSubmersion.isEhresmannConnection_orthogonal_ker_mfderiv`). Its local frames are
+gradients: in normal-form charts the submersion reads as a linear projection `u ↦ (L u).1` onto the
+model space of `B`, and the gradients of the coordinates of this projection span the orthogonal
+complement of its kernel (`TauCeti.isDistributionFrameOn_mgradient_coord`). No metric on `B` is
+used. As a σ-compact Hausdorff smooth manifold carries a smooth Riemannian metric, every submersion
+from such a manifold has an Ehresmann connection
 (`Manifold.IsSubmersion.exists_isEhresmannConnection`).
 
 ## Main definitions
@@ -47,9 +48,10 @@ such a manifold has an Ehresmann connection
 * `TauCeti.isDistributionFrameOn_mgradient_coord`: the gradients of the coordinates of a map to a
   vector space whose derivative is surjective form a local frame of the orthogonal complements of
   the kernels of its derivative.
-* `Manifold.IsSubmersion.isContMDiffDistribution_orthogonal_ker`: the orthogonal complements of
-  the vertical spaces of a submersion form a `C^m` distribution of rank `dim B`.
-* `Manifold.IsSubmersion.isEhresmannConnection_orthogonal_ker`: they form an Ehresmann connection.
+* `Manifold.IsSubmersion.isContMDiffDistribution_orthogonal_ker_mfderiv`: the orthogonal
+  complements of the vertical spaces of a submersion form a `C^m` distribution of rank `dim B`.
+* `Manifold.IsSubmersion.isEhresmannConnection_orthogonal_ker_mfderiv`: they form an Ehresmann
+  connection.
 * `Manifold.IsSubmersion.exists_isEhresmannConnection`: every submersion from a σ-compact
   Hausdorff smooth manifold has an Ehresmann connection.
 
@@ -155,6 +157,12 @@ theorem horizontalLift_mfderiv (x : P) (w : D x) :
     hD.horizontalLift x (mfderiv I J f x w) = w :=
   (hD.horizontalLift x).apply_symm_apply w
 
+/-- The inverse of the horizontal lift is the restriction of `df_x` to the horizontal space. -/
+@[simp]
+theorem horizontalLift_symm_apply (x : P) (w : D x) :
+    (hD.horizontalLift x).symm w = mfderiv I J f x w :=
+  (LinearEquiv.symm_apply_eq _).2 (hD.horizontalLift_mfderiv x w).symm
+
 /-- The horizontal lift of `v` is the unique horizontal vector projecting to `v`. -/
 theorem eq_horizontalLift_iff {x : P} {v : TangentSpace J (f x)} {w : D x} :
     w = hD.horizontalLift x v ↔ mfderiv I J f x w = v := by
@@ -175,16 +183,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {n : ℕ∞ω}
 
 open _root_.TauCeti.Manifold in
-/-- The inner product with the gradient of a coordinate of a map `g` into a vector space is
-that coordinate of the derivative of `g`. -/
-private theorem inner_mgradient_coord {ι : Type*} [Finite ι] (b : Basis ι ℝ F) (i : ι)
-    {g : P → F} {y : P} (hg : MDifferentiableAt I 𝓘(ℝ, F) g y) (v : TangentSpace I y) :
-    inner ℝ (mgradient I (fun y ↦ b.coord i (g y)) y) v = b.coord i (mvfderiv I g y v) := by
-  have := b.finiteDimensional_of_finite
-  rw [inner_mgradient]
-  exact ContinuousLinearMap.mvfderiv_comp_apply (b.coord i).toContinuousLinearMap hg v
-
-open _root_.TauCeti.Manifold in
 /-- **Gradient frames of orthogonal complements of kernels.** Let `g : P → F` be a `C^(n+1)` map
 into a vector space whose derivative is surjective at every point of an open set `U`, and let `b`
 be a basis of `F`. For a `C^n` Riemannian metric on `P`, the gradients of the coordinates
@@ -201,11 +199,14 @@ theorem isDistributionFrameOn_mgradient_coord [IsManifold I (n + 1) P]
   have := b.finiteDimensional_of_finite
   have hgd {y : P} (hy : y ∈ U) : MDifferentiableAt I 𝓘(ℝ, F) g y :=
     ((hg.contMDiffAt (hU.mem_nhds hy)).mdifferentiableAt (by simp))
+  have hinner {y : P} (hy : y ∈ U) (i : ι) (v : TangentSpace I y) :
+      inner ℝ (mgradient I (fun y ↦ b.coord i (g y)) y) v = b.coord i (mvfderiv I g y v) :=
+    (b.coord i).toContinuousLinearMap.inner_mgradient_comp (hgd hy) v
   -- The inner products of the frame against vectors mapped to the basis are the Kronecker delta.
   have hdelta {y : P} (hy : y ∈ U) (i j : ι) {w : TangentSpace I y}
       (hw : mvfderiv I g y w = b j) :
       inner ℝ (mgradient I (fun y ↦ b.coord i (g y)) y) w = if j = i then 1 else 0 := by
-    rw [inner_mgradient_coord b i (hgd hy), hw, Basis.coord_apply, Basis.repr_self,
+    rw [hinner hy i, hw, Basis.coord_apply, Basis.repr_self,
       Finsupp.single_apply]
   have hli {y : P} (hy : y ∈ U) :
       LinearIndependent ℝ (fun i ↦ mgradient I (fun y ↦ b.coord i (g y)) y) := by
@@ -229,7 +230,7 @@ theorem isDistributionFrameOn_mgradient_coord [IsManifold I (n + 1) P]
       rintro _ ⟨i, rfl⟩
       refine (Submodule.mem_orthogonal' _ _).2 fun u hu ↦ ?_
       have hu' : mvfderiv I g y u = 0 := LinearMap.mem_ker.1 hu
-      rw [inner_mgradient_coord b i (hgd hy), hu', map_zero]
+      rw [hinner hy i, hu', map_zero]
     -- Both spaces have dimension `dim F`, by rank–nullity for the surjective derivative.
     refine Submodule.eq_of_le_of_finrank_eq hle ?_
     have hrange : LinearMap.range (mvfderiv I g y : TangentSpace I y →ₗ[ℝ] F) = ⊤ :=
@@ -266,7 +267,7 @@ manifold modelled on a finite-dimensional real space and a `C^m` Riemannian metr
 `m + 1 ≤ n`, the orthogonal complements `(ker df_x)ᗮ` of the vertical spaces form a `C^m`
 distribution of rank `dim B`. Near each point it is spanned by the gradients of the coordinates
 of `f` read in normal-form charts. -/
-theorem isContMDiffDistribution_orthogonal_ker [IsManifold I (m + 1) P]
+theorem isContMDiffDistribution_orthogonal_ker_mfderiv [IsManifold I (m + 1) P]
     [IsContMDiffRiemannianBundle I m E (fun x : P ↦ TangentSpace I x)]
     (hf : IsSubmersion I J n f) (hmn : m + 1 ≤ n) :
     IsContMDiffDistribution I m (finrank ℝ F) (fun x ↦ (mfderiv I J f x).kerᗮ) := by
@@ -310,7 +311,7 @@ theorem isContMDiffDistribution_orthogonal_ker [IsManifold I (m + 1) P]
 /-- **Ehresmann connections from metrics.** For a `C^n` submersion `f` and a `C^m` Riemannian
 metric on `P`, with `m + 1 ≤ n`, the orthogonal complements `(ker df_x)ᗮ` of the vertical spaces
 form a `C^m` Ehresmann connection on `f`. -/
-theorem isEhresmannConnection_orthogonal_ker [IsManifold I (m + 1) P]
+theorem isEhresmannConnection_orthogonal_ker_mfderiv [IsManifold I (m + 1) P]
     [IsContMDiffRiemannianBundle I m E (fun x : P ↦ TangentSpace I x)]
     (hf : IsSubmersion I J n f) (hmn : m + 1 ≤ n) :
     IsEhresmannConnection I J m f (fun x ↦ (mfderiv I J f x).kerᗮ) where
@@ -319,7 +320,7 @@ theorem isEhresmannConnection_orthogonal_ker [IsManifold I (m + 1) P]
     have : FiniteDimensional ℝ (TangentSpace I x) := inferInstanceAs (FiniteDimensional ℝ E)
     exact (Submodule.isCompl_orthogonal (mfderiv I J f x).ker).symm
   surjective_mfderiv := hf.surjective_mfderiv fun h ↦ by simp [h] at hmn
-  isContMDiffDistribution := hf.isContMDiffDistribution_orthogonal_ker hmn
+  isContMDiffDistribution := hf.isContMDiffDistribution_orthogonal_ker_mfderiv hmn
 
 end Metric
 
@@ -338,6 +339,6 @@ theorem exists_isEhresmannConnection [T2Space P] [SigmaCompactSpace P] [IsManifo
   let : RiemannianBundle (fun x : P ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
   have : IsContMDiffRiemannianBundle I m E (fun x : P ↦ TangentSpace I x) :=
     Bundle.instIsContMDiffRiemannianBundle g
-  exact ⟨_, hf.isEhresmannConnection_orthogonal_ker hmn⟩
+  exact ⟨_, hf.isEhresmannConnection_orthogonal_ker_mfderiv hmn⟩
 
 end Manifold.IsSubmersion
