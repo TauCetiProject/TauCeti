@@ -5,21 +5,31 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.RicciFlow.StandardCap.Profile
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.WarpedProd
+public import TauCeti.Geometry.RicciFlow.StandardCap.Profile
 
 /-!
 # The standard cap away from its tip
 
-A standard cap profile `f` gives a smooth positive definite metric
-`dr² + f(r)² g_(Sⁿ)` on `(0, ∞) × Sⁿ`. We construct this metric using the native
-warped-product construction and compute its scalar curvature from the native
-Levi-Civita connection. It is nonnegative, and on the cylindrical end equals
-`n(n-1)/2`, hence equals one when `n = 2`.
+A standard cap profile `f` gives a smooth positive definite metric `dr² + f(r)² g_(Sⁿ)` on
+`(0, ∞) × Sⁿ` via the native warped-product construction. Scalar curvature is nonnegative, equals
+`n(n+1)/4` near the missing tip, and equals `n(n-1)/2` on the cylindrical end (`1` when `n = 2`).
+Sectional curvature of the punctured cap is developed in
+`TauCeti.Geometry.RicciFlow.StandardCap.SectionalCurvature`, and the global smooth extension across
+`0 ∈ V` (identified with `(0, ∞) × Sⁿ` via `TauCeti.radialSphereDiffeomorph`) in
+`TauCeti.Geometry.RicciFlow.StandardCap.Metric`.
 
-This is the punctured cap: the origin has not been added, and no completeness
-assertion is made. The same formula will identify the restriction of a smooth
-cap metric in polar coordinates.
+## Main definitions and results
+
+* `TauCeti.standardCapRadialDomain`: the open radial half-line `(0, ∞)`.
+* `TauCeti.IsStandardCapProfile.puncturedMetric`,
+  `TauCeti.IsStandardCapProfile.puncturedMetric_def`: the smooth warped metric
+  `dr² + f(r)² g_(Sⁿ)`.
+* `TauCeti.IsStandardCapProfile.scalarCurvature_puncturedMetric`,
+  `TauCeti.IsStandardCapProfile.scalarCurvature_puncturedMetric_nonneg`,
+  `TauCeti.IsStandardCapProfile.exists_scalarCurvature_puncturedMetric_eq_round`,
+  `TauCeti.IsStandardCapProfile.exists_scalarCurvature_puncturedMetric_eq_cylinder`: scalar
+  curvature formula, nonnegativity, and round-tip / cylindrical-end values.
 
 ## References
 
@@ -31,7 +41,7 @@ cap metric in polar coordinates.
 
 public noncomputable section
 
-open Bundle Set Real TopologicalSpace
+open Bundle Manifold Metric Module Set Real TopologicalSpace
 open TauCeti.Manifold
 open scoped ContDiff Manifold InnerProductSpace Topology
 
@@ -56,6 +66,16 @@ def puncturedMetric :
       (fun r ↦ (hf.apply_pos r.property).ne')
       ((sphereRoundMetric (E := V)).ofLE (m := ∞) le_top)
 
+/-- Explicit warped-product definition of `hf.puncturedMetric V`. -/
+theorem puncturedMetric_def :
+    hf.puncturedMetric (n := n) V =
+      (((riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top).restrictOpenTangentSpace
+        standardCapRadialDomain).warpedProdTangentSpace (fun r ↦ f r)
+        (hf.contDiff.contMDiff.comp contMDiff_subtype_val)
+        (fun r ↦ (hf.apply_pos r.property).ne')
+        ((sphereRoundMetric (E := V) (n := n)).ofLE (m := ∞) le_top) :=
+  (rfl)
+
 variable {V}
 
 /-- The punctured metric is the orthogonal sum of the radial metric and the
@@ -70,7 +90,7 @@ theorem puncturedMetric_inner
           (tangentSpaceProdEquiv p w).1 +
       f p.1 ^ 2 * ((sphereRoundMetric (E := V)).ofLE (m := ∞) le_top).inner p.2
         (tangentSpaceProdEquiv p v).2 (tangentSpaceProdEquiv p w).2 := by
-  rw [puncturedMetric, ContMDiffRiemannianMetric.warpedProdTangentSpace_inner]
+  rw [puncturedMetric_def, ContMDiffRiemannianMetric.warpedProdTangentSpace_inner]
 
 /-- Scalar curvature of the punctured standard cap, using ordinary radial derivatives.
 For a two-dimensional sphere fibre the two terms are
@@ -80,7 +100,7 @@ theorem scalarCurvature_puncturedMetric
     (hf.puncturedMetric (n := n) V).scalarCurvature p =
       (n : ℝ) * (n - 1) * (1 - deriv f p.1 ^ 2) / f p.1 ^ 2 -
         2 * n * deriv (deriv f) p.1 / f p.1 := by
-  rw [puncturedMetric]
+  rw [puncturedMetric_def]
   exact scalarCurvature_warpedProdTangentSpace_real_sphere standardCapRadialDomain
     (hf.contDiff.contMDiff.comp contMDiff_subtype_val)
     (fun r ↦ (hf.apply_pos r.property).ne') p
@@ -118,8 +138,7 @@ theorem exists_scalarCurvature_puncturedMetric_eq_cylinder :
   have heq : f =ᶠ[𝓝 (p.1 : ℝ)] fun _ ↦ √2 := by
     filter_upwards [Ioi_mem_nhds hr] with s hs using hR s hs.le
   have hd : deriv f =ᶠ[𝓝 (p.1 : ℝ)] fun _ ↦ 0 := by
-    filter_upwards [heq.deriv] with s hs
-    simpa only [deriv_const] using hs
+    filter_upwards [heq.deriv] with s hs using by simpa only [deriv_const] using hs
   rw [hf.scalarCurvature_puncturedMetric, heq.eq_of_nhds, hd.eq_of_nhds,
     hd.deriv_eq, deriv_const, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
   ring
@@ -130,25 +149,14 @@ theorem exists_scalarCurvature_puncturedMetric_eq_round :
     ∃ r₀ > 0, ∀ p : standardCapRadialDomain × Metric.sphere (0 : V) 1,
       (p.1 : ℝ) < r₀ →
       (hf.puncturedMetric (n := n) V).scalarCurvature p = (n : ℝ) * (n + 1) / 4 := by
-  obtain ⟨r₀, hr₀, h⟩ := hf.exists_eq_two_mul_sin
+  obtain ⟨r₀, hr₀, h⟩ := hf.exists_neg_deriv_deriv_div_eq_and_one_sub_deriv_sq_div_sq_eq
   refine ⟨r₀, hr₀, fun p hp ↦ ?_⟩
-  have heq : f =ᶠ[𝓝 (p.1 : ℝ)] fun s ↦ 2 * sin (s / 2) := by
-    filter_upwards [Ioo_mem_nhds p.1.property hp] with s hs using h s ⟨hs.1.le, hs.2⟩
-  have hd : deriv f =ᶠ[𝓝 (p.1 : ℝ)] fun s ↦ cos (s / 2) := by
-    filter_upwards [heq.deriv] with s hs
-    rw [hs, (((hasDerivAt_id' s).div_const 2).sin.const_mul 2).deriv]
-    ring
-  have hdd : deriv (deriv f) (p.1 : ℝ) = -sin ((p.1 : ℝ) / 2) / 2 := by
-    rw [hd.deriv_eq, (((hasDerivAt_id' (p.1 : ℝ)).div_const 2).cos).deriv]
-    ring
-  have hsin : sin ((p.1 : ℝ) / 2) ≠ 0 := by
-    have := hf.apply_pos p.1.property
-    rw [heq.eq_of_nhds] at this
-    exact ne_of_gt (by linarith)
-  have htrig : 1 - cos ((p.1 : ℝ) / 2) ^ 2 = sin ((p.1 : ℝ) / 2) ^ 2 := by
-    nlinarith [sin_sq_add_cos_sq ((p.1 : ℝ) / 2)]
-  rw [hf.scalarCurvature_puncturedMetric, heq.eq_of_nhds, hd.eq_of_nhds, hdd, htrig]
-  field_simp
+  obtain ⟨hmix, hvert⟩ := h p.1 p.1.property.ne' (by rwa [abs_of_pos p.1.property])
+  have h1 : (n : ℝ) * (n - 1) * (1 - deriv f p.1 ^ 2) / f p.1 ^ 2 =
+      (n : ℝ) * (n - 1) * ((1 - deriv f p.1 ^ 2) / f p.1 ^ 2) := by ring
+  have h2 : -(2 * (n : ℝ) * deriv (deriv f) p.1 / f p.1) =
+      2 * (n : ℝ) * (-deriv (deriv f) p.1 / f p.1) := by ring
+  rw [hf.scalarCurvature_puncturedMetric, sub_eq_add_neg, h1, h2, hvert, hmix]
   ring
 
 end TauCeti.IsStandardCapProfile
