@@ -73,6 +73,8 @@ assembly of the levels at the ends into a broken configuration are not treated h
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., Section 4.6
   (bubbling off finitely many points) and Section 8.1 (the energy of solutions of the
   inhomogeneous equation).
+* D. Salamon, *Lectures on Floer homology*, in *Symplectic geometry and topology*, IAS/Park City
+  Math. Ser. 7 (1999), Lecture 3, on Floer breaking at the ends.
 -/
 
 public section
@@ -296,15 +298,11 @@ private theorem contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positive
     exact isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart_add hKH hH hHd R (hT z hz)
       ((hu.contMDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds (hS z hz))).mdifferentiableAt
         (by norm_num)) h
-  have hf0 : 0 ≤ᵐ[volume.restrict Ω] ω.floerEnergyDensity (fun _ _ ↦ 0)
-      (fun w ↦ positiveEndHamiltonian H q w.2) v :=
-    ae_restrict_of_forall_mem hΩ.measurableSet fun z hz ↦
-      floerEnergyDensity_nonneg (u := v) hω (hJt _ _ (huC hz)) (hvfl z hz)
   -- The energy of `v` over `Ω` is at most the energy of `u` over `S`.
   have hlin := (setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_le hKH hH hHd
     (hu.mdifferentiableOn (by norm_num)) q R hΩ.measurableSet hΩT).trans hE
-  -- The density is continuous on `Ω`, since the Hamiltonian vector fields of `0` and of
-  -- `H'_q(t)` are.
+  -- The Hamiltonian vector fields of `0` and of `H'_q(t)` are continuous, so the energy bound
+  -- over `Ω` is one for the Bochner integral.
   have hX {F : ℝ × ℝ → M → ℝ} (hF : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 2 (uncurry F)) :
       ContinuousOn (fun p : (ℝ × ℝ) × M ↦
         (⟨p.2, ω.hamiltonianVectorField (F p.1) p.2⟩ : TangentBundle I M)) (Ω ×ˢ univ) :=
@@ -313,14 +311,9 @@ private theorem contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positive
       (uncurry fun (w : ℝ × ℝ) x ↦ positiveEndHamiltonian H q w.2 x) :=
     ((contMDiff_uncurry_positiveEndHamiltonian hHq).comp
       ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)).of_le (by norm_num)
-  have hint : IntegrableOn (ω.floerEnergyDensity (fun _ _ ↦ 0)
-      (fun w ↦ positiveEndHamiltonian H q w.2) v) Ω :=
-    ⟨(ω.continuousOn_floerEnergyDensity hΩ (hvC.of_le (by norm_num)) (hX contMDiff_const)
-      (hX hH')).aestronglyMeasurable hΩ.measurableSet,
-      (hasFiniteIntegral_iff_ofReal hf0).2 (hlin.trans_lt ENNReal.ofReal_lt_top)⟩
-  refine ⟨hvC, hvfl, hint, ?_⟩
-  rw [integral_eq_lintegral_of_nonneg_ae hf0 hint.aestronglyMeasurable]
-  exact ENNReal.toReal_le_of_le_ofReal hE0 hlin
+  exact ⟨hvC, hvfl, ω.integrableOn_and_setIntegral_floerEnergyDensity_le hΩ hΩ.measurableSet
+    subset_rfl (hvC.of_le (by norm_num)) (hX contMDiff_const) (hX hH')
+    (fun z hz ↦ floerEnergyDensity_nonneg (u := v) hω (hJt _ _ (huC hz)) (hvfl z hz)) hE0 hlin⟩
 
 /-- **The translated ends of Floer pairs of pants in a symplectic chart of a manifold converge
 off finitely many bubbling points.** Let `K` be equal to `H_r(t) dt` beyond `T₀` on each end `r`,
