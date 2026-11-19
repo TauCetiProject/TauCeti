@@ -8,6 +8,7 @@ module
 import Mathlib.GroupTheory.FiniteAbelian.Basic
 import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
+import TauCeti.Algebra.MonoidAlgebra.Frobenius
 public import TauCeti.Algebra.MonoidAlgebra.NotReduced
 public import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
 public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
@@ -157,17 +158,15 @@ commutative monoid killed by `p`, the `p`-th power map is the `p`-th power of th
 @[simp]
 theorem pow_expChar_monoidAlgebra_eq_algebraMap (hM : ∀ m : M, m ^ p = 1) (x : k[M]) :
     x ^ p = algebraMap k k[M] (Coalgebra.counit (R := k) x ^ p) := by
-  have hinj : Function.Injective (algebraMap k k[M]) :=
-    Bialgebra.algebraMap_injective k[M]
-  have _ : ExpChar k[M] p :=
-    expChar_of_injective_algebraMap hinj p
-  induction x using MonoidAlgebra.induction_linear with
-  | zero => simp [(expChar_pos k p).ne']
-  | add x y hx hy =>
-      rw [add_pow_expChar, hx, hy, map_add, add_pow_expChar, map_add]
-  | single m a =>
-      rw [MonoidAlgebra.single_pow, hM m, MonoidAlgebra.counit_single]
-      simp [MonoidAlgebra.coe_algebraMap]
+  -- The `p`-th power map of `M` is trivial, and pushing forward along the trivial map is the
+  -- counit followed by the inclusion of scalars.
+  have hpow : (powMonoidHom p : M →* M) = 1 := MonoidHom.ext hM
+  have hcounit : MonoidAlgebra.mapDomainRingHom k (1 : M →* M) =
+      (algebraMap k k[M]).comp (Bialgebra.counitAlgHom k k[M]) :=
+    MonoidAlgebra.ringHom_ext (by simp [MonoidAlgebra.coe_algebraMap])
+      (by simp [MonoidAlgebra.coe_algebraMap])
+  rw [← MonoidAlgebra.mapRingHom_frobenius_mapDomainRingHom_powMonoidHom p x, hpow, hcounit]
+  simp [MonoidAlgebra.coe_algebraMap, frobenius_def]
 
 end Power
 
@@ -182,10 +181,6 @@ counit by a `p`-nilpotent element, so the only idempotents are the two trivial o
 theorem connectedSpace_primeSpectrum_monoidAlgebra_of_pow_eq_one (hM : ∀ m : M, m ^ p = 1) :
     ConnectedSpace (PrimeSpectrum k[M]) := by
   let : Nontrivial k := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
-  have hinj : Function.Injective (algebraMap k k[M]) :=
-    Bialgebra.algebraMap_injective k[M]
-  have _ : ExpChar k[M] p :=
-    expChar_of_injective_algebraMap hinj p
   -- Every element differs from the image of its counit by an element killed by the `p`-th power.
   have hnil : ∀ x : k[M], (x - algebraMap k k[M] (Coalgebra.counit (R := k) x)) ^ p = 0 := by
     intro x

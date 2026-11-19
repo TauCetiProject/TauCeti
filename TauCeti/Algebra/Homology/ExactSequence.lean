@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Homology.ExactSequence
 public import Mathlib.Algebra.Homology.ShortComplex.PreservesHomology
 
 /-!
-# Exact sequences built term by term, and under functors
+# Exactness of composable arrows built term by term, and under exact functors
 
 Mathlib's `CategoryTheory.ComposableArrows.mkOfObjOfMapSucc obj mapSucc` is the sequence of
 composable arrows with objects `obj i` and arrows `mapSucc i`. It is exact as soon as consecutive
@@ -17,19 +17,23 @@ arrows compose to zero and the short complexes they form are exact
 (`CategoryTheory.ComposableArrows.exact_mkOfObjOfMapSucc`). This is the form in which sequences
 built term by term, for instance by splicing, are shown to be exact.
 
-A functor which preserves zero morphisms and homology sends an exact sequence of composable arrows
-to an exact sequence (`CategoryTheory.ComposableArrows.Exact.map`), extending Mathlib's
-`CategoryTheory.ShortComplex.Exact.map` from short complexes to the sequences of
-`Mathlib.Algebra.Homology.ExactSequence`.
+Exact sequences are also carried to exact sequences by functors preserving homology
+(`CategoryTheory.ComposableArrows.Exact.map`), the composable-arrows form of Mathlib's
+`CategoryTheory.ShortComplex.Exact.map`.
+
+## Main results
+
+* `CategoryTheory.ComposableArrows.exact_mkOfObjOfMapSucc`: exactness of `mkOfObjOfMapSucc` from
+  that of its consecutive short complexes.
+* `CategoryTheory.ComposableArrows.Exact.map`: a functor preserving zero morphisms and homology
+  carries exact sequences to exact sequences.
 -/
 
 public section
 
-open CategoryTheory Limits
-
 namespace CategoryTheory.ComposableArrows
 
-section MkOfObjOfMapSucc
+open Limits
 
 variable {C : Type*} [Category* C] [HasZeroMorphisms C] {m : ℕ} (obj : Fin (m + 1) → C)
   (mapSucc : ∀ i : Fin m, obj i.castSucc ⟶ obj i.succ)
@@ -50,15 +54,11 @@ theorem exact_mkOfObjOfMapSucc
       (by simp [mkOfObjOfMapSucc_map_succ obj mapSucc i (by omega)])
       (by simp [mkOfObjOfMapSucc_map_succ obj mapSucc (i + 1) (by omega)])
 
-end MkOfObjOfMapSucc
-
-variable {C D : Type*} [Category* C] [Category* D] [HasZeroMorphisms C] [HasZeroMorphisms D]
-
-/-- A functor which preserves zero morphisms and homology sends an exact sequence of composable
-arrows to an exact sequence. -/
-lemma Exact.map {n : ℕ} {S : ComposableArrows C n} (hS : S.Exact) (F : C ⥤ D)
-    [F.PreservesZeroMorphisms] [F.PreservesHomology] :
-    ((F.mapComposableArrows n).obj S).Exact where
+/-- **Exact functors preserve exact sequences.** A functor preserving zero morphisms and homology
+carries an exact sequence of composable arrows to an exact sequence. -/
+theorem Exact.map {D : Type*} [Category* D] [HasZeroMorphisms D] {n : ℕ}
+    {S : ComposableArrows C n} (hS : S.Exact) (F : C ⥤ D) [F.PreservesZeroMorphisms]
+    [F.PreservesHomology] : ((F.mapComposableArrows n).obj S).Exact where
   zero i hi := by
     simpa only [Functor.mapComposableArrows_obj_map, Functor.map_comp, F.map_zero] using
       congrArg F.map (hS.zero i hi)

@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.Complex.ClosedUpperHalfPlane
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
-import TauCeti.Analysis.Complex.EvenReflection
+import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Sobolev.Local.Basic
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
@@ -150,16 +150,18 @@ theorem interior_halfClosedImage (i : Fin A.n) :
 /-- The points of the image of chart `i` in `ℂ` that are not in its interior lie on the real
 axis, so the image and its interior differ by a null set. -/
 theorem halfClosedImage_ae_le_halfImage (i : Fin A.n) :
-    A.halfClosedImage i ≤ᵐ[volume] (A.halfImage i : Set ℂ) :=
-  (EventuallyEqSet.inter EventuallyEqSet.rfl (Complex.setOf_le_im_ae_eq 0)).subset
+    A.halfClosedImage i ≤ᵐ[volume] (A.halfImage i : Set ℂ) := by
+  rw [← A.interior_halfClosedImage]
+  exact (inter_setOf_im_nonneg_ae_eq_interior
+    ⟨_, (A.image i).isOpen.preimage closedUpperHalfPlaneModel.continuous_symm⟩).subset
 
 /-- Every point of the image of chart `i` in `ℂ`, including the points on the real axis, is a
 limit of points of its interior. -/
 theorem halfClosedImage_subset_closure_halfImage (i : Fin A.n) :
     A.halfClosedImage i ⊆ closure (A.halfImage i : Set ℂ) := by
   have hO := (A.image i).isOpen.preimage closedUpperHalfPlaneModel.continuous_symm
-  have h := subset_closure_interior_setOfPred_le_im_inter hO
-  rwa [inter_comm, interior_inter_setOf_im_nonneg hO] at h
+  have h := subset_closure_interior_inter_setOf_im_nonneg hO
+  rwa [interior_inter_setOf_im_nonneg hO] at h
 
 /-- Two functions continuous on the image of chart `i` in `ℂ` that agree almost everywhere on its
 interior, for a measure charging nonempty open sets, agree on the whole image, including its points
@@ -191,8 +193,8 @@ theorem subset_closure_halfOverlap (i i' : Fin A.n) :
     closedUpperHalfPlaneModel.symm ⁻¹' A.overlap i i' ∩ {z : ℂ | 0 ≤ z.im} ⊆
       closure (A.halfOverlap i i') := by
   have hO := (A.isOpen_overlap i i').preimage closedUpperHalfPlaneModel.continuous_symm
-  have h := subset_closure_interior_setOfPred_le_im_inter hO
-  rw [inter_comm, interior_inter_setOf_im_nonneg hO] at h
+  have h := subset_closure_interior_inter_setOf_im_nonneg hO
+  rw [interior_inter_setOf_im_nonneg hO] at h
   exact h.trans (closure_mono fun _ hz ↦ A.mem_halfOverlap.2 hz)
 
 theorem halfOverlap_subset_halfImage (i i' : Fin A.n) :
