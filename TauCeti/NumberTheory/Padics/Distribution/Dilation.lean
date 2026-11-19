@@ -28,11 +28,12 @@ where `a b.val = d.val + pʰ s` is the disc decomposition of `PadicInt.discHomeo
 coordinates, `a (b.val + pʰ w) = d.val + pʰ (s + a w)`, so a series `∑ₙ c(d, n) vⁿ` on the disc of
 `d` becomes `∑ₙ c(d, n) (s + a w)ⁿ`, whose coefficient of `wʲ` is
 `∑ₙ (n choose j) sⁿ⁻ʲ aʲ • c(d, n)`. This is the affine re-expansion
-`TauCeti.AnalyticStage.reexpand` that also defines the transitions between levels, so these
-coefficients are again a null family, and the resulting map `TauCeti.AnalyticStage.compMulLeft`
-does not increase norms. Re-expanding twice along affine substitutions is re-expanding once along
-their composite (`TauCeti.AnalyticStage.reexpand_reexpand`); this gives the evaluation formula,
-compatibility with the transitions between levels, and the composition law
+`TauCeti.AnalyticStage.reexpand` that also defines the transitions between levels, so the
+resulting map `TauCeti.AnalyticStage.compMulLeft` is, like the transition, an instance of
+`TauCeti.AnalyticStage.reexpandMap` and does not increase norms. Re-expanding twice along affine
+substitutions is re-expanding once along their composite
+(`TauCeti.AnalyticStage.reexpand_reexpand`); this gives compatibility with the transitions
+between levels and the composition law
 `(a a')^* = a'^* ∘ a^*`, all on coefficients, so that no torsion-freeness of `E` is needed.
 
 The Amice formula rests on the dilation formula for Mahler functions, `PadicInt.mahler_mul` of
@@ -99,34 +100,6 @@ private theorem natCast_val_mulDisc_add (a : ℤ_[p]) (b : ZMod (p ^ h)) :
     ((mulDisc a b).1.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * (mulDisc a b).2 = a * b.val := by
   rw [← PadicInt.discHomeomorph_apply, mulDisc, Homeomorph.apply_symm_apply]
 
-/-- The coefficients of `w ↦ f(a (b.val + pʰ w))` on the disc of `b`, where `f` has coefficient
-vector `c`: writing `a b.val = d.val + pʰ s`, they re-expand the series of `f` on the disc of
-`d` along `s + a w`. -/
-private noncomputable def compMulLeftCoeff (a : ℤ_[p]) (c : AnalyticStage p h E)
-    (i : ZMod (p ^ h) × ℕ) : E :=
-  reexpand (mulDisc a i.1).2 a (fun n ↦ c ((mulDisc a i.1).1, n)) i.2
-
-private theorem norm_compMulLeftCoeff_le (a : ℤ_[p]) (c : AnalyticStage p h E)
-    (i : ZMod (p ^ h) × ℕ) : ‖compMulLeftCoeff a c i‖ ≤ ‖c‖ :=
-  norm_reexpand_le _ _ (norm_nonneg c) fun _ _ ↦ c.norm_coe_le_norm _
-
-private theorem tendsto_compMulLeftCoeff (a : ℤ_[p]) (c : AnalyticStage p h E) :
-    Tendsto (compMulLeftCoeff a c) cofinite (𝓝 0) := by
-  refine NormedAddGroup.tendsto_nhds_zero.mpr fun ε hε ↦ ?_
-  have hc := NormedAddGroup.tendsto_nhds_zero.mp c.tendsto_cofinite (ε / 2) (half_pos hε)
-  rw [eventually_cofinite] at hc ⊢
-  -- Beyond the degrees of the finitely many large coefficients of `c`, every re-expanded
-  -- coefficient is small, uniformly in the disc.
-  obtain ⟨N, hN⟩ := (hc.image Prod.snd).bddAbove
-  refine (Set.finite_univ.prod (Set.finite_Iic N)).subset fun i hi ↦ ⟨trivial, ?_⟩
-  by_contra hiN
-  rw [Set.mem_Iic, not_le] at hiN
-  refine hi ((norm_reexpand_le _ _ (half_pos hε).le fun n hn ↦ ?_).trans_lt (half_lt_self hε))
-  by_contra hcn
-  have hmem : ((mulDisc a i.1).1, n) ∈ {x | ¬‖c x‖ < ε / 2} := not_lt.mpr (not_le.mp hcn).le
-  have := hN ⟨_, hmem, rfl⟩
-  omega
-
 variable [CompleteSpace E]
   (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E] [SMulCommClass ℤ_[p] S E]
 
@@ -135,45 +108,25 @@ variable [CompleteSpace E]
 `a b.val = d.val + pʰ s`; in the disc coordinates, `a (b.val + pʰ w) = d.val + pʰ (s + a w)`, so
 the coefficient of `wʲ` is `∑ₙ (n choose j) sⁿ⁻ʲ aʲ • c(d, n)`. -/
 noncomputable def compMulLeft (a : ℤ_[p]) : AnalyticStage p h E →L[S] AnalyticStage p h E :=
-  let L : AnalyticStage p h E →ₗ[S] AnalyticStage p h E :=
-    { toFun c := ZeroAtInftyContinuousMap.mkOfDiscrete (compMulLeftCoeff a c)
-        (tendsto_compMulLeftCoeff a c)
-      map_add' c d := by
-        ext i
-        simp only [ZeroAtInftyContinuousMap.coe_mkOfDiscrete, compMulLeftCoeff, reexpand,
-          FunLike.coe_add, Pi.add_apply, smul_add]
-        exact (summable_smul_apply c _ _).tsum_add (summable_smul_apply d _ _)
-      map_smul' s c := by
-        ext i
-        simp only [ZeroAtInftyContinuousMap.coe_mkOfDiscrete, compMulLeftCoeff, reexpand,
-          FunLike.coe_smul, Pi.smul_apply, RingHom.id_apply, smul_comm _ s]
-        exact (summable_smul_apply c _ _).tsum_const_smul s }
-  { L with
-    cont := AddMonoidHomClass.continuous_of_bound L 1 fun c ↦ by
-      rw [one_mul]
-      refine (ZeroAtInftyContinuousMap.norm_le (norm_nonneg c)).mpr fun i ↦ ?_
-      simp only [L, LinearMap.coe_mk, AddHom.coe_mk, ZeroAtInftyContinuousMap.coe_mkOfDiscrete]
-      exact norm_compMulLeftCoeff_le a c i }
+  reexpandMap S (fun b ↦ (mulDisc a b).1) (fun b ↦ (mulDisc a b).2) fun _ ↦ a
 
 private theorem coe_compMulLeft (a : ℤ_[p]) (c : AnalyticStage p h E) :
-    ⇑(compMulLeft S a c) = compMulLeftCoeff a c :=
-  ZeroAtInftyContinuousMap.coe_mkOfDiscrete _ _
+    ⇑(compMulLeft S a c) =
+      fun i ↦ reexpand (mulDisc a i.1).2 a (fun n ↦ c ((mulDisc a i.1).1, n)) i.2 :=
+  funext fun ⟨b, j⟩ ↦ by rw [compMulLeft, reexpandMap_apply]
 
 /-- The re-expansion formula for dilation: if `a b.val = d.val + pʰ s`, where `(d, s)` is the disc
-decomposition of `a b.val`, the coefficient of `wʲ` on the disc of `b` is
-`∑ₙ (n choose j) sⁿ⁻ʲ aʲ • c(d, n)`. -/
+decomposition of `a b.val`, the coefficients on the disc of `b` re-expand those on the disc of `d`
+along `s + a w`. -/
 theorem compMulLeft_apply (a : ℤ_[p]) (c : AnalyticStage p h E) (b : ZMod (p ^ h)) (j : ℕ) :
-    compMulLeft S a c (b, j) = ∑' n, ((n.choose j : ℤ_[p]) *
-      ((PadicInt.discHomeomorph p h).symm (a * b.val)).2 ^ (n - j) * a ^ j) •
-        c (((PadicInt.discHomeomorph p h).symm (a * b.val)).1, n) := by
-  rw [coe_compMulLeft]
-  rfl
+    compMulLeft S a c (b, j) = reexpand ((PadicInt.discHomeomorph p h).symm (a * b.val)).2 a
+      (fun n ↦ c (((PadicInt.discHomeomorph p h).symm (a * b.val)).1, n)) j := by
+  simp only [coe_compMulLeft, mulDisc]
 
 /-- Dilation does not increase norms. -/
 theorem norm_compMulLeft_le (a : ℤ_[p]) (c : AnalyticStage p h E) :
     ‖compMulLeft S a c‖ ≤ ‖c‖ :=
-  (ZeroAtInftyContinuousMap.norm_le (norm_nonneg c)).mpr fun i ↦
-    coe_compMulLeft S a c ▸ norm_compMulLeftCoeff_le a c i
+  norm_reexpandMap_le S _ _ _ c
 
 /-- Dilation has operator norm at most `1`. -/
 theorem opNorm_compMulLeft_le_one {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
@@ -191,18 +144,7 @@ theorem eval_compMulLeft (a : ℤ_[p]) (c : AnalyticStage p h E) (x : ℤ_[p]) :
       ((mulDisc a b).1.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * ((mulDisc a b).2 + a * w) := by
     rw [mul_add, ← natCast_val_mulDisc_add]
     ring
-  rw [PadicInt.discHomeomorph_apply, eval_natCast_val_add_mul, hx, eval_natCast_val_add_mul,
-    coe_compMulLeft]
-  simp only [compMulLeftCoeff]
-  exact tsum_pow_smul_reexpand (tendsto_apply_mk c _) _ _ w
-
-/-- On the discs of the next level, the transition is the re-expansion along `β + p v`, where
-`β` is the digit of the smaller disc. -/
-private theorem transition_apply_eq_reexpand (c : AnalyticStage p h E) (b' : ZMod (p ^ (h + 1)))
-    (j : ℕ) :
-    transition S c (b', j) =
-      reexpand ((b'.val / p ^ h : ℕ) : ℤ_[p]) p (fun k ↦ c ((b'.val : ZMod (p ^ h)), k)) j :=
-  transition_apply S c b' j
+  rw [PadicInt.discHomeomorph_apply, compMulLeft, eval_reexpandMap_natCast_val_add_mul, hx]
 
 /-- Dilation commutes with re-expansion to the discs of the next level. -/
 theorem transition_compMulLeft (a : ℤ_[p]) (c : AnalyticStage p h E) :
@@ -228,8 +170,8 @@ theorem transition_compMulLeft (a : ℤ_[p]) (c : AnalyticStage p h E) :
     congr 1
     linear_combination h₁ - h₂
   obtain ⟨hd, hs⟩ := Prod.mk.inj hy
-  rw [transition_apply_eq_reexpand, coe_compMulLeft, coe_compMulLeft]
-  simp only [compMulLeftCoeff, transition_apply_eq_reexpand]
+  rw [transition_apply, coe_compMulLeft, coe_compMulLeft]
+  simp only [transition_apply]
   rw [reexpand_reexpand (tendsto_apply_mk c _), reexpand_reexpand (tendsto_apply_mk c _), hd, hs,
     mul_comm (p : ℤ_[p]) a]
 
@@ -251,7 +193,7 @@ private theorem mulDisc_eq (a : ℤ_[p]) (b : ZMod (p ^ h)) {y : ZMod (p ^ h) ×
 theorem compMulLeft_one (c : AnalyticStage p h E) : compMulLeft S 1 c = c := by
   ext ⟨b, j⟩
   rw [coe_compMulLeft]
-  simp only [compMulLeftCoeff, mulDisc_eq 1 b (y := (b, 0)) (by simp), reexpand]
+  simp only [mulDisc_eq 1 b (y := (b, 0)) (by simp), reexpand]
   rw [tsum_eq_single j fun n hn ↦ ?_]
   · simp [reexpandScalar]
   · rcases lt_or_gt_of_ne hn with hnj | hnj
@@ -267,7 +209,7 @@ theorem compMulLeft_mul (a a' : ℤ_[p]) (c : AnalyticStage p h E) :
     mulDisc_eq _ _ <| by
       linear_combination natCast_val_mulDisc_add a (mulDisc a' b).1 +
         a * natCast_val_mulDisc_add a' b
-  simp only [coe_compMulLeft, compMulLeftCoeff]
+  simp only [coe_compMulLeft]
   rw [reexpand_reexpand (tendsto_apply_mk c _), hy]
 
 /-- On the stage of a level `h` with `n < pʰ`, dilation by `a` sends Amice's vector
@@ -299,7 +241,7 @@ private theorem compMulLeft_amiceTerm (a : ℤ_[p]) {n : ℕ} (hn : n < p ^ h) (
   have hcoeff := congrArg (fun P ↦ P.coeff j) hpoly
   simp only [Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul] at hcoeff
   rw [coe_compMulLeft]
-  simp only [compMulLeftCoeff, amiceTerm_apply, reexpand_coeff_smul, hcoeff, Finset.sum_smul]
+  simp only [amiceTerm_apply, reexpand_coeff_smul, hcoeff, Finset.sum_smul]
   simp [amiceTerm_apply, smul_smul, mul_comm]
 
 end Stage

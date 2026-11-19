@@ -65,6 +65,8 @@ The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
 * `TauCeti.AnalyticStage.eval S`: evaluation `LA_h(E) →L[S] C(ℤ_p, E)`.
 * `TauCeti.AnalyticStage.reexpand s t c`: the coefficients of `∑ₙ (s + t v)ⁿ • cₙ` in powers
   of `v`.
+* `TauCeti.AnalyticStage.reexpandMap S σ s t`: the pullback `LA_h(E) →L[S] LA_k(E)` along a map
+  that is affine from each disc of level `k` into a disc of level `h`.
 * `TauCeti.AnalyticStage.transition S`: the re-expansion `LA_h(E) →L[S] LA_{h+1}(E)`.
 * `TauCeti.AnalyticStage.transitionLE S hhk`: re-expansion from level `h` to level `k` for `h ≤ k`.
 
@@ -79,6 +81,8 @@ The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
 * `TauCeti.AnalyticStage.reexpand_reexpand`: re-expansions compose along affine substitutions.
 * `TauCeti.AnalyticStage.tsum_pow_smul_reexpand`: a re-expansion evaluates the original series
   at `s + t v`.
+* `TauCeti.AnalyticStage.eval_reexpandMap_natCast_val_add_mul`: a re-expansion map evaluates to
+  the pullback along the corresponding affine maps of discs.
 * `TauCeti.AnalyticStage.transition_apply`: the re-expansion formula for the transition.
 * `TauCeti.AnalyticStage.norm_transition_apply_le`: the coefficient of `vʲ` after the transition
   has norm at most `‖p‖ʲ ‖c‖`.
@@ -436,37 +440,90 @@ theorem reexpand_reexpand {c : ℕ → E} (hc : Tendsto c cofinite (𝓝 0))
 `s + t w`. -/
 theorem tsum_pow_smul_reexpand {c : ℕ → E} (hc : Tendsto c cofinite (𝓝 0)) (s t w : ℤ_[p]) :
     ∑' j, w ^ j • reexpand s t c j = ∑' n, (s + t * w) ^ n • c n := by
-  have h := reexpand_reexpand hc s t w 0 0
-  simpa [reexpand, reexpandScalar] using h
+  -- Re-expand once more along the constant substitution `w + 0 u` and read off the coefficient
+  -- of `u⁰`: as `reexpandScalar w 0 n 0 = wⁿ`, the left side becomes `∑ⱼ wʲ • reexpand s t c j`
+  -- and the right side, a re-expansion along `(s + t w) + 0 u`, becomes `∑ₙ (s + t w)ⁿ • cₙ`.
+  simpa [reexpand, reexpandScalar] using reexpand_reexpand hc s t w 0 0
 
 end Reexpansion
 
+/-! ### Re-expansion maps between analytic stages -/
+
+section ReexpandMap
+
+variable {k : ℕ} (σ : ZMod (p ^ k) → ZMod (p ^ h)) (s t : ZMod (p ^ k) → ℤ_[p])
+
+omit [CompleteSpace E] in
+private theorem norm_reexpand_apply_le (c : AnalyticStage p h E) (i : ZMod (p ^ k) × ℕ) :
+    ‖reexpand (s i.1) (t i.1) (fun n ↦ c (σ i.1, n)) i.2‖ ≤ ‖c‖ :=
+  norm_reexpand_le _ _ (norm_nonneg c) fun _ _ ↦ c.norm_coe_le_norm _
+
+omit [CompleteSpace E] in
+private theorem tendsto_reexpand_apply (c : AnalyticStage p h E) :
+    Tendsto (fun i : ZMod (p ^ k) × ℕ ↦ reexpand (s i.1) (t i.1) (fun n ↦ c (σ i.1, n)) i.2)
+      cofinite (𝓝 0) := by
+  refine NormedAddGroup.tendsto_nhds_zero.mpr fun ε hε ↦ ?_
+  have hc := NormedAddGroup.tendsto_nhds_zero.mp c.tendsto_cofinite (ε / 2) (half_pos hε)
+  rw [eventually_cofinite] at hc ⊢
+  -- Beyond the degrees of the finitely many large coefficients of `c`, every re-expanded
+  -- coefficient is small, uniformly in the disc.
+  obtain ⟨N, hN⟩ := (hc.image Prod.snd).bddAbove
+  refine (Set.finite_univ.prod (Set.finite_Iic N)).subset fun i hi ↦ ⟨trivial, ?_⟩
+  by_contra hiN
+  rw [Set.mem_Iic, not_le] at hiN
+  refine hi ((norm_reexpand_le _ _ (half_pos hε).le fun n hn ↦ ?_).trans_lt (half_lt_self hε))
+  by_contra hcn
+  have hmem : (σ i.1, n) ∈ {x | ¬‖c x‖ < ε / 2} := not_lt.mpr (not_le.mp hcn).le
+  have := hN ⟨_, hmem, rfl⟩
+  omega
+
+/-- The pullback `LA_h(E) →L[S] LA_k(E)` along a self-map of `ℤ_p` that sends the disc of each
+class `b` of level `k` into the disc of `σ b` of level `h`, affinely in the disc coordinates as
+`w ↦ s b + t b w`. The series `∑ₙ c(σ b, n) vⁿ` becomes `∑ₙ c(σ b, n) (s b + t b w)ⁿ`, whose
+coefficient of `wʲ` is the re-expansion `∑ₙ (n choose j) (s b)ⁿ⁻ʲ (t b)ʲ • c(σ b, n)`. -/
+noncomputable def reexpandMap : AnalyticStage p h E →L[S] AnalyticStage p k E :=
+  let L : AnalyticStage p h E →ₗ[S] AnalyticStage p k E :=
+    { toFun c := ZeroAtInftyContinuousMap.mkOfDiscrete _ (tendsto_reexpand_apply σ s t c)
+      map_add' c d := by
+        ext i
+        simp only [ZeroAtInftyContinuousMap.coe_mkOfDiscrete, reexpand, FunLike.coe_add,
+          Pi.add_apply, smul_add]
+        exact (summable_smul_apply c _ _).tsum_add (summable_smul_apply d _ _)
+      map_smul' r c := by
+        ext i
+        simp only [ZeroAtInftyContinuousMap.coe_mkOfDiscrete, reexpand, FunLike.coe_smul,
+          Pi.smul_apply, RingHom.id_apply, smul_comm _ r]
+        exact (summable_smul_apply c _ _).tsum_const_smul r }
+  { L with
+    cont := AddMonoidHomClass.continuous_of_bound L 1 fun c ↦ by
+      rw [one_mul]
+      refine (ZeroAtInftyContinuousMap.norm_le (norm_nonneg c)).mpr fun i ↦ ?_
+      simp only [L, LinearMap.coe_mk, AddHom.coe_mk, ZeroAtInftyContinuousMap.coe_mkOfDiscrete]
+      exact norm_reexpand_apply_le σ s t c i }
+
+/-- The coefficients of `reexpandMap S σ s t c` on the disc of `b` re-expand those of `c` on the
+disc of `σ b` along `s b + t b w`. -/
+theorem reexpandMap_apply (c : AnalyticStage p h E) (b : ZMod (p ^ k)) (j : ℕ) :
+    reexpandMap S σ s t c (b, j) = reexpand (s b) (t b) (fun n ↦ c (σ b, n)) j :=
+  congrFun (ZeroAtInftyContinuousMap.coe_mkOfDiscrete _ _) (b, j)
+
+/-- A re-expansion map does not increase norms. -/
+theorem norm_reexpandMap_le (c : AnalyticStage p h E) : ‖reexpandMap S σ s t c‖ ≤ ‖c‖ :=
+  (ZeroAtInftyContinuousMap.norm_le (norm_nonneg c)).mpr fun i ↦
+    reexpandMap_apply S σ s t c i.1 i.2 ▸ norm_reexpand_apply_le σ s t c i
+
+/-- A re-expansion map evaluates on the disc of `b` to `c` evaluated at the affine image
+`(σ b).val + pʰ (s b + t b w)` of the point `b.val + pᵏ w`. -/
+theorem eval_reexpandMap_natCast_val_add_mul (c : AnalyticStage p h E) (b : ZMod (p ^ k))
+    (w : ℤ_[p]) :
+    eval S (reexpandMap S σ s t c) ((b.val : ℤ_[p]) + (p : ℤ_[p]) ^ k * w) =
+      eval S c (((σ b).val : ℤ_[p]) + (p : ℤ_[p]) ^ h * (s b + t b * w)) := by
+  simp only [eval_natCast_val_add_mul, reexpandMap_apply]
+  exact tsum_pow_smul_reexpand (tendsto_apply_mk c _) _ _ w
+
+end ReexpandMap
+
 /-! ### Raising the level -/
-
-/-- The coefficients of the re-expansion of `c` on the discs of level `h + 1`: on the disc of
-`a' = a + pʰ b`, `0 ≤ b < p`, the coefficient of `vʲ` is
-`∑ₖ (k choose j) b^(k - j) pʲ • c(a, k)`. -/
-private noncomputable def transitionCoeff (c : AnalyticStage p h E)
-    (i : ZMod (p ^ (h + 1)) × ℕ) : E :=
-  reexpand ((i.1.val / p ^ h : ℕ) : ℤ_[p]) p (fun k ↦ c ((i.1.val : ZMod (p ^ h)), k)) i.2
-
-omit [CompleteSpace E] in
-private theorem norm_transitionCoeff_le (c : AnalyticStage p h E) (i : ZMod (p ^ (h + 1)) × ℕ) :
-    ‖transitionCoeff c i‖ ≤ ‖(p : ℤ_[p])‖ ^ i.2 * ‖c‖ :=
-  IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (by positivity) fun k ↦
-    (norm_smul_le _ _).trans <| mul_le_mul (norm_reexpandScalar_le _ _ _ _)
-      (c.norm_coe_le_norm _) (norm_nonneg _) (by positivity)
-
-omit [CompleteSpace E] in
-private theorem norm_transitionCoeff_le_norm (c : AnalyticStage p h E)
-    (i : ZMod (p ^ (h + 1)) × ℕ) : ‖transitionCoeff c i‖ ≤ ‖c‖ :=
-  (norm_transitionCoeff_le c i).trans <| mul_le_of_le_one_left (norm_nonneg c) <|
-    pow_le_one₀ (norm_nonneg _) PadicInt.norm_p_lt_one.le
-
-omit [CompleteSpace E] in
-private theorem tendsto_transitionCoeff (c : AnalyticStage p h E) :
-    Tendsto (transitionCoeff c) cofinite (𝓝 0) :=
-  squeeze_zero_norm (norm_transitionCoeff_le c) (PadicInt.tendsto_norm_p_pow_mul_cofinite _)
 
 /-- The transition `LA_h(E) → LA_{h+1}(E)`. The disc of `a ∈ ZMod (pʰ)` is the union of the discs
 of the classes `a' = a + pʰ b`, `0 ≤ b < p`, in `ZMod (p ^ (h + 1))`, where `b = ⌊a'.val / pʰ⌋`.
@@ -475,37 +532,15 @@ On the disc of `a'` the coordinates are related by `w = b + p v`, and the transi
 
 `d(a', j) = ∑ₖ (k choose j) b^(k - j) pʲ • c(a, k)`. -/
 noncomputable def transition : AnalyticStage p h E →L[S] AnalyticStage p (h + 1) E :=
-  let L : AnalyticStage p h E →ₗ[S] AnalyticStage p (h + 1) E :=
-    { toFun c := ZeroAtInftyContinuousMap.mkOfDiscrete (transitionCoeff c)
-        (tendsto_transitionCoeff c)
-      map_add' c d := by
-        ext i
-        simp only [ZeroAtInftyContinuousMap.coe_mkOfDiscrete, transitionCoeff, reexpand,
-          FunLike.coe_add, Pi.add_apply, smul_add]
-        exact (summable_smul_apply c _ _).tsum_add (summable_smul_apply d _ _)
-      map_smul' s c := by
-        ext i
-        simp only [ZeroAtInftyContinuousMap.coe_mkOfDiscrete, transitionCoeff, reexpand,
-          FunLike.coe_smul, Pi.smul_apply, RingHom.id_apply, smul_comm _ s]
-        exact (summable_smul_apply c _ _).tsum_const_smul s }
-  { L with
-    cont := AddMonoidHomClass.continuous_of_bound L 1 fun c ↦ by
-      rw [one_mul]
-      refine (ZeroAtInftyContinuousMap.norm_le (norm_nonneg c)).mpr fun i ↦ ?_
-      simp only [L, LinearMap.coe_mk, AddHom.coe_mk, ZeroAtInftyContinuousMap.coe_mkOfDiscrete]
-      exact norm_transitionCoeff_le_norm c i }
+  reexpandMap S (fun a' ↦ (a'.val : ZMod (p ^ h))) (fun a' ↦ ((a'.val / p ^ h : ℕ) : ℤ_[p]))
+    fun _ ↦ (p : ℤ_[p])
 
-private theorem coe_transition (c : AnalyticStage p h E) :
-    ⇑(transition S c) = transitionCoeff c :=
-  ZeroAtInftyContinuousMap.coe_mkOfDiscrete _ _
-
-/-- The re-expansion formula for the transition. -/
+/-- The re-expansion formula for the transition: on the disc of `a'`, the transition re-expands
+the coefficients on the disc of level `h` containing it along `⌊a'.val / pʰ⌋ + p v`. -/
 theorem transition_apply (c : AnalyticStage p h E) (a' : ZMod (p ^ (h + 1))) (j : ℕ) :
-    transition S c (a', j) = ∑' k, ((k.choose j : ℤ_[p]) *
-      ((a'.val / p ^ h : ℕ) : ℤ_[p]) ^ (k - j) * (p : ℤ_[p]) ^ j) •
-        c ((a'.val : ZMod (p ^ h)), k) := by
-  rw [coe_transition]
-  rfl
+    transition S c (a', j) =
+      reexpand ((a'.val / p ^ h : ℕ) : ℤ_[p]) p (fun k ↦ c ((a'.val : ZMod (p ^ h)), k)) j := by
+  rw [transition, reexpandMap_apply]
 
 /-- On the subdisc with the same natural centre, re-expansion multiplies the degree-`j`
 coefficient by `p^j`. -/
@@ -515,13 +550,13 @@ theorem transition_apply_cast (c : AnalyticStage p h E) (a : ZMod (p ^ h)) (j : 
   have hval : (a.cast : ZMod (p ^ (h + 1))).val = a.val :=
     ZMod.val_cast_eq_val_of_lt <| (ZMod.val_lt a).trans_le
       (Nat.pow_le_pow_right hp.out.pos (Nat.le_succ h))
-  rw [transition_apply, hval, Nat.div_eq_of_lt (ZMod.val_lt a), tsum_eq_single j]
-  · simp
+  rw [transition_apply, reexpand, hval, Nat.div_eq_of_lt (ZMod.val_lt a), tsum_eq_single j]
+  · simp [reexpandScalar]
   · intro k hkj
     by_cases hlt : k < j
-    · simp [Nat.choose_eq_zero_of_lt hlt]
+    · simp [reexpandScalar_of_lt _ _ hlt]
     · have hsub : k - j ≠ 0 := by omega
-      simp [hsub]
+      simp [reexpandScalar, hsub]
 
 /-- Raising the level is injective if multiplication by `p` on the coefficient module is
 injective. -/
@@ -536,13 +571,14 @@ theorem transition_injective (hpE : IsSMulRegular E (p : ℤ_[p])) :
 /-- The coefficient of `vʲ` after the transition has norm at most `‖p‖ʲ ‖c‖`. -/
 theorem norm_transition_apply_le (c : AnalyticStage p h E) (a' : ZMod (p ^ (h + 1))) (j : ℕ) :
     ‖transition S c (a', j)‖ ≤ ‖(p : ℤ_[p])‖ ^ j * ‖c‖ := by
-  rw [coe_transition]
-  exact norm_transitionCoeff_le c (a', j)
+  rw [transition_apply]
+  exact IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (by positivity) fun k ↦
+    (norm_smul_le _ _).trans <| mul_le_mul (norm_reexpandScalar_le _ _ _ _)
+      (c.norm_coe_le_norm _) (norm_nonneg _) (by positivity)
 
 /-- The transition does not increase norms. -/
 theorem norm_transition_le (c : AnalyticStage p h E) : ‖transition S c‖ ≤ ‖c‖ :=
-  (ZeroAtInftyContinuousMap.norm_le (norm_nonneg c)).mpr fun i ↦
-    coe_transition S c ▸ norm_transitionCoeff_le_norm c i
+  norm_reexpandMap_le S _ _ _ c
 
 /-- The transition is compatible with evaluation: a coefficient vector and its re-expansion on
 the smaller discs define the same function. -/
@@ -559,9 +595,7 @@ theorem eval_transition (c : AnalyticStage p h E) : eval S (transition S c) = ev
     rw [hval, Nat.cast_add, Nat.cast_mul, Nat.cast_pow]
     simp only [b]
     ring
-  rw [PadicInt.discHomeomorph_apply, eval_natCast_val_add_mul, hx, eval_natCast_val_add_mul,
-    coe_transition]
-  exact tsum_pow_smul_reexpand (tendsto_apply_mk c a) b p v
+  rw [PadicInt.discHomeomorph_apply, transition, eval_reexpandMap_natCast_val_add_mul, hx]
 
 /-- Evaluation after the transition is evaluation, as an identity of continuous linear maps. -/
 @[simp]
