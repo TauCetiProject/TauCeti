@@ -100,6 +100,12 @@ section Monoid
 
 variable [Monoid R] (x : ι → R)
 
+/-- A standard monomial is the product of the `x i` over the sorted multiset of its exponent
+vector. -/
+theorem standardMonomial_def (f : ι →₀ ℕ) :
+    standardMonomial x f = ((Multiset.sort f.toMultiset).map x).prod :=
+  (rfl)
+
 @[simp]
 theorem standardMonomial_zero : standardMonomial x 0 = 1 := by
   simp [standardMonomial]
@@ -120,7 +126,7 @@ theorem standardMonomial_mem {x : ι → R} {M σ : Type*} [AddCommMonoid M] [Se
     {𝒜 : M → σ} [SetLike.GradedMonoid 𝒜] {deg : ι → M} (hx : ∀ i, x i ∈ 𝒜 (deg i)) (f : ι →₀ ℕ) :
     standardMonomial x f ∈ 𝒜 (weight deg f) := by
   have hw : ((Multiset.sort f.toMultiset).map deg).sum = weight deg f := by
-    rw [← Multiset.sum_coe, ← Multiset.map_coe, Multiset.sort_eq, toMultiset_map, sum_toMultiset,
+    rw [Multiset.sum_map_sort, toMultiset_map, sum_toMultiset,
       sum_mapDomain_index (h := fun a n => n • a) (fun _ => zero_smul ..) fun _ _ _ => add_smul ..,
       weight_apply]
   rw [standardMonomial, ← hw]
@@ -131,8 +137,8 @@ end Monoid
 /-- In a commutative monoid a standard monomial is the product of the powers `x i ^ f i`. -/
 theorem standardMonomial_eq_prod [CommMonoid R] (x : ι → R) (f : ι →₀ ℕ) :
     standardMonomial x f = f.prod fun i n => x i ^ n := by
-  rw [standardMonomial, ← Multiset.prod_coe, ← Multiset.map_coe, Multiset.sort_eq, toMultiset_map,
-    prod_toMultiset, prod_mapDomain_index pow_zero pow_add]
+  rw [standardMonomial, Multiset.prod_map_sort, toMultiset_map, prod_toMultiset,
+    prod_mapDomain_index pow_zero pow_add]
 
 section Ring
 
@@ -168,8 +174,7 @@ theorem mul_standardMonomial
       (((f.toMultiset.filter (· < i)).map fun j => (deg j : ℤ)).sum * deg i).negOnePow •
         standardMonomial y (f + single i 1) := by
   rw [standardMonomial, mul_list_prod_map hy i (Multiset.pairwise_sort _ _), standardMonomial,
-    toMultiset_add_single_one, Multiset.sort_cons_eq_orderedInsert, ← Multiset.sum_coe,
-    ← Multiset.map_coe, ← Multiset.filter_coe, Multiset.sort_eq]
+    toMultiset_add_single_one, Multiset.sort_cons_eq_orderedInsert, Multiset.sum_map_filter_sort]
 
 /-- A generator whose square vanishes annihilates every standard monomial in which it occurs. -/
 theorem mul_standardMonomial_eq_zero
@@ -344,6 +349,11 @@ private theorem constr_one (hx : IsFreeGradedCommutative 𝒜 x deg) (b : ι →
   rw [← standardMonomial_zero x, ← basis_apply hx ⟨0, fun _ _ => zero_le_one⟩,
     Module.Basis.constr_basis, standardMonomial_zero]
 
+private theorem constr_x (hx : IsFreeGradedCommutative 𝒜 x deg)
+    (hb : ∀ i j, b i * b j = ((deg i : ℤ) * deg j).negOnePow • (b j * b i)) (i : ι) :
+    hx.basis.constr K (fun f => standardMonomial b f.1) (x i) = b i := by
+  rw [← mul_one (x i), constr_generator_mul hx hb, constr_one, mul_one]
+
 /-- The linear map sending each standard monomial in the `x i` to the same standard monomial in
 the `b i` is multiplicative: the set of `w` with `L (w * a) = L w * L a` for all `a` is a
 subalgebra containing the generators. -/
@@ -360,8 +370,7 @@ private theorem constr_mul (hx : IsFreeGradedCommutative 𝒜 x deg)
   | mem w hw =>
     obtain ⟨i, rfl⟩ := hw
     intro a
-    rw [constr_generator_mul hx hb, ← mul_one (x i), constr_generator_mul hx hb, constr_one,
-      mul_one]
+    rw [constr_generator_mul hx hb, constr_x hx hb]
   | algebraMap r =>
     intro a
     rw [Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul, map_smul, map_smul, constr_one,
@@ -387,8 +396,7 @@ noncomputable def lift (hx : IsFreeGradedCommutative 𝒜 x deg) (b : ι → B)
 theorem lift_x (hx : IsFreeGradedCommutative 𝒜 x deg) (b : ι → B)
     (hb : ∀ i j, b i * b j = ((deg i : ℤ) * deg j).negOnePow • (b j * b i)) (i : ι) :
     hx.lift b hb (x i) = b i := by
-  rw [lift, AlgHom.ofLinearMap_apply, ← mul_one (x i), constr_generator_mul hx hb, constr_one,
-    mul_one]
+  rw [lift, AlgHom.ofLinearMap_apply, constr_x hx hb]
 
 /-- `lift` sends the family of generators `x` to the family `b`. -/
 @[simp]
