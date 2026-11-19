@@ -37,7 +37,8 @@ of the strip which maps the strip onto itself, commutes with the deck translatio
 boundary lines, preserves the order of first coordinates and pulls `a dx ∧ dy` back to
 `ρ dx ∧ dy` for a constant `a > 0`. Then:
 
-* the conjugate `Φ ∘ F ∘ Φ⁻¹` is a Poincaré–Birkhoff lift for the constant density `1`
+* the conjugate `Φ ∘ F ∘ Φ⁻¹` (`TauCeti.IsPoincareBirkhoffLift.conj`) is a Poincaré–Birkhoff
+  lift for the constant density `1`
   (`TauCeti.IsPoincareBirkhoffLift.conj_stripDensityNormalization`);
 * `Φ` maps the fixed points of `F` in `[0, 1) × (0, 1)` bijectively onto those of the conjugate
   (`TauCeti.IsPoincareBirkhoffLift.bijOn_stripDensityNormalization_fixedPoints`).
@@ -108,24 +109,25 @@ theorem congr_density (hF : IsPoincareBirkhoffLift ρ F) (h : EqOn ρ' ρ (univ 
   density_mul_det p hp := by
     rw [h (hF.mapsTo hp), h hp, hF.density_mul_det p hp]
 
-/-- The conjugate `Φ ∘ F ∘ Φ⁻¹` of `F` by the density normalization `Φ`, as a composite. -/
-private theorem coe_conj (hρ₁ : ContDiff ℝ 1 ρ) (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y))
-    (F : OpenPartialHomeomorph (ℝ × ℝ) (ℝ × ℝ)) :
-    ⇑((stripDensityNormalizationOpenPartialHomeomorph hρ₁ hpos).symm.trans
-        (F.trans (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hpos))) =
-      stripDensityNormalization ρ ∘ F ∘
-        (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hpos).symm := by
-  rw [OpenPartialHomeomorph.coe_trans, OpenPartialHomeomorph.coe_trans,
+/-- The conjugate `Φ ∘ F ∘ Φ⁻¹` of a Poincaré–Birkhoff lift `F` by the density normalization `Φ` of
+its density, an open partial homeomorphism of the plane. -/
+def conj (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : ContDiff ℝ 1 ρ) :
+    OpenPartialHomeomorph (ℝ × ℝ) (ℝ × ℝ) :=
+  (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos).symm.trans
+    (F.trans (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos))
+
+/-- The conjugate `Φ ∘ F ∘ Φ⁻¹` as a composite. -/
+theorem coe_conj (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : ContDiff ℝ 1 ρ) :
+    ⇑(hF.conj hρ₁) = stripDensityNormalization ρ ∘ F ∘
+      (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos).symm := by
+  rw [conj, OpenPartialHomeomorph.coe_trans, OpenPartialHomeomorph.coe_trans,
     coe_stripDensityNormalizationOpenPartialHomeomorph, comp_assoc]
 
 /-- The inverse of the conjugate `Φ ∘ F ∘ Φ⁻¹` is `Φ ∘ F⁻¹ ∘ Φ⁻¹`. -/
-private theorem coe_conj_symm (hρ₁ : ContDiff ℝ 1 ρ)
-    (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) (F : OpenPartialHomeomorph (ℝ × ℝ) (ℝ × ℝ)) :
-    ⇑((stripDensityNormalizationOpenPartialHomeomorph hρ₁ hpos).symm.trans
-        (F.trans (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hpos))).symm =
-      stripDensityNormalization ρ ∘ F.symm ∘
-        (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hpos).symm := by
-  rw [OpenPartialHomeomorph.coe_trans_symm, OpenPartialHomeomorph.coe_trans_symm,
+theorem coe_conj_symm (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : ContDiff ℝ 1 ρ) :
+    ⇑(hF.conj hρ₁).symm = stripDensityNormalization ρ ∘ F.symm ∘
+      (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos).symm := by
+  rw [conj, OpenPartialHomeomorph.coe_trans_symm, OpenPartialHomeomorph.coe_trans_symm,
     OpenPartialHomeomorph.symm_symm, coe_stripDensityNormalizationOpenPartialHomeomorph]
 
 /-- On a boundary line `y = c` preserved by `F` and by `Φ`, where `Φ(x, c) = (u(x), c)`, the
@@ -133,27 +135,20 @@ conjugate `Φ ∘ F ∘ Φ⁻¹` sends `(u(x), c)` to `(u(X), c)`, where `F(x, c
 private theorem conj_apply_mk (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : ContDiff ℝ 1 ρ) {c : ℝ}
     (hc : c ∈ Icc (0 : ℝ) 1) (hΦc : ∀ x, (stripDensityNormalization ρ (x, c)).2 = c)
     (hFc : ∀ x, (F (x, c)).2 = c) (x : ℝ) :
-    (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos).symm.trans
-        (F.trans (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos))
-        (stripAreaFraction ρ x, c) =
-      (stripAreaFraction ρ (F (x, c)).1, c) := by
+    hF.conj hρ₁ (stripAreaFraction ρ x, c) = (stripAreaFraction ρ (F (x, c)).1, c) := by
   have h : (stripAreaFraction ρ x, c) = stripDensityNormalization ρ (x, c) :=
     Prod.ext (stripDensityNormalization_fst (x, c)).symm (hΦc x).symm
   obtain ⟨X, hX⟩ : ∃ X, F (x, c) = (X, c) := ⟨_, Prod.ext rfl (hFc x)⟩
-  rw [coe_conj, comp_apply, comp_apply, h, stripDensityNormalizationOpenPartialHomeomorph_symm_apply
-    (univ_prod_Icc_subset_stripDensityNormalizationSource hF.density_pos
-      (mk_mem_prod (mem_univ x) hc)), hX]
+  rw [coe_conj, comp_apply, comp_apply, h,
+    stripDensityNormalizationOpenPartialHomeomorph_symm_apply_apply
+      (univ_prod_Icc_subset_stripDensityNormalizationSource hF.density_pos
+        (mk_mem_prod (mem_univ x) hc)), hX]
   exact Prod.ext (stripDensityNormalization_fst (X, c)) (hΦc X)
 
 /-- The conjugate `Φ ∘ F ∘ Φ⁻¹` commutes with the deck translation on the strip. -/
 private theorem conj_add_fst (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : ContDiff ℝ 1 ρ) {q : ℝ × ℝ}
     (hq : q ∈ univ ×ˢ Icc (0 : ℝ) 1) :
-    (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos).symm.trans
-        (F.trans (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos))
-        (q + (1, 0)) =
-      (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos).symm.trans
-        (F.trans (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos)) q +
-        (1, 0) := by
+    hF.conj hρ₁ (q + (1, 0)) = hF.conj hρ₁ q + (1, 0) := by
   have hc := hρ₁.continuous.continuousOn (s := univ ×ˢ Icc 0 1)
   have ha := (annulusArea_pos_of_forall hc hF.density_pos).ne'
   rw [coe_conj, comp_apply, comp_apply, comp_apply, comp_apply,
@@ -166,9 +161,7 @@ private theorem conj_add_fst (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : ContDi
 /-- The conjugate `Φ ∘ F ∘ Φ⁻¹` preserves `dx ∧ dy` on the strip. -/
 private theorem det_fderiv_conj (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : ContDiff ℝ 1 ρ)
     {q : ℝ × ℝ} (hq : q ∈ univ ×ˢ Icc (0 : ℝ) 1) :
-    (fderiv ℝ ((stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos).symm.trans
-      (F.trans (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos))) q).det =
-      1 := by
+    (fderiv ℝ (hF.conj hρ₁) q).det = 1 := by
   obtain ⟨p, hp, rfl⟩ := (bijOn_stripDensityNormalization hρ₁.continuous.continuousOn
     hF.density_add_one hF.density_pos).surjOn hq
   have hFp : DifferentiableAt ℝ F p :=
@@ -182,25 +175,20 @@ private theorem det_fderiv_conj (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : Con
 on the plane. -/
 private theorem contDiffOn_conj (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : ContDiff ℝ 1 ρ)
     (hρ : ContDiff ℝ ∞ ρ) :
-    ContDiffOn ℝ ∞ ((stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos).symm.trans
-        (F.trans (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos)))
-      ((stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos).symm.trans
-        (F.trans (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos))).source ∧
-    ContDiffOn ℝ ∞ ((stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos).symm.trans
-        (F.trans (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos))).symm
-      ((stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos).symm.trans
-        (F.trans (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos))).target := by
+    ContDiffOn ℝ ∞ (hF.conj hρ₁) (hF.conj hρ₁).source ∧
+      ContDiffOn ℝ ∞ (hF.conj hρ₁).symm (hF.conj hρ₁).target := by
   have hΦ := contDiff_stripDensityNormalization_of_forall hρ hF.density_pos
   have hΦsymm :=
     contDiffOn_stripDensityNormalizationOpenPartialHomeomorph_symm hρ₁ hF.density_pos hρ
   constructor
   · -- The conjugate is `Φ ∘ (F ∘ Φ⁻¹)`, with `Φ` smooth on the plane.
-    rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.trans_source,
-      OpenPartialHomeomorph.symm_source, coe_conj]
+    rw [coe_conj, conj, OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.trans_source,
+      OpenPartialHomeomorph.symm_source]
     exact hΦ.comp_contDiffOn (hF.contDiffOn.comp (hΦsymm.mono inter_subset_left)
       fun q hq ↦ hq.2.1)
   · -- The inverse of the conjugate is `Φ ∘ (F⁻¹ ∘ Φ⁻¹)`.
-    rw [OpenPartialHomeomorph.trans_target, OpenPartialHomeomorph.trans_target, coe_conj_symm]
+    rw [coe_conj_symm, conj, OpenPartialHomeomorph.trans_target,
+      OpenPartialHomeomorph.trans_target]
     exact hΦ.comp_contDiffOn (hF.contDiffOn_symm.comp
       (hΦsymm.mono (inter_subset_left.trans inter_subset_left)) fun q hq ↦ hq.1.2)
 
@@ -209,9 +197,7 @@ private theorem contDiffOn_conj (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : Con
 `Φ ∘ F ∘ Φ⁻¹` for the constant density `1`. -/
 theorem conj_stripDensityNormalization (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : ContDiff ℝ 1 ρ)
     (hρ : ContDiff ℝ ∞ ρ) :
-    IsPoincareBirkhoffLift (fun _ ↦ 1)
-      ((stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos).symm.trans
-        (F.trans (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos))) := by
+    IsPoincareBirkhoffLift (fun _ ↦ 1) (hF.conj hρ₁) := by
   have hc := hρ₁.continuous.continuousOn (s := univ ×ˢ Icc 0 1)
   have hbij := bijOn_stripDensityNormalization hc hF.density_add_one hF.density_pos
   have hS := univ_prod_Icc_subset_stripDensityNormalizationSource hF.density_pos
@@ -247,10 +233,10 @@ theorem conj_stripDensityNormalization (hF : IsPoincareBirkhoffLift ρ F) (hρ�
       snd_apply_mk_one := fun x' ↦ by obtain ⟨x, rfl⟩ := hsurj x'; rw [h1]
       lt_fst_apply_mk_one := fun x' ↦ by
         obtain ⟨x, rfl⟩ := hsurj x'; rw [h1]; exact hu (hF.lt_fst_apply_mk_one x) }
-  · rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.trans_source,
+  · rw [conj, OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.trans_source,
       OpenPartialHomeomorph.symm_source, stripDensityNormalizationOpenPartialHomeomorph_source]
     exact ⟨hT hq, hF.subset_source (hsymm hq), hS (hF.mapsTo (hsymm hq))⟩
-  · rw [OpenPartialHomeomorph.trans_target, OpenPartialHomeomorph.trans_target,
+  · rw [conj, OpenPartialHomeomorph.trans_target, OpenPartialHomeomorph.trans_target,
       OpenPartialHomeomorph.symm_target, stripDensityNormalizationOpenPartialHomeomorph_source,
       mem_inter_iff, mem_preimage, OpenPartialHomeomorph.coe_trans_symm, comp_apply]
     exact ⟨⟨hT hq, hF.subset_target (hsymm hq)⟩, hS (hF.mapsTo_symm (hsymm hq))⟩
@@ -261,9 +247,7 @@ points of the conjugate `Φ ∘ F ∘ Φ⁻¹` there. -/
 theorem bijOn_stripDensityNormalization_fixedPoints (hF : IsPoincareBirkhoffLift ρ F)
     (hρ₁ : ContDiff ℝ 1 ρ) :
     BijOn (stripDensityNormalization ρ) (fixedPoints F ∩ Ico (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1)
-      (fixedPoints ((stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos).symm.trans
-        (F.trans (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos))) ∩
-        Ico (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1) := by
+      (fixedPoints (hF.conj hρ₁) ∩ Ico (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1) := by
   have hbij := bijOn_stripDensityNormalization hρ₁.continuous.continuousOn hF.density_add_one
     hF.density_pos
   have hD : Ico (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1 ⊆ univ ×ˢ Icc 0 1 :=
@@ -275,14 +259,14 @@ theorem bijOn_stripDensityNormalization_fixedPoints (hF : IsPoincareBirkhoffLift
     hbij.injOn.mono fun p hp ↦ hD hp.2, fun q ⟨hfix, hq⟩ ↦ ?_⟩
   · -- `Φ ∘ F ∘ Φ⁻¹` fixes `Φ(p)`, since `Φ⁻¹(Φ(p)) = p` and `F(p) = p`.
     rw [mem_fixedPoints_iff, coe_conj, comp_apply, comp_apply,
-      stripDensityNormalizationOpenPartialHomeomorph_symm_apply (hS (hD hp)),
+      stripDensityNormalizationOpenPartialHomeomorph_symm_apply_apply (hS (hD hp)),
       mem_fixedPoints_iff.1 hfix]
   · -- `p = Φ⁻¹(q)` lies in the strip, and `Φ(F(p)) = q = Φ(p)` with `Φ` injective there.
     obtain ⟨p, hp, rfl⟩ := hbij.surjOn (hD hq)
     refine ⟨p, ⟨mem_fixedPoints_iff.2 ?_, (hiff hp).1 hq⟩, rfl⟩
     have h := mem_fixedPoints_iff.1 hfix
     rw [coe_conj, comp_apply, comp_apply,
-      stripDensityNormalizationOpenPartialHomeomorph_symm_apply (hS hp)] at h
+      stripDensityNormalizationOpenPartialHomeomorph_symm_apply_apply (hS hp)] at h
     exact hbij.injOn (hF.mapsTo hp) hp h
 
 /-- **The strict annulus fixed-point theorem reduces to the standard area form.** If every
@@ -340,7 +324,7 @@ theorem isPoincareBirkhoffLift_linearPlaneShear_trans_addRight :
       contDiffOn_symm := by rw [hcoe_symm]; fun_prop
       mapsTo := fun p hp ↦ by simpa [happly] using hp
       mapsTo_symm := fun p hp ↦ by simpa [hsymm] using hp
-      add_fst := fun p _ ↦ by simp only [happly]; ext <;> simp; ring
+      add_fst := fun p _ ↦ Prod.ext (by simp [happly]; ring) (by simp [happly])
       density_mul_det := fun p _ ↦ ?_
       snd_apply_mk_zero := fun x ↦ by simp [happly]
       fst_apply_mk_zero_lt := fun x ↦ by simp [happly]

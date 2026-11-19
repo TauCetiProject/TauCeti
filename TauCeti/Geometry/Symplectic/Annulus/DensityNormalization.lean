@@ -546,8 +546,8 @@ theorem bijOn_stripDensityNormalization (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 
       (by simpa [stripDensityNormalization_snd_mk_one (hs x).ne'] using hq.2)
     exact ⟨(x, y), ⟨mem_univ _, hy⟩, Prod.ext (by simpa using hx) hxy⟩
 
-/-- For a density positive on the strip, the area fraction maps `[0, 1)` onto `[0, 1)` and nothing
-else into it. -/
+/-- For a density positive on the strip, the area fraction of `x` lies in `[0, 1)` exactly when `x`
+does. -/
 theorem stripAreaFraction_mem_Ico_iff (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1))
     (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) {x : ℝ} :
     stripAreaFraction ρ x ∈ Ico (0 : ℝ) 1 ↔ x ∈ Ico (0 : ℝ) 1 := by
@@ -587,7 +587,7 @@ section
 variable {hρ₁ : ContDiff ℝ 1 ρ} {hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)}
 
 @[simp]
-theorem stripDensityNormalizationOpenPartialHomeomorph_symm_apply {p : ℝ × ℝ}
+theorem stripDensityNormalizationOpenPartialHomeomorph_symm_apply_apply {p : ℝ × ℝ}
     (hp : p ∈ stripDensityNormalizationSource ρ) :
     (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hpos).symm
       (stripDensityNormalization ρ p) = p :=
@@ -612,7 +612,7 @@ theorem mapsTo_stripDensityNormalizationOpenPartialHomeomorph_symm
   intro q hq
   obtain ⟨p, hp, rfl⟩ :=
     (bijOn_stripDensityNormalization hρ₁.continuous.continuousOn hper hpos).surjOn hq
-  rwa [stripDensityNormalizationOpenPartialHomeomorph_symm_apply
+  rwa [stripDensityNormalizationOpenPartialHomeomorph_symm_apply_apply
     (univ_prod_Icc_subset_stripDensityNormalizationSource hpos hp)]
 
 /-- On the strip, the inverse of the normalization commutes with the deck translation. -/
@@ -626,9 +626,9 @@ theorem stripDensityNormalizationOpenPartialHomeomorph_symm_add_fst
     (bijOn_stripDensityNormalization hc hper hpos).surjOn ⟨mem_univ _, hq⟩
   have hp' : (p + (1, 0)).2 ∈ Icc (0 : ℝ) 1 := by simpa using hp.2
   rw [← stripDensityNormalization_add_fst hc hper (annulusArea_pos_of_forall hc hpos).ne' hp.2,
-    stripDensityNormalizationOpenPartialHomeomorph_symm_apply
+    stripDensityNormalizationOpenPartialHomeomorph_symm_apply_apply
       (univ_prod_Icc_subset_stripDensityNormalizationSource hpos ⟨mem_univ _, hp'⟩),
-    stripDensityNormalizationOpenPartialHomeomorph_symm_apply
+    stripDensityNormalizationOpenPartialHomeomorph_symm_apply_apply
       (univ_prod_Icc_subset_stripDensityNormalizationSource hpos hp)]
 
 end
