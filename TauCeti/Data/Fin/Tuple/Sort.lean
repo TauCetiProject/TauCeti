@@ -64,6 +64,14 @@ theorem strictMono_comp_sort {b : Fin m → β} (hb : Function.Injective b) :
     StrictMono (b ∘ sort b) :=
   (monotone_sort b).strictMono_of_injective (hb.comp (sort b).injective)
 
+/-- For a tuple with distinct entries, a permutation gives a strictly increasing rearrangement
+exactly when it is the sorting permutation. -/
+theorem strictMono_comp_perm_iff_sort_eq {b : Fin m → β} (hb : Function.Injective b)
+    (σ : Equiv.Perm (Fin m)) : StrictMono (b ∘ σ) ↔ sort b = σ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ strictMono_comp_sort hb⟩
+  have heq := unique_monotone (monotone_sort b) h.monotone
+  exact DFunLike.ext _ _ fun i ↦ hb (congrFun heq i)
+
 /-- Rearranging a tuple does not change its set of entries. -/
 theorem range_comp_sort (b : Fin m → β) : Set.range (b ∘ sort b) = Set.range b :=
   (sort b).surjective.range_comp b
