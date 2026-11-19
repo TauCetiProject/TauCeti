@@ -745,7 +745,7 @@ private theorem crossingTurn_insertClasp :
       halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl (D.crossingTurn x)))) := by
   rw [← halfEdgeTwoSuccEquiv_inl_inl, crossingTurn_insertClasp, Equiv.permCongr_apply,
     Equiv.symm_apply_apply]
-  rfl
+  simp [halfEdgeTwoSuccEquiv_inl_inl]
 
 /-- Passing straight through the first new crossing goes to the opposite slot. -/
 @[simp] theorem crossingTurn_insertClasp_inl_inr (slot : Fin 4) :
@@ -755,7 +755,7 @@ private theorem crossingTurn_insertClasp :
         (.inl (halfEdgeSuccEquiv n (.inr (oppositeCrossingSlot slot)))) := by
   rw [← halfEdgeTwoSuccEquiv_inl_inr, crossingTurn_insertClasp, Equiv.permCongr_apply,
     Equiv.symm_apply_apply]
-  rfl
+  simp [halfEdgeTwoSuccEquiv_inl_inr]
 
 /-- Passing straight through the second new crossing goes to the opposite slot. -/
 @[simp] theorem crossingTurn_insertClasp_inr (slot : Fin 4) :
@@ -763,7 +763,7 @@ private theorem crossingTurn_insertClasp :
       halfEdgeSuccEquiv (n + 1) (.inr (oppositeCrossingSlot slot)) := by
   rw [← halfEdgeTwoSuccEquiv_inr, crossingTurn_insertClasp, Equiv.permCongr_apply,
     Equiv.symm_apply_apply]
-  rfl
+  simp [halfEdgeTwoSuccEquiv_inr]
 
 private theorem init_init_smoothingChoice_insertClasp (s : Fin (n + 2) → Bool) :
     Fin.init (Fin.init ((D.insertClasp p q b hqp hqe).smoothingChoice s)) =
