@@ -25,6 +25,11 @@ and a module `N` with trivial action, precomposition with `φ` gives an equivari
 `Res(f)(Homₖ(B, N)) ⟶ Homₖ(A, N)`.
 This is the coefficient map on dual representations used in contravariant change of group
 for cohomology. Its underlying linear map sends `ℓ` to `ℓ ∘ φ`.
+
+On `Homₖ(A, N)` with `N` trivial, an element `g⁻¹` acts by precomposition with `ρ(g)`, so
+`ρ(g⁻¹) - 𝟙` is precomposition with `ρ(g) - 𝟙` (`Rep.ihom_obj_trivial_ρ_inv_sub_id`). For a
+cyclic group this identifies the cohomology of `Homₖ(A, N)` with that of the dual of the complex
+`A --(ρ(g) - 𝟙)--> A`.
 -/
 
 public section
@@ -69,6 +74,20 @@ theorem shortExact_map_ihom [Module.Projective k A] {S : ShortComplex (Rep.{w} k
         congrArg Subtype.val ((LinearEquiv.ofInjective _ hf).apply_symm_apply _)⟩
   · rintro ⟨(ℓ : A →ₗ[k] S.X₁), rfl⟩
     exact LinearMap.ext fun a ↦ hfg.apply_apply_eq_zero (ℓ a)
+
+/-- On the internal hom `Homₖ(A, N)` into a trivial representation, `g⁻¹` acts by precomposition
+with `ρ(g)`, so `ρ(g⁻¹) - 𝟙` is `φ ↦ φ ∘ (ρ(g) - 𝟙)`. -/
+theorem ihom_obj_trivial_ρ_inv_sub_id (N : Type w) [AddCommGroup N] [Module k N] (g : G) :
+    ((Rep.ihom A).obj (Rep.trivial k G N)).ρ g⁻¹ - LinearMap.id =
+      LinearMap.lcomp k N (A.ρ g - LinearMap.id) := by
+  refine LinearMap.ext fun φ ↦ ?_
+  -- The carrier of `(Rep.ihom A).obj (Rep.trivial k G N)` is `A →ₗ[k] N` only up to unfolding
+  -- `Rep.trivial`, so `Rep.ihom_obj_ρ_apply` does not rewrite here; this states the action as
+  -- Mathlib's `Representation.linHom`, which it is by definition of `Rep.ihom`.
+  change A.ρ.linHom (Representation.trivial k G N) g⁻¹ φ - φ = φ ∘ₗ (A.ρ g - LinearMap.id)
+  rw [Representation.linHom_apply, inv_inv]
+  ext a
+  simp
 
 end Rep
 
