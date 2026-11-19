@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.UniformSpace.HeineCantor
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Iterated derivatives of a directional derivative
@@ -38,8 +40,12 @@ of a smooth family of compactly supported functions with respect to a parameter.
 * `ContDiff.norm_iteratedFDeriv_fderiv_apply_le`: `‖Dⁱ (y ↦ Df(y) v)‖ ≤ ‖D^{i+1} f‖ ‖v‖`.
 * `ContDiff.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le`: a bound on the derivatives of `f`
   up to order `k + 1` bounds those of `y ↦ Df(y) v` up to order `k`.
+* `ContDiff.exists_bound_iteratedFDeriv_fderiv_apply`: the same with a separate bound for each
+  order.
 * `ContDiffAt.iteratedFDeriv_fderiv_apply_eq_iteratedFDeriv_snoc`: the pointwise form
   `Dⁱ (y ↦ Df(y) v) (x) m = D^{i+1} f (x) (m, v)`, with `v` in the last slot.
+* `ContDiff.holderWith_iteratedFDeriv_fderiv_apply`: if `D^{k+1} f` is `r`-Hölder with constant
+  `H`, then `D^k (y ↦ Df(y) v)` is `r`-Hölder with constant `H ‖v‖`.
 * `TauCeti.tsupport_sub_sub_add_fderiv_subset`: the support of the first-order Taylor remainder.
 * `HasCompactSupport.exists_norm_iteratedFDeriv_sub_sub_add_fderiv_le`: the uniform estimate on
   the derivatives of the first-order Taylor remainder.
@@ -108,6 +114,17 @@ theorem ContDiff.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le {n : WithTop �
   (hf.norm_iteratedFDeriv_fderiv_apply_le ((minSmoothness_monotone (by gcongr)).trans hk) v x).trans
     (mul_le_mul_of_nonneg_right (hC (i + 1) (by omega) x) (norm_nonneg v))
 
+/-- Bounds on the iterated derivatives of `f` up to order `k + 1`, one for each order, give bounds
+on those of a directional derivative `y ↦ Df(y) v` up to order `k`. -/
+theorem ContDiff.exists_bound_iteratedFDeriv_fderiv_apply {n : WithTop ℕ∞} {f : E → F}
+    (hf : ContDiff 𝕜 n f) {k : ℕ} (hk : minSmoothness 𝕜 (k + 1) ≤ n)
+    (hbd : ∀ i ≤ k + 1, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 i f x‖ ≤ C) (v : E) :
+    ∀ i ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 i (fun y ↦ fderiv 𝕜 f y v) x‖ ≤ C := by
+  intro i hi
+  obtain ⟨C, hC⟩ := hbd (i + 1) (by omega)
+  exact ⟨C * ‖v‖, fun x ↦ (hf.norm_iteratedFDeriv_fderiv_apply_le
+    ((minSmoothness_monotone (by gcongr)).trans hk) v x).trans (by gcongr; exact hC x)⟩
+
 /-- **The innermost derivative of an iterated derivative.** If `f` is `C^{k+1}` at `x`, the `k`-th
 iterated derivative of the directional derivative `y ↦ Df(y) v` at `x` is the `(k + 1)`-th
 iterated derivative of `f` at `x` with `v` in the last slot. Unlike
@@ -123,6 +140,32 @@ theorem ContDiffAt.iteratedFDeriv_fderiv_apply_eq_iteratedFDeriv_snoc {f : E →
   rw [iteratedFDeriv_succ_apply_right, Fin.init_snoc, Fin.snoc_last, hv,
     (ContinuousLinearMap.apply 𝕜 F v).iteratedFDeriv_comp_left (hf.fderiv_right le_rfl) le_rfl]
   simp
+
+open scoped NNReal in
+/-- **Hölder continuity passes to a directional derivative.** If `f` is `C^{k+1}` and its
+`(k + 1)`-th iterated derivative is `r`-Hölder with constant `H`, then the `k`-th iterated
+derivative of `y ↦ Df(y) v` is `r`-Hölder with constant `H ‖v‖₊`. -/
+theorem ContDiff.holderWith_iteratedFDeriv_fderiv_apply {f : E → F} {k : ℕ}
+    (hf : ContDiff 𝕜 (k + 1) f) {H r : ℝ≥0} (hH : HolderWith H r (iteratedFDeriv 𝕜 (k + 1) f))
+    (v : E) : HolderWith (H * ‖v‖₊) r (iteratedFDeriv 𝕜 k fun y ↦ fderiv 𝕜 f y v) := by
+  set D := iteratedFDeriv 𝕜 (k + 1) f
+  set Dv := iteratedFDeriv 𝕜 k fun y ↦ fderiv 𝕜 f y v
+  -- The `k`-th derivative of `y ↦ Df(y) v` is `D^{k+1} f` with `v` in the last slot.
+  have hD (z : E) (m : Fin k → E) : Dv z m = D z (Fin.snoc m v) :=
+    hf.contDiffAt.iteratedFDeriv_fderiv_apply_eq_iteratedFDeriv_snoc v m
+  have hdist (x y : E) : dist (Dv x) (Dv y) ≤ (H * ‖v‖₊ : ℝ≥0) * dist x y ^ (r : ℝ) := by
+    have hop : ‖Dv x - Dv y‖ ≤ ‖D x - D y‖ * ‖v‖ :=
+      ContinuousMultilinearMap.opNorm_le_bound (by positivity) fun m ↦ by
+        rw [sub_apply, hD, hD, ← sub_apply]
+        refine (ContinuousMultilinearMap.le_opNorm _ _).trans_eq ?_
+        rw [Fin.prod_univ_castSucc]
+        simp only [Fin.snoc_castSucc, Fin.snoc_last]
+        ring
+    rw [dist_eq_norm, NNReal.coe_mul, coe_nnNorm, mul_right_comm]
+    refine hop.trans ?_
+    gcongr
+    simpa [dist_eq_norm] using hH.dist_le x y
+  exact holderOnWith_univ.1 (HolderOnWith.of_dist_le fun x _ y _ ↦ hdist x y)
 
 namespace TauCeti
 

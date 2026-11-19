@@ -19,7 +19,8 @@ hypothesis on the ambient space, where the adjoint of a bounded operator need no
 
 A map `T P_U` that factors through the projection onto a finite-dimensional `U` has rank at most
 `dim U`. For subspaces `U` and `V` of the same finite dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the
-same dimension. The orthogonal complement of a nonzero vector has codimension one, and fewer than
+same dimension. The orthogonal complement of a nonzero vector has codimension one, that of the
+span of a finite linearly independent family has codimension its cardinality, and fewer than
 `dim E` vectors have a common nonzero orthogonal vector, which may be taken of norm one. A nonzero
 vector followed by a linearly independent family in its orthogonal complement is linearly
 independent.
@@ -35,7 +36,9 @@ For finite-dimensional `U` and `V` with `dim V ≤ dim U`, a lower bound `k ‖u
 
 The projection `P_U v` is the point of `v + Uᗮ` of least norm, and it is the only one: a vector
 `w` with `‖w‖ ≤ ‖P_U w‖` equals `P_U w`. Equivalently, `v ∈ U` exactly when adding a vector of
-`Uᗮ` never decreases the norm of `v`. Over `ℝ`, Pythagoras splits the squared distance from a
+`Uᗮ` never decreases the norm of `v`. Perturbing a subspace increases the distance from any vector
+to the subspace by at most the operator-norm change in orthogonal projection times the vector's
+norm. Over `ℝ`, Pythagoras splits the squared distance from a
 point `b + c`, with `b ∈ U` and `c ∈ Uᗮ`, into its components along `U` and `Uᗮ`.
 
 Since the kernel of `P_V` is `Vᗮ`, the projection `P_V` is injective on `U` exactly when no
@@ -75,6 +78,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `TauCeti.eventually_linearIndependent_and_span_starProjection`: projected bases of a
   continuously varying family of subspaces stay linearly independent, and stay bases under a
   complementary dimension count.
+* `LinearIndependent.finrank_orthogonal_span`: `dim (span v)ᗮ = dim E - card ι` for a finite
+  linearly independent family `v`.
 * `LinearIndependent.finCons_orthogonal_span_singleton`: a nonzero vector `p` followed by a
   linearly independent family in `(𝕜 ∙ p)ᗮ` is linearly independent.
 * `LinearIsometry.exists_mem_sphere_inner_eq_zero`: a linear isometry into a space of larger
@@ -86,6 +91,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   is its projection.
 * `Submodule.mem_iff_forall_mem_orthogonal_norm_le_norm_add`: `v ∈ U` if and only if
   `‖v‖ ≤ ‖v + w‖` for every `w ∈ Uᗮ`.
+* `Submodule.infDist_le_add_norm_starProjection_sub_mul`:
+  `infDist w U ≤ infDist w V + ‖P_U - P_V‖ * ‖w‖`.
 * `Submodule.norm_sub_add_sq_of_mem_of_mem_orthogonal`: Pythagoras for `‖v - (b + c)‖²` with
   `b ∈ R` and `c ∈ Rᗮ`, split along `R` and `Rᗮ`.
 * `Submodule.injOn_starProjection_iff_disjoint`: `P_V` is injective on `U` if and only if
@@ -111,6 +118,18 @@ open scoped InnerProductSpace
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 variable (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
+
+/-- The inner product with the orthogonal-complement projection is squared distance, embedded
+in the scalar field. In particular, this inner product is real even for complex scalars. -/
+theorem inner_starProjection_orthogonal_eq_infDist_sq (x : E) :
+    inner 𝕜 x (Uᗮ.starProjection x) = (Metric.infDist x (U : Set E) : 𝕜) ^ 2 := by
+  have hfix : Uᗮ.starProjection (Uᗮ.starProjection x) = Uᗮ.starProjection x :=
+    starProjection_eq_self_iff.mpr (Uᗮ.starProjection_apply_mem x)
+  calc
+    inner 𝕜 x (Uᗮ.starProjection x) = inner 𝕜 (Uᗮ.starProjection x) (Uᗮ.starProjection x) := by
+      rw [Uᗮ.inner_starProjection_left_eq_right, hfix]
+    _ = (Metric.infDist x (U : Set E) : 𝕜) ^ 2 := by
+      rw [inner_self_eq_norm_sq_to_K, Uᗮ.norm_starProjection_eq_infDist, orthogonal_orthogonal]
 
 /-- One half of `norm_starProjection_comp_starProjection_comm`. -/
 private theorem norm_starProjection_comp_starProjection_le :
@@ -257,6 +276,21 @@ theorem mem_iff_forall_mem_orthogonal_norm_le_norm_add {v : E} :
     rw [add_sub_cancel] at hle
     rw [U.eq_starProjection_of_norm_le hle]
     exact U.starProjection_apply_mem v
+
+/-- Perturbing a subspace in orthogonal-projection operator norm increases the distance from any
+vector `w` to the subspace by at most `‖P_U - P_V‖ * ‖w‖`. -/
+theorem infDist_le_add_norm_starProjection_sub_mul (w : E) :
+    Metric.infDist w U ≤ Metric.infDist w V + ‖U.starProjection - V.starProjection‖ * ‖w‖ := by
+  rw [← U.dist_starProjection_eq_infDist, ← V.dist_starProjection_eq_infDist,
+    dist_eq_norm, dist_eq_norm]
+  calc ‖w - U.starProjection w‖
+      ≤ ‖w - V.starProjection w‖ + ‖V.starProjection w - U.starProjection w‖ := by
+        simpa only [sub_add_sub_cancel] using
+          norm_add_le (w - V.starProjection w) (V.starProjection w - U.starProjection w)
+    _ ≤ ‖w - V.starProjection w‖ + ‖U.starProjection - V.starProjection‖ * ‖w‖ := by
+        rw [norm_sub_rev (V.starProjection w), ← sub_apply]
+        gcongr
+        exact le_opNorm _ w
 
 omit [U.HasOrthogonalProjection] in
 /-- The orthogonal projection onto `V` is injective on `U` exactly when `U ⊓ Vᗮ = ⊥`, since its
@@ -473,6 +507,16 @@ end TauCeti
 namespace LinearIndependent
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {m : ℕ}
+
+/-- The orthogonal complement of the span of a finite linearly independent family `v` has
+dimension `dim E - card ι`. -/
+theorem finrank_orthogonal_span [FiniteDimensional 𝕜 E] {ι : Type*} [Fintype ι] {v : ι → E}
+    (hv : LinearIndependent 𝕜 v) :
+    Module.finrank 𝕜 (Submodule.span 𝕜 (Set.range v))ᗮ =
+      Module.finrank 𝕜 E - Fintype.card ι := by
+  have h := (Submodule.span 𝕜 (Set.range v)).finrank_add_finrank_orthogonal
+  rw [finrank_span_eq_card hv] at h
+  omega
 
 /-- A nonzero vector followed by a linearly independent family in its orthogonal complement is
 linearly independent. -/
