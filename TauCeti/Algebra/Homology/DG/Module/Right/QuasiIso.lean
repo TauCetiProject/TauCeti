@@ -36,6 +36,8 @@ roofs `M ← P → N` are Mathlib's right fractions for it.
 * `TauCeti.DGRightModuleHom.isQuasiIso_id`, `TauCeti.DGRightModuleHom.IsQuasiIso.comp`,
   `IsQuasiIso.of_comp_left`, `IsQuasiIso.of_comp_right`: identity, composition and two out of
   three.
+* `TauCeti.DGRightModuleCat.IsQuasiIso.comp`, `TauCeti.DGRightModuleCat.isQuasiIso_of_isIso`:
+  composites of quasi-isomorphisms and isomorphisms of bundled modules are quasi-isomorphisms.
 * `TauCeti.DGRightModuleHom.IsQuasiIso.cohomologyLinearEquiv`: the induced isomorphism of
   cohomology.
 * `TauCeti.DGRightModuleHom.isQuasiIso_of_homotopyInverse`,
@@ -287,6 +289,20 @@ theorem quasiIsos_iff {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N) :
   rw [quasiIsos, MorphismProperty.inverseImage_iff, MorphismProperty.isomorphisms.iff,
     CategoryTheory.ConcreteCategory.isIso_iff_bijective]
   exact Iff.rfl
+
+/-- A composite of quasi-isomorphisms of bundled DG right modules is a quasi-isomorphism. This is
+`TauCeti.DGRightModuleHom.IsQuasiIso.comp` in diagrammatic order, stated for bundled modules so
+that no instance search on their carriers is needed. -/
+theorem IsQuasiIso.comp {M N P : DGRightModuleCat.{uR, uA, uM} h} {f : M ⟶ N} {g : N ⟶ P}
+    (hf : IsQuasiIso f) (hg : IsQuasiIso g) : IsQuasiIso (f ≫ g) :=
+  DGRightModuleHom.IsQuasiIso.comp hg hf
+
+/-- An isomorphism of bundled DG right modules is a quasi-isomorphism. -/
+theorem isQuasiIso_of_isIso {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N) [IsIso f] :
+    IsQuasiIso f := by
+  rw [← quasiIsos_iff, quasiIsos, MorphismProperty.inverseImage_iff,
+    MorphismProperty.isomorphisms.iff]
+  infer_instance
 
 end DGRightModuleCat
 
