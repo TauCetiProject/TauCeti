@@ -281,6 +281,14 @@ instance fintypeDegreeEq {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
   Fintype.ofFinset (p := {s : σ →₀ ℕ | s.degree = n}) ((Finset.univ : Finset σ).finsuppAntidiag n)
     fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
 
+/-- For a fintype of variables with decidable equality, the exponent vectors of degree at most `n`
+form a fintype, enumerated degree by degree by `Finset.finsuppAntidiag`. -/
+instance fintypeDegreeLe {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
+    Fintype {s : σ →₀ ℕ // s.degree ≤ n} :=
+  Fintype.ofFinset (p := {s : σ →₀ ℕ | s.degree ≤ n})
+    ((Finset.range (n + 1)).biUnion fun m ↦ (Finset.univ : Finset σ).finsuppAntidiag m)
+    fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum, Nat.lt_succ_iff]
+
 end Finsupp
 
 namespace Finsupp
