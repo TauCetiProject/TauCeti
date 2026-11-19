@@ -24,13 +24,14 @@ homomorphism exactly when it is one on `T`-valued points for every `S`-scheme `T
 ## Main declarations
 
 * `CategoryTheory.isMonHom_iff_forall_one_comp_mul_comp`: `IsMonHom f` holds exactly when
-  postcomposition with `f` preserves the unit and multiplication of all point monoids.
+  postcomposition with `f` preserves the unit and multiplication of all point monoids. Its
+  additive form is `CategoryTheory.isAddMonHom_iff_forall_zero_comp_add_comp`.
 -/
 
 public section
 
 open CategoryTheory MonoidalCategory CartesianMonoidalCategory MonObj
-open scoped CategoryTheory.MonObj
+open scoped CategoryTheory.MonObj CategoryTheory.AddMonObj
 
 namespace CategoryTheory
 
@@ -41,6 +42,9 @@ variable {C : Type u} [Category.{v} C] [CartesianMonoidalCategory C]
 /-- A morphism of monoid objects in a cartesian monoidal category is a monoid homomorphism exactly
 when, for every test object `X`, postcomposition with it preserves the unit and the multiplication
 of the monoid `X ⟶ M` of `X`-valued points. -/
+@[to_additive /-- A morphism of additive monoid objects in a cartesian monoidal category is an
+additive monoid homomorphism exactly when, for every test object `X`, postcomposition with it
+preserves the zero and the addition of the additive monoid `X ⟶ M` of `X`-valued points. -/]
 theorem isMonHom_iff_forall_one_comp_mul_comp {M N : C} [MonObj M] [MonObj N] (f : M ⟶ N) :
     IsMonHom f ↔ ∀ X : C, (1 : X ⟶ M) ≫ f = 1 ∧
       ∀ x y : X ⟶ M, (x * y) ≫ f = (x ≫ f) * (y ≫ f) := by

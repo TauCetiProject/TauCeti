@@ -112,6 +112,9 @@ lemma equivAbelianVariety_symm_apply (A : AbelianVariety K) :
 lemma ofAbelianVariety_baseChange (A : AbelianVariety K) (L : Type u) [Field L] [Algebra K L] :
     ofAbelianVariety (A.baseChange L) =
       (ofAbelianVariety A).baseChange (Spec.map (CommRingCat.ofHom (algebraMap K L))) :=
+  -- Both adapters keep `toOver` and the group law, so the `Grp.mk` of each side unfolds to the
+  -- underlying group object of `A.baseChange L` (`grpMk_baseChange_toOver` on the right); and
+  -- `CommGrp.toGrp` of `mapCommGrp.obj` is by definition `mapGrp.obj` of `CommGrp.toGrp`.
   ext (congrArg CommGrp.toGrp (A.commGrpMk_baseChange_toOver L))
 
 /-- The adapter `toAbelianVariety` commutes with base change along a field extension `L / K`. -/
@@ -120,7 +123,7 @@ lemma toAbelianVariety_baseChange (A : AbelianScheme (Spec (.of K))) (L : Type u
     (A.baseChange (Spec.map (CommRingCat.ofHom (algebraMap K L)))).toAbelianVariety =
       A.toAbelianVariety.baseChange L := by
   conv_lhs => rw [← ofAbelianVariety_toAbelianVariety A, ← ofAbelianVariety_baseChange]
-  rfl
+  exact toAbelianVariety_ofAbelianVariety _
 
 /-! ### The equivalence of categories
 
@@ -130,35 +133,21 @@ below act as the identity on underlying morphisms. -/
 
 noncomputable section
 
-/-- The homomorphism of abelian varieties with the same underlying morphism as a homomorphism of
-abelian schemes over `Spec K`; this is the morphism map of `toAbelianVarietyFunctor`. -/
-private lemma toOverHom_mk'_toOverHom {A B : AbelianScheme (Spec (.of K))} (f : A ⟶ B) :
-    AbelianVariety.Hom.toOverHom (A := A.toAbelianVariety) (B := B.toAbelianVariety)
-      (AbelianVariety.Hom.mk' (Hom.toOverHom f) (Hom.one_hom f) (Hom.mul_hom f)) =
-      Hom.toOverHom f :=
-  AbelianVariety.Hom.toOverHom_mk' _ _ _
-
-/-- The homomorphism of abelian schemes with the same underlying morphism as a homomorphism of
-abelian varieties; this is the morphism map of `ofAbelianVarietyFunctor`. -/
-private lemma toOverHom_mk'_toOverHom' {A B : AbelianVariety K} (g : A ⟶ B) :
-    Hom.toOverHom (A := ofAbelianVariety A) (B := ofAbelianVariety B)
-      (Hom.mk' (AbelianVariety.Hom.toOverHom g) (AbelianVariety.Hom.one_hom g)
-        (AbelianVariety.Hom.mul_hom g)) =
-      AbelianVariety.Hom.toOverHom g :=
-  Hom.toOverHom_mk' _ _ _
-
 /-- The functor from abelian schemes over `Spec K` to abelian varieties over `K`, the identity on
 underlying group-scheme homomorphisms. -/
 @[expose] def toAbelianVarietyFunctor : AbelianScheme (Spec (.of K)) ⥤ AbelianVariety K where
   obj := toAbelianVariety
   map f := AbelianVariety.Hom.mk' (Hom.toOverHom f) (Hom.one_hom f) (Hom.mul_hom f)
-  map_id A := AbelianVariety.Hom.toOverHom_injective <| by
-    rw [toOverHom_mk'_toOverHom, Hom.toOverHom_id, AbelianVariety.Hom.toOverHom_id]
-    rfl
-  map_comp f g := AbelianVariety.Hom.toOverHom_injective <| by
-    rw [AbelianVariety.Hom.toOverHom_comp, toOverHom_mk'_toOverHom, toOverHom_mk'_toOverHom,
-      toOverHom_mk'_toOverHom, Hom.toOverHom_comp]
-    rfl
+  -- `rw` cannot use `AbelianVariety.Hom.toOverHom_mk'` here: its implicit objects are
+  -- `A.toAbelianVariety`, whose `toOver` is `A.toOver` only after unfolding the exposed adapter.
+  map_id A := AbelianVariety.Hom.toOverHom_injective <|
+    (AbelianVariety.Hom.toOverHom_mk' _ _ _).trans <|
+      (Hom.toOverHom_id A).trans (AbelianVariety.Hom.toOverHom_id A.toAbelianVariety).symm
+  map_comp f g := AbelianVariety.Hom.toOverHom_injective <|
+    (AbelianVariety.Hom.toOverHom_mk' _ _ _).trans <| (Hom.toOverHom_comp f g).trans <|
+      .symm <| (AbelianVariety.Hom.toOverHom_comp _ _).trans <|
+        congrArg₂ (· ≫ ·) (AbelianVariety.Hom.toOverHom_mk' _ _ _)
+          (AbelianVariety.Hom.toOverHom_mk' _ _ _)
 
 @[simp]
 lemma toAbelianVarietyFunctor_obj (A : AbelianScheme (Spec (.of K))) :
@@ -177,13 +166,14 @@ underlying group-scheme homomorphisms. -/
   obj := ofAbelianVariety
   map g := Hom.mk' (AbelianVariety.Hom.toOverHom g) (AbelianVariety.Hom.one_hom g)
     (AbelianVariety.Hom.mul_hom g)
-  map_id A := Hom.toOverHom_injective <| by
-    rw [toOverHom_mk'_toOverHom', AbelianVariety.Hom.toOverHom_id, Hom.toOverHom_id]
-    rfl
-  map_comp f g := Hom.toOverHom_injective <| by
-    rw [Hom.toOverHom_comp, toOverHom_mk'_toOverHom', toOverHom_mk'_toOverHom',
-      toOverHom_mk'_toOverHom', AbelianVariety.Hom.toOverHom_comp]
-    rfl
+  -- As above, `Hom.toOverHom_mk'` is applied as a term rather than by `rw`.
+  map_id A := Hom.toOverHom_injective <|
+    (Hom.toOverHom_mk' _ _ _).trans <|
+      (AbelianVariety.Hom.toOverHom_id A).trans (Hom.toOverHom_id (ofAbelianVariety A)).symm
+  map_comp f g := Hom.toOverHom_injective <|
+    (Hom.toOverHom_mk' _ _ _).trans <| (AbelianVariety.Hom.toOverHom_comp f g).trans <|
+      .symm <| (Hom.toOverHom_comp _ _).trans <|
+        congrArg₂ (· ≫ ·) (Hom.toOverHom_mk' _ _ _) (Hom.toOverHom_mk' _ _ _)
 
 @[simp]
 lemma ofAbelianVarietyFunctor_obj (A : AbelianVariety K) :
