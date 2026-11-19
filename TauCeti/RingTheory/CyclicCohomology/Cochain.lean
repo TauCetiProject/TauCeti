@@ -245,11 +245,13 @@ def natHochschildFace (m l : ℕ) (b : ℕ → A) : ℕ → A :=
   if l < m then natContract l b else natContract 0 (natRotate m b)
 
 /-- The `l`-th face for `l < m` contracts the entries `l` and `l + 1`. -/
+@[simp]
 theorem natHochschildFace_of_lt {m l : ℕ} (h : l < m) (b : ℕ → A) :
     natHochschildFace m l b = natContract l b :=
   ite_eq_left h
 
 /-- The last face contracts the first two entries of the rotated sequence. -/
+@[simp]
 theorem natHochschildFace_self (m : ℕ) (b : ℕ → A) :
     natHochschildFace m m b = natContract 0 (natRotate m b) :=
   ite_eq_right (lt_irrefl m)
