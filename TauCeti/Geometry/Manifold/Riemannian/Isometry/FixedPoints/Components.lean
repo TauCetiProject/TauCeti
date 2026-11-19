@@ -205,7 +205,7 @@ theorem isLocallyConstant_domRestrict_fixedPoints_of_compactSpace {F : Type*}
     [NormedAddCommGroup F] [NormedSpace ℝ F] {f : M → F}
     (hf : ∀ x ∈ fixedPoints G M, HasMFDerivAt I 𝓘(ℝ, F) f x 0) :
     IsLocallyConstant ((fixedPoints G M).domRestrict f) :=
-  have : ContMDiffConstSMul I ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := IG)⟩
+  have : ContMDiffConstSMul I ∞ G M := ContMDiffSMul.contMDiffConstSMul IG
   of_forall_riemannianBundle_inner_mfderiv IG G fun hG ↦
     isLocallyConstant_domRestrict_fixedPoints hG hf
 
@@ -215,7 +215,7 @@ include I in
 components.** -/
 theorem finite_connectedComponents_fixedPoints_of_compactSpace [CompactSpace M] :
     Finite (ConnectedComponents (fixedPoints G M)) :=
-  have : ContMDiffConstSMul I ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := IG)⟩
+  have : ContMDiffConstSMul I ∞ G M := ContMDiffSMul.contMDiffConstSMul IG
   of_forall_riemannianBundle_inner_mfderiv (I := I) IG G fun hG ↦
     finite_connectedComponents_fixedPoints hG
 

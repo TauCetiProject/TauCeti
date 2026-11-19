@@ -94,7 +94,7 @@ theorem isLocallyConstant_domRestrict_fixedPoints
       inner ℝ (mfderiv I' I' (g • ·) x u) (mfderiv I' I' (g • ·) x w) = inner ℝ u w)
     (ξ : GroupLieAlgebra I G) :
     IsLocallyConstant ((MulAction.fixedPoints G M).domRestrict fun y ↦ μ y ξ) :=
-  have : ContMDiffConstSMul I' ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := I)⟩
+  have : ContMDiffConstSMul I' ∞ G M := ContMDiffSMul.contMDiffConstSMul I
   TauCeti.isLocallyConstant_domRestrict_fixedPoints hG fun _ hx ↦
     h.hasMFDerivAt_zero_of_mem_fixedPoints ξ hx
 
