@@ -200,9 +200,7 @@ theorem IsGradedCoderivationOver.square_eq_zero_iff_counit_of_negOnePow_eq_neg_o
     (hD : LinearMap.IsHomogeneous D G.piece G.piece r)
     (hqr : (((q * r).negOnePow : ℤ) : R) = -1)
     (hb : b ∘ₗ b = 0) :
-    D ∘ₗ D = 0 ↔
-      (TensorProduct.rid R N).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := C)).lTensor N ∘ₗ (D ∘ₗ D) = 0 := by
+    D ∘ₗ D = 0 ↔ cofreeCounit R C N ∘ₗ (D ∘ₗ D) = 0 := by
   let f : Hom R C (N ⊗[R] C) (N ⊗[R] C) :=
     h.squareHomOfNegOnePowEqNegOne hD hqr hb
   constructor
@@ -211,8 +209,7 @@ theorem IsGradedCoderivationOver.square_eq_zero_iff_counit_of_negOnePow_eq_neg_o
     simp
   · intro hc
     have hz : f = 0 := (Hom.eq_zero_iff_counit f).2 (by
-      simpa only [f, squareHomOfNegOnePowEqNegOne_toLinearMap, cofreeCounit_def,
-        LinearMap.comp_assoc] using hc)
+      simpa only [f, squareHomOfNegOnePowEqNegOne_toLinearMap] using hc)
     have hlin := congrArg (fun g : Hom R C (N ⊗[R] C) (N ⊗[R] C) => g.toLinearMap) hz
     simpa only [f, squareHomOfNegOnePowEqNegOne_toLinearMap, Hom.zero_toLinearMap] using hlin
 
@@ -224,9 +221,7 @@ theorem IsGradedCoderivationOver.square_eq_zero_iff_counit
     (h : IsGradedCoderivationOver G 1 b D)
     (hD : LinearMap.IsHomogeneous D G.piece G.piece 1)
     (hb : b ∘ₗ b = 0) :
-    D ∘ₗ D = 0 ↔
-      (TensorProduct.rid R N).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := C)).lTensor N ∘ₗ (D ∘ₗ D) = 0 :=
+    D ∘ₗ D = 0 ↔ cofreeCounit R C N ∘ₗ (D ∘ₗ D) = 0 :=
   h.square_eq_zero_iff_counit_of_negOnePow_eq_neg_one G b D hD (by norm_num) hb
 
 /-- Two coderivations over the same coalgebra operator on a cofree comodule are equal when their
@@ -236,11 +231,7 @@ theorem IsGradedCoderivationOver.eq_of_counit_comp_eq
     (b : C →ₗ[R] C) (D E : (N ⊗[R] C) →ₗ[R] N ⊗[R] C)
     (hD : IsGradedCoderivationOver G q b D)
     (hE : IsGradedCoderivationOver G q b E)
-    (hcounit :
-      (TensorProduct.rid R N).toLinearMap ∘ₗ
-          (Coalgebra.counit (R := R) (A := C)).lTensor N ∘ₗ D =
-        (TensorProduct.rid R N).toLinearMap ∘ₗ
-          (Coalgebra.counit (R := R) (A := C)).lTensor N ∘ₗ E) :
+    (hcounit : cofreeCounit R C N ∘ₗ D = cofreeCounit R C N ∘ₗ E) :
     D = E := by
   let _ : AddCommGroup N := Module.addCommMonoidToAddCommGroup R
   let _ : AddCommGroup C := Module.addCommMonoidToAddCommGroup R
@@ -253,9 +244,7 @@ theorem IsGradedCoderivationOver.eq_of_counit_comp_eq
     { toLinearMap := D - E
       map_coact := by
         simpa only [LinearMap.rTensor] using hcomm.symm }
-  have hf_counit :
-      (TensorProduct.rid R N).toLinearMap ∘ₗ
-          (Coalgebra.counit (R := R) (A := C)).lTensor N ∘ₗ f.toLinearMap = 0 := by
+  have hf_counit : cofreeCounit R C N ∘ₗ f.toLinearMap = 0 := by
     dsimp only [f]
     apply LinearMap.ext
     intro x

@@ -169,8 +169,7 @@ private theorem inducedEval_toLinearMap :
 @[simp]
 theorem inducedEval_apply (t : induced f M) :
     letI := Corestrict (M := induced f M) f
-    inducedEval f t =
-      TensorProduct.rid R M ((Coalgebra.counit (R := R) (A := C)).lTensor M t) :=
+    inducedEval f t = cofreeCounit R C M t :=
   (rfl)
 
 /-- The comodule morphism `N → M ⊗[R] C` attached to a morphism of `D`-comodules lands in the
@@ -294,7 +293,7 @@ theorem inducedEquiv_inducedMap_comp (h : Hom R D M M') (φ : Hom R C N (induced
   have key := LinearMap.congr_fun (cofreeCounit_comp_rTensor (C := C) h.toLinearMap)
     (φ n : M ⊗[R] C)
   simp only [LinearMap.comp_apply] at key
-  simpa [cofreeCounit_def] using key
+  simpa using key
 
 end Comodule
 
