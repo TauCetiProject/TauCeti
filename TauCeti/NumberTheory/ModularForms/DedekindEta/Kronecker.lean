@@ -98,12 +98,6 @@ private theorem e24_twelve_mul (k : ℕ) : e24 (12 * k) = (-1) ^ k := by
   push_cast
   ring
 
-private theorem e24_three : e24 3 = cexp (π * I / 4) := by
-  rw [e24]
-  congr 1
-  push_cast
-  ring
-
 private theorem e24_neg_three : e24 (-3) = cexp (-(π * I / 4)) := by
   rw [e24]
   congr 1
@@ -334,6 +328,17 @@ private theorem kroneckerEven_neg {a b c d : ℤ} (hc : c < 0) (hdo : Odd d) :
 
 /-! ### The steps on the multiplier side -/
 
+private theorem neg_mul_S_apply_apply_zero (γ : SL(2, ℤ)) (i : Fin 2) :
+    (-(γ * S)) i 0 = -γ i 1 := by
+  rw [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, mul_S_apply_apply_zero]
+
+private theorem neg_mul_S_apply_apply_one (γ : SL(2, ℤ)) (i : Fin 2) :
+    (-(γ * S)) i 1 = γ i 0 := by
+  rw [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, mul_S_apply_apply_one, neg_neg]
+
+private theorem lt_or_gt_of_odd {d : ℤ} (hd : Odd d) : d < 0 ∨ 0 < d :=
+  lt_or_gt_of_ne (by rintro rfl; simp at hd)
+
 private theorem etaMultiplier_eq_e24_three_mul (γ : SL(2, ℤ)) (hd : 0 < γ 1 1) :
     etaMultiplier γ = e24 3 * etaMultiplier (γ * S) := by
   rw [etaMultiplier_mul_S γ hd, ← e24_neg_three, ← mul_assoc, ← e24_add]
@@ -376,15 +381,11 @@ private theorem etaMultiplier_eq_kroneckerOdd_of_inversion (γ : SL(2, ℤ)) (hc
       kroneckerSym (g 1 1) (g 1 0) * e24 (oddExp (g 0 0) (g 0 1) (g 1 0) (g 1 1))) :
     etaMultiplier γ =
       kroneckerSym (γ 1 1) (γ 1 0) * e24 (oddExp (γ 0 0) (γ 0 1) (γ 1 0) (γ 1 1)) := by
-  rcases lt_or_gt_of_ne (show γ 1 1 ≠ 0 by rintro h; simp [h] at hdo) with hd | hd
+  rcases lt_or_gt_of_odd hdo with hd | hd
   · -- `d < 0`: pass to `-(γ S) = (-b a; -d c)`.
-    have key := h (-(γ * S))
-      (by simp only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply,
-        mul_S_apply_apply_zero, abs_of_neg hd])
-      (by simpa only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply,
-        mul_S_apply_apply_zero, odd_neg] using hdo)
-    simp only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, mul_S_apply_apply_zero,
-      mul_S_apply_apply_one, neg_neg] at key
+    have key := h (-(γ * S)) (by rw [neg_mul_S_apply_apply_zero, abs_of_neg hd])
+      (by rwa [neg_mul_S_apply_apply_zero, odd_neg])
+    simp only [neg_mul_S_apply_apply_zero, neg_mul_S_apply_apply_one] at key
     rw [etaMultiplier_eq_e24_neg_three_mul γ hc hd, key]
     exact kroneckerOdd_neg_inversion γ.fin_two_mul_sub_mul_eq_one hc hd hodd hdo
   · -- `d > 0`: pass to `γ S = (b -a; d -c)`.
@@ -435,15 +436,11 @@ private theorem etaMultiplier_eq_kroneckerEven_of_pos (γ : SL(2, ℤ)) (hc : 0 
       kroneckerSym (γ 1 0) (γ 1 1) * e24 (evenExp (γ 0 0) (γ 0 1) (γ 1 0) (γ 1 1)) := by
   have hdet := γ.fin_two_mul_sub_mul_eq_one
   have hdo := γ.odd_apply_one_of_even_apply_zero heven
-  rcases lt_or_gt_of_ne (show γ 1 1 ≠ 0 by rintro h; simp [h] at hdo) with hneg | hpos
+  rcases lt_or_gt_of_odd hdo with hneg | hpos
   · rw [etaMultiplier_eq_e24_neg_three_mul γ hc hneg,
-      etaMultiplier_eq_kroneckerOdd (-(γ * S))
-        (by simp only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply,
-          mul_S_apply_apply_zero]; omega)
-        (by simpa only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply,
-          mul_S_apply_apply_zero, odd_neg] using hdo)]
-    simp only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, mul_S_apply_apply_zero,
-      mul_S_apply_apply_one, neg_neg]
+      etaMultiplier_eq_kroneckerOdd (-(γ * S)) (by rw [neg_mul_S_apply_apply_zero]; omega)
+        (by rwa [neg_mul_S_apply_apply_zero, odd_neg])]
+    simp only [neg_mul_S_apply_apply_zero, neg_mul_S_apply_apply_one]
     exact kroneckerEven_neg_inversion hdet hc hneg heven hdo
   · rw [etaMultiplier_eq_e24_three_mul γ hpos,
       etaMultiplier_eq_kroneckerOdd (γ * S) (by rwa [mul_S_apply_apply_zero])
