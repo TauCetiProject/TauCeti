@@ -83,76 +83,6 @@ variable {X M : Type} [NormedAddCommGroup X] [InnerProductSpace ℝ X] [FiniteDi
   (oM : Manifold.Orientation 𝓘(ℝ, X) M (Fin (n + 1))) {s : ∀ x, E x}
   (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x))
 
-omit [T2Space M] in
-include hF in
-/-- **An isolating neighbourhood of a zero in local coordinates.** Let `z` be a zero of `s`, `e` a
-trivialization of `E` at `z`, and `φ` a chart of `M` at `z` with values in `F`. If the section, read
-in these coordinates as `y ↦ (e (s (φ⁻¹ y))).2`, has at `φ z` a derivative `A` bounded below, then
-`z` has an open neighbourhood inside the base set of `e` and the source of `φ`, containing no other
-zero of `s`, on which `e` reads the orientation of every fibre as at `z`. These are the
-neighbourhood hypotheses of
-`TauCeti.VectorBundleOrientation.sectionIndex_eq_sign_det_of_hasFDerivAt`. -/
-private theorem exists_isolating_nhds_of_hasFDerivAt (e : Trivialization F (π F E))
-    [MemTrivializationAtlas e] [e.IsLinear ℝ] (φ : OpenPartialHomeomorph M F) {z : M}
-    (hze : z ∈ e.baseSet) (hzφ : z ∈ φ.source) (hz : s z = 0) {A : F →L[ℝ] F}
-    (hA : HasFDerivAt (fun y ↦ (e (TotalSpace.mk' F (φ.symm y) (s (φ.symm y)))).2) A (φ z))
-    (hAC : ∃ C, AntilipschitzWith C A) :
-    ∃ U, IsOpen U ∧ z ∈ U ∧ (∀ x ∈ U, s x = 0 → x = z) ∧ ∃ hUe : U ⊆ e.baseSet,
-      U ⊆ φ.source ∧ ∀ x (hx : x ∈ U), e.mapOrientation (Fin (n + 1)) (hUe hx) (o x) =
-        e.mapOrientation (Fin (n + 1)) hze (o z) := by
-  have hf0 : (e (TotalSpace.mk' F (φ.symm (φ z)) (s (φ.symm (φ z))))).2 = 0 := by
-    rw [φ.left_inv hzφ, hz]
-    exact congrArg Prod.snd (e.zeroSection ℝ hze)
-  obtain ⟨V, hV, hVo, hzV⟩ := eventually_nhds_iff.1 (eventually_nhdsWithin_iff.1
-    (hA.eventually_ne (c := (e (TotalSpace.mk' F (φ.symm (φ z)) (s (φ.symm (φ z))))).2) hAC))
-  obtain ⟨W, hW, hWo, hzW⟩ := eventually_nhds_iff.1
-    (o.eventually_mapOrientation_eq (by simp [hF]) e hze)
-  refine ⟨(φ.source ∩ φ ⁻¹' V) ∩ (e.baseSet ∩ W),
-    (φ.isOpen_inter_preimage hVo).inter (e.open_baseSet.inter hWo), ⟨⟨hzφ, hzV⟩, hze, hzW⟩,
-    ?_, fun x hx ↦ hx.2.1, fun x hx ↦ hx.1.1, fun x hx ↦ hW x hx.2.2 hx.2.1⟩
-  intro x hx hx0
-  by_contra hxz
-  apply hV (φ x) hx.1.2 fun h ↦ hxz (φ.injOn hx.1.1 hzφ h)
-  rw [hf0, φ.left_inv hx.1.1, hx0]
-  exact congrArg Prod.snd (e.zeroSection ℝ hx.2.1)
-
-omit [FiniteDimensional ℝ X] [T2Space M] [IsManifold 𝓘(ℝ, X) 1 M] in
-/-- **A section has derivative the identity in the chart given by its linearization.** Let `z` be
-a zero of `s` whose fibre coordinate in a trivialization `e` is differentiable at `z`, and let
-`Λ : X ≃ F` agree with the linearization of `s` at `z` read in `e`. Then in the chart
-`Λ ∘ chartAt X z` the fibre coordinate of `s` has derivative the identity at the image of `z`. -/
-private theorem hasFDerivAt_transHomeomorph_chartAt_symm_eq_id (e : Trivialization F (π F E))
-    [MemTrivializationAtlas e] {z : M} (hze : z ∈ e.baseSet) (hz : s z = 0)
-    (hg : MDifferentiableAt 𝓘(ℝ, X) 𝓘(ℝ, F) (fun y ↦ (e ⟨y, s y⟩).2) z) (Λ : X ≃L[ℝ] F)
-    (hΛ : ∀ v, Λ v = e.continuousLinearMapAt ℝ z (sectionLinearization (F := F) 𝓘(ℝ, X) id s z v)) :
-    HasFDerivAt (fun y ↦ (e (TotalSpace.mk' F
-        (((chartAt X z).transHomeomorph Λ.toHomeomorph).symm y)
-        (s (((chartAt X z).transHomeomorph Λ.toHomeomorph).symm y)))).2)
-      (ContinuousLinearMap.id ℝ F) ((chartAt X z).transHomeomorph Λ.toHomeomorph z) := by
-  set φ := (chartAt X z).transHomeomorph Λ.toHomeomorph
-  -- The derivative in `chartAt X z` is the linearization read in `e`, so precomposing with
-  -- `Λ⁻¹` gives the identity.
-  have hgc := hasFDerivAt_comp_chartAt_symm_sectionLinearization continuousAt_id hze hg hz
-  have hpt : chartAt X z z = Λ.symm (φ z) := (Λ.symm_apply_apply _).symm
-  rw [hpt] at hgc
-  have h₂ := hgc.comp (φ z) Λ.symm.hasFDerivAt
-  convert h₂ using 1
-  · ext v
-    rw [OpenPartialHomeomorph.transHomeomorph_symm_apply,
-      ContinuousLinearEquiv.coe_symm_toHomeomorph, Function.comp_apply, Function.comp_apply,
-      Function.comp_apply]
-    -- The two sides differ only by the base map `id` of the linearization.
-    rfl
-  ext v
-  -- The composite passes through `TangentSpace 𝓘(ℝ, X) z`, which is `X` only after unfolding,
-  -- so its topology instance differs syntactically from that of `X` and
-  -- `ContinuousLinearMap.comp_apply` fails to rewrite. `change` evaluates the two compositions
-  -- at `v` definitionally, and drops the coercion of `Λ.symm` to a continuous linear map.
-  change v = e.continuousLinearMapAt ℝ z
-    (sectionLinearization (F := F) 𝓘(ℝ, X) id s z (Λ.symm v))
-  rw [← hΛ]
-  exact (Λ.apply_symm_apply v).symm
-
 /-- **The local index at an orientation-preserving transverse zero is `1`.** Let `z` be a zero of
 a section `s` of an oriented bundle `E` of rank `n + 1` over a manifold oriented by `oM`, at which
 `s` is differentiable with invertible linearization `D : T_z M ≃ E_z`. If `D` carries the
@@ -176,7 +106,8 @@ theorem sectionIndex_toHomologicalOrientation_eq_one {z : M} (hz : s z = 0)
   let Λ : X ≃L[ℝ] F := D.trans (e.continuousLinearEquivAt ℝ z hze)
   let φ : OpenPartialHomeomorph M F := (chartAt X z).transHomeomorph Λ.toHomeomorph
   have hzφ : z ∈ φ.source := mem_chart_source X z
-  have hA := hasFDerivAt_transHomeomorph_chartAt_symm_eq_id e hze hz hg Λ fun v ↦ by
+  have hA := hasFDerivAt_comp_chartAt_transHomeomorph_symm_sectionLinearization_id
+    e hze hz hg Λ fun v ↦ by
     -- `Λ v` is `e_z (D v)` by definition of the composite.
     rw [← hD, ← e.coe_continuousLinearEquivAt_eq hze]
     rfl
