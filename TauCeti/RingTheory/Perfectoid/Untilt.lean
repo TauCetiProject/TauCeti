@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.Jacobson.Associated
 public import TauCeti.RingTheory.Perfection
 
 /-!
-# Approximation, divisibility, and quotients along the untilt map
+# Approximation and divisibility along the untilt map
 
 Let `p` be a prime and `A` a `(p)`-adically complete commutative ring in which `p` is not a unit,
 so Mathlib's tilt `PreTilt A p` and multiplicative untilt map `PreTilt.untilt : PreTilt A p →* A`

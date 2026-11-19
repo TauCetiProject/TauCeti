@@ -46,6 +46,8 @@ unique map to `A` has principal kernel anyway.
   Mathlib's Fontaine map is principal.
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.surjective_fontaineTheta`: Fontaine's map
   `θ : W(A♭) → A` is surjective.
+* `TauCeti.Perfectoid.IsIntegralPerfectoid.coeff_zero_surjective`: the zeroth coordinate
+  `A♭ → A ⧸ p` of the tilt is surjective.
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.exists_natCast_dvd_sub_pow`: every element is a
   `p`-th power modulo `p`.
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.frobeniusModPow_surjective`: for every `π` with
@@ -128,6 +130,12 @@ theorem exists_natCast_dvd_sub_pow (x : A) : ∃ y, (p : A) ∣ x - y ^ p := by
 theorem surjective_fontaineTheta [Fact ¬IsUnit (p : A)] :
     Function.Surjective (WittVector.fontaineTheta A p) :=
   _root_.surjective_fontaineTheta ((surjective_frobenius_modP_iff A).mpr exists_natCast_dvd_sub_pow)
+
+/-- The zeroth coordinate `A♭ → A ⧸ p` of the tilt of an integral perfectoid ring is
+surjective. -/
+theorem coeff_zero_surjective [Fact ¬IsUnit (p : A)] :
+    Function.Surjective (PreTilt.coeff (O := A) (p := p) 0) :=
+  Perfection.coeff_surjective ((surjective_frobenius_modP_iff A).mpr exists_natCast_dvd_sub_pow) 0
 
 /-- In an integral perfectoid ring, Frobenius `A ⧸ π → A ⧸ π ^ p` is surjective for every `π`
 with `π ^ p ∣ p`, with no completeness assumption on `π`. This is the surjectivity half of

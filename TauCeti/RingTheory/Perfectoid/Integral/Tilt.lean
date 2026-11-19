@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Perfectoid.Integral
+public import TauCeti.RingTheory.Perfectoid.Integral.Basic
 
 /-!
 # An integral perfectoid ring and its tilt modulo divisors of `p`
@@ -152,10 +152,16 @@ private theorem dvd_coeff_zero_of_untilt_dvd {g : WittVector p (PreTilt A p)}
     exact h
   have h₀ : t ∣ g₀ * z.coeff 0 := by
     simpa [mul_coeff_zero, coeff_p_zero] using hmod 0
-  have h₁ : t ∣ 1 - (u : WittVector p (PreTilt A p)).coeff 0 ^ p * z.coeff 0 ^ p -
-      g₀ ^ p * z.coeff 1 := by
-    simpa [mul_coeff_one_charP, coeff_p_zero, coeff_p_one, sub_coeff_zero, mul_coeff_zero,
-      teichmuller_coeff_pos p g₀ 1 one_pos, hp.out.ne_zero, sub_pow_char, mul_pow] using hmod 1
+  -- The first Witt coordinates of `p (1 - u z)` and of `[g₀] z`.
+  have hp₁ : ((p : WittVector p (PreTilt A p)) * (1 - ↑u * z)).coeff 1 =
+      1 - (u : WittVector p (PreTilt A p)).coeff 0 ^ p * z.coeff 0 ^ p := by
+    rw [mul_comm, mul_charP_coeff_succ, sub_coeff_zero, one_coeff_zero, mul_coeff_zero,
+      sub_pow_char, one_pow, mul_pow]
+  have hg₁ : (teichmuller p g₀ * z).coeff 1 = g₀ ^ p * z.coeff 1 := by
+    rw [mul_coeff_one_charP, teichmuller_coeff_pos p g₀ 1 one_pos, teichmuller_coeff_zero,
+      mul_zero, add_zero]
+  have h₁ := hmod 1
+  rw [hp₁, hg₁] at h₁
   have hz₀ : z.coeff 0 ^ p = z.coeff 0 ^ (p - 1) * z.coeff 0 := by
     rw [← pow_succ, Nat.sub_add_cancel hp.out.one_le]
   have hunit : IsUnit (1 - g₀ ^ p * z.coeff 1) := by
@@ -241,9 +247,7 @@ theorem frobeniusModPow_injective {π : A} (h : π ^ p ∣ (p : A)) [IsAdicCompl
   have hϖy : ϖ.untilt ^ p ∣ y ^ p := (pow_dvd_pow_of_dvd hassoc.symm.dvd p).trans hy
   refine hassoc.dvd.trans ?_
   -- Write `y = x♯ + p z`; then `ϖ♯ ^ p ∣ (x ^ p)♯`, so `ϖ ^ p ∣ x ^ p` and `ϖ ∣ x` in `A♭`.
-  obtain ⟨x, hx⟩ : ∃ x : PreTilt A p, PreTilt.coeff 0 x = Ideal.Quotient.mk (span {(p : A)}) y :=
-    Perfection.coeff_surjective
-      ((surjective_frobenius_modP_iff A).mpr exists_natCast_dvd_sub_pow) 0 _
+  obtain ⟨x, hx⟩ := coeff_zero_surjective (p := p) (Ideal.Quotient.mk (span {(p : A)}) y)
   have hpy : (p : A) ∣ y - x.untilt := by
     rw [← mem_span_singleton, ← Ideal.Quotient.eq, PreTilt.mk_untilt_eq_coeff_zero]
     exact hx.symm
@@ -292,9 +296,7 @@ noncomputable def quotientSpanEquiv {t : PreTilt A p} (ht : t.untilt ∣ (p : A)
     rw [RingHom.mem_ker, hψ, Ideal.Quotient.eq_zero_iff_mem, mem_span_singleton,
       mem_span_singleton, IsIntegralPerfectoid.dvd_iff_untilt_dvd ht]
   have hsurj : Function.Surjective ψ :=
-    (Ideal.Quotient.factor_surjective hle).comp <| Perfection.coeff_surjective
-      ((TauCeti.surjective_frobenius_modP_iff A).mpr
-        IsIntegralPerfectoid.exists_natCast_dvd_sub_pow) 0
+    (Ideal.Quotient.factor_surjective hle).comp IsIntegralPerfectoid.coeff_zero_surjective
   exact (Ideal.quotEquivOfEq hker.symm).trans (RingHom.quotientKerEquivOfSurjective hsurj)
 
 /-- `PreTilt.quotientSpanEquiv` sends the class of `x` to the class of `x♯`. -/
