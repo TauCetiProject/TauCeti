@@ -28,26 +28,29 @@ By the Auslander–Buchsbaum formula over `S`, together with `depth_S M = depth_
 `dim R + 1 = dim S`, the depth of `M` measures its projective dimension over `S`:
 
 * if `M` has projective dimension at most one over `S`, then `M` is maximal Cohen–Macaulay over
-  `R` (`ModuleCat.ringKrullDim_quotient_le_depth_of_hasProjectiveDimensionLE`);
+  `R`
+  (`ModuleCat.ringKrullDim_quotient_le_depth_of_hasProjectiveDimensionLE_restrictScalars_quotient`);
 * conversely, a maximal Cohen–Macaulay `R`-module of finite projective dimension over `S` has
   projective dimension at most one over `S`
-  (`ModuleCat.hasProjectiveDimensionLE_of_ringKrullDim_quotient_le_depth`).
+  (`ModuleCat.hasProjectiveDimensionLE_restrictScalars_quotient_of_ringKrullDim_quotient_le_depth`).
 
 Over a regular local ring every module has finite projective dimension, so the two conditions
-agree (`ModuleCat.hasProjectiveDimensionLE_iff_ringKrullDim_quotient_le_depth`). This is the
-module-theoretic input to Eisenbud's description of the maximal Cohen–Macaulay modules over a
-hypersurface as the cokernels of matrix factorizations.
+agree
+(`ModuleCat.hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_quotient_le_depth`).
+This is the module-theoretic input to Eisenbud's description of the maximal Cohen–Macaulay
+modules over a hypersurface as the cokernels of matrix factorizations. The comparison
+`depth_S M = depth_R M` is `ModuleCat.depth_restrictScalars_of_surjective` from
+`TauCeti.RingTheory.Depth.Basic`.
 
 ## Main results
 
-* `ModuleCat.depth_restrictScalars_of_surjective`: restricting scalars along a surjective
-  homomorphism of local rings preserves the depth of a finitely generated module.
-* `ModuleCat.ringKrullDim_quotient_le_depth_of_hasProjectiveDimensionLE` and
-  `ModuleCat.hasProjectiveDimensionLE_of_ringKrullDim_quotient_le_depth`: the two implications
-  above, over a Cohen–Macaulay local ring `S`.
-* `ModuleCat.hasProjectiveDimensionLE_iff_ringKrullDim_quotient_le_depth`: over a regular local
-  ring `S`, a finitely generated `S/(w)`-module is maximal Cohen–Macaulay exactly when it has
-  projective dimension at most one over `S`.
+* `ModuleCat.ringKrullDim_quotient_le_depth_of_hasProjectiveDimensionLE_restrictScalars_quotient`
+  and
+  `ModuleCat.hasProjectiveDimensionLE_restrictScalars_quotient_of_ringKrullDim_quotient_le_depth`:
+  the two implications above, over a Cohen–Macaulay local ring `S`.
+* `ModuleCat.hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_quotient_le_depth`:
+  over a regular local ring `S`, a finitely generated `S/(w)`-module is maximal Cohen–Macaulay
+  exactly when it has projective dimension at most one over `S`.
 
 ## References
 
@@ -60,21 +63,9 @@ public section
 
 open CategoryTheory IsLocalRing
 
-universe u u' v
+universe u
 
 namespace ModuleCat
-
-/-- Restricting scalars along a surjective homomorphism of local rings `S → T`, with `S`
-Noetherian, preserves the depth of a finitely generated `T`-module. -/
-theorem depth_restrictScalars_of_surjective {S : Type u} {T : Type u'} [CommRing S] [CommRing T]
-    [IsLocalRing S] [IsNoetherianRing S] [IsLocalRing T] [Small.{v} S] [Small.{v} T]
-    (f : S →+* T) (hf : Function.Surjective f) (M : ModuleCat.{v} T) [Module.Finite T M] :
-    IsLocalRing.depth ((restrictScalars f).obj M) = IsLocalRing.depth M := by
-  -- The restricted module is `M` with the `S`-action through `f`.
-  let := f.toAlgebra
-  let : Module S M := Module.compHom M f
-  have : IsScalarTower S T M := ⟨fun s t m ↦ mul_smul (f s) t m⟩
-  exact depth_eq_depth_of_surjective (R := S) (T := T) (M := M) hf
 
 variable {S : Type u} [CommRing S] {w : S} [IsLocalRing (S ⧸ Ideal.span {w})]
 
@@ -110,7 +101,7 @@ private theorem projectiveDimension_add_depth_eq (hS : Module.IsCohenMacaulay S 
 `S/(w)`.** Let `S` be a Cohen–Macaulay Noetherian local ring and `w` a non-zero-divisor with
 `S/(w)` local. A finitely generated `S/(w)`-module of projective dimension at most one over `S`
 has depth at least `dim S/(w)`. -/
-theorem ringKrullDim_quotient_le_depth_of_hasProjectiveDimensionLE
+theorem ringKrullDim_quotient_le_depth_of_hasProjectiveDimensionLE_restrictScalars_quotient
     (hS : Module.IsCohenMacaulay S S) (hw : w ∈ nonZeroDivisors S)
     (M : ModuleCat.{u} (S ⧸ Ideal.span {w})) [Module.Finite (S ⧸ Ideal.span {w}) M]
     (hM : HasProjectiveDimensionLE ((restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M)
@@ -131,7 +122,7 @@ dimension at most one.** Let `S` be a Cohen–Macaulay Noetherian local ring and
 non-zero-divisor with `S/(w)` local. A finitely generated `S/(w)`-module of depth at least
 `dim S/(w)` whose projective dimension over `S` is finite has projective dimension at most one
 over `S`. -/
-theorem hasProjectiveDimensionLE_of_ringKrullDim_quotient_le_depth
+theorem hasProjectiveDimensionLE_restrictScalars_quotient_of_ringKrullDim_quotient_le_depth
     (hS : Module.IsCohenMacaulay S S) (hw : w ∈ nonZeroDivisors S)
     (M : ModuleCat.{u} (S ⧸ Ideal.span {w})) [Module.Finite (S ⧸ Ideal.span {w}) M]
     (hpd : projectiveDimension ((restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) ≠
@@ -164,14 +155,14 @@ end CohenMacaulay
 regular local ring and `w` a non-zero-divisor with `S/(w)` local. A finitely generated
 `S/(w)`-module has depth at least `dim S/(w)` exactly when its projective dimension over `S` is
 at most one. -/
-theorem hasProjectiveDimensionLE_iff_ringKrullDim_quotient_le_depth [IsRegularLocalRing S]
-    (hw : w ∈ nonZeroDivisors S) (M : ModuleCat.{u} (S ⧸ Ideal.span {w}))
+theorem hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_quotient_le_depth
+    [IsRegularLocalRing S] (hw : w ∈ nonZeroDivisors S) (M : ModuleCat.{u} (S ⧸ Ideal.span {w}))
     [Module.Finite (S ⧸ Ideal.span {w}) M] :
     HasProjectiveDimensionLE ((restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) 1 ↔
       ringKrullDim (S ⧸ Ideal.span {w}) ≤ IsLocalRing.depth M := by
-  refine ⟨ringKrullDim_quotient_le_depth_of_hasProjectiveDimensionLE
+  refine ⟨ringKrullDim_quotient_le_depth_of_hasProjectiveDimensionLE_restrictScalars_quotient
     TauCeti.IsRegularLocalRing.isCohenMacaulay hw M,
-    hasProjectiveDimensionLE_of_ringKrullDim_quotient_le_depth
+    hasProjectiveDimensionLE_restrictScalars_quotient_of_ringKrullDim_quotient_le_depth
       TauCeti.IsRegularLocalRing.isCohenMacaulay hw M ?_⟩
   exact (projectiveDimension_ne_top_iff _).2
     ⟨_, TauCeti.IsRegularLocalRing.hasProjectiveDimensionLE_spanFinrank_maximalIdeal _⟩

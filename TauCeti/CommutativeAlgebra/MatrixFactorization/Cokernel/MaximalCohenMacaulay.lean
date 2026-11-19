@@ -20,7 +20,8 @@ When `S` is Cohen–Macaulay, the cokernel of the reduction modulo `w` of a fini
 factorization of `w` is maximal Cohen–Macaulay
 (`TauCeti.MatrixFactorization.ringKrullDim_quotient_le_depth_quotientCokernel`): such a cokernel
 has projective dimension at most one over `S`, and the Auslander–Buchsbaum formula turns this
-into the depth bound (`ModuleCat.ringKrullDim_quotient_le_depth_of_hasProjectiveDimensionLE`).
+into the depth bound
+(`ModuleCat.ringKrullDim_quotient_le_depth_of_hasProjectiveDimensionLE_restrictScalars_quotient`).
 
 When `S` is regular local, this is **Eisenbud's description** of the maximal Cohen–Macaulay
 modules over the hypersurface: a finitely generated `R`-module is maximal Cohen–Macaulay exactly
@@ -30,8 +31,8 @@ finitely generated projective `S`-modules are free, these are the finite free fa
 
 In the same regular local setting the finitely generated Gorenstein-projective `R`-modules are
 exactly the maximal Cohen–Macaulay ones
-(`TauCeti.isGorensteinProjective_quotient_iff_ringKrullDim_le_depth`). A Gorenstein-projective
-`R`-module has projective dimension at most one over `S`
+(`TauCeti.isGorensteinProjective_quotient_iff_finite_and_ringKrullDim_le_depth`). A
+Gorenstein-projective `R`-module has projective dimension at most one over `S`
 (`hasProjectiveDimensionLE_restrictScalars_quotient_of_isRegularLocalRing` in the namespace
 `TauCeti.IsGorensteinProjective`), and an `R`-module of projective dimension at most one over `S`
 is the cokernel of a matrix factorization, hence Gorenstein-projective
@@ -49,9 +50,9 @@ Cohen–Macaulay `R`-modules.
 * `TauCeti.MatrixFactorization.exists_quotientCokernel_iso_iff_ringKrullDim_le_depth`: over a
   regular local ring, the cokernels of reduced matrix factorizations are exactly the finitely
   generated maximal Cohen–Macaulay modules.
-* `TauCeti.isGorensteinProjective_quotient_iff_ringKrullDim_le_depth`: over a hypersurface in a
-  regular local ring, a module is Gorenstein-projective exactly when it is finitely generated and
-  maximal Cohen–Macaulay.
+* `TauCeti.isGorensteinProjective_quotient_iff_finite_and_ringKrullDim_le_depth`: over a
+  hypersurface in a regular local ring, a module is Gorenstein-projective exactly when it is
+  finitely generated and maximal Cohen–Macaulay.
 
 ## References
 
@@ -82,7 +83,8 @@ theorem ringKrullDim_quotient_le_depth_quotientCokernel [IsLocalRing S] [IsNoeth
     ringKrullDim (S ⧸ Ideal.span {w}) ≤
       depth (cokernelFunctor.obj
         ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X)).obj :=
-  ModuleCat.ringKrullDim_quotient_le_depth_of_hasProjectiveDimensionLE hS hw _
+  ModuleCat.ringKrullDim_quotient_le_depth_of_hasProjectiveDimensionLE_restrictScalars_quotient
+    hS hw _
     ((exists_quotientCokernel_iso_iff_hasProjectiveDimensionLE_of_isNoetherianRing hw _).1
       ⟨X, ⟨Iso.refl _⟩⟩)
 
@@ -98,7 +100,8 @@ theorem exists_quotientCokernel_iso_iff_ringKrullDim_le_depth [IsRegularLocalRin
         X)).obj ≅ M)) ↔
       ringKrullDim (S ⧸ Ideal.span {w}) ≤ depth M := by
   rw [exists_quotientCokernel_iso_iff_hasProjectiveDimensionLE_of_isNoetherianRing hw,
-    ModuleCat.hasProjectiveDimensionLE_iff_ringKrullDim_quotient_le_depth hw]
+    ModuleCat.hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_quotient_le_depth
+      hw]
 
 end MatrixFactorization
 
@@ -106,15 +109,17 @@ end MatrixFactorization
 Let `S` be a regular local ring and `w` a non-zero-divisor with `S/(w)` local. An `S/(w)`-module
 is Gorenstein-projective exactly when it is finitely generated and its depth is at least
 `dim S/(w)`. -/
-theorem isGorensteinProjective_quotient_iff_ringKrullDim_le_depth [IsRegularLocalRing S]
-    (hw : w ∈ nonZeroDivisors S) (M : ModuleCat.{u} (S ⧸ Ideal.span {w})) :
+theorem isGorensteinProjective_quotient_iff_finite_and_ringKrullDim_le_depth
+    [IsRegularLocalRing S] (hw : w ∈ nonZeroDivisors S) (M : ModuleCat.{u} (S ⧸ Ideal.span {w})) :
     IsGorensteinProjective (S ⧸ Ideal.span {w}) M ↔
       Module.Finite (S ⧸ Ideal.span {w}) M ∧
         ringKrullDim (S ⧸ Ideal.span {w}) ≤ depth M := by
   refine ⟨fun hM ↦ ?_, fun ⟨_, hM⟩ ↦ ?_⟩
   · have := hM.finite
-    exact ⟨this, (ModuleCat.hasProjectiveDimensionLE_iff_ringKrullDim_quotient_le_depth hw M).1
-      (hM.hasProjectiveDimensionLE_restrictScalars_quotient_of_isRegularLocalRing hw)⟩
+    refine ⟨this, ?_⟩
+    open ModuleCat in
+    exact (hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_quotient_le_depth
+      hw M).1 (hM.hasProjectiveDimensionLE_restrictScalars_quotient_of_isRegularLocalRing hw)
   · obtain ⟨X, ⟨e⟩⟩ :=
       (MatrixFactorization.exists_quotientCokernel_iso_iff_ringKrullDim_le_depth hw M).2 hM
     exact (IsGorensteinProjective _).prop_of_iso e
