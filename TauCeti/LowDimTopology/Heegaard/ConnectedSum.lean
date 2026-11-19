@@ -260,23 +260,9 @@ theorem mem_periodicDomains_sumCircleTimesSphere_iff (hr₀ : r₀ ∈ Set.range
     P ∈ (H.sumCircleTimesSphere r₀).periodicDomains ↔
       P ∘ Sum.inl ∈ H.periodicDomains ∧ P (Sum.inr 0) + P (Sum.inr 1) = 0 := by
   obtain ⟨z₀, rfl⟩ := hr₀
-  rw [mem_periodicDomains_mapRegion_iff, mem_periodicDomains_iff]
-  simp only [funext_iff, Sum.forall, Fin.forall_fin_two, Pi.zero_apply, alphaArcBoundary_apply,
-    betaArcBoundary_apply, alphaBoundary_apply, betaBoundary_apply, addBasepoint_alphaNext,
-    addBasepoint_betaNext, addBasepoint_alphaLeft, addBasepoint_alphaRight,
-    addBasepoint_betaLeft, addBasepoint_betaRight, Equiv.Perm.sumCongr_symm,
-    Equiv.Perm.sumCongr_apply, Sum.map_inl, Sum.map_inr, Sum.elim_inl, Sum.elim_inr,
-    comp_apply, Equiv.symm_swap, Equiv.swap_apply_left, Equiv.swap_apply_right,
-    Matrix.cons_val_zero, Matrix.cons_val_one, sumCircleTimesSphereRegion_inl,
-    sumCircleTimesSphereRegion_inr_zero, sumCircleTimesSphereRegion_inr_one,
-    sumCircleTimesSphereRegion_inr_two]
-  constructor
-  · rintro ⟨hz, ⟨hα, hα₀, -⟩, hβ, -, -⟩
-    have h₀ := hz z₀
-    exact ⟨⟨hz, hα, hβ⟩, by linarith⟩
-  · rintro ⟨⟨hz, hα, hβ⟩, hs⟩
-    have h₀ := hz z₀
-    exact ⟨hz, ⟨hα, by linarith, by linarith⟩, hβ, by linarith, by linarith⟩
+  rw [mem_periodicDomains_iff, mem_periodicDomains_iff]
+  simp [funext_iff, Sum.forall, Fin.forall_fin_two]
+  grind
 
 /-- The difference `B₁ - B₂` of the two bigons is a periodic domain of the connected sum, with
 boundary `α - β`: the class of the sphere `S²` in `S¹ × S²`. -/
@@ -396,8 +382,8 @@ theorem mem_hatDomains_sumCircleTimesSphere_iff (hr₀ : r₀ ∈ Set.range H.ba
 /-- When `r₀` contains a basepoint, the domains counted by the hat differential of the diagram
 with an added basepoint in `r₀` are the pullbacks of those counted by the hat differential of the
 connected sum: they vanish on `r₀` and on the lens alike. -/
-theorem hatDomains_addBasepoint_eq_image (hr₀ : r₀ ∈ Set.range H.basepoint)
-    (x y : (H.addBasepoint r₀).Generator) :
+theorem hatDomains_addBasepoint_eq_image_hatDomains_sumCircleTimesSphere
+    (hr₀ : r₀ ∈ Set.range H.basepoint) (x y : (H.addBasepoint r₀).Generator) :
     (H.addBasepoint r₀).hatDomains (addBasepointEuler χ r₀) x y =
       (· ∘ sumCircleTimesSphereRegion r₀) ''
         (H.sumCircleTimesSphere r₀).hatDomains (sumCircleTimesSphereEuler χ r₀) x y := by
@@ -427,6 +413,16 @@ theorem hatDomains_addBasepoint_eq_image (hr₀ : r₀ ∈ Set.range H.basepoint
   · rintro ⟨D, hD, rfl⟩
     exact (H.mem_hatDomains_sumCircleTimesSphere_iff r₀ hr₀).mp hD
 
+/-- When `r₀` contains a basepoint, the connected sum with `S¹ × S²` in `r₀` and the diagram with
+an added basepoint in `r₀` have the same hat coefficients between their common generators. -/
+theorem hatCoefficient_sumCircleTimesSphere_eq_hatCoefficient_addBasepoint
+    (hr₀ : r₀ ∈ Set.range H.basepoint) (x y : (H.addBasepoint r₀).Generator) :
+    (H.sumCircleTimesSphere r₀).hatCoefficient (sumCircleTimesSphereEuler χ r₀) x y =
+      (H.addBasepoint r₀).hatCoefficient (addBasepointEuler χ r₀) x y := by
+  rw [hatCoefficient_def, hatCoefficient_def,
+    H.hatDomains_addBasepoint_eq_image_hatDomains_sumCircleTimesSphere r₀ hr₀,
+    Set.ncard_image_of_injective _ (sumCircleTimesSphereRegion_surjective r₀).injective_comp_right]
+
 /-- The coefficient of the hat differential of the connected sum with `S¹ × S²` in a region
 containing a basepoint, from `(x, i)` to `(y, j)`, is that of the original diagram from `x` to `y`
 when `i = j`, and zero otherwise: from `p` to `q` the counted domains are the pairs of an old
@@ -436,9 +432,8 @@ theorem hatCoefficient_sumCircleTimesSphere (hr₀ : r₀ ∈ Set.range H.basepo
     (H.sumCircleTimesSphere r₀).hatCoefficient (sumCircleTimesSphereEuler χ r₀)
         (H.addBasepointGenerator r₀ x i) (H.addBasepointGenerator r₀ y j) =
       if i = j then H.hatCoefficient χ x y else 0 := by
-  rw [← H.hatCoefficient_addBasepoint r₀ hr₀, hatCoefficient_def, hatCoefficient_def,
-    H.hatDomains_addBasepoint_eq_image r₀ hr₀,
-    Set.ncard_image_of_injective _ (sumCircleTimesSphereRegion_surjective r₀).injective_comp_right]
+  rw [H.hatCoefficient_sumCircleTimesSphere_eq_hatCoefficient_addBasepoint r₀ hr₀,
+    H.hatCoefficient_addBasepoint r₀ hr₀]
 
 /-- Each of the two bigons is a domain counted by the hat differential of the connected sum from
 `(x, p)` to `(x, q)`: it has Maslov index one and avoids all basepoints, so `p` and `q` lie one
@@ -464,6 +459,16 @@ section Differential
 
 variable [Fintype Point] [DecidableEq Region] [Fintype Region] (r₀ : Region) {χ : Region → ℤ}
 
+/-- When `r₀` contains a basepoint, the connected sum with `S¹ × S²` in `r₀` and the diagram with
+an added basepoint in `r₀` have the same hat differential on their common chain group. -/
+theorem hatDifferential_sumCircleTimesSphere_eq_hatDifferential_addBasepoint
+    (hr₀ : r₀ ∈ Set.range H.basepoint) :
+    (H.sumCircleTimesSphere r₀).hatDifferential (sumCircleTimesSphereEuler χ r₀) =
+      (H.addBasepoint r₀).hatDifferential (addBasepointEuler χ r₀) := by
+  ext x y
+  simp only [LinearMap.comp_apply, Finsupp.lsingle_apply, hatDifferential_single_apply,
+    H.hatCoefficient_sumCircleTimesSphere_eq_hatCoefficient_addBasepoint r₀ hr₀]
+
 /-- The hat differential of the connected sum with `S¹ × S²` in a region containing a basepoint is
 `∂ ⊗ 1` on `CF̂(Y) ⊗ W`, where `∂` is the hat differential of the original diagram and `W` is the
 two-dimensional space on the two new points with zero differential: under the identification
@@ -475,10 +480,8 @@ theorem hatDifferential_sumCircleTimesSphere_comp_addBasepointChainEquiv
         (H.addBasepointChainEquiv r₀).toLinearMap =
       (H.addBasepointChainEquiv r₀).toLinearMap ∘ₗ
         TensorProduct.map (H.hatDifferential χ) LinearMap.id := by
-  ext x k g
-  obtain ⟨⟨y, m⟩, rfl⟩ := (H.addBasepointGeneratorEquiv r₀).surjective g
-  simp [hatCoefficient_sumCircleTimesSphere _ _ hr₀, finsuppTensorFinsupp'_apply_apply,
-    Finsupp.single_apply]
+  rw [H.hatDifferential_sumCircleTimesSphere_eq_hatDifferential_addBasepoint r₀ hr₀]
+  exact H.hatDifferential_comp_addBasepointChainEquiv r₀ hr₀
 
 end Differential
 
