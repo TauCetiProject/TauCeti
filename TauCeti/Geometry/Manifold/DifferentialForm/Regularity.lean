@@ -527,16 +527,18 @@ theorem exists_mextDeriv_eq_of_forall_eventuallyEq_add_const [IsManifold I 1 M]
 
 end Regularity
 
-/-- Every zero-dimensional form is smooth: a manifold modelled on a singleton space is discrete. -/
-theorem isSmoothForm_zeroDim {E M : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [Subsingleton E] [TopologicalSpace M] [ChartedSpace E M]
-    [IsManifold 𝓘(ℝ, E) 1 M]
+/-- Every zero-dimensional form is smooth: its coordinate functions have singleton domain. -/
+theorem isSmoothForm_zeroDim {E H M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [Subsingleton E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
     {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ} {n : WithTop ℕ∞}
-    (φ : RoughForm 𝓘(ℝ, E) M F k) :
-    IsSmoothForm 𝓘(ℝ, E) n φ := by
-  rw [isSmoothForm_def]
-  have : DiscreteTopology M := ChartedSpace.discreteTopology E M
-  exact contMDiff_of_discreteTopology
+    (φ : RoughForm I M F k) :
+    IsSmoothForm I n φ := by
+  refine IsSmoothForm.of_contDiffWithinAt_inChartAt_self fun x ↦ ?_
+  have he : φ.inChartAt x = fun _ ↦ φ.inChartAt x 0 :=
+    funext fun y ↦ congrArg (φ.inChartAt x) (Subsingleton.elim y 0)
+  rw [he]
+  exact contDiffWithinAt_const
 
 /-- Over the model space `𝓘(ℝ, E)`, a form is a `C^n` section exactly when it is a `C^n`
 function into the space of alternating maps. -/
@@ -636,6 +638,13 @@ theorem mextDeriv_eq_bilinFormAt [IsManifold I 2 M] (α : SmoothForm I M ℝ 1) 
     (v w : TangentSpace I x) :
     mextDeriv α.1 x ![v, w] = (mextDerivₗ I 1 α).bilinFormAt x v w := by
   rw [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
+
+/-- A tangent vector lies in the kernel of the bilinear form of `dα` exactly when `dα` vanishes on
+every pair with that vector as its first argument. -/
+theorem mem_ker_bilinFormAt_mextDerivₗ_iff [IsManifold I 2 M] {α : SmoothForm I M ℝ 1} {x : M}
+    {v : TangentSpace I x} :
+    v ∈ LinearMap.ker ((mextDerivₗ I 1 α).bilinFormAt x) ↔ ∀ w, mextDeriv α.1 x ![v, w] = 0 := by
+  rw [mem_ker_bilinFormAt_iff, mextDerivₗ_apply]
 
 end SmoothForm
 
