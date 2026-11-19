@@ -81,6 +81,11 @@ def IsEquivariant (f : E →ₗ.[R] F) (π : ContRepresentation R G E) (ρ : Con
 
 variable {f : E →ₗ.[R] F} {π : ContRepresentation R G E} {ρ : ContRepresentation R G F}
 
+/-- An operator is equivariant exactly when every `π g × ρ g` maps its graph into itself. -/
+theorem isEquivariant_iff :
+    f.IsEquivariant π ρ ↔ ∀ g x y, (x, y) ∈ f.graph → (π g x, ρ g y) ∈ f.graph :=
+  Iff.rfl
+
 /-- The domain of an equivariant operator is invariant. -/
 theorem IsEquivariant.apply_mem_domain (hf : f.IsEquivariant π ρ) (g : G) (x : f.domain) :
     π g x ∈ f.domain :=
@@ -144,8 +149,7 @@ theorem graphSpaceRepresentation_toGraphSpace (g : G) (x : f.domain) :
     f.graphSpaceRepresentation π ρ hf g (f.toGraphSpace x) =
       f.toGraphSpace ⟨π g x, hf.apply_mem_domain g x⟩ := by
   ext1
-  rw [coe_graphSpaceRepresentation_apply, coe_toGraphSpace, coe_toGraphSpace, hf.map_apply,
-    WithLp.toLp_fst, WithLp.toLp_snd]
+  simp [hf.map_apply]
 
 /-- **The graph space representation is unitary** when `π` and `ρ` are. -/
 theorem isUnitary_graphSpaceRepresentation {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E]

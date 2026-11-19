@@ -74,6 +74,10 @@ theorem mem_graphSpace_iff {z : WithLp 2 (E × F)} :
     z ∈ f.graphSpace ↔ (z.fst, z.snd) ∈ f.graph :=
   Iff.rfl
 
+/-- As a set, the graph space is the preimage of the graph under `WithLp.ofLp`. -/
+theorem coe_graphSpace : (f.graphSpace : Set (WithLp 2 (E × F))) = WithLp.ofLp ⁻¹' f.graph :=
+  Set.ext fun _ ↦ f.mem_graphSpace_iff
+
 theorem toLp_mem_graphSpace_iff {x : E} {y : F} :
     WithLp.toLp 2 (x, y) ∈ f.graphSpace ↔ (x, y) ∈ f.graph :=
   Iff.rfl
@@ -121,8 +125,7 @@ theorem apply_toGraphSpace_symm (z : f.graphSpace) :
 /-- **The graph norm.** -/
 theorem norm_toGraphSpace_sq (x : f.domain) :
     ‖f.toGraphSpace x‖ ^ 2 = ‖(x : E)‖ ^ 2 + ‖f x‖ ^ 2 := by
-  rw [← Submodule.norm_coe, coe_toGraphSpace, WithLp.prod_norm_sq_eq_of_L2, WithLp.toLp_fst,
-    WithLp.toLp_snd]
+  simp [← Submodule.norm_coe, WithLp.prod_norm_sq_eq_of_L2]
 
 /-- The graph norm of a vector of the graph space, in terms of its coordinates. -/
 theorem norm_graphSpace_sq (z : f.graphSpace) :
@@ -214,7 +217,8 @@ theorem map_ker_graphSnd : f.graphSnd.ker.map (f.graphFst : f.graphSpace →ₗ[
 theorem norm_eq_norm_graphFst_of_graphSnd_eq_zero {z : f.graphSpace} (hz : f.graphSnd z = 0) :
     ‖z‖ = ‖f.graphFst z‖ := by
   have h := f.norm_graphSpace_sq z
-  rw [← graphSnd_apply, hz, norm_zero, zero_pow two_ne_zero, add_zero, ← graphFst_apply] at h
+  rw [graphSnd_apply] at hz
+  rw [hz, norm_zero, zero_pow two_ne_zero, add_zero] at h
   exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 h
 
 /-- **The kernel of the bounded realization.** The first projection is a linear isometric
@@ -235,8 +239,9 @@ theorem coe_kerGraphSndEquiv (z : f.graphSnd.ker) :
 
 /-- The graph space is closed in `WithLp 2 (E × F)` exactly when `f` is a closed operator. -/
 theorem isClosed_graphSpace_iff :
-    _root_.IsClosed (f.graphSpace : Set (WithLp 2 (E × F))) ↔ f.IsClosed :=
-  (WithLp.prodContinuousLinearEquiv 2 𝕜 E F).toHomeomorph.isClosed_preimage (s := f.graph)
+    _root_.IsClosed (f.graphSpace : Set (WithLp 2 (E × F))) ↔ f.IsClosed := by
+  rw [coe_graphSpace]
+  exact (WithLp.prodContinuousLinearEquiv 2 𝕜 E F).toHomeomorph.isClosed_preimage
 
 /-- **The graph space of a closed operator is a Hilbert space.** -/
 theorem IsClosed.completeSpace_graphSpace [CompleteSpace E] [CompleteSpace F] {f : E →ₗ.[𝕜] F}
@@ -253,15 +258,14 @@ variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSp
 /-- **The graph inner product.** -/
 theorem inner_toGraphSpace (x y : f.domain) :
     ⟪f.toGraphSpace x, f.toGraphSpace y⟫_𝕜 = ⟪(x : E), (y : E)⟫_𝕜 + ⟪f x, f y⟫_𝕜 := by
-  rw [Submodule.coe_inner, coe_toGraphSpace, coe_toGraphSpace, WithLp.prod_inner_apply]
+  simp [Submodule.coe_inner, WithLp.prod_inner_apply]
 
 /-- The inner product of two vectors of the graph space is the sum of the inner products of their
 coordinates. -/
 theorem inner_graphSpace (z w : f.graphSpace) :
     ⟪z, w⟫_𝕜 = ⟪(z : WithLp 2 (E × F)).fst, (w : WithLp 2 (E × F)).fst⟫_𝕜 +
       ⟪(z : WithLp 2 (E × F)).snd, (w : WithLp 2 (E × F)).snd⟫_𝕜 := by
-  rw [Submodule.coe_inner, WithLp.prod_inner_apply, WithLp.ofLp_fst, WithLp.ofLp_fst,
-    WithLp.ofLp_snd, WithLp.ofLp_snd]
+  simp [Submodule.coe_inner, WithLp.prod_inner_apply]
 
 end Inner
 
