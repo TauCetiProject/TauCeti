@@ -59,6 +59,8 @@ frequency derivative of its Fourier transform.
   `‖Op(a) u (x)‖ ≤ C ∫ ⟨2πζ⟩ ^ m ‖𝓕 u ζ‖ dζ`.
 * `TauCeti.continuous_quantizeSchwartzValue`: `Op(a) u` is continuous for continuous `a` with
   growth bounds locally uniform in `x`.
+* `TauCeti.integrable_quantizeSchwartzValue`: `Op(a) u` is integrable for continuous `a` that
+  vanishes at positions outside a compact set and has a growth bound there.
 * `TauCeti.quantizeSchwartzCLM`: for continuous `a` with growth bounds uniform in `x`, the
   quantization is a continuous linear map from Schwartz space to bounded continuous functions.
   `TauCeti.continuous_quantizeSchwartzValue_input` is the pointwise version: `u ↦ Op(a) u (x)`
@@ -333,6 +335,30 @@ theorem continuous_quantizeSchwartzValue (ha : Continuous a)
     (u : 𝓢(E, V)) : Continuous (quantizeSchwartzValue a u) := by
   simp only [funext (quantizeSchwartzValue_def a u)]
   exact continuous_integral_integrand ha hC (𝓕 u)
+
+/-- The quantization of a coefficient vanishing at positions outside a compact set `K` vanishes
+outside `K`. -/
+theorem hasCompactSupport_quantizeSchwartzValue {K : Set E} (hK : IsCompact K)
+    (hKa : ∀ x ∉ K, ∀ ξ, a (x, ξ) = 0) (u : 𝓢(E, V)) :
+    HasCompactSupport (quantizeSchwartzValue a u) :=
+  HasCompactSupport.intro hK fun x hx ↦ by simp [quantizeSchwartzValue_def, hKa x hx]
+
+/-- **Integrability.** The quantization of a continuous coefficient vanishing at positions outside
+a compact set `K`, with a growth bound `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m` on `K`, is integrable for every
+measure that is finite on compact sets. -/
+theorem integrable_quantizeSchwartzValue {μ : Measure E} [IsFiniteMeasureOnCompacts μ]
+    (ha : Continuous a) {K : Set E} (hK : IsCompact K) {C : ℝ}
+    (hC : ∀ x ∈ K, ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
+    (hKa : ∀ x ∉ K, ∀ ξ, a (x, ξ) = 0) (u : 𝓢(E, V)) :
+    Integrable (quantizeSchwartzValue a u) μ := by
+  -- Since `a` vanishes outside `K`, the bound `max C 0` holds at every position.
+  have hC' (x ξ : E) : ‖a (x, ξ)‖ ≤ max C 0 * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+    by_cases hx : x ∈ K
+    · exact (hC x hx ξ).trans (by gcongr; exact le_max_left C 0)
+    · rw [hKa x hx, norm_zero]
+      positivity
+  exact (continuous_quantizeSchwartzValue ha (fun _ _ ↦ ⟨max C 0, fun x _ ξ ↦ hC' x ξ⟩)
+    u).integrable_of_hasCompactSupport (hasCompactSupport_quantizeSchwartzValue hK hKa u)
 
 end Continuity
 
@@ -1025,13 +1051,14 @@ theorem HasCompactSpatialSupport.hasCompactSupport_quantizeSchwartzValue
     (ha : a.HasCompactSpatialSupport) (u : 𝓢(CoordinateSpace n, V)) :
     HasCompactSupport (quantizeSchwartzValue a.coefficient u) := by
   obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
-  exact HasCompactSupport.intro hK fun x hx ↦ by simp [quantizeSchwartzValue_def, hKa x hx]
+  exact TauCeti.hasCompactSupport_quantizeSchwartzValue hK hKa u
 
 theorem HasCompactSpatialSupport.integrable_quantizeSchwartzValue
     (ha : a.HasCompactSpatialSupport) (u : 𝓢(CoordinateSpace n, V)) :
-    Integrable (quantizeSchwartzValue a.coefficient u) :=
-  (a.continuous_quantizeSchwartzValue_coefficient u).integrable_of_hasCompactSupport
-    (ha.hasCompactSupport_quantizeSchwartzValue u)
+    Integrable (quantizeSchwartzValue a.coefficient u) := by
+  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
+  obtain ⟨C, hC⟩ := a.exists_norm_coefficient_le K hK
+  exact TauCeti.integrable_quantizeSchwartzValue a.contDiff_coefficient.continuous hK hC hKa u
 
 theorem HasCompactSpatialSupport.memLp_quantizeSchwartzValue
     (ha : a.HasCompactSpatialSupport) (u : 𝓢(CoordinateSpace n, V)) (p : ENNReal) :
