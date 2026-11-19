@@ -160,10 +160,10 @@ theorem centralizerHopfIdeal_le_ker_iff_adjointAction
     (A : CommAlgCat.{u} k) (g : WithConv (H →ₐ[k] A)) :
     (centralizerHopfIdeal H x).toIdeal ≤ RingHom.ker g.ofConv ↔
       (Derivation.adjointAction A g).val (1 ⊗ₜ[k] x) = 1 ⊗ₜ[k] x := by
-  rw [← (Derivation.tangentScalarExtensionEquiv (R := k) (A := H) (B := A)).injective.eq_iff,
-    Derivation.tangentScalarExtensionEquiv_adjointAction,
-    Derivation.tangentScalarExtensionEquiv_tmul, one_smul]
-  exact centralizerHopfIdeal_le_ker_iff x g
+  rw [← Derivation.adjointComodule_endOfPoint_eq_adjointAction,
+    ← mem_quotientPointsSubgroup_centralizerHopfIdeal_iff_endOfPoint,
+    CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
+  simp only [IsConcreteLE.le_iff, HopfIdeal.mem_toIdeal, RingHom.mem_ker]
 
 /-- The centralizer of `x` is the whole group exactly when `x` is fixed by the adjoint
 coaction. -/

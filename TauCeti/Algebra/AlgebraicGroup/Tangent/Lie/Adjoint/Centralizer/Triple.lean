@@ -46,8 +46,8 @@ each fibre of the adjoint quotient restricted to `S`, in particular the nilpoten
 
 * `TauCeti.tripleCentralizerHopfIdeal`: the Hopf ideal of `C_G(h, e, f)`.
 * `TauCeti.mem_quotientPointsSubgroup_tripleCentralizerHopfIdeal_iff_endOfPoint` and
-  `TauCeti.mem_quotientPointsSubgroup_tripleCentralizerHopfIdeal_iff`: its algebra-valued and
-  rational points.
+  `TauCeti.mem_quotientPointsSubgroup_tripleCentralizerHopfIdeal_iff_basePointsRepresentation`:
+  its algebra-valued and rational points.
 * `TauCeti.tripleCentralizerHopfIdeal_eq_sup_of_lie_eq` and
   `IsSl2Triple.tripleCentralizerHopfIdeal_eq_sup`: the reductions to `C_G(e) ∩ C_G(f)` and, in
   characteristic zero, to `C_G(h) ∩ C_G(e)`.
@@ -149,7 +149,8 @@ theorem mem_quotientPointsSubgroup_tripleCentralizerHopfIdeal_iff_endOfPoint
 
 /-- A rational point lies in the centralizer of `(h, e, f)` exactly when its adjoint action fixes
 `h`, `e` and `f`. -/
-theorem mem_quotientPointsSubgroup_tripleCentralizerHopfIdeal_iff (g : WithConv (H →ₐ[k] k)) :
+theorem mem_quotientPointsSubgroup_tripleCentralizerHopfIdeal_iff_basePointsRepresentation
+    (g : WithConv (H →ₐ[k] k)) :
     g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
         (tripleCentralizerHopfIdeal H h e f) (CommAlgCat.of k k) ↔
       Comodule.basePointsRepresentation 𝔤 g h = h ∧
@@ -245,7 +246,7 @@ theorem _root_.IsSl2Triple.tripleCentralizerHopfIdeal_eq_sup {h e f : 𝔤} (t :
     HopfAlgebra.isReduced_of_charZero k _
   apply HopfIdeal.eq_of_quotientPointsSubgroup_eq (H := G) (K := k)
   ext g
-  rw [mem_quotientPointsSubgroup_tripleCentralizerHopfIdeal_iff,
+  rw [mem_quotientPointsSubgroup_tripleCentralizerHopfIdeal_iff_basePointsRepresentation,
     CommHopfAlgCat.quotientPointsSubgroup_sup, Subgroup.mem_inf,
     mem_quotientPointsSubgroup_centralizerHopfIdeal_iff_basePointsRepresentation,
     mem_quotientPointsSubgroup_centralizerHopfIdeal_iff_basePointsRepresentation]
@@ -273,7 +274,9 @@ noncomputable instance instSMulSlodowySlice :
       (tripleCentralizerHopfIdeal H h e f) (CommAlgCat.of k k)) (slodowySlice k e f) where
   smul g x :=
     ⟨Comodule.basePointsRepresentation 𝔤 (g : WithConv (H →ₐ[k] k)) x, by
-      have hg := (mem_quotientPointsSubgroup_tripleCentralizerHopfIdeal_iff _).mp g.2
+      have hg :=
+        (mem_quotientPointsSubgroup_tripleCentralizerHopfIdeal_iff_basePointsRepresentation _).mp
+          g.2
       simpa using LieHom.apply_mem_slodowySlice
         (Derivation.basePointsAdjointLieEquiv (R := k) (H := H) g : 𝔤 →ₗ⁅k⁆ 𝔤)
         (by simpa using hg.2.1) (by simpa using hg.2.2) x.2⟩
