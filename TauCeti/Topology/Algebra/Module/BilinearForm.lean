@@ -43,7 +43,6 @@ use.
 
 * `LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap`: making a finite-dimensional
   bilinear form continuous and then forgetting continuity returns the original form.
-
 * `ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective`: the bilinear form of a
   continuous linear map into the dual is left-separating if and only if the map is injective.
 * `ContinuousLinearMap.isSymm_toBilinForm_iff`: the bilinear form of a continuous linear map into
