@@ -88,7 +88,7 @@ theorem transition_frobeniusSubIdCoeffs (e : E) (he : (p : ℤ_[p]) • e = 0) :
       transition S (ZeroAtInftyContinuousMap.single (0, n) e : AnalyticStage p 0 E)
           (a, j) =
         ((n.choose j : ℤ_[p]) * (a.val : ℤ_[p]) ^ (n - j) * (p : ℤ_[p]) ^ j) • e := by
-    simp only [transition_apply, reexpand, reexpandScalar]
+    simp only [transition_apply, reexpand_def, reexpandScalar_def]
     rw [tsum_eq_single n]
     · rw [ZeroAtInftyContinuousMap.single_apply]
       have ha : ((a.val : ZMod (p ^ 0)), n) = (0, n) :=

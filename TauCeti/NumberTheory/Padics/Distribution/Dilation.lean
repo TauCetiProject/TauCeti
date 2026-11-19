@@ -193,12 +193,7 @@ private theorem mulDisc_eq (a : ℤ_[p]) (b : ZMod (p ^ h)) {y : ZMod (p ^ h) ×
 theorem compMulLeft_one (c : AnalyticStage p h E) : compMulLeft S 1 c = c := by
   ext ⟨b, j⟩
   rw [coe_compMulLeft]
-  simp only [mulDisc_eq 1 b (y := (b, 0)) (by simp), reexpand]
-  rw [tsum_eq_single j fun n hn ↦ ?_]
-  · simp [reexpandScalar]
-  · rcases lt_or_gt_of_ne hn with hnj | hnj
-    · simp [reexpandScalar_of_lt _ _ hnj]
-    · simp [reexpandScalar, Nat.sub_ne_zero_of_lt hnj]
+  simp [mulDisc_eq 1 b (y := (b, 0)) (by simp)]
 
 /-- Dilations compose: `x ↦ f(a a' x)` is `x ↦ f(a x)` dilated by `a'`. -/
 theorem compMulLeft_mul (a a' : ℤ_[p]) (c : AnalyticStage p h E) :

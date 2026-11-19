@@ -483,6 +483,16 @@ theorem summable_mul_of_norm_le_one {R ι : Type*} [SeminormedRing R] [IsUltrame
     (squeeze_zero_norm (fun i ↦ ?_) (by simpa using hf.tendsto_cofinite_zero.norm))
   exact (norm_mul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) (hc i))
 
+/-- In a complete ultrametric normed group with a bounded scalar action, a cofinitely null family
+scaled by multipliers of norm at most one is summable. -/
+theorem summable_smul_of_tendsto_of_norm_le_one [SeminormedAddGroup R] [SMulZeroClass R M]
+    [IsBoundedSMul R M] [CompleteSpace M] {ι : Type*} {f : ι → M}
+    (hf : Tendsto f cofinite (𝓝 0)) {c : ι → R} (hc : ∀ i, ‖c i‖ ≤ 1) :
+    Summable fun i ↦ c i • f i := by
+  refine NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
+    (squeeze_zero_norm (fun i ↦ ?_) (tendsto_zero_iff_norm_tendsto_zero.mp hf))
+  exact (norm_smul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) (hc i))
+
 end TauCeti
 
 end

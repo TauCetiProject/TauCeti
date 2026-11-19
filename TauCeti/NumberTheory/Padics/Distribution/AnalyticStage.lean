@@ -162,17 +162,12 @@ private theorem norm_discTerm_le (i : ZMod (p ^ h) × ℕ) (e : E) : ‖discTerm
 
 variable [IsUltrametricDist E] [CompleteSpace E]
 
-private theorem summable_smul_of_tendsto {c : ℕ → E} (hc : Tendsto c cofinite (𝓝 0))
-    (r : ℕ → ℤ_[p]) : Summable fun n ↦ r n • c n :=
-  NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <|
-    squeeze_zero_norm (fun n ↦ norm_smul_le_of_norm_le_one _ (PadicInt.norm_le_one (r n)))
-      (tendsto_zero_iff_norm_tendsto_zero.mp hc)
-
 /-- The power series of a vector in `LA_h(E)` on a single disc converges at every point of
 `ℤ_p`, and more generally against any `ℤ_p`-valued weights. -/
 theorem summable_smul_apply (c : AnalyticStage p h E) (a : ZMod (p ^ h)) (r : ℕ → ℤ_[p]) :
     Summable fun n ↦ r n • c (a, n) :=
-  summable_smul_of_tendsto (tendsto_apply_mk c a) r
+  summable_smul_of_tendsto_of_norm_le_one (tendsto_apply_mk c a) fun n ↦
+    PadicInt.norm_le_one (r n)
 
 /-- The family of power series with coefficient vector `c`, as a continuous function of the
 disc label and the disc coordinate. -/
@@ -346,8 +341,13 @@ section Reexpansion
 open Polynomial
 
 /-- The coefficient `(n choose j) sⁿ⁻ʲ tʲ` of `vʲ` in `(s + t v)ⁿ`. -/
-@[expose] noncomputable def reexpandScalar (s t : ℤ_[p]) (n j : ℕ) : ℤ_[p] :=
+noncomputable def reexpandScalar (s t : ℤ_[p]) (n j : ℕ) : ℤ_[p] :=
   (n.choose j : ℤ_[p]) * s ^ (n - j) * t ^ j
+
+/-- The closed form of the re-expansion scalar. -/
+theorem reexpandScalar_def (s t : ℤ_[p]) (n j : ℕ) :
+    reexpandScalar s t n j = (n.choose j : ℤ_[p]) * s ^ (n - j) * t ^ j := by
+  rw [reexpandScalar]
 
 /-- The re-expansion scalar vanishes above the degree: `(s + t v)ⁿ` has no `vʲ` term for `n < j`. -/
 theorem reexpandScalar_of_lt (s t : ℤ_[p]) {n j : ℕ} (hnj : n < j) :
@@ -381,8 +381,24 @@ theorem sum_reexpandScalar_mul (s₁ t₁ s₂ t₂ : ℤ_[p]) (n j : ℕ) :
 
 omit [IsBoundedSMul ℤ_[p] E] [IsUltrametricDist E] [CompleteSpace E] in
 /-- The coefficients `∑ₙ (n choose j) sⁿ⁻ʲ tʲ • cₙ` of `∑ₙ (s + t v)ⁿ • cₙ` in powers of `v`. -/
-@[expose] noncomputable def reexpand (s t : ℤ_[p]) (c : ℕ → E) (j : ℕ) : E :=
+noncomputable def reexpand (s t : ℤ_[p]) (c : ℕ → E) (j : ℕ) : E :=
   ∑' n, reexpandScalar s t n j • c n
+
+omit [IsBoundedSMul ℤ_[p] E] [IsUltrametricDist E] [CompleteSpace E] in
+/-- A re-expanded coefficient as a sum over the original coefficients. -/
+theorem reexpand_def (s t : ℤ_[p]) (c : ℕ → E) (j : ℕ) :
+    reexpand s t c j = ∑' n, reexpandScalar s t n j • c n := by
+  rw [reexpand]
+
+omit [IsBoundedSMul ℤ_[p] E] [IsUltrametricDist E] [CompleteSpace E] in
+/-- Re-expanding along `0 + t v` scales the coefficient of `vʲ` by `tʲ`. -/
+@[simp]
+theorem reexpand_zero_left (t : ℤ_[p]) (c : ℕ → E) (j : ℕ) : reexpand 0 t c j = t ^ j • c j := by
+  rw [reexpand, tsum_eq_single j fun n hn ↦ ?_]
+  · simp [reexpandScalar]
+  · rcases lt_or_gt_of_ne hn with hnj | hnj
+    · simp [reexpandScalar_of_lt _ _ hnj]
+    · simp [reexpandScalar, Nat.sub_ne_zero_of_lt hnj]
 
 omit [IsBoundedSMul ℤ_[p] E] [IsUltrametricDist E] [CompleteSpace E] in
 /-- Re-expanding the coefficients of a polynomial is substituting `s + t X` into it. -/
@@ -427,7 +443,8 @@ theorem reexpand_reexpand {c : ℕ → E} (hc : Tendsto c cofinite (𝓝 0))
   calc reexpand s₂ t₂ (reexpand s₁ t₁ c) j = ∑' m, ∑' n, f m n := by
         refine tsum_congr fun m ↦ ?_
         simp only [reexpand, f, mul_smul]
-        exact ((summable_smul_of_tendsto hc _).tsum_const_smul _).symm
+        exact ((summable_smul_of_tendsto_of_norm_le_one hc fun n ↦
+          PadicInt.norm_le_one _).tsum_const_smul _).symm
     _ = ∑' n, ∑' m, f m n := hf.tsum_comm.symm
     _ = reexpand (s₁ + t₁ * s₂) (t₁ * t₂) c j := by
         refine tsum_congr fun n ↦ ?_
@@ -503,6 +520,7 @@ noncomputable def reexpandMap : AnalyticStage p h E →L[S] AnalyticStage p k E 
 
 /-- The coefficients of `reexpandMap S σ s t c` on the disc of `b` re-expand those of `c` on the
 disc of `σ b` along `s b + t b w`. -/
+@[simp]
 theorem reexpandMap_apply (c : AnalyticStage p h E) (b : ZMod (p ^ k)) (j : ℕ) :
     reexpandMap S σ s t c (b, j) = reexpand (s b) (t b) (fun n ↦ c (σ b, n)) j :=
   congrFun (ZeroAtInftyContinuousMap.coe_mkOfDiscrete _ _) (b, j)
@@ -550,13 +568,8 @@ theorem transition_apply_cast (c : AnalyticStage p h E) (a : ZMod (p ^ h)) (j : 
   have hval : (a.cast : ZMod (p ^ (h + 1))).val = a.val :=
     ZMod.val_cast_eq_val_of_lt <| (ZMod.val_lt a).trans_le
       (Nat.pow_le_pow_right hp.out.pos (Nat.le_succ h))
-  rw [transition_apply, reexpand, hval, Nat.div_eq_of_lt (ZMod.val_lt a), tsum_eq_single j]
-  · simp [reexpandScalar]
-  · intro k hkj
-    by_cases hlt : k < j
-    · simp [reexpandScalar_of_lt _ _ hlt]
-    · have hsub : k - j ≠ 0 := by omega
-      simp [reexpandScalar, hsub]
+  rw [transition_apply, hval, Nat.div_eq_of_lt (ZMod.val_lt a), Nat.cast_zero, reexpand_zero_left,
+    ZMod.natCast_zmod_val]
 
 /-- Raising the level is injective if multiplication by `p` on the coefficient module is
 injective. -/

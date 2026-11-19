@@ -191,7 +191,7 @@ theorem transition_amiceTerm (h n : ℕ) (e : E) :
   -- This avoids any torsion-freeness assumption on the coefficient module.
   ext ⟨a, j⟩
   have hscalar := DFunLike.congr_fun (transition_amiceTerm_scalar (p := p) h n) (a, j)
-  simp only [transition_apply, reexpand, reexpandScalar] at hscalar ⊢
+  simp only [transition_apply, reexpand_def, reexpandScalar_def] at hscalar ⊢
   simp only [amiceTerm_apply, smul_eq_mul, mul_one] at hscalar
   simp only [amiceTerm_apply, smul_smul]
   rw [← hscalar]

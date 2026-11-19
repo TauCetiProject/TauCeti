@@ -265,7 +265,7 @@ theorem transition_mem_polynomialSubmodule {c : AnalyticStage p h E}
     (hc : c ∈ polynomialSubmodule S k) :
     transition S c ∈ polynomialSubmodule S k := by
   intro a j hj
-  rw [transition_apply, reexpand]
+  rw [transition_apply, reexpand_def]
   trans ∑' _ : ℕ, (0 : E)
   · apply tsum_congr
     intro n
