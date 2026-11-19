@@ -57,7 +57,9 @@ to Lebesgue measure on a nonempty open subset of `ℝⁿ`, `n ≥ 1`.
 
 For a complex inner product space `F` regarded as a real one (`InnerProductSpace.complexToReal`),
 the real inner product on `L²(α, F)` is the real part of the complex one
-(`MeasureTheory.L2.real_inner_eq_re_inner`). For a family of inner product spaces `G i`, evaluating
+(`MeasureTheory.L2.real_inner_eq_re_inner`), and the adjoint of the realification of a bounded
+operator between such `L²` spaces is the realification of its adjoint
+(`MeasureTheory.L2.adjoint_restrictScalars`). For a family of inner product spaces `G i`, evaluating
 coordinate `i` of an `L²(α, ℓ²(G))` function is adjoint to placing an `L²(α, G i)` function in
 coordinate `i` (`MeasureTheory.L2.inner_evalCLM_compLpL`).
 
@@ -190,6 +192,24 @@ theorem L2.real_inner_eq_re_inner {F : Type*} [NormedAddCommGroup F] [InnerProdu
   let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   rw [L2.inner_def, L2.inner_def]
   exact integral_re (L2.integrable_inner (𝕜 := ℂ) f g)
+
+/-- For complex inner product spaces `F` and `G` with their induced real structures, the adjoint of
+the realification of a bounded operator `L²(α, F) → L²(α, G)` is the realification of its adjoint.
+This is the `L²` counterpart of `ContinuousLinearMap.adjoint_restrictScalars`, which is stated for
+the real structure `InnerProductSpace.rclikeToReal`. -/
+theorem L2.adjoint_restrictScalars {F G : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+    [CompleteSpace F] [NormedAddCommGroup G] [InnerProductSpace ℂ G] [CompleteSpace G]
+    (T : Lp F 2 μ →L[ℂ] Lp G 2 μ) :
+    letI : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+    letI : InnerProductSpace ℝ G := InnerProductSpace.complexToReal
+    ContinuousLinearMap.adjoint (T.restrictScalars ℝ) =
+      (ContinuousLinearMap.adjoint T).restrictScalars ℝ := by
+  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+  let : InnerProductSpace ℝ G := InnerProductSpace.complexToReal
+  refine ((ContinuousLinearMap.eq_adjoint_iff _ _).2 fun f g ↦ ?_).symm
+  rw [L2.real_inner_eq_re_inner, L2.real_inner_eq_re_inner,
+    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.coe_restrictScalars',
+    ContinuousLinearMap.adjoint_inner_left]
 
 /-- Evaluating coordinate `i` of an `L²(α, ℓ²(G))` function is adjoint to placing an
 `L²(α, G i)` function in coordinate `i`. -/

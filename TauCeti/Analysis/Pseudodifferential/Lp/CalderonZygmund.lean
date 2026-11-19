@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
 import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Adjoint
 import TauCeti.MeasureTheory.Measure.LocallyNull
 
@@ -210,10 +211,8 @@ private theorem IsUniform.ae_restrict_eq_integral_offDiagonalKernel (ha : a.IsUn
     rw [hx, integral_truncKernel_apply_eq hxA hg]
   -- The set of `g` with `T g = R g` on `A` is closed,
   set P := LpToLpRestrictCLM (CoordinateSpace n) W ℂ volume 2 A
-  have hP (h : Lp W 2 volume) : P h = 0 ↔ h =ᵐ[volume.restrict A] 0 := by
-    rw [Lp.eq_zero_iff_ae_eq_zero]
-    exact ⟨fun H ↦ (LpToLpRestrictCLM_coeFn ℂ A h).symm.trans H,
-      fun H ↦ (LpToLpRestrictCLM_coeFn ℂ A h).trans H⟩
+  have hP (h : Lp W 2 volume) : P h = 0 ↔ h =ᵐ[volume.restrict A] 0 :=
+    LpToLpRestrictCLM_eq_zero_iff A h
   have hclosed : IsClosed {g | P ((T - R) g) = 0} :=
     isClosed_eq (P.continuous.comp (T - R).continuous) continuous_const
   -- and contains the smooth approximations of `f` supported in `B`, so it contains `f`.
@@ -333,10 +332,8 @@ theorem IsUniform.exists_eLpNorm_le_of_ae_eq_quantizeSchwartzValue (ha : a.IsUni
     (by norm_num) (by norm_num) (by positivity)
   obtain ⟨C', hC'0, hC'⟩ := ha.exists_norm_offDiagonalKernel_sub_left_le (δ := 1 / 2)
     (by norm_num) (by norm_num) (by positivity)
-  have hadj : adjoint (T.restrictScalars ℝ) = (adjoint T).restrictScalars ℝ := by
-    refine ((eq_adjoint_iff _ _).2 fun f g ↦ ?_).symm
-    rw [L2.real_inner_eq_re_inner, L2.real_inner_eq_re_inner, coe_restrictScalars',
-      coe_restrictScalars', adjoint_inner_left]
+  have hadj : adjoint (T.restrictScalars ℝ) = (adjoint T).restrictScalars ℝ :=
+    L2.adjoint_restrictScalars T
   have hKm := stronglyMeasurable_uncurry_offDiagonalKernel a
   have hrs := (restrictScalarsIsometry ℂ V W ℝ ℝ).continuous
   refine exists_eLpNorm_le_of_norm_sub_le_mul_rpow (V := CoordinateSpace n) (H := V) (K := W)
