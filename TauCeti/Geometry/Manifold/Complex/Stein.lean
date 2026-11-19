@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Runge.Hull
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Topology.ContinuousMap.Separation
 
 /-!
 # Holomorphic hulls and Stein manifolds
@@ -211,13 +212,11 @@ instance (priority := 100) of_subsingleton [Subsingleton E] : IsSteinManifold I 
 variable (I)
 
 /-- A Stein manifold is Hausdorff. -/
-theorem t2Space [IsSteinManifold I M] : T2Space M := by
+theorem t2Space [IsSteinManifold I M] : T2Space M :=
   -- Global holomorphic functions are continuous and separate points.
-  refine .of_injective_continuous (f := fun x (f : {f : M → ℂ // MDifferentiable I 𝓘(ℂ) f}) ↦
-    f.1 x) (fun x y hxy ↦ ?_) (continuous_pi fun f ↦ f.2.continuous)
-  by_contra hne
-  obtain ⟨f, hf, hfxy⟩ := exists_mdifferentiable_apply_ne (I := I) hne
-  exact hfxy (congrFun hxy ⟨f, hf⟩)
+  Set.SeparatesPoints.t2Space (B := {g : C(M, ℂ) | MDifferentiable I 𝓘(ℂ) g}) fun _ _ hxy ↦
+    let ⟨f, hf, hfxy⟩ := exists_mdifferentiable_apply_ne (I := I) hxy
+    ⟨f, ⟨⟨f, hf.continuous⟩, hf, rfl⟩, hfxy⟩
 
 /-- A compact Stein manifold without boundary is finite. -/
 theorem finite_of_compactSpace [IsSteinManifold I M] [I.Boundaryless] [IsManifold I 1 M]
