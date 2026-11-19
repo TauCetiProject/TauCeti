@@ -84,6 +84,8 @@ the linear algebra itself is standard.
   convention).
 * `LinearMap.detLineCongr_refl`, `LinearMap.detLineCongr_trans` and `LinearMap.detLineCongr_symm`:
   transport along commuting squares is functorial.
+* `LinearMap.detLineCongrOfEq_eq_detLineCongr`: the identification of the determinant lines of
+  equal maps is transport along the commuting square of identities.
 * `LinearMap.detLineCongrOfEq_rfl`, `LinearMap.detLineCongrOfEq_trans` and
   `LinearMap.detLineCongrOfEq_symm`: the identifications of the determinant lines of equal maps are
   functorial.
@@ -472,6 +474,14 @@ commuting square of identities. -/
 def detLineCongrOfEq {g : M →ₗ[R] N} (h : f = g) : f.detLine ≃ₗ[R] g.detLine :=
   f.detLineCongr (LinearEquiv.refl R M) (LinearEquiv.refl R N)
     (by rw [h, LinearEquiv.refl_toLinearMap, LinearEquiv.refl_toLinearMap, comp_id, id_comp])
+
+/-- The identification of the determinant lines of equal maps `f = g` is transport along the
+commuting square of identities, so it combines with `detLineCongr_trans` and `detLineCongr_symm`
+for other commuting squares. -/
+theorem detLineCongrOfEq_eq_detLineCongr {g : M →ₗ[R] N} (h : f = g) :
+    detLineCongrOfEq h = f.detLineCongr (LinearEquiv.refl R M) (LinearEquiv.refl R N)
+      (by rw [h, LinearEquiv.refl_toLinearMap, LinearEquiv.refl_toLinearMap, comp_id, id_comp]) :=
+  (rfl)
 
 /-- Identifying the determinant line of `f` with itself is the identity. -/
 @[simp]
