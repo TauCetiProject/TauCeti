@@ -142,16 +142,6 @@ theorem norm_one_sub_complexSlope {s t : ℝ} (hs : 0 < s) (ht : 0 < t) (hst : s
     abs_of_pos (div_pos (sin_pi_mul_pos_of_pos_of_lt_one hs (by linarith))
       (sin_pi_mul_one_sub_sub_pos hs ht hst))]
 
-/-- The sine of the angle `π - arg ξ + arg (1 - ξ)` of the triangle `0, 1, ξ` at `ξ`. -/
-private theorem sin_arg_sub_arg_one_sub {ξ : ℂ} (h₀ : ξ ≠ 0) (h₁ : 1 - ξ ≠ 0) :
-    Real.sin (arg ξ - arg (1 - ξ)) = ξ.im / (‖ξ‖ * ‖1 - ξ‖) := by
-  rw [Real.sin_sub, sin_arg, sin_arg, cos_arg h₀, cos_arg h₁]
-  have : ‖ξ‖ ≠ 0 := norm_ne_zero_iff.2 h₀
-  have : ‖1 - ξ‖ ≠ 0 := norm_ne_zero_iff.2 h₁
-  field_simp
-  simp
-  ring
-
 /-- The complex slope of `(arg ξ / π, -arg (1 - ξ) / π)` is `ξ`, for `ξ` in the upper half-plane:
 `ξ` is determined by the angles of the triangle `0, 1, ξ` at `0` and `1`. -/
 theorem complexSlope_arg_div_pi {ξ : ℂ} (hξ : 0 < ξ.im) :
