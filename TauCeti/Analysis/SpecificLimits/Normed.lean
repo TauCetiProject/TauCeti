@@ -16,7 +16,8 @@ The norms of the powers of an element in the open unit ball form a summable seri
 the seminorm is not normalized. The same holds after multiplication by bounded coefficients.
 Completeness then gives summability in the ring itself. In a complete seminormed group, a
 sequence whose consecutive norms shrink by factors `C ρᵏ` with `ρ < 1` is summable, by the ratio
-test.
+test. In any normed ring with summable geometric series, shifted polynomial-geometric series
+`∑ (n + c) ^ k * r ^ n` are summable whenever `‖r‖ < 1`.
 
 Over a normed field, the evaluations below specialize Mathlib's binomial geometric-series
 formula to linear and quadratic coefficients, without requiring completeness or an ultrametric
@@ -88,7 +89,36 @@ theorem summable_of_norm_succ_le_mul_pow {E : Type*} [SeminormedAddCommGroup E] 
     filter_upwards [Filter.eventually_ge_atTop 2] with n hn
     simpa [add_tsub_cancel_of_le (hj2.trans hn)] using hzero j hj (n - j)
 
+/-- For any shift `c` and `r` with `‖r‖ < 1` in a normed ring with summable geometric series,
+the shifted polynomial-geometric series `∑' n, (n + c) ^ k * r ^ n` is summable. -/
+theorem summable_add_pow_mul_geometric_of_norm_lt_one {R : Type*} [NormedRing R]
+    [HasSummableGeomSeries R] (c : R) (k : ℕ) {r : R} (hr : ‖r‖ < 1) :
+    Summable (fun n : ℕ ↦ ((n : R) + c) ^ k * r ^ n) := by
+  have hsum : Summable fun n : ℕ ↦
+      ∑ i ∈ Finset.range (k + 1), (c ^ (k - i) * (k.choose i : R)) * ((n : R) ^ i * r ^ n) :=
+    summable_sum fun i _ ↦ (summable_pow_mul_geometric_of_norm_lt_one i hr).mul_left _
+  refine hsum.congr fun n ↦ ?_
+  rw [(Nat.cast_commute n c).add_pow k, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [← mul_assoc, ← Nat.cast_pow, (Nat.cast_commute (n ^ i) _).symm.eq, Nat.cast_pow,
+    ← mul_assoc]
+
 variable {K : Type*} [NormedField K]
+
+/-- The geometric series with coefficients `(k + 1)²` sums to `(1 + x) / (1 - x)³`. -/
+theorem hasSum_succ_sq_mul_geometric_of_norm_lt_one {x : K} (hx : ‖x‖ < 1) :
+    HasSum (fun k : ℕ ↦ ((k : K) + 1) ^ 2 * x ^ k) ((1 + x) / (1 - x) ^ 3) := by
+  have H := ((hasSum_sq_mul_geometric_of_norm_lt_one hx).add
+    ((hasSum_coe_mul_geometric_of_norm_lt_one hx).mul_left 2)).add
+    (hasSum_geometric_of_norm_lt_one hx)
+  convert H using 1
+  · ext k
+    ring
+  · have hne : 1 - x ≠ 0 := sub_ne_zero.mpr (fun h ↦ by
+      have : x = 1 := h.symm
+      simp only [this, norm_one, lt_self_iff_false] at hx)
+    field_simp
+    ring
 
 /-- The geometric series with coefficient and exponent both shifted by one. -/
 theorem tsum_natCast_succ_mul_pow_succ (r : K) (hr : ‖r‖ < 1) :

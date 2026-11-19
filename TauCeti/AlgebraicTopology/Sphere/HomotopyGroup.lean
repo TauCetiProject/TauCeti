@@ -24,8 +24,11 @@ import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 
 The unit sphere `Sⁿ` of an `(n + 1)`-dimensional real normed space is `(n - 1)`-connected:
 `πₖ(Sⁿ, x)` is trivial for every `k < n`, in every degree including `π₀`
-(`TauCeti.subsingleton_homotopyGroup_sphere_of_lt`). Consequently, by the Hurewicz theorem and
-the homology of spheres, `πₙ(Sⁿ, x) ≅ ℤ` for `n ≥ 2` (`TauCeti.homotopyGroupSphereAddEquiv`),
+(`TauCeti.subsingleton_homotopyGroup_sphere_of_lt`), so its Moore loop space is
+`(n - 2)`-connected (`TauCeti.subsingleton_homotopyGroup_mooreLoopSpace_sphere`), and for `n ≥ 2`
+its fixed-interval loop space is path connected (`TauCeti.pathConnectedSpace_loopSpace_sphere`).
+From this connectivity, by the Hurewicz theorem and the homology of spheres,
+`πₙ(Sⁿ, x) ≅ ℤ` for `n ≥ 2` (`TauCeti.homotopyGroupSphereAddEquiv`),
 the double Moore loop space of `S³` has first integral homology `ℤ`
 (`TauCeti.MooreLoopSpace.doubleFirstHomologySphereAddEquiv`), and for `m ≥ 4` the double Moore loop
 space of `Sᵐ` has integral homology `ℤ` in degree `m - 2`
@@ -37,6 +40,10 @@ of the coefficients indexed by the nonzero integers
 (`TauCeti.MooreLoopSpace.doubleReducedHomology₀SphereIso`); with coefficients in a ring `R` it
 contains a copy of `R`, so an infinite cyclic subgroup for `R = ℤ`
 (`TauCeti.MooreLoopSpace.exists_injective_doubleReducedHomology₀_sphere`).
+
+The full homology of the loop space of `Sⁿ` is computed downstream, in
+`TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Sphere.Basic`
+(`TauCeti.isZero_singularHomology_mooreLoopSpace_sphere`).
 
 The vanishing follows from cellular compression, as in Hatcher's Corollary 4.12. The sphere
 `Sⁿ` has a CW structure with one `0`-cell and one `n`-cell (`TauCeti.sphereCWComplex`), so its
@@ -57,6 +64,9 @@ basis, so its sign depends on the orientation of that basis.
 ## Main declarations
 
 * `TauCeti.subsingleton_homotopyGroup_sphere_of_lt`: `πₖ(Sⁿ, x)` is trivial for `k < n`.
+* `TauCeti.subsingleton_homotopyGroup_mooreLoopSpace_sphere`: `πₖ(ΩSⁿ)` is trivial for
+  `k + 1 < n`.
+* `TauCeti.pathConnectedSpace_loopSpace_sphere`: `ΩSⁿ` is path connected for `n ≥ 2`.
 * `TauCeti.subsingleton_homotopyGroup_sphere_piLp_quaternion`: `πₖ(S^{4m-1}, x)` is trivial for
   `k < 4m - 1`, for the unit sphere of `ℍᵐ`.
 * `TauCeti.subsingleton_homotopyGroup_sphere_quaternion`: `πₖ(S³, x)` is trivial for `k < 3`.
@@ -80,7 +90,7 @@ public section
 noncomputable section
 
 open Metric Set Module CategoryTheory Limits Topology.RelCWComplex
-open scoped unitInterval Topology Topology.Homotopy
+open scoped Topology Topology.Homotopy
 
 namespace TauCeti
 
@@ -104,7 +114,6 @@ theorem subsingleton_homotopyGroup_sphere_of_lt {E : Type*} [NormedAddCommGroup 
   let F := EuclideanSpace ℝ (Fin (m + 2))
   have hF : Fintype.card (Fin (m + 2)) = m + 1 + 1 := Fintype.card_fin _
   let _ := sphereCWComplex hF
-  have := finite_sphereCWComplex hF
   -- The `m`-skeleton of the CW structure on `Sᵐ⁺¹` is its pole, the unique `0`-cell.
   have hA := skeletonLT_sphereCWComplex hF (k := m + 1) (by simp) le_rfl
   have hp : spherePole hF ∈ (skeletonLT (sphere (0 : F) 1) (m + 1) : Set F) :=
@@ -121,7 +130,22 @@ theorem subsingleton_homotopyGroup_sphere_of_lt {E : Type*} [NormedAddCommGroup 
   let h := sphereHomeomorphOfFinrankEq (hE.trans (finrank_euclideanSpace_fin (n := m + 2)).symm :
     finrank ℝ E = finrank ℝ F)
   exact (HomotopyGroup.homeomorphEquiv (N := N) h x).subsingleton_congr.mpr
-    ((homotopyGroupEquivOfPath (PathConnectedSpace.somePath _ _)).subsingleton_congr.mp hpole)
+    (subsingleton_homotopyGroup_of_pathConnectedSpace hpole)
+
+/-- **The loop space of `Sⁿ` is `(n - 2)`-connected.** For the unit sphere `Sⁿ` of an
+`(n + 1)`-dimensional real normed space, `πₖ(ΩSⁿ)` is trivial for every `k + 1 < n`. -/
+theorem subsingleton_homotopyGroup_mooreLoopSpace_sphere {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {n : ℕ} (hE : finrank ℝ E = n + 1) (x : sphere (0 : E) 1) {k : ℕ}
+    (hk : k + 1 < n) : Subsingleton (π_ k (MooreLoopSpace (sphere (0 : E) 1) x) 1) :=
+  (MooreLoopSpace.subsingleton_homotopyGroup_iff x k).2
+    (subsingleton_homotopyGroup_sphere_of_lt hE (by simpa using hk) x)
+
+/-- **The loop space of `Sⁿ` is path connected** for `n ≥ 2`, since `Sⁿ` is simply connected. -/
+theorem pathConnectedSpace_loopSpace_sphere {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {n : ℕ} (hE : finrank ℝ E = n + 1) (hn : 2 ≤ n) (x : sphere (0 : E) 1) :
+    PathConnectedSpace (Ω (sphere (0 : E) 1) x) :=
+  (pathConnectedSpace_loopSpace_iff_subsingleton_pi1 x).2
+    (subsingleton_homotopyGroup_sphere_of_lt hE (by simp; omega) x)
 
 section Hurewicz
 

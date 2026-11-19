@@ -30,7 +30,7 @@ local notation "D" => closedBall (0 : ℂ) 1
 local notation "B" => ModelWithCorners.boundary (I := (𝓡∂ (1 + 1))) D
 local notation "E₁" => EuclideanSpace ℝ (Fin 1)
 
-local instance : IsManifold (𝓡 1) ω B := isManifold_boundary (n := 1) D (by simp)
+local instance : IsManifold (𝓡 1) ω B := isManifold_boundary (n := 1) D
 
 local instance : CompactSpace B :=
   isCompact_iff_compactSpace.mp
@@ -151,8 +151,7 @@ theorem integralTopForm_twoDiskBoundaries (P Q : ℂ → ℝ) (hP : Continuous P
     (sphereDiffeomorphBoundaryClosedBall (n := 1) (Circle.exp (-Real.pi)))
   have hf : ContMDiff (𝓡 1) 𝓘(ℝ, ℂ) 1 f := by
     have h := (contMDiff_subtypeVal_closedBall (n := 2) (k := 1)).comp
-      (isSmoothEmbedding_subtypeVal_boundary (n := 1) D
-        (by simp : (1 : ℕ∞ω) ≠ 0)).contMDiff
+      (isSmoothEmbedding_subtypeVal_boundary (n := 1) (k := 1) D).contMDiff
     exact h.sumElim h
   have hqext (i : Bool) (t : ℝ) : (q i).extend t =
       componentInclusion i (unitDiskBoundaryLoop.extend t) := rfl
