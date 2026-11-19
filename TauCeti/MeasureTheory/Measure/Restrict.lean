@@ -17,7 +17,8 @@ of preimage-event probabilities. This converts restricted distribution identitie
 independence identities without requiring the restricting event to be measurable.
 
 Restricting a measure to the whole space, written as the top open set, does not change it
-(`MeasureTheory.Measure.restrict_coe_opens_top`). Spaces of functions on an open set `Ω` are
+(`MeasureTheory.Measure.restrict_coe_opens_top`), and neither does its almost-everywhere filter
+(`MeasureTheory.Measure.ae_restrict_coe_opens_top`). Spaces of functions on an open set `Ω` are
 built on `μ.restrict Ω`, so this identifies their whole-space instances with the spaces for `μ`.
 
 On a finite type, the restriction of a measure to its points of finite mass is a finite measure
@@ -40,6 +41,13 @@ theorem restrict_coe_opens_top {α : Type*} {_ : MeasurableSpace α} [Topologica
     (μ : Measure α) :
     μ.restrict ((⊤ : TopologicalSpace.Opens α) : Set α) = μ := by
   rw [TopologicalSpace.Opens.coe_top, restrict_univ]
+
+/-- Almost everywhere for the restriction of a measure to the whole space, as the top open set,
+is almost everywhere for the measure itself. -/
+theorem ae_restrict_coe_opens_top {α : Type*} {_ : MeasurableSpace α} [TopologicalSpace α]
+    (μ : Measure α) :
+    ae (μ.restrict ((⊤ : TopologicalSpace.Opens α) : Set α)) = ae μ :=
+  congrArg ae (restrict_coe_opens_top μ)
 
 end MeasureTheory.Measure
 
