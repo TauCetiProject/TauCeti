@@ -270,12 +270,8 @@ theorem cotangentRel_mul_right_leftTrivialization (g h : G) (a : E →L[ℝ] ℝ
   ext v
   obtain ⟨ξ, rfl⟩ := exists_mulInvariantVectorField_eq (I := I) (G := G) (g := x) v
   -- `d(R_h)` carries `ξ^L` at `g` to `(Ad_{h⁻¹} ξ)^L` at `g h`, and `Ad_h ∘ Ad_{h⁻¹} = id`.
-  have hAd : Lie.adjointContinuousLinearMap (I := I) h
-      (Lie.adjointContinuousLinearMap (I := I) h⁻¹ ξ) = ξ := by
-    rw [← ContinuousLinearMap.comp_apply, ← Lie.adjointContinuousLinearMap_mul, mul_inv_cancel,
-      Lie.adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply]
   exact ((hq _).trans (congrArg a (mfderiv_inv_mul_mulInvariantVectorField ξ x))).trans <|
-    (congrArg a hAd).symm.trans <|
+    (congrArg a (Lie.adjointContinuousLinearMap_adjointContinuousLinearMap_inv h ξ)).symm.trans <|
       (leftTrivialization_snd_apply_mulInvariantVectorField (x * h, b)
         (Lie.adjointContinuousLinearMap (I := I) h⁻¹ ξ)).symm.trans
         (congrArg (leftTrivialization I G (x * h, b)).2
@@ -375,14 +371,15 @@ theorem eval₂_mpullback_leftTrivialization_symplecticForm (p : G × (E →L[�
   obtain ⟨η, hη⟩ := exists_mulInvariantVectorField_eq (I := I) (G := G) (g := p.1) w.1
   set X := prodVectorField (mulInvariantVectorField ξ) (constVectorField v.2)
   set Y := prodVectorField (mulInvariantVectorField η) (constVectorField w.2)
-  have hv : X p = v := (tangentSpaceProdEquiv p).injective <| by
-    rw [tangentSpaceProdEquiv_prodVectorField, tangentSpaceProdEquiv_apply]
-    exact Prod.ext hξ
-      ((constVectorField_apply _ _).trans (NormedSpace.fromTangentSpace_symm_apply _ _))
-  have hw : Y p = w := (tangentSpaceProdEquiv p).injective <| by
-    rw [tangentSpaceProdEquiv_prodVectorField, tangentSpaceProdEquiv_apply]
-    exact Prod.ext hη
-      ((constVectorField_apply _ _).trans (NormedSpace.fromTangentSpace_symm_apply _ _))
+  have hreal (u : TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) p) (ζ : GroupLieAlgebra I G)
+      (hζ : mulInvariantVectorField ζ p.1 = u.1) :
+      prodVectorField (mulInvariantVectorField ζ) (constVectorField u.2) p = u :=
+    (tangentSpaceProdEquiv p).injective <| by
+      rw [tangentSpaceProdEquiv_prodVectorField, tangentSpaceProdEquiv_apply]
+      exact Prod.ext hζ
+        ((constVectorField_apply _ _).trans (NormedSpace.fromTangentSpace_symm_apply _ _))
+  have hv : X p = v := hreal v ξ hξ
+  have hw : Y p = w := hreal w η hη
   set lam := SmoothForm.mpullback (leftTrivialization I G) (leftTrivialization I G).contMDiff
     (liouvilleForm I G)
   have hX : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).tangent
