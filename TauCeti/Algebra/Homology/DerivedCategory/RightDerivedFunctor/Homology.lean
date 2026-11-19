@@ -119,7 +119,9 @@ variable [HasDerivedCategory.{w} C] [TauCeti.HasKInjectiveResolutions C]
 `0` is the classical right derived functor: `Hⁿ(RF(X[0])) ≅ RⁿF(X)`, naturally in `X`. -/
 def rightDerivedFunctorHomologyIso (n : ℕ) :
     singleFunctor C 0 ⋙ F.rightDerivedFunctor ⋙ homologyFunctor D n ≅ F.rightDerived n :=
-  isoWhiskerRight (TauCeti.singleFunctorCompKInjectiveReplacementIso C)
+  isoWhiskerLeft (singleFunctor C 0)
+      (isoWhiskerRight F.rightDerivedFunctorIsoKInjectiveReplacement (homologyFunctor D n)) ≪≫
+    isoWhiskerRight (TauCeti.singleFunctorCompKInjectiveReplacementIso C)
       (F.mapHomotopyCategory _ ⋙ Qh ⋙ homologyFunctor D n) ≪≫
     isoWhiskerLeft (injectiveResolutions C ⋙ ComplexShape.embeddingUpNat.extendHomotopyFunctor C ⋙
       F.mapHomotopyCategory _) (homologyFunctorFactorsh D n) ≪≫

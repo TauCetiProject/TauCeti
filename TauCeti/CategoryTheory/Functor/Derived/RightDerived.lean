@@ -8,14 +8,14 @@ module
 public import Mathlib.CategoryTheory.Functor.Derived.RightDerived
 
 /-!
-# Right derived functors along reflective localizations
+# Right derived functors along localizations with a right adjoint
 
-Let `L : C ⥤ D` be a functor with a fully faithful right adjoint `R`, that is, an adjunction
-`adj : L ⊣ R` whose counit is an isomorphism. For every functor `F : C ⥤ H`, the composite
-`R ⋙ F`, together with the transformation `F ⟶ L ⋙ R ⋙ F` induced by the unit of `adj`, is a
-left Kan extension of `F` along `L`
+Let `adj : L ⊣ R` be an adjunction between `L : C ⥤ D` and `R : D ⥤ C`. For every functor
+`F : C ⥤ H`, the composite `R ⋙ F`, together with the transformation `F ⟶ L ⋙ R ⋙ F` induced
+by the unit of `adj`, is a left Kan extension of `F` along `L`
 (`CategoryTheory.Adjunction.isLeftKanExtension_whiskerRightUnit`).
-Hence, whenever `L` is a localization functor, `R ⋙ F` is a right derived functor of `F`
+Hence, whenever `L` is a localization functor (for instance a reflective localization, where `R`
+is fully faithful), `R ⋙ F` is a right derived functor of `F`
 (`CategoryTheory.Adjunction.isRightDerivedFunctor_whiskerRightUnit`).
 
 This is how right derived functors are computed from functorial fibrant replacements, for
@@ -40,16 +40,14 @@ def whiskerRightUnit : F ⟶ L ⋙ R ⋙ F :=
 lemma whiskerRightUnit_app (X : C) : (adj.whiskerRightUnit F).app X = F.map (adj.unit.app X) := by
   simp [whiskerRightUnit]
 
-variable [IsIso adj.counit]
-
-/-- If the counit of `L ⊣ R` is an isomorphism, then `R ⋙ F` is a left Kan extension of `F`
-along `L`, with unit induced by the unit of the adjunction. -/
+/-- For an adjunction `L ⊣ R`, the functor `R ⋙ F` is a left Kan extension of `F` along `L`, with
+unit induced by the unit of the adjunction. -/
 lemma isLeftKanExtension_whiskerRightUnit :
     (R ⋙ F).IsLeftKanExtension (adj.whiskerRightUnit F) where
   nonempty_isUniversal := ⟨IsInitial.ofUniqueHom
     (fun G ↦ StructuredArrow.homMk
       (whiskerLeft R G.hom ≫ (associator R L G.right).inv ≫
-        whiskerRight (asIso adj.counit).hom G.right ≫ G.right.leftUnitor.hom) (by
+        whiskerRight adj.counit G.right ≫ G.right.leftUnitor.hom) (by
         ext X
         have := G.hom.naturality (adj.unit.app X)
         dsimp at this ⊢
@@ -65,8 +63,8 @@ lemma isLeftKanExtension_whiskerRightUnit :
       rw [← h₁, Category.assoc, ← h₂, ← F.map_comp_assoc, right_triangle_components]
       simp)⟩
 
-/-- If the counit of `L ⊣ R` is an isomorphism and `L` is a localization functor for `W`, then
-`R ⋙ F` is a right derived functor of `F` with respect to `W`. -/
+/-- If `L` is a localization functor for `W` and `L ⊣ R`, then `R ⋙ F` is a right derived
+functor of `F` with respect to `W`. -/
 lemma isRightDerivedFunctor_whiskerRightUnit (W : MorphismProperty C) [L.IsLocalization W] :
     (R ⋙ F).IsRightDerivedFunctor (adj.whiskerRightUnit F) W where
   isLeftKanExtension := adj.isLeftKanExtension_whiskerRightUnit F
