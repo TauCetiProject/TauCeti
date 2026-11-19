@@ -117,6 +117,7 @@ def conj (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : ContDiff ℝ 1 ρ) :
     (F.trans (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos))
 
 /-- The conjugate `Φ ∘ F ∘ Φ⁻¹` as a composite. -/
+@[simp]
 theorem coe_conj (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : ContDiff ℝ 1 ρ) :
     ⇑(hF.conj hρ₁) = stripDensityNormalization ρ ∘ F ∘
       (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos).symm := by
@@ -124,6 +125,7 @@ theorem coe_conj (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : ContDiff ℝ 1 ρ)
     coe_stripDensityNormalizationOpenPartialHomeomorph, comp_assoc]
 
 /-- The inverse of the conjugate `Φ ∘ F ∘ Φ⁻¹` is `Φ ∘ F⁻¹ ∘ Φ⁻¹`. -/
+@[simp]
 theorem coe_conj_symm (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : ContDiff ℝ 1 ρ) :
     ⇑(hF.conj hρ₁).symm = stripDensityNormalization ρ ∘ F.symm ∘
       (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos).symm := by
@@ -269,7 +271,8 @@ theorem bijOn_stripDensityNormalization_fixedPoints (hF : IsPoincareBirkhoffLift
   have hD : Ico (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1 ⊆ univ ×ˢ Icc 0 1 :=
     fun p hp ↦ ⟨mem_univ _, Ioo_subset_Icc_self hp.2⟩
   have hiff {p : ℝ × ℝ} (hp : p ∈ univ ×ˢ Icc (0 : ℝ) 1) :=
-    stripDensityNormalization_mem_Ico_prod_Ioo_iff hρ₁.continuous hF.density_pos hp.2
+    stripDensityNormalization_mem_Ico_prod_Ioo_iff hρ₁.continuous.continuousOn hF.density_pos
+      hp.2
   have hS := univ_prod_Icc_subset_stripDensityNormalizationSource hF.density_pos
   refine ⟨fun p ⟨hfix, hp⟩ ↦ ⟨?_, (hiff (hD hp)).2 hp⟩,
     hbij.injOn.mono fun p hp ↦ hD hp.2, fun q ⟨hfix, hq⟩ ↦ ?_⟩

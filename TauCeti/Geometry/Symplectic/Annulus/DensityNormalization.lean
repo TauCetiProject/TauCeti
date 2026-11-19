@@ -558,28 +558,39 @@ theorem stripAreaFraction_mem_Ico_iff (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1)
 
 /-- For a density positive on the strip, the normalization maps a point `(x, y)` of the strip to an
 interior height, `0 < v(x, y) < 1`, exactly when `0 < y < 1`. -/
-theorem stripDensityNormalization_snd_mem_Ioo_iff (hρ : Continuous ρ)
+theorem stripDensityNormalization_snd_mem_Ioo_iff (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1))
     (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) {p : ℝ × ℝ} (hp : p.2 ∈ Icc (0 : ℝ) 1) :
     (stripDensityNormalization ρ p).2 ∈ Ioo (0 : ℝ) 1 ↔ p.2 ∈ Ioo (0 : ℝ) 1 := by
   obtain ⟨x, y⟩ := p
-  have hs := stripColumnMean_pos_of_forall hρ.continuousOn hpos x
+  -- On the strip the normalization only reads `ρ` there, so `ρ` may be taken continuous.
+  obtain ⟨ρ', hc, hρρ'⟩ := hρ.exists_continuous_eqOn_univ_prod_Icc zero_le_one
+  have hv' {y : ℝ} (hy : y ∈ Icc (0 : ℝ) 1) :
+      (stripDensityNormalization ρ (x, y)).2 = (stripDensityNormalization ρ' (x, y)).2 := by
+    simp only [stripDensityNormalization_snd, stripColumnMean_congr hρρ']
+    exact congrArg _ (integral_congr fun r hr ↦ (hρρ' ⟨mem_univ _,
+      Icc_subset_Icc_right hy.2 (by rwa [uIcc_of_le hy.1] at hr)⟩).symm)
+  replace hpos x y (hy : y ∈ Icc (0 : ℝ) 1) : 0 < ρ' (x, y) := by
+    rw [hρρ' ⟨mem_univ _, hy⟩]
+    exact hpos x y hy
+  have hs := stripColumnMean_pos_of_forall hc.continuousOn hpos x
   have hv := strictMonoOn_stripDensityNormalization_snd (by fun_prop) hs
-  have hmem {y : ℝ} (hy : y ∈ Icc (0 : ℝ) 1) : (x, y) ∈ stripDensityNormalizationSource ρ :=
+  have hmem {y : ℝ} (hy : y ∈ Icc (0 : ℝ) 1) : (x, y) ∈ stripDensityNormalizationSource ρ' :=
     univ_prod_Icc_subset_stripDensityNormalizationSource hpos ⟨mem_univ _, hy⟩
   have h0 := hmem (left_mem_Icc.2 zero_le_one)
   have h1 := hmem (right_mem_Icc.2 zero_le_one)
-  rw [mem_Ioo, mem_Ioo, ← hv.lt_iff_lt h0 (hmem hp), ← hv.lt_iff_lt (hmem hp) h1]
+  rw [hv' (y := y) hp, mem_Ioo, mem_Ioo, ← hv.lt_iff_lt h0 (hmem hp),
+    ← hv.lt_iff_lt (hmem hp) h1]
   simp only [stripDensityNormalization_snd_mk_zero, stripDensityNormalization_snd_mk_one hs.ne']
 
 /-- For a density positive on the strip, the normalization maps a point of the strip into the
 half-open fundamental domain `[0, 1) × (0, 1)` of the interior of the annulus exactly when the
 point lies there. -/
-theorem stripDensityNormalization_mem_Ico_prod_Ioo_iff (hρ : Continuous ρ)
+theorem stripDensityNormalization_mem_Ico_prod_Ioo_iff (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1))
     (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) {p : ℝ × ℝ} (hp : p.2 ∈ Icc (0 : ℝ) 1) :
     stripDensityNormalization ρ p ∈ Ico (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1 ↔
       p ∈ Ico (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1 := by
   rw [mem_prod, mem_prod, stripDensityNormalization_fst,
-    stripAreaFraction_mem_Ico_iff hρ.continuousOn hpos,
+    stripAreaFraction_mem_Ico_iff hρ hpos,
     stripDensityNormalization_snd_mem_Ioo_iff hρ hpos hp]
 
 section
