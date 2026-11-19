@@ -40,8 +40,10 @@ corresponding to the pair of its white and its black face.
 * `TauCeti.hexGraph_isBipartiteWith`: `hexGraph` is bipartite, with the white and the black faces
   as parts.
 * `TauCeti.existsUnique_mem_edges_of_hexGraph_adj`: adjacent faces share a unique edge.
-* `TauCeti.vertexCycle_isCycle`, `TauCeti.support_vertexCycle`: the six faces at a vertex form a
-  `6`-cycle of `hexGraph`.
+* `TauCeti.TriEdge.equivHexGraphEdgeSet_vadd`, `TauCeti.TriEdge.equivHexGraphEdgeSet_rot`: the
+  bijection between the edges of the lattice and of `hexGraph` commutes with translations and `ρ`.
+* `TauCeti.vertexCycle_isCycle`, `TauCeti.toFinset_support_vertexCycle`: the six faces at a vertex
+  form a `6`-cycle of `hexGraph`.
 
 ## References
 
@@ -118,6 +120,13 @@ theorem dualEdge_injective : Function.Injective dualEdge := fun e e' h => by
   have hb : e ∈ e'.blackFace.edges := mem_dualEdge.1 (h ▸ mem_dualEdge.2 e'.mem_blackFace_edges)
   exact eq_of_whiteFace_eq_of_blackFace_eq
     (eq_whiteFace_of_mem_edges hw (by simp)).symm (eq_blackFace_of_mem_edges hb (by simp)).symm
+
+@[simp] theorem dualEdge_vadd (w : ℤ × ℤ) (e : TriEdge) :
+    (w +ᵥ e).dualEdge = e.dualEdge.map (w +ᵥ ·) := by
+  simp [dualEdge]
+
+@[simp] theorem dualEdge_rot (e : TriEdge) : (rot e).dualEdge = e.dualEdge.map TriFace.rot := by
+  simp [dualEdge]
 
 end TriEdge
 
@@ -280,6 +289,18 @@ def hexGraphRot : hexGraph ≃g hexGraph :=
 
 @[simp] theorem hexGraphRot_apply (f : TriFace) : hexGraphRot f = TriFace.rot f := (rfl)
 
+/-- The bijection `TriEdge.equivHexGraphEdgeSet` commutes with translations. -/
+@[simp] theorem TriEdge.equivHexGraphEdgeSet_vadd (w : ℤ × ℤ) (e : TriEdge) :
+    TriEdge.equivHexGraphEdgeSet (w +ᵥ e) =
+      (hexGraphTranslation (.ofAdd w)).mapEdgeSet (TriEdge.equivHexGraphEdgeSet e) :=
+  Subtype.ext (TriEdge.dualEdge_vadd w e)
+
+/-- The bijection `TriEdge.equivHexGraphEdgeSet` commutes with the rotation `ρ`. -/
+@[simp] theorem TriEdge.equivHexGraphEdgeSet_rot (e : TriEdge) :
+    TriEdge.equivHexGraphEdgeSet (TriEdge.rot e) =
+      hexGraphRot.mapEdgeSet (TriEdge.equivHexGraphEdgeSet e) :=
+  Subtype.ext (TriEdge.dualEdge_rot e)
+
 /-! ### The hexagon at a vertex -/
 
 /-- Distinct faces sharing an edge are adjacent. -/
@@ -314,7 +335,8 @@ theorem vertexCycle_isCycle (v : ℤ × ℤ) : (vertexCycle v).IsCycle := by
   omega
 
 /-- The cycle `vertexCycle v` passes through exactly the six faces containing `v`. -/
-theorem support_vertexCycle (v : ℤ × ℤ) : (vertexCycle v).support.toFinset = vertexFaces v := by
+theorem toFinset_support_vertexCycle (v : ℤ × ℤ) :
+    (vertexCycle v).support.toFinset = vertexFaces v := by
   obtain ⟨x, y⟩ := v
   ext ⟨⟨a, b⟩, c⟩
   cases c <;> simp [vertexCycle] <;> omega

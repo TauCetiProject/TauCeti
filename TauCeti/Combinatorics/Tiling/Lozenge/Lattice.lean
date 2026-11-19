@@ -376,6 +376,9 @@ namespace TriEdge
   simp only [blackFace, vadd_v, vadd_k, TriFace.vadd_v]
   split_ifs <;> abel
 
+@[simp] theorem faces_vadd (w : ℤ × ℤ) (e : TriEdge) : (w +ᵥ e).faces = w +ᵥ e.faces := by
+  simp [faces, Finset.vadd_finset_insert]
+
 end TriEdge
 
 theorem vertexFaces_add (w v : ℤ × ℤ) : vertexFaces (w + v) = w +ᵥ vertexFaces v := by
@@ -462,6 +465,10 @@ def rot : Equiv.Perm TriEdge where
 theorem rot_apply (e : TriEdge) :
     rot e = ⟨if e.k = 0 then latticeRot e.v else latticeRot e.target, e.k + 1⟩ := (rfl)
 
+theorem rot_symm_apply (e : TriEdge) :
+    rot.symm e = ⟨latticeRot.symm (if e.k = 1 then e.v else e.v + latticeDir e.k), e.k + 2⟩ :=
+  (rfl)
+
 /-- `ρ` sends the edges of direction `k` to direction `k + 1`. -/
 @[simp] theorem rot_k (e : TriEdge) : (rot e).k = e.k + 1 := (rfl)
 
@@ -506,6 +513,10 @@ def rot : Equiv.Perm TriFace where
 
 theorem rot_apply (f : TriFace) :
     rot f = ⟨latticeRot f.v - if f.isWhite then (1, 0) else (1, 1), f.isWhite⟩ := (rfl)
+
+theorem rot_symm_apply (f : TriFace) :
+    rot.symm f = ⟨latticeRot.symm (f.v + if f.isWhite then (1, 0) else (1, 1)), f.isWhite⟩ :=
+  (rfl)
 
 @[simp] theorem rot_mk_true (v : ℤ × ℤ) :
     rot ⟨v, true⟩ = ⟨latticeRot v - (1, 0), true⟩ := (rfl)
@@ -557,6 +568,9 @@ namespace TriEdge
 
 @[simp] theorem blackFace_rot (e : TriEdge) : (rot e).blackFace = TriFace.rot e.blackFace :=
   (eq_blackFace_of_mem_edges (rot_mem_edges_rot.2 e.mem_blackFace_edges) (by simp)).symm
+
+@[simp] theorem faces_rot (e : TriEdge) : (rot e).faces = e.faces.map TriFace.rot.toEmbedding := by
+  simp [faces]
 
 end TriEdge
 
