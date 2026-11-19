@@ -63,6 +63,7 @@ theorem hammingNorm_indicator_one (s : Finset ι) :
     simp [Set.indicator_apply, hi, NeZero.ne]
 
 /-- Two indicators differ at exactly the elements of the symmetric difference of their sets. -/
+@[simp]
 theorem hammingDist_indicator_one [DecidableEq ι] (s t : Finset ι) :
     hammingDist ((s : Set ι).indicator (1 : ι → A)) ((t : Set ι).indicator 1) = (s ∆ t).card := by
   classical
