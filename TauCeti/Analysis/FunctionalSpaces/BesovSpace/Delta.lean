@@ -73,6 +73,14 @@ private theorem toLp_fourierInv_ae_eq (j : ℕ) (p : ℝ≥0∞) :
   filter_upwards [(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).coeFn_toLp p] with x hx
   rw [hx, φ.coe_fourierInv_inhomogeneousLittlewoodPaleySchwartz]
 
+/-- For `1 ≤ p ≤ ∞`, the first dyadic block `Δ₁ δ₀ = 𝓕⁻ ψ₁` has positive `Lᵖ` norm. -/
+private theorem norm_toLp_fourierInv_one_pos [Nontrivial E] (p : ℝ≥0∞) [Fact (1 ≤ p)] :
+    0 < ‖(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz 1)).toLp p (volume : Measure E)‖ := by
+  refine ENNReal.toReal_pos ?_ (Lp.eLpNorm_ne_top _)
+  rw [eLpNorm_congr_ae (toLp_fourierInv_ae_eq φ 1 p)]
+  exact φ.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_ne_zero 1
+    (zero_lt_one.trans_le Fact.out).ne'
+
 variable {φ}
 
 /-- The weighted block norms of `δ₀` form, from `j = 1` on, a geometric sequence:
@@ -110,11 +118,7 @@ theorem memBesov_delta_zero_iff [Nontrivial E] {s : ℝ} {p q : ℝ≥0∞} [Fac
     fun j ↦ (𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).toLp p
   have hfae (j : ℕ) : f j =ᵐ[volume] 𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
     toLp_fourierInv_ae_eq φ j p
-  have hc : 0 < ‖f 1‖ := by
-    refine ENNReal.toReal_pos ?_ (Lp.eLpNorm_ne_top _)
-    rw [eLpNorm_congr_ae (hfae 1)]
-    exact φ.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_ne_zero 1
-      (zero_lt_one.trans_le Fact.out).ne'
+  have hc : 0 < ‖f 1‖ := norm_toLp_fourierInv_one_pos φ p
   rw [memBesov_iff_memℓp (f := f) (littlewoodPaleyBlock_delta_zero_eq_toLp φ · p),
     ← TauCeti.memℓp_nat_add_iff 1]
   simp_rw [rpow_mul_norm_succ_eq hfae]
@@ -153,11 +157,7 @@ theorem not_tendsto_rpow_mul_norm_block_delta_zero [Nontrivial E] (p : ℝ≥0�
     Lp.toTemperedDistribution_injective <| by
       simp only [TauCeti.BesovSpace.coe_block, MemBesov.toDistr_toBesovSpace]
       exact littlewoodPaleyBlock_delta_zero_eq_toLp φ j p
-  have hc : 0 < ‖f 1‖ := by
-    refine ENNReal.toReal_pos ?_ (Lp.eLpNorm_ne_top _)
-    rw [eLpNorm_congr_ae (toLp_fourierInv_ae_eq φ 1 p)]
-    exact φ.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_ne_zero 1
-      (zero_lt_one.trans_le Fact.out).ne'
+  have hc : 0 < ‖f 1‖ := norm_toLp_fourierInv_one_pos φ p
   -- From `j = 1` on, the weighted block norms are the positive constant `2^{-n/p'} ‖Δ₁ δ₀‖_p`.
   have hconst (j : ℕ) : (2 : ℝ) ^ (-(finrank ℝ E * (1 - p.toReal⁻¹)) * (j + 1 : ℕ)) *
       ‖(memBesov_delta_zero φ p).toBesovSpace.block (j + 1)‖ =

@@ -588,14 +588,21 @@ private theorem heatSemigroup_sub_eq_fourierMultiplierCLM {χ : 𝓢(E, ℂ)} {R
   have hσ : ⇑(SchwartzMap.smulLeftCLM ℂ h χ - χ) = ⇑χ * h - ⇑χ := by
     funext ξ
     simp [SchwartzMap.smulLeftCLM_apply_apply hh, mul_comm]
-  -- Since `u` is reproduced by `χ`, `(χ e^{tΔ})(D) u = e^{tΔ} u`.
-  rw [hσ, TemperedDistribution.fourierMultiplierCLM_apply, TemperedDistribution.smulLeftCLM_sub
-    (χ.hasTemperateGrowth.mul hh) χ.hasTemperateGrowth, sub_apply, FourierTransform.fourierInv_sub,
-    ← TemperedDistribution.fourierMultiplierCLM_apply,
-    ← TemperedDistribution.fourierMultiplierCLM_apply,
-    ← TemperedDistribution.fourierMultiplierCLM_fourierMultiplierCLM_apply χ.hasTemperateGrowth hh,
-    TemperedDistribution.fourierMultiplierCLM_eq_self_of_isVanishingOn hu χ.hasTemperateGrowth hχ1,
-    TemperedDistribution.heatSemigroup_eq_fourierMultiplierCLM]
+  -- Since `u` is reproduced by `χ`, `χ(D) u = u` and `(χ e^{tΔ})(D) u = e^{tΔ} u`.
+  have hχu : TemperedDistribution.fourierMultiplierCLM F χ u = u :=
+    TemperedDistribution.fourierMultiplierCLM_eq_self_of_isVanishingOn hu χ.hasTemperateGrowth hχ1
+  have hχh : TemperedDistribution.fourierMultiplierCLM F (⇑χ * h) u =
+      TemperedDistribution.heatSemigroup E F t u := by
+    rw [← TemperedDistribution.fourierMultiplierCLM_fourierMultiplierCLM_apply
+      χ.hasTemperateGrowth hh, hχu, TemperedDistribution.heatSemigroup_eq_fourierMultiplierCLM]
+  -- The multiplier is linear in its symbol.
+  have hsub : TemperedDistribution.fourierMultiplierCLM F (⇑χ * h - ⇑χ) u =
+      TemperedDistribution.fourierMultiplierCLM F (⇑χ * h) u -
+        TemperedDistribution.fourierMultiplierCLM F χ u := by
+    simp only [TemperedDistribution.fourierMultiplierCLM_apply, TemperedDistribution.smulLeftCLM_sub
+      (χ.hasTemperateGrowth.mul hh) χ.hasTemperateGrowth, sub_apply,
+      FourierTransform.fourierInv_sub]
+  rw [hσ, hsub, hχh, hχu]
 
 variable [CompleteSpace F]
 
@@ -626,13 +633,18 @@ theorem exists_heatSemigroup_sub_eq_and_norm_le_of_isVanishingOn_fourier (R : �
   set κ : Lp ℂ 1 (volume : Measure E) := (𝓕⁻ χ).toLp 1
   have hκ (t : ℝ≥0) : (𝓕⁻ (SchwartzMap.smulLeftCLM ℂ (h t) χ)).toLp 1 =
       heatSemigroup (E := E) (F := ℂ) hp1 t κ := by
+    -- On Schwartz functions, the multiplier `e^{tΔ}` sends `𝓕⁻ χ` to `𝓕⁻ (χ e^{tΔ})`.
+    have hS : SchwartzMap.fourierMultiplierCLM ℂ (h t) (𝓕⁻ χ) =
+        𝓕⁻ (SchwartzMap.smulLeftCLM ℂ (h t) χ) := by
+      rw [SchwartzMap.fourierMultiplierCLM_apply, FourierTransform.fourier_fourierInv_eq]
+    have hT : TemperedDistribution.heatSemigroup E ℂ t ((𝓕⁻ χ : 𝓢(E, ℂ)) : 𝓢'(E, ℂ)) =
+        ((𝓕⁻ (SchwartzMap.smulLeftCLM ℂ (h t) χ) : 𝓢(E, ℂ)) : 𝓢'(E, ℂ)) := by
+      rw [TemperedDistribution.heatSemigroup_eq_fourierMultiplierCLM,
+        TemperedDistribution.fourierMultiplierCLM_toTemperedDistributionCLM_eq (hh t), hS]
     refine Lp.toTemperedDistribution_injective ?_
     dsimp only
     rw [← TemperedDistribution.heatSemigroup_toTemperedDistribution hp1,
-      Lp.toTemperedDistribution_toLp_eq, Lp.toTemperedDistribution_toLp_eq,
-      TemperedDistribution.heatSemigroup_eq_fourierMultiplierCLM,
-      TemperedDistribution.fourierMultiplierCLM_toTemperedDistributionCLM_eq (hh t),
-      SchwartzMap.fourierMultiplierCLM_apply, FourierTransform.fourier_fourierInv_eq]
+      Lp.toTemperedDistribution_toLp_eq, Lp.toTemperedDistribution_toLp_eq, hT]
   refine ⟨fun t ↦ ‖heatSemigroup (E := E) (F := ℂ) hp1 t κ - κ‖, ?_, fun {p} _ t f hf ↦ ?_⟩
   · have h0 := (heatSemigroup (E := E) (F := ℂ) hp1).continuousAt_zero_tendsto κ
     simpa using (tendsto_iff_norm_sub_tendsto_zero.1 h0)

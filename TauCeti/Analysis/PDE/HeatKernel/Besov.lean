@@ -461,14 +461,13 @@ private theorem tendsto_rpow_mul_norm_block_of_tendsto_heatSemigroup {u : BesovS
     (Metric.ball_mem_nhds u (half_pos hε))).and (self_mem_nhdsWithin (s := Set.Ioi 0)) |>.exists
   -- The heat flow `e^{tΔ} u` lies in `B^{s+1}_{p,∞}`, so its weighted blocks decay like `2^{-j}`.
   set w := heatSemigroupOfNeZero F φ s p ∞ (s + 1) (ne_of_gt ht0) u
+  have h2s (j : ℕ) : (2 : ℝ) ^ (s * j) = (1 / 2) ^ j * 2 ^ ((s + 1) * j) := by
+    rw [add_mul, one_mul, Real.rpow_add two_pos, Real.rpow_natCast, mul_left_comm, ← mul_pow]
+    norm_num
   have hw (j : ℕ) : 2 ^ (s * j) * ‖(heatSemigroup F φ s p ∞ t u).block j‖ ≤
       (1 / 2) ^ j * ‖w‖ := by
-    rw [block_eq_of_toDistr_eq (v := w) (by simp [w]) j]
-    refine le_trans (le_of_eq ?_) (mul_le_mul_of_nonneg_left (rpow_mul_norm_block_le w j)
-      (by positivity))
-    rw [← mul_assoc, one_div, inv_pow, ← Real.rpow_natCast, ← Real.rpow_neg zero_le_two,
-      ← Real.rpow_add two_pos]
-    ring_nf
+    rw [block_eq_of_toDistr_eq (v := w) (by simp [w]) j, h2s, mul_assoc]
+    exact mul_le_mul_of_nonneg_left (rpow_mul_norm_block_le w j) (by positivity)
   have h2 : Tendsto (fun j : ℕ ↦ (1 / 2 : ℝ) ^ j * ‖w‖) atTop (𝓝 0) := by
     simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one (by norm_num : (0 : ℝ) ≤ 1 / 2)
       (by norm_num)).mul_const ‖w‖
