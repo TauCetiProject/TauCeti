@@ -322,17 +322,12 @@ theorem reducedTrace_tmul (L : Type*) [Field L] [Algebra K L] (l : L) (a : A) :
 theorem trace_mulLeft_eq_deg_mul_reducedTrace (a : A) :
     LinearMap.trace K A (LinearMap.mulLeft K a) = deg K A * reducedTrace K A a := by
   let e := sepClosureSplitting K A
-  have hbc : (LinearMap.mulLeft K a).baseChange (SeparableClosure K) =
-      LinearMap.mulLeft (SeparableClosure K) ((1 : SeparableClosure K) ⊗ₜ[K] a) := by
-    ext
-    simp
-  have hconj : e.toLinearEquiv.conj (LinearMap.mulLeft (SeparableClosure K) (1 ⊗ₜ[K] a)) =
-      LinearMap.mulLeft (SeparableClosure K) (e (1 ⊗ₜ a)) := by
-    ext x : 1
-    simp [LinearEquiv.conj_apply]
   apply (algebraMap K (SeparableClosure K)).injective
-  rw [map_mul, map_natCast, algebraMap_reducedTrace e, ← LinearMap.trace_baseChange, hbc,
-    ← LinearMap.trace_conj' _ e.toLinearEquiv, hconj, Matrix.trace_mulLeft, Fintype.card_fin]
+  rw [map_mul, map_natCast, algebraMap_reducedTrace e, ← LinearMap.trace_baseChange,
+    show (LinearMap.mulLeft K a).baseChange (SeparableClosure K) =
+      LinearMap.mulLeft (SeparableClosure K) (1 ⊗ₜ a) from Algebra.baseChange_lmul a,
+    ← LinearMap.trace_conj' _ e.toLinearEquiv, AlgEquiv.linearEquivConj_mulLeft,
+    Matrix.trace_mulLeft, Fintype.card_fin]
 
 end Def
 
