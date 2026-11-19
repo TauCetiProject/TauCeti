@@ -87,7 +87,9 @@ does not depend on `L`. The curvature of the neck itself vanishes, as the datum 
   is its pair-of-pants datum.
 * `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_realChart_plumbingMap`: for
   `L > 4` and `L > R + 2`, if `u` solves the Floer equation of the glued datum at `ψ(w)` with
-  `w ∈ S_R`, then `u ∘ ψ` solves the Floer equation of the inserted pair of pants at `w`.
+  `w ∈ S_R`, then `u ∘ ψ` solves the Floer equation of the inserted pair of pants at `w`, and
+  `TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_realChart_plumbingMap` is the
+  same statement for a manifold target.
 
 ## References
 
@@ -460,6 +462,68 @@ theorem abs_setIntegral_hamiltonianCurvature_plumbedPerturbation_le (ω : Smooth
   exact (eNorm_integral_le_lintegral_eNorm _).trans ((setLIntegral_le_lintegral _ _).trans
     (ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le hq hHa hHb hHas hHbs hab hL hBa
       hBb u))
+
+/-- **The inserted pair of pants solves its Floer equation, for a manifold target.** Let `u` solve
+the Floer equation `(du - X_K)^{0,1} = 0` of the plumbed perturbation `K` of `C¹` Hamiltonians at
+the image `ψ_L(w)` of a point `w` of the truncation `S_R` of the inserted pair of pants, with neck
+length `L > 4` and `L > R + 2`. Then `u ∘ ψ_L` solves the Floer equation of the inserted
+pair-of-pants perturbation at `w`, for the same almost complex structure on `T_{u(ψ_L(w))} M`,
+because the plumbing map is holomorphic. For a symplectic vector space target this is
+`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_realChart_plumbingMap`. -/
+theorem isComplexLinearMap_perturbedMFDeriv_comp_realChart_plumbingMap (ω : SmoothTwoForm I M)
+    (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) {R : ℝ} (hRL : R + 2 < L) {w : ℝ × ℝ}
+    (hw : Complex.equivRealProdCLM.symm w ∈ truncation R) {u : ℝ × ℝ → M}
+    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (realChart (q.plumbingMap L) w))
+    {J : AlmostComplexStructure (TangentSpace I (u (realChart (q.plumbingMap L) w)))}
+    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J (ω.perturbedMFDeriv
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+      u (realChart (q.plumbingMap L) w)).toLinearMap) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) J (ω.perturbedMFDeriv
+      (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
+      (u ∘ realChart (q.plumbingMap L)) w).toLinearMap := by
+  have h₂ := (mem_truncation.1 hw).2.2 inf
+  rw [endSign_inf, neg_one_mul] at h₂
+  -- The point `ψ_L(w)` lies in the plumbed four-punctured sphere.
+  have hP : (Complex.equivRealProdCLM.symm (realChart (q.plumbingMap L) w) ≠ 0 ∧
+      Complex.equivRealProdCLM.symm (realChart (q.plumbingMap L) w) ≠ 1) ∧
+      Complex.equivRealProdCLM.symm (realChart (q.plumbingMap L) w) ≠ q.plumbingMap L 1 := by
+    rw [equivRealProdCLM_symm_realChart]
+    exact mapsTo_plumbingMap hq (by linarith) ⟨⟨(mem_truncation.1 hw).1,
+      (mem_truncation.1 hw).2.1⟩, by linarith⟩
+  have h' := ω.isComplexLinearMap_perturbedMFDeriv_perturbationPullback
+    ((contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w) hu
+    (mdifferentiableAt_plumbedPerturbation_target hq hHa hHb hHas hHbs hab hL hP _ 1)
+    (mdifferentiableAt_plumbedPerturbation_target hq hHa hHb hHas hHbs hab hL hP _ Complex.I)
+    (isComplexLinearMap_fderiv_realChart (q.hasDerivAt_plumbingMap L _)) h
+  -- The pulled-back datum at `w` is the datum of the inserted pair of pants.
+  have hs (v : ℝ × ℝ) : perturbationPullback (realChart (q.plumbingMap L))
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+      v w = fun x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm w) x
+        (Complex.equivRealProdCLM.symm v) :=
+    funext fun x ↦ perturbationPullback_plumbedPerturbation_of_mem_truncation hq hab hRL.le hw v x
+  have hK : ω.perturbedMFDeriv
+      (perturbationPullback (realChart (q.plumbingMap L))
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        stdComplexLineReal)
+      (perturbationPullback (realChart (q.plumbingMap L))
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        stdComplexLineImag) (u ∘ realChart (q.plumbingMap L)) w =
+      ω.perturbedMFDeriv
+        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
+        (u ∘ realChart (q.plumbingMap L)) w := by
+    refine ContinuousLinearMap.ext fun v ↦ ?_
+    rw [perturbedMFDeriv_apply, perturbedMFDeriv_apply, hs, hs,
+      equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag]
+  rwa [hK] at h'
 
 end TauCeti.SmoothTwoForm
 
