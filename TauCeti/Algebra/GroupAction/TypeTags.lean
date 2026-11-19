@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Group.Action.TypeTags
 public import Mathlib.Algebra.Group.Pointwise.Set.Scalar
 public import Mathlib.Algebra.GroupWithZero.Action.Defs
+public import Mathlib.Algebra.Group.Subgroup.Lattice
+public import Mathlib.Algebra.Ring.Action.Submonoid
 public import Mathlib.GroupTheory.GroupAction.Hom
 
 /-!
@@ -34,6 +36,11 @@ The inverse transport `Multiplicative.mulDistribMulAction` reads a distributive 
 additive monoid `A` as an action by monoid endomorphisms on `Multiplicative A`. It is what lets an
 additive coefficient module enter a construction stated for multiplicative ones, such as the
 twisted product of a factor set.
+
+The two transported actions have the same fixed points as the original ones:
+`FixedPoints.addSubgroup_additive` and `FixedPoints.subgroup_multiplicative` identify the fixed
+subgroup on a type tag with the image of the original fixed subgroup under Mathlib's subgroup
+correspondences `Subgroup.toAddSubgroup` and `AddSubgroup.toSubgroup`.
 -/
 
 public section
@@ -89,6 +96,24 @@ theorem toAdd_smul (g : M) (x : Multiplicative A) : (g • x).toAdd = g • x.to
   rfl
 
 end Multiplicative
+
+namespace FixedPoints
+
+/-- The fixed points of the distributive action on `Additive A` are the fixed points of the action
+on `A`, read additively. -/
+theorem addSubgroup_additive (M A : Type*) [Monoid M] [Group A] [MulDistribMulAction M A] :
+    FixedPoints.addSubgroup M (Additive A) = (FixedPoints.subgroup M A).toAddSubgroup := by
+  ext x
+  simp [← Additive.toMul_smul, Additive.toMul.injective.eq_iff]
+
+/-- The fixed points of the action on `Multiplicative A` are the fixed points of the distributive
+action on `A`, read multiplicatively. -/
+theorem subgroup_multiplicative (M A : Type*) [Monoid M] [AddGroup A] [DistribMulAction M A] :
+    FixedPoints.subgroup M (Multiplicative A) = (FixedPoints.addSubgroup M A).toSubgroup := by
+  ext x
+  simp [← Multiplicative.toAdd_smul, Multiplicative.toAdd.injective.eq_iff]
+
+end FixedPoints
 
 namespace MulDistribMulActionHom
 
