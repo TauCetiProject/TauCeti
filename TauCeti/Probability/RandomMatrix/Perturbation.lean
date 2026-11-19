@@ -40,6 +40,16 @@ variable {Ω n 𝕜 E : Type*} [MeasurableSpace Ω] [Fintype n] [DecidableEq n] 
 
 include hD hf
 
+private theorem spectralMeasure_sub_sq_bound :
+    Integrable (fun ω ↦ (K : ℝ) ^ 2 / Fintype.card n * ‖A ω - B ω‖ ^ 2) P ∧
+      ∀ ω, ‖(∫ x, f x ∂((A ω).spectralMeasure (hA ω) : Measure ℝ)) -
+        ∫ x, f x ∂((B ω).spectralMeasure (hB ω) : Measure ℝ)‖ ^ 2 ≤
+        (K : ℝ) ^ 2 / Fintype.card n * ‖A ω - B ω‖ ^ 2 := by
+  refine ⟨hD.const_mul _, fun ω ↦ ?_⟩
+  rw [div_mul_eq_mul_div, ← Real.sq_sqrt (Nat.cast_nonneg (Fintype.card n)), ← mul_pow, ← div_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _)
+    (Matrix.norm_integral_spectralMeasure_sub_integral_spectralMeasure_le (hA ω) (hB ω) hf) 2
+
 /-- The difference of Lipschitz spectral statistics has an integrable squared norm
 when the matrices are measurable almost everywhere and the squared Frobenius error is integrable. -/
 theorem integrable_norm_integral_spectralMeasure_sub_sq
@@ -60,13 +70,10 @@ theorem integrable_norm_integral_spectralMeasure_sub_sq
     hf.continuous).comp_aestronglyMeasurable hAm'.aestronglyMeasurable
   have hSB := (Matrix.continuous_integral_spectralMeasure (n := n) (𝕜 := 𝕜)
     hf.continuous).comp_aestronglyMeasurable hBm'.aestronglyMeasurable
-  have hi : Integrable (fun ω ↦
-      ((K : ℝ) * ‖A ω - B ω‖ / Real.sqrt (Fintype.card n)) ^ 2) P := by
-    simpa only [div_pow, mul_pow] using (hD.const_mul ((K : ℝ) ^ 2)).div_const _
+  obtain ⟨hi, hle⟩ := spectralMeasure_sub_sq_bound A B hA hB hD hf
   refine hi.mono' ((hSA.sub hSB).norm.pow 2) (.of_forall fun ω ↦ ?_)
   rw [Real.norm_of_nonneg (sq_nonneg _)]
-  exact pow_le_pow_left₀ (norm_nonneg _)
-    (Matrix.norm_integral_spectralMeasure_sub_integral_spectralMeasure_le (hA ω) (hB ω) hf) 2
+  exact hle ω
 
 /-- Mean-square Frobenius control gives mean-square control of every Lipschitz linear
 spectral statistic, with the normalization by matrix dimension. -/
@@ -75,18 +82,10 @@ theorem integral_norm_integral_spectralMeasure_sub_sq_le
     ∫ ω, ‖(∫ x, f x ∂((A ω).spectralMeasure (hA ω) : Measure ℝ)) -
       ∫ x, f x ∂((B ω).spectralMeasure (hB ω) : Measure ℝ)‖ ^ 2 ∂P ≤
       (K : ℝ) ^ 2 / Fintype.card n * ∫ ω, ‖A ω - B ω‖ ^ 2 ∂P := by
-  calc
-    _ ≤ ∫ ω, ((K : ℝ) * ‖A ω - B ω‖ / Real.sqrt (Fintype.card n)) ^ 2 ∂P := by
-      apply integral_mono_ae
-        (integrable_norm_integral_spectralMeasure_sub_sq A B hA hB hD hf hAm hBm)
-      · simpa only [div_pow, mul_pow] using (hD.const_mul ((K : ℝ) ^ 2)).div_const _
-      · exact .of_forall fun ω ↦ pow_le_pow_left₀ (norm_nonneg _)
-          (Matrix.norm_integral_spectralMeasure_sub_integral_spectralMeasure_le
-            (hA ω) (hB ω) hf) 2
-    _ = _ := by
-      simp_rw [div_pow, mul_pow, Real.sq_sqrt (Nat.cast_nonneg _), div_eq_mul_inv]
-      rw [integral_mul_const, integral_const_mul]
-      ring
+  obtain ⟨hi, hle⟩ := spectralMeasure_sub_sq_bound A B hA hB hD hf
+  rw [← integral_const_mul]
+  exact integral_mono_ae
+    (integrable_norm_integral_spectralMeasure_sub_sq A B hA hB hD hf hAm hBm) hi (.of_forall hle)
 
 /-- A quantitative probability bound for a Lipschitz spectral-statistic perturbation.
 The estimate includes constant test functions (`K = 0`). -/

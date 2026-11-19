@@ -55,8 +55,7 @@ theorem _root_.ProbabilityTheory.iIndepFun.wignerMatrix_centeredTruncation
     | .inr _ => id
   have hg (k) : Measurable (g k) := by
     cases k
-    · exact (measurable_id.indicator
-        (measurableSet_le measurable_norm measurable_const)).sub measurable_const
+    · exact (measurable_id.indicator_setOf_norm_le R).sub_const _
     · exact measurable_id
   convert h.comp g hg using 1
   funext k ω
@@ -123,10 +122,10 @@ theorem integral_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_sq_le
     (aemeasurable_wignerMatrix (fun ij _ ↦
       (((hd ij).symm.memLp_snd hX).aestronglyMeasurable.centeredTruncation R).aemeasurable)
       (fun i _ ↦ hη i))).trans ?_
-  simpa only [Fintype.card_fin, Nat.cast_add, Nat.cast_one, div_eq_mul_inv, mul_assoc] using
-    mul_le_mul_of_nonneg_left
-      (inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le hX hmean hd R n)
-      (sq_nonneg (K : ℝ))
+  rw [Fintype.card_fin, Nat.cast_add, Nat.cast_one, div_eq_mul_inv, mul_assoc]
+  exact mul_le_mul_of_nonneg_left
+    (inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le hX hmean hd R n)
+    (sq_nonneg (K : ℝ))
 
 /-- A spectral-statistic approximation probability bound uniform over all positive dimensions. -/
 theorem measure_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_ge_le
@@ -143,10 +142,11 @@ theorem measure_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_ge_le
     (fun ω ↦ wignerMatrix_isHermitian _ η ω _)
     (integrable_norm_wignerMatrix_sub_centeredTruncation_sq hX hd R _) hf hε).trans ?_
   apply ENNReal.ofReal_le_ofReal
-  simpa only [Fintype.card_fin, Nat.cast_add, Nat.cast_one, div_eq_mul_inv,
-    mul_inv, mul_assoc, mul_left_comm, mul_comm] using mul_le_mul_of_nonneg_left
-      (inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le hX hmean hd R n)
-      (by positivity : 0 ≤ (K : ℝ) ^ 2 / ε ^ 2)
+  rw [Fintype.card_fin, Nat.cast_add, Nat.cast_one, mul_comm (n + 1 : ℝ) (ε ^ 2), ← div_div,
+    div_eq_mul_inv ((K : ℝ) ^ 2 / ε ^ 2), mul_assoc]
+  exact mul_le_mul_of_nonneg_left
+    (inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le hX hmean hd R n)
+    (by positivity)
 
 /-- Bounded centered off-diagonal approximation is valid in probability, uniformly over
 all positive matrix sizes, for every Lipschitz spectral statistic. -/

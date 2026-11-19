@@ -142,12 +142,8 @@ theorem MemLp.integral_norm_sub_integral_sq [IsProbabilityMeasure μ] {f : α �
   have hc : Integrable (fun x ↦ 2 * ⟪(∫ y, f y ∂μ), f x⟫) μ :=
     (hi.const_inner _).const_mul 2
   simp_rw [norm_sub_sq_real, real_inner_comm (∫ y, f y ∂μ)]
-  rw [integral_add (f := fun x ↦ ‖f x‖ ^ 2 - 2 * ⟪(∫ y, f y ∂μ), f x⟫)
-      (g := fun _ ↦ ‖∫ y, f y ∂μ‖ ^ 2) (hs.sub hc) (integrable_const _),
-    integral_sub (f := fun x ↦ ‖f x‖ ^ 2)
-      (g := fun x ↦ 2 * ⟪(∫ y, f y ∂μ), f x⟫) hs hc,
-    integral_const_mul, integral_inner hi, real_inner_self_eq_norm_sq,
-    integral_const, probReal_univ, one_smul]
+  rw [integral_add (by exact hs.sub hc) (by exact integrable_const _), integral_sub hs hc]
+  simp [integral_const_mul, integral_inner hi]
   ring
 
 end Centering

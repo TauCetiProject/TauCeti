@@ -694,19 +694,18 @@ theorem integral_norm_wignerMatrix_sub_sq {ξ' : StrictUpper → Ω → ℂ}
         (n + 1 : ℝ)⁻¹ * ‖wignerMatrix d (fun _ _ ↦ 0) (n + 1) ω‖ ^ 2 := by
     rw [(wignerMatrix_isHermitian d (fun _ _ ↦ 0) ω _).trace_mul_self_eq_sum_norm_sq,
       Matrix.frobenius_norm_sq_eq_sum_normSq]
-    simp only [Complex.normSq_eq_norm_sq,
-      ← Complex.ofReal_natCast, ← Complex.ofReal_one, ← Complex.ofReal_add,
-      ← Complex.ofReal_inv, ← Complex.ofReal_mul, Complex.ofReal_re]
+    simp only [Complex.normSq_eq_norm_sq]
+    rw [← Complex.ofReal_re ((n + 1 : ℝ)⁻¹ * _)]
+    push_cast
+    rfl
   have h := integral_re_trace_wignerMatrix_mul_self (ξ := d) (η := fun _ _ ↦ 0) (σ2 := 0)
     (fun ij ↦ (memLp_two_iff_integrable_sq_norm (hξ ij).aestronglyMeasurable).mp (hξ ij))
     hs (fun _ ↦ by simp) (fun _ ↦ by simp) (n + 1)
-  simp only [Nat.cast_add, Nat.cast_one] at h
-  simp only [hn, integral_const_mul] at h
   simp_rw [heq]
   have hN : (n + 1 : ℝ) ≠ 0 := by positivity
-  simp only [add_sub_cancel_right, zero_add] at h
-  field_simp at h
-  exact h
+  apply (div_left_inj₀ hN).mp
+  simpa only [Nat.cast_add, Nat.cast_one, hn, integral_const_mul, add_sub_cancel_right, zero_add,
+    div_eq_inv_mul] using h
 
 end SecondMoment
 
