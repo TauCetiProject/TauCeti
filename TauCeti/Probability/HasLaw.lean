@@ -287,25 +287,6 @@ theorem _root_.ProbabilityTheory.HasLaw.prod_extension {Ω α E : Type*}
     measurable_id.aemeasurable]
   rw [hX.map_eq, Measure.map_id]
 
-/-- Projecting away one added independent probability coordinate preserves the old law. -/
-theorem _root_.ProbabilityTheory.HasLaw.comp_fst_prod_extension
-    {Ω α E : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace E]
-    {X : Ω → α} {μ : Measure α} {P : Measure Ω} {ν : Measure E}
-    [IsProbabilityMeasure ν] (hX : HasLaw X μ P) :
-    HasLaw (fun z : Ω × E => X z.1) μ (P.prod ν) := by
-  have hFst : HasLaw Prod.fst P (P.prod ν) := measurePreserving_fst.hasLaw
-  simpa [Function.comp_def] using hX.comp hFst
-
-/-- Projecting away two added independent probability coordinates preserves the old tuple's law,
-including dependence among the coordinates of the old tuple. -/
-theorem _root_.ProbabilityTheory.HasLaw.comp_fst_prod_extension₂
-    {Ω α E F : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
-    [MeasurableSpace E] [MeasurableSpace F] {X : Ω → α} {μ : Measure α}
-    {P : Measure Ω} {ν : Measure E} {η : Measure F}
-    [IsProbabilityMeasure ν] [IsProbabilityMeasure η] (hX : HasLaw X μ P) :
-    HasLaw (fun z : Ω × (E × F) => X z.1) μ (P.prod (ν.prod η)) := by
-  simpa using hX.comp_fst_prod_extension (ν := ν.prod η)
-
 /-- Extending a random variable by a constant coordinate gives the product with the point law,
 without changing its source or its original law. -/
 theorem _root_.ProbabilityTheory.HasLaw.prod_extension_dirac
