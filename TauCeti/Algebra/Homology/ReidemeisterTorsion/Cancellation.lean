@@ -64,8 +64,8 @@ inverted when `z⁺` is odd, and by a sign
 need not be a global sign. This is the form of the birth/death identity for the torsion of a
 Floer–Novikov complex over a Novikov ring: at a death the entry `a` is `1 + b`, a unit of the
 Novikov ring, and the componentwise torsions of the complexes before and after the death differ by
-`(1 + b)^(±1)` in every field component of the total quotient ring, including the components where
-both complexes are not acyclic and both torsions vanish.
+`(1 + b)^(±1)` up to the sign `(-1) ^ q` in every field component of the total quotient ring,
+including the components where both complexes are not acyclic and both torsions vanish.
 
 ## Main results
 
@@ -543,6 +543,17 @@ theorem acyclic_matrixBaseChange_iff_of_cancel
 
 end Field
 
+/-- If in each residue field `Q ⧸ m` of a reduced Artinian ring the component of `x` is
+`(-1) ^ k m` times that of `y`, then `x = ε * y` for some `ε : Q` with `ε * ε = 1`. -/
+private theorem exists_mul_self_eq_one_and_eq_mul {Q : Type*} [CommRing Q] [IsArtinianRing Q]
+    [IsReduced Q] {x y : Q} (k : MaximalSpectrum Q → ℕ)
+    (h : ∀ m : MaximalSpectrum Q,
+      Ideal.Quotient.mk m.asIdeal x = (-1) ^ k m * Ideal.Quotient.mk m.asIdeal y) :
+    ∃ ε : Q, ε * ε = 1 ∧ x = ε * y :=
+  ⟨(IsArtinianRing.equivPi Q).symm fun m ↦ (-1) ^ k m,
+    (IsArtinianRing.equivPi Q).injective (funext fun m ↦ by simp [← mul_pow]),
+    (IsArtinianRing.equivPi Q).injective (funext fun m ↦ by simp [h])⟩
+
 section OneZero
 
 variable (hφ : ∀ l, (φ.f 1).hom (e 1 l) - c 1 l.succ ∈ A ∙ c 1 0)
@@ -597,17 +608,11 @@ theorem exists_componentwiseParityTorsion_eq_of_cancel_one_zero
     (ha : IsUnit (f ((c 0).repr ((C.d 1 0).hom (c 1 0)) 0))) :
     ∃ ε : Q, ε * ε = 1 ∧
       C.componentwiseParityTorsion c f = ε * ↑ha.unit⁻¹ * D.componentwiseParityTorsion e f := by
-  refine ⟨(IsArtinianRing.equivPi Q).symm fun m ↦ (-1) ^ finrank (Q ⧸ m.asIdeal)
-    (LinearMap.range ((D.matrixBaseChange e ((Ideal.Quotient.mk m.asIdeal).comp f)).d 0 1).hom),
-    (IsArtinianRing.equivPi Q).injective (funext fun m ↦ ?_),
-    (IsArtinianRing.equivPi Q).injective (funext fun m ↦ ?_)⟩
-  · rw [map_mul, map_one, Pi.mul_apply, Pi.one_apply, IsArtinianRing.equivPi_apply,
-      IsArtinianRing.mk_equivPi_symm, ← mul_pow, neg_one_mul, neg_neg, one_pow]
-  · rw [map_mul, map_mul, Pi.mul_apply, Pi.mul_apply, IsArtinianRing.equivPi_apply,
-      IsArtinianRing.equivPi_apply, IsArtinianRing.equivPi_apply, IsArtinianRing.equivPi_apply,
-      IsArtinianRing.mk_equivPi_symm, map_units_inv, IsUnit.unit_spec]
-    exact mk_componentwiseParityTorsion_eq_of_cancel_one_zero hφ hφ' f m
-      ((ha.map (Ideal.Quotient.mk m.asIdeal)).ne_zero)
+  simp_rw [mul_assoc]
+  exact exists_mul_self_eq_one_and_eq_mul _ fun m ↦
+    (mk_componentwiseParityTorsion_eq_of_cancel_one_zero hφ hφ' f m
+      (ha.map (Ideal.Quotient.mk m.asIdeal)).ne_zero).trans <| by
+        rw [mul_assoc, map_mul, map_units_inv, IsUnit.unit_spec]
 
 end OneZero
 
@@ -665,17 +670,10 @@ theorem exists_componentwiseParityTorsion_eq_of_cancel_zero_one
     (ha : IsUnit (f ((c 1).repr ((C.d 0 1).hom (c 0 0)) 0))) :
     ∃ ε : Q, ε * ε = 1 ∧ C.componentwiseParityTorsion c f =
       ε * f ((c 1).repr ((C.d 0 1).hom (c 0 0)) 0) * D.componentwiseParityTorsion e f := by
-  refine ⟨(IsArtinianRing.equivPi Q).symm fun m ↦ (-1) ^ finrank (Q ⧸ m.asIdeal)
-    (LinearMap.range ((D.matrixBaseChange e ((Ideal.Quotient.mk m.asIdeal).comp f)).d 1 0).hom),
-    (IsArtinianRing.equivPi Q).injective (funext fun m ↦ ?_),
-    (IsArtinianRing.equivPi Q).injective (funext fun m ↦ ?_)⟩
-  · rw [map_mul, map_one, Pi.mul_apply, Pi.one_apply, IsArtinianRing.equivPi_apply,
-      IsArtinianRing.mk_equivPi_symm, ← mul_pow, neg_one_mul, neg_neg, one_pow]
-  · rw [map_mul, map_mul, Pi.mul_apply, Pi.mul_apply, IsArtinianRing.equivPi_apply,
-      IsArtinianRing.equivPi_apply, IsArtinianRing.equivPi_apply, IsArtinianRing.equivPi_apply,
-      IsArtinianRing.mk_equivPi_symm]
-    exact mk_componentwiseParityTorsion_eq_of_cancel_zero_one hφ hφ' f m
-      ((ha.map (Ideal.Quotient.mk m.asIdeal)).ne_zero)
+  simp_rw [mul_assoc]
+  exact exists_mul_self_eq_one_and_eq_mul _ fun m ↦
+    (mk_componentwiseParityTorsion_eq_of_cancel_zero_one hφ hφ' f m
+      (ha.map (Ideal.Quotient.mk m.asIdeal)).ne_zero).trans <| by rw [mul_assoc, map_mul]
 
 end ZeroOne
 

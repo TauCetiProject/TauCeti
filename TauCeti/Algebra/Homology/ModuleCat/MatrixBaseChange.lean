@@ -182,6 +182,7 @@ theorem matrixBaseChangeMap_id :
 
 /-- The coordinate base change of a composite of chain maps is the composite of their coordinate
 base changes. -/
+@[reassoc]
 theorem matrixBaseChangeMap_comp {E : HomologicalComplex (ModuleCat A) s} {p : ι → ℕ}
     (b : ∀ i, Basis (Fin (p i)) A (E.X i)) (h : E ⟶ D) (f : D ⟶ C) :
     matrixBaseChangeMap c φ b (h ≫ f) =
@@ -189,10 +190,8 @@ theorem matrixBaseChangeMap_comp {E : HomologicalComplex (ModuleCat A) s} {p : �
   ext i : 2
   apply (LinearMap.toMatrix (E.matrixBaseChangeBasis b φ i)
     (C.matrixBaseChangeBasis c φ i)).injective
-  rw [HomologicalComplex.comp_f, ModuleCat.hom_comp,
-    LinearMap.toMatrix_comp _ (D.matrixBaseChangeBasis e φ i), toMatrix_matrixBaseChangeMap_f,
-    toMatrix_matrixBaseChangeMap_f, toMatrix_matrixBaseChangeMap_f, ← Matrix.map_mul,
-    ← LinearMap.toMatrix_comp, HomologicalComplex.comp_f, ModuleCat.hom_comp]
+  simp [LinearMap.toMatrix_comp _ (D.matrixBaseChangeBasis e φ i), Matrix.map_mul,
+    LinearMap.toMatrix_comp _ (e i)]
 
 /-- The coordinate maps intertwine a chain map `f : D ⟶ C` and its coordinate base change. -/
 theorem matrixBaseChangeMap_f_apply_semilinearMap (f : D ⟶ C) (i : ι) (y : D.X i) :
