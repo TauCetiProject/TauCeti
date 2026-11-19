@@ -451,42 +451,20 @@ theorem tendsto_heatSemigroup (hq : q ≠ ⊤) (u : BesovSpace F φ s p q) :
   rwa [Real.zero_rpow (one_div_pos.2 hq0).ne'] at h
 
 /-- If the heat flow of `u ∈ B^s_{p,∞}` tends to `u`, the weighted blocks of `u` vanish at high
-frequency, because those of `e^{tΔ} u`, `t > 0`, decay like `2^{-j}`. -/
+frequency, because those of `e^{tΔ} u`, `t > 0`, do and this is a closed condition. -/
 private theorem tendsto_rpow_mul_norm_block_of_tendsto_heatSemigroup {u : BesovSpace F φ s p ∞}
     (hu : Tendsto (fun t ↦ heatSemigroup F φ s p ∞ t u) (𝓝 0) (𝓝 u)) :
     Tendsto (fun j : ℕ ↦ 2 ^ (s * j) * ‖u.block j‖) atTop (𝓝 0) := by
-  refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
-  -- Choose a positive time `t` at which `e^{tΔ} u` is within `ε / 2` of `u`.
-  obtain ⟨t, ht, ht0⟩ := ((hu.mono_left nhdsWithin_le_nhds).eventually
-    (Metric.ball_mem_nhds u (half_pos hε))).and (self_mem_nhdsWithin (s := Set.Ioi 0)) |>.exists
-  -- The heat flow `e^{tΔ} u` lies in `B^{s+1}_{p,∞}`, so its weighted blocks decay like `2^{-j}`.
-  set w := heatSemigroupOfNeZero F φ s p ∞ (s + 1) (ne_of_gt ht0) u
-  have h2s (j : ℕ) : (2 : ℝ) ^ (s * j) = (1 / 2) ^ j * 2 ^ ((s + 1) * j) := by
-    rw [add_mul, one_mul, Real.rpow_add two_pos, Real.rpow_natCast, mul_left_comm, ← mul_pow]
-    norm_num
-  have hw (j : ℕ) : 2 ^ (s * j) * ‖(heatSemigroup F φ s p ∞ t u).block j‖ ≤
-      (1 / 2) ^ j * ‖w‖ := by
-    rw [block_eq_of_toDistr_eq (v := w) (by simp [w]) j, h2s, mul_assoc]
-    exact mul_le_mul_of_nonneg_left (rpow_mul_norm_block_le w j) (by positivity)
-  have h2 : Tendsto (fun j : ℕ ↦ (1 / 2 : ℝ) ^ j * ‖w‖) atTop (𝓝 0) := by
-    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one (by norm_num : (0 : ℝ) ≤ 1 / 2)
-      (by norm_num)).mul_const ‖w‖
-  obtain ⟨N, hN⟩ := eventually_atTop.1 (h2.eventually (gt_mem_nhds (half_pos hε)))
-  refine ⟨N, fun j hj ↦ ?_⟩
-  rw [Real.dist_eq, sub_zero, abs_of_nonneg (by positivity)]
-  -- Compare the blocks of `u` with those of `e^{tΔ} u`.
-  have hd : 2 ^ (s * j) * ‖(u - heatSemigroup F φ s p ∞ t u).block j‖ < ε / 2 :=
-    (rpow_mul_norm_block_le _ j).trans_lt (by rw [← dist_eq_norm, dist_comm]; exact ht)
-  have hle := norm_add_le ((u - heatSemigroup F φ s p ∞ t u).block j)
-    ((heatSemigroup F φ s p ∞ t u).block j)
-  rw [← block_add, sub_add_cancel] at hle
-  calc 2 ^ (s * j) * ‖u.block j‖
-      ≤ 2 ^ (s * j) * ‖(u - heatSemigroup F φ s p ∞ t u).block j‖ +
-          2 ^ (s * j) * ‖(heatSemigroup F φ s p ∞ t u).block j‖ := by
-        rw [← mul_add]
-        gcongr
-    _ < ε / 2 + ε / 2 := add_lt_add_of_lt_of_le hd ((hw j).trans (hN j hj).le)
-    _ = ε := add_halves ε
+  refine isClosed_setOfPred_tendsto_rpow_mul_norm_block.mem_of_tendsto
+    (hu.mono_left (nhdsWithin_le_nhds (s := Set.Ioi 0)))
+    (eventually_nhdsWithin_of_forall fun t (ht : 0 < t) ↦ ?_)
+  -- At `t > 0`, `e^{tΔ} u` lies in `B^{s+1}_{p,∞} ⊆ B^s_{p,1}`, with the same blocks.
+  set w := heatSemigroupOfNeZero F φ s p ∞ (s + 1) (ne_of_gt ht) u
+  have h := tendsto_rpow_mul_norm_block ENNReal.one_ne_top
+    (inclusionOfLT F φ p ∞ 1 (lt_add_one s) w)
+  simp only [block_inclusionOfLT] at h
+  exact h.congr fun j ↦ by
+    rw [block_eq_of_toDistr_eq (u := heatSemigroup F φ s p ∞ t u) (v := w) (by simp [w]) j]
 
 /-- If the weighted blocks of `u ∈ B^s_{p,∞}` vanish at high frequency, the heat flow of `u`
 tends to `u`: the high blocks are small uniformly in time, and each low block converges. -/

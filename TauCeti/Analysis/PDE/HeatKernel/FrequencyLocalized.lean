@@ -478,8 +478,7 @@ theorem exists_heatSemigroup_littlewoodPaleyBlock_succ_eq_and_norm_le
     rw [TemperedDistribution.heatSemigroup_eq_fourierMultiplierCLM,
       TemperedDistribution.littlewoodPaleyBlock_apply,
       TemperedDistribution.fourierMultiplierCLM_fourierMultiplierCLM_apply hψ
-        (by exact Complex.hasTemperateGrowth_ofReal.comp
-              (Function.hasTemperateGrowth_exp_neg_mul_norm_sq (by positivity))),
+        (TemperedDistribution.hasTemperateGrowth_heatSymbol t),
       TemperedDistribution.fourierMultiplierCLM_fourierMultiplierCLM_apply hψ
         σ.hasTemperateGrowth, hσψ]
   obtain ⟨g, hg, hgn⟩ := TemperedDistribution.exists_fourierMultiplierCLM_eq_and_norm_le σ f
@@ -515,9 +514,7 @@ theorem littlewoodPaleyBlock_heatSemigroup_comm (j : ℕ) (t : ℝ≥0) (u : �
     littlewoodPaleyBlock F φ j (heatSemigroup E F t u) =
       heatSemigroup E F t (littlewoodPaleyBlock F φ j u) := by
   rw [heatSemigroup_eq_fourierMultiplierCLM]
-  exact littlewoodPaleyBlock_fourierMultiplierCLM_comm φ
-    (by exact Complex.hasTemperateGrowth_ofReal.comp
-          (Function.hasTemperateGrowth_exp_neg_mul_norm_sq (by positivity))) j u
+  exact littlewoodPaleyBlock_fourierMultiplierCLM_comm φ (hasTemperateGrowth_heatSymbol t) j u
 
 variable [CompleteSpace F]
 
@@ -566,13 +563,6 @@ open scoped NNReal ENNReal SchwartzMap
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The heat symbol `exp(-4π² t ‖ξ‖²)` has temperate growth. -/
-private theorem hasTemperateGrowth_heatSymbol (t : ℝ≥0) :
-    (fun ξ : E ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)).HasTemperateGrowth :=
-  Complex.hasTemperateGrowth_ofReal.comp
-    (Function.hasTemperateGrowth_exp_neg_mul_norm_sq (by positivity))
-
 /-- On a tempered distribution `u` whose Fourier transform vanishes off the closed ball of radius
 `R`, `e^{tΔ} u - u` is the Fourier multiplier by `χ (exp(-4π² t ‖ξ‖²) - 1)`, for every Schwartz
 `χ` equal to one near that ball. -/
@@ -584,7 +574,7 @@ private theorem heatSemigroup_sub_eq_fourierMultiplierCLM {χ : 𝓢(E, ℂ)} {R
         ⇑(SchwartzMap.smulLeftCLM ℂ (fun ξ ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)) χ -
           χ) u := by
   set h : E → ℂ := fun ξ ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)
-  have hh : h.HasTemperateGrowth := hasTemperateGrowth_heatSymbol t
+  have hh : h.HasTemperateGrowth := TemperedDistribution.hasTemperateGrowth_heatSymbol t
   have hσ : ⇑(SchwartzMap.smulLeftCLM ℂ h χ - χ) = ⇑χ * h - ⇑χ := by
     funext ξ
     simp [SchwartzMap.smulLeftCLM_apply_apply hh, mul_comm]
@@ -626,7 +616,8 @@ theorem exists_heatSemigroup_sub_eq_and_norm_le_of_isVanishingOn_fourier (R : �
       ((eventually_nhdsSet_iff_forall.1 hχ ξ hξR).mono fun η hη ↦ by simp [hη]) hξ
   -- The heat symbol at time `t`.
   set h : ℝ≥0 → E → ℂ := fun t ξ ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)
-  have hh (t : ℝ≥0) : (h t).HasTemperateGrowth := hasTemperateGrowth_heatSymbol t
+  have hh (t : ℝ≥0) : (h t).HasTemperateGrowth :=
+    TemperedDistribution.hasTemperateGrowth_heatSymbol t
   -- The kernel `κ = 𝓕⁻ χ` of the reproducing multiplier, as an `L¹` function. The kernel of the
   -- multiplier `χ e^{tΔ}` is its heat flow `e^{tΔ} κ`.
   have hp1 : (1 : ℝ≥0∞) ≠ ∞ := ENNReal.one_ne_top
