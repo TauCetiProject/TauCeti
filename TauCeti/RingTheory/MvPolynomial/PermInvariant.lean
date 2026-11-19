@@ -76,6 +76,12 @@ def permInvariants (G : Subgroup (Equiv.Perm σ)) : Subalgebra R (MvPolynomial �
 
 variable {G H : Subgroup (Equiv.Perm σ)} {p : MvPolynomial σ R}
 
+/-- Mapping the domain of a finitely supported function by `g⁻¹` and then by `g` gives it back. -/
+private theorem mapDomain_mapDomain_perm_inv {M : Type*} [AddCommMonoid M] (g : Equiv.Perm σ)
+    (e : σ →₀ M) : (e.mapDomain ⇑g⁻¹).mapDomain g = e := by
+  rw [← Finsupp.mapDomain_comp, ← Equiv.Perm.coe_mul, mul_inv_cancel, Equiv.Perm.coe_one,
+    Finsupp.mapDomain_id]
+
 @[simp]
 theorem mem_permInvariants : p ∈ permInvariants R G ↔ ∀ g ∈ G, rename g p = p :=
   Iff.rfl
@@ -88,10 +94,7 @@ theorem mem_permInvariants_iff_forall_coeff_mapDomain :
   · conv_lhs => rw [← hp g hg]
     exact coeff_rename_mapDomain _ g.injective p e
   · ext e
-    have he : (e.mapDomain ⇑g⁻¹).mapDomain g = e := by
-      rw [← Finsupp.mapDomain_comp, ← Equiv.Perm.coe_mul, mul_inv_cancel, Equiv.Perm.coe_one,
-        Finsupp.mapDomain_id]
-    rw [← he, coeff_rename_mapDomain _ g.injective, h g hg]
+    rw [← mapDomain_mapDomain_perm_inv g e, coeff_rename_mapDomain _ g.injective, h g hg]
 
 /-- Invariance under a larger group is a stronger condition. -/
 theorem permInvariants_anti (hGH : G ≤ H) : permInvariants R H ≤ permInvariants R G :=
@@ -124,8 +127,7 @@ def permOrbitRel (G : Subgroup (Equiv.Perm σ)) : Setoid (σ →₀ ℕ) where
       symm := by
         rintro e f ⟨g, hg, rfl⟩
         refine ⟨g⁻¹, G.inv_mem hg, ?_⟩
-        rw [← Finsupp.mapDomain_comp, ← Equiv.Perm.coe_mul, inv_mul_cancel, Equiv.Perm.coe_one,
-          Finsupp.mapDomain_id]
+        simpa using mapDomain_mapDomain_perm_inv g⁻¹ e
       trans := by
         rintro e f d ⟨g, hg, rfl⟩ ⟨h, hh, rfl⟩
         exact ⟨h * g, G.mul_mem hh hg, by rw [Equiv.Perm.coe_mul, Finsupp.mapDomain_comp]⟩ }
@@ -166,6 +168,7 @@ theorem orbitSum_def (e : σ →₀ ℕ) :
     orbitSum R G e = ∑ f ∈ (finite_setOf_permOrbitRel G e).toFinset, monomial f 1 :=
   (rfl)
 
+@[simp]
 theorem coeff_orbitSum_of_rel (h : permOrbitRel G e f) : (orbitSum R G e).coeff f = 1 := by
   classical
   rw [orbitSum, coeff_sum, Finset.sum_eq_single_of_mem f (by simpa using h)]
@@ -182,8 +185,8 @@ theorem coeff_orbitSum_of_not_rel (h : ¬permOrbitRel G e f) : (orbitSum R G e).
     exact h (by simpa using hd)
   simp [coeff_monomial, hdf]
 
-open Classical in
-theorem coeff_orbitSum : (orbitSum R G e).coeff f = if permOrbitRel G e f then 1 else 0 := by
+theorem coeff_orbitSum [Decidable (permOrbitRel G e f)] :
+    (orbitSum R G e).coeff f = if permOrbitRel G e f then 1 else 0 := by
   split_ifs with h
   · exact coeff_orbitSum_of_rel h
   · exact coeff_orbitSum_of_not_rel h
@@ -195,6 +198,7 @@ theorem mem_support_orbitSum [Nontrivial R] :
   · simp [h, coeff_orbitSum_of_rel h]
   · simp [h, coeff_orbitSum_of_not_rel h]
 
+@[simp]
 theorem orbitSum_ne_zero [Nontrivial R] : orbitSum R G e ≠ 0 :=
   ne_zero_iff.2 ⟨e, by
     rw [coeff_orbitSum_of_rel ((permOrbitRel G).iseqv.refl e)]
@@ -210,6 +214,7 @@ theorem orbitSum_eq_of_rel (h : permOrbitRel G e f) : orbitSum R G e = orbitSum 
 
 /-- Over nontrivial coefficients, two orbit sums agree exactly when the exponents lie in the same
 orbit. -/
+@[simp]
 theorem orbitSum_eq_orbitSum_iff [Nontrivial R] :
     orbitSum R G e = orbitSum R G f ↔ permOrbitRel G e f := by
   refine ⟨fun h ↦ ?_, orbitSum_eq_of_rel⟩
@@ -233,18 +238,20 @@ private theorem eq_sum_orbitSum_of_mem_permInvariants {p : MvPolynomial σ R}
       p.coeff O.out • orbitSum R G O.out := by
   have hcoeff := mem_permInvariants_iff_coeff.1 hp
   ext d
-  rw [coeff_sum, Finset.sum_eq_single (Quotient.mk (permOrbitRel G) d)]
-  · rw [coeff_smul, coeff_orbitSum_of_rel (Quotient.mk_out d), smul_eq_mul, mul_one,
+  have hd : (p.coeff (⟦d⟧ : Quotient (permOrbitRel G)).out •
+      orbitSum R G (⟦d⟧ : Quotient (permOrbitRel G)).out).coeff d = p.coeff d := by
+    rw [coeff_smul, coeff_orbitSum_of_rel (Quotient.mk_out d), smul_eq_mul, mul_one,
       hcoeff _ _ (Quotient.mk_out d)]
+  rw [coeff_sum, Finset.sum_eq_single (Quotient.mk (permOrbitRel G) d)]
+  · exact hd.symm
   · intro O _ hO
     rw [coeff_smul, coeff_orbitSum_of_not_rel, smul_zero]
     intro h
     exact hO (by rw [← Quotient.out_eq O]; exact Quotient.sound h)
-  · intro hd
-    rw [coeff_smul, coeff_orbitSum_of_rel (Quotient.mk_out d), smul_eq_mul, mul_one,
-      hcoeff _ _ (Quotient.mk_out d)]
+  · intro hmem
+    rw [hd]
     by_contra hne
-    exact hd (Finset.mem_image_of_mem _ (mem_support_iff.2 hne))
+    exact hmem (Finset.mem_image_of_mem _ (mem_support_iff.2 hne))
 
 variable (R G) in
 /-- The orbit sums span the invariant subalgebra. -/
