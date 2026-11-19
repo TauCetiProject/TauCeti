@@ -172,30 +172,13 @@ theorem localHomologyMap_comp_localHomologyTransport_of_leftInverse {F F' : C(P 
   have hcover (p₀ : P) : ∃ J : good, (J : Set P) ∈ 𝓝 p₀ := by
     obtain ⟨J, hJ, φ, K, hK⟩ := exists_mem_nhds_preimage_subset (E := E) hF ho hB p₀
     exact ⟨⟨J, φ, K, hK⟩, hJ⟩
-  -- The path classes along which the identity holds form a subgroupoid. It is stated for the
-  -- pullback `Φ` of the local homology system along `o`, whose objects are those of `m`.
-  let Φ := FundamentalGroupoid.map o ⋙ localHomologySystem R M E k
-  let m (c : FundamentalGroupoid P) : localHomology R {x} k ⟶ Φ.obj c :=
-    localHomologyMap R (F.curry c.as)
-      (preimage_curry_singleton_subset_of_leftInverse hF c.as (ho c.as)) k
-  let S : Subgroupoid (FundamentalGroupoid P) :=
-    { arrows c d := {f | m c ≫ Φ.map f = m d}
-      inv {c d f} hf := by
-        rw [Set.mem_ofPred_eq, ← hf, Category.assoc, ← Φ.map_comp, Groupoid.comp_inv, Φ.map_id,
-          Category.comp_id]
-      mul {c d e f} hf {g} hg := by
-        rw [Set.mem_ofPred_eq, Φ.map_comp, ← Category.assoc, hf, hg] }
-  -- It contains the classes of paths inside the sets in `good`, so it is everything.
-  have hS : S = ⊤ := by
-    rw [eq_top_iff, ← FundamentalGroupoid.iSup_im_map_subtypeVal_eq_top
-      (U := fun J : good ↦ (J : Set P)) hcover]
-    refine iSup_le fun J ↦ ?_
-    rw [Subgroupoid.im, Subgroupoid.map_le_iff_le_comap]
-    rintro ⟨⟨a⟩, ⟨b⟩, g⟩ -
-    induction g using Path.Homotopic.Quotient.ind with | mk γ =>
-    obtain ⟨φ, K, hK, hKc, hKφ, hJK, hJB⟩ := J.2
-    exact localHomologyMap_comp_localHomologyTransport_of_path R x hxB k φ hK hKc hKφ
-      (γ.map continuous_subtype_val) (fun s ↦ hJK _ (γ s).2) (fun s ↦ hJB _ (γ s).2) _ _
-  exact (hS ▸ trivial : f ∈ S.arrows p q)
+  -- Paths inside the sets in `good` generate the fundamental groupoid of `P`.
+  refine FundamentalGroupoid.comp_map_eq_of_forall_path (U := fun J : good ↦ (J : Set P)) hcover
+    (FundamentalGroupoid.map o ⋙ localHomologySystem R M E k)
+    (fun c ↦ localHomologyMap R (F.curry c.as)
+      (preimage_curry_singleton_subset_of_leftInverse hF c.as (ho c.as)) k) (fun J _ _ γ ↦ ?_) f
+  obtain ⟨φ, K, hK, hKc, hKφ, hJK, hJB⟩ := J.2
+  exact localHomologyMap_comp_localHomologyTransport_of_path R x hxB k φ hK hKc hKφ
+    (γ.map continuous_subtype_val) (fun s ↦ hJK _ (γ s).2) (fun s ↦ hJB _ (γ s).2) _ _
 
 end TauCeti

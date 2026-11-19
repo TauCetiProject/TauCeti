@@ -43,9 +43,12 @@ compatibility with composition characterizes the transport
   bijective.
 * `TauCeti.localHomologySingletonLinearEquiv`: with coefficients `N ≃ₗ[Λ] Λ`, the local homology
   `Hₙ(M, M ∖ {x}; N)` of an `n`-manifold is a copy of `Λ`.
+* `TauCeti.existsUnique_forall_localHomology_eq_zsmul`: with coefficients `L ≃ₗ[ℤ] ℤ`, every
+  linear endomorphism of `Hₙ(M, M ∖ {x}; L)` is multiplication by a unique integer.
 * `TauCeti.localHomologyMap`: for a continuous map `j : M → N` with `j ⁻¹' T ⊆ S`, the map
   `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j`. It is functorial, is the restriction map for `j`
-  the identity, and is compatible with restriction on both sides.
+  the identity, is the identity for `j` fixing every point (`TauCeti.localHomologyMap_eq_id`),
+  and is compatible with restriction on both sides.
 * `TauCeti.isZero_localHomology_empty`: `Hₖ(M, M) = 0`.
 * `TauCeti.isIso_singularHomologyδ_ofSubset_compl`: the connecting morphism of the triple
   `(M, M ∖ T, M ∖ S)` is an isomorphism when the local homology along `S` vanishes.
@@ -229,6 +232,25 @@ def localHomologySingletonLinearEquiv [T1Space M] {E : Type w} [NormedAddCommGro
   ((hn ▸ singularHomologyComplSingletonFinrankIso N (chartAt E x) (mem_chart_source E x) :
     localHomology N ({x} : Set M) n ≅ N).toLinearEquiv).trans eN
 
+/-- With coefficients `L ≃ₗ[ℤ] ℤ`, every linear endomorphism of the local homology
+`Hₙ(M, M ∖ {x}; L) ≅ ℤ` of a manifold of dimension `n` at a point `x` is multiplication by a
+unique integer. -/
+theorem existsUnique_forall_localHomology_eq_zsmul [T1Space M] {E : Type w}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M] {n : ℕ}
+    (hn : Module.finrank ℝ E = n) {L : ModuleCat.{w} ℤ} (eL : L ≃ₗ[ℤ] ℤ) (x : M)
+    (φ : (localHomology L ({x} : Set M) n : ModuleCat.{w} ℤ) →ₗ[ℤ]
+      (localHomology L ({x} : Set M) n : ModuleCat.{w} ℤ)) :
+    ∃! c : ℤ, ∀ z, φ z = c • z := by
+  -- The local homology is a copy of `ℤ`, so it is free of rank one.
+  let e := localHomologySingletonLinearEquiv L hn eL x
+  have := Module.Free.of_equiv e.symm
+  obtain ⟨c, hc, hu⟩ := LinearMap.existsUnique_eq_smul_id_of_finrank_eq_one
+    (e.finrank_eq.trans (Module.finrank_self ℤ)) φ
+  -- The scalar action of the `ℤ`-module `localHomology L {x} n` is the `ℤ`-action `zsmul` of
+  -- its additive group.
+  exact ⟨c, fun z ↦ (LinearMap.congr_fun hc z).trans (int_smul_eq_zsmul _ c z),
+    fun c' hc' ↦ hu c' (LinearMap.ext fun z ↦ (hc' z).trans (int_smul_eq_zsmul _ c' z).symm)⟩
+
 end SingularHomology
 
 section Map
@@ -266,6 +288,13 @@ lemma localHomologyMap_id {S T : Set M} (h : ContinuousMap.id M ⁻¹' T ⊆ S) 
     localHomologyMap R (ContinuousMap.id M) h k = localHomologyRestriction R h k := by
   rw [localHomologyMap, localHomologyRestriction_def]
   exact congrArg (TopPair.singularHomologyMap · R k) (TopPair.hom_ext_of_fst _ (rfl))
+
+/-- A continuous self-map which fixes every point induces the identity of local homology. -/
+lemma localHomologyMap_eq_id {S : Set M} {f : C(M, M)} (hf : ∀ z, f z = z) (h : f ⁻¹' S ⊆ S)
+    (k : ℕ) : localHomologyMap R f h k = 𝟙 _ := by
+  obtain rfl : f = ContinuousMap.id M := ContinuousMap.ext hf
+  rw [localHomologyMap_id]
+  exact localHomologyRestriction_refl R S k
 
 /-- The maps of local homology are functorial. -/
 @[reassoc (attr := simp)]
@@ -671,26 +700,11 @@ theorem localHomologyRestriction_univ_comp_localHomologyTransport (k : ℕ)
       ← localHomologyRestriction_comp R (P.singleton_subset_closedImage ha) (subset_univ _),
       ← P.iso_hom R ha, Category.assoc, Iso.hom_inv_id_assoc]
     simp [Patch.iso_hom]
-  -- The path classes along which the restrictions are compatible form a subgroupoid.
-  let S : Subgroupoid (FundamentalGroupoid M) :=
-    { arrows c d := {f | localHomologyRestriction R (subset_univ {c.as}) k ≫
-        localHomologyTransport R M E k f = localHomologyRestriction R (subset_univ {d.as}) k}
-      inv {c d f} hf := by
-        rw [Set.mem_ofPred_eq, ← hf]
-        simp [← localHomologyTransport_comp]
-      mul {c d e f} hf {g} hg := by
-        rw [Set.mem_ofPred_eq, localHomologyTransport_comp, ← Category.assoc, hf, hg] }
-  -- It contains the classes of paths inside the domains of patches, so it is everything.
-  have hS : S = ⊤ := by
-    rw [eq_top_iff, ← FundamentalGroupoid.iSup_im_map_subtypeVal_eq_top
-      (U := Patch.domain (M := M) (E := E)) Patch.exists_domain_mem_nhds]
-    refine iSup_le fun P ↦ ?_
-    rw [Subgroupoid.im, Subgroupoid.map_le_iff_le_comap]
-    rintro ⟨⟨a⟩, ⟨b⟩, g⟩ -
-    induction g using Path.Homotopic.Quotient.ind with | mk γ =>
-    exact hpatch P (γ.map continuous_subtype_val) fun s ↦ (γ s).2
-  have hf : f ∈ S.arrows x y := hS ▸ trivial
-  exact hf
+  -- Paths inside the domains of patches generate the fundamental groupoid.
+  exact FundamentalGroupoid.comp_map_eq_of_forall_path (U := Patch.domain (M := M) (E := E))
+    Patch.exists_domain_mem_nhds (localHomologySystem R M E k)
+    (fun c ↦ localHomologyRestriction R (subset_univ {c.as}) k)
+    (fun P _ _ γ ↦ hpatch P (γ.map continuous_subtype_val) fun s ↦ (γ s).2) f
 
 end Chart
 

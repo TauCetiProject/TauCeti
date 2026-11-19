@@ -34,6 +34,9 @@ a space with 2-cells attached is pushed off one point of each open cell.
 * `TauCeti.FundamentalGroupoid.functor_ext`: two functors out of `FundamentalGroupoid X` which
   agree after precomposition with every inclusion functor are equal. This is the uniqueness part
   of the universal property of the fundamental groupoid as a colimit over the cover.
+* `TauCeti.FundamentalGroupoid.comp_map_eq_of_forall_path`: a family of morphisms
+  `m c : Y ⟶ Φ.obj c` into a functor out of `FundamentalGroupoid X` which is compatible with `Φ`
+  along the paths inside each `U i` is compatible with `Φ` along every morphism.
 * `Path.exists_range_subset_homotopic`: if `X` is covered by `V` and simply connected sets `W i`,
   each meeting `V` in a path-connected set and overlapping one another only inside `V`, then
   every path between points of `V` is homotopic to a path in `V`.
@@ -164,6 +167,40 @@ theorem functor_ext (hU : ∀ x, ∃ i, U i ∈ 𝓝 x) {D : Type*} [Category D]
     -- `(φ ⋙ F).map g` is by definition `F.map (φ.map g)`.
     exact CategoryTheory.Functor.congr_hom (h i) g
   refine CategoryTheory.Functor.ext hobj fun c d f ↦ ?_
+  have hf : f ∈ S.arrows c d := by
+    rw [hS]
+    trivial
+  exact hf
+
+/-- Let `Φ` be a functor out of the fundamental groupoid of `X` and `m c : Y ⟶ Φ.obj c` a family
+of morphisms, and let every point of `X` have some `U i` as a neighbourhood. If
+`m a ≫ Φ.map γ = m b` for every path `γ` inside some `U i`, then `m c ≫ Φ.map f = m d` for every
+morphism `f : c ⟶ d` of the fundamental groupoid. -/
+theorem comp_map_eq_of_forall_path (hU : ∀ x, ∃ i, U i ∈ 𝓝 x) {D : Type*} [Category D] {Y : D}
+    (Φ : _root_.FundamentalGroupoid X ⥤ D) (m : ∀ c, Y ⟶ Φ.obj c)
+    (h : ∀ i {a b : U i} (γ : Path a b),
+      m (mk a) ≫ Φ.map (Path.Homotopic.Quotient.mk (γ.map continuous_subtype_val) :
+        mk (a : X) ⟶ mk (b : X)) = m (mk b))
+    {c d : _root_.FundamentalGroupoid X} (f : c ⟶ d) :
+    m c ≫ Φ.map f = m d := by
+  -- The morphisms along which `m` is compatible with `Φ` form a subgroupoid.
+  let S : Subgroupoid (_root_.FundamentalGroupoid X) :=
+    { arrows c d := {f | m c ≫ Φ.map f = m d}
+      inv {c d f} hf := by
+        rw [mem_ofPred_eq, ← hf, Category.assoc, ← Φ.map_comp, Groupoid.comp_inv, Φ.map_id,
+          Category.comp_id]
+      mul {c d e f} hf {g} hg := by
+        rw [mem_ofPred_eq, Φ.map_comp, ← Category.assoc, hf, hg] }
+  -- It contains the classes of paths inside the sets `U i`, so it is everything.
+  have hS : S = ⊤ := by
+    rw [eq_top_iff, ← iSup_im_map_subtypeVal_eq_top hU]
+    refine iSup_le fun i ↦ ?_
+    rw [Subgroupoid.im, Subgroupoid.map_le_iff_le_comap]
+    rintro ⟨⟨a⟩, ⟨b⟩, g⟩ -
+    induction g using Path.Homotopic.Quotient.ind with | mk γ =>
+    -- Membership in `Subgroupoid.comap φ S` is by definition membership of `φ.map g` in `S`, and
+    -- `map Subtype.val` sends the class of `γ` to the class of `γ.map continuous_subtype_val`.
+    exact h i γ
   have hf : f ∈ S.arrows c d := by
     rw [hS]
     trivial

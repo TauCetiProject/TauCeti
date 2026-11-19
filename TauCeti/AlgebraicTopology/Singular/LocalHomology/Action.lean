@@ -96,14 +96,6 @@ private theorem preimage_smul_singleton_subset (g : G) {x y : M} (h : g • x = 
     (g • · : M → M) ⁻¹' {y} ⊆ {x} :=
   fun z hz ↦ (smul_left_cancel_iff g).1 ((hz : g • z = y).trans h.symm)
 
-omit [MulAction G M] [ContinuousConstSMul G M] in
-/-- A continuous map which is pointwise the identity induces the identity of local homology. -/
-private lemma localHomologyMap_eq_id {S : Set M} {j : C(M, M)} (hj : ∀ z, j z = z)
-    (h : j ⁻¹' S ⊆ S) (k : ℕ) : localHomologyMap R j h k = 𝟙 _ := by
-  obtain rfl : j = ContinuousMap.id M := ContinuousMap.ext hj
-  rw [localHomologyMap_id]
-  exact localHomologyRestriction_refl R S k
-
 /-- The isomorphism `Hₖ(M, M ∖ {x}) ≅ Hₖ(M, M ∖ {y})` of local homology induced by the
 homeomorphism `z ↦ g • z`, where `g • x = y`. -/
 def localHomologySMulIso (g : G) {x y : M} (h : g • x = y) (k : ℕ) :
@@ -133,6 +125,15 @@ lemma localHomologySMulIso_inv (g : G) {x y : M} (h : g • x = y)
     (localHomologySMulIso R g h k).inv =
       localHomologyMap R ⟨(g⁻¹ • ·), continuous_const_smul g⁻¹⟩ hpre k :=
   (rfl)
+
+/-- The isomorphism induced by `g` is the map of local homology induced by `F (p, ·)`, for any
+continuous family `F : P × M → M` of maps with `F (p, ·) = (g • ·)`. -/
+lemma localHomologySMulIso_hom_eq_localHomologyMap {P : Type*} [TopologicalSpace P]
+    {F : C(P × M, M)} {p : P} {g : G} (hF : ∀ z, F (p, z) = g • z) {x y : M} (h : g • x = y)
+    (hpre : F.curry p ⁻¹' {y} ⊆ {x}) (k : ℕ) :
+    (localHomologySMulIso R g h k).hom = localHomologyMap R (F.curry p) hpre k :=
+  (localHomologySMulIso_hom R g h (preimage_smul_singleton_subset g h) k).trans
+    (localHomologyMap_congr R (ContinuousMap.ext fun z ↦ (hF z).symm) _ k)
 
 /-- The isomorphism induced by the identity is the identity. -/
 @[simp]
@@ -179,10 +180,18 @@ theorem localHomologySMulIso_hom_comp_localHomologyTransport (x : M) {π : C(G, 
     (hπ : ∀ g, g • x = π g) (k : ℕ) {g₀ g₁ : FundamentalGroupoid G} (f : g₀ ⟶ g₁) :
     (localHomologySMulIso R g₀.as (hπ g₀.as) k).hom ≫
         localHomologyTransport R M E k ((FundamentalGroupoid.map π).map f) =
-      (localHomologySMulIso R g₁.as (hπ g₁.as) k).hom :=
-  localHomologyMap_comp_localHomologyTransport_of_leftInverse R
-    (F := ⟨fun q : G × M ↦ q.1 • q.2, continuous_smul⟩)
-    (F' := ⟨fun q : G × M ↦ q.1⁻¹ • q.2, by fun_prop⟩) (fun g y ↦ inv_smul_smul g y) x hπ k f
+      (localHomologySMulIso R g₁.as (hπ g₁.as) k).hom := by
+  -- The isomorphisms are the maps induced by the family `F (g, y) = g • y`, which has the left
+  -- inverses `(g, y) ↦ g⁻¹ • y`. Here `F (g, y)` is by definition `g • y`.
+  let F : C(G × M, M) := ⟨fun q ↦ q.1 • q.2, continuous_smul⟩
+  have hF (g : G) (y : M) :
+      (⟨fun q ↦ q.1⁻¹ • q.2, by fun_prop⟩ : C(G × M, M)) (g, F (g, y)) = y :=
+    inv_smul_smul g y
+  rw [localHomologySMulIso_hom_eq_localHomologyMap R (F := F) (p := g₀.as) (fun _ ↦ rfl) _
+      (preimage_curry_singleton_subset_of_leftInverse hF g₀.as (hπ g₀.as)),
+    localHomologySMulIso_hom_eq_localHomologyMap R (F := F) (p := g₁.as) (fun _ ↦ rfl) _
+      (preimage_curry_singleton_subset_of_leftInverse hF g₁.as (hπ g₁.as))]
+  exact localHomologyMap_comp_localHomologyTransport_of_leftInverse R hF x hπ k f
 
 /-- **The flat trivialization of local homology along an orbit.** For an orbit map
 `π : G → M`, `g ↦ g • x`, the isomorphisms `Hₖ(M, M ∖ {x}) ≅ Hₖ(M, M ∖ {g • x})` induced by the
@@ -217,66 +226,58 @@ section Character
 variable [ContinuousConstSMul G M] [T2Space M] {E : Type w} [NormedAddCommGroup E]
   [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M] {d : ℕ}
 
-omit [MulAction G M] [ContinuousConstSMul G M] in
-/-- Every additive endomorphism of `H_d(M, M ∖ {x}; ℤ) ≅ ℤ` in the dimension `d` of `M` is
-multiplication by a unique integer. -/
-private lemma existsUnique_forall_eq_smul (hd : finrank ℝ E = d) (x : M)
-    (φ : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d →+
-      localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d) :
-    ∃! c : ℤ, ∀ z, φ z = c • z := by
-  let e := (localHomologySingletonLinearEquiv (ModuleCat.of ℤ (ULift.{w} ℤ)) hd ULift.moduleEquiv
-    x).toAddEquiv
-  -- Every class is a multiple of the generator `u = e⁻¹ 1`.
-  have he (z) : z = e z • e.symm 1 :=
-    e.injective (by rw [map_zsmul, e.apply_symm_apply, zsmul_eq_mul, mul_one, Int.cast_id])
-  refine ⟨e (φ (e.symm 1)), fun z ↦ ?_, fun c hc ↦ ?_⟩
-  · conv_lhs => rw [he z, map_zsmul, he (φ (e.symm 1)), smul_smul, mul_comm, ← smul_smul, ← he z]
-  · rw [hc, map_zsmul, e.apply_symm_apply, zsmul_eq_mul, mul_one, Int.cast_id]
-
 /-- The action of an element of the stabilizer of `x` on `H_d(M, M ∖ {x}; ℤ)`. -/
-private def stabilizerAddHom (x : M) (d : ℕ) (h : stabilizer G x) :
-    localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d →+
+private def stabilizerEnd (x : M) (d : ℕ) (h : stabilizer G x) :
+    localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d →ₗ[ℤ]
       localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d :=
   (localHomologySMulIso (ModuleCat.of ℤ (ULift.{w} ℤ)) (h : G) (mem_stabilizer_iff.1 h.2)
-    d).hom.hom.toAddMonoidHom
+    d).hom.hom
+
+omit [T2Space M] in
+/-- The action of an element `h` of the stabilizer is the map underlying the isomorphism induced
+by `h`, which does not depend on the proof that `h` fixes `x`. -/
+private lemma stabilizerEnd_apply (x : M) (d : ℕ) (h : stabilizer G x) (hh : (h : G) • x = x)
+    (z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d) :
+    stabilizerEnd x d h z =
+      (localHomologySMulIso (ModuleCat.of ℤ (ULift.{w} ℤ)) (h : G) hh d).hom z :=
+  (rfl)
 
 /-- The integer by which an element of the stabilizer of `x` acts on `H_d(M, M ∖ {x}; ℤ)`. -/
 private def stabilizerScalar (hd : finrank ℝ E = d) (x : M) (h : stabilizer G x) : ℤ :=
-  (existsUnique_forall_eq_smul hd x (stabilizerAddHom x d h)).choose
+  (existsUnique_forall_localHomology_eq_zsmul hd ULift.moduleEquiv x
+    (stabilizerEnd x d h)).choose
 
 private lemma stabilizerScalar_spec (hd : finrank ℝ E = d) (x : M) (h : stabilizer G x)
     (hh : (h : G) • x = x)
     (z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d) :
     (localHomologySMulIso (ModuleCat.of ℤ (ULift.{w} ℤ)) (h : G) hh d).hom z =
       stabilizerScalar hd x h • z :=
-  (existsUnique_forall_eq_smul hd x (stabilizerAddHom x d h)).choose_spec.1 z
+  (stabilizerEnd_apply x d h hh z).symm.trans
+    ((existsUnique_forall_localHomology_eq_zsmul hd ULift.moduleEquiv x
+      (stabilizerEnd x d h)).choose_spec.1 z)
+
+/-- `stabilizerScalar hd x h` is the only integer by which `h` acts. -/
+private lemma stabilizerScalar_eq (hd : finrank ℝ E = d) (x : M) (h : stabilizer G x)
+    (hh : (h : G) • x = x) {c : ℤ}
+    (hc : ∀ z, (localHomologySMulIso (ModuleCat.of ℤ (ULift.{w} ℤ)) (h : G) hh d).hom z = c • z) :
+    stabilizerScalar hd x h = c :=
+  (existsUnique_forall_localHomology_eq_zsmul hd ULift.moduleEquiv x
+    (stabilizerEnd x d h)).unique
+    (fun z ↦ (stabilizerEnd_apply x d h hh z).trans (stabilizerScalar_spec hd x h hh z))
+    fun z ↦ (stabilizerEnd_apply x d h hh z).trans (hc z)
 
 private lemma stabilizerScalar_one (hd : finrank ℝ E = d) (x : M) :
-    stabilizerScalar hd x (1 : stabilizer G x) = 1 := by
-  refine (existsUnique_forall_eq_smul hd x (stabilizerAddHom x d 1)).unique
-    (stabilizerScalar_spec hd x 1 (one_smul G x)) fun z ↦ ?_
-  have h1 : (localHomologySMulIso (ModuleCat.of ℤ (ULift.{w} ℤ))
-      ((1 : stabilizer G x) : G) (one_smul G x) d).hom = 𝟙 _ :=
-    localHomologyMap_eq_id _ (one_smul G) _ d
-  exact (congrArg (fun f ↦ ModuleCat.Hom.hom f z) h1).trans (one_zsmul z).symm
+    stabilizerScalar hd x (1 : stabilizer G x) = 1 :=
+  stabilizerScalar_eq hd x 1 (mem_stabilizer_iff.1 (1 : stabilizer G x).2) fun z ↦ by simp
 
 private lemma stabilizerScalar_mul (hd : finrank ℝ E = d) (x : M) (g h : stabilizer G x) :
     stabilizerScalar hd x (g * h) = stabilizerScalar hd x g * stabilizerScalar hd x h := by
-  refine (existsUnique_forall_eq_smul hd x (stabilizerAddHom x d (g * h))).unique
-    (stabilizerScalar_spec hd x (g * h) (mem_stabilizer_iff.1 (g * h).2)) fun z ↦ ?_
+  refine stabilizerScalar_eq hd x (g * h) (mem_stabilizer_iff.1 (g * h).2) fun z ↦ ?_
   -- The element `g * h` acts as `h` followed by `g`.
-  have hcomp := localHomologySMulIso_hom_comp_localHomologySMulIso_hom
-    (ModuleCat.of ℤ (ULift.{w} ℤ)) (h : G) (g : G) (mem_stabilizer_iff.1 h.2)
-    (mem_stabilizer_iff.1 g.2) d
-  calc _ = (localHomologySMulIso (ModuleCat.of ℤ (ULift.{w} ℤ)) (g : G)
-        (mem_stabilizer_iff.1 g.2) d).hom
-          ((localHomologySMulIso (ModuleCat.of ℤ (ULift.{w} ℤ)) (h : G)
-            (mem_stabilizer_iff.1 h.2) d).hom z) := by
-        rw [← ModuleCat.comp_apply, hcomp]
-        rfl
-    _ = _ := by
-      rw [stabilizerScalar_spec hd x h, map_zsmul, stabilizerScalar_spec hd x g, smul_smul,
-        mul_comm]
+  simp only [Subgroup.coe_mul]
+  rw [← localHomologySMulIso_hom_comp_localHomologySMulIso_hom _ (h : G) (g : G)
+      (mem_stabilizer_iff.1 h.2) (mem_stabilizer_iff.1 g.2), ModuleCat.comp_apply,
+    stabilizerScalar_spec hd x h, map_zsmul, stabilizerScalar_spec hd x g, smul_smul, mul_comm]
 
 /-- **The isotropy orientation character.** An element `h` of the stabilizer of `x` acts on the
 integral local homology `H_d(M, M ∖ {x}; ℤ) ≅ ℤ` in the dimension `d` of `M` by multiplication
@@ -304,8 +305,7 @@ theorem isotropyOrientationCharacter_eq_one_iff (hd : finrank ℝ E = d) {x : M}
       ∀ z, (localHomologySMulIso (ModuleCat.of ℤ (ULift.{w} ℤ)) (h : G) hh d).hom z = z := by
   refine ⟨fun h1 z ↦ by rw [localHomologySMulIso_hom_apply_eq_zsmul hd h, h1, Units.val_one,
     one_zsmul], fun hall ↦ Units.ext ?_⟩
-  exact (existsUnique_forall_eq_smul hd x (stabilizerAddHom x d h)).unique
-    (stabilizerScalar_spec hd x h hh) fun z ↦ (hall z).trans (one_zsmul z).symm
+  exact stabilizerScalar_eq hd x h hh fun z ↦ (hall z).trans (one_zsmul z).symm
 
 /-- **The trivialization along the orbit is equivariant up to the orientation character.** For
 `g` with `g • x = y` and `h` in the stabilizer of `x`, the image of a class `z` of
@@ -327,32 +327,40 @@ theorem isotropyOrientationCharacter_eq_of_joined [TopologicalSpace G] [Continuo
     [ContinuousSMul G M] (hd : finrank ℝ E = d) {x : M} {h h' : stabilizer G x}
     (hJ : Joined h h') :
     isotropyOrientationCharacter hd x h = isotropyOrientationCharacter hd x h' := by
-  -- The family `(h, y) ↦ h • y` over the stabilizer fixes `x`, so the transport is trivial.
+  -- The class of a path from `h` to `h'` in the stabilizer.
+  set γ : FundamentalGroupoid.mk h ⟶ FundamentalGroupoid.mk h' :=
+    Path.Homotopic.Quotient.mk hJ.somePath
+  -- The family `F (h, y) = h • y` over the stabilizer, with the left inverses
+  -- `(h, y) ↦ h⁻¹ • y`, fixes `x`. Here `F (h, y)` is by definition `h • y`.
+  let F : C(stabilizer G x × M, M) := ⟨fun q ↦ (q.1 : G) • q.2, by fun_prop⟩
+  let F' : C(stabilizer G x × M, M) := ⟨fun q ↦ (q.1 : G)⁻¹ • q.2, by fun_prop⟩
+  have hF (g : stabilizer G x) (y : M) : F' (g, F (g, y)) = y := inv_smul_smul (g : G) y
   have key := localHomologyMap_comp_localHomologyTransport_of_leftInverse
-    (ModuleCat.of ℤ (ULift.{w} ℤ)) (E := E)
-    (F := ⟨fun q : stabilizer G x × M ↦ (q.1 : G) • q.2, by fun_prop⟩)
-    (F' := ⟨fun q : stabilizer G x × M ↦ (q.1 : G)⁻¹ • q.2, by fun_prop⟩)
-    (fun g y ↦ inv_smul_smul (g : G) y) x (o := ContinuousMap.const _ x)
-    (fun g ↦ mem_stabilizer_iff.1 g.2) d
-    (Path.Homotopic.Quotient.mk hJ.somePath :
-      FundamentalGroupoid.mk h ⟶ FundamentalGroupoid.mk h')
-  have hconst : (FundamentalGroupoid.map (ContinuousMap.const (stabilizer G x) x)).map
-      (Path.Homotopic.Quotient.mk hJ.somePath :
-        FundamentalGroupoid.mk h ⟶ FundamentalGroupoid.mk h') =
-        𝟙 ((FundamentalGroupoid.map (ContinuousMap.const (stabilizer G x) x)).obj
-          (FundamentalGroupoid.mk h)) :=
-    congrArg Path.Homotopic.Quotient.mk (Path.ext rfl)
+    (ModuleCat.of ℤ (ULift.{w} ℤ)) (E := E) hF x (o := ContinuousMap.const _ x)
+    (fun g ↦ mem_stabilizer_iff.1 g.2) d γ
+  -- The point `x` stays put along `γ`, so the transport along its image is trivial.
   have hT : localHomologyTransport (ModuleCat.of ℤ (ULift.{w} ℤ)) M E d
-      ((FundamentalGroupoid.map (ContinuousMap.const (stabilizer G x) x)).map
-        (Path.Homotopic.Quotient.mk hJ.somePath :
-          FundamentalGroupoid.mk h ⟶ FundamentalGroupoid.mk h')) = 𝟙 _ := by
-    rw [hconst]
+      ((FundamentalGroupoid.map (ContinuousMap.const (stabilizer G x) x)).map γ) = 𝟙 _ := by
+    rw [show (FundamentalGroupoid.map (ContinuousMap.const (stabilizer G x) x)).map γ = 𝟙 _ from
+      congrArg Path.Homotopic.Quotient.mk (Path.ext rfl)]
     exact localHomologyTransport_id _ M E d _
-  refine Units.ext ((existsUnique_forall_eq_smul hd x (stabilizerAddHom x d h)).unique
-    (stabilizerScalar_spec hd x h (mem_stabilizer_iff.1 h.2)) fun z ↦ ?_)
-  exact (congrArg (fun φ ↦ ModuleCat.Hom.hom φ z)
-    (((Category.comp_id _).symm.trans (congrArg _ hT.symm)).trans key)).trans
-      (stabilizerScalar_spec hd x h' (mem_stabilizer_iff.1 h'.2) z)
+  -- So `h` and `h'` induce the same map.
+  have hhh' : (localHomologySMulIso (ModuleCat.of ℤ (ULift.{w} ℤ)) (h : G)
+      (mem_stabilizer_iff.1 h.2) d).hom =
+        (localHomologySMulIso (ModuleCat.of ℤ (ULift.{w} ℤ)) (h' : G)
+          (mem_stabilizer_iff.1 h'.2) d).hom := by
+    rw [localHomologySMulIso_hom_eq_localHomologyMap _ (F := F) (p := h) (g := (h : G))
+        (fun _ ↦ rfl) _ (preimage_curry_singleton_subset_of_leftInverse hF h
+          (mem_stabilizer_iff.1 h.2)),
+      localHomologySMulIso_hom_eq_localHomologyMap _ (F := F) (p := h') (g := (h' : G))
+        (fun _ ↦ rfl) _ (preimage_curry_singleton_subset_of_leftInverse hF h'
+          (mem_stabilizer_iff.1 h'.2))]
+    -- `key` is stated at the points `o h = x` and `o h' = x` of the constant path `o`, and `hT`
+    -- at the first of them; these are all `x` by definition, so they combine by `Eq.trans`.
+    exact (Category.comp_id _).symm.trans ((congrArg _ hT.symm).trans key)
+  refine Units.ext (stabilizerScalar_eq hd x h (mem_stabilizer_iff.1 h.2) fun z ↦ ?_)
+  rw [hhh']
+  exact localHomologySMulIso_hom_apply_eq_zsmul hd h' _ z
 
 end Character
 
