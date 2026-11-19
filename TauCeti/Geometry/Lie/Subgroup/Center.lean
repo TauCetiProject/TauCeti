@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Commutative
 public import TauCeti.Topology.Algebra.Group.Connected
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
+import TauCeti.Geometry.Lie.Adjoint.Representation.Stabilizer
 import TauCeti.Geometry.Lie.Exponential.Generation
 import TauCeti.Geometry.Lie.Subgroup.Embedded
 import TauCeti.RepresentationTheory.Continuous.Basic
@@ -62,11 +63,11 @@ nontrivial monodromy.
 * `TauCeti.Lie.finite_center_of_center_eq_bot` and `TauCeti.Lie.finite_center_iff`: a compact Lie
   group with `𝔷(𝔤) = 0` has finite centre, and for compact connected `G` this characterizes
   `𝔷(𝔤) = 0`.
-* `TauCeti.Lie.mem_centralizer_connectedComponentOfOne_iff_forall_Ad_apply_eq_self` and
+* `TauCeti.Lie.mem_centralizer_connectedComponent_one_iff_forall_Ad_apply_eq_self` and
   `TauCeti.Lie.ker_continuousAdjointRepresentation`: the kernel of the adjoint representation of
   any Lie group is the centralizer of its identity component.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_connectedComponentOfOne` and
-  `TauCeti.Lie.lieSubalgebraOfSubgroup_centralizer_connectedComponentOfOne`: the identity
+  `TauCeti.Lie.lieSubalgebraOfSubgroup_centralizer_connectedComponent_one`: the identity
   component has Lie algebra `𝔤`, and its centralizer has Lie algebra `𝔷(𝔤)`.
 * `TauCeti.Lie.Ad_apply_mem_center`, `TauCeti.Lie.Ad_apply_eq_self_of_mem_connectedComponentOfOne`
   and `TauCeti.Lie.Ad_apply_eq_Ad_apply_of_mem_center`: the adjoint action preserves `𝔷(𝔤)`, the
@@ -110,15 +111,71 @@ theorem Ad_apply_eq_self_of_mem_center {g : G} (hg : g ∈ Subgroup.center G)
   rw [← Subgroup.centralizer_univ, ← Subgroup.coe_top] at hg
   exact Ad_apply_eq_self_of_mem_centralizer hg (by simp)
 
+/-! ### The kernel of the adjoint representation -/
+
+variable [IsTopologicalGroup G] in
+/-- **The Lie algebra of the identity component is the whole Lie algebra**: every one-parameter
+subgroup is a connected curve through `1`. -/
+@[simp]
+theorem lieSubalgebraOfSubgroup_connectedComponentOfOne :
+    lieSubalgebraOfSubgroup (I := I) (Subgroup.connectedComponentOfOne G) = ⊤ :=
+  eq_top_iff.mpr fun X _ => mem_lieSubalgebraOfSubgroup_of_forall fun t =>
+    lieExp_mem_connectedComponent_one (t • X)
+
+/-- **An element acts trivially on the Lie algebra exactly when it centralizes the identity
+component.** This holds for a possibly disconnected Lie group `G`, with `G⁰` its identity component;
+for connected `G` it is `TauCeti.Lie.mem_center_iff_forall_Ad_apply_eq_self`. -/
+theorem mem_centralizer_connectedComponent_one_iff_forall_Ad_apply_eq_self (g : G) :
+    g ∈ Subgroup.centralizer (connectedComponent (1 : G)) ↔
+      ∀ X : LeftInvariantDerivation I G, Ad (I := I) g X = X := by
+  have := topologicalGroup_of_lieGroup I ∞ (G := G)
+  have hconn : IsPreconnected (Subgroup.connectedComponentOfOne G : Set G) := by
+    rw [Subgroup.coe_connectedComponentOfOne]
+    exact isPreconnected_connectedComponent
+  rw [← Subgroup.coe_connectedComponentOfOne, mem_centralizer_iff_forall_Ad_apply_eq_self (I := I)
+    Subgroup.isClosed_connectedComponentOfOne hconn,
+    lieSubalgebraOfSubgroup_connectedComponentOfOne]
+  simp
+
+/-- **The kernel of the adjoint representation is the centralizer of the identity component**,
+`ker (Ad : G → Aut 𝔤) = C_G(G⁰)`. In particular this centralizer is a normal subgroup. -/
+theorem ker_continuousAdjointRepresentation :
+    (continuousAdjointRepresentation (I := I) (G := G)).toMonoidHom.ker =
+      Subgroup.centralizer (connectedComponent (1 : G)) := by
+  ext g
+  rw [MonoidHom.mem_ker,
+    mem_centralizer_connectedComponent_one_iff_forall_Ad_apply_eq_self (I := I),
+    ContRepresentation.toMonoidHom_apply, ContinuousLinearMap.ext_iff]
+  simp
+
+/-- **The Lie algebra of the centralizer of the identity component is the centre of the Lie
+algebra.** The centralizer `C_G(G⁰)` is the kernel of the adjoint representation
+(`TauCeti.Lie.mem_centralizer_connectedComponent_one_iff_forall_Ad_apply_eq_self`); for connected
+`G` it is the centre, and this is `TauCeti.Lie.lieSubalgebraOfSubgroup_center`. -/
+@[simp]
+theorem lieSubalgebraOfSubgroup_centralizer_connectedComponent_one :
+    lieSubalgebraOfSubgroup (I := I)
+        (Subgroup.centralizer (connectedComponent (1 : G))) =
+      (center ℝ (LeftInvariantDerivation I G) : LieSubalgebra ℝ (LeftInvariantDerivation I G)) := by
+  have := topologicalGroup_of_lieGroup I ∞ (G := G)
+  refine le_antisymm (fun X hX => ?_) fun X hX => ?_
+  · rw [LieIdeal.mem_toLieSubalgebra, LieModule.mem_maxTrivSubmodule]
+    intro Y
+    rw [← lie_skew, lie_eq_zero_of_mem_lieSubalgebraOfSubgroup_centralizer
+      (K := Subgroup.connectedComponentOfOne G) hX (by simp), neg_zero]
+  · rw [LieIdeal.mem_toLieSubalgebra, LieModule.mem_maxTrivSubmodule] at hX
+    refine mem_lieSubalgebraOfSubgroup_of_forall fun t => ?_
+    rw [mem_centralizer_connectedComponent_one_iff_forall_Ad_apply_eq_self (I := I)]
+    intro Y
+    refine Ad_lieExp_smul_apply_eq_self_of_lie_eq_zero ?_ t
+    rw [← lie_skew, hX Y, neg_zero]
+
 /-- **The centre of a connected Lie group is the kernel of the adjoint representation**: an element
 is central exactly when its adjoint action fixes every derivation. -/
 theorem mem_center_iff_forall_Ad_apply_eq_self [PreconnectedSpace G] (g : G) :
     g ∈ Subgroup.center G ↔ ∀ X : LeftInvariantDerivation I G, Ad (I := I) g X = X := by
-  refine ⟨fun hg => Ad_apply_eq_self_of_mem_center hg, fun h => ?_⟩
-  rw [← Subgroup.centralizer_univ, ← Subgroup.coe_top,
-    mem_centralizer_iff_forall_Ad_apply_eq_self (I := I)
-    (by simp) (by simpa using isPreconnected_univ)]
-  exact fun X _ => h X
+  rw [← Subgroup.centralizer_univ, ← PreconnectedSpace.connectedComponent_eq_univ (1 : G)]
+  exact mem_centralizer_connectedComponent_one_iff_forall_Ad_apply_eq_self g
 
 /-- **The kernel of a homomorphism with injective differential from a connected Lie group is
 central.** Its elements act trivially on the Lie algebra
@@ -144,26 +201,17 @@ theorem _root_.MonoidHom.ker_le_center_of_injective_groupLieAlgebraMap [Preconne
 needed. -/
 theorem lieSubalgebraOfSubgroup_center_le :
     lieSubalgebraOfSubgroup (I := I) (Subgroup.center G) ≤
-      (center ℝ (LeftInvariantDerivation I G) : LieSubalgebra ℝ (LeftInvariantDerivation I G)) := by
-  intro X hX
-  rw [← Subgroup.centralizer_univ, ← Subgroup.coe_top] at hX
-  rw [LieIdeal.mem_toLieSubalgebra, LieModule.mem_maxTrivSubmodule]
-  intro Y
-  rw [← lie_skew, lie_eq_zero_of_mem_lieSubalgebraOfSubgroup_centralizer hX (by simp),
-    neg_zero]
+      (center ℝ (LeftInvariantDerivation I G) : LieSubalgebra ℝ (LeftInvariantDerivation I G)) :=
+  (lieSubalgebraOfSubgroup_mono (Subgroup.center_le_centralizer _)).trans
+    lieSubalgebraOfSubgroup_centralizer_connectedComponent_one.le
 
 /-- **The Lie algebra of the centre of a connected Lie group is the centre of its Lie algebra.** -/
 @[simp]
 theorem lieSubalgebraOfSubgroup_center [PreconnectedSpace G] :
     lieSubalgebraOfSubgroup (I := I) (Subgroup.center G) =
       (center ℝ (LeftInvariantDerivation I G) : LieSubalgebra ℝ (LeftInvariantDerivation I G)) := by
-  refine le_antisymm lieSubalgebraOfSubgroup_center_le fun X hX => ?_
-  rw [LieIdeal.mem_toLieSubalgebra, LieModule.mem_maxTrivSubmodule] at hX
-  refine mem_lieSubalgebraOfSubgroup_of_forall fun t => ?_
-  rw [mem_center_iff_forall_Ad_apply_eq_self (I := I)]
-  intro Y
-  refine Ad_lieExp_smul_apply_eq_self_of_lie_eq_zero ?_ t
-  rw [← lie_skew, hX Y, neg_zero]
+  rw [← Subgroup.centralizer_univ, ← PreconnectedSpace.connectedComponent_eq_univ (1 : G)]
+  exact lieSubalgebraOfSubgroup_centralizer_connectedComponent_one
 
 /-- **The centre is discrete when the Lie algebra has trivial centre**, in particular when the Lie
 algebra is semisimple (`LieAlgebra.center_eq_bot`). -/
@@ -263,60 +311,6 @@ section IdentityComponent
 
 variable [IsTopologicalGroup G]
 
-/-- **The Lie algebra of the identity component is the whole Lie algebra**: every one-parameter
-subgroup is a connected curve through `1`. -/
-@[simp]
-theorem lieSubalgebraOfSubgroup_connectedComponentOfOne :
-    lieSubalgebraOfSubgroup (I := I) (Subgroup.connectedComponentOfOne G) = ⊤ :=
-  eq_top_iff.mpr fun X _ => mem_lieSubalgebraOfSubgroup_of_forall fun t =>
-    lieExp_mem_connectedComponent_one (t • X)
-
-/-- **An element acts trivially on the Lie algebra exactly when it centralizes the identity
-component.** This holds for a possibly disconnected Lie group `G`, with `G⁰` its identity component;
-for connected `G` it is `TauCeti.Lie.mem_center_iff_forall_Ad_apply_eq_self`. -/
-theorem mem_centralizer_connectedComponentOfOne_iff_forall_Ad_apply_eq_self (g : G) :
-    g ∈ Subgroup.centralizer (connectedComponent (1 : G)) ↔
-      ∀ X : LeftInvariantDerivation I G, Ad (I := I) g X = X := by
-  have hconn : IsPreconnected (Subgroup.connectedComponentOfOne G : Set G) := by
-    rw [Subgroup.coe_connectedComponentOfOne]
-    exact isPreconnected_connectedComponent
-  rw [← Subgroup.coe_connectedComponentOfOne, mem_centralizer_iff_forall_Ad_apply_eq_self (I := I)
-    Subgroup.isClosed_connectedComponentOfOne hconn,
-    lieSubalgebraOfSubgroup_connectedComponentOfOne]
-  simp
-
-/-- **The kernel of the adjoint representation is the centralizer of the identity component**,
-`ker (Ad : G → Aut 𝔤) = C_G(G⁰)`. In particular this centralizer is a normal subgroup. -/
-theorem ker_continuousAdjointRepresentation :
-    (continuousAdjointRepresentation (I := I) (G := G)).toMonoidHom.ker =
-      Subgroup.centralizer (connectedComponent (1 : G)) := by
-  ext g
-  rw [MonoidHom.mem_ker,
-    mem_centralizer_connectedComponentOfOne_iff_forall_Ad_apply_eq_self (I := I),
-    ContRepresentation.toMonoidHom_apply, ContinuousLinearMap.ext_iff]
-  simp
-
-/-- **The Lie algebra of the centralizer of the identity component is the centre of the Lie
-algebra.** The centralizer `C_G(G⁰)` is the kernel of the adjoint representation
-(`TauCeti.Lie.mem_centralizer_connectedComponentOfOne_iff_forall_Ad_apply_eq_self`); for connected
-`G` it is the centre, and this is `TauCeti.Lie.lieSubalgebraOfSubgroup_center`. -/
-@[simp]
-theorem lieSubalgebraOfSubgroup_centralizer_connectedComponentOfOne :
-    lieSubalgebraOfSubgroup (I := I)
-        (Subgroup.centralizer (connectedComponent (1 : G))) =
-      (center ℝ (LeftInvariantDerivation I G) : LieSubalgebra ℝ (LeftInvariantDerivation I G)) := by
-  refine le_antisymm (fun X hX => ?_) fun X hX => ?_
-  · rw [LieIdeal.mem_toLieSubalgebra, LieModule.mem_maxTrivSubmodule]
-    intro Y
-    rw [← lie_skew, lie_eq_zero_of_mem_lieSubalgebraOfSubgroup_centralizer
-      (K := Subgroup.connectedComponentOfOne G) hX (by simp), neg_zero]
-  · rw [LieIdeal.mem_toLieSubalgebra, LieModule.mem_maxTrivSubmodule] at hX
-    refine mem_lieSubalgebraOfSubgroup_of_forall fun t => ?_
-    rw [mem_centralizer_connectedComponentOfOne_iff_forall_Ad_apply_eq_self (I := I)]
-    intro Y
-    refine Ad_lieExp_smul_apply_eq_self_of_lie_eq_zero ?_ t
-    rw [← lie_skew, hX Y, neg_zero]
-
 /-- **The identity component acts trivially on the centre of the Lie algebra.** The exponential
 of any `X` fixes a central `Y`, since `⁅X, Y⁆ = 0`, and the exponential image generates the
 identity component. -/
@@ -325,13 +319,10 @@ theorem Ad_apply_eq_self_of_mem_connectedComponentOfOne {g : G}
     (hY : Y ∈ center ℝ (LeftInvariantDerivation I G)) : Ad (I := I) g Y = Y := by
   rw [LieModule.mem_maxTrivSubmodule] at hY
   rw [← closure_range_lieExp_eq_connectedComponentOfOne (I := I)] at hg
-  induction hg using Subgroup.closure_induction with
-  | mem g hg =>
-    obtain ⟨X, rfl⟩ := hg
-    exact Ad_lieExp_apply_eq_self_of_lie_eq_zero (hY X)
-  | one => simp
-  | mul g h _ _ hg hh => rw [Ad_mul, LieEquiv.trans_apply, hh, hg]
-  | inv g _ hg => rw [Ad_inv, LieEquiv.symm_apply_eq, hg]
+  exact mem_stabilizer_continuousAdjointRepresentation_iff.mp <|
+    (Subgroup.closure_le _).2 (Set.range_subset_iff.2 fun X =>
+      mem_stabilizer_continuousAdjointRepresentation_iff.mpr
+        (Ad_lieExp_apply_eq_self_of_lie_eq_zero (hY X))) hg
 
 variable (I G) in
 /-- The **representation of the component group** `π₀ G = G ⧸ G⁰` on the centre `𝔷` of the Lie
