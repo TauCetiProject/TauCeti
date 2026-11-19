@@ -40,7 +40,8 @@ finite-dimensional kernel and closed range of the extension of `P` to `W^{1,2}`
 * `exists_forall_setIntegral_le_mul_setIntegral_cauchyRiemann_add_of_ends` is the patching
   argument: estimates of `P` on the two ends imply the semi-Fredholm estimate. Cut `ξ` into three
   pieces with cutoffs `β(s)` near `+∞`, near `-∞` and on a compact cylinder; since `P` only
-  differentiates the cutoffs in `s`, `P (β ξ) = β P ξ + β' ξ`, and on the compact cylinder the
+  differentiates the cutoffs in `s`, `P (β ξ) = β P ξ + β' ξ`
+  (`TauCeti.SymplecticForm.cauchyRiemann_smul_fst`), and on the compact cylinder the
   `L²` estimate for domain-dependent compatible structures
   (`TauCeti.SymplecticForm.exists_forall_setIntegral_norm_fderiv_sq_le_of_periodic`) applies.
 * `exists_mem_forall_setIntegral_le_mul_setIntegral_cauchyRiemann_of_tendstoUniformlyOn` is the
@@ -113,7 +114,7 @@ private theorem continuous_sobolev {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1
   fun_prop
 
 /-- `P ξ` is continuous for a `C¹` map `ξ` and continuous coefficients. -/
-private theorem continuous_cauchyRiemann {J : ℝ × ℝ → AlmostComplexStructure V}
+theorem continuous_cauchyRiemann {J : ℝ × ℝ → AlmostComplexStructure V}
     {A : ℝ × ℝ → V →L[ℝ] V} (hJc : Continuous fun z ↦ (J z).toLinearMap.toContinuousLinearMap)
     (hAc : Continuous A) {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) :
     Continuous fun z ↦
@@ -121,25 +122,6 @@ private theorem continuous_cauchyRiemann {J : ℝ × ℝ → AlmostComplexStruct
   have hdξ (v : ℝ × ℝ) : Continuous fun z ↦ fderiv ℝ ξ z v :=
     (hξ.continuous_fderiv one_ne_zero).clm_apply continuous_const
   exact ((hdξ _).add (hJc.clm_apply (hdξ _))).add (hAc.clm_apply hξ.continuous)
-
-omit [FiniteDimensional ℝ V] in
-/-- **Multiplying by a cutoff in `s`.** If `β` has derivative `β'` at `s`, the operator
-`P = ∂s + J ∂t + A` sends `β(s) ξ` to `β(s) P ξ + β' ξ` at `z = (s, t)`. -/
-private theorem cauchyRiemann_smul_fst (J : ℝ × ℝ → AlmostComplexStructure V)
-    (A : ℝ × ℝ → V →L[ℝ] V) {ξ : ℝ × ℝ → V} {z : ℝ × ℝ} {β : ℝ → ℝ} {β' : ℝ}
-    (hβ : HasDerivAt β β' z.1) (hξ : DifferentiableAt ℝ ξ z) :
-    fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineReal +
-        J z (fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineImag) + A z (β z.1 • ξ z) =
-      β z.1 • (fderiv ℝ ξ z stdComplexLineReal + J z (fderiv ℝ ξ z stdComplexLineImag) +
-        A z (ξ z)) + β' • ξ z := by
-  have hd : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1 • ξ w) _ z :=
-    (hβ.hasFDerivAt.comp z hasFDerivAt_fst).smul hξ.hasFDerivAt
-  rw [hd.fderiv]
-  simp only [Function.comp_apply, add_apply, smul_apply, smulRight_apply,
-    ContinuousLinearMap.comp_apply, coe_fst', stdComplexLineReal_fst, toSpanSingleton_apply,
-    smul_eq_mul, one_mul, stdComplexLineImag_fst, zero_mul, zero_smul, add_zero, map_smul,
-    smul_add]
-  abel
 
 /-- **The `L²` norm of `P` on a cut-off section.** For a cutoff `β(s)` with `|β| ≤ 1`,
 `|β'| ≤ M` and `β'` supported in `[-T, T]`, the `L²` norm of `P (β ξ) = β P ξ + β' ξ` is
@@ -164,7 +146,8 @@ private theorem setIntegral_norm_cauchyRiemann_smul_sq_le {J : ℝ × ℝ → Al
   have hD (z : ℝ × ℝ) : fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineReal +
       J z (fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineImag) + A z (β z.1 • ξ z) =
       β z.1 • P z + β' z.1 • ξ z :=
-    cauchyRiemann_smul_fst J A (hβ z.1) (hξ.differentiable one_ne_zero z)
+    cauchyRiemann_smul_fst (fun z ↦ (J z).toLinearMap.toContinuousLinearMap) A (hβ z.1)
+      (hξ.differentiable one_ne_zero z)
   have hDc : Continuous P := continuous_cauchyRiemann hJc hAc hξ
   have hβ'ξ : Continuous fun z : ℝ × ℝ ↦ β' z.1 ^ 2 * ‖ξ z‖ ^ 2 := by
     have := hξ.continuous
@@ -270,6 +253,58 @@ private theorem setIntegral_sobolev_le_three_mul_add {ξ ξp ξm ξ₀ : ℝ × 
         integral_add (hI (continuous_sobolev (hξp.of_le one_le_two)))
           (hI (continuous_sobolev (hξm.of_le one_le_two)))]
 
+omit [FiniteDimensional ℝ V] in
+/-- **The energy of an end piece.** Let `η` vanish for `s ∉ (c, d)`, with `[c, d] ⊆ [a', b']`. An
+estimate `∫ (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C ∫ ‖P η‖²` over `[c, d] × [0, 1]` and a bound `K` on
+`∫ ‖P η‖²` over `[a', b'] × [0, 1]` bound the energy of `η` over `[a', b'] × [0, 1]` by
+`max C 0 * K`. -/
+private theorem setIntegral_sobolev_le_max_mul {J : ℝ × ℝ → AlmostComplexStructure V}
+    {A : ℝ × ℝ → V →L[ℝ] V} {η : ℝ × ℝ → V} {c d a' b' C K : ℝ}
+    (hη : ∀ s t, s ∉ Ioo c d → η (s, t) = 0) (ha : a' ≤ c) (hb : d ≤ b')
+    (hend : ∫ z in Icc c d ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 +
+        ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2 + ‖η z‖ ^ 2) ≤
+      C * ∫ z in Icc c d ×ˢ Icc (0 : ℝ) 1, ‖fderiv ℝ η z stdComplexLineReal +
+        J z (fderiv ℝ η z stdComplexLineImag) + A z (η z)‖ ^ 2)
+    (hK : ∫ z in Icc a' b' ×ˢ Icc (0 : ℝ) 1, ‖fderiv ℝ η z stdComplexLineReal +
+        J z (fderiv ℝ η z stdComplexLineImag) + A z (η z)‖ ^ 2 ≤ K) :
+    ∫ z in Icc a' b' ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 +
+        ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2 + ‖η z‖ ^ 2) ≤ max C 0 * K := by
+  rw [setIntegral_sobolev_eq hη ha hb]
+  rw [setIntegral_norm_cauchyRiemann_sq_eq hη ha hb] at hK
+  exact hend.trans (mul_le_mul (le_max_left _ _) hK
+    (setIntegral_nonneg (measurableSet_Icc.prod measurableSet_Icc) fun _ _ ↦ sq_nonneg _)
+    (le_max_right _ _))
+
+/-- **The energy of the compact piece.** Let `η` be a `C¹` map vanishing for `s ∉ (-T, T)`, with
+`[-T, T] ⊆ [a', b']`, such that `∫ (‖∂s η‖² + ‖∂t η‖²) ≤ C₀ ∫ (‖P η‖² + ‖η‖²)` over
+`[-T, T] × [0, 1]`. A bound `K` on `∫ ‖P η‖²` over `[a', b'] × [0, 1]` and a bound `Y` on
+`∫ ‖η‖²` over `[-T, T] × [0, 1]` bound the energy of `η` over `[a', b'] × [0, 1]` by
+`C₀ (K + Y) + Y`. -/
+private theorem setIntegral_sobolev_le_mul_add_add {J : ℝ × ℝ → AlmostComplexStructure V}
+    {A : ℝ × ℝ → V →L[ℝ] V} (hJc : Continuous fun z ↦ (J z).toLinearMap.toContinuousLinearMap)
+    (hAc : Continuous A) {η : ℝ × ℝ → V} (hη : ContDiff ℝ 1 η) {T a' b' C₀ K Y : ℝ}
+    (hη₀ : ∀ s t, s ∉ Ioo (-T) T → η (s, t) = 0) (ha : a' ≤ -T) (hb : T ≤ b') (hC₀ : 0 ≤ C₀)
+    (hcore : ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 +
+        ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2) ≤
+      C₀ * ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ η z stdComplexLineReal +
+        J z (fderiv ℝ η z stdComplexLineImag) + A z (η z)‖ ^ 2 + ‖η z‖ ^ 2))
+    (hK : ∫ z in Icc a' b' ×ˢ Icc (0 : ℝ) 1, ‖fderiv ℝ η z stdComplexLineReal +
+        J z (fderiv ℝ η z stdComplexLineImag) + A z (η z)‖ ^ 2 ≤ K)
+    (hY : ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖η z‖ ^ 2 ≤ Y) :
+    ∫ z in Icc a' b' ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 +
+        ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2 + ‖η z‖ ^ 2) ≤ C₀ * (K + Y) + Y := by
+  have hI {f : ℝ × ℝ → ℝ} (hf : Continuous f) : IntegrableOn f (Icc (-T) T ×ˢ Icc (0 : ℝ) 1) :=
+    hf.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
+  have := hη.continuous
+  have := hη.continuous_fderiv one_ne_zero
+  have hP := continuous_cauchyRiemann hJc hAc hη
+  rw [setIntegral_sobolev_eq hη₀ ha hb, integral_add (hI (by fun_prop)) (hI (by fun_prop))]
+  rw [integral_add (hI (f := fun z ↦ ‖fderiv ℝ η z stdComplexLineReal +
+    J z (fderiv ℝ η z stdComplexLineImag) + A z (η z)‖ ^ 2) (hP.norm.pow 2))
+    (hI (by fun_prop))] at hcore
+  rw [setIntegral_norm_cauchyRiemann_sq_eq hη₀ ha hb] at hK
+  nlinarith [mul_le_mul_of_nonneg_left (add_le_add hK hY) hC₀]
+
 /-- **Patching end estimates into the semi-Fredholm estimate.** Let `J(z)` be `ω`-compatible
 complex structures and `A(z)` linear maps, both continuous in `z`, and let
 `P ξ = ∂s ξ + J(z) ∂t ξ + A(z) ξ`. Suppose that `P` controls the `W^{1,2}` norm on the two ends:
@@ -361,8 +396,6 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_cauchyRiemann_add_of_ends
   -- The window `[a', b'] ⊇ [a, b] ∪ [-T, T]` carrying all the pieces.
   set a' := min a (-T)
   set b' := max b T
-  have hrect : MeasurableSet (Icc a' b' ×ˢ Icc (0 : ℝ) 1) :=
-    measurableSet_Icc.prod measurableSet_Icc
   set X := ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖fderiv ℝ ξ z stdComplexLineReal +
     J z (fderiv ℝ ξ z stdComplexLineImag) + A z (ξ z)‖ ^ 2
   set Y := ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2
@@ -382,60 +415,30 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_cauchyRiemann_add_of_ends
       (min_le_right _ _) (le_max_right _ _)
     nlinarith [mul_nonneg (sq_nonneg M) hX]
   -- The piece near `+∞`.
-  have hPp : ∫ z in Icc a' b' ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξp z stdComplexLineReal‖ ^ 2 +
-      ‖fderiv ℝ ξp z stdComplexLineImag‖ ^ 2 + ‖ξp z‖ ^ 2) ≤ max Cp 0 * (L * (X + Y)) := by
-    rw [setIntegral_sobolev_eq (a' := a') (b' := b') hvp
-      ((min_le_left _ _).trans (le_max_left _ _)) (max_le_max le_rfl (by linarith))]
-    refine (hp hξp (fun s t ↦ by simp only [ξp, hper]) (hRp.trans (le_max_right _ _))
+  have hPp := setIntegral_sobolev_le_max_mul hvp ((min_le_left _ _).trans (le_max_left _ _))
+    (max_le_max le_rfl (by linarith))
+    (hp hξp (fun s t ↦ by simp only [ξp, hper]) (hRp.trans (le_max_right _ _))
       (max_le_max hab le_rfl) (fun t ↦ hvp _ t fun h ↦ lt_irrefl _ h.1)
-      (fun t ↦ hvp _ t fun h ↦ lt_irrefl _ h.2)).trans ?_
-    rw [← setIntegral_norm_cauchyRiemann_sq_eq (a' := a') (b' := b') hvp
-      ((min_le_left _ _).trans (le_max_left _ _)) (max_le_max le_rfl (by linarith))]
-    exact mul_le_mul (le_max_left _ _) (hcut hβpc hβp1 hβpM hβpT)
-      (setIntegral_nonneg hrect fun _ _ ↦ sq_nonneg _) (le_max_right _ _)
+      (fun t ↦ hvp _ t fun h ↦ lt_irrefl _ h.2)) (hcut hβpc hβp1 hβpM hβpT)
   -- The piece near `-∞`.
-  have hPm : ∫ z in Icc a' b' ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξm z stdComplexLineReal‖ ^ 2 +
-      ‖fderiv ℝ ξm z stdComplexLineImag‖ ^ 2 + ‖ξm z‖ ^ 2) ≤ max Cm 0 * (L * (X + Y)) := by
-    rw [setIntegral_sobolev_eq (a' := a') (b' := b') hvm (min_le_min le_rfl (by linarith))
-      ((min_le_left _ _).trans (le_max_left _ _))]
-    refine (hm hξm (fun s t ↦ by simp only [ξm, hper]) (min_le_min hab le_rfl)
+  have hPm := setIntegral_sobolev_le_max_mul hvm (min_le_min le_rfl (by linarith))
+    ((min_le_left _ _).trans (le_max_left _ _))
+    (hm hξm (fun s t ↦ by simp only [ξm, hper]) (min_le_min hab le_rfl)
       ((min_le_right _ _).trans hRm) (fun t ↦ hvm _ t fun h ↦ lt_irrefl _ h.1)
-      (fun t ↦ hvm _ t fun h ↦ lt_irrefl _ h.2)).trans ?_
-    rw [← setIntegral_norm_cauchyRiemann_sq_eq (a' := a') (b' := b') hvm
-      (min_le_min le_rfl (by linarith)) ((min_le_left _ _).trans (le_max_left _ _))]
-    exact mul_le_mul (le_max_left _ _) (hcut hβmc hβm1 hβmM hβmT)
-      (setIntegral_nonneg hrect fun _ _ ↦ sq_nonneg _) (le_max_right _ _)
+      (fun t ↦ hvm _ t fun h ↦ lt_irrefl _ h.2)) (hcut hβmc hβm1 hβmM hβmT)
   -- The piece on the compact cylinder `[-T, T] × [0, 1]`.
-  have hP₀ : ∫ z in Icc a' b' ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξ₀ z stdComplexLineReal‖ ^ 2 +
-      ‖fderiv ℝ ξ₀ z stdComplexLineImag‖ ^ 2 + ‖ξ₀ z‖ ^ 2) ≤
-        C₀ * (L * (X + Y) + (X + Y)) + (X + Y) := by
-    have hξ₀1 : Continuous ξ₀ := hξ₀c.continuous
-    have hdξ₀ := hξ₀c.continuous_fderiv two_ne_zero
-    have hDξ₀ := continuous_cauchyRiemann hJc hAc (hξ₀c.of_le one_le_two)
-    rw [setIntegral_sobolev_eq (a' := a') (b' := b') hv₀ (min_le_right _ _) (le_max_right _ _),
-      integral_add (hI (by fun_prop) _ _) (hI (by fun_prop) _ _)]
-    have hcore' := hcore hξ₀c (fun s _ ↦ by rw [← zero_add (1 : ℝ), hper₀])
-      (fun t ↦ hv₀ _ t fun h ↦ lt_irrefl _ h.1) (fun t ↦ hv₀ _ t fun h ↦ lt_irrefl _ h.2)
-    rw [integral_add (hI (f := fun z ↦ ‖fderiv ℝ ξ₀ z stdComplexLineReal +
-      J z (fderiv ℝ ξ₀ z stdComplexLineImag) + A z (ξ₀ z)‖ ^ 2) (hDξ₀.norm.pow 2) _ _)
-      (hI (by fun_prop) _ _)] at hcore'
-    have hD₀ : ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖fderiv ℝ ξ₀ z stdComplexLineReal +
-        J z (fderiv ℝ ξ₀ z stdComplexLineImag) + A z (ξ₀ z)‖ ^ 2 ≤ L * (X + Y) := by
-      rw [← setIntegral_norm_cauchyRiemann_sq_eq (a' := a') (b' := b') hv₀
-        (min_le_right a _) (le_max_right b _)]
-      exact hcut hβ₀c hβ₀1 hβ₀M hβ₀T'
-    have hξ₀Y : ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ₀ z‖ ^ 2 ≤ Y := by
-      refine setIntegral_mono_on (hI (by fun_prop) _ _)
-        (hI (by have := hξ.continuous; fun_prop) _ _)
-        (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ ?_
-      simp only [ξ₀, norm_smul, Real.norm_eq_abs]
-      gcongr
-      exact mul_le_of_le_one_left (norm_nonneg _) (hβ₀1 z.1)
-    have h₁ : C₀ * ((∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖fderiv ℝ ξ₀ z stdComplexLineReal +
-        J z (fderiv ℝ ξ₀ z stdComplexLineImag) + A z (ξ₀ z)‖ ^ 2) +
-          ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ₀ z‖ ^ 2) ≤ C₀ * (L * (X + Y) + (X + Y)) :=
-      mul_le_mul_of_nonneg_left (add_le_add hD₀ (hξ₀Y.trans (by linarith))) hC₀
-    linarith
+  have hξ₀Y : ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ₀ z‖ ^ 2 ≤ X + Y := by
+    refine le_add_of_nonneg_of_le hX (setIntegral_mono_on (hI (by
+      have := hξ₀c.continuous; fun_prop) _ _) (hI (by have := hξ.continuous; fun_prop) _ _)
+      (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ ?_)
+    simp only [ξ₀, norm_smul, Real.norm_eq_abs]
+    gcongr
+    exact mul_le_of_le_one_left (norm_nonneg _) (hβ₀1 z.1)
+  have hP₀ := setIntegral_sobolev_le_mul_add_add hJc hAc (hξ₀c.of_le one_le_two) hv₀
+    (min_le_right _ _) (le_max_right _ _) hC₀
+    (hcore hξ₀c (fun s _ ↦ by rw [← zero_add (1 : ℝ), hper₀])
+      (fun t ↦ hv₀ _ t fun h ↦ lt_irrefl _ h.1) (fun t ↦ hv₀ _ t fun h ↦ lt_irrefl _ h.2))
+    (hcut hβ₀c hβ₀1 hβ₀M hβ₀T') hξ₀Y
   -- Summing the three pieces.
   have hsum := setIntegral_sobolev_le_three_mul_add hξp hξm hξ₀c hsplit a' b'
   rw [setIntegral_sobolev_eq (a' := a') (b' := b') hξ₀ (min_le_left a _) (le_max_left b _)]
