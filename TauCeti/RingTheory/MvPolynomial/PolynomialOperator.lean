@@ -112,7 +112,9 @@ theorem polynomialOperator_monomial (a b : σ) (s : σ →₀ ℕ) (r : R) :
       monomial (Finsupp.single a 1 + (s - Finsupp.single b 1)) (r * s b) := by
   rw [polynomialOperator_apply, pderiv_monomial, X, monomial_mul_monomial, one_mul]
 
-/-- `X a ∂_a` multiplies a monomial by its degree in `a`. -/
+/-- `X a ∂_a` multiplies a monomial by its degree in `a`. This takes precedence over
+`polynomialOperator_monomial` on the diagonal. -/
+@[simp high]
 theorem polynomialOperator_self_monomial (a : σ) (s : σ →₀ ℕ) (r : R) :
     polynomialOperator R a a (monomial s r) = s a • monomial s r :=
   X_mul_pderiv_monomial
@@ -272,6 +274,7 @@ variable {R : Type*} [CommSemiring R] {d i : ℕ}
 
 /-- **The raising ladder**: for `i ≤ d`, the `k`-th power of `E = x ∂_y` sends the binary
 monomial `e_i` to `i(i-1)⋯(i-k+1) e_(i-k)`. -/
+@[simp]
 theorem pow_polynomialOperator_zero_one_polynomialMonomial (h : i ≤ d) (k : ℕ) :
     (polynomialOperator R (0 : Fin 2) 1 ^ k) (polynomialMonomial R d i) =
       (i.descFactorial k : R) • polynomialMonomial R d (i - k) := by
@@ -304,6 +307,7 @@ theorem pow_polynomialOperator_one_zero_polynomialMonomial (k : ℕ) :
   · rw [polynomialMonomial_of_lt h, polynomialMonomial_of_lt (by omega), map_zero, smul_zero]
 
 /-- `E = x ∂_y` sends `e_i` to `i e_(i-1)` for `i ≤ d`; in particular it kills `e_0 = x ^ d`. -/
+@[simp]
 theorem polynomialOperator_zero_one_polynomialMonomial (h : i ≤ d) :
     polynomialOperator R (0 : Fin 2) 1 (polynomialMonomial R d i) =
       (i : R) • polynomialMonomial R d (i - 1) := by
