@@ -131,7 +131,7 @@ theorem IsMetricCompatible.mvfderiv_bilinFormTrace
   have hU := (trivializationAt E (TangentSpace I) x).open_baseSet.mem_nhds hx
   have : IsManifold I (1 + 1) M := by norm_num; infer_instance
   have hF (i : Fin (Module.finrank ℝ E)) : MDiffAt (T% (F i)) x :=
-    ((contMDiffOn_chartLocalFrame (n := 1) x i).contMDiffAt hU).mdifferentiableAt one_ne_zero
+    (contMDiffAt_chartLocalFrame (n := 1) x i).mdifferentiableAt one_ne_zero
   have hD (i : Fin (Module.finrank ℝ E)) : MDiffAt (T% (D i)) x :=
     (contMDiffAt_chartDualFrame (n := 1) x hx i).mdifferentiableAt one_ne_zero
   -- Near `x`, the metric trace of `b` is `∑ᵢ b(Fᵢ, Dᵢ)`.
