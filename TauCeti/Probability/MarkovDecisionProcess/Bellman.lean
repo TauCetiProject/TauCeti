@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.MetricSpace.Contracting
 public import TauCeti.Probability.MarkovDecisionProcess.Basic
 public import TauCeti.Probability.ProbabilityMassFunction.Finite
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # Bellman operators of a discounted Markov decision process
@@ -270,26 +271,18 @@ theorem bellman_eq_self_iff (hγ : γ < 1) {v : BoundedFn S} :
   rw [M.optimalValue_eq_fixedPoint hγ]
   exact ContractingWith.fixedPoint_unique _ h
 
-omit [MeasurableSpace S] [Countable S] [MeasurableSingletonClass S] in
-/-- A fixed point `v` of an operator `T` with `‖T v‖ ≤ R + γ ‖v‖` and `γ < 1` is bounded by
-`R / (1 - γ)`. -/
-private theorem norm_le_div_of_isFixedPt (hγ : γ < 1) {T : BoundedFn S → BoundedFn S}
-    {v : BoundedFn S} {R : ℝ} (hT : ‖T v‖ ≤ R + γ * ‖v‖) (hv : T v = v) :
-    ‖v‖ ≤ R / (1 - γ) := by
-  rw [hv] at hT
-  rw [le_div_iff₀ (sub_pos.2 (show (γ : ℝ) < 1 from hγ))]
-  linarith
-
 omit [Nonempty A] in
 /-- For `γ < 1` the value of every policy is bounded by `rewardBound / (1 - γ)`. -/
 theorem norm_value_le [Nonempty S] (hγ : γ < 1) (π : S → PMF A) :
     ‖M.value γ π‖ ≤ M.rewardBound / (1 - γ) :=
-  norm_le_div_of_isFixedPt hγ (M.norm_bellmanEval_le γ π _) (M.bellmanEval_value hγ π)
+  norm_le_div_of_isFixedPt (NNReal.coe_lt_one.2 hγ) (M.norm_bellmanEval_le γ π _)
+    (M.bellmanEval_value hγ π)
 
 /-- For `γ < 1` the optimal value is bounded by `rewardBound / (1 - γ)`. -/
 theorem norm_optimalValue_le [Nonempty S] (hγ : γ < 1) :
     ‖M.optimalValue γ‖ ≤ M.rewardBound / (1 - γ) :=
-  norm_le_div_of_isFixedPt hγ (M.norm_bellman_le γ _) (M.bellman_optimalValue hγ)
+  norm_le_div_of_isFixedPt (NNReal.coe_lt_one.2 hγ) (M.norm_bellman_le γ _)
+    (M.bellman_optimalValue hγ)
 
 end Countable
 
@@ -317,16 +310,25 @@ maximizes the one-step lookahead `a ↦ reward s a + γ * expect v s a`. -/
 def IsGreedy (γ : ℝ≥0) (v : S → ℝ) (π : S → A) : Prop :=
   ∀ s a, M.reward s a + γ * M.expect v s a ≤ M.reward s (π s) + γ * M.expect v s (π s)
 
+omit [Fintype A] [Nonempty A] in
+/-- The characterization of greedy policies: `π` is greedy for `v` exactly when `π s` maximizes
+the one-step lookahead in every state. -/
+theorem isGreedy_iff (γ : ℝ≥0) (v : S → ℝ) (π : S → A) :
+    M.IsGreedy γ v π ↔
+      ∀ s a, M.reward s a + γ * M.expect v s a ≤ M.reward s (π s) + γ * M.expect v s (π s) :=
+  Iff.rfl
+
 omit [Fintype A] in
 /-- Every function has a greedy deterministic policy. -/
 theorem exists_isGreedy [Finite A] (γ : ℝ≥0) (v : S → ℝ) : ∃ π : S → A, M.IsGreedy γ v π := by
   choose π hπ using fun s ↦ Finite.exists_max fun a ↦ M.reward s a + γ * M.expect v s a
-  exact ⟨π, hπ⟩
+  exact ⟨π, (M.isGreedy_iff γ v π).2 hπ⟩
 
 /-- The evaluation operator of a deterministic policy agrees with the optimality operator at `v`
 if and only if the policy is greedy for `v`. -/
 theorem bellmanEval_ofDet_eq_bellman_iff (γ : ℝ≥0) (π : S → A) (v : BoundedFn S) :
     M.bellmanEval γ (ofDet π) v = M.bellman γ v ↔ M.IsGreedy γ v π := by
+  rw [isGreedy_iff]
   refine ⟨fun h s a ↦ ?_, fun h ↦ ?_⟩
   · rw [← M.bellmanEval_ofDet_apply, h]
     exact M.reward_add_expect_le_bellman γ v s a
