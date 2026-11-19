@@ -7,7 +7,6 @@ module
 
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 
-import TauCeti.AlgebraicGeometry.AffineScheme
 import TauCeti.AlgebraicGeometry.Cover.Open
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
@@ -37,52 +36,6 @@ namespace AlgebraicGeometry.Scheme.Hom
 
 variable {R : Type u} [CommRing R] {X : Scheme.{u}} (π : X ⟶ Spec (.of R))
 
-/-- The sections of the scheme over an open `U` form an `R`-algebra through the
-structure morphism to `Spec R`. -/
-@[instance_reducible]
-private noncomputable def sectionsAlgebra (U : X.Opens) :
-    Algebra R Γ(X, U) :=
-  ((Scheme.ΓSpecIso (.of R)).inv ≫ π.appLE ⊤ U fun _ _ ↦ trivial).hom.toAlgebra
-
-private theorem algebraMap_sections (U : X.Opens) :
-    @algebraMap R Γ(X, U) _ _ (sectionsAlgebra π U) =
-      ((Scheme.ΓSpecIso (.of R)).inv ≫ π.appLE ⊤ U fun _ _ ↦ trivial).hom :=
-  rfl
-
-/-- The inclusion `Spec Γ(X, U) ⟶ X` of an affine open lies over `Spec R`. -/
-private theorem fromSpec_toSpec {U : X.Opens} (hU : IsAffineOpen U) :
-    hU.fromSpec ≫ π =
-      Spec.map (CommRingCat.ofHom (@algebraMap R Γ(X, U) _ _ (sectionsAlgebra π U))) := by
-  rw [IsAffineOpen.fromSpec_comp_eq_SpecMap, algebraMap_sections, CommRingCat.ofHom_hom]
-
-/-- Restriction of sections of the scheme, as a map of `R`-algebras. -/
-private noncomputable def resₐ {U V : X.Opens} (h : V ≤ U) :
-    letI := sectionsAlgebra π U
-    letI := sectionsAlgebra π V
-    Γ(X, U) →ₐ[R] Γ(X, V) := by
-  letI := sectionsAlgebra π U
-  letI := sectionsAlgebra π V
-  exact {
-    toRingHom := (X.presheaf.map (homOfLE h).op).hom
-    commutes' := fun r ↦ by
-      exact congr(($(π.appLE_map (U := ⊤) (fun _ _ ↦ trivial) (homOfLE h).op)).hom
-        ((Scheme.ΓSpecIso (.of R)).inv.hom r)) }
-
-/-- Factor a point through an affine chart using the algebra-homomorphism correspondence. -/
-private theorem exists_specMap_comp_fromSpec {A : Type u} [CommRing A] [Algebra R A]
-    (g : Spec (.of A) ⟶ X)
-    (hg : g ≫ π = Spec.map (CommRingCat.ofHom (algebraMap R A)))
-    {U : X.Opens} (hU : IsAffineOpen U) (hgU : Set.range g ⊆ U) :
-    letI := sectionsAlgebra π U
-    ∃ φ : Γ(X, U) →ₐ[R] A,
-      Spec.map (CommRingCat.ofHom (φ : Γ(X, U) →+* A)) ≫ hU.fromSpec = g := by
-  let := sectionsAlgebra π U
-  let : X.Over (Spec (.of R)) := ⟨π⟩
-  let : hU.fromSpec.IsOver (Spec (.of R)) := ⟨fromSpec_toSpec π hU⟩
-  let : g.IsOver (Spec (.of R)) := ⟨hg⟩
-  exact (TauCeti.AlgebraicGeometry.existsUnique_spec_map_comp_eq_of_range_subset
-    hU.fromSpec g (by rwa [hU.range_fromSpec])).exists
-
 variable
   (I : ∀ {A : Type u} [CommRing A] [Algebra R A],
     {g : Spec (.of A) ⟶ X //
@@ -102,10 +55,15 @@ noncomputable def idealSheafOfAffinePoints : X.IdealSheafData where
   map_ideal_basicOpen U f := by
     let := sectionsAlgebra π U
     let := sectionsAlgebra π (X.basicOpen f)
-    exact (hI (resₐ π (X.basicOpen_le f))
+    have hi := (hI (resₐ π (X.basicOpen_le f))
       ⟨U.2.fromSpec, fromSpec_toSpec π U.2⟩
       ⟨(X.affineBasicOpen f).2.fromSpec, fromSpec_toSpec π (X.affineBasicOpen f).2⟩
-      (U.2.map_fromSpec (X.affineBasicOpen f).2 (homOfLE (X.basicOpen_le f)).op)).symm
+      (by
+        rw [resₐ_toRingHom, CommRingCat.ofHom_hom]
+        exact U.2.map_fromSpec (X.affineBasicOpen f).2
+          (homOfLE (X.basicOpen_le f)).op)).symm
+    rw [← Ideal.map_coe, ← AlgHom.toRingHom_eq_coe, resₐ_toRingHom] at hi
+    exact hi
 
 private theorem comap_idealSheafOfAffinePoints_of_range_subset
     {A : Type u} [CommRing A] [Algebra R A]
@@ -115,7 +73,12 @@ private theorem comap_idealSheafOfAffinePoints_of_range_subset
     (π.idealSheafOfAffinePoints I hI).comap g.1 =
       ofIdealTop ((I g).map (Scheme.ΓSpecIso (.of A)).inv.hom) := by
   let := sectionsAlgebra π U
-  obtain ⟨φ, hφ⟩ := exists_specMap_comp_fromSpec π g.1 g.2 hU hgU
+  let : X.Over (Spec (.of R)) := ⟨π⟩
+  let : hU.fromSpec.IsOver (Spec (.of R)) := ⟨fromSpec_toSpec π hU⟩
+  let : g.1.IsOver (Spec (.of R)) := ⟨g.2⟩
+  obtain ⟨φ, hφ, -⟩ :=
+    TauCeti.AlgebraicGeometry.existsUnique_spec_map_comp_eq_of_range_subset
+      (R := R) hU.fromSpec g.1 (by rwa [hU.range_fromSpec])
   rw [← hφ, comap_SpecMap_fromSpec_eq_ofIdealTop]
   exact congrArg (fun J : Ideal A ↦ ofIdealTop (J.map (Scheme.ΓSpecIso (.of A)).inv.hom))
     (hI φ ⟨hU.fromSpec, fromSpec_toSpec π hU⟩ g hφ).symm
