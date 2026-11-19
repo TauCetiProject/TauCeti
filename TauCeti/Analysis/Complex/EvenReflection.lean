@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Complex.RealDeriv
-import Mathlib.Analysis.Complex.ReImTopology
+import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Calculus.FDeriv.ClosedCover
 import TauCeti.Analysis.Calculus.TangentCone.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
@@ -114,14 +114,6 @@ theorem eventually_add_smul_one_mem_setOfPred_le_im_inter {U : Set ℂ} (hU : Is
     ∀ᶠ t : ℝ in 𝓝 0, x + t • (1 : ℂ) ∈ {z : ℂ | 0 ≤ z.im} ∩ U :=
   ((Continuous.tendsto' (by fun_prop) 0 x (by simp)).eventually (hU.mem_nhds hx.2)).mono
     fun t ht ↦ ⟨by simpa using hx.1, ht⟩
-
-/-- For `U` open, every point of `{0 ≤ im z} ∩ U`, including the points on the real axis, lies in
-the closure of its interior. -/
-theorem subset_closure_interior_setOfPred_le_im_inter {U : Set ℂ} (hU : IsOpen U) :
-    {z : ℂ | 0 ≤ z.im} ∩ U ⊆ closure (interior ({z : ℂ | 0 ≤ z.im} ∩ U)) := by
-  intro x hx
-  rw [interior_inter, hU.interior_eq, interior_setOfPred_le_im, inter_comm]
-  exact hU.inter_closure ⟨hx.2, by rw [closure_setOfPred_lt_im]; exact hx.1⟩
 
 /-! ### `C²` regularity of the even reflection -/
 
