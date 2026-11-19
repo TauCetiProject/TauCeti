@@ -104,23 +104,6 @@ open TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
-/-- Carrying a left-invariant measure on `K` to `Unit → K` along the constant map, an additive
-bijection, gives a left-invariant measure that assigns each box `Set.univ.pi fun _ ↦ S` the mass
-of `S`. This transports the box formulas on `Unit → K` to `K`. -/
-private theorem map_constAddMonoidHom_unit [MeasurableSpace K] [BorelSpace K]
-    (μ : Measure K) [μ.IsAddLeftInvariant] :
-    (μ.map (Pi.constAddMonoidHom Unit K)).IsAddLeftInvariant ∧
-      ∀ S : Set K, MeasurableSet S →
-        μ.map (Pi.constAddMonoidHom Unit K) (Set.univ.pi fun _ ↦ S) = μ S := by
-  have hc : Measurable (Pi.constAddMonoidHom Unit K) :=
-    continuous_pi (fun _ ↦ continuous_id) |>.measurable
-  refine ⟨isAddLeftInvariant_map (Pi.constAddMonoidHom Unit K).toAddHom hc
-    fun g ↦ ⟨g (), funext fun _ ↦ rfl⟩, fun S hS ↦ ?_⟩
-  rw [map_apply hc (MeasurableSet.univ_pi fun _ ↦ hS)]
-  congr 1
-  ext x
-  simp
-
 /-- For every left-invariant measure on `K` and every uniformizer `ϖ`, the maximal ideal
 `ϖ • 𝒪[K]` has `q⁻¹` times the mass of `𝒪[K]`, where `q` is the cardinality of the residue field:
 the box formula `MeasureTheory.Measure.measure_univ_pi_image_maximalIdeal_pow` in one
@@ -128,13 +111,14 @@ coordinate. -/
 private theorem measure_smul_integer_of_irreducible [MeasurableSpace K] [BorelSpace K]
     (μ : Measure K) [μ.IsAddLeftInvariant] {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) :
     μ ((ϖ : K) • (𝒪[K] : Set K)) = (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ * μ 𝒪[K] := by
-  obtain ⟨_, hbox⟩ := map_constAddMonoidHom_unit μ
+  have := isAddLeftInvariant_map_constAddMonoidHom (ι := Unit) μ
   have hm : ((↑) : 𝒪[K] → K) '' ↑𝓂[K] = (ϖ : K) • (𝒪[K] : Set K) := by
     simpa using hϖ.image_maximalIdeal_pow_eq_smul (A := K) 1
   have h := measure_univ_pi_image_maximalIdeal_pow (μ.map (Pi.constAddMonoidHom Unit K))
     (fun _ ↦ 1)
-  rw [integerBox_def, hbox _ Valuation.isClosed_integer.measurableSet, pow_one, hm,
-    hbox _ ((Valuation.isClosed_integer (v := valuation K)).smul₀ (ϖ : K)).measurableSet] at h
+  rw [integerBox_def, map_constAddMonoidHom_univ_pi _ Valuation.isClosed_integer.measurableSet,
+    pow_one, hm, map_constAddMonoidHom_univ_pi _
+      ((Valuation.isClosed_integer (v := valuation K)).smul₀ (ϖ : K)).measurableSet] at h
   simpa using h
 
 /-- **The Haar character of a local field.** Multiplication by `x ∈ Kˣ` scales additive Haar
@@ -186,6 +170,7 @@ variable [MeasurableSpace K] [BorelSpace K] (μ : Measure K) [μ.IsAddHaarMeasur
 
 /-- **Scaling of Haar measure on a local field.** For every additive Haar measure `μ` on `K`,
 every `a ∈ K` and every set `s`, `μ (a • s) = |a|_K * μ s`. -/
+@[simp]
 theorem addHaar_smul_eq_normalizedAbsoluteValue_mul (a : K) (s : Set K) :
     μ (a • s) = (normalizedAbsoluteValue K a : ℝ≥0) * μ s := by
   have hunit (b : K) (hb : b ≠ 0) (t : Set K) :
@@ -198,16 +183,17 @@ theorem addHaar_smul_eq_normalizedAbsoluteValue_mul (a : K) (s : Set K) :
   · simp
   -- `0 • s = {0}`, a coordinate hyperplane of the integer box of `Unit → K`.
   rw [Set.zero_smul_set hs, AbsoluteValue.map_zero, NNRat.cast_zero, ENNReal.coe_zero, zero_mul]
-  obtain ⟨_, hbox⟩ := map_constAddMonoidHom_unit μ
+  have := isAddLeftInvariant_map_constAddMonoidHom (ι := Unit) μ
   have h0 : integerBox K Unit ∩ {a | a () = 0} = Set.univ.pi fun _ ↦ ({0} : Set K) := by
     ext a
     refine ⟨fun h _ _ ↦ h.2, fun h ↦ ⟨mem_integerBox.2 fun i ↦ ?_, h () trivial⟩⟩
     rw [h i trivial]
     exact zero_mem _
   have h := measure_integerBox_inter_coord_eq_zero (μ.map (Pi.constAddMonoidHom Unit K))
-    (by rw [integerBox_def, hbox _ Valuation.isClosed_integer.measurableSet]
+    (by rw [integerBox_def,
+          map_constAddMonoidHom_univ_pi _ Valuation.isClosed_integer.measurableSet]
         exact (integerPositiveCompacts K).isCompact.measure_ne_top) ()
-  rwa [h0, hbox _ (measurableSet_singleton 0)] at h
+  rwa [h0, map_constAddMonoidHom_univ_pi _ (measurableSet_singleton 0)] at h
 
 /-- **Pushforward of Haar measure on a local field.** For `a ≠ 0`, multiplication by `a` pushes
 every additive Haar measure `μ` on `K` forward to `|a|_K⁻¹ • μ`. -/
