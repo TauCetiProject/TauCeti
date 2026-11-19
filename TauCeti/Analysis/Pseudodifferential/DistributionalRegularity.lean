@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Distribution.WaveFrontSet.EllipticRegularity
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.SingularSupport
 public import TauCeti.Analysis.Pseudodifferential.BesselPotentialSpace
-public import TauCeti.Analysis.Pseudodifferential.Sobolev
 public import TauCeti.Analysis.Sobolev.BesselPotential.Local
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Differential
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
@@ -68,12 +67,10 @@ supported where `ψ = 1`.
 
 ## Main results
 
-* `TauCeti.ClassicalSymbol.toDistr_quantizeSobolev_ofDifferentialSymbol_smul_id`,
-  `TauCeti.ClassicalSymbol.toDistr_quantizeBesselPotentialSpace_ofDifferentialSymbol_smul_id`: on
-  `H^r` and on `H^{r,p}`, the quantization of the symbol of a differential operator with compactly
-  supported smooth scalar coefficients is that differential operator on tempered distributions;
-  on `H^r` this is the compactly supported case of
-  `TauCeti.ClassicalSymbol.toDistr_quantizeSobolev_ofDifferentialSymbol`.
+* `TauCeti.ClassicalSymbol.toDistr_quantizeBesselPotentialSpace_ofDifferentialSymbol_smul_id`: on
+  `H^{r,p}`, the quantization of the symbol of a differential operator with compactly supported
+  smooth scalar coefficients is that differential operator on tempered distributions; it is the
+  `H^{r,p}` counterpart of `TauCeti.ClassicalSymbol.toDistr_quantizeSobolev_ofDifferentialSymbol`.
 * `TauCeti.differentialSymbol_filter_smul_id`,
   `TauCeti.ClassicalSymbol.isElliptic_ofDifferentialSymbol_smul_id_iff`: for scalar coefficients,
   the top-order differential symbol is `i ^ M` times the principal symbol
@@ -105,29 +102,6 @@ open scoped BesselPotentialSpace ContDiff Distributions ENNReal LineDeriv Schwar
 namespace TauCeti
 
 namespace ClassicalSymbol
-
-section Sobolev
-
-variable {n : ℕ} {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
-  {ι : Type*} {k : ι → ℕ}
-
-/-- **Differential operators on Bessel-potential spaces.** For a differential operator
-`u ↦ ∑ i ∈ s, βᵢ ∂^{vᵢ} u` with smooth compactly supported scalar coefficients `βᵢ`, the extension
-`H^r → H^{r - m}` of the quantization of its classical symbol is the differential operator acting
-on tempered distributions. -/
-theorem toDistr_quantizeSobolev_ofDifferentialSymbol_smul_id (m : ℕ) (s : Finset ι)
-    (v : ∀ i, Fin (k i) → CoordinateSpace n) {β : ι → CoordinateSpace n → ℂ}
-    (hβ : ∀ i ∈ s, ContDiff ℝ ∞ (β i)) (hβc : ∀ i ∈ s, HasCompactSupport (β i))
-    (hk : ∀ i ∈ s, k i ≤ m) (r : ℝ) (u : H^{r}(CoordinateSpace n, V)) :
-    ((ofDifferentialSymbol m s v (fun i x ↦ β i x • ContinuousLinearMap.id ℂ V)
-        (fun i hi ↦ (hβ i hi).smul contDiff_const) hk).toSymbol.quantizeSobolev
-      (hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol m s v _ _ hk
-        fun i hi ↦ (hβc i hi).smul_right) r u).toDistr =
-      ∑ i ∈ s, TemperedDistribution.smulLeftCLM V (β i) (∂^{v i} u.toDistr) :=
-  toDistr_quantizeSobolev_ofDifferentialSymbol m s v hk
-    (fun i hi ↦ (hβc i hi).hasTemperateGrowth (hβ i hi)) _ r u
-
-end Sobolev
 
 section BesselPotentialSpace
 
