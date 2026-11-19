@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Sign
 public import TauCeti.LinearAlgebra.Orientation.Exact.Pair
-public import TauCeti.Geometry.Manifold.Orientation.Family
+public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Orientation
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
 
 /-!
@@ -172,57 +172,7 @@ end SignRule
 
 section Oriented
 
-variable {ι : Type*} [Fintype ι]
-
-/-- The flow of an adapted pseudo-gradient preserves every orientation of `M`. -/
-private theorem isOrientationPreservingAt_flow (hX : IsAdaptedPseudoGradient f X)
-    (oM : Manifold.Orientation 𝓘(ℝ, E) M ι) (t : ℝ) (y : M) :
-    oM.IsOrientationPreservingAt oM (hX.flow t) y := by
-  have h := Manifold.Orientation.isOrientationPreservingAt_family_iff oM oM
-    (hX.contMDiff_flow_uncurry.of_le (by simp)) y
-    (fun s ↦ by
-      have hs : (fun z ↦ hX.flow s z) = hX.flowDiffeomorph s :=
-        funext fun z ↦ (hX.flowDiffeomorph_apply s z).symm
-      exact hs ▸ (hX.flowDiffeomorph s).isInvertible_mfderiv (x := y) (by simp)) t 0
-  simp only [Flow.map_zero] at h
-  exact h.2 (Manifold.Orientation.isOrientationPreservingAt_id oM y)
-
-omit [CompactSpace M] [T2Space M] in
-/-- A Morse chart preserves orientations near its centre, for one of the orientations of the
-model space. -/
-private theorem exists_eventually_isOrientationPreservingAt_toChart {x : M}
-    (φ : MorseChart E f x) (oM : Manifold.Orientation 𝓘(ℝ, E) M ι) :
-    ∃ oE : Manifold.Orientation 𝓘(ℝ, E) E ι,
-      ∀ᶠ z in 𝓝 x, oM.IsOrientationPreservingAt oE φ.toChart z := by
-  obtain ⟨e, he⟩ := isInvertible_mfderiv_chart φ.mem_maximalAtlas_one φ.mem_source
-  exact ⟨Manifold.Orientation.model (I := 𝓘(ℝ, E))
-    (Orientation.map ι e.toLinearEquiv (oM.orientationAt x) : Orientation ℝ E ι) oM.card_eq,
-    Manifold.Orientation.eventually_isOrientationPreservingAt
-      (contMDiffAt_of_mem_maximalAtlas φ.mem_maximalAtlas_one φ.mem_source)
-      ((Manifold.Orientation.isOrientationPreservingAt_iff_of_coe_eq _ _ _ _ e he).2
-        (Manifold.Orientation.orientationAt_model _ _ _).symm)⟩
-
-omit [CompactSpace M] [T2Space M] in
-/-- If a map `g` into the model space preserves the orientations `oM` and `oE` at two points `y`
-and `z`, the derivatives of `g` there give a linear isomorphism of the tangent spaces at `y` and
-`z` which carries `oM` at `y` to `oM` at `z`. -/
-private theorem exists_linearEquiv_map_orientationAt {oM : Manifold.Orientation 𝓘(ℝ, E) M ι}
-    {oE : Manifold.Orientation 𝓘(ℝ, E) E ι} {g : M → E} {y z : M}
-    (hy : oM.IsOrientationPreservingAt oE g y) (hz : oM.IsOrientationPreservingAt oE g z) :
-    ∃ e : TangentSpace 𝓘(ℝ, E) y ≃ₗ[ℝ] TangentSpace 𝓘(ℝ, E) z,
-      (∀ v, mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) g z (e v) = mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) g y v) ∧
-      Orientation.map ι e (oM.orientationAt y) = oM.orientationAt z := by
-  obtain ⟨ey, hey, hy⟩ := (Manifold.Orientation.isOrientationPreservingAt_iff _ _ _ _).1 hy
-  obtain ⟨ez, hez, hz⟩ := (Manifold.Orientation.isOrientationPreservingAt_iff _ _ _ _).1 hz
-  refine ⟨ey.toLinearEquiv.trans ez.toLinearEquiv.symm, fun v ↦ ?_, ?_⟩
-  · rw [← hey, ← hez]
-    exact ez.apply_symm_apply (ey v)
-  · have h := Orientation.map_trans (ι := ι) ey.toLinearEquiv ez.toLinearEquiv.symm
-      (oM.orientationAt y)
-    rw [h, hy, Manifold.Orientation.orientationAt_eq_orientationAt oE (g y) (g z), ← hz]
-    exact Orientation.map_symm_map _ _
-
-variable {hX : IsAdaptedPseudoGradient f X} {p q : M}
+variable {ι : Type*} [Fintype ι] {hX : IsAdaptedPseudoGradient f X} {p q : M}
 
 /-- **The orientation of `M` along an unstable manifold.** Let `X` be linear in a Morse chart `φ`
 at a critical point `p`, and orient the coordinates of negative weight of `φ` by `op` and those of
@@ -247,19 +197,19 @@ theorem reindex_ofExact_unstableFrame_eq_orientationAt_iff {φ : MorseChart E f 
         φ.finrank_negativeWeight_fun (φ.neg hp).finrank_negativeWeight_fun) =
         oM.orientationAt y ↔
       Orientation.reindex ℝ _ e (Orientation.ofExact
-          (injective_unstableFrame_of_mem hφ hf (hX.mem_unstableSet_inter_stableSet_self
-            (hX.mfderiv_eq_zero_of_mem_unstableSet hy)).1)
-          (exact_unstableFrame_neg_stableNormal hφ hf hp (hX.mem_unstableSet_inter_stableSet_self
-            (hX.mfderiv_eq_zero_of_mem_unstableSet hy)).1)
+          (injective_unstableFrame_of_mem hφ hf (hX.mem_unstableSet_self hp.mem_criticalPoints))
+          (exact_unstableFrame_neg_stableNormal hφ hf hp
+            (hX.mem_unstableSet_self hp.mem_criticalPoints))
           (surjective_stableNormal_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hp)
             ((hX.unstableSet_eq_stableSet_neg hf p).subset
-              (hX.mem_unstableSet_inter_stableSet_self
-                (hX.mfderiv_eq_zero_of_mem_unstableSet hy)).1)) op op'
+              (hX.mem_unstableSet_self hp.mem_criticalPoints))) op op'
           φ.finrank_negativeWeight_fun (φ.neg hp).finrank_negativeWeight_fun) =
         oM.orientationAt p := by
   have hcrit := hX.mfderiv_eq_zero_of_mem_unstableSet hy
-  have hpp := (hX.mem_unstableSet_inter_stableSet_self hcrit).1
-  obtain ⟨oE, hU⟩ := exists_eventually_isOrientationPreservingAt_toChart φ oM
+  have hpp := hX.mem_unstableSet_self hp.mem_criticalPoints
+  obtain ⟨oE, hU⟩ := Manifold.Orientation.exists_eventually_isOrientationPreservingAt
+    (contMDiffAt_of_mem_maximalAtlas φ.mem_maximalAtlas_one φ.mem_source)
+    (isInvertible_mfderiv_chart φ.mem_maximalAtlas_one φ.mem_source) oM
   -- Flow `y` back close to `p`, to a time of linear backward flow of both `y` and `p`.
   have hlim : Tendsto (fun T ↦ hX.flow (-T) y) atTop (𝓝 p) :=
     (Flow.mem_unstableSet.1 hy).comp tendsto_neg_atTop_atBot
@@ -270,13 +220,14 @@ theorem reindex_ofExact_unstableFrame_eq_orientationAt_iff {φ : MorseChart E f 
     exact hU.self_of_nhds
   -- The derivatives of `φ ∘ Φ_{-T}` at `y` and at `p` identify the two tangent spaces, carrying
   -- the orientation of `M` at `y` to that at `p`.
-  obtain ⟨eB, hD, hor⟩ := exists_linearEquiv_map_orientationAt
-    (hTU.comp (isOrientationPreservingAt_flow hX oM (-T) y))
-    (hpU.comp (isOrientationPreservingAt_flow hX oM (-T) p))
+  obtain ⟨eB, hD, hor⟩ := Manifold.Orientation.exists_linearEquiv_map_orientationAt
+    (hTU.comp (hX.isOrientationPreservingAt_flow oM (-T) y))
+    (hpU.comp (hX.isOrientationPreservingAt_flow oM (-T) p))
   -- It identifies the two exact sequences.
   have hcomp : (φ.neg hp).toChart ∘ (hX.neg hf).flow T = φ.toChart ∘ hX.flow (-T) := by
     rw [MorseChart.neg_toChart, hX.neg_flow hf]
-    rfl
+    funext z
+    simp
   have hfe (c : {i // φ.weight i < 0} → ℝ) :
       eB (hX.unstableFrame φ y c) = hX.unstableFrame φ p c :=
     (isInvertible_mfderiv_toChart_comp_flow ((mem_linearBackwardTimes hX φ).1 hTp).1).injective (by
@@ -323,17 +274,18 @@ theorem reindex_ofExact_neg_unstableFrame_eq_orientationAt_iff {φ : MorseChart 
         oM.orientationAt y ↔
       Orientation.reindex ℝ _ e (Orientation.ofExact
           (injective_unstableFrame_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hq) hf.neg
-            ((hX.stableSet_eq_unstableSet_neg hf q).subset (hX.mem_unstableSet_inter_stableSet_self
-              (hX.mfderiv_eq_zero_of_mem_stableSet hy)).2))
-          (exact_neg_unstableFrame_stableNormal hφ hf hq (hX.mem_unstableSet_inter_stableSet_self
-            (hX.mfderiv_eq_zero_of_mem_stableSet hy)).2)
-          (surjective_stableNormal_of_mem hφ (hX.mem_unstableSet_inter_stableSet_self
-            (hX.mfderiv_eq_zero_of_mem_stableSet hy)).2)
+            ((hX.stableSet_eq_unstableSet_neg hf q).subset
+              (hX.mem_stableSet_self hq.mem_criticalPoints)))
+          (exact_neg_unstableFrame_stableNormal hφ hf hq
+            (hX.mem_stableSet_self hq.mem_criticalPoints))
+          (surjective_stableNormal_of_mem hφ (hX.mem_stableSet_self hq.mem_criticalPoints))
           oq' oq (φ.neg hq).finrank_negativeWeight_fun φ.finrank_negativeWeight_fun) =
         oM.orientationAt q := by
   have hcrit := hX.mfderiv_eq_zero_of_mem_stableSet hy
-  have hqq := (hX.mem_unstableSet_inter_stableSet_self hcrit).2
-  obtain ⟨oE, hU⟩ := exists_eventually_isOrientationPreservingAt_toChart φ oM
+  have hqq := hX.mem_stableSet_self hq.mem_criticalPoints
+  obtain ⟨oE, hU⟩ := Manifold.Orientation.exists_eventually_isOrientationPreservingAt
+    (contMDiffAt_of_mem_maximalAtlas φ.mem_maximalAtlas_one φ.mem_source)
+    (isInvertible_mfderiv_chart φ.mem_maximalAtlas_one φ.mem_source) oM
   -- Flow `y` forward close to `q`, to a time of linear forward flow of both `y` and `q`.
   obtain ⟨T, hT, hTq, hTU⟩ := ((hX.eventually_mem_linearForwardTimes hφ hy).and
     ((hX.eventually_mem_linearForwardTimes hφ hqq).and
@@ -343,9 +295,9 @@ theorem reindex_ofExact_neg_unstableFrame_eq_orientationAt_iff {φ : MorseChart 
     exact hU.self_of_nhds
   -- The derivatives of `φ ∘ Φ_T` at `y` and at `q` identify the two tangent spaces, carrying the
   -- orientation of `M` at `y` to that at `q`.
-  obtain ⟨eB, hD, hor⟩ := exists_linearEquiv_map_orientationAt
-    (hTU.comp (isOrientationPreservingAt_flow hX oM T y))
-    (hqU.comp (isOrientationPreservingAt_flow hX oM T q))
+  obtain ⟨eB, hD, hor⟩ := Manifold.Orientation.exists_linearEquiv_map_orientationAt
+    (hTU.comp (hX.isOrientationPreservingAt_flow oM T y))
+    (hqU.comp (hX.isOrientationPreservingAt_flow oM T q))
   -- It identifies the two exact sequences.
   have hcomp : (φ.neg hq).toChart ∘ (hX.neg hf).flow (-T) = φ.toChart ∘ hX.flow T := by
     rw [MorseChart.neg_toChart, hX.neg_flow hf]
@@ -397,8 +349,30 @@ variable {hX : IsAdaptedPseudoGradient f X} {p q : M} {φp : MorseChart E f p}
   (oq : Orientation ℝ ({i // φq.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f q)))
   (oq' : Orientation ℝ ({i // (φq.neg hq).weight i < 0} → ℝ)
     (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) q)))
+  -- `op` followed by `op'` orients `M` at `p`, and `oq'` followed by `oq` orients `M` at `q`.
+  (hop : Orientation.reindex ℝ _ (finCongr ((add_comm _ _).trans
+      hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank))
+    (Orientation.ofExact
+      (injective_unstableFrame_of_mem hφp hf (hX.mem_unstableSet_self hp.mem_criticalPoints))
+      (exact_unstableFrame_neg_stableNormal hφp hf hp
+        (hX.mem_unstableSet_self hp.mem_criticalPoints))
+      (surjective_stableNormal_of_mem (hX := hX.neg hf) (φp.coord_mfderiv_neg hφp hp)
+        ((hX.unstableSet_eq_stableSet_neg hf p).subset
+          (hX.mem_unstableSet_self hp.mem_criticalPoints))) op op'
+      φp.finrank_negativeWeight_fun (φp.neg hp).finrank_negativeWeight_fun) =
+    oM.orientationAt p)
+  (hoq : Orientation.reindex ℝ _ (finCongr
+      hq.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank)
+    (Orientation.ofExact
+      (injective_unstableFrame_of_mem (hX := hX.neg hf) (φq.coord_mfderiv_neg hφq hq) hf.neg
+        ((hX.stableSet_eq_unstableSet_neg hf q).subset
+          (hX.mem_stableSet_self hq.mem_criticalPoints)))
+      (exact_neg_unstableFrame_stableNormal hφq hf hq (hX.mem_stableSet_self hq.mem_criticalPoints))
+      (surjective_stableNormal_of_mem hφq (hX.mem_stableSet_self hq.mem_criticalPoints))
+      oq' oq (φq.neg hq).finrank_negativeWeight_fun φq.finrank_negativeWeight_fun) =
+    oM.orientationAt q)
 
-include hφp hφq
+include hop hoq
 
 /-- **The sign rule for the reversed pseudo-gradient on an oriented manifold.** Let `oM` orient
 `M`, and choose the orientations so that, at `p`, the orientation `op` of the unstable manifold
@@ -408,31 +382,6 @@ followed by the orientation `op'` of the stable manifold is that of `M`, and at 
 `-(-1) ^ (ind_f q * ind_{-f} p)` times its sign for `f`. -/
 theorem neg_trajectorySign_of_orientationAt (hMS : hX.IsMorseSmale)
     (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
-    (hop : Orientation.reindex ℝ _ (finCongr ((add_comm _ _).trans
-        hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank))
-      (Orientation.ofExact (injective_unstableFrame_of_mem hφp hf
-          (hX.mem_unstableSet_inter_stableSet_self (mem_criticalPoints_iff_mfderiv_eq_zero.1
-            hp.mem_criticalPoints)).1)
-        (exact_unstableFrame_neg_stableNormal hφp hf hp (hX.mem_unstableSet_inter_stableSet_self
-          (mem_criticalPoints_iff_mfderiv_eq_zero.1 hp.mem_criticalPoints)).1)
-        (surjective_stableNormal_of_mem (hX := hX.neg hf) (φp.coord_mfderiv_neg hφp hp)
-          ((hX.unstableSet_eq_stableSet_neg hf p).subset
-            (hX.mem_unstableSet_inter_stableSet_self (mem_criticalPoints_iff_mfderiv_eq_zero.1
-              hp.mem_criticalPoints)).1)) op op'
-        φp.finrank_negativeWeight_fun (φp.neg hp).finrank_negativeWeight_fun) =
-      oM.orientationAt p)
-    (hoq : Orientation.reindex ℝ _ (finCongr
-        hq.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank)
-      (Orientation.ofExact
-        (injective_unstableFrame_of_mem (hX := hX.neg hf) (φq.coord_mfderiv_neg hφq hq) hf.neg
-          ((hX.stableSet_eq_unstableSet_neg hf q).subset (hX.mem_unstableSet_inter_stableSet_self
-            (mem_criticalPoints_iff_mfderiv_eq_zero.1 hq.mem_criticalPoints)).2))
-        (exact_neg_unstableFrame_stableNormal hφq hf hq (hX.mem_unstableSet_inter_stableSet_self
-          (mem_criticalPoints_iff_mfderiv_eq_zero.1 hq.mem_criticalPoints)).2)
-        (surjective_stableNormal_of_mem hφq (hX.mem_unstableSet_inter_stableSet_self
-          (mem_criticalPoints_iff_mfderiv_eq_zero.1 hq.mem_criticalPoints)).2)
-        oq' oq (φq.neg hq).finrank_negativeWeight_fun φq.finrank_negativeWeight_fun) =
-      oM.orientationAt q)
     {y : M} (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) :
     (hX.neg hf).trajectorySign (φq.neg hq) (φp.neg hp) oq' op'
         (hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq) y =
@@ -466,32 +415,7 @@ orientations of `neg_trajectorySign_of_orientationAt`, the signed count of the t
 from `q` to `p` is `-(-1) ^ (ind_f q * ind_{-f} p)` times the signed count of the trajectories of
 `X` from `p` to `q`. -/
 theorem neg_signedTrajectoryCount_of_orientationAt (hMS : hX.IsMorseSmale)
-    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
-    (hop : Orientation.reindex ℝ _ (finCongr ((add_comm _ _).trans
-        hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank))
-      (Orientation.ofExact (injective_unstableFrame_of_mem hφp hf
-          (hX.mem_unstableSet_inter_stableSet_self (mem_criticalPoints_iff_mfderiv_eq_zero.1
-            hp.mem_criticalPoints)).1)
-        (exact_unstableFrame_neg_stableNormal hφp hf hp (hX.mem_unstableSet_inter_stableSet_self
-          (mem_criticalPoints_iff_mfderiv_eq_zero.1 hp.mem_criticalPoints)).1)
-        (surjective_stableNormal_of_mem (hX := hX.neg hf) (φp.coord_mfderiv_neg hφp hp)
-          ((hX.unstableSet_eq_stableSet_neg hf p).subset
-            (hX.mem_unstableSet_inter_stableSet_self (mem_criticalPoints_iff_mfderiv_eq_zero.1
-              hp.mem_criticalPoints)).1)) op op'
-        φp.finrank_negativeWeight_fun (φp.neg hp).finrank_negativeWeight_fun) =
-      oM.orientationAt p)
-    (hoq : Orientation.reindex ℝ _ (finCongr
-        hq.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank)
-      (Orientation.ofExact
-        (injective_unstableFrame_of_mem (hX := hX.neg hf) (φq.coord_mfderiv_neg hφq hq) hf.neg
-          ((hX.stableSet_eq_unstableSet_neg hf q).subset (hX.mem_unstableSet_inter_stableSet_self
-            (mem_criticalPoints_iff_mfderiv_eq_zero.1 hq.mem_criticalPoints)).2))
-        (exact_neg_unstableFrame_stableNormal hφq hf hq (hX.mem_unstableSet_inter_stableSet_self
-          (mem_criticalPoints_iff_mfderiv_eq_zero.1 hq.mem_criticalPoints)).2)
-        (surjective_stableNormal_of_mem hφq (hX.mem_unstableSet_inter_stableSet_self
-          (mem_criticalPoints_iff_mfderiv_eq_zero.1 hq.mem_criticalPoints)).2)
-        oq' oq (φq.neg hq).finrank_negativeWeight_fun φq.finrank_negativeWeight_fun) =
-      oM.orientationAt q) :
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) :
     (hX.neg hf).signedTrajectoryCount (φq.neg hq) (φp.neg hp) oq' op'
         (hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq) =
       -(-1) ^ (manifoldMorseIndex 𝓘(ℝ, E) f q * manifoldMorseIndex 𝓘(ℝ, E) (-f) p) *
@@ -499,7 +423,7 @@ theorem neg_signedTrajectoryCount_of_orientationAt (hMS : hX.IsMorseSmale)
   rw [signedTrajectoryCount_def, signedTrajectoryCount_def, hX.neg_morseTrajectorySlice hf,
     mul_finsum_mem]
   refine finsum_mem_congr rfl fun y hy ↦ ?_
-  exact neg_trajectorySign_of_orientationAt hφp hφq hf hp hq oM op op' oq oq' hMS hpq hop hoq
+  exact neg_trajectorySign_of_orientationAt hφp hφq hf hp hq oM op op' oq oq' hop hoq hMS hpq
     ⟨(hX.mem_morseTrajectorySlice.1 hy).1, (hX.mem_morseTrajectorySlice.1 hy).2.1⟩
 
 end OrientedSignRule
