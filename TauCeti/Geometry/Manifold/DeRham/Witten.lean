@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.DeRham.Basic
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
+public import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 
 /-!
@@ -46,7 +46,6 @@ state of the harmonic oscillator obtained from the Witten Laplacian at a nondege
 
 ## Main definitions
 
-* `TauCeti.expMul f t`: the smooth function `e^{t f}`.
 * `TauCeti.expSMulEquiv f t k`: multiplication of smooth `k`-forms by `e^{t f}`.
 * `TauCeti.wittenExtDerivₗ f t k`: the Witten deformation `d_t` of the exterior derivative.
 * `TauCeti.wittenComplex f t`: the cochain complex of smooth forms with differential `d_t`.
@@ -119,22 +118,6 @@ end RoughForm
 
 section SmoothForm
 
-/-- The smooth function `e^{t f}`. -/
-def expMul (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) : C^∞⟮I, M; ℝ⟯ :=
-  ⟨fun x ↦ Real.exp (t * f x),
-    ((Real.contDiff_exp.comp (contDiff_const.mul contDiff_id)).comp_contMDiff f.contMDiff :)⟩
-
-/-- The value of `e^{t f}` at `x` is `Real.exp (t * f x)`. -/
-@[simp]
-theorem expMul_apply (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (x : M) :
-    expMul f t x = Real.exp (t * f x) :=
-  (rfl)
-
-/-- `e^{t f} e^{-t f} = 1`. -/
-theorem expMul_mul_expMul_neg (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (x : M) :
-    expMul f t x * expMul f (-t) x = 1 := by
-  rw [expMul_apply, expMul_apply, ← Real.exp_add, neg_mul, add_neg_cancel, Real.exp_zero]
-
 section Gauge
 
 variable [IsManifold I 1 M]
@@ -143,25 +126,25 @@ variable (k) in
 /-- Multiplication of smooth `k`-forms by the positive function `e^{t f}`, a linear automorphism
 whose inverse is multiplication by `e^{-t f}`. -/
 def expSMulEquiv (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) : SmoothForm I M ℝ k ≃ₗ[ℝ] SmoothForm I M ℝ k where
-  toLinearMap := SmoothForm.funSMulₗ (expMul f t)
-  invFun := SmoothForm.funSMulₗ (expMul f (-t))
+  toLinearMap := SmoothForm.funSMulₗ (ContMDiffMap.expMul f t)
+  invFun := SmoothForm.funSMulₗ (ContMDiffMap.expMul f (-t))
   left_inv φ := Subtype.ext <| funext fun x ↦ by
     simp only [LinearMap.toFun_eq_coe, SmoothForm.coe_funSMulₗ, smul_smul,
-      mul_comm (expMul f (-t) x), expMul_mul_expMul_neg, one_smul]
+      mul_comm (ContMDiffMap.expMul f (-t) x), ContMDiffMap.expMul_mul_expMul_neg, one_smul]
   right_inv φ := Subtype.ext <| funext fun x ↦ by
     simp only [LinearMap.toFun_eq_coe, SmoothForm.coe_funSMulₗ, smul_smul,
-      expMul_mul_expMul_neg, one_smul]
+      ContMDiffMap.expMul_mul_expMul_neg, one_smul]
 
 /-- The rough form underlying `e^{t f} φ` is the pointwise product. -/
 @[simp]
 theorem coe_expSMulEquiv (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (φ : SmoothForm I M ℝ k) :
     (expSMulEquiv k f t φ : RoughForm I M ℝ k) = fun x ↦ Real.exp (t * f x) • φ.1 x := by
-  simp [expSMulEquiv, expMul_apply]
+  simp [expSMulEquiv, ContMDiffMap.expMul_apply]
 
 /-- Multiplication by `e^{t f}` is `SmoothForm.funSMulₗ` of the smooth function `e^{t f}`. -/
 theorem expSMulEquiv_eq_funSMulₗ (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) :
     (expSMulEquiv k f t : SmoothForm I M ℝ k →ₗ[ℝ] SmoothForm I M ℝ k) =
-      SmoothForm.funSMulₗ (expMul f t) :=
+      SmoothForm.funSMulₗ (ContMDiffMap.expMul f t) :=
   (rfl)
 
 /-- The inverse of multiplication by `e^{t f}` is multiplication by `e^{-t f}`. -/

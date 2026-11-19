@@ -362,21 +362,21 @@ theorem wittenCodifferential_eq_add_smul_gradInteriorₗ (o : Manifold.Orientati
     (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (hkl : k + 1 + l = m) :
     wittenCodifferential o f t hkl =
       SmoothForm.codifferential o hkl + t • SmoothForm.gradInteriorₗ f k := by
-  -- `e^{-t f} β = h β` for the smooth function `h = expMul f (-t) = e^{-t f}`, whose gradient is
-  -- `-t e^{-t f} grad f`; then `d^*(h β) = h d^*β + t e^{-t f} ι_(grad f) β`.
-  have hgrad : Manifold.mgradient I (expMul f (-t)) =
+  -- `e^{-t f} β = h β` for the smooth function `h = ContMDiffMap.expMul f (-t) = e^{-t f}`,
+  -- whose gradient is `-t e^{-t f} grad f`; then `d^*(h β) = h d^*β + t e^{-t f} ι_(grad f) β`.
+  have hgrad : Manifold.mgradient I (ContMDiffMap.expMul f (-t)) =
       fun x ↦ (-t * Real.exp (-t * f x)) • Manifold.mgradient I f x := by
     funext x
     have hd : HasDerivAt (fun s ↦ Real.exp (-t * s)) (Real.exp (-t * f x) * (-t * 1)) (f x) :=
       ((hasDerivAt_id' (f x)).const_mul (-t)).exp
-    have he : ⇑(expMul f (-t)) = (fun s ↦ Real.exp (-t * s)) ∘ f :=
-      funext fun y ↦ expMul_apply f (-t) y
+    have he : ⇑(ContMDiffMap.expMul f (-t)) = (fun s ↦ Real.exp (-t * s)) ∘ f :=
+      funext fun y ↦ ContMDiffMap.expMul_apply f (-t) y
     rw [he, Manifold.mgradient_comp_hasDerivAt hd (f.contMDiff.mdifferentiableAt (by simp))]
     congr 1
     ring
   ext β : 1
-  have h1 := expMul_mul_expMul_neg f t
-  simp only [expMul_apply] at h1
+  have h1 := ContMDiffMap.expMul_mul_expMul_neg f t
+  simp only [ContMDiffMap.expMul_apply] at h1
   have he := LinearMap.congr_fun (expSMulEquiv_eq_funSMulₗ (k := k + 1) f (-t)) β
   rw [LinearEquiv.coe_coe] at he
   rw [wittenCodifferential_def, he, SmoothForm.codifferential_funSMulₗ]
@@ -385,7 +385,7 @@ theorem wittenCodifferential_eq_add_smul_gradInteriorₗ (o : Manifold.Orientati
   simp only [coe_expSMulEquiv, Submodule.coe_sub, SmoothForm.coe_funSMulₗ,
     SmoothForm.coe_gradInteriorₗ, hgrad, RoughForm.interior_smul_field, LinearMap.add_apply,
     LinearMap.smul_apply, Submodule.coe_add, Submodule.coe_smul, Pi.add_apply, Pi.sub_apply,
-    Pi.smul_apply, smul_sub, smul_smul, expMul_apply]
+    Pi.smul_apply, smul_sub, smul_smul, ContMDiffMap.expMul_apply]
   rw [h1 x,
     show Real.exp (t * f x) * (-t * Real.exp (-t * f x)) = -t by linear_combination -t * h1 x,
     one_smul, neg_smul, sub_neg_eq_add]
