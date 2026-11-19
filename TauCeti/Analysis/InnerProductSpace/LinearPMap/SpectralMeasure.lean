@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Basic
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Map
-import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
 
 /-!
 # The spectral measure of an unbounded self-adjoint operator
@@ -16,22 +16,21 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
 Let `A` be a self-adjoint partial linear map on a complex Hilbert space `H`. Its Cayley transform
 `U = (A - i)(A + i)⁻¹` (`LinearPMap.cayley`) is a bounded unitary operator, so it has a spectral
 measure on its spectrum, a subset of the unit circle. The inverse Cayley map
-`w ↦ i (1 + w) / (1 - w)` sends the circle with `1` removed onto the real line, and pushing the
-spectral measure of `U` forward along it gives a projection-valued measure on `ℝ`: the
-**spectral measure** `P_A` of `A` (`LinearPMap.spectralPVM`).
+`w ↦ i (1 + w) / (1 - w)` (`Complex.invCayley`) sends the circle with `1` removed onto the real
+line, and pushing the spectral measure of `U` forward along it gives a projection-valued measure
+on `ℝ`: the **spectral measure** `P_A` of `A` (`LinearPMap.spectralPVM`).
 
 The point `1`, where the inverse Cayley map is singular, carries no mass: the spectral projection
 of a point is the eigenprojection there, and `1` is never an eigenvalue of a Cayley transform.
 The value assigned to `1` is therefore immaterial. With this, every nonreal `z` satisfies the
 **resolvent formula**: the resolvent `(z - A)⁻¹` is the spectral integral of `s ↦ (z - s)⁻¹`, so
 `⟪ξ, (z - A)⁻¹ ξ⟫ = ∫ (z - s)⁻¹ dμ_ξ(s)` for the diagonal measures `μ_ξ` of `P_A`. Consequently
-the spectral projections commute with the resolvents and preserve the domain of `A`, and the
-spectral measure is carried by the spectrum: it vanishes on every Borel set of real resolvent
-points.
+the spectral projections preserve the domain of `A` and commute with `A` there, hence with every
+resolvent of `A`, and the spectral measure is carried by the spectrum: it vanishes on every Borel
+set of real resolvent points.
 
 ## Main definitions
 
-* `Complex.invCayley`: the inverse Cayley map `w ↦ i (1 + w) / (1 - w)`, read as a real number.
 * `LinearPMap.spectralPVM`: the spectral measure of a self-adjoint partial linear map.
 
 ## Main results
@@ -43,8 +42,8 @@ points.
 * `IsSelfAdjoint.inner_resolvent_self_eq_integral`: the resolvent formula
   `⟪ξ, (z - A)⁻¹ ξ⟫ = ∫ (z - s)⁻¹ dμ_ξ(s)`.
 * `IsSelfAdjoint.commute_spectralPVM_proj_resolvent`,
-  `IsSelfAdjoint.spectralPVM_proj_apply_mem_domain`: spectral projections commute with the
-  resolvents and preserve the domain.
+  `IsSelfAdjoint.spectralPVM_proj_apply_mem_domain`: spectral projections commute with every
+  resolvent and preserve the domain.
 * `IsSelfAdjoint.spectralPVM_proj_eq_zero_of_subset_resolventSet`: the spectral measure vanishes
   on Borel sets of resolvent points.
 
@@ -65,26 +64,10 @@ open scoped InnerProductSpace ComplexConjugate
 
 namespace Complex
 
-/-- The **inverse Cayley map** `w ↦ i (1 + w) / (1 - w)`, read as a real number. On the unit circle
-with `1` removed this expression is real (`Complex.ofReal_invCayley`), and it inverts the Cayley
-map `s ↦ (s - i) / (s + i)` of the real line. At `w = 1` it takes the value `0`. -/
-def invCayley (w : ℂ) : ℝ :=
-  (I * (1 + w) / (1 - w)).re
-
-theorem invCayley_apply (w : ℂ) : invCayley w = (I * (1 + w) / (1 - w)).re :=
-  (rfl)
-
 @[fun_prop]
 theorem measurable_invCayley : Measurable invCayley := by
-  unfold invCayley
+  rw [show invCayley = fun w => (I * (1 + w) / (1 - w)).re from funext invCayley_apply]
   fun_prop
-
-/-- On the unit circle the inverse Cayley map is real: `invCayley w = i (1 + w) / (1 - w)`. -/
-theorem ofReal_invCayley {w : ℂ} (hw : ‖w‖ = 1) :
-    (invCayley w : ℂ) = I * (1 + w) / (1 - w) := by
-  have him : (I * (1 + w) / (1 - w)).im = 0 := by
-    simpa [normSq_eq_norm_sq, hw, sub_eq_add_neg] using TauCeti.im_I_mul_sub_div_add 1 (-w)
-  exact Complex.ext (by simp [invCayley_apply]) (by simp [him])
 
 end Complex
 
@@ -101,8 +84,8 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteS
 and its Cayley transform is normal, the spectral projection of `{1}` vanishes, since `1` is not
 an eigenvalue of the Cayley transform. -/
 theorem cayley_spectralPVM_proj_singleton_one [IsStarNormal A.cayley] (h : -I ∈ A.resolventSet) :
-    A.cayley.spectralPVM.proj (Subtype.val ⁻¹' {1})
-      ((measurableSet_singleton 1).preimage measurable_subtype_coe) = 0 := by
+    A.cayley.spectralPVM.proj (Subtype.val ⁻¹' {1}) (measurableSet_preimage_val_singleton 1) =
+      0 := by
   rw [ContinuousLinearMap.spectralPVM_proj_singleton_eq_zero_iff, Module.End.hasEigenvalue_iff,
     not_not, Submodule.eq_bot_iff]
   intro x hx
@@ -184,8 +167,7 @@ theorem integral_spectralPVM_eq_resolvent (hA : IsSelfAdjoint A) {z : ℂ} (hz :
       [measure_eq_zero_iff_ae_notMem.1 (LinearPMap.cayley_diagMeasure_singleton_one hI ξ)]
       with v hv
     have hv1 : (v : ℂ) ≠ 1 := hv
-    have hnorm : ‖(v : ℂ)‖ = 1 := by
-      simpa using spectrum.subset_circle_of_unitary hA.cayley_mem_unitary v.2
+    have hnorm : ‖(v : ℂ)‖ = 1 := spectrum.norm_eq_one_of_unitary hA.cayley_mem_unitary v.2
     have hne : z - (invCayley v : ℂ) ≠ 0 := fun h => hz (by simpa using congrArg im h)
     have key : (z - I) - (z + I) * v = (z - invCayley v) * (1 - v) := by
       rw [ofReal_invCayley hnorm]
@@ -232,8 +214,8 @@ theorem inner_resolvent_self_eq_integral (hA : IsSelfAdjoint A) {z : ℂ} (hz : 
 /-! ### Spectral projections, resolvents and the domain -/
 
 /-- Every spectral projection of `A` commutes with every resolvent at a nonreal point. -/
-theorem commute_spectralPVM_proj_resolvent (hA : IsSelfAdjoint A) {B : Set ℝ}
-    (hB : MeasurableSet B) {z : ℂ} (hz : z.im ≠ 0) :
+private theorem commute_spectralPVM_proj_resolvent_of_im_ne_zero (hA : IsSelfAdjoint A)
+    {B : Set ℝ} (hB : MeasurableSet B) {z : ℂ} (hz : z.im ≠ 0) :
     Commute ((A.spectralPVM hA).proj B hB) (A.resolvent z) := by
   rw [← hA.integral_spectralPVM_eq_resolvent hz _ (resolventSymbol_apply z hz),
     ← ProjValMeasure.integral_indicator]
@@ -247,9 +229,34 @@ theorem spectralPVM_proj_apply_mem_domain (hA : IsSelfAdjoint A) {B : Set ℝ}
   -- The domain is the range of the resolvent `R(i)`, which commutes with `P_A(B)`.
   have hx' : A.resolvent I (I • x - A ⟨x, hx⟩) = x :=
     LinearPMap.resolvent_smul_sub_apply hI ⟨x, hx⟩
-  rw [← hx', ← mul_apply_eq_comp, (hA.commute_spectralPVM_proj_resolvent hB (by simp)).eq,
-    mul_apply_eq_comp]
+  rw [← hx', ← mul_apply_eq_comp,
+    (commute_spectralPVM_proj_resolvent_of_im_ne_zero hA hB (by simp)).eq, mul_apply_eq_comp]
   exact LinearPMap.resolvent_mem_domain hI _
+
+/-- Every spectral projection of `A` commutes with every resolvent of `A`, at real resolvent
+points as well as nonreal ones. -/
+theorem commute_spectralPVM_proj_resolvent (hA : IsSelfAdjoint A) {B : Set ℝ}
+    (hB : MeasurableSet B) {z : ℂ} (hz : z ∈ A.resolventSet) :
+    Commute ((A.spectralPVM hA).proj B hB) (A.resolvent z) := by
+  set P := (A.spectralPVM hA).proj B hB
+  have hI : I ∈ A.resolventSet := hA.mem_resolventSet_of_im_ne_zero (by simp)
+  have hPdom (x : A.domain) : P x ∈ A.domain := hA.spectralPVM_proj_apply_mem_domain hB x.2
+  -- `P` commutes with `A` on the domain, since it commutes with `R(i) = (i - A)⁻¹`.
+  have hPA (x : A.domain) : A ⟨P x, hPdom x⟩ = P (A x) := by
+    have hPx : P x = A.resolvent I (P (I • (x : H) - A x)) := by
+      rw [← mul_apply_eq_comp,
+        ← (commute_spectralPVM_proj_resolvent_of_im_ne_zero hA hB (z := I) (by simp)).eq,
+        mul_apply_eq_comp, LinearPMap.resolvent_smul_sub_apply hI]
+    have hx : (⟨P x, hPdom x⟩ : A.domain) =
+        ⟨A.resolvent I (P (I • (x : H) - A x)), LinearPMap.resolvent_mem_domain hI _⟩ :=
+      Subtype.ext hPx
+    rw [hx, LinearPMap.apply_resolvent hI, ← hPx, map_sub, map_smul, sub_sub_cancel]
+  -- Hence `P` commutes with `z - A` on the domain, and therefore with its inverse `R(z)`.
+  ext y
+  obtain ⟨x, rfl⟩ := (LinearPMap.isResolventAt_resolvent hz).smul_sub_surjective y
+  change P (A.resolvent z _) = A.resolvent z (P _)
+  rw [LinearPMap.resolvent_smul_sub_apply hz, map_sub, map_smul, ← hPA x]
+  exact (LinearPMap.resolvent_smul_sub_apply hz ⟨P x, hPdom x⟩).symm
 
 /-! ### Spectral support -/
 
@@ -265,8 +272,7 @@ theorem spectralPVM_proj_eq_zero_of_subset_resolventSet (hA : IsSelfAdjoint A) {
     (LinearPMap.cayley_spectralPVM_proj_singleton_one hI)
   -- A point `w ≠ 1` of the spectrum of the Cayley transform has `invCayley w` in `σ(A)`.
   by_contra hw1
-  have hnorm : ‖(w : ℂ)‖ = 1 := by
-    simpa using spectrum.subset_circle_of_unitary hA.cayley_mem_unitary w.2
+  have hnorm : ‖(w : ℂ)‖ = 1 := spectrum.norm_eq_one_of_unitary hA.cayley_mem_unitary w.2
   have hmem := (LinearPMap.mem_spectrum_cayley_iff hI hw1).1 w.2
   rw [← ofReal_invCayley hnorm, LinearPMap.mem_spectrum_iff] at hmem
   exact hmem (hBA _ hw)

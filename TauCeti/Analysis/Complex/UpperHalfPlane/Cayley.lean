@@ -64,6 +64,9 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
   closed upper half-plane, with inverse `w ↦ ζ (i - w) / (w + i)`.
 * `TauCeti.contDiffAt_I_mul_sub_div_add` and `TauCeti.contDiffAt_mul_I_sub_div_add_I`: these
   two maps are analytic away from their poles `-ζ` and `-i`.
+* `Complex.invCayley`: the inverse transform `w ↦ i (1 + w) / (1 - w)` read as a real number,
+  which inverts the transform on the real line (`Complex.invCayley_cayley`) and agrees with the
+  complex expression on the unit circle (`Complex.ofReal_invCayley`).
 
 ## References
 
@@ -455,3 +458,34 @@ theorem contDiffAt_mul_I_sub_div_add_I {n : ℕ∞ω} (ζ : ℂ) {w : ℂ} (hw :
     (contDiffAt_id.add contDiffAt_const) hw
 
 end TauCeti
+
+namespace Complex
+
+/-- The **inverse Cayley map** `w ↦ i (1 + w) / (1 - w)`, read as a real number. On the unit circle
+with `1` removed this expression is real (`Complex.ofReal_invCayley`), and it inverts the Cayley
+map `s ↦ (s - i) / (s + i)` of the real line (`Complex.invCayley_cayley`). At `w = 1` it takes the
+value `0` (`Complex.invCayley_one`). -/
+noncomputable def invCayley (w : ℂ) : ℝ :=
+  (I * (1 + w) / (1 - w)).re
+
+theorem invCayley_apply (w : ℂ) : invCayley w = (I * (1 + w) / (1 - w)).re :=
+  (rfl)
+
+@[simp]
+theorem invCayley_one : invCayley 1 = 0 := by
+  simp [invCayley_apply]
+
+/-- The inverse Cayley map inverts the Cayley map `s ↦ (s - i) / (s + i)` of the real line. -/
+@[simp]
+theorem invCayley_cayley (s : ℝ) : invCayley ((s - I) / (s + I)) = s := by
+  have hs : (s : ℂ) + I ≠ 0 := fun h => by simpa using congrArg im h
+  rw [invCayley_apply, TauCeti.I_mul_one_add_sub_I_div_add_I_div_one_sub hs, ofReal_re]
+
+/-- On the unit circle the inverse Cayley map is real: `invCayley w = i (1 + w) / (1 - w)`. -/
+theorem ofReal_invCayley {w : ℂ} (hw : ‖w‖ = 1) :
+    (invCayley w : ℂ) = I * (1 + w) / (1 - w) := by
+  have him : (I * (1 + w) / (1 - w)).im = 0 := by
+    simpa [normSq_eq_norm_sq, hw, sub_eq_add_neg] using TauCeti.im_I_mul_sub_div_add 1 (-w)
+  exact Complex.ext (by simp [invCayley_apply]) (by simp [him])
+
+end Complex
