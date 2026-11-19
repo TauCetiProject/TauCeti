@@ -98,22 +98,6 @@ private theorem coefficient_ofInner_single (j : Fin n) (p : CoordinateSpace n ×
       p.2 j • ContinuousLinearMap.id ℂ V := by
   simp [EuclideanSpace.inner_single_right]
 
-/-- The frequency coordinate `ξⱼ` does not depend on the position. -/
-private theorem spatialDeriv_ofInner_single (j l : Fin n) :
-    spatialDeriv l (ofInner (EuclideanSpace.single j 1) : Symbol n V V 1) = 0 := by
-  ext1
-  funext ⟨x, ξ⟩
-  simp [coordinateDeriv_const _ (List.cons_ne_nil l [])]
-
-/-- The derivative `∂_{ξₗ} ξⱼ` is `(eₗ)ⱼ`. -/
-private theorem coefficient_frequencyDeriv_ofInner_single (j l : Fin n) (x ξ : CoordinateSpace n) :
-    (frequencyDeriv l (ofInner (EuclideanSpace.single j 1) : Symbol n V V 1)).coefficient (x, ξ) =
-      (EuclideanSpace.single l (1 : ℝ) : CoordinateSpace n) j • ContinuousLinearMap.id ℂ V := by
-  rw [coefficient_frequencyDeriv]
-  simp only [coefficient_ofInner_single]
-  exact congrFun (((EuclideanSpace.proj j).smulRight
-    (ContinuousLinearMap.id ℂ V)).coordinateDeriv_singleton l) ξ
-
 /-- The derivative `∂_{xₗ} xₖ` is `(eₗ)ₖ`. -/
 private theorem coefficient_spatialDeriv_coordSubSymbol_zero (k l : Fin n)
     (x ξ : CoordinateSpace n) :
@@ -121,8 +105,7 @@ private theorem coefficient_spatialDeriv_coordSubSymbol_zero (k l : Fin n)
       (EuclideanSpace.single l (1 : ℝ) : CoordinateSpace n) k • ContinuousLinearMap.id ℂ V := by
   rw [coefficient_spatialDeriv]
   simp only [coefficient_coordSubSymbol, sub_zero]
-  exact congrFun (((EuclideanSpace.proj k).smulRight
-    (ContinuousLinearMap.id ℂ V)).coordinateDeriv_singleton l) x
+  exact congrFun (coordinateDeriv_singleton_coord_smul _ k l) x
 
 /-- **The leading term of `ξⱼ # xₖ`** is the product `ξⱼ xₖ`. -/
 theorem coefficient_ofInner_sharpTerm_coordSubSymbol_zero (j k : Fin n)
@@ -139,14 +122,14 @@ theorem coefficient_ofInner_sharpTerm_coordSubSymbol_one (j k : Fin n)
         (coordSubSymbol 0 k) 1).coefficient (x, ξ) =
       (if j = k then -Complex.I else 0) • ContinuousLinearMap.id ℂ V := by
   rw [coefficient_sharpTerm_one]
-  simp only [coefficient_frequencyDeriv_ofInner_single,
+  simp only [coefficient_frequencyDeriv_ofInner,
     coefficient_spatialDeriv_coordSubSymbol_zero,
     ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_smul, ContinuousLinearMap.id_comp,
-    smul_smul, PiLp.single_apply]
+    PiLp.single_apply]
   split_ifs with h
   · subst h
     simp
-  · simp [ite_smul, Ne.symm h, eq_comm (a := j)]
+  · simp [ite_smul, Ne.symm h]
 
 /-- The terms of `ξⱼ # xₖ` of order `-1` and below vanish: `ξⱼ` has no second frequency
 derivatives. -/
@@ -159,8 +142,7 @@ theorem ofInner_sharpTerm_coordSubSymbol_add_two (j k : Fin n) (N : ℕ) :
       mixedDeriv [] (List.ofFn w) (ofInner (EuclideanSpace.single j 1) : Symbol n V V 1).coefficient
         x ξ = 0 := by
     simp only [mixedDeriv_def, coordinateDeriv_nil, coefficient_ofInner_single]
-    exact congrFun (((EuclideanSpace.proj j).smulRight
-      (ContinuousLinearMap.id ℂ V)).coordinateDeriv_eq_zero_of_two_le_length (by simp)) ξ
+    exact congrFun (coordinateDeriv_coord_smul_eq_zero_of_two_le_length _ j (by simp)) ξ
   rw [coefficient_sharpTerm]
   simp only [h, ContinuousLinearMap.zero_comp, Finset.sum_const_zero, smul_zero, coefficient_zero,
     Pi.zero_apply]
@@ -193,7 +175,7 @@ theorem coefficient_coordSubSymbol_sharpTerm_ofInner_zero (j k : Fin n)
 theorem coordSubSymbol_sharpTerm_ofInner_succ (j k : Fin n) (N : ℕ) :
     (coordSubSymbol 0 k).sharpTerm (ofInner (EuclideanSpace.single j 1) : Symbol n V V 1)
       (N + 1) = 0 :=
-  sharpTerm_succ_eq_zero_of_spatialDeriv_eq_zero (spatialDeriv_ofInner_single j) _ N
+  sharpTerm_succ_eq_zero_of_spatialDeriv_eq_zero (spatialDeriv_ofInner _) _ N
 
 /-- **The commutator `[Dⱼ, xₖ]` has symbol `-i δⱼₖ`**: the composition expansions of `ξⱼ # xₖ` and
 `xₖ # ξⱼ` differ by `-i δⱼₖ` as soon as they have at least two terms. -/
@@ -235,25 +217,16 @@ section MatrixUnits
 
 open Matrix
 
-/-- **The composition expansion of constant matrix symbols** is the matrix product: its leading
-term is `A B` and every later term vanishes. -/
-theorem sum_coefficient_const_sharpTerm_const (A B : Matrix (Fin 2) (Fin 2) ℂ) (N : ℕ)
-    (p : CoordinateSpace n × CoordinateSpace n) :
-    ∑ i ∈ range (N + 1), ((const (n := n) (toEuclideanCLM (𝕜 := ℂ) A)).sharpTerm
-      (const (toEuclideanCLM (𝕜 := ℂ) B)) i).coefficient p = toEuclideanCLM (𝕜 := ℂ) (A * B) := by
-  rw [Finset.sum_range_succ']
-  simp only [const_sharpTerm_succ, coefficient_zero, Pi.zero_apply, Finset.sum_const_zero,
-    zero_add, coefficient_sharpTerm_zero, coefficient_const, map_mul]
-  rfl
-
 /-- **`eᵢₖ # eₖᵢ = eᵢᵢ`**: the composition expansion of the constant matrix units `eᵢₖ` and `eₖᵢ` is
 `eᵢᵢ`. In particular `e₁₂ # e₂₁ = e₁₁` and `e₂₁ # e₁₂ = e₂₂`. -/
-theorem sum_coefficient_single_sharpTerm_single (i k : Fin 2) (N : ℕ)
+theorem sum_coefficient_single_sharpTerm_single {ι : Type*} [Fintype ι] [DecidableEq ι] (i k : ι)
+    (N : ℕ)
     (p : CoordinateSpace n × CoordinateSpace n) :
     ∑ l ∈ range (N + 1), ((const (n := n) (toEuclideanCLM (𝕜 := ℂ) (single i k 1))).sharpTerm
       (const (toEuclideanCLM (𝕜 := ℂ) (single k i 1))) l).coefficient p =
       toEuclideanCLM (𝕜 := ℂ) (single i i 1) := by
-  rw [sum_coefficient_const_sharpTerm_const, single_mul_single_same, one_mul]
+  rw [sum_coefficient_const_sharpTerm_const, ← ContinuousLinearMap.mul_def, ← map_mul,
+    single_mul_single_same, one_mul]
 
 /-- **The commutator of `e₁₂` and `e₂₁` is `diag(1, -1)`**: the difference of the composition
 expansions `e₁₂ # e₂₁` and `e₂₁ # e₁₂`. -/
@@ -275,27 +248,11 @@ negative order has the constant coefficient `diag(1, -1)`. -/
 theorem not_exists_coefficient_eq_diagonal [NeZero n] {μ : ℝ} (hμ : μ < 0) :
     ¬∃ a : Symbol n (EuclideanSpace ℂ (Fin 2)) (EuclideanSpace ℂ (Fin 2)) μ,
       ∀ p, a.coefficient p = toEuclideanCLM (𝕜 := ℂ) (diagonal ![1, -1]) := by
-  rintro ⟨a, ha⟩
-  set D := toEuclideanCLM (𝕜 := ℂ) (diagonal ![(1 : ℂ), -1])
-  have hD : D ≠ 0 := by
+  have hD : toEuclideanCLM (𝕜 := ℂ) (diagonal ![(1 : ℂ), -1]) ≠ 0 := by
     intro h
     have h' := congrArg (fun T ↦ T (EuclideanSpace.single 0 1) 0) h
-    simp [D] at h'
-  obtain ⟨C, -, hC⟩ := a.exists_bound {0} isCompact_singleton [] []
-  -- Along `ξ = t e₀` the weight `⟨ξ⟩ ^ μ` tends to `0`, while the coefficient is the fixed `D`.
-  have htend : Filter.Tendsto (fun t : ℝ ↦ C * (1 + t ^ 2) ^ (μ / 2)) Filter.atTop
-      (nhds (C * 0)) := by
-    refine tendsto_const_nhds.mul ?_
-    have h := tendsto_rpow_neg_atTop (y := -(μ / 2)) (by linarith)
-    rw [neg_neg] at h
-    exact h.comp (Filter.tendsto_atTop_add_const_left _ 1
-      (Filter.tendsto_pow_atTop two_ne_zero))
-  rw [mul_zero] at htend
-  obtain ⟨t, ht⟩ := (htend.eventually (gt_mem_nhds (norm_pos_iff.2 hD))).exists
-  have h := hC 0 rfl (EuclideanSpace.single 0 t)
-  simp only [mixedDeriv_nil_nil, ha, List.length_nil, CharP.cast_eq_zero, sub_zero,
-    PiLp.norm_single, Real.norm_eq_abs, sq_abs] at h
-  linarith
+    simp at h'
+  exact not_exists_coefficient_eq_const hD hμ
 
 end MatrixUnits
 
@@ -341,8 +298,7 @@ private theorem coefficient_spatialDeriv_frequencyDeriv_expMulFreq (j l : Fin n)
     rw [coefficient_frequencyDeriv]
     simp only [coefficient_expMulFreq]
     rw [smul_comm]
-    exact congrFun (((EuclideanSpace.proj j).smulRight (Complex.exp (Complex.I * (y j : ℂ)) •
-      ContinuousLinearMap.id ℂ H)).coordinateDeriv_singleton l) ξ
+    exact congrFun (coordinateDeriv_singleton_coord_smul _ j l) ξ
   rw [coefficient_spatialDeriv]
   simp only [hξ]
   rw [coordinateDeriv_cexp_smul]
@@ -389,9 +345,7 @@ theorem adjointTerm_expMulFreq_add_two (j : Fin n) (N : ℕ) :
     simp only [mixedDeriv_def, coefficient_expMulFreq]
     have h0 : (fun y : CoordinateSpace n ↦ coordinateDeriv (List.ofFn w) (fun η ↦
         η j • Complex.exp (Complex.I * (y j : ℂ)) • ContinuousLinearMap.id ℂ H) ξ) = 0 :=
-      funext fun y ↦ congrFun (ContinuousLinearMap.coordinateDeriv_eq_zero_of_two_le_length
-        ((EuclideanSpace.proj j).smulRight
-          (Complex.exp (Complex.I * (y j : ℂ)) • ContinuousLinearMap.id ℂ H)) (by simp)) ξ
+      funext fun _ ↦ congrFun (coordinateDeriv_coord_smul_eq_zero_of_two_le_length _ j (by simp)) ξ
     rw [h0, coordinateDeriv_zero, Pi.zero_apply]
   rw [coefficient_adjointTerm]
   simp only [h, map_zero, Finset.sum_const_zero, smul_zero, coefficient_zero, Pi.zero_apply]

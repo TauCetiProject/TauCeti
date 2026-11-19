@@ -60,7 +60,8 @@ symbols are closed under the operations above, and they form a two-sided ideal u
 coefficient vanishing at all large frequencies is smoothing
 (`TauCeti.Symbol.isSmoothing_ofBoundedFrequencySupport`,
 `TauCeti.Symbol.isSmoothing_of_coefficient_eq_zero`), while in positive dimension a nonzero
-constant is not (`TauCeti.Symbol.isSmoothing_const_iff`).
+constant is not (`TauCeti.Symbol.isSmoothing_const_iff`); it is a symbol of no negative order
+(`TauCeti.Symbol.not_exists_coefficient_eq_const`).
 
 The estimates are only required locally uniformly in `x`. The predicate
 `TauCeti.Symbol.IsUniform` asks for constants independent of `x`, and
@@ -1374,25 +1375,37 @@ theorem exists_coefficient_eq_of_forall_le_norm
   ⟨b + ofBoundedFrequencySupport (f - b.coefficient) (hf.sub b.contDiff_coefficient) R
     fun x ξ hξ => sub_eq_zero.2 (h x ξ hξ), by simp⟩
 
+/-- In positive dimension, a nonzero constant is a symbol of no negative order: along a ray of
+frequencies the weight `⟨ξ⟩ ^ m` tends to `0`, while the coefficient stays the fixed `T`. -/
+theorem not_exists_coefficient_eq_const [NeZero n] {T : V →L[ℂ] W} (hT : T ≠ 0) (hm : m < 0) :
+    ¬∃ a : Symbol n V W m, ∀ p, a.coefficient p = T := by
+  rintro ⟨a, ha⟩
+  obtain ⟨C, -, hC⟩ := a.exists_bound {0} isCompact_singleton [] []
+  have htend : Filter.Tendsto (fun t : ℝ ↦ C * (1 + t ^ 2) ^ (m / 2)) Filter.atTop
+      (nhds (C * 0)) := by
+    refine tendsto_const_nhds.mul ?_
+    have h := tendsto_rpow_neg_atTop (y := -(m / 2)) (by linarith)
+    rw [neg_neg] at h
+    exact h.comp (Filter.tendsto_atTop_add_const_left _ 1
+      (Filter.tendsto_pow_atTop two_ne_zero))
+  rw [mul_zero] at htend
+  obtain ⟨t, ht⟩ := (htend.eventually (gt_mem_nhds (norm_pos_iff.2 hT))).exists
+  have h := hC 0 rfl (EuclideanSpace.single 0 t)
+  simp only [mixedDeriv_nil_nil, ha, List.length_nil, CharP.cast_eq_zero, sub_zero,
+    PiLp.norm_single, Real.norm_eq_abs, sq_abs] at h
+  linarith
+
 /-- In positive dimension, a nonzero constant symbol is not smoothing: it does not even have order
-`-2`. (On `ℝ⁰` every symbol is smoothing, since there `⟨ξ⟩ = 1`.) -/
+`-2` (`TauCeti.Symbol.not_exists_coefficient_eq_const`). (On `ℝ⁰` every symbol is smoothing, since
+there `⟨ξ⟩ = 1`.) -/
 theorem isSmoothing_const_iff (hn : n ≠ 0) {T : V →L[ℂ] W} :
     (const T : Symbol n V W 0).IsSmoothing ↔ T = 0 := by
   refine ⟨fun h => ?_, fun h => ?_⟩
   · obtain ⟨b, hb⟩ := h (-2)
-    obtain ⟨C, hC0, hC⟩ := b.exists_bound {0} isCompact_singleton [] []
     by_contra hT
-    have hT' : 0 < ‖T‖ := norm_pos_iff.2 hT
-    -- At a frequency with `‖ξ‖ ^ 2 = C / ‖T‖` the order `-2` bound fails.
-    let ξ : CoordinateSpace n := EuclideanSpace.single ⟨0, Nat.pos_of_ne_zero hn⟩ √(C / ‖T‖)
-    have hξ : ‖ξ‖ ^ 2 = C / ‖T‖ := by
-      rw [PiLp.norm_single, Real.norm_eq_abs, sq_abs, Real.sq_sqrt (by positivity)]
-    have h := hC 0 rfl ξ
-    rw [mixedDeriv_nil_nil, hb, coefficient_const, List.length_nil, Nat.cast_zero, sub_zero, hξ,
-      show (-2 : ℝ) / 2 = -1 by norm_num, Real.rpow_neg_one, ← div_eq_mul_inv,
-      le_div_iff₀ (by positivity)] at h
-    have : ‖T‖ * (1 + C / ‖T‖) = ‖T‖ + C := by field_simp
-    linarith
+    have : NeZero n := ⟨hn⟩
+    exact not_exists_coefficient_eq_const hT (by norm_num)
+      ⟨b, fun p => by rw [hb, coefficient_const]⟩
   · subst h
     exact fun _ => ⟨0, by funext p; simp⟩
 
