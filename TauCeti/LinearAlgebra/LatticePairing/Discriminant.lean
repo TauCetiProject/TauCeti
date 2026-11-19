@@ -244,11 +244,13 @@ instance instIsNondegenerateFlip [Module.IsReflexive ℤ X] : IsNondegenerate u.
 same order. -/
 theorem natCard_componentGroup_flip [Module.IsReflexive ℤ X] [Module.IsReflexive ℤ Y] :
     Nat.card (componentGroup u.flip) = Nat.card u.componentGroup :=
+  -- Here and below, `natCard_characterModule` counts the characters `A →+ AddCircle (1 : ℚ)`
+  -- of a cokernel `A` through the definitional equality `CharacterModule A = A →+ AddCircle 1`.
   le_antisymm
     ((Nat.card_le_card_of_injective _ u.injective_discriminantPairing_flip).trans_eq
-      (natCard_addMonoidHom_addCircle _))
+      (natCard_characterModule (componentGroup u)))
     ((Nat.card_le_card_of_injective _ u.injective_discriminantPairing).trans_eq
-      (natCard_addMonoidHom_addCircle _))
+      (natCard_characterModule (componentGroup u.flip)))
 
 /-- **Perfectness of the discriminant pairing.** For reflexive `X` and `Y` (for instance free of
 finite rank), every character of the transpose cokernel is the pairing with a unique class of
@@ -256,7 +258,7 @@ finite rank), every character of the transpose cokernel is the pairing with a un
 theorem bijective_discriminantPairing [Module.IsReflexive ℤ X] [Module.IsReflexive ℤ Y] :
     Function.Bijective u.discriminantPairing :=
   u.injective_discriminantPairing.bijective_of_nat_card_le
-    ((natCard_addMonoidHom_addCircle _).trans_le u.natCard_componentGroup_flip.le)
+    ((natCard_characterModule (componentGroup u.flip)).trans_le u.natCard_componentGroup_flip.le)
 
 /-- **Perfectness of the discriminant pairing**, in the other variable: for reflexive `X` and
 `Y`, every character of `componentGroup u` is the pairing with a unique class of the transpose
@@ -264,7 +266,7 @@ cokernel. -/
 theorem bijective_discriminantPairing_flip [Module.IsReflexive ℤ X] [Module.IsReflexive ℤ Y] :
     Function.Bijective u.discriminantPairing.flip :=
   u.injective_discriminantPairing_flip.bijective_of_nat_card_le
-    ((natCard_addMonoidHom_addCircle _).trans_le u.natCard_componentGroup_flip.ge)
+    ((natCard_characterModule (componentGroup u)).trans_le u.natCard_componentGroup_flip.ge)
 
 /-! ### The rank-one pairings -/
 
