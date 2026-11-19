@@ -19,6 +19,8 @@ This file collects two enumerations of fixed-cardinality subsets through Mathlib
 `Set.powersetCard.ofFinEmbEquiv`, together with the sum and product formulas for its increasing
 enumeration.
 
+A two-element set `{a, b}` with `a < b` is listed in increasing order as `![a, b]`.
+
 In a linear order, a three-element finite set is listed exactly once as an increasing triple
 `a < b < c`. `Set.powersetCard.ofLtTriple` is this enumeration, an equivalence between the
 increasing triples and `Set.powersetCard I 3`. It is the case `n = 3` of Mathlib's
@@ -59,6 +61,14 @@ theorem prod_comp_ofFinEmbEquiv_symm {n : ℕ} (s : powersetCard I n)
       rw [ofFinEmbEquiv_symm_apply]
       exact congrArg f (Finset.coe_orderIsoOfFin_apply s.1 s.2 a).symm)).trans
     (Finset.prod_coe_sort s.val f)
+
+/-- A two-element subset `{a, b}` with `a < b` is listed in increasing order as `![a, b]`. -/
+theorem coe_ofFinEmbEquiv_symm_eq_of_val_eq_pair {a b : I} (hab : a < b)
+    {s : powersetCard I 2} (hs : s.val = {a, b}) : ⇑(ofFinEmbEquiv.symm s) = ![a, b] := by
+  rw [ofFinEmbEquiv_symm_apply]
+  refine (Finset.orderEmbOfFin_unique (mem_iff.1 s.prop) (fun m ↦ ?_) ?_).symm
+  · fin_cases m <;> simp [hs]
+  · exact Fin.strictMono_iff_lt_succ.2 fun m ↦ by fin_cases m; simpa using hab
 
 /-- An increasing triple, as an order embedding of `Fin 3`. -/
 private def ltTripleEmb (t : {t : I × I × I // t.1 < t.2.1 ∧ t.2.1 < t.2.2}) : Fin 3 ↪o I :=
