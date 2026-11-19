@@ -79,12 +79,12 @@ private theorem dvd_of_mul_hyperplaneCoordinateGerm_eq {a s : A} {u v : B}
   · have hu : stalkPrecomp 𝓘(ℂ, E × ℂ) (E × ℂ) Prod.fst contDiff_fst.contMDiff (b, 0) a =
         hyperplaneCoordinateGerm b 0 * u := mul_right_cancel₀ hT (by rw [h, map_zero]; ring)
     have ha := congrArg (restrictHyperplane b 0) hu
-    rw [restrictHyperplane_stalkPrecomp_fst, map_mul, restrictHyperplane_hyperplaneCoordinateGerm,
-      zero_mul] at ha
+    simp only [map_mul, restrictHyperplane_stalkPrecomp_fst b 0,
+      restrictHyperplane_hyperplaneCoordinateGerm, zero_mul] at ha
     rw [ha]
   · have hr := congrArg (restrictHyperplane b 0) h
-    rw [map_add, map_mul, map_mul, map_mul, map_pow, restrictHyperplane_stalkPrecomp_fst,
-      restrictHyperplane_stalkPrecomp_fst, restrictHyperplane_hyperplaneCoordinateGerm] at hr
+    simp only [map_add, map_mul, map_pow, restrictHyperplane_stalkPrecomp_fst b 0,
+      restrictHyperplane_hyperplaneCoordinateGerm] at hr
     have hv : restrictHyperplane b 0 v = 0 :=
       (mul_eq_zero.1 (by linear_combination -hr)).resolve_left hs
     obtain ⟨w, rfl⟩ : hyperplaneCoordinateGerm b 0 ∣ v := by
@@ -95,9 +95,8 @@ private theorem dvd_of_mul_hyperplaneCoordinateGerm_eq {a s : A} {u v : B}
           stalkPrecomp 𝓘(ℂ, E × ℂ) (E × ℂ) Prod.fst contDiff_fst.contMDiff (b, 0) s * w :=
       mul_right_cancel₀ hT (by rw [h]; ring)
     have ha := congrArg (restrictHyperplane b 0) hw
-    rw [map_add, map_mul, map_mul, restrictHyperplane_stalkPrecomp_fst,
-      restrictHyperplane_stalkPrecomp_fst, restrictHyperplane_hyperplaneCoordinateGerm, zero_mul,
-      zero_add] at ha
+    simp only [map_add, map_mul, restrictHyperplane_stalkPrecomp_fst b 0,
+      restrictHyperplane_hyperplaneCoordinateGerm, zero_mul, zero_add] at ha
     exact ⟨_, ha⟩
 
 /-- If `P f + P' c ∈ (xy - s)`, where restriction `ρ` to a coordinate plane sends `P` to the
@@ -150,9 +149,7 @@ private theorem nodeEulerDerivation_nodeFstCoordinate :
     toFilterGerm_nodeFstCoordinate]
   congr 1
   funext z
-  -- The first fibre coordinate is a continuous linear map.
-  rw [show (fun z : (E × ℂ) × ℂ ↦ z.1.2) = (ContinuousLinearMap.snd ℂ E ℂ).comp
-    (ContinuousLinearMap.fst ℂ (E × ℂ) ℂ) from rfl, ContinuousLinearMap.fderiv]
+  rw [fderiv.snd differentiableAt_fst, fderiv_fst]
   simp [nodeEulerField_apply]
 
 private theorem nodeEulerDerivation_nodeSndCoordinate :
@@ -162,10 +159,7 @@ private theorem nodeEulerDerivation_nodeSndCoordinate :
     map_neg, toFilterGerm_nodeSndCoordinate, ← Germ.coe_neg]
   congr 1
   funext z
-  -- The second fibre coordinate is a continuous linear map.
-  rw [show (fun z : (E × ℂ) × ℂ ↦ z.2) = ContinuousLinearMap.snd ℂ (E × ℂ) ℂ from rfl,
-    ContinuousLinearMap.fderiv]
-  simp [nodeEulerField_apply]
+  simp [fderiv_snd, nodeEulerField_apply]
 
 private theorem nodeEulerDerivation_nodeBaseExtension (a : A) :
     nodeEulerDerivation b (nodeBaseExtension b a) = 0 := by
@@ -177,11 +171,10 @@ private theorem nodeEulerDerivation_nodeBaseExtension (a : A) :
   have hb : Tendsto (fun z : (E × ℂ) × ℂ ↦ z.1.1) (𝓝 ((b, (0 : ℂ)), (0 : ℂ))) (𝓝 b) :=
     continuous_fst.fst.continuousAt.tendsto
   filter_upwards [hb.eventually hfa.eventually_analyticAt] with z hz
-  -- The base projection is a continuous linear map killing the Euler field.
-  let π := (ContinuousLinearMap.fst ℂ E ℂ).comp (ContinuousLinearMap.fst ℂ (E × ℂ) ℂ)
-  rw [show (fun z : (E × ℂ) × ℂ ↦ f z.1.1) = f ∘ π from rfl,
-    fderiv_comp z hz.differentiableAt π.differentiableAt, π.fderiv]
-  simp [π, nodeEulerField_apply]
+  -- The base projection kills the Euler field.
+  rw [fderiv_fun_comp z hz.differentiableAt differentiableAt_fst.fst,
+    fderiv.fst differentiableAt_fst, fderiv_fst]
+  simp [nodeEulerField_apply]
 
 /-- The Euler derivation is tangent to the node family: it kills its defining equation. -/
 private theorem nodeEulerDerivation_nodeEquation (s : A) :

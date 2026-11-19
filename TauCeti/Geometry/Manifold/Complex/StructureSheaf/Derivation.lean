@@ -73,6 +73,18 @@ private theorem toFilterGerm_stalkDerivativeFun (hξ : AnalyticAt ℂ ξ p)
       (fun z ↦ fderiv ℂ f z (ξ z) : V → ℂ) :=
   (exists_toFilterGerm_eq_fderiv hξ s).choose_spec f hs
 
+/-- Every holomorphic germ has a representative, differentiable near `p`, whose derivative along `ξ`
+represents the derivative of the germ. -/
+private theorem exists_toFilterGerm_stalkDerivativeFun (hξ : AnalyticAt ℂ ξ p)
+    (s : (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk p) :
+    ∃ f : V → ℂ, toFilterGerm 𝓘(ℂ, V) V p (𝓝 p) le_rfl s = f ∧
+      toFilterGerm 𝓘(ℂ, V) V p (𝓝 p) le_rfl (stalkDerivativeFun hξ s) =
+        (fun z ↦ fderiv ℂ f z (ξ z) : V → ℂ) ∧
+      ∀ᶠ z in 𝓝 p, DifferentiableAt ℂ f z := by
+  obtain ⟨f, -, hf⟩ := exists_analyticAt_toFilterGerm_eq p s
+  exact ⟨f, hf _ le_rfl, toFilterGerm_stalkDerivativeFun hξ (hf _ le_rfl),
+    eventually_differentiableAt_of_toFilterGerm_eq (hf _ le_rfl)⟩
+
 variable (ξ) in
 /-- The derivative of holomorphic germs at `p` along a vector field `ξ` analytic at `p`: the germ
 of `f` goes to the germ of `z ↦ f'(z) (ξ z)`. -/
@@ -88,29 +100,22 @@ def stalkDerivative (hξ : AnalyticAt ℂ ξ p) :
           rw [toFilterGerm_stalkDerivativeFun hξ (f := (0 : V → ℂ)) (by simp), map_zero]
           simp [← Germ.coe_zero, Pi.zero_def]
         map_add' := fun s t ↦ by
-          obtain ⟨f, -, hf⟩ := exists_analyticAt_toFilterGerm_eq p s
-          obtain ⟨g, -, hg⟩ := exists_analyticAt_toFilterGerm_eq p t
+          obtain ⟨f, hf, hf', hfd⟩ := exists_toFilterGerm_stalkDerivativeFun hξ s
+          obtain ⟨g, hg, hg', hgd⟩ := exists_toFilterGerm_stalkDerivativeFun hξ t
           apply toFilterGerm_nhds_injective p
           rw [map_add, toFilterGerm_stalkDerivativeFun hξ (f := f + g)
-              (by rw [map_add, hf _ le_rfl, hg _ le_rfl, Germ.coe_add]),
-            toFilterGerm_stalkDerivativeFun hξ (hf _ le_rfl),
-            toFilterGerm_stalkDerivativeFun hξ (hg _ le_rfl), ← Germ.coe_add, Germ.coe_eq]
-          filter_upwards [eventually_differentiableAt_of_toFilterGerm_eq (hf _ le_rfl),
-            eventually_differentiableAt_of_toFilterGerm_eq (hg _ le_rfl)] with z hfz hgz
+              (by rw [map_add, hf, hg, Germ.coe_add]), hf', hg', ← Germ.coe_add, Germ.coe_eq]
+          filter_upwards [hfd, hgd] with z hfz hgz
           simp [fderiv_add hfz hgz] })
     fun s t ↦ by
-      obtain ⟨f, -, hf⟩ := exists_analyticAt_toFilterGerm_eq p s
-      obtain ⟨g, -, hg⟩ := exists_analyticAt_toFilterGerm_eq p t
+      obtain ⟨f, hf, hf', hfd⟩ := exists_toFilterGerm_stalkDerivativeFun hξ s
+      obtain ⟨g, hg, hg', hgd⟩ := exists_toFilterGerm_stalkDerivativeFun hξ t
       apply toFilterGerm_nhds_injective p
       simp only [AddMonoidHom.coe_toIntLinearMap, AddMonoidHom.coe_mk, ZeroHom.coe_mk,
         smul_eq_mul, map_add, map_mul]
-      rw [toFilterGerm_stalkDerivativeFun hξ (f := f * g)
-          (by rw [map_mul, hf _ le_rfl, hg _ le_rfl, Germ.coe_mul]),
-        toFilterGerm_stalkDerivativeFun hξ (hf _ le_rfl),
-        toFilterGerm_stalkDerivativeFun hξ (hg _ le_rfl), hf _ le_rfl, hg _ le_rfl,
-        ← Germ.coe_mul, ← Germ.coe_mul, ← Germ.coe_add, Germ.coe_eq]
-      filter_upwards [eventually_differentiableAt_of_toFilterGerm_eq (hf _ le_rfl),
-        eventually_differentiableAt_of_toFilterGerm_eq (hg _ le_rfl)] with z hfz hgz
+      rw [toFilterGerm_stalkDerivativeFun hξ (f := f * g) (by rw [map_mul, hf, hg, Germ.coe_mul]),
+        hf', hg', hf, hg, ← Germ.coe_mul, ← Germ.coe_mul, ← Germ.coe_add, Germ.coe_eq]
+      filter_upwards [hfd, hgd] with z hfz hgz
       simp [fderiv_mul hfz hgz]
 
 /-- The derivative of a germ along `ξ` is represented by the derivative along `ξ` of any of its
