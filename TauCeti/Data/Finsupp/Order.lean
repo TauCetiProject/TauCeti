@@ -58,13 +58,10 @@ theorem sum_eq_apply_iff_of_nonneg {ι M : Type*} [AddCommMonoid M] [IsLeftCance
     [PartialOrder M] [IsOrderedAddMonoid M] {f : ι →₀ M} (hf : 0 ≤ f) {a : ι} :
     (f.sum fun _ c ↦ c) = f a ↔ ∀ b ≠ a, f b = 0 := by
   classical
-  -- Split the sum into the value at `a` and the sum of `f` with `a` erased.
-  have hsplit : (f.sum fun _ c ↦ c) = f a + (f.erase a).sum fun _ c ↦ c := by
-    conv_lhs => rw [← single_add_erase a f]
-    rw [sum_add_index' (fun _ ↦ rfl) (fun _ _ _ ↦ rfl), sum_single_index rfl]
   have herase : 0 ≤ f.erase a := fun i ↦ by
     rw [erase_apply]; split_ifs; exacts [le_rfl, hf i]
-  rw [hsplit, add_eq_left, sum_eq_zero_iff_of_nonneg herase, Finsupp.ext_iff]
+  rw [← add_sum_erase' f a _ fun _ ↦ rfl, add_eq_left, sum_eq_zero_iff_of_nonneg herase,
+    Finsupp.ext_iff]
   refine forall_congr' fun b ↦ ?_
   by_cases hb : b = a <;> simp [hb]
 
