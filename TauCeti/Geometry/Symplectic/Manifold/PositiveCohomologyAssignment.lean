@@ -410,12 +410,22 @@ theorem charge_comap_of_comp_eq {σ' : C(𝔻, Y')} {σ : C(𝔻, Y)} (hσ : f.c
 @[simp]
 theorem localCharge_comap (σ : C(𝔻, Y')) (z : 𝔻) :
     (A.comap f hf hinj).localCharge σ z = A.localCharge (f.comp σ) z :=
+  -- Both sides test compactness of the same set and evaluate the same integer: `(σ ∘ τ)⁻¹'
+  -- (f⁻¹' Z)` and `((f ∘ σ) ∘ τ)⁻¹' Z` agree definitionally because `ContinuousMap.comp` and
+  -- `Set.preimage` unfold to function composition, so `ContinuousMap.comp_assoc` is `rfl`.
   (rfl)
+
+/-- If `σ = f ∘ σ'`, the local charges of `σ'` for the pulled-back assignment are those of `σ`. -/
+theorem localCharge_comap_of_comp_eq {σ' : C(𝔻, Y')} {σ : C(𝔻, Y)} (hσ : f.comp σ' = σ)
+    (z : 𝔻) : (A.comap f hf hinj).localCharge σ' z = A.localCharge σ z := by
+  rw [localCharge_comap, hσ]
 
 /-- Pulling back along the identity does nothing. -/
 @[simp]
 theorem comap_id :
     A.comap (ContinuousMap.id Y) (isPseudoholomorphic_id J) Function.injective_id = A :=
+  -- `(ContinuousMap.id Y).comp σ` reduces to `σ` by structure eta (`ContinuousMap.id_comp` is
+  -- `rfl`), so every field of the pulled-back assignment is that of `A`.
   (rfl)
 
 /-- Pulling back is functorial: pulling back along `f` and then along `g` is pulling back along
@@ -447,10 +457,8 @@ theorem charge_restrictOpen (U : TopologicalSpace.Opens Y) {σ' : C(𝔻, U)} {�
 /-- The local charges of the restricted assignment are those of the discs in `Y`. -/
 theorem localCharge_restrictOpen (U : TopologicalSpace.Opens Y) {σ' : C(𝔻, U)} {σ : C(𝔻, Y)}
     (hσ : ∀ z, (σ' z : Y) = σ z) (z : 𝔻) :
-    (A.restrictOpen U).localCharge σ' z = A.localCharge σ z := by
-  rw [restrictOpen, localCharge_comap]
-  congr 1
-  exact ContinuousMap.ext hσ
+    (A.restrictOpen U).localCharge σ' z = A.localCharge σ z :=
+  A.localCharge_comap_of_comp_eq ⟨Subtype.val, continuous_subtype_val⟩ _ _ (ContinuousMap.ext hσ) z
 
 section Pullback
 
@@ -476,10 +484,8 @@ theorem charge_pullback (h : Y' ≃ₘ⟮I', I⟯ Y) {σ' : C(𝔻, Y')} {σ : C
 /-- The local charges of the transported assignment are those of the image discs. -/
 theorem localCharge_pullback (h : Y' ≃ₘ⟮I', I⟯ Y) {σ' : C(𝔻, Y')} {σ : C(𝔻, Y)}
     (hσ : ∀ z, h (σ' z) = σ z) (z : 𝔻) :
-    (A.pullback h).localCharge σ' z = A.localCharge σ z := by
-  rw [pullback, localCharge_comap]
-  congr 1
-  exact ContinuousMap.ext hσ
+    (A.pullback h).localCharge σ' z = A.localCharge σ z :=
+  A.localCharge_comap_of_comp_eq ⟨h, h.continuous⟩ _ _ (ContinuousMap.ext hσ) z
 
 end Pullback
 

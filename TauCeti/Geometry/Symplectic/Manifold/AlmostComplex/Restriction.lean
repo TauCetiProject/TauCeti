@@ -84,6 +84,14 @@ theorem restrictOpen_apply (J : SmoothAlmostComplexStructure I M) (U : Opens M) 
   rw [restrictOpen, ContMDiffAlmostComplexStructure.toSmooth_apply,
     ContMDiffAlmostComplexStructure.restrictOpen_apply, toContMDiff_apply]
 
+/-- Smooth-to-finite regularity conversion commutes with open restriction. -/
+@[simp]
+theorem toContMDiff_restrictOpen (J : SmoothAlmostComplexStructure I M) (U : Opens M) (n : ℕ∞) :
+    (J.restrictOpen U).toContMDiff n = (J.toContMDiff n).restrictOpen U := by
+  ext x v
+  rw [toContMDiff_apply, restrictOpen_apply, ContMDiffAlmostComplexStructure.restrictOpen_apply,
+    toContMDiff_apply]
+
 /-- The inclusion of an open submanifold is pseudoholomorphic from the restricted structure to the
 ambient one. -/
 theorem isPseudoholomorphic_subtype_val (J : SmoothAlmostComplexStructure I M) (U : Opens M) :
@@ -94,6 +102,16 @@ theorem isPseudoholomorphic_subtype_val (J : SmoothAlmostComplexStructure I M) (
         ContinuousLinearEquiv.apply_symm_apply]
 
 end SmoothAlmostComplexStructure
+
+/-- Infinite-order open restriction agrees with the native smooth restriction under smooth
+conversion. -/
+@[simp]
+theorem ContMDiffAlmostComplexStructure.toSmooth_restrictOpen
+    (J : ContMDiffAlmostComplexStructure I ⊤ M) (U : Opens M) :
+    (J.restrictOpen U).toSmooth = J.toSmooth.restrictOpen U := by
+  ext x v
+  rw [toSmooth_apply, restrictOpen_apply, SmoothAlmostComplexStructure.restrictOpen_apply,
+    toSmooth_apply]
 
 namespace ContMDiffAlmostComplexStructureFamily
 
