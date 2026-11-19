@@ -32,6 +32,13 @@ the `n`-th cyclotomic field it is the subgroup attached to the maximal real subf
   parity.
 * `DirichletCharacter.card_apply_neg_one_mul_apply_neg_one_eq_of_le_two`: if neither level
   exceeds two, the only pair of characters has product parity `1`.
+* `DirichletCharacter.two_mul_sum_even`: twice a sum over the even characters is the sum of
+  `(1 + χ (-1)) f χ` over all characters.
+* `DirichletCharacter.two_mul_sum_even_apply`, `DirichletCharacter.sum_even_apply`: orthogonality
+  for the even characters, which detect `a = ±1` rather than `a = 1`.
+* `DirichletCharacter.sum_even_ne_one_apply`: at an odd prime level `q`, the sum of `χ a` over
+  the even nontrivial characters is `0` at `a = 0`, `(q - 1) / 2 - 1` at `a = ±1` and `-1`
+  otherwise.
 -/
 
 public section
@@ -154,5 +161,83 @@ theorem card_apply_neg_one_mul_apply_neg_one_eq_of_le_two {R : Type*} [CommMonoi
   · have : IsEmpty {_q : DirichletCharacter R a × DirichletCharacter R b // (1 : R) = ε} :=
       ⟨fun ⟨_, h⟩ ↦ hε h.symm⟩
     exact Nat.card_of_isEmpty
+
+/-! ### Orthogonality for even characters -/
+
+open Finset
+
+open scoped Classical in
+/-- **Projection onto the even characters.** Twice the sum of `f χ` over the even characters
+is the sum of `(1 + χ (-1)) f χ` over all characters, since `χ (-1)` is `1` for an even and
+`-1` for an odd character. -/
+theorem two_mul_sum_even [IsDomain R] (f : DirichletCharacter R n → R) :
+    2 * ∑ χ : DirichletCharacter R n with χ.Even, f χ = ∑ χ, f χ + ∑ χ, χ (-1) * f χ := by
+  rw [mul_sum, sum_filter, ← sum_add_distrib]
+  refine sum_congr rfl fun χ _ ↦ ?_
+  split_ifs with h
+  · rw [h]
+    ring
+  · rw [χ.even_or_odd.resolve_left h]
+    ring
+
+/-- Above level two, `2` is nonzero in a domain with enough roots of unity for the Dirichlet
+characters of level `n`: the exponent of `(ℤ/nℤ)ˣ` is even, so the domain contains the square
+root of unity `-1 ≠ 1`. -/
+theorem neZero_two_of_two_lt (R : Type*) [CommRing R] [IsDomain R] {n : ℕ}
+    [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod n)ˣ)] (hn : 2 < n) : NeZero (2 : R) := by
+  have : HasEnoughRootsOfUnity R 2 :=
+    .of_dvd R (ZMod.two_dvd_exponent_units (n := n) (by omega) (by omega))
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot R 2
+  exact_mod_cast hζ.neZero'
+
+variable [IsDomain R] [NeZero n] [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod n)ˣ)]
+
+open scoped Classical in
+/-- **Orthogonality for even characters.** Twice the sum of `χ a` over the even characters
+of level `n` is `φ(n)` for each of `a = 1` and `a = -1`, and vanishes when `a ≠ ±1`. -/
+theorem two_mul_sum_even_apply (a : ZMod n) :
+    2 * ∑ χ : DirichletCharacter R n with χ.Even, χ a =
+      (if a = 1 then (n.totient : R) else 0) + if a = -1 then (n.totient : R) else 0 := by
+  simp_rw [two_mul_sum_even, ← map_mul, neg_one_mul, sum_characters_eq, neg_eq_iff_eq_neg]
+
+open scoped Classical in
+/-- **Orthogonality for even characters**, above level two: the sum of `χ a` over the even
+characters of level `n` is `φ(n) / 2` for each of `a = 1` and `a = -1`, and vanishes when
+`a ≠ ±1`. -/
+theorem sum_even_apply (hn : 2 < n) (a : ZMod n) :
+    ∑ χ : DirichletCharacter R n with χ.Even, χ a =
+      ((n.totient / 2 : ℕ) : R) * ((if a = 1 then 1 else 0) + if a = -1 then 1 else 0) := by
+  have := neZero_two_of_two_lt R hn
+  obtain ⟨m, hm⟩ := Nat.totient_even hn
+  refine mul_left_cancel₀ (two_ne_zero (α := R)) ?_
+  rw [two_mul_sum_even_apply, hm, ← two_mul, Nat.mul_div_cancel_left m two_pos]
+  push_cast
+  split_ifs <;> ring
+
+open scoped Classical in
+/-- **Orthogonality for even nontrivial characters** at an odd prime level `q`: the sum of
+`χ a` over the even characters other than the trivial one is `0` at `a = 0`,
+`(q - 1) / 2 - 1` at `a = ±1`, and `-1` at every other residue. -/
+theorem sum_even_ne_one_apply {q : ℕ} [Fact q.Prime]
+    [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod q)ˣ)] (hq : 2 < q) (a : ZMod q) :
+    ∑ χ : DirichletCharacter R q with χ.Even ∧ χ ≠ 1, χ a =
+      if a = 0 then 0 else if a = 1 ∨ a = -1 then (((q - 1) / 2 : ℕ) : R) - 1 else -1 := by
+  have : Fact (2 < q) := ⟨hq⟩
+  have h1 : (1 : DirichletCharacter R q) ∈ ({χ | χ.Even} : Finset _) := by simp
+  rw [← filter_filter, filter_ne', sum_erase_eq_sub h1, sum_even_apply hq,
+    Nat.totient_prime Fact.out]
+  have hne : (1 : ZMod q) ≠ -1 := (ZMod.neg_one_ne_one).symm
+  by_cases ha : a = 0
+  · subst ha
+    simp [zero_ne_one, (neg_ne_zero.mpr one_ne_zero).symm, MulChar.map_zero]
+  · have hu : IsUnit a := Ne.isUnit ha
+    rw [MulChar.one_apply hu]
+    by_cases h1 : a = 1
+    · subst h1
+      simp [hne]
+    · by_cases h2 : a = -1
+      · subst h2
+        simp [hne.symm]
+      · simp [ha, h1, h2]
 
 end DirichletCharacter
