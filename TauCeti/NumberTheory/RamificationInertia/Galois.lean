@@ -61,6 +61,8 @@ transitivity.
   prime has order `e * f`, without a residue-separability hypothesis.
 * `Ideal.card_stabilizer_eq_ramificationIdx_mul_inertiaDeg`: the same formula in terms of the
   ramification index and inertia degree of the upstairs ideal.
+* `Ideal.natCard_smul_eq_eq_ramificationIdx_mul_inertiaDeg`: for primes `P` and `Q` over the same
+  base prime, the number of `g ∈ G` with `g • P = Q` is `P.ramificationIdx R * P.inertiaDeg R`.
 * `Ideal.card_inertia_eq_ramificationIdx`: the un-`In` form of the inertia count.
 * `Ideal.isUnramifiedAt_pointwise_smul_iff`: unramifiedness is invariant under translation by
   an algebra automorphism.
@@ -199,6 +201,18 @@ theorem card_stabilizer_eq_ramificationIdx_mul_inertiaDeg (P : Ideal S) [P.IsPri
   rw [← ramificationIdxIn_eq_ramificationIdx (P.under R) P G,
     ← inertiaDegIn_eq_inertiaDeg (P.under R) P G]
   exact card_stabilizer_eq_ramificationIdxIn_mul_inertiaDegIn (G := G) (P.under R) P
+
+/-- For primes `P` and `Q` of `S` lying over the same prime of `R`, the number of elements `g ∈ G`
+sending `P` to `Q` is `P.ramificationIdx R * P.inertiaDeg R`. -/
+theorem natCard_smul_eq_eq_ramificationIdx_mul_inertiaDeg (P Q : Ideal S) [P.IsPrime]
+    [Q.IsPrime] [Q.LiesOver (P.under R)] :
+    Nat.card {g : G // g • P = Q} = P.ramificationIdx R * P.inertiaDeg R := by
+  have := IsGaloisGroup.finite G R S
+  obtain ⟨σ, rfl⟩ := exists_smul_eq_of_isGaloisGroup (P.under R) P Q G
+  have heq : Nat.card {g : G // g • P = σ • P} = Nat.card (stabilizer G P) :=
+    Nat.card_congr ((Equiv.mulLeft σ⁻¹).subtypeEquiv fun g ↦ by
+      rw [mem_stabilizer_iff, Equiv.coe_mulLeft, mul_smul, inv_smul_eq_iff])
+  rw [heq, card_stabilizer_eq_ramificationIdx_mul_inertiaDeg (R := R) (G := G) P]
 
 end DecompositionGroup
 

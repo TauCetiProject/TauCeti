@@ -239,9 +239,8 @@ theorem exists_topRegularOverMostPolyads_scheduledRank [Finite κ] [Fintype κ�
     H.exists_strong_topRegularOverMostPolyads S (pow_pos hγ 2) (η := fun _ ↦ δ ^ 2 / 2)
       (μ := fun _ ↦ ε * δ ^ 2 / 4) (fun _ ↦ by positivity) (fun _ ↦ by positivity) r
   refine ⟨C, π, hCcard, hCV, hπ, hrev, hCpol, ?_⟩
-  have hdec {C : TriadicComplex3 V} (h : C.polyads = univ) : C.IsPolyadDecomposition :=
-    C.isPolyadDecomposition_iff_ofTriple_mem.2 fun _ ↦ h ▸ mem_univ _
-  have hreg := hDreg.of_polyadEnergy_sub_le (hdec hCpol) (hdec hDpol) (hDV.trans hCV.symm).le f
+  have hreg := hDreg.of_polyadEnergy_sub_le (C.isPolyadDecomposition_of_polyads_eq_univ hCpol)
+    (D.isPolyadDecomposition_of_polyads_eq_univ hDpol) (hDV.trans hCV.symm).le f
     (fun p ↦ (hf p).symm) hgap (by positivity) hδ (by linarith [pow_pos hδ 2])
   refine hreg.mono le_rfl ?_ le_rfl
   -- The exceptional proportion is at most `(ε δ² / 4 + q γ) / (δ² / 2) ≤ ε`.

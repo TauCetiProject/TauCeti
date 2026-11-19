@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.QuadraticAlgebra.Basic
+public import TauCeti.Algebra.QuadraticAlgebra.Basic
 public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 import TauCeti.FieldTheory.Finite.Card
@@ -83,19 +83,6 @@ public section
 namespace QuadraticAlgebra
 
 open TauCeti.FiniteField
-
-/-- For odd `n`, the `n`-th power of the generator of `R[√r]` is `r ^ (n / 2) • ω`. -/
-theorem omega_pow_of_odd {R : Type*} [CommSemiring R] {r : R} {n : ℕ} (hn : Odd n) :
-    (ω : QuadraticAlgebra R r 0) ^ n = r ^ (n / 2) • ω := by
-  conv_lhs => rw [← Nat.two_mul_div_two_add_one_of_odd hn]
-  rw [pow_succ, pow_mul, sq, omega_mul_omega_eq_algebraMap, map_zero, zero_mul, add_zero,
-    ← map_pow, ← Algebra.smul_def]
-
-/-- For even `n`, the `n`-th power of the generator of `R[√r]` is the scalar `r ^ (n / 2)`. -/
-theorem omega_pow_of_even {R : Type*} [CommSemiring R] {r : R} {n : ℕ} (hn : Even n) :
-    (ω : QuadraticAlgebra R r 0) ^ n = algebraMap R _ (r ^ (n / 2)) := by
-  conv_lhs => rw [← Nat.two_mul_div_two_of_even hn]
-  rw [pow_mul, sq, omega_mul_omega_eq_algebraMap, map_zero, zero_mul, add_zero, ← map_pow]
 
 section Finite
 
