@@ -91,12 +91,11 @@ theorem mem_stabilizer_coadjointRepresentation_iff {g : G} :
 nondegenerate bilinear form on the Lie algebra invariant under the adjoint action, the coadjoint
 stabilizer of `b(X, ·)` is the adjoint stabilizer of `X`. -/
 theorem stabilizer_coadjointRepresentation_eq_stabilizer_adjointRepresentation
-    {b : GroupLieAlgebra I G →L[𝕜] GroupLieAlgebra I G →L[𝕜] 𝕜}
-    (hb : ∀ a, (∀ c, b a c = 0) → a = 0)
+    {b : LinearMap.BilinForm 𝕜 (GroupLieAlgebra I G)} (hb : b.SeparatingLeft)
     (hinv : ∀ (g : G) (a c : GroupLieAlgebra I G),
       b (adjointContinuousLinearMap (I := I) g a) (adjointContinuousLinearMap (I := I) g c) = b a c)
     (X : GroupLieAlgebra I G) :
-    (coadjointRepresentation 𝕜 I G).stabilizer (b X : Module.Dual 𝕜 (GroupLieAlgebra I G)) =
+    (coadjointRepresentation 𝕜 I G).stabilizer (b X) =
       (adjointRepresentation 𝕜 I G).stabilizer X := by
   ext g
   rw [mem_stabilizer_coadjointRepresentation_iff, ← Subgroup.inv_mem_iff,
@@ -110,9 +109,9 @@ theorem stabilizer_coadjointRepresentation_eq_stabilizer_adjointRepresentation
     congr 1
     rw [← ContinuousLinearMap.comp_apply, ← adjointContinuousLinearMap_mul, inv_mul_cancel,
       adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply]
-  simp only [ContinuousLinearMap.coe_coe, hAd]
+  simp only [hAd]
   refine ⟨fun h ↦ sub_eq_zero.1 (hb _ fun c ↦ ?_), fun h c ↦ by rw [h]⟩
-  rw [map_sub, sub_apply, h c, sub_self]
+  rw [map_sub, LinearMap.sub_apply, h c, sub_self]
 
 end General
 

@@ -128,14 +128,11 @@ containing `S`, which is a connected subset of the centralizer joining `1` to `h
 theorem IsTorus.isConnected_centralizer {S : Subgroup G} (hS : IsTorus S) :
     IsConnected (Subgroup.centralizer (S : Set G) : Set G) := by
   set C := Subgroup.centralizer (S : Set G)
-  suffices hC : (C : Set G) ⊆ connectedComponentIn (C : Set G) 1 by
-    have h₁ := isConnected_connectedComponentIn_iff.mpr C.one_mem
-    rwa [(connectedComponentIn_subset _ _).antisymm hC] at h₁
-  intro h hh
+  refine ⟨⟨1, C.one_mem⟩, isPreconnected_of_forall 1 fun h hh ↦ ?_⟩
   obtain ⟨R, hR, hSR, hhR⟩ := hS.exists_isTorus_le_mem_of_mem_centralizer I hh
   -- A torus containing `S` is commutative, so it lies in the centralizer of `S`.
   have hRC : (R : Set G) ⊆ C := fun r hr s hs ↦
     Subgroup.le_centralizer_iff_isMulCommutative.mpr hR.isMulCommutative hr s (hSR hs)
-  exact hR.isConnected.isPreconnected.subset_connectedComponentIn R.one_mem hRC hhR
+  exact ⟨R, hRC, R.one_mem, hhR, hR.isConnected.isPreconnected⟩
 
 end TauCeti.Lie
