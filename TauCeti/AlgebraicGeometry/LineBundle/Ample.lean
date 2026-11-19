@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.QuasiAffine
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
 public import TauCeti.AlgebraicGeometry.LineBundle.NonvanishingLocus
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
+import Mathlib.Topology.Separation.Basic
 
 /-!
 # Ample line bundles
@@ -41,6 +42,12 @@ A scheme carrying an ample line bundle is quasi-separated
 and `X_s ∩ X_t` is the nonvanishing locus of the restriction of `t` to the affine scheme `X_s`,
 hence affine.
 
+On a quasi-compact scheme, the affine nonvanishing neighbourhoods need only be
+constructed at closed points (`LineBundleClass.isAmple_iff_forall_isClosed_singleton`).
+No common tensor
+power is required. Every ample class also admits a finite affine cover by such nonvanishing
+loci (`LineBundleClass.IsAmple.exists_finset_isAffineOpen_nonvanishingLocus`).
+
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.LineBundleClass.IsAmple a`: the line-bundle class `a` is ample.
@@ -57,6 +64,10 @@ hence affine.
   line-bundle class is ample.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.IsAmple.quasiSeparatedSpace`: a scheme with an ample
   line-bundle class is quasi-separated.
+* `LineBundleClass.isAmple_iff_forall_isClosed_singleton`: on a quasi-compact
+  scheme, the defining affine nonvanishing neighbourhoods need only cover the closed points.
+* `TauCeti.AlgebraicGeometry.LineBundleClass.IsAmple.exists_finset_isAffineOpen_nonvanishingLocus`:
+  finitely many such nonvanishing loci cover a scheme carrying an ample class.
 
 ## References
 
@@ -178,5 +189,51 @@ theorem IsAmple.quasiSeparatedSpace {a : LineBundleClass X} (h : a.IsAmple) :
   · let k : i.1.obj.nonvanishingLocus i.2.1 ⟶ ⊤ := homOfLE le_top
     rw [← Opens.coe_inf, ← Scheme.Modules.nonvanishingLocus_map k]
     exact (i.2.2.nonvanishingLocus _).isCompact
+
+/-- On a quasi-compact scheme, a line-bundle class is ample exactly when every closed
+point has an affine nonvanishing neighbourhood from a section of a positive tensor power. -/
+theorem isAmple_iff_forall_isClosed_singleton [CompactSpace X]
+    (a : LineBundleClass X) :
+    a.IsAmple ↔ ∀ x : X, IsClosed {x} →
+      ∃ n : ℕ, 0 < n ∧ ∃ (L : InvertibleSheaf X) (_ : mk L = a ^ n) (s : Γ(L.obj, ⊤)),
+        x ∈ L.obj.nonvanishingLocus s ∧ IsAffineOpen (L.obj.nonvanishingLocus s) := by
+  classical
+  refine ⟨fun h x _ ↦ h.exists_isAffineOpen_nonvanishingLocus x, fun h ↦ ?_⟩
+  choose n hn L hL s hx hs using fun x : {x : X // IsClosed {x}} ↦ h x x.property
+  let U : X.Opens := ⨆ x : {x : X // IsClosed {x}}, (L x).obj.nonvanishingLocus (s x)
+  have hU : U = ⊤ := by
+    apply top_unique
+    intro x _
+    by_contra hxU
+    obtain ⟨y, hy, hyc⟩ := U.isOpen.isClosed_compl.exists_closed_singleton ⟨x, hxU⟩
+    exact hy (Opens.mem_iSup.mpr ⟨⟨y, hyc⟩, hx ⟨y, hyc⟩⟩)
+  refine ⟨inferInstance, fun x ↦ ?_⟩
+  have hxU : x ∈ U := by rw [hU]; exact Opens.mem_top x
+  obtain ⟨y, hy⟩ := Opens.mem_iSup.mp hxU
+  exact ⟨n y, hn y, L y, hL y, s y, hy, hs y⟩
+
+/-- An ample class admits a finite affine open cover by nonvanishing loci of sections of
+positive tensor powers. The exponent and representative may vary between members of the cover. -/
+theorem IsAmple.exists_finset_isAffineOpen_nonvanishingLocus {a : LineBundleClass X}
+    (ha : a.IsAmple) :
+    ∃ S : Finset X.Opens, sSup (S : Set X.Opens) = ⊤ ∧ ∀ U ∈ S,
+      IsAffineOpen U ∧ ∃ n : ℕ, 0 < n ∧
+        ∃ (L : InvertibleSheaf X) (_ : LineBundleClass.mk L = a ^ n) (s : Γ(L.obj, ⊤)),
+          L.obj.nonvanishingLocus s = U := by
+  classical
+  have : CompactSpace X := ha.compactSpace
+  choose n hn L hL s hx hs using ha.exists_isAffineOpen_nonvanishingLocus
+  obtain ⟨T, hT⟩ := isCompact_univ.elim_finite_subcover
+    (fun x ↦ ((L x).obj.nonvanishingLocus (s x) : Set X))
+    (fun x ↦ ((L x).obj.nonvanishingLocus (s x)).isOpen)
+    (fun x _ ↦ Set.mem_iUnion.mpr ⟨x, hx x⟩)
+  refine ⟨T.image (fun x ↦ (L x).obj.nonvanishingLocus (s x)), ?_, ?_⟩
+  · apply top_unique
+    intro x _
+    obtain ⟨y, hy, hxy⟩ := Set.mem_iUnion₂.mp (hT (Set.mem_univ x))
+    exact Opens.mem_sSup.mpr ⟨_, Finset.mem_image.mpr ⟨y, hy, rfl⟩, hxy⟩
+  · intro U hU
+    obtain ⟨x, -, rfl⟩ := Finset.mem_image.mp hU
+    exact ⟨hs x, n x, hn x, L x, hL x, s x, rfl⟩
 
 end TauCeti.AlgebraicGeometry.LineBundleClass

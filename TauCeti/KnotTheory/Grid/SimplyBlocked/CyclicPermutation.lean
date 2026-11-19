@@ -63,12 +63,12 @@ theorem simplyBlockedDifferential_relabelRows_finRotate_apply (c : GridChainHat 
     (G.relabelRows (finRotate n)).simplyBlockedDifferential R i
         (GridChain.relabelRowsEquiv (finRotate n) c) =
       GridChain.relabelRowsEquiv (finRotate n) (G.simplyBlockedDifferential R i c) := by
-  obtain ⟨c, rfl⟩ := simplyBlockedSpecialization_surjective R i c
-  rw [← simplyBlockedSpecialization_relabelRowsEquiv,
-    ← simplyBlockedSpecialization_unblockedDifferential,
-    unblockedDifferential_relabelRows_finRotate_apply,
-    simplyBlockedSpecialization_relabelRowsEquiv,
-    simplyBlockedSpecialization_unblockedDifferential]
+  symm
+  apply map_simplyBlockedDifferential_of_simplyBlockedSpecialization
+  · intro c
+    exact (simplyBlockedSpecialization_relabelRowsEquiv R (finRotate n) i c).symm
+  · intro c
+    exact (G.unblockedDifferential_relabelRows_finRotate_apply R c).symm
 
 /-- The column relabeling by a cyclic permutation, renaming the surviving variables, intertwines
 the simply blocked differentials, with the blocked column moved to `finRotate n i`. -/
@@ -78,12 +78,12 @@ theorem simplyBlockedDifferential_relabelColumns_finRotate_apply (c : GridChainH
         (GridChain.simplyBlockedRelabelColumnsEquiv R (finRotate n) i c) =
       GridChain.simplyBlockedRelabelColumnsEquiv R (finRotate n) i
         (G.simplyBlockedDifferential R i c) := by
-  obtain ⟨c, rfl⟩ := simplyBlockedSpecialization_surjective R i c
-  rw [← simplyBlockedSpecialization_relabelColumnsRenameEquiv,
-    ← simplyBlockedSpecialization_unblockedDifferential,
-    unblockedDifferential_relabelColumns_finRotate_apply,
-    simplyBlockedSpecialization_relabelColumnsRenameEquiv,
-    simplyBlockedSpecialization_unblockedDifferential]
+  symm
+  apply map_simplyBlockedDifferential_of_simplyBlockedSpecialization
+  · intro c
+    exact (simplyBlockedSpecialization_relabelColumnsRenameEquiv R (finRotate n) i c).symm
+  · intro c
+    exact (G.unblockedDifferential_relabelColumns_finRotate_apply R c).symm
 
 end GridDiagram
 

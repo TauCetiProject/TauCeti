@@ -1107,7 +1107,7 @@ theorem crossinglessComponents_unlink (orientations : Multiset Bool) :
 /-- Every zero-crossing oriented PD-code is its canonical crossing-free unlink code. -/
 theorem eq_unlink (D : OrientedPDCode 0) :
     D = unlink D.crossinglessComponents :=
-  OrientedPDCode.ext (PDCode.ext (Equiv.ext (·.elim0)) (Subtype.ext (Equiv.ext (·.elim0)))
+  OrientedPDCode.ext (PDCode.ext (Equiv.ext (·.elim0)) (by ext i; exact Fin.elim0 i)
     D.card_crossinglessComponents.symm (funext (·.elim0))) (funext (·.elim0)) rfl
 
 /-- Multisets of orientations are equivalent to zero-crossing oriented PD-codes. -/

@@ -61,8 +61,9 @@ one, supported near `+∞`, near `-∞` and on a bounded interval, with bounded 
   half-line.
 * `Real.smoothTransition.exists_forall_norm_deriv_le` and
   `Real.smoothTransition.exists_forall_norm_deriv_deriv_le`: the first two derivatives are bounded.
+* `Real.smoothTransition.differentiable_deriv`: the derivative is differentiable.
 * `Real.smoothTransition.abs_deriv_mul_mul_le`: `|ψ'(a t) (a y)| ≤ M C` when `M` bounds `ψ'`,
-  `a ≥ 0` and `|y| ≤ C |t|`.
+  `0 ≤ C` and `|y| ≤ C |t|`.
 * `Real.smoothTransition.integral_deriv`: the derivative has integral one.
 * `Real.smoothTransition.setIntegral_Icc_deriv`, `Real.smoothTransition.setIntegral_deriv_le_one`:
   its integral over an interval containing `[0, 1]` is one, and over any set at most one.
@@ -78,9 +79,14 @@ one, supported near `+∞`, near `-∞` and on a bounded interval, with bounded 
   `|c|⁻¹ a₀` as `T → ∞` when `a (c⁻¹ σ) → a₀` as `σ → ∞`.
 * `Real.smoothTransition.integrable_mul_deriv_mul_sub_smul`: its product with a function
   integrable on `closedBall a c⁻¹` is integrable.
+* `Real.smoothTransition.tendsto_indicator`: the smoothed superlevel functions
+  `ψ ((n + 1) (f - t))` converge pointwise to the indicator of `{f > t}`.
+* `Real.smoothTransition.enorm_sub_indicator_le_one`: `ψ y` differs from the indicator of any set
+  by at most `1`.
 * `Real.smoothTransition.tendsto_integral_mul_deriv_mul_sub_smul`: at a Lebesgue point `a` of `u`
   with value `v`, `∫ c ψ'(c (y - a)) u y dy → v` as `c → ∞`.
 * `HasFDerivAt.smoothTransition` and `HasDerivAt.smoothTransition`: the chain rule for `ψ ∘ f`.
+* `HasDerivAt.deriv_smoothTransition`: the chain rule for `ψ' ∘ f`.
 * `DifferentiableAt.enorm_fderiv_smoothTransition_mul_sub`: for `c ≥ 0`,
   `‖d(ψ(c (t - u)))‖ = c ψ'(c (t - u)) ‖du‖`.
 * `LocallyLipschitzOn.smoothTransition_mul_sub`: `ψ (c (u - t))` is locally Lipschitz on `s`
@@ -95,6 +101,8 @@ one, supported near `+∞`, near `-∞` and on a bounded interval, with bounded 
   `(a, b)` and equal to `1` on `[a + δ, b - δ]`.
 * `TauCeti.exists_contDiff_antitone_cutoff_abs_deriv_le`: such a step whose slope is at most `τ`,
   for every `v < τ (b - a)`.
+* `TauCeti.exists_contDiff_odd_truncation`: a smooth odd function equal to the identity on
+  `[-r, r]`, to `±1` on `±[R, ∞)`, with the sign of its argument.
 * `TauCeti.exists_cutoffs_add_add_eq_one`: three `C²` cutoffs summing to one, vanishing for
   `s ≤ R`, for `s ≥ -R` and outside `(-(R + 1), R + 1)`, with derivatives bounded by a common
   constant and supported in `[-(R + 1), R + 1]`.
@@ -174,22 +182,26 @@ theorem exists_forall_norm_deriv_deriv_le :
   (Real.smoothTransition.contDiff.iterate_deriv 2).continuous.bounded_above_of_compact_support
     hasCompactSupport_deriv.deriv
 
-/-- A bound for the error term of a smooth transition rescaled by `a ≥ 0`: if `M` bounds the
-derivative of the smooth transition function `ψ` and `|y| ≤ C |t|`, then
+/-- The derivative of the smooth transition function is differentiable. -/
+theorem differentiable_deriv : Differentiable ℝ (deriv smoothTransition) :=
+  (contDiff_infty_iff_deriv.1 smoothTransition.contDiff).2.differentiable (by simp)
+
+/-- A bound for the error term of a smooth transition rescaled by `a`: if `M` bounds the
+derivative of the smooth transition function `ψ`, `0 ≤ C` and `|y| ≤ C |t|`, then
 `|ψ'(a t) (a y)| ≤ M C`. The factor `a y` only matters where `0 ≤ a t ≤ 1`, the support of
 `ψ'`, and there `|a y| ≤ C |a t| ≤ C`. -/
 theorem abs_deriv_mul_mul_le {M C a t y : ℝ} (hM : ∀ t, ‖deriv smoothTransition t‖ ≤ M)
-    (hC : 0 ≤ C) (ha : 0 ≤ a) (hy : |y| ≤ C * |t|) :
+    (hC : 0 ≤ C) (hy : |y| ≤ C * |t|) :
     |deriv smoothTransition (a * t) * (a * y)| ≤ M * C := by
   have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0)
   rcases lt_or_ge (a * t) 0 with ht | ht
   · simpa [deriv_of_neg ht] using mul_nonneg hM0 hC
   rcases lt_or_ge 1 (a * t) with ht' | ht'
   · simpa [deriv_of_one_lt ht'] using mul_nonneg hM0 hC
-  rw [abs_mul, abs_mul, abs_of_nonneg ha]
+  rw [abs_mul, abs_mul]
   refine mul_le_mul (hM _) ?_ (by positivity) hM0
-  calc a * |y| ≤ a * (C * |t|) := by gcongr
-    _ = C * |a * t| := by rw [abs_mul, abs_of_nonneg ha]; ring
+  calc |a| * |y| ≤ |a| * (C * |t|) := by gcongr
+    _ = C * |a * t| := by rw [abs_mul]; ring
     _ ≤ C * 1 := by rw [abs_of_nonneg ht]; gcongr
     _ = C := mul_one _
 
@@ -300,13 +312,19 @@ theorem lintegral_lintegral_ofReal_mul_deriv_mul_sub_mul {X : Type*} [Measurable
   rw [lintegral_mul_const _ (by fun_prop), hk, one_mul]
 
 /-- Averaging a function `a` against the derivative `ψ'(c y - T)` of the smooth transition
-function `ψ`, for `c ≠ 0`, recovers `|c|⁻¹` times its limit `a₀` along the direction of `c` as
-`T → ∞`: the weight has integral `|c|⁻¹` and is supported where `c y ≥ T`. -/
-theorem tendsto_integral_deriv_mul_sub_mul {c : ℝ} (hc : c ≠ 0) {a : ℝ → ℝ} {a₀ : ℝ}
+function `ψ` recovers `|c|⁻¹` times its limit `a₀` along the direction of `c` as `T → ∞`: for
+`c ≠ 0` the weight has integral `|c|⁻¹` and is supported where `c y ≥ T`, and for `c = 0` it
+vanishes once `T > 0`. -/
+theorem tendsto_integral_deriv_mul_sub_mul {c : ℝ} {a : ℝ → ℝ} {a₀ : ℝ}
     (ha : Tendsto (fun σ => a (c⁻¹ * σ)) atTop (𝓝 a₀))
     (hint : ∀ᶠ T in atTop, Integrable fun y => deriv smoothTransition (c * y - T) * a y) :
     Tendsto (fun T => ∫ y, deriv smoothTransition (c * y - T) * a y) atTop
       (𝓝 (|c|⁻¹ * a₀)) := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp only [abs_zero, inv_zero, zero_mul, zero_mul, zero_sub]
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with T hT
+    simp [deriv_of_neg (neg_neg_of_pos hT)]
   have hc' : 0 < |c| := abs_pos.2 hc
   have hβ (T : ℝ) : Integrable fun y => deriv smoothTransition (c * y - T) :=
     (integrable_deriv.comp_sub_right T).comp_mul_left' hc
@@ -416,6 +434,23 @@ theorem tendsto_add_mul_add_deriv_mul {t d e k : ℝ} :
     filter_upwards [hev] with n hn
     simp [one_of_one_le hn.le, deriv_of_one_lt hn, not_le.2 ht]
 
+/-- **Smoothing a superlevel indicator.** The functions `ψ ((n + 1) (f - t))` converge pointwise
+to the indicator of the superlevel set `{f > t}`. -/
+theorem tendsto_indicator {X : Type*} (f : X → ℝ) (t : ℝ) (x : X) :
+    Tendsto (fun n : ℕ => smoothTransition ((n + 1) * (f x - t))) atTop
+      (𝓝 ({x | t < f x}.indicator 1 x)) := by
+  convert tendsto_add_mul_add_deriv_mul (t := f x - t) (d := 0) (e := 1) (k := 0) using 2
+  · simp
+  · by_cases hxt : t < f x <;> simp [hxt]
+
+/-- `ψ y` differs from the value at `x` of the indicator of any set `s` by at most `1`, since both
+lie in `[0, 1]`. -/
+theorem enorm_sub_indicator_le_one {X : Type*} (y : ℝ) (s : Set X) (x : X) :
+    ‖smoothTransition y - s.indicator 1 x‖ₑ ≤ 1 := by
+  rw [Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_le_one]
+  refine abs_sub_le_of_nonneg_of_le (nonneg _) (le_one _) ?_ ?_ <;>
+    by_cases hxs : x ∈ s <;> simp [hxs]
+
 /-- `x + (1 - smoothTransition x)` is at least `x`. -/
 theorem le_add_one_sub (x : ℝ) : x ≤ x + (1 - smoothTransition x) := by
   linarith [le_one x]
@@ -444,6 +479,13 @@ theorem HasDerivAt.smoothTransition {f : ℝ → ℝ} {f' x : ℝ} (hf : HasDeri
       (_root_.deriv Real.smoothTransition (f x) * f') x :=
   (((Real.smoothTransition.contDiff (n := 1)).differentiable (by simp)
     (f x)).hasDerivAt).comp x hf
+
+/-- The chain rule for the derivative `ψ'` of the smooth transition function: if `f` has
+derivative `f'` at `x`, then `ψ' ∘ f` has derivative `ψ''(f x) * f'` there. -/
+theorem HasDerivAt.deriv_smoothTransition {f : ℝ → ℝ} {f' x : ℝ} (hf : HasDerivAt f f' x) :
+    HasDerivAt (fun y => _root_.deriv Real.smoothTransition (f y))
+      (_root_.deriv (_root_.deriv Real.smoothTransition) (f x) * f') x :=
+  (Real.smoothTransition.differentiable_deriv (f x)).hasDerivAt.comp x hf
 
 /-- If `u` is differentiable at `x` and `c ≥ 0`, the derivative of `y ↦ ψ(c (t - u y))` at `x`,
 for the smooth transition function `ψ`, has norm `c ψ'(c (t - u x)) ‖du x‖`. -/
@@ -737,5 +779,42 @@ theorem exists_cutoffs_add_add_eq_one {R : ℝ} (hR : 0 ≤ R) :
     · rw [(h₀ s).deriv, hψ'0 (s - R) (by rcases hs with hs | hs <;> [left; right] <;> linarith),
         hψ'0 (-s - R) (by rcases hs with hs | hs <;> [right; left] <;> linarith)]
       ring
+
+
+/-- **A smooth odd truncation of the identity.** For `r < R` with `0 < R`, there is a smooth odd
+function equal to the identity on `[-r, r]`, to `1` on `[R, ∞)` and to `-1` on `(-∞, -R]`, with
+the sign of its argument. -/
+theorem exists_contDiff_odd_truncation {r R : ℝ} (hrR : r < R) (hR : 0 < R) :
+    ∃ h : ℝ → ℝ, ContDiff ℝ ∞ h ∧ Function.Odd h ∧ (∀ t, |t| ≤ r → h t = t) ∧
+      (∀ t, R ≤ t → h t = 1) ∧ (∀ t, t ≤ -R → h t = -1) ∧ (∀ t, 0 < t → 0 < h t) ∧
+      (∀ t, t < 0 → h t < 0) := by
+  set r' := max r 0
+  have hr'R : r' < R := max_lt hrR hR
+  obtain ⟨ν, hν, -, hν0, hνR, hνr, -⟩ := exists_contDiff_antitone_cutoff hr'R zero_le_one
+  obtain ⟨μ, hμ, -, -, hμr, hμR, hμpos⟩ :=
+    exists_contDiff_antitone_cutoff (neg_lt_neg hr'R) zero_le_one
+  set h : ℝ → ℝ := fun t ↦ ν t * ν (-t) * t + μ (-t) - μ t
+  have hodd : Function.Odd h := fun t ↦ by simp only [h, neg_neg]; ring
+  have hid (t : ℝ) (ht : |t| ≤ r') : h t = t := by
+    obtain ⟨h₁, h₂⟩ := abs_le.1 ht
+    simp only [h, hνr t h₂, hνr (-t) (by linarith), hμr t h₁, hμr (-t) (by linarith)]
+    ring
+  have hone (t : ℝ) (ht : R ≤ t) : h t = 1 := by
+    simp only [h, hνR t ht, hμR (-t) (by linarith), hμr t (by linarith [le_max_right r 0])]
+    ring
+  have hpos (t : ℝ) (ht : 0 < t) : 0 < h t := by
+    rcases le_or_gt t r' with htr | htr
+    · rw [hid t (abs_le.2 ⟨by linarith [le_max_right r 0], htr⟩)]
+      exact ht
+    · have := hμpos one_pos (-t) (by linarith)
+      have : 0 ≤ ν t * ν (-t) * t := mul_nonneg (mul_nonneg (hν0 t) (hν0 (-t))) ht.le
+      simp only [h, hμr t (by linarith [le_max_right r 0])]
+      linarith
+  refine ⟨h, (hν.mul (hν.comp contDiff_neg)).mul contDiff_id |>.add (hμ.comp contDiff_neg)
+    |>.sub hμ, hodd, fun t ht ↦ hid t (ht.trans (le_max_left r 0)), hone, fun t ht ↦ ?_, hpos,
+    fun t ht ↦ ?_⟩
+  · rw [← neg_neg t, hodd, hone (-t) (by linarith)]
+  · rw [← neg_neg t, hodd, neg_lt_zero]
+    exact hpos (-t) (by linarith)
 
 end TauCeti

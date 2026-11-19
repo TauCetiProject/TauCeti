@@ -15,7 +15,6 @@ public import TauCeti.GroupTheory.GroupAlgGeom.Basic
 import Mathlib.Data.ZMod.Basic
 import TauCeti.GroupTheory.FreeGroup.Centralizer
 import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
-import Mathlib.Logic.Equiv.Set
 import Mathlib.Order.Concept
 
 /-!
@@ -175,7 +174,7 @@ def I (Y : Set (X → H)) : Subgroup (GX G X) where
   one_mem' _ _ := map_one _
   inv_mem' ha v hv := by simp [ha hv]
 
-variable {ι} {S T : Set (GX G X)} {Y Z : Set (X → H)} {v : X → H} {w : GX G X}
+variable {ι} {S T : Set (GX G X)} {Y : Set (X → H)} {v : X → H} {w : GX G X}
 
 @[simp]
 theorem mem_V : v ∈ V ι S ↔ ∀ s ∈ S, eval ι v s = 1 := Iff.rfl
@@ -280,6 +279,16 @@ theorem wordMap_mem_V_iff {Y : Type*} (ι : G →* H)
     wordMap ι (fun y => σ (inr (FreeGroup.of y))) v ∈ V ι (σ ⁻¹' S) ↔ v ∈ V ι S := by
   simpa only [Set.mem_preimage, Set.image_preimage_eq S hσ] using
     (Set.ext_iff.mp (preimage_wordMap_V_eq_V_image ι σ (σ ⁻¹' S))) v
+
+/-- For a surjective `σ`, a point `(v', w)` with `v'` the image of `v` under the word map of `σ`
+solves the transformed system `sumExtend Y σ ⁻¹' T` exactly when `(v, w)` solves `T`. -/
+theorem sumElim_wordMap_mem_V_preimage_iff {X' Y : Type*} (ι : G →* H)
+    {σ : GHom (inl : G →* GX G X') (inl : G →* GX G X)} (hσ : Function.Surjective σ)
+    {T : Set (GX G (X ⊕ Y))} {v : X → H} {w : Y → H} :
+    Sum.elim (wordMap ι (fun x' => σ (inr (FreeGroup.of x'))) v) w ∈
+        V ι (sumExtend Y σ ⁻¹' T) ↔ Sum.elim v w ∈ V ι T := by
+  rw [← wordMap_sumExtend]
+  exact wordMap_mem_V_iff ι (sumExtend Y σ) (sumExtend_surjective hσ) T _
 
 /-- The singleton of a tuple of coefficients is the solution set of the equations specifying
 all its coordinates. -/
