@@ -6,7 +6,6 @@ Authors: Arend Mellendijk, The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticFunction.Additive
-public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 
 /-!
 # Completely additive arithmetic functions and powers of additive functions
@@ -21,9 +20,8 @@ values at primes through the factorization formula
 
 `ArithmeticFunction.powOfAdditive k f`, the arithmetic function with value `k ^ f n` at every
 positive `n`, is defined in `TauCeti.NumberTheory.ArithmeticFunction.Additive`, where it is shown
-to be multiplicative when `f` is additive. Here it is multiplicative on all pairs of inputs when
-`f` is completely additive, as for `n ↦ k ^ Ω n`. The function `n ↦ k ^ ω n` is multiplicative,
-and for a commutative base it is Mathlib's `prodPrimeFactors` of the constant function `k`.
+to be multiplicative when `f` is additive, together with the case `n ↦ k ^ ω n`. Here it is
+multiplicative on all pairs of inputs when `f` is completely additive, as for `n ↦ k ^ Ω n`.
 
 ## References
 
@@ -136,21 +134,6 @@ theorem IsCompletelyAdditive.powOfAdditive_mul {f : ArithmeticFunction ℕ}
   rcases eq_or_ne n 0 with rfl | hn
   · simp
   simp [hm, hn, hf.map_mul hm hn, pow_add]
-
-/-- The arithmetic function `n ↦ k ^ ω n` is multiplicative. -/
-theorem isMultiplicative_powOfAdditive_cardDistinctFactors (k : R) :
-    (powOfAdditive k cardDistinctFactors).IsMultiplicative :=
-  IsAdditive.isMultiplicative_powOfAdditive
-    { map_one := cardDistinctFactors_one, map_mul := fun _ _ h => cardDistinctFactors_mul h } k
-
-/-- The arithmetic function `n ↦ k ^ ω n` is Mathlib's product over prime factors of the constant
-function `k`, for a commutative base. -/
-theorem powOfAdditive_cardDistinctFactors_eq_prodPrimeFactors {S : Type*} [CommMonoidWithZero S]
-    (k : S) : powOfAdditive k cardDistinctFactors = prodPrimeFactors fun _ => k := by
-  ext n
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  simp [hn, prodPrimeFactors_apply hn, cardDistinctFactors_eq_card_primeFactors]
 
 end powOfAdditive
 

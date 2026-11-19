@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.Defs
 public import Mathlib.Algebra.Group.TypeTags.Basic
+public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 
 /-!
 # Additive arithmetic functions and normalization
@@ -30,6 +31,8 @@ multiplicative predicate, including the cases of zero inputs. Natural powers are
 through Mathlib's `powersHom`: `ArithmeticFunction.powOfAdditive k f` has value `k ^ f n` at every
 positive `n`, for `k` in a monoid with zero and a natural-valued `f`, and
 `IsAdditive.isMultiplicative_powOfAdditive` shows it is multiplicative when `f` is additive.
+In particular `n ↦ k ^ ω n` is multiplicative, and for a commutative base it is Mathlib's
+`prodPrimeFactors` of the constant function `k`.
 
 Complete additivity is in `TauCeti.NumberTheory.ArithmeticFunction.CompletelyAdditive`.
 -/
@@ -101,6 +104,21 @@ theorem powOfAdditive_apply_one (k : R) {f : ArithmeticFunction ℕ} (hf : f 1 =
 theorem IsAdditive.isMultiplicative_powOfAdditive {f : ArithmeticFunction ℕ} (hf : IsAdditive f)
     (k : R) : (powOfAdditive k f).IsMultiplicative :=
   hf.isMultiplicative_of_eq_monoidHom (powersHom R k) fun n hn => by simp [hn]
+
+/-- The arithmetic function `n ↦ k ^ ω n` is multiplicative. -/
+theorem isMultiplicative_powOfAdditive_cardDistinctFactors (k : R) :
+    (powOfAdditive k cardDistinctFactors).IsMultiplicative :=
+  IsAdditive.isMultiplicative_powOfAdditive
+    { map_one := cardDistinctFactors_one, map_mul := fun _ _ h => cardDistinctFactors_mul h } k
+
+/-- The arithmetic function `n ↦ k ^ ω n` is Mathlib's product over prime factors of the constant
+function `k`, for a commutative base. -/
+theorem powOfAdditive_cardDistinctFactors_eq_prodPrimeFactors {S : Type*} [CommMonoidWithZero S]
+    (k : S) : powOfAdditive k cardDistinctFactors = prodPrimeFactors fun _ => k := by
+  ext n
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  simp [hn, prodPrimeFactors_apply hn, cardDistinctFactors_eq_card_primeFactors]
 
 end powOfAdditive
 
