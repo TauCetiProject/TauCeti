@@ -170,10 +170,6 @@ base. -/
 instance isFinite_relativeSpecToBase :
     IsFinite
       (CommMon.invariantSubalgebraPresheaf (functionAlgebraAction F)).relativeSpecToBase := by
-  observe hasFiniteAffineProperty : HasAffineProperty @IsFinite.{u}
-    (fun X _ f _ ↦ IsAffine X ∧ RingHom.Finite (f.appTop).hom)
-  have : IsZariskiLocalAtTarget @IsFinite.{u} :=
-    @HasAffineProperty.instIsZariskiLocalAtTarget _ _ hasFiniteAffineProperty
   refine (CommMon.SubalgebraPresheaf.relativeSpecToBase_iff _ @IsFinite).mpr fun U ↦ ?_
   rw [IsFinite.SpecMap_iff, CommRingCat.hom_ofHom, RingHom.finite_algebraMap,
     CommMon.invariantSubalgebraPresheaf_sections]
@@ -183,8 +179,6 @@ instance isFinite_relativeSpecToBase :
 base. -/
 instance etale_relativeSpecToBase :
     Etale (CommMon.invariantSubalgebraPresheaf (functionAlgebraAction F)).relativeSpecToBase := by
-  have : IsZariskiLocalAtTarget @Etale.{u} :=
-    HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := @RingHom.Etale)
   refine (CommMon.SubalgebraPresheaf.relativeSpecToBase_iff _ @Etale).mpr fun U ↦ ?_
   rw [HasRingHomProperty.Spec_iff (P := @Etale), CommRingCat.hom_ofHom, RingHom.etale_algebraMap,
     CommMon.invariantSubalgebraPresheaf_sections]

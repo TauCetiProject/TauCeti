@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber
 public import TauCeti.AlgebraicGeometry.Gluing.Pushout
-import Mathlib.Tactic.Observe
 
 /-!
 # Gluing finite étale covers along two opens
@@ -56,6 +55,11 @@ private def overlapIso (e : (pullback i₁).obj Y₁ ≅ (pullback i₂).obj Y�
   (Over.forget _).mapIso ((ObjectProperty.ι _).mapIso e)
 
 omit [IsOpenImmersion i₁] [IsOpenImmersion i₂] in
+private lemma overlapIso_hom (e : (pullback i₁).obj Y₁ ≅ (pullback i₂).obj Y₂) :
+    (overlapIso e).hom = e.hom.hom.left :=
+  rfl
+
+omit [IsOpenImmersion i₁] [IsOpenImmersion i₂] in
 private lemma overlapIso_hom_snd (e : (pullback i₁).obj Y₁ ≅ (pullback i₂).obj Y₂) :
     (overlapIso e).hom ≫ Limits.pullback.snd Y₂.obj.hom i₂ = Limits.pullback.snd Y₁.obj.hom i₁ :=
   Over.w e.hom.hom
@@ -92,14 +96,6 @@ theorem exists_pullback_iso_of_isPullback (h : IsPullback i₁ i₂ j₁ j₂)
   have w : Limits.pullback.fst Y₁.obj.hom i₁ ≫ Y₁.obj.hom ≫ j₁ =
       ((overlapIso e).hom ≫ Limits.pullback.fst Y₂.obj.hom i₂) ≫ Y₂.obj.hom ≫ j₂ := by
     rw [h₁.w_assoc, h.w, ← h₂.w_assoc]
-  -- Instance search does not find that `IsFinite` and `Etale` are local on the target; these
-  -- come from their affine and ring-map descriptions.
-  observe hasFiniteAffineProperty : HasAffineProperty @IsFinite.{u}
-    (fun X _ f _ ↦ IsAffine X ∧ RingHom.Finite (f.appTop).hom)
-  have : IsZariskiLocalAtTarget @IsFinite.{u} :=
-    @HasAffineProperty.instIsZariskiLocalAtTarget _ _ hasFiniteAffineProperty
-  have : IsZariskiLocalAtTarget @Etale.{u} :=
-    HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := @RingHom.Etale)
   have : IsFinite (pushout.desc (Y₁.obj.hom ≫ j₁) (Y₂.obj.hom ≫ j₂) w) :=
     (IsZariskiLocalAtTarget.pushout_desc_comp_iff h h₁ h₂ w hcover).mpr
       ⟨inferInstance, inferInstance⟩
@@ -108,9 +104,7 @@ theorem exists_pullback_iso_of_isPullback (h : IsPullback i₁ i₂ j₁ j₂)
       ⟨inferInstance, inferInstance⟩
   have chart₁ := (Scheme.isPullback_pushout_desc_comp_inl h h₁.toCommSq h₂ w).flip
   have chart₂ := (Scheme.isPullback_pushout_desc_comp_inr h h₁ h₂.toCommSq w).flip
-  let Y : FiniteEtaleScheme S :=
-    ⟨Over.mk (pushout.desc (Y₁.obj.hom ≫ j₁) (Y₂.obj.hom ≫ j₂) w),
-      (finiteEtaleSchemeProperty_iff _).mpr ⟨‹_›, ‹_›⟩⟩
+  let Y : FiniteEtaleScheme S := ofHom (pushout.desc (Y₁.obj.hom ≫ j₁) (Y₂.obj.hom ≫ j₂) w)
   let e₁ : (pullback j₁).obj Y ≅ Y₁ :=
     ObjectProperty.isoMk _ (Over.isoMk chart₁.isoPullback.symm chart₁.isoPullback_inv_snd)
   let e₂ : (pullback j₂).obj Y ≅ Y₂ :=
@@ -121,7 +115,7 @@ theorem exists_pullback_iso_of_isPullback (h : IsPullback i₁ i₂ j₁ j₂)
   have c₂ : e₂.inv.hom.left ≫ Limits.pullback.fst Y.obj.hom j₂ = pushout.inr _ _ :=
     chart₂.isoPullback_hom_fst
   refine ⟨Y, e₁, e₂, ?_⟩
-  rw [c₁, c₂]
-  exact pushout.condition
+  rw [c₁, c₂, ← overlapIso_hom]
+  exact pushout.condition.trans (Category.assoc _ _ _)
 
 end TauCeti.FiniteEtaleScheme

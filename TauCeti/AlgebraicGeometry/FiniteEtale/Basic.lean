@@ -11,6 +11,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.RingTheory.Etale.Finite
 public import Mathlib.CategoryTheory.Limits.FintypeCat
 public import TauCeti.CategoryTheory.ObjectProperty
+import Mathlib.Tactic.Observe
 import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 
 /-!
@@ -27,6 +28,11 @@ surjectivity uses affineness of finite morphisms. The inverse is naturally ident
 over a separably closed field uses `CommAlgCat.FiniteEtale.equivOfIsSepClosed`, and
 `equivOfIsSepClosedFunctorCompInclIso` identifies the finite set it attaches to a finite étale
 scheme with the set of sections of that scheme.
+
+Finiteness and étaleness of morphisms are local on the target
+(`TauCeti.isZariskiLocalAtTarget_isFinite`, `TauCeti.isZariskiLocalAtTarget_etale`); these are
+recorded as instances because instance search does not derive them from Mathlib's affine and
+ring-map descriptions.
 
 ## References
 
@@ -63,6 +69,18 @@ instance : (@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).HasOfPostcompPro
     (@IsFinite ⊓ @Etale) :=
   ⟨fun f g ⟨_, _⟩ ⟨_, _⟩ ↦ ⟨IsFinite.of_comp f g, Etale.of_comp f g⟩⟩
 
+/-- Finiteness of a morphism of schemes is local on the target. Instance search does not find
+this from Mathlib's affine description of `IsFinite`, so it is recorded here. -/
+instance isZariskiLocalAtTarget_isFinite : IsZariskiLocalAtTarget @IsFinite.{u} := by
+  observe h : HasAffineProperty @IsFinite.{u}
+    (fun X _ f _ ↦ IsAffine X ∧ RingHom.Finite (f.appTop).hom)
+  exact @HasAffineProperty.instIsZariskiLocalAtTarget _ _ h
+
+/-- Étaleness of a morphism of schemes is local on the target. Instance search does not find
+this from Mathlib's ring-map description of `Etale`, so it is recorded here. -/
+instance isZariskiLocalAtTarget_etale : IsZariskiLocalAtTarget @Etale.{u} :=
+  HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := @RingHom.Etale)
+
 /-- Finite étale schemes over `S`, with all morphisms over `S`. -/
 abbrev FiniteEtaleScheme (S : Scheme.{u}) :=
   (finiteEtaleSchemeProperty S).FullSubcategory
@@ -90,7 +108,7 @@ instance etale_hom_left {S : Scheme.{u}} {X Y : FiniteEtaleScheme S} (f : X ⟶ 
   exact Etale.of_comp f.hom.left Y.obj.hom
 
 /-- Bundle a scheme with a finite étale structure morphism. -/
-def ofHom {S X : Scheme.{u}} (f : X ⟶ S) [IsFinite f] [Etale f] : FiniteEtaleScheme S :=
+@[expose] def ofHom {S X : Scheme.{u}} (f : X ⟶ S) [IsFinite f] [Etale f] : FiniteEtaleScheme S :=
   ⟨Over.mk f, by
     constructor
     · exact ‹IsFinite f›
