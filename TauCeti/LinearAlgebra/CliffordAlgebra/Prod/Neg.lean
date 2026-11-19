@@ -79,8 +79,10 @@ theorem cliffordProdTensor_of_eq_neg (hδ : δ * δ = 1) (h : γ' = -γ)
     (a : CliffordAlgebra (Q₁.prod Q₂)) :
     cliffordProdTensor ρ₁ γ' hγ' hγ'ρ ρ₂ a =
       δ.lTensor E * cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ a * δ.lTensor E := by
-  rw [lTensor_mul_cliffordProdTensor_of_eq_neg ρ₁ γ hγ hγρ γ' hγ' hγ'ρ ρ₂ hδρ h, mul_assoc,
-    ← LinearMap.lTensor_mul, hδ, Module.End.one_eq_id, LinearMap.lTensor_id, ← Module.End.one_eq_id,
+  have hδE : δ.lTensor E * δ.lTensor E = 1 := by
+    rw [← LinearMap.lTensor_mul, hδ]
+    exact LinearMap.lTensor_id E F
+  rw [lTensor_mul_cliffordProdTensor_of_eq_neg ρ₁ γ hγ hγρ γ' hγ' hγ'ρ ρ₂ hδρ h, mul_assoc, hδE,
     mul_one]
 
 end AlgHom

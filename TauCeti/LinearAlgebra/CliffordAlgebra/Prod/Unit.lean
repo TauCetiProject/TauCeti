@@ -70,9 +70,8 @@ theorem cliffordProdTensor_eq_lTensor (a : CliffordAlgebra (Q₁.prod Q₂)) :
   induction a using CliffordAlgebra.induction with
   | algebraMap r => simp [Algebra.algebraMap_eq_smul_one, Module.End.one_eq_id]
   | ι x =>
-    rw [cliffordProdTensor_ι, Subsingleton.elim x.1 0, map_zero, map_zero, LinearMap.rTensor_zero,
-      zero_add, map_apply_ι, QuadraticMap.IsometryEquiv.toIsometry_apply,
-      QuadraticMap.IsometryEquiv.uniqueProd_apply, LinearMap.lTensor_def, Module.End.one_eq_id]
+    simp [cliffordProdTensor_ι, Subsingleton.elim x.1 0, LinearMap.lTensor_def,
+      Module.End.one_eq_id]
   | add a b ha hb => rw [map_add, ha, hb, map_add, map_add, LinearMap.lTensor_add]
   | mul a b ha hb => rw [map_mul, ha, hb, map_mul, map_mul, LinearMap.lTensor_mul]
 
@@ -109,9 +108,7 @@ theorem cliffordProdTensor_eq_rTensor (a : CliffordAlgebra (Q₁.prod Q₂)) :
   induction a using CliffordAlgebra.induction with
   | algebraMap r => simp [Algebra.algebraMap_eq_smul_one, Module.End.one_eq_id]
   | ι x =>
-    rw [cliffordProdTensor_ι, Subsingleton.elim x.2 0, map_zero, map_zero, map_zero_right,
-      add_zero, map_apply_ι, QuadraticMap.IsometryEquiv.toIsometry_apply,
-      QuadraticMap.IsometryEquiv.prodUnique_apply]
+    simp [cliffordProdTensor_ι, Subsingleton.elim x.2 0]
   | add a b ha hb => rw [map_add, ha, hb, map_add, map_add, LinearMap.rTensor_add]
   | mul a b ha hb => rw [map_mul, ha, hb, map_mul, map_mul, LinearMap.rTensor_mul]
 
