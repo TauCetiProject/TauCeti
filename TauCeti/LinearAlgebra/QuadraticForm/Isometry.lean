@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 
@@ -33,6 +34,8 @@ sum of squares along an equivalence of its index type, which complements Mathlib
   `QuadraticMap.IsometryEquiv.trans_apply`: basic evaluation and involution lemmas for isometric
   equivalences.
 * `QuadraticMap.IsometryEquiv.nondegenerate_iff`: nondegeneracy is invariant under isometry.
+* `QuadraticMap.IsometryEquiv.toMatrix_polarBilin_basis_map`: an isometric equivalence carries the
+  polar Gram matrix of a basis to that of the image basis.
 * `QuadraticMap.isometryEquivNeg`: if `u * u = -1`, multiplication by `u` is an isometry from
   `Q` to `-Q`.
 * `QuadraticForm.isometryEquivWeightedSumSquaresReindex`: reindexing the weights of a weighted sum
@@ -178,6 +181,19 @@ theorem _root_.QuadraticMap.IsometryEquiv.trans_apply {R : Type u} {M₁ : Type 
     {Q₃ : QuadraticMap R M₃ N} (f : Q₁.IsometryEquiv Q₂) (g : Q₂.IsometryEquiv Q₃) (x : M₁) :
     f.trans g x = g (f x) :=
   rfl
+
+/-- An isometric equivalence carries the Gram matrix of the polar form in a basis `b` to the Gram
+matrix of the polar form in the image basis `b.map e`. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.toMatrix_polarBilin_basis_map
+    {R : Type u} {M₁ : Type v} {M₂ : Type*} {ι : Type*} [CommRing R] [AddCommGroup M₁]
+    [Module R M₁] [AddCommGroup M₂] [Module R M₂] [Fintype ι] [DecidableEq ι]
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} (e : Q₁.IsometryEquiv Q₂)
+    (b : Module.Basis ι R M₁) :
+    LinearMap.BilinForm.toMatrix (b.map e.toLinearEquiv) Q₂.polarBilin =
+      LinearMap.BilinForm.toMatrix b Q₁.polarBilin := by
+  ext x y
+  simp [LinearMap.BilinForm.toMatrix_apply]
 
 /-- Nondegeneracy of a quadratic map is invariant under an isometric equivalence. -/
 theorem _root_.QuadraticMap.IsometryEquiv.nondegenerate_iff

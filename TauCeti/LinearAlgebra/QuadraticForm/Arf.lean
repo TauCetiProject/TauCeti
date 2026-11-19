@@ -51,7 +51,8 @@ obstruction in dimensions `4k + 2`.
 * `QuadraticMap.sum_neg_one_uzpow_eq_of_basis`: the Gauss sum of `q` computed in a symplectic
   basis.
 * `QuadraticMap.arf_eq_sum`: the Arf invariant equals `∑ᵢ q(aᵢ) q(bᵢ)` in *every* symplectic
-  basis; `QuadraticMap.arf_eq_zero_of_not_nondegenerate` gives the degenerate case.
+  basis; `QuadraticMap.arf_eq_zero_of_not_exists_basis` and
+  `QuadraticMap.arf_eq_zero_of_not_nondegenerate` give the cases without a symplectic basis.
 * `QuadraticMap.sum_neg_one_uzpow_eq`: the Gauss sum formula `∑ᵥ (-1)^{q(v)} = (-1)^{Arf(q)} 2^m`.
 * `QuadraticMap.arf_congr`: isometric forms have the same Arf invariant.
 * `QuadraticMap.arf_prod`: the Arf invariant is additive on orthogonal sums.
@@ -226,8 +227,9 @@ theorem arf_eq_sum {m : ℕ} (b : Basis (Fin m ⊕ Fin m) (ZMod 2) V)
   · exact sum_mul_eq_of_basis h.choose_spec.choose_spec hb
   · exact absurd ⟨m, b, hb⟩ h
 
-/-- The Arf invariant is `0` by convention when the polar form has no symplectic basis. -/
-private theorem arf_eq_zero_of_not_exists_basis
+/-- The Arf invariant is `0` by convention when the polar form has no symplectic basis, for instance
+when `V` is infinite-dimensional. -/
+theorem arf_eq_zero_of_not_exists_basis
     (h : ¬ ∃ (m : ℕ) (b : Basis (Fin m ⊕ Fin m) (ZMod 2) V),
       BilinForm.toMatrix b q.polarBilin = Matrix.J (Fin m) (ZMod 2)) :
     q.arf = 0 := by
@@ -252,28 +254,17 @@ theorem sum_neg_one_uzpow_eq [Fintype V] (hq : q.polarBilin.Nondegenerate) :
     omega
   rw [hm, arf_eq_sum b hb, sum_neg_one_uzpow_eq_of_basis q b hb]
 
-/-- An isometry carries symplectic bases of `q₁` to symplectic bases of `q₂`. -/
-private theorem toMatrix_map_polarBilin_eq_J {q₁ : QuadraticForm (ZMod 2) V₁}
-    {q₂ : QuadraticForm (ZMod 2) V₂} (e : q₁.IsometryEquiv q₂) {m : ℕ}
-    {b : Basis (Fin m ⊕ Fin m) (ZMod 2) V₁}
-    (hb : BilinForm.toMatrix b q₁.polarBilin = Matrix.J (Fin m) (ZMod 2)) :
-    BilinForm.toMatrix (b.map e.toLinearEquiv) q₂.polarBilin = Matrix.J (Fin m) (ZMod 2) := by
-  rw [← hb]
-  ext x y
-  rw [BilinForm.toMatrix_apply, BilinForm.toMatrix_apply, Basis.map_apply, Basis.map_apply,
-    polarBilin_apply_apply, polarBilin_apply_apply]
-  exact e.polar_apply (b x) (b y)
-
 /-- Isometric quadratic forms over `ZMod 2` have the same Arf invariant. -/
 theorem arf_congr {q₁ : QuadraticForm (ZMod 2) V₁} {q₂ : QuadraticForm (ZMod 2) V₂}
     (e : q₁.IsometryEquiv q₂) : q₁.arf = q₂.arf := by
   by_cases h : ∃ (m : ℕ) (b : Basis (Fin m ⊕ Fin m) (ZMod 2) V₁),
       BilinForm.toMatrix b q₁.polarBilin = Matrix.J (Fin m) (ZMod 2)
   · obtain ⟨m, b, hb⟩ := h
-    rw [arf_eq_sum b hb, arf_eq_sum _ (toMatrix_map_polarBilin_eq_J e hb)]
+    rw [arf_eq_sum b hb, arf_eq_sum _ ((e.toMatrix_polarBilin_basis_map b).trans hb)]
     simp [IsometryEquiv.map_app]
   · rw [arf_eq_zero_of_not_exists_basis h, arf_eq_zero_of_not_exists_basis (q := q₂)
-      fun ⟨m, b, hb⟩ => h ⟨m, b.map e.symm.toLinearEquiv, toMatrix_map_polarBilin_eq_J e.symm hb⟩]
+      fun ⟨m, b, hb⟩ => h ⟨m, b.map e.symm.toLinearEquiv,
+        (e.symm.toMatrix_polarBilin_basis_map b).trans hb⟩]
 
 /-- **The Arf invariant is additive on orthogonal sums** of forms with nondegenerate polar forms
 on finite-dimensional spaces. -/
@@ -351,12 +342,14 @@ theorem arf_eq_mul_of_polar_eq_one {q : QuadraticForm (ZMod 2) (ZMod 2 × ZMod 2
   rw [arf_eq_sum b hb, Fin.sum_univ_one, hb₁, hb₂]
 
 /-- The **hyperbolic plane** `q(x, y) = xy` over `ZMod 2` has Arf invariant `0`. -/
+@[simp]
 theorem arf_linMulLin_fst_snd :
     (linMulLin (LinearMap.fst (ZMod 2) (ZMod 2) (ZMod 2))
       (LinearMap.snd (ZMod 2) (ZMod 2) (ZMod 2))).arf = 0 := by
   rw [arf_eq_mul_of_polar_eq_one] <;> simp [polar]
 
 /-- The **anisotropic plane** `q(x, y) = x² + xy + y²` over `ZMod 2` has Arf invariant `1`. -/
+@[simp]
 theorem arf_sq_comp_fst_add_linMulLin_fst_snd_add_sq_comp_snd :
     (sq.comp (LinearMap.fst (ZMod 2) (ZMod 2) (ZMod 2)) +
       linMulLin (LinearMap.fst (ZMod 2) (ZMod 2) (ZMod 2))
