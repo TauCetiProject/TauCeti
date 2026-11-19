@@ -330,7 +330,7 @@ theorem localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChar
         (S := ContinuousMap.subtypeVal φ.source ⁻¹' {a}) (T := {a}) subset_rfl k ≫
           (singularHomologyComplSingletonIsoOfChart R φ ha k).hom =
       localHomologyMap R σ h k := by
-  obtain rfl : σ = ⟨φ.source.domRestrict φ, φ.continuousOn.domRestrict⟩ := ContinuousMap.ext hσ
+  obtain rfl : σ = φ.sourceRestrict := ContinuousMap.ext hσ
   have h₁ : localHomologyMap R (ContinuousMap.subtypeVal φ.source)
       (S := ContinuousMap.subtypeVal φ.source ⁻¹' {a}) (T := {a}) subset_rfl k =
         TopPair.singularHomologyMap
@@ -342,7 +342,7 @@ theorem localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChar
     ext z
     erw [TopPair.excisionMap_fst_apply, TopPair.ofSubsetMap_fst_apply]
     rfl
-  have h₂ : localHomologyMap R ⟨φ.source.domRestrict φ, φ.continuousOn.domRestrict⟩ h k =
+  have h₂ : localHomologyMap R φ.sourceRestrict h k =
       TopPair.singularHomologyMap ((TopPair.ofSubsetIso (X := TopCat.of φ.source)
           (Y := TopCat.of φ.target) φ.toHomeomorphSourceTarget
           (B := Subtype.val ⁻¹' {a}ᶜ) (B' := Subtype.val ⁻¹' {φ a}ᶜ)

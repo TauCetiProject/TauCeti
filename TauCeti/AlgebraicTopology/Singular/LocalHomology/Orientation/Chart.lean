@@ -370,15 +370,17 @@ variable {M E F : Type w} [TopologicalSpace M] [T1Space M]
 
 /-- Applying a linear isometry equivalence followed by radial projection about `e p` is radial
 projection about `p` followed by the restriction of `e` to the unit spheres. -/
-private theorem snd_ofSubsetMap_linearIsometryEquiv_comp_complSingletonHomotopyEquivSphere
-    (p : E) (e : E ≃ₗᵢ[ℝ] F) :
+theorem
+    _root_.LinearIsometryEquiv.snd_ofSubsetMap_comp_complSingletonHomotopyEquivSphere
+    (e : E ≃ₗᵢ[ℝ] F) (p : E) (q : F) (hq : e p = q) :
     TopPair.Hom.snd (TopPair.ofSubsetMap (X := TopCat.of E) (Y := TopCat.of F)
-        (TopCat.ofHom ⟨e, e.continuous⟩) (B := {p}ᶜ) (B' := {e p}ᶜ)
-        (fun _ hy h ↦ hy (e.injective h))) ≫
-      TopCat.ofHom (complSingletonHomotopyEquivSphere (e p)).toFun =
+        (TopCat.ofHom ⟨e, e.continuous⟩) (B := {p}ᶜ) (B' := {q}ᶜ)
+        (fun _ hy h ↦ hy (e.injective (h.trans hq.symm)))) ≫
+      TopCat.ofHom (complSingletonHomotopyEquivSphere q).toFun =
     TopCat.ofHom (complSingletonHomotopyEquivSphere p).toFun ≫
       TopCat.ofHom ⟨e.toLinearIsometry.unitSphereMap,
         e.toLinearIsometry.continuous_unitSphereMap⟩ := by
+  subst q
   ext z
   -- The subspace of `TopPair.ofSubset` is the subtype only after unfolding the pair.
   erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
@@ -413,7 +415,7 @@ theorem singularHomologyComplSingletonIsoOfOrientation_transHomeomorph_linearIso
   congr 1
   -- Unfold the subspace of `TopPair.ofSubset` and `transHomeomorph` to compose `TopCat` morphisms.
   erw [← Functor.map_comp_assoc,
-    snd_ofSubsetMap_linearIsometryEquiv_comp_complSingletonHomotopyEquivSphere (φ x) e,
+    e.snd_ofSubsetMap_comp_complSingletonHomotopyEquivSphere (φ x) (e (φ x)) rfl,
     Functor.map_comp_assoc,
     reducedSingularHomologySphereIsoOfOrientation_hom_naturality R o
       (o.map (Fin (n + 1)) e.toLinearEquiv) e rfl hE]

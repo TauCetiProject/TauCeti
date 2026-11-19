@@ -301,13 +301,7 @@ theorem _root_.LinearIsometryEquiv.localHomologyMap_localOrientationOfOrientedCh
       TopCat.ofHom (complSingletonHomotopyEquivSphere (0 : X)).toFun ≫
         TopCat.ofHom ⟨f.toLinearIsometry.unitSphereMap,
           f.toLinearIsometry.continuous_unitSphereMap⟩ := by
-    ext x
-    -- The subspace of `TopPair.ofSubset` is the subtype only after unfolding the pair.
-    erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
-    refine (coe_complSingletonHomotopyEquivSphere_apply (0 : Y) _).trans ?_
-    erw [TopPair.ofSubsetMap_snd_apply, LinearIsometry.coe_unitSphereMap_apply,
-      coe_complSingletonHomotopyEquivSphere_apply]
-    simp
+    exact f.snd_ofSubsetMap_comp_complSingletonHomotopyEquivSphere 0 0 f.map_zero
   have key : localHomologyMap R (⟨f, f.continuous⟩ : C(X, Y)) h (n + 1) ≫ eY.hom = eX.hom := by
     simp only [eX, eY, singularHomologyComplSingletonIsoOfOrientation_refl_hom]
     rw [localHomologyMap_def, ← TopPair.reducedSingularHomologyδ_naturality_assoc]

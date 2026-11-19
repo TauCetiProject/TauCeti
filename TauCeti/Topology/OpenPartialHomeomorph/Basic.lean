@@ -56,13 +56,16 @@ theorem isClosed_image_of_closure_subset_target {s : Set X} (hs : IsClosed s)
     IsClosed (e '' s) :=
   e.toPartialHomeomorph.isClosed_image_of_closure_subset_target hs hse hclosure
 
+/-- Every point is in the source of the identity partial homeomorphism. -/
 theorem mem_refl_source (x : X) : x ∈ (OpenPartialHomeomorph.refl X).source :=
   Set.mem_univ x
 
 /-- The restriction of an open partial homeomorphism to its source, as a continuous map. -/
+-- Expose the formula so Mathlib's restriction lemmas apply across module boundaries.
 @[expose] def sourceRestrict : C(e.source, Y) :=
   ⟨e.source.domRestrict e, e.continuousOn.domRestrict⟩
 
+/-- Restricting to the source agrees pointwise with the partial homeomorphism. -/
 @[simp]
 theorem sourceRestrict_apply (x : e.source) : e.sourceRestrict x = e x :=
   (rfl)
