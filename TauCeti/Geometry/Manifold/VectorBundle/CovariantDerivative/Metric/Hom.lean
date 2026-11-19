@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.RankOne
 /-!
 # Induced Hom connections of metric connections
 
-For connections on bundles `V` and `W`, this module records two consequences of metric
+For connections on bundles `V` and `W`, this module records three consequences of metric
 compatibility for the induced connection on `Hom(V, W)`.
 
 * If the connection on the Riemannian bundle `W` is metric and the sections `σ` of `W` and `τ`
@@ -24,9 +24,12 @@ compatibility for the induced connection on `Hom(V, W)`.
   `∇(rankOne σ τ) = rankOne (∇σ) τ + rankOne σ (∇τ)`
   (`CovariantDerivative.IsMetricCompatible.hom_rankOne_apply`).
   In particular they are parallel wherever `σ` and `τ` are.
+* If the connection on the Riemannian bundle `V` is metric, then the covariant derivative of a
+  field of skew-adjoint endomorphisms of `V` is skew-adjoint
+  (`CovariantDerivative.IsMetricCompatible.inner_hom_apply_add_inner_hom_apply_eq_zero`).
 
-These are the comparisons for the frames induced on `Hom(V, W)` by frames parallel at a point,
-following J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapters 4–5.
+The first two are the comparisons for the frames induced on `Hom(V, W)` by frames parallel at a
+point, following J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapters 4–5.
 -/
 
 public section
@@ -120,5 +123,39 @@ theorem IsMetricCompatible.hom_rankOne_eq_zero (hcov : covV.IsMetricCompatible)
   simp [hcov.hom_rankOne_apply hσ hτ, hσ₀, hτ₀]
 
 end RankOne
+
+section Endomorphism
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle 1 F V I]
+  [IsContMDiffRiemannianBundle I 1 F V]
+  {cov : CovariantDerivative I F V} {A : Π x : M, V x →L[ℝ] V x}
+
+/-- **The derivative of a skew-adjoint endomorphism field is skew-adjoint.** If `∇` is metric and
+`A` is a field of skew-adjoint endomorphisms differentiable at `x`, then `∇_v A` is
+skew-adjoint. -/
+theorem IsMetricCompatible.inner_hom_apply_add_inner_hom_apply_eq_zero
+    (hcov : cov.IsMetricCompatible) {x : M} (hA : MDiffAt (fun y ↦ TotalSpace.mk' (F →L[ℝ] F)
+      (E := fun z ↦ V z →L[ℝ] V z) y (A y)) x)
+    (hskew : ∀ y (u w : V y), inner ℝ (A y u) w = -inner ℝ u (A y w))
+    (v : TangentSpace I x) (u w : V x) :
+    inner ℝ (cov.hom cov A x v u) w + inner ℝ u (cov.hom cov A x v w) = 0 := by
+  have hs : MDiffAt (T% (extend F u)) x := mdifferentiableAt_extend ..
+  have ht : MDiffAt (T% (extend F w)) x := mdifferentiableAt_extend ..
+  -- Differentiate `⟪A s, t⟫ = -⟪s, A t⟫` with the metric connection.
+  have hfun : (fun y ↦ inner ℝ (A y (extend F u y)) (extend F w y)) =
+      fun y ↦ -inner ℝ (extend F u y) (A y (extend F w y)) := by
+    funext y
+    exact hskew y _ _
+  have h₁ := hcov.mvfderiv_inner_eq (fun _ ↦ v) (hA.clm_bundle_apply hs) ht
+  have h₂ := hcov.mvfderiv_inner_eq (fun _ ↦ v) hs (hA.clm_bundle_apply ht)
+  rw [hfun, mvfderiv_fun_neg, neg_apply] at h₁
+  simp only [extend_apply_self] at h₁ h₂
+  rw [hom_apply_eq_extend _ _ hA, hom_apply_eq_extend _ _ hA, inner_sub_left, inner_sub_right]
+  linarith [hskew x (cov (extend F u) x v) w, hskew x u (cov (extend F w) x v)]
+
+end Endomorphism
 
 end CovariantDerivative
