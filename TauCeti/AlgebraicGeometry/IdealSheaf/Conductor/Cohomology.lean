@@ -216,10 +216,10 @@ theorem subsingleton_cohomology_unit_iff_of_two_le_of_isModification {X Y : Sche
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
   have : (SheafOfModules.unit Y.ringCatSheaf).IsQuasicoherent :=
     AlgebraicGeometry.isQuasicoherent_structureSheaf Y
-  let eCech := (f.cohomologyPushforwardIsoOfIsAffineHom
+  let ePush := (f.cohomologyPushforwardIsoOfIsAffineHom
     (SheafOfModules.unit Y.ringCatSheaf) (m + 2)).addCommGroupIsoToAddEquiv
   let eMap := Equiv.ofBijective _ (f.cohomologyMap_unitToPushforwardObjUnit_add_two_bijective hX m)
-  exact (eMap.trans eCech.toEquiv).subsingleton_congr
+  exact (eMap.trans ePush.toEquiv).subsingleton_congr
 
 end Modules
 
