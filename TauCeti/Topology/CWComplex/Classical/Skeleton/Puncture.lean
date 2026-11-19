@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.Basic
+public import TauCeti.Analysis.Normed.Module.Ball.Radial.PuncturedBall
 public import TauCeti.Topology.CWComplex.Classical.OpenCells
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.Neighborhood
 
@@ -18,7 +19,7 @@ Let `C` be a relative CW complex, `Xⁿ = skeletonLT C (n + 1)` its `n`-skeleton
 the open cell leaves the smaller set `TauCeti.skeletonDiffCore j`. The first deforms into the
 second relative to the second (`TauCeti.skeletonDiffCenterHomotopyRel`): inside the open cell,
 read through `χ`, a point `y ≠ 0` of norm less than `2⁻¹` moves along its ray out to the sphere
-of radius `2⁻¹`, and every other point stays fixed.
+of radius `2⁻¹` (`TauCeti.puncturedBallPush`), and every other point stays fixed.
 
 When `j` is the only `n`-cell, `TauCeti.skeletonDiffCore j` is the neighbourhood
 `TauCeti.skeletonNeighborhood C n` of the `(n-1)`-skeleton
@@ -68,62 +69,6 @@ namespace TauCeti
 
 variable {X : Type u} [TopologicalSpace X] [T2Space X] {D : Set X} {C : Set X} [RelCWComplex C D]
   {n : ℕ}
-
-/-! ### The radial push off the centre -/
-
-/-- The push of the punctured ball of radius `2⁻¹` onto its boundary sphere: at time `t` the
-vector `y` is scaled by `max 1 (1 - t + t (2 ‖y‖)⁻¹)`. Vectors of norm at least `2⁻¹` are fixed. -/
-private def centerPush (t : I) (y : Fin n → ℝ) : Fin n → ℝ :=
-  max 1 (1 - (t : ℝ) + t * (2 * ‖y‖)⁻¹) • y
-
-private lemma centerPush_zero_left (y : Fin n → ℝ) : centerPush 0 y = y := by
-  simp [centerPush]
-
-private lemma centerPush_of_le_norm (t : I) {y : Fin n → ℝ} (hy : (2 : ℝ)⁻¹ ≤ ‖y‖) :
-    centerPush t y = y := by
-  have h : (2 * ‖y‖)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ (by linarith)
-  have ht : (t : ℝ) * (2 * ‖y‖)⁻¹ ≤ t := mul_le_of_le_one_right t.2.1 h
-  rw [centerPush, max_eq_left (by linarith), one_smul]
-
-private lemma norm_centerPush (t : I) (y : Fin n → ℝ) :
-    ‖centerPush t y‖ = max 1 (1 - (t : ℝ) + t * (2 * ‖y‖)⁻¹) * ‖y‖ := by
-  rw [centerPush, norm_smul, Real.norm_of_nonneg (zero_le_one.trans (le_max_left _ _))]
-
-private lemma norm_centerPush_lt_one (t : I) {y : Fin n → ℝ} (hy : ‖y‖ < 1) :
-    ‖centerPush t y‖ < 1 := by
-  rw [norm_centerPush]
-  rcases eq_or_ne y 0 with rfl | hy0
-  · simp
-  have hpos : 0 < ‖y‖ := norm_pos_iff.2 hy0
-  rcases le_total (1 - (t : ℝ) + t * (2 * ‖y‖)⁻¹) 1 with h | h
-  · rwa [max_eq_left h, one_mul]
-  · -- Off the unit factor, the norm is `(1 - t) ‖y‖ + t / 2`, between `‖y‖` and `2⁻¹`.
-    have h2 : (2 * ‖y‖)⁻¹ * ‖y‖ = 2⁻¹ := by field_simp
-    rw [max_eq_right h, add_mul, mul_assoc, h2]
-    nlinarith [t.2.1, t.2.2]
-
-private lemma centerPush_ne_zero (t : I) {y : Fin n → ℝ} (hy : y ≠ 0) : centerPush t y ≠ 0 :=
-  smul_ne_zero (zero_lt_one.trans_le (le_max_left _ _)).ne' hy
-
-private lemma le_norm_centerPush_one {y : Fin n → ℝ} (hy : y ≠ 0) :
-    (2 : ℝ)⁻¹ ≤ ‖centerPush 1 y‖ := by
-  rw [norm_centerPush]
-  have hpos : 0 < ‖y‖ := norm_pos_iff.2 hy
-  calc (2 : ℝ)⁻¹ = (1 - ((1 : I) : ℝ) + (1 : I) * (2 * ‖y‖)⁻¹) * ‖y‖ := by
-        field_simp
-        simp
-    _ ≤ _ := mul_le_mul_of_nonneg_right (le_max_right _ _) hpos.le
-
-private lemma continuousAt_centerPush {t : I} {y : Fin n → ℝ} (hy : y ≠ 0) :
-    ContinuousAt (fun q : I × (Fin n → ℝ) ↦ centerPush q.1 q.2) (t, y) := by
-  have hinv : ContinuousAt (fun q : I × (Fin n → ℝ) ↦ (2 * ‖q.2‖)⁻¹) (t, y) :=
-    (continuousAt_const.mul continuous_snd.norm.continuousAt).inv₀
-      (mul_ne_zero two_ne_zero (norm_ne_zero_iff.2 hy))
-  unfold centerPush
-  exact (continuousAt_const.max ((continuousAt_const.sub
-    (continuous_subtype_val.comp continuous_fst).continuousAt).add
-    ((continuous_subtype_val.comp continuous_fst).continuousAt.mul hinv))).smul
-    continuous_snd.continuousAt
 
 /-! ### The punctured skeleton and its deformation -/
 
@@ -183,15 +128,21 @@ private lemma le_norm_map_symm {x : X} (hx : x ∈ openCell (C := C) n j)
     (hxc : x ∉ map n j '' ball 0 2⁻¹) : (2 : ℝ)⁻¹ ≤ ‖(map n j).symm x‖ :=
   not_lt.1 fun h ↦ hxc ⟨_, mem_ball_zero_iff.2 h, map_map_symm n hx⟩
 
+/-- The push of the punctured ball of radius `2⁻¹` stays in the open unit ball. -/
+private lemma norm_puncturedBallPush_lt_one (t : I) {y : Fin n → ℝ} (hy : ‖y‖ < 1) :
+    ‖puncturedBallPush 2⁻¹ t y‖ < 1 :=
+  (norm_puncturedBallPush_le _ t y).trans_lt (max_lt hy (by norm_num))
+
 /-- The radial push read through the characteristic map of `j` on its open cell, and the identity
 elsewhere. -/
 private def pushFun (q : I × X) : X :=
   open Classical in
-  if q.2 ∈ openCell (C := C) n j then map n j (centerPush q.1 ((map n j).symm q.2)) else q.2
+  if q.2 ∈ openCell (C := C) n j then map n j (puncturedBallPush 2⁻¹ q.1 ((map n j).symm q.2))
+  else q.2
 
 omit [T2Space X] in
 private lemma pushFun_of_mem {t : I} {x : X} (hx : x ∈ openCell (C := C) n j) :
-    pushFun j (t, x) = map n j (centerPush t ((map n j).symm x)) := by
+    pushFun j (t, x) = map n j (puncturedBallPush 2⁻¹ t ((map n j).symm x)) := by
   simp [pushFun, hx]
 
 omit [T2Space X] in
@@ -204,7 +155,7 @@ omit [T2Space X] in
 private lemma pushFun_of_notMem_image (t : I) {x : X} (hx : x ∉ map n j '' ball 0 2⁻¹) :
     pushFun j (t, x) = x := by
   by_cases hxo : x ∈ openCell (C := C) n j
-  · rw [pushFun_of_mem j hxo, centerPush_of_le_norm t (le_norm_map_symm j hxo hx),
+  · rw [pushFun_of_mem j hxo, puncturedBallPush_of_le_norm t (le_norm_map_symm j hxo hx),
       map_map_symm n hxo]
   · exact pushFun_of_notMem j hxo
 
@@ -219,9 +170,9 @@ private lemma pushFun_mem_skeletonDiffCenter (t : I) {x : X} (hx : x ∈ skeleto
   by_cases hxo : x ∈ openCell (C := C) n j
   · have hy := map_symm_mem_ball n hxo
     have hy0 := map_symm_ne_zero j hxo hx.2
-    have hz := norm_centerPush_lt_one t (mem_ball_zero_iff.1 hy)
+    have hz := norm_puncturedBallPush_lt_one t (mem_ball_zero_iff.1 hy)
     rw [pushFun_of_mem j hxo]
-    refine ⟨map_mem_skeletonLT_succ j hz.le, fun h ↦ centerPush_ne_zero t hy0 ?_⟩
+    refine ⟨map_mem_skeletonLT_succ j hz.le, fun h ↦ puncturedBallPush_ne_zero 2⁻¹ t hy0 ?_⟩
     exact ((map_eq_map_iff hz (by simp)).1 h).2
   · rwa [pushFun_of_notMem j hxo]
 
@@ -241,16 +192,17 @@ private lemma continuous_pushFun :
         continuous_snd.continuousAt
     have hy := map_symm_mem_ball n hxo
     have hpush : ContinuousAt (fun q : I × skeletonDiffCenter j ↦
-        centerPush q.1 ((map n j).symm q.2)) (t, x) :=
+        puncturedBallPush 2⁻¹ q.1 ((map n j).symm q.2)) (t, x) :=
       ContinuousAt.comp (f := fun q : I × skeletonDiffCenter j ↦ (q.1, (map n j).symm q.2))
-        (continuousAt_centerPush (map_symm_ne_zero j (x := (x : X)) hxo x.2.2))
+        (continuousAt_puncturedBallPush 2⁻¹ (map_symm_ne_zero j (x := (x : X)) hxo x.2.2))
         (continuous_fst.continuousAt.prodMk hsymm)
-    have hmap : ContinuousAt (map n j) (centerPush t ((map n j).symm x)) :=
+    have hmap : ContinuousAt (map n j) (puncturedBallPush 2⁻¹ t ((map n j).symm x)) :=
       (continuousOn n j).continuousAt <| Filter.mem_of_superset (isOpen_ball.mem_nhds
-        (mem_ball_zero_iff.2 (norm_centerPush_lt_one t (mem_ball_zero_iff.1 hy))))
+        (mem_ball_zero_iff.2 (norm_puncturedBallPush_lt_one t (mem_ball_zero_iff.1 hy))))
         ball_subset_closedBall
     refine (ContinuousAt.comp (x := (t, x))
-      (f := fun q : I × skeletonDiffCenter j ↦ centerPush q.1 ((map n j).symm q.2)) hmap
+      (f := fun q : I × skeletonDiffCenter j ↦ puncturedBallPush 2⁻¹ q.1 ((map n j).symm q.2))
+      hmap
       hpush).congr ?_
     filter_upwards [prod_mem_nhds Filter.univ_mem (hU.mem_nhds hxo)] with q hq
     exact (pushFun_of_mem j hq.2).symm
@@ -273,6 +225,10 @@ private def pushMap : C(I × skeletonDiffCenter j, skeletonDiffCenter j) :=
   ⟨fun q ↦ ⟨pushFun j (q.1, q.2), pushFun_mem_skeletonDiffCenter j q.1 q.2.2⟩,
     (continuous_pushFun j).subtype_mk _⟩
 
+private lemma pushMap_apply (q : I × skeletonDiffCenter j) :
+    (pushMap j q : X) = pushFun j (q.1, q.2) :=
+  rfl
+
 /-- The endpoint of `TauCeti.skeletonDiffCenterHomotopyRel`: inside the open `n`-cell `j`, read
 through its characteristic map, it sends a point `y ≠ 0` of norm less than `2⁻¹` to `(2 ‖y‖)⁻¹ • y`
 on the sphere of radius `2⁻¹`, and it fixes every other point. It takes values in
@@ -290,8 +246,8 @@ def skeletonDiffCenterHomotopyRel :
   toContinuousMap := pushMap j
   map_zero_left x := Subtype.ext <| by
     by_cases hxo : (x : X) ∈ openCell (C := C) n j
-    · change pushFun j (0, x) = x
-      rw [pushFun_of_mem j hxo, centerPush_zero_left, map_map_symm n hxo]
+    · rw [ContinuousMap.toFun_eq_coe, ContinuousMap.id_apply, pushMap_apply, pushFun_of_mem j hxo,
+        puncturedBallPush_zero, map_map_symm n hxo]
     · exact pushFun_of_notMem j hxo
   map_one_left _ := rfl
   prop' t x hx := Subtype.ext (pushFun_of_notMem_image j t hx.2)
@@ -301,15 +257,15 @@ cell. -/
 lemma skeletonDiffCenterEndpoint_mem (x : skeletonDiffCenter j) :
     (skeletonDiffCenterEndpoint j x : X) ∈ skeletonDiffCore j := by
   refine ⟨(skeletonDiffCenterEndpoint j x).2.1, ?_⟩
-  change pushFun j (1, x) ∉ _
+  rw [skeletonDiffCenterEndpoint, ContinuousMap.curry_apply, pushMap_apply]
   by_cases hxo : (x : X) ∈ openCell (C := C) n j
   · have hy0 := map_symm_ne_zero j (x := (x : X)) hxo x.2.2
-    have hz := norm_centerPush_lt_one 1 (mem_ball_zero_iff.1 (map_symm_mem_ball n hxo))
+    have hz := norm_puncturedBallPush_lt_one 1 (mem_ball_zero_iff.1 (map_symm_mem_ball n hxo))
     rw [pushFun_of_mem j hxo]
     rintro ⟨y, hy, h⟩
     rw [mem_ball_zero_iff] at hy
     obtain rfl := ((map_eq_map_iff (hy.trans (by norm_num)) hz).1 h).2
-    exact (le_norm_centerPush_one hy0).not_gt hy
+    exact (le_norm_puncturedBallPush_one 2⁻¹ hy0).not_gt hy
   · rw [pushFun_of_notMem j hxo]
     rintro ⟨y, hy, hyx⟩
     exact hxo (hyx ▸ ⟨y, ball_subset_ball (by norm_num) hy, rfl⟩)
