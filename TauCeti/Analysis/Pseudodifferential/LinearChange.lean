@@ -78,35 +78,44 @@ variable {V W U : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCo
   [NormedSpace ℂ W] [NormedAddCommGroup U] [NormedSpace ℂ U] {m m' : ℝ}
 
 /-- The symbol estimates of a smooth coefficient `f` at the position `P x` give estimates of
-`f ∘ (P × Q)` at the position `x`, with a constant depending only on `P`, `Q` and the constants
-for `f`. The frequency map `Q` is invertible, so that `⟨Q ξ⟩` and `⟨ξ⟩` are comparable. -/
-private theorem exists_bound_comp_prodMap {f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W}
-    (hf : ContDiff ℝ ∞ f) (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
-    (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (C : List (Fin n) → List (Fin n) → ℝ)
-    (α β : List (Fin n)) :
-    ∃ B, 0 ≤ B ∧ ∀ x, (∀ α' β' η, ‖mixedDeriv α' β' f (P x) η‖ ≤
+`f ∘ (P × Q)` at the position `x`. The constant depends only on the constants for `f` and on a bound
+`c` for `‖P‖`, `‖Q‖` and `‖Q⁻¹‖`, so it is uniform over linear changes of variables of bounded norm.
+The frequency map `Q` is invertible, so that `⟨Q ξ⟩` and `⟨ξ⟩` are comparable. -/
+theorem exists_norm_mixedDeriv_comp_prodMap_le
+    {f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f) (c : ℝ)
+    (C : List (Fin n) → List (Fin n) → ℝ) (α β : List (Fin n)) :
+    ∃ B, 0 ≤ B ∧ ∀ (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
+      (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n), ‖P‖ ≤ c →
+      ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ ≤ c →
+      ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ ≤ c → ∀ x,
+      (∀ α' β' η, ‖mixedDeriv α' β' f (P x) η‖ ≤
         C α' β' * (1 + ‖η‖ ^ 2) ^ ((m - β'.length) / 2)) → ∀ ξ,
       ‖mixedDeriv α β (f ∘ P.prodMap (Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)) x ξ‖ ≤
         B * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  set c : ℝ := max 1 (max ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖
-    ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖)
+  set c' : ℝ := max 1 c
   set s : ℝ := m - β.length
   set D : ℝ := ∑ r : Fin (α.length + β.length) → Fin n,
     max (C (List.ofFn fun i => r (Fin.castAdd β.length i))
       (List.ofFn fun i => r (Fin.natAdd α.length i))) 0
+  have hc : 1 ≤ c' := le_max_left _ _
   have _ : 0 ≤ D := Finset.sum_nonneg fun _ _ => le_max_right _ _
-  refine ⟨(∏ i, ‖P (EuclideanSpace.single (α.get i) 1)‖) *
-    (∏ i, ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n) (EuclideanSpace.single (β.get i) 1)‖) *
-      D * c ^ |s|, by positivity, fun x hC ξ => ?_⟩
-  have hc : 1 ≤ c := le_max_left _ _
-  have hweight : (1 + ‖Q ξ‖ ^ 2) ^ (s / 2) ≤ c ^ |s| * (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by
+  refine ⟨c' ^ α.length * c' ^ β.length * D * c' ^ |s|, by positivity,
+    fun P Q hP hQ hQ' x hC ξ => ?_⟩
+  -- Each direction `L eⱼ` of a map `L` of norm at most `c'` has norm at most `c'`.
+  have hdir {k : ℕ} (L : CoordinateSpace n →L[ℝ] CoordinateSpace n) (hL : ‖L‖ ≤ c')
+      (γ : Fin k → Fin n) : ∏ i, ‖L (EuclideanSpace.single (γ i) 1)‖ ≤ c' ^ k := by
+    calc ∏ i, ‖L (EuclideanSpace.single (γ i) 1)‖ ≤ ∏ _i : Fin k, c' := by
+          gcongr with i
+          exact (L.le_opNorm _).trans (by simpa using hL)
+      _ = c' ^ k := by simp
+  have hweight : (1 + ‖Q ξ‖ ^ 2) ^ (s / 2) ≤ c' ^ |s| * (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by
     refine one_add_norm_sq_rpow_le_of_norm_le_mul hc s ?_ ?_
     · calc ‖Q ξ‖ ≤ ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ * ‖ξ‖ :=
             (Q : CoordinateSpace n →L[ℝ] CoordinateSpace n).le_opNorm ξ
-        _ ≤ c * ‖ξ‖ := by gcongr; exact le_max_of_le_right (le_max_left _ _)
+        _ ≤ c' * ‖ξ‖ := by gcongr; exact hQ.trans (le_max_right _ _)
     · calc ‖ξ‖ ≤ ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ * ‖Q ξ‖ :=
             norm_le_norm_symm_mul Q ξ
-        _ ≤ c * ‖Q ξ‖ := by gcongr; exact le_max_of_le_right (le_max_right _ _)
+        _ ≤ c' * ‖Q ξ‖ := by gcongr; exact hQ'.trans (le_max_right _ _)
   have hsum : ∑ r : Fin (α.length + β.length) → Fin n,
       ‖mixedDeriv (List.ofFn fun i => r (Fin.castAdd β.length i))
         (List.ofFn fun i => r (Fin.natAdd α.length i)) f (P x) (Q ξ)‖ ≤
@@ -117,14 +126,31 @@ private theorem exists_bound_comp_prodMap {f : CoordinateSpace n × CoordinateSp
     exact mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
   rw [mixedDeriv_comp_prodMap P _ (hf.of_le (mod_cast le_top))]
   refine (norm_iteratedFDeriv_append_le (hf.of_le (mod_cast le_top)) _ _ _ _).trans ?_
-  simp only [ContinuousLinearEquiv.coe_coe] at hsum ⊢
-  calc _ ≤ (∏ i, ‖P (EuclideanSpace.single (α.get i) 1)‖) *
-        (∏ i, ‖Q (EuclideanSpace.single (β.get i) 1)‖) * (D * (1 + ‖Q ξ‖ ^ 2) ^ (s / 2)) := by
+  have hα := hdir P (hP.trans (le_max_right _ _)) α.get
+  have hβ := hdir (Q : CoordinateSpace n →L[ℝ] CoordinateSpace n) (hQ.trans (le_max_right _ _))
+    β.get
+  simp only [ContinuousLinearEquiv.coe_coe] at hsum hβ ⊢
+  calc _ ≤ c' ^ α.length * c' ^ β.length * (D * (1 + ‖Q ξ‖ ^ 2) ^ (s / 2)) := by
         gcongr
-    _ ≤ (∏ i, ‖P (EuclideanSpace.single (α.get i) 1)‖) *
-        (∏ i, ‖Q (EuclideanSpace.single (β.get i) 1)‖) *
-          (D * (c ^ |s| * (1 + ‖ξ‖ ^ 2) ^ (s / 2))) := by gcongr
+    _ ≤ c' ^ α.length * c' ^ β.length * (D * (c' ^ |s| * (1 + ‖ξ‖ ^ 2) ^ (s / 2))) := by gcongr
     _ = _ := by ring
+
+/-- The symbol estimates of a smooth coefficient `f` at the position `P x` give estimates of
+`f ∘ (P × Q)` at the position `x`, with a constant depending only on `P`, `Q` and the constants
+for `f`. -/
+private theorem exists_bound_comp_prodMap {f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W}
+    (hf : ContDiff ℝ ∞ f) (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
+    (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (C : List (Fin n) → List (Fin n) → ℝ)
+    (α β : List (Fin n)) :
+    ∃ B, 0 ≤ B ∧ ∀ x, (∀ α' β' η, ‖mixedDeriv α' β' f (P x) η‖ ≤
+        C α' β' * (1 + ‖η‖ ^ 2) ^ ((m - β'.length) / 2)) → ∀ ξ,
+      ‖mixedDeriv α β (f ∘ P.prodMap (Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)) x ξ‖ ≤
+        B * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+  obtain ⟨B, hB, h⟩ := exists_norm_mixedDeriv_comp_prodMap_le hf
+    (max ‖P‖ (max ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖
+      ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖)) C α β
+  exact ⟨B, hB, h P Q (le_max_left _ _) ((le_max_left _ _).trans (le_max_right _ _))
+    ((le_max_right _ _).trans (le_max_right _ _))⟩
 
 /-- **Linear change of variables in a symbol.** For a linear map `P` of positions and a linear
 isomorphism `Q` of frequencies, the symbol `(x, ξ) ↦ a(P x, Q ξ)` of order `m`, as a `ℂ`-linear map
