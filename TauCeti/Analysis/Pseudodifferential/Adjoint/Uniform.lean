@@ -392,9 +392,7 @@ theorem IsUniform.exists_quantizeRightUniformCLM_eq {c : Symbol n V W m} (hc : c
   set w : (Fin n → ℤ) → CoordinateSpace n → ℝ := fun j x ↦
     ((1 + ‖x - latticePoint j‖ ^ 2) ^ n)⁻¹
   obtain ⟨b, hb, hbsum⟩ := exists_isUniform_hasSum_coefficient F w (fun _ _ ↦ by positivity)
-    (fun x ↦ ⟨fun j ↦ 4 ^ n * w j x,
-      (summable_one_add_norm_sub_latticePoint_sq_pow_inv x).mul_left _,
-      fun j _ hy ↦ one_add_norm_sub_latticePoint_sq_pow_inv_le_of_dist_le_one (mem_ball.1 hy).le j⟩)
+    exists_summable_forall_one_add_norm_sub_latticePoint_sq_pow_inv_le
     tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le
     (hfam.exists_norm_mixedDeriv_ofRight_le)
   have hord : 0 + m = m := zero_add m

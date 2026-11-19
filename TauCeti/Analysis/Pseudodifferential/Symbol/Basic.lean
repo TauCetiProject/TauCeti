@@ -52,10 +52,7 @@ space, and develop the first operations of the symbol calculus:
   `⟨ξ⟩^(m' - |β₁|) ⟨ξ⟩^(m - |β₂|) = ⟨ξ⟩^(m' + m - |β|)`; this estimate holds for every continuous
   bilinear map (`ContinuousLinearMap.norm_mixedDeriv_le_of_bilinear`). It is bilinear and
   associative, with the constant symbol `id` as identity, and spatial and frequency derivatives
-  obey the Leibniz rule (`TauCeti.Symbol.spatialDeriv_comp`, `TauCeti.Symbol.frequencyDeriv_comp`);
-* `TauCeti.Symbol.poissonBracket`: the Poisson bracket
-  `{a, b} = ∑ⱼ (∂_{ξⱼ} a ∘ ∂_{xⱼ} b - ∂_{xⱼ} a ∘ ∂_{ξⱼ} b)` of symbols of orders `m'` and `m` has
-  order `m' + m - 1`.
+  obey the Leibniz rule (`TauCeti.Symbol.spatialDeriv_comp`, `TauCeti.Symbol.frequencyDeriv_comp`).
 
 A symbol is *smoothing* (`TauCeti.Symbol.IsSmoothing`) if it is a symbol of every order. Smoothing
 symbols are closed under the operations above, and they form a two-sided ideal under composition
@@ -116,8 +113,7 @@ theorem rpow_weight_le_rpow_weight (ξ : CoordinateSpace n) {t t' : ℝ} (h : t 
 
 /-- The weight `⟨ξ⟩^t = (1 + ‖ξ‖²)^(t/2)` is positive. -/
 theorem rpow_weight_pos (ξ : CoordinateSpace n) (t : ℝ) :
-    0 < (1 + ‖ξ‖ ^ 2) ^ (t / 2) :=
-  Real.rpow_pos_of_pos (by positivity) _
+    0 < (1 + ‖ξ‖ ^ 2) ^ (t / 2) := Real.rpow_pos_of_pos (by positivity) _
 
 /-- Above radius `t > 0`, raising the order of the weight `⟨ξ⟩^s` to `s' ≥ s` costs at most the
 factor `t^(s - s')`. -/
@@ -232,13 +228,11 @@ def HasCompactSpatialSupport (a : Symbol n V W m) : Prop :=
 
 theorem isUniform_iff {a : Symbol n V W m} :
     a.IsUniform ↔ ∀ α β : List (Fin n), ∃ C : ℝ, 0 ≤ C ∧ ∀ x ξ,
-      ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) :=
-  Iff.rfl
+      ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := Iff.rfl
 
 theorem hasCompactSpatialSupport_iff {a : Symbol n V W m} :
     a.HasCompactSpatialSupport ↔
-      ∃ K : Set (CoordinateSpace n), IsCompact K ∧ ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0 :=
-  Iff.rfl
+      ∃ K : Set (CoordinateSpace n), IsCompact K ∧ ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0 := Iff.rfl
 
 /-- A symbol with compact spatial support satisfies its estimates uniformly in the position:
 outside the support all its mixed derivatives vanish. -/
@@ -306,8 +300,7 @@ theorem IsUniform.hasTemperateGrowth_coefficient_slice {a : Symbol n V W m} (ha 
   simpa only [mixedDeriv_def, coordinateDeriv_nil, List.length_nil, CharP.cast_eq_zero,
     sub_zero] using hB (List.ofFn r) [] x ξ
 
-/-- A position slice `x ↦ a(x, ξ)` of a symbol with compact spatial support has compact
-support. -/
+/-- A position slice `x ↦ a(x, ξ)` of a symbol with compact spatial support has compact support. -/
 theorem HasCompactSpatialSupport.hasCompactSupport_slice {a : Symbol n V W m}
     (ha : a.HasCompactSpatialSupport) (ξ : CoordinateSpace n) :
     HasCompactSupport fun x ↦ a.coefficient (x, ξ) := by
@@ -396,18 +389,15 @@ theorem coefficient_neg (a : Symbol n V W m) : (-a).coefficient = -a.coefficient
 
 @[simp]
 theorem coefficient_sub (a b : Symbol n V W m) :
-    (a - b).coefficient = a.coefficient - b.coefficient :=
-  (sub_eq_add_neg _ _).symm
+    (a - b).coefficient = a.coefficient - b.coefficient := (sub_eq_add_neg _ _).symm
 
 @[simp]
 theorem coefficient_nsmul (k : ℕ) (a : Symbol n V W m) :
-    (k • a).coefficient = k • a.coefficient :=
-  Nat.cast_smul_eq_nsmul ℂ k a.coefficient
+    (k • a).coefficient = k • a.coefficient := Nat.cast_smul_eq_nsmul ℂ k a.coefficient
 
 @[simp]
 theorem coefficient_zsmul (k : ℤ) (a : Symbol n V W m) :
-    (k • a).coefficient = k • a.coefficient :=
-  Int.cast_smul_eq_zsmul ℂ k a.coefficient
+    (k • a).coefficient = k • a.coefficient := Int.cast_smul_eq_zsmul ℂ k a.coefficient
 
 instance : AddCommGroup (Symbol n V W m) :=
   coefficient_injective.addCommGroup _ coefficient_zero coefficient_add coefficient_neg
@@ -450,8 +440,7 @@ theorem IsUniform.neg {a : Symbol n V W m} (ha : a.IsUniform) : (-a).IsUniform :
     exact hCa x ξ⟩
 
 theorem IsUniform.sub {a b : Symbol n V W m} (ha : a.IsUniform) (hb : b.IsUniform) :
-    (a - b).IsUniform :=
-  sub_eq_add_neg a b ▸ ha.add hb.neg
+    (a - b).IsUniform := sub_eq_add_neg a b ▸ ha.add hb.neg
 
 theorem isUniform_zero : (0 : Symbol n V W m).IsUniform :=
   fun _ _ => ⟨0, le_rfl, fun x ξ => by simp⟩
@@ -578,8 +567,7 @@ theorem hasLineDerivAt_coefficient_single (a : Symbol n V W m) (j : Fin n)
 
 /-- The frequency derivative of the slice `ξ ↦ a(x, ξ)` of a symbol in the `j`-th coordinate
 direction is the coefficient of its frequency derivative `∂_{ξ_j} a`. -/
-theorem fderiv_coefficient_slice_single (a : Symbol n V W m) (j : Fin n)
-    (x ξ : CoordinateSpace n) :
+theorem fderiv_coefficient_slice_single (a : Symbol n V W m) (j : Fin n) (x ξ : CoordinateSpace n) :
     fderiv ℝ (fun η ↦ a.coefficient (x, η)) ξ (EuclideanSpace.single j 1) =
       (frequencyDeriv j a).coefficient (x, ξ) := by
   rw [coefficient_frequencyDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
@@ -946,8 +934,7 @@ theorem not_isUniform_ofSpatial_smul (j : Fin n) {T : V →L[ℂ] W} (hT : T ≠
   linarith [le_abs_self C]
 
 /-- The constant symbol with coefficient `T`, a symbol of order `0`. -/
-def const (T : V →L[ℂ] W) : Symbol n V W 0 :=
-  ofSpatial (fun _ => T) contDiff_const
+def const (T : V →L[ℂ] W) : Symbol n V W 0 := ofSpatial (fun _ => T) contDiff_const
 
 @[simp]
 theorem coefficient_const (T : V →L[ℂ] W) (p : CoordinateSpace n × CoordinateSpace n) :
@@ -1308,29 +1295,6 @@ theorem frequencyDeriv_comp (j : Fin n) (b : Symbol n W U m') (a : Symbol n V W 
       ((b.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (by simp))
       ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (by simp)) j ξ
 
-/-! ### The Poisson bracket -/
-
-section PoissonBracket
-
-variable (a : Symbol n W U m') (b : Symbol n V W m)
-
-/-- The **Poisson bracket** `{a, b} = ∑ⱼ (∂_{ξⱼ} a ∘ ∂_{xⱼ} b - ∂_{xⱼ} a ∘ ∂_{ξⱼ} b)` of a symbol
-`a` of order `m'` and a symbol `b` of order `m`, a symbol of order `m' + m - 1`. For symbols whose
-values commute with each other, `-i {a, b}` is the leading term of the composition symbol of the
-commutator `[Op(a), Op(b)]` (`exists_coefficient_eq_sharp_sub_sharp_add_poissonBracket`). -/
-def poissonBracket : Symbol n V U (m' + m - 1) :=
-  ∑ j, (inclusion (by linarith) ((frequencyDeriv j a).comp (spatialDeriv j b)) -
-    inclusion (by linarith) ((spatialDeriv j a).comp (frequencyDeriv j b)))
-
-@[simp]
-theorem coefficient_poissonBracket (p : CoordinateSpace n × CoordinateSpace n) :
-    (a.poissonBracket b).coefficient p =
-      ∑ j, (((frequencyDeriv j a).coefficient p).comp ((spatialDeriv j b).coefficient p) -
-        ((spatialDeriv j a).coefficient p).comp ((frequencyDeriv j b).coefficient p)) := by
-  simp [poissonBracket, coefficient_sum]
-
-end PoissonBracket
-
 end Comp
 
 section Smoothing
@@ -1343,8 +1307,7 @@ def IsSmoothing (a : Symbol n V W m) : Prop :=
 /-- A symbol is smoothing exactly when its coefficient satisfies the symbol estimates of every real
 order. -/
 theorem isSmoothing_iff {a : Symbol n V W m} :
-    a.IsSmoothing ↔ ∀ m' : ℝ, ∃ b : Symbol n V W m', b.coefficient = a.coefficient :=
-  Iff.rfl
+    a.IsSmoothing ↔ ∀ m' : ℝ, ∃ b : Symbol n V W m', b.coefficient = a.coefficient := Iff.rfl
 
 /-- The estimates characterizing smoothing symbols: a symbol is smoothing exactly when, for every
 real order `m'`, every compact set `K` of positions and all words `α` and `β`, the mixed derivative
@@ -1365,8 +1328,7 @@ theorem isSmoothing_iff_forall_nat {a : Symbol n V W m} :
   exact ⟨inclusion (by linarith [Nat.le_ceil (m - m')]) b, by rw [coefficient_inclusion, hb]⟩
 
 @[simp]
-theorem isSmoothing_zero : (0 : Symbol n V W m).IsSmoothing :=
-  fun _ => ⟨0, rfl⟩
+theorem isSmoothing_zero : (0 : Symbol n V W m).IsSmoothing := fun _ => ⟨0, rfl⟩
 
 theorem IsSmoothing.add {a b : Symbol n V W m} (ha : a.IsSmoothing) (hb : b.IsSmoothing) :
     (a + b).IsSmoothing := fun m' => by
