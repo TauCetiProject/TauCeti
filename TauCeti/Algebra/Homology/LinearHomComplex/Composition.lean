@@ -259,8 +259,7 @@ lemma linearHomComplexUnit_f_zero_apply (r : R) :
   rw [linearHomComplexUnit_def, linearHomComplexOfHom_f_zero_apply]
 
 /-- Two maps out of a tensor product of linear Hom complexes agree when they agree on every pure
-tensor of cochains.  This keeps the totalization and `ModuleCat` extensionality boilerplate out of
-naturality and unit calculations. -/
+tensor of cochains. -/
 lemma linearHomComplex_tensor_hom_ext
     {A B D E : CochainComplex C ℤ} {Z : CochainComplex (ModuleCat.{v} R) ℤ}
     {f g : linearHomComplex R A B ⊗ linearHomComplex R D E ⟶ Z}

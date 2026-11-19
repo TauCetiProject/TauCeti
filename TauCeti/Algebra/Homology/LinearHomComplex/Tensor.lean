@@ -39,9 +39,9 @@ product, the Koszul braiding and the unitor `R[0] ⊗ R[0] ≅ R[0]` give the co
 (`TauCeti.linearHomComplexDualDistrib`), a complex-level form of `TensorProduct.dualDistrib` with
 the factors in the reverse order. In this order, in which the inner factors `f` and `a` are paired
 first, it carries no sign (`CochainComplex.HomComplex.Cochain.ιTensorObj_dualDistrib_v`). Applied to
-`A` and `B∨` it is the comparison `B∨∨ ⊗ A∨ ⟶ (A ⊗ B∨)∨`, which sends tensors to functionals on an
-external kernel `A ⊗ B∨`; its inverse, which exists under finiteness hypotheses and is not
-constructed here, converts such functionals back into tensors.
+`A` and `B∨` it is the comparison `B∨∨ ⊗ A∨ ⟶ (A ⊗ B∨)∨`, which sends tensors to functionals on
+`A ⊗ B∨`; its inverse, which exists under finiteness hypotheses and is not constructed here,
+converts such functionals back into tensors.
 
 ## Main definitions
 
