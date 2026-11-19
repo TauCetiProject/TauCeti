@@ -189,7 +189,8 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset_of_is
       (mdifferentiableAt_perturbation_positiveEndChart hKH hHd hζT 1 _)
       (mdifferentiableAt_perturbation_positiveEndChart hKH hHd hζT Complex.I _)
   rw [← lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul hs
-    ((injOn_positiveEndChart q t₀).mono (hst.trans (prod_mono (subset_univ _) subset_rfl)))
+    ((injOn_positiveEndChart q t₀).mono
+      (hst.trans (prod_mono (subset_univ _) Ioo_subset_Ico_self)))
     (fun ζ _ ↦ (contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ) hdens]
   refine lintegral_mono_set ?_
   rintro _ ⟨ζ, hζ, rfl⟩
