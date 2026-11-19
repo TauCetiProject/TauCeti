@@ -43,6 +43,12 @@ namespace TauCeti
 
 /-! ### The identity-chart generator of an inner product space -/
 
+-- These private lemmas are a temporary copy of the identity-chart comparison of the open Tau Ceti
+-- pull request https://github.com/TauCetiProject/TauCeti/pull/37381, which adds them publicly to
+-- `TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Linear` as
+-- `Orientation.localHomologyMap_linearIsometryEquiv_localOrientationOfOrientedChart_refl` and
+-- `Orientation.localOrientation_eq_localOrientationOfOrientedChart_refl`. Once that lands, this
+-- section is to be deleted and its uses replaced by those lemmas.
 section IdentityChart
 
 open CategoryTheory
@@ -61,7 +67,10 @@ private theorem snd_complZeroPairIso_comp_complSingletonHomotopyEquivSphere (f :
           f.toLinearIsometry.continuous_unitSphereMap⟩ := by
   ext z
   rw [ContinuousLinearEquiv.complZeroPairIso_hom]
-  -- The subspace of `TopPair.ofSubset` is the subtype only after unfolding the pair.
+  -- The subspace of `TopPair.ofSubset` is the subtype `{0}ᶜ` only after unfolding the pair, so
+  -- each of the following three `erw` steps matches a lemma about the subtype against a term
+  -- stated for the subspace of the pair: the composites, the second component of the pair map,
+  -- and radial projection on `E`.
   erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
   refine (coe_complSingletonHomotopyEquivSphere_apply (0 : G) _).trans ?_
   erw [TopPair.ofSubsetMap_snd_apply]

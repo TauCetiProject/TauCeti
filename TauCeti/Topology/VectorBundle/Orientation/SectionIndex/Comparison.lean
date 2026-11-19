@@ -50,36 +50,44 @@ variable {M E' : Type} [TopologicalSpace M] [T2Space M] [NormedAddCommGroup E']
 
 /-- **Sections with the same fibre coordinates have the same local index.** Let `s₁` and `s₂` be
 sections of oriented vector bundles `E₁` and `E₂` over `M`, with the same model fibre, and let
-`e₁` and `e₂` be linear trivializations whose base sets contain an open neighbourhood `U` of `z`
-on which `s₁` has no zero other than `z`. If `e₁` and `e₂` read the orientations of all fibres over
-`U` as the same orientation `ω` of the model fibre, and `s₁` and `s₂` have the same fibre
-coordinates in `e₁` and `e₂` over `U`, then they have the same local index at `z`. -/
+`e₁` and `e₂` be linear trivializations whose base sets contain an open neighbourhood `U` of `z`.
+If `e₁` and `e₂` read the orientations of all fibres over `U` as the same orientation `ω` of the
+model fibre, and `s₁` and `s₂` have the same fibre coordinates in `e₁` and `e₂` over `U`, then they
+have the same local index at `z`. -/
 theorem sectionIndex_eq_of_snd_apply_eq {z : M} {U : Set M} (hU : IsOpen U) (hz : z ∈ U)
-    (hUz : ∀ x ∈ U, s₁ x = 0 → x = z) (hUe₁ : U ⊆ e₁.baseSet) (hUe₂ : U ⊆ e₂.baseSet)
-    {ω : Orientation ℝ F (Fin (n + 1))}
+    (hUe₁ : U ⊆ e₁.baseSet) (hUe₂ : U ⊆ e₂.baseSet) {ω : Orientation ℝ F (Fin (n + 1))}
     (ho₁ : ∀ x (hx : x ∈ U), e₁.mapOrientation (Fin (n + 1)) (hUe₁ hx) (o₁ x) = ω)
     (ho₂ : ∀ x (hx : x ∈ U), e₂.mapOrientation (Fin (n + 1)) (hUe₂ hx) (o₂ x) = ω)
     (hcoord : ∀ x ∈ U, (e₂ (TotalSpace.mk' F x (s₂ x))).2 = (e₁ (TotalSpace.mk' F x (s₁ x))).2) :
     o₂.sectionIndex hF oM hs₂ z = o₁.sectionIndex hF oM hs₁ z := by
-  -- The common fibre coordinate on `U`.
-  let σ : C(U, F) := ⟨fun x ↦ (e₁ (TotalSpace.mk' F x.1 (s₁ x.1))).2,
-    continuous_snd.comp ((e₁.continuousOn.comp_continuous (hs₁.comp continuous_subtype_val)
-      fun x ↦ e₁.mem_source.2 (hUe₁ x.2)))⟩
-  have hσ₀ : ∀ x : U, σ x = 0 → s₁ x.1 = 0 := fun x h ↦ by
-    by_contra h'
-    exact (e₁.snd_apply_ne_zero_iff ℝ (v := TotalSpace.mk' F x.1 (s₁ x.1)) (hUe₁ x.2)).2 h' h
-  have hσz : σ ⁻¹' ({0} : Set F) ⊆ {(⟨z, hz⟩ : U)} := fun x hx ↦
-    Subtype.ext (hUz x.1 x.2 (hσ₀ x hx))
-  have hUz₂ : ∀ x ∈ U, s₂ x = 0 → x = z := fun x hx h ↦ by
-    refine hUz x hx (hσ₀ ⟨x, hx⟩ ?_)
-    change (e₁ (TotalSpace.mk' F x (s₁ x))).2 = 0
-    rw [← hcoord x hx]
-    by_contra h'
-    exact (e₂.snd_apply_ne_zero_iff ℝ (v := TotalSpace.mk' F x (s₂ x)) (hUe₂ hx)).1 h' h
-  have h₁ := o₁.localHomologyMap_eq_sectionIndex_smul hF oM hs₁ e₁ hU hz hUz hUe₁ ho₁ σ
-    (fun _ ↦ rfl) hσz
-  have h₂ := o₂.localHomologyMap_eq_sectionIndex_smul hF oM hs₂ e₂ hU hz hUz₂ hUe₂ ho₂ σ
-    (fun x ↦ (hcoord x.1 x.2).symm) hσz
+  -- On `U` the two sections vanish at the same points.
+  have hzero : ∀ x ∈ U, s₂ x = 0 ↔ s₁ x = 0 := fun x hx ↦ by
+    rw [← e₂.snd_apply_eq_zero_iff ℝ (v := TotalSpace.mk' F x (s₂ x)) (hUe₂ hx),
+      ← e₁.snd_apply_eq_zero_iff ℝ (v := TotalSpace.mk' F x (s₁ x)) (hUe₁ hx), hcoord x hx]
+  by_cases hiso : ∃ V, IsOpen V ∧ z ∈ V ∧ ∀ x ∈ V, s₁ x = 0 → x = z
+  swap
+  · -- If `z` is not an isolated zero of `s₁`, it is not one of `s₂` either: both indices are `0`.
+    have hiso₂ : ¬ ∃ V, IsOpen V ∧ z ∈ V ∧ ∀ x ∈ V, s₂ x = 0 → x = z := by
+      rintro ⟨V, hV, hzV, hVz⟩
+      exact hiso ⟨V ∩ U, hV.inter hU, ⟨hzV, hz⟩, fun x hx h ↦ hVz x hx.1 ((hzero x hx.2).2 h)⟩
+    rw [sectionIndex_of_not_isolated _ _ _ _ hiso₂, sectionIndex_of_not_isolated _ _ _ _ hiso]
+  -- Shrink `U` to `V ∩ U`, which contains no zero of `s₁`, nor of `s₂`, other than `z`.
+  obtain ⟨V, hV, hzV, hVz⟩ := hiso
+  have hW : IsOpen (V ∩ U) := hV.inter hU
+  have hzW : z ∈ V ∩ U := ⟨hzV, hz⟩
+  have hWe₁ : V ∩ U ⊆ e₁.baseSet := fun x hx ↦ hUe₁ hx.2
+  have hWe₂ : V ∩ U ⊆ e₂.baseSet := fun x hx ↦ hUe₂ hx.2
+  have hWz₂ : ∀ x ∈ V ∩ U, s₂ x = 0 → x = z := fun x hx h ↦ hVz x hx.1 ((hzero x hx.2).1 h)
+  -- The common fibre coordinate on `V ∩ U`.
+  let σ : C(↥(V ∩ U), F) := ⟨fun x ↦ (e₁ (TotalSpace.mk' F x.1 (s₁ x.1))).2,
+    (e₁.continuousOn_snd_apply_mk hs₁).comp_continuous continuous_subtype_val fun x ↦ hWe₁ x.2⟩
+  have hσz : σ ⁻¹' ({0} : Set F) ⊆ {(⟨z, hzW⟩ : ↥(V ∩ U))} := fun x hx ↦ Subtype.ext
+    (hVz x.1 x.2.1 ((e₁.snd_apply_eq_zero_iff ℝ (v := TotalSpace.mk' F x.1 (s₁ x.1))
+      (hWe₁ x.2)).1 hx))
+  have h₁ := o₁.localHomologyMap_eq_sectionIndex_smul hF oM hs₁ e₁ hW hzW
+    (fun x hx ↦ hVz x hx.1) hWe₁ (fun x hx ↦ ho₁ x hx.2) σ (fun _ ↦ rfl) hσz
+  have h₂ := o₂.localHomologyMap_eq_sectionIndex_smul hF oM hs₂ e₂ hW hzW hWz₂ hWe₂
+    (fun x hx ↦ ho₂ x hx.2) σ (fun x ↦ (hcoord x.1 x.2.2).symm) hσz
   rw [← ω.kronecker_localCohomologyClass_zsmul hF (o₂.sectionIndex hF oM hs₂ z), ← h₂, h₁,
     ω.kronecker_localCohomologyClass_zsmul hF]
 
