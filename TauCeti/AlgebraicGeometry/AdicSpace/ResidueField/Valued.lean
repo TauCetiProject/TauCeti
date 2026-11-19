@@ -27,8 +27,9 @@ depend on the continuous-valuation API.
   `κ(v)` takes the image of `a : A` to `v.valuation a`.
 * `TauCeti.ValuationSpectrum.continuous_algebraMap_residueFieldValuation`: for a continuous point
   of a ring with separately continuous operations, `A → κ(v)` is continuous.
-* `TauCeti.ValuationSpectrum.valued_residueFieldCompletionMap`: the canonical map to the
-  completed residue field still computes the original valuation.
+* `TauCeti.ValuationSpectrum.valued_residueFieldCompletionMap` and
+  `TauCeti.ValuationSpectrum.valued_comap_residueFieldCompletionMap`: the canonical map to the
+  completed residue field still computes the original valuation, pointwise and as a valuation.
 
 ## References
 
@@ -104,6 +105,13 @@ theorem valued_residueFieldCompletionMap (v : Spv A) (a : A) :
     Valued.v (residueFieldCompletionMap v a) = v.valuation a := by
   rw [residueFieldCompletionMap_apply, Valued.valuedCompletion_apply,
     valued_algebraMap_residueFieldValuation]
+
+/-- Pulling back the completed residue field valuation along its canonical map recovers the
+valuation of the original point. -/
+@[simp]
+theorem valued_comap_residueFieldCompletionMap (v : Spv A) :
+    Valued.v.comap (residueFieldCompletionMap v) = v.valuation :=
+  Valuation.ext (valued_residueFieldCompletionMap v)
 
 /-- The canonical map to the completed residue field has kernel the support prime. -/
 @[simp]

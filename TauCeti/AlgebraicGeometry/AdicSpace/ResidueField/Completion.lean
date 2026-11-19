@@ -126,11 +126,8 @@ theorem residueFieldCompletionHom_spaComap_point :
     (residueFieldCompletionHom S x).spaComap (residueFieldCompletionPoint x.1) = x := by
   apply Subtype.ext
   rw [Pair.Hom.spaComap_val, residueFieldCompletionHom_toRingHom,
-    coe_residueFieldCompletionPoint, comap_ofValuation]
-  have hval : Valued.v.comap (residueFieldCompletionMap x.1) = x.1.valuation := by
-    ext a
-    exact valued_residueFieldCompletionMap x.1 a
-  rw [hval, ofValuation_valuation]
+    coe_residueFieldCompletionPoint, comap_ofValuation,
+    valued_comap_residueFieldCompletionMap, ofValuation_valuation]
 
 /-- Every point of the completed residue spectrum maps to a generization of the original
 point. -/

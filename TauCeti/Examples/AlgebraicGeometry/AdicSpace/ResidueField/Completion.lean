@@ -29,14 +29,9 @@ namespace TauCeti.Examples.ResidueFieldCompletion
 
 variable (p : ℕ) [Fact p.Prime]
 
-local notation "𝒯" => weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set ℚ_[p]))
-  isWeightFamily_one_weight
-local notation "T" => weightedX (fun _ : Fin 1 ↦ ({1} : Set ℚ_[p]))
-  isWeightFamily_one_weight 0
-
 /-- The rank-two point above the boundary gives a Tate residue field with its original
 valuation. -/
-theorem isTateRing_gaussPointAboveOneCompletion :
+example :
     IsTateRing (residueFieldValuation (gaussPointAboveOne ℚ_[p])).Completion :=
   (isAnalyticPoint_of_isTateRing _).isTateRing_residueFieldCompletion
     ((mem_spa_iff _ _).mp gaussPointAboveOne_mem_spa_closedDiscMinimalPlus).1
@@ -44,7 +39,8 @@ theorem isTateRing_gaussPointAboveOneCompletion :
 /-- The canonical morphism from the minimal p-adic disc pair sends the closed point of the
 rank-two completed residue spectrum back to the rank-two point. -/
 example :
-    let S : Pair 𝒯 := ⟨closedDiscMinimalPlus ℚ_[p],
+    let S : Pair (weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set ℚ_[p]))
+      isWeightFamily_one_weight) := ⟨closedDiscMinimalPlus ℚ_[p],
       isRingOfIntegralElements_closedDiscMinimalPlus⟩
     let x : spa S.plus := ⟨gaussPointAboveOne ℚ_[p],
       gaussPointAboveOne_mem_spa_closedDiscMinimalPlus⟩
@@ -59,7 +55,8 @@ example :
 /-- The canonical completed residue map at the rank-two point keeps the strict inequality
 `v(T) > 1`; the power-bounded coordinate need not belong to this pair's plus ring. -/
 example :
-    1 < Valued.v (residueFieldCompletionMap (gaussPointAboveOne ℚ_[p]) T) := by
+    1 < Valued.v (residueFieldCompletionMap (gaussPointAboveOne ℚ_[p])
+      (weightedX (fun _ : Fin 1 ↦ ({1} : Set ℚ_[p])) isWeightFamily_one_weight 0)) := by
   rw [valued_residueFieldCompletionMap, ← map_one (gaussPointAboveOne ℚ_[p]).valuation,
     lt_iff_not_ge, valuation_le_iff]
   intro h
@@ -70,7 +67,8 @@ example :
 /-- The rank-one Gauss point gives a second canonical residue morphism from the same minimal
 p-adic disc pair, whose distinguished closed point lies over the Gauss point. -/
 example :
-    let S : Pair 𝒯 := ⟨closedDiscMinimalPlus ℚ_[p],
+    let S : Pair (weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set ℚ_[p]))
+      isWeightFamily_one_weight) := ⟨closedDiscMinimalPlus ℚ_[p],
       isRingOfIntegralElements_closedDiscMinimalPlus⟩
     let x : spa S.plus := ⟨(gaussPoint (K := ℚ_[p]) one_pos le_rfl).1,
       closedPolydisc_subset_spa_closedDiscMinimalPlus (gaussPoint one_pos le_rfl).2⟩
@@ -85,7 +83,8 @@ example :
 /-- At the rank-one Gauss point the coordinate remains sub-unit in the completed residue
 field, separating its valuation from the rank-two example. -/
 example :
-    Valued.v (residueFieldCompletionMap (gaussPoint (K := ℚ_[p]) one_pos le_rfl).1 T) ≤ 1 := by
+    Valued.v (residueFieldCompletionMap (gaussPoint (K := ℚ_[p]) one_pos le_rfl).1
+      (weightedX (fun _ : Fin 1 ↦ ({1} : Set ℚ_[p])) isWeightFamily_one_weight 0)) ≤ 1 := by
   rw [valued_residueFieldCompletionMap,
     ← map_one (gaussPoint (K := ℚ_[p]) one_pos le_rfl).1.valuation, valuation_le_iff]
   exact (mem_closedPolydisc_iff_weightedX_vle_one
@@ -106,7 +105,8 @@ example :
       ⟨comap (weightedC _ isWeightFamily_one_weight) g.1, comap_weightedC_mem_spa g⟩
     let x := classicalPoint b (fun _ : Fin 1 ↦ (0 : ℚ_[p]))
       (fun _ ↦ isPowerBounded_zero)
-    x.1.IsAnalyticPoint ∧ residueFieldCompletionMap x.1 T = 0 := by
+    x.1.IsAnalyticPoint ∧ residueFieldCompletionMap x.1
+      (weightedX (fun _ : Fin 1 ↦ ({1} : Set ℚ_[p])) isWeightFamily_one_weight 0) = 0 := by
   intro g b x
   refine ⟨isAnalyticPoint_of_isTateRing x.1, ?_⟩
   rw [← RingHom.mem_ker, ker_residueFieldCompletionMap, mem_supp_iff, classicalPoint_vle]
