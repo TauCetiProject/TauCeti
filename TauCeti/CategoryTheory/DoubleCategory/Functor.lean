@@ -174,17 +174,17 @@ theorem congr_obj {F G : StrictDoubleFunctor D₁ D₂} (h : F = G) (a : O₁) :
   rw [h]
 
 /-- Equal strict double functors agree on horizontal edges, up to heterogeneous equality. -/
-theorem congr_hMap {F G : StrictDoubleFunctor D₁ D₂} (h : F = G) {a b : O₁} (f : Edge H₁ a b) :
+theorem hcongr_hMap {F G : StrictDoubleFunctor D₁ D₂} (h : F = G) {a b : O₁} (f : Edge H₁ a b) :
     F.hMap f ≍ G.hMap f := by
   rw [h]
 
 /-- Equal strict double functors agree on vertical edges, up to heterogeneous equality. -/
-theorem congr_vMap {F G : StrictDoubleFunctor D₁ D₂} (h : F = G) {a b : O₁} (f : Edge V₁ a b) :
+theorem hcongr_vMap {F G : StrictDoubleFunctor D₁ D₂} (h : F = G) {a b : O₁} (f : Edge V₁ a b) :
     F.vMap f ≍ G.vMap f := by
   rw [h]
 
 /-- Equal strict double functors agree on cells, up to heterogeneous equality. -/
-theorem congr_map {F G : StrictDoubleFunctor D₁ D₂} (h : F = G) {a b c d : O₁}
+theorem hcongr_map {F G : StrictDoubleFunctor D₁ D₂} (h : F = G) {a b c d : O₁}
     {p : Edge H₁ a b} {q : Edge H₁ c d} {l : Edge V₁ a c} {r : Edge V₁ b d}
     (α : D₁.Cell p q l r) : F.map α ≍ G.map α := by
   rw [h]
@@ -317,9 +317,10 @@ variable {D₁ : StrictDoubleCategory.{s₁} O₁ H₁ V₁} {D₂ : StrictDoubl
 @[ext]
 theorem ext {e e' : StrictDoubleIso D₁ D₂} (h : e.hom = e'.hom) : e = e' := by
   have h_inv : e.inv = e'.inv := by
-    calc e.inv = e.inv.comp (e'.hom.comp e'.inv) := by rw [e'.hom_inv_id]; rfl
-      _ = (e.inv.comp e.hom).comp e'.inv := by rw [← h]; rfl
-      _ = e'.inv := by rw [e.inv_hom_id]; rfl
+    calc e.inv = e.inv.comp (e'.hom.comp e'.inv) := by
+          rw [e'.hom_inv_id, StrictDoubleFunctor.comp_id]
+      _ = (e.inv.comp e.hom).comp e'.inv := by rw [← h, StrictDoubleFunctor.comp_assoc]
+      _ = e'.inv := by rw [e.inv_hom_id, StrictDoubleFunctor.id_comp]
   cases e
   cases e'
   cases h
@@ -359,6 +360,38 @@ def trans (e : StrictDoubleIso D₁ D₂) (e' : StrictDoubleIso D₂ D₃) : Str
     rw [StrictDoubleFunctor.comp_assoc, ← StrictDoubleFunctor.comp_assoc e.inv,
       e.inv_hom_id, StrictDoubleFunctor.id_comp, e'.inv_hom_id]
 
+@[simp]
+theorem refl_symm : (refl D₁).symm = refl D₁ :=
+  rfl
+
+@[simp]
+theorem trans_symm (e : StrictDoubleIso D₁ D₂) (e' : StrictDoubleIso D₂ D₃) :
+    (e.trans e').symm = e'.symm.trans e.symm :=
+  rfl
+
+@[simp]
+theorem refl_trans (e : StrictDoubleIso D₁ D₂) : (refl D₁).trans e = e :=
+  rfl
+
+@[simp]
+theorem trans_refl (e : StrictDoubleIso D₁ D₂) : e.trans (refl D₂) = e :=
+  rfl
+
+@[simp]
+theorem trans_assoc {O₄ : Type u₄} {H₄ : Category.{h₄} O₄} {V₄ : Category.{v₄} O₄}
+    {D₄ : StrictDoubleCategory.{s₄} O₄ H₄ V₄} (e : StrictDoubleIso D₁ D₂)
+    (e' : StrictDoubleIso D₂ D₃) (e'' : StrictDoubleIso D₃ D₄) :
+    (e.trans e').trans e'' = e.trans (e'.trans e'') :=
+  rfl
+
+@[simp]
+theorem self_trans_symm (e : StrictDoubleIso D₁ D₂) : e.trans e.symm = refl D₁ :=
+  ext e.hom_inv_id
+
+@[simp]
+theorem symm_self_trans (e : StrictDoubleIso D₁ D₂) : e.symm.trans e = refl D₂ :=
+  ext e.inv_hom_id
+
 /-- A double isomorphism followed by its inverse fixes every object. -/
 @[simp]
 theorem inv_obj_hom_obj (e : StrictDoubleIso D₁ D₂) (a : O₁) : e.inv.obj (e.hom.obj a) = a :=
@@ -371,42 +404,42 @@ theorem hom_obj_inv_obj (e : StrictDoubleIso D₁ D₂) (a : O₂) : e.hom.obj (
 
 /-- A double isomorphism followed by its inverse fixes every horizontal edge, up to the
 identification of its endpoints given by `inv_obj_hom_obj`. -/
-theorem inv_hMap_hom_hMap (e : StrictDoubleIso D₁ D₂) {a b : O₁} (f : Edge H₁ a b) :
+theorem inv_hMap_hom_hMap_heq (e : StrictDoubleIso D₁ D₂) {a b : O₁} (f : Edge H₁ a b) :
     e.inv.hMap (e.hom.hMap f) ≍ f :=
-  StrictDoubleFunctor.congr_hMap e.hom_inv_id f
+  StrictDoubleFunctor.hcongr_hMap e.hom_inv_id f
 
 /-- A double isomorphism followed by its inverse fixes every vertical edge, up to the
 identification of its endpoints given by `inv_obj_hom_obj`. -/
-theorem inv_vMap_hom_vMap (e : StrictDoubleIso D₁ D₂) {a b : O₁} (f : Edge V₁ a b) :
+theorem inv_vMap_hom_vMap_heq (e : StrictDoubleIso D₁ D₂) {a b : O₁} (f : Edge V₁ a b) :
     e.inv.vMap (e.hom.vMap f) ≍ f :=
-  StrictDoubleFunctor.congr_vMap e.hom_inv_id f
+  StrictDoubleFunctor.hcongr_vMap e.hom_inv_id f
 
 /-- A double isomorphism followed by its inverse fixes every cell, up to the identification of
-its boundary given by `inv_obj_hom_obj`, `inv_hMap_hom_hMap` and `inv_vMap_hom_vMap`. -/
-theorem inv_map_hom_map (e : StrictDoubleIso D₁ D₂) {a b c d : O₁} {p : Edge H₁ a b}
+its boundary given by `inv_obj_hom_obj`, `inv_hMap_hom_hMap_heq` and `inv_vMap_hom_vMap_heq`. -/
+theorem inv_map_hom_map_heq (e : StrictDoubleIso D₁ D₂) {a b c d : O₁} {p : Edge H₁ a b}
     {q : Edge H₁ c d} {l : Edge V₁ a c} {r : Edge V₁ b d} (α : D₁.Cell p q l r) :
     e.inv.map (e.hom.map α) ≍ α :=
-  StrictDoubleFunctor.congr_map e.hom_inv_id α
+  StrictDoubleFunctor.hcongr_map e.hom_inv_id α
 
 /-- The inverse of a double isomorphism followed by the isomorphism fixes every horizontal edge,
 up to the identification of its endpoints given by `hom_obj_inv_obj`. -/
-theorem hom_hMap_inv_hMap (e : StrictDoubleIso D₁ D₂) {a b : O₂} (f : Edge H₂ a b) :
+theorem hom_hMap_inv_hMap_heq (e : StrictDoubleIso D₁ D₂) {a b : O₂} (f : Edge H₂ a b) :
     e.hom.hMap (e.inv.hMap f) ≍ f :=
-  StrictDoubleFunctor.congr_hMap e.inv_hom_id f
+  StrictDoubleFunctor.hcongr_hMap e.inv_hom_id f
 
 /-- The inverse of a double isomorphism followed by the isomorphism fixes every vertical edge,
 up to the identification of its endpoints given by `hom_obj_inv_obj`. -/
-theorem hom_vMap_inv_vMap (e : StrictDoubleIso D₁ D₂) {a b : O₂} (f : Edge V₂ a b) :
+theorem hom_vMap_inv_vMap_heq (e : StrictDoubleIso D₁ D₂) {a b : O₂} (f : Edge V₂ a b) :
     e.hom.vMap (e.inv.vMap f) ≍ f :=
-  StrictDoubleFunctor.congr_vMap e.inv_hom_id f
+  StrictDoubleFunctor.hcongr_vMap e.inv_hom_id f
 
 /-- The inverse of a double isomorphism followed by the isomorphism fixes every cell, up to the
-identification of its boundary given by `hom_obj_inv_obj`, `hom_hMap_inv_hMap` and
-`hom_vMap_inv_vMap`. -/
-theorem hom_map_inv_map (e : StrictDoubleIso D₁ D₂) {a b c d : O₂} {p : Edge H₂ a b}
+identification of its boundary given by `hom_obj_inv_obj`, `hom_hMap_inv_hMap_heq` and
+`hom_vMap_inv_vMap_heq`. -/
+theorem hom_map_inv_map_heq (e : StrictDoubleIso D₁ D₂) {a b c d : O₂} {p : Edge H₂ a b}
     {q : Edge H₂ c d} {l : Edge V₂ a c} {r : Edge V₂ b d} (α : D₂.Cell p q l r) :
     e.hom.map (e.inv.map α) ≍ α :=
-  StrictDoubleFunctor.congr_map e.inv_hom_id α
+  StrictDoubleFunctor.hcongr_map e.inv_hom_id α
 
 section OfCellEquiv
 
@@ -474,7 +507,7 @@ variable (φ : ∀ {a b c d : O₁} {p : Edge H₁ a b} {q : Edge H₁ c d} {l :
     (α : D.Cell p q l m) (β : D.Cell q r n t), φ (D.vComp α β) = D'.vComp (φ α) (φ β))
 
 /-- The double isomorphism `ofCellEquiv` followed by its inverse fixes every cell. Unlike
-`inv_map_hom_map`, this is an equality, since `ofCellEquiv` is the identity on objects and
+`inv_map_hom_map_heq`, this is an equality, since `ofCellEquiv` is the identity on objects and
 edges. -/
 @[simp]
 theorem ofCellEquiv_inv_map_hom_map {a b c d : O₁} {p : Edge H₁ a b} {q : Edge H₁ c d}
