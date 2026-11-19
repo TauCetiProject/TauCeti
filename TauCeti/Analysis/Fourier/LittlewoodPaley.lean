@@ -630,7 +630,7 @@ private theorem sum_toLp_symbol_smul_toLp_symbol {L : ℕ}
   simp only [Lp.smul_eq_mul]
   refine Lp.sum_mul_eq_of_ae_eq_ofReal (fun k ↦
     ((φ.inhomogeneousLittlewoodPaleySchwartz k).coeFn_toLp ∞ volume).trans
-      (.of_forall (φ.inhomogeneousLittlewoodPaleySchwartz_apply k))) fun ξ ↦ ?_
+      (.of_forall (φ.inhomogeneousLittlewoodPaleySchwartz_apply k))) (.of_forall fun ξ ↦ ?_)
   rw [← Finset.sum_mul, ← φ.enlargedLittlewoodPaley_apply,
     φ.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley hL]
 
@@ -916,7 +916,7 @@ theorem sum_fourierMultiplierCLM_fourierMultiplierCLM_littlewoodPaley {L : ℕ}
   have hsym : ∑ k ∈ Finset.Ioo (j - L) (j + L), (m k • m j : Lp ℂ ∞ (volume : Measure V)) =
       m j := by
     simpa only [Lp.smul_eq_mul] using
-      Lp.sum_mul_eq_of_ae_eq_ofReal hm (φ.sum_littlewoodPaley_mul_littlewoodPaley hL j)
+      Lp.sum_mul_eq_of_ae_eq_ofReal hm (.of_forall (φ.sum_littlewoodPaley_mul_littlewoodPaley hL j))
   simp only [Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply]
   conv_rhs => rw [← hsym]
   rw [Lp.fourierMultiplierCLM_sum, FunLike.coe_sum, Finset.sum_apply]

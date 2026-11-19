@@ -24,9 +24,8 @@ wave-admissible, `2 / q + (n - 1) / r = (n - 1) / 2`, with `2 < q < ∞`, and le
 
 in weak form, that is tested against `G ∈ L^{q'}_t L^{r'}_x`, and the same estimate for the
 backward propagator `W₋(t) = W₊(-t)`. The right-hand side is the norm of `f` in the homogeneous
-Besov space `\dot B^γ_{2,1}`, written through the blocks of `f`. Since the bound is a sum over the
-blocks rather than a square function, it also covers the pairs with `r = ∞`, where the false
-embedding of `\dot H^γ` in `L^∞` rules out a bound by the homogeneous Sobolev norm.
+Besov space `\dot B^γ_{2,1}`, written through the blocks of `f`. Since the bound is an `ℓ¹` sum
+over the blocks rather than a square function, the argument also covers the pairs with `r = ∞`.
 
 ## The argument
 
