@@ -260,8 +260,9 @@ theorem quantizeTempered_smulLeftCLM_coord {a : Symbol n ℂ ℂ m} (ha : a.HasC
     (ofRealCLM.comp (EuclideanSpace.proj j)).hasTemperateGrowth
   have h : quantizeTempered F ((coordSubSymbol 0 j).comp a) (ha.comp_left _).isUniform T =
       TemperedDistribution.smulLeftCLM F (fun y : CoordinateSpace n ↦ (((y - 0) j : ℝ) : ℂ))
-        (quantizeTempered F a ha.isUniform T) :=
-    quantizeTempered_ofSpatial_smul_id_comp ha _ (by simpa using hft) T
+        (quantizeTempered F a ha.isUniform T) := by
+    rw [coordSubSymbol_eq_ofSpatial]
+    exact quantizeTempered_ofSpatial_smul_id_comp ha _ (by simpa using hft) T
   simp only [sub_zero] at h
   rw [h, smulLeftCLM_quantizeTempered]
   abel

@@ -1063,10 +1063,17 @@ section Commutator
 
 /-- The symbol of order `0` of multiplication by the `j`-th coordinate `(y - z)ⱼ` of the
 displacement of the position `y` from a point `z`. -/
-@[expose] def coordSubSymbol (z : CoordinateSpace n) (j : Fin n) : Symbol n W W 0 :=
+def coordSubSymbol (z : CoordinateSpace n) (j : Fin n) : Symbol n W W 0 :=
   ofSpatial (fun y ↦ (y - z) j • ContinuousLinearMap.id ℂ W)
     (((EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).contDiff.comp
       (contDiff_id.sub contDiff_const)).smul contDiff_const)
+
+/-- `coordSubSymbol z j` is the spatial symbol `(y - z)ⱼ • id`. -/
+theorem coordSubSymbol_eq_ofSpatial (z : CoordinateSpace n) (j : Fin n) :
+    coordSubSymbol (W := W) z j = ofSpatial (fun y ↦ (y - z) j • ContinuousLinearMap.id ℂ W)
+      (((EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).contDiff.comp
+        (contDiff_id.sub contDiff_const)).smul contDiff_const) :=
+  (rfl)
 
 @[simp]
 theorem coefficient_coordSubSymbol (z : CoordinateSpace n) (j : Fin n)
