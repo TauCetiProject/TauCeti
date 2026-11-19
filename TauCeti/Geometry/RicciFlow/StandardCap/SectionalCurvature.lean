@@ -68,10 +68,10 @@ theorem exists_hasSectionalCurvatureAt_puncturedMetric_round :
       (leviCivitaConnection (𝓘(ℝ).prod (𝓡 n))
         (standardCapRadialDomain × Metric.sphere (0 : V) 1)).HasSectionalCurvatureAt
         (isMetricCompatible_leviCivitaConnection (𝓘(ℝ).prod (𝓡 n))) p (1 / 4) := by
-  obtain ⟨r₀, hr₀, h⟩ := Metric.eventually_nhds_iff.1 (hf.eventuallyEq_two_mul_sin.and
-    (hf.deriv_eventuallyEq_cos.and hf.deriv_deriv_eventuallyEq_neg_sin))
+  obtain ⟨r₀, hr₀, h⟩ :=
+    hf.exists_eq_two_mul_sin_and_deriv_eq_cos_and_deriv_deriv_eq_neg_sin_div_two
   refine ⟨r₀, hr₀, fun p hp ↦ ?_⟩
-  obtain ⟨h₀, h₁, h₂⟩ := h (by rwa [Real.dist_0_eq_abs, abs_of_pos p.1.property])
+  obtain ⟨h₀, h₁, h₂⟩ := h p.1 ⟨p.1.property.le, hp⟩
   rw [hf.puncturedMetric_def]
   apply hasSectionalCurvatureAt_warpedProdTangentSpace_real_sphere (n := n)
     standardCapRadialDomain

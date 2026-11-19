@@ -29,6 +29,8 @@ dependent pairs, whose totalized sectional curvature is zero.
 
 * `TauCeti.Manifold.exists_sectionalCurvature_eq_vertical_right_of_finrank_le_one`: over a base
   of dimension at most one, every plane is spanned by a pair whose second vector is vertical.
+* `TauCeti.Manifold.IsWarpedProduct.sectionalCurvature_vertical_right_of_finrank_le_one`: the
+  sectional curvature of such a pair, in terms of the warping function and the fibre.
 * `TauCeti.Manifold.IsWarpedProduct.le_sectionalCurvature_of_finrank_le_one` and
   `TauCeti.Manifold.IsWarpedProduct.sectionalCurvature_le_of_finrank_le_one`: lower and upper
   sectional curvature bounds.
@@ -168,6 +170,25 @@ theorem exists_sectionalCurvature_eq_vertical_right_of_finrank_le_one
         real_inner_comm u v]
       ring
 
+/-- Over a base of dimension at most one, the sectional curvature of an arbitrary vector and a
+vertical vector of the warped metric, as the quotient of the radial and vertical numerator terms
+by the split Gram determinant. Fibre quantities on the right use the unscaled fibre metric. -/
+theorem IsWarpedProduct.sectionalCurvature_vertical_right_of_finrank_le_one
+    (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hn : Module.finrank ℝ E ≤ 1) (p : M × N) (u : TangentSpace I p.1)
+    (v w : TangentSpace J p.2) :
+    (leviCivitaConnection (I.prod J) (M × N)).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection (I.prod J)) p
+        ((tangentSpaceProdEquiv p).symm (u, v)) ((tangentSpaceProdEquiv p).symm (0, w)) =
+      (-f p.1 * laplaceBeltrami I f p.1 * ‖u‖ ^ 2 * ‖w‖ ^ 2 + f p.1 ^ 2 *
+          (inner ℝ ((leviCivitaConnection J N).curvatureTensor p.2 v w w) v -
+            ‖mgradient I f p.1‖ ^ 2 * (Matrix.gram ℝ ![v, w]).det)) /
+        (f p.1 ^ 2 * ‖u‖ ^ 2 * ‖w‖ ^ 2 + f p.1 ^ 4 * (Matrix.gram ℝ ![v, w]).det) := by
+  rw [sectionalCurvature_apply, h.det_gram_vertical_right,
+    h.inner_curvatureTensor_vertical_right hf,
+    hessian_eq_laplaceBeltrami_mul_inner_of_finrank_le_one hn, real_inner_self_eq_norm_sq]
+  ring
+
 /-- Over a base of dimension at most one, sectional curvature is at least `k` on every plane
 when `-f Δf ≥ k f²` and the fibre curvature numerator is at least
 `(|grad f|² + k f²) det Gram` at the point. The fibre condition is stated in the unscaled fibre
@@ -185,9 +206,8 @@ theorem IsWarpedProduct.le_sectionalCurvature_of_finrank_le_one
   obtain ⟨a, w, hK, hdet⟩ := exists_sectionalCurvature_eq_vertical_right_of_finrank_le_one hn p u v
   have hpos := hdet ▸ (Matrix.posDef_gram_of_linearIndependent huv).det_pos
   obtain ⟨⟨x, y⟩, rfl⟩ := (tangentSpaceProdEquiv p).symm.surjective a
-  rw [hK, sectionalCurvature_apply, le_div_iff₀ hpos, h.det_gram_vertical_right,
-    h.inner_curvatureTensor_vertical_right hf,
-    hessian_eq_laplaceBeltrami_mul_inner_of_finrank_le_one hn, real_inner_self_eq_norm_sq]
+  rw [h.det_gram_vertical_right] at hpos
+  rw [hK, h.sectionalCurvature_vertical_right_of_finrank_le_one hf hn, le_div_iff₀ hpos]
   have h₁ := mul_le_mul_of_nonneg_right hlap (by positivity : (0 : ℝ) ≤ ‖x‖ ^ 2 * ‖w‖ ^ 2)
   have h₂ := mul_le_mul_of_nonneg_left (hfibre y w) (sq_nonneg (f p.1))
   linear_combination h₁ + h₂
@@ -209,9 +229,8 @@ theorem IsWarpedProduct.sectionalCurvature_le_of_finrank_le_one
   obtain ⟨a, w, hK, hdet⟩ := exists_sectionalCurvature_eq_vertical_right_of_finrank_le_one hn p u v
   have hpos := hdet ▸ (Matrix.posDef_gram_of_linearIndependent huv).det_pos
   obtain ⟨⟨x, y⟩, rfl⟩ := (tangentSpaceProdEquiv p).symm.surjective a
-  rw [hK, sectionalCurvature_apply, div_le_iff₀ hpos, h.det_gram_vertical_right,
-    h.inner_curvatureTensor_vertical_right hf,
-    hessian_eq_laplaceBeltrami_mul_inner_of_finrank_le_one hn, real_inner_self_eq_norm_sq]
+  rw [h.det_gram_vertical_right] at hpos
+  rw [hK, h.sectionalCurvature_vertical_right_of_finrank_le_one hf hn, div_le_iff₀ hpos]
   have h₁ := mul_le_mul_of_nonneg_right hlap (by positivity : (0 : ℝ) ≤ ‖x‖ ^ 2 * ‖w‖ ^ 2)
   have h₂ := mul_le_mul_of_nonneg_left (hfibre y w) (sq_nonneg (f p.1))
   linear_combination h₁ + h₂

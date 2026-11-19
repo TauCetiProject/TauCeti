@@ -141,10 +141,10 @@ theorem exists_scalarCurvature_puncturedMetric_eq_round :
     ∃ r₀ > 0, ∀ p : standardCapRadialDomain × Metric.sphere (0 : V) 1,
       (p.1 : ℝ) < r₀ →
       (hf.puncturedMetric (n := n) V).scalarCurvature p = (n : ℝ) * (n + 1) / 4 := by
-  obtain ⟨r₀, hr₀, h⟩ := Metric.eventually_nhds_iff.1 (hf.eventuallyEq_two_mul_sin.and
-    (hf.deriv_eventuallyEq_cos.and hf.deriv_deriv_eventuallyEq_neg_sin))
+  obtain ⟨r₀, hr₀, h⟩ :=
+    hf.exists_eq_two_mul_sin_and_deriv_eq_cos_and_deriv_deriv_eq_neg_sin_div_two
   refine ⟨r₀, hr₀, fun p hp ↦ ?_⟩
-  obtain ⟨h₀, h₁, h₂⟩ := h (by rwa [Real.dist_0_eq_abs, abs_of_pos p.1.property])
+  obtain ⟨h₀, h₁, h₂⟩ := h p.1 ⟨p.1.property.le, hp⟩
   have hsin : sin ((p.1 : ℝ) / 2) ≠ 0 := by
     have := hf.apply_pos p.1.property
     rw [h₀] at this

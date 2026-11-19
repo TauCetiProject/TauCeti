@@ -46,8 +46,8 @@ nonempty (`TauCeti.exists_isStandardCapProfile`), so the standard cap can be cho
 
 * `TauCeti.IsStandardCapProfile.eventuallyEq_two_mul_sin`: near the tip, on both sides, the profile
   is `2 sin (r / 2)`; `TauCeti.IsStandardCapProfile.deriv_eventuallyEq_cos` and
-  `TauCeti.IsStandardCapProfile.deriv_deriv_eventuallyEq_neg_sin` give its first two derivatives
-  there.
+  `TauCeti.IsStandardCapProfile.deriv_deriv_eventuallyEq_neg_sin_div_two` give its first two
+  derivatives there.
 * `TauCeti.IsStandardCapProfile.apply_zero`, `TauCeti.IsStandardCapProfile.deriv_zero`: `f(0) = 0`
   and `f'(0) = 1`.
 * `TauCeti.IsStandardCapProfile.deriv_nonneg`, `TauCeti.IsStandardCapProfile.deriv_le_one`,
@@ -126,11 +126,20 @@ theorem deriv_eventuallyEq_cos : deriv f =ᶠ[𝓝 0] fun r ↦ cos (r / 2) := b
 
 /-- Near the tip, on both sides, the second derivative of a standard cap profile is
 `-sin (r / 2) / 2`. -/
-theorem deriv_deriv_eventuallyEq_neg_sin :
+theorem deriv_deriv_eventuallyEq_neg_sin_div_two :
     deriv (deriv f) =ᶠ[𝓝 0] fun r ↦ -(sin (r / 2) / 2) := by
   filter_upwards [hf.deriv_eventuallyEq_cos.eventuallyEq_nhds] with r hr
   rw [hr.deriv_eq, ((hasDerivAt_id' r).div_const 2).cos.deriv]
   ring
+
+/-- On a common interval `[0, r₀)` at the tip, a standard cap profile is `2 sin (r / 2)`, its
+derivative is `cos (r / 2)` and its second derivative is `-sin (r / 2) / 2`. -/
+theorem exists_eq_two_mul_sin_and_deriv_eq_cos_and_deriv_deriv_eq_neg_sin_div_two :
+    ∃ r₀ > 0, ∀ r ∈ Ico 0 r₀, f r = 2 * sin (r / 2) ∧ deriv f r = cos (r / 2) ∧
+      deriv (deriv f) r = -(sin (r / 2) / 2) := by
+  obtain ⟨r₀, hr₀, h⟩ := Metric.eventually_nhds_iff.1 (hf.eventuallyEq_two_mul_sin.and
+    (hf.deriv_eventuallyEq_cos.and hf.deriv_deriv_eventuallyEq_neg_sin_div_two))
+  exact ⟨r₀, hr₀, fun r hr ↦ h (by rw [Real.dist_0_eq_abs, abs_of_nonneg hr.1]; exact hr.2)⟩
 
 /-- A standard cap profile vanishes at the tip. -/
 theorem apply_zero : f 0 = 0 := by
