@@ -11,7 +11,7 @@ import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
 
 /-!
-# The Mellin–Barnes integral of `(1 + u)^{-a}`
+# The Mellin–Barnes integral of `(1 + u)^{-a}` and Barnes's first lemma
 
 For `0 < Re s < Re a` the Mellin transform of `t ↦ (1 + t)^{-a}` is Euler's Beta integral of the
 second kind (DLMF 5.12.3),
@@ -29,23 +29,43 @@ binomial,
 
 This is the integral that, inserted into Euler's integral for the Gauss hypergeometric function
 and into a Beta integral, gives the Mellin–Barnes representations of the Gauss function and
-Barnes's first lemma.
+Barnes's first lemma (DLMF 5.13.3): for `a`, `b`, `c`, `d` with positive real parts,
+
+`(1 / 2π) ∫ Γ(a + i y) Γ(b + i y) Γ(c - i y) Γ(d - i y) dy
+  = Γ(a + c) Γ(a + d) Γ(b + c) Γ(b + d) / Γ(a + b + c + d)`.
+
+To prove it, write `Γ(b + d) (1 + u)^{-(b + d)}` as its Mellin–Barnes integral along
+`Re s = Re b` inside the Beta integral
+`∫₀^∞ u^{b + c - 1} (1 + u)^{-(a + c)} (1 + u)^{-(b + d)} du
+  = Γ(b + c) Γ(a + d) / Γ(a + b + c + d)`,
+and exchange the two integrals: the inner integral in `u` is then the Beta integral
+`∫₀^∞ u^{c - i y - 1} (1 + u)^{-(a + c)} du = Γ(c - i y) Γ(a + i y) / Γ(a + c)`. Barnes's first
+lemma evaluates the termwise integrals in the Mellin–Barnes representation of the Gauss function
+in the variable `1 - z` (DLMF 15.6.7).
 
 ## Main results
 
 * `Complex.hasMellin_one_add_cpow_neg`: the Mellin transform of `(1 + t)^{-a}` converges at every
   `s` with `0 < Re s < Re a` and equals `Γ(s) Γ(a - s) / Γ(a)` there.
+* `Complex.integrableOn_cpow_mul_one_add_cpow_neg`, `Complex.integral_cpow_mul_one_add_cpow_neg`:
+  the same Beta integral as an integrable function and a set integral on `(0, ∞)`.
 * `Complex.verticalIntegrable_Gamma_mul_Gamma_sub`: `s ↦ Γ(s) Γ(a - s)` is integrable on every
   vertical line `Re s = σ` with neither `σ` nor `Re a - σ` a nonpositive integer.
 * `Complex.mellinInv_Gamma_mul_Gamma_sub`: Mellin inversion of `Γ(s) Γ(a - s)` on a vertical line
   `Re s = σ` with `0 < σ < Re a` is `Γ(a) (1 + u)^{-a}`.
 * `Complex.integral_cpow_neg_mul_Gamma_mul_Gamma_sub`: the same formula as the unnormalised
   vertical integral `∫ u^{-(σ + i y)} Γ(σ + i y) Γ(a - σ - i y) dy = 2π Γ(a) (1 + u)^{-a}`.
+* `Complex.integral_cpow_neg_mul_Gamma_add_mul_Gamma_sub`: the same integral along the line
+  `Re s = Re b` parametrised from a complex point `b`,
+  `∫ u^{-(b + i y)} Γ(b + i y) Γ(d - i y) dy = 2π Γ(b + d) (1 + u)^{-(b + d)}`.
+* `Complex.integrable_Gamma_mul_Gamma_mul_Gamma_mul_Gamma`: the integrand of Barnes's first lemma
+  is integrable on the imaginary axis.
+* `Complex.integral_Gamma_mul_Gamma_mul_Gamma_mul_Gamma`: **Barnes's first lemma** (DLMF 5.13.3).
 
 ## References
 
-* NIST Digital Library of Mathematical Functions, equation 5.12.3 and §15.6 (the Mellin–Barnes
-  integrals 15.6.6–15.6.7).
+* NIST Digital Library of Mathematical Functions, equations 5.12.3 and 5.13.3 and §15.6 (the
+  Mellin–Barnes integrals 15.6.6–15.6.7).
 * E. T. Whittaker and G. N. Watson, *A Course of Modern Analysis*, §§12.41 and 14.5.
 -/
 
@@ -120,6 +140,19 @@ theorem hasMellin_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.r
       setIntegral_congr_set Ioo_ae_eq_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
       ← betaIntegral, betaIntegral_eq_Gamma_mul_div _ _ hs has, add_sub_cancel]
 
+/-- For `0 < Re s < Re a`, the integrand `u^{s - 1} (1 + u)^{-a}` of Euler's Beta integral of the
+second kind is integrable on `(0, ∞)`. -/
+theorem integrableOn_cpow_mul_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.re) :
+    IntegrableOn (fun u : ℝ ↦ (u : ℂ) ^ (s - 1) * (1 + (u : ℂ)) ^ (-a)) (Ioi 0) := by
+  simpa [MellinConvergent] using (hasMellin_one_add_cpow_neg hs hsa).1
+
+/-- **Euler's Beta integral of the second kind** (DLMF 5.12.3), as a set integral: for
+`0 < Re s < Re a`, `∫₀^∞ u^{s - 1} (1 + u)^{-a} du = Γ(s) Γ(a - s) / Γ(a)`. -/
+theorem integral_cpow_mul_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.re) :
+    ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s - 1) * (1 + (u : ℂ)) ^ (-a) =
+      Gamma s * Gamma (a - s) / Gamma a := by
+  simpa [mellin] using (hasMellin_one_add_cpow_neg hs hsa).2
+
 /-- On every vertical line `Re s = σ` with neither `σ` nor `Re a - σ` a nonpositive integer, the
 product `Γ(s) Γ(a - s)` is integrable. -/
 theorem verticalIntegrable_Gamma_mul_Gamma_sub {a : ℂ} {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n)
@@ -173,5 +206,145 @@ theorem integral_cpow_neg_mul_Gamma_mul_Gamma_sub {a : ℂ} {σ : ℝ} (hσ : 0 
   simp only [smul_eq_mul] at h
   rw [← h, ← mul_assoc,
     show (2 * π : ℂ) * ((1 / (2 * π) : ℝ) : ℂ) = 1 by push_cast; field_simp, one_mul]
+
+/-! ### Barnes's first lemma -/
+
+/-- A complex number with positive real part does not have a nonpositive integer as real part. -/
+private lemma re_ne_neg_natCast {b : ℂ} (hb : 0 < b.re) (n : ℕ) : b.re ≠ -n := by
+  linarith [n.cast_nonneg' (α := ℝ)]
+
+/-- The line `Re s = Re b`, parametrised from `Re b` and shifted by `Im b`, is the line
+parametrised from `b`. -/
+private lemma re_add_add_im_mul_I (b : ℂ) (y : ℝ) :
+    (b.re : ℂ) + ((y + b.im : ℝ) : ℂ) * I = b + y * I := by
+  apply Complex.ext <;> simp [add_comm]
+
+/-- On the imaginary axis, `y ↦ Γ(b + i y) Γ(d - i y)` is integrable when neither `Re b` nor `Re d`
+is a nonpositive integer. -/
+theorem integrable_Gamma_add_mul_Gamma_sub {b d : ℂ} (hb : ∀ n : ℕ, b.re ≠ -n)
+    (hd : ∀ n : ℕ, d.re ≠ -n) :
+    Integrable fun y : ℝ ↦ Gamma (b + y * I) * Gamma (d - y * I) := by
+  have h := (verticalIntegrable_Gamma_mul_Gamma_sub (a := b + d) (σ := b.re) hb
+    (by simpa using hd)).comp_add_right b.im
+  refine h.congr (Eventually.of_forall fun y ↦ ?_)
+  simp only [re_add_add_im_mul_I, add_sub_add_left_eq_sub]
+
+/-- **The Mellin–Barnes integral of `(1 + u)^{-(b + d)}`** along the line `Re s = Re b`,
+parametrised from `b`: for `0 < Re b`, `0 < Re d` and `u > 0`,
+`∫ u^{-(b + i y)} Γ(b + i y) Γ(d - i y) dy = 2π Γ(b + d) (1 + u)^{-(b + d)}`. -/
+theorem integral_cpow_neg_mul_Gamma_add_mul_Gamma_sub {b d : ℂ} (hb : 0 < b.re) (hd : 0 < d.re)
+    {u : ℝ} (hu : 0 < u) :
+    ∫ y : ℝ, (u : ℂ) ^ (-(b + y * I)) * (Gamma (b + y * I) * Gamma (d - y * I)) =
+      2 * π * (Gamma (b + d) * (1 + (u : ℂ)) ^ (-(b + d))) := by
+  set φ : ℂ → ℂ := fun s ↦ (u : ℂ) ^ (-s) * (Gamma s * Gamma (b + d - s))
+  calc
+    _ = ∫ y : ℝ, φ (b.re + ((y + b.im : ℝ) : ℂ) * I) := by
+      refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
+      simp only [φ, re_add_add_im_mul_I, add_sub_add_left_eq_sub]
+    _ = ∫ y : ℝ, φ (b.re + y * I) := integral_add_right_eq_self (fun y : ℝ ↦ φ (b.re + y * I)) b.im
+    _ = _ := integral_cpow_neg_mul_Gamma_mul_Gamma_sub hb (by simp; linarith) hu
+
+/-- The integrand `Γ(a + i y) Γ(b + i y) Γ(c - i y) Γ(d - i y)` of Barnes's first lemma is
+integrable on the imaginary axis when `a`, `b`, `c` and `d` have positive real parts. -/
+theorem integrable_Gamma_mul_Gamma_mul_Gamma_mul_Gamma {a b c d : ℂ} (ha : 0 < a.re)
+    (hb : 0 < b.re) (hc : 0 < c.re) (hd : 0 < d.re) :
+    Integrable fun y : ℝ ↦
+      Gamma (a + y * I) * Gamma (b + y * I) * Gamma (c - y * I) * Gamma (d - y * I) := by
+  refine ((integrable_Gamma_add_mul_Gamma_sub (re_ne_neg_natCast ha) (re_ne_neg_natCast hd)).mul_bdd
+    (c := Real.Gamma b.re * Real.Gamma c.re) (integrable_Gamma_add_mul_Gamma_sub
+      (re_ne_neg_natCast hb) (re_ne_neg_natCast hc)).aestronglyMeasurable
+    (Eventually.of_forall fun y ↦ ?_)).congr (Eventually.of_forall fun y ↦ by ring)
+  have h1 : ‖Gamma (b + y * I)‖ ≤ Real.Gamma b.re := by
+    simpa using norm_Gamma_le_Gamma_re (s := b + y * I) (by simpa using hb)
+  have h2 : ‖Gamma (c - y * I)‖ ≤ Real.Gamma c.re := by
+    simpa using norm_Gamma_le_Gamma_re (s := c - y * I) (by simpa using hc)
+  rw [norm_mul]
+  exact mul_le_mul h1 h2 (norm_nonneg _) (Real.Gamma_pos_of_pos hb).le
+
+/-- The kernel `u^{c - 1} (1 + u)^{-(a + c)} u^{-i y} Γ(b + i y) Γ(d - i y)` whose two iterated
+integrals give the two sides of Barnes's first lemma is integrable on `(0, ∞) × ℝ`: for `u > 0` its
+norm is the product of the norms of a Beta integrand in `u` and of `Γ(b + i y) Γ(d - i y)`. -/
+private lemma integrable_barnesKernel {a b c d : ℂ} (ha : 0 < a.re) (hb : 0 < b.re)
+    (hc : 0 < c.re) (hd : 0 < d.re) :
+    Integrable (fun z : ℝ × ℝ ↦ (z.1 : ℂ) ^ (c - 1) * (1 + (z.1 : ℂ)) ^ (-(a + c)) *
+      ((z.1 : ℂ) ^ (-(z.2 * I)) * (Gamma (b + z.2 * I) * Gamma (d - z.2 * I))))
+      ((volume.restrict (Ioi 0)).prod volume) := by
+  have hh := integrableOn_cpow_mul_one_add_cpow_neg (s := c) (a := a + c) hc (by simp; linarith)
+  have hg := integrable_Gamma_add_mul_Gamma_sub (re_ne_neg_natCast hb) (re_ne_neg_natCast hd)
+  have hpos : ∀ᵐ z ∂((volume.restrict (Ioi (0 : ℝ))).prod (volume : Measure ℝ)), 0 < z.1 := by
+    rw [← Measure.restrict_univ (μ := (volume : Measure ℝ)), Measure.prod_restrict]
+    filter_upwards [ae_restrict_mem (measurableSet_Ioi.prod MeasurableSet.univ)] with z hz
+    exact hz.1
+  refine (hh.mul_prod hg).norm.mono' (hh.aestronglyMeasurable.comp_fst.mul
+    ((Measurable.aestronglyMeasurable (by fun_prop)).mul hg.aestronglyMeasurable.comp_snd)) ?_
+  filter_upwards [hpos] with z hz
+  simp [norm_cpow_eq_rpow_re_of_pos hz]
+
+/-- The integral in `y` of the kernel of Barnes's first lemma is the Mellin–Barnes integral of
+`(1 + u)^{-(b + d)}`, which turns the kernel into a Beta integrand in `u`. -/
+private lemma integral_barnesKernel_im {a b c d : ℂ} (hb : 0 < b.re) (hd : 0 < d.re) {u : ℝ}
+    (hu : 0 < u) :
+    ∫ y : ℝ, (u : ℂ) ^ (c - 1) * (1 + (u : ℂ)) ^ (-(a + c)) *
+      ((u : ℂ) ^ (-(y * I)) * (Gamma (b + y * I) * Gamma (d - y * I))) =
+      2 * π * Gamma (b + d) * ((u : ℂ) ^ (b + c - 1) * (1 + (u : ℂ)) ^ (-(a + b + c + d))) := by
+  have hu0 : (u : ℂ) ≠ 0 := ofReal_ne_zero.mpr hu.ne'
+  have h1u : 1 + (u : ℂ) ≠ 0 := by
+    rw [← ofReal_one, ← ofReal_add]
+    exact ofReal_ne_zero.mpr (by linarith)
+  have hshift (y : ℝ) : (u : ℂ) ^ (-(y * I)) = (u : ℂ) ^ b * (u : ℂ) ^ (-(b + y * I)) := by
+    rw [← cpow_add _ _ hu0]
+    congr 1
+    ring
+  simp_rw [hshift, mul_assoc ((u : ℂ) ^ b)]
+  rw [integral_const_mul, integral_const_mul,
+    integral_cpow_neg_mul_Gamma_add_mul_Gamma_sub hb hd hu, show b + c - 1 = c - 1 + b by ring,
+    show -(a + b + c + d) = -(a + c) + -(b + d) by ring,
+    cpow_add _ _ hu0, cpow_add _ _ h1u]
+  ring
+
+/-- The integral in `u` of the kernel of Barnes's first lemma is a Beta integral of the second
+kind, which turns the kernel into the integrand of Barnes's first lemma. -/
+private lemma integral_barnesKernel_Ioi {a b c d : ℂ} (ha : 0 < a.re) (hc : 0 < c.re) (y : ℝ) :
+    ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (c - 1) * (1 + (u : ℂ)) ^ (-(a + c)) *
+      ((u : ℂ) ^ (-(y * I)) * (Gamma (b + y * I) * Gamma (d - y * I))) =
+      Gamma (c - y * I) * Gamma (a + y * I) / Gamma (a + c) *
+        (Gamma (b + y * I) * Gamma (d - y * I)) := by
+  have hm := integral_cpow_mul_one_add_cpow_neg (s := c - y * I) (a := a + c) (by simpa using hc)
+    (by simpa using ha)
+  rw [show a + c - (c - y * I) = a + y * I by ring] at hm
+  rw [← hm, ← integral_mul_const]
+  refine setIntegral_congr_fun measurableSet_Ioi fun u (hu : 0 < u) ↦ ?_
+  rw [show c - y * I - 1 = c - 1 + -(y * I) by ring, cpow_add _ _ (ofReal_ne_zero.mpr hu.ne')]
+  ring
+
+/-- **Barnes's first lemma** (DLMF 5.13.3). For `a`, `b`, `c`, `d` with positive real parts,
+`(1 / 2π) ∫ Γ(a + i y) Γ(b + i y) Γ(c - i y) Γ(d - i y) dy` equals
+`Γ(a + c) Γ(a + d) Γ(b + c) Γ(b + d) / Γ(a + b + c + d)`. -/
+theorem integral_Gamma_mul_Gamma_mul_Gamma_mul_Gamma {a b c d : ℂ} (ha : 0 < a.re)
+    (hb : 0 < b.re) (hc : 0 < c.re) (hd : 0 < d.re) :
+    ∫ y : ℝ, Gamma (a + y * I) * Gamma (b + y * I) * Gamma (c - y * I) * Gamma (d - y * I) =
+      2 * π * (Gamma (a + c) * Gamma (a + d) * Gamma (b + c) * Gamma (b + d) /
+        Gamma (a + b + c + d)) := by
+  have hac : Gamma (a + c) ≠ 0 := Gamma_ne_zero_of_re_pos (by simp; linarith)
+  have hm := integral_cpow_mul_one_add_cpow_neg (s := b + c) (a := a + b + c + d)
+    (by simp; linarith) (by simp; linarith)
+  rw [show a + b + c + d - (b + c) = a + d by ring] at hm
+  -- integrate the kernel first in `u`, then in `y`, and swap the order by Fubini
+  calc
+    _ = Gamma (a + c) * ∫ y : ℝ, ∫ u in Ioi (0 : ℝ),
+          (u : ℂ) ^ (c - 1) * (1 + (u : ℂ)) ^ (-(a + c)) *
+            ((u : ℂ) ^ (-(y * I)) * (Gamma (b + y * I) * Gamma (d - y * I))) := by
+      rw [← integral_const_mul]
+      refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
+      simp only [integral_barnesKernel_Ioi ha hc]
+      field_simp
+    _ = Gamma (a + c) * ∫ u in Ioi (0 : ℝ),
+          2 * π * Gamma (b + d) * ((u : ℂ) ^ (b + c - 1) * (1 + (u : ℂ)) ^ (-(a + b + c + d))) := by
+      rw [← integral_integral_swap (integrable_barnesKernel ha hb hc hd)]
+      congr 1
+      exact setIntegral_congr_fun measurableSet_Ioi fun u hu ↦ integral_barnesKernel_im hb hd hu
+    _ = _ := by
+      rw [integral_const_mul, hm]
+      ring
 
 end Complex
