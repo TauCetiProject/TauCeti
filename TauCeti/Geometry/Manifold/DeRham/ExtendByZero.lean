@@ -290,6 +290,16 @@ theorem extendByZero_f {U W : Opens M} (h : U ≤ W) (k : ℕ) :
         ModuleCat.ofHom (compactlySupportedForms.extendByZero h k) := by
   simp [extendByZero]
 
+/-- The cochain map of extension by zero, on a form read through the canonical identification of
+the degree-`k` object, is extension by zero of that form. -/
+theorem extendByZero_f_inv_apply {U W : Opens M} (h : U ≤ W) (k : ℕ)
+    (φ : compactlySupportedForms I U k) :
+    (extendByZero (I := I) h).f k ((compactlySupportedDeRhamComplexXIso I k).inv φ) =
+      (compactlySupportedDeRhamComplexXIso I k).inv
+        (compactlySupportedForms.extendByZero h k φ) := by
+  rw [(Iso.eq_comp_inv _).mpr (extendByZero_f h k)]
+  simp
+
 /-- Extension by zero from an open subset to itself is the identity cochain map. -/
 @[simp]
 theorem extendByZero_self (U : Opens M) : extendByZero (I := I) (le_refl U) = 𝟙 _ := by
