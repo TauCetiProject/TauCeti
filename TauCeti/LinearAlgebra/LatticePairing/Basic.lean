@@ -135,18 +135,21 @@ theorem rankOneDualClass_apply (n s : ℤ) :
     rankOneDualClass n s = Submodule.Quotient.mk (LinearMap.mul ℤ ℤ s) :=
   (rfl)
 
+private theorem mul_mem_range_rankOne_iff (n r : ℤ) :
+    LinearMap.mul ℤ ℤ r ∈ LinearMap.range (rankOne n) ↔ n ∣ r := by
+  rw [mem_range_rankOne_iff]
+  simp
+
 /-- The rank-one class of `r` vanishes exactly when `n` divides `r`. -/
 @[simp]
 theorem rankOneClass_eq_zero_iff (n r : ℤ) : rankOneClass n r = 0 ↔ n ∣ r := by
-  rw [rankOneClass_apply, Submodule.Quotient.mk_eq_zero, mem_range_rankOne_iff]
-  simp
+  rw [rankOneClass_apply, Submodule.Quotient.mk_eq_zero, mul_mem_range_rankOne_iff]
 
 /-- The rank-one dual class of `s` vanishes exactly when `n` divides `s`. -/
 @[simp]
 theorem rankOneDualClass_eq_zero_iff (n s : ℤ) : rankOneDualClass n s = 0 ↔ n ∣ s := by
   rw [rankOneDualClass_apply, Submodule.Quotient.mk_eq_zero, flip_rankOne,
-    mem_range_rankOne_iff]
-  simp
+    mul_mem_range_rankOne_iff]
 
 /-- Two rank-one classes agree exactly when their representatives are congruent modulo `n`. -/
 theorem rankOneClass_eq_iff (n r r' : ℤ) : rankOneClass n r = rankOneClass n r' ↔ n ∣ r - r' := by
@@ -158,23 +161,23 @@ theorem rankOneDualClass_eq_iff (n s s' : ℤ) :
     rankOneDualClass n s = rankOneDualClass n s' ↔ n ∣ s - s' := by
   rw [← sub_eq_zero, ← map_sub, rankOneDualClass_eq_zero_iff]
 
-/-- Every class in the cokernel of `rankOne n` is a rank-one class. -/
-theorem rankOneClass_surjective (n : ℤ) : Function.Surjective (rankOneClass n) := by
+/-- Every class in a quotient of `ℤ →ₗ[ℤ] ℤ` is the class of some `x ↦ r x`. -/
+private theorem mkQ_comp_mul_surjective (p : Submodule ℤ (ℤ →ₗ[ℤ] ℤ)) :
+    Function.Surjective (p.mkQ ∘ₗ LinearMap.mul ℤ ℤ) := by
   intro c
   obtain ⟨f, rfl⟩ := Submodule.Quotient.mk_surjective _ c
   refine ⟨f 1, ?_⟩
-  rw [rankOneClass_apply]
+  rw [LinearMap.comp_apply, Submodule.mkQ_apply]
   congr 1
   exact LinearMap.ext_ring (by simp)
 
+/-- Every class in the cokernel of `rankOne n` is a rank-one class. -/
+theorem rankOneClass_surjective (n : ℤ) : Function.Surjective (rankOneClass n) :=
+  mkQ_comp_mul_surjective _
+
 /-- Every class in the cokernel of the transpose of `rankOne n` is a rank-one dual class. -/
-theorem rankOneDualClass_surjective (n : ℤ) : Function.Surjective (rankOneDualClass n) := by
-  intro c
-  obtain ⟨f, rfl⟩ := Submodule.Quotient.mk_surjective _ c
-  refine ⟨f 1, ?_⟩
-  rw [rankOneDualClass_apply]
-  congr 1
-  exact LinearMap.ext_ring (by simp)
+theorem rankOneDualClass_surjective (n : ℤ) : Function.Surjective (rankOneDualClass n) :=
+  mkQ_comp_mul_surjective _
 
 /-- The cokernel of `rankOne n` is `ℤ / n`, of order `|n|`; for `n = 0` it is `ℤ`, which is
 infinite, so its `Nat.card` is `0`. -/
