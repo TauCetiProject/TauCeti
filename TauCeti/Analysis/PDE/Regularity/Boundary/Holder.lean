@@ -60,18 +60,17 @@ Giorgi's interior theorem (`TauCeti.PDE.exists_holderOnWith_preciseRepresentativ
 to `w` on `U`, and the reflected coefficients are merely measurable and bounded, which is all that
 theorem needs.
 
-A right-hand side `f` is reflected oddly: `w` solves the reflected equation on `U` with right-hand
-side `x ↦ 1_H f x - 1_H f (ρ x)`
-(`TauCeti.PDE.energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral`), whose
-`Lʳ(U)` norm is at most `2 ‖f‖_{Lʳ(U ∩ H)}`, and De Giorgi's interior theorem with a right-hand
-side (`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_memLp`) applies to it. A
-divergence datum `F` is reflected to the field equal to `F` on `H` and to `-R F(ρ x)` on the
-other side, where `R` is the linear part of `ρ`: testing `F` against the gradient of
-`φ - φ ∘ ρ` on `U ∩ H` is testing this field against the gradient of `φ` on `U`
-(`TauCeti.W1p0.setIntegral_inner_gradient_restrictSubCompHyperplaneReflectionL`). Its `L^q(U)`
-norm is at most `2 ‖F‖_{L^q(U ∩ H)}`, since `R` is an isometry, and De Giorgi's interior theorem
-for the datum `f + ∂ᵢFⁱ`
-(`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_memLp_add_divergence`) applies.
+With data `f` and `F`, both are reflected at once. The scalar datum is reflected oddly to
+`x ↦ 1_H f x - 1_H f (ρ x)`, and the divergence datum to the field equal to `F` on `H` and to
+`-R F(ρ x)` on the other side, where `R` is the linear part of `ρ`: testing `F` against the
+gradient of `φ - φ ∘ ρ` on `U ∩ H` is testing this field against the gradient of `φ` on `U`
+(`TauCeti.W1p0.setIntegral_inner_gradient_restrictSubCompHyperplaneReflectionL`). So `w` solves
+the reflected equation on `U` with the reflected pair of data
+(`energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral_sub_setIntegral`).
+Their `Lʳ(U)` and `L^q(U)` norms are at most `2 ‖f‖_{Lʳ(U ∩ H)}` and `2 ‖F‖_{L^q(U ∩ H)}`,
+since `R` is an isometry, and De Giorgi's interior theorem for the datum `f + ∂ᵢFⁱ`
+(`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_memLp_add_divergence`) applies. The
+estimates for `f` alone and for `F` alone are the cases `F = 0` and `f = 0` of this one.
 
 ## References
 
