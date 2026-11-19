@@ -79,9 +79,11 @@ private theorem isReduced_comp_comp_smulPath_reverse {g : G} {p q : T.V} (hp : p
   -- Its length `2 d(q, p) + ℓ(g)` is the distance from `q` to `g • q`.
   refine Path.isReduced_of_length_le_dist (le_of_eq ?_)
   have hacyc := IsTree.isAcyclic _ T.isTree
-  rw [dist_smul_eq_translationLength_add_two_mul_dist hp hmin, Quiver.Path.length_comp,
-    Quiver.Path.length_comp, Quiver.Path.length_reverse, length_smulPath,
-    ← hacyc.dist_eq_length hr, ← hacyc.dist_eq_length hb, mem_axis_iff.mp hp]
+  have hdr := hacyc.dist_eq_length hr
+  have hdb := hacyc.dist_eq_length hb
+  have hpA := mem_axis_iff.mp hp
+  rw [dist_smul_eq_translationLength_add_two_mul_dist hp hmin]
+  simp only [Quiver.Path.length_comp, Quiver.Path.length_reverse, length_smulPath]
   omega
 
 /-- Let `q` be a vertex of the characteristic set of `h`, and let `s` be a reduced path from `q` to
@@ -134,8 +136,8 @@ at minimal distance. Then `h⁻¹ • q` lies in the characteristic set of `g * 
 private theorem exists_mem_axis_mul_of_disjoint_axis {g h : G}
     (hd : Disjoint (T.axis g) (T.axis h)) {p q : T.V} (hp : p ∈ T.axis g) (hq : q ∈ T.axis h)
     (hmin : ∀ p' ∈ T.axis g, ∀ q' ∈ T.axis h, T.dist p q ≤ T.dist p' q') :
-    ∃ x ∈ T.axis (g * h), T.dist x ((g * h) • x) =
-      T.translationLength g + T.translationLength h + 2 * T.dist p q ∧
+    (∃ x ∈ T.axis (g * h), T.dist x ((g * h) • x) =
+      T.translationLength g + T.translationLength h + 2 * T.dist p q) ∧
       p ∈ T.axis (g * h) ∧ q ∈ T.axis (g * h) := by
   have hacyc := IsTree.isAcyclic _ T.isTree
   have hqp : q ≠ p := fun hqp => Set.disjoint_left.mp hd hp (hqp ▸ hq)
@@ -144,40 +146,37 @@ private theorem exists_mem_axis_mul_of_disjoint_axis {g h : G}
   obtain ⟨r, hr, -⟩ := T.isTree.existsUnique_isReduced q p
   obtain ⟨b, hb, -⟩ := T.isTree.existsUnique_isReduced p (g • p)
   have hrne : Path.darts T.toSerreGraph r ≠ [] := fun h0 => hqp (Path.eq_of_darts_eq_nil _ r h0)
-  obtain ⟨f, hf⟩ : ∃ f, (Path.darts T.toSerreGraph r).head? = some f :=
-    ⟨_, List.head?_eq_some_head hrne⟩
-  obtain ⟨e, he⟩ : ∃ e, (Path.darts T.toSerreGraph r).getLast? = some e :=
-    ⟨_, List.getLast?_eq_some_getLast hrne⟩
+  obtain ⟨f, hf⟩ := Option.ne_none_iff_exists'.mp (mt List.head?_eq_none_iff.mp hrne)
+  obtain ⟨e, he⟩ := Option.ne_none_iff_exists'.mp (mt List.getLast?_eq_none_iff.mp hrne)
   -- Since `q` is a vertex of the characteristic set of `h` nearest to `p`, the first dart of `r`
   -- ends outside of it.
+  have hfr : T.rev f ∈ Path.darts T.toSerreGraph r.reverse := by
+    rw [Path.darts_reverse, List.map_reverse, List.mem_reverse]
+    exact List.mem_map_of_mem (List.mem_of_mem_head? hf)
   have hfA : T.tgt f ∉ T.axis h := by
-    simpa using hacyc.src_notMem_of_forall_dist_le (fun b hb => hmin p hp b hb)
-      ((Path.isReduced_reverse _ r).mpr hr) (e := T.rev f)
-      (by simpa using ⟨f, List.mem_of_mem_head? hf, rfl⟩)
+    rw [← src_rev]
+    exact hacyc.src_notMem_of_forall_dist_le (fun b hb => hmin p hp b hb)
+      ((Path.isReduced_reverse _ r).mpr hr) hfr
   -- The path `s` from `q` along `r`, `b` and back along the translate of `r`.
-  have hs := isReduced_comp_comp_smulPath_reverse hp
-    (fun p' hp' => by simpa only [dist_comm q] using hmin p' hp' q hq) hr hb
-  have hsdarts : Path.darts T.toSerreGraph ((r.comp b).comp (smulPath g r).reverse) =
-      Path.darts T.toSerreGraph r ++ Path.darts T.toSerreGraph b ++
-        ((Path.darts T.toSerreGraph r).map (g • ·)).reverse.map T.rev := by
-    simp only [Path.darts_comp, Path.darts_reverse, darts_smulPath]
-  obtain ⟨has, hxA⟩ := mem_axis_mul_of_isReduced hq hs
-    (by rw [hsdarts, List.append_assoc, List.head?_append, hf, Option.some_or])
-    (by rw [hsdarts, List.getLast?_append, List.getLast?_map, List.getLast?_reverse,
-      List.head?_map, hf]; rfl) hfA ha
+  have hmin' : ∀ p' ∈ T.axis g, T.dist q p ≤ T.dist q p' := fun p' hp' => by
+    simpa only [dist_comm q] using hmin p' hp' q hq
+  have hs := isReduced_comp_comp_smulPath_reverse hp hmin' hr hb
+  obtain ⟨has, hxA⟩ := mem_axis_mul_of_isReduced hq hs (by simp [hf]) (by simp [hf]) hfA ha
   -- The reduced path `a.comp s` joins two vertices of the characteristic set of `g * h`, and
   -- passes through `p` and `q`.
-  have hgxA : g • q ∈ T.axis (g * h) := by
-    simpa [mul_smul] using smul_mem_axis_iff.mpr hxA
+  have hgxA : g • q ∈ T.axis (g * h) := by simpa [mul_smul] using smul_mem_axis_iff.mpr hxA
   have hmem : ∀ e' ∈ Path.darts T.toSerreGraph r,
       e' ∈ Path.darts T.toSerreGraph (a.comp ((r.comp b).comp (smulPath g r).reverse)) :=
     fun e' he' => by simp [he']
-  refine ⟨_, hxA, ?_, ?_, ?_⟩
-  · rw [show (g * h) • (h⁻¹ • q) = g • q by rw [mul_smul, smul_inv_smul], hacyc.dist_eq_length has]
-    simp only [Quiver.Path.length_comp, Quiver.Path.length_reverse, length_smulPath]
-    rw [← hacyc.dist_eq_length ha, ← hacyc.dist_eq_length hr, ← hacyc.dist_eq_length hb,
-      ← mem_axis_iff.mp hp, ← mem_axis_iff.mp (inv_smul_mem_axis_iff.mpr hq), smul_inv_smul,
-      dist_comm q p]
+  refine ⟨⟨_, hxA, ?_⟩, ?_, ?_⟩
+  · -- Its length is `ℓ(h) + d(q, g • q)`, where `d(q, g • q) = ℓ(g) + 2 d(q, p)`.
+    have hda := hacyc.dist_eq_length ha
+    have hds := hacyc.dist_eq_length hs
+    have hgq := dist_smul_eq_translationLength_add_two_mul_dist hp hmin'
+    have hqA : T.dist (h⁻¹ • q) q = T.translationLength h := by
+      simpa only [smul_inv_smul] using mem_axis_iff.mp (inv_smul_mem_axis_iff.mpr hq)
+    rw [show (g * h) • (h⁻¹ • q) = g • q by rw [mul_smul, smul_inv_smul], hacyc.dist_eq_length has,
+      Quiver.Path.length_comp, dist_comm p q]
     omega
   · rw [← Path.tgt_eq_of_mem_getLast?_darts _ r he]
     exact (T.isConvex_axis _).tgt_mem hxA hgxA has (hmem e (List.mem_of_mem_getLast? he))
@@ -192,7 +191,7 @@ theorem translationLength_mul_of_disjoint_axis {g h : G} (hd : Disjoint (T.axis 
     (hmin : ∀ p' ∈ T.axis g, ∀ q' ∈ T.axis h, T.dist p q ≤ T.dist p' q') :
     T.translationLength (g * h) =
       T.translationLength g + T.translationLength h + 2 * T.dist p q := by
-  obtain ⟨x, hx, hdist, -, -⟩ := exists_mem_axis_mul_of_disjoint_axis hd hp hq hmin
+  obtain ⟨⟨x, hx, hdist⟩, -, -⟩ := exists_mem_axis_mul_of_disjoint_axis hd hp hq hmin
   rw [← mem_axis_iff.mp hx, hdist]
 
 /-- If `g` and `h` have disjoint characteristic sets, then the characteristic set of `g * h`
@@ -201,7 +200,7 @@ theorem mem_axis_mul_of_disjoint_axis_left {g h : G} (hd : Disjoint (T.axis g) (
     {p q : T.V} (hp : p ∈ T.axis g) (hq : q ∈ T.axis h)
     (hmin : ∀ p' ∈ T.axis g, ∀ q' ∈ T.axis h, T.dist p q ≤ T.dist p' q') :
     p ∈ T.axis (g * h) :=
-  (exists_mem_axis_mul_of_disjoint_axis hd hp hq hmin).choose_spec.2.2.1
+  (exists_mem_axis_mul_of_disjoint_axis hd hp hq hmin).2.1
 
 /-- If `g` and `h` have disjoint characteristic sets, then the characteristic set of `g * h`
 contains the vertex `q` of the characteristic set of `h` nearest to that of `g`. -/
@@ -209,7 +208,7 @@ theorem mem_axis_mul_of_disjoint_axis_right {g h : G} (hd : Disjoint (T.axis g) 
     {p q : T.V} (hp : p ∈ T.axis g) (hq : q ∈ T.axis h)
     (hmin : ∀ p' ∈ T.axis g, ∀ q' ∈ T.axis h, T.dist p q ≤ T.dist p' q') :
     q ∈ T.axis (g * h) :=
-  (exists_mem_axis_mul_of_disjoint_axis hd hp hq hmin).choose_spec.2.2.2
+  (exists_mem_axis_mul_of_disjoint_axis hd hp hq hmin).2.2
 
 /-- The characteristic sets of two elements contain vertices at minimal distance. -/
 private theorem exists_mem_axis_forall_dist_le (g h : G) :
@@ -222,8 +221,9 @@ private theorem exists_mem_axis_forall_dist_le (g h : G) :
     (le_total _ _).elim id (hmin (j := (p', q')) ⟨hp', hq'⟩)⟩
 
 /-- If `g` and `h` have disjoint characteristic sets, then `g * h` is hyperbolic. For elliptic
-`g` and `h` this says that the product of two elliptic elements without a common fixed vertex is
-hyperbolic. -/
+`g` and `h`, whose characteristic sets are their sets of fixed vertices
+(`GTree.IsElliptic.axis_eq_fixedBy`), this says that the product of two elliptic elements without a
+common fixed vertex is hyperbolic. -/
 theorem isHyperbolic_mul_of_disjoint_axis {g h : G} (hd : Disjoint (T.axis g) (T.axis h)) :
     T.IsHyperbolic (g * h) := by
   obtain ⟨p, hp, q, hq, hmin⟩ := exists_mem_axis_forall_dist_le (T := T) g h
