@@ -22,8 +22,7 @@ closes up. The **collared concatenation** `Path.collaredTrans γ₁ γ₂` repar
 So it rests at its start, at the junction and at its end on the collars `[0, 1/6]`, `[1/3, 2/3]`
 and `[5/6, 1]`, and the collared concatenation of two smooth loops based at a point is smooth as a
 periodic map. The collared concatenation of two constant paths is constant
-(`Path.collaredTrans_refl`). The map `unitInterval.smoothTransition` is `β` as a map into the unit
-interval.
+(`Path.collaredTrans_refl`).
 
 Being a reparametrization, the collared concatenation is joined to the concatenation by the
 straight-line reparametrization homotopy `Path.reparamHomotopy`, which is continuous on the whole
@@ -33,7 +32,6 @@ the path space, an identity for constant paths (`Path.collaredTransHom_refl`).
 
 ## Main definitions
 
-* `unitInterval.smoothTransition`: `Real.smoothTransition` as a map into the unit interval.
 * `Path.collaredTransReparam`: the reparametrization of the unit interval.
 * `Path.collaredTrans γ₁ γ₂`: the collared concatenation of two paths.
 * `Path.collaredTransHom γ₁ γ₂`: the class joining the concatenation to the collared
@@ -46,29 +44,6 @@ noncomputable section
 
 open Set CategoryTheory
 open scoped Manifold
-
-namespace unitInterval
-
-/-- `Real.smoothTransition` as a map into the unit interval. -/
-def smoothTransition (s : ℝ) : I :=
-  ⟨Real.smoothTransition s, Real.smoothTransition.nonneg s, Real.smoothTransition.le_one s⟩
-
-@[simp]
-theorem coe_smoothTransition (s : ℝ) : (smoothTransition s : ℝ) = Real.smoothTransition s :=
-  (rfl)
-
-theorem continuous_smoothTransition : Continuous smoothTransition :=
-  Real.smoothTransition.continuous.subtype_mk _
-
-@[simp]
-theorem smoothTransition_zero : smoothTransition 0 = 0 :=
-  Subtype.ext Real.smoothTransition.zero
-
-@[simp]
-theorem smoothTransition_one : smoothTransition 1 = 1 :=
-  Subtype.ext Real.smoothTransition.one
-
-end unitInterval
 
 namespace Path
 

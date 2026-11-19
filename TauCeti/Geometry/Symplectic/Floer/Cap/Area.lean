@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Cap.PairOfPants
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Capped
 public import TauCeti.Topology.PathSpace.CollaredTrans
 import TauCeti.Algebra.Order.ToIntervalMod
+import TauCeti.Geometry.Manifold.Instances.Icc
 
 /-!
 # The symplectic area of raw caps
