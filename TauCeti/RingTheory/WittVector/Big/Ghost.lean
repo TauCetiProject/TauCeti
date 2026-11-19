@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Ideal.Span
 public import TauCeti.RingTheory.WittVector.Big.TruncationSet
 
 import TauCeti.Algebra.Regular.NatCast
+import TauCeti.Data.Nat.Factorization.Basic
 import TauCeti.NumberTheory.Basic
 import TauCeti.RingTheory.Coprime.Lemmas
 
@@ -138,7 +139,7 @@ theorem ghostPolynomial_sub_map_ghostPolynomial_div_mem {p : ℕ} (hp : p.Prime)
   · -- divisors of `p * m` not dividing `m` are divisible by `p ^ v_p(p m)`
     obtain ⟨hd, hdm⟩ := mem_sdiff.1 hd
     refine Dvd.dvd.mul_right ?_ _
-    have := pow_multiplicity_dvd_of_not_dvd_div hp (Nat.dvd_of_mem_divisors hd)
+    have := hp.pow_multiplicity_dvd_of_dvd_of_not_dvd_div (Nat.dvd_of_mem_divisors hd)
       (by rw [Nat.mul_div_cancel_left m hp.pos]; exact fun h ↦ hdm (Nat.mem_divisors.2 ⟨h, hm⟩))
     exact_mod_cast Nat.cast_dvd_cast (α := R) this
   · -- for `d ∣ m`, compare `d * x_d ^ (p e)` with `d * φ(x_d) ^ e`, where `m = d e`
