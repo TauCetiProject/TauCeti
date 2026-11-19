@@ -337,11 +337,6 @@ theorem mem_normalTube {f : M → V} {ε : ℝ} {p : M × V} :
     p ∈ normalTube I f ε ↔ p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ < ε :=
   Iff.rfl
 
-/-- For a positive radius, the zero section lies in the normal tube. -/
-theorem mk_zero_mem_normalTube {f : M → V} {ε : ℝ} (hε : 0 < ε) (x : M) :
-    ((x, 0) : M × V) ∈ normalTube I f ε :=
-  mem_normalTube.mpr ⟨zero_mem _, by simpa using hε⟩
-
 @[simp]
 theorem mem_normalTubeOfRadius {f : M → V} {r : M → ℝ} {p : M × V} :
     p ∈ normalTubeOfRadius I f r ↔ p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ < r p.1 :=
