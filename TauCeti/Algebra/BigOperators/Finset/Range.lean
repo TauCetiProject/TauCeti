@@ -73,6 +73,9 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   over `range (2 * k + 1)` into its even and odd indices.
 * `Finset.prod_range_ite_lt`, `Finset.sum_range_ite_lt`: a product or sum over `range n` whose
   factors past `x ≤ n` are replaced by `1` or `0` is the product or sum over `range x`.
+* `Finset.prod_range_eq_mul_prod_range_succ`, `Finset.sum_range_eq_add_sum_range_succ`: shift
+  the index of a product or sum over `range n` whose factor or term at the top index `n` is
+  trivial.
 * `Finset.four_dvd_sum_range_two_mul_add_one`: a sum over `range (2 * k + 1)` of even terms,
   symmetric under `i ↦ 2 * k - i` and vanishing at the middle index `k`, is divisible by `4`.
 * `Finset.prod_card_filter_lt_card_filter_gt`, `Finset.sum_card_filter_lt_card_filter_gt`: reindex
@@ -143,6 +146,16 @@ theorem prod_range_ite_lt {M : Type*} [CommMonoid M] (f : ℕ → M) {x n : ℕ}
   ext r
   simp only [mem_filter, mem_range]
   omega
+
+/-- Shifting the index of a product over `range n` whose factor at the top index `n` is `1`. -/
+@[to_additive /-- Shifting the index of a sum over `range n` whose term at the top index `n`
+vanishes. -/]
+theorem prod_range_eq_mul_prod_range_succ {M : Type*} [CommMonoid M] (f : ℕ → M) {n : ℕ}
+    (hf : f n = 1) :
+    ∏ l ∈ range n, f l = f 0 * ∏ l ∈ range n, f (l + 1) := by
+  have h := prod_range_succ f n
+  rw [prod_range_succ', hf, mul_one] at h
+  rw [← h, mul_comm]
 
 
 /-- A sum over `range (2 * k + 1)` of a family that is symmetric under `i ↦ 2 * k - i`, vanishes
