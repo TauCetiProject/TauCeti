@@ -172,7 +172,7 @@ open _root_.TauCeti.EuclideanHalfSpace
 namespace SmoothCollar
 
 variable {n : ℕ} {k : WithTop ℕ∞} {M : Type*} [TopologicalSpace M]
-  [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) 1 M]
+  [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
   (c : SmoothCollar n k M) {ε : ℝ} (hε : 0 < ε) (hε1 : ε ≤ 1)
 
 /-- **Shrinking a smooth collar.** For `0 < ε ≤ 1`, the restriction of a smooth collar `c` to
