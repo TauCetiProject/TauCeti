@@ -26,7 +26,8 @@ whenever `m + 1 ≤ n` (`ContDiffAt.fderiv_snd_apply`).
 
 For a scalar factor, `ContDiffAt.contDiffAt_deriv_snd` and
 `ContDiffAt.contDiffAt_deriv_fst` give joint `C^m` regularity of the corresponding partial
-derivative of a `C^n` map, for `m + 1 ≤ n`.
+derivative of a `C^n` map, for `m + 1 ≤ n`, and `ContDiffAt.contDiffAt_iterate_deriv_fst` gives
+joint `C^m` regularity of the `k`-th partial derivative in the first variable, for `m + k ≤ n`.
 
 If a separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` is `Cⁿ` at `(a, b)`, then each summand is `Cⁿ` at
 its point (`ContDiffAt.of_comp_fst_add_comp_snd_left` and
@@ -89,6 +90,18 @@ theorem contDiffAt_deriv_fst {m n : WithTop ℕ∞} {g : 𝕜 × E → X} {z : �
   have hswap : ContDiffAt 𝕜 n (fun w : E × 𝕜 ↦ g (w.2, w.1)) (z.2, z.1) :=
     hg.comp (z.2, z.1) (contDiffAt_snd.prodMk contDiffAt_fst)
   exact (hswap.contDiffAt_deriv_snd hmn).comp z (contDiffAt_snd.prodMk contDiffAt_fst)
+
+/-- For a `C^n` map on a product with a scalar first factor, the `k`-th partial derivative in the
+first variable is jointly `C^m` for `m + k ≤ n`. -/
+theorem contDiffAt_iterate_deriv_fst {m n : WithTop ℕ∞} {g : 𝕜 × E → X} {z : 𝕜 × E}
+    (hg : ContDiffAt 𝕜 n g z) {k : ℕ} (hmn : m + k ≤ n) :
+    ContDiffAt 𝕜 m (fun w : 𝕜 × E ↦ deriv^[k] (fun r ↦ g (r, w.2)) w.1) z := by
+  induction k generalizing n g with
+  | zero => simpa using hg.of_le (by simpa using hmn)
+  | succ k ih =>
+    refine ih (hg.contDiffAt_deriv_fst (m := m + k) ?_) le_rfl
+    rw [add_assoc]
+    exact_mod_cast hmn
 
 /-- A function that is `C^n` at `(p, ψ p)` is `C^n` at `(q, ψ q)` for `q` near `p`, when `ψ` is
 continuous at `p`. -/

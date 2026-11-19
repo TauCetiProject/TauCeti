@@ -13,12 +13,12 @@ public import Mathlib.Topology.Baire.CompleteMetrizable
 /-!
 # The compact derivative topology on bundle sections is completely metrizable
 
-Let `V` be a smooth vector bundle with Banach model fibre `F` over a boundaryless manifold `M`
-modelled on a locally compact normed space over `ℝ` or `ℂ`. Its `C^n` sections, for finite or
-smooth regularity `n`, carry the compact derivative topology `ContMDiffSection.frameTopology` of
-any covering system of smooth frames, which does not depend on the covering system
-(`ContMDiffSection.frameTopology_eq_of_covers`). For instance the `C^k` vector fields on `M` are
-the `C^k` sections of its tangent bundle.
+Let `V` be a smooth vector bundle with Banach model fibre `F` over a manifold `M`, possibly with
+boundary or corners, modelled on a locally compact normed space over `ℝ` or `ℂ`. Its `C^n` sections,
+for finite or smooth regularity `n`, carry the compact derivative topology
+`ContMDiffSection.frameTopology` of any covering system of smooth frames, which does not depend on
+the covering system (`ContMDiffSection.frameTopology_eq_of_covers`). For instance the `C^k` vector
+fields on `M` are the `C^k` sections of its tangent bundle.
 
 This file proves that for a Lindelöf base, for instance a second-countable, sigma-compact or
 compact one, this topology is completely metrizable
@@ -38,16 +38,16 @@ for the uniform structure of this topological additive group
 a countably generated uniformity, so it carries a complete compatible metric. A Lindelöf base is
 covered by countably many charts, so it is second-countable. Then every covering frame system
 has a countable subcover, whose domains are open in a locally compact second-countable space and
-hence sigma-compact, and the subcover induces the same topology. The metrizability step needs
-neither completeness of the fibre nor a boundaryless base, so it is stated on its own.
+hence sigma-compact, and the subcover induces the same topology. The metrizability step does not
+need completeness of the fibre, so it is stated on its own.
 
 ## Main results
 
 * `ContMDiffSection.metrizableSpace_frameTopology`: on a Lindelöf base, possibly with boundary
   or corners, the sections form a metrizable space for every covering frame system.
-* `ContMDiffSection.isCompletelyMetrizableSpace_frameTopology`: on a Lindelöf boundaryless base
-  with Banach model fibre, the sections form a completely metrizable space for every covering
-  frame system.
+* `ContMDiffSection.isCompletelyMetrizableSpace_frameTopology`: on a Lindelöf base, possibly with
+  boundary or corners, with Banach model fibre, the sections form a completely metrizable space for
+  every covering frame system.
 * `ContMDiffSection.isCompletelyMetrizableSpace_frameTopology_of_countable`: the same for a
   countable covering frame system with Lindelöf domains.
 * `ContMDiffSection.baireSpace_frameTopology`: on a Lindelöf base, the sections form a
@@ -113,12 +113,12 @@ theorem metrizableSpace_frameTopology [LindelofSpace M] (hcover : ∀ x, ∃ i, 
   exact metrizableSpace_frameTopology_of_sigmaCompactDomains (I := I) (n := n)
     (fun j : T ↦ e j) (fun j ↦ U j) (fun j ↦ hU j) hcover'
 
-variable [IsRCLikeNormedField 𝕜] [I.Boundaryless] [CompleteSpace F] [ENat.LEInfty n]
+variable [IsRCLikeNormedField 𝕜] [CompleteSpace F] [ENat.LEInfty n]
 
-/-- **Sections are completely metrizable.** Over a Lindelöf boundaryless manifold
-modelled on a locally compact space over `ℝ` or `ℂ`, the `C^n` sections of a vector bundle with
-Banach model fibre, for finite or smooth regularity `n`, form a completely metrizable space in the
-compact derivative topology of any covering system of smooth frames. -/
+/-- **Sections are completely metrizable.** Over a Lindelöf manifold, possibly with boundary or
+corners, modelled on a locally compact space over `ℝ` or `ℂ`, the `C^n` sections of a vector bundle
+with Banach model fibre, for finite or smooth regularity `n`, form a completely metrizable space in
+the compact derivative topology of any covering system of smooth frames. -/
 theorem isCompletelyMetrizableSpace_frameTopology [LindelofSpace M]
     (hcover : ∀ x, ∃ i, x ∈ U i) :
     let _ := frameTopology (I := I) (n := n) e U hU
@@ -143,11 +143,11 @@ theorem isCompletelyMetrizableSpace_frameTopology_of_countable [Countable ι]
     isLindelof_iUnion fun i ↦ IsLindelof.of_coe (s := (U i : Set M))⟩
   exact isCompletelyMetrizableSpace_frameTopology (I := I) (n := n) e U hU hcover
 
-/-- **Sections form a Baire space.** Over a Lindelöf boundaryless manifold modelled on a
-locally compact space over `ℝ` or `ℂ`, the `C^n` sections of a vector bundle with Banach model
-fibre, for finite or smooth regularity `n`, form a Baire space in the compact derivative topology
-of any covering system of smooth frames: a countable intersection of open dense sets of sections
-is dense. -/
+/-- **Sections form a Baire space.** Over a Lindelöf manifold, possibly with boundary or corners,
+modelled on a locally compact space over `ℝ` or `ℂ`, the `C^n` sections of a vector bundle with
+Banach model fibre, for finite or smooth regularity `n`, form a Baire space in the compact
+derivative topology of any covering system of smooth frames: a countable intersection of open dense
+sets of sections is dense. -/
 theorem baireSpace_frameTopology [LindelofSpace M] (hcover : ∀ x, ∃ i, x ∈ U i) :
     let _ := frameTopology (I := I) (n := n) e U hU
     BaireSpace Cₛ^n⟮I; F, V⟯ := by

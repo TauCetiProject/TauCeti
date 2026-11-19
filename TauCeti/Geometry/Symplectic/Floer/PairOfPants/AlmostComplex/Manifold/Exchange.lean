@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Manifold
+public import TauCeti.Geometry.Symplectic.Floer.Manifold.Exchange
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Exchange
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Manifold.Capping
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
 # Almost complex structures along the input-exchange family in a manifold
@@ -54,8 +55,8 @@ Finally, the member `c = 1` of the family of Floer data is the pullback of the p
 with exchanged inputs along `w ↦ 1 - w`: if `u` solves the Floer equation in `M` at `1 - w` for the
 exchanged pair-of-pants data, then `u (1 - ·)` solves it at `w` for `(K_1, J_1)`
 (`TauCeti.SmoothTwoForm.Compatible.isComplexLinearMap_perturbedMFDeriv_exchange_one`). This uses
-the naturality of the intrinsic perturbed derivative under holomorphic changes of domain
-coordinates (`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_perturbationPullback`).
+the naturality of the intrinsic perturbed derivative under the exchange
+(`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_one_sub`).
 
 ## References
 
@@ -252,6 +253,18 @@ theorem exchangeAlmostComplex_zero (w : ThricePuncturedSphere) :
     rw [almostComplexStructureAt_exchangeAlmostComplex, Floer.exchangeAlmostComplex_zero,
       almostComplexStructureAt_pairOfPantsAlmostComplex]
 
+omit [FiniteDimensional ℝ E] in
+/-- If the exchanged end structures are tame, then on the tangent space at every point `x` the
+exchanged end structures of the fiberwise end structures `J q t x` are tamed by `σ x`. -/
+theorem tames_exchangeEndData_almostComplexStructureAt
+    (hJ' : ∀ q t, σ.Tames (Floer.exchangeEndData J q t)) (x : M) (q : Puncture) (t : ℝ)
+    (y : Unit) : (h₀.isNondegenerate.symplecticFormAt x).Tames
+      (Floer.exchangeEndData (fun q t (_ : Unit) => (J q t).almostComplexStructureAt x) q t y) := by
+  cases q
+  · simpa using h₀.isNondegenerate.tames_iff.mp (hJ' zero t) x
+  · simpa using h₀.isNondegenerate.tames_iff.mp (hJ' one t) x
+  · simpa using h₀.isNondegenerate.tames_iff.mp (hJ' inf t) x
+
 /-- **The end of the family is the exchanged pair-of-pants structure.** If the output structures
 `J ∞` have period one in `t`, the member `c = 1` of the family at `1 - w` is the pair-of-pants
 structure with exchanged end structures (`TauCeti.Floer.exchangeEndData`: `J 1` at `0`, `J 0` at
@@ -261,16 +274,9 @@ theorem exchangeAlmostComplex_one (hJp : Periodic (J inf) 1)
     h₀.exchangeAlmostComplex J hJ 1 (1 - w) =
       h₀.pairOfPantsAlmostComplex (Floer.exchangeEndData J) hJ' w :=
   SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
-    have hJx : ∀ q t (y : Unit), (h₀.isNondegenerate.symplecticFormAt x).Tames
-        (Floer.exchangeEndData (fun q t (_ : Unit) => (J q t).almostComplexStructureAt x) q t
-          y) := by
-      intro q t _
-      cases q
-      · simpa using h₀.isNondegenerate.tames_iff.mp (hJ' zero t) x
-      · simpa using h₀.isNondegenerate.tames_iff.mp (hJ' one t) x
-      · simpa using h₀.isNondegenerate.tames_iff.mp (hJ' inf t) x
     rw [almostComplexStructureAt_exchangeAlmostComplex,
-      Floer.exchangeAlmostComplex_one (h₀.compatibleAt x) (fun t => by simp only [hJp t]) hJx,
+      Floer.exchangeAlmostComplex_one (h₀.compatibleAt x) (fun t => by simp only [hJp t])
+        (h₀.tames_exchangeEndData_almostComplexStructureAt J hJ' x),
       sub_sub_cancel, almostComplexStructureAt_pairOfPantsAlmostComplex]
     -- Both sides are the linear pair-of-pants structure of the same exchanged end structures.
     refine (h₀.compatibleAt x).eq_of_cayley_eq
@@ -345,7 +351,7 @@ theorem contMDiffAt_exchangeAlmostComplex {F G N : Type*} [NormedAddCommGroup F]
           (f := fun y => ((f y - c y : ℂ), b y)) y₀ (hfc.prodMk hb)
     refine hpl.congr_of_eventuallyEq ?_
     have h3 : 3 < ‖f y₀ - c y₀‖ :=
-      lt_of_lt_of_le (by nlinarith [Real.add_one_le_exp (2 * π), Real.two_le_pi]) hge
+      lt_of_lt_of_le (by linarith [fourteen_le_two_mul_exp_two_pi]) hge
     filter_upwards [hdist.eventually (lt_mem_nhds h3),
       hc.continuousAt.eventually (isOpen_Ioo.mem_nhds hcy)] with y hy hcy'
     rcases le_or_gt ‖f y - c y‖ (2 * Real.exp (2 * π)) with hle | hgt
@@ -396,30 +402,8 @@ theorem isComplexLinearMap_perturbedMFDeriv_exchange_one {H : Puncture → ℝ �
   have hJz := exchangeAlmostComplex_one h₀ J hJ hJp hJ' ⟨_, hz⟩
   simp only [hσ] at hJz
   rw [hJz]
-  -- The perturbation is the pullback along `σ'` of the exchanged pair-of-pants perturbation.
-  have hpull (v : ℝ × ℝ) : (fun z x ↦ Floer.exchangePerturbation H 1 (e z) x (e v)) =
-      Floer.perturbationPullback (fun z ↦ (1, 0) - z)
-        (fun z x ↦ Floer.pairOfPantsPerturbation (Floer.exchangeEndData H) (e z) x 1)
-        (fun z x ↦ Floer.pairOfPantsPerturbation (Floer.exchangeEndData H) (e z) x Complex.I)
-        v := by
-    funext z' x
-    rw [Floer.perturbationPullback_pairOfPantsPerturbation_exchangeEndData (hH inf)]
-  have hD : σ.perturbedMFDeriv (fun z x ↦ Floer.exchangePerturbation H 1 (e z) x 1)
-      (fun z x ↦ Floer.exchangePerturbation H 1 (e z) x Complex.I) (u ∘ fun z ↦ (1, 0) - z) z =
-      σ.perturbedMFDeriv
-        (Floer.perturbationPullback (fun z ↦ (1, 0) - z)
-          (fun z x ↦ Floer.pairOfPantsPerturbation (Floer.exchangeEndData H) (e z) x 1)
-          (fun z x ↦ Floer.pairOfPantsPerturbation (Floer.exchangeEndData H) (e z) x Complex.I)
-          stdComplexLineReal)
-        (Floer.perturbationPullback (fun z ↦ (1, 0) - z)
-          (fun z x ↦ Floer.pairOfPantsPerturbation (Floer.exchangeEndData H) (e z) x 1)
-          (fun z x ↦ Floer.pairOfPantsPerturbation (Floer.exchangeEndData H) (e z) x Complex.I)
-          stdComplexLineImag)
-        (u ∘ fun z ↦ (1, 0) - z) z := by
-    conv_lhs => rw [← equivRealProdCLM_symm_stdComplexLineReal,
-      ← equivRealProdCLM_symm_stdComplexLineImag, hpull, hpull]
-  rw [hD]
-  -- The exchanged pair-of-pants perturbation is differentiable in the target point at `σ'(z)`.
+  -- The perturbation is the pullback along `σ'` of the exchanged pair-of-pants perturbation,
+  -- which is differentiable in the target point at `σ'(z)`.
   have hK (v : ℂ) : MDifferentiableAt I 𝓘(ℝ)
       (fun x ↦ Floer.pairOfPantsPerturbation (Floer.exchangeEndData H) (e ((1, 0) - z)) x v)
       (u ((1, 0) - z)) := by
@@ -427,15 +411,7 @@ theorem isComplexLinearMap_perturbedMFDeriv_exchange_one {H : Puncture → ℝ �
       (Floer.contMDiff_uncurry_exchangeEndData hHs) ⟨_, hz⟩ (u ((1, 0) - z))
     exact ((hd.comp _ (contMDiffAt_const.prodMk contMDiffAt_id)).clm_apply
       contMDiffAt_const).mdifferentiableAt one_ne_zero
-  -- The exchange is holomorphic: its derivative is `-1`.
-  have hφ : DifferentiableAt ℝ (fun z : ℝ × ℝ ↦ (1, 0) - z) z :=
-    (differentiableAt_const _).sub differentiableAt_id
-  have hφJ : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (AlmostComplexStructure.product ℝ)
-      (fderiv ℝ (fun z : ℝ × ℝ ↦ (1, 0) - z) z : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
-    rw [fderiv_const_sub, fderiv_fun_id]
-    simp
-  exact σ.isComplexLinearMap_perturbedMFDeriv_perturbationPullback hφ hu (hK 1) (hK Complex.I)
-    hφJ h
+  exact σ.isComplexLinearMap_perturbedMFDeriv_comp_one_sub (Floer.exchangePerturbation_one (hH inf))
+    hu hK h
 
 end TauCeti.SmoothTwoForm.Compatible
