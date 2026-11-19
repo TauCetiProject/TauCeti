@@ -25,7 +25,14 @@ class of the quotient extension of `G`: the restricted class vanishes by
 followed by corestriction is multiplication by the index (when `H` has infinite index,
 `H.index = 0` and there is nothing to prove). This is the step of the cohomological
 proof of Gaschütz's splitting theorem that uses the local complement; no finiteness of `G` or
-of `N` is needed for it.
+of `N` is needed for it. The exponent of `N` also kills the class
+(`TauCeti.FactorSet.exponent_nsmul_cohomologyClass_eq_zero`), so when `[G : H]` is prime to that
+exponent the class vanishes and `N` has a complement in `G`
+(`Subgroup.exists_complement_iff_cohomologyClass_eq_zero`). This is the cohomological proof of
+Gaschütz's theorem. It needs `N` to have bounded exponent rather than finite order, so it also
+covers infinite abelian normal subgroups of bounded exponent, which the transfer proof in
+`TauCeti/GroupTheory/Complement/Gaschutz.lean` does not; that proof, in turn, is
+universe-polymorphic and produces an explicit complement.
 
 ## Main definitions
 
@@ -37,6 +44,9 @@ of `N` is needed for it.
 * `Subgroup.map_subtype_cohomologyClass_factorSet_quotientExtension`: the restriction formula.
 * `Subgroup.IsLocalComplement.index_nsmul_cohomologyClass_eq_zero`: a local complement in `H`
   forces `[G : H]` to kill the class of the quotient extension.
+* `Subgroup.IsLocalComplement.cohomologyClass_eq_zero_of_coprime_exponent` and
+  `Subgroup.IsLocalComplement.exists_isComplement'_of_coprime_exponent`: Gaschütz's splitting
+  theorem, proved cohomologically, for `[G : H]` prime to the exponent of `N`.
 
 ## References
 
@@ -199,5 +209,31 @@ theorem IsLocalComplement.index_nsmul_cohomologyClass_eq_zero {K : Subgroup G}
   rw [← hindex]
   refine TauCeti.groupCohomology.index_nsmul_eq_zero_of_map_eq_zero _ ?_
   rw [map_subtype_cohomologyClass_factorSet_quotientExtension hK.left_le σ hσ τ hτ, hτ0, map_zero]
+
+/-- **Gaschütz's splitting theorem, cohomologically.** If `N` has a local complement in `H` and
+`[G : H]` is prime to the exponent of `N`, then the class in `H²(G ⧸ N, N)` of the quotient
+extension of `G` by `N` vanishes, since both the index and the exponent kill it. Neither `G` nor
+`N` need be finite; when the exponent of `N` is unbounded, the coprimality forces `H = ⊤`. -/
+theorem IsLocalComplement.cohomologyClass_eq_zero_of_coprime_exponent {K : Subgroup G}
+    (hK : N.IsLocalComplement K H) (hcop : Nat.Coprime H.index (Monoid.exponent N))
+    (σ : N.quotientExtension.Section) (hσ : σ 1 = 1) :
+    (TauCeti.GroupExtension.factorSet σ hσ N.quotientExtension_inducesAction).cohomologyClass =
+      0 :=
+  (nsmul_eq_zero_iff_of_coprime hcop).1 ⟨hK.index_nsmul_cohomologyClass_eq_zero σ hσ,
+    TauCeti.FactorSet.exponent_nsmul_cohomologyClass_eq_zero _⟩
+
+/-- **Gaschütz's splitting theorem for abelian normal subgroups of bounded exponent.** If `N` has
+a local complement in `H` and `[G : H]` is prime to the exponent of `N`, then `N` has a
+complement in `G`.
+
+For finite `N` the exponent and the order have the same prime divisors, so this is
+`Subgroup.IsLocalComplement.exists_isComplement'_of_coprime_index`; the present form also applies
+to infinite `N` of bounded exponent, such as an infinite elementary abelian `p`-group. -/
+theorem IsLocalComplement.exists_isComplement'_of_coprime_exponent {K : Subgroup G}
+    (hK : N.IsLocalComplement K H) (hcop : Nat.Coprime H.index (Monoid.exponent N)) :
+    ∃ D : Subgroup G, N.IsComplement' D :=
+  (N.exists_complement_iff_cohomologyClass_eq_zero _
+      (TauCeti.GroupExtension.normalizeSection_one N.quotientExtension.surjInvRightHom)).2
+    (hK.cohomologyClass_eq_zero_of_coprime_exponent hcop _ _)
 
 end Subgroup

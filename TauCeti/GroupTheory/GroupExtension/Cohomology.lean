@@ -64,6 +64,8 @@ of `G`, equivalently the central extensions of `G` by `kˣ` up to equivalence.
   for the coboundaries, equivalently for the factor sets whose extension splits.
 * `TauCeti.FactorSet.nsmul_cohomologyClass_eq_zero_iff`: `n` kills a factor-set class exactly
   when the pointwise `n`-th power of the factor set is a multiplicative coboundary.
+* `TauCeti.FactorSet.exponent_nsmul_cohomologyClass_eq_zero`: the exponent of `M` kills every
+  factor-set class.
 * `TauCeti.FactorSet.exists_rescale_pow_eq_one`: with a surjective `n`-th power map for
   nonzero `n`, a class killed by `n` admits a normalized rescaling by an action-aware
   coboundary whose values have `n`-th power one. For `n = 0`, no divisibility is needed.
@@ -161,6 +163,13 @@ theorem nsmul_cohomologyClass_eq_zero_iff (n : ℕ) :
   rw [hcoe]
   exact ⟨fun h ↦ isMulCoboundary₂_of_mem_coboundaries₂ _ h,
     fun h ↦ (coboundariesOfIsMulCoboundary₂ h).2⟩
+
+/-- **The exponent of the coefficient group kills the class of a factor set.** When `M` has
+unbounded exponent, `Monoid.exponent M = 0` and the statement is trivial. -/
+theorem exponent_nsmul_cohomologyClass_eq_zero :
+    Monoid.exponent M • α.cohomologyClass = 0 := by
+  rw [nsmul_cohomologyClass_eq_zero_iff]
+  exact ⟨1, fun _ _ ↦ by simp [Monoid.pow_exponent_eq_one]⟩
 
 end Class
 
