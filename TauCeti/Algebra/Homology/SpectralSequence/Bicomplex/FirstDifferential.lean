@@ -17,8 +17,11 @@ its total complex by rows (`HomologicalComplex₂.rowFiltrationSpectralSequence`
 the rows (`HomologicalComplex₂.rowFiltrationSpectralSequenceFirstPageXIso`): its object at
 `(p, s)` with `p + 2s + k = 0` is the homology in degree `k` of the row `s`. This file shows that
 the differential of this page, from the row `s + 1` to the row `s`, is induced by the vertical
-differentials (`HomologicalComplex₂.rowVerticalMap`), up to the sign `(-1)^k`
-(`HomologicalComplex₂.rowFiltrationSpectralSequence_page_two_d`).
+differentials, up to the sign `(-1)^k`
+(`HomologicalComplex₂.rowFiltrationSpectralSequence_page_two_d`). The rows of `K` are the columns
+`K.flip.X s` of the flipped bicomplex, and the map they induce is the differential
+`K.flip.d (s + 1) s`; the statement conjugates its homology map by the identifications
+`HomologicalComplex₂.flipRowIso` of `K.flip`, which are identities.
 
 The sign comes from the convention `d₁ + (-1)^p d₂` for the differential of the total complex on
 the summand `(K.X p).X q`. The differential is the connecting map of the short exact sequence
@@ -105,18 +108,6 @@ variable {C : Type*} [Category* C] [Abelian C] (K : HomologicalComplex₂ C (dow
 
 /-! ### The connecting map of a row and the rows above it -/
 
-/-- The map from the row `s + 1` to the row `s` of `K` given by the vertical differentials
-`(K.X p).d (s + 1) s`. It is the differential `K.flip.d (s + 1) s` of the flipped bicomplex. -/
-def rowVerticalMap (s : ℕ) :
-    ((HomologicalComplex.eval C (down ℕ) (s + 1)).mapHomologicalComplex (down ℕ)).obj K ⟶
-      ((HomologicalComplex.eval C (down ℕ) s).mapHomologicalComplex (down ℕ)).obj K where
-  f p := (K.X p).d (s + 1) s
-  comm' p p' _ := ((K.d p p').comm (s + 1) s).symm
-
-/-- The components of `HomologicalComplex₂.rowVerticalMap` are the vertical differentials. -/
-@[simp]
-lemma rowVerticalMap_f (s p : ℕ) : (K.rowVerticalMap s).f p = (K.X p).d (s + 1) s := (rfl)
-
 /-- The cycles of the row `s` placed in the degrees of the total complex: in degree `k + s` they
 are the cycles of the row `s` in degree `k`. -/
 def totalRowCyclesIso (K : HomologicalComplex₂ C (down ℕ) (down ℕ)) : (s k : ℕ) →
@@ -191,16 +182,18 @@ lemma iCycles_ιTotalRowsGE_d (s k : ℕ) :
     d₂_eq K _ _ (ComplexShape.down_mk _ _ rfl) _ (by simp)]
   simp [ComplexShape.ε_down_ℕ, Units.smul_def]
 
-/-- **The connecting map of a row and the rows above it.** For the short exact sequence
-`row s ⟶ Tot (rows ≥ s) ⟶ Tot (rows ≥ s + 1)`, the connecting map restricted to the row `s + 1`
-is, in horizontal degree `k`, `(-1)^k` times the map induced on homology by the vertical
-differentials. -/
-theorem totalRowHomologyIso_inv_homologyMap_totalRowι_δ (s k : ℕ) :
+/-- The connecting map of `row s ⟶ Tot (rows ≥ s) ⟶ Tot (rows ≥ s + 1)`, restricted to the row
+`s + 1`, for any chain map `φ` from the row `s + 1` to the row `s` with the vertical differentials
+as components. -/
+private lemma totalRowHomologyIso_inv_homologyMap_totalRowι_δ_of_f (s k : ℕ)
+    (φ : ((HomologicalComplex.eval C (down ℕ) (s + 1)).mapHomologicalComplex (down ℕ)).obj K ⟶
+      ((HomologicalComplex.eval C (down ℕ) s).mapHomologicalComplex (down ℕ)).obj K)
+    (hφ : ∀ p, φ.f p = (K.X p).d (s + 1) s) :
     (K.totalRowHomologyIso (s + 1) k).inv ≫
       HomologicalComplex.homologyMap (K.totalRowι (s + 1)) (k + (s + 1)) ≫
       (K.totalRowShortComplex_shortExact s).δ (k + (s + 1)) (k + s) (by simp; omega) ≫
       (K.totalRowHomologyIso s k).hom =
-    ((-1 : ℤ) ^ k) • HomologicalComplex.homologyMap (K.rowVerticalMap s) k := by
+    ((-1 : ℤ) ^ k) • HomologicalComplex.homologyMap φ k := by
   let x₃ := (K.totalRow (s + 1)).iCycles (k + (s + 1)) ≫ (K.totalRowι (s + 1)).f (k + (s + 1))
   let x₂ := (K.totalRowCyclesIso (s + 1) k).hom ≫ (((HomologicalComplex.eval C (down ℕ)
     (s + 1)).mapHomologicalComplex (down ℕ)).obj K).iCycles k ≫
@@ -227,7 +220,35 @@ theorem totalRowHomologyIso_inv_homologyMap_totalRowι_δ (s k : ℕ) :
   simp only [Preadditive.comp_zsmul, ← Category.assoc, ← Preadditive.zsmul_comp]
   congr 1
   simp [← cancel_mono ((((HomologicalComplex.eval C (down ℕ) s).mapHomologicalComplex
-    (down ℕ)).obj K).iCycles k), x₁]
+    (down ℕ)).obj K).iCycles k), x₁, hφ]
+
+/-- The rows of `K` are the columns `K.flip.X s` of the flipped bicomplex, and the chain map
+between them induced by the vertical differentials is `K.flip.d (s + 1) s`. -/
+private lemma flipRowIso_hom_d_flipRowIso_inv_f (s p : ℕ) :
+    ((K.flip.flipRowIso (s + 1)).hom ≫ K.flip.d (s + 1) s ≫ (K.flip.flipRowIso s).inv).f p =
+      (K.X p).d (s + 1) s := by
+  simp only [HomologicalComplex.comp_f, flipRowIso_hom_f, flipRowIso_inv_f, flip_d_f]
+  -- The identities are those of `(K.X p).X (s + 1)` and `(K.X p).X s`, up to unfolding `flip`.
+  exact (Category.id_comp _).trans (Category.comp_id _)
+
+/-- **The connecting map of a row and the rows above it.** For the short exact sequence
+`row s ⟶ Tot (rows ≥ s) ⟶ Tot (rows ≥ s + 1)`, the connecting map restricted to the row `s + 1`
+is, in horizontal degree `k`, `(-1)^k` times the map induced on homology by the vertical
+differentials, that is by the differential `K.flip.d (s + 1) s` of the flipped bicomplex, whose
+columns `K.flip.X s` are the rows of `K` (`HomologicalComplex₂.flipRowIso` applied to `K.flip`). -/
+theorem totalRowHomologyIso_inv_homologyMap_totalRowι_δ (s k : ℕ) :
+    (K.totalRowHomologyIso (s + 1) k).inv ≫
+      HomologicalComplex.homologyMap (K.totalRowι (s + 1)) (k + (s + 1)) ≫
+      (K.totalRowShortComplex_shortExact s).δ (k + (s + 1)) (k + s) (by simp; omega) ≫
+      (K.totalRowHomologyIso s k).hom =
+    ((-1 : ℤ) ^ k) • ((HomologicalComplex.homologyMapIso (K.flip.flipRowIso (s + 1)) k).hom ≫
+      HomologicalComplex.homologyMap (K.flip.d (s + 1) s) k ≫
+      (HomologicalComplex.homologyMapIso (K.flip.flipRowIso s) k).inv) :=
+  -- The rows of `K.flip.flip` are those of `K` by definition.
+  (K.totalRowHomologyIso_inv_homologyMap_totalRowι_δ_of_f s k _
+    (K.flipRowIso_hom_d_flipRowIso_inv_f s)).trans (congrArg _
+      ((HomologicalComplex.homologyMap_comp _ _ _).trans
+        (congrArg _ (HomologicalComplex.homologyMap_comp _ _ _))))
 
 /-! ### Comparison with the graded pieces of the row filtration -/
 
@@ -390,18 +411,17 @@ lemma rowFiltrationSpectralSequence_page_two_d_totalRow_extendHomologyIso (p : �
 
 /-! ### The first differentials -/
 
-/-- **The first differential of the spectral sequence of the row filtration.** On the first page
-(numbered `2`), the differential from `(p, s + 1)` to `(p', s)`, where `p + 2(s + 1) + k = 0` and
-`p' + 2s + k = 0`, is, under the identifications
-`HomologicalComplex₂.rowFiltrationSpectralSequenceFirstPageXIso` with the homology of the rows in
-degree `k`, the map induced by the vertical differentials `(K.X p).d (s + 1) s`, multiplied by
-`(-1)^k`. -/
-theorem rowFiltrationSpectralSequence_page_two_d (p p' : ℤ) (s k : ℕ)
-    (hp : p + 2 * ((s + 1 : ℕ) : ℤ) + k = 0) (hp' : p' + 2 * (s : ℤ) + k = 0) :
+/-- The first differential of the spectral sequence of the row filtration, for any chain map `φ`
+from the row `s + 1` to the row `s` with the vertical differentials as components. -/
+private lemma rowFiltrationSpectralSequence_page_two_d_of_f (p p' : ℤ) (s k : ℕ)
+    (hp : p + 2 * ((s + 1 : ℕ) : ℤ) + k = 0) (hp' : p' + 2 * (s : ℤ) + k = 0)
+    (φ : ((HomologicalComplex.eval C (down ℕ) (s + 1)).mapHomologicalComplex (down ℕ)).obj K ⟶
+      ((HomologicalComplex.eval C (down ℕ) s).mapHomologicalComplex (down ℕ)).obj K)
+    (hφ : ∀ p, φ.f p = (K.X p).d (s + 1) s) :
     (K.rowFiltrationSpectralSequenceFirstPageXIso p (s + 1) k hp).inv ≫
       (K.rowFiltrationSpectralSequence.page 2).d (p, (s + 1 : ℕ)) (p', s) ≫
       (K.rowFiltrationSpectralSequenceFirstPageXIso p' s k hp').hom =
-    ((-1 : ℤ) ^ k) • HomologicalComplex.homologyMap (K.rowVerticalMap s) k := by
+    ((-1 : ℤ) ^ k) • HomologicalComplex.homologyMap φ k := by
   obtain rfl : p' = p + 2 := by omega
   rw [rowFiltrationSpectralSequenceFirstPageXIso_eq,
     rowFiltrationSpectralSequenceFirstPageXIso_eq]
@@ -409,19 +429,28 @@ theorem rowFiltrationSpectralSequence_page_two_d (p p' : ℤ) (s k : ℕ)
   rw [reassoc_of%
       (K.rowFiltrationSpectralSequence_page_two_d_totalRow_extendHomologyIso p s k hp),
     Iso.inv_hom_id_assoc]
-  exact K.totalRowHomologyIso_inv_homologyMap_totalRowι_δ s k
+  exact K.totalRowHomologyIso_inv_homologyMap_totalRowι_δ_of_f s k φ hφ
 
-/-- The map induced by the vertical differentials of `K.flip` between its rows `p + 1` and `p` is
-the horizontal differential `K.d (p + 1) p` of `K`, under the identifications of the rows of
-`K.flip` with the columns of `K`. -/
-lemma flipRowIso_inv_rowVerticalMap_flipRowIso_hom (p : ℕ) :
-    (K.flipRowIso (p + 1)).inv ≫ K.flip.rowVerticalMap p ≫ (K.flipRowIso p).hom =
-      K.d (p + 1) p := by
-  ext q
-  simp only [HomologicalComplex.comp_f, flipRowIso_inv_f, flipRowIso_hom_f, rowVerticalMap_f,
-    flip_X_d]
-  -- The identities are those of `(K.X (p + 1)).X q` and `(K.X p).X q`, up to unfolding `flip`.
-  exact (Category.id_comp _).trans (Category.comp_id _)
+/-- **The first differential of the spectral sequence of the row filtration.** On the first page
+(numbered `2`), the differential from `(p, s + 1)` to `(p', s)`, where `p + 2(s + 1) + k = 0` and
+`p' + 2s + k = 0`, is, under the identifications
+`HomologicalComplex₂.rowFiltrationSpectralSequenceFirstPageXIso` with the homology of the rows in
+degree `k`, the map induced by the vertical differentials `(K.X p).d (s + 1) s`, multiplied by
+`(-1)^k`. This map is the differential `K.flip.d (s + 1) s` of the flipped bicomplex, whose columns
+`K.flip.X s` are the rows of `K` (`HomologicalComplex₂.flipRowIso` applied to `K.flip`). -/
+theorem rowFiltrationSpectralSequence_page_two_d (p p' : ℤ) (s k : ℕ)
+    (hp : p + 2 * ((s + 1 : ℕ) : ℤ) + k = 0) (hp' : p' + 2 * (s : ℤ) + k = 0) :
+    (K.rowFiltrationSpectralSequenceFirstPageXIso p (s + 1) k hp).inv ≫
+      (K.rowFiltrationSpectralSequence.page 2).d (p, (s + 1 : ℕ)) (p', s) ≫
+      (K.rowFiltrationSpectralSequenceFirstPageXIso p' s k hp').hom =
+    ((-1 : ℤ) ^ k) • ((HomologicalComplex.homologyMapIso (K.flip.flipRowIso (s + 1)) k).hom ≫
+      HomologicalComplex.homologyMap (K.flip.d (s + 1) s) k ≫
+      (HomologicalComplex.homologyMapIso (K.flip.flipRowIso s) k).inv) :=
+  -- The rows of `K.flip.flip` are those of `K` by definition.
+  (K.rowFiltrationSpectralSequence_page_two_d_of_f p p' s k hp hp' _
+    (K.flipRowIso_hom_d_flipRowIso_inv_f s)).trans (congrArg _
+      ((HomologicalComplex.homologyMap_comp _ _ _).trans
+        (congrArg _ (HomologicalComplex.homologyMap_comp _ _ _))))
 
 /-- **The first differential of the spectral sequence of the column filtration.** On the first
 page (numbered `2`), the differential from `(-k - 2(p + 1), p + 1)` to `(-k - 2p, p)` is, under
@@ -438,8 +467,15 @@ theorem columnFiltrationSpectralSequence_page_two_d (p k : ℕ) :
     columnFiltrationSpectralSequenceFirstPageXIso_eq]
   simp only [Iso.trans_inv, Iso.trans_hom, Category.assoc,
     HomologicalComplex.homologyMapIso_inv, HomologicalComplex.homologyMapIso_hom]
-  rw [reassoc_of% (K.flip.rowFiltrationSpectralSequence_page_two_d _ _ p k (by omega) (by omega)),
+  rw [reassoc_of% (K.flip.rowFiltrationSpectralSequence_page_two_d_of_f _ _ p k (by omega)
+      (by omega) ((K.flipRowIso (p + 1)).hom ≫ K.d (p + 1) p ≫ (K.flipRowIso p).inv)
+      -- The identities are those of `(K.X (p + 1)).X q` and `(K.X p).X q`, up to unfolding
+      -- `flip`.
+      (fun q ↦ by
+        simp only [HomologicalComplex.comp_f, flipRowIso_hom_f, flipRowIso_inv_f, flip_X_d]
+        exact (Category.id_comp _).trans (Category.comp_id _))),
     Preadditive.zsmul_comp, Preadditive.comp_zsmul, ← HomologicalComplex.homologyMap_comp,
-    ← HomologicalComplex.homologyMap_comp, flipRowIso_inv_rowVerticalMap_flipRowIso_hom]
+    ← HomologicalComplex.homologyMap_comp]
+  simp
 
 end HomologicalComplex₂
