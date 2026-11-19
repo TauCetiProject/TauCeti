@@ -256,10 +256,9 @@ theorem exists_norm_newtonianKernel_convolution_le {G H : Type*} [NormedAddCommG
         norm_integral_le_of_norm_le ((hind.add hψ).const_mul _) (ae_of_all _ hpt)
     _ = ‖L‖ * M * (c * volume.real (closedBall (0 : EuclideanSpace ℝ (Fin n)) R) +
           ∫ t, ψ t) := by
-      simp only [b]
       rw [integral_const_mul, integral_add hind hψ,
         integral_indicator_const _ measurableSet_closedBall, smul_eq_mul,
-        Measure.real, Measure.real, Measure.addHaar_closedBall_center, mul_comm c]
+        Measure.addHaar_real_closedBall_center, mul_comm c]
 
 /-- The Newtonian potential of a difference of continuous functions with compact support is the
 difference of their potentials. -/

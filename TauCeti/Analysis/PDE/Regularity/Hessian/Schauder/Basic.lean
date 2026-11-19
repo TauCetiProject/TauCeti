@@ -163,8 +163,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_laplacian {α : ℝ≥0} (hα 
         ∫ x in Omega, -Δ u x * W1p.value (w : W1p volume Omega 2) x :=
     energyFormH1_one_zero_zero_eq_setIntegral_neg_laplacian_mul
       (hu.mono (subset_closure.trans hWU)) hv hΔ
-  have hK' : HolderOnWith K α (fun x => -Δ u x) (thickening R S) := fun x hx y hy => by
-    simpa only [edist_neg_neg] using hK x hx y hy
+  have hK' : HolderOnWith K α (fun x => -Δ u x) (thickening R S) := hK.neg
   have hVU : (V : Set E) ⊆ U := hVT ▸ subset_closure.trans hTU
   have hvV : W1p.value v =ᵐ[volume.restrict V] u :=
     ae_restrict_of_ae_restrict_of_subset (hVT ▸ subset_closure.trans hTW) hv

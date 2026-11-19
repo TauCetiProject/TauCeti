@@ -81,37 +81,36 @@ private theorem exists_dist_iteratedFDeriv_two_le_of_laplacian {α : ℝ≥0} (h
   set v : E → ℝ := fun z ↦ u (t • z) with hv
   have hD2v : ∀ z, iteratedFDeriv ℝ 2 v z = t ^ 2 • iteratedFDeriv ℝ 2 u (t • z) :=
     fun z ↦ iteratedFDeriv_comp_const_smul_apply u t z 2
-  -- A Hölder bound `K` for `g` gives the bound `t ^ 2 K t ^ α` for `z ↦ t ^ 2 • g (t • z)`.
-  have hdil : ∀ {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F] {g : E → F} {K : ℝ≥0},
-      HolderWith K α g → HolderWith (t ^ 2 * K * t ^ (α : ℝ)).toNNReal α
-        (fun z ↦ t ^ 2 • g (t • z)) := fun {F _ _ g K} hg ↦ by
-    convert (holderOnWith_univ.1 ((hg.holderOnWith univ).comp_const_smul t
-      (mapsTo_univ _ _))).smul (t ^ 2) using 1
-    rw [← NNReal.coe_inj, Real.coe_toNNReal _ (by positivity), NNReal.coe_mul, NNReal.coe_mul,
-      NNReal.coe_rpow, coe_nnNorm, coe_nnNorm, norm_pow, Real.norm_of_nonneg ht.le]
+  -- A Hölder bound `K` for `g` gives the bound `s ^ 2 K s ^ α` for `z ↦ s ^ 2 • g (s • z)`.
+  have hdil : ∀ {s : ℝ}, 0 < s → ∀ {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F]
+      {g : E → F} {K : ℝ≥0}, HolderWith K α g → HolderWith (s ^ 2 * K * s ^ (α : ℝ)).toNNReal α
+        (fun z ↦ s ^ 2 • g (s • z)) := fun {s} hs {F _ _ g K} hg ↦ by
+    convert (holderOnWith_univ.1 ((hg.holderOnWith univ).comp_const_smul s
+      (mapsTo_univ _ _))).smul (s ^ 2) using 1
+    rw [← NNReal.coe_inj]
+    push_cast [Real.coe_toNNReal _ (by positivity : 0 ≤ s ^ 2 * K * s ^ (α : ℝ)),
+      norm_pow, Real.norm_of_nonneg hs.le]
     ring
-  have hvH : MemHolder α (iteratedFDeriv ℝ 2 v) := ⟨_, by rw [funext hD2v]; exact hdil hCu⟩
+  have hvH : MemHolder α (iteratedFDeriv ℝ 2 v) := ⟨_, by rw [funext hD2v]; exact hdil ht hCu⟩
   have hLv : HolderWith (t ^ 2 * H * t ^ (α : ℝ)).toNNReal α (fun z ↦ ∑ i, ∑ j,
       (fun _ ↦ (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)) z i j •
         fderiv ℝ (fderiv ℝ v) z (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) := by
     simp only [sum_one_smul_fderiv_fderiv_eq_laplacian]
     rw [hv, laplacian_comp_smul_right]
-    exact hdil hH
-  -- Rescale the estimate for `v` at the points `t⁻¹ • x`, `t⁻¹ • y` back to `u`.
-  have hres := (hC (uniformlyEllipticOn_const_one_one univ) (fun _ _ ↦ HolderWith.const)
-    (show ContDiff ℝ 2 v from hu.comp (contDiff_const_smul t)) (fun z ↦ hN (t • z)) hvH
-    hLv).1.dist_le (t⁻¹ • x) (t⁻¹ • y)
-  rw [hD2v, hD2v, smul_inv_smul₀ ht.ne', smul_inv_smul₀ ht.ne', dist_smul₀, norm_pow,
-    Real.norm_of_nonneg ht.le, dist_smul₀, Real.norm_of_nonneg (inv_nonneg.2 ht.le),
-    Real.mul_rpow (inv_nonneg.2 ht.le) dist_nonneg, Real.inv_rpow ht.le, NNReal.coe_mul,
-    NNReal.coe_add, Real.coe_toNNReal _ (by positivity)] at hres
-  calc dist (iteratedFDeriv ℝ 2 u x) (iteratedFDeriv ℝ 2 u y)
-      = (t ^ 2)⁻¹ * (t ^ 2 * dist (iteratedFDeriv ℝ 2 u x) (iteratedFDeriv ℝ 2 u y)) := by
-        field_simp
-    _ ≤ (t ^ 2)⁻¹ * (C * (t ^ 2 * H * t ^ (α : ℝ) + N) *
-          ((t ^ (α : ℝ))⁻¹ * dist x y ^ (α : ℝ))) := by gcongr
-    _ = C * (H + N * (t ^ 2 * t ^ (α : ℝ))⁻¹) * dist x y ^ (α : ℝ) := by
-        field_simp
+    exact hdil ht hH
+  -- Dilating the estimate for `v` back by `t⁻¹` gives one for `u`.
+  have hres := hdil (inv_pos.2 ht) (hC (uniformlyEllipticOn_const_one_one univ)
+    (fun _ _ ↦ HolderWith.const) (show ContDiff ℝ 2 v from hu.comp (contDiff_const_smul t))
+    (fun z ↦ hN (t • z)) hvH hLv).1
+  have hu2 : (fun z ↦ t⁻¹ ^ 2 • iteratedFDeriv ℝ 2 v (t⁻¹ • z)) = iteratedFDeriv ℝ 2 u := by
+    funext z
+    rw [hD2v, smul_inv_smul₀ ht.ne', inv_pow, inv_smul_smul₀ (pow_ne_zero 2 ht.ne')]
+  rw [hu2] at hres
+  refine (hres.dist_le x y).trans_eq ?_
+  rw [Real.coe_toNNReal _ (by positivity)]
+  push_cast [Real.coe_toNNReal _ (by positivity : 0 ≤ t ^ 2 * H * t ^ (α : ℝ)),
+    Real.inv_rpow ht.le]
+  field_simp
 
 /-- **The scale-invariant Schauder estimate for the Laplacian.** For `0 < α < 1` there is a
 constant `C`, depending only on `n` and `α`, such that every bounded `C²` function `u` on

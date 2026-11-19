@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Potential
 public import Mathlib.Topology.MetricSpace.Holder
 import TauCeti.Analysis.Calculus.BumpFunction.HolderApproximation
+import TauCeti.Analysis.Holder.JetBounds
 import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Laplacian
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Topology.MetricSpace.Holder
@@ -93,13 +94,10 @@ private theorem memHolder_iteratedFDeriv_two_newtonianKernel_convolution (hn : 3
   obtain ⟨C₃, hC₃⟩ := exists_norm_iteratedFDeriv_newtonianKernel_convolution_le hn hg hc 3
   have hw : ContDiff ℝ 3 (newtonianKernel n ⋆ g) :=
     (contDiff_newtonianKernel_convolution hg hc).of_le (by norm_cast)
-  have hlip : LipschitzWith C₃.toNNReal (iteratedFDeriv ℝ 2 (newtonianKernel n ⋆ g)) :=
-    lipschitzWith_of_nnNorm_fderiv_le
-      (hw.differentiable_iteratedFDeriv (by exact_mod_cast Nat.lt_succ_self 2)) fun x ↦ by
-      rw [← NNReal.coe_le_coe, coe_nnNorm, norm_fderiv_iteratedFDeriv]
-      exact (hC₃ x).trans (Real.le_coe_toNNReal C₃)
-  exact ⟨_, holderOnWith_univ.1 (hlip.lipschitzOnWith.holderOnWith_of_norm_le
-    (M := C₂.toNNReal) (fun x _ ↦ (hC₂ x).trans (Real.le_coe_toNNReal C₂)) hβ)⟩
+  exact ⟨_, holderOnWith_univ.1 ((hw.contDiffOn (s := univ)).holderOnWith_iteratedFDeriv_of_lt
+    (j := 2) isOpen_univ convex_univ (by norm_num) hβ (M := C₂.toNNReal) (L := C₃.toNNReal)
+    (fun x _ ↦ (hC₂ x).trans (Real.le_coe_toNNReal C₂))
+    (fun x _ ↦ (hC₃ x).trans (Real.le_coe_toNNReal C₃)))⟩
 
 end Smooth
 
@@ -139,15 +137,9 @@ private theorem exists_norm_le_of_newtonianKernel_convolution (hn : 3 ≤ m + 1)
         fderiv ℝ (fderiv ℝ ⇑W) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) := by
     simp only [PDE.sum_one_smul_fderiv_fderiv_eq_laplacian, W, CkHolderSpace.coe_ofContDiff,
       laplacian_newtonianKernel_convolution (by omega) (by omega) (hg.of_le (by norm_cast)) hc]
-    rw [← holderOnWith_univ]
-    refine HolderOnWith.of_le_of_dist_le (fun x _ y _ _ ↦ ?_) (fun x _ y _ ↦ ?_) hβα.le
+    exact hgK.neg.of_le_of_norm_le (fun x ↦ by
+      simpa only [Pi.neg_apply, norm_neg] using (hD x).trans (Real.le_coe_toNNReal D)) hβα.le
       (Real.toNNReal_pos.2 hδ)
-    · simpa only [Pi.neg_apply, dist_neg_neg] using hgK.dist_le x y
-    · calc dist ((-g) x) ((-g) y) ≤ ‖(-g) x‖ + ‖(-g) y‖ := dist_le_norm_add_norm _ _
-        _ ≤ D + D := by
-          refine add_le_add ?_ ?_ <;> simpa only [Pi.neg_apply, norm_neg] using hD _
-        _ = ((2 * D.toNNReal : ℝ≥0) : ℝ) := by
-          rw [NNReal.coe_mul, Real.coe_toNNReal _ hD0]; push_cast; ring
   have hle := hC₁ (PDE.uniformlyEllipticOn_const_one_one univ) (fun _ _ ↦ HolderWith.const)
     W hN hK
   simp only [NNReal.coe_add, NNReal.coe_mul, NNReal.coe_rpow, Real.coe_toNNReal _ hδ.le,
@@ -331,7 +323,7 @@ private theorem newtonianKernel_convolution_of_holderWith_aux (hn : 3 ≤ n)
       (memHolder_iteratedFDeriv_two_newtonianKernel_convolution hn (hgs k) (hgc k) hα1.le)
       ?_).1
     simp only [PDE.sum_one_smul_fderiv_fderiv_eq_laplacian, hΔu]
-    exact fun x y ↦ by simpa only [Pi.neg_apply, edist_neg_neg] using hgH k x y
+    exact (hgH k).neg
   exact ⟨hVf ▸ V.contDiff, hΔ, ⟨N, hNu hM hfsupp⟩, ⟨_, HolderWith.of_tendsto hlimD
     (Eventually.of_forall hHk)⟩⟩
 
@@ -344,12 +336,7 @@ private theorem contDiff_and_laplacian_newtonianKernel_convolution_of_holderWith
   obtain ⟨M, hM⟩ := (hf.continuous hα).bounded_above_of_compact_support hc
   have hβ : 0 < α / 2 := div_pos hα two_pos
   have hβα : α / 2 < α := NNReal.half_lt_self hα.ne'
-  have hf' : HolderWith (H * 1 ^ ((α : ℝ) - (α / 2 : ℝ≥0)) +
-      (2 * M).toNNReal * 1 ^ (-((α / 2 : ℝ≥0) : ℝ))) (α / 2) f :=
-    holderOnWith_univ.1 (HolderOnWith.of_le_of_dist_le (fun x _ y _ _ ↦ hf.dist_le x y)
-      (fun x _ y _ ↦ (dist_le_norm_add_norm _ _).trans (by
-        rw [Real.coe_toNNReal _ (by linarith [(norm_nonneg _).trans (hM x)])]
-        linarith [hM x, hM y])) hβα.le one_pos)
+  have hf' := hf.of_le_of_norm_le (fun x ↦ (hM x).trans (Real.le_coe_toNNReal M)) hβα.le one_pos
   obtain ⟨h1, h2, -, -⟩ :=
     newtonianKernel_convolution_of_holderWith_aux hn hβ (hβα.trans_le hα1) hf' hc
   exact ⟨h1, h2⟩
@@ -386,6 +373,6 @@ theorem exists_holderWith_iteratedFDeriv_two_newtonianKernel_convolution (hn : 3
   obtain ⟨hw2, hΔ, ⟨N, hN⟩, hw⟩ := newtonianKernel_convolution_of_holderWith_aux hn hα hα1 hf hc
   refine hC hw2 hN hw ?_
   rw [hΔ]
-  exact fun x y ↦ by simpa only [Pi.neg_apply, edist_neg_neg] using hf x y
+  exact hf.neg
 
 end TauCeti
