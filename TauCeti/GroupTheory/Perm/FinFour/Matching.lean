@@ -170,7 +170,8 @@ transposition. -/
 theorem mem_centralizer_symmetricGroupFourMatching_iff {σ : Perm (Fin 4)} {m : Fin 3} :
     σ ∈ Subgroup.centralizer {symmetricGroupFourMatching m} ↔
       symmetricGroupFourMatchingHom σ m = m := by
-  rw [Subgroup.mem_centralizer_singleton_iff, ← symmetricGroupFourMatching_injective.eq_iff,
+  rw [Subgroup.mem_centralizer_singleton_iff, commute_iff_eq, eq_comm,
+    ← symmetricGroupFourMatching_injective.eq_iff,
     symmetricGroupFourMatching_symmetricGroupFourMatchingHom_apply, mul_inv_eq_iff_eq_mul,
     eq_comm]
 
@@ -189,8 +190,8 @@ theorem centralizer_symmetricGroupFourMatching_two_eq_closure :
     obtain ⟨i, j, rfl⟩ := hword σ (Subgroup.mem_centralizer_singleton_iff.1 hσ)
     exact mul_mem (pow_mem (Subgroup.subset_closure (by simp)) _)
       (pow_mem (Subgroup.subset_closure (by simp)) _)
-  · rintro σ (rfl | rfl) <;> rw [SetLike.mem_coe, Subgroup.mem_centralizer_singleton_iff] <;>
-      decide
+  · rintro σ (rfl | rfl) <;>
+      rw [SetLike.mem_coe, Subgroup.mem_centralizer_singleton_iff, commute_iff_eq] <;> decide
 
 /-- The transposition `(01)` fixes `M₀ = 01|23` and swaps `M₁ = 03|12` with `M₂ = 02|13`. -/
 @[simp]
