@@ -10,8 +10,8 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 /-!
 # Elementary bounds for the real exponential
 
-Every affine function `A x + B` is eventually smaller than `exp (a x)` when `0 < a`, and
-`e^{t a} b` stays bounded as `t → +∞` only for `b = 0`. For `0 < x`
+Every affine function `A x + B` is eventually smaller than `exp (a x)` when `0 < a`, and, for
+`0 < a`, `e^{t a} b` stays bounded as `t → +∞` only for `b = 0`. For `0 < x`
 the function `x / (exp x - 1)`, the generating function of the Bernoulli numbers, lies between
 `exp (-x)` and `1`. With `q = exp (-x)` it is `x q / (1 - q)`, the rescaled mean of the geometric
 weights `(1 - q) q ^ k`, so these bounds control geometric averages as `q ↑ 1`.

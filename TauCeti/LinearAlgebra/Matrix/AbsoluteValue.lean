@@ -13,7 +13,11 @@ import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Data.Fintype.Order
 
 /-!
-# The `ℓ¹` and ultrametric forms of Hadamard's determinant bound
+# Entrywise absolute-value bounds for matrices
+
+This file bounds the determinant, the entries of a product and the entries of the adjugate of a
+matrix through entrywise bounds, starting with the `ℓ¹` and ultrametric forms of Hadamard's
+determinant bound.
 
 For a square matrix `A` and an absolute value `abv`, the absolute value of the determinant is at
 most the product over the rows of the `ℓ¹` norms of the rows:

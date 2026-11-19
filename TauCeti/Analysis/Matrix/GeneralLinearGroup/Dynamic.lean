@@ -12,6 +12,7 @@ public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.Normed.Ring.Units
+import TauCeti.Analysis.Matrix.Normed
 import TauCeti.Analysis.Matrix.Spectrum
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 import TauCeti.Analysis.Normed.Group.Basic
@@ -107,8 +108,7 @@ private lemma flow_of_commute {X A : Matrix m m ℝ} (h : Commute A X) (t : ℝ)
   rw [flow, Matrix.mul_assoc, ((h.smul_right t).exp_right).eq, neg_smul, exp_neg_mul_exp_mul]
 
 private lemma det_flow (X A : Matrix m m ℝ) (t : ℝ) : (flow X A t).det = A.det := by
-  rw [flow, det_mul, det_mul, mul_comm, ← mul_assoc, ← det_mul, neg_smul, exp_mul_exp_neg,
-    det_one, one_mul]
+  rw [flow, det_mul_comm, ← Matrix.mul_assoc, neg_smul, exp_mul_exp_neg, Matrix.one_mul]
 
 private lemma flow_inv (X : Matrix m m ℝ) (g : GL m ℝ) (t : ℝ) :
     flow X ((g⁻¹ : GL m ℝ) : Matrix m m ℝ) t = (flow X g t)⁻¹ := by
@@ -166,30 +166,10 @@ private lemma bddFlow_of_tendsto {X A L : Matrix m m ℝ} (h : Tendsto (flow X A
 end Norm
 
 private lemma isBoundedUnder_of_bddFlow {X A : Matrix m m ℝ} (hA : BddFlow X A) (i j : m) :
-    IsBoundedUnder (· ≤ ·) atTop ((‖·‖) ∘ fun t ↦ flow X A t i j) := by
+    IsBoundedUnder (· ≤ ·) atTop fun t ↦ ‖flow X A t i j‖ := by
   obtain ⟨C, hC⟩ := hA
   exact isBoundedUnder_of_eventually_le (a := C)
     (eventually_atTop.2 ⟨0, fun t ht ↦ hC t ht i j⟩)
-
-/-- A bounded family times a family tending to `0` tends to `0`. -/
-private lemma tendsto_flow_mul_zero {X A : Matrix m m ℝ} (hA : BddFlow X A)
-    {H : ℝ → Matrix m m ℝ} (hH : Tendsto H atTop (𝓝 0)) :
-    Tendsto (fun t ↦ flow X A t * H t) atTop (𝓝 0) := by
-  rw [Matrix.tendsto_iff_tendsto_apply] at hH ⊢
-  intro i j
-  simpa only [Matrix.mul_apply, Matrix.zero_apply, Finset.sum_const_zero] using
-    tendsto_finsetSum _ fun k _ ↦
-      Filter.isBoundedUnder_le_mul_tendsto_zero (isBoundedUnder_of_bddFlow hA i k) (hH k j)
-
-/-- A family tending to `0` times a bounded family tends to `0`. -/
-private lemma tendsto_mul_flow_zero {X A : Matrix m m ℝ} (hA : BddFlow X A)
-    {H : ℝ → Matrix m m ℝ} (hH : Tendsto H atTop (𝓝 0)) :
-    Tendsto (fun t ↦ H t * flow X A t) atTop (𝓝 0) := by
-  rw [Matrix.tendsto_iff_tendsto_apply] at hH ⊢
-  intro i j
-  simpa only [Matrix.mul_apply, Matrix.zero_apply, Finset.sum_const_zero] using
-    tendsto_finsetSum _ fun k _ ↦
-      (hH i k).zero_mul_isBoundedUnder_le (isBoundedUnder_of_bddFlow hA k j)
 
 private lemma tendsto_flow_inv {X : Matrix m m ℝ} {g : GL m ℝ}
     (hg : Tendsto (flow X g) atTop (𝓝 1)) :
@@ -293,14 +273,16 @@ theorem mul_mul_inv_mem_dynamicUnipotent {u : GL m ℝ} (hg : g ∈ G.dynamicPar
         flow X (g * u * g⁻¹ : GL m ℝ) t := by
     have hFF : flow X g t * flow X ((g⁻¹ : GL m ℝ) : Matrix m m ℝ) t = 1 := by
       rw [← flow_mul, ← Units.val_mul, mul_inv_cancel, Units.val_one, flow_one]
-    rw [Units.val_mul, Units.val_mul, flow_mul, flow_mul, Matrix.mul_sub, Matrix.sub_mul,
-      Matrix.mul_one, hFF, sub_add_cancel]
-  have h := (tendsto_mul_flow_zero hginv (tendsto_flow_mul_zero hg.2 hu')).add_const 1
+    simp only [Units.val_mul, flow_mul, Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_one, hFF,
+      sub_add_cancel]
+  have h := (Matrix.tendsto_zero_mul_isBoundedUnder_le
+    (Matrix.isBoundedUnder_le_mul_tendsto_zero (isBoundedUnder_of_bddFlow hg.2) hu')
+    (isBoundedUnder_of_bddFlow hginv)).add_const 1
   rw [zero_add] at h
   exact h.congr key
 
 /-- The dynamic unipotent subgroup is a normal subgroup of the dynamic parabolic subgroup. -/
-theorem normal_dynamicUnipotent_subgroupOf (G : Subgroup (GL m ℝ)) (X : Matrix m m ℝ) :
+instance normal_dynamicUnipotent_subgroupOf (G : Subgroup (GL m ℝ)) (X : Matrix m m ℝ) :
     ((G.dynamicUnipotent X).subgroupOf (G.dynamicParabolic X)).Normal :=
   ⟨fun u hu g ↦ by
     rw [mem_subgroupOf, coe_mul, coe_mul, coe_inv]
@@ -407,8 +389,8 @@ private lemma commute_iff_diagonal (hX : X = O * diagonal d * ((O⁻¹ : GL m �
       ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * B * O * (((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * C * O) =
         ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * (B * C) * O := by
     simp only [Matrix.mul_assoc, Units.mul_inv_cancel_left]
-  rw [show diagonal d = ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * X * O by rw [hX, inv_conj_conj],
-    commute_iff_eq, commute_iff_eq, hmul, hmul, Units.mul_left_inj, Units.mul_right_inj]
+  rw [show diagonal d = ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * X * O by rw [hX, inv_conj_conj]]
+  simp only [commute_iff_eq, hmul, Units.mul_left_inj, Units.mul_right_inj]
 
 private lemma bddFlow_diagonal_iff (B : Matrix m m ℝ) :
     BddFlow (diagonal d) B ↔ ∀ i j, d i < d j → B i j = 0 := by
