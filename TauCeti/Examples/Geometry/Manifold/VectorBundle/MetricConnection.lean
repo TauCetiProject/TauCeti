@@ -32,6 +32,12 @@ namespace TauCeti.Examples.MetricConnection
 /-- The native flat connection on the trivial real line over the real line. -/
 def flatConnection := CovariantDerivative.trivial (I := 𝓘(ℝ)) (M := ℝ) ℝ
 
+/-- The native flat connection preserves smoothness at every regularity order. -/
+instance flatConnection.contMDiffCovariantDerivative (n : ℕ∞ω) :
+    flatConnection.ContMDiffCovariantDerivative n :=
+  inferInstanceAs (CovariantDerivative.ContMDiffCovariantDerivative
+    (CovariantDerivative.trivial (I := 𝓘(ℝ)) (M := ℝ) ℝ) n)
+
 /-- The constant scalar endomorphism-valued one-form `a dx`. -/
 def constantOneForm (a : ℝ) (x : ℝ) :
     ℝ →L[ℝ] TangentSpace 𝓘(ℝ) x →L[ℝ] ℝ :=
@@ -87,11 +93,11 @@ example (cov : CovariantDerivative 𝓘(ℝ) ℝ (Trivial ℝ ℝ))
 
 private def standardMetric : ContMDiffRiemannianMetric 𝓘(ℝ) ∞ ℝ (Trivial ℝ ℝ) where
   inner _ := innerSL ℝ
-  symm _ _ _ := by erw [innerSL_apply_apply, innerSL_apply_apply]; exact real_inner_comm _ _
-  pos _ _ hv := by erw [innerSL_apply_apply]; exact real_inner_self_pos.mpr hv
+  symm _ _ _ := by rw [innerSL_apply_apply, innerSL_apply_apply]; exact real_inner_comm _ _
+  pos _ _ hv := by rw [innerSL_apply_apply]; exact real_inner_self_pos.mpr hv
   isVonNBounded _ :=
     ((ContinuousLinearEquiv.refl ℝ ℝ).mem_setOfPred_symm_pos_isVonNBounded_of_inner
-      (g := innerSL ℝ) (by intro u v; erw [innerSL_apply_apply]; rfl)).2.2
+      (g := innerSL ℝ) (by intro u v; rw [innerSL_apply_apply]; rfl)).2.2
   contMDiff := IsContMDiffRiemannianBundle.contMDiff_innerSL
 
 private def scaledStandardMetric := standardMetric.rescale (fun x : ℝ ↦ Real.exp (2*x))
@@ -100,20 +106,10 @@ private def scaledStandardMetric := standardMetric.rescale (fun x : ℝ ↦ Real
 
 -- The automatic instance also matches the literal continuity order.
 example : flatConnection.metricCompatible.ContMDiffCovariantDerivative 0 := by
-  let : flatConnection.ContMDiffCovariantDerivative 0 :=
-    show (CovariantDerivative.trivial (I := 𝓘(ℝ)) (M := ℝ) ℝ).ContMDiffCovariantDerivative 0
-      from inferInstance
   infer_instance
 
 -- Automatic correction regularity for every finite or smooth order, including zero.
 example (n : ℕ∞) : flatConnection.metricCompatible.ContMDiffCovariantDerivative n := by
-  have : ContMDiffVectorBundle (n + 1) ℝ (Trivial ℝ ℝ) 𝓘(ℝ) :=
-    .of_le (show (n : ℕ∞ω) + 1 ≤ ∞ by simp)
-  have : IsContMDiffRiemannianBundle 𝓘(ℝ) (n + 1) ℝ (Trivial ℝ ℝ) :=
-    .of_le (show (n : ℕ∞ω) + 1 ≤ ∞ by simp)
-  let : flatConnection.ContMDiffCovariantDerivative n :=
-    show (CovariantDerivative.trivial (I := 𝓘(ℝ)) (M := ℝ) ℝ).ContMDiffCovariantDerivative n
-      from inferInstance
   infer_instance
 
 example (n : ℕ∞) : ∃ cov : CovariantDerivative 𝓘(ℝ) ℝ (Trivial ℝ ℝ),
@@ -169,6 +165,11 @@ def exponentialMetric : ContMDiffRiemannianMetric 𝓘(ℝ) ∞ ℝ MetricLine :
 /-- The flat connection in the underlying trivialization, before metric correction. -/
 def exponentialFlatConnection : CovariantDerivative 𝓘(ℝ) ℝ MetricLine := flatConnection
 
+/-- The flat connection on the metric line preserves smoothness at every order. -/
+instance exponentialFlatConnection.contMDiffCovariantDerivative (n : ℕ∞ω) :
+    exponentialFlatConnection.ContMDiffCovariantDerivative n :=
+  inferInstanceAs (flatConnection.ContMDiffCovariantDerivative n)
+
 instance metricLineRiemannian : RiemannianBundle MetricLine :=
   ⟨exponentialMetric.toRiemannianMetric⟩
 
@@ -193,10 +194,11 @@ private theorem exponentialFlatConnection_apply (u : Π x, MetricLine x) (x : �
     (X : TangentSpace 𝓘(ℝ) x) :
     (exponentialFlatConnection u x X).toReal = (NormedSpace.fromTangentSpace x) X *
       deriv (fun y ↦ (u y).toReal) x := by
-  have h : flatConnection (fun y ↦ (u y).toReal) x X =
-      (NormedSpace.fromTangentSpace x) X * deriv (fun y ↦ (u y).toReal) x := by
-    simp [flatConnection, CovariantDerivative.trivial_apply]
-  exact h
+  -- Definitional transport through `MetricLine.toReal`, which is the identity on the
+  -- fibres: both connections use the same underlying trivialization and module structure.
+  -- This uses no identification of the exponential metric norm with the Euclidean norm.
+  change flatConnection (fun y ↦ (u y).toReal) x X = _
+  simp [flatConnection, CovariantDerivative.trivial_apply]
 
 private theorem real_mvfderiv_apply (f : ℝ → ℝ) (x : ℝ)
     (X : TangentSpace 𝓘(ℝ) x) :
@@ -259,9 +261,6 @@ example : exponentialFlatConnection.metricCompatible.ContMDiffCovariantDerivativ
     inferInstanceAs (ContMDiffVectorBundle ∞ ℝ MetricLine 𝓘(ℝ))
   have : IsContMDiffRiemannianBundle 𝓘(ℝ) (∞ + 1) ℝ MetricLine :=
     inferInstanceAs (IsContMDiffRiemannianBundle 𝓘(ℝ) ∞ ℝ MetricLine)
-  let : exponentialFlatConnection.ContMDiffCovariantDerivative ∞ :=
-    show (CovariantDerivative.trivial (I := 𝓘(ℝ)) (M := ℝ) ℝ).ContMDiffCovariantDerivative ∞
-      from inferInstance
   infer_instance
 
 /-- The nowhere-zero section `exp(-x)`, parallel for the corrected exponential metric. -/
