@@ -244,7 +244,7 @@ variable `p`, for fixed `n` and nonnegative `x`. -/
 noncomputable def bernsteinKernelBoundedContinuous (n : ℕ) {x : ℝ} (hx : 0 ≤ x) :
     ℝ≥0 →ᵇ ℝ where
   toFun := fun p => bernsteinKernel n x (p : ℝ)
-  continuous_toFun := (continuous_bernsteinKernel n x).comp continuous_subtype_val
+  continuous_toFun := (continuous_bernsteinKernel n x).comp continuous_subtypeVal
   map_bounded' :=
     ⟨1, fun p q => by
       rw [Real.dist_eq]
@@ -391,7 +391,7 @@ lemma chafaiRescaled_integral_bernsteinKernel (f : ℝ → ℝ) (n : ℕ) (x : �
     ∫ p, bernsteinKernel n x (p : ℝ) ∂(chafaiRescaled f n) =
       ∫ t, bernsteinKernel n x (chafaiRescaling n t : ℝ) ∂(chafaiMeasure f n) := by
   exact chafaiRescaled_integral f n
-    (((continuous_bernsteinKernel n x).comp continuous_subtype_val).measurable.aestronglyMeasurable)
+    (((continuous_bernsteinKernel n x).comp continuous_subtypeVal).measurable.aestronglyMeasurable)
 
 /-- Bounded-continuous characteristic pairing of the rescaled Chafaï measure with the Bernstein
 kernel. This lets weak-convergence consumers use the bundled test function while the right-hand
@@ -1241,7 +1241,7 @@ private lemma bernsteinKernel_le_exp {n : ℕ} (hn : 2 ≤ n) {x p : ℝ} (_hx :
           ≤ (Real.exp (-(x * p / ↑(n - 1)))) ^ (n - 1) :=
             pow_le_pow_left₀ h.le hle _
       _ = Real.exp (↑(n - 1) * -(x * p / ↑(n - 1))) := by
-            rw [← Real.exp_nat_mul]
+            rw [← Real.exp_natCast_mul]
       _ = Real.exp (-(x * p)) := by
             congr 1
             field_simp [hden_pos.ne']

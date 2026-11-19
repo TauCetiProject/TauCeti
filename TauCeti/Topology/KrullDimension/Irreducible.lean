@@ -99,14 +99,14 @@ variable {Y : Type*} [TopologicalSpace Y] [IrreducibleSpace Y] {Z : Set Y}
 theorem topologicalKrullDim_add_one_le (hZ : IsClosed Z) (hZY : Z ≠ univ) :
     topologicalKrullDim Z + 1 ≤ topologicalKrullDim Y :=
   IsInducing.subtypeVal.topologicalKrullDim_add_one_le fun h ↦
-    hZY <| hZ.closure_eq ▸ dense_iff_closure_eq.mp (denseRange_subtype_val.mp h)
+    hZY <| hZ.closure_eq ▸ dense_iff_closure_eq.mp (denseRange_subtypeVal.mp h)
 
 /-- A proper closed subset `Z` of an irreducible space `Y` of finite Krull dimension has
 strictly smaller Krull dimension than `Y`. -/
 theorem topologicalKrullDim_lt (hZ : IsClosed Z) (hZY : Z ≠ univ)
     (hY : topologicalKrullDim Y ≠ ⊤) : topologicalKrullDim Z < topologicalKrullDim Y :=
   IsInducing.subtypeVal.topologicalKrullDim_lt (fun h ↦
-    hZY <| hZ.closure_eq ▸ dense_iff_closure_eq.mp (denseRange_subtype_val.mp h)) hY
+    hZY <| hZ.closure_eq ▸ dense_iff_closure_eq.mp (denseRange_subtypeVal.mp h)) hY
 
 end IsClosed
 

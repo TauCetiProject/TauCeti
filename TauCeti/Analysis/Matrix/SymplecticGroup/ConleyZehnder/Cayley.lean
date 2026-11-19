@@ -110,7 +110,7 @@ theorem conleyZehnderIndex_eq_neg_signature_symplecticCayley_sub_div_two {A B : 
         signature (symplecticCayley ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) : ℝ) /
           2 := by
   set m : I → Matrix (n ⊕ n) (n ⊕ n) ℝ := fun t => ((γ t : GL (n ⊕ n) ℝ) : _)
-  have hmc : Continuous m := Units.continuous_val.comp (continuous_subtype_val.comp γ.continuous)
+  have hmc : Continuous m := Units.continuous_val.comp (continuous_subtypeVal.comp γ.continuous)
   have hc : Continuous fun t => symplecticCayley (m t) := by
     simp only [symplecticCayley_def]
     refine continuous_iff_continuousAt.2 fun t => ?_

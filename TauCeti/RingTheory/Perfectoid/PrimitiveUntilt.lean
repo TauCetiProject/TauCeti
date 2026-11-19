@@ -288,7 +288,7 @@ private theorem coeff_zero_mem_radical (hξ : ξ.IsPrimitive) {ϖ : P.plus}
     (hϖ : IsPseudoUniformizer (ϖ : R)) : ξ.coeff 0 ∈ (Ideal.span {ϖ}).radical := by
   obtain ⟨n, hn⟩ := P.plus.exists_dvd_pow_of_isTopologicallyNilpotent
     P.isRingOfIntegralElements.isOpen hϖ.isUnit
-    (hξ.isTopologicallyNilpotent_coeff_zero.map (φ := P.plus.subtype) continuous_subtype_val)
+    (hξ.isTopologicallyNilpotent_coeff_zero.map (φ := P.plus.subtype) continuous_subtypeVal)
   exact ⟨n, Ideal.mem_span_singleton.mpr hn⟩
 
 /-- The class of `[ϖ]` is a nonzerodivisor of `𝕎 R⁺ ⧸ (ξ)` for primitive `ξ`. -/

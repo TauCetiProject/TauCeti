@@ -85,7 +85,7 @@ private theorem mappingSpaceEvalFiberHomeomorph_mappingSpaceEvalFiberConst :
 
 /-- Pushed into all maps, the based maps give the fibre inclusion. -/
 private theorem subtypeVal_comp_mappingSpaceEvalFiberHomeomorph :
-    (⟨Subtype.val, continuous_subtype_val⟩ : C(BasedMap B Q b x, C(B, Q))).comp
+    (⟨Subtype.val, continuous_subtypeVal⟩ : C(BasedMap B Q b x, C(B, Q))).comp
       ⟨mappingSpaceEvalFiberHomeomorph b x, (mappingSpaceEvalFiberHomeomorph b x).continuous⟩ =
       ((mappingSpaceEvalHom b (Q := Q)).fiberι x).hom :=
   ContinuousMap.ext fun f ↦ (TopCat.Hom.fiberι_apply _ _ f).symm
@@ -95,7 +95,7 @@ the identification of the fibre with the based maps. -/
 private theorem homotopyGroupMap_basedMap_val_eq :
     HomotopyGroup.map (N := N)
         (x := (⟨ContinuousMap.const B x, ContinuousMap.const_apply x b⟩ : BasedMap B Q b x))
-        ⟨Subtype.val, continuous_subtype_val⟩ rfl =
+        ⟨Subtype.val, continuous_subtypeVal⟩ rfl =
       HomotopyGroup.map ((mappingSpaceEvalHom b (Q := Q)).fiberι x).hom
           (TopCat.Hom.fiberι_apply _ _ (mappingSpaceEvalFiberConst b x)) ∘
         (HomotopyGroup.homeomorphEquivOfEq (mappingSpaceEvalFiberHomeomorph b x)
@@ -120,7 +120,7 @@ theorem injective_homotopyGroupMap_basedMap_val
     [Finite N] [Nonempty N] :
     Function.Injective (HomotopyGroup.map (N := N)
       (x := (⟨ContinuousMap.const B x, ContinuousMap.const_apply x b⟩ : BasedMap B Q b x))
-      ⟨Subtype.val, continuous_subtype_val⟩ rfl) := by
+      ⟨Subtype.val, continuous_subtypeVal⟩ rfl) := by
   rw [homotopyGroupMap_basedMap_val_eq]
   exact (TopCat.injective_homotopyGroupMap_fiberι_of_section
     (e := mappingSpaceEvalFiberConst b x) hev (const_comp_mappingSpaceEvalHom b) rfl).comp
@@ -134,7 +134,7 @@ theorem mem_range_homotopyGroupMap_basedMap_val_iff
     [Finite N] {a : HomotopyGroup N C(B, Q) (ContinuousMap.const B x)} :
     a ∈ Set.range (HomotopyGroup.map (N := N)
       (x := (⟨ContinuousMap.const B x, ContinuousMap.const_apply x b⟩ : BasedMap B Q b x))
-      ⟨Subtype.val, continuous_subtype_val⟩ rfl) ↔
+      ⟨Subtype.val, continuous_subtypeVal⟩ rfl) ↔
       HomotopyGroup.map (mappingSpaceEval b) (leftInverse_mappingSpaceEval_const b x) a =
         (⟦GenLoop.const⟧ : HomotopyGroup N Q x) := by
   have h := congrFun (homotopyGroupMap_basedMap_val_eq (N := N) b x)
@@ -160,7 +160,7 @@ def basedMapHomotopyGroupHom
     (e : HomotopyGroup N (BasedMap B Q b x)
       ⟨ContinuousMap.const B x, ContinuousMap.const_apply x b⟩ ≃* G) :
     G →* HomotopyGroup N C(B, Q) (ContinuousMap.const B x) :=
-  (HomotopyGroup.mapHom ⟨Subtype.val, continuous_subtype_val⟩ rfl).comp e.symm.toMonoidHom
+  (HomotopyGroup.mapHom ⟨Subtype.val, continuous_subtypeVal⟩ rfl).comp e.symm.toMonoidHom
 
 /-- On the image under `e` of a class of based maps, `TauCeti.basedMapHomotopyGroupHom` is the map
 induced by the inclusion of the based maps. -/
@@ -170,7 +170,7 @@ theorem basedMapHomotopyGroupHom_apply_mulEquiv
     (a : HomotopyGroup N (BasedMap B Q b x)
       ⟨ContinuousMap.const B x, ContinuousMap.const_apply x b⟩) :
     basedMapHomotopyGroupHom e (e a) =
-      HomotopyGroup.map ⟨Subtype.val, continuous_subtype_val⟩ rfl a := by
+      HomotopyGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ rfl a := by
   rw [basedMapHomotopyGroupHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     MulEquiv.symm_apply_apply, HomotopyGroup.mapHom_apply]
 

@@ -108,7 +108,7 @@ def toContinuousRep (Λ : IntegralModel O ρ) : ContinuousRep Γ O Λ.lattice wh
       map_one' := by ext; simp
       map_mul' g h := by ext; simp }
   continuous_action := (ρ.continuous_action.comp
-    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).subtype_mk _
+    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))).subtype_mk _
 
 /-- The inclusion of an integral model intertwines its action with the action on `V`. -/
 @[simp]

@@ -88,7 +88,7 @@ identity. -/
 of `X`. -/
 @[simp] theorem doubleGlueData_f (i j : (doubleGlueData X U).J) :
     (doubleGlueData X U).f i j =
-      TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C({x : X // i = j ∨ x ∈ U}, X)) :=
+      TopCat.ofHom (⟨Subtype.val, continuous_subtypeVal⟩ : C({x : X // i = j ∨ x ∈ U}, X)) :=
   (rfl)
 
 /-- The transition maps of the double are the identity on underlying points of `X`. -/

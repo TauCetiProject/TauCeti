@@ -146,7 +146,7 @@ theorem exists_refinement_energy_add_lt (P : Finpartition (univ : Finset V)) (h�
     intro AB hAB
     simpa only [isRegularPair_iff, not_forall, not_le, exists_prop] using (hmem hAB).2.2.2
   obtain ⟨AB₀, hAB₀⟩ : I.Nonempty := by
-    rw [nonempty_iff_ne_empty]
+    rw [← ne_empty_iff_nonempty]
     rintro hempty
     rw [hempty, sum_empty] at hbad
     nlinarith [sq_nonneg (Fintype.card V : ℝ)]

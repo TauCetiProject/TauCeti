@@ -117,7 +117,7 @@ theorem restrictOpenTangentSpace_eq_of_apply_eq
 ambient one. -/
 theorem isLocalIsometry_subtype_val :
     (g.restrictOpenTangentSpace U).IsLocalIsometry g (Subtype.val : U → M) where
-  contMDiff := contMDiff_subtype_val
+  contMDiff := contMDiff_subtypeVal
   isInvertible_mfderiv x := ⟨tangentSpaceOpenEquiv (I := I) x, (mfderiv_subtype_val x).symm⟩
   apply_mfderiv x v w := by
     simp only [mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe, restrictOpenTangentSpace_apply]

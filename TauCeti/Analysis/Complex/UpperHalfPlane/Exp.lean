@@ -43,7 +43,7 @@ namespace TauCeti.UpperHalfPlane
 
 /-- `q = e^{2π i τ}` is the square of `e^{π i τ}`. -/
 theorem exp_two_pi_I_eq_exp_pi_I_sq (τ : ℂ) : cexp (2 * π * I * τ) = cexp (π * I * τ) ^ 2 := by
-  rw [← Complex.exp_nat_mul]
+  rw [← Complex.exp_natCast_mul]
   congr 1
   push_cast
   ring
@@ -131,7 +131,7 @@ theorem one_sub_exp_two_pi_I_ne_zero {x y : ℝ} {τ : ℂ} (hτ : 0 < τ.im)
 theorem exp_two_pi_I_zpow_mul_exp (k : ℤ) (x y : ℝ) (τ : ℂ) :
     cexp (2 * π * I * τ) ^ k * cexp (2 * π * I * (x * τ + y)) =
       cexp (2 * π * I * (((k + x : ℝ) : ℂ) * τ + y)) := by
-  rw [← Complex.exp_int_mul, ← Complex.exp_add]
+  rw [← Complex.exp_intCast_mul, ← Complex.exp_add]
   push_cast
   ring_nf
 

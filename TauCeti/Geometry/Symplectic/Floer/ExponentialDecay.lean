@@ -601,7 +601,7 @@ theorem exists_pos_eventually_norm_sub_le_exp {L : ℝ}
   set h := Real.exp (-(κ₀ / 3 * s)) with hhdef
   have hh : 0 < h := Real.exp_pos _
   have hh3 : Real.exp (-(κ₀ * s)) = h * h ^ 2 := by
-    rw [hhdef, ← Real.exp_nat_mul, ← Real.exp_add]
+    rw [hhdef, ← Real.exp_natCast_mul, ← Real.exp_add]
     congr 1
     push_cast
     ring
@@ -724,7 +724,7 @@ theorem exists_pos_eventually_norm_fderiv_apply_one_zero_le_exp (hH : ContDiff �
     rw [show -(κ * (s - 1)) = κ + -(κ * s) by ring, Real.exp_add]
     ring
   have hexp : (√B * Real.exp (-(κ / 2 * s))) ^ 2 = B * Real.exp (-(κ * s)) := by
-    rw [mul_pow, Real.sq_sqrt hB, ← Real.exp_nat_mul]
+    rw [mul_pow, Real.sq_sqrt hB, ← Real.exp_natCast_mul]
     congr 2
     push_cast
     ring

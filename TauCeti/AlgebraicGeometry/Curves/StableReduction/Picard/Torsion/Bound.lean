@@ -416,7 +416,7 @@ private lemma finrank_ker_intersectionMod_add_card_le [Fact ℓ.Prime]
   have hB := (incidence T ℓ).mulVecLin.finrank_range_add_finrank_ker
   have hA := (intersectionMod T ℓ).mulVecLin.finrank_range_add_finrank_ker
   rw [Module.finrank_fintype_fun_eq_card] at hA hB
-  rw [rank, rank] at hsyl
+  rw [← finrank_range_mulVecLin, ← finrank_range_mulVecLin] at hsyl
   rw [hsymm]
   have := finrank_ker_incidence_le_one (T := T) (ℓ := ℓ)
   omega

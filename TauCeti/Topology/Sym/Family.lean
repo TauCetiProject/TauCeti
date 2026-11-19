@@ -64,7 +64,7 @@ omit [Fintype ι] in
 private theorem continuous_regroup (e : (Σ i, Fin (m i)) ≃ Fin n) :
     Continuous (regroup U m e) :=
   continuous_pi fun _j =>
-    continuous_subtype_val.comp ((continuous_apply _).comp (continuous_apply _))
+    continuous_subtypeVal.comp ((continuous_apply _).comp (continuous_apply _))
 
 omit [Fintype ι] in
 private theorem isOpenMap_regroup (hU : ∀ i, IsOpen (U i)) (e : (Σ i, Fin (m i)) ≃ Fin n) :
@@ -76,7 +76,7 @@ private theorem isOpenMap_regroup (hU : ∀ i, IsOpen (U i)) (e : (Σ i, Fin (m 
     funext f j
     simp [regroup, R]
   rw [hfun]
-  exact (IsOpenMap.piMap (fun j => (hU _).isOpenMap_subtype_val) (by simp)).comp R.isOpenMap
+  exact (IsOpenMap.piMap (fun j => (hU _).isOpenMap_subtypeVal) (by simp)).comp R.isOpenMap
 
 omit [Fintype ι] in
 private theorem isOpenQuotientMap_piMap_ofFn :

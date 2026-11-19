@@ -621,7 +621,7 @@ private lemma continuous_integrandFDeriv (c : Symbol n V W m) (u : 𝓢(Coordina
   refine continuous_clm_apply.2 fun h ↦ ?_
   simp only [integrandFDeriv_apply]
   have he : Continuous fun y : CoordinateSpace n ↦ (𝐞 (-⟪y, ζ⟫) : ℂ) :=
-    (Real.continuous_fourierChar.comp (by fun_prop)).subtype_val
+    (Real.continuous_fourierChar.comp (by fun_prop)).subtypeVal
   refine (he.smul ((hD.clm_apply continuous_const).clm_apply u.continuous)).add ?_
   exact (((continuous_const.mul (Complex.continuous_ofReal.comp (by fun_prop))).mul he).smul
     (hc.clm_apply u.continuous))

@@ -158,7 +158,7 @@ theorem IsFoelner.exists_finset_card_smul_symmDiff_lt [MulAction G X] {ι : Type
       (hF.eventually_measurableSet.and hK))).exists
   have hfin : (F i).Finite := (Measure.count_apply_lt_top' hmeas).1 (lt_top_iff_ne_top.2 hitop)
   have hne : hfin.toFinset.Nonempty := by
-    simpa [Set.nonempty_iff_ne_empty] using mt Measure.count_eq_zero_iff.2 hi0
+    simpa [← Set.ne_empty_iff_nonempty] using mt Measure.count_eq_zero_iff.2 hi0
   have hmeas' : MeasurableSet (hfin.toFinset : Set X) := by simpa using hmeas
   refine ⟨hfin.toFinset, hne, fun g hg => ?_⟩
   have hlt := (Measure.card_smul_symmDiff_div_card_le_count_div_count hmeas' g).trans_lt

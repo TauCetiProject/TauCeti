@@ -212,13 +212,13 @@ theorem continuous_unitCharacterEval {S : Type*} [TopologicalSpace S]
   -- continuous.
   have hval : Continuous fun s => κ s g := (continuous_eval_const g).comp hκ
   have hV : IsOpen {s : {s // κ s ≠ 1} | κ s g ≠ 1} :=
-    isOpen_ne_fun (hval.comp continuous_subtype_val) continuous_const
+    isOpen_ne_fun (hval.comp continuous_subtypeVal) continuous_const
   refine ContinuousAt.congr (f := fun s : {s // κ s ≠ 1} =>
       (numerator (diracHom (R := ℤ_[p])) _ g z (κ s) : ℚ_[p]) / ((κ s g : ℚ_[p]) - 1)) ?_ ?_
   · refine ContinuousAt.div ?_ ?_ (coe_apply_sub_one_ne_zero _ hg)
-    · exact (continuous_subtype_val.comp ((map_continuous _).comp
-        (hκ'.comp continuous_subtype_val))).continuousAt
-    · exact ((continuous_subtype_val.comp (hval.comp continuous_subtype_val)).sub
+    · exact (continuous_subtypeVal.comp ((map_continuous _).comp
+        (hκ'.comp continuous_subtypeVal))).continuousAt
+    · exact ((continuous_subtypeVal.comp (hval.comp continuous_subtypeVal)).sub
         continuous_const).continuousAt
   · filter_upwards [hV.mem_nhds hg] with s hs
     exact (unitCharacterEval_eq_div _ _ hs z).symm

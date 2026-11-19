@@ -54,7 +54,7 @@ theorem proPFrattiniStep_eq_map_proPFrattini (hp : p.Prime) {H : Subgroup G}
     · rintro ⟨y, hy, rfl⟩
       exact ⟨⟨y, hy⟩, by simp⟩
   rw [proPFrattini_eq_topologicalClosure hp,
-    H.subtype.map_topologicalClosure continuous_subtype_val _
+    H.subtype.map_topologicalClosure continuous_subtypeVal _
       (isClosed_topologicalClosure _).isCompact,
     Subgroup.map_sup, MonoidHom.map_closure, himage, H.map_subtype_commutator,
     proPFrattiniStep_def]

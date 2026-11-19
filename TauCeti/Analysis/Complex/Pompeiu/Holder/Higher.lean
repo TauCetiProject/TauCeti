@@ -305,7 +305,7 @@ private def cauchyField (hα : 0 < α) (hα1 : α < 1) (j : ℕ) (hj : j ≤ k +
   BoundedContinuousFunction.mkOfCompact
     ⟨fun x ↦ iteratedFDeriv ℝ j (cauchyCk f) x,
       ((contDiff_cauchyCk hα hα1 f).continuous_iteratedFDeriv
-        (by exact_mod_cast hj)).comp continuous_subtype_val⟩
+        (by exact_mod_cast hj)).comp continuous_subtypeVal⟩
 
 private theorem cauchyField_apply (hα : 0 < α) (hα1 : α < 1) (j : ℕ)
     (hj : j ≤ k + 1) (f : supportedCkHolderSubmodule (E := ℂ) (F := F) k α (closedBall c r))

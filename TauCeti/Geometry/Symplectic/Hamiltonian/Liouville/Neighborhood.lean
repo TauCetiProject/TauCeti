@@ -82,10 +82,10 @@ theorem exists_opens_isCompleteVectorField_hamiltonianVectorField [T2Space M]
     ∃ W : Opens M, connectedComponentIn (F ⁻¹' {F x}) x ⊆ W ∧
       (∀ c, IsCompact ((fun y : W ↦ F y) ⁻¹' {c})) ∧
       (∀ i j y, SmoothTwoForm.poissonBracket
-        (SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtype_val σ)
+        (SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtypeVal σ)
         (fun y : W ↦ F y i) (fun y : W ↦ F y j) y = 0) ∧
       ∀ i, IsCompleteVectorField (SmoothTwoForm.hamiltonianVectorField
-        (SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtype_val σ)
+        (SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtypeVal σ)
         fun y : W ↦ F y i) := by
   have := Manifold.locallyCompact_of_finiteDimensional (M := M) I
   obtain ⟨W, hWo, hLW, hWc⟩ :=
@@ -103,9 +103,9 @@ theorem exists_opens_isCompleteVectorField_hamiltonianVectorField [T2Space M]
   have hσU := hσ.mpullback_subtype_val U
   -- each restricted `F_j` is a first integral of the restricted `F_i`
   exact hσU.isCompleteVectorField_hamiltonianVectorField_of_isCompact_preimage_singleton
-    ((hFi i).comp contMDiff_subtype_val) (fun _ ↦ hlev _)
+    ((hFi i).comp contMDiff_subtypeVal) (fun _ ↦ hlev _)
     (fun j ↦ isFirstIntegral_iff.2 (hcommU j i))
-    fun j ↦ ((hFi j).comp contMDiff_subtype_val).mdifferentiable (by simp)
+    fun j ↦ ((hFi j).comp contMDiff_subtypeVal).mdifferentiable (by simp)
 
 /-- **Restriction to a neighbourhood of a compact regular component of a level.** Let `F` be a
 family of pairwise Poisson-commuting `C²` functions for a nondegenerate form `σ` on a
@@ -127,10 +127,10 @@ theorem exists_opens_isCompact_connectedComponentIn_isCompleteVectorField [T2Spa
       (∀ z ∈ connectedComponentIn ((fun z : W ↦ F z) ⁻¹' {F x}) ⟨x, hxW⟩,
         IsRegularPoint I 𝓘(ℝ, ι → ℝ) (fun z : W ↦ F z) z) ∧
       (∀ i j y, SmoothTwoForm.poissonBracket
-        (SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtype_val σ)
+        (SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtypeVal σ)
         (fun y : W ↦ F y i) (fun y : W ↦ F y j) y = 0) ∧
       ∀ i, IsCompleteVectorField (SmoothTwoForm.hamiltonianVectorField
-        (SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtype_val σ)
+        (SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtypeVal σ)
         fun y : W ↦ F y i) := by
   obtain ⟨W, hLW, -, hcommW, hcW⟩ :=
     hσ.exists_opens_isCompleteVectorField_hamiltonianVectorField hF hcomm hK

@@ -28,7 +28,7 @@ open Algebra.TensorProduct
 namespace TensorPointChecks
 
 private noncomputable def basePoint : spa (Pair.powerBounded ℚ_[2]).plus :=
-  Classical.choice <| Set.Nonempty.to_subtype <| Set.nonempty_iff_ne_empty.mpr <| by
+  Classical.choice <| Set.Nonempty.to_subtype <| Set.ne_empty_iff_nonempty.mp <| by
     intro h
     exact not_subsingleton ℚ_[2] ((spa_eq_empty_iff_subsingleton _
       (Pair.powerBounded ℚ_[2]).isRingOfIntegralElements).mp h)

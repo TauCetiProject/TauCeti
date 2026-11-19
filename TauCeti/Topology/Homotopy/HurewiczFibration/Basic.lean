@@ -124,7 +124,7 @@ joining by paths, for instance a union of path components, is a Hurewicz fibrati
 theorem comp_subtypeVal (hp : IsHurewiczFibration.{w} p) {S : Set E}
     (hS : ∀ ⦃e e' : E⦄, e ∈ S → Joined e e' → e' ∈ S) :
     IsHurewiczFibration.{w} (p ∘ Subtype.val : S → B) :=
-  ⟨hp.1.comp continuous_subtype_val,
+  ⟨hp.1.comp continuous_subtypeVal,
     fun A _ ↦ HasHomotopyLiftingProperty.comp_subtypeVal (hp.2 A) hS⟩
 
 end IsHurewiczFibration

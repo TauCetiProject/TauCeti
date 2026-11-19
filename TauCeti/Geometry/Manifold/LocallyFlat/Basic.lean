@@ -365,7 +365,7 @@ theorem eventually_symm_add_mem {φ : OpenPartialHomeomorph M F} {A : Set M} {x 
     (hφ : IsSliceChart φ (L : Set F) A) (hxφ : x ∈ φ.source) (hxA : x ∈ A) :
     ∀ᶠ z : L in 𝓝 0, φ.symm (φ x + (z : F)) ∈ A := by
   have hxL : φ x ∈ L := (isSliceChart_iff.1 hφ x hxφ).1 hxA
-  have hcont : Continuous fun z : L ↦ φ x + (z : F) := continuous_const.add continuous_subtype_val
+  have hcont : Continuous fun z : L ↦ φ x + (z : F) := continuous_const.add continuous_subtypeVal
   have hxt : φ.target ∈ 𝓝 (φ x + ((0 : L) : F)) := by
     simpa using φ.open_target.mem_nhds (φ.map_source hxφ)
   filter_upwards [hcont.continuousAt.preimage_mem_nhds hxt] with z hz

@@ -106,7 +106,7 @@ example (p : ℕ) [Fact p.Prime] :
       · simp
       · rw [hpow n]
         exact ((IsLocalRing.isOpen_maximalIdeal_pow ℤ_[p] _).prod
-          (isOpen_discrete ({0} : Set B))).preimage continuous_subtype_val
+          (isOpen_discrete ({0} : Set B))).preimage continuous_subtypeVal
     · rw [nhds_subtype_eq_comap, Filter.mem_comap] at hs
       obtain ⟨t, ht, hts⟩ := hs
       rw [nhds_prod_eq, Filter.mem_prod_iff] at ht

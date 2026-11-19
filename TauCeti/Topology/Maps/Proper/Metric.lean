@@ -94,7 +94,7 @@ proper map exactly when the subset is closed. -/
 theorem isProperMap_norm_sq_sub_subtypeVal_iff {E : Type*} [NormedAddCommGroup E]
     [ProperSpace E] {S : Set E} (a : E) :
     IsProperMap (fun x : S ↦ ‖(x : E) - a‖ ^ 2) ↔ IsClosed S := by
-  rw [isProperMap_norm_sq_sub_comp_iff continuous_subtype_val]
+  rw [isProperMap_norm_sq_sub_comp_iff continuous_subtypeVal]
   exact ⟨fun h ↦ Subtype.range_coe (s := S) ▸ h.isClosed_range,
     IsClosed.isProperMap_subtypeVal⟩
 
@@ -119,7 +119,7 @@ theorem not_isProperMap_norm_sq_sub_compl_singleton (y a : F) [(𝓝[≠] y).NeB
   intro h
   refine not_isCompact_compl_singleton_inter_preimage_Iic (lt_add_one (‖y - a‖ ^ 2)) ?_
   have hK := (h.isCompact_preimage (isCompact_Icc (a := 0) (b := ‖y - a‖ ^ 2 + 1))).image
-    continuous_subtype_val
+    continuous_subtypeVal
   convert hK using 1
   ext v
   simp only [mem_inter_iff, mem_compl_iff, mem_preimage, mem_Iic, mem_image, mem_Icc,

@@ -115,7 +115,7 @@ theorem continuousFunctionalCalculus : ContinuousFunctionalCalculus 𝕜 S (fun 
   predicate_zero := by simpa using ContinuousFunctionalCalculus.predicate_zero (R := 𝕜) (A := B)
   compactSpace_spectrum x := by
     have : CompleteSpace S := hS.completeSpace_coe
-    exact isCompact_iff_compactSpace.1 (spectrum.isCompact x)
+    exact isCompact_iff_compactSpace.1 (spectrum.isCompact 𝕜 x)
   spectrum_nonempty x hx := by
     have : Nontrivial B := Function.Injective.nontrivial (f := ((↑) : S → B)) Subtype.val_injective
     rw [S.spectrum_eq_of_predicate hx]
@@ -150,7 +150,7 @@ theorem coe_cfc (f : 𝕜 → 𝕜) (x : S) :
   let := S.continuousFunctionalCalculus
   by_cases hx : q x
   · by_cases hf : ContinuousOn f (spectrum 𝕜 x)
-    · exact S.subtype.map_cfc f x hf continuous_subtype_val hx hx
+    · exact S.subtype.map_cfc f x hf continuous_subtypeVal hx hx
     · rw [cfc_apply_of_not_continuousOn _ hf,
         cfc_apply_of_not_continuousOn _ (by rwa [← S.spectrum_eq_of_predicate hx]),
         ZeroMemClass.coe_zero]
@@ -170,7 +170,7 @@ theorem StarAlgHom.continuousFunctionalCalculus_of_isClosedEmbedding (φ : A →
   let e := StarAlgEquiv.ofInjective φ hφ.injective
   have he (y : φ.range) : φ (e.symm y) = y := congr_arg Subtype.val (e.apply_symm_apply y)
   .transfer e.symm (hφ.isInducing.continuous_iff.2 <| by
-      simpa [Function.comp_def, he] using continuous_subtype_val)
+      simpa [Function.comp_def, he] using continuous_subtypeVal)
     fun y ↦ by rw [hpq, he]
 
 end Banach

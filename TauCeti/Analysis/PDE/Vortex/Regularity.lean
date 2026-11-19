@@ -130,7 +130,7 @@ theorem exists_continuousOn_ae_eq_of_forall_integral_inner_gradient_eq_neg (hE :
       (W1p.integrableOn_exp_mul_abs_value (by rw [hE]; norm_cast) (by omega) w hK hKO 4)
       (hexp.pow 2) (ae_of_all _ fun x => ?_)
     rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity),
-      ← Real.exp_nat_mul]
+      ← Real.exp_natCast_mul]
     exact Real.exp_le_exp.2 (by push_cast; linarith [le_abs_self (W1p.value w x)])
   have hfK : AEStronglyMeasurable f (volume.restrict K) := by
     have h1 := (hh.mono hKO).aestronglyMeasurable (μ := volume) hK.measurableSet
@@ -218,7 +218,7 @@ private theorem memLp_nonlinearity (hh : Continuous h) (hk : Continuous k)
   have hE : MemLp (fun x => Real.exp (2 * |u x|)) 2 (volume.restrict (ball c ρ)) := by
     refine (memLp_two_iff_integrable_sq he).2 (hexp.congr_fun_ae (ae_of_all _ fun x => ?_))
     simp only
-    rw [← Real.exp_nat_mul]
+    rw [← Real.exp_natCast_mul]
     ring_nf
   have hG : MemLp (fun x => |Mh| / 8 * (Real.exp (2 * |u x|) + 1) + |Mk|) 2
       (volume.restrict (ball c ρ)) :=

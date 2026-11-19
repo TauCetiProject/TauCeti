@@ -44,7 +44,7 @@ def cubeToOnePoint : C((N → I), OnePoint (N → ℝ)) where
   toFun z := unitBallToOnePoint (cubeHomeomorphClosedBall N z : N → ℝ)
   continuous_toFun :=
     continuous_unitBallToOnePoint.comp
-      (continuous_subtype_val.comp (cubeHomeomorphClosedBall N).continuous)
+      (continuous_subtypeVal.comp (cubeHomeomorphClosedBall N).continuous)
 
 variable {N}
 

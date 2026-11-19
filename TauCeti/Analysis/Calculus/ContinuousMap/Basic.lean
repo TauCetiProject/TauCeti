@@ -103,7 +103,7 @@ private def intervalPrimitive (a b : ℝ) [Fact (a ≤ b)]
   ⟨fun t ↦ ∫ s in a..t, intervalExtension a b f s,
     (intervalIntegral.continuous_primitive
       (fun x y ↦ (intervalExtension a b f).continuous.intervalIntegrable x y) a).comp
-        continuous_subtype_val⟩
+        continuous_subtypeVal⟩
 
 private theorem intervalPrimitive_apply (a b : ℝ) [Fact (a ≤ b)]
     (f : C(Set.Icc a b, E)) (t : Set.Icc a b) :

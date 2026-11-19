@@ -101,7 +101,7 @@ def localSectionTrivializationOfCosetFibers (K : Subgroup G) (hπ : Continuous �
       fun g hg ↦ coe_localSectionFiber hg
   continuousOn_invFun :=
     (hs.comp (continuousOn_fst (s := U ×ˢ univ)) fun _ hp ↦ hp.1).mul
-      (continuous_subtype_val.comp_continuousOn continuousOn_snd)
+      (continuous_subtypeVal.comp_continuousOn continuousOn_snd)
   baseSet := U
   open_baseSet := hU
   source_eq := rfl

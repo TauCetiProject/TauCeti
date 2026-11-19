@@ -52,7 +52,7 @@ lemma isIso_homologyMap_app_top_of_isIso_abutment {F : ℤ → Subobject K} {hF 
     (spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom α
       (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤)) n).symm
   have : IsIso (HomologicalComplex.homologyMap (cokernel.map _ _ _ _
-      (α.naturality (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤)))) n) := by
+      (α.naturality (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))).symm) n) := by
     rw [hc]
     infer_instance
   have := cokernel.π_of_zero (filtrationFunctor_map_bot F hF ⊤)
@@ -62,7 +62,7 @@ lemma isIso_homologyMap_app_top_of_isIso_abutment {F : ℤ → Subobject K} {hF 
       HomologicalComplex.homologyMap
         (cokernel.π ((filtrationFunctor F hF).map (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤)))) n ≫
         HomologicalComplex.homologyMap (cokernel.map _ _ _ _
-          (α.naturality (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤)))) n := by
+          (α.naturality (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))).symm) n := by
     simp only [← HomologicalComplex.homologyMap_comp, cokernel.π_desc]
   have : IsIso (HomologicalComplex.homologyMap (α.app ⊤) n ≫ HomologicalComplex.homologyMap
       (cokernel.π ((filtrationFunctor G hG).map (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤)))) n) := by

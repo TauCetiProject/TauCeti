@@ -151,9 +151,9 @@ private theorem continuous_realCliffordSpinSpherePair (n : ℕ) :
   unfold realCliffordSpinSpherePair
   apply continuous_spinReflectionPair
   · exact (EuclideanSpace.equiv (Fin n) ℝ).continuous.comp
-      (continuous_subtype_val.comp continuous_fst)
+      (continuous_subtypeVal.comp continuous_fst)
   · exact (EuclideanSpace.equiv (Fin n) ℝ).continuous.comp
-      (continuous_subtype_val.comp continuous_snd)
+      (continuous_subtypeVal.comp continuous_snd)
 
 private def realCliffordSpinCompactParam (n : ℕ) :
     (Fin (n + 1) → realCliffordUnitSphere n × realCliffordUnitSphere n) →

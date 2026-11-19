@@ -424,7 +424,7 @@ theorem mapOrientation_eq_of_isPreconnected (hι : Fintype.card ι = finrank ℝ
   -- Read on the subtype `s`, the orientation is locally constant.
   have hlc : IsLocallyConstant fun z : s ↦ e.mapOrientation ι (hse z.2) (o z) :=
     (IsLocallyConstant.iff_eventually_eq _).2 fun z ↦
-      ((continuous_subtype_val.tendsto z).eventually
+      ((continuous_subtypeVal.tendsto z).eventually
         (o.eventually_mapOrientation_eq hι e (hse z.2))).mono fun w hw ↦ hw (hse w.2)
   exact hlc.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
 

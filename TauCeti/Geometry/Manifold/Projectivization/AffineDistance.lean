@@ -96,7 +96,7 @@ private theorem isZero_singularHomology_inter_setOf_le_of_isZero_sublevelPair
         R j) := by
   set g : Z → ℝ := fun z ↦ (1 + ‖WithLp.toLp 2 (z : Fin n → 𝕜) - a‖ ^ 2)⁻¹
   have hF : Continuous fun x : X ↦ affineChartInvOneAddDistSq i a x :=
-    (continuous_affineChartInvOneAddDistSq i a).comp continuous_subtype_val
+    (continuous_affineChartInvOneAddDistSq i a).comp continuous_subtypeVal
   -- The affine part of `X`, as a subspace of `X`, is the image of `Z`.
   let φ : C({z | g z ≤ ε + 1}, X) :=
     ⟨inclusion inter_subset_left ∘ (interAffineOpenHomeomorph hZ).symm ∘ Subtype.val, by fun_prop⟩

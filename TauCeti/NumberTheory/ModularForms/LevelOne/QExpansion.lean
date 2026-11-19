@@ -89,7 +89,7 @@ theorem qExpansion_E₄_eq :
     PowerSeries.coeff_ofNat_mul, PowerSeries.coeff_map, TauCeti.coeff_divisorSumSeries]
   rcases eq_or_ne m 0 with rfl | hm
   · simp
-  · simp [hm, bernoulli_four]
+  · simp [hm]
     norm_num
 
 /-- The `q`-expansion of `E₆` is `1 - 504 ∑ σ₅(n) qⁿ`. -/
@@ -101,7 +101,7 @@ theorem qExpansion_E₆_eq :
     PowerSeries.coeff_ofNat_mul, PowerSeries.coeff_map, TauCeti.coeff_divisorSumSeries]
   rcases eq_or_ne m 0 with rfl | hm
   · simp
-  · simp [hm, bernoulli_six]
+  · simp [hm]
     norm_num
 
 open scoped Real in

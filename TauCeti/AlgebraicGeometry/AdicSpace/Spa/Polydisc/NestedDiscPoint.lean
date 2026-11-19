@@ -288,8 +288,8 @@ theorem nestedDiscPoint_vle_iff (f g : 𝒯 K) :
 theorem nestedDiscPoint_mem_closedSubdisc_iff (b d : K) :
     nestedDiscPoint a ha c hc₀ hc₁ hac hcc ∈ closedSubdisc b d ↔
       ⨅ n, max ‖c n‖ ‖a n - b‖ ≤ ‖d‖ ∧ d ≠ 0 := by
-  rw [mem_closedSubdisc, nestedDiscPoint_vle_iff, nestedDiscPoint_vle_iff, map_zero, le_zero_iff,
-    nestedDiscValuation_weightedC, nnNorm_eq_zero, ← NNReal.coe_le_coe,
+  rw [mem_closedSubdisc, nestedDiscPoint_vle_iff, nestedDiscPoint_vle_iff, map_zero,
+    nonpos_iff_eq_zero, nestedDiscValuation_weightedC, nnNorm_eq_zero, ← NNReal.coe_le_coe,
     coe_nestedDiscValuation_weightedX_sub_weightedC, coe_nnNorm]
 
 /-- **The point lies in every disc `D(aₙ, |cₙ|)` of the sequence.** -/

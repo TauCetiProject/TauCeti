@@ -156,7 +156,7 @@ theorem continuous_closedStarMap
     {f : geometricLink K v → geometricLink L w} (hf : Continuous f) :
     Continuous (closedStarMap f) := by
   have hc : Continuous (fun x : closedStarRealization K {v} => x.1.1 v) :=
-    (continuous_apply v).comp ((continuous_realization_coe K).comp continuous_subtype_val)
+    (continuous_apply v).comp ((continuous_realization_coe K).comp continuous_subtypeVal)
   let S : Set (closedStarRealization K {v}) := {x | x.1.1 v < 1}
   have hS : IsOpen S := isOpen_lt hc continuous_const
   -- Off the apex, use the existing product coordinates on the punctured star.
@@ -165,13 +165,13 @@ theorem continuous_closedStarMap
     let p : S → puncturedClosedStar K v := fun x =>
       ⟨x.1.1, (mem_puncturedClosedStar K v _).mpr ⟨x.1.2, x.2⟩⟩
     have hp : Continuous p :=
-      (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+      (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
     have ht : Continuous (fun x : S =>
         (⟨x.1.1.1 v, Realization.nonneg K x.1.1 v, x.2⟩ : Ico (0 : ℝ) 1)) :=
-      (hc.comp continuous_subtype_val).subtype_mk _
+      (hc.comp continuous_subtypeVal).subtype_mk _
     have hr := (continuous_starRay L w hL).comp
       ((hf.comp ((continuous_starLinkProjection K v hK).comp hp)).prodMk ht)
-    exact (continuous_subtype_val.comp hr).subtype_mk _ |>.congr fun x => by
+    exact (continuous_subtypeVal.comp hr).subtype_mk _ |>.congr fun x => by
       exact (closedStarMap_of_lt f x.1 x.2).symm
   rw [continuous_iff_continuousAt]
   intro x

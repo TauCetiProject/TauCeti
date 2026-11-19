@@ -354,14 +354,15 @@ theorem HasWeakFDerivOn.locallyIntegrableOn_deriv [FiniteDimensional ℝ E] {U :
   let b := Module.finBasis ℝ E
   -- The `i`-th term `x ↦ (b.coord i).smulRight (U x (b i))` of the expansion of `U` in `b`.
   let g : Fin (Module.finrank ℝ E) → E → E →L[ℝ] F := fun i x =>
-    ContinuousLinearMap.smulRightL ℝ E F (LinearMap.toContinuousLinearMap (b.coord i)) (U x (b i))
+    ContinuousLinearMap.smulRightL ℝ ℝ ℝ E F (LinearMap.toContinuousLinearMap (b.coord i))
+      (U x (b i))
   have hU : U = fun x => ∑ i, g i x := by
     funext x
     ext v
     calc U x v = U x (∑ i, b.repr v i • b i) := by rw [b.sum_repr]
       _ = _ := by rw [map_sum]; simp [g]
   have hg : ∀ i, LocallyIntegrableOn (g i) Ω μ := fun i =>
-    (ContinuousLinearMap.smulRightL ℝ E F _).locallyIntegrableOn_comp
+    (ContinuousLinearMap.smulRightL ℝ ℝ ℝ E F _).locallyIntegrableOn_comp
       (h.hasWeakLineDerivOn (b i)).locallyIntegrableOn_deriv
   have hsum : LocallyIntegrableOn (fun x => ∑ i, g i x) Ω μ :=
     locallyIntegrableOn_finsetSum Finset.univ fun i _ => hg i

@@ -297,7 +297,7 @@ theorem continuous_boundaryParam : Continuous (boundaryParam n) :=
 
 /-- The boundary projection is continuous. -/
 theorem continuous_boundaryProj : Continuous (boundaryProj n) :=
-  (euclideanHalfSpaceBoundaryProj n).continuous.comp continuous_subtype_val
+  (euclideanHalfSpaceBoundaryProj n).continuous.comp continuous_subtypeVal
 
 /-- The inverse of the model map `𝓡∂ (n + 1)` sends the parametrized coordinate hyperplane to the
 boundary parametrization. -/

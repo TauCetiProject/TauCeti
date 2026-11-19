@@ -181,8 +181,8 @@ theorem inv_norm_smul_radialPush (hr : 0 < r) (t : I) :
     mul_right_comm, inv_mul_cancel₀ hc.ne', one_mul]
 
 theorem continuous_radialPush (hr : 0 ≤ r) : Continuous fun p : I × E ↦ radialPush r p.1 p.2 :=
-  ((continuous_const.sub (continuous_subtype_val.comp continuous_fst)).smul
-    continuous_snd).add <| (continuous_subtype_val.comp continuous_fst).smul <|
+  ((continuous_const.sub (continuous_subtypeVal.comp continuous_fst)).smul
+    continuous_snd).add <| (continuous_subtypeVal.comp continuous_fst).smul <|
       ((lipschitzWith_radialRetraction (E := E) hr).continuous.comp continuous_snd).const_smul _
 
 /-- The norm along `TauCeti.radialPush` is the linear interpolation between the initial

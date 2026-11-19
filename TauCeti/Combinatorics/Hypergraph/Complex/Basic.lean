@@ -134,7 +134,7 @@ noncomputable def ofPreAbstractSimplicialComplex (K : PreAbstractSimplicialCompl
         · simp [ht]
         · have hsK := (mem_preAbstractSimplicialComplex_faces K).mp
             (hfinite.mem_toFinset.mp hs)
-          have htK := (K.isRelLowerSet_faces hsK).2 hts (nonempty_iff_ne_empty.mpr ht)
+          have htK := (K.isRelLowerSet_faces hsK).2 hts (ne_empty_iff_nonempty.mp ht)
           exact mem_insert_of_mem (hfinite.mem_toFinset.mpr
             ((mem_preAbstractSimplicialComplex_faces K).mpr htK))
     empty_mem := by simp }

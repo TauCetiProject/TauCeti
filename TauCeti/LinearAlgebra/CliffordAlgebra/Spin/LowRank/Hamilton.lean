@@ -210,7 +210,7 @@ private theorem map_hamiltonVectorEven (v : Fin 3 → K) :
         (hamiltonBasisVector (K := K) 2) (hamiltonBasisVector (K := K) 0)) =
       (⟨0, -1, 0, 0⟩ : ℍ[K]) := by
     rw [evenHamiltonEquivWeightedSumSquaresOne_ι]
-    ext <;> simp [hamiltonBasisVector, Pi.basisFun_apply, QuaternionAlgebra.mk_mul_mk]
+    ext <;> simp [hamiltonBasisVector, Pi.basisFun_apply]
   have h01 : evenHamiltonEquivWeightedSumSquaresOne
       ((even.ι (hamiltonThreeForm (K := K))).bilin
         (hamiltonBasisVector (K := K) 0) (hamiltonBasisVector (K := K) 1)) =

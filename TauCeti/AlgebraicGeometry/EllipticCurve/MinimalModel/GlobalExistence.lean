@@ -87,7 +87,7 @@ private theorem valuation_mul_inv_le_one (v : HeightOneSpectrum O) (C D : Variab
     v.valuation K (C * D⁻¹).r ≤ 1 ∧ v.valuation K (C * D⁻¹).s ≤ 1 ∧
       v.valuation K (C * D⁻¹).t ≤ 1 := by
   have hD : 0 < v.valuation K D.u :=
-    zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
+    pos_iff_ne_zero.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
   have hBr : (C * D⁻¹).r = (C.r - D.r) / (D.u : K) ^ 2 := by
     rw [VariableChange.mul_inv_r, Units.val_inv_eq_inv_val, inv_pow, div_eq_mul_inv]
   have hBs : (C * D⁻¹).s = (C.s - D.s) / (D.u : K) := by
@@ -113,7 +113,7 @@ private theorem isMinimal_smul_of_valuation_sub_le (v : HeightOneSpectrum O)
     IsMinimal (Localization.AtPrime v.asIdeal) (C • W) := by
   have hv := v.integers_valuation_of_isLocalizationAtPrime (Localization.AtPrime v.asIdeal) (K := K)
   have hD : 0 < v.valuation K D.u :=
-    zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
+    pos_iff_ne_zero.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
   have hBu : ((C * D⁻¹).u : K) = C.u / D.u := by
     rw [VariableChange.mul_inv_u, Units.val_mul, Units.val_inv_eq_inv_val, div_eq_mul_inv]
   obtain ⟨hr', hs', ht'⟩ := valuation_mul_inv_le_one v C D hr hs ht

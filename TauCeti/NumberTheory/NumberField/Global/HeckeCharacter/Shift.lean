@@ -154,7 +154,7 @@ private lemma coe_ideleNorm_diagonalIdele (t : ℝ) :
     Units.ext (by simp [IdeleGroup.coe_toFiniteIdele, coe_diagonalIdele])
   rw [← mixedEmbedding_norm_eq_ideleNorm (h1 ▸ one_mem _), coe_diagonalIdele,
     RingEquiv.apply_symm_apply, Algebra.algebraMap_eq_smul_one, mixedEmbedding.norm_smul,
-    map_one, mul_one, abs_of_pos (Real.exp_pos t), ← Real.exp_nat_mul]
+    map_one, mul_one, abs_of_pos (Real.exp_pos t), ← Real.exp_natCast_mul]
 
 /-- The absolute value of a Hecke character is a real power of the idele class norm. -/
 private theorem exists_norm_apply_eq_rpow (χ : HeckeCharacter K) :

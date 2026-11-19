@@ -102,7 +102,7 @@ theorem identification_of_mem_cycle {j k : Fin n} {z w : ℍ} (hz : P.vertex j =
 theorem orbitRel_of_identification (hmap : ∀ i, σ.map i ∈ Γ) {z w : ℍ}
     (h : σ.identification z w) : orbitRel Γ ℍ z w :=
   haveI := (orbitRel Γ ℍ).iseqv.isEquiv
-  Relation.EqvGen.eqvGen_le (fun z _ ⟨i, _, h⟩ ↦
+  Relation.eqvGen_le (fun z _ ⟨i, _, h⟩ ↦
     h ▸ (orbitRel Γ ℍ).symm (mem_orbit z (⟨σ.map i, hmap i⟩ : Γ))) _ _ h
 
 /-! ### Orbits of points of a fundamental polygon -/

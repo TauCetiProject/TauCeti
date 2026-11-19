@@ -93,7 +93,7 @@ theorem ae_mem_Ico_wrappedNormalAngleMeasure (m : AddCircle (2 * π)) (v : ℝ�
   rw [wrappedNormalAngleMeasure_def]
   have hm : Measurable (fun θ : AddCircle (2 * π) ↦
       (AddCircle.equivIco (2 * π) (-π) θ : ℝ)) :=
-    measurable_subtype_coe.comp (AddCircle.measurableEquivIco (2 * π) (-π)).measurable
+    measurable_subtypeVal.comp (AddCircle.measurableEquivIco (2 * π) (-π)).measurable
   apply (ae_map_iff hm.aemeasurable measurableSet_Ico).2
   exact ae_of_all _ fun θ ↦ by
     have hπ : -π + 2 * π = π := by ring
@@ -299,7 +299,7 @@ theorem tendsto_quantile_wrappedNormalAngleMeasure_nhdsLT_one (hv : v ≠ 0) :
 theorem measurable_wrappedNormalAngleMeasure :
     Measurable fun p : AddCircle (2 * π) × ℝ≥0 ↦ wrappedNormalAngleMeasure p.1 p.2 := by
   simp only [wrappedNormalAngleMeasure_def]
-  exact (Measure.measurable_map _ (measurable_subtype_coe.comp
+  exact (Measure.measurable_map _ (measurable_subtypeVal.comp
     (AddCircle.measurableEquivIco (2 * π) (-π)).measurable)).comp measurable_wrappedNormalMeasure
 
 end TauCeti.Probability
@@ -317,7 +317,7 @@ theorem HasLaw.angle_wrappedNormalMeasure {Ω : Type*} [MeasurableSpace Ω] {P :
     HasLaw (fun ω ↦ (AddCircle.equivIco (2 * π) (-π) (X ω) : ℝ))
       (wrappedNormalAngleMeasure m v) P := by
   rw [wrappedNormalAngleMeasure_def]
-  exact (hasLaw_map (measurable_subtype_coe.comp
+  exact (hasLaw_map (measurable_subtypeVal.comp
     (AddCircle.measurableEquivIco (2 * π) (-π)).measurable).aemeasurable).comp hX
 
 end ProbabilityTheory

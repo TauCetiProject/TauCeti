@@ -412,8 +412,8 @@ lemma quotient_obj_surjective : Function.Surjective (quotient C).obj := by
   refine ⟨⟨L, ?_⟩, ?_⟩
   · rw [← HomotopyCategory.bounded_quotient_obj_iff, hL]
     exact hK
-  · ext
-    exact hL
+  · subst hL
+    rfl
 
 instance : (quotient C).EssSurj where
   mem_essImage K := by

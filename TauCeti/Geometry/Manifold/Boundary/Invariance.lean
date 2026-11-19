@@ -75,7 +75,7 @@ theorem coe_fst_apply_zero_eq_zero_of_notMem_interior
       (isOpen_lt continuous_const ((PiLp.continuous_apply 2 _ 0).comp continuous_fst))
   let f : EuclideanSpace ℝ (Fin m) × V → E := fun p => (φ.symm (j p) : E)
   have hf : ContinuousOn f U :=
-    continuous_subtype_val.comp_continuousOn
+    continuous_subtypeVal.comp_continuousOn
       (φ.continuousOn_symm.comp hj.continuousOn fun _ hp => hp.1)
   -- On points of positive zeroth coordinate, `j` is injective, so `f` is injective on `U`.
   have hjI {p : EuclideanSpace ℝ (Fin m) × V} (hp : 0 < p.1 0) : I (j p).1 = p.1 :=

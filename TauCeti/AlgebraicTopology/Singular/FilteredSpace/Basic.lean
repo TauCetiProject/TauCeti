@@ -779,7 +779,7 @@ private lemma chainFiltrationMap_app_comp_singularChainFiltrationIso_hom (b : �
 filtrations induced by `g` is the chain map induced by `g` on the pairs `(X b, X a)`. -/
 private lemma cokernelMap_comp_cokernelFiltrationFunctorMapIso_hom {a b : ℤ}
     (f : (a : EInt) ⟶ b) :
-    cokernel.map _ _ _ _ ((chainFiltrationMap (𝟙 _) hX hX' g hg).naturality f) ≫
+    cokernel.map _ _ _ _ ((chainFiltrationMap (𝟙 _) hX hX' g hg).naturality f).symm ≫
         (cokernelFiltrationFunctorMapIso R hX' f).hom =
       (cokernelFiltrationFunctorMapIso R hX f).hom ≫
         extendMap (TopPair.singularChainComplexMap
@@ -987,7 +987,7 @@ filtrations induced by `φ` is the chain map induced by `φ` on the relative sin
 pair `(X b, X a)`. -/
 private lemma cokernelMap_comp_cokernelFiltrationFunctorMapIso_hom_coefficient {a b : ℤ}
     (f : (a : EInt) ⟶ b) :
-    cokernel.map _ _ _ _ ((filteredSpaceCoefficientFiltrationMap hX φ).naturality f) ≫
+    cokernel.map _ _ _ _ ((filteredSpaceCoefficientFiltrationMap hX φ).naturality f).symm ≫
         (cokernelFiltrationFunctorMapIso R' hX f).hom =
       (cokernelFiltrationFunctorMapIso R hX f).hom ≫
         extendMap (((SSetPair.chainComplexFunctor A).map φ).app (TopPair.toSSetPair.obj

@@ -315,7 +315,7 @@ theorem exists_explicitInfl2_eq (c : H2 L.ground.toSubgroup M) :
   -- inside both `N` and `V` gives a layer `W ◁ U` refining `V ◁ U` whose quotient refines `U ⧸ N`.
   obtain ⟨N, y, rfl⟩ := ContCohomology.exists_explicitInfl2_eq c
   let S : Set G := Subtype.val '' (N : Set L.ground.toSubgroup) ∩ (L.top : Set G)
-  have hS : IsOpen S := (L.ground.isOpen.isOpenMap_subtype_val _ N.isOpen).inter L.top.isOpen
+  have hS : IsOpen S := (L.ground.isOpen.isOpenMap_subtypeVal _ N.isOpen).inter L.top.isOpen
   have h1 : (1 : G) ∈ S := ⟨⟨1, N.one_mem, rfl⟩, L.top.one_mem⟩
   obtain ⟨W, hW⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hS h1
   have hWV : W.toOpenSubgroup ≤ L.top := fun w hw => (hW hw).2

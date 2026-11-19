@@ -164,7 +164,7 @@ theorem mem_zpowers_iff_mem_lattice_periodPair (z : ℍ) {x : ℂ} {q t : ℂˣ}
   constructor
   · rintro ⟨m, hm⟩
     have h := congrArg Units.val hm
-    rw [Units.val_zpow_eq_zpow_val, hq, ht, ← Complex.exp_int_mul,
+    rw [Units.val_zpow_eq_zpow_val, hq, ht, ← Complex.exp_intCast_mul,
       Complex.exp_eq_exp_iff_exists_int] at h
     obtain ⟨n, hn⟩ := h
     refine ⟨m, -n, mul_left_cancel₀ two_pi_I_ne_zero ?_⟩
@@ -172,7 +172,7 @@ theorem mem_zpowers_iff_mem_lattice_periodPair (z : ℍ) {x : ℂ} {q t : ℂˣ}
     linear_combination hn
   · rintro ⟨m, n, hmn⟩
     refine ⟨m, Units.val_injective ?_⟩
-    rw [Units.val_zpow_eq_zpow_val, hq, ht, ← hmn, ← Complex.exp_int_mul,
+    rw [Units.val_zpow_eq_zpow_val, hq, ht, ← hmn, ← Complex.exp_intCast_mul,
       show 2 * π * Complex.I * (m * (z : ℂ) + n * 1) =
         m * (2 * π * Complex.I * z) + n * (2 * π * Complex.I) by ring, Complex.exp_add,
       Complex.exp_int_mul_two_pi_mul_I, mul_one]

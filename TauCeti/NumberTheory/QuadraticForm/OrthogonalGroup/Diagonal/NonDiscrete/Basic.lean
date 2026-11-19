@@ -155,7 +155,7 @@ theorem not_discreteTopology_range_finiteAdelicOrthogonalDiagonal_of_specialOrth
           h).symm⟩⟩
   have hf : Continuous f :=
     (U.continuous_finiteAdelicSpecialOrthogonalToOrthogonal.comp
-      continuous_subtype_val).subtype_mk _
+      continuous_subtypeVal).subtype_mk _
   have hinj : Function.Injective f := fun g h hgh ↦ Subtype.ext
     (U.finiteAdelicSpecialOrthogonalToOrthogonal_injective (congrArg Subtype.val hgh))
   exact hSO (DiscreteTopology.of_continuous_injective hf hinj)

@@ -55,7 +55,7 @@ theorem smul_kummerCoeff_eq_self_of_isProP (hℓ : IsUnit (ℓ : K))
   have hker : IsOpen (f.ker : Set P) := by
     refine Subgroup.isOpen_mono (H₁ := (MulAction.stabilizer (AbsoluteGaloisGroup K) ζ).comap
       P.subtype) (fun g hg => ?_) ((stabilizer_isOpen_of_isIntegral ζ).preimage
-        continuous_subtype_val)
+        continuous_subtypeVal)
     rw [MonoidHom.mem_ker]
     refine Units.ext (modularCyclotomicCharacter.unique L hcard (ρ g) (c := 1) fun t ht => ?_).symm
     obtain ⟨i, -, rfl⟩ := hζu.eq_pow_of_mem_rootsOfUnity ht

@@ -219,7 +219,7 @@ theorem isOpen_setOf_notMem_supp {A : Type*} [CommRing A] [TopologicalSpace A]
     ext v
     simp [ValuativeRel.vle_refl]
   rw [this]
-  exact (isOpen_basicOpen f f).preimage continuous_subtype_val
+  exact (isOpen_basicOpen f f).preimage continuous_subtypeVal
 
 section SeparatelyContinuousAdd
 

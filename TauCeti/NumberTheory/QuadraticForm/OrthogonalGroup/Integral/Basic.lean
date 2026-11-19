@@ -140,7 +140,7 @@ theorem isOpen_integralOrthogonalSubgroup :
       LinearMap.toMatrix b b (g : V ≃ₗ[ℚ_[p]] V).toLinearMap) :=
     (IsModuleTopology.continuous_of_linearMap
       (LinearMap.toMatrixAlgEquiv b).toLinearMap).comp
-      (continuous_linearEquiv_toLinearMap.comp continuous_subtype_val)
+      (continuous_linearEquiv_toLinearMap.comp continuous_subtypeVal)
   have ho : IsOpen (PadicInt.subring p : Set ℚ_[p]) := by
     simpa using PadicInt.isOpenEmbedding_coe.isOpen_range
   have hset : (integralOrthogonalSubgroup Q b : Set (orthogonalGroup Q)) =
@@ -171,7 +171,7 @@ theorem isCompact_integralOrthogonalSubgroup :
     (IsModuleTopology.continuous_of_linearMap
       (LinearMap.toMatrixAlgEquiv b).symm.toLinearMap).comp
       (continuous_pi fun i ↦ continuous_pi fun j ↦
-        continuous_subtype_val.comp ((continuous_apply j).comp (continuous_apply i)))
+        continuous_subtypeVal.comp ((continuous_apply j).comp (continuous_apply i)))
   have hcompact : IsCompact ((MonoidHom.mrange f).units : Set (Module.End ℚ_[p] V)ˣ) :=
     Submonoid.units_isCompact (isCompact_range hf)
   let e := generalLinearContinuousMulEquiv (K := ℚ_[p]) (V := V)

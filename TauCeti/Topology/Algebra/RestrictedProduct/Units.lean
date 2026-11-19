@@ -97,8 +97,8 @@ theorem continuous_unitsEquiv (hB : ∀ i, IsOpen (B i : Set (R i))) :
   refine ContinuousOn.continuousAt (continuousOn_iff_continuous_domRestrict.mpr ?_) hV
   rw [TauCeti.continuous_restrictedProduct_iff_of_forall_mem hT hmem]
   exact continuous_pi fun i ↦ Units.continuous_iff.mpr
-    ⟨((continuous_eval i).comp Units.continuous_val).comp continuous_subtype_val,
-      ((continuous_eval i).comp Units.continuous_coe_inv).comp continuous_subtype_val⟩
+    ⟨((continuous_eval i).comp Units.continuous_val).comp continuous_subtypeVal,
+      ((continuous_eval i).comp Units.continuous_coe_inv).comp continuous_subtypeVal⟩
 
 end RestrictedProduct
 

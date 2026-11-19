@@ -209,7 +209,7 @@ def orthantBoundaryHomeomorph :
   invFun y := ⟨orthantLift y, orthantLift_mem_frontier y⟩
   left_inv p := Subtype.ext (orthantLift_orthantProjection p.2)
   right_inv := orthantProjection_orthantLift
-  continuous_toFun := orthantProjection.continuous.comp continuous_subtype_val
+  continuous_toFun := orthantProjection.continuous.comp continuous_subtypeVal
   continuous_invFun :=
     (continuousOn_univ.mp isPiecewiseAffineOn_orthantLift.continuousOn).subtype_mk _
 

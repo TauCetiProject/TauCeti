@@ -392,7 +392,7 @@ theorem discCoordinate_positiveStabilizerGenerator_zpow (n : ℤ) (τ : ℍ) :
     ring
   rw [discCoordinate_stabilizer_smul]
   simp only [map_zpow, stabilizerDeriv_apply, smulDeriv_positiveStabilizerGenerator]
-  rw [← Complex.exp_int_mul, hangle, mul_comm]
+  rw [← Complex.exp_intCast_mul, hangle, mul_comm]
 
 end PositiveGenerator
 

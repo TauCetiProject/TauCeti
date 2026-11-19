@@ -185,7 +185,7 @@ theorem exists_expGauge_eq_and_norm_le (hs : 1 < s) :
   have hd := finrank_real_complex_lt_two_mul hs
   have hexp :
       Continuous fun z ↦ (Circle.exp (continuousRep (⟨_, hmem⟩ : realSubmodule ℂ h) z) : ℂ) :=
-    continuous_subtype_val.comp (Circle.exp.continuous.comp (continuous_continuousRep hd _))
+    continuous_subtypeVal.comp (Circle.exp.continuous.comp (continuous_continuousRep hd _))
   have heq := (Continuous.ae_eq_iff_eq volume hexp (continuous_coe_toSubgroup u)).1 <| by
     filter_upwards [coeFn_inclusionLp_ae_eq_continuousRep hd (⟨_, hmem⟩ : realSubmodule ℂ h), hA]
       with w hw hw'

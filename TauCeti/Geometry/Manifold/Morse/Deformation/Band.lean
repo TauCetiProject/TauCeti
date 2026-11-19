@@ -159,13 +159,13 @@ noncomputable def bandInteriorDiffeomorph (hrega : IsRegularValue I 𝓘(ℝ) f 
     contMDiff_toFun := by
       have hemb := isSmoothEmbedding_coe_regularLevel (by simp) (fun _ _ ↦ hf.contMDiffAt) hrega hn
       refine ContMDiff.prodMk (hemb.contMDiff_iff_comp.2 ?_)
-        ((ContMDiff.subtypeVal_comp_iff _ _).1 (hf.comp contMDiff_subtype_val))
-      exact hφ.comp (((hf.comp contMDiff_subtype_val).sub contMDiff_const).prodMk
-        contMDiff_subtype_val)
+        ((ContMDiff.subtypeVal_comp_iff _ _).1 (hf.comp contMDiff_subtypeVal))
+      exact hφ.comp (((hf.comp contMDiff_subtypeVal).sub contMDiff_const).prodMk
+        contMDiff_subtypeVal)
     contMDiff_invFun := by
       have hemb := isSmoothEmbedding_coe_regularLevel (by simp) (fun _ _ ↦ hf.contMDiffAt) hrega hn
       refine (ContMDiff.subtypeVal_comp_iff _ _).1 ?_
-      exact hφ.comp ((contMDiff_const.sub (contMDiff_subtype_val.comp contMDiff_snd)).prodMk
+      exact hφ.comp ((contMDiff_const.sub (contMDiff_subtypeVal.comp contMDiff_snd)).prodMk
         (hemb.contMDiff.comp contMDiff_fst)) }
 
 @[simp]

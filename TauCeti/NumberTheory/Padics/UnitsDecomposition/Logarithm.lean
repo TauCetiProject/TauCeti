@@ -163,7 +163,7 @@ private noncomputable def unitsPrincipalEquivUnitFiltration :
       right_inv _ := Subtype.ext (Units.ext rfl)
       map_mul' _ _ := rfl }
   have he : Continuous e :=
-    ((Continuous.units_map _ continuous_subtype_val).comp continuous_subtype_val).subtype_mk _
+    ((Continuous.units_map _ continuous_subtypeVal).comp continuous_subtypeVal).subtype_mk _
   -- A continuous bijection from a compact space to a Hausdorff space is a homeomorphism.
   ContinuousMulEquiv.mk e he (he.continuous_symm_of_equiv_compact_to_t2 (f := e.toEquiv))
 
@@ -208,11 +208,11 @@ private noncomputable def maximalIdealPowEquiv :
     simp only [toAdd_mul, toAdd_ofAdd, PadicInt.coe_add, coe_divQ, Submodule.coe_add,
       Subring.coe_add, add_div]
   continuous_toFun := continuous_ofAdd.comp <| Continuous.subtype_mk
-    ((continuous_subtype_val.comp (continuous_subtype_val.comp continuous_toAdd)).div_const _) _
+    ((continuous_subtypeVal.comp (continuous_subtypeVal.comp continuous_toAdd)).div_const _) _
   continuous_invFun := by
     refine continuous_ofAdd.comp (Continuous.subtype_mk (Continuous.subtype_mk ?_ _) _)
     exact continuous_const.mul
-      ((continuous_subtype_val : Continuous ((↑) : ℤ_[p] → ℚ_[p])).comp continuous_toAdd)
+      ((continuous_subtypeVal : Continuous ((↑) : ℤ_[p] → ℚ_[p])).comp continuous_toAdd)
 
 variable (p) in
 /-- **The `p`-adic logarithm on `1 + qℤ_p`.** The logarithm identifies the principal units

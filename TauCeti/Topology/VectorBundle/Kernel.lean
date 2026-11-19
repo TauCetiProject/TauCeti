@@ -64,7 +64,7 @@ noncomputable def kernelTrivialization :
       left_inv := fun _ ↦ rfl
       right_inv := fun _ ↦ rfl
       continuous_toFun := he.continuous.subtype_mk _
-      continuous_invFun := he.continuous_iff.mpr continuous_subtype_val }
+      continuous_invFun := he.continuous_iff.mpr continuous_subtypeVal }
   exact {
     toOpenPartialHomeomorph :=
       (e.trans (ContinuousLinearMap.kernelHomeomorph A q hA h)).toOpenPartialHomeomorph

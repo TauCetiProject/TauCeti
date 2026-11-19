@@ -184,9 +184,9 @@ private theorem trajectorySign_eq_neg_of_mem_stableSet (hf : IsMorse 𝓘(ℝ, E
     hp hpq hpq hy₁.1 hy₂.1
     (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hne hy₁)
     (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hne hy₂) h
-  have hcard : Fintype.card (Fin (manifoldMorseIndex 𝓘(ℝ, E) f q)) =
+  have hcard : Nat.card (Fin (manifoldMorseIndex 𝓘(ℝ, E) f q)) =
       Module.finrank ℝ ({i // φq.weight i < 0} → ℝ) := by
-    rw [Fintype.card_fin, φq.finrank_negativeWeight_fun]
+    rw [Nat.card_fin, φq.finrank_negativeWeight_fun]
   rcases oq.eq_or_eq_neg (Module.finBasisOfFinrankEq ℝ _ φq.finrank_negativeWeight_fun).orientation
     hcard with rfl | rfl
   · exact key

@@ -38,8 +38,8 @@ theorem continuousOn_of_isClosed_graphOn {f : X → Y} {s : Set X} {K : Set Y}
     simp [F, Function.graph, Subtype.ext_iff]
   have hF : Continuous F := continuous_of_isClosed_graph <| by
     rw [hgraph]
-    exact hf.preimage (continuous_subtype_val.prodMap continuous_subtype_val)
-  exact continuousOn_iff_continuous_domRestrict.mpr (continuous_subtype_val.comp hF)
+    exact hf.preimage (continuous_subtypeVal.prodMap continuous_subtypeVal)
+  exact continuousOn_iff_continuous_domRestrict.mpr (continuous_subtypeVal.comp hF)
 
 end TauCeti
 

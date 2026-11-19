@@ -1019,9 +1019,9 @@ theorem continuous_integral_rpow_mul_one_sub_rpow_mul (f : ℝ →ᵇ ℝ) :
     Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦
       ∫ x in Ioo (0 : ℝ) 1, x ^ ((p.1 : ℝ) - 1) * (1 - x) ^ ((p.2 : ℝ) - 1) * f x := by
   have ha : Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦ (p.1 : ℝ) :=
-    continuous_subtype_val.comp continuous_fst
+    continuous_subtypeVal.comp continuous_fst
   have hb : Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦ (p.2 : ℝ) :=
-    continuous_subtype_val.comp continuous_snd
+    continuous_subtypeVal.comp continuous_snd
   refine continuous_iff_continuousAt.2 fun p ↦ ?_
   -- Halving the shapes gives a locally uniform integrable bound at both endpoints.
   let bound : ℝ → ℝ := fun x ↦

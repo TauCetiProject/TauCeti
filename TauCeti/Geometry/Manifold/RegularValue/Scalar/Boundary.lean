@@ -101,8 +101,8 @@ noncomputable def scalarRegularSublevelBoundaryHomeomorph :
     invFun y := ⟨⟨y.1, le_of_eq y.2⟩, h₂ y⟩
     left_inv _ := rfl
     right_inv _ := rfl
-    continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk h₁
-    continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk h₂ }
+    continuous_toFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk h₁
+    continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk h₂ }
 
 /-- `TauCeti.scalarRegularSublevelBoundaryHomeomorph` is the identity on underlying points. -/
 @[simp]

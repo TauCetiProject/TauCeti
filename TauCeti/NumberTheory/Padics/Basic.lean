@@ -81,7 +81,7 @@ theorem norm_coe_ringHom_lt_one_iff {a : ℤ_[p]} :
 
 /-- The inclusion `ℤ_[p] → ℚ_[p]` is a topological embedding. -/
 theorem isEmbedding_coe_ringHom : Topology.IsEmbedding (Coe.ringHom (p := p)) :=
-  isometry_subtype_coe.isEmbedding
+  isometry_subtypeVal.isEmbedding
 
 /-- Every element of the closed unit ball of `ℚ_[p]` lies in the image of `ℤ_[p]`. -/
 theorem closedBall_subset_range_coe_ringHom :

@@ -69,7 +69,7 @@ theorem isOpenMap_frobenius (p : ℕ) [Fact p.Prime] [CharP R p] [PerfectRing R 
       smul_add a y z := Subtype.ext (by rw [hsmul, AddSubgroup.coe_add, AddSubgroup.coe_add,
         hsmul, hsmul, mul_add]) }
   have : ContinuousConstSMul R N :=
-    ⟨fun a ↦ (continuous_const.mul continuous_subtype_val).subtype_mk _⟩
+    ⟨fun a ↦ (continuous_const.mul continuous_subtypeVal).subtype_mk _⟩
   have : (uniformity R).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
   have : BaireSpace N := hN.baireSpace
   -- Frobenius as an `R`-equivariant additive map `R → N`
@@ -87,7 +87,7 @@ theorem isOpenMap_frobenius (p : ℕ) [Fact p.Prime] [CharP R p] [PerfectRing R 
   have hφ : ⇑(frobenius R p) = Subtype.val ∘ ⇑f :=
     funext fun x ↦ by rw [Function.comp_apply, hfx, frobenius_def]
   rw [hφ]
-  exact hN.isOpenMap_subtype_val.comp hf
+  exact hN.isOpenMap_subtypeVal.comp hf
 
 /-- **A perfect complete Hausdorff Tate ring of characteristic `p` is uniform** (Scholze, *Étale
 cohomology of diamonds*, proof of Proposition 3.5): its power-bounded subring `R°` is bounded. -/

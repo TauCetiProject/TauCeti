@@ -671,21 +671,21 @@ private theorem exists_tendsto_comap_val_nhds
   by_cases hx : x ∈ X.π ⁻¹' range toOnePoint
   · refine ⟨f ⟨x, hx⟩, ?_⟩
     rw [← nhds_subtype_eq_comap]
-    exact (continuous_subtype_val.comp hf).continuousAt
+    exact (continuous_subtypeVal.comp hf).continuousAt
   -- At a point `x` of a marked fibre, the cluster set of `f` is connected, since the unbranched
   -- part has preconnected approach regions at `x`, and lies in the finite fibre of `Y` over
   -- `X.π x`. So it has at most one point, and compactness of `Y` turns it into a limit.
   -- Read `f` as a map `g` on the total space of `X`, continuous on the unbranched part.
   obtain ⟨g, hg⟩ : ∃ g : X.Z → Y.Z, ∀ z : X.π ⁻¹' range toOnePoint, g z = f z :=
-    ⟨_, X.dense_preimage_range.extend_eq (continuous_subtype_val.comp hf)⟩
+    ⟨_, X.dense_preimage_range.extend_eq (continuous_subtypeVal.comp hf)⟩
   have hgc : ContinuousOn g (X.π ⁻¹' range toOnePoint) := by
     rw [continuousOn_iff_continuous_domRestrict]
-    exact (continuous_subtype_val.comp hf).congr fun z ↦ (hg z).symm
+    exact (continuous_subtypeVal.comp hf).congr fun z ↦ (hg z).symm
   suffices h : ∃ y, Tendsto g (𝓝[X.π ⁻¹' range toOnePoint] x) (𝓝 y) by
     obtain ⟨y, hy⟩ := h
     refine ⟨y, ?_⟩
     rw [show Subtype.val ∘ f = g ∘ Subtype.val from funext fun z ↦ (hg z).symm,
-      ← tendsto_map'_iff, subtype_coe_map_comap]
+      ← tendsto_map'_iff, subtypeVal_map_comap]
     exact hy
   refine exists_tendsto_of_clusterSetOn_subsingleton isCompact_univ (mapsTo_univ _ _)
     (X.dense_preimage_range.closure_eq ▸ mem_univ x) ?_
@@ -719,7 +719,7 @@ variable (f : C(X.π ⁻¹' range toOnePoint, Y.π ⁻¹' range toOnePoint))
 /-- On the unbranched part, the extension of `f` is `f`. -/
 @[simp]
 theorem extend_apply_val (z : X.π ⁻¹' range toOnePoint) : extend f hπ z = f z :=
-  X.dense_preimage_range.extend_eq (continuous_subtype_val.comp f.continuous) z
+  X.dense_preimage_range.extend_eq (continuous_subtypeVal.comp f.continuous) z
 
 /-- A continuous map of total spaces agreeing with `f` on the unbranched part is the extension
 of `f`. -/

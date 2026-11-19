@@ -75,7 +75,8 @@ theorem natCard_eigenspace_transpose (A : Matrix n n K) (c : K) :
       simp [sub_eq_zero]
     have hrk := (B - c • 1).mulVecLin.finrank_range_add_finrank_ker
     rw [Module.finrank_fintype_fun_eq_card] at hrk
-    rw [hker, Module.natCard_eq_pow_finrank (K := K), Matrix.rank, ← hrk, Nat.add_sub_cancel_left]
+    rw [hker, Module.natCard_eq_pow_finrank (K := K), ← Matrix.finrank_range_mulVecLin,
+      ← hrk, Nat.add_sub_cancel_left]
   have htr : Aᵀ - c • (1 : Matrix n n K) = (A - c • 1)ᵀ := by
     rw [transpose_sub, transpose_smul, transpose_one]
   rw [key, key, htr, rank_transpose]

@@ -99,7 +99,7 @@ theorem isOpenEmbedding_ballCollar : IsOpenEmbedding (ballCollar (V := V)) := by
     (Real.isOpenEmbedding_exp.smul_coe_sphere Real.exp_pos).isEmbedding
   refine ⟨IsEmbedding.subtypeVal.of_comp_iff.1 (hexp.comp (IsEmbedding.id.prodMap hcoord)), ?_⟩
   rw [range_ballCollar]
-  exact isOpen_ne_fun continuous_subtype_val continuous_const
+  exact isOpen_ne_fun continuous_subtypeVal continuous_const
 
 /-- `ballCollarInv` inverts the radial collar. -/
 @[simp]

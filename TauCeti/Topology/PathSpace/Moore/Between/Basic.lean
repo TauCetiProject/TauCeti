@@ -65,7 +65,7 @@ theorem target (γ : MoorePathBetween X a b) : γ.toMoorePath.target = b := γ.p
 @[fun_prop]
 theorem continuous_toMoorePath :
     Continuous (toMoorePath : MoorePathBetween X a b → MoorePath X) :=
-  continuous_subtype_val
+  continuous_subtypeVal
 
 /-- Reverse a Moore path with specified endpoints. -/
 def symm (γ : MoorePathBetween X a b) : MoorePathBetween X b a :=

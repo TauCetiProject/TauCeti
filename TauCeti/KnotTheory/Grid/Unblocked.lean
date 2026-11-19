@@ -774,7 +774,7 @@ theorem constantCoeff_sum_OMonomial {x y : GridState n} (s : Finset (GridRectang
     simp
   have h₂ : ∀ r ∈ s.filter fun r => ¬G.OColumns r.toGridRectangle = ∅,
       constantCoeff (G.OMonomial R r.toGridRectangle) = 0 := fun r hr => by
-    obtain ⟨c, hc⟩ := Finset.nonempty_iff_ne_empty.mpr (Finset.mem_filter.mp hr).2
+    obtain ⟨c, hc⟩ := Finset.ne_empty_iff_nonempty.1 (Finset.mem_filter.mp hr).2
     rw [G.OMonomial_eq_monomial R, MvPolynomial.constantCoeff_monomial]
     have hsum : (∑ c ∈ G.OColumns r.toGridRectangle, Finsupp.single c 1) ≠
         (0 : Fin n →₀ ℕ) := by
@@ -863,7 +863,7 @@ theorem unblockedDifferentialOnGenerator_support_subset (x : GridState n) :
   intro y hy
   rw [Finsupp.mem_support_iff, unblockedDifferentialOnGenerator_apply] at hy
   have hne : (G.unblockedRectangles x y).Nonempty := by
-    rw [Finset.nonempty_iff_ne_empty]
+    rw [← Finset.ne_empty_iff_nonempty]
     intro he
     rw [unblockedCoefficient, he, Finset.sum_empty] at hy
     exact hy rfl

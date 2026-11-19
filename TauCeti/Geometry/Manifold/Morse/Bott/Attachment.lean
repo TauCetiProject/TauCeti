@@ -208,7 +208,7 @@ private theorem continuous_tubeRetraction (hW : IsOpen W) (hs : ContinuousOn s W
     (hfix : ∀ x ∈ X, x ∉ C → ∀ τ, tubeRetraction φ s t ε τ x = x) :
     Continuous fun p : unitInterval × X ↦ tubeRetraction φ s t ε p.1 p.2 := by
   have hval : Continuous fun p : unitInterval × X ↦ (p.2 : M) :=
-    continuous_subtype_val.comp continuous_snd
+    continuous_subtypeVal.comp continuous_snd
   refine continuous_iff_continuousAt.2 fun p₀ ↦ ?_
   by_cases hp₀ : (p₀.2 : M) ∈ W
   swap
@@ -223,7 +223,7 @@ private theorem continuous_tubeRetraction (hW : IsOpen W) (hs : ContinuousOn s W
   refine ContinuousWithinAt.continuousAt ?_ (hU.mem_nhds hp₀)
   rw [continuousWithinAt_iff_continuousAt_domRestrict _ (show p₀ ∈ U from hp₀)]
   set w : U → W := fun q ↦ ⟨q.1.2, q.2⟩
-  have hw : Continuous w := (hval.comp continuous_subtype_val).subtype_mk _
+  have hw : Continuous w := (hval.comp continuous_subtypeVal).subtype_mk _
   have heq : U.domRestrict (fun p : unitInterval × X ↦ tubeRetraction φ s t ε p.1 p.2) =
       fun q ↦ (φ (retractionScale s t ε q.1.1 q.1.2, w q) : M) :=
     funext fun q ↦ tubeRetraction_of_mem (x := (q.1.2 : M)) q.1.1 q.2
@@ -233,16 +233,16 @@ private theorem continuous_tubeRetraction (hW : IsOpen W) (hs : ContinuousOn s W
   have hst (g : M → ℝ) (hg : ContinuousOn g W) (q : U) :
       ContinuousAt (fun p : U ↦ g p.1.2) q :=
     ContinuousAt.comp (f := fun q : U ↦ ((q.1.2 : X) : M)) (hg.continuousAt (hW.mem_nhds q.2))
-      (hval.comp continuous_subtype_val).continuousAt
+      (hval.comp continuous_subtypeVal).continuousAt
   have hκ (q : U) (hq : w q ∉ {y : W | t y = 0}) :
       ContinuousAt (fun p : U ↦ retractionScale s t ε p.1.1 p.1.2) q := by
     refine ContinuousAt.codRestrict (f := fun q : U ↦ (1 - (q.1.1 : ℝ)) *
       min 1 √((s q.1.2 - ε) / t q.1.2) + q.1.1) (fun q ↦ (retractionScale s t ε _ _).2) ?_
     have hτ : Continuous fun q : U ↦ (q.1.1 : ℝ) :=
-      continuous_subtype_val.comp (continuous_fst.comp continuous_subtype_val)
+      continuous_subtypeVal.comp (continuous_fst.comp continuous_subtypeVal)
     exact ((continuous_const.sub hτ).continuousAt.mul (continuousAt_const.min
       (((hst s hs q).sub continuousAt_const).div (hst t ht q) hq).sqrt)).add hτ.continuousAt
-  exact (continuous_subtype_val.comp (φ.continuous_apply_prodMk_of_fixed
+  exact (continuous_subtypeVal.comp (φ.continuous_apply_prodMk_of_fixed
     (A := {y : W | t y = 0}) (fun τ y hy ↦ hφ₀ τ y hy) hw hκ)).continuousAt
 
 include hφs hφt hφ₁ hφ₀ in
@@ -612,9 +612,9 @@ private theorem exists_continuousMap_iUnion_image (Θ : ∀ a, PartialDiffeomorp
     ⟨fun p ↦ ⟨Θ a (ρ a p.1.1 ((Θ a).toPartialEquiv.symm p.1.2)), mem_iUnion_of_mem a
       (mem_image_of_mem _ (hρW a _ _ ((image_subset_target_and_symm_mem _ (hWΘ a)).2 _ p.2)))⟩,
     ((Θ a).contMDiffOn.continuousOn.comp_continuous ((hρ a).comp
-      ((continuous_subtype_val.comp (continuous_fst.comp continuous_subtype_val)).prodMk
+      ((continuous_subtypeVal.comp (continuous_fst.comp continuous_subtypeVal)).prodMk
         ((Θ a).symm.contMDiffOn.continuousOn.comp_continuous
-          (continuous_subtype_val.comp (continuous_snd.comp continuous_subtype_val))
+          (continuous_subtypeVal.comp (continuous_snd.comp continuous_subtypeVal))
           fun p ↦ (image_subset_target_and_symm_mem _ (hWΘ a)).1 p.2)))
       fun p ↦ hWΘ a (hρW a _ _ ((image_subset_target_and_symm_mem _ (hWΘ a)).2 _ p.2))).subtype_mk
         _⟩
@@ -623,7 +623,7 @@ private theorem exists_continuousMap_iUnion_image (Θ : ∀ a, PartialDiffeomorp
   · obtain rfl : a = b := by_contra fun hab ↦ (hd hab).ne_of_mem ha hb rfl
     rfl
   · obtain ⟨a, ha⟩ := mem_iUnion.1 p.2.2
-    exact ⟨a, ((hTo a).preimage (continuous_subtype_val.comp continuous_snd)).mem_nhds ha⟩
+    exact ⟨a, ((hTo a).preimage (continuous_subtypeVal.comp continuous_snd)).mem_nhds ha⟩
   · rw [ContinuousMap.liftCover_coe (i := a) ⟨_, mem_image_of_mem _ hx⟩]
     -- By definition `ψ a` sends `(τ, Θ a x)` to `Θ a (ρ a τ (Θ a⁻¹ (Θ a x)))`.
     exact congrArg (fun y ↦ Θ a (ρ a τ y)) ((Θ a).left_inv (hWΘ a hx))

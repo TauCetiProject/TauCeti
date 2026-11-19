@@ -157,7 +157,7 @@ private theorem continuous_disp (hκ : 1 < κ) : Continuous (disp g κ) := by
       refine ContinuousAt.sup (continuousAt_const.sub (ContinuousAt.sup ?_ continuousAt_const))
         continuousAt_const
       exact ContinuousAt.div (by fun_prop) (by fun_prop) hden
-    exact ((continuous_subtype_val.comp continuous_fst).continuousAt.mul hw).smul
+    exact ((continuous_subtypeVal.comp continuous_fst).continuousAt.mul hw).smul
       (by fun_prop)
 
 /-- In each fibre, at each time, the straightening is a bijection of `W`: it is the identity over

@@ -89,7 +89,7 @@ private theorem continuous_mul_leftMulMatrixRpow :
   have : FiniteDimensional ℝ V := b.finiteDimensional_of_finite
   have hf : Continuous fun p : spinGroup (Q.baseChange ℂ) × ℝ ↦
       ((p.1 : CliffordAlgebra (Q.baseChange ℂ)), p.2) := by fun_prop
-  exact (continuous_subtype_val.comp continuous_fst).mul
+  exact (continuous_subtypeVal.comp continuous_fst).mul
     ((continuousOn_leftMulMatrixRpow_complexConj_reverse_mul_self hb hQ).comp_continuous hf
       fun p ↦ ⟨spinGroup.isUnit_coe p.1, trivial⟩)
 
@@ -139,7 +139,7 @@ noncomputable def spinPolarHomotopyRel :
       {g | complexConj Q (reverse (g : CliffordAlgebra (Q.baseChange ℂ))) * g = 1} where
   toFun p := ⟨_, mul_leftMulMatrixRpow_mem_spinGroup hb hQ p.2 (-(p.1 : ℝ) / 2)⟩
   continuous_toFun := ((continuous_mul_leftMulMatrixRpow hb hQ).comp (continuous_snd.prodMk
-    ((continuous_subtype_val.comp continuous_fst).neg.div_const 2))).subtype_mk _
+    ((continuous_subtypeVal.comp continuous_fst).neg.div_const 2))).subtype_mk _
   map_zero_left g := by
     ext
     simp only [Set.Icc.coe_zero, neg_zero, zero_div, ContinuousMap.id_apply]
@@ -171,7 +171,7 @@ noncomputable def spinPolarHomotopyEquiv :
     {g : spinGroup (Q.baseChange ℂ) //
         complexConj Q (reverse (g : CliffordAlgebra (Q.baseChange ℂ))) * g = 1} ≃ₕ
       spinGroup (Q.baseChange ℂ) where
-  toFun := ⟨Subtype.val, continuous_subtype_val⟩
+  toFun := ⟨Subtype.val, continuous_subtypeVal⟩
   invFun := ⟨fun g ↦ ⟨spinPolarRetraction hb hQ g,
       complexConj_reverse_mul_self_spinPolarRetraction hb hQ g⟩,
     (spinPolarRetraction hb hQ).continuous.subtype_mk _⟩

@@ -196,7 +196,7 @@ private theorem IsNondegenerate.exists_lintegral_norm_sq_sliceDefect_comp_ne_top
   -- Extend it from `e(K)` to a continuous periodic field on `F`.
   obtain ⟨Y, hYc, hYper, hYe⟩ := hemb.exists_continuous_periodic_extension
     (f := fun t (p : K) ↦ mvfderiv I e p (ω.hamiltonianVectorField (H t) p))
-    (T := 1) (hXe.comp (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd)))
+    (T := 1) (hXe.comp (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd)))
     fun p t ↦ congrArg (fun h ↦ mvfderiv I e p (ω.hamiltonianVectorField h p)) (hHper t)
   have hYe' : ∀ t, ∀ p ∈ K, Y t (e p) = mvfderiv I e p (ω.hamiltonianVectorField (H t) p) :=
     fun t p hp ↦ hYe t ⟨p, hp⟩

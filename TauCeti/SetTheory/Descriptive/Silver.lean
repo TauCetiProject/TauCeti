@@ -169,7 +169,7 @@ theorem countable_or_hasCantorAntichainOn_of_measurableSet [TopologicalSpace X] 
   refine (silver_dichotomy_standardBorel F hF).imp_right fun ⟨f, hf, hfF⟩ => ?_
   -- Pulled back along the embedding `(↑) ∘ f` of Cantor space into `X`, the relation `R` is
   -- equality, whose Cantor antichain on the whole space is the identity.
-  have hg := (MeasurableEmbedding.subtype_coe hA).comp hf
+  have hg := (MeasurableEmbedding.subtypeVal hA).comp hf
   have hid : (R.comap ((↑) ∘ f)).HasCantorAntichainOn univ :=
     hasCantorAntichainOn_iff.2 ⟨id, continuous_id, fun _ => trivial,
       fun a b hab h => hfF a b hab (hRF _ _ ((comap_rel _ _ _ _).1 h))⟩

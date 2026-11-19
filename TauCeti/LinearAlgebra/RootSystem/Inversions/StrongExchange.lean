@@ -141,7 +141,7 @@ theorem eq_one_of_mapsTo_posRoots {w : P.weylGroup}
 /-- A Weyl-group element other than the identity sends some positive root to a negative root. -/
 theorem inversions_nonempty_of_ne_one {w : P.weylGroup} (hw : w ≠ 1) :
     (inversions P b w).Nonempty :=
-  Set.nonempty_iff_ne_empty.mpr fun h ↦ hw (eq_one_of_inversions_eq_empty h)
+  Set.ne_empty_iff_nonempty.mp fun h ↦ hw (eq_one_of_inversions_eq_empty h)
 
 /-- A Weyl-group element other than the identity has at least one inversion. -/
 theorem ncard_inversions_pos_of_ne_one {w : P.weylGroup} (hw : w ≠ 1) :

@@ -169,7 +169,7 @@ theorem principalChar_one (κ : WeightSpace p R) :
     ContinuousMulEquiv.symm_apply_apply]
 
 theorem continuous_principalChar (κ : WeightSpace p R) : Continuous κ.principalChar :=
-  Units.continuous_val.comp <| κ.continuous.comp <| continuous_subtype_val.comp <|
+  Units.continuous_val.comp <| κ.continuous.comp <| continuous_subtypeVal.comp <|
     (unitsPrincipalLogEquiv p).symm.continuous.comp continuous_ofAdd
 
 /-- A weight is determined by its finite part and its principal part. -/

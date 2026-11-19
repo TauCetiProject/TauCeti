@@ -63,7 +63,7 @@ private theorem sub_topPart_mem {a : ℤ} {c : GridChainMinus R n}
       G.alexanderFiltration R (a - 1) := by
   rw [mem_alexanderFiltration] at hc ⊢
   intro x e he
-  rw [Finsupp.sub_apply, MvPolynomial.mem_support_iff, coeff_sub,
+  rw [Finsupp.sub_apply, MvPolynomial.mem_support_iff, AddMonoidAlgebra.coeff_sub_apply,
     G.coeff_decompose_alexanderChainMinusGrading] at he
   by_cases h : G.alexanderℤ x - (e.degree : ℤ) = a
   · simp [h] at he

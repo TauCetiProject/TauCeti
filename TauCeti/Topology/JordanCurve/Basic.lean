@@ -195,7 +195,7 @@ noncomputable def jordanParam (e : C ≃ₜ Circle) : Circle → X :=
 
 /-- The parametrization `TauCeti.jordanParam` of a Jordan curve by the circle is continuous. -/
 lemma continuous_jordanParam (e : C ≃ₜ Circle) : Continuous (jordanParam e) :=
-  continuous_subtype_val.comp e.symm.continuous
+  continuous_subtypeVal.comp e.symm.continuous
 
 /-- The parametrization `TauCeti.jordanParam` of a Jordan curve by the circle is injective: this is
 the simplicity of the curve. -/

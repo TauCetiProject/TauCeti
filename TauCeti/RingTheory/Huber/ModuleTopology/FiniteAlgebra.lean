@@ -117,7 +117,7 @@ theorem exists_pairOfDefinition_isIntegral (P : PairOfDefinition A) :
     fun b hb ↦ Submodule.isIntegral_of_mem_multiplierRing (Submodule.fg_span hT) h1 hb⟩
   · -- `Jⁿ` contains the neighbourhood `I^(n + j) • M₀` of `0`
     refine (J ^ n).toAddSubgroup.isOpen_of_mem_nhds (g := 0) ?_
-    have hmem := continuous_subtype_val.continuousAt.preimage_mem_nhds
+    have hmem := continuous_subtypeVal.continuousAt.preimage_mem_nhds
       (hbasis.mem_of_mem (i := n + j) trivial) (x := (0 : B₀))
     refine mem_of_superset hmem fun x hx ↦ ?_
     obtain ⟨y, hy, hxy⟩ := Submodule.smul_subset_coe_map_pow hjB₀ n hx

@@ -152,7 +152,7 @@ theorem chartDerivativeSeminorm_eq_zero_of_eventuallyEq_zero (x : U)
     have hz' : (((extChartAt I x).symm z : U) : M) ∈ Subtype.val '' ((extChartAt I x).symm ''
         (Subtype.val '' (K : Set (extChartAt I x).target))) :=
       ⟨_, ⟨z, ⟨z, hz, rfl⟩, rfl⟩, rfl⟩
-    have hnhds := (continuous_subtype_val.continuousAt
+    have hnhds := (continuous_subtypeVal.continuousAt
       (x := (extChartAt I x).symm z)).eventually (hs.filter_mono (nhds_le_nhdsSet hz'))
     filter_upwards [hnhds] with y hy
     exact (frameCoordinates_eq_iff e hU s 0 y).mpr (by simpa using hy) |>.trans (by simp)

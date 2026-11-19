@@ -274,7 +274,7 @@ theorem exists_tendstoUniformly_subseq_of_periodic_of_modulus {M : Type*} [Pseud
     ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ ∃ x : ℝ → M, Periodic x 1 ∧ Continuous x ∧
       TendstoUniformly (fun n ↦ y (ψ n)) x atTop := by
   -- Arzelà–Ascoli on `C([0, 1], M)`.
-  let G : ℕ → C(Icc (0 : ℝ) 1, M) := fun n ↦ ⟨fun t ↦ y n t, (hy n).comp continuous_subtype_val⟩
+  let G : ℕ → C(Icc (0 : ℝ) 1, M) := fun n ↦ ⟨fun t ↦ y n t, (hy n).comp continuous_subtypeVal⟩
   have hGeq : Equicontinuous fun n ↦ ⇑(G n) := by
     refine Metric.equicontinuous_of_continuity_modulus ρ hρ _ fun t₁ t₂ n ↦ ?_
     rw [Subtype.dist_eq, Real.dist_eq]

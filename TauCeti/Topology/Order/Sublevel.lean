@@ -354,7 +354,7 @@ theorem isClosedEmbedding_sublevelInclusion {X β : Type*} [TopologicalSpace X] 
     [TopologicalSpace β] [ClosedIicTopology β] {f : X → β} (hf : Continuous f) {a b : β}
     (hab : a ≤ b) : Topology.IsClosedEmbedding (sublevelInclusion f a b hab) :=
   .inclusion (sublevel_mono f hab)
-    ((isClosed_Iic.preimage hf).preimage continuous_subtype_val)
+    ((isClosed_Iic.preimage hf).preimage continuous_subtypeVal)
 
 /-- The sublevel pair `({f ≤ b}, {f ≤ a})` of a function `f` for `a ≤ b`, as a pair of subspaces
 of `X`. -/
@@ -435,7 +435,7 @@ the sublevels into `X`. -/
 @[expose, simps]
 def sublevelCocone : Cocone (sublevelFunctor f) where
   pt := TopCat.of X
-  ι := { app b := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ }
+  ι := { app b := TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ }
 
 end Functor
 
@@ -474,7 +474,7 @@ theorem exists_sublevelDeformation_of_apply_eq_sub {X : Type*} [TopologicalSpace
     linarith [le_max_left (f x.1 - a) 0]
   obtain ⟨r, hr⟩ : ∃ r : C({x | f x ≤ b}, {x | f x ≤ a}), ∀ x, (r x : X) = φ (τ x.1) x.1 :=
     ⟨⟨fun x ↦ ⟨φ (τ x.1) x.1, hra x⟩,
-      (hφ.comp ((hτ.comp continuous_subtype_val).prodMk continuous_subtype_val)).subtype_mk _⟩,
+      (hφ.comp ((hτ.comp continuous_subtypeVal).prodMk continuous_subtypeVal)).subtype_mk _⟩,
       fun _ ↦ rfl⟩
   refine ⟨r, hr, fun x ↦ Subtype.ext ?_, ⟨?_⟩⟩
   · simp [hr, hτ0 x.1 x.2, hφ0]
@@ -486,11 +486,11 @@ theorem exists_sublevelDeformation_of_apply_eq_sub {X : Type*} [TopologicalSpace
     rw [mem_ofPred_eq, h]
     linarith
   have hx : Continuous fun p : unitInterval × {x | f x ≤ b} ↦ (p.2 : X) :=
-    continuous_subtype_val.comp continuous_snd
+    continuous_subtypeVal.comp continuous_snd
   exact
     { toFun := fun p ↦ ⟨φ ((1 - (p.1 : ℝ)) * τ p.2.1) p.2.1, hHb p⟩
       continuous_toFun := (hφ.comp (((continuous_const.sub
-        (continuous_subtype_val.comp continuous_fst)).mul (hτ.comp hx)).prodMk hx)).subtype_mk _
+        (continuous_subtypeVal.comp continuous_fst)).mul (hτ.comp hx)).prodMk hx)).subtype_mk _
       map_zero_left := fun x ↦ Subtype.ext <| by simp [hr]
       map_one_left := fun x ↦ Subtype.ext <| by simp [hφ0]
       prop' := fun t x hx ↦ Subtype.ext <| by simp [hr, hτ0 x.1 hx, hφ0] }
@@ -663,7 +663,7 @@ theorem exists_homotopyEquiv_level_sublevel (hf : Continuous f) {s : ℝ} (has :
     ⟨fun y ↦ ⟨φ (f (p₀ y) - a) (p₀ y), hdown y⟩, by fun_prop⟩
   refine ⟨⟨up, down, ?_, ?_⟩, fun x ↦ ⟨rfl, hup x⟩⟩
   · -- Flowing up and back down is the identity of `f⁻¹(a)`.
-    refine φ.homotopic_of_eq_apply IsEmbedding.subtypeVal continuous_subtype_val continuous_const
+    refine φ.homotopic_of_eq_apply IsEmbedding.subtypeVal continuous_subtypeVal continuous_const
       continuous_const (τ₀ := fun _ ↦ 0) (τ₁ := fun _ ↦ 0) (fun x ↦ ?_) (fun x ↦ by simp)
       fun x t _ ↦ ⟨x, by simp⟩
     simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, up, down, p₀, Flow.map_zero_apply]
@@ -757,7 +757,7 @@ theorem exists_homotopyEquiv_sublevel_band (hf : Continuous f) {s : ℝ} (has : 
       simp only [mul_zero, add_zero]
       exact ⟨⟨_, h₁ ▸ h₂, h₁ ▸ h₃⟩, rfl⟩
   have hρ₁ : (incl.comp ρ).Homotopic (ContinuousMap.id _) := φ.homotopic_of_eq_apply
-    IsEmbedding.subtypeVal continuous_subtype_val (by fun_prop) continuous_const
+    IsEmbedding.subtypeVal continuous_subtypeVal (by fun_prop) continuous_const
     (τ₀ := fun y ↦ -(1 * θ y)) (τ₁ := fun _ ↦ 0) (fun y ↦ rfl) (fun y ↦ by simp)
     fun y t ht ↦ by
       obtain ⟨h₁, h₂, h₃, -⟩ := hθ _ y.2.1 y.2.2 (1 - t) ⟨by linarith [ht.2], by linarith [ht.1]⟩
@@ -810,12 +810,12 @@ def bandHomeomorph (hf : Continuous f) (hanti : ∀ x, AntitoneOn (fun t ↦ f (
         rw [hup p, ← Flow.map_add, sub_add_sub_cancel, sub_self, Flow.map_zero_apply])
       (Subtype.ext (hup p))
     continuous_toFun := by
-      have hx : Continuous fun x : f ⁻¹' Icc a b ↦ (x : X) := continuous_subtype_val
+      have hx : Continuous fun x : f ⁻¹' Icc a b ↦ (x : X) := continuous_subtypeVal
       exact ((φ.continuous ((hf.comp hx).sub continuous_const) hx).subtype_mk _).prodMk
         ((hf.comp hx).subtype_mk _)
     continuous_invFun :=
-      (φ.continuous (continuous_const.sub (continuous_subtype_val.comp continuous_snd))
-        (continuous_subtype_val.comp continuous_fst)).subtype_mk hband }
+      (φ.continuous (continuous_const.sub (continuous_subtypeVal.comp continuous_snd))
+        (continuous_subtypeVal.comp continuous_fst)).subtype_mk hband }
 
 variable (hf : Continuous f) (hanti : ∀ x, AntitoneOn (fun t ↦ f (φ t x)) (Ici 0))
   (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t)

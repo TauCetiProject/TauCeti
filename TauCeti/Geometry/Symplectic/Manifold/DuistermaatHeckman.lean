@@ -129,9 +129,9 @@ and of a measurable map `μ` to an open subset `U` is the pushforward along `μ`
 to `U` of the Liouville measure of `σ`. -/
 theorem duistermaatHeckmanMeasure_mpullback_subtypeVal (U : TopologicalSpace.Opens M)
     [LindelofSpace U] (hμ : Measurable μ) :
-    duistermaatHeckmanMeasure n (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ)
+    duistermaatHeckmanMeasure n (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ)
         (μ ∘ Subtype.val) = ((σ.liouvilleMeasure n).restrict U).map μ := by
-  rw [duistermaatHeckmanMeasure_def, ← Measure.map_map hμ measurable_subtype_coe,
+  rw [duistermaatHeckmanMeasure_def, ← Measure.map_map hμ measurable_subtypeVal,
     map_liouvilleMeasure_mpullback_subtypeVal]
 
 /-- On a compact manifold the Duistermaat–Heckman measure is finite. -/

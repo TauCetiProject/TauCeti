@@ -79,7 +79,7 @@ theorem exists_ne_zero_and_div_mem (O : ValuationSubring K) {ι : Type*} {s : Fi
   have hgk : g k ≠ 0 := by
     intro hk
     have := hkmax i₀ hi₀s
-    rw [hk, map_zero, le_zero_iff, Valuation.zero_iff] at this
+    rw [hk, map_zero, nonpos_iff_eq_zero, Valuation.zero_iff] at this
     exact hi₀ this
   refine ⟨k, hks, hgk, fun i hi ↦ ?_⟩
   rw [← O.valuation_le_one_iff, map_div₀]

@@ -671,7 +671,7 @@ private theorem mem_boundaryNhd {x : handlebody g} : x ∈ boundaryNhd g ↔ 0 <
   Iff.rfl
 
 private theorem isOpen_boundaryNhd : IsOpen (boundaryNhd g) :=
-  isOpen_lt continuous_const (continuous_boundaryLevel.comp continuous_subtype_val)
+  isOpen_lt continuous_const (continuous_boundaryLevel.comp continuous_subtypeVal)
 
 /-- The deformation of the complement of the core onto the boundary surface, as a continuous map
 of subtypes. -/
@@ -804,7 +804,7 @@ theorem exists_deformation_frontier_handlebody (g : ℕ) :
   refine ⟨y, hsub hy, fun {x} hx ↦ ?_⟩
   have hpath : JoinedIn (boundaryNhd g) x (boundaryDeformMap (1, ⟨x, hx⟩)) :=
     ⟨⟨⟨fun t ↦ boundaryDeformMap (t, ⟨x, hx⟩),
-      continuous_subtype_val.comp (boundaryDeformMap.continuous.comp
+      continuous_subtypeVal.comp (boundaryDeformMap.continuous.comp
         (continuous_id.prodMk continuous_const))⟩,
       by simp [Subtype.ext_iff, boundaryDeformMap_apply_coe, boundaryDeform_zero], rfl⟩,
       fun t ↦ (boundaryDeformMap (t, ⟨x, hx⟩)).2⟩

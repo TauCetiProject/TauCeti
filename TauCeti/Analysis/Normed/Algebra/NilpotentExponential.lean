@@ -201,10 +201,10 @@ theorem contractibleSpace_of_expSMulHom_log_mem (G : Subgroup Aˣ) {n : ℕ}
     ContractibleSpace G := by
   have hlog : Continuous (fun g : G ↦ log ((g : Aˣ) : A)) :=
     (continuousOn_log n).comp_continuous
-      (Units.continuous_val.comp continuous_subtype_val) (fun g ↦ hn g g.property)
+      (Units.continuous_val.comp continuous_subtypeVal) (fun g ↦ hn g g.property)
   have hscale : Continuous (fun p : unitInterval × G ↦
       (1 - (p.1 : ℝ)) • log ((p.2 : Aˣ) : A)) :=
-    (continuous_const.sub (continuous_subtype_val.comp continuous_fst)).smul
+    (continuous_const.sub (continuous_subtypeVal.comp continuous_fst)).smul
       (hlog.comp continuous_snd)
   have hpow (t : ℝ) (g : G) : (t • log ((g : Aˣ) : A)) ^ n = 0 := by
     rw [smul_pow, pow_log_eq_zero (hn g g.property), smul_zero]

@@ -40,7 +40,7 @@ def MonoidHomClass.mgraphEquiv (f : F) :
   right_inv x := Subtype.ext (Prod.ext rfl x.property)
   map_mul' x y := by ext <;> simp
   continuous_toFun := (continuous_id.prodMk (map_continuous f)).subtype_mk _
-  continuous_invFun := continuous_fst.comp continuous_subtype_val
+  continuous_invFun := continuous_fst.comp continuous_subtypeVal
 
 /-- The submonoid graph equivalence sends an element to the corresponding point of the graph. -/
 @[to_additive (attr := simp)

@@ -313,7 +313,7 @@ theorem natural_le_eventuallyMeasurableSpace_iSup_dyadicNatural
     have hvu : (fun n ↦ (v n : ℝ)) = fun n ↦ (u n : ℝ) :=
       funext fun n ↦ by rw [coe_dyadicTime_eq_coe_dyadicPoint, hk]
     rw [hvu]
-    exact (continuous_subtype_val.tendsto _).comp hlim
+    exact (continuous_subtypeVal.tendsto _).comp hlim
   -- On the full-measure continuity set take limits; elsewhere keep the first observation.
   let C := {ω | ContinuousOn (X · ω) (Set.Iic T)}
   have hC : MeasurableSet[eventuallyMeasurableSpace 𝒟 (ae P)] C :=

@@ -711,10 +711,10 @@ variable {s' t' : ℝ} (h : t ≤ s) (h' : t' ≤ s') (P : CircleSobolev t E ≃
 `P : H^t → H^t'` such that `P` carries `H^s` into `H^s'` and `P⁻¹` carries `H^s'` into `H^s`, for
 `t ≤ s` and `t' ≤ s'`, as a continuous linear isomorphism `H^s → H^s'`. -/
 def restrictEquiv [CompleteSpace E] : CircleSobolev s E ≃L[ℂ] CircleSobolev s' E :=
-  ContinuousLinearEquiv.equivOfInverse (restrict h h' P fun a ↦ by simpa using hP a)
+  ContinuousLinearEquiv.ofContinuousLinearMap (restrict h h' P fun a ↦ by simpa using hP a)
     (restrict h' h P.symm fun b ↦ by simpa using hP' b)
-    (fun a ↦ inclusion_injective h (by simp))
-    (fun b ↦ inclusion_injective h' (by simp))
+    (ContinuousLinearMap.ext fun b ↦ inclusion_injective h' (by simp))
+    (ContinuousLinearMap.ext fun a ↦ inclusion_injective h (by simp))
 
 /-- In `H^t'`, `restrictEquiv` is `P`. -/
 @[simp]

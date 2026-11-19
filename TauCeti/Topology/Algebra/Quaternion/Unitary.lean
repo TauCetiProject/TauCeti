@@ -107,7 +107,7 @@ noncomputable def unitaryContinuousMulEquivSpecialUnitaryGroup :
     apply continuous_induced_rng.mpr
     simpa only [Function.comp_def, coe_unitaryEquivSpecialUnitaryGroup_apply,
       AlgHom.coe_toLinearMap, StarAlgHom.coe_toAlgHom] using
-      (toComplexMatrix.toLinearMap.continuous_of_finiteDimensional.comp continuous_subtype_val)
+      (toComplexMatrix.toLinearMap.continuous_of_finiteDimensional.comp continuous_subtypeVal)
   exact { __ := unitaryEquivSpecialUnitaryGroup
           __ := unitaryEquivSpecialUnitaryGroup.toEquiv.toHomeomorphOfContinuousClosed
             hf hf.isClosedMap }

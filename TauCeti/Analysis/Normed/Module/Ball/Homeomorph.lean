@@ -209,7 +209,7 @@ closed unit ball. -/
 theorem isOpenEmbedding_inclusion_comp_unitBall :
     IsOpenEmbedding (inclusion (ball_subset_closedBall (x := (0 : E)) (ε := 1)) ∘
       Homeomorph.unitBall) :=
-  (IsOpenEmbedding.inclusion _ (isOpen_ball.preimage continuous_subtype_val)).comp
+  (IsOpenEmbedding.inclusion _ (isOpen_ball.preimage continuous_subtypeVal)).comp
     Homeomorph.unitBall.isOpenEmbedding
 
 section Cube
@@ -229,9 +229,9 @@ def cubeHomeomorphClosedBall : (N → I) ≃ₜ closedBall (0 : N → ℝ) 1 :=
   let b : (N → Icc (-1 : ℝ) 1) ≃ₜ univ.pi (fun _ : N ↦ Icc (-1 : ℝ) 1) :=
     { toEquiv := (Equiv.Set.univPi _).symm
       continuous_toFun := (continuous_pi fun i ↦
-        continuous_subtype_val.comp (continuous_apply i)).subtype_mk _
+        continuous_subtypeVal.comp (continuous_apply i)).subtype_mk _
       continuous_invFun := continuous_pi fun i ↦
-        ((continuous_apply i).comp continuous_subtype_val).subtype_mk _ }
+        ((continuous_apply i).comp continuous_subtypeVal).subtype_mk _ }
   have h : univ.pi (fun _ : N ↦ Icc (-1 : ℝ) 1) = closedBall (0 : N → ℝ) 1 := by
     simp [closedBall_pi _ zero_le_one, Real.closedBall_eq_Icc]
   a.trans <| b.trans <| Homeomorph.setCongr h

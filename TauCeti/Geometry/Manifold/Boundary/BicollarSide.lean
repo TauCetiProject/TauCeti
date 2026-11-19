@@ -105,7 +105,7 @@ private theorem isOpenEmbedding_collarPiece (hb : IsBicollar f b)
       refine ⟨(p.1, EuclideanHalfSpace.normalRay p.2), Subtype.ext ?_⟩
       rw [coe_collarPiece, EuclideanHalfSpace.normalRay_coe_apply, max_eq_left hp'.2, ← hp]
   rw [hrange]
-  exact hb.isOpenEmbedding.isOpen_range.preimage continuous_subtype_val
+  exact hb.isOpenEmbedding.isOpen_range.preimage continuous_subtypeVal
 
 private theorem collarPiece_apply_zero (hb : IsBicollar f b) (hC : b ⁻¹' C = univ ×ˢ Ici 0)
     (y : N) : (collarPiece hC (y, 0) : M) = f y := by
@@ -144,7 +144,7 @@ omit [ChartedSpace (EuclideanSpace ℝ (Fin (n + 1))) M] [TopologicalSpace N]
   [ChartedSpace (EuclideanSpace ℝ (Fin n)) N] in
 private theorem isOpenEmbedding_inclusion_sdiff (hCo : IsOpen (C \ range f)) :
     IsOpenEmbedding (inclusion (sdiff_subset : C \ range f ⊆ C)) :=
-  IsOpenEmbedding.inclusion sdiff_subset (hCo.preimage continuous_subtype_val)
+  IsOpenEmbedding.inclusion sdiff_subset (hCo.preimage continuous_subtypeVal)
 
 /-- The chart of a side of a bicollar at a point `x` off the image of `f`: a chart of `M` at `x`,
 followed by a homeomorphism of `ℝⁿ⁺¹` onto the open half-space. -/

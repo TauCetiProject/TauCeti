@@ -110,11 +110,11 @@ theorem mk_point_path (x : MooreReplacement p) : mk x.point x.path x.source_path
 
 @[fun_prop]
 theorem continuous_point : Continuous (point : MooreReplacement p → E) :=
-  continuous_fst.comp continuous_subtype_val
+  continuous_fst.comp continuous_subtypeVal
 
 @[fun_prop]
 theorem continuous_path : Continuous (path : MooreReplacement p → MoorePath B) :=
-  continuous_snd.comp continuous_subtype_val
+  continuous_snd.comp continuous_subtypeVal
 
 /-- A family of pairs is continuous when its points and its paths are. -/
 @[fun_prop]

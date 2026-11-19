@@ -473,7 +473,7 @@ theorem Submodule.isSmoothEmbedding_orbitRelQuotientMap_subtype (L : Submodule �
   refine ⟨L.isImmersion_orbitRelQuotientMap_subtype V hV, ?_⟩
   -- A continuous injection of a compact space into a Hausdorff space is an embedding.
   refine (Continuous.isClosedEmbedding ?_ ?_).isEmbedding
-  · exact Submodule.continuous_orbitRelQuotientMap _ _ _ continuous_subtype_val
+  · exact Submodule.continuous_orbitRelQuotientMap _ _ _ continuous_subtypeVal
   · exact (Submodule.orbitRelQuotientMap_injective_iff _ _ _ _).2 le_rfl
 
 /-- Let a linear map `f : E → E'` over `𝕜 = ℝ` or `ℂ` carry a full lattice `L` into a discrete
@@ -534,7 +534,7 @@ theorem Submodule.isOpenEmbedding_orbitRelQuotientToKerOrbitRelQuotientMap :
   have hj : Set.range j = _root_.Quotient.mk (AddAction.orbitRel L E) '' (LinearMap.ker f) :=
     (Submodule.range_orbitRelQuotientMap _ _ _ _).trans <| congrArg _ <| by ext; simp
   -- The range is the trace of `U` on the kernel.
-  convert hU.preimage continuous_subtype_val using 1
+  convert hU.preimage continuous_subtypeVal using 1
   ext ⟨z, hz⟩
   have hzK : z ∈ _root_.Quotient.mk (AddAction.orbitRel L E) '' (f ⁻¹' L') := hK ▸ hz
   have hzU : z ∈ U ↔ z ∈ Set.range j := by

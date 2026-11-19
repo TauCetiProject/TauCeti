@@ -126,7 +126,7 @@ theorem explicitMap2_explicitRes2_of_conj (x : H2 G M) :
     rw [explicitRes2_mk, explicitMap2_mk, explicitRes2_mk, H2pi_eq_iff]
     refine mem_B2_iff.2 ⟨fun v : V => inverseConjugationHomotopy2 g c v,
       (continuous_inverseConjugationHomotopy2 g (mem_Z2_iff.1 c.property).1).comp
-        continuous_subtype_val, ?_⟩
+        continuous_subtypeVal, ?_⟩
     funext ⟨v, w⟩
     simpa [cocyclesMap2_apply, cochainsMap2_apply] using
       congrFun (cochainsMap2_res_sub_eq_d1_of_conj G M U V g f hf (κ : V →* U) hκ c).symm

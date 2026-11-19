@@ -382,7 +382,7 @@ noncomputable def jetLimitEquiv : FormalCoordinate R ≃ₜ* jetLimit R :=
     continuous_toFun := isInducing_jets.continuous.subtype_mk _
     continuous_invFun := by
       refine isInducing_jets.continuous_iff.mpr ?_
-      convert continuous_subtype_val using 1
+      convert continuous_subtypeVal using 1
       exact funext fun x ↦ congr_arg Subtype.val (e.apply_symm_apply x) }
 
 @[simp]

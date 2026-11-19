@@ -60,8 +60,8 @@ private theorem continuous_local_repr :
   simp only [Function.comp_def, OrthonormalBasis.repr_apply_apply]
   have hbase : Continuous (fun p : {p : TotalSpace F E // p.proj ∈ U} ↦
       (⟨p.val.proj, p.property⟩ : U)) :=
-    ((FiberBundle.continuous_proj F E).comp continuous_subtype_val).subtype_mk _
-  exact ((hd i).comp hbase).inner_bundle continuous_subtype_val
+    ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal).subtype_mk _
+  exact ((hd i).comp hbase).inner_bundle continuous_subtypeVal
 
 include hd in
 omit [IsContinuousRiemannianBundle F E] in
@@ -71,10 +71,10 @@ private theorem continuous_local_repr_symm :
   classical
   refine continuous_iff_continuousAt.2 fun p ↦ ?_
   rw [FiberBundle.continuousAt_totalSpace]
-  refine ⟨(continuous_subtype_val.comp continuous_fst).continuousAt, ?_⟩
+  refine ⟨(continuous_subtypeVal.comp continuous_fst).continuousAt, ?_⟩
   let e := trivializationAt F E (p.1 : B)
   have hmem : ∀ᶠ q : U × F in 𝓝 p, (q.1 : B) ∈ e.baseSet :=
-    (continuous_subtype_val.comp continuous_fst).continuousAt
+    (continuous_subtypeVal.comp continuous_fst).continuousAt
       (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E (p.1 : B)))
   have hc (i : ι) : ContinuousAt
       (fun q : U × F ↦ TotalSpace.mk' F (q.1 : B) (d q.1 i)) p :=
@@ -110,15 +110,15 @@ def bundleTrivialization : Trivialization F (π F E) where
   open_target := hU.prod isOpen_univ
   continuousOn_toFun := by
     rw [continuousOn_iff_continuous_domRestrict]
-    exact ((FiberBundle.continuous_proj F E).comp continuous_subtype_val).prodMk
+    exact ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal).prodMk
       ((c.repr.symm.continuous.comp (continuous_local_repr d hd)).congr
         fun p ↦ by simp [p.property])
   continuousOn_invFun := by
     rw [continuousOn_iff_continuous_domRestrict]
     have h : Continuous (fun p : U ×ˢ (univ : Set F) ↦
         ((⟨p.val.1, p.property.1⟩ : U), p.val.2)) :=
-      ((continuous_fst.comp continuous_subtype_val).subtype_mk _).prodMk
-        (continuous_snd.comp continuous_subtype_val)
+      ((continuous_fst.comp continuous_subtypeVal).subtype_mk _).prodMk
+        (continuous_snd.comp continuous_subtypeVal)
     exact ((continuous_local_repr_symm c d hd).comp h).congr fun p ↦ by
       simp [p.property.1]
   baseSet := U

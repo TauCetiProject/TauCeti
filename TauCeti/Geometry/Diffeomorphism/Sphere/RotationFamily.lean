@@ -121,9 +121,9 @@ theorem continuous_sphereRotationPlane (p : sphere (0 : E) 1) :
     Continuous fun v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 ↦
       (sphereRotationPlane p v).toContinuousLinearMap := by
   have hv : Continuous fun v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 ↦ ((v : (ℝ ∙ (p : E))ᗮ) : E) :=
-    continuous_subtype_val.comp continuous_subtype_val
+    continuous_subtypeVal.comp continuous_subtypeVal
   refine ((continuous_const (y := Complex.reCLM.smulRight (p : E))).add
-    ((ContinuousLinearMap.smulRightL ℝ ℂ E Complex.imCLM).continuous.comp hv)).congr fun v ↦ ?_
+    ((StrongDual.smulRightL ℝ ℂ E Complex.imCLM).continuous.comp hv)).congr fun v ↦ ?_
   ext w
   simp
 
@@ -173,7 +173,7 @@ theorem continuous_sphereRotationIsometry (p : sphere (0 : E) 1) :
     Continuous fun x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 ↦
       ((sphereRotationIsometry p x).toContinuousLinearEquiv : E →L[ℝ] E) :=
   ((continuous_sphereRotationPlane p).comp continuous_fst).planeRotation
-    ((continuous_subtype_val.comp continuous_snd).subtype_mk _)
+    ((continuous_subtypeVal.comp continuous_snd).subtype_mk _)
 
 variable [FiniteDimensional ℝ E] {n : ℕ} [Fact (finrank ℝ E = n + 1)]
 

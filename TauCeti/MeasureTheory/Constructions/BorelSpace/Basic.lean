@@ -44,7 +44,7 @@ theorem ContinuousOn.measurableSet_preimage_inter {X Y : Type*} [TopologicalSpac
     [BorelSpace Y] {f : X → Y} {s : Set X} {A : Set Y} (hc : ContinuousOn f s)
     (hs : MeasurableSet s) (hA : MeasurableSet A) : MeasurableSet (f ⁻¹' A ∩ s) := by
   rw [Set.inter_comm, ← Subtype.image_preimage_coe]
-  apply (MeasurableEmbedding.subtype_coe hs).measurableSet_image.mpr
+  apply (MeasurableEmbedding.subtypeVal hs).measurableSet_image.mpr
   rw [← Set.preimage_comp, ← Set.domRestrict_eq]
   exact hc.domRestrict.measurable hA
 
@@ -76,7 +76,7 @@ theorem IsLocalHomeomorph.measurableSet_image {α β : Type*} [TopologicalSpace 
   -- On the source of `e x`, the map `f` is the open embedding `(e x).source.domRestrict (e x)`.
   rw [hfe x, ← Set.image_domRestrict]
   exact (e x).isOpenEmbedding_restrict.measurableEmbedding.measurableSet_image'
-    (measurable_subtype_coe hs)
+    (measurable_subtypeVal hs)
 
 namespace MeasureTheory.Measure
 

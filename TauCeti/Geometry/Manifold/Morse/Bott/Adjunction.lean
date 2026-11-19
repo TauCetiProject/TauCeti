@@ -184,7 +184,7 @@ theorem isPushout_negativeDiscBundle (hf : Continuous f)
   refine ⟨⟨hα.restrict, (hΘc.mono hSD).mapsToRestrict hα⟩, ⟨hχ.restrict, hΘc.mapsToRestrict hχ⟩,
     fun _ ↦ rfl, fun _ ↦ rfl, IsPushout.of_isClosedEmbedding_of_range_union_range rfl ?_ ?_ ?_ ?_⟩
   · exact IsClosedEmbedding.inclusion subset_union_left
-      ((isClosed_le hf continuous_const).preimage continuous_subtype_val)
+      ((isClosed_le hf continuous_const).preimage continuous_subtypeVal)
   · have := isCompact_iff_compactSpace.1 hD
     exact (hΘc.mapsToRestrict hχ).isClosedEmbedding fun x y hxy ↦
       hΘi.injective (congrArg Subtype.val hxy)

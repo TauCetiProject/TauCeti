@@ -812,7 +812,7 @@ private theorem exists_valuation_sum_eq {e : ℕ} (A : Fin e → F')
     simp only [Finset.mem_sdiff, Finset.mem_singleton] at hj
     by_cases hAj : A j = 0
     · rw [hAj, map_zero]
-      exact zero_lt_iff.mpr ((Valuation.ne_zero_iff _).mpr hj₀A)
+      exact pos_iff_ne_zero.mpr ((Valuation.ne_zero_iff _).mpr hj₀A)
     · obtain ⟨m, hm⟩ := hAord j hAj
       obtain ⟨m₀, hm₀⟩ := hAord j₀ hj₀A
       have hne : P'.ord (A j) ≠ P'.ord (A j₀) := by

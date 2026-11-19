@@ -353,16 +353,17 @@ theorem adjoint_symm_adjoint_apply [CompleteSpace E] [CompleteSpace F]
 adjoint of `A⁻¹`. -/
 noncomputable def adjointEquiv [CompleteSpace E] [CompleteSpace F]
     (A : E ≃L[𝕜] F) : F ≃L[𝕜] E :=
-  equivOfInverse (ContinuousLinearMap.adjoint (A : E →L[𝕜] F))
-    (ContinuousLinearMap.adjoint (A.symm : F →L[𝕜] E)) (adjoint_symm_adjoint_apply A)
-    (adjoint_symm_adjoint_apply A.symm)
+  ofContinuousLinearMap (ContinuousLinearMap.adjoint (A : E →L[𝕜] F))
+    (ContinuousLinearMap.adjoint (A.symm : F →L[𝕜] E))
+    (ContinuousLinearMap.ext (adjoint_symm_adjoint_apply A.symm))
+    (ContinuousLinearMap.ext (adjoint_symm_adjoint_apply A))
 
 /-- Applying the adjoint equivalence is applying the adjoint map. -/
 @[simp]
 theorem adjointEquiv_apply [CompleteSpace E] [CompleteSpace F]
     (A : E ≃L[𝕜] F) (x : F) :
     A.adjointEquiv x = ContinuousLinearMap.adjoint (A : E →L[𝕜] F) x := by
-  exact equivOfInverse_apply _ _ _ _ _
+  rfl
 
 /-- The inverse of the adjoint equivalence is the adjoint equivalence of the inverse. -/
 @[simp]

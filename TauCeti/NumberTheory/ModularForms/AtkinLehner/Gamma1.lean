@@ -140,8 +140,8 @@ theorem Gamma1_map_inv_conjAct_atkinLehnerGL_eq (hQ : 0 < Q) (hQN : Q ∣ N)
   constructor
   · rintro ⟨τ, hτ, hτy⟩
     obtain ⟨δ, hmul, hδ⟩ :=
-      exists_mapGL_mul_atkinLehnerGL_eq hQ hQN h ⟨τ, Gamma1_in_Gamma0 N hτ⟩
-    rw [(mem_Gamma1_iff_toHomUnits_eq_one ⟨τ, Gamma1_in_Gamma0 N hτ⟩).mp hτ, map_one] at hδ
+      exists_mapGL_mul_atkinLehnerGL_eq hQ hQN h ⟨τ, Gamma1_le_Gamma0 N hτ⟩
+    rw [(mem_Gamma1_iff_toHomUnits_eq_one ⟨τ, Gamma1_le_Gamma0 N hτ⟩).mp hτ, map_one] at hδ
     refine ⟨δ, (mem_Gamma1_iff_toHomUnits_eq_one δ).mpr hδ, ?_⟩
     rw [hτy] at hmul
     refine (mul_left_cancel (a := atkinLehnerGL hQ h) ?_).symm
@@ -149,8 +149,8 @@ theorem Gamma1_map_inv_conjAct_atkinLehnerGL_eq (hQ : 0 < Q) (hQN : Q ∣ N)
     group
   · rintro ⟨σ, hσ, rfl⟩
     obtain ⟨δ, hmul, hδ⟩ :=
-      exists_atkinLehnerGL_mul_mapGL_eq hQ hQN h ⟨σ, Gamma1_in_Gamma0 N hσ⟩
-    rw [(mem_Gamma1_iff_toHomUnits_eq_one ⟨σ, Gamma1_in_Gamma0 N hσ⟩).mp hσ, map_one] at hδ
+      exists_atkinLehnerGL_mul_mapGL_eq hQ hQN h ⟨σ, Gamma1_le_Gamma0 N hσ⟩
+    rw [(mem_Gamma1_iff_toHomUnits_eq_one ⟨σ, Gamma1_le_Gamma0 N hσ⟩).mp hσ, map_one] at hδ
     exact ⟨δ, (mem_Gamma1_iff_toHomUnits_eq_one δ).mpr hδ, by rw [hmul]; group⟩
 
 /-- **The Atkin–Lehner slash operator on `M_k(Γ₁(N))`**: `f ↦ f ∣[k] W`, as a `ℂ`-linear

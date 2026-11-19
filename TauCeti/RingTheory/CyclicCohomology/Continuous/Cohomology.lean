@@ -476,7 +476,7 @@ def map (f : A →ₙₐ[𝕜] B) (hf : Continuous f) (n : ℕ) :
       ⟨(continuousCyclicCochainsMap M ⟨(f : A →ₗ[𝕜] B), hf⟩ n).restrict
         fun _ hφ ↦ continuousCyclicCochainsMap_mem_continuousCyclicCocycles f hf hφ,
         ((continuous_continuousCyclicCochainsMap _ n).comp
-          continuous_subtype_val).subtype_mk _⟩)
+          continuous_subtypeVal).subtype_mk _⟩)
     fun _ hφ ↦ (mk_eq_zero_iff 𝕜 A M _).2
       (continuousCyclicCochainsMap_mem_continuousCyclicCoboundaries f hf hφ)
 

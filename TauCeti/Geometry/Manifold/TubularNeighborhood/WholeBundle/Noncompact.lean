@@ -89,18 +89,18 @@ def normalBundleHomeomorphTubeOfRadius (f : M → V) (r : C(M, ℝ))
   continuous_invFun := by
     have hι := isEmbedding_totalSpace_normalSubspace (I := I) (F := V) f
     have hrq : Continuous fun q : normalTubeOfRadius I f r => (r q.1.1)⁻¹ :=
-      (r.continuous.comp (continuous_fst.comp continuous_subtype_val)).inv₀
+      (r.continuous.comp (continuous_fst.comp continuous_subtypeVal)).inv₀
         (fun q => (hr q.1.1).ne')
     have hv : Continuous fun q : normalTubeOfRadius I f r =>
         (r q.1.1)⁻¹ • q.1.2 :=
-      hrq.smul (continuous_snd.comp continuous_subtype_val)
+      hrq.smul (continuous_snd.comp continuous_subtypeVal)
     let k : normalTubeOfRadius I f r → ball (0 : V) 1 := fun q =>
       ⟨(r q.1.1)⁻¹ • q.1.2, by
         rw [mem_ball_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (hr q.1.1).le]
         exact (inv_mul_lt_iff₀ (hr q.1.1)).mpr (by simpa using (mem_normalTubeOfRadius.mp q.2).2)⟩
     have hk : Continuous k := hv.subtype_mk _
     apply hι.isInducing.continuous_iff.mpr
-    convert (continuous_fst.comp continuous_subtype_val).prodMk
+    convert (continuous_fst.comp continuous_subtypeVal).prodMk
       (Homeomorph.unitBall.symm.continuous.comp hk) using 1
     funext q
     apply Prod.ext
@@ -208,8 +208,8 @@ theorem exists_isTubularNeighborhood_wholeNormalBundle [FiniteDimensional ℝ V]
     have hp : Continuous fun p : Icc (0 : ℝ) 1 ×
         (Set.univ : Set (TotalSpace V (fun x : M => normalSubspace I f x))) =>
           (p.2.1.proj, (p.2.1.2 : V)) :=
-      hι.continuous.comp (continuous_subtype_val.comp continuous_snd)
-    exact hp.fst.prodMk ((continuous_subtype_val.comp continuous_fst).smul hp.snd)
+      hι.continuous.comp (continuous_subtypeVal.comp continuous_snd)
+    exact hp.fst.prodMk ((continuous_subtypeVal.comp continuous_fst).smul hp.snd)
 
 /-- A noncompact Euclidean immersion inducing the source topology has an open embedding of its
 whole normal bundle. -/

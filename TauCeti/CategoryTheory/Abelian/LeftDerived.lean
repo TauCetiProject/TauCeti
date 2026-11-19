@@ -286,7 +286,7 @@ theorem NatTrans.leftDerived_zero_comp_fromLeftDerivedZero {F G : C ⥤ D} [F.Ad
   have h : HomologicalComplex.opcyclesMap ((NatTrans.mapHomologicalComplex α _).app P.complex) 0 ≫
       P.fromLeftDerivedZero' G = P.fromLeftDerivedZero' F ≫ α.app X := by
     rw [← cancel_epi (HomologicalComplex.pOpcycles _ 0), HomologicalComplex.p_opcyclesMap_assoc]
-    simpa using (α.naturality (P.π.f 0)).symm
+    simp
   simp only [NatTrans.comp_app, P.leftDerived_app_eq, P.fromLeftDerivedZero_eq, Category.assoc,
     Iso.inv_hom_id_assoc]
   -- `erw`: the homology of `F(P)` appears both as `homologyFunctor.obj` and as `homology 0`.

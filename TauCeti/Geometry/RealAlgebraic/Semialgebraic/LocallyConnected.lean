@@ -55,7 +55,7 @@ theorem SemialgebraicAt.exists_isConnected_mem_nhdsWithin (hs : SemialgebraicAt 
   have hopen : IsOpen ((Subtype.val : s → (σ → ℝ)) ⁻¹' C) := by
     rw [hCeq, preimage_inter]
     simpa only [Subtype.coe_preimage_self, univ_inter] using
-      (hUo.inter hOo).preimage continuous_subtype_val
+      (hUo.inter hOo).preimage continuous_subtypeVal
   have hCn : C ∈ 𝓝[s] x := by
     rw [hCeq]
     exact inter_mem_nhdsWithin s ((hUo.inter hOo).mem_nhds (hCeq ▸ hxC).2)
@@ -79,7 +79,7 @@ theorem SemialgebraicAt.nhdsWithin_hasBasis_isConnected (hs : SemialgebraicAt s 
     have hn : (Subtype.val : s → (σ → ℝ)) ⁻¹' C ∈ 𝓝 (⟨x, hx⟩ : s) :=
       ho.mem_nhds hxC
     have hCn : C ∈ 𝓝[s] x := by
-      rw [← map_nhds_subtype_val (⟨x, hx⟩ : s)]
+      rw [← map_nhds_subtypeVal (⟨x, hx⟩ : s)]
       exact hn
     exact mem_of_superset hCn hCV
 

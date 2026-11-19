@@ -199,7 +199,6 @@ theorem khovanovComplexι_khovanovComplexMarkX_f (hj : j' = j - 2) {i : ℤ}
     HomologicalComplex.restrictionMap_f]
   simp only [eqToHom_trans_assoc, Category.assoc]
   erw [eqToHom_refl, Category.id_comp, NatTrans.ι_cubeComplexMap_f_assoc]
-  rfl
 
 /-- Projecting the marked `X` chain action onto a state gives the marked `X` action of that
 state. -/

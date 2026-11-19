@@ -367,7 +367,7 @@ def mapLinearIsometryEquiv (S : ZeroShakeSurface K) (e : E ≃ₗᵢ[ℝ] F)
       rw [e.coe_unitSphereIsometryEquiv_apply, ← hK', hz]
     exact S.isSolidTorusNeighborhood.boundaryHomologyMap_basis_one_eq_zero_of_map _
       (ContinuousMap.id Circle) ⟨fun x ↦ ⟨_, hmaps x⟩,
-        (e.unitSphereIsometryEquiv.continuous.comp continuous_subtype_val).subtype_mk _⟩
+        (e.unitSphereIsometryEquiv.continuous.comp continuous_subtypeVal).subtype_mk _⟩
       (fun _ _ hx ↦ congrArg e.unitSphereIsometryEquiv hx) S.boundaryHomologyMap_longitude
   parallels := S.parallels
   norm_lt_one_of_mem_parallels := S.norm_lt_one_of_mem_parallels

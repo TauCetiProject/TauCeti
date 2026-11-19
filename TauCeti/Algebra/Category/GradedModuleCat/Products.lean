@@ -138,6 +138,6 @@ noncomputable instance hasProductDegreewise (X : J → GradedModuleCat.{v} 𝒜)
   HasLimit.mk { cone := degreewiseProductFan X, isLimit := degreewiseProductFanIsLimit X }
 
 instance : HasProducts.{v} (GradedModuleCat.{v} 𝒜) :=
-  fun _ ↦ ⟨fun _ ↦ hasLimit_of_iso Discrete.natIsoFunctor.symm⟩
+  .mk fun _ ↦ ⟨fun _ ↦ hasLimit_of_iso Discrete.natIsoFunctor.symm⟩
 
 end TauCeti.GradedModuleCat

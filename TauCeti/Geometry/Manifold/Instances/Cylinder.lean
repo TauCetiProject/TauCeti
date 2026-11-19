@@ -251,7 +251,7 @@ instance orientable_sphere_prod_real :
   -- The constant orientation of `V`, restricted to the punctured space.
   let o : Manifold.Orientation 𝓘(ℝ, V) (puncturedSpace V) _ :=
     (Manifold.Orientation.model (I := 𝓘(ℝ, V)) (finBasisOfFinrankEq ℝ V hk).orientation hι).pullback
-      contMDiff_subtype_val (fun x => ⟨_, (Manifold.mfderiv_subtype_val x).symm⟩) hι
+      contMDiff_subtypeVal (fun x => ⟨_, (Manifold.mfderiv_subtype_val x).symm⟩) hι
   exact ⟨⟨o.pullback (sphereProdRealDiffeomorph.contMDiff.of_le (by simp))
     (fun x => sphereProdRealDiffeomorph.isInvertible_mfderiv (x := x) (by simp))
     (Fintype.card_fin _)⟩⟩

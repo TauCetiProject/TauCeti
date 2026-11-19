@@ -133,7 +133,7 @@ identity. -/
 private theorem continuous_chartHandleDeformation [T2Space M] [Finite ι]
     (hC : ∀ i, IsCompact (C i)) :
     Continuous fun p : I × X ↦ chartHandleDeformation φ ε p.1 p.2 := by
-  have hval : Continuous fun q : I × X ↦ (q.2 : M) := continuous_subtype_val.comp continuous_snd
+  have hval : Continuous fun q : I × X ↦ (q.2 : M) := continuous_subtypeVal.comp continuous_snd
   set K := ⋃ i, (φ i).symm '' C i
   have hK : IsClosed K := (isCompact_iUnion fun i ↦ (hC i).image_of_continuousOn
     ((φ i).continuousOn_symm.mono (hCφ i))).isClosed

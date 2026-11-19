@@ -190,7 +190,8 @@ theorem exists_norm_exp_smul_le_of_aeval_eq_zero' (T : V →L[ℂ] V) {q : ℂ[X
     rw [← NNReal.coe_lt_coe, coe_nnNorm, ← Complex.exp_eq_exp_ℂ, Complex.norm_exp,
       NNReal.coe_one, Real.exp_lt_one_iff]
     exact hrroots μ hrμ
-  have hρ := spectrum.spectralRadius_lt_of_forall_lt _ hspec
+  have hρ := spectrum.spectralRadius_lt_of_forall_lt _ (r := 1) fun z hz ↦ by
+    simpa [eNorm_eq_nnNorm] using ENNReal.coe_lt_coe.2 (hspec z hz)
   rw [spectrum.spectralRadius_eq_gelfandRadius, ENNReal.coe_one, ENNReal.ofReal_lt_one] at hρ
   obtain ⟨C, hC0, hC⟩ := norm_pow_le_mul_pow_of_gelfandRadius_lt _ hρ
   simp only [one_pow, mul_one] at hC

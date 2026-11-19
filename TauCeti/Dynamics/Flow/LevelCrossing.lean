@@ -157,7 +157,7 @@ theorem continuousOn_levelCrossingTime :
   rw [continuousOn_iff_continuous_domRestrict, continuous_iff_continuousAt]
   intro x
   have hvalue (u : ℝ) : Continuous fun y : ↥(unstableSet φ p ∩ stableSet φ q) ↦ f (φ u y.1) :=
-    hf.comp_continuous (φ.continuous continuous_const continuous_subtype_val)
+    hf.comp_continuous (φ.continuous continuous_const continuous_subtypeVal)
       fun y ↦ isInvariant_unstableSet_inter_stableSet φ p q u y.2
   have ht (y : ↥(unstableSet φ p ∩ stableSet φ q)) :
       f (φ (levelCrossingTime φ f c y) y.1) = c :=
@@ -207,8 +207,8 @@ private def zeroCrossingTimeHomeomorphLevelSlice :
     neg_eq_zero.2 ((levelCrossingTime_eq_zero_iff (hanti _ x.2.1) (hex _ x.2.1)).2 x.2.2)⟩
   left_inv _ := rfl
   right_inv _ := rfl
-  continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-  continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _
+  continuous_toFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
+  continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _
 
 private theorem coe_zeroCrossingTimeHomeomorphLevelSlice
     (x : {x : ↥(unstableSet φ p ∩ stableSet φ q) | connectingTimeCoord φ f p q c x = 0}) :
@@ -276,7 +276,7 @@ private theorem exists_homeomorph_levelSlice :
       ∀ x, e.symm x = Quotient.mk _ ⟨x.1, x.2.1⟩ := by
   let i : C(↥((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c}),
       ↥(unstableSet φ p ∩ stableSet φ q)) :=
-    ⟨fun x ↦ ⟨x.1, x.2.1⟩, continuous_subtype_val.subtype_mk _⟩
+    ⟨fun x ↦ ⟨x.1, x.2.1⟩, continuous_subtypeVal.subtype_mk _⟩
   -- The retraction onto the slice is the second coordinate of the product homeomorphism.
   let s : C(↥(unstableSet φ p ∩ stableSet φ q),
       ↥((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c})) :=

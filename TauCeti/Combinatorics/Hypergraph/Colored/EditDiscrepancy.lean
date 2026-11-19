@@ -153,7 +153,7 @@ theorem editDiscrepancy3_mul_card_pow [Finite V] (H H' : Colored3Graph κ V) :
       apply Nat.eq_zero_of_le_zero
       calc
         _ ≤ Nat.card (Set.powersetCard V 3) := Set.ncard_le_card _
-        _ = 0 := by simp [hn]
+        _ = 0 := by simp [(ENat.card_eq_zero_iff_empty V).2 (Finite.card_eq_zero_iff.1 hn)]
     simp [hn, he]
   · rw [editDiscrepancy3_def, div_mul_cancel₀]
     exact pow_ne_zero 3 (Nat.cast_ne_zero.mpr hn)

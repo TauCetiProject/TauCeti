@@ -84,7 +84,7 @@ private theorem contMDiff_puncturedHomotopy :
       (fun p : (⟨{0}ᶜ, isOpen_compl_singleton⟩ : Opens E) × Icc (0 : ℝ) 1 ↦ (p.2 : ℝ)) :=
     contMDiff_subtypeVal_Icc.comp contMDiff_snd
   exact ((contMDiff_const.sub ht).smul (contMDiff_normalize_compl_zero.comp contMDiff_fst)).add
-    (ht.smul (contMDiff_subtype_val.comp contMDiff_fst))
+    (ht.smul (contMDiff_subtypeVal.comp contMDiff_fst))
 
 variable (E n) in
 /-- **The de Rham cohomology of a punctured space is that of the sphere.** For a real inner
@@ -176,7 +176,7 @@ private theorem contMDiff_closedBallComplHomotopy (hr : 0 ≤ r) :
     contMDiff_normalize_compl_zero.comp
       (contMDiff_inclusion (compl_subset_compl.2 (singleton_subset_iff.2 (mem_closedBall_self hr))))
   exact (((contMDiff_const.sub ht).mul contMDiff_const).smul (hn.comp contMDiff_fst)).add
-    (ht.smul (contMDiff_subtype_val.comp contMDiff_fst))
+    (ht.smul (contMDiff_subtypeVal.comp contMDiff_fst))
 
 variable (E n) in
 /-- **The de Rham cohomology of the complement of a closed ball is that of the sphere.** For a

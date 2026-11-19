@@ -80,7 +80,7 @@ theorem continuous_pluckerMap :
   apply isQuotientMap_frameSpan.continuous_iff.2
   simpa only [Function.comp_def, pluckerMap_frameSpan] using
     Projectivization.continuous_mk
-      (continuous_plucker.comp (continuous_subtype_val :
+      (continuous_plucker.comp (continuous_subtypeVal :
         Continuous fun f : finiteFullRankFrame 𝕜 r N ↦ f.1))
       (fun f ↦ (plucker_ne_zero_iff _).2 f.2)
 

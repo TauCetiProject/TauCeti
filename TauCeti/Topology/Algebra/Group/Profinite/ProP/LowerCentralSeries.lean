@@ -185,7 +185,7 @@ theorem IsTopologicallyFinitelyGenerated.isOpen_pLowerCentralSeries
     have hle : (proPFrattini p U.toSubgroup).map U.toSubgroup.subtype ≤
         pLowerCentralSeries p G (k + 1) := by
       rw [proPFrattini_eq_topologicalClosure hp, pLowerCentralSeries_succ, pLowerCentralStep_def]
-      refine (U.toSubgroup.subtype.map_topologicalClosure_le continuous_subtype_val _).trans
+      refine (U.toSubgroup.subtype.map_topologicalClosure_le continuous_subtypeVal _).trans
         (topologicalClosure_mono ?_)
       rw [Subgroup.map_sup, MonoidHom.map_closure, commutator_def, map_commutator]
       refine sup_le (le_sup_of_le_left ((Subgroup.closure_le _).mpr ?_))

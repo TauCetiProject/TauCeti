@@ -130,7 +130,7 @@ private noncomputable def resolutionHomotopy : (n : ℕ) →
   | n + 1 =>
     { toFun F := ⟨fun x ↦ F (w x) x - resolutionHomotopy n (F (w x)), by
         have hFw : Continuous fun x : G ↦ (F : C(G, C(G, (resolutionX X n).V))) (w x) :=
-          F.continuous.comp (continuous_subtype_val.comp w.continuous)
+          F.continuous.comp (continuous_subtypeVal.comp w.continuous)
         exact (hFw.eval continuous_id).sub ((resolutionHomotopy n).continuous.comp hFw)⟩
       map_add' F F' := by ext x; simp; abel
       map_smul' c F := by ext x; simp [smul_sub]
@@ -139,7 +139,7 @@ private noncomputable def resolutionHomotopy : (n : ℕ) →
         refine ContinuousMap.continuous_of_continuous_uncurry _ ?_
         have hFw : Continuous fun p : (resolutionX X (n + 2)).V × G ↦
             (p.1 : C(G, C(G, (resolutionX X n).V))) (w p.2) :=
-          continuous_fst.eval (continuous_subtype_val.comp (w.continuous.comp continuous_snd))
+          continuous_fst.eval (continuous_subtypeVal.comp (w.continuous.comp continuous_snd))
         exact (hFw.eval continuous_snd).sub ((resolutionHomotopy n).continuous.comp hFw) }
 
 private theorem resolutionHomotopy_zero : resolutionHomotopy X w 0 = 0 :=

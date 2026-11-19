@@ -122,7 +122,7 @@ private theorem exists_valuation_ne_zero_and_lt (vK : Spv K) (s : Finset (Spv C)
       exact hρ w (Finset.mem_filter.mp hw).1 (Finset.mem_filter.mp hw).2
   -- lift the separating elements of `κ(Q)` to `C`
   refine ⟨fun w ↦ Function.surjInv hsurj (e (ρ w)), fun w hw hwQ ↦ ⟨?_, fun w' hw' hw'Q hne ↦ ?_⟩⟩
-  · rw [ne_eq, ← le_zero_iff, ← map_zero w.valuation,
+  · rw [ne_eq, ← nonpos_iff_eq_zero, ← map_zero w.valuation,
       valuation_le_iff_of_comap_eq (hlift w hwQ), Function.surjInv_eq hsurj, map_zero,
       map_zero, (he _ (hmem hw hwQ)).1]
     exact not_le.mpr zero_lt_one

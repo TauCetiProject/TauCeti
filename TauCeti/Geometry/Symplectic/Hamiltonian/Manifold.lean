@@ -985,11 +985,11 @@ differentiability is needed: both sides are computed from the same form and diff
 theorem hamiltonianVectorField_comp_subtype_val (σ : SmoothTwoForm I M)
     {U : TopologicalSpace.Opens M} (f : M → ℝ) (x : U) :
     SmoothTwoForm.hamiltonianVectorField
-        (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ)
+        (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ)
         (f ∘ Subtype.val) x =
       (Manifold.tangentSpaceOpenEquiv (I := I) x).symm (σ.hamiltonianVectorField f x) := by
   have hflat : SmoothTwoForm.flat
-      (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ) x = σ.flat x := by
+      (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ) x = σ.flat x := by
     ext v w
     rw [flat_apply, SmoothForm.eval₂_mpullback, Manifold.mfderiv_subtype_val,
       ContinuousLinearEquiv.coe_coe, Manifold.tangentSpaceOpenEquiv_apply,
@@ -1010,7 +1010,7 @@ their Poisson bracket. -/
 theorem poissonBracket_comp_subtype_val (σ : SmoothTwoForm I M)
     {U : TopologicalSpace.Opens M} (f g : M → ℝ) (x : U) :
     SmoothTwoForm.poissonBracket
-        (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ)
+        (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ)
         (f ∘ Subtype.val) (g ∘ Subtype.val) x =
       σ.poissonBracket f g x := by
   rw [poissonBracket_def, poissonBracket_def, hamiltonianVectorField_comp_subtype_val,

@@ -146,7 +146,7 @@ private lemma setIntegral_ball_zero_trace_fderiv [Nontrivial E] {R : ℝ} (hR : 
   have hΦ0 : (0 : ℝ) ^ (finrank ℝ E - 1) •
       ∫ θ : sphere (0 : E) 1, ⟪V ((0 : ℝ) • (θ : E)), θ⟫ ∂μ.toSphere = 0 := by
     simp only [zero_smul]
-    rw [integral_inner (continuous_subtype_val.integrable_of_hasCompactSupport
+    rw [integral_inner (continuous_subtypeVal.integrable_of_hasCompactSupport
       (HasCompactSupport.of_compactSpace _)), integral_toSphere_coe_eq_zero, inner_zero_right,
       smul_zero]
   rcases hR.eq_or_lt with rfl | hR

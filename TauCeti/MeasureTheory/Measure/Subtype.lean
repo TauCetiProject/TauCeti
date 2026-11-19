@@ -79,7 +79,7 @@ theorem comap_preimage_le {f : α → β} (hf : Measurable f) (μ : Measure β) 
 theorem comap_inclusion_comap_subtype_coe {s t : Set α} (ht : MeasurableSet t) (hst : s ⊆ t)
     (μ : Measure α) :
     (μ.comap ((↑) : t → α)).comap (Set.inclusion hst) = μ.comap ((↑) : s → α) :=
-  (MeasurableEmbedding.subtype_coe ht).comap_comap (Set.inclusion hst) μ
+  (MeasurableEmbedding.subtypeVal ht).comap_comap (Set.inclusion hst) μ
 
 end Measurable
 
@@ -92,8 +92,8 @@ instance instIsLocallyFiniteMeasureComapSubtype (μ : Measure α) [IsLocallyFini
     (p : α → Prop) : IsLocallyFiniteMeasure (μ.comap (Subtype.val : Subtype p → α)) where
   finiteAtNhds x := by
     obtain ⟨v, hv, hμv⟩ := μ.finiteAt_nhds (x : α)
-    exact ⟨Subtype.val ⁻¹' v, continuous_subtype_val.continuousAt hv,
-      (comap_preimage_le measurable_subtype_coe μ v).trans_lt hμv⟩
+    exact ⟨Subtype.val ⁻¹' v, continuous_subtypeVal.continuousAt hv,
+      (comap_preimage_le measurable_subtypeVal μ v).trans_lt hμv⟩
 
 /-- Pulling a measure that is finite on compact sets back to any subtype yields a measure that is
 finite on compact sets. -/
@@ -101,8 +101,8 @@ instance instIsFiniteMeasureOnCompactsComapSubtype (μ : Measure α) [IsFiniteMe
     (p : α → Prop) : IsFiniteMeasureOnCompacts (μ.comap (Subtype.val : Subtype p → α)) where
   lt_top_of_isCompact K hK :=
     ((measure_mono (subset_preimage_image Subtype.val K)).trans
-      (comap_preimage_le measurable_subtype_coe μ _)).trans_lt
-      (hK.image continuous_subtype_val).measure_lt_top
+      (comap_preimage_le measurable_subtypeVal μ _)).trans_lt
+      (hK.image continuous_subtypeVal).measure_lt_top
 
 /-- A measure that is finite on compact sets pulls back to a σ-finite measure on every σ-compact
 set, with no separation or measurability assumptions on the ambient space. -/
@@ -115,10 +115,10 @@ theorem _root_.IsSigmaCompact.sigmaFinite_comap [IsFiniteMeasureOnCompacts μ] {
 `InnerRegularCompactLTTop`. -/
 theorem InnerRegularCompactLTTop.comap_subtype_coe [μ.InnerRegularCompactLTTop] {s : Set α}
     (hs : MeasurableSet s) : (μ.comap ((↑) : s → α)).InnerRegularCompactLTTop := by
-  refine ⟨InnerRegularCompactLTTop.innerRegular.comap (MeasurableEmbedding.subtype_coe hs)
-    (fun U hU ↦ ⟨(MeasurableEmbedding.subtype_coe hs).measurableSet_image' hU.1, ?_⟩)
+  refine ⟨InnerRegularCompactLTTop.innerRegular.comap (MeasurableEmbedding.subtypeVal hs)
+    (fun U hU ↦ ⟨(MeasurableEmbedding.subtypeVal hs).measurableSet_image' hU.1, ?_⟩)
     (fun K hKrange hK ↦ IsInducing.subtypeVal.isCompact_preimage' hK hKrange)⟩
-  rw [← comap_subtype_coe_apply hs]
+  rw [← comap_subtypeVal_apply hs]
   exact hU.2
 
 end Topological

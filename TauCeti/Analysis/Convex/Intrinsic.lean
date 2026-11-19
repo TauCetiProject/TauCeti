@@ -151,7 +151,7 @@ theorem intrinsicInterior_inter_subset_of_affineSpan_eq {U : Set P} (hU : IsOpen
   rw [intrinsicInterior, h]
   have hsub : interior ((↑) ⁻¹' t) ∩ (↑) ⁻¹' U ⊆ ((↑) ⁻¹' s : Set (affineSpan 𝕜 t)) :=
     fun z hz ↦ htU ⟨(interior_subset hz.1 : z ∈ (↑) ⁻¹' t), hz.2⟩
-  exact ⟨y, interior_maximal hsub (isOpen_interior.inter (hU.preimage continuous_subtype_val))
+  exact ⟨y, interior_maximal hsub (isOpen_interior.inter (hU.preimage continuous_subtypeVal))
     ⟨hy, hyU⟩, rfl⟩
 
 /-- The intrinsic frontier of a closed set consists of its points outside its intrinsic
@@ -159,7 +159,7 @@ interior. -/
 theorem _root_.IsClosed.sdiff_intrinsicInterior (hs : IsClosed s) :
     s \ intrinsicInterior 𝕜 s = intrinsicFrontier 𝕜 s := by
   rw [← intrinsicClosure_sdiff_intrinsicInterior,
-    (hs.preimage continuous_subtype_val).intrinsicClosure]
+    (hs.preimage continuous_subtypeVal).intrinsicClosure]
 
 /-- Membership in the intrinsic interior, read in the ambient space: `x` is an intrinsic interior
 point of `s` when it lies in the affine span of `s` and every point of that span close to `x` lies
@@ -204,7 +204,7 @@ theorem _root_.IsClosed.isNowhereDense_preimage_intrinsicFrontier {s : Set P} (h
   subst hA
   rw [intrinsicFrontier, preimage_image_eq _ Subtype.val_injective,
     isClosed_frontier.isNowhereDense_iff]
-  exact interior_frontier (hs.preimage continuous_subtype_val)
+  exact interior_frontier (hs.preimage continuous_subtypeVal)
 
 /-- Off the relative boundary of a set, membership in the set is locally constant within
 its affine span. -/
@@ -616,7 +616,7 @@ theorem inter_affineSpan_subset {S U : Set V} (hU : Convex ℝ U) (hUS : (U ∩ 
     ⟨AffineMap.lineMap w z (r : ℝ),
       AffineMap.lineMap_mem _ (subset_affineSpan ℝ S hwP) hzA⟩
   have hg : Continuous g :=
-    (AffineMap.lineMap_continuous.comp continuous_subtype_val).subtype_mk _
+    (AffineMap.lineMap_continuous.comp continuous_subtypeVal).subtype_mk _
   let B : Set (affineSpan ℝ S) := (↑) ⁻¹' S
   have havoid : Set.range g ⊆ (frontier B)ᶜ := by
     rintro _ ⟨r, rfl⟩ hr

@@ -48,7 +48,7 @@ variable {n : Type*} [Fintype n]
 /-- The pointwise first-order drift form `(u, ξ) ↦ ⟪b, ξ⟫ u`. -/
 noncomputable def driftForm (b : EuclideanSpace ℝ n) :
     ℝ →L[ℝ] EuclideanSpace ℝ n →L[ℝ] ℝ :=
-  ContinuousLinearMap.smulRightL ℝ (EuclideanSpace ℝ n) ℝ (innerSL ℝ b)
+  ContinuousLinearMap.smulRightL ℝ ℝ ℝ (EuclideanSpace ℝ n) ℝ (innerSL ℝ b)
 
 /-- The pointwise zeroth-order mass form `(u, v) ↦ c u v`. -/
 noncomputable def massForm (c : ℝ) : ℝ →L[ℝ] ℝ →L[ℝ] ℝ :=
@@ -74,7 +74,7 @@ lemma massForm_apply (c u v : ℝ) :
 /-- The drift coefficient-to-form map as a continuous linear map. -/
 noncomputable def driftFormLinear :
     EuclideanSpace ℝ n →L[ℝ] ℝ →L[ℝ] EuclideanSpace ℝ n →L[ℝ] ℝ :=
-  (ContinuousLinearMap.smulRightL ℝ (EuclideanSpace ℝ n) ℝ).comp (innerSL ℝ)
+  (ContinuousLinearMap.smulRightL ℝ ℝ ℝ (EuclideanSpace ℝ n) ℝ).comp (innerSL ℝ)
 
 /-- Applying `driftFormLinear` recovers `driftForm`. -/
 @[simp]

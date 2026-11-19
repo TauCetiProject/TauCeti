@@ -189,8 +189,8 @@ private theorem isIso_singularHomologyMap_excision_collar {a' : ℝ} (hf : Conti
       exact h ▸ y.2
     exact ⟨⟨x.1, x.2.1, hy'⟩, rfl⟩
   · cases i
-    · exact isOpen_lt continuous_const (hf.comp continuous_subtype_val)
-    · exact (isOpen_lt (hf.comp continuous_subtype_val) continuous_const).union isOpen_const
+    · exact isOpen_lt continuous_const (hf.comp continuous_subtypeVal)
+    · exact (isOpen_lt (hf.comp continuous_subtypeVal) continuous_const).union isOpen_const
   · refine eq_univ_of_forall fun x ↦ mem_iUnion.2 ?_
     by_cases hx : f x.1 < a'
     · exact ⟨true, Or.inl hx⟩

@@ -459,7 +459,7 @@ theorem slash_mapGL_eq_smul_of_mem_functionCharSpace {k : ℤ} {χ : (ZMod N)ˣ 
 lemma slash_mapGL_eq_self_of_mem_functionCharSpace_of_mem_Gamma1 {k : ℤ}
     {χ : (ZMod N)ˣ →* ℂˣ} {f : ℍ → ℂ} (hf : f ∈ functionCharSpace k χ) {γ : SL(2, ℤ)}
     (hγ : γ ∈ Gamma1 N) : f ∣[k] mapGL ℝ γ = f := by
-  have h := slash_mapGL_eq_smul_of_mem_functionCharSpace hf ⟨γ, Gamma1_in_Gamma0 N hγ⟩
+  have h := slash_mapGL_eq_smul_of_mem_functionCharSpace hf ⟨γ, Gamma1_le_Gamma0 N hγ⟩
   rwa [(mem_Gamma1_iff_toHomUnits_eq_one _).mp hγ, map_one, Units.val_one, one_smul] at h
 
 /-- A `χ`-invariant function for `Γ₀(N)` has the same slash by two matrices of `SL(2, ℤ)` whose

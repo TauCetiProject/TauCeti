@@ -144,7 +144,7 @@ theorem roots_charpoly_standardRepresentation_wordProd_permCoxeterSystem
   rw [roots_charpoly_standardRepresentation_wordProd_permCoxeterSystem_of_isPrimitiveRoot
     (Complex.isPrimitiveRoot_exp n hn) hω]
   refine Multiset.map_congr rfl fun e _ ↦ ?_
-  rw [← Complex.exp_nat_mul]
+  rw [← Complex.exp_natCast_mul]
   congr 1
   push_cast
   ring

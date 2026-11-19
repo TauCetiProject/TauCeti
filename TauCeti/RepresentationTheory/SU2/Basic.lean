@@ -168,7 +168,7 @@ theorem torusMatrix_mem (z : Circle) :
     torusMatrix_one]
 
 theorem continuous_torusMatrix : Continuous torusMatrix := by
-  have hcoe : Continuous fun z : Circle => (z : ℂ) := continuous_subtype_val
+  have hcoe : Continuous fun z : Circle => (z : ℂ) := continuous_subtypeVal
   have hinv : Continuous fun z : Circle => ((z : ℂ))⁻¹ := hcoe.inv₀ fun z => z.coe_ne_zero
   refine Continuous.matrix_diagonal (continuous_pi fun i => ?_)
   fin_cases i

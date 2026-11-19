@@ -48,7 +48,7 @@ theorem sum_divisors_cpow_neg (n : ℕ) (w : ℂ) :
   refine Finset.sum_congr rfl fun d hd ↦ ?_
   have hd0 : (d : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr ((Nat.pos_of_mem_divisors hd).ne')
   have hp : (d : ℂ) ^ w ≠ 0 := Complex.cpow_ne_zero_iff.mpr (Or.inl hd0)
-  have H := Complex.natCast_mul_natCast_cpow d (n / d) (-w)
+  have H := Complex.natCast_mul_cpow d ((n / d : ℕ) : ℂ) (-w)
   rw [← Nat.cast_mul, Nat.mul_div_cancel' (Nat.dvd_of_mem_divisors hd)] at H
   rw [H, Complex.cpow_neg (d : ℂ) w]
   field_simp

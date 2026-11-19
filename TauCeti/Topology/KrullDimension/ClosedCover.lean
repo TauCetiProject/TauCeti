@@ -49,7 +49,7 @@ theorem topologicalKrullDim_eq_iSup_irreducibleComponents
   -- Restrict the whole chain to a component containing its largest member.
   let q : LTSeries (IrreducibleCloseds C) :=
     ⟨p.length, fun j ↦ ⟨Subtype.val ⁻¹' (p j : Set X), hirr j,
-      (p j).isClosed.preimage continuous_subtype_val⟩, fun j ↦ by
+      (p j).isClosed.preimage continuous_subtypeVal⟩, fun j ↦ by
         refine lt_of_le_of_ne (Set.preimage_mono (p.step j).le) ?_
         intro h
         have hp : p j.castSucc < p j.succ := p.step j
@@ -97,7 +97,7 @@ theorem topologicalKrullDim_compl_lt {X : Type*} [TopologicalSpace X]
       ⨆ C : irreducibleComponents X, topologicalKrullDim ↥(C.1 \ U) := by
     rw [TauCeti.topologicalKrullDim_eq_iSup_of_isClosed
       (fun C : irreducibleComponents X ↦ (Subtype.val : ↥(Uᶜ) → X) ⁻¹' C.1)
-      (fun C ↦ (isClosed_of_mem_irreducibleComponents _ C.2).preimage continuous_subtype_val)
+      (fun C ↦ (isClosed_of_mem_irreducibleComponents _ C.2).preimage continuous_subtypeVal)
       (fun y ↦ ⟨⟨irreducibleComponent y.1,
         irreducibleComponent_mem_irreducibleComponents y.1⟩, mem_irreducibleComponent⟩)]
     apply iSup_congr

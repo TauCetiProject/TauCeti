@@ -41,7 +41,7 @@ def restrictOpen (J : ContMDiffAlmostComplexStructure I n M) (U : Opens M) :
       (Manifold.contMDiff_restrictOpenTangentSpaceEnd
         (fun q : M × M ↦ J.toEndomorphism q.2) U
         (J.toEndomorphism.contMDiff.comp (contMDiff_snd (I := I) (J := I)))).comp
-          ((contMDiff_subtype_val (I := I) (U := U)).prodMk contMDiff_id)⟩
+          ((contMDiff_subtypeVal (I := I) (U := U)).prodMk contMDiff_id)⟩
   square_neg x := by
     ext v
     simp only [ContMDiffSection.coeFn_mk, ContinuousLinearMap.comp_apply, neg_apply,
@@ -89,7 +89,7 @@ theorem restrictTargetOpen_toEndomorphism_apply
 fibres. Domain composition and target tangent transport preserve the same finite order. -/
 def restrictOpen (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
     (U : Opens P) (V : Opens M) : ContMDiffAlmostComplexStructureFamily I V IP U n :=
-  (J.restrictTargetOpen V).comp ⟨Subtype.val, contMDiff_subtype_val⟩
+  (J.restrictTargetOpen V).comp ⟨Subtype.val, contMDiff_subtypeVal⟩
 
 @[simp]
 theorem restrictOpen_toEndomorphism_apply

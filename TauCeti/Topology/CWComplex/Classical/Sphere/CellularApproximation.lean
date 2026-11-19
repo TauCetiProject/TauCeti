@@ -63,7 +63,7 @@ theorem exists_homotopic_mapsTo_skeletonLT_diskBoundary {m : ℕ}
   let S := sphere (0 : EuclideanSpace ℝ ι) 1
   let E := diskBoundaryHomeomorph.{u} (k + 1)
   let down : C(TopCat.diskBoundary.{u} (k + 1), S) := E
-  let val : C((univ : Set W), W) := ⟨Subtype.val, continuous_subtype_val⟩
+  let val : C((univ : Set W), W) := ⟨Subtype.val, continuous_subtypeVal⟩
   let φ : C(S, (univ : Set W)) := ⟨fun y ↦ ⟨f (E.symm y), mem_univ _⟩, by fun_prop⟩
   have hf : f = val.comp (φ.comp down) := by
     ext x

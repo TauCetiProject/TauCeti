@@ -140,7 +140,7 @@ theorem exists_dual_ne_zero_of_isClosed {G : AddSubgroup E} (hG : IsClosed (G : 
   have hLmem : ∀ w : W, w ∈ L ↔ (w : E) ∈ G := fun _ ↦ by
     simp [L, ← SetLike.mem_coe, AddSubgroup.coe_toIntSubmodule]
   have : DiscreteTopology L := by
-    have hL : IsClosed (L : Set W) := hG.preimage continuous_subtype_val
+    have hL : IsClosed (L : Set W) := hG.preimage continuous_subtypeVal
     -- `L` and `L.toAddSubgroup` have the same underlying subtype.
     refine discreteTopology_of_isClosed_of_forall_smul_mem (G := L.toAddSubgroup) hL fun w hw ↦ ?_
     have hwV : (w : E) ∈ V := fun t ↦ (hLmem _).1 (hw t)

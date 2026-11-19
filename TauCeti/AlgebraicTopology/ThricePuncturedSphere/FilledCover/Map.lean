@@ -120,7 +120,7 @@ theorem fillMap_disc (i : FilledPoint p) (w : ↥(ball (0 : ℂ) 1)) :
   · have h : Continuous (fun w : ↥(ball (0 : ℂ) 1) =>
         (FilledPoint.sigmaEquiv p i).1.sphereCoordInv ((w : ℂ) ^ degree p i)) :=
       ((FilledPoint.sigmaEquiv p i).1.continuous_sphereCoordInv).comp
-      (continuous_subtype_val.pow (degree p i))
+      (continuous_subtypeVal.pow (degree p i))
     exact h.congr (fun w => (fillMap_disc hp hfin i w).symm)
 
 /-- Compactness of the filled finite cover makes the extended projection proper. -/

@@ -355,7 +355,7 @@ theorem coe_mapNonnegSubring (a : nonnegSubring R N) :
 /-- The pushforward on the nonnegative subrings is continuous for the period topologies. -/
 @[fun_prop]
 theorem continuous_mapNonnegSubring : Continuous (mapNonnegSubring ρ φ hφ) :=
-  continuous_induced_rng.2 <| (continuous_mapRingHom ρ φ hφ).comp continuous_subtype_val
+  continuous_induced_rng.2 <| (continuous_mapRingHom ρ φ hφ).comp continuous_subtypeVal
 
 /-- The pushforward on the nonnegative subrings along injective coefficient and exponent maps is
 injective. -/

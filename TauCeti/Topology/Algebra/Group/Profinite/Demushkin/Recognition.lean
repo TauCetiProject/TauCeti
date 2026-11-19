@@ -348,7 +348,7 @@ theorem isDemushkin_iff_finrank_cohomFp_two_openSubgroup :
          right_inv := fun _ ↦ rfl
          map_mul' := fun _ _ ↦ rfl
          continuous_toFun := continuous_id.subtype_mk fun x ↦ Subgroup.mem_top x
-         continuous_invFun := continuous_subtype_val } : G ≃ₜ* (⊤ : Subgroup G))).trans
+         continuous_invFun := continuous_subtypeVal } : G ≃ₜ* (⊤ : Subgroup G))).trans
       (hU ⊤ Subgroup.normal_top)
   exact CohomologicalDimensionLE.isDemushkin_of_finrank_cohomFp_two_openSubgroup_index_eq
     ((cohomologicalDimensionAt_le_iff p G 2).1 hcd.le) hG hfg h2 fun U hUn _ ↦ hU U hUn

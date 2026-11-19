@@ -165,7 +165,7 @@ theorem hasSum_wrappedCauchyPDFReal_coe {γ : ℝ≥0} (hγ : 0 < γ) (a x : ℝ
   -- The `n + 1`-st power of the pole-to-boundary ratio in polar form.
   have hpow : ((Real.exp (-(γ : ℝ)) : ℂ) * Complex.exp (a * I) / Complex.exp (x * I)) ^ (n + 1) =
       (Real.exp (-(γ : ℝ)) ^ (n + 1) : ℝ) * Complex.exp (((n + 1 : ℝ) * (a - x) : ℝ) * I) := by
-    rw [mul_div_assoc, ← Complex.exp_sub, mul_pow, ← Complex.exp_nat_mul]
+    rw [mul_div_assoc, ← Complex.exp_sub, mul_pow, ← Complex.exp_natCast_mul]
     push_cast
     ring_nf
   rw [hpow, Complex.re_ofReal_mul, Complex.exp_ofReal_mul_I_re, ← neg_sub x a, mul_neg,
@@ -322,7 +322,7 @@ theorem wrappedCauchyMeasure_eq_withDensity (m : AddCircle (2 * π)) {γ : ℝ�
       hcont.measurable.aemeasurable (ae_of_all _ hnonneg)]
     rw [integral_wrappedCauchyPDFReal_smul_fourier m hγ n]
     congr 1
-    rw [← Complex.ofReal_pow, ← Real.exp_nat_mul]
+    rw [← Complex.ofReal_pow, ← Real.exp_natCast_mul]
     congr 2
     rw [mul_comm, Nat.cast_natAbs, Int.cast_abs]
     ring

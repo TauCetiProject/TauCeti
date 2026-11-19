@@ -184,7 +184,7 @@ theorem isContinuous_extendToLocalization [IsTopologicalRing A]
       ((Valuation.mem_supp_iff _ _).mpr h)
   rw [Valuation.extendToLocalization_mk', ← div_eq_mul_inv] at hb ⊢
   have hnhds : {c : A | v c < v a / v (y : A)} ∈ nhds (0 : A) :=
-    (hv.isOpen_lt_div a hy).mem_nhds (by simpa using zero_lt_iff.mpr hb)
+    (hv.isOpen_lt_div a hy).mem_nhds (by simpa using pos_iff_ne_zero.mpr hb)
   obtain ⟨n, -, hn⟩ := P.hasBasis_nhds_zero.mem_iff.mp hnhds
   -- The sublevel set is an additive subgroup containing an open one, hence open.
   have hopen := AddSubgroup.isOpen_mono (H₁ := locIdealImage P T s S n)

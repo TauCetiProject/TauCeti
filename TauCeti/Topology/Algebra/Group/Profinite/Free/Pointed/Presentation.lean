@@ -161,7 +161,7 @@ variable (hG : IsProP p G) (s : Set G)
 the free pro-`p` group on the pointed space `(insert 1 s, 1)` to `G` that extends the inclusion
 of `insert 1 s` into `G`. -/
 noncomputable def presentation : freeProPInsertOne p s →ₜ* G :=
-  freeProCPointed.lift (isProC_finiteGroupClassP_iff.mpr hG) Subtype.val continuous_subtype_val rfl
+  freeProCPointed.lift (isProC_finiteGroupClassP_iff.mpr hG) Subtype.val continuous_subtypeVal rfl
 
 /-- The presentation sends the generator attached to a point of `insert 1 s` to that point. -/
 @[simp]

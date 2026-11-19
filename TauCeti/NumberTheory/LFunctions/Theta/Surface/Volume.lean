@@ -161,7 +161,7 @@ private theorem expMapBasis_preimage_shell (A : Set (realSpace K)) :
   ext z
   simp only [mem_preimage, mem_inter_iff, surfacePart_expMapBasis, archNorm_expMapBasis, mem_Icc,
     normSlab, coordCylinder, mem_ofPred_eq]
-  rw [← Real.exp_nat_mul, Real.one_le_exp_iff, Real.exp_le_exp, mul_comm, ← le_div_iff₀ hn,
+  rw [← Real.exp_natCast_mul, Real.one_le_exp_iff, Real.exp_le_exp, mul_comm, ← le_div_iff₀ hn,
     mul_nonneg_iff_of_pos_right hn, one_div, and_comm]
 
 /-- The parameters with surface part in a subset of `S` and norm in `[1, e]` are positive, so they
@@ -182,7 +182,7 @@ private theorem surfaceHaar_preimage_eq_volume {A : Set (realSpace K)}
     surfaceHaar K (Subtype.val ⁻¹' A) =
       2⁻¹ ^ nrComplexPlaces K * ENNReal.ofReal (regulator K) * Module.finrank ℚ K *
         volume (normSlab K ∩ coordCylinder A) := by
-  rw [surfaceHaar_apply (measurable_subtype_coe hAm), Subtype.image_preimage_coe,
+  rw [surfaceHaar_apply (measurable_subtypeVal hAm), Subtype.image_preimage_coe,
     inter_eq_right.mpr hA, ← image_preimage_eq_of_subset (shell_subset_range hA),
     expMapBasis_preimage_shell, archHaar_image_expMapBasis
       (measurableSet_normSlab.inter (measurableSet_coordCylinder hAm))]

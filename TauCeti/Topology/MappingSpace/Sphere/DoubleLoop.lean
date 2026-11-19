@@ -73,7 +73,7 @@ theorem loopSpace2Homeomorph_def :
 that corresponds to it under `loopSpace2Homeomorph`. -/
 def loopSpace2ToMapCircle :
     C((X.iteratedLoopSpace 2).carrier, C(Sphere1, Path X.basepoint X.basepoint)) :=
-  (⟨Subtype.val, continuous_subtype_val⟩ :
+  (⟨Subtype.val, continuous_subtypeVal⟩ :
     C(BasedMap Sphere1 X.loopSpace.carrier Sphere1.east X.loopSpace.basepoint,
       C(Sphere1, Path X.basepoint X.basepoint))).comp (loopSpace2Homeomorph X : C(_, _))
 

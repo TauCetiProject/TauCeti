@@ -105,13 +105,13 @@ private theorem exists_cutoff_compl_closedBall (R : ℝ) :
         ∀ᶠ y in 𝓝 x, ρ y = 0) ∧
       HasCompactSupport fun x ↦ 1 - ρ x := by
   let b : ContDiffBump (0 : E) := ⟨max R 0 + 1, max R 0 + 2, by positivity, by linarith⟩
-  refine ⟨fun x ↦ 1 - b x, contMDiff_const.sub (b.contDiff.contMDiff.comp contMDiff_subtype_val),
+  refine ⟨fun x ↦ 1 - b x, contMDiff_const.sub (b.contDiff.contMDiff.comp contMDiff_subtypeVal),
     fun x hx ↦ ?_, ?_⟩
   · have hxb : (x : E) ∈ ball (0 : E) (max R 0 + 1) := by
       simp only [Opens.mem_mk, mem_compl_iff, not_not, mem_closedBall_zero_iff] at hx
       rw [mem_ball_zero_iff]
       linarith [le_max_left R 0]
-    filter_upwards [continuous_subtype_val.continuousAt.preimage_mem_nhds
+    filter_upwards [continuous_subtypeVal.continuousAt.preimage_mem_nhds
       (isOpen_ball.mem_nhds hxb)] with y hy
     simp [b.one_of_mem_closedBall (ball_subset_closedBall hy)]
   · simpa [Function.comp_def] using b.hasCompactSupport.comp_homeomorph
@@ -166,7 +166,7 @@ private theorem mem_exactCompactlySupportedForms_top {k : ℕ} (hk : 0 < k)
   obtain ⟨η, rfl⟩ := hφe
   -- `dη` is supported in a closed ball of radius `R ≥ 0`; let `U` be its complement.
   obtain ⟨r, hr⟩ := (((mem_compactlySupportedForms _).mp hφc).image
-    continuous_subtype_val).isBounded.subset_closedBall 0
+    continuous_subtypeVal).isBounded.subset_closedBall 0
   set R := max r 0
   have hR : 0 ≤ R := le_max_right r 0
   let U : Opens E := ⟨(closedBall (0 : E) R)ᶜ, isClosed_closedBall.isOpen_compl⟩
@@ -226,9 +226,9 @@ private theorem exists_smul_add_smul_mem_exactCompactlySupportedForms_top {n : �
   obtain ⟨θ, rfl⟩ := hψe
   -- Both supports lie in a closed ball of radius `R ≥ 0`; let `U` be its complement.
   obtain ⟨r₁, hr₁⟩ := (((mem_compactlySupportedForms _).mp hφc).image
-    continuous_subtype_val).isBounded.subset_closedBall 0
+    continuous_subtypeVal).isBounded.subset_closedBall 0
   obtain ⟨r₂, hr₂⟩ := (((mem_compactlySupportedForms _).mp hψc).image
-    continuous_subtype_val).isBounded.subset_closedBall 0
+    continuous_subtypeVal).isBounded.subset_closedBall 0
   set R := max (max r₁ r₂) 0
   have hR : 0 ≤ R := le_max_right _ 0
   let U : Opens E := ⟨(closedBall (0 : E) R)ᶜ, isClosed_closedBall.isOpen_compl⟩

@@ -193,7 +193,7 @@ private theorem coe_toDual_apply (hπ : π.IsUnitary) (ω : characterSpace ℂ (
 private theorem continuous_toDual (hπ : π.IsUnitary) : Continuous (toDual hπ) := by
   refine ContinuousMonoidHom.continuous_of_continuous_uncurry _
     (continuous_prod_of_discrete_right.2 fun g => ?_)
-  exact ((eval_continuous (op hπ g)).comp continuous_subtype_val).subtype_mk
+  exact ((eval_continuous (op hπ g)).comp continuous_subtypeVal).subtype_mk
     (apply_op_mem_sphere hπ · g)
 
 end SpectralPVM

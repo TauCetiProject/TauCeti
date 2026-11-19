@@ -150,14 +150,14 @@ private theorem contMDiff_homeomorphProdOpens_symm (h : IsProductCollarChart k �
   have hboundaryVal : ContMDiff ((𝓡 n).prod (𝓡∂ 1)) (𝓡∂ (n + 1)) k
       (fun p : h.sourceBoundaryOpens × EuclideanHalfSpace.normalIioOpens ε ↦ (p.1.1 : M)) :=
     (isSmoothEmbedding_subtypeVal_boundary (n := n) (k := k) M).contMDiff.comp
-      (contMDiff_subtype_val.comp contMDiff_fst)
+      (contMDiff_subtypeVal.comp contMDiff_fst)
   have hφboundary : ContMDiff ((𝓡 n).prod (𝓡∂ 1)) ((𝓡 n).prod (𝓡∂ 1)) k
       (fun p : h.sourceBoundaryOpens × EuclideanHalfSpace.normalIioOpens ε ↦ φ p.1.1) := fun p ↦
     (h.contMDiffAt_chart (h.mem_sourceBoundaryOpens.1 p.1.2)).comp p hboundaryVal.contMDiffAt
   have hpair : ContMDiff ((𝓡 n).prod (𝓡∂ 1)) ((𝓡 n).prod (𝓡∂ 1)) k
       (fun p : h.sourceBoundaryOpens × EuclideanHalfSpace.normalIioOpens ε ↦
         ((φ p.1.1).1, (p.2 : EuclideanHalfSpace 1))) :=
-    hφboundary.fst.prodMk (contMDiff_subtype_val.comp contMDiff_snd)
+    hφboundary.fst.prodMk (contMDiff_subtypeVal.comp contMDiff_snd)
   have hassembleVal : ContMDiff ((𝓡 n).prod (𝓡∂ 1)) (𝓡∂ (n + 1)) k
       (fun p : h.sourceBoundaryOpens × EuclideanHalfSpace.normalIioOpens ε ↦
         (h.homeomorphProdOpens.symm p : M)) := by

@@ -91,7 +91,7 @@ theorem algebraicIndependent_exp {ι : Type*} (u : ι → integralClosure ℚ �
     (fun m ↦ p.coeff m) (by
       rw [MvPolynomial.aeval_def, MvPolynomial.eval₂_eq] at hp
       refine Eq.trans (Finset.sum_congr rfl fun m _ ↦ ?_) hp
-      simp [Finsupp.linearCombination_apply, Finsupp.sum, exp_sum, exp_nat_mul,
+      simp [Finsupp.linearCombination_apply, Finsupp.sum, exp_sum, exp_natCast_mul,
         Subalgebra.smul_def])
   by_contra hp0
   obtain ⟨m, hm⟩ := MvPolynomial.ne_zero_iff.1 hp0

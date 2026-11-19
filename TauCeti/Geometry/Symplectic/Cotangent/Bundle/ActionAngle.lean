@@ -192,7 +192,7 @@ private def actionAngleLiouvilleCLM :
     ((ι → ℝ) × (ι → ℝ)) →L[ℝ] (((ι → ℝ) × (ι → ℝ)) [⋀^Fin 1]→L[ℝ] ℝ) :=
   (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := (ι → ℝ) × (ι → ℝ)) (F := ℝ)
     (0 : Fin 1)).toContinuousLinearEquiv.toContinuousLinearMap.comp
-    (∑ j, ((ContinuousLinearMap.smulRightL ℝ ((ι → ℝ) × (ι → ℝ)) ℝ
+    (∑ j, ((StrongDual.smulRightL ℝ ((ι → ℝ) × (ι → ℝ)) ℝ
       ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) j).comp
         (ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ)))).comp
       ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) j).comp

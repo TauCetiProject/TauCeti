@@ -110,7 +110,7 @@ theorem freeLoopHomotopyGroupHom_basedMapCircleHomotopyGroupMulEquiv (m : ℕ)
     (a : π_ (m + 1) (BasedMap Circle Q 1 x)
       ⟨ContinuousMap.const Circle x, ContinuousMap.const_apply x 1⟩) :
     freeLoopHomotopyGroupHom x m (basedMapCircleHomotopyGroupMulEquiv x m a) =
-      HomotopyGroup.map ⟨Subtype.val, continuous_subtype_val⟩ rfl a :=
+      HomotopyGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ rfl a :=
   basedMapHomotopyGroupHom_apply_mulEquiv _ a
 
 /-- The injection `π_{m+2}(Q, x) → π_{m+1}(𝓛Q, x)` is injective. -/
@@ -144,7 +144,7 @@ def contractibleLoopsHomotopyGroupMulEquiv [DecidableEq N] [Nonempty N] :
 theorem contractibleLoopsHomotopyGroupMulEquiv_apply [DecidableEq N] [Nonempty N]
     (a : HomotopyGroup N (contractibleLoops Q) (constContractibleLoop x)) :
     contractibleLoopsHomotopyGroupMulEquiv x a =
-      HomotopyGroup.map ⟨Subtype.val, continuous_subtype_val⟩ (coe_constContractibleLoop x) a :=
+      HomotopyGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ (coe_constContractibleLoop x) a :=
   HomotopyGroup.subtypeValMulEquivOfPathComponentSubset_apply _ _ a
 
 /-- The injection `π_{m+2}(Q, x) → π_{m+1}(𝓛₀Q, x)` at the constant loop: the injection into the

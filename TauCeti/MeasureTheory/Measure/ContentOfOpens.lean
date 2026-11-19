@@ -69,7 +69,7 @@ of every compact subset of `Ω`. -/
 theorem opensInf_ne_top (hmono : Monotone m)
     (hfin : ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens X, K ⊆ (U : Set X) ∧ m U ≠ ∞)
     {K : Set Ω} (hK : IsCompact K) : opensInf m Ω K ≠ ∞ := by
-  obtain ⟨U, hKU, hU⟩ := hfin _ (hK.image continuous_subtype_val) (Subtype.coe_image_subset _ _)
+  obtain ⟨U, hKU, hU⟩ := hfin _ (hK.image continuous_subtypeVal) (Subtype.coe_image_subset _ _)
   refine ne_top_of_le_ne_top hU ((opensInf_le (V := U ⊓ Ω) ?_ inf_le_right).trans
     (hmono inf_le_left))
   rw [Opens.coe_inf]
@@ -90,7 +90,7 @@ theorem opensInf_add_le_union [T2Space X] (hmono : Monotone m)
     opensInf m Ω K₁ + opensInf m Ω K₂ ≤ opensInf m Ω (K₁ ∪ K₂) := by
   -- Separate the two compact sets by disjoint open sets `W₁` and `W₂`.
   obtain ⟨W₁, W₂, hW₁, hW₂, hKW₁, hKW₂, hW⟩ := SeparatedNhds.of_isCompact_isCompact
-    (hK₁.image continuous_subtype_val) (hK₂.image continuous_subtype_val)
+    (hK₁.image continuous_subtypeVal) (hK₂.image continuous_subtypeVal)
     ((disjoint_image_iff Subtype.val_injective).2 h)
   refine le_opensInf fun V hKV hVΩ => ?_
   have hKV' : (↑) '' K₁ ⊆ (V : Set X) ∧ (↑) '' K₂ ⊆ (V : Set X) := by
@@ -143,7 +143,7 @@ the compact subsets of `Ω ∩ U`. -/
 theorem contentOfOpens_measure_preimage_coe [MeasurableSpace X] [BorelSpace X] {U : Opens X}
     (hinner : m U ≤ ⨆ (K : Compacts Ω) (_ : (K : Set Ω) ⊆ (↑) ⁻¹' (U : Set X)), opensInf m Ω K) :
     (contentOfOpens hmono hsub hadd hfin).measure ((↑) ⁻¹' (U : Set X)) = m U := by
-  have hU : IsOpen ((↑) ⁻¹' (U : Set X) : Set Ω) := U.isOpen.preimage continuous_subtype_val
+  have hU : IsOpen ((↑) ⁻¹' (U : Set X) : Set Ω) := U.isOpen.preimage continuous_subtypeVal
   rw [Content.measure_apply _ hU.measurableSet, Content.outerMeasure_of_isOpen _ _ hU]
   simp only [Content.innerContent, contentOfOpens_apply, Opens.coe_mk]
   refine le_antisymm (iSup₂_le fun K hK => ?_) hinner

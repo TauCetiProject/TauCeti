@@ -320,7 +320,7 @@ theorem continuousAt_trivOperator {y₀ : B}
     ContinuousAt (trivOperator 𝕜 F X y₀) y₀ := by
   refine tendsto_finsetSum _ fun i _ ↦ ?_
   have h := ((FiberBundle.continuousAt_totalSpace F _).mp (hX i)).2
-  exact ((ContinuousLinearMap.smulRightL 𝕜 (ι → 𝕜) F
+  exact ((ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 (ι → 𝕜) F
     (ContinuousLinearMap.proj i)).continuous.continuousAt).comp h
 
 /-- At a point `y₀` of `U`, the frame read in the trivialization of `E` at `y₀` is injective on

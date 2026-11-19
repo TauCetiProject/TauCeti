@@ -306,7 +306,7 @@ theorem exists_gaugeTransform_eq_of_tendstoLocallyUniformly [l.NeBot]
     tendstoLocallyUniformly_iff_filter.2 fun z ↦
       (tendstoLocallyUniformly_iff_filter.1 h z).mono_left hU
   have hc : Tendsto (fun i ↦ (us i 0 : ℂ)) U (𝓝 ((U.map fun i ↦ us i 0).lim : ℂ)) :=
-    (continuous_subtype_val.tendsto _).comp (U.map fun i ↦ us i 0).le_nhds_lim
+    (continuous_subtypeVal.tendsto _).comp (U.map fun i ↦ us i 0).le_nhds_lim
   obtain ⟨v, hvd, hv, -⟩ := exists_gaugeTransform_eq_of_tendsto_apply hus hxy (hmono hx)
     (hmono hy) hxc hyc hc
   exact ⟨v, hvd, hv⟩

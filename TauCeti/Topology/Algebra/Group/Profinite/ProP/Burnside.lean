@@ -187,7 +187,7 @@ theorem eq_top_of_le_map_proPFrattini_of_sup_eq_top {P : Subgroup G}
   have : CompactSpace P := isCompact_iff_compactSpace.mp hPc.isCompact
   have hNP : N ≤ P := hN.trans (Subgroup.map_subtype_le _)
   have hHP : H.subgroupOf P = ⊤ := by
-    refine hP.eq_top_of_sup_proPFrattini_eq_top (hH.preimage continuous_subtype_val)
+    refine hP.eq_top_of_sup_proPFrattini_eq_top (hH.preimage continuous_subtypeVal)
       (top_unique fun x _ ↦ ?_)
     have hx : (x : G) ∈ H ⊔ N := hsup ▸ Subgroup.mem_top _
     obtain ⟨h, hh, n, hn, hhn⟩ := Subgroup.mem_sup_of_normal_right.mp hx

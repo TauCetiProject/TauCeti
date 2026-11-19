@@ -166,7 +166,7 @@ theorem mem_comap (K : Type*) [NormedField K] {E F : Type*} [NormedAddCommGroup 
 instance instDiscreteTopologyComapSubtype {K : Type*} [NormedField K] {E : Type*}
     [NormedAddCommGroup E] [NormedSpace K E] (L : Submodule ℤ E) [DiscreteTopology L]
     (V : Submodule K E) : DiscreteTopology (ZLattice.comap K L V.subtype) :=
-  comap_discreteTopology K L continuous_subtype_val V.injective_subtype
+  comap_discreteTopology K L continuous_subtypeVal V.injective_subtype
 
 section LinearIsometryEquiv
 

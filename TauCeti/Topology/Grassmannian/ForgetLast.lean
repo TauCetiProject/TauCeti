@@ -47,7 +47,7 @@ def forgetLast (f : finiteOrthonormalFrame 𝕜 (r + 1) N) :
 
 @[fun_prop] theorem continuous_forgetLast :
     Continuous (forgetLast : finiteOrthonormalFrame 𝕜 (r + 1) N → _) :=
-  (continuous_pi fun i ↦ (continuous_apply i.castSucc).comp continuous_subtype_val).subtype_mk _
+  (continuous_pi fun i ↦ (continuous_apply i.castSucc).comp continuous_subtypeVal).subtype_mk _
 
 /-- Forgetting the last vector commutes with the ambient unitary action. -/
 @[simp] theorem forgetLast_unitaryMap (A : Matrix.unitaryGroup (Fin N) 𝕜)
@@ -156,7 +156,7 @@ def forgetLastFiberHomeomorph (f : finiteOrthonormalFrame 𝕜 r N) :
     apply Continuous.subtype_mk
     exact (PiLp.continuous_toLp 2 _).comp
       ((continuous_apply (Fin.last r)).comp
-        (continuous_subtype_val.comp continuous_subtype_val))
+        (continuous_subtypeVal.comp continuous_subtypeVal))
   continuous_invFun := (continuous_snoc f).subtype_mk _
 
 @[simp] theorem forgetLastFiberHomeomorph_apply (f : finiteOrthonormalFrame 𝕜 r N)

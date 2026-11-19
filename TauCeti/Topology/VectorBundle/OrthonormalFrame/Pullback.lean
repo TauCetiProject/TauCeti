@@ -113,9 +113,9 @@ def pullbackHomeomorph (f : B' → B) :
   continuous_invFun := by
     refine continuous_iff.2 fun v ↦
       (inducing_pullbackTotalSpaceEmbedding F E f).continuous_iff.2 ?_
-    refine ((continuous_fst.comp continuous_subtype_val).prodMk
+    refine ((continuous_fst.comp continuous_subtypeVal).prodMk
       ((continuous_totalSpaceMk_frame v).comp
-        (continuous_snd.comp continuous_subtype_val))).congr fun q ↦ ?_
+        (continuous_snd.comp continuous_subtypeVal))).congr fun q ↦ ?_
     rcases q with ⟨⟨x, ⟨y, φ⟩⟩, h⟩
     dsimp only at h
     cases h

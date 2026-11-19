@@ -422,7 +422,7 @@ theorem _root_.NumberField.eq_zero_of_norm_le_exp_of_house_le_exp {K : Type*} [F
     rwa [NumberField.house_pow, NumberField.house_intCast, Int.cast_abs]
   have hlt :
       Real.exp C * Real.exp A * (Real.exp C * Real.exp B) ^ (Module.finrank ℚ K - 1) < 1 := by
-    rw [← Real.exp_add, ← Real.exp_add, ← Real.exp_nat_mul, ← Real.exp_add]
+    rw [← Real.exp_add, ← Real.exp_add, ← Real.exp_natCast_mul, ← Real.exp_add]
     exact Real.exp_lt_one_iff.2 (by linarith)
   refine absurd (lt_of_le_of_lt ?_ hlt) (lt_irrefl 1)
   exact (NumberField.one_le_norm_mul_house_pow hint hx0 σ).trans <| mul_le_mul hσx

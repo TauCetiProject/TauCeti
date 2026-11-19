@@ -136,12 +136,12 @@ theorem setLIntegral_chartRiemannianVolume
   have hR : MeasurableEmbedding (e.source.domRestrict e) :=
     measurableEmbedding_extChartAt_restrict α
   have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
-    MeasurableEmbedding.subtype_coe (isOpen_extChartAt_source α).measurableSet
+    MeasurableEmbedding.subtypeVal (isOpen_extChartAt_source α).measurableSet
   have himage : e.source.domRestrict e '' (Subtype.val ⁻¹' s) = e '' (s ∩ e.source) :=
     Set.image_domRestrict _ _ _
   have hA : MeasurableSet (e '' (s ∩ e.source)) := by
     rw [← himage]
-    exact hR.measurableSet_image.mpr (hs.preimage measurable_subtype_coe)
+    exact hR.measurableSet_image.mpr (hs.preimage measurable_subtypeVal)
   have htarget : e '' (s ∩ e.source) ⊆ e.target :=
     e.image_source_eq_target.subset.trans' (Set.image_mono inter_subset_right)
   -- Read `φ` on the chart source through the coordinate map `e`.
@@ -176,12 +176,12 @@ theorem setIntegral_chartRiemannianVolume
   have hR : MeasurableEmbedding (e.source.domRestrict e) :=
     measurableEmbedding_extChartAt_restrict α
   have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
-    MeasurableEmbedding.subtype_coe (isOpen_extChartAt_source α).measurableSet
+    MeasurableEmbedding.subtypeVal (isOpen_extChartAt_source α).measurableSet
   have himage : e.source.domRestrict e '' (Subtype.val ⁻¹' s) = e '' (s ∩ e.source) :=
     Set.image_domRestrict _ _ _
   have hA : MeasurableSet (e '' (s ∩ e.source)) := by
     rw [← himage]
-    exact hR.measurableSet_image.mpr (hs.preimage measurable_subtype_coe)
+    exact hR.measurableSet_image.mpr (hs.preimage measurable_subtypeVal)
   have htarget : e '' (s ∩ e.source) ⊆ e.target :=
     e.image_source_eq_target.subset.trans' (Set.image_mono inter_subset_right)
   -- Read `φ` on the chart source through the coordinate map `e`.

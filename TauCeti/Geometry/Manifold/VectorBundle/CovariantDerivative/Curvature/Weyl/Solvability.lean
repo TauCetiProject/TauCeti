@@ -401,9 +401,9 @@ private theorem exists_pullback_parametrization_of_isInteriorPoint {x₀ : M}
   let Φ : U ≃ₘ^∞⟮I, 𝓘(ℝ, E)⟯ E := Φ₀.trans (toEuclidean (E := E)).symm.toDiffeomorph
   let f : E → M := (Subtype.val : U → M) ∘ Φ.symm
   have hf_smooth : ContMDiff 𝓘(ℝ, E) I (∞ + 1) f :=
-    (contMDiff_subtype_val.comp Φ.symm.contMDiff).of_le (by simp)
+    (contMDiff_subtypeVal.comp Φ.symm.contMDiff).of_le (by simp)
   have hinv (z : E) : (mfderiv 𝓘(ℝ, E) I f z).IsInvertible := by
-    rw [mfderiv_comp z ((contMDiff_subtype_val (n := ∞)).mdifferentiableAt (by simp))
+    rw [mfderiv_comp z ((contMDiff_subtypeVal (n := ∞)).mdifferentiableAt (by simp))
       (Φ.symm.contMDiff.mdifferentiableAt (by simp))]
     exact ((TauCeti.IsLocalRiemannianIsometry.subtype_val U).isInvertible_mfderiv
       (Φ.symm z)).comp (Φ.symm.isInvertible_mfderiv (by simp))

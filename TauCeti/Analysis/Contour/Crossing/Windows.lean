@@ -98,7 +98,7 @@ private theorem crossings_bounded_from_exceptional {crossings P : Finset ℝ}
     ∃ c > 0, ∀ t ∈ crossings, ∀ p ∈ P, c ≤ |t - p| := by
   by_cases hP : P = ∅
   · exact ⟨1, one_pos, fun _ _ p hp => absurd (hP ▸ hp) (Finset.notMem_empty p)⟩
-  · obtain ⟨p₀, hp₀⟩ := Finset.nonempty_iff_ne_empty.mpr hP
+  · obtain ⟨p₀, hp₀⟩ := Finset.ne_empty_iff_nonempty.mp hP
     obtain ⟨t₀, ht₀⟩ := h_nonempty
     obtain ⟨m, hm_mem, hm⟩ :=
       Finset.exists_min_image (crossings ×ˢ P) (fun q => |q.1 - q.2|)

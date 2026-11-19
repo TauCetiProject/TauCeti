@@ -95,11 +95,11 @@ private lemma continuous_zeroExt (f : C_c(Ω, ℝ)) : Continuous (zeroExt f) :=
 
 private lemma tsupport_zeroExt_subset (f : C_c(Ω, ℝ)) :
     tsupport (zeroExt f) ⊆ (↑) '' tsupport f :=
-  f.hasCompactSupport.tsupport_extend_zero_subset continuous_subtype_val
+  f.hasCompactSupport.tsupport_extend_zero_subset continuous_subtypeVal
 
 private lemma isCompact_image_tsupport (f : C_c(Ω, ℝ)) :
     IsCompact (((↑) : Ω → E) '' tsupport f) :=
-  f.hasCompactSupport.isCompact.image continuous_subtype_val
+  f.hasCompactSupport.isCompact.image continuous_subtypeVal
 
 variable [NormedSpace ℝ E] {𝓕 : Type*} [FunLike 𝓕 𝓓(Ω, ℝ) ℝ]
 

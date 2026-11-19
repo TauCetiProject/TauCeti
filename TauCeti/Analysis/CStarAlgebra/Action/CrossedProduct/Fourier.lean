@@ -92,7 +92,7 @@ theorem fourierCoeff_star (hρ : Function.Injective ρ) (g : G)
     apply continuous_induced_rng.mpr
     simpa only [Function.comp_def, StarMemClass.coe_star, ContinuousLinearMap.star_eq_adjoint]
       using ContinuousLinearMap.adjoint.continuous.comp
-        (continuous_subtype_val : Continuous fun y : regularAlgebra α ρ Measure.count =>
+        (continuous_subtypeVal : Continuous fun y : regularAlgebra α ρ Measure.count =>
           (y : Lp H 2 (Measure.count : Measure G) →L[ℂ] Lp H 2 (Measure.count : Measure G)))
   induction x using induction_on α ρ Measure.count with
   | hp =>

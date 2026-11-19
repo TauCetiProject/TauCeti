@@ -156,7 +156,7 @@ theorem exp_sub_one_sq_le_two_mul_sq_mul_cosh (t : ℝ) :
   calc (exp t - 1) ^ 2 = |exp t - 1| ^ 2 := (sq_abs _).symm
     _ ≤ (|t| * exp |t|) ^ 2 := by gcongr
     _ = t ^ 2 * exp (2 * |t|) := by
-        rw [mul_pow, sq_abs, ← exp_nat_mul]; push_cast; ring_nf
+        rw [mul_pow, sq_abs, ← exp_natCast_mul]; push_cast; ring_nf
     _ ≤ t ^ 2 * (2 * cosh (2 * t)) := by gcongr
     _ = 2 * t ^ 2 * cosh (2 * t) := by ring
 

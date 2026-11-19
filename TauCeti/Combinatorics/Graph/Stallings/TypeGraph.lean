@@ -92,7 +92,7 @@ theorem typeVertices_nonempty : S.typeVertices.Nonempty := by
   by_cases h : S.graph.IsAcyclic
   · exact ⟨S.base, Or.inr ⟨h, rfl⟩⟩
   · rw [S.typeVertices_eq_cyclicVertices h]
-    exact Set.nonempty_iff_ne_empty.mpr (mt S.graph.cyclicVertices_eq_empty_iff.mp h)
+    exact Set.ne_empty_iff_nonempty.mp (mt S.graph.cyclicVertices_eq_empty_iff.mp h)
 
 theorem src_mem_typeVertices {e : S.graph.E} (he : e ∈ S.graph.cyclicDarts) :
     S.graph.src e ∈ S.typeVertices :=

@@ -453,7 +453,7 @@ adic topology of the ideal of definition of the completion. -/
 theorem isAdic_completionIdeal (P : PairOfDefinition A) : IsAdic P.completionIdeal := by
   refine isAdic_iff.mpr ⟨fun n ↦ ?_, fun s hs ↦ ?_⟩
   · rw [P.completionIdeal_pow]
-    exact (P.isOpen_completionIdealImage n).preimage continuous_subtype_val
+    exact (P.isOpen_completionIdealImage n).preimage continuous_subtypeVal
   · rw [mem_nhds_subtype] at hs
     obtain ⟨V, hV, hVs⟩ := hs
     obtain ⟨n, -, hn⟩ := P.hasBasis_nhds_zero_completion.mem_iff.mp hV

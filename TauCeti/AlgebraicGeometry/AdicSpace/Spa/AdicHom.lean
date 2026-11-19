@@ -168,7 +168,7 @@ private theorem exists_mem_spaAnalytic_le_supp_of_notMem {Bplus : Subring B}
   -- coarsen along the dominating generator `t₀` and extend to a continuous point of `B ⧸ 𝔭`
   obtain ⟨w, hwc, ht₀w, hcmp⟩ := Q'.exists_continuous_coarsened_extension_of_valuation v₀ hv₀le hS
     (hSI t₀ ht₀S) (fun s hs ↦ ht₀max s hs) (hv₀lt t₀ (hSI t₀ ht₀S))
-    (lt_of_lt_of_le (zero_lt_iff.mpr hs₁) (ht₀max s₁ hs₁S)).ne'
+    (lt_of_lt_of_le (pos_iff_ne_zero.mpr hs₁) (ht₀max s₁ hs₁S)).ne'
   have hwan : IsAnalyticPoint w :=
     (isAnalyticPoint_iff_exists_mem_extendedIdealOfDefinition_notMem_supp Q' w).mpr
       ⟨t₀, by rw [Q'.extendedIdealOfDefinition_def]; exact Ideal.mem_map_of_mem _ (hSI t₀ ht₀S),

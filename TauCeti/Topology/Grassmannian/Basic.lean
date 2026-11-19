@@ -74,7 +74,7 @@ theorem coe_ofNeZero (v : {v : Fin N → 𝕜 // v ≠ 0}) :
 @[fun_prop]
 theorem continuous_ofNeZero [TopologicalSpace 𝕜] :
     Continuous (ofNeZero : {v : Fin N → 𝕜 // v ≠ 0} → finiteFullRankFrame 𝕜 1 N) :=
-  (continuous_pi fun _ ↦ continuous_subtype_val).subtype_mk _
+  (continuous_pi fun _ ↦ continuous_subtypeVal).subtype_mk _
 
 /-- The general linear group acts on frames by left multiplication of the matrix of row
 vectors: `A • f` has `j`th vector `∑ i, A j i • f i`. -/
@@ -107,7 +107,7 @@ instance [TopologicalSpace 𝕜] [IsTopologicalRing 𝕜] :
   continuous_const_smul A := by
     refine Continuous.subtype_mk (continuous_pi fun j => continuous_finsetSum _ fun i _ => ?_) _
     exact ((continuous_apply i : Continuous fun p : Fin r → Fin N → 𝕜 => p i).comp
-      continuous_subtype_val).const_smul ((A : Matrix (Fin r) (Fin r) 𝕜) j i)
+      continuous_subtypeVal).const_smul ((A : Matrix (Fin r) (Fin r) 𝕜) j i)
 
 end finiteFullRankFrame
 

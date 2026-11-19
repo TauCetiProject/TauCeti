@@ -135,7 +135,7 @@ theorem Gamma1_map_le_conjAct_upperRightHom (hNL : N * M ∣ L) (hML : M * M ∣
   rw [map_inv, Subgroup.mem_inv_pointwise_smul_iff, ConjAct.toConjAct_smul]
   obtain ⟨hA, hD, hC⟩ := (Gamma1_mem L γ).mp hγ
   obtain ⟨c, hc, hNc⟩ := CongruenceSubgroup.exists_eq_mul_mul_of_mem_Gamma0 hNL hML
-    (Gamma1_in_Gamma0 L hγ)
+    (Gamma1_le_Gamma0 L hγ)
   have hDM : ((γ 1 1 : ℤ) : ZMod M) = 1 := by
     simpa [map_one] using congrArg (ZMod.castHom (dvd_of_mul_left_dvd hML) (ZMod M)) hD
   obtain ⟨γ', hA', hC', hD', heq⟩ :=
@@ -291,7 +291,7 @@ theorem _root_.ModularForm.qExpansion_twist_coeff [NeZero M] (Φ : ZMod M → �
       rw [ZMod.natCast_zmod_val]
     have hM : (M : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne M)
     rw [ham, ZMod.stdAddChar_coe, coe_vadd, Function.Periodic.qParam,
-      Function.Periodic.qParam, ← Complex.exp_nat_mul, ← Complex.exp_nat_mul,
+      Function.Periodic.qParam, ← Complex.exp_natCast_mul, ← Complex.exp_natCast_mul,
       ← Complex.exp_add]
     congr 1
     push_cast

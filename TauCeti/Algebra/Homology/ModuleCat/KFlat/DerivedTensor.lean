@@ -366,7 +366,6 @@ theorem leftDerivedTensorObjIsoKFlatTensor_naturality
       (leftDerivedTensorObjIsoKFlatTensor LF α P₁).hom.app (DerivedCategory.Q.obj L) ≫
       P₁.kFlatTensorModelIso.hom.app L ≫ DerivedCategory.Q.map (tensorHom f (𝟙 L)) := by
     rw [NatTrans.comp_app, Category.assoc, CochainComplex.kFlatTensorMap_app_Q_comp]
-    rfl
   have h₂ : (((leftDerivedTensorObjIsoKFlatTensor LF α P₁).hom ≫
       CochainComplex.kFlatTensorMap f).app (DerivedCategory.Q.obj L)) ≫
       P₂.kFlatTensorModelIso.hom.app L =

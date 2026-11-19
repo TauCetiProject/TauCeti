@@ -95,7 +95,7 @@ private abbrev sigmaOpenShellPair : TopPair.{w} :=
 
 private lemma continuous_norm_sigma_snd :
     Continuous fun p : Σ _ : ι, closedBall (0 : Fin n → ℝ) 1 ↦ ‖(p.2 : Fin n → ℝ)‖ :=
-  continuous_sigma fun _ ↦ continuous_norm.comp continuous_subtype_val
+  continuous_sigma fun _ ↦ continuous_norm.comp continuous_subtypeVal
 
 private lemma radialPush_mem_closedBall (t : I) (y : closedBall (0 : Fin n → ℝ) 1) :
     radialPush 2⁻¹ t (y : Fin n → ℝ) ∈ closedBall (0 : Fin n → ℝ) 1 :=
@@ -115,7 +115,7 @@ def sigmaRadialPush :
       ((Homeomorph.sigmaProdDistrib (ι := ι) (X := fun _ ↦ closedBall (0 : Fin n → ℝ) 1)
         (Y := I)).continuous.comp continuous_swap)
     exact Continuous.subtype_mk ((continuous_radialPush (by norm_num)).comp
-      (continuous_snd.prodMk (continuous_subtype_val.comp continuous_fst))) _
+      (continuous_snd.prodMk (continuous_subtypeVal.comp continuous_fst))) _
 
 /-- The radial deformation of the disks, from the identity to the map pushing the shells onto the
 boundary spheres. -/
@@ -229,7 +229,7 @@ private def sigmaOpenShellPairToShellPair : sigmaOpenShellPair ι n ⟶ sigmaShe
       continuous_sigma_map.2 fun _ ↦ continuous_inclusion ball_subset_closedBall⟩)
     (TopCat.ofHom ⟨fun p ↦ ⟨Sigma.map id (fun _ ↦ inclusion ball_subset_closedBall) p.1, p.2⟩,
       (continuous_sigma_map.2 fun _ ↦ continuous_inclusion ball_subset_closedBall).comp
-        continuous_subtype_val |>.subtype_mk _⟩)
+        continuous_subtypeVal |>.subtype_mk _⟩)
     rfl
 
 /-- The open cover of `∐ᵢ Dⁿ` by the open balls `‖y‖ < 1` and the open shells `2⁻¹ < ‖y‖`, along
@@ -312,8 +312,8 @@ def characteristicPairMap (n : ℕ) : sigmaDiskPair (cell C n) n ⟶ skeletonPai
   TopPair.ofHom (TopCat.ofHom (sigmaCharacteristicMap C n))
     (TopCat.ofHom ⟨fun p ↦ ⟨map n p.1.1 p.1.2, cellFrontier_subset_skeletonLT n p.1.1
       ⟨p.1.2, mem_sphere_zero_iff_norm.2 p.2, rfl⟩⟩,
-      (continuous_subtype_val.comp ((sigmaCharacteristicMap C n).continuous.comp
-        continuous_subtype_val)).subtype_mk _⟩)
+      (continuous_subtypeVal.comp ((sigmaCharacteristicMap C n).continuous.comp
+        continuous_subtypeVal)).subtype_mk _⟩)
     rfl
 
 @[simp]
@@ -337,8 +337,8 @@ private def sigmaShellPairToNeighborhoodPair (n : ℕ) :
   TopPair.ofHom (TopCat.ofHom (sigmaCharacteristicMap C n))
     (TopCat.ofHom ⟨fun p ↦ ⟨map n p.1.1 p.1.2, (map_mem_skeletonNeighborhood_iff p.1.1
       (mem_closedBall_zero_iff.1 p.1.2.2)).2 p.2⟩,
-      (continuous_subtype_val.comp ((sigmaCharacteristicMap C n).continuous.comp
-        continuous_subtype_val)).subtype_mk _⟩)
+      (continuous_subtypeVal.comp ((sigmaCharacteristicMap C n).continuous.comp
+        continuous_subtypeVal)).subtype_mk _⟩)
     rfl
 
 /-- The open cover of `Xⁿ` by the complement of `Xⁿ⁻¹` and the interior of
@@ -382,7 +382,7 @@ private lemma excisive_sigmaOpenShellPairToNeighborhoodPair (n : ℕ) :
     exact ⟨⟨⟨j, y⟩, (map_mem_skeletonNeighborhood_iff j (mem_ball_zero_iff.1 y.2).le).1 hy⟩, rfl⟩
   · cases b
     · exact isOpen_interior
-    · exact ((skeletonLT C n).closed.preimage continuous_subtype_val).isOpen_compl
+    · exact ((skeletonLT C n).closed.preimage continuous_subtypeVal).isOpen_compl
   · refine eq_univ_of_forall fun (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) ↦
       mem_iUnion.2 ?_
     by_cases hx : (x : X) ∈ (skeletonLT C n : Set X)

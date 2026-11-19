@@ -199,7 +199,7 @@ theorem support_eq_empty {a : NovikovSeries R H N} : a.support = ∅ ↔ a = 0 :
   rw [support, Function.support_eq_empty_iff, ← coeff_zero', coeff_injective.eq_iff]
 
 theorem support_nonempty_iff {a : NovikovSeries R H N} : a.support.Nonempty ↔ a ≠ 0 := by
-  rw [nonempty_iff_ne_empty, Ne, support_eq_empty]
+  rw [← ne_empty_iff_nonempty, Ne, support_eq_empty]
 
 instance : Inhabited (NovikovSeries R H N) :=
   ⟨0⟩

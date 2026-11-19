@@ -124,7 +124,7 @@ theorem support_massMeasure (hT : HasLocallyFiniteMass T) :
   constructor
   · intro hx
     obtain ⟨U, ⟨hxU, hU⟩, hzero⟩ := (nhds_basis_opens x).notMem_measureSupport.1 hx
-    have hU' : IsOpen ((↑) '' U : Set E) := Ω.isOpen.isOpenMap_subtype_val U hU
+    have hU' : IsOpen ((↑) '' U : Set E) := Ω.isOpen.isOpenMap_subtypeVal U hU
     have hpre : ((Subtype.val : Ω → E) ⁻¹' ((Subtype.val : Ω → E) '' U)) = U :=
       preimage_image_eq U Subtype.val_injective
     have hvan : IsVanishingOn T ((↑) '' U) :=
@@ -133,7 +133,7 @@ theorem support_massMeasure (hT : HasLocallyFiniteMass T) :
   · intro hx
     obtain ⟨U, hvan, hU, hxU⟩ := (notMem_dsupport_iff (x : E)).1 hx
     exact Measure.notMem_support_iff_exists.2
-      ⟨(↑) ⁻¹' U, (hU.preimage continuous_subtype_val).mem_nhds hxU,
+      ⟨(↑) ⁻¹' U, (hU.preimage continuous_subtypeVal).mem_nhds hxU,
         (massMeasure_preimage_coe_eq_zero_iff hT hU).2 hvan⟩
 
 /-- The mass measure gives zero mass to the complement of the distributional support. -/

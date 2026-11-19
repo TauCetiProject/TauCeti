@@ -329,7 +329,7 @@ theorem mem_sIntegralUnits_iff_mem_sIntegralAdeles
     exact ⟨fun v hv ↦ (h v hv).le, fun v hv ↦ by rw [h v hv, inv_one]⟩
   · rintro ⟨h₁, h₂⟩ v hv
     have hpos : 0 < Valued.v ((x : 𝔸ᶠ[R, K]) v) :=
-      zero_lt_iff.mpr (valued_coe_units_apply_ne_zero x v)
+      pos_iff_ne_zero.mpr (valued_coe_units_apply_ne_zero x v)
     exact le_antisymm (h₁ v hv) ((inv_le_one₀ hpos).mp (h₂ v hv))
 
 variable (R K) in

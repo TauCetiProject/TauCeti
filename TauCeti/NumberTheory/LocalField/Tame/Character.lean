@@ -305,7 +305,7 @@ theorem isLocallyConstant_inertiaKummerCharacter :
     (IsLocallyConstant.iff_continuous _).2 hcont
   exact IsLocallyConstant.desc _ (fun ζ : rootsOfUnity m (AlgebraicClosure K) ↦
     ((ζ : (AlgebraicClosure K)ˣ) : AlgebraicClosure K))
-    ((horbit.comp (· / root K m hm a)).comp_continuous continuous_subtype_val)
+    ((horbit.comp (· / root K m hm a)).comp_continuous continuous_subtypeVal)
     rootsOfUnity.coe_injective
 
 variable (m hm) in

@@ -62,7 +62,12 @@ theorem ContMDiffWithinAt.rankOne_bundle
   have hσ' := (contMDiffWithinAt_totalSpace_iff.mp hσ).2
   rw [contMDiffWithinAt_hom_bundle]
   refine ⟨hb, ?_⟩
-  have hp := ((ContinuousLinearMap.smulRightL ℝ F F').contDiff.comp_contMDiffWithinAt
+  -- Cache operator norms before composing the curried multiplication map.
+  let _ : NormedAddCommGroup (F →L[ℝ] F') := inferInstance
+  let _ : NormedSpace ℝ (F →L[ℝ] F') := inferInstance
+  let _ : NormedAddCommGroup (F' →L[ℝ] F →L[ℝ] F') := inferInstance
+  let _ : NormedSpace ℝ (F' →L[ℝ] F →L[ℝ] F') := inferInstance
+  have hp := ((ContinuousLinearMap.smulRightL ℝ ℝ ℝ F F').contDiff.comp_contMDiffWithinAt
     hdual'.2).clm_apply hσ'
   refine hp.congr_of_eventuallyEq ?_ ?_
   · filter_upwards [hb.continuousWithinAt.preimage_mem_nhdsWithin

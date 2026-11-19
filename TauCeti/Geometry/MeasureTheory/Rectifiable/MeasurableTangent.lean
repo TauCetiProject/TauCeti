@@ -64,7 +64,7 @@ theorem LipschitzOnWith.exists_measurable_tangent_projection
     hg.continuous.continuousOn.measurableEmbedding hs (injOn_iff_injective.mpr hi'.injective)
   let A : s → V →L[ℝ] V := fun x ↦ (fderiv ℝ g x).range.starProjection
   obtain ⟨Q, hQm, hQ⟩ := he.exists_measurable_extend (g := A)
-    (((measurable_fderiv ℝ g).starProjection_range).comp measurable_subtype_coe)
+    (((measurable_fderiv ℝ g).starProjection_range).comp measurable_subtypeVal)
     (fun _ ↦ ⟨0⟩)
   refine ⟨Q, hQm, ?_⟩
   filter_upwards [hg.ae_exists_fderiv_range_forall_infDist_le hi'] with y hy hyimage
@@ -133,9 +133,9 @@ theorem CountablyRectifiable.exists_measurable_approximate_tangent_projection
   have hindex (x : S) : ∃ n, (x : V) ∈ T n := mem_iUnion.mp x.property
   let F : S → V →L[ℝ] V := fun x ↦ A (Nat.find (hindex x)) x
   have hFm : Measurable F := Measurable.find
-    (fun n ↦ (hAm n).comp measurable_subtype_coe)
-    (fun n ↦ (hTm n).preimage measurable_subtype_coe) hindex
-  have he := MeasurableEmbedding.subtype_coe (MeasurableSet.iUnion hTm)
+    (fun n ↦ (hAm n).comp measurable_subtypeVal)
+    (fun n ↦ (hTm n).preimage measurable_subtypeVal) hindex
+  have he := MeasurableEmbedding.subtypeVal (MeasurableSet.iUnion hTm)
   obtain ⟨Q, hQm, hQ⟩ := he.exists_measurable_extend hFm (fun _ ↦ ⟨(0 : V →L[ℝ] V)⟩)
   refine ⟨Q, hQm, ?_⟩
   have hzero (n : ℕ) : ∀ᵐ x ∂μHE[k], x ∉ E \ T n → Tendsto (fun r ↦

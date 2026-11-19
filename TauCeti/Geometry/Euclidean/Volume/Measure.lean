@@ -357,7 +357,7 @@ theorem val_comp_vaddConst (s : AffineSubspace ℝ P) [Nonempty s] (q : s) :
 theorem isometry_coe_vadd (s : AffineSubspace ℝ P) [Nonempty s] (q : s) :
     Isometry fun v : s.direction ↦ ((v +ᵥ q : s) : P) := by
   rw [← s.val_comp_vaddConst q]
-  exact isometry_subtype_coe.comp (IsometryEquiv.vaddConst q).isometry
+  exact isometry_subtypeVal.comp (IsometryEquiv.vaddConst q).isometry
 
 /-- Adding a base point `q` of `s` to the directions of `s` reaches exactly the points of `s`. -/
 theorem range_coe_vadd (s : AffineSubspace ℝ P) [Nonempty s] (q : s) :
@@ -390,7 +390,7 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {ν : F}
 isometry. When `‖ν‖ = 1`, its range is the hyperplane `{x | ⟪x, ν⟫ = c}`. -/
 theorem isometry_smul_add_coe (c : ℝ) :
     Isometry fun y : (ℝ ∙ ν)ᗮ => c • ν + (y : F) :=
-  (isometry_add_left (c • ν)).comp isometry_subtype_coe
+  (isometry_add_left (c • ν)).comp isometry_subtypeVal
 
 variable [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
 

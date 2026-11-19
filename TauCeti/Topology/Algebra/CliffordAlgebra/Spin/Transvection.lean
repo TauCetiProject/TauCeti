@@ -76,7 +76,7 @@ theorem continuous_transvectionLiftHom {u : V} (hQ : Q.Nondegenerate) (hu : Q u 
       Additive.ofMul (spinTransvection hQ hu (hw w))) :=
     continuous_spinTransvection (fun _ ↦ u)
       (fun w : LinearMap.ker (Q.polarBilin u) ↦ (w : V)) hQ (fun _ ↦ hu)
-      hw continuous_const continuous_subtype_val
+      hw continuous_const continuous_subtypeVal
   convert hraw using 1
   funext w
   apply Additive.toMul.injective

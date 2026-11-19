@@ -132,7 +132,7 @@ private theorem continuous_halfBallMap
     (e : geometricLink K v ≃ₜ {z : sphere (0 : E) 1 // 0 ≤ ⟪(z : E), (p : E)⟫}) :
     Continuous (halfBallMap e) := by
   have hc : Continuous (fun x : closedStarRealization K {v} => x.1.1 v) :=
-    (continuous_apply v).comp ((continuous_realization_coe K).comp continuous_subtype_val)
+    (continuous_apply v).comp ((continuous_realization_coe K).comp continuous_subtypeVal)
   let S : Set (closedStarRealization K {v}) := {x | x.1.1 v < 1}
   have hS : IsOpen S := isOpen_lt hc continuous_const
   have haway : ContinuousOn (halfBallMap e) S := by
@@ -140,10 +140,10 @@ private theorem continuous_halfBallMap
     let q : S → puncturedClosedStar K v := fun x =>
       ⟨x.1.1, (mem_puncturedClosedStar K v _).mpr ⟨x.1.2, x.2⟩⟩
     have hq : Continuous q :=
-      (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-    have he := continuous_subtype_val.comp (continuous_subtype_val.comp
+      (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
+    have he := continuous_subtypeVal.comp (continuous_subtypeVal.comp
       (e.continuous.comp ((continuous_starLinkProjection_of_isCompact K v hcompact).comp hq)))
-    exact ((((continuous_const (y := (1 : ℝ))).sub hc).comp continuous_subtype_val).smul he).congr
+    exact ((((continuous_const (y := (1 : ℝ))).sub hc).comp continuous_subtypeVal).smul he).congr
       fun x => by
         have hx : x.1.1.1 v < 1 := x.2
         simp [halfBallMap, hx, q, Set.domRestrict]
@@ -264,10 +264,10 @@ def openStarHomeomorphHalfBall :
       ((closedStarHomeomorphHalfBall hcompact e).apply_symm_apply
         ⟨z.1, ball_subset_closedBall z.2.1, z.2.2⟩)
   continuous_toFun := by
-    exact (continuous_subtype_val.comp ((closedStarHomeomorphHalfBall hcompact e).continuous.comp
+    exact (continuous_subtypeVal.comp ((closedStarHomeomorphHalfBall hcompact e).continuous.comp
       (continuous_inclusion (openStarRealization_subset_closedStarRealization K v)))).subtype_mk _
   continuous_invFun := by
-    exact (continuous_subtype_val.comp
+    exact (continuous_subtypeVal.comp
       ((closedStarHomeomorphHalfBall hcompact e).symm.continuous.comp
         (continuous_inclusion (inter_subset_inter_left _ ball_subset_closedBall)))).subtype_mk _
 

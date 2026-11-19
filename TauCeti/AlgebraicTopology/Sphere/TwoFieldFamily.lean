@@ -381,7 +381,7 @@ Definition 6.14 of Barraud–Damian–Humilière–Oancea reads in the double lo
 def twoFieldSphereFamilyFiber (x : sphere (0 : E) 1) :
     C({xq : twoFieldEquators u v // xq.1.1 = x},
       BasedMap Sphere2 (sphere (0 : E) 1) Sphere2.north x) :=
-  BasedMap.lift ((twoFieldSphereFamily h hu hv).comp ⟨Subtype.val, continuous_subtype_val⟩)
+  BasedMap.lift ((twoFieldSphereFamily h hu hv).comp ⟨Subtype.val, continuous_subtypeVal⟩)
     fun xq ↦ by simpa using xq.2
 
 /-- The based two-sphere of a point `(x, q)` of the fibre over `x` is the two-sphere of `(x, q)`. -/

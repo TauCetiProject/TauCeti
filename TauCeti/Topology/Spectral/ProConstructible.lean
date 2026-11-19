@@ -258,7 +258,7 @@ theorem IsProConstructible.compactSpace [CompactSpace X] (hs : IsProConstructibl
 prespectral space is a spectral map. -/
 theorem IsProConstructible.isSpectralMap_subtypeVal (hs : IsProConstructible s) :
     IsSpectralMap ((↑) : s → X) where
-  toContinuous := continuous_subtype_val
+  toContinuous := continuous_subtypeVal
   isCompact_preimage_of_isOpen := fun U hUo hUc ↦ by
     -- Restrict to the compact open `U`, where the constructible topology is compact.
     let : CompactSpace U := isCompact_iff_compactSpace.1 hUc
@@ -307,7 +307,7 @@ theorem IsProConstructible.quasiSober [QuasiSober X] {s : Set X}
     -- An ambient generic point of `closure (Subtype.val '' Z)` lies in the constructible
     -- closure of the image, hence in the pro-constructible ambient subset `s`.
     obtain ⟨η, hη⟩ := QuasiSober.sober
-      (hZirr.image _ continuous_subtype_val.continuousOn).closure isClosed_closure
+      (hZirr.image _ continuous_subtypeVal.continuousOn).closure isClosed_closure
     have hηs : η ∈ s :=
       (@IsClosed.closure_subset X (constructibleTopology X) s
         (isProConstructible_iff_isClosed.1 hs)) <|

@@ -759,7 +759,7 @@ private theorem exists_openPartialHomeomorph_coord_eq_zero {x : X} {N : Set X} (
       ((homeomorphNormalIio ε).symm.isOpenEmbedding.comp
         (e.symm.isOpenEmbedding.comp
           (IsOpenEmbedding.inclusion interior_subset
-            (isOpen_interior.preimage continuous_subtype_val))))
+            (isOpen_interior.preimage continuous_subtypeVal))))
   obtain ⟨c, hcs, hcg⟩ :=
     OpenPartialHomeomorph.exists_source_eq_of_isOpenEmbedding isOpen_interior hg ⟨x, hx⟩
   have hxc : x ∈ c.source := hcs ▸ hx
@@ -784,7 +784,7 @@ private theorem exists_openPartialHomeomorph_coord_pos (hF : Module.finrank ℝ 
     (isOpenEmbedding_interiorEmbedding 0).comp (L.toHomeomorph.isOpenEmbedding.comp
       (hV.isOpenEmbedding_subtypeVal.comp (e.symm.isOpenEmbedding.comp
         (IsOpenEmbedding.inclusion interior_subset
-          (isOpen_interior.preimage continuous_subtype_val)))))
+          (isOpen_interior.preimage continuous_subtypeVal)))))
   obtain ⟨c, hcs, hcg⟩ :=
     OpenPartialHomeomorph.exists_source_eq_of_isOpenEmbedding isOpen_interior hg ⟨x, hx⟩
   have hxc : x ∈ c.source := hcs ▸ hx

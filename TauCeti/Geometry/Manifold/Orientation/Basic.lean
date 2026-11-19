@@ -88,7 +88,8 @@ theorem exists_lift_modelOrientation_eq (o : Orientation I M ι)
     (m : _root_.Orientation ℝ E ι) :
     ∃ l : OrientationLift I M ι, mk l = o ∧ l.modelOrientation = m := by
   obtain ⟨l, rfl⟩ := o.exists_lift
-  rcases _root_.Orientation.eq_or_eq_neg l.modelOrientation m l.card_eq with h | h
+  rcases _root_.Orientation.eq_or_eq_neg l.modelOrientation m
+    (Nat.card_eq_fintype_card.trans l.card_eq) with h | h
   · exact ⟨l, rfl, h⟩
   · exact ⟨l.flip, (mk_eq_mk_iff _ _).mpr (.inr rfl), by
       rw [OrientationLift.flip_modelOrientation, h]

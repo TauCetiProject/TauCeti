@@ -107,7 +107,7 @@ lemma continuous_ofCube (n : ℕ) : Continuous (ofCube n) := by
     · simp only [Function.comp_apply, ofCube_weights_succ]
       have := (continuous_weights_apply ℝ k).comp
         (ih.comp (continuous_pi fun j => continuous_apply (A := fun _ => I) j.succ))
-      exact (continuous_subtype_val.comp (continuous_apply 0)).mul this
+      exact (continuous_subtypeVal.comp (continuous_apply 0)).mul this
 
 /-- A point of the cube whose image in the simplex has a vanishing barycentric coordinate lies
 on the boundary of the cube. -/

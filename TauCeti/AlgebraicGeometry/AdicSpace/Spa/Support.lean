@@ -125,7 +125,7 @@ theorem exists_mem_spa_le_supp_iff_closure_ne_top (Aplus : Subring A)
     have hmapmem : ∀ a ∈ Aplus, Ideal.Quotient.mk J a ∈ Aplus.map (Ideal.Quotient.mk J) :=
       fun a ha ↦ (Subring.mem_map (f := Ideal.Quotient.mk J)).mpr ⟨a, ha, rfl⟩
     have hne : (spa (Aplus.map (Ideal.Quotient.mk J))).Nonempty := by
-      rw [Set.nonempty_iff_ne_empty]
+      rw [← Set.ne_empty_iff_nonempty]
       intro hempty
       refine hJ ((Ideal.eq_top_iff_one _).mpr ?_)
       rw [← SetLike.mem_coe, Ideal.coe_closure, ← Ideal.Quotient.mk_mem_closure_zero_iff, map_one]

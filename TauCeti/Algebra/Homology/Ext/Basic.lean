@@ -195,7 +195,7 @@ noncomputable def injectiveCokernelSequenceMap {Y Y' : C} (f : Y ⟶ Y') :
   τ₂ := Injective.factorThru (f ≫ Injective.ι Y') (Injective.ι Y)
   τ₃ := cokernel.map (Injective.ι Y) (Injective.ι Y') f
     (Injective.factorThru (f ≫ Injective.ι Y') (Injective.ι Y))
-    (Injective.comp_factorThru _ _)
+    (Injective.comp_factorThru _ _).symm
   comm₁₂ := (Injective.comp_factorThru _ _).symm
   comm₂₃ := (cokernel.π_desc _ _ _).symm
 
@@ -218,7 +218,7 @@ lemma injectiveCokernelSequenceMap_τ₃ {Y Y' : C} (f : Y ⟶ Y') :
     (injectiveCokernelSequenceMap f).τ₃ =
       cokernel.map (Injective.ι Y) (Injective.ι Y') f
         (Injective.factorThru (f ≫ Injective.ι Y') (Injective.ι Y))
-        (Injective.comp_factorThru _ _) :=
+        (Injective.comp_factorThru _ _).symm :=
   (rfl)
 
 /-- The dimension-shift criterion specialised to the chosen embedding into an injective object. -/

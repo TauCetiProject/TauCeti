@@ -71,7 +71,7 @@ noncomputable def _root_.ContinuousLinearMap.orthogonalKerEquivRange (T : E →L
   letI : CompleteSpace R := hT.completeSpace_coe
   exact (LinearMap.kerComplementEquivRange (T : E →ₗ[𝕜] F)
     K.isCompl_orthogonal.symm).toContinuousLinearEquivOfContinuous
-      ((T.continuous.comp continuous_subtype_val).subtype_mk _)
+      ((T.continuous.comp continuous_subtypeVal).subtype_mk _)
 
 /-- The closed-range restriction equivalence acts by the original operator. -/
 @[simp]
@@ -86,7 +86,7 @@ theorem _root_.ContinuousLinearMap.orthogonalKerEquivRange_apply (T : E →L[�
   let e := LinearMap.kerComplementEquivRange (T : E →ₗ[𝕜] F)
     (LinearMap.ker (T : E →ₗ[𝕜] F)).isCompl_orthogonal.symm
   let he : Continuous e :=
-    (T.continuous.comp continuous_subtype_val).subtype_mk _
+    (T.continuous.comp continuous_subtypeVal).subtype_mk _
   -- Expose the `LinearEquiv` underlying the continuous wrapper so its application lemma applies.
   change ((e.toContinuousLinearEquivOfContinuous he x :
     LinearMap.range (T : E →ₗ[𝕜] F)) : F) = T x

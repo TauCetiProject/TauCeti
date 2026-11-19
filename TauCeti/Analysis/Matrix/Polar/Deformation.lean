@@ -186,7 +186,7 @@ def polarHomotopy :
     have h : Continuous (fun p : ℝ × GL n 𝕜 ↦ polarDeformation p.2 p.1) :=
       (contMDiff_polarDeformation (k := ∞)).continuous
     have hinc : Continuous (fun p : unitInterval × GL n 𝕜 ↦ ((p.1 : ℝ), p.2)) :=
-      (continuous_subtype_val.comp continuous_fst).prodMk continuous_snd
+      (continuous_subtypeVal.comp continuous_fst).prodMk continuous_snd
     simpa only [Function.comp_def] using h.comp hinc
   map_zero_left := polarDeformation_zero
   map_one_left := polarDeformation_one

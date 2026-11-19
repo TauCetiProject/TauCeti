@@ -291,7 +291,7 @@ theorem continuous_polyEvalHom {k : ℕ} (t : Fin k → A)
         ∈ weightedNhd (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight
           (P.idealImage n) :=
     ((isOpen_weightedNhd (k := k) isWeightFamily_one_weight
-      (P.isOpen_idealImage n)).preimage continuous_subtype_val).mem_nhds
+      (P.isOpen_idealImage n)).preimage continuous_subtypeVal).mem_nhds
       (by simp)
   filter_upwards [hnhd] with x hx
   obtain ⟨p, rfl⟩ : ∃ p, weightedPolynomialsEquiv isWeightFamily_one_weight p = x :=

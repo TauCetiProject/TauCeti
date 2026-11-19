@@ -250,14 +250,14 @@ def relationalConfigurationEquiv :
   measurable_invFun :=
     measurable_iff_adj.2 fun u v =>
       (Measurable.of_discrete (f := fun b : Bool => b = true)).comp
-        ((measurable_eval (adjAtom u v)).comp measurable_subtype_coe)
+        ((measurable_eval (adjAtom u v)).comp measurable_subtypeVal)
 
 /-- Encoding a simple graph as a configuration is measurable. -/
 @[fun_prop]
 theorem measurable_toRelationalConfiguration :
     Measurable
       (toRelationalConfiguration : SimpleGraph V → RelationalConfiguration Language.graph V) :=
-  measurable_subtype_coe.comp relationalConfigurationEquiv.measurable
+  measurable_subtypeVal.comp relationalConfigurationEquiv.measurable
 
 @[simp]
 theorem coe_relationalConfigurationEquiv (G : SimpleGraph V) :
@@ -290,7 +290,7 @@ so laws on simple graphs are the laws on configurations concentrated on simple g
 theorem measurableEmbedding_toRelationalConfiguration [Countable V] :
     MeasurableEmbedding
       (toRelationalConfiguration : SimpleGraph V → RelationalConfiguration Language.graph V) :=
-  (MeasurableEmbedding.subtype_coe measurableSet_setOf_isSimpleGraph).comp
+  (MeasurableEmbedding.subtypeVal measurableSet_setOf_isSimpleGraph).comp
     relationalConfigurationEquiv.measurableEmbedding
 
 /-- The encoding of a law on simple graphs is concentrated on simple graphs. -/
@@ -310,7 +310,7 @@ theorem map_comap_toRelationalConfiguration
       NullMeasurableSet (toRelationalConfiguration '' s) μ := by
     intro s hs
     simpa only [Set.image_image, coe_relationalConfigurationEquiv] using
-      Measure.MeasurableSet.nullMeasurableSet_subtype_coe hA
+      Measure.MeasurableSet.nullMeasurableSet_subtypeVal hA
         (relationalConfigurationEquiv.measurableSet_image.2 hs)
   refine Measure.ext fun T hT ↦ ?_
   rw [Measure.map_apply measurable_toRelationalConfiguration hT,

@@ -48,7 +48,7 @@ theorem tsum_nat_exp_neg_mul_add_one {a : ℝ} (ha : 0 < a) :
       intro n
       -- The summand is the geometric power given by `Real.exp_nat_mul`.
       dsimp only [q]
-      rw [← Real.exp_nat_mul]
+      rw [← Real.exp_natCast_mul]
       congr 1
       ring
     _ = ∑' n : ℕ, q ^ n * q := by simp_rw [pow_succ]

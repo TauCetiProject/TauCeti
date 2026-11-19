@@ -145,7 +145,7 @@ variable [Fintype ι] (s) (b : Basis ι 𝕜 F)
 /-- The frame `s` at `x`, read in a trivialization `e'`, as the operator of `F` sending `w` to the
 coordinates in `e'` of the combination of the frame with coefficients `b.repr w`. -/
 private def frameOperator (e' : Trivialization F (π F V)) (x : B) : F →L[𝕜] F :=
-  ∑ i, ContinuousLinearMap.smulRightL 𝕜 F F
+  ∑ i, ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 F F
     ((ContinuousLinearMap.proj i).comp (b.equivFunL : F →L[𝕜] ι → 𝕜)) (e' ⟨x, s i x⟩).2
 
 variable {s} (e' : Trivialization F (π F V)) [e'.IsLinear 𝕜] {x : B}
@@ -198,7 +198,7 @@ include hs in
 private theorem continuousOn_frameOperator :
     ContinuousOn (frameOperator s b e') (U ∩ e'.baseSet) := by
   refine continuousOn_finsetSum _ fun i _ ↦ ?_
-  refine (ContinuousLinearMap.smulRightL 𝕜 F F _).continuous.comp_continuousOn ?_
+  refine (ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 F F _).continuous.comp_continuousOn ?_
   exact continuous_snd.comp_continuousOn (e'.continuousOn.comp
     ((hs.contMDiffOn i).continuousOn.mono inter_subset_left) fun y hy ↦ e'.mem_source.2 hy.2)
 
@@ -338,7 +338,7 @@ theorem trivialization_mem_maximalAtlas [ContMDiffVectorBundle n F V IB] :
   -- Read in `e'`, the frame is a `C^n` family of operators, its coordinates in `e'` being `C^n`.
   have hframe : ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] F) n (frameOperator s b e') (U ∩ e'.baseSet) := by
     refine contMDiffOn_finsetSum fun i _ ↦ ?_
-    refine (ContinuousLinearMap.smulRightL 𝕜 F F _).contMDiff.comp_contMDiffOn ?_
+    refine (ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 F F _).contMDiff.comp_contMDiffOn ?_
     exact (Trivialization.contMDiffOn_section_iff_of_mem_maximalAtlas
       (Trivialization.mem_maximalAtlas_of_memTrivializationAtlas IB n e')
       inter_subset_right).1 ((hs.contMDiffOn i).mono inter_subset_left)

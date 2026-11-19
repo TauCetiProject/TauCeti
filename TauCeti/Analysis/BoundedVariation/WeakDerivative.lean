@@ -79,10 +79,10 @@ theorem HasWeakFDerivOn.variationMeasure_eq_withDensity [μ.IsAddHaarMeasure]
       rw [withDensity_apply' _ K]
       exact (setLIntegral_subtype hΩ K fun y => ‖U y‖ₑ).trans_lt
         (h.locallyIntegrableOn_deriv.integrableOn_compact_subset
-          (Subtype.coe_image_subset _ _) (hK.image continuous_subtype_val)).2⟩
+          (Subtype.coe_image_subset _ _) (hK.image continuous_subtypeVal)).2⟩
   refine (eq_variationMeasure h.locallyIntegrableOn
     (fun K hK hKΩ => h.exists_totalVariationOn_ne_top hK hKΩ) fun V hV => ?_).symm
-  rw [withDensity_apply _ (V.isOpen.measurableSet.preimage measurable_subtype_coe)]
+  rw [withDensity_apply _ (V.isOpen.measurableSet.preimage measurable_subtypeVal)]
   refine (setLIntegral_subtype hΩ _ fun y => ‖U y‖ₑ).trans ?_
   -- `convert` identifies the two spellings `↥Ω` and `↑(Ω : Set E)` of the subtype.
   convert (h.mono hV).totalVariationOn_eq_setLIntegral_enorm.symm using 3
@@ -105,8 +105,8 @@ theorem HasWeakFDerivOn.ae_norm_smul_polarDensity_eq [μ.IsAddHaarMeasure] {g : 
     simp [← ofReal_norm, innerSL_apply_norm]
   have hgm : AEStronglyMeasurable (fun x : Ω => g x) ν := by
     have hg := h.locallyIntegrableOn_gradient.aestronglyMeasurable
-    rw [← map_comap_subtype_coe hΩ] at hg
-    exact (MeasurableEmbedding.subtype_coe hΩ).aestronglyMeasurable_map_iff.1 hg
+    rw [← map_comap_subtypeVal hΩ] at hg
+    exact (MeasurableEmbedding.subtypeVal hΩ).aestronglyMeasurable_map_iff.1 hg
   -- The normalized gradient `τ = g / ‖g‖` represents `Du` against `|Du|`.
   set τ : Ω → E := fun x => NormedSpace.normalize (g x)
   have hτ (x : Ω) : ‖g x‖ • τ x = g x := NormedSpace.norm_smul_normalize (g x)
@@ -179,7 +179,7 @@ theorem hasWeakFDerivOn_of_absolutelyContinuous [IsFiniteMeasureOnCompacts μ]
   set G : Ω → E := fun x => (lam.rnDeriv ν x).toReal • polarDensity μ Ω u x with hG
   set g : E → E := Function.extend (↑) G 0
   have hg (x : Ω) : g x = G x := Subtype.val_injective.extend_apply G 0 x
-  have hgm : Measurable g := (MeasurableEmbedding.subtype_coe hΩ).measurable_extend
+  have hgm : Measurable g := (MeasurableEmbedding.subtypeVal hΩ).measurable_extend
     ((Measure.measurable_rnDeriv _ _).ennreal_toReal.smul measurable_polarDensity)
     measurable_const
   -- `∫_K ‖g‖ dμ ≤ |Du|(K) < ∞` for compact `K ⊆ Ω`.

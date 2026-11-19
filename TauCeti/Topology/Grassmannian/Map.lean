@@ -41,7 +41,7 @@ theorem coe_map (f : (Fin N → 𝕜) →ₗ[𝕜] (Fin M → 𝕜)) (hf : Funct
 theorem continuous_map [TopologicalSpace 𝕜]
     (f : (Fin N → 𝕜) →ₗ[𝕜] (Fin M → 𝕜)) (hf : Function.Injective f)
     (hfc : Continuous f) : Continuous (map (r := r) f hf) :=
-  (continuous_pi fun i ↦ hfc.comp ((continuous_apply i).comp continuous_subtype_val)).subtype_mk _
+  (continuous_pi fun i ↦ hfc.comp ((continuous_apply i).comp continuous_subtypeVal)).subtype_mk _
 
 end finiteFullRankFrame
 

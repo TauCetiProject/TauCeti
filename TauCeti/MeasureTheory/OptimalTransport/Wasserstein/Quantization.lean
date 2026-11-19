@@ -119,7 +119,7 @@ theorem wassersteinQuantizationError_eq_iInf_eLpNorm_infEDist
     exact (ae_map_iff hT.aemeasurable s.measurableSet).2 (.of_forall hTs)
   · obtain ⟨s, hsN, hνs⟩ := hcarrier
     have hs : s.Nonempty := by
-      rw [Finset.nonempty_iff_ne_empty]
+      rw [← Finset.ne_empty_iff_nonempty]
       rintro rfl
       simp at hνs
     exact (iInf₂_le s hs).trans ((iInf_le _ hsN).trans

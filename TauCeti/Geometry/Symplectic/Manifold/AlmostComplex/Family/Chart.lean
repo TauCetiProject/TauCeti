@@ -192,7 +192,7 @@ def ofChart (q : P × M) (A : EP × E → E →L[ℝ] E)
           (fun r : chartSource (H := HP) q.1 × chartSource (H := H) q.2 ↦
             extChartAt (IP.prod I) q ((r.1 : P), (r.2 : M))) :=
         (contMDiffOn_extChartAt (I := IP.prod I) (x := q) (n := n)).comp_contMDiff
-          ((contMDiff_subtype_val (I := IP)).prodMap (contMDiff_subtype_val (I := I)))
+          ((contMDiff_subtypeVal (I := IP)).prodMap (contMDiff_subtypeVal (I := I)))
           (fun r ↦ by simpa only [extChartAt_source] using hmem r)
       refine (hA.contMDiffOn.comp_contMDiff hg fun r ↦
         (extChartAt (IP.prod I) q).map_source (hmem r)).congr fun r ↦ ?_

@@ -180,7 +180,7 @@ theorem _root_.MeasureTheory.StronglyMeasurable.exists_isClosed_measure_sdiff_lt
   obtain ⟨F, hFs, hF, hFμ, hFg⟩ :=
     (hg.measurable.subtype_mk : Measurable (rangeFactorization g))
       |>.exists_isClosed_measure_sdiff_lt_continuousOn hs hμs hε
-  exact ⟨F, hFs, hF, hFμ, continuous_subtype_val.comp_continuousOn hFg⟩
+  exact ⟨F, hFs, hF, hFμ, continuous_subtypeVal.comp_continuousOn hFg⟩
 
 /-- **Lusin's theorem** for an almost-everywhere strongly measurable map into a pseudometrizable
 space: it is continuous on a closed set `F ⊆ s` with `μ (s \ F) < ε`, for every null measurable set

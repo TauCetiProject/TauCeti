@@ -83,7 +83,7 @@ def closedUpperHalfPlaneModel : ModelWithCorners ℝ ℂ ClosedUpperHalfPlane :=
         simp only [max_eq_left hz]
         exact Complex.re_add_im _ }
     rfl ((convex_Ici (0 : ℝ)).linear_preimage Complex.imCLM.toLinearMap)
-    continuous_subtype_val (by
+    continuous_subtypeVal (by
       -- The model constructor asks for continuity of a map into the subtype; this unfolds
       -- its bundled partial-equivalence inverse so `fun_prop` can see the clamped coordinate.
       change Continuous (fun z : ℂ ↦ (⟨(z.re : ℂ) + ((max z.im 0 : ℝ) : ℂ) * I,
@@ -175,9 +175,9 @@ def upperHalfPlaneChart : OpenPartialHomeomorph ClosedUpperHalfPlane ℂ where
       using hz
   left_inv' z _ := closedUpperHalfPlaneModel_symm_coe z
   right_inv' _ hz := coe_closedUpperHalfPlaneModel_symm_of_im_nonneg (le_of_lt hz)
-  open_source := isOpen_lt continuous_const (continuous_im.comp continuous_subtype_val)
+  open_source := isOpen_lt continuous_const (continuous_im.comp continuous_subtypeVal)
   open_target := isOpen_lt continuous_const continuous_im
-  continuousOn_toFun := continuous_subtype_val.continuousOn
+  continuousOn_toFun := continuous_subtypeVal.continuousOn
   continuousOn_invFun := closedUpperHalfPlaneModel.continuous_symm.continuousOn
 
 /-- `upperHalfPlaneChart` is the inclusion into `ℂ`. -/

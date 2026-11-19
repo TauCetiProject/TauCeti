@@ -77,7 +77,7 @@ theorem continuous_generalizedExtremeValueMeasure :
     (fun p => (measurable_generalizedExtremeValueMap_right _ _ _).aemeasurable)
     (ae_of_all _ fun e => (continuous_generalizedExtremeValueMap_left e).comp
       ((continuous_fst.fst.prodMk
-        (continuous_subtype_val.comp continuous_fst.snd)).prodMk continuous_snd))
+        (continuous_subtypeVal.comp continuous_fst.snd)).prodMk continuous_snd))
   refine h.congr fun p => ?_
   apply ProbabilityMeasure.toMeasure_injective
   rw [ProbabilityMeasure.toMeasure_map]

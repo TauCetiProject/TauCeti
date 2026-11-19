@@ -191,7 +191,7 @@ theorem IsAlgebraic.exists_ne_zero_vle {y : L} (halg : IsAlgebraic K y) (hy : y 
   have hai : IsIntegral (valuation L).integer (a • y⁻¹) := ha.tower_top
   have hav : valuation L (a • y⁻¹) ≤ 1 :=
     (Valuation.integer.integers (valuation L)).isIntegral_iff_v_le_one.mp hai
-  have hyv : 0 < valuation L y := zero_lt_iff.mpr (by simpa using hy)
+  have hyv : 0 < valuation L y := pos_iff_ne_zero.mpr (by simpa using hy)
   refine ⟨a, ?_, ?_⟩
   · exact_mod_cast (nonZeroDivisors.ne_zero a.property)
   · rw [(valuation L).vle_iff_le]

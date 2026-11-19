@@ -170,7 +170,7 @@ private theorem laurentCoverLeIdeal_le_ker (f : A) :
   apply (RingHom.mem_ker).2
   simp only [laurentCoverLeMap, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
     weightedRenameAlgHom_apply, map_sub, weightedRename_weightedC, weightedRename_weightedX]
-  rw [Fin.castSuccEmb_apply, Fin.castSucc_zero',
+  rw [Fin.castSuccEmb_apply, Fin.castSucc_zero,
     mk_weightedC_eq_mk_weightedX_in_laurentCoverOverlap, sub_self]
 
 private theorem laurentCoverGeIdeal_le_ker (f : A) :
@@ -297,7 +297,7 @@ private theorem laurentDiff_pieceRelations (f : A) (u : R₂) :
   refine ⟨c, d, ?_⟩
   rw [laurentDiff_apply]
   simp only [map_mul, map_sub, map_one, weightedRename_weightedC, weightedRename_weightedX]
-  rw [Fin.castSuccEmb_apply, Fin.castSucc_zero', Fin.coe_succEmb, Fin.succ_zero_eq_one']
+  rw [Fin.castSuccEmb_apply, Fin.castSucc_zero, Fin.coe_succEmb, Fin.succ_zero_eq_one']
   have hu' : Ideal.Quotient.mk (laurentIdeal A) u =
       Ideal.Quotient.mk (laurentIdeal A)
         (weightedRename Fin.castSuccEmb isWeightFamily_one_weight isWeightFamily_one_weight

@@ -204,7 +204,7 @@ theorem riemannianVolume_image_of_inner_mfderiv [LindelofSpace M] [LindelofSpace
     (hV_open x).mem_nhds ⟨mem_chart_source H x, mem_interior_iff_mem_nhds.2 <|
       (hΦ x hx).continuousAt.preimage_mem_nhds (chart_source_mem_nhds H' (Φ x))⟩
   obtain ⟨T, hTc, -, hcover⟩ := (HereditarilyLindelofSpace.isLindelof s).elim_nhds_subcover V hV
-  have hι : MeasurableEmbedding (Subtype.val : s → M) := .subtype_coe hs
+  have hι : MeasurableEmbedding (Subtype.val : s → M) := .subtypeVal hs
   have hf_image (t : Set s) : s.domRestrict Φ '' t = Φ '' (Subtype.val '' t) := by
     rw [Set.domRestrict_eq, image_comp]
   -- Images of measurable subsets of `s` are measurable, by the Lusin–Souslin theorem.
@@ -223,7 +223,7 @@ theorem riemannianVolume_image_of_inner_mfderiv [LindelofSpace M] [LindelofSpace
     fun x _ ↦ ?_
   ext t ht
   have htV : MeasurableSet (t ∩ Subtype.val ⁻¹' V x) :=
-    ht.inter ((hV_open x).measurableSet.preimage measurable_subtype_coe)
+    ht.inter ((hV_open x).measurableSet.preimage measurable_subtypeVal)
   set u := Subtype.val '' (t ∩ Subtype.val ⁻¹' V x)
   have hus : u ⊆ s := Subtype.coe_image_subset s _
   have huV : u ⊆ V x := by rintro _ ⟨y, hy, rfl⟩; exact hy.2

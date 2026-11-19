@@ -66,7 +66,7 @@ theorem interior_eq_empty_of_dense_setOf_interior_preimage_prodMk_eq_empty {s : 
     (hs : Dense {x | interior (Prod.mk x ⁻¹' s) = ∅}) : interior s = ∅ := by
   by_contra h
   obtain ⟨_, hx, ⟨x, y⟩, hxy, rfl⟩ := hs.exists_mem_open (isOpenMap_fst _ isOpen_interior)
-    ((nonempty_iff_ne_empty.mpr h).image _)
+    ((ne_empty_iff_nonempty.mp h).image _)
   exact hx.le (preimage_interior_subset_interior_preimage (Continuous.prodMk_right x) hxy)
 
 /-- A subset of a product has empty interior if every vertical fibre has empty interior. -/

@@ -141,7 +141,7 @@ theorem mapsTo_stellarSubdivisionLinearMap :
   · subst σ
     rw [mem_stellarSubdivision_iff] at hxface
     simp at hxface
-  have hσne : σ.Nonempty := Finset.nonempty_iff_ne_empty.mpr hσempty
+  have hσne : σ.Nonempty := Finset.ne_empty_iff_nonempty.mp hσempty
   rw [Geometry.SimplicialComplex.mem_space_onFinsupp_iff]
   refine ⟨?_, (sum_stellarSubdivisionLinearMap hσne x).trans hxsum, ?_⟩
   · intro i

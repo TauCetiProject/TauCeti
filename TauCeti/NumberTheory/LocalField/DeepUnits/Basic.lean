@@ -70,7 +70,7 @@ theorem valuation_exp_sub_exp (hi : absoluteRamificationIndex K p < (p - 1) * i)
 theorem continuous_exp_maximalIdeal_pow (hi : absoluteRamificationIndex K p < (p - 1) * i) :
     Continuous fun x : (𝓂[K] ^ i : Ideal 𝒪[K]) => exp (x : K) := by
   have hc : Continuous fun x : (𝓂[K] ^ i : Ideal 𝒪[K]) => ((x : 𝒪[K]) : K) :=
-    continuous_subtype_val.comp continuous_subtype_val
+    continuous_subtypeVal.comp continuous_subtypeVal
   refine continuous_iff_continuousAt.2 fun x => ?_
   refine (IsValuativeTopology.hasBasis_nhds _).tendsto_right_iff.2 fun γ _ => ?_
   filter_upwards [(IsValuativeTopology.hasBasis_nhds _).tendsto_right_iff.1 (hc.tendsto x) γ

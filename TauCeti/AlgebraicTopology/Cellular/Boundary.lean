@@ -169,7 +169,7 @@ theorem cellularDifferential_eq_zero_of_cellFrontier_subset (n : ℕ)
     TopCat.ofHom ⟨fun z ↦ ⟨cellAttachingMap j z, h j <| by
         rw [← range_cellAttachingMap]
         exact Set.mem_range_self z⟩,
-      (continuous_subtype_val.comp (cellAttachingMap j).hom.continuous).subtype_mk _⟩
+      (continuous_subtypeVal.comp (cellAttachingMap j).hom.continuous).subtype_mk _⟩
   have hzero : SSet.homologyMap (TopCat.toSSet.map (g ≫ (skeletonPair C n).map)) R n ≫
       (skeletonPair C n).singularHomologyπ R n = 0 := by
     rw [Functor.map_comp, SSet.homologyMap_comp]

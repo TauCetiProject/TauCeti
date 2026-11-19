@@ -131,8 +131,8 @@ directions. -/
 def subgroupMap (e : G ≃ₜ* H) (K : Subgroup G) :
     K ≃ₜ* K.map ((e : G ≃* H) : G →* H) where
   toMulEquiv := (e : G ≃* H).subgroupMap K
-  continuous_toFun := (e.continuous.comp continuous_subtype_val).subtype_mk _
-  continuous_invFun := (e.symm.continuous.comp continuous_subtype_val).subtype_mk _
+  continuous_toFun := (e.continuous.comp continuous_subtypeVal).subtype_mk _
+  continuous_invFun := (e.symm.continuous.comp continuous_subtypeVal).subtype_mk _
 
 /-- `ContinuousMulEquiv.subgroupMap` applies the isomorphism. -/
 @[simp]

@@ -71,7 +71,7 @@ def morseAnnulusMap (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) 
   continuous_toFun := by
     apply Continuous.subtype_mk
     exact (ψ.continuousOn_morseCellMap hball hk).comp_continuous
-      (continuous_subtype_val.comp (continuous_uliftDown.comp
+      (continuous_subtypeVal.comp (continuous_uliftDown.comp
         (TauCeti.TopCat.continuous_annulusPoint d.2.1 d.2.2)))
       fun p ↦ (TauCeti.TopCat.annulusPoint d.2.1 d.2.2 p.1 p.2).down.2
 

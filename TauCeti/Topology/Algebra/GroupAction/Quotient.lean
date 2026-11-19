@@ -96,14 +96,14 @@ theorem _root_.SubMulAction.isOpenEmbedding_orbitRelQuotientMap {H : Subgroup G}
   -- Composed with the orbit projection of `S`, the map is the orbit projection of `X` on `S`.
   have hcont : Continuous S.orbitRelQuotientMap := by
     rw [isQuotientMap_quotient_mk'.continuous_iff]
-    exact S.orbitRelQuotientMap_comp_mk ▸ continuous_quot_mk.comp continuous_subtype_val
+    exact S.orbitRelQuotientMap_comp_mk ▸ continuous_quot_mk.comp continuous_subtypeVal
   refine .of_continuous_injective_isOpenMap hcont (S.orbitRelQuotientMap_injective hS)
     fun U hU ↦ ?_
   -- The image of `U` is the image in `X / G` of the open set of points of `S` lying over `U`.
   rw [← Quotient.mk_surjective.image_preimage U, ← image_comp, S.orbitRelQuotientMap_comp_mk,
     image_comp]
   exact isOpenMap_quotient_mk'_mul _
-    (hS_open.isOpenMap_subtype_val _ (hU.preimage continuous_quot_mk))
+    (hS_open.isOpenMap_subtypeVal _ (hU.preimage continuous_quot_mk))
 
 end Slice
 

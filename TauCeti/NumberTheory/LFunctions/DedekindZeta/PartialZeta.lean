@@ -271,7 +271,7 @@ theorem finiteEulerCorrection_eq_one_iff (𝔪 : Modulus K) {s : ℝ} (hs : 0 < 
   classical
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [finiteEulerCorrection_def, h, Finset.prod_empty]⟩
   by_contra hne
-  obtain ⟨𝔮, h𝔮⟩ := Finset.nonempty_iff_ne_empty.mpr hne
+  obtain ⟨𝔮, h𝔮⟩ := Finset.ne_empty_iff_nonempty.mp hne
   -- each factor is the real number `1 - N(𝔭) ^ (-s)`, which lies in `(0, 1)`
   have hfac (𝔭 : HeightOneSpectrum (𝓞 K)) :
       1 - (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (-(s : ℂ)) =

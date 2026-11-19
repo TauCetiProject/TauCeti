@@ -429,7 +429,7 @@ noncomputable def normTwist (z : ℂ) (χ : MultiplicativeIdealWeight K) :
       map_zero' := by simp
       map_one' := by simp
       map_mul' I J := by
-        rw [map_mul, map_mul, Nat.cast_mul, Complex.natCast_mul_natCast_cpow]
+        rw [map_mul, map_mul, Nat.cast_mul, Complex.natCast_mul_cpow]
         ring }
   finite_setOf_apply_eq_zero := χ.finite_badPrimes.subset fun 𝔭 h𝔭 ↦ by
     simpa [Complex.cpow_eq_zero_iff, Ideal.absNorm_eq_zero_iff, 𝔭.ne_bot] using h𝔭

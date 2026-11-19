@@ -171,7 +171,7 @@ private theorem ae_norm_eq_one_of_le_one (hT : HasLocallyFiniteMass T) {τ : Ω 
   -- Testing the supremum defining `‖T‖(V)` gives `‖T‖(V) ≤ ∫_V ‖τ‖ d‖T‖` on open sets.
   have hopen (V : Set Ω) (hV : IsOpen V) : massMeasure T V ≤ ∫⁻ x in V, ‖τ x‖ₑ ∂massMeasure T := by
     set U : Set E := (↑) '' V
-    have hU : IsOpen U := Ω.isOpen.isOpenMap_subtype_val V hV
+    have hU : IsOpen U := Ω.isOpen.isOpenMap_subtypeVal V hV
     have hUV : ((↑) : Ω → E) ⁻¹' U = V := preimage_image_eq V Subtype.val_injective
     rw [← hUV, massMeasure_preimage_coe hT hU, localMass_le_iff]
     intro φ hφU hφ

@@ -161,7 +161,7 @@ rotation by the angle `2θ`. -/
 theorem spinVectorAction_spinCircle_exp (θ : ℝ) (v : V) :
     spinVectorAction Q (o.spinCircle hQ (Circle.exp θ)) v = o.rotation (2 * θ : ℝ) v := by
   have h : ((Circle.exp θ : ℂ)) ^ 2 = Complex.exp ((2 * θ : ℝ) * Complex.I) := by
-    rw [Circle.coe_exp, ← Complex.exp_nat_mul]
+    rw [Circle.coe_exp, ← Complex.exp_natCast_mul]
     push_cast
     ring_nf
   rw [spinVectorAction_spinCircle, h, o.rotation_apply, Complex.exp_ofReal_mul_I_re,

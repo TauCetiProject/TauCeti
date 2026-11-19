@@ -317,7 +317,7 @@ theorem isVertexConnected_two_iff : G.IsVertexConnected 2 ↔
     by_cases hsempty : s = ∅
     · obtain ⟨p⟩ := hconn.preconnected u.1 v.1
       exact ⟨p.induce sᶜ fun _ _ ↦ by simp [hsempty]⟩
-    · obtain ⟨x, hxs⟩ := Set.nonempty_iff_ne_empty.mpr hsempty
+    · obtain ⟨x, hxs⟩ := Set.ne_empty_iff_nonempty.mp hsempty
       have hu : u.1 ∉ s := u.2
       have hv : v.1 ∉ s := v.2
       obtain ⟨p, hp⟩ :=

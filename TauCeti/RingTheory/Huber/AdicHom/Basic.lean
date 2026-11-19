@@ -63,7 +63,7 @@ theorem continuousAt_zero (hf : IsAdicHom f) : ContinuousAt f 0 := by
       P.fg_idealOfDefinition (heq ▸ Ideal.le_radical)
   apply (P.isOpen_ringOfDefinition.isOpenEmbedding_subtypeVal.continuousAt_iff
     (x := (0 : P.ringOfDefinition))).mp
-  exact continuous_subtype_val.continuousAt.comp hc.continuousAt
+  exact continuous_subtypeVal.continuousAt.comp hc.continuousAt
 
 omit [IsTopologicalRing A] [IsTopologicalRing B] in
 /-- An adic homomorphism is continuous. -/

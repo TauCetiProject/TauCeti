@@ -164,7 +164,7 @@ theorem coe_nonnegDegreeDerivation (a : nonnegSubring R N) :
 @[fun_prop]
 theorem continuous_nonnegDegreeDerivation :
     Continuous (nonnegDegreeDerivation (N := N) ℓ) :=
-  ((continuous_degreeDerivation ℓ).comp continuous_subtype_val).subtype_mk _
+  ((continuous_degreeDerivation ℓ).comp continuous_subtypeVal).subtype_mk _
 
 end Ring
 

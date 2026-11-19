@@ -311,7 +311,7 @@ private theorem exists_nodeInterp_close {x y : sphere (0 : E) 1} (γ : Path x y)
       nodeInterp N node 0 = ((x : sphere (0 : E) 1) : E) ∧
       nodeInterp N node 1 = ((y : sphere (0 : E) 1) : E) := by
   have hγcont : Continuous fun t : I => ((γ t : sphere (0 : E) 1) : E) :=
-    continuous_subtype_val.comp γ.continuous
+    continuous_subtypeVal.comp γ.continuous
   -- Choose a subdivision so fine that the path moves by less than `1` across each step.
   obtain ⟨δ, hδ, hδ'⟩ := Metric.uniformContinuous_iff.mp
     (CompactSpace.uniformContinuous_of_continuous hγcont) 1 one_pos

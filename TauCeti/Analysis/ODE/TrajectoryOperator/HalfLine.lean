@@ -298,7 +298,7 @@ private theorem squareIntegrableSolutionsOn_leftCap_Iio (hA : Continuous A) :
       (integrableOn_exp_mul_Iic two_pos (-1)).const_mul _
     refine hi.congr_fun (fun τ hτ ↦ ?_) measurableSet_Iic
     have he : Real.exp (1 * (τ - -1)) ^ 2 = Real.exp 2 * Real.exp (2 * τ) := by
-      rw [← Real.exp_add, ← Real.exp_nat_mul]
+      rw [← Real.exp_add, ← Real.exp_natCast_mul]
       congr 1
       push_cast
       ring

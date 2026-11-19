@@ -73,7 +73,7 @@ theorem existsUnique_eq_ofFun_const_of_locally (T : 𝓓'^{n}(Ω, F))
   have hlc : IsLocallyConstant c := by
     rw [IsLocallyConstant.iff_eventually_eq]
     intro x
-    filter_upwards [((hU x).preimage continuous_subtype_val).mem_nhds (hxU x)] with y hy
+    filter_upwards [((hU x).preimage continuous_subtypeVal).mem_nhds (hxU x)] with y hy
     exact hceq hy
   let : PreconnectedSpace Ω := isPreconnected_iff_preconnectedSpace.mp hΩ.isPreconnected
   obtain ⟨x₀, hx₀⟩ := hΩ.nonempty

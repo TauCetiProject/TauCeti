@@ -798,7 +798,7 @@ private theorem IsCore.exists_hanging_geodesic {v : Γ.V} (hΓ : Γ.IsCore v) (h
     ∃ w ∈ Γ.cyclicVertices, ∃ p : Γ.Path v w, p.length = Γ.dist v w ∧
       ∀ e ∈ Path.darts Γ p, Γ.src e ∉ Γ.cyclicVertices := by
   obtain ⟨w, hw, hmin⟩ := exists_forall_dist_le
-    (Set.nonempty_iff_ne_empty.mpr (mt Γ.cyclicVertices_eq_empty_iff.mp h)) v
+    (Set.ne_empty_iff_nonempty.mp (mt Γ.cyclicVertices_eq_empty_iff.mp h)) v
   obtain ⟨p, hp⟩ := exists_length_eq_dist (((Γ.isCore_iff v).mp hΓ).1 w)
   exact ⟨w, hw, p, hp, fun e he => Path.src_notMem_of_forall_dist_le hmin hp.le he⟩
 

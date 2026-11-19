@@ -165,7 +165,7 @@ theorem coe_detCircle (U : unitaryGroup n ℂ) : (detCircle U : ℂ) = (U : Matr
 
 /-- The determinant of a unitary matrix depends continuously on the matrix. -/
 theorem continuous_detCircle : Continuous (detCircle : unitaryGroup n ℂ → Circle) :=
-  Continuous.subtype_mk (continuous_subtype_val.matrix_det) _
+  Continuous.subtype_mk (continuous_subtypeVal.matrix_det) _
 
 /-- The transpose of a unitary matrix is unitary, with inverse its entrywise conjugate:
 `Uᵀ conj(U) = 1`. -/
@@ -183,8 +183,8 @@ theorem continuous_sum {α : Type*} [CommRing α] [StarRing α] [TopologicalSpac
     Continuous (sum : unitaryGroup n α × unitaryGroup m α →* unitaryGroup (n ⊕ m) α) := by
   refine continuous_induced_rng.2 ?_
   simpa only [Function.comp_def, coe_sum] using
-    Continuous.matrix_fromBlocks (continuous_subtype_val.comp continuous_fst) continuous_const
-      continuous_const (continuous_subtype_val.comp continuous_snd)
+    Continuous.matrix_fromBlocks (continuous_subtypeVal.comp continuous_fst) continuous_const
+      continuous_const (continuous_subtypeVal.comp continuous_snd)
 
 /-- The determinant of a block-diagonal sum of unitary matrices is the product of the
 determinants. -/

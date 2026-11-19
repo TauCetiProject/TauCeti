@@ -88,7 +88,7 @@ theorem isPLMap_subtypeVal_boundary :
     IsPLMap 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
       (Subtype.val : ↥((𝓡∂ (n + 1)).boundary M) → M) := by
   refine isPLMap_iff_forall_isPLMapAt.2 fun p ↦ isPLMapAt_iff.2
-    ⟨continuous_subtype_val.continuousAt, ?_⟩
+    ⟨continuous_subtypeVal.continuousAt, ?_⟩
   set c := chartAt (EuclideanSpace ℝ (Fin n)) p
   -- On the target of the boundary chart, the reading of the inclusion is the parametrization.
   have heq : EqOn ((𝓡∂ (n + 1)) ∘ chartAt (EuclideanHalfSpace (n + 1)) (p : M) ∘ Subtype.val ∘

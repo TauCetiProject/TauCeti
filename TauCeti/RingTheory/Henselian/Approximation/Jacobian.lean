@@ -131,7 +131,7 @@ theorem elkikJacobianIdeal_unique [Unique σ] (f : σ → MvPolynomial ι R) :
       rw [jacobianMinorsIdeal_empty_mul_colon, hrange]
       exact le_sup_left
     · have hs' : s = {default} :=
-        (Finset.nonempty_iff_ne_empty.mpr hs).eq_singleton_default
+        (Finset.ne_empty_iff_nonempty.mp hs).eq_singleton_default
       rw [hs', jacobianMinorsIdeal_singleton_mul_colon f default hspan]
       exact le_sup_right
   · refine sup_le ?_ ?_

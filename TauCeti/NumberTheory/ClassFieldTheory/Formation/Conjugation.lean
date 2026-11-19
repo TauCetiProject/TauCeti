@@ -295,7 +295,7 @@ the layer. -/
 def conjugateGroundHom : (L.conjugate g).ground.toSubgroup →ₜ* L.ground.toSubgroup where
   toMonoidHom := (L.conjugateGroundEquiv g).symm.toMonoidHom
   continuous_toFun := Topology.IsInducing.subtypeVal.continuous_iff.2 <|
-    ((continuous_mul_const g).comp ((continuous_const_mul g⁻¹).comp continuous_subtype_val)).congr
+    ((continuous_mul_const g).comp ((continuous_const_mul g⁻¹).comp continuous_subtypeVal)).congr
       fun v => (L.conjugateGroundEquiv_symm_apply_coe g v).symm
 
 /-- On elements of `G`, the inverse-conjugation homomorphism is `v ↦ g⁻¹ * v * g`. -/

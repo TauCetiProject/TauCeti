@@ -243,7 +243,7 @@ lemma isOpen_preimage_val_openCell {S : Set X}
     · exact h k (by simpa using hki) (openCell_subset_closedCell n k hk)
   rw [hcompl]
   exact ((isClosed_skeletonLT_union_iUnion_closedCell n _).preimage
-    continuous_subtype_val).isOpen_compl
+    continuous_subtypeVal).isOpen_compl
 
 /-- The inverse of the characteristic map of an `n`-cell `i`, as a chart of the `n`-skeleton
 `skeletonLT C (n + 1)` whose source is the open cell and whose target is the open unit ball.
@@ -269,7 +269,7 @@ noncomputable def openCellChart (i : cell C n) :
     exact (map n i).left_inv (by rwa [source_eq])
   open_source := isOpen_preimage_val_openCell n Subset.rfl i
   open_target := isOpen_ball
-  continuousOn_toFun := (continuousOn_symm n i).comp continuous_subtype_val.continuousOn
+  continuousOn_toFun := (continuousOn_symm n i).comp continuous_subtypeVal.continuousOn
     fun x hx ↦ by rwa [target_map_eq_openCell]
   continuousOn_invFun := ((cellRetractMap n i).continuous.subtype_mk _).continuousOn
 

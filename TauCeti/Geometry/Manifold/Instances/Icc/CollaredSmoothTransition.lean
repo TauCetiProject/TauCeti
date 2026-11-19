@@ -163,7 +163,7 @@ theorem coe_collaredSmoothTransitionLineMapUnit (c s : unitInterval) :
 theorem continuous_collaredSmoothTransitionLineMapUnit :
     Continuous fun q : unitInterval × unitInterval ↦ collaredSmoothTransitionLineMapUnit q.1 q.2 :=
   (continuous_collaredSmoothTransitionLineMap.comp
-    (continuous_subtype_val.prodMap continuous_subtype_val)).subtype_mk _
+    (continuous_subtypeVal.prodMap continuous_subtypeVal)).subtype_mk _
 
 /-- At time `0` the straight-line homotopy of the unit interval is the identity. -/
 @[simp]

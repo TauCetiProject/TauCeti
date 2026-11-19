@@ -72,7 +72,7 @@ theorem exp_add_smul_apply (A : X →L[𝕜] X) (s t : 𝕜) (x : X) :
 /-- The exponential `exp B` of a continuous endomorphism of a Banach space, as a continuous linear
 automorphism with inverse `exp (-B)`. -/
 noncomputable def expEquiv (B : X →L[𝕜] X) : X ≃L[𝕜] X :=
-  .equivOfInverse' (exp B) (exp (-B))
+  .ofContinuousLinearMap (exp B) (exp (-B))
     (by
       let +nondep : NormedAlgebra ℚ (X →L[𝕜] X) := .restrictScalars ℚ 𝕜 _
       rw [← ContinuousLinearMap.mul_def, ← exp_add_of_commute (Commute.refl B).neg_right,
@@ -154,11 +154,11 @@ finite-dimensional complex normed space, the spectrum of `exp N` is the image of
 theorem spectrum_exp (N : V →L[ℂ] V) :
     spectrum ℂ (exp N) = exp '' spectrum ℂ N := by
   have := FiniteDimensional.completeSpace ℂ V
-  -- The inclusion `⊇` is `spectrum.exp_mem_exp`. For `⊆`, `exp N` is a polynomial `P (N)`, so its
+  -- The inclusion `⊇` is `exp_mem_spectrum_exp`. For `⊆`, `exp N` is a polynomial `P (N)`, so its
   -- spectrum consists of the values `P (μ)` at the eigenvalues `μ` of `N`, and an eigenvector for
   -- `μ` shows `P (μ) = exp μ`.
   refine subset_antisymm (fun z hz ↦ ?_)
-    (Set.image_subset_iff.mpr fun μ hμ ↦ spectrum.exp_mem_exp N hμ)
+    (Set.image_subset_iff.mpr fun μ hμ ↦ exp_mem_spectrum_exp N hμ)
   rcases subsingleton_or_nontrivial V with hV | hV
   · simp [spectrum.of_subsingleton] at hz
   obtain ⟨P, hP⟩ := TauCeti.exists_aeval_eq_exp (𝕜 := ℂ) N

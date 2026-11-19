@@ -256,7 +256,7 @@ theorem map_topologicalAbelianizationEquivMaximalAbelianExtension_artinMap_unitF
         Finite.instDiscreteTopology
       exact (isClosed_discrete _).preimage
         ((InfiniteGalois.restrictNormalHom_continuous M.toIntermediateField).comp
-          (hφ_cont.comp continuous_subtype_val))
+          (hφ_cont.comp continuous_subtypeVal))
     have hne (M : FiniteGaloisIntermediateField K Kab) : (T M).Nonempty := by
       obtain ⟨u, hu, hu_eq⟩ := exists_mem_unitFiltration_restrictNormalHom_eq K n M
         (Subgroup.mem_iInf.1 hτ M)

@@ -607,8 +607,10 @@ variable {X Y Z : Type*} [SeminormedAddCommGroup X] [NormedSpace ℝ X]
 /-- Complexification of a continuous `ℝ`-linear equivalence between real seminormed spaces, as a
 continuous `ℂ`-linear equivalence between their Taylor-seminormed complexifications. -/
 def complexify (e : X ≃L[ℝ] Y) : Complexification X ≃L[ℂ] Complexification Y :=
-  equivOfInverse e.toContinuousLinearMap.complexify e.symm.toContinuousLinearMap.complexify
-    (fun _ ↦ by ext <;> simp) (fun _ ↦ by ext <;> simp)
+  ofContinuousLinearMap e.toContinuousLinearMap.complexify
+    e.symm.toContinuousLinearMap.complexify
+    (ContinuousLinearMap.ext fun _ ↦ by ext <;> simp)
+    (ContinuousLinearMap.ext fun _ ↦ by ext <;> simp)
 
 @[simp] theorem toContinuousLinearMap_complexify (e : X ≃L[ℝ] Y) :
     e.complexify.toContinuousLinearMap = e.toContinuousLinearMap.complexify := (rfl)

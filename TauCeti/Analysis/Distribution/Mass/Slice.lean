@@ -79,7 +79,7 @@ zero by convention. -/
 def slice (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ) (u : E → ℝ) (t : ℝ) :
     𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ :=
   if hu : Measurable u then
-    let hA := measurableSet_lt (hu.comp measurable_subtype_coe) (measurable_const (a := t))
+    let hA := measurableSet_lt (hu.comp measurable_subtypeVal) (measurable_const (a := t))
     massRestrict T hA ∘L extDerivCLM - massRestrict (T ∘L extDerivCLM) hA
   else 0
 
@@ -90,10 +90,10 @@ variable (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ)
 /-- For measurable `u`, the slice evaluates as `(T ⌞ {u < t}) (dφ) - ((∂T) ⌞ {u < t}) φ`. -/
 theorem slice_apply (hu : Measurable u) (φ : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) :
     slice T u t φ =
-      massRestrict T (measurableSet_lt (hu.comp measurable_subtype_coe) (measurable_const (a := t)))
+      massRestrict T (measurableSet_lt (hu.comp measurable_subtypeVal) (measurable_const (a := t)))
           (extDerivCLM φ) -
         massRestrict (T ∘L extDerivCLM)
-          (measurableSet_lt (hu.comp measurable_subtype_coe) (measurable_const (a := t))) φ := by
+          (measurableSet_lt (hu.comp measurable_subtypeVal) (measurable_const (a := t))) φ := by
   simp [slice, hu]
 
 /-- The slice by a non-measurable function is zero by convention. -/
@@ -132,7 +132,7 @@ theorem dsupport_slice_subset {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L
   obtain ⟨hT₁, hT₂⟩ := isLocallyNormal_succ_iff.1 hT
   have hum : Measurable u := hu.measurable
   have hA : MeasurableSet {x : Ω | u x < t} :=
-    measurableSet_lt (hum.comp measurable_subtype_coe) measurable_const
+    measurableSet_lt (hum.comp measurable_subtypeVal) measurable_const
   -- Off `spt T`, both Borel restrictions vanish.
   have hv₁ : IsVanishingOn (slice T u t) (dsupport T)ᶜ := fun φ hφ => by
     have h₁ : massRestrict T hA (extDerivCLM φ) = 0 :=
@@ -188,7 +188,7 @@ private theorem mass_slice_le_liminf {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] 
   obtain ⟨hT₁, hT₂⟩ := isLocallyNormal_succ_iff.1 hT
   have hum : Measurable u := hu.continuous.measurable
   have hA : MeasurableSet {x : Ω | u x < t} :=
-    measurableSet_lt (hum.comp measurable_subtype_coe) measurable_const
+    measurableSet_lt (hum.comp measurable_subtypeVal) measurable_const
   have hf (m : ℕ) : ContDiff ℝ ∞ fun x => Real.smoothTransition (((m : ℝ) + 1) * (t - u x)) :=
     Real.smoothTransition.contDiff.comp (contDiff_const.mul (contDiff_const.sub hu))
   have hfC (m : ℕ) : ∀ x ∈ Ω, |Real.smoothTransition (((m : ℝ) + 1) * (t - u x))| ≤ 1 :=
@@ -219,9 +219,9 @@ private theorem exists_measurable_mass_slice_le {T : 𝓓(Ω, E [⋀^Fin (k + 1)
     ∃ G : ℝ → ℝ≥0∞, Measurable G ∧ (∀ t, mass (slice T u t) ≤ G t) ∧
       ∫⁻ t, G t ≤ (k + 1) * ∫⁻ x, ‖fderiv ℝ u x‖ₑ ∂massMeasure T := by
   have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
-  have hum : Measurable fun x : Ω => u x := hu.continuous.measurable.comp measurable_subtype_coe
+  have hum : Measurable fun x : Ω => u x := hu.continuous.measurable.comp measurable_subtypeVal
   have hdu : Measurable fun x : Ω => ‖fderiv ℝ u x‖ₑ := (continuous_eNorm.comp
-    ((hu.continuous_fderiv (by simp)).comp continuous_subtype_val)).measurable
+    ((hu.continuous_fderiv (by simp)).comp continuous_subtypeVal)).measurable
   have hg' (m : ℕ) :=
     Real.smoothTransition.measurable_ofReal_mul_deriv_mul_sub_mul hum hdu ((m : ℝ) + 1)
   have hg (m : ℕ) : Measurable fun t => (k + 1 : ℝ≥0∞) *

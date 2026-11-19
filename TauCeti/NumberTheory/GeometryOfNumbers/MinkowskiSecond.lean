@@ -596,7 +596,7 @@ theorem prod_mul_measure_le_two_pow_mul_covolume (L : Submodule ℤ E)
     refine discreteTopology_of_isOpen_singleton_zero ?_
     have hopen : IsOpen {v : E | gauge K v < g ⟨0, hnpos⟩} :=
       isOpen_lt (continuous_gauge hK (mem_interior_iff_mem_nhds.1 h0)) continuous_const
-    convert hopen.preimage (continuous_subtype_val (p := (· ∈ L))) using 1
+    convert hopen.preimage (continuous_subtypeVal (p := (· ∈ L))) using 1
     ext v
     simp only [mem_singleton_iff, mem_preimage, mem_ofPred_eq]
     refine ⟨fun hv ↦ ?_, fun hv ↦ ?_⟩

@@ -124,7 +124,7 @@ theorem fourier_cutoffTempered_apply (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) {
   have hY : MeasurableSet Y := (isClosed_tsupport _).measurableSet
   have : CompactSpace Y := isCompact_iff_compactSpace.1 hψ
   have : IsFiniteMeasure (volume.comap ((↑) : Y → E)) := ⟨by
-    rw [comap_subtype_coe_apply hY, image_univ, Subtype.range_coe]
+    rw [comap_subtypeVal_apply hY, image_univ, Subtype.range_coe]
     exact hψ.measure_lt_top⟩
   -- The modulated cutoffs `ψ η • φ e_η`, and `φ 𝓕ψ` as their integral.
   let f : Y → 𝓓(Ω, ℂ) := fun η ↦
@@ -153,7 +153,7 @@ theorem fourier_cutoffTempered_apply (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) {
       congrArg (iteratedFDeriv ℝ k · p.2) (funext (hf p.1))
     simp only [heq]
     exact (continuous_iteratedFDeriv_mul_fourierAtom φ ψ k).comp
-      ((continuous_subtype_val.comp continuous_fst).prodMk continuous_snd)
+      ((continuous_subtypeVal.comp continuous_fst).prodMk continuous_snd)
   have hfK (η : Y) : tsupport (f η) ⊆ tsupport φ := by
     rw [show ⇑(f η) = fun x ↦ ψ η * (φ x * TauCeti.fourierAtom (η : E) x) from funext (hf η)]
     exact tsupport_mul_subset_right.trans tsupport_mul_subset_left

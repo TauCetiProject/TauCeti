@@ -244,17 +244,17 @@ def cartanHomeomorph :
     { toFun k := ⟨⟨k, (mem_specialUnitaryGroup_iff.1 k.2).1⟩,
         (hG _).2 (mem_specialUnitaryGroup_iff.1 k.2).2⟩
       invFun u := ⟨u.1, mem_specialUnitaryGroup_iff.2 ⟨u.1.2, (hG _).1 u.2⟩⟩
-      continuous_toFun := (continuous_subtype_val.subtype_mk _).subtype_mk _
-      continuous_invFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _ }
+      continuous_toFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _
+      continuous_invFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _ }
   let eP : {X : selfAdjoint (Matrix n n 𝕜) // (X : Matrix n n 𝕜).trace = 0} ≃ₜ
       {x : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ, TauCeti.expUnit (t • (x : Matrix n n 𝕜)) ∈ G} :=
     { toFun X := ⟨X.1, (hline _).2 X.2⟩
       invFun x := ⟨x.1, (hline _).1 x.2⟩
-      continuous_toFun := continuous_subtype_val.subtype_mk _
-      continuous_invFun := continuous_subtype_val.subtype_mk _ }
+      continuous_toFun := continuous_subtypeVal.subtype_mk _
+      continuous_invFun := continuous_subtypeVal.subtype_mk _ }
   let eSL : G ≃ₜ SpecialLinearGroup n 𝕜 :=
     { toEquiv := toGLKerEquiv.symm.toEquiv
-      continuous_toFun := (Units.continuous_val.comp continuous_subtype_val).subtype_mk _
+      continuous_toFun := (Units.continuous_val.comp continuous_subtypeVal).subtype_mk _
       continuous_invFun := continuous_toGL.subtype_mk _ }
   exact (eK.prodCongr eP).trans
     ((G.cartanHomeomorph hstar fun x hx h ↦ (hline x).2 ((hexpG hx).1 h)).trans eSL)

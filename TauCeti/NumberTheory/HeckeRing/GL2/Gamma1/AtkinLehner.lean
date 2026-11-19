@@ -81,8 +81,8 @@ private lemma atkinLehnerAntiInvolution_bar_mem_Gamma1 {x : GL (Fin 2) ℚ} (hx 
     (atkinLehnerAntiInvolution N).bar x hx ∈ (Gamma1 N).map (mapGL ℚ) := by
   obtain ⟨γ, hγ, rfl⟩ := h
   obtain ⟨τ, hτ, hτeq⟩ := (atkinLehnerAntiInvolution N).bar_mem_H hx
-    (Subgroup.mem_map_of_mem _ (Gamma1_in_Gamma0 N hγ))
-  obtain ⟨c, hc⟩ := mem_Gamma0_iff_dvd.mp (Gamma1_in_Gamma0 N hγ)
+    (Subgroup.mem_map_of_mem _ (Gamma1_le_Gamma0 N hγ))
+  obtain ⟨c, hc⟩ := mem_Gamma0_iff_dvd.mp (Gamma1_le_Gamma0 N hγ)
   have hmat : (τ : Matrix (Fin 2) (Fin 2) ℤ) = !![γ 0 0, c; (N : ℤ) * γ 0 1, γ 1 1] :=
     Matrix.map_injective (Int.cast_injective (α := ℚ)) <|
       (coe_mapGL_int τ).symm.trans <| (congrArg Units.val hτeq).trans <|

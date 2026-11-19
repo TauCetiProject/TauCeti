@@ -402,7 +402,7 @@ variable [IsIsometricSMul G X]
 
 private theorem continuous_proj (hP : IsLocalTiling P N) : Continuous (proj hP) :=
   Continuous.quotient_lift
-    (continuous_sigma fun a ↦ (continuous_const_smul a).comp continuous_subtype_val) _
+    (continuous_sigma fun a ↦ (continuous_const_smul a).comp continuous_subtypeVal) _
 
 /-- The lift from a chart is continuous on the chart: near each point it is pieced together
 from finitely many tiles, on each of which it is a translate of the inclusion of the tile. -/
@@ -427,7 +427,7 @@ private theorem continuousOn_chartLift (hP : IsLocalTiling P N) (hc : IsTilingCh
       funext fun u ↦ chartLift_eq hP hc g e₀ u.2.2 h.1.2 u.2.1
     rw [heq]
     exact (continuous_glue hP _).comp
-      (((continuous_const_smul _).comp continuous_subtype_val).subtype_mk _)
+      (((continuous_const_smul _).comp continuous_subtypeVal).subtype_mk _)
   have hK : K ⊆ ⋃ h : F, ((h : G) • P ∩ K) := fun u hu ↦ by
     obtain ⟨h, hh, huh⟩ := mem_iUnion₂.1 (hc.subset_iUnion_smul (hKW hu).1)
     exact mem_iUnion.2 ⟨⟨⟨h, hh⟩, u, ⟨huh, (hKW hu).1⟩, (hKW hu).2⟩, huh, hu⟩
@@ -452,7 +452,7 @@ private theorem isOpen_image_chartLift (hP : IsLocalTiling P N) (hc : IsTilingCh
     rwa [mul_inv_rev, ← mul_assoc, mul_inv_cancel_left] at this
   refine ⟨{x' | g⁻¹ • a • (x' : X) ∈ B}, fun x' hx' ↦ ⟨_, hx', ?_⟩,
     hB.preimage ((continuous_const_smul _).comp ((continuous_const_smul _).comp
-      continuous_subtype_val)), ?_⟩
+      continuous_subtypeVal)), ?_⟩
   · rw [← mul_smul, chartLift_smul hP hc g e₀ hga x'.2 (by rw [mul_smul]; exact hBW hx'),
       mul_inv_cancel_left]
     -- `glue hP a x'` is by definition the class of `⟨a, x'⟩`

@@ -97,7 +97,7 @@ theorem weightDistribution_zero (h : 0 ∈ C) : C.weightDistribution 0 = 1 := by
 theorem weightDistribution_ne_zero_iff (hC : C.Finite) {w : ℕ} :
     C.weightDistribution w ≠ 0 ↔ ∃ x ∈ C, hammingNorm x = w := by
   rw [weightDistribution_eq_card_filter hC, Ne, Finset.card_eq_zero, ← Ne,
-    ← Finset.nonempty_iff_ne_empty]
+    Finset.ne_empty_iff_nonempty]
   simp [Finset.Nonempty]
 
 /-- The weight distribution of a finite set of words sums to its cardinality. -/

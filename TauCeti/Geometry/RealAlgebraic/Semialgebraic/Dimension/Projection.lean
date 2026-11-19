@@ -123,7 +123,7 @@ theorem IsSemialgebraic.natCast_le_semialgebraicDim_iff {s : Set (Fin n → ℝ)
     -- mapped onto an open subset of `ℝ ^ d'` by a coordinate projection, where `d ≤ d'`.
     obtain ⟨𝒞, h𝒞, hsub⟩ := hs.exists_isCAD_subset_or_disjoint
     have hne : {E ∈ 𝒞 | E ⊆ s}.Nonempty := by
-      refine nonempty_iff_ne_empty.2 fun h0 ↦ ?_
+      refine Set.ne_empty_iff_nonempty.1 fun h0 ↦ ?_
       rw [← h𝒞.sUnion_sep_subset hsub, h0, sUnion_empty, semialgebraicDim_empty] at h
       exact (WithBot.bot_lt_coe _).not_ge h
     obtain ⟨E, hE, hmax⟩ :=

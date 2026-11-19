@@ -42,7 +42,7 @@ theorem isPathConnected_symplecticGroup :
     IsPathConnected (symplecticGroup n ℝ : Set (Matrix (n ⊕ n) (n ⊕ n) ℝ)) := by
   let f : unitaryGroup n ℂ → Matrix (n ⊕ n) (n ⊕ n) ℝ := fun U ↦ (U : Matrix n n ℂ).realify
   have hf : Continuous f :=
-    isClosedEmbedding_realify.continuous.comp continuous_subtype_val
+    isClosedEmbedding_realify.continuous.comp continuous_subtypeVal
   have hrange : Set.range f =
       ((symplecticGroup n ℝ ⊓ orthogonalGroup (n ⊕ n) ℝ :
         Submonoid (Matrix (n ⊕ n) (n ⊕ n) ℝ)) : Set _) := by

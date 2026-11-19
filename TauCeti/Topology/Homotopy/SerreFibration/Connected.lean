@@ -170,7 +170,7 @@ variable {b : B}
 domain is the `TopCat` fibre `p.fiber b`, so it matches `p.fiberι b` and the homotopy groups of
 `p.fiber b` under `rw`, and its value at `e` reduces to `e.1`. -/
 private abbrev fiberVal (p : E ⟶ B) (b : B) : C(p.fiber b, E) :=
-  ⟨Subtype.val, continuous_subtype_val⟩
+  ⟨Subtype.val, continuous_subtypeVal⟩
 
 private theorem fiberι_hom_eq_fiberVal : (p.fiberι b).hom = fiberVal p b :=
   ContinuousMap.ext (TopCat.Hom.fiberι_apply p b)

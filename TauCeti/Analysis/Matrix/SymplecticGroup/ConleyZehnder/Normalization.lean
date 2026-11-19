@@ -172,7 +172,7 @@ theorem conleyZehnderIndex_eq_signature_sub_of_isUnit_det_add_one {A B : GLSympl
           J n ℝ * ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) : ℝ) / 2 := by
   set Ψ : I → Matrix (n ⊕ n) (n ⊕ n) ℝ := fun t ↦ ((γ t : GL (n ⊕ n) ℝ) : Matrix _ _ ℝ)
   have hΨc : Continuous Ψ :=
-    Units.continuous_val.comp (continuous_subtype_val.comp γ.continuous)
+    Units.continuous_val.comp (continuous_subtypeVal.comp γ.continuous)
   -- The straightened graph of `γ t` is the graph of the symmetric matrix `graphSymm (γ t)`.
   set S : I → Matrix (n ⊕ n) (n ⊕ n) ℝ := fun t ↦ graphSymm (Ψ t) with hSdef
   have hinv : Continuous fun t ↦ (Ψ t + 1)⁻¹ :=
@@ -277,7 +277,7 @@ private theorem signature_exp_transpose_mul_J_sub_J_mul_exp {S : Matrix (n ⊕ n
   have hloc : IsLocallyConstant fun u : I ↦ signature (g u) := by
     refine (IsLocallyConstant.iff_eventually_eq _).2 fun u ↦ ?_
     filter_upwards [IsHermitian.eventually_signature_eq_of_continuousAt hgh
-      (hgc.comp continuous_subtype_val).continuousAt (hgdet u)] with w hw
+      (hgc.comp continuous_subtypeVal).continuousAt (hgdet u)] with w hw
     exact (IsHermitian.signature_map_ofReal (𝕜 := ℝ) (hgh w)).symm.trans
       (hw.trans (IsHermitian.signature_map_ofReal (𝕜 := ℝ) (hgh u)))
   have h := hloc.apply_eq_of_preconnectedSpace 1 0

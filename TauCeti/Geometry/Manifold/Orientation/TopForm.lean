@@ -133,7 +133,8 @@ private theorem mapOrientation_topFormOrientationAt [IsManifold I 1 M]
   · have hne : (e.basisAt B hx).orientation ≠ topFormOrientationAt (I := I) hk φ x :=
       fun h ↦ hpos ((topFormOrientationAt_spec hk x h0 _).mp h)
     rcases Orientation.eq_or_eq_neg (topFormOrientationAt (I := I) hk φ x)
-        (e.basisAt B hx).orientation ((Fintype.card_fin k).trans hk.symm) with h | h
+        (e.basisAt B hx).orientation
+        ((Nat.card_eq_fintype_card.trans (Fintype.card_fin k)).trans hk.symm) with h | h
     · exact absurd h.symm hne
     · rw [h, Trivialization.mapOrientation_neg, hmap]
 
@@ -215,7 +216,8 @@ theorem orientation_eq_ite_orientationAt_ofTopForm [IsManifold I 1 M]
       else -orientationAt (ofTopForm hk φ hφ h0) x := by
   split_ifs with h
   · exact (orientation_eq_orientationAt_ofTopForm_iff hk hφ h0 b).mpr h
-  · refine ((b.orientation).eq_or_eq_neg _ ((Fintype.card_fin k).trans hk.symm)).resolve_left ?_
+  · refine ((b.orientation).eq_or_eq_neg _ (Nat.card_eq_fintype_card.trans
+      ((Fintype.card_fin k).trans hk.symm))).resolve_left ?_
     exact fun h' ↦ h ((orientation_eq_orientationAt_ofTopForm_iff hk hφ h0 b).mp h')
 
 variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']

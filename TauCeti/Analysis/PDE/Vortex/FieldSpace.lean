@@ -213,7 +213,7 @@ theorem referenceField_eventuallyEq_amplitudeField (f : ContDiffBump (0 : ℝ)) 
       smul_eq_mul]
     ring
   have hs : (w / (‖w‖ : ℂ)) ^ m = (Real.exp (-(m * Real.log ‖w‖)) : ℂ) * w ^ m := by
-    rw [Real.exp_neg, Real.exp_nat_mul, Real.exp_log hn, div_pow, div_eq_inv_mul]
+    rw [Real.exp_neg, Real.exp_natCast_mul, Real.exp_log hn, div_pow, div_eq_inv_mul]
     push_cast
     ring
   rw [referenceField_eq_of_rOut_le f m hw.le, hs, re_ofReal_mul, im_ofReal_mul]
@@ -231,7 +231,7 @@ theorem equation_referenceField_eq_zero (f : ContDiffBump (0 : ℝ)) (m : ℕ) {
       (norm_pos_iff.1 hn)).const_smul (c := (m : ℝ))).neg
   rw [equation_congr_nhds (referenceField_eventuallyEq_amplitudeField f m hz),
     equation_amplitudeField_eq_zero_iff hu.1 (differentiableAt_pow m), hu.2.eq_of_nhds,
-    two_mul, Real.exp_add, Real.exp_neg, Real.exp_nat_mul, Real.exp_log hn, norm_pow]
+    two_mul, Real.exp_add, Real.exp_neg, Real.exp_natCast_mul, Real.exp_log hn, norm_pow]
   field_simp
   norm_num
 

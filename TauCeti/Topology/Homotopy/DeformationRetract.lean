@@ -310,7 +310,7 @@ theorem exists_deformation_of_preimage (hj : IsOpenEmbedding j) {S T V : Set X} 
   have hkS {x : S} (hx : x ∉ range k) : (x : X) ∈ V :=
     hSV ⟨x.2, fun ⟨y, hy⟩ ↦ hx ⟨⟨y, by simp [hy, x.2]⟩, Subtype.ext hy⟩⟩
   obtain ⟨G, hGk, hG⟩ := (S.restrictPreimage_isOpenEmbedding hj).exists_continuousMap_extend_id
-    (hV.preimage continuous_subtype_val) (fun _ ↦ hkS) H.toContinuousMap
+    (hV.preimage continuous_subtypeVal) (fun _ ↦ hkS) H.toContinuousMap
     fun t y hy ↦ H.eq_snd t (hVT ⟨y.2, hy⟩)
   -- The extended deformation fixes every point of `T` and starts inside `T`.
   have hGT (t : I) (x : S) (hx : (x : X) ∈ T) : G (t, x) = x := by

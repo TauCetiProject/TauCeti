@@ -217,7 +217,7 @@ private theorem exists_joined_of_commSq (hp' : serreFibrations p')
   have hΓ1 : p' (Γ 1) = g b := (congrFun hΓ 1).trans hb.somePath.symm.target
   obtain ⟨y, hy⟩ := (hfib b).exists_joined ⟨Γ 1, hΓ1⟩
   have hyE : Joined (f y.1) (Γ 1) := by
-    simpa only [sq.fiberMap_apply_coe] using hy.map continuous_subtype_val
+    simpa only [sq.fiberMap_apply_coe] using hy.map continuous_subtypeVal
   exact ⟨y.1, hyE.trans (Joined.symm ⟨⟨Γ, hΓ0, rfl⟩⟩)⟩
 
 /-- **Injectivity on path components.** Two points of `E` whose images are joined in `E'` are

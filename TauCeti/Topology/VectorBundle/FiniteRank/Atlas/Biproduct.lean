@@ -75,8 +75,8 @@ private def rankSplit (A D : FiniteRankAtlas 𝕜 X) (n : ℕ)
 private theorem isLocallyConstant_rankSplit (A D : FiniteRankAtlas 𝕜 X) (n : ℕ) :
     IsLocallyConstant (rankSplit A D n) := by
   refine (IsLocallyConstant.iff_eventually_eq _).2 fun x => ?_
-  filter_upwards [((A.rank.isLocallyConstant.comp_continuous continuous_subtype_val).prodMk
-    (D.rank.isLocallyConstant.comp_continuous continuous_subtype_val)).eventually_eq x] with y hy
+  filter_upwards [((A.rank.isLocallyConstant.comp_continuous continuous_subtypeVal).prodMk
+    (D.rank.isLocallyConstant.comp_continuous continuous_subtypeVal)).eventually_eq x] with y hy
   exact Subtype.ext hy
 
 private def rankInclusionLeft (A D : FiniteRankAtlas 𝕜 X) (n : ℕ)
@@ -84,14 +84,14 @@ private def rankInclusionLeft (A D : FiniteRankAtlas 𝕜 X) (n : ℕ)
     C({x : {x : X // (A.rank + D.rank) x = n} // rankSplit A D n x = pq},
       {z : X // A.rank z = pq.1.1}) :=
   ⟨fun x => ⟨x.1.1, congrArg (fun u : {pq : ℕ × ℕ // pq.1 + pq.2 = n} => u.1.1) x.2⟩,
-    (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _⟩
+    (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _⟩
 
 private def rankInclusionRight (A D : FiniteRankAtlas 𝕜 X) (n : ℕ)
     (pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}) :
     C({x : {x : X // (A.rank + D.rank) x = n} // rankSplit A D n x = pq},
       {z : X // D.rank z = pq.1.2}) :=
   ⟨fun x => ⟨x.1.1, congrArg (fun u : {pq : ℕ × ℕ // pq.1 + pq.2 = n} => u.1.2) x.2⟩,
-    (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _⟩
+    (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _⟩
 
 /-- On each clopen `(p, q)`-piece of the rank-`n` stratum, form the constant-rank Whitney sum of
 the pulled-back stratum cores of `A` and `D`. -/
@@ -188,36 +188,36 @@ private theorem continuous_blocks_of_continuous_whitneySum {Y : Type*} [Topologi
   let s₁ (y : Y) : A.Fiber (b y) := (splitCoords (𝕜 := 𝕜) (A.rank (b y)) (D.rank (b y)) (s y)).1
   let s₂ (y : Y) : D.Fiber (b y) := (splitCoords (𝕜 := 𝕜) (A.rank (b y)) (D.rank (b y)) (s y)).2
   have hpiece (p q : ℕ) := (continuous_whitneyPieceCore_iff A D (p + q) ⟨(p, q), rfl⟩
-    ((((hb.comp continuous_subtype_val).comp continuous_subtype_val).subtype_mk _).subtype_mk _)
+    ((((hb.comp continuous_subtypeVal).comp continuous_subtypeVal).subtype_mk _).subtype_mk _)
     (fun y => fun i : Fin (p + q) => s y.1.1 (Fin.cast y.1.2.symm i))).1 <|
       ((isLocallyConstant_rankSplit A D (p + q)).continuous_mk_pointIndexedVectorBundleCore_iff
-        _ ((hb.comp continuous_subtype_val).subtype_mk _) _).1 (hstrata (p + q)) ⟨(p, q), rfl⟩
+        _ ((hb.comp continuous_subtypeVal).subtype_mk _) _).1 (hstrata (p + q)) ⟨(p, q), rfl⟩
   refine ⟨(A.continuous_mk_iff_rankStrata hb s₁).2 fun p => ?_,
     (D.continuous_mk_iff_rankStrata hb s₂).2 fun q => ?_⟩
   · refine continuous_of_cover_nhds
       (s := fun q : ℕ => {z : {y : Y // A.rank (b y) = p} | D.rank (b z.1) = q})
       (fun z => ⟨D.rank (b z.1), ((D.rank.isLocallyConstant.isOpen_fiber _).preimage
-        (hb.comp continuous_subtype_val)).mem_nhds rfl⟩) fun q => ?_
+        (hb.comp continuous_subtypeVal)).mem_nhds rfl⟩) fun q => ?_
     rw [continuousOn_iff_continuous_domRestrict]
     let g : {z : {y : Y // A.rank (b y) = p} // D.rank (b z.1) = q} →
         {y : {y : Y // (A.rank + D.rank) (b y) = p + q} //
           rankSplit A D (p + q) ⟨b y.1, y.2⟩ = ⟨(p, q), rfl⟩} :=
       fun z => ⟨⟨z.1.1, congrArg₂ (· + ·) z.1.2 z.2⟩, Subtype.ext (Prod.ext z.1.2 z.2)⟩
     have hg : Continuous g :=
-      ((continuous_subtype_val.comp continuous_subtype_val).subtype_mk _).subtype_mk _
+      ((continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _).subtype_mk _
     exact ((hpiece p q).1.comp hg).congr fun z =>
       TotalSpace.mk_inj.mpr (splitCoords_cast_fst z.1.2.symm (g z).1.2.symm (s z.1.1))
   · refine continuous_of_cover_nhds
       (s := fun p : ℕ => {z : {y : Y // D.rank (b y) = q} | A.rank (b z.1) = p})
       (fun z => ⟨A.rank (b z.1), ((A.rank.isLocallyConstant.isOpen_fiber _).preimage
-        (hb.comp continuous_subtype_val)).mem_nhds rfl⟩) fun p => ?_
+        (hb.comp continuous_subtypeVal)).mem_nhds rfl⟩) fun p => ?_
     rw [continuousOn_iff_continuous_domRestrict]
     let g : {z : {y : Y // D.rank (b y) = q} // A.rank (b z.1) = p} →
         {y : {y : Y // (A.rank + D.rank) (b y) = p + q} //
           rankSplit A D (p + q) ⟨b y.1, y.2⟩ = ⟨(p, q), rfl⟩} :=
       fun z => ⟨⟨z.1.1, congrArg₂ (· + ·) z.2 z.1.2⟩, Subtype.ext (Prod.ext z.2 z.1.2)⟩
     have hg : Continuous g :=
-      ((continuous_subtype_val.comp continuous_subtype_val).subtype_mk _).subtype_mk _
+      ((continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _).subtype_mk _
     exact ((hpiece p q).2.comp hg).congr fun z =>
       TotalSpace.mk_inj.mpr (splitCoords_cast_snd z.1.2.symm (g z).1.2.symm (s z.1.1))
 
@@ -242,21 +242,21 @@ theorem continuous_mk_whitneySum_iff {Y : Type*} [TopologicalSpace Y]
   have hs₂_strata := (D.continuous_mk_iff_rankStrata hb s₂).1 hs₂
   refine ((whitneySum A D).continuous_mk_iff_rankStrata hb s).2 fun n => ?_
   refine ((isLocallyConstant_rankSplit A D n).continuous_mk_pointIndexedVectorBundleCore_iff
-    _ ((hb.comp continuous_subtype_val).subtype_mk _) _).2 fun pq => ?_
+    _ ((hb.comp continuous_subtypeVal).subtype_mk _) _).2 fun pq => ?_
   refine (continuous_whitneyPieceCore_iff A D n pq
-    ((((hb.comp continuous_subtype_val).comp continuous_subtype_val).subtype_mk _).subtype_mk _)
+    ((((hb.comp continuous_subtypeVal).comp continuous_subtypeVal).subtype_mk _).subtype_mk _)
     _).2 ⟨?_, ?_⟩
   · let g₁ : {y : {y : Y // (A.rank + D.rank) (b y) = n} // rankSplit A D n ⟨b y.1, y.2⟩ = pq} →
         {z : Y // A.rank (b z) = pq.1.1} :=
       fun y => ⟨y.1.1, congrArg (fun u : {pq : ℕ × ℕ // pq.1 + pq.2 = n} => u.1.1) y.2⟩
-    have hg₁ : Continuous g₁ := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+    have hg₁ : Continuous g₁ := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
     exact ((hs₁_strata pq.1.1).comp hg₁).congr fun y =>
       TotalSpace.mk_inj.mpr
         (splitCoords_cast_fst (g₁ y).2.symm (pq.2.trans y.1.2.symm) (s y.1.1)).symm
   · let g₂ : {y : {y : Y // (A.rank + D.rank) (b y) = n} // rankSplit A D n ⟨b y.1, y.2⟩ = pq} →
         {z : Y // D.rank (b z) = pq.1.2} :=
       fun y => ⟨y.1.1, congrArg (fun u : {pq : ℕ × ℕ // pq.1 + pq.2 = n} => u.1.2) y.2⟩
-    have hg₂ : Continuous g₂ := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+    have hg₂ : Continuous g₂ := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
     exact ((hs₂_strata pq.1.2).comp hg₂).congr fun y =>
       TotalSpace.mk_inj.mpr
         (splitCoords_cast_snd (g₂ y).2.symm (pq.2.trans y.1.2.symm) (s y.1.1)).symm
@@ -763,9 +763,9 @@ private theorem continuous_trivialAdd_hom (r₁ r₂ : LocallyConstant X ℕ) :
     (s := fun pq : ℕ × ℕ => {y : S | r₁ y.1.proj = pq.1 ∧ r₂ y.1.proj = pq.2})
   · exact fun y => ⟨(r₁ y.1.proj, r₂ y.1.proj),
       (((r₁.isLocallyConstant.isOpen_fiber _).preimage
-          (WT.continuous_proj.comp continuous_subtype_val)).inter
+          (WT.continuous_proj.comp continuous_subtypeVal)).inter
         ((r₂.isLocallyConstant.isOpen_fiber _).preimage
-          (WT.continuous_proj.comp continuous_subtype_val))).mem_nhds ⟨rfl, rfl⟩⟩
+          (WT.continuous_proj.comp continuous_subtypeVal))).mem_nhds ⟨rfl, rfl⟩⟩
   · rintro ⟨p, q⟩
     rw [continuousOn_iff_continuous_domRestrict]
     by_cases hpq : p + q = n
@@ -773,8 +773,8 @@ private theorem continuous_trivialAdd_hom (r₁ r₂ : LocallyConstant X ℕ) :
           {z : TotalSpace Unit WT.Fiber // r₁ z.proj = p} := fun y => ⟨y.1.1, y.2.1⟩
       let g₂ : {y : S // r₁ y.1.proj = p ∧ r₂ y.1.proj = q} →
           {z : TotalSpace Unit WT.Fiber // r₂ z.proj = q} := fun y => ⟨y.1.1, y.2.2⟩
-      have hg₁ : Continuous g₁ := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-      have hg₂ : Continuous g₂ := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+      have hg₁ : Continuous g₁ := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
+      have hg₂ : Continuous g₂ := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
       have hjoined :=
         (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin n => 𝕜) (finCongr hpq)).continuous.comp
           ((splitCoords (𝕜 := 𝕜) (M := 𝕜) p q).symm.continuous.comp
@@ -807,13 +807,13 @@ private theorem continuous_trivialAdd_inv (r₁ r₂ : LocallyConstant X ℕ) :
     let S := {y : TotalSpace Unit (trivial 𝕜 X (r₁ + r₂)).Fiber // r₁ y.proj = p}
     refine continuous_of_cover_nhds (s := fun q : ℕ => {y : S | r₂ y.1.proj = q})
       (fun y => ⟨r₂ y.1.proj, ((r₂.isLocallyConstant.isOpen_fiber _).preimage
-        ((trivial 𝕜 X (r₁ + r₂)).continuous_proj.comp continuous_subtype_val)).mem_nhds rfl⟩)
+        ((trivial 𝕜 X (r₁ + r₂)).continuous_proj.comp continuous_subtypeVal)).mem_nhds rfl⟩)
       fun q => ?_
     rw [continuousOn_iff_continuous_domRestrict]
     let g : {y : S // r₂ y.1.proj = q} →
         {z : TotalSpace Unit (trivial 𝕜 X (r₁ + r₂)).Fiber // (r₁ + r₂) z.proj = p + q} :=
       fun y => ⟨y.1.1, congrArg₂ (· + ·) y.1.2 y.2⟩
-    have hg : Continuous g := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+    have hg : Continuous g := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
     exact (((continuous_fst.comp (splitCoords (𝕜 := 𝕜) (M := 𝕜) p q).continuous).comp
       ((hc (p + q)).comp hg)).congr
       fun y => splitCoords_cast_fst y.1.2.symm (g y).2.symm y.1.1.2)
@@ -822,13 +822,13 @@ private theorem continuous_trivialAdd_inv (r₁ r₂ : LocallyConstant X ℕ) :
     let S := {y : TotalSpace Unit (trivial 𝕜 X (r₁ + r₂)).Fiber // r₂ y.proj = q}
     refine continuous_of_cover_nhds (s := fun p : ℕ => {y : S | r₁ y.1.proj = p})
       (fun y => ⟨r₁ y.1.proj, ((r₁.isLocallyConstant.isOpen_fiber _).preimage
-        ((trivial 𝕜 X (r₁ + r₂)).continuous_proj.comp continuous_subtype_val)).mem_nhds rfl⟩)
+        ((trivial 𝕜 X (r₁ + r₂)).continuous_proj.comp continuous_subtypeVal)).mem_nhds rfl⟩)
       fun p => ?_
     rw [continuousOn_iff_continuous_domRestrict]
     let g : {y : S // r₁ y.1.proj = p} →
         {z : TotalSpace Unit (trivial 𝕜 X (r₁ + r₂)).Fiber // (r₁ + r₂) z.proj = p + q} :=
       fun y => ⟨y.1.1, congrArg₂ (· + ·) y.2 y.1.2⟩
-    have hg : Continuous g := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+    have hg : Continuous g := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
     exact (((continuous_snd.comp (splitCoords (𝕜 := 𝕜) (M := 𝕜) p q).continuous).comp
       ((hc (p + q)).comp hg)).congr
       fun y => splitCoords_cast_snd y.1.2.symm (g y).2.symm y.1.1.2)
@@ -900,8 +900,8 @@ noncomputable def whitneySumFiberedProdHomeomorph (A D : FiniteRankAtlas 𝕜 X)
       ((whitneySnd A D).totalSpaceMap.continuous)).subtype_mk _
   continuous_invFun := by
     refine continuous_mk_whitneySum_iff.2
-      ⟨(continuous_fst.comp continuous_subtype_val).congr fun pq => ?_,
-        (continuous_snd.comp continuous_subtype_val).congr fun pq => ?_⟩
+      ⟨(continuous_fst.comp continuous_subtypeVal).congr fun pq => ?_,
+        (continuous_snd.comp continuous_subtypeVal).congr fun pq => ?_⟩
     · rcases pq with ⟨⟨⟨x₁, u⟩, ⟨x₂, w⟩⟩, h⟩; cases h
       exact TotalSpace.mk_inj.mpr (congrArg Prod.fst
         ((splitCoords (𝕜 := 𝕜) (M := 𝕜) (A.rank x₁) (D.rank x₁)).apply_symm_apply (u, w))).symm

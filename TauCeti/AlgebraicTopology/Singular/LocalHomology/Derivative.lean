@@ -111,7 +111,7 @@ theorem localHomologyMap_domRestrict_eq_affine_of_hasFDerivAt {f : E → F} {f' 
     ext y
     simp [ι, Subtype.ext_iff]
   have := isIso_localHomologyMap R ι
-    (IsOpenEmbedding.inclusion hBU (isOpen_ball.preimage continuous_subtype_val)) hιx
+    (IsOpenEmbedding.inclusion hBU (isOpen_ball.preimage continuous_subtypeVal)) hιx
     isClosed_singleton (by simp [ι, hr]) k
   rw [← cancel_epi (localHomologyMap R ι hιx.subset k), localHomologyMap_comp,
     localHomologyMap_comp]

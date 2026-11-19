@@ -65,7 +65,7 @@ theorem LocallyIntegrableOn.variationMeasure_absolutelyContinuous_of_unifIntegra
     variationMeasure μ Ω u ≪ μ.comap ((↑) : Ω → E) := by
   refine Measure.AbsolutelyContinuous.mk fun A _ hnull => ?_
   have hnull' : μ (((↑) : Ω → E) '' A) = 0 := by
-    exact ((MeasurableEmbedding.subtype_coe Ω.isOpen.measurableSet).comap_apply μ A).symm.trans
+    exact ((MeasurableEmbedding.subtypeVal Ω.isOpen.measurableSet).comap_apply μ A).symm.trans
       hnull
   refine le_antisymm ?_ bot_le
   apply le_of_forall_gt_imp_ge_of_dense fun ε hε => ?_

@@ -256,7 +256,7 @@ private theorem eventually_integrable_and_integral_inner_sub_le_integral_diverge
     refine image_eq_zero_of_notMem_tsupport fun h => hy ?_
     rw [mem_preimage, mul_comm, ← inv_smul_sub_mem_closedBall_zero_iff hr]
     exact closedBall_subset_closedBall (le_max_left _ _) (hR h)
-  have hSm : MeasurableSet S := (isClosed_closedBall.preimage continuous_subtype_val).measurableSet
+  have hSm : MeasurableSet S := (isClosed_closedBall.preimage continuous_subtypeVal).measurableSet
   -- The perimeter measure of `S` is bounded by the upper density estimate.
   have hSfin : lam S ≠ ∞ := ne_top_of_le_ne_top (by finiteness) h2
   have hlamS : lam.real S ≤ 2 * (n * (R' * r) ^ (n - 1) * ω) := by
@@ -804,7 +804,7 @@ private theorem eventually_variationMeasure_closedBall_div_le_integral_divergenc
     self_mem_nhdsWithin] with r ⟨hint, h⟩ h2 (hr : 0 < r)
   set S₁ := ((↑) : Ω → E) ⁻¹' closedBall x r
   have hS₁m : MeasurableSet S₁ :=
-    (isClosed_closedBall.preimage continuous_subtype_val).measurableSet
+    (isClosed_closedBall.preimage continuous_subtypeVal).measurableSet
   have hS₁fin : lam S₁ ≠ ∞ := ne_top_of_le_ne_top (by finiteness) h2
   -- `|Dχ_s|(S₁) ≤ ∫ ⟪φ((· - x) / r), ν⟫ d|Dχ_s|`, since `y ∈ S₁` exactly when
   -- `(y - x) / r ∈ closedBall 0 1`.

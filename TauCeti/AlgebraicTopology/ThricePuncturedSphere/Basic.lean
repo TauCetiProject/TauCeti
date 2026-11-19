@@ -174,11 +174,11 @@ theorem mem_rightOpen {z : ThricePuncturedSphere} : z ∈ rightOpen ↔ 0 < (z :
 
 /-- The set `leftOpen` is open in the thrice-punctured sphere. -/
 theorem isOpen_leftOpen : IsOpen leftOpen :=
-  isOpen_lt (Complex.continuous_re.comp continuous_subtype_val) continuous_const
+  isOpen_lt (Complex.continuous_re.comp continuous_subtypeVal) continuous_const
 
 /-- The set `rightOpen` is open in the thrice-punctured sphere. -/
 theorem isOpen_rightOpen : IsOpen rightOpen :=
-  isOpen_lt continuous_const (Complex.continuous_re.comp continuous_subtype_val)
+  isOpen_lt continuous_const (Complex.continuous_re.comp continuous_subtypeVal)
 
 /-- The two open sets `A` and `B` cover the thrice-punctured sphere: a point with `re z < 1` lies
 in `A`, and otherwise `re z ≥ 1 > 0` puts it in `B`. -/

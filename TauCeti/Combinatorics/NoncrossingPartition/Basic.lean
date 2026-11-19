@@ -523,7 +523,7 @@ partition. -/
 instance (i : α) : Unique (NoncrossingPartition ({i} : Finset α)) where
   default := ⊥
   uniq P := le_bot_iff.1 <| le_top.trans_eq <| Subtype.ext <| Finpartition.ext <| by
-    simp [Finpartition.parts_top (singleton_ne_empty i)]
+    simp [Finpartition.parts_top (singleton_nonempty i).ne_empty]
 
 /-- If `s` has at least two elements, the partition into singletons and the partition into one
 part are different noncrossing partitions of `s`. -/
@@ -605,7 +605,7 @@ def singletonPartEquiv {i : α} (hi : i ∈ s) :
     {π : NoncrossingPartition s // {i} ∈ π.1.parts} ≃ NoncrossingPartition (s.erase i) where
   toFun π := ⟨π.1.1.restrict (s.erase_subset i), π.1.2.restrict _⟩
   invFun τ :=
-    ⟨⟨τ.1.extend (singleton_ne_empty i) (disjoint_singleton_right.2 (s.notMem_erase i))
+    ⟨⟨τ.1.extend (singleton_nonempty i).ne_empty (disjoint_singleton_right.2 (s.notMem_erase i))
         (by rw [union_singleton, insert_erase hi]),
       τ.2.extend_singleton _ _ _⟩, mem_insert_self _ _⟩
   left_inv π := Subtype.ext <| Subtype.ext <| Finpartition.ext <| by

@@ -60,7 +60,7 @@ theorem generalizingMap_spaComap_of_isTateRing (f : Hom S T) : GeneralizingMap f
   intro y x h
   have hxy : x.1 ⤳ comap f.toRingHom y.1 := by
     rw [← spaComap_val]
-    exact h.map continuous_subtype_val
+    exact h.map continuous_subtypeVal
   have hxc : x.1.IsContinuous := ((mem_spa_iff _ _).mp x.2).1
   have hsupp := hxc.supp_eq_of_specializes (isAnalyticPoint_of_isTateRing _) hxy
   set v := y.1.valuation

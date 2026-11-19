@@ -89,7 +89,7 @@ theorem extendsDisjointOpens_diskBoundaryInclusion_prodMap (n : ℕ) (Z : Type u
   -- The radial projection in the first factor, continuous away from the centre, retracts the
   -- neighbourhood `1 / 2 < ‖x‖` of `∂𝔻 n × Z` onto it.
   have hν : Continuous fun x : TopCat.disk.{u} n × Z ↦ ν x.1 :=
-    (continuous_subtype_val.comp continuous_uliftDown).comp continuous_fst
+    (continuous_subtypeVal.comp continuous_uliftDown).comp continuous_fst
   refine extendsDisjointOpens_of_continuousOn _ (hμ.prodMap IsEmbedding.id).isInducing
     (N := {x | 1 / 2 < ‖ν x.1‖}) (ρ := fun x ↦ (‖ν x.1‖⁻¹ • ν x.1, x.2))
     (isOpen_lt continuous_const hν.norm)

@@ -168,7 +168,7 @@ private theorem continuous_sectionUnitary (k : Fin (n + 1)) :
       (add_pos_of_pos_of_nonneg one_pos (inv_nonneg.2 (norm_nonneg _))).ne'
   have hu : Continuous (reflectionAxis (n := n) k) :=
     continuous_const.add ((PiLp.continuous_ofLp 2 _).comp
-      (continuous_subtype_val.comp (affineUnitVector k).continuous))
+      (continuous_subtypeVal.comp (affineUnitVector k).continuous))
   refine Continuous.subtype_mk ?_ _
   unfold sectionMatrix
   exact ((continuous_const.sub (hc.smul (hu.matrix_vecMulVec hu.star))).matrix_mul

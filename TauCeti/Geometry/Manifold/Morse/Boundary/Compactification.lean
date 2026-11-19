@@ -155,15 +155,15 @@ theorem exists_homeomorph_morseTrajectoryPairs {p r : M}
   have hg : Continuous fun y ↦ hX.flow (τ y) (y : M) := by
     refine continuous_iff_continuousAt.2 fun y ↦ ?_
     obtain ⟨σ, hσ, hlim⟩ := hX.exists_tendsto_flow_of_tendsto y.2.1 hr₂ h₂p
-      (continuous_subtype_val.tendsto y) (s := τ) hτ'
+      (continuous_subtypeVal.tendsto y) (s := τ) hτ'
     rwa [(hτ y).unique hσ (hτ' y)] at hlim
   refine ⟨
     { toFun w := ⟨w.1.1, w.2.1, w.2.2.1⟩
       invFun y := ⟨(y.1, hX.flow (τ y) y.1), y.2.1, y.2.2, hτ' y, τ y, rfl⟩
       left_inv := ?_
       right_inv y := rfl
-      continuous_toFun := (continuous_fst.comp continuous_subtype_val).subtype_mk _
-      continuous_invFun := (continuous_subtype_val.prodMk hg).subtype_mk _ }, fun w ↦ rfl⟩
+      continuous_toFun := (continuous_fst.comp continuous_subtypeVal).subtype_mk _
+      continuous_invFun := (continuous_subtypeVal.prodMk hg).subtype_mk _ }, fun w ↦ rfl⟩
   rintro ⟨⟨y, z⟩, hy, hyc, hzc, t, ht⟩
   obtain rfl : hX.flow t y = z := ht
   have := (hτ ⟨y, hy, hyc⟩).unique (hτ' ⟨y, hy, hyc⟩) hzc
@@ -362,7 +362,7 @@ theorem isOpen_preimage_val_morseTrajectoryPairs {p r : M}
   have hc : IsClosed ((↑) ⁻¹' (closure (hX.morseTrajectoryPairs p r c₁ c₂) \
       hX.morseTrajectoryPairs p r c₁ c₂) : Set (closure (hX.morseTrajectoryPairs p r c₁ c₂))) :=
     (h.finite_closure_diff_morseTrajectoryPairs hf hind hr₂ h₂₁ h₁p
-      hgap).isClosed.preimage continuous_subtype_val
+      hgap).isClosed.preimage continuous_subtypeVal
   convert hc.isOpen_compl using 1
   ext x
   simp only [mem_preimage, mem_compl_iff, Set.mem_sdiff, Subtype.coe_prop, true_and, not_not]

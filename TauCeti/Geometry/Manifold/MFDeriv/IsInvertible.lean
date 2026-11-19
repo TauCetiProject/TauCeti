@@ -98,13 +98,18 @@ theorem isInvertible_mfderiv_of_isInvertible_mfderiv_comp
   have hright (y : TangentSpace I' (f x)) :
       mfderiv I I' f x (s (mfderiv I' I'' g (f x) y)) = y :=
     hinj (by rw [hcomp]; exact e.apply_symm_apply _)
-  exact ⟨⟨ContinuousLinearEquiv.equivOfInverse (mfderiv I I' f x)
+  exact ⟨⟨ContinuousLinearEquiv.ofContinuousLinearMap (mfderiv I I' f x)
       (s.comp (mfderiv I' I'' g (f x)))
-      (fun v ↦ by simp only [s, ContinuousLinearMap.comp_apply, hcomp]; exact e.symm_apply_apply v)
-      hright, rfl⟩,
-    ⟨ContinuousLinearEquiv.equivOfInverse (mfderiv I' I'' g (f x)) ((mfderiv I I' f x).comp s)
-      (fun y ↦ hright y)
-      (fun z ↦ by simp only [s, ContinuousLinearMap.comp_apply, hcomp]; exact e.apply_symm_apply z),
+      (ContinuousLinearMap.ext hright)
+      (ContinuousLinearMap.ext fun v ↦ by
+        simp only [s, ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, hcomp]
+        exact e.symm_apply_apply v), rfl⟩,
+    ⟨ContinuousLinearEquiv.ofContinuousLinearMap (mfderiv I' I'' g (f x))
+      ((mfderiv I I' f x).comp s)
+      (ContinuousLinearMap.ext fun z ↦ by
+        simp only [s, ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, hcomp]
+        exact e.apply_symm_apply z)
+      (ContinuousLinearMap.ext fun y ↦ hright y),
     rfl⟩⟩
 
 /-- If the source is modelled on a finite-dimensional space over a complete field and the

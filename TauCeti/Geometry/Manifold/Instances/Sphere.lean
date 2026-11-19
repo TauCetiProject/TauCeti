@@ -325,7 +325,7 @@ def stereographicDiffeomorph (v : sphere (0 : E) 1) :
   right_inv y := (stereographic' n v).right_inv (by simp)
   contMDiff_toFun :=
     (contMDiffOn_of_mem_maximalAtlas (stereographic'_mem_maximalAtlas v)).comp_contMDiff
-      contMDiff_subtype_val fun x ↦ by simp
+      contMDiff_subtypeVal fun x ↦ by simp
   contMDiff_invFun := (ContMDiff.subtypeVal_comp_iff _ _).mp
     (isSmoothEmbedding_stereographic'_symm v).contMDiff
 
@@ -360,9 +360,9 @@ def stereographicPuncturedDiffeomorph (v : sphere (0 : E) 1) :
   right_inv y := Subtype.ext ((stereographic' n v).right_inv (by simp))
   contMDiff_toFun := (ContMDiff.subtypeVal_comp_iff _ _).mp <|
     (contMDiffOn_of_mem_maximalAtlas (stereographic'_mem_maximalAtlas v)).comp_contMDiff
-      contMDiff_subtype_val fun x ↦ by simpa using x.2.1
+      contMDiff_subtypeVal fun x ↦ by simpa using x.2.1
   contMDiff_invFun := (ContMDiff.subtypeVal_comp_iff _ _).mp
-    ((isSmoothEmbedding_stereographic'_symm v).contMDiff.comp contMDiff_subtype_val)
+    ((isSmoothEmbedding_stereographic'_symm v).contMDiff.comp contMDiff_subtypeVal)
 
 /-- The diffeomorphism `TauCeti.stereographicPuncturedDiffeomorph v` is stereographic projection
 from `v`. -/
@@ -977,7 +977,7 @@ theorem contMDiff_normalize_compl_zero :
       (fun x : (⟨{0}ᶜ, isOpen_compl_singleton⟩ : Opens E) ↦ NormedSpace.normalize (x : E)) := by
   simp only [NormedSpace.normalize]
   exact fun x ↦ (((contDiffAt_norm ℝ x.2).inv (norm_ne_zero_iff.2 x.2)).contMDiffAt.comp x
-    contMDiff_subtype_val.contMDiffAt).smul contMDiff_subtype_val.contMDiffAt
+    contMDiff_subtypeVal.contMDiffAt).smul contMDiff_subtypeVal.contMDiffAt
 
 variable {n : ℕ} [Fact (finrank ℝ E = n + 1)]
 

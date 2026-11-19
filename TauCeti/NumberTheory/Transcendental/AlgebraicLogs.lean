@@ -68,7 +68,7 @@ noncomputable def algebraicLogs : Submodule ℚ ℂ where
       rw [Rat.smul_def, ← mul_assoc]
       congr 1
       exact_mod_cast q.den_mul_eq_num
-    rw [← exp_nat_mul, h, exp_int_mul]
+    rw [← exp_natCast_mul, h, exp_intCast_mul]
     rcases Int.eq_nat_or_neg q.num with ⟨m, hm | hm⟩ <;> rw [hm]
     · simpa using hl.pow m
     · simpa using (hl.pow m).inv

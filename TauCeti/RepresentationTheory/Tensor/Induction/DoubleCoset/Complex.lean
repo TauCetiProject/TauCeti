@@ -116,7 +116,7 @@ noncomputable def smoothTensorInducedMackeyResolutionDifferential :
       smoothTensorInducedMackeyResolutionModule U V hU r t A :=
   (smoothTensorInducedMackeyIso U V hU r hr t s
     (smoothGradedResolutionFunctor.obj A)).hom ≫
-      (smoothResFunctor R V.subtype continuous_subtype_val).map
+      (smoothResFunctor R V.subtype continuous_subtypeVal).map
         (smoothTensorInducedGradedResolutionDifferential U hU s A) ≫
       (smoothTensorInducedMackeyIso U V hU r hr t s
         (smoothGradedResolutionFunctor.obj A)).inv
@@ -234,15 +234,15 @@ private theorem mackeyResolutionDifferential_comp_hom :
           (smoothGradedResolutionFunctor.obj A)).hom =
       (smoothTensorInducedMackeyIso U V hU r hr t s
         (smoothGradedResolutionFunctor.obj A)).hom ≫
-          (smoothResFunctor R V.subtype continuous_subtype_val).map
+          (smoothResFunctor R V.subtype continuous_subtypeVal).map
             (smoothTensorInducedGradedResolutionDifferential U hU s A) := by
   -- Fix the codomain presentation before categorical simplification across the coefficient
   -- dictionaries; their underlying objects agree, but not at reducible transparency.
   let e : smoothTensorInducedMackeyResolutionModule U V hU r t A ≅
-      (smoothResFunctor R V.subtype continuous_subtype_val).obj
+      (smoothResFunctor R V.subtype continuous_subtypeVal).obj
         ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A) :=
     smoothTensorInducedMackeyIso U V hU r hr t s (smoothGradedResolutionFunctor.obj A)
-  let δ := (smoothResFunctor R V.subtype continuous_subtype_val).map
+  let δ := (smoothResFunctor R V.subtype continuous_subtypeVal).map
     (smoothTensorInducedGradedResolutionDifferential U hU s A)
   have key : (e.hom ≫ δ ≫ e.inv) ≫ e.hom = e.hom ≫ δ := by simp [Category.assoc]
   exact key
@@ -268,10 +268,10 @@ theorem smoothTensorInducedMackeyResolutionDifferential_sq (hA : ∀ a : A.obj.V
     (smoothTensorInducedMackeyResolutionDifferential U V hU r hr t s A).hom ≫
       (smoothTensorInducedMackeyResolutionDifferential U V hU r hr t s A).hom = 0 := by
   let e : smoothTensorInducedMackeyResolutionModule U V hU r t A ≅
-      (smoothResFunctor R V.subtype continuous_subtype_val).obj
+      (smoothResFunctor R V.subtype continuous_subtypeVal).obj
         ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A) :=
     smoothTensorInducedMackeyIso U V hU r hr t s (smoothGradedResolutionFunctor.obj A)
-  let δ := (smoothResFunctor R V.subtype continuous_subtype_val).map
+  let δ := (smoothResFunctor R V.subtype continuous_subtypeVal).map
     (smoothTensorInducedGradedResolutionDifferential U hU s A)
   have hδ : δ ≫ δ = 0 := by
     apply ObjectProperty.hom_ext
@@ -300,9 +300,9 @@ The body is exposed so that each degree has its native subtype carrier, as for
 /-- The Mackey comparison identifies the orbitwise tensor complex with the complex of the
 restricted ambient tensor-induced resolution, in every degree. -/
 noncomputable def smoothTensorInducedMackeyResolutionIso (hA : ∀ a : A.obj.V, a + a = 0) :
-    let M := ((smoothResFunctor R V.subtype continuous_subtype_val).obj
+    let M := ((smoothResFunctor R V.subtype continuous_subtypeVal).obj
       ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A)).obj
-    let d := ((smoothResFunctor R V.subtype continuous_subtype_val).map
+    let d := ((smoothResFunctor R V.subtype continuous_subtypeVal).map
       (smoothTensorInducedGradedResolutionDifferential U hU s A)).hom
     smoothTensorInducedMackeyResolution U V hU r hr t s A hA ≅
       M.gradedCochainComplex (smoothTensorInducedGradedResolutionPiece U hU s A)

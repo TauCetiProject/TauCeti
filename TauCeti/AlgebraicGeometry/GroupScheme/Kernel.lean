@@ -100,7 +100,7 @@ lemma kernelMap_comp_kernelBaseChangeIso_inv {S T : Scheme.{u}} (s : T ⟶ S)
         (kernelBaseChangeIso s f₂).inv =
       (kernelBaseChangeIso s f₁).inv ≫
         (Over.pullback s).mapGrp.map (kernel.map f₁ f₂ g h w) :=
-  kernel_map_comp_preserves_kernel_iso_inv (Over.pullback s).mapGrp f₁ f₂ g h w
+  kernelMap_comp_preservesKernelIso_inv (Over.pullback s).mapGrp f₁ f₂ g h w
 
 /-- The categorical kernel of a group-scheme homomorphism is its fibre over the identity section.
 The horizontal maps are the kernel inclusion and the identity section; the other map from the

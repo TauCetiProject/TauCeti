@@ -212,7 +212,7 @@ namespace MarkovEquiv
 
 /-- Markov equivalence is an equivalence relation. -/
 theorem equivalence : Equivalence MarkovEquiv :=
-  Relation.EqvGen.is_equivalence IsMarkovMove
+  Relation.EqvGen.equivalence IsMarkovMove
 
 @[refl]
 theorem refl (β : MarkovBraid) : MarkovEquiv β β := Relation.EqvGen.refl β

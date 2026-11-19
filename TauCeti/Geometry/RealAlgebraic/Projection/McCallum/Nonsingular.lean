@@ -107,7 +107,7 @@ theorem exists_delineation_orderAt_eq_of_nonsingular (hB : F.IsSquarefreeBasis B
   have := isPreconnected_iff_preconnectedSpace.mp hconn
   obtain ⟨D⟩ := TauCeti.nonempty_delineation_of_leadingCoeff_discr_resultant_ne_zero
     (fun x : S ↦ MvPolynomial.eval x.1)
-    (fun b _ j ↦ (MvPolynomial.continuous_eval (b.coeff j)).comp continuous_subtype_val)
+    (fun b _ j ↦ (MvPolynomial.continuous_eval (b.coeff j)).comp continuous_subtypeVal)
     (fun b hb x ↦ hlc b hb x x.2) (fun b hb x ↦ hdiscr b hb x x.2)
     (fun b hb c hc hne x ↦ hres b hb c hc hne x x.2)
   -- Intrinsic analyticity of coefficients makes sections analytic; sectors are relatively open.

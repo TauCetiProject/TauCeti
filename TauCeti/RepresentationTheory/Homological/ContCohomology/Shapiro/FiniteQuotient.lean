@@ -80,7 +80,7 @@ noncomputable def comapInflation (B : Rep.{w} R C) :
     SmoothDiscreteTopRep.{v, u, w} R (C.comap (QuotientGroup.mk' V.toSubgroup)) :=
   ⟨TopRep.res ((QuotientGroup.mk' V.toSubgroup).subgroupComap C) (discreteTopRep R C B),
     (isSmoothDiscrete_discreteTopRep R C B).res
-      ((QuotientGroup.continuous_mk.comp continuous_subtype_val).subtype_mk _)⟩
+      ((QuotientGroup.continuous_mk.comp continuous_subtypeVal).subtype_mk _)⟩
 
 variable {V C} (B : Rep.{w} R C)
 

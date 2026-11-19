@@ -74,7 +74,7 @@ noncomputable def homeomorphFactorsThrough (q : C(A, B)) (hq : IsProperMap q)
   have hcont : Continuous (hqm.liftEquiv (Z := X)).symm :=
     continuous_induced_rng.2 (continuous_precomp q)
   (hqm.liftEquiv (Z := X)).symm.toHomeomorphOfIsInducing
-    (IsInducing.of_comp hcont continuous_subtype_val (isInducing_precomp_of_surjective q hq hsurj))
+    (IsInducing.of_comp hcont continuous_subtypeVal (isInducing_precomp_of_surjective q hq hsurj))
 
 /-- The map out of `A` attached to `f : C(B, X)` by `homeomorphFactorsThrough` is `f ∘ q`. -/
 @[simp]

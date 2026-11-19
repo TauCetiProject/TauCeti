@@ -148,7 +148,7 @@ instance instMeasurableSpace : MeasurableSpace (WassersteinComponent p μ₀) :=
 /-- The inclusion of a Wasserstein component into probability measures is measurable. -/
 theorem measurable_toProbabilityMeasure :
     Measurable (toProbabilityMeasure : WassersteinComponent p μ₀ → ProbabilityMeasure X) :=
-  measurable_subtype_coe
+  measurable_subtypeVal
 
 /-- The probability measure underlying `TauCeti.WassersteinComponent.mk μ hμ` is `μ`. -/
 @[simp]
@@ -304,7 +304,7 @@ instance instMeasurableSpace : MeasurableSpace (WassersteinSpace p X) :=
 /-- The inclusion of finite-moment laws into probability measures is measurable. -/
 theorem measurable_toProbabilityMeasure :
     Measurable (toProbabilityMeasure : WassersteinSpace p X → ProbabilityMeasure X) :=
-  measurable_subtype_coe
+  measurable_subtypeVal
 
 /-- The probability measure underlying `TauCeti.WassersteinSpace.mk μ hμ` is `μ`. -/
 @[simp]

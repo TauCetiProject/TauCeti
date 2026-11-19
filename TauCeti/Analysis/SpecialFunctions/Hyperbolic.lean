@@ -321,7 +321,7 @@ theorem one_sub_exp_neg_div_le_exp (l : ℝ) :
   -- bounds it by `exp (l ^ 2 / 24)`.
   have h1 : 1 - exp (-l) = exp (-(l / 2)) * (2 * sinh (l / 2)) := by
     have ha : exp (-(l / 2)) * exp (l / 2) = 1 := by rw [← exp_add]; simp
-    have hb : exp (-l) = exp (-(l / 2)) ^ 2 := by rw [← exp_nat_mul]; ring_nf
+    have hb : exp (-l) = exp (-(l / 2)) ^ 2 := by rw [← exp_natCast_mul]; ring_nf
     rw [sinh_eq]
     linear_combination -ha - hb
   have hsq : (l / 2) ^ 2 / 6 = l ^ 2 / 24 := by ring

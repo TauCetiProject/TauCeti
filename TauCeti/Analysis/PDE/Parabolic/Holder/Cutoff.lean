@@ -175,7 +175,7 @@ private theorem exists_eq_comp_time {a b : ℝ} (hab : a < b) {g g' : ℝ → �
       ∀ p : slab (E := E) a b, timeDerivL χ p = g' (p : ParabolicSpaceTime E).time := by
   have hcont (g : ℝ → ℝ) (hg : Continuous g) :
       Continuous fun p : slab (E := E) a b ↦ g (p : ParabolicSpaceTime E).time :=
-    hg.comp (continuous_time.comp continuous_subtype_val)
+    hg.comp (continuous_time.comp continuous_subtypeVal)
   let u : slab (E := E) a b →ᵇ ℝ := BoundedContinuousFunction.ofNormedAddCommGroup _
     (hcont g (continuous_iff_continuousAt.2 fun t ↦ (hg t).continuousAt)) A fun p ↦ hgA _
   let ut : HolderSpace α (slab (E := E) a b) ℝ := HolderSpace.ofBoundedContinuousFunction

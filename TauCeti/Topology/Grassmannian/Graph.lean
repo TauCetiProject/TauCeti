@@ -186,12 +186,12 @@ theorem continuous_graph :
 private theorem continuous_firstBlock :
     Continuous (firstBlock : finiteFullRankFrame 𝕜 r (r + q) → _) :=
   continuous_pi fun i ↦ continuous_pi fun j ↦
-    (continuous_apply (Fin.castAdd q j)).comp ((continuous_apply i).comp continuous_subtype_val)
+    (continuous_apply (Fin.castAdd q j)).comp ((continuous_apply i).comp continuous_subtypeVal)
 
 private theorem continuous_lastBlock :
     Continuous (lastBlock : finiteFullRankFrame 𝕜 r (r + q) → _) :=
   continuous_pi fun i ↦ continuous_pi fun j ↦
-    (continuous_apply (Fin.natAdd r j)).comp ((continuous_apply i).comp continuous_subtype_val)
+    (continuous_apply (Fin.natAdd r j)).comp ((continuous_apply i).comp continuous_subtypeVal)
 
 variable [IsTopologicalDivisionRing 𝕜] [T1Space 𝕜]
 

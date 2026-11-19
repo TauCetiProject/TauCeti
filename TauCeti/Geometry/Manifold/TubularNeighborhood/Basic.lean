@@ -86,7 +86,7 @@ theorem isTubularNeighborhood_zeroSection
   isEmbedding_f := hzero
   map_zeroSection _ := rfl
   continuous_radial :=
-    hradial.comp (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
+    hradial.comp (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
 
 namespace IsTubularNeighborhood
 

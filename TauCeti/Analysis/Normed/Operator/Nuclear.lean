@@ -123,7 +123,7 @@ variable (𝕜 E F) in
 /-- The canonical operator `E* ⊗̂π F → (E →L[𝕜] F)` sending `f ⊗ₜ y` to the rank-one operator
 `x ↦ f x • y`. Its range is the submodule of nuclear operators. -/
 def toContinuousLinearMap : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F →L[𝕜] E →L[𝕜] F :=
-  liftIsometry 𝕜 (StrongDual 𝕜 E) F (E →L[𝕜] F) (ContinuousLinearMap.smulRightL 𝕜 E F)
+  liftIsometry 𝕜 (StrongDual 𝕜 E) F (E →L[𝕜] F) (StrongDual.smulRightL 𝕜 E F)
 
 /-- The canonical operator sends `f ⊗ₜ y` to the rank-one operator `x ↦ f x • y`. -/
 @[simp]

@@ -202,7 +202,7 @@ theorem isCompl_comap_restrictₗ_charSpace_range_cuspToModFormCharSpace
       (modFormCharSpace k χ).subtype) (LinearMap.range (cuspToModFormCharSpace k χ)) :=
   isCompl_comap_subtype_range_cuspToModFormCharSpace
     (isCompl_comap_restrictₗ_cuspFormSubmodule hE
-      (fun γ hγ ↦ hslash γ (Gamma1_in_Gamma0 N hγ)) (Gamma_le_Gamma1 N))
+      (fun γ hγ ↦ hslash γ (Gamma1_le_Gamma0 N hγ)) (Gamma_le_Gamma1 N))
     (fun d _ hf ↦ diamondOp_mem_comap_restrictₗ hslash d hf) χ
 
 end Gamma1

@@ -87,7 +87,7 @@ subspace `S` contains the path component of `x ∈ S`, its inclusion induces a b
 the boundary of the cube, take their values in the path component of `x`. -/
 theorem bijective_map_subtypeVal_of_pathComponent_subset [Nonempty N] {S : Set X} {x : S}
     {x' : X} (hS : pathComponent (x : X) ⊆ S) (hx : (x : X) = x') :
-    Function.Bijective (map (N := N) ⟨Subtype.val, continuous_subtype_val⟩ hx) := by
+    Function.Bijective (map (N := N) ⟨Subtype.val, continuous_subtypeVal⟩ hx) := by
   subst hx
   obtain ⟨i⟩ := ‹Nonempty N›
   have : PathConnectedSpace I :=
@@ -123,8 +123,8 @@ induces an isomorphism `π_N(S, x) ≃* π_N(X, x)`. -/
 noncomputable def subtypeValMulEquivOfPathComponentSubset [DecidableEq N] [Nonempty N]
     {S : Set X} {x : S} {x' : X} (hS : pathComponent (x : X) ⊆ S) (hx : (x : X) = x') :
     HomotopyGroup N S x ≃* HomotopyGroup N X x' :=
-  MulEquiv.ofBijective (mapHom ⟨Subtype.val, continuous_subtype_val⟩ hx) <|
-    funext (mapHom_apply (N := N) (⟨Subtype.val, continuous_subtype_val⟩ : C(S, X)) hx) ▸
+  MulEquiv.ofBijective (mapHom ⟨Subtype.val, continuous_subtypeVal⟩ hx) <|
+    funext (mapHom_apply (N := N) (⟨Subtype.val, continuous_subtypeVal⟩ : C(S, X)) hx) ▸
       bijective_map_subtypeVal_of_pathComponent_subset hS hx
 
 /-- `HomotopyGroup.subtypeValMulEquivOfPathComponentSubset` is the map induced by the inclusion. -/
@@ -133,7 +133,7 @@ theorem subtypeValMulEquivOfPathComponentSubset_apply [DecidableEq N] [Nonempty 
     {x : S} {x' : X} (hS : pathComponent (x : X) ⊆ S) (hx : (x : X) = x')
     (a : HomotopyGroup N S x) :
     subtypeValMulEquivOfPathComponentSubset hS hx a =
-      map ⟨Subtype.val, continuous_subtype_val⟩ hx a := by
+      map ⟨Subtype.val, continuous_subtypeVal⟩ hx a := by
   rw [subtypeValMulEquivOfPathComponentSubset, MulEquiv.ofBijective_apply, mapHom_apply]
 
 section Sigma

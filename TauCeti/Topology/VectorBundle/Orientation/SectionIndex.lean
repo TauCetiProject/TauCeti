@@ -100,7 +100,7 @@ private def indexOn {z : M} {U : Set M} (hU : IsOpen U) (hz : z ∈ U)
   (((TopPair.ofSubset ({⟨z, hz⟩}ᶜ : Set (TopCat.of U))).singularKronecker ℤ (n + 1)
     (TopPair.singularCohomologyMap
       (thomPairMapOfNeZero ⟨fun x : U ↦ TotalSpace.mk' F x.1 (s x.1),
-        hs.comp continuous_subtype_val⟩ (S := {⟨z, hz⟩})
+        hs.comp continuous_subtypeVal⟩ (S := {⟨z, hz⟩})
         fun x hx h0 ↦ hx (Subtype.ext (hUz x.1 x.2 h0)))
       (n + 1) (o.thomClass hF))).hom
     ((localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ))
@@ -145,7 +145,7 @@ private theorem singularKronecker_localOrientationAlong {z : M} {U : Set M} (hU 
         (o.thomClass hF))).hom (oM.localOrientationAlong hU hz hUz)).down =
       indexOn o hF oM hs hU hz hUz := by
   rw [HomologicalOrientation.localOrientationAlong_def, localHomologyMap_def
-    (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨Subtype.val, continuous_subtype_val⟩ (S := {(⟨z, hz⟩ : U)})
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨Subtype.val, continuous_subtypeVal⟩ (S := {(⟨z, hz⟩ : U)})
     (T := {x | s x = 0}) (fun x (hx : x.1 ∈ {x | s x = 0}) ↦ Subtype.ext (hUz x.1 x.2 hx)),
     ← ModuleCat.comp_apply,
     ← TopPair.singularKronecker_naturality, ← TopPair.singularCohomologyMap_comp_apply,
@@ -184,7 +184,7 @@ theorem sectionIndex_eq {z : M} {U : Set M} (hU : IsOpen U) (hz : z ∈ U)
       (((TopPair.ofSubset ({⟨z, hz⟩}ᶜ : Set (TopCat.of U))).singularKronecker ℤ (n + 1)
         (TopPair.singularCohomologyMap
           (thomPairMapOfNeZero ⟨fun x : U ↦ TotalSpace.mk' F x.1 (s x.1),
-            hs.comp continuous_subtype_val⟩ (S := {⟨z, hz⟩})
+            hs.comp continuous_subtypeVal⟩ (S := {⟨z, hz⟩})
             fun x hx h0 ↦ hx (Subtype.ext (hUz x.1 x.2 h0)))
           (n + 1) (o.thomClass hF))).hom
         ((localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ))

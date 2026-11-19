@@ -173,7 +173,7 @@ theorem IsMorse.criticalCount_one_ne_zero (hf : IsMorse I f) (hp : IsProperMap f
     criticalCount I f 1 ≠ 0 := by
   obtain ⟨p, hp, hp₁⟩ := hf.exists_manifoldMorseIndex_eq_one hp hbdd x
   rw [criticalCount_def, Ne, encard_eq_zero]
-  exact nonempty_iff_ne_empty.1 ⟨p, hp, hp₁⟩
+  exact ne_empty_iff_nonempty.2 ⟨p, hp, hp₁⟩
 
 /-- **The fundamental group obstructs perfection.** Let `f` be a Morse function on a compact
 manifold whose fundamental group is nontrivial at some basepoint, and let `k` be a division ring

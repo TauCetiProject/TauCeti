@@ -322,10 +322,10 @@ theorem tendsto_apply_smulLeftCLM_massRestrict (hT : HasLocallyFiniteMass T)
   refine tendsto_lintegral_of_dominated_convergence' (fun x => (‖C‖ₑ + 1) * ‖φ x‖ₑ)
     (fun i => ?_) (fun i => ae_of_all _ fun x => ?_) ?_ (ae_of_all _ fun x => ?_)
   · have hc : Continuous fun x : Ω => f i x • φ x :=
-      (((hf i).continuous.comp continuous_subtype_val).smul
-        (φ.continuous.comp continuous_subtype_val))
+      (((hf i).continuous.comp continuous_subtypeVal).smul
+        (φ.continuous.comp continuous_subtypeVal))
     exact (hc.aestronglyMeasurable.sub ((φ.continuous.comp
-      continuous_subtype_val).aestronglyMeasurable.indicator hA)).eNorm.congr
+      continuous_subtypeVal).aestronglyMeasurable.indicator hA)).eNorm.congr
       (ae_of_all _ fun x => by by_cases hx : x ∈ A <;> simp [hx, sub_smul])
   · dsimp only
     rw [eNorm_smul]

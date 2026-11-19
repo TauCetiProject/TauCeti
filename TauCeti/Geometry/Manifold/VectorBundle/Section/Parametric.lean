@@ -233,7 +233,7 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
   -- outside them need not be section zeros. The intrinsic linearization is recovered here.
   refine ⟨Subtype.val ⁻¹' ((chartAt X x).source ×ˢ univ ∩ b ⁻¹' e.baseSet ∩
       ψ ⁻¹' (V ∩ {p | DifferentiableAt ℝ f p})),
-    continuous_subtype_val.continuousAt.preimage_mem_nhds
+    continuous_subtypeVal.continuousAt.preimage_mem_nhds
       (inter_mem (inter_mem hsource hbase) (hψ.preimage_mem_nhds (inter_mem hV hdiff))),
     A, hA, ?_⟩
   rintro ⟨⟨x', k⟩, hw⟩ ⟨⟨⟨hx', -⟩, hwe⟩, hwV, hwd⟩ hbad

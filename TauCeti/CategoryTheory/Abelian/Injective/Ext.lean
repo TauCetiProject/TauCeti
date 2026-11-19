@@ -214,7 +214,7 @@ noncomputable def rightDerivedLinearCoyonedaIsoExt (n : ℕ) :
           ext x
           exact (injectiveResolution Y).homologyLinearCoyonedaEquiv_naturality
             (injectiveResolution Y')
-            ⟨φ, by simpa using InjectiveResolution.desc_commutes_zero g _ _⟩ n x
+            ⟨φ, by simp [φ]⟩ n x
 
 /-- On each coefficient object the derived Hom comparison is computed by its chosen
 injective resolution and the cocycle-to-Ext equivalence. -/

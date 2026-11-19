@@ -354,7 +354,7 @@ theorem finrank_symplecticHarmonicTensors_add_finrank_symplecticTraceTensors :
   -- of the monomial basis, for which every arc is self-adjoint.
   let b := Basis.piTensorProduct fun _ : Fin d => Pi.basisFun k (Fin n ⊕ Fin n)
   let B := Matrix.toBilin b (1 : Matrix (Fin d → Fin n ⊕ Fin n) (Fin d → Fin n ⊕ Fin n) k)
-  have hB : B.Nondegenerate := (Matrix.nondegenerate_of_det_ne_zero (by simp)).toBilin b
+  have hB : B.Nondegenerate := (Matrix.Nondegenerate.of_det_ne_zero (by simp)).toBilin b
   have hBapply (x y) : B x y = ⇑(b.repr x) ⬝ᵥ ⇑(b.repr y) := by
     simp [B, Matrix.toBilin_apply, dotProduct, Matrix.one_apply]
   have hadj (i j : Fin d) (x y) :

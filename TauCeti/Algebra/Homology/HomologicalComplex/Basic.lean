@@ -91,7 +91,7 @@ lemma pow_f_succ (m : ℕ) (i : ι) :
 /-- Homological complexes have the coproducts that the underlying category has. They are
 computed degreewise. -/
 instance hasCoproducts [HasCoproducts.{w} C] : HasCoproducts.{w} (HomologicalComplex C c) :=
-  fun _ ↦ inferInstance
+  .mk fun _ ↦ inferInstance
 
 /-! ### The maps onto the cycles -/
 

@@ -83,7 +83,7 @@ private theorem hasDerivAt_coe {γ : ℝ → realOpenUnitBall} {s : Set ℝ} {t 
   have hval : HasMFDerivAt 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) (Subtype.val : realOpenUnitBall → ℝ) (γ t)
       (tangentSpaceOpenEquiv (I := 𝓘(ℝ, ℝ)) (γ t)).toContinuousLinearMap := by
     rw [← mfderiv_subtype_val]
-    exact (contMDiff_subtype_val.mdifferentiableAt one_ne_zero).hasMFDerivAt
+    exact (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero).hasMFDerivAt
   have h := hasMFDerivAt_iff_hasFDerivAt.1 (hval.comp t (hasMFDerivAt_curveVelocity hγ))
   rw [curveVelocityWithin_of_mem_nhds hs, hasDerivAt_iff_hasFDerivAt]
   refine h.congr_fderiv (ContinuousLinearMap.ext_ring ?_)
@@ -115,7 +115,7 @@ theorem coe_maximalGeodesic {t : ℝ} (ht : t ∈ geodesicInterval 𝓘(ℝ, ℝ
   -- The coordinate `f` of the geodesic is `C²`, with derivative the coordinate of its velocity.
   set f : ℝ → ℝ := fun r ↦ (γ r : ℝ)
   have hf : ContDiffOn ℝ 2 f J :=
-    (contMDiff_subtype_val.comp_contMDiffOn hγ.isGeodesicCurveOn.contMDiffOn).contDiffOn
+    (contMDiff_subtypeVal.comp_contMDiffOn hγ.isGeodesicCurveOn.contMDiffOn).contDiffOn
   have hderiv (s : ℝ) (hs : s ∈ J) : HasDerivAt f (NormedSpace.fromTangentSpace (γ s : ℝ)
       (tangentSpaceOpenEquiv (γ s) (curveVelocityWithin 𝓘(ℝ, ℝ) γ J s))) s :=
     hasDerivAt_coe (hJ.mem_nhds hs)

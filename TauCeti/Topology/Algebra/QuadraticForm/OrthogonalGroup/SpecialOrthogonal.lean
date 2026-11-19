@@ -55,7 +55,7 @@ variable {R M N : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
 @[fun_prop]
 theorem _root_.QuadraticMap.continuous_orthogonalDet :
     Continuous (_root_.QuadraticMap.orthogonalDet Q) :=
-  (continuous_linearEquiv_det.comp continuous_subtype_val).congr fun g ↦
+  (continuous_linearEquiv_det.comp continuous_subtypeVal).congr fun g ↦
     (_root_.QuadraticMap.orthogonalDet_apply g).symm
 
 variable [T1Space R]
@@ -75,7 +75,7 @@ theorem _root_.QuadraticMap.isClosed_specialOrthogonalWithin :
 theorem _root_.QuadraticMap.isClosedEmbedding_specialOrthogonalToOrthogonal :
     Topology.IsClosedEmbedding (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q) where
   toIsEmbedding := .of_comp (_root_.QuadraticMap.continuous_specialOrthogonalToOrthogonal Q)
-    continuous_subtype_val <| by
+    continuous_subtypeVal <| by
       convert Topology.IsEmbedding.subtypeVal using 1
       ext g
       simp

@@ -85,9 +85,13 @@ theorem det_imDilation (c : ℝ) : LinearMap.det (imDilation c : ℂ →ₗ[ℝ]
 
 /-- A nonzero dilation of the normal coordinate as a continuous linear equivalence. -/
 def imDilationEquiv {c : ℝ} (hc : c ≠ 0) : ℂ ≃L[ℝ] ℂ :=
-  ContinuousLinearEquiv.equivOfInverse (imDilation c) (imDilation c⁻¹)
-    (fun z => by rw [imDilation_imDilation, inv_mul_cancel₀ hc, imDilation_one_apply])
-    (fun z => by rw [imDilation_imDilation, mul_inv_cancel₀ hc, imDilation_one_apply])
+  ContinuousLinearEquiv.ofContinuousLinearMap (imDilation c) (imDilation c⁻¹)
+    (ContinuousLinearMap.ext fun z => by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, imDilation_imDilation,
+        mul_inv_cancel₀ hc, imDilation_one_apply])
+    (ContinuousLinearMap.ext fun z => by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, imDilation_imDilation,
+        inv_mul_cancel₀ hc, imDilation_one_apply])
 
 @[simp]
 theorem coe_imDilationEquiv {c : ℝ} (hc : c ≠ 0) : ⇑(imDilationEquiv hc) = imDilation c := by

@@ -115,7 +115,7 @@ private theorem continuous_norm_mul_dir {X : Type*} [TopologicalSpace X]
   · have hd : ContinuousAt (fun p : X × ℂ ↦ dir p.2) (x, z) :=
       (continuousAt_dir hz).comp (f := Prod.snd) (x := (x, z)) continuousAt_snd
     exact (continuous_ofReal.comp continuous_snd.norm).continuousAt.mul
-      (continuous_subtype_val.continuousAt.comp (hΦ.continuousAt.comp
+      (continuous_subtypeVal.continuousAt.comp (hΦ.continuousAt.comp
         (continuousAt_fst.prodMk hd)))
 
 /-- The cone `z ↦ ‖z‖ u(z / ‖z‖)` over a map `u : S¹ → S¹`. -/

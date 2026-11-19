@@ -350,7 +350,7 @@ end
 of that of its width-parameter values. -/
 private theorem sq_exp_radius (A : ℝ) :
     Real.exp (-2 * Real.pi * A / (2 * D.width)) ^ 2 = Real.exp (-2 * Real.pi * A / D.width) := by
-  rw [← Real.exp_nat_mul]
+  rw [← Real.exp_natCast_mul]
   congr 1
   field_simp [D.width_pos.ne']
   push_cast

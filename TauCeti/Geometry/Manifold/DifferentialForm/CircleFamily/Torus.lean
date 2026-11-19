@@ -176,7 +176,7 @@ theorem mextDeriv_timeForm (i : ι) (hp : ContMDiff IB 𝓘(ℝ) ∞ (p i)) :
   have hc := contMDiff_coord p IB ∞ i
   have hg : ContMDiff (IB.prod 𝓘(ℝ)) 𝓘(ℝ, ℝ) ∞
       fun z : CircleFamily.Pullback (p i) ↦ (p i z.base : ℝ) :=
-    (contMDiff_subtype_val.comp hp).comp (CircleFamily.Pullback.contMDiff_base (p i) IB ∞)
+    (contMDiff_subtypeVal.comp hp).comp (CircleFamily.Pullback.contMDiff_base (p i) IB ∞)
   have hcomp : (fun z : CircleFamily.Pullback (p i) ↦ (p i z.base : ℝ)) ∘ coord p i =
       fun z ↦ (p i z.base : ℝ) :=
     funext fun z ↦ by simp

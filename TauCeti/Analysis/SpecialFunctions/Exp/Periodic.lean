@@ -71,8 +71,8 @@ theorem exists_div_two_pi_I_smul_eq_add_zsmul {E : Type*} [AddCommGroup E] [Modu
 theorem exp_log_add_inv_mul_log_div_pow {m : ℕ} [NeZero m] {z₀ t : ℂ} (hz₀ : z₀ ≠ 0)
     (ht : t ≠ 0) : exp (log z₀ + (m : ℂ)⁻¹ * log (t / z₀ ^ m)) ^ m = t := by
   have hm : (m : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne m)
-  rw [← exp_nat_mul, mul_add, ← mul_assoc, mul_inv_cancel₀ hm, one_mul, exp_add,
-    exp_nat_mul, exp_log hz₀, exp_log (div_ne_zero ht (pow_ne_zero m hz₀)),
+  rw [← exp_natCast_mul, mul_add, ← mul_assoc, mul_inv_cancel₀ hm, one_mul, exp_add,
+    exp_natCast_mul, exp_log hz₀, exp_log (div_ne_zero ht (pow_ne_zero m hz₀)),
     mul_div_cancel₀ _ (pow_ne_zero m hz₀)]
 
 end Complex

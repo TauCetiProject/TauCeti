@@ -109,8 +109,8 @@ noncomputable def padicIntUnitsEquivProd :
   -- Multiplication is continuous, and a continuous bijection from a compact space to a Hausdorff
   -- space is a homeomorphism.
   have he : Continuous e :=
-    ((continuous_subtype_val.comp continuous_fst).mul
-      (continuous_subtype_val.comp continuous_snd)).congr fun x ↦
+    ((continuous_subtypeVal.comp continuous_fst).mul
+      (continuous_subtypeVal.comp continuous_snd)).congr fun x ↦
         (padicIntUnitsProdMulEquiv_apply x).symm
   (ContinuousMulEquiv.mk e he (he.continuous_symm_of_equiv_compact_to_t2 (f := e.toEquiv))).symm
 

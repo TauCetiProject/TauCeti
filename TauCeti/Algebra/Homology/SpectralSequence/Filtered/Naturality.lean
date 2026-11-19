@@ -59,13 +59,13 @@ lemma spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom (α : F ⟶ G) {i
     ((spectralObjectMap α).hom n).app (mk₁ f) ≫ (spectralObjectHIsoCokernel G f n).hom =
       (spectralObjectHIsoCokernel F f n).hom ≫
         HomologicalComplex.homologyMap
-          (cokernel.map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f)) n := by
+          (cokernel.map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f).symm) n := by
   -- The square of mapping cones and cokernels, from `mappingCone.map_descShortComplex`.
   have key₀ := mappingCone.map_descShortComplex (ShortComplex.cokernelSequence (F.map f))
     (ShortComplex.cokernelSequence (G.map f))
     { τ₁ := α.app i
       τ₂ := α.app j
-      τ₃ := cokernel.map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f)
+      τ₃ := cokernel.map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f).symm
       comm₁₂ := (α.naturality f).symm
       comm₂₃ := (cokernel.π_desc _ _ _).symm }
   have key := (HomologicalComplex.homologyMap_comp _ _ n).symm.trans
@@ -158,7 +158,7 @@ lemma spectralSequenceFirstPageXIsoCokernel_hom_naturality
         (spectralSequenceFirstPageXIsoCokernel G pq i₁ i₂ hi₁ hi₂ n hn).hom =
       (spectralSequenceFirstPageXIsoCokernel F pq i₁ i₂ hi₁ hi₂ n hn).hom ≫
         HomologicalComplex.homologyMap
-          (cokernel.map _ _ (α.app i₁) (α.app i₂) (α.naturality _)) n := by
+          (cokernel.map _ _ (α.app i₁) (α.app i₂) (α.naturality _).symm) n := by
   simp only [spectralSequenceMap_hom, spectralSequencePageMap_f,
     spectralSequenceFirstPageXIsoCokernel_eq, Iso.trans_hom]
   -- The degree of the recipe `coreE₂Cohomological` at `pq` is only definitionally

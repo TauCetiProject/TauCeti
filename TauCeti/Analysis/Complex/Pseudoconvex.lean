@@ -272,7 +272,7 @@ theorem isOpen_setOf_re_leviForm_posOnSubspace (q : ℕ) :
         (z.1.toBilinForm.leviForm (z.2 : V) z.2).re := by
       simp only [LinearMap.BilinForm.re_leviForm_apply]
       have hv : Continuous fun z : (V →L[ℝ] V →L[ℝ] ℝ) × P ↦ (z.2 : V) :=
-        continuous_subtype_val.comp continuous_snd
+        continuous_subtypeVal.comp continuous_snd
       have hvI : Continuous fun z : (V →L[ℝ] V →L[ℝ] ℝ) × P ↦ I • (z.2 : V) :=
         continuous_const_smul I |>.comp hv
       exact ((continuous_fst.clm_apply hv).clm_apply hv).add

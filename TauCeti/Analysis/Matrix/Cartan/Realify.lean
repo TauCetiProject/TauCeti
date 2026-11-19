@@ -117,8 +117,8 @@ def cartanHomeomorph :
         ∀ t : ℝ, expUnit (t • (x : Matrix (n ⊕ n) (n ⊕ n) ℝ)) ∈ GLSymplectic n ℝ} :=
     { toFun X := ⟨X.1, (hline _).2 X.2⟩
       invFun x := ⟨x.1, (hline _).1 x.2⟩
-      continuous_toFun := continuous_subtype_val.subtype_mk _
-      continuous_invFun := continuous_subtype_val.subtype_mk _ }
+      continuous_toFun := continuous_subtypeVal.subtype_mk _
+      continuous_invFun := continuous_subtypeVal.subtype_mk _ }
   exact ((realifyUnitaryHomeomorph inf_unitarySubgroup).prodCongr eP).trans
     ((GLSymplectic n ℝ).cartanHomeomorph (fun _ ↦ star_mem) fun x hx h ↦ (hline x).2
       ((IsHermitian.exp_mem_symplecticGroup_iff hx.isHermitian).1 (by simpa using h)))
@@ -205,8 +205,8 @@ def realifyCartanHomeomorph :
         ∀ t : ℝ, expUnit (t • (x : Matrix (n ⊕ n) (n ⊕ n) ℝ)) ∈ (realify n ℂ).range} :=
     { toFun X := ⟨X.1, (hline (isHermitian_iff_isSelfAdjoint.2 X.1.2)).2 X.2⟩
       invFun x := ⟨x.1, (hline (isHermitian_iff_isSelfAdjoint.2 x.1.2)).1 x.2⟩
-      continuous_toFun := continuous_subtype_val.subtype_mk _
-      continuous_invFun := continuous_subtype_val.subtype_mk _ }
+      continuous_toFun := continuous_subtypeVal.subtype_mk _
+      continuous_invFun := continuous_subtypeVal.subtype_mk _ }
   exact ((realifyUnitaryHomeomorph (inf_comm (realify n ℂ).range _ ▸
       unitarySubgroup_inf_range_realify)).prodCongr eP).trans
     ((realify n ℂ).range.cartanHomeomorph (fun _ ↦ star_mem_range_realify) fun x hx h ↦

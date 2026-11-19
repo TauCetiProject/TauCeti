@@ -475,7 +475,7 @@ theorem continuous_toSO3 : Continuous toSO3 := by
     exact congrFun ((mulVec_single_one _ j).symm.trans (pauliRotation_mulVec _ _)) i
   have hc : Continuous fun g : SU2 => (g : Matrix (Fin 2) (Fin 2) ℂ) * pauli (Pi.single j 1) *
       star (g : Matrix (Fin 2) (Fin 2) ℂ) :=
-    (continuous_subtype_val.mul continuous_const).mul continuous_subtype_val.star
+    (continuous_subtypeVal.mul continuous_const).mul continuous_subtypeVal.star
   simp only [Function.comp_def, h]
   exact (continuous_apply i).comp ((LinearMap.continuous_of_finiteDimensional pauliCoord).comp hc)
 

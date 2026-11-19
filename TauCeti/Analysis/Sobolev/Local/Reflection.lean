@@ -607,8 +607,8 @@ reflection of the tangential derivative, and the normal component is the reflect
 derivative with the weights `d j * higherReflectionNode j`. Below the axis it is the chain-rule
 expression `TauCeti.planarReflectionFDeriv_of_neg`. -/
 def planarReflectionFDeriv (d : Fin k → ℝ) (Dg : ℂ → ℂ →L[ℝ] F) (z : ℂ) : ℂ →L[ℝ] F :=
-  ContinuousLinearMap.smulRightL ℝ ℂ F reCLM (planarReflection d (fun w => Dg w 1) z) +
-    ContinuousLinearMap.smulRightL ℝ ℂ F imCLM
+  ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ F reCLM (planarReflection d (fun w => Dg w 1) z) +
+    ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ F imCLM
       (planarReflection (fun j => d j * higherReflectionNode j) (fun w => Dg w I) z)
 
 @[simp]
@@ -697,8 +697,8 @@ theorem MemWkpLoc.planarReflection {p : ℝ≥0∞} (hp : 1 ≤ p) {Ω : Opens �
     have h2 := ih (d := fun j => d j * higherReflectionNode j)
       (fun i hi => by simpa [mul_assoc, pow_succ'] using hd (i + 1) (by omega))
       (hDgm.clm_comp (ContinuousLinearMap.apply ℝ F I))
-    have h := (h1.clm_comp (ContinuousLinearMap.smulRightL ℝ ℂ F reCLM)).add
-      (h2.clm_comp (ContinuousLinearMap.smulRightL ℝ ℂ F imCLM))
+    have h := (h1.clm_comp (ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ F reCLM)).add
+      (h2.clm_comp (ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ F imCLM))
     convert h using 1
     funext z
     simp [planarReflectionFDeriv]

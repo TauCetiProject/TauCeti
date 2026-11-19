@@ -355,7 +355,7 @@ theorem exists_energyDensity_le_mul_exp
   refine ⟨(1 / 64 + 1) * K₁ ^ 2 + 2 * K₂ ^ 2, fun z ↦ ?_⟩
   set E := Real.exp (-(c / 2 * ‖z‖)) with hE
   have hEsq : E ^ 2 = Real.exp (-(c * ‖z‖)) := by
-    rw [hE, ← Real.exp_nat_mul]
+    rw [hE, ← Real.exp_natCast_mul]
     ring_nf
   -- The modulus defect, and hence the curvature, is bounded by `K₁ E`.
   have hdef₀ : 0 ≤ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by

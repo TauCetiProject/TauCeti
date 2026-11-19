@@ -275,7 +275,7 @@ theorem IsPrimitiveOn.eventually_exists_path_pathClassIntegral_eq_sub (hφ : IsS
   filter_upwards [eventually_exists_contMDiff_curve (I := I) (n := 1)
     (hgU.isOpen.mem_nhds hxU)] with y ⟨c, hc, hc₀, hc₁, hcU⟩
   let γ : Path x y :=
-    ⟨⟨fun t ↦ c t, hc.continuous.comp continuous_subtype_val⟩, hc₀ 0 le_rfl, hc₁ 1 le_rfl⟩
+    ⟨⟨fun t ↦ c t, hc.continuous.comp continuous_subtypeVal⟩, hc₀ 0 le_rfl, hc₁ 1 le_rfl⟩
   exact ⟨γ, pathClassIntegral_mk_eq_sub_of_isPrimitiveOn hφ hclosed hgU γ fun t ↦ hcU t⟩
 
 /-- **Forms with vanishing periods on singular homology are exact.** A closed `C^r` `1`-form

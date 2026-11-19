@@ -162,7 +162,7 @@ theorem eq_or_eq_neg_trajectoryTargetOrientation
     (o : Orientation ℝ (ℝ × ({i // φ.weight i < 0} → ℝ)) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p))) :
     o = φ.trajectoryTargetOrientation oq hpq ∨ o = -φ.trajectoryTargetOrientation oq hpq :=
   o.eq_or_eq_neg _ (by
-    rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self, φ.finrank_negativeWeight_fun]
+    rw [Nat.card_fin, Module.finrank_prod, Module.finrank_self, φ.finrank_negativeWeight_fun]
     omega)
 
 /-- Transporting the orientation `oq` of the coordinates of negative weight of `φ` to those of

@@ -264,7 +264,7 @@ theorem mextDeriv_ofFunction_coe_fst_apply {U : Opens F} (z : U × M)
       v.1 := by
   have h : (fun z : U × M ↦ (z.1 : F)) = Subtype.val ∘ Prod.fst := rfl
   rw [mextDeriv_ofFunction_apply, h, mfderiv_comp z
-      (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) mdifferentiableAt_fst,
+      (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) mdifferentiableAt_fst,
     ContinuousLinearMap.comp_apply, Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
     Manifold.tangentSpaceOpenEquiv_apply, mfderiv_fst]
   -- Tangent vectors of `U × M` are pairs.
@@ -406,7 +406,7 @@ theorem mpullback_liftOpens_apply_coe {E' H' M' : Type*} [NormedAddCommGroup E']
     mpullback I I' (Ψ.liftOpens hU hV) ω x =
       mpullback I I' Ψ (mpullback I' I' (Subtype.val : V → M') ω) x := by
   have hval (z : V) : MDifferentiableAt I' I' (Subtype.val : V → M') z :=
-    contMDiff_subtype_val.mdifferentiableAt one_ne_zero
+    contMDiff_subtypeVal.mdifferentiableAt one_ne_zero
   have hlift : MDifferentiableAt I I' (Ψ.liftOpens hU hV) x :=
     (Ψ.liftOpens hU hV).mdifferentiableAt hn (by
       rw [PartialDiffeomorph.liftOpens_source]
@@ -415,7 +415,7 @@ theorem mpullback_liftOpens_apply_coe {E' H' M' : Type*} [NormedAddCommGroup E']
   have hcomp : ⇑(Ψ.liftOpens hU hV) ∘ (Subtype.val : U → M) = Subtype.val ∘ ⇑Ψ :=
     funext (Ψ.liftOpens_apply_coe hU hV)
   refine (mpullback_subtype_val_apply _ x).symm.trans ?_
-  rw [← mpullback_comp_at (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) hlift, hcomp,
+  rw [← mpullback_comp_at (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) hlift, hcomp,
     mpullback_comp_at (Ψ.mdifferentiableAt hn hx) (hval _)]
 
 end TauCeti

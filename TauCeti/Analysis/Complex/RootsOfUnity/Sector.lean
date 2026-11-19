@@ -59,7 +59,7 @@ theorem volume_setOf_pow_notMem_slitPlane (d : ℕ) :
   have hζ : IsPrimitiveRoot ζ d := isPrimitiveRoot_exp d hd
   have hd' : (d : ℂ) ≠ 0 := Nat.cast_ne_zero.2 hd
   have hcd : c ^ d = -1 := by
-    rw [← exp_nat_mul, mul_div_cancel₀ _ hd', exp_pi_mul_I]
+    rw [← exp_natCast_mul, mul_div_cancel₀ _ hd', exp_pi_mul_I]
   -- Each point with `z ^ d ≤ 0` is a real multiple of `c * ζ ^ k` for some `k < d`.
   have hsub : {z : ℂ | z ^ d ∉ slitPlane} ⊆
       ⋃ k ∈ Finset.range d, ((ℝ ∙ (c * ζ ^ k) : Submodule ℝ ℂ) : Set ℂ) := by

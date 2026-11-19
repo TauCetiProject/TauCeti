@@ -335,7 +335,7 @@ variable {E k} in
 space. -/
 @[fun_prop]
 theorem continuous_stiefelProj (i : Fin k) : Continuous (stiefelProj E k i) :=
-  continuous_induced_rng.2 ((continuous_apply i).comp continuous_subtype_val)
+  continuous_induced_rng.2 ((continuous_apply i).comp continuous_subtypeVal)
 
 /-- The projection of a frame to its `i`th vector is smooth, for Mathlib's manifold structure on
 the unit sphere. The `FiniteDimensional` instance, which also follows from the `Fact`, is the one

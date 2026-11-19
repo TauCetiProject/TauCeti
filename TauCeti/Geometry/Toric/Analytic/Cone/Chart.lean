@@ -262,10 +262,10 @@ noncomputable def coneChartAmbientHomeomorph (g : AddGeneratingFamily (dualSemig
       continuous_toFun := by
         apply Continuous.subtype_mk
         exact continuous_fst.prodMk <| continuous_pi fun c ↦
-          continuous_subtype_val.comp <| (continuous_apply c).comp continuous_snd
-      continuous_invFun := continuous_fst.comp continuous_subtype_val |>.prodMk <|
+          continuous_subtypeVal.comp <| (continuous_apply c).comp continuous_snd
+      continuous_invFun := continuous_fst.comp continuous_subtypeVal |>.prodMk <|
         continuous_pi fun c ↦ Continuous.subtype_mk
-          ((continuous_apply c).comp <| continuous_snd.comp continuous_subtype_val) _ }
+          ((continuous_apply c).comp <| continuous_snd.comp continuous_subtypeVal) _ }
   (coneChartHomeomorph hi hσ hB g).trans <|
     ((Homeomorph.piCongrLeft κ).prodCongr
       (Homeomorph.piCongrRight fun _ ↦ unitsHomeomorphNeZero (G₀ := ℂ))).trans

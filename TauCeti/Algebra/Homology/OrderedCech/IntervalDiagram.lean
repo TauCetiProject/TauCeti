@@ -658,10 +658,6 @@ theorem quasiIso_totalMap (α : A ⟶ B) [∀ I, QuasiIso (α.app I)] : QuasiIso
     -- the goal only up to unfolding the total complex, so the sign is moved with `erw`.
     erw [Linear.units_smul_comp, ιTotal_totalMap, Linear.comp_units_smul]
     rw [HomologicalComplex₂.flipFunctor_map_f_f]
-    -- The two sides now differ only in the types of the morphisms, where one side still writes
-    -- the objects of the flag complexes through `HomologicalComplex₂.flip`; they agree by
-    -- definition.
-    rfl
   rw [← quasiIso_iff_comp_left
       (HomologicalComplex₂.totalFlipIso A.flagComplex (ComplexShape.down ℕ)).hom, hcomm]
   infer_instance

@@ -93,7 +93,7 @@ theorem tendstoUniformly_approxOn {f : β → α} (hf : Measurable f) {s : Set �
     · rintro _ ⟨k, rfl⟩
       exact ⟨k + 1, rfl⟩
     · rw [range_comp]
-      exact image_closure_subset_closure_image continuous_subtype_val
+      exact image_closure_subset_closure_image continuous_subtypeVal
         ⟨⟨y, hy⟩, (denseRange_denseSeq s).closure_range ▸ mem_univ _, rfl⟩
   rw [← tendstoUniformlyOn_univ]
   simpa only [approxOn, coe_comp, Function.id_comp] using

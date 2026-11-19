@@ -188,8 +188,8 @@ def chartBallProjFiberHomeomorph (p : E ⟶ B) (hε₀ : 0 < ε) :
       exact mem_chartBall_self e hb hε₀⟩, (coe_chartBallProj_eq_zero_iff e hb hε _).2 hy⟩
   left_inv _ := rfl
   right_inv _ := rfl
-  continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-  continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _
+  continuous_toFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
+  continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _
 
 lemma coe_chartBallProjFiberHomeomorph_apply (p : E ⟶ B) (hε₀ : 0 < ε)
     (z : chartBallProj e hε p ⁻¹' {x | (x : V) = 0}) :

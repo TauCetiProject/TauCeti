@@ -57,7 +57,7 @@ def cechMap (s : CechIndex ι) :
     (cechTopDiagram U).obj s ⟶ (cechTopDiagram V).obj ((CechIndex.map r).obj s) :=
   TopCat.ofHom
     { toFun := fun x ↦ ⟨f x.1, mapsTo_cechIntersection U V f r hf s x.2⟩
-      continuous_toFun := (f.hom.continuous.comp continuous_subtype_val).subtype_mk _ }
+      continuous_toFun := (f.hom.continuous.comp continuous_subtypeVal).subtype_mk _ }
 
 /-- Maps between Cech intersections commute with their inclusions into the ambient spaces. -/
 @[reassoc]

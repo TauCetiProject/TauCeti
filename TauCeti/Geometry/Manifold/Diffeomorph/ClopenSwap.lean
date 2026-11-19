@@ -80,14 +80,14 @@ private theorem contMDiff_clopenSwapFun (φ : U ≃ₘ^n⟮I, I⟯ V) (hU : IsCl
     have : (fun y : U ↦ clopenSwapFun φ y) = fun y ↦ (φ y : M) :=
       funext (clopenSwapFun_of_mem_left φ)
     rw [this]
-    exact (contMDiff_subtype_val.comp φ.contMDiff).contMDiffAt
+    exact (contMDiff_subtypeVal.comp φ.contMDiff).contMDiffAt
   by_cases hxV : x ∈ V
   · -- On the open set `V` the map is `φ⁻¹`.
     rw [← contMDiffAt_subtype_iff (x := (⟨x, hxV⟩ : V))]
     have : (fun y : V ↦ clopenSwapFun φ y) = fun y ↦ (φ.symm y : M) :=
       funext (clopenSwapFun_of_mem_right φ hUV)
     rw [this]
-    exact (contMDiff_subtype_val.comp φ.symm.contMDiff).contMDiffAt
+    exact (contMDiff_subtypeVal.comp φ.symm.contMDiff).contMDiffAt
   · -- Off the closed set `U ∪ V` the map is the identity.
     refine contMDiffAt_id.congr_of_eventuallyEq ?_
     filter_upwards [(hU.union hV).isOpen_compl.mem_nhds (by simp [hxU, hxV])] with y hy

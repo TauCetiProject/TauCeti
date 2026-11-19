@@ -382,7 +382,7 @@ private noncomputable def foxHom :
 private theorem continuous_foxHom : Continuous (foxHom p (g := g)) :=
   continuous_ofAdd.comp (continuous_pi fun k ↦ (continuous_apply k.2).comp
     ((continuous_apply k.1).comp
-      ((continuous_coeff_foxDerivative p g).comp continuous_subtype_val)))
+      ((continuous_coeff_foxDerivative p g).comp continuous_subtypeVal)))
 
 /-- The Fox derivative factors through `R^ab(p)`. -/
 private noncomputable def abelianFoxHom :

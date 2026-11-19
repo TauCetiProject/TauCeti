@@ -100,7 +100,7 @@ theorem eq_of_forall_quantizeSchwartzValue_eq (ha : Continuous fun ξ ↦ a (x, 
     rw [integral_sub hia hib, hf, sub_self]
   have hcont : Continuous fun ζ : E ↦
       (𝐞 ⟪ζ, x⟫ : ℂ) • (a (x, (2 * π) • ζ) - b (x, (2 * π) • ζ)) :=
-    (continuous_subtype_val.comp
+    (continuous_subtypeVal.comp
       (Real.continuous_fourierChar.comp (continuous_id.inner continuous_const))).smul
       ((ha.comp (continuous_const_smul _)).sub (hb.comp (continuous_const_smul _)))
   have hξ := eq_zero_of_forall_integral_apply_eq_zero hcont hzero ((2 * π)⁻¹ • ξ)

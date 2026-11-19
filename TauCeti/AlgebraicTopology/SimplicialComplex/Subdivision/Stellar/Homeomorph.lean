@@ -122,7 +122,7 @@ private theorem exists_homeomorph_stellarSubdivision_of_finite (hσ : σ ∈ K)
     apply continuous_pi
     intro i
     have hcoord (j : ι) : Continuous (fun x : S => x.1.1 j) :=
-      ((continuous_apply j).comp (continuous_realization_coe A)).comp continuous_subtype_val
+      ((continuous_apply j).comp (continuous_realization_coe A)).comp continuous_subtypeVal
     simp only [Function.comp_def, hfval, Finset.stellarSubdivisionLinearMap_apply]
     exact (hcoord i).add ((hcoord v).mul continuous_const)
   let e := (Equiv.ofBijective f hbij).toHomeomorphOfContinuousClosed hc hc.isClosedMap
@@ -196,12 +196,12 @@ theorem exists_homeomorph_stellarSubdivision (hσ : σ ∈ K) (hv : ({v} : Finse
   have hincT (W : Finset ι) :
       Continuous fun y : {x : Realization A // x.1.support ∈ K ⊓ simplex W} =>
         (⟨y.1, (mem_inf.mp y.2).1⟩ : {x : Realization A // x.1.support ∈ K}) :=
-    continuous_subtype_val.subtype_mk _
+    continuous_subtypeVal.subtype_mk _
   have hincS (W : Finset ι) :
       Continuous fun y : {x : Realization A //
           x.1.support ∈ stellarSubdivision (K ⊓ simplex W) σ v} =>
         (⟨y.1, hsubS W y.2⟩ : {x : Realization A // x.1.support ∈ stellarSubdivision K σ v}) :=
-    continuous_subtype_val.subtype_mk _
+    continuous_subtypeVal.subtype_mk _
   have hcont : Continuous f := by
     refine (continuous_subtype_iff_faceInclusion hS).mpr fun τ hτ => ?_
     have hW : σ ⊆ τ.erase v ∪ σ := Finset.subset_union_right

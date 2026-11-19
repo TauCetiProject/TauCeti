@@ -146,7 +146,7 @@ private theorem map_splitSurjectiveEquiv_eq (hf : Function.Injective f)
   set e := finBasisOfFinrankEq K W hc
   choose t ht using fun j ↦ hg (e j)
   rcases x.eq_or_eq_neg (prod b.orientation e.orientation ha hc)
-    (by rw [Fintype.card_fin, finrank_prod, ha, hc]) with rfl | rfl <;>
+    (by rw [Nat.card_fin, finrank_prod, ha, hc]) with rfl | rfl <;>
   simp only [Orientation.map_neg, map_splitSurjectiveEquiv_prod_basis hf hfg _ b e t ht]
 
 /-! ### The orientation of the middle term -/
@@ -231,7 +231,7 @@ theorem shortExact_units_smul_right (u : Kˣ) (o : Orientation K U (Fin a))
 theorem shortExact_inj_left {o o' : Orientation K U (Fin a)} (p : Orientation K W (Fin c)) :
     shortExact hf hfg hg o p ha hc = shortExact hf hfg hg o' p ha hc ↔ o = o' := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
-  rcases o.eq_or_eq_neg o' (by rw [Fintype.card_fin, ha]) with ho | ho
+  rcases o.eq_or_eq_neg o' (by rw [Nat.card_fin, ha]) with ho | ho
   · exact ho
   · rw [ho, shortExact_neg_left] at h
     exact absurd h (Module.Ray.ne_neg_self _).symm
@@ -241,7 +241,7 @@ theorem shortExact_inj_left {o o' : Orientation K U (Fin a)} (p : Orientation K 
 theorem shortExact_inj_right (o : Orientation K U (Fin a)) {p p' : Orientation K W (Fin c)} :
     shortExact hf hfg hg o p ha hc = shortExact hf hfg hg o p' ha hc ↔ p = p' := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
-  rcases p.eq_or_eq_neg p' (by rw [Fintype.card_fin, hc]) with hp | hp
+  rcases p.eq_or_eq_neg p' (by rw [Nat.card_fin, hc]) with hp | hp
   · exact hp
   · rw [hp, shortExact_neg_right] at h
     exact absurd h (Module.Ray.ne_neg_self _).symm
@@ -277,8 +277,8 @@ theorem map_shortExact {U' V' W' : Type*} [AddCommGroup U'] [Module K U'] [AddCo
     rw [shortExact_basis_orientation hf hfg hg ha hc b e B hB₁ hB₂, ← Basis.orientation_map,
       ← Basis.orientation_map, ← Basis.orientation_map,
       shortExact_basis_orientation hf' hfg' hg' _ _ _ _ _ hB₁' hB₂']
-  rcases o.eq_or_eq_neg b.orientation (by rw [Fintype.card_fin, ha]) with rfl | rfl <;>
-  rcases p.eq_or_eq_neg e.orientation (by rw [Fintype.card_fin, hc]) with rfl | rfl <;>
+  rcases o.eq_or_eq_neg b.orientation (by rw [Nat.card_fin, ha]) with rfl | rfl <;>
+  rcases p.eq_or_eq_neg e.orientation (by rw [Nat.card_fin, hc]) with rfl | rfl <;>
   simp only [shortExact_neg_left, shortExact_neg_right, Orientation.map_neg, key]
 
 /-! ### The orientation of the subspace -/
@@ -299,8 +299,8 @@ theorem shortExact_shortExactLeft (ov : Orientation K V (Fin (a + c)))
     (p : Orientation K W (Fin c)) :
     shortExact hf hfg hg (shortExactLeft hf hfg hg ha hc ov p) p ha hc = ov := by
   have := Module.Finite.of_exact hfg hg
-  have hV : Fintype.card (Fin (a + c)) = finrank K V := by
-    rw [Fintype.card_fin, hfg.finrank_eq_add hf hg, ha, hc]
+  have hV : Nat.card (Fin (a + c)) = finrank K V := by
+    rw [Nat.card_fin, hfg.finrank_eq_add hf hg, ha, hc]
   unfold shortExactLeft
   split_ifs with h
   · exact h

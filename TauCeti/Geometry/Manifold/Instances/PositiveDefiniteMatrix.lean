@@ -67,7 +67,7 @@ regularity. -/
 theorem contMDiff_coe_posDefOpens {k : ℕ∞ω} :
     ContMDiff 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)) 𝓘(ℝ, Matrix n n 𝕜) k
       (fun P : posDefOpens n 𝕜 ↦ ((P : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜)) :=
-  (selfAdjoint.contDiff_subtype_val ℝ).contMDiff.comp contMDiff_subtype_val
+  (selfAdjoint.contDiff_subtype_val ℝ).contMDiff.comp contMDiff_subtypeVal
 
 variable (n 𝕜) in
 /-- Exponential coordinates on the positive-definite cone: a global real diffeomorphism from

@@ -415,7 +415,7 @@ theorem iteratedDeriv_waldschmidtFunction {K : Type*} [Field K] (ι : K →+* �
     rw [← mul_add, waldschmidtPoint_zero_add_sum, mul_add, exp_add, map_prod, mul_sum, exp_sum]
     congr 1
     · refine prod_congr rfl fun j _ ↦ ?_
-      rw [map_zpow₀, hα, ← exp_int_mul]
+      rw [map_zpow₀, hα, ← exp_intCast_mul]
       congr 1
       push_cast
       ring

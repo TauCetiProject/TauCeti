@@ -176,7 +176,7 @@ private lemma acyclic_cokernel_pullback_snd {A M F N : CochainComplex C ℤ} (p 
   let u : cokernel (pullback.snd p ψ) ⟶ N := cokernel.desc _ e (by
     rw [← cancel_mono ι, Category.assoc, ← hψ, ← pullback.condition_assoc, cokernel.condition,
       comp_zero, zero_comp])
-  have hu : u ≫ ι = cokernel.map _ _ _ _ (IsPullback.of_hasPullback p ψ).flip.w := by
+  have hu : u ≫ ι = cokernel.map _ _ _ _ (IsPullback.of_hasPullback p ψ).w := by
     rw [← cancel_epi (cokernel.π (pullback.snd p ψ))]
     simp [u, hψ]
   have : Mono (u ≫ ι) := by

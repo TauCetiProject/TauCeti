@@ -70,8 +70,8 @@ private def fiberProductZeroHomeomorph (hf : Continuous f) (hg : Continuous g) :
     (φ.fiberProductEquation_eq_zero_iff p.2.2 (p.2.1 ▸ p.2.2)).2 p.2.1⟩
   left_inv _ := rfl
   right_inv _ := rfl
-  continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-  continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _
+  continuous_toFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
+  continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _
 
 private theorem coe_fiberProductZeroHomeomorph_symm (hf : Continuous f) (hg : Continuous g)
     (p : {p : X × Y // f p.1 = g p.2 ∧ f p.1 ∈ φ.source}) :
@@ -84,7 +84,7 @@ private theorem contMDiff_fiberProductDomain_equation :
       (fun p : φ.fiberProductDomain hf.continuous hg.continuous ↦
         φ.fiberProductEquation f g p.1) := by
   exact (φ.contMDiffOn_fiberProductEquation hf hg).comp_contMDiff
-    contMDiff_subtype_val fun p ↦ p.2
+    contMDiff_subtypeVal fun p ↦ p.2
 
 include hn in
 private theorem isRegularValue_fiberProductDomain_equation
@@ -109,7 +109,7 @@ private theorem isRegularValue_fiberProductDomain_equation
   rw [isRegularPoint_iff, hEq, mfderiv_comp _
     ((φ.contMDiffOn_fiberProductEquation hf hg).contMDiffAt
       ((φ.fiberProductDomain hf.continuous hg.continuous).isOpen.mem_nhds p.2)
-      |>.mdifferentiableAt hn0) (contMDiff_subtype_val.mdifferentiableAt hn0)]
+      |>.mdifferentiableAt hn0) (contMDiff_subtypeVal.mdifferentiableAt hn0)]
   exact (isRegularPoint_iff.1 hreg).comp hD.surjective
 
 variable [IsManifold IX n X] [IsManifold IY n Y] [IX.Boundaryless] [IY.Boundaryless]

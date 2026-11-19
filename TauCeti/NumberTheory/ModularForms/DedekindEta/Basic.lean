@@ -62,7 +62,7 @@ theorem eta_two_mul {τ : ℂ} (hτ : 0 < τ.im) :
     η (2 * τ) = cexp (π * I * τ / 12) * η τ *
       ∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (n + 1)) := by
   have hq : cexp (2 * π * I * (2 * τ)) = cexp (2 * π * I * τ) ^ 2 := by
-    rw [← Complex.exp_nat_mul]
+    rw [← Complex.exp_natCast_mul]
     congr 1
     push_cast
     ring

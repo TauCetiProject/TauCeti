@@ -85,7 +85,7 @@ theorem map_val_periph0Left :
         FundamentalGroup ThricePuncturedSphere basePt)
       (FundamentalGroup leftOpen ⟨basePt, basePt_mem_leftOpen⟩)
       (fun _ => FundamentalGroup ThricePuncturedSphere basePt) MonoidHom.instFunLike
-      (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ _) periph0Left = periph0 := by
+      (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ _) periph0Left = periph0 := by
   rw [periph0Left, periph0_def]
   -- Mapping a loop class is represented by mapping the loop, and `⟦γ0⟧` is notation for
   -- `Path.Homotopic.Quotient.mk γ0`.
@@ -102,7 +102,7 @@ theorem map_val_periph1Right :
         FundamentalGroup ThricePuncturedSphere basePt)
       (FundamentalGroup rightOpen ⟨basePt, basePt_mem_rightOpen⟩)
       (fun _ => FundamentalGroup ThricePuncturedSphere basePt) MonoidHom.instFunLike
-      (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ _) periph1Right = periph1 := by
+      (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ _) periph1Right = periph1 := by
   rw [periph1Right, periph1_def]
   -- Mapping a loop class is represented by mapping the loop, and `⟦γ1⟧` is notation for
   -- `Path.Homotopic.Quotient.mk γ1`.

@@ -277,9 +277,9 @@ theorem isHomeomorph_plusEquiv (hI : IsAdic I) :
   have hm : IsHomeomorph (plusMulEquiv h : plusSubring p h → Perfection Bplus p) := by
     refine (plusMulEquiv h).toEquiv.isHomeomorph_iff.mpr ⟨?_, ?_⟩
     · refine Perfection.continuous_iff.mpr fun n ↦ ?_
-      exact ((continuous_coeff n).comp continuous_subtype_val).subtype_mk _
+      exact ((continuous_coeff n).comp continuous_subtypeVal).subtype_mk _
     · refine Continuous.subtype_mk (continuous_iff.mpr fun n ↦ ?_) _
-      exact (continuous_subtype_val.comp (Perfection.continuous_coeffMonoidHom n)).congr
+      exact (continuous_subtypeVal.comp (Perfection.continuous_coeffMonoidHom n)).congr
         fun y ↦ (coeff_plusMulEquiv_symm h y n).symm
   -- The underlying map of `plusEquiv` is the composite of the multiplicative equivalences.
   exact (Perfection.isHomeomorph_quotientMulEquiv hI).comp hm

@@ -77,7 +77,7 @@ theorem contMDiff_hemisphereChord :
   apply contMDiff_iff_comp_subtypeVal_closedBall.mpr
   have hx : ContMDiff ((𝓡 n).prod (𝓡∂ 1)) 𝓘(ℝ, E) ω
       (fun q : hemisphereOpens p × Icc (-1 : ℝ) 1 => (q.1 : E)) :=
-    contMDiff_coe_sphere.comp (contMDiff_subtype_val.comp contMDiff_fst)
+    contMDiff_coe_sphere.comp (contMDiff_subtypeVal.comp contMDiff_fst)
   have ht : ContMDiff ((𝓡 n).prod (𝓡∂ 1)) 𝓘(ℝ) ω
       (fun q : hemisphereOpens p × Icc (-1 : ℝ) 1 => (q.2 : ℝ)) :=
     (contMDiff_subtypeVal_Icc (x := -1) (y := 1)).comp contMDiff_snd
@@ -96,7 +96,7 @@ theorem contMDiff_hemisphereChord_symm :
       (𝓡∂ (n + 1)) ((𝓡 n).prod (𝓡∂ 1)) ω (hemisphereChord p).symm := by
   have hy : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ, E) ω
       (fun y : chordBallOpens p => (y : E)) :=
-    contMDiff_subtypeVal_closedBall.comp contMDiff_subtype_val
+    contMDiff_subtypeVal_closedBall.comp contMDiff_subtypeVal
   have hi : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ) ω
       (fun y : chordBallOpens p => ⟪(y : E), (p : E)⟫) :=
     contDiff_inner.contMDiff.comp (hy.prodMk_space contMDiff_const)

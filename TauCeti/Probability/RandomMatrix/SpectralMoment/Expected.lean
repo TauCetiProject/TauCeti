@@ -178,7 +178,7 @@ theorem aemeasurable_spectralMeasure_wignerMatrix {n : ℕ}
   have hH : AEMeasurable (Set.codRestrict (wignerMatrix ξ η (n + 1)) {A | A.IsHermitian}
       fun ω ↦ wignerMatrix_isHermitian ξ η ω (n + 1)) P :=
     (aemeasurable_wignerMatrix hξ hη).subtype_mk
-  exact (measurable_subtype_coe.comp Matrix.measurable_spectralMeasure).comp_aemeasurable hH
+  exact (measurable_subtypeVal.comp Matrix.measurable_spectralMeasure).comp_aemeasurable hH
 
 /-- On a probability space, the mixture `P.bind L_{H_{n+1}}` — the expected empirical spectral
 measure of the Wigner matrix — is a probability measure whenever the corner entry coordinates are

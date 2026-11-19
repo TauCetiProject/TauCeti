@@ -121,7 +121,7 @@ theorem mem_closedSubdisc (a c : K) (v : closedPolydisc 1 K) :
 
 /-- Each disc `D(a, |c|)` is open in the closed unit disc. -/
 theorem isOpen_closedSubdisc (a c : K) : IsOpen (closedSubdisc a c) :=
-  (isOpen_basicOpen _ _).preimage continuous_subtype_val
+  (isOpen_basicOpen _ _).preimage continuous_subtypeVal
 
 open scoped Classical in
 /-- **`D(a, |c|)` is the rational subset `R({T - a, c} / c)`.** Including the denominator among
@@ -206,7 +206,7 @@ theorem closure_closedSubdisc_subset_closedSubdisc {a c d : K} (hcd : ‖c‖ < 
   let F : Set (closedPolydisc 1 K) :=
     (Subtype.val ⁻¹' basicOpen (C d) (T - C a))ᶜ
   have hF : IsClosed F :=
-    ((isOpen_basicOpen _ _).preimage continuous_subtype_val).isClosed_compl
+    ((isOpen_basicOpen _ _).preimage continuous_subtypeVal).isClosed_compl
   have hsub : closedSubdisc a c ⊆ F := by
     intro x hx hmem
     have h₁ := (mem_closedSubdisc a c x).mp hx
@@ -348,7 +348,7 @@ strictly larger than `T` just below radius `r`. -/
 theorem gaussPointBelow_mem_closedSubdisc_zero_iff (hr₀ : 0 < r) (hr₁ : r ≤ 1) (c : K) :
     gaussPointBelow hr₀ hr₁ ∈ closedSubdisc 0 c ↔ r ≤ ‖c‖ := by
   rw [mem_closedSubdisc, map_zero, sub_zero, gaussPointBelow_vle_iff, gaussPointBelow_vle_iff,
-    map_zero, le_zero_iff, closedDiscGaussValuationBelow_eq_zero_iff,
+    map_zero, nonpos_iff_eq_zero, closedDiscGaussValuationBelow_eq_zero_iff,
     map_eq_zero_iff _ (weightedC_injective _ isWeightFamily_one_weight)]
   -- the Gauss norms of radius `r` of `T` and `c` are `r` and `‖c‖`
   have hT := coe_closedDiscGaussValuation_weightedX (R := K) hr₀ hr₁
@@ -368,7 +368,7 @@ strictly larger than `c` just above radius `r`, so the disc of radius `r` contai
 theorem gaussPointAbove_mem_closedSubdisc_zero_iff (hr₀ : 0 < r) (hr₁ : r < 1) (c : K) :
     gaussPointAbove hr₀ hr₁ ∈ closedSubdisc 0 c ↔ r < ‖c‖ := by
   rw [mem_closedSubdisc, map_zero, sub_zero, gaussPointAbove_vle_iff, gaussPointAbove_vle_iff,
-    map_zero, le_zero_iff, closedDiscGaussValuationAbove_eq_zero_iff,
+    map_zero, nonpos_iff_eq_zero, closedDiscGaussValuationAbove_eq_zero_iff,
     map_eq_zero_iff _ (weightedC_injective _ isWeightFamily_one_weight)]
   -- the Gauss norms of radius `r` of `T` and `c` are `r` and `‖c‖`
   have hT := coe_closedDiscGaussValuation_weightedX (R := K) hr₀ hr₁.le
@@ -548,7 +548,7 @@ theorem exists_forall_mem_closedSubdisc {x : closedPolydisc 1 K}
     refine ⟨n, ?_⟩
     rw [norm_sub_rev, ← hClt, ← hac n, ← valuation_weightedX_sub_weightedC_eq_of_lt hn]
     exact hn
-  · rw [mem_closedSubdisc, ← valuation_le_iff, ← valuation_le_iff, map_zero, le_zero_iff]
+  · rw [mem_closedSubdisc, ← valuation_le_iff, ← valuation_le_iff, map_zero, nonpos_iff_eq_zero]
     exact ⟨(hac n).le, fun h ↦ hc₀ n ((closedPolydisc_valuation_weightedC_eq_zero_iff x _).mp h)⟩
 
 end NoMinimum

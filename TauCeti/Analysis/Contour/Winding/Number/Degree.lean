@@ -167,7 +167,7 @@ theorem windingNumber_comp_circleMap_eq_degree_toBasedLoop {f : ℂ → ℂ} {c 
     simpa using (hper 0).symm
   let Γ : Path (γ (2 * Real.pi * (0 : ℝ))) (γ (2 * Real.pi * (0 : ℝ))) :=
     { toFun t := γ (2 * Real.pi * t)
-      continuous_toFun := hf.continuous.comp (continuous_const.mul continuous_subtype_val)
+      continuous_toFun := hf.continuous.comp (continuous_const.mul continuous_subtypeVal)
       source' := rfl
       target' := hclosed.symm }
   have hΓ_apply (t : I) : Γ t = γ (2 * Real.pi * t) := rfl

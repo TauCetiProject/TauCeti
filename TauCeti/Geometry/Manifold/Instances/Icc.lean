@@ -179,7 +179,7 @@ theorem mfderiv_subtypeVal_Icc (x : Icc a b) :
       (if (x : ℝ) < b then (1 : ℝ) else -1) •
         EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0 := by
   apply HasMFDerivAt.mfderiv
-  refine ⟨continuous_subtype_val.continuousAt, ?_⟩
+  refine ⟨continuous_subtypeVal.continuousAt, ?_⟩
   simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
     Function.id_comp]
   convert! hasFDerivWithinAt_subtypeVal_extChartAt_Icc_symm x (mem_extChartAt_target x) using 1

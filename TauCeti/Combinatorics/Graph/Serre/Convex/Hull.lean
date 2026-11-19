@@ -99,7 +99,7 @@ theorem convexHull_mono {S T : Set Γ.V} (h : S ⊆ T) : Γ.convexHull S ⊆ Γ.
     exact convexHull_empty⟩
 
 @[simp] theorem convexHull_nonempty_iff : (Γ.convexHull S).Nonempty ↔ S.Nonempty := by
-  simp only [Set.nonempty_iff_ne_empty, ne_eq, convexHull_eq_empty]
+  simp only [← Set.ne_empty_iff_nonempty, ne_eq, convexHull_eq_empty]
 
 /-- In an acyclic graph, the convex hull of a vertex is that vertex. -/
 @[simp] theorem IsAcyclic.convexHull_singleton (h : Γ.IsAcyclic) (v : Γ.V) :

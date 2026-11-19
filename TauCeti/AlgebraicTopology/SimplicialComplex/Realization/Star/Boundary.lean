@@ -100,7 +100,7 @@ theorem IsCombinatorialBall.exists_openPartialHomeomorph_openStar_halfBall
       ∀ x : openStarRealization K v, ‖(c x.1).1‖ = 1 - x.1.1 v := by
   obtain ⟨e, he⟩ := h.exists_homeomorph_openStar_halfBall
   have hU : IsOpen {z : EuclideanHalfSpace (n + 1) | ‖z.1‖ < 1} :=
-    isOpen_lt continuous_subtype_val.norm continuous_const
+    isOpen_lt continuous_subtypeVal.norm continuous_const
   obtain ⟨c, hs, ht, hc⟩ := OpenPartialHomeomorph.exists_source_eq_target_eq_of_homeomorph
     (K.isOpen_openStarRealization v) hU e ⟨vertex K v, by simp [mem_openStarRealization]⟩
   have hradius (x : openStarRealization K v) : ‖(c x.1).1‖ = 1 - x.1.1 v := by

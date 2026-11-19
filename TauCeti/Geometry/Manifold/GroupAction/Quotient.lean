@@ -171,7 +171,7 @@ private theorem exists_sliceDomain (x : M) :
   set B := (fun v ↦ extChartAt I' x x + (sliceEquiv I G I' x v : E')) ⁻¹'
     (extChartAt I' x).target
   have hB : IsOpen B := (isOpen_extChartAt_target x).preimage (continuous_const.add
-    (continuous_subtype_val.comp (sliceEquiv I G I' x).continuous))
+    (continuous_subtypeVal.comp (sliceEquiv I G I' x).continuous))
   have h0B : (0 : QuotientModelSpace E E') ∈ B := by simp [B]
   -- Properness upgrades local injectivity near `(1, 0)` to injectivity on a tube.
   obtain ⟨N, hN, hinjN⟩ := hloc.exists_mem_nhds_injOn

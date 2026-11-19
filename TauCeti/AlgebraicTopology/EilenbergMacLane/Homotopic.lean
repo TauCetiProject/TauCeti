@@ -224,7 +224,7 @@ theorem homotopicRel_singleton_of_mapOfEq_eq_of_cwComplex [CWComplex (univ : Set
     (hfg : FundamentalGroup.mapOfEq f hf = FundamentalGroup.mapOfEq g hg) :
     f.HomotopicRel g {x₀} := by
   -- Apply `homotopicRel_singleton_of_mapOfEq_eq` to `univ`, through `Subtype.val`.
-  let e : C(univ, X) := ⟨Subtype.val, continuous_subtype_val⟩
+  let e : C(univ, X) := ⟨Subtype.val, continuous_subtypeVal⟩
   have h := homotopicRel_singleton_of_mapOfEq_eq (C := (univ : Set X)) hY (x₀ := ⟨x₀, trivial⟩)
     (by ext x; simp [← SetLike.mem_coe, hx₀, Subtype.ext_iff]) (f := f.comp e) (g := g.comp e)
     hf hg <| by

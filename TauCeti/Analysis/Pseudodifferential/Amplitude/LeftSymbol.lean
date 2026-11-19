@@ -144,7 +144,7 @@ theorem HasCompactInputSupport.continuous_leftIntegrand {a : Amplitude n V W m}
     (ha : a.HasCompactInputSupport) (s : ℝ) (p : CoordinateSpace n × CoordinateSpace n) :
     Continuous (leftIntegrand a s p) := by
   have h₁ : Continuous fun θ : CoordinateSpace n ↦ (𝐞 ⟪θ, p.1⟫ : ℂ) :=
-    continuous_subtype_val.comp (Real.continuous_fourierChar.comp (by fun_prop))
+    continuous_subtypeVal.comp (Real.continuous_fourierChar.comp (by fun_prop))
   have h₂ : Continuous fun θ ↦ 𝓕 (fun y ↦ a.coefficient (p.1, y, p.2 + s • θ)) θ :=
     ha.continuous_fourier_slice.comp (f := fun θ : CoordinateSpace n ↦
       (θ, p.1, p.2 + s • θ)) (by fun_prop)

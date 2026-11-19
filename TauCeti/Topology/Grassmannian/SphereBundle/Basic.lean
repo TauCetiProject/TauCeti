@@ -92,7 +92,7 @@ variable (n) in
 theorem continuous_specialOrthogonalSphereMap : Continuous (specialOrthogonalSphereMap n) :=
   (finiteOrthonormalFrame.sphereHomeomorph (1 + n)).continuous.comp
     (finiteOrthonormalFrame.continuous_unitaryMap.comp
-      ((continuous_subtype_val.subtype_mk _).prodMk continuous_const))
+      ((continuous_subtypeVal.subtype_mk _).prodMk continuous_const))
 
 /-- The evaluation map is equivariant: `(A B) e₀ = A (B e₀)`. -/
 theorem ofLp_specialOrthogonalSphereMap_mul (A B : specialOrthogonalGroup (Fin (1 + n)) ℝ) :

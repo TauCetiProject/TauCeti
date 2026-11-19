@@ -163,7 +163,7 @@ private theorem continuous_seminorm_gauge_sub (k : ℕ) (a : SmoothNoncommutativ
   simp only [seminorm_apply, coeff_sub, Pi.sub_apply, coeff_gauge]
   apply continuous_tsum
   · intro x
-    exact (((continuous_gaugePhase x).subtype_val.mul_const (a.coeff x)).sub
+    exact (((continuous_gaugePhase x).subtypeVal.mul_const (a.coeff x)).sub
       continuous_const).norm.mul_const _
   · exact (a.isRapidDecay_coeff.summable_norm_mul_weight_pow k).mul_left 2
   · intro x z

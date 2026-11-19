@@ -110,7 +110,7 @@ theorem _root_.TotallyBounded.exists_measurable_dist_lt {X : Type u} [PseudoMetr
       ∀ x ∈ s, ∀ y ∈ s, q x = q y → dist x y < δ := by
   classical
   have hs' : TotallyBounded (univ : Set s) :=
-    (totallyBounded_image_iff isUniformEmbedding_subtype_val.isUniformInducing).1 (by simpa)
+    (totallyBounded_image_iff isUniformEmbedding_subtypeVal.isUniformInducing).1 (by simpa)
   obtain ⟨n, v, r, hr, hrv⟩ := TauCeti.exists_measurable_dist_lt s hs' (half_pos hδ)
   refine ⟨n, fun x ↦ if hx : x ∈ s then (r ⟨x, hx⟩).castSucc else Fin.last n,
     ((measurable_of_countable Fin.castSucc).comp hr).dite measurable_const hsm,

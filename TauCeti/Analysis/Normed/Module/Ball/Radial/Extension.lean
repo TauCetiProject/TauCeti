@@ -113,7 +113,7 @@ private theorem continuous_radialExtensionFun (h : sphere (0 : E) 1 ≃ₜ spher
       have hres : ({0}ᶜ : Set E).domRestrict (radialExtensionFun h) =
           Subtype.val ∘ polarCongr h := funext (radialExtensionFun_of_ne_zero h)
       rw [hres]
-      exact continuous_subtype_val.comp (polarCongr h).continuous
+      exact continuous_subtypeVal.comp (polarCongr h).continuous
     exact hon.continuousAt (isOpen_compl_singleton.mem_nhds hx)
 
 /-- The **radial extension** of a homeomorphism `h` from the unit sphere of a real normed space `E`

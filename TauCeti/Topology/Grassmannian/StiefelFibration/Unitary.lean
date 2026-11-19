@@ -184,7 +184,7 @@ private theorem continuous_frameCompletion (k : Fin (r + m)) :
     Continuous fun f : finiteOrthonormalFrame 𝕜 r (r + m) ↦ frameCompletion f k := by
   refine Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) k
   · simp only [frameCompletion, Fin.append_left]
-    exact (PiLp.continuous_toLp 2 _).comp ((continuous_apply i).comp continuous_subtype_val)
+    exact (PiLp.continuous_toLp 2 _).comp ((continuous_apply i).comp continuous_subtypeVal)
   · simp only [frameCompletion, Fin.append_right]
     exact continuous_const
 

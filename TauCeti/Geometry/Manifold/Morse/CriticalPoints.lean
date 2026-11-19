@@ -513,7 +513,7 @@ theorem finiteDimensional_of_isCompact_sublevel [T2Space M] {b : ℝ} (hf : Cont
       (fun x hx ↦ by
         have hlt : f x < b := hx
         simpa using hlt.le)
-      (U.isOpen.preimage continuous_subtype_val)).locallyCompactSpace
+      (U.isOpen.preimage continuous_subtypeVal)).locallyCompactSpace
   exact FiniteDimensional.of_locallyCompact_manifold U I
 
 end Boundaryless
@@ -1058,7 +1058,7 @@ theorem two_mul_card_connectedComponents_le_totalCriticalCount [I.Boundaryless] 
   have : Nontrivial (ConnectedComponents.mk x).opens := ChartedSpace.nontrivial (H := H)
   have : CompactSpace (ConnectedComponents.mk x).opens :=
     isCompact_iff_compactSpace.1 (ConnectedComponents.isClopen_opens _).isClosed.isCompact
-  exact two_le_totalCriticalCount (hf.comp continuous_subtype_val)
+  exact two_le_totalCriticalCount (hf.comp continuous_subtypeVal)
 
 /-- A compact boundaryless manifold of positive dimension carrying a continuous function with fewer
 than four critical points is preconnected, hence connected when nonempty: each connected component

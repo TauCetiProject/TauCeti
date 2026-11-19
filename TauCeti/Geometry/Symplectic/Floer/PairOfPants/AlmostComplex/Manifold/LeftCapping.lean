@@ -288,8 +288,8 @@ theorem contMDiff_cappedExchangeAlmostComplex {F G N : Type*} [NormedAddCommGrou
     let U : TopologicalSpace.Opens N :=
       ⟨{y | ‖f y‖ < 1}, isOpen_lt hf.continuous.norm continuous_const⟩
     have hU := contMDiff_cappingAlmostComplex h₀ J hJ hJp hJs (q := zero) (by decide)
-      (ℓ := fun _ : U => L) contMDiff_const (hf.comp contMDiff_subtype_val)
-      (hb.comp contMDiff_subtype_val) (fun _ => hL) fun y => by
+      (ℓ := fun _ : U => L) contMDiff_const (hf.comp contMDiff_subtypeVal)
+      (hb.comp contMDiff_subtypeVal) (fun _ => hL) fun y => by
         rcases eq_or_ne (f y) 0 with h | h
         · exact Or.inl (by rw [comp_apply, h, endCenter_zero])
         · exact Or.inr ⟨h, hf₁ y⟩

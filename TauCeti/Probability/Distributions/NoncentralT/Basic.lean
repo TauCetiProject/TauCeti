@@ -251,7 +251,7 @@ theorem measurable_noncentralTMeasure :
         (fun z ↦ (z.1 + p.2) / √(z.2 / p.1)) : Measure ℝ) := by
     have hmap := TauCeti.MeasureTheory.measurable_probabilityMeasure_map_of_measurable_uncurry
       (f := fun (p : ℝ × ℝ) (z : ℝ × ℝ) ↦ (z.1 + p.2) / √(z.2 / p.1)) (by fun_prop)
-    exact measurable_subtype_coe.comp (hmap.comp (hprod.prodMk measurable_id))
+    exact measurable_subtypeVal.comp (hmap.comp (hprod.prodMk measurable_id))
   have h : Measurable fun p : ℝ × ℝ ↦ if 0 < p.1 then
       ((gaussianReal 0 1).prod (chiSquaredMeasure |p.1|)).map
         (fun z ↦ (z.1 + p.2) / √(z.2 / p.1)) else 0 :=

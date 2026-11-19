@@ -217,7 +217,7 @@ private theorem hasFDerivAt_newtonianKernel_convolution_of_support (hn : n ≠ 2
     · simp [hy]
     rw [norm_smul]
     exact mul_le_mul_of_nonneg_right (hM y (hR hy)) (norm_nonneg _)
-  · exact (smulRightL ℝ (EuclideanSpace ℝ (Fin n)) F).aestronglyMeasurable_comp₂
+  · exact (smulRightL ℝ ℝ ℝ (EuclideanSpace ℝ (Fin n)) F).aestronglyMeasurable_comp₂
       ((measurable_fderiv ℝ G).comp (measurable_const.sub measurable_id)).aestronglyMeasurable
       hf.aestronglyMeasurable
   · rw [norm_smulRight_apply]

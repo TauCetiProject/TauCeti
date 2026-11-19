@@ -137,10 +137,10 @@ theorem doubleCoset_natDiagGL_Gamma0_eq_iUnion_rightCosets_of_prime (hp : p.Prim
     cases i with
     | none =>
       obtain ⟨γ, hγ, heq⟩ := exists_mem_Gamma1_natDiagGL_mul_eq_primeRep_none hp.pos hσ10 hσ11
-      exact ⟨mapGL ℚ γ, Subgroup.mem_map_of_mem _ (Gamma1_in_Gamma0 N hγ), heq⟩
+      exact ⟨mapGL ℚ γ, Subgroup.mem_map_of_mem _ (Gamma1_le_Gamma0 N hγ), heq⟩
     | some b =>
       exact ⟨mapGL ℚ (ModularGroup.T ^ (b : ℤ)),
-        Subgroup.mem_map_of_mem _ (Gamma1_in_Gamma0 N (T_zpow_mem_Gamma1 N _)), by
+        Subgroup.mem_map_of_mem _ (Gamma1_le_Gamma0 N (T_zpow_mem_Gamma1 N _)), by
         rw [primeRep_some, natDiagGL_mul_mapGL_T_zpow b]⟩
 
 /-- **At a prime dividing the level, the `Γ₀(N)` double coset of `diag(1, p)` is the union of the
@@ -162,7 +162,7 @@ theorem doubleCoset_natDiagGL_Gamma0_eq_iUnion_rightCosets_of_dvd (hp : p.Prime)
     simp
   · intro j
     exact ⟨mapGL ℚ (ModularGroup.T ^ (j : ℤ)),
-      Subgroup.mem_map_of_mem _ (Gamma1_in_Gamma0 N (T_zpow_mem_Gamma1 N _)),
+      Subgroup.mem_map_of_mem _ (Gamma1_le_Gamma0 N (T_zpow_mem_Gamma1 N _)),
       natDiagGL_mul_mapGL_T_zpow j⟩
 
 /-! ### The upper-left units of the representatives -/

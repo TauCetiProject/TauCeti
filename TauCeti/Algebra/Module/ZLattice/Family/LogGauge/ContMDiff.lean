@@ -103,7 +103,7 @@ theorem contMDiffAt_torusFamilyLogGauge (l : Λ)
         ((contMDiff_powPullbackPeriod P (hP l)).comp contMDiff_fst).contMDiffAt)))
   apply hs.congr_of_eventuallyEq
   have hopen : IsOpen {p : rootsOfUnityBall m r × E | (p.1 : ℂ) ≠ 0} :=
-    isOpen_ne_fun (continuous_subtype_val.comp continuous_fst) continuous_const
+    isOpen_ne_fun (continuous_subtypeVal.comp continuous_fst) continuous_const
   filter_upwards [hopen.mem_nhds hz₀] with p hp
   simpa [Function.comp_def, powPullbackPeriod_apply] using
     (torusFamilyLogGauge_mk_of_exp_eq P l (hL hp) p.2)

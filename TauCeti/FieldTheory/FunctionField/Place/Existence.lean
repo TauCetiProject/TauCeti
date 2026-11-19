@@ -91,7 +91,7 @@ theorem exists_forall_mem_integers_and_valuation_lt_one (hF : IsFunctionField k 
       rw [integers_ofValuationSubring]
       exact hnonunit b hb h
     rw [mem_integers_iff, not_le, map_inv₀,
-      one_lt_inv₀ (zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 h))] at hb1
+      one_lt_inv₀ (pos_iff_ne_zero.2 ((Valuation.ne_zero_iff _).2 h))] at hb1
     exact hb1
 
 /-! ### Zeros and poles -/

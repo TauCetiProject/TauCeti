@@ -198,7 +198,7 @@ theorem exists_realImage_homotopy_unitaryGroup {M : I → GL n ℂ} (hM : Contin
   refine ⟨fun p ↦ GeneralLinearGroup.polarDeformation
     (GeneralLinearGroup.realOrthonormalize (M p.2)) p.1, ?_, fun t ↦ ?_, fun s ↦ ?_, fun t ↦ ?_⟩
   · have h := (GeneralLinearGroup.contMDiff_polarDeformation (n := n) (𝕜 := ℂ) (k := 0)).continuous
-    exact h.comp ((continuous_subtype_val.comp continuous_fst).prodMk
+    exact h.comp ((continuous_subtypeVal.comp continuous_fst).prodMk
       ((GeneralLinearGroup.continuous_realOrthonormalize hM).comp continuous_snd))
   · simp
   · simp only

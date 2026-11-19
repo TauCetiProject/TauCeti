@@ -172,7 +172,7 @@ private theorem continuousOn_doubleChartFun
     ContinuousOn (doubleChartFun e) (DoubleAlong.fold _ ⁻¹' e.source) := by
   have hc : ContinuousOn (fun z : SchottkyDouble M ↦ (e (DoubleAlong.fold _ z) : ℂ))
       (DoubleAlong.fold _ ⁻¹' e.source) :=
-    continuous_subtype_val.comp_continuousOn
+    continuous_subtypeVal.comp_continuousOn
       (e.continuousOn.comp (DoubleAlong.fold _).continuous.continuousOn fun _ hz ↦ hz)
   refine ContinuousOn.piecewise ?_ (hc.mono inter_subset_left)
     ((continuous_conj.comp_continuousOn hc).mono inter_subset_left)

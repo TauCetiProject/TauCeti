@@ -37,6 +37,6 @@ instance instPolynormableSpace {𝕜 X F : Type*} [NormedField 𝕜] [Topologica
   apply PolynormableSpace.iInf
   intro K
   exact PolynormableSpace.induced
-    (compCLM 𝕜 F (⟨Subtype.val, continuous_subtype_val⟩ : C(K, X))).toLinearMap
+    (compCLM 𝕜 F (⟨Subtype.val, continuous_subtypeVal⟩ : C(K, X))).toLinearMap
 
 end ContinuousMap

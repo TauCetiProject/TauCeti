@@ -551,7 +551,7 @@ theorem continuous_foldedNormalMeasure :
   have hparam : Continuous fun p : ℝ × Ioi (0 : ℝ) ↦
       (p.1, (((p.2 : ℝ) ^ 2).toNNReal : ℝ≥0)) :=
     continuous_fst.prodMk (continuous_real_toNNReal.comp
-      ((continuous_subtype_val.comp continuous_snd).pow 2))
+      ((continuous_subtypeVal.comp continuous_snd).pow 2))
   have h := (ProbabilityMeasure.continuous_map continuous_abs).comp
     (continuous_gaussianReal.comp hparam)
   refine h.congr fun p ↦ ?_

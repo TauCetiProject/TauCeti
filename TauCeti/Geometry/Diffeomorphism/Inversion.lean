@@ -242,7 +242,7 @@ theorem continuous_symm : Continuous (Diffeomorph.symm : (M ≃ₘ^n⟮I, J⟯ N
   rw [nhds_prod_eq] at hsrc ⊢
   simpa only [Diffeomorph.toContMDiffMap, ContMDiffMap.coeFn_mk, Function.comp_def,
     Prod.map_fst, Prod.map_snd, id_eq, Membership.mem, Set.Mem] using
-    hsrc.and ((tendsto_id.prodMap (map_nhds_subtype_val w).le).eventually hD)
+    hsrc.and ((tendsto_id.prodMap (map_nhds_subtypeVal w).le).eventually hD)
 
 variable [T2Space M]
 

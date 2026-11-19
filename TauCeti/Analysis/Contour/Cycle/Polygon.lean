@@ -158,11 +158,11 @@ theorem _root_.Polygon.contourCurve_apply {t : ℝ} (ht : t ∈ Icc (0 : ℝ) n)
 /-- The closed polygonal curve of a polygon `poly` with `n ≠ 0` vertices, as a one-generator
 contour cycle. -/
 def _root_.Polygon.contourCycle : Cycle :=
-  FreeAbelianGroup.of poly.contourCurve
+  FreeAddCommGroup.of poly.contourCurve
 
 /-- The cycle of a polygon is the single generator given by its polygonal curve. -/
 theorem _root_.Polygon.contourCycle_def :
-    poly.contourCycle = FreeAbelianGroup.of poly.contourCurve := (rfl)
+    poly.contourCycle = FreeAddCommGroup.of poly.contourCurve := (rfl)
 
 /-- The trace of the cycle of a polygon is the boundary of the polygon. -/
 @[simp]

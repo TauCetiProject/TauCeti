@@ -387,7 +387,7 @@ theorem isClosed_range_center : IsClosed (range (center φ)) := by
 /-- The punctured unit disc is an open subspace of the unit disc. -/
 private theorem isOpenEmbedding_inclusion_puncture :
     IsOpenEmbedding (inclusion (sdiff_subset : ball (0 : ℂ) 1 \ {0} ⊆ ball 0 1)) :=
-  .inclusion _ <| (isOpen_ball.sdiff isClosed_singleton).preimage continuous_subtype_val
+  .inclusion _ <| (isOpen_ball.sdiff isClosed_singleton).preimage continuous_subtypeVal
 
 /-- If the punctured discs `φ i` are continuous, `E` is an open subspace of its puncture
 filling. -/

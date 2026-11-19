@@ -459,7 +459,7 @@ theorem isAdic_map_idealOfDefinition {B : Type*} [CommRing B] [TopologicalSpace 
   have : IsTopologicalRing Q.ringOfDefinition :=
     Q.isAdic_idealOfDefinition ▸ Q.idealOfDefinition.nonarchimedean.toIsTopologicalRing
   let f₀ := f.restrict _ _ h
-  have hc : Continuous f₀ := (hf.comp continuous_subtype_val).subtype_mk _
+  have hc : Continuous f₀ := (hf.comp continuous_subtypeVal).subtype_mk _
   have hrad := P.isAdic_idealOfDefinition.map_le_radical_of_continuous
     Q.isAdic_idealOfDefinition hc
   apply Q.isAdic_idealOfDefinition.isAdic_iff_isOpen_and_exists_pow_le.mpr
@@ -575,7 +575,7 @@ theorem isOpen_iff_setOf_isTopologicallyNilpotent_coe_subset_of_isRadical [IsHub
   · -- `q` contains the trace on `B` of the open set of topologically nilpotent elements of `I`
     obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
     refine AddSubgroup.isOpen_of_mem_nhds q.toAddSubgroup (g := 0) <|
-      Filter.mem_of_superset (continuous_subtype_val.continuousAt.preimage_mem_nhds
+      Filter.mem_of_superset (continuous_subtypeVal.continuousAt.preimage_mem_nhds
         ((P.isOpen_idealImage 1).mem_nhds ?_))
         fun s hs ↦ h (P.isTopologicallyNilpotent_of_mem_idealImage one_ne_zero hs)
     simp

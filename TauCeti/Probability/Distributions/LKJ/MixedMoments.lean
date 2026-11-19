@@ -129,7 +129,7 @@ theorem integral_prod_pow_coe_apply_lkjMeasure (p : ℕ) {η : ℝ} (hη : 0 < �
     ∫ R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
         ∏ ij, (R : Matrix (Fin p) (Fin p) ℝ) ij.1 ij.2 ^ n ij ∂(lkjMeasure p η) =
         ∫ R, f R ∂((lkjMeasure p η).map Subtype.val) := by
-          rw [integral_map measurable_subtype_coe.aemeasurable hf.aestronglyMeasurable]
+          rw [integral_map measurable_subtypeVal.aemeasurable hf.aestronglyMeasurable]
     _ = ∫ z, f (partialCorrelationGram z) ∂(Measure.pi fun ij : strictLowerTriangle p ↦
           (betaMeasure (lkjPartialCorrelationShape p η ij)
             (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x)) := by
