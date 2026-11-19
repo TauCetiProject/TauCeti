@@ -24,6 +24,9 @@ one-sided relations with a self-adjoint element: `x * q = x` becomes `q * x = x`
 element `2 p - 1` is again self-adjoint, and its commutator `ξ p - p ξ` with a skew-adjoint `ξ`
 is self-adjoint.
 
+Preservation of self-adjoint squares by an additive homomorphism also implies preservation
+of anticommutators on the self-adjoint part when the codomain has cancellative addition.
+
 ## Main results
 
 * `IsSelfAdjoint.eq_zero_of_isNilpotent`: a nilpotent self-adjoint element is zero.
@@ -37,6 +40,7 @@ is self-adjoint.
 * `IsSelfAdjoint.of_mul_eq_one`: a right inverse of a self-adjoint element is self-adjoint.
 * `IsSelfAdjoint.mul_sub_mul_of_mem_skewAdjoint`: the commutator `ξ H - H ξ` of a skew-adjoint
   `ξ` with a self-adjoint `H` is self-adjoint.
+* `AddMonoidHom.map_mul_add_mul_of_isSelfAdjoint`: polarization of the self-adjoint square law.
 -/
 
 public section
@@ -97,3 +101,22 @@ theorem IsSelfAdjoint.of_mul_eq_one {A : Type*} [Monoid A] [StarMul A] {R Rinv :
 theorem IsSelfAdjoint.mul_sub_mul_of_mem_skewAdjoint {R : Type*} [NonUnitalRing R] [StarRing R]
     {ξ H : R} (hH : IsSelfAdjoint H) (hξ : ξ ∈ skewAdjoint R) : IsSelfAdjoint (ξ * H - H * ξ) := by
   simp [IsSelfAdjoint, hH.star_eq, skewAdjoint.mem_iff.mp hξ, neg_add_eq_sub]
+
+namespace AddMonoidHom
+
+/-- An additive homomorphism preserving self-adjoint squares preserves anticommutators of
+self-adjoint elements when addition in the codomain is cancellative. -/
+theorem map_mul_add_mul_of_isSelfAdjoint
+    {A B : Type*} [NonUnitalNonAssocSemiring A] [StarAddMonoid A]
+    [NonUnitalNonAssocSemiring B] [IsCancelAdd B] (f : A →+ B)
+    (hf : ∀ x, IsSelfAdjoint x → f (x * x) = f x * f x)
+    {x y : A} (hx : IsSelfAdjoint x) (hy : IsSelfAdjoint y) :
+    f (x * y + y * x) = f x * f y + f y * f x := by
+  have h := hf (x + y) (hx.add hy)
+  simp only [add_mul, mul_add, map_add, hf x hx, hf y hy] at h
+  rw [map_add]
+  -- Collect the two common square terms on the left before cancelling them.
+  apply add_left_cancel (a := f x * f x + f y * f y)
+  convert h using 1 <;> ac_rfl
+
+end AddMonoidHom
