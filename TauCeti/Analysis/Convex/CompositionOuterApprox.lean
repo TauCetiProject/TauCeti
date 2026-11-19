@@ -47,8 +47,9 @@ so the shared rows are valid and at least as tight as the direct ones with the s
 height space this follows from differentiability. On coordinates in `J` the outer derivatives may
 have either sign. No monotonicity of `h` itself enters the first inclusion.
 
-Derivatives are taken within `D` and `E`, so anchors and heights may lie on the boundary of the
-domains.
+The inner map `g` is differentiated within `D` and the outer function `h` within `E`, so anchors
+and heights may lie on the boundary of the domains. Only the full-space comparison for a monotone
+`h` takes derivatives of `h` on the whole height space.
 
 ## Main definitions
 
@@ -192,14 +193,14 @@ theorem componentRow_apply_eq_of_eq_continuousAffineMap {j : ι} (φ : X →ᴬ[
     simpa using φ.map_vadd a (x - a)
   rw [componentRow_def, Pi.add_apply, hj, congr_fun hφ a, congr_fun hφ x, hφx, add_comm]
 
-/-- **Direct support.** If the composition `h ∘ g` is convex on `D`, `h` has derivative `Dh` at
-`g a` and `g` has derivative `Dg` within `D` at the anchor `a ∈ D`, then the direct row lies below
-`h ∘ g` on `D`. -/
-theorem directRow_le (hc : ConvexOn ℝ D (h ∘ g)) (ha : a ∈ D) (hx : x ∈ D)
-    (hh : HasFDerivAt h Dh (g a)) (hg : HasFDerivWithinAt g Dg D a) :
-    directRow g h a Dg Dh x ≤ h (g x) :=
+/-- **Direct support.** If the composition `h ∘ g` is convex on `D`, `g` maps `D` into `E`, `h` has
+derivative `Dh` within `E` at `g a` and `g` has derivative `Dg` within `D` at the anchor `a ∈ D`,
+then the direct row lies below `h ∘ g` on `D`. -/
+theorem directRow_le {E : Set (ι → ℝ)} (hc : ConvexOn ℝ D (h ∘ g)) (hgE : MapsTo g D E)
+    (ha : a ∈ D) (hx : x ∈ D) (hh : HasFDerivWithinAt h Dh E (g a))
+    (hg : HasFDerivWithinAt g Dg D a) : directRow g h a Dg Dh x ≤ h (g x) :=
   have := Fintype.ofFinite ι
-  hc.add_le_of_hasFDerivWithinAt ha hx (hh.comp_hasFDerivWithinAt a hg)
+  hc.add_le_of_hasFDerivWithinAt ha hx (hh.comp a hg hgE)
 
 end Rows
 
@@ -325,6 +326,18 @@ theorem fst_image_sharedOuterApproxOn_subset_directOuterApprox
   rw [outerRow_componentRow] at hsub
   linarith [(hz i).2]
 
+/-- **Shared rows contain the original set.** If `g` maps `D` into `E`, every coordinate of `g` is
+convex on `D`, `h` is convex on `E`, and `g` and `h` have derivatives `Dg i` within `D` at
+`a i ∈ D` and `Dh i` within `E` at `g (a i)`, then the graph point `(x, g x)` of a point `x` of the
+original set lies in the shared approximation. -/
+theorem mk_mem_sharedOuterApprox_of_mem_originalSet [Finite ι] (hgE : MapsTo g D E)
+    (hc : ∀ j, ConvexOn ℝ D fun x ↦ g x j) (hh : ConvexOn ℝ E h) (ha : ∀ i, a i ∈ D)
+    (hg : ∀ i, HasFDerivWithinAt g (Dg i) D (a i))
+    (hdh : ∀ i, HasFDerivWithinAt h (Dh i) E (g (a i))) {x : X} (hx : x ∈ originalSet D g h b) :
+    (x, g x) ∈ sharedOuterApprox D E g h a Dg Dh b :=
+  sharedOuterApproxOn_subset <| mk_mem_sharedOuterApproxOn_of_mem_originalSet (J := ∅) hgE
+    (fun j _ ↦ hc j) hh ha hg hdh (by simp) hx
+
 /-- **The original set lies in the shared approximation.** If `g` maps `D` into `E`, every
 coordinate of `g` is convex on `D`, `h` is convex on `E`, and `g` and `h` have derivatives `Dg i`
 within `D` at `a i ∈ D` and `Dh i` within `E` at `g (a i)`, then every point of the original set
@@ -333,9 +346,8 @@ theorem originalSet_subset_fst_image_sharedOuterApprox [Finite ι] (hgE : MapsTo
     (hc : ∀ j, ConvexOn ℝ D fun x ↦ g x j) (hh : ConvexOn ℝ E h) (ha : ∀ i, a i ∈ D)
     (hg : ∀ i, HasFDerivWithinAt g (Dg i) D (a i))
     (hdh : ∀ i, HasFDerivWithinAt h (Dh i) E (g (a i))) :
-    originalSet D g h b ⊆ Prod.fst '' sharedOuterApprox D E g h a Dg Dh b := by
-  simpa using originalSet_subset_fst_image_sharedOuterApproxOn (J := ∅) hgE (by simp)
-    (fun j _ ↦ hc j) hh ha hg hdh
+    originalSet D g h b ⊆ Prod.fst '' sharedOuterApprox D E g h a Dg Dh b :=
+  fun x hx ↦ ⟨(x, g x), mk_mem_sharedOuterApprox_of_mem_originalSet hgE hc hh ha hg hdh hx, rfl⟩
 
 /-- **The shared approximation lies in the direct one.** If every outer derivative `Dh i` is
 monotone, then the projection of the shared approximation lies in the direct approximation with
@@ -356,14 +368,16 @@ theorem fst_image_sharedOuterApprox_subset_directOuterApprox_of_monotone [Finite
   fst_image_sharedOuterApprox_subset_directOuterApprox fun i ↦ (hdh i).monotone_of_monotone hm
 
 /-- **The original set lies in the direct approximation.** If the composition `h ∘ g` is convex on
-`D`, `h` has derivative `Dh i` at `g (a i)` and `g` has derivative `Dg i` within `D` at `a i ∈ D`,
-then every point of the original set satisfies the direct rows. -/
+`D`, `g` maps `D` into `E`, `h` has derivative `Dh i` within `E` at `g (a i)` and `g` has
+derivative `Dg i` within `D` at `a i ∈ D`, then every point of the original set satisfies the
+direct rows. -/
 theorem originalSet_subset_directOuterApprox [Finite ι] (hc : ConvexOn ℝ D (h ∘ g))
-    (ha : ∀ i, a i ∈ D) (hdh : ∀ i, HasFDerivAt h (Dh i) (g (a i)))
+    (hgE : MapsTo g D E) (ha : ∀ i, a i ∈ D) (hdh : ∀ i, HasFDerivWithinAt h (Dh i) E (g (a i)))
     (hg : ∀ i, HasFDerivWithinAt g (Dg i) D (a i)) :
     originalSet D g h b ⊆ directOuterApprox D g h a Dg Dh b :=
   fun _ hx ↦ ⟨(mem_originalSet.1 hx).1, fun i ↦
-    (directRow_le hc (ha i) (mem_originalSet.1 hx).1 (hdh i) (hg i)).trans (mem_originalSet.1 hx).2⟩
+    (directRow_le hc hgE (ha i) (mem_originalSet.1 hx).1 (hdh i) (hg i)).trans
+      (mem_originalSet.1 hx).2⟩
 
 end Sets
 
