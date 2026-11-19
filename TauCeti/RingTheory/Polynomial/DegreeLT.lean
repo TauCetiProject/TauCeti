@@ -35,6 +35,7 @@ of `g` and `h` on these degree bounds, in the explicit form consumed by Hensel's
   land.
 * `Polynomial.Monic.modByMonic_mul_add`, `Polynomial.Monic.divByMonic_mul_add`: division with
   remainder reads off `g * v + u`.
+* `Polynomial.map_mem_degreeLT`: a change of coefficients preserves membership in `R[X]_n`.
 * `Polynomial.Monic.sub_mem_degreeLT`: the difference of two monic polynomials of the same degree
   `n` has degree `< n`.
 * `IsCoprime.exists_mem_degreeLT_mul_add_mul_eq`, `IsCoprime.eq_zero_of_mul_add_mul_eq_zero`:
@@ -67,6 +68,11 @@ variable {R : Type*} [Semiring R] {g q : R[X]}
 theorem mem_degreeLT_natDegree_iff (hg : g ≠ 0) :
     q ∈ degreeLT R g.natDegree ↔ q.degree < g.degree := by
   rw [mem_degreeLT, degree_eq_natDegree hg]
+
+/-- A change of coefficients preserves the degree bound. -/
+theorem map_mem_degreeLT {S : Type*} [Semiring S] (φ : R →+* S) {n : ℕ} {f : R[X]}
+    (hf : f ∈ degreeLT R n) : f.map φ ∈ degreeLT S n :=
+  mem_degreeLT.2 (degree_map_le.trans_lt (mem_degreeLT.1 hf))
 
 end Semiring
 

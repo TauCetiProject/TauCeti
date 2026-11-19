@@ -54,6 +54,8 @@ countable products of projective graded modules and is not treated here.
   totalizations of short exact sequences are right orthogonal to graded-projective modules.
 * `TauCeti.CurvedDGRightModuleCat.contraacyclic_le_rightOrthogonal_gradedProjective`:
   contraacyclic modules are right orthogonal to graded-projective modules.
+* `TauCeti.CurvedDGRightModuleCat.isZero_of_contraacyclic_of_gradedProjective`: every
+  contraacyclic graded-projective curved right module is zero in the curved homotopy category.
 * `TauCeti.CurvedDGRightModuleCat.ContraderivedCategory.map_bijective_of_gradedProjective`:
   morphisms out of a graded-projective module in the curved homotopy category are exactly the
   morphisms in the contraderived category.
@@ -212,6 +214,28 @@ private theorem exists_comp_coneDesc_eq
   · rw [closedHom_comp, closedHom_coneDesc, closedHom_closedHomOf, LinearMap.comp_apply,
       LinearMap.comp_apply, hφ₀, LinearMap.snd_apply, hu']
 
+omit hf hg hex [Projective P.toGradedModuleCat] in
+/-- Correcting the second component of a closed map `φ` to the cone by the boundary of an odd
+cochain `k'` gives a degree-zero cochain. -/
+private theorem exists_cochain_eq_snd_sub
+    (φ : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) P ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (cone f))
+    (k' : dgRightModuleCochains (R := R) (A := A) (ℳ := P.grading) (ℳN := L.grading) (-1)) :
+    ∃ ψ : dgRightModuleCochains (R := R) (A := A) (ℳ := P.grading)
+      (ℳN := L.grading) 0, ∀ x, ψ.1 x = (closedHom φ x).2 -
+        (L.differential (k'.1 x) + k'.1 (P.differential x)) := by
+  refine ⟨⟨(LinearMap.snd _ _ _).comp (closedHom φ) -
+    (dgRightModuleCochains.curvedDifferential (hM := P.isCurvedDGRightModule)
+      (hN := L.isCurvedDGRightModule) (-1) k').1, Submodule.sub_mem _ ?_ (by simp)⟩,
+    fun x ↦ ?_⟩
+  · rw [dgRightModuleCochains.mem_iff, LinearMap.isHomogeneous_def]
+    intro p x hx
+    have := closedHom_mem φ hx
+    rw [cone_grading] at this
+    simpa using this.2
+  · rw [LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.snd_apply,
+      dgRightModuleCochains.curvedDifferential_neg_one_apply]
+
 /-- For a short exact sequence `K ⟶ L ⟶ M` of curved modules, a closed map from a
 graded-projective module to the cone of `K ⟶ L` is null-homotopic as soon as its composite with
 the induced map to `M` is. -/
@@ -226,20 +250,7 @@ private theorem quotient_map_eq_zero_of_comp_coneDesc
   obtain ⟨k', hk'⟩ := exists_comp_eq_of_surjective g hg k
   -- Correct the second component of `φ` by the boundary of the lift; the result factors
   -- through `f`.
-  obtain ⟨ψ, hψ⟩ : ∃ ψ : dgRightModuleCochains (R := R) (A := A) (ℳ := P.grading)
-      (ℳN := L.grading) 0, ∀ x, ψ.1 x = (closedHom φ x).2 -
-        (L.differential (k'.1 x) + k'.1 (P.differential x)) := by
-    refine ⟨⟨(LinearMap.snd _ _ _).comp (closedHom φ) -
-      (dgRightModuleCochains.curvedDifferential (hM := P.isCurvedDGRightModule)
-        (hN := L.isCurvedDGRightModule) (-1) k').1, Submodule.sub_mem _ ?_ (by simp)⟩,
-      fun x ↦ ?_⟩
-    · rw [dgRightModuleCochains.mem_iff, LinearMap.isHomogeneous_def]
-      intro p x hx
-      have := closedHom_mem φ hx
-      rw [cone_grading] at this
-      simpa using this.2
-    · rw [LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.snd_apply,
-        dgRightModuleCochains.curvedDifferential_neg_one_apply]
+  obtain ⟨ψ, hψ⟩ := exists_cochain_eq_snd_sub φ k'
   obtain ⟨a, ha⟩ := exists_comp_eq_of_injective f hf ψ fun x ↦
     (hex _).1 (by
       have := hk x
@@ -341,6 +352,14 @@ zero. -/
 theorem contraacyclic_le_rightOrthogonal_gradedProjective :
     contraacyclic R h ≤ (gradedProjective R h).rightOrthogonal :=
   contraacyclic_le_iff.2 (totalizations_le_rightOrthogonal_gradedProjective R h)
+
+/-- Every contraacyclic graded-projective object of the curved homotopy category is zero. -/
+theorem isZero_of_contraacyclic_of_gradedProjective
+    {X : DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)}
+    (hX : contraacyclic R h X) (hP : gradedProjective R h X) :
+    IsZero X :=
+  (IsZero.iff_id_eq_zero X).mpr
+    (contraacyclic_le_rightOrthogonal_gradedProjective R h X hX (𝟙 X) hP)
 
 /-- The localization functor to the contraderived category is bijective on morphisms out of a
 graded-projective module. -/

@@ -56,6 +56,11 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.restrict`: the place of `F / k` that a place of `F' / k'` lies over.
 * `TauCeti.Place.ramificationIdx`: the ramification index `e(P' | P)`.
 * `TauCeti.Place.relativeDegree`: the relative degree `f(P' | P) = [F'_{P'} : F_P]`.
+* `TauCeti.Place.ramificationIdxIn`: the ramification index of a place `P` of the base in an
+  algebraic extension, computed at an arbitrary chosen place above `P` and zero when there is
+  none. Without the Galois hypothesis the places above `P` need not share one ramification
+  index; in a finite Galois extension they do
+  (`TauCeti.Place.ramificationIdxIn_eq_ramificationIdx`).
 
 ## Main results
 
@@ -566,6 +571,19 @@ noncomputable instance instAlgebraIntegers : Algebra (P'.restrict k F).integers 
 theorem coe_algebraMap_integers (x : (P'.restrict k F).integers) :
     ((algebraMap (P'.restrict k F).integers P'.integers x : P'.integers) : F') =
       algebraMap F F' (x : F) := (rfl)
+
+section
+
+attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+
+/-- The valuation-ring extension `𝒪_P ⊆ 𝒪_{P'}` forms a scalar tower inside `F'`. -/
+instance isScalarTower_restrict_integers_field :
+    IsScalarTower (P'.restrict k F).integers P'.integers F' :=
+  IsScalarTower.of_algebraMap_eq fun x ↦ by
+    rw [IsScalarTower.algebraMap_apply (P'.restrict k F).integers F F',
+      ValuationSubring.algebraMap_apply, ValuationSubring.algebraMap_apply, coe_algebraMap_integers]
+
+end
 
 /-- The valuation-ring algebra map is local, so it induces the residue-field extension used by
 `relativeDegree`. -/
@@ -1254,6 +1272,43 @@ theorem ramificationIdx_self : ramificationIdx F P = 1 := by
     Valuation.ordIndex_eq_one_of_surjective _ P.valuation_surjective]
 
 end Self
+
+section RamificationIdxIn
+
+variable [Algebra.IsIntegral F F']
+
+open scoped Classical in
+/-- **The ramification index of a place of the base in an algebraic extension**: the ramification
+index `e(P' ∣ P)` of a place `P'` of `F'` over `P`, where `P'` is an arbitrary choice among the
+places over `P`. It is `0` when no place of `F'` lies over `P`, which does not happen for an
+extension of function fields (`TauCeti.Place.ramificationIdxIn_pos`). Without
+the Galois hypothesis the places over `P` may have different ramification indices, so this value
+need not be common to them; for a finite Galois extension it is
+(`TauCeti.Place.ramificationIdxIn_eq_ramificationIdx`). This is the analogue for places of
+Mathlib's `Ideal.ramificationIdxIn`. -/
+noncomputable def ramificationIdxIn (P : Place k F) (F' : Type v') [Field F'] [Algebra F F']
+    [Algebra k F'] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] : ℕ :=
+  if h : ∃ P' : Place k F', P'.restrict k F = P then ramificationIdx F h.choose else 0
+
+/-- If some place of `F'` lies over `P`, the ramification index of `P` in `F'` is that of the
+chosen such place. -/
+theorem ramificationIdxIn_of_exists {P : Place k F} (h : ∃ P' : Place k F', P'.restrict k F = P) :
+    P.ramificationIdxIn F' = ramificationIdx F h.choose :=
+  dite_eq_left h
+
+/-- The ramification index of a place of the base vanishes exactly when no place lies above it. -/
+@[simp]
+theorem ramificationIdxIn_eq_zero_iff {P : Place k F} :
+    P.ramificationIdxIn F' = 0 ↔ ∀ P' : Place k F', P'.restrict k F ≠ P := by
+  constructor
+  · intro h P' hP'
+    rw [ramificationIdxIn, dite_eq_left ⟨P', hP'⟩] at h
+    exact absurd h (ramificationIdx_pos F _).ne'
+  · intro h
+    rw [ramificationIdxIn, dite_eq_right]
+    exact fun ⟨P', hP'⟩ ↦ h P' hP'
+
+end RamificationIdxIn
 
 end Place
 

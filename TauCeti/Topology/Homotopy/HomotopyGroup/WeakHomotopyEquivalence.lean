@@ -38,6 +38,9 @@ equivalence, is `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv` in
   equivalence induces bijections of fundamental groups.
 * `ContinuousMap.isWeakHomotopyEquivalence_iff_forall_bijective`: on a path-connected space it
   suffices to check bijectivity on homotopy groups at a single base point.
+* `ContinuousMap.isWeakHomotopyEquivalence_of_forall_bijective_succ`: between path-connected
+  spaces it suffices to check bijectivity on positive-dimensional homotopy groups at a single base
+  point.
 * `HomotopyGroup.map_injective_of_isEmpty_of_joined`,
   `HomotopyGroup.map_surjective_of_isEmpty_of_exists_joined`: in degree zero, the induced map is
   injective or surjective as soon as the map is on path components.
@@ -45,6 +48,9 @@ equivalence, is `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv` in
   on path components inducing bijections on the positive-dimensional homotopy groups.
 * `ContinuousMap.HomotopyEquiv.isWeakHomotopyEquivalence`: a homotopy equivalence is a weak
   homotopy equivalence.
+* `ContinuousMap.isWeakHomotopyEquivalence_inclusion_preimage_val_iff`: an inclusion of subsets
+  of a subspace `W` is a weak homotopy equivalence exactly when the inclusion of their preimages
+  in `W` is.
 * `ContinuousMap.IsWeakHomotopyEquivalence.of_homotopic`,
   `ContinuousMap.IsWeakHomotopyEquivalence.comp`,
   `ContinuousMap.IsWeakHomotopyEquivalence.of_postcomp`,
@@ -392,6 +398,22 @@ theorem isWeakHomotopyEquivalence_iff_forall_bijective [PathConnectedSpace X] (x
       homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk]
   · exact (f.bijective_map_iff_of_path (PathConnectedSpace.somePath x x')).1 (h n)
 
+/-- **Between path-connected spaces, weak homotopy equivalences can be detected in positive
+degrees at one point.** A map between path-connected spaces sending `x` to `y` is a weak homotopy
+equivalence as soon as it induces a bijection `π_(n+1)(X, x) → π_(n+1)(Y, y)` for every `n`. -/
+theorem isWeakHomotopyEquivalence_of_forall_bijective_succ [PathConnectedSpace X]
+    [PathConnectedSpace Y] {x : X} {y : Y} (hf : f x = y)
+    (h : ∀ n, Function.Bijective (HomotopyGroup.map (N := Fin (n + 1)) f hf)) :
+    f.IsWeakHomotopyEquivalence := by
+  subst hf
+  refine (isWeakHomotopyEquivalence_iff_forall_bijective x).2 fun n ↦ ?_
+  rcases n with _ | n
+  · -- Degree zero: both homotopy sets are trivial.
+    have := (TauCeti.pathConnectedSpace_iff_subsingleton_homotopyGroup_zero x).1 inferInstance
+    have := (TauCeti.pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (f x)).1 inferInstance
+    exact Function.bijective_of_subsingleton' _
+  · exact h n
+
 /-- **Weak homotopy equivalences through path components.** A map is a weak homotopy equivalence
 exactly when it induces a bijection on path components, that is, every point of `Y` is joined to a
 point of the image and two points of `X` are joined when their images are, and a bijection
@@ -413,6 +435,29 @@ theorem HomotopyEquiv.isWeakHomotopyEquivalence (e : X ≃ₕ Y) :
     e.toFun.IsWeakHomotopyEquivalence where
   exists_joined y := ⟨e.invFun y, ⟨e.right_inv.some.evalAt y⟩⟩
   bijective _ x := HomotopyGroup.map_bijective_of_homotopyEquiv e x
+
+/-- **Inclusions read in a subspace.** Let `S ⊆ T` be subsets of `X` lying in a subspace `W`. The
+inclusion `S ⊆ T` is a weak homotopy equivalence exactly when the inclusion of their preimages in
+`W` is: the two inclusions are identified by the homeomorphisms between the preimages in `W` and
+the subsets themselves. -/
+theorem isWeakHomotopyEquivalence_inclusion_preimage_val_iff {W S T : Set X} (hT : T ⊆ W)
+    (hST : S ⊆ T) :
+    (inclusion (Set.preimage_mono hST :
+      (Subtype.val ⁻¹' S : Set W) ⊆ Subtype.val ⁻¹' T)).IsWeakHomotopyEquivalence ↔
+      (inclusion hST).IsWeakHomotopyEquivalence := by
+  let eS := Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
+    ((hST.trans hT).trans (Subtype.range_coe (s := W)).ge)
+  let eT := Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
+    (hT.trans (Subtype.range_coe (s := W)).ge)
+  have heq : eT.toHomotopyEquiv.toFun.comp (inclusion (Set.preimage_mono hST)) =
+      (inclusion hST).comp eS.toHomotopyEquiv.toFun := by
+    ext
+    simp [eS, eT]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · exact IsWeakHomotopyEquivalence.of_precomp eS.toHomotopyEquiv.isWeakHomotopyEquivalence
+      (heq ▸ eT.toHomotopyEquiv.isWeakHomotopyEquivalence.comp h)
+  · exact IsWeakHomotopyEquivalence.of_postcomp eT.toHomotopyEquiv.isWeakHomotopyEquivalence
+      (heq ▸ h.comp eS.toHomotopyEquiv.isWeakHomotopyEquivalence)
 
 
 /-- **A map between contractible spaces is a weak homotopy equivalence.** It is homotopic to a

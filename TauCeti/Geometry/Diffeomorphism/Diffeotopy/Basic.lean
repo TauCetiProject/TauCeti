@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Instances.Icc
+public import TauCeti.Geometry.Diffeomorphism.Group
 public import TauCeti.Topology.Homotopy.Isotopy.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # Smooth ambient isotopies
@@ -46,6 +48,10 @@ specialization to bundled smooth embeddings, used for geometric knot presentatio
   and inversion.
 * `TauCeti.Diffeotopy.final_trans` and `final_symm`: the corresponding calculus for final
   diffeomorphisms.
+* `TauCeti.Diffeotopy.final_symm_trans`: `φ_t ∘ ψ_t⁻¹` ends at `φ₁ * ψ₁⁻¹`.
+* `TauCeti.Diffeotopy.timeSlice_transDiffeomorph_eq_mul_mul_inv` and
+  `final_transDiffeomorph_eq_mul_mul_inv`: conjugating a diffeotopy by a self-diffeomorphism `f`
+  conjugates its time slices by `f` in the self-diffeomorphism group.
 * `TauCeti.Diffeotopy.toAmbientIsotopy_final_apply`: forgetting smoothness preserves the final
   action.
 * `TauCeti.Diffeotopy.final_eq_of_homotopy`: diffeotopies whose motions are joined by a homotopy
@@ -207,10 +213,27 @@ theorem mapsTo_final_of_eqOn_compl {K U : Set M} (hKU : K ⊆ U)
   simpa only [compl_compl] using
     ((Set.surjOn_id Uᶜ).congr hfix.symm).mapsTo_compl Φ.final.injective
 
+/-- The time slices of a conjugated diffeotopy are the conjugated time slices. -/
+theorem timeSlice_transDiffeomorph (f : M ≃ₘ^n⟮J, J⟯ P) (t : I) :
+    (Φ.transDiffeomorph f).timeSlice t = (f.symm.trans (Φ.timeSlice t)).trans f :=
+  _root_.Diffeomorph.ext fun x ↦ by simp
+
 /-- The final diffeomorphism of a conjugated diffeotopy is the conjugated final diffeomorphism. -/
 theorem final_transDiffeomorph (f : M ≃ₘ^n⟮J, J⟯ P) :
     (Φ.transDiffeomorph f).final = (f.symm.trans Φ.final).trans f :=
   _root_.Diffeomorph.ext fun x ↦ by simp
+
+/-- The time slices of a diffeotopy conjugated by a self-diffeomorphism `f` are the conjugates
+`f * φ_t * f⁻¹` in the self-diffeomorphism group. -/
+theorem timeSlice_transDiffeomorph_eq_mul_mul_inv (f : M ≃ₘ^n⟮J, J⟯ M) (t : I) :
+    (Φ.transDiffeomorph f).timeSlice t = f * Φ.timeSlice t * f⁻¹ :=
+  _root_.Diffeomorph.ext fun x ↦ by simp
+
+/-- The final diffeomorphism of a diffeotopy conjugated by a self-diffeomorphism `f` is the
+conjugate `f * φ₁ * f⁻¹` in the self-diffeomorphism group. -/
+theorem final_transDiffeomorph_eq_mul_mul_inv (f : M ≃ₘ^n⟮J, J⟯ M) :
+    (Φ.transDiffeomorph f).final = f * Φ.final * f⁻¹ :=
+  Φ.timeSlice_transDiffeomorph_eq_mul_mul_inv f 1
 
 /-! ### The motion on the cylinder -/
 
@@ -298,6 +321,24 @@ theorem cylinderMap_trans (Ψ : Diffeotopy J n M) :
     (Φ.trans Ψ).cylinderMap = Ψ.cylinderMap ∘ fun p ↦ (Φ.cylinderMap p, p.2) :=
   funext fun p ↦ by simp
 
+/-- The level-preserving motion `(x, t) ↦ (Φ (t, x), t)` of a `C^n` diffeotopy is `C^n`. -/
+theorem contMDiff_cylinderMap_prodMk_snd :
+    ContMDiff (J.prod (𝓡∂ 1)) (J.prod (𝓡∂ 1)) n fun p : M × I ↦ (Φ.cylinderMap p, p.2) :=
+  Φ.contMDiff_cylinderMap.prodMk contMDiff_snd
+
+/-- The level-preserving motion `(x, t) ↦ (Φ (t, x), t)` of a `C^n` diffeotopy, `1 ≤ n`, acts on
+tangent vectors by `w ↦ (dΦ w, w₂)`. -/
+theorem mfderiv_cylinderMap_prodMk_snd (hn : 1 ≤ n) (p : M × I)
+    (w : TangentSpace (J.prod (𝓡∂ 1)) p) :
+    mfderiv (J.prod (𝓡∂ 1)) (J.prod (𝓡∂ 1)) (fun q ↦ (Φ.cylinderMap q, q.2)) p w =
+      (mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p w, w.2) := by
+  rw [mfderiv_prodMk (Φ.contMDiff_cylinderMap.mdifferentiableAt
+      (zero_lt_one.trans_le (by exact_mod_cast hn)).ne') mdifferentiableAt_snd]
+  -- `mfderiv_prodMk` returns a map into `TangentSpace J _ × TangentSpace (𝓡∂ 1) _`, the tangent
+  -- space of the product only up to unfolding `TangentSpace`, so `ContinuousLinearMap.prod_apply`
+  -- is applied by `exact` rather than rewritten.
+  exact (ContinuousLinearMap.prod_apply _ _ w).trans (congrArg (Prod.mk _) (mfderiv_snd_apply p w))
+
 /-- The time slice of a composite diffeotopy is the composite of its time slices. -/
 @[simp]
 theorem timeSlice_trans (Ψ : Diffeotopy J n M) (t : I) :
@@ -363,6 +404,12 @@ theorem apply_symm_apply (p : I × M) :
 @[simp]
 theorem final_symm : Φ.symm.final = Φ.final.symm := by
   simpa only [final_def] using Φ.timeSlice_symm 1
+
+/-- Following the inverse of `ψ_t` by `φ_t` ends at `φ₁ * ψ₁⁻¹` in the self-diffeomorphism
+group. -/
+theorem final_symm_trans (Ψ : Diffeotopy J n M) :
+    (Ψ.symm.trans Φ).final = Φ.final * Ψ.final⁻¹ := by
+  rw [final_trans, final_symm, _root_.Diffeomorph.mul_def, _root_.Diffeomorph.inv_def]
 
 /-- A point is fixed by the inverse diffeotopy at time `t` exactly when it is fixed by the
 diffeotopy at time `t`. -/

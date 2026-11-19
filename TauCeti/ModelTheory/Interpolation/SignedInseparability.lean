@@ -26,11 +26,11 @@ both polarity budgets and the constant budget exactly. Right-hand rules follow b
 * E. G. K. López-Escobar, *An interpolation theorem for denumerably long formulas* (1965).
 * David Marker, *Lectures on Infinitary Model Theory* (2016), Chapter 4.
 
-The countable-choice argument refines the unsigned paired-inseparability argument in
-`TauCeti.ModelTheory.Interpolation.Craig`, itself following the interpolation construction of
-Cameron Freer's `cameronfreer/infinitary-logic` at checkpoint `518a366`. Here the two signed
-relation budgets are independent, the constant type is arbitrary, and no finiteness of the
-pair or relationality of the language is needed for propositional decomposition.
+The countable-choice argument adapts the paired-inseparability construction of Cameron Freer's
+`cameronfreer/infinitary-logic` at checkpoint `518a366` and supplies the propositional
+decomposition steps for `TauCeti.ModelTheory.Interpolation.Lyndon`. Here the two signed relation
+budgets are independent, the constant type is arbitrary, and no finiteness of the pair or
+relationality of the language is needed for propositional decomposition.
 -/
 
 public section

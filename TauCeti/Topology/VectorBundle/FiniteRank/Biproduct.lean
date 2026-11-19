@@ -32,8 +32,10 @@ bundles over the empty base.
 `whitneySum A D` with the total space of Mathlib's native direct-sum bundle
 `A.core.Fiber ×ᵇ D.core.Fiber`, over the identity of the base and by
 `whitneySumFiberEquiv` (`TauCeti.splitCoords`) on each fibre, intertwining the
-projections, inclusions, and direct sums of bundle maps. The base is arbitrary, and
-the scalar field need not be complete.
+projections, inclusions, and direct sums of bundle maps, and
+`continuous_mk_whitneySum_iff` characterizes continuity of maps into
+`(whitneySum A D).core.TotalSpace` by continuity of their two coordinate blocks. The
+base is arbitrary, and the scalar field need not be complete.
 
 The construction uses Mathlib's coordinate cores, its direct-sum vector bundle
 `Bundle.Prod`, and its preadditive criterion
@@ -839,6 +841,26 @@ theorem whitneySumTotalSpaceHomeomorph_naturality {A A' D D' : FiniteRankBundleC
   rw [CoordinateHom.totalSpaceMap_mk, whitneySumTotalSpaceHomeomorph_apply]
   exact congrArg (TotalSpace.mk' ((Fin A'.rank → 𝕜) × (Fin D'.rank → 𝕜)) x)
     (whitneySumFiberEquiv_fiberMap_whitneyMap f g x v)
+
+/-- A map into `(whitneySum A D).core.TotalSpace` is continuous if and only if its two coordinate
+blocks under `splitCoords` define continuous maps into `A.core.TotalSpace` and
+`D.core.TotalSpace`. -/
+theorem continuous_mk_whitneySum_iff {Y : Type*} [TopologicalSpace Y]
+    (A D : FiniteRankBundleCore 𝕜 B) {b : Y → B} {s : Y → Fin (A.rank + D.rank) → 𝕜} :
+    Continuous (fun y => (⟨b y, s y⟩ : (whitneySum A D).core.TotalSpace)) ↔
+      Continuous (fun y =>
+        (⟨b y, (splitCoords (𝕜 := 𝕜) A.rank D.rank (s y)).1⟩ : A.core.TotalSpace)) ∧
+      Continuous (fun y =>
+        (⟨b y, (splitCoords (𝕜 := 𝕜) A.rank D.rank (s y)).2⟩ : D.core.TotalSpace)) := by
+  rw [(whitneySumTotalSpaceHomeomorph A D).isInducing.continuous_iff,
+    (FiberBundle.Prod.isInducing_diag (Fin A.rank → 𝕜) A.core.Fiber
+      (Fin D.rank → 𝕜) D.core.Fiber).continuous_iff]
+  simp only [Function.comp_def, whitneySumTotalSpaceHomeomorph_apply, continuous_prodMk]
+  exact and_congr
+    (continuous_congr fun y => TotalSpace.mk_inj.mpr
+      (congrArg Prod.fst (whitneySumFiberEquiv_apply A D (b y) (s y))))
+    (continuous_congr fun y => TotalSpace.mk_inj.mpr
+      (congrArg Prod.snd (whitneySumFiberEquiv_apply A D (b y) (s y))))
 
 end MathlibProd
 

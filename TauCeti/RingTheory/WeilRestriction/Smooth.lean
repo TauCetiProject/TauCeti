@@ -13,10 +13,10 @@ import TauCeti.Algebra.TensorProduct.Ideal
 /-!
 # Smoothness of Weil restrictions
 
-Weil restriction along a finite projective algebra sends a finitely presented, formally smooth
-algebra to a formally smooth algebra. Since the Weil restriction is finitely presented, it
-also preserves smoothness. These instances allow smooth affine schemes, and in particular
-smooth affine groups, to be restricted to the smaller base ring.
+Weil restriction along a finite projective algebra preserves formal smoothness. Together with
+preservation of finite presentation, this also shows that it preserves smoothness. These
+instances allow smooth affine schemes, and in particular smooth affine groups, to be restricted
+to the smaller base ring.
 
 The infinitesimal lifting property passes through `WeilRestriction.homEquiv`: tensoring a
 surjection with square-zero kernel gives another surjection with square-zero kernel.
@@ -36,10 +36,8 @@ namespace TauCeti.Algebra.WeilRestriction
 
 variable (A B C : Type*) [CommRing A] [CommRing B] [CommRing C]
   [Algebra A B] [Algebra B C] [Module.Finite A B] [Module.Projective A B]
-  [FinitePresentation B C]
 
-/-- Weil restriction of a formally smooth finitely presented algebra along a finite
-projective algebra is formally smooth. -/
+/-- Weil restriction along a finite projective algebra preserves formal smoothness. -/
 instance instFormallySmooth [FormallySmooth B C] :
     FormallySmooth A (WeilRestriction A B C) := by
   refine FormallySmooth.of_comp_surjective fun T _ _ I hI f ↦ ?_

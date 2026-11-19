@@ -271,6 +271,17 @@ theorem norm_sub_lt_norm_sub_reflection_orthogonal_singleton {v x y : F}
   nlinarith [norm_nonneg (y - x), norm_nonneg (y - (ℝ ∙ v)ᗮ.reflection x),
     mul_pos hxw hyw]
 
+/-- If `x` and `y` both lie in the closed half-space `⟪v, ·⟫ ≥ 0`, then `y` is at least as close
+to `x` as to the reflection of `x` in the hyperplane `⟪v, ·⟫ = 0`. -/
+theorem norm_sub_le_norm_sub_reflection_orthogonal_singleton {v x y : F}
+    (hx : 0 ≤ ⟪v, x⟫_ℝ) (hy : 0 ≤ ⟪v, y⟫_ℝ) :
+    ‖y - x‖ ≤ ‖y - (ℝ ∙ v)ᗮ.reflection x‖ := by
+  rcases hx.eq_or_lt with hx | hx
+  · rw [reflection_orthogonal_singleton_eq_self_of_inner_eq_zero hx.symm]
+  rcases hy.eq_or_lt with hy | hy
+  · rw [norm_sub_reflection_orthogonal_singleton_eq_of_inner_eq_zero x hy.symm]
+  · exact (norm_sub_lt_norm_sub_reflection_orthogonal_singleton hx hy).le
+
 /-- Reflection in the hyperplane orthogonal to a nonzero vector has determinant `-1`. -/
 theorem linearEquiv_det_reflection_orthogonal_singleton [FiniteDimensional ℝ F] {v : F}
     (hv : v ≠ 0) : (LinearEquiv.det (ℝ ∙ v)ᗮ.reflection.toLinearEquiv : ℝ) = -1 := by

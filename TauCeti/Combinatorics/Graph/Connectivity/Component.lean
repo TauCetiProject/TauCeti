@@ -412,6 +412,13 @@ theorem connected_iff_toSimpleGraph_connected : G.Connected ↔ G.toSimpleGraph.
     exact mem_connectedComponentVertexSet_iff.mpr
       ⟨hy, SimpleGraph.ConnectedComponent.sound (hG ⟨y, hy⟩ vx)⟩
 
+/-- A simple graph is connected exactly when it is connected as a multigraph. This includes the
+case where the vertex type `α` is empty, when neither representation is connected. -/
+@[simp]
+theorem connected_ofSimpleGraph_iff (H : SimpleGraph α) :
+    (Graph.ofSimpleGraph H).Connected ↔ H.Connected :=
+  connected_iff_toSimpleGraph_connected.trans (toSimpleGraphOfSimpleGraphIso H).connected_iff
+
 /-- A multigraph is connected exactly when it has an actual vertex and any two actual vertices
 are reachable from each other. -/
 theorem connected_iff_forall_reachable :
@@ -451,6 +458,10 @@ theorem Walk.connected_walkGraph {x y : α} (p : G.Walk x y) : (G.walkGraph p).C
 /-- Finitely many actual vertices give finitely many connected-component subgraphs. -/
 instance [Finite V(G)] : Finite G.ConnectedComponent :=
   G.connectedComponentEquiv.finite_iff.mpr inferInstance
+
+/-- A multigraph without actual vertices has no connected-component subgraphs. -/
+instance [IsEmpty V(G)] : IsEmpty G.ConnectedComponent :=
+  G.connectedComponentEquiv.isEmpty
 
 /-- The number of connected-component subgraphs of `G`, or `0` if there are infinitely many. -/
 noncomputable def componentCount (G : Graph α β) : Nat :=
@@ -624,3 +635,15 @@ theorem componentCount_banana {x y : α} {F : Set β} (hF : F.Nonempty) :
 end
 
 end Graph
+
+namespace SimpleGraph.Subgraph
+
+/-- `S.toGraph` is connected as a multigraph if and only if `S` is connected as a simple-graph
+subgraph. -/
+@[simp]
+theorem connected_toGraph_iff {α : Type u} {H : SimpleGraph α} {S : H.Subgraph} :
+    S.toGraph.Connected ↔ S.Connected := by
+  rw [Graph.connected_iff_toSimpleGraph_connected, ← S.toSimpleGraphToGraphIso.symm.connected_iff,
+    ← Subgraph.connected_iff']
+
+end SimpleGraph.Subgraph
