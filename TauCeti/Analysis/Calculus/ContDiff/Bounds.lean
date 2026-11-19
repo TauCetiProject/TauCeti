@@ -381,9 +381,9 @@ theorem ContinuousLinearMap.exists_bound_iteratedFDeriv_comp_left {D : Type*}
     [NormedAddCommGroup D] [NormedSpace 𝕜 D] (L : E →L[𝕜] F) {f : D → E} {k : ℕ}
     (hf : ContDiff 𝕜 k f) (hbd : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ C) :
     ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n (fun y ↦ L (f y)) x‖ ≤ C := fun n hn ↦ by
-  obtain ⟨C, hC⟩ := hbd n hn
-  exact ⟨‖L‖ * C, fun x ↦ (L.norm_iteratedFDeriv_comp_left hf.contDiffAt (mod_cast hn)).trans
-    (by gcongr; exact hC x)⟩
+  obtain ⟨C, hC⟩ := L.exists_norm_iteratedFDeriv_comp_left_le (w := 1) (hf.of_le (mod_cast hn))
+    (by simpa using hbd n hn)
+  exact ⟨C, by simpa using hC⟩
 
 namespace TauCeti
 

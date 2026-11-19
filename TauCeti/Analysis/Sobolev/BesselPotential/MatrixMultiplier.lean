@@ -10,6 +10,8 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 import TauCeti.Analysis.Sobolev.BesselPotential.ComplexInterpolation
 import TauCeti.Analysis.Sobolev.BesselPotential.Duality
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
@@ -203,7 +205,7 @@ theorem hasSobolevExtension_bilinLeftCLM_apply (s : ℝ) {A : E → F →L[ℂ] 
   -- Expand `A` in a basis `(bᵢ)` of `F →L[ℂ] G`, with coordinate functionals `ℓᵢ`.
   let b := Module.finBasis ℂ (F →L[ℂ] G)
   let ℓ i : (F →L[ℂ] G) →L[ℝ] ℂ := (b.coord i).toContinuousLinearMap.restrictScalars ℝ
-  have hℓA (i) : (fun x ↦ ℓ i (A x)).HasTemperateGrowth := (ℓ i).hasTemperateGrowth.comp hA
+  have hℓA := hA.basis_coord b
   rw [bilinLeftCLM_apply_eq_sum Finset.univ b (g := fun i x ↦ ℓ i (A x)) (fun i _ ↦ hℓA i) hA
     fun x ↦ (b.sum_repr (A x)).symm]
   refine Finset.sum_induction _ (fun T ↦ HasSobolevExtension T s s)
@@ -258,15 +260,12 @@ theorem MemSobolev.applyLeftCLM_of_norm_iteratedFDeriv_le_natCeil [FiniteDimensi
     {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G] [FiniteDimensional ℂ G]
     {s : ℝ} {A : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth)
     (hbd : ∀ n ≤ ⌈|s|⌉₊, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n A x‖ ≤ C) {f : 𝓢'(E, F)}
-    (hf : MemSobolev s 2 f) : MemSobolev s 2 (applyLeftCLM A f) := by
-  -- `A f = ∑ᵢ bᵢ (gᵢ f)` for a basis `(bᵢ)` of `F →L[ℂ] G`, and the coordinates `gᵢ = bᵢ* ∘ A`
-  -- inherit the derivative bounds of `A`.
-  rw [applyLeftCLM_def]
-  simp only [sum_apply, ContinuousLinearMap.comp_apply]
-  refine MemSobolev.sum fun i _ ↦ MemSobolev.postcomp ?_ _
-  let ℓ : (F →L[ℂ] G) →L[ℝ] ℂ :=
-    (Module.finBasis ℂ (F →L[ℂ] G)).coord i |>.toContinuousLinearMap.restrictScalars ℝ
-  exact hf.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil (ℓ.hasTemperateGrowth.comp hA)
-    (ℓ.exists_bound_iteratedFDeriv_comp_left (hA.1.of_le (mod_cast le_top)) hbd)
+    (hf : MemSobolev s 2 f) : MemSobolev s 2 (applyLeftCLM A f) :=
+  -- Each scalar function `ℓ ∘ A` inherits the derivative bounds of `A`.
+  MemSobolev.applyLeftCLM_of_forall_smulLeftCLM fun ℓ ↦
+    hf.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil
+      ((ℓ.restrictScalars ℝ).hasTemperateGrowth.comp hA)
+      ((ℓ.restrictScalars ℝ).exists_bound_iteratedFDeriv_comp_left (hA.1.of_le (mod_cast le_top))
+        hbd)
 
 end TemperedDistribution

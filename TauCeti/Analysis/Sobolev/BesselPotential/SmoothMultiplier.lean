@@ -63,6 +63,8 @@ The Leibniz rule turns `g f` into `g u - ∑ᵢ (∂ᵢ g) wᵢ + ∑ᵢ ∂ᵢ 
   negative order `H^{-k,p}`.
 * `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_intCast`: the two
   combined, for `H^{k,p}` with `k ∈ ℤ` and bounded derivatives up to order `|k|`.
+* `TemperedDistribution.MemSobolev.applyLeftCLM_of_forall_smulLeftCLM`: a matrix-valued multiplier
+  `A` preserves `H^{s,p}` if each scalar multiplier `ℓ ∘ A` does.
 * `TemperedDistribution.MemSobolev.applyLeftCLM_of_norm_iteratedFDeriv_le_intCast`: the same for a
   matrix-valued multiplier `A`, from `H^{k,p}(E, F)` to `H^{k,p}(E, G)`.
 * `BesselPotentialSpace.applyLeftCLM`: multiplication by `A` as a bounded operator
@@ -170,6 +172,18 @@ section Matrix
 variable [FiniteDimensional ℂ F] {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
   [CompleteSpace G] [FiniteDimensional ℂ G]
 
+/-- **Reduction of matrix multipliers to scalar ones.** If multiplication by each scalar function
+`x ↦ ℓ (A x)`, for `ℓ` a linear functional on `F →L[ℂ] G`, sends `f` into `H^{s,p}(E, F)`, then
+`A f ∈ H^{s,p}(E, G)`: `A f = ∑ᵢ bᵢ (gᵢ f)` for a basis `(bᵢ)` of `F →L[ℂ] G`, with coordinates
+`gᵢ = bᵢ* ∘ A`. -/
+theorem MemSobolev.applyLeftCLM_of_forall_smulLeftCLM {s : ℝ} {A : E → F →L[ℂ] G} {f : 𝓢'(E, F)}
+    (h : ∀ ℓ : (F →L[ℂ] G) →L[ℂ] ℂ, MemSobolev s p (smulLeftCLM F (fun x ↦ ℓ (A x)) f)) :
+    MemSobolev s p (applyLeftCLM A f) := by
+  rw [applyLeftCLM_def]
+  simp only [sum_apply, ContinuousLinearMap.comp_apply]
+  exact MemSobolev.sum fun i _ ↦
+    (h ((Module.finBasis ℂ (F →L[ℂ] G)).coord i).toContinuousLinearMap).postcomp _
+
 /-- **Matrix multipliers with bounded derivatives act on `H^{k,p}` for every integer `k`.** Let
 `1 < p < ∞`, let `F` and `G` be finite-dimensional, and let `A : E → (F →L[ℂ] G)` be a function of
 temperate growth whose iterated derivatives of order at most `|k|` are bounded. Then
@@ -177,16 +191,13 @@ temperate growth whose iterated derivatives of order at most `|k|` are bounded. 
 theorem MemSobolev.applyLeftCLM_of_norm_iteratedFDeriv_le_intCast (hp : 1 < p) (hp_top : p ≠ ∞)
     {k : ℤ} {A : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth)
     (hbd : ∀ n ≤ k.natAbs, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n A x‖ ≤ C) {f : 𝓢'(E, F)}
-    (hf : MemSobolev k p f) : MemSobolev k p (applyLeftCLM A f) := by
-  -- `A f = ∑ᵢ bᵢ (gᵢ f)` for a basis `(bᵢ)` of `F →L[ℂ] G`, and the coordinates `gᵢ = bᵢ* ∘ A`
-  -- inherit the derivative bounds of `A`.
-  rw [applyLeftCLM_def]
-  simp only [sum_apply, ContinuousLinearMap.comp_apply]
-  refine MemSobolev.sum fun i _ ↦ MemSobolev.postcomp ?_ _
-  let ℓ : (F →L[ℂ] G) →L[ℝ] ℂ :=
-    (Module.finBasis ℂ (F →L[ℂ] G)).coord i |>.toContinuousLinearMap.restrictScalars ℝ
-  exact hf.smulLeftCLM_of_norm_iteratedFDeriv_le_intCast hp hp_top (ℓ.hasTemperateGrowth.comp hA)
-    (ℓ.exists_bound_iteratedFDeriv_comp_left (hA.1.of_le (mod_cast le_top)) hbd)
+    (hf : MemSobolev k p f) : MemSobolev k p (applyLeftCLM A f) :=
+  -- Each scalar function `ℓ ∘ A` inherits the derivative bounds of `A`.
+  MemSobolev.applyLeftCLM_of_forall_smulLeftCLM fun ℓ ↦
+    hf.smulLeftCLM_of_norm_iteratedFDeriv_le_intCast hp hp_top
+      ((ℓ.restrictScalars ℝ).hasTemperateGrowth.comp hA)
+      ((ℓ.restrictScalars ℝ).exists_bound_iteratedFDeriv_comp_left (hA.1.of_le (mod_cast le_top))
+        hbd)
 
 end Matrix
 

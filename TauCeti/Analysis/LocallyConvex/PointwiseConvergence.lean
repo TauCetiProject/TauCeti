@@ -18,7 +18,8 @@ functionals of values (`PointwiseConvergenceCLM.exists_finset_sum_eq`). On a Hil
 writing each `g x` as an inner product gives the usual finite sums of matrix coefficients.
 
 The file also evaluates post-composition by a fixed continuous linear map at a vector
-(`PointwiseConvergenceCLM.postcomp_apply_apply`).
+(`PointwiseConvergenceCLM.postcomp_apply_apply`), and post-composition by the identity is the
+identity (`PointwiseConvergenceCLM.postcomp_id`).
 
 ## References
 
@@ -46,6 +47,12 @@ result. This lemma is a pre-simp lemma so that it fires before simp rewrites the
 @[simp↓]
 theorem postcomp_apply_apply (L : F →SL[τ] G) (u : E →SLₚₜ[σ] F) (x : E) :
     postcomp E L u x = L (u x) :=
+  rfl
+
+/-- Post-composition by the identity is the identity. -/
+@[simp]
+theorem postcomp_id :
+    postcomp E (ContinuousLinearMap.id 𝕜₂ F) = ContinuousLinearMap.id 𝕜₂ (E →SLₚₜ[σ] F) :=
   rfl
 
 end Postcomp

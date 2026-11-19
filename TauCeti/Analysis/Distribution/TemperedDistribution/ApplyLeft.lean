@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TemperedDistribution
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.LocallyConvex.PointwiseConvergence
@@ -60,9 +62,9 @@ variable {E F G H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 `A : E → (F →L[ℂ] G)`, for finite-dimensional `F` and `G`. With the coordinates `gᵢ = bᵢ* ∘ A` of
 `A` in a basis `(bᵢ)` of `F →L[ℂ] G`, it sends `u` to `∑ᵢ bᵢ (gᵢ u)`. Any other expansion of `A`
 gives the same operator (`TemperedDistribution.applyLeftCLM_eq_sum`); on Schwartz functions it is
-`u ↦ (x ↦ A x (u x))` (`TemperedDistribution.applyLeftCLM_toTemperedDistributionCLM_eq`). If `A`
-does not have temperate growth, the coordinates are multiplied by the junk value of
-`smulLeftCLM`. -/
+`u ↦ (x ↦ A x (u x))` (`TemperedDistribution.applyLeftCLM_toTemperedDistributionCLM_eq`). Each
+coordinate `gᵢ` without temperate growth contributes `0`, since `smulLeftCLM` is `0` for such
+functions; the result is only meaningful when `A` has temperate growth. -/
 def applyLeftCLM (A : E → F →L[ℂ] G) : 𝓢'(E, F) →L[ℂ] 𝓢'(E, G) :=
   let b := Module.finBasis ℂ (F →L[ℂ] G)
   ∑ i, PointwiseConvergenceCLM.postcomp _ (b i) ∘L smulLeftCLM F fun x ↦ b.coord i (A x)
@@ -134,7 +136,7 @@ theorem applyLeftCLM_const (L : F →L[ℂ] G) :
   simp only [Finset.sum_singleton, ContinuousLinearMap.comp_apply, smulLeftCLM_const, one_smul]
 
 /-- The identity acts as the identity. (Not `@[simp]`: `applyLeftCLM_const` rewrites its left side
-first.) -/
+first, and `PointwiseConvergenceCLM.postcomp_id` then finishes.) -/
 theorem applyLeftCLM_id_apply (u : 𝓢'(E, F)) :
     applyLeftCLM (fun _ : E ↦ ContinuousLinearMap.id ℂ F) u = u := by
   ext φ
@@ -143,15 +145,14 @@ theorem applyLeftCLM_id_apply (u : 𝓢'(E, F)) :
 
 /-- **Multiplications compose**: multiplying by `A` and then by `B` is multiplying by
 `x ↦ B x ∘L A x`, for `A` and `B` of temperate growth. -/
+@[simp]
 theorem applyLeftCLM_applyLeftCLM_apply {A : E → F →L[ℂ] G} {B : E → G →L[ℂ] H}
     (hA : A.HasTemperateGrowth) (hB : B.HasTemperateGrowth) (u : 𝓢'(E, F)) :
     applyLeftCLM B (applyLeftCLM A u) = applyLeftCLM (fun x ↦ B x ∘L A x) u := by
   set a := Module.finBasis ℂ (F →L[ℂ] G)
   set b := Module.finBasis ℂ (G →L[ℂ] H)
-  have hga (i) : (fun x ↦ a.coord i (A x)).HasTemperateGrowth :=
-    ((a.coord i).toContinuousLinearMap.restrictScalars ℝ).hasTemperateGrowth.comp hA
-  have hgb (j) : (fun x ↦ b.coord j (B x)).HasTemperateGrowth :=
-    ((b.coord j).toContinuousLinearMap.restrictScalars ℝ).hasTemperateGrowth.comp hB
+  have hga := hA.basis_coord a
+  have hgb := hB.basis_coord b
   have hBA (x) : B x ∘L A x = ∑ ij ∈ Finset.univ ×ˢ Finset.univ,
       (fun x ↦ a.coord ij.1 (A x) * b.coord ij.2 (B x)) x • (b ij.2 ∘L a ij.1) := by
     ext v
@@ -170,26 +171,6 @@ theorem applyLeftCLM_applyLeftCLM_apply {A : E → F →L[ℂ] G} {B : E → G �
 
 end TemperedDistribution
 
-namespace SchwartzMap
-
-variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℂ F] [NormedAddCommGroup G] [NormedSpace ℂ G]
-
-/-- **Expansion of multiplication by an operator-valued function on Schwartz functions.** If
-`A x = ∑ᵢ gᵢ(x) • Lᵢ` for finitely many scalar functions `gᵢ` of temperate growth and constant
-maps `Lᵢ`, then `u ↦ (x ↦ A x (u x))` is `u ↦ ∑ᵢ Lᵢ ∘ (gᵢ u)`. -/
-theorem bilinLeftCLM_apply_eq_sum {ι : Type*} (s : Finset ι) (L : ι → F →L[ℂ] G)
-    {g : ι → E → ℂ} (hg : ∀ i ∈ s, (g i).HasTemperateGrowth) {A : E → F →L[ℂ] G}
-    (hA' : A.HasTemperateGrowth) (hA : ∀ x, A x = ∑ i ∈ s, g i x • L i) :
-    bilinLeftCLM (ContinuousLinearMap.apply ℂ G) hA' =
-      ∑ i ∈ s, postcompCLM (L i) ∘L smulLeftCLM F (g i) := by
-  ext u x
-  simp only [bilinLeftCLM_apply, ContinuousLinearMap.apply_apply, hA, sum_apply, smul_apply,
-    ContinuousLinearMap.comp_apply, postcompCLM_apply]
-  exact Finset.sum_congr rfl fun i hi ↦ by rw [smulLeftCLM_apply_apply (hg i hi), map_smul]
-
-end SchwartzMap
-
 namespace TemperedDistribution
 
 variable {E F G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -204,8 +185,7 @@ theorem applyLeftCLM_toTemperedDistributionCLM_eq {A : E → F →L[ℂ] G}
       ((SchwartzMap.bilinLeftCLM (ContinuousLinearMap.apply ℂ G) hA u : 𝓢(E, G)) : 𝓢'(E, G)) := by
   -- Expand `A` in a basis of `F →L[ℂ] G` on both sides.
   set b := Module.finBasis ℂ (F →L[ℂ] G)
-  have hg (i) : (fun x ↦ b.coord i (A x)).HasTemperateGrowth :=
-    ((b.coord i).toContinuousLinearMap.restrictScalars ℝ).hasTemperateGrowth.comp hA
+  have hg := hA.basis_coord b
   have hexp (x) : A x = ∑ i, b.coord i (A x) • b i := (b.sum_repr (A x)).symm
   rw [applyLeftCLM_eq_sum Finset.univ b (fun i _ ↦ hg i) hexp,
     SchwartzMap.bilinLeftCLM_apply_eq_sum Finset.univ b (fun i _ ↦ hg i) hA hexp]
