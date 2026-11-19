@@ -13,7 +13,7 @@ import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Topology.Baire.Lemmas
 import TauCeti.Algebra.Group.Prod
 import TauCeti.Analysis.Calculus.Sard.OutermostStratum
-import TauCeti.Analysis.Fredholm.NormalForm
+import TauCeti.Analysis.Fredholm.NormalForm.Basic
 import TauCeti.Analysis.Fredholm.Proper
 import TauCeti.Analysis.Normed.Operator.Surjective
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
@@ -48,7 +48,7 @@ The two halves of the local statement are proved from the two halves of the subs
 place over the linear Fredholm theory.
 
 *Empty interior* comes from the Lyapunov--Schmidt normal form of
-`TauCeti.Analysis.Fredholm.NormalForm`. In the normal-form chart `Φ` at a point `a`, the map
+`TauCeti.Analysis.Fredholm.NormalForm.Basic`. In the normal-form chart `Φ` at a point `a`, the map
 reads `y ↦ y.1 + q y` where the **obstruction** `q` takes values in the finite-dimensional
 complement `pkg.decCodom.X₀` of the range; the first coordinate is therefore free, and the
 derivative at `Φ.symm y` is surjective exactly when the derivative of the *slice*
