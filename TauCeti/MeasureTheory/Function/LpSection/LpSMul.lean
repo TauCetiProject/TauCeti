@@ -49,7 +49,8 @@ operators `MeasureTheory.Lp.multiplicationOperator` on `MeasureTheory.Lp`.
   and the `IsScalarTower` and `SMulCommClass` instances relating it to the action of `𝕜`.
 * `TauCeti.LpSection.norm_lpSMul_le`: `‖φ • f‖ ≤ ‖φ‖ ‖f‖`.
 * `TauCeti.LpSection.lpSMulL`: multiplication as a continuous bilinear map of norm at most `1`
-  (`TauCeti.LpSection.norm_lpSMulL_le`), with `TauCeti.LpSection.norm_lpSMulL_apply_le`.
+  (`TauCeti.LpSection.norm_lpSMulL_le`), with `TauCeti.LpSection.norm_lpSMulL_apply_le` and the
+  composition laws `TauCeti.LpSection.lpSMulL_mul` and `TauCeti.LpSection.lpSMulL_one`.
 * `TauCeti.LpSection.inner_lpSMul_left`, `inner_lpSMul_right` and `adjoint_lpSMulL`:
   `M_φ† = M_{star φ}`.
 * `TauCeti.LpSection.sum_star_lpSMul_lpSMul` and `TauCeti.LpSection.sum_norm_lpSMul_sq`:
@@ -189,6 +190,18 @@ theorem norm_lpSMulL_le [Fact (1 ≤ p)] : ‖lpSMulL 𝕜 F E p μ‖ ≤ 1 :=
 /-- The multiplication operator `M_φ` has norm at most `‖φ‖_{L^∞}`. -/
 theorem norm_lpSMulL_apply_le [Fact (1 ≤ p)] : ‖lpSMulL 𝕜 F E p μ φ‖ ≤ ‖φ‖ :=
   ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg φ) (norm_lpSMul_le φ)
+
+/-- **Composition of multiplication operators**: `M_{φ ψ} = M_φ ∘ M_ψ`. -/
+@[simp]
+theorem lpSMulL_mul [Fact (1 ≤ p)] :
+    lpSMulL 𝕜 F E p μ (φ * ψ) = lpSMulL 𝕜 F E p μ φ ∘L lpSMulL 𝕜 F E p μ ψ :=
+  ContinuousLinearMap.ext fun f ↦ mul_smul φ ψ f
+
+/-- Multiplication by the constant function `1` is the identity: `M_1 = id`. -/
+@[simp]
+theorem lpSMulL_one [Fact (1 ≤ p)] :
+    lpSMulL 𝕜 F E p μ 1 = ContinuousLinearMap.id 𝕜 (LpSection 𝕜 F E p μ) :=
+  ContinuousLinearMap.ext fun f ↦ one_smul (Lp 𝕜 ∞ μ) f
 
 end Normed
 
