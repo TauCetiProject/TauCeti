@@ -108,6 +108,14 @@ def pullbackBasepointChangeCompHom (M : DGLocalSystem.{v} B x R) :
     (pullback R g rfl).map ((pullback R f rfl).map (tensorPathChainConcat M (f y) (f (g z)))) ≫
     (pullbackComp R f g rfl rfl).inv.app ((basepointChange R x (f (g z))).obj M)
 
+/-- The composition law for a single DG local system, as a composite. -/
+theorem pullbackBasepointChangeCompHom_eq (M : DGLocalSystem.{v} B x R) :
+    pullbackBasepointChangeCompHom f g y z M =
+      (pullback R g rfl).map (changeBasepointPullbackHom f ((basepointChange R x (f y)).obj M)) ≫
+        (pullback R g rfl).map ((pullback R f rfl).map (tensorPathChainConcat M (f y) (f (g z)))) ≫
+          (pullbackComp R f g rfl rfl).inv.app ((basepointChange R x (f (g z))).obj M) :=
+  (rfl)
+
 /-- The composition law for a single DG local system is natural in the DG local system. -/
 theorem pullbackBasepointChangeCompHom_naturality {M N : DGLocalSystem.{v} B x R} (φ : M ⟶ N) :
     (pullback R g rfl).map ((basepointChange R y (g z)).map
@@ -168,17 +176,6 @@ open DGRightModuleCat
 variable {B B' B'' : Type u} [TopologicalSpace B] [TopologicalSpace B'] [TopologicalSpace B'']
   (R : Type w) [CommRing R] {β : PathComponentBasepoints B}
 
-/-- The chosen basepoint of the path component of `x` is joined to `x`. -/
-private theorem joined_point_mk (β : PathComponentBasepoints B) (x : B) :
-    Joined (β.point (ZerothHomotopy.mk x)) x :=
-  Quotient.exact (β.mk_point (ZerothHomotopy.mk x))
-
-/-- A map `f` sends the chosen basepoint of the path component of `y` into the path component of
-`f y`. -/
-private theorem mk_apply_point_mk (f : C(B', B)) (β' : PathComponentBasepoints B') (y : B') :
-    ZerothHomotopy.mk (f (β'.point (ZerothHomotopy.mk y))) = ZerothHomotopy.mk (f y) :=
-  Quotient.sound ((joined_point_mk β' y).map f.continuous)
-
 /-- The component of `pullbackBasepointChangeComp` at a family and a path component. -/
 def pullbackBasepointChangeCompApp (f : C(B', B)) (g : C(B'', B'))
     (β' : PathComponentBasepoints B') (β'' : PathComponentBasepoints B'')
@@ -190,8 +187,23 @@ def pullbackBasepointChangeCompApp (f : C(B', B)) (g : C(B'', B'))
       (β'.point (ZerothHomotopy.mk (g (β''.point c'')))) (β''.point c'') _ ≫
     eqToHom ((congrArg (fun c ↦ (DGLocalSystem.pullback R (f.comp g) rfl).obj
       ((DGLocalSystem.basepointChange R (β.point c) (f (g (β''.point c'')))).obj (𝓕 c)))
-      (mk_apply_point_mk f β' (g (β''.point c'')))).trans
+      (β'.mk_apply_point_mk f.continuous (g (β''.point c'')))).trans
         (pullbackBasepointChange_obj R (f.comp g) β'' 𝓕 c'').symm)
+
+/-- The component of `pullbackBasepointChangeComp`, as a composite. -/
+theorem pullbackBasepointChangeCompApp_eq (f : C(B', B)) (g : C(B'', B'))
+    (β' : PathComponentBasepoints B') (β'' : PathComponentBasepoints B'')
+    (𝓕 : DGLocalSystemFamily.{v} β R) (c'' : ZerothHomotopy B'') :
+    pullbackBasepointChangeCompApp R f g β' β'' 𝓕 c'' =
+      eqToHom (by rw [Functor.comp_obj, pullbackBasepointChange_obj,
+        pullbackBasepointChange_obj]) ≫
+      DGLocalSystem.pullbackBasepointChangeCompHom f g
+        (β'.point (ZerothHomotopy.mk (g (β''.point c'')))) (β''.point c'') _ ≫
+      eqToHom ((congrArg (fun c ↦ (DGLocalSystem.pullback R (f.comp g) rfl).obj
+        ((DGLocalSystem.basepointChange R (β.point c) (f (g (β''.point c'')))).obj (𝓕 c)))
+        (β'.mk_apply_point_mk f.continuous (g (β''.point c'')))).trans
+          (pullbackBasepointChange_obj R (f.comp g) β'' 𝓕 c'').symm) :=
+  (rfl)
 
 /-- **The composition law of the pullback** of families: the pullback along `f` followed by the
 pullback along `g` compares to the pullback along `f ∘ g`. At the path component `c''` of `B''`
@@ -213,7 +225,7 @@ def pullbackBasepointChangeComp (f : C(B', B)) (g : C(B'', B'))
     refine whisker_eq _ ?_
     have key := eqToHom_naturality (fun c ↦ (DGLocalSystem.pullback R (f.comp g) rfl).map
       ((DGLocalSystem.basepointChange R (β.point c) (f (g (β''.point c'')))).map (φ c)))
-      (mk_apply_point_mk f β' (g (β''.point c'')))
+      (β'.mk_apply_point_mk f.continuous (g (β''.point c'')))
     exact (whisker_eq _ (eqToHom_trans _ _).symm).trans <| (Category.assoc _ _ _).symm.trans <|
       (eq_whisker key _).trans (Category.assoc _ _ _)
 
@@ -234,8 +246,8 @@ theorem isQuasiIso_pullbackBasepointChangeComp_app (f : C(B', B)) (g : C(B'', B'
     IsQuasiIso ((pullbackBasepointChangeComp R f g β' β'').app 𝓕 c'') :=
   IsQuasiIso.comp (isQuasiIso_of_isIso _) <| IsQuasiIso.comp
     (DGLocalSystem.isQuasiIso_pullbackBasepointChangeCompHom f g _ _ _
-      (nonempty_moorePathBetween_iff.2 (joined_point_mk β _))
-      (nonempty_moorePathBetween_iff.2 (joined_point_mk β' _)))
+      (nonempty_moorePathBetween_iff.2 (β.joined_point_mk _))
+      (nonempty_moorePathBetween_iff.2 (β'.joined_point_mk _)))
     (isQuasiIso_of_isIso _)
 
 /-- The identification `𝓕_{c₁} ⊗ C_*(P_{b_{c₁}→b_c} B) ≅ 𝓕_c` for an index `c₁` equal to `c`
@@ -245,6 +257,14 @@ def changeBasepointsSelfApp {c₁ c : ZerothHomotopy B} (h : c₁ = c)
     (DGLocalSystem.basepointChange R (β.point c₁) (β.point c)).obj (𝓕 c₁) ≅ 𝓕 c := by
   subst h
   exact tensorPathChainOneIso.{u, w, v} B (β.point c₁) R (𝓕 c₁)
+
+/-- For the index `c` itself, `changeBasepointsSelfApp` is `TauCeti.tensorPathChainOneIso`. -/
+@[simp]
+theorem changeBasepointsSelfApp_rfl (c : ZerothHomotopy B)
+    (𝓕 : DGLocalSystemFamily.{max u w v} β R) :
+    changeBasepointsSelfApp.{u, w, v} R (rfl : c = c) 𝓕 =
+      tensorPathChainOneIso.{u, w, v} B (β.point c) R (𝓕 c) :=
+  (rfl)
 
 /-- Naturality of `changeBasepointsSelfApp` in the family. -/
 theorem changeBasepointsSelfApp_naturality {c₁ c : ZerothHomotopy B} (h : c₁ = c)
@@ -302,7 +322,20 @@ identity law of the pullback. -/
 def changeBasepointsRoundTrip (β β' : PathComponentBasepoints B) :
     changeBasepoints R β β' ⋙ changeBasepoints R β' β ⟶
       𝟭 (DGLocalSystemFamily.{max u w v} β R) :=
+  -- The target of the composition law is the pullback along
+  -- `(ContinuousMap.id B).comp (ContinuousMap.id B)`, which is definitionally `ContinuousMap.id B`,
+  -- so it is the source `changeBasepoints R β β` of the identity law.
   pullbackBasepointChangeComp R (.id B) (.id B) β' β ≫ (pullbackBasepointChangeId.{u, w, v} R).hom
+
+/-- The components of `changeBasepointsRoundTrip`: the composition law followed by the identity
+law. -/
+@[simp]
+theorem changeBasepointsRoundTrip_app (β β' : PathComponentBasepoints B)
+    (𝓕 : DGLocalSystemFamily.{max u w v} β R) (c : ZerothHomotopy B) :
+    (changeBasepointsRoundTrip.{u, w, v} R β β').app 𝓕 c =
+      pullbackBasepointChangeCompApp R (.id B) (.id B) β' β 𝓕 c ≫
+        (pullbackBasepointChangeIdApp.{u, w, v} R 𝓕 c).hom :=
+  (rfl)
 
 /-- **Independence of the chosen basepoints**: the round trip of the change of chosen basepoints is
 a quasi-isomorphism at every family and every path component. -/
