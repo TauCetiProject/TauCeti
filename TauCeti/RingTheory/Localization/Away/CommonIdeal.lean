@@ -35,8 +35,10 @@ trivially.
   every element of `ker f`.
 * `IsLocalization.Away.map_injective_of_ker_inf_eq_bot`: the map `A_t → B_{f t}` is injective
   when `ker f ∩ I = 0`.
-* `IsLocalization.Away.map_surjective_of_coe_map_subset_image`: it is surjective when `f(I)`
-  is the ideal `I.map f`.
+* `IsLocalization.Away.map_eq`, `IsLocalization.Away.map_mk'`: the values of the map
+  `A_t → B_{f t}` on `[a]` and on fractions `a / s`.
+* `IsLocalization.Away.map_surjective_of_coe_map_subset_range`: it is surjective when every
+  element of the ideal `I.map f` lies in the image of `f`.
 * `IsLocalization.Away.map_bijective_of_mem_ideal`: under both conditions it is bijective.
 * `IsLocalization.Away.mapRingEquivOfMemIdeal_symm_algebraMap_eq_mk'`: the inverse sends `b`
   to `a / t` for any `a : A` with `f a = f t * b`.
@@ -64,6 +66,25 @@ end TauCeti
 
 namespace IsLocalization.Away
 
+section Semiring
+
+variable {A B : Type*} [CommSemiring A] [CommSemiring B] (f : A →+* B) (t : A)
+variable (S Q : Type*) [CommSemiring S] [CommSemiring Q] [Algebra A S] [Algebra B Q]
+  [IsLocalization.Away t S] [IsLocalization.Away (f t) Q]
+
+/-- The map `A_t → B_{f t}` sends `[a]` to `[f a]`. -/
+@[simp]
+theorem map_eq (a : A) : map S Q f t (algebraMap A S a) = algebraMap B Q (f a) :=
+  IsLocalization.map_eq _ _
+
+/-- The map `A_t → B_{f t}` sends the fraction `a / s` to `f a / f s`. -/
+theorem map_mk' (a : A) (s : Submonoid.powers t) :
+    map S Q f t (mk' S a s) =
+      mk' Q (f a) ⟨f s, Submonoid.map_powers f t ▸ Submonoid.mem_map_of_mem f s.2⟩ :=
+  IsLocalization.map_mk' _ _ _
+
+end Semiring
+
 variable {A B : Type*} [CommRing A] [CommRing B] {f : A →+* B} {I : Ideal A} {t : A}
 variable (S Q : Type*) [CommRing S] [CommRing Q] [Algebra A S] [Algebra B Q]
   [IsLocalization.Away t S] [IsLocalization.Away (f t) Q]
@@ -74,13 +95,14 @@ theorem map_injective_of_ker_inf_eq_bot (hker : RingHom.ker f ⊓ I = ⊥) (ht :
   (map_injective_iff (S := S) Q f t).mpr fun _ ha ↦
     ⟨1, by simpa using TauCeti.mul_eq_zero_of_ker_inf_eq_bot hker ht ha⟩
 
-/-- If the image `f(I)` is already the ideal `I.map f` and `t ∈ I`, then `A_t → B_{f t}` is
-surjective. The inclusion `f(I) ⊆ I.map f` always holds, so only the reverse one is assumed. -/
-theorem map_surjective_of_coe_map_subset_image (himage : (I.map f : Set B) ⊆ f '' I)
+/-- If every element of the ideal `I.map f` lies in the image of `f` and `t ∈ I`, then
+`A_t → B_{f t}` is surjective. This holds in particular when `f(I)` is already the ideal
+`I.map f`. -/
+theorem map_surjective_of_coe_map_subset_range (hrange : (I.map f : Set B) ⊆ Set.range f)
     (ht : t ∈ I) : Function.Surjective (map S Q f t) := by
   refine (map_surjective_iff S Q f t).mpr fun b ↦ ?_
-  -- `f t * b` lies in the ideal `I.map f`, hence is the image of some `a ∈ I`
-  obtain ⟨a, -, ha⟩ := himage ((I.map f).mul_mem_right b (Ideal.mem_map_of_mem f ht))
+  -- `f t * b` lies in the ideal `I.map f`, hence is the image of some `a`
+  obtain ⟨a, ha⟩ := hrange ((I.map f).mul_mem_right b (Ideal.mem_map_of_mem f ht))
   exact ⟨a, 1, by rw [ha, pow_one]⟩
 
 /-- **Ferrand's localization of a common ideal.** If `f` maps the ideal `I` bijectively onto the
@@ -88,7 +110,7 @@ ideal `I.map f`, then for `t ∈ I` the induced map `A_t → B_{f t}` is bijecti
 theorem map_bijective_of_mem_ideal (hker : RingHom.ker f ⊓ I = ⊥)
     (himage : (I.map f : Set B) ⊆ f '' I) (ht : t ∈ I) : Function.Bijective (map S Q f t) :=
   ⟨map_injective_of_ker_inf_eq_bot S Q hker ht,
-    map_surjective_of_coe_map_subset_image S Q himage ht⟩
+    map_surjective_of_coe_map_subset_range S Q (himage.trans (Set.image_subset_range _ _)) ht⟩
 
 /-- The ring isomorphism `A_t ≃+* B_{f t}` of `IsLocalization.Away.map_bijective_of_mem_ideal`,
 for `f` mapping the ideal `I` bijectively onto the ideal `I.map f` and `t ∈ I`. -/
@@ -106,7 +128,7 @@ theorem coe_mapRingEquivOfMemIdeal :
 @[simp]
 theorem mapRingEquivOfMemIdeal_algebraMap (a : A) :
     mapRingEquivOfMemIdeal S Q hker himage ht (algebraMap A S a) = algebraMap B Q (f a) := by
-  simp [map, IsLocalization.map_eq]
+  simp
 
 @[simp]
 theorem mapRingEquivOfMemIdeal_symm_algebraMap (a : A) :
@@ -120,7 +142,7 @@ unique; the fraction `a / t` does not depend on the choice. -/
 theorem mapRingEquivOfMemIdeal_symm_algebraMap_eq_mk' {a : A} {b : B} (hab : f a = f t * b) :
     (mapRingEquivOfMemIdeal S Q hker himage ht).symm (algebraMap B Q b) =
       IsLocalization.mk' S a (⟨t, Submonoid.mem_powers t⟩ : Submonoid.powers t) := by
-  rw [RingEquiv.symm_apply_eq, coe_mapRingEquivOfMemIdeal, map, IsLocalization.map_mk',
+  rw [RingEquiv.symm_apply_eq, coe_mapRingEquivOfMemIdeal, map_mk',
     IsLocalization.eq_mk'_iff_mul_eq, ← map_mul, hab, mul_comm]
 
 end IsLocalization.Away
