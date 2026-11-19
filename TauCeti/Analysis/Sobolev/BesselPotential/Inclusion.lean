@@ -88,13 +88,6 @@ variable {E F G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Finit
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [CompleteSpace F] [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G]
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- An order `s` above half the dimension of `E` is nonnegative, so that `H^{s,p}(E, G)` embeds
-in `Lᵖ` (`BesselPotentialSpace.inclusionLp`). -/
-theorem TauCeti.nonneg_of_finrank_lt_two_mul {s : ℝ} (hs : Module.finrank ℝ E < 2 * s) :
-    0 ≤ s := by
-  linarith [(Module.finrank ℝ E).cast_nonneg (α := ℝ)]
-
 namespace BesselPotentialSpace
 
 variable {r s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
