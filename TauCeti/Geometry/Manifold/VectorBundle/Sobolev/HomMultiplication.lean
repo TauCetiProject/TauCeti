@@ -14,10 +14,10 @@ public import TauCeti.Analysis.Sobolev.W1p.CompactMultiplication.Basic
 
 For finite-dimensional real bundles over a compact manifold of positive dimension `n`, an
 order-zero Sobolev section of the real hom bundle with exponent `p > n` acts boundedly on
-`W^{1,q}` sections with values in `W^{0,q}`, for every finite `1 ≤ q ≤ p`. For each fixed coefficient the operator is
-compact. On a surface this includes every finite `1 < q ≤ p`, including `q = p`, `q = 2` and
-`q < 2`, as well as the natural endpoint `q = 1`. The surface case supplies the order-zero part of
-McDuff--Salamon, Lemma C.2.2.
+`W^{1,q}` sections with values in `W^{0,q}`, for every finite `1 ≤ q ≤ p`. For each fixed
+coefficient the operator is compact. On a surface this includes every finite `1 < q ≤ p`,
+including `q = p`, `q = 2` and `q < 2`, as well as the natural endpoint `q = 1`. The surface case
+supplies the order-zero part of McDuff--Salamon, Lemma C.2.2.
 
 The construction uses the native finite-atlas Sobolev spaces. Interior mixed multiplication and
 Rellich compactness are transferred between charts and glued over a finite cover. The hom bundle
@@ -348,10 +348,10 @@ private theorem exists_homMulComponents (hp : (finrank ℝ E : ℝ≥0) < p) (hq
     (fun i ↦ hPj i j) (hcov j) (f j m) _ (hf j m)
   exact ⟨Φ, fun α ξ j m ↦ hΦ j m α ξ⟩
 
-/-- **Bounded multiplication by rough hom sections.** On a positive-dimensional base, if
+/-- **Bounded multiplication by rough hom sections.** On a positive-dimensional base with
 `dim E < p < ∞` and `1 ≤ q ≤ p`, there is a bounded real bilinear action of order-zero `Lᵖ` hom
-sections on `W^{1,q}` sections, with values in the native order-zero `W^{0,q}` space of the target bundle. Its chart readings
-are the pointwise application of the coefficient readings to the input readings. -/
+sections on `W^{1,q}` sections, valued in the native `W^{0,q}` space of the target bundle.
+Its chart readings are pointwise application of coefficient readings to input readings. -/
 theorem exists_homMulL (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : q ≤ p) :
     ∃ T : SobolevSection (A.hom (𝕜 := ℝ) h) μ p 0 →L[ℝ]
       SobolevSection A μ q 1 →L[ℝ] SobolevSection (A.ofBaseSet h) μ q 0,
