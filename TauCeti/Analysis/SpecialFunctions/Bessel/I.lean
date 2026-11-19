@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
-public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
+public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 
 /-!
 # The modified Bessel function of the first kind
