@@ -55,8 +55,10 @@ connect it with the realization on `H¹`.
 A surjective bounded operator between Banach spaces with finite-dimensional kernel is Fredholm
 (`ContinuousLinearMap.IsFredholm.of_surjective`), so the realization is Fredholm
 (`TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator`). Its index is the real dimension of its
-kernel (`LinearMap.index_of_surjective`). The identification of this kernel with the real tangent
-space of the divisor space, of dimension `2m`, is not proved here.
+kernel (`LinearMap.index_of_surjective`). At a continuous plane vortex lying in `A_m^k` for every
+`k` (see `TauCeti.Vortex.exists_framedGaugeGroup_smul_mem_framedFieldSpace`) this kernel has real
+dimension `2m`, the dimension of the divisor space `Sym^m ℂ`, so the index is `2m`; this is
+proved in `TauCeti.Analysis.PDE.Vortex.Index`.
 
 ## References
 
