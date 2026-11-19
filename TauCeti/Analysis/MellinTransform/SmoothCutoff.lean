@@ -46,8 +46,8 @@ how such sums are compared with zero-free regions of their Dirichlet series.
 * `TauCeti.smoothCutoff_eq_integral_mul_div`: the cutoff as the Mellin convolution
   `1_(0,1] ⋆ ν_ε`.
 * `TauCeti.continuousOn_smoothCutoff`: the cutoff is continuous on `(0, ∞)`.
-* `TauCeti.hasMellin_smoothCutoff`: `mellin χ_ε s = mellin ν (εs) / s` for `Re s > 0`, with
-  absolute convergence.
+* `TauCeti.mellin_smoothCutoff`, `TauCeti.hasMellin_smoothCutoff`:
+  `mellin χ_ε s = mellin ν (εs) / s` for `Re s > 0`, with absolute convergence.
 * `TauCeti.exists_norm_mellin_smoothCutoff_le`: `‖mellin χ_ε s‖ ≤ C / (|s| (1 + ε|s|)^k)` on a
   vertical strip, uniformly in `0 < ε ≤ 1`.
 * `TauCeti.norm_mellin_smoothCutoff_one_sub_one_le`: `‖mellin χ_ε 1 - 1‖ ≤ 2 log 2 · ε`.
@@ -145,18 +145,14 @@ theorem integral_deltaSpike_div (ν : ℝ → ℝ) (hε : 0 < ε) :
   have h := mellin_deltaSpike ν hε 0
   rwa [mul_zero, mellin_ofReal_zero, mellin_ofReal_zero, ofReal_inj] at h
 
-/-- A function of `dx/x`-mass `1` on `(0, ∞)` has `x ↦ f x / x` integrable there. -/
-private lemma integrableOn_div_of_integral_div_eq_one {f : ℝ → ℝ}
-    (hf : ∫ x in Ioi 0, f x / x = 1) : IntegrableOn (fun x ↦ f x / x) (Ioi 0) :=
-  Integrable.of_integral_ne_zero (hf ▸ one_ne_zero)
-
 /-- For a bump `ν` (`ν ≥ 0`, supported in `[1/2, 2]`, of `dx/x`-mass `1`) and `0 ≤ ε ≤ 1`,
 `‖mellin ν ε - 1‖ ≤ 2 log 2 · ε`. This is the distance between the Mellin transform of the spike
 `ν_ε` at `s = 1` and that of the sharp cutoff. -/
 theorem norm_mellin_sub_one_le (hν0 : ∀ x, 0 ≤ ν x) (hνs : Function.support ν ⊆ Icc (1 / 2) 2)
     (hνm : ∫ x in Ioi 0, ν x / x = 1) (hε0 : 0 ≤ ε) (hε1 : ε ≤ 1) :
     ‖mellin (fun x ↦ (ν x : ℂ)) ε - 1‖ ≤ 2 * Real.log 2 * ε := by
-  have hνi := integrableOn_div_of_integral_div_eq_one hνm
+  have hνi : IntegrableOn (fun x ↦ ν x / x) (Ioi 0) :=
+    Integrable.of_integral_ne_zero (hνm ▸ one_ne_zero)
   have hνc := mellinConvergent_ofReal_of_support_subset_Icc (by norm_num) hνs hνi
   have h1 : mellin (fun x ↦ (ν x : ℂ)) 0 = 1 := by rw [mellin_ofReal_zero, hνm, ofReal_one]
   rw [← h1, mellin, mellin, ← integral_sub (hνc _) (hνc _)]
@@ -220,7 +216,7 @@ theorem smoothCutoff_le_one (hν : ∀ x, 0 ≤ ν x) (hνm : ∫ x in Ioi 0, ν
   have hm := integral_deltaSpike_div ν hε
   rw [hνm] at hm
   rw [smoothCutoff_of_pos hx, ← hm]
-  exact setIntegral_mono_set (integrableOn_div_of_integral_div_eq_one hm)
+  exact setIntegral_mono_set (Integrable.of_integral_ne_zero (hm ▸ one_ne_zero))
     ((ae_restrict_iff' measurableSet_Ioi).mpr (Eventually.of_forall fun z hz ↦
       div_nonneg (deltaSpike_nonneg hν hε.le z) (le_of_lt hz)))
     (Eventually.of_forall (Ioi_subset_Ioi hx.le))
@@ -301,6 +297,13 @@ theorem hasMellin_smoothCutoff (hνs : Function.support ν ⊆ Icc (1 / 2) 2)
   rw [h1.2, mellin_deltaSpike ν hε, one_div_mul_eq_div] at h
   exact (hasMellin_congr fun x hx ↦ smoothCutoff_eq_integral_mul_div ν ε hx).mpr h
 
+/-- For `ν` supported in `[1/2, 2]` with `x ↦ ν x / x` integrable on `(0, ∞)`, `ε > 0` and
+`Re s > 0`, the Mellin transform of the smoothed cutoff is `mellin χ_ε s = mellin ν (εs) / s`. -/
+theorem mellin_smoothCutoff (hνs : Function.support ν ⊆ Icc (1 / 2) 2)
+    (hνi : IntegrableOn (fun x ↦ ν x / x) (Ioi 0)) (hε : 0 < ε) {s : ℂ} (hs : 0 < s.re) :
+    mellin (fun x ↦ (smoothCutoff ν ε x : ℂ)) s = mellin (fun x ↦ (ν x : ℂ)) (ε * s) / s :=
+  (hasMellin_smoothCutoff hνs hνi hε hs).2
+
 /-- For `ν` of class `C^k` on `(0, ∞)` and supported in `[1/2, 2]`, and `0 < σ₁`, there is one
 constant `C` with `‖mellin χ_ε s‖ ≤ C / (|s| (1 + ε|s|)^k)` for every `0 < ε ≤ 1` and every
 `s` with `σ₁ ≤ Re s ≤ σ₂`: the decay of order `k` of `mellin ν` on vertical strips, read at
@@ -343,7 +346,7 @@ theorem exists_norm_mellin_smoothCutoff_le {k : ℕ} (hν : ContDiffOn ℝ k ν 
     have h3 : 0 ≤ σ₂ * (ε * |s.im|) :=
       mul_nonneg (hs0.le.trans hs2) (mul_nonneg hε.le (abs_nonneg _))
     linarith
-  rw [(hasMellin_smoothCutoff hνs hνi hε hs0).2, norm_div,
+  rw [mellin_smoothCutoff hνs hνi hε hs0, norm_div,
     div_le_div_iff₀ hsn (by positivity)]
   set A := ‖mellin (fun x ↦ (ν x : ℂ)) (ε * s)‖
   have hσ₂ : 0 ≤ 1 + σ₂ := by linarith
@@ -359,8 +362,8 @@ theorem norm_mellin_smoothCutoff_one_sub_one_le (hν0 : ∀ x, 0 ≤ ν x)
     (hνs : Function.support ν ⊆ Icc (1 / 2) 2) (hνm : ∫ x in Ioi 0, ν x / x = 1) (hε : 0 < ε)
     (hε1 : ε ≤ 1) :
     ‖mellin (fun x ↦ (smoothCutoff ν ε x : ℂ)) 1 - 1‖ ≤ 2 * Real.log 2 * ε := by
-  rw [(hasMellin_smoothCutoff hνs (integrableOn_div_of_integral_div_eq_one hνm) hε
-    (by norm_num : (0 : ℝ) < (1 : ℂ).re)).2, mul_one, div_one]
+  rw [mellin_smoothCutoff hνs (Integrable.of_integral_ne_zero (hνm ▸ one_ne_zero)) hε
+    (by norm_num : (0 : ℝ) < (1 : ℂ).re), mul_one, div_one]
   exact norm_mellin_sub_one_le hν0 hνs hνm hε.le hε1
 
 end TauCeti
