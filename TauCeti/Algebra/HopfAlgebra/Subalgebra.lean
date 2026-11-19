@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Algebra.Coalgebra.Subcoalgebra.Structure
 import TauCeti.Algebra.HopfAlgebra.TensorShear
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 import TauCeti.RingTheory.Flat.TensorProduct
 
 /-!
@@ -309,24 +310,6 @@ private theorem tensorShearMulRight_mem_range
       Algebra.TensorProduct.map_tmul, TauCeti.HopfAlgebra.tensorShearMulRight_tmul, map_one,
       Subalgebra.coe_val]
 
-/-- Contracting the right factor of the image of `A ⊗ A` with the counit lands in `A`. -/
-private theorem rid_lTensor_counit_map_val_mem (t : A ⊗[k] A) :
-    TensorProduct.rid k H ((Coalgebra.counit (R := k)).lTensor H
-      (Algebra.TensorProduct.map A.val A.val t)) ∈ A := by
-  induction t using TensorProduct.inductionOn with
-  | add s t hs ht => simpa only [map_add] using add_mem hs ht
-  | tmul a c => simpa using A.smul_mem a.2 (Coalgebra.counit (R := k) (c : H))
-
-/-- Contracting the right factor with the counit commutes with applying the antipode on the
-left factor. -/
-private theorem lTensor_counit_map_antipode_id (x : H ⊗[k] H) :
-    (Coalgebra.counit (R := k)).lTensor H
-        (TensorProduct.map (HopfAlgebra.antipode k) LinearMap.id x) =
-      (HopfAlgebra.antipode k).rTensor k ((Coalgebra.counit (R := k)).lTensor H x) := by
-  induction x using TensorProduct.inductionOn with
-  | tmul => simp
-  | add x y hx hy => simp only [map_add, hx, hy]
-
 /-- **A finite-dimensional subbialgebra is a Hopf subalgebra.** Over a field, a
 finite-dimensional subalgebra of a commutative Hopf algebra which comultiplication maps into the
 image of its tensor square is closed under the antipode.
@@ -359,10 +342,14 @@ theorem of_finiteDimensional [FiniteDimensional k A]
     rw [TauCeti.HopfAlgebra.tensorShearMulRight_symm_tmul, ← Algebra.TensorProduct.one_def,
       one_mul] at hmem
     obtain ⟨t, ht⟩ := hmem
-    have h := rid_lTensor_counit_map_val_mem t
-    rwa [← AlgHom.toLinearMap_apply, ht, lTensor_counit_map_antipode_id,
-      Coalgebra.lTensor_counit_comul, LinearMap.rTensor_tmul, TensorProduct.rid_tmul,
+    rw [Algebra.TensorProduct.toLinearMap_map, TensorProduct.AlgebraTensorModule.map_eq] at ht
+    have h := congrArg (LinearMap.tensorComponent (Coalgebra.counit (R := k))) ht
+    rw [LinearMap.tensorComponent_map, LinearMap.tensorComponent_map, LinearMap.comp_id,
+      LinearMap.tensorComponent_def (Coalgebra.counit (R := k) (A := H)), LinearMap.comp_apply,
+      Coalgebra.lTensor_counit_comul, LinearEquiv.coe_coe, TensorProduct.rid_tmul,
       one_smul] at h
+    rw [← h]
+    exact (LinearMap.tensorComponent _ t).2
 
 end IsHopfSubalgebra
 
