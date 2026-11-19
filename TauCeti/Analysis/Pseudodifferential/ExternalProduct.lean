@@ -233,9 +233,10 @@ theorem add_le_two_mul_lineMap {a b t : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (ht :
   gcongr
 
 /-- The convex combination `(1 - s) χ₀ + s χ₁` of two conic cutoffs, for `s ∈ [0, 1]`, is again a
-conic cutoff. These join `χ₀` (`ConicCutoff.lineMap_zero`) to `χ₁` (`ConicCutoff.lineMap_one`),
-and they join the cut-off external products for `χ₀` and `χ₁` through elliptic symbols, so the
-product is independent of the cutoff up to homotopy
+conic cutoff. These join `χ₀` (`ConicCutoff.lineMap_zero`) to `χ₁` (`ConicCutoff.lineMap_one`).
+For elliptic factors with finite-dimensional fibres they also join the cut-off external products
+for `χ₀` and `χ₁` through elliptic symbols (`HomogeneousSymbol.IsElliptic.externalProduct`),
+continuously in `s`
 (`HomogeneousSymbol.continuousOn_coefficient_externalProduct_conicCutoffLineMap`). -/
 def lineMap (χ₀ χ₁ : ConicCutoff) (s : unitInterval) : ConicCutoff where
   toFun t := AffineMap.lineMap (χ₀ t) (χ₁ t) (s : ℝ)
