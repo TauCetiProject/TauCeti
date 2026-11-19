@@ -39,10 +39,13 @@ In the chart at a point `α`, the equation becomes a coordinate Floer equation o
   fields in the chart (`TauCeti.SmoothTwoForm.continuousLinearMapAt_perturbedMFDeriv_apply`).
   So if `u` solves the Floer equation, `v` solves `∂ₜv - X_{K_t} = J (∂ₛv - X_{K_s})` with the
   data read in the chart
-  (`TauCeti.SmoothTwoForm.fderiv_extChartAt_comp_stdComplexLineImag_sub`).
+  (`TauCeti.SmoothTwoForm.fderiv_extChartAt_comp_stdComplexLineImag_sub`). The two vector fields
+  together form the Hamiltonian one-form `X_K = ds ⊗ X_{K_s} + dt ⊗ X_{K_t}` read in the chart
+  (`TauCeti.SmoothTwoForm.hamiltonianOneFormInChartAt`), the one-form of this coordinate equation.
 
 Compactness of solutions with values in one chart, of either kind, is
-`TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold`.
+`TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold`, and the mean-value inequality in a chart
+of the atlas is `TauCeti.Geometry.Symplectic.Floer.Compactness.MeanValue`.
 
 ## Symplectic charts
 
@@ -187,6 +190,48 @@ theorem hamiltonianVectorFieldInChartAt_apply (ω : SmoothTwoForm I M) (α : M)
       (trivializationAt E (TangentSpace I) α).continuousLinearMapAt ℝ ((extChartAt I α).symm y)
         (ω.hamiltonianVectorField (K z) ((extChartAt I α).symm y)) :=
   (rfl)
+
+/-- The Hamiltonian one-form `X_K = ds ⊗ X_{K_s} + dt ⊗ X_{K_t}` of a perturbation
+`K = K_s ds + K_t dt`, read in the chart at `α`: at `(z, y)` it sends a tangent vector `(a, b)` of
+the domain to `a X_{K_s} + b X_{K_t}`, with the Hamiltonian vector fields read in the chart. This is
+the one-form of the coordinate Floer equation solved by the coordinate expressions of solutions
+(`TauCeti.SmoothTwoForm.fderiv_extChartAt_comp_stdComplexLineImag_sub`). -/
+def hamiltonianOneFormInChartAt (ω : SmoothTwoForm I M) (α : M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (p : (ℝ × ℝ) × E) : ℝ × ℝ →L[ℝ] E :=
+  (ContinuousLinearMap.fst ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorFieldInChartAt α Ks p) +
+    (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorFieldInChartAt α Kt p)
+
+omit [FiniteDimensional ℝ E] in
+theorem hamiltonianOneFormInChartAt_apply (ω : SmoothTwoForm I M) (α : M)
+    (Ks Kt : ℝ × ℝ → M → ℝ) (p : (ℝ × ℝ) × E) (v : ℝ × ℝ) :
+    ω.hamiltonianOneFormInChartAt α Ks Kt p v =
+      v.1 • ω.hamiltonianVectorFieldInChartAt α Ks p +
+        v.2 • ω.hamiltonianVectorFieldInChartAt α Kt p :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem hamiltonianOneFormInChartAt_stdComplexLineReal (ω : SmoothTwoForm I M) (α : M)
+    (Ks Kt : ℝ × ℝ → M → ℝ) (p : (ℝ × ℝ) × E) :
+    ω.hamiltonianOneFormInChartAt α Ks Kt p stdComplexLineReal =
+      ω.hamiltonianVectorFieldInChartAt α Ks p := by
+  simp [hamiltonianOneFormInChartAt_apply]
+
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem hamiltonianOneFormInChartAt_stdComplexLineImag (ω : SmoothTwoForm I M) (α : M)
+    (Ks Kt : ℝ × ℝ → M → ℝ) (p : (ℝ × ℝ) × E) :
+    ω.hamiltonianOneFormInChartAt α Ks Kt p stdComplexLineImag =
+      ω.hamiltonianVectorFieldInChartAt α Kt p := by
+  simp [hamiltonianOneFormInChartAt_apply]
+
+omit [FiniteDimensional ℝ E] in
+/-- The Hamiltonian one-form in a chart is as regular as the two Hamiltonian vector fields. -/
+theorem contDiffOn_hamiltonianOneFormInChartAt {n : WithTop ℕ∞} {W : Set ((ℝ × ℝ) × E)}
+    (hXs : ContDiffOn ℝ n (ω.hamiltonianVectorFieldInChartAt α Ks) W)
+    (hXt : ContDiffOn ℝ n (ω.hamiltonianVectorFieldInChartAt α Kt) W) :
+    ContDiffOn ℝ n (ω.hamiltonianOneFormInChartAt α Ks Kt) W :=
+  (contDiffOn_const.smulRight hXs).add (contDiffOn_const.smulRight hXt)
 
 omit [FiniteDimensional ℝ E] in
 /-- **The perturbed derivative in a chart.** In the tangent coordinates of the chart at `α`, the

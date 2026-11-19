@@ -42,6 +42,8 @@ exact sequence of the pair lifts it to `H*(X, Uᵢ)`. The relative cup product o
   degree vanishes.
 * `TauCeti.lsCupLength_le_one_of_subsingleton`: if `Hᵖ(X; R)` is a subsingleton in every positive
   degree `p ≠ N`, the cup length is at most `1`.
+* `TauCeti.lsCupLength_le_of_subsingleton`: if `Hᵖ(X; R)` is a subsingleton in every degree
+  `p > N`, the cup length is at most `N`.
 * `TauCeti.IsPositiveDegreeCupProduct.exists_singularCohomologyπ_eq`: a product of `n` classes of
   positive degree comes from the cohomology of `X` relative to the union of any `n` open sets with
   nullhomotopic inclusions.
@@ -115,6 +117,14 @@ theorem degree_ne_zero {n d : ℕ}
     {x : (TopCat.of X).singularCohomology (𝟙_ (ModuleCat.{u} R)) R (𝟙_ (ModuleCat.{u} R)) d}
     (hx : IsPositiveDegreeCupProduct X R n x) : d ≠ 0 := by
   cases hx <;> omega
+
+/-- A product of `n` positive-degree classes has degree at least `n`. -/
+theorem le_degree {n d : ℕ}
+    {x : (TopCat.of X).singularCohomology (𝟙_ (ModuleCat.{u} R)) R (𝟙_ (ModuleCat.{u} R)) d}
+    (hx : IsPositiveDegreeCupProduct X R n x) : n ≤ d := by
+  induction hx with
+  | single => omega
+  | cup _ _ _ _ ih => omega
 
 /-- The products of length one are exactly the classes of positive degree. -/
 @[simp]
@@ -217,6 +227,18 @@ theorem lsCupLength_le_one_of_subsingleton {N : ℕ}
     have := hdeg _ (by omega) hx0
     have := hdeg a hp ha
     exact absurd (by omega : q = 0) hy.degree_ne_zero
+
+/-- **Cohomology vanishing above degree `N` bounds the cup length by `N`.** If `Hᵖ(X; R)` is a
+subsingleton in every degree `p > N`, then `lsCupLength X R ≤ N`: a product of more than `N`
+classes of positive degree lies in degree above `N`. -/
+theorem lsCupLength_le_of_subsingleton {N : ℕ}
+    (h : ∀ p, N < p → Subsingleton
+      ((TopCat.of X).singularCohomology (𝟙_ (ModuleCat.{u} R)) R (𝟙_ (ModuleCat.{u} R)) p)) :
+    lsCupLength X R ≤ N := by
+  refine lsCupLength_le_iff.mpr fun n d x hx hx0 ↦ ?_
+  by_contra hnN
+  have : N < d := (Nat.cast_lt.mp (not_le.mp hnN)).trans_le hx.le_degree
+  exact hx0 (@Subsingleton.elim _ (h d this) x 0)
 
 /-- **Monotonicity**: if a continuous map `f : X → Y` induces injective maps on cohomology in every
 positive degree, then the cup length of `Y` is at most that of `X`. -/

@@ -46,7 +46,9 @@ which needs the error `F(w_R)` to be small. This file proves that it is.
   `s > 1` that of `v` at `(s - R, t)`
   (`TauCeti.SymplecticForm.floerOperator_preglue_of_lt_neg_one`,
   `TauCeti.SymplecticForm.floerOperator_preglue_of_one_lt`). If `u` and `v` are solutions, the
-  error is supported in the neck (`TauCeti.SymplecticForm.floerOperator_preglue_eq_zero`).
+  error is supported in the neck (`TauCeti.SymplecticForm.floerOperator_preglue_eq_zero`), so a
+  bound on the neck bounds it everywhere
+  (`TauCeti.SymplecticForm.norm_floerOperator_preglue_le_of_floerOperator_eq_zero`).
 * **The error on the neck.** On the neck, `‖F(w_R)‖` is bounded by a constant times the
   `C¹` distances of `u` from `x` at `s + R` and of `v` from `x` at `s - R`
   (`TauCeti.SymplecticForm.norm_floerOperator_preglue_le`).
@@ -353,23 +355,21 @@ theorem floerOperator_preglue_of_one_lt (ω : SymplecticForm V) (J : ℝ → V �
   simp only [floerOperator_def, fderiv_preglue_of_one_lt hz, preglue_of_one_le hz.le,
     Prod.snd_sub, sub_zero]
 
-/-- **The pre-gluing error vanishes off the neck.** Suppose `u` solves the Floer equation on a set
-`A` and `v` on a set `B`. Then the Floer operator of the pre-glued map vanishes at every point
-`z = (s, t)` with `s ∉ [-1, 1]` such that `z + (R, 0) ∈ A` if `s < -1` and `z - (R, 0) ∈ B` if
-`s > 1`. -/
+/-- **The pre-gluing error vanishes off the neck.** Let `z = (s, t)` with `s ∉ [-1, 1]`. If `u`
+solves the Floer equation at `(s + R, t)` when `s < -1`, and `v` solves it at `(s - R, t)` when
+`s > 1`, then the Floer operator of the pre-glued map vanishes at `z`. -/
 theorem floerOperator_preglue_eq_zero (ω : SymplecticForm V) (J : ℝ → V → V →L[ℝ] V)
-    (H : ℝ → V → ℝ) (x : ℝ → V) {u v : ℝ × ℝ → V} (R : ℝ) {A B : Set (ℝ × ℝ)}
-    (huF : EqOn (ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u) 0 A)
-    (hvF : EqOn (ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v) 0 B)
-    {z : ℝ × ℝ} (hA : z.1 < -1 → z + (R, 0) ∈ A) (hB : 1 < z.1 → z - (R, 0) ∈ B)
+    (H : ℝ → V → ℝ) (x : ℝ → V) {u v : ℝ × ℝ → V} (R : ℝ) {z : ℝ × ℝ}
+    (huF : z.1 < -1 →
+      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u (z + (R, 0)) = 0)
+    (hvF : 1 < z.1 →
+      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v (z - (R, 0)) = 0)
     (hzN : z.1 ∉ Icc (-1 : ℝ) 1) :
     ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R) z = 0 := by
   rcases lt_or_ge z.1 (-1) with h₁ | h₁
-  · rw [ω.floerOperator_preglue_of_lt_neg_one J H x u v R h₁]
-    exact huF (hA h₁)
+  · rw [ω.floerOperator_preglue_of_lt_neg_one J H x u v R h₁, huF h₁]
   rcases lt_or_ge 1 z.1 with h₂ | h₂
-  · rw [ω.floerOperator_preglue_of_one_lt J H x u v R h₂]
-    exact hvF (hB h₂)
+  · rw [ω.floerOperator_preglue_of_one_lt J H x u v R h₂, hvF h₂]
   exact absurd ⟨h₁, h₂⟩ hzN
 
 /-- **The pointwise pre-gluing error.** Let `x` be an orbit of `X_{H_t}` at `t = z.2`, and write
@@ -515,6 +515,25 @@ theorem exists_eventually_norm_floerOperator_preglue_le (ω : SymplecticForm V)
         mul_le_mul_of_nonneg_left (by linarith) hK
     _ = _ := by ring
 
+/-- **The pre-gluing error off the neck.** Let `z = (s, t)`. If the Floer operator of the
+pre-glued map `w_R` is at most `c` on the segment `[-1, 1] × {t}` of the neck, `u` solves the Floer
+equation at `(s + R, t)` if `s < -1`, and `v` solves it at `(s - R, t)` if `s > 1`, then the Floer
+operator of `w_R` is at most `c` at `z`. -/
+theorem norm_floerOperator_preglue_le_of_floerOperator_eq_zero (ω : SymplecticForm V)
+    (J : ℝ → V → V →L[ℝ] V) (H : ℝ → V → ℝ) {x : ℝ → V} {u v : ℝ × ℝ → V} {R c : ℝ} {z : ℝ × ℝ}
+    (hc : ∀ s ∈ Icc (-1 : ℝ) 1,
+      ‖ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R) (s, z.2)‖ ≤
+        c)
+    (huF : z.1 < -1 →
+      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u (z + (R, 0)) = 0)
+    (hvF : 1 < z.1 →
+      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v (z - (R, 0)) = 0) :
+    ‖ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R) z‖ ≤ c := by
+  by_cases hzN : z.1 ∈ Icc (-1 : ℝ) 1
+  · exact hc z.1 hzN
+  rw [ω.floerOperator_preglue_eq_zero J H x R huF hvF hzN, norm_zero]
+  exact (norm_nonneg _).trans (hc 0 ⟨by norm_num, by norm_num⟩)
+
 /-- **The pre-gluing error away from the neck.** Under the hypotheses of
 `TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglue_le`, suppose moreover that `u`
 solves the Floer equation on a set `A` and `v` on a set `B`. Then for every large gluing parameter
@@ -544,13 +563,9 @@ theorem exists_eventually_norm_floerOperator_preglue_le_of_eqOn (ω : Symplectic
         C' * Real.exp (-(κ * R)) := by
   obtain ⟨C', hC'⟩ :=
     ω.exists_eventually_norm_floerOperator_preglue_le hH hJ hx hκ hud hu hdu hvd hv hdv
-  refine ⟨C', hC'.mono fun R hR z hz hA hB ↦ ?_⟩
-  have hpos : 0 ≤ C' * Real.exp (-(κ * R)) :=
-    (norm_nonneg _).trans (hR (0, 0) ⟨⟨by norm_num, by norm_num⟩, by norm_num, by norm_num⟩)
-  by_cases hzN : z.1 ∈ Icc (-1 : ℝ) 1
-  · exact hR z ⟨hzN, hz⟩
-  rw [ω.floerOperator_preglue_eq_zero J H x R huF hvF hA hB hzN, norm_zero]
-  exact hpos
+  exact ⟨C', hC'.mono fun R hR z hz hA hB ↦
+    ω.norm_floerOperator_preglue_le_of_floerOperator_eq_zero J H
+      (fun s hs ↦ hR (s, z.2) ⟨hs, hz⟩) (fun h ↦ huF (hA h)) fun h ↦ hvF (hB h)⟩
 
 /-- **The pre-gluing error of two Floer cylinders.** Under the hypotheses of
 `TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglue_le`, suppose moreover that `u`
@@ -637,8 +652,8 @@ theorem exists_eventually_eLpNorm_floerOperator_preglue_le_of_floerOperator_eq_z
     by_cases hzN : z ∈ N
     · rw [indicator_of_mem hzN]
     · rw [indicator_of_notMem hzN]
-      exact ω.floerOperator_preglue_eq_zero J H x R huF hvF (fun _ ↦ by simpa [S] using hz)
-        (fun _ ↦ by simpa [S] using hz) fun h ↦ hzN ⟨h, hz.2⟩
+      exact ω.floerOperator_preglue_eq_zero J H x R (fun _ ↦ huF _ (by simpa [S] using hz))
+        (fun _ ↦ hvF _ (by simpa [S] using hz)) fun h ↦ hzN ⟨h, hz.2⟩
   have hvol : volume.restrict S N = 2 := by
     rw [Measure.restrict_apply hN, inter_eq_left.2 (prod_mono (subset_univ _) le_rfl),
       Measure.volume_eq_prod, Measure.prod_prod, Real.volume_Icc, Real.volume_Icc]
