@@ -115,27 +115,21 @@ variable [FiniteDimensional ℂ E]
   (hΛ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) Λ)
 include hΛ
 
-/-- The complex coordinates of `E` in a real basis of `Λ`. -/
-private noncomputable def coords : E ≃L[ℂ] (Fin (finrank ℝ Λ) → ℂ) :=
-  (hΛ.complexBasis (Module.finBasis ℝ Λ)).equivFun.toContinuousLinearEquiv
-
-/-- `Λ` consists of the vectors whose coordinates are real. -/
-private theorem mem_iff_coords {x : E} : x ∈ Λ ↔ ∀ i, conj (hΛ.coords x i) = hΛ.coords x i :=
-  hΛ.mem_iff_forall_conj_complexBasis_repr _
-
 /-- **The kernel is the constants.** A map holomorphic on the open unit disc and continuous on its
 closure, with boundary values in a maximal totally real subspace `Λ`, is constant on the closed
 disc. -/
 theorem eqOn_closedBall_const_of_diffContOnCl {u : ℂ → E} (hu : DiffContOnCl ℂ u (ball 0 1))
     (hb : ∀ w ∈ sphere (0 : ℂ) 1, u w ∈ Λ) : EqOn u (fun _ => u 1) (closedBall 0 1) := by
-  have hA : DiffContOnCl ℂ (hΛ.coords ∘ u) (ball 0 1) :=
-    hΛ.coords.differentiable.diffContOnCl.comp hu (mapsTo_univ _ _)
-  have hk : (closedBall 0 1).domRestrict (hΛ.coords ∘ u) ∈ unitDiscCauchyRiemannKernelPi 0 :=
+  set A := (hΛ.complexBasis (Module.finBasis ℝ Λ)).equivFunL
+  have hA : DiffContOnCl ℂ (A ∘ u) (ball 0 1) :=
+    A.differentiable.diffContOnCl.comp hu (mapsTo_univ _ _)
+  have hk : (closedBall 0 1).domRestrict (A ∘ u) ∈ unitDiscCauchyRiemannKernelPi 0 :=
     mem_unitDiscCauchyRiemannKernelPi_iff_exists.2 ⟨_, hA, fun w hw i => by
-      simpa using ((hΛ.mem_iff_coords).1 (hb w hw) i).symm, rfl⟩
+      simpa [A] using
+        ((hΛ.mem_iff_forall_conj_complexBasis_repr (Module.finBasis ℝ Λ)).1 (hb w hw) i).symm, rfl⟩
   obtain ⟨r, hr⟩ := mem_unitDiscCauchyRiemannKernelPi_zero_iff.1 hk
   intro z hz
-  apply hΛ.coords.injective
+  apply A.injective
   have h₁ := congrFun hr ⟨z, hz⟩
   have h₂ := congrFun hr ⟨1, by simp⟩
   simp only [domRestrict_apply, Function.comp_apply] at h₁ h₂
@@ -202,7 +196,7 @@ theorem exists_conjWirtingerDeriv_eq_and_mem {f : ℂ → E}
     ∃ u : ℂ → E, ContinuousOn u (closedBall 0 1) ∧ DifferentiableOn ℝ u (ball 0 1) ∧
       (∀ z ∈ ball (0 : ℂ) 1, conjWirtingerDeriv u z 1 = f z) ∧
       (∀ w ∈ sphere (0 : ℂ) 1, u w ∈ Λ) ∧ u 1 = v := by
-  set A := hΛ.coords
+  set A := (hΛ.complexBasis (Module.finBasis ℝ Λ)).equivFunL
   have hsol : ∀ i, ∃ ui : ℂ → ℂ, ContinuousOn ui (closedBall 0 1) ∧
       DifferentiableOn ℝ ui (ball 0 1) ∧
       (∀ z ∈ ball (0 : ℂ) 1, conjWirtingerDeriv ui z 1 = A (f z) i) ∧
@@ -224,7 +218,9 @@ theorem exists_conjWirtingerDeriv_eq_and_mem {f : ℂ → E}
   have hUc : ContinuousOn U (closedBall 0 1) := continuousOn_pi.2 hc
   have hUd : DifferentiableOn ℝ U (ball 0 1) := differentiableOn_pi.2 hd
   have hmem : ∀ w ∈ sphere (0 : ℂ) 1, A.symm (U w) ∈ Λ := fun w hw =>
-    (hΛ.mem_iff_coords).2 fun i => by simpa [A, U] using hb i w hw
+    (hΛ.mem_iff_forall_conj_complexBasis_repr (Module.finBasis ℝ Λ)).2 fun i => by
+      rw [← Basis.equivFunL_apply, A.apply_symm_apply]
+      exact hb i w hw
   refine ⟨fun z => A.symm (U z) + (v - A.symm (U 1)), ?_, ?_, fun z hz => ?_, fun w hw => ?_, ?_⟩
   · exact (A.symm.continuous.comp_continuousOn hUc).add continuousOn_const
   · exact (((A.symm : _ →L[ℂ] E).restrictScalars ℝ).differentiable.comp_differentiableOn
@@ -232,10 +228,10 @@ theorem exists_conjWirtingerDeriv_eq_and_mem {f : ℂ → E}
   · have hUz : DifferentiableAt ℝ U z := hUd.differentiableAt (isOpen_ball.mem_nhds hz)
     have hproj : ∀ i, conjWirtingerDeriv U z 1 i = A (f z) i := fun i => by
       simpa [U, heq i z hz] using
-        congr($((ContinuousLinearMap.proj (R := ℂ) (φ := fun _ => ℂ) i).conjWirtingerDeriv_comp
+        congr($((ContinuousLinearMap.proj (R := ℂ) (φ := fun _ => ℂ) i).conjWirtingerDeriv_comp_left
           hUz) 1).symm
     simpa [funext hproj] using
-      congr($((A.symm : _ →L[ℂ] E).conjWirtingerDeriv_comp hUz) 1)
+      congr($((A.symm : _ →L[ℂ] E).conjWirtingerDeriv_comp_left hUz) 1)
   · exact Λ.add_mem (hmem w hw) (Λ.sub_mem hv (hmem 1 (by simp)))
   · simp
 

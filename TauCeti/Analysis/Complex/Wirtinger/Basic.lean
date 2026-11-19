@@ -75,8 +75,8 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   pointwise difference and of a finite sum of real-differentiable functions.
 * `TauCeti.conjWirtingerDeriv_comp`: the chain rule `\bar∂(φ ∘ g) = Dφ(g x) ∘ \bar∂g` after a
   holomorphic map `φ`.
-* `ContinuousLinearMap.conjWirtingerDeriv_comp`: the chain rule `\bar∂(L ∘ g) = L ∘ \bar∂g` after
-  a continuous complex-linear map `L`.
+* `ContinuousLinearMap.conjWirtingerDeriv_comp_left`: the chain rule `\bar∂(L ∘ g) = L ∘ \bar∂g`
+  after a continuous complex-linear map `L`.
 * `TauCeti.conjWirtingerDeriv_fun_mul`, `TauCeti.conjWirtingerDeriv_fun_pow`: the Leibniz and
   power rules for complex-valued functions.
 * `TauCeti.conjWirtingerDeriv_finsetProd`, `TauCeti.norm_conjWirtingerDeriv_finsetProd_le`: the
@@ -454,7 +454,7 @@ theorem conjWirtingerDeriv_comp {X : Type*} [NormedAddCommGroup X] [NormedSpace 
 
 /-- **The chain rule for the conjugate Wirtinger derivative** after a continuous complex-linear
 map: `\bar∂(L ∘ g) = L ∘ \bar∂g`. -/
-theorem _root_.ContinuousLinearMap.conjWirtingerDeriv_comp {X : Type*} [NormedAddCommGroup X]
+theorem _root_.ContinuousLinearMap.conjWirtingerDeriv_comp_left {X : Type*} [NormedAddCommGroup X]
     [NormedSpace ℂ X] (L : W →L[ℂ] X) {g : V → W} {x : V} (hg : DifferentiableAt ℝ g x) :
     conjWirtingerDeriv (fun y ↦ L (g y)) x = L.comp (conjWirtingerDeriv g x) := by
   rw [← Function.comp_def, TauCeti.conjWirtingerDeriv_comp L.differentiableAt hg, L.fderiv]
