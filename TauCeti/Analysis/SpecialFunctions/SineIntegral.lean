@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Analysis.Contour.WorkedExamples.HalfDisc.SineIntegral
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Sinc
 
 /-!
 # Bounds for the sine integral
@@ -33,12 +34,12 @@ the global maximum.
 
 ## Main declarations
 
-* `TauCeti.Real.sineIntegral`: the sine integral `Si x = ∫_0^x sinc t dt`.
-* `TauCeti.Real.integral_sin_div_eq_sub`: `∫_a^b sin t / t dt = Si b - Si a`.
-* `TauCeti.Real.abs_sineIntegral_le`: `|Si x| ≤ Si π`.
-* `TauCeti.Real.abs_sineIntegral_sub_le`: `|Si R - Si x| ≤ 2 / x` for `0 < x ≤ R`.
-* `TauCeti.Real.abs_pi_div_two_sub_sineIntegral_le`: `|π / 2 - Si x| ≤ 2 / x` for `x > 0`.
-* `TauCeti.Real.abs_integral_sin_mul_div_le`: `|∫_a^b sin (T v) / v dv| ≤ 2 Si π`.
+* `Real.sineIntegral`: the sine integral `Si x = ∫_0^x sinc t dt`.
+* `Real.integral_sin_div_eq_sub`: `∫_a^b sin t / t dt = Si b - Si a`.
+* `Real.abs_sineIntegral_le`: `|Si x| ≤ Si π`.
+* `Real.abs_sineIntegral_sub_le`: `|Si R - Si x| ≤ 2 / x` for `0 < x ≤ R`.
+* `Real.abs_pi_div_two_sub_sineIntegral_le`: `|π / 2 - Si x| ≤ 2 / x` for `x > 0`.
+* `Real.abs_integral_sin_mul_div_le`: `|∫_a^b sin (T v) / v dv| ≤ 2 Si π`.
 
 ## References
 
@@ -50,7 +51,7 @@ public section
 
 open Filter Set Topology intervalIntegral Real
 
-namespace TauCeti.Real
+namespace Real
 
 /-- The **sine integral** `Si x = ∫_0^x sin t / t dt`. The integrand is written as the continuous
 function `Real.sinc`, which agrees with `sin t / t` away from `t = 0`; see
@@ -146,13 +147,10 @@ private theorem antitoneOn_sineIntegral_add_cos_add_one_div :
 
 private theorem tendsto_sineIntegral_add_div (c : ℝ) :
     Tendsto (fun y ↦ sineIntegral y + (cos y + c) / y) atTop (𝓝 (π / 2)) := by
-  have hbound : ∀ᶠ y in atTop, ‖(cos y + c) / y‖ ≤ (1 + |c|) * y⁻¹ := by
-    filter_upwards [eventually_gt_atTop 0] with y hy
-    rw [norm_div, Real.norm_of_nonneg hy.le, div_eq_mul_inv]
-    gcongr
-    exact (norm_add_le _ _).trans (by simp [abs_cos_le_one])
-  have hzero := squeeze_zero_norm' hbound (by
-    simpa using (tendsto_inv_atTop_zero (𝕜 := ℝ)).const_mul (1 + |c|))
+  have hzero : Tendsto (fun y ↦ (cos y + c) / y) atTop (𝓝 0) :=
+    tendsto_bdd_div_atTop_nhds_zero (b := -1 + c) (B := 1 + c)
+      (.of_forall fun y ↦ by linarith [neg_one_le_cos y])
+      (.of_forall fun y ↦ by linarith [cos_le_one y]) tendsto_id
   simpa using tendsto_sineIntegral_atTop.add hzero
 
 /-! ### The tail bounds -/
@@ -211,15 +209,10 @@ theorem abs_pi_div_two_sub_sineIntegral_le {x : ℝ} (hx : 0 < x) :
 
 /-! ### The global maximum -/
 
-private theorem sinc_nonneg_of_mem_Icc {t : ℝ} (ht : t ∈ Icc 0 π) : 0 ≤ sinc t := by
-  rcases eq_or_ne t 0 with rfl | ht₀
-  · simp
-  · rw [sinc_of_ne_zero ht₀]
-    exact div_nonneg (sin_nonneg_of_nonneg_of_le_pi ht.1 ht.2) ht.1
-
 theorem sineIntegral_nonneg {x : ℝ} (hx : 0 ≤ x) : 0 ≤ sineIntegral x := by
   rcases le_or_gt x π with hxπ | hπx
-  · exact integral_nonneg hx fun t ht ↦ sinc_nonneg_of_mem_Icc ⟨ht.1, ht.2.trans hxπ⟩
+  · exact integral_nonneg hx fun t ht ↦
+      sinc_nonneg (abs_le.2 ⟨by linarith [pi_pos, ht.1], ht.2.trans hxπ⟩)
   have hx₀ : 0 < x := pi_pos.trans hπx
   have h := pi_div_two_sub_sineIntegral_le_one_add_cos_div hx₀
   have h₁ : (1 + cos x) / x ≤ 2 / x := by
@@ -242,7 +235,8 @@ theorem sineIntegral_le_sineIntegral_pi (x : ℝ) : sineIntegral x ≤ sineInteg
     linarith [sineIntegral_pi_nonneg]
   rcases le_or_gt x π with hxπ | hπx
   · rw [← sub_nonneg, ← integral_sinc_eq_sub]
-    exact integral_nonneg hxπ fun t ht ↦ sinc_nonneg_of_mem_Icc ⟨hx.trans ht.1, ht.2⟩
+    exact integral_nonneg hxπ fun t ht ↦
+      sinc_nonneg (abs_le.2 ⟨by linarith [pi_pos, ht.1], ht.2⟩)
   have hx₀ : 0 < x := pi_pos.trans hπx
   have h := antitoneOn_sineIntegral_add_cos_add_one_div pi_pos hx₀ hπx.le
   have hx₁ : 0 ≤ (cos x + 1) / x := div_nonneg (by linarith [neg_one_le_cos x]) hx₀.le
@@ -281,4 +275,4 @@ theorem abs_integral_sin_mul_div_le (T a b : ℝ) :
   have h₂ := abs_le.1 (abs_sineIntegral_le (T * a))
   exact abs_le.2 ⟨by linarith [h₁.1, h₂.2], by linarith [h₁.2, h₂.1]⟩
 
-end TauCeti.Real
+end Real
