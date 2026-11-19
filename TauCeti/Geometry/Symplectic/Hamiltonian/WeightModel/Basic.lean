@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import Mathlib.Geometry.Convex.Cone.Pointed
 public import Mathlib.Analysis.Convex.Extreme
+public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Instances.AddCircle.Defs
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Pow
@@ -110,8 +111,11 @@ span a cone containing a line, so that `0` is not an extreme point of the image,
   with `z_i ≠ 0`.
 * `TauCeti.finrank_range_weightInfinitesimalAction`: the orbit through `z` has dimension the rank
   of the weights `α_i` with `z_i ≠ 0`.
-* `TauCeti.weightRotation_eq_id_iff`: the kernel of the rotation action.
-* `TauCeti.exists_weightRotation_apply_eq_iff`: the orbits of the full rotation torus.
+* `TauCeti.weightRotation_eq_id_iff`: the kernel of the rotation action; in particular the
+  rotation by the arguments of `e^{i θ_j}` is the rotation by `θ`
+  (`TauCeti.weightRotation_arg_circleExp`).
+* `TauCeti.exists_weightRotation_apply_eq_iff`: the orbits of the full rotation torus, which
+  preserve the squared radius `‖q‖² + ‖p‖²` (`TauCeti.norm_fst_sq_add_norm_snd_sq_weightRotation`).
 * `TauCeti.torusRotation_add`, `TauCeti.torusRotation_apply_eq_self_iff`,
   `TauCeti.continuous_torusRotation`: `(ℝ / 2πℤ)^ι` acts continuously on `ℂ^ι` by rotations, and
   `θ` fixes `z` exactly when `θ_i = 0` for every `i` with `z_i ≠ 0`.
@@ -682,6 +686,16 @@ theorem weightRotation_eq_id_iff (θ : ι → ℝ) :
     rw [h, ContinuousLinearMap.id_apply]
   exact (weightRotation_apply_eq_self_iff θ _).1 hx j (Or.inl (by simp))
 
+/-- The rotation by the arguments of the unit complex numbers `e^{i θ_j}` is the rotation by the
+angles `θ`: rotations only depend on their angles modulo `2π`. -/
+theorem weightRotation_arg_circleExp (θ : ι → ℝ) :
+    weightRotation (fun j ↦ Complex.arg (Circle.exp (θ j))) = weightRotation θ := by
+  have h (j : ι) : ∃ k : ℤ, k * (2 * π) = Complex.arg (Circle.exp (θ j)) - θ j := by
+    obtain ⟨k, hk⟩ := Circle.exp_eq_exp.1 (Circle.exp_arg (Circle.exp (θ j)))
+    exact ⟨k, by linarith⟩
+  rw [← sub_add_cancel (fun j ↦ Complex.arg (Circle.exp (θ j))) θ, weightRotation_add,
+    (weightRotation_eq_id_iff (_ - θ)).2 h, ContinuousLinearMap.id_comp]
+
 /-- **Orbits of the rotation torus.** Some rotation of `ℂ^ι` carries `z` to `w` exactly when
 `|z_j| = |w_j|` for every `j`. -/
 theorem exists_weightRotation_apply_eq_iff (x y : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
@@ -714,6 +728,15 @@ theorem exists_weightRotation_apply_eq_iff (x y : EuclideanSpace ℝ ι × Eucli
       linear_combination h j
     choose θ hθ using hrot
     exact ⟨θ, by ext j <;> simp [hθ]⟩
+
+/-- Rotations preserve the squared radius `‖q‖² + ‖p‖²` of `ℂ^ι`. -/
+@[simp]
+theorem norm_fst_sq_add_norm_snd_sq_weightRotation (θ : ι → ℝ)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    ‖(weightRotation θ x).1‖ ^ 2 + ‖(weightRotation θ x).2‖ ^ 2 = ‖x.1‖ ^ 2 + ‖x.2‖ ^ 2 := by
+  have h := (exists_weightRotation_apply_eq_iff x (weightRotation θ x)).1 ⟨θ, rfl⟩
+  simp only [EuclideanSpace.real_norm_sq_eq]
+  rw [← Finset.sum_add_distrib, ← Finset.sum_congr rfl fun j _ ↦ h j, Finset.sum_add_distrib]
 
 /-- **Fixed points of the weight action.** A point of `ℂ^ι` is fixed by the action of every
 `ξ ∈ 𝔱` exactly when its coordinates `z_j` vanish along the nonzero weights `α_j`. -/
