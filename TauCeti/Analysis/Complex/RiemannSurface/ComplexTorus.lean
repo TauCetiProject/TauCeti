@@ -174,8 +174,8 @@ private theorem finite_fixingSubgroup_of_nonempty [IsZLattice ℝ L] (hn : n ≠
   -- Both maps fix `[p]`, so their translation parts agree modulo `L`.
   have hbb : b φ - b ψ ∈ L := by
     have := L.orbitRelQuotient_mk_eq_mk_iff.mp
-      (((hb φ p).symm.trans (apply_eq_of_mem_fixingSubgroup φ.2 hx)).trans
-        ((hb ψ p).symm.trans (apply_eq_of_mem_fixingSubgroup ψ.2 hx)).symm)
+      (((hb φ p).symm.trans (apply_eq_of_mem_fixingSubgroup φ.property hx)).trans
+        ((hb ψ p).symm.trans (apply_eq_of_mem_fixingSubgroup ψ.property hx)).symm)
     rw [hu] at this
     convert this using 1
     ring

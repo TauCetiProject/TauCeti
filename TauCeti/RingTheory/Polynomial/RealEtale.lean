@@ -188,7 +188,7 @@ theorem aeval_etaleTuple_snd (q : ℝ[X]) (p : {p : f.Factors // (p : ℝ[X]).na
 @[simp]
 theorem aeval_etaleTuple : aeval (etaleTuple f) f = 0 := by
   have h1 : (aeval (etaleTuple f) f).1 = 0 := by
-    funext x; rw [Pi.zero_apply, aeval_etaleTuple_fst]; exact x.2
+    funext x; rw [Pi.zero_apply, aeval_etaleTuple_fst]; exact x.property
   have h2 : (aeval (etaleTuple f) f).2 = 0 := by
     funext p
     rw [Pi.zero_apply, aeval_etaleTuple_snd]

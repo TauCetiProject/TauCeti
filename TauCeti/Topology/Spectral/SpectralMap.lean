@@ -89,13 +89,13 @@ theorem isSpectralMap_of_isTopologicalBasis {f : X → Y} {B : Set (Set Y)}
   -- Write `s` as a union of basis members, then extract a finite subcover from compactness.
   obtain ⟨S, hSB, rfl⟩ := hB.open_eq_sUnion hso
   obtain ⟨t, ht⟩ := hs.elim_finite_subcover (fun b : S ↦ (b : Set Y))
-    (fun b ↦ hB.isOpen (hSB b.2)) Set.sUnion_eq_iUnion.le
+    (fun b ↦ hB.isOpen (hSB b.property)) Set.sUnion_eq_iUnion.le
   -- The subcover is an equality: every member of `S` is contained in `⋃₀ S`.
   have heq : ⋃₀ S = ⋃ b ∈ t, (b : Set Y) := by
     refine subset_antisymm ht (Set.iUnion₂_subset fun b _ ↦ ?_)
-    exact Set.subset_sUnion_of_mem b.2
+    exact Set.subset_sUnion_of_mem b.property
   rw [heq, Set.preimage_iUnion₂]
-  exact t.isCompact_biUnion fun b _ ↦ hpre b (hSB b.2)
+  exact t.isCompact_biUnion fun b _ ↦ hpre b (hSB b.property)
 
 /-- Spectrality of the restriction of a map between subspaces is tested on compact open subsets of
 the ambient target: every compact open subset of `V` must pull back to a compact subset of `U`. -/
@@ -185,7 +185,7 @@ theorem _root_.IsOpen.exists_spectralSpace_subset_inter {V O : Set X} (hVo : IsO
   refine ⟨Subtype.val '' W', ?_, hemb.isOpenMap _ hW'o, ⟨_, hxW', rfl⟩,
     hW'c.image continuous_subtype_val, ?_⟩
   · rintro _ ⟨y, hy, rfl⟩
-    exact ⟨y.2, hW'O hy⟩
+    exact ⟨y.property, hW'O hy⟩
   · refine (hemb.isEmbedding.spectralSpace_preimage_iff (image_subset_range _ _)).mp ?_
     rw [preimage_image_eq W' Subtype.val_injective]
     have : CompactSpace W' := isCompact_iff_compactSpace.mp hW'c

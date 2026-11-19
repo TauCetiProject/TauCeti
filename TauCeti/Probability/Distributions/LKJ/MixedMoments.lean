@@ -91,8 +91,8 @@ theorem integral_prod_pow_partialCorrelationGram_pi_betaMeasure {p : ℕ}
     ∫ z, ∏ ij, partialCorrelationGram z ij.1 ij.2 ^ n ij
       ∂(Measure.pi fun ij ↦ (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)) =
       ∑ c : mulTransposeExpansionChoice n,
-        ∏ ij, if Even (mulTransposeExpansionPower c ij.1) then
-          beta (((mulTransposeExpansionPower c ij.1 : ℝ) + 1) / 2)
+        ∏ ij, if Even (mulTransposeExpansionPower c ij.val) then
+          beta (((mulTransposeExpansionPower c ij.val : ℝ) + 1) / 2)
               (a ij + partialCorrelationCholeskyMonomialResidualPower
                 (mulTransposeExpansionPower c) ij) /
             beta (1 / 2) (a ij)
@@ -114,8 +114,8 @@ theorem integral_prod_pow_coe_apply_lkjMeasure (p : ℕ) {η : ℝ} (hη : 0 < �
     ∫ R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
         ∏ ij, (R : Matrix (Fin p) (Fin p) ℝ) ij.1 ij.2 ^ n ij ∂(lkjMeasure p η) =
       ∑ c : mulTransposeExpansionChoice n,
-        ∏ ij, if Even (mulTransposeExpansionPower c ij.1) then
-          beta (((mulTransposeExpansionPower c ij.1 : ℝ) + 1) / 2)
+        ∏ ij, if Even (mulTransposeExpansionPower c ij.val) then
+          beta (((mulTransposeExpansionPower c ij.val : ℝ) + 1) / 2)
               (lkjPartialCorrelationShape p η ij +
                 partialCorrelationCholeskyMonomialResidualPower
                   (mulTransposeExpansionPower c) ij) /

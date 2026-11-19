@@ -249,9 +249,9 @@ noncomputable def bernsteinKernelBoundedContinuous (n : ℕ) {x : ℝ} (hx : 0 �
     ⟨1, fun p q => by
       rw [Real.dist_eq]
       have hp0 : 0 ≤ bernsteinKernel n x (p : ℝ) := bernsteinKernel_nonneg n x (p : ℝ)
-      have hp1 : bernsteinKernel n x (p : ℝ) ≤ 1 := bernsteinKernel_le_one hx p.2
+      have hp1 : bernsteinKernel n x (p : ℝ) ≤ 1 := bernsteinKernel_le_one hx p.property
       have hq0 : 0 ≤ bernsteinKernel n x (q : ℝ) := bernsteinKernel_nonneg n x (q : ℝ)
-      have hq1 : bernsteinKernel n x (q : ℝ) ≤ 1 := bernsteinKernel_le_one hx q.2
+      have hq1 : bernsteinKernel n x (q : ℝ) ≤ 1 := bernsteinKernel_le_one hx q.property
       exact abs_sub_le_iff.mpr ⟨by linarith, by linarith⟩⟩
 
 /-- The bundled Bernstein kernel evaluates to the unbundled kernel on `ℝ≥0`. -/
@@ -1405,7 +1405,7 @@ lemma integral_bernsteinKernel_sub_laplaceKernel_tendsto_zero_of_mass_bound
           apply integral_mono_of_nonneg
             (ae_of_all _ fun _ => norm_nonneg _) (integrable_const _)
           exact ae_of_all _ fun p => by
-            simpa [Real.norm_eq_abs] using le_of_lt (hN n hn (p : ℝ) p.2)
+            simpa [Real.norm_eq_abs] using le_of_lt (hN n hn (p : ℝ) p.property)
       _ = ε / (2 * max C 1) * ((σ n) univ).toReal := by
           simp [MeasureTheory.integral_const, smul_eq_mul, Measure.real, mul_comm]
       _ ≤ ε / (2 * max C 1) * max C 1 := by

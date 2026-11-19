@@ -139,8 +139,8 @@ private theorem exists_quotient_map_in_relation {p : ℕ} (hG : HasPGroupSolutio
   obtain ⟨k, hk, hkτ⟩ := Subgroup.mem_map.mp (QuotientGroup.eq.mp hquot)
   have hsg : s (h * k) = g := by
     rw [map_mul, hh, MonoidHom.mem_ker.mp hk, mul_one]
-  refine ⟨(h * k).1.1, ?_, ?_⟩
-  · have hm := (h * k).2
+  refine ⟨(h * k).val.1, ?_, ?_⟩
+  · have hm := (h * k).property
     rwa [← hsg, hs_apply, Prod.mk.eta]
   · have ht : τ (h * k) = γ g := by
       rw [map_mul, hkτ, mul_inv_cancel_left]

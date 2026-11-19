@@ -76,27 +76,27 @@ noncomputable def restrictOpenTangentSpace
   symm x v w := by
     rw [TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply,
       TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply]
-    exact g.symm x.1 _ _
+    exact g.symm x.val _ _
   pos x v hv := by
     rw [TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply]
-    exact g.pos x.1 _
+    exact g.pos x.val _
       ((TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x).toLinearEquiv.map_ne_zero_iff.mpr hv)
   continuousAt x := by
     have h : ContinuousAt (fun v : TangentSpace I x ↦
-        g.inner x.1 (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x v)
+        g.inner x.val (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x v)
           (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x v)) 0 :=
-      (g.continuousAt x.1).comp_of_eq
+      (g.continuousAt x.val).comp_of_eq
         (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x).continuousAt (map_zero _)
     simpa only [TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply] using h
   isVonNBounded x := by
     have heq : {v | TauCeti.Manifold.restrictOpenTangentSpaceBilinear g.inner U x v v < 1} =
         (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x).symm.toContinuousLinearMap ''
-          {v | g.inner x.1 v v < 1} := by
+          {v | g.inner x.val v v < 1} := by
       simp only [TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply,
         ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.image_symm_eq_preimage,
         Set.preimage_ofPred_eq]
     rw [heq]
-    exact (g.isVonNBounded x.1).image
+    exact (g.isVonNBounded x.val).image
       (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x).symm.toContinuousLinearMap
 
 /-- Restricting a Riemannian metric evaluates the ambient metric through the canonical tangent-space
@@ -171,7 +171,7 @@ theorem restrictOpenTangentSpace_eq_of_inner_eq
     (h : ∀ x ∈ U, g₁.inner x = g₂.inner x) :
     g₁.restrictOpenTangentSpace U = g₂.restrictOpenTangentSpace U := by
   ext x v w
-  simp only [restrictOpenTangentSpace_inner, h x x.2]
+  simp only [restrictOpenTangentSpace_inner, h x x.property]
 
 /-- Restricting a conformally rescaled metric `f g` to an open submanifold `U` equals rescaling
 the restricted metric by `f ∘ Subtype.val`. -/

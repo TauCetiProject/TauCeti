@@ -73,7 +73,7 @@ instance : (isCompleteSeparated.{u}).IsClosedUnderLimitsOfShape WalkingParallelP
       have hset : ((RingHom.eqLocus f.val g.val : Subring _) : Set (F.obj .zero)) =
           {x | f.val x = g.val x} := Set.ext fun _ ↦ RingHom.mem_eqLocus
       rw [hset]
-      exact isClosed_eq f.2 g.2
+      exact isClosed_eq f.property g.property
     exact ObjectProperty.prop_of_iso _
       (IsLimit.conePointsIsoOfNatIso (equalizerForkIsLimit f g) (limit.isLimit F)
         (diagramIsoParallelPair F).symm)

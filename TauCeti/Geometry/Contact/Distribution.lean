@@ -208,7 +208,7 @@ theorem SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution [ENat
     [IsManifold I (n + 1) M] {α : SmoothForm I M ℝ 1} :
     α.IsContactForm ↔ IsContactDistribution I n α.kerDistribution := by
   -- The kernel of `α` at `x` is all of `T_x M` exactly when `α_x = 0`.
-  have htop (x : M) : α.kerDistribution x ≠ ⊤ ↔ α.1 x ≠ 0 := by
+  have htop (x : M) : α.kerDistribution x ≠ ⊤ ↔ α.val x ≠ 0 := by
     rw [SmoothForm.kerDistribution_eq_ker, Ne, RoughForm.ker_eq_top_iff]
   rw [isContactForm_iff_forall_bijective_distributionLeviForm]
   exact ⟨fun h ↦ ⟨isContMDiffDistribution_kerDistribution fun x ↦ (h x).1,

@@ -309,7 +309,7 @@ theorem detLineChartEquiv_detLineCongr
       ← LinearEquiv.detLineCongr_trans]
     -- Both composites read a stabilized kernel vector `k` as `q' (Ψ k) = eG (q k)`.
     refine congrArg (fun e ↦ LinearEquiv.detLineCongr e a) (LinearEquiv.ext fun k ↦ ?_)
-    simp [hq k k.2]
+    simp [hq k k.property]
   | add a b ha hb => rw [LinearEquiv.map_add, LinearEquiv.map_add, ha, hb, LinearEquiv.map_add,
       LinearEquiv.map_add]
 
@@ -653,7 +653,7 @@ theorem eventually_detLineChartEquiv_symm_eq_smul {A₀ : E →L[ℝ] F}
   -- The transition on the open set `V` where both charts are valid, relative to its value at `A₀`.
   obtain ⟨c, hc, -, hcu⟩ := exists_continuous_detLineChartEquiv_symm_eq_smul
     (T := fun A : V ↦ (A : E →L[ℝ] F)) continuous_subtype_val (fun A ↦ hUinv A A.2.1)
-    (fun A ↦ hUinv' A A.2.2) ⟨A₀, hxV⟩
+    (fun A ↦ hUinv' A A.property.2) ⟨A₀, hxV⟩
   -- At `A₀` the transition agrees with itself, so its relative coefficient `c` is `1` there.
   have hc1 : c ⟨A₀, hxV⟩ = 1 := by
     have : Nontrivial (TauCeti.detLine ℝ G' ⊗[ℝ] Dual ℝ (TauCeti.detLine ℝ Λ')) :=

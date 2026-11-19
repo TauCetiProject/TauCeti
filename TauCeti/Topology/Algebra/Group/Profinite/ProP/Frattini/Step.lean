@@ -50,7 +50,7 @@ theorem proPFrattiniStep_eq_map_proPFrattini (hp : p.Prime) {H : Subgroup G}
     rw [← Set.range_comp]
     refine Set.ext fun x ↦ ⟨?_, ?_⟩
     · rintro ⟨y, rfl⟩
-      exact ⟨y, y.2, by simp⟩
+      exact ⟨y, y.property, by simp⟩
     · rintro ⟨y, hy, rfl⟩
       exact ⟨⟨y, hy⟩, by simp⟩
   rw [proPFrattini_eq_topologicalClosure hp,

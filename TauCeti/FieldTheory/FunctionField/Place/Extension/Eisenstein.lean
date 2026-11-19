@@ -242,7 +242,7 @@ theorem isEisensteinAt_map (P : Place k F) {ψ : Polynomial P.integers}
       h.leading (by rw [h0]; exact Submodule.zero_mem _)
     have hlc0 : (ψ.leadingCoeff : F) ≠ 0 := fun h0 => hlcne (Subtype.ext h0)
     have hnonneg : 0 ≤ P.ord (ψ.leadingCoeff : F) :=
-      P.mem_integers_iff_ord_nonneg.mp ψ.leadingCoeff.2
+      P.mem_integers_iff_ord_nonneg.mp ψ.leadingCoeff.property
     have hnotpos : ¬0 < P.ord (ψ.leadingCoeff : F) := fun hp =>
       h.leading ((P.mem_maximalIdeal_iff_ord_pos hlc0).mpr hp)
     rw [hlc]

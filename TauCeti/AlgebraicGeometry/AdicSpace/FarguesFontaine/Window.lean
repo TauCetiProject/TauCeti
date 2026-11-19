@@ -469,15 +469,15 @@ def spaYWindow (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ}
 @[simp]
 theorem mem_spaYWindow_iff (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ}))
     {n : ℕ} {v : spaY p ϖ} :
-    v ∈ spaYWindow ϖ hI n ↔ IsRadiusLowerBound p ϖ ((p : ℚ≥0) ^ (-(n : ℤ))) v.1 ∧
-      IsRadiusUpperBound p ϖ ((p : ℚ≥0) ^ (n : ℤ)) v.1 :=
-  ⟨fun h ↦ h.2, fun h ↦ ⟨v.2, h⟩⟩
+    v ∈ spaYWindow ϖ hI n ↔ IsRadiusLowerBound p ϖ ((p : ℚ≥0) ^ (-(n : ℤ))) v.val ∧
+      IsRadiusUpperBound p ϖ ((p : ℚ≥0) ^ (n : ℤ)) v.val :=
+  ⟨fun h ↦ h.2, fun h ↦ ⟨v.property, h⟩⟩
 
 /-- **The windows increase**: `W_m ⊆ W_n` for `m ≤ n`. -/
 theorem monotone_spaYWindow (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) :
     Monotone (spaYWindow ϖ hI) := fun m n hmn v hv ↦ by
   have hp : (1 : ℚ≥0) ≤ p := by exact_mod_cast (Fact.out : p.Prime).one_lt.le
-  have hspa := ((mem_spaY_iff p ϖ v.1).mp v.2).1
+  have hspa := ((mem_spaY_iff p ϖ v.val).mp v.property).1
   rw [mem_spaYWindow_iff] at hv ⊢
   exact ⟨hv.1.of_le hspa (zpow_le_zpow_right₀ hp (neg_le_neg (Nat.cast_le.mpr hmn))),
     hv.2.of_le hspa (zpow_le_zpow_right₀ hp (Nat.cast_le.mpr hmn))⟩
@@ -487,8 +487,8 @@ theorem iSup_spaYWindow (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmul
     ⨆ n, spaYWindow ϖ hI n = ⊤ := by
   refine eq_top_iff.mpr fun v _ ↦ ?_
   have hp : (1 : ℚ≥0) ≤ p := by exact_mod_cast (Fact.out : p.Prime).one_lt.le
-  have hspa := ((mem_spaY_iff p ϖ v.1).mp v.2).1
-  obtain ⟨m, hm, hm'⟩ := exists_isRadiusLowerBound_zpow hI v.2
+  have hspa := ((mem_spaY_iff p ϖ v.val).mp v.property).1
+  obtain ⟨m, hm, hm'⟩ := exists_isRadiusLowerBound_zpow hI v.property
   exact Opens.mem_iSup.mpr ⟨m.natAbs + 1, (mem_spaYWindow_iff hI).mpr
     ⟨hm.of_le hspa (zpow_le_zpow_right₀ hp (by omega)),
       hm'.of_le hspa (zpow_le_zpow_right₀ hp (by omega))⟩⟩

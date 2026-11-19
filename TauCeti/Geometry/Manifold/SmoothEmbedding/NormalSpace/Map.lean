@@ -163,13 +163,13 @@ On each fibre it is the normal map induced by the ambient differential. -/
 def normalBundleMap (hn : n ≠ 0) (hm : m ≠ 0) (h : v ∘ f = g ∘ u)
     (p : Bundle.TotalSpace K (fun x => f.NormalSpace x hn)) :
     Bundle.TotalSpace K' (fun x => g.NormalSpace x hm) :=
-  ⟨u p.proj, f.normalMap g hn hm (EventuallyEq.of_eq h) p.2⟩
+  ⟨u p.proj, f.normalMap g hn hm (EventuallyEq.of_eq h) p.snd⟩
 
 /-- The induced total map applies the normal map in each fibre. -/
 @[simp] theorem normalBundleMap_apply (hn : n ≠ 0) (hm : m ≠ 0) (h : v ∘ f = g ∘ u)
     (p : Bundle.TotalSpace K (fun x => f.NormalSpace x hn)) :
     f.normalBundleMap (K' := K') g hn hm h p =
-      ⟨u p.proj, f.normalMap g hn hm (EventuallyEq.of_eq h) p.2⟩ :=
+      ⟨u p.proj, f.normalMap g hn hm (EventuallyEq.of_eq h) p.snd⟩ :=
   (rfl)
 
 /-- The identity square induces the identity of the normal bundle. -/
@@ -230,7 +230,7 @@ theorem normalBundleMap_comp (hn : n ≠ 0) (hm : m ≠ 0) (hr : r ≠ 0)
   simp only [Function.comp_apply, normalBundleMap_apply]
   have hc := f.normalMap_comp g q hn hm hr (hv (f p.proj)) (hv' (g (u p.proj)))
     (EventuallyEq.of_eq h) (EventuallyEq.of_eq h')
-  exact congrArg (Bundle.TotalSpace.mk (u' (u p.proj))) (congrArg (fun L => L p.2) hc)
+  exact congrArg (Bundle.TotalSpace.mk (u' (u p.proj))) (congrArg (fun L => L p.snd) hc)
 
 end Composition
 

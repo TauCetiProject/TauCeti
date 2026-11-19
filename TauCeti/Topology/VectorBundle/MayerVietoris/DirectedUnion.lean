@@ -181,11 +181,11 @@ def isColimitMapCoconeSingularHomologyThomPairFiniteTrivializingUnion
     (fun K hcomp ↦ by
       obtain ⟨s, hs⟩ := IsCompact.exists_finset_subset_preimage_biUnion_baseSet
         (F := F) (E := E) (hcomp.image continuous_subtype_val)
-      exact ⟨s, fun p hp ↦ ⟨⟨p.1, hs (mem_image_of_mem _ hp), p.2⟩, by
+      exact ⟨s, fun p hp ↦ ⟨⟨p.val, hs (mem_image_of_mem _ hp), p.property⟩, by
         apply Subtype.ext
         have h := TopPair.Hom.w_apply
           ((thomPairFiniteTrivializingUnionCocone (F := F) (E := E)).ι.app s)
-          ⟨p.1, hs (mem_image_of_mem _ hp), p.2⟩
+          ⟨p.val, hs (mem_image_of_mem _ hp), p.property⟩
         rw [hfst s] at h
         exact h⟩⟩)
 
@@ -253,16 +253,16 @@ private theorem existsUnique_thomCover
     -- Compact subsets of the total space project into finitely many members of the cover.
     intro K hK
     have hproj := hK.image ((FiberBundle.continuous_proj F E).comp continuous_subtype_val)
-    obtain ⟨s, hs⟩ := hproj.elim_finite_subcover W hWo (by rintro _ ⟨v, _, rfl⟩; exact v.2)
-    refine ⟨s, fun v hv ↦ ⟨⟨v.1, hs ⟨v, hv, rfl⟩⟩, ?_⟩⟩
+    obtain ⟨s, hs⟩ := hproj.elim_finite_subcover W hWo (by rintro _ ⟨v, _, rfl⟩; exact v.property)
+    refine ⟨s, fun v hv ↦ ⟨⟨v.val, hs ⟨v, hv, rfl⟩⟩, ?_⟩⟩
     exact thomPairOverMap_fst_apply F E _ _
   have hsndK : ∀ K : Set c.pt.snd, IsCompact K →
       ∃ s, K ⊆ range (TopPair.Hom.snd (c.ι.app s)) := by
     -- The same argument applies to the complement of the zero section.
     intro K hK
     have hproj := hK.image ((FiberBundle.continuous_proj F E).comp continuous_subtype_val)
-    obtain ⟨s, hs⟩ := hproj.elim_finite_subcover W hWo (by rintro _ ⟨v, _, rfl⟩; exact v.2.1)
-    refine ⟨s, fun v hv ↦ ⟨⟨v.1, hs ⟨v, hv, rfl⟩, v.2.2⟩, ?_⟩⟩
+    obtain ⟨s, hs⟩ := hproj.elim_finite_subcover W hWo (by rintro _ ⟨v, _, rfl⟩; exact v.property.1)
+    refine ⟨s, fun v hv ↦ ⟨⟨v.val, hs ⟨v, hv, rfl⟩, v.property.2⟩, ?_⟩⟩
     exact thomPairOverMap_snd_apply F E _ _
   exact TopPair.existsUnique_singularCohomology_of_directedUnion R M c
     (fun s ↦ by

@@ -219,7 +219,7 @@ theorem riemannianVolume_image_of_inner_mfderiv [LindelofSpace M] [LindelofSpace
     rwa [Measure.comap_apply _ hinj.injective hf _ MeasurableSet.univ, hι.comap_apply,
       image_univ, image_univ, Set.range_domRestrict, Subtype.range_coe] at h'
   refine Measure.ext_of_biUnion_eq_univ (s := fun x ↦ (Subtype.val : s → M) ⁻¹' V x) hTc
-    (by rw [← preimage_iUnion₂]; exact eq_univ_of_forall fun y ↦ hcover y.2)
+    (by rw [← preimage_iUnion₂]; exact eq_univ_of_forall fun y ↦ hcover y.property)
     fun x _ ↦ ?_
   ext t ht
   have htV : MeasurableSet (t ∩ Subtype.val ⁻¹' V x) :=

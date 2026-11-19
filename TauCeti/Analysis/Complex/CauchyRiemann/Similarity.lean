@@ -121,7 +121,7 @@ private theorem cauchySource_of_mem {c : ℂ} {r : ℝ} (D : ℂ → E →L[ℂ]
 private theorem cauchySource_of_notMem {c : ℂ} {r : ℝ} (D : ℂ → E →L[ℂ] E)
     (Ψ : C(closedBall c r, E →L[ℂ] E)) {z : ℂ} (hz : z ∉ closedBall c r) :
     cauchySource D Ψ z = 0 := by
-  rw [cauchySource, extend_apply' _ _ _ fun ⟨w, hw⟩ ↦ hz (hw ▸ w.2)]
+  rw [cauchySource, extend_apply' _ _ _ fun ⟨w, hw⟩ ↦ hz (hw ▸ w.property)]
   simp
 
 private theorem support_cauchySource_subset {c : ℂ} {r : ℝ} (D : ℂ → E →L[ℂ] E)
@@ -246,7 +246,7 @@ private theorem exists_cauchyTransform_eq [FiniteDimensional ℂ E] {D : ℂ →
     simp only [op, ContinuousMap.coe_mk, dist_eq_norm, add_sub_add_left_eq_sub, ← Pi.sub_apply,
       cauchyTransform_cauchySource_sub hq hD]
     rw [dist_eq_norm Ψ Ψ']
-    exact hTΨ (Ψ - Ψ') w.2
+    exact hTΨ (Ψ - Ψ') w.property
   set Ψ₀ := ContractingWith.fixedPoint op hop
   set g := cauchySource D Ψ₀ with hg
   have hfix : op Ψ₀ = Ψ₀ := ContractingWith.fixedPoint_isFixedPt hop
@@ -256,8 +256,8 @@ private theorem exists_cauchyTransform_eq [FiniteDimensional ℂ E] {D : ℂ →
   have hnorm : ‖Ψ₀‖ ≤ 4 / 3 := by
     have h1 : ‖Ψ₀‖ ≤ 1 + 4⁻¹ * ‖Ψ₀‖ := by
       refine (ContinuousMap.norm_le _ (by positivity)).2 fun w ↦ ?_
-      rw [hΨ₀ w w.2]
-      exact (norm_add_le _ _).trans (add_le_add ContinuousLinearMap.norm_id_le (hTΨ Ψ₀ w.2))
+      rw [hΨ₀ w w.property]
+      exact (norm_add_le _ _).trans (add_le_add ContinuousLinearMap.norm_id_le (hTΨ Ψ₀ w.property))
     linarith
   refine ⟨g, (memLp_cauchySource hD Ψ₀).1, support_cauchySource_subset D Ψ₀, hcont Ψ₀,
     fun z hz ↦ ?_, fun z hz ↦ ?_⟩

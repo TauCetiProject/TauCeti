@@ -143,9 +143,9 @@ noncomputable def algHomEquiv (f : R[X]) :
   toFun φ := ⟨φ (root f), by rw [← algHom_mk, mk_self, map_zero]⟩
   -- `AdjoinRoot.liftAlgHom` asks for a commutative target, so the inverse uses
   -- `Ideal.Quotient.liftₐ` instead.
-  invFun x := Ideal.Quotient.liftₐ _ (aeval x.1) fun p hp ↦ by
+  invFun x := Ideal.Quotient.liftₐ _ (aeval x.val) fun p hp ↦ by
     obtain ⟨q, rfl⟩ := Ideal.mem_span_singleton'.mp hp
-    rw [map_mul, x.2, mul_zero]
+    rw [map_mul, x.property, mul_zero]
   left_inv φ := algHom_ext <| (Ideal.Quotient.lift_mk _ _ _).trans (aeval_X _)
   right_inv x := Subtype.ext <| (Ideal.Quotient.lift_mk _ _ _).trans (aeval_X _)
 

@@ -138,7 +138,7 @@ def cyclicDistanceCutRepeatFirst {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + 2) �
     (h₀ : δ 0 ≤ δ' 0) (h₁ : 0 ≤ δ' 1)
     (h : ∀ i : Fin n, δ i.succ ≤ δ' i.succ.succ) :
     C(cyclicDistanceCut (X := X) δ, cyclicDistanceCut (X := X) δ') where
-  toFun q := ⟨Fin.cons (q.1 0) q.1, cons_mem_cyclicDistanceCut h₀ h₁ h q.2⟩
+  toFun q := ⟨Fin.cons (q.val 0) q.val, cons_mem_cyclicDistanceCut h₀ h₁ h q.property⟩
   continuous_toFun :=
     (((continuous_apply 0).comp continuous_subtype_val).finCons (A := fun _ ↦ X)
       continuous_subtype_val).subtype_mk _
@@ -147,7 +147,7 @@ def cyclicDistanceCutRepeatFirst {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + 2) �
 theorem coe_cyclicDistanceCutRepeatFirst_apply {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + 2) → ℝ}
     (h₀ : δ 0 ≤ δ' 0) (h₁ : 0 ≤ δ' 1)
     (h : ∀ i : Fin n, δ i.succ ≤ δ' i.succ.succ) (q : cyclicDistanceCut (X := X) δ) :
-    (cyclicDistanceCutRepeatFirst h₀ h₁ h q : Fin (n + 2) → X) = Fin.cons (q.1 0) q.1 :=
+    (cyclicDistanceCutRepeatFirst h₀ h₁ h q : Fin (n + 2) → X) = Fin.cons (q.val 0) q.val :=
   (rfl)
 
 /-- Repeating the first vertex is an embedding of distance cuts: forgetting the first vertex is a
@@ -158,7 +158,7 @@ theorem isEmbedding_cyclicDistanceCutRepeatFirst {δ : Fin (n + 1) → ℝ} {δ'
     IsEmbedding (cyclicDistanceCutRepeatFirst (X := X) h₀ h₁ h) := by
   refine IsEmbedding.of_comp (map_continuous _)
     continuous_subtype_val.finTail ?_
-  have hcomp : (fun p : cyclicDistanceCut (X := X) δ' ↦ Fin.tail p.1) ∘
+  have hcomp : (fun p : cyclicDistanceCut (X := X) δ' ↦ Fin.tail p.val) ∘
       cyclicDistanceCutRepeatFirst h₀ h₁ h = Subtype.val := by
     funext q
     simp
@@ -177,7 +177,8 @@ theorem range_cyclicDistanceCutRepeatFirst {δ : Fin (n + 1) → ℝ} {δ' : Fin
     rw [← hq]
     refine ⟨?_, ?_⟩
     · simp [Fin.cons_one]
-    · simpa only [mem_preimage, coe_cyclicDistanceCutRepeatFirst_apply, Fin.tail_cons] using q.2
+    · simpa only [mem_preimage, coe_cyclicDistanceCutRepeatFirst_apply,
+        Fin.tail_cons] using q.property
   · rintro ⟨h01, htail⟩
     refine ⟨⟨Fin.tail p, htail⟩, Subtype.ext ?_⟩
     have h0 : Fin.tail p 0 = p 0 := by

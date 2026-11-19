@@ -104,7 +104,7 @@ theorem coe_leviPointsIso_hom_app_apply (l : H →ₐc[R] LaurentPolynomial R)
 theorem quotientPointsHom_leviPointsIso_inv_app_apply
     (l : H →ₐc[R] LaurentPolynomial R) (A : CommAlgCat.{w} R) (g : levi A l) :
     CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H)
-        (leviDefiningHopfIdeal l) A ((leviPointsIso l).inv.app A g) = g.1 := by
+        (leviDefiningHopfIdeal l) A ((leviPointsIso l).inv.app A g) = g.val := by
   unfold leviPointsIso
   exact CommHopfAlgCat.quotientPointsHom_quotientPointsSubgroupRepresentingIso_inv_app_apply
     (_root_.CommHopfAlgCat.of R H) (leviDefiningHopfIdeal l) (fun A ↦ levi A l) _ A g

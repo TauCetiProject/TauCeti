@@ -214,21 +214,22 @@ theorem card_topRow_rowWeight_succ (l w : Fin (n + 1) → ℤ) :
       else 0 := by
   split_ifs with hsum
   · have e₂ := Equiv.subtypeEquiv (truncateSigmaEquiv l)
-      (p := fun P => P.1.rowWeight = w) (q := fun x => x.2.1.rowWeight = Fin.init w) fun P => by
+      (p := fun P => P.val.rowWeight = w) (q := fun x => x.2.val.rowWeight = Fin.init w) fun P => by
         rw [truncateSigmaEquiv_apply_snd_coe]
         refine ⟨fun hp => funext fun r => by rw [rowWeight_truncate, hp, Fin.init_def],
           fun hq => funext <| Fin.lastCases ?_ fun j => by
             rw [← rowWeight_truncate, hq, Fin.init_def]⟩
-        have hPsum := P.1.sum_rowWeight
-        rw [P.2, ← hsum, Fin.sum_univ_castSucc, Fin.sum_univ_castSucc] at hPsum
-        have hinit : (∑ j : Fin n, P.1.rowWeight j.castSucc) = ∑ j : Fin n, w j.castSucc :=
+        have hPsum := P.val.sum_rowWeight
+        rw [P.property, ← hsum, Fin.sum_univ_castSucc, Fin.sum_univ_castSucc] at hPsum
+        have hinit : (∑ j : Fin n, P.val.rowWeight j.castSucc) = ∑ j : Fin n, w j.castSucc :=
           Finset.sum_congr rfl fun j _ => by rw [← rowWeight_truncate, hq, Fin.init_def]
         linarith
     have e₃ : {x : Σ m : interlacingFinset l, {Q : GTPattern n // Q.topRow = (m : Fin n → ℤ)} //
-          x.2.1.rowWeight = Fin.init w} ≃
+          x.2.val.rowWeight = Fin.init w} ≃
         Σ m : interlacingFinset l,
           {Q : GTPattern n // Q.topRow = (m : Fin n → ℤ) ∧ Q.rowWeight = Fin.init w} :=
-      { toFun x := ⟨x.1.1, ⟨x.1.2.1, x.1.2.2, x.2⟩⟩, invFun y := ⟨⟨y.1, ⟨y.2.1, y.2.2.1⟩⟩, y.2.2.2⟩,
+      { toFun x := ⟨x.val.1, ⟨x.val.2.val, x.val.2.property, x.property⟩⟩, invFun y := ⟨⟨y.1,
+          ⟨y.2.val, y.2.property.1⟩⟩, y.2.property.2⟩,
         left_inv _ := rfl, right_inv _ := rfl }
     rw [Nat.card_congr <| (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm.trans (e₂.trans e₃),
       Nat.card_sigma]
@@ -253,8 +254,9 @@ theorem card_topRow_rowWeight_two (l w : Fin 2 → ℤ) :
     Nat.card {P : GTPattern 2 // P.topRow = l ∧ P.rowWeight = w} =
       if w 0 + w 1 = l 0 + l 1 ∧ l 1 ≤ w 0 ∧ w 0 ≤ l 0 then 1 else 0 := by
   have : Subsingleton {P : GTPattern 2 // P.topRow = l ∧ P.rowWeight = w} :=
-    ⟨fun P Q => Subtype.ext (eq_of_topRow_eq_of_rowWeight_eq_two (P.2.1.trans Q.2.1.symm)
-      (P.2.2.trans Q.2.2.symm))⟩
+    ⟨fun P Q => Subtype.ext (eq_of_topRow_eq_of_rowWeight_eq_two
+        (P.property.1.trans Q.property.1.symm)
+      (P.property.2.trans Q.property.2.symm))⟩
   split_ifs with hcond
   · obtain ⟨hsum, hlo, hhi⟩ := hcond
     let Q₁ : GTPattern 1 := equivOne.symm ![w 0]

@@ -266,7 +266,7 @@ theorem toX_ιL (k : ℕ) (w : (stage s₀ a Φ k).W) :
 theorem monotone_Z : Monotone Z :=
   monotone_nat_of_le_succ fun k z hz ↦ by
     have h : (Φ k (adjInr (a k) ⟨z, hz⟩) : X) = z := hΦ k ⟨z, hz⟩
-    exact h ▸ (Φ k (adjInr (a k) ⟨z, hz⟩)).2
+    exact h ▸ (Φ k (adjInr (a k) ⟨z, hz⟩)).property
 
 theorem exists_homotopyEquiv (hZX : ⋃ k, Z k = univ) (hZc : IsCoherentWith (range Z))
     (hZH : ∀ k, HasHomotopyExtensionProperty ((↑) ⁻¹' Z k : Set (Z (k + 1)))) :

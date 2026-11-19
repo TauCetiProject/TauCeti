@@ -286,15 +286,15 @@ def extChartAtDiffeomorph [I.Boundaryless] [IsManifold I n M] (x : M) :
     chartSourceOpens H x ≃ₘ^n⟮I, 𝓘(𝕜, E)⟯ extChartTargetOpens I x where
   toFun p := ⟨extChartAt I x p, (extChartAt I x).map_source (by
     rw [extChartAt_source]
-    exact p.2)⟩
+    exact p.property)⟩
   invFun z := ⟨(extChartAt I x).symm z, by
-    have h := (extChartAt I x).map_target z.2
+    have h := (extChartAt I x).map_target z.property
     rw [extChartAt_source] at h
     exact h⟩
   left_inv p := Subtype.ext <| (extChartAt I x).left_inv (by
     rw [extChartAt_source]
-    exact p.2)
-  right_inv z := Subtype.ext <| (extChartAt I x).right_inv z.2
+    exact p.property)
+  right_inv z := Subtype.ext <| (extChartAt I x).right_inv z.property
   contMDiff_toFun := (ContMDiff.subtypeVal_comp_iff (extChartTargetOpens I x) _).mp
     ((contMDiffOn_extChartAt (x := x)).comp_contMDiff contMDiff_subtype_val fun p ↦ p.2)
   contMDiff_invFun := (ContMDiff.subtypeVal_comp_iff (chartSourceOpens H x) _).mp

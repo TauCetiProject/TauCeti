@@ -111,9 +111,9 @@ theorem exists_isPreconnected_isBicollar [LocallyConnectedSpace N] (h : IsLocall
   have hVW : V ⊆ W := connectedComponentIn_subset _ _
   have hVU : V ⊆ U := fun y hy => by
     obtain ⟨z, -, rfl⟩ := hVW hy
-    exact z.2
+    exact z.property
   have hVu : ∀ y : V, inclusion hVU y ∈ u := fun y => by
-    obtain ⟨z, hz, hzy⟩ := hVW y.2
+    obtain ⟨z, hz, hzy⟩ := hVW y.property
     obtain rfl : z = inclusion hVU y := Subtype.ext hzy
     exact interior_subset hz
   -- The new depth coordinate: `ℝ` reparametrized as `(-ε, ε)`.

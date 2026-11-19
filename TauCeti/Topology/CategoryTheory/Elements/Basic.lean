@@ -145,16 +145,17 @@ theorem continuous_target_iff :
 in `C` is. -/
 theorem continuous_comp
     (hc : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
-      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total C)) :
+      (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ : Quiver.Total
+          C)) :
     Continuous fun p : {p : Quiver.Total F.Elements × Quiver.Total F.Elements //
         p.1.right = p.2.left} ↦
-      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ :
+      (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ :
         Quiver.Total F.Elements) := by
   let π := fun a : Quiver.Total F.Elements ↦
     (⟨a.left.obj, a.right.obj, a.hom.hom⟩ : Quiver.Total C)
   let g := fun p : {p : Quiver.Total F.Elements × Quiver.Total F.Elements //
       p.1.right = p.2.left} ↦
-    (⟨(π p.1.1, π p.1.2), congrArg Functor.Elements.obj p.2⟩ :
+    (⟨(π p.val.1, π p.val.2), congrArg Functor.Elements.obj p.property⟩ :
       {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left})
   have hg : Continuous g :=
     ((continuous_total_π.comp (continuous_fst.comp continuous_subtype_val)).prodMk

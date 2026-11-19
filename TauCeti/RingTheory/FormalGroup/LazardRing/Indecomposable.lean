@@ -358,7 +358,7 @@ private theorem toCotangent_smul_eq_augmentation_smul (c : LazardRing) (y : augm
     augmentationIdeal.toCotangent (c • y) = augmentation c • augmentationIdeal.toCotangent y := by
   have hc : c - (augmentation c : LazardRing) ∈ augmentationIdeal := by simp
   rw [← map_zsmul, augmentationIdeal.toCotangent_eq, pow_two]
-  convert Ideal.mul_mem_mul hc y.2 using 1
+  convert Ideal.mul_mem_mul hc y.property using 1
   simp [sub_mul, zsmul_eq_mul]
 
 /-- The classes of the generators `xₙ` span `I ⧸ I²` over `ℤ`. -/

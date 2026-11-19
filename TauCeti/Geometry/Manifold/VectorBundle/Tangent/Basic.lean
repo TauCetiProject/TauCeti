@@ -212,7 +212,7 @@ this describes the tangent-bundle charts completely. -/
 @[simp, mfld_simps]
 theorem coe_chartAt_snd [IsManifold I 1 M] {p q : TangentBundle I M} :
     (chartAt (ModelProd H E) q p).2 =
-      tangentCoordChange I p.1 q.1 p.1 p.2 := by
+      tangentCoordChange I p.proj q.proj p.proj p.snd := by
   -- After unfolding the tangent-bundle chart, the fibre-to-model-space conversion is
   -- definitionally the tangent coordinate change; no separate conversion lemma is needed.
   rw [TangentBundle.chartAt]
@@ -268,7 +268,7 @@ theorem symmL_trivializationAt_self (x : M) (v : E) :
 fibres through the tangent coordinate change from the chart at `v.proj` to itself, which is the
 identity at `v.proj`. -/
 theorem extChartAt_tangent_self_snd (v : TangentBundle I M) :
-    (extChartAt I.tangent v v).2 = v.2 := by
+    (extChartAt I.tangent v v).2 = v.snd := by
   simp only [extChartAt_coe, Function.comp_apply, modelWithCorners_prod_coe, Prod.map_snd,
     modelWithCornersSelf_coe, id_eq, TangentBundle.coe_chartAt_snd]
   exact tangentCoordChange_self (mem_extChartAt_source v.proj)
@@ -483,9 +483,9 @@ private theorem extChartAt_tangent_symm_trans_eq [IsManifold I 1 M] (z q : Tange
     have h := congrArg Prod.fst hright
     change extChartAt I z.proj b.proj = a.1 at h
     exact h
-  have hfiber : tangentCoordChange I b.proj z.proj b.proj b.2 = a.2 := by
+  have hfiber : tangentCoordChange I b.proj z.proj b.proj b.snd = a.2 := by
     have h := congrArg Prod.snd hright
-    change tangentCoordChange I b.proj z.proj b.proj b.2 = a.2 at h
+    change tangentCoordChange I b.proj z.proj b.proj b.snd = a.2 at h
     exact h
   have hy : (extChartAt I z.proj).symm a.1 = b.proj := by
     rw [← hbase]
@@ -494,11 +494,11 @@ private theorem extChartAt_tangent_symm_trans_eq [IsManifold I 1 M] (z q : Tange
       tangentCoordChange I z.proj q.proj b.proj a.2 := by
     rw [← hfiber]
     have hcomp := tangentCoordChange_comp (I := I) (w := b.proj) (x := z.proj)
-      (y := q.proj) (z := b.proj) (v := b.2)
+      (y := q.proj) (z := b.proj) (v := b.snd)
       ⟨⟨mem_extChartAt_source b.proj, hbz⟩, hbq⟩
     -- The domain and codomain tangent spaces are modelled by `E`; expose that representation to
     -- apply the coordinate-change composition theorem.
-    change tangentCoordChange I b.proj q.proj b.proj b.2 = _
+    change tangentCoordChange I b.proj q.proj b.proj b.snd = _
     exact hcomp.symm
   -- Compare the two product coordinates separately.
   apply Prod.ext
@@ -882,7 +882,7 @@ ambient tangent vectors through `tangentSpaceOpenEquiv`. -/
 theorem tangentMap_subtype_val {U : Opens M}
     (p : TangentBundle I U) :
     tangentMap I I (Subtype.val : U → M) p =
-      ⟨(p.proj : M), tangentSpaceOpenEquiv (I := I) p.proj p.2⟩ := by
+      ⟨(p.proj : M), tangentSpaceOpenEquiv (I := I) p.proj p.snd⟩ := by
   simp only [tangentMap, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe]
 
 section RestrictOpen
@@ -1050,8 +1050,8 @@ theorem contMDiffAt_restrictOpenTangentSpaceBilinear [IsManifold I 1 M] {n : ℕ
     (trivializationAt E (TangentSpace I : U → Type _) x).open_baseSet.mem_nhds
       (mem_baseSet_trivializationAt E (TangentSpace I : U → Type _) x),
     continuousAt_subtype_val.eventually
-      ((trivializationAt E (TangentSpace I : M → Type _) x.1).open_baseSet.mem_nhds
-        (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) x.1)),
+      ((trivializationAt E (TangentSpace I : M → Type _) x.val).open_baseSet.mem_nhds
+        (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) x.val)),
     eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq (I := I) x] with y hyU hyM hsymm
   have hyU' : y ∈ (chartAt H x).source := by simpa using hyU
   have hyM' : (y : M) ∈ (chartAt H (x : M)).source := hyM

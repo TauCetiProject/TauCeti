@@ -192,7 +192,7 @@ theorem natCard_H2_sq_le_natCard_H2_ker (χ : G →ₜ* Multiplicative (ZMod p))
       proj_surjective := fun x ↦ by
         obtain ⟨f, hf⟩ := CharacterExtension.coindTrace_surjective χ htriv hN hNker hχ x
         exact ⟨f, (hT f).trans hf⟩
-      exact := fun f ↦ ⟨fun hf ↦ ⟨⟨f, hf⟩, rfl⟩, by rintro ⟨a, rfl⟩; exact a.2⟩ }
+      exact := fun f ↦ ⟨fun hf ↦ ⟨⟨f, hf⟩, rfl⟩, by rintro ⟨a, rfl⟩; exact a.property⟩ }
   -- `Coind_N^G 𝔽_p`, hence `K`, is killed by `p`
   have hp0 : ∀ f : DiscreteCoind G N (ZMod p), p • f = 0 :=
     DiscreteCoind.nsmul_eq_zero (ZModModule.char_nsmul_eq_zero p)

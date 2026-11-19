@@ -330,7 +330,7 @@ private theorem openCell_cwComplexOfIsColimit {n : ℕ}
         (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc)) n j =
       @openCell c.pt _ (range (c.ι.app (towerCell hF hι hc n j).1)) ∅
         (@CWComplex.instRelCWComplex _ _ _ (stageCWComplex hF hc _)) n
-        (towerCell hF hι hc n j).2.1 := by
+        (towerCell hF hι hc n j).2.val := by
   let := fun k ↦ stageCWComplex hF hc k
   have hj : @IsClosedEmbedding.relCWComplexCellEquiv c.pt c.pt _ _ id .id _ ∅
       (@CWComplex.instRelCWComplex _ _ _ (towerCWComplex hF hι hc)) univ ∅
@@ -362,7 +362,7 @@ def cwComplexOfIsColimitSubcomplex (k : ℕ) :
       rw [empty_union, ← iUnion_openCell_towerNewCell_of_le
         (W := fun k ↦ (range (c.ι.app k) : Set c.pt)) (coe_map_stageCellMap hF hι hc) k]
       refine iUnion_congr fun n ↦ ((towerCell hF hι hc n).subtypeEquiv fun j ↦ ?_).iSup_congr
-        fun j ↦ (openCell_cwComplexOfIsColimit hF hι hc j.1).symm
+        fun j ↦ (openCell_cwComplexOfIsColimit hF hι hc j.val).symm
       rw [mem_ofPred_eq, cwComplexOfIsColimitCellStage_eq] }
 
 /-- The subcomplex of the colimit given by the stage `F k` is the range of `F k`. -/

@@ -223,7 +223,7 @@ private theorem mem_closedAnnulus_inner {ζ : ℂ} (hζ : ‖ζ‖ = 1) (w : Clo
     simp [im_capIm]
   rw [mem_closedAnnulus, norm_ofReal_mul_mul_exp hr₁.out.le hζ, him]
   constructor
-  · exact le_mul_of_one_le_right hr₁.out.le (Real.one_le_exp (le_min w.2 hL))
+  · exact le_mul_of_one_le_right hr₁.out.le (Real.one_le_exp (le_min w.property hL))
   · calc r₁ * Real.exp (min (w : ℂ).im (Real.log (r₂ / r₁)))
         ≤ r₁ * Real.exp (Real.log (r₂ / r₁)) :=
           mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 (min_le_right _ _)) hr₁.out.le
@@ -242,7 +242,7 @@ private theorem mem_closedAnnulus_outer {ζ : ℂ} (hζ : ‖ζ‖ = 1) (w : Clo
       _ ≤ r₂ * Real.exp (-min (w : ℂ).im (Real.log (r₂ / r₁))) :=
           mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 (neg_le_neg (min_le_right _ _))) hr₂.le
   · exact mul_le_of_le_one_right hr₂.le
-      (Real.exp_le_one_iff.2 (neg_nonpos.2 (le_min w.2 hL)))
+      (Real.exp_le_one_iff.2 (neg_nonpos.2 (le_min w.property hL)))
 
 omit hr₁₂ in
 /-- The inner chart has nonnegative imaginary part on the closed annulus. -/

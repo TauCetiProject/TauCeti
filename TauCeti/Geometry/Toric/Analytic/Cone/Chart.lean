@@ -255,8 +255,8 @@ noncomputable def coneChartAmbientHomeomorph (g : AddGeneratingFamily (dualSemig
   let _ := affinePointTopology g
   let ambientValueHomeomorph :
       ((Fin k → ℂ) × (Fin l → {z : ℂ // z ≠ 0})) ≃ₜ {z // z ∈ mixedChartDomain k l} :=
-    { toFun := fun z ↦ ⟨(z.1, fun c ↦ z.2 c), mem_mixedChartDomain.2 fun c ↦ (z.2 c).2⟩
-      invFun := fun z ↦ (z.1.1, fun c ↦ ⟨z.1.2 c, mem_mixedChartDomain.1 z.2 c⟩)
+    { toFun := fun z ↦ ⟨(z.1, fun c ↦ z.2 c), mem_mixedChartDomain.2 fun c ↦ (z.2 c).property⟩
+      invFun := fun z ↦ (z.val.1, fun c ↦ ⟨z.val.2 c, mem_mixedChartDomain.1 z.property c⟩)
       left_inv := fun z ↦ rfl
       right_inv := fun z ↦ rfl
       continuous_toFun := by
@@ -274,7 +274,7 @@ noncomputable def coneChartAmbientHomeomorph (g : AddGeneratingFamily (dualSemig
 @[simp]
 theorem coneChartAmbientHomeomorph_apply (g : AddGeneratingFamily (dualSemigroup hi σ) s)
     (x : AffineSemigroupComplexPoint (dualSemigroup hi σ)) :
-    (coneChartAmbientHomeomorph hi hσ hB κ g x).1 = coneChartAmbient hi hσ hB κ x :=
+    (coneChartAmbientHomeomorph hi hσ hB κ g x).val = coneChartAmbient hi hσ hB κ x :=
   by
     have hRay : (Homeomorph.piCongrLeft κ) (coneChartEquiv hi hσ hB x).1 =
         fun a ↦ (coneChartEquiv hi hσ hB x).1 (κ.symm a) := by
@@ -318,29 +318,29 @@ theorem coneChartAmbientHomeomorph_symm_apply
     @Homeomorph.symm _ _ (affinePointTopology g) instTopologicalSpaceSubtype
         (coneChartAmbientHomeomorph hi hσ hB κ g) z =
       (coneChartEquiv hi hσ hB).symm
-        (fun ρ ↦ z.1.1 (κ ρ), fun c ↦
-          Units.mk0 (z.1.2 c) (mem_mixedChartDomain.1 z.2 c)) :=
+        (fun ρ ↦ z.val.1 (κ ρ), fun c ↦
+          Units.mk0 (z.val.2 c) (mem_mixedChartDomain.1 z.property c)) :=
   by
     have hUnits :
         (Homeomorph.piCongrRight fun _ : Fin l ↦
             (unitsHomeomorphNeZero (G₀ := ℂ)).symm)
-            (fun c ↦ ⟨z.1.2 c, mem_mixedChartDomain.1 z.2 c⟩) =
-          fun c ↦ Units.mk0 (z.1.2 c) (mem_mixedChartDomain.1 z.2 c) := by
+            (fun c ↦ ⟨z.val.2 c, mem_mixedChartDomain.1 z.property c⟩) =
+          fun c ↦ Units.mk0 (z.val.2 c) (mem_mixedChartDomain.1 z.property c) := by
       funext c
       apply Units.ext
       rw [Homeomorph.piCongrRight_apply]
       have h := congrArg Subtype.val
         ((unitsHomeomorphNeZero (G₀ := ℂ)).apply_symm_apply
-          ⟨z.1.2 c, mem_mixedChartDomain.1 z.2 c⟩)
+          ⟨z.val.2 c, mem_mixedChartDomain.1 z.property c⟩)
       rw [unitsHomeomorphNeZero] at h
       exact h
     have hPair :
-        ((Homeomorph.piCongrLeft κ).symm z.1.1,
+        ((Homeomorph.piCongrLeft κ).symm z.val.1,
             (Homeomorph.piCongrRight fun _ : Fin l ↦
               (unitsHomeomorphNeZero (G₀ := ℂ)).symm)
-              (fun c ↦ ⟨z.1.2 c, mem_mixedChartDomain.1 z.2 c⟩)) =
-          (fun ρ ↦ z.1.1 (κ ρ), fun c ↦
-            Units.mk0 (z.1.2 c) (mem_mixedChartDomain.1 z.2 c)) := by
+              (fun c ↦ ⟨z.val.2 c, mem_mixedChartDomain.1 z.property c⟩)) =
+          (fun ρ ↦ z.val.1 (κ ρ), fun c ↦
+            Units.mk0 (z.val.2 c) (mem_mixedChartDomain.1 z.property c)) := by
       rw [hUnits]
       rfl
     simpa [coneChartAmbientHomeomorph] using

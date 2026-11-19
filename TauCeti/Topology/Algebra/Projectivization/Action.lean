@@ -60,7 +60,7 @@ instance instContinuousSMul : ContinuousSMul G (ℙ K V) where
     rw [(IsOpenQuotientMap.id.prodMap isOpenQuotientMap_mk').isQuotientMap.continuous_iff]
     -- On representatives the action is `(g, v) ↦ [g • v]` (`Projectivization.smul_mk`).
     exact continuous_mk (continuous_fst.smul (continuous_subtype_val.comp continuous_snd))
-      fun p ↦ (smul_ne_zero_iff_ne p.1).2 p.2.2
+      fun p ↦ (smul_ne_zero_iff_ne p.1).2 p.2.property
 
 end DivisionRing
 

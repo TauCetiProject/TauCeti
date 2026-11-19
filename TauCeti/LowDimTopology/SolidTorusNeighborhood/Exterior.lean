@@ -86,7 +86,7 @@ theorem knotExterior_sdiff_range (Φ : SolidTorus → X) :
   have hunion : {p : SolidTorus | ‖(p.1 : ℂ)‖ < 1} ∪ range SolidTorus.boundaryInclusion = univ := by
     rw [SolidTorus.range_boundaryInclusion, eq_univ_iff_forall]
     intro p
-    exact (mem_closedBall_zero_iff.mp p.1.2).lt_or_eq
+    exact (mem_closedBall_zero_iff.mp p.1.property).lt_or_eq
   rw [knotExterior, range_comp, sdiff_eq, ← compl_union, ← image_union, hunion, image_univ]
 
 section Topology
@@ -185,7 +185,7 @@ namespace SolidTorus
 /-- The solid torus of half the radius inside the solid torus: `(w, z) ↦ (w / 2, z)`. -/
 noncomputable def halve (p : SolidTorus) : SolidTorus :=
   (⟨(2⁻¹ : ℝ) • (p.1 : ℂ), by
-    have hp := mem_closedBall_zero_iff.mp p.1.2
+    have hp := mem_closedBall_zero_iff.mp p.1.property
     rw [mem_closedBall_zero_iff, norm_smul, Real.norm_of_nonneg (by norm_num)]
     linarith⟩, p.2)
 
@@ -255,7 +255,7 @@ theorem comp_halve (h : IsSolidTorusNeighborhood f Φ) :
       isOpen_lt (by fun_prop) continuous_const
     have := h.isOpenEmbedding_comp hO.isOpenEmbedding_subtypeVal (by
       rintro _ ⟨p, rfl⟩
-      exact (mem_ofPred_eq.mp p.2).trans (by norm_num))
+      exact (mem_ofPred_eq.mp p.property).trans (by norm_num))
     have hopen := this.isOpen_range
     rwa [range_comp, Subtype.range_coe] at hopen
 

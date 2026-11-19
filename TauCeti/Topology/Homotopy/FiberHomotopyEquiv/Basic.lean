@@ -82,7 +82,7 @@ structure FiberHomotopyEquiv (p : C(E, B)) (q : C(E', B)) where
 
 theorem apply_of_comp_eq {p : C(E, B)} {q : C(E', B)} {f : C(E, E')} (hf : q.comp f = p)
     {b : B} (e : {e // p e = b}) : q (f e) = b := by
-  rw [← ContinuousMap.comp_apply, hf, e.2]
+  rw [← ContinuousMap.comp_apply, hf, e.property]
 
 /-- The map of fibres over `b` induced by a map `f` over `B`. -/
 -- The body has type `C(p ⁻¹' {b}, q ⁻¹' {b})`, definitionally equal to the stated type; see the
@@ -116,9 +116,9 @@ def restrictPreimageHomotopyWith {p : C(E, B)} (S : Set B) {f₀ f₁ : C(E, E)}
     (H : HomotopyWith f₀ f₁ fun f ↦ p.comp f = p) (h₀ : p.comp f₀ = p) (h₁ : p.comp f₁ = p) :
     HomotopyWith (restrictPreimageMap S h₀) (restrictPreimageMap S h₁)
       fun f ↦ (p.restrictPreimage S).comp f = p.restrictPreimage S where
-  toFun x := ⟨H (x.1, x.2.1), by
+  toFun x := ⟨H (x.1, x.2.val), by
     rw [Set.mem_preimage, apply_homotopyWith H]
-    exact x.2.2⟩
+    exact x.2.property⟩
   continuous_toFun := by fun_prop
   map_zero_left e := Subtype.ext ((H.apply_zero e).trans (coe_restrictPreimageMap S h₀ e).symm)
   map_one_left e := Subtype.ext ((H.apply_one e).trans (coe_restrictPreimageMap S h₁ e).symm)

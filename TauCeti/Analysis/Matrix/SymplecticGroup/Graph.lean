@@ -297,7 +297,7 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 /-- The determinant of the graph frame of a symplectic matrix does not vanish. -/
 theorem det_graphFrame_ne_zero (A : GLSymplectic n ℝ) :
     (graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det ≠ 0 :=
-  (isUnit_det_graphFrame (mem_iff_mem_symplecticGroup.1 A.2)).ne_zero
+  (isUnit_det_graphFrame (mem_iff_mem_symplecticGroup.1 A.property)).ne_zero
 
 /-- The graph frame of a symplectic matrix, as a complex-linear automorphism of `ℂ^{n ⊕ n}`. -/
 noncomputable def graphFrameEquiv (A : GLSymplectic n ℝ) :
@@ -346,7 +346,7 @@ theorem coe_graphPhase (A : GLSymplectic n ℝ) :
 `ℂ^{n ⊕ n}`. -/
 theorem coe_graphPhase_eq_maslovPhase (A : GLSymplectic n ℝ) :
     (graphPhase A : ℂ) = isMaximalTotallyReal_realSubspace.maslovPhase
-      (isMaximalTotallyReal_graphSubspace (mem_iff_mem_symplecticGroup.1 A.2)) := by
+      (isMaximalTotallyReal_graphSubspace (mem_iff_mem_symplecticGroup.1 A.property)) := by
   -- `graphSubspace A` is by definition the image `(graphFrame A).realImage` of the real points.
   rw [coe_graphPhase]
   exact (maslovPhase_eq_det_div_conj_det _ _ rfl).symm

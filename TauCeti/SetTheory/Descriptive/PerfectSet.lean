@@ -71,10 +71,10 @@ theorem Setoid.hasCantorAntichainOn_ker_univ_of_not_countable_range [Topological
   -- the open sets with uncountable image
   let P := {U : Set Y // IsOpen U ∧ ¬(f '' U).Countable}
   choose W hW hsep using fun (U : P) (n : ℕ) =>
-    hf.exists_split_of_not_countable_image U.2.1 U.2.2 (hu n).1
+    hf.exists_split_of_not_countable_image U.property.1 U.property.2 (hu n).1
   let D : List Bool → P := fun l => l.rec ⟨univ, isOpen_univ, by rwa [image_univ]⟩
     fun a l U => ⟨W U l.length a, (hW U l.length a).1, (hW U l.length a).2.1⟩
-  let A : List Bool → Set Y := fun l => (D l).1
+  let A : List Bool → Set Y := fun l => (D l).val
   have hA (a : Bool) (l : List Bool) : A (a :: l) = W (D l) l.length a := rfl
   have hanti : ClosureAntitone A := fun l a => by
     rw [hA]

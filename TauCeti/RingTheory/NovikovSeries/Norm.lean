@@ -147,7 +147,7 @@ def normNonnegSubring : nonnegSubring R N →* nonnegSubring R (N.comp K.subtype
   toFun a := ⟨Algebra.norm (NovikovSeries R K (N.comp K.subtype)) (a : NovikovSeries R H N),
     mem_nonnegSubring.2 <| mem_periodFiltration.1 <| by
       simpa using algebraNorm_mem_periodFiltration K
-        (mem_periodFiltration.2 (mem_nonnegSubring.1 a.2))⟩
+        (mem_periodFiltration.2 (mem_nonnegSubring.1 a.property))⟩
   map_one' := Subtype.ext (_root_.map_one _)
   map_mul' a b := Subtype.ext (_root_.map_mul _ _ _)
 

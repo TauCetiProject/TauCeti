@@ -146,6 +146,6 @@ theorem IsCompact.exists_opens_nonempty_smoothEmbedding_euclidean [I.Boundaryles
       hFi.injective).isEmbedding.comp (IsEmbedding.inclusion interior_subset)
   refine ⟨W, hKL, hL.closure_of_subset interior_subset, n, ⟨.ofIsSmoothEmbedding _
     ⟨(hF.comp contMDiff_subtype_val).isImmersion_of_injective_mfderiv (by simp) fun x v w hvw ↦
-      hFd _ (interior_subset x.2) ?_, hemb⟩⟩⟩
+      hFd _ (interior_subset x.property) ?_, hemb⟩⟩⟩
   rwa [← TauCeti.Manifold.mfderiv_comp_subtype_val_apply,
     ← TauCeti.Manifold.mfderiv_comp_subtype_val_apply]

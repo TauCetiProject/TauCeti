@@ -394,7 +394,7 @@ theorem weylGroup.commute_ofIdx_of_isOrthogonal
 theorem exists_flip_weylGroup_smul_eq_coweightEquiv (w : P.weylGroup) :
     ∃ w' : P.flip.weylGroup, ∀ z : N, w' • z = (w : P.Aut).coweightEquiv z := by
   suffices ∀ u ∈ P.weylGroup, ∃ w' : P.flip.weylGroup, ∀ z : N, w' • z = u.coweightEquiv z from
-    this w w.2
+    this w w.property
   intro u hu
   induction hu using weylGroup.induction with
   | mem i =>

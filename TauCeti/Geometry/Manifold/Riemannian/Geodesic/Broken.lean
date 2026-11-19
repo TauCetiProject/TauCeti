@@ -101,30 +101,31 @@ pair `(x, y)` of points at distance less than `r`. -/
 def geodesicSegmentUnitPath : C({p : M × M // dist p.1 p.2 < r}, C(unitInterval, M)) :=
   ContinuousMap.curry
     ⟨fun x : {p : M × M // dist p.1 p.2 < r} × unitInterval ↦
-        riemannianExp I M x.1.1.1 ((x.2 : ℝ) • riemannianLog I M x.1.1.1 (ball 0 r) x.1.1.2),
+        riemannianExp I M x.1.val.1 ((x.2 : ℝ) • riemannianLog I M x.1.val.1 (ball 0 r) x.1.val.2),
       (contMDiffOn_riemannianExp_smul_riemannianLog_of_forall_isNormalDomain
         hr).continuousOn.comp_continuous
         (f := fun x : {p : M × M // dist p.1 p.2 < r} × unitInterval ↦ ((x.1 : M × M), (x.2 : ℝ)))
-        (by fun_prop) fun x ↦ ⟨edist_lt_ofReal.2 x.1.2, x.2.2⟩⟩
+        (by fun_prop) fun x ↦ ⟨edist_lt_ofReal.2 x.1.property, x.2.property⟩⟩
 
 theorem geodesicSegmentUnitPath_apply (p : {p : M × M // dist p.1 p.2 < r}) (s : unitInterval) :
     geodesicSegmentUnitPath hr p s =
-      riemannianExp I M p.1.1 ((s : ℝ) • riemannianLog I M p.1.1 (ball 0 r) p.1.2) :=
+      riemannianExp I M p.val.1 ((s : ℝ) • riemannianLog I M p.val.1 (ball 0 r) p.val.2) :=
   (rfl)
 
 @[simp]
 theorem geodesicSegmentUnitPath_zero (p : {p : M × M // dist p.1 p.2 < r}) :
-    geodesicSegmentUnitPath hr p 0 = p.1.1 := by
+    geodesicSegmentUnitPath hr p 0 = p.val.1 := by
   simp [geodesicSegmentUnitPath_apply]
 
 @[simp]
 theorem geodesicSegmentUnitPath_one (p : {p : M × M // dist p.1 p.2 < r}) :
-    geodesicSegmentUnitPath hr p 1 = p.1.2 := by
+    geodesicSegmentUnitPath hr p 1 = p.val.2 := by
   rw [geodesicSegmentUnitPath_apply, Set.Icc.coe_one, one_smul]
-  exact riemannianExp_riemannianLog ((hr p.1.1).mem_image_riemannianExp_ball subset_rfl p.2)
+  exact riemannianExp_riemannianLog ((hr p.val.1).mem_image_riemannianExp_ball subset_rfl
+      p.property)
 
-theorem geodesicSegmentUnitPath_of_eq (p : {p : M × M // dist p.1 p.2 < r}) (hp : p.1.1 = p.1.2)
-    (s : unitInterval) : geodesicSegmentUnitPath hr p s = p.1.1 := by
+theorem geodesicSegmentUnitPath_of_eq (p : {p : M × M // dist p.1 p.2 < r}) (hp : p.val.1 = p.val.2)
+    (s : unitInterval) : geodesicSegmentUnitPath hr p s = p.val.1 := by
   rw [geodesicSegmentUnitPath_apply, ← hp, (hr _).riemannianLog_self, smul_zero,
     riemannianExp_zero]
 
@@ -135,7 +136,7 @@ so that it is at `exp_x (min (t / dist x y) 1 • log_x y)` at time `t`
 segment from a point to itself is the constant path of length zero
 (`TauCeti.Manifold.geodesicSegment_self`). -/
 def geodesicSegment : C({p : M × M // dist p.1 p.2 < r}, MoorePath M) where
-  toFun p := (MoorePath.ofUnitPath (geodesicSegmentUnitPath hr p)).rescale (nndist p.1.1 p.1.2)
+  toFun p := (MoorePath.ofUnitPath (geodesicSegmentUnitPath hr p)).rescale (nndist p.val.1 p.val.2)
   continuous_toFun := by
     refine (MoorePath.continuous_ofUnitPath.comp
       (geodesicSegmentUnitPath hr).continuous).moorePath_rescale_of_forall_eq_source
@@ -146,41 +147,41 @@ def geodesicSegment : C({p : M × M // dist p.1 p.2 < r}, MoorePath M) where
 
 theorem geodesicSegment_def (p : {p : M × M // dist p.1 p.2 < r}) :
     geodesicSegment hr p =
-      (MoorePath.ofUnitPath (geodesicSegmentUnitPath hr p)).rescale (nndist p.1.1 p.1.2) :=
+      (MoorePath.ofUnitPath (geodesicSegmentUnitPath hr p)).rescale (nndist p.val.1 p.val.2) :=
   (rfl)
 
 @[simp]
 theorem length_geodesicSegment (p : {p : M × M // dist p.1 p.2 < r}) :
-    (geodesicSegment hr p).length = nndist p.1.1 p.1.2 := by
+    (geodesicSegment hr p).length = nndist p.val.1 p.val.2 := by
   rw [geodesicSegment_def, MoorePath.length_rescale]
 
 /-- The geodesic segment from `x` to `y` is at `exp_x (min (t / dist x y) 1 • log_x y)` at time
 `t`. -/
 theorem geodesicSegment_apply (p : {p : M × M // dist p.1 p.2 < r}) (t : ℝ≥0) :
-    geodesicSegment hr p t = riemannianExp I M p.1.1
-      (min ((t : ℝ) / dist p.1.1 p.1.2) 1 • riemannianLog I M p.1.1 (ball 0 r) p.1.2) := by
+    geodesicSegment hr p t = riemannianExp I M p.val.1
+      (min ((t : ℝ) / dist p.val.1 p.val.2) 1 • riemannianLog I M p.val.1 (ball 0 r) p.val.2) := by
   rw [geodesicSegment_def, MoorePath.rescale_apply, MoorePath.ofUnitPath_apply,
     geodesicSegmentUnitPath_apply, Set.coe_projIcc]
   simp [min_comm, div_nonneg]
 
 @[simp]
 theorem source_geodesicSegment (p : {p : M × M // dist p.1 p.2 < r}) :
-    (geodesicSegment hr p).source = p.1.1 := by
+    (geodesicSegment hr p).source = p.val.1 := by
   rw [geodesicSegment_def, MoorePath.source_rescale, MoorePath.source_ofUnitPath,
     geodesicSegmentUnitPath_zero]
 
 @[simp]
 theorem target_geodesicSegment (p : {p : M × M // dist p.1 p.2 < r}) :
-    (geodesicSegment hr p).target = p.1.2 := by
-  rcases eq_or_ne (nndist p.1.1 p.1.2) 0 with hp | hp
+    (geodesicSegment hr p).target = p.val.2 := by
+  rcases eq_or_ne (nndist p.val.1 p.val.2) 0 with hp | hp
   · rw [geodesicSegment_def, hp, MoorePath.rescale_zero, MoorePath.target_refl,
       MoorePath.source_ofUnitPath, geodesicSegmentUnitPath_zero, nndist_eq_zero.1 hp]
   · rw [geodesicSegment_def, MoorePath.target_rescale _ hp, MoorePath.target_ofUnitPath,
       geodesicSegmentUnitPath_one]
 
 /-- The geodesic segment between equal points is the constant Moore path of length zero. -/
-theorem geodesicSegment_of_eq (p : {p : M × M // dist p.1 p.2 < r}) (hp : p.1.1 = p.1.2) :
-    geodesicSegment hr p = MoorePath.refl p.1.1 := by
+theorem geodesicSegment_of_eq (p : {p : M × M // dist p.1 p.2 < r}) (hp : p.val.1 = p.val.2) :
+    geodesicSegment hr p = MoorePath.refl p.val.1 := by
   rw [geodesicSegment_def, nndist_eq_zero.2 hp, MoorePath.rescale_zero,
     MoorePath.source_ofUnitPath, geodesicSegmentUnitPath_zero]
 
@@ -237,16 +238,16 @@ private def brokenGeodesicAux : (n : ℕ) → (q : Fin (n + 1) → M) →
   | 0, q, _ => ⟨MoorePath.refl (q 0), MoorePath.source_refl _, MoorePath.target_refl _⟩
   | n + 1, q, h =>
     let γ := brokenGeodesicAux n (Fin.tail q) (forall_dist_tail_lt h)
-    ⟨(geodesicSegment hr ⟨(q (Fin.castSucc 0), q (Fin.succ 0)), h 0⟩).trans γ.1
-        (by rw [target_geodesicSegment, γ.2.1, Fin.tail]),
+    ⟨(geodesicSegment hr ⟨(q (Fin.castSucc 0), q (Fin.succ 0)), h 0⟩).trans γ.val
+        (by rw [target_geodesicSegment, γ.property.1, Fin.tail]),
       by rw [MoorePath.source_trans, source_geodesicSegment]; exact congrArg q Fin.castSucc_zero,
-      by rw [MoorePath.target_trans, γ.2.2, Fin.tail, Fin.succ_last]⟩
+      by rw [MoorePath.target_trans, γ.property.2, Fin.tail, Fin.succ_last]⟩
 
 /-- **The broken geodesic** through points `q 0, …, q n` whose consecutive distances are less than
 `r`: the concatenation of the geodesic segments from `q i` to `q (i + 1)`. -/
 def brokenGeodesic (n : ℕ) (q : Fin (n + 1) → M)
     (h : ∀ i : Fin n, dist (q i.castSucc) (q i.succ) < r) : MoorePath M :=
-  (brokenGeodesicAux hr n q h).1
+  (brokenGeodesicAux hr n q h).val
 
 @[simp]
 theorem brokenGeodesic_zero (q : Fin 1 → M) (h : ∀ i : Fin 0, dist (q i.castSucc) (q i.succ) < r) :
@@ -257,13 +258,13 @@ theorem brokenGeodesic_zero (q : Fin 1 → M) (h : ∀ i : Fin 0, dist (q i.cast
 theorem source_brokenGeodesic (n : ℕ) (q : Fin (n + 1) → M)
     (h : ∀ i : Fin n, dist (q i.castSucc) (q i.succ) < r) :
     (brokenGeodesic hr n q h).source = q 0 :=
-  (brokenGeodesicAux hr n q h).2.1
+  (brokenGeodesicAux hr n q h).property.1
 
 @[simp]
 theorem target_brokenGeodesic (n : ℕ) (q : Fin (n + 1) → M)
     (h : ∀ i : Fin n, dist (q i.castSucc) (q i.succ) < r) :
     (brokenGeodesic hr n q h).target = q (Fin.last n) :=
-  (brokenGeodesicAux hr n q h).2.2
+  (brokenGeodesicAux hr n q h).property.2
 
 /-- The broken geodesic through `q 0, …, q (n + 1)` is the geodesic segment from `q 0` to `q 1`
 followed by the broken geodesic through `q 1, …, q (n + 1)`. -/
@@ -315,7 +316,7 @@ theorem brokenGeodesic_const (n : ℕ) (x : M)
 continuously on the tuple. -/
 theorem continuous_brokenGeodesic (n : ℕ) :
     Continuous fun q : {q : Fin (n + 1) → M // ∀ i : Fin n, dist (q i.castSucc) (q i.succ) < r} ↦
-      brokenGeodesic hr n q.1 q.2 := by
+      brokenGeodesic hr n q.val q.property := by
   induction n with
   | zero =>
     simp only [brokenGeodesic_zero]
@@ -323,15 +324,16 @@ theorem continuous_brokenGeodesic (n : ℕ) :
   | succ n ih =>
     simp only [fun q : {q : Fin (n + 2) → M //
         ∀ i : Fin (n + 1), dist (q i.castSucc) (q i.succ) < r} ↦
-      brokenGeodesic_succ hr n q.1 q.2 (forall_dist_tail_lt q.2)]
+      brokenGeodesic_succ hr n q.val q.property (forall_dist_tail_lt q.property)]
     have hseg : Continuous fun q : {q : Fin (n + 2) → M //
         ∀ i : Fin (n + 1), dist (q i.castSucc) (q i.succ) < r} ↦
-        (⟨(q.1 (Fin.castSucc 0), q.1 (Fin.succ 0)), q.2 0⟩ : {p : M × M // dist p.1 p.2 < r}) :=
+        (⟨(q.val (Fin.castSucc 0), q.val (Fin.succ 0)), q.property 0⟩ :
+            {p : M × M // dist p.1 p.2 < r}) :=
       (((continuous_apply _).comp continuous_subtype_val).prodMk
         ((continuous_apply _).comp continuous_subtype_val)).subtype_mk _
     have htail : Continuous fun q : {q : Fin (n + 2) → M //
         ∀ i : Fin (n + 1), dist (q i.castSucc) (q i.succ) < r} ↦
-        (⟨Fin.tail q.1, forall_dist_tail_lt q.2⟩ :
+        (⟨Fin.tail q.val, forall_dist_tail_lt q.property⟩ :
           {q : Fin (n + 1) → M // ∀ i : Fin n, dist (q i.castSucc) (q i.succ) < r}) :=
       continuous_subtype_val.finTail.subtype_mk _
     exact ((geodesicSegment hr).continuous.comp hseg).moorePath_trans (ih.comp htail) _
@@ -450,12 +452,13 @@ include hr
 `{q | dist (q i) (q (i - 1)) ≤ δ i}`, as a continuous map to the free Moore loop space. -/
 def cyclicDistanceCutBrokenGeodesic {n : ℕ} {δ : Fin (n + 1) → ℝ} (hδ : ∀ i, δ i < r) :
     C(cyclicDistanceCut (X := M) δ, MooreFreeLoopSpace M) where
-  toFun q := brokenGeodesicLoop hr n q.1 fun i ↦ (mem_cyclicDistanceCut.1 q.2 i).trans_lt (hδ i)
+  toFun q := brokenGeodesicLoop hr n q.val fun i ↦ (mem_cyclicDistanceCut.1 q.property i).trans_lt
+      (hδ i)
   continuous_toFun := by
     refine MooreFreeLoopSpace.isEmbedding_toMoorePath.continuous_iff.2 ?_
     have hsnoc : Continuous fun q : cyclicDistanceCut (X := M) δ ↦
-        (⟨Fin.snoc q.1 (q.1 0),
-          forall_dist_snoc_lt fun i ↦ (mem_cyclicDistanceCut.1 q.2 i).trans_lt (hδ i)⟩ :
+        (⟨Fin.snoc q.val (q.val 0),
+          forall_dist_snoc_lt fun i ↦ (mem_cyclicDistanceCut.1 q.property i).trans_lt (hδ i)⟩ :
           {q : Fin (n + 2) → M // ∀ i : Fin (n + 1), dist (q i.castSucc) (q i.succ) < r}) :=
       (Continuous.finSnoc (A := fun _ ↦ M) continuous_subtype_val
         ((continuous_apply 0).comp continuous_subtype_val)).subtype_mk _
@@ -465,7 +468,8 @@ def cyclicDistanceCutBrokenGeodesic {n : ℕ} {δ : Fin (n + 1) → ℝ} (hδ : 
 theorem cyclicDistanceCutBrokenGeodesic_apply {n : ℕ} {δ : Fin (n + 1) → ℝ} (hδ : ∀ i, δ i < r)
     (q : cyclicDistanceCut (X := M) δ) :
     cyclicDistanceCutBrokenGeodesic hr hδ q =
-      brokenGeodesicLoop hr n q.1 fun i ↦ (mem_cyclicDistanceCut.1 q.2 i).trans_lt (hδ i) :=
+      brokenGeodesicLoop hr n q.val fun i ↦ (mem_cyclicDistanceCut.1 q.property i).trans_lt (hδ i)
+          :=
   (rfl)
 
 /-- **`geoⁿ⁺¹ ∘ ιⁿ = geoⁿ`.** The broken geodesics through a tuple of a distance cut and through
@@ -478,7 +482,7 @@ theorem cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirst {n : ℕ} {
     cyclicDistanceCutBrokenGeodesic hr hδ' (cyclicDistanceCutRepeatFirst h₀ h₁ h q) =
       cyclicDistanceCutBrokenGeodesic hr hδ q := by
   simp only [cyclicDistanceCutBrokenGeodesic_apply, coe_cyclicDistanceCutRepeatFirst_apply]
-  exact brokenGeodesicLoop_cons hr n q.1 _ _
+  exact brokenGeodesicLoop_cons hr n q.val _ _
 
 end Cut
 

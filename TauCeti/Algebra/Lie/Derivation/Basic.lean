@@ -143,7 +143,7 @@ namespace derivationLieAlgebra
 theorem leibniz (D : derivationLieAlgebra R A) (x y : A) :
     (D : Module.End R A) (x * y)
       = (D : Module.End R A) x * y + x * (D : Module.End R A) y :=
-  D.2 x y
+  D.property x y
 
 /-- **The constants of a derivation are closed under multiplication**: if `D` kills `x` and `y`
 then it kills `x * y`.  Together with linearity this says that the kernel of a derivation is an
@@ -369,7 +369,7 @@ def derivationEquivDerivationLieAlgebra : Derivation R A A ≃ₗ⁅R⁆ derivat
     simp only [Derivation.coeFn_coe, Derivation.leibniz, smul_eq_mul]
     ring⟩
   invFun D := Derivation.mk' (D : Module.End R A) fun x y => by
-    rw [D.2 x y]
+    rw [D.property x y]
     simp only [smul_eq_mul]
     ring
   map_add' _ _ := rfl
@@ -431,7 +431,7 @@ the commutator of the endomorphism ring, so the identity on underlying linear ma
 of Lie algebras. -/
 def derivationLieAlgebraCommutatorRingEquivLieDerivation :
     derivationLieAlgebra R (CommutatorRing L) ≃ₗ⁅R⁆ LieDerivation R L L where
-  toFun D := ⟨D.1, mem_derivationLieAlgebra_commutatorRing_iff_apply_lie_eq_sub.mp D.2⟩
+  toFun D := ⟨D.val, mem_derivationLieAlgebra_commutatorRing_iff_apply_lie_eq_sub.mp D.property⟩
   invFun D := ⟨(D : L →ₗ[R] L),
     mem_derivationLieAlgebra_commutatorRing_iff_apply_lie_eq_sub.mpr fun x y =>
       D.apply_lie_eq_sub x y⟩
@@ -445,13 +445,13 @@ def derivationLieAlgebraCommutatorRingEquivLieDerivation :
 @[simp]
 theorem derivationLieAlgebraCommutatorRingEquivLieDerivation_apply
     (D : derivationLieAlgebra R (CommutatorRing L)) (x : L) :
-    derivationLieAlgebraCommutatorRingEquivLieDerivation D x = D.1 x :=
+    derivationLieAlgebraCommutatorRingEquivLieDerivation D x = D.val x :=
   (rfl)
 
 @[simp]
 theorem derivationLieAlgebraCommutatorRingEquivLieDerivation_symm_apply
     (D : LieDerivation R L L) (x : L) :
-    (derivationLieAlgebraCommutatorRingEquivLieDerivation.symm D).1 x = D x :=
+    (derivationLieAlgebraCommutatorRingEquivLieDerivation.symm D).val x = D x :=
   (rfl)
 
 end Lie

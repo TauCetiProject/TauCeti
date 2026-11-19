@@ -65,13 +65,13 @@ variable {W : Type*} [SeminormedAddCommGroup W] [NormedSpace ℝ W]
 
 /-- The inverse of `unitBall` in explicit radial coordinates. -/
 theorem Homeomorph.unitBall_symm_apply_coe (y : ball (0 : W) 1) :
-    (Homeomorph.unitBall.symm y : W) = (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 :=
+    (Homeomorph.unitBall.symm y : W) = (Real.sqrt (1 - ‖y.val‖ ^ 2))⁻¹ • y.val :=
   -- Compose the explicit formulas as terms: the intermediate subtypes are the source and target
   -- of the partial homeomorphism rather than `ball 0 1`, so `simp` cannot chain the rewrites.
   (Homeomorph.unitBall_symm_apply y).trans
     ((OpenPartialHomeomorph.toHomeomorphSourceTarget_symm_apply_coe
       (OpenPartialHomeomorph.univUnitBall (E := W)) y).trans
-      (OpenPartialHomeomorph.univUnitBall_symm_apply y.1))
+      (OpenPartialHomeomorph.univUnitBall_symm_apply y.val))
 
 variable {P : Type*} [PseudoMetricSpace P] [NormedAddTorsor W P]
 

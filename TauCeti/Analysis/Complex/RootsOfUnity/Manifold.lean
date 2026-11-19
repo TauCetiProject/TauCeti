@@ -72,7 +72,7 @@ instance instContMDiffConstSMul : ContMDiffConstSMul 𝓘(ℂ) n (rootsOfUnity m
     (rootsOfUnityBall m r) where
   contMDiff_const_smul ζ := by
     have h : ContMDiff 𝓘(ℂ) 𝓘(ℂ) n (Subtype.val ∘ fun u : opens m r ↦
-        (⟨ζ • (u : ℂ), (rootsOfUnityBall m r).smul_mem ζ u.2⟩ : opens m r)) :=
+        (⟨ζ • (u : ℂ), (rootsOfUnityBall m r).smul_mem ζ u.property⟩ : opens m r)) :=
       (contMDiff_iff_contDiff.2 (contDiff_const_smul ((ζ : ℂˣ) : ℂ))).comp contMDiff_subtype_val
     exact fun u ↦ (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff _ _ _).1 (h u)
 

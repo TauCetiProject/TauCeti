@@ -182,7 +182,7 @@ theorem continuousAt_linearProjection {T W : Type*} [TopologicalSpace T] [AddCom
   rw [continuousOn_iff_continuous_domRestrict]
   refine (continuous_mk (K := K) (hGv.comp continuous_subtype_val) fun x : U ↦ x.2).congr
     fun x ↦ ?_
-  simp [mk'_eq_mk, linearProjection_mk _ _ x.2]
+  simp [mk'_eq_mk, linearProjection_mk _ _ x.property]
 
 /-- Projective space is second countable when the vector space is. -/
 instance instSecondCountableTopology [SecondCountableTopology V] :
@@ -209,7 +209,7 @@ theorem mk'_eq_mk'_iff_forall_strongDual [SeparatingDual K V] (v w : {v : V // v
     simp only [Units.smul_coe, Units.smul_def, map_smul, smul_eq_mul]
     ring
   · intro h
-    obtain ⟨f, hf⟩ := SeparatingDual.exists_ne_zero (R := K) w.2
+    obtain ⟨f, hf⟩ := SeparatingDual.exists_ne_zero (R := K) w.property
     -- A form `f` not vanishing on `w` determines the ratio `c = f v / f w` with `v = c • w`.
     have hvw : (v : V) = (f v / f w) • (w : V) := by
       rw [← sub_eq_zero]
@@ -217,7 +217,7 @@ theorem mk'_eq_mk'_iff_forall_strongDual [SeparatingDual K V] (v w : {v : V // v
       rw [map_sub, map_smul, smul_eq_mul]
       field_simp
       linear_combination -h f g
-    have hc : f v / f w ≠ 0 := fun hc ↦ v.2 (by rw [hvw, hc, zero_smul])
+    have hc : f v / f w ≠ 0 := fun hc ↦ v.property (by rw [hvw, hc, zero_smul])
     exact ⟨Units.mk0 _ hc, Subtype.ext (by rw [Units.smul_coe, Units.smul_def,
       Units.val_mk0, ← hvw])⟩
 
@@ -284,7 +284,7 @@ theorem pathConnectedSpace_of_one_lt_rank {K V : Type*} [DivisionRing K] [AddCom
   have := isPathConnected_iff_pathConnectedSpace.1
     (isPathConnected_compl_singleton_of_one_lt_rank h (0 : V))
   exact Function.Surjective.pathConnectedSpace
-    (f := fun v : ({0}ᶜ : Set V) ↦ mk K (v : V) (mem_compl_singleton_iff.1 v.2))
+    (f := fun v : ({0}ᶜ : Set V) ↦ mk K (v : V) (mem_compl_singleton_iff.1 v.property))
     (fun x ↦ ⟨⟨x.rep, mem_compl_singleton_iff.2 x.rep_ne_zero⟩, x.mk_rep⟩)
     (continuous_mk continuous_subtype_val _)
 
@@ -316,7 +316,7 @@ variable {K : Type*} [DivisionRing K] [TopologicalSpace K] [T1Space K] {ι : Typ
 nonzero, is open. -/
 theorem isOpen_affineOpen (i : ι) : IsOpen (affineOpen (K := K) i) := by
   rw [← isQuotientMap_mk'.isOpen_preimage]
-  have : mk' K ⁻¹' affineOpen i = (fun v : {v : ι → K // v ≠ 0} ↦ v.1 i) ⁻¹' {0}ᶜ := by
+  have : mk' K ⁻¹' affineOpen i = (fun v : {v : ι → K // v ≠ 0} ↦ v.val i) ⁻¹' {0}ᶜ := by
     ext v
     simp [mk'_eq_mk]
   rw [this]
@@ -354,9 +354,9 @@ theorem continuousOn_affineChart (i : Fin (n + 1)) :
   rw [mk'_eq_mk, mk_mem_affineOpen_iff] at hx
   -- Composed with the quotient map, the chart is a family of ratios of coordinates.
   have hchart : affineChart i ∘ mk' K = fun v : {v : Fin (n + 1) → K // v ≠ 0} ↦
-      fun j ↦ v.1 (i.succAbove j) / v.1 i :=
-    funext fun v ↦ affineChart_mk i v.1 v.2
-  have hcoord (j : Fin (n + 1)) : Continuous fun v : {v : Fin (n + 1) → K // v ≠ 0} ↦ v.1 j :=
+      fun j ↦ v.val (i.succAbove j) / v.val i :=
+    funext fun v ↦ affineChart_mk i v.val v.property
+  have hcoord (j : Fin (n + 1)) : Continuous fun v : {v : Fin (n + 1) → K // v ≠ 0} ↦ v.val j :=
     (continuous_apply j).comp continuous_subtype_val
   rw [← isOpenQuotientMap_mk'.continuousAt_comp_iff, hchart]
   exact continuousAt_pi.2 fun j ↦ (hcoord _).continuousAt.div₀ (hcoord i).continuousAt hx

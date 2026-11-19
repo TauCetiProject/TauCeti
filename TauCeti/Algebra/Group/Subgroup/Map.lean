@@ -195,7 +195,7 @@ homomorphism itself instead. -/
 @[simp]
 theorem _root_.MonoidHom.coe_subgroupCongr_apply {A A' : Subgroup G} {B B' : Subgroup H}
     (hA : A' = A) (hB : B' = B) (f : A →* B) (x : A') :
-    (f.subgroupCongr hA hB x : H) = f ⟨x, hA ▸ x.2⟩ := by
+    (f.subgroupCongr hA hB x : H) = f ⟨x, hA ▸ x.property⟩ := by
   simp only [MonoidHom.subgroupCongr, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     MulEquiv.subgroupCongr_symm_apply]
   exact congrArg (fun y ↦ (f y : H)) (Subtype.ext (MulEquiv.subgroupCongr_apply hA x))
@@ -375,7 +375,7 @@ The map `κ` only witnesses `g⁻¹ v g ∈ U` for each `v ∈ V`; it need not b
 continuous. -/
 theorem _root_.Subgroup.le_map_conj_of_forall_coe_eq (V U : Subgroup G) (g : G) (κ : V → U)
     (hκ : ∀ v : V, (κ v : G) = g⁻¹ * v * g) : V ≤ U.map (MulAut.conj g).toMonoidHom :=
-  fun v hv ↦ Subgroup.mem_map.2 ⟨κ ⟨v, hv⟩, (κ ⟨v, hv⟩).2, by simp [hκ, mul_assoc]⟩
+  fun v hv ↦ Subgroup.mem_map.2 ⟨κ ⟨v, hv⟩, (κ ⟨v, hv⟩).property, by simp [hκ, mul_assoc]⟩
 
 /-- The image of a subgroup in `G ⧸ N`, pushed forward along the map `G ⧸ N →* H ⧸ M` induced by
 `f`, is the image in `H ⧸ M` of the image of the subgroup under `f`.

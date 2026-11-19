@@ -111,7 +111,7 @@ theorem prodMap {E' : Type u'} {B' : Type v'} [TopologicalSpace E'] [Topological
 /-- The base change of a Hurewicz fibration along any continuous map is a Hurewicz fibration. -/
 theorem pullback {B' : Type v'} [TopologicalSpace B'] (hp : IsHurewiczFibration.{w} p)
     (g : C(B', B)) :
-    IsHurewiczFibration.{w} (fun x : {x : B' × E // g x.1 = p x.2} ↦ x.1.1) :=
+    IsHurewiczFibration.{w} (fun x : {x : B' × E // g x.1 = p x.2} ↦ x.val.1) :=
   ⟨by fun_prop, fun A _ ↦ (hp.2 A).pullback g⟩
 
 /-- Precomposing a Hurewicz fibration with a homeomorphism gives a Hurewicz fibration. -/

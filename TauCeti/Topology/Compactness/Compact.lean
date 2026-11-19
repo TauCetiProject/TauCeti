@@ -186,13 +186,13 @@ theorem _root_.IsCompact.prod_inter_setOf_eq {Y Z : Type*} [TopologicalSpace Y]
     (ht : IsCompact t) {f : X → Z} {g : Y → Z} (hf : ContinuousOn f s) (hg : ContinuousOn g t) :
     IsCompact (s ×ˢ t ∩ {z | f z.1 = g z.2}) := by
   have : CompactSpace (s ×ˢ t) := isCompact_iff_compactSpace.1 (hs.prod ht)
-  have hf' : Continuous fun z : s ×ˢ t ↦ f z.1.1 :=
+  have hf' : Continuous fun z : s ×ˢ t ↦ f z.val.1 :=
     (hf.comp continuousOn_fst fun _ hz ↦ (mem_prod.1 hz).1).domRestrict
-  have hg' : Continuous fun z : s ×ˢ t ↦ g z.1.2 :=
+  have hg' : Continuous fun z : s ×ˢ t ↦ g z.val.2 :=
     (hg.comp continuousOn_snd fun _ hz ↦ (mem_prod.1 hz).2).domRestrict
   convert (isClosed_eq hf' hg').isCompact.image continuous_subtype_val using 1
   ext z
-  exact ⟨fun hz ↦ ⟨⟨z, hz.1⟩, hz.2, rfl⟩, by rintro ⟨z, hz, rfl⟩; exact ⟨z.2, hz⟩⟩
+  exact ⟨fun hz ↦ ⟨⟨z, hz.1⟩, hz.2, rfl⟩, by rintro ⟨z, hz, rfl⟩; exact ⟨z.property, hz⟩⟩
 
 /-- The points of a compact set `C` that a map continuous on `C` sends into a closed set `K` form
 a compact set. -/

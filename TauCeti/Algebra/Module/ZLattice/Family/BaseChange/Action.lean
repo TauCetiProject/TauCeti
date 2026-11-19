@@ -449,10 +449,10 @@ theorem isManifold_torusFamilyAffineQuotient_freeLocus
       ∀ g : Γ, ContMDiff I (I.prod 𝓘(𝕜, E)) n (b g)) :
     letI : ∀ z : freeLocus Γ Y,
         DiscreteTopology (LinearMap.range ((P ∘ (Subtype.val : freeLocus Γ Y → Y)) z)) :=
-      fun z ↦ inferInstanceAs (DiscreteTopology (LinearMap.range (P z.1)))
+      fun z ↦ inferInstanceAs (DiscreteTopology (LinearMap.range (P z.val)))
     letI : ∀ z : freeLocus Γ Y,
         IsZLattice ℝ (LinearMap.range ((P ∘ (Subtype.val : freeLocus Γ Y → Y)) z)) :=
-      fun z ↦ inferInstanceAs (IsZLattice ℝ (LinearMap.range (P z.1)))
+      fun z ↦ inferInstanceAs (IsZLattice ℝ (LinearMap.range (P z.val)))
     letI := periodAddAction P
     letI := periodAddAction (P ∘ (Subtype.val : freeLocus Γ Y → Y))
     letI := torusFamilyChartedSpace (H := HY) P (fun l ↦ (hP l).continuous) hinj
@@ -493,23 +493,23 @@ theorem isManifold_torusFamilyAffineQuotient_freeLocus
   -- `freeLocus.instChartedSpace` is the open-subset charted space on `(freeLocus Γ Y : Set Y)`.
   have hf_diff : ContMDiff I I n f := contMDiff_subtype_val (U := ⟨_, isOpen_freeLocus Γ Y⟩)
   let : ∀ z : freeLocus Γ Y, DiscreteTopology (LinearMap.range ((P ∘ f) z)) :=
-    fun z ↦ inferInstanceAs (DiscreteTopology (LinearMap.range (P z.1)))
+    fun z ↦ inferInstanceAs (DiscreteTopology (LinearMap.range (P z.val)))
   let : ∀ z : freeLocus Γ Y, IsZLattice ℝ (LinearMap.range ((P ∘ f) z)) :=
-    fun z ↦ inferInstanceAs (IsZLattice ℝ (LinearMap.range (P z.1)))
+    fun z ↦ inferInstanceAs (IsZLattice ℝ (LinearMap.range (P z.val)))
   let _ := periodAddAction P
   let _ := periodAddAction (P ∘ f)
   let _ := torusFamilyChartedSpace (H := HY) P (fun l ↦ (hP l).continuous) hinj
   let _ := torusFamilyChartedSpace (H := HY) (P ∘ f)
-    (fun l ↦ ((hP l).comp hf_diff).continuous) (fun z ↦ hinj z.1)
+    (fun l ↦ ((hP l).comp hf_diff).continuous) (fun z ↦ hinj z.val)
   have := continuousConstVAdd_periodAddAction (P ∘ f)
     (fun l ↦ ((hP l).comp hf_diff).continuous)
   have := properlyDiscontinuousVAdd_periodAddAction (P ∘ f)
-    (fun l ↦ ((hP l).comp hf_diff).continuous) (fun z ↦ hinj z.1)
+    (fun l ↦ ((hP l).comp hf_diff).continuous) (fun z ↦ hinj z.val)
   have : T2Space (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E)) :=
     t2Space_of_properlyDiscontinuousVAdd_of_t2Space
   have : LocallyCompactSpace (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E)) :=
     AddAction.isOpenQuotientMap_quotientMk.locallyCompactSpace
-  have := isManifold_torusFamily (P ∘ f) (fun z ↦ hinj z.1) (fun l ↦ (hP l).comp hf_diff)
+  have := isManifold_torusFamily (P ∘ f) (fun z ↦ hinj z.val) (fun l ↦ (hP l).comp hf_diff)
   let _ := torusFamilyAffineMulAction
     (fun g (z : freeLocus Γ Y) ↦ R (MonoidHom.id Γ g) (f z))
     (linearCocycle_baseChange_one R hone (MonoidHom.id Γ) f)
@@ -545,10 +545,10 @@ theorem contMDiff_orbitRelQuotientMap_torusFamilyAffineBaseChangeHom_freeLocus
     {m : ℕ∞ω} (hm : m ≤ n) :
     letI : ∀ z : freeLocus Γ Y,
         DiscreteTopology (LinearMap.range ((P ∘ (Subtype.val : freeLocus Γ Y → Y)) z)) :=
-      fun z ↦ inferInstanceAs (DiscreteTopology (LinearMap.range (P z.1)))
+      fun z ↦ inferInstanceAs (DiscreteTopology (LinearMap.range (P z.val)))
     letI : ∀ z : freeLocus Γ Y,
         IsZLattice ℝ (LinearMap.range ((P ∘ (Subtype.val : freeLocus Γ Y → Y)) z)) :=
-      fun z ↦ inferInstanceAs (IsZLattice ℝ (LinearMap.range (P z.1)))
+      fun z ↦ inferInstanceAs (IsZLattice ℝ (LinearMap.range (P z.val)))
     letI := periodAddAction P
     letI := periodAddAction (P ∘ (Subtype.val : freeLocus Γ Y → Y))
     letI := torusFamilyChartedSpace (H := HY) P (fun l ↦ (hP l).continuous) hinj

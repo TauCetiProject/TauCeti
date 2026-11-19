@@ -244,7 +244,7 @@ private theorem eventually_nhdsWithin_sigPos_sub_sigNeg_eq {s : Set ℝ} (hc : C
       sigNeg (V t₀).toBilinForm.toQuadraticMap := by
     rw [nhdsWithin_eq_map_subtype_coe ht₀, eventually_map]
     exact eventually_sigNeg_toBilinForm_eq_of_continuousAt (V := s.domRestrict V) (x := ⟨t₀, ht₀⟩)
-      (Eventually.of_forall fun u ↦ hsymm u u.2) hc.domRestrict.continuousAt hnd
+      (Eventually.of_forall fun u ↦ hsymm u u.property) hc.domRestrict.continuousAt hnd
   filter_upwards [hnd', hneg, self_mem_nhdsWithin] with t ht hnt hts
   exact ⟨sigPos_sub_sigNeg_eq_of_sigNeg_eq (hsymm t hts) ht (hsymm t₀ ht₀) hnd hnt, ht⟩
 

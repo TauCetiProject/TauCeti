@@ -125,12 +125,12 @@ private theorem exists_volume_lt_enorm_sub_setAverage_le_tsum [Nonempty ι] [Com
     (hMQ : ⨍⁻ x in dyadicCube q₀.1 q₀.2, ‖f x - ⨍ y in dyadicCube q₀.1 q₀.2, f y ∂volume‖ₑ
       ∂volume ≤ M) (N : ℕ) :
     ∃ C : Set (ℤ × (ι → ℤ)), (∀ q ∈ C, dyadicCube q.1 q.2 ⊆ dyadicCube q₀.1 q₀.2) ∧
-      ∑' q : C, volume (dyadicCube q.1.1 q.1.2) ≤ 2⁻¹ * volume (dyadicCube q₀.1 q₀.2) ∧
+      ∑' q : C, volume (dyadicCube q.val.1 q.val.2) ≤ 2⁻¹ * volume (dyadicCube q₀.1 q₀.2) ∧
       volume {x ∈ dyadicCube q₀.1 q₀.2 | 2 ^ (Fintype.card ι + 1) * ↑(N + 1) * (M : ℝ≥0∞) <
           ‖f x - ⨍ y in dyadicCube q₀.1 q₀.2, f y ∂volume‖ₑ} ≤
-        ∑' q : C, volume {x ∈ dyadicCube q.1.1 q.1.2 |
+        ∑' q : C, volume {x ∈ dyadicCube q.val.1 q.val.2 |
           2 ^ (Fintype.card ι + 1) * N * (M : ℝ≥0∞) <
-            ‖f x - ⨍ y in dyadicCube q.1.1 q.1.2, f y ∂volume‖ₑ} := by
+            ‖f x - ⨍ y in dyadicCube q.val.1 q.val.2, f y ∂volume‖ₑ} := by
   set Q := dyadicCube q₀.1 q₀.2
   set c := ⨍ y in Q, f y ∂volume
   set n := Fintype.card ι
@@ -207,8 +207,8 @@ private theorem exists_volume_lt_enorm_sub_setAverage_le_tsum [Nonempty ι] [Com
               · exact one_le_two
               · omega
               · exact_mod_cast Nat.succ_pos N
-    _ ≤ ∑' q : C, volume {x ∈ dyadicCube q.1.1 q.1.2 | 2 ^ (n + 1) * N * (M : ℝ≥0∞) <
-          ‖f x - ⨍ y in dyadicCube q.1.1 q.1.2, f y ∂volume‖ₑ} :=
+    _ ≤ ∑' q : C, volume {x ∈ dyadicCube q.val.1 q.val.2 | 2 ^ (n + 1) * N * (M : ℝ≥0∞) <
+          ‖f x - ⨍ y in dyadicCube q.val.1 q.val.2, f y ∂volume‖ₑ} :=
         measure_biUnion_le _ C.to_countable _
 
 /-- **The John–Nirenberg inequality, dyadic form.** Let `f` be integrable on the dyadic cube
@@ -251,10 +251,10 @@ private theorem volume_lt_enorm_sub_setAverage_le_inv_two_pow [CompleteSpace E]
     obtain ⟨C, hsub, hC, hcover⟩ :=
       exists_volume_lt_enorm_sub_setAverage_le_tsum hM0 hf (hM q₀ le_rfl) N
     calc _ ≤ _ := hcover
-      _ ≤ ∑' q : C, 2⁻¹ ^ N * volume (dyadicCube q.1.1 q.1.2) :=
+      _ ≤ ∑' q : C, 2⁻¹ ^ N * volume (dyadicCube q.val.1 q.val.2) :=
         _root_.tsum_le_tsum fun q =>
-          ih (hf.mono_set (hsub q q.2)) fun q' hq' => hM q' (hq'.trans (hsub q q.2))
-      _ = 2⁻¹ ^ N * ∑' q : C, volume (dyadicCube q.1.1 q.1.2) := ENNReal.tsum_mul_left
+          ih (hf.mono_set (hsub q q.property)) fun q' hq' => hM q' (hq'.trans (hsub q q.property))
+      _ = 2⁻¹ ^ N * ∑' q : C, volume (dyadicCube q.val.1 q.val.2) := ENNReal.tsum_mul_left
       _ ≤ 2⁻¹ ^ N * (2⁻¹ * volume (dyadicCube q₀.1 q₀.2)) := by gcongr
       _ = 2⁻¹ ^ (N + 1) * volume (dyadicCube q₀.1 q₀.2) := by rw [pow_succ, mul_assoc]
 

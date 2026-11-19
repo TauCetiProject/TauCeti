@@ -741,7 +741,7 @@ theorem wellOrdering_undefinable (lt : L.Relations 2) :
   have hwo : IsWellOrder M fun x y : M => RelMap lt ![x, y] := by
     simpa only [hrel] using (inferInstance : IsWellOrder M (· < ·))
   let f : α.ToType → M := fun a => ToType.mk
-    ⟨(ToType.toOrd a).1, (ToType.toOrd a).2.trans_le (Order.le_succ α)⟩
+    ⟨(ToType.toOrd a).val, (ToType.toOrd a).property.trans_le (Order.le_succ α)⟩
   have hc : Countable M :=
     Cardinal.countable_toType_of_lt_omega_one ((Cardinal.isSuccLimit_omega 1).add_one_lt hα)
   exact hbound M _ hne ((hφ M _ hne hc).2 hwo) f fun x y hxy => (hrel _ _).2

@@ -269,7 +269,7 @@ private theorem continuous_iwasawaUnitary : Continuous (iwasawaUnitary (𝕜 := 
       exact iwasawaTriangular_mem g
     · intro hx
       apply Subtype.ext
-      have h := iwasawaUnitary_mul x.2 hx
+      have h := iwasawaUnitary_mul x.property hx
       rwa [mul_inv_cancel_left] at h
   have hclosed : IsClosed f.graph := by
     rw [hgraph]

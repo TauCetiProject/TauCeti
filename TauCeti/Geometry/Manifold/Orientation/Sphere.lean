@@ -117,7 +117,7 @@ inclusion. -/
 @[simp]
 theorem _root_.Orientation.sphereVolumeForm_apply (o : Orientation ℝ E (Fin (n + 1)))
     (u : sphere (0 : E) 1) (v : Fin n → TangentSpace (𝓡 n) u) :
-    o.sphereVolumeForm.1 u v = o.volumeForm
+    o.sphereVolumeForm.val u v = o.volumeForm
       (Fin.cons (u : E) fun i ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u (v i)) := by
   rw [Orientation.sphereVolumeForm, SmoothForm.mpullback_apply]
   -- The radial form is `curryLeft` of the volume form, `Matrix.vecCons` is `Fin.cons`, and
@@ -127,7 +127,7 @@ theorem _root_.Orientation.sphereVolumeForm_apply (o : Orientation ℝ E (Fin (n
 
 /-- The volume form of the unit sphere vanishes nowhere. -/
 theorem _root_.Orientation.sphereVolumeForm_apply_ne_zero (o : Orientation ℝ E (Fin (n + 1)))
-    (u : sphere (0 : E) 1) : o.sphereVolumeForm.1 u ≠ 0 := by
+    (u : sphere (0 : E) 1) : o.sphereVolumeForm.val u ≠ 0 := by
   let b := finBasisOfFinrankEq ℝ (TangentSpace (𝓡 n) u) (finrank_euclideanSpace_fin (𝕜 := ℝ))
   intro h
   have hb := DFunLike.congr_fun h ⇑b
@@ -149,7 +149,7 @@ space `E` of dimension `n + 1`: a tangent basis `v₁, …, vₙ` at `u` is posi
 (`Orientation.orientation_eq_orientationAt_sphereOrientation_iff`). -/
 def _root_.Orientation.sphereOrientation (o : Orientation ℝ E (Fin (n + 1))) :
     Manifold.Orientation (𝓡 n) (sphere (0 : E) 1) (Fin n) :=
-  Manifold.Orientation.ofTopForm finrank_euclideanSpace_fin o.sphereVolumeForm.1
+  Manifold.Orientation.ofTopForm finrank_euclideanSpace_fin o.sphereVolumeForm.val
     (o.sphereVolumeForm.isSmoothForm.of_le zero_le) o.sphereVolumeForm_apply_ne_zero
 
 /-- A tangent basis `v` of the unit sphere at `u` is positive for the outward-normal orientation
@@ -207,8 +207,8 @@ theorem _root_.Orientation.sphereOrientation_neg (o : Orientation ℝ E (Fin (n 
 sphere back to `(-1)^(n+1)` times itself: it negates both the point and the tangent vectors. -/
 theorem _root_.Orientation.mpullback_neg_sphereVolumeForm (o : Orientation ℝ E (Fin (n + 1)))
     (u : sphere (0 : E) 1) :
-    mpullback (𝓡 n) (𝓡 n) (fun y : sphere (0 : E) 1 ↦ -y) o.sphereVolumeForm.1 u =
-      ((-1 : ℝ) ^ (n + 1)) • o.sphereVolumeForm.1 u := by
+    mpullback (𝓡 n) (𝓡 n) (fun y : sphere (0 : E) 1 ↦ -y) o.sphereVolumeForm.val u =
+      ((-1 : ℝ) ^ (n + 1)) • o.sphereVolumeForm.val u := by
   have hneg : MDifferentiableAt (𝓡 n) (𝓡 n) (fun y : sphere (0 : E) 1 ↦ -y) u :=
     (contMDiff_neg_sphere (m := 1)).mdifferentiableAt one_ne_zero
   have hcoe : MDifferentiableAt (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) (-u) :=

@@ -227,7 +227,7 @@ variable (g) in
 /-- The fibre class over a point `x` of `W`: the image of `g x` in `Hᵣ(E|_W, E₀|_W; K)`. -/
 private def fiberClassOver (W : Set B) (x : W) :
     ((thomPairOver F E W).singularHomology (ModuleCat.of K K) (finrank ℝ F) : ModuleCat.{w} K) :=
-  TopPair.singularHomologyMap (fiberThomPairOverMap F E x.2) (ModuleCat.of K K) (finrank ℝ F)
+  TopPair.singularHomologyMap (fiberThomPairOverMap F E x.property) (ModuleCat.of K K) (finrank ℝ F)
     (g x)
 
 omit [FiniteDimensional ℝ F] [∀ b, Module ℝ (E b)] [VectorBundle ℝ F E] in
@@ -251,8 +251,8 @@ private theorem singularHomologyMap_thomPairOverIso_fiberClassOver
       (ε c x : K) • (prodThomPairSingularHomologyIso (ModuleCat.of K K) W F 0 (finrank ℝ F)).inv
         (singularHomology₀Section (ModuleCat.of K K) (X := TopCat.of W) x 1) := by
   rw [fiberClassOver, ← ConcreteCategory.comp_apply, ← TopPair.singularHomologyMap_comp,
-    Bundle.Trivialization.fiberThomPairOverMap_comp_thomPairOverIso_hom ℝ _ hW x.2,
-    TopPair.singularHomologyMap_comp, ConcreteCategory.comp_apply, hg.map_eq c x (hW x.2),
+    Bundle.Trivialization.fiberThomPairOverMap_comp_thomPairOverIso_hom ℝ _ hW x.property,
+    TopPair.singularHomologyMap_comp, ConcreteCategory.comp_apply, hg.map_eq c x (hW x.property),
     map_smul, Subtype.coe_eta, singularHomologyMap_prodThomPairFiberMap_complZeroPairGenerator]
 
 /-- The fibre classes over two points of `W` joined by a path in `W`, inside the base set of the
@@ -263,12 +263,12 @@ private theorem fiberClassOver_eq_of_joinedIn (hg : IsLocalFiberGenerator K F E 
     fiberClassOver g W x = fiberClassOver g W y := by
   set T := (trivializationAt F E c).baseSet
   have hW : W ∩ T ⊆ T := inter_subset_right
-  let x' : ↥(W ∩ T) := ⟨x, x.2, h.source_mem.1⟩
-  let y' : ↥(W ∩ T) := ⟨y, y.2, h.target_mem.1⟩
+  let x' : ↥(W ∩ T) := ⟨x, x.property, h.source_mem.1⟩
+  let y' : ↥(W ∩ T) := ⟨y, y.property, h.target_mem.1⟩
   -- The two points are joined in `W ∩ T`, so their classes in `H₀` agree.
   have hj : Joined x' y' :=
     h.joined_subtype.map (f := fun z : {z : W | (z : B) ∈ T ∧ ε c z = ε c x} ↦
-      (⟨z.1.1, z.1.2, z.2.1⟩ : ↥(W ∩ T))) (by fun_prop)
+      (⟨z.val.val, z.val.property, z.property.1⟩ : ↥(W ∩ T))) (by fun_prop)
   have hxy : fiberClassOver g (W ∩ T) x' = fiberClassOver g (W ∩ T) y' := by
     apply (ModuleCat.mono_iff_injective (TopPair.singularHomologyMap
       ((trivializationAt F E c).thomPairOverIso ℝ hW).hom (ModuleCat.of K K)

@@ -80,11 +80,11 @@ variable {ι K : Type*} [Fintype ι] [Field K] [LinearOrder K] [IsStrictOrderedR
 /-- The projector map is continuous for the quotient topology on projective space. -/
 theorem continuous_projector : Continuous (projector : ℙ K (ι → K) → Matrix ι ι K) := by
   rw [continuous_iff]
-  have hcomp : projector ∘ mk' K = fun x : {x : ι → K // x ≠ 0} ↦ rankOneProjector x.1 :=
+  have hcomp : projector ∘ mk' K = fun x : {x : ι → K // x ≠ 0} ↦ rankOneProjector x.val :=
     funext fun x ↦ by simp
   simp only [hcomp, rankOneProjector_def]
   exact ((continuous_subtype_val.dotProduct continuous_subtype_val).inv₀ fun x ↦
-    dotProduct_self_eq_zero.not.mpr x.2).smul
+    dotProduct_self_eq_zero.not.mpr x.property).smul
     (continuous_subtype_val.matrix_vecMulVec continuous_subtype_val)
 
 /-- Over `ℝ` the projector map is a closed embedding, hence a homeomorphism from real projective

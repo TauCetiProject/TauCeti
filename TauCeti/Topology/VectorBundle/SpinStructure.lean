@@ -126,10 +126,10 @@ structure Equiv (s t : SpinStructure F E n) where
   toEquiv : ∀ x, s.P x ≃ t.P x
   /-- The induced map of total spaces is continuous. -/
   continuous_toFun : Continuous fun p : TotalSpace (realCliffordSpinGroupZero n) s.P ↦
-    (⟨p.proj, toEquiv p.proj p.2⟩ : TotalSpace (realCliffordSpinGroupZero n) t.P)
+    (⟨p.proj, toEquiv p.proj p.snd⟩ : TotalSpace (realCliffordSpinGroupZero n) t.P)
   /-- The inverse map of total spaces is continuous. -/
   continuous_invFun : Continuous fun p : TotalSpace (realCliffordSpinGroupZero n) t.P ↦
-    (⟨p.proj, (toEquiv p.proj).symm p.2⟩ : TotalSpace (realCliffordSpinGroupZero n) s.P)
+    (⟨p.proj, (toEquiv p.proj).symm p.snd⟩ : TotalSpace (realCliffordSpinGroupZero n) s.P)
   /-- The bijection is equivariant. -/
   map_smul : ∀ (x : X) (p : s.P x) (g : realCliffordSpinGroupZero n),
     toEquiv x (op g • p) = op g • toEquiv x p
@@ -167,8 +167,8 @@ theorem ext {φ ψ : s.Equiv t} (h : ∀ x p, φ.toEquiv x p = ψ.toEquiv x p) :
 def toHomeomorph (φ : s.Equiv t) :
     TotalSpace (realCliffordSpinGroupZero n) s.P ≃ₜ TotalSpace (realCliffordSpinGroupZero n) t.P
     where
-  toFun p := ⟨p.proj, φ.toEquiv p.proj p.2⟩
-  invFun p := ⟨p.proj, (φ.toEquiv p.proj).symm p.2⟩
+  toFun p := ⟨p.proj, φ.toEquiv p.proj p.snd⟩
+  invFun p := ⟨p.proj, (φ.toEquiv p.proj).symm p.snd⟩
   left_inv p := by simp
   right_inv p := by simp
   continuous_toFun := φ.continuous_toFun
@@ -176,13 +176,13 @@ def toHomeomorph (φ : s.Equiv t) :
 
 @[simp]
 theorem toHomeomorph_apply (φ : s.Equiv t) (p : TotalSpace (realCliffordSpinGroupZero n) s.P) :
-    φ.toHomeomorph p = ⟨p.proj, φ.toEquiv p.proj p.2⟩ :=
+    φ.toHomeomorph p = ⟨p.proj, φ.toEquiv p.proj p.snd⟩ :=
   (rfl)
 
 @[simp]
 theorem toHomeomorph_symm_apply (φ : s.Equiv t)
     (p : TotalSpace (realCliffordSpinGroupZero n) t.P) :
-    φ.toHomeomorph.symm p = ⟨p.proj, (φ.toEquiv p.proj).symm p.2⟩ :=
+    φ.toHomeomorph.symm p = ⟨p.proj, (φ.toEquiv p.proj).symm p.snd⟩ :=
   (rfl)
 
 /-- The homeomorphism of total spaces induced by an equivalence covers the identity of the
@@ -195,13 +195,13 @@ theorem proj_toHomeomorph (φ : s.Equiv t) (p : TotalSpace (realCliffordSpinGrou
 frames. -/
 theorem toFrame_toHomeomorph (φ : s.Equiv t) (p : TotalSpace (realCliffordSpinGroupZero n) s.P) :
     t.toFrame (φ.toHomeomorph p) = s.toFrame p :=
-  φ.toFrame_map p.proj p.2
+  φ.toFrame_map p.proj p.snd
 
 /-- The homeomorphism of total spaces induced by an equivalence is equivariant. -/
 theorem toHomeomorph_smul (φ : s.Equiv t) (g : (realCliffordSpinGroupZero n)ᵐᵒᵖ)
     (p : TotalSpace (realCliffordSpinGroupZero n) s.P) :
     φ.toHomeomorph (g • p) = g • φ.toHomeomorph p :=
-  congrArg (TotalSpace.mk p.proj) (φ.map_smul p.proj p.2 g.unop)
+  congrArg (TotalSpace.mk p.proj) (φ.map_smul p.proj p.snd g.unop)
 
 /-- The inverse homeomorphism of total spaces induced by an equivalence covers the identity of the
 base. -/
@@ -214,13 +214,13 @@ frames. -/
 theorem toFrame_toHomeomorph_symm (φ : s.Equiv t)
     (p : TotalSpace (realCliffordSpinGroupZero n) t.P) :
     s.toFrame (φ.toHomeomorph.symm p) = t.toFrame p :=
-  φ.toFrame_map_symm p.proj p.2
+  φ.toFrame_map_symm p.proj p.snd
 
 /-- The inverse homeomorphism of total spaces induced by an equivalence is equivariant. -/
 theorem toHomeomorph_symm_smul (φ : s.Equiv t) (g : (realCliffordSpinGroupZero n)ᵐᵒᵖ)
     (p : TotalSpace (realCliffordSpinGroupZero n) t.P) :
     φ.toHomeomorph.symm (g • p) = g • φ.toHomeomorph.symm p :=
-  congrArg (TotalSpace.mk p.proj) (φ.map_smul_symm p.proj p.2 g.unop)
+  congrArg (TotalSpace.mk p.proj) (φ.map_smul_symm p.proj p.snd g.unop)
 
 /-- The identity equivalence of a Spin structure. -/
 @[refl]
@@ -393,11 +393,11 @@ noncomputable def Equiv.pullback {s t : SpinStructure F E n} (φ : s.Equiv t) (f
   toEquiv y := φ.toEquiv (f y)
   continuous_toFun := (Pullback.continuous_iff (f := (f : Y → X))
     (g := fun p : TotalSpace _ ((f : Y → X) *ᵖ s.P) ↦
-      (⟨p.proj, φ.toEquiv (f p.proj) p.2⟩ : TotalSpace _ ((f : Y → X) *ᵖ t.P)))).2
+      (⟨p.proj, φ.toEquiv (f p.proj) p.snd⟩ : TotalSpace _ ((f : Y → X) *ᵖ t.P)))).2
     ⟨Pullback.continuous_proj _ _ _, φ.continuous_toFun.comp (Pullback.continuous_lift _ _ _)⟩
   continuous_invFun := (Pullback.continuous_iff (f := (f : Y → X))
     (g := fun p : TotalSpace _ ((f : Y → X) *ᵖ t.P) ↦
-      (⟨p.proj, (φ.toEquiv (f p.proj)).symm p.2⟩ : TotalSpace _ ((f : Y → X) *ᵖ s.P)))).2
+      (⟨p.proj, (φ.toEquiv (f p.proj)).symm p.snd⟩ : TotalSpace _ ((f : Y → X) *ᵖ s.P)))).2
     ⟨Pullback.continuous_proj _ _ _, φ.continuous_invFun.comp (Pullback.continuous_lift _ _ _)⟩
   map_smul y p g := φ.map_smul (f y) p g
   toFrame_map y p := by

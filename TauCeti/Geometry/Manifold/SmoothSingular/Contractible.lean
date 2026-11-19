@@ -117,7 +117,7 @@ theorem exists_contMDiff_contraction_of_starConvex {U : TopologicalSpace.Opens H
   -- The straight-line contraction of `I '' U` towards `c`, read back in `H` through `I.symm`.
   let h : ℝ × U → E := fun p ↦ c + (1 - Real.smoothTransition p.1) • (I p.2 - c)
   have hmem : ∀ p, h p ∈ I '' U := fun p ↦
-    hU.add_smul_sub_mem (mem_image_of_mem I p.2.2)
+    hU.add_smul_sub_mem (mem_image_of_mem I p.2.property)
       (by linarith [Real.smoothTransition.le_one p.1])
       (by linarith [Real.smoothTransition.nonneg p.1])
   have hU' : ∀ p, I.symm (h p) ∈ U := fun p ↦ by
@@ -234,7 +234,7 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_starConvex [Cate
     {U : TopologicalSpace.Opens H} {c : E} (hU : StarConvex ℝ c (I '' U)) :
     QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I U).ι R) := by
   rcases (U : Set H).eq_empty_or_nonempty with hempty | ⟨x₀, hx₀⟩
-  · have : IsEmpty U := ⟨fun x ↦ eq_empty_iff_forall_notMem.1 hempty x x.2⟩
+  · have : IsEmpty U := ⟨fun x ↦ eq_empty_iff_forall_notMem.1 hempty x x.property⟩
     exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_isEmpty R
   obtain ⟨F, hF, h₀, h₁⟩ := exists_contMDiff_contraction_of_starConvex hU
   exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contraction R hF (F (1, ⟨x₀, hx₀⟩))
@@ -252,7 +252,7 @@ theorem isZero_homology_smoothSingularSubcomplex_of_starConvex [CategoryWithHomo
     IsZero ((smoothSingularSubcomplex I U : SSet).homology R n) := by
   rcases (U : Set H).eq_empty_or_nonempty with hempty | ⟨x₀, hx₀⟩
   · -- An empty open set has no smooth simplices at all.
-    have : IsEmpty U := ⟨fun x ↦ eq_empty_iff_forall_notMem.1 hempty x x.2⟩
+    have : IsEmpty U := ⟨fun x ↦ eq_empty_iff_forall_notMem.1 hempty x x.property⟩
     exact (HomologicalComplex.homologyFunctor C _ n).map_isZero (SSet.isZero_chainComplex _ R)
   obtain ⟨F, hF, h₀, h₁⟩ := exists_contMDiff_contraction_of_starConvex hU
   exact isZero_homology_smoothSingularSubcomplex_of_contMDiff R hF (F (1, ⟨x₀, hx₀⟩)) h₀

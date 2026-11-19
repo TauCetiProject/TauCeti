@@ -79,7 +79,7 @@ theorem HasCompactSupport.exists_testFunction_eLpNorm_sub_le [IsFiniteMeasureOnC
   set K : Set E := (↑) '' tsupport g
   have hK : IsCompact K := hgc.isCompact.image continuous_subtype_val
   obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open Ω.isOpen
-    (image_subset_iff.2 fun x _ => x.2)
+    (image_subset_iff.2 fun x _ => x.property)
   set K' := cthickening δ K
   set M := μ ((↑) ⁻¹' K') ^ (1 / p.toReal)
   have hM : M ≠ ⊤ := ENNReal.rpow_ne_top_of_nonneg (by positivity)

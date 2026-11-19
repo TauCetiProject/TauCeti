@@ -245,7 +245,7 @@ theorem isLocallyConformallyFlatAt_iff_exists_opens_curvatureTensor_rescale_eq_z
     rw [curvatureTensor_leviCivitaConnection_eq_of_riemannianBundle_eq
       (congrArg ContMDiffRiemannianMetric.toRiemannianMetric hEq) y]
     exact (curvatureTensor_leviCivitaConnection_restrictOpenTangentSpace_eq_zero_iff
-      (g.rescale f hf hf_pos) W y).2 (hUflat y.1 y.2)
+      (g.rescale f hf hf_pos) W y).2 (hUflat y.val y.property)
   · rintro ⟨W, hxW, φ, hφ, hφ_pos, hflat⟩
     exact g.isLocallyConformallyFlatAt_of_opens hxW hφ hφ_pos (Eventually.of_forall hflat)
 
@@ -283,7 +283,7 @@ theorem IsLocallyConformallyFlat.restrictOpenTangentSpace
     (hg : g.IsLocallyConformallyFlat) (U : Opens M) :
     (g.restrictOpenTangentSpace U).IsLocallyConformallyFlat :=
   (g.restrictOpenTangentSpace U).isLocallyConformallyFlat_iff_forall_isLocallyConformallyFlatAt.2
-    fun x ↦ (hg.isLocallyConformallyFlatAt x.1).restrictOpenTangentSpace
+    fun x ↦ (hg.isLocallyConformallyFlatAt x.val).restrictOpenTangentSpace
 
 /-- **Locality of `IsLocallyConformallyFlat`.** A smooth metric `g` is locally conformally flat if
 and only if every point has an open neighbourhood on which the restricted metric is locally

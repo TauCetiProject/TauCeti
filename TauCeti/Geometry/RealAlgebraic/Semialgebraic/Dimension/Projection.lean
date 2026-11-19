@@ -74,7 +74,7 @@ theorem IsSemialgebraic.semialgebraicDim_image_tail_le {s : Set (Fin (n + 1) →
   -- The cell `E` contains the graph of a continuous function on `Fin.tail '' E`, and this graph
   -- is homeomorphic to `Fin.tail '' E`.
   obtain ⟨g, hg, hgE⟩ := h𝒞.exists_continuous_cons_mem hE.1
-  have htail : (Fin.tail ∘ fun x : Fin.tail '' E ↦ (Fin.cons (g x) x.1 : Fin (n + 1) → ℝ)) =
+  have htail : (Fin.tail ∘ fun x : Fin.tail '' E ↦ (Fin.cons (g x) x.val : Fin (n + 1) → ℝ)) =
       Subtype.val := by
     funext x
     simp
@@ -141,7 +141,7 @@ theorem IsSemialgebraic.natCast_le_semialgebraicDim_iff {s : Set (Fin n → ℝ)
       interior_mono ?_ ((hp _ hf.isOpen_range).interior_eq.symm ▸
         mem_image_of_mem p (mem_range_self (⟨x, hx⟩ : E)))⟩
     rintro _ ⟨_, ⟨y, rfl⟩, rfl⟩
-    exact ⟨y.1, hE.2 y.2, rfl⟩
+    exact ⟨y.val, hE.2 y.property, rfl⟩
   · -- The projection contains a nonempty open subset of `ℝ ^ d`.
     calc (d : WithBot ℕ∞) = semialgebraicDim (interior ((fun x ↦ x ∘ ι) '' s)) :=
           (isOpen_interior.semialgebraicDim_eq hint).symm

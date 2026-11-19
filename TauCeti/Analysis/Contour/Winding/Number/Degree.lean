@@ -126,7 +126,7 @@ theorem integral_realWindingIntegrand_eq_two_pi_mul_degree {γ : ℝ → ℂ} {w
       target' := hclosed.symm }
   have hΓ : EqOn Γ.extend γ (Icc 0 1) := fun t ht ↦ Path.extend_apply Γ ht
   have hdeg := windingNumber_eq_degree_of_eq_div_norm Γ p
-    (hγ.congr (by simpa only [uIcc_of_le zero_le_one] using hΓ)) (fun t ↦ havoid t t.2) hp
+    (hγ.congr (by simpa only [uIcc_of_le zero_le_one] using hΓ)) (fun t ↦ havoid t t.property) hp
   rw [windingNumber_congr_curve (hΓ.mono (by simpa using Ioo_subset_Icc_self)), hreal] at hdeg
   have hdeg' : 1 / (2 * Real.pi) *
       ∫ t in (0 : ℝ)..1, realWindingIntegrand (γ t - w) (deriv γ t) = Circle.degree p := by

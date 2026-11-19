@@ -107,7 +107,7 @@ theorem dense_setOf_stabilizer_eq_ker_of_interior_fixedBy [Finite G]
   · exact isClosed_iUnion_of_finite fun g ↦ isClosed_iUnion_of_finite fun _ ↦ isClosed_fixedBy g
   · simpa only [iUnion_subtype] using
       IsNowhereDense.iUnion fun g : {g : G // g ∉ (toPermHom G X).ker} ↦
-        (isClosed_fixedBy (g : G)).isNowhereDense_iff.mpr (h g g.2)
+        (isClosed_fixedBy (g : G)).isNowhereDense_iff.mpr (h g g.property)
 
 end Topology
 

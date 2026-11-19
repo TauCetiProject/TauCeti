@@ -72,7 +72,7 @@ theorem _root_.Module.Basis.isOpen_span_range {ι : Type*} [Finite ι] (b : Basi
     ext x
     simp only [SetLike.mem_coe, Basis.mem_span_iff_repr_mem, mem_preimage, mem_univ_pi,
       TauCeti.ModuleTopology.equivFunHomeomorph_apply, Basis.equivFun_apply]
-    exact forall_congr' fun i => ⟨fun ⟨a, h⟩ => h ▸ a.2, fun h => ⟨⟨_, h⟩, rfl⟩⟩
+    exact forall_congr' fun i => ⟨fun ⟨a, h⟩ => h ▸ a.property, fun h => ⟨⟨_, h⟩, rfl⟩⟩
   rw [h]
   exact (isOpen_set_pi finite_univ fun _ _ => Valuation.isOpen_integer).preimage
     (TauCeti.ModuleTopology.equivFunHomeomorph b).continuous
@@ -104,7 +104,7 @@ instance IsFullLattice.isModuleTopology : IsModuleTopology 𝒪[E] L := by
   obtain ⟨s, hs⟩ := IsLattice.fg (A := E) (M := L)
   -- `L` is the image of `𝒪[E] ^ s` under `φ`, and `V` is the image of `E ^ s` under `Φ`.
   let φ : (s → 𝒪[E]) →ₗ[𝒪[E]] L :=
-    Fintype.linearCombination 𝒪[E] fun i : s => ⟨i, hs ▸ subset_span i.2⟩
+    Fintype.linearCombination 𝒪[E] fun i : s => ⟨i, hs ▸ subset_span i.property⟩
   let Φ : (s → E) →ₗ[E] V := Fintype.linearCombination E fun i : s => (i : V)
   have hΦ : Function.Surjective Φ := by
     rw [← LinearMap.range_eq_top, Fintype.range_linearCombination, Subtype.range_coe_subtype,

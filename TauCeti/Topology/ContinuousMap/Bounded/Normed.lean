@@ -178,8 +178,8 @@ preserved by both `a` and `b`. -/
 def compContinuousₗᵢ (s : S) (a b : C(α, α)) (hab : ∀ x, a (b x) = x) (hba : ∀ x, b (a x) = x)
     (ha : ∀ f ∈ s, f.compContinuous a ∈ s) (hb : ∀ f ∈ s, f.compContinuous b ∈ s) :
     s ≃ₗᵢ[𝕜] s where
-  toFun f := ⟨(f : α →ᵇ β).compContinuous a, ha _ f.2⟩
-  invFun f := ⟨(f : α →ᵇ β).compContinuous b, hb _ f.2⟩
+  toFun f := ⟨(f : α →ᵇ β).compContinuous a, ha _ f.property⟩
+  invFun f := ⟨(f : α →ᵇ β).compContinuous b, hb _ f.property⟩
   map_add' _ _ := Subtype.ext <| ext fun _ => by simp
   map_smul' _ _ := Subtype.ext <| ext fun _ => by simp
   left_inv f := Subtype.ext <| ext fun x => congrArg (f : α →ᵇ β) (hab x)

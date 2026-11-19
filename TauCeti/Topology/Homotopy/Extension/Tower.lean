@@ -162,12 +162,12 @@ theorem exists_leftInverse_homotopy_of_isCoherentWith (hA : Monotone A) (hB : Mo
   have hIX : ⋃ n, (univ : Set I) ×ˢ A n = univ := by simp [← prod_iUnion, hAX]
   let Hs (n : ℕ) : C((univ : Set I) ×ˢ A n, X) :=
     (subtypeVal (A n)).comp <| (s n).2.toContinuousMap.comp
-      ⟨fun p ↦ (p.1.1, ⟨p.1.2, p.2.2⟩), by fun_prop⟩
+      ⟨fun p ↦ (p.val.1, ⟨p.val.2, p.property.2⟩), by fun_prop⟩
   let HX : C(I × X, X) := liftCoherent (fun n ↦ (univ : Set I) ×ˢ A n) Hs
     (fun i j p hi hj ↦ (hs_H (le_max_left i j) p.1 ⟨p.2, hi.2⟩).symm.trans
       (hs_H (le_max_right i j) p.1 ⟨p.2, hj.2⟩)) (hAc.univ_prod hAX) hIX
   have hHX (n : ℕ) (t : I) (a : A n) : HX (t, a) = (s n).2 (t, a) :=
-    liftCoherent_coe (S := fun n ↦ (univ : Set I) ×ˢ A n) ⟨(t, a), mem_univ t, a.2⟩
+    liftCoherent_coe (S := fun n ↦ (univ : Set I) ×ˢ A n) ⟨(t, a), mem_univ t, a.property⟩
   have hmem (x : X) : ∃ n, x ∈ A n := mem_iUnion.1 (hAX ▸ mem_univ x)
   refine ⟨g, ⟨HX, fun x ↦ ?_, fun x ↦ ?_⟩, fun n y hy ↦ ?_, fun n t x hx ↦ ?_⟩
   · obtain ⟨n, hx⟩ := hmem x
@@ -176,7 +176,7 @@ theorem exists_leftInverse_homotopy_of_isCoherentWith (hA : Monotone A) (hB : Mo
     simp [hHX n 1 ⟨x, hx⟩]
   · simp [hg n ⟨y, hy⟩]
   · -- The glued homotopy is `HX` as a function.
-    have hH := ((s n).2 (t, ⟨x, hx⟩)).2
+    have hH := ((s n).2 (t, ⟨x, hx⟩)).property
     rw [← hHX n t ⟨x, hx⟩] at hH
     exact hH
 
@@ -196,12 +196,13 @@ theorem exists_homotopyEquiv_of_isCoherentWith (hA : Monotone A) (hB : Monotone 
     exists_leftInverse_homotopy_of_isCoherentWith hA hB hAX hBY hAc hBc hAH hBH f e he
   -- On each stage, `g` is a left homotopy inverse of `e n`, hence a homotopy equivalence.
   let e' (n : ℕ) : B n ≃ₕ A n :=
-    have Hn : (ContinuousMap.comp ⟨fun b ↦ ⟨g b, hgB n b.2⟩, by fun_prop⟩ (e n).toFun).Homotopy
+    have Hn : (ContinuousMap.comp ⟨fun b ↦ ⟨g b, hgB n b.property⟩, by fun_prop⟩
+        (e n).toFun).Homotopy
         (ContinuousMap.id (A n)) :=
-      { toFun p := ⟨H (p.1, p.2), hHA n p.1 p.2 p.2.2⟩
+      { toFun p := ⟨H (p.1, p.2), hHA n p.1 p.2 p.2.property⟩
         map_zero_left a := Subtype.ext <| by simp [he]
         map_one_left a := Subtype.ext <| by simp }
-    { toFun := ⟨fun b ↦ ⟨g b, hgB n b.2⟩, by fun_prop⟩
+    { toFun := ⟨fun b ↦ ⟨g b, hgB n b.property⟩, by fun_prop⟩
       invFun := (e n).toFun
       left_inv := (e n).toFun_comp_homotopic_id_of_comp_toFun_homotopic_id ⟨Hn⟩
       right_inv := ⟨Hn⟩ }

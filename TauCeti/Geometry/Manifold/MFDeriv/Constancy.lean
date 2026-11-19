@@ -101,7 +101,7 @@ theorem apply_eq_of_mfderiv_eq_zero (hf : MDifferentiableOn I J f s) (hs : IsOpe
   have hloc : IsLocallyConstant (s.domRestrict f) :=
     (IsLocallyConstant.iff_eventually_eq _).mpr fun z ↦
       (continuous_subtype_val.tendsto z).eventually
-        (hf.eventuallyEq_const_of_mfderiv_eq_zero hs hzero z.2)
+        (hf.eventuallyEq_const_of_mfderiv_eq_zero hs hzero z.property)
   exact hloc.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
 
 end MDifferentiableOn

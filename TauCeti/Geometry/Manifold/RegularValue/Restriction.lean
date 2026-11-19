@@ -64,8 +64,8 @@ noncomputable def regularFiberRestrictDiffeomorph (hm : 1 ≤ m) (hf : ContMDiff
   let V : Opens {x : M // f x = c} :=
     Opens.comap ⟨Subtype.val, continuous_subtype_val⟩ U
   let e : {x : U // f x = c} ≃ₜ V :=
-    { toFun := fun x ↦ ⟨⟨x.1.1, x.2⟩, x.1.2⟩
-      invFun := fun x ↦ ⟨⟨x.1.1, x.2⟩, x.1.2⟩
+    { toFun := fun x ↦ ⟨⟨x.val.val, x.property⟩, x.val.property⟩
+      invFun := fun x ↦ ⟨⟨x.val.val, x.property⟩, x.val.property⟩
       left_inv := fun _ ↦ rfl
       right_inv := fun _ ↦ rfl
       continuous_toFun := by fun_prop
@@ -88,7 +88,7 @@ noncomputable def regularFiberRestrictDiffeomorph (hm : 1 ≤ m) (hf : ContMDiff
 theorem regularFiberRestrictDiffeomorph_apply (hm : 1 ≤ m) (hf : ContMDiff I J m f)
     (hc : J.IsInteriorPoint c) (hreg : IsRegularValue I J f c) (U : Opens M)
     (x : {x : U // f x = c}) :
-    regularFiberRestrictDiffeomorph hm hf hc hreg U x = ⟨⟨x.1.1, x.2⟩, x.1.2⟩ :=
+    regularFiberRestrictDiffeomorph hm hf hc hreg U x = ⟨⟨x.val.val, x.property⟩, x.val.property⟩ :=
   (rfl)
 
 /-- The inverse restriction comparison preserves the underlying point in the open subset. -/
@@ -100,7 +100,8 @@ theorem regularFiberRestrictDiffeomorph_symm_apply (hm : 1 ≤ m) (hf : ContMDif
     letI := regularFiberChartedSpace (f := fun x : U ↦ f x) hm
       (hf.comp contMDiff_subtype_val) hc
       (hreg.restrict U)
-    (regularFiberRestrictDiffeomorph hm hf hc hreg U).symm x = ⟨⟨x.1.1, x.2⟩, x.1.2⟩ :=
+    (regularFiberRestrictDiffeomorph hm hf hc hreg U).symm x = ⟨⟨x.val.val, x.property⟩,
+        x.val.property⟩ :=
   (rfl)
 
 end TauCeti

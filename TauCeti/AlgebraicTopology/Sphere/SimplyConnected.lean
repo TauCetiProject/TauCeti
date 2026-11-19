@@ -345,7 +345,7 @@ private theorem exists_homotopic_normalize_nodeInterp {x y : sphere (0 : E) 1} (
     ∃ γ' : Path x y, γ.Homotopic γ' ∧
       ∀ t, ((γ' t : sphere (0 : E) 1) : E) = normalize (nodeInterp N node t) := by
   have hγnorm : ∀ t, ‖((γ t : sphere (0 : E) 1) : E)‖ = 1 := fun t =>
-    mem_sphere_zero_iff_norm.mp (γ t).2
+    mem_sphere_zero_iff_norm.mp (γ t).property
   have hLne : ∀ t : I, nodeInterp N node t ≠ 0 := by
     intro t ht
     have hlt := hLclose t
@@ -354,7 +354,7 @@ private theorem exists_homotopic_normalize_nodeInterp {x y : sphere (0 : E) 1} (
   -- The comparison path.
   have hcontL : Continuous (nodeInterp N node) := continuous_nodeInterp N node
   let Lsphere := normalizeToSphere (nodeInterp N node) hcontL hLne
-  have hx1 : ‖((x : sphere (0 : E) 1) : E)‖ = 1 := mem_sphere_zero_iff_norm.mp x.2
+  have hx1 : ‖((x : sphere (0 : E) 1) : E)‖ = 1 := mem_sphere_zero_iff_norm.mp x.property
   let γ' : Path x y :=
     { toFun := Lsphere
       continuous_toFun := Lsphere.continuous
@@ -362,7 +362,7 @@ private theorem exists_homotopic_normalize_nodeInterp {x y : sphere (0 : E) 1} (
         rw [coe_normalizeToSphere_apply, hL0, normalize_eq_self_of_norm_eq_one hx1])
       target' := Subtype.ext (by
         rw [coe_normalizeToSphere_apply, hL1,
-          normalize_eq_self_of_norm_eq_one (mem_sphere_zero_iff_norm.mp y.2)]) }
+          normalize_eq_self_of_norm_eq_one (mem_sphere_zero_iff_norm.mp y.property)]) }
   -- The straight-line homotopy between the path and the comparison path misses the origin.
   have hGne : ∀ z : I × I,
       (1 - (z.1 : ℝ)) • ((γ z.2 : sphere (0 : E) 1) : E) + (z.1 : ℝ) • nodeInterp N node z.2

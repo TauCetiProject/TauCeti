@@ -87,7 +87,7 @@ theorem exists_nat_cover_finite_sup (hB : Opens.IsBasis B) (U : Opens X) :
   · apply le_antisymm
     · exact iSup_le fun n x hx ↦ by
         obtain ⟨y, _, rfl⟩ := (hsW n hx).1
-        exact y.2
+        exact y.property
     · intro x hx
       let y : U := ⟨x, hx⟩
       have hy := K₀.mem_sdiff_shiftr_find y

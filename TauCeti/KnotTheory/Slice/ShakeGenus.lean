@@ -363,7 +363,7 @@ def mapLinearIsometryEquiv (S : ZeroShakeSurface K) (e : E ≃ₗᵢ[ℝ] F)
     -- The isometry maps the complement of `K` into the complement of `K'`.
     have hmaps (x : ↥(range K)ᶜ) : e.unitSphereIsometryEquiv x ∈ (range K')ᶜ := by
       rintro ⟨z, hz⟩
-      refine x.2 ⟨z, e.unitSphereIsometryEquiv.injective (Subtype.ext ?_)⟩
+      refine x.property ⟨z, e.unitSphereIsometryEquiv.injective (Subtype.ext ?_)⟩
       rw [e.coe_unitSphereIsometryEquiv_apply, ← hK', hz]
     exact S.isSolidTorusNeighborhood.boundaryHomologyMap_basis_one_eq_zero_of_map _
       (ContinuousMap.id Circle) ⟨fun x ↦ ⟨_, hmaps x⟩,

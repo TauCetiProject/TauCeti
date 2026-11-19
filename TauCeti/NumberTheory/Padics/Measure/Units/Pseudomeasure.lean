@@ -202,7 +202,7 @@ convergence since `ℤ_pˣ` is compact) and a fixed pseudo-measure `z`, the valu
 continuously on the parameter `s` ranging over `{s | κ s ≠ 1}`. -/
 theorem continuous_unitCharacterEval {S : Type*} [TopologicalSpace S]
     {κ : S → ℤ_[p]ˣ →ₜ* ℤ_[p]} (hκ : Continuous κ) (z : unitsPseudomeasures p) :
-    Continuous fun s : {s // κ s ≠ 1} => (κ s).unitCharacterEval s.2 z := by
+    Continuous fun s : {s // κ s ≠ 1} => (κ s).unitCharacterEval s.property z := by
   have hκ' : Continuous fun s => (κ s : C(ℤ_[p]ˣ, ℤ_[p])) :=
     (ContinuousMonoidHom.isInducing_toContinuousMap _ _).continuous.comp hκ
   rw [continuous_iff_continuousAt]

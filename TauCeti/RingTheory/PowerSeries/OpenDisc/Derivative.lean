@@ -87,7 +87,7 @@ variable {R : Type*} [NormedRing R] {R₀ : ℝ}
 noncomputable def hasseDeriv (k : ℕ) :
     OnOpenDisc.subring R R₀ →ₗ[R] OnOpenDisc.subring R R₀ where
   toFun f := ⟨PowerSeries.hasseDeriv k (f : R⟦X⟧),
-    OnOpenDisc.mem_subring.mpr ((OnOpenDisc.mem_subring.mp f.2).hasseDeriv k)⟩
+    OnOpenDisc.mem_subring.mpr ((OnOpenDisc.mem_subring.mp f.property).hasseDeriv k)⟩
   map_add' f g := Subtype.ext (map_add (PowerSeries.hasseDeriv k) (f : R⟦X⟧) g)
   map_smul' a f := Subtype.ext (map_smul (PowerSeries.hasseDeriv k) a (f : R⟦X⟧))
 
@@ -166,9 +166,10 @@ attribute [local instance] radius_pos
 theorem norm_restrict_hasseDeriv_le (r : Set.Ioo (0 : ℝ) R₀) (k : ℕ)
     (f : OnOpenDisc.subring R R₀) :
     ‖restrict r (hasseDeriv k f)‖ ≤ (r : ℝ)⁻¹ ^ k * ‖restrict r f‖ := by
-  have hf : (f : R⟦X⟧).IsRestricted r := (mem_subring_iff_forall_isRestricted.mp f.2) r
+  have hf : (f : R⟦X⟧).IsRestricted r := (mem_subring_iff_forall_isRestricted.mp f.property) r
   rw [norm_eq_gaussNorm, norm_eq_gaussNorm, coe_restrict, coe_restrict, coe_hasseDeriv]
-  exact PowerSeries.gaussNorm_hasseDeriv_le (R := R) r.2.1 (hasGaussNorm_of_isRestricted hf) k
+  exact PowerSeries.gaussNorm_hasseDeriv_le (R := R) r.property.1 (hasGaussNorm_of_isRestricted hf)
+      k
 
 /-- Hasse derivatives on an open disc are uniformly continuous for the Gauss uniformity. -/
 theorem uniformContinuous_hasseDeriv (k : ℕ) :
@@ -197,7 +198,7 @@ variable {R : Type*} [NormedCommRing R] {R₀ S₀ : ℝ}
 noncomputable def derivative :
     Derivation R (OnOpenDisc.subring R R₀) (OnOpenDisc.subring R R₀) where
   toFun f := ⟨d⁄dX (f : R⟦X⟧),
-    OnOpenDisc.mem_subring.mpr (OnOpenDisc.mem_subring.mp f.2).derivative⟩
+    OnOpenDisc.mem_subring.mpr (OnOpenDisc.mem_subring.mp f.property).derivative⟩
   map_add' f g := Subtype.ext (map_add PowerSeries.derivative (f : R⟦X⟧) g)
   map_smul' a f := Subtype.ext (Derivation.map_smul PowerSeries.derivative a (f : R⟦X⟧))
   map_one_eq_zero' := Subtype.ext PowerSeries.derivative_one
@@ -312,7 +313,7 @@ theorem hasseDeriv_taylorHom {a : R} (ha : ‖a‖ < R₀) (k : ℕ) (f : OnOpen
     hasseDeriv k (taylorHom ha f) = taylorHom ha (hasseDeriv k f) := by
   apply Subtype.ext
   rw [coe_hasseDeriv, coe_taylorHom, coe_taylorHom, coe_hasseDeriv]
-  exact (OnOpenDisc.mem_subring.mp f.2).hasseDeriv_taylor ha k
+  exact (OnOpenDisc.mem_subring.mp f.property).hasseDeriv_taylor ha k
 
 /-- **The derivative commutes with Taylor translation** on an open disc. -/
 theorem derivative_taylorHom {a : R} (ha : ‖a‖ < R₀) (f : OnOpenDisc.subring R R₀) :

@@ -159,7 +159,7 @@ theorem isOpenEmbedding_quotientMk_domRestrict_of_disjoint_smul (hU_open : IsOpe
     (continuous_quot_mk.comp continuous_subtype_val) ?_
     (MulAction.isOpenQuotientMap_quotientMk.isOpenMap.domRestrict hU_open)
   intro x y hxy
-  exact Subtype.ext (injOn_quotientMk_of_disjoint_smul hU x.2 y.2 hxy)
+  exact Subtype.ext (injOn_quotientMk_of_disjoint_smul hU x.property y.property hxy)
 
 end DisjointTranslates
 
@@ -194,7 +194,7 @@ theorem isOpenEmbedding_quotientMk_domRestrict_of_disjoint_vadd (hU_open : IsOpe
     (continuous_quot_mk.comp continuous_subtype_val) ?_
     (AddAction.isOpenQuotientMap_quotientMk.isOpenMap.domRestrict hU_open)
   intro x y hxy
-  exact Subtype.ext (injOn_quotientMk_of_disjoint_vadd hU x.2 y.2 hxy)
+  exact Subtype.ext (injOn_quotientMk_of_disjoint_vadd hU x.property y.property hxy)
 
 end DisjointTranslatesAdd
 
@@ -292,13 +292,13 @@ theorem properlyDiscontinuousSMul_of_conjAct_smul_eq {G X : Type*} [Group G] [To
     let φ : H → (ConjAct.toConjAct g • H : _root_.Subgroup G) := fun k ↦
       ⟨g * k * g⁻¹, by
         simpa [ConjAct.toConjAct_smul] using
-          _root_.Subgroup.smul_mem_pointwise_smul _ (ConjAct.toConjAct g) H k.2⟩
+          _root_.Subgroup.smul_mem_pointwise_smul _ (ConjAct.toConjAct g) H k.property⟩
     refine ((ProperlyDiscontinuousSMul.finite_disjoint_inter_image (Γ := H)
       (hK.image (continuous_const_smul g⁻¹)) (hL.image (continuous_const_smul g⁻¹))).image
         φ).subset ?_
     intro k hk
     have hk' : g⁻¹ * k * g ∈ H := by
-      have := _root_.Subgroup.mem_pointwise_smul_iff_inv_smul_mem.mp k.2
+      have := _root_.Subgroup.mem_pointwise_smul_iff_inv_smul_mem.mp k.property
       rwa [← ConjAct.toConjAct_inv, ConjAct.toConjAct_smul, inv_inv] at this
     refine ⟨⟨g⁻¹ * k * g, hk'⟩, ?_, Subtype.ext (by simp [φ, mul_assoc])⟩
     -- a point `x ∈ K` with `k • x ∈ L` gives `g⁻¹ • x ∈ g⁻¹ • K` moved into `g⁻¹ • L`

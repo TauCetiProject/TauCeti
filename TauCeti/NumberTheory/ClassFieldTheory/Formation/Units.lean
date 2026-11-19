@@ -121,7 +121,7 @@ theorem range_localFormationHom :
   ext g
   refine ⟨?_, fun hg => ⟨(TauCeti.galoisSubgroupEquiv K L σ).symm ⟨g, hg⟩, ?_⟩⟩
   · rintro ⟨h, rfl⟩
-    exact (TauCeti.galoisSubgroupEquiv K L σ h).2
+    exact (TauCeti.galoisSubgroupEquiv K L σ h).property
   · rw [localFormationHom_apply, ContinuousMulEquiv.apply_symm_apply]
 
 /-- The embedding of absolute Galois groups underlying restriction of the units formation is
@@ -150,7 +150,7 @@ def localFormationHomInv {U : Subgroup (AbsoluteGaloisGroup L)}
       (Subgroup.inclusion (h.trans ((Subgroup.map_le_range _ U).trans
         (range_localFormationHom K L σ).le)))).codRestrict U
     fun u => by
-      obtain ⟨v, hv, hvu⟩ := h u.2
+      obtain ⟨v, hv, hvu⟩ := h u.property
       have hu : Subgroup.inclusion (h.trans ((Subgroup.map_le_range _ U).trans
           (range_localFormationHom K L σ).le)) u = TauCeti.galoisSubgroupEquiv K L σ v :=
         Subtype.ext (hvu.symm.trans (localFormationHom_apply K L σ v))
@@ -165,7 +165,8 @@ theorem localFormationHomInv_apply_coe {U : Subgroup (AbsoluteGaloisGroup L)}
     (u : U') :
     (localFormationHomInv K L σ h u : AbsoluteGaloisGroup L) =
       (TauCeti.galoisSubgroupEquiv K L σ).symm
-        ⟨u, (h.trans ((Subgroup.map_le_range _ U).trans (range_localFormationHom K L σ).le)) u.2⟩ :=
+        ⟨u, (h.trans ((Subgroup.map_le_range _ U).trans (range_localFormationHom K L σ).le))
+            u.property⟩ :=
   (rfl)
 
 /-- `localFormationHomInv` is a right inverse of the embedding `G_L → G_K`. -/
@@ -403,7 +404,7 @@ theorem subsingleton_h1_unitsFormation (L : NormalLayer (AbsoluteGaloisGroup K))
   have : (L.top.toSubgroup.subgroupOf L.ground.toSubgroup).Normal := L.normal
   obtain ⟨m, hm⟩ := isCoboundary₁_of_isCocycle₁_quotient L.ground.toSubgroup L.ground.isClosed
     (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) (L.top.isOpen.preimage continuous_subtype_val)
-    (f := unitsCocycle L f) (isCocycle₁_unitsCocycle L ((mem_cocycles₁_iff f).1 f.2))
+    (f := unitsCocycle L f) (isCocycle₁_unitsCocycle L ((mem_cocycles₁_iff f).1 f.property))
   let e := L.coeffFixedPointsEquiv (unitsCoeffEquivUnitsFormation K)
     (unitsCoeffEquivUnitsFormation_smul K)
   refine ⟨e.symm m, funext fun σ => e.injective ?_⟩

@@ -122,8 +122,8 @@ variable [I.Boundaryless]
 /-- The chart target, as a subtype of the model space, is its own open-set form. -/
 private def chartTargetHomeomorph (x₀ : M) :
     (extChartAt I x₀).target ≃ₜ extChartTargetOpens I x₀ where
-  toFun z := ⟨z, mem_extChartTargetOpens.mpr z.2⟩
-  invFun z := ⟨z, mem_extChartTargetOpens.mp z.2⟩
+  toFun z := ⟨z, mem_extChartTargetOpens.mpr z.property⟩
+  invFun z := ⟨z, mem_extChartTargetOpens.mp z.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := continuous_subtype_val.subtype_mk _
@@ -155,7 +155,7 @@ private theorem coe_symChartMetric_apply (k : ℕ∞)
     (z : extChartTargetOpens I x₀) :
     (symChartMetric k g x₀ z : E →L[ℝ] E →L[ℝ] ℝ) = g.toNondegenerateMetric.chartMetric x₀ z := by
   have hz : (extChartAt I x₀).symm z ∈ (chartAt H x₀).source := by
-    simpa using (extChartAt I x₀).map_target (mem_extChartTargetOpens.mp z.2)
+    simpa using (extChartAt I x₀).map_target (mem_extChartTargetOpens.mp z.property)
   simp only [symChartMetric, symFrameCoordinates, ContMDiffMap.comp_apply,
     Trivialization.frameCoordinates_apply]
   rw [ContMDiffNondegenerateMetric.chartMetric_def, Diffeomorph.coe_coe,
@@ -201,7 +201,7 @@ private theorem chartMetricDerivative_eq (k : ℕ∞)
         C((extChartAt I x₀).target, extChartTargetOpens I x₀)) := by
   ext1 z
   have hT : IsOpen ((extChartTargetOpens I x₀ : Set E)) := (extChartTargetOpens I x₀).isOpen
-  have hz : (z : E) ∈ (extChartTargetOpens I x₀ : Set E) := mem_extChartTargetOpens.mpr z.2
+  have hz : (z : E) ∈ (extChartTargetOpens I x₀ : Set E) := mem_extChartTargetOpens.mpr z.property
   refine (chartMetricDerivative_apply g x₀ m z).trans ?_
   simp only [ContinuousMap.comp_apply, ContinuousMap.coe_ofClass, coe_chartTargetHomeomorph_apply,
     ContMDiffMap.openIteratedFDerivContinuousMap_apply, symInclusion_apply]
@@ -223,14 +223,14 @@ private theorem continuous_symChartMetric (k : ℕ∞) (x₀ : M) :
   apply (ContMDiffMap.isInducing_openWeakWhitneyJet _).continuous_iff.mpr
   refine continuous_pi fun m ↦ ?_
   apply ((ContinuousMap.isInducing_postcomp _
-    (isInducing_symInclusion (E := E) m.1)).continuous_iff).mpr
+    (isInducing_symInclusion (E := E) m.val)).continuous_iff).mpr
   refine ((ContinuousMap.continuous_precomp ((chartTargetHomeomorph (I := I) x₀).symm :
     C(extChartTargetOpens I x₀, (extChartAt I x₀).target))).comp
-      (continuous_chartMetricDerivative k x₀ (by exact_mod_cast m.2))).congr fun g ↦ ?_
+      (continuous_chartMetricDerivative k x₀ (by exact_mod_cast m.property))).congr fun g ↦ ?_
   -- The two descriptions of the chart target are identified by mutually inverse identity maps.
   ext1 z
   dsimp only [Function.comp_apply]
-  rw [chartMetricDerivative_eq k _ _ _ (by exact_mod_cast m.2),
+  rw [chartMetricDerivative_eq k _ _ _ (by exact_mod_cast m.property),
     ContMDiffMap.openWeakWhitneyJet_apply]
   rfl
 

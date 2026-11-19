@@ -123,7 +123,7 @@ theorem quaternionUnitaryFirstColumn_mul
 theorem coe_quaternionUnitaryFirstColumn
     (A : unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ)) :
     (quaternionUnitaryFirstColumn n A : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) =
-      WithLp.toLp 2 (A.1 *ᵥ Pi.single 0 1) := by
+      WithLp.toLp 2 (A.val *ᵥ Pi.single 0 1) := by
   simp [quaternionUnitaryFirstColumn]
 
 variable (n) in
@@ -340,7 +340,7 @@ private theorem star_dotProduct_firstColumnAligned
     rw [normSq_eq_norm_mul_self] at h
     nlinarith [norm_nonneg (firstColumnPhase x)]
   have hnorm : ‖(x : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) <• firstColumnPhase x‖ = 1 := by
-    rw [norm_smul, norm_op, hnu, mem_sphere_zero_iff_norm.1 x.2, mul_one]
+    rw [norm_smul, norm_op, hnu, mem_sphere_zero_iff_norm.1 x.property, mul_one]
   simpa [firstColumnAligned, hnorm] using
     star_dotProduct_self_ofLp ((x : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) <• firstColumnPhase x)
 
@@ -442,7 +442,7 @@ private def firstColumnSection (n : ℕ)
 private theorem coe_firstColumnSection
     {x : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1}
     (hx : x ∈ firstColumnSectionDomain n) :
-    (firstColumnSection n x).1 = firstColumnRawSection x := by
+    (firstColumnSection n x).val = firstColumnRawSection x := by
   simp only [firstColumnSection, hx, ↓reduceDIte]
 
 variable (n) in

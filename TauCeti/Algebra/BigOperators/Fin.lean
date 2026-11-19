@@ -229,11 +229,11 @@ theorem val_finSigmaFinEquiv_eq_sum_filter {r : ℕ} {m : Fin r → ℕ}
     (finSigmaFinEquiv x : ℕ) = ∑ i ∈ Finset.univ.filter (· < x.1), m i + x.2 := by
   rw [finSigmaFinEquiv_apply]
   congr 1
-  refine (Finset.sum_map Finset.univ (Fin.castLEEmb x.1.2.le) m).symm.trans
+  refine (Finset.sum_map Finset.univ (Fin.castLEEmb x.1.isLt.le) m).symm.trans
     (congrArg (fun s : Finset (Fin r) => s.sum m) ?_)
   ext t
   simp only [Finset.mem_map, Finset.mem_univ, true_and, Fin.coe_castLEEmb, Finset.mem_filter]
-  exact ⟨fun ⟨u, hu⟩ => hu ▸ u.2, fun h => ⟨⟨t, h⟩, rfl⟩⟩
+  exact ⟨fun ⟨u, hu⟩ => hu ▸ u.isLt, fun h => ⟨⟨t, h⟩, rfl⟩⟩
 
 /-- A pair with an earlier first entry comes earlier in the lexicographic order. -/
 theorem finSigmaFinEquiv_lt_of_fst_lt {r : ℕ} {m : Fin r → ℕ} {x y : (i : Fin r) × Fin (m i)}
@@ -247,7 +247,7 @@ theorem finSigmaFinEquiv_lt_of_fst_lt {r : ℕ} {m : Fin r → ℕ} {x y : (i : 
     · exact ht.trans h
   have := Finset.sum_le_sum_of_subset (f := m) hsub
   rw [Finset.sum_insert (by simp)] at this
-  have := x.2.2
+  have := x.2.isLt
   omega
 
 namespace Fin
@@ -260,7 +260,7 @@ variable {r : ℕ} {m : Fin r → ℕ}
 plus `j`. -/
 private theorem coe_finSigmaFinEquiv (i : Fin r) (j : Fin (m i)) :
     (finSigmaFinEquiv ⟨i, j⟩ : ℕ) = prefixSum i m + j := by
-  rw [finSigmaFinEquiv_apply, prefixSum_eq_sum_castLE i.2.le]
+  rw [finSigmaFinEquiv_apply, prefixSum_eq_sum_castLE i.isLt.le]
 
 /-- Inside a block, the cyclic successor of a position is the next position of that block. -/
 theorem finRotate_finSigmaFinEquiv_of_lt (i : Fin r) (j : Fin (m i)) (h : (j : ℕ) + 1 < m i) :
@@ -279,7 +279,7 @@ theorem finRotate_finSigmaFinEquiv_of_eq (i : Fin r) (j : Fin (m i)) (h : (j : �
     finRotate _ (finSigmaFinEquiv ⟨i, j⟩) = finSigmaFinEquiv ⟨finRotate r i, j'⟩ := by
   apply Fin.ext
   have hlt := (finSigmaFinEquiv ⟨finRotate r i, j'⟩).is_lt
-  have hstep : prefixSum (i + 1) m = prefixSum i m + m i := prefixSum_succ i.2 m
+  have hstep : prefixSum (i + 1) m = prefixSum i m + m i := prefixSum_succ i.isLt m
   rw [Fin.coe_finRotate_eq_ite, coe_finSigmaFinEquiv, coe_finSigmaFinEquiv]
   rw [coe_finSigmaFinEquiv] at hlt
   rw [Fin.coe_finRotate_eq_ite i] at hlt ⊢

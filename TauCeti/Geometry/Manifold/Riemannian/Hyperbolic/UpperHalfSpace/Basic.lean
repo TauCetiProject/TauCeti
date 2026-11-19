@@ -110,7 +110,7 @@ variable {E}
 /-- The point of `E × ℝ` represented by a point of the upper half-space. -/
 @[coe]
 def coe (x : UpperHalfSpace E) : WithLp 2 (E × ℝ) :=
-  (show upperHalfSpaceOpens E from x).1
+  (show upperHalfSpaceOpens E from x).val
 
 instance : CoeOut (UpperHalfSpace E) (WithLp 2 (E × ℝ)) := ⟨coe⟩
 
@@ -141,7 +141,7 @@ theorem snd_coe (x : UpperHalfSpace E) : (x : WithLp 2 (E × ℝ)).snd = height 
 
 /-- Points of the upper half-space have positive height. -/
 theorem height_pos (x : UpperHalfSpace E) : 0 < height x :=
-  (show upperHalfSpaceOpens E from x).2
+  (show upperHalfSpaceOpens E from x).property
 
 /-- A point of the upper half-space is not a point `(a, 0)` of its boundary hyperplane. -/
 theorem coe_ne_toLp (x : UpperHalfSpace E) (a : E) :
@@ -223,7 +223,7 @@ theorem tangentSpaceCastModel_mfderiv_apply {f : UpperHalfSpace E → UpperHalfS
         (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) f x v) =
       L (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x v) := by
   -- Read the base point of `hA` as a point of the open subset, as in the general lemma.
-  have hA' : HasFDerivAt A L (show upperHalfSpaceOpens E from x).1 := hA
+  have hA' : HasFDerivAt A L (show upperHalfSpaceOpens E from x).val := hA
   have h := TauCeti.Manifold.tangentSpaceOpenEquiv_mfderiv_apply
     (I := 𝓘(ℝ, WithLp 2 (E × ℝ))) (I' := 𝓘(ℝ, WithLp 2 (E × ℝ)))
     (U := upperHalfSpaceOpens E) (V := upperHalfSpaceOpens E) (f := f) hcomp v

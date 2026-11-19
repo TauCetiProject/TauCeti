@@ -72,7 +72,7 @@ theorem continuous_mk_trivial_iff {Y : Type*} [TopologicalSpace Y]
     (s : ∀ y, (trivial 𝕜 X r).Fiber (b y)) :
     Continuous (fun y => (⟨b y, s y⟩ : TotalSpace Unit (trivial 𝕜 X r).Fiber)) ↔
       ∀ n : ℕ, Continuous (fun y : {y : Y // r (b y) = n} =>
-        fun i : Fin n => s y.1 (Fin.cast y.2.symm i)) := by
+        fun i : Fin n => s y.val (Fin.cast y.property.symm i)) := by
   rw [(trivial 𝕜 X r).continuous_mk_iff_rankStrata hb s]
   refine forall_congr' fun n => ?_
   exact (FiniteRankBundleCore.continuous_trivial_iff
@@ -97,21 +97,21 @@ theorem continuous_mk_trivial_const_iff {Y : Type*} [TopologicalSpace Y]
     by_cases hnm : n = m
     · subst hnm
       exact hs.comp continuous_subtype_val
-    · have : IsEmpty {y : Y // (LocallyConstant.const X n) (b y) = m} := ⟨fun y => hnm y.2⟩
+    · have : IsEmpty {y : Y // (LocallyConstant.const X n) (b y) = m} := ⟨fun y => hnm y.property⟩
       exact continuous_of_discreteTopology
 
 /-- The reconstructed total space of a constant-rank trivial atlas is homeomorphic to
 `X × (Fin n → 𝕜)`. -/
 def trivialConstTotalSpaceHomeomorph (n : ℕ) :
     TotalSpace Unit (trivial 𝕜 X (LocallyConstant.const X n)).Fiber ≃ₜ X × (Fin n → 𝕜) where
-  toFun p := (p.proj, p.2)
+  toFun p := (p.proj, p.snd)
   invFun p := ⟨p.1, p.2⟩
   left_inv p := by cases p; rfl
   right_inv p := by cases p; rfl
   continuous_toFun := by
     have h := (continuous_mk_trivial_const_iff (𝕜 := 𝕜) (X := X) (n := n)
       (b := fun p : TotalSpace Unit (trivial 𝕜 X (LocallyConstant.const X n)).Fiber => p.proj)
-      (s := fun p => p.2)).1 continuous_id
+      (s := fun p => p.snd)).1 continuous_id
     exact h.1.prodMk h.2
   continuous_invFun :=
     (continuous_mk_trivial_const_iff (𝕜 := 𝕜) (X := X) (n := n)).2 ⟨continuous_fst, continuous_snd⟩
@@ -120,7 +120,7 @@ def trivialConstTotalSpaceHomeomorph (n : ℕ) :
 @[simp]
 theorem trivialConstTotalSpaceHomeomorph_apply (n : ℕ)
     (p : TotalSpace Unit (trivial 𝕜 X (LocallyConstant.const X n)).Fiber) :
-    trivialConstTotalSpaceHomeomorph (𝕜 := 𝕜) (X := X) n p = (p.proj, p.2) := (rfl)
+    trivialConstTotalSpaceHomeomorph (𝕜 := 𝕜) (X := X) n p = (p.proj, p.snd) := (rfl)
 
 /-- Inverse evaluation of `trivialConstTotalSpaceHomeomorph`. -/
 @[simp]

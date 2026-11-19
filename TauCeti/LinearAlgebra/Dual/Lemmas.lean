@@ -149,7 +149,7 @@ theorem linearIndependent_sub_div_smul (f : Dual K V) {ι : Type*} {X : ι → V
     (c := Function.update (fun i ↦ -(f (X i) / f (X j))) j 0) (Function.update_self _ _ _)).2 hX
   convert h.comp Subtype.val Subtype.val_injective using 1
   ext i
-  simp [Function.update_of_ne i.2, sub_eq_add_neg]
+  simp [Function.update_of_ne i.property, sub_eq_add_neg]
 
 /-- If `X` is a family of `finrank K V` linearly independent vectors and `f (X j) ≠ 0`, the vectors
 `X i - (f (X i) / f (X j)) • X j`, `i ≠ j`, span the kernel of `f`. Together with

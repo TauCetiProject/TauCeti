@@ -112,12 +112,12 @@ restriction maps of `F`. -/
 private lemma map_toAdd_symm_sections (F : Sheaf J AddCommGrpCat.{w})
     (s : (((abelianSheafToGrpSheaf J).obj F).obj ⋙ forget GrpCat).sections) {U V : Cᵒᵖ}
     (f : U ⟶ V) :
-    F.obj.map f ((abelianSheafToGrpSheafObjEquiv F U).symm (s.1 U)).toAdd =
-      ((abelianSheafToGrpSheafObjEquiv F V).symm (s.1 V)).toAdd := by
+    F.obj.map f ((abelianSheafToGrpSheafObjEquiv F U).symm (s.val U)).toAdd =
+      ((abelianSheafToGrpSheafObjEquiv F V).symm (s.val V)).toAdd := by
   have h := abelianSheafToGrpSheaf_map_abelianSheafToGrpSheafObjEquiv F f
-    ((abelianSheafToGrpSheafObjEquiv F U).symm (s.1 U))
+    ((abelianSheafToGrpSheafObjEquiv F U).symm (s.val U))
   rw [MulEquiv.apply_symm_apply] at h
-  rw [(s.2 f).symm.trans h, MulEquiv.symm_apply_apply, toAdd_ofAdd]
+  rw [(s.property f).symm.trans h, MulEquiv.symm_apply_apply, toAdd_ofAdd]
 
 /-- Morphisms from the constant presheaf `ℤ` to an abelian sheaf `F` are the global sections of
 `F`, through the image of `1`. -/
@@ -131,7 +131,7 @@ def constIntHomMulEquivSections (F : Sheaf J AddCommGrpCat.{w}) :
             (NatTrans.naturality_apply ψ f _).symm)⟩
       invFun s :=
         { app U := (AddCommGrpCat.uliftZMultiplesAddEquiv _).symm
-            ((abelianSheafToGrpSheafObjEquiv F U).symm (s.1 U)).toAdd
+            ((abelianSheafToGrpSheafObjEquiv F U).symm (s.val U)).toAdd
           naturality U V f := by
             refine (AddCommGrpCat.uliftZMultiplesAddEquiv _).injective ?_
             -- Both sides are evaluated at `1`; the section `s` is compatible with restriction.
@@ -158,7 +158,7 @@ at `1`. -/
 lemma constIntHomMulEquivSections_apply_coe (F : Sheaf J AddCommGrpCat.{w})
     (ψ : Multiplicative ((Functor.const Cᵒᵖ).obj (AddCommGrpCat.of (ULift ℤ)) ⟶ F.obj))
     (U : Cᵒᵖ) :
-    (constIntHomMulEquivSections F ψ).1 U =
+    (constIntHomMulEquivSections F ψ).val U =
       abelianSheafToGrpSheafObjEquiv F U (.ofAdd (ψ.toAdd.app U ⟨1⟩)) :=
   (rfl)
 
@@ -169,7 +169,7 @@ lemma constIntHomMulEquivSections_symm_apply_app (F : Sheaf J AddCommGrpCat.{w})
     (s : (((abelianSheafToGrpSheaf J).obj F).obj ⋙ forget GrpCat).sections) (U : Cᵒᵖ) :
     ((constIntHomMulEquivSections F).symm s).toAdd.app U =
       (AddCommGrpCat.uliftZMultiplesAddEquiv _).symm
-        ((abelianSheafToGrpSheafObjEquiv F U).symm (s.1 U)).toAdd :=
+        ((abelianSheafToGrpSheafObjEquiv F U).symm (s.val U)).toAdd :=
   (rfl)
 
 end Sheaf
@@ -229,10 +229,10 @@ private def degZero : Cᵒᵖ ⥤ AddCommGrpCat.{w} where
   map f := AddCommGrpCat.ofHom (degZeroMap P f)
   map_id U := by
     ext x
-    exact congr(AddCommGrpCat.Hom.hom $((P.sheaf.obj ⋙ AddCommGrpCat.free).map_id U) x.1)
+    exact congr(AddCommGrpCat.Hom.hom $((P.sheaf.obj ⋙ AddCommGrpCat.free).map_id U) x.val)
   map_comp f g := by
     ext x
-    exact congr(AddCommGrpCat.Hom.hom $((P.sheaf.obj ⋙ AddCommGrpCat.free).map_comp f g) x.1)
+    exact congr(AddCommGrpCat.Hom.hom $((P.sheaf.obj ⋙ AddCommGrpCat.free).map_comp f g) x.val)
 
 /-- The inclusion of the formal sums of degree zero into all formal sums. -/
 private def degZeroι : degZero P ⟶ P.sheaf.obj ⋙ AddCommGrpCat.free where
@@ -255,7 +255,7 @@ private lemma diffHom_apply {U : Cᵒᵖ} (p₀ : P.sheaf.obj.obj U)
     (x : (degree (P.sheaf.obj.obj U)).ker) :
     diffHom P U x = FreeAbelianGroup.lift (diff P · p₀) x.1 := by
   rw [diffHom, dite_eq_left_of_eq_true (eq_true ⟨p₀⟩), AddMonoidHom.comp_apply,
-    lift_diff P _ p₀, AddSubgroup.coe_subtype, x.2, zero_smul, add_zero]
+    lift_diff P _ p₀, AddSubgroup.coe_subtype, x.property, zero_smul, add_zero]
 
 private lemma diffHom_degZeroMap {U V : Cᵒᵖ} (f : U ⟶ V) (x : (degree (P.sheaf.obj.obj U)).ker) :
     diffHom P V (degZeroMap P f x) = F.obj.map f (diffHom P U x) := by

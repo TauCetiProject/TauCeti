@@ -195,7 +195,7 @@ theorem supSeminorm_eq_iSup_coeff_rpow_of_dvd (hB : IsAffinoidAlgebra K B)
         exact (hy i).trans (pow_le_pow_left₀ (pointNorm_nonneg f)
           (hB.pointNorm_le_supSeminorm y f) _)
     exact (Real.rpow_one_div_natCast_sub_le_iff (supSeminorm_nonneg _) (supSeminorm_nonneg f)
-      i.2).mpr hle
+      i.isLt).mpr hle
 
 /-- **The supremum seminorm is the spectral value of the minimal polynomial.** Let `B` be an
 affinoid algebra which is integral and torsion-free over an integrally closed domain `A`. For

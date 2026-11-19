@@ -52,18 +52,18 @@ def totalEnhancedStateAtEquiv (i : ℤ) :
     (Equiv.subtypeSubtypeEquivSubtypeInter
       (fun e ↦ D.stateCochainDegree e.1 = i)
       (fun e ↦ D.enhancedQuantumDegree e = j)).symm).trans
-    (Equiv.sigmaFiberEquiv fun e : D.TotalEnhancedStateAt i ↦ D.enhancedQuantumDegree e.1)
+    (Equiv.sigmaFiberEquiv fun e : D.TotalEnhancedStateAt i ↦ D.enhancedQuantumDegree e.val)
 
 /-- Forgetting the quantum index retains the underlying native enhanced state. -/
 @[simp]
 theorem totalEnhancedStateAtEquiv_apply_val (i j : ℤ) (e : D.EnhancedStateAt i j) :
-    (D.totalEnhancedStateAtEquiv i ⟨j, e⟩).1 = e.toEnhancedState D := by
+    (D.totalEnhancedStateAtEquiv i ⟨j, e⟩).val = e.toEnhancedState D := by
   exact D.enhancedStateAtEquiv_apply_val e
 
 /-- The inverse recovers the intrinsic quantum degree of an enhanced state. -/
 @[simp]
 theorem totalEnhancedStateAtEquiv_symm_fst (i : ℤ) (e : D.TotalEnhancedStateAt i) :
-    ((D.totalEnhancedStateAtEquiv i).symm e).1 = D.enhancedQuantumDegree e.1 := (rfl)
+    ((D.totalEnhancedStateAtEquiv i).symm e).1 = D.enhancedQuantumDegree e.val := (rfl)
 
 variable (hD : D.toPDCode.IsPlanar) (R : Type u) [CommRing R]
 

@@ -640,7 +640,7 @@ theorem curveVelocityLiftWithin_proj (γ : 𝕜 → M) (s : Set 𝕜) (t : 𝕜)
 /-- The fibre component of the velocity lift is the velocity of the curve. -/
 @[simp]
 theorem curveVelocityLiftWithin_snd (γ : 𝕜 → M) (s : Set 𝕜) (t : 𝕜) :
-    (curveVelocityLiftWithin I γ s t).2 = curveVelocityWithin I γ s t := (rfl)
+    (curveVelocityLiftWithin I γ s t).snd = curveVelocityWithin I γ s t := (rfl)
 
 /-- The unrestricted velocity lift lies over the curve. -/
 @[simp]
@@ -650,7 +650,7 @@ theorem curveVelocityLift_proj (γ : 𝕜 → M) (t : 𝕜) :
 /-- The fibre component of the unrestricted velocity lift is the velocity of the curve. -/
 @[simp]
 theorem curveVelocityLift_snd (γ : 𝕜 → M) (t : 𝕜) :
-    (curveVelocityLift I γ t).2 = curveVelocity I γ t := (rfl)
+    (curveVelocityLift I γ t).snd = curveVelocity I γ t := (rfl)
 
 /-- Two curves which agree within `s` near `t`, and at `t`, have the same velocity lift within
 `s` at `t`. No differentiability is assumed; the velocities are compared as points of the tangent
@@ -716,9 +716,9 @@ integral curve of a second-order vector field on `TM`. -/
 theorem eq_curveVelocityLiftWithin_of_hasMFDerivWithinAt {z : 𝕜 → TangentBundle I M} {s : Set 𝕜}
     {t : 𝕜} {w : TangentSpace I.tangent (z t)} (hs : UniqueDiffWithinAt 𝕜 s t)
     (hz : HasMFDerivWithinAt 𝓘(𝕜, 𝕜) I.tangent z s t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w))
-    (hw : mfderiv I.tangent I (π E (TangentSpace I)) (z t) w = (z t).2) :
+    (hw : mfderiv I.tangent I (π E (TangentSpace I)) (z t) w = (z t).snd) :
     z t = curveVelocityLiftWithin I (fun r ↦ (z r).proj) s t := by
-  have hvel : curveVelocityWithin I (fun r ↦ (z r).proj) s t = (z t).2 := by
+  have hvel : curveVelocityWithin I (fun r ↦ (z r).proj) s t = (z t).snd := by
     refine (curveVelocityWithin_map (f := π E (TangentSpace I))
       ((contMDiff_proj (TangentSpace I) (z t)).mdifferentiableAt (n := 1) one_ne_zero)
       hs hz.mdifferentiableWithinAt).trans ?_
@@ -731,7 +731,7 @@ curve in `TM` whose velocity at `t` projects to `z t` is the velocity lift of it
 theorem eq_curveVelocityLift_of_hasMFDerivAt {z : 𝕜 → TangentBundle I M} {t : 𝕜}
     {w : TangentSpace I.tangent (z t)}
     (hz : HasMFDerivAt 𝓘(𝕜, 𝕜) I.tangent z t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w))
-    (hw : mfderiv I.tangent I (π E (TangentSpace I)) (z t) w = (z t).2) :
+    (hw : mfderiv I.tangent I (π E (TangentSpace I)) (z t) w = (z t).snd) :
     z t = curveVelocityLift I (fun s ↦ (z s).proj) t := by
   rw [← curveVelocityLiftWithin_univ]
   exact eq_curveVelocityLiftWithin_of_hasMFDerivWithinAt uniqueDiffWithinAt_univ

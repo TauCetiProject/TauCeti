@@ -153,7 +153,7 @@ def spSymmHomeomorph : {X : selfAdjoint (Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) //
     (X : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) (.inl default) (.inr default)]
   invFun v := ⟨⟨spSymmMatrix ι (v 0) (v 1), isSelfAdjoint_spSymmMatrix _ _⟩,
     spSymmMatrix_mem_sp _ _⟩
-  left_inv X := Subtype.ext (Subtype.ext (eq_spSymmMatrix X.1.2 X.2).symm)
+  left_inv X := Subtype.ext (Subtype.ext (eq_spSymmMatrix X.val.property X.property).symm)
   right_inv v := by
     ext i
     fin_cases i <;> simp

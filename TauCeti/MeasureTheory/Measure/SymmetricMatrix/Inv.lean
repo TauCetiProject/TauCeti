@@ -150,7 +150,7 @@ theorem hasFDerivAt_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin p) 
   -- therefore apply to `π` after `Subtype.ext`.
   have hπ_apply : ∀ X : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
       π (X : Matrix (Fin p) (Fin p) ℝ) = X := fun X =>
-    Subtype.ext (IsSelfAdjoint.coe_selfAdjointPart_apply ℝ X.2)
+    Subtype.ext (IsSelfAdjoint.coe_selfAdjointPart_apply ℝ X.property)
   have hπ_coe : ∀ M : Matrix (Fin p) (Fin p) ℝ,
       (π M : Matrix (Fin p) (Fin p) ℝ) = (2 : ℝ)⁻¹ • (M + Mᵀ) := fun M => by
     have h : (π M : Matrix (Fin p) (Fin p) ℝ) = (⅟2 : ℝ) • (M + star M) :=

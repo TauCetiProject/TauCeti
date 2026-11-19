@@ -277,14 +277,14 @@ def ClosedUpperHalfPlane.euclideanHalfSpaceHomeomorph :
 
 @[simp]
 theorem ClosedUpperHalfPlane.coe_euclideanHalfSpaceHomeomorph (z : ClosedUpperHalfPlane) :
-    (euclideanHalfSpaceHomeomorph z).1 =
+    (euclideanHalfSpaceHomeomorph z).val =
       closedUpperHalfPlaneCoordinates z := by
   rw [euclideanHalfSpaceHomeomorph]
   rfl
 
 @[simp]
 theorem ClosedUpperHalfPlane.coe_euclideanHalfSpaceHomeomorph_symm (v : EuclideanHalfSpace 2) :
-    (euclideanHalfSpaceHomeomorph.symm v : ℂ) = closedUpperHalfPlaneCoordinates.symm v.1 := by
+    (euclideanHalfSpaceHomeomorph.symm v : ℂ) = closedUpperHalfPlaneCoordinates.symm v.val := by
   rw [euclideanHalfSpaceHomeomorph]
   rfl
 
@@ -302,7 +302,7 @@ def ClosedUpperHalfPlane.euclideanHalfSpaceDiffeomorph (n : ℕ∞ω) :
     -- The inherited half-space chart and subtype coercion reduce to their ambient model
     -- coordinates; `simp` has already exposed the chart composition, but cannot rewrite
     -- this dependent subtype expression to the public coefficient getter directly.
-    change (euclideanHalfSpaceHomeomorph (closedUpperHalfPlaneModel.symm z)).1 =
+    change (euclideanHalfSpaceHomeomorph (closedUpperHalfPlaneModel.symm z)).val =
       closedUpperHalfPlaneCoordinates z
     rw [coe_euclideanHalfSpaceHomeomorph]
     congr 1
@@ -324,14 +324,15 @@ def ClosedUpperHalfPlane.euclideanHalfSpaceDiffeomorph (n : ℕ∞ω) :
 @[simp]
 theorem ClosedUpperHalfPlane.coe_euclideanHalfSpaceDiffeomorph (n : ℕ∞ω)
     (z : ClosedUpperHalfPlane) :
-    (euclideanHalfSpaceDiffeomorph n z).1 = closedUpperHalfPlaneCoordinates z := by
+    (euclideanHalfSpaceDiffeomorph n z).val = closedUpperHalfPlaneCoordinates z := by
   rw [euclideanHalfSpaceDiffeomorph]
   exact coe_euclideanHalfSpaceHomeomorph z
 
 @[simp]
 theorem ClosedUpperHalfPlane.coe_euclideanHalfSpaceDiffeomorph_symm (n : ℕ∞ω)
     (v : EuclideanHalfSpace 2) :
-    ((euclideanHalfSpaceDiffeomorph n).symm v : ℂ) = closedUpperHalfPlaneCoordinates.symm v.1 := by
+    ((euclideanHalfSpaceDiffeomorph n).symm v : ℂ) = closedUpperHalfPlaneCoordinates.symm v.val
+        := by
   rw [euclideanHalfSpaceDiffeomorph]
   exact coe_euclideanHalfSpaceHomeomorph_symm v
 

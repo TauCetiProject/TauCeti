@@ -429,8 +429,8 @@ theorem Concordant.trans (h₁ : Concordant g₀ g₁) (h₂ : Concordant g₁ g
 /-- Concordance is an equivalence relation on the metrics of positive scalar curvature on `M`. -/
 theorem equivalence_concordant :
     Equivalence fun g₀ g₁ : {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) //
-      g.HasPositiveScalarCurvature} ↦ Concordant g₀.1 g₁.1 :=
-  ⟨fun g ↦ concordant_self_iff.2 g.2, Concordant.symm, Concordant.trans⟩
+      g.HasPositiveScalarCurvature} ↦ Concordant g₀.val g₁.val :=
+  ⟨fun g ↦ concordant_self_iff.2 g.property, Concordant.symm, Concordant.trans⟩
 
 end Concordance
 
@@ -742,12 +742,12 @@ theorem IsConcordance.exists_isCollaredConcordance (h : IsConcordance G g₀ g�
   · have hψ := stretch_eventuallyEq_of_lt 2 hp
     refine reparamTime_inner_eq_cylinder_inner _ _ ?_ (by simp [hψ.deriv_eq])
     rw [hψ.eq_of_nhds]
-    exact hG'₀ _ p.2.2.2
+    exact hG'₀ _ p.2.property.2
   · have hp' : 2 / 3 < (p.2 : ℝ) := by linarith
     have hψ := stretch_eventuallyEq_of_gt 2 hp'
     refine reparamTime_inner_eq_cylinder_inner _ _ ?_ (by simp [hψ.deriv_eq])
     rw [hψ.eq_of_nhds]
-    exact hG'₁ _ (by simp [p.2.2.1])
+    exact hG'₁ _ (by simp [p.2.property.1])
 
 /-- **Collared concordances give concordances.** If there is a collared concordance from `g₀` to
 `g₁`, then `g₀` and `g₁` are concordant. -/

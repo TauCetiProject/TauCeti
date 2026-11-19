@@ -149,7 +149,7 @@ theorem exists_aeval_eq_of_mem_locIdealImage (n : ℕ) {x : S}
           rw [map_add, ha, hb]; push_cast; ring⟩
       smul_mem' := by
         rintro c a ⟨qa, hqa, ha⟩
-        obtain ⟨qc, hqc⟩ := exists_aeval_eq_of_mem_locSubring P T s S c.2
+        obtain ⟨qc, hqc⟩ := exists_aeval_eq_of_mem_locSubring P T s S c.property
         refine ⟨qc * qa, Ideal.mul_mem_left _ _ hqa, ?_⟩
         rw [map_mul, hqc, ha, smul_eq_mul]
         norm_cast } with _

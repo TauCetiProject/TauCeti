@@ -76,7 +76,7 @@ def stabilizerBall : SubMulAction (stabilizer Γ z) ℍ where
   carrier := ball z ε
   smul_mem' q τ hτ := by
     have hq : ((q : Γ) : PSL(2, ℝ)) • z = z := by
-      have h := q.2
+      have h := q.property
       rwa [mem_stabilizer_iff, Subgroup.smul_def] at h
     have hball : ((q : Γ) : PSL(2, ℝ)) • ball z ε = ball z ε := by
       rw [Metric.smul_ball, hq]
@@ -113,13 +113,14 @@ def stabilizerBallHomeomorph [Finite (stabilizer Γ z)] :
     stabilizerBall Γ z ε ≃ₜ
       rootsOfUnityBall (Nat.card (stabilizer Γ z)) (Real.tanh (ε / 2)) where
   toFun τ :=
-    ⟨discCoordinate z τ, mem_rootsOfUnityBall.mpr (mem_ball_iff_norm_discCoordinate_lt.mp τ.2)⟩
+    ⟨discCoordinate z τ, mem_rootsOfUnityBall.mpr (mem_ball_iff_norm_discCoordinate_lt.mp
+        τ.property)⟩
   invFun u :=
     ⟨(discCoordinateHomeomorph z).symm
-        (.mk u ((mem_rootsOfUnityBall.mp u.2).trans (Real.tanh_lt_one _))),
+        (.mk u ((mem_rootsOfUnityBall.mp u.property).trans (Real.tanh_lt_one _))),
       mem_ball_iff_norm_discCoordinate_lt.mpr (by
         rw [discCoordinate_discCoordinateHomeomorph_symm, Complex.UnitDisc.coe_mk]
-        exact mem_rootsOfUnityBall.mp u.2)⟩
+        exact mem_rootsOfUnityBall.mp u.property)⟩
   left_inv τ :=
     Subtype.ext <| discCoordinate_injective z <| by
       simp only [discCoordinate_discCoordinateHomeomorph_symm, Complex.UnitDisc.coe_mk]

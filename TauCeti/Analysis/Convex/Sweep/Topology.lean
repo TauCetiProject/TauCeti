@@ -285,7 +285,7 @@ theorem sweepHomeomorph_symm_apply (hn : n ∉ vectorSpan ℝ P) (y : sweep ℝ 
 @[simp]
 theorem sweepHomeomorph_apply (hn : n ∉ vectorSpan ℝ P)
     (z : P × {t : ℝ // 0 ≤ t}) :
-    (sweepHomeomorph hn z : V) = z.1.1 - z.2.1 • n := by
+    (sweepHomeomorph hn z : V) = z.1.val - z.2.val • n := by
   exact sweepEquiv_apply P n hn z
 
 end Set

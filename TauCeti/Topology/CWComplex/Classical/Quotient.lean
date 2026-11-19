@@ -53,9 +53,10 @@ variable {X : Type*} [TopologicalSpace X] [T2Space X] {C D : Set X} [RelCWComple
 disjoint union of the base `D` and of one closed unit ball for every cell, given by the inclusion
 of `D` and by the characteristic maps, is a quotient map onto `C`. -/
 theorem isQuotientMap_sumElim_base_map :
-    IsQuotientMap (Sum.elim (fun d : D ↦ (⟨d, base_subset_complex d.2⟩ : C))
+    IsQuotientMap (Sum.elim (fun d : D ↦ (⟨d, base_subset_complex d.property⟩ : C))
       fun p : Σ m : Σ n, cell C n, closedBall (0 : Fin m.1 → ℝ) 1 ↦
-        (⟨map p.1.1 p.1.2 p.2, closedCell_subset_complex p.1.1 p.1.2 ⟨p.2, p.2.2, rfl⟩⟩ : C)) := by
+        (⟨map p.1.1 p.1.2 p.2, closedCell_subset_complex p.1.1 p.1.2 ⟨p.2, p.2.property, rfl⟩⟩ : C))
+            := by
   refine isQuotientMap_iff_isClosed.2 ⟨?_, fun s ↦ ⟨fun hs ↦ hs.preimage ?_, fun hs ↦ ?_⟩⟩
   · rintro ⟨x, hx⟩
     simp_rw [← union (C := C), mem_union, mem_iUnion] at hx
@@ -102,8 +103,8 @@ theorem topologicalSpace_eq_iSup_coinduced_map_closedBall {Y : Type*} [tY : Topo
 and along the characteristic map of every cell. -/
 theorem continuous_complex_iff {Y : Type*} [TopologicalSpace Y] {g : C → Y} :
     Continuous g ↔ (∀ n (j : cell C n), Continuous fun y : closedBall (0 : Fin n → ℝ) 1 ↦
-        g ⟨map n j y, closedCell_subset_complex n j ⟨y, y.2, rfl⟩⟩) ∧
-      Continuous fun d : D ↦ g ⟨d, base_subset_complex d.2⟩ := by
+        g ⟨map n j y, closedCell_subset_complex n j ⟨y, y.property, rfl⟩⟩) ∧
+      Continuous fun d : D ↦ g ⟨d, base_subset_complex d.property⟩ := by
   rw [isQuotientMap_sumElim_base_map.continuous_iff, continuous_sum_dom, continuous_sigma_iff,
     and_comm]
   exact and_congr_left' ⟨fun h n j ↦ h ⟨n, j⟩, fun h m ↦ h m.1 m.2⟩
@@ -115,8 +116,8 @@ homotopies out of a CW complex cell by cell. -/
 theorem continuous_prod_complex_iff {Z Y : Type*} [TopologicalSpace Z] [LocallyCompactSpace Z]
     [TopologicalSpace Y] {g : Z × C → Y} :
     Continuous g ↔ (∀ n (j : cell C n), Continuous fun p : Z × closedBall (0 : Fin n → ℝ) 1 ↦
-        g (p.1, ⟨map n j p.2, closedCell_subset_complex n j ⟨p.2, p.2.2, rfl⟩⟩)) ∧
-      Continuous fun p : Z × D ↦ g (p.1, ⟨p.2, base_subset_complex p.2.2⟩) := by
+        g (p.1, ⟨map n j p.2, closedCell_subset_complex n j ⟨p.2, p.2.property, rfl⟩⟩)) ∧
+      Continuous fun p : Z × D ↦ g (p.1, ⟨p.2, base_subset_complex p.2.property⟩) := by
   refine ⟨fun hg ↦ ⟨fun n j ↦ hg.comp (continuous_fst.prodMk ?_), hg.comp
     (continuous_fst.prodMk ((continuous_subtype_val.comp continuous_snd).subtype_mk _))⟩,
     fun ⟨hcell, hbase⟩ ↦ isQuotientMap_sumElim_base_map.continuous_lift_prod_right ?_⟩
@@ -149,16 +150,16 @@ theorem continuous_prod_subtype_of_continuousOn_map {Z Y : Type*} [TopologicalSp
     refine ⟨fun n j ↦ ?_, ?_⟩
     · have hS : IsOpen {p : Z × closedBall (0 : Fin n → ℝ) 1 | map n j p.2 ∈ U} :=
         hU.preimage ((((continuousOn n j).domRestrict.comp continuous_snd).subtype_mk
-          fun p ↦ closedCell_subset_complex n j ⟨p.2, p.2.2, rfl⟩))
+          fun p ↦ closedCell_subset_complex n j ⟨p.2, p.2.property, rfl⟩))
       exact isOpen_iff_continuous_mem.1 ((hcell n j).isOpen_inter_preimage hS hV)
     · have hS : IsOpen {p : Z × D | (p.2 : X) ∈ U} :=
         hU.preimage (((continuous_subtype_val.comp continuous_snd).subtype_mk
-          fun p ↦ base_subset_complex p.2.2))
+          fun p ↦ base_subset_complex p.2.property))
       exact isOpen_iff_continuous_mem.1 (hbase.isOpen_inter_preimage hS hV)
   convert hT.preimage (continuous_fst.prodMk ((continuous_subtype_val.comp
-    continuous_snd).subtype_mk fun p : Z × U ↦ hUC p.2.2)) using 1
+    continuous_snd).subtype_mk fun p : Z × U ↦ hUC p.2.property)) using 1
   ext p
-  exact ⟨fun h ↦ ⟨p.2.2, h⟩, fun h ↦ h.2⟩
+  exact ⟨fun h ↦ ⟨p.2.property, h⟩, fun h ↦ h.2⟩
 
 /-- **Continuity criterion on `Z × U`, for `U` open in a CW complex**, in the form of continuity
 on `univ ×ˢ U`; see `TauCeti.continuous_prod_subtype_of_continuousOn_map`. -/

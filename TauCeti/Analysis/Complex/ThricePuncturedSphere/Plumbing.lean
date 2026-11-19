@@ -492,7 +492,7 @@ thrice-punctured sphere because `w` avoids the center of the end `q` and the ima
 def plumbingPreimage (q : Puncture) (L : ℝ) (w : ThricePuncturedSphere)
     (hw : (w : ℂ) ≠ q.plumbingMap L 1) : ThricePuncturedSphere :=
   ⟨((w : ℂ) - q.endCenter) / q.plumbingFactor L,
-    q.sub_endCenter_div_plumbingFactor_ne_zero L (ne_endCenter w.2 q),
+    q.sub_endCenter_div_plumbingFactor_ne_zero L (ne_endCenter w.property q),
     fun h => hw ((q.plumbingMap_sub_endCenter_div L w).symm.trans (congrArg (q.plumbingMap L) h))⟩
 
 /-- The point undoing the plumbing map is `(w - c_q) / ψ'`. -/

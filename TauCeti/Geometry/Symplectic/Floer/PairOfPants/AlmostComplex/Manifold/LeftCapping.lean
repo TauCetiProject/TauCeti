@@ -295,7 +295,7 @@ theorem contMDiff_cappedExchangeAlmostComplex {F G N : Type*} [NormedAddCommGrou
         · exact Or.inr ⟨h, hf₁ y⟩
     refine contMDiffAt_subtype_iff (U := U) (x := ⟨y₀, hlt⟩) |>.mp ?_
     refine (hU _).congr_of_eventuallyEq (Filter.Eventually.of_forall fun y => ?_)
-    have hy : ‖f y‖ < 1 := y.2
+    have hy : ‖f y‖ < 1 := y.property
     simp only [comp_apply, cappedExchangeAlmostComplex_of_norm_le h₀ J hJ
       (by linarith : (2 : ℝ) < L) (Ioo_subset_Icc_self (hcy y)) hy.le]
   · -- Off the disc `‖w‖ ≤ 1/2` the family is the input-exchange family.

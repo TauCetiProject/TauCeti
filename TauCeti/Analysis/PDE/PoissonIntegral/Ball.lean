@@ -192,7 +192,7 @@ theorem harmonicOnNhd_ballPoissonIntegral {g : sphere (0 : EuclideanSpace ℝ (F
     fun x hx y hxy ↦ hx (by
       have hxy' : x = (y : EuclideanSpace ℝ (Fin n)) := by simpa only using hxy
       rw [hxy']
-      exact y.2)
+      exact y.property)
   have h := harmonicOnNhd_integral_smul_of_contDiffOn hg continuous_subtype_val
     (isOpen_ne_fun continuous_fst continuous_snd) contDiffOn_ballPoissonKernel
     isClosed_sphere.isOpen_compl hU fun y ↦
@@ -366,7 +366,7 @@ theorem exists_harmonicOnNhd_ball_continuousOn_closedBall_eq
   have huP : ∀ x ∈ ball (0 : EuclideanSpace ℝ (Fin n)) 1, u =ᶠ[𝓝 x] ballPoissonIntegral g :=
     fun x hx ↦ Filter.eventually_of_mem (isOpen_ball.mem_nhds hx) hu
   refine ⟨u, fun x hx ↦ (harmonicAt_congr_nhds (huP x hx)).2 (hP x hx), ?_,
-    fun z ↦ dite_eq_left z.2, hu⟩
+    fun z ↦ dite_eq_left z.property, hu⟩
   rw [← ball_union_sphere]
   intro x hx
   rcases hx with hx | hx
@@ -378,7 +378,7 @@ theorem exists_harmonicOnNhd_ball_continuousOn_closedBall_eq
       exact (tendsto_ballPoissonIntegral hg ⟨x, hx⟩).congr'
         (Filter.eventually_of_mem self_mem_nhdsWithin fun y hy ↦ (hu hy).symm)
     · have hres : (sphere (0 : EuclideanSpace ℝ (Fin n)) 1).domRestrict u = g :=
-        funext fun z ↦ dite_eq_left z.2
+        funext fun z ↦ dite_eq_left z.property
       exact (continuousOn_iff_continuous_domRestrict.2 (hres ▸ hg)) x hx
 
 /-- **Poisson representation of harmonic functions on the unit ball.**  A function continuous on

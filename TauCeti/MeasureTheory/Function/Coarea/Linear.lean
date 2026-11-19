@@ -111,7 +111,7 @@ private theorem exists_orthogonal_ker_equiv (L : E →ₗ[ℝ] F) (hL : Function
   have hMinj : Function.Injective M := by
     refine (injective_iff_map_eq_zero M).2 fun w hw ↦ Subtype.ext ?_
     have hk : (w : E) ∈ ker L := by simpa [M] using hw
-    exact inner_self_eq_zero.1 (Submodule.inner_right_of_mem_orthogonal hk w.2)
+    exact inner_self_eq_zero.1 (Submodule.inner_right_of_mem_orthogonal hk w.property)
   have hMbij : Function.Bijective M :=
     ⟨hMinj, (injective_iff_surjective_of_finrank_eq_finrank hdim).mp hMinj⟩
   let e : W ≃L[ℝ] F := (LinearEquiv.ofBijective M hMbij).toContinuousLinearEquiv

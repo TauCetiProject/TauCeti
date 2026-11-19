@@ -105,7 +105,7 @@ theorem mem_integralOrthogonalSubgroup_iff_mem_span (g : orthogonalGroup Q) :
         (Submodule.span (PadicInt.subring p) (Set.range b)) ↔
       ∀ i j, LinearMap.toMatrix b b f i j ∈ PadicInt.subring p := by
     rw [b.mapsTo_span_range_iff_forall_toMatrix_mem]
-    exact forall₂_congr fun _ _ ↦ ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.2, fun h ↦ ⟨⟨_, h⟩, rfl⟩⟩
+    exact forall₂_congr fun _ _ ↦ ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.property, fun h ↦ ⟨⟨_, h⟩, rfl⟩⟩
   rw [mem_integralOrthogonalSubgroup_iff]
   exact and_congr (hmaps _).symm (hmaps _).symm
 

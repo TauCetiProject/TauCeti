@@ -61,12 +61,12 @@ theorem linearIndependent_exp {ι : Type*} (u : ι → integralClosure ℚ ℂ) 
       simp only [T, Finset.coe_union, Finset.coe_image, Set.mem_union, Set.mem_image,
         Finset.mem_coe] at ht
       rcases ht with ⟨j, -, rfl⟩ | ⟨j, -, rfl⟩
-      exacts [(u j).2.isAlgebraic, (g j).2.isAlgebraic]
+      exacts [(u j).property.isAlgebraic, (g j).property.isAlgebraic]
   have : NumberField K := { }
   have hu (j : s) : (u j : ℂ) ∈ K :=
-    hTK (Finset.mem_coe.2 (Finset.mem_union_left _ (Finset.mem_image_of_mem _ j.2)))
+    hTK (Finset.mem_coe.2 (Finset.mem_union_left _ (Finset.mem_image_of_mem _ j.property)))
   have hg' (j : s) : (g j : ℂ) ∈ K :=
-    hTK (Finset.mem_coe.2 (Finset.mem_union_right _ (Finset.mem_image_of_mem _ j.2)))
+    hTK (Finset.mem_coe.2 (Finset.mem_union_right _ (Finset.mem_image_of_mem _ j.property)))
   -- Over `K`, the exponentials `exp (u j)`, `j ∈ s`, are linearly independent.
   have hind : LinearIndependent K fun j : s ↦ exp (u j) := by
     have := LindemannWeierstrass.linearIndependent_exp_algebraMap.comp

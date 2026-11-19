@@ -147,7 +147,7 @@ private def levelCocycle (c : cocycles₂ (L.rep F)) :
       (FixedPoints.addSubgroup (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) M) :=
   ⟨fun q => L.coeffFixedPointsEquiv e he (c q), mem_Z2_iff.2 ⟨continuous_of_discreteTopology,
     fun g h j => by
-      have hc := congrArg (L.coeffFixedPointsEquiv e he) ((mem_cocycles₂_iff c).1 c.2 g h j)
+      have hc := congrArg (L.coeffFixedPointsEquiv e he) ((mem_cocycles₂_iff c).1 c.property g h j)
       rw [map_add, map_add] at hc
       exact hc.trans (congrArg (· + _) (L.coeffFixedPointsEquiv_ρ e he g (c (h, j))))⟩⟩
 

@@ -83,7 +83,7 @@ theorem chartIteratedFDeriv_eq_iteratedFDerivWithin_coordChange
   simp only [extChartAt] at hz ⊢
   refine TauCeti.iteratedFDerivWithin_comp_extend_symm_eq_extendCoordChange f ?_ m
   rw [PartialEquiv.trans_source, PartialEquiv.symm_source]
-  exact ⟨z.2, hz⟩
+  exact ⟨z.property, hz⟩
 
 omit [IsManifold I n M] in
 /-- On a compact subset of the overlap of two charts of the maximal atlas, the coordinate
@@ -144,7 +144,7 @@ theorem exists_chartCkSeminorm_le_coordChange
       (I.extendCoordChange (chartAt H x) (chartAt H y)).source := by
     rintro _ ⟨z, hz, rfl⟩
     rw [PartialEquiv.trans_source, PartialEquiv.symm_source]
-    exact ⟨z.2, hoverlap z hz⟩
+    exact ⟨z.property, hoverlap z hz⟩
   obtain ⟨C, hCpos, hC⟩ := exists_norm_iteratedFDerivWithin_comp_extend_symm_le (F := F)
     (chart_mem_maximalAtlas x) (chart_mem_maximalAtlas y)
     (K.isCompact.image continuous_subtype_val) hKs k hk

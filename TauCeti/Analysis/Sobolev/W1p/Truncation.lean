@@ -247,7 +247,7 @@ theorem W1p.posPartAbove_mem_w1p0Submodule_of_le (hp : p ≠ ∞) {k l : ℝ} (h
 zero-boundary Sobolev function again has zero boundary values
 (`TauCeti.W1p.posPart_mem_w1p0Submodule`). -/
 def W1p0.posPart (hp : p ≠ ∞) (u : W1p0 mu Omega p) : W1p0 mu Omega p :=
-  ⟨W1p.posPart hp u, W1p.posPart_mem_w1p0Submodule hp u.2⟩
+  ⟨W1p.posPart hp u, W1p.posPart_mem_w1p0Submodule hp u.property⟩
 
 @[simp]
 theorem W1p0.coe_posPart (hp : p ≠ ∞) (u : W1p0 mu Omega p) :

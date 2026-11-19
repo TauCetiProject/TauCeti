@@ -39,8 +39,8 @@ variable (F) in
 /-- Finite places above `v` correspond to absolute values restricting to `v` exactly, by taking
 the reciprocal local-degree power of the finite place. -/
 noncomputable def placesOverEquivAbsValues (v : FinitePlace K) :
-    v.placesOver F ≃ {w : AbsoluteValue F ℝ // w.LiesOver v.1} := by
-  let f : v.placesOver F → {w : AbsoluteValue F ℝ // w.LiesOver v.1} := fun w ↦
+    v.placesOver F ≃ {w : AbsoluteValue F ℝ // w.LiesOver v.val} := by
+  let f : v.placesOver F → {w : AbsoluteValue F ℝ // w.LiesOver v.val} := fun w ↦
     ⟨w.val.relativeAbsValue K, by
       have : w.val.LiesOver v := mem_placesOver.mp w.property
       infer_instance⟩
@@ -49,7 +49,7 @@ noncomputable def placesOverEquivAbsValues (v : FinitePlace K) :
   · intro w u h
     exact Subtype.ext (relativeAbsValue_injective (congrArg Subtype.val h))
   · intro u
-    have : u.val.LiesOver (mk v.maximalIdeal).1 := by
+    have : u.val.LiesOver (mk v.maximalIdeal).val := by
       simpa only [v.mk_maximalIdeal] using u.property
     obtain ⟨P, hP, hroot⟩ :=
       (NumberField.existsUnique_finitePlace_rpow_inv_eq_of_liesOver
@@ -70,16 +70,16 @@ theorem placesOverEquivAbsValues_apply (v : FinitePlace K) (w : v.placesOver F) 
 local degree. This holds at every element of the extension, not only at base-field elements. -/
 @[simp]
 theorem placesOverEquivAbsValues_symm_apply_pow (v : FinitePlace K)
-    (w : {w : AbsoluteValue F ℝ // w.LiesOver v.1}) (y : F) :
+    (w : {w : AbsoluteValue F ℝ // w.LiesOver v.val}) (y : F) :
     w.val y ^ ((placesOverEquivAbsValues F v).symm w).val.localDegree K =
       ((placesOverEquivAbsValues F v).symm w).val y := by
-  have h := congrArg (fun u : {w : AbsoluteValue F ℝ // w.LiesOver v.1} ↦ u.val y)
+  have h := congrArg (fun u : {w : AbsoluteValue F ℝ // w.LiesOver v.val} ↦ u.val y)
     ((placesOverEquivAbsValues F v).apply_symm_apply w)
   rw [placesOverEquivAbsValues_apply] at h
   rw [← h, relativeAbsValue_pow_localDegree]
 
 /-- The fibre of absolute values above a finite place is finite. -/
-instance (v : FinitePlace K) : Finite {w : AbsoluteValue F ℝ // w.LiesOver v.1} :=
+instance (v : FinitePlace K) : Finite {w : AbsoluteValue F ℝ // w.LiesOver v.val} :=
   Finite.of_equiv _ (placesOverEquivAbsValues F v)
 
 attribute [local instance] Fintype.ofFinite
@@ -88,7 +88,7 @@ open scoped Classical in
 /-- A local-degree weighted product over the absolute values above `v` is the unweighted
 product over the finite places above `v`. -/
 theorem prod_apply_pow_localDegree (v : FinitePlace K) (y : F) :
-    (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.1},
+    (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.val},
       w.val y ^ ((placesOverEquivAbsValues F v).symm w).val.localDegree K) =
         ∏ w ∈ (v.placesOver F).toFinset, w y := by
   classical
@@ -102,7 +102,7 @@ open scoped Classical in
 values above a finite place, weighted by their local degrees, is the base absolute value to
 the degree of the extension. -/
 theorem prod_algebraMap_pow_localDegree (v : FinitePlace K) (x : K) :
-    (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.1},
+    (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.val},
       w.val (algebraMap K F x) ^ ((placesOverEquivAbsValues F v).symm w).val.localDegree K) =
         v x ^ Module.finrank K F := by
   classical
@@ -121,7 +121,7 @@ theorem prod_algebraMap_pow_localDegree (v : FinitePlace K) (x : K) :
 recover it. The formula also includes the zero element of the base. -/
 
 example (v : FinitePlace K) :
-    (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.1},
+    (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.val},
       w.val (algebraMap K F 0) ^
         ((placesOverEquivAbsValues F v).symm w).val.localDegree K) = 0 := by
   rw [prod_algebraMap_pow_localDegree, map_zero, zero_pow Module.finrank_pos.ne']

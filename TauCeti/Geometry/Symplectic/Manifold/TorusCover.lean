@@ -99,13 +99,13 @@ theorem integralTopForm_mpullback_wedge_timeForm_pos [CompactSpace C]
     {c₀ : C} (hne : mfderiv I (𝓘(ℝ).prod 𝓘(ℝ)) v c₀ ≠ 0) :
     0 < integralTopForm o (SmoothForm.mpullback v hv (SmoothForm.wedge
         (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm p))
-        (SmoothForm.mpullback Prod.snd contMDiff_snd (AddCircle.timeForm q)))).1 := by
+        (SmoothForm.mpullback Prod.snd contMDiff_snd (AddCircle.timeForm q)))).val := by
   set η := SmoothForm.mpullback v hv (SmoothForm.wedge
     (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm p))
     (SmoothForm.mpullback Prod.snd contMDiff_snd (AddCircle.timeForm q)))
   -- On a frame `(e, j e)`, `η` is `|dv e|²`.
   have hη (c : C) (e : TangentSpace I c) :
-      η.1 c ![e, j c e] = (mfderiv I (𝓘(ℝ).prod 𝓘(ℝ)) v c e).1 ^ 2 +
+      η.val c ![e, j c e] = (mfderiv I (𝓘(ℝ).prod 𝓘(ℝ)) v c e).1 ^ 2 +
         (mfderiv I (𝓘(ℝ).prod 𝓘(ℝ)) v c e).2 ^ 2 :=
     (SmoothBundleForm.eval₂_apply _ _ _ _).symm.trans
       (eval₂_mpullback_wedge_timeForm_of_isPseudoholomorphicAt hv (hhol c) e)

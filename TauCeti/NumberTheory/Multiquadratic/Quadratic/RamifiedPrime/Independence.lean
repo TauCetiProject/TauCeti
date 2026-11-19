@@ -257,7 +257,8 @@ theorem eq_empty_or_eq_primeFactors_of_prod_classGroupMk0_eq_one
     (h : ∏ p ∈ s, ClassGroup.mk0 (Q p) = 1) :
     s = ∅ ∨ s = d.natAbs.primeFactors := by
   have hprin : Submodule.IsPrincipal (∏ p ∈ s, (Q p : Ideal (𝓞 K))) := by
-    rwa [← map_prod, ClassGroup.mk0_eq_one_iff (∏ p ∈ s, Q p).2, Submonoid.coe_finsetProd] at h
+    rwa [← map_prod, ClassGroup.mk0_eq_one_iff (∏ p ∈ s, Q p).property,
+        Submonoid.coe_finsetProd] at h
   rcases prod_eq_one_or_prod_eq_natAbs_of_isPrincipal_prod hmin hgen hsf hd
       (fun p => (Q p : Ideal (𝓞 K))) hram hprime hover hprin with h1 | h1
   · left

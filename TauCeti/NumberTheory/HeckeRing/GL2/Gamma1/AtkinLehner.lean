@@ -166,9 +166,9 @@ private lemma atkinLehnerAntiInvolutionGamma1_bar_mem_doubleCoset_of_primitive
     simpa [Gamma0Map_apply] using congrArg Units.val hσlabel
   have hσ00 : (((σ : SL(2, ℤ)) 0 0 : ℤ) : ZMod N) * (A 0 0 : ZMod N) = 1 := by
     rw [← hσ11]
-    exact intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 σ.2
+    exact intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 σ.property
   have hσ₀ : mapGL ℚ (σ : SL(2, ℤ)) ∈ (Gamma0 N).map (mapGL ℚ) :=
-    Subgroup.mem_map_of_mem _ σ.2
+    Subgroup.mem_map_of_mem _ σ.property
   -- left multiplication by `σ` lands both in the `Γ₁(N)` double coset of `diag(1, m)`
   have hσx := mapGL_mul_mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 hσ₀ hσ00 hA rfl
     ⟨c, hc⟩ hx₀
@@ -206,7 +206,7 @@ theorem atkinLehnerAntiInvolutionGamma1_bar_mem_doubleCoset (x : GL (Fin 2) ℚ)
   | h g =>
     rw [(atkinLehnerAntiInvolutionGamma1 N).onHeckeCoset_mk]
     exact HeckeCoset.mk_eq_mk_of_mem
-      (atkinLehnerAntiInvolutionGamma1_bar_mem_doubleCoset N (g : GL (Fin 2) ℚ) g.2)
+      (atkinLehnerAntiInvolutionGamma1_bar_mem_doubleCoset N (g : GL (Fin 2) ℚ) g.property)
 
 /-- **Shimura's Proposition 3.8 for `Γ₁(N)`**: the Hecke ring `R(Γ₁(N), Δ₀(N))` over any
 commutative semiring is commutative. It contains the diamond operators as well as the Hecke

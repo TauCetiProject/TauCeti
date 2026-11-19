@@ -102,7 +102,7 @@ theorem Topology.IsInducing.opensMeasurableSpace_probabilityMeasure [OpensMeasur
   -- Each point of `Φ ⁻¹' W` lies in the preimage of a finite-dimensional open cylinder in `W`.
   have hcyl : ∀ a : Φ ⁻¹' W, ∃ V : Set α, IsOpen V ∧ MeasurableSet V ∧ (a : α) ∈ V ∧
       V ⊆ Φ ⁻¹' W := fun a ↦ by
-    obtain ⟨I, u, hu, hsub⟩ := isOpen_pi_iff.1 hW _ a.2
+    obtain ⟨I, u, hu, hsub⟩ := isOpen_pi_iff.1 hW _ a.property
     refine ⟨Φ ⁻¹' (I : Set (X →ᵇ ℝ≥0)).pi u, ?_, ?_, fun f hf ↦ (hu f hf).2,
       preimage_mono hsub⟩
     · exact (isOpen_set_pi I.finite_toSet fun f hf ↦ (hu f hf).1).preimage hΦ.continuous

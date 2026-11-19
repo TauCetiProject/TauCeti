@@ -197,9 +197,10 @@ theorem _root_.HasFPowerSeriesOnBall.comp_pow_ofScalars {𝕂 A : Type*} [Nontri
       have hk := hC k
       rw [ofScalars_norm] at hk
       rw [Nat.mul_div_cancel_left _ hm]
-      exact (mul_le_mul_of_nonneg_left (pow_le_pow_of_le_one ρ.2 hρ1 (Nat.le_mul_of_pos_left k hm))
+      exact (mul_le_mul_of_nonneg_left (pow_le_pow_of_le_one ρ.property hρ1
+          (Nat.le_mul_of_pos_left k hm))
         (norm_nonneg _)).trans hk
-    · simpa using (mul_nonneg (norm_nonneg _) (pow_nonneg ρ.2 0)).trans (hC 0)
+    · simpa using (mul_nonneg (norm_nonneg _) (pow_nonneg ρ.property 0)).trans (hC 0)
   · -- the series of `f` at `y ^ m`, reindexed along the multiples of `m`
     have hy1 : ‖y‖ₑ ≤ 1 := (mem_eball_zero_iff.mp hy).le.trans hr
     have hym : y ^ m ∈ Metric.eball (0 : A) r := by

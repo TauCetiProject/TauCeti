@@ -96,11 +96,11 @@ variable {B : Type w} (F : Type*) (E : B → Type w) [∀ b, Zero (E b)]
 /-- The complement `E₀` of the zero section in the total space of a bundle: its nonzero
 vectors. -/
 def zeroSectionCompl : Set (TotalSpace F E) :=
-  {v | v.2 ≠ 0}
+  {v | v.snd ≠ 0}
 
 variable {F E} in
 @[simp]
-theorem mem_zeroSectionCompl {v : TotalSpace F E} : v ∈ zeroSectionCompl F E ↔ v.2 ≠ 0 :=
+theorem mem_zeroSectionCompl {v : TotalSpace F E} : v ∈ zeroSectionCompl F E ↔ v.snd ≠ 0 :=
   Iff.rfl
 
 /-- The nonzero vectors are the complement of the range of the zero section. -/
@@ -144,13 +144,13 @@ theorem thomPairOverUnivIso_hom :
 
 @[simp]
 theorem thomPairOverUnivIso_hom_fst_apply (v : π F E ⁻¹' univ) :
-    TopPair.Hom.fst (thomPairOverUnivIso F E).hom v = v.1 :=
+    TopPair.Hom.fst (thomPairOverUnivIso F E).hom v = v.val :=
   TopCat.restrictPreimagePairMap_fst_apply (X := TopCat.of (TotalSpace F E)) (π F E)
     (zeroSectionCompl F E) univ v
 
 @[simp]
 theorem thomPairOverUnivIso_hom_snd_apply (v : ↥(π F E ⁻¹' univ ∩ zeroSectionCompl F E)) :
-    TopPair.Hom.snd (thomPairOverUnivIso F E).hom v = ⟨v.1, v.2.2⟩ :=
+    TopPair.Hom.snd (thomPairOverUnivIso F E).hom v = ⟨v.val, v.property.2⟩ :=
   TopCat.restrictPreimagePairMap_snd_apply (X := TopCat.of (TotalSpace F E)) (π F E)
     (zeroSectionCompl F E) univ v
 
@@ -162,9 +162,9 @@ theorem thomPairOverUnivIso_inv_fst_apply (v : TotalSpace F E) :
 
 @[simp]
 theorem thomPairOverUnivIso_inv_snd_apply (v : zeroSectionCompl F E) :
-    TopPair.Hom.snd (thomPairOverUnivIso F E).inv v = ⟨v.1, trivial, v.2⟩ :=
+    TopPair.Hom.snd (thomPairOverUnivIso F E).inv v = ⟨v.val, trivial, v.property⟩ :=
   Subtype.ext (congrArg Subtype.val ((TopPair.Hom.w_apply (thomPairOverUnivIso F E).inv v).trans
-    (thomPairOverUnivIso_inv_fst_apply F E v.1)) :)
+    (thomPairOverUnivIso_inv_fst_apply F E v.val)) :)
 
 /-- For `W ⊆ W'`, the map of Thom pairs `(E|_W, E₀|_W) ⟶ (E|_{W'}, E₀|_{W'})` induced by the
 inclusion. -/
@@ -175,7 +175,7 @@ def thomPairOverMap {W W' : Set B} (h : W ⊆ W') : thomPairOver F E W ⟶ thomP
 
 @[simp]
 theorem thomPairOverMap_fst_apply {W W' : Set B} (h : W ⊆ W') (v : π F E ⁻¹' W) :
-    TopPair.Hom.fst (thomPairOverMap F E h) v = ⟨v.1, h v.2⟩ :=
+    TopPair.Hom.fst (thomPairOverMap F E h) v = ⟨v.val, h v.property⟩ :=
   (rfl)
 
 /-- The map of ambient spaces of `thomPairOverMap F E h` is the inclusion `E|_W ⊆ E|_{W'}`. -/
@@ -187,7 +187,7 @@ theorem thomPairOverMap_fst {W W' : Set B} (h : W ⊆ W') :
 @[simp]
 theorem thomPairOverMap_snd_apply {W W' : Set B} (h : W ⊆ W')
     (v : (thomPairOver F E W).snd) :
-    TopPair.Hom.snd (thomPairOverMap F E h) v = ⟨v.1, h v.2.1, v.2.2⟩ :=
+    TopPair.Hom.snd (thomPairOverMap F E h) v = ⟨v.val, h v.property.1, v.property.2⟩ :=
   (rfl)
 
 @[simp]
@@ -214,25 +214,25 @@ variable {F E} {X : Type w} [TopologicalSpace X]
 /-- The map of pairs `(X, X ∖ S) ⟶ (E, E₀)` into the Thom pair of a bundle given by a continuous
 map `f : X → E` which takes nonzero values off `S`. For a section `s` and `S` its zero set, this is
 `s` as a map of pairs. -/
-def thomPairMapOfNeZero (f : C(X, TotalSpace F E)) {S : Set X} (h : ∀ x ∉ S, (f x).2 ≠ 0) :
+def thomPairMapOfNeZero (f : C(X, TotalSpace F E)) {S : Set X} (h : ∀ x ∉ S, (f x).snd ≠ 0) :
     TopPair.ofSubset (Sᶜ : Set (TopCat.of X)) ⟶ thomPair F E :=
   TopPair.ofSubsetMap (TopCat.ofHom f) fun x hx ↦ mem_zeroSectionCompl.2 (h x hx)
 
 @[simp]
 theorem thomPairMapOfNeZero_fst_apply (f : C(X, TotalSpace F E)) {S : Set X}
-    (h : ∀ x ∉ S, (f x).2 ≠ 0) (x : X) : TopPair.Hom.fst (thomPairMapOfNeZero f h) x = f x :=
+    (h : ∀ x ∉ S, (f x).snd ≠ 0) (x : X) : TopPair.Hom.fst (thomPairMapOfNeZero f h) x = f x :=
   TopPair.ofSubsetMap_fst_apply (X := TopCat.of X) _ _ x
 
 theorem thomPairMapOfNeZero_fst (f : C(X, TotalSpace F E)) {S : Set X}
-    (h : ∀ x ∉ S, (f x).2 ≠ 0) : TopPair.Hom.fst (thomPairMapOfNeZero f h) = TopCat.ofHom f :=
+    (h : ∀ x ∉ S, (f x).snd ≠ 0) : TopPair.Hom.fst (thomPairMapOfNeZero f h) = TopCat.ofHom f :=
   TopPair.ofSubsetMap_fst _ _
 
 /-- Precomposing `thomPairMapOfNeZero f` with the map of pairs induced by a continuous map `g`
 gives `thomPairMapOfNeZero` of any map equal to `f ∘ g`. -/
 theorem ofSubsetMap_comp_thomPairMapOfNeZero_of_comp_eq {Y : Type w} [TopologicalSpace Y]
-    (f : C(X, TotalSpace F E)) {S : Set X} (h : ∀ x ∉ S, (f x).2 ≠ 0) (g : C(Y, X)) {T : Set Y}
+    (f : C(X, TotalSpace F E)) {S : Set X} (h : ∀ x ∉ S, (f x).snd ≠ 0) (g : C(Y, X)) {T : Set Y}
     (hg : MapsTo (TopCat.ofHom g) (Tᶜ : Set (TopCat.of Y)) (Sᶜ : Set (TopCat.of X)))
-    {f' : C(Y, TotalSpace F E)} (hf : f.comp g = f') (h' : ∀ y ∉ T, (f' y).2 ≠ 0) :
+    {f' : C(Y, TotalSpace F E)} (hf : f.comp g = f') (h' : ∀ y ∉ T, (f' y).snd ≠ 0) :
     TopPair.ofSubsetMap (TopCat.ofHom g) hg ≫ thomPairMapOfNeZero f h =
       thomPairMapOfNeZero f' h' := by
   subst hf
@@ -252,7 +252,7 @@ theorem isOpen_zeroSectionCompl : IsOpen (zeroSectionCompl F E) := by
   refine isOpen_iff_forall_mem_open.2 fun v hv ↦ ?_
   let e := trivializationAt F E v.proj
   -- Over the base set of `e`, a vector is nonzero exactly when its coordinate in `F` is.
-  have key (w : TotalSpace F E) (hw : w ∈ e.source) : (e w).2 ≠ 0 ↔ w.2 ≠ 0 := by
+  have key (w : TotalSpace F E) (hw : w ∈ e.source) : (e w).2 ≠ 0 ↔ w.snd ≠ 0 := by
     rw [← e.continuousLinearEquivAt_apply' (R := ℝ) w hw]
     exact map_ne_zero_iff _ (e.continuousLinearEquivAt ℝ _ _).injective
   refine ⟨e.source ∩ e ⁻¹' (univ ×ˢ {0}ᶜ), fun w ⟨hw, hw'⟩ ↦
@@ -339,7 +339,7 @@ def fiberThomPairOverMap {W : Set B} {b : B} (hb : b ∈ W) :
   TopPair.ofHom
     (TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk b x, hb⟩,
       (FiberBundle.continuous_totalSpaceMk F E b).subtype_mk _⟩)
-    (TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk b x.1, hb, mem_zeroSectionCompl.2 x.2⟩,
+    (TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk b x.val, hb, mem_zeroSectionCompl.2 x.property⟩,
       ((FiberBundle.continuous_totalSpaceMk F E b).comp continuous_subtype_val).subtype_mk _⟩)
     (by ext; rfl)
 
@@ -517,22 +517,22 @@ theorem zeroSectionHom_apply (b : B) : zeroSectionHom F E b = zeroSection F E b 
 /-- Fibrewise negation `v ↦ -v` of a real vector bundle, written `v ↦ (-1) • v`, as a self-map of
 its total space. -/
 def negTotalSpace : C(TotalSpace F E, TotalSpace F E) where
-  toFun v := TotalSpace.mk' F v.proj ((-1 : ℝ) • v.2)
+  toFun v := TotalSpace.mk' F v.proj ((-1 : ℝ) • v.snd)
   continuous_toFun := continuous_const.smul_totalSpace continuous_id
 
 @[simp]
 theorem negTotalSpace_apply (v : TotalSpace F E) :
-    negTotalSpace F E v = TotalSpace.mk' F v.proj ((-1 : ℝ) • v.2) :=
+    negTotalSpace F E v = TotalSpace.mk' F v.proj ((-1 : ℝ) • v.snd) :=
   (rfl)
 
 /-- Fibrewise negation `v ↦ -v`, as a self-map of the Thom pair `(E, E₀)`. -/
 def negThomPairMap : thomPair F E ⟶ thomPair F E :=
-  TopPair.ofSubsetMap (TopCat.ofHom (negTotalSpace F E)) fun v (hv : v.2 ≠ 0) ↦
-    (smul_ne_zero (neg_ne_zero.2 one_ne_zero) hv : ((-1 : ℝ) • v.2) ≠ 0)
+  TopPair.ofSubsetMap (TopCat.ofHom (negTotalSpace F E)) fun v (hv : v.snd ≠ 0) ↦
+    (smul_ne_zero (neg_ne_zero.2 one_ne_zero) hv : ((-1 : ℝ) • v.snd) ≠ 0)
 
 @[simp]
 theorem negThomPairMap_fst_apply (v : TotalSpace F E) :
-    TopPair.Hom.fst (negThomPairMap F E) v = TotalSpace.mk' F v.proj ((-1 : ℝ) • v.2) :=
+    TopPair.Hom.fst (negThomPairMap F E) v = TotalSpace.mk' F v.proj ((-1 : ℝ) • v.snd) :=
   TopPair.ofSubsetMap_fst_apply (X := TopCat.of (TotalSpace F E)) _ _ v
 
 /-- Fibrewise negation fixes the zero section. -/

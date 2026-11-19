@@ -249,7 +249,7 @@ theorem map_genericMatrix_eq_kostantRootSubgroupMatrix :
     ext
     simp
   have hmatrix := congrArg
-    (fun g : Matrix.GeneralLinearGroup (Fin n) (AdditiveGroup.coordinateHopfAlgebra ℤ) => g.1)
+    (fun g : Matrix.GeneralLinearGroup (Fin n) (AdditiveGroup.coordinateHopfAlgebra ℤ) => g.val)
     hpoint'
   -- This bridge compares the bundled algebra structure with the canonical integer algebra.
   -- Both maps are identified explicitly by their value on the symmetric-algebra generator.

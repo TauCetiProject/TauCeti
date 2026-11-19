@@ -305,7 +305,7 @@ of `Ω` lies in `∂*s`. -/
 theorem ae_mem_reducedBoundary :
     ∀ᵐ y : Ω ∂variationMeasure μ Ω (s.indicator 1), ↑y ∈ reducedBoundary μ Ω s := by
   filter_upwards [ae_tendsto_setAverage_polarDensity] with y ⟨h1, hy⟩
-  exact ⟨y.2, _, h1, hy⟩
+  exact ⟨y.property, _, h1, hy⟩
 
 /-- The outer normal is minus the polar density of `Dχ_s` at `|Dχ_s|`-almost every point. -/
 theorem ae_outerNormal_eq :

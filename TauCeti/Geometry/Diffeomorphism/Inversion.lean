@@ -238,7 +238,7 @@ theorem continuous_symm : Continuous (Diffeomorph.symm : (M ≃ₘ^n⟮I, J⟯ N
     he.continuousAt.preimage_mem_nhds
       ((isOpen_extChartAt_source x).mem_nhds (h₀ w hw).1)
   have hD := (TauCeti.tendsto_iteratedFDerivWithin_diffeomorph_symm_extChartAt
-    w.2 (h₀ w hw).1 hm).eventually (hV.mem_nhds (h₀ w hw).2)
+    w.property (h₀ w hw).1 hm).eventually (hV.mem_nhds (h₀ w hw).2)
   rw [nhds_prod_eq] at hsrc ⊢
   simpa only [Diffeomorph.toContMDiffMap, ContMDiffMap.coeFn_mk, Function.comp_def,
     Prod.map_fst, Prod.map_snd, id_eq, Membership.mem, Set.Mem] using

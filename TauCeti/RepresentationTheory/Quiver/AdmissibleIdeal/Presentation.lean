@@ -204,7 +204,7 @@ theorem IsBasic.exists_surjective_pathAlgebra_isAdmissibleIdeal_ker {k : Type w}
   let : Quiver.{0} (Fin n) := ⟨fun i j => Fin (Module.finrank k (W i j))⟩
   have hlift (i j : Fin n) (t : i ⟶ j) : ∃ x ∈ Ring.jacobson A,
       Ideal.Quotient.mk (Ring.jacobson A ^ 2) (e j * x * e i) = Module.finBasis k (W i j) t := by
-    exact mem_radicalLayerCorner.mp (Module.finBasis k (W i j) t).2
+    exact mem_radicalLayerCorner.mp (Module.finBasis k (W i j) t).property
   choose x hxJ hx using hlift
   let f : ∀ {i j : Fin n}, (i ⟶ j) → A := fun {i j} t => e j * x i j t * e i
   have hl {i j : Fin n} (t : i ⟶ j) : e j * f t = f t := by

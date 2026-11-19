@@ -361,7 +361,7 @@ theorem transportCost_borelGapCost_self (μ : Measure I) [IsProbabilityMeasure �
       have hu_fin : ∫⁻ z, u z.1 ∂π ≠ ∞ := by
         rw [hπ.lintegral_comp_fst hu_meas.aemeasurable]
         exact ne_top_of_le_ne_top ENNReal.one_ne_top <|
-          (lintegral_mono fun x : I ↦ ENNReal.ofReal_le_one.2 x.2.2).trans_eq (by simp)
+          (lintegral_mono fun x : I ↦ ENNReal.ofReal_le_one.2 x.property.2).trans_eq (by simp)
       have hu_eq : (fun z : I × I ↦ u z.1) =ᵐ[π] fun z ↦ u z.2 :=
         ae_eq_of_ae_le_of_lintegral_le
           (hae_le.mono fun _ hz ↦ ENNReal.ofReal_le_ofReal hz) hu_fin
@@ -371,7 +371,7 @@ theorem transportCost_borelGapCost_self (μ : Measure I) [IsProbabilityMeasure �
       have hae_cost : borelGapCost =ᵐ[π] 1 := by
         filter_upwards [hu_eq] with z huz
         have hzeq : z.1 = z.2 :=
-          Subtype.ext ((ENNReal.ofReal_eq_ofReal_iff z.1.2.1 z.2.2.1).1 huz)
+          Subtype.ext ((ENNReal.ofReal_eq_ofReal_iff z.1.property.1 z.2.property.1).1 huz)
         rw [← Prod.eta z, hzeq]
         exact borelGapCost_self z.2
       rw [lintegral_congr_ae hae_cost]
@@ -400,7 +400,8 @@ theorem relaxedTransportCost_borelGapCost :
   let a : I := ⟨1 - δ, ⟨by linarith, by linarith⟩⟩
   let s : Set I := Iic a
   let μ₀ : Measure I := (volume : Measure I).restrict s
-  let g : I → I := fun x ↦ ⟨min ((x : ℝ) + δ) 1, ⟨le_min (add_nonneg x.2.1 hδ_pos.le) zero_le_one,
+  let g : I → I := fun x ↦ ⟨min ((x : ℝ) + δ) 1, ⟨le_min (add_nonneg x.property.1 hδ_pos.le)
+      zero_le_one,
     min_le_right _ _⟩⟩
   have hg_meas : Measurable g :=
     (((continuous_subtype_val.add continuous_const).min continuous_const).subtype_mk _).measurable

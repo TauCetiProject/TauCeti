@@ -230,7 +230,7 @@ theorem deriv_smul_mul_smulDeriv_of_eventuallyEq {W : ℂ → ℂ} (q : PSL(2, �
           W ((q • ofComplex y : ℍ) : ℂ) = W y := by
         rwa [ofComplex_apply, inv_smul_smul]
       filter_upwards [hg.continuousAt.eventually hW',
-        isOpen_upperHalfPlaneSet.mem_nhds (q • z).2] with u hu hu'
+        isOpen_upperHalfPlaneSet.mem_nhds (q • z).coe_im_pos] with u hu hu'
       simp only [Function.comp_apply]
       rw [ofComplex_apply, smul_inv_smul, ofComplex_apply_of_im_pos hu'] at hu
       rw [ofComplex_apply_of_im_pos hu']

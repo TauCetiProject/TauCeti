@@ -80,7 +80,7 @@ Substituting polynomials without constant term whose coefficients have norm at m
 `R`-algebra homomorphism `R⟨X⟩† → R⟨Y⟩†`. -/
 noncomputable def subst : washnitzerAlgebra σ R →ₐ[R] washnitzerAlgebra τ R :=
   ((substAlgHom (hasSubst_coe ha₀)).comp (washnitzerAlgebra σ R).val).codRestrict _ fun f ↦ by
-    simpa [coe_substAlgHom] using subst_mem_washnitzerAlgebra ha₀ ha₁ f.2
+    simpa [coe_substAlgHom] using subst_mem_washnitzerAlgebra ha₀ ha₁ f.property
 
 /-- The map of Monsky–Washnitzer algebras is Mathlib's formal substitution. -/
 @[simp]

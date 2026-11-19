@@ -502,12 +502,12 @@ theorem exists_isClopen_between_connectedComponent [T2Space X] [CompactSpace X] 
     {U : Set X} (hU : IsOpen U) (h : connectedComponent x ⊆ U) :
     ∃ s : Set X, IsClopen s ∧ connectedComponent x ⊆ s ∧ s ⊆ U := by
   obtain ⟨u, hu⟩ := hU.isClosed_compl.isCompact
-    |>.elim_finite_subfamily_closed (fun s : {s : Set X // IsClopen s ∧ x ∈ s} => s.1)
-      (fun s => s.2.1.1) (by
+    |>.elim_finite_subfamily_closed (fun s : {s : Set X // IsClopen s ∧ x ∈ s} => s.val)
+      (fun s => s.property.1.1) (by
         rw [← connectedComponent_eq_iInter_isClopen, disjoint_compl_left_iff_subset]
         exact h)
-  have hs : IsClopen (⋂ i ∈ u, i.1) := isClopen_biInter_finset fun i _ => i.2.1
-  exact ⟨_, hs, hs.connectedComponent_subset (mem_iInter₂.mpr fun i _ => i.2.2),
+  have hs : IsClopen (⋂ i ∈ u, i.val) := isClopen_biInter_finset fun i _ => i.property.1
+  exact ⟨_, hs, hs.connectedComponent_subset (mem_iInter₂.mpr fun i _ => i.property.2),
     disjoint_compl_left_iff_subset.mp hu⟩
 
 /-- **A compact component of a closed set is cut out by an open set.** In a locally compact

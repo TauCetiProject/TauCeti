@@ -142,7 +142,7 @@ pseudomeasure is continuous away from the trivial character. -/
 theorem continuous_extendedPseudoCharacterEval {S : Type*} [TopologicalSpace S]
     {κ : S → G →ₜ* K} (hκ : Continuous κ)
     (z : pseudomeasures (diracHom (G := G) (R := O)) Q) :
-    Continuous fun s : {s // κ s ≠ 1} ↦ (κ s).extendedPseudoCharacterEval j hj Q s.2 z := by
+    Continuous fun s : {s // κ s ≠ 1} ↦ (κ s).extendedPseudoCharacterEval j hj Q s.property z := by
   have hκ' : Continuous fun s ↦ (κ s : C(G, K)) :=
     (ContinuousMonoidHom.isInducing_toContinuousMap _ _).continuous.comp hκ
   rw [continuous_iff_continuousAt]
@@ -161,7 +161,7 @@ theorem continuous_extendedPseudoCharacterEval {S : Type*} [TopologicalSpace S]
           (hκ'.comp continuous_subtype_val)).continuousAt
     · exact ((hval.comp continuous_subtype_val).sub continuous_const).continuousAt
   · filter_upwards [hV.mem_nhds hg] with s hs
-    exact ((κ s).extendedPseudoCharacterEval_eq_div j hj Q s.2 hs z).symm
+    exact ((κ s).extendedPseudoCharacterEval_eq_div j hj Q s.property hs z).symm
 
 end ContinuousMonoidHom
 

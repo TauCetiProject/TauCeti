@@ -360,15 +360,15 @@ theorem exists_finite_cover_extendCoordChange_source
     refine nhdsWithin_mono _ (hKt.trans (e.extend_target_subset_range (I := I)))
       (I.extendCoordChange_source_mem_nhdsWithin ?_)
     rw [PartialEquiv.trans_source, PartialEquiv.symm_source, (σ _).extend_source]
-    exact ⟨hKt z.2, hσ _⟩
+    exact ⟨hKt z.property, hσ _⟩
   choose u hu hzu huK using fun z : K ↦ mem_nhdsWithin.mp (hnhds z)
   obtain ⟨t, ht⟩ := hK.elim_finite_subcover u hu fun z hz ↦ mem_iUnion.mpr ⟨⟨z, hz⟩, hzu _⟩
   obtain ⟨Q, hQc, hQu, hKQ⟩ := hK.finite_compact_cover t u (fun z _ ↦ hu z)
     (by simpa only [iUnion_subtype] using ht)
   have hQK (z : K) (hz : z ∈ t) : Q z ⊆ K := hKQ ▸ subset_biUnion_of_mem (u := Q) hz
-  refine ⟨t.card, fun j ↦ (e.extend I).symm (t.equivFin.symm j).1,
-    fun j ↦ Q (t.equivFin.symm j), fun j ↦ hQc _, fun j ↦ hQK _ (t.equivFin.symm j).2,
-    fun j w hw ↦ huK _ ⟨hQu _ hw, hQK _ (t.equivFin.symm j).2 hw⟩, fun z hz ↦ ?_⟩
+  refine ⟨t.card, fun j ↦ (e.extend I).symm (t.equivFin.symm j).val,
+    fun j ↦ Q (t.equivFin.symm j), fun j ↦ hQc _, fun j ↦ hQK _ (t.equivFin.symm j).property,
+    fun j w hw ↦ huK _ ⟨hQu _ hw, hQK _ (t.equivFin.symm j).property hw⟩, fun z hz ↦ ?_⟩
   rw [hKQ] at hz
   obtain ⟨y, hy, hzy⟩ := mem_iUnion₂.mp hz
   exact mem_iUnion.mpr ⟨t.equivFin ⟨y, hy⟩, by simpa using hzy⟩
@@ -664,7 +664,7 @@ theorem exists_finite_compact_chart_cover [CompactSpace M] [LocallyCompactSpace 
       (continuousOn_extChartAt_symm (α i)))
   refine interior_maximal (fun z hz ↦ ?_) hO ?_
   · have hmem := (hu i).2.2.2.2 (Set.mem_image_of_mem _ hz)
-    rwa [(extChartAt I (α i)).right_inv z.2] at hmem
+    rwa [(extChartAt I (α i)).right_inv z.property] at hmem
   · simpa only [Set.mem_ofPred_eq, (extChartAt I (α i)).left_inv hy] using hyi
 
 /-- A *compact chart atlas* of `M`: finitely many points `center i` of `M` with compact subsets

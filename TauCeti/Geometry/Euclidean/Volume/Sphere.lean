@@ -298,7 +298,8 @@ private theorem euclideanHausdorffMeasure_image_coe_of_forall_ne {v : E} (hv : �
       finrank ℝ E * volume (Ioo (0 : ℝ) 1 • (((↑) : sphere (0 : E) 1 → E) '' s)) := by
   set ψ := stereoInvFunAux v ∘ ((↑) : (ℝ ∙ v)ᗮ → E)
   set A := ((↑) : sphere (0 : E) 1 → E) '' s
-  have hnorm (w : (ℝ ∙ v)ᗮ) : ‖ψ w‖ = 1 := mem_sphere_zero_iff_norm.1 (stereoInvFunAux_mem hv w.2)
+  have hnorm (w : (ℝ ∙ v)ᗮ) : ‖ψ w‖ = 1 := mem_sphere_zero_iff_norm.1
+      (stereoInvFunAux_mem hv w.property)
   have hd : Differentiable ℝ ψ :=
     (contDiff_stereoInvFunAux.comp (ℝ ∙ v)ᗮ.subtypeL.contDiff).differentiable one_ne_zero
   have hA : MeasurableSet A :=
@@ -323,7 +324,7 @@ theorem toSphere_volume_eq_comap_euclideanHausdorffMeasure :
     (volume : Measure E).toSphere = (μHE[finrank ℝ E - 1] : Measure E).comap (↑) := by
   rcases subsingleton_or_nontrivial E with hE | hE
   · have : IsEmpty (sphere (0 : E) 1) :=
-      ⟨fun x => by simpa [Subsingleton.elim (x : E) 0] using x.2⟩
+      ⟨fun x => by simpa [Subsingleton.elim (x : E) 0] using x.property⟩
     ext s
     simp [Set.eq_empty_of_isEmpty s]
   have hemb :=

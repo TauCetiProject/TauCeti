@@ -170,11 +170,11 @@ theorem exists_common_window_radius_le {a b : ℝ} {crossings : Finset ℝ}
   -- `Option {t // t ∈ crossings}` so that `r₀` is the `none` component.
   obtain ⟨r, hr_pos, hr_all⟩ := Pi.exists_forall_pos_add_lt
     (ι := Option {t // t ∈ crossings}) (x := fun _ => (0 : ℝ))
-    (y := fun i => i.elim r₀ fun t => R t.1)
+    (y := fun i => i.elim r₀ fun t => R t.val)
     (fun i => by
       cases i with
       | none => simpa using hr₀_pos
-      | some t => simpa using hR_pos t.1 t.2)
+      | some t => simpa using hR_pos t.val t.property)
   have hr_lt : r < r₀ := by simpa using hr_all none
   exact ⟨r, hr_pos, fun t ht => ⟨by linarith [(h_endpts t ht).1], by
     linarith [(h_endpts t ht).2]⟩,

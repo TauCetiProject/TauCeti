@@ -110,7 +110,7 @@ private theorem continuousOn_liftAux (h : GluedCurve d ≃ₜ GluedCurve d')
     ContinuousOn (liftAux h) (flagPointSet d)ᶜ := by
   -- Corestrict to the complement of the flag points, where the quotient map is an embedding.
   let k : ((flagPointSet d)ᶜ : Set (Σ i, X i)) → ((flagPointSet d')ᶜ : Set (Σ i, X' i)) :=
-    fun x ↦ ⟨liftAux h x, (mem_flagPointSet_iff_of_mk_eq hN (mk_liftAux h x)).not.mpr x.2⟩
+    fun x ↦ ⟨liftAux h x, (mem_flagPointSet_iff_of_mk_eq hN (mk_liftAux h x)).not.mpr x.property⟩
   have hk : Continuous k := by
     rw [(isOpenEmbedding_domRestrict_quotient_mk d').isInducing.continuous_iff]
     have : (flagPointSet d')ᶜ.domRestrict (Quotient.mk (gluedRelSetoid d')) ∘ k =

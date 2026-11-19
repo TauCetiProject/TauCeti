@@ -152,7 +152,7 @@ theorem eventually_exists_homotopicRel_id_eventually_eq {y : M} {U : Set M} (hU 
       (isCompact_closedBall c' (r / 2 / 2)) (fun p hp ↦ (hrt (hKr hp)).1)
       (fun t v hv ↦ by
         rw [mem_closedBall, dist_eq_norm] at hv ⊢
-        exact (norm_radialSquash_sub_le c' (r / 2) t.2.1 t.2.2 v).trans hv)
+        exact (norm_radialSquash_sub_le c' (r / 2) t.property.1 t.property.2 v).trans hv)
       (fun t v hv ↦ radialSquash_of_le (half_pos hr) t (by
         rw [mem_closedBall, dist_eq_norm, not_le] at hv
         exact hv.le))

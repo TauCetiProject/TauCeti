@@ -243,7 +243,7 @@ theorem signedMorseBoundary_single_eq_zero_of_unique_index_zero {R : Type*} [Rin
   by_cases hq : manifoldMorseIndex 𝓘(ℝ, E) f q = 0
   · have hqm (y : M) (hy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0)
         (hy0 : manifoldMorseIndex 𝓘(ℝ, E) f y = 0) : y = q :=
-      hmin ⟨hy, hy0⟩ ⟨mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2, hq⟩
+      hmin ⟨hy, hy0⟩ ⟨mem_criticalPoints_iff_mfderiv_eq_zero.1 q.property, hq⟩
     rw [h.signedMorseBoundaryCoeff_eq_zero_of_unique_index_zero hf 𝔬 hqm p, Int.cast_zero,
       mul_zero]
   · rw [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one (by omega), Int.cast_zero,

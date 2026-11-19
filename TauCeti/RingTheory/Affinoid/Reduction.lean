@@ -227,7 +227,7 @@ theorem isIntegral_powerBoundedMap (f : A →ₐ[K] B) (hA : IsAffinoidAlgebra K
   -- An integral equation of `b` over `A` whose coefficients have `|·|sup ≤ 1`.
   obtain ⟨p, hp, hpb, hc⟩ := hA.exists_monic_aeval_eq_zero_supSeminorm_coeff_le hB (b : B)
   have hb : supSeminorm K (b : B) ≤ 1 :=
-    hB.isPowerBounded_iff_supSeminorm_le_one.mp (mem_powerBoundedSubring.mp b.2)
+    hB.isPowerBounded_iff_supSeminorm_le_one.mp (mem_powerBoundedSubring.mp b.property)
   have hlifts : p ∈ Polynomial.lifts (powerBoundedSubring A).subtype :=
     (Polynomial.lifts_iff_coeff_lifts p).mpr fun i ↦
       ⟨⟨p.coeff i, mem_powerBoundedSubring.mpr <| hA.isPowerBounded_iff_supSeminorm_le_one.mpr <|

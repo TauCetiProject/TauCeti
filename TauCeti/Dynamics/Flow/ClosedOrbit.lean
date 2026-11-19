@@ -542,7 +542,7 @@ theorem primitive_iterate_multiplicity (γ : ClosedOrbit ϕ) :
 iterations, by taking the iterate. -/
 def equivPrimitiveProdPNat : ClosedOrbit ϕ ≃ {γ : ClosedOrbit ϕ // γ.IsPrimitive} × ℕ+ where
   toFun γ := (⟨γ.primitive, γ.isPrimitive_primitive⟩, γ.multiplicity)
-  invFun p := p.1.1.iterate p.2
+  invFun p := p.1.val.iterate p.2
   left_inv γ := γ.primitive_iterate_multiplicity
   right_inv := fun ⟨⟨γ, hγ⟩, k⟩ ↦ by
     refine Prod.ext (Subtype.ext ?_) ?_
@@ -556,7 +556,7 @@ theorem equivPrimitiveProdPNat_apply (γ : ClosedOrbit ϕ) :
 
 @[simp]
 theorem equivPrimitiveProdPNat_symm_apply (p : {γ : ClosedOrbit ϕ // γ.IsPrimitive} × ℕ+) :
-    equivPrimitiveProdPNat.symm p = p.1.1.iterate p.2 :=
+    equivPrimitiveProdPNat.symm p = p.1.val.iterate p.2 :=
   (rfl)
 
 end T1Space

@@ -197,12 +197,13 @@ private theorem exists_max_valuation_lt_one (hF : IsFunctionField k F)
   push Not at hcon
   -- Otherwise the valuations of the nonunits climb forever, contradicting the chain bound.
   let g : {z : F // z ≠ 0 ∧ A.valuation z < 1} → {z : F // z ≠ 0 ∧ A.valuation z < 1} :=
-    fun t ↦ ⟨(hcon t.1 t.2.1 t.2.2).choose, (hcon t.1 t.2.1 t.2.2).choose_spec.1,
-      (hcon t.1 t.2.1 t.2.2).choose_spec.2.1⟩
-  have hg : ∀ t, A.valuation t.1 < A.valuation (g t).1 :=
-    fun t ↦ (hcon t.1 t.2.1 t.2.2).choose_spec.2.2
+    fun t ↦ ⟨(hcon t.val t.property.1 t.property.2).choose,
+        (hcon t.val t.property.1 t.property.2).choose_spec.1,
+      (hcon t.val t.property.1 t.property.2).choose_spec.2.1⟩
+  have hg : ∀ t, A.valuation t.val < A.valuation (g t).val :=
+    fun t ↦ (hcon t.val t.property.1 t.property.2).choose_spec.2.2
   refine not_exists_seq_valuation_strictMono hF hk hui0
-    (y := fun n ↦ (g^[n] ⟨u⁻¹, hui0, hui⟩).1) (fun n ↦ (g^[n] _).2.2)
+    (y := fun n ↦ (g^[n] ⟨u⁻¹, hui0, hui⟩).val) (fun n ↦ (g^[n] _).property.2)
     (fun n ↦ ?_) le_rfl
   rw [Function.iterate_succ_apply']
   exact hg _
@@ -219,9 +220,10 @@ theorem isDiscreteValuationRing_of_isFunctionField (hF : IsFunctionField k F)
   · -- Irreducibility: a factor of smaller valuation than `t` is impossible.
     have hcoe : t = (a : F) * (b : F) := congrArg Subtype.val hab
     have ha0 : (a : F) ≠ 0 := fun h ↦ ht0 (by rw [hcoe, h, zero_mul])
-    rcases eq_or_lt_of_le ((A.valuation_le_one_iff (a : F)).2 a.2) with hva | hva
+    rcases eq_or_lt_of_le ((A.valuation_le_one_iff (a : F)).2 a.property) with hva | hva
     · exact Or.inl ((A.valuation_eq_one_iff a).2 hva)
-    refine Or.inr ((A.valuation_eq_one_iff b).2 (le_antisymm ((A.valuation_le_one_iff _).2 b.2)
+    refine Or.inr ((A.valuation_eq_one_iff b).2 (le_antisymm ((A.valuation_le_one_iff _).2
+        b.property)
       (not_lt.1 fun hlt ↦ absurd (htmax _ ha0 hva) (not_le.2 ?_))))
     calc A.valuation t = A.valuation (a : F) * A.valuation (b : F) := by rw [hcoe, map_mul]
       _ < A.valuation (a : F) * 1 :=
@@ -243,7 +245,7 @@ theorem isDiscreteValuationRing_of_isFunctionField (hF : IsFunctionField k F)
         | zero =>
           refine lt_of_le_of_ne ?_ (hcon 0)
           rw [pow_zero, div_one]
-          exact (A.valuation_le_one_iff _).2 z.2
+          exact (A.valuation_le_one_iff _).2 z.property
         | succ n ih =>
           refine lt_of_le_of_ne ?_ (hcon (n + 1))
           rw [hval, pow_succ, ← div_div, ← hval, div_le_one₀ htpos]

@@ -171,7 +171,7 @@ theorem taylorJet_eq_zero_iff {r : R} {n : ℕ} {f : R[X]} :
     taylorJet r n f = 0 ↔ (X - C r) ^ n ∣ f := by
   rw [X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero, funext_iff]
   simp only [taylorJet_apply, Pi.zero_apply]
-  exact ⟨fun h k hk => h ⟨k, hk⟩, fun h k => h k k.2⟩
+  exact ⟨fun h k hk => h ⟨k, hk⟩, fun h k => h k k.isLt⟩
 
 /-- Every family of Taylor coordinates is attained, by `∑ k, c k • (X - C r) ^ k`. -/
 theorem taylorJet_surjective (r : R) (n : ℕ) : Surjective (taylorJet r n) := by

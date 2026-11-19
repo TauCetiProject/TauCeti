@@ -104,24 +104,24 @@ theorem norm_sum_indicatorConstLp_one (hs : ∀ i, MeasurableSet (s i)) (hμs : 
 finite set `S` of values of `G` of the indicator classes of the fibres `G ⁻¹' {w}` with constants
 `φ w`, provided that `φ ∘ G` vanishes wherever `G` takes a value outside `S`. -/
 theorem eq_sum_indicatorConstLp_fiber {F : Type*} {G : SimpleFunc α F} {φ : F → E}
-    {S : Finset F} (hS : ∀ a, G a ∉ S → φ (G a) = 0) (hμS : ∀ w : S, μ (G ⁻¹' {w.1}) ≠ ∞)
+    {S : Finset F} (hS : ∀ a, G a ∉ S → φ (G a) = 0) (hμS : ∀ w : S, μ (G ⁻¹' {w.val}) ≠ ∞)
     {x : Lp E p μ} (hx : x =ᵐ[μ] fun a ↦ φ (G a)) :
-    x = ∑ w : S, indicatorConstLp p (G.measurableSet_fiber w.1) (hμS w) (φ w.1) := by
+    x = ∑ w : S, indicatorConstLp p (G.measurableSet_fiber w.val) (hμS w) (φ w.val) := by
   refine Lp.ext ?_
   filter_upwards [hx, Lp.coeFn_fun_finsetSum Finset.univ
-      fun w : S ↦ indicatorConstLp p (G.measurableSet_fiber w.1) (hμS w) (φ w.1),
-    ae_all_iff.2 fun w : S ↦ indicatorConstLp_coeFn (p := p) (hs := G.measurableSet_fiber w.1)
-      (hμs := hμS w) (c := φ w.1)] with a h₀ h₁ h₂
+      fun w : S ↦ indicatorConstLp p (G.measurableSet_fiber w.val) (hμS w) (φ w.val),
+    ae_all_iff.2 fun w : S ↦ indicatorConstLp_coeFn (p := p) (hs := G.measurableSet_fiber w.val)
+      (hμs := hμS w) (c := φ w.val)] with a h₀ h₁ h₂
   simp only [h₀, h₁, h₂]
   by_cases h : G a ∈ S
   · rw [Finset.sum_eq_single (⟨G a, h⟩ : S)]
     · simp
     · intro w _ hw
-      have hw' : a ∉ G ⁻¹' {w.1} := fun ha ↦ hw (Subtype.ext (Set.mem_singleton_iff.1 ha).symm)
+      have hw' : a ∉ G ⁻¹' {w.val} := fun ha ↦ hw (Subtype.ext (Set.mem_singleton_iff.1 ha).symm)
       simp [hw']
     · simp
   · refine (hS a h).trans (Finset.sum_eq_zero fun w _ ↦ ?_).symm
-    have hw : a ∉ G ⁻¹' {w.1} := fun ha ↦ h ((Set.mem_singleton_iff.1 ha) ▸ w.2)
+    have hw : a ∉ G ⁻¹' {w.val} := fun ha ↦ h ((Set.mem_singleton_iff.1 ha) ▸ w.property)
     simp [hw]
 
 end Disjoint

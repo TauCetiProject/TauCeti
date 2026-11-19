@@ -352,7 +352,7 @@ private theorem exists_setIntegral_norm_gradient_sq_le_rpow {α : ℝ≥0} (hα 
       (hGK.mono (ball_subset_ball hrR)) hu
       (hf.mono_measure (Measure.restrict_mono (ball_subset_ball hrR) le_rfl))
       ((ball_subset_ball hrR).trans hball) hρ hρr
-    exact le_mul_add_mul_rpow_of_le_of_mul_rpow_le hA hr hR hrθ hrR (by positivity) Ka.2 hM
+    exact le_mul_add_mul_rpow_of_le_of_mul_rpow_le hA hr hR hrθ hrR (by positivity) Ka.property hM
       (hD r hr hrR) hV0 (setIntegral_nonneg measurableSet_ball fun _ _ => by positivity)
       (by linarith) h1
   have hit' := hit (φ := fun t => ∫ x in ball z t, ‖W1p.gradient u x‖ ^ 2) (R := θ * R)
@@ -457,7 +457,7 @@ private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le_rpow {α :
       (hGK.mono (ball_subset_ball hrR)) hu
       (hf.mono_measure (Measure.restrict_mono (ball_subset_ball hrR) le_rfl))
       ((ball_subset_ball hrR).trans hball) hρ hρr
-    exact le_mul_add_mul_rpow_of_le_of_le_mul_rpow hA hr hR hrR Ka.2 hM (hD r hr hrR) hV0
+    exact le_mul_add_mul_rpow_of_le_of_le_mul_rpow hA hr hR hrR Ka.property hM (hD r hr hrR) hV0
       (setIntegral_nonneg measurableSet_ball fun _ _ => by positivity) (hΦ r hr hrθ) hτβ hτγ h1
   have hit' := hit (φ := fun t =>
       ∫ x in ball z t, ‖W1p.gradient u x - ⨍ y in ball z t, W1p.gradient u y‖ ^ 2) (R := θ * R)
@@ -963,7 +963,7 @@ theorem
         4 * r ^ 2 * ∫ x in ball z r, f x ^ 2 ≤
           c₀ * X ^ 2 * (r / R) ^ ((n : ℝ) + 1 + 2 * β) := fun z hz r hr hrR => by
     rw [hc₀def, hωdef]
-    exact rpow_mul_add_mul_setIntegral_sq_le hq hf (by exact_mod_cast hβα) hβq KG.2 hGQ
+    exact rpow_mul_add_mul_setIntegral_sq_le hq hf (by exact_mod_cast hβα) hβq KG.property hGQ
       (hKf ▸ hfQ) hr hrR ((ball_subset_ball hrR).trans (ball_subset_thickening hz R))
   -- The mean oscillation of `∇u` on `closedBall z t` is at most `√(C₀ c₀ / ω) Q t^β`.
   have hosc : ∀ z ∈ S, ∀ t, 0 < t → t ≤ θ * R →

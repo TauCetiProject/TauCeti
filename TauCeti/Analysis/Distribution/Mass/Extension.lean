@@ -332,7 +332,7 @@ theorem tendsto_apply_smulLeftCLM_massRestrict (hT : HasLocallyFiniteMass T)
     gcongr
     refine (eNorm_sub_le).trans (add_le_add ?_ ?_)
     · rw [← ofReal_norm, ← ofReal_norm, Real.norm_eq_abs]
-      exact ENNReal.ofReal_le_ofReal ((hfC i x x.2).trans (le_abs_self C))
+      exact ENNReal.ofReal_le_ofReal ((hfC i x x.property).trans (le_abs_self C))
     · by_cases hx : x ∈ A <;> simp [hx]
   · rw [lintegral_const_mul' _ _ (by simp), ← TestFunction.enorm_toLp_one]
     exact ENNReal.mul_ne_top (by simp) eNorm_ne_top

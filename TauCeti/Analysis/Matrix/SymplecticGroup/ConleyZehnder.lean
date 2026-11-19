@@ -238,7 +238,7 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 /-- The graph frame of a symplectic matrix, as an invertible matrix. -/
 private noncomputable def graphFrameUnit (A : GLSymplectic n ℝ) : GL (n ⊕ n) ℂ :=
   ((Matrix.isUnit_iff_isUnit_det _).2
-    (isUnit_det_graphFrame (mem_iff_mem_symplecticGroup.1 A.2))).unit
+    (isUnit_det_graphFrame (mem_iff_mem_symplecticGroup.1 A.property))).unit
 
 private theorem coe_graphFrameUnit (A : GLSymplectic n ℝ) :
     (graphFrameUnit A : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
@@ -261,7 +261,7 @@ noncomputable def graphUnitaryFrame (A : GLSymplectic n ℝ) : unitaryGroup (n �
     mul_mem diagonalStraightening_mem_unitaryGroup (realOrthonormalize_mem_unitaryGroup (by
       rw [coe_graphFrameUnit]
       exact map_im_conjTranspose_graphFrame_mul_graphFrame
-        (mem_iff_mem_symplecticGroup.1 A.2)))⟩
+        (mem_iff_mem_symplecticGroup.1 A.property)))⟩
 
 /-- **The unitary graph frame frames the straightened graph**: its columns span the image
 `T Γ(A)` of the graph of `A` under the diagonal straightening. -/
@@ -380,9 +380,9 @@ private theorem conjTranspose_graphFrame_realify_mul_self (W : unitaryGroup n �
     (graphFrame (W : Matrix n n ℂ).realify)ᴴ * graphFrame (W : Matrix n n ℂ).realify =
       (2 : ℂ) • 1 := by
   have hsymp : (W : Matrix n n ℂ).realify ∈ symplecticGroup n ℝ :=
-    realify_mem_symplecticGroup_iff.2 W.2
+    realify_mem_symplecticGroup_iff.2 W.property
   have horth : ((W : Matrix n n ℂ).realify)ᵀ * (W : Matrix n n ℂ).realify = 1 :=
-    (mem_orthogonalGroup_iff' _ _).1 (realify_mem_orthogonalGroup_iff.2 W.2)
+    (mem_orthogonalGroup_iff' _ _).1 (realify_mem_orthogonalGroup_iff.2 W.property)
   rw [conjTranspose_graphFrame_mul_graphFrame, horth, SymplecticGroup.mem_iff'.1 hsymp, sub_self]
   ext i j
   by_cases hij : i = j
@@ -536,7 +536,7 @@ theorem conleyZehnderIndex_sum {A B : GLSymplectic n ℝ} {C D : GLSymplectic m 
   let f : I → unitaryGroup ((n ⊕ m) ⊕ (n ⊕ m)) ℂ := fun t ↦
     ⟨symplecticSum (graphUnitaryFrame (γ₁ t) : Matrix (n ⊕ n) (n ⊕ n) ℂ)
       (graphUnitaryFrame (γ₂ t) : Matrix (m ⊕ m) (m ⊕ m) ℂ),
-      symplecticSum_mem_unitaryGroup (graphUnitaryFrame _).2 (graphUnitaryFrame _).2⟩
+      symplecticSum_mem_unitaryGroup (graphUnitaryFrame _).property (graphUnitaryFrame _).property⟩
   have hf : Continuous f := Continuous.subtype_mk
     (Continuous.matrix_symplecticSum
       (continuous_subtype_val.comp (continuous_graphUnitaryFrame.comp γ₁.continuous))

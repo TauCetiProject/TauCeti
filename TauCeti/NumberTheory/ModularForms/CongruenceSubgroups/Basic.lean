@@ -338,9 +338,9 @@ theorem intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 {M : ℕ}
 /-- The upper-left entry of a `Γ₀(N)` matrix is a unit modulo `N`: the determinant is one
 and the lower-left entry vanishes modulo `N`, so `ad ≡ 1`. -/
 theorem isUnit_intCast_apply_zero_zero_of_mem_Gamma0 {N : ℕ} {σ : SL(2, ℤ)} (hσ : σ ∈ Gamma0 N) :
-    IsUnit ((σ.1 0 0 : ℤ) : ZMod N) := by
-  have h10 : ((σ.1 1 0 : ℤ) : ZMod N) = 0 := Gamma0_mem.mp hσ
-  have hdet : σ.1 0 0 * σ.1 1 1 - σ.1 0 1 * σ.1 1 0 = 1 :=
+    IsUnit ((σ.val 0 0 : ℤ) : ZMod N) := by
+  have h10 : ((σ.val 1 0 : ℤ) : ZMod N) = 0 := Gamma0_mem.mp hσ
+  have hdet : σ.val 0 0 * σ.val 1 1 - σ.val 0 1 * σ.val 1 0 = 1 :=
     Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one σ
   have hcast := congrArg (fun z : ℤ ↦ (z : ZMod N)) hdet
   push_cast at hcast
@@ -493,7 +493,7 @@ theorem Gamma0Map_apply (g : ↥(Gamma0 N)) :
 theorem mem_Gamma1_iff_toHomUnits_eq_one (g : ↥(Gamma0 N)) :
     (g : SL(2, ℤ)) ∈ Gamma1 N ↔ (Gamma0Map N).toHomUnits g = 1 := by
   rw [mem_Gamma1_iff, Units.ext_iff, MonoidHom.coe_toHomUnits, Gamma0Map_apply, Units.val_one]
-  exact and_iff_right g.2
+  exact and_iff_right g.property
 
 /-- `(Gamma0Map N).toHomUnits` is surjective: every unit `u ∈ (ZMod N)ˣ` is realized as the
 lower-right entry of some `g ∈ Gamma0 N`, by strong approximation for `SL₂`. -/
@@ -666,27 +666,27 @@ section BaseCase
 
 open ModularGroup
 
-private lemma TjS_00 (j : ℤ) : (T ^ j * S).1 0 0 = j := by
+private lemma TjS_00 (j : ℤ) : (T ^ j * S).val 0 0 = j := by
   simp [coe_T_zpow, coe_S]
 
-private lemma TjS_10 (j : ℤ) : (T ^ j * S).1 1 0 = 1 := by
+private lemma TjS_10 (j : ℤ) : (T ^ j * S).val 1 0 = 1 := by
   simp [coe_S]
 
-private lemma TjS_inv_10 (j : ℤ) : ((T ^ j * S)⁻¹).1 1 0 = -1 := by
+private lemma TjS_inv_10 (j : ℤ) : ((T ^ j * S)⁻¹).val 1 0 = -1 := by
   rw [inv_apply_one_zero, TjS_10]
 
-private lemma TjS_inv_11 (j : ℤ) : ((T ^ j * S)⁻¹).1 1 1 = j := by
+private lemma TjS_inv_11 (j : ℤ) : ((T ^ j * S)⁻¹).val 1 1 = j := by
   rw [inv_apply_one_one, TjS_00]
 
 
 private lemma TjS_inv_mul_10 (j : ℤ) (σ : SL(2, ℤ)) :
-    ((T ^ j * S)⁻¹ * σ).1 1 0 = j * σ.1 1 0 - σ.1 0 0 := by
+    ((T ^ j * S)⁻¹ * σ).val 1 0 = j * σ.val 1 0 - σ.val 0 0 := by
   simp only [Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_two]
   rw [TjS_inv_10, TjS_inv_11]
   ring
 
 private lemma rep_diff_10 (i j : ℤ) :
-    ((T ^ j * S)⁻¹ * (T ^ i * S)).1 1 0 = j - i := by
+    ((T ^ j * S)⁻¹ * (T ^ i * S)).val 1 0 = j - i := by
   rw [TjS_inv_mul_10, TjS_10, TjS_00]
   ring
 
@@ -719,12 +719,12 @@ private lemma Gamma0_prime_index_surj :
   have : Fact (Nat.Prime p) := ⟨hp⟩
   intro x
   obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective x
-  by_cases h : ((σ.1 1 0 : ℤ) : ZMod p) = 0
+  by_cases h : ((σ.val 1 0 : ℤ) : ZMod p) = 0
   · refine ⟨⟨p, p.lt_succ_self⟩, ?_⟩
     rw [QuotientGroup.eq, Gamma0_mem]
     simpa [Gamma0Rep] using h
-  · have hunit : IsUnit ((σ.1 1 0 : ℤ) : ZMod p) := Ne.isUnit h
-    obtain ⟨j₀, hj₀⟩ := ZMod.exists_dvd_sub_val_mul p (σ.1 0 0) (σ.1 1 0) hunit
+  · have hunit : IsUnit ((σ.val 1 0 : ℤ) : ZMod p) := Ne.isUnit h
+    obtain ⟨j₀, hj₀⟩ := ZMod.exists_dvd_sub_val_mul p (σ.val 0 0) (σ.val 1 0) hunit
     refine ⟨⟨j₀.val, Nat.lt_succ_of_lt (ZMod.val_lt j₀)⟩, ?_⟩
     rw [QuotientGroup.eq, mem_Gamma0_iff_dvd]
     simp only [Gamma0Rep, ZMod.val_lt j₀, ite_true]
@@ -760,7 +760,7 @@ private lemma lowerTriRep_mem_Gamma0 (k : ℕ) (c : Fin p) :
   simp [lowerTriRep, ← Nat.cast_pow, -Int.natCast_pow]
 
 private lemma lowerTriRep_diff_entry (k : ℕ) (c₁ c₂ : Fin p) :
-    ((lowerTriRep p k c₁)⁻¹ * lowerTriRep p k c₂).1 1 0 =
+    ((lowerTriRep p k c₁)⁻¹ * lowerTriRep p k c₂).val 1 0 =
     ((c₂ : ℤ) - (c₁ : ℤ)) * (p : ℤ) ^ k := by
   simp only [Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_two]
   rw [inv_apply_one_zero, inv_apply_one_one]
@@ -768,7 +768,7 @@ private lemma lowerTriRep_diff_entry (k : ℕ) (c₁ c₂ : Fin p) :
   ring
 
 private lemma lowerTriRep_inv_mul_10 (k : ℕ) (c : Fin p) (σ : SL(2, ℤ)) :
-    ((lowerTriRep p k c)⁻¹ * σ).1 1 0 = σ.1 1 0 - (c : ℤ) * (p : ℤ) ^ k * σ.1 0 0 := by
+    ((lowerTriRep p k c)⁻¹ * σ).val 1 0 = σ.val 1 0 - (c : ℤ) * (p : ℤ) ^ k * σ.val 0 0 := by
   simp only [Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_two]
   rw [inv_apply_one_zero, inv_apply_one_one]
   simp [lowerTriRep]
@@ -800,21 +800,21 @@ private lemma Gamma0_relindex_step_surj (k : ℕ) (hk : 0 < k) :
   have : NeZero p := ⟨hp.ne'⟩
   intro x
   obtain ⟨⟨σ, hσ_K⟩, rfl⟩ := QuotientGroup.mk_surjective x
-  obtain ⟨q, hq⟩ : (↑(p ^ k) : ℤ) ∣ σ.1 1 0 := by
+  obtain ⟨q, hq⟩ : (↑(p ^ k) : ℤ) ∣ σ.val 1 0 := by
     rwa [← mem_Gamma0_iff_dvd]
   push_cast at hq
-  have h00_unit : IsUnit ((σ.1 0 0 : ℤ) : ZMod p) :=
+  have h00_unit : IsUnit ((σ.val 0 0 : ℤ) : ZMod p) :=
     isUnit_intCast_apply_zero_zero_of_mem_Gamma0
       (mem_Gamma0_iff_dvd.mpr (hq ▸ dvd_mul_of_dvd_left (dvd_pow_self _ hk.ne') q))
-  obtain ⟨c₀, hc₀⟩ := ZMod.exists_dvd_sub_val_mul p q (σ.1 0 0) h00_unit
+  obtain ⟨c₀, hc₀⟩ := ZMod.exists_dvd_sub_val_mul p q (σ.val 0 0) h00_unit
   refine ⟨⟨c₀.val, ZMod.val_lt c₀⟩, ?_⟩
   rw [QuotientGroup.eq, Subgroup.mem_subgroupOf]
   simp only [relindexRep, InvMemClass.coe_inv, MulMemClass.coe_mul]
   rw [mem_Gamma0_iff_dvd, lowerTriRep_inv_mul_10, hq, pow_succ]
   push_cast
   calc (p : ℤ) ^ k * (p : ℤ)
-      ∣ (p : ℤ) ^ k * (q - ↑c₀.val * σ.1 0 0) := mul_dvd_mul_left _ hc₀
-    _ = (p : ℤ) ^ k * q - ↑c₀.val * (p : ℤ) ^ k * σ.1 0 0 := by ring
+      ∣ (p : ℤ) ^ k * (q - ↑c₀.val * σ.val 0 0) := mul_dvd_mul_left _ hc₀
+    _ = (p : ℤ) ^ k * q - ↑c₀.val * (p : ℤ) ^ k * σ.val 0 0 := by ring
 
 /-- `[Γ₀(pᵏ) : Γ₀(p^(k+1))] = p` for any positive base `p` and `k ≥ 1`. -/
 theorem Gamma0_relIndex_pow_succ (k : ℕ) (hk : 0 < k) :

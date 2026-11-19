@@ -289,7 +289,7 @@ noncomputable def completionEquivClosure (G : Subring A) :
         have hx : (x : Completion A) ∈ Set.range
             (Completion.mapRingHom G.subtype (by fun_prop)) := by
           rw [G.range_mapRingHom_subtype]
-          exact x.2
+          exact x.property
         obtain ⟨y, hy⟩ := hx
         exact ⟨y, Subtype.ext hy⟩⟩
 

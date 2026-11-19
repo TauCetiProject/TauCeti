@@ -300,7 +300,7 @@ theorem natural_le_eventuallyMeasurableSpace_iSup_dyadicNatural
   refine iSup₂_le fun s hs ↦ measurable_iff_comap_le.1 ?_
   -- Approximate `s` by dyadic times, using their density in the real interval `[0, T]`.
   obtain ⟨u, hu, hlim⟩ := mem_closure_iff_seq_limit.1
-    (dense_iUnion_range_dyadicPoint T.coe_nonneg (⟨s, s.2, hs⟩ : Icc (0 : ℝ) T))
+    (dense_iUnion_range_dyadicPoint T.coe_nonneg (⟨s, s.property, hs⟩ : Icc (0 : ℝ) T))
   choose j hj using fun n ↦ mem_iUnion.1 (hu n)
   choose k hk using hj
   let v : ℕ → ℝ≥0 := fun n ↦ dyadicTime T (j n) (k n)

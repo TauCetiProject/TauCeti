@@ -83,7 +83,7 @@ theorem samplingKernel_apply (P : ProbabilityMeasure α) :
   (rfl)
 
 instance : IsMarkovKernel (samplingKernel α) :=
-  ⟨fun P => P.2⟩
+  ⟨fun P => P.property⟩
 
 end Probability
 

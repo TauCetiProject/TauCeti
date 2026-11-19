@@ -97,14 +97,15 @@ private theorem slFactors_mul (g : SpecialLinearGroup (Fin n) ℝ) :
 private theorem det_slFactors (g : SpecialLinearGroup (Fin n) ℝ) :
     GeneralLinearGroup.det ((slFactors g).1 : GL (Fin n) ℝ) = 1 ∧
       GeneralLinearGroup.det ((slFactors g).2.1 : GL (Fin n) ℝ) = 1 :=
-  det_eq_one_of_det_mul_mul_eq_one (slFactors g).1.2 (slFactors g).2.1.2 (slFactors g).2.2.2
+  det_eq_one_of_det_mul_mul_eq_one (slFactors g).1.property (slFactors g).2.1.property
+      (slFactors g).2.2.property
     (by rw [slFactors_mul, coeToGL_det])
 
 private theorem det_slFactors_unitriangular (g : SpecialLinearGroup (Fin n) ℝ) :
     GeneralLinearGroup.det ((slFactors g).2.2 : GL (Fin n) ℝ) = 1 :=
   Units.ext <| by
     rw [GeneralLinearGroup.val_det_apply, Units.val_one,
-      (UpperUnitriangularGroup.mem_iff.1 (slFactors g).2.2.2).det_eq_one]
+      (UpperUnitriangularGroup.mem_iff.1 (slFactors g).2.2.property).det_eq_one]
 
 /-- The special orthogonal factor of the Iwasawa decomposition of `g`. -/
 private def slOrthogonal (g : SpecialLinearGroup (Fin n) ℝ) : SpecialLinearGroup (Fin n) ℝ :=
@@ -152,10 +153,11 @@ def iwasawaSLHomeomorph :
       SpecialLinearGroup (Fin n) ℝ where
   toFun x := x.1 * x.2.1 * x.2.2
   invFun g :=
-    (⟨slOrthogonal g, Subgroup.mem_comap.2 <| (toGL_slOrthogonal g).symm ▸ (slFactors g).1.2⟩,
-      ⟨slDiagonal g, Subgroup.mem_comap.2 <| (toGL_slDiagonal g).symm ▸ (slFactors g).2.1.2⟩,
+    (⟨slOrthogonal g, Subgroup.mem_comap.2 <| (toGL_slOrthogonal g).symm ▸
+        (slFactors g).1.property⟩,
+      ⟨slDiagonal g, Subgroup.mem_comap.2 <| (toGL_slDiagonal g).symm ▸ (slFactors g).2.1.property⟩,
       ⟨slUnitriangular g,
-        Subgroup.mem_comap.2 <| (toGL_slUnitriangular g).symm ▸ (slFactors g).2.2.2⟩)
+        Subgroup.mem_comap.2 <| (toGL_slUnitriangular g).symm ▸ (slFactors g).2.2.property⟩)
   left_inv := by
     rintro ⟨⟨k, hk⟩, ⟨a, ha⟩, ⟨u, hu⟩⟩
     have h := slFactors_mul_mul (Subgroup.mem_comap.1 hk) (Subgroup.mem_comap.1 ha)
@@ -198,9 +200,10 @@ theorem iwasawaSLHomeomorph_apply
 matrix of determinant one are the images under `toGL` of its factors in `SL n ℝ`. -/
 theorem iwasawaHomeomorph_symm_toGL (g : SpecialLinearGroup (Fin n) ℝ) :
     (iwasawaHomeomorph ℝ n).symm (toGL g) =
-      (⟨toGL ((iwasawaSLHomeomorph n).symm g).1, ((iwasawaSLHomeomorph n).symm g).1.2⟩,
-        ⟨toGL ((iwasawaSLHomeomorph n).symm g).2.1, ((iwasawaSLHomeomorph n).symm g).2.1.2⟩,
-        ⟨toGL ((iwasawaSLHomeomorph n).symm g).2.2, ((iwasawaSLHomeomorph n).symm g).2.2.2⟩) :=
+      (⟨toGL ((iwasawaSLHomeomorph n).symm g).1, ((iwasawaSLHomeomorph n).symm g).1.property⟩,
+        ⟨toGL ((iwasawaSLHomeomorph n).symm g).2.1, ((iwasawaSLHomeomorph n).symm g).2.1.property⟩,
+        ⟨toGL ((iwasawaSLHomeomorph n).symm g).2.2, ((iwasawaSLHomeomorph n).symm g).2.2.property⟩)
+            :=
   (iwasawaHomeomorph ℝ n).symm_apply_eq.2 <| by
     conv_lhs => rw [← (iwasawaSLHomeomorph n).apply_symm_apply g]
     rw [iwasawaSLHomeomorph_apply, iwasawaHomeomorph_apply, Algebra.algebraMap_self,

@@ -128,7 +128,7 @@ theorem snd_mk (t : ThricePuncturedSphere) (y : ℂ)
 /-- The equation of the cyclic cover. -/
 theorem snd_pow (z : CyclicCover m a b) :
     z.snd ^ m = (z.fst : ℂ) ^ a * ((z.fst : ℂ) - 1) ^ b :=
-  z.2.symm
+  z.property.symm
 
 /-- The function `t ↦ tᵃ (t − 1)ᵇ` has no zeros on `ℂ ∖ {0, 1}`. -/
 private theorem rhs_ne_zero (t : ThricePuncturedSphere) : (t : ℂ) ^ a * ((t : ℂ) - 1) ^ b ≠ 0 :=
@@ -197,13 +197,13 @@ private theorem fiberPoint_injective :
   dsimp only at hij
   have h := congrArg (fun z ↦ Function.Pullback.snd (Subtype.val z)) hij
   simp only [snd_fiberPoint] at h
-  exact Fin.ext (isPrimitiveRoot_ζ.pow_inj i.2 j.2 (mul_right_cancel₀ (exp_ne_zero _) h))
+  exact Fin.ext (isPrimitiveRoot_ζ.pow_inj i.isLt j.isLt (mul_right_cancel₀ (exp_ne_zero _) h))
 
 /-- Every point of the fibre over `1/2` is one of the points `ζ ^ i · y₀`, `i < m`. -/
 private theorem fiberPoint_surjective :
     Surjective fun i : Fin m ↦ fiberPoint (m := m) (a := a) (b := b) i := by
   intro z
-  have hz : (z : CyclicCover m a b).fst = basePt := z.2
+  have hz : (z : CyclicCover m a b).fst = basePt := z.property
   have hy₀ : cexp (w₀ / m) ≠ 0 := exp_ne_zero _
   have hpow : ((z : CyclicCover m a b).snd / cexp (w₀ / m)) ^ m = 1 := by
     rw [div_pow, snd_pow, hz, ← exp_nat_mul, mul_div_cancel₀ _ (Nat.cast_ne_zero.2 (NeZero.ne m)),
@@ -411,7 +411,7 @@ private theorem snd_rotate_pow_smul (k : ℕ) (z : CyclicCover m a b) :
 theorem orderOf_rotate : orderOf (rotate (m := m) (a := a) (b := b)) = m := by
   refine (orderOf_eq_orderOf_iff.2 ?_).trans (isPrimitiveRoot_ζ (m := m)).eq_orderOf.symm
   refine fun n ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have hz := snd_rotate_pow_smul n (fiberPoint (m := m) (a := a) (b := b) 0).1
+  · have hz := snd_rotate_pow_smul n (fiberPoint (m := m) (a := a) (b := b) 0).val
     rw [h, one_smul] at hz
     exact (mul_eq_right₀ (mul_ne_zero (pow_ne_zero _ (exp_ne_zero _)) (exp_ne_zero _))).1 hz.symm
   · exact Subtype.ext (Homeomorph.ext fun z ↦

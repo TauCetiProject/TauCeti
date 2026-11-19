@@ -108,7 +108,7 @@ theorem norm_lt_one_iff {f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)} :
 theorem norm_coeff_le_one [NormOneClass R]
     (f : Subring.unitClosedBall (IsRestricted.subring (R := R) (fun _ : σ ↦ 1))) (t : σ →₀ ℕ) :
     ‖coeff t ((f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) : MvPowerSeries σ R)‖ ≤ 1 :=
-  mem_unitClosedBall_iff.mp f.2 t
+  mem_unitClosedBall_iff.mp f.property t
 
 /-- A norm-nonincreasing coefficient map sends the Gauss unit ball into the Gauss unit ball. -/
 theorem restrictedMap_mem_unitClosedBall [NormOneClass R] {S : Type*} [NormedRing S]
@@ -155,7 +155,7 @@ private theorem restrictedIntegerHom_bijective :
   · let g : MvPowerSeries σ 𝒪[K] := fun t ↦ ⟨_, coeff_mem_integer f t⟩
     have hgc (t : σ →₀ ℕ) : coeff t g = ⟨_, coeff_mem_integer f t⟩ := (rfl)
     have hg : IsRestricted (fun _ : σ ↦ 1) g := by
-      have hf : IsRestricted (fun _ : σ ↦ 1) ((f : T) : MvPowerSeries σ K) := (f : T).2
+      have hf : IsRestricted (fun _ : σ ↦ 1) ((f : T) : MvPowerSeries σ K) := (f : T).property
       simp only [IsRestricted] at hf ⊢
       simpa [hgc] using hf
     exact ⟨⟨g, hg⟩, Subtype.ext <| Subtype.ext <| MvPowerSeries.ext fun t ↦ by
@@ -198,7 +198,7 @@ section Reduction
 private theorem finite_support_residue_coeff (f : Tint) :
     (Function.support fun t ↦ residue 𝒪[K] (coeff t (f : MvPowerSeries σ 𝒪[K]))).Finite := by
   have hfin : {t | 1 ≤ ‖coeff t (f : MvPowerSeries σ 𝒪[K])‖}.Finite := by
-    simpa [eventually_cofinite, not_lt] using f.2.eventually (gt_mem_nhds one_pos)
+    simpa [eventually_cofinite, not_lt] using f.property.eventually (gt_mem_nhds one_pos)
   refine hfin.subset fun t ht ↦ ?_
   rw [Function.mem_support, Ne, residue_eq_zero_iff, mem_maximalIdeal, mem_nonunits_iff,
     not_not, Valued.integer.isUnit_iff_norm_eq_one] at ht
@@ -259,7 +259,7 @@ theorem restrictedReduction_eq_zero_iff {f : T°} :
 theorem restrictedReduction_ne_zero_iff {f : T°} :
     restrictedReduction f ≠ 0 ↔ ‖(f : T)‖ = 1 := by
   rw [Ne, restrictedReduction_eq_zero_iff, not_lt]
-  exact ⟨fun h ↦ le_antisymm (Subring.mem_unitClosedBall.mp f.2) h, ge_of_eq⟩
+  exact ⟨fun h ↦ le_antisymm (Subring.mem_unitClosedBall.mp f.property) h, ge_of_eq⟩
 
 /-- Membership in the kernel of `restrictedReduction` is the strict bound `‖f‖ < 1`. -/
 theorem mem_ker_restrictedReduction {f : T°} :
@@ -367,10 +367,10 @@ local notation "Tₖ°" => Subring.unitClosedBall (IsRestricted.subring (R := K)
 
 /-- A series of the Gauss unit ball takes integral values at integral points. -/
 theorem restrictedEval₂_mem_integer (f : Tₖ°) :
-    restrictedEval₂ φ (fun i ↦ (x i : L)) hφ (fun i ↦ Valued.integer.mem_iff.1 (x i).2)
+    restrictedEval₂ φ (fun i ↦ (x i : L)) hφ (fun i ↦ Valued.integer.mem_iff.1 (x i).property)
       (f : Tₖ) ∈ 𝒪[L] :=
   Valued.integer.mem_iff.2 ((norm_restrictedEval₂_le _ _ _ _ _).trans
-    (Subring.mem_unitClosedBall.mp f.2))
+    (Subring.mem_unitClosedBall.mp f.property))
 
 /-- **Reduction commutes with evaluation at integral points.** Let `φ : K →+* L` be a
 norm-nonincreasing homomorphism into a complete nonarchimedean field and let `x` be a point with
@@ -379,7 +379,7 @@ coordinates in `𝒪[L]`. For a series `f` of Gauss norm at most one, the residu
 the induced homomorphism `𝓀[K] →+* 𝓀[L]` of residue fields. -/
 @[simp]
 theorem residue_restrictedEval₂ (f : Tₖ°)
-    (h : restrictedEval₂ φ (fun i ↦ (x i : L)) hφ (fun i ↦ Valued.integer.mem_iff.1 (x i).2)
+    (h : restrictedEval₂ φ (fun i ↦ (x i : L)) hφ (fun i ↦ Valued.integer.mem_iff.1 (x i).property)
       (f : Tₖ) ∈ 𝒪[L]) :
     residue 𝒪[L] ⟨_, h⟩ = (restrictedReduction f).eval₂ (ResidueField.map (φ.integerRestrict hφ))
       (fun i ↦ residue 𝒪[L] (x i)) := by
@@ -401,7 +401,8 @@ theorem residue_restrictedEval₂ (f : Tₖ°)
       restrictedReduction_eq_zero_iff]
     exact hfP
   -- The value of `P` at `x` is the integral polynomial value `q(x)`.
-  have hP : restrictedEval₂ φ (fun i ↦ (x i : L)) hφ (fun i ↦ Valued.integer.mem_iff.1 (x i).2)
+  have hP : restrictedEval₂ φ (fun i ↦ (x i : L)) hφ (fun i ↦ Valued.integer.mem_iff.1
+      (x i).property)
       (P : Tₖ) = ((MvPolynomial.eval₂ (φ.integerRestrict hφ) x q : 𝒪[L]) : L) := by
     have : (P : Tₖ) = ⟨(q.map (𝒪[K]).subtype : MvPolynomial (Fin k) K),
         MvPolynomial.isRestricted _ _⟩ :=
@@ -422,7 +423,7 @@ theorem residue_restrictedEval₂ (f : Tₖ°)
 /-- A series of the Gauss unit ball has a value of norm less than one at an integral point `x`
 exactly when its reduction vanishes at the residue of `x`. -/
 theorem norm_restrictedEval₂_lt_one_iff (f : Tₖ°) :
-    ‖restrictedEval₂ φ (fun i ↦ (x i : L)) hφ (fun i ↦ Valued.integer.mem_iff.1 (x i).2)
+    ‖restrictedEval₂ φ (fun i ↦ (x i : L)) hφ (fun i ↦ Valued.integer.mem_iff.1 (x i).property)
       (f : Tₖ)‖ < 1 ↔ (restrictedReduction f).eval₂ (ResidueField.map (φ.integerRestrict hφ))
         (fun i ↦ residue 𝒪[L] (x i)) = 0 := by
   rw [← residue_restrictedEval₂ φ hφ x f (restrictedEval₂_mem_integer φ hφ x f),

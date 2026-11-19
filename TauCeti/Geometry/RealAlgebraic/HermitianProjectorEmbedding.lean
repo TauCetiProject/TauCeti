@@ -89,11 +89,11 @@ theorem continuous_hermitianProjector :
     Continuous (hermitianProjector : ℙ 𝕜 (ι → 𝕜) → Matrix ι ι 𝕜) := by
   rw [continuous_iff]
   have hcomp : hermitianProjector ∘ mk' 𝕜 =
-      fun x : {x : ι → 𝕜 // x ≠ 0} ↦ rankOneHermitianProjector x.1 :=
+      fun x : {x : ι → 𝕜 // x ≠ 0} ↦ rankOneHermitianProjector x.val :=
     funext fun x ↦ by simp
   simp only [hcomp, rankOneHermitianProjector_def]
   exact ((continuous_subtype_val.star.dotProduct continuous_subtype_val).inv₀ fun x ↦
-    dotProduct_star_self_eq_zero.not.mpr x.2).smul
+    dotProduct_star_self_eq_zero.not.mpr x.property).smul
     (continuous_subtype_val.matrix_vecMulVec continuous_subtype_val.star)
 
 /-- Over `ℝ` or `ℂ` the Hermitian projector map is a closed embedding, hence a homeomorphism from

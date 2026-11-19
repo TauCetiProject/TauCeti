@@ -214,11 +214,11 @@ private theorem wassersteinEDist_one_map_le_iSup [IsProbabilityMeasure μ]
   -- extend the test function from `t` to `X`
   have hrestrict : (t : Set X).domRestrict (fun x ↦ if h : x ∈ (t : Set X) then g ⟨x, h⟩ else 0)
       = g :=
-    funext fun y ↦ dite_eq_left y.2
+    funext fun y ↦ dite_eq_left y.property
   obtain ⟨G, hG, hGg⟩ := LipschitzOnWith.extend_real
     (lipschitzOnWith_iff_restrict.2 (hrestrict ▸ hg))
   have hGt : ∀ y : (t : Set X), G y = g y := fun y ↦ by
-    simpa [y.2] using (hGg y.2).symm
+    simpa [y.property] using (hGg y.property).symm
   have hint (ρ : Measure (t : Set X)) : ∫ y, g y ∂ρ = ∫ x, G x ∂(ρ.map (↑)) := by
     rw [integral_map measurable_subtype_coe.aemeasurable hG.continuous.aestronglyMeasurable]
     simp only [hGt]

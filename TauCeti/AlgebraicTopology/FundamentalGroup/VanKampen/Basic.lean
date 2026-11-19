@@ -134,9 +134,9 @@ private noncomputable def connect (hST : S ⊆ T) (hS : IsPathConnected S) (hT :
     (s₀ : S) (z : FundamentalGroupoid T) :
     FundamentalGroupoid.mk (ContinuousMap.inclusion hST s₀) ⟶ z := by
   classical
-  exact if hz : z.as.1 ∈ S then
+  exact if hz : z.as.val ∈ S then
     (FundamentalGroupoid.map (ContinuousMap.inclusion hST)).map
-      (baseHom hS s₀ (FundamentalGroupoid.mk ⟨z.as.1, hz⟩))
+      (baseHom hS s₀ (FundamentalGroupoid.mk ⟨z.as.val, hz⟩))
   else baseHom hT _ z
 
 private theorem connect_map_obj (hST : S ⊆ T) (hS : IsPathConnected S) (hT : IsPathConnected T)
@@ -144,7 +144,7 @@ private theorem connect_map_obj (hST : S ⊆ T) (hS : IsPathConnected S) (hT : I
     connect hST hS hT s₀ ((FundamentalGroupoid.map (ContinuousMap.inclusion hST)).obj w) =
       (FundamentalGroupoid.map (ContinuousMap.inclusion hST)).map (baseHom hS s₀ w) := by
   classical
-  exact dite_eq_left w.as.2
+  exact dite_eq_left w.as.property
 
 @[simp]
 private theorem connect_base (hST : S ⊆ T) (hS : IsPathConnected S) (hT : IsPathConnected T)
@@ -416,7 +416,7 @@ theorem isPushout_fundamentalGroup_union {A B C : Set X} (hC : C = A ∪ B)
     rw [(hAo.preimage continuous_subtype_val).interior_eq,
       (hBo.preimage continuous_subtype_val).interior_eq]
     ext z
-    exact iff_of_true z.2 (mem_univ z)
+    exact iff_of_true z.property (mem_univ z)
   let iA : GrpCat.of (_root_.FundamentalGroup A' ⟨x', hxA⟩) ≅
       GrpCat.of (_root_.FundamentalGroup A ⟨x, hxA⟩) := (FundamentalGroup.homeomorphMulEquivOfEq eA
     (rfl : eA ⟨x', hxA⟩ = ⟨x, hxA⟩)).toGrpIso

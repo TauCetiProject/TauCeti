@@ -868,7 +868,7 @@ omitted point. -/
 theorem sum_piecewise_eq_sum_update_of_card_eq_succ {ι : Type*} {α : ι → Type*} {M : Type*}
     [Fintype ι] [DecidableEq ι] [AddCommMonoid M] {m : ℕ} (hm : Fintype.card ι = m + 1)
     (F : ((i : ι) → α i) → M) (f g : (i : ι) → α i) :
-    (∑ s : {s : Finset ι // s.card = m}, F (s.1.piecewise f g)) =
+    (∑ s : {s : Finset ι // s.card = m}, F (s.val.piecewise f g)) =
       ∑ i : ι, F (Function.update f i (g i)) := by
   refine (Fintype.sum_equiv (e := (Set.powersetCard.ofSingleton.trans
     (Set.powersetCard.compl hm.symm)).trans

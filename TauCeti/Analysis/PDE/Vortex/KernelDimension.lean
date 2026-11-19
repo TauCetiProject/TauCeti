@@ -341,7 +341,7 @@ theorem range_covariantTranslationLinearMap :
     simpa using hframe
   obtain ⟨D, hD⟩ := exists_sym_isZeroMultiplicity hx hsol hframe₁
   exact range_covariantTranslationLinearMap_of_card_eq_one hx hsol
-    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe₁) hD D.2
+    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe₁) hD D.property
 
 /-- **The kernel of `L_x` in degree one has real dimension two**, the dimension of
 `Sym¹ ℂ = ℂ`. -/
@@ -351,7 +351,7 @@ theorem finrank_gaugeFixedKernel_eq_two : finrank ℝ (gaugeFixedKernel x) = 2 :
     simpa using hframe
   obtain ⟨D, hD⟩ := exists_sym_isZeroMultiplicity hx hsol hframe₁
   exact finrank_gaugeFixedKernel_eq_two_of_card_eq_one hx hsol
-    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe₁) hD D.2
+    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe₁) hD D.property
 
 end Translations
 

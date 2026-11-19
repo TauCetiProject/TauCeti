@@ -78,7 +78,7 @@ private theorem mul_leftMulMatrixRpow_mem_spinGroup (g : spinGroup (Q.baseChange
         (basis (Q.baseChange ℂ) (b.baseChange ℂ))
         (complexConj Q (reverse (g : CliffordAlgebra (Q.baseChange ℂ))) * g) s ∈
       spinGroup (Q.baseChange ℂ) :=
-  mul_mem g.2 (leftMulMatrixRpow_complexConj_reverse_mul_self_mem_spinGroup hb hQ g s)
+  mul_mem g.property (leftMulMatrixRpow_complexConj_reverse_mul_self_mem_spinGroup hb hQ g s)
 
 /-- `(g, s) ↦ g (g† g) ^ s` is jointly continuous on the Spin group. -/
 private theorem continuous_mul_leftMulMatrixRpow :
@@ -180,7 +180,7 @@ noncomputable def spinPolarHomotopyEquiv :
     refine ⟨(ContinuousMap.Homotopy.refl (ContinuousMap.id _)).cast ?_ rfl⟩
     ext g
     exact congrArg Subtype.val
-      (spinPolarRetraction_of_complexConj_reverse_mul_self_eq_one hb hQ g.2).symm
+      (spinPolarRetraction_of_complexConj_reverse_mul_self_eq_one hb hQ g.property).symm
   right_inv := by
     -- Composing the corestricted retraction with the inclusion recovers the retraction.
     refine ⟨(spinPolarHomotopyRel hb hQ).toHomotopy.symm.cast ?_ rfl⟩

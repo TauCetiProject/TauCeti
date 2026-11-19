@@ -482,16 +482,16 @@ theorem isAdic_map_idealOfDefinition {B : Type*} [CommRing B] [TopologicalSpace 
   have htQ : ∀ t ∈ T, t ∈ Q.ringOfDefinition := by
     intro t ht
     obtain ⟨g, -, rfl⟩ := Finset.mem_image.mp ht
-    exact h g g.2
-  have heq' : ∑ t ∈ T.attach, (⟨t.1, htQ t.1 t.2⟩ : Q.ringOfDefinition) *
-      ⟨w t.1, hwQ t.1 t.2⟩ = a := by
+    exact h g g.property
+  have heq' : ∑ t ∈ T.attach, (⟨t.val, htQ t.val t.property⟩ : Q.ringOfDefinition) *
+      ⟨w t.val, hwQ t.val t.property⟩ = a := by
     apply Subtype.ext
     simpa using heq
   rw [← heq']
   apply sum_mem
   intro t _
   apply Ideal.mul_mem_right
-  obtain ⟨g, hg, hgt⟩ := Finset.mem_image.mp t.2
+  obtain ⟨g, hg, hgt⟩ := Finset.mem_image.mp t.property
   have hgI : g ∈ P.idealOfDefinition := hG ▸ Ideal.subset_span hg
   convert Ideal.mem_map_of_mem f₀ hgI using 1
   exact Subtype.ext hgt.symm

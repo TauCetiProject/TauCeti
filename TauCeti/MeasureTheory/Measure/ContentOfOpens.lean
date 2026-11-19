@@ -59,7 +59,7 @@ theorem opensInf_le {K : Set Ω} (hKV : (↑) '' K ⊆ (V : Set X)) (hV : V ≤ 
 
 theorem le_opensInf {K : Set Ω} {c : ℝ≥0∞}
     (h : ∀ V : Opens X, (↑) '' K ⊆ (V : Set X) → V ≤ Ω → c ≤ m V) : c ≤ opensInf m Ω K :=
-  le_iInf fun V => h V V.2.1 V.2.2
+  le_iInf fun V => h V V.property.1 V.property.2
 
 theorem opensInf_mono {K₁ K₂ : Set Ω} (h : K₁ ⊆ K₂) : opensInf m Ω K₁ ≤ opensInf m Ω K₂ :=
   le_opensInf fun _ hV hVΩ => opensInf_le ((image_mono h).trans hV) hVΩ

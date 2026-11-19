@@ -43,8 +43,8 @@ def stiefelFrameIncl : C(stiefel (ℝ ∙ (p : E))ᗮ k, stiefel E (k + 1)) wher
   toFun x := ⟨Matrix.vecCons (p : E) fun i => ((x : Fin k → (ℝ ∙ (p : E))ᗮ) i : E),
     mem_stiefel_iff.2 <| orthonormal_vecCons_iff.2
       ⟨norm_eq_of_mem_sphere p,
-        fun i => Submodule.mem_orthogonal_singleton_iff_inner_right.1 (x.1 i).2,
-        (mem_stiefel_iff.1 x.2).comp_linearIsometry (ℝ ∙ (p : E))ᗮ.subtypeₗᵢ⟩⟩
+        fun i => Submodule.mem_orthogonal_singleton_iff_inner_right.1 (x.val i).property,
+        (mem_stiefel_iff.1 x.property).comp_linearIsometry (ℝ ∙ (p : E))ᗮ.subtypeₗᵢ⟩⟩
   continuous_toFun := Continuous.subtype_mk (continuous_const.matrixVecCons (continuous_pi fun i =>
     continuous_subtype_val.comp ((continuous_apply i).comp continuous_subtype_val))) _
 
@@ -70,7 +70,7 @@ theorem range_stiefelFrameIncl :
   refine Set.Subset.antisymm (Set.range_subset_iff.2 fun x => by simp) fun y hy => ?_
   have hy0 : (y : Fin (k + 1) → E) 0 = p :=
     (coe_stiefelProj 0 y).symm.trans (congrArg Subtype.val hy)
-  have hon := mem_stiefel_iff.1 y.2
+  have hon := mem_stiefel_iff.1 y.property
   rw [← Matrix.cons_head_tail (y : Fin (k + 1) → E)] at hon
   have hmem (i : Fin k) : Matrix.vecTail (y : Fin (k + 1) → E) i ∈ (ℝ ∙ (p : E))ᗮ :=
     Submodule.mem_orthogonal_singleton_iff_inner_right.2
@@ -110,6 +110,6 @@ theorem contMDiff_stiefelFrameIncl [FiniteDimensional ℝ E] {r : ℕ∞ω} :
     · simp only [Matrix.cons_val_succ]
       exact (ℝ ∙ (p : E))ᗮ.subtypeL.contDiff.comp (contDiff_apply ℝ _ i)
   exact ContMDiff.codRestrict_stiefel (hcons.contMDiff.comp (contMDiff_coe_stiefel _ _))
-    fun x => (stiefelFrameIncl p k x).2
+    fun x => (stiefelFrameIncl p k x).property
 
 end TauCeti

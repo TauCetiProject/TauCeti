@@ -79,7 +79,7 @@ theorem smul_kummerCoeff_eq_self_of_isProP (hℓ : IsUnit (ℓ : K))
   -- unfolding `f` and the two compositions, `f g` is `χ (ρ g)`
   have hχ : χ (ρ g) = 1 := by simpa only [f, MonoidHom.comp_apply, Subgroup.coe_subtype] using hf g
   refine Additive.toMul.injective (Subtype.ext (Units.ext ?_))
-  have h := modularCyclotomicCharacter.spec L hcard (ρ g) x.toMul.2
+  have h := modularCyclotomicCharacter.spec L hcard (ρ g) x.toMul.property
   rw [hχ, Units.val_one, hℓ1, pow_one] at h
   -- `MulSemiringAction.toRingAut` is the action of `g` on `Kˢ`, which is evaluation
   have hρ : ∀ y, ρ g y = (g : AbsoluteGaloisGroup K) y := fun y => AlgEquiv.smul_def _ y

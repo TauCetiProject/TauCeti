@@ -78,7 +78,7 @@ value at the conjugating element. This is the representative-level restriction i
 theorem smul_inverseConjugation_apply_sub_eq_d0 (c : Z1 G M) (g : G) (v : V) :
     g • (c : G → M) (g⁻¹ * (v : G) * g) - (c : G → M) (v : G) =
       d0 V M ((c : G → M) g) v := by
-  rw [groupCohomology.smul_apply_inv_mul_mul_of_isCocycle₁ (mem_Z1_iff.1 c.2).2 g (v : G),
+  rw [groupCohomology.smul_apply_inv_mul_mul_of_isCocycle₁ (mem_Z1_iff.1 c.property).2 g (v : G),
     d0_apply, Subgroup.smul_def]
   abel
 

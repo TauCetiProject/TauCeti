@@ -229,7 +229,7 @@ theorem pullbackSymmetricPowerComparison_app_val_app_unit (n : ℕ)
   refine (congrArg (SymmetricAlgebra.mapₛₗ _)
     (ModuleCat.symmetricPower.coe_map_apply _ n x)).trans ?_
   refine (congrArg (SymmetricAlgebra.mapₛₗ _)
-    (RingHom.congr_fun (SymmetricAlgebra.mapₛₗ_eq_map _).symm x.1)).trans ?_
+    (RingHom.congr_fun (SymmetricAlgebra.mapₛₗ_eq_map _).symm x.val)).trans ?_
   -- The two induced ring homomorphisms compose to the one induced by the unit; the underlying
   -- functions of the semilinear maps agree by definition.
   rw [TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply, ← RingHom.comp_apply,

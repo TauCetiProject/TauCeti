@@ -132,8 +132,8 @@ private theorem norm_solutionValue_le
       rw [euclideanInitialDataCLE_symm_apply_slabMk_zero, ← toBUC_apply, ← Real.norm_eq_abs,
         ← ClosedSubmodule.norm_coe]
       exact norm_coe_le_norm _ x) p
-  have ht0 : (0 : ℝ) ≤ slabTime p := (slabTime p).2.1
-  have htT : (slabTime p : ℝ) ≤ T := (slabTime p).2.2
+  have ht0 : (0 : ℝ) ≤ slabTime p := (slabTime p).property.1
+  have htT : (slabTime p : ℝ) ≤ T := (slabTime p).property.2
   have hexp : Real.exp (‖c‖ * (slabTime p - 0)) ≤ Real.exp (‖c‖ * T) :=
     Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left (by linarith) (norm_nonneg c))
   calc ‖solutionValue hα₀ hα₁ hT a b c ha d p‖ = |u p| := Real.norm_eq_abs _
@@ -366,7 +366,7 @@ theorem tendstoUniformly_euclideanCauchySolutionBUC
   have h2 := abs_lt.1 (hg x)
   have h3 := u.norm_apply_slabMk_sub_le x t ⟨0, left_mem_Icc.2 hT.le⟩
   rw [euclideanInitialDataCLE_symm_apply_slabMk_zero, Real.norm_eq_abs, sub_zero,
-    abs_of_nonneg t.2.1] at h3
+    abs_of_nonneg t.property.1] at h3
   have hDt : ‖timeDerivL u‖ * t ≤ ε / 2 :=
     (mul_le_mul_of_nonneg_left ht.le (norm_nonneg _)).trans hDτ
   have h3' := abs_le.1 (h3.trans hDt)

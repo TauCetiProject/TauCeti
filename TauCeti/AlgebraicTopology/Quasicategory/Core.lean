@@ -373,7 +373,7 @@ private lemma isEquivalence_of_horn₂₁ [Quasicategory X] {a : (Λ[2, 1] : SSe
       rw [← stdSimplex.δ_comp_yonedaEquiv_symm, ← horn.ι_ι 1 j hj, Category.assoc, sq.w]
     rw [← edge_mem_core_iff, mk'_edge, ← yonedaEquiv.apply_symm_apply (X.δ j s), h,
       yonedaEquiv_comp]
-    exact (a.app _ _).2
+    exact (a.app _ _).property
   -- The only edge of `Δ[2]` outside `Λ[2, 1]` is the long edge `δ 1`; constant edges are
   -- degenerate.
   obtain ⟨f, rfl⟩ : ∃ f : ⦋1⦌ ⟶ ⦋2⦌, stdSimplex.objEquiv.symm f = y :=
@@ -395,8 +395,8 @@ lemma hasLiftingProperty_horn_ι_core_ι [Quasicategory X] {n : ℕ} (i : Fin (n
       rw [range_le_core_iff]
       intro y
       by_cases hy : y ∈ Λ[_, i].obj (op ⦋1⦌)
-      · have : b.app _ y = (a.app _ ⟨y, hy⟩).1 := congr($(sq.w).app _ ⟨y, hy⟩).symm
-        exact (edge_mem_core_iff (mk' _)).1 (this ▸ (a.app _ ⟨y, hy⟩).2)
+      · have : b.app _ y = (a.app _ ⟨y, hy⟩).val := congr($(sq.w).app _ ⟨y, hy⟩).symm
+        exact (edge_mem_core_iff (mk' _)).1 (this ▸ (a.app _ ⟨y, hy⟩).property)
       obtain _ | n := n
       · obtain rfl : i = 1 := by
           rw [Fin.lt_def] at h0 hn
@@ -475,10 +475,10 @@ noncomputable def nerveIso : nerve (Core C) ≅ ((nerve C).core : SSet) where
     rw [nerve.isEquivalence_mk'_iff]
     exact (ComposableArrows.hom y).iso.isIso_hom
   inv :=
-    { app _ := ↾fun s ↦ functorToCoreOfIsIso s.1 ((nerve.mem_core_iff s.1).1 s.2)
+    { app _ := ↾fun s ↦ functorToCoreOfIsIso s.val ((nerve.mem_core_iff s.val).1 s.property)
       naturality _ _ g := by
         ext s
-        exact functorToCoreOfIsIso_comp_left (SimplexCategory.toCat.map g.unop).toFunctor s.1 _ }
+        exact functorToCoreOfIsIso_comp_left (SimplexCategory.toCat.map g.unop).toFunctor s.val _ }
   hom_inv_id := by
     ext n y
     exact functorToCoreOfIsIso_comp_inclusion_self y

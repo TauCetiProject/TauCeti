@@ -141,7 +141,7 @@ theorem _root_.Irreducible.image_maximalIdeal_pow_eq_smul {A S : Type*} [CommRin
     (k : ℕ) :
     ((↑) : s → A) '' ↑(IsLocalRing.maximalIdeal s ^ k) = (ϖ : A) ^ k • (s : Set A) := by
   rw [hϖ.maximalIdeal_eq_of_preValuationRing]
-  exact SubsemiringClass.image_coe_span_singleton_pow s ϖ.2 k
+  exact SubsemiringClass.image_coe_span_singleton_pow s ϖ.property k
 
 end ValuationRing
 

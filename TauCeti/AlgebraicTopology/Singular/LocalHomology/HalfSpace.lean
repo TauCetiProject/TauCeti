@@ -125,12 +125,12 @@ private theorem isZero_localHomology_halfSpace_of_pos (hn : finrank ℝ E = n)
       ext y
       refine ⟨?_, fun (hy : 0 < f y) ↦ ⟨⟨⟨y, hy.le⟩, hy⟩, rfl⟩⟩
       rintro ⟨z, rfl⟩
-      exact z.2
+      exact z.property
     rw [this]
     exact isOpen_lt continuous_const f.continuous
   have hKj : j ⁻¹' K = j' ⁻¹' (Subtype.val '' K) := by
     ext z
-    exact (Subtype.val_injective.mem_set_image (a := z.1) (s := K)).symm
+    exact (Subtype.val_injective.mem_set_image (a := z.val) (s := K)).symm
   have hKE : IsZero (localHomology R (Subtype.val '' K) k) := by
     have := isZero_localHomology_symm_image_iUnion R (OpenPartialHomeomorph.refl E) hn
       (K := fun _ : Unit ↦ Subtype.val '' K) (fun _ ↦ hKv)
@@ -157,7 +157,7 @@ theorem isZero_localHomology_halfSpace_of_convex (hf : f ≠ 0) (hn : finrank �
       ⟨x, hx, rfl⟩ hfx (hKc.image continuous_subtype_val).isBounded k
   · simp only [not_exists, not_and] at h
     exact isZero_localHomology_halfSpace_of_pos R hn hKv hKc
-      (fun x hx ↦ x.2.lt_of_ne' (h x hx)) hk
+      (fun x hx ↦ x.property.lt_of_ne' (h x hx)) hk
 
 variable {M : Type w} [TopologicalSpace M] [T2Space M]
   (φ : OpenPartialHomeomorph M ↥{x : E | 0 ≤ f x})
@@ -180,7 +180,7 @@ theorem isZero_localHomology_symm_image_halfSpace (hf : f ≠ 0) (hn : finrank �
   have hKj : j ⁻¹' (φ.symm '' K) = j' ⁻¹' K := by
     ext z
     rw [hL]
-    exact ⟨fun h ↦ h.2, fun h ↦ ⟨z.2, h⟩⟩
+    exact ⟨fun h ↦ h.2, fun h ↦ ⟨z.property, h⟩⟩
   refine (isZero_localHomology_iff_of_isOpenEmbedding R j hj rfl hLc.isClosed
     (fun x hx ↦ ⟨⟨x, (hL ▸ hx).1⟩, rfl⟩) k).1 ?_
   exact (isZero_localHomology_iff_of_isOpenEmbedding R j' hj' hKj.symm hKc.isClosed

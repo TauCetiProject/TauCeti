@@ -195,13 +195,13 @@ theorem IsTree.convexHull_insert (h : Γ.IsTree) (x : Γ.V) (S : Set Γ.V) :
   -- The right-hand side is the union of the segments from `x` to the vertices of `{x} ∪ S`.
   have hconv : Γ.IsConvex (insert x (⋃ s ∈ S, Γ.convexHull {x, s})) := by
     have hU : insert x (⋃ s ∈ S, Γ.convexHull {x, s}) =
-        ⋃ s : ↥(insert x S), Γ.convexHull {x, s.1} := by
+        ⋃ s : ↥(insert x S), Γ.convexHull {x, s.val} := by
       rw [← Set.biUnion_eq_iUnion (s := insert x S) (t := fun s _ => Γ.convexHull {x, s}),
         Set.biUnion_insert, Set.pair_eq_singleton, h.isAcyclic.convexHull_singleton,
         Set.singleton_union]
     rw [hU]
     exact h.isConvex_iUnion (x := x) (fun _ => isConvex_convexHull _)
-      fun s => left_mem_convexHull_pair x s.1
+      fun s => left_mem_convexHull_pair x s.val
   refine (hconv.convexHull_subset ?_).antisymm ?_
   · rintro s (rfl | hs)
     · exact Set.mem_insert _ _

@@ -146,7 +146,7 @@ include hb in
 lemma coe_chartBallProj_eq_zero_iff {p : E ⟶ B} (z : _root_.TopCat.of (p ⁻¹' chartBall e b ε)) :
     (chartBallProj e hε p z : V) = 0 ↔ p z = b := by
   rw [coe_chartBallProj_apply, sub_eq_zero]
-  exact e.injOn.eq_iff (e.chartBall_subset_source b ε z.2) hb
+  exact e.injOn.eq_iff (e.chartBall_subset_source b ε z.property) hb
 
 lemma mem_serreFibrations_chartBallProj {p : E ⟶ B} (hp : serreFibrations p) :
     serreFibrations (chartBallProj e hε p) :=
@@ -180,10 +180,10 @@ lemma chartBallComplFiberPairIso_inv (p : E ⟶ B) :
 /-- The fibre over `0` of `chartBallProj e hε p` is the fibre of `p` over `b`. -/
 def chartBallProjFiberHomeomorph (p : E ⟶ B) (hε₀ : 0 < ε) :
     (chartBallProj e hε p ⁻¹' {x | (x : V) = 0}) ≃ₜ (p ⁻¹' {b}) where
-  toFun z := ⟨z.1.1, (coe_chartBallProj_eq_zero_iff e hb hε z.1).1 z.2⟩
+  toFun z := ⟨z.val.val, (coe_chartBallProj_eq_zero_iff e hb hε z.val).1 z.property⟩
   invFun y :=
-    have hy : p y.1 = b := mem_singleton_iff.1 y.2
-    ⟨⟨y.1, by
+    have hy : p y.val = b := mem_singleton_iff.1 y.property
+    ⟨⟨y.val, by
       rw [mem_preimage, hy]
       exact mem_chartBall_self e hb hε₀⟩, (coe_chartBallProj_eq_zero_iff e hb hε _).2 hy⟩
   left_inv _ := rfl
@@ -193,11 +193,11 @@ def chartBallProjFiberHomeomorph (p : E ⟶ B) (hε₀ : 0 < ε) :
 
 lemma coe_chartBallProjFiberHomeomorph_apply (p : E ⟶ B) (hε₀ : 0 < ε)
     (z : chartBallProj e hε p ⁻¹' {x | (x : V) = 0}) :
-    (chartBallProjFiberHomeomorph e hb hε p hε₀ z : E) = z.1.1 :=
+    (chartBallProjFiberHomeomorph e hb hε p hε₀ z : E) = z.val.val :=
   (rfl)
 
 lemma coe_chartBallProjFiberHomeomorph_symm_apply (p : E ⟶ B) (hε₀ : 0 < ε) (y : p ⁻¹' {b}) :
-    ((chartBallProjFiberHomeomorph e hb hε p hε₀).symm y).1.1 = y.1 :=
+    ((chartBallProjFiberHomeomorph e hb hε p hε₀).symm y).val.val = y.val :=
   (rfl)
 
 end OpenPartialHomeomorph
@@ -385,7 +385,7 @@ private lemma chartBallProjFiberHomeomorph_naturality (hε₀ : 0 < ε) (hf : f 
   -- The homeomorphism is applied through `TopCat.isoOfHomeo`, which `rw` does not see through.
   erw [OpenPartialHomeomorph.coe_chartBallProjFiberHomeomorph_apply]
   exact ((congrArg Subtype.val (TopCat.Hom.coe_preimageMap_apply _ _ _ x)).trans
-    (TopCat.Hom.coe_preimageMap_apply _ _ _ x.1)).symm
+    (TopCat.Hom.coe_preimageMap_apply _ _ _ x.val)).symm
 
 /-- **The homology of a Serre fibration modulo the complement of a fibre is natural in maps of
 fibrations.** Let `p : E ⟶ B` and `p' : E' ⟶ B` be Serre fibrations over a `T₁` space, `e` a chart

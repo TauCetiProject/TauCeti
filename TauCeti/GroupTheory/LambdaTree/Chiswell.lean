@@ -80,7 +80,7 @@ private def preDist (p q : (g : G) × Icc (0 : Λ) (l g)) : Λ :=
   p.2 + q.2 - min (2 • (p.2 : Λ)) (min (2 • (q.2 : Λ)) (l p.1 + l q.1 - l (p.1⁻¹ * q.1)))
 
 private theorem preDist_self (p : (g : G) × Icc (0 : Λ) (l g)) : preDist l p p = 0 := by
-  have := p.2.2.2
+  have := p.2.property.2
   simp only [preDist, inv_mul_cancel, map_one_eq_zero, sub_zero, two_nsmul]
   grind
 
@@ -251,7 +251,7 @@ theorem chiswellMetric_mk_mk_of_coe_eq {g f : G} (a : Icc (0 : Λ) (l g)) (b : I
 @[simp]
 theorem chiswellMetric_root_mk (g : G) (a : Icc (0 : Λ) (l g)) :
     l.chiswellMetric (root l) (ChiswellTree.mk g a) = a := by
-  have := a.2.1
+  have := a.property.1
   simp only [root, chiswellMetric_mk_mk, map_one_eq_zero, inv_one, one_mul, two_nsmul]
   grind
 
@@ -260,7 +260,7 @@ theorem chiswellMetric_root_mk (g : G) (a : Icc (0 : Λ) (l g)) :
 theorem chiswellMetric_mk_mk_self (g : G) (a b : Icc (0 : Λ) (l g)) :
     l.chiswellMetric (ChiswellTree.mk g a) (ChiswellTree.mk g b) = |(a : Λ) - b| := by
   simp only [chiswellMetric_mk_mk, inv_mul_cancel, map_one_eq_zero, sub_zero, two_nsmul]
-  grind [a.2.2, b.2.2]
+  grind [a.property.2, b.property.2]
 
 /-! ### Chiswell's tree is a `Λ`-tree -/
 
@@ -297,8 +297,8 @@ private theorem exists_isSegment_mk (g : G) {s t : Icc (0 : Λ) (l g)} (hst : s 
     fun r => ChiswellTree.mk g (projIcc 0 (l g) (apply_nonneg l g) r), hst, by simp, by simp, ?_,
     rfl⟩⟩
   refine l.chiswellMetric.isometricOn_iff.2 fun r hr r' hr' => ?_
-  have hr₁ : r ∈ Icc 0 (l g) := ⟨s.2.1.trans hr.1, hr.2.trans t.2.2⟩
-  have hr₂ : r' ∈ Icc 0 (l g) := ⟨s.2.1.trans hr'.1, hr'.2.trans t.2.2⟩
+  have hr₁ : r ∈ Icc 0 (l g) := ⟨s.property.1.trans hr.1, hr.2.trans t.property.2⟩
+  have hr₂ : r' ∈ Icc 0 (l g) := ⟨s.property.1.trans hr'.1, hr'.2.trans t.property.2⟩
   rw [chiswellMetric_mk_mk_self, projIcc_of_mem _ hr₁, projIcc_of_mem _ hr₂]
 
 /-- Chiswell's tree is geodesic when the Gromov products of the length function lie in `Λ`: the
@@ -316,14 +316,14 @@ private theorem isGeodesic_chiswellMetric
     two_nsmul, two_nsmul] at hm
   have hD := map_mul_le_add l g⁻¹ f
   rw [map_inv_eq_map] at hD
-  have hm0 : 0 ≤ m := by grind [a.2.1, b.2.1]
+  have hm0 : 0 ≤ m := by grind [a.property.1, b.property.1]
   have hma : m ≤ a := by grind
   have hmb : m ≤ b := by grind
-  have hmk : ChiswellTree.mk g ⟨m, hm0, hma.trans a.2.2⟩ =
-      ChiswellTree.mk f ⟨m, hm0, hmb.trans b.2.2⟩ :=
+  have hmk : ChiswellTree.mk g ⟨m, hm0, hma.trans a.property.2⟩ =
+      ChiswellTree.mk f ⟨m, hm0, hmb.trans b.property.2⟩ :=
     ChiswellTree.mk_eq_mk_iff.2 ⟨rfl, l.coe_le_gromovProduct_iff.2 (by rw [two_nsmul]; grind)⟩
-  obtain ⟨σ, hσ⟩ := l.exists_isSegment_mk g (s := ⟨m, hm0, hma.trans a.2.2⟩) (t := a) hma
-  obtain ⟨τ, hτ⟩ := l.exists_isSegment_mk f (s := ⟨m, hm0, hmb.trans b.2.2⟩) (t := b) hmb
+  obtain ⟨σ, hσ⟩ := l.exists_isSegment_mk g (s := ⟨m, hm0, hma.trans a.property.2⟩) (t := a) hma
+  obtain ⟨τ, hτ⟩ := l.exists_isSegment_mk f (s := ⟨m, hm0, hmb.trans b.property.2⟩) (t := b) hmb
   rw [← hmk] at hτ
   refine ⟨σ ∪ τ, hσ.symm.union hτ ?_⟩
   nth_rw 2 [hmk]

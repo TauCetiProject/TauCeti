@@ -144,9 +144,9 @@ private theorem mem_seifertLoops_braidSwap (hab : (a.1 : ℕ) ≠ b.1) {c : ℕ 
 by `braidSwap`. -/
 private def braidLoopsEquiv (hab : (a.1 : ℕ) ≠ b.1) :
     (u ++ a :: b :: a :: v).seifertLoops ≃ (u ++ b :: a :: b :: v).seifertLoops where
-  toFun c := ⟨braidSwap u.length c, (mem_seifertLoops_braidSwap a b hab).2 c.2⟩
+  toFun c := ⟨braidSwap u.length c, (mem_seifertLoops_braidSwap a b hab).2 c.property⟩
   invFun c := ⟨braidSwap u.length c, by
-    rw [← mem_seifertLoops_braidSwap a b hab, braidSwap_braidSwap]; exact c.2⟩
+    rw [← mem_seifertLoops_braidSwap a b hab, braidSwap_braidSwap]; exact c.property⟩
   left_inv c := Subtype.ext (braidSwap_braidSwap _ _)
   right_inv c := Subtype.ext (braidSwap_braidSwap _ _)
 

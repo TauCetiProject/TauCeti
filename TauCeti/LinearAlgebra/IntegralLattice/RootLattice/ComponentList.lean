@@ -77,38 +77,38 @@ abbrev Component : Type := {t : DynkinType // t.Valid ∧ t.IsSimplyLaced}
 namespace Component
 
 /-- The rank of a component, the number of simple roots. -/
-@[expose] def rank (c : Component) : ℕ := c.1.rank
+@[expose] def rank (c : Component) : ℕ := c.val.rank
 
 /-- The positive root lattice of a component, on its simple-root coordinate space. -/
 @[expose] noncomputable def rootLattice (c : Component) : IntegralLattice (Fin c.rank → ℚ) :=
-  c.1.rootLattice c.2.2
+  c.val.rootLattice c.property.2
 
 /-- The root lattice of a component is the root lattice of its underlying Dynkin type. -/
-theorem rootLattice_eq (c : Component) : c.rootLattice = c.1.rootLattice c.2.2 :=
+theorem rootLattice_eq (c : Component) : c.rootLattice = c.val.rootLattice c.property.2 :=
   (rfl)
 
 /-- The root lattice of a component is even. -/
 theorem isEven_rootLattice (c : Component) : c.rootLattice.IsEven :=
-  c.1.isEven_rootLattice c.2.2
+  c.val.isEven_rootLattice c.property.2
 
 /-- The root lattice of a component is nondegenerate. -/
 instance isNondegenerate_rootLattice (c : Component) : c.rootLattice.IsNondegenerate :=
-  inferInstanceAs (c.1.rootLattice c.2.2).IsNondegenerate
+  inferInstanceAs (c.val.rootLattice c.property.2).IsNondegenerate
 
 /-- The glue alphabet of a component: the finite quadratic module of its glue labels. -/
 @[expose] noncomputable def glueAlphabet (c : Component) : FiniteQuadraticModule :=
-  c.1.glueAlphabet c.2.2
+  c.val.glueAlphabet c.property.2
 
 /-- The glue alphabet of a component is the discriminant quadratic module of its root lattice. -/
 noncomputable def glueAlphabetIsometry (c : Component) :
     FiniteQuadraticModule.Isometry c.glueAlphabet
       (c.rootLattice.discriminantQuadraticModule c.isEven_rootLattice) :=
-  c.1.glueAlphabetIsometry c.2.1 c.2.2
+  c.val.glueAlphabetIsometry c.property.1 c.property.2
 
 /-- The glue isometry of a component acts as the glue isometry of its underlying Dynkin type. -/
 @[simp]
 theorem glueAlphabetIsometry_apply (c : Component) (x : c.glueAlphabet) :
-    c.glueAlphabetIsometry x = c.1.glueAlphabetIsometry c.2.1 c.2.2 x :=
+    c.glueAlphabetIsometry x = c.val.glueAlphabetIsometry c.property.1 c.property.2 x :=
   (rfl)
 
 end Component

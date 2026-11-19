@@ -71,12 +71,12 @@ theorem prod_powersetCard_succ_insert [DecidableEq α] {s : Finset α} {a : α} 
 theorem sum_noncommProd_powersetCard_eq_indicator {ι R : Type*} [Semiring R] {s u : Finset ι}
     (hu : u ⊆ s) (x : ι → R) (hc : (s : Set ι).Pairwise (Commute on x)) (n : ℕ) :
     ∑ t : u.powersetCard n,
-        t.1.noncommProd x (hc.mono (coe_subset.2 ((mem_powersetCard.1 t.2).1.trans hu))) =
+        t.val.noncommProd x (hc.mono (coe_subset.2 ((mem_powersetCard.1 t.property).1.trans hu))) =
       ∑ t ∈ u.powersetCard n,
         t.noncommProd ((s : Set ι).indicator x) (hc.pairwise_commute_indicator.set_pairwise _) := by
   rw [← sum_coe_sort (u.powersetCard n)]
   exact sum_congr rfl fun (t : u.powersetCard n) _ ↦ noncommProd_congr rfl (fun i hi ↦
-    (Set.indicator_of_mem (mem_coe.2 ((mem_powersetCard.1 t.2).1.trans hu hi)) x).symm) _
+    (Set.indicator_of_mem (mem_coe.2 ((mem_powersetCard.1 t.property).1.trans hu hi)) x).symm) _
 
 /-- With `a ∉ s`, the sum of the products over the `n + 1`-element subsets of `insert a s` of a
 family commuting pairwise everywhere is the corresponding sum over `s` plus `x a` times the sum of
@@ -98,11 +98,12 @@ theorem sum_noncommProd_powersetCard_succ_insert {ι R : Type*} [Semiring R] [De
     {s : Finset ι} {a : ι} (ha : a ∉ s) (x : ι → R)
     (hc : ((insert a s : Finset ι) : Set ι).Pairwise (Commute on x)) (n : ℕ) :
     ∑ t : (insert a s).powersetCard (n + 1),
-        t.1.noncommProd x (hc.mono (coe_subset.2 (mem_powersetCard.1 t.2).1)) =
-      ∑ t : s.powersetCard (n + 1), t.1.noncommProd x
-          (hc.mono (coe_subset.2 ((mem_powersetCard.1 t.2).1.trans (subset_insert a s)))) +
-        x a * ∑ t : s.powersetCard n, t.1.noncommProd x
-          (hc.mono (coe_subset.2 ((mem_powersetCard.1 t.2).1.trans (subset_insert a s)))) := by
+        t.val.noncommProd x (hc.mono (coe_subset.2 (mem_powersetCard.1 t.property).1)) =
+      ∑ t : s.powersetCard (n + 1), t.val.noncommProd x
+          (hc.mono (coe_subset.2 ((mem_powersetCard.1 t.property).1.trans (subset_insert a s)))) +
+        x a * ∑ t : s.powersetCard n, t.val.noncommProd x
+          (hc.mono (coe_subset.2 ((mem_powersetCard.1 t.property).1.trans (subset_insert a s))))
+              := by
   rw [sum_noncommProd_powersetCard_eq_indicator subset_rfl x hc,
     sum_noncommProd_powersetCard_eq_indicator (subset_insert a s) x hc,
     sum_noncommProd_powersetCard_eq_indicator (subset_insert a s) x hc,

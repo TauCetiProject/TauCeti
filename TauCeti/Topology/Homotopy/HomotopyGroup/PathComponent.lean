@@ -56,7 +56,7 @@ theorem apply_mem_pathComponent [Nonempty N] (p : Ω^ N X x) (t : I^N) : p t ∈
   obtain ⟨i⟩ := ‹Nonempty N›
   have : PathConnectedSpace I :=
     (Set.projIcc_surjective (zero_le_one : (0 : ℝ) ≤ 1)).pathConnectedSpace continuous_projIcc
-  have h : Joined (p 0) (p t) := (PathConnectedSpace.joined (0 : I^N) t).map p.1.continuous
+  have h : Joined (p 0) (p t) := (PathConnectedSpace.joined (0 : I^N) t).map p.val.continuous
   rw [_root_.GenLoop.boundary p 0 ⟨i, Or.inl rfl⟩] at h
   exact h
 

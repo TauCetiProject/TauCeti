@@ -73,8 +73,9 @@ theorem eq_of_eval_eq_on_unitaryGroup {p q : MvPolynomial (ι × ι) ℂ}
         (Matrix.of fun i j => x (i, j)).submatrix e.symm e.symm =
           (U : Matrix _ _ ℂ) * Matrix.diagonal d * (V : Matrix _ _ ℂ) :=
       ⟨_, Matrix.exists_unitary_mul_diagonal_mul_unitary _⟩
-    refine ⟨d ∘ e, ⟨(U : Matrix _ _ ℂ).submatrix e e, Matrix.submatrix_equiv_mem_unitary.mpr U.2⟩,
-      ⟨(V : Matrix _ _ ℂ).submatrix e e, Matrix.submatrix_equiv_mem_unitary.mpr V.2⟩, ?_⟩
+    refine ⟨d ∘ e, ⟨(U : Matrix _ _ ℂ).submatrix e e, Matrix.submatrix_equiv_mem_unitary.mpr
+        U.property⟩,
+      ⟨(V : Matrix _ _ ℂ).submatrix e e, Matrix.submatrix_equiv_mem_unitary.mpr V.property⟩, ?_⟩
     rw [← Matrix.submatrix_diagonal_equiv, Matrix.submatrix_mul_equiv,
       Matrix.submatrix_mul_equiv, ← hUV, Matrix.submatrix_submatrix]
     simp
@@ -100,7 +101,7 @@ theorem eq_of_eval_eq_on_unitaryGroup {p q : MvPolynomial (ι × ι) ℂ}
     refine MvPolynomial.funext_set (fun _ => Metric.sphere (0 : ℂ) 1) (fun _ => hS)
       fun z hz => ?_
     rw [hF, hF]
-    refine h _ (mul_mem (mul_mem U.2 ?_) V.2)
+    refine h _ (mul_mem (mul_mem U.property ?_) V.property)
     refine Matrix.diagonal_mem_unitary.mpr (Pi.mem_unitary_iff.mpr fun i => ?_)
     -- A complex number of modulus one is unitary: `conj z * z = ‖z‖ ^ 2 = 1`.
     rw [Unitary.mem_iff_star_mul_self, Complex.star_def, Complex.conj_mul',

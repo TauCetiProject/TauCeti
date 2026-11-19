@@ -168,7 +168,8 @@ theorem spectralMeasure_map_ofReal (A : Matrix n n ℝ)
 topology on probability measures. -/
 @[fun_prop]
 theorem continuous_spectralMeasure :
-    Continuous (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.1.spectralMeasure A.2) := by
+    Continuous (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.val.spectralMeasure A.property)
+        := by
   simp_rw [spectralMeasure_def]
   exact continuous_empiricalMeasureOfFintype.comp continuous_eigenvalues
 
@@ -176,7 +177,8 @@ theorem continuous_spectralMeasure :
 matrices and the evaluation σ-algebra on probability measures. -/
 @[fun_prop]
 theorem measurable_spectralMeasure [MeasurableSpace 𝕜] [BorelSpace 𝕜] :
-    Measurable (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.1.spectralMeasure A.2) := by
+    Measurable (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.val.spectralMeasure A.property)
+        := by
   simp_rw [spectralMeasure_def]
   exact measurable_empiricalMeasureOfFintype.comp measurable_eigenvalues
 

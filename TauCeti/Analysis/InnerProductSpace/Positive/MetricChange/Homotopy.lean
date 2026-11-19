@@ -57,10 +57,11 @@ noncomputable def metricChangeCompositionCorrectionPath (h k : E →L[ℝ] E →
       (Unitary.linearIsometryEquiv.symm (h.metricChangeCompositionCorrection k hH hK)) where
   toFun t := Unitary.linearIsometryEquiv.symm
     ((AffineMap.lineMap k h (t : ℝ)).metricChangeCompositionCorrection k
-      (isStrictlyPositive_continuousLinearMapOfBilin_lineMap k h hK hH t t.2) hK)
+      (isStrictlyPositive_continuousLinearMapOfBilin_lineMap k h hK hH t t.property) hK)
   continuous_toFun := (Path.segment k h).continuous.metricChangeCompositionCorrection
     continuous_const
-    (fun t ↦ isStrictlyPositive_continuousLinearMapOfBilin_lineMap k h hK hH t t.2) (fun _ ↦ hK)
+    (fun t ↦ isStrictlyPositive_continuousLinearMapOfBilin_lineMap k h hK hH t t.property)
+        (fun _ ↦ hK)
   source' := by simp [← LinearIsometryEquiv.one_def]
   target' := by simp
 
@@ -70,7 +71,7 @@ theorem metricChangeCompositionCorrectionPath_apply (h k : E →L[ℝ] E →L[�
     (hH : IsStrictlyPositive h♯) (hK : IsStrictlyPositive k♯) (t : unitInterval) (v : E) :
     (metricChangeCompositionCorrectionPath h k hH hK t : E →L[ℝ] E) v =
       (AffineMap.lineMap k h (t : ℝ)).metricChangeCompositionCorrection k
-        (isStrictlyPositive_continuousLinearMapOfBilin_lineMap k h hK hH t t.2) hK v :=
+        (isStrictlyPositive_continuousLinearMapOfBilin_lineMap k h hK hH t t.property) hK v :=
   (rfl)
 
 /-- The canonical correction paths depend jointly continuously on time and on a continuous
@@ -87,7 +88,7 @@ theorem _root_.Continuous.metricChangeCompositionCorrectionPath
     fun_prop
   exact (hline.metricChangeCompositionCorrection (hk.comp continuous_snd)
     (fun p ↦ isStrictlyPositive_continuousLinearMapOfBilin_lineMap
-      (k p.2) (h p.2) (kpos p.2) (hpos p.2) p.1 p.1.2)
+      (k p.2) (h p.2) (kpos p.2) (hpos p.2) p.1 p.1.property)
     (fun p ↦ kpos p.2))
 
 /-- No correction path is introduced when the intermediate and final metrics agree. -/
@@ -107,7 +108,7 @@ noncomputable def metricChangeCompositionHomotopy (h k : E →L[ℝ] E →L[ℝ]
       ⟨fun v ↦ h.metricChangeBetween k (h.metricChangeTransport v),
         (h.metricChangeBetween k).continuous.comp h.metricChangeTransport.continuous⟩ where
   toFun p := k.metricChangeTransport
-    ((metricChangeCompositionCorrectionPath h k hH hK p.1).1 p.2)
+    ((metricChangeCompositionCorrectionPath h k hH hK p.1).val p.2)
   continuous_toFun := k.metricChangeTransport.continuous.comp
     ((continuous_subtype_val.comp
       ((metricChangeCompositionCorrectionPath h k hH hK).continuous.comp continuous_fst)).clm_apply

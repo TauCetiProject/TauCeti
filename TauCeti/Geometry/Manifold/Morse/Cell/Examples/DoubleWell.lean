@@ -302,7 +302,7 @@ theorem not_homotopic_morseAttachingMap_doubleWellChart_doubleWellNegChart :
     exact ⟨by linarith, ha.le⟩
   obtain ⟨t, ht⟩ := intermediate_value_univ 1 0 hγ h01
   -- The value of the homotopy at `(t, s₁)` lies in the sublevel `{doubleWell ≤ 1/2}`.
-  have hmem : doubleWell (H (t, s₁) : ℝ) ≤ 1 - 1 / 2 := (H (t, s₁)).2
+  have hmem : doubleWell (H (t, s₁) : ℝ) ≤ 1 - 1 / 2 := (H (t, s₁)).property
   have ht0 : (H (t, s₁) : ℝ) = 0 := ht
   rw [ht0, doubleWell_def] at hmem
   norm_num at hmem

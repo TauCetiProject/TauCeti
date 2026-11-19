@@ -301,21 +301,21 @@ theorem continuous_retraction (b : B) : Continuous (retraction p b) :=
 /-- The circle over a base point is homeomorphic to the subspace fiber of the base projection. -/
 def fiberHomeomorph (b : B) : AddCircle (p b : ℝ) ≃ₜ {z : Pullback p // z.base = b} where
   toFun x := ⟨mk b x, rfl⟩
-  invFun z := retraction p b z.1
+  invFun z := retraction p b z.val
   left_inv := retraction_mk p b
-  right_inv z := Subtype.ext (mk_retraction p z.2)
+  right_inv z := Subtype.ext (mk_retraction p z.property)
   continuous_toFun := (continuous_mk p b).subtype_mk _
   continuous_invFun := (continuous_retraction p b).comp continuous_subtype_val
 
 /-- The fiber homeomorphism is the inclusion of the circle. -/
 @[simp]
 theorem coe_fiberHomeomorph (b : B) (x : AddCircle (p b : ℝ)) :
-    (fiberHomeomorph p b x).1 = mk b x := (rfl)
+    (fiberHomeomorph p b x).val = mk b x := (rfl)
 
 /-- The inverse fiber homeomorphism is the retraction restricted to the fiber. -/
 @[simp]
 theorem fiberHomeomorph_symm_apply (b : B) (z : {z : Pullback p // z.base = b}) :
-    (fiberHomeomorph p b).symm z = retraction p b z.1 := (rfl)
+    (fiberHomeomorph p b).symm z = retraction p b z.val := (rfl)
 
 /-- The map to the total family is continuous when `p` is. -/
 theorem continuous_toCircleFamily (hp : Continuous p) : Continuous (toCircleFamily p) := by
@@ -329,11 +329,11 @@ base point and a point of the total family whose period is `p b`. -/
 def fiberProductHomeomorph (hp : Continuous p) :
     Pullback p ≃ₜ {w : B × CircleFamily // p w.1 = w.2.period} where
   toFun z := ⟨(z.base, toCircleFamily p z), rfl⟩
-  invFun w := ⟨w.1.1, CircleFamily.retraction (p w.1.1) w.1.2⟩
+  invFun w := ⟨w.val.1, CircleFamily.retraction (p w.val.1) w.val.2⟩
   left_inv z := by
     rcases z with ⟨b, x⟩
     exact congrArg (mk b) (CircleFamily.retraction_mk (p b) x)
-  right_inv w := Subtype.ext (Prod.ext rfl (CircleFamily.mk_retraction w.2.symm))
+  right_inv w := Subtype.ext (Prod.ext rfl (CircleFamily.mk_retraction w.property.symm))
   continuous_toFun := ((continuous_base p).prodMk (continuous_toCircleFamily p hp)).subtype_mk _
   continuous_invFun := by
     refine continuous_of_normalizationEquiv_comp p ?_
@@ -341,11 +341,11 @@ def fiberProductHomeomorph (hp : Continuous p) :
     -- point of the total family, which lies on the circle of period `p b`.
     have h : normalizationEquiv p ∘
         (fun w : {w : B × CircleFamily // p w.1 = w.2.period} ↦
-          (⟨w.1.1, CircleFamily.retraction (p w.1.1) w.1.2⟩ : Pullback p)) =
-        fun w ↦ (w.1.1, (CircleFamily.normalization ⊤ w.1.2).2) := by
+          (⟨w.val.1, CircleFamily.retraction (p w.val.1) w.val.2⟩ : Pullback p)) =
+        fun w ↦ (w.val.1, (CircleFamily.normalization ⊤ w.val.2).2) := by
       funext w
       refine Prod.ext rfl ?_
-      conv_rhs => rw [← CircleFamily.mk_retraction w.2.symm, CircleFamily.normalization_mk]
+      conv_rhs => rw [← CircleFamily.mk_retraction w.property.symm, CircleFamily.normalization_mk]
       rfl
     rw [h]
     exact (continuous_fst.comp continuous_subtype_val).prodMk
@@ -355,7 +355,7 @@ def fiberProductHomeomorph (hp : Continuous p) :
 /-- The fiber-product homeomorphism records the base point and the image in the total family. -/
 @[simp]
 theorem coe_fiberProductHomeomorph (hp : Continuous p) (z : Pullback p) :
-    (fiberProductHomeomorph p hp z).1 = (z.base, toCircleFamily p z) := (rfl)
+    (fiberProductHomeomorph p hp z).val = (z.base, toCircleFamily p z) := (rfl)
 
 /-- Normalize real representatives by dividing the time coordinate by the period at the base
 point. For continuous periods this is a homeomorphism of `B × ℝ`. -/

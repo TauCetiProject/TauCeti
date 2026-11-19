@@ -231,7 +231,8 @@ theorem coeff_msymm_eq_zero_of_degree_ne (ν : n.Partition) {d : σ →₀ ℕ} 
   refine Finset.sum_eq_zero fun s _ => ?_
   rw [prod_map_X_eq_monomial, coeff_monomial, ite_eq_right]
   rintro rfl
-  exact h (by rw [← Finsupp.card_toMultiset_eq_degree, Multiset.toFinsupp_toMultiset]; exact s.1.2)
+  exact h (by rw [← Finsupp.card_toMultiset_eq_degree, Multiset.toFinsupp_toMultiset]; exact
+      s.val.property)
 
 /-- **The coefficients of a monomial symmetric polynomial are `0` and `1`**: `m_ν` is the sum of
 the monomials of total degree `n` whose nonzero exponents are the parts of `ν`, each occurring
@@ -255,7 +256,7 @@ theorem coeff_msymm (ν : n.Partition) {d : σ →₀ ℕ} (h : d.degree = n) :
     -- `weightPartition d h` is `Nat.Partition.ofSym (weightSym d h)` by definition, and `s` ranges
     -- over the multisets of letters whose partition is `ν`.
     exact (congrArg (fun t : Sym σ n => Nat.Partition.ofSym t)
-      ((hinj s.1).mp hcoeff)).symm.trans s.2
+      ((hinj s.val).mp hcoeff)).symm.trans s.property
 
 /-- **A monomial symmetric polynomial vanishes when its partition has more parts than the alphabet
 has letters**: no monomial in that alphabet uses that many distinct letters. -/

@@ -97,7 +97,7 @@ is at most `c` on `Θ(D_ε)`, since the normal Hessian is negative semidefinite 
 normal spaces. -/
 theorem apply_le_of_mem_negativeDiscBundle
     (hΘ : ∀ x ∈ h.negativeDiscBundle hn P g ε,
-      f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.2 x.2)
+      f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.snd x.snd)
     {x : TotalSpace P fun s ↦ i.NormalSpace s hn} (hx : x ∈ h.negativeDiscBundle hn P g ε) :
     f (Θ x) ≤ c := by
   rw [hΘ x hx]
@@ -110,7 +110,7 @@ theorem apply_le_of_mem_negativeDiscBundle
 lies in the negative sphere bundle `S_ε`. -/
 theorem mem_negativeSphereBundle_iff_apply_le
     (hΘ : ∀ x ∈ h.negativeDiscBundle hn P g ε,
-      f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.2 x.2)
+      f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.snd x.snd)
     {x : TotalSpace P fun s ↦ i.NormalSpace s hn} (hx : x ∈ h.negativeDiscBundle hn P g ε) :
     x ∈ h.negativeSphereBundle hn P g ε ↔ f (Θ x) ≤ c - ε := by
   rw [mem_negativeSphereBundle, hΘ x hx]
@@ -121,7 +121,7 @@ theorem mem_negativeSphereBundle_iff_apply_le
 sublevel `{f ≤ c - ε}` exactly in the image of the negative sphere bundle. -/
 theorem image_negativeDiscBundle_inter_sublevel
     (hΘ : ∀ x ∈ h.negativeDiscBundle hn P g ε,
-      f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.2 x.2) :
+      f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.snd x.snd) :
     Θ '' h.negativeDiscBundle hn P g ε ∩ {y | f y ≤ c - ε} =
       Θ '' h.negativeSphereBundle hn P g ε := by
   ext y
@@ -166,7 +166,7 @@ theorem isPushout_negativeDiscBundle (hf : Continuous f)
     (hΘc : ContinuousOn Θ (h.negativeDiscBundle hn P g ε))
     (hΘi : InjOn Θ (h.negativeDiscBundle hn P g ε))
     (hΘ : ∀ x ∈ h.negativeDiscBundle hn P g ε,
-      f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.2 x.2) :
+      f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.snd x.snd) :
     ∃ (α : C(h.negativeSphereBundle hn P g ε, {y | f y ≤ c - ε}))
       (χ : C(h.negativeDiscBundle hn P g ε,
         ({y | f y ≤ c - ε} ∪ Θ '' h.negativeDiscBundle hn P g ε : Set M))),

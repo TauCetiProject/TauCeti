@@ -76,18 +76,18 @@ private abbrev preimageOpens (V : Opens Y) : Opens (TopCat.of X) :=
 
 private lemma preimageOpens_le (V : Opens Y) : preimageOpens φ V ≤ W := by
   rintro _ ⟨a, -, rfl⟩
-  exact a.2
+  exact a.property
 
 /-- A point of `preimageOpens φ V` is sent by `φ` into `V`. -/
 private def toOpens {V : Opens Y} (x : preimageOpens φ V) : V :=
   ⟨φ (Opens.inclusion (preimageOpens_le φ V) x), by
-    obtain ⟨a, ha, h⟩ := x.2
+    obtain ⟨a, ha, h⟩ := x.property
     have hx : Opens.inclusion (preimageOpens_le φ V) x = a := Subtype.ext h.symm
     rwa [hx]⟩
 
 /-- A point of `V` is sent by `φ.symm` into `preimageOpens φ V`. -/
 private def ofOpens {V : Opens Y} (y : V) : preimageOpens φ V :=
-  ⟨(φ.symm y).1, φ.symm y, ((φ.apply_symm_apply y).symm ▸ y.2 : φ (φ.symm y) ∈ V), rfl⟩
+  ⟨(φ.symm y).val, φ.symm y, ((φ.apply_symm_apply y).symm ▸ y.property : φ (φ.symm y) ∈ V), rfl⟩
 
 private lemma toOpens_ofOpens {V : Opens Y} (y : V) : toOpens φ (ofOpens φ y) = y :=
   Subtype.ext (by simp [toOpens, ofOpens, Opens.inclusion])
@@ -233,8 +233,8 @@ theorem exists_finite_cover_subsingleton_H'_one_holomorphicStructureSheafModules
       ((V (k x)).isOpen.mem_nhds (hk x))
   have hWc : IsOpenCover W := .mk <| eq_top_iff.2 fun x _ ↦ Opens.mem_iSup.2 ⟨x, hxW x⟩
   obtain ⟨s, hs⟩ := hWc.exists_finite_of_compactSpace
-  exact ⟨s, inferInstance, fun i ↦ W i.1, hs.iSup_eq_top, fun i ↦ ⟨k i.1, hWV i.1⟩,
-    fun i ↦ hW i.1⟩
+  exact ⟨s, inferInstance, fun i ↦ W i.val, hs.iSup_eq_top, fun i ↦ ⟨k i.val, hWV i.val⟩,
+    fun i ↦ hW i.val⟩
 
 end Chart
 

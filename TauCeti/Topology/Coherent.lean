@@ -64,7 +64,7 @@ theorem univ_prod [LocallyCompactSpace Z] (hS : IsCoherentWith (range S)) (hSX :
     rw [continuousOn_iff_continuous_domRestrict]
     have hc : Continuous fun p : S i × Z ↦ g (p.2, p.1) :=
       (hg' i).comp_continuous (continuous_snd.prodMk (continuous_subtype_val.comp continuous_fst))
-        fun p ↦ ⟨mem_univ _, p.1.2⟩
+        fun p ↦ ⟨mem_univ _, p.1.property⟩
     exact (ContinuousMap.curry ⟨_, hc⟩).continuous
   exact continuous_eval.comp ((hG.comp continuous_snd).prodMk continuous_fst)
 
@@ -83,7 +83,7 @@ theorem exists_subset_of_isCompact [T1Space X] {A : ℕ → Set X} (hA : Monoton
     refine hAc.isClosed_iff.2 <| forall_mem_range.2 fun m ↦ Finite.isClosed ?_
     refine ((finite_Iio m).image x).preimage Subtype.val_injective.injOn |>.subset fun y hy ↦ ?_
     obtain ⟨k, hk⟩ := hE hy
-    exact ⟨k, lt_of_not_ge fun hmk ↦ hxA k (hk ▸ hA hmk y.2), hk⟩
+    exact ⟨k, lt_of_not_ge fun hmk ↦ hxA k (hk ▸ hA hmk y.property), hk⟩
   have hfin : (range x).Finite :=
     (hK.of_isClosed_subset (hcl _ Subset.rfl) (range_subset_iff.2 hxK)).finite <|
       isDiscrete_iff_forall_mem_exists_isClosed.2 fun E hE ↦ ⟨E, hcl E hE, inter_eq_left.2 hE⟩

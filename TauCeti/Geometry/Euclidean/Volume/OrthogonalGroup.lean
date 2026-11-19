@@ -200,7 +200,7 @@ private def decompose
 private theorem measurable_of_measurable_coe {α : Type*} [MeasurableSpace α] {m : ℕ}
     {f : α → Matrix.orthogonalGroup (Fin m) ℝ}
     (hf : Measurable fun x ↦ (f x : Matrix (Fin m) (Fin m) ℝ)) : Measurable f :=
-  hf.subtype_mk (h := fun x ↦ (f x).2)
+  hf.subtype_mk (h := fun x ↦ (f x).property)
 
 private theorem coe_decompose
     (p : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 × Matrix.orthogonalGroup (Fin n) ℝ) :
@@ -285,7 +285,7 @@ private def fibreCorner (g : Matrix.orthogonalGroup (Fin (n + 1)) ℝ)
   ⟨(fibreShift g u : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ).submatrix Fin.castSucc Fin.castSucc, by
     obtain ⟨h, hh⟩ := exists_orthogonalBlockSucc_eq_fibreShift g u
     rw [← hh, coe_orthogonalBlockSucc, Matrix.submatrix_blockSucc_castSucc]
-    exact h.2⟩
+    exact h.property⟩
 
 private theorem coe_fibreCorner (g : Matrix.orthogonalGroup (Fin (n + 1)) ℝ)
     (u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
@@ -481,7 +481,8 @@ theorem orthogonalGroupVolume_eq_two_mul_specialOrthogonalGroupVolume {n : ℕ} 
     ext g
     simp only [S, mem_preimage, mem_compl_iff, Set.mem_ofPred_eq, Submonoid.coe_mul,
       Matrix.det_mul, det_orthogonalDiagonalReflection, neg_one_mul, neg_eq_iff_eq_neg]
-    rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup g.2 with h | h <;> rw [h] <;> norm_num
+    rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup g.property with h | h <;> rw
+        [h] <;> norm_num
   have hcompl : orthogonalGroupMeasure (m + 1) Sᶜ = orthogonalGroupMeasure (m + 1) S := by
     rw [← hpre, measure_preimage_mul]
   have hSO : {g : Matrix.orthogonalGroup (Fin (m + 1)) ℝ |

@@ -258,7 +258,7 @@ theorem exists_windingNumber_integral_eq_sum_segments {E : Finset (ℂ × ℂ)}
     intro z hz
     obtain ⟨i, hi⟩ := mem_iUnion.1 hz
     rw [Polygon.edgeSet_eq_image_edgePath, hedge, ← segment_eq_image_lineMap] at hi
-    exact mem_biUnion (σ^[i] e).2 hi
+    exact mem_biUnion (σ^[i] e).property hi
   -- The cycle is the sum of the polygons of the orbits; sums over the segments are computed orbit
   -- by orbit.
   refine ⟨∑ q : Quotient (Equiv.Perm.SameCycle.setoid σ), (P q.out).contourCycle,

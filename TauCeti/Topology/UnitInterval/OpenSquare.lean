@@ -153,7 +153,8 @@ private lemma prodMap_val_clamp {z : ℝ × ℝ} (hz : z ∈ Icc (0 : ℝ) 1 ×�
 
 private lemma starConvex_Icc_prod_Icc :
     StarConvex ℝ (Prod.map Subtype.val Subtype.val squareCentre) (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1) :=
-  ((convex_Icc 0 1).prod (convex_Icc 0 1)).starConvex ⟨squareCentre.1.2, squareCentre.2.2⟩
+  ((convex_Icc 0 1).prod (convex_Icc 0 1)).starConvex ⟨squareCentre.1.property,
+      squareCentre.2.property⟩
 
 /-- In the sup norm, a point is at distance `1 / 2` from the centre exactly when one of its
 coordinates is at distance `1 / 2` from `1 / 2` and the other at most that. -/
@@ -203,7 +204,7 @@ private noncomputable abbrev realRadialHomotopy :=
 `ℝ × ℝ`. -/
 private def toPunctured {q : I × I} (hq : q ≠ squareCentre) :
     ↥(Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1 \ {Prod.map Subtype.val Subtype.val squareCentre}) :=
-  ⟨Prod.map Subtype.val Subtype.val q, ⟨q.1.2, q.2.2⟩,
+  ⟨Prod.map Subtype.val Subtype.val q, ⟨q.1.property, q.2.property⟩,
     (Subtype.val_injective.prodMap Subtype.val_injective).ne hq⟩
 
 /-- The **radial deformation** of the unit square with its centre removed onto its boundary, at
@@ -251,8 +252,8 @@ theorem radialPush_one_notMem {q : I × I} (hq : q ≠ squareCentre) :
     TauCeti.coe_sphereInclusionDiffSingleton_apply]
   set z := TauCeti.radialProjectionToSphere (V := Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)
     (by norm_num : (0 : ℝ) < 1 / 2) (toPunctured hq)
-  rw [← prodMap_val_mem_sphere_iff, prodMap_val_clamp (sphere_subset_Icc_prod_Icc z.2)]
-  exact z.2
+  rw [← prodMap_val_mem_sphere_iff, prodMap_val_clamp (sphere_subset_Icc_prod_Icc z.property)]
+  exact z.property
 
 /-- The radial deformation is continuous in the time and the point away from the centre. -/
 theorem continuousAt_radialPush {t : I} {q : I × I} (hq : q ≠ squareCentre) :
@@ -262,9 +263,9 @@ theorem continuousAt_radialPush {t : I} {q : I × I} (hq : q ≠ squareCentre) :
   refine ContinuousOn.continuousAt ?_ (hO.mem_nhds hq)
   rw [continuousOn_iff_continuous_domRestrict]
   have h : {p : I × (I × I) | p.2 ≠ squareCentre}.domRestrict (fun p => radialPush p.1 p.2) =
-      fun p => clamp (realRadialHomotopy (σ p.1.1, toPunctured p.2)) :=
+      fun p => clamp (realRadialHomotopy (σ p.val.1, toPunctured p.property)) :=
     funext fun p => by
-      have hp : (p : I × (I × I)).2 ≠ squareCentre := p.2
+      have hp : (p : I × (I × I)).2 ≠ squareCentre := p.property
       simp only [domRestrict_apply, radialPush, hp, ↓reduceDIte]
   rw [h]
   refine continuous_clamp.comp (continuous_subtype_val.comp (realRadialHomotopy.continuous.comp

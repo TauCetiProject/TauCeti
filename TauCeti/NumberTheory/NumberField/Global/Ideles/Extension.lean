@@ -88,7 +88,7 @@ place below under the completion map. -/
 @[simp]
 theorem ideleInfiniteCoord_ideleExtension (w : InfinitePlace L) (x : IdeleGroup (𝓞 K) K) :
     w.ideleInfiniteCoord (ideleExtension K L x) =
-      Units.map (AbsoluteValue.Completion.map (w.comap (algebraMap K L)).1 w.1).toMonoidHom
+      Units.map (AbsoluteValue.Completion.map (w.comap (algebraMap K L)).val w.val).toMonoidHom
         ((w.comap (algebraMap K L)).ideleInfiniteCoord x) := by
   apply Units.ext
   simp only [InfinitePlace.coe_ideleInfiniteCoord, coe_ideleExtension,
@@ -128,8 +128,8 @@ private theorem prod_infiniteFactors_ideleExtension (x : IdeleGroup (𝓞 K) K) 
   rw [← Fintype.prod_fiberwise (fun w : InfinitePlace L ↦ w.comap (algebraMap K L))]
   have h (v : InfinitePlace K) :
       (∏ w : {w : InfinitePlace L // w.comap (algebraMap K L) = v},
-        completionNormalizedAbsValue w.1
-          (w.1.ideleInfiniteCoord (ideleExtension K L x))) =
+        completionNormalizedAbsValue w.val
+          (w.val.ideleInfiniteCoord (ideleExtension K L x))) =
         completionNormalizedAbsValue v (v.ideleInfiniteCoord x) ^
           Module.finrank K L := by
     let e : {w : InfinitePlace L // w.comap (algebraMap K L) = v} ≃
@@ -158,7 +158,7 @@ private theorem prod_finiteFactors_ideleExtension (x : IdeleGroup (𝓞 K) K) :
     (hasFiniteMulSupport_norm_ideleFiniteCoord (ideleExtension K L x))]
   have h (v : HeightOneSpectrum (𝓞 K)) :
       (∏ᶠ w : {w : HeightOneSpectrum (𝓞 L) // w.under (𝓞 K) = v},
-        ‖(w.1.ideleFiniteCoord (ideleExtension K L x) : w.1.adicCompletion L)‖) =
+        ‖(w.val.ideleFiniteCoord (ideleExtension K L x) : w.val.adicCompletion L)‖) =
         ‖(v.ideleFiniteCoord x : v.adicCompletion K)‖ ^ Module.finrank K L := by
     let e : {w : HeightOneSpectrum (𝓞 L) // w.under (𝓞 K) = v} ≃
         {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal} :=

@@ -41,7 +41,7 @@ theorem unattach_map {α β : Type*} {q : β → Prop} (o : Option α)
 
 /-- Mapping after `Option.unattach` composes with `Subtype.val`. -/
 theorem map_unattach {α β : Type*} {p : α → Prop} (o : Option {x // p x}) (g : α → β) :
-    o.unattach.map g = o.map fun x ↦ g x.1 := by
+    o.unattach.map g = o.map fun x ↦ g x.val := by
   cases o <;> rfl
 
 end Option

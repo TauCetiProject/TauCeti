@@ -99,7 +99,7 @@ variable {v : ℕ} [NeZero v]
 /-- The point `(z + r) / v` of the upper half-plane. -/
 private def residuePoint (v : ℕ) [NeZero v] (z : ℍ) (r : ℕ) : ℍ :=
   ⟨((z : ℂ) + r) / v, by
-    simpa [Complex.div_natCast_im] using div_pos z.2 (Nat.cast_pos.mpr (NeZero.pos v))⟩
+    simpa [Complex.div_natCast_im] using div_pos z.coe_im_pos (Nat.cast_pos.mpr (NeZero.pos v))⟩
 
 private lemma coe_residuePoint (z : ℍ) (r : ℕ) :
     (residuePoint v z r : ℂ) = ((z : ℂ) + r) / v :=
@@ -273,7 +273,7 @@ private lemma tsum_row_pnat (hk : 2 ≤ k) (z : ℍ) (c : ℕ+) :
       (-2 * π * I) ^ k / ((k - 1).factorial * v ^ k) * ∑' m : ℕ+,
         𝓕 ⇑(φ⁻¹) (-(m : ZMod v)) * (m : ℂ) ^ (k - 1) * cexp (2 * π * I * z) ^ (c * m : ℕ) := by
   let w : ℍ := ⟨((v * c : ℕ) : ℂ) * z, by
-    simpa using mul_pos (Nat.cast_pos.mpr (mul_pos (NeZero.pos v) c.pos)) z.2⟩
+    simpa using mul_pos (Nat.cast_pos.mpr (mul_pos (NeZero.pos v) c.pos)) z.coe_im_pos⟩
   have hw : (((v * c : ℤ) : ℂ) * z) = (w : ℂ) := by
     simp [w]
   simp_rw [hw]
@@ -561,7 +561,7 @@ private lemma tsum_row_add_tsum_row_neg (hk : 2 ≤ k) (z : ℍ) (c : ℕ+)
     (-2 * π * I) ^ k / ((k - 1).factorial * N ^ k) * ∑' m : ℕ+,
       𝓕 (fun d ↦ W ![((c : ℕ) : ZMod N), d] + (-1) ^ k * W ![-((c : ℕ) : ZMod N), -d])
         (-(m : ZMod N)) * (m : ℂ) ^ (k - 1) * cexp (2 * π * I * z / N) ^ ((c : ℕ) * m) := by
-  let w : ℍ := ⟨((c : ℕ) : ℂ) * z, by simpa using mul_pos (Nat.cast_pos.mpr c.pos) z.2⟩
+  let w : ℍ := ⟨((c : ℕ) : ℂ) * z, by simpa using mul_pos (Nat.cast_pos.mpr c.pos) z.coe_im_pos⟩
   have hw : (w : ℂ) = ((c : ℕ) : ℂ) * z := rfl
   have hsign : ((-1 : ℂ) ^ k)⁻¹ = (-1) ^ k := by
     rw [← inv_pow, inv_neg, inv_one]

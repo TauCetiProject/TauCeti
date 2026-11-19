@@ -163,7 +163,7 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
   · refine ContinuousLinearMap.isInvertible_of_injective_of_finrank_eq
       (P ∘L D ∘L F.subtypeL) hdimF ?_
     refine (injective_iff_map_eq_zero (P ∘L D ∘L F.subtypeL)).2 fun z hz ↦ Subtype.ext ?_
-    have h0 := Submodule.disjoint_def.1 hπdisj _ (hA'F z z.2)
+    have h0 := Submodule.disjoint_def.1 hπdisj _ (hA'F z z.property)
       (LinearMap.mem_ker.2 (by simpa [π, hDF] using hz))
     simpa using h0
 

@@ -109,12 +109,12 @@ def positiveDefiniteSymmetricSectionHomeomorph :
         fun g ↦ Subtype.ext (positiveDefiniteSymmetricSectionEquiv_apply g).symm
   · apply (continuous_frameTopology_iff (IB := IB) (n := n) e U hU).mpr
     simpa using (continuous_subtype_val : Continuous
-      (fun σ : TauCeti.Manifold.positiveDefiniteSymmetricSections IB n F V ↦ σ.1))
+      (fun σ : TauCeti.Manifold.positiveDefiniteSymmetricSections IB n F V ↦ σ.val))
 
 @[simp]
 theorem positiveDefiniteSymmetricSectionHomeomorph_apply
     (g : ContMDiffRiemannianMetric IB n F V) :
-    (positiveDefiniteSymmetricSectionHomeomorph e U hU g).1 = g.toSymmetricSection :=
+    (positiveDefiniteSymmetricSectionHomeomorph e U hU g).val = g.toSymmetricSection :=
   positiveDefiniteSymmetricSectionEquiv_apply g
 
 @[simp]
@@ -123,7 +123,7 @@ theorem positiveDefiniteSymmetricSectionHomeomorph_symm_apply
     let _ := ContMDiffSection.frameTopology (I := IB) (n := n) e U hU
     let _ := frameTopology IB n e U hU
     (positiveDefiniteSymmetricSectionHomeomorph (IB := IB) (n := n) e U hU).symm σ =
-      ofPositiveDefiniteSymmetricSection σ.1 σ.2 := by
+      ofPositiveDefiniteSymmetricSection σ.val σ.property := by
   let _ := ContMDiffSection.frameTopology (I := IB) (n := n) e U hU
   let _ := frameTopology IB n e U hU
   exact positiveDefiniteSymmetricSectionEquiv_symm_apply σ

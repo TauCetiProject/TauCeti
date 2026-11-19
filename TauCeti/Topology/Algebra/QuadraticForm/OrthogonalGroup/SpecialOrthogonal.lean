@@ -104,7 +104,8 @@ theorem _root_.QuadraticMap.isOpen_specialOrthogonalWithin (hQ : Q.polarBilin.Se
 theorem _root_.QuadraticMap.isOpenEmbedding_specialOrthogonalToOrthogonal
     (hQ : Q.polarBilin.SeparatingLeft) :
     Topology.IsOpenEmbedding (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q) where
-  toIsEmbedding := (_root_.QuadraticMap.isClosedEmbedding_specialOrthogonalToOrthogonal Q).1
+  toIsEmbedding := (_root_.QuadraticMap.isClosedEmbedding_specialOrthogonalToOrthogonal
+      Q).toIsEmbedding
   isOpen_range := by
     rw [← MonoidHom.coe_range, _root_.QuadraticMap.range_specialOrthogonalToOrthogonal]
     exact _root_.QuadraticMap.isOpen_specialOrthogonalWithin hQ

@@ -299,9 +299,9 @@ theorem classOf_eq_inr [Countable M] {n : ℕ} (hM : φ.Realize M) (e : M ≃ Fi
 /-- The class of the structure decoded from a model of `φ` on `ℕ` is the class of that model. -/
 @[simp]
 theorem classOf_toStructure_nat (c : modelsOf (V := ℕ) φ) :
-    letI := c.1.toStructure
-    classOf φ (mem_modelsOf.1 c.2) = .inl ⟦c⟧ := by
-  let := c.1.toStructure
+    letI := c.val.toStructure
+    classOf φ (mem_modelsOf.1 c.property) = .inl ⟦c⟧ := by
+  let := c.val.toStructure
   rw [classOf_eq_inl _ (Equiv.refl ℕ)]
   congr
   simp
@@ -310,9 +310,9 @@ theorem classOf_toStructure_nat (c : modelsOf (V := ℕ) φ) :
 model. -/
 @[simp]
 theorem classOf_toStructure_fin {n : ℕ} (c : modelsOf (V := Fin n) φ) :
-    letI := c.1.toStructure
-    classOf φ (mem_modelsOf.1 c.2) = .inr ⟨n, ⟦c⟧⟩ := by
-  let := c.1.toStructure
+    letI := c.val.toStructure
+    classOf φ (mem_modelsOf.1 c.property) = .inr ⟨n, ⟦c⟧⟩ := by
+  let := c.val.toStructure
   rw [classOf_eq_inr _ (Equiv.refl (Fin n))]
   congr
   simp
@@ -372,13 +372,13 @@ theorem classOf_surjective (q : CountableModelClasses φ) :
   -- Transport the decoded structure `V` of a representative to `ULift V`, in universe `w`.
   have key {V : Type} [Countable V] (c : modelsOf (V := V) φ) :
       ∃ (M : Type w) (_ : L.Structure M) (_ : Countable M) (hM : φ.Realize M),
-        letI := c.1.toStructure
-        classOf φ hM = classOf φ (mem_modelsOf.1 c.2) := by
-    let := c.1.toStructure
+        letI := c.val.toStructure
+        classOf φ hM = classOf φ (mem_modelsOf.1 c.property) := by
+    let := c.val.toStructure
     let e : V ≃ ULift.{w} V := Equiv.ulift.symm
     let := e.inducedStructure (L := L)
     have hM : φ.Realize (ULift.{w} V) :=
-      (StrongHomClass.realize_sentenceInf e.inducedStructureEquiv φ).1 (mem_modelsOf.1 c.2)
+      (StrongHomClass.realize_sentenceInf e.inducedStructureEquiv φ).1 (mem_modelsOf.1 c.property)
     exact ⟨ULift.{w} V, _, inferInstance, hM, classOf_congr e.inducedStructureEquiv.symm hM _⟩
   rcases q with q | ⟨n, q⟩
   · induction q using Quotient.inductionOn with

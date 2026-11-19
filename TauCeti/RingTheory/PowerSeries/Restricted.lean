@@ -161,7 +161,7 @@ noncomputable instance instAlgebraIsRestrictedSubring {S : Type*} [CommSemiring 
     Algebra S (PowerSeries.IsRestricted.subring (R := R) c) where
   smul s f := ⟨s • (f : PowerSeries R), by
     rw [Algebra.smul_def, PowerSeries.algebraMap_apply]
-    exact (PowerSeries.isRestricted_C c (algebraMap S R s)).mul f.2⟩
+    exact (PowerSeries.isRestricted_C c (algebraMap S R s)).mul f.property⟩
   algebraMap := (algebraMap S (PowerSeries R)).codRestrict _ fun s ↦ by
     rw [PowerSeries.algebraMap_apply]
     exact PowerSeries.isRestricted_C c _

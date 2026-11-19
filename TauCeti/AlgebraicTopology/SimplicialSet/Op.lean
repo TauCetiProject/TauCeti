@@ -143,7 +143,7 @@ def opIso (n : ℕ) : opFunctor.obj (∂Δ[n] : SSet.{u}) ≅ (∂Δ[n] : SSet.{
     ext x
     apply Subtype.ext
     exact NatTrans.naturality_apply (stdSimplex.opIso ⦋n⦌).hom f
-      (opObjEquiv.symm (opObjEquiv x).1))
+      (opObjEquiv.symm (opObjEquiv x).val))
 
 /-- Boundary reversal is the restriction of standard-simplex reversal. -/
 @[reassoc (attr := simp)]

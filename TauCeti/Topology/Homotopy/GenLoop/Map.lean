@@ -29,7 +29,7 @@ variable {N X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [Topologica
 
 /-- A based continuous map sends generalized loops to generalized loops by postcomposition. -/
 def map (f : C(X, Y)) (hf : f x = y) (p : Ω^ N X x) : Ω^ N Y y :=
-  ⟨f.comp p.1, fun t ht => by simpa [hf] using congrArg f (_root_.GenLoop.boundary p t ht)⟩
+  ⟨f.comp p.val, fun t ht => by simpa [hf] using congrArg f (_root_.GenLoop.boundary p t ht)⟩
 
 @[simp]
 theorem map_apply (f : C(X, Y)) (hf : f x = y) (p : Ω^ N X x) (t : I^N) :

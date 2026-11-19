@@ -164,7 +164,7 @@ theorem IsProConstructible.biInter {ι : Sort*} {p : ι → Prop} {f : ∀ i, p 
 theorem IsProConstructible.sInter {S : Set (Set X)} (hS : ∀ s ∈ S, IsProConstructible s) :
     IsProConstructible (⋂₀ S) := by
   rw [Set.sInter_eq_iInter]
-  exact IsProConstructible.iInter fun s ↦ hS s.1 s.2
+  exact IsProConstructible.iInter fun s ↦ hS s.val s.property
 
 /-- A quasi-compact open subset is pro-constructible: it is even clopen for the constructible
 topology, since it and its complement both belong to the defining subbasis. -/
@@ -282,7 +282,7 @@ is quasi-separated. -/
 theorem IsProConstructible.quasiSeparatedSpace (hs : IsProConstructible s) :
     QuasiSeparatedSpace s := by
   refine QuasiSeparatedSpace.of_isTopologicalBasis
-    (b := fun U : {U : Set X // IsOpen U ∧ IsCompact U} ↦ ((↑) : s → X) ⁻¹' U.1) ?_ ?_
+    (b := fun U : {U : Set X // IsOpen U ∧ IsCompact U} ↦ ((↑) : s → X) ⁻¹' U.val) ?_ ?_
   · have h := Topology.IsInducing.isTopologicalBasis (f := ((↑) : s → X))
       IsEmbedding.subtypeVal.isInducing (PrespectralSpace.isTopologicalBasis (X := X))
     convert h using 1
@@ -440,13 +440,13 @@ theorem isProConstructible_eq [T0Space Y] [PrespectralSpace Y] {f g : X → Y}
     TauCeti.IsProConstructible {x | f x = g x} := by
   let B := {U : Set Y // IsOpen U ∧ IsCompact U}
   have heq : {x | f x = g x} = ⋂ U : B,
-      ((f ⁻¹' U.1) ∩ (g ⁻¹' U.1)) ∪ ((f ⁻¹' U.1)ᶜ ∩ (g ⁻¹' U.1)ᶜ) := by
+      ((f ⁻¹' U.val) ∩ (g ⁻¹' U.val)) ∪ ((f ⁻¹' U.val)ᶜ ∩ (g ⁻¹' U.val)ᶜ) := by
     ext x
     rw [Set.mem_ofPred_eq, PrespectralSpace.isTopologicalBasis.eq_iff]
     simp only [mem_iInter, mem_union, mem_inter_iff, mem_preimage, mem_compl_iff]
     constructor
     · intro h U
-      have := h U.1 U.2
+      have := h U.val U.property
       tauto
     · intro h U hU
       have := h ⟨U, hU⟩
@@ -454,12 +454,14 @@ theorem isProConstructible_eq [T0Space Y] [PrespectralSpace Y] {f g : X → Y}
   rw [heq]
   refine TauCeti.IsProConstructible.iInter fun U ↦ ?_
   apply TauCeti.isProConstructible_iff_isClosed.mpr
-  have hfc : IsClopen[constructibleTopology X] (f ⁻¹' U.1) :=
-    (hf.isCompact_preimage_of_isOpen U.2.1 U.2.2).isClopen_constructibleTopology_of_isOpen
-      (U.2.1.preimage hf.continuous)
-  have hgc : IsClopen[constructibleTopology X] (g ⁻¹' U.1) :=
-    (hg.isCompact_preimage_of_isOpen U.2.1 U.2.2).isClopen_constructibleTopology_of_isOpen
-      (U.2.1.preimage hg.continuous)
+  have hfc : IsClopen[constructibleTopology X] (f ⁻¹' U.val) :=
+    (hf.isCompact_preimage_of_isOpen U.property.1
+        U.property.2).isClopen_constructibleTopology_of_isOpen
+      (U.property.1.preimage hf.continuous)
+  have hgc : IsClopen[constructibleTopology X] (g ⁻¹' U.val) :=
+    (hg.isCompact_preimage_of_isOpen U.property.1
+        U.property.2).isClopen_constructibleTopology_of_isOpen
+      (U.property.1.preimage hg.continuous)
   let : TopologicalSpace X := constructibleTopology X
   exact (hfc.isClosed.inter hgc.isClosed).union (hfc.compl.isClosed.inter hgc.compl.isClosed)
 

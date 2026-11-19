@@ -135,8 +135,8 @@ theorem isIso_unit_app_of_ker_ideal_le_annihilator (i : Z ⟶ X) [IsClosedImmers
     (h : ∀ U : X.affineOpens, i.ker.ideal U ≤ Module.annihilator Γ(X, U) Γ(M, U)) :
     IsIso ((pullbackPushforwardAdjunction i).unit.app M) := by
   refine Hom.isIso_of_bijective_app (M := M) (N := (pushforward i).obj ((pullback i).obj M)) _
-    (U := fun U : X.affineOpens ↦ U.1) (fun U ↦ U.2) (iSup_affineOpens_eq_top X) fun U ↦ ?_
-  have hU : IsAffineOpen U.1 := U.2
+    (U := fun U : X.affineOpens ↦ U.val) (fun U ↦ U.property) (iSup_affineOpens_eq_top X) fun U ↦ ?_
+  have hU : IsAffineOpen U.val := U.property
   have hV := hU.preimage i
   let := (i.app U).hom.toAlgebra
   -- `Γ(X, U) → Γ(Z, i⁻¹ U)` is surjective with kernel `i.ker(U)`, which annihilates `Γ(M, U)`.

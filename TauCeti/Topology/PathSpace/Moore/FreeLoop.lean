@@ -324,7 +324,7 @@ def basepointContractible : C(contractibleLoops X, X) :=
 
 @[simp]
 theorem basepointContractible_apply (γ : contractibleLoops X) :
-    basepointContractible X γ = γ.1.basepoint :=
+    basepointContractible X γ = γ.val.basepoint :=
   (rfl)
 
 variable (X) in

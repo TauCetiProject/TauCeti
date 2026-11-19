@@ -94,20 +94,20 @@ theorem _root_.SpectralSpace.isLocallySpectralSpace [SpectralSpace X] :
 theorem IsLocallySpectralSpace.prespectralSpace (hX : IsLocallySpectralSpace X) :
     PrespectralSpace X := by
   let S : Set (Set X) := {U | IsOpen U ∧ SpectralSpace U}
-  let U : S → Opens X := fun s ↦ ⟨s, s.2.1⟩
-  have hU : IsOpenCover U := IsOpenCover.of_sets (fun s ↦ s.2.1) <| by
+  let U : S → Opens X := fun s ↦ ⟨s, s.property.1⟩
+  have hU : IsOpenCover U := IsOpenCover.of_sets (fun s ↦ s.property.1) <| by
     apply eq_univ_iff_forall.mpr
     intro x
     obtain ⟨V, hVo, hxV, hVs⟩ := hX x
     exact mem_iUnion.mpr ⟨⟨V, hVo, hVs⟩, hxV⟩
-  let _ : ∀ s, PrespectralSpace (U s) := fun s ↦ s.2.2.toPrespectralSpace
+  let _ : ∀ s, PrespectralSpace (U s) := fun s ↦ s.property.2.toPrespectralSpace
   exact PrespectralSpace.of_isOpenCover hU
 
 /-- A locally spectral space is quasi-sober. -/
 theorem IsLocallySpectralSpace.quasiSober (hX : IsLocallySpectralSpace X) : QuasiSober X := by
   let S : Set (Set X) := {U | IsOpen U ∧ SpectralSpace U}
-  let _ : ∀ s : S, QuasiSober s := fun s ↦ s.2.2.toQuasiSober
-  apply quasiSober_of_open_cover S (fun s ↦ s.2.1)
+  let _ : ∀ s : S, QuasiSober s := fun s ↦ s.property.2.toQuasiSober
+  apply quasiSober_of_open_cover S (fun s ↦ s.property.1)
   apply eq_univ_iff_forall.mpr
   intro x
   obtain ⟨U, hUo, hxU, hUs⟩ := hX x
@@ -238,7 +238,7 @@ theorem _root_.IsSpectralMap.isLocallySpectralMap [QuasiSeparatedSpace X] {f : X
   have hiU : IsSpectralMap iU := hUo.isOpenEmbedding_subtypeVal.isSpectralMap
   let g : U → Y := f ∘ iU
   have hg : IsSpectralMap g := hf.comp hiU
-  refine ⟨hg.continuous.subtype_mk fun x ↦ hUV x.2, fun s hso hsc ↦ ?_⟩
+  refine ⟨hg.continuous.subtype_mk fun x ↦ hUV x.property, fun s hso hsc ↦ ?_⟩
   have hs_image_open : IsOpen (Subtype.val '' s : Set Y) :=
     hVo.isOpenEmbedding_subtypeVal.isOpenMap _ hso
   have hs_image_compact : IsCompact (Subtype.val '' s : Set Y) :=

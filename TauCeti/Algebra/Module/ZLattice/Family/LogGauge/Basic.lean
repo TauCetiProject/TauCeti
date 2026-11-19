@@ -438,13 +438,13 @@ noncomputable def torusFamilyLogGaugeEquiv :
   letI := periodAddAction P
   letI := periodAddAction (powPullbackPeriod m r P)
   letI := logTranslationMulAction P l
-  { toFun q := ⟨torusFamilyLogGauge P l q.1.out, by
-      have h := q.2
-      rw [← Quotient.out_eq q.1, torusFamilyCyclicQuotientProjection_mk] at h
+  { toFun q := ⟨torusFamilyLogGauge P l q.val.out, by
+      have h := q.property
+      rw [← Quotient.out_eq q.val, torusFamilyCyclicQuotientProjection_mk] at h
       rwa [torusFamilyProjection_torusFamilyLogGauge, rootsOfUnityBall.coe_powMap]⟩
-    invFun y := ⟨torusFamilyLogGaugeInv P l hr y.1, by
+    invFun y := ⟨torusFamilyLogGaugeInv P l hr y.val, by
       rw [torusFamilyCyclicQuotientProjection_torusFamilyLogGaugeInv]
-      exact y.2⟩
+      exact y.property⟩
     left_inv q := by
       obtain ⟨q, hq⟩ := q
       induction q using Quotient.inductionOn with
@@ -512,16 +512,16 @@ theorem torusFamilyLogGaugeEquiv_symm_mk {t : Metric.ball (0 : ℂ) (r ^ m)}
     letI := periodAddAction P
     letI := periodAddAction (powPullbackPeriod m r P)
     letI := logTranslationMulAction P l
-    ((torusFamilyProjection P (torusFamilyLogGaugeEquiv P l hr q).1 :
+    ((torusFamilyProjection P (torusFamilyLogGaugeEquiv P l hr q).val :
       Metric.ball (0 : ℂ) (r ^ m)) : ℂ) =
       torusFamilyCyclicQuotientProjection (fun _ _ ↦ AddMonoidHom.id E) (fun _ _ ↦ rfl)
         (fun _ _ _ _ ↦ rfl) (powPullbackPeriod m r P)
         (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
         (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
-        (logTranslationSection_mul P l) q.1 := by
+        (logTranslationSection_mul P l) q.val := by
   obtain ⟨q, hq⟩ := (torusFamilyLogGaugeEquiv P l hr).symm.surjective q
   rw [← hq, Equiv.apply_symm_apply]
-  exact (torusFamilyCyclicQuotientProjection_torusFamilyLogGaugeInv P l hr q.1).symm
+  exact (torusFamilyCyclicQuotientProjection_torusFamilyLogGaugeInv P l hr q.val).symm
 
 /-! ### The logarithmic gauge is a homeomorphism -/
 
@@ -636,10 +636,10 @@ private theorem continuousAt_torusFamilyLogGaugeInv
   have hmem (t : Metric.ball (0 : ℂ) (r ^ m)) : exp (L t) ∈ rootsOfUnityBall m r := by
     by_cases ht : (t : ℂ) = 0
     · simp only [L, ht, zero_div, log_zero, mul_zero, add_zero, exp_log hz₀]
-      exact z₀.2
+      exact z₀.property
     · rw [mem_rootsOfUnityBall, ← pow_lt_pow_iff_left₀ (norm_nonneg _) hr (NeZero.ne m),
         ← norm_pow, exp_log_add_inv_mul_log_div_pow hz₀ ht, ← mem_ball_zero_iff]
-      exact t.2
+      exact t.property
   let w : Metric.ball (0 : ℂ) (r ^ m) → rootsOfUnityBall m r := fun t ↦ ⟨exp (L t), hmem t⟩
   have hw {t : Metric.ball (0 : ℂ) (r ^ m)} (ht : (t : ℂ) ≠ 0) :
       rootsOfUnityBall.powMap m r (w t) = t :=

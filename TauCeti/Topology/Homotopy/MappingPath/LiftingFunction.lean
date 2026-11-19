@@ -247,7 +247,7 @@ private theorem continuous_extendPath {Y : Type*} [TopologicalSpace Y] {γ δ : 
   exact h y
 
 private theorem extendPath_zero_left (γ δ : C(I, K)) (u : I) : extendPath γ δ 0 u = γ u := by
-  simp [extendPath, u.2.2]
+  simp [extendPath, u.property.2]
 
 private theorem extendPath_zero_right (γ δ : C(I, K)) (s : I) : extendPath γ δ s 0 = γ 0 := by
   simp [extendPath, IccExtend_left]
@@ -256,7 +256,7 @@ private theorem extendPath_one_right {γ δ : C(I, K)} (h : γ 1 = δ 0) (s : I)
     extendPath γ δ s 1 = δ s := by
   rcases eq_or_ne s 0 with rfl | hs
   · simp [extendPath, h]
-  · have hs : (0 : ℝ) < s := lt_of_le_of_ne s.2.1 fun h ↦ hs (Subtype.ext h.symm)
+  · have hs : (0 : ℝ) < s := lt_of_le_of_ne s.property.1 fun h ↦ hs (Subtype.ext h.symm)
     simp [extendPath, hs.not_ge, IccExtend_val]
 
 private theorem path_one_eq (x : MappingPathSpace (endpoint f)) :

@@ -211,13 +211,15 @@ theorem smulPath_def (g : G) {a b : T.V} (p : T.Path a b) :
 dart. -/
 @[simp] theorem smulPath_cons (g : G) {a b c : T.V} (p : T.Path a b) (e : Quiver.Hom b c) :
     smulPath g (p.cons e) =
-      (smulPath g p).cons ⟨g • e.1, by rw [src_smul, e.2.1], by rw [tgt_smul, e.2.2]⟩ :=
+      (smulPath g p).cons ⟨g • e.val, by rw [src_smul, e.property.1], by rw [tgt_smul,
+          e.property.2]⟩ :=
   Aut.smulPath_cons (T.action g) p e
 
 /-- The translate of a one-dart path is the one-dart path through the translated dart. -/
 @[simp] theorem smulPath_toPath (g : G) {a b : T.V} (e : Quiver.Hom a b) :
     smulPath g e.toPath =
-      Quiver.Hom.toPath (⟨g • e.1, by rw [src_smul, e.2.1], by rw [tgt_smul, e.2.2]⟩ :
+      Quiver.Hom.toPath (⟨g • e.val, by rw [src_smul, e.property.1], by rw [tgt_smul,
+          e.property.2]⟩ :
         Quiver.Hom (g • a) (g • b)) :=
   Aut.smulPath_toPath (T.action g) e
 

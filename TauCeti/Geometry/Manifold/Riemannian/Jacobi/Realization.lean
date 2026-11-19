@@ -61,7 +61,7 @@ private theorem IsJacobiFieldOn.exists_initialData_variation
       σ 0 = TotalSpace.mk' E p v ∧
       (∀ᶠ q in 𝓝 0, ContMDiffAt 𝓘(ℝ, ℝ) I.tangent ∞ σ q) ∧
       ∀ t ∈ s, variationField I
-        (fun q ↦ maximalGeodesic I M (σ q).proj (σ q).2) t = J t := by
+        (fun q ↦ maximalGeodesic I M (σ q).proj (σ q).snd) t = J t := by
   obtain ⟨σ, hσ0, hσ, hpos, hvel⟩ :=
     TangentSpace.exists_smooth_initialData (v := v)
       (J 0) (alongCurveWithin (leviCivitaConnection I M)
@@ -70,11 +70,11 @@ private theorem IsJacobiFieldOn.exists_initialData_variation
   have hF0 := variationField_maximalGeodesic_zero (I := I) (σ := σ)
   have hDF0 := alongCurveWithin_variationField_maximalGeodesic_zero
     (hσ.self_of_nhds.of_le (by simp))
-  have hbase : maximalGeodesic I M (σ 0).proj (σ 0).2 = maximalGeodesic I M p v := by
-    exact congrArg (fun z : TangentBundle I M ↦ maximalGeodesic I M z.proj z.2) hσ0
-  have hinterval : geodesicInterval I M (σ 0).proj (σ 0).2 =
+  have hbase : maximalGeodesic I M (σ 0).proj (σ 0).snd = maximalGeodesic I M p v := by
+    exact congrArg (fun z : TangentBundle I M ↦ maximalGeodesic I M z.proj z.snd) hσ0
+  have hinterval : geodesicInterval I M (σ 0).proj (σ 0).snd =
       geodesicInterval I M p v :=
-    congrArg (fun z : TangentBundle I M ↦ geodesicInterval I M z.proj z.2) hσ0
+    congrArg (fun z : TangentBundle I M ↦ geodesicInterval I M z.proj z.snd) hσ0
   rw [hbase, hinterval] at hF hDF0
   have hFs := hF.mono hJ.uniqueDiffOn hsub
   refine ⟨σ, hσ0, hσ, fun t ht ↦ ?_⟩
@@ -97,13 +97,13 @@ theorem IsJacobiFieldOn.exists_geodesicVariation_of_isCompact
       F 0 = maximalGeodesic I M p v ∧
       (∀ t ∈ s, variationField I F t = J t) := by
   obtain ⟨σ, hσ0, hσ, hfield⟩ := hJ.exists_initialData_variation hs h0 hsub
-  have hdom : K ⊆ geodesicInterval I M (σ 0).proj (σ 0).2 := by
-    rw [congrArg (fun z : TangentBundle I M ↦ geodesicInterval I M z.proj z.2) hσ0]
+  have hdom : K ⊆ geodesicInterval I M (σ 0).proj (σ 0).snd := by
+    rw [congrArg (fun z : TangentBundle I M ↦ geodesicInterval I M z.proj z.snd) hσ0]
     exact hKs.trans hsub
   obtain ⟨U, V, hU, hV, h0U, hKV, hF, hgeod⟩ :=
     exists_contMDiffOn_maximalGeodesic_comp_of_isCompact (n := ⊤) hσ hK hdom
-  exact ⟨fun q ↦ maximalGeodesic I M (σ q).proj (σ q).2,
+  exact ⟨fun q ↦ maximalGeodesic I M (σ q).proj (σ q).snd,
     U, V, hU, hV, h0U, hKV, hF, hgeod,
-    congrArg (fun z : TangentBundle I M ↦ maximalGeodesic I M z.proj z.2) hσ0, hfield⟩
+    congrArg (fun z : TangentBundle I M ↦ maximalGeodesic I M z.proj z.snd) hσ0, hfield⟩
 
 end TauCeti.Manifold

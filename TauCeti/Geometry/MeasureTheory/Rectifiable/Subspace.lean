@@ -104,7 +104,7 @@ theorem AffineSubspace.countablyRectifiable {V P : Type*} [NormedAddCommGroup V]
     simp only [image_univ, mem_range, φ, SetLike.mem_coe]
     refine ⟨?_, fun hp ↦ ?_⟩
     · rintro ⟨u, rfl⟩
-      exact AffineSubspace.vadd_mem_of_mem_direction (e u).2 hq
+      exact AffineSubspace.vadd_mem_of_mem_direction (e u).property hq
     · refine ⟨e.symm ⟨p -ᵥ q, AffineSubspace.vsub_mem_direction hp hq⟩, ?_⟩
       simp
   rw [← hφ]

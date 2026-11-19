@@ -152,12 +152,12 @@ theorem arcStraighteningMap_zero (γ : arcsWithin U r) :
 theorem source_arcStraighteningMap (t : I) (γ : arcsWithin U r) :
     (arcStraighteningMap hρ hr (t, γ)).source = (γ : MoorePath X).source := by
   rw [← toUnitPath_zero, toUnitPath_arcStraighteningMap,
-    straightenArcs_source hρ hr γ.2, toUnitPath_zero]
+    straightenArcs_source hρ hr γ.property, toUnitPath_zero]
 
 @[simp]
 theorem target_arcStraighteningMap (t : I) (γ : arcsWithin U r) :
     (arcStraighteningMap hρ hr (t, γ)).target = (γ : MoorePath X).target := by
-  rw [← toUnitPath_one, toUnitPath_arcStraighteningMap, straightenArcs_target hρ hr γ.2,
+  rw [← toUnitPath_one, toUnitPath_arcStraighteningMap, straightenArcs_target hρ hr γ.property,
     toUnitPath_one]
 
 /-- The straightening homotopy fixes the sampled vertices. -/
@@ -166,7 +166,7 @@ theorem sample_arcStraighteningMap (t : I) (γ : arcsWithin U r) :
     (arcStraighteningMap hρ hr (t, γ)).sample r = (γ : MoorePath X).sample r := by
   funext i
   rw [sample_eq_toUnitPath_arcPoint, sample_eq_toUnitPath_arcPoint, toUnitPath_arcStraighteningMap,
-    straightenArcs_arcPoint_zero hρ γ.2 i.2]
+    straightenArcs_arcPoint_zero hρ γ.property i.isLt]
 
 /-- The broken path through the sampled vertices of a Moore path whose arcs lie in `U`, of the
 same length. -/
@@ -219,7 +219,7 @@ theorem mem_arcsWithin {γ : MooreFreeLoopSpace X} :
 
 /-- A free Moore loop whose arcs lie in `U`, as a Moore path whose arcs lie in `U`. -/
 def toArcsWithin (γ : arcsWithin U r) : MoorePath.arcsWithin U r :=
-  ⟨(γ : MooreFreeLoopSpace X).toMoorePath, MoorePath.mem_arcsWithin.2 (mem_arcsWithin.1 γ.2)⟩
+  ⟨(γ : MooreFreeLoopSpace X).toMoorePath, MoorePath.mem_arcsWithin.2 (mem_arcsWithin.1 γ.property)⟩
 
 @[simp]
 theorem coe_toArcsWithin (γ : arcsWithin U r) :
@@ -237,7 +237,7 @@ closed because it fixes the end points. -/
 def arcStraighteningMap : C(I × arcsWithin U r, MooreFreeLoopSpace X) where
   toFun p := ⟨MoorePath.arcStraighteningMap hρ hr (p.1, toArcsWithin p.2), by
     rw [MoorePath.target_arcStraighteningMap, MoorePath.source_arcStraighteningMap,
-      coe_toArcsWithin, p.2.1.target_eq_source]⟩
+      coe_toArcsWithin, p.2.val.target_eq_source]⟩
   continuous_toFun := isEmbedding_toMoorePath.continuous_iff.2 <|
     (MoorePath.arcStraighteningMap hρ hr).continuous.comp (by fun_prop)
 
@@ -290,8 +290,8 @@ theorem exists_subset_arcsWithin {K : Set (MoorePath X)} (hK : IsCompact K) {U :
   have hrpos : (0 : ℝ) < r := by exact_mod_cast (Nat.zero_le i).trans_lt hi
   rw [← sample_eq_toUnitPath_arcPoint γ ⟨i, hi⟩]
   refine h r hr γ hγ ⟨i, hi⟩ (arcPoint r i a) ?_ ?_ <;> rw [coe_arcPoint hi]
-  · exact div_le_div_of_nonneg_right (le_add_of_nonneg_right a.2.1) hrpos.le
-  · exact div_le_div_of_nonneg_right (by linarith [a.2.2]) hrpos.le
+  · exact div_le_div_of_nonneg_right (le_add_of_nonneg_right a.property.1) hrpos.le
+  · exact div_le_div_of_nonneg_right (by linarith [a.property.2]) hrpos.le
 
 end MoorePath
 

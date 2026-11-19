@@ -151,10 +151,10 @@ def toDiffeomorphSourceTarget :
       (⟨Φ.target, Φ.open_target⟩ : TopologicalSpace.Opens N) where
   toEquiv := Φ.toOpenPartialHomeomorph.toHomeomorphSourceTarget.toEquiv
   contMDiff_toFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1 fun x ↦
-    ((Φ.contMDiffOn x x.2).contMDiffAt (Φ.open_source.mem_nhds x.2)).comp x
+    ((Φ.contMDiffOn x x.property).contMDiffAt (Φ.open_source.mem_nhds x.property)).comp x
       contMDiff_subtype_val.contMDiffAt
   contMDiff_invFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1 fun x ↦
-    ((Φ.symm.contMDiffOn x x.2).contMDiffAt (Φ.open_target.mem_nhds x.2)).comp x
+    ((Φ.symm.contMDiffOn x x.property).contMDiffAt (Φ.open_target.mem_nhds x.property)).comp x
       contMDiff_subtype_val.contMDiffAt
 
 /-- The diffeomorphism `PartialDiffeomorph.toDiffeomorphSourceTarget` evaluates as the partial
@@ -288,7 +288,7 @@ theorem subtypeVal_symm_apply (U : TopologicalSpace.Opens M) (hU : Nonempty U) {
 @[simp]
 theorem subtypeVal_symm_apply_coe (U : TopologicalSpace.Opens M) (hU : Nonempty U) (x : U) :
     (subtypeVal I n U hU).toPartialEquiv.symm x = x :=
-  subtypeVal_symm_apply U hU x.2
+  subtypeVal_symm_apply U hU x.property
 
 end PartialDiffeomorph
 
@@ -334,7 +334,7 @@ theorem exists_ambient_of_opens {U : TopologicalSpace.Opens M}
   · rw [trans_source, mem_inter_iff, mem_preimage, hΨx]
     exact ⟨hi.localInverse_mem_source, hx⟩
   · rw [← hi.localInverse_right_inv ((Ψ.trans_source Φ).subset hy).1]
-    exact (Ψ y).2
+    exact (Ψ y).property
   · rw [coe_trans, Function.comp_apply, hΨx]
   · exact ((Ψ.trans_target Φ).subset hz).1
   · -- On the target of `Ψ`, the inverse of `Ψ` is the inclusion.
@@ -381,7 +381,7 @@ theorem liftOpens_source : (Ψ.liftOpens hU hV).source = Subtype.val '' Ψ.sourc
   refine ⟨fun ⟨hx, hΨ⟩ ↦ ⟨⟨x, hx⟩, ?_, rfl⟩, ?_⟩
   · rwa [subtypeVal_symm_apply U hU hx] at hΨ
   · rintro ⟨y, hy, rfl⟩
-    exact ⟨y.2, by rwa [subtypeVal_symm_apply_coe]⟩
+    exact ⟨y.property, by rwa [subtypeVal_symm_apply_coe]⟩
 
 @[simp]
 theorem liftOpens_target : (Ψ.liftOpens hU hV).target = Subtype.val '' Ψ.target := by
@@ -392,6 +392,6 @@ theorem liftOpens_target : (Ψ.liftOpens hU hV).target = Subtype.val '' Ψ.targe
   refine ⟨fun ⟨hy, hΨ⟩ ↦ ⟨⟨y, hy⟩, ?_, rfl⟩, ?_⟩
   · rwa [subtypeVal_symm_apply V hV hy] at hΨ
   · rintro ⟨z, hz, rfl⟩
-    exact ⟨z.2, by rwa [subtypeVal_symm_apply_coe]⟩
+    exact ⟨z.property, by rwa [subtypeVal_symm_apply_coe]⟩
 
 end PartialDiffeomorph

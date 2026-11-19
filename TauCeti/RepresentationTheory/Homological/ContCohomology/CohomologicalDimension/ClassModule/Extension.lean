@@ -55,7 +55,7 @@ theorem mem_abelianizationProPExtensionKernel_iff (g : G) :
   simp only [abelianizationProPExtensionKernel, Subgroup.mem_map, MonoidHom.mem_ker]
   constructor
   · rintro ⟨v, hv, rfl⟩
-    exact ⟨v.2, hv⟩
+    exact ⟨v.property, hv⟩
   · rintro ⟨hg, h⟩
     exact ⟨⟨g, hg⟩, h, rfl⟩
 
@@ -115,7 +115,7 @@ theorem range_abelianizationProPExtensionInl :
   constructor
   · rintro ⟨a, rfl⟩
     obtain ⟨v, rfl⟩ := abelianizationProPMk_surjective p G V a
-    exact Subgroup.mem_map.mpr ⟨v, v.2, (abelianizationProPExtensionInl_mk p G V v).symm⟩
+    exact Subgroup.mem_map.mpr ⟨v, v.property, (abelianizationProPExtensionInl_mk p G V v).symm⟩
   · rintro ⟨g, hg, rfl⟩
     exact ⟨abelianizationProPMk p G V ⟨g, hg⟩, abelianizationProPExtensionInl_mk p G V _⟩
 

@@ -176,7 +176,8 @@ def fatClassifyingSpaceHomotopyEquivOfStarConvex (U : SubMulAction G E)
       fatClassifyingSpace (ActionCategory G PUnit.{u + 1}) :=
   fatClassifyingSpaceHomotopyEquivOfContraction G ⟨0, h0⟩
     { toFun p := ⟨(unitInterval.symm p.1 : ℝ) • (p.2 : E),
-        hU.smul_mem p.2.2 (unitInterval.symm p.1).2.1 (unitInterval.symm p.1).2.2⟩
+        hU.smul_mem p.2.property (unitInterval.symm p.1).property.1
+            (unitInterval.symm p.1).property.2⟩
       continuous_toFun := Continuous.subtype_mk
         ((continuous_subtype_val.comp (unitInterval.continuous_symm.comp continuous_fst)).smul
           (continuous_subtype_val.comp continuous_snd)) _

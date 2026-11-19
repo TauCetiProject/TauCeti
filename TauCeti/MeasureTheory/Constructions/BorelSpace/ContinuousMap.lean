@@ -130,7 +130,7 @@ theorem measurableEmbedding_val [MeasurableSingletonClass E] :
 
 /-- Restriction to finitely many times is measurable on based continuous maps. -/
 theorem measurable_finsetRestrict (I : Finset T) :
-    Measurable (fun γ : BasedMap T E t₀ x₀ ↦ I.restrict (γ.1 : T → E)) :=
+    Measurable (fun γ : BasedMap T E t₀ x₀ ↦ I.restrict (γ.val : T → E)) :=
   (ContinuousMap.measurable_finsetRestrict I).comp measurable_subtype_coe
 
 variable [SecondCountableTopology T] [LocallyCompactSpace T]
@@ -138,13 +138,13 @@ variable [SecondCountableTopology T] [LocallyCompactSpace T]
 
 /-- A map into based continuous maps is measurable exactly when every evaluation is. -/
 theorem measurable_iff_eval {f : Ω → BasedMap T E t₀ x₀} :
-    Measurable f ↔ ∀ t, Measurable (fun ω ↦ (f ω).1 t) := by
+    Measurable f ↔ ∀ t, Measurable (fun ω ↦ (f ω).val t) := by
   exact ⟨fun hf ↦ ContinuousMap.measurable_iff_eval.1 hf.subtype_coe,
     fun hf ↦ (ContinuousMap.measurable_iff_eval.2 hf).subtype_mk⟩
 
 /-- A map into based continuous maps is a.e. measurable exactly when every evaluation is. -/
 theorem aemeasurable_iff_eval {μ : Measure Ω} {f : Ω → BasedMap T E t₀ x₀} :
-    AEMeasurable f μ ↔ ∀ t, AEMeasurable (fun ω ↦ (f ω).1 t) μ := by
+    AEMeasurable f μ ↔ ∀ t, AEMeasurable (fun ω ↦ (f ω).val t) μ := by
   rw [aemeasurable_comap_iff Subtype.val_injective, ContinuousMap.aemeasurable_iff_eval]
   rfl
 

@@ -231,7 +231,7 @@ theorem equivOppositeConvention_modularTriple_quotientRightRel (Γ' : Subgroup P
     (r : Quotient (QuotientGroup.rightRel Γ') ≃ Fin n) :
     (equivOppositeConvention n
       (modularTriple Γ'
-        ((QuotientGroup.quotientRightRelEquivQuotientLeftRel Γ').symm.trans r))).1 =
+        ((QuotientGroup.quotientRightRelEquivQuotientLeftRel Γ').symm.trans r))).val =
       (r.permCongr (Γ'.rightCosetPerm (U : PSL(2, ℤ))),
         r.permCongr (Γ'.rightCosetPerm (S : PSL(2, ℤ))),
         r.permCongr (Γ'.rightCosetPerm (T : PSL(2, ℤ)))) := by
@@ -437,20 +437,20 @@ noncomputable def modularIsoClassEquiv [NeZero n] :
 /-- `modularIsoClassEquiv` sends the conjugacy class of `Γ'` to `IsoClass.mk (modularTriple Γ' e)`
 for any numbering `e` of the cosets of `Γ'`. -/
 theorem coe_modularIsoClassEquiv_mk [NeZero n] (Γ' : Subgroup.ofIndex PSL(2, ℤ) n)
-    (e : PSL(2, ℤ) ⧸ Γ'.1 ≃ Fin n) :
+    (e : PSL(2, ℤ) ⧸ Γ'.val ≃ Fin n) :
     (modularIsoClassEquiv (Quotient.mk'' Γ') : IsoClass n) =
-      IsoClass.mk (modularTriple Γ'.1 e) := by
+      IsoClass.mk (modularTriple Γ'.val e) := by
   have hcomap : (modularEquiv.symm.ofIndexEquiv n Γ' : Subgroup (TriangleGroup 3 2 0)) =
-      Γ'.1.comap (modularEquiv : TriangleGroup 3 2 0 →* PSL(2, ℤ)) :=
+      Γ'.val.comap (modularEquiv : TriangleGroup 3 2 0 →* PSL(2, ℤ)) :=
     (modularEquiv.symm.coe_ofIndexEquiv_apply n Γ').trans
-      (Subgroup.comap_equiv_eq_map_symm modularEquiv Γ'.1).symm
+      (Subgroup.comap_equiv_eq_map_symm modularEquiv Γ'.val).symm
   rw [modularIsoClassEquiv, Equiv.trans_apply, Equiv.trans_apply,
     MulEquiv.orbitRelQuotientOfIndexEquiv_mk, Set.equivOfEq_apply]
   have heq := TriangleGroup.coe_cosetIsoClassEquiv_mk (modularEquiv.symm.ofIndexEquiv n Γ')
     ((Subgroup.quotientEquivOfEq hcomap).trans
       ((TauCeti.QuotientGroup.congrOfMapEq modularEquiv
-        (Subgroup.map_comap_eq_self_of_surjective modularEquiv.surjective Γ'.1)).trans e))
-  rw [heq, modularTriple_eq_cosetTriple Γ'.1 e, IsoClass.mk_eq_mk_iff,
+        (Subgroup.map_comap_eq_self_of_surjective modularEquiv.surjective Γ'.val)).trans e))
+  rw [heq, modularTriple_eq_cosetTriple Γ'.val e, IsoClass.mk_eq_mk_iff,
     TriangleGroup.cosetTriple_equivalent_cosetTriple_iff]
   exact ⟨1, by rw [one_smul, hcomap]⟩
 
@@ -458,16 +458,16 @@ theorem coe_modularIsoClassEquiv_mk [NeZero n] (Γ' : Subgroup.ofIndex PSL(2, �
 `σ0 ^ 3 = 1` and `σ1 ^ 2 = 1`. -/
 def modularMarkedIsoClasses (n : ℕ) : Set (MarkedIsoClass n) :=
   {m | ∃ (t : ConnectedTriple n) (i : Fin n),
-    t.1.σ0 ^ 3 = 1 ∧ t.1.σ1 ^ 2 = 1 ∧ MarkedIsoClass.mk t i = m}
+    t.val.σ0 ^ 3 = 1 ∧ t.val.σ1 ^ 2 = 1 ∧ MarkedIsoClass.mk t i = m}
 
 /-- The marked class of `(t, i)` lies in `modularMarkedIsoClasses n` if and only if
 `t.1.σ0 ^ 3 = 1` and `t.1.σ1 ^ 2 = 1`. -/
 @[simp] theorem mk_mem_modularMarkedIsoClasses_iff {t : ConnectedTriple n} {i : Fin n} :
-    MarkedIsoClass.mk t i ∈ modularMarkedIsoClasses n ↔ t.1.σ0 ^ 3 = 1 ∧ t.1.σ1 ^ 2 = 1 := by
+    MarkedIsoClass.mk t i ∈ modularMarkedIsoClasses n ↔ t.val.σ0 ^ 3 = 1 ∧ t.val.σ1 ^ 2 = 1 := by
   refine ⟨?_, fun ⟨h0, h1⟩ ↦ ⟨t, i, h0, h1, rfl⟩⟩
   rintro ⟨t', i', h0, h1, h⟩
   obtain ⟨τ, hτ, -⟩ := MarkedIsoClass.mk_eq_mk_iff_exists_smul.mp h.symm
-  have hval : (t : PermutationTriple n) = τ • t'.1 := by rw [← hτ, ConnectedTriple.coe_smul]
+  have hval : (t : PermutationTriple n) = τ • t'.val := by rw [← hτ, ConnectedTriple.coe_smul]
   rw [hval]
   exact ⟨by simp [h0], by simp [h1]⟩
 
@@ -489,24 +489,24 @@ noncomputable def modularMarkedIsoClassEquiv [NeZero n] :
 /-- `modularMarkedIsoClassEquiv` sends `Γ'` to the class of `modularTriple Γ' e` marked at the base
 coset `e 1`, independently of `e`. -/
 theorem coe_modularMarkedIsoClassEquiv_apply [NeZero n] (Γ' : Subgroup.ofIndex PSL(2, ℤ) n)
-    (e : PSL(2, ℤ) ⧸ Γ'.1 ≃ Fin n) :
+    (e : PSL(2, ℤ) ⧸ Γ'.val ≃ Fin n) :
     (modularMarkedIsoClassEquiv Γ' : MarkedIsoClass n) =
-      MarkedIsoClass.mk ⟨modularTriple Γ'.1 e, isConnected_modularTriple Γ'.1 e⟩
-        (e ((1 : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ'.1)) := by
+      MarkedIsoClass.mk ⟨modularTriple Γ'.val e, isConnected_modularTriple Γ'.val e⟩
+        (e ((1 : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ'.val)) := by
   have hcomap : (modularEquiv.symm.ofIndexEquiv n Γ' : Subgroup (TriangleGroup 3 2 0)) =
-      Γ'.1.comap (modularEquiv : TriangleGroup 3 2 0 →* PSL(2, ℤ)) :=
+      Γ'.val.comap (modularEquiv : TriangleGroup 3 2 0 →* PSL(2, ℤ)) :=
     (modularEquiv.symm.coe_ofIndexEquiv_apply n Γ').trans
-      (Subgroup.comap_equiv_eq_map_symm modularEquiv Γ'.1).symm
+      (Subgroup.comap_equiv_eq_map_symm modularEquiv Γ'.val).symm
   let f := (TauCeti.QuotientGroup.congrOfMapEq modularEquiv
-    (Subgroup.map_comap_eq_self_of_surjective modularEquiv.surjective Γ'.1)).trans e
+    (Subgroup.map_comap_eq_self_of_surjective modularEquiv.surjective Γ'.val)).trans e
   rw [modularMarkedIsoClassEquiv, Equiv.trans_apply, Equiv.trans_apply, Set.equivOfEq_apply,
     TriangleGroup.coe_cosetMarkedIsoClassEquiv_apply _
       ((Subgroup.quotientEquivOfEq hcomap).trans f)]
-  have hf : e ((1 : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ'.1) =
+  have hf : e ((1 : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ'.val) =
       f ((1 : TriangleGroup 3 2 0) : TriangleGroup 3 2 0 ⧸ _) := by simp [f]
-  have hc : (⟨modularTriple Γ'.1 e, isConnected_modularTriple Γ'.1 e⟩ : ConnectedTriple n) =
+  have hc : (⟨modularTriple Γ'.val e, isConnected_modularTriple Γ'.val e⟩ : ConnectedTriple n) =
       ⟨TriangleGroup.cosetTriple _ f, TriangleGroup.isConnected_cosetTriple _ f⟩ :=
-    Subtype.ext (modularTriple_eq_cosetTriple Γ'.1 e)
+    Subtype.ext (modularTriple_eq_cosetTriple Γ'.val e)
   rw [hc, hf, TriangleGroup.markedIsoClass_cosetTriple_eq_iff]
   exact hcomap
 
@@ -615,16 +615,16 @@ theorem infinite_ofIndex_zero : Infinite (Subgroup.ofIndex PSL(2, ℤ) 0) :=
 /-! ### Computable conjugacy-class counts in small indices -/
 
 private noncomputable def modularConnectedIsoClassEquiv :
-    {c : ConnectedIsoClass n // ∀ t ∈ c.orbitFinset, t.1.σ0 ^ 3 = 1 ∧ t.1.σ1 ^ 2 = 1} ≃
+    {c : ConnectedIsoClass n // ∀ t ∈ c.orbitFinset, t.val.σ0 ^ 3 = 1 ∧ t.val.σ1 ^ 2 = 1} ≃
       modularIsoClasses n :=
   Equiv.ofBijective
-    (fun c ↦ ⟨c.1.forget, by
-      obtain ⟨t, ht⟩ := ConnectedIsoClass.mk_surjective c.1
+    (fun c ↦ ⟨c.val.forget, by
+      obtain ⟨t, ht⟩ := ConnectedIsoClass.mk_surjective c.val
       rw [← ht, ConnectedIsoClass.forget_mk, mk_mem_modularIsoClasses_iff]
-      exact ⟨t.2, c.2 t (ConnectedIsoClass.mem_orbitFinset.mpr ht)⟩⟩)
+      exact ⟨t.property, c.property t (ConnectedIsoClass.mem_orbitFinset.mpr ht)⟩⟩)
     ⟨fun _ _ h ↦ Subtype.ext (ConnectedIsoClass.forget_injective (congrArg Subtype.val h)),
       fun C ↦ by
-        obtain ⟨t₀, ⟨ht₀, h0, h1⟩, hC⟩ := C.2
+        obtain ⟨t₀, ⟨ht₀, h0, h1⟩, hC⟩ := C.property
         refine ⟨⟨ConnectedIsoClass.mk ⟨t₀, ht₀⟩, fun t ht ↦ ?_⟩, Subtype.ext ?_⟩
         · obtain ⟨τ, hτ⟩ := ConnectedIsoClass.mk_eq_mk_iff_exists_smul.mp
             (ConnectedIsoClass.mem_orbitFinset.mp ht)
@@ -641,11 +641,11 @@ equals the number of connected degree-`n` isomorphism classes whose orbits satis
 theorem natCard_orbitRel_quotient_ofIndex_eq (n : ℕ) :
     Nat.card (MulAction.orbitRel.Quotient (ConjAct PSL(2, ℤ)) (Subgroup.ofIndex PSL(2, ℤ) n)) =
       ((Finset.univ : Finset (ConnectedIsoClass n)).filter
-        fun c ↦ ∀ t ∈ c.orbitFinset, t.1.σ0 ^ 3 = 1 ∧ t.1.σ1 ^ 2 = 1).card := by
+        fun c ↦ ∀ t ∈ c.orbitFinset, t.val.σ0 ^ 3 = 1 ∧ t.val.σ1 ^ 2 = 1).card := by
   rcases eq_or_ne n 0 with rfl | hn
   · have := infinite_orbitRel_quotient_ofIndex_zero
     have : IsEmpty (ConnectedIsoClass 0) :=
-      ⟨fun c ↦ let ⟨t, _⟩ := ConnectedIsoClass.mk_surjective c; t.2.ne_zero rfl⟩
+      ⟨fun c ↦ let ⟨t, _⟩ := ConnectedIsoClass.mk_surjective c; t.property.ne_zero rfl⟩
     rw [Nat.card_eq_zero_of_infinite, Finset.univ_eq_empty, Finset.filter_empty, Finset.card_empty]
   · have : NeZero n := ⟨hn⟩
     rw [Nat.card_congr modularIsoClassEquiv, Nat.card_congr modularConnectedIsoClassEquiv.symm,

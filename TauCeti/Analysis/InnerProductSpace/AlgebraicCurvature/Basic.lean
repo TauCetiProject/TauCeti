@@ -219,7 +219,8 @@ theorem isClosed_algebraicCurvatureSubmodule :
     ext r
     simp only [SetLike.mem_coe, mem_algebraicCurvatureSubmodule, Set.mem_inter_iff,
       Set.mem_iInter, Set.mem_ofPred_eq]
-    exact ⟨fun h ↦ ⟨⟨⟨h.1, h.2⟩, h.3⟩, h.4⟩, fun h ↦ ⟨h.1.1.1, h.1.1.2, h.1.2, h.2⟩⟩
+    exact ⟨fun h ↦ ⟨⟨⟨h.antisymm_first, h.antisymm_last⟩, h.swap_pairs⟩, h.cyclic_eq_zero⟩, fun h ↦
+        ⟨h.1.1.1, h.1.1.2, h.1.2, h.2⟩⟩
   rw [this]
   refine ((IsClosed.inter (IsClosed.inter ?_ ?_) ?_).inter ?_) <;>
     refine isClosed_iInter fun u ↦ isClosed_iInter fun v ↦ isClosed_iInter fun z ↦

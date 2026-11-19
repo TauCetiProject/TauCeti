@@ -139,8 +139,8 @@ def intervalIntegralOperator (a b : ℝ) (hab : a ≤ b) :
         intervalIntegral.norm_integral_le_of_norm_le_const fun s _ ↦
           norm_coe_le_norm f (projIccCM s)
       _ ≤ (b - a) * ‖f‖ := by
-        rw [abs_of_nonneg (sub_nonneg.mpr t.2.1), mul_comm (b - a)]
-        exact mul_le_mul_of_nonneg_left (sub_le_sub_right t.2.2 a) (norm_nonneg f)
+        rw [abs_of_nonneg (sub_nonneg.mpr t.property.1), mul_comm (b - a)]
+        exact mul_le_mul_of_nonneg_left (sub_le_sub_right t.property.2 a) (norm_nonneg f)
 
 /-- The Volterra integral operator on `[a, b]` has operator norm at most the interval length. -/
 theorem norm_intervalIntegralOperator_le (a b : ℝ) (hab : a ≤ b) :

@@ -227,7 +227,7 @@ theorem mul_norm_sq_le_norm_starProjection_sq_of_finrank_le [FiniteDimensional �
     refine (injective_iff_map_eq_zero T).mpr fun u hu => ?_
     have h0 : V.starProjection u = 0 := by
       simpa [T] using congrArg (Subtype.val : V → E) hu
-    have := hU u u.2
+    have := hU u u.property
     rw [h0, norm_zero, zero_pow two_ne_zero] at this
     have : ‖(u : E)‖ ^ 2 = 0 :=
       le_antisymm (nonpos_of_mul_nonpos_right this hk) (sq_nonneg _)
@@ -241,12 +241,12 @@ theorem mul_norm_sq_le_norm_starProjection_sq_of_finrank_le [FiniteDimensional �
     have : ⟪U.starProjection v, (w : E)⟫_𝕜 = ⟪v, v⟫_𝕜 := calc
       _ = ⟪v, U.starProjection w⟫_𝕜 := inner_starProjection_left_eq_right U v w
       _ = ⟪V.starProjection v, (w : E)⟫_𝕜 := by
-        rw [starProjection_eq_self_iff.mpr w.2, starProjection_eq_self_iff.mpr hv]
+        rw [starProjection_eq_self_iff.mpr w.property, starProjection_eq_self_iff.mpr hv]
       _ = ⟪v, v⟫_𝕜 := by rw [inner_starProjection_left_eq_right, hPw]
     have h := norm_inner_le_norm (𝕜 := 𝕜) (U.starProjection v) (w : E)
     rwa [this, inner_self_eq_norm_sq_to_K, norm_pow, RCLike.norm_ofReal, abs_norm] at h
   -- Combined with `k ‖w‖² ≤ ‖P_V w‖² = ‖v‖²`, this gives `k ‖v‖⁴ ≤ ‖P_U v‖² ‖v‖²`.
-  have hw' := hU w w.2
+  have hw' := hU w w.property
   rw [hPw] at hw'
   rcases (norm_nonneg v).eq_or_lt with hv0 | hv0
   · rw [← hv0, zero_pow two_ne_zero, mul_zero]
@@ -310,7 +310,7 @@ theorem rank_le_of_disjoint_orthogonal (h : Disjoint U Vᗮ) :
   have hxy' : V.starProjection x = V.starProjection y := by
     rw [starProjection_apply, starProjection_apply]
     exact congr_arg ((↑) : V → E) hxy
-  exact Subtype.ext <| (injOn_starProjection_iff_disjoint U V).2 h x.2 y.2 hxy'
+  exact Subtype.ext <| (injOn_starProjection_iff_disjoint U V).2 h x.property y.property hxy'
 
 /-- Compressing `(P_U - P_V)²` to `U` on the right gives `P_U - P_U P_V P_U`. -/
 theorem starProjection_sub_starProjection_sq_mul_starProjection :
@@ -350,7 +350,7 @@ theorem adjoint_subtype [FiniteDimensional 𝕜 E] :
   -- `starProjection`; the inner-product identity is then a projection property.
   change ⟪U.starProjection x, (y : E)⟫_𝕜 = ⟪x, (y : E)⟫_𝕜
   rw [U.inner_starProjection_left_eq_right,
-    U.starProjection_eq_self_iff.mpr y.2]
+    U.starProjection_eq_self_iff.mpr y.property]
 
 /-- The algebraic adjoint of the orthogonal projection `E → U` is the inclusion `U → E`.
 This is the elementary simplification rule for the adjoints of cross-projections and
@@ -481,9 +481,9 @@ theorem eventually_linearIndependent_and_span_starProjection
   have hk := finrank_eq_card_basis b
   obtain ⟨bL⟩ : Nonempty (Basis (Fin (finrank ℝ (L x₀))) ℝ (L x₀)) := ⟨finBasis ℝ _⟩
   have hK' := eventually_linearIndependent_starProjection_apply (b := fun i ↦ (b i : F)) hK
-    (b.linearIndependent.map' (K x₀).subtype (Submodule.ker_subtype _)) fun i ↦ (b i).2
+    (b.linearIndependent.map' (K x₀).subtype (Submodule.ker_subtype _)) fun i ↦ (b i).property
   have hL' := eventually_linearIndependent_starProjection_apply (b := fun i ↦ (bL i : F)) hL
-    (bL.linearIndependent.map' (L x₀).subtype (Submodule.ker_subtype _)) fun i ↦ (bL i).2
+    (bL.linearIndependent.map' (L x₀).subtype (Submodule.ker_subtype _)) fun i ↦ (bL i).property
   have h₀ := hdim.self_of_nhds
   filter_upwards [hK', hL', hdim] with x hliK hliL hx
   have hle (M : Submodule ℝ F) {κ : Type} (c : κ → F) :

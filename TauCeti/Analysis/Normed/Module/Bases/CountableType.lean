@@ -124,7 +124,7 @@ theorem exists_isTOrthogonalBasis_of_dense_span {v : ℕ → E}
     ∃ (S : Set ℕ) (e : S → E), IsTOrthogonalBasis K t e := by
   obtain ⟨e, he, hspan⟩ := exists_isTOrthogonalFamily_span_image_Iio_eq (K := K) v ht
   -- Discard the zero vectors of `e`; they do not change its span.
-  refine ⟨{n | e n ≠ 0}, fun n ↦ e n, he.comp Subtype.val_injective, fun n ↦ n.2, ?_⟩
+  refine ⟨{n | e n ≠ 0}, fun n ↦ e n, he.comp Subtype.val_injective, fun n ↦ n.property, ?_⟩
   have hrange : range e ⊆ insert 0 (range fun n : {n | e n ≠ 0} ↦ e n) := by
     rintro _ ⟨n, rfl⟩
     by_cases h : e n = 0
@@ -156,7 +156,7 @@ theorem exists_basis_isTOrthogonalFamily [FiniteDimensional K E] {t : ℝ≥0} (
   have htop : ⊤ ≤ span K (range fun i : Fin d ↦ e i) :=
     calc ⊤ = span K (range b₀) := b₀.span_eq.symm
       _ ≤ span K (w '' Iio d) :=
-        span_mono <| range_subset_iff.2 fun i ↦ ⟨i, i.2, by simp [w, d, i.isLt]⟩
+        span_mono <| range_subset_iff.2 fun i ↦ ⟨i, i.isLt, by simp [w, d, i.isLt]⟩
       _ = span K (e '' Iio d) := (hspan d).symm
       _ ≤ span K (range fun i : Fin d ↦ e i) := span_mono <| by
         rintro _ ⟨n, hn, rfl⟩

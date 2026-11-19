@@ -510,7 +510,7 @@ instance instFiniteDimensionalBinaryForms : FiniteDimensional k (binaryForms k d
     Module.Finite.iff_fg.mpr (MvPolynomial.homogeneousSubmodule_fg (Fin 2) k d)
   exact Module.Finite.of_injective
     ((SMulMemClass.subtype (binaryForms k d)).codRestrict
-      (MvPolynomial.homogeneousSubmodule (Fin 2) k d) fun f ↦ mem_binaryForms.mp f.2)
+      (MvPolynomial.homogeneousSubmodule (Fin 2) k d) fun f ↦ mem_binaryForms.mp f.property)
     ((LinearMap.injective_codRestrict_iff _).mpr Subtype.val_injective)
 
 /-- **Every nonzero subrepresentation of the binary forms of degree `d` contains `yᵈ`**, over every

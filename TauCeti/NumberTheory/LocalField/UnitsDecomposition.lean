@@ -94,7 +94,7 @@ theorem continuous_normalizedValuation : Continuous (normalizedValuation K) :=
 @[simp]
 theorem normalizedValuation_coe_unitFiltration_zero (u : unitFiltration K 0) :
     normalizedValuation K u = 1 :=
-  ((ker_normalizedValuation K).ge u.2 : _)
+  ((ker_normalizedValuation K).ge u.property : _)
 
 end NormalizedValuation
 
@@ -376,18 +376,18 @@ def unitFiltrationZeroEquivProd :
     unitFiltration K 0 ≃ₜ* rootsOfUnity (Nat.card 𝓀[K] - 1) K × unitFiltration K 1 where
   toFun u := (teichmullerProjection K u,
     ⟨u * (teichmullerProjection K u : Kˣ)⁻¹, mul_inv_teichmullerProjection_mem K u⟩)
-  invFun p := ⟨p.1 * p.2, mul_mem (rootsOfUnity_residue_le K p.1.2)
-    (unitFiltration_antitone (Nat.zero_le 1) p.2.2)⟩
+  invFun p := ⟨p.1 * p.2, mul_mem (rootsOfUnity_residue_le K p.1.property)
+    (unitFiltration_antitone (Nat.zero_le 1) p.2.property)⟩
   left_inv u := by ext; simp
   right_inv p := by
     have h : teichmullerProjection K ⟨p.1 * p.2, mul_mem
-        (rootsOfUnity_residue_le K p.1.2)
-        (unitFiltration_antitone (Nat.zero_le 1) p.2.2)⟩ = p.1 := by
+        (rootsOfUnity_residue_le K p.1.property)
+        (unitFiltration_antitone (Nat.zero_le 1) p.2.property)⟩ = p.1 := by
       have := map_mul (teichmullerProjection K)
         (Subgroup.inclusion (rootsOfUnity_residue_le K) p.1)
         (Subgroup.inclusion (unitFiltration_antitone (Nat.zero_le 1)) p.2)
       rw [teichmullerProjection_inclusion,
-        teichmullerProjection_eq_one K (Subgroup.inclusion _ p.2) p.2.2, mul_one] at this
+        teichmullerProjection_eq_one K (Subgroup.inclusion _ p.2) p.2.property, mul_one] at this
       exact this
     refine Prod.ext h (Subtype.ext ?_)
     simp only [h]

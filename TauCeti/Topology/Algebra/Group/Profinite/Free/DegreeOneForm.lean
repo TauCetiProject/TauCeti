@@ -198,7 +198,7 @@ private noncomputable def heisenbergZ :
   map_mul' y _ := by
     rw [Subgroup.coe_mul, map_mul, ULift.mul_down, HeisenbergGroup.mul_z,
       (down_x_eq_zero_of_mem_pLowerCentralSeries_one
-        (heisenbergHom_mem_pLowerCentralSeries χ ψ y.2)).1,
+        (heisenbergHom_mem_pLowerCentralSeries χ ψ y.property)).1,
       zero_mul, add_zero, ofAdd_add]
 
 private theorem heisenbergZ_eq_one_of_mem {y : pLowerCentralSeries p (freeProP p X) 1}

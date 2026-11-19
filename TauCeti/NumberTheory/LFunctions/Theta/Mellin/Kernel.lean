@@ -162,7 +162,7 @@ theorem integrableOn_latticeTheta_surfaceScale {D : Set (realSpace K)} (hDm : Me
     rw [continuous_iff_continuousAt]
     intro x
     exact ContinuousAt.comp (g := latticeTheta L) (continuousAt_latticeTheta L
-      (surfaceScale_pos (mem_normOneSurface.mp x.2).1 ht))
+      (surfaceScale_pos (mem_normOneSurface.mp x.property).1 ht))
         (continuous_surfaceScale.comp
           (continuous_subtype_val.prodMk continuous_const)).continuousAt
   have := isFiniteMeasure_restrict.mpr (surfaceHaar_preimage_lt_top hD).ne
@@ -379,7 +379,7 @@ theorem mellinKernel_mixedDual_idealLattice {I J : (FractionalIdeal (𝓞 K)⁰ 
     ext x
     simp only [Set.mem_preimage, surfaceMul_apply]
     refine (Function.Injective.mem_set_image fun a b hab ↦ funext fun w ↦ ?_)
-    exact mul_left_cancel₀ ((mem_normOneSurface.mp c.2).1 w).ne' (congrFun hab w)
+    exact mul_left_cancel₀ ((mem_normOneSurface.mp c.property).1 w).ne' (congrFun hab w)
   simp_rw [mellinKernel_def, hpt]
   rw [← hpre, (measurePreserving_surfaceMul c).setIntegral_preimage_emb
     (surfaceMul c).measurableEmbedding fun y : normOneSurface K ↦ latticeTheta (idealLattice K J)

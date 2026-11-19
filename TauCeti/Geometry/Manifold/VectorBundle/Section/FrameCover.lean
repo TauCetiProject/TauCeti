@@ -80,7 +80,7 @@ theorem continuous_frameCoordinates_of_cover (hcover : ∀ x : M, ∃ i, x ∈ U
   apply ContMDiffMap.continuous_of_forall_continuous_restrict W hW
   intro i
   let j : C^n⟮I, W i; I, U i⟯ :=
-    ⟨fun x ↦ ⟨((x : U') : M), x.2⟩,
+    ⟨fun x ↦ ⟨((x : U') : M), x.property⟩,
       (TauCeti.ContMDiff.subtypeVal_comp_iff (U i) _).mp (by
         -- The target-subtype criterion leaves composition through two inclusions. Normalize
         -- their nested subtype coercions, which are bundled by different open carriers.
@@ -90,7 +90,7 @@ theorem continuous_frameCoordinates_of_cover (hcover : ∀ x : M, ∃ i, x ∈ U
   let A : C^n⟮I, W i; 𝓘(𝕜, F →L[𝕜] F), F →L[𝕜] F⟯ :=
     ⟨fun x ↦ ((e i).coordChangeL 𝕜 e' ((x : U') : M) : F →L[𝕜] F), fun x ↦
       (contMDiffAt_coordChangeL (e := e i) (e' := e')
-        (hU i x.2) (hU' (x : U').2)).comp x
+        (hU i x.property) (hU' (x : U').property)).comp x
           (contMDiff_subtype_val.comp contMDiff_subtype_val).contMDiffAt⟩
   have hc : Continuous (fun s : Cₛ^n⟮I; F, V⟯ ↦
       ((e i).frameCoordinates (hU i) s).comp j) :=
@@ -104,9 +104,9 @@ theorem continuous_frameCoordinates_of_cover (hcover : ∀ x : M, ∃ i, x ∈ U
     ContMDiffMap.clmApplyLinearMap_apply, ContMDiffMap.comp_apply,
     Bundle.Trivialization.frameCoordinates_apply]
   exact (((e i).coordChangeL_apply (R := 𝕜) e'
-    ⟨hU i x.2, hU' (x : U').2⟩) ((e i) ⟨((x : U') : M), s x⟩).2).trans
+    ⟨hU i x.property, hU' (x : U').property⟩) ((e i) ⟨((x : U') : M), s x⟩).2).trans
       (congrArg (fun v ↦ (e' ⟨((x : U') : M), v⟩).2)
-        ((e i).symm_apply_apply_mk (hU i x.2) (s ((x : U') : M)))) |>.symm
+        ((e i).symm_apply_apply_mk (hU i x.property) (s ((x : U') : M)))) |>.symm
 
 /-- A covering frame system induces a finer topology than any other specified frame system. -/
 theorem frameTopology_le_of_cover (hcover : ∀ x : M, ∃ i, x ∈ U i)
@@ -179,7 +179,7 @@ theorem continuous_restrict_frameTopology (W : Opens M) :
   apply (continuous_frameTopology_iff_frameCoordinates eW UW hUW).mpr
   intro i
   let j : C^n⟮I, UW i; I, U i⟯ :=
-    ⟨fun x ↦ ⟨((x : W) : M), x.2⟩,
+    ⟨fun x ↦ ⟨((x : W) : M), x.property⟩,
       (TauCeti.ContMDiff.subtypeVal_comp_iff (U i) _).mp (by
         -- Normalize the composite of the two open inclusions after the target-subtype
         -- criterion; rewriting cannot identify their distinct bundled membership proofs.

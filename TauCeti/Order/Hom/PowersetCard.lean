@@ -57,16 +57,16 @@ theorem prod_comp_ofFinEmbEquiv_symm {n : ℕ} (s : powersetCard I n)
   exact (Fintype.prod_equiv (orderIsoOfFin s).toEquiv
     (fun a ↦ f (ofFinEmbEquiv.symm s a)) (fun i ↦ f i.val) (fun a ↦ by
       rw [ofFinEmbEquiv_symm_apply]
-      exact congrArg f (Finset.coe_orderIsoOfFin_apply s.1 s.2 a).symm)).trans
+      exact congrArg f (Finset.coe_orderIsoOfFin_apply s.val s.property a).symm)).trans
     (Finset.prod_coe_sort s.val f)
 
 /-- An increasing triple, as an order embedding of `Fin 3`. -/
 private def ltTripleEmb (t : {t : I × I × I // t.1 < t.2.1 ∧ t.2.1 < t.2.2}) : Fin 3 ↪o I :=
-  OrderEmbedding.ofStrictMono ![t.1.1, t.1.2.1, t.1.2.2]
-    (Fin.strictMono_iff_lt_succ.2 fun m ↦ by fin_cases m; exacts [t.2.1, t.2.2])
+  OrderEmbedding.ofStrictMono ![t.val.1, t.val.2.1, t.val.2.2]
+    (Fin.strictMono_iff_lt_succ.2 fun m ↦ by fin_cases m; exacts [t.property.1, t.property.2])
 
 private theorem ltTripleEmb_apply (t : {t : I × I × I // t.1 < t.2.1 ∧ t.2.1 < t.2.2})
-    (m : Fin 3) : ltTripleEmb t m = ![t.1.1, t.1.2.1, t.1.2.2] m :=
+    (m : Fin 3) : ltTripleEmb t m = ![t.val.1, t.val.2.1, t.val.2.2] m :=
   rfl
 
 /-- The increasing triples `a < b < c` of a linear order enumerate its three-element sets, by
@@ -84,7 +84,7 @@ private theorem ofLtTriple_apply (t : {t : I × I × I // t.1 < t.2.1 ∧ t.2.1 
 /-- The three-element set enumerated by an increasing triple consists of its three entries. -/
 @[simp]
 theorem val_ofLtTriple (t : {t : I × I × I // t.1 < t.2.1 ∧ t.2.1 < t.2.2}) :
-    (ofLtTriple t).val = {t.1.1, t.1.2.1, t.1.2.2} := by
+    (ofLtTriple t).val = {t.val.1, t.val.2.1, t.val.2.2} := by
   ext a
   simp [ofLtTriple_apply, val_ofFinEmb, ltTripleEmb_apply, Fin.exists_fin_succ, eq_comm]
 
@@ -92,7 +92,7 @@ theorem val_ofLtTriple (t : {t : I × I × I // t.1 < t.2.1 ∧ t.2.1 < t.2.2}) 
 theorem exists_lt_lt_val_eq (s : powersetCard I 3) :
     ∃ a b c, a < b ∧ b < c ∧ s.val = {a, b, c} := by
   obtain ⟨t, rfl⟩ := ofLtTriple.surjective s
-  exact ⟨_, _, _, t.2.1, t.2.2, val_ofLtTriple t⟩
+  exact ⟨_, _, _, t.property.1, t.property.2, val_ofLtTriple t⟩
 
 /-- A finite linear order with `n` elements has `n.choose 3` increasing triples. -/
 theorem card_lt_triple [Fintype I] :

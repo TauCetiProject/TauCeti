@@ -131,7 +131,7 @@ from the point numbered `i`. -/
 theorem _root_.IsCoveringMap.finEquivConnectedComponentsUpperHalfPlane_apply (i : Fin n) :
     hp.finEquivConnectedComponentsUpperHalfPlane ν i =
       ConnectedComponents.mk ⟨hp.monodromy (.mk αPlus) (ν.symm i), by
-        rw [mem_preimage, (hp.monodromy (.mk αPlus) (ν.symm i)).2]
+        rw [mem_preimage, (hp.monodromy (.mk αPlus) (ν.symm i)).property]
         exact pPlus_mem_upperHalfPlane⟩ := by
   have := locallyPathConnectedSpace_preimage_upperHalfPlane hp
   rw [IsCoveringMap.finEquivConnectedComponentsUpperHalfPlane, Equiv.trans_apply,

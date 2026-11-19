@@ -89,7 +89,7 @@ private lemma range_ternary : range ternary = cantorSet := by
   ext x
   refine ⟨?_, fun hx ↦ ⟨cantorSetEquivNatToBool ⟨x, hx⟩, ?_⟩⟩
   · rintro ⟨s, rfl⟩
-    exact (cantorSetEquivNatToBool.symm s).2
+    exact (cantorSetEquivNatToBool.symm s).property
   · simp [ternary]
 
 private lemma bddAbove_image_dyadic (S : Set (ℕ → Bool)) : BddAbove (dyadic '' S) :=
@@ -200,7 +200,7 @@ theorem continuous_cantorFunction : Continuous cantorFunction := by
   have hsurj : Function.Surjective g := fun y ↦ by
     obtain ⟨x, hx⟩ : (y : ℝ) ∈ range cantorFunction := by
       rw [range_cantorFunction]
-      exact y.2
+      exact y.property
     exact ⟨x, Subtype.ext hx⟩
   exact continuous_subtype_val.comp (hg.continuous_of_surjective hsurj)
 

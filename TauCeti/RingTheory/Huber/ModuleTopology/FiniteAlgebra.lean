@@ -180,7 +180,7 @@ theorem isOpen_integralClosure_map_algebraMap [IsHuberRing A] {C : Subring A}
   -- `b` is integral over `A₀`, hence over the image of `C ⊇ A₀`
   let φ : P.ringOfDefinition →+* C.map (algebraMap A B) :=
     ((algebraMap A B).comp P.ringOfDefinition.subtype).codRestrict _
-      fun a ↦ Subring.mem_map.mpr ⟨a, hP a.2, rfl⟩
+      fun a ↦ Subring.mem_map.mpr ⟨a, hP a.property, rfl⟩
   exact (hQ b hb).map_of_comp_eq φ (RingHom.id B) (RingHom.ext fun _ ↦ rfl)
 
 end CommRing

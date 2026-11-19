@@ -117,7 +117,7 @@ theorem continuous_transvectionHom {u : V} (hu : Q u = 0) :
     (K ∙ u).comap (LinearMap.ker (Q.polarBilin u)).subtype
   rw [S.isQuotientMap_mkQ.continuous_iff]
   have hw : ∀ w : LinearMap.ker (Q.polarBilin u), polar Q u (w : V) = 0 := fun w ↦ by
-    simpa only [QuadraticMap.polarBilin_apply_apply] using LinearMap.mem_ker.mp w.2
+    simpa only [QuadraticMap.polarBilin_apply_apply] using LinearMap.mem_ker.mp w.property
   apply Continuous.subtype_mk
   exact (continuous_transvection (fun _ ↦ u)
     (fun w : LinearMap.ker (Q.polarBilin u) ↦ (w : V)) (fun _ ↦ hu) hw

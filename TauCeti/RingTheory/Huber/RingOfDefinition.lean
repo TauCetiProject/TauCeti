@@ -508,13 +508,13 @@ private theorem idealImage_subset_image_span_pow (P : PairOfDefinition A) {B : S
       fun z ↦ ih ((P.mem_idealImage _).mpr ⟨c z, hc z, rfl⟩)
     choose w hw hweq using hcof
     choose u hu hueq using hS
-    refine ⟨∑ z ∈ Gk.attach, u z.1 z.2 * w z.1, Submodule.sum_mem _ fun z _ ↦ ?_, ?_⟩
+    refine ⟨∑ z ∈ Gk.attach, u z.val z.property * w z.val, Submodule.sum_mem _ fun z _ ↦ ?_, ?_⟩
     · rw [pow_succ']
-      exact Ideal.mul_mem_mul (Ideal.subset_span (hu z.1 z.2)) (hw z.1)
+      exact Ideal.mul_mem_mul (Ideal.subset_span (hu z.val z.property)) (hw z.val)
     · rw [← hsum]
       push_cast
       rw [← Finset.sum_attach Gk fun z ↦ (z : A) * (c z : A)]
-      exact Finset.sum_congr rfl fun z _ ↦ by rw [hueq z.1 z.2, hweq z.1]
+      exact Finset.sum_congr rfl fun z _ ↦ by rw [hueq z.val z.property, hweq z.val]
 
 variable [IsTopologicalRing A]
 

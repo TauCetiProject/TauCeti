@@ -398,7 +398,7 @@ theorem _root_.IsOpen.exists_contDiff_decomposition_cutoff [NormedSpace ℝ E]
   have hVmono : Monotone V := fun m n hmn => image_mono (interior_mono (K.subset hmn))
   have hVsub : ∀ n, V n ⊆ U := fun n => by
     rintro _ ⟨y, -, rfl⟩
-    exact y.2
+    exact y.property
   have hcover : ∀ x ∈ U, ∃ n, x ∈ V n := fun x hx => by
     obtain ⟨n, hn⟩ := K.exists_mem ⟨x, hx⟩
     exact ⟨n + 1, ⟨x, hx⟩, K.subset_interior_succ n hn, rfl⟩

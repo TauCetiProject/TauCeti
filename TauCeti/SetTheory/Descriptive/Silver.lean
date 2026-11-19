@@ -176,7 +176,7 @@ theorem countable_or_hasCantorAntichainOn_of_measurableSet [TopologicalSpace X] 
   exact ((hasCantorAntichainOn_image_iff (F := R) hg (fun _ _ => (comap_rel _ _ _ _).symm)
     univ).2 hid).mono <| by
     rintro _ ⟨a, -, rfl⟩
-    exact (f a).2
+    exact (f a).property
 
 /-- **Silver's theorem in reducibility form.** Equality on Cantor space is Borel reducible to a
 Borel equivalence relation on a standard Borel space exactly when the latter has uncountably many

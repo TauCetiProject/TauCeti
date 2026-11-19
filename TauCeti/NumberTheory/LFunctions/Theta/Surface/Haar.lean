@@ -204,7 +204,7 @@ private theorem surfaceHaar_surfaceBox_lt_top (k : ℕ) : surfaceHaar K (surface
 
 private theorem iUnion_surfaceBox : ⋃ k, surfaceBox (K := K) k = univ := by
   refine eq_univ_of_forall fun x ↦ ?_
-  have hx := (mem_normOneSurface.mp x.2).1
+  have hx := (mem_normOneSurface.mp x.property).1
   obtain ⟨k, hk⟩ := exists_nat_ge (∑ w, ((x : realSpace K) w + ((x : realSpace K) w)⁻¹))
   have hle (w : InfinitePlace K) :
       (x : realSpace K) w + ((x : realSpace K) w)⁻¹ ≤ k + 1 :=

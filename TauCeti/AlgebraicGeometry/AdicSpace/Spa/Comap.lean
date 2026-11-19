@@ -95,12 +95,12 @@ theorem mem_spa_map_iff {φ : A →+* B} (hφ : Continuous φ) (Aplus : Subring 
 `φ : A →+* B` carrying `Aplus` into `Bplus`. -/
 def spaComap (φ : A →+* B) (hφ : Continuous φ) (Aplus : Subring A) (Bplus : Subring B)
     (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) (v : spa Bplus) : spa Aplus :=
-  ⟨comap φ v.1, comap_mem_spa hφ hplus v.2⟩
+  ⟨comap φ v.val, comap_mem_spa hφ hplus v.property⟩
 
 @[simp]
 theorem spaComap_val (φ : A →+* B) (hφ : Continuous φ) (Aplus : Subring A)
     (Bplus : Subring B) (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) (v : spa Bplus) :
-    (spaComap φ hφ Aplus Bplus hplus v).1 = comap φ v.1 := (rfl)
+    (spaComap φ hφ Aplus Bplus hplus v).val = comap φ v.val := (rfl)
 
 /-- `spaComap` is continuous for the subspace topologies. -/
 theorem continuous_spaComap (φ : A →+* B) (hφ : Continuous φ) (Aplus : Subring A)

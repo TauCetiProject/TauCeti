@@ -159,7 +159,7 @@ theorem isLeast_form_self_nsmul_typeAFundamentalWeightClass {k : ℕ} (hk : k �
   refine ⟨?_, ?_⟩
   · obtain ⟨x, hx, hex⟩ := exists_mk_eq_nsmul_typeAFundamentalWeightClass_and_apply_eq hk
     refine ⟨x, hx, ?_⟩
-    have hsum := (mem_singleParityCheckCode ℚ (Fin (n + 1))).mp (e x).2
+    have hsum := (mem_singleParityCheckCode ℚ (Fin (n + 1))).mp (e x).property
     rw [typeARootLattice_form_self_eq_dotProduct]
     refine (dotProduct_self_eq_mul_sub_div_iff (k := k) hsum fun j ↦
       ⟨if (j : ℕ) < k then 1 else 0, by simp [e, hex]⟩).mpr fun j ↦ ?_
@@ -167,7 +167,7 @@ theorem isLeast_form_self_nsmul_typeAFundamentalWeightClass {k : ℕ} (hk : k �
   · rintro q ⟨x, hx, rfl⟩
     rw [← natCast_zsmul] at hx
     rw [typeARootLattice_form_self_eq_dotProduct]
-    have hsum := (mem_singleParityCheckCode ℚ (Fin (n + 1))).mp (e x).2
+    have hsum := (mem_singleParityCheckCode ℚ (Fin (n + 1))).mp (e x).property
     simpa using mul_sub_div_le_dotProduct_self (k := k) hsum
       (exists_typeAIsometryZeroSumLattice_apply_eq_intCast_sub_of_mk_eq x hx)
 

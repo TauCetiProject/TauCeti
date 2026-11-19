@@ -56,7 +56,7 @@ theorem isPathConnected_symplecticGroup :
   have hU : (u.polarUnitary : Matrix (n ⊕ n) (n ⊕ n) ℝ) ∈
       (symplecticGroup n ℝ ⊓ orthogonalGroup (n ⊕ n) ℝ :
         Submonoid (Matrix (n ⊕ n) (n ⊕ n) ℝ)) :=
-    ⟨SymplecticGroup.polarUnitary_mem hA, u.polarUnitary.2⟩
+    ⟨SymplecticGroup.polarUnitary_mem hA, u.polarUnitary.property⟩
   exact ((hconn.joinedIn 1 (Submonoid.one_mem _) _ hU).mono
     (fun _ h ↦ h.1)).trans (SymplecticGroup.joinedIn_polarUnitary hA).symm
 

@@ -74,7 +74,7 @@ theorem tristramLevineSignature_comp_eq_of_isPreconnected {X : Type*} [Topologic
     rw [IsLocallyConstant.iff_eventually_eq]
     intro x
     exact hγ.domRestrict.continuousAt.eventually
-      (eventually_tristramLevineSignature_eq V (hdet x x.2))
+      (eventually_tristramLevineSignature_eq V (hdet x x.property))
   have : PreconnectedSpace s := isPreconnected_iff_preconnectedSpace.mp hs
   exact hloc.apply_eq_of_preconnectedSpace ⟨t, ht⟩ ⟨t₀, ht₀⟩
 

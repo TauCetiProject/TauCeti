@@ -255,12 +255,12 @@ theorem mem_stripTraces_iff {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)} :
 the closed strip it agrees with every admissible function with these traces
 (`CompatibleCouple.stripFunction_eq`). -/
 def stripFunction (g : C.stripTraces) : ℂ → C.SumSpace :=
-  (verticalClosedStrip 0 1).indicator (mem_stripTraces_iff.1 g.2).choose
+  (verticalClosedStrip 0 1).indicator (mem_stripTraces_iff.1 g.property).choose
 
 theorem isStripFunction_stripFunction (g : C.stripTraces) :
     C.IsStripFunction (C.stripFunction g) g := by
-  have hF := (mem_stripTraces_iff.1 g.2).choose_spec
-  have hEq : EqOn (C.stripFunction g) (mem_stripTraces_iff.1 g.2).choose
+  have hF := (mem_stripTraces_iff.1 g.property).choose_spec
+  have hEq : EqOn (C.stripFunction g) (mem_stripTraces_iff.1 g.property).choose
       (verticalClosedStrip 0 1) := fun z hz => indicator_of_mem hz _
   exact
     { diffContOnCl :=

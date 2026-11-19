@@ -269,7 +269,7 @@ private theorem IsCapConfig.capSumFun_mem_sphere (h : IsCapConfig ι r c Ks) (z 
     capSumFun ι c Ks z ∈ sphere (0 : E) 1 := by
   obtain ⟨G, hG⟩ := h.exists_eventually_capSumFun_eq z
   rw [hG.self_of_nhds]
-  exact (G z).2
+  exact (G z).property
 
 /-- The cap sum is in the cap around `ι (c j i)` exactly over the arc around `c j i`. -/
 private theorem IsCapConfig.lt_inner_capSumFun_iff (h : IsCapConfig ι r c Ks) (j : Fin m)

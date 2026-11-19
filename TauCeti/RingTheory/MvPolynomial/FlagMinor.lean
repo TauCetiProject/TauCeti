@@ -101,7 +101,7 @@ theorem flagMinor_singleton (r : Fin n) : flagMinor R {r} = X (r, ⟨0, r.pos⟩
   have : Unique (Fin #{r}) := card_singleton r ▸ inferInstance
   rw [flagMinor_def, Matrix.mvPolynomialMinor_one, mem_singleton.1 (orderEmbOfFin_mem _ _ _)]
   congr
-  exact Fin.ext (Nat.lt_one_iff.1 ((default : Fin #{r}).2.trans_eq (card_singleton r)))
+  exact Fin.ext (Nat.lt_one_iff.1 ((default : Fin #{r}).isLt.trans_eq (card_singleton r)))
 
 /-- The exponent of the main diagonal `∏_(c < d) z_(i_c, c)` of the flag minor of
 `I = {i_0 < ⋯ < i_(d-1)}`, in the variables indexed by the lexicographically ordered pairs. -/
@@ -125,7 +125,7 @@ theorem flagDiagonalExponent_apply (I : Finset (Fin n)) (r c : Fin n) :
   · refine Fintype.sum_eq_zero _ fun d ↦ Finsupp.single_eq_of_ne fun h ↦ hc ?_
     have := congrArg (fun x ↦ ((ofLex x).2 : ℕ)) h
     simp only [ofLex_toLex, Fin.val_castLE] at this
-    exact this ▸ d.2
+    exact this ▸ d.isLt
 
 /-- The diagonal exponent of a single row `r` is that of the variable `z_(r,0)`. -/
 @[simp]
@@ -134,7 +134,7 @@ theorem flagDiagonalExponent_singleton (r : Fin n) :
   have : Unique (Fin #{r}) := card_singleton r ▸ inferInstance
   rw [flagDiagonalExponent, Fintype.sum_unique, mem_singleton.1 (orderEmbOfFin_mem _ _ _)]
   congr
-  exact Fin.ext (Nat.lt_one_iff.1 ((default : Fin #{r}).2.trans_eq (card_singleton r)))
+  exact Fin.ext (Nat.lt_one_iff.1 ((default : Fin #{r}).isLt.trans_eq (card_singleton r)))
 
 /-- The diagonal exponent of all rows is that of the main diagonal `∏_c z_(c,c)`. -/
 theorem flagDiagonalExponent_univ :
@@ -241,8 +241,8 @@ theorem exponentEntries_succ_sub (e : Fin n ×ₗ Fin n →₀ ℕ) (r c : Fin n
     ext r'
     simp only [mem_filter, mem_univ, true_and, mem_insert, Fin.ext_iff]
     omega
-  have h₁ : (c : ℕ) < n ∧ (r : ℕ) + 1 ≤ n := ⟨c.2, r.2⟩
-  have h₂ : (c : ℕ) < n ∧ (r : ℕ) ≤ n := ⟨c.2, r.2.le⟩
+  have h₁ : (c : ℕ) < n ∧ (r : ℕ) + 1 ≤ n := ⟨c.isLt, r.isLt⟩
+  have h₂ : (c : ℕ) < n ∧ (r : ℕ) ≤ n := ⟨c.isLt, r.isLt.le⟩
   simp only [exponentEntries_apply, h₁, h₂, and_self, dite_true, hfilter]
   rw [sum_insert (by simp), add_sub_cancel_right]
 

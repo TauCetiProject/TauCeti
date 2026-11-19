@@ -280,7 +280,7 @@ theorem _root_.MeasureTheory.coe_successiveMin (L : Submodule ℤ E) (K : Convex
     NNReal.smul_def]
   constructor
   · rintro ⟨r, ⟨v, hv, hvs⟩, rfl⟩
-    exact ⟨r.2, v, hv, fun j ↦ (hvs j).symm⟩
+    exact ⟨r.property, v, hv, fun j ↦ (hvs j).symm⟩
   · rintro ⟨ht, v, hv, hvs⟩
     exact ⟨⟨t, ht⟩, ⟨v, hv, fun j ↦ (hvs j).symm⟩, rfl⟩
 

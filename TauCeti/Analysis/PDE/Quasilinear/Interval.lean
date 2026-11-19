@@ -543,12 +543,12 @@ theorem exists_contDiff_eq_intervalRepresentativeL_and_holderWith_deriv_deriv (h
   -- Integrating `h` twice gives the `C²` extension `w` of `w₁`, with `w'' = h ∘ projIcc`.
   obtain ⟨w, hw, hw₁w, hdw₁w, hddw⟩ :=
     exists_contDiff_two_eqOn_and_deriv_deriv_eq hx.le hw₁ hderiv (hH.continuousOn hα₀)
-  refine ⟨w, hw, fun t => (hū t).trans (hw₁w t.2), ?_, fun t ht => ?_⟩
+  refine ⟨w, hw, fun t => (hū t).trans (hw₁w t.property), ?_, fun t ht => ?_⟩
   · -- `w''` is Hölder on `ℝ`, since `projIcc` is `1`-Lipschitz.
     have hπ : LipschitzWith 1 fun t => (projIcc x₀ x₁ hx.le t : ℝ) := by
       simpa [Function.comp_def] using
         (LipschitzWith.subtype_val _).comp (LipschitzWith.projIcc hx.le)
-    have hHₑ := hH.comp_holderWith hπ.holderWith fun t => (projIcc x₀ x₁ hx.le t).2
+    have hHₑ := hH.comp_holderWith hπ.holderWith fun t => (projIcc x₀ x₁ hx.le t).property
     rw [mul_one] at hHₑ
     rw [hddw]
     exact ⟨_, hHₑ⟩

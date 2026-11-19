@@ -112,8 +112,8 @@ topology, is topologically isomorphic to the corresponding subgroup `H.toSubgrou
 `Multiplicative A`. -/
 def toSubgroupContinuousMulEquiv {A : Type*} [AddGroup A] [TopologicalSpace A]
     (H : AddSubgroup A) : Multiplicative H ≃ₜ* H.toSubgroup where
-  toFun x := ⟨ofAdd (x.toAdd : A), x.toAdd.2⟩
-  invFun y := ofAdd ⟨y.1.toAdd, y.2⟩
+  toFun x := ⟨ofAdd (x.toAdd : A), x.toAdd.property⟩
+  invFun y := ofAdd ⟨y.val.toAdd, y.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_mul' _ _ := rfl

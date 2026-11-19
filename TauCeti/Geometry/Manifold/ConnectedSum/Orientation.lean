@@ -107,14 +107,14 @@ private theorem map_orientationAt_inl_eq_inr
   -- Both are read off the punctured space `E ∖ {0}`, mapped into the two punctured summands by
   -- `ρ₁ = e₁` and `ρ₂ = e₂ ∘ inversion 0 1`, whose composites with the quotient map agree.
   let P := puncture (id : E → E)
-  have hP (w : P) : (w : E) ≠ 0 := mem_puncture.1 w.2
+  have hP (w : P) : (w : E) ≠ 0 := mem_puncture.1 w.property
   let ρ₁ : P → puncture e₁ := fun w ↦ ⟨e₁ w, mem_puncture.2 (h₁.injective.ne (hP w))⟩
   let ρ₂ : P → puncture e₂ := fun w ↦
     ⟨e₂ (inversion 0 1 w), apply_inversion_mem_puncture h₂.injective (hP w)⟩
   have hρ : inl e₁ e₂ ∘ ρ₁ = inr e₁ e₂ ∘ ρ₂ :=
     funext fun w ↦ by
       simpa only [comp_apply, mk_inl, mk_inr] using inl_eq_inr (e₁ := e₁) (e₂ := e₂) (w : E)
-        (ρ₁ w).2 (ρ₂ w).2
+        (ρ₁ w).property (ρ₂ w).property
   let oP := oE.restrict P
   let w₀ : P := ⟨v, mem_puncture.2 hv⟩
   have hv' : inversion (0 : E) 1 v ≠ 0 := by simpa [inversion_eq_center one_ne_zero] using hv

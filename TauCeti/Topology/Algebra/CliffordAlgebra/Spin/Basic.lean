@@ -265,9 +265,10 @@ theorem joined_of_coe_eq_prod_mul_ι_mul_prod [TopologicalSpace V] [IsModuleTopo
     Joined x y := by
   have hmem (v : {v : V // Q v = Q b}) :
       (l₁.map (ι Q)).prod * ι Q v * (l₂.map (ι Q)).prod ∈ spinGroup Q := by
-    have h := prod_map_ι_mem_spinGroup (Q := Q) (l := l₁ ++ v.1 :: l₂)
+    have h := prod_map_ι_mem_spinGroup (Q := Q) (l := l₁ ++ v.val :: l₂)
       (by rwa [List.length_append, List.length_cons, ← Nat.add_assoc])
-      (by rw [List.map_append, List.prod_append, List.map_cons, List.prod_cons, v.2, ← mul_assoc,
+      (by rw [List.map_append, List.prod_append, List.map_cons, List.prod_cons, v.property,
+          ← mul_assoc,
         hQ])
     rwa [List.map_append, List.prod_append, List.map_cons, List.prod_cons, ← mul_assoc] at h
   let f : {v : V // Q v = Q b} → spinGroup Q := fun v ↦ ⟨_, hmem v⟩

@@ -111,7 +111,7 @@ theorem restrictOpenTangentSpace_eq_of_apply_eq
     {g₁ g₂ : ContMDiffNondegenerateMetric (I := I) (M := M)} (h : ∀ x ∈ U, g₁ x = g₂ x) :
     g₁.restrictOpenTangentSpace U = g₂.restrictOpenTangentSpace U := by
   ext x v w
-  simp only [restrictOpenTangentSpace_apply, h x x.2]
+  simp only [restrictOpenTangentSpace_apply, h x x.property]
 
 /-- The inclusion of an open submanifold is a local isometry from the restricted metric to the
 ambient one. -/

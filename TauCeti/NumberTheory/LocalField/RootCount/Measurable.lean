@@ -119,7 +119,7 @@ theorem isCompact_setOf_le_card_aroots (n k : ℕ) :
     obtain ⟨x, b, h⟩ := (hfac α).1 hcard
     exact ⟨((x, b), α), h, rfl⟩
   · rintro ⟨⟨⟨x, b⟩, α⟩, h, rfl⟩
-    refine ⟨mem_integerBox.2 fun i ↦ (α i).2, ?_⟩
+    refine ⟨mem_integerBox.2 fun i ↦ (α i).property, ?_⟩
     rw [card_aroots_monicOfCoeff_coe]
     exact (hfac α).2 ⟨x, b, h⟩
 

@@ -142,16 +142,16 @@ theorem exists_riemannianIsometry_ball_of_inner_mfderiv_eq
     refine ⟨⟨ψ.map_source hz_src, hψW₂⟩, ?_⟩
     simpa only [mem_preimage, ψ, hloc.localInverse_right_inv hz_src] using hz
   let d : Diffeomorph I 𝓘(ℝ, F) W B ∞ :=
-    { toFun := fun y ↦ ⟨Φ y.1, y.2.2⟩
-      invFun := fun z ↦ ⟨ψ z.1, hψ_maps z.2⟩
-      left_inv := fun y ↦ Subtype.ext (hloc.localInverse_left_inv y.2.1.1)
-      right_inv := fun z ↦ Subtype.ext (hloc.localInverse_right_inv (hr_sub z.2).1)
+    { toFun := fun y ↦ ⟨Φ y.val, y.property.2⟩
+      invFun := fun z ↦ ⟨ψ z.val, hψ_maps z.property⟩
+      left_inv := fun y ↦ Subtype.ext (hloc.localInverse_left_inv y.property.1.1)
+      right_inv := fun z ↦ Subtype.ext (hloc.localInverse_right_inv (hr_sub z.property).1)
       contMDiff_toFun :=
         (ContMDiff.subtypeVal_comp_iff B _).mp (hΦ_smooth.comp contMDiff_subtype_val)
       contMDiff_invFun := (ContMDiff.subtypeVal_comp_iff W _).mp <|
         contMDiffOn_univ.1 <|
           hloc.contMDiffOn_localInverse.comp contMDiff_subtype_val.contMDiffOn
-            fun z _ ↦ (hr_sub z.2).1 }
+            fun z _ ↦ (hr_sub z.property).1 }
   have hcomp_coe : ((Subtype.val : B → F) ∘ d) = (Φ ∘ (Subtype.val : W → M)) := rfl
   let Ψ : RiemannianIsometry I 𝓘(ℝ, F) W B :=
     { toDiffeomorph := d
@@ -160,12 +160,12 @@ theorem exists_riemannianIsometry_ball_of_inner_mfderiv_eq
         have hιW := IsLocalRiemannianIsometry.subtype_val (I := I) W
         have hdf (u : TangentSpace I y) :
             mfderiv 𝓘(ℝ, F) 𝓘(ℝ, F) (Subtype.val : B → F) (d y) (mfderiv I 𝓘(ℝ, F) d y u) =
-              mfderiv I 𝓘(ℝ, F) Φ y.1 (mfderiv I I (Subtype.val : W → M) y u) := by
+              mfderiv I 𝓘(ℝ, F) Φ y.val (mfderiv I I (Subtype.val : W → M) y u) := by
           rw [← mfderiv_comp_apply y (hιB.mdifferentiableAt (d y))
               (d.contMDiff.mdifferentiableAt (by simp)),
             hcomp_coe,
             mfderiv_comp_apply y (hΦ_smooth.mdifferentiableAt (by simp)) (hιW.mdifferentiableAt y)]
-        rw [← hιB.inner_mfderiv (d y), hdf v, hdf w, hΦ_inner y.2.1.2, hιW.inner_mfderiv y] }
+        rw [← hιB.inner_mfderiv (d y), hdf v, hdf w, hΦ_inner y.property.1.2, hιW.inner_mfderiv y] }
   refine ⟨W, hx₀W, r, hr, Ψ, fun y hy ↦ hW₂U hy.1.2, hΦ_x₀, fun v ↦ ?_⟩
   have hmv := mvfderiv_comp_apply (⟨x₀, hx₀W⟩ : W) (hΦ_smooth.mdifferentiableAt (by simp))
     ((IsLocalRiemannianIsometry.subtype_val (I := I) W).mdifferentiableAt ⟨x₀, hx₀W⟩) v

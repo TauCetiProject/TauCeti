@@ -119,7 +119,7 @@ variable {Γ} in
 /-- An acyclic graph has no parallel darts: a dart is determined by its endpoints. -/
 theorem IsAcyclic.eq_of_src_eq_of_tgt_eq (h : Γ.IsAcyclic) {e f : Γ.E}
     (hs : Γ.src e = Γ.src f) (ht : Γ.tgt e = Γ.tgt f) : e = f := by
-  have key : ∀ {a b : Γ.V} (x y : Quiver.Hom a b), x.1 = y.1 := fun x y => by
+  have key : ∀ {a b : Γ.V} (x y : Quiver.Hom a b), x.val = y.val := fun x y => by
     simpa using congrArg (Path.darts Γ)
       (h.eq_of_isReduced (Path.isReduced_toPath Γ x) (Path.isReduced_toPath Γ y))
   exact (Γ.dart_val e).symm.trans (key (Γ.dart e) ⟨f, hs.symm, ht.symm⟩)
@@ -176,7 +176,7 @@ theorem isAcyclic_of_isEmpty_dart [IsEmpty Γ.E] : Γ.IsAcyclic := by
   refine (isAcyclic_iff Γ).mpr fun u p _ => ?_
   cases p with
   | nil => rfl
-  | cons p e => exact isEmptyElim e.1
+  | cons p e => exact isEmptyElim e.val
 
 /-- A Serre graph without darts is a tree exactly when it has exactly one vertex. -/
 theorem isTree_iff_of_isEmpty_dart [IsEmpty Γ.E] :
@@ -364,10 +364,10 @@ theorem segment_isTree : segment.IsTree := by
       cases p with
       | nil =>
         -- The vertices and darts of the segment are both `Bool`, with `tgt f = !f`.
-        exact absurd (f.2.2.trans f.2.1.symm) (Bool.not_ne_self f.1)
+        exact absurd (f.property.2.trans f.property.1.symm) (Bool.not_ne_self f.val)
       | cons p e =>
         refine absurd ?_ ((Path.isReduced_cons_cons segment p e f).mp hp).2
-        exact f.2.1.trans e.2.2.symm
+        exact f.property.1.trans e.property.2.symm
 
 /-- A rose with a petal is not a tree. -/
 theorem rose_not_isTree {α : Type*} (a : α) : ¬(rose α).IsTree := by

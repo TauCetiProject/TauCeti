@@ -131,7 +131,7 @@ omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundar
 coordinates `coord ∘ π`. -/
 private theorem connectedComponentIn_coord_comp (x : π ⁻¹' {b}) :
     connectedComponentIn ((h.coord b ∘ π) ⁻¹' {(h.coord b ∘ π) x}) x = π ⁻¹' {b} :=
-  (h.coord_spec b).2.2.2 x x.2
+  (h.coord_spec b).2.2.2 x x.property
 
 omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
 /-- The coordinates `coord ∘ π` are regular along the fibre over `b`. -/
@@ -236,7 +236,7 @@ theorem coe_fiberAction_eq_flowOf {α : F →L[ℝ] ℝ} {g : B → ℝ}
     have h2 : φ.comp (h.coordEquiv b : F →L[ℝ] Fin (finrank ℝ F) → ℝ) = α :=
       (h.dualCoord b).injective (funext fun i ↦ by simp [φ, dualCoord_apply])
     exact ContinuousLinearMap.ext fun w ↦ (h1 w).trans (congrArg (· w) h2)
-  have hx : π x = b := x.2
+  have hx : π x = b := x.property
   rw [coe_fiberAction, coordAction, ← one_smul ℝ (h.dualCoord b α),
     ← (⟨hσc, hσ⟩ : σ.IsSymplectic).flowOf_hamiltonianVectorField_dotProduct]
   exact h.flowOf_hamiltonianVectorField_comp_eq h.isProperMap hφ hg
@@ -268,7 +268,7 @@ theorem exists_fiberAction_eq (x y : π ⁻¹' {b}) : ∃ α, h.fiberAction hσc
     (h.contMDiff_coord_comp b) (h.poissonBracket_coord_comp b)
     (h.isCompleteVectorField_coord_comp b) (h.two_mul_card_eq x)
     (h.isRegularPoint_coord_comp_of_mem_connectedComponentIn b x)
-    ((h.connectedComponentIn_coord_comp b x).symm.subset y.2)
+    ((h.connectedComponentIn_coord_comp b x).symm.subset y.property)
   refine ⟨(h.dualCoord b).symm v, Subtype.ext ?_⟩
   rw [coe_fiberAction, ContinuousLinearEquiv.apply_symm_apply]
   exact hv
@@ -366,7 +366,7 @@ private theorem discreteTopology_coordStabilizer (x : π ⁻¹' {b}) :
     DiscreteTopology (h.coordStabilizer hσc b x) :=
   (⟨hσc, hσ⟩ : σ.IsSymplectic).discreteTopology_hamiltonianFlowStabilizer
     (h.contMDiff_coord_comp b) (h.poissonBracket_coord_comp b)
-    (h.isCompleteVectorField_coord_comp b) (h.isRegularPoint_coord_comp b x.2)
+    (h.isCompleteVectorField_coord_comp b) (h.isRegularPoint_coord_comp b x.property)
 
 /-- **The period lattice is discrete.** -/
 instance discreteTopology_periodLattice : DiscreteTopology (h.periodLattice hσc b) := by
@@ -375,7 +375,8 @@ instance discreteTopology_periodLattice : DiscreteTopology (h.periodLattice hσc
   -- The dual coordinates embed the period lattice into the discrete stabilizer of `x`.
   exact DiscreteTopology.of_continuous_injective
     (f := fun α : h.periodLattice hσc b ↦ (⟨h.dualCoord b α,
-      (h.mem_periodLattice_iff_mem_coordStabilizer hσc b x).1 α.2⟩ : h.coordStabilizer hσc b x))
+      (h.mem_periodLattice_iff_mem_coordStabilizer hσc b x).1 α.property⟩ : h.coordStabilizer hσc b
+          x))
     (((h.dualCoord b).continuous.comp continuous_subtype_val).subtype_mk _)
     fun _ _ hαβ ↦ Subtype.ext ((h.dualCoord b).injective (congrArg Subtype.val hαβ))
 

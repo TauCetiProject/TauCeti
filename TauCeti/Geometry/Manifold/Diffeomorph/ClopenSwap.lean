@@ -56,7 +56,7 @@ private theorem clopenSwapFun_of_mem_left (φ : U ≃ₘ^n⟮I, I⟯ V) (x : U) 
 
 private theorem clopenSwapFun_of_mem_right (φ : U ≃ₘ^n⟮I, I⟯ V) (hUV : Disjoint U V) (y : V) :
     clopenSwapFun φ y = φ.symm y := by
-  have hyU : (y : M) ∉ U := (Opens.coe_disjoint.2 hUV).symm.notMem_of_mem_left y.2
+  have hyU : (y : M) ∉ U := (Opens.coe_disjoint.2 hUV).symm.notMem_of_mem_left y.property
   simp [clopenSwapFun, hyU]
 
 private theorem clopenSwapFun_of_notMem {φ : U ≃ₘ^n⟮I, I⟯ V} {x : M} (hU : x ∉ U) (hV : x ∉ V) :

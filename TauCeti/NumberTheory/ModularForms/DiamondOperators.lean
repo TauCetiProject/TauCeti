@@ -623,7 +623,7 @@ noncomputable def cuspToModFormCharSpace (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) 
     cuspFormCharSpace k χ →ₗ[ℂ] modFormCharSpace k χ :=
   LinearMap.codRestrict (modFormCharSpace k χ)
     (CuspForm.toModularFormₗ.comp (cuspFormCharSpace k χ).subtype)
-    fun f ↦ (coe_mem_modFormCharSpace_iff k χ _).mpr f.2
+    fun f ↦ (coe_mem_modFormCharSpace_iff k χ _).mpr f.property
 
 @[simp]
 theorem coe_cuspToModFormCharSpace (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) (f : cuspFormCharSpace k χ) :
@@ -651,7 +651,7 @@ theorem mem_range_cuspToModFormCharSpace_iff (k : ℤ) (χ : (ZMod N)ˣ →* ℂ
   · rintro ⟨g, hg⟩
     have hgmem : (g : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ modFormCharSpace k χ := by
       rw [← CuspForm.toModularFormₗ_eq_coe, hg]
-      exact f.2
+      exact f.property
     exact ⟨⟨g, (coe_mem_modFormCharSpace_iff k χ g).mp hgmem⟩, Subtype.ext hg⟩
 
 /-- The projection onto a diamond-stable complement of the cusp forms in `M_k(Γ₁(N))` commutes
@@ -699,7 +699,7 @@ theorem isCompl_comap_subtype_range_cuspToModFormCharSpace {k : ℤ}
       ((mem_range_cuspToModFormCharSpace_iff k χ f).mp hfS))
   · refine codisjoint_iff.mpr (eq_top_iff.mpr fun f _ ↦ ?_)
     let e : modFormCharSpace k χ :=
-      ⟨F.projection _ hF f, projection_mem_modFormCharSpace hF hd χ f.2⟩
+      ⟨F.projection _ hF f, projection_mem_modFormCharSpace hF hd χ f.property⟩
     have he : e ∈ F.comap (modFormCharSpace k χ).subtype := by
       rw [Submodule.mem_comap, Submodule.subtype_apply]
       exact Submodule.projection_apply_mem _ _

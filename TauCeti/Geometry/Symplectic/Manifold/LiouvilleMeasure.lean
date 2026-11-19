@@ -108,11 +108,11 @@ variable (σ n) in
 `2 * n`: the measure `|σⁿ / n!|` of its symplectic volume form. For a symplectic form this is the
 canonical volume of the symplectic manifold. -/
 def liouvilleMeasure : Measure M :=
-  RoughForm.measure (σ.volumeForm n).1
+  RoughForm.measure (σ.volumeForm n).val
 
 variable (σ n) in
 /-- The Liouville measure is the measure of the symplectic volume form. -/
-theorem liouvilleMeasure_def : σ.liouvilleMeasure n = RoughForm.measure (σ.volumeForm n).1 :=
+theorem liouvilleMeasure_def : σ.liouvilleMeasure n = RoughForm.measure (σ.volumeForm n).val :=
   (rfl)
 
 /-- **The Liouville measure in coordinates.** The Liouville measure of a measurable subset of a
@@ -122,7 +122,8 @@ theorem liouvilleMeasure_apply_of_subset {α : M} {s : Set M} (hs : MeasurableSe
     (hsub : s ⊆ (extChartAt I α).source) :
     σ.liouvilleMeasure n s =
       ∫⁻ y in (extChartAt I α) '' s,
-        ENNReal.ofReal |RoughForm.inChartAt (σ.volumeForm n).1 α y (finBasisOfFinrankEq ℝ E hn.out)|
+        ENNReal.ofReal |RoughForm.inChartAt (σ.volumeForm n).val α y
+            (finBasisOfFinrankEq ℝ E hn.out)|
           ∂(finBasisOfFinrankEq ℝ E hn.out).addHaar :=
   RoughForm.measure_apply_of_subset _ hs hsub
 
@@ -159,7 +160,7 @@ variable {H' N : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [T
 homeomorphism `Φ : M → N` with `Φ^* τ = σ` carries the Liouville measure of `σ` to that of `τ`. In
 particular a symplectomorphism preserves the Liouville measure. -/
 theorem measurePreserving_liouvilleMeasure {σ : SmoothTwoForm I M} {τ : SmoothTwoForm J N}
-    (Φ : M ≃ₜ N) (hΦ : MDifferentiable I J Φ) (h : mpullback I J Φ τ.1 = σ.1) :
+    (Φ : M ≃ₜ N) (hΦ : MDifferentiable I J Φ) (h : mpullback I J Φ τ.val = σ.val) :
     MeasurePreserving Φ (σ.liouvilleMeasure n) (τ.liouvilleMeasure n) := by
   rw [SmoothTwoForm.liouvilleMeasure_def, SmoothTwoForm.liouvilleMeasure_def,
     ← SmoothTwoForm.mpullback_volumeForm h]
@@ -180,7 +181,7 @@ differentiable measurable embedding `f : M → N` between manifolds of the same 
 `f^* τ = σ`, such as a symplectic open embedding, carries the Liouville measure of `σ` to the
 restriction of the Liouville measure of `τ` to the range of `f`. -/
 theorem map_liouvilleMeasure (hf : MeasurableEmbedding f) (hfd : MDifferentiable I J f)
-    (h : mpullback I J f τ.1 = σ.1) :
+    (h : mpullback I J f τ.val = σ.val) :
     (σ.liouvilleMeasure n).map f = (τ.liouvilleMeasure n).restrict (range f) := by
   rw [SmoothTwoForm.liouvilleMeasure_def, SmoothTwoForm.liouvilleMeasure_def,
     ← SmoothTwoForm.mpullback_volumeForm h]
@@ -190,7 +191,8 @@ theorem map_liouvilleMeasure (hf : MeasurableEmbedding f) (hfd : MDifferentiable
 pulls `τ` back to `σ`, then the Liouville measure of `σ` gives a set `s` the Liouville measure of
 `τ` of its image `f '' s`. -/
 theorem liouvilleMeasure_eq_comap (hf : MeasurableEmbedding f) (hfd : MDifferentiable I J f)
-    (h : mpullback I J f τ.1 = σ.1) : σ.liouvilleMeasure n = (τ.liouvilleMeasure n).comap f := by
+    (h : mpullback I J f τ.val = σ.val) : σ.liouvilleMeasure n = (τ.liouvilleMeasure n).comap f
+        := by
   rw [SmoothTwoForm.liouvilleMeasure_def, SmoothTwoForm.liouvilleMeasure_def,
     ← SmoothTwoForm.mpullback_volumeForm h]
   exact hf.measure_mpullback hfd _
@@ -267,7 +269,7 @@ theorem liouvilleMeasure_constSmooth (σ : SymplecticForm V) {b : Basis (Fin m �
     (hb : σ.IsDarbouxBasis b) : σ.constSmooth.liouvilleMeasure m = b.addHaar := by
   set e := finProdFinEquiv.trans (finCongr (Nat.mul_comm m 2))
   -- The tangent spaces of the model space are `V` itself, and `b` is a basis of each of them.
-  have hval (x : V) : (σ.constSmooth.volumeForm m).1 x (b.reindex e) = 1 :=
+  have hval (x : V) : (σ.constSmooth.volumeForm m).val x (b.reindex e) = 1 :=
     σ.isNondegenerate_constSmooth.volumeForm_apply_reindex (x := x) (b := b)
       (by rwa [isNondegenerate_constSmooth_symplecticFormAt])
   rw [SmoothTwoForm.liouvilleMeasure_def, RoughForm.measure_eq_smul_addHaar (c := 1) _ hval,

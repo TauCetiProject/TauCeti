@@ -349,7 +349,7 @@ theorem isLocallyFiniteMeasure_comap_mongeAmpereMeasure [IsFiniteMeasureOnCompac
     refine ⟨fun K hK => ?_⟩
     rw [comap_subtype_coe_apply measurableSet_interior]
     exact mongeAmpereMeasure_lt_top μ hf hbot hμ (hK.image continuous_subtype_val)
-      (image_subset_iff.2 fun x _ => x.2)
+      (image_subset_iff.2 fun x _ => x.property)
   infer_instance
 
 /-- The Aleksandrov Monge–Ampère measure with respect to a measure that is finite on compact sets

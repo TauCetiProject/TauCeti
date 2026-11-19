@@ -31,7 +31,7 @@ instance instPolynormableSpace {𝕜 X F : Type*} [NormedField 𝕜] [Topologica
         (restrict (K : Set X)) compactOpen := by
     rw [compactOpen_eq_iInf_induced]
     apply le_antisymm
-    · exact le_iInf fun K ↦ iInf₂_le K.1 K.2
+    · exact le_iInf fun K ↦ iInf₂_le K.carrier K.isCompact'
     · exact le_iInf fun K ↦ le_iInf fun hK ↦ iInf_le _ (⟨K, hK⟩ : Compacts X)
   rw [ht]
   apply PolynormableSpace.iInf

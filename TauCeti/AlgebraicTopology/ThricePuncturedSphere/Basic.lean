@@ -76,11 +76,11 @@ namespace ThricePuncturedSphere
 
 /-- A point of the thrice-punctured sphere is not the puncture `0`. -/
 @[simp]
-theorem ne_zero (z : ThricePuncturedSphere) : (z : ℂ) ≠ 0 := z.2.1
+theorem ne_zero (z : ThricePuncturedSphere) : (z : ℂ) ≠ 0 := z.property.1
 
 /-- A point of the thrice-punctured sphere is not the puncture `1`. -/
 @[simp]
-theorem ne_one (z : ThricePuncturedSphere) : (z : ℂ) ≠ 1 := z.2.2
+theorem ne_one (z : ThricePuncturedSphere) : (z : ℂ) ≠ 1 := z.property.2
 
 /-- The points of `ℂ` underlying the thrice-punctured sphere are those other than `0` and `1`. -/
 theorem range_coe : range ((↑) : ThricePuncturedSphere → ℂ) = {0, 1}ᶜ := by

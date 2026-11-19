@@ -154,7 +154,7 @@ noncomputable def unitaryMatrixQuaternionUniqueHomeomorphSphere :
 @[simp]
 theorem coe_unitaryMatrixQuaternionUniqueHomeomorphSphere_apply
     (A : unitary (Matrix ι ι ℍ)) :
-    (unitaryMatrixQuaternionUniqueHomeomorphSphere ι A : ℍ) = A.1 default default := by
+    (unitaryMatrixQuaternionUniqueHomeomorphSphere ι A : ℍ) = A.val default default := by
   rw [unitaryMatrixQuaternionUniqueHomeomorphSphere, Homeomorph.trans_apply,
     Quaternion.coe_unitaryHomeomorphSphere_apply, ContinuousMulEquiv.toHomeomorph_eq_coe]
   exact Matrix.coe_unitaryUniqueContinuousMulEquiv_apply A
@@ -162,7 +162,7 @@ theorem coe_unitaryMatrixQuaternionUniqueHomeomorphSphere_apply
 @[simp]
 theorem coe_unitaryMatrixQuaternionUniqueHomeomorphSphere_symm_apply
     (q : sphere (0 : ℍ) 1) :
-    ((unitaryMatrixQuaternionUniqueHomeomorphSphere ι).symm q).1 =
+    ((unitaryMatrixQuaternionUniqueHomeomorphSphere ι).symm q).val =
       Matrix.of fun _ _ ↦ (q : ℍ) := by
   rw [unitaryMatrixQuaternionUniqueHomeomorphSphere, Homeomorph.symm_trans_apply,
     ContinuousMulEquiv.toHomeomorph_eq_coe, ContinuousMulEquiv.coe_toHomeomorph_symm]

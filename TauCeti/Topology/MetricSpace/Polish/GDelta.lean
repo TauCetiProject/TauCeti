@@ -85,7 +85,7 @@ theorem isGδ_of_isCompletelyMetrizableSpace [T2Space X] {s : Set X}
   obtain ⟨y, hy⟩ := CompleteSpace.complete hF
   obtain rfl : x = y := tendsto_nhds_unique tendsto_comap
     ((continuous_subtype_val.tendsto y).mono_left hy)
-  exact y.2
+  exact y.property
 
 /-- **Alexandrov's theorem and its converse**: a subset of a completely metrizable space is
 completely metrizable in the subspace topology if and only if it is a Gδ set. -/

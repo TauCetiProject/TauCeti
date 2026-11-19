@@ -273,7 +273,7 @@ theorem exists_tendsto_eventually_forall_norm_eval_le [Nontrivial R] {ι : Type*
       ∀ z, ‖((X : Polynomial R) ^ (k : ℕ)).eval z‖ ≤ C * (1 + ‖Q.eval z‖) := fun k ↦
     exists_norm_eval_le_mul_one_add_norm_eval <| by
       rw [degree_X_pow]
-      exact (WithBot.coe_le_coe.2 (Nat.lt_succ_iff.1 k.2)).trans hn
+      exact (WithBot.coe_le_coe.2 (Nat.lt_succ_iff.1 k.isLt)).trans hn
   choose C hC0 hC using hX
   refine ⟨fun i ↦ ∑ k : Fin (n + 1), C k * ‖(A i).coeff k‖, fun i ↦
     Finset.sum_nonneg fun k _ ↦ mul_nonneg (hC0 k) (norm_nonneg _), ?_, ?_⟩

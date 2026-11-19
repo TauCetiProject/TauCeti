@@ -304,7 +304,7 @@ theorem ae_enorm_le_of_forall_enorm_integral_apply_le {h : Ω → StrongDual ℝ
     rw [mul_comm]
     exact_mod_cast this
   rw [eNorm_eq_nnNorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnNorm]
-  exact (h x).opNorm_le_bound q.2 hle
+  exact (h x).opNorm_le_bound q.property hle
 
 end Dual
 

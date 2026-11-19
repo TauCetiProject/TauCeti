@@ -90,8 +90,8 @@ value at that point of the map out of the source. -/
 @[simp]
 theorem homeomorphFactorsThrough_symm_apply_comp (q : C(A, B)) (hq : IsProperMap q)
     (hsurj : Function.Surjective q) (g : {g : C(A, X) // Function.FactorsThrough g q}) (a : A) :
-    (homeomorphFactorsThrough q hq hsurj).symm g (q a) = g.1 a := by
-  have h := congrArg (fun f : {g : C(A, X) // Function.FactorsThrough g q} => f.1 a)
+    (homeomorphFactorsThrough q hq hsurj).symm g (q a) = g.val a := by
+  have h := congrArg (fun f : {g : C(A, X) // Function.FactorsThrough g q} => f.val a)
     ((homeomorphFactorsThrough q hq hsurj).apply_symm_apply g)
   rwa [homeomorphFactorsThrough_apply] at h
 

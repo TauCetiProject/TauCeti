@@ -95,7 +95,7 @@ theorem natDegree_hermiteModulus [Nontrivial R] (a : ι → R) (m : ι → ℕ) 
 
 /-- The Hermite jet map commutes with a change of coefficients. -/
 theorem hermiteJet_map (φ : R →+* S) (a : ι → R) (m : ι → ℕ) (f : degreeLT R (∑ i, m i)) :
-    hermiteJet (φ ∘ a) m ⟨(f : R[X]).map φ, map_mem_degreeLT φ f.2⟩ =
+    hermiteJet (φ ∘ a) m ⟨(f : R[X]).map φ, map_mem_degreeLT φ f.property⟩ =
       fun i k => φ (hermiteJet a m f i k) := by
   ext i k
   rw [hermiteJet_apply, hermiteJet_apply]
@@ -176,7 +176,7 @@ theorem hermiteJet_injective (ha : Injective a) (m : ι → ℕ) : Injective (he
       simpa using congr_fun (congr_fun hf i) ⟨k, hk⟩
   refine Subtype.ext (eq_zero_of_dvd_of_degree_lt hdvd ?_)
   rw [degree_eq_natDegree (monic_hermiteModulus a m).ne_zero, natDegree_hermiteModulus]
-  exact mem_degreeLT.1 f.2
+  exact mem_degreeLT.1 f.property
 
 /-- The source and the target of the Hermite jet map have the same dimension. -/
 theorem finrank_degreeLT_eq_finrank_pi (m : ι → ℕ) :
@@ -253,7 +253,7 @@ theorem hermiteJetEquiv_symm_map (m : ι → ℕ) (ha : Injective a) (φ : K →
   set f := (hermiteJetEquiv m ha).symm c
   have hf : hermiteJet a m f = c := hermiteJet_hermiteJetEquiv_symm m ha c
   have h : hermiteJetEquiv m (φ.injective.comp ha)
-      ⟨(f : K[X]).map φ, map_mem_degreeLT φ f.2⟩ = fun i k => φ (c i k) := by
+      ⟨(f : K[X]).map φ, map_mem_degreeLT φ f.property⟩ = fun i k => φ (c i k) := by
     rw [hermiteJetEquiv_apply, hermiteJet_map, hf]
   rw [← h, LinearEquiv.symm_apply_apply]
 
@@ -266,7 +266,7 @@ theorem ordinaryHermiteJet_bijective (ha : Injective a) (m : ι → ℕ)
     ext i k
     have := congr_fun (congr_fun hf i) k
     rw [ordinaryHermiteJet_eq_factorial_mul] at this
-    simpa using (hm i k k.2).mul_right_eq_zero.1 this
+    simpa using (hm i k k.isLt).mul_right_eq_zero.1 this
   exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
     (finrank_degreeLT_eq_finrank_pi m)).1 hinj⟩
 

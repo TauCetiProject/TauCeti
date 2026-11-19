@@ -75,7 +75,7 @@ theorem range_ofFreeLocusQuotient :
       · rintro ⟨w, hw⟩
         induction w using Quotient.inductionOn with
         | h w =>
-          exact (mem_freeLocus_iff_of_quotientMk_eq Γ ℍ (ofQuotient_injective hw)).mp w.2
+          exact (mem_freeLocus_iff_of_quotientMk_eq Γ ℍ (ofQuotient_injective hw)).mp w.property
       · exact fun hz ↦ ⟨Quotient.mk _ ⟨z, hz⟩, rfl⟩
 
 variable [DiscreteTopology Γ]

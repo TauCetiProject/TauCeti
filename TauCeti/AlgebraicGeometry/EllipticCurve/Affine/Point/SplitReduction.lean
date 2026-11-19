@@ -851,7 +851,7 @@ private theorem SplitNodal.exists_point [HenselianLocalRing v.valuationSubring]
     field_simp at hroot ⊢
     linear_combination hroot
   · rw [hw, map_mul]
-    exact mul_le_of_le_one_right' t.2
+    exact mul_le_of_le_one_right' t.property
 
 /-- **Every value of `v` in `(v a₆, 1)` is the component of a point.** -/
 private theorem SplitNodal.exists_componentValue_eq [HenselianLocalRing v.valuationSubring]

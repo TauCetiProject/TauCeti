@@ -524,7 +524,7 @@ theorem comap_subtype_algebraMap_mul (b : NovikovSeries R K (N.comp K.subtype))
   · have huK : u ∈ K := by_contra fun huK => hu (coeff_algebraMap_addSubgroup_of_notMem b huK)
     have hvK : v ∈ K := by
       rw [← add_sub_cancel_left u v, huv]
-      exact K.sub_mem k.2 huK
+      exact K.sub_mem k.property huK
     refine ⟨(⟨u, huK⟩, ⟨v, hvK⟩), (Set.Finite.mem_toFinset _).2 ⟨Subtype.ext huv, ?_, ?_⟩, rfl⟩
     · rwa [← coeff_algebraMap_addSubgroup_coe (H := H)]
     · rwa [coeff_comap]

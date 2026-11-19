@@ -148,7 +148,7 @@ theorem exists_mapClusterPt_curveVelocityLiftWithin {s : Set ℝ} (hγ : IsGeode
   obtain ⟨τ, hτ⟩ := l.nonempty_of_mem hl
   obtain ⟨K, hK, hpK⟩ := exists_compact_mem_nhds p
   have hmem : Tendsto (curveVelocityLiftWithin I γ s) l
-      (𝓟 {z : TangentBundle I M | z.proj ∈ K ∧ ‖z.2‖ ≤ ‖curveVelocityWithin I γ s τ‖}) := by
+      (𝓟 {z : TangentBundle I M | z.proj ∈ K ∧ ‖z.snd‖ ≤ ‖curveVelocityWithin I γ s τ‖}) := by
     refine tendsto_principal.2 ?_
     filter_upwards [hp.eventually hpK, hl] with t ht hts
     rw [curveVelocityLiftWithin_apply]

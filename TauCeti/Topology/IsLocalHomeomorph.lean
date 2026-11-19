@@ -210,19 +210,19 @@ theorem pullback_snd {f : X → Y} {g : Z → Y} (hf : IsLocalHomeomorph f)
     continuous_fst.comp continuous_subtype_val
   have hsnd : Continuous (Function.Pullback.snd : (⇑e).Pullback g → Z) :=
     continuous_snd.comp continuous_subtype_val
-  have hpb (p : (⇑e).Pullback g) : e p.fst = g p.snd := p.2
+  have hpb (p : (⇑e).Pullback g) : e p.fst = g p.snd := p.property
   let U : Set ((⇑e).Pullback g) := Function.Pullback.fst ⁻¹' e.source
   let W : Set Z := g ⁻¹' e.target
-  have hgU (p : U) : g p.1.snd ∈ e.target := hpb p.1 ▸ e.map_source p.2
-  have hfW (w : W) : e (e.symm (g w)) = g w := e.right_inv w.2
+  have hgU (p : U) : g p.val.snd ∈ e.target := hpb p.val ▸ e.map_source p.property
+  have hfW (w : W) : e (e.symm (g w)) = g w := e.right_inv w.property
   -- Over the chart `e`, the projection identifies `U` with `W`.
   let φ : U ≃ₜ W :=
-    { toFun p := ⟨p.1.snd, hgU p⟩
-      invFun w := ⟨⟨(e.symm (g w), w), hfW w⟩, e.map_target w.2⟩
+    { toFun p := ⟨p.val.snd, hgU p⟩
+      invFun w := ⟨⟨(e.symm (g w), w), hfW w⟩, e.map_target w.property⟩
       left_inv p := by
         refine Subtype.ext (Subtype.ext (Prod.ext ?_ rfl))
         -- The first component of the round trip is `e.symm (g p.1.snd)` by definition of `φ`.
-        exact (congrArg e.symm (hpb p.1)).symm.trans (e.left_inv p.2)
+        exact (congrArg e.symm (hpb p.val)).symm.trans (e.left_inv p.property)
       right_inv _ := rfl
       continuous_toFun := (hsnd.comp continuous_subtype_val).subtype_mk _
       continuous_invFun :=
@@ -245,11 +245,11 @@ theorem _root_.IsLocalHomeomorph.of_isEmbedding_of_range_eq {X' Y' : Type*}
   obtain ⟨U, hU, hfU⟩ := isLocalHomeomorph_iff_isOpenEmbedding_restrict.mp hf (i x')
   refine ⟨i ⁻¹' U, hi.continuous.continuousAt.preimage_mem_nhds hU, ?_⟩
   -- Over `U`, the restriction of `f'` is the restriction of `f` precomposed with `i`.
-  let k : i ⁻¹' U → U := fun v ↦ ⟨i v, v.2⟩
+  let k : i ⁻¹' U → U := fun v ↦ ⟨i v, v.property⟩
   have hk : IsEmbedding k :=
     IsEmbedding.subtypeVal.of_comp_iff.mp (hi.comp IsEmbedding.subtypeVal)
   have hcomm' : j ∘ (i ⁻¹' U).domRestrict f' = U.domRestrict f ∘ k :=
-    funext fun v ↦ (congrFun hcomm v.1).symm
+    funext fun v ↦ (congrFun hcomm v.val).symm
   refine ⟨hj.of_comp_iff.mp (hcomm' ▸ hfU.isEmbedding.comp hk), ?_⟩
   -- The range is the part of `Y'` that `j` sends into the open range of `U.domRestrict f`.
   convert hfU.isOpen_range.preimage hj.continuous using 1

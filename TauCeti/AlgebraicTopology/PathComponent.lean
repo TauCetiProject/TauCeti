@@ -89,7 +89,7 @@ noncomputable def _root_.FundamentalGroup.pathComponentMulEquiv (a : pathCompone
       exact hnull
     · intro ⟨g⟩
       obtain ⟨γ, rfl⟩ := Quotient.exists_rep g
-      have hmem : ∀ t, γ t ∈ pathComponent x₀ := γ.mem_pathComponent_of_mem a.2
+      have hmem : ∀ t, γ t ∈ pathComponent x₀ := γ.mem_pathComponent_of_mem a.property
       refine ⟨FundamentalGroup.fromPath
         ⟦Path.codRestrict (x := a) (y := a) γ hmem⟧, ?_⟩
       simp only [Path.Homotopic.Quotient.mk''_eq_mk]
@@ -112,11 +112,11 @@ theorem _root_.FundamentalGroup.pathComponentMulEquiv_symm_fromPath (a : pathCom
         (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) =
       FundamentalGroup.fromPath
         (Path.Homotopic.Quotient.mk
-          (Path.codRestrict (x := a) (y := a) γ (γ.mem_pathComponent_of_mem a.2))) := by
+          (Path.codRestrict (x := a) (y := a) γ (γ.mem_pathComponent_of_mem a.property))) := by
   rw [MulEquiv.symm_apply_eq, FundamentalGroup.pathComponentMulEquiv_apply]
   exact congrArg FundamentalGroup.fromPath <| congrArg Path.Homotopic.Quotient.mk <|
     (Path.map_codRestrict (s := pathComponent x₀) (x := a) (y := a) γ
-      (γ.mem_pathComponent_of_mem a.2)).symm
+      (γ.mem_pathComponent_of_mem a.property)).symm
 
 /-- **Simple connectivity of a path component.** The path component of `x₀` is simply connected
 exactly when the fundamental group of the ambient space at `x₀` is trivial. -/

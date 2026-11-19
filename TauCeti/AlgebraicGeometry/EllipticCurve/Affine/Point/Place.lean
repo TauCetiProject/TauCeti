@@ -243,17 +243,18 @@ private noncomputable def equationToDegreeOnePlace
     (p : {xy : F × F // W.Equation xy.1 xy.2}) :
     {v : HeightOneSpectrum W.CoordinateRing //
       Module.finrank F (W.CoordinateRing ⧸ v.asIdeal) = 1} :=
-  ⟨WeierstrassCurve.Affine.CoordinateRing.pointPlace p.2,
-      WeierstrassCurve.Affine.CoordinateRing.pointPlace.finrank_residueField_eq_one p.2⟩
+  ⟨WeierstrassCurve.Affine.CoordinateRing.pointPlace p.property,
+      WeierstrassCurve.Affine.CoordinateRing.pointPlace.finrank_residueField_eq_one p.property⟩
 
 variable (W) in
 /-- Sending an equation solution to its degree-one place is bijective. -/
 private theorem equationToDegreeOnePlace_bijective :
     Function.Bijective (WeierstrassCurve.Affine.CoordinateRing.equationToDegreeOnePlace W) :=
   ⟨fun p q h ↦ Subtype.ext <| Prod.ext_iff.mpr <|
-      (WeierstrassCurve.Affine.CoordinateRing.pointPlace_eq_iff p.2 q.2).mp (Subtype.ext_iff.mp h),
+      (WeierstrassCurve.Affine.CoordinateRing.pointPlace_eq_iff p.property q.property).mp
+          (Subtype.ext_iff.mp h),
     fun v ↦ by
-      obtain ⟨x, y, h, hv⟩ := WeierstrassCurve.Affine.CoordinateRing.exists_pointPlace_eq v.2
+      obtain ⟨x, y, h, hv⟩ := WeierstrassCurve.Affine.CoordinateRing.exists_pointPlace_eq v.property
       exact ⟨⟨(x, y), h⟩, Subtype.ext hv⟩⟩
 
 variable (W) in
@@ -273,7 +274,7 @@ noncomputable def equationEquivDegreeOnePlace :
 theorem equationEquivDegreeOnePlace_apply_coe
     (p : {xy : F × F // W.Equation xy.1 xy.2}) :
     (WeierstrassCurve.Affine.CoordinateRing.equationEquivDegreeOnePlace W p : HeightOneSpectrum
-        W.CoordinateRing) = WeierstrassCurve.Affine.CoordinateRing.pointPlace p.2 := by
+        W.CoordinateRing) = WeierstrassCurve.Affine.CoordinateRing.pointPlace p.property := by
   rw [WeierstrassCurve.Affine.CoordinateRing.equationEquivDegreeOnePlace, Equiv.ofBijective_apply]
   rfl
 
@@ -284,7 +285,8 @@ theorem
     (v : {v : HeightOneSpectrum W.CoordinateRing //
       Module.finrank F (W.CoordinateRing ⧸ v.asIdeal) = 1}) :
     WeierstrassCurve.Affine.CoordinateRing.pointPlace
-        ((WeierstrassCurve.Affine.CoordinateRing.equationEquivDegreeOnePlace W).symm v).2 = v.1 :=
+        ((WeierstrassCurve.Affine.CoordinateRing.equationEquivDegreeOnePlace W).symm v).property =
+            v.val :=
             by
   rw [← WeierstrassCurve.Affine.CoordinateRing.equationEquivDegreeOnePlace_apply_coe]
   exact congrArg Subtype.val ((WeierstrassCurve.Affine.CoordinateRing.equationEquivDegreeOnePlace

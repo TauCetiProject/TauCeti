@@ -50,18 +50,18 @@ its base set, as a linear map to native vector-valued smooth maps. -/
 def frameCoordinates : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] C^n⟮I, U; 𝓘(𝕜, F), F⟯ where
   toFun s := ⟨fun x => (e ⟨(x : M), s x⟩).2, fun x =>
     (contMDiffAt_subtype_iff (f := fun y => (e ⟨y, s y⟩).2)).mpr
-      ((e.contMDiffAt_section_iff (hU x.2)).mp (s.contMDiff x))⟩
+      ((e.contMDiffAt_section_iff (hU x.property)).mp (s.contMDiff x))⟩
   map_add' s t := by
     ext x
     -- Unpack the bundled maps before applying fibrewise linearity.
     change (e ⟨(x : M), s x + t x⟩).2 = (e ⟨(x : M), s x⟩).2 +
       (e ⟨(x : M), t x⟩).2
-    simp only [← e.continuousLinearMapAt_apply_of_mem 𝕜 (hU x.2), map_add]
+    simp only [← e.continuousLinearMapAt_apply_of_mem 𝕜 (hU x.property), map_add]
   map_smul' c s := by
     ext x
     -- Unpack the bundled maps before applying fibrewise linearity.
     change (e ⟨(x : M), c • s x⟩).2 = c • (e ⟨(x : M), s x⟩).2
-    simp only [← e.continuousLinearMapAt_apply_of_mem 𝕜 (hU x.2), map_smul]
+    simp only [← e.continuousLinearMapAt_apply_of_mem 𝕜 (hU x.property), map_smul]
 
 /-- Frame coordinates are the fibre component of the given trivialization. -/
 @[simp]
@@ -75,7 +75,7 @@ theorem frameCoordinates_eq_iff (s t : Cₛ^n⟮I; F, V⟯) (x : U) :
   constructor
   · intro h
     rw [frameCoordinates_apply, frameCoordinates_apply] at h
-    simpa only [e.symm_apply_apply_mk (hU x.2)] using congrArg (e.symm x) h
+    simpa only [e.symm_apply_apply_mk (hU x.property)] using congrArg (e.symm x) h
   · intro h
     simp only [frameCoordinates_apply, h]
 
@@ -84,8 +84,8 @@ theorem frameCoordinates_coordChange (e' : Trivialization F (π F V))
     [MemTrivializationAtlas e'] (hU' : (U : Set M) ⊆ e'.baseSet)
     (s : Cₛ^n⟮I; F, V⟯) (x : U) :
     e.coordChangeL 𝕜 e' x (frameCoordinates e hU s x) = frameCoordinates e' hU' s x := by
-  simp only [frameCoordinates_apply, e.coordChangeL_apply e' ⟨hU x.2, hU' x.2⟩,
-    e.symm_apply_apply_mk (hU x.2)]
+  simp only [frameCoordinates_apply, e.coordChangeL_apply e' ⟨hU x.property, hU' x.property⟩,
+    e.symm_apply_apply_mk (hU x.property)]
 
 /-- Coefficients in a second frame are obtained by the smooth transition multiplier. -/
 theorem frameCoordinates_eq_clmApply (e' : Trivialization F (π F V))

@@ -71,7 +71,7 @@ lemma coe_characteristicCellPairMap_fst_apply {n : ℕ} (j : cell C n)
     (x : TopCat.disk.{w} n) :
     (ConcreteCategory.hom (X := TopCat.disk.{w} n)
       (Y := TopCat.of (skeletonLT C ((n + 1 : ℕ) : ℕ∞)))
-      (TopPair.Hom.fst (characteristicCellPairMap C j)) x).1 =
+      (TopPair.Hom.fst (characteristicCellPairMap C j)) x).val =
       map n j ((EuclideanSpace.equiv (Fin n) ℝ).unitBallHomeomorph x.down) := by
   -- Pair components use the skeletal subspace object, while the evaluation lemmas use its
   -- explicit `TopCat.of` presentation; `erw` identifies these before evaluating composites.

@@ -73,7 +73,7 @@ variable {n : ℕ} (g g' : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSp
 def diskMap : TopCat.disk.{u} n ⟶ TopCat.disk.{u} n :=
   TopCat.ofHom
     { toFun w := ULift.up ⟨g w.down, mem_closedBall_zero_iff.2 <| (g.norm_map _).trans_le <|
-        mem_closedBall_zero_iff.1 w.down.2⟩
+        mem_closedBall_zero_iff.1 w.down.property⟩
       continuous_toFun := continuous_uliftUp.comp ((g.continuous.comp
         (continuous_subtype_val.comp continuous_uliftDown)).subtype_mk _) }
 
@@ -82,7 +82,7 @@ isometry `g` of `ℝⁿ`. -/
 def diskBoundaryMap : TopCat.diskBoundary.{u} n ⟶ TopCat.diskBoundary.{u} n :=
   TopCat.ofHom
     { toFun s := ULift.up ⟨g s.down, mem_sphere_zero_iff_norm.2 <| (g.norm_map _).trans <|
-        mem_sphere_zero_iff_norm.1 s.down.2⟩
+        mem_sphere_zero_iff_norm.1 s.down.property⟩
       continuous_toFun := continuous_uliftUp.comp ((g.continuous.comp
         (continuous_subtype_val.comp continuous_uliftDown)).subtype_mk _) }
 
@@ -206,7 +206,7 @@ theorem exists_homotopy_diskMap_id_of_det_eq_one (hg : LinearMap.det g.toLinearM
   rw [mem_range_diskBoundaryInclusion_iff]
   refine (congrArg norm (coe_linearIsometryEquivPathHomotopy_apply_down _ _ _ _ (t, _))).trans ?_
   rw [LinearIsometryEquiv.norm_map, coe_diskBoundaryInclusion_apply_down]
-  exact mem_sphere_zero_iff_norm.1 s.down.2
+  exact mem_sphere_zero_iff_norm.1 s.down.property
 
 /-- **An orientation-preserving orthogonal map of a sphere is homotopic to the identity.** If
 `det g = 1`, the boundary map of `g` is homotopic to the identity of `TopCat.diskBoundary n`. -/

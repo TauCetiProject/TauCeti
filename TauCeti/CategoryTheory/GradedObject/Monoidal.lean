@@ -56,12 +56,12 @@ variable {I J C : Type*} [Category* C]
 objects is the map of colimits of the corresponding discrete diagrams. -/
 lemma mapMap_eq_colimMap {X Y : GradedObject I C} (φ : X ⟶ Y) (p : I → J) [X.HasMap p]
     [Y.HasMap p] (j : J) :
-    mapMap φ p j = colimMap (Discrete.natTrans fun i ↦ φ i.as.1 :
+    mapMap φ p j = colimMap (Discrete.natTrans fun i ↦ φ i.as.val :
       Discrete.functor (X.mapObjFun p j) ⟶ Discrete.functor (Y.mapObjFun p j)) := by
   refine mapObj_ext _ _ _ _ fun i hi ↦ ?_
   rw [ι_mapMap]
   -- `ιMapObj` is the colimit inclusion `Sigma.ι` of the discrete diagram `mapObjFun`
-  exact (ι_colimMap (Discrete.natTrans fun i ↦ φ i.as.1 :
+  exact (ι_colimMap (Discrete.natTrans fun i ↦ φ i.as.val :
     Discrete.functor (X.mapObjFun p j) ⟶ Discrete.functor (Y.mapObjFun p j)) ⟨⟨i, hi⟩⟩).symm
 
 /-- A morphism of graded objects which is a monomorphism in each degree induces a monomorphism on
@@ -72,8 +72,8 @@ lemma mono_mapMap {X Y : GradedObject I C} (φ : X ⟶ Y) (p : I → J) [X.HasMa
     [(colim : (Discrete (p ⁻¹' {j}) ⥤ C) ⥤ C).PreservesMonomorphisms]
     [hφ : ∀ i, Mono (φ i)] : Mono (mapMap φ p j) := by
   let α : Discrete.functor (X.mapObjFun p j) ⟶ Discrete.functor (Y.mapObjFun p j) :=
-    Discrete.natTrans fun i ↦ φ i.as.1
-  have : ∀ i, Mono (α.app i) := fun i ↦ inferInstanceAs (Mono (φ i.as.1))
+    Discrete.natTrans fun i ↦ φ i.as.val
+  have : ∀ i, Mono (α.app i) := fun i ↦ inferInstanceAs (Mono (φ i.as.val))
   have : Mono α := NatTrans.mono_of_mono_app _
   rw [mapMap_eq_colimMap, ← colim_map]
   exact CategoryTheory.Functor.map_mono colim α
@@ -99,16 +99,17 @@ lemma exact_mapMap [Abelian C] (S : ShortComplex (GradedObject I C)) (p : I → 
   let T : ShortComplex (Discrete (p ⁻¹' {j}) ⥤ C) :=
     ShortComplex.mk (X₁ := Discrete.functor (S.X₁.mapObjFun p j))
       (X₂ := Discrete.functor (S.X₂.mapObjFun p j)) (X₃ := Discrete.functor (S.X₃.mapObjFun p j))
-      (Discrete.natTrans fun i ↦ S.f i.as.1) (Discrete.natTrans fun i ↦ S.g i.as.1)
-      (by ext i; exact congr_fun S.zero i.as.1)
+      (Discrete.natTrans fun i ↦ S.f i.as.val) (Discrete.natTrans fun i ↦ S.g i.as.val)
+      (by ext i; exact congr_fun S.zero i.as.val)
   have hT : T.Exact := by
     have hP : JointlyReflectIsomorphisms fun i : Discrete (p ⁻¹' {j}) ↦ (evaluation _ C).obj i :=
       ⟨fun f h ↦ have : ∀ i, IsIso (f.app i) := h; NatIso.isIso_of_isIso_app f⟩
     rw [hP.exact_iff]
-    exact fun i ↦ hS i.as.1
+    exact fun i ↦ hS i.as.val
   exact colim.exact_mapShortComplex hT (colimit.isColimit _) (colimit.isColimit _)
     (colimit.isColimit _) (mapMap S.f p j) (mapMap S.g p j)
-    (fun i ↦ ι_mapMap S.f p i.as.1 j i.as.2) (fun i ↦ ι_mapMap S.g p i.as.1 j i.as.2)
+    (fun i ↦ ι_mapMap S.f p i.as.val j i.as.property) (fun i ↦ ι_mapMap S.g p i.as.val j
+        i.as.property)
 
 /-- A short complex of graded objects which is short exact in each degree induces a short exact
 sequence on the coproducts over the fibre of `p : I → J` over `j`, when coproducts of that shape

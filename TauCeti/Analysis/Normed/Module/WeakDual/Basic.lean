@@ -63,7 +63,7 @@ noncomputable def evalClosedBall (r : ℝ) :
     (max r 0) fun x ↦ (ContinuousMap.norm_le _ (by positivity)).2 fun φ ↦
       ((toStrongDual (φ : WeakDual 𝕜 E)).le_opNorm x).trans <| by
         gcongr
-        exact (mem_closedBall_zero_iff.1 φ.2).trans (le_max_left r 0)
+        exact (mem_closedBall_zero_iff.1 φ.property).trans (le_max_left r 0)
 
 @[simp]
 theorem evalClosedBall_apply_apply (r : ℝ) (x : E)

@@ -158,7 +158,7 @@ theorem isCompact_closure_range_of_equicontinuous [UniformSpace Y]
       Subset.antisymm (image_subset_iff.2 fun _ hg ↦ hg)
         fun p hp ↦ ⟨⟨p, hPeq.continuous_of_mem hp⟩, hp, rfl⟩
     exact ArzelaAscoli.isCompact_of_equicontinuous S (himage ▸ hP)
-      (hPeq.comp fun g : S ↦ (⟨⇑(g : C(X, Y)), g.2⟩ : P))
+      (hPeq.comp fun g : S ↦ (⟨⇑(g : C(X, Y)), g.property⟩ : P))
   exact hS.of_isClosed_subset isClosed_closure (closure_minimal
     (range_subset_iff.2 fun i ↦ subset_closure (mem_range_self i))
     (isClosed_closure.preimage (continuous_pi continuous_eval_const)))
@@ -185,7 +185,7 @@ theorem EquicontinuousOn.exists_finite_approx_of_isCompact [UniformSpace Y]
     ArzelaAscoli.isCompact_closure_range_of_equicontinuous hφequi fun x ↦ by
       have hpoint : TotallyBounded (range fun i ↦ (g i x : UniformSpace.Completion Y)) := by
         simpa only [← range_comp, Function.comp_def] using
-          (hg x x.2).image (UniformSpace.Completion.uniformContinuous_coe Y)
+          (hg x x.property).image (UniformSpace.Completion.uniformContinuous_coe Y)
       exact ⟨closure (range fun i ↦ (g i x : UniformSpace.Completion Y)),
         hpoint.closure.isCompact_of_isClosed isClosed_closure,
         fun i ↦ subset_closure (mem_range_self i)⟩
@@ -250,7 +250,7 @@ theorem EquicontinuousOn.exists_strictMono_tendstoLocallyUniformlyOn [LocallyCom
   -- A subsequence of the restrictions converges in `C(U, Y)`, that is, locally uniformly on `U`.
   set f : ℕ → C(U, Y) := fun n ↦ ⟨U.domRestrict (u n), (hequi.continuousOn n).domRestrict⟩
   obtain ⟨a, -, φ, hφ, hconv⟩ := (ArzelaAscoli.isCompact_closure_range_of_equicontinuous (f := f)
-    ((equicontinuous_restrict_iff _).2 hequi) fun x ↦ hQ x x.2).tendsto_subseq
+    ((equicontinuous_restrict_iff _).2 hequi) fun x ↦ hQ x x.property).tendsto_subseq
     fun n ↦ subset_closure (mem_range_self n)
   refine ⟨φ, hφ, Function.extend Subtype.val a (u 0), ?_⟩
   rw [tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe,
@@ -280,9 +280,9 @@ theorem exists_tendstoUniformly_subseq_of_periodic_of_modulus {M : Type*} [Pseud
     rw [Subtype.dist_eq, Real.dist_eq]
     rcases le_total (t₁ : ℝ) t₂ with h | h
     · rw [dist_comm, abs_sub_comm, abs_of_nonneg (sub_nonneg.2 h)]
-      exact hmod n t₁ t₁.2 t₂ t₂.2 h
+      exact hmod n t₁ t₁.property t₂ t₂.property h
     · rw [abs_of_nonneg (sub_nonneg.2 h)]
-      exact hmod n t₂ t₂.2 t₁ t₁.2 h
+      exact hmod n t₂ t₂.property t₁ t₁.property h
   obtain ⟨g, -, ψ, hψ, hlim⟩ :=
     (ArzelaAscoli.isCompact_closure_range_of_equicontinuous hGeq fun t ↦
       ⟨K, hK, fun n ↦ hyK n t⟩).tendsto_subseq
@@ -461,11 +461,11 @@ theorem isCompact_setOf_lipschitzWith_apply_mem_of_forall_isCompact_cthickening
     ((isClosed_setOfPred_lipschitzWith C).preimage continuous_coeFun).inter
       (hK.preimage (continuous_eval_const x₀))
   have hequi : Equicontinuous fun f : A ↦ ⇑(f : C(X, Y)) :=
-    (LipschitzWith.uniformEquicontinuous _ C fun f ↦ f.2.1).equicontinuous
+    (LipschitzWith.uniformEquicontinuous _ C fun f ↦ f.property.1).equicontinuous
   have hball (x : X) : ∃ Q : Set Y, IsCompact Q ∧ ∀ f : A, (f : C(X, Y)) x ∈ Q := by
-    refine ⟨_, hKC x, fun f ↦ Metric.mem_cthickening_of_edist_le _ _ _ _ f.2.2 ?_⟩
+    refine ⟨_, hKC x, fun f ↦ Metric.mem_cthickening_of_edist_le _ _ _ _ f.property.2 ?_⟩
     rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_coe_nnreal, ← edist_dist]
-    exact f.2.1 x x₀
+    exact f.property.1 x x₀
   have hrange := ArzelaAscoli.isCompact_closure_range_of_equicontinuous hequi hball
   rw [Subtype.range_coe] at hrange
   exact hrange.of_isClosed_subset hA subset_closure
@@ -479,7 +479,7 @@ theorem isCompact_setOf_lipschitzWith_apply_mem_of_isCompact_cthickening
   isCompact_setOf_lipschitzWith_apply_mem_of_forall_isCompact_cthickening C t₀ hK fun t ↦
     hKC.of_isClosed_subset Metric.isClosed_cthickening
       (Metric.cthickening_mono
-        (mul_le_of_le_one_right C.2 (Real.dist_le_of_mem_Icc_01 t.2 t₀.2)) K)
+        (mul_le_of_le_one_right C.property (Real.dist_le_of_mem_Icc_01 t.property t₀.property)) K)
 
 /-- For a proper target `Y`, the `C`-Lipschitz maps whose value at `x₀` lies in a compact set `K`
 form a compact subset of `C(X, Y)`. -/
@@ -498,7 +498,7 @@ theorem isCompact_setOf_lipschitzWith_apply_eq_of_isCompact_closedBall (C : ℝ�
     IsCompact {f : C(I, Y) | LipschitzWith C f ∧ f t₀ = x} := by
   simpa only [mem_singleton_iff] using
     isCompact_setOf_lipschitzWith_apply_mem_of_isCompact_cthickening C t₀ isClosed_singleton
-      ((Metric.cthickening_singleton x C.2).symm ▸ hx)
+      ((Metric.cthickening_singleton x C.property).symm ▸ hx)
 
 /-- For a proper target `Y`, the `C`-Lipschitz maps taking value `y` at `x₀` form a compact
 subset of `C(X, Y)`. -/

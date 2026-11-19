@@ -322,7 +322,7 @@ private theorem exists_contDiffOn_ball (hh : ContDiff ℝ 1 h) (hk : ContDiff �
   rw [hu] at hHα
   have hβ0 : 0 < α / 2 := half_pos hα
   have hβ1 : α / 2 < 1 := (half_lt_self hα).trans_le hα1
-  obtain ⟨Cβ, hHβ⟩ := HolderOnWith.exists_holderOnWith_of_le ⟨_, hHα⟩ (half_le_self α.2)
+  obtain ⟨Cβ, hHβ⟩ := HolderOnWith.exists_holderOnWith_of_le ⟨_, hHα⟩ (half_le_self α.property)
     isBounded_ball
   have huM : ∀ x ∈ ball c 1, |u x| ≤ |u c| + Cβ := fun x hx => by
     have hd := hHβ.dist_le_mul_rpow_of_mem_ball hx

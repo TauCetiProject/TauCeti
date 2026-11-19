@@ -118,8 +118,9 @@ theorem exists_contMDiff_homotopicRel (e : SmoothEmbedding J 𝓘(ℝ, V) ∞ M 
   have hφ : Continuous φ := by fun_prop
   have hφW (p : unitInterval × N) : φ p ∈ W := by
     refine hεW p.2 _ ?_
-    rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg p.1.2.1, ← dist_eq_norm]
-    exact (mul_le_of_le_one_left dist_nonneg p.1.2.2).trans_lt (hGF p.2)
+    rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg p.1.property.1,
+        ← dist_eq_norm]
+    exact (mul_le_of_le_one_left dist_nonneg p.1.property.2).trans_lt (hGF p.2)
   have hGW (x : N) : G x ∈ W := by simpa [φ] using hφW (1, x)
   have hrc : ContinuousOn r W := hr.continuousOn
   let g : C(N, M) := ⟨r ∘ G, hrc.comp_continuous G.contMDiff.continuous hGW⟩

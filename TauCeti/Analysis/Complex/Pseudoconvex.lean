@@ -277,7 +277,7 @@ theorem isOpen_setOf_re_leviForm_posOnSubspace (q : ℕ) :
         continuous_const_smul I |>.comp hv
       exact ((continuous_fst.clm_apply hv).clm_apply hv).add
         ((continuous_fst.clm_apply hvI).clm_apply hvI) |>.div_const 4
-    exact (isOpen_lt continuous_const hcont).mem_nhds (hpos v v.2 hv0)
+    exact (isOpen_lt continuous_const hcont).mem_nhds (hpos v v.property hv0)
   filter_upwards [key] with C hC
   refine ⟨P, hP, fun v hv hv0 ↦ ?_⟩
   let u : P := ⟨v, hv⟩

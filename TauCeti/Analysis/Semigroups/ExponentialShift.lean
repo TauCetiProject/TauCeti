@@ -129,7 +129,7 @@ def expShiftContraction (S : StronglyContinuousSemigroup X) (lambda : ℝ)
   toStronglyContinuousSemigroup := S.expShift lambda
   contracting t := by
     have h := hb.expShift (lambda := lambda)
-    have hbound := h.bound (t : ℝ) (by exact_mod_cast t.2)
+    have hbound := h.bound (t : ℝ) (by exact_mod_cast t.property)
     rw [realOperator_coe] at hbound
     rw [sub_self, zero_mul, Real.exp_zero, mul_one] at hbound
     exact hbound

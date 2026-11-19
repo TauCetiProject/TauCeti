@@ -88,7 +88,7 @@ theorem tsum_absNorm_cpow_dvd_isPrincipal (J : (Ideal (𝓞 K))⁰) (s : ℂ) :
   -- cancellative monoid of nonzero ideals), and carries the condition on `𝔟 J` along.
   let e : {𝔟 : (Ideal (𝓞 K))⁰ // IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K)))} ≃
       {I : (Ideal (𝓞 K))⁰ // (J : Ideal (𝓞 K)) ∣ I ∧ IsPrincipal (I : Ideal (𝓞 K))} :=
-    ((Equiv.dvd J).subtypeEquiv (q := fun I ↦ IsPrincipal (I.1 : Ideal (𝓞 K)))
+    ((Equiv.dvd J).subtypeEquiv (q := fun I ↦ IsPrincipal (I.val : Ideal (𝓞 K)))
         fun 𝔟 ↦ by rw [Equiv.dvd_apply, Submonoid.coe_mul, mul_comm]).trans <|
       (Equiv.subtypeSubtypeEquivSubtypeInter (fun I ↦ J ∣ I)
         fun I : (Ideal (𝓞 K))⁰ ↦ IsPrincipal (I : Ideal (𝓞 K))).trans <|
@@ -114,7 +114,7 @@ theorem hasSum_norm_cpow_idealSet (J : (Ideal (𝓞 K))⁰) {s : ℂ} (hs : 1 < 
   have hFn : Summable fun I ↦ ‖F I‖ := by
     refine ((summable_absNorm_rpow_ideal_iff (K := K)).mpr hs).subtype _ |>.congr fun I ↦ ?_
     rw [Function.comp_apply, hF, Complex.norm_natCast_cpow_of_pos
-      (absNorm_pos_of_nonZeroDivisors I.1), Complex.neg_re]
+      (absNorm_pos_of_nonZeroDivisors I.val), Complex.neg_re]
   have h1 : Summable fun _ : torsion K ↦ ‖(1 : ℂ)‖ := Summable.of_finite
   have hprod : HasSum (fun p : {I : (Ideal (𝓞 K))⁰ // (J : Ideal (𝓞 K)) ∣ I ∧
       IsPrincipal (I : Ideal (𝓞 K))} × torsion K ↦ F p.1 * 1)
@@ -152,7 +152,7 @@ theorem LSeries_rayClassCoeff_one_eq_tsum {c : RayClassGroup (Modulus.one K)}
   -- exactly when `𝔟 J` has trivial class, that is, is principal.
   have hcop : (Modulus.one K).IsCoprimeTo (𝔟 : Ideal (𝓞 K)) :=
     Modulus.mem_integralIdealsPrimeTo.mp <| by
-      simpa using (integralIdealsPrimeToOneEquiv.symm 𝔟).2
+      simpa using (integralIdealsPrimeToOneEquiv.symm 𝔟).property
   have hclass : idealClass (Modulus.one K) ⟨𝔟, Modulus.mem_integralIdealsPrimeTo.mpr hcop⟩ = c ↔
       IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K))) := by
     rw [← mul_inv_eq_one, ← hJ, ← idealClass_mul, idealClass_one_eq_one_iff_isPrincipal,
@@ -228,10 +228,11 @@ theorem hasSum_norm_cpow_fundamentalCone_inter_idealLattice {c : RayClassGroup (
     rw [hJ, Nat.cast_smul_eq_nsmul, nsmul_eq_mul, ← map_natCast (mixedEmbedding K)]
     exact mixedEmbedding_mul_mem_idealLattice_iff (Units.mk0 (n : K) hn) I
   let e : ↥(fundamentalCone K ∩ (idealLattice K I : Set (mixedSpace K))) ≃ idealSet K J :=
-    { toFun a := ⟨(n : ℝ) • (a : mixedSpace K), (smul_mem_iff_mem hn0).mpr a.2.1,
-        (hmem _).mpr a.2.2⟩
-      invFun b := ⟨(n : ℝ)⁻¹ • (b : mixedSpace K), (smul_mem_iff_mem (inv_ne_zero hn0)).mpr b.2.1,
-        (hmem _).mp (by rw [smul_inv_smul₀ hn0]; exact b.2.2)⟩
+    { toFun a := ⟨(n : ℝ) • (a : mixedSpace K), (smul_mem_iff_mem hn0).mpr a.property.1,
+        (hmem _).mpr a.property.2⟩
+      invFun b := ⟨(n : ℝ)⁻¹ • (b : mixedSpace K), (smul_mem_iff_mem
+          (inv_ne_zero hn0)).mpr b.property.1,
+        (hmem _).mp (by rw [smul_inv_smul₀ hn0]; exact b.property.2)⟩
       left_inv a := Subtype.ext (inv_smul_smul₀ hn0 _)
       right_inv b := Subtype.ext (smul_inv_smul₀ hn0 _) }
   have hN : (absNorm (J : Ideal (𝓞 K)) : ℂ) =

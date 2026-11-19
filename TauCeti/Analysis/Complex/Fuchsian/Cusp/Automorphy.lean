@@ -744,7 +744,7 @@ theorem automorphyFrame_smul_of_smul_cusp_eq (hs : (s : PSL(2, ℝ)) = D.scaling
       coe_scaling_mul_mul_inv hs hs' hh, mul_smul, mul_smul, inv_smul_smul]
   -- hence the widths satisfy `w' = t₀₀ ^ 2 * w`, comparing `D'` with the transport of `D`
   have hw : D'.width = t 0 0 ^ 2 * D.width := by
-    have hc := Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.le_normalizer γ.2)
+    have hc := Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.le_normalizer γ.property)
     have h := TauCeti.cuspDatum_width_eq_mul (D := D.conj hc) (D' := D')
       (by rw [_root_.Subgroup.CuspDatum.conj_cusp, ← hγ, Subgroup.smul_def])
       (a := t 0 0 ^ 2) (b := t 0 0 * t 0 1) fun x ↦ by
@@ -843,7 +843,7 @@ theorem automorphyFrame_smul_of_mem
     automorphyFrame D s k r (h • τ) =
       denom (Matrix.SpecialLinearGroup.mapGL ℝ h) τ ^ k * automorphyFrame D s k r τ := by
   -- a lift of the generator in `Γ'`
-  obtain ⟨g₀, hg₀, hg₀gen⟩ := _root_.Subgroup.mem_map.mp (hΓ.symm ▸ D.generator.2 :
+  obtain ⟨g₀, hg₀, hg₀gen⟩ := _root_.Subgroup.mem_map.mp (hΓ.symm ▸ D.generator.property :
     (D.generator : PSL(2, ℝ)) ∈ Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ))))
   -- the image of `h` is a power of the generator
   have hstab : (⟨(h : PSL(2, ℝ)), hΓ ▸ _root_.Subgroup.mem_map_of_mem _ hh⟩ : Γ) ∈
@@ -999,7 +999,7 @@ theorem automorphyDescent_eq_mul_automorphyDescent
       automorphyDescent D s k r (Γ'.automorphyExtension (horodisc D' A') k
           (automorphyFrame D' s' k r')) (coordinate D τ) *
         automorphyDescent D' s' k r' f (coordinate D' (h • τ)) := by
-  obtain ⟨g', hg'Γ, hg'⟩ := _root_.Subgroup.mem_map.mp (hΓ.symm ▸ D'.generator.2 :
+  obtain ⟨g', hg'Γ, hg'⟩ := _root_.Subgroup.mem_map.mp (hΓ.symm ▸ D'.generator.property :
     (D'.generator : PSL(2, ℝ)) ∈ Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ))))
   refine automorphyDescent_eq_automorphyDescent_automorphyExtension_mul hs hg hk hgΓ
     (automorphyFrame_compatible hΓ hs' hk' hprec') hr hlaw hh hτ ?_
@@ -1052,7 +1052,7 @@ theorem exponent_eq_of_smul_cusp_eq
     (hr' : r' < 2) {h : SL(2, ℝ)} {γ : Γ} (hhΓ : h ∈ Γ') (hh : (h : PSL(2, ℝ)) = γ)
     (hγ : γ • D.cusp = D'.cusp) : r = r' := by
   -- `h * g * h⁻¹` lifts the generator of `D'`
-  have hc := Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.le_normalizer γ.2)
+  have hc := Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.le_normalizer γ.property)
   have hgen : ((h * g * h⁻¹ : SL(2, ℝ)) : PSL(2, ℝ)) = D'.generator := by
     rw [← cuspDatum_generator_eq (D := D.conj hc)
       (by rw [_root_.Subgroup.CuspDatum.conj_cusp, ← hγ, Subgroup.smul_def]),

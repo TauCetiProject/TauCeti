@@ -133,7 +133,7 @@ noncomputable def height : R.posRootCone →+ ℕ :=
 
 /-- The height is the `LinearIndependent.natSpanHeight` of the simple roots. -/
 theorem height_apply (x : R.posRootCone) :
-    R.height x = R.linearIndependent_nat_root.natSpanHeight ⟨x, R.posRootCone_def ▸ x.2⟩ :=
+    R.height x = R.linearIndependent_nat_root.natSpanHeight ⟨x, R.posRootCone_def ▸ x.property⟩ :=
   (rfl)
 
 /-- The height of a natural combination of the simple roots is the sum of its coefficients. -/

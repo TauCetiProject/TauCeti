@@ -542,7 +542,7 @@ theorem MemHolder.eHolderNorm_comp_le {X' X Z : Type*} [PseudoEMetricSpace X']
     ⟨⟨D, hD⟩, ENNReal.rpow_ne_top_of_nonneg α.coe_nonneg ENNReal.coe_ne_top⟩
     fun C D ↦ ?_
   rw [← ENNReal.coe_rpow_of_nonneg _ α.coe_nonneg, ← ENNReal.coe_mul]
-  exact (C.2.comp D.2).eHolderNorm_le
+  exact (C.property.comp D.property).eHolderNorm_le
 
 /-- **The Hölder seminorm of a composition.** If `f` is `α`-Hölder and `g` is `β`-Hölder, then the
 `α β`-Hölder seminorm of `f ∘ g` is at most `nnHolderNorm α f * nnHolderNorm β g ^ α`. For a

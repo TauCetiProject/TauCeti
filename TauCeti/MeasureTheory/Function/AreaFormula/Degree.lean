@@ -154,7 +154,7 @@ theorem integral_det_fderiv_smul_comp_eq_degree_comap_smul_integral
     (hp.isCompact_preimage hK).image continuous_subtype_val
   have hCs : Subtype.val '' (f ⁻¹' (Subtype.val ⁻¹' tsupport g)) ⊆ U := by
     rintro _ ⟨z, -, rfl⟩
-    exact z.2
+    exact z.property
   have hint' : ∀ c : E → ℝ, ContinuousOn c U → IntegrableOn (fun x ↦ c x • g (φ x)) U :=
     fun c hc ↦ (((hc.smul (hg.comp_continuousOn hφd.continuousOn)).mono hCs).integrableOn_compact'
       hC hC.measurableSet).of_forall_sdiff_eq_zero hs.measurableSet fun x hx ↦ by
@@ -210,7 +210,7 @@ theorem integral_det_fderiv_smul_comp_eq_degree_comap_smul_integral
     · rintro ⟨hwU, hw⟩
       exact ⟨⟨w, hwU⟩, (hφ ⟨w, hwU⟩).symm.trans hw, rfl⟩
     · rintro ⟨z, hz, rfl⟩
-      exact ⟨z.2, (hφ z).trans hz⟩
+      exact ⟨z.property, (hφ z).trans hz⟩
   have hfin : ∀ᵐ y, ((U : Set E) ∩ φ ⁻¹' {y}).Finite := hsard.mono fun y hy ↦ by
     refine (IsCompact.finite_inter_preimage_of_hasFDerivAt ?_ (fun x hx ↦ hd x hx.1) fun x hx ↦
       ⟨_, ((fderiv ℝ φ x).toContinuousLinearEquivOfDetNeZero
@@ -258,7 +258,7 @@ theorem integral_det_fderiv_smul_comp_eq_degree_comap_smul_integral
   · simp [hgy]
   have hyV : y ∈ (V : Set E) := hgV (subset_tsupport g hgy)
   rw [o.degree_comap_eq_ncard_sub_ncard hE hp hφ (f' := fderiv ℝ φ) (y := ⟨y, hyV⟩)
-    (fun x _ ↦ hd x x.2) fun x hx ↦ hy x x.2 ((hφ x).trans (congrArg Subtype.val hx))]
+    (fun x _ ↦ hd x x.property) fun x hx ↦ hy x x.property ((hφ x).trans (congrArg Subtype.val hx))]
   push_cast
   rw [sub_smul]
 

@@ -97,8 +97,8 @@ theorem summable_prime_log_one_sub_inv_add_inv :
   have hneg : Summable (fun p : Nat.Primes ↦
       -Real.log (1 - ((p : ℕ) : ℝ)⁻¹) - ((p : ℕ) : ℝ)⁻¹) :=
     hsq.of_nonneg_of_le
-      (fun p ↦ (Real.neg_log_one_sub_inv_sub_inv_pos (mod_cast p.2.one_lt)).le)
-      (fun p ↦ Real.neg_log_one_sub_inv_sub_inv_le (mod_cast p.2.two_le))
+      (fun p ↦ (Real.neg_log_one_sub_inv_sub_inv_pos (mod_cast p.property.one_lt)).le)
+      (fun p ↦ Real.neg_log_one_sub_inv_sub_inv_le (mod_cast p.property.two_le))
   exact hneg.neg.congr fun _ ↦ by ring
 
 /-- For `x > 0`, the tail of the positive quadratic Euler-product remainders
@@ -155,7 +155,7 @@ theorem meisselMertensConstant_le_add_half_sub_log_two :
     tsum_nonpos fun p ↦ by
       split_ifs
       · exact le_rfl
-      · linarith [Real.neg_log_one_sub_inv_sub_inv_pos (x := (p : ℕ)) (mod_cast p.2.one_lt)]
+      · linarith [Real.neg_log_one_sub_inv_sub_inv_pos (x := (p : ℕ)) (mod_cast p.property.one_lt)]
   have hp2 : Real.log (1 - ((p2 : ℕ) : ℝ)⁻¹) + ((p2 : ℕ) : ℝ)⁻¹ = 1 / 2 - Real.log 2 := by
     have hsub : 1 - ((p2 : ℕ) : ℝ)⁻¹ = (2 : ℝ)⁻¹ := by norm_num [p2]
     have hinv : ((p2 : ℕ) : ℝ)⁻¹ = 1 / 2 := by norm_num [p2]

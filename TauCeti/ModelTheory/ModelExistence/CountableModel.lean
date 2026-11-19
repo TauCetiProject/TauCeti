@@ -107,7 +107,7 @@ theorem Model.exists_countable_model (hT : T.Countable) {M : Type w} [L.Structur
   have : Countable T := hT.to_subtype
   let ι := symbSublangIncl F R
   let T₀ : (symbSublang F R).Theoryω :=
-    Set.range fun φ : T => φ.1.restrictSymbols (hF φ.1 φ.2) (Set.subset_univ _)
+    Set.range fun φ : T => φ.val.restrictSymbols (hF φ.val φ.property) (Set.subset_univ _)
   have hT₀ : ι.onTheoryω T₀ = T := by
     ext φ
     simp [T₀, ι, LHom.onTheoryω_def, ← Set.range_comp]

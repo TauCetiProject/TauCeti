@@ -221,7 +221,7 @@ private theorem isUnit_det_stiefelNormalCons (v : stiefel E 2)
     IsUnit (e.det (stiefelNormalCons (v : Fin 2 → E) fun i ↦
       mfderiv 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) 𝓘(ℝ, Fin 2 → E)
         ((↑) : stiefel E 2 → Fin 2 → E) v (b i))) := by
-  have hli := linearIndependent_stiefelNormalCons v.2
+  have hli := linearIndependent_stiefelNormalCons v.property
     (b.linearIndependent.map' _ (LinearMap.ker_eq_bot_of_injective
       (injective_mfderiv_coe_stiefel v)))
     fun i ↦ gramSym2Deriv_mfderiv_coe_stiefel v (b i)

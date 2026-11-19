@@ -421,12 +421,12 @@ theorem isEmbedding_stack (hF : IsCollaredTrack f g F) (hG : IsCollaredTrack g h
   · rintro (_ | _)
     · have heq : TauCeti.stack F G ∘ (Subtype.val : W false → M × ℝ) =
           conjTime F 3 0 ∘ Subtype.val :=
-        funext fun p => hF.stack_eqOn_lower hG p.2
+        funext fun p => hF.stack_eqOn_lower hG p.property
       rw [heq]
       exact hF3.comp IsEmbedding.subtypeVal
     · have heq : TauCeti.stack F G ∘ (Subtype.val : W true → M × ℝ) =
           conjTime G 3 (-2) ∘ Subtype.val :=
-        funext fun p => hF.stack_eqOn_upper hG p.2
+        funext fun p => hF.stack_eqOn_upper hG p.property
       rw [heq]
       exact hG3.comp IsEmbedding.subtypeVal
 

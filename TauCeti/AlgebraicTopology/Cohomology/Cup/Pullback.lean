@@ -211,7 +211,7 @@ theorem pullbackCupRestrict_naturality {S T : Set Y} (hST : S ⊆ T) {n p m : �
       (ContinuousMap.inclusion (Set.preimage_mono hST)) fun _ hx ↦ ⟨hST hx.1, hx.2⟩) ≫
         ofHom (π.hom.restrictPreimage T) =
       ofHom (π.hom.restrictPreimage S) ≫ ofHom (ContinuousMap.inclusion hST) :=
-    TopCat.ext fun x ↦ Subtype.ext (congrArg (fun y : ↥(π ⁻¹' T) ↦ π y.1)
+    TopCat.ext fun x ↦ Subtype.ext (congrArg (fun y : ↥(π ⁻¹' T) ↦ π y.val)
       (TopPair.ofInclusionMap_fst_apply _ _ x))
   rw [pullbackCupRestrict_apply, pullbackCupRestrict_apply,
     ← ofInclusionMap_inclusion_comp_restrictPreimagePairMap π Z hST,

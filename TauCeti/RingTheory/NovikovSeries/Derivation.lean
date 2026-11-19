@@ -148,7 +148,7 @@ theorem degreeDerivation_mem_nonnegSubring (ha : a ∈ nonnegSubring R N) :
 /-- The degree derivation along `ℓ`, restricted to the nonnegative subring. -/
 def nonnegDegreeDerivation : Derivation ℤ (nonnegSubring R N) (nonnegSubring R N) :=
   Derivation.mk'
-    { toFun a := ⟨degreeDerivation ℓ a, degreeDerivation_mem_nonnegSubring ℓ a.2⟩
+    { toFun a := ⟨degreeDerivation ℓ a, degreeDerivation_mem_nonnegSubring ℓ a.property⟩
       map_add' a b := Subtype.ext (map_add (degreeDerivation ℓ) _ _)
       map_smul' n a := Subtype.ext (by simp) }
     fun a b => Subtype.ext (by simp [Derivation.leibniz, smul_eq_mul])

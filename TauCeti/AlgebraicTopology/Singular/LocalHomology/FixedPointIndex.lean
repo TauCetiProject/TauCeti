@@ -281,7 +281,7 @@ theorem finite_setOf_apply_eq (f : C(U, E)) (hK : IsCompact {z | f z = z}) {φ :
     ext w
     constructor
     · rintro ⟨z, hz, rfl⟩
-      exact ⟨z.2, sub_eq_zero.2 ((hφ z).trans hz).symm⟩
+      exact ⟨z.property, sub_eq_zero.2 ((hφ z).trans hz).symm⟩
     · intro hw
       exact ⟨⟨w, hw.1⟩, hfix w hw, rfl⟩
   have hc : IsCompact ((U : Set E) ∩ (fun z ↦ z - φ z) ⁻¹' {0}) :=
@@ -375,7 +375,7 @@ theorem fixedPointIndex_add_pow_three :
     simp only [mem_ofPred_eq, mem_prod, mem_univ, mem_singleton_iff, true_and, Subtype.ext_iff,
       hHapply]
     constructor
-    · exact eq_zero_of_add_pow_three_add_mul_eq t.2.1
+    · exact eq_zero_of_add_pow_three_add_mul_eq t.property.1
     · intro hz
       simp [hz]
   rw [fixedPointIndex_eq_of_homotopy H (hH ▸ isCompact_univ.prod isCompact_singleton)]

@@ -251,7 +251,8 @@ theorem IsMorse.isZero_filteredSpaceSpectralSequence_page_two_X (hf : IsMorse I 
   obtain ⟨e⟩ := hf.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma R ha hband pq hq n
     hn
   have : IsEmpty {x : ↥(criticalPoints I f ∩ f ⁻¹' Ioc (a q) (a (q + 1))) //
-      manifoldMorseIndex I f x = n} := ⟨fun x ↦ hindex x.1 x.1.2.1 x.1.2.2 x.2⟩
+      manifoldMorseIndex I f x = n} := ⟨fun x ↦ hindex x.val x.val.property.1 x.val.property.2
+          x.property⟩
   exact ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ isEmptyElim)).of_iso e
 
 /-- **The dimensions of the first page.** Under the hypotheses of

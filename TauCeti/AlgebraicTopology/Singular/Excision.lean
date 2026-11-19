@@ -86,13 +86,13 @@ lemma mem_relativeSimplex_restrictMap_right_app (n : ℕ)
     (x : ((toSSetPair.obj P).restrict
         (P.smallSingularSubcomplex (fun i ↦ Hom.fst f ⁻¹' U i))).RelativeSimplex n) :
     (SSetPair.restrictMap (toSSetPair.map f)
-        (smallSingularSubcomplex_le_preimage f U)).right.app _ x.1 ∈
+        (smallSingularSubcomplex_le_preimage f U)).right.app _ x.val ∈
       ((toSSetPair.obj P').restrict (P'.smallSingularSubcomplex U)).RelativeSimplex n := by
   intro hx
   obtain ⟨a, ha⟩ := (SSetPair.mem_range_restrict_hom_app_iff _ _ _).mp hx
   have hx' := (P'.isEmbedding_map.isInducing.mem_range_toSSet_map_app_iff _ _).mp
-    ⟨a, ha.trans (SSetPair.restrictMap_right_app_coe _ _ x.1)⟩
-  refine x.2 ((mem_range_restrict_hom_app_iff P _ _).mpr ?_)
+    ⟨a, ha.trans (SSetPair.restrictMap_right_app_coe _ _ x.val)⟩
+  refine x.property ((mem_range_restrict_hom_app_iff P _ _).mpr ?_)
   rintro _ ⟨t, rfl⟩
   apply hsnd
   apply hx'
@@ -113,23 +113,23 @@ lemma relativeSimplex_restrictMap_bijective (n : ℕ) :
   constructor
   · intro x y hxy
     have h1 := congrArg (fun z : ((toSSetPair.obj P').restrict
-        (P'.smallSingularSubcomplex U)).RelativeSimplex n ↦ z.1.1) hxy
-    have h2 := (SSetPair.restrictMap_right_app_coe _ _ x.1).symm.trans
-      (h1.trans (SSetPair.restrictMap_right_app_coe _ _ y.1))
+        (P'.smallSingularSubcomplex U)).RelativeSimplex n ↦ z.val.val) hxy
+    have h2 := (SSetPair.restrictMap_right_app_coe _ _ x.val).symm.trans
+      (h1.trans (SSetPair.restrictMap_right_app_coe _ _ y.val))
     exact Subtype.ext (Subtype.ext (injective_of_mono ((TopCat.toSSet.map (Hom.fst f)).app _) h2))
   · intro y
-    obtain ⟨i, hi⟩ := (P'.mem_smallSingularSubcomplex_iff U _).mp y.1.2
-    have hy : ¬ Set.range (P'.fst.toSSetObjEquiv _ y.1.1) ⊆ Set.range P'.map := fun h ↦
-      y.2 ((mem_range_restrict_hom_app_iff P' _ _).mpr h)
+    obtain ⟨i, hi⟩ := (P'.mem_smallSingularSubcomplex_iff U _).mp y.val.property
+    have hy : ¬ Set.range (P'.fst.toSSetObjEquiv _ y.val.val) ⊆ Set.range P'.map := fun h ↦
+      y.property ((mem_range_restrict_hom_app_iff P' _ _).mpr h)
     -- The simplex lies in a member of the cover, which lies in the image of `f` since the simplex
     -- does not lie in the subspace; as `f` is an embedding, the simplex is induced from `P`.
-    have hsub : Set.range (P'.fst.toSSetObjEquiv _ y.1.1) ⊆ Set.range (Hom.fst f) := by
+    have hsub : Set.range (P'.fst.toSSetObjEquiv _ y.val.val) ⊆ Set.range (Hom.fst f) := by
       rcases hUf i with h | h
       · exact (hy (hi.trans h)).elim
       · exact hi.trans h
     obtain ⟨σ, hσ⟩ := (hf.isInducing.mem_range_toSSet_map_app_iff _ _).mpr hsub
     have hσ' : (ConcreteCategory.hom (Hom.fst f)).comp (P.fst.toSSetObjEquiv _ σ) =
-        P'.fst.toSSetObjEquiv _ y.1.1 := by
+        P'.fst.toSSetObjEquiv _ y.val.val := by
       rw [← TauCeti.TopCat.toSSetObjEquiv_toSSet_map_app, hσ]
     rw [← hσ', ContinuousMap.coe_comp, Set.range_comp, Set.image_subset_iff] at hi
     have hσS : σ ∈ (P.smallSingularSubcomplex (fun i ↦ Hom.fst f ⁻¹' U i)).obj _ :=
@@ -188,11 +188,11 @@ def excisionMap : interPair A B ⟶ ofSubset B :=
     (TopCat.ofHom ⟨B.restrictPreimage Subtype.val, continuous_subtype_val.restrictPreimage⟩)
 
 @[simp]
-lemma excisionMap_fst_apply (x : (interPair A B).fst) : Hom.fst (excisionMap A B) x = x.1 := (rfl)
+lemma excisionMap_fst_apply (x : (interPair A B).fst) : Hom.fst (excisionMap A B) x = x.val := (rfl)
 
 @[simp]
 lemma excisionMap_snd_apply (x : (interPair A B).snd) :
-    (Hom.snd (excisionMap A B) x).1 = x.1.1 := (rfl)
+    (Hom.snd (excisionMap A B) x).val = x.val.val := (rfl)
 
 /-- The excision map is an embedding of ambient spaces. -/
 lemma isEmbedding_fst_excisionMap : IsEmbedding (Hom.fst (excisionMap A B)) :=
@@ -268,13 +268,13 @@ def interPairMap : interPair A B ⟶ interPair A' B' :=
 
 @[simp]
 lemma interPairMap_fst_apply (x : (interPair A B).fst) :
-    (Hom.fst (interPairMap g hA hB) x).1 = g x.1 :=
+    (Hom.fst (interPairMap g hA hB) x).val = g x.val :=
   congrArg Subtype.val (ofSubsetMap_fst_apply
     (TopCat.ofHom ⟨hA.restrict, g.hom.continuous.restrict hA⟩) (fun _ hx ↦ hB hx) x)
 
 @[simp]
 lemma interPairMap_snd_apply (x : (interPair A B).snd) :
-    (Hom.snd (interPairMap g hA hB) x).1.1 = g x.1.1 :=
+    (Hom.snd (interPairMap g hA hB) x).val.val = g x.val.val :=
   congrArg Subtype.val (ofSubsetMap_snd_apply
     (TopCat.ofHom ⟨hA.restrict, g.hom.continuous.restrict hA⟩) (fun _ hx ↦ hB hx) x)
 
@@ -356,11 +356,12 @@ private def subsetToOuter : ofSubset U ⟶ TopTriple.outerPair.obj (interTriple 
 
 /-- The identification of `(X, U ∩ V)` with the total pair of `TopPair.interTriple U V`. -/
 private def interToTotal : ofSubset (U ∩ V) ⟶ TopTriple.totalPair.obj (interTriple U V) :=
-  ofHom (𝟙 X) (TopCat.ofHom ⟨fun y ↦ ⟨⟨y.1, y.2.1⟩, y.2.2⟩, by fun_prop⟩) (by ext; rfl)
+  ofHom (𝟙 X) (TopCat.ofHom ⟨fun y ↦ ⟨⟨y.val, y.property.1⟩, y.property.2⟩, by fun_prop⟩)
+      (by ext; rfl)
 
 private instance : IsIso (interToTotal U V) :=
   have : IsIso (Hom.fst (interToTotal U V)) := inferInstanceAs (IsIso (𝟙 X))
-  isIso_of_isIso_fst_of_surjective_snd _ fun y ↦ ⟨⟨y.1.1, y.1.2, y.2⟩, rfl⟩
+  isIso_of_isIso_fst_of_surjective_snd _ fun y ↦ ⟨⟨y.val.val, y.val.property, y.property⟩, rfl⟩
 
 private instance : IsIso (interPairToInner U V) :=
   have : IsIso (Hom.fst (interPairToInner U V)) := inferInstanceAs (IsIso (𝟙 (TopCat.of U)))
@@ -368,14 +369,14 @@ private instance : IsIso (interPairToInner U V) :=
 
 /-- The map from the total pair `(X, U ∩ V)` of `TopPair.interTriple U V` to the pair `(X, V)`. -/
 private def totalToSubset : TopTriple.totalPair.obj (interTriple U V) ⟶ ofSubset V :=
-  ofHom (𝟙 X) (TopCat.ofHom ⟨fun y ↦ ⟨y.1.1, y.2⟩, by fun_prop⟩) (by ext; rfl)
+  ofHom (𝟙 X) (TopCat.ofHom ⟨fun y ↦ ⟨y.val.val, y.property⟩, by fun_prop⟩) (by ext; rfl)
 
 private lemma interPairToInner_comp_innerToTotal_comp_totalToSubset :
     interPairToInner U V ≫ TopTriple.innerToTotal.app (interTriple U V) ≫ totalToSubset U V =
       excisionMap U V := by
   ext x : 2
   · refine Subtype.ext (Eq.trans ?_ (excisionMap_snd_apply U V x).symm)
-    exact congrArg (fun g ↦ (g x).1.1) (TopTriple.innerToTotal_app_snd (T := interTriple U V))
+    exact congrArg (fun g ↦ (g x).val.val) (TopTriple.innerToTotal_app_snd (T := interTriple U V))
   · refine Eq.trans ?_ (excisionMap_fst_apply U V x).symm
     exact congrArg (fun g ↦ g x) (TopTriple.innerToTotal_app_fst (T := interTriple U V))
 
@@ -386,7 +387,7 @@ private lemma interToTotal_comp_totalToOuter (hU : Set.MapsTo (𝟙 X) (U ∩ V)
       ofSubsetMap (𝟙 X) hU ≫ subsetToOuter U V := by
   ext x : 2
   · refine Subtype.ext (Eq.trans ?_ (ofSubsetMap_snd_apply (𝟙 X) hU x).symm)
-    exact congrArg (fun g ↦ (g (Hom.snd (interToTotal U V) x)).1)
+    exact congrArg (fun g ↦ (g (Hom.snd (interToTotal U V) x)).val)
       (TopTriple.totalToOuter_app_snd (T := interTriple U V))
   · refine Eq.trans ?_ (ofSubsetMap_fst_apply (𝟙 X) hU x).symm
     exact congrArg (fun g ↦ g x) (TopTriple.totalToOuter_app_fst (T := interTriple U V))

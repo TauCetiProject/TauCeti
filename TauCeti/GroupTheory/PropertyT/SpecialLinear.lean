@@ -119,7 +119,7 @@ theorem measurable_torusAngle : Measurable torusAngle :=
 theorem torusAngle_mem_Ico (x : AddCircle (1 : ℝ)) :
     torusAngle x ∈ Ico (-1 / 2 : ℝ) (1 / 2) := by
   unfold torusAngle
-  have hx := (AddCircle.measurableEquivIco (1 : ℝ) (-1 / 2) x).2
+  have hx := (AddCircle.measurableEquivIco (1 : ℝ) (-1 / 2) x).property
   exact ⟨hx.1, by linarith [hx.2]⟩
 
 theorem abs_torusAngle_le (x : AddCircle (1 : ℝ)) : |torusAngle x| ≤ 1 / 2 := by

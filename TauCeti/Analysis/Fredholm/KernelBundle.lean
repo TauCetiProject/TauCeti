@@ -106,7 +106,7 @@ theorem IsFredholm.exists_stabilization_kernel_contMDiffVectorBundle
                     (I.prod 𝓘(𝕜, E × S)) n
                     (fun p : TotalSpace ((T x₀).coprod S.subtypeL).ker
                       (fun x : U ↦ ((T x).coprod S.subtypeL).ker) ↦
-                        (p.proj, (p.2 : E × S))) := by
+                        (p.proj, (p.snd : E × S))) := by
   obtain ⟨S, hSD, -, hS, q, U, hU, hx₀, hinv⟩ :=
     hT₀.exists_stabilization_kernel_coordinates hT.continuous.continuousAt hD
   let := hS

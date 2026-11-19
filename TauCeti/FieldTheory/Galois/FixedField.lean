@@ -148,9 +148,9 @@ theorem fixedField_fixingSubgroup (E : IntermediateField K M) [IsGalois E M] :
     rw [mem_fixedField_iff] at hx
     have hfixed (σ : M ≃ₐ[E] M) : σ x = x := by
       simpa only [coe_fixingSubgroupEquiv_symm_apply] using
-        hx _ (E.fixingSubgroupEquiv.symm σ).2
+        hx _ (E.fixingSubgroupEquiv.symm σ).property
     obtain ⟨y, rfl⟩ := (InfiniteGalois.mem_range_algebraMap_iff_fixed (k := E) x).mpr hfixed
-    exact y.2
+    exact y.property
   · exact (le_fixedField_iff_le_fixingSubgroup _ _).mpr le_rfl
 
 /-- **A finite group of automorphisms is the whole fixing subgroup of its fixed field.** Every
@@ -165,9 +165,9 @@ theorem fixingSubgroup_fixedField_of_finite (H : Subgroup (M ≃ₐ[K] M)) [Fini
   refine le_antisymm (fun σ hσ ↦ ?_) ((le_fixedField_iff_le_fixingSubgroup _ _).mp le_rfl)
   rw [mem_fixingSubgroup_iff] at hσ
   obtain ⟨g, hg⟩ := FixedPoints.toAlgAut_surjective H M
-    (AlgEquiv.ofRingEquiv (f := σ.toRingEquiv) fun x ↦ hσ x x.2)
+    (AlgEquiv.ofRingEquiv (f := σ.toRingEquiv) fun x ↦ hσ x x.property)
   have hgσ : (g : M ≃ₐ[K] M) = σ := AlgEquiv.ext fun z ↦ congrArg (fun τ ↦ τ z) hg
-  exact hgσ ▸ g.2
+  exact hgσ ▸ g.property
 
 /-- **Artin's theorem**: `M` is finite over the field fixed by a finite group of automorphisms.
 
@@ -289,7 +289,7 @@ supplied by `IntermediateField.isAlgebraic_tower_bot`. The suffix names that hyp
 theorem fixingSubgroup_isClosed_of_isAlgebraic (E : IntermediateField K M)
     [Algebra.IsAlgebraic K E] : IsClosed (E.fixingSubgroup : Set (M ≃ₐ[K] M)) := by
   have hE : E = ⨆ x : E, K⟮(x : M)⟯ := by
-    refine le_antisymm (fun x hx ↦ ?_) (iSup_le fun x ↦ adjoin_simple_le_iff.mpr x.2)
+    refine le_antisymm (fun x hx ↦ ?_) (iSup_le fun x ↦ adjoin_simple_le_iff.mpr x.property)
     exact le_iSup (fun y : E ↦ K⟮(y : M)⟯) ⟨x, hx⟩ (mem_adjoin_simple_self K x)
   rw [hE, fixingSubgroup_iSup, Subgroup.coe_iInf]
   refine isClosed_iInter fun x ↦ ?_
@@ -324,7 +324,7 @@ theorem fixingSubgroup_inf_separableClosure (E : IntermediateField K M)
     simpa using congrArg (algebraMap E M) hy
   have hyS : x ^ ringExpChar K ^ n ∈ separableClosure K M := by
     rw [← hyM]
-    exact (map_mem_separableClosure_iff (IsScalarTower.toAlgHom K E M)).mpr y.2
+    exact (map_mem_separableClosure_iff (IsScalarTower.toAlgHom K E M)).mpr y.property
   have hpow : σ x ^ ringExpChar K ^ n = x ^ ringExpChar K ^ n := by
     rw [← map_pow]
     exact hσ _ (mem_inf.mpr ⟨_root_.pow_mem hx _, hyS⟩)
@@ -391,7 +391,7 @@ theorem apply_eq_apply_of_smul_eq_smul {X : Type*} [MulAction (M ≃ₐ[K] M) X]
     {σ τ : M ≃ₐ[K] M} (h : σ • x = τ • x)
     (l : fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) : σ l = τ l := by
   have hl : (τ⁻¹ * σ) (l : M) = l :=
-    l.2 ⟨_, by rw [MulAction.mem_stabilizer_iff, mul_smul, h, inv_smul_smul]⟩
+    l.property ⟨_, by rw [MulAction.mem_stabilizer_iff, mul_smul, h, inv_smul_smul]⟩
   conv_rhs => rw [← hl]
   rw [AlgEquiv.mul_apply, AlgEquiv.aut_inv, AlgEquiv.apply_symm_apply]
 
@@ -457,7 +457,7 @@ theorem apply_eq_self_of_forall_mem_inf (E : IntermediateField k Ω) [FiniteDime
     rintro ⟨e, he⟩
     apply Subtype.ext
     rw [AlgEquiv.smul_def, hr]
-    refine hσ e e.2 ?_
+    refine hσ e e.property ?_
     rw [← fixedField_fixingSubgroup F]
     rintro ⟨τ, hτ⟩
     simpa [hr] using congrArg Subtype.val (he ⟨r τ, Subgroup.mem_map_of_mem r hτ⟩)
@@ -639,9 +639,9 @@ theorem card_fixedField_pow_roots (σ : M ≃ₐ[K] M) [Finite (Subgroup.zpowers
     Nat.card {τ : M ≃ₐ[↥(fixedField (Subgroup.zpowers σ))] M //
         τ ^ m = σ.toFixedFieldAlgEquiv ∧ restrictScalars K τ ∈ S} =
       Nat.card {w : M ≃ₐ[K] M // w ∈ S ∧ w ∈ Subgroup.zpowers σ ∧ w ^ m = σ} := by
-  refine Nat.card_congr (Equiv.ofBijective (fun τ ↦ ⟨restrictScalars K τ.1, τ.2.2,
-    σ.restrictScalars_mem_zpowers τ.1, ?_⟩) ⟨?_, ?_⟩)
-  · rw [← restrictScalarsHom_apply, ← map_pow, τ.2.1,
+  refine Nat.card_congr (Equiv.ofBijective (fun τ ↦ ⟨restrictScalars K τ.val, τ.property.2,
+    σ.restrictScalars_mem_zpowers τ.val, ?_⟩) ⟨?_, ?_⟩)
+  · rw [← restrictScalarsHom_apply, ← map_pow, τ.property.1,
       restrictScalarsHom_apply, restrictScalars_toFixedFieldAlgEquiv]
   · intro τ₁ τ₂ h
     exact Subtype.ext (restrictScalars_injective K (congrArg Subtype.val h))

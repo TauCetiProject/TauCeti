@@ -137,7 +137,7 @@ private noncomputable def tateRoot (p : ℕ) [ExpChar K p] (e : ℕ)
     have hq_inv : 0 < qR⁻¹ :=
       inv_pos.mpr (Nat.cast_pos.mpr (pow_pos (expChar_pos K p) e))
     have hlim :=
-      ((Real.continuousAt_rpow_const 0 qR⁻¹ (Or.inr hq_inv.le)).tendsto.comp f.2)
+      ((Real.continuousAt_rpow_const 0 qR⁻¹ (Or.inr hq_inv.le)).tendsto.comp f.property)
     rw [Real.zero_rpow hq_inv.ne'] at hlim
     refine hlim.congr fun μ ↦ ?_
     dsimp only [Function.comp_apply, qR]
@@ -304,7 +304,7 @@ private theorem exists_restrictedFamily_coeff_sum_ne_zero
         _root_.MvPowerSeries σ K'), hwG_mem j α⟩,
       IsRestrictedFamily.mem_addSubgroup.mpr <|
         ((isRestrictedFamily_coeff_iff _).mpr
-          (restrictedExpandComponent hq hr ν (rootG j)).2).of_norm_le (C := 1) fun _ ↦
+          (restrictedExpandComponent hq hr ν (rootG j)).property).of_norm_le (C := 1) fun _ ↦
             (one_mul _).symm.le⟩
   have hcoe_wE (j : Fin m) (α : σ →₀ ℕ) :
       ((IsRestrictedFamily.coeff K α (wE j) : E) : K') =
@@ -426,7 +426,7 @@ theorem isWeaklyStable_gaussFractionField (σ K : Type*) [Countable σ]
   choose a₀ ha₀ using hs₀
   have hs₀_F_ne : algebraMap T' F' (Ψ s₀) ≠ 0 := by
     rw [← norm_ne_zero_iff, norm_algebraMap_gaussFractionField, hΨ_norm, norm_ne_zero_iff]
-    exact nonZeroDivisors.ne_zero s₀.2
+    exact nonZeroDivisors.ne_zero s₀.property
   have hu₀_ne : ∑ j, Ψ (a₀ j) * rootG j ≠ 0 := fun h0 ↦ by
     have hmul : algebraMap T' F' (Ψ s₀) * ι x₀ = 0 := by
       rw [← algebraMap_sum_mul_eq_mul b Ψ rootG ι hι_alg hι_b x₀ s₀ a₀ ha₀, h0, map_zero]
@@ -453,7 +453,7 @@ theorem isWeaklyStable_gaussFractionField (σ K : Type*) [Countable σ]
         norm_algebraMap_gaussFractionField σ K' r _, hΨ_norm, hι_norm]
     have hs_pos : 0 < ‖(s : T)‖ := by
       rw [← norm_algebraMap_gaussFractionField σ K c (s : T), norm_pos_iff]
-      exact IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors s.2
+      exact IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors s.property
     refine le_of_mul_le_mul_left ?_ hs_pos
     calc ‖(s : T)‖ * ‖φ y‖
         = ‖algebraMap T F s * φ y‖ := by rw [norm_mul, norm_algebraMap_gaussFractionField σ K c _]

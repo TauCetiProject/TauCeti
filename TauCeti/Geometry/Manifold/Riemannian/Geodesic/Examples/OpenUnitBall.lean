@@ -129,7 +129,7 @@ theorem coe_maximalGeodesic {t : ℝ} (ht : t ∈ geodesicInterval 𝓘(ℝ, ℝ
   have h0 : deriv f 0 = c := by
     rw [(hderiv 0 zero_mem_geodesicInterval).deriv]
     exact congrArg (fun z : TangentBundle 𝓘(ℝ, ℝ) realOpenUnitBall ↦
-      NormedSpace.fromTangentSpace (z.proj : ℝ) (tangentSpaceOpenEquiv z.proj z.2))
+      NormedSpace.fromTangentSpace (z.proj : ℝ) (tangentSpaceOpenEquiv z.proj z.snd))
       hγ.initial_eq
   -- A continuous function of constant absolute value on an interval is constant.
   have hconst : EqOn (deriv f) (fun _ ↦ c) J := by
@@ -160,7 +160,7 @@ private theorem mem_geodesicInterval_of_nonneg {t : ℝ} (ht0 : 0 ≤ t)
     rintro _ ⟨s, hs, rfl⟩
     refine ⟨⟨_, mem_iff.2 ?_⟩, rfl⟩
     -- The line is inside the ball at times `0` and `t`, hence at every time in between.
-    have hp := abs_lt.1 (mem_iff.1 p.2)
+    have hp := abs_lt.1 (mem_iff.1 p.property)
     have ht' := abs_lt.1 ht
     have hst : s ≤ t := hs.2
     rw [abs_lt]
@@ -185,7 +185,7 @@ theorem geodesicInterval_eq :
   constructor
   · intro ht
     rw [mem_ofPred_eq, ← coe_maximalGeodesic p v ht]
-    exact mem_iff.1 (maximalGeodesic 𝓘(ℝ, ℝ) realOpenUnitBall p v t).2
+    exact mem_iff.1 (maximalGeodesic 𝓘(ℝ, ℝ) realOpenUnitBall p v t).property
   · intro ht
     rcases le_total 0 t with h | h
     · exact mem_geodesicInterval_of_nonneg p v h ht
@@ -238,7 +238,7 @@ theorem isGeodesicCurveOn_radialSegment (q : realOpenUnitBall) :
     intro t ht
     rw [geodesicInterval_eq, mem_ofPred_eq, hc, coe_center, zero_add, abs_mul,
       abs_of_nonneg ht.1]
-    exact (mul_le_of_le_one_left (abs_nonneg _) ht.2).trans_lt (mem_iff.1 q.2)
+    exact (mul_le_of_le_one_left (abs_nonneg _) ht.2).trans_lt (mem_iff.1 q.property)
   refine ((isGeodesicCurveOnFrom_maximalGeodesic center v).isGeodesicCurveOn.mono
     (uniqueDiffOn_Icc zero_lt_one) hJ).congr fun t ht ↦ Subtype.ext ?_
   rw [coe_radialSegment q t ht, coe_maximalGeodesic center v (hJ ht), hc, coe_center, zero_add]

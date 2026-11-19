@@ -38,7 +38,7 @@ variable {K F : Type*} [Field K] [Field F] [NumberField K] [NumberField F] [Alge
 finite places of the base is at most the relative height in the extension. -/
 theorem prod_max_apply_one_le_mulHeight₁_of_liesOver
     (S : Finset (FinitePlace K)) (w : FinitePlace K → AbsoluteValue F ℝ)
-    (hw : ∀ v ∈ S, (w v).LiesOver v.1) (x : F) :
+    (hw : ∀ v ∈ S, (w v).LiesOver v.val) (x : F) :
     ∏ v ∈ S, max (w v x) 1 ≤ mulHeight₁ x := by
   classical
   obtain ⟨V, t, hV, ht⟩ := exists_injective_finitePlace_rpow_eq_of_liesOver
@@ -65,7 +65,7 @@ theorem prod_max_apply_one_le_mulHeight₁_of_liesOver
 finite places of the base is at least the reciprocal relative height of a nonzero element. -/
 theorem inv_mulHeight₁_le_prod_min_one_apply_of_liesOver
     (S : Finset (FinitePlace K)) (w : FinitePlace K → AbsoluteValue F ℝ)
-    (hw : ∀ v ∈ S, (w v).LiesOver v.1) {x : F} (hx : x ≠ 0) :
+    (hw : ∀ v ∈ S, (w v).LiesOver v.val) {x : F} (hx : x ≠ 0) :
     (mulHeight₁ x)⁻¹ ≤ ∏ v ∈ S, min 1 (w v x) := by
   have h := prod_max_apply_one_le_mulHeight₁_of_liesOver S w hw x⁻¹
   have hinv (v : FinitePlace K) : max (w v x⁻¹) 1 = (min 1 (w v x))⁻¹ := by
@@ -81,7 +81,7 @@ theorem inv_mulHeight₁_le_prod_min_one_apply_of_liesOver
 /-- An absolute value lying over a finite place of the base is bounded by the relative height
 in the extension, even when it is not itself a finite place. -/
 theorem FinitePlace.max_apply_one_le_mulHeight₁_of_liesOver (v : FinitePlace K)
-    (w : AbsoluteValue F ℝ) [w.LiesOver v.1] (x : F) :
+    (w : AbsoluteValue F ℝ) [w.LiesOver v.val] (x : F) :
     max (w x) 1 ≤ mulHeight₁ x := by
   simpa using prod_max_apply_one_le_mulHeight₁_of_liesOver {v} (fun _ ↦ w)
     (by intro u hu; obtain rfl := Finset.mem_singleton.mp hu; infer_instance) x
@@ -89,7 +89,7 @@ theorem FinitePlace.max_apply_one_le_mulHeight₁_of_liesOver (v : FinitePlace K
 /-- At an absolute value above a finite place, the lower truncated factor of a nonzero element
 is bounded below by its reciprocal relative height. -/
 theorem FinitePlace.inv_mulHeight₁_le_min_one_apply_of_liesOver (v : FinitePlace K)
-    (w : AbsoluteValue F ℝ) [w.LiesOver v.1] {x : F} (hx : x ≠ 0) :
+    (w : AbsoluteValue F ℝ) [w.LiesOver v.val] {x : F} (hx : x ≠ 0) :
     (mulHeight₁ x)⁻¹ ≤ min 1 (w x) := by
   simpa using inv_mulHeight₁_le_prod_min_one_apply_of_liesOver {v} (fun _ ↦ w)
     (by intro u hu; obtain rfl := Finset.mem_singleton.mp hu; infer_instance) hx

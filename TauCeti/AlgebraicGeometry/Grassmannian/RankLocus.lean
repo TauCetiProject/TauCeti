@@ -137,8 +137,8 @@ inclusion into the Grassmannian scheme, is the morphism classifying `N`. -/
 theorem schemeRankLocusHomEquiv_apply_comp_subschemeι (F : ι → Submodule R M) (s : ι → ℕ)
     {A : Type u} [CommRing A] [Algebra R A]
     (N : {N : G(k, A ⊗[R] M; A) // ∀ i, N.rankLocus (F i) (s i) = ⊥}) :
-    (schemeRankLocusHomEquiv k F s A N).1 ≫ (schemeRankLocus k F s).subschemeι =
-      toSchemeHom N.1 :=
+    (schemeRankLocusHomEquiv k F s A N).val ≫ (schemeRankLocus k F s).subschemeι =
+      toSchemeHom N.val :=
   schemeIdealLocusHomEquiv_apply_comp_subschemeι (R := R) (M := M) (k := k)
     (fun N ↦ ⨆ i, N.rankLocus (F i) (s i)) (iSup_rankLocus_map F s) _
 
@@ -150,8 +150,8 @@ theorem toSchemeHom_schemeRankLocusHomEquiv_symm_apply (F : ι → Submodule R M
     (h : {h : Spec (.of A) ⟶ (schemeRankLocus k F s).subscheme //
       h ≫ (schemeRankLocus k F s).subschemeι ≫ toSpec R M k =
         Spec.map (CommRingCat.ofHom (algebraMap R A))}) :
-    toSchemeHom ((schemeRankLocusHomEquiv k F s A).symm h).1 =
-      h.1 ≫ (schemeRankLocus k F s).subschemeι :=
+    toSchemeHom ((schemeRankLocusHomEquiv k F s A).symm h).val =
+      h.val ≫ (schemeRankLocus k F s).subschemeι :=
   toSchemeHom_schemeIdealLocusHomEquiv_symm_apply (R := R) (M := M) (k := k)
     (fun N ↦ ⨆ i, N.rankLocus (F i) (s i)) (iSup_rankLocus_map F s) h
 

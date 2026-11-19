@@ -160,7 +160,7 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_sup (U V : Opens M)
   -- By the small-chain theorems, this is the conclusion.
   have hcov : ⋃ i, ![{x : ↥(U ⊔ V) | (x : M) ∈ U}, {x | (x : M) ∈ V}] i = Set.univ := by
     rw [Set.iUnion_vecCons_pair]
-    exact Set.eq_univ_of_forall fun x ↦ Opens.mem_sup.1 x.2
+    exact Set.eq_univ_of_forall fun x ↦ Opens.mem_sup.1 x.property
   exact (quasiIso_chainComplexMap_ι_iff_homOfLE_inf_smallSingularSubcomplex R S _
     (IsOpen.vecCons (U.isOpen.preimage continuous_subtype_val)
       (V.isOpen.preimage continuous_subtype_val)) hcov).2 h₃

@@ -533,7 +533,7 @@ theorem _root_.IsCompact.exists_morseChart_closed_nhds [T2Space M] {K : Set M} (
     (criticalPoints 𝓘(ℝ, E) f ∩ K).Finite ∧
       ∃ (φ : ∀ c : ↥(criticalPoints 𝓘(ℝ, E) f ∩ K), MorseChart E f c)
         (W A : ↥(criticalPoints 𝓘(ℝ, E) f ∩ K) → Set M),
-        (∀ c, IsOpen (W c)) ∧ Pairwise (Disjoint on W) ∧ (∀ c, A c ∈ 𝓝 c.1) ∧
+        (∀ c, IsOpen (W c)) ∧ Pairwise (Disjoint on W) ∧ (∀ c, A c ∈ 𝓝 c.val) ∧
           (∀ c, IsClosed (A c)) ∧ ∀ c, A c ⊆ (φ c).toChart.source ∩ W c := by
   let _ : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace E M
   -- Nondegenerate critical points are isolated, hence finitely many in `K`.
@@ -541,7 +541,8 @@ theorem _root_.IsCompact.exists_morseChart_closed_nhds [T2Space M] {K : Set M} (
     finite_criticalPoints_inter_of_forall_isManifoldNondegenerateCriticalPoint
       (hf.of_le (by simp)) hK fun x hx ↦ hnd x hx.2 (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.1)
   let φ (c : ↥(criticalPoints 𝓘(ℝ, E) f ∩ K)) : MorseChart E f c :=
-    ((hnd c c.2.2 (mem_criticalPoints_iff_mfderiv_eq_zero.1 c.2.1)).nonempty_morseChart
+    ((hnd c c.property.2 (mem_criticalPoints_iff_mfderiv_eq_zero.1
+        c.property.1)).nonempty_morseChart
       (Eventually.of_forall fun _ ↦ hf.contMDiffAt)).some
   obtain ⟨W, hW, hWdisj⟩ := hC.t2_separation
   choose A hAn hAc hAsub using fun c : ↥(criticalPoints 𝓘(ℝ, E) f ∩ K) ↦
@@ -549,7 +550,7 @@ theorem _root_.IsCompact.exists_morseChart_closed_nhds [T2Space M] {K : Set M} (
       (Filter.inter_mem ((φ c).toChart.open_source.mem_nhds (φ c).mem_source)
         ((hW c).2.mem_nhds (hW c).1))
   exact ⟨hC, φ, fun c ↦ W c, A, fun c ↦ (hW c).2,
-    fun c c' h ↦ hWdisj c.2 c'.2 (Subtype.coe_injective.ne h), hAn, hAc, hAsub⟩
+    fun c c' h ↦ hWdisj c.property c'.property (Subtype.coe_injective.ne h), hAn, hAc, hAsub⟩
 
 variable [T2Space M] [SigmaCompactSpace M]
 
@@ -581,7 +582,7 @@ theorem _root_.IsCompact.exists_contMDiff_pseudoGradientOn_nhds {K : Set M}
   -- disjoint closed neighbourhoods `A c` inside these charts.
   let C := criticalPoints 𝓘(ℝ, E) f ∩ K
   have hCcrit (c : C) : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f c = 0 :=
-    mem_criticalPoints_iff_mfderiv_eq_zero.1 c.2.1
+    mem_criticalPoints_iff_mfderiv_eq_zero.1 c.property.1
   obtain ⟨hC, φ, W, A, hW, hWdisj, hAn, hAc, hAsub⟩ := hK.exists_morseChart_closed_nhds hf hnd
   have : Finite C := hC.to_subtype
   -- The regular core `R` of `K`, away from the interiors of these neighbourhoods, is compact.

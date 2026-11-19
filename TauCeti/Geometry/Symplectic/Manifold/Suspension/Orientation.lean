@@ -190,7 +190,7 @@ theorem integralTopForm_mpullback_suspensionForm_of_orbitTorus_comp_eq
     (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u) (hτΦ : orbitTorus φ h ∘ Φ = u)
     (hΦ : ∀ c, Manifold.Orientation.IsOrientationPreservingAt o
       ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ))) Φ c) :
-    integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).1 = d := by
+    integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).val = d := by
   subst hτΦ
   have hΦe : Topology.IsOpenEmbedding Φ := Φ.coe_toHomeomorph ▸ Φ.toHomeomorph.isOpenEmbedding
   rw [← SmoothForm.mpullback_mpullback _ _ Φ.contMDiff (contMDiff_orbitTorus h),
@@ -222,7 +222,7 @@ theorem exists_isLocalDiffeomorph_orbitTorus_comp_eq_of_integralTopForm_eq_zero
       0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
         (fiberForm φ σ hσ)) (u c) v (J (u c) v))
     (h0 : integralTopForm o (SmoothForm.mpullback u hu
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0)
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val = 0)
     (hinj : ∀ c, Injective (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c))
     {c : C} {t : ℝ} (hc : (u c).2 = mk φ t x) (hd : minimalPeriod φ x = d) :
     ∃ v : C → UnitAddCircle × AddCircle (d : ℝ),
@@ -254,7 +254,7 @@ theorem exists_diffeomorph_orbitTorus_comp_eq_of_integralTopForm_eq_zero
       0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
         (fiberForm φ σ hσ)) (u c) v (J (u c) v))
     (h0 : integralTopForm o (SmoothForm.mpullback u hu
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0)
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val = 0)
     (hinj : ∀ c, Injective (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c))
     {c : C} {t : ℝ} (hc : (u c).2 = mk φ t x) (hd : minimalPeriod φ x = d) :
     ∃ Φ : C ≃ₘ⟮I', 𝓘(ℝ).prod 𝓘(ℝ)⟯ UnitAddCircle × AddCircle (d : ℝ),
@@ -291,10 +291,10 @@ theorem integralTopForm_mpullback_suspensionForm_of_integralTopForm_eq_zero
       0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
         (fiberForm φ σ hσ)) (u c) v (J (u c) v))
     (h0 : integralTopForm o (SmoothForm.mpullback u hu
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0)
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val = 0)
     (hinj : ∀ c, Injective (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c))
     {c : C} {t : ℝ} {x : M} (hc : (u c).2 = mk φ t x) :
-    integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).1 =
+    integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).val =
       minimalPeriod φ x := by
   have : Fact (0 < (minimalPeriod φ x : ℝ)) :=
     ⟨Nat.cast_pos.mpr (minimalPeriod_pos_of_integralTopForm_eq_zero hu ho hhol hS hV htame h0

@@ -53,7 +53,7 @@ variable (c : OrthonormalBasis ι ℝ F) {U : Set B} (hU : IsOpen U)
 include hd in
 private theorem continuous_local_repr :
     Continuous fun p : {p : TotalSpace F E // p.proj ∈ U} ↦
-      (d ⟨p.val.proj, p.property⟩).repr p.val.2 := by
+      (d ⟨p.val.proj, p.property⟩).repr p.val.snd := by
   apply continuous_induced_rng.2
   apply continuous_pi
   intro i
@@ -96,7 +96,7 @@ open scoped Classical in
 /-- A continuous local orthonormal basis defines a bundle chart whose fibre map sends that
 basis to the fixed orthonormal model basis `c`. -/
 def bundleTrivialization : Trivialization F (π F E) where
-  toFun p := (p.proj, if h : p.proj ∈ U then c.repr.symm ((d ⟨p.proj, h⟩).repr p.2) else 0)
+  toFun p := (p.proj, if h : p.proj ∈ U then c.repr.symm ((d ⟨p.proj, h⟩).repr p.snd) else 0)
   invFun p := ⟨p.1, if h : p.1 ∈ U then (d ⟨p.1, h⟩).repr.symm (c.repr p.2) else 0⟩
   source := (π F E) ⁻¹' U
   target := U ×ˢ univ

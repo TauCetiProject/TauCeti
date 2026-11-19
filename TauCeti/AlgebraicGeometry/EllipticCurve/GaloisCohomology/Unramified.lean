@@ -143,7 +143,7 @@ theorem kummerMap_mem_unramifiedTorsionCohomology
     apply Subtype.ext
     funext σ
     rw [cocyclesMap1_apply, AddMonoidHom.id_apply, ContinuousMonoidHom.subgroupSubtype_apply]
-    obtain ⟨τ, hτ, hτσ⟩ := σ.2
+    obtain ⟨τ, hτ, hτσ⟩ := σ.property
     rw [← hτσ]
     exact kummerCocycle_eq_zero_of_mem_inertiaSubgroup hmres hQ hτ
   exact (explicitRes1_mk _ _ _ _).trans (congrArg (H1pi _ _) hzero)

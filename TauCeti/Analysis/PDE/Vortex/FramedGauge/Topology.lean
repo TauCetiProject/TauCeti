@@ -129,14 +129,14 @@ def toSubgroup : SobolevTopologicalGaugeGroup hs ≃* sobolevGaugeGroup hs := Mu
 (`SobolevTopologicalGaugeGroup.coeFn_toLp_inclusion_subOne`). -/
 def subOne (u : SobolevTopologicalGaugeGroup hs) : H^{s}(ℂ) :=
   (exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup
-    (toSubgroup hs u).2).choose_spec.2.toBesselPotentialSpace
+    (toSubgroup hs u).property).choose_spec.2.toBesselPotentialSpace
 
 /-- The `L²` function of `subOne u` is `u - 1`. -/
 theorem coeFn_toLp_inclusion_subOne (h : 0 ≤ s) (u : SobolevTopologicalGaugeGroup hs) :
     ⇑(inclusion h (subOne u)).toLp =ᵐ[volume]
       fun z ↦ ((toSubgroup hs u : ℂ → Circle) z : ℂ) - 1 := by
   obtain ⟨hae, -⟩ :=
-    (exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup (toSubgroup hs u).2).choose_spec
+    (exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup (toSubgroup hs u).property).choose_spec
   rw [subOne, toLp_inclusion_toBesselPotentialSpace h _ rfl]
   exact hae
 

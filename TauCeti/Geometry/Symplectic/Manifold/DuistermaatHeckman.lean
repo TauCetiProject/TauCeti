@@ -181,7 +181,7 @@ variable {H' N : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [T
 Duistermaat–Heckman measure as `τ` and `ν`. In particular an equivariant symplectomorphism
 intertwining two moment maps preserves the Duistermaat–Heckman measure. -/
 theorem duistermaatHeckmanMeasure_eq {σ : SmoothTwoForm I M} {τ : SmoothTwoForm J N}
-    (Φ : M ≃ₜ N) (hΦ : MDifferentiable I J Φ) (h : mpullback I J Φ τ.1 = σ.1) {μ : M → F}
+    (Φ : M ≃ₜ N) (hΦ : MDifferentiable I J Φ) (h : mpullback I J Φ τ.val = σ.val) {μ : M → F}
     {ν : N → F} (hν : Measurable ν) (hμν : ν ∘ Φ = μ) :
     σ.duistermaatHeckmanMeasure n μ = τ.duistermaatHeckmanMeasure n ν := by
   rw [SmoothTwoForm.duistermaatHeckmanMeasure_def, SmoothTwoForm.duistermaatHeckmanMeasure_def,

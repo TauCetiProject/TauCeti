@@ -161,8 +161,8 @@ instance instLocallyCompactSpace : LocallyCompactSpace (characterSpace 𝕜 A) :
   have : CompactSpace K := isCompact_iff_compactSpace.mp isCompact_union_zero
   let z₀ : K := ⟨0, Or.inr rfl⟩
   let e : characterSpace 𝕜 A ≃ₜ {x : K // x ≠ z₀} :=
-    { toFun φ := ⟨⟨φ.1, Or.inl φ.2⟩, fun h ↦ φ.2.1 (congrArg Subtype.val h)⟩
-      invFun x := ⟨x.1.1, x.1.2.resolve_right fun h0 ↦ x.2 (Subtype.ext h0)⟩
+    { toFun φ := ⟨⟨φ.val, Or.inl φ.property⟩, fun h ↦ φ.property.1 (congrArg Subtype.val h)⟩
+      invFun x := ⟨x.val.val, x.val.property.resolve_right fun h0 ↦ x.property (Subtype.ext h0)⟩
       left_inv _ := rfl
       right_inv _ := rfl
       continuous_toFun := (continuous_subtype_val.subtype_mk _).subtype_mk _

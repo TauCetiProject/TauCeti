@@ -391,8 +391,8 @@ theorem exists_maximalIdeal_pow_subset_of_mem_nhds {s : Set (v.adicCompletionInt
   obtain ⟨t, ht, hts⟩ := mem_nhds_subtype _ _ _ |>.mp hs
   rw [ZeroMemClass.coe_zero] at ht
   obtain ⟨γ, hγ⟩ := Valued.mem_nhds_zero.mp ht
-  obtain ⟨m, hm⟩ : ∃ m : ℤ, exp m < MonoidWithZeroHom.ValueGroup₀.embedding γ.1 := by
-    refine ⟨log (MonoidWithZeroHom.ValueGroup₀.embedding γ.1) - 1, ?_⟩
+  obtain ⟨m, hm⟩ : ∃ m : ℤ, exp m < MonoidWithZeroHom.ValueGroup₀.embedding γ.val := by
+    refine ⟨log (MonoidWithZeroHom.ValueGroup₀.embedding γ.val) - 1, ?_⟩
     conv_rhs => rw [← exp_log (MonoidWithZeroHom.ValueGroup₀.embedding_unit_ne_zero γ)]
     exact exp_lt_exp.mpr (by lia)
   refine ⟨(-m).toNat, fun x hx ↦ hts ?_⟩
@@ -456,7 +456,7 @@ theorem exists_valued_sub_le (x : v.adicCompletionIntegers K) (n : ℕ) :
     ⟨x, x, by simp [U], rfl⟩
   have hz : v.valuation K z ≤ 1 := by
     have hy1 : Valued.v (algebraMap K (v.adicCompletion K) z) ≤ 1 :=
-      hyz ▸ (mem_adicCompletionIntegers R K v).mp y.2
+      hyz ▸ (mem_adicCompletionIntegers R K v).mp y.property
     rwa [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation'] at hy1
   -- and `z` is approximated by an element of `R`
   obtain ⟨a, ha⟩ := v.exists_valuation_sub_lt_of_integer hz (Units.mk0 (exp (-(n : ℤ))) exp_ne_zero)

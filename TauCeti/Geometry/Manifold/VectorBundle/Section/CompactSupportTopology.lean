@@ -230,7 +230,7 @@ theorem continuous_frameCoordinates_chartTestSection_ofSupportedIn {K : Compacts
     (hK : (K : Set E) ⊆ c.target) (t' : Trivialization F (π F V)) [MemTrivializationAtlas t']
     {U : Opens M} (hU : (U : Set M) ⊆ t'.baseSet) :
     Continuous (fun φ : 𝓓^{n}_{K}(E, F) ↦ t'.frameCoordinates hU
-      (t.chartTestSection c hc hct (TestFunction.ofSupportedIn hK φ)).1) := by
+      (t.chartTestSection c hc hct (TestFunction.ofSupportedIn hK φ)).val) := by
   have hL : IsClosed (c.symm '' K) :=
     (K.isCompact.image_of_continuousOn (c.continuousOn_symm.mono hK)).isClosed
   let val : C(U, M) := ⟨Subtype.val, continuous_subtype_val⟩
@@ -252,21 +252,21 @@ theorem continuous_frameCoordinates_chartTestSection_ofSupportedIn {K : Compacts
     funext φ
     ext x
     have hx : ((x : U) : M) ∉
-        (t.chartTestSection c hc hct (TestFunction.ofSupportedIn hK φ)).1.tsupport := by
+        (t.chartTestSection c hc hct (TestFunction.ofSupportedIn hK φ)).val.tsupport := by
       rw [tsupport_chartTestSection, TestFunction.coe_ofSupportedIn]
-      exact fun hmem ↦ x.2 (image_mono φ.tsupport_subset hmem)
+      exact fun hmem ↦ x.property (image_mono φ.tsupport_subset hmem)
     rw [ContMDiffMap.restrict_apply, frameCoordinates_apply, eq_zero_of_notMem_tsupport _ hx,
-      ← t'.continuousLinearMapAt_apply_of_mem (R := ℝ) (hU (x : U).2), map_zero]
+      ← t'.continuousLinearMapAt_apply_of_mem (R := ℝ) (hU (x : U).property), map_zero]
     simp
   | true =>
     -- On the chart source, compose with the chart and apply the transition matrix.
     let j : C^n⟮I, W true; 𝓘(ℝ, E), E⟯ :=
       ⟨fun x ↦ c ((x : U) : M), fun x ↦
-        (hc.contMDiffAt (c.open_source.mem_nhds x.2)).comp x
+        (hc.contMDiffAt (c.open_source.mem_nhds x.property)).comp x
           (contMDiff_subtype_val.comp contMDiff_subtype_val).contMDiffAt⟩
     let A : C^n⟮I, W true; 𝓘(ℝ, F →L[ℝ] F), F →L[ℝ] F⟯ :=
       ⟨fun x ↦ (t.coordChangeL ℝ t' ((x : U) : M) : F →L[ℝ] F), fun x ↦
-        (contMDiffAt_coordChangeL (e := t) (e' := t') (hct x.2) (hU (x : U).2)).comp x
+        (contMDiffAt_coordChangeL (e := t) (e' := t') (hct x.property) (hU (x : U).property)).comp x
           (contMDiff_subtype_val.comp contMDiff_subtype_val).contMDiffAt⟩
     have hincl : Continuous (ContDiffMapSupportedIn.toContMDiffMap :
         𝓓^{n}_{K}(E, F) → C^n⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯) := by
@@ -278,10 +278,11 @@ theorem continuous_frameCoordinates_chartTestSection_ofSupportedIn {K : Compacts
     convert (ContMDiffMap.continuous_clmApplyLinearMap A).comp hcomp using 1
     funext φ
     ext x
-    have hx : ((x : U) : M) ∈ c.source := x.2
+    have hx : ((x : U) : M) ∈ c.source := x.property
     rw [ContMDiffMap.restrict_apply, frameCoordinates_apply,
-      ← t'.continuousLinearMapAt_apply_of_mem (R := ℝ) (hU (x : U).2),
-      t.continuousLinearMapAt_chartTestSection_eq_coordChangeL c hc hct t' _ hx (hU (x : U).2)]
+      ← t'.continuousLinearMapAt_apply_of_mem (R := ℝ) (hU (x : U).property),
+      t.continuousLinearMapAt_chartTestSection_eq_coordChangeL c hc hct t' _ hx (hU
+          (x : U).property)]
     simp only [Function.comp_apply, ContMDiffMap.clmApplyLinearMap_apply,
       ContMDiffMap.comp_apply, TestFunction.coe_ofSupportedIn,
       ContDiffMapSupportedIn.coe_toContMDiffMap]
@@ -305,7 +306,7 @@ theorem continuous_chartTestSection :
   let K' : Compacts M := ⟨c.symm '' K, K.isCompact.image_of_continuousOn
     (c.continuousOn_symm.mono hK)⟩
   have hval : Continuous fun φ : 𝓓^{n}_{K}(E, F) ↦
-      (t.chartTestSection c hc hct (TestFunction.ofSupportedIn hK φ)).1 :=
+      (t.chartTestSection c hc hct (TestFunction.ofSupportedIn hK φ)).val :=
     (continuous_frameTopology_iff_frameCoordinates e U hU).2 fun i ↦
       continuous_frameCoordinates_chartTestSection_ofSupportedIn t c hc hct hK (e i) (hU i)
   let g : 𝓓^{n}_{K}(E, F) → supportedIn I F n V K' := fun φ ↦

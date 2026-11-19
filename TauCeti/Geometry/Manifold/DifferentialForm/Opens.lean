@@ -98,7 +98,7 @@ namespace RoughForm
 theorem extendByZero_inclusion {U W : Opens M} (h : U ≤ W) (ω : RoughForm I U F k) (x : U) :
     extendByZero W ω (Opens.inclusion h x) = ω x := by
   simp only [extendByZero, Opens.inclusion]
-  exact dite_eq_left x.2
+  exact dite_eq_left x.property
 
 /-- The extension by zero agrees with the form at the points of the smaller open subset. -/
 theorem extendByZero_apply_of_mem {U W : Opens M} (ω : RoughForm I U F k) {x : W}
@@ -189,7 +189,7 @@ private theorem extendByZero_eq_extend {U W : Opens M} (h : U ≤ W) (ω : Rough
       ((Set.inclusion_injective h).extend_apply _ (0 : W → E [⋀^Fin k]→L[ℝ] F) ⟨x, hx⟩).symm
   · have hxr : ¬∃ y, Opens.inclusion h y = x := by
       rintro ⟨y, rfl⟩
-      exact hx y.2
+      exact hx y.property
     exact (extendByZero_apply_of_notMem ω hx).trans
       (Function.extend_apply' (γ := E [⋀^Fin k]→L[ℝ] F) (f := Opens.inclusion h) ω 0 x hxr).symm
 
@@ -222,7 +222,7 @@ theorem eventually_extendByZero_eq_zero {U W : Opens M} (h : U ≤ W) {ω : Roug
   have hxs : x ∉ _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (extendByZero W ω) :=
     fun hxs ↦ hx <| by
       obtain ⟨y, -, rfl⟩ := tsupport_extendByZero_subset h hω hxs
-      exact y.2
+      exact y.property
   filter_upwards [(_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] F) _).isOpen_compl.mem_nhds
     hxs] with y hy
   exact _root_.image_eq_zero_of_notMem_tsupport (α := E [⋀^Fin k]→L[ℝ] F) hy
@@ -359,7 +359,7 @@ theorem IsSmoothForm.of_mpullback_inclusion_sup {U V : Opens M} {n : WithTop ℕ
     IsSmoothForm I n γ := by
   refine IsSmoothForm.of_mpullback_inclusion (U := fun b : Bool ↦ cond b U V)
     (fun b ↦ by cases b <;> simp) (fun x ↦ ?_) fun b ↦ ?_
-  · rcases Opens.mem_sup.mp x.2 with hx | hx
+  · rcases Opens.mem_sup.mp x.property with hx | hx
     exacts [⟨true, hx⟩, ⟨false, hx⟩]
   · cases b
     · exact hV

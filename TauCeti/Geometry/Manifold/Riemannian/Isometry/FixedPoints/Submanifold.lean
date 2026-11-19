@@ -134,10 +134,10 @@ theorem isLocallyConstant_finrank_fixedTangentSubspace :
     IsLocallyConstant fun z : MulAction.fixedPoints K M ↦
       Module.finrank ℝ (fixedTangentSubspace 𝓘(ℝ, E) K (z : M)) := by
   refine (IsLocallyConstant.iff_eventually_eq _).2 fun p ↦ ?_
-  obtain ⟨q, hq, hpq, hs⟩ := exists_mem_maximalAtlas_isSliceChart hK p.2
+  obtain ⟨q, hq, hpq, hs⟩ := exists_mem_maximalAtlas_isSliceChart hK p.property
   filter_upwards [continuous_subtype_val.continuousAt.preimage_mem_nhds
     (q.open_source.mem_nhds hpq)] with z hz
-  exact finrank_fixedTangentSubspace_eq_of_mem_source hK hq hs hz z.2
+  exact finrank_fixedTangentSubspace_eq_of_mem_source hK hq hs hz z.property
 
 /-- Each part of the fixed set of a given dimension is open in the fixed set. -/
 theorem isOpen_preimage_val_fixedPointsOfFinrank (d : ℕ) :
@@ -145,7 +145,7 @@ theorem isOpen_preimage_val_fixedPointsOfFinrank (d : ℕ) :
       Set (MulAction.fixedPoints K M)) := by
   convert (isLocallyConstant_finrank_fixedTangentSubspace hK).isOpen_fiber d using 1
   ext z
-  exact mem_fixedPointsOfFinrank.trans (and_iff_right z.2)
+  exact mem_fixedPointsOfFinrank.trans (and_iff_right z.property)
 
 /-- **A connected part of the fixed set has a single dimension.** A preconnected subset of the
 fixed set containing a point `p` lies in the part of the fixed set where the fixed tangent
@@ -197,7 +197,7 @@ theorem exists_isSmoothEmbedding_fixedPointsOfFinrank {d : ℕ} {L : Submodule �
     refine mem_fixedTangentSubspace.2 fun k _ ↦ ?_
     -- Every `k •` is the identity on the fixed set, so it fixes the tangent image of `val`.
     have hcomp : ((k • ·) ∘ Subtype.val : fixedPointsOfFinrank 𝓘(ℝ, E) K M d → M) =
-        Subtype.val := funext fun z ↦ (mem_fixedPointsOfFinrank.1 z.2).1 k
+        Subtype.val := funext fun z ↦ (mem_fixedPointsOfFinrank.1 z.property).1 k
     have h := mfderiv_comp y
       ((contMDiff_const_smul (I := 𝓘(ℝ, E)) (n := ∞) k).mdifferentiableAt (by simp))
       (hemb.contMDiff.mdifferentiableAt (by simp) (x := y))
@@ -205,7 +205,7 @@ theorem exists_isSmoothEmbedding_fixedPointsOfFinrank {d : ℕ} {L : Submodule �
     exact (congrArg (fun A ↦ A u) h).symm
   refine Submodule.eq_of_le_of_finrank_eq hle ?_
   rw [LinearMap.finrank_range_of_inj (hemb.isImmersion.mfderiv_injective (by simp) y),
-    (mem_fixedPointsOfFinrank.1 y.2).2]
+    (mem_fixedPointsOfFinrank.1 y.property).2]
   exact hL
 
 end TauCeti

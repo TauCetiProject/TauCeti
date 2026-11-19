@@ -116,7 +116,7 @@ theorem contMDiffAt_exponentialVariation {n : ℕ∞} {s t : ℝ}
     contDiff_fst.contMDiff.contMDiffAt.smul_totalSpace
       (hV.comp (s, t) contDiff_snd.contMDiff.contMDiffAt)
   have hexp : ContMDiffAt I.tangent I n
-      (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2)
+      (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.snd)
       (TotalSpace.mk' E (γ t) (s • V t)) :=
     (contMDiffOn_riemannianExp_tangentBundle.contMDiffAt
       (isOpen_setOfPred_mem_expDomain.mem_nhds hv)).of_le (by exact_mod_cast le_top)
@@ -177,8 +177,8 @@ theorem contMDiffOn_exponentialVariation {n : ℕ∞} {S : Set ℝ}
         (fun _ hz ↦ hz.1 : MapsTo Prod.snd
           {z : ℝ × ℝ | z.2 ∈ S ∧ z.1 • V z.2 ∈ expDomain I M (γ z.2)} S))
   have hexp : ContMDiffOn I.tangent I n
-      (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2)
-      {z | z.2 ∈ expDomain I M z.proj} :=
+      (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.snd)
+      {z | z.snd ∈ expDomain I M z.proj} :=
     contMDiffOn_riemannianExp_tangentBundle.of_le (by exact_mod_cast le_top)
   exact hexp.comp hinput fun _ hz ↦ hz.2
 

@@ -72,11 +72,11 @@ theorem isOpenEmbedding_domRestrict_quotient_mk_of_isOpen {U : Set X} (hU : IsOp
     IsOpenEmbedding (U.domRestrict (Quotient.mk s)) := by
   refine .of_continuous_injective_isOpenMap
     (continuous_quotient_mk'.comp continuous_subtype_val) (fun x y hxy => ?_) fun W hW => ?_
-  · exact Subtype.ext (hfix x.2 (Quotient.exact hxy))
+  · exact Subtype.ext (hfix x.property (Quotient.exact hxy))
   · rw [domRestrict_eq, image_comp]
     refine isOpen_image_quotient_mk s (hU.isOpenMap_subtype_val W hW) ?_
     rintro _ y ⟨x, hx, rfl⟩ hxy
-    exact hfix x.2 hxy ▸ mem_image_of_mem _ hx
+    exact hfix x.property hxy ▸ mem_image_of_mem _ hx
 
 end Setoid
 

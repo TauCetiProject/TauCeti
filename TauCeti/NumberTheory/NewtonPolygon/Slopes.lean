@@ -161,7 +161,7 @@ theorem newtonSlopes_eq_slopeMultiset {d : FiniteSlopeData ℝ}
     · rintro ⟨⟨h₁, -⟩, -, h₂⟩
       exact ⟨⟨n - d.start, by omega⟩, by dsimp only; omega⟩
     · rintro ⟨i, rfl⟩
-      have := i.2
+      have := i.isLt
       omega
   rw [newtonSlopes_def, hfin, Finset.map_val, Multiset.map_map, d.slopeMultiset_def,
     ← Fin.univ_val_map, ← hd]

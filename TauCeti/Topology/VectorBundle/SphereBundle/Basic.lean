@@ -128,37 +128,37 @@ variable (F E) [∀ b, NormedAddCommGroup (E b)]
 /-- The unit disc bundle `D(E)` of a bundle with normed fibres: the vectors of norm at most one,
 the disc bundle of the fibre norm. -/
 def discBundle : Set (TotalSpace F E) :=
-  gaugeDiscBundle fun v : TotalSpace F E ↦ ‖v.2‖
+  gaugeDiscBundle fun v : TotalSpace F E ↦ ‖v.snd‖
 
 /-- The unit sphere bundle `S(E)` of a bundle with normed fibres: the vectors of norm one, the
 sphere bundle of the fibre norm. -/
 @[expose] def sphereBundle : Set (TotalSpace F E) :=
-  gaugeSphereBundle fun v : TotalSpace F E ↦ ‖v.2‖
+  gaugeSphereBundle fun v : TotalSpace F E ↦ ‖v.snd‖
 
 variable {F E} in
 /-- The unit disc bundle is the disc bundle of the fibre norm. -/
-theorem discBundle_def : discBundle F E = gaugeDiscBundle fun v : TotalSpace F E ↦ ‖v.2‖ :=
+theorem discBundle_def : discBundle F E = gaugeDiscBundle fun v : TotalSpace F E ↦ ‖v.snd‖ :=
   (rfl)
 
 variable {F E} in
 /-- The unit sphere bundle is the sphere bundle of the fibre norm. -/
-theorem sphereBundle_def : sphereBundle F E = gaugeSphereBundle fun v : TotalSpace F E ↦ ‖v.2‖ :=
+theorem sphereBundle_def : sphereBundle F E = gaugeSphereBundle fun v : TotalSpace F E ↦ ‖v.snd‖ :=
   (rfl)
 
 variable {F E} in
 @[simp]
-theorem mem_discBundle {v : TotalSpace F E} : v ∈ discBundle F E ↔ ‖v.2‖ ≤ 1 :=
+theorem mem_discBundle {v : TotalSpace F E} : v ∈ discBundle F E ↔ ‖v.snd‖ ≤ 1 :=
   Iff.rfl
 
 variable {F E} in
 @[simp]
-theorem mem_sphereBundle {v : TotalSpace F E} : v ∈ sphereBundle F E ↔ ‖v.2‖ = 1 :=
+theorem mem_sphereBundle {v : TotalSpace F E} : v ∈ sphereBundle F E ↔ ‖v.snd‖ = 1 :=
   Iff.rfl
 
 variable {F E} in
 /-- The vectors of norm less than one miss the sphere bundle. -/
 theorem disjoint_norm_lt_one_sphereBundle :
-    Disjoint {v : TotalSpace F E | ‖v.2‖ < 1} (sphereBundle F E) :=
+    Disjoint {v : TotalSpace F E | ‖v.snd‖ < 1} (sphereBundle F E) :=
   Set.disjoint_left.2 fun _ hv hv' ↦ (mem_ofPred_eq ▸ hv).ne (mem_sphereBundle.1 hv')
 
 variable {F E} [TopologicalSpace (TotalSpace F E)]
@@ -182,8 +182,8 @@ off the zero section. It is in particular nonnegative and vanishes exactly on th
 structure IsFiberGauge (ρ : TotalSpace F E → ℝ) : Prop where
   continuous : Continuous ρ
   smul_of_nonneg {t : ℝ} (ht : 0 ≤ t) (v : TotalSpace F E) :
-    ρ (TotalSpace.mk' F v.proj (t • v.2)) = t * ρ v
-  pos {v : TotalSpace F E} (hv : v.2 ≠ 0) : 0 < ρ v
+    ρ (TotalSpace.mk' F v.proj (t • v.snd)) = t * ρ v
+  pos {v : TotalSpace F E} (hv : v.snd ≠ 0) : 0 < ρ v
 
 namespace IsFiberGauge
 
@@ -191,19 +191,19 @@ variable {ρ : TotalSpace F E → ℝ} (hρ : IsFiberGauge ρ)
 include hρ
 
 /-- A fibre gauge vanishes on the zero section. -/
-theorem eq_zero_of_snd_eq_zero {v : TotalSpace F E} (hv : v.2 = 0) : ρ v = 0 := by
+theorem eq_zero_of_snd_eq_zero {v : TotalSpace F E} (hv : v.snd = 0) : ρ v = 0 := by
   have h := hρ.smul_of_nonneg le_rfl v
   rw [zero_smul, zero_mul, ← hv, TotalSpace.mk', TotalSpace.eta] at h
   exact h
 
 /-- A fibre gauge is nonnegative. -/
 theorem nonneg (v : TotalSpace F E) : 0 ≤ ρ v := by
-  by_cases hv : v.2 = 0
+  by_cases hv : v.snd = 0
   · exact (hρ.eq_zero_of_snd_eq_zero hv).ge
   · exact (hρ.pos hv).le
 
 /-- A fibre gauge vanishes exactly on the zero section. -/
-theorem eq_zero_iff {v : TotalSpace F E} : ρ v = 0 ↔ v.2 = 0 :=
+theorem eq_zero_iff {v : TotalSpace F E} : ρ v = 0 ↔ v.snd = 0 :=
   ⟨fun h ↦ by_contra fun hv ↦ (hρ.pos hv).ne' h, hρ.eq_zero_of_snd_eq_zero⟩
 
 end IsFiberGauge
@@ -226,12 +226,12 @@ variable {ρ : TotalSpace F E → ℝ} (hρ : IsFiberGauge ρ)
 
 @[simp]
 theorem gaugeDiscSpherePairMap_fst_apply (v : gaugeDiscBundle ρ) :
-    TopPair.Hom.fst (gaugeDiscSpherePairMap hρ) v = v.1 :=
+    TopPair.Hom.fst (gaugeDiscSpherePairMap hρ) v = v.val :=
   (rfl)
 
 @[simp]
 theorem gaugeDiscSpherePairMap_snd_apply (v : gaugeSphereBundle ρ) :
-    (TopPair.Hom.snd (gaugeDiscSpherePairMap hρ) v).1 = v.1 :=
+    (TopPair.Hom.snd (gaugeDiscSpherePairMap hρ) v).val = v.val :=
   (rfl)
 
 /-- The square root of a continuous function `q` on the total space which is positively homogeneous
@@ -241,8 +241,8 @@ fibres. The disc and sphere bundles of `√q` are `{q ≤ 1}` and `{q = 1}`
 (`TauCeti.gaugeDiscBundle_sqrt`, `TauCeti.gaugeSphereBundle_sqrt`). -/
 theorem isFiberGauge_sqrt {q : TotalSpace F E → ℝ} (hq : Continuous q)
     (hsmul : ∀ {t : ℝ}, 0 ≤ t → ∀ v : TotalSpace F E,
-      q (TotalSpace.mk' F v.proj (t • v.2)) = t ^ 2 * q v)
-    (hpos : ∀ {v : TotalSpace F E}, v.2 ≠ 0 → 0 < q v) :
+      q (TotalSpace.mk' F v.proj (t • v.snd)) = t ^ 2 * q v)
+    (hpos : ∀ {v : TotalSpace F E}, v.snd ≠ 0 → 0 < q v) :
     IsFiberGauge fun v ↦ √(q v) where
   continuous := hq.sqrt
   smul_of_nonneg {t} ht v := by rw [hsmul ht, Real.sqrt_mul (sq_nonneg t), Real.sqrt_sq ht]
@@ -254,8 +254,8 @@ end Gauge
 bundles are the unit disc bundle `D(E)` and the unit sphere bundle `S(E)`. -/
 theorem isFiberGauge_norm {B : Type w} {F : Type*} {E : B → Type w}
     [∀ b, NormedAddCommGroup (E b)] [∀ b, NormedSpace ℝ (E b)] [TopologicalSpace (TotalSpace F E)]
-    (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
-    IsFiberGauge fun v : TotalSpace F E ↦ ‖v.2‖ where
+    (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖) :
+    IsFiberGauge fun v : TotalSpace F E ↦ ‖v.snd‖ where
   continuous := hnorm
   smul_of_nonneg ht v := by simp [norm_smul, Real.norm_eq_abs, abs_of_nonneg ht]
   pos hv := norm_pos_iff.2 hv
@@ -278,7 +278,7 @@ theorem sphereBundleProj_apply (v : sphereBundle F E) :
 /-- The inclusion `S(E_b) → S(E)` of the unit sphere of the fibre over `b` into the unit sphere
 bundle. -/
 def sphereBundleFiberIncl (b : B) : C(Metric.sphere (0 : E b) 1, sphereBundle F E) where
-  toFun x := ⟨⟨b, x⟩, mem_sphereBundle.2 (mem_sphere_zero_iff_norm.1 x.2)⟩
+  toFun x := ⟨⟨b, x⟩, mem_sphereBundle.2 (mem_sphere_zero_iff_norm.1 x.property)⟩
   continuous_toFun :=
     ((FiberBundle.continuous_totalSpaceMk F E b).comp continuous_subtype_val).subtype_mk _
 
@@ -348,7 +348,7 @@ theorem isProperMap_discBundle_proj :
   -- which the projection is proper.
   let ev : OrthonormalFrameBundle 𝕜 F E V × Metric.closedBall (0 : V) 1 → discBundle F E :=
     fun q ↦ ⟨⟨q.1.proj, q.1.frame q.2⟩,
-      mem_discBundle.2 ((q.1.frame.norm_map _).trans_le (mem_closedBall_zero_iff.1 q.2.2))⟩
+      mem_discBundle.2 ((q.1.frame.norm_map _).trans_le (mem_closedBall_zero_iff.1 q.2.property))⟩
   refine isProperMap_of_comp_of_surj (f := ev)
     ((OrthonormalFrameBundle.continuous_totalSpaceMk_frame_apply.comp
       (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).subtype_mk _)
@@ -394,7 +394,7 @@ variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [N
 /-- The radial retraction `v ↦ v / max 1 (ρ v)` of the total space onto the disc bundle of a fibre
 gauge `ρ`. -/
 private def gaugeDiscRetraction : C(TotalSpace F E, gaugeDiscBundle ρ) where
-  toFun v := ⟨TotalSpace.mk' F v.proj ((max 1 (ρ v))⁻¹ • v.2), by
+  toFun v := ⟨TotalSpace.mk' F v.proj ((max 1 (ρ v))⁻¹ • v.snd), by
     have h : 0 < max 1 (ρ v) := lt_max_of_lt_left one_pos
     rw [mem_gaugeDiscBundle, hρ.smul_of_nonneg (inv_nonneg.2 h.le), inv_mul_le_iff₀ h, mul_one]
     exact le_max_right _ _⟩
@@ -414,7 +414,7 @@ def gaugeDiscBundleHomotopyEquiv : gaugeDiscBundle ρ ≃ₕ TotalSpace F E wher
     · rfl
     · simp [gaugeDiscRetraction, max_eq_left (mem_gaugeDiscBundle.1 hx)]
   right_inv := ⟨ContinuousMap.Homotopy.symm
-    { toFun := fun p ↦ TotalSpace.mk' F p.2.proj ((1 - p.1 + p.1 * (max 1 (ρ p.2))⁻¹) • p.2.2)
+    { toFun := fun p ↦ TotalSpace.mk' F p.2.proj ((1 - p.1 + p.1 * (max 1 (ρ p.2))⁻¹) • p.2.snd)
       continuous_toFun := by
         have ht : Continuous fun p : I × TotalSpace F E ↦ (p.1 : ℝ) :=
           continuous_subtype_val.comp continuous_fst
@@ -426,14 +426,14 @@ def gaugeDiscBundleHomotopyEquiv : gaugeDiscBundle ρ ≃ₕ TotalSpace F E wher
 
 @[simp]
 theorem coe_gaugeDiscBundleHomotopyEquiv (v : gaugeDiscBundle ρ) :
-    gaugeDiscBundleHomotopyEquiv hρ v = v.1 :=
+    gaugeDiscBundleHomotopyEquiv hρ v = v.val :=
   (rfl)
 
 /-- The homotopy inverse of `D_ρ(E) ≃ₕ E` is the radial retraction `v ↦ v / max 1 (ρ v)`. -/
 @[simp]
 theorem coe_gaugeDiscBundleHomotopyEquiv_symm_apply (v : TotalSpace F E) :
     ((gaugeDiscBundleHomotopyEquiv hρ).symm v : TotalSpace F E) =
-      TotalSpace.mk' F v.proj ((max 1 (ρ v))⁻¹ • v.2) :=
+      TotalSpace.mk' F v.proj ((max 1 (ρ v))⁻¹ • v.snd) :=
   (rfl)
 
 /-- **The sphere bundle of a fibre gauge is a deformation retract of the deleted total space**: the
@@ -442,34 +442,34 @@ inclusion `S_ρ(E) → E₀` is a homotopy equivalence, with homotopy inverse th
 def gaugeSphereBundleHomotopyEquiv : gaugeSphereBundle ρ ≃ₕ zeroSectionCompl F E :=
   ContinuousMap.HomotopyEquiv.ofWeakDeformationRetraction
     hρ.gaugeSphereBundle_subset_zeroSectionCompl
-    (fun p ↦ TotalSpace.mk' F p.2.1.proj ((1 - p.1 + p.1 * (ρ p.2.1)⁻¹) • p.2.1.2))
+    (fun p ↦ TotalSpace.mk' F p.2.val.proj ((1 - p.1 + p.1 * (ρ p.2.val)⁻¹) • p.2.val.snd))
     (have ht : Continuous fun p : I × zeroSectionCompl F E ↦ (p.1 : ℝ) :=
       continuous_subtype_val.comp continuous_fst
     Continuous.smul_totalSpace ((continuous_const.sub ht).add (ht.mul
       ((hρ.continuous.comp (continuous_subtype_val.comp continuous_snd)).inv₀
-        fun p ↦ (hρ.pos (mem_zeroSectionCompl.1 p.2.2)).ne')))
+        fun p ↦ (hρ.pos (mem_zeroSectionCompl.1 p.2.property)).ne')))
       (continuous_subtype_val.comp continuous_snd))
-    (fun p ↦ have hp := mem_zeroSectionCompl.1 p.2.2
+    (fun p ↦ have hp := mem_zeroSectionCompl.1 p.2.property
       mem_zeroSectionCompl.2 <|
         smul_ne_zero (by
           simpa using (convex_Ioi (0 : ℝ) one_pos (inv_pos.2 (hρ.pos hp))
-            (sub_nonneg.2 p.1.2.2) p.1.2.1 (sub_add_cancel 1 _)).ne') hp)
+            (sub_nonneg.2 p.1.property.2) p.1.property.1 (sub_add_cancel 1 _)).ne') hp)
     (fun v ↦ by simp)
     (fun v ↦ by
-      simp [hρ.smul_of_nonneg (inv_nonneg.2 (hρ.nonneg v.1)) v.1,
-        inv_mul_cancel₀ (hρ.pos (mem_zeroSectionCompl.1 v.2)).ne'])
+      simp [hρ.smul_of_nonneg (inv_nonneg.2 (hρ.nonneg v.val)) v.val,
+        inv_mul_cancel₀ (hρ.pos (mem_zeroSectionCompl.1 v.property)).ne'])
     (fun t v hv ↦ by simp [mem_gaugeSphereBundle.1 hv, hv])
 
 @[simp]
 theorem coe_gaugeSphereBundleHomotopyEquiv (v : gaugeSphereBundle ρ) :
-    (gaugeSphereBundleHomotopyEquiv hρ v : TotalSpace F E) = v.1 :=
+    (gaugeSphereBundleHomotopyEquiv hρ v : TotalSpace F E) = v.val :=
   ContinuousMap.HomotopyEquiv.coe_ofWeakDeformationRetraction_apply _ _ _ _ _ _ _ v
 
 /-- The homotopy inverse of `S_ρ(E) ≃ₕ E₀` is the normalization `v ↦ v / ρ v`. -/
 @[simp]
 theorem coe_gaugeSphereBundleHomotopyEquiv_symm_apply (v : zeroSectionCompl F E) :
     ((gaugeSphereBundleHomotopyEquiv hρ).symm v : TotalSpace F E) =
-      TotalSpace.mk' F v.1.proj ((ρ v.1)⁻¹ • v.1.2) := by
+      TotalSpace.mk' F v.val.proj ((ρ v.val)⁻¹ • v.val.snd) := by
   rw [gaugeSphereBundleHomotopyEquiv,
     ContinuousMap.HomotopyEquiv.coe_ofWeakDeformationRetraction_symm_apply]
   simp
@@ -533,10 +533,11 @@ section. -/
 private def gaugeDiscBundleContraction :
     ContinuousMap.Homotopy ((zeroSectionGaugeDisc hρ).comp gaugeDiscProjMap)
       (ContinuousMap.id (gaugeDiscBundle ρ)) where
-  toFun p := ⟨TotalSpace.mk' F (p.2 : TotalSpace F E).proj ((p.1 : ℝ) • (p.2 : TotalSpace F E).2),
+  toFun p := ⟨TotalSpace.mk' F (p.2 : TotalSpace F E).proj ((p.1 : ℝ) • (p.2 : TotalSpace F E).snd),
     by
-      rw [mem_gaugeDiscBundle, hρ.smul_of_nonneg p.1.2.1]
-      exact (mul_le_of_le_one_left (hρ.nonneg _) p.1.2.2).trans (mem_gaugeDiscBundle.1 p.2.2)⟩
+      rw [mem_gaugeDiscBundle, hρ.smul_of_nonneg p.1.property.1]
+      exact (mul_le_of_le_one_left (hρ.nonneg _) p.1.property.2).trans
+          (mem_gaugeDiscBundle.1 p.2.property)⟩
   continuous_toFun := by
     refine Continuous.subtype_mk ?_ _
     exact (continuous_subtype_val.comp continuous_fst).smul_totalSpace
@@ -579,8 +580,8 @@ sphere bundle. -/
 theorem gaugeDiscSpherePair_map_comp_gaugeDiscBundleProjHomotopyEquiv_norm {B : Type w}
     [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {E : B → Type w}
     [∀ b, NormedAddCommGroup (E b)] [∀ b, NormedSpace ℝ (E b)] [TopologicalSpace (TotalSpace F E)]
-    [FiberBundle F E] [VectorBundle ℝ F E] (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
-    (gaugeDiscSpherePair fun v : TotalSpace F E ↦ ‖v.2‖).map ≫
+    [FiberBundle F E] [VectorBundle ℝ F E] (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖) :
+    (gaugeDiscSpherePair fun v : TotalSpace F E ↦ ‖v.snd‖).map ≫
         TopCat.ofHom (gaugeDiscBundleProjHomotopyEquiv (isFiberGauge_norm hnorm)).toFun =
       TopCat.ofHom (sphereBundleProj F E) := by
   ext v

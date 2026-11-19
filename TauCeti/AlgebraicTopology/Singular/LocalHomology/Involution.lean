@@ -53,7 +53,7 @@ variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
 private def interPairToComplPair (hapU : a p ∉ U) :
     interPair U {p}ᶜ ⟶ ofSubset ({p}ᶜ ∩ {a p}ᶜ : Set S) :=
   ofSubsetMap (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
-    fun u hu ↦ ⟨hu, fun h ↦ hapU (Set.mem_singleton_iff.1 h ▸ u.2)⟩
+    fun u hu ↦ ⟨hu, fun h ↦ hapU (Set.mem_singleton_iff.1 h ▸ u.property)⟩
 
 omit [T1Space S] in
 /-- Followed by the inclusion `(S, S ∖ {p, a p}) ⟶ (S, S ∖ {p})`, the inclusion of
@@ -70,7 +70,7 @@ private lemma singularHomologyMap_interPairToComplPair_comp_eq_zero (hapU : a p 
     TopPair.singularHomologyMap
       (interPairToComplPair hapU ≫ ofSubsetMap (𝟙 S) (B' := ({a p}ᶜ : Set S)) fun _ h ↦ h.2)
       R n = 0 := by
-  have hU (u : U) : u.1 ∈ ({a p}ᶜ : Set S) := fun (h : u.1 = a p) ↦ hapU (h ▸ u.2)
+  have hU (u : U) : u.val ∈ ({a p}ᶜ : Set S) := fun (h : u.val = a p) ↦ hapU (h ▸ u.property)
   refine (congrArg (TopPair.singularHomologyMap · R n)
     (ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (fun u _ ↦ hU u) rfl)).trans ?_
   exact singularHomologyMap_eq_zero_of_fac _ R
@@ -85,13 +85,13 @@ private lemma singularHomologyMap_interPairToComplPair_comp_ofSubsetMap_comp_eq_
     (haP : Set.MapsTo a ({p}ᶜ ∩ {a p}ᶜ) ({p}ᶜ ∩ {a p}ᶜ)) (n : ℕ) :
     TopPair.singularHomologyMap (interPairToComplPair hapU ≫ ofSubsetMap a haP ≫
       ofSubsetMap (𝟙 S) (by exact fun _ h ↦ h.1)) R n = 0 := by
-  have hU (u : U) : a u.1 ∈ ({p}ᶜ : Set S) := fun (h : a u.1 = p) ↦
-    hapU ((ha u.1).symm.trans (congrArg a h) ▸ u.2)
+  have hU (u : U) : a u.val ∈ ({p}ᶜ : Set S) := fun (h : a u.val = p) ↦
+    hapU ((ha u.val).symm.trans (congrArg a h) ▸ u.property)
   refine (congrArg (TopPair.singularHomologyMap · R n) ((whisker_eq _
     (ofSubsetMap_comp_ofSubsetMap_of_comp_eq haP _ (fun _ h ↦ (haP h).1)
       (Category.comp_id _))).trans
     (ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (fun u _ ↦ hU u) rfl))).trans ?_
-  exact singularHomologyMap_eq_zero_of_fac _ R (TopCat.ofHom (⟨fun u ↦ ⟨a u.1, hU u⟩,
+  exact singularHomologyMap_eq_zero_of_fac _ R (TopCat.ofHom (⟨fun u ↦ ⟨a u.val, hU u⟩,
       (a.hom.continuous.comp continuous_subtype_val).subtype_mk _⟩ : C(U, ({p}ᶜ : Set S))))
     (TopCat.ext fun u ↦ (ofSubsetMap_fst_apply _ _ u).symm) n
 
@@ -156,12 +156,12 @@ theorem comp_singularHomologyMap_ofSubsetMap_eq_one_add_smul (ha : Function.Invo
       (1 + ε) • (t ≫ TopPair.singularHomologyMap
         (ofSubsetMap (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ ≫ f)
           (B := (Subtype.val ⁻¹' {p}ᶜ : Set U)) (B' := {y}ᶜ) fun u hu ↦
-            hfP ⟨hu, fun h ↦ hapU (Set.mem_singleton_iff.1 h ▸ u.2)⟩) R n) := by
+            hfP ⟨hu, fun h ↦ hapU (Set.mem_singleton_iff.1 h ▸ u.property)⟩) R n) := by
   have haP : Set.MapsTo a ({p}ᶜ ∩ {a p}ᶜ) ({p}ᶜ ∩ {a p}ᶜ) := fun x hx ↦
     ⟨fun h ↦ hx.2 ((ha x).symm.trans (congrArg a h)), fun h ↦ hx.1 (ha.injective h)⟩
   have hfU : Set.MapsTo (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ ≫ f)
       (Subtype.val ⁻¹' {p}ᶜ : Set U) {y}ᶜ := fun u hu ↦
-    hfP ⟨hu, fun h ↦ hapU (Set.mem_singleton_iff.1 h ▸ u.2)⟩
+    hfP ⟨hu, fun h ↦ hapU (Set.mem_singleton_iff.1 h ▸ u.property)⟩
   have hcov : interior ({p}ᶜ : Set S) ∪ interior {a p}ᶜ = Set.univ := by
     rw [isOpen_compl_singleton.interior_eq, isOpen_compl_singleton.interior_eq,
       ← Set.compl_inter, Set.singleton_inter_eq_empty.2 (Set.mem_singleton_iff.not.2 hp.symm),

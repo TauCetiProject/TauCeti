@@ -199,11 +199,11 @@ private theorem isIso_localHomologyMap_actionMap_comp_prodMap [T1Space M] {B : T
         ((⟨U.domRestrict s, hs.domRestrict⟩ : C(U, G)).prodMap
           (ContinuousMap.id (BasedMap B M b₀ (x₀ : M))))) h n) := by
   let sU : C(U, G) := ⟨U.domRestrict s, hs.domRestrict⟩
-  have hsU : ∀ z : U, sU z • (x₀ : M) = z := fun z ↦ hsec z z.2
+  have hsU : ∀ z : U, sU z • (x₀ : M) = z := fun z ↦ hsec z z.property
   let F := BasedMap B M b₀ (x₀ : M)
   let Θ : C(U × F, C(B, M)) := (BasedMap.actionMap (G := G) b₀ (x₀ : M)).comp
     (sU.prodMap (ContinuousMap.id F))
-  have hΘapply : ∀ p : U × F, Θ p = sU p.1 • p.2.1 := fun _ ↦ by simp [Θ]
+  have hΘapply : ∀ p : U × F, Θ p = sU p.1 • p.2.val := fun _ ↦ by simp [Θ]
   let τ := mappingSpaceEvalTrivialization b₀ (x₀ : M) U hU s hs hsec
   have hτ : U ⊆ τ.baseSet := by simp [τ]
   have hΘτ : (Θ : U × F → C(B, M)) = Subtype.val ∘ (τ.preimageHomeomorph hτ).symm :=
@@ -214,7 +214,7 @@ private theorem isIso_localHomologyMap_actionMap_comp_prodMap [T1Space M] {B : T
       (τ.preimageHomeomorph hτ).symm.isOpenEmbedding
   have hΘF : Θ ⁻¹' (mappingSpaceEval b₀ ⁻¹' {(x₀ : M)}) = Prod.fst ⁻¹' {x₀} := by
     ext p
-    simp [hΘapply, p.2.2, hsU, Subtype.ext_iff]
+    simp [hΘapply, p.2.property, hsU, Subtype.ext_iff]
   have hFΘ : mappingSpaceEval b₀ ⁻¹' {(x₀ : M)} ⊆ range Θ := fun f hf ↦ by
     have hf' : f b₀ = x₀ := by simpa using hf
     refine ⟨(x₀, ⟨(sU x₀)⁻¹ • f, by
@@ -283,12 +283,12 @@ theorem livesOverFundamentalClass_actionMap_singularHomologyCross {B : Type}
   -- Work with the base point as a point of `U`.
   obtain ⟨x₀, rfl⟩ : ∃ x₀' : U, (x₀' : M) = x₀ := ⟨⟨x₀, hx₀U⟩, rfl⟩
   let sU : C(U, G) := ⟨U.domRestrict s, hs.domRestrict⟩
-  have hsU : ∀ z : U, sU z • (x₀ : M) = z := fun z ↦ hsec z z.2
+  have hsU : ∀ z : U, sU z • (x₀ : M) = z := fun z ↦ hsec z z.property
   have hsU' : sU ⁻¹' (π ⁻¹' {(x₀ : M)}) ⊆ {x₀} := fun z hz ↦
     Subtype.ext ((hsU z).symm.trans ((hπ _).symm.trans hz))
   let F := BasedMap B M b₀ (x₀ : M)
   let Φ := BasedMap.actionMap (G := G) b₀ (x₀ : M)
-  have hΦ : mappingSpaceEval b₀ ∘ Φ = π ∘ Prod.fst := funext fun p ↦ by simp [Φ, hπ, p.2.2]
+  have hΦ : mappingSpaceEval b₀ ∘ Φ = π ∘ Prod.fst := funext fun p ↦ by simp [Φ, hπ, p.2.property]
   -- `Θ = Φ ∘ (s × id)`, `(x, u) ↦ s(x) • u`, induces an isomorphism on local homology.
   let Θ : C(U × F, C(B, M)) := Φ.comp (sU.prodMap (ContinuousMap.id F))
   obtain ⟨hΘF, hΘiso⟩ := isIso_localHomologyMap_actionMap_comp_prodMap (G := G) b₀ hU x₀ s hs hsec

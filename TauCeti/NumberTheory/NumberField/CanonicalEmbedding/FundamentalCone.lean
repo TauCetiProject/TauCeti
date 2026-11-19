@@ -68,17 +68,17 @@ noncomputable def idealSetEquivPrincipal :
   calc idealSet K J
       ≃ {a : integerSet K // (preimageOfMemIntegerSet a : 𝓞 K) ∈ (J : Set (𝓞 K))} :=
         idealSetEquiv K J
-    _ ≃ {p : {I : (Ideal (𝓞 K))⁰ // IsPrincipal I.1} × torsion K //
-          (J : Ideal (𝓞 K)) ∣ p.1.1} :=
+    _ ≃ {p : {I : (Ideal (𝓞 K))⁰ // IsPrincipal I.val} × torsion K //
+          (J : Ideal (𝓞 K)) ∣ p.1.val} :=
         Equiv.subtypeEquiv (integerSetEquiv K) fun a ↦ by
           rw [integerSetEquiv_apply_fst, dvd_span_singleton, SetLike.mem_coe]
-    _ ≃ {I : {I : (Ideal (𝓞 K))⁰ // IsPrincipal I.1} // (J : Ideal (𝓞 K)) ∣ I.1} × torsion K :=
+    _ ≃ {I : {I : (Ideal (𝓞 K))⁰ // IsPrincipal I.val} // (J : Ideal (𝓞 K)) ∣ I.val} × torsion K :=
         Equiv.prodSubtypeFstEquivSubtypeProd
-          (p := fun I : {I : (Ideal (𝓞 K))⁰ // IsPrincipal I.1} ↦ (J : Ideal (𝓞 K)) ∣ I.1)
+          (p := fun I : {I : (Ideal (𝓞 K))⁰ // IsPrincipal I.val} ↦ (J : Ideal (𝓞 K)) ∣ I.val)
     _ ≃ {I : (Ideal (𝓞 K))⁰ // (J : Ideal (𝓞 K)) ∣ I ∧ IsPrincipal (I : Ideal (𝓞 K))} ×
           torsion K :=
         Equiv.prodCongrLeft fun _ ↦ (Equiv.subtypeSubtypeEquivSubtypeInter
-          (fun I : (Ideal (𝓞 K))⁰ ↦ IsPrincipal I.1) (fun I ↦ (J : Ideal (𝓞 K)) ∣ I.1)).trans
+          (fun I : (Ideal (𝓞 K))⁰ ↦ IsPrincipal I.val) (fun I ↦ (J : Ideal (𝓞 K)) ∣ I.val)).trans
           (Equiv.subtypeEquivRight fun _ ↦ and_comm)
 
 variable {K J}
@@ -88,7 +88,7 @@ algebraic integer whose image is `a`. -/
 theorem idealSetEquivPrincipal_apply_fst (a : idealSet K J) {x : 𝓞 K}
     (hx : mixedEmbedding K (x : K) = a) :
     ((idealSetEquivPrincipal K J a).1 : Ideal (𝓞 K)) = span {x} := by
-  have h : (preimageOfMemIntegerSet (idealSetEquiv K J a).1 : 𝓞 K) = x := by
+  have h : (preimageOfMemIntegerSet (idealSetEquiv K J a).val : 𝓞 K) = x := by
     refine RingOfIntegers.ext (mixedEmbedding_injective K ?_)
     rw [mixedEmbedding_preimageOfMemIntegerSet, idealSetEquiv_apply, hx]
   rw [← h]
@@ -100,7 +100,7 @@ theorem absNorm_idealSetEquivPrincipal_fst (a : idealSet K J) :
     (absNorm ((idealSetEquivPrincipal K J a).1 : Ideal (𝓞 K)) : ℝ) =
       mixedEmbedding.norm (a : mixedSpace K) := by
   rw [idealSetEquivPrincipal_apply_fst a (mixedEmbedding_preimageOfMemIntegerSet
-    (idealSetEquiv K J a).1), ← intNorm_idealSetEquiv_apply, intNorm, absNorm_span_singleton,
+    (idealSetEquiv K J a).val), ← intNorm_idealSetEquiv_apply, intNorm, absNorm_span_singleton,
     Nat.cast_natAbs, Int.cast_abs]
 
 /-- **The unit multiples of the points of the cone.** A point `x` of nonzero norm is `u • a`, with
@@ -112,16 +112,16 @@ theorem natCard_unitSMul_eq_torsionOrder {x : mixedSpace K} (hx : mixedEmbedding
   obtain ⟨u₁, hu₁⟩ := exists_unit_smul_mem hx
   have hmem (ζ : torsion K) : ((ζ : (𝓞 K)ˣ) * u₁) • x ∈ fundamentalCone K := by
     rw [mul_smul]
-    exact torsion_smul_mem_of_mem hu₁ ζ.2
+    exact torsion_smul_mem_of_mem hu₁ ζ.property
   -- `ζ ↦ ((ζ u₁) x, (ζ u₁)⁻¹)` is a bijection from the torsion onto the pairs
   refine (Nat.card_eq_of_bijective (fun ζ : torsion K ↦
     ⟨(⟨_, hmem ζ⟩, ((ζ : (𝓞 K)ˣ) * u₁)⁻¹), inv_smul_smul _ _⟩)
     ⟨fun ζ ζ' h ↦ ?_, fun ⟨⟨a, u⟩, (hp : u • (a : mixedSpace K) = x)⟩ ↦ ?_⟩).symm
-  · simpa using congrArg (fun q ↦ (q.1.2 : (𝓞 K)ˣ)) h
+  · simpa using congrArg (fun q ↦ (q.val.2 : (𝓞 K)ˣ)) h
   · have hζ : u⁻¹ * u₁⁻¹ ∈ torsion K := by
       rw [← unit_smul_mem_iff_mem_torsion hu₁, smul_smul, inv_mul_cancel_right, ← hp,
         inv_smul_smul]
-      exact a.2
+      exact a.property
     refine ⟨⟨_, hζ⟩, Subtype.ext (Prod.ext (Subtype.ext ?_) ?_)⟩ <;>
       simp only [inv_mul_cancel_right, ← hp, inv_smul_smul, inv_inv]
 

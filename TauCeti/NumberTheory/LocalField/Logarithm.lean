@@ -175,14 +175,14 @@ theorem continuous_log_unitFiltration (p : ℕ) [Fact p.Prime] [FinitePadicExten
     Units.continuous_val.comp continuous_subtype_val
   have hdisc : ∀ u : unitFiltration K i, valuation K (((u : Kˣ) : K) - 1) ≤ valuation K (π : K) :=
     fun u => by simpa using ((mem_unitFiltration_iff_valuation_le hπ).mp
-      (unitFiltration_antitone hi u.2)).2
+      (unitFiltration_antitone hi u.property)).2
   refine continuous_iff_continuousAt.2 fun u => ?_
   refine (IsValuativeTopology.hasBasis_nhds _).tendsto_right_iff.2 fun γ _ => ?_
   -- Inputs within `γ * v(π) ^ (C + 1)` of `u` have logarithms within `γ` of `log u`.
   filter_upwards [(IsValuativeTopology.hasBasis_nhds _).tendsto_right_iff.1 (hc.tendsto u)
     (γ * Units.mk0 _ hπ0 ^ (C + 1)) trivial] with w hw
-  refine valuation_lt_of_hasSum (hasSum_log_sub_log p (unitFiltration_antitone hi w.2)
-    (unitFiltration_antitone hi u.2)) γ fun n => ?_
+  refine valuation_lt_of_hasSum (hasSum_log_sub_log p (unitFiltration_antitone hi w.property)
+    (unitFiltration_antitone hi u.property)) γ fun n => ?_
   rcases eq_or_ne n 0 with rfl | hn
   · simp
   rw [← mul_lt_mul_iff_left₀ (pow_pos (zero_lt_iff.mpr hπ0) (C + 1))]
@@ -290,7 +290,7 @@ theorem log_unitFiltration_injective {i : ℕ}
     Function.Injective fun u : unitFiltration K i => log ((u : Kˣ) : K) := by
   intro u w huw
   dsimp only at huw
-  have h := valuation_log_sub_log hi u.2 w.2
+  have h := valuation_log_sub_log hi u.property w.property
   rw [huw, sub_self, map_zero, eq_comm, (valuation K).zero_iff, sub_eq_zero] at h
   exact Subtype.ext (Units.val_injective h)
 

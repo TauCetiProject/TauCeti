@@ -208,7 +208,7 @@ private lemma quasiIso_cechAugmentation_finset {ι : Type u} (V : ι → X.Opens
           (ih _ (Topology.prod_pi_mem_of_inf_mem (U := W) Scheme.inf_mem_range_basicOpen
             (fun i ↦ hV i) hYT₁ n b) ((leOfHom (prod.fst ≫ prod.snd)).trans hV₁s))
       · exact quasiIso_cechAugmentation_prod_of_hom W isTerminalTop _ _
-          (i₀ := ⟨b 0, Finset.mem_cons_of_mem (b 0).2⟩) (Pi.π _ 0)
+          (i₀ := ⟨b 0, Finset.mem_cons_of_mem (b 0).property⟩) (Pi.π _ 0)
       · exact (quasiIso_cechAugmentation_iff_of_iso _ _ _ e).2
           (ih _ hYT₁ ((leOfHom prod.snd).trans hV₁s))
 

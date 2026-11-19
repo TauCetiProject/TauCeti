@@ -295,7 +295,7 @@ theorem orbitZeta_eq_eulerProduct (hpos : ∀ i, 0 < N (γ i))
     exact hasSum_single_iterate (hpos i) (ε i) (σ i) (hε i)
   -- So its exponential is the product of the `exp (ℓ i) = u i ^ (-(ε i 1 * σ i))`.
   have hprod := HasSum.exp_of_mem_ideal (S := nonnegSubring K N) (I := posIdeal K N)
-    (fun _ => isTopologicallyNilpotent_of_mem_posIdeal') hsum (fun i => (ℓ i).2) hLpos
+    (fun _ => isTopologicallyNilpotent_of_mem_posIdeal') hsum (fun i => (ℓ i).property) hLpos
   have hexp (i : ι) : NormedSpace.exp (ℓ i : nonnegSubring K N) =
       (↑(u i ^ (-(ε i 1 * σ i))) : nonnegSubring K N) := by
     have h1 : expMulEquiv K N (.ofAdd (ℓ i)) = ⟨u i, hu i⟩ ^ (-(ε i 1 * σ i)) := by

@@ -125,8 +125,9 @@ private theorem sphere_subset_halfPlane : sphere (0 : ℂ) (1 / 2) ⊆ {z : ℂ 
 
 /-- `A` as a subset of `ℂ`: the half-plane `re z < 1` punctured at `0`. -/
 private def leftOpenHomeomorph : leftOpen ≃ₜ ↥({z : ℂ | z.re < 1} \ {0}) where
-  toFun w := ⟨w.1.1, mem_leftOpen.mp w.2, w.1.ne_zero⟩
-  invFun z := ⟨⟨z.1, z.2.2, fun h => by simpa [h] using z.2.1⟩, mem_leftOpen.mpr z.2.1⟩
+  toFun w := ⟨w.val.val, mem_leftOpen.mp w.property, w.val.ne_zero⟩
+  invFun z := ⟨⟨z.val, z.property.2, fun h => by simpa [h] using z.property.1⟩,
+      mem_leftOpen.mpr z.property.1⟩
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := by fun_prop

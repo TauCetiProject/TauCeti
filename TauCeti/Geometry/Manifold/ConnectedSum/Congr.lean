@@ -202,7 +202,7 @@ point outside the ball goes to itself. -/
 private def congrLeftInr (he₁ : Injective e₁) (y : puncture e₂) : ConnectedSum e₁' e₂ :=
   if h : (y : N) ∈ range e₂ then
     inl e₁' e₂ (punctureMap φ φ.injective hφ.eq_of_nhds ⟨e₁ (inversion 0 1 (invFun e₂ y)),
-      apply_inversion_mem_puncture he₁ fun h0 ↦ mem_puncture.1 y.2 (h0 ▸ invFun_eq h).symm⟩)
+      apply_inversion_mem_puncture he₁ fun h0 ↦ mem_puncture.1 y.property (h0 ▸ invFun_eq h).symm⟩)
   else inr e₁' e₂ y
 
 private theorem congrLeftInr_apply (he₁ : Injective e₁) (he₂ : Injective e₂) {w : E}
@@ -341,7 +341,7 @@ variable [ProperSpace E] [T2Space N] (h₁ : IsOpenEmbedding e₁) (h₁' : IsOp
 @[simp]
 theorem congrLeftHomeomorph_inl (x : puncture e₁) :
     congrLeftHomeomorph φ hφ h₁ h₁' h₂ (inl e₁ e₂ x) =
-      inl e₁' e₂ ⟨φ x, apply_mem_puncture φ.injective hφ.eq_of_nhds x.2⟩ :=
+      inl e₁' e₂ ⟨φ x, apply_mem_puncture φ.injective hφ.eq_of_nhds x.property⟩ :=
   (congrLeftMap_inl φ hφ h₁.injective h₂.injective x).trans
     (congrArg _ (Subtype.ext (coe_punctureMap _ _ _)))
 
@@ -504,8 +504,8 @@ variable {e₁ : E → M} {e₂ : E → N}
 and of its inversion. -/
 private theorem inl_eq_inr_of_eq {x : puncture e₁} {y : puncture e₂} (v : E)
     (hx : e₁ v = x) (hy : e₂ (inversion 0 1 v) = y) : inl e₁ e₂ x = inr e₁ e₂ y := by
-  have hx' : x = ⟨e₁ v, hx ▸ x.2⟩ := Subtype.ext hx.symm
-  have hy' : y = ⟨e₂ (inversion 0 1 v), hy ▸ y.2⟩ := Subtype.ext hy.symm
+  have hx' : x = ⟨e₁ v, hx ▸ x.property⟩ := Subtype.ext hx.symm
+  have hy' : y = ⟨e₂ (inversion 0 1 v), hy ▸ y.property⟩ := Subtype.ext hy.symm
   rw [hx', hy']
   exact inl_eq_inr v _ _
 
@@ -550,13 +550,13 @@ theorem compLinearIsometryEquivHomeomorph_inr (y : puncture e₂) :
 @[simp]
 theorem compLinearIsometryEquivHomeomorph_symm_inl (x : puncture (e₁ ∘ R)) :
     (compLinearIsometryEquivHomeomorph R e₁ e₂).symm (inl (e₁ ∘ R) (e₂ ∘ R) x) =
-      inl e₁ e₂ ⟨x, by simpa using x.2⟩ :=
+      inl e₁ e₂ ⟨x, by simpa using x.property⟩ :=
   lift_inl _ _ _ x
 
 @[simp]
 theorem compLinearIsometryEquivHomeomorph_symm_inr (y : puncture (e₂ ∘ R)) :
     (compLinearIsometryEquivHomeomorph R e₁ e₂).symm (inr (e₁ ∘ R) (e₂ ∘ R) y) =
-      inr e₁ e₂ ⟨y, by simpa using y.2⟩ :=
+      inr e₁ e₂ ⟨y, by simpa using y.property⟩ :=
   lift_inr _ _ _ y
 
 /-- Read on the disjoint union of the punctured summands, the rotation of the balls is the identity

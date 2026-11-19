@@ -67,7 +67,7 @@ variable (𝕜 : Type*) [NormedField 𝕜] [NormedSpace 𝕜 E]
 most `C • ν` with `C` finite. -/
 private def compOfMapLeSmulₗ (hf : Measurable f) (hC : C ≠ ∞) (hmap : μ.map f ≤ C • ν) :
     Lp E p ν →ₗ[𝕜] Lp E p μ where
-  toFun g := ⟨_, AEEqFun.compQuasiMeasurePreserving_mem_Lp g.2
+  toFun g := ⟨_, AEEqFun.compQuasiMeasurePreserving_mem_Lp g.property
     (QuasiMeasurePreserving.of_map_le_smul hf hmap) hC hmap⟩
   map_add' g h := by
     have hqmp := QuasiMeasurePreserving.of_map_le_smul hf hmap
@@ -117,8 +117,8 @@ variable {𝕜}
 @[simp]
 theorem compOfMapLeSmul_val (hf : Measurable f) (hC : C ≠ ∞) (hmap : μ.map f ≤ C • ν)
     (g : Lp E p ν) :
-    (compOfMapLeSmul 𝕜 hf hC hmap g).1 =
-      g.1.compQuasiMeasurePreserving f (.of_map_le_smul hf hmap) :=
+    (compOfMapLeSmul 𝕜 hf hC hmap g).val =
+      g.val.compQuasiMeasurePreserving f (.of_map_le_smul hf hmap) :=
   (rfl)
 
 /-- Precomposition with `f` is `g ↦ g ∘ f` almost everywhere. -/

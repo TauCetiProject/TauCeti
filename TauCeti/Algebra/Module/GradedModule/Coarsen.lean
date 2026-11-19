@@ -168,40 +168,41 @@ theorem mem_coarsenGrading_iff {x : M} {k : κ} :
 
 omit [DecidableEq ι] [Decomposition ℳ] in
 private def coarsenGradingToSubmodule (k : κ) :
-    (⨁ i : {i : ι // f i = k}, ℳ i.1) →ₗ[R] coarsenGrading ℳ f k :=
+    (⨁ i : {i : ι // f i = k}, ℳ i.val) →ₗ[R] coarsenGrading ℳ f k :=
   toModule R {i : ι // f i = k} (coarsenGrading ℳ f k) fun i ↦
-    Submodule.inclusion ((le_coarsenGrading ℳ f i.1).trans_eq (congrArg (coarsenGrading ℳ f) i.2))
+    Submodule.inclusion ((le_coarsenGrading ℳ f i.val).trans_eq (congrArg
+        (coarsenGrading ℳ f) i.property))
 
 open Classical in
 private noncomputable def coarsenGradingProj (k : κ) :
-    M →ₗ[R] ⨁ i : {i : ι // f i = k}, ℳ i.1 :=
-  (toModule R ι (⨁ i : {i : ι // f i = k}, ℳ i.1) fun i ↦
-    if h : f i = k then lof R {j : ι // f j = k} (fun j ↦ ℳ j.1) ⟨i, h⟩ else 0).comp
+    M →ₗ[R] ⨁ i : {i : ι // f i = k}, ℳ i.val :=
+  (toModule R ι (⨁ i : {i : ι // f i = k}, ℳ i.val) fun i ↦
+    if h : f i = k then lof R {j : ι // f j = k} (fun j ↦ ℳ j.val) ⟨i, h⟩ else 0).comp
     (decomposeLinearEquiv ℳ).toLinearMap
 
 private theorem coarsenGradingProj_apply (k : κ) (y : M) (i : {i : ι // f i = k}) :
-    (coarsenGradingProj ℳ f k y i : M) = (decompose ℳ y i.1 : M) := by
+    (coarsenGradingProj ℳ f k y i : M) = (decompose ℳ y i.val : M) := by
   classical
   induction y using Decomposition.inductionOn ℳ with
   | zero => simp
   | @homogeneous j y =>
     simp only [coarsenGradingProj, LinearMap.comp_apply, LinearEquiv.coe_coe]
     rw [decomposeLinearEquiv_apply_coe ℳ j y, toModule_lof]
-    by_cases hj : j = i.1
+    by_cases hj : j = i.val
     · subst hj
-      rw [dite_eq_left i.2, decompose_of_mem_same ℳ y.2]
+      rw [dite_eq_left i.property, decompose_of_mem_same ℳ y.property]
       simp
     · by_cases hfk : f j = k
       · have hne : i ≠ ⟨j, hfk⟩ := fun heq ↦ hj (congrArg Subtype.val heq.symm)
         rw [dite_eq_left hfk, lof_eq_of, of_eq_of_ne _ _ _ hne, Submodule.coe_zero,
-          decompose_of_mem_ne ℳ y.2 hj]
+          decompose_of_mem_ne ℳ y.property hj]
       · rw [dite_eq_right hfk, LinearMap.zero_apply, DirectSum.zero_apply, Submodule.coe_zero,
-          decompose_of_mem_ne ℳ y.2 hj]
+          decompose_of_mem_ne ℳ y.property hj]
   | add y z hy hz => simp [hy, hz]
 
 /-- Each coarsened piece is the direct sum of the original pieces in its fibre. -/
 noncomputable def coarsenGradingEquiv (k : κ) :
-    (⨁ i : {i : ι // f i = k}, ℳ i.1) ≃ₗ[R] coarsenGrading ℳ f k :=
+    (⨁ i : {i : ι // f i = k}, ℳ i.val) ≃ₗ[R] coarsenGrading ℳ f k :=
   LinearEquiv.ofLinearMap
     (coarsenGradingToSubmodule ℳ f k)
     ((coarsenGradingProj ℳ f k).comp (coarsenGrading ℳ f k).subtype)
@@ -225,19 +226,19 @@ noncomputable def coarsenGradingEquiv (k : κ) :
       simp only [coarsenGradingProj, coarsenGradingToSubmodule, LinearMap.comp_apply,
         LinearMap.id_apply, Submodule.coe_subtype, LinearEquiv.coe_coe, toModule_lof,
         Submodule.coe_inclusion]
-      rw [decomposeLinearEquiv_apply_coe ℳ i.1 x, toModule_lof, dite_eq_left i.2])
+      rw [decomposeLinearEquiv_apply_coe ℳ i.val x, toModule_lof, dite_eq_left i.property])
 
 /-- On a single fibre summand, `coarsenGradingEquiv` is the submodule inclusion into `M`. -/
 @[simp]
-theorem coe_coarsenGradingEquiv_lof (k : κ) (i : {i : ι // f i = k}) (x : ℳ i.1) :
-    (coarsenGradingEquiv ℳ f k (lof R {j : ι // f j = k} (fun j ↦ ℳ j.1) i x) : M) = x := by
+theorem coe_coarsenGradingEquiv_lof (k : κ) (i : {i : ι // f i = k}) (x : ℳ i.val) :
+    (coarsenGradingEquiv ℳ f k (lof R {j : ι // f j = k} (fun j ↦ ℳ j.val) i x) : M) = x := by
   simp [coarsenGradingEquiv, coarsenGradingToSubmodule]
 
 /-- On a single fibre summand written with `DirectSum.of`, `coarsenGradingEquiv` is the submodule
 inclusion into `M`. -/
 @[simp]
-theorem coe_coarsenGradingEquiv_of (k : κ) (i : {i : ι // f i = k}) (x : ℳ i.1) :
-    (coarsenGradingEquiv ℳ f k (of (fun j : {j : ι // f j = k} ↦ ℳ j.1) i x) : M) = x := by
+theorem coe_coarsenGradingEquiv_of (k : κ) (i : {i : ι // f i = k}) (x : ℳ i.val) :
+    (coarsenGradingEquiv ℳ f k (of (fun j : {j : ι // f j = k} ↦ ℳ j.val) i x) : M) = x := by
   rw [← lof_eq_of R, coe_coarsenGradingEquiv_lof]
 
 /-- The inverse of `coarsenGradingEquiv` extracts the `i`-th homogeneous component for each `i` in
@@ -245,13 +246,13 @@ the fibre over `k`. -/
 @[simp]
 theorem coarsenGradingEquiv_symm_apply (k : κ) (x : coarsenGrading ℳ f k)
     (i : {i : ι // f i = k}) :
-    (coarsenGradingEquiv ℳ f k).symm x i = decompose ℳ (x : M) i.1 := by
+    (coarsenGradingEquiv ℳ f k).symm x i = decompose ℳ (x : M) i.val := by
   refine Subtype.ext ?_
   simpa only [coarsenGradingEquiv, LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap,
-    LinearMap.comp_apply, Submodule.coe_subtype] using coarsenGradingProj_apply ℳ f k x.1 i
+    LinearMap.comp_apply, Submodule.coe_subtype] using coarsenGradingProj_apply ℳ f k x.val i
 
 /-- A coarsened piece whose fibre pieces are all free `R`-modules is itself a free `R`-module. -/
-instance instModuleFreeCoarsenGrading (k : κ) [∀ i : {i : ι // f i = k}, Module.Free R (ℳ i.1)] :
+instance instModuleFreeCoarsenGrading (k : κ) [∀ i : {i : ι // f i = k}, Module.Free R (ℳ i.val)] :
     Module.Free R (coarsenGrading ℳ f k) :=
   Module.Free.of_equiv (coarsenGradingEquiv ℳ f k)
 

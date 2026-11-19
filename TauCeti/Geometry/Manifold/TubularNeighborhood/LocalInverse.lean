@@ -107,7 +107,7 @@ theorem exists_contMDiff_normalBundle_add_rightInverse
         ∃ R : t → TotalSpace F (fun x => normalSubspace I f x),
           ContMDiff 𝓘(ℝ, V) (I.prod 𝓘(ℝ, F)) n R ∧
           (∀ y, (R y).proj ∈ U) ∧
-          (∀ y, f (R y).proj + ((R y).2 : V) = y) ∧
+          (∀ y, f (R y).proj + ((R y).snd : V) = y) ∧
           ∀ x ∈ U, ∀ y : t, (y : V) = f x →
             R y = zeroSection F (fun x => normalSubspace I f x) x := by
   have : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
@@ -146,7 +146,7 @@ theorem isLocalDiffeomorphAt_normalBundle_add_zeroSection
     letI := normalVectorBundle (hf.of_le le_add_self) himm hdim
     letI := normalContMDiffVectorBundle hf himm hdim
     IsLocalDiffeomorphAt (I.prod 𝓘(ℝ, F)) 𝓘(ℝ, V) n
-      (fun p : TotalSpace F (fun x => normalSubspace I f x) => f p.proj + (p.2 : V))
+      (fun p : TotalSpace F (fun x => normalSubspace I f x) => f p.proj + (p.snd : V))
       (zeroSection F (fun x => normalSubspace I f x) x₀) := by
   have : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
   have : IsManifold I n M := .of_le (n := n + 1) (by simp)
@@ -154,7 +154,7 @@ theorem isLocalDiffeomorphAt_normalBundle_add_zeroSection
   let := normalVectorBundle (hf.of_le le_add_self) himm hdim
   let := normalContMDiffVectorBundle hf himm hdim
   let A : TotalSpace F (fun x => normalSubspace I f x) → V :=
-    fun p => f p.proj + (p.2 : V)
+    fun p => f p.proj + (p.snd : V)
   let z := zeroSection F (fun x => normalSubspace I f x) x₀
   have hA : ContMDiff (I.prod 𝓘(ℝ, F)) 𝓘(ℝ, V) n A :=
     contMDiff_normalBundle_add hf himm hdim

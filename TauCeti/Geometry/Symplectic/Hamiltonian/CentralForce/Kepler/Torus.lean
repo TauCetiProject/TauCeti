@@ -227,7 +227,7 @@ theorem contMDiff_centralForceEnergyMomentum_keplerBoundPhaseSpace :
     ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ, Fin 2 → ℝ) ∞
       (centralForceEnergyMomentum b m (fun r ↦ -κ / r) ∘
         (Subtype.val : keplerBoundPhaseSpace b m κ → V × V)) :=
-  fun x ↦ (contDiffAt_centralForceEnergyMomentum_kepler b x.2.1).contMDiffAt.comp x
+  fun x ↦ (contDiffAt_centralForceEnergyMomentum_kepler b x.property.1).contMDiffAt.comp x
     (contMDiff_subtype_val x)
 
 /-- **The levels of the Kepler problem in its bound phase space are compact.** For `m, κ > 0`,
@@ -238,14 +238,14 @@ theorem isCompact_keplerBoundPhaseSpace_preimage_singleton [FiniteDimensional �
     IsCompact ((centralForceEnergyMomentum b m (fun r ↦ -κ / r) ∘
       (Subtype.val : keplerBoundPhaseSpace b m κ → V × V)) ⁻¹'
       {centralForceEnergyMomentum b m (fun r ↦ -κ / r) x}) := by
-  obtain ⟨_, hE, hℓ⟩ := x.2
+  obtain ⟨_, hE, hℓ⟩ := x.property
   rw [Subtype.isCompact_iff]
   convert isCompact_setOf_centralForceHamiltonian_kepler_eq b hm hκ hE hℓ using 1
   ext y
   simp only [mem_image, mem_preimage, comp_apply, mem_singleton_iff, mem_ofPred_eq]
   constructor
   · rintro ⟨y, hy, rfl⟩
-    exact ⟨y.2.1, (centralForceEnergyMomentum_eq_iff b).1 hy⟩
+    exact ⟨y.property.1, (centralForceEnergyMomentum_eq_iff b).1 hy⟩
   · rintro ⟨hy, hyE, hyℓ⟩
     exact ⟨⟨y, hy, hyE ▸ hE, hyℓ ▸ hℓ⟩, (centralForceEnergyMomentum_eq_iff b).2 ⟨hyE, hyℓ⟩, rfl⟩
 
@@ -303,7 +303,8 @@ theorem nonempty_homeomorph_unitAddTorus_keplerBoundPhaseSpace [FiniteDimensiona
     have hFy := connectedComponentIn_subset _ _ hy
     simp only [mem_preimage, comp_apply, mem_singleton_iff] at hFy
     obtain ⟨hE, hℓ⟩ := (centralForceEnergyMomentum_eq_iff b).1 hFy
-    exact (isRegularPoint_centralForceEnergyMomentum_kepler b hm.ne' y.2.1 (hℓ ▸ x.2.2.2)
+    exact (isRegularPoint_centralForceEnergyMomentum_kepler b hm.ne' y.property.1
+        (hℓ ▸ x.property.2.2)
       (by rwa [hE, hℓ])).comp (isRegularPoint_subtype_val y)
   · rw [Module.finrank_prod, Module.finrank_eq_card_basis b.toBasis]
     simp

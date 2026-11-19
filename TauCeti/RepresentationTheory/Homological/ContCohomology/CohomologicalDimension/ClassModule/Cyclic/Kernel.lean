@@ -157,7 +157,7 @@ private theorem cyclicKernel_quotient_isProP (hV : IsOpen (V : Set G))
     (MonoidHom.id G) (QuotientGroup.mk'_surjective V) (Subgroup.map_subtype_le _)
   -- The kernel of `f` is a continuous image of `V^ab(p) / (s - 1)`.
   let ψ : V →* f.ker := ((QuotientGroup.mk' K).comp V.subtype).codRestrict f.ker
-    fun w => (QuotientGroup.eq_one_iff (N := V) _).mpr w.2
+    fun w => (QuotientGroup.eq_one_iff (N := V) _).mpr w.property
   have hψker : β.ker ≤ ψ.ker := fun w hw =>
     Subtype.ext ((QuotientGroup.eq_one_iff _).mpr ⟨w, hw, rfl⟩)
   let φ : V ⧸ β.ker →* f.ker := QuotientGroup.lift β.ker ψ hψker

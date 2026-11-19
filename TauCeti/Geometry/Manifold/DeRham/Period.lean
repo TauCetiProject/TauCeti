@@ -138,7 +138,7 @@ theorem PrimitiveSpace.value_monodromy (hφ : IsSmoothForm I 1 φ) (hclosed : me
       PrimitiveSpace.value φ e + pathClassIntegral φ γ := by
   have hp := PrimitiveSpace.isCoveringMap_proj (r := 1) le_rfl hφ hclosed
   induction γ with | mk γ =>
-  have he : γ 0 = PrimitiveSpace.proj φ e := γ.source.trans e.2.symm
+  have he : γ 0 = PrimitiveSpace.proj φ e := γ.source.trans e.property.symm
   rw [pathClassIntegral_mk_eq_sub hφ hclosed (hp.liftPath γ e he).continuous
     (fun t ↦ congrFun (hp.liftPath_lifts γ e he) t), hp.liftPath_zero,
     ← hp.coe_monodromy_mk γ e]
@@ -447,7 +447,7 @@ theorem mpullback_mem_exactForms_one_iff_periodHom_map_eq_zero [PreconnectedSpac
       ∀ γ : FundamentalGroup M x₀, periodHom (θ : RoughForm I' M' ℝ 1) (f x₀)
         (Additive.ofMul (FundamentalGroup.map ⟨f, hf.continuous⟩ x₀ γ)) = 0 := by
   have hc : SmoothForm.mpullback f hf θ ∈ closedForms I M 1 := by
-    simpa using (closedForms.mpullback f hf 1 ⟨θ, hθ⟩).2
+    simpa using (closedForms.mpullback f hf 1 ⟨θ, hθ⟩).property
   rw [mem_exactForms_one_iff_periodHom_eq_zero hc x₀, SmoothForm.coe_mpullback,
     periodHom_mpullback (hf.of_le (by simp)) (θ.isSmoothForm.of_le (by simp))
       ((mem_closedForms I' θ).mp hθ)]
@@ -459,10 +459,10 @@ namespace deRhamCohomology
 /-- The periods of closed smooth real `1`-forms, as a linear map. -/
 private def periodClosedForms (x : M) :
     closedForms I M 1 →ₗ[ℝ] Additive (FundamentalGroup M x) →+ ℝ where
-  toFun φ := periodHom (φ.1 : RoughForm I M ℝ 1) x
+  toFun φ := periodHom (φ.val : RoughForm I M ℝ 1) x
   map_add' φ ψ :=
-    periodHom_add (φ.1.isSmoothForm.of_le (by simp)) ((mem_closedForms I _).mp φ.2)
-      (ψ.1.isSmoothForm.of_le (by simp)) ((mem_closedForms I _).mp ψ.2) x
+    periodHom_add (φ.val.isSmoothForm.of_le (by simp)) ((mem_closedForms I _).mp φ.property)
+      (ψ.val.isSmoothForm.of_le (by simp)) ((mem_closedForms I _).mp ψ.property) x
   map_smul' a φ := periodHom_smul a x
 
 /-- Exact forms have vanishing periods. -/
@@ -484,7 +484,7 @@ def period (x : M) : deRhamCohomology I M 1 →ₗ[ℝ] Additive (FundamentalGro
 /-- The periods of the class of a closed form are the periods of the form. -/
 @[simp]
 theorem period_mk (x : M) (φ : closedForms I M 1) :
-    period x (mk I 1 φ) = periodHom (φ.1 : RoughForm I M ℝ 1) x :=
+    period x (mk I 1 φ) = periodHom (φ.val : RoughForm I M ℝ 1) x :=
   LinearMap.equivOfSurjective_apply _ _
 
 /-- **De Rham classes of degree one are determined by their periods** on a connected manifold. -/
@@ -493,7 +493,7 @@ theorem period_injective [PreconnectedSpace M] (x : M) :
   refine (injective_iff_map_eq_zero _).mpr fun c hc ↦ ?_
   obtain ⟨φ, rfl⟩ := mk_surjective I 1 c
   rw [period_mk] at hc
-  rw [mk_eq_zero_iff, mem_exactForms_one_iff_periodHom_eq_zero φ.2 x]
+  rw [mk_eq_zero_iff, mem_exactForms_one_iff_periodHom_eq_zero φ.property x]
   exact hc
 
 /-- **Naturality of periods of de Rham classes.** The periods of the pullback of a class along a
@@ -503,8 +503,8 @@ theorem period_map (hf : ContMDiff I I' ∞ f) (x : M) (c : deRhamCohomology I' 
       (period (f x) c).comp (FundamentalGroup.map ⟨f, hf.continuous⟩ x).toAdditive := by
   obtain ⟨θ, rfl⟩ := mk_surjective I' 1 c
   rw [map_mk, period_mk, period_mk, closedForms.coe_mpullback, SmoothForm.coe_mpullback]
-  exact periodHom_mpullback (hf.of_le (by simp)) (θ.1.isSmoothForm.of_le (by simp))
-    ((mem_closedForms I' _).mp θ.2) x
+  exact periodHom_mpullback (hf.of_le (by simp)) (θ.val.isSmoothForm.of_le (by simp))
+    ((mem_closedForms I' _).mp θ.property) x
 
 end deRhamCohomology
 

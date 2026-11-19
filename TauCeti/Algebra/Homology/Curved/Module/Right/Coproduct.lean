@@ -411,12 +411,12 @@ theorem dgClosedToHomotopy_map_directSum_ext {N : CurvedDGRightModuleCat.{u, u, 
   simp only [quotient_map_eq_iff_exists_homotopy, closedHom_comp, LinearMap.comp_apply,
     closedHom_closedDirectSumι] at hfg ⊢
   choose k hk using hfg
-  let K := DirectSum.toModule Aᵐᵒᵖ J N fun j ↦ (k j).1
+  let K := DirectSum.toModule Aᵐᵒᵖ J N fun j ↦ (k j).val
   refine ⟨⟨K, ?_⟩, fun x ↦ ?_⟩
   · rw [dgRightModuleCochains.mem_iff, LinearMap.isHomogeneous_def]
     intro p x hx
-    exact toModule_mem_grading M (fun j ↦ (k j).1)
-      (fun j p y hy ↦ (dgRightModuleCochains.mem_iff.mp (k j).2).map_mem hy) hx
+    exact toModule_mem_grading M (fun j ↦ (k j).val)
+      (fun j p y hy ↦ (dgRightModuleCochains.mem_iff.mp (k j).property).map_mem hy) hx
   · refine LinearMap.congr_fun (?_ : (closedHom f).restrictScalars R -
       (closedHom g).restrictScalars R =
         (N.differential ∘ₗ K.restrictScalars R : directSum M →ₗ[R] N) +

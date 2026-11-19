@@ -707,7 +707,7 @@ def filteredSpaceStepMap {a b : ℤ} (hab : a ≤ b) :
 @[simp]
 lemma filteredSpaceStepMap_fst_apply {a b : ℤ} (hab : a ≤ b)
     (x : (TopPair.ofInclusion (hX hab)).fst) :
-    (TopPair.Hom.fst (filteredSpaceStepMap hX hX' g hg hab) x).1 = g x.1 :=
+    (TopPair.Hom.fst (filteredSpaceStepMap hX hX' g hg hab) x).val = g x.val :=
   congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ x)
 
 /-- The subspace component of the map of pairs `(X b, X a) ⟶ (X' b, X' a)` induced by `g` sends
@@ -715,7 +715,7 @@ lemma filteredSpaceStepMap_fst_apply {a b : ℤ} (hab : a ≤ b)
 @[simp]
 lemma filteredSpaceStepMap_snd_apply {a b : ℤ} (hab : a ≤ b)
     (x : (TopPair.ofInclusion (hX hab)).snd) :
-    (TopPair.Hom.snd (filteredSpaceStepMap hX hX' g hg hab) x).1 = g x.1 :=
+    (TopPair.Hom.snd (filteredSpaceStepMap hX hX' g hg hab) x).val = g x.val :=
   TopPair.ofInclusionMap_snd_apply _ _ x
 
 /-- The identity of a filtered space induces the identity of each pair `(X b, X a)`. -/

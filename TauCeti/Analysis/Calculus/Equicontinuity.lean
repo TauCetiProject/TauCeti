@@ -47,7 +47,7 @@ theorem equicontinuousOn_of_forall_isCompact_norm_fderiv_le
     EquicontinuousOn u Ω := by
   rw [← equicontinuous_restrict_iff]
   intro x
-  obtain ⟨r, hr, hrΩ⟩ := Metric.isOpen_iff.mp hΩ x x.2
+  obtain ⟨r, hr, hrΩ⟩ := Metric.isOpen_iff.mp hΩ x x.property
   have hball : closedBall (x : E) (r / 2) ⊆ Ω :=
     (closedBall_subset_ball (by linarith : r / 2 < r)).trans hrΩ
   obtain ⟨M, hM⟩ := hb _ (isCompact_closedBall (x : E) (r / 2)) hball

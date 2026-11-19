@@ -123,7 +123,7 @@ instance instIsOpenPosMeasureSupportMeasure (M : MetricMeasureSpace X) :
     obtain ⟨O, hO, rfl⟩ := isOpen_induced_iff.mp hU
     rw [supportMeasure_apply, Subtype.image_preimage_coe, Set.inter_comm,
       measure_inter_conull M.measure_compl_support]
-    exact ((M.mem_support_iff x).mp x.2 O (hO.mem_nhds hx)).ne'
+    exact ((M.mem_support_iff x).mp x.property O (hO.mem_nhds hx)).ne'
 
 /-- The reduced measure has full support: every point of the support of the reference
 measure lies in the support of its restriction. -/

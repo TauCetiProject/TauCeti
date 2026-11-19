@@ -119,10 +119,10 @@ theorem chartIteratedFDeriv_restrict_apply [IsManifold I n M]
     (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (U : Opens M) (x : U) (m : ℕ) (hm : m ≤ n)
     (z : (extChartAt I x).target) :
     chartIteratedFDeriv (f.restrict U) x m hm z =
-      chartIteratedFDeriv f (x : M) m hm ⟨z, U.extChartAt_target_subset x z.2⟩ := by
+      chartIteratedFDeriv f (x : M) m hm ⟨z, U.extChartAt_target_subset x z.property⟩ := by
   rw [chartIteratedFDeriv_self_target_apply, chartIteratedFDeriv_self_target_apply]
   simpa only [ftaylorSeriesWithin, Function.comp_def, restrict_apply] using
-    congrFun (ftaylorSeriesWithin_restrict_extChartAt f U x z.2) m
+    congrFun (ftaylorSeriesWithin_restrict_extChartAt f U x z.property) m
 
 /-- Coordinate derivatives may be computed through a chart of an open restriction, using the
 ordinary Faà di Bruno composition with the ambient coordinate change. -/
@@ -246,7 +246,7 @@ theorem continuous_of_forall_continuous_restrict [IsManifold I n M] [LocallyComp
   refine hK.eventually_forall_of_forall_eventually fun w hw ↦ ?_
   obtain ⟨i, hi⟩ := hU ((extChartAt I x).symm w)
   have hlim := tendsto_iteratedFDerivWithin_of_restrict (U := U i)
-    ((hg i).continuousAt (x := p₀)) x (z := w) w.2 hi m hm
+    ((hg i).continuousAt (x := p₀)) x (z := w) w.property hi m hm
   have hv : V ∈ 𝓝 (iteratedFDerivWithin 𝕜 m (g p₀ ∘ (extChartAt I x).symm)
       (extChartAt I x).target w) := by
     apply hV.mem_nhds
@@ -311,7 +311,7 @@ def ofOpens {U : Opens M} (c : StrongCkControl I U n)
         Subtype.val '' ((extChartAt I (c.center i)).symm '' (Subtype.val ''
           (c.compact i : Set (extChartAt I (c.center i)).target))) := by
       simp only [Compacts.coe_map, image_image]
-      exact image_congr fun z _ ↦ (U.coe_extChartAt_symm_apply _ z.2).symm
+      exact image_congr fun z _ ↦ (U.coe_extChartAt_symm_apply _ z.property).symm
     simp only [h]
     exact LocallyFinite.image_of_isClosedMap c.locallyFinite hU.isClosedMap_subtype_val fun _ ↦
       (subsingleton_singleton.preimage Subtype.val_injective).isCompact

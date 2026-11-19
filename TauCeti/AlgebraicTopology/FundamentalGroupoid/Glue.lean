@@ -674,15 +674,15 @@ def glue : _root_.FundamentalGroupoid X ⥤ D where
 /-- The glued functor restricts to `F i` on the fundamental groupoid of `U i`. -/
 @[simp] theorem map_subtypeVal_comp_glue (i : ι) :
     map (ContinuousMap.subtypeVal (U i)) ⋙ glue hU F hF = F i := by
-  refine CategoryTheory.Functor.ext (fun a ↦ (obj_eq hU F hF i a.as.2).symm) fun a b γ ↦ ?_
+  refine CategoryTheory.Functor.ext (fun a ↦ (obj_eq hU F hF i a.as.property).symm) fun a b γ ↦ ?_
   induction γ using Path.Homotopic.Quotient.ind with | mk γ =>
   let γ' := γ.map continuous_subtype_val
-  have hγ' : ∀ t, γ' t ∈ U i := fun t ↦ (γ t).2
+  have hγ' : ∀ t, γ' t ∈ U i := fun t ↦ (γ t).property
   have hγ : γ'.codRestrict (x := a.as) (y := b.as) hγ' = γ := by
     ext t
     exact Path.codRestrict_coe (x := a.as) (y := b.as) _ _ t
-  have key : locVal hU F hF i γ' hγ' = eqToHom (obj_eq hU F hF i a.as.2).symm ≫
-      (F i).map (Path.Homotopic.Quotient.mk γ) ≫ eqToHom (obj_eq hU F hF i b.as.2) := by
+  have key : locVal hU F hF i γ' hγ' = eqToHom (obj_eq hU F hF i a.as.property).symm ≫
+      (F i).map (Path.Homotopic.Quotient.mk γ) ≫ eqToHom (obj_eq hU F hF i b.as.property) := by
     unfold locVal
     rw [hγ]
   -- By the definitions of `FundamentalGroupoid.map` and of `glue`, the left-hand side is the

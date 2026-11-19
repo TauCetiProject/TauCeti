@@ -69,7 +69,7 @@ theorem integral_map_circleExp_of_restrict_Ioc {E : Type*} [NormedAddCommGroup E
       AddCircle.homeomorphCircle' ∘ (AddCircle.measurableEquivIoc (2 * π) a).symm := by
     funext θ
     rw [Function.comp_apply, Function.comp_apply,
-      (MeasurableEquiv.symm_apply_eq _).2 (AddCircle.equivIoc_coe_eq θ.2).symm,
+      (MeasurableEquiv.symm_apply_eq _).2 (AddCircle.equivIoc_coe_eq θ.property).symm,
       AddCircle.homeomorphCircle'_apply_mk]
   have he : MeasurableEmbedding (Circle.exp ∘ ((↑) : Ioc a (a + 2 * π) → ℝ)) := hexp ▸
     AddCircle.homeomorphCircle'.toMeasurableEquiv.measurableEmbedding.comp

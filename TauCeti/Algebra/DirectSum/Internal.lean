@@ -166,7 +166,7 @@ theorem DirectSum.isInternal_comap {R ι M N : Type*} [Semiring R]
     DirectSum.IsInternal 𝓝 := by
   classical
   let φ : ∀ i, 𝓝 i →ₗ[R] ℳ i := fun i ↦
-    (f.comp (𝓝 i).subtype).codRestrict (ℳ i) fun x ↦ (hmem i x).mp x.2
+    (f.comp (𝓝 i).subtype).codRestrict (ℳ i) fun x ↦ (hmem i x).mp x.property
   have hφ : ∀ (i : ι) (x : 𝓝 i), (φ i x : M) = f x := fun _ _ ↦ rfl
   have hΦinj : Function.Injective (DirectSum.lmap φ) :=
     (DirectSum.lmap_injective φ).mpr fun i x y hxy ↦
@@ -255,7 +255,7 @@ theorem map_decompose_shift {ι κ M N S T : Type*}
   induction x using Decomposition.inductionOn ℳ with
   | zero => simp
   | @homogeneous j x =>
-    have hxM : (x : M) ∈ ℳ j := x.2
+    have hxM : (x : M) ∈ ℳ j := x.property
     have hxN : f (x : M) ∈ 𝓝 (σ j) := hf j x hxM
     by_cases hij : i = j
     · subst hij
@@ -357,7 +357,7 @@ theorem pi_ext_of_decomposition {R ι M N P : Type*} [Semiring R] [AddCommMonoid
   refine pi_ext' fun x ↦ ?_
   refine DirectSum.decompose_lhom_ext ℳ fun i ↦ ?_
   refine ext fun α ↦ ?_
-  simpa using h x α.2
+  simpa using h x α.property
 
 end LinearMap
 
@@ -464,7 +464,7 @@ theorem iSup_inf_eq_of_component_mem
     exact Finset.sum_congr rfl fun i _ ↦ coeLinearMap_of A i (e.symm m i)
   rw [hsum]
   exact Submodule.sum_mem _ fun i _ ↦
-    Submodule.mem_iSup_of_mem i ⟨hp m hm i, (e.symm m i).2⟩
+    Submodule.mem_iSup_of_mem i ⟨hp m hm i, (e.symm m i).property⟩
 
 end DirectSum.IsInternal
 
@@ -485,12 +485,12 @@ theorem coe_decompose_smul_add_of_right_mem {a : A} {x : M} {i j : ι} (hx : x �
   induction a using Decomposition.inductionOn 𝒜 with
   | zero => simp
   | @homogeneous k a =>
-    have hmem : (a : A) • x ∈ ℳ (k + j) := SetLike.GradedSMul.smul_mem a.2 hx
+    have hmem : (a : A) • x ∈ ℳ (k + j) := SetLike.GradedSMul.smul_mem a.property hx
     by_cases hki : k = i
     · subst k
-      rw [decompose_of_mem_same ℳ hmem, decompose_of_mem_same 𝒜 a.2]
+      rw [decompose_of_mem_same ℳ hmem, decompose_of_mem_same 𝒜 a.property]
     · rw [decompose_of_mem_ne ℳ hmem (fun h ↦ hki (add_right_cancel h)),
-        decompose_of_mem_ne 𝒜 a.2 hki, zero_smul]
+        decompose_of_mem_ne 𝒜 a.property hki, zero_smul]
   | add a b ha hb => simp [add_smul, ha, hb]
 
 end DirectSum
@@ -576,7 +576,8 @@ theorem Module.Basis.isInternal_span_image_fiber {R ι κ M : Type*} [Semiring R
       rw [DirectSum.coeLinearMap_of]
       by_cases h : c' = c
       · subst h; simp
-      · rw [DirectSum.of_eq_of_ne _ _ _ (Ne.symm h), hsupp c' a a.2 i fun e => h (e.symm.trans hi)]
+      · rw [DirectSum.of_eq_of_ne _ _ _ (Ne.symm h), hsupp c' a a.property i fun e => h
+          (e.symm.trans hi)]
         simp
     | add x y hx hy => simp [hx, hy]
   -- For submodules, the additive recomposition map in `IsInternal` is the underlying function
@@ -586,7 +587,7 @@ theorem Module.Basis.isInternal_span_image_fiber {R ι κ M : Type*} [Semiring R
   · refine DirectSum.ext fun c => Subtype.ext (b.repr.injective (Finsupp.ext fun i => ?_))
     by_cases hi : w i = c
     · rw [← key x c i hi, ← key y c i hi, hxy]
-    · rw [hsupp c _ (x c).2 i hi, hsupp c _ (y c).2 i hi]
+    · rw [hsupp c _ (x c).property i hi, hsupp c _ (y c).property i hi]
   · rw [← LinearMap.range_eq_top, eq_top_iff, ← b.span_eq, Submodule.span_le]
     rintro _ ⟨i, rfl⟩
     exact ⟨DirectSum.of (fun c => A c) (w i) ⟨b i, Submodule.subset_span ⟨i, rfl, rfl⟩⟩, by simp⟩

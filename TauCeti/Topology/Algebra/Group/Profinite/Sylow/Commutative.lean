@@ -88,7 +88,7 @@ theorem bijective_domRestrict_maximalProPQuotient_mk (hP : IsProPSylow p P) :
         mul_inv_eq_one]
       exact hxy
     exact mul_inv_eq_one.mp (Subgroup.disjoint_def.mp hP.isProP.disjoint_proPKernel
-      (P.mul_mem x.2 (P.inv_mem y.2)) hmem)
+      (P.mul_mem x.property (P.inv_mem y.property)) hmem)
   · -- Surjectivity: the image of `P` is a Sylow pro-`p` subgroup of the pro-`p` group `G(p)`.
     have himage : P.map (maximalProPQuotient.mk p G) = ⊤ :=
       (hP.map_of_surjective _ (maximalProPQuotient.continuous_mk p G)

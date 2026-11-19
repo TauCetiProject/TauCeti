@@ -91,7 +91,7 @@ private theorem finite_coeff_ge_of_ne_zero (hv : v.IsContinuous)
     rw [v.coe_ltAddSubgroupOfNeZero hb]
     exact v.isContinuous_def.mp hv b
   let U : OpenAddSubgroup A := ⟨v.ltAddSubgroupOfNeZero hb, hopen⟩
-  refine ((mem_weightedRestrictedSubring.mp f.2).finite_coeff_notMem U).subset fun ν hν ↦ ?_
+  refine ((mem_weightedRestrictedSubring.mp f.property).finite_coeff_notMem U).subset fun ν hν ↦ ?_
   rw [Set.mem_ofPred_eq, weightMul_one_weight]
   intro hlt
   exact not_lt_of_ge hν ((v.mem_ltAddSubgroupOfNeZero hb).mp hlt)

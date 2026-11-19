@@ -58,7 +58,7 @@ private theorem isCompact_frameSeminormSupport
     IsCompact (frameSeminormSupport (I := I) (n := n) U j) := by
   unfold frameSeminormSupport
   exact ((j.2.2.2.isCompact.image continuous_subtype_val).image_of_continuousOn
-    ((continuousOn_extChartAt_symm j.2.1).mono (by rintro _ ⟨z, -, rfl⟩; exact z.2))).image
+    ((continuousOn_extChartAt_symm j.2.1).mono (by rintro _ ⟨z, -, rfl⟩; exact z.property))).image
     continuous_subtype_val
 
 /-- A frame seminorm vanishes on a section which is zero near the points it represents. -/

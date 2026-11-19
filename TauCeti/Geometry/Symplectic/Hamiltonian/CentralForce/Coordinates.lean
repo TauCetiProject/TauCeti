@@ -312,9 +312,9 @@ momentum `q₁ p₂ - q₂ p₁` in the basis `b`. -/
 @[simp]
 theorem coe_polarCanonicalDiffeomorph_symm_apply (x : puncturedPhaseSpace V) :
     ((polarCanonicalDiffeomorph b).symm x : (ℝ × ℝ) × (AddCircle (2 * π) × ℝ)) =
-      ((‖x.1.1‖, radialMomentum x.1),
-        ((((polarAngle (b 0) (b 1) x.1.1).toReal : ℝ) : AddCircle (2 * π)),
-          angularMomentum (b 0) (b 1) x.1)) := by
+      ((‖x.val.1‖, radialMomentum x.val),
+        ((((polarAngle (b 0) (b 1) x.val.1).toReal : ℝ) : AddCircle (2 * π)),
+          angularMomentum (b 0) (b 1) x.val)) := by
   have h := polarCanonicalCoords_polarCylinderMap b ((polarCanonicalDiffeomorph b).symm x).property
   rw [← coe_polarCanonicalDiffeomorph_apply, Diffeomorph.apply_symm_apply] at h
   simpa only [polarCanonicalCoords] using h.symm
@@ -478,7 +478,7 @@ private theorem radius_angle_polarCanonicalDiffeomorph_symm (x : puncturedPhaseS
     ((((polarCanonicalDiffeomorph b).symm x : (ℝ × ℝ) × (AddCircle (2 * π) × ℝ)).1.1,
         ((polarCanonicalDiffeomorph b).symm x : (ℝ × ℝ) × (AddCircle (2 * π) × ℝ)).2.1) :
         ℝ × AddCircle (2 * π)) =
-      (‖x.1.1‖, (((polarAngle (b 0) (b 1) x.1.1).toReal : ℝ) : AddCircle (2 * π))) := by
+      (‖x.val.1‖, (((polarAngle (b 0) (b 1) x.val.1).toReal : ℝ) : AddCircle (2 * π))) := by
   rw [coe_polarCanonicalDiffeomorph_symm_apply]
 
 /-- **Smooth polar coordinates of the plane.** For an orthonormal basis `b` of a plane `V`, the map
@@ -493,7 +493,8 @@ def polarPlaneDiffeomorph :
     mem_polarHalfCylinder.2 (norm_pos_iff.2 (mem_puncturedSpace.1 q.property))⟩
   left_inv y := by
     have h := radius_angle_polarCanonicalDiffeomorph_symm b (polarCanonicalDiffeomorph b
-      ⟨((y.1.1, 0), (y.1.2, 0)), mem_polarCanonicalCylinder.2 (mem_polarHalfCylinder.1 y.property)⟩)
+      ⟨((y.val.1, 0), (y.val.2, 0)), mem_polarCanonicalCylinder.2
+          (mem_polarHalfCylinder.1 y.property)⟩)
     rw [Diffeomorph.symm_apply_apply, coe_polarCanonicalDiffeomorph_apply,
       fst_polarCylinderMap] at h
     exact Subtype.ext h.symm

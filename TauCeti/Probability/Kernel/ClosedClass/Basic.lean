@@ -225,7 +225,7 @@ theorem reaches_subtype_communicatingClass [Countable S] [MeasurableSingletonCla
   obtain ⟨n, hn⟩ := (reaches_def y z).mp
     (((communicates_def y z).mp (((mem_communicatingClass_iff x y).mp hy).symm.trans
       ((mem_communicatingClass_iff x z).mp hz))).1)
-  suffices key : ∀ (n : ℕ) (a : κ.communicatingClass x), 0 < (κ ^ n) a.1 {z} →
+  suffices key : ∀ (n : ℕ) (a : κ.communicatingClass x), 0 < (κ ^ n) a.val {z} →
       0 < ((κ.subtype (κ.measurableSet_communicatingClass x)) ^ n) a {⟨z, hz⟩} from
     (reaches_def _ _).mpr ⟨n, key n ⟨y, hy⟩ hn⟩
   intro n
@@ -247,12 +247,12 @@ theorem reaches_subtype_communicatingClass [Countable S] [MeasurableSingletonCla
     rw [add_comm n 1, pow_add_apply_singleton κ 1 n, pos_iff_ne_zero, Ne, tsum_eq_zero_iff] at ha
     push Not at ha
     obtain ⟨w, hw⟩ := ha
-    have hw1 : 0 < κ a.1 {w} := by simpa [pos_iff_ne_zero] using left_ne_zero_of_mul hw
+    have hw1 : 0 < κ a.val {w} := by simpa [pos_iff_ne_zero] using left_ne_zero_of_mul hw
     have hw2 : 0 < (κ ^ n) w {z} := by simpa [pos_iff_ne_zero] using right_ne_zero_of_mul hw
-    have haw : κ.Reaches a.1 w := reaches_of_pos hw1
+    have haw : κ.Reaches a.val w := reaches_of_pos hw1
     have hwx : κ.Communicates x w := by
       have hz' := (mem_communicatingClass_iff x z).mp hz
-      have ha' := (mem_communicatingClass_iff x a.1).mp a.2
+      have ha' := (mem_communicatingClass_iff x a.val).mp a.property
       rw [communicates_def] at ha' hz' ⊢
       exact ⟨ha'.1.trans haw, ((reaches_def w z).mpr ⟨n, hw2⟩).trans hz'.2⟩
     have hwC : w ∈ κ.communicatingClass x := (mem_communicatingClass_iff x w).mpr hwx

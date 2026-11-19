@@ -222,8 +222,8 @@ theorem measurable_infinitePi {ι' : Type*} {β : ι' → Type*} [∀ i, Measura
   simpa only [ProbabilityMeasure.toMeasure_pi, Function.comp_def] using
     (Measure.measurable_coe hS).comp
       (measurable_probabilityMeasure_pi_toMeasure
-        (fun i : s ↦ fun p : ∀ j, ProbabilityMeasure (β j) ↦ p i.1)
-        fun i ↦ measurable_pi_apply i.1)
+        (fun i : s ↦ fun p : ∀ j, ProbabilityMeasure (β j) ↦ p i.val)
+        fun i ↦ measurable_pi_apply i.val)
 
 /-- Constant-coordinate `ℕ` specialization of `measurable_infinitePi`: the countable power
 `p ↦ p^{⊗ℕ}` is measurable. -/

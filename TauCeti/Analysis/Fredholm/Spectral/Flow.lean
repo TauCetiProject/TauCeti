@@ -352,7 +352,7 @@ private theorem exists_pos_forall_exists_isSpectralCutOn_ball_inter {X : Type*}
     hK (fun _ ↦ isOpen_ball) (fun z hz ↦ mem_iUnion.2 ⟨⟨z, hz⟩, mem_ball_self (hε z hz)⟩)
   refine ⟨δ, hδ, fun z hz ↦ ?_⟩
   obtain ⟨i, hi⟩ := hleb z hz
-  exact ⟨c i, (hcut i i.2).mono fun w hw ↦ ⟨hi hw.1, hw.2⟩⟩
+  exact ⟨c i, (hcut i i.property).mono fun w hw ↦ ⟨hi hw.1, hw.2⟩⟩
 
 omit [IsScalarTower ℝ 𝕜 (H →L[𝕜] H)] in
 /-- By the Lebesgue number lemma, if every time has a neighbourhood with a spectral cut, then all

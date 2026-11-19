@@ -172,13 +172,13 @@ quasi-separated morphism `f : X ⟶ Y` and a quasi-coherent `𝒪_X`-module `M`,
 image `Rⁿ f_* M` is quasi-coherent. -/
 instance isQuasicoherent_higherDirectImage [QuasiCompact f] [QuasiSeparated f] (M : X.Modules)
     [M.IsQuasicoherent] (n : ℕ) : ((f.higherDirectImage n).obj M).IsQuasicoherent := by
-  refine (Scheme.Modules.isQuasicoherent_iff_of_iSup_eq_top _ (fun U : Y.affineOpens ↦ U.1)
+  refine (Scheme.Modules.isQuasicoherent_iff_of_iSup_eq_top _ (fun U : Y.affineOpens ↦ U.val)
     (iSup_affineOpens_eq_top Y)).2 fun U ↦ ?_
   -- over the affine open `U`, the higher direct image is that of `f ∣_ U`, whose source
   -- `f⁻¹ U` is quasi-compact and quasi-separated
-  have : IsAffine U.1 := U.2
-  exact (SheafOfModules.isQuasicoherent U.1.toScheme.ringCatSheaf).prop_of_iso
-    ((f.higherDirectImageRestrictIso U.1 n).app M).symm
-    (isQuasicoherent_higherDirectImage_of_isAffine (f ∣_ U.1) (M.restrict (f ⁻¹ᵁ U.1).ι) n)
+  have : IsAffine U.val := U.property
+  exact (SheafOfModules.isQuasicoherent U.val.toScheme.ringCatSheaf).prop_of_iso
+    ((f.higherDirectImageRestrictIso U.val n).app M).symm
+    (isQuasicoherent_higherDirectImage_of_isAffine (f ∣_ U.val) (M.restrict (f ⁻¹ᵁ U.val).ι) n)
 
 end AlgebraicGeometry.Scheme.Hom

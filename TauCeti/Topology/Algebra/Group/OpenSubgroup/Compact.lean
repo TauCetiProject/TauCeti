@@ -193,7 +193,7 @@ theorem exists_isCompact_le_normal_of_mem_nhds_one [IsTopologicalGroup G]
   let V : OpenSubgroup G := ⟨H_sub, hH_open⟩
   have hVU₀ : V ≤ U₀ := by
     rintro _ ⟨x, -, rfl⟩
-    exact x.2
+    exact x.property
   have hsub : V.toSubgroup.subgroupOf U₀' = N.toSubgroup := by
     ext x
     simp [V, H_sub, Subgroup.mem_subgroupOf]

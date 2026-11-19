@@ -96,18 +96,18 @@ section Spanning
 `F̂_P`. -/
 private noncomputable def completionEmbeddingPi :
     letI := fun P' : {P' : Place k' F' // P'.restrict k F = P} ↦
-      P.completionExtensionAlgebra P'.1 P'.2
+      P.completionExtensionAlgebra P'.val P'.property
     F' →ₛₗ[(P.completionEmbedding : F →+* P.Completion)]
-      ∀ P' : {P' : Place k' F' // P'.restrict k F = P}, P'.1.Completion :=
+      ∀ P' : {P' : Place k' F' // P'.restrict k F = P}, P'.val.Completion :=
   letI := fun P' : {P' : Place k' F' // P'.restrict k F = P} ↦
-    P.completionExtensionAlgebra P'.1 P'.2
-  { toFun y P' := P'.1.completionEmbedding y
+    P.completionExtensionAlgebra P'.val P'.property
+  { toFun y P' := P'.val.completionEmbedding y
     map_add' _ _ := funext fun _ ↦ map_add _ _ _
-    map_smul' c y := funext fun P' ↦ completionEmbedding_smul P P'.1 P'.2 c y }
+    map_smul' c y := funext fun P' ↦ completionEmbedding_smul P P'.val P'.property c y }
 
 /-- `TauCeti.Place.completionEmbeddingPi` is the coordinatewise completion embedding. -/
 private theorem completionEmbeddingPi_apply (y : F') :
-    completionEmbeddingPi k' P y = fun P' ↦ P'.1.completionEmbedding y :=
+    completionEmbeddingPi k' P y = fun P' ↦ P'.val.completionEmbedding y :=
   rfl
 
 variable (F') in
@@ -116,36 +116,37 @@ the diagonal images of the functions of `F'` regular at every place over `P` spa
 `∏_{P' ∣ P} 𝒪̂_{P'}` over `𝒪̂_P`. -/
 theorem span_completionIntegers_pi_eq_top :
     letI := fun P' : {P' : Place k' F' // P'.restrict k F = P} ↦
-      P.completionIntegersExtensionAlgebra P'.1 P'.2
+      P.completionIntegersExtensionAlgebra P'.val P'.property
     Submodule.span P.completionPlace.integers
       (Set.range fun y : {y : F' // ∀ P' : {P' : Place k' F' // P'.restrict k F = P},
-          y ∈ P'.1.integers} ↦
+          y ∈ P'.val.integers} ↦
         fun P' : {P' : Place k' F' // P'.restrict k F = P} ↦
-          P'.1.completionIntegersEmbedding ⟨y.1, y.2 P'⟩) = ⊤ := by
+          P'.val.completionIntegersEmbedding ⟨y.val, y.property P'⟩) = ⊤ := by
   classical
   let ι := {P' : Place k' F' // P'.restrict k F = P}
-  let _ := fun P' : ι ↦ P.completionIntegersExtensionAlgebra P'.1 P'.2
-  have _ := fun P' : ι ↦ moduleFinite_completionIntegers P P'.1 P'.2
+  let _ := fun P' : ι ↦ P.completionIntegersExtensionAlgebra P'.val P'.property
+  have _ := fun P' : ι ↦ moduleFinite_completionIntegers P P'.val P'.property
   have := Fintype.ofFinite ι
   -- By Nakayama's lemma it suffices to span modulo `𝔪̂_P`.
   refine top_unique (Submodule.le_of_le_smul_of_le_jacobson (I := maximalIdeal _)
     Module.Finite.fg_top (ringJacobson_eq_maximalIdeal _).ge fun m _ ↦ ?_)
   -- Approximate `m` to order `e(P' ∣ P)` at every `P'` by a single function `y`.
   obtain ⟨y, hy⟩ := exists_forall_sub_completionEmbedding_mem_filtration
-    (P := fun P' : ι ↦ P'.1) Subtype.val_injective (fun P' ↦ (m P' : P'.1.Completion))
-    (fun P' ↦ ramificationIdx F P'.1)
-  have hyint (P' : ι) : y ∈ P'.1.integers := by
-    have hm := P'.1.completionPlace.mem_filtration_zero_iff.mpr (m P').2
-    have h := sub_mem hm (P'.1.completionPlace.filtration_antitone (by simp) (hy P'))
+    (P := fun P' : ι ↦ P'.val) Subtype.val_injective (fun P' ↦ (m P' : P'.val.Completion))
+    (fun P' ↦ ramificationIdx F P'.val)
+  have hyint (P' : ι) : y ∈ P'.val.integers := by
+    have hm := P'.val.completionPlace.mem_filtration_zero_iff.mpr (m P').property
+    have h := sub_mem hm (P'.val.completionPlace.filtration_antitone (by simp) (hy P'))
     rw [sub_sub_cancel, completionEmbedding_mem_filtration_iff] at h
-    exact P'.1.mem_filtration_zero_iff.mp h
+    exact P'.val.mem_filtration_zero_iff.mp h
   -- The error is a multiple of a uniformizer of `P` at every coordinate.
-  set my := fun P' : ι ↦ P'.1.completionIntegersEmbedding ⟨y, hyint P'⟩
+  set my := fun P' : ι ↦ P'.val.completionIntegersEmbedding ⟨y, hyint P'⟩
   rw [← add_sub_cancel my m, ← Finset.univ_sum_single (m - my)]
   refine Submodule.add_mem_sup (Submodule.subset_span ⟨⟨y, hyint⟩, rfl⟩)
     (Submodule.sum_mem _ fun P' _ ↦ Submodule.smul_top_le_comap_smul_top _
-      (LinearMap.single P.completionPlace.integers (fun P' : ι ↦ P'.1.completionPlace.integers) P')
-      (mem_maximalIdeal_smul_top_of_mem_filtration P P'.1 P'.2 ?_))
+      (LinearMap.single P.completionPlace.integers (fun P' : ι ↦ P'.val.completionPlace.integers)
+          P')
+      (mem_maximalIdeal_smul_top_of_mem_filtration P P'.val P'.property ?_))
   simpa [my, completionIntegersEmbedding_apply] using hy P'
 
 variable (F') in
@@ -153,19 +154,19 @@ variable (F') in
 `∏_{P' ∣ P} F̂'_{P'}` over `F̂_P`. -/
 theorem span_completion_pi_eq_top :
     letI := fun P' : {P' : Place k' F' // P'.restrict k F = P} ↦
-      P.completionExtensionAlgebra P'.1 P'.2
+      P.completionExtensionAlgebra P'.val P'.property
     Submodule.span P.Completion
       (Set.range fun (y : F') (P' : {P' : Place k' F' // P'.restrict k F = P}) ↦
-        P'.1.completionEmbedding y) = ⊤ := by
+        P'.val.completionEmbedding y) = ⊤ := by
   let ι := {P' : Place k' F' // P'.restrict k F = P}
-  let _ := fun P' : ι ↦ P.completionExtensionAlgebra P'.1 P'.2
-  let _ := fun P' : ι ↦ P.completionIntegersExtensionAlgebra P'.1 P'.2
+  let _ := fun P' : ι ↦ P.completionExtensionAlgebra P'.val P'.property
+  let _ := fun P' : ι ↦ P.completionIntegersExtensionAlgebra P'.val P'.property
   set W := Submodule.span P.Completion
-    (Set.range fun (y : F') (P' : ι) ↦ P'.1.completionEmbedding y)
+    (Set.range fun (y : F') (P' : ι) ↦ P'.val.completionEmbedding y)
   -- Families of completed integers lie in `W`, since they are spanned by functions of `F'`.
-  let toV : (∀ P' : ι, P'.1.completionPlace.integers) →+* ∀ P' : ι, P'.1.Completion :=
-    RingHom.pi fun P' ↦ P'.1.completionPlace.integers.subtype.comp (Pi.evalRingHom _ P')
-  have hint (m : ∀ P' : ι, P'.1.completionPlace.integers) : toV m ∈ W := by
+  let toV : (∀ P' : ι, P'.val.completionPlace.integers) →+* ∀ P' : ι, P'.val.Completion :=
+    RingHom.pi fun P' ↦ P'.val.completionPlace.integers.subtype.comp (Pi.evalRingHom _ P')
+  have hint (m : ∀ P' : ι, P'.val.completionPlace.integers) : toV m ∈ W := by
     refine Submodule.map_mem_span_of_forall_exists (A := P.completionPlace.integers) toV _ _
       (fun a ↦ ⟨(a : P.Completion), funext fun P' ↦ ?_⟩) ?_
       ((span_completionIntegers_pi_eq_top k' F' P).symm ▸ Submodule.mem_top)
@@ -173,13 +174,13 @@ theorem span_completion_pi_eq_top :
         Pi.algebraMap_apply, ValuationSubring.coe_subtype]
       rw [coe_algebraMap_completionIntegersExtensionAlgebra, algebraMap_completionExtensionAlgebra]
     · rintro _ ⟨y, rfl⟩
-      exact Submodule.subset_span ⟨y.1, funext fun P' ↦ by simp [toV]⟩
+      exact Submodule.subset_span ⟨y.val, funext fun P' ↦ by simp [toV]⟩
   refine eq_top_iff.mpr fun z _ ↦ ?_
   -- Subtracting a function of `F'` leaves a family of completed integers.
   obtain ⟨y, hy⟩ := exists_forall_sub_completionEmbedding_mem_filtration
-    (P := fun P' : ι ↦ P'.1) Subtype.val_injective z (fun _ ↦ 0)
+    (P := fun P' : ι ↦ P'.val) Subtype.val_injective z (fun _ ↦ 0)
   have h := W.add_mem (Submodule.subset_span ⟨y, rfl⟩)
-    (hint fun P' ↦ ⟨_, P'.1.completionPlace.mem_filtration_zero_iff.mp (hy P')⟩)
+    (hint fun P' ↦ ⟨_, P'.val.completionPlace.mem_filtration_zero_iff.mp (hy P')⟩)
   convert h using 1
   funext P'
   simp [toV]
@@ -189,12 +190,12 @@ its diagonal image spans `∏_{P' ∣ P} F̂'_{P'}` over `F̂_P`. -/
 theorem span_completionEmbedding_pi_eq_top {ι' : Type*} {v : ι' → F'}
     (hv : Submodule.span F (Set.range v) = ⊤) :
     letI := fun P' : {P' : Place k' F' // P'.restrict k F = P} ↦
-      P.completionExtensionAlgebra P'.1 P'.2
+      P.completionExtensionAlgebra P'.val P'.property
     Submodule.span P.Completion
       (Set.range fun (i : ι') (P' : {P' : Place k' F' // P'.restrict k F = P}) ↦
-        P'.1.completionEmbedding (v i)) = ⊤ := by
+        P'.val.completionEmbedding (v i)) = ⊤ := by
   let _ := fun P' : {P' : Place k' F' // P'.restrict k F = P} ↦
-    P.completionExtensionAlgebra P'.1 P'.2
+    P.completionExtensionAlgebra P'.val P'.property
   exact (Submodule.span_range_eq_span_range_comp_of_span_eq_top (S := P.Completion) hv
     (completionEmbeddingPi k' P)).symm.trans (span_completion_pi_eq_top k' F' P)
 
@@ -211,29 +212,29 @@ private theorem finsum_finrank_completion_eq_finrank_of_sum_eq
     (hfund : ∀ {s : Finset (Place k' F')}, (∀ P' : Place k' F', P' ∈ s ↔ P'.restrict k F = P) →
       ∑ P' ∈ s, ramificationIdx F P' * relativeDegree k F P' = finrank F F') :
     ∑ᶠ P' : {P' : Place k' F' // P'.restrict k F = P},
-        (letI := P.completionExtensionAlgebra P'.1 P'.2
-        finrank P.Completion P'.1.Completion) = finrank F F' := by
+        (letI := P.completionExtensionAlgebra P'.val P'.property
+        finrank P.Completion P'.val.Completion) = finrank F F' := by
   have hfin := finite_setOf_restrict_eq (k' := k') (F' := F') k F P
   have := Fintype.ofFinite {P' : Place k' F' // P'.restrict k F = P}
   rw [finsum_eq_sum_of_fintype, ← hfund (s := hfin.toFinset) fun _ ↦ hfin.mem_toFinset,
     Finset.sum_subtype hfin.toFinset fun _ ↦ hfin.mem_toFinset]
-  exact Finset.sum_congr rfl fun P' _ ↦ finrank_completion P P'.1 P'.2
+  exact Finset.sum_congr rfl fun P' _ ↦ finrank_completion P P'.val P'.property
 
 /-- The diagonal image of an `F`-basis of `F'` is linearly independent over `F̂_P` whenever the
 local degrees above `P` add up to `[F' : F]`. -/
 private theorem linearIndependent_completionEmbedding_basis_of_finsum
     (hdeg : ∑ᶠ P' : {P' : Place k' F' // P'.restrict k F = P},
-        (letI := P.completionExtensionAlgebra P'.1 P'.2
-        finrank P.Completion P'.1.Completion) = finrank F F')
+        (letI := P.completionExtensionAlgebra P'.val P'.property
+        finrank P.Completion P'.val.Completion) = finrank F F')
     {ι' : Type*} (b : Basis ι' F F') :
     letI := fun P' : {P' : Place k' F' // P'.restrict k F = P} ↦
-      P.completionExtensionAlgebra P'.1 P'.2
+      P.completionExtensionAlgebra P'.val P'.property
     LinearIndependent P.Completion
       fun (i : ι') (P' : {P' : Place k' F' // P'.restrict k F = P}) ↦
-        P'.1.completionEmbedding (b i) := by
+        P'.val.completionEmbedding (b i) := by
   let ι := {P' : Place k' F' // P'.restrict k F = P}
-  let _ := fun P' : ι ↦ P.completionExtensionAlgebra P'.1 P'.2
-  have _ := fun P' : ι ↦ finiteDimensional_completion P P'.1 P'.2
+  let _ := fun P' : ι ↦ P.completionExtensionAlgebra P'.val P'.property
+  have _ := fun P' : ι ↦ finiteDimensional_completion P P'.val P'.property
   have := Fintype.ofFinite ι
   have := Module.Finite.finite_basis b
   have := Fintype.ofFinite ι'
@@ -245,17 +246,17 @@ private theorem linearIndependent_completionEmbedding_basis_of_finsum
 linearly independent over `F̂_P`, whenever the local degrees above `P` add up to `[F' : F]`. -/
 private theorem linearIndependent_completionEmbedding_pi_iff_of_finsum
     (hdeg : ∑ᶠ P' : {P' : Place k' F' // P'.restrict k F = P},
-        (letI := P.completionExtensionAlgebra P'.1 P'.2
-        finrank P.Completion P'.1.Completion) = finrank F F')
+        (letI := P.completionExtensionAlgebra P'.val P'.property
+        finrank P.Completion P'.val.Completion) = finrank F F')
     {ι' : Type*} {v : ι' → F'} :
     letI := fun P' : {P' : Place k' F' // P'.restrict k F = P} ↦
-      P.completionExtensionAlgebra P'.1 P'.2
+      P.completionExtensionAlgebra P'.val P'.property
     LinearIndependent P.Completion
         (fun (i : ι') (P' : {P' : Place k' F' // P'.restrict k F = P}) ↦
-          P'.1.completionEmbedding (v i)) ↔
+          P'.val.completionEmbedding (v i)) ↔
       LinearIndependent F v := by
   let ι := {P' : Place k' F' // P'.restrict k F = P}
-  let _ := fun P' : ι ↦ P.completionExtensionAlgebra P'.1 P'.2
+  let _ := fun P' : ι ↦ P.completionExtensionAlgebra P'.val P'.property
   refine ⟨fun h ↦ ?_, fun hv ↦ ?_⟩
   · -- A vanishing `F`-combination of `v` maps to a vanishing `F̂_P`-combination.
     rw [linearIndependent_iff'] at h ⊢
@@ -276,37 +277,38 @@ private theorem linearIndependent_completionEmbedding_pi_iff_of_finsum
 /-- The trace formula at `P`, whenever the local degrees above `P` add up to `[F' : F]`. -/
 private theorem completionEmbedding_trace_of_finsum
     (hdeg : ∑ᶠ P' : {P' : Place k' F' // P'.restrict k F = P},
-        (letI := P.completionExtensionAlgebra P'.1 P'.2
-        finrank P.Completion P'.1.Completion) = finrank F F')
+        (letI := P.completionExtensionAlgebra P'.val P'.property
+        finrank P.Completion P'.val.Completion) = finrank F F')
     (x : F') :
     P.completionEmbedding (Algebra.trace F F' x) =
       ∑ᶠ P' : {P' : Place k' F' // P'.restrict k F = P},
-        (letI := P.completionExtensionAlgebra P'.1 P'.2
-        Algebra.trace P.Completion P'.1.Completion (P'.1.completionEmbedding x)) := by
+        (letI := P.completionExtensionAlgebra P'.val P'.property
+        Algebra.trace P.Completion P'.val.Completion (P'.val.completionEmbedding x)) := by
   classical
   let ι := {P' : Place k' F' // P'.restrict k F = P}
-  let _ := fun P' : ι ↦ P.completionExtensionAlgebra P'.1 P'.2
-  have _ := fun P' : ι ↦ finiteDimensional_completion P P'.1 P'.2
+  let _ := fun P' : ι ↦ P.completionExtensionAlgebra P'.val P'.property
+  have _ := fun P' : ι ↦ finiteDimensional_completion P P'.val P'.property
   have := Fintype.ofFinite ι
   let b := Module.finBasis F F'
   -- The diagonal image `B` of `b` is a basis, in which `x` acts by the matrix it has in `b`.
-  let B : Basis (Fin (finrank F F')) P.Completion (∀ P' : ι, P'.1.Completion) :=
+  let B : Basis (Fin (finrank F F')) P.Completion (∀ P' : ι, P'.val.Completion) :=
     .mk (linearIndependent_completionEmbedding_basis_of_finsum k' P hdeg b)
       (span_completionEmbedding_pi_eq_top k' P b.span_eq).ge
   have hrepr (y : F') (i) :
-      B.repr (fun P' : ι ↦ P'.1.completionEmbedding y) i = P.completionEmbedding (b.repr y i) := by
-    have hy : (fun P' : ι ↦ P'.1.completionEmbedding y) =
+      B.repr (fun P' : ι ↦ P'.val.completionEmbedding y) i = P.completionEmbedding (b.repr y i)
+          := by
+    have hy : (fun P' : ι ↦ P'.val.completionEmbedding y) =
         ∑ j, P.completionEmbedding (b.repr y j) • B j := by
       rw [← completionEmbeddingPi_apply]
       conv_lhs => rw [← b.sum_repr y]
       simp only [B, Basis.coe_mk, map_sum, LinearMap.map_smulₛₗ, AlgHom.coe_toRingHom,
         completionEmbeddingPi_apply]
     rw [hy, B.repr_sum_self]
-  have hmat : Algebra.leftMulMatrix B (fun P' : ι ↦ P'.1.completionEmbedding x) =
+  have hmat : Algebra.leftMulMatrix B (fun P' : ι ↦ P'.val.completionEmbedding x) =
       (P.completionEmbedding : F →+* P.Completion).mapMatrix (Algebra.leftMulMatrix b x) := by
     ext i j
-    have hmul : (fun P' : ι ↦ P'.1.completionEmbedding x) * B j =
-        fun P' : ι ↦ P'.1.completionEmbedding (x * b j) := by
+    have hmul : (fun P' : ι ↦ P'.val.completionEmbedding x) * B j =
+        fun P' : ι ↦ P'.val.completionEmbedding (x * b j) := by
       funext P'
       simp [B]
     rw [Algebra.leftMulMatrix_eq_repr_mul, RingHom.mapMatrix_apply, Matrix.map_apply,
@@ -324,8 +326,8 @@ field extension `k' / k` is integral. For an algebraic function field `F / k` se
 needed; that is `TauCeti.Place.finsum_finrank_completion_eq_finrank`. -/
 theorem finsum_finrank_completion_eq_finrank_of_isSeparable [Algebra.IsSeparable F F'] :
     ∑ᶠ P' : {P' : Place k' F' // P'.restrict k F = P},
-        (letI := P.completionExtensionAlgebra P'.1 P'.2
-        finrank P.Completion P'.1.Completion) = finrank F F' :=
+        (letI := P.completionExtensionAlgebra P'.val P'.property
+        finrank P.Completion P'.val.Completion) = finrank F F' :=
   finsum_finrank_completion_eq_finrank_of_sum_eq k' P
     (sum_ramificationIdx_mul_relativeDegree_eq_finrank_of_isSeparable k F P)
 
@@ -337,8 +339,8 @@ hypothesis. For a separable `F' / F` this holds without assuming that `F / k` is
 that is `TauCeti.Place.finsum_finrank_completion_eq_finrank_of_isSeparable`. -/
 theorem finsum_finrank_completion_eq_finrank (hF : IsFunctionField k F) :
     ∑ᶠ P' : {P' : Place k' F' // P'.restrict k F = P},
-        (letI := P.completionExtensionAlgebra P'.1 P'.2
-        finrank P.Completion P'.1.Completion) = finrank F F' :=
+        (letI := P.completionExtensionAlgebra P'.val P'.property
+        finrank P.Completion P'.val.Completion) = finrank F F' :=
   finsum_finrank_completion_eq_finrank_of_sum_eq k' P
     (sum_ramificationIdx_mul_relativeDegree_eq_finrank_of_isFunctionField k F hF P)
 
@@ -352,10 +354,10 @@ needed; that is `TauCeti.Place.linearIndependent_completionEmbedding_pi_iff`. -/
 theorem linearIndependent_completionEmbedding_pi_iff_of_isSeparable [Algebra.IsSeparable F F']
     {ι' : Type*} {v : ι' → F'} :
     letI := fun P' : {P' : Place k' F' // P'.restrict k F = P} ↦
-      P.completionExtensionAlgebra P'.1 P'.2
+      P.completionExtensionAlgebra P'.val P'.property
     LinearIndependent P.Completion
         (fun (i : ι') (P' : {P' : Place k' F' // P'.restrict k F = P}) ↦
-          P'.1.completionEmbedding (v i)) ↔
+          P'.val.completionEmbedding (v i)) ↔
       LinearIndependent F v :=
   linearIndependent_completionEmbedding_pi_iff_of_finsum k' P
     (finsum_finrank_completion_eq_finrank_of_isSeparable k' F' P)
@@ -371,10 +373,10 @@ separable `F' / F` this holds without assuming that `F / k` is a function field;
 theorem linearIndependent_completionEmbedding_pi_iff (hF : IsFunctionField k F)
     {ι' : Type*} {v : ι' → F'} :
     letI := fun P' : {P' : Place k' F' // P'.restrict k F = P} ↦
-      P.completionExtensionAlgebra P'.1 P'.2
+      P.completionExtensionAlgebra P'.val P'.property
     LinearIndependent P.Completion
         (fun (i : ι') (P' : {P' : Place k' F' // P'.restrict k F = P}) ↦
-          P'.1.completionEmbedding (v i)) ↔
+          P'.val.completionEmbedding (v i)) ↔
       LinearIndependent F v :=
   linearIndependent_completionEmbedding_pi_iff_of_finsum k' P
     (finsum_finrank_completion_eq_finrank k' F' P hF)
@@ -387,8 +389,8 @@ completion at `P`, the sum of the traces of `x` over the completions `F̂'_{P'} 
 theorem completionEmbedding_trace_of_isSeparable [Algebra.IsSeparable F F'] (x : F') :
     P.completionEmbedding (Algebra.trace F F' x) =
       ∑ᶠ P' : {P' : Place k' F' // P'.restrict k F = P},
-        (letI := P.completionExtensionAlgebra P'.1 P'.2
-        Algebra.trace P.Completion P'.1.Completion (P'.1.completionEmbedding x)) :=
+        (letI := P.completionExtensionAlgebra P'.val P'.property
+        Algebra.trace P.Completion P'.val.Completion (P'.val.completionEmbedding x)) :=
   completionEmbedding_trace_of_finsum k' P
     (finsum_finrank_completion_eq_finrank_of_isSeparable k' F' P) x
 
@@ -401,8 +403,8 @@ separable `F' / F` this holds without assuming that `F / k` is a function field;
 theorem completionEmbedding_trace (hF : IsFunctionField k F) (x : F') :
     P.completionEmbedding (Algebra.trace F F' x) =
       ∑ᶠ P' : {P' : Place k' F' // P'.restrict k F = P},
-        (letI := P.completionExtensionAlgebra P'.1 P'.2
-        Algebra.trace P.Completion P'.1.Completion (P'.1.completionEmbedding x)) :=
+        (letI := P.completionExtensionAlgebra P'.val P'.property
+        Algebra.trace P.Completion P'.val.Completion (P'.val.completionEmbedding x)) :=
   completionEmbedding_trace_of_finsum k' P (finsum_finrank_completion_eq_finrank k' F' P hF) x
 
 end Dimension

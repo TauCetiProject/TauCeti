@@ -53,7 +53,7 @@ instance instPathConnectedSpaceMatrixGeneralLinearGroup : PathConnectedSpace (GL
     isPathConnected_iff_pathConnectedSpace.mp
       (convex_setOfPred_posDef.isPathConnected ⟨1, PosDef.one⟩)
   let f : {P : Matrix n n ℂ | P.PosDef} × unitaryGroup n ℂ → GL n ℂ :=
-    fun PU => PU.1.2.isUnit.unit * Unitary.toUnits PU.2
+    fun PU => PU.1.property.isUnit.unit * Unitary.toUnits PU.2
   have hf : Function.Surjective f := by
     intro A
     obtain ⟨⟨P, U⟩, ⟨hP, hPU⟩, _⟩ := A.existsUnique_posDef_mul_unitary

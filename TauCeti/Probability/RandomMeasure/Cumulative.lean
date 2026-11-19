@@ -93,10 +93,10 @@ cumulative masses indexed by `[0, t]`. This includes multiplicities and the mass
 theorem comap_restrict_Iic_eq_comap_Iic (t : ℝ≥0)
     (hfinite : ∀ ω, M ω (Iic t) ≠ ∞) :
     MeasurableSpace.comap (fun ω ↦ (M ω).restrict (Iic t)) inferInstance =
-      MeasurableSpace.comap (fun ω (s : Iic t) ↦ M ω (Iic s.1)) inferInstance := by
+      MeasurableSpace.comap (fun ω (s : Iic t) ↦ M ω (Iic s.val)) inferInstance := by
   apply le_antisymm
-  · let := MeasurableSpace.comap (fun ω (s : Iic t) ↦ M ω (Iic s.1)) inferInstance
-    have h : Measurable (fun ω (s : Iic t) ↦ M ω (Iic s.1)) :=
+  · let := MeasurableSpace.comap (fun ω (s : Iic t) ↦ M ω (Iic s.val)) inferInstance
+    have h : Measurable (fun ω (s : Iic t) ↦ M ω (Iic s.val)) :=
       Measurable.of_comap_le le_rfl
     exact ((measurable_restrict_Iic_iff t hfinite).mpr
       (fun s hs ↦ (measurable_pi_apply (⟨s, hs⟩ : Iic t)).comp h)).comap_le
@@ -104,9 +104,9 @@ theorem comap_restrict_Iic_eq_comap_Iic (t : ℝ≥0)
     have hM : Measurable (fun ω ↦ (M ω).restrict (Iic t)) :=
       Measurable.of_comap_le le_rfl
     refine (measurable_pi_iff.mpr fun s ↦ ?_).comap_le
-    have h := (Measure.measurable_coe (s := Iic s.1) measurableSet_Iic).comp hM
+    have h := (Measure.measurable_coe (s := Iic s.val) measurableSet_Iic).comp hM
     simpa only [Function.comp_def, Measure.restrict_apply measurableSet_Iic, Iic_inter_Iic,
-      min_eq_left (show s.1 ≤ t from s.2)] using h
+      min_eq_left (show s.val ≤ t from s.property)] using h
 
 /-- Two almost surely boundedly finite random measures have the same law exactly when their
 entire cumulative-mass processes have the same law. This is equality in distribution, not

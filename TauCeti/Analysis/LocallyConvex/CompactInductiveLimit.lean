@@ -86,7 +86,7 @@ theorem isVonNBounded_iff_exists_subset_image_closedBall [SeparatingDual 𝕜 L]
       ((NormedSpace.isVonNBounded_iff 𝕜).1 (hA.image φ))
     refine ⟨C, ?_⟩
     rintro _ ⟨x, rfl⟩
-    simpa [hy] using hC _ (Set.mem_image_of_mem φ x.2)
+    simpa [hy] using hC _ (Set.mem_image_of_mem φ x.property)
   obtain ⟨j, R, hrep⟩ := exists_forall_exists_norm_le_eval_eq hT _ hbdd
   refine ⟨j, R, fun x hx ↦ ?_⟩
   obtain ⟨z, hz, heq⟩ := hrep ⟨x, hx⟩

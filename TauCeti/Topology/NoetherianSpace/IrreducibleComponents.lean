@@ -58,7 +58,7 @@ theorem isClopen_of_mem_irreducibleComponents_of_pairwiseDisjoint [NoetherianSpa
   have : Finite (irreducibleComponents X) :=
     NoetherianSpace.finite_irreducibleComponents.to_subtype
   exact isClopen_of_finite_pairwiseDisjoint_closed_cover
-    (fun D : irreducibleComponents X ↦ isClosed_of_mem_irreducibleComponents D.1 D.2)
+    (fun D : irreducibleComponents X ↦ isClosed_of_mem_irreducibleComponents D.val D.property)
     hdisj.subtype (sUnion_eq_iUnion ▸ sUnion_irreducibleComponents (X := X)) ⟨C, hC⟩
 
 variable [NoetherianSpace X] [JacobsonSpace X] {ι : Type*}

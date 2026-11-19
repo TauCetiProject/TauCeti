@@ -175,21 +175,21 @@ theorem contMDiff_retraction (p : PositivePeriod) (n : ℕ∞ω) :
 def fiberHomeomorph (p : PositivePeriod) :
     AddCircle (p : ℝ) ≃ₜ {z : CircleFamily // z.period = p} where
   toFun x := ⟨mk p x, rfl⟩
-  invFun z := retraction p z.1
+  invFun z := retraction p z.val
   left_inv := retraction_mk p
-  right_inv z := Subtype.ext (mk_retraction z.2)
+  right_inv z := Subtype.ext (mk_retraction z.property)
   continuous_toFun := ((contMDiff_mk p 0).continuous).subtype_mk _
   continuous_invFun := (contMDiff_retraction p 0).continuous.comp continuous_subtype_val
 
 /-- The fiber homeomorphism is the original fixed-period inclusion. -/
 @[simp]
 theorem coe_fiberHomeomorph (p : PositivePeriod) (x : AddCircle (p : ℝ)) :
-    (fiberHomeomorph p x).1 = mk p x := (rfl)
+    (fiberHomeomorph p x).val = mk p x := (rfl)
 
 /-- The inverse fiber homeomorphism is the smooth retraction restricted to the fiber. -/
 @[simp]
 theorem fiberHomeomorph_symm_apply (p : PositivePeriod) (z : {z : CircleFamily // z.period = p}) :
-    (fiberHomeomorph p).symm z = retraction p z.1 := (rfl)
+    (fiberHomeomorph p).symm z = retraction p z.val := (rfl)
 
 /-- The real representative map of the positive-period total family. -/
 def representative (z : PositivePeriod × ℝ) : CircleFamily := mk z.1 (z.2 : AddCircle _)

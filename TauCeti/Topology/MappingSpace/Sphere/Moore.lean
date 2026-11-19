@@ -189,7 +189,7 @@ theorem mooreLoopSpaceHomotopyEquivBasedMapCircleOne_apply (γ : MooreLoopSpace 
 @[simp]
 theorem mooreLoopSpaceHomotopyEquivBasedMapCircleOne_apply_unitToCircle
     (γ : MooreLoopSpace X x) (t : I) :
-    (mooreLoopSpaceHomotopyEquivBasedMapCircleOne X x γ).1 (unitToCircle t) = γ.toPath t := by
+    (mooreLoopSpaceHomotopyEquivBasedMapCircleOne X x γ).val (unitToCircle t) = γ.toPath t := by
   rw [mooreLoopSpaceHomotopyEquivBasedMapCircleOne_apply,
     basedMapCircleOneHomeomorphPath_symm_unitToCircle]
 
@@ -233,7 +233,7 @@ theorem constContractibleRangeToProd_apply
     (p : ↥(Set.range (constContractibleLoop (Q := Q))) ×
       ↥(Set.range (constContractibleLoop (Q := Q)))) :
     constContractibleRangeToProd Q p =
-      (basepointContractibleLoop p.1.1, basepointContractibleLoop p.2.1) := by
+      (basepointContractibleLoop p.1.val, basepointContractibleLoop p.2.val) := by
   cases p
   simp [constContractibleRangeToProd]
 
@@ -246,7 +246,7 @@ def constContractibleMooreEndpoints : C(ConstContractibleMoorePaths Q, Q × Q) :
 @[simp]
 theorem constContractibleMooreEndpoints_apply (γ : ConstContractibleMoorePaths Q) :
     constContractibleMooreEndpoints Q γ =
-      (basepointContractibleLoop γ.1.source, basepointContractibleLoop γ.1.target) := by
+      (basepointContractibleLoop γ.val.source, basepointContractibleLoop γ.val.target) := by
   simp [constContractibleMooreEndpoints, MoorePath.endpointsBetween_apply]
 
 /-- Evaluation of a two-sphere map at `(north, south) : Sphere2 × Sphere2`. -/
@@ -266,11 +266,11 @@ def contractibleConstLoopPathHomeomorphUnitPathsBetween :
     ContractibleConstLoopPath Q ≃ₜ
       unitPathsBetween (Set.range (constContractibleLoop (Q := Q)))
         (Set.range (constContractibleLoop (Q := Q))) where
-  toFun p := ⟨p.1, (mem_unitPathsBetween _ _).2
-    ⟨let ⟨q, hq⟩ := p.2.1; ⟨q, hq.symm⟩, let ⟨q, hq⟩ := p.2.2; ⟨q, hq.symm⟩⟩⟩
+  toFun p := ⟨p.val, (mem_unitPathsBetween _ _).2
+    ⟨let ⟨q, hq⟩ := p.property.1; ⟨q, hq.symm⟩, let ⟨q, hq⟩ := p.property.2; ⟨q, hq.symm⟩⟩⟩
   invFun r :=
-    let hr := (mem_unitPathsBetween _ _).1 r.2
-    ⟨r.1, ⟨let ⟨q, hq⟩ := hr.1; ⟨q, hq.symm⟩, let ⟨q, hq⟩ := hr.2; ⟨q, hq.symm⟩⟩⟩
+    let hr := (mem_unitPathsBetween _ _).1 r.property
+    ⟨r.val, ⟨let ⟨q, hq⟩ := hr.1; ⟨q, hq.symm⟩, let ⟨q, hq⟩ := hr.2; ⟨q, hq.symm⟩⟩⟩
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := continuous_subtype_val.subtype_mk _
@@ -278,14 +278,14 @@ def contractibleConstLoopPathHomeomorphUnitPathsBetween :
 
 @[simp]
 theorem coe_contractibleConstLoopPathHomeomorphUnitPathsBetween (p : ContractibleConstLoopPath Q) :
-    (contractibleConstLoopPathHomeomorphUnitPathsBetween p : C(I, contractibleLoops Q)) = p.1 :=
+    (contractibleConstLoopPathHomeomorphUnitPathsBetween p : C(I, contractibleLoops Q)) = p.val :=
   (rfl)
 
 @[simp]
 theorem coe_contractibleConstLoopPathHomeomorphUnitPathsBetween_symm
     (r : unitPathsBetween (Set.range (constContractibleLoop (Q := Q)))
       (Set.range (constContractibleLoop (Q := Q)))) :
-    (contractibleConstLoopPathHomeomorphUnitPathsBetween.symm r).1 = r.1 :=
+    (contractibleConstLoopPathHomeomorphUnitPathsBetween.symm r).val = r.val :=
   (rfl)
 
 variable (Q) in
@@ -301,7 +301,7 @@ def sphere2HomeomorphUnitPathsBetween :
 
 @[simp]
 theorem sphere2HomeomorphUnitPathsBetween_apply (f : C(Sphere2, Q)) (t : I) (z : Circle) :
-    ((sphere2HomeomorphUnitPathsBetween Q f).1 t : C(Circle, Q)) z =
+    ((sphere2HomeomorphUnitPathsBetween Q f).val t : C(Circle, Q)) z =
       f (suspensionToSphere (t, z)) := by
   simp [sphere2HomeomorphUnitPathsBetween]
 
@@ -311,7 +311,7 @@ theorem sphere2HomeomorphUnitPathsBetween_symm_apply
       (Set.range (constContractibleLoop (Q := Q))))
     (t : I) (z : Circle) :
     (sphere2HomeomorphUnitPathsBetween Q).symm r (suspensionToSphere (t, z)) =
-      (r.1 t : C(Circle, Q)) z := by
+      (r.val t : C(Circle, Q)) z := by
   simp [sphere2HomeomorphUnitPathsBetween]
 
 theorem sphere2Poles_sphere2HomeomorphUnitPathsBetween_symm
@@ -366,14 +366,14 @@ def sphere2HomotopyEquivMoorePaths :
 theorem sphere2HomotopyEquivMoorePaths_apply_suspensionToSphere
     (γ : ConstContractibleMoorePaths Q) (t : I) (z : Circle) :
     sphere2HomotopyEquivMoorePaths Q γ (suspensionToSphere (t, z)) =
-      (γ.1.toUnitPath t : C(Circle, Q)) z := by
+      (γ.val.toUnitPath t : C(Circle, Q)) z := by
   rw [sphere2HomotopyEquivMoorePaths, FiberHomotopyEquiv.toHomotopyEquiv_apply]
   simp
 
 @[simp]
 theorem sphere2HomotopyEquivMoorePaths_apply_north (γ : ConstContractibleMoorePaths Q) :
     sphere2HomotopyEquivMoorePaths Q γ Sphere2.north =
-      basepointContractibleLoop γ.1.source := by
+      basepointContractibleLoop γ.val.source := by
   rw [sphere2HomotopyEquivMoorePaths, FiberHomotopyEquiv.toHomotopyEquiv_apply]
   have h := congrArg Prod.fst
     (DFunLike.congr_fun (sphere2FiberHomotopyEquivMoorePaths Q).comp_toFun γ)
@@ -382,7 +382,7 @@ theorem sphere2HomotopyEquivMoorePaths_apply_north (γ : ConstContractibleMooreP
 @[simp]
 theorem sphere2HomotopyEquivMoorePaths_apply_south (γ : ConstContractibleMoorePaths Q) :
     sphere2HomotopyEquivMoorePaths Q γ Sphere2.south =
-      basepointContractibleLoop γ.1.target := by
+      basepointContractibleLoop γ.val.target := by
   rw [sphere2HomotopyEquivMoorePaths, FiberHomotopyEquiv.toHomotopyEquiv_apply]
   have h := congrArg Prod.snd
     (DFunLike.congr_fun (sphere2FiberHomotopyEquivMoorePaths Q).comp_toFun γ)
@@ -458,7 +458,7 @@ def sphere2ConstMooreSectionHomotopy :
     (continuous_fst.prodMk ((constContractibleLoop.continuous.comp continuous_snd).subtype_mk _))
   map_zero_left q := by
     apply Subtype.ext
-    have hpath : (sphere2HomeomorphUnitPathsBetween Q (ContinuousMap.const Sphere2 q)).1 =
+    have hpath : (sphere2HomeomorphUnitPathsBetween Q (ContinuousMap.const Sphere2 q)).val =
         ContinuousMap.const I (constContractibleLoop q) := by
       ext t z
       simp
@@ -493,18 +493,18 @@ def basedConstContractibleMooreTarget : C(BasedConstContractibleMoorePaths Q x, 
 
 @[simp]
 theorem basedConstContractibleMooreTarget_apply (γ : BasedConstContractibleMoorePaths Q x) :
-    basedConstContractibleMooreTarget Q x γ = basepointContractibleLoop γ.1.target := by
+    basedConstContractibleMooreTarget Q x γ = basepointContractibleLoop γ.val.target := by
   simp [basedConstContractibleMooreTarget, basedConstContractibleRangeToTarget,
     MoorePath.endpointsBetween_apply]
 
 /-- South-pole evaluation `Map_*(S², Q) → Q`. -/
 def basedMapSphere2South : C(BasedMap Sphere2 Q Sphere2.north x, Q) :=
-  ⟨fun f ↦ f.1 Sphere2.south,
+  ⟨fun f ↦ f.val Sphere2.south,
     (continuous_eval_const Sphere2.south).comp continuous_subtype_val⟩
 
 @[simp]
 theorem basedMapSphere2South_apply (f : BasedMap Sphere2 Q Sphere2.north x) :
-    basedMapSphere2South Q x f = f.1 Sphere2.south :=
+    basedMapSphere2South Q x f = f.val Sphere2.south :=
   (rfl)
 
 variable {Q x}
@@ -515,10 +515,11 @@ def basedContractibleConstLoopPathHomeomorphUnitPathsBetween (x : Q) :
     BasedContractibleConstLoopPath Q x ≃ₜ
       unitPathsBetween {constContractibleLoop x}
         (Set.range (constContractibleLoop (Q := Q))) where
-  toFun p := ⟨p.1.1, (mem_unitPathsBetween _ _).2 ⟨p.2, let ⟨q, hq⟩ := p.1.2.2; ⟨q, hq.symm⟩⟩⟩
+  toFun p := ⟨p.val.val, (mem_unitPathsBetween _ _).2 ⟨p.property, let ⟨q, hq⟩ := p.val.property.2;
+      ⟨q, hq.symm⟩⟩⟩
   invFun r :=
-    let hr := (mem_unitPathsBetween _ _).1 r.2
-    ⟨⟨r.1, ⟨⟨x, hr.1⟩, let ⟨q, hq⟩ := hr.2; ⟨q, hq.symm⟩⟩⟩, hr.1⟩
+    let hr := (mem_unitPathsBetween _ _).1 r.property
+    ⟨⟨r.val, ⟨⟨x, hr.1⟩, let ⟨q, hq⟩ := hr.2; ⟨q, hq.symm⟩⟩⟩, hr.1⟩
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := continuous_subtype_val.subtype_val.subtype_mk _
@@ -528,14 +529,14 @@ def basedContractibleConstLoopPathHomeomorphUnitPathsBetween (x : Q) :
 theorem coe_basedContractibleConstLoopPathHomeomorphUnitPathsBetween (x : Q)
     (p : BasedContractibleConstLoopPath Q x) :
     (basedContractibleConstLoopPathHomeomorphUnitPathsBetween x p : C(I, contractibleLoops Q)) =
-      p.1.1 :=
+      p.val.val :=
   (rfl)
 
 @[simp]
 theorem coe_basedContractibleConstLoopPathHomeomorphUnitPathsBetween_symm (x : Q)
     (r : unitPathsBetween {constContractibleLoop x}
       (Set.range (constContractibleLoop (Q := Q)))) :
-    ((basedContractibleConstLoopPathHomeomorphUnitPathsBetween x).symm r).1.1 = r.1 :=
+    ((basedContractibleConstLoopPathHomeomorphUnitPathsBetween x).symm r).val.val = r.val :=
   (rfl)
 
 variable (Q x) in
@@ -551,8 +552,8 @@ def basedMapSphere2HomeomorphUnitPathsBetween :
 @[simp]
 theorem basedMapSphere2HomeomorphUnitPathsBetween_apply
     (f : BasedMap Sphere2 Q Sphere2.north x) (t : I) (z : Circle) :
-    ((basedMapSphere2HomeomorphUnitPathsBetween Q x f).1 t : C(Circle, Q)) z =
-      f.1 (suspensionToSphere (t, z)) := by
+    ((basedMapSphere2HomeomorphUnitPathsBetween Q x f).val t : C(Circle, Q)) z =
+      f.val (suspensionToSphere (t, z)) := by
   simp [basedMapSphere2HomeomorphUnitPathsBetween]
 
 @[simp]
@@ -560,8 +561,8 @@ theorem basedMapSphere2HomeomorphUnitPathsBetween_symm_apply
     (r : unitPathsBetween {constContractibleLoop x}
       (Set.range (constContractibleLoop (Q := Q))))
     (t : I) (z : Circle) :
-    ((basedMapSphere2HomeomorphUnitPathsBetween Q x).symm r).1 (suspensionToSphere (t, z)) =
-      (r.1 t : C(Circle, Q)) z := by
+    ((basedMapSphere2HomeomorphUnitPathsBetween Q x).symm r).val (suspensionToSphere (t, z)) =
+      (r.val t : C(Circle, Q)) z := by
   simp [basedMapSphere2HomeomorphUnitPathsBetween]
 
 theorem basedMapSphere2South_basedMapSphere2HomeomorphUnitPathsBetween_symm
@@ -612,16 +613,16 @@ def basedMapSphere2HomotopyEquivMoorePaths :
 @[simp]
 theorem basedMapSphere2HomotopyEquivMoorePaths_apply_suspensionToSphere
     (γ : BasedConstContractibleMoorePaths Q x) (t : I) (z : Circle) :
-    (basedMapSphere2HomotopyEquivMoorePaths Q x γ).1 (suspensionToSphere (t, z)) =
-      (γ.1.toUnitPath t : C(Circle, Q)) z := by
+    (basedMapSphere2HomotopyEquivMoorePaths Q x γ).val (suspensionToSphere (t, z)) =
+      (γ.val.toUnitPath t : C(Circle, Q)) z := by
   rw [basedMapSphere2HomotopyEquivMoorePaths, FiberHomotopyEquiv.toHomotopyEquiv_apply]
   simp
 
 @[simp]
 theorem basedMapSphere2HomotopyEquivMoorePaths_apply_south
     (γ : BasedConstContractibleMoorePaths Q x) :
-    (basedMapSphere2HomotopyEquivMoorePaths Q x γ).1 Sphere2.south =
-      basepointContractibleLoop γ.1.target := by
+    (basedMapSphere2HomotopyEquivMoorePaths Q x γ).val Sphere2.south =
+      basepointContractibleLoop γ.val.target := by
   rw [basedMapSphere2HomotopyEquivMoorePaths, FiberHomotopyEquiv.toHomotopyEquiv_apply]
   have h := DFunLike.congr_fun (basedMapSphere2FiberHomotopyEquivMoorePaths Q x).comp_toFun γ
   simpa using h

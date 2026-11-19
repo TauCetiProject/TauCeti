@@ -225,7 +225,7 @@ theorem exists_homeomorph_comp_eq_of_continuous_injective
         exact (L₀.norm_map w).trans (norm_eq_of_mem_sphere w)
       have hxe : (⟨(L₀ w : E), hx⟩ : sphere (0 : E) 1) ∈ {x : sphere (0 : E) 1 |
           ⟪(x : E), (v : E)⟫_ℝ = 0} :=
-        Submodule.mem_orthogonal_singleton_iff_inner_left.1 (L₀ w).2
+        Submodule.mem_orthogonal_singleton_iff_inner_left.1 (L₀ w).property
       obtain ⟨u, hu⟩ : H ⟨(L₀ w : E), hx⟩ ∈ range γ := hH ▸ mem_image_of_mem H hxe
       refine ⟨u, Subtype.ext (L₀.injective ?_)⟩
       apply Subtype.ext

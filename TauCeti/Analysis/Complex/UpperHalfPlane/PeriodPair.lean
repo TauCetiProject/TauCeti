@@ -324,7 +324,7 @@ theorem weierstrassZeta_periodPair_smul (γ : SL(2, ℤ)) (z : ℍ) (x : ℂ) :
 point `l / (c z + d)` of `ℤ γz + ℤ` is `(c z + d)` times that of `l` in `ℤ z + ℤ`. -/
 theorem quasiPeriod_periodPair_smul (γ : SL(2, ℤ)) (z : ℍ) (l : z.periodPair.lattice) :
     (γ • z).periodPair.quasiPeriod
-        ⟨l / denom γ z, (div_denom_mem_lattice_periodPair_smul_iff γ z l).mpr l.2⟩ =
+        ⟨l / denom γ z, (div_denom_mem_lattice_periodPair_smul_iff γ z l).mpr l.property⟩ =
       denom γ z * z.periodPair.quasiPeriod l := by
   rw [← weierstrassZeta_coe, ← weierstrassZeta_coe, weierstrassZeta_periodPair_smul]
 

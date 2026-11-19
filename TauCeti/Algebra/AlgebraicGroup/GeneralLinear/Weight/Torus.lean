@@ -436,7 +436,7 @@ morphism. -/
 theorem coe_weightTorusClosedSubgroup [Finite κ] (wt : Fin N → κ → ℤ)
     (hwt : Submodule.span ℤ (Set.range wt) = ⊤) :
     let _ := isClosedImmersion_weightTorus (R := R) wt hwt
-    (weightTorusClosedSubgroup (R := R) wt hwt).1 =
+    (weightTorusClosedSubgroup (R := R) wt hwt).val =
       Subobject.mk (weightTorus (R := R) wt) := by
   have _ := isClosedImmersion_weightTorus (R := R) wt hwt
   rw [weightTorusClosedSubgroup]

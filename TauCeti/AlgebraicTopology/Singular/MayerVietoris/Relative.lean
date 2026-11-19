@@ -286,7 +286,7 @@ lemma exists_iso_comp_smallSingularSubcomplexToUnion :
         (CategoryTheory.mono_iff_injective (f.app n)).1 inferInstance
       refine (isIso_iff_bijective _).2 ⟨fun x y hxy ↦ Subtype.ext ?_, fun y ↦ ?_⟩
       · exact hinj (congrArg Subtype.val hxy)
-      · exact (D.mem_range_fromPreimage_app_iff f y).2 (smallSubcomplex_le_range U V n y.2)
+      · exact (D.mem_range_fromPreimage_app_iff f y).2 (smallSubcomplex_le_range U V n y.property)
     exact NatIso.isIso_of_isIso_app _
   rw [← preimage_smallSingularSubcomplex]
   refine ⟨asIso (D.fromPreimage f), ?_⟩
@@ -361,7 +361,7 @@ lemma quasiIso_chainComplexMap_smallSingularSubcomplexToUnion
     (fun i ↦ by fin_cases i; exacts [hU, hV])
     (by
       rw [← Set.preimage_iUnion, Set.iUnion_vecCons_pair]
-      exact Set.eq_univ_of_forall fun x ↦ x.2)
+      exact Set.eq_univ_of_forall fun x ↦ x.property)
   have hcomp : SSet.chainComplexMap (e.hom ≫ smallSingularSubcomplexToUnion U V) R =
       SSet.chainComplexMap e.hom R ≫ SSet.chainComplexMap (smallSingularSubcomplexToUnion U V) R :=
     Functor.map_comp _ _ _

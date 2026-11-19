@@ -366,7 +366,7 @@ private theorem comp_restrictPreimagePairUnionIso_hom_comp_restrictPreimagePairM
       (inter_subset_left : π ⁻¹' U ∩ Z ⊆ π ⁻¹' U)
       (inter_subset_left : π ⁻¹' V ∩ Z ⊆ π ⁻¹' V)))
     (ψ : P ⟶ TopPair.ofInclusion (inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S))
-    (hφψ : ∀ x, (TopPair.Hom.fst φ x).1 = (TopPair.Hom.fst ψ x).1) :
+    (hφψ : ∀ x, (TopPair.Hom.fst φ x).val = (TopPair.Hom.fst ψ x).val) :
     φ ≫ (restrictPreimagePairUnionIso π Z U V).hom ≫ restrictPreimagePairMap π Z (U ∪ V) =
       ψ ≫ restrictPreimagePairMap π Z S :=
   TopPair.hom_ext_of_fst _ (TopCat.ext fun x ↦
@@ -506,7 +506,7 @@ theorem bijective_pullbackCupRestrict_union {U V : Set Y} (hU : IsOpen U) (hV : 
     (ofHom (π.hom.restrictPreimage (U ∪ V))) ((↑) ⁻¹' (π ⁻¹' (U ∪ V) ∩ Z)) M
     (U := ((↑) : ↥(U ∪ V) → Y) ⁻¹' U) (V := ((↑) : ↥(U ∪ V) → Y) ⁻¹' V)
     (hU.preimage continuous_subtype_val) (hV.preimage continuous_subtype_val)
-    (eq_univ_of_forall fun x ↦ x.2) (n := n) (p := p) (m := m)
+    (eq_univ_of_forall fun x ↦ x.property) (n := n) (p := p) (m := m)
   replace key := key (restrictClass π Z (U ∪ V) u)
     (fun q hq ↦ (bijective_pullbackCupRestrict_restrict_iff π Z M subset_union_left rfl u).2
       (hU' q hq))

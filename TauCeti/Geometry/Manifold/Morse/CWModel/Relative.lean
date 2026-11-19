@@ -134,7 +134,7 @@ theorem IsMorse.exists_relCWComplex_sum_range_monomial_sublevelPair_eq_add_mul (
   have hcell (i : ℕ) : Finite (cell (univ : Set W) i) := FiniteType.finite_cell i
   have hn' : IsEmpty (cell (univ : Set W) (n + 1)) :=
     (c (n + 1)).some.isEmpty_congr.2 ⟨fun x ↦ by
-      have := x.2.2 ▸ manifoldMorseIndex_le_finrank (I := I) (f := f) (x := x.1)
+      have := x.property.2 ▸ manifoldMorseIndex_le_finrank (I := I) (f := f) (x := x.val)
       lia⟩
   have h := sum_range_monomial_natCard_cell_mul_finrank_eq (univ : Set W) V (fun i _ ↦ hcell i) hn'
   simp only [Nat.card_congr (c _).some, Nat.card_coe_set_eq] at h

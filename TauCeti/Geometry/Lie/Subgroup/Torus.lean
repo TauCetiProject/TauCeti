@@ -283,7 +283,7 @@ theorem IsTorus.exists_closedZpowers_eq [IsTopologicalGroup G] {T : Subgroup G}
     intros
     obtain ⟨t, ht⟩ :=
       exists_closedZpowers_eq_top 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) (G := T)
-    refine ⟨t, t.2, ?_⟩
+    refine ⟨t, t.property, ?_⟩
     -- The closed cyclic subgroup of `t` in `T`, which is compact, pushes forward to the closed
     -- cyclic subgroup of `t` in `G`.
     rw [← T.coe_subtype, ← T.subtype.map_closedZpowers continuous_subtype_val
@@ -311,7 +311,7 @@ theorem IsMaximalTorus.lieSubalgebraOfSubgroup_centralizer {T : Subgroup G}
     intro t s
     obtain ⟨s, rfl⟩ := Multiplicative.ofAdd.surjective s
     rw [oneParameterSubgroup_apply]
-    exact Subgroup.mem_centralizer_iff.mp (hX s) t t.2
+    exact Subgroup.mem_centralizer_iff.mp (hX s) t t.property
   let φ : T × Multiplicative ℝ →* G :=
     T.subtype.noncommCoprod (oneParameterSubgroup (I := I) X).toMonoidHom hcomm
   have hφ : Continuous φ := by

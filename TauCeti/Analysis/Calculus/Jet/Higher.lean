@@ -85,7 +85,7 @@ variable {r m : ℕ}
 
 /-- The relation defining jets is equality of finite jets of the representatives. -/
 private theorem rel_iff {x : E} {s t : {s : E → F // ContDiffAt 𝕜 ∞ s x}} :
-    (SameJetAt.setoid 𝕜 F r x).comap Subtype.val s t ↔ SameJetAt 𝕜 r x s.1 t.1 := by
+    (SameJetAt.setoid 𝕜 F r x).comap Subtype.val s t ↔ SameJetAt 𝕜 r x s.val t.val := by
   rw [Setoid.comap_rel, SameJetAt.setoid_apply]
 
 /-- The jet of order `r` of a section smooth near `x`. -/
@@ -103,7 +103,7 @@ theorem mk_eq_mk_iff {x : E} {s t : E → F} (hs : ContDiffAt 𝕜 ∞ s x)
 @[elab_as_elim]
 theorem ind {x : E} {motive : JetAt 𝕜 F r x → Prop}
     (h : ∀ s (hs : ContDiffAt 𝕜 ∞ s x), motive (mk s hs)) (j : JetAt 𝕜 F r x) : motive j :=
-  Quotient.ind (fun s ↦ h s.1 s.2) j
+  Quotient.ind (fun s ↦ h s.val s.property) j
 
 /-- The quotient forgets how a local section is extended away from the point. -/
 theorem mk_eq_mk_of_eventuallyEq {x : E} {s t : E → F}
@@ -113,7 +113,7 @@ theorem mk_eq_mk_of_eventuallyEq {x : E} {s t : E → F}
 
 /-- The derivative tuple `(s x, Ds(x), …, Dʳs(x))` of a jet in the selected chart. -/
 def coordinates {x : E} : JetAt 𝕜 F r x → (i : Fin (r + 1)) → E [×i]→L[𝕜] F :=
-  Quotient.lift (fun s ↦ fun i : Fin (r + 1) ↦ iteratedFDeriv 𝕜 i s.1 x)
+  Quotient.lift (fun s ↦ fun i : Fin (r + 1) ↦ iteratedFDeriv 𝕜 i s.val x)
     fun _ _ h ↦ funext fun i ↦ (rel_iff.mp h).iteratedFDeriv_eq (Nat.lt_succ_iff.mp i.isLt)
 
 @[simp]
@@ -216,7 +216,7 @@ theorem zeroEquiv_symm_apply {x : E} (v : F) :
 /-- Jets of order one are the first jets of `TauCeti.FirstJetAt`, which have an explicit
 first-order transformation law. -/
 def firstJetAtEquiv (x : E) : JetAt 𝕜 F 1 x ≃ FirstJetAt 𝕜 F x where
-  toFun := Quotient.lift (fun s ↦ FirstJetAt.mk s.1 s.2) fun _ _ h ↦
+  toFun := Quotient.lift (fun s ↦ FirstJetAt.mk s.val s.property) fun _ _ h ↦
     (FirstJetAt.mk_eq_mk_iff _ _).2 (sameJetAt_one_iff.1 (rel_iff.1 h))
   invFun j := mk (FirstJetAt.exists_section j).choose
     (FirstJetAt.exists_section j).choose_spec.choose.contDiffAt
@@ -254,10 +254,10 @@ theorem coordinates_firstJetAtEquiv {x : E} (j : JetAt 𝕜 F 1 x) :
 
 /-- A chosen representative of a jet, used to transform jets. -/
 private def rep {x : E} (j : JetAt 𝕜 F r x) : E → F :=
-  (Quotient.out j).1
+  (Quotient.out j).val
 
 private theorem contDiffAt_rep {x : E} (j : JetAt 𝕜 F r x) : ContDiffAt 𝕜 ∞ (rep j) x :=
-  (Quotient.out j).2
+  (Quotient.out j).property
 
 private theorem mk_rep {x : E} (j : JetAt 𝕜 F r x) : mk (rep j) (contDiffAt_rep j) = j :=
   Quotient.out_eq j
@@ -402,17 +402,18 @@ def coordinatesEquiv [IsRCLikeNormedField 𝕜] (r : ℕ) (x : E) :
       ∀ (i : Fin (r + 1)) (v : Fin i → E) (σ : Equiv.Perm (Fin i)), A i (v ∘ σ) = A i v} :=
   letI : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
   { toFun j := ⟨coordinates j, coordinates_comp_perm j⟩
-    invFun A := mk (finiteJetPolynomial r A.1 x) (contDiff_finiteJetPolynomial r A.1 x).contDiffAt
+    invFun A := mk (finiteJetPolynomial r A.val x) (contDiff_finiteJetPolynomial r A.val
+        x).contDiffAt
     left_inv j := coordinates_injective
       (coordinates_mk_finiteJetPolynomial _ (coordinates_comp_perm j))
-    right_inv A := Subtype.ext (coordinates_mk_finiteJetPolynomial A.1 A.2) }
+    right_inv A := Subtype.ext (coordinates_mk_finiteJetPolynomial A.val A.property) }
 
 @[simp]
 theorem coordinatesEquiv_symm_apply [IsRCLikeNormedField 𝕜] {x : E}
     (A : {A : (i : Fin (r + 1)) → E [×i]→L[𝕜] F //
       ∀ (i : Fin (r + 1)) (v : Fin i → E) (σ : Equiv.Perm (Fin i)), A i (v ∘ σ) = A i v}) :
     (coordinatesEquiv r x).symm A =
-      mk (finiteJetPolynomial r A.1 x) (contDiff_finiteJetPolynomial r A.1 x).contDiffAt :=
+      mk (finiteJetPolynomial r A.val x) (contDiff_finiteJetPolynomial r A.val x).contDiffAt :=
   (rfl)
 
 @[simp]

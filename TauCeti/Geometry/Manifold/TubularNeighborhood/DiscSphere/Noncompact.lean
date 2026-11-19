@@ -174,7 +174,7 @@ theorem exists_isClosedEmbedding_normalDiscBundleOfRadius [FiniteDimensional ℝ
       frontier ((fun p : M × V => f p.1 + p.2) '' normalTubeOfRadius I f r) =
         (fun p : M × V => f p.1 + p.2) '' normalSphereBundleOfRadius I f r := by
   rcases isEmpty_or_nonempty M with hM | ⟨⟨x⟩⟩
-  · have (s : Set (M × V)) : IsEmpty s := ⟨fun p ↦ IsEmpty.false p.1.1⟩
+  · have (s : Set (M × V)) : IsEmpty s := ⟨fun p ↦ IsEmpty.false p.val.1⟩
     exact ⟨1, fun x ↦ (IsEmpty.false x).elim, .of_isEmpty _, .of_isEmpty _, .of_isEmpty _,
       by simp [Set.eq_empty_of_isEmpty]⟩
   have : FiniteDimensional ℝ E :=
@@ -214,7 +214,7 @@ theorem exists_isClosedEmbedding_normalDiscBundleOfRadius_const [FiniteDimension
       frontier ((fun p : M × V => f p.1 + p.2) '' normalTube I f ε) =
         (fun p : M × V => f p.1 + p.2) '' normalSphereBundleOfRadius I f (fun _ => ε) := by
   rcases isEmpty_or_nonempty M with hM | ⟨⟨x⟩⟩
-  · have (s : Set (M × V)) : IsEmpty s := ⟨fun p ↦ IsEmpty.false p.1.1⟩
+  · have (s : Set (M × V)) : IsEmpty s := ⟨fun p ↦ IsEmpty.false p.val.1⟩
     exact ⟨1, one_pos, .of_isEmpty _, .of_isEmpty _, .of_isEmpty _,
       by simp [Set.eq_empty_of_isEmpty]⟩
   have : FiniteDimensional ℝ E :=

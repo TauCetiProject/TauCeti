@@ -196,7 +196,7 @@ theorem Measure.ext_of_forall_lt_card_integral_pow_eq_of_support {𝕜 : Type*} 
     have hv := Matrix.eq_zero_of_forall_pow_sum_mul_pow_eq_zero (f := fun j => (e j : 𝕜))
       (v := fun j => (μ.real {(e j : 𝕜)} : 𝕜) - ν.real {(e j : 𝕜)})
       (fun a b hab => e.injective (Subtype.ext hab)) fun i => by
-        have hi := h i i.2
+        have hi := h i i.isLt
         rw [hsum μ hμ, hsum ν hν, ← sub_eq_zero, ← Finset.sum_sub_distrib,
           ← Finset.sum_coe_sort Z, ← e.sum_comp] at hi
         simpa [sub_mul] using hi

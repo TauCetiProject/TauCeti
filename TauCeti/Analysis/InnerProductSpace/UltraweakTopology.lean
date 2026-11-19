@@ -408,7 +408,7 @@ theorem isInducing_restrict_toWOT {s : Set (ContinuousLinearMapUltraweak 𝕜 E 
     ((continuous_toWOT.comp continuous_subtype_val).tendsto A).le_comap ?_
   rw [nhds_subtype, ← tendsto_iff_comap]
   exact (tendsto_iff_tendsto_toWOT_of_eventually_norm_le
-    (Eventually.of_forall fun B : s ↦ hs B B.2)).2 tendsto_comap
+    (Eventually.of_forall fun B : s ↦ hs B B.property)).2 tendsto_comap
 
 end Comparison
 

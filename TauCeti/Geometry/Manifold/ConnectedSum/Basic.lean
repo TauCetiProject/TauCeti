@@ -597,7 +597,7 @@ private theorem inl_mem_range_inr_of_mem_range (h₁ : IsOpenEmbedding e₁)
     (h₂ : IsOpenEmbedding e₂) {x : puncture e₁} (hx : (x : M) ∈ range e₁) :
     inl e₁ e₂ x ∈ range (inr e₁ e₂) := by
   obtain ⟨v, hv⟩ := hx
-  have hv0 : v ≠ 0 := by rintro rfl; exact x.2 hv.symm
+  have hv0 : v ≠ 0 := by rintro rfl; exact x.property hv.symm
   have hy : e₂ (inversion 0 1 v) ∈ puncture e₂ := by
     simpa [h₂.injective.eq_iff, inversion_eq_center one_ne_zero] using hv0
   refine ⟨⟨_, hy⟩, ?_⟩
@@ -610,7 +610,7 @@ private theorem inr_mem_range_inl_of_mem_range (h₁ : IsOpenEmbedding e₁)
     (h₂ : IsOpenEmbedding e₂) {y : puncture e₂} (hy : (y : N) ∈ range e₂) :
     inr e₁ e₂ y ∈ range (inl e₁ e₂) := by
   obtain ⟨w, hw⟩ := hy
-  have hw0 : w ≠ 0 := by rintro rfl; exact y.2 hw.symm
+  have hw0 : w ≠ 0 := by rintro rfl; exact y.property hw.symm
   have hx : e₁ (inversion 0 1 w) ∈ puncture e₁ := by
     simpa [h₁.injective.eq_iff, inversion_eq_center one_ne_zero] using hw0
   refine ⟨⟨_, hx⟩, ?_⟩

@@ -118,12 +118,12 @@ theorem pointConfigurations_map_equiv (e : P ≃ Q) :
 /-- The components of a point configuration are candidates. -/
 private theorem mem_of_mem_pointConfigurations (hl : l ∈ pointConfigurations r cls pts s A)
     (c : l.support) : (c : ι) ∈ s :=
-  (mem_compatibleConfigurations.1 hl.1).1 c.2
+  (mem_compatibleConfigurations.1 hl.1).1 c.property
 
 /-- Distinct components of a point configuration are compatible. -/
 private theorem rel_of_mem_pointConfigurations (hl : l ∈ pointConfigurations r cls pts s A)
     {c d : l.support} (hcd : c ≠ d) : r c d :=
-  (mem_compatibleConfigurations.1 hl.1).2.1 c.2 d.2 (Subtype.coe_ne_coe.2 hcd)
+  (mem_compatibleConfigurations.1 hl.1).2.1 c.property d.property (Subtype.coe_ne_coe.2 hcd)
 
 /-- Restricting the candidates to a subset `t` of `s` does not change the point configurations
 in class `A` if every point configuration in class `A` from `s` is supported in `t`. -/
@@ -325,7 +325,7 @@ Its structure theorem then gives the assignment of the points to the components:
 theorem isGoodCycle_of_mem_pointConfigurations (hl : l ∈ pointConfigurations r cls pts s A)
     (hA : B A A - B κ A = 2 * Fintype.card P) :
     IsGoodCycle B κ A (fun c : l.support ↦ cls c) (fun c ↦ l c) 0 (fun c ↦ pts c) where
-  mult_pos c := Nat.pos_of_ne_zero (Finsupp.mem_support_iff.1 c.2)
+  mult_pos c := Nat.pos_of_ne_zero (Finsupp.mem_support_iff.1 c.property)
   apply_nonneg {c d} hcd :=
     hint c (mem_of_mem_pointConfigurations hl c) d (mem_of_mem_pointConfigurations hl d)
       (rel_of_mem_pointConfigurations hl hcd)

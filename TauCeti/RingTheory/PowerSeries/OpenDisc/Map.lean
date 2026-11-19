@@ -70,7 +70,7 @@ variable {R S : Type*} [NormedRing R] [NormedRing S] {R₀ : ℝ}
 radius `R₀`. -/
 noncomputable def mapHom : OnOpenDisc.subring R R₀ →+* OnOpenDisc.subring S R₀ :=
   ((PowerSeries.map φ).comp (OnOpenDisc.subring R R₀).subtype).codRestrict _ fun f ↦
-    OnOpenDisc.mem_subring.mpr ((OnOpenDisc.mem_subring.mp f.2).map φ hφ)
+    OnOpenDisc.mem_subring.mpr ((OnOpenDisc.mem_subring.mp f.property).map φ hφ)
 
 /-- `mapHom` acts by `PowerSeries.map` on the underlying formal power series. -/
 @[simp]
@@ -153,7 +153,7 @@ theorem exists_mapHom_eq_and_norm_coeff_le {C' : ℝ}
   have hcoeff (n : ℕ) : coeff n f = lift (coeff n (g : S⟦X⟧)) := (rfl)
   have hf : f.OnOpenDisc R₀ := onOpenDisc_iff.mpr fun r hr hrR ↦
     MvPowerSeries.isRestricted_map _ lift hnorm_lift
-      (onOpenDisc_iff.mp (OnOpenDisc.mem_subring.mp g.2) r hr hrR)
+      (onOpenDisc_iff.mp (OnOpenDisc.mem_subring.mp g.property) r hr hrR)
   refine ⟨⟨f, OnOpenDisc.mem_subring.mpr hf⟩, Subtype.ext (PowerSeries.ext fun n ↦ ?_),
     fun n ↦ by simpa only [hcoeff] using hnorm_lift _⟩
   rw [coeff_mapHom, hcoeff, hφ_lift]
@@ -270,7 +270,7 @@ omit [IsUltrametricDist R] [IsUltrametricDist S] [CompleteSpace S] in
 theorem evalAt_mapHom {a : R} (ha : ‖a‖ < R₀) (f : OnOpenDisc.subring R R₀) :
     (mapHom φ hφ f : S⟦X⟧).evalAt (φ a) = φ ((f : R⟦X⟧).evalAt a) := by
   rw [coe_mapHom]
-  exact (OnOpenDisc.mem_subring.mp f.2).evalAt_map φ
+  exact (OnOpenDisc.mem_subring.mp f.property).evalAt_map φ
     (AddMonoidHomClass.continuous_of_bound φ C hφ) ha
 
 /-- **Bounded coefficient maps commute with Taylor translation** on an open disc whenever the
@@ -279,7 +279,7 @@ theorem mapHom_taylorHom {a : R} (ha : ‖a‖ < R₀) (hφa : ‖φ a‖ < R₀
     (f : OnOpenDisc.subring R R₀) :
     mapHom φ hφ (taylorHom ha f) = taylorHom hφa (mapHom φ hφ f) := by
   refine Subtype.ext <| PowerSeries.ext fun n ↦ ?_
-  simpa using (((OnOpenDisc.mem_subring.mp f.2).hasseDeriv n).evalAt_map φ
+  simpa using (((OnOpenDisc.mem_subring.mp f.property).hasseDeriv n).evalAt_map φ
     (AddMonoidHomClass.continuous_of_bound φ C hφ) ha).symm
 
 /-- **Bounded coefficient maps commute with analytic substitution** on open discs whenever the

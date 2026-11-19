@@ -102,7 +102,7 @@ theorem sum_ramificationIdx_mul_relativeDegree_eq_finrank_of_isSeparable [Algebr
   -- valuation ring, hence Dedekind, and `F` is its fraction field.
   have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ by
     rw [ValuationSubring.algebraMap_apply]
-    exact r.2
+    exact r.property
   have : IsScalarTower k P.integers F' := .of_algebraMap_eq fun c ↦ by
     rw [IsScalarTower.algebraMap_apply P.integers F F',
       ← IsScalarTower.algebraMap_apply k P.integers F, ← IsScalarTower.algebraMap_apply k F F']
@@ -155,7 +155,7 @@ theorem sum_ramificationIdx_mul_relativeDegree_eq_finrank_of_isFunctionField
   -- `P` is finite on `R`, since `t` has no pole at `P`.
   have hR : ∀ r : R, algebraMap R F r ∈ P.integers := fun r ↦
     P.mem_integers_iff.mpr
-      (P.forall_algebraMap_mem_integers_integralClosure_adjoin_iff.mpr hti r r.2)
+      (P.forall_algebraMap_mem_integers_integralClosure_adjoin_iff.mpr hti r r.property)
   -- `S` contains the constants `k'`, because they are integral over `k ⊆ R`.
   have hk' : ∀ c : k', algebraMap k' F' c ∈ S := fun c ↦
     (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top

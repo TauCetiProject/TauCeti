@@ -399,7 +399,7 @@ theorem restrictToConvex_lt_coe_iff (v : Valuation R Γ₀) (H : ConvexSubgroup 
       have hlt1 : v r < 1 := lt_one_of_unit_notMem hr (fun h => hH r hr h) hmem
       have hu1 : Units.mk0 (v r) hr ≤ 1 := by simpa [← Units.val_le_val] using hlt1.le
       have hlt : Units.mk0 (v r) hr < (u : Γ₀ˣ) :=
-        not_le.mp fun h => hmem (ConvexSubgroup.mem_of_le_le_one u.2 h hu1)
+        not_le.mp fun h => hmem (ConvexSubgroup.mem_of_le_le_one u.property h hu1)
       simp only [pos_iff_ne_zero, ne_eq, WithZero.coe_ne_zero, not_false_eq_true, true_iff]
       simpa [← Units.val_lt_val] using hlt
 

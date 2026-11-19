@@ -95,7 +95,7 @@ variable (sq : CommSq f p p' g) {b : B} (e : p.fiber b) {N : Type*} {x' : E'}
 
 /-- On homotopy groups, the fibre inclusion of `p` followed by `f` is the fibre map followed by
 the fibre inclusion of `p'`. -/
-private theorem map_map_fiberι (hx : f e.1 = x') (w : HomotopyGroup N (p.fiber b) e) :
+private theorem map_map_fiberι (hx : f e.val = x') (w : HomotopyGroup N (p.fiber b) e) :
     HomotopyGroup.map f.hom hx
         (HomotopyGroup.map (p.fiberι b).hom (TopCat.Hom.fiberι_apply p b e) w) =
       HomotopyGroup.map (p'.fiberι (g b)).hom
@@ -106,9 +106,10 @@ private theorem map_map_fiberι (hx : f e.1 = x') (w : HomotopyGroup N (p.fiber 
 
 include sq in
 /-- On homotopy groups, `p' ∘ f = g ∘ p`. -/
-private theorem map_proj_map (hx : f e.1 = x') (hx' : p' x' = g b) (x : HomotopyGroup N E e.1) :
+private theorem map_proj_map (hx : f e.val = x') (hx' : p' x' = g b) (x : HomotopyGroup N E e.val) :
     HomotopyGroup.map p'.hom hx' (HomotopyGroup.map f.hom hx x) =
-      HomotopyGroup.map g.hom rfl (HomotopyGroup.map p.hom (Set.mem_singleton_iff.1 e.2) x) := by
+      HomotopyGroup.map g.hom rfl (HomotopyGroup.map p.hom (Set.mem_singleton_iff.1 e.property) x)
+          := by
   rw [HomotopyGroup.map_comp_apply, HomotopyGroup.map_comp_apply]
   exact HomotopyGroup.map_congr (congrArg TopCat.Hom.hom sq.w) _ _ x
 
@@ -118,12 +119,12 @@ variable {sq}
 `π_{n+1}`, at a point of the fibre over `b`. -/
 private theorem surjective_map_option (hp : serreFibrations p) (hp' : serreFibrations p')
     [Finite N] (hg : g.hom.IsWeakHomotopyEquivalence)
-    (hfib : (sq.fiberMap b).hom.IsWeakHomotopyEquivalence) (hx : f e.1 = x') :
+    (hfib : (sq.fiberMap b).hom.IsWeakHomotopyEquivalence) (hx : f e.val = x') :
     Surjective (HomotopyGroup.map (N := Option N) f.hom hx) := by
   classical
   -- Work at the base point `(sq.fiberMap b e).1 = f e.1` of the exact sequence of `p'`.
-  obtain rfl : (sq.fiberMap b e).1 = x' := (sq.fiberMap_apply_coe b e).trans hx
-  have hx' := Set.mem_singleton_iff.1 (sq.fiberMap b e).2
+  obtain rfl : (sq.fiberMap b e).val = x' := (sq.fiberMap_apply_coe b e).trans hx
+  have hx' := Set.mem_singleton_iff.1 (sq.fiberMap b e).property
   intro x
   -- The projection of `x` to `B'` comes from `B`, by an element `y` whose boundary vanishes,
   -- since it vanishes after applying the fibre map.
@@ -148,19 +149,19 @@ private theorem surjective_map_option (hp : serreFibrations p) (hp' : serreFibra
 `π_{n+1}`, at a point of the fibre over `b`. -/
 private theorem injective_map_option (hp : serreFibrations p) (hp' : serreFibrations p')
     [Finite N] (hg : g.hom.IsWeakHomotopyEquivalence)
-    (hfib : (sq.fiberMap b).hom.IsWeakHomotopyEquivalence) (hx : f e.1 = x') :
+    (hfib : (sq.fiberMap b).hom.IsWeakHomotopyEquivalence) (hx : f e.val = x') :
     Injective (HomotopyGroup.map (N := Option N) f.hom hx) := by
   classical
   -- Work at the base point `(sq.fiberMap b e).1 = f e.1` of the exact sequence of `p'`.
-  obtain rfl : (sq.fiberMap b e).1 = x' := (sq.fiberMap_apply_coe b e).trans hx
+  obtain rfl : (sq.fiberMap b e).val = x' := (sq.fiberMap_apply_coe b e).trans hx
   refine (injective_iff_map_eq_one (HomotopyGroup.mapHom (N := Option N) f.hom hx)).2
     fun x hx1 ↦ ?_
   rw [HomotopyGroup.mapHom_apply] at hx1
   -- The projection of `x` to `B` is trivial, because `g` is injective, so `x` comes from the
   -- fibre of `p`.
-  have hpx : HomotopyGroup.map p.hom (Set.mem_singleton_iff.1 e.2) x = 1 := by
+  have hpx : HomotopyGroup.map p.hom (Set.mem_singleton_iff.1 e.property) x = 1 := by
     apply (hg.map_bijective (Option N) b).1
-    rw [← map_proj_map sq e hx (Set.mem_singleton_iff.1 (sq.fiberMap b e).2), hx1,
+    rw [← map_proj_map sq e hx (Set.mem_singleton_iff.1 (sq.fiberMap b e).property), hx1,
       HomotopyGroup.map_one, HomotopyGroup.map_one]
   obtain ⟨w, rfl⟩ := (mem_range_homotopyGroupMap_fiberι_iff hp).2
     (hpx.trans HomotopyGroup.mk_const_eq_one.symm)
@@ -181,7 +182,7 @@ whose images are joined in `E'` are joined in `E`. -/
 private theorem joined_of_joined_map_of_fiber (hp : serreFibrations p)
     (hp' : serreFibrations p') (hg : g.hom.IsWeakHomotopyEquivalence)
     (hfib : (sq.fiberMap b).hom.IsWeakHomotopyEquivalence) (y : p.fiber b)
-    (h : Joined (f e.1) (f y.1)) : Joined e.1 y.1 := by
+    (h : Joined (f e.val) (f y.val)) : Joined e.val y.val := by
   -- The image of `y` in the fibre of `p'` is joined to the base point in `E'`, so its class is a
   -- boundary, of an element which comes from `B` since `g` is surjective on `π_1`.
   obtain ⟨y', hy'⟩ := (joined_iff_mem_range_fibrationBoundary hp' (e := sq.fiberMap b e)
@@ -216,9 +217,9 @@ private theorem exists_joined_of_commSq (hp' : serreFibrations p')
   obtain ⟨Γ, hΓ0, hΓ⟩ := exists_path_lift_of_mem_serreFibrations hp' hb.somePath.symm
   have hΓ1 : p' (Γ 1) = g b := (congrFun hΓ 1).trans hb.somePath.symm.target
   obtain ⟨y, hy⟩ := (hfib b).exists_joined ⟨Γ 1, hΓ1⟩
-  have hyE : Joined (f y.1) (Γ 1) := by
+  have hyE : Joined (f y.val) (Γ 1) := by
     simpa only [sq.fiberMap_apply_coe] using hy.map continuous_subtype_val
-  exact ⟨y.1, hyE.trans (Joined.symm ⟨⟨Γ, hΓ0, rfl⟩⟩)⟩
+  exact ⟨y.val, hyE.trans (Joined.symm ⟨⟨Γ, hΓ0, rfl⟩⟩)⟩
 
 /-- **Injectivity on path components.** Two points of `E` whose images are joined in `E'` are
 joined in `E`. -/
@@ -274,7 +275,7 @@ theorem isWeakHomotopyEquivalence_pullbackSnd (hp : serreFibrations p) {B' : Top
   have h₁ : sq.fiberMap b' = (p.fiberPullbackFstIso g b').hom := by
     ext x
     exact (sq.fiberMap_apply_coe b' x).trans
-      ((TopCat.pullbackSnd_apply g p x.1).trans (p.fiberPullbackFstIso_hom_apply_coe g b' x).symm)
+      ((TopCat.pullbackSnd_apply g p x.val).trans (p.fiberPullbackFstIso_hom_apply_coe g b' x).symm)
   rw [h₁]
   exact (mem_weakEquivalences_iff _).1 (weakEquivalences.of_isIso _)
 
@@ -292,10 +293,10 @@ theorem isWeakHomotopyEquivalence_inclusion_preimage (hp : serreFibrations p) {S
     (mem_serreFibrations_restrictPreimage hp T) sq h fun b ↦ ?_
   -- Both fibres over `b` consist of the points of `E` over `b`, so the fibre map is invertible.
   have hy (y : (TopCat.ofHom (p.hom.restrictPreimage T)).fiber (ContinuousMap.inclusion hST b)) :
-      p y.1.1 = b.1 :=
-    congrArg Subtype.val (mem_singleton_iff.1 y.2)
+      p y.val.val = b.val :=
+    congrArg Subtype.val (mem_singleton_iff.1 y.property)
   have : IsIso (sq.fiberMap b) :=
-    ⟨TopCat.ofHom ⟨fun y ↦ ⟨⟨y.1.1, by simp [hy y]⟩, Subtype.ext (hy y)⟩,
+    ⟨TopCat.ofHom ⟨fun y ↦ ⟨⟨y.val.val, by simp [hy y]⟩, Subtype.ext (hy y)⟩,
       by fun_prop⟩,
       by ext x; simpa using congrArg Subtype.val (sq.fiberMap_apply_coe b x),
       by ext x; simpa using congrArg Subtype.val (sq.fiberMap_apply_coe b _)⟩

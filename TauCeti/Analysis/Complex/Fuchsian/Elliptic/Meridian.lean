@@ -157,9 +157,9 @@ theorem eq_ellipticMeridianLift_of_pow_eq (n : ℤ) {τ : ℍ}
   let L (t : unitInterval) : {w : ℂ // w ≠ 0} :=
     ⟨discCoordinate z (ellipticMeridianLift Γ z n τ t), hlift0 t⟩
   have he : (fun w : {w : ℂ // w ≠ 0} ↦
-      (⟨w ^ Nat.card (stabilizer Γ z), pow_ne_zero _ w.2⟩ : {w : ℂ // w ≠ 0})) ∘ F =
+      (⟨w ^ Nat.card (stabilizer Γ z), pow_ne_zero _ w.property⟩ : {w : ℂ // w ≠ 0})) ∘ F =
       (fun w : {w : ℂ // w ≠ 0} ↦
-        (⟨w ^ Nat.card (stabilizer Γ z), pow_ne_zero _ w.2⟩ : {w : ℂ // w ≠ 0})) ∘ L := by
+        (⟨w ^ Nat.card (stabilizer Γ z), pow_ne_zero _ w.property⟩ : {w : ℂ // w ≠ 0})) ∘ L := by
     funext t
     apply Subtype.ext
     exact (hq t).trans (ellipticMeridian_apply Γ z n τ t)

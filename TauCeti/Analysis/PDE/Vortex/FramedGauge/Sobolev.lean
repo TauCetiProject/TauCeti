@@ -405,12 +405,13 @@ field by the charge-one transformation `(a, α) ↦ (a - u⁻¹ du, u α)`. The 
 `C¹`. -/
 instance {k : ℕ} [Fact (1 < k)] {hs : 1 < (k : ℝ) + 1} {f : ContDiffBump (0 : ℝ)} {m : ℕ} :
     MulAction (sobolevGaugeGroup hs) (framedFieldSpace f m k) where
-  smul u x := ⟨gaugeTransform u x, gaugeTransform_mem_framedFieldSpace Fact.out u.2 x.2⟩
+  smul u x := ⟨gaugeTransform u x, gaugeTransform_mem_framedFieldSpace Fact.out u.property
+      x.property⟩
   one_smul x := Subtype.ext (gaugeTransform_one x)
   mul_smul u v x := by
     have h2 : 2 < (k : ℝ) + 1 := by linarith [(by exact_mod_cast Fact.out : (1 : ℝ) < k)]
-    exact Subtype.ext (gaugeTransform_mul (differentiable_of_mem_sobolevGaugeGroup h2 u.2)
-      (differentiable_of_mem_sobolevGaugeGroup h2 v.2) x)
+    exact Subtype.ext (gaugeTransform_mul (differentiable_of_mem_sobolevGaugeGroup h2 u.property)
+      (differentiable_of_mem_sobolevGaugeGroup h2 v.property) x)
 
 /-- The bundled action of `G_(k+1)` on `A_m^k` is the charge-one coordinate transformation. -/
 @[simp]
@@ -425,9 +426,9 @@ instance {k : ℕ} [Fact (1 < k)] {hs : 1 < (k : ℝ) + 1} {f : ContDiffBump (0 
     IsCancelSMul (sobolevGaugeGroup hs) (framedFieldSpace f m k) := by
   have h2 : 2 < (k : ℝ) + 1 := by linarith [(by exact_mod_cast Fact.out : (1 : ℝ) < k)]
   refine isCancelSMul_iff_eq_one_of_smul_eq.mpr fun u x hux ↦ Subtype.ext ?_
-  exact eq_one_of_gaugeTransform_eq_self (x := x.1)
-    (differentiable_of_mem_sobolevGaugeGroup h2 u.2)
-    (tendsto_cocompact_of_mem_sobolevGaugeGroup u.2)
+  exact eq_one_of_gaugeTransform_eq_self (x := x.val)
+    (differentiable_of_mem_sobolevGaugeGroup h2 u.property)
+    (tendsto_cocompact_of_mem_sobolevGaugeGroup u.property)
     (by simpa only [coe_sobolevGaugeGroup_smul] using congrArg Subtype.val hux)
 
 end TauCeti.Vortex

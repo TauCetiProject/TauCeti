@@ -154,7 +154,7 @@ noncomputable def realifyUnitaryHomeomorph
     (hG : G ⊓ unitarySubgroup (GL (n ⊕ n) ℝ) = (unitarySubgroup (GL n ℂ)).map (realify n ℂ)) :
     unitaryGroup n ℂ ≃ₜ {u : unitaryGroup (n ⊕ n) ℝ // Unitary.toUnits u ∈ G} :=
   have hmem (U : unitaryGroup n ℂ) : (U : Matrix n n ℂ).realify ∈ unitaryGroup (n ⊕ n) ℝ :=
-    realify_mem_orthogonalGroup_iff.2 U.2
+    realify_mem_orthogonalGroup_iff.2 U.property
   have hG' (U : unitaryGroup n ℂ) : Unitary.toUnits ⟨_, hmem U⟩ ∈ G := by
     have hU : realify n ℂ (Unitary.toUnits U) ∈ G ⊓ unitarySubgroup (GL (n ⊕ n) ℝ) :=
       hG ▸ Subgroup.mem_map_of_mem _ (by simp [mem_unitarySubgroup_iff, Units.unitary_eq])
@@ -169,7 +169,7 @@ noncomputable def realifyUnitaryHomeomorph
         ((u : unitaryGroup (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) h
     have hu : Unitary.toUnits (u : unitaryGroup (n ⊕ n) ℝ) ∈
         G ⊓ unitarySubgroup (GL (n ⊕ n) ℝ) :=
-      Subgroup.mem_inf.2 ⟨u.2, by simp [mem_unitarySubgroup_iff, Units.unitary_eq]⟩
+      Subgroup.mem_inf.2 ⟨u.property, by simp [mem_unitarySubgroup_iff, Units.unitary_eq]⟩
     rw [hG] at hu
     obtain ⟨A, hA, hAu⟩ := hu
     refine ⟨⟨A, by simpa [mem_unitarySubgroup_iff, Units.unitary_eq] using hA⟩, ?_⟩

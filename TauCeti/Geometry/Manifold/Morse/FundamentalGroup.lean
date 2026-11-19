@@ -98,9 +98,9 @@ theorem IsMorse.subsingleton_fundamentalGroup_sublevel_of_subsingleton (hf : IsM
       hf.exists_relCWComplex_sublevel_deformation hδ hcompact
     refine ⟨ε, hε, hεδ, fun hs y ↦ ?_⟩
     have : IsEmpty (RelCWComplex.cell C 1) := (hcells 1).some.isEmpty_congr.2
-      ⟨fun q ↦ hd q.1 ⟨q.1.2.1, by
-        have : f q.1 = f p := q.1.2.2
-        constructor <;> linarith⟩ q.2⟩
+      ⟨fun q ↦ hd q.val ⟨q.val.property.1, by
+        have : f q.val = f p := q.val.property.2
+        constructor <;> linarith⟩ q.property⟩
     have hCsub := subsingleton_fundamentalGroup_of_isEmpty_cell_one this hs
     -- The complex is a strong deformation retract of the upper sublevel.
     let e := ContinuousMap.HomotopyEquiv.ofRetraction hC r hr G.toHomotopy
@@ -121,7 +121,7 @@ theorem IsMorse.subsingleton_fundamentalGroup_sublevel_of_manifoldMorseIndex_ne_
   refine hf.subsingleton_fundamentalGroup_sublevel_of_subsingleton hab
     (hcompact.of_isClosed_subset (isClosed_Icc.preimage hfc) fun y hy ↦ hy.2)
     (isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨p, _, hp⟩ ↦ (ha p).ne' hp) hb
-    (fun p hp ↦ hd p hp.1 hp.2.2) (fun y ↦ ((ha y).not_ge y.2).elim) x
+    (fun p hp ↦ hd p hp.1 hp.2.2) (fun y ↦ ((ha y).not_ge y.property).elim) x
 
 /-- **A proper Morse function without critical points of index one leaves no loops.** Let `f` be a
 proper Morse function, bounded below, with no critical point of Morse index one. Then every loop

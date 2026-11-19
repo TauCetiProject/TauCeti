@@ -221,8 +221,8 @@ private theorem norm_weightedCoeff_le {t₀ t₁ : ℝ} {K L : ℝ≥0}
       ‖euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ‖ ≤ weightedCoeffBound ι K L := by
   simp only [weightedCoeffBound, NNReal.coe_mul, NNReal.coe_add, NNReal.coe_one, NNReal.coe_pow,
     NNReal.coe_natCast, NNReal.coe_ofNat]
-  have hK : (0 : ℝ) ≤ K := K.2
-  have hL : (0 : ℝ) ≤ L := L.2
+  have hK : (0 : ℝ) ≤ K := K.property
+  have hL : (0 : ℝ) ≤ L := L.property
   have hn : (0 : ℝ) ≤ Fintype.card ι := Nat.cast_nonneg _
   have hb (i : ι) : ‖euclideanWeightedFirstOrderCoeff a b dℓ i‖ ≤
       K + Fintype.card ι * (2 * K * L) := by
@@ -357,13 +357,13 @@ theorem exists_norm_euclideanInitialDataCLE_weighted_symm_sub_le (hα₀ : 0 < �
   obtain ⟨hak₁, hb, hc⟩ := norm_weightedCoeff_le hak hbk hck hdℓ hd2ℓ
   obtain ⟨hak₁', hb', hc'⟩ := norm_weightedCoeff_le hak' hbk' hck' hdℓ hd2ℓ
   obtain ⟨hbw, hcw⟩ := norm_weightedCoeff_sub_le (a := a) (a' := a') (b := b) (b' := b') (c := c)
-    (c' := c') L.2 hdℓ hd2ℓ
+    (c' := c') L.property hdℓ hd2ℓ
   refine (hest T hT hTT₀ a a' _ _ _ _ ha ha' hak₁ hb hc hak₁' hb' hc').trans ?_
   set A := ∑ i, ∑ j, ‖a i j - a' i j‖
   set B := ∑ i, ‖b i - b' i‖
   have hA : 0 ≤ A := Finset.sum_nonneg fun i _ ↦ Finset.sum_nonneg fun j _ ↦ norm_nonneg _
   have hB : 0 ≤ B := Finset.sum_nonneg fun i _ ↦ norm_nonneg _
-  have hL : (0 : ℝ) ≤ L := L.2
+  have hL : (0 : ℝ) ≤ L := L.property
   have hc0 : 0 ≤ ‖c - c'‖ := norm_nonneg _
   have h : A + (B + 2 * L * A) + (‖c - c'‖ + (L + L * L) * A + L * B) ≤
       (1 + 3 * L + L * L) * (A + B + ‖c - c'‖) := by

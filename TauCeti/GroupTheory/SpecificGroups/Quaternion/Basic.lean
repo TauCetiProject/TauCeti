@@ -155,7 +155,7 @@ theorem conjNormal_eq_inv_of_notMem_quaternionRotations {s : QuaternionGroup n}
     MulAut.conjNormal s x = x⁻¹ :=
   Subtype.ext (by
     rw [MulAut.conjNormal_apply]
-    simpa using conj_eq_inv_of_notMem_quaternionRotations hs x.2)
+    simpa using conj_eq_inv_of_notMem_quaternionRotations hs x.property)
 
 /-- The rotation index of a quaternion-group element: the index `i` of `a i`, and the junk value
 `0` on `xa i`. The interface is `TauCeti.quaternionRotationsMulEquiv`, which reads the index off
@@ -183,9 +183,9 @@ def quaternionRotationsMulEquiv (n : ℕ) :
     quaternionRotations n ≃* Multiplicative (ZMod (2 * n)) where
   toFun x := Multiplicative.ofAdd (quaternionRotationIndex (x : QuaternionGroup n))
   invFun i := ⟨QuaternionGroup.a (Multiplicative.toAdd i), a_mem_quaternionRotations _⟩
-  left_inv x := Subtype.ext (a_quaternionRotationIndex x.2)
+  left_inv x := Subtype.ext (a_quaternionRotationIndex x.property)
   right_inv _ := rfl
-  map_mul' x y := congrArg Multiplicative.ofAdd (quaternionRotationIndex_mul x.2 y.2)
+  map_mul' x y := congrArg Multiplicative.ofAdd (quaternionRotationIndex_mul x.property y.property)
 
 @[simp]
 theorem quaternionRotationsMulEquiv_a (i : ZMod (2 * n)) :

@@ -150,7 +150,7 @@ theorem continuous_collaredSmoothTransitionLineMap :
 /-- The straight-line homotopy from the identity to the collared smooth transition, as a map of the
 unit interval at each time `c ∈ [0, 1]`. -/
 def collaredSmoothTransitionLineMapUnit (c s : unitInterval) : unitInterval :=
-  ⟨collaredSmoothTransitionLineMap c s, collaredSmoothTransitionLineMap_mem c.2 s.2⟩
+  ⟨collaredSmoothTransitionLineMap c s, collaredSmoothTransitionLineMap_mem c.property s.property⟩
 
 /-- The straight-line homotopy of the unit interval is the straight-line homotopy. -/
 @[simp]

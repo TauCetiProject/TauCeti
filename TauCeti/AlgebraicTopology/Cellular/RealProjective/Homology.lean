@@ -252,8 +252,8 @@ theorem isZero_singularHomology_of_even (h2 : IsRightRegular (2 : R)) (hk : Even
   rcases le_or_gt k N with hkN | hkN
   · have : Subsingleton (LinearMap.ker (LinearMap.toSpanSingleton R R 2)) :=
       ⟨fun a b ↦ Subtype.ext <| by
-        have ha := a.2
-        have hb := b.2
+        have ha := a.property
+        have hb := b.property
         simp only [LinearMap.mem_ker, LinearMap.toSpanSingleton_apply, smul_eq_mul] at ha hb
         exact h2 (ha.trans hb.symm)⟩
     exact ModuleCat.isZero_iff_subsingleton.2

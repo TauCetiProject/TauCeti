@@ -305,7 +305,7 @@ variable {ι : Type*}
 face barycentre. -/
 theorem stellarSubdivisionLinearMap_single_eq_faceBarycenter (K : AbstractSimplicialComplex ι)
     (τ : Face K) (v : ι) :
-    Finset.stellarSubdivisionLinearMap τ.1 v (Finsupp.single v 1) = faceBarycenter K τ := by
+    Finset.stellarSubdivisionLinearMap τ.val v (Finsupp.single v 1) = faceBarycenter K τ := by
   classical
   ext i
   simp [Finset.sum_apply', Finsupp.single_apply]

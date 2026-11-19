@@ -34,7 +34,7 @@ def timeSliceHomeomorph (hc : Continuous c) (hshift : ∀ t x, c (φ t x) = t + 
     X ≃ₜ ℝ × {x : X | c x = 0} := by
   let forward (x : X) : ℝ × {x : X | c x = 0} :=
     (c x, ⟨φ (-c x) x, by simp only [mem_ofPred_eq, hshift, neg_add_cancel]⟩)
-  let backward (tx : ℝ × {x : X | c x = 0}) : X := φ tx.1 tx.2.1
+  let backward (tx : ℝ × {x : X | c x = 0}) : X := φ tx.1 tx.2.val
   refine
     { toFun := forward
       invFun := backward
@@ -59,7 +59,7 @@ theorem timeSliceHomeomorph_snd_coe (x : X) :
 
 @[simp]
 theorem timeSliceHomeomorph_symm_apply (tx : ℝ × {x : X | c x = 0}) :
-    (φ.timeSliceHomeomorph c hc hshift).symm tx = φ tx.1 tx.2.1 := (rfl)
+    (φ.timeSliceHomeomorph c hc hshift).symm tx = φ tx.1 tx.2.val := (rfl)
 
 /-- In time-slice coordinates the flow translates only the real coordinate. -/
 @[simp]

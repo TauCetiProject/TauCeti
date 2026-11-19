@@ -62,7 +62,7 @@ of that dart. -/
       (Additive.ofMul (Group.Abelianization.of (T.loop v e.1))) = FreeAbelianGroup.of e := by
   -- `FreeAbelianGroup.of e` is by definition the additive class of `FreeGroup.of e`.
   change Additive.ofMul ((T.pathGroupEquivFreeGroup v hO).abelianizationCongr
-    (Group.Abelianization.of (T.loop v e.1))) =
+    (Group.Abelianization.of (T.loop v e.val))) =
       Additive.ofMul (Group.Abelianization.of (FreeGroup.of e))
   rw [Group.abelianizationCongr_of, pathGroupEquivFreeGroup_loop]
 
@@ -70,7 +70,7 @@ of that dart. -/
 @[simp] theorem abelianizationEquivFreeAbelianGroup_symm_of (hO : Γ.IsOrientation O)
     (e : ↥(O \ T.darts)) :
     (T.abelianizationEquivFreeAbelianGroup v hO).symm (FreeAbelianGroup.of e) =
-      Additive.ofMul (Group.Abelianization.of (T.loop v e.1)) := by
+      Additive.ofMul (Group.Abelianization.of (T.loop v e.val)) := by
   rw [← T.abelianizationEquivFreeAbelianGroup_loop v hO, AddEquiv.symm_apply_apply]
 
 /-- The free coordinates of a class in the abelianized path group are the coordinates of its
@@ -94,7 +94,7 @@ theorem equivFinsupp_abelianizationEquivFreeAbelianGroup_symm_of (T' : Γ.Spanni
     (hO : Γ.IsOrientation O) (e : ↥(O \ T.darts)) :
     FreeAbelianGroup.equivFinsupp _ (T'.abelianizationEquivFreeAbelianGroup v hO
         ((T.abelianizationEquivFreeAbelianGroup v hO).symm (FreeAbelianGroup.of e))) =
-      Γ.cycleChordCoordinates O T'.darts ℤ (PathGroup.cycleClass hO ℤ (T.loop v e.1)).toAdd := by
+      Γ.cycleChordCoordinates O T'.darts ℤ (PathGroup.cycleClass hO ℤ (T.loop v e.val)).toAdd := by
   rw [abelianizationEquivFreeAbelianGroup_symm_of, equivFinsupp_abelianizationEquivFreeAbelianGroup,
     abelianizationEquivCycle_of]
 

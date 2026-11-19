@@ -67,9 +67,9 @@ through `x` is defined at time `t`, the time-`t` map pulls `α` back at `x` to
 theorem mpullback_flowOf_apply (hα : α.IsContactForm)
     (hX : α.IsContactHamiltonianVectorField f X) (hf : ContMDiff I 𝓘(ℝ) 3 f) {t : ℝ} {x : M}
     (hx : (t, x) ∈ flowDomain X) :
-    TauCeti.mpullback I I (flowOf X t) α.1 x =
+    TauCeti.mpullback I I (flowOf X t) α.val x =
       Real.exp (∫ s in 0..t,
-        mvfderiv I f (flowOf X s x) (α.reebVectorField (flowOf X s x))) • α.1 x := by
+        mvfderiv I f (flowOf X s x) (α.reebVectorField (flowOf X s x))) • α.val x := by
   have hX2 : ContMDiff I I.tangent 2 (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) :=
     hX.contMDiff hα (by simp) (by norm_num [hf])
   have hRf : Continuous fun y ↦ mvfderiv I f y (α.reebVectorField y) :=
@@ -85,7 +85,7 @@ contact Hamiltonian vector field `X` of a `C³` function, wherever the maximal f
 theorem exists_pos_mpullback_flowOf_apply_eq_smul (hα : α.IsContactForm)
     (hX : α.IsContactHamiltonianVectorField f X) (hf : ContMDiff I 𝓘(ℝ) 3 f) {t : ℝ} {x : M}
     (hx : (t, x) ∈ flowDomain X) :
-    ∃ c : ℝ, 0 < c ∧ TauCeti.mpullback I I (flowOf X t) α.1 x = c • α.1 x :=
+    ∃ c : ℝ, 0 < c ∧ TauCeti.mpullback I I (flowOf X t) α.val x = c • α.val x :=
   ⟨_, Real.exp_pos _, hX.mpullback_flowOf_apply hα hf hx⟩
 
 /-- **Strict contact Hamiltonian flows.** For a contact form `α` and the contact Hamiltonian
@@ -93,7 +93,7 @@ vector field `X` of a `C³` function `f`, the maximal flow of `X` preserves `α`
 defined exactly when `f` is invariant under the Reeb vector field: `R_α f = 0`. -/
 theorem mpullback_flowOf_apply_eq_self_iff (hα : α.IsContactForm)
     (hX : α.IsContactHamiltonianVectorField f X) (hf : ContMDiff I 𝓘(ℝ) 3 f) :
-    (∀ t x, (t, x) ∈ flowDomain X → TauCeti.mpullback I I (flowOf X t) α.1 x = α.1 x) ↔
+    (∀ t x, (t, x) ∈ flowDomain X → TauCeti.mpullback I I (flowOf X t) α.val x = α.val x) ↔
       ∀ x, mvfderiv I f x (α.reebVectorField x) = 0 := by
   have hX2 : ContMDiff I I.tangent 2 (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) :=
     hX.contMDiff hα (by simp) (by norm_num [hf])
@@ -103,8 +103,8 @@ theorem mpullback_flowOf_apply_eq_self_iff (hα : α.IsContactForm)
     -- The pullbacks `φₜ^* α` at `x` are constant for small `t`, and their velocity at `0` is
     -- `L_X α = (R_α f) α`.
     have hd := hasDerivAt_mpullback_flowOf_zero hX2 x (α.mdifferentiable x)
-    have hconst : (fun s ↦ TauCeti.mpullback I I (flowOf X s) α.1 x) =ᶠ[𝓝 0]
-        fun _ ↦ α.1 x := by
+    have hconst : (fun s ↦ TauCeti.mpullback I I (flowOf X s) α.val x) =ᶠ[𝓝 0]
+        fun _ ↦ α.val x := by
       have hopen : {s | (s, x) ∈ flowDomain X} ∈ 𝓝 (0 : ℝ) :=
         ((isOpen_flowDomain hX1).preimage (continuous_id.prodMk continuous_const)).mem_nhds
           (mem_flowDomain_zero hX1 x)
@@ -112,8 +112,8 @@ theorem mpullback_flowOf_apply_eq_self_iff (hα : α.IsContactForm)
       exact h s x hs
     rw [hX.mlieDerivForm_eq (hX2.mdifferentiable two_ne_zero)] at hd
     have h0 := (hd.congr_of_eventuallyEq hconst.symm).unique
-      (hasDerivAt_const (F := E [⋀^Fin 1]→L[ℝ] ℝ) (0 : ℝ) (α.1 x))
-    have hα₀ : (α.1 x : E [⋀^Fin 1]→L[ℝ] ℝ) ≠ 0 :=
+      (hasDerivAt_const (F := E [⋀^Fin 1]→L[ℝ] ℝ) (0 : ℝ) (α.val x))
+    have hα₀ : (α.val x : E [⋀^Fin 1]→L[ℝ] ℝ) ≠ 0 :=
       (isContactForm_iff_forall_isContactFormAt.mp hα x).ne_zero
     exact (smul_eq_zero.mp h0).resolve_right hα₀
   · intro h t x hx
@@ -129,11 +129,11 @@ theorem mpullback_globalFlow_apply (hα : α.IsContactForm)
     (hX : α.IsContactHamiltonianVectorField f X) (hf : ContMDiff I 𝓘(ℝ) 3 f)
     (hc : IsCompleteVectorField X) (t : ℝ) (x : M) :
     TauCeti.mpullback I I
-        (globalFlow X (hX.contMDiff hα (n := 1) (by simp) (hf.of_le (by norm_num))) hc t) α.1 x =
+        (globalFlow X (hX.contMDiff hα (n := 1) (by simp) (hf.of_le (by norm_num))) hc t) α.val x =
       Real.exp (∫ s in 0..t,
         mvfderiv I f (globalFlow X (hX.contMDiff hα (n := 1) (by simp) (hf.of_le (by norm_num)))
           hc s x) (α.reebVectorField (globalFlow X
-            (hX.contMDiff hα (n := 1) (by simp) (hf.of_le (by norm_num))) hc s x))) • α.1 x := by
+            (hX.contMDiff hα (n := 1) (by simp) (hf.of_le (by norm_num))) hc s x))) • α.val x := by
   rw [← flowOf_eq_globalFlow]
   exact hX.mpullback_flowOf_apply hα hf (hc.mem_flowDomain t x)
 
@@ -172,7 +172,7 @@ contact form `α` through `x` is defined at time `t`, the time-`t` map pulls `α
 `α x`. -/
 theorem IsContactForm.mpullback_flowOf_reebVectorField_apply (hα : α.IsContactForm) {t : ℝ}
     {x : M} (hx : (t, x) ∈ flowDomain α.reebVectorField) :
-    TauCeti.mpullback I I (flowOf α.reebVectorField t) α.1 x = α.1 x := by
+    TauCeti.mpullback I I (flowOf α.reebVectorField t) α.val x = α.val x := by
   have hX : α.IsContactHamiltonianVectorField 1 α.reebVectorField := by
     rw [← hα.contactHamiltonianVectorField_one]
     exact hα.isContactHamiltonianVectorField_contactHamiltonianVectorField 1

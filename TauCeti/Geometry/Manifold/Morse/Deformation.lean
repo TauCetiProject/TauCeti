@@ -338,7 +338,7 @@ theorem exists_ambientSublevelDeformation (hf : ContMDiff I 𝓘(ℝ) ∞ f)
   refine ⟨⟨fun p ↦ φ (T * p.1) p.2, φ.continuous
     (continuous_const.mul (continuous_subtype_val.comp continuous_fst)) continuous_snd⟩,
     fun x ↦ by simp, fun t x ↦ ?_, fun x hx ↦ ?_⟩
-  · simpa using hanti x (mul_nonneg hT0 t.2.1)
+  · simpa using hanti x (mul_nonneg hT0 t.property.1)
   simp only [ContinuousMap.coe_mk, Set.Icc.coe_one, mul_one]
   rcases lt_or_ge (f x) a with hxa | hxa
   · exact (hanti x hT0).trans_lt (by simpa using hxa)
@@ -388,7 +388,8 @@ theorem exists_criticalLevelDeformation (hf : ContMDiff I 𝓘(ℝ) ∞ f) {c δ
   refine ⟨min (δ / 2) (τ / 3), by positivity, by linarith [min_le_left (δ / 2) (τ / 3)],
     ⟨fun p ↦ φ (τ * p.1) p.2, φ.continuous
       (continuous_const.mul (continuous_subtype_val.comp continuous_fst)) continuous_snd⟩,
-    fun x ↦ by simp, fun t x ↦ by simpa using hanti x (mul_nonneg hτ.le t.2.1), fun x hx ↦ ?_⟩
+    fun x ↦ by simp, fun t x ↦ by simpa using hanti x (mul_nonneg hτ.le t.property.1),
+        fun x hx ↦ ?_⟩
   set ε := min (δ / 2) (τ / 3)
   have hεδ : ε ≤ δ / 2 := min_le_left _ _
   have hετ : ε ≤ τ / 3 := min_le_right _ _

@@ -86,7 +86,7 @@ theorem hasContinuousLogOn_range_of_isEmbedding_path (γ : Path x y)
   · rw [continuousOn_iff_continuous_domRestrict]
     convert (continuousOn_univ.mp hHc).comp (continuous_subtype_val.comp e.symm.continuous) using 1
     ext z
-    simp only [domRestrict_apply, h, z.2, ↓reduceDIte, Function.comp_apply]
+    simp only [domRestrict_apply, h, z.property, ↓reduceDIte, Function.comp_apply]
   · intro z hz
     have he : γ (e.symm ⟨z, hz⟩) = z := by
       have he' := congrArg Subtype.val (e.apply_symm_apply ⟨z, hz⟩)

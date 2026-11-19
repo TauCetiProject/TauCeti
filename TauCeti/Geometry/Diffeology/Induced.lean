@@ -154,7 +154,7 @@ theorem dTopology_subtype_of_isOpen {U : Set X} (hU : IsOpen[_root_.Diffeology.d
     simp [p', show p y ∈ U from hy]
   have hplot : IsPlotOn (p ⁻¹' U) p' :=
     isPlotOn_subtype_iff.mpr ((isPlotOn_of_isPlot hp _).congr hp')
-  have hzU : p z ∈ U := hx ▸ x.2
+  have hzU : p z ∈ U := hx ▸ x.property
   let : TopologicalSpace U := _root_.Diffeology.dTopology
   refine ⟨p ⁻¹' U ∩ p' ⁻¹' W, fun y ⟨hyU, hyW⟩ ↦ ⟨p' y, hyW, (hp' hyU).symm⟩,
     (hplot.continuousOn ho).isOpen_inter_preimage ho hW, hzU, ?_⟩
@@ -215,7 +215,7 @@ theorem IsSubduction.restrictPreimage [DiffeologicalSpace Q] {q : X → Q} (hq :
     -- On `v`, the lift lands in the preimage of `t`, since its image under `q` is `p`.
     have hmem : ∀ y ∈ v, lift y ∈ q ⁻¹' t := fun y hy ↦ by
       rw [mem_preimage, ← comp_apply (f := q), hq' hy]
-      exact (p y).2
+      exact (p y).property
     let lift' : 𝔼ⁿ → q ⁻¹' t := fun y ↦ if h : lift y ∈ q ⁻¹' t then ⟨lift y, h⟩
       else ⟨lift z, hmem z hzv⟩
     have hlift' : ∀ y (hy : y ∈ v), lift' y = ⟨lift y, hmem y hy⟩ := fun y hy ↦ by

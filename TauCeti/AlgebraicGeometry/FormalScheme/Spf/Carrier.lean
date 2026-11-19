@@ -187,7 +187,7 @@ theorem mem_basicOpen {f : A} {p : carrier A} :
 @[simp]
 theorem basicOpen_one : basicOpen (1 : A) = ⊤ := by
   ext p
-  simpa using (Ideal.ne_top_iff_one _).mp p.1.isPrime.ne_top
+  simpa using (Ideal.ne_top_iff_one _).mp p.val.isPrime.ne_top
 
 @[simp]
 theorem basicOpen_zero : basicOpen (0 : A) = ⊥ := by
@@ -196,7 +196,7 @@ theorem basicOpen_zero : basicOpen (0 : A) = ⊥ := by
 
 theorem basicOpen_mul (f g : A) : basicOpen (f * g) = basicOpen f ⊓ basicOpen g := by
   ext p
-  simp [p.1.isPrime.mul_mem_iff_mem_or_mem, not_or]
+  simp [p.val.isPrime.mul_mem_iff_mem_or_mem, not_or]
 
 /-- The basic open sets `D(f)` form a basis of the topology of the underlying space of `Spf A`. -/
 theorem isBasis_basicOpen : Opens.IsBasis (Set.range (basicOpen (A := A))) := by
@@ -213,7 +213,7 @@ theorem exists_basicOpen_le {U : Opens (carrier A)} {p : carrier A} (hp : p ∈ 
 
 /-- Every open set `U` of `Spf A` is covered by the basic open sets `D(f) ⊆ U`. -/
 theorem le_iSup_basicOpen_le (U : Opens (carrier A)) :
-    U ≤ ⨆ p : { f : A // basicOpen f ≤ U }, basicOpen p.1 := fun _ hz ↦
+    U ≤ ⨆ p : { f : A // basicOpen f ≤ U }, basicOpen p.val := fun _ hz ↦
   let ⟨f, hzf, hfU⟩ := exists_basicOpen_le hz
   Opens.mem_iSup.mpr ⟨⟨f, hfU⟩, hzf⟩
 
@@ -241,7 +241,7 @@ theorem basicOpen_le_basicOpen_iff (hI : IsAdic I) {f g : A} :
     by_contra hg
     exact h (x := ⟨p, (mem_carrier_iff_le hI).mpr hp⟩) hg hf
   · exact Set.singleton_subset_iff.mp
-      (h ⟨Set.singleton_subset_iff.mpr hf, (mem_carrier_iff_le hI).mp p.2⟩)
+      (h ⟨Set.singleton_subset_iff.mpr hf, (mem_carrier_iff_le hI).mp p.property⟩)
 
 /-- If `I` defines the topology of `A`, then `D(f)` is empty if and only if `f` lies in the
 radical of `I`, that is, if and only if `f` is nilpotent modulo `I`. -/
@@ -261,7 +261,7 @@ variable {B : Type*} [CommRing B] [TopologicalSpace B] {C : Type*} [CommRing C]
 `B`, so it induces a continuous map from the underlying space of `Spf A` to that of `Spf B`
 (EGA I, Ch. I, 10.2.1). -/
 def comap (φ : B →+* A) (hφ : Continuous φ) : C(carrier A, carrier B) where
-  toFun p := ⟨PrimeSpectrum.comap φ p, p.2.preimage hφ⟩
+  toFun p := ⟨PrimeSpectrum.comap φ p, p.property.preimage hφ⟩
   continuous_toFun := ((continuous_comap φ).comp continuous_subtype_val).subtype_mk _
 
 @[simp]

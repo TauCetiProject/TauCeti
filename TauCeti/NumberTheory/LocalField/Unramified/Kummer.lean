@@ -73,7 +73,7 @@ private theorem smul_kummerCoeff_eq_self_of_mem_inertiaSubgroup (hp : ¬ ringCha
   have hx : (((x.toMul : (SeparableClosure K)ˣ) : SeparableClosure K) : AlgebraicClosure K) ^ n =
       1 := by
     have := congrArg (fun u : (SeparableClosure K)ˣ ↦ ((u : SeparableClosure K) :
-      AlgebraicClosure K)) ((mem_rootsOfUnity _ _).1 x.toMul.2)
+      AlgebraicClosure K)) ((mem_rootsOfUnity _ _).1 x.toMul.property)
     simpa using this
   have h := apply_eq_self_of_mem_inertiaSubgroup_of_pow_eq_one hσ hm hx
   simp only [Additive.toMul_smul, rootsOfUnity.coe_smul, AlgEquiv.smul_units_def, Units.coe_map,
@@ -96,7 +96,7 @@ private theorem explicitRes1_kummerCocycleClass_eq_zero_iff (hp : ¬ ringChar �
   have hcob : ∀ (x : KummerCoeff K n)
       (τ : (inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom),
       τ • x - x = 0 := fun x τ ↦ by
-    rw [Subgroup.smul_def, smul_kummerCoeff_eq_self_of_mem_inertiaSubgroup hp τ.2, sub_self]
+    rw [Subgroup.smul_def, smul_kummerCoeff_eq_self_of_mem_inertiaSubgroup hp τ.property, sub_self]
   simp only [groupCohomology.IsCoboundary₁, hcob, cocyclesMap1_apply, AddMonoidHom.id_apply,
     ContinuousMonoidHom.subgroupSubtype_apply, exists_const]
   -- the image of `σ` fixes `α` in `Kˢ` exactly when `σ` fixes it in `K^{alg}`
@@ -147,14 +147,14 @@ theorem explicitRes1_kummerMap_eq_zero_iff (hn : IsUnit (n : K)) (hp : ¬ ringCh
       IntermediateField.adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral x)
     have : Algebra.IsSeparable K E :=
       (IntermediateField.isSeparable_adjoin_simple_iff_isSeparable K (AlgebraicClosure K)).2
-        (mem_separableClosure_iff.1 (α : SeparableClosure K).2)
+        (mem_separableClosure_iff.1 (α : SeparableClosure K).property)
     let := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) E
     let := finiteIntermediateFieldTopology K (AlgebraicClosure K) E
     have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K) E
     have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K) E
     have hur : IsUnramified K E := (inertiaSubgroup_le_fixingSubgroup_iff E).1 <|
       (IntermediateField.le_fixedField_iff_le_fixingSubgroup _ _).1
-        (IntermediateField.adjoin_simple_le_iff.2 fun σ ↦ h σ σ.2)
+        (IntermediateField.adjoin_simple_le_iff.2 fun σ ↦ h σ σ.property)
     -- in `E`, `a = yⁿ`, and the normalized valuation of `E` extends that of `K`
     have hx0 : x ≠ 0 := by simp [x]
     set y : Eˣ := Units.mk0 ⟨x, IntermediateField.mem_adjoin_simple_self K x⟩

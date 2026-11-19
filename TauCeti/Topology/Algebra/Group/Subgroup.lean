@@ -177,7 +177,7 @@ instance isClosed_subgroupOf (H K : Subgroup G) [IsClosed (H : Set G)] :
 /-- The inclusion of `U ⊓ D` into `U`, where `U ⊓ D` is presented as the subgroup `U.subgroupOf D`
 of `D`, is continuous. -/
 theorem continuous_subgroupOf_codRestrict (D U : Subgroup G) :
-    Continuous ((D.subtype.comp (U.subgroupOf D).subtype).codRestrict U fun x ↦ x.2) :=
+    Continuous ((D.subtype.comp (U.subgroupOf D).subtype).codRestrict U fun x ↦ x.property) :=
   (continuous_subtype_val.comp continuous_subtype_val).codRestrict _
 
 /-- A homomorphism of subgroups is continuous if its values are those of a continuous
@@ -192,16 +192,17 @@ inclusion of `U ⊓ D`, presented as the subgroup `U.subgroupOf D` of `D`, into 
 range. -/
 theorem _root_.Dense.denseRange_subgroupOf_codRestrict {D U : Subgroup G}
     (hD : Dense (D : Set G)) (hU : IsOpen (U : Set G)) :
-    DenseRange ((D.subtype.comp (U.subgroupOf D).subtype).codRestrict U fun x ↦ x.2) := by
+    DenseRange ((D.subtype.comp (U.subgroupOf D).subtype).codRestrict U fun x ↦ x.property) := by
   -- The range is `D ∩ U`, viewed inside `U`, and `Subtype.val : U → G` is an open map.
-  have hrange : Set.range ((D.subtype.comp (U.subgroupOf D).subtype).codRestrict U fun x ↦ x.2)
+  have hrange : Set.range ((D.subtype.comp (U.subgroupOf D).subtype).codRestrict U fun x ↦
+      x.property)
       = (Subtype.val : U → G) ⁻¹' (D : Set G) := by
     ext x
     constructor
     · rintro ⟨y, rfl⟩
-      exact y.1.2
+      exact y.val.property
     · intro hxD
-      exact ⟨⟨⟨x, hxD⟩, x.2⟩, rfl⟩
+      exact ⟨⟨⟨x, hxD⟩, x.property⟩, rfl⟩
   rw [DenseRange, hrange]
   exact hD.preimage hU.isOpenMap_subtype_val
 
@@ -281,7 +282,7 @@ theorem dense_preimage_val_iff_le_topologicalClosure {H K : Subgroup G} (h : H �
     rwa [himage, ← topologicalClosure_coe] at this
   · intro hle x
     rw [closure_subtype, himage, ← topologicalClosure_coe]
-    exact hle x.2
+    exact hle x.property
 
 omit [IsTopologicalGroup G] in
 /-- A closed subgroup of a compact group is compact. -/

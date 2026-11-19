@@ -512,7 +512,7 @@ theorem isStrictlyTopologicallyFiniteType_toCompletionLoc [IsTateRing A]
   let _ : UniformContinuousConstSMul A S :=
     uniformContinuousConstSMul_of_continuousConstSMul A S
   let t : Fin T.card → A := fun i ↦ ((T.equivFin.symm i : ↥T) : A)
-  have ht : ∀ i, t i ∈ T := fun i ↦ (T.equivFin.symm i).2
+  have ht : ∀ i, t i ∈ T := fun i ↦ (T.equivFin.symm i).property
   have happ : ∀ y : ↥T, t (T.equivFin y) = (y : A) := fun y ↦ by simp [t]
   have hrange : Set.range t = (T : Set A) := by
     ext a

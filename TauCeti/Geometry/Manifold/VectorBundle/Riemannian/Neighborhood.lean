@@ -94,7 +94,7 @@ theorem exists_diffeomorph_subset_zeroSection [IsContMDiffRiemannianBundle I n F
     (I := I) (n := n) hzero (continuous_const (y := (1 : ℝ))) (fun _ => zero_lt_one)
   let Ψ := vectorBundleRadialPartialDiffeomorphOfRadius (F := F) (V := V) r.contMDiff hr
   have hsource : Ψ.source = univ := vectorBundleRadialPartialDiffeomorphOfRadius_source _ _
-  have htarget : Ψ.target = {p : TotalSpace F V | ‖p.2‖ < r p.proj} :=
+  have htarget : Ψ.target = {p : TotalSpace F V | ‖p.snd‖ < r p.proj} :=
     vectorBundleRadialPartialDiffeomorphOfRadius_target _ _
   have hforward : ContMDiff (I.prod 𝓘(ℝ, F)) (I.prod 𝓘(ℝ, F)) n Ψ := by
     rw [← contMDiffOn_univ, ← hsource]
@@ -113,7 +113,7 @@ theorem exists_diffeomorph_subset_zeroSection [IsContMDiffRiemannianBundle I n F
   · intro p hp
     have hp' : p ∈ Ψ.target := hp
     rw [htarget] at hp'
-    exact hdisc p.proj p.2 hp'.le
+    exact hdisc p.proj p.snd hp'.le
   · intro p
     rw [hΦ]
     simp [Ψ]

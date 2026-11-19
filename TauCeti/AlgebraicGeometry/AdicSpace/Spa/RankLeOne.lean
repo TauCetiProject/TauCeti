@@ -147,22 +147,22 @@ topologically nilpotent unit, as every Tate ring does. For the closed unit disc 
 algebraically closed field this subspace is the Berkovich disc of Wedhorn's Example 7.57. -/
 theorem t2Space_spa_isRankLeOne {π : A} (hπ : Huber.IsPseudoUniformizer π)
     (Aplus : Subring A) :
-    T2Space {x : spa Aplus // @ValuativeRel.IsRankLeOne A _ x.1.toValuativeRel} := by
+    T2Space {x : spa Aplus // @ValuativeRel.IsRankLeOne A _ x.val.toValuativeRel} := by
   -- at every point of `Spa(A, A⁺)`, `0 < v(π) < 1`
-  have hπv (v : spa Aplus) : ¬ v.1.toValuativeRel.vle π 0 ∧ v.1.toValuativeRel.vlt π 1 := by
-    have hcont := (isContinuous_def v.1).mp ((mem_spa_iff Aplus v.1).mp v.2).1
+  have hπv (v : spa Aplus) : ¬ v.val.toValuativeRel.vle π 0 ∧ v.val.toValuativeRel.vlt π 1 := by
+    have hcont := (isContinuous_def v.val).mp ((mem_spa_iff Aplus v.val).mp v.property).1
     rw [← valuation_le_iff, ← valuation_lt_iff, map_zero, map_one, le_zero_iff]
-    exact ⟨(hπ.isUnit.map v.1.valuation).ne_zero,
+    exact ⟨(hπ.isUnit.map v.val.valuation).ne_zero,
       hcont.lt_one_of_isTopologicallyNilpotent hπ.isTopologicallyNilpotent⟩
   refine ⟨fun x y hxy ↦ ?_⟩
-  have hne : x.1.1 ≠ y.1.1 := fun h ↦ hxy (Subtype.ext (Subtype.ext h))
+  have hne : x.val.val ≠ y.val.val := fun h ↦ hxy (Subtype.ext (Subtype.ext h))
   obtain ⟨U, V, hU, hV, hxU, hyV, hUV⟩ := exists_isOpen_inter_subset_setOf_one_vle_of_ne hne
-    x.2 y.2 (hπv x.1).1 (hπv x.1).2 (hπv y.1).1 (hπv y.1).2
+    x.property y.property (hπv x.val).1 (hπv x.val).2 (hπv y.val).1 (hπv y.val).2
   have hc := (continuous_subtype_val (p := (· ∈ spa Aplus))).comp
     (continuous_subtype_val (p := fun x : spa Aplus ↦
-      @ValuativeRel.IsRankLeOne A _ x.1.toValuativeRel))
+      @ValuativeRel.IsRankLeOne A _ x.val.toValuativeRel))
   refine ⟨_, _, hU.preimage hc, hV.preimage hc, hxU, hyV,
     Set.disjoint_left.mpr fun z hzU hzV ↦ ?_⟩
-  exact (hπv z.1).2 (hUV ⟨hzU, hzV⟩)
+  exact (hπv z.val).2 (hUV ⟨hzU, hzV⟩)
 
 end TauCeti.ValuationSpectrum

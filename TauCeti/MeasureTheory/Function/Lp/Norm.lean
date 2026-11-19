@@ -613,7 +613,8 @@ theorem Lp.exists_measurableSet_mul_norm_lt_norm_apply_measure_lt_top [SigmaFini
   set S : Set (E →L[𝕜] F) := {B ∈ C | c + δ < ‖B‖}
   have : Countable S := (hC_count.mono (Set.sep_subset _ _)).to_subtype
   choose u hu using fun B : S ↦ show ∃ u : E, (c + δ) * ‖u‖ < ‖(B : E →L[𝕜] F) u‖ by
-    by_contra! h; exact (not_le_of_gt B.2.2) ((B : E →L[𝕜] F).opNorm_le_bound (by linarith) h)
+    by_contra! h; exact (not_le_of_gt B.property.2) ((B : E →L[𝕜] F).opNorm_le_bound
+        (by linarith) h)
   have hcover : {x | c + 2 * δ < ‖A x‖} ⊆ ⋃ B : S, {x | c * ‖u B‖ < ‖A x (u B)‖} := fun x hx ↦ by
     obtain ⟨B, hBC, hdist⟩ := Metric.mem_closure_iff.mp (hC_sub ⟨x, rfl⟩) δ hδ
     rw [dist_comm, _root_.dist_eq_norm] at hdist

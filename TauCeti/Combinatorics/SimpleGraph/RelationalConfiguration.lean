@@ -229,7 +229,7 @@ measurable equivalence. -/
 def relationalConfigurationEquiv :
     SimpleGraph V ≃ᵐ {c : RelationalConfiguration Language.graph V // IsSimpleGraph c} where
   toFun G := ⟨G.toRelationalConfiguration, G.isSimpleGraph_toRelationalConfiguration⟩
-  invFun c := toSimpleGraph c.1 c.2
+  invFun c := toSimpleGraph c.val c.property
   left_inv G := by
     classical
     ext u v
@@ -267,7 +267,7 @@ theorem coe_relationalConfigurationEquiv (G : SimpleGraph V) :
 @[simp]
 theorem relationalConfigurationEquiv_symm_apply
     (c : {c : RelationalConfiguration Language.graph V // IsSimpleGraph c}) :
-    relationalConfigurationEquiv.symm c = toSimpleGraph c.1 c.2 := (rfl)
+    relationalConfigurationEquiv.symm c = toSimpleGraph c.val c.property := (rfl)
 
 /-- The configurations of simple graphs are exactly the simple-graph configurations. -/
 @[simp]
@@ -371,13 +371,13 @@ theorem map_comap_comap_toRelationalConfiguration [Countable V] (f : V → W)
 theorem relationalConfigurationEquiv_comap (f : V → W) (G : SimpleGraph W) :
     relationalConfigurationEquiv (G.comap f) =
       ⟨(relationalConfigurationEquiv G : RelationalConfiguration Language.graph W).restrict f,
-        (relationalConfigurationEquiv G).2.restrict f⟩ :=
+        (relationalConfigurationEquiv G).property.restrict f⟩ :=
   Subtype.ext (toRelationalConfiguration_comap f G)
 
 /-- Decoding commutes with restriction. -/
 theorem relationalConfigurationEquiv_symm_restrict (f : V → W)
     (c : {c : RelationalConfiguration Language.graph W // IsSimpleGraph c}) :
-    relationalConfigurationEquiv.symm ⟨c.1.restrict f, c.2.restrict f⟩ =
+    relationalConfigurationEquiv.symm ⟨c.val.restrict f, c.property.restrict f⟩ =
       (relationalConfigurationEquiv.symm c).comap f := by
   ext u v
   simp

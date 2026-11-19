@@ -131,12 +131,12 @@ theorem exists_circle_smul_mem_specialUnitaryGroup (U : unitaryGroup n ℂ) :
     ∃ c : Circle, (c : ℂ) • (U : Matrix n n ℂ) ∈ specialUnitaryGroup n ℂ := by
   -- Rescaling by a scalar of modulus one keeps the matrix unitary, whatever the scalar.
   have hunit (c : Circle) : (c : ℂ) • (U : Matrix n n ℂ) ∈ unitaryGroup n ℂ :=
-    Unitary.smul_mem_of_mem c.coe_mem_unitary U.2
+    Unitary.smul_mem_of_mem c.coe_mem_unitary U.property
   rcases isEmpty_or_nonempty n with hn | hn
   · -- With no indices at all every determinant is one and there is nothing to rescale.
     exact ⟨1, mem_specialUnitaryGroup_iff.mpr ⟨hunit 1, det_isEmpty⟩⟩
   obtain ⟨θ, hθ⟩ := Circle.exp_surjective (⟨(U : Matrix n n ℂ).det,
-    mem_sphere_zero_iff_norm.mpr (CStarRing.norm_of_mem_unitary (det_of_mem_unitary U.2))⟩ :
+    mem_sphere_zero_iff_norm.mpr (CStarRing.norm_of_mem_unitary (det_of_mem_unitary U.property))⟩ :
       Circle)
   refine ⟨Circle.exp (-(θ / Fintype.card n)), mem_specialUnitaryGroup_iff.mpr ⟨hunit _, ?_⟩⟩
   -- `c ^ card n` is the inverse of the determinant, viewed as a point of the circle.
@@ -154,7 +154,7 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 /-- The determinant of a complex unitary matrix, as a point of the unit circle. -/
 noncomputable def detCircle : unitaryGroup n ℂ →* Circle where
   toFun U := ⟨(U : Matrix n n ℂ).det,
-    mem_sphere_zero_iff_norm.2 (CStarRing.norm_of_mem_unitary (det_of_mem_unitary U.2))⟩
+    mem_sphere_zero_iff_norm.2 (CStarRing.norm_of_mem_unitary (det_of_mem_unitary U.property))⟩
   map_one' := Circle.ext det_one
   map_mul' U V := Circle.ext (det_mul (U : Matrix n n ℂ) V)
 

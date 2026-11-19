@@ -347,8 +347,8 @@ theorem restrict (h : IsLocallyBicollared f) {U : Set N} (hU : IsOpen U) :
   -- `W` and `R` are the two readings of `U ∩ V`, one as a subset of `U` and one as a subset of
   -- `V`; the homeomorphism between them only re-brackets the pair of membership proofs.
   let e : W ≃ₜ R := {
-    toFun y := ⟨⟨y.1.1, y.2⟩, y.1.2⟩
-    invFun y := ⟨⟨y.1.1, y.2⟩, y.1.2⟩
+    toFun y := ⟨⟨y.val.val, y.property⟩, y.val.property⟩
+    invFun y := ⟨⟨y.val.val, y.property⟩, y.val.property⟩
     left_inv _ := rfl
     right_inv _ := rfl
     continuous_toFun := by fun_prop

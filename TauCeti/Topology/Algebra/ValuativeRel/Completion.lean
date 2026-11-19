@@ -128,7 +128,7 @@ theorem denseRange_algebraMap_integer :
   obtain ⟨V, hV, hVU⟩ := mem_comap.1 hU
   obtain ⟨r, hrV, hrv⟩ := (valuation K).exists_coe_mem_extension_eq hV
   have hx1 : (x : Completion K) ≤ᵥ 1 := by
-    simpa using (valuation (Completion K)).vle_iff_le.2 x.2
+    simpa using (valuation (Completion K)).vle_iff_le.2 x.property
   have hr1 : valuation K r ≤ 1 := by
     rw [← hrv]
     simpa using ((valuation K).extension).vle_iff_le.1 hx1

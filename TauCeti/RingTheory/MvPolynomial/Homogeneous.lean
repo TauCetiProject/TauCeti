@@ -252,7 +252,7 @@ theorem eval_coe_homogeneousSubmodule_eq_sum [Fintype σ] [DecidableEq σ] {n : 
     (p : homogeneousSubmodule σ R n) (v : σ → R) :
     eval v (p : MvPolynomial σ R) = ∑ l ∈ Finset.univ.finsuppAntidiag n,
       (p : MvPolynomial σ R).coeff l * ∏ i, v i ^ l i := by
-  simpa using ((mem_homogeneousSubmodule n _).mp p.2).aeval_eq_sum_finsuppAntidiag v
+  simpa using ((mem_homogeneousSubmodule n _).mp p.property).aeval_eq_sum_finsuppAntidiag v
 
 end TauCeti
 

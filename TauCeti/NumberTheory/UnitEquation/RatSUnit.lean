@@ -144,7 +144,7 @@ private theorem rpow_neg_le_padicNorm_sub_one (hS : ∀ p ∈ S, p.Prime) {C : �
   rw [← hzw] at h
   refine le_trans (Real.rpow_le_rpow_of_nonpos (by positivity) ?_ (neg_nonpos.2 hC)) h
   gcongr
-  exact Finset.sup_le fun q _ ↦ hb q ▸ hN q q.2
+  exact Finset.sup_le fun q _ ↦ hb q ▸ hN q q.property
 
 /-- The key step: if `N` bounds all valuations of `x` and `y` at the primes of `S` and is
 attained by `|v_p(x)|` with `N ≠ 0`, then `(e · max(1, N)) ^ (-C) ≤ p ^ (-N)`. -/
@@ -160,7 +160,7 @@ private theorem rpow_neg_le_zpow_neg (hS : ∀ p ∈ S, p.Prime) {C : ℝ} (hC :
     (hNy : ∀ q ∈ S, (padicValRat q (y : ℚ)).natAbs ≤ N)
     (p : S) (hpN : (padicValRat p (x : ℚ)).natAbs = N) (hN : N ≠ 0) :
     (Real.exp 1 * max 1 (N : ℝ)) ^ (-C) ≤ (p : ℝ) ^ (-(N : ℤ)) := by
-  have : Fact (p : ℕ).Prime := ⟨hS p p.2⟩
+  have : Fact (p : ℕ).Prime := ⟨hS p p.property⟩
   have hx0 : (x : ℚ) ≠ 0 := x.ne_zero
   have hy0 : (y : ℚ) ≠ 0 := y.ne_zero
   have hv0 : padicValRat p (x : ℚ) ≠ 0 := by omega
@@ -193,7 +193,7 @@ private theorem rpow_neg_le_zpow_neg (hS : ∀ p ∈ S, p.Prime) {C : ℝ} (hC :
       have := hNy q hq
       rw [hdiv q (hS q hq)]
       omega
-    have h := rpow_neg_le_padicNorm_sub_one hS hC hLB p hz (by rw [hdiv p (hS p p.2)]; omega)
+    have h := rpow_neg_le_padicNorm_sub_one hS hC hLB p hz (by rw [hdiv p (hS p p.property)]; omega)
       hz1 hbound
     have hsub : ((-x / y : ℚˣ) : ℚ) - 1 = -(y : ℚ)⁻¹ := by
       rw [Units.val_div_eq_div_val, Units.val_neg]

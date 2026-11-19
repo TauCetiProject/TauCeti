@@ -194,7 +194,7 @@ theorem eq_top_of_le_map_proPFrattini_of_sup_eq_top {P : Subgroup G}
     obtain ⟨m, hm, rfl⟩ := hN hn
     -- The `H`-component `h = x * m⁻¹` of `x` lies in `P`, since `x` and `m` do.
     have hhP : h ∈ P := by
-      simpa [← hhn] using P.mul_mem x.2 (P.inv_mem m.2)
+      simpa [← hhn] using P.mul_mem x.property (P.inv_mem m.property)
     have hxm : x = ⟨h, hhP⟩ * m := Subtype.ext hhn.symm
     exact hxm ▸ Subgroup.mul_mem_sup (Subgroup.mem_subgroupOf.mpr hh) hm
   have hPH : P ≤ H := Subgroup.subgroupOf_eq_top.mp hHP

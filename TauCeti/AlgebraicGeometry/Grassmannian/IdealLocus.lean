@@ -152,7 +152,7 @@ private theorem span_affineSet {A : Type u} [CommRing A] [Algebra R A] (N : G(k,
   -- a basic open `D(a)` around `p` which the morphism classifying `N` maps into `U`
   obtain ⟨_, ⟨a, rfl⟩, hpa, hsub⟩ :=
     PrimeSpectrum.isTopologicalBasis_basic_opens.exists_subset_of_mem_open
-      (a := p) (u := toSchemeHom N ⁻¹' U) hpU (U.2.preimage (toSchemeHom N).continuous)
+      (a := p) (u := toSchemeHom N ⁻¹' U) hpU (U.is_open'.preimage (toSchemeHom N).continuous)
   have has : a ∈ affineSet N := by
     refine ⟨U, hU, ?_⟩
     rintro _ ⟨q, rfl⟩
@@ -175,9 +175,9 @@ exactly when `I N = ⊥` (`Module.Grassmannian.schemeIdealLocus_le_ker_toSchemeH
 affine open `U`, its ideal is `I` of the point over `Γ(G(k, M), U)` classifying the inclusion of
 `U`. -/
 noncomputable def schemeIdealLocus : (scheme R M k).IdealSheafData where
-  ideal U := I (affinePoint U.2)
+  ideal U := I (affinePoint U.property)
   map_ideal_basicOpen U f := by
-    rw [← map_resₐ_affinePoint U.2 ((scheme R M k).affineBasicOpen f).2
+    rw [← map_resₐ_affinePoint U.property ((scheme R M k).affineBasicOpen f).property
       ((scheme R M k).basicOpen_le f), hI]
     rfl
 
@@ -213,17 +213,17 @@ theorem comap_toSchemeHom_schemeIdealLocus {A : Type u} [CommRing A] [Algebra R 
       ofIdealTop ((I N).map (Scheme.ΓSpecIso (.of A)).inv.hom) := by
   -- compare both sides on the cover of `Spec A` by the basic opens `D(a)`, `a ∈ affineSet N`
   refine ext_of_comap_openCover (Scheme.affineOpenCoverOfSpanRangeEqTop (R := .of A)
-    (fun a : affineSet N ↦ a.1) (by rw [Subtype.range_coe]; exact span_affineSet N)).openCover
+    (fun a : affineSet N ↦ a.val) (by rw [Subtype.range_coe]; exact span_affineSet N)).openCover
     fun a ↦ ?_
-  obtain ⟨U, hU, hNU⟩ := a.2
-  let ι : A →ₐ[R] Localization.Away a.1 := IsScalarTower.toAlgHom R A _
-  have hι : Spec.map (CommRingCat.ofHom (algebraMap A (Localization.Away a.1))) ≫ toSchemeHom N =
+  obtain ⟨U, hU, hNU⟩ := a.property
+  let ι : A →ₐ[R] Localization.Away a.val := IsScalarTower.toAlgHom R A _
+  have hι : Spec.map (CommRingCat.ofHom (algebraMap A (Localization.Away a.val))) ≫ toSchemeHom N =
       toSchemeHom (map ι N) :=
     (toSchemeHom_map ι N).symm
   rw [← comap_comp]
   -- the members of the cover are by definition the localization maps `Spec A[1/a] ⟶ Spec A`
   change (schemeIdealLocus I hI).comap
-      (Spec.map (CommRingCat.ofHom (algebraMap A (Localization.Away a.1))) ≫ toSchemeHom N) =
+      (Spec.map (CommRingCat.ofHom (algebraMap A (Localization.Away a.val))) ≫ toSchemeHom N) =
     (ofIdealTop _).comap (Spec.map (CommRingCat.ofHom (algebraMap A _)))
   rw [hι, comap_toSchemeHom_of_range_subset I hI _ hU (hι ▸ hNU),
     comap_ofIdealTop_map_ΓSpecIso_inv, CommRingCat.hom_ofHom, hI]
@@ -256,12 +256,12 @@ noncomputable def schemeIdealLocusHomEquiv (A : Type u) [CommRing A] [Algebra R 
       {h : Spec (.of A) ⟶ (schemeIdealLocus I hI).subscheme //
         h ≫ (schemeIdealLocus I hI).subschemeι ≫ toSpec R M k =
           Spec.map (CommRingCat.ofHom (algebraMap R A))} where
-  toFun N := ⟨(toSchemeHom N.1).toImage ≫
-      inclusion ((schemeIdealLocus_le_ker_toSchemeHom_iff I hI N.1).2 N.2), by
+  toFun N := ⟨(toSchemeHom N.val).toImage ≫
+      inclusion ((schemeIdealLocus_le_ker_toSchemeHom_iff I hI N.val).2 N.property), by
     rw [Category.assoc, inclusion_subschemeι_assoc, Scheme.Hom.toImage_imageι_assoc,
       toSchemeHom_toSpec]⟩
   invFun h := ⟨(schemeHomEquiv R M k A).symm
-      ⟨h.1 ≫ (schemeIdealLocus I hI).subschemeι, by rw [Category.assoc, h.2]⟩, by
+      ⟨h.val ≫ (schemeIdealLocus I hI).subschemeι, by rw [Category.assoc, h.property]⟩, by
     rw [← schemeIdealLocus_le_ker_toSchemeHom_iff I hI, toSchemeHom_schemeHomEquiv_symm_apply]
     exact (ker_subschemeι _).ge.trans (Scheme.Hom.le_ker_comp _ _)⟩
   left_inv N := Subtype.ext <| toSchemeHom_injective <| by
@@ -274,8 +274,8 @@ the inclusion into the Grassmannian scheme, is the morphism classifying `N`. -/
 @[reassoc (attr := simp)]
 theorem schemeIdealLocusHomEquiv_apply_comp_subschemeι {A : Type u} [CommRing A] [Algebra R A]
     (N : {N : G(k, A ⊗[R] M; A) // I N = ⊥}) :
-    (schemeIdealLocusHomEquiv I hI A N).1 ≫ (schemeIdealLocus I hI).subschemeι =
-      toSchemeHom N.1 := by
+    (schemeIdealLocusHomEquiv I hI A N).val ≫ (schemeIdealLocus I hI).subschemeι =
+      toSchemeHom N.val := by
   simp [schemeIdealLocusHomEquiv]
 
 /-- The point corresponding to a morphism `h` to the closed subscheme is the point classified by
@@ -285,8 +285,8 @@ theorem toSchemeHom_schemeIdealLocusHomEquiv_symm_apply {A : Type u} [CommRing A
     (h : {h : Spec (.of A) ⟶ (schemeIdealLocus I hI).subscheme //
       h ≫ (schemeIdealLocus I hI).subschemeι ≫ toSpec R M k =
         Spec.map (CommRingCat.ofHom (algebraMap R A))}) :
-    toSchemeHom ((schemeIdealLocusHomEquiv I hI A).symm h).1 =
-      h.1 ≫ (schemeIdealLocus I hI).subschemeι :=
+    toSchemeHom ((schemeIdealLocusHomEquiv I hI A).symm h).val =
+      h.val ≫ (schemeIdealLocus I hI).subschemeι :=
   toSchemeHom_schemeHomEquiv_symm_apply _
 
 end Module.Grassmannian

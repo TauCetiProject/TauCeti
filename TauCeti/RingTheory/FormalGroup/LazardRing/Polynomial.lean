@@ -98,7 +98,7 @@ theorem adjoin_range_generator : Algebra.adjoin ℤ (Set.range generator) = ⊤ 
   induction hx using Algebra.adjoin_induction with
   | mem x hx => exact Algebra.subset_adjoin hx
   | algebraMap r =>
-    rw [SetLike.GradeZero.algebraMap_apply, ← intCast_augmentation_of_mem_grading_zero r.2]
+    rw [SetLike.GradeZero.algebraMap_apply, ← intCast_augmentation_of_mem_grading_zero r.property]
     exact intCast_mem _ _
   | add x y _ _ hx hy => exact add_mem hx hy
   | mul x y _ _ hx hy => exact mul_mem hx hy

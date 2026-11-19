@@ -189,7 +189,7 @@ theorem MemWkpLocMapOn.memWkpLocMapOnBordered_image [CompleteSpace F]
       have hxφ : (x : X) ∈ φ.source := by
         rw [hxz]
         exact φ.map_target hzt.1
-      have h := (mem_borderedInterior_iff_im_pos hφ1 hxφ).1 x.2
+      have h := (mem_borderedInterior_iff_im_pos hφ1 hxφ).1 x.property
       rw [hxz, φ.right_inv hzt.1, coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hzt.2] at h
       exact ⟨hzt.1, h⟩
     have hsymm : φi.symm z = x :=

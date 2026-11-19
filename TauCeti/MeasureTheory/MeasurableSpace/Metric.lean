@@ -140,7 +140,7 @@ theorem _root_.TotallyBounded.exists_measurable_partition_ball {X : Type u} [Pse
   set c : Fin n → X := fun i ↦ e.symm i
   set f : Fin n → Set X := fun i ↦ s ∩ ball (c i) δ
   have hf : ∀ i, MeasurableSet (f i) := fun i ↦ hsm.inter isOpen_ball.measurableSet
-  refine ⟨n, c, disjointed f, fun i ↦ hTs (e.symm i).2, fun i ↦ ?_,
+  refine ⟨n, c, disjointed f, fun i ↦ hTs (e.symm i).property, fun i ↦ ?_,
     fun i ↦ disjointed_subset f i, disjoint_disjointed f, ?_⟩
   · rw [disjointed_eq_inter_compl]
     exact (hf i).inter (.iInter fun j ↦ .iInter fun _ ↦ (hf j).compl)

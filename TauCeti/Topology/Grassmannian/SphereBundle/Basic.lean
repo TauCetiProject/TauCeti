@@ -72,7 +72,7 @@ variable (n : ℕ)
 def specialOrthogonalSphereMap (A : specialOrthogonalGroup (Fin (1 + n)) ℝ) :
     sphere (0 : EuclideanSpace ℝ (Fin (1 + n))) 1 :=
   finiteOrthonormalFrame.sphereHomeomorph (1 + n)
-    (finiteOrthonormalFrame.unitaryMap ⟨A.1, A.2.1⟩
+    (finiteOrthonormalFrame.unitaryMap ⟨A.val, A.property.1⟩
       (finiteOrthonormalFrame.standard ℝ (Nat.le_add_right 1 n)))
 
 variable {n}

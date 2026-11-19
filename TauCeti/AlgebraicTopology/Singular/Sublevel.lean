@@ -71,7 +71,8 @@ variable {X : Type u} [TopologicalSpace X] {β : Type*} [Preorder β] {f : X →
 `{f ≤ b}` to the relative homology of the sublevel pair is an isomorphism. -/
 private theorem isIso_singularHomologyπ_sublevelPair (hab : a ≤ b) (ha : ∀ x, a < f x) (R : C)
     (n : ℕ) : IsIso ((sublevelPair f hab).singularHomologyπ R n) := by
-  have : IsEmpty (sublevelPair f hab).snd := ⟨fun (x : {x : X | f x ≤ a}) ↦ (ha x).not_ge x.2⟩
+  have : IsEmpty (sublevelPair f hab).snd := ⟨fun (x : {x : X | f x ≤ a}) ↦
+      (ha x).not_ge x.property⟩
   infer_instance
 
 /-- **The sublevel pair of a band covering `X`.** If `a < f ≤ b` everywhere, the relative singular

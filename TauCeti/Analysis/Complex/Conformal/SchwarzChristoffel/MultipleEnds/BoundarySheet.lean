@@ -106,7 +106,8 @@ theorem exists_ball_preimage_schwarzChristoffelPrimitive_subset_of_unique_bounda
   -- Interior points are excluded by `hnot`; boundary points are determined by `hunique`.
   have hfiber (v : C) (hv : C.domRestrict E v = b) :
       (v : OnePoint ℂ) = ((x : ℂ) : OnePoint ℂ) :=
-    eq_coe_of_schwarzChristoffelSphereExtension_eq_boundary a e z₀ x hnot hunique hBx v v.2 hv
+    eq_coe_of_schwarzChristoffelSphereExtension_eq_boundary a e z₀ x hnot hunique hBx v v.property
+        hv
   -- Compactness makes the extension a closed map. Its unique fiber controls all nearby fibers.
   have hnear : ∀ᶠ w in 𝓝 b, ∀ v : C, C.domRestrict E v = w →
       (v : OnePoint ℂ) ∈ ((↑) : ℂ → OnePoint ℂ) '' U := by

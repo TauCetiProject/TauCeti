@@ -63,7 +63,7 @@ variable {R M : Type*} [Ring R] [TopologicalSpace M] [AddCommGroup M] [Module R 
 @[simp]
 theorem apply_coe_range (hp : IsIdempotentElem p) (w : p.range) : p w = w :=
   (LinearMap.IsIdempotentElem.mem_range_iff
-    (ContinuousLinearMap.IsIdempotentElem.toLinearMap hp)).mp w.2
+    (ContinuousLinearMap.IsIdempotentElem.toLinearMap hp)).mp w.property
 
 variable [IsTopologicalAddGroup M]
 

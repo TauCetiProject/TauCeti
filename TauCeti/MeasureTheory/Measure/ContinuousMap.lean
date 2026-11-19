@@ -124,8 +124,8 @@ theorem basedMap_measure_ext_of_forall_finset_map_restrict_eq
     [MeasurableSpace E] [BorelSpace E] {t₀ : T} {x₀ : E}
     {ν ρ : Measure (BasedMap T E t₀ x₀)} [IsFiniteMeasure ρ]
     (h : ∀ I : Finset T,
-      ν.map (fun γ ↦ I.restrict (γ.1 : T → E)) =
-        ρ.map (fun γ ↦ I.restrict (γ.1 : T → E))) : ν = ρ := by
+      ν.map (fun γ ↦ I.restrict (γ.val : T → E)) =
+        ρ.map (fun γ ↦ I.restrict (γ.val : T → E))) : ν = ρ := by
   have heq : ν.map Subtype.val = ρ.map Subtype.val := by
     apply continuousMap_measure_ext_of_forall_finset_map_restrict_eq
     intro I

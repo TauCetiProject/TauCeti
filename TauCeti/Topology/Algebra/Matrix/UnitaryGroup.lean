@@ -54,7 +54,7 @@ def unitaryReindexContinuousMulEquiv (e : m ≃ n) :
 variable {α} in
 @[simp]
 theorem coe_unitaryReindexContinuousMulEquiv_apply (e : m ≃ n) (A : unitary (Matrix m m α)) :
-    (unitaryReindexContinuousMulEquiv α e A : Matrix n n α) = reindex e e A.1 := by
+    (unitaryReindexContinuousMulEquiv α e A : Matrix n n α) = reindex e e A.val := by
   simp [unitaryReindexContinuousMulEquiv]
 
 variable {α} in
@@ -89,7 +89,7 @@ topological groups. -/
 def unitaryUniqueContinuousMulEquiv : unitary (Matrix m m α) ≃ₜ* unitary α where
   __ := (Unitary.mapEquiv (.ofClass (uniqueStarRingEquiv (m := m) (A := α)))).toMulEquiv
   continuous_toFun := continuous_induced_rng.2 <| by
-    have h : Continuous fun A : unitary (Matrix m m α) ↦ A.1 default default :=
+    have h : Continuous fun A : unitary (Matrix m m α) ↦ A.val default default :=
       (continuous_apply default).comp ((continuous_apply default).comp continuous_subtype_val)
     exact h.congr fun _ ↦ by simp
   continuous_invFun := continuous_induced_rng.2 <| by
@@ -100,7 +100,7 @@ def unitaryUniqueContinuousMulEquiv : unitary (Matrix m m α) ≃ₜ* unitary α
 variable {m α} in
 @[simp]
 theorem coe_unitaryUniqueContinuousMulEquiv_apply (A : unitary (Matrix m m α)) :
-    (unitaryUniqueContinuousMulEquiv m α A : α) = A.1 default default := by
+    (unitaryUniqueContinuousMulEquiv m α A : α) = A.val default default := by
   simp [unitaryUniqueContinuousMulEquiv]
 
 variable {m α} in

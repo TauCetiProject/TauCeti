@@ -120,7 +120,7 @@ theorem exists_pairwise_disjoint_injOn_pow_image_eq_slitPlane {d : ℕ} (hd : d 
     · exact (continuous_pow d).measurable isOpen_slitPlane.measurableSet
     exact measurableSet_eq_fun (measurable_const.mul
       ((measurable_id.pow_const d).pow_const _)) measurable_id
-  · refine Set.disjoint_left.2 fun z hi hj ↦ hij (Fin.ext (hζ.pow_inj i.2 j.2 ?_))
+  · refine Set.disjoint_left.2 fun z hi hj ↦ hij (Fin.ext (hζ.pow_inj i.isLt j.isLt ?_))
     have hne : (z ^ d) ^ ((d : ℂ)⁻¹) ≠ 0 :=
       fun h ↦ slitPlane_ne_zero hi.1 ((cpow_eq_zero_iff _ _).1 h).1
     exact mul_right_cancel₀ hne (hi.2.trans hj.2.symm)

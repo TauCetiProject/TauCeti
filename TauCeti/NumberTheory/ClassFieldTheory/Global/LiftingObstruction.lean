@@ -129,8 +129,8 @@ theorem exists_ideleClassMk_eq_of_isClosed (V : Subgroup (AbsoluteGaloisGroup K)
   have := subsingleton_H1_unitsCoeff_of_isClosed K V hV
   let S := (ideleShortExact K).restrict V
   obtain ⟨x, hx⟩ := S.explicitCoeff0_surjective_of_subsingleton
-    ⟨c, (FixedPoints.mem_addSubgroup _ _ _).2 fun v ↦ hc v v.2⟩
-  refine ⟨x, fun v hv ↦ (FixedPoints.mem_addSubgroup _ _ _).1 x.2 ⟨v, hv⟩, ?_⟩
+    ⟨c, (FixedPoints.mem_addSubgroup _ _ _).2 fun v ↦ hc v v.property⟩
+  refine ⟨x, fun v hv ↦ (FixedPoints.mem_addSubgroup _ _ _).1 x.property ⟨v, hv⟩, ?_⟩
   simpa [S] using congrArg Subtype.val hx
 
 /-! ### The maps of formations -/

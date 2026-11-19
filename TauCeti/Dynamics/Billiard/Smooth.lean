@@ -301,13 +301,13 @@ private theorem continuous_restrict_strip {f : ℝ × ℝ → ℝ × ℝ}
     Continuous fun x : ℝ × Ioo (-1 : ℝ) 1 ↦
       ((f (x.1, x.2)).1, (⟨(f (x.1, x.2)).2, hmaps x⟩ : Ioo (-1 : ℝ) 1)) := by
   have h := hf.comp_continuous (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
-    fun x ↦ ⟨mem_univ _, x.2.2⟩
+    fun x ↦ ⟨mem_univ _, x.2.property⟩
   exact (continuous_fst.comp h).prodMk ((continuous_snd.comp h).subtype_mk hmaps)
 
 /-- The next-collision bijection of `ℝ × (-1, 1)` is continuous when `χ` is `C²`. -/
 theorem continuous_nextCollisionEquiv (hχ : ContDiff ℝ 2 χ) : Continuous χ.nextCollisionEquiv :=
   (continuous_restrict_strip (χ.contDiffOn_nextCollision one_ne_zero hχ).continuousOn
-    fun x ↦ by simpa using χ.nextTangential_mem_Ioo x.2.2).congr fun x ↦ by simp
+    fun x ↦ by simpa using χ.nextTangential_mem_Ioo x.2.property).congr fun x ↦ by simp
 
 /-- The inverse of the next-collision bijection of `ℝ × (-1, 1)` is continuous when `χ` is
 `C²`. -/

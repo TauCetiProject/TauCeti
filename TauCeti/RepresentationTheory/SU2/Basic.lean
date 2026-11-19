@@ -216,7 +216,7 @@ theorem mem_torus_iff {g : SU2} :
     have h01 : (g : Matrix (Fin 2) (Fin 2) ℂ) 0 1 = 0 := hdiag (by decide)
     have h10 : (g : Matrix (Fin 2) (Fin 2) ℂ) 1 0 = 0 := hdiag (by decide)
     have hunit : (g : Matrix (Fin 2) (Fin 2) ℂ) * star (g : Matrix (Fin 2) (Fin 2) ℂ) = 1 :=
-      Matrix.mem_unitaryGroup_iff.mp (Matrix.specialUnitaryGroup_le_unitaryGroup g.2)
+      Matrix.mem_unitaryGroup_iff.mp (Matrix.specialUnitaryGroup_le_unitaryGroup g.property)
     have hmul : (g : Matrix (Fin 2) (Fin 2) ℂ) 0 0 * star ((g : Matrix (Fin 2) (Fin 2) ℂ) 0 0)
         = 1 := by
       have h := congrFun (congrFun hunit 0) 0
@@ -228,7 +228,7 @@ theorem mem_torus_iff {g : SU2} :
       rw [norm_mul, norm_star, norm_one] at h
       nlinarith [norm_nonneg ((g : Matrix (Fin 2) (Fin 2) ℂ) 0 0)]
     have hdet : (g : Matrix (Fin 2) (Fin 2) ℂ) 0 0 * (g : Matrix (Fin 2) (Fin 2) ℂ) 1 1 = 1 := by
-      have h := (Matrix.mem_specialUnitaryGroup_iff.mp g.2).2
+      have h := (Matrix.mem_specialUnitaryGroup_iff.mp g.property).2
       rw [Matrix.det_fin_two, h01] at h
       simpa using h
     have h11 : (g : Matrix (Fin 2) (Fin 2) ℂ) 1 1 = ((g : Matrix (Fin 2) (Fin 2) ℂ) 0 0)⁻¹ :=

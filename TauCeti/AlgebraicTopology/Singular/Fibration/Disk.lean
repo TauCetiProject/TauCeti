@@ -113,14 +113,14 @@ private lemma isZero_of_starConvex (hp : serreFibrations p) (hK : Convex ℝ K) 
     IsZero ((TopPair.ofSubset (p ⁻¹' {x : K | (x : V) ∈ S})).singularHomology M m) :=
   let G := ContinuousMap.Homotopy.affine ⟨((↑) : K → V), continuous_subtype_val⟩ (.const K c)
   isZero_singularHomology_preimage_of_deformation hp
-    ⟨fun q ↦ ⟨G q, hK.lineMap_mem q.2.2 hc q.1.2⟩, by fun_prop⟩
+    ⟨fun q ↦ ⟨G q, hK.lineMap_mem q.2.property hc q.1.property⟩, by fun_prop⟩
     (fun x ↦ Subtype.ext (by simp [G]))
     (fun x ↦ by simpa [G] using hcS)
     (fun t x hx ↦ by
       simp only [mem_ofPred_eq, ContinuousMap.coe_mk, G, ContinuousMap.Homotopy.affine_apply,
         AffineMap.lineMap_apply_module] at hx ⊢
       rw [add_comm]
-      exact hS hx t.2.1 (sub_nonneg.2 t.2.2) (add_sub_cancel _ _)) M m
+      exact hS hx t.property.1 (sub_nonneg.2 t.property.2) (add_sub_cancel _ _)) M m
 
 /-- The composite `E → K → V` of the fibration with the inclusion of the base. -/
 private abbrev proj (p : E ⟶ _root_.TopCat.of K) : C(E, V) :=
@@ -222,7 +222,8 @@ private def radial : C(I × _root_.TopCat.of (puncturedBall (V := V)),
     _root_.TopCat.of (puncturedBall (V := V))) :=
   let H := ((convex_closedBall (0 : V) 1).starConvex
     (mem_closedBall_self zero_le_one)).radialHomotopy one_pos sphere_subset_closedBall
-  { toFun q := ⟨⟨H.symm (q.1, ⟨q.2, q.2.1.2, q.2.2⟩), (H.symm _).2.1⟩, (H.symm _).2.2⟩
+  { toFun q := ⟨⟨H.symm (q.1, ⟨q.2, q.2.val.property, q.2.property⟩), (H.symm _).property.1⟩,
+      (H.symm _).property.2⟩
     continuous_toFun := by fun_prop }
 
 omit [FiniteDimensional ℝ V] in
@@ -236,7 +237,7 @@ private lemma isZero_singularHomology_puncturedBall_unitSphere (hp : serreFibrat
     (fun x ↦ by ext; simp [radial])
     (fun x ↦ by
       rw [mem_preimage, mem_ofPred_eq]
-      simp [radial, ContinuousMap.Homotopy.symm_apply, norm_smul, (norm_pos_iff.2 x.2).ne'])
+      simp [radial, ContinuousMap.Homotopy.symm_apply, norm_smul, (norm_pos_iff.2 x.property).ne'])
     (fun t x hx ↦ by
       rw [mem_preimage, mem_ofPred_eq] at hx ⊢
       have hx' : ‖(x : V)‖ = 1 := mem_sphere_zero_iff_norm.1 hx

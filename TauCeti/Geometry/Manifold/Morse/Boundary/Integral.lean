@@ -352,7 +352,7 @@ an orientation. -/
 theorem nonempty_morseOrientation (hX : IsAdaptedPseudoGradient f X) :
     Nonempty (MorseOrientation f X) := by
   choose φ hφ using fun p : criticalPoints 𝓘(ℝ, E) f ↦
-    hX.exists_morseChart p (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2)
+    hX.exists_morseChart p (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.property)
   exact ⟨⟨φ, hφ, fun p ↦ (φ p).negativeOrientation⟩⟩
 
 end IsAdaptedPseudoGradient

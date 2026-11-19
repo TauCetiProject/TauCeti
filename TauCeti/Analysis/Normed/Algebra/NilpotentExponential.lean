@@ -117,7 +117,7 @@ noncomputable def expImageHomeomorph {s : Set A} {n : ℕ} (hs : ∀ a ∈ s, a 
   invFun := MapsTo.restrict log _ s <| by
     rintro _ ⟨a, ha, rfl⟩
     rwa [log_exp ⟨n, hs a ha⟩]
-  left_inv a := Subtype.ext (log_exp ⟨n, hs a a.2⟩)
+  left_inv a := Subtype.ext (log_exp ⟨n, hs a a.property⟩)
   right_inv := by
     rintro ⟨_, a, ha, rfl⟩
     exact Subtype.ext (congrArg exp (log_exp ⟨n, hs a ha⟩))

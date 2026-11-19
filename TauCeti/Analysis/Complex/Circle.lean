@@ -265,7 +265,8 @@ its inverse, the point `x - √(1 - x²) I` of the lower semicircle, it parametr
 its real part. -/
 def upperSemicircle (x : Set.Icc (-1 : ℝ) 1) : Circle :=
   ⟨(x : ℝ) + √(1 - (x : ℝ) ^ 2) * Complex.I, mem_sphere_zero_iff_norm.2 (by
-    rw [Complex.norm_add_mul_I, Real.sq_sqrt (by nlinarith [x.2.1, x.2.2]), add_sub_cancel,
+    rw [Complex.norm_add_mul_I, Real.sq_sqrt (by nlinarith [x.property.1, x.property.2]),
+        add_sub_cancel,
       Real.sqrt_one])⟩
 
 theorem coe_upperSemicircle (x : Set.Icc (-1 : ℝ) 1) :
@@ -304,7 +305,7 @@ theorem upperSemicircle_eq_inv_iff {x y : Set.Icc (-1 : ℝ) 1} :
     obtain rfl : x = y := Subtype.ext hre
     refine ⟨rfl, ?_⟩
     have h0 : √(1 - (x : ℝ) ^ 2) = 0 := by linarith [Real.sqrt_nonneg (1 - (x : ℝ) ^ 2)]
-    nlinarith [Real.sqrt_eq_zero'.1 h0, x.2.1, x.2.2]
+    nlinarith [Real.sqrt_eq_zero'.1 h0, x.property.1, x.property.2]
   · rintro ⟨rfl, hx⟩
     exact (inv_upperSemicircle_of_sq_eq_one hx).symm
 

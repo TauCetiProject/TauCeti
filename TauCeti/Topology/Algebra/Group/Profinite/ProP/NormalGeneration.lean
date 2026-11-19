@@ -125,7 +125,7 @@ theorem topologicalClosure_normalClosure_eq_iff_quotient_pLowerCentralStep (s : 
   have : CompactSpace R := isCompact_iff_compactSpace.mp hR.isCompact
   have hs : Subtype.val '' s ⊆ R := by
     rintro _ ⟨x, -, rfl⟩
-    exact x.2
+    exact x.property
   rw [hF.topologicalClosure_normalClosure_eq_iff_topologicalClosure_sup_eq hp hR hs,
     ← topologicalClosure_closure_sup_eq_top_iff]
   -- Both sides describe the same subgroup of `R`, read in `F` and in `R`.

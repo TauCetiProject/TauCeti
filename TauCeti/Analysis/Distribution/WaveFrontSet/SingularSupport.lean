@@ -139,7 +139,7 @@ private theorem hasSum_fourier_mul_localFourier (T : 𝓓'(Ω, ℂ)) (χ : 𝓓(
     rw [localFourier_eq T _ (ψ := postcompCLM (𝕜 := ℝ) ofRealCLM φ) fun y ↦ by simp [hφK'],
       complexPairing_postcompCLM_ofRealCLM]
   have h := hasSum_localFourier_ofSupportedIn T hKΩ L
-    (fun y hy ℓ h ↦ Subtype.ext (hL y hy ℓ ℓ.2 h)) (φ := φK) (χ := χK) (fun y hy ↦ by
+    (fun y hy ℓ h ↦ Subtype.ext (hL y hy ℓ ℓ.property h)) (φ := φK) (χ := χK) (fun y hy ↦ by
       rw [hχK]
       exact hφ (by simpa [hφK'] using hy)) 0
   simpa only [zero_sub, hχK', hTφ, hφK', smul_eq_mul] using h

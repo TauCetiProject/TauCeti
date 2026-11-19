@@ -45,7 +45,7 @@ theorem MeromorphicOn.measurable_domRestrict
   set u : Set s := {z | AnalyticAt 𝕜 f z}
   have hu_open : IsOpen u := (isOpen_analyticAt 𝕜 f).preimage continuous_subtype_val
   have hsub : uᶜ ⊆ (Subtype.val : s → 𝕜) ⁻¹' ({z : 𝕜 | AnalyticAt 𝕜 f z}ᶜ ∩ s) :=
-    fun z hz ↦ ⟨hz, z.2⟩
+    fun z hz ↦ ⟨hz, z.property⟩
   have huc_cnt : uᶜ.Countable :=
     Set.Countable.mono hsub (hf.countable_compl_analyticAt_inter.preimage Subtype.val_injective)
   have _ : Countable ↑uᶜ := huc_cnt.to_subtype

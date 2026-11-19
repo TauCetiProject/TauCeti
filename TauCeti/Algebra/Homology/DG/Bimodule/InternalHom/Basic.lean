@@ -104,7 +104,7 @@ theorem comp_toLinearMap_mem_iSup_dgRightModuleCochains {f : M →ₗ[Bᵐᵒᵖ
     simp
   | @homogeneous q a =>
     exact Submodule.mem_iSup_of_mem (q + p)
-      (comp_toLinearMap_mem_dgRightModuleCochains hf a.2)
+      (comp_toLinearMap_mem_dgRightModuleCochains hf a.property)
   | add a a' ha ha' =>
     convert add_mem ha ha' using 1
     ext x
@@ -227,7 +227,7 @@ variable (𝒜) in
 /-- A right-module map of degree `p`, as an element of the internal Hom. -/
 def ofCochains (p : ℤ) :
     dgRightModuleCochains (R := R) (A := B) (ℳ := ℳ) (ℳN := 𝒩) p →ₗ[R] InternalHom 𝒜 B ℳ 𝒩 where
-  toFun f := ⟨⟨f.1, Submodule.mem_iSup_of_mem p f.2⟩⟩
+  toFun f := ⟨⟨f.val, Submodule.mem_iSup_of_mem p f.property⟩⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
@@ -245,7 +245,7 @@ theorem coeLM_ofCochains (p : ℤ)
 theorem ofCochains_mem_grading (p : ℤ)
     (f : dgRightModuleCochains (R := R) (A := B) (ℳ := ℳ) (ℳN := 𝒩) p) :
     ofCochains 𝒜 p f ∈ grading 𝒜 B ℳ 𝒩 p :=
-  f.2
+  f.property
 
 /-- The elements of degree `p` of the internal Hom are exactly the right-module maps of degree
 `p`. -/
@@ -267,7 +267,7 @@ theorem isInternal_grading : DirectSum.IsInternal (grading 𝒜 B ℳ 𝒩) := b
   · refine eq_top_iff.2 fun f _ ↦ ?_
     obtain ⟨f', hf', hff'⟩ : ∃ f' ∈ ⨆ p, grading 𝒜 B ℳ 𝒩 p, coeLM f' = coeLM f := by
       refine Submodule.iSup_induction _ (motive := fun g ↦ ∃ f' ∈ ⨆ p, grading 𝒜 B ℳ 𝒩 p,
-        coeLM f' = g) f.val.2 (fun p g hg ↦ ?_) ⟨0, zero_mem _, map_zero _⟩ ?_
+        coeLM f' = g) f.val.property (fun p g hg ↦ ?_) ⟨0, zero_mem _, map_zero _⟩ ?_
       · exact ⟨ofCochains 𝒜 p ⟨g, hg⟩, Submodule.mem_iSup_of_mem p (ofCochains_mem_grading p _),
           rfl⟩
       · rintro _ _ ⟨f₁, hf₁, rfl⟩ ⟨f₂, hf₂, rfl⟩
@@ -295,7 +295,7 @@ noncomputable def differential (hM : IsDGRightModule hB ℳ dM) (hN : IsDGRightM
     InternalHom 𝒜 B ℳ 𝒩 →ₗ[R] InternalHom 𝒜 B ℳ 𝒩 :=
   (DirectSum.toModule R ℤ _ fun p ↦
     ofCochains 𝒜 (p + 1) ∘ₗ dgRightModuleCochains.differential (hM := hM) (hN := hN) p ∘ₗ
-      (coeLM ∘ₗ (grading 𝒜 B ℳ 𝒩 p).subtype).codRestrict _ fun f ↦ f.2) ∘ₗ
+      (coeLM ∘ₗ (grading 𝒜 B ℳ 𝒩 p).subtype).codRestrict _ fun f ↦ f.property) ∘ₗ
     (decomposeLinearEquiv (grading 𝒜 B ℳ 𝒩)).toLinearMap
 
 variable (hM : IsDGRightModule hB ℳ dM) (hN : IsDGRightModule hB 𝒩 dN)
@@ -310,7 +310,7 @@ theorem differential_ofCochains (p : ℤ)
   have h : decomposeLinearEquiv (grading 𝒜 B ℳ 𝒩) (ofCochains 𝒜 p f) =
       lof R ℤ (fun q ↦ grading 𝒜 B ℳ 𝒩 q) p ⟨ofCochains 𝒜 p f, ofCochains_mem_grading p f⟩ :=
     decomposeLinearEquiv_apply_coe _ p ⟨_, ofCochains_mem_grading p f⟩
-  have hf : (coeLM ∘ₗ (grading 𝒜 B ℳ 𝒩 p).subtype).codRestrict _ (fun g ↦ g.2)
+  have hf : (coeLM ∘ₗ (grading 𝒜 B ℳ 𝒩 p).subtype).codRestrict _ (fun g ↦ g.property)
       ⟨ofCochains 𝒜 p f, ofCochains_mem_grading p f⟩ = f :=
     Subtype.ext ((LinearMap.codRestrict_apply _ _ _).trans (coeLM_ofCochains (𝒜 := 𝒜) p f))
   rw [differential, LinearMap.comp_apply, LinearEquiv.coe_coe, h, DirectSum.toModule_lof,
@@ -339,7 +339,7 @@ theorem differential_sq_zero (f : InternalHom 𝒜 B ℳ 𝒩) :
   induction f using DirectSum.Decomposition.inductionOn (grading 𝒜 B ℳ 𝒩) with
   | zero => rw [map_zero, map_zero]
   | @homogeneous p f =>
-    obtain ⟨g, hg⟩ := mem_grading_iff_exists.1 f.2
+    obtain ⟨g, hg⟩ := mem_grading_iff_exists.1 f.property
     rw [← hg, differential_ofCochains, differential_ofCochains,
       ← LinearMap.comp_apply (dgRightModuleCochains.differential (p + 1)),
       dgRightModuleCochains.differential_comp_self, LinearMap.zero_apply, map_zero]
@@ -357,7 +357,7 @@ variable [Module A M] [SMulCommClass A Bᵐᵒᵖ M] [DirectSum.Decomposition �
 /-- The right action of `A` on the internal Hom, `(f · a)(x) = f (a x)`. -/
 instance : SMul Aᵐᵒᵖ (InternalHom 𝒜 B ℳ 𝒩) where
   smul a f := ⟨⟨(f.val : M →ₗ[Bᵐᵒᵖ] N) ∘ₗ DistribSMul.toLinearMap Bᵐᵒᵖ M a.unop,
-    comp_toLinearMap_mem_iSup_dgRightModuleCochains 𝒜 f.val.2 a.unop⟩⟩
+    comp_toLinearMap_mem_iSup_dgRightModuleCochains 𝒜 f.val.property a.unop⟩⟩
 
 /-- The right action of `A` on the internal Hom precomposes with the left action on `M`. -/
 @[simp]
@@ -493,7 +493,8 @@ def evalOne : DGRightModuleHom (hB.isDGBimodule.internalHom hN) hN where
     induction f using DirectSum.Decomposition.inductionOn (grading ℬ B ℬ 𝒩) with
     | zero => rw [zero_apply, map_zero, map_zero, zero_apply]
     | @homogeneous q f =>
-      rw [differential_apply_of_mem _ _ f.2, hB.map_one_eq_zero, map_zero, smul_zero, sub_zero]
+      rw [differential_apply_of_mem _ _ f.property, hB.map_one_eq_zero, map_zero, smul_zero,
+          sub_zero]
     | add f g hf hg => rw [add_apply, map_add, map_add, add_apply, hf, hg]
 
 @[simp]
@@ -508,7 +509,7 @@ theorem rightMul_evalOne (f : InternalHom ℬ B ℬ 𝒩) : rightMul ℬ 𝒩 (e
   induction f using DirectSum.Decomposition.inductionOn (grading ℬ B ℬ 𝒩) with
   | zero => rw [map_zero, map_zero]
   | @homogeneous q f =>
-    obtain ⟨g, hg⟩ := mem_grading_iff_exists.1 f.2
+    obtain ⟨g, hg⟩ := mem_grading_iff_exists.1 f.property
     rw [← hg, evalOne_apply, ofCochains_apply, ← dgYonedaCochainEquiv_apply, rightMul_coe,
       LinearEquiv.symm_apply_apply]
   | add f g hf hg => rw [map_add, map_add, hf, hg]

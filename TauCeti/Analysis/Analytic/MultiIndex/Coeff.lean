@@ -216,7 +216,7 @@ theorem summable_norm_sum_Iic_smul_mul_pow {ι A G : Type*} [Fintype ι] [Decida
         rw [← hdeg, pow_add]
         ring
     _ = ∑ x : Iic ν,
-          (‖a x.1‖ * ρ ^ (∑ i, x.1 i)) * (‖b (ν - x.1)‖ * ρ ^ (∑ i, (ν - x.1) i)) :=
+          (‖a x.val‖ * ρ ^ (∑ i, x.val i)) * (‖b (ν - x.val)‖ * ρ ^ (∑ i, (ν - x.val) i)) :=
         (sum_coe_sort (Iic ν) fun β ↦
           (‖a β‖ * ρ ^ (∑ i, β i)) * (‖b (ν - β)‖ * ρ ^ (∑ i, (ν - β) i))).symm
     _ = _ := (tsum_fintype _).symm
@@ -239,7 +239,7 @@ theorem hasSum_prod_pow_smul_sum_Iic_smul {𝕜 ι A F : Type*} [CommMonoid 𝕜
   refine (sigmaIicEquivProd.hasSum_iff.2 hprod).sigma fun ν ↦ ?_
   have hfib : (∏ i, y i ^ ν i) • ∑ β ∈ Iic ν, a β • b (ν - β) =
       ∑ β : Iic ν,
-        ((∏ i, y i ^ β.1 i) • a β.1) • ((∏ i, y i ^ (ν - β.1) i) • b (ν - β.1)) := by
+        ((∏ i, y i ^ β.val i) • a β.val) • ((∏ i, y i ^ (ν - β.val) i) • b (ν - β.val)) := by
     rw [sum_coe_sort (Iic ν) fun β ↦
       ((∏ i, y i ^ β i) • a β) • ((∏ i, y i ^ (ν - β) i) • b (ν - β)), smul_sum]
     refine sum_congr rfl fun β hβ ↦ ?_
@@ -507,7 +507,7 @@ theorem exists_hasFPowerSeriesOnBall_of_hasSum {f : (ι → 𝕜) → F} {x : ι
     exact_mod_cast h
   -- Sum the given expansion fiberwise by total degree; each fiber is finite.
   let e : (Σ k : ℕ, {α // α ∈ univ.piAntidiag k}) ≃ (ι → ℕ) :=
-    { toFun := fun x ↦ x.2.1
+    { toFun := fun x ↦ x.2.val
       invFun := fun α ↦ ⟨∑ i, α i, ⟨α, mem_piAntidiag.2 ⟨rfl, by simp⟩⟩⟩
       left_inv := by rintro ⟨_, α, hα⟩; obtain ⟨rfl, -⟩ := mem_piAntidiag.1 hα; rfl
       right_inv := fun _ ↦ rfl }

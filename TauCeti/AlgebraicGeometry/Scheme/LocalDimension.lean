@@ -163,11 +163,11 @@ theorem topologicalKrullDimAt_eq_iSup_topologicalKrullDim_irreducibleComponents 
       rfl⟩) ?_)
     rw [← Ideal.topologicalKrullDim_zeroLocus]
     exact ((g.isOpenEmbedding.isEmbedding.comp IsEmbedding.subtypeVal).codRestrict Z
-      fun v ↦ hVZ ⟨v.1, v.2, rfl⟩).isInducing.topologicalKrullDim_le
+      fun v ↦ hVZ ⟨v.val, v.property, rfl⟩).isInducing.topologicalKrullDim_le
   · -- A component `Z` through `x` meets every open neighbourhood `U` of `x` in a nonempty open
     -- part of `Z`, which has the dimension of `Z`.
     rw [← topologicalKrullDim_inter_eq_of_locallyOfFiniteType (X ↘ Spec (.of k)) hZ.1
-      (isClosed_of_mem_irreducibleComponents Z hZ) U.2.1 ⟨x, hxZ, U.2.2⟩]
+      (isClosed_of_mem_irreducibleComponents Z hZ) U.property.1 ⟨x, hxZ, U.property.2⟩]
     exact (IsEmbedding.inclusion Set.inter_subset_right).isInducing.topologicalKrullDim_le
 
 include k in

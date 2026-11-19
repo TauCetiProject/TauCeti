@@ -347,7 +347,7 @@ theorem exists_weightedPolyEvalHom_eq_of_mem_locIdealImage (m : ℕ) {x : S}
         exact ⟨fa + fb, add_mem hfa hfb, by rw [map_add, ha, hb]; rfl⟩
       smul_mem' := by
         rintro c a ⟨fa, hfa, ha⟩
-        obtain ⟨g, hg, hgc⟩ := exists_weightedPolyEvalHom_eq_of_mem_locSubring P T s S hW c.2
+        obtain ⟨g, hg, hgc⟩ := exists_weightedPolyEvalHom_eq_of_mem_locSubring P T s S hW c.property
         refine ⟨g * fa, mem_weightedNhd.mpr fun ν ↦ ?_, by rw [map_mul, hgc, ha]; rfl⟩
         have hle : AddSubgroup.closure ((P.ringOfDefinition.toAddSubgroup : Set A) *
             (P.idealImage m : Set A)) ≤ P.idealImage m := by

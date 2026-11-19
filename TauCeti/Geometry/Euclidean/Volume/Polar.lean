@@ -154,10 +154,11 @@ theorem ae_integrableOn_sphere (c : E) {f : E → F} (hf : Integrable f) :
       Integrable (fun u : sphere (0 : E) 1 ↦ f (c + (r : ℝ) • (u : E)))
         (volume : Measure E).toSphere :=
     absolutelyContinuous_withDensity_ofReal (measurable_subtype_coe.pow_const _).aemeasurable
-      (ae_of_all _ fun r ↦ pow_pos r.2 _) hint.prod_left_ae
+      (ae_of_all _ fun r ↦ pow_pos r.property _) hint.prod_left_ae
   rw [ae_restrict_iff_subtype measurableSet_Ioi]
   filter_upwards [hae] with r hr
-  rw [integrableOn_sphere_iff _ c r.2, IntegrableOn, euclideanHausdorffMeasure_restrict_sphere,
+  rw [integrableOn_sphere_iff _ c r.property, IntegrableOn,
+      euclideanHausdorffMeasure_restrict_sphere,
     (MeasurableEmbedding.subtype_coe isClosed_sphere.measurableSet).integrable_map_iff]
   exact hr
 
@@ -175,8 +176,8 @@ theorem integrableOn_Ioi_setIntegral_sphere (c : E) {f : E → F} (hf : Integrab
       (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)] at hint
   rw [integrableOn_iff_comap_subtypeVal measurableSet_Ioi]
   refine hint.congr (ae_of_all _ fun r ↦ ?_)
-  simp only [Function.comp_apply, ENNReal.toReal_ofReal (pow_nonneg (le_of_lt r.2) _)]
-  exact (setIntegral_sphere_eq_smul_integral_toSphere c r.2 f).symm
+  simp only [Function.comp_apply, ENNReal.toReal_ofReal (pow_nonneg (le_of_lt r.property) _)]
+  exact (setIntegral_sphere_eq_smul_integral_toSphere c r.property f).symm
 
 /-- **Integration in polar coordinates against Hausdorff measure.** In a nontrivial real inner
 product space of dimension `n`, the integral of an integrable function is the integral over the

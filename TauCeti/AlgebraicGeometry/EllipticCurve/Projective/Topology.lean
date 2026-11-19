@@ -99,7 +99,7 @@ sending a representative to its point is an open quotient map. Continuity of a m
 points, or out of a product of copies of them, can therefore be checked on representatives. -/
 theorem isOpenQuotientMap_mk [IsTopologicalRing F] :
     IsOpenQuotientMap fun P : {P : Fin 3 → F // W.Nonsingular P} ↦
-      (Point.mk ((nonsingularLift_iff P.1).mpr P.2) : W.Point) := by
+      (Point.mk ((nonsingularLift_iff P.val).mpr P.property) : W.Point) := by
   refine ⟨fun Q ↦ ?_, continuous_mk continuous_subtype_val Subtype.prop, fun U hU ↦ ?_⟩
   · refine ⟨⟨Q.point.out, (nonsingularLift_iff _).mp ?_⟩, Point.ext (Quotient.out_eq _)⟩
     simpa only [Quotient.out_eq] using Q.nonsingular

@@ -188,7 +188,7 @@ theorem finite_setOf_forall_abs_apply_le [AddGroup.FG H] (θ : ι → H →+ ℝ
   -- A finite linearly independent subfamily `b` of the `θ i` still spans.
   obtain ⟨b, hbθ, hbspan, hb⟩ := exists_linearIndependent ℝ (range θ)
   have : Fintype b := hb.setFinite.fintype
-  choose c hc using fun f : b ↦ hbθ f.2
+  choose c hc using fun f : b ↦ hbθ f.property
   refine (LinearMap.finite_preimage_of_injective_liftBaseChange _
     (liftBaseChange_pi_injective_of_span_eq_top (fun f : b ↦ (f : H →+ ℝ))
       (by rw [Subtype.range_coe, hbspan, hθ]))

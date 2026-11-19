@@ -102,13 +102,13 @@ private lemma hornFilling_zero_aux [Quasicategory C] (N : ℕ) (hN : 2 ≤ N)
     rw [mk'_edge, mk'_edge, slice.comp_π, Equiv.apply_symm_apply, ← hedge, ← yonedaEquiv_comp]
     simp only [b, Category.assoc]
   have := slice.hasLift_of_isEquivalence p ∂Δ[n].ι sq hB
-  let τ := (slice.homEquiv sq.lift).1
+  let τ := (slice.homEquiv sq.lift).val
   have hτ : U.ι ≫ τ = I.hom ≫ σ₀ := hpush.hom_ext
     (by
       rw [Subcomplex.unionJoin.ι₁_ι_assoc, ← slice.homEquiv_comp_coe, sq.fac_left,
         Equiv.apply_symm_apply])
     (by
-      have h := congrArg (fun F ↦ (slice.homEquiv F).1) sq.fac_right
+      have h := congrArg (fun F ↦ (slice.homEquiv F).val) sq.fac_right
       rw [slice.homEquiv_comp_map_coe, Equiv.apply_symm_apply, Category.comp_id] at h
       rw [Subcomplex.unionJoin.ι₂_ι_assoc, h])
   exact ⟨E.inv ≫ τ, by

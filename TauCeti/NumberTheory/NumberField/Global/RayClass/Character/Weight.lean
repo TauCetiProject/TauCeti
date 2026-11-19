@@ -166,7 +166,7 @@ theorem toMultiplicativeIdealWeight_injective :
   intro I
   apply Units.ext
   have hI : Ideal.IsPrimeTo (I : Ideal (𝓞 K)) 𝔪.support :=
-    Ideal.isPrimeTo_iff.mpr (NumberFieldArithmetic.mem_integralIdealsAway_iff.mp I.2)
+    Ideal.isPrimeTo_iff.mpr (NumberFieldArithmetic.mem_integralIdealsAway_iff.mp I.property)
   have hval := congrArg (fun w : TauCeti.MultiplicativeIdealWeight K ↦
     w (I : Ideal (𝓞 K))) h
   simpa only [toMultiplicativeIdealWeight_apply_of_isPrimeTo (hI := hI)] using hval
@@ -185,7 +185,7 @@ noncomputable def toUnitaryIdealWeight (χ : RayClassCharacter 𝔪) :
 /-- The underlying multiplicative weight of the unitary extension. -/
 @[simp]
 theorem val_toUnitaryIdealWeight (χ : RayClassCharacter 𝔪) :
-    χ.toUnitaryIdealWeight.1 = χ.toMultiplicativeIdealWeight := by
+    χ.toUnitaryIdealWeight.val = χ.toMultiplicativeIdealWeight := by
   simp [toUnitaryIdealWeight]
 
 /-- The unitary extension respects pointwise multiplication of characters. -/

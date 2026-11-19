@@ -277,11 +277,11 @@ private theorem range_proj_inl :
   refine ⟨?_, fun hz ↦ ?_⟩
   · rintro ⟨x, hx⟩
     rw [← stackMap_proj, ← hx, stackMap_proj]
-    exact (mem_lowerPiece_iff S₁ S₂).1 x.2
+    exact (mem_lowerPiece_iff S₁ S₂).1 x.property
   rcases z with x | y
   · exact ⟨x, rfl⟩
   · -- A point of the upper part below that height lies on the cylinder over `K₁`.
-    have hy := (mem_upperPiece_iff S₁ S₂).1 y.2
+    have hy := (mem_upperPiece_iff S₁ S₂).1 y.property
     obtain ⟨x, hx⟩ := (mem_range_lower_iff_mem_range_upper S₁ S₂ hy.le hz.le).2
       (mem_range_self (y : S₂.carrier))
     refine ⟨⟨x, (mem_lowerPiece_iff S₁ S₂).2 ?_⟩, (proj_eq_proj_iff S₁ S₂).2 hx⟩
@@ -298,10 +298,10 @@ private theorem range_proj_inr :
   refine ⟨?_, fun hz ↦ ?_⟩
   · rintro ⟨y, hy⟩
     rw [← stackMap_proj, ← hy, stackMap_proj]
-    exact (mem_upperPiece_iff S₁ S₂).1 y.2
+    exact (mem_upperPiece_iff S₁ S₂).1 y.property
   rcases z with x | y
   · -- A point of the lower part above that height lies on the cylinder over `K₁`.
-    have hx := (mem_lowerPiece_iff S₁ S₂).1 x.2
+    have hx := (mem_lowerPiece_iff S₁ S₂).1 x.property
     obtain ⟨y, hy⟩ := (mem_range_lower_iff_mem_range_upper S₁ S₂ hz.le hx.le).1
       (mem_range_self (x : S₁.carrier))
     refine ⟨⟨y, (mem_upperPiece_iff S₁ S₂).2 ?_⟩, (proj_eq_proj_iff S₁ S₂).2 hy⟩
@@ -427,8 +427,8 @@ private theorem mem_range_stackMap_iff {p : sphere (0 : E) 1 × ℝ} :
   rw [range_stackMap]
   constructor
   · rintro ⟨x | y, rfl⟩
-    · exact .inl ⟨mem_range_self _, (mem_lowerPiece_iff S₁ S₂).1 x.2⟩
-    · exact .inr ⟨mem_range_self _, (mem_upperPiece_iff S₁ S₂).1 y.2⟩
+    · exact .inl ⟨mem_range_self _, (mem_lowerPiece_iff S₁ S₂).1 x.property⟩
+    · exact .inr ⟨mem_range_self _, (mem_upperPiece_iff S₁ S₂).1 y.property⟩
   · rintro (⟨⟨x, rfl⟩, hx⟩ | ⟨⟨y, rfl⟩, hy⟩)
     · exact ⟨.inl ⟨x, (mem_lowerPiece_iff S₁ S₂).2 hx⟩, rfl⟩
     · exact ⟨.inr ⟨y, (mem_upperPiece_iff S₁ S₂).2 hy⟩, rfl⟩
@@ -628,9 +628,9 @@ private def overlap : TopologicalSpace.Opens (lowerPiece S₁ S₂) :=
 
 private theorem exists_upper_eq_lower (w : overlap S₁ S₂) :
     ∃ y : upperPiece S₁ S₂, upper S₂ y = lower S₁ (w : lowerPiece S₁ S₂) := by
-  obtain ⟨y, hy⟩ := (mem_range_lower_iff_mem_range_upper S₁ S₂ w.2.le
-    ((mem_lowerPiece_iff S₁ S₂).1 (w : lowerPiece S₁ S₂).2).le).1 (mem_range_self _)
-  exact ⟨⟨y, (mem_upperPiece_iff S₁ S₂).2 (hy ▸ w.2)⟩, hy⟩
+  obtain ⟨y, hy⟩ := (mem_range_lower_iff_mem_range_upper S₁ S₂ w.property.le
+    ((mem_lowerPiece_iff S₁ S₂).1 (w : lowerPiece S₁ S₂).property).le).1 (mem_range_self _)
+  exact ⟨⟨y, (mem_upperPiece_iff S₁ S₂).2 (hy ▸ w.property)⟩, hy⟩
 
 /-- The transition from the overlap, in the lower part, to the upper part: the point of the upper
 part with the same image. -/
@@ -682,9 +682,9 @@ private instance : PreconnectedSpace (overlap S₁ S₂) := by
     ext p
     constructor
     · rintro ⟨w, rfl⟩
-      exact ⟨(mem_range_lower_iff_of_le S₁ ((mem_overlap_iff S₁ S₂).1 w.2).le).1
-        (mem_range_self _), (mem_overlap_iff S₁ S₂).1 w.2,
-        (mem_lowerPiece_iff S₁ S₂).1 (w : lowerPiece S₁ S₂).2⟩
+      exact ⟨(mem_range_lower_iff_of_le S₁ ((mem_overlap_iff S₁ S₂).1 w.property).le).1
+        (mem_range_self _), (mem_overlap_iff S₁ S₂).1 w.property,
+        (mem_lowerPiece_iff S₁ S₂).1 (w : lowerPiece S₁ S₂).property⟩
     · rintro ⟨hK, h₁, h₂⟩
       obtain ⟨x, hx⟩ := (mem_range_lower_iff_of_le S₁ h₁.le).2 hK
       exact ⟨⟨⟨x, (mem_lowerPiece_iff S₁ S₂).2 (hx ▸ h₂)⟩, (mem_overlap_iff S₁ S₂).2 (hx ▸ h₁)⟩,
@@ -737,7 +737,7 @@ private instance : Orientable ((𝓡 1).prod 𝓘(ℝ)) (Stack S₁ S₂) := by
     simpa only [piecesMap_inl, piecesMap_inr] using (proj_eq_proj_iff S₁ S₂).1 hxy
   have hx : x ∈ overlap S₁ S₂ := by
     rw [mem_overlap_iff, hw]
-    exact (mem_upperPiece_iff S₁ S₂).1 y.2
+    exact (mem_upperPiece_iff S₁ S₂).1 y.property
   obtain rfl : transition S₁ S₂ ⟨x, hx⟩ = y :=
     upper_injective S₁ S₂ ((upper_transition S₁ S₂ ⟨x, hx⟩).trans hw)
   -- Both are read off the overlap, by the inclusion into the lower part and by the transition.

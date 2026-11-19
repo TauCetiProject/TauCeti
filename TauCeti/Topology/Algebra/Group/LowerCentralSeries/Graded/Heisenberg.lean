@@ -246,8 +246,8 @@ theorem gradedRestrict_degreeOneFamily_inl (i : ι) :
 `[y i, y j] ↦ μ (a (y i)) (b (y j)) - μ (a (y j)) (b (y i))`. -/
 theorem gradedRestrict_degreeOneFamily_inr (ij : {ij : ι × ι // ij.1 < ij.2}) :
     hh.gradedRestrict htrivP haN hbN hP (degreeOneFamily p y (Sum.inr ij)) =
-      μ ((a : G → M) (y ij.1.1)) ((b : G → A) (y ij.1.2)) -
-        μ ((a : G → M) (y ij.1.2)) ((b : G → A) (y ij.1.1)) := by
+      μ ((a : G → M) (y ij.val.1)) ((b : G → A) (y ij.val.2)) -
+        μ ((a : G → M) (y ij.val.2)) ((b : G → A) (y ij.val.1)) := by
   rw [degreeOneFamily_inr,
     gradedRestrict_gradedBracket_gradedMkZero hh htrivP haN hbN hP htrivM htrivA]
 

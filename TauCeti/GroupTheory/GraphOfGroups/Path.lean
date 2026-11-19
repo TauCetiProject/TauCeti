@@ -252,7 +252,7 @@ theorem cons_cons_reverse (p : 𝔸.Path x y) (l : 𝔸.Letter y z) :
 /-- Moving an edge group element across a dart `e : b ⟶ c` of the quiver of `Γ`:
 `e, ω_e(c) ~ α_e(c), e`. -/
 theorem dart_ωArrow {b c : Γ.V} (p : 𝔸.Path x ⟨b⟩) (e : b ⟶ c)
-    (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
+    (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.val)) :
     Homotopic ((p.cons (Letter.dart e)).cons (Letter.vertex (𝔸.ωArrow e c₀)))
       ((p.cons (Letter.vertex (𝔸.αArrow e c₀))).cons (Letter.dart e)) := by
   obtain ⟨e, rfl, rfl⟩ := e
@@ -471,14 +471,14 @@ variable {𝔸}
 generator for a dart. -/
 def Letter.toπ₁Tree (T : Set Γ.E) : ∀ {x y : 𝔸.LetterVertex}, 𝔸.Letter x y → π₁Tree 𝔸 T
   | _, _, .vertex g => π₁Tree.of T _ g
-  | _, _, .dart e => π₁Tree.edge T e.1
+  | _, _, .dart e => π₁Tree.edge T e.val
 
 @[simp] theorem Letter.toπ₁Tree_vertex (T : Set Γ.E) {a : Γ.V} (g : 𝔸.vertexGroup a) :
     (Letter.vertex g).toπ₁Tree T = π₁Tree.of T a g :=
   (rfl)
 
 @[simp] theorem Letter.toπ₁Tree_dart (T : Set Γ.E) {a b : Γ.V} (e : a ⟶ b) :
-    (Letter.dart (𝔸 := 𝔸) e).toπ₁Tree T = π₁Tree.edge T e.1 :=
+    (Letter.dart (𝔸 := 𝔸) e).toπ₁Tree T = π₁Tree.edge T e.val :=
   (rfl)
 
 /-- The image of a reversed letter in `π₁(𝔸, T)` is the inverse of the image of the letter. -/
@@ -510,7 +510,7 @@ variable (T : Set Γ.E) {x y z : 𝔸.LetterVertex}
   simp [ofVertex, Quiver.Hom.toPath]
 
 @[simp] theorem toπ₁Tree_ofDart {a b : Γ.V} (e : a ⟶ b) :
-    toπ₁Tree T (ofDart (𝔸 := 𝔸) e) = π₁Tree.edge T e.1 := by
+    toπ₁Tree T (ofDart (𝔸 := 𝔸) e) = π₁Tree.edge T e.val := by
   simp [ofDart, Quiver.Hom.toPath]
 
 @[simp] theorem toπ₁Tree_reverse (p : 𝔸.Path x y) :
@@ -574,7 +574,7 @@ private theorem exists_homotopic_ofVertex_aux :
     obtain ⟨h, g', hg'⟩ := exists_homotopic_ofVertex_aux p
     cases h
     exact ⟨rfl, g' * g, (hg'.cons _).trans (Path.Homotopic.mul _ g' g)⟩
-  | _, .cons _ (.dart e) => isEmptyElim e.1
+  | _, .cons _ (.dart e) => isEmptyElim e.val
 
 /-- Over a graph without edges, every closed `𝔸`-path is homotopic to a single vertex group
 letter. -/
@@ -639,7 +639,7 @@ theorem _root_.TauCeti.SerreGraph.Path.Homotopic.mapPath_dartPrefunctor {a b : �
 generators. -/
 @[simp] theorem Path.toπ₁Tree_mapPath_dartPrefunctor (T : Set Γ.E) {a b : Γ.V} (p : Γ.Path a b) :
     Path.toπ₁Tree T ((dartPrefunctor 𝔸).mapPath p) =
-      p.weight fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge T e.1 := by
+      p.weight fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge T e.val := by
   simp [Path.toπ₁Tree]
 
 namespace π₁

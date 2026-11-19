@@ -295,7 +295,7 @@ theorem mem_range_absoluteGaloisGroupExtend_iff {g : Field.absoluteGaloisGroup K
   refine ⟨?_, fun hg ↦ ?_⟩
   · rintro ⟨τ, rfl⟩
     rw [absoluteGaloisGroupRestrictEquiv_absoluteGaloisGroupExtend]
-    exact (galoisSubgroupEquiv K L σ _).2
+    exact (galoisSubgroupEquiv K L σ _).property
   · refine ⟨(absoluteGaloisGroupRestrictEquiv L).symm
       ((galoisSubgroupEquiv K L σ).symm ⟨absoluteGaloisGroupRestrictEquiv K g, hg⟩),
       (absoluteGaloisGroupRestrictEquiv K).injective ?_⟩

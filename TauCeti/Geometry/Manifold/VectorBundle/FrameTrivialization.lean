@@ -223,7 +223,7 @@ variable [VectorBundle 𝕜 F V] [Finite ι] (hs : IsLocalFrameOn IB F n s U) (h
 
 include hU in
 private theorem continuousAt_coords {p : TotalSpace F V} (hp : p.proj ∈ U) :
-    ContinuousAt (fun q : TotalSpace F V ↦ hs.coords b q.proj q.2) p := by
+    ContinuousAt (fun q : TotalSpace F V ↦ hs.coords b q.proj q.snd) p := by
   let := Fintype.ofFinite ι
   set e' := trivializationAt F V p.proj
   have hp' : p.proj ∈ e'.baseSet := FiberBundle.mem_baseSet_trivializationAt' p.proj
@@ -232,7 +232,7 @@ private theorem continuousAt_coords {p : TotalSpace F V} (hp : p.proj ∈ U) :
     (e'.continuousAt (e'.mem_source.2 hp')).snd).congr ?_
   filter_upwards [hproj.preimage_mem_nhds ((hU.inter e'.open_baseSet).mem_nhds ⟨hp, hp'⟩)]
     with q hq
-  exact (coords_eq_inverse b e' hs hq.1 hq.2 q.2).symm
+  exact (coords_eq_inverse b e' hs hq.1 hq.2 q.snd).symm
 
 include hU in
 private theorem continuousAt_vec {q : B × F} (hq : q.1 ∈ U) :
@@ -252,7 +252,7 @@ private theorem continuousAt_vec {q : B × F} (hq : q.1 ∈ U) :
 `b` of the model fibre: over `U`, a vector of `V x` is sent to the vector of `F` with the same
 coordinates in `b` as it has in the frame `s · x`. -/
 def trivialization : Trivialization F (π F V) where
-  toFun p := (p.proj, hs.coords b p.proj p.2)
+  toFun p := (p.proj, hs.coords b p.proj p.snd)
   invFun q := TotalSpace.mk' F q.1 (hs.vec b q.1 q.2)
   source := π F V ⁻¹' U
   target := U ×ˢ univ
@@ -281,7 +281,7 @@ theorem baseSet_trivialization : (hs.trivialization hU b).baseSet = U :=
   (rfl)
 
 private theorem trivialization_apply_eq (p : TotalSpace F V) :
-    hs.trivialization hU b p = (p.proj, hs.coords b p.proj p.2) :=
+    hs.trivialization hU b p = (p.proj, hs.coords b p.proj p.snd) :=
   (rfl)
 
 private theorem trivialization_symm_apply_eq (q : B × F) :
@@ -385,7 +385,7 @@ theorem contMDiffOn_coeff [VectorBundle 𝕜 F V] [FiniteDimensional 𝕜 F]
 vector, as a point of the total space over `U`. -/
 theorem continuousOn_coeff_totalSpace [VectorBundle 𝕜 F V] [FiniteDimensional 𝕜 F]
     (hs : IsLocalFrameOn IB F n s U) (hU : IsOpen U) (i : ι) :
-    ContinuousOn (fun p : TotalSpace F V ↦ hs.coeff i p.proj p.2) (π F V ⁻¹' U) := by
+    ContinuousOn (fun p : TotalSpace F V ↦ hs.coeff i p.proj p.snd) (π F V ⁻¹' U) := by
   intro p hp
   let := hs.fintypeOfFiniteDimensional hp
   let b : Basis ι 𝕜 F := (hs.toBasisAt hp).map
@@ -395,7 +395,7 @@ theorem continuousOn_coeff_totalSpace [VectorBundle 𝕜 F V] [FiniteDimensional
       (π F V ⁻¹' U) :=
     continuous_snd.comp_continuousOn (hs.trivialization hU b).continuousOn_toFun
   have heq (q : TotalSpace F V) (hq : q ∈ π F V ⁻¹' U) :
-      hs.coeff i q.proj q.2 = b.coord i (hs.trivialization hU b q).2 := by
+      hs.coeff i q.proj q.snd = b.coord i (hs.trivialization hU b q).2 := by
     obtain ⟨x, v⟩ := q
     rw [hs.trivialization_apply hU b hq]
     simp [IsLocalFrameOn.coeff, mem_preimage.mp hq, Basis.coord_apply, Basis.equiv]

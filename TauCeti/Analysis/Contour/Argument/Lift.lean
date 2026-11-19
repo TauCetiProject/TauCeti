@@ -391,7 +391,7 @@ private theorem exists_monotone_partition_mesh_lt {a b δ : ℝ} (hab : a ≤ b)
   obtain ⟨m, hm⟩ := Set.Icc.addNSMul_eq_right hab hδ2
   refine ⟨m + 1, fun j => ↑(Set.Icc.addNSMul hab (δ / 2) j), m.succ_pos, ?_, ?_,
     fun i j hij => Subtype.coe_le_coe.mpr (Set.Icc.monotone_addNSMul hab hδ2.le hij),
-    fun j _ => (Set.Icc.addNSMul hab (δ / 2) j).2, fun j => ?_⟩
+    fun j _ => (Set.Icc.addNSMul hab (δ / 2) j).property, fun j => ?_⟩
   · exact Set.Icc.addNSMul_zero hab
   · exact hm (m + 1) (Nat.le_succ m)
   · -- gap `< δ`: the fixed step gives `≤ δ / 2` (Mathlib's `abs_sub_addNSMul_le`), and `δ / 2 < δ`.

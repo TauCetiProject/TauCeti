@@ -333,7 +333,7 @@ theorem torusFamilyMarking_singularHomologyMap_affineMap {g : Γ} {y y' : Y}
   -- The target fibre is the fibre over `g • y`, as `φ` sends `[y, 0]` there.
   have hy' : y' = g • y := by
     have : torusFamilyProjection P
-        (φ ⟨Quotient.mk _ (y, 0), torusFamilyProjection_mk P (y, 0)⟩ : _) = y' := (φ _).2
+        (φ ⟨Quotient.mk _ (y, 0), torusFamilyProjection_mk P (y, 0)⟩ : _) = y' := (φ _).property
     rwa [hφ, torusFamilyProjection_affineMap, torusFamilyProjection_mk, eq_comm] at this
   subst hy'
   obtain ⟨⟨y₁, β⟩, hβ⟩ := Quotient.exists_rep (b g y)
@@ -391,7 +391,7 @@ theorem torusFamilyMarking_loopClass_eq_of_homotopy {y₀ y₁ : Y}
         AddAction.orbitRel.Quotient Λ (Y × E)) = H (t, s)) → ∀ t, (H' (t, s)).1 = y := by
     intro y z γ s hγ t
     rw [← torusFamilyProjection_mk P, hH', ← hγ]
-    exact (γ t).2
+    exact (γ t).property
   let Γ : I → C(I, E) := fun s ↦
     ContinuousMap.snd.comp (H'.comp ((ContinuousMap.id I).prodMk (ContinuousMap.const I s)))
   have hΓ : ∀ {y : Y} {z} (γ : Path z z) (s : I),

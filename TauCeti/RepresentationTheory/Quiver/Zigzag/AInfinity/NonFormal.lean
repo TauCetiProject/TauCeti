@@ -185,7 +185,7 @@ theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_four_le_degree [Nontri
   obtain ⟨ι⟩ : Nonempty (Fin 4 ↪ G.neighborSet v) := Function.Embedding.nonempty_of_card_le
     (by rwa [Fintype.card_fin, SimpleGraph.card_neighborSet_eq_degree])
   exact ⟨_, _, not_isFormal_zigzagLoopAInfinityAlgebra_single
-    (δ := fun i ↦ ⟨((ι i : V), v), (ι i).2.symm⟩)
+    (δ := fun i ↦ ⟨((ι i : V), v), (ι i).property.symm⟩)
     (fun i j h ↦ ι.injective (Subtype.ext (congrArg (·.fst) h))) (v := v) fun _ ↦ rfl⟩
 
 /-- **The zigzag algebra of a graph with a vertex of degree at least four is not intrinsically

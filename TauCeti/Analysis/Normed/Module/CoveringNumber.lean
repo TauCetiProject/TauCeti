@@ -68,7 +68,7 @@ theorem card_le_of_isSeparated_of_subset_closedBall {s : Finset E} (hε : ε ≠
   -- closed ball of radius `r + δ` around `x`.
   have hsub : cthickening δ (s : Set E) ⊆ closedBall x (r + δ) := by
     rw [add_comm]
-    exact (cthickening_subset_of_subset δ hsx).trans (cthickening_closedBall hδ.le r.2 x).le
+    exact (cthickening_subset_of_subset δ hsx).trans (cthickening_closedBall hδ.le r.property x).le
   have key : (s.card : ℝ≥0∞) * ENNReal.ofReal (δ ^ finrank ℝ E) * μ (ball 0 1) ≤
       ENNReal.ofReal ((r + δ) ^ finrank ℝ E) * μ (ball 0 1) :=
     calc (s.card : ℝ≥0∞) * ENNReal.ofReal (δ ^ finrank ℝ E) * μ (ball 0 1)

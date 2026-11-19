@@ -268,12 +268,12 @@ theorem isOpenMap_toOrientationCover [FiniteDimensional ℝ V] (hι : Fintype.ca
     let U : Set (VectorBundleOrientationCover F E ι) := VectorBundleOrientationCover.proj ⁻¹'
       T.baseSet
     have hU : IsOpen U := VectorBundleOrientationCover.isOpen_preimage_proj T.open_baseSet
-    have hcont : Continuous fun q : U ↦ toOrientationCover o (s q.1.proj) :=
+    have hcont : Continuous fun q : U ↦ toOrientationCover o (s q.val.proj) :=
       (continuous_toOrientationCover hι o).comp (hs.comp_continuous
         (VectorBundleOrientationCover.continuous_proj.comp continuous_subtype_val) fun q ↦ q.2)
     have hopen := (VectorBundleOrientationCover.isCoveringMap_proj hF).isLocalHomeomorph
       |>.isLocallyInjective.isOpen_eqLocus hcont continuous_subtype_val
-        (funext fun q ↦ hsproj q.2)
+        (funext fun q ↦ hsproj q.property)
     refine Filter.mem_of_superset ((hU.isOpenMap_subtype_val _ hopen).mem_nhds
       ⟨⟨toOrientationCover o p₀, hT⟩, by simp [hs₀], rfl⟩) ?_
     rintro _ ⟨q, hq, rfl⟩

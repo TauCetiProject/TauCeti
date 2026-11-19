@@ -60,7 +60,7 @@ theorem mem_discBoundary {z : closedBall (0 : ℂ) 1} : z ∈ discBoundary ↔ �
   Iff.rfl
 
 private theorem norm_le_one (z : closedBall (0 : ℂ) 1) : ‖(z : ℂ)‖ ≤ 1 :=
-  mem_closedBall_zero_iff.1 z.2
+  mem_closedBall_zero_iff.1 z.property
 
 /-- The continuous map from the doubled disc to the sphere: the identity on the first sheet and the
 inversion in the unit circle on the second. -/
@@ -69,7 +69,7 @@ private noncomputable def discDoubleMap : C(DoubleAlong discBoundary, OnePoint �
     ⟨fun z ↦ ((z : ℂ) : OnePoint ℂ), continuous_coe.comp continuous_subtype_val⟩
     ⟨fun z ↦ unitCircleInversion ((z : ℂ) : OnePoint ℂ),
       unitCircleInversion.continuous.comp (continuous_coe.comp continuous_subtype_val)⟩
-    fun z ↦ (unitCircleInversion_coe_of_norm_eq_one z.2).symm
+    fun z ↦ (unitCircleInversion_coe_of_norm_eq_one z.property).symm
 
 private theorem discDoubleMap_inl (z : closedBall (0 : ℂ) 1) :
     discDoubleMap (inl _ z) = ((z : ℂ) : OnePoint ℂ) :=
@@ -198,7 +198,7 @@ private noncomputable def discNegConjSwapMap :
     C(DoubleAlong discBoundary, DoubleAlong discBoundary) :=
   desc discBoundary ((inr _).comp ⟨discNegConj, continuous_discNegConj⟩)
     ((inl _).comp ⟨discNegConj, continuous_discNegConj⟩)
-    fun z ↦ (inl_coe_eq_inr _ ⟨discNegConj z, discNegConj_mem_discBoundary z.2⟩).symm
+    fun z ↦ (inl_coe_eq_inr _ ⟨discNegConj z, discNegConj_mem_discBoundary z.property⟩).symm
 
 private theorem discNegConjSwapMap_inl (z : closedBall (0 : ℂ) 1) :
     discNegConjSwapMap (inl _ z) = inr _ (discNegConj z) :=

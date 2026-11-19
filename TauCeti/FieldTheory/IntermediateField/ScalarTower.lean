@@ -43,7 +43,7 @@ instance instIsScalarTower {k K L : Type*} [Semiring k] [Field K] [Field L]
 `x ∈ E` is the image in `L` of `algebraMap E E' x ∈ E'`. -/
 theorem le_of_isScalarTower {K L : Type*} [Field K] [Field L] [Algebra K L]
     {E E' : IntermediateField K L} [Algebra E E'] [IsScalarTower E E' L] : E ≤ E' := fun x hx ↦ by
-  have h := (algebraMap E E' ⟨x, hx⟩).2
+  have h := (algebraMap E E' ⟨x, hx⟩).property
   rwa [← algebraMap_apply, ← IsScalarTower.algebraMap_apply] at h
 
 section RestrictScalars
@@ -56,8 +56,8 @@ have the same carrier; this is the resulting `K`-algebra equivalence between the
 `K`-algebra through `L'`. It lets a statement about `E` over `K` be read on the intermediate field
 `E.restrictScalars K` of `L / K`, and conversely. -/
 def restrictScalarsAlgEquiv : E.restrictScalars K ≃ₐ[K] E where
-  toFun x := ⟨x, x.2⟩
-  invFun x := ⟨x, x.2⟩
+  toFun x := ⟨x, x.property⟩
+  invFun x := ⟨x, x.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_mul' _ _ := rfl

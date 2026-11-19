@@ -320,7 +320,8 @@ private theorem eq_of_one_lt_valuation_weightedX {v w : Spv 𝒯}
     (hvT : 1 < v.valuation T) (hwT : 1 < w.valuation T) : v = w := by
   have hdist {f : 𝒯} (hf : f ≠ 0) : ∃ s, TauCeti.PowerSeries.IsDistinguished 1 s
       (weightedRestrictedSubringOneEquiv f : PowerSeries K) :=
-    TauCeti.PowerSeries.exists_isDistinguished one_pos (weightedRestrictedSubringOneEquiv f).2
+    TauCeti.PowerSeries.exists_isDistinguished one_pos (weightedRestrictedSubringOneEquiv
+        f).property
       (by simpa using hf)
   have hne {u : Spv 𝒯} (hu : u ∈ spa (closedDiscMinimalPlus K)) (huT : 1 < u.valuation T)
       {f : 𝒯} (hf : f ≠ 0) : u.valuation f ≠ 0 := by
@@ -452,7 +453,7 @@ theorem spa_closedDiscMinimalPlus :
 /-- **`x_{>1}` is a specialization of the Gauss point `η_1`**: it lies in the closure of `η_1` in
 `Spv K⟨T⟩`, since its valuation refines the Gauss norm. -/
 theorem gaussPoint_specializes_gaussPointAboveOne :
-    (gaussPoint (K := K) one_pos le_rfl).1 ⤳ gaussPointAboveOne K :=
+    (gaussPoint (K := K) one_pos le_rfl).val ⤳ gaussPointAboveOne K :=
   gaussPoint_specializes_of_lt
     (fun _ _ h ↦ by
       rw [gaussPointAboveOne_vle_iff, not_le]
@@ -464,7 +465,7 @@ theorem isOpen_closedPolydisc_spa_closedDiscMinimalPlus :
   have h : ((↑) : spa (closedDiscMinimalPlus K) → Spv 𝒯) ⁻¹' closedPolydisc 1 K =
       ((↑) : spa (closedDiscMinimalPlus K) → Spv 𝒯) ⁻¹' basicOpen T 1 := by
     ext v
-    simp [basicOpen_one_right, mem_closedPolydisc_iff_weightedX_vle_one v.2]
+    simp [basicOpen_one_right, mem_closedPolydisc_iff_weightedX_vle_one v.property]
   rw [h]
   exact (isOpen_basicOpen T 1).preimage continuous_subtype_val
 
@@ -481,7 +482,7 @@ theorem denseRange_inclusion_closedPolydisc_spa_closedDiscMinimalPlus :
     DenseRange (Set.inclusion (closedPolydisc_subset_spa_closedDiscMinimalPlus (K := K))) := by
   rw [denseRange_inclusion_iff, spa_closedDiscMinimalPlus]
   refine Set.insert_subset ?_ subset_closure
-  exact closure_mono (Set.singleton_subset_iff.mpr (gaussPoint one_pos le_rfl).2)
+  exact closure_mono (Set.singleton_subset_iff.mpr (gaussPoint one_pos le_rfl).property)
     (specializes_iff_mem_closure.mp gaussPoint_specializes_gaussPointAboveOne)
 
 /-- **`x_{>1}` is a closed point of `Spa(K⟨T⟩, K⟨T⟩⁺)`**: its complement is the closed unit
@@ -493,7 +494,7 @@ theorem isClosed_singleton_gaussPointAboveOne :
   convert isOpen_closedPolydisc_spa_closedDiscMinimalPlus (K := K) using 1
   ext v
   have hv : (v : Spv 𝒯) ∈ insert (gaussPointAboveOne K) (closedPolydisc 1 K) :=
-    spa_closedDiscMinimalPlus (K := K) ▸ v.2
+    spa_closedDiscMinimalPlus (K := K) ▸ v.property
   simp only [Set.mem_compl_iff, Set.mem_singleton_iff, Set.mem_preimage, Subtype.ext_iff]
   exact ⟨hv.resolve_left, fun h h' ↦ gaussPointAboveOne_notMem_closedPolydisc (h' ▸ h)⟩
 

@@ -222,7 +222,8 @@ theorem exists_homeomorph_morseTrajectoryRecords {p r : M} (hpr : p ≠ r) {c : 
       continuous_subtype_val fun y ↦ y.2.1) continuous_subtype_val
   -- The point on the level `c i₀` is the point itself.
   have hτ₀ (y : S) : τ i₀ y = 0 :=
-    (Flow.levelCrossingTime_eq_zero_iff (hanti y y.2.1) (hex i₀ y y.2.1)).2 y.2.2
+    (Flow.levelCrossingTime_eq_zero_iff (hanti y y.property.1)
+        (hex i₀ y y.property.1)).2 y.property.2
   -- The point of a record on the level `c i₀` lies in the slice, and determines the record.
   have hmem : ∀ w ∈ hX.morseTrajectoryRecords p r c, w i₀ ∈ S := by
     rintro w ⟨y, hy, hw⟩
@@ -239,9 +240,10 @@ theorem exists_homeomorph_morseTrajectoryRecords {p r : M} (hpr : p ≠ r) {c : 
       (Flow.eq_levelCrossingTime_iff (hanti _ hC) (hex i _ hC)).2 (by rw [hflow]; exact hwi)
     rw [← hτi, hflow]
   refine ⟨
-    { toFun w := ⟨w.1 i₀, hmem w.1 w.2⟩
-      invFun y := ⟨fun i ↦ hX.flow (τ i y) y, y, y.2.1, fun i ↦ ⟨hτ' i y y.2.1, τ i y, rfl⟩⟩
-      left_inv w := Subtype.ext (funext (hrec w.1 w.2))
+    { toFun w := ⟨w.val i₀, hmem w.val w.property⟩
+      invFun y := ⟨fun i ↦ hX.flow (τ i y) y, y, y.property.1, fun i ↦ ⟨hτ' i y y.property.1, τ i y,
+          rfl⟩⟩
+      left_inv w := Subtype.ext (funext (hrec w.val w.property))
       right_inv y := Subtype.ext (by simp only [hτ₀, Flow.map_zero_apply])
       continuous_toFun := ((continuous_apply i₀).comp continuous_subtype_val).subtype_mk _
       continuous_invFun := hg.subtype_mk _ }, fun w ↦ rfl⟩

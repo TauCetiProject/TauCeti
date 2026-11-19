@@ -87,7 +87,7 @@ theorem isSmoothForm_opens_iff {n : WithTop ℕ∞}
   exact ⟨fun h x hx ↦ (key ⟨x, hx⟩).mp
       (ω.contDiffWithinAt_range_inChartAt_of_contMDiffAt (h ⟨x, hx⟩)),
     fun h x ↦ contMDiffAt_form_of_contDiffWithinAt_inChartAt_self
-      ((key x).mpr (h x.2))⟩
+      ((key x).mpr (h x.property))⟩
 
 /-- Exterior differentiation within an arbitrary subset of an open model domain agrees
 with flat exterior differentiation of an ambient representative. No regularity is needed. -/
@@ -122,7 +122,7 @@ theorem mextDeriv_opens_eq_extDeriv
     mextDeriv ω x = extDeriv ω₀ (x : E) := by
   rw [← mextDerivWithin_univ, mextDerivWithin_opens_eq_extDerivWithin hω,
     image_univ, Subtype.range_coe_subtype]
-  exact extDerivWithin_of_mem_nhds (U.isOpen.mem_nhds x.2)
+  exact extDerivWithin_of_mem_nhds (U.isOpen.mem_nhds x.property)
 
 /-- A regular form on an open model domain has an ambient representative regular on that
 domain. This asserts no regularity of the representative across its boundary. -/
@@ -147,7 +147,7 @@ theorem mextDeriv_opens_eq_zero_iff
     exact (mextDeriv_opens_eq_extDeriv hω ⟨x, hx⟩).symm.trans (congrFun h ⟨x, hx⟩)
   · intro h
     funext x
-    exact (mextDeriv_opens_eq_extDeriv hω x).trans (h x x.2)
+    exact (mextDeriv_opens_eq_extDeriv hω x).trans (h x x.property)
 
 /-- Degree-one rough forms on a canonical open model domain are exactly fields of
 continuous linear maps. This is a pointwise equivalence, imposing no continuity in the base. -/

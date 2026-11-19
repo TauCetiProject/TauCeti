@@ -92,7 +92,8 @@ theorem natCard_eigenvectors_of_infinite [Infinite K] (A : Matrix n n K) :
   refine Set.Infinite.card_eq_zero (Set.infinite_of_injective_forall_mem
     (f := fun a : ↥({0}ᶜ : Set K) ↦ (a : K) • v)
     (fun a b hab ↦ Subtype.ext (smul_left_injective K hv0 hab))
-    fun a ↦ mem_eigenvectors.mpr ⟨smul_ne_zero (Set.mem_compl_singleton_iff.mp a.2) hv0, c, ?_⟩)
+    fun a ↦ mem_eigenvectors.mpr ⟨smul_ne_zero (Set.mem_compl_singleton_iff.mp a.property) hv0, c,
+        ?_⟩)
   rw [mulVec_smul, hc, smul_comm]
 
 /-- A matrix and its transpose have equally many nonzero eigenvectors. Over an infinite field both
@@ -108,7 +109,7 @@ theorem natCard_eigenvectors_transpose (A : Matrix n n K) :
     rw [← Nat.card_sigma]
     refine (Nat.card_congr (Equiv.ofBijective
       (fun p : Σ c : K, {v : n → K // Module.End.HasEigenvector B.mulVecLin c v} ↦
-        (⟨p.2.1, p.1, p.2.2⟩ : B.eigenvectors)) ⟨?_, ?_⟩)).symm
+        (⟨p.2.val, p.1, p.2.property⟩ : B.eigenvectors)) ⟨?_, ?_⟩)).symm
     · rintro ⟨c, v, hc⟩ ⟨c', v', hc'⟩ h
       obtain rfl : v = v' := congrArg Subtype.val h
       exact Sigma.subtype_ext (smul_left_injective K (Module.End.hasEigenvector_iff.mp hc).2

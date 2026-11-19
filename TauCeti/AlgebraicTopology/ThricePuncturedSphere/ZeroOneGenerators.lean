@@ -167,9 +167,9 @@ theorem coe_δZero (t : unitInterval) :
 def αZero : Path basePt (zeroBasePt : ThricePuncturedSphere) where
   toFun t := ⟨((1 / 2 - t / 4 : ℝ) : ℂ), by
       rw [Ne, ofReal_eq_zero]
-      linarith [t.2.2], by
+      linarith [t.property.2], by
       rw [Ne, ← ofReal_one, ofReal_inj]
-      linarith [t.2.1]⟩
+      linarith [t.property.1]⟩
   continuous_toFun := by fun_prop
   source' := Subtype.ext (by simp [coe_basePt])
   target' := Subtype.ext (by norm_num [zeroBasePt])
@@ -218,8 +218,8 @@ theorem transport_δZero_eq_periph0 :
   have hδ (t : unitInterval) : δZero.map continuous_subtype_val t ∈ S :=
     hmem (by simp [norm_circleMap_zero]; norm_num)
   have hα (t : unitInterval) : αZero t ∈ S := hmem (by
-    rw [coe_αZero, norm_real, Real.norm_of_nonneg (by linarith [t.2.2])]
-    linarith [t.2.1])
+    rw [coe_αZero, norm_real, Real.norm_of_nonneg (by linarith [t.property.2])]
+    linarith [t.property.1])
   have hsub := ball_diff_subset_range (c := 0) (R := 1) (.inl rfl) le_rfl
   have h := (Circle.homotopic_trans_of_degree_map_eq
     (map_direction_bijective (S := S) one_pos (fun _ => Iff.rfl) hsub ⟨basePt, hb⟩).injective
@@ -271,9 +271,9 @@ theorem coe_δOne (t : unitInterval) :
 def αOne : Path basePt (oneBasePt : ThricePuncturedSphere) where
   toFun t := ⟨((1 / 2 + t / 4 : ℝ) : ℂ), by
       rw [Ne, ofReal_eq_zero]
-      linarith [t.2.1], by
+      linarith [t.property.1], by
       rw [Ne, ← ofReal_one, ofReal_inj]
-      linarith [t.2.2]⟩
+      linarith [t.property.2]⟩
   continuous_toFun := by fun_prop
   source' := Subtype.ext (by simp [coe_basePt])
   target' := Subtype.ext (by norm_num [oneBasePt])
@@ -322,8 +322,9 @@ theorem transport_δOne_eq_periph1 :
   have hδ (t : unitInterval) : δOne.map continuous_subtype_val t ∈ S :=
     hmem (by simp [circleMap_sub_center, norm_circleMap_zero]; norm_num)
   have hα (t : unitInterval) : αOne t ∈ S := hmem (by
-    rw [coe_αOne, ← ofReal_one, ← ofReal_sub, norm_real, Real.norm_of_nonpos (by linarith [t.2.2])]
-    linarith [t.2.1])
+    rw [coe_αOne, ← ofReal_one, ← ofReal_sub, norm_real, Real.norm_of_nonpos (by linarith
+        [t.property.2])]
+    linarith [t.property.1])
   have hsub := ball_diff_subset_range (c := 1) (R := 1) (.inr rfl) le_rfl
   have h := (Circle.homotopic_trans_of_degree_map_eq
     (map_direction_bijective (S := S) one_pos (fun _ => Iff.rfl) hsub ⟨basePt, hb⟩).injective

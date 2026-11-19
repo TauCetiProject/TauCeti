@@ -47,15 +47,15 @@ theorem IsTopologicallyFinitelyGenerated.isOpen_proPFrattini
   have := hG.finite_openSubgroup_index_eq p
   have : Finite {U : OpenNormalSubgroup G // U.toSubgroup.index = p} :=
     Finite.of_injective
-      (fun U ↦ (⟨U.1.toOpenSubgroup, U.2⟩ :
+      (fun U ↦ (⟨U.val.toOpenSubgroup, U.property⟩ :
         {U : OpenSubgroup G // (U : Subgroup G).index = p})) (by
       intro U V h
       apply Subtype.ext
       apply OpenNormalSubgroup.toSubgroup_injective
       exact congrArg (fun U : {U : OpenSubgroup G // (U : Subgroup G).index = p} ↦
-        U.1.toSubgroup) h)
+        U.val.toSubgroup) h)
   rw [proPFrattini_def, Subgroup.coe_iInf]
-  exact isOpen_iInter_of_finite fun U ↦ U.1.isOpen
+  exact isOpen_iInter_of_finite fun U ↦ U.val.isOpen
 
 /-- In a topologically finitely generated compact group, the topologically characteristic open
 normal subgroups contained in the pro-`p` Frattini subgroup are cofinal among the open subgroups:

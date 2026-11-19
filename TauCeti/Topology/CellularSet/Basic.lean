@@ -382,7 +382,7 @@ theorem IsCellularSet.exists_homeomorph_image [ChartedSpace E M] {X : Set M}
   obtain ⟨e, he⟩ := exists_homeomorph_image_of_forall_eq_iff hφ hK (hcK.restrict c K K)
     (hcc.restrict hcK) hcKs fun a b ↦ by
       rw [Subtype.ext_iff]
-      exact (hcf a b).trans (hφK a a.2 b b.2).symm
+      exact (hcf a b).trans (hφK a a.property b b.property).symm
   have hψ (a : K) : (e.symm (hcK.restrict c K K a) : Y) = φ a := by
     rw [← he, e.symm_apply_apply]
   -- Outside `U` the collapse is the identity, so `e.symm` agrees with `φ` there.
@@ -392,7 +392,7 @@ theorem IsCellularSet.exists_homeomorph_image [ChartedSpace E M] {X : Set M}
     obtain ⟨a, rfl⟩ := hcKs x
     rw [hψ]
     refine ⟨fun ⟨u, hu, hua⟩ ↦ hcUU a ?_, fun hx ↦ mem_image_of_mem φ (hcU' a hx)⟩
-    rcases (hφK u (hUK hu) a a.2).1 hua with h | h
+    rcases (hφK u (hUK hu) a a.property).1 hua with h | h
     · exact h ▸ hu
     · exact hXU h.2
   exact ⟨e.symm, hoff, hin⟩

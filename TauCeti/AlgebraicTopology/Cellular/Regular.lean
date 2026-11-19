@@ -83,7 +83,7 @@ theorem isIso_singularHomologyMap_cellAttachingMap_domRestrict {n : ℕ} {i : ce
   · rw [TopPair.ofSubsetMap_fst]
     exact hemb
   · rintro u ⟨z, hz⟩
-    refine ⟨⟨u, fun hu ↦ z.2 ?_⟩, rfl⟩
+    refine ⟨⟨u, fun hu ↦ z.property ?_⟩, rfl⟩
     refine hz.trans ?_
     rw [TopPair.ofSubsetMap_fst_apply]
     exact congrArg (cellAttachingMap j) hu

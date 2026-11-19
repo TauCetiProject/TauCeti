@@ -32,7 +32,7 @@ theorem continuousOn_of_isClosed_graphOn {f : X → Y} {s : Set X} {K : Set Y}
     (hf : IsClosed (s.graphOn f)) (hK : IsCompact K) (hfK : MapsTo f s K) :
     ContinuousOn f s := by
   have : CompactSpace K := isCompact_iff_compactSpace.mp hK
-  let F : s → K := fun x ↦ ⟨f x, hfK x.2⟩
+  let F : s → K := fun x ↦ ⟨f x, hfK x.property⟩
   have hgraph : F.graph = Prod.map Subtype.val Subtype.val ⁻¹' s.graphOn f := by
     ext ⟨x, y⟩
     simp [F, Function.graph, Subtype.ext_iff]

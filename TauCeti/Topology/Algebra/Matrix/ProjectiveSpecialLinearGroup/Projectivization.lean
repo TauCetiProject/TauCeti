@@ -72,7 +72,7 @@ theorem _root_.Matrix.isOpen_setOf_det_rep_ne_zero [IsTopologicalRing K] [T1Spac
       {v : {v : Matrix n n K // v ≠ 0} | (v : Matrix n n K).det ≠ 0} := by
     ext v
     rw [Set.mem_preimage, Projectivization.mk'_eq_mk]
-    exact det_rep_mk_ne_zero_iff v.2
+    exact det_rep_mk_ne_zero_iff v.property
   rw [this]
   exact isOpen_compl_singleton.preimage (continuous_subtype_val.matrix_det)
 

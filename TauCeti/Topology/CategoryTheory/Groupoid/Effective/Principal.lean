@@ -148,7 +148,7 @@ theorem dense_setOf_ineffectiveKernel_eq_top : Dense {x : C | ineffectiveKernel 
     let ⟨U, hxU, _, _, hdense⟩ := exists_isotropy_chart_principal hs hp x
     let ⟨y, hyV, hyP⟩ := hdense.inter_open_nonempty ((Subtype.val : U → C) ⁻¹' V)
       (hV.preimage continuous_subtype_val) ⟨⟨x, hxU⟩, hxV⟩
-    ⟨y.1, hyV, hyP⟩
+    ⟨y.val, hyV, hyP⟩
 
 /-- In a Hausdorff proper étale topological groupoid, the coarse image of the principal objects is
 open in the space of isomorphism classes. -/

@@ -1065,13 +1065,13 @@ theorem finSigmaFinEquiv_lt_finSigmaFinEquiv_iff {k : ℕ} {d : Fin k → ℕ}
     {x y : (i : Fin k) × Fin (d i)} :
     finSigmaFinEquiv x < finSigmaFinEquiv y ↔ x.1 < y.1 ∨ x.1 = y.1 ∧ (x.2 : ℕ) < y.2 := by
   -- The offset of block `i` is the sum of the sizes of the blocks before it.
-  set s : Fin k → ℕ := fun i ↦ ∑ j : Fin i, d (Fin.castLE i.2.le j) with hs
+  set s : Fin k → ℕ := fun i ↦ ∑ j : Fin i, d (Fin.castLE i.isLt.le j) with hs
   have hoff (i j : Fin k) (h : i < j) : s i + d i ≤ s j := by
     set F : ℕ → ℕ := fun l ↦ if h : l < k then d ⟨l, h⟩ else 0
     have hF (i : Fin k) : s i = ∑ l ∈ range i, F l := by
       rw [hs, ← Fin.sum_univ_eq_sum_range]
       refine Fintype.sum_congr _ _ fun l ↦ ?_
-      simp [F, l.2.trans i.2, Fin.castLE]
+      simp [F, l.isLt.trans i.isLt, Fin.castLE]
     have hFi : F i = d i := by simp [F]
     rw [hF, hF, ← hFi, ← sum_range_succ, ← sum_range_add_sum_Ico F (Fin.lt_def.1 h)]
     exact Nat.le_add_right _ _

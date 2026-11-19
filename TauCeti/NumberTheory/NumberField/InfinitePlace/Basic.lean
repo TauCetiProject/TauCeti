@@ -87,7 +87,7 @@ variable {K : Type*} [Field K]
 /-- A totally real field has no complex infinite places. -/
 instance IsTotallyReal.instIsEmptyIsComplex [IsTotallyReal K] :
     IsEmpty {w : InfinitePlace K // w.IsComplex} :=
-  ⟨fun w ↦ not_isReal_iff_isComplex.mpr w.2 (IsTotallyReal.isReal w.1)⟩
+  ⟨fun w ↦ not_isReal_iff_isComplex.mpr w.property (IsTotallyReal.isReal w.val)⟩
 
 /-- **An extension of a totally real field unramified at infinity is totally real.** If every
 infinite place of `K` is unramified over a totally real field `k`, then every infinite place of
@@ -331,7 +331,7 @@ theorem InfinitePlace.LiesOver.embedding_comp_eq_and_conjugate_embedding_comp_eq
     exact (ComplexEmbedding.involutive_conjugate k _).symm
 
 /-- An infinite place is archimedean: it takes the value `2` at `2`. -/
-theorem InfinitePlace.not_isNonarchimedean (v : InfinitePlace K) : ¬IsNonarchimedean v.1 := by
+theorem InfinitePlace.not_isNonarchimedean (v : InfinitePlace K) : ¬IsNonarchimedean v.val := by
   intro h
   have := h.apply_natCast_le_one (n := 2) (by simp) (by simp)
   rw [← InfinitePlace.coe_apply, v.map_natCast] at this

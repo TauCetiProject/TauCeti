@@ -450,7 +450,7 @@ def kummerCoeffPow {m : ℕ} (h : m ∣ n) :
     KummerCoeff K n →+[AbsoluteGaloisGroup K] KummerCoeff K m where
   toFun x := Additive.ofMul ⟨(x.toMul : (SeparableClosure K)ˣ) ^ (n / m), by
     rw [mem_rootsOfUnity, ← pow_mul, Nat.div_mul_cancel h]
-    exact (mem_rootsOfUnity _ _).1 x.toMul.2⟩
+    exact (mem_rootsOfUnity _ _).1 x.toMul.property⟩
   map_zero' := Additive.toMul.injective (Subtype.ext (by simp))
   map_add' x y := Additive.toMul.injective (Subtype.ext (by simp [mul_pow]))
   map_smul' g x := Additive.toMul.injective (Subtype.ext (by simp [smul_pow']))

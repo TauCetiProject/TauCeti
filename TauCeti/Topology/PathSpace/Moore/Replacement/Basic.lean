@@ -280,7 +280,7 @@ theorem val_eq_subtypeVal (x : Fiber p b) : x.val = Subtype.val x :=
 
 @[simp]
 theorem target_path_val (x : Fiber p b) : x.val.path.target = b :=
-  x.2
+  x.property
 
 @[ext]
 theorem ext {x y : Fiber p b} (h : x.val = y.val) : x = y :=
@@ -359,12 +359,13 @@ open MooreReplacement
 `f · ω = Φ (f, ω)(end)`.  It is a strict action when `Φ` is transitive. -/
 def fiberAct {p : C(E, B)} (Φ : MooreLiftingFunction p) (b : B) (f : {e // p e = b})
     (ω : MooreLoopSpace B b) : {e // p e = b} :=
-  ⟨(Φ.lift f ω.toMoorePath (by rw [ω.source_eq, f.2])).target, by rw [target_lift, ω.target_eq]⟩
+  ⟨(Φ.lift f ω.toMoorePath (by rw [ω.source_eq, f.property])).target, by rw [target_lift,
+      ω.target_eq]⟩
 
 @[simp]
 theorem coe_fiberAct {p : C(E, B)} (Φ : MooreLiftingFunction p) (b : B) (f : {e // p e = b})
     (ω : MooreLoopSpace B b) :
-    (Φ.fiberAct b f ω : E) = (Φ.lift f ω.toMoorePath (by rw [ω.source_eq, f.2])).target :=
+    (Φ.fiberAct b f ω : E) = (Φ.lift f ω.toMoorePath (by rw [ω.source_eq, f.property])).target :=
   (rfl)
 
 /-- The action through a lifting function is continuous in both variables. -/
@@ -436,7 +437,7 @@ theorem IsTransitive.transport_act {p : C(E, B)} {Φ : MooreLiftingFunction p}
 
 private theorem target_path_incl_val {p : C(E, B)} {b : B} (f : {e // p e = b}) :
     (incl p f).path.target = b := by
-  simp [f.2]
+  simp [f.property]
 
 /-- The inclusion of the fibre of `p` into the fibre `F'`, `f ↦ (f, const)`. -/
 def fiberIncl (p : C(E, B)) (b : B) : C({e // p e = b}, Fiber p b) :=

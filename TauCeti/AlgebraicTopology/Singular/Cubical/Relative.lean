@@ -136,7 +136,7 @@ theorem range_map_eq_supportedIn_range {Y : Type*} [TopologicalSpace Y] {f : C(X
     | smul r a ha => simpa using Submodule.smul_mem _ r ha
     | ofCube c =>
       rw [map_ofCube]
-      exact ofCube_mem_range_map R hf fun _ ⟨t, ht⟩ ↦ ht ▸ (c t).2
+      exact ofCube_mem_range_map R hf fun _ ⟨t, ht⟩ ↦ ht ▸ (c t).property
 
 /-- **Supports along an embedding**: a chain is supported in `A` exactly when its push-forward
 along an embedding `ι` is supported in `ι '' A`. -/
@@ -177,7 +177,7 @@ private theorem restrictTo_eq_self {A : Set X} {n : ℕ} {g : NormalizedCubicalC
   | smul r a ha => simp [ha]
   | ofCube c =>
     rw [map_ofCube, restrictTo_ofCube]
-    exact ite_eq_left_of_eq_true _ _ (eq_true fun _ ⟨t, ht⟩ ↦ ht ▸ (c t).2)
+    exact ite_eq_left_of_eq_true _ _ (eq_true fun _ ⟨t, ht⟩ ↦ ht ▸ (c t).property)
 
 private theorem restrictTo_restrictTo_mem (A B : Set X) {n : ℕ} (g : NormalizedCubicalChain X R n) :
     restrictTo R A n (restrictTo R B n g) ∈ supportedIn R (A ∩ B) n := by

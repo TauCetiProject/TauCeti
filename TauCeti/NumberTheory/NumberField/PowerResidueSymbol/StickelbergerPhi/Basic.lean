@@ -363,7 +363,7 @@ theorem stickelbergerPhi_modEq [Fact m.Prime] (P : Ideal (𝓞 K)) [P.IsMaximal]
     have hfσ (x : 𝓞 K) : (f x : ℂ) = σ x := rfl
     simpa [hfσ] using (congrArg Subtype.val hy).symm
   obtain ⟨z, hz'⟩ := IsIntegralClosure.isIntegral_iff (A := 𝓞 K) |>.mp <|
-    (isIntegral_algHom_iff σ.toIntAlgHom σ.injective).mp (hz ▸ y.2)
+    (isIntegral_algHom_iff σ.toIntAlgHom σ.injective).mp (hz ▸ y.property)
   rw [SModEq.sub_mem, sub_neg_eq_add, mem_span_singleton']
   refine ⟨z, RingOfIntegers.coe_injective ?_⟩
   rw [map_mul, hz', map_natCast, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hm.ne_zero)]

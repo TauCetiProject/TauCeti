@@ -113,7 +113,7 @@ theorem mem_halfClosedImage {i : Fin A.n} {z : ℂ} :
 theorem coe_mem_halfClosedImage {i : Fin A.n} {y : ClosedUpperHalfPlane} :
     (y : ℂ) ∈ A.halfClosedImage i ↔ y ∈ A.image i := by
   rw [mem_halfClosedImage, closedUpperHalfPlaneModel_symm_coe]
-  exact and_iff_left y.2
+  exact and_iff_left y.property
 
 /-- The open subset of `ℂ` whose trace on the closed upper half-plane is the image of chart `i`. -/
 def halfOpen (i : Fin A.n) : Opens ℂ :=
@@ -135,7 +135,7 @@ theorem halfClosedImage_eq_image_val (i : Fin A.n) :
   ext z
   refine ⟨fun ⟨hz, hz0⟩ ↦ ⟨_, hz, coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz0⟩, ?_⟩
   rintro ⟨w, hw, rfl⟩
-  exact ⟨by simpa using hw, w.2⟩
+  exact ⟨by simpa using hw, w.property⟩
 
 theorem halfImage_subset_halfClosedImage (i : Fin A.n) :
     (A.halfImage i : Set ℂ) ⊆ A.halfClosedImage i :=
@@ -485,7 +485,7 @@ theorem exists_continuous_halfCoord_eqOn {g : Fin A.n → ℂ → F}
       -- A point of the overlap in the closed upper half-plane, read in `ℂ`.
       have hy' : (y : ℂ) ∈
           closedUpperHalfPlaneModel.symm ⁻¹' A.overlap i i' ∩ {z : ℂ | 0 ≤ z.im} :=
-        ⟨by rw [mem_preimage, closedUpperHalfPlaneModel_symm_coe]; exact hy, y.2⟩
+        ⟨by rw [mem_preimage, closedUpperHalfPlaneModel_symm_coe]; exact hy, y.property⟩
       simpa only [closedUpperHalfPlaneModel_symm_coe, halfTransition_def] using hcompat' i i' hy'
   refine ⟨t, ht, fun i z hz ↦ ?_⟩
   obtain ⟨hzi, hz0⟩ := A.mem_halfClosedImage.1 hz

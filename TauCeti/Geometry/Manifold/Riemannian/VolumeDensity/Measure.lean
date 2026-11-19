@@ -147,7 +147,7 @@ theorem setLIntegral_chartRiemannianVolume
   -- Read `φ` on the chart source through the coordinate map `e`.
   have hφ (μ : Measure e.source) : ∫⁻ z, φ z ∂μ =
       ∫⁻ z, (fun y ↦ φ (e.symm y)) (e.source.domRestrict e z) ∂μ :=
-    lintegral_congr fun z ↦ by simp only [Set.domRestrict_apply, e.left_inv z.2]
+    lintegral_congr fun z ↦ by simp only [Set.domRestrict_apply, e.left_inv z.property]
   rw [chartRiemannianVolume, hval.restrict_map, hval.lintegral_map, hR.restrict_comap, himage, hφ]
   refine (hR.lintegral_map (fun y ↦ φ (e.symm y))).symm.trans ?_
   rw [hR.map_comap, Measure.restrict_restrict hR.measurableSet_range,
@@ -188,7 +188,7 @@ theorem setIntegral_chartRiemannianVolume
   have hφ (μ : Measure e.source) : ∫ z, φ z ∂μ =
       ∫ z, (fun y ↦ φ (e.symm y)) (e.source.domRestrict e z) ∂μ :=
     integral_congr_ae (Filter.Eventually.of_forall fun z ↦ by
-      simp only [Set.domRestrict_apply, e.left_inv z.2])
+      simp only [Set.domRestrict_apply, e.left_inv z.property])
   rw [chartRiemannianVolume, hval.restrict_map, hval.integral_map, hR.restrict_comap, himage, hφ]
   refine (hR.integral_map (fun y ↦ φ (e.symm y))).symm.trans ?_
   rw [hR.map_comap, Measure.restrict_restrict hR.measurableSet_range,

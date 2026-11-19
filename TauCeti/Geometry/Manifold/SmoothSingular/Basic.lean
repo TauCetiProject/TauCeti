@@ -153,19 +153,19 @@ variable {p : ℕ}
 
 /-- A smooth singular simplex as a continuous map on the full-dimensional simplex `Δᵖ`. -/
 def toContinuousMap (σ : SmoothSimplex I M p) : C(fullSimplex p, M) :=
-  ((TopCat.of M).toSSetObjEquiv _ σ.1).comp
+  ((TopCat.of M).toSSetObjEquiv _ σ.val).comp
     ⟨fullSimplexEquivStdSimplex p, (fullSimplexEquivStdSimplex p).continuous⟩
 
 /-- A smooth singular simplex read on `Δᵖ` is the underlying singular simplex read through the
 identification of `Δᵖ` with the barycentric standard simplex. -/
 theorem toContinuousMap_apply (σ : SmoothSimplex I M p) (x : fullSimplex p) :
-    σ.toContinuousMap x = (TopCat.of M).toSSetObjEquiv _ σ.1 (fullSimplexEquivStdSimplex p x) :=
+    σ.toContinuousMap x = (TopCat.of M).toSSetObjEquiv _ σ.val (fullSimplexEquivStdSimplex p x) :=
   (rfl)
 
 /-- A smooth singular simplex is smooth on `Δᵖ` in the sense of maps on arbitrary subsets. -/
 theorem contMDiffOnSubset_toContinuousMap (σ : SmoothSimplex I M p) :
     ContMDiffOnSubset I ∞ σ.toContinuousMap :=
-  (mem_smoothSingularSubcomplex_iff σ.1).mp σ.2
+  (mem_smoothSingularSubcomplex_iff σ.val).mp σ.property
 
 /-- A smooth singular simplex is determined by the map it induces on `Δᵖ`. -/
 theorem toContinuousMap_injective :
@@ -216,12 +216,14 @@ affine map `simplexMapAmbient`. -/
 theorem toContinuousMap_map_apply {q : ℕ} (σ : SmoothSimplex I M p) (f : ⦋q⦌ ⟶ ⦋p⦌)
     (x : fullSimplex q) :
     toContinuousMap ((smoothSingularSubcomplex I M : SSet).map f.op σ) x =
-      σ.toContinuousMap ⟨simplexMapAmbient f.toOrderHom x, mapsTo_simplexMapAmbient _ x.2⟩ := by
-  have hx : (⟨simplexMapAmbient f.toOrderHom x, mapsTo_simplexMapAmbient _ x.2⟩ : fullSimplex p) =
+      σ.toContinuousMap ⟨simplexMapAmbient f.toOrderHom x, mapsTo_simplexMapAmbient _ x.property⟩
+          := by
+  have hx : (⟨simplexMapAmbient f.toOrderHom x, mapsTo_simplexMapAmbient _ x.property⟩ : fullSimplex
+      p) =
       (fullSimplexEquivStdSimplex p).symm ((fullSimplexEquivStdSimplex q x).map f.toOrderHom) :=
     Subtype.ext (simplexMapAmbient_coe _ x)
   rw [toContinuousMap_apply, hx, toContinuousMap_apply, Homeomorph.apply_symm_apply]
-  exact TopCat.toSSetObjEquiv_naturality_apply f σ.1 (fullSimplexEquivStdSimplex q x)
+  exact TopCat.toSSetObjEquiv_naturality_apply f σ.val (fullSimplexEquivStdSimplex q x)
 
 -- `simp` reduces `SmoothSimplex` (`(smoothSingularSubcomplex I M).toSSet.obj _`) in implicit type
 -- arguments via `Subfunctor.toFunctor_obj` before looking up a lemma, so `simp` lemmas involving
@@ -243,23 +245,23 @@ projection `simplexMapAmbient i.predAbove`. -/
 theorem toContinuousMap_σ_apply (σ : SmoothSimplex I M p) (i : Fin (p + 1))
     (x : fullSimplex (p + 1)) :
     toContinuousMap ((smoothSingularSubcomplex I M : SSet).σ i σ) x =
-      σ.toContinuousMap ⟨simplexMapAmbient i.predAbove x, mapsTo_simplexMapAmbient _ x.2⟩ :=
+      σ.toContinuousMap ⟨simplexMapAmbient i.predAbove x, mapsTo_simplexMapAmbient _ x.property⟩ :=
   σ.toContinuousMap_map_apply (SimplexCategory.σ i) x
 
 variable (I M) in
 /-- Smooth `0`-simplices of `M` correspond bijectively to points of `M`, restricting
 `TopCat.toSSetObj₀Equiv`. -/
 def equiv₀ : SmoothSimplex I M 0 ≃ M where
-  toFun σ := (TopCat.of M).toSSetObj₀Equiv σ.1
+  toFun σ := (TopCat.of M).toSSetObj₀Equiv σ.val
   invFun x₀ := ⟨(TopCat.of M).toSSetObj₀Equiv.symm x₀, by simp⟩
-  left_inv σ := Subtype.ext ((TopCat.of M).toSSetObj₀Equiv.symm_apply_apply σ.1)
+  left_inv σ := Subtype.ext ((TopCat.of M).toSSetObj₀Equiv.symm_apply_apply σ.val)
   right_inv x₀ := (TopCat.of M).toSSetObj₀Equiv.apply_symm_apply x₀
 
 /-- The underlying singular `0`-simplex of `(equiv₀ I M).symm x₀` is
 `TopCat.toSSetObj₀Equiv.symm x₀`. -/
 @[simp]
 theorem coe_equiv₀_symm (x₀ : M) :
-    (dsimp% only [Subfunctor.toFunctor_obj] (((equiv₀ I M).symm x₀).1)) =
+    (dsimp% only [Subfunctor.toFunctor_obj] (((equiv₀ I M).symm x₀).val)) =
       (TopCat.of M).toSSetObj₀Equiv.symm x₀ :=
   (rfl)
 
@@ -313,7 +315,7 @@ private theorem toSSetObjEquiv_simplex₁_fullSimplexEquivStdSimplex_apply {γ :
     (hγ : Continuous fun t : unitInterval ↦ γ t) (x : fullSimplex 1) :
     (TopCat.of M).toSSetObjEquiv _
       (TauCeti.TopCat.simplex₁ (X := TopCat.of M) ⟨fun t ↦ γ t, hγ⟩)
-      (fullSimplexEquivStdSimplex 1 x) = γ (x.1 0) := by
+      (fullSimplexEquivStdSimplex 1 x) = γ (x.val 0) := by
   rw [TauCeti.TopCat.toSSetObjEquiv_simplex₁]
   -- `(0 : Fin 1).succ` is definitionally `1 : Fin 2`.
   simpa [StdSimplex.homeomorphI_apply_coe] using
@@ -332,7 +334,7 @@ def ofCurve {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) : SmoothS
 /-- The underlying singular `1`-simplex of `SmoothSimplex.ofCurve` is `TauCeti.TopCat.simplex₁`. -/
 @[simp]
 theorem coe_ofCurve {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) :
-    (ofCurve hγ).1 = TauCeti.TopCat.simplex₁ (X := TopCat.of M)
+    (ofCurve hγ).val = TauCeti.TopCat.simplex₁ (X := TopCat.of M)
       ⟨fun t ↦ γ t, hγ.continuous.comp continuous_subtype_val⟩ :=
   (rfl)
 
@@ -340,7 +342,7 @@ theorem coe_ofCurve {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) :
 @[simp]
 theorem toContinuousMap_ofCurve_apply {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ)
     (x : fullSimplex 1) :
-    (ofCurve hγ).toContinuousMap x = γ (x.1 0) := by
+    (ofCurve hγ).toContinuousMap x = γ (x.val 0) := by
   rw [toContinuousMap_apply, coe_ofCurve]
   exact toSSetObjEquiv_simplex₁_fullSimplexEquivStdSimplex_apply _ x
 
@@ -380,7 +382,7 @@ def smoothSingularSubcomplexMap (hφ : ContMDiff I J ∞ φ) :
   SSet.Subcomplex.lift
     ((smoothSingularSubcomplex I M).ι ≫ TopCat.toSSet.map (TopCat.ofHom ⟨φ, hφ.continuous⟩)) (by
       rintro k _ ⟨σ, rfl⟩
-      exact smoothSingularSubcomplex_le_preimage hφ k σ.2)
+      exact smoothSingularSubcomplex_le_preimage hφ k σ.property)
 
 /-- The map of smooth singular subcomplexes is the restriction of the map of singular simplicial
 sets. -/
@@ -422,15 +424,15 @@ simplices. -/
 @[simp]
 theorem coe_smoothSingularSubcomplexMap_app (hφ : ContMDiff I J ∞ φ) {k : SimplexCategoryᵒᵖ}
     (σ : (smoothSingularSubcomplex I M : SSet).obj k) :
-    (dsimp% only [Subfunctor.toFunctor_obj] ((smoothSingularSubcomplexMap φ hφ).app k σ).1) =
-      (TopCat.toSSet.map (TopCat.ofHom ⟨φ, hφ.continuous⟩)).app k σ.1 :=
+    (dsimp% only [Subfunctor.toFunctor_obj] ((smoothSingularSubcomplexMap φ hφ).app k σ).val) =
+      (TopCat.toSSet.map (TopCat.ofHom ⟨φ, hφ.continuous⟩)).app k σ.val :=
   (rfl)
 
 /-- The map of constant simplices sends a singular simplex to the constant singular simplex. -/
 @[simp]
 theorem coe_smoothSingularSubcomplexConst_app (X : TopCat.{u}) (c : M) {k : SimplexCategoryᵒᵖ}
     (σ : (TopCat.toSSet.obj X).obj k) :
-    (dsimp% only [Subfunctor.toFunctor_obj] ((smoothSingularSubcomplexConst I X c).app k σ).1) =
+    (dsimp% only [Subfunctor.toFunctor_obj] ((smoothSingularSubcomplexConst I X c).app k σ).val) =
       (TopCat.toSSet.map (TopCat.ofHom ⟨fun _ ↦ c, continuous_const⟩)).app k σ :=
   (rfl)
 
@@ -466,7 +468,7 @@ theorem range_smoothSingularSubcomplexMap_inclusion_ι {U V : TopologicalSpace.O
   simp only [Subfunctor.range_obj, Subfunctor.min_obj, Set.mem_inter_iff, Set.mem_range]
   constructor
   · rintro ⟨τ, rfl⟩
-    exact ⟨smoothSingularSubcomplex_le_preimage (contMDiff_inclusion h) k τ.2, τ.1, rfl⟩
+    exact ⟨smoothSingularSubcomplex_le_preimage (contMDiff_inclusion h) k τ.property, τ.val, rfl⟩
   · rintro ⟨hσ, τ, rfl⟩
     have hτ : τ ∈ (smoothSingularSubcomplex I U).obj k := by
       rw [← smoothSingularSubcomplex_preimage_inclusion h]

@@ -35,14 +35,14 @@ private noncomputable def rowCellsEquiv (μ : YoungDiagram) :
     rowBlocks μ.rowLens ≃ ↥μ.cells where
   toFun x := ⟨(x.1, x.2), by
     rw [YoungDiagram.mem_cells, YoungDiagram.mem_iff_lt_rowLen, ← YoungDiagram.get_rowLens]
-    exact x.2.2⟩
+    exact x.2.isLt⟩
   invFun c :=
-    ⟨⟨c.1.1, by
+    ⟨⟨c.val.1, by
       rw [YoungDiagram.length_rowLens]
-      exact (_root_.YoungDiagram.mem_iff_lt_colLen.mp c.2).trans_le
-        (μ.colLen_anti 0 c.1.2 c.1.2.zero_le)⟩,
-      ⟨c.1.2, by
-        have hj := _root_.YoungDiagram.mem_iff_lt_rowLen.mp c.2
+      exact (_root_.YoungDiagram.mem_iff_lt_colLen.mp c.property).trans_le
+        (μ.colLen_anti 0 c.val.2 c.val.2.zero_le)⟩,
+      ⟨c.val.2, by
+        have hj := _root_.YoungDiagram.mem_iff_lt_rowLen.mp c.property
         rw [← YoungDiagram.get_rowLens] at hj
         exact hj⟩⟩
   left_inv _ := rfl
@@ -111,7 +111,7 @@ theorem rowYoungConjugator_youngBlocksEquiv {μ : YoungDiagram} (t : YoungTablea
         let y := sortedBlocksEquivRows μ x
         calc
           (x.2 : ℕ) = y.2 := (sortedBlocksEquivRows_snd μ x).symm
-          _ < μ.rowLens.get y.1 := y.2.2
+          _ < μ.rowLens.get y.1 := y.2.isLt
           _ = μ.rowLen y.1 := YoungDiagram.get_rowLens
           _ = μ.rowLen x.1 := congrArg μ.rowLen (sortedBlocksEquivRows_fst μ x)⟩ := by
   simp only [rowYoungConjugator, Equiv.trans_apply, Equiv.symm_apply_apply]

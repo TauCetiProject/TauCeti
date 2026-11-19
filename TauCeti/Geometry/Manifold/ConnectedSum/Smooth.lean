@@ -141,7 +141,7 @@ private theorem exists_transition {X Y : Type*} [TopologicalSpace X] [T1Space X]
       (df v).localInverse_mem_source) fun x' hx' ↦ (df v).localInverse_right_inv hx'
   have hev : ∀ᶠ x' in 𝓝 (x : X), L x' ≠ 0 ∧ f (L x') = x' ∧ τ₀ x' ≠ g 0 :=
     (hLc.eventually_ne (by rwa [hLx])).and (hfL.and
-      (hτ₀.continuousAt.eventually_ne (by rw [hτ₀x]; exact mem_puncture.1 y.2)))
+      (hτ₀.continuousAt.eventually_ne (by rw [hτ₀x]; exact mem_puncture.1 y.property)))
   have hev' := continuous_subtype_val.continuousAt.eventually hev
   classical
   let τ : puncture f → puncture g := fun x' ↦

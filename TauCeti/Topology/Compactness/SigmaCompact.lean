@@ -32,7 +32,7 @@ theorem IsOpen.exists_monotone_isCompact_subset_forall_isCompact_subset_exists_s
   refine ⟨fun m => (↑) '' Kx m, fun m => (Kx.isCompact m).image continuous_subtype_val,
     fun m => ?_, fun m m' h => image_mono (Kx.subset h), fun K hK hKΩ => ?_⟩
   · rintro _ ⟨x, -, rfl⟩
-    exact x.2
+    exact x.property
   · have hK' : IsCompact (((↑) : Ω → X) ⁻¹' K) :=
       Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
     obtain ⟨m, hm⟩ := Kx.exists_superset_of_isCompact hK'

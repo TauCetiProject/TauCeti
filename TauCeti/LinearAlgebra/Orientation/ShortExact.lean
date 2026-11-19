@@ -120,11 +120,11 @@ private theorem map_splitSurjectiveEquiv_prod_basis (hf : Function.Injective f)
     (hfg : Function.Exact f g) (l : { l : W →ₗ[K] V // g ∘ₗ l = LinearMap.id })
     (b : Basis (Fin a) K U) (e : Basis (Fin c) K W) (t : Fin c → V) (ht : ∀ j, g (t j) = e j)
     (ha : finrank K U = a) (hc : finrank K W = c) :
-    map (Fin (a + c)) (hfg.splitSurjectiveEquiv hf l).1.symm
+    map (Fin (a + c)) (hfg.splitSurjectiveEquiv hf l).val.symm
         (prod b.orientation e.orientation ha hc) =
       ((Basis.ofExactLift hf hfg b e t ht).reindex finSumFinEquiv).orientation := by
-  obtain ⟨hφf, hφg⟩ := (hfg.splitSurjectiveEquiv hf l).2
-  set φ := (hfg.splitSurjectiveEquiv hf l).1
+  obtain ⟨hφf, hφg⟩ := (hfg.splitSurjectiveEquiv hf l).property
+  set φ := (hfg.splitSurjectiveEquiv hf l).val
   rw [prod_basis_orientation, ← Basis.orientation_map]
   set B := ((b.prod e).reindex finSumFinEquiv).map φ.symm
   have hB₁ (i : Fin a) : B (Fin.castAdd c i) = f (b i) := by
@@ -140,8 +140,8 @@ private theorem map_splitSurjectiveEquiv_eq (hf : Function.Injective f)
     (hfg : Function.Exact f g) (hg : Function.Surjective g)
     (l l' : { l : W →ₗ[K] V // g ∘ₗ l = LinearMap.id }) (ha : finrank K U = a)
     (hc : finrank K W = c) (x : Orientation K (U × W) (Fin (a + c))) :
-    map (Fin (a + c)) (hfg.splitSurjectiveEquiv hf l).1.symm x =
-      map (Fin (a + c)) (hfg.splitSurjectiveEquiv hf l').1.symm x := by
+    map (Fin (a + c)) (hfg.splitSurjectiveEquiv hf l).val.symm x =
+      map (Fin (a + c)) (hfg.splitSurjectiveEquiv hf l').val.symm x := by
   set b := finBasisOfFinrankEq K U ha
   set e := finBasisOfFinrankEq K W hc
   choose t ht using fun j ↦ hg (e j)
@@ -158,7 +158,7 @@ the image of a positive basis of `U` followed by lifts of a positive basis of `W
 def shortExact (hf : Function.Injective f) (hfg : Function.Exact f g)
     (hg : Function.Surjective g) (o : Orientation K U (Fin a)) (p : Orientation K W (Fin c))
     (ha : finrank K U = a) (hc : finrank K W = c) : Orientation K V (Fin (a + c)) :=
-  map (Fin (a + c)) (hfg.splitSurjectiveEquiv hf ⟨_, (exists_section hg).choose_spec⟩).1.symm
+  map (Fin (a + c)) (hfg.splitSurjectiveEquiv hf ⟨_, (exists_section hg).choose_spec⟩).val.symm
     (prod o p ha hc)
 
 variable (hf : Function.Injective f) (hfg : Function.Exact f g) (hg : Function.Surjective g)
@@ -169,7 +169,7 @@ variable (hf : Function.Injective f) (hfg : Function.Exact f g) (hg : Function.S
 theorem shortExact_eq_map_prod (o : Orientation K U (Fin a)) (p : Orientation K W (Fin c))
     (s : W →ₗ[K] V) (hs : g ∘ₗ s = LinearMap.id) :
     shortExact hf hfg hg o p ha hc =
-      map (Fin (a + c)) ((hfg.splitSurjectiveEquiv hf ⟨s, hs⟩).1.symm) (prod o p ha hc) :=
+      map (Fin (a + c)) ((hfg.splitSurjectiveEquiv hf ⟨s, hs⟩).val.symm) (prod o p ha hc) :=
   map_splitSurjectiveEquiv_eq hf hfg hg _ _ ha hc _
 
 /-- A basis of `V` consisting of the image of a basis `b` of `U` followed by lifts of a basis `e`

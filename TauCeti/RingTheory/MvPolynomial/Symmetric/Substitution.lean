@@ -77,7 +77,7 @@ theorem esymmSubst_X [CommSemiring R] (n : ℕ) (i : Fin n) :
 
 /-- Elementary-symmetric substitution agrees with Mathlib's fundamental-theorem map. -/
 theorem esymmSubst_apply [CommSemiring R] (n : ℕ) (p : MvPolynomial (Fin n) R) :
-    esymmSubst n p = (MvPolynomial.esymmAlgHom (Fin n) R n p).1 :=
+    esymmSubst n p = (MvPolynomial.esymmAlgHom (Fin n) R n p).val :=
   (MvPolynomial.esymmAlgHom_apply p).symm
 
 /-- Substitution by the elementary symmetric polynomials is injective. -/

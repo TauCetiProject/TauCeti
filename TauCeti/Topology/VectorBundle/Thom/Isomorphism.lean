@@ -207,19 +207,19 @@ private theorem span_singularCohomologyMap_prodThomPairFiberMap_thomPairOverIso_
         TopPair.singularCohomologyMap (TopCat.restrictPreimagePairMap
           (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) W) (finrank ℝ F) u} =
       ⊤ := by
-  set ψ := (e.continuousLinearEquivAt ℝ b.1 (hW b.2)).complZeroPairIso
+  set ψ := (e.continuousLinearEquivAt ℝ b.val (hW b.property)).complZeroPairIso
   have hψ : Function.Surjective (TopPair.singularCohomologyMap (R := ModuleCat.of K K) (k := K)
       (M := ModuleCat.of K K) ψ.inv (finrank ℝ F)).hom := fun y ↦
     ⟨TopPair.singularCohomologyMap ψ.hom _ y, by
       rw [← TopPair.singularCohomologyMap_comp_apply, ψ.inv_hom_id,
         TopPair.singularCohomologyMap_id, ConcreteCategory.id_apply]⟩
   have hb := congrArg (Submodule.map (TopPair.singularCohomologyMap ψ.inv _).hom)
-    ((isThomClass_iff.1 hu).2 b.1)
+    ((isThomClass_iff.1 hu).2 b.val)
   rw [Submodule.map_span, Set.image_singleton, Submodule.map_top,
     LinearMap.range_eq_top.2 hψ] at hb
   rw [← TopPair.singularCohomologyMap_comp_apply,
     e.prodThomPairFiberMap_comp_thomPairOverIso_inv ℝ hW, TopPair.singularCohomologyMap_comp_apply,
-    ← TopPair.singularCohomologyMap_comp_apply (fiberThomPairOverMap F E b.2),
+    ← TopPair.singularCohomologyMap_comp_apply (fiberThomPairOverMap F E b.property),
     fiberThomPairOverMap_comp_restrictPreimagePairMap]
   exact hb
 

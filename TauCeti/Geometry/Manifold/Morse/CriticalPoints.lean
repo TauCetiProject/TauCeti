@@ -662,7 +662,7 @@ and a critical point of index `m` in `S` exist. -/
 theorem finite_sigma_criticalPoints_inter {S : Set M} (hS : (criticalPoints I f ∩ S).Finite) :
     Finite (Σ m, ↥{x ∈ criticalPoints I f ∩ S | manifoldMorseIndex I f x = m}) :=
   have := hS.to_subtype
-  .of_injective (fun x ↦ (⟨x.2, x.2.2.1⟩ : ↥(criticalPoints I f ∩ S)))
+  .of_injective (fun x ↦ (⟨x.2, x.2.property.1⟩ : ↥(criticalPoints I f ∩ S)))
     fun ⟨_, _, hx⟩ ⟨_, _, hy⟩ hxy ↦ by
       cases Subtype.ext_iff.1 hxy
       cases hx.2.symm.trans hy.2
@@ -1192,7 +1192,7 @@ def IsMorse.criticalPointsIndexNegEquiv (hf : IsMorse I f) {j k : ℕ}
       {p : criticalPoints I f // manifoldMorseIndex I f p = k} :=
   (Set.equivOfEq criticalPoints_neg).subtypeEquiv fun p ↦ by
     have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      (by simpa using p.2)).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+      (by simpa using p.property)).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     simp only [Set.equivOfEq_apply]
     omega
 

@@ -66,7 +66,7 @@ theorem exists_pow_eq_of_pow_lt_of_le_one
         (by
           rw [← hrz, map_mul, pow_succ] at hlt
           exact lt_of_mul_lt_mul_right' hlt)
-        r.2
+        r.property
       exact ⟨j + 1, by lia, by rw [pow_succ, hjr, ← map_mul, hrz]⟩
     · exact ⟨0, by lia, by rw [pow_zero, hz]⟩
 

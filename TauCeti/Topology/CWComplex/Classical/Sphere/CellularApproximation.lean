@@ -74,7 +74,7 @@ theorem exists_homotopic_mapsTo_skeletonLT_diskBoundary {m : ℕ}
     (hφg.homotopic.comp (ContinuousMap.Homotopic.refl down)), fun x ↦ hg (k + 1) ?_⟩
   -- Every point of `Sᵏ` lies in an open cell of dimension at most `k`.
   obtain ⟨l, -, j, hj⟩ := CWComplex.mem_skeletonLT_iff.1
-    (by rw [← SetLike.mem_coe, skeletonLT_top]; exact (down x).2 :
+    (by rw [← SetLike.mem_coe, skeletonLT_top]; exact (down x).property :
       (down x : EuclideanSpace ℝ ι) ∈ skeletonLT S ⊤)
   have hl : l < k + 1 := by
     by_contra! hl

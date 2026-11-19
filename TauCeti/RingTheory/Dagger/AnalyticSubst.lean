@@ -80,14 +80,14 @@ theorem coe_restrictedAnalyticSubst_mem_washnitzerAlgebra (g : Fin k → washnit
     (hg : ∀ i, ‖washnitzerAlgebra.toTate τ R (g i)‖ ≤ 1) (f : washnitzerAlgebra (Fin k) R) :
     (restrictedAnalyticSubst (fun i ↦ washnitzerAlgebra.toTate τ R (g i)) hg
       (washnitzerAlgebra.toTate (Fin k) R f) : MvPowerSeries τ R) ∈ washnitzerAlgebra τ R := by
-  obtain ⟨ρf, hρf, hf⟩ := mem_washnitzerAlgebra.mp f.2
+  obtain ⟨ρf, hρf, hf⟩ := mem_washnitzerAlgebra.mp f.property
   -- The coefficients of every `gᵢ` have norm at most `1 < ρf`, so at a common radius `ρ > 1`
   -- every `gᵢ` is restricted with all weighted coefficient norms below `ρf`.
   have hcoeff (i : Fin k) (t : τ →₀ ℕ) : ‖coeff t (g i : MvPowerSeries τ R)‖ < ρf := by
     simpa using ((norm_coeff_le_norm (washnitzerAlgebra.toTate τ R (g i)) t).trans
       (hg i)).trans_lt hρf
   obtain ⟨ρ, hρg, hρ⟩ := ((eventually_all.2 fun i ↦
-    eventually_isRestricted_forall_norm_coeff_mul_pow_lt (g i).2 (hcoeff i)).and
+    eventually_isRestricted_forall_norm_coeff_mul_pow_lt (g i).property (hcoeff i)).and
       self_mem_nhdsWithin).exists
   have : Fact (0 < ρ) := ⟨zero_lt_one.trans hρ⟩
   have : Fact (0 < ρf) := ⟨zero_lt_one.trans hρf⟩

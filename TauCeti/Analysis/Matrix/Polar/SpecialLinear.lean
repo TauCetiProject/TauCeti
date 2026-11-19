@@ -79,7 +79,8 @@ variable (n 𝕜) in
 polar decomposition `g = P * U`, which has determinant one. -/
 def polarRetraction : C(SpecialLinearGroup n 𝕜, specialUnitaryGroup n 𝕜) where
   toFun g := ⟨(toGL g).polarUnitary, mem_specialUnitaryGroup_iff.mpr
-    ⟨((toGL g).polarUnitary).2, det_polarUnitary_of_det_eq_one _ (coe_GL_coe_matrix g ▸ g.2)⟩⟩
+    ⟨((toGL g).polarUnitary).property, det_polarUnitary_of_det_eq_one _
+        (coe_GL_coe_matrix g ▸ g.property)⟩⟩
   continuous_toFun :=
     ((contMDiff_coe_polarUnitary (n := n) (𝕜 := 𝕜) (k := 0)).continuous.comp
       continuous_toGL).subtype_mk _
@@ -118,7 +119,7 @@ def polarHomotopy :
         (polarRetraction n 𝕜))
       (Set.range toSL) where
   toFun p := ⟨polarDeformation (toGL p.2) p.1,
-    det_polarDeformation_of_det_eq_one (coe_GL_coe_matrix p.2 ▸ p.2.2) _⟩
+    det_polarDeformation_of_det_eq_one (coe_GL_coe_matrix p.2 ▸ p.2.property) _⟩
   continuous_toFun := by
     have h := (GeneralLinearGroup.polarHomotopy n 𝕜).continuous.comp
       (continuous_fst.prodMk (continuous_toGL.comp continuous_snd) :

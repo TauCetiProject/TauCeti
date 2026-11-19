@@ -213,10 +213,10 @@ private theorem exists_valuation_sub_le_exp_neg_obstructionExponentAt_pow
       WithZero.exp (-obstructionExponentAt O v W) ^ m := by
   let S := (hasFiniteMulSupport_pow_obstructionExponentAt_toNat O W).toFinset
   have hloc (v : S) : ∃ b : O,
-      v.1.valuation K (algebraMap O K b - x v) ≤
-        WithZero.exp (-(m * (obstructionExponentAt O v.1 W).toNat : ℤ)) := by
-    obtain ⟨b, hb⟩ := v.1.exists_valuation_sub_lt_of_integer (hx v)
-      (Units.mk0 (WithZero.exp (-(m * (obstructionExponentAt O v.1 W).toNat : ℤ)))
+      v.val.valuation K (algebraMap O K b - x v) ≤
+        WithZero.exp (-(m * (obstructionExponentAt O v.val W).toNat : ℤ)) := by
+    obtain ⟨b, hb⟩ := v.val.exists_valuation_sub_lt_of_integer (hx v)
+      (Units.mk0 (WithZero.exp (-(m * (obstructionExponentAt O v.val W).toNat : ℤ)))
         WithZero.exp_ne_zero)
     exact ⟨b, hb.le⟩
   choose b hb using hloc

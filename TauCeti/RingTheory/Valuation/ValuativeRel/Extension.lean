@@ -243,12 +243,12 @@ to an `𝒪[K]`-algebra automorphism of `𝒪[L]`. -/
 noncomputable def integerAlgEquivOfMemInteger (σ : L ≃ₐ[K] L)
     (hσ : ∀ z : L, σ z ∈ 𝒪ᵥ[L] ↔ z ∈ 𝒪ᵥ[L]) :
     𝒪ᵥ[L] ≃ₐ[𝒪ᵥ[K]] 𝒪ᵥ[L] where
-  toFun x := ⟨σ x.1, (hσ x.1).2 x.2⟩
-  invFun x := ⟨σ.symm x.1, (hσ (σ.symm x.1)).1 (by rw [σ.apply_symm_apply]; exact x.2)⟩
-  left_inv x := Subtype.ext (σ.symm_apply_apply x.1)
-  right_inv x := Subtype.ext (σ.apply_symm_apply x.1)
-  map_mul' x y := Subtype.ext (map_mul σ x.1 y.1)
-  map_add' x y := Subtype.ext (map_add σ x.1 y.1)
+  toFun x := ⟨σ x.val, (hσ x.val).2 x.property⟩
+  invFun x := ⟨σ.symm x.val, (hσ (σ.symm x.val)).1 (by rw [σ.apply_symm_apply]; exact x.property)⟩
+  left_inv x := Subtype.ext (σ.symm_apply_apply x.val)
+  right_inv x := Subtype.ext (σ.apply_symm_apply x.val)
+  map_mul' x y := Subtype.ext (map_mul σ x.val y.val)
+  map_add' x y := Subtype.ext (map_add σ x.val y.val)
   commutes' r := Subtype.ext (by
     simp only [Valuation.HasExtension.val_algebraMap]
     exact σ.commutes (r : K))

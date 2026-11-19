@@ -369,7 +369,7 @@ def explicitMap0 {H : Type*} [Monoid H] {N : Type*} [AddCommGroup N] [DistribMul
     (φ : H →* G) (f : M →+ N) (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) :
     H0 G M →+ H0 H N where
   toFun m := ⟨f (m : M), (FixedPoints.mem_addSubgroup H N (f (m : M))).2 fun h => by
-    rw [← hequiv h (m : M), (FixedPoints.mem_addSubgroup G M (m : M)).1 m.2 (φ h)]⟩
+    rw [← hequiv h (m : M), (FixedPoints.mem_addSubgroup G M (m : M)).1 m.property (φ h)]⟩
   map_zero' := Subtype.ext (map_zero f)
   map_add' _ _ := Subtype.ext (map_add f _ _)
 
@@ -394,7 +394,7 @@ theorem explicitMap0_bijective {H : Type*} [Monoid H] {N : Type*} [AddCommGroup 
   · obtain ⟨m, hm⟩ := hf.2 (n : N)
     refine ⟨⟨m, (FixedPoints.mem_addSubgroup G M m).2 fun g => hf.1 ?_⟩, Subtype.ext ?_⟩
     · obtain ⟨h, rfl⟩ := hφ g
-      rw [hequiv, hm, (FixedPoints.mem_addSubgroup H N n).1 n.2]
+      rw [hequiv, hm, (FixedPoints.mem_addSubgroup H N n).1 n.property]
     · simpa only [coe_explicitMap0] using hm
 
 /-- Pullback along the identity compatible pair is the identity on degree-zero cohomology. -/
@@ -956,7 +956,7 @@ variable (G : Type u) [Monoid G] [TopologicalSpace G] [Subsingleton G]
 /-- **A trivial group has vanishing `H¹`.** -/
 instance subsingleton_H1_of_subsingleton : Subsingleton (H1 G M) :=
   have : Subsingleton (Z1 G M) := ⟨fun f f' => Subtype.ext <| funext fun g => by
-    rw [Subsingleton.elim g 1, map_one_of_mem_Z1 f.2, map_one_of_mem_Z1 f'.2]⟩
+    rw [Subsingleton.elim g 1, map_one_of_mem_Z1 f.property, map_one_of_mem_Z1 f'.property]⟩
   QuotientAddGroup.mk_surjective.subsingleton
 
 /-- **A trivial group has vanishing `H²`.** -/
@@ -1019,8 +1019,8 @@ def Z1EquivOfSmulEqSelf : Z1 G M ≃+ Additive (ContinuousMonoidHom G (Multiplic
   toFun f := Additive.ofMul
     { toMonoidHom :=
         MonoidHom.mk' (fun g => Multiplicative.ofAdd ((f : G → M) g)) fun a b => by
-          rw [map_mul_of_smul_eq_self_of_mem_Z1 htriv f.2 a b, ofAdd_add]
-      continuous_toFun := (mem_Z1_iff.1 f.2).1 }
+          rw [map_mul_of_smul_eq_self_of_mem_Z1 htriv f.property a b, ofAdd_add]
+      continuous_toFun := (mem_Z1_iff.1 f.property).1 }
   invFun φ :=
     ⟨fun g => Multiplicative.toAdd ((Additive.toMul φ) g),
       mem_Z1_of_smul_eq_self_of_continuousMonoidHom htriv (Additive.toMul φ)⟩

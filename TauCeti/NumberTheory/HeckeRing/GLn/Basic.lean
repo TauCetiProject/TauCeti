@@ -347,11 +347,11 @@ coefficients, modular symbols — receive the action of a Hecke coset representa
 /-- The integral matrix underlying an element of `intEntries n`: the chosen witness of its
 membership, unique because the cast `ℤ → ℚ` is injective (`intMatrix_eq_iff`). -/
 private noncomputable def intMatrixFun (g : intEntries n) : Matrix (Fin n) (Fin n) ℤ :=
-  Classical.choose ((mem_intEntries n).mp g.2)
+  Classical.choose ((mem_intEntries n).mp g.property)
 
 private lemma map_intMatrixFun (g : intEntries n) :
     (intMatrixFun n g).map (Int.cast : ℤ → ℚ) = ((g : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ) :=
-  (Classical.choose_spec ((mem_intEntries n).mp g.2)).symm
+  (Classical.choose_spec ((mem_intEntries n).mp g.property)).symm
 
 private lemma intMatrixFun_eq_iff {g : intEntries n} {A : Matrix (Fin n) (Fin n) ℤ} :
     intMatrixFun n g = A ↔
@@ -531,10 +531,10 @@ instance finiteIndex_SLnZ_subgroupOf_GLnZ : ((SLnZ n).subgroupOf (GLnZ n)).Finit
     ((Set.finite_singleton (1 : ℚˣ)).insert (-1)).subset (by
       rintro _ ⟨g, rfl⟩
       simpa [Units.ext_iff, Matrix.GeneralLinearGroup.val_det_apply, or_comm] using
-        det_eq_one_or_neg_one_of_mem_GLnZ n g.2) |>.to_subtype
+        det_eq_one_or_neg_one_of_mem_GLnZ n g.property) |>.to_subtype
   have hker : (SLnZ n).subgroupOf (GLnZ n) = φ.ker := by
     ext g; rw [Subgroup.mem_subgroupOf, MonoidHom.mem_ker, Subtype.ext_iff, Units.ext_iff]
-    exact ⟨det_eq_one_of_mem_SLnZ n, mem_SLnZ_of_mem_GLnZ_of_det_eq_one n g.2⟩
+    exact ⟨det_eq_one_of_mem_SLnZ n, mem_SLnZ_of_mem_GLnZ_of_det_eq_one n g.property⟩
   exact hker ▸ Subgroup.finiteIndex_ker φ
 
 /-- `GL_n(ℤ)` and `SL_n(ℤ)` are commensurable in `GL_n(ℚ)`. -/

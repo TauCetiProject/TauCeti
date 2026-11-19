@@ -215,9 +215,9 @@ theorem smul_coeLinearMap_smul_top (he : OrthogonalIdempotents e)
   | of i x =>
     rcases eq_or_ne j i with rfl | hji
     · rw [DirectSum.coeLinearMap_of, DirectSum.of_eq_same,
-        (he.idem j).smul_eq_self_of_mem_smul_top x.2]
+        (he.idem j).smul_eq_self_of_mem_smul_top x.property]
     · rw [DirectSum.coeLinearMap_of, DirectSum.of_eq_of_ne _ _ _ hji,
-        smul_eq_zero_of_ne_of_mem_smul_top he hji x.2, ZeroMemClass.coe_zero]
+        smul_eq_zero_of_ne_of_mem_smul_top he hji x.property, ZeroMemClass.coe_zero]
   | add z w hz hw =>
     rw [map_add, smul_add, hz, hw, DFinsupp.add_apply, Submodule.coe_add]
 
@@ -324,21 +324,21 @@ variable {S M A : Type*} [Semiring S] [Semiring A] [AddCommMonoid M] [Module S M
 
 /-- The corner ring `eAe` acts on the piece `e • M` by restricting the action of `A`. -/
 instance instSMulCornerSmulTop : SMul he.Corner ↥(e • (⊤ : Submodule S M)) where
-  smul b x := ⟨b.1 • x.1, TauCeti.smul_mem_smul_top_of_mul_eq_self (he.mul_corner_val b) _⟩
+  smul b x := ⟨b.val • x.val, TauCeti.smul_mem_smul_top_of_mul_eq_self (he.mul_corner_val b) _⟩
 
 @[simp]
 theorem Corner.coe_smul (b : he.Corner) (x : ↥(e • (⊤ : Submodule S M))) :
-    ((b • x : ↥(e • (⊤ : Submodule S M))) : M) = b.1 • (x : M) := (rfl)
+    ((b • x : ↥(e • (⊤ : Submodule S M))) : M) = b.val • (x : M) := (rfl)
 
 /-- **The piece `e • M` of an `A`-module is a module over the corner ring `eAe`.** Its unit `e`
 acts trivially because `e` fixes `e • M` pointwise. -/
 instance instModuleCornerSmulTop : Module he.Corner ↥(e • (⊤ : Submodule S M)) where
-  one_smul x := Subtype.ext (he.smul_eq_self_of_mem_smul_top x.2)
-  mul_smul b c x := Subtype.ext (mul_smul b.1 c.1 x.1)
-  smul_zero b := Subtype.ext (smul_zero b.1)
-  smul_add b x y := Subtype.ext (smul_add b.1 x.1 y.1)
-  add_smul b c x := Subtype.ext (add_smul b.1 c.1 x.1)
-  zero_smul x := Subtype.ext (zero_smul A x.1)
+  one_smul x := Subtype.ext (he.smul_eq_self_of_mem_smul_top x.property)
+  mul_smul b c x := Subtype.ext (mul_smul b.val c.val x.val)
+  smul_zero b := Subtype.ext (smul_zero b.val)
+  smul_add b x y := Subtype.ext (smul_add b.val x.val y.val)
+  add_smul b c x := Subtype.ext (add_smul b.val c.val x.val)
+  zero_smul x := Subtype.ext (zero_smul A x.val)
 
 /-- On the piece `e • M`, the scalar `r • e` of the corner ring acts as `r` does on `M`. -/
 theorem coe_algebraMap_corner_smul {R : Type*} [CommSemiring R] [Algebra R A] (r : R)
@@ -346,6 +346,6 @@ theorem coe_algebraMap_corner_smul {R : Type*} [CommSemiring R] [Algebra R A] (r
     ((algebraMap R he.Corner r • x : ↥(e • (⊤ : Submodule S M))) : M) =
       algebraMap R A r • (x : M) := by
   rw [Corner.coe_smul, Corner.val_algebraMap, Algebra.smul_def, mul_smul,
-    he.smul_eq_self_of_mem_smul_top x.2]
+    he.smul_eq_self_of_mem_smul_top x.property]
 
 end IsIdempotentElem

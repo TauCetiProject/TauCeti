@@ -321,7 +321,7 @@ theorem IsHermiteNormalForm.exists_isHermiteDecomposition {A : Matrix (Fin m) (F
   rw [hAU]
   obtain ⟨a | a, rfl⟩ := e.surjective j
   · simp [b', b₀, e, hs, hermitePad_apply]
-  · have hker : A *ᵥ (b a : Fin n → ℤ) = 0 := LinearMap.mem_ker.mp (b a).2
+  · have hker : A *ᵥ (b a : Fin n → ℤ) = 0 := LinearMap.mem_ker.mp (b a).property
     simp [b', b₀, e, hker, hermitePad_apply]
 
 /-- **Existence of the Hermite normal form.** Every integer matrix `A` has a Hermite

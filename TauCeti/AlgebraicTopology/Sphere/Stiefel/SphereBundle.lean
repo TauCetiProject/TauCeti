@@ -150,7 +150,7 @@ sphere fibre. -/
 theorem stiefelBundleSphereFamily_fiberIncl_stiefelFrameIncl (b : B) (p : sphere (0 : E b) 1)
     (y : stiefel (ℝ ∙ (p : E b))ᗮ 2) :
     stiefelBundleSphereFamily F E (StiefelBundle.fiberIncl F E 3 b (stiefelFrameIncl p 2 y)) =
-      (BasedMap.map (sphereBundleFiberIncl F E b) rfl (stiefelSphereFamilyFiber p y)).1 := by
+      (BasedMap.map (sphereBundleFiberIncl F E b) rfl (stiefelSphereFamilyFiber p y)).val := by
   refine ContinuousMap.ext fun w ↦ ?_
   rw [stiefelBundleSphereFamily_fiberIncl, ContinuousMap.comp_apply,
     stiefelSphereFamily_stiefelFrameIncl, BasedMap.map_apply]

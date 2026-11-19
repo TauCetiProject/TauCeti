@@ -210,7 +210,7 @@ theorem powerBoundedSubring.dvd_iff_norm_le {a b : powerBoundedSubring K} :
   refine ⟨fun ⟨c, hc⟩ ↦ ?_, fun h ↦ ?_⟩
   · rw [hc, Subring.coe_mul, norm_mul]
     exact mul_le_of_le_one_right (norm_nonneg _)
-      (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp c.2))
+      (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp c.property))
   · rcases eq_or_ne (b : K) 0 with hb | hb
     · have ha : (a : K) = 0 := norm_le_zero_iff.mp (by simpa [hb] using h)
       exact ⟨0, Subtype.ext (by simp [ha])⟩

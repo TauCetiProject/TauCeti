@@ -94,7 +94,7 @@ private noncomputable def spinThreeHom
     (CliffordAlgebra.star_mul_self_eq_one_iff_det_eq_one_of_finrank_eq_three
       Q hV e (spinGroupToEven Q g)).mp (by
         rw [coe_spinGroupToEven_apply]
-        exact spinGroup.star_mul_self_of_mem g.2)⟩
+        exact spinGroup.star_mul_self_of_mem g.property)⟩
   map_one' := by
     apply Subtype.ext
     simp only [map_one]

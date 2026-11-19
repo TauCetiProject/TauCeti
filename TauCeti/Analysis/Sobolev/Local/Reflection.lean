@@ -759,7 +759,7 @@ theorem MemWkpLoc.exists_opens_memWkpLoc_planarReflection [CompleteSpace F] {p :
     (hp : 1 ≤ p) {Ω : Opens ℂ} {u : ℂ → F} (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u) :
     ∃ V : Opens ℂ, (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ V ∧ (V : Set ℂ) ⊆ Ω ∧
       MemWkpLoc p V k (TauCeti.planarReflection (higherReflectionCoeff k) u) := by
-  choose r hr0 hrΩ using fun x : {x : ℝ // (x : ℂ) ∈ Ω} => Metric.isOpen_iff.1 Ω.isOpen _ x.2
+  choose r hr0 hrΩ using fun x : {x : ℝ // (x : ℂ) ∈ Ω} => Metric.isOpen_iff.1 Ω.isOpen _ x.property
   let H : Opens ℂ := ⟨{z | 0 < z.im}, isOpen_lt continuous_const continuous_im⟩
   let O : Option {x : ℝ // (x : ℂ) ∈ Ω} → Opens ℂ := fun i =>
     i.elim (Ω ⊓ H) fun x => ⟨Metric.ball (x : ℂ) (r x), Metric.isOpen_ball⟩

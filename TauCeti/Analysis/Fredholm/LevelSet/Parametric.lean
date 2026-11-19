@@ -152,7 +152,7 @@ theorem exists_apply_levelSetParameterMap_eq
   refine ⟨(((levelSetChart hf (LinearMap.range_eq_top.mpr hD) hker hxl).symm k :
     ↥{z | f z = c}) : E × Λ).1, ?_⟩
   rw [levelSetParameterMap_apply]
-  exact ((levelSetChart hf (LinearMap.range_eq_top.mpr hD) hker hxl).symm k).2
+  exact ((levelSetChart hf (LinearMap.range_eq_top.mpr hD) hker hxl).symm k).property
 
 /-- The local parameter map is as smooth at the chart origin as the parametrized equation. -/
 theorem contDiffAt_levelSetParameterMap {n : ℕ∞ω}
@@ -507,13 +507,14 @@ theorem exists_mem_nhds_isNowhereDense_not_surjective_fderiv_comp_inl
       ContinuousLinearMap.coprod_comp_inl_inr] using htotal
   obtain ⟨N, hNnhds, -, -, hNnowhere⟩ :=
     exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetParameterMap
-      hstrict hcont hfixed hsurj z.2 hn (U := univ) Filter.univ_mem
+      hstrict hcont hfixed hsurj z.property hn (U := univ) Filter.univ_mem
   let Φ := levelSetChart hstrict (LinearMap.range_eq_top.mpr hsurj)
-    (hfixed.closedComplemented_ker_coprod hsurj) z.2
+    (hfixed.closedComplemented_ker_coprod hsurj) z.property
   let g := levelSetParameterMap hstrict hsurj
-    (hfixed.closedComplemented_ker_coprod hsurj) z.2
+    (hfixed.closedComplemented_ker_coprod hsurj) z.property
   obtain ⟨Q₀, hQ₀nhds, hQ₀⟩ := exists_mem_nhds_forall_mem_source_and_levelSetChart_mem
-    hstrict (LinearMap.range_eq_top.mpr hsurj) (hfixed.closedComplemented_ker_coprod hsurj) z.2
+    hstrict (LinearMap.range_eq_top.mpr hsurj) (hfixed.closedComplemented_ker_coprod hsurj)
+        z.property
     hNnhds
   let Q : Set {z : E × Λ | f z = c} := Subtype.val ⁻¹' Q₀
   let B : Set Λ := g ''
@@ -530,7 +531,7 @@ theorem exists_mem_nhds_isNowhereDense_not_surjective_fderiv_comp_inl
     exact hwbad
   refine ⟨Φ w, ⟨hwN, hwbad'⟩, ?_⟩
   exact levelSetParameterMap_levelSetChart hstrict hsurj
-    (hfixed.closedComplemented_ker_coprod hsurj) z.2 hwsource
+    (hfixed.closedComplemented_ker_coprod hsurj) z.property hwsource
 
 end Real
 

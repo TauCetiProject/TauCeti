@@ -164,7 +164,7 @@ theorem degree_comap_eq_ncard_sub_ncard {U V : TopologicalSpace.Opens E} [Precon
     ext w
     constructor
     · rintro ⟨z, hz, rfl⟩
-      exact ⟨z.2, (hφ z).trans (congrArg Subtype.val hz)⟩
+      exact ⟨z.property, (hφ z).trans (congrArg Subtype.val hz)⟩
     · rintro ⟨hwU, hw⟩
       exact ⟨⟨w, hwU⟩, Subtype.ext ((hφ ⟨w, hwU⟩).symm.trans hw), rfl⟩
   have hmem : ∀ w (hw : w ∈ (U : Set E) ∩ φ ⁻¹' {(y : E)}), (⟨w, hw.1⟩ : U) ∈ f ⁻¹' {y} :=
@@ -193,7 +193,7 @@ theorem degree_comap_eq_ncard_sub_ncard {U V : TopologicalSpace.Opens E} [Precon
     · rintro ⟨⟨hwU, hp⟩, hw⟩
       exact ⟨⟨w, hwU⟩, ⟨hmem w ⟨hwU, hw⟩, hp⟩, rfl⟩
     · rintro ⟨z, ⟨hz, hp⟩, rfl⟩
-      exact ⟨⟨z.2, hp⟩, (hφ z).trans (congrArg Subtype.val hz)⟩
+      exact ⟨⟨z.property, hp⟩, (hφ z).trans (congrArg Subtype.val hz)⟩
   simp_rw [e]
   rw [Finset.sum_sub_distrib, Finset.sum_boole, Finset.sum_boole,
     hcount (fun t ↦ 0 < t), hcount (fun t ↦ t < 0)]

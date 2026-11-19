@@ -110,7 +110,7 @@ private theorem borelSpace_of_edist_eq {Y : Type*} [PseudoMetricSpace Y] [Separa
         simp [Metric.mem_eball, hedist, e]
       rw [this]
       exact hem (measurableSet_lt hlsc.measurable measurable_const)
-    choose ε hε hsub using fun a : U ↦ EMetric.isOpen_iff.1 hU a a.2
+    choose ε hε hsub using fun a : U ↦ EMetric.isOpen_iff.1 hU a a.property
     have hunion : ⋃ a : U, Metric.eball (a : Y) (ε a) = U :=
       Subset.antisymm (iUnion_subset hsub) fun a ha ↦
         mem_iUnion.2 ⟨⟨a, ha⟩, Metric.mem_eball_self (hε _)⟩

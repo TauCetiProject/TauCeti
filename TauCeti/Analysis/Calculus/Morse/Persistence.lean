@@ -187,7 +187,7 @@ theorem exists_pos_forall_morseIndex_eq [FiniteDimensional ℝ E]
   -- The negative index is locally constant on the space of symmetric forms.
   let a : {B : E →L[ℝ] E →L[ℝ] ℝ // B.toBilinForm.IsSymm} :=
     ⟨fderiv ℝ (fderiv ℝ f) x, hsymm h.contDiffAt⟩
-  have hnd : a.1.toBilinForm.Nondegenerate :=
+  have hnd : a.val.toBilinForm.Nondegenerate :=
     LinearMap.BilinForm.Nondegenerate.ofSeparatingLeft h.separatingLeft
   obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff
     (α := {B : E →L[ℝ] E →L[ℝ] ℝ // B.toBilinForm.IsSymm}) |>.1

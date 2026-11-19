@@ -337,7 +337,7 @@ theorem peterssonInnerCosets_restrict_restrict {Γ' : Subgroup SL(2, ℤ)} [Γ'.
           (QuotientGroup.mk (p.out * (γ : SL(2, ℤ))) : SL(2, ℤ) ⧸ Γ'.withCenter) := rfl
       rw [hsymm, peterssonInner_slash_inv_out, CuspForm.coe_restrict, CuspForm.coe_restrict,
         mul_inv_rev, SlashAction.slash_mul, SlashAction.slash_mul,
-        peterssonInner_slash_slash_of_mem_withCenter f g (Γ.withCenter.inv_mem γ.2)]
+        peterssonInner_slash_slash_of_mem_withCenter f g (Γ.withCenter.inv_mem γ.property)]
   rw [peterssonInnerCosets_def, peterssonInnerCosets_def,
     ← (Subgroup.quotientEquivProdOfLE hwc).symm.sum_comp, Fintype.sum_prod_type]
   simp only [key, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← Finset.mul_sum]

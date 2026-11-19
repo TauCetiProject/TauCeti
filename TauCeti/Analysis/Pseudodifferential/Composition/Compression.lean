@@ -476,10 +476,12 @@ theorem exists_isSmoothing_sum_smul_quantizeSchwartzValue_eq {ι : Type*} {s : F
       quantizeSchwartzValue a.coefficient (SchwartzMap.smulLeftCLM V (ψ i) u) x =
         quantizeSchwartzValue a.coefficient u x + quantizeSchwartzValue r.coefficient u x := by
   refine ⟨_, isSmoothing_sum_compress_sub (s := s.attach) (φ := fun i ↦ φ i) (ψ := fun i ↦ ψ i)
-    (fun i ↦ hφ i i.2) (fun i ↦ hψ i i.2) (fun i ↦ hψc i i.2) (fun i _ ↦ hψφ i i.2)
+    (fun i ↦ hφ i i.property) (fun i ↦ hψ i i.property) (fun i ↦ hψc i i.property)
+        (fun i _ ↦ hψφ i i.property)
     (fun x hx ↦ (Finset.sum_attach s fun i ↦ φ i x).trans (hU x hx)) ha, fun u x ↦ ?_⟩
   rw [← Finset.sum_attach s, Finset.sum_congr rfl fun (i : s) _ ↦
-      (quantizeSchwartzValue_compress (hφ i i.2) (hψ i i.2) (hψc i i.2) u x).symm,
+      (quantizeSchwartzValue_compress (hφ i i.property) (hψ i i.property)
+          (hψc i i.property) u x).symm,
     ← quantizeSchwartzValue_sum_left, ← quantizeSchwartzValue_coefficient_add, coefficient_sub,
     add_sub_cancel]
 
@@ -536,11 +538,12 @@ theorem exists_sum_smul_quantizeSchwartzValue_eq {ι : Type*} {s : Finset ι}
       quantizeSchwartzValue a.coefficient (SchwartzMap.smulLeftCLM V (χ i) u) x =
         quantizeSchwartzValue a.coefficient u x + quantizeSchwartzValue r.coefficient u x := by
   obtain ⟨r, hr⟩ := exists_coefficient_eq_sum_compress_sub (s := s.attach) (χ := fun i ↦ χ i)
-    (fun i ↦ hχ i i.2) (fun i ↦ hχc i i.2)
+    (fun i ↦ hχ i i.property) (fun i ↦ hχc i i.property)
     (fun x hx ↦ (Finset.sum_attach s fun i ↦ χ i x ^ 2).trans (hU x hx)) ha
   refine ⟨r, fun u x ↦ ?_⟩
   rw [← Finset.sum_attach s, Finset.sum_congr rfl fun (i : s) _ ↦
-      (quantizeSchwartzValue_compress (hχ i i.2) (hχ i i.2) (hχc i i.2) u x).symm,
+      (quantizeSchwartzValue_compress (hχ i i.property) (hχ i i.property)
+          (hχc i i.property) u x).symm,
     ← quantizeSchwartzValue_sum_left, ← quantizeSchwartzValue_coefficient_add, hr,
     add_sub_cancel]
 

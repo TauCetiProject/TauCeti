@@ -70,19 +70,19 @@ variable {F : Set (Σ n, L.Functions n)} {R : Set (Σ n, L.Relations n)}
 variable (F R) in
 /-- The inclusion of a symbol sublanguage into `L`. -/
 def symbSublangIncl : symbSublang F R →ᴸ L where
-  onFunction _ f := f.1
-  onRelation _ r := r.1
+  onFunction _ f := f.val
+  onRelation _ r := r.val
 
 /-- The inclusion sends a function symbol of the sublanguage to the underlying symbol of `L`. -/
 @[simp]
 theorem symbSublangIncl_onFunction {n : ℕ} (f : (symbSublang F R).Functions n) :
-    (symbSublangIncl F R).onFunction f = f.1 :=
+    (symbSublangIncl F R).onFunction f = f.val :=
   (rfl)
 
 /-- The inclusion sends a relation symbol of the sublanguage to the underlying symbol of `L`. -/
 @[simp]
 theorem symbSublangIncl_onRelation {n : ℕ} (r : (symbSublang F R).Relations n) :
-    (symbSublangIncl F R).onRelation r = r.1 :=
+    (symbSublangIncl F R).onRelation r = r.val :=
   (rfl)
 
 variable (F R) in
@@ -95,7 +95,7 @@ symbols, counted over all arities. -/
 instance countable_functions_symbSublang [Countable F] :
     Countable (Σ n, (symbSublang F R).Functions n) :=
   Function.Injective.countable (f := fun s : Σ n, (symbSublang F R).Functions n =>
-      (⟨⟨s.1, s.2.1⟩, s.2.2⟩ : F)) <| by
+      (⟨⟨s.1, s.2.val⟩, s.2.property⟩ : F)) <| by
     rintro ⟨n, f, hf⟩ ⟨m, f', hf'⟩ h
     cases congrArg Subtype.val h
     rfl
@@ -105,18 +105,18 @@ symbols, counted over all arities. -/
 instance countable_relations_symbSublang [Countable R] :
     Countable (Σ n, (symbSublang F R).Relations n) :=
   Function.Injective.countable (f := fun s : Σ n, (symbSublang F R).Relations n =>
-      (⟨⟨s.1, s.2.1⟩, s.2.2⟩ : R)) <| by
+      (⟨⟨s.1, s.2.val⟩, s.2.property⟩ : R)) <| by
     rintro ⟨n, r, hr⟩ ⟨m, r', hr'⟩ h
     cases congrArg Subtype.val h
     rfl
 
 /-- Any symbol sublanguage of a relational language is relational. -/
 instance isRelational_symbSublang [L.IsRelational] : (symbSublang F R).IsRelational :=
-  fun _ => ⟨fun f => isEmptyElim f.1⟩
+  fun _ => ⟨fun f => isEmptyElim f.val⟩
 
 /-- A symbol sublanguage with an empty set of function symbols is relational. -/
 instance isRelational_symbSublang_of_isEmpty [IsEmpty F] : (symbSublang F R).IsRelational :=
-  fun n => ⟨fun f => isEmptyElim (⟨⟨n, f.1⟩, f.2⟩ : F)⟩
+  fun n => ⟨fun f => isEmptyElim (⟨⟨n, f.val⟩, f.property⟩ : F)⟩
 
 namespace Term
 
@@ -173,13 +173,13 @@ theorem exists_comp_eq_symbSublangIncl (g : L →ᴸ L') {F : Set (Σ n, L'.Func
       Set.range fun s : Σ n, L.Relations n => (⟨s.1, g.onRelation s.2⟩ : Σ k, L'.Relations k)) :
     ∃ h : symbSublang F R →ᴸ L, g.comp h = symbSublangIncl F R := by
   have hF' : ∀ n (f : (symbSublang F R).Functions n), ∃ f₀ : L.Functions n,
-      g.onFunction f₀ = f.1 := by
+      g.onFunction f₀ = f.val := by
     rintro n ⟨f, hf⟩
     obtain ⟨⟨k, f₀⟩, hk⟩ := hF hf
     cases hk
     exact ⟨f₀, rfl⟩
   have hR' : ∀ n (r : (symbSublang F R).Relations n), ∃ r₀ : L.Relations n,
-      g.onRelation r₀ = r.1 := by
+      g.onRelation r₀ = r.val := by
     rintro n ⟨r, hr⟩
     obtain ⟨⟨k, r₀⟩, hk⟩ := hR hr
     cases hk

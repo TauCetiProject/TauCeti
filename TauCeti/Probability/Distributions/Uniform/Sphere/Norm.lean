@@ -287,7 +287,7 @@ theorem mul_sqrt_log_card_div_le_integral_norm_sum_smul_uniformSphereMeasure
     [SeminormedAddCommGroup F] [NormedSpace ℝ F] (v : ι → F) {c : ℝ} (hc : 0 ≤ c)
     (hv : ∀ i, c ≤ ‖v i‖) :
     c * √(Real.log (Fintype.card ι) / Fintype.card ι) / 32 ≤
-      ∫ u : sphere (0 : EuclideanSpace ℝ ι) 1, ‖∑ i, u.1 i • v i‖
+      ∫ u : sphere (0 : EuclideanSpace ℝ ι) 1, ‖∑ i, u.val i • v i‖
         ∂uniformSphereMeasure (EuclideanSpace ℝ ι) := by
   classical
   let T : EuclideanSpace ℝ ι →ₗ[ℝ] F :=

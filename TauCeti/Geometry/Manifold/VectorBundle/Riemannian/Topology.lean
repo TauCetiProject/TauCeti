@@ -142,7 +142,7 @@ theorem antitone_chartCkTopology :
     Antitone (chartCkTopology (I := I) (M := M)) := fun _ l hkl ↦
   let _ := chartCkTopology (I := I) (M := M) l
   continuous_iff_le_induced.1 (continuous_pi fun x ↦ continuous_pi fun m ↦
-    continuous_chartMetricDerivative l x (m.2.trans hkl))
+    continuous_chartMetricDerivative l x (m.property.trans hkl))
 
 /-- A family is continuous in the chart Cᵏ topology exactly when its coordinate derivatives of
 order at most `k` depend jointly continuously on the parameter and chart variable. -/

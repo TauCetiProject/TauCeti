@@ -407,7 +407,7 @@ theorem IsGeneratorMatrix.vecMul_encodingEquiv_symm_apply (hG : C.IsGeneratorMat
 theorem isGeneratorMatrix_of_basis (b : Module.Basis ρ F C) :
     C.IsGeneratorMatrix (Matrix.of fun r ↦ (b r : ι → F)) := by
   rw [isGeneratorMatrix_def, generatedBy_eq_span_rows, Matrix.row_of]
-  exact (Submodule.span_range_subtype_eq_top_iff C fun r ↦ (b r).2).1 b.span_eq
+  exact (Submodule.span_range_subtype_eq_top_iff C fun r ↦ (b r).property).1 b.span_eq
 
 omit [Fintype ρ] in
 /-- The matrix whose rows are the vectors of a basis has linearly independent rows. -/
@@ -424,7 +424,7 @@ def basisEquivFullRankGeneratorMatrix (C : LinearCode F ι) (ρ : Type*) [Fintyp
     where
   toFun b := ⟨Matrix.of fun r ↦ (b r : ι → F), isGeneratorMatrix_of_basis b,
     linearIndependent_row_of_basis b⟩
-  invFun G := G.2.1.basis G.2.2
+  invFun G := G.property.1.basis G.property.2
   left_inv b := Module.Basis.eq_of_apply_eq fun r ↦ Subtype.ext (by simp)
   right_inv G := Subtype.ext (Matrix.ext fun r i ↦ by simp)
 
@@ -440,7 +440,7 @@ rows. -/
 @[simp]
 theorem basisEquivFullRankGeneratorMatrix_symm_apply [Fintype ρ] {C : LinearCode F ι}
     (G : {G : Matrix ρ ι F // C.IsGeneratorMatrix G ∧ LinearIndependent F G.row}) :
-    (basisEquivFullRankGeneratorMatrix C ρ).symm G = G.2.1.basis G.2.2 :=
+    (basisEquivFullRankGeneratorMatrix C ρ).symm G = G.property.1.basis G.property.2 :=
   (rfl)
 
 /-- Every finite-length linear code has a generator matrix with one row per dimension, and those

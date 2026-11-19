@@ -82,7 +82,7 @@ noncomputable def restrictedMap :
   ((MvPowerSeries.map φ).comp (IsRestricted.subring (R := R) c).subtype).codRestrict _
     -- `MvPowerSeries.map φ f` is definitionally `fun t ↦ φ (coeff t f)`, which is the series
     -- that `isRestricted_map` shows to be restricted.
-    fun f ↦ isRestricted_map c φ hφ f.2
+    fun f ↦ isRestricted_map c φ hφ f.property
 
 /-- `restrictedMap` acts as `MvPowerSeries.map` on the underlying series. -/
 theorem coe_restrictedMap (f : IsRestricted.subring (R := R) c) :
@@ -176,7 +176,7 @@ theorem exists_restrictedMap_eq_and_norm_coeff_le {C' : ℝ}
   -- Mathlib's bounded coefficient-family construction allows a nonlinear choice of lifts.
   let f : MvPowerSeries σ R := fun t ↦ r (coeff t (g : MvPowerSeries σ S))
   have hcoeff (t : σ →₀ ℕ) : coeff t f = r (coeff t (g : MvPowerSeries σ S)) := (rfl)
-  have hf : IsRestricted c f := isRestricted_map c r hrn g.2
+  have hf : IsRestricted c f := isRestricted_map c r hrn g.property
   refine ⟨⟨f, hf⟩, Subtype.ext ?_, fun t ↦ by simpa only [hcoeff] using hrn _⟩
   ext t
   rw [coeff_restrictedMap, hcoeff]

@@ -162,7 +162,7 @@ theorem derivWithin_eq_exp_smul_timeDerivL (v : ParabolicC2HolderSpace α E F ht
       simp only [timeExtension_def, projIcc_of_mem ht.le hs]
       exact hu x ⟨s, hs⟩)
     (by simp only [timeExtension_def, projIcc_val]; exact hu x t),
-    (hasDerivWithinAt_exp_smul v x t).derivWithin (uniqueDiffOn_Icc ht t t.2)]
+    (hasDerivWithinAt_exp_smul v x t).derivWithin (uniqueDiffOn_Icc ht t t.property)]
 
 end WeightedMap
 
@@ -699,7 +699,7 @@ theorem exp_smul_parabolicOperatorL_weightCoeff (hφ : ∀ x, HasFDerivAt φ (�
   rw [hslice, (hasFDerivAt_fderiv_exp_smul_slice hφ hℓ v t x).fderiv,
     (hasFDerivAt_exp_smul_slice hφ v t x).fderiv, htime,
     ((v.hasTimeDerivWithinAt x t).const_smul (Real.exp (φ x))).derivWithin
-      (uniqueDiffOn_Icc ht t t.2), hu]
+      (uniqueDiffOn_Icc ht t t.property), hu]
   simp only [parabolicOperatorL_apply, weightFirstOrderCoeff_apply,
     weightZerothOrderCoeff_apply, space_slabMk, map_smul, map_add, smul_sub, smul_add]
   abel

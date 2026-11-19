@@ -197,16 +197,16 @@ theorem range_pi_spaComap :
   · rintro _ ⟨v, rfl⟩ i j h
     refine Subtype.ext ?_
     simp only [spaComap_val]
-    exact comap_comap_of_comp_eq hφt h v.1
-  have hw' : (fun i ↦ (w i).1) ∈
+    exact comap_comap_of_comp_eq hφt h v.val
+  have hw' : (fun i ↦ (w i).val) ∈
       {w : ∀ i, Spv (A i) | ∀ i j (h : i ≤ j), comap (t i j h) (w j) = w i} :=
     fun i j h ↦ (spaComap_val _ _ _ _ _ _).symm.trans (congrArg Subtype.val (hw i j h))
   rw [← range_pi_comap hφt hcover hker] at hw'
   obtain ⟨v, hv⟩ := hw'
-  have hvi : ∀ i, comap (φ i) v = (w i).1 := fun i ↦ congr_fun hv i
+  have hvi : ∀ i, comap (φ i) v = (w i).val := fun i ↦ congr_fun hv i
   have hmem : v ∈ spa Lplus :=
     (mem_spa_iff_forall_comap_mem_spa Aplus Lplus hφc hφplus hφt hcover ht P hP hLplus v).mpr
-      fun i ↦ hvi i ▸ (w i).2
+      fun i ↦ hvi i ▸ (w i).property
   exact ⟨⟨v, hmem⟩, funext fun i ↦ Subtype.ext ((spaComap_val _ _ _ _ _ _).trans (hvi i))⟩
 
 /-- **The adic spectrum of a directed colimit of Huber pairs is the inverse limit of the adic

@@ -203,9 +203,9 @@ theorem hsymmPart_eq_sum_kostkaNumber_smul_schurPoly (σ : Type*) [Fintype σ] [
     hsymmPart σ R ν = ∑ μ : n.Partition, (kostkaNumber μ ν : R) • schurPoly σ R μ := by
   -- Expand along the row lengths `l` of the shape of `ν`.
   set l := (ofPartition ν).rowLens with hl
-  have hl_apply (i : Fin l.length) : rowLenWeight l.length (ofPartition ν) i = l[i.1] := by
+  have hl_apply (i : Fin l.length) : rowLenWeight l.length (ofPartition ν) i = l[i.val] := by
     rw [rowLenWeight_apply, ← YoungDiagram.getD_rowLens]
-    exact List.getD_eq_getElem l 0 i.2
+    exact List.getD_eq_getElem l 0 i.isLt
   have hdeg : (rowLenWeight l.length (ofPartition ν)).degree = n := by
     rw [Finsupp.degree_eq_sum]
     simp only [hl_apply]

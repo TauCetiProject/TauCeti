@@ -407,7 +407,7 @@ theorem euclideanHausdorffMeasure_restrict_setOf_inner_eq (hν : ‖ν‖ = 1) (
     ext x
     refine ⟨?_, fun hx => ?_⟩
     · rintro ⟨y, rfl⟩
-      have hy : ⟪(y : F), ν⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1 y.2
+      have hy : ⟪(y : F), ν⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1 y.property
       simp [inner_add_left, real_inner_smul_left, hν, hy]
     · have hy : x - c • ν ∈ (ℝ ∙ ν)ᗮ := by
         rw [Submodule.mem_orthogonal_singleton_iff_inner_left, inner_sub_left,

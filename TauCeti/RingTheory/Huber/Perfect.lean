@@ -126,7 +126,7 @@ theorem IsUniform.of_perfectRing (p : ℕ) [Fact p.Prime] [CharP R p] [PerfectRi
       refine fun x hx ↦ hroot x (ih (x ^ p) ?_)
       rwa [← pow_mul, ← pow_succ']
   -- hence `R° ⊆ ϖ ^ (-(c + 1)) R₀`
-  refine isUniform_iff.mpr (((isBounded_singleton (hϖu.unit⁻¹ ^ (c + 1) : Rˣ).1).mul hb).subset
+  refine isUniform_iff.mpr (((isBounded_singleton (hϖu.unit⁻¹ ^ (c + 1) : Rˣ).val).mul hb).subset
     fun x hx ↦ ?_)
   obtain ⟨k, hk⟩ := (isPowerBounded_iff.mp hx).exists_pow_mul_subset hϖ hR₀
   have hlt : k ≤ p ^ k := (Nat.lt_pow_self (Fact.out : p.Prime).one_lt).le

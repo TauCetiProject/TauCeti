@@ -70,7 +70,7 @@ theorem enatCard_zerothHomotopy_inter_le_two {F : Type w} [NormedAddCommGroup F]
   let V : Set (of ↥E) := Subtype.val ⁻¹' B
   have hU : IsOpen U := hA.preimage continuous_subtype_val
   have hV : IsOpen V := hB.preimage continuous_subtype_val
-  have hUV : U ∪ V = univ := eq_univ_of_forall fun z ↦ hABE.ge z.2
+  have hUV : U ∪ V = univ := eq_univ_of_forall fun z ↦ hABE.ge z.property
   have : PathConnectedSpace ↥U := isPathConnected_iff_pathConnectedSpace.1 (hAc.preimage_coe hAE)
   have : PathConnectedSpace ↥V := isPathConnected_iff_pathConnectedSpace.1 (hBc.preimage_coe hBE)
   have : Epi (reducedMayerVietorisδ M hU hV hUV 0) := epi_reducedMayerVietorisδ M hU hV hUV

@@ -93,8 +93,8 @@ theorem IsFormalAdjoint.add {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup
     [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
     {T₁ T₂ : E →ₗ.[𝕜] F} {S₁ S₂ : F →ₗ.[𝕜] E} (h₁ : T₁.IsFormalAdjoint S₁)
     (h₂ : T₂.IsFormalAdjoint S₂) : (T₁ + T₂).IsFormalAdjoint (S₁ + S₂) := fun x y ↦ by
-  rw [add_apply, add_apply, inner_add_left, inner_add_right, h₁ ⟨x, x.2.1⟩ ⟨y, y.2.1⟩,
-    h₂ ⟨x, x.2.2⟩ ⟨y, y.2.2⟩]
+  rw [add_apply, add_apply, inner_add_left, inner_add_right, h₁ ⟨x, x.property.1⟩ ⟨y, y.property.1⟩,
+    h₂ ⟨x, x.property.2⟩ ⟨y, y.property.2⟩]
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
@@ -469,7 +469,7 @@ theorem IsFormalAdjoint.adjoint_eq_neg_of_surjective_sub_add [CompleteSpace E] {
   hG.adjoint_eq_of_smul_sub_surjective (c := 1) (by simpa only [one_smul] using hsub)
     fun t => by
       obtain ⟨x, hx⟩ := hadd t
-      exact ⟨⟨x, by rw [neg_domain]; exact x.2⟩, by simpa only [map_one, one_smul, neg_apply,
+      exact ⟨⟨x, by rw [neg_domain]; exact x.property⟩, by simpa only [map_one, one_smul, neg_apply,
         sub_neg_eq_add, Subtype.coe_eta] using hx⟩
 
 end LinearPMap

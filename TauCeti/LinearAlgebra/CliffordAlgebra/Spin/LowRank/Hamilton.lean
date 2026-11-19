@@ -314,7 +314,7 @@ private theorem hamiltonVectorEven_spin_action
   have hrev : reverse (s : CliffordAlgebra (hamiltonThreeForm (K := K))) =
       star (s : CliffordAlgebra (hamiltonThreeForm (K := K))) :=
     reverse_eq_star_of_mem_even
-      ⟨(s : CliffordAlgebra (hamiltonThreeForm (K := K))), spinGroup.mem_even s.2⟩
+      ⟨(s : CliffordAlgebra (hamiltonThreeForm (K := K))), spinGroup.mem_even s.property⟩
   rw [hrev]
   have hcomm : hamiltonVolume (K := K) * star (s : CliffordAlgebra _) =
       star (s : CliffordAlgebra _) * hamiltonVolume :=

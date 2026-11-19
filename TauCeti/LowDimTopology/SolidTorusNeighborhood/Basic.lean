@@ -159,7 +159,7 @@ theorem SolidTorus.range_boundaryInclusion :
 private noncomputable def SolidTorus.twistMap (n : ℤ) (p : SolidTorus) : SolidTorus :=
   (⟨(p.1 : ℂ) * ((p.2 ^ n : Circle) : ℂ), by
     rw [mem_closedBall_zero_iff, norm_mul, Circle.norm_coe, mul_one]
-    exact mem_closedBall_zero_iff.mp p.1.2⟩, p.2)
+    exact mem_closedBall_zero_iff.mp p.1.property⟩, p.2)
 
 private theorem SolidTorus.twistMap_twistMap (m n : ℤ) (p : SolidTorus) :
     twistMap n (twistMap m p) = twistMap (m + n) p :=
@@ -365,7 +365,7 @@ theorem frontier_image [T2Space X] (h : IsSolidTorusNeighborhood f Φ) :
     SolidTorus.range_boundaryInclusion]
   congr 1
   ext p
-  have hp : ‖(p.1 : ℂ)‖ ≤ 1 := mem_closedBall_zero_iff.mp p.1.2
+  have hp : ‖(p.1 : ℂ)‖ ≤ 1 := mem_closedBall_zero_iff.mp p.1.property
   simp only [mem_sdiff, mem_univ, mem_ofPred_eq, true_and, not_lt]
   exact ⟨fun h' => le_antisymm hp h', fun h' => h'.ge⟩
 
@@ -688,7 +688,7 @@ theorem exists_isSolidTorusNeighborhood_hasFDerivAt_coreReading {f : Circle → 
     rw [norm_smul, (ψ q.2).norm_map, Real.norm_of_nonneg hr.le]
   have hle : ∀ q : SolidTorus, ‖r • ψ q.2 q.1‖ ≤ r := fun q => by
     rw [hnorm]
-    exact mul_le_of_le_one_right hr.le (mem_closedBall_zero_iff.mp q.1.2)
+    exact mul_le_of_le_one_right hr.le (mem_closedBall_zero_iff.mp q.1.property)
   have hmem : ∀ q : SolidTorus, (q.2, r • ψ q.2 q.1) ∈ normalTube (𝓡 1) f ε := fun q =>
     mem_normalTube.mpr ⟨Submodule.smul_mem _ _ ((hψ q.2).1 _), (hle q).trans_lt hrε⟩
   have hinj : Injective fun q : SolidTorus => f q.2 + r • ψ q.2 q.1 := fun q q' h => by

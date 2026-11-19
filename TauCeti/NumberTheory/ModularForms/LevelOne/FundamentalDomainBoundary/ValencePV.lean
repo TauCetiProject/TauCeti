@@ -327,12 +327,12 @@ private theorem two_pi_I_mul_sum_windingNumber_mul_orderOfVanishingAt_eq (g : �
     (hpos : ∀ s ∈ T, 0 < s.im) (hbase : fdBoundary H 0 ∉ (T : Set ℂ)) :
     2 * (Real.pi : ℂ) * Complex.I *
         ∑ z ∈ T.attach, Contour.windingNumber (fdBoundary H) 0 5 (z : ℂ) *
-          ((orderOfVanishingAt g ⟨(z : ℂ), hpos _ z.2⟩ : ℤ) : ℂ) =
+          ((orderOfVanishingAt g ⟨(z : ℂ), hpos _ z.property⟩ : ℤ) : ℂ) =
       2 * (Real.pi : ℂ) * Complex.I * qExpansionOrderAtCusp 1 g -
         (k : ℂ) * ((Real.pi / 6 : ℝ) * Complex.I) := by
   have hsummand : ∀ z ∈ T.attach,
       Contour.windingNumber (fdBoundary H) 0 5 (z : ℂ) *
-          ((orderOfVanishingAt g ⟨(z : ℂ), hpos _ z.2⟩ : ℤ) : ℂ) =
+          ((orderOfVanishingAt g ⟨(z : ℂ), hpos _ z.property⟩ : ℤ) : ℂ) =
         Contour.windingNumber (fdBoundary H) 0 5 (z : ℂ) *
           (((meromorphicOrderAt (g ∘ ofComplex) (z : ℂ)).untop₀ : ℤ) : ℂ) := by
     intro z _
@@ -364,7 +364,7 @@ theorem sum_windingNumber_mul_orderOfVanishingAt_eq (g : ℍ → ℂ) {H : ℝ} 
     (hmero : ∀ s ∈ T, s ∈ U → MeromorphicAt (g ∘ ofComplex) s)
     (hpos : ∀ s ∈ T, 0 < s.im) (hbase : fdBoundary H 0 ∉ (T : Set ℂ)) :
     ∑ z ∈ T.attach, Contour.windingNumber (fdBoundary H) 0 5 (z : ℂ) *
-        ((orderOfVanishingAt g ⟨(z : ℂ), hpos _ z.2⟩ : ℤ) : ℂ) =
+        ((orderOfVanishingAt g ⟨(z : ℂ), hpos _ z.property⟩ : ℤ) : ℂ) =
       qExpansionOrderAtCusp 1 g - (k : ℂ) / 12 := by
   refine mul_left_cancel₀ Complex.two_pi_I_ne_zero ?_
   rw [two_pi_I_mul_sum_windingNumber_mul_orderOfVanishingAt_eq g hH hpv
@@ -399,7 +399,7 @@ theorem sum_orderOfVanishingAt_add_qExpansionOrderAtCusp_eq [SlashInvariantFormC
       AnalyticAt ℂ (cuspFunction 1 ⇑f) q)
     (hgz : ∀ q ∈ Metric.closedBall (0 : ℂ) (fdBoundaryQRadius H), q ≠ 0 →
       cuspFunction 1 ⇑f q ≠ 0) :
-    ∑ z ∈ T.attach, ((orderOfVanishingAt ⇑f ⟨(z : ℂ), hpos _ z.2⟩ : ℤ) : ℂ) +
+    ∑ z ∈ T.attach, ((orderOfVanishingAt ⇑f ⟨(z : ℂ), hpos _ z.property⟩ : ℤ) : ℂ) +
         qExpansionOrderAtCusp 1 ⇑f = (k : ℂ) / 12 := by
   -- Both are forced by the data: excision centres sit on the unit circle, and every divisor
   -- point has `|re| < 1/2` while the basepoint has real part exactly `1/2`.
@@ -413,11 +413,12 @@ theorem sum_orderOfVanishingAt_add_qExpansionOrderAtCusp_eq [SlashInvariantFormC
     simp at h
   have hw : ∀ z ∈ T.attach,
       Contour.windingNumber (fdBoundary H) 0 5 (z : ℂ) *
-          ((orderOfVanishingAt ⇑f ⟨(z : ℂ), hpos _ z.2⟩ : ℤ) : ℂ) =
-        -((orderOfVanishingAt ⇑f ⟨(z : ℂ), hpos _ z.2⟩ : ℤ) : ℂ) := by
+          ((orderOfVanishingAt ⇑f ⟨(z : ℂ), hpos _ z.property⟩ : ℤ) : ℂ) =
+        -((orderOfVanishingAt ⇑f ⟨(z : ℂ), hpos _ z.property⟩ : ℤ) : ℂ) := by
     intro z _
-    obtain ⟨h1, h2, h3⟩ := hin _ z.2
-    rw [windingNumber_fdBoundary_eq_neg_one_of_interior hH h1 h2 (hpos _ z.2) h3, neg_one_mul]
+    obtain ⟨h1, h2, h3⟩ := hin _ z.property
+    rw [windingNumber_fdBoundary_eq_neg_one_of_interior hH h1 h2 (hpos _ z.property) h3,
+        neg_one_mul]
   have := sum_windingNumber_mul_orderOfVanishingAt_eq ⇑f hH.le
     (hasCauchyPVWith_fdBoundary_logDeriv_comp_ofComplex f hS hnorm hinv hHgt hper hoffγ hga hgz)
     hU hUdom hoff hmero hpos hbase
@@ -430,10 +431,10 @@ sum carries its own membership proof; `ofComplex` is the total map that replaces
 agrees with the attached point because `X` lies in the upper half plane. -/
 private lemma sum_attach_mul_orderOfVanishingAt {f : ℍ → ℂ} {X : Finset ℂ}
     (hX : ∀ z ∈ X, 0 < z.im) (c : ℂ → ℂ) :
-    ∑ z ∈ X.attach, c (z : ℂ) * ((orderOfVanishingAt f ⟨(z : ℂ), hX _ z.2⟩ : ℤ) : ℂ) =
+    ∑ z ∈ X.attach, c (z : ℂ) * ((orderOfVanishingAt f ⟨(z : ℂ), hX _ z.property⟩ : ℤ) : ℂ) =
       ∑ z ∈ X, c z * ((orderOfVanishingAt f (ofComplex z) : ℤ) : ℂ) := by
   rw [← Finset.sum_attach X fun z => c z * ((orderOfVanishingAt f (ofComplex z) : ℤ) : ℂ)]
-  exact Finset.sum_congr rfl fun z _ => by rw [ofComplex_apply_of_im_pos (hX _ z.2)]
+  exact Finset.sum_congr rfl fun z _ => by rw [ofComplex_apply_of_im_pos (hX _ z.property)]
 
 
 /-- A corner the divisor set misses has order `0`: the corners lie in the closed fundamental
@@ -515,13 +516,15 @@ private lemma windingNumber_coe_eq_neg_half {H : ℝ} {p : ℍ} (hH : 1 < H) (hp
     Contour.windingNumber (fdBoundary H) 0 5 (p : ℂ) = -(1 / 2 : ℂ) := by
   rcases (mem_boundary_iff hp).mp ⟨hc, hint⟩ with ⟨hre, hgt⟩ | ⟨hre, hgt⟩ |
     ⟨hne, hnorm, hpos⟩ | ⟨hne, hnorm, hneg⟩
-  · exact windingNumber_fdBoundary_vertical (by rw [← one_div]; exact Or.inl hre) hgt p.2 him
-  · exact windingNumber_fdBoundary_vertical (by rw [← one_div]; exact Or.inr hre) hgt p.2 him
-  · refine windingNumber_fdBoundary_arc hH hnorm ?_ p.2
+  · exact windingNumber_fdBoundary_vertical (by rw [← one_div]; exact Or.inl hre) hgt p.coe_im_pos
+      him
+  · exact windingNumber_fdBoundary_vertical (by rw [← one_div]; exact Or.inr hre) hgt p.coe_im_pos
+      him
+  · refine windingNumber_fdBoundary_arc hH hnorm ?_ p.coe_im_pos
     rw [← one_div, abs_lt]
     exact ⟨by linarith, lt_of_le_of_ne (abs_le.mp hp.2).2 fun h =>
       hne ((congrArg _ (eq_vadd_one_ρ_of_re_eq_half hnorm h)).trans coe_vadd_one_ρ)⟩
-  · refine windingNumber_fdBoundary_arc hH hnorm ?_ p.2
+  · refine windingNumber_fdBoundary_arc hH hnorm ?_ p.coe_im_pos
     rw [← one_div, abs_lt]
     exact ⟨lt_of_le_of_ne (abs_le.mp hp.2).1 fun h =>
       hne (congrArg _ (eq_ρ_of_re_eq_neg_half hnorm h.symm)), by linarith⟩
@@ -578,7 +581,7 @@ private lemma windingNumber_mul_order_ite {f : ℍ → ℂ} {H : ℝ} {S : Finse
   obtain ⟨hp', hpc⟩ := Finset.mem_filter.mp hp
   obtain ⟨hpS, hpne⟩ := Finset.mem_filter.mp hp'
   split_ifs with h
-  · rw [windingNumber_fdBoundary_eq_neg_one_of_interior hH h.1 h.2 p.2 (hHgt p hpS),
+  · rw [windingNumber_fdBoundary_eq_neg_one_of_interior hH h.1 h.2 p.coe_im_pos (hHgt p hpS),
       neg_one_mul]
   · rw [windingNumber_coe_eq_neg_half hH (hSfd p hpS hpne) hpc h (hHgt p hpS)]
 
@@ -651,14 +654,14 @@ private lemma analyticAt_comp_ofComplex_and_ne_zero_of_notMem [ModularFormClass 
       (fdBoundary_mem_arcSingularSet_union_verticalSingularSet_of_comp_eq_zero hf hcomp hH
         hHgt ht h0)⟩
   rw [← hqe]
-  exact q.2
+  exact q.coe_im_pos
 
 /-- The image of a divisor set of upper half-plane points lies above the real axis. -/
 private lemma im_pos_of_mem_image {S : Finset ℍ} :
     ∀ z ∈ S.image ((↑·) : ℍ → ℂ), 0 < z.im := by
   simp only [Finset.mem_image]
   rintro z ⟨p, -, rfl⟩
-  exact p.2
+  exact p.coe_im_pos
 
 /-- The basepoint of the contour sits at height `H`, above every point of a height-bounded
 divisor set. -/

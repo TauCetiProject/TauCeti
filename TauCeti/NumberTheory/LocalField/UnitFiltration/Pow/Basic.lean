@@ -414,7 +414,8 @@ theorem powMonoidHom_unitFiltration_succ_bijective_of_isUnit {n : ℕ} (hn : IsU
   refine ⟨(MonoidHom.ker_eq_bot_iff _).mp <| eq_bot_iff.mpr fun x hx ↦ Subtype.ext ?_,
     MonoidHom.range_eq_top.mp ?_⟩
   · refine Subgroup.disjoint_def.mp (disjoint_rootsOfUnity_unitFiltration_one_of_isUnit hn)
-      ((mem_rootsOfUnity n (x : Kˣ)).mpr ?_) (unitFiltration_antitone (Nat.le_add_left 1 i) x.2)
+      ((mem_rootsOfUnity n (x : Kˣ)).mpr ?_) (unitFiltration_antitone
+          (Nat.le_add_left 1 i) x.property)
     simpa using congrArg Subtype.val (MonoidHom.mem_ker.mp hx)
   · rw [← Subgroup.subgroupOf_map_powMonoidHom_eq_range,
       map_powMonoidHom_unitFiltration_succ_of_isUnit hn i, Subgroup.subgroupOf_self]

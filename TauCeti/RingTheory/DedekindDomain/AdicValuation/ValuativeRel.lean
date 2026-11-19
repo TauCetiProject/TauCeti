@@ -161,7 +161,7 @@ which the theory of local fields consumes a ring of integers. -/
 theorem valuation_integers_adicCompletionIntegers :
     (ValuativeRel.valuation (v.adicCompletion K)).Integers (v.adicCompletionIntegers K) where
   hom_inj := Subtype.val_injective
-  map_le_one x := (v.mem_adicCompletionIntegers_iff_valuation_le_one (K := K) x.1).mp x.2
+  map_le_one x := (v.mem_adicCompletionIntegers_iff_valuation_le_one (K := K) x.val).mp x.property
   exists_of_le_one {r} hr :=
     ⟨⟨r, (v.mem_adicCompletionIntegers_iff_valuation_le_one (K := K) r).mpr hr⟩, rfl⟩
 

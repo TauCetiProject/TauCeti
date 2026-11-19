@@ -84,7 +84,7 @@ theorem exists_homotopyRel_of_segment_subset_target (f : C(X, Y)) (φ : OpenPart
   have hmem : ∀ (t : unitInterval) x, f x ∈ φ.source →
       (t : ℝ) • (w x - φ (f x)) + φ (f x) ∈ φ.target := fun t x hx =>
     hseg x hx (AffineMap.lineMap_apply_module' (φ (f x)) (w x) (t : ℝ) ▸
-      lineMap_mem_segment ℝ _ _ t.2)
+      lineMap_mem_segment ℝ _ _ t.property)
   let H : unitInterval × X → Y := fun q =>
     if f q.2 ∈ φ.source then φ.symm ((q.1 : ℝ) • (w q.2 - φ (f q.2)) + φ (f q.2)) else f q.2
   have hH_eq : ∀ q : unitInterval × X, (f q.2 ∈ φ.source → w q.2 = φ (f q.2)) → H q = f q.2 :=

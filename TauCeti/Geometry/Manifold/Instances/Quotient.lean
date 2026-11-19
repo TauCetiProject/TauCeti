@@ -399,7 +399,7 @@ instance instContMDiffConstSMul [ContMDiffConstSMul I n G M] :
   contMDiff_const_smul γ := by
     let U : TopologicalSpace.Opens M := ⟨_, isOpen_freeLocus G M⟩
     have h : ContMDiff I I n
-        (Subtype.val ∘ fun x : U ↦ (⟨γ • (x : M), (freeLocus G M).smul_mem γ x.2⟩ : U)) :=
+        (Subtype.val ∘ fun x : U ↦ (⟨γ • (x : M), (freeLocus G M).smul_mem γ x.property⟩ : U)) :=
       (contMDiff_const_smul γ).comp contMDiff_subtype_val
     exact fun x ↦ (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff _ _ _).1 (h x)
 

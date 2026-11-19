@@ -102,10 +102,10 @@ theorem exists_flow_val_eq_pairCutCapacity_mem [Fintype V]
     exact hst (by simpa using congrArg Subtype.val h)
   have hcap : 0 ≤ G.ofSimpleGraphCapacity c := fun e ↦ by
     rw [G.ofSimpleGraphCapacity_apply]
-    exact hc e.1 (by simpa using e.2)
+    exact hc e.val (by simpa using e.property)
   have hcapA : ∀ e, G.ofSimpleGraphCapacity c e ∈ A := fun e ↦ by
     rw [G.ofSimpleGraphCapacity_apply]
-    exact hcA e.1 (by simpa using e.2)
+    exact hcA e.val (by simpa using e.property)
   obtain ⟨f, hfacyc, hfA, T, hsT, htT, hval⟩ :=
     (Graph.ofSimpleGraph G).exists_flow_val_eq_edgeCutCapacity_mem hst' hcap A hcapA
   let S : Finset V := T.map ⟨Subtype.val, Subtype.val_injective⟩

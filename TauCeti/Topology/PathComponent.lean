@@ -49,7 +49,7 @@ theorem homotopic_pathComponent_of_map_subtypeVal_homotopic
     γ.Homotopic δ := by
   obtain ⟨H⟩ := h
   have hγmem : ∀ t, (γ.map continuous_subtype_val) t ∈ pathComponent x₀ := fun t =>
-    (γ t).2
+    (γ t).property
   have hmem : ∀ p : I × I, H p ∈ pathComponent x₀ := fun p =>
     Joined.mem_pathComponent
       ((H.evalAt p.2).mem_pathComponent p.1)

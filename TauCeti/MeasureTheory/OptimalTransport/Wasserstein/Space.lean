@@ -123,7 +123,7 @@ def mk (μ : ProbabilityMeasure X)
 
 /-- The probability measure underlying an element of a Wasserstein component. -/
 @[coe]
-def toProbabilityMeasure (μ : WassersteinComponent p μ₀) : ProbabilityMeasure X := μ.1
+def toProbabilityMeasure (μ : WassersteinComponent p μ₀) : ProbabilityMeasure X := μ.val
 
 instance : CoeOut (WassersteinComponent p μ₀) (ProbabilityMeasure X) :=
   ⟨toProbabilityMeasure⟩
@@ -169,7 +169,7 @@ together with `TauCeti.WassersteinComponent.mk` this characterises the elements 
 component. -/
 theorem wassersteinEDist_anchor_ne_top (μ : WassersteinComponent p μ₀) :
     wassersteinEDist p (μ₀ : Measure X) ((μ : ProbabilityMeasure X) : Measure X) ≠ ∞ :=
-  μ.2
+  μ.property
 
 /-- Rebuilding an element of a component from its underlying probability measure and the proof
 that it lies at finite distance from the anchor returns the element. -/
@@ -280,7 +280,7 @@ def mk (μ : ProbabilityMeasure X) (hμ : HasFiniteMoment p (μ : Measure X)) :
 
 /-- The probability measure underlying an element of `WassersteinSpace p X`. -/
 @[coe]
-def toProbabilityMeasure (μ : WassersteinSpace p X) : ProbabilityMeasure X := μ.1
+def toProbabilityMeasure (μ : WassersteinSpace p X) : ProbabilityMeasure X := μ.val
 
 instance : CoeOut (WassersteinSpace p X) (ProbabilityMeasure X) :=
   ⟨toProbabilityMeasure⟩
@@ -323,7 +323,7 @@ theorem measurable_mk {Y : Type*} [MeasurableSpace Y] {f : Y → ProbabilityMeas
 `TauCeti.WassersteinSpace.mk` this characterises its elements. -/
 theorem hasFiniteMoment (μ : WassersteinSpace p X) :
     HasFiniteMoment p ((μ : ProbabilityMeasure X) : Measure X) :=
-  μ.2
+  μ.property
 
 /-- Rebuilding an element of `WassersteinSpace p X` from its underlying probability measure and
 its finite `p`-moment returns the element. -/

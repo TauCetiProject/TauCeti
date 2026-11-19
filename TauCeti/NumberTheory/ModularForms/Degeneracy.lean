@@ -569,7 +569,7 @@ lemma exists_conjScale_mem_Gamma0_of_dvd (d M N : ℕ) (hdvd : d * M ∣ N) (γ 
       (Gamma0Map M).toHomUnits ⟨conjScale d γ c hc, hm⟩ =
         ZMod.unitsMap ((Dvd.intro_left d rfl).trans hdvd) ((Gamma0Map N).toHomUnits γ) := by
   obtain ⟨t, ht⟩ :=
-    Int.natCast_mul d M ▸ mem_Gamma0_iff_dvd.mp (Gamma0_le_Gamma0_of_dvd hdvd γ.2)
+    Int.natCast_mul d M ▸ mem_Gamma0_iff_dvd.mp (Gamma0_le_Gamma0_of_dvd hdvd γ.property)
   refine ⟨_, ht.trans (mul_assoc _ _ _), mem_Gamma0_iff_dvd.mpr (dvd_mul_right _ _), ?_⟩
   ext
   simp [Gamma0Map_apply, ZMod.unitsMap_val, ZMod.cast_intCast ((Dvd.intro_left d rfl).trans hdvd)]

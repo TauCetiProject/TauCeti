@@ -143,7 +143,7 @@ theorem isLocalHomeomorph_mapTotal :
     ((isOpenMap_mapTotal hs).comp hU.isOpenMap_subtype_val)⟩
   intro b c hbc
   apply Subtype.ext
-  exact hinj b.2 c.2
+  exact hinj b.property c.property
     ((isHomeomorph_toEffectiveQuotient_obj (C := C)).injective (congrArg Quiver.Total.left hbc))
 
 /-- The source of the effective quotient remains a local homeomorphism. -/
@@ -211,7 +211,7 @@ theorem isTopologicalGroupoid : IsTopologicalGroupoid (EffectiveQuotient C) wher
     -- when any pair of its lifts is composable.
     let lift : (Prod.map q q) ⁻¹' S →
         {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} := fun p ↦
-      ⟨p.1, (isHomeomorph_toEffectiveQuotient_obj (C := C)).injective p.2⟩
+      ⟨p.val, (isHomeomorph_toEffectiveQuotient_obj (C := C)).injective p.property⟩
     have hlift : Continuous lift := continuous_subtype_val.subtype_mk _
     convert hq.continuous.comp (IsTopologicalGroupoid.continuous_comp.comp hlift) using 1
     funext p
@@ -288,7 +288,7 @@ theorem t2Space_arrows_iff :
       (IsTopologicalGroupoid.continuous_target.comp continuous_snd)
     -- On pairs with a common target, `p.1` followed by `(p.2)⁻¹` tests the germ relation.
     let φ : S → Quiver.Total C := fun p ↦
-      p.1.1.comp ⟨p.1.2.right, p.1.2.left, inv p.1.2.hom⟩ p.2
+      p.val.1.comp ⟨p.val.2.right, p.val.2.left, inv p.val.2.hom⟩ p.property
     have hφ : Continuous φ := IsTopologicalGroupoid.continuous_comp.comp
       (((continuous_fst.comp continuous_subtype_val).prodMk
         (IsTopologicalGroupoid.continuous_inverse.comp

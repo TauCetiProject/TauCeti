@@ -216,7 +216,7 @@ read as a covector of `M` through the identification `T_x U = T_x M`. -/
 theorem coe_overOpenTranslateDiffeomorph (U : Opens M) (β : SmoothForm I U ℝ 1)
     (z : overOpen (I := I) U) :
     (overOpenTranslateDiffeomorph U β z : CotangentBundle I M) =
-      TotalSpace.mk' (E →L[ℝ] ℝ) z.val.proj (z.val.2 +
+      TotalSpace.mk' (E →L[ℝ] ℝ) z.val.proj (z.val.snd +
         SmoothForm.degreeOneEquiv β ⟨z.val.proj, (mem_overOpen U _).1 z.property⟩ ∘L
           (Manifold.tangentSpaceOpenEquiv (I := I)
             ⟨z.val.proj, (mem_overOpen U _).1 z.property⟩).symm.toContinuousLinearMap) := by

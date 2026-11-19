@@ -87,7 +87,7 @@ theorem contMDiff_hemisphereChord :
   convert hx.sub (((contMDiff_const (c := (1 : ℝ)).sub ht).mul hi).smul
     (contMDiff_const (c := (p : E)))) using 1
   funext q
-  exact (coe_hemisphereChord_apply p q).trans (chordPoint_def p q.1.1 q.2)
+  exact (coe_hemisphereChord_apply p q).trans (chordPoint_def p q.1.val q.2)
 
 /-- The upper chord endpoint and normalized height depend analytically on the point off the
 equator. -/
@@ -113,7 +113,7 @@ theorem contMDiff_hemisphereChord_symm :
       ((contMDiff_const (c := (1 : ℝ)).sub ((contDiff_norm_sq ℝ).contMDiff.comp hy)).add
         (hi.pow 2)).contMDiffAt
   have hx : ContMDiff (𝓡∂ (n + 1)) (𝓡 n) ω
-      (fun y : chordBallOpens p => ((hemisphereChord p).symm y).1.1) := by
+      (fun y : chordBallOpens p => ((hemisphereChord p).symm y).1.val) := by
     apply ContMDiff.codRestrict_sphere
     convert hy.add ((hr.sub hi).smul (contMDiff_const (c := (p : E)))) using 1
     funext y

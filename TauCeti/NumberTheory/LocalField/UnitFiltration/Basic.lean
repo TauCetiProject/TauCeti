@@ -417,7 +417,7 @@ theorem unitsMap_residue_unitFiltrationToIntegerUnits_one (y : unitFiltration K 
   refine Units.ext ?_
   rw [Units.coe_map]
   exact (mem_unitFiltration_one_iff_residue_eq_one _).mp
-    (by rw [unitsMap_subtype_unitFiltrationToIntegerUnits]; exact y.2)
+    (by rw [unitsMap_subtype_unitFiltrationToIntegerUnits]; exact y.property)
 
 -- Not a `simp` lemma: `unitFiltrationGradedZeroEquivResidueFieldUnits_mk` rewrites its left-hand
 -- side first.

@@ -212,7 +212,7 @@ theorem apply_eq_or_eq_neg_of_sq_eq_galoisSubgroup (σ : L →ₐ[K] SeparableCl
     (γ : AbsoluteGaloisGroup K) r = r ∨ (γ : AbsoluteGaloisGroup K) r = -r :=
   sq_eq_sq_iff_eq_or_eq_neg.1 <| by
     rw [← map_pow, hr]
-    exact (mem_galoisSubgroup_iff K L σ).1 γ.2 a
+    exact (mem_galoisSubgroup_iff K L σ).1 γ.property a
 
 /-- An element of `G_L = galoisSubgroup K L σ` acts on the Kummer coordinate `σ(y) r` through the
 sign of `r`, for a square root `r` of `σ a`. -/

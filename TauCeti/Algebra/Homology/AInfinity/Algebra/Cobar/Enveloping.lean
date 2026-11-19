@@ -227,7 +227,8 @@ theorem comp_eq_envelopingAugmentation_iff (ε : 𝒜.Augmentation) {hB : IsDGAl
     eB.comp φ = ε.envelopingAugmentation ↔
       (ε.envelopingDGAlgHomEquiv hB φ).val.IsAugmented ε eB.toAInfinityAugmentation := by
   have hsu : (ε.envelopingDGAlgHomEquiv hB φ).val.IsStrictlyUnital ε.isStrictUnit
-      eB.toAInfinityAugmentation.isStrictUnit := by simpa using (ε.envelopingDGAlgHomEquiv hB φ).2
+      eB.toAInfinityAugmentation.isStrictUnit := by simpa using (ε.envelopingDGAlgHomEquiv hB
+          φ).property
   rw [hsu.isAugmented_iff_taylor_comp_inclusion_mem, envelopingDGAlgHomEquiv_comp_inclusion]
   refine ⟨fun h w ↦ ?_, fun h ↦
     ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.cobarHom_ext _ fun w ↦ by simpa using h w⟩

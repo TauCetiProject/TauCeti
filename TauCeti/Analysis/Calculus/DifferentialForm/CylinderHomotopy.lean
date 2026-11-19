@@ -362,7 +362,7 @@ theorem contDiffOn_cylinderHomotopy (hs : Convex ℝ s) (hsu : UniqueDiffOn ℝ 
   rw [cylinderHomotopy_eq_integral_unitInterval]
   exact hs.contDiffOn_integral_smul_of_contDiffOn (μ := (volume : Measure I))
     (integrable_const (1 : ℝ)) continuous_subtype_val hsu (hsu.prod uniqueDiffOn_Icc_zero_one)
-    (contractInl.contDiff.comp_contDiffOn hω) fun x hx t ↦ ⟨hx, t.2⟩
+    (contractInl.contDiff.comp_contDiffOn hω) fun x hx t ↦ ⟨hx, t.property⟩
 
 variable [CompleteSpace F]
 
@@ -379,11 +379,11 @@ private theorem extDerivWithin_cylinderHomotopy_eq (hs : Convex ℝ s) (hsu : Un
     contractInl ∘L fderivWithin ℝ ω (s ×ˢ Icc 0 1) (x, t) ∘L .inl ℝ E ℝ
   have hpart (t : I) : HasFDerivWithinAt (fun x' ↦ contractInl (ω (x', (t : ℝ)))) (D t) s x :=
     (contractInl (E := E) (F := F) (n := n)).hasFDerivAt.comp_hasFDerivWithinAt x
-      ((hω.differentiableOn one_ne_zero _ ⟨hx, t.2⟩).hasFDerivWithinAt.comp x
-        (hasFDerivAt_prodMk_left x (t : ℝ)).hasFDerivWithinAt fun x' hx' ↦ ⟨hx', t.2⟩)
+      ((hω.differentiableOn one_ne_zero _ ⟨hx, t.property⟩).hasFDerivWithinAt.comp x
+        (hasFDerivAt_prodMk_left x (t : ℝ)).hasFDerivWithinAt fun x' hx' ↦ ⟨hx', t.property⟩)
   have h := hs.hasFDerivWithinAt_integral_smul_of_contDiffOn (μ := (volume : Measure I))
     (integrable_const (1 : ℝ)) continuous_subtype_val hW
-    (contractInl.contDiff.comp_contDiffOn hω) (fun x hx t ↦ ⟨hx, t.2⟩) hx (hsu x hx)
+    (contractInl.contDiff.comp_contDiffOn hω) (fun x hx t ↦ ⟨hx, t.property⟩) hx (hsu x hx)
   simp only [Function.comp_apply] at h
   have hDc : ContinuousOn D (Icc 0 1) :=
     continuousOn_const.clm_comp (((hω.continuousOn_fderivWithin hW le_rfl).comp
@@ -391,7 +391,8 @@ private theorem extDerivWithin_cylinderHomotopy_eq (hs : Convex ℝ s) (hsu : Un
         continuousOn_const)
   have hint := integrable_smul_of_continuousOn (μ := (volume : Measure I)) (x := x)
     (integrable_const (1 : ℝ)) continuous_subtype_val (F := fun p : E × ℝ ↦ D p.2)
-    (W := {p | p.2 ∈ Icc 0 1}) (hDc.comp continuous_snd.continuousOn fun _ hp ↦ hp) fun t ↦ t.2
+    (W := {p | p.2 ∈ Icc 0 1}) (hDc.comp continuous_snd.continuousOn fun _ hp ↦ hp) fun t ↦
+        t.property
   simp only [one_smul] at hint
   calc extDerivWithin (cylinderHomotopy ω) s x
       = ContinuousAlternatingMap.alternatizeUncurryFinCLM ℝ E F (∫ t : I, D t) := by

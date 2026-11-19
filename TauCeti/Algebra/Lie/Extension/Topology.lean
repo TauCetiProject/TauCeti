@@ -215,11 +215,11 @@ theorem range_inl_inter_ker_proj :
 instance : DiscreteTopology (proj c).ker := by
   refine discreteTopology_iff_isOpen_singleton.mpr fun v ↦ ?_
   have h : ({v} : Set (proj c).ker) =
-      Subtype.val ⁻¹' ((fun w ↦ ((ofProd c).symm w).2) ⁻¹' {((ofProd c).symm v.1).2}) := by
+      Subtype.val ⁻¹' ((fun w ↦ ((ofProd c).symm w).2) ⁻¹' {((ofProd c).symm v.val).2}) := by
     ext w
     simp only [Set.mem_singleton_iff, Set.mem_preimage]
     refine ⟨fun h ↦ h ▸ rfl, fun h ↦ Subtype.ext ((ofProd c).symm.injective ?_)⟩
-    exact Prod.ext (((mem_ker_proj c).mp w.2).trans ((mem_ker_proj c).mp v.2).symm) h
+    exact Prod.ext (((mem_ker_proj c).mp w.property).trans ((mem_ker_proj c).mp v.property).symm) h
   rw [h]
   exact ((isLocallyConstant_snd c).isOpen_fiber _).preimage continuous_subtype_val
 

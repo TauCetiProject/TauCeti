@@ -46,7 +46,7 @@ def subtypeSubtypeComm {E : Type*} {p q : E → Prop} {p' : Subtype q → Prop}
 @[simp]
 theorem coe_coe_subtypeSubtypeComm_apply {E : Type*} {p q : E → Prop} {p' : Subtype q → Prop}
     {q' : Subtype p → Prop} (hp : ∀ e he, p' ⟨e, he⟩ ↔ p e) (hq : ∀ e he, q' ⟨e, he⟩ ↔ q e)
-    (e : {e : Subtype p // q' e}) : ((subtypeSubtypeComm hp hq e : Subtype q) : E) = e.1.1 :=
+    (e : {e : Subtype p // q' e}) : ((subtypeSubtypeComm hp hq e : Subtype q) : E) = e.val.val :=
   (rfl)
 
 /-- The inverse of `Equiv.subtypeSubtypeComm` does not move the underlying element of `E`. -/
@@ -54,7 +54,7 @@ theorem coe_coe_subtypeSubtypeComm_apply {E : Type*} {p q : E → Prop} {p' : Su
 theorem coe_coe_subtypeSubtypeComm_symm_apply {E : Type*} {p q : E → Prop}
     {p' : Subtype q → Prop} {q' : Subtype p → Prop} (hp : ∀ e he, p' ⟨e, he⟩ ↔ p e)
     (hq : ∀ e he, q' ⟨e, he⟩ ↔ q e) (e : {e : Subtype q // p' e}) :
-    (((subtypeSubtypeComm hp hq).symm e : Subtype p) : E) = e.1.1 :=
+    (((subtypeSubtypeComm hp hq).symm e : Subtype p) : E) = e.val.val :=
   (rfl)
 
 section subtypeApplyEqApplyEquivFun
@@ -66,19 +66,19 @@ the functions on `{a // a ≠ j}`: such an `f` is restricted to the points other
 function `g` on them is extended by its value at `i`. -/
 def subtypeApplyEqApplyEquivFun (hij : i ≠ j) :
     {f : α → β // f i = f j} ≃ ({a // a ≠ j} → β) where
-  toFun f a := f.1 a
+  toFun f a := f.val a
   invFun g := ⟨fun a ↦ if ha : a = j then g ⟨i, hij⟩ else g ⟨a, ha⟩, by simp [hij]⟩
   left_inv := fun ⟨f, (hf : f i = f j)⟩ ↦ by
     ext a
     by_cases ha : a = j <;> simp [ha, hf]
   right_inv g := by
     funext a
-    simp [a.2]
+    simp [a.property]
 
 /-- `Equiv.subtypeApplyEqApplyEquivFun` restricts a function to the points other than `j`. -/
 @[simp]
 theorem subtypeApplyEqApplyEquivFun_apply (hij : i ≠ j) (f : {f : α → β // f i = f j})
-    (a : {a // a ≠ j}) : subtypeApplyEqApplyEquivFun hij f a = f.1 a :=
+    (a : {a // a ≠ j}) : subtypeApplyEqApplyEquivFun hij f a = f.val a :=
   (rfl)
 
 /-- The inverse of `Equiv.subtypeApplyEqApplyEquivFun` extends a function on the points other

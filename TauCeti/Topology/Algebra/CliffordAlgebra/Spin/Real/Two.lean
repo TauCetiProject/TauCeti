@@ -156,13 +156,13 @@ private theorem planeCoord_single_zero : planeCoord (Pi.single 0 1 : Fin (2 + 0)
 private theorem coe_mem_evenOdd_zero (x : realCliffordSpinGroupZero 2) :
     (x : CliffordAlgebra (realCliffordForm 2 0)) ∈ evenOdd (realCliffordForm 2 0) 0 := by
   rw [← even_toSubmodule]
-  exact spinGroup.mem_even x.2
+  exact spinGroup.mem_even x.property
 
 /-- The value of a Spin element has norm one. -/
 private theorem norm_planeValue (x : realCliffordSpinGroupZero 2) :
     ‖planeValue (x : CliffordAlgebra (realCliffordForm 2 0))‖ = 1 := by
   have hx := coe_mem_evenOdd_zero x
-  have h := congrArg planeValue (spinGroup.mul_star_self_of_mem x.2)
+  have h := congrArg planeValue (spinGroup.mul_star_self_of_mem x.property)
   rw [planeValue_mul_of_mem_even hx, star_def, involute_eq_of_mem_even hx,
     planeValue_reverse_of_mem_even hx] at h
   simpa [mul_conj, planeValue_one, normSq_eq_norm_sq, ← ofReal_pow,
@@ -202,7 +202,8 @@ private theorem exists_coe_eq_ι_single_mul_ι (x : realCliffordSpinGroupZero 2)
       ι _ (Pi.single 0 1 : Fin (2 + 0) → ℝ) * ι _ w := by
   let _ : Invertible (realCliffordForm 2 0 (Pi.single 0 1 : Fin (2 + 0) → ℝ)) :=
     invertibleOfNonzero (by simp [realCliffordForm_zero_single_one])
-  exact (mem_even_iff_exists_ι_mul_ι_of_finrank_eq_two _ (by simp) _).1 (spinGroup.mem_even x.2)
+  exact (mem_even_iff_exists_ι_mul_ι_of_finrank_eq_two _ (by simp) _).1
+      (spinGroup.mem_even x.property)
 
 private theorem spinTwoToCircle_injective : Function.Injective spinTwoToCircle := by
   intro x y hxy

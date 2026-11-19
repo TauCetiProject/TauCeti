@@ -135,9 +135,9 @@ def toGraph : Graph Γ.V Γ.Edge where
 
 /-- A Serre dart links its endpoints in the underlying multigraph. -/
 theorem toGraph_isLink_edge {u v : Γ.V} (e : Quiver.Hom u v) :
-    Γ.toGraph.IsLink (Γ.edge e.1) u v := by
+    Γ.toGraph.IsLink (Γ.edge e.val) u v := by
   rw [toGraph_isLink, edgeEnds_edge]
-  exact congrArg₂ (fun x y => s(x, y)) e.2.1 e.2.2
+  exact congrArg₂ (fun x y => s(x, y)) e.property.1 e.property.2
 
 /-- Forget the directions of a Serre path, retaining its edge orbits. -/
 def Path.toWalk {u v : Γ.V} (p : Γ.Path u v) : Γ.toGraph.Walk u v := by
@@ -176,13 +176,13 @@ def Path.toWalk {u v : Γ.V} (p : Γ.Path u v) : Γ.toGraph.Walk u v := by
 /-- The final dart of a path contributes its undirected edge to the walk. -/
 theorem Path.edges_toWalk_cons {u v w : Γ.V} (p : Γ.Path u v)
     (e : Quiver.Hom v w) :
-    (Path.toWalk Γ (p.cons e)).edges = (Path.toWalk Γ p).edges ++ [Γ.edge e.1] := by
+    (Path.toWalk Γ (p.cons e)).edges = (Path.toWalk Γ p).edges ++ [Γ.edge e.val] := by
   simp [Graph.IsLink.edges_toWalk]
 
 /-- A link in the underlying multigraph can be oriented as a Serre arrow. -/
 theorem exists_hom_of_toGraph_isLink {u v : Γ.V} {q : Γ.Edge}
     (h : Γ.toGraph.IsLink q u v) :
-    ∃ e : Quiver.Hom u v, Γ.edge e.1 = q := by
+    ∃ e : Quiver.Hom u v, Γ.edge e.val = q := by
   obtain ⟨d, rfl⟩ := Γ.edge_surjective q
   rw [toGraph_isLink, edgeEnds_edge, Sym2.eq_iff] at h
   rcases h with ⟨hu, hv⟩ | ⟨hu, hv⟩
@@ -200,7 +200,7 @@ them. -/
   constructor
   · rintro ⟨q, hq⟩
     obtain ⟨e, -⟩ := Γ.exists_hom_of_toGraph_isLink hq
-    exact ⟨e.1, e.2⟩
+    exact ⟨e.val, e.property⟩
   · rintro ⟨e, rfl, rfl⟩
     exact ⟨Γ.edge e, by simp⟩
 

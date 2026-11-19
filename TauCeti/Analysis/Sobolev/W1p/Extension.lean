@@ -217,7 +217,7 @@ theorem Sobolev1JetLp.extendByZeroₗᵢ_mem_w1pSubmodule (hsub : Omega ≤ Omeg
     Sobolev1JetLp.extendByZeroₗᵢ hsub (u : Sobolev1JetLp mu Omega p) ∈
       w1pSubmodule mu Omega' p := by
   obtain ⟨v, -, hv⟩ := extendByZero_mem_image hsub hu
-  exact hv ▸ v.2
+  exact hv ▸ v.property
 
 /-- **Extension by zero as an operator `W^{1,p}_0(Ω) →L[ℝ] W^{1,p}_0(Ω')`.**  The extension of a
 limit of test functions on `Ω` is again a limit of test functions, on `Ω'`, so the operator lands
@@ -232,9 +232,9 @@ def W1p0.extendByZeroL (hsub : Omega ≤ Omega') :
         ((w1pSubmodule mu Omega p).toSubmodule.subtypeL.comp
           (w1p0Submodule mu Omega p).toSubmodule.subtypeL))
       (w1pSubmodule mu Omega' p).toSubmodule
-      fun u => Sobolev1JetLp.extendByZeroₗᵢ_mem_w1pSubmodule hsub u.2)
+      fun u => Sobolev1JetLp.extendByZeroₗᵢ_mem_w1pSubmodule hsub u.property)
     (w1p0Submodule mu Omega' p).toSubmodule
-    fun u => mem_w1p0Submodule_of_coe_eq hsub u.2 rfl
+    fun u => mem_w1p0Submodule_of_coe_eq hsub u.property rfl
 
 /-- The ambient jet of the extension is the extension of the ambient jet. -/
 @[simp]
@@ -333,7 +333,7 @@ theorem W1p0.hasWeakFDerivOn_indicator (hsub : Omega ≤ Omega')
     (W1p.value_coe (W1p0.extendByZeroL hsub u : W1p mu Omega' p)).symm
   have hmem := (mem_w1pSubmodule_iff_hasWeakFDerivOn
     ((W1p0.extendByZeroL hsub u : W1p mu Omega' p) : Sobolev1JetLp mu Omega' p)).mp
-      (W1p0.extendByZeroL hsub u : W1p mu Omega' p).2
+      (W1p0.extendByZeroL hsub u : W1p mu Omega' p).property
   rw [hbridge] at hmem
   have hvalue : (W1p.value (W1p0.extendByZeroL hsub u : W1p mu Omega' p) : E → ℝ)
       =ᵐ[mu.restrict Omega']

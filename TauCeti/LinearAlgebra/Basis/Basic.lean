@@ -123,7 +123,7 @@ theorem linearIndependent_of_repr_eq_single {b : Module.Basis ι K V} {S : Finse
   have hπ : π ∘ v = fun s ↦ Pi.single s 1 := by
     funext s t
     simp only [Function.comp_apply, π, LinearMap.pi_apply, coord_apply]
-    rw [hv s t t.2]
+    rw [hv s t t.property]
     by_cases hst : t = s
     · simp [hst]
     · rw [Finsupp.single_eq_of_ne (fun h : (t : ι) = s ↦ hst (Subtype.ext h)),
@@ -245,21 +245,21 @@ variable {κ R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddComm
 determined by its values on the remaining basis vectors `b (inl l)`, and these are arbitrary. -/
 noncomputable def constrSumInrEquiv :
     {f : M →ₗ[R] N // ∀ j, f (b (.inr j)) = v j} ≃ (ι → N) where
-  toFun f l := f.1 (b (.inl l))
+  toFun f l := f.val (b (.inl l))
   invFun g := ⟨b.constr ℕ (Sum.elim g v), fun j ↦ by rw [constr_basis, Sum.elim_inr]⟩
-  left_inv f := Subtype.ext <| b.ext fun i ↦ by rcases i with l | j <;> simp [f.2]
+  left_inv f := Subtype.ext <| b.ext fun i ↦ by rcases i with l | j <;> simp [f.property]
   right_inv g := funext fun l ↦ by simp
 
 /-- The parameter of a linear map records its values on the basis vectors `b (inl l)`. -/
 @[simp]
 theorem constrSumInrEquiv_apply (f : {f : M →ₗ[R] N // ∀ j, f (b (.inr j)) = v j}) (l : ι) :
-    b.constrSumInrEquiv v f l = f.1 (b (.inl l)) :=
+    b.constrSumInrEquiv v f l = f.val (b (.inl l)) :=
   (rfl)
 
 /-- The linear map with parameter `g` sends `b (inl l)` to `g l` and `b (inr j)` to `v j`. -/
 @[simp]
 theorem coe_constrSumInrEquiv_symm_apply (g : ι → N) :
-    ((b.constrSumInrEquiv v).symm g).1 = b.constr ℕ (Sum.elim g v) :=
+    ((b.constrSumInrEquiv v).symm g).val = b.constr ℕ (Sum.elim g v) :=
   (rfl)
 
 end SumInr

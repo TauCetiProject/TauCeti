@@ -71,9 +71,9 @@ theorem prod_def (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N) :
 @[simp]
 theorem prod_apply (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N) (p : M × N)
     (v : Fin 2 → TangentSpace (I.prod J) p) :
-    (prod σ τ).1 p v =
-      σ.1 p.1 (fun i ↦ (Manifold.tangentSpaceProdEquiv p (v i)).1) +
-        τ.1 p.2 (fun i ↦ (Manifold.tangentSpaceProdEquiv p (v i)).2) := by
+    (prod σ τ).val p v =
+      σ.val p.1 (fun i ↦ (Manifold.tangentSpaceProdEquiv p (v i)).1) +
+        τ.val p.2 (fun i ↦ (Manifold.tangentSpaceProdEquiv p (v i)).2) := by
   simp only [Manifold.tangentSpaceProdEquiv_apply, prod_def, SmoothForm.add_toRoughForm,
     Pi.add_apply, ContinuousAlternatingMap.add_apply, SmoothForm.mpullback_apply, mfderiv_fst,
     mfderiv_snd]

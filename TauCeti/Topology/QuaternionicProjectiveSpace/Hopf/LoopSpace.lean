@@ -381,7 +381,7 @@ private def hopfLoop : C(sphere (0 : ℍ) 1, MooreLoopSpace (QuaternionicProject
       have hS : Continuous fun u : {u : sphere (0 : ℍ) 1 // u ≠ 1} ↦ hopfLoopPath v w hw hvw u :=
         (MoorePath.continuous_ofUnitPath.comp
           ((hopfUnitLoop v w hw hvw).continuous.comp continuous_subtype_val)).moorePath_rescale
-            (by fun_prop) fun u ↦ nnNorm_sub_one_ne_zero u.2
+            (by fun_prop) fun u ↦ nnNorm_sub_one_ne_zero u.property
       have hu' : ContinuousAt (fun u ↦ hopfLoopPath v w hw hvw u) u :=
         (isOpen_ne.isOpenEmbedding_subtypeVal.continuousAt_iff (x := ⟨u, hu⟩)).1 hS.continuousAt
       exact MoorePath.continuous_eval.continuousAt.comp

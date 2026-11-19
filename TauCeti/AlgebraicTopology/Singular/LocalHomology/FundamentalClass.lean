@@ -276,7 +276,7 @@ def localOrientationAlong {z : M} {U : Set M} (hU : IsOpen U) (hz : z ∈ U)
     (hUZ : ∀ x ∈ U, x ∈ Z → x = z) :
     localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) Z n :=
   localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨Subtype.val, continuous_subtype_val⟩
-    (S := {(⟨z, hz⟩ : U)}) (fun x hx ↦ Subtype.ext (hUZ x.1 x.2 hx)) n
+    (S := {(⟨z, hz⟩ : U)}) (fun x hx ↦ Subtype.ext (hUZ x.val x.property hx)) n
     ((localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ))
       hU.isOpenEmbedding_subtypeVal ⟨z, hz⟩ n).inv (o z).val)
 
@@ -286,7 +286,7 @@ theorem localOrientationAlong_def {z : M} {U : Set M} (hU : IsOpen U) (hz : z �
     (hUZ : ∀ x ∈ U, x ∈ Z → x = z) :
     o.localOrientationAlong hU hz hUZ =
       localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨Subtype.val, continuous_subtype_val⟩
-        (S := {(⟨z, hz⟩ : U)}) (fun x hx ↦ Subtype.ext (hUZ x.1 x.2 hx)) n
+        (S := {(⟨z, hz⟩ : U)}) (fun x hx ↦ Subtype.ext (hUZ x.val x.property hx)) n
         ((localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ))
           hU.isOpenEmbedding_subtypeVal ⟨z, hz⟩ n).inv (o z).val) :=
   (rfl)
@@ -299,7 +299,7 @@ theorem localHomologyRestriction_localOrientationAlong_self {z : M} {U : Set M} 
       (o.localOrientationAlong hU hz hUZ) = (o z).val := by
   have h := localHomologyMap_comp_localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ))
     ⟨Subtype.val, continuous_subtype_val⟩ (S := {(⟨z, hz⟩ : U)}) (singleton_subset_iff.2 hzZ)
-    (fun x hx ↦ Subtype.ext (hUZ x.1 x.2 hx)) n
+    (fun x hx ↦ Subtype.ext (hUZ x.val x.property hx)) n
   rw [localOrientationAlong, ← ConcreteCategory.comp_apply, h]
   exact localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap_apply
     (ModuleCat.of ℤ (ULift.{0} ℤ)) hU.isOpenEmbedding_subtypeVal ⟨z, hz⟩ _ n (o z).val
@@ -312,10 +312,11 @@ theorem localHomologyRestriction_localOrientationAlong_of_ne {z : M} {U : Set M}
       (o.localOrientationAlong hU hz hUZ) = 0 := by
   let R := ModuleCat.of ℤ (ULift.{0} ℤ)
   -- No point of `U` lies over `x ≠ z`, so the map factors through `Hₙ(U, U) = 0`.
-  have h : (Subtype.val : U → M) ⁻¹' {x} ⊆ ∅ := fun y (hy : y.1 = x) ↦
-    hxz (hy.symm.trans (hUZ y.1 y.2 (hy ▸ hx)))
+  have h : (Subtype.val : U → M) ⁻¹' {x} ⊆ ∅ := fun y (hy : y.val = x) ↦
+    hxz (hy.symm.trans (hUZ y.val y.property (hy ▸ hx)))
   have h₁ := localHomologyMap_comp_localHomologyRestriction R ⟨Subtype.val, continuous_subtype_val⟩
-    (S := {(⟨z, hz⟩ : U)}) (singleton_subset_iff.2 hx) (fun x hx ↦ Subtype.ext (hUZ x.1 x.2 hx)) n
+    (S := {(⟨z, hz⟩ : U)}) (singleton_subset_iff.2 hx) (fun x hx ↦ Subtype.ext
+        (hUZ x.val x.property hx)) n
   have h₂ := localHomologyRestriction_comp_localHomologyMap R ⟨Subtype.val, continuous_subtype_val⟩
     (empty_subset {(⟨z, hz⟩ : U)}) h n
   rw [localOrientationAlong, ← ConcreteCategory.comp_apply, h₁, ← h₂, ConcreteCategory.comp_apply,

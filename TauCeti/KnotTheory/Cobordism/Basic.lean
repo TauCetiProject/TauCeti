@@ -629,7 +629,7 @@ private theorem isEmbedding_glueFun_comp_subtypeVal_upper (hc : 0 < c)
       (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier)) := by
   have heq : glueFun C S hc ∘ (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier) =
       rescale C hc ∘ (collarParam S ∘ Subtype.val) :=
-    funext fun y ↦ glueFun_of_le_snd C hc hS (le_of_lt y.2)
+    funext fun y ↦ glueFun_of_le_snd C hc hS (le_of_lt y.property)
   have hP : Continuous (collarParam S ∘
       (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier)) :=
     continuous_iff_continuousAt.2 fun y ↦
@@ -638,7 +638,7 @@ private theorem isEmbedding_glueFun_comp_subtypeVal_upper (hc : 0 < c)
     K₁.isEmbedding.continuous.prodMap continuous_id
   have hPK : Prod.map K₁ id ∘ (collarParam S ∘
       (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier)) = S.toFun ∘ Subtype.val :=
-    funext fun y ↦ prodMap_collarParam (fst_mem_range_of_le hS (le_of_lt y.2))
+    funext fun y ↦ prodMap_collarParam (fst_mem_range_of_le hS (le_of_lt y.property))
   rw [heq]
   refine (rescale C hc).isEmbedding.comp (IsEmbedding.of_comp hP hK ?_)
   rw [hPK]
@@ -686,7 +686,7 @@ private theorem isEmbedding_glueFun (hc : 0 < c)
   · rintro (_ | _)
     · have heq : glueFun C S hc ∘ (Subtype.val : W false → S.carrier) =
           S.toFun ∘ Subtype.val :=
-        funext fun y ↦ glueFun_of_le C hc (le_of_lt y.2)
+        funext fun y ↦ glueFun_of_le C hc (le_of_lt y.property)
       rw [heq]
       exact S.isSmoothEmbedding.isEmbedding.comp IsEmbedding.subtypeVal
     · exact isEmbedding_glueFun_comp_subtypeVal_upper C hc hS

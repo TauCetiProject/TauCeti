@@ -191,7 +191,7 @@ theorem IsTopologicallyFinitelyGenerated.isOpen_pLowerCentralSeries
       refine sup_le (le_sup_of_le_left ((Subgroup.closure_le _).mpr ?_))
         (le_sup_of_le_right (commutator_mono (map_subtype_le _) le_top))
       rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
-      exact Subgroup.subset_closure ⟨x, x.2, (Subgroup.coe_pow _ x p).symm⟩
+      exact Subgroup.subset_closure ⟨x, x.property, (Subgroup.coe_pow _ x p).symm⟩
     exact isOpen_mono hle (hG.isOpen_map_subtype_proPFrattini p U)
 
 /-- For a prime `p`, in a topologically finitely generated profinite group every quotient

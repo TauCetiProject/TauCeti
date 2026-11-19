@@ -167,7 +167,7 @@ private theorem hasSum_coeff_exp_sub_one_mul_pow [CharZero K]
 /-- The valuation of an element of `𝓂[K] ^ i`, for a uniformizer `π`, is at most `v(π) ^ i`. -/
 private theorem valuation_le_pow_of_mem_maximalIdeal_pow {π : 𝒪[K]} (hπ : Irreducible π)
     (x : (𝓂[K] ^ i : Ideal 𝒪[K])) : valuation K (x : K) ≤ valuation K (π : K) ^ i :=
-  (Set.ext_iff.mp (hπ.maximalIdeal_pow_eq_setOfPred_le_v_coe_pow (valuation K) i) x).mp x.2
+  (Set.ext_iff.mp (hπ.maximalIdeal_pow_eq_setOfPred_le_v_coe_pow (valuation K) i) x).mp x.property
 
 /-- On `𝓂[K] ^ i` with `(p - 1) * i > e`, the exponential preserves the valuation of its
 argument: `v(exp x - 1) = v(x)`. -/

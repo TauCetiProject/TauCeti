@@ -140,7 +140,7 @@ lemma mapsTo_range_map_of_hom {P : TopPair.{u}} (f : P ⟶ ofSubset B) :
     Set.MapsTo (Hom.fst f) (Set.range P.map) B := by
   rintro _ ⟨s, rfl⟩
   rw [← Hom.w_apply f s]
-  exact (Hom.snd f s).2
+  exact (Hom.snd f s).property
 
 /-- A continuous map `g : X ⟶ Y` carrying `B` into `B'` induces a map of pairs
 `(X, B) ⟶ (Y, B')`. -/
@@ -154,7 +154,7 @@ lemma ofSubsetMap_fst : Hom.fst (ofSubsetMap g hB) = g := (rfl)
 
 @[simp]
 lemma ofSubsetMap_snd_apply (x : (ofSubset B).snd) :
-    (Hom.snd (ofSubsetMap g hB) x).1 = g x.1 := (rfl)
+    (Hom.snd (ofSubsetMap g hB) x).val = g x.val := (rfl)
 
 @[simp]
 lemma ofSubsetMap_id (h : Set.MapsTo (𝟙 X) B B) : ofSubsetMap (𝟙 X) h = 𝟙 (ofSubset B) := by
@@ -190,11 +190,11 @@ def ofSubsetIso (e : X ≃ₜ Y) (h : ∀ x, x ∈ B ↔ e x ∈ B') : ofSubset 
   inv := ofSubsetMap (TopCat.ofHom e.symm) fun y hy ↦ (h _).2 (by simpa using hy)
   hom_inv_id := by
     ext a : 2
-    · exact Subtype.ext (e.symm_apply_apply a.1)
+    · exact Subtype.ext (e.symm_apply_apply a.val)
     · exact e.symm_apply_apply a
   inv_hom_id := by
     ext a : 2
-    · exact Subtype.ext (e.apply_symm_apply a.1)
+    · exact Subtype.ext (e.apply_symm_apply a.val)
     · exact e.apply_symm_apply a
 
 @[simp]
@@ -214,10 +214,10 @@ def ofSubsetHomotopy {g₀ g₁ : X ⟶ Y} (F : g₀.hom.Homotopy g₁.hom)
       (ofSubsetMap g₁ fun x hx ↦ F.apply_one x ▸ hF 1 x hx) where
   fst := F
   snd :=
-    { toFun (p : unitInterval × B) := ⟨F (p.1, p.2), hF p.1 _ p.2.2⟩
+    { toFun (p : unitInterval × B) := ⟨F (p.1, p.2), hF p.1 _ p.2.property⟩
       continuous_toFun := by fun_prop
-      map_zero_left x := Subtype.ext (F.apply_zero x.1)
-      map_one_left x := Subtype.ext (F.apply_one x.1) }
+      map_zero_left x := Subtype.ext (F.apply_zero x.val)
+      map_one_left x := Subtype.ext (F.apply_one x.val) }
 
 section ofInclusion
 
@@ -229,7 +229,7 @@ variable {X Y Z : TopCat.{u}} {s t : Set X} {s' t' : Set Y} {s'' t'' : Set Z}
 def ofInclusionMap (g : C(t, t')) (hg : ∀ x : t, (x : X) ∈ s → (g x : Y) ∈ s') :
     ofInclusion hst ⟶ ofInclusion hst' :=
   TopPair.ofHom (TopCat.ofHom g)
-    (TopCat.ofHom ⟨fun x ↦ ⟨g ⟨x, hst x.2⟩, hg _ x.2⟩, by fun_prop⟩)
+    (TopCat.ofHom ⟨fun x ↦ ⟨g ⟨x, hst x.property⟩, hg _ x.property⟩, by fun_prop⟩)
 
 variable {hst hst'}
 
@@ -243,7 +243,8 @@ lemma ofInclusionMap_fst (g : C(t, t')) (hg : ∀ x : t, (x : X) ∈ s → (g x 
 
 @[simp]
 lemma ofInclusionMap_snd_apply (g : C(t, t')) (hg : ∀ x : t, (x : X) ∈ s → (g x : Y) ∈ s')
-    (x : s) : (Hom.snd (ofInclusionMap hst hst' g hg) x).1 = (g ⟨x.1, hst x.2⟩).1 := (rfl)
+    (x : s) : (Hom.snd (ofInclusionMap hst hst' g hg) x).val = (g ⟨x.val, hst x.property⟩).val :=
+        (rfl)
 
 @[simp]
 lemma ofInclusionMap_id :
@@ -283,18 +284,19 @@ def ofInclusionHomotopy {g₀ g₁ : C(t, t')} (F : g₀.Homotopy g₁)
       (ofInclusionMap hst hst' g₁ fun x hx ↦ F.apply_one x ▸ hF 1 x hx) where
   fst := F
   snd :=
-    { toFun (p : unitInterval × s) := ⟨F (p.1, ⟨p.2.1, hst p.2.2⟩), hF p.1 _ p.2.2⟩
+    { toFun (p : unitInterval × s) := ⟨F (p.1, ⟨p.2.val, hst p.2.property⟩), hF p.1 _ p.2.property⟩
       continuous_toFun := by fun_prop
-      map_zero_left x := Subtype.ext (congrArg Subtype.val (F.apply_zero ⟨x.1, hst x.2⟩) :)
-      map_one_left x := Subtype.ext (congrArg Subtype.val (F.apply_one ⟨x.1, hst x.2⟩) :) }
+      map_zero_left x := Subtype.ext (congrArg Subtype.val (F.apply_zero ⟨x.val, hst x.property⟩) :)
+      map_one_left x := Subtype.ext (congrArg Subtype.val (F.apply_one ⟨x.val, hst x.property⟩) :) }
 
 variable (hst) in
 /-- The pair of `t` and the preimage of `s` in `t` is isomorphic to the pair `(t, s)`: the two
 pairs have the same ambient space, and their subspaces are identified by the coercion to `X`. -/
 def ofSubsetPreimageValIso :
     ofSubset (X := TopCat.of t) (Subtype.val ⁻¹' s) ≅ ofInclusion hst where
-  hom := TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨x.1.1, x.2⟩, by fun_prop⟩)
-  inv := TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨⟨x.1, hst x.2⟩, x.2⟩, by fun_prop⟩)
+  hom := TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨x.val.val, x.property⟩, by fun_prop⟩)
+  inv := TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨⟨x.val, hst x.property⟩, x.property⟩,
+      by fun_prop⟩)
   hom_inv_id := by ext : 2 <;> rfl
   inv_hom_id := by ext : 2 <;> rfl
 
@@ -306,7 +308,7 @@ lemma ofSubsetPreimageValIso_hom_fst : Hom.fst (ofSubsetPreimageValIso hst).hom 
 
 @[simp]
 lemma ofSubsetPreimageValIso_hom_snd_apply (x : (Subtype.val ⁻¹' s : Set t)) :
-    (Hom.snd (ofSubsetPreimageValIso hst).hom x).1 = x.1.1 := (rfl)
+    (Hom.snd (ofSubsetPreimageValIso hst).hom x).val = x.val.val := (rfl)
 
 @[simp]
 lemma ofSubsetPreimageValIso_inv_fst_apply (x : t) :
@@ -316,7 +318,7 @@ lemma ofSubsetPreimageValIso_inv_fst : Hom.fst (ofSubsetPreimageValIso hst).inv 
 
 @[simp]
 lemma ofSubsetPreimageValIso_inv_snd_apply (x : s) :
-    (Hom.snd (ofSubsetPreimageValIso hst).inv x).1 = ⟨x.1, hst x.2⟩ := (rfl)
+    (Hom.snd (ofSubsetPreimageValIso hst).inv x).val = ⟨x.val, hst x.property⟩ := (rfl)
 
 variable (hst) in
 /-- When `t` contains every point of `X`, the pair `(t, s)` is the pair `(X, s')` for any `s'` with
@@ -324,21 +326,21 @@ the same points as `s`. -/
 def ofInclusionIsoOfSubset (ht : ∀ x, x ∈ t) {s₀ : Set X} (hs : ∀ x, x ∈ s ↔ x ∈ s₀) :
     ofInclusion hst ≅ ofSubset s₀ where
   hom := TopPair.ofHom (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
-    (TopCat.ofHom ⟨fun x ↦ ⟨x.1, (hs _).1 x.2⟩, by fun_prop⟩)
+    (TopCat.ofHom ⟨fun x ↦ ⟨x.val, (hs _).1 x.property⟩, by fun_prop⟩)
   inv := TopPair.ofHom (TopCat.ofHom ⟨fun x ↦ ⟨x, ht x⟩, by fun_prop⟩)
-    (TopCat.ofHom ⟨fun x ↦ ⟨x.1, (hs _).2 x.2⟩, by fun_prop⟩)
+    (TopCat.ofHom ⟨fun x ↦ ⟨x.val, (hs _).2 x.property⟩, by fun_prop⟩)
   hom_inv_id := by ext : 2 <;> rfl
   inv_hom_id := by ext : 2 <;> rfl
 
 @[simp]
 lemma ofInclusionIsoOfSubset_hom_fst_apply (ht : ∀ x, x ∈ t) {s₀ : Set X}
     (hs : ∀ x, x ∈ s ↔ x ∈ s₀) (x : t) :
-    Hom.fst (ofInclusionIsoOfSubset hst ht hs).hom x = x.1 := (rfl)
+    Hom.fst (ofInclusionIsoOfSubset hst ht hs).hom x = x.val := (rfl)
 
 @[simp]
 lemma ofInclusionIsoOfSubset_hom_snd_apply (ht : ∀ x, x ∈ t) {s₀ : Set X}
     (hs : ∀ x, x ∈ s ↔ x ∈ s₀) (x : s) :
-    (Hom.snd (ofInclusionIsoOfSubset hst ht hs).hom x).1 = x.1 := (rfl)
+    (Hom.snd (ofInclusionIsoOfSubset hst ht hs).hom x).val = x.val := (rfl)
 
 /-- Under `TopPair.ofInclusionIsoOfSubset`, the map of pairs induced by an inclusion `t ⊆ t'` is
 the map of pairs induced by the identity of `X`. -/
@@ -413,7 +415,7 @@ lemma isoOfSubsetRange_hom_fst (P : TopPair.{u}) : Hom.fst (isoOfSubsetRange P).
 
 @[simp]
 lemma isoOfSubsetRange_hom_snd_apply (P : TopPair.{u}) (x : P.snd) :
-    (Hom.snd (isoOfSubsetRange P).hom x).1 = P.map x := (rfl)
+    (Hom.snd (isoOfSubsetRange P).hom x).val = P.map x := (rfl)
 
 @[simp]
 lemma isoOfSubsetRange_inv_fst_apply (P : TopPair.{u}) (x : P.fst) :
@@ -424,7 +426,7 @@ lemma isoOfSubsetRange_inv_fst (P : TopPair.{u}) : Hom.fst (isoOfSubsetRange P).
 
 @[simp]
 lemma isoOfSubsetRange_inv_snd_apply (P : TopPair.{u}) (y : (ofSubset (Set.range P.map)).snd) :
-    P.map (Hom.snd (isoOfSubsetRange P).inv y) = y.1 :=
+    P.map (Hom.snd (isoOfSubsetRange P).inv y) = y.val :=
   congrArg Subtype.val (P.isEmbedding_map.toHomeomorph.apply_symm_apply y)
 
 /-- A map of pairs `f : P ⟶ (X, B)` factors through the isomorphism of `P` with the pair of its
@@ -549,7 +551,7 @@ projections. -/
 def prodLeftToPreimageUnion :
     (ofSubset B).prodLeft (ofSubset A).fst ⟶ ofSubset
       (CartesianMonoidalCategory.fst X Y ⁻¹' A ∪ CartesianMonoidalCategory.snd X Y ⁻¹' B) :=
-  TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨(x.1, x.2.1), Or.inr x.2.2⟩, by fun_prop⟩)
+  TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨(x.1, x.2.val), Or.inr x.2.property⟩, by fun_prop⟩)
     (by ext; rfl)
 
 /-- The inclusion `(X × Y, X × B) ⟶ (X × Y, A × Y ∪ X × B)` is the identity of `X × Y`. -/
@@ -596,8 +598,8 @@ abbrev prodRight (P : TopPair.{u}) (Y : TopCat.{u}) : TopPair.{u} :=
 preimage of `A` under the first projection of `X × Y`. -/
 def ofSubsetProdRightIso {X : TopCat.{u}} (A : Set X) (Y : TopCat.{u}) :
     (ofSubset A).prodRight Y ≅ ofSubset (X := TopCat.of (X × Y)) (Prod.fst ⁻¹' A) where
-  hom := TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨(x.1.1, x.2), x.1.2⟩, by fun_prop⟩)
-  inv := TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ (⟨x.1.1, x.2⟩, x.1.2), by fun_prop⟩)
+  hom := TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨(x.1.val, x.2), x.1.property⟩, by fun_prop⟩)
+  inv := TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ (⟨x.val.1, x.property⟩, x.val.2), by fun_prop⟩)
   hom_inv_id := by ext : 2 <;> rfl
   inv_hom_id := by ext : 2 <;> rfl
 
@@ -709,7 +711,7 @@ lemma prodExcisionPairToProdLeft_fst :
 
 @[simp]
 lemma prodExcisionPairToProdLeft_fst_apply (x : P.prodSubspace Q) :
-    Hom.fst (P.prodExcisionPairToProdLeft Q) x = x.1 := (rfl)
+    Hom.fst (P.prodExcisionPairToProdLeft Q) x = x.val := (rfl)
 
 lemma prodExcisionPairToProdLeft_snd : Hom.snd (P.prodExcisionPairToProdLeft Q) = 𝟙 _ := (rfl)
 
@@ -793,9 +795,10 @@ variable (X Y A) in
 and the preimage of `A` under the first projection `X × Y ⟶ X`. -/
 noncomputable def prodPreimageFstIso :
     (TopPair.ofSubset A).snd ⊗ Y ≅ (TopPair.ofSubset (fst X Y ⁻¹' A)).snd where
-  hom := ofHom ⟨fun x ↦ ⟨((TopPair.ofSubset A).map ⊗ₘ 𝟙 Y) x, (fst (TopPair.ofSubset A).snd Y x).2⟩,
+  hom := ofHom ⟨fun x ↦ ⟨((TopPair.ofSubset A).map ⊗ₘ 𝟙 Y) x, (fst
+      (TopPair.ofSubset A).snd Y x).property⟩,
     ((TopPair.ofSubset A).map ⊗ₘ 𝟙 Y).hom.continuous.subtype_mk _⟩
-  inv := lift (ofHom ⟨fun x ↦ ⟨fst X Y x.1, x.2⟩, by fun_prop⟩)
+  inv := lift (ofHom ⟨fun x ↦ ⟨fst X Y x.val, x.property⟩, by fun_prop⟩)
     ((TopPair.ofSubset (fst X Y ⁻¹' A)).map ≫ snd X Y)
 
 variable (X Y A) in
@@ -826,12 +829,13 @@ variable {X : TopCat.{u}} {Y : Type*} (π : X → Y) (Z : Set X)
 subset `S` of the base of a map `π : X → Y`. -/
 def restrictPreimagePairMap (S : Set Y) :
     TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S) ⟶ TopPair.ofSubset Z :=
-  TopPair.ofHom (ofHom (ContinuousMap.subtypeVal _)) (ofHom ⟨fun x ↦ ⟨x.1, x.2.2⟩, by fun_prop⟩)
+  TopPair.ofHom (ofHom (ContinuousMap.subtypeVal _)) (ofHom ⟨fun x ↦ ⟨x.val, x.property.2⟩,
+      by fun_prop⟩)
     (by ext; rfl)
 
 @[simp]
 lemma restrictPreimagePairMap_fst_apply (S : Set Y) (x : ↥(π ⁻¹' S)) :
-    TopPair.Hom.fst (restrictPreimagePairMap π Z S) x = x.1 :=
+    TopPair.Hom.fst (restrictPreimagePairMap π Z S) x = x.val :=
   (rfl)
 
 lemma restrictPreimagePairMap_fst (S : Set Y) :
@@ -840,7 +844,7 @@ lemma restrictPreimagePairMap_fst (S : Set Y) :
 
 @[simp]
 lemma restrictPreimagePairMap_snd_apply (S : Set Y) (x : ↥(π ⁻¹' S ∩ Z)) :
-    TopPair.Hom.snd (restrictPreimagePairMap π Z S) x = ⟨x.1, x.2.2⟩ :=
+    TopPair.Hom.snd (restrictPreimagePairMap π Z S) x = ⟨x.val, x.property.2⟩ :=
   (rfl)
 
 /-- For `S ⊆ T`, the inclusion of the pair over `S` into the pair over `T`, followed by the
@@ -863,7 +867,7 @@ lemma isIso_restrictPreimagePairMap {S : Set Y} (hS : ∀ x, π x ∈ S) :
       TopCat.ext fun _ ↦ rfl
     rw [he]
     exact Iso.isIso_hom _
-  exact TopPair.isIso_of_isIso_fst_of_surjective_snd _ fun z ↦ ⟨⟨z.1, hS z.1, z.2⟩, rfl⟩
+  exact TopPair.isIso_of_isIso_fst_of_surjective_snd _ fun z ↦ ⟨⟨z.val, hS z.val, z.property⟩, rfl⟩
 
 /-- For subsets `U` and `V` of the base, the union `(π⁻¹ U ∪ π⁻¹ V, π⁻¹ U ∩ Z ∪ π⁻¹ V ∩ Z)` of
 the pairs over `U` and over `V` is the pair over `U ∪ V`. -/
@@ -883,12 +887,12 @@ def restrictPreimagePairUnionIso (U V : Set Y) :
 
 @[simp]
 lemma restrictPreimagePairUnionIso_hom_fst_apply (U V : Set Y) (x : ↥(π ⁻¹' U ∪ π ⁻¹' V)) :
-    (TopPair.Hom.fst (restrictPreimagePairUnionIso π Z U V).hom x).1 = x.1 :=
+    (TopPair.Hom.fst (restrictPreimagePairUnionIso π Z U V).hom x).val = x.val :=
   (rfl)
 
 @[simp]
 lemma restrictPreimagePairUnionIso_inv_fst_apply (U V : Set Y) (x : ↥(π ⁻¹' (U ∪ V))) :
-    (TopPair.Hom.fst (restrictPreimagePairUnionIso π Z U V).inv x).1 = x.1 :=
+    (TopPair.Hom.fst (restrictPreimagePairUnionIso π Z U V).inv x).val = x.val :=
   (rfl)
 
 lemma restrictPreimagePairUnionIso_hom_fst (U V : Set Y) :
@@ -918,12 +922,12 @@ def restrictPreimagePairInterIso (U V : Set Y) :
 
 @[simp]
 lemma restrictPreimagePairInterIso_hom_fst_apply (U V : Set Y) (x : ↥(π ⁻¹' U ∩ π ⁻¹' V)) :
-    (TopPair.Hom.fst (restrictPreimagePairInterIso π Z U V).hom x).1 = x.1 :=
+    (TopPair.Hom.fst (restrictPreimagePairInterIso π Z U V).hom x).val = x.val :=
   (rfl)
 
 @[simp]
 lemma restrictPreimagePairInterIso_inv_fst_apply (U V : Set Y) (x : ↥(π ⁻¹' (U ∩ V))) :
-    (TopPair.Hom.fst (restrictPreimagePairInterIso π Z U V).inv x).1 = x.1 :=
+    (TopPair.Hom.fst (restrictPreimagePairInterIso π Z U V).inv x).val = x.val :=
   (rfl)
 
 lemma restrictPreimagePairInterIso_hom_fst (U V : Set Y) :
@@ -946,32 +950,33 @@ def restrictPreimagePairRestrictPreimageIso (hSW : S ⊆ W) :
       W.restrictPreimage π ⁻¹' ((↑) ⁻¹' S) ∩ ((↑) ⁻¹' (π ⁻¹' W ∩ Z)) ⊆
         W.restrictPreimage π ⁻¹' ((↑) ⁻¹' S)) ≅
       TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S) where
-  hom := TopPair.ofHom (ofHom ⟨fun x ↦ ⟨x.1.1, x.2⟩, by fun_prop⟩)
-    (ofHom ⟨fun x ↦ ⟨x.1.1, x.2.1, x.2.2.2⟩, by fun_prop⟩) (by ext; rfl)
-  inv := TopPair.ofHom (ofHom ⟨fun x ↦ ⟨⟨x.1, hSW x.2⟩, x.2⟩, by fun_prop⟩)
-    (ofHom ⟨fun x ↦ ⟨⟨x.1, hSW x.2.1⟩, x.2.1, hSW x.2.1, x.2.2⟩, by fun_prop⟩) (by ext; rfl)
+  hom := TopPair.ofHom (ofHom ⟨fun x ↦ ⟨x.val.val, x.property⟩, by fun_prop⟩)
+    (ofHom ⟨fun x ↦ ⟨x.val.val, x.property.1, x.property.2.2⟩, by fun_prop⟩) (by ext; rfl)
+  inv := TopPair.ofHom (ofHom ⟨fun x ↦ ⟨⟨x.val, hSW x.property⟩, x.property⟩, by fun_prop⟩)
+    (ofHom ⟨fun x ↦ ⟨⟨x.val, hSW x.property.1⟩, x.property.1, hSW x.property.1, x.property.2⟩,
+        by fun_prop⟩) (by ext; rfl)
   hom_inv_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
   inv_hom_id := TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
 
 @[simp]
 lemma restrictPreimagePairRestrictPreimageIso_hom_fst_apply (hSW : S ⊆ W)
     (x : ↥(W.restrictPreimage π ⁻¹' (((↑) : W → Y) ⁻¹' S))) :
-    (TopPair.Hom.fst (restrictPreimagePairRestrictPreimageIso π Z hSW).hom x).1 = x.1.1 :=
+    (TopPair.Hom.fst (restrictPreimagePairRestrictPreimageIso π Z hSW).hom x).val = x.val.val :=
   (rfl)
 
 @[simp]
 lemma restrictPreimagePairRestrictPreimageIso_inv_fst_apply (hSW : S ⊆ W) (x : ↥(π ⁻¹' S)) :
-    ((TopPair.Hom.fst (restrictPreimagePairRestrictPreimageIso π Z hSW).inv x).1).1 = x.1 :=
+    ((TopPair.Hom.fst (restrictPreimagePairRestrictPreimageIso π Z hSW).inv x).val).val = x.val :=
   (rfl)
 
 lemma restrictPreimagePairRestrictPreimageIso_hom_fst (hSW : S ⊆ W) :
     TopPair.Hom.fst (restrictPreimagePairRestrictPreimageIso π Z hSW).hom =
-      ofHom ⟨fun x ↦ ⟨x.1.1, x.2⟩, by fun_prop⟩ :=
+      ofHom ⟨fun x ↦ ⟨x.val.val, x.property⟩, by fun_prop⟩ :=
   (rfl)
 
 lemma restrictPreimagePairRestrictPreimageIso_inv_fst (hSW : S ⊆ W) :
     TopPair.Hom.fst (restrictPreimagePairRestrictPreimageIso π Z hSW).inv =
-      ofHom ⟨fun x ↦ ⟨⟨x.1, hSW x.2⟩, x.2⟩, by fun_prop⟩ :=
+      ofHom ⟨fun x ↦ ⟨⟨x.val, hSW x.property⟩, x.property⟩, by fun_prop⟩ :=
   (rfl)
 
 end RestrictPreimage

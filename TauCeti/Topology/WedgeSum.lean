@@ -276,7 +276,7 @@ lemma incl_mem_range_subtypeVal_iff {i : ι} {z : X i} :
     obtain ⟨-, rfl⟩ | h := incl_eq_incl_iff.1 hw
     · exact hS i
     · obtain ⟨rfl, h⟩ := Sigma.mk.inj h
-      exact (eq_of_heq h) ▸ a.2
+      exact (eq_of_heq h) ▸ a.property
 
 lemma base_mem_range_subtypeVal : base x ∈ range (subtypeVal hS) :=
   ⟨base _, rfl⟩

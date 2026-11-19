@@ -268,7 +268,7 @@ private theorem exists_basicOpenFinset_of_forall_cofinalValue {v : Spv A} (S : F
   have key : ∀ σ ∈ S, ∃ n : ℕ, w.restrict σ ^ n < w.restrict s := fun σ hσ ↦
     cofinalValue_iff.mp (hcof σ hσ) _ hrs
   choose n hn using key
-  refine ⟨insert f (S.attach.image fun σ ↦ σ.1 ^ n σ.1 σ.2), Finset.mem_insert_self _ _,
+  refine ⟨insert f (S.attach.image fun σ ↦ σ.val ^ n σ.val σ.property), Finset.mem_insert_self _ _,
     fun σ hσ ↦ ⟨n σ hσ, Finset.mem_insert_of_mem (Finset.mem_image.mpr ⟨⟨σ, hσ⟩,
       Finset.mem_attach _ _, rfl⟩)⟩, (mem_basicOpenFinset_iff _ _ _).mpr ⟨?_, hs0⟩⟩
   intro t ht

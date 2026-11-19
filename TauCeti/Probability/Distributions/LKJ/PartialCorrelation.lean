@@ -71,7 +71,7 @@ variable {p : ℕ} {η : ℝ}
 product of the centered symmetric Beta densities of the partial correlations. -/
 private theorem prod_sqrt_pow_mul_lkj_density {z : strictLowerTriangle p → ℝ}
     (hz : ∀ ij, |z ij| < 1) :
-    (∏ ij : strictLowerTriangle p, Real.sqrt (1 - z ij ^ 2) ^ (p - ij.1.2.1 - 2)) *
+    (∏ ij : strictLowerTriangle p, Real.sqrt (1 - z ij ^ 2) ^ (p - ij.val.2.val - 2)) *
         ((correlationMatrix p (correlationCoordinatesOfPartialCorrelation z) :
           Matrix (Fin p) (Fin p) ℝ).det ^ (η - 1) / lkjNormalizer p η) =
       ∏ ij : strictLowerTriangle p,
@@ -115,7 +115,7 @@ theorem map_correlationCoordinatesOfPartialCorrelation_pi_betaMeasure (hη : 0 <
   rw [pi_withDensity _ hD, ← volume_pi]
   refine Measure.map_withDensity_eq_withDensity
     (jac := cube.indicator fun z ↦ ENNReal.ofReal
-      (∏ ij : strictLowerTriangle p, Real.sqrt (1 - z ij ^ 2) ^ (p - ij.1.2.1 - 2)))
+      (∏ ij : strictLowerTriangle p, Real.sqrt (1 - z ij ^ 2) ^ (p - ij.val.2.val - 2)))
     continuous_correlationCoordinatesOfPartialCorrelation.measurable
     ((Measurable.ennreal_ofReal (by fun_prop)).indicator hcube) (by fun_prop) ?_
     (Filter.Eventually.of_forall fun z ↦ ?_)

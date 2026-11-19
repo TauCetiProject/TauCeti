@@ -190,7 +190,7 @@ theorem diamondOp_mem_comap_restrictₗ (hslash : ∀ γ ∈ Gamma0 N, ∀ f ∈
   obtain ⟨g, hg⟩ := Gamma0Map_toHomUnits_surjective (N := N) d
   rw [Submodule.mem_comap, ModularForm.restrictₗ_apply] at hf ⊢
   rw [restrict_diamondOp_eq_gammaSlashₗ d g hg]
-  exact hslash _ g.2 _ hf
+  exact hslash _ g.property _ hf
 
 /-- **Descent to a nebentypus.** If `E` is a complement of the cusp forms in `M_k(Γ(N))` stable
 under slashing by `Γ₀(N)`, then the forms of nebentypus `χ` whose restriction to `Γ(N)` lies in

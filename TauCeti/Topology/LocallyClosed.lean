@@ -66,7 +66,7 @@ theorem isLocallyClosed_of_locallyCompactSpace [T2Space X] [LocallyCompactSpace 
   have h1 : interior V ∩ s ⊆ Subtype.val '' K := fun z ⟨hz, hzu⟩ ↦
     ⟨⟨z, hzu⟩, hVK (mem_preimage.2 (interior_subset hz)), rfl⟩
   obtain ⟨z, -, rfl⟩ := closure_minimal h1 hKcl (isOpen_interior.inter_closure hy)
-  exact z.2
+  exact z.property
 
 /-- **Finite covers by locally closed sets.** If a nonempty space is the union of finitely many
 locally closed sets, one of them has nonempty interior. -/

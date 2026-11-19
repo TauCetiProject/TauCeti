@@ -58,7 +58,7 @@ theorem one_sub_pow_mem_slitPlane_iff {m : ℕ} (hm : 0 < m) {z : ℂ} :
     rw [hzm_eq, ← ofReal_pow, Real.rpow_inv_natCast_pow (zero_le_one.trans hzm_re) hm.ne']
   obtain ⟨ζ, hζz⟩ := (TauCeti.pow_eq_pow_iff_exists_rootsOfUnity_smul hm.ne').mp hzm_pow
   rw [rootsOfUnity.smul_eq_mul] at hζz
-  exact hz _ ((mem_rootsOfUnity' m _).mp ζ.2) (hζz ▸ by exact_mod_cast hs_ge)
+  exact hz _ ((mem_rootsOfUnity' m _).mp ζ.property) (hζz ▸ by exact_mod_cast hs_ge)
 
 /-- If `1 - ζ * z` lies in the slit plane for every `m`-th root of unity `ζ` (`0 < m`), then
 `1 - z ^ m` lies in the slit plane. -/

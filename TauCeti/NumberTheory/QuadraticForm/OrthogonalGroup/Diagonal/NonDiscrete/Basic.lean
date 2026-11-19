@@ -147,7 +147,7 @@ theorem not_discreteTopology_range_finiteAdelicOrthogonalDiagonal_of_specialOrth
   let f : U.finiteAdelicSpecialOrthogonalDiagonal.range →
       U.finiteAdelicOrthogonalDiagonal.range := fun g ↦
     ⟨U.finiteAdelicSpecialOrthogonalToOrthogonal g, by
-      obtain ⟨h, hh⟩ := g.2
+      obtain ⟨h, hh⟩ := g.property
       rw [← hh]
       exact ⟨specialOrthogonalToOrthogonal Q h,
         (DFunLike.congr_fun

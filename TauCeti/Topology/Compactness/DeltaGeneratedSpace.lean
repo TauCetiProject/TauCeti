@@ -43,6 +43,6 @@ instance instDeltaGeneratedSpaceClosedBall {E : Type*} [NormedAddCommGroup E] [N
     ⟨centeredRadialRetraction x r y, centeredRadialRetraction_mem_closedBall hr y⟩
   have hρ : Continuous ρ := (lipschitzWith_centeredRadialRetraction hr).continuous.subtype_mk _
   exact (IsQuotientMap.of_inverse continuous_subtype_val hρ fun z ↦
-    Subtype.ext (centeredRadialRetraction_of_mem_closedBall z.2)).isGeneratedBy
+    Subtype.ext (centeredRadialRetraction_of_mem_closedBall z.property)).isGeneratedBy
 
 end TauCeti

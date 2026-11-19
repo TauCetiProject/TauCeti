@@ -207,10 +207,10 @@ theorem exists_forall_abs_card_filter_sub_mul_card_lt [Fintype κ] {p : κ → �
     rw [card_subtype, filter_true_of_mem fun e he ↦ hU he]
   have hcount : #{e ∈ T i | (if he : e ∈ U then y ⟨e, he⟩ else Classical.arbitrary κ) = c} =
       #{e ∈ (T i).subtype (· ∈ U) | y e = c} := by
-    refine (card_bij (fun e _ ↦ e.1) (fun e he ↦ ?_) (fun _ _ _ _ ↦ Subtype.ext)
+    refine (card_bij (fun e _ ↦ e.val) (fun e he ↦ ?_) (fun _ _ _ _ ↦ Subtype.ext)
       fun e he ↦ ?_).symm
     · obtain ⟨he, hc⟩ := mem_filter.1 he
-      exact mem_filter.2 ⟨mem_subtype.1 he, by simpa [e.2] using hc⟩
+      exact mem_filter.2 ⟨mem_subtype.1 he, by simpa [e.property] using hc⟩
     · obtain ⟨he, hc⟩ := mem_filter.1 he
       exact ⟨⟨e, hU he⟩, mem_filter.2 ⟨mem_subtype.2 he, by simpa [hU he] using hc⟩, rfl⟩
   simpa [hcount, hcard] using hy i c

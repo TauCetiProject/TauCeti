@@ -147,7 +147,7 @@ variable (G B) in
 /-- The inclusions of the subcomplexes of the free complexes of `exists_free_lift` that are
 quasi-isomorphisms. Unlike `monoQuasiIsoOfCardinalLT κ`, this family of morphisms is `w`-small. -/
 private def freeMonoQuasiIso : MorphismProperty (CochainComplex C ℤ) :=
-  MorphismProperty.ofHoms fun S : FreeSubcomplexes G B ↦ S.2.1.arrow
+  MorphismProperty.ofHoms fun S : FreeSubcomplexes G B ↦ S.2.val.arrow
 
 private instance : MorphismProperty.IsSmall.{w} (freeMonoQuasiIso G B) := by
   dsimp only [freeMonoQuasiIso]
@@ -210,7 +210,7 @@ private lemma exists_pushouts (hG : IsSeparator G)
   -- `pullback.snd p ψ` is isomorphic to the inclusion of a subcomplex of the free complex.
   let u := Subobject.underlyingIso (pullback.snd p ψ)
   have hS : freeMonoQuasiIso G B (Subobject.mk (pullback.snd p ψ)).arrow :=
-    MorphismProperty.ofHoms.mk (f := fun S : FreeSubcomplexes G B ↦ S.2.1.arrow)
+    MorphismProperty.ofHoms.mk (f := fun S : FreeSubcomplexes G B ↦ S.2.val.arrow)
       ⟨j, Subobject.mk (pullback.snd p ψ),
         by rw [← Subobject.underlyingIso_hom_comp_eq_mk]; infer_instance⟩
   have hsq : IsPushout (u.hom ≫ pullback.fst p ψ) (Subobject.mk (pullback.snd p ψ)).arrow

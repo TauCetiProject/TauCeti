@@ -173,13 +173,13 @@ theorem isEven_pi_iff : (pi L).IsEven ↔ ∀ i, (L i).IsEven := by
   simp only [isEven_iff_forall_norm]
   constructor
   · intro h i v
-    obtain ⟨z, hz⟩ := h ⟨_, single_mem_pi_carrier L i v.2⟩
+    obtain ⟨z, hz⟩ := h ⟨_, single_mem_pi_carrier L i v.property⟩
     refine ⟨z, ?_⟩
     rw [← hz, norm_pi_apply, Finset.sum_eq_single i (fun j _ hji ↦ by
       simp [Pi.single_eq_of_ne hji]) (by simp)]
     simp
   · intro h x
-    choose z hz using fun i ↦ h i ⟨(x : ∀ i, V i) i, (mem_pi_carrier_iff L _).mp x.2 i⟩
+    choose z hz using fun i ↦ h i ⟨(x : ∀ i, V i) i, (mem_pi_carrier_iff L _).mp x.property i⟩
     refine ⟨∑ i, z i, ?_⟩
     rw [norm_pi_apply]
     push_cast

@@ -143,7 +143,7 @@ theorem map_coe_withDensity {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
   rw [← lintegral_tsum hmeas]
   refine setLIntegral_congr_fun measurableSet_Ioc fun x _ ↦ ?_
   have hx (γ : (AddSubgroup.zmultiples T).op) : ((γ +ᵥ x : ℝ) : AddCircle T) = x :=
-    QuotientAddGroup.mk_add_of_mem x γ.2
+    QuotientAddGroup.mk_add_of_mem x γ.property
   by_cases h : (x : AddCircle T) ∈ A
   · simp [indicator, hx, h, QuotientAddGroup.automorphize_mk]
   · simp [indicator, hx, h]

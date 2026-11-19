@@ -204,11 +204,11 @@ def hyperboloidConvexRetract : ConvexRetract (hyperboloid E) (ℝ × E) where
   carrier := futureCone E
   convex := convex_futureCone
   embed := ⟨Subtype.val, continuous_subtype_val⟩
-  embed_mem v := hyperboloid_subset_futureCone v.2
-  retraction := ⟨fun v ↦ ⟨hyperboloidNormalize v, hyperboloidNormalize_mem v.2⟩,
+  embed_mem v := hyperboloid_subset_futureCone v.property
+  retraction := ⟨fun v ↦ ⟨hyperboloidNormalize v, hyperboloidNormalize_mem v.property⟩,
     (continuousOn_hyperboloidNormalize.comp_continuous continuous_subtype_val
       Subtype.prop).subtype_mk _⟩
-  retraction_embed v := Subtype.ext (hyperboloidNormalize_of_mem v.2)
+  retraction_embed v := Subtype.ext (hyperboloidNormalize_of_mem v.property)
 
 lemma hyperboloidConvexRetract_carrier : (hyperboloidConvexRetract E).carrier = futureCone E :=
   (rfl)
@@ -244,7 +244,7 @@ lemma map_mem_hyperboloid {v : ℝ × E} (hv : v ∈ hyperboloid E) : L v ∈ hy
 /-- The self-map of the hyperboloid induced by a continuous linear map of `ℝ × E` preserving the
 Minkowski square norm and the future cone. -/
 def hyperboloidMap : C(hyperboloid E, hyperboloid E) :=
-  ⟨fun v ↦ ⟨L v, map_mem_hyperboloid hq hL v.2⟩,
+  ⟨fun v ↦ ⟨L v, map_mem_hyperboloid hq hL v.property⟩,
     (L.continuous.comp continuous_subtype_val).subtype_mk _⟩
 
 @[simp]
