@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Calculus.CoordinateDeriv
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Analysis.Complex.SectorBounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.ContinuousLinearMapInverse
@@ -944,51 +945,76 @@ private theorem bounds_laplacianSymbol (Λ : Set ℂ) (hΛ : IsOpen Λ) (s : ℝ
   refine h₂.congr fun p _ => Filter.Eventually.of_forall fun q => ?_
   simp [laplacianSymbol, B, π, ζ, sub_eq_add_neg]
 
-/-- For `0 ≤ s` and a spectral parameter `z` in the sector `Re z ≤ c ‖z‖`, `c < 1`, with
-`δ ≤ s + ‖z‖`, the symbol `(s + ‖ξ‖²) - z` is bounded below by a multiple of the squared weight. -/
-private theorem mul_parameterWeight_sq_le_norm_laplacianSymbol {s c δ : ℝ} (hs : 0 ≤ s)
-    (hc : c < 1) (hδ : 0 < δ) {z : ℂ} (hz : z.re ≤ c * ‖z‖) (hzδ : δ ≤ s + ‖z‖)
-    (x ξ : CoordinateSpace n) :
-    (1 - max c (-1)) / 2 / (3 * (1 + δ⁻¹)) * parameterWeight ξ z ^ 2 ≤
-      ‖laplacianSymbol s ((x, ξ), z)‖ := by
+/-- The sector estimate for a real `q ≥ μ ‖ξ‖²`, `μ > 0`: for a spectral parameter `z` in the
+sector `Re z ≤ c ‖z‖`, `c < 1`, with `δ ≤ q + ‖z‖`, `δ > 0`, the modulus of `q - z` is at least a
+fixed multiple of the squared weight. -/
+private theorem mul_parameterWeight_sq_le_norm_ofReal_sub {q μ c δ : ℝ} (hμ : 0 < μ) (hc : c < 1)
+    (hδ : 0 < δ) {ξ : CoordinateSpace n} {z : ℂ} (hq : μ * ‖ξ‖ ^ 2 ≤ q) (hz : z.re ≤ c * ‖z‖)
+    (hzδ : δ ≤ q + ‖z‖) :
+    (1 - max c (-1)) / 2 / (3 * (1 + μ⁻¹ + δ⁻¹)) * parameterWeight ξ z ^ 2 ≤ ‖(q : ℂ) - z‖ := by
   set c₀ := max c (-1)
-  set r := s + ‖ξ‖ ^ 2
-  set a := ‖z‖
   have hc₀ : -1 ≤ c₀ := le_max_right _ _
   have hc₀' : c₀ < 1 := max_lt hc (by norm_num)
-  have _ : 0 ≤ r := by positivity
-  have ha : 0 ≤ a := norm_nonneg z
-  have hre : z.re ≤ c₀ * a := hz.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) ha)
-  -- `‖r - z‖² = r² - 2 r Re z + ‖z‖²`.
-  have hsq : ‖laplacianSymbol s ((x, ξ), z)‖ ^ 2 = r ^ 2 - 2 * r * z.re + a ^ 2 := by
-    simp only [laplacianSymbol, a, r, Complex.sq_norm, Complex.normSq_apply, Complex.sub_re,
-      Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im]
-    ring
-  -- Sector estimate: `‖r - z‖ ≥ (1 - c₀) / 2 * (r + ‖z‖)`.
-  have hsector : (1 - c₀) / 2 * (r + a) ≤ ‖laplacianSymbol s ((x, ξ), z)‖ := by
-    have h1 : ((1 - c₀) / 2 * (r + a)) ^ 2 ≤ ‖laplacianSymbol s ((x, ξ), z)‖ ^ 2 := by
-      rw [hsq]
-      nlinarith [mul_le_mul_of_nonneg_left hre (by positivity : 0 ≤ 2 * r),
-        mul_nonneg (by linarith : 0 ≤ 1 + c₀) (sq_nonneg (r - a)),
-        mul_nonneg (mul_nonneg (by linarith : 0 ≤ 1 - c₀) (by linarith : 0 ≤ 1 + c₀))
-          (sq_nonneg (r + a))]
-    exact le_of_pow_le_pow_left₀ two_ne_zero (norm_nonneg _) h1
-  -- Weight estimate: `w² ≤ 3 (1 + δ⁻¹) (r + ‖z‖)`.
-  have hw : parameterWeight ξ z ^ 2 ≤ 3 * (1 + δ⁻¹) * (r + a) := by
-    have hsqrt := Real.sq_sqrt ha
-    have h3 : parameterWeight ξ z ^ 2 ≤ 3 * (1 + ‖ξ‖ ^ 2 + a) := by
-      unfold parameterWeight
-      nlinarith [sq_nonneg (1 - ‖ξ‖), sq_nonneg (1 - Real.sqrt a), sq_nonneg (‖ξ‖ - Real.sqrt a)]
-    have h1 : 1 ≤ δ⁻¹ * (r + a) := by
+  have hq₀ : 0 ≤ q := (mul_nonneg hμ.le (sq_nonneg _)).trans hq
+  -- Sector estimate: `‖q - z‖ ≥ (1 - c₀) / 2 * (‖z‖ + q)`.
+  have hsector : (1 - c₀) / 2 * (‖z‖ + q) ≤ ‖(q : ℂ) - z‖ := by
+    have h := Complex.mul_norm_add_le_norm_add_ofReal (s := -z) (c := (1 - c₀) / 2) (t := q)
+      (by linarith) (by linarith) hq₀ (by
+        rw [norm_neg, Complex.neg_re]
+        nlinarith [hz, le_max_left c (-1), norm_nonneg z])
+    rwa [norm_neg, neg_add_eq_sub] at h
+  -- Weight estimate: `w² ≤ 3 (1 + ‖ξ‖² + ‖z‖) ≤ 3 (1 + μ⁻¹ + δ⁻¹) (‖z‖ + q)`.
+  have hw : parameterWeight ξ z ^ 2 ≤ 3 * (1 + μ⁻¹ + δ⁻¹) * (‖z‖ + q) := by
+    have hsqrt := Real.sq_sqrt (norm_nonneg z)
+    have h3 : parameterWeight ξ z ^ 2 ≤ 3 * (1 + ‖ξ‖ ^ 2 + ‖z‖) := by
+      rw [parameterWeight_def]
+      nlinarith [sq_nonneg (1 - ‖ξ‖), sq_nonneg (1 - Real.sqrt ‖z‖),
+        sq_nonneg (‖ξ‖ - Real.sqrt ‖z‖)]
+    have h1 : 1 ≤ δ⁻¹ * (‖z‖ + q) := by
       rw [inv_mul_eq_div, one_le_div hδ]
-      nlinarith [sq_nonneg ‖ξ‖]
-    nlinarith [sq_nonneg ‖ξ‖]
-  have hκ : 0 < 3 * (1 + δ⁻¹) := by positivity
-  calc (1 - c₀) / 2 / (3 * (1 + δ⁻¹)) * parameterWeight ξ z ^ 2
-      ≤ (1 - c₀) / 2 / (3 * (1 + δ⁻¹)) * (3 * (1 + δ⁻¹) * (r + a)) :=
+      linarith
+    have hξ : ‖ξ‖ ^ 2 ≤ μ⁻¹ * (‖z‖ + q) := by
+      rw [inv_mul_eq_div, le_div_iff₀ hμ]
+      nlinarith [norm_nonneg z]
+    nlinarith [norm_nonneg z, inv_pos.2 hμ, inv_pos.2 hδ]
+  have hκ : 0 < 3 * (1 + μ⁻¹ + δ⁻¹) := by positivity
+  calc (1 - c₀) / 2 / (3 * (1 + μ⁻¹ + δ⁻¹)) * parameterWeight ξ z ^ 2
+      ≤ (1 - c₀) / 2 / (3 * (1 + μ⁻¹ + δ⁻¹)) * (3 * (1 + μ⁻¹ + δ⁻¹) * (‖z‖ + q)) :=
         mul_le_mul_of_nonneg_left hw (div_nonneg (by linarith) hκ.le)
-    _ = (1 - c₀) / 2 * (r + a) := by field_simp
+    _ = (1 - c₀) / 2 * (‖z‖ + q) := by field_simp
     _ ≤ _ := hsector
+
+variable (V) in
+/-- **Inverse estimate in a sector.** Let `q ≥ μ ‖ξ‖²` be real, `μ > 0`, and let the spectral
+parameter `z` lie in the sector `Re z ≤ c ‖z‖`, `c < 1`, with `δ ≤ q + ‖z‖`, `δ > 0`. Then
+`(q - z) • id` is invertible, with inverse bounded by `κ⁻¹ w ^ (-2)` for
+`κ = (1 - max c (-1)) / 2 / (3 (1 + μ⁻¹ + δ⁻¹))` and `w = 1 + ‖ξ‖ + ‖z‖ ^ (1 / 2)`. This is the
+pointwise ellipticity estimate for symbols `q • id - z` with real scalar principal part, such as
+`TauCeti.ParameterSymbol.shiftedLaplacian`. -/
+theorem isInvertible_ofReal_sub_smul_id_and_norm_inverse_le {q μ c δ : ℝ} (hμ : 0 < μ)
+    (hc : c < 1) (hδ : 0 < δ) {ξ : CoordinateSpace n} {z : ℂ} (hq : μ * ‖ξ‖ ^ 2 ≤ q)
+    (hz : z.re ≤ c * ‖z‖) (hzδ : δ ≤ q + ‖z‖) :
+    (((q : ℂ) - z) • ContinuousLinearMap.id ℂ V).IsInvertible ∧
+      ‖(((q : ℂ) - z) • ContinuousLinearMap.id ℂ V).inverse‖ ≤
+        ((1 - max c (-1)) / 2 / (3 * (1 + μ⁻¹ + δ⁻¹)))⁻¹ * parameterWeight ξ z ^ (-2 : ℝ) := by
+  set κ := (1 - max c (-1)) / 2 / (3 * (1 + μ⁻¹ + δ⁻¹))
+  have hκ : 0 < κ := div_pos (by linarith [max_lt hc (by norm_num : (-1 : ℝ) < 1)])
+    (by positivity)
+  have hw := pow_pos (parameterWeight_pos ξ z) 2
+  have hle := mul_parameterWeight_sq_le_norm_ofReal_sub hμ hc hδ hq hz hzδ
+  have hne : (q : ℂ) - z ≠ 0 := fun h0 => by
+    rw [h0, norm_zero] at hle
+    exact (mul_pos hκ hw).not_ge hle
+  refine ⟨(ContinuousLinearMap.isInvertible_smul_iff hne).2
+    (ContinuousLinearMap.isInvertible_equiv (f := ContinuousLinearEquiv.refl ℂ V)), ?_⟩
+  rw [ContinuousLinearMap.inverse_smul, ContinuousLinearMap.inverse_id,
+    Real.rpow_neg (parameterWeight_pos ξ z).le, Real.rpow_two]
+  calc ‖((q : ℂ) - z)⁻¹ • ContinuousLinearMap.id ℂ V‖
+      ≤ ‖((q : ℂ) - z)⁻¹‖ := (ContinuousLinearMap.opNorm_smul_le _ _).trans
+        (mul_le_of_le_one_right (norm_nonneg _) ContinuousLinearMap.norm_id_le)
+    _ = ‖(q : ℂ) - z‖⁻¹ := norm_inv _
+    _ ≤ (κ * parameterWeight ξ z ^ 2)⁻¹ := inv_anti₀ (mul_pos hκ hw) hle
+    _ = κ⁻¹ * (parameterWeight ξ z ^ 2)⁻¹ := mul_inv _ _
 
 open scoped Classical in
 variable (V) in
@@ -1026,32 +1052,15 @@ the ball of radius `δ` about `0` when `s = 0`. -/
 theorem isElliptic_shiftedLaplacian {s c δ : ℝ} (hs : 0 ≤ s) (hc : c < 1) (hδ : 0 < δ)
     (hΛ : ∀ z ∈ Λ, z.re ≤ c * ‖z‖ ∧ δ ≤ s + ‖z‖) :
     (shiftedLaplacian V s : ParameterSymbol n Λ V V 2).IsElliptic := by
-  have hlow (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :=
-    mul_parameterWeight_sq_le_norm_laplacianSymbol hs hc hδ (hΛ z hz).1 (hΛ z hz).2 x ξ
-  have hκ : 0 < (1 - max c (-1)) / 2 / (3 * (1 + δ⁻¹)) :=
-    div_pos (by linarith [max_lt hc (by norm_num : (-1 : ℝ) < 1)]) (by positivity)
-  have hne (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :
-      ((s + ‖ξ‖ ^ 2 : ℝ) : ℂ) - z ≠ 0 := by
-    intro h
-    have := (mul_pos hκ (pow_pos (parameterWeight_pos ξ z) 2)).trans_le (hlow x ξ hz)
-    simp only [laplacianSymbol, h, norm_zero] at this
-    exact lt_irrefl 0 this
-  refine ⟨fun x ξ z hz => ?_, fun K _ => ⟨((1 - max c (-1)) / 2 / (3 * (1 + δ⁻¹)))⁻¹,
-    fun x _ ξ z hz => ?_⟩⟩
-  · rw [coefficient_shiftedLaplacian s x ξ hz,
-      ContinuousLinearMap.isInvertible_smul_iff (hne x ξ hz)]
-    exact ⟨ContinuousLinearEquiv.refl ℂ V, rfl⟩
-  · rw [coefficient_shiftedLaplacian s x ξ hz, ContinuousLinearMap.inverse_smul,
-      ContinuousLinearMap.inverse_id, Real.rpow_neg (parameterWeight_pos ξ z).le, Real.rpow_two]
-    calc ‖(((s + ‖ξ‖ ^ 2 : ℝ) : ℂ) - z)⁻¹ • ContinuousLinearMap.id ℂ V‖
-        ≤ ‖(((s + ‖ξ‖ ^ 2 : ℝ) : ℂ) - z)⁻¹‖ * ‖ContinuousLinearMap.id ℂ V‖ :=
-          ContinuousLinearMap.opNorm_smul_le _ _
-      _ ≤ ‖(((s + ‖ξ‖ ^ 2 : ℝ) : ℂ) - z)⁻¹‖ :=
-          mul_le_of_le_one_right (norm_nonneg _) ContinuousLinearMap.norm_id_le
-      _ = ‖laplacianSymbol s ((x, ξ), z)‖⁻¹ := norm_inv _
-      _ ≤ ((1 - max c (-1)) / 2 / (3 * (1 + δ⁻¹)) * parameterWeight ξ z ^ 2)⁻¹ :=
-          inv_anti₀ (mul_pos hκ (pow_pos (parameterWeight_pos ξ z) 2)) (hlow x ξ hz)
-      _ = _ := mul_inv _ _
+  have h (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :=
+    isInvertible_ofReal_sub_smul_id_and_norm_inverse_le V one_pos hc hδ
+      (q := s + ‖ξ‖ ^ 2) (by linarith) (hΛ z hz).1 (by linarith [(hΛ z hz).2, sq_nonneg ‖ξ‖])
+  refine ⟨fun x ξ z hz => ?_, fun K _ =>
+    ⟨((1 - max c (-1)) / 2 / (3 * (1 + 1⁻¹ + δ⁻¹)))⁻¹, fun x _ ξ z hz => ?_⟩⟩
+  · rw [coefficient_shiftedLaplacian s x ξ hz]
+    exact (h x ξ hz).1
+  · rw [coefficient_shiftedLaplacian s x ξ hz]
+    exact (h x ξ hz).2
 
 /-- The coefficient of the resolvent symbol: the inverse of the symbol of `s - Δ - z` is
 `((s + ‖ξ‖²) - z)⁻¹ • id`, a parameter-dependent symbol of order `-2`. -/
@@ -1101,21 +1110,25 @@ private theorem bounds_of_quasiHomogeneous (Λ : Set ℂ)
     · rw [inv_mul_le_one₀ (by positivity)]
       exact norm_le_parameterWeight_sq ξ z
   have hfq : ContDiff ℝ ∞ fun v => f (v + q) := hf.comp (contDiff_id.add contDiff_const)
-  rw [parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
-  dsimp only
-  rw [← ht_def, hq,
-    iteratedFDeriv_const_smul_apply' (hfq.contDiffAt.of_le (by exact_mod_cast le_top)),
-    iteratedFDeriv_comp_add_right, zero_add, norm_smul, Real.norm_eq_abs,
-    abs_of_pos (Real.rpow_pos_of_pos ht m), mul_comm]
-  exact mul_le_mul_of_nonneg_right ((hC q hmem).trans (le_max_left _ _))
-    (Real.rpow_pos_of_pos ht m).le
+  have heq : parameterIteratedFDeriv k f ((x, ξ), z) = t ^ m • iteratedFDeriv ℝ k f q := by
+    rw [parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
+    dsimp only
+    rw [← ht_def, hq,
+      iteratedFDeriv_const_smul_apply' (hfq.contDiffAt.of_le (by exact_mod_cast le_top)),
+      iteratedFDeriv_comp_add_right, zero_add]
+  have htm := Real.rpow_pos_of_pos ht m
+  rw [heq, norm_smul, Real.norm_eq_abs, abs_of_pos htm, mul_comm]
+  gcongr
+  exact (hC q hmem).trans (le_max_left _ _)
 
 open scoped Classical in
 /-- A smooth function `f((x, ξ), z)` that is quasi-homogeneous of degree `m`,
 `f((x, t ξ), t² z) = t ^ m f((x, ξ), z)` for `t > 0`, as a parameter-dependent symbol of order `m`
 on `Λ`. Examples are the spectral parameter `z` itself, of order `2`
-(`TauCeti.ParameterSymbol.spectralParameter`), and the symbols of differential operators of order
-`m`, polynomials in `ξ` with coefficients depending on the position. -/
+(`TauCeti.ParameterSymbol.spectralParameter`), and homogeneous polynomials of degree `m` in `ξ`
+with coefficients depending on the position, the single summands of the symbol of a differential
+operator; the symbol of a general differential operator is assembled from these in
+`TauCeti.ParameterSymbol.ofDifferentialSymbol`. -/
 def ofQuasiHomogeneous (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → V →L[ℂ] W)
     (hf : ContDiff ℝ ∞ f)
     (hhom : ∀ t : ℝ, 0 < t → ∀ p, f (parameterDilation n t p) = t ^ m • f p) :
@@ -1153,6 +1166,12 @@ theorem coefficient_spectralParameter (x ξ : CoordinateSpace n) {z : ℂ} (hz :
     (spectralParameter V : ParameterSymbol n Λ V V 2).coefficient ((x, ξ), z) =
       z • ContinuousLinearMap.id ℂ V :=
   coefficient_ofQuasiHomogeneous _ _ _ x ξ hz
+
+/-- The spectral parameter does not depend on the position. -/
+@[simp]
+theorem spatialDeriv_spectralParameter (v : CoordinateSpace n) :
+    (spectralParameter V : ParameterSymbol n Λ V V 2).spatialDeriv v = 0 :=
+  ext_of_mem fun x ξ z hz => by simp [coefficient_spatialDeriv _ _ _ _ hz, hz]
 
 /-! ### Lower-order perturbations -/
 

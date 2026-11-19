@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.DifferentialSymbol
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Basic
-import TauCeti.Analysis.Complex.SectorBounds
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Differential operators minus a spectral parameter
@@ -104,40 +102,9 @@ theorem ofDifferentialSymbol_filter_add_ofDifferentialSymbol_filter_not (m : ℕ
 
 /-! ### Operators of Laplace type -/
 
-/-- The sector estimate for a real scalar principal symbol `q ≥ μ ‖ξ‖²`: for `Re z ≤ c ‖z‖`,
-`c < 1`, and `‖z‖ ≥ 1`, the modulus of `q - z` is at least a fixed multiple of `w²`. -/
-private theorem mul_parameterWeight_sq_le_norm_sub {μ c q : ℝ} (hμ : 0 < μ) (hc : c < 1)
-    {ξ : CoordinateSpace n} {z : ℂ} (hq : μ * ‖ξ‖ ^ 2 ≤ q) (hz : z.re ≤ c * ‖z‖)
-    (hz₁ : 1 ≤ ‖z‖) :
-    min μ 1 * ((1 - max c (-1)) / 2) / 6 * parameterWeight ξ z ^ 2 ≤ ‖(q : ℂ) - z‖ := by
-  set c₀ := max c (-1)
-  have hc₀ : -1 ≤ c₀ := le_max_right _ _
-  have hc₀' : c₀ < 1 := max_lt hc (by norm_num)
-  have hq₀ : 0 ≤ q := (mul_nonneg hμ.le (sq_nonneg _)).trans hq
-  -- The sector estimate `(1 - c₀) / 2 * (q + ‖z‖) ≤ ‖q - z‖`.
-  have hsector : (1 - c₀) / 2 * (‖z‖ + q) ≤ ‖(q : ℂ) - z‖ := by
-    have h := Complex.mul_norm_add_le_norm_add_ofReal (s := -z) (c := (1 - c₀) / 2) (t := q)
-      (by linarith) (by linarith) hq₀ (by
-        rw [norm_neg, Complex.neg_re]
-        nlinarith [hz, le_max_left c (-1), norm_nonneg z])
-    rwa [norm_neg, neg_add_eq_sub] at h
-  -- The weight estimate `w² ≤ 6 (‖ξ‖² + ‖z‖) ≤ 6 / min μ 1 * (q + ‖z‖)`.
-  have hsqrt := Real.sq_sqrt (norm_nonneg z)
-  have hw : parameterWeight ξ z ^ 2 ≤ 6 * (‖ξ‖ ^ 2 + ‖z‖) := by
-    rw [parameterWeight_def]
-    nlinarith [sq_nonneg (1 - ‖ξ‖), sq_nonneg (1 - Real.sqrt ‖z‖),
-      sq_nonneg (‖ξ‖ - Real.sqrt ‖z‖)]
-  have hmin : min μ 1 * (‖ξ‖ ^ 2 + ‖z‖) ≤ ‖z‖ + q := by
-    nlinarith [min_le_left μ 1, min_le_right μ 1, sq_nonneg ‖ξ‖, norm_nonneg z]
-  calc min μ 1 * ((1 - c₀) / 2) / 6 * parameterWeight ξ z ^ 2
-      ≤ min μ 1 * ((1 - c₀) / 2) / 6 * (6 * (‖ξ‖ ^ 2 + ‖z‖)) := by gcongr
-    _ = (1 - c₀) / 2 * (min μ 1 * (‖ξ‖ ^ 2 + ‖z‖)) := by ring
-    _ ≤ (1 - c₀) / 2 * (‖z‖ + q) := by gcongr
-    _ ≤ _ := hsector
-
 /-- A symbol `q • id` of order `2` with real `q ≥ μ ‖ξ‖²`, minus `z`, is invertible at spectral
 parameters with `Re z ≤ c ‖z‖` and `‖z‖ ≥ 1`, with inverse bounded by `κ⁻¹ w⁻²` for the constant
-`κ` of `mul_parameterWeight_sq_le_norm_sub`. -/
+`κ` of `TauCeti.ParameterSymbol.isInvertible_ofReal_sub_smul_id_and_norm_inverse_le`. -/
 private theorem isInvertible_sub_spectralParameter_and_norm_inverse_le
     {a : ParameterSymbol n Λ V V 2} {μ c : ℝ} (hμ : 0 < μ) (hc : c < 1)
     (ha : ∀ x ξ, ∀ z ∈ Λ, ∃ q : ℝ, μ * ‖ξ‖ ^ 2 ≤ q ∧
@@ -145,27 +112,12 @@ private theorem isInvertible_sub_spectralParameter_and_norm_inverse_le
     (hΛ : ∀ z ∈ Λ, z.re ≤ c * ‖z‖ ∧ 1 ≤ ‖z‖) (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :
     ((a - spectralParameter V).coefficient ((x, ξ), z)).IsInvertible ∧
       ‖((a - spectralParameter V).coefficient ((x, ξ), z)).inverse‖ ≤
-        (min μ 1 * ((1 - max c (-1)) / 2) / 6)⁻¹ * parameterWeight ξ z ^ (-2 : ℝ) := by
-  set κ := min μ 1 * ((1 - max c (-1)) / 2) / 6
-  have hκ : 0 < κ := div_pos (mul_pos (lt_min hμ one_pos)
-    (by linarith [max_lt hc (by norm_num : (-1 : ℝ) < 1)])) (by norm_num)
-  have hw := pow_pos (parameterWeight_pos ξ z) 2
+        ((1 - max c (-1)) / 2 / (3 * (1 + μ⁻¹ + 1⁻¹)))⁻¹ * parameterWeight ξ z ^ (-2 : ℝ) := by
   obtain ⟨q, hq, h⟩ := ha x ξ z hz
-  have hle := mul_parameterWeight_sq_le_norm_sub hμ hc hq (hΛ z hz).1 (hΛ z hz).2
-  have hne : (q : ℂ) - z ≠ 0 := fun h0 => by
-    rw [h0, norm_zero] at hle
-    exact (mul_pos hκ hw).not_ge hle
+  have hq₀ : 0 ≤ q := (mul_nonneg hμ.le (sq_nonneg _)).trans hq
   rw [coefficient_sub, Pi.sub_apply, coefficient_spectralParameter x ξ hz, h, ← sub_smul]
-  refine ⟨(ContinuousLinearMap.isInvertible_smul_iff hne).2
-    (ContinuousLinearMap.isInvertible_equiv (f := ContinuousLinearEquiv.refl ℂ V)), ?_⟩
-  rw [ContinuousLinearMap.inverse_smul, ContinuousLinearMap.inverse_id,
-    Real.rpow_neg (parameterWeight_pos ξ z).le, Real.rpow_two]
-  calc ‖((q : ℂ) - z)⁻¹ • ContinuousLinearMap.id ℂ V‖
-      ≤ ‖((q : ℂ) - z)⁻¹‖ := (ContinuousLinearMap.opNorm_smul_le _ _).trans
-        (mul_le_of_le_one_right (norm_nonneg _) ContinuousLinearMap.norm_id_le)
-    _ = ‖(q : ℂ) - z‖⁻¹ := norm_inv _
-    _ ≤ (κ * parameterWeight ξ z ^ 2)⁻¹ := inv_anti₀ (mul_pos hκ hw) hle
-    _ = κ⁻¹ * (parameterWeight ξ z ^ 2)⁻¹ := mul_inv _ _
+  exact isInvertible_ofReal_sub_smul_id_and_norm_inverse_le V hμ hc one_pos hq (hΛ z hz).1
+    (by linarith [(hΛ z hz).2])
 
 /-- The symbol of the summands of order at most `1`, with coefficients bounded by `B`, is at most
 `D w` for `D = B ∑ᵢ ∏ⱼ ‖vᵢⱼ‖`. -/
@@ -204,7 +156,7 @@ theorem exists_isElliptic_ofDifferentialSymbol_sub_spectralParameter [CompleteSp
     ∃ R : ℝ, ∀ Λ : TopologicalSpace.Opens ℂ, (∀ z ∈ Λ, z.re ≤ c * ‖z‖ ∧ R ≤ ‖z‖) →
       (ofDifferentialSymbol 2 s v b hb hk - spectralParameter V :
         ParameterSymbol n Λ V V 2).IsElliptic := by
-  set C := (min μ 1 * ((1 - max c (-1)) / 2) / 6)⁻¹
+  set C := ((1 - max c (-1)) / 2 / (3 * (1 + μ⁻¹ + 1⁻¹)))⁻¹
   set D := ∑ i ∈ s with ¬k i = 2, (∏ j, ‖v i j‖) * B
   refine ⟨max 1 ((2 * C * D) ^ 2), fun Λ hΛ => ?_⟩
   have hΛ₁ (z : ℂ) (hz : z ∈ Λ) : z.re ≤ c * ‖z‖ ∧ 1 ≤ ‖z‖ :=
@@ -212,14 +164,14 @@ theorem exists_isElliptic_ofDifferentialSymbol_sub_spectralParameter [CompleteSp
   -- Split `P - z` into its principal part minus `z` and its part of order at most `1`.
   rw [← ofDifferentialSymbol_filter_add_ofDifferentialSymbol_filter_not 2 s v b hb hk
     (fun i => k i = 2), sub_eq_add_neg, add_right_comm, ← sub_eq_add_neg]
-  refine isElliptic_add (C := C) (D := D)
-    (fun x ξ z hz => (isInvertible_sub_spectralParameter_and_norm_inverse_le hμ hc
+  have hinv (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :=
+    isInvertible_sub_spectralParameter_and_norm_inverse_le (a := ofDifferentialSymbol 2
+      {i ∈ s | k i = 2} v b (fun i hi => hb i (Finset.mem_filter.1 hi).1)
+      (fun i hi => hk i (Finset.mem_filter.1 hi).1)) hμ hc
       (fun x ξ z hz => by rw [coefficient_ofDifferentialSymbol _ _ _ _ _ _ x ξ hz]; exact hprin x ξ)
-      hΛ₁ x ξ hz).1)
-    (fun x ξ z hz => (isInvertible_sub_spectralParameter_and_norm_inverse_le hμ hc
-      (fun x ξ z hz => by rw [coefficient_ofDifferentialSymbol _ _ _ _ _ _ x ξ hz]; exact hprin x ξ)
-      hΛ₁ x ξ hz).2)
-    (fun x ξ z hz => ?_) fun z hz => ?_
+      hΛ₁ x ξ hz
+  refine isElliptic_add (C := C) (D := D) (fun x ξ _ hz => (hinv x ξ hz).1)
+    (fun x ξ _ hz => (hinv x ξ hz).2) (fun x ξ z hz => ?_) fun z hz => ?_
   · rw [coefficient_ofDifferentialSymbol _ _ _ _ _ _ x ξ hz, show (2 : ℝ) - 1 = 1 by norm_num,
       Real.rpow_one]
     exact norm_differentialSymbol_le_mul_parameterWeight
