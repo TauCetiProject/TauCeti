@@ -380,16 +380,18 @@ theorem rectangleIntegral_rectangleTrans_comp_prodMap_one_sub [IsManifold I 1 M]
 /-! ### Concatenation along the second coordinate -/
 
 /-- The loopwise concatenation of two maps `u₁ u₂ : ℝ × ℝ → M`: for each `s`, the loop that runs
-through `t ↦ u₁ (s, t)` and then through `t ↦ u₂ (s, t)`, both over `t ∈ [0, 1]`. On `[0, 1)` it
-is `u₁ (s, β (6 t - 1))` for `t ≤ 1/2` and `u₂ (s, β (6 t - 4))` for `t > 1/2`, where
-`β = Real.smoothTransition`, and it is `1`-periodic in `t`. When `u₁ (s, 1) = u₂ (s, 0)` and
+through `t ↦ u₁ (s, t)` and then through `t ↦ u₂ (s, t)`, both over `t ∈ [0, 1]`. It is the curve
+concatenation `TauCeti.curveConcat` of `r ↦ u₁ (s, β (2 r - 1))` and `r ↦ u₂ (s, β (2 r))`,
+where `β = Real.smoothTransition`, evaluated at the fractional part of `t`. So on `[0, 1)` it is
+`u₁ (s, β (6 t - 1))` for `t ≤ 1/2` and `u₂ (s, β (6 t - 4))` for `t > 1/2`, and it is
+`1`-periodic in `t`. When `u₁ (s, 1) = u₂ (s, 0)` and
 `u₂ (s, 1) = u₁ (s, 0)` for all `s`, it rests at these common points for `t` near `1/2` and near
 the integers, so it is as smooth as `u₁` and `u₂` (`TauCeti.contMDiff_loopwiseTrans`). This is how
 caps of two loops based at the same point are placed side by side, as a cap of their collared
 concatenation (`Path.collaredTrans`). -/
 def loopwiseTrans (u₁ u₂ : ℝ × ℝ → M) (z : ℝ × ℝ) : M :=
-  if Int.fract z.2 ≤ 1 / 2 then u₁ (z.1, Real.smoothTransition (6 * Int.fract z.2 - 1))
-  else u₂ (z.1, Real.smoothTransition (6 * Int.fract z.2 - 4))
+  curveConcat (fun r ↦ u₁ (z.1, Real.smoothTransition (2 * r - 1)))
+    (fun r ↦ u₂ (z.1, Real.smoothTransition (2 * r))) (Int.fract z.2)
 
 omit [TopologicalSpace M] in
 /-- The loopwise concatenation is `1`-periodic in the second coordinate. -/
@@ -402,13 +404,17 @@ omit [TopologicalSpace M] in
 /-- On `[0, 1/2]` the loopwise concatenation runs through the first map. -/
 theorem loopwiseTrans_of_le (u₁ u₂ : ℝ × ℝ → M) {z : ℝ × ℝ} (h₀ : 0 ≤ z.2) (h : z.2 ≤ 1 / 2) :
     loopwiseTrans u₁ u₂ z = u₁ (z.1, Real.smoothTransition (6 * z.2 - 1)) := by
-  rw [loopwiseTrans, Int.fract_eq_self.2 ⟨h₀, by linarith⟩, ite_eq_left h]
+  rw [loopwiseTrans, Int.fract_eq_self.2 ⟨h₀, by linarith⟩, curveConcat_of_le (by linarith),
+    ← mul_assoc]
+  norm_num
 
 omit [TopologicalSpace M] in
 /-- On `(1/2, 1)` the loopwise concatenation runs through the second map. -/
 theorem loopwiseTrans_of_lt (u₁ u₂ : ℝ × ℝ → M) {z : ℝ × ℝ} (h : 1 / 2 < z.2) (h₁ : z.2 < 1) :
     loopwiseTrans u₁ u₂ z = u₂ (z.1, Real.smoothTransition (6 * z.2 - 4)) := by
-  rw [loopwiseTrans, Int.fract_eq_self.2 ⟨by linarith, h₁⟩, ite_eq_right h.not_ge]
+  rw [loopwiseTrans, Int.fract_eq_self.2 ⟨by linarith, h₁⟩, curveConcat_of_lt (by linarith),
+    mul_sub, ← mul_assoc]
+  norm_num
 
 omit [TopologicalSpace M] in
 /-- Near `t = k` and up to `t = k + 1/2`, for an integer `k`, the loopwise concatenation is a
@@ -419,15 +425,16 @@ theorem loopwiseTrans_eq_left {u₁ u₂ : ℝ × ℝ → M} (h₂ : ∀ s, u₂
   obtain ⟨hz₁, hz₂⟩ := hz
   rcases le_or_gt (k : ℝ) z.2 with hk | hk
   · have hf : Int.fract z.2 = z.2 - k := Int.fract_eq_iff.2 ⟨by linarith, by linarith, k, by ring⟩
-    rw [loopwiseTrans, hf, ite_eq_left (by linarith)]
+    rw [loopwiseTrans, hf, curveConcat_of_le (by linarith), ← mul_assoc]
+    norm_num
   · -- Just below `k` the concatenation rests at the end of the second map of the previous period.
     have hf : Int.fract z.2 = z.2 - (k - 1) :=
       Int.fract_eq_iff.2 ⟨by linarith, by linarith, k - 1, by push_cast; ring⟩
-    have h₁ : Real.smoothTransition (6 * (z.2 - (k - 1)) - 4) = 1 :=
+    have h₁ : Real.smoothTransition (2 * (3 * (z.2 - (k - 1)) - 2)) = 1 :=
       Real.smoothTransition.one_of_one_le (by linarith)
     have h₀ : Real.smoothTransition (6 * (z.2 - k) - 1) = 0 :=
       Real.smoothTransition.zero_of_nonpos (by linarith)
-    rw [loopwiseTrans, hf, ite_eq_right (by linarith), h₁, h₀, h₂]
+    rw [loopwiseTrans, hf, curveConcat_of_lt (by linarith), h₁, h₀, h₂]
 
 omit [TopologicalSpace M] in
 /-- From `t = k + 1/3` up to just beyond `t = k + 1`, for an integer `k`, the loopwise
@@ -440,23 +447,22 @@ theorem loopwiseTrans_eq_right {u₁ u₂ : ℝ × ℝ → M} (h₁ : ∀ s, u�
   obtain ⟨hz₁, hz₂⟩ := hz
   rcases lt_or_ge z.2 (k + 1) with hk | hk
   · have hf : Int.fract z.2 = z.2 - k := Int.fract_eq_iff.2 ⟨by linarith, by linarith, k, by ring⟩
-    rw [loopwiseTrans, hf]
-    split_ifs with h
-    · -- Around `k + 1/2` the concatenation rests at the junction of the two maps.
-      have hβ₁ : Real.smoothTransition (6 * (z.2 - k) - 1) = 1 :=
-        Real.smoothTransition.one_of_one_le (by linarith)
-      have hβ₀ : Real.smoothTransition (6 * (z.2 - k) - 4) = 0 :=
-        Real.smoothTransition.zero_of_nonpos (by linarith)
-      rw [hβ₁, hβ₀, h₁]
-    · rfl
+    -- From `k + 1/3` on, the concatenation is past the rest at the junction of the two maps.
+    rw [loopwiseTrans, hf, eqOn_curveConcat_right (y := u₁ (z.1, 1))
+      (fun r hr ↦ by rw [Real.smoothTransition.one_of_one_le (by linarith)])
+      (fun r hr ↦ by rw [Real.smoothTransition.zero_of_nonpos (by linarith), h₁])
+      (show 1 / 3 < z.2 - k by linarith)]
+    dsimp only
+    congr 3
+    ring
   · -- Just beyond `k + 1` it rests at the start of the first map of the next period.
     have hf : Int.fract z.2 = z.2 - (k + 1) :=
       Int.fract_eq_iff.2 ⟨by linarith, by linarith, k + 1, by push_cast; ring⟩
-    have hβ₀ : Real.smoothTransition (6 * (z.2 - (k + 1)) - 1) = 0 :=
+    have hβ₀ : Real.smoothTransition (2 * (3 * (z.2 - (k + 1))) - 1) = 0 :=
       Real.smoothTransition.zero_of_nonpos (by linarith)
     have hβ₁ : Real.smoothTransition (6 * (z.2 - k) - 4) = 1 :=
       Real.smoothTransition.one_of_one_le (by linarith)
-    rw [loopwiseTrans, hf, ite_eq_left (by linarith), hβ₀, hβ₁, h₂]
+    rw [loopwiseTrans, hf, curveConcat_of_le (by linarith), hβ₀, hβ₁, h₂]
 
 /-- The loopwise concatenation of two `C^n` maps, each ending where the other starts, is
 `C^n`. -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 public import TauCeti.Topology.PathSpace.Prepend
+import TauCeti.Geometry.Manifold.ContMDiff.Curve
 
 /-!
 # Collared concatenation of paths
@@ -44,6 +45,7 @@ public section
 noncomputable section
 
 open Set CategoryTheory
+open scoped Manifold
 
 namespace unitInterval
 
@@ -72,26 +74,33 @@ namespace Path
 
 variable {X : Type*} [TopologicalSpace X] {a b c : X}
 
-/-- The real function underlying `Path.collaredTransReparam`. -/
-private def collaredTransReparamAux (t : ℝ) : ℝ :=
-  if t ≤ 1 / 2 then Real.smoothTransition (6 * t - 1) / 2
-  else (1 + Real.smoothTransition (6 * t - 4)) / 2
+/-- The real function underlying `Path.collaredTransReparam`: the curve concatenation
+`TauCeti.curveConcat` of `r ↦ β (2 r - 1) / 2` and `r ↦ (1 + β (2 r)) / 2`, where
+`β = Real.smoothTransition`. -/
+private def collaredTransReparamAux : ℝ → ℝ :=
+  TauCeti.curveConcat (fun r ↦ Real.smoothTransition (2 * r - 1) / 2)
+    (fun r ↦ (1 + Real.smoothTransition (2 * r)) / 2)
 
 private theorem collaredTransReparamAux_of_le {t : ℝ} (ht : t ≤ 1 / 2) :
     collaredTransReparamAux t = Real.smoothTransition (6 * t - 1) / 2 := by
-  simp only [collaredTransReparamAux, ht, ↓reduceIte]
+  rw [collaredTransReparamAux, TauCeti.curveConcat_of_le (by linarith), ← mul_assoc]
+  norm_num
 
 private theorem collaredTransReparamAux_of_lt {t : ℝ} (ht : 1 / 2 < t) :
     collaredTransReparamAux t = (1 + Real.smoothTransition (6 * t - 4)) / 2 := by
-  simp only [collaredTransReparamAux, ht.not_ge, ↓reduceIte]
-
-private theorem continuous_collaredTransReparamAux : Continuous collaredTransReparamAux := by
-  refine Continuous.if_le (by fun_prop (disch := exact Real.smoothTransition.continuous))
-    (by fun_prop (disch := exact Real.smoothTransition.continuous)) continuous_id
-    continuous_const fun t ht ↦ ?_
-  rw [ht, Real.smoothTransition.one_of_one_le (by norm_num),
-    Real.smoothTransition.zero_of_nonpos (by norm_num)]
+  rw [collaredTransReparamAux, TauCeti.curveConcat_of_lt (by linarith), mul_sub, ← mul_assoc]
   norm_num
+
+private theorem continuous_collaredTransReparamAux : Continuous collaredTransReparamAux :=
+  (ContMDiff.curveConcat (I := 𝓘(ℝ, ℝ)) (n := 0) (y := 1 / 2)
+    ((Real.smoothTransition.contDiff.comp (by fun_prop)).div_const 2).contMDiff
+    ((contDiff_const.add (Real.smoothTransition.contDiff.comp (by fun_prop))).div_const
+      2).contMDiff
+    (fun r hr ↦ by
+      rw [Function.comp_apply, Real.smoothTransition.one_of_one_le (by linarith)])
+    (fun r hr ↦ by
+      rw [Function.comp_apply, Real.smoothTransition.zero_of_nonpos (by linarith)]
+      norm_num)).continuous
 
 private theorem collaredTransReparamAux_mem (t : ℝ) : collaredTransReparamAux t ∈ unitInterval := by
   have h₀ := Real.smoothTransition.nonneg (6 * t - 1)
