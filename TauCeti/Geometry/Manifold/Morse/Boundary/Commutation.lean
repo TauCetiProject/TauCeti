@@ -152,28 +152,27 @@ variable {hX₀ : IsAdaptedPseudoGradient f₀ X₀} {hX₁ : IsAdaptedPseudoGra
 
 include h₀ hf₀ in
 /-- **Finitely many continuation trajectories broken at the source**, when the continuation slices
-between critical points of equal index are finite. -/
+into `r` from critical points of the same index are finite. -/
 theorem finite_morseSourceBrokenContinuationSet
-    (hV : ∀ (p : criticalPoints 𝓘(ℝ, E) f₀) (q : criticalPoints 𝓘(ℝ, E) f₁),
-      manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₁ q →
-        (morseContinuationSlice V p q).Finite)
-    (p : criticalPoints 𝓘(ℝ, E) f₀) (r : criticalPoints 𝓘(ℝ, E) f₁) :
+    (p : criticalPoints 𝓘(ℝ, E) f₀) (r : criticalPoints 𝓘(ℝ, E) f₁)
+    (hV : ∀ p' : criticalPoints 𝓘(ℝ, E) f₀,
+      manifoldMorseIndex 𝓘(ℝ, E) f₀ p' = manifoldMorseIndex 𝓘(ℝ, E) f₁ r →
+        (morseContinuationSlice V p' r).Finite) :
     (morseSourceBrokenContinuationSet f₁ V hX₀ p r).Finite := by
   have := hf₀.finite_criticalPoints.to_subtype
-  exact finite_setOf_and_and_mem_and_mem (fun _ ↦ h₀.finite_morseTrajectorySlice hf₀)
-    fun p' ↦ hV p' r
+  exact finite_setOf_and_and_mem_and_mem (fun _ ↦ h₀.finite_morseTrajectorySlice hf₀) hV
 
 include h₁ hf₁ in
 /-- **Finitely many continuation trajectories broken at the target**, when the continuation slices
-between critical points of equal index are finite. -/
+out of `p` to critical points of the same index are finite. -/
 theorem finite_morseTargetBrokenContinuationSet
-    (hV : ∀ (p : criticalPoints 𝓘(ℝ, E) f₀) (q : criticalPoints 𝓘(ℝ, E) f₁),
-      manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₁ q →
-        (morseContinuationSlice V p q).Finite)
-    (p : criticalPoints 𝓘(ℝ, E) f₀) (r : criticalPoints 𝓘(ℝ, E) f₁) :
+    (p : criticalPoints 𝓘(ℝ, E) f₀) (r : criticalPoints 𝓘(ℝ, E) f₁)
+    (hV : ∀ q' : criticalPoints 𝓘(ℝ, E) f₁,
+      manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₁ q' →
+        (morseContinuationSlice V p q').Finite) :
     (morseTargetBrokenContinuationSet f₀ V hX₁ p r).Finite := by
   have := hf₁.finite_criticalPoints.to_subtype
-  exact finite_setOf_and_and_mem_and_mem (hV p) fun _ ↦ h₁.finite_morseTrajectorySlice hf₁
+  exact finite_setOf_and_and_mem_and_mem hV fun _ ↦ h₁.finite_morseTrajectorySlice hf₁
 
 include h₀ in
 /-- **`Φ ∘ ∂₀` counts continuation trajectories broken at the source.** When they are finitely
@@ -256,9 +255,9 @@ theorem morseBoundary_comp_morseContinuationMap_eq_iff
       Even ((morseSourceBrokenContinuationSet f₁ V hX₀ p r).ncard +
         (morseTargetBrokenContinuationSet f₀ V hX₁ p r).ncard) := fun p r ↦ by
     rw [morseBoundary_morseContinuationMap_single_apply h₁ hf₁ p r
-        (finite_morseTargetBrokenContinuationSet h₁ hf₁ hV p r),
+        (finite_morseTargetBrokenContinuationSet h₁ hf₁ p r (hV p)),
       morseContinuationMap_morseBoundary_single_apply h₀ hf₀ hf₁ p r
-        (finite_morseSourceBrokenContinuationSet h₀ hf₀ hV p r),
+        (finite_morseSourceBrokenContinuationSet h₀ hf₀ p r (hV · r)),
       ← ZMod.natCast_eq_zero_iff_even, Nat.cast_add, CharTwo.add_eq_zero]
     exact eq_comm
   simp_rw [← hcoeff]
