@@ -126,7 +126,7 @@ lemma mapGL_mul_coe_eq_intMatrix (τ δ : SpecialLinearGroup (Fin n) ℤ)
   have h₂ := map_mul (Int.castRingHom ℚ).mapMatrix (τ : Matrix (Fin n) (Fin n) ℤ) A
   simp only [RingHom.mapMatrix_apply, Int.coe_castRingHom] at h₁ h₂
   simp only [GeneralLinearGroup.coe_mul, mapGL_coe_matrix, map_apply_coe,
-    RingHom.mapMatrix_apply, algebraMap_int_eq, Int.coe_castRingHom, hA]
+    algebraMap_int_eq, Int.coe_castRingHom, hA]
   rw [h₁, h₂]
 
 -- Adapted from [AINTLIB](https://github.com/CBirkbeck/AINTLIB) commit
@@ -472,9 +472,9 @@ theorem SLnZ_eq_GLnZ_inf_glpos : SLnZ n = GLnZ n ⊓ Matrix.GLPos (Fin n) ℚ :=
     have hdet1 := (det_eq_one_or_neg_one_of_mem_GLnZ n hgZ).resolve_right (by linarith)
     obtain ⟨A, hA⟩ := (hasIntEntries_iff n).mp (hasIntEntries_of_mem_GLnZ n hgZ)
     have hAdet : A.det = 1 := by rw [hA, ← Int.cast_det] at hdet1; exact_mod_cast hdet1
-    let σ : SpecialLinearGroup (Fin n) ℤ := ⟨A, hAdet⟩
+    let σ : SpecialLinearGroup (Fin n) ℤ := .mk A hAdet
     refine (mem_SLnZ_iff n).mpr ⟨σ, Units.ext ?_⟩
-    rw [hA, mapGL_coe_matrix, algebraMap_int_eq, map_apply_coe, RingHom.mapMatrix_apply]; rfl
+    rw [hA, mapGL_coe_matrix, algebraMap_int_eq, map_apply_coe]; rfl
 
 /-- An element of `GL_n(ℤ)` with determinant `1` belongs to `SL_n(ℤ)`. -/
 theorem mem_SLnZ_of_mem_GLnZ_of_det_eq_one {g : GL (Fin n) ℚ} (hg : g ∈ GLnZ n)
@@ -651,7 +651,7 @@ lemma inv_conjugate_mem_SLnZ_of_mem_ker (g : GL (Fin n) ℚ) (A : Matrix (Fin n)
     change (g.val * (delta : GL (Fin n) ℚ).val : Matrix _ _ ℚ) =
       ((γ : GL (Fin n) ℚ).val * g.val : Matrix _ _ ℚ)
     simp only [mapGL_coe_matrix, algebraMap_int_eq,
-      map_apply_coe, RingHom.mapMatrix_apply, Int.coe_castRingHom] at hA ⊢
+      map_apply_coe, Int.coe_castRingHom] at hA ⊢
     rw [hA]
     simp only [← Int.coe_castRingHom, ← Matrix.map_mul]
     rw [h_int_eq]
