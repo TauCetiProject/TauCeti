@@ -40,15 +40,17 @@ needed for the statements below.
   `τ` over `M`, for instance if `σ` is a homeomorphism over `M`, then `σ_* α` lives over the
   fundamental class exactly when `α` does
   (`TauCeti.livesOverFundamentalClass_homologyMap_iff_of_comp_eq_id`). Localization also commutes
-  with morphisms of coefficients (`TauCeti.fiberLocalization_coefficient_naturality`), so living
-  over the fundamental class is unchanged by an isomorphism of coefficients
+  with morphisms of coefficients (`TauCeti.fiberLocalization_coefficient_naturality`), as do maps
+  of spaces (`TauCeti.homologyMap_coefficient_naturality`), so living over the fundamental class
+  is unchanged by an isomorphism of coefficients
   (`TauCeti.livesOverFundamentalClass_homologyMap_coefficient_iff`).
 * **Products with a second factor.** For a space `Y`, the map `p ∘ fst : E × Y → M` has fibre
   `p⁻¹(b) × Y`, and localizing a cross product `α × β` at it is the relative cross product of the
   localization of `α` with `β` (`TauCeti.fiberLocalization_singularHomologyCross_tmul`); the
   relative cross product is natural for maps of local homology in the first factor
-  (`TauCeti.singularHomologyCrossRel_localHomologyMap_tmul`). So if `α × β` lives over the
-  fundamental class, so does `α`
+  (`TauCeti.singularHomologyCrossRel_localHomologyMap_tmul`), and the absolute one for maps of
+  the second factor (`TauCeti.homologyMap_prodMap_id_singularHomologyCross_tmul`). So if `α × β`
+  lives over the fundamental class, so does `α`
   (`TauCeti.LivesOverFundamentalClass.of_singularHomologyCross`), and `β ≠ 0`
   (`TauCeti.LivesOverFundamentalClass.right_ne_zero_of_singularHomologyCross`). When the relative
   cross product is injective, for instance over a field by the relative Künneth theorem, and the
@@ -163,6 +165,21 @@ theorem fiberLocalization_coefficient_naturality {R R' : A} (φ : R ⟶ R') (p :
   exact (HomologicalComplex.homologyMap_comp _ _ _).symm.trans
     ((congrArg (HomologicalComplex.homologyMap · k) h).trans
       (HomologicalComplex.homologyMap_comp _ _ _))
+
+/-- **Changes of coefficients commute with maps of spaces**: for a morphism `φ : R ⟶ R'` of
+coefficients and a map `σ : E → E'`, the map `σ_*` on homology commutes with the map induced by
+`φ`. -/
+@[reassoc]
+theorem homologyMap_coefficient_naturality {R R' : A} (φ : R ⟶ R') (σ : C(E, E')) (k : ℕ) :
+    HomologicalComplex.homologyMap (((SSet.chainComplexFunctor A).map φ).app
+        (TopCat.toSSet.obj (TopCat.of E))) k ≫
+          SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom σ)) R' k =
+      SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom σ)) R k ≫
+        HomologicalComplex.homologyMap (((SSet.chainComplexFunctor A).map φ).app
+          (TopCat.toSSet.obj (TopCat.of E'))) k := by
+  rw [← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp]
+  exact congrArg (HomologicalComplex.homologyMap · k)
+    (((SSet.chainComplexFunctor A).map φ).naturality (TopCat.toSSet.map (TopCat.ofHom σ))).symm
 
 end Localization
 
@@ -356,6 +373,29 @@ theorem singularHomologyCrossRel_localHomologyMap_tmul {X X' : Type w} [Topologi
   exact (congrArg (fun x ↦ (TopCat.singularHomologyCrossRel (TopCat.of X') (TopCat.of Y) Tᶜ
     R S i j n hn).hom (x ⊗ₜ b)) (ConcreteCategory.congr_hom (localHomologyMap_def R f h i) a)).trans
     (ConcreteCategory.congr_hom hnat (a ⊗ₜ b))
+
+/-- **Naturality of the cross product in the second factor**, on pure tensors: for a map
+`g : Y → Y'`, `(id × g)_*(α × β) = α × g_* β`. -/
+theorem homologyMap_prodMap_id_singularHomologyCross_tmul {X Y' : Type w} [TopologicalSpace X]
+    [TopologicalSpace Y'] (g : C(Y, Y')) {i j n : ℕ} (h : i + j = n)
+    (α : ((TopCat.toSSet.obj (TopCat.of X)).homology R i : ModuleCat.{w} k))
+    (β : ((TopCat.toSSet.obj (TopCat.of Y)).homology S j : ModuleCat.{w} k)) :
+    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom ((ContinuousMap.id X).prodMap g))) (R ⊗ S)
+        n).hom ((TopCat.singularHomologyCross (TopCat.of X) (TopCat.of Y) R S i j n h).hom
+          (α ⊗ₜ β)) =
+      (TopCat.singularHomologyCross (TopCat.of X) (TopCat.of Y') R S i j n h).hom
+        (α ⊗ₜ (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g)) S j).hom β) := by
+  -- Both maps send `(x, y)` to `(x, g y)`.
+  have hg : 𝟙 (TopCat.of X) ⊗ₘ TopCat.ofHom g = TopCat.ofHom ((ContinuousMap.id X).prodMap g) :=
+    TopCat.ext fun _ ↦ rfl
+  have := congrArg (fun φ ↦ φ.hom (α ⊗ₜ β))
+    (TopCat.singularHomologyCross_naturality (𝟙 (TopCat.of X)) (TopCat.ofHom g) R S i j n h)
+  rw [ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply,
+    CategoryTheory.Functor.map_id, hg, ModuleCat.hom_tensorHom] at this
+  -- `this` is the claim up to the action of `𝟙 _ ⊗ₘ g_*` on a pure tensor and the functor map as
+  -- `SSet.homologyMap`; these cannot be rewritten in `this`, whose classes are typed by the objects
+  -- of the homology functor rather than by `SSet.homology`.
+  exact this.symm
 
 /-- If the cross product `α × β ∈ Hₙ(E × Y; R ⊗ S)` lives over the fundamental class at `b` for
 `p ∘ fst : E × Y → M`, then `α` lives over the fundamental class at `b` for `p`. -/

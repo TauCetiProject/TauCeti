@@ -9,6 +9,9 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LivesOver
 public import TauCeti.Topology.MappingSpace.Evaluation
 public import TauCeti.Topology.MappingSpace.Sphere.Basic
 public import TauCeti.Topology.Sphere.Suspension
+public import Mathlib.Topology.Homotopy.HomotopyGroup
+import TauCeti.AlgebraicTopology.Singular.Reduced
+import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 
 /-!
 # Manifolds abundant with two-spheres
@@ -50,7 +53,8 @@ loop space carried to `Map_*(S², Q)` (`TauCeti.doubleLoopSpaceHomologyIsoBasedM
 
 * `TauCeti.IsAbundantWithTwoSpheres Q n b`: `Q` is abundant with 2-spheres at `b`, in
   dimension `n`, characterized by `TauCeti.isAbundantWithTwoSpheres_iff`.
-* `TauCeti.uliftIntTensorIso`: `ℤ ⊗ ℤ ≅ ℤ`, for the coefficients `ULift ℤ`.
+* `TauCeti.uliftIntTensorIso`: `ℤ ⊗ ℤ ≅ ℤ`, for the coefficients `ULift ℤ`, which multiplies the
+  integers (`TauCeti.uliftIntTensorIso_hom_tmul`).
 * `TauCeti.doubleLoopSpaceHomologyIsoBasedMap`: `Hₘ(Ω²Q; ℤ) ≅ Hₘ(Map_*(S², Q); ℤ)`.
 
 ## Main results
@@ -59,6 +63,11 @@ loop space carried to `Map_*(S², Q)` (`TauCeti.doubleLoopSpaceHomologyIsoBasedM
   fundamental class witnesses abundance.
 * `TauCeti.isAbundantWithTwoSpheres_of_eq`: so does a class of degree `n` living over the
   fundamental class whose localization is not that of a constant sphere class.
+* `TauCeti.isAbundantWithTwoSpheres_of_livesOverFundamentalClass_sub`: this holds for a class `α`
+  of degree `n` when both `α` and `α - ρ_* α` live over the fundamental class, where `ρ` is the
+  self-map `f ↦ const (f(north))` of `Map(S², Q)`.
+* `TauCeti.exists_not_joined_of_nontrivial_homotopyGroup_two`: if `π₂(Q, x) ≠ 0`, every based
+  sphere at `x` has a based sphere not joined to it, a degree-zero witness for the above.
 
 ## References
 
@@ -72,7 +81,7 @@ public section
 noncomputable section
 
 open CategoryTheory MonoidalCategory
-open scoped Topology.Homotopy
+open scoped Topology Topology.Homotopy TensorProduct
 
 namespace TauCeti
 
@@ -143,6 +152,52 @@ theorem isAbundantWithTwoSpheres_of_eq {n : ℕ} {b : Q}
     IsAbundantWithTwoSpheres Q n b :=
   ⟨n, α, hα, Or.inr ⟨rfl, fun ⟨β, hβ⟩ ↦ hc β hβ⟩⟩
 
+/-- **Abundance from a class in the dimension not fixed by the constant spheres.** Let `ρ` be the
+self-map `f ↦ const (f(north))` of `Map(S², Q)`. If a class `α ∈ Hₙ(Map(S², Q); ℤ)` lives over the
+fundamental class at `b`, and so does `α - ρ_* α`, then `Q` is abundant with 2-spheres at `b` in
+dimension `n`. Indeed `ρ` lies over `Q` and fixes the constant spheres, so if the localization of
+`α` were that of a class of constant spheres, it would agree with the localization of `ρ_* α`. -/
+theorem isAbundantWithTwoSpheres_of_livesOverFundamentalClass_sub {n : ℕ} {b : Q}
+    {α : ((TopCat.toSSet.obj (TopCat.of C(Sphere2, Q))).homology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) n : ModuleCat.{0} ℤ)}
+    (hα : LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ))
+      (mappingSpaceEval Sphere2.north) b α)
+    (hρα : LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ))
+      (mappingSpaceEval Sphere2.north) b (α - (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
+        (ContinuousMap.const'.comp (mappingSpaceEval (X := Q) Sphere2.north))))
+          (ModuleCat.of ℤ (ULift.{0} ℤ)) n).hom α)) :
+    IsAbundantWithTwoSpheres Q n b := by
+  let R := ModuleCat.of ℤ (ULift.{0} ℤ)
+  let ρ : C(C(Sphere2, Q), C(Sphere2, Q)) :=
+    ContinuousMap.const'.comp (mappingSpaceEval Sphere2.north)
+  have hρ : mappingSpaceEval Sphere2.north ∘ ρ = mappingSpaceEval Sphere2.north := funext fun f ↦ by
+    simp [ρ]
+  have hρc : ρ.comp ContinuousMap.const' = ContinuousMap.const' := ContinuousMap.ext fun x ↦ by
+    simp [ρ]
+  refine isAbundantWithTwoSpheres_of_eq hα fun β hβ ↦ ?_
+  -- If the localization of `α` is that of a class `β` of constant spheres, it is fixed by `ρ`.
+  have key : (fiberLocalization R (mappingSpaceEval Sphere2.north) b n).hom
+      ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom ρ)) R n).hom α) =
+        (fiberLocalization R (mappingSpaceEval Sphere2.north) b n).hom α := by
+    rw [← ModuleCat.comp_apply, homologyMap_comp_fiberLocalization R ρ hρ, ModuleCat.comp_apply,
+      ← hβ, ← ModuleCat.comp_apply, localHomologyMap_comp, localHomologyMap_congr R hρc]
+  refine (livesOverFundamentalClass_iff _ _ _ _).1 hρα ?_
+  rw [map_sub]
+  exact sub_eq_zero.2 key.symm
+
+/-- **Based spheres outside a path component.** If `π₂(Q, x)` is nontrivial, then the based
+mapping space `Map_*(S², Q) ≃ₜ Ω²Q` is not path connected: for every based sphere `y₀` some based
+sphere `y₁` is not joined to `y₀` by a path. -/
+theorem exists_not_joined_of_nontrivial_homotopyGroup_two (x : Q) [Nontrivial (π_ 2 Q x)]
+    (y₀ : BasedMap Sphere2 Q Sphere2.north x) :
+    ∃ y₁ : BasedMap Sphere2 Q Sphere2.north x, ¬Joined y₁ y₀ := by
+  let e := BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2 ⟨Q, x⟩ Sphere2.north
+  by_contra! h
+  have : PathConnectedSpace (BasedMap Sphere2 Q Sphere2.north x) :=
+    ⟨⟨y₀⟩, fun y y' ↦ (h y).trans (h y').symm⟩
+  exact not_subsingleton (π_ 2 Q x)
+    ((pathConnectedSpace_doubleLoopSpace_iff x).1 (e.surjective.pathConnectedSpace e.continuous))
+
 /-- The identification of the coefficients `ℤ ⊗ ℤ` of a cross product of integral classes with
 `ℤ`, both written `ULift ℤ` as in `TauCeti.IsAbundantWithTwoSpheres`. -/
 def uliftIntTensorIso :
@@ -150,6 +205,13 @@ def uliftIntTensorIso :
   let e : ModuleCat.of ℤ (ULift.{0} ℤ) ≅ 𝟙_ (ModuleCat.{0} ℤ) :=
     (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso
   tensorIso e e ≪≫ λ_ (𝟙_ _) ≪≫ e.symm
+
+/-- `TauCeti.uliftIntTensorIso` multiplies the integers. -/
+@[simp]
+theorem uliftIntTensorIso_hom_tmul (a b : ℤ) :
+    uliftIntTensorIso.hom.hom (ULift.up a ⊗ₜ[ℤ] ULift.up b) = ULift.up (a * b) := by
+  unfold uliftIntTensorIso
+  rfl
 
 /-- The integral homology of the double loop space `Ω²Q` at `x` is that of the based mapping space
 `Map_*(S², Q)` of maps sending the north pole to `x`, with the coefficients `ULift ℤ` of

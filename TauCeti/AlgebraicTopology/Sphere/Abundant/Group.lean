@@ -47,7 +47,8 @@ over `b` is not that of a class of constant spheres. The self-map `f ↦ const (
 the localization of `[G] × α` came from the constant spheres, it would therefore agree with that
 of the image of `[G] × α`, which is `[G] × c_* α` because under `G × Map_*(S², G) ≃ₜ Map(S², G)`
 this self-map is the identity times `c`. Then `[G] × (α - c_* α)` would not live over the
-fundamental class, contradicting `α - c_* α ≠ 0`.
+fundamental class, contradicting `α - c_* α ≠ 0`
+(`TauCeti.isAbundantWithTwoSpheres_of_livesOverFundamentalClass_sub`).
 
 By Lemma 3.41 of the source (`TauCeti.isAspherical_iff_doubleLoopSpace_singularHomology`), a
 path-connected space is aspherical exactly when its double loop space is path connected with
@@ -166,33 +167,6 @@ private theorem sphereClass_sub {k : ℕ}
     (congrArg _ (TensorProduct.tmul_sub _ _ _)).trans (map_sub _ _ _)
   exact (congrArg _ ((congrArg _ h).trans (map_sub _ _ _))).trans (map_sub _ _ _)
 
-omit [IsTopologicalGroup G] in
-/-- The cross product with `[G]` is natural in the second factor: `(id × g)_*([G] × α)` is
-`[G] × g_* α`. -/
-private theorem homologyMap_prodMap_crossFundamentalClass {k : ℕ}
-    (g : C(BasedMap Sphere2 G Sphere2.north 1, BasedMap Sphere2 G Sphere2.north 1))
-    (α : ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 G Sphere2.north 1))).homology
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
-    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom ((ContinuousMap.id G).prodMap g)))
-      (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ) : ModuleCat.{0} ℤ)
-        (n + k)).hom (o.crossFundamentalClass hn α) =
-      o.crossFundamentalClass hn ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g))
-        (ModuleCat.of ℤ (ULift.{0} ℤ)) k).hom α) := by
-  -- Both maps send `(x, y)` to `(x, g y)`.
-  have hg : 𝟙 (TopCat.of G) ⊗ₘ TopCat.ofHom g = TopCat.ofHom ((ContinuousMap.id G).prodMap g) :=
-    TopCat.ext fun _ ↦ rfl
-  have := congrArg (fun φ ↦ φ.hom (o.fundamentalClass hn ⊗ₜ α))
-    (TopCat.singularHomologyCross_naturality (𝟙 (TopCat.of G)) (TopCat.ofHom g)
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) n k (n + k) rfl)
-  rw [ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply,
-    CategoryTheory.Functor.map_id, hg, ModuleCat.hom_tensorHom] at this
-  -- `this` is the goal up to unfolding `crossFundamentalClass`, the action of `𝟙 _ ⊗ₘ g_*` on a
-  -- pure tensor (`TensorProduct.map_tmul`), and the functor map as `SSet.homologyMap` of
-  -- `TopCat.toSSet.map` (`TauCeti.singularHomologyFunctor_obj_map`). These cannot be rewritten
-  -- in `this`: the naturality lemma types its classes by the functor's objects, while `α` and
-  -- `[G]` are typed by `SSet.homology`, so the rewritten terms would not be type-correct.
-  exact this.symm
-
 /-- The constant spheres at the values at the north pole, `f ↦ const (f north)`, send `[G] × α`
 to `[G] × c_* α`, where `c` is the constant self-map of `Map_*(S², G)` at the constant sphere `1`:
 composed with `G × Map_*(S², G) ≃ₜ Map(S², G)`, this self-map of `Map(S², G)` is the identity
@@ -218,17 +192,12 @@ private theorem homologyMap_const'_comp_mappingSpaceEval_sphereClass {k : ℕ}
       ContinuousMap.coe_ofClass]
     rw [mappingSpaceGroupHomeomorph_apply, mappingSpaceGroupHomeomorph_apply]
     simp [y.2]
-  -- The identification of coefficients is natural in the space.
-  have hcoeff : HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
-      uliftIntTensorIso.hom).app (TopCat.toSSet.obj (TopCat.of (G × Y)))) (n + k) ≫
-        SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom γ)) R (n + k) =
-      SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom γ)) (R ⊗ R : ModuleCat.{0} ℤ) (n + k) ≫
-        HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
-          uliftIntTensorIso.hom).app (TopCat.toSSet.obj (TopCat.of (G × Y)))) (n + k) := by
-    rw [← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp]
-    exact congrArg (HomologicalComplex.homologyMap · (n + k))
-      (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map uliftIntTensorIso.hom).naturality
-        (TopCat.toSSet.map (TopCat.ofHom γ))).symm
+  -- The cross product with `[G]` is natural in the second factor: `γ_*([G] × α) = [G] × c_* α`.
+  have hcross : (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom γ)) (R ⊗ R : ModuleCat.{0} ℤ)
+      (n + k)).hom (o.crossFundamentalClass hn α) =
+        o.crossFundamentalClass hn ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom c)) R k).hom
+          α) :=
+    homologyMap_prodMap_id_singularHomologyCross_tmul R R c rfl (o.fundamentalClass hn) α
   have hΨ' : SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom γ)) R (n + k) ≫
       SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom Ψ)) R (n + k) =
       SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom Ψ)) R (n + k) ≫
@@ -236,12 +205,15 @@ private theorem homologyMap_const'_comp_mappingSpaceEval_sphereClass {k : ℕ}
           (ContinuousMap.const'.comp (mappingSpaceEval (X := G) Sphere2.north)))) R (n + k) := by
     rw [← SSet.homologyMap_comp, ← SSet.homologyMap_comp, ← Functor.map_comp, ← Functor.map_comp,
       ← TopCat.ofHom_comp, ← TopCat.ofHom_comp, hΨ]
-  have e₁ := ConcreteCategory.congr_hom hcoeff (o.crossFundamentalClass hn α)
+  -- The identification of coefficients is natural in the space.
+  have e₁ := ConcreteCategory.congr_hom
+    (homologyMap_coefficient_naturality uliftIntTensorIso.hom γ (n + k))
+    (o.crossFundamentalClass hn α)
   have e₂ := ConcreteCategory.congr_hom hΨ' ((HomologicalComplex.homologyMap
     (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map uliftIntTensorIso.hom).app
       (TopCat.toSSet.obj (TopCat.of (G × Y)))) (n + k)).hom (o.crossFundamentalClass hn α))
   simp only [ConcreteCategory.comp_apply] at e₁ e₂
-  rw [sphereClass, sphereClass, ← o.homologyMap_prodMap_crossFundamentalClass hn c α, ← e₁, e₂]
+  rw [sphereClass, sphereClass, ← hcross, ← e₁, e₂]
 
 include o hn in
 /-- **A topological group with a nonzero class of positive degree in its double loop space is
@@ -275,28 +247,11 @@ theorem isAbundantWithTwoSpheres_of_homologyMap_const_ne (b : G)
       (ContinuousMap.const (BasedMap Sphere2 G Sphere2.north 1) ⟨1, ContinuousMap.one_apply _⟩)))
         (ModuleCat.of ℤ (ULift.{0} ℤ)) 0).hom α ≠ α) :
     IsAbundantWithTwoSpheres G n b := by
-  let R := ModuleCat.of ℤ (ULift.{0} ℤ)
-  let ρ : C(C(Sphere2, G), C(Sphere2, G)) :=
-    ContinuousMap.const'.comp (mappingSpaceEval Sphere2.north)
-  have hρ : mappingSpaceEval Sphere2.north ∘ ρ = mappingSpaceEval Sphere2.north := funext fun f ↦ by
-    simp [ρ]
-  have hρc : ρ.comp ContinuousMap.const' = ContinuousMap.const' := ContinuousMap.ext fun g ↦ by
-    simp [ρ]
-  refine isAbundantWithTwoSpheres_of_eq (α := o.sphereClass hn α)
-    ((o.livesOverFundamentalClass_sphereClass_iff hn b).2 fun h ↦ hα (by rw [h, map_zero]))
-    fun β hβ ↦ ?_
-  -- `ρ` lies over `G` and fixes the constant spheres, so if the localization of `[G] × α` were
-  -- that of a class of constant spheres, it would equal that of `ρ_*([G] × α) = [G] × c_* α`.
-  -- Then `[G] × (α - c_* α)` would not live over the fundamental class, although `α - c_* α ≠ 0`.
-  have key : (fiberLocalization R (mappingSpaceEval Sphere2.north) b n).hom
-      ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom ρ)) R n).hom (o.sphereClass hn α)) =
-        (fiberLocalization R (mappingSpaceEval Sphere2.north) b n).hom (o.sphereClass hn α) := by
-    rw [← ModuleCat.comp_apply, homologyMap_comp_fiberLocalization R ρ hρ, ModuleCat.comp_apply,
-      ← hβ, ← ModuleCat.comp_apply, localHomologyMap_comp, localHomologyMap_congr R hρc]
-  refine (livesOverFundamentalClass_iff _ _ _ _).1
-    ((o.livesOverFundamentalClass_sphereClass_iff hn b).2 (sub_ne_zero.2 hα.symm)) ?_
-  rw [sphereClass_sub, ← o.homologyMap_const'_comp_mappingSpaceEval_sphereClass hn, map_sub]
-  exact sub_eq_zero.2 key.symm
+  refine isAbundantWithTwoSpheres_of_livesOverFundamentalClass_sub (α := o.sphereClass hn α)
+    ((o.livesOverFundamentalClass_sphereClass_iff hn b).2 fun h ↦ hα (by rw [h, map_zero])) ?_
+  -- The self-map `f ↦ const (f(north))` sends `[G] × α` to `[G] × c_* α`, and `α - c_* α ≠ 0`.
+  have h := (o.livesOverFundamentalClass_sphereClass_iff hn b).2 (sub_ne_zero.2 hα.symm)
+  rwa [sphereClass_sub, ← o.homologyMap_const'_comp_mappingSpaceEval_sphereClass hn] at h
 
 include o hn in
 /-- **A non-aspherical topological group is abundant with 2-spheres**
@@ -308,8 +263,6 @@ theorem isAbundantWithTwoSpheres_of_not_isAspherical [PathConnectedSpace G] (b :
   let R := ModuleCat.of ℤ (ULift.{0} ℤ)
   let Y := BasedMap Sphere2 G Sphere2.north 1
   let y₀ : Y := ⟨1, ContinuousMap.one_apply _⟩
-  let e := BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2 ⟨G, 1⟩
-    Sphere2.north
   by_cases h₂ : Subsingleton (π_ 2 G 1)
   · -- By Lemma 3.41 of the source the double loop space of `G` has a nonzero integral homology
     -- class of positive degree, to which `isAbundantWithTwoSpheres_of_ne_zero` applies.
@@ -326,21 +279,14 @@ theorem isAbundantWithTwoSpheres_of_not_isAspherical [PathConnectedSpace G] (b :
     exact o.isAbundantWithTwoSpheres_of_ne_zero hn b (Nat.pos_of_ne_zero hm₀) hα
   · -- `π₂(G) ≠ 0`, so `Map_*(S², G) ≃ₜ Ω²G` has a point `y₁` not joined to the constant
     -- sphere `1`, and the class of `y₁` is not fixed by the constant self-map at `1`.
-    have hY : ¬PathConnectedSpace Y := fun h ↦ h₂ ((pathConnectedSpace_doubleLoopSpace_iff
-      (1 : G)).1 (e.surjective.pathConnectedSpace e.continuous))
-    obtain ⟨y₁, hy₁⟩ : ∃ y₁ : Y, ¬Joined y₀ y₁ := by
-      by_contra! h
-      exact hY ⟨⟨y₀⟩, fun x y ↦ ((h x).symm.trans (h y))⟩
+    have := not_subsingleton_iff_nontrivial.1 h₂
+    obtain ⟨y₁, hy₁⟩ := exists_not_joined_of_nontrivial_homotopyGroup_two (1 : G) y₀
     have hr : (ULift.up 1 : R) ≠ 0 := fun h ↦ one_ne_zero (congrArg ULift.down h)
     refine o.isAbundantWithTwoSpheres_of_homologyMap_const_ne hn b
       (α := (singularHomology₀Section R (X := TopCat.of Y) y₁).hom (ULift.up 1)) ?_
-    intro h
-    -- `c_* [y₁] = [c y₁] = [1]`, so `h` says that `[1] = [y₁]`.
-    have hc := congrArg (fun φ ↦ φ.hom (ULift.up 1 : R))
-      (singularHomology₀Section_naturality R (TopCat.ofHom (ContinuousMap.const Y y₀)) y₁)
-    rw [ModuleCat.hom_comp, LinearMap.comp_apply, singularHomologyFunctor_obj_map] at hc
-    simp only [TopCat.hom_ofHom, ContinuousMap.const_apply] at hc
-    exact hy₁ ((singularHomology₀Section_apply_eq_iff hr).1 (hc.symm.trans h))
+    -- `c_* [y₁] = [c y₁] = [1]`, so the hypothesis says that `[1] = [y₁]`.
+    rw [homologyMap_singularHomology₀Section_apply]
+    exact fun h ↦ hy₁ ((singularHomology₀Section_apply_eq_iff hr).1 h.symm)
 
 end HomologicalOrientation
 

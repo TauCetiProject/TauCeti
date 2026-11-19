@@ -40,7 +40,9 @@ of `ι` other than the one of the point (`TauCeti.reducedSingularHomology₀IsoO
 A morphism out of zeroth homology is determined by its values on the classes of points
 (`TauCeti.singularHomology₀_hom_ext`), and any family of values on the classes of points that is
 constant along paths is attained by such a morphism (`TauCeti.singularHomology₀Desc`,
-`TauCeti.singularHomology₀Section_singularHomology₀Desc`). Points joined by a path have the same
+`TauCeti.singularHomology₀Section_singularHomology₀Desc`). A continuous map sends the class of a
+point to that of its image (`TauCeti.singularHomology₀Section_naturality`,
+`TauCeti.homologyMap_singularHomology₀Section_apply`). Points joined by a path have the same
 class (`TauCeti.singularHomology₀Section_eq_of_joined`), and with coefficients in a module the
 converse holds on every nonzero coefficient
 (`TauCeti.singularHomology₀Section_apply_eq_iff`). More precisely, no scalar that does not kill a
@@ -147,6 +149,14 @@ lemma singularHomology₀Section_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (x 
     (TopCat.toSSetObj₀Equiv.symm x)).trans
       (congrArg (SSet.ιHomology₀ R) (TopCat.toSSet_map_app_toSSetObj₀Equiv_symm f x))
 
+/-- With coefficients in a module, a continuous map sends the class of a point on a coefficient
+`r` to the class of its image on `r`. -/
+theorem homologyMap_singularHomology₀Section_apply {k : Type v} [Ring k] {M : ModuleCat.{w} k}
+    {X Y : TopCat.{w}} (f : X ⟶ Y) (x : X) (r : M) :
+    (SSet.homologyMap (TopCat.toSSet.map f) M 0).hom ((singularHomology₀Section M x).hom r) =
+      (singularHomology₀Section M (f x)).hom r :=
+  ConcreteCategory.congr_hom (singularHomology₀Section_naturality M f x) r
+
 /-- Mathlib's identification of zeroth homology with the coproduct over path components sends the
 class of a point to the coproduct inclusion indexed by its path component. -/
 @[reassoc (attr := simp)]
@@ -225,7 +235,7 @@ instance isIso_singularHomology₀UnitsSmul {K : Type*} [Semiring K] [Linear K C
 
 /-- With coefficients in a module, the difference of the classes of two points that are not joined
 by a path is not killed by any scalar `c` that does not kill the coefficient `r`: the classes of
-the points of different path components are linearly independent. -/
+`r` at points of different path components do not cancel under such a scalar. -/
 theorem smul_sub_singularHomology₀Section_apply_ne_zero {k : Type v} [Ring k]
     {M : ModuleCat.{w} k} {X : TopCat.{w}} {x y : X} (hxy : ¬Joined x y) {c : k} {r : M}
     (hr : c • r ≠ 0) :
