@@ -148,6 +148,11 @@ theorem smoothingSeries_spec (a : ℕ) (ha : IsUnit (a : R)) :
   linear_combination (X * mk fun n ↦ coeff (n + 1) (cyclotomicSeries a : R⟦X⟧)) *
     (isUnit_cyclotomicSeries_iff.2 ha).mul_val_inv
 
+/-- Without the factor `X`: `f_a F_a` is the quotient `∑ₙ f_a[n + 1] Xⁿ` of `f_a - a` by `X`. -/
+theorem cyclotomicSeries_mul_smoothingSeries (a : ℕ) (ha : IsUnit (a : R)) :
+    cyclotomicSeries a * smoothingSeries a ha = mk fun n ↦ coeff (n + 1) (cyclotomicSeries a) := by
+  rw [smoothingSeries, mul_left_comm, (isUnit_cyclotomicSeries_iff.2 ha).mul_val_inv, mul_one]
+
 /-- The smoothing series is the unique solution `F` of `X f_a F = f_a - a`. -/
 theorem eq_smoothingSeries_iff {a : ℕ} (ha : IsUnit (a : R)) {F : R⟦X⟧} :
     F = smoothingSeries a ha ↔ X * cyclotomicSeries a * F = cyclotomicSeries a - C (a : R) := by
@@ -184,8 +189,8 @@ theorem constantCoeff_smoothingSeries_of_isUnit_two (a : ℕ) (ha : IsUnit (a : 
 
 /-- The smoothing series commutes with every change of coefficients. -/
 @[simp]
-theorem map_smoothingSeries (f : R →+* S) {a : ℕ} (ha : IsUnit (a : R)) (hb : IsUnit (a : S)) :
-    map f (smoothingSeries a ha) = smoothingSeries a hb := by
+theorem map_smoothingSeries (f : R →+* S) {a : ℕ} (ha : IsUnit (a : R)) :
+    map f (smoothingSeries a ha) = smoothingSeries a (by simpa using ha.map f) := by
   rw [eq_smoothingSeries_iff]
   simpa using congrArg (map f) (smoothingSeries_spec a ha)
 
