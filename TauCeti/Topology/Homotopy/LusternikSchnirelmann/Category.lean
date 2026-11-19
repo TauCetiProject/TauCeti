@@ -121,6 +121,7 @@ theorem normalizedLSCategory_of_discreteTopology [DiscreteTopology X] :
 /-- **Normalized category is not additive.** For nonempty `X` and `Y`, the normalized category of
 `X ⊕ Y` is one more than the sum of the normalized categories of `X` and `Y`, because each summand
 needs its own categorical open sets while the normalization subtracts one only once. -/
+@[simp]
 theorem normalizedLSCategory_sum [Nonempty X] [Nonempty Y] :
     normalizedLSCategory (X ⊕ Y) = normalizedLSCategory X + normalizedLSCategory Y + 1 := by
   rw [normalizedLSCategory_def, lsCategoryCount_univ_sum,
