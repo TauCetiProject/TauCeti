@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.Topology.UrysohnsLemma
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # Continuity sets and compact sets under vague convergence
@@ -28,7 +29,8 @@ Both reduce to the portmanteau theorem for finite measures: weighting by a nonne
 supported continuous function `χ` turns vague convergence into weak convergence of the finite
 measures `χ μs i`
 (`MeasureTheory.Measure.tendsto_withDensity_ofReal_of_tendsto_integral_compactlySupported`), and
-these agree with `μs i` on the set when `χ` is a cutoff equal to one there.
+these agree with `μs i` on the set when `χ` is a cutoff equal to one there
+(`MeasureTheory.withDensity_apply_eq_self_of_eqOn_one`).
 
 ## References
 
@@ -70,17 +72,6 @@ theorem tendsto_withDensity_ofReal_of_tendsto_integral_compactlySupported
   simpa only [FiniteMeasure.toMeasure_mk, hint, g, CompactlySupportedContinuousMap.coe_mk,
     ContinuousMap.mul_apply, BoundedContinuousFunction.coe_toContinuousMap] using h g
 
-omit [BorelSpace X] [T2Space X] [LocallyCompactSpace X] [HasOuterApproxClosed X] in
-/-- A cutoff equal to one on `s` does not change the mass of `s`. -/
-private lemma withDensity_ofReal_apply_eq (χ : C(X, ℝ)) {s : Set X} (hs : MeasurableSet s)
-    (hχs : EqOn χ 1 s) (ρ : Measure X) :
-    ρ.withDensity (fun x ↦ ENNReal.ofReal (χ x)) s = ρ s := by
-  rw [withDensity_apply _ hs]
-  calc
-    ∫⁻ x in s, ENNReal.ofReal (χ x) ∂ρ = ∫⁻ _ in s, 1 ∂ρ :=
-      setLIntegral_congr_fun hs fun x hx ↦ by simp [hχs hx]
-    _ = ρ s := by simp
-
 /-- Vague convergence implies convergence on relatively compact measurable sets whose
 boundary has zero limit mass. The measures need not have finite total mass. -/
 theorem tendsto_measure_of_null_frontier_of_tendsto_integral_compactlySupported
@@ -90,8 +81,9 @@ theorem tendsto_measure_of_null_frontier_of_tendsto_integral_compactlySupported
     Tendsto (fun i ↦ μs i s) l (𝓝 (μ s)) := by
   obtain ⟨χ, hχone, hχcomp, -, hχrange⟩ :=
     exists_continuousMap_one_of_isCompact_subset_isOpen hsc isOpen_univ (subset_univ _)
-  have hχs : EqOn χ 1 s := hχone.mono subset_closure
-  simpa only [FiniteMeasure.toMeasure_mk, withDensity_ofReal_apply_eq χ hs hχs] using
+  have hχs : EqOn (fun x ↦ ENNReal.ofReal (χ x)) 1 s := fun x hx ↦ by
+    simp [hχone (subset_closure hx)]
+  simpa only [FiniteMeasure.toMeasure_mk, withDensity_apply_eq_self_of_eqOn_one hs hχs] using
     FiniteMeasure.tendsto_measure_of_null_frontier_of_tendsto
       (tendsto_withDensity_ofReal_of_tendsto_integral_compactlySupported h χ hχcomp
         fun x ↦ (hχrange x).1)
@@ -106,8 +98,9 @@ theorem limsup_measure_le_of_tendsto_integral_compactlySupported
     limsup (fun i ↦ μs i K) l ≤ μ K := by
   obtain ⟨χ, hχone, hχcomp, -, hχrange⟩ :=
     exists_continuousMap_one_of_isCompact_subset_isOpen hK isOpen_univ (subset_univ _)
+  have hχK : EqOn (fun x ↦ ENNReal.ofReal (χ x)) 1 K := fun x hx ↦ by simp [hχone hx]
   simpa only [FiniteMeasure.toMeasure_mk,
-    withDensity_ofReal_apply_eq χ hK.isClosed.measurableSet hχone] using
+    withDensity_apply_eq_self_of_eqOn_one hK.isClosed.measurableSet hχK] using
     FiniteMeasure.limsup_measure_closed_le_of_tendsto
       (tendsto_withDensity_ofReal_of_tendsto_integral_compactlySupported h χ hχcomp
         fun x ↦ (hχrange x).1) hK.isClosed

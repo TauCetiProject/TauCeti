@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Hausdorff
 public import Mathlib.Topology.MetricSpace.Closeds
 import Mathlib.MeasureTheory.Measure.Portmanteau
 import TauCeti.MeasureTheory.Covering.HausdorffDensity
+import TauCeti.MeasureTheory.Measure.LowerDensity
 import TauCeti.Topology.MetricSpace.Closeds
 
 /-!
@@ -25,8 +26,9 @@ eventually within `ρ - ρ'` of some point `y ∈ Z i`, so `closedBall y ρ' ⊆
 portmanteau theorem bounds the limit superior of the masses of the closed set `closedBall x ρ` by
 its mass for `ν`; finally `ρ' → ρ`. This argument, with the limit superior bound on the ball as a
 hypothesis and only the points of `Z i` near `x` used, is
-`MeasureTheory.Measure.le_measure_closedBall_of_limsup_le`; it also serves for vague limits of
-locally finite measures.
+`MeasureTheory.Measure.le_measure_closedBall_of_limsup_le` in
+`TauCeti.MeasureTheory.Measure.LowerDensity`; it also serves for vague limits of locally finite
+measures.
 
 Combined with the density comparison for Hausdorff measure
 (`MeasureTheory.Measure.mul_hausdorffMeasure_le_measure_of_isOpen`), this bounds the
@@ -51,45 +53,6 @@ public section
 
 open Filter Metric Set TopologicalSpace Topology
 open scoped ENNReal
-
-namespace MeasureTheory.Measure
-
-variable {X ι : Type*} [MetricSpace X] [MeasurableSpace X]
-
-/-- **Lower density bounds pass to limits.** Let `h i → 0` along a nontrivial filter, and let `x`
-be a limit of points of `Z i`: for every `ε > 0`, eventually some point of `Z i` lies within `ε`
-of `x`. Suppose that, for some neighbourhood `U` of `x`, eventually
-`c ρ ^ d ≤ μs i (closedBall y ρ)` for every `y ∈ Z i ∩ U` and every radius `h i ≤ ρ ≤ ρ₀`. If
-`0 < ρ ≤ ρ₀` and the limit superior of `μs i (closedBall x ρ)` is at most `μ (closedBall x ρ)`,
-then `c ρ ^ d ≤ μ (closedBall x ρ)`. -/
-theorem le_measure_closedBall_of_limsup_le {l : Filter ι} [l.NeBot] {μs : ι → Measure X}
-    {μ : Measure X} {Z : ι → Set X} {h : ι → ℝ} {d : ℕ} {x : X}
-    (hx : ∀ ε > 0, ∀ᶠ i in l, ∃ y ∈ Z i, dist y x < ε) (hh : Tendsto h l (𝓝 0))
-    {U : Set X} (hU : U ∈ 𝓝 x) {c ρ₀ : ℝ}
-    (hdens : ∀ᶠ i in l, ∀ y ∈ Z i ∩ U, ∀ ρ, h i ≤ ρ → ρ ≤ ρ₀ →
-      ENNReal.ofReal (c * ρ ^ d) ≤ μs i (closedBall y ρ))
-    {ρ : ℝ} (hρ : 0 < ρ) (hρρ₀ : ρ ≤ ρ₀)
-    (hlimsup : limsup (fun i ↦ μs i (closedBall x ρ)) l ≤ μ (closedBall x ρ)) :
-    ENNReal.ofReal (c * ρ ^ d) ≤ μ (closedBall x ρ) := by
-  obtain ⟨δ, hδ, hδU⟩ := Metric.mem_nhds_iff.1 hU
-  -- It suffices to prove the bound with `c ρ' ^ d` for every `ρ' ∈ (0, ρ)`, and let `ρ' → ρ`.
-  have hcont : Tendsto (fun ρ' : ℝ ↦ ENNReal.ofReal (c * ρ' ^ d)) (𝓝[<] ρ)
-      (𝓝 (ENNReal.ofReal (c * ρ ^ d))) :=
-    ((ENNReal.continuous_ofReal.comp (continuous_const.mul (continuous_pow d))).tendsto ρ).mono_left
-      nhdsWithin_le_nhds
-  refine le_of_tendsto hcont ?_
-  filter_upwards [Ioo_mem_nhdsLT hρ] with ρ' hρ'
-  -- Eventually some `y ∈ Z i ∩ U` has `closedBall y ρ' ⊆ closedBall x ρ`, and `h i ≤ ρ'`.
-  have hev : ∀ᶠ i in l, ENNReal.ofReal (c * ρ' ^ d) ≤ μs i (closedBall x ρ) := by
-    filter_upwards [hdens, hx (min (ρ - ρ') δ) (lt_min (sub_pos.2 hρ'.2) hδ),
-      hh.eventually (gt_mem_nhds hρ'.1)] with i hi ⟨y, hy, hyx⟩ hhi
-    refine (hi y ⟨hy, hδU (mem_ball.2 (hyx.trans_le (min_le_right _ _)))⟩ ρ' hhi.le
-      (hρ'.2.le.trans hρρ₀)).trans (measure_mono fun z hz ↦ ?_)
-    rw [mem_closedBall] at hz ⊢
-    linarith [dist_triangle z y x, min_le_left (ρ - ρ') δ]
-  exact (le_limsup_of_frequently_le hev.frequently).trans hlimsup
-
-end MeasureTheory.Measure
 
 namespace MeasureTheory.FiniteMeasure
 

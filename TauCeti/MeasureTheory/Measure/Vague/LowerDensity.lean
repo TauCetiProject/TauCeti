@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Vague
 public import Mathlib.Topology.MetricSpace.ProperSpace
-import TauCeti.MeasureTheory.Measure.FiniteMeasure.LowerDensity
+import TauCeti.MeasureTheory.Measure.LowerDensity
 
 /-!
 # Lower density bounds in vague limits of locally finite measures
