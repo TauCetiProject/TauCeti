@@ -161,12 +161,10 @@ private theorem hasFDerivWithinAt_comp_extChartAt_symm
   ext v
   have hchain : fderivWithin ℝ (f ∘ c.symm) (range I) y v =
       mvfderiv I f (c.symm y) (mfderivWithin 𝓘(ℝ, E) I c.symm (range I) y v) := by
-    have hfd : fderivWithin ℝ (f ∘ c.symm) (range I) y v =
-        mfderivWithin 𝓘(ℝ, E) 𝓘(ℝ, V) (f ∘ c.symm) (range I) y v := by
-      rw [mfderivWithin_eq_fderivWithin]
-      rfl
-    rw [hfd, hd]
-    rfl
+    rw [mvfderiv_apply_eq_mfderiv_apply]
+    -- `mfderivWithin` between normed spaces with their self models is `fderivWithin`, up to the
+    -- tangent-space synonyms.
+    exact DFunLike.congr_fun (mfderivWithin_eq_fderivWithin.symm.trans hd) v
   rw [hchain, spatialCLM_inChartAt_apply B x₁ p₁ hp hy]
   exact (hfB (c.symm y) (mfderivWithin 𝓘(ℝ, E) I c.symm (range I) y v)).symm
 
