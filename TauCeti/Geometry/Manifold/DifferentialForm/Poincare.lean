@@ -7,6 +7,7 @@ module
 
 import TauCeti.Analysis.Calculus.DifferentialForm.Poincare
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Family
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Vertical
@@ -68,16 +69,6 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {k : ℕ}
 
-/-- A ball about the chart point of `x`, intersected with the model range, lies in the chart
-target and over any prescribed neighbourhood of `x`. -/
-private theorem exists_ball_inter_range_subset {x : M} {S : Set M} (hS : S ∈ 𝓝 x) :
-    ∃ ε > 0, ball (extChartAt I x x) ε ∩ range I ⊆
-      (extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' S := by
-  rw [← Metric.mem_nhdsWithin_iff]
-  refine inter_mem (extChartAt_target_mem_nhdsWithin x) ?_
-  rw [← map_extChartAt_symm_nhdsWithin_range (I := I) x] at hS
-  exact hS
-
 /-- A form which is closed over a ball about the chart point of `x`, intersected with the model
 range, has a flat primitive there in the chart at `x`: the Poincaré homotopy operator centred at
 the chart point of `x` of its coordinate expression. It is as smooth as the form and vanishes at
@@ -95,8 +86,7 @@ private theorem poincareHomotopy_inChartAt [IsManifold I ∞ M] {r : ℕ∞} (hr
     IsManifold.of_le (n := ∞) (by exact_mod_cast le_top)
   have hφ₁ : IsSmoothForm I 1 φ :=
     hφ.of_le (by exact_mod_cast hr)
-  have hxs : extChartAt I x x ∈ ball (extChartAt I x x) ε ∩ range I :=
-    ⟨mem_ball_self hε, extChartAt_target_subset_range x (mem_extChartAt_target x)⟩
+  obtain ⟨hconv, hsu, hxs⟩ := convex_uniqueDiffOn_ball_inter_range_extChartAt (I := I) x hε
   have hω : ContDiffOn ℝ r (φ.inChartAt x) (ball (extChartAt I x x) ε ∩ range I) :=
     fun z hz ↦ (φ.contDiffWithinAt_inChartAt_of_contDiffWithinAt_inChartAt (hsub hz).1
       (mem_extChartAt_source _) (hφ.contDiffWithinAt_inChartAt_self _)).mono inter_subset_right
@@ -110,11 +100,6 @@ private theorem poincareHomotopy_inChartAt [IsManifold I ∞ M] {r : ℕ∞} (hr
     ext v
     rw [RoughForm.inChartAt_apply, show mextDeriv φ ((extChartAt I x).symm z) = 0 from (hsub hz).2]
     simp only [ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
-  have hsu : UniqueDiffOn ℝ (ball (extChartAt I x x) ε ∩ range I) := by
-    rw [inter_comm]
-    exact I.uniqueDiffOn.inter isOpen_ball
-  have hconv : Convex ℝ (ball (extChartAt I x x) ε ∩ range I) :=
-    (convex_ball _ _).inter I.convex_range
   exact ⟨hconv.contDiffOn_poincareHomotopy hsu hxs hω, fun z hz ↦
     hconv.extDerivWithin_poincareHomotopy hsu hxs (hω.of_le (by exact_mod_cast hr)) hcl hz⟩
 
@@ -170,7 +155,7 @@ theorem exists_mextDeriv_eq_nhds [FiniteDimensional ℝ E] [T2Space M] [IsManifo
     ∃ U ∈ 𝓝 x, ∃ ψ : RoughForm I M F k, IsSmoothForm I r ψ ∧ ∀ y ∈ U, mextDeriv ψ y = φ y := by
   have : IsManifold I ((r : WithTop ℕ∞) + 1) M :=
     IsManifold.of_le (n := ∞) (by exact_mod_cast le_top)
-  obtain ⟨ε, hε, hsub⟩ := exists_ball_inter_range_subset (I := I) hclosed
+  obtain ⟨ε, hε, hsub⟩ := exists_ball_inter_range_subset_extChartAt (I := I) hclosed
   obtain ⟨hα, hdα⟩ := poincareHomotopy_inChartAt hr hφ hε hsub
   obtain ⟨χ, -, hχu⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.mp
     ((isOpen_extChartAt_preimage x (isOpen_ball (x := extChartAt I x x) (ε := ε))).mem_nhds
@@ -201,33 +186,20 @@ private theorem contMDiffAt_verticalForm_mpullback_extChartAt [IsManifold I ∞ 
     ContMDiffAt (J.prod I) ((J.prod I).prod 𝓘(ℝ, (EN × E) [⋀^Fin k]→L[ℝ] F)) r
       (fun z ↦ TotalSpace.mk' ((EN × E) [⋀^Fin k]→L[ℝ] F) z (verticalForm J (fun p ↦
         mpullback I 𝓘(ℝ, E) (extChartAt I x) (K p : RoughForm 𝓘(ℝ, E) E F k)) z)) z := by
-  have : IsManifold (J.prod I) ((r : WithTop ℕ∞) + 1) (N × M) :=
+  have : IsManifold I ((r : WithTop ℕ∞) + 1) M :=
+    IsManifold.of_le (n := ∞) (by exact_mod_cast le_top)
+  have : IsManifold J ((r : WithTop ℕ∞) + 1) N :=
     IsManifold.of_le (n := ∞) (by exact_mod_cast le_top)
   have hz : z ∈ (extChartAt (J.prod I) (z.1, x)).source := by
     rw [extChartAt_prod, PartialEquiv.prod_source]
     exact ⟨mem_extChartAt_source _, hzs⟩
-  have hK' := hK z.1 _ hzb
-  rw [← ModelWithCorners.range_prod] at hK'
-  have hX₀ : extChartAt (J.prod I) (z.1, x) z = (extChartAt J z.1 z.1, extChartAt I x z.2) :=
-    extChartAt_prod_apply _ _
-  -- In the product chart at `(z.1, x)` the coordinate expression of the vertical form is that of
-  -- `K`, precomposed with the second projection.
-  refine (contMDiffAt_form_of_contDiffWithinAt_inChartAt hz ?_)
-  rw [hX₀]
-  refine ((ContinuousAlternatingMap.compContinuousLinearMapCLM
-    (ContinuousLinearMap.snd ℝ EN E)).contDiff.comp_contDiffWithinAt
-      hK').congr_of_eventuallyEq_of_mem ?_
-    (hX₀ ▸ extChartAt_target_subset_range _ ((extChartAt (J.prod I) (z.1, x)).map_source hz))
-  rw [← hX₀]
-  filter_upwards [extChartAt_target_mem_nhdsWithin' hz] with X hX
-  have hX₂ : X.2 ∈ (extChartAt I x).target := by
-    rw [extChartAt_prod, PartialEquiv.prod_target] at hX
-    exact hX.2
-  rw [verticalForm_inChartAt _ _ hX]
-  dsimp only
-  rw [RoughForm.inChartAt_mpullback_extChartAt
-    (K ((extChartAt J z.1).symm X.1) : RoughForm 𝓘(ℝ, E) E F k) x hX₂]
-  exact (ContinuousAlternatingMap.compContinuousLinearMapCLM_apply _ _).symm
+  -- In the chart at `x` the coordinate expression of the pullback of `K p` is `K p`.
+  refine contMDiffAt_verticalForm hz ((hK z.1 _ hzb).congr_of_eventuallyEq_of_mem ?_
+    ⟨extChartAt_target_subset_range _ (mem_extChartAt_target _), hzb.2⟩)
+  rw [nhdsWithin_prod_eq]
+  filter_upwards [prod_mem_prod self_mem_nhdsWithin (extChartAt_target_mem_nhdsWithin' hzs)]
+    with X hX
+  exact RoughForm.inChartAt_mpullback_extChartAt _ x hX.2
 
 omit [CompleteSpace F] in
 /-- A family `K p` of flat forms over a ball about the chart point of `x`, intersected with the
@@ -243,7 +215,7 @@ private theorem isSmoothForm_verticalForm_smul_mpullback_extChartAt [IsManifold 
     (hχu : tsupport χ ⊆ (chartAt H x).source ∩ extChartAt I x ⁻¹' ball (extChartAt I x x) ε) :
     IsSmoothForm (J.prod I) r (verticalForm J fun p y ↦
       χ y • mpullback I 𝓘(ℝ, E) (extChartAt I x) (K p : RoughForm 𝓘(ℝ, E) E F k) y) := by
-  rw [isSmoothForm_def, verticalForm_smul]
+  rw [isSmoothForm_def, verticalForm_fun_smul]
   -- The uncut vertical form is `C^r` over the chart domain, which contains the support of the
   -- cutoff.
   exact (hχ.comp contMDiff_snd).contMDiffOn.smul_section_of_tsupport
@@ -272,14 +244,9 @@ private theorem contDiffWithinAt_poincareHomotopy_inChartAt_mpullback_prodMk [Is
     IsManifold.of_le (n := ∞) (by exact_mod_cast le_top)
   obtain ⟨t, hts, htu, htc, htn, -, -⟩ := exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt
     (I := J) p₀
+  obtain ⟨hs, hsu, hc⟩ :=
+    convex_uniqueDiffOn_ball_inter_range_extChartAt (I := I) x (pos_of_mem_ball hw.1)
   set s := ball (extChartAt I x x) ε ∩ range I
-  have hs : Convex ℝ s := (convex_ball _ _).inter I.convex_range
-  have hsu : UniqueDiffOn ℝ s := by
-    rw [show s = range I ∩ ball (extChartAt I x x) ε from inter_comm _ _]
-    exact I.uniqueDiffOn.inter isOpen_ball
-  have hc : extChartAt I x x ∈ s :=
-    ⟨mem_ball_self (pos_of_mem_ball hw.1),
-      extChartAt_target_subset_range x (mem_extChartAt_target x)⟩
   -- The coordinate expressions of the slices are jointly `C^r` on the product chart target.
   have hω : ContDiffOn ℝ r (Function.uncurry fun (q : EN) (z : E) ↦
       (mpullback I (J.prod I) (Prod.mk ((extChartAt J p₀).symm q)) φ).inChartAt x z) (t ×ˢ s) :=
@@ -300,9 +267,7 @@ closed near `x` uniformly in `p`. Then there are a neighbourhood `U` of `x` and 
 forms on `M`, jointly `C^r` in the sense that its vertical form on `N × M` is `C^r`, such that
 `d (σ p) = ι_p^* φ` on `U` and `σ p` vanishes at `x`, for every `p`.
 
-The parameter manifold `N` is arbitrary, and `M` may have boundary or corners. Each `σ p` is the
-Poincaré homotopy operator, centred at the chart point of `x`, of the coordinate expression of
-`ι_p^* φ`, pulled back along the chart and cut off by one bump function for all `p`. -/
+The parameter manifold `N` is arbitrary, and `M` may have boundary or corners. -/
 theorem exists_mextDeriv_eq_mpullback_prodMk_nhds [FiniteDimensional ℝ E] [T2Space M]
     [IsManifold I ∞ M] [IsManifold J ∞ N] {r : ℕ∞} (hr : 1 ≤ r)
     {φ : RoughForm (J.prod I) (N × M) F (k + 1)} (hφ : IsSmoothForm (J.prod I) r φ) {x : M}
@@ -314,7 +279,7 @@ theorem exists_mextDeriv_eq_mpullback_prodMk_nhds [FiniteDimensional ℝ E] [T2S
     IsManifold.of_le (n := ∞) (by exact_mod_cast le_top)
   have : IsManifold J ((r : WithTop ℕ∞) + 1) N :=
     IsManifold.of_le (n := ∞) (by exact_mod_cast le_top)
-  obtain ⟨ε, hε, hsub⟩ := exists_ball_inter_range_subset (I := I) hclosed
+  obtain ⟨ε, hε, hsub⟩ := exists_ball_inter_range_subset_extChartAt (I := I) hclosed
   -- The slices are `C^r`, and over the ball each has the flat primitive `K p`.
   have hslice (p : N) : IsSmoothForm I r (mpullback I (J.prod I) (Prod.mk p) φ) :=
     hφ.mpullback ((contMDiff_const.prodMk contMDiff_id).of_le le_top)
@@ -322,6 +287,7 @@ theorem exists_mextDeriv_eq_mpullback_prodMk_nhds [FiniteDimensional ℝ E] [T2S
     ⟨(hsub hz).1, (hsub hz).2 p⟩
   set K : N → E → E [⋀^Fin k]→L[ℝ] F := fun p ↦ poincareHomotopy (extChartAt I x x)
     ((mpullback I (J.prod I) (Prod.mk p) φ).inChartAt x)
+  -- Each `σ p` is `K p` pulled back along the chart and cut off by one bump function for all `p`.
   obtain ⟨χ, -, hχu⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.mp
     ((isOpen_extChartAt_preimage x (isOpen_ball (x := extChartAt I x x) (ε := ε))).mem_nhds
       ⟨mem_chart_source H x, mem_ball_self hε⟩)

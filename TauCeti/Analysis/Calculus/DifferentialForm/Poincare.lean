@@ -440,18 +440,38 @@ theorem poincareHomotopy_pullback_apply {E' : Type*} [NormedAddCommGroup E']
     ← ContinuousLinearMap.intervalIntegral_comp_comm _ (intervalIntegrable_integrand hω)]
   simp [hline]
 
-/-- The integrand of the homotopy operator is as smooth as the form, on the open set of pairs
-`(x, t)` with `x₀ + t (x - x₀) ∈ s`. -/
+/-- The integrand of the homotopy operator of a family of forms `ω q` is as smooth as the family,
+jointly in the parameter `q`, the point `x` and the time `t`, on the set of triples with
+`(q, x₀ + t (x - x₀)) ∈ W`. -/
+private theorem contDiffOn_uncurry_integrand {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] {x₀ : E} {W : Set (P × E)} {ω : P → E → E [⋀^Fin (n + 1)]→L[ℝ] F}
+    {r : WithTop ℕ∞} (hω : ContDiffOn ℝ r (Function.uncurry ω) W) :
+    ContDiffOn ℝ r (fun p : (P × E) × ℝ ↦ (ω p.1.1 (lineMap x₀ p.1.2 p.2)).curryLeft (p.1.2 - x₀))
+      {p : (P × E) × ℝ | (p.1.1, lineMap x₀ p.1.2 p.2) ∈ W} := by
+  have hcomp : ContDiffOn ℝ r (fun p : (P × E) × ℝ ↦ ω p.1.1 (lineMap x₀ p.1.2 p.2))
+      {p : (P × E) × ℝ | (p.1.1, lineMap x₀ p.1.2 p.2) ∈ W} :=
+    hω.comp ((contDiff_fst.comp contDiff_fst).prodMk
+      (contDiff_const.lineMap (contDiff_snd.comp contDiff_fst) contDiff_snd)).contDiffOn
+      fun _ hp ↦ hp
+  exact (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
+    (n := n)).toContinuousLinearMap.contDiff.comp_contDiffOn hcomp |>.clm_apply
+      (((contDiff_snd.comp contDiff_fst).sub contDiff_const).contDiffOn)
+
+/-- The integrand of the homotopy operator is as smooth as the form, on the set of pairs
+`(x, t)` with `x₀ + t (x - x₀) ∈ s`. This is the constant family case of
+`contDiffOn_uncurry_integrand`. -/
 private theorem contDiffOn_integrand {x₀ : E} {s : Set E} {ω : E → E [⋀^Fin (n + 1)]→L[ℝ] F}
     {r : WithTop ℕ∞} (hω : ContDiffOn ℝ r ω s) :
     ContDiffOn ℝ r (fun p : E × ℝ ↦ (ω (lineMap x₀ p.1 p.2)).curryLeft (p.1 - x₀))
       {p : E × ℝ | lineMap x₀ p.1 p.2 ∈ s} := by
-  have hcomp : ContDiffOn ℝ r (fun p : E × ℝ ↦ ω (lineMap x₀ p.1 p.2))
-      {p : E × ℝ | lineMap x₀ p.1 p.2 ∈ s} :=
-    hω.comp (contDiff_const.lineMap contDiff_fst contDiff_snd).contDiffOn fun _ hp ↦ hp
-  exact (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
-    (n := n)).toContinuousLinearMap.contDiff.comp_contDiffOn hcomp |>.clm_apply
-      ((contDiff_fst.sub contDiff_const).contDiffOn)
+  have hω' : ContDiffOn ℝ r (Function.uncurry fun _ : ℝ ↦ ω) (univ ×ˢ s) :=
+    hω.comp contDiff_snd.contDiffOn fun _ hp ↦ hp.2
+  have hg : ContDiff ℝ r fun p : E × ℝ ↦ (((0 : ℝ), p.1), p.2) :=
+    (contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd
+  -- Elaborated before matching the goal: unifying the composite with the goal directly is slow.
+  have h := (contDiffOn_uncurry_integrand (x₀ := x₀) hω').comp hg.contDiffOn
+    (s := {p : E × ℝ | lineMap x₀ p.1 p.2 ∈ s}) fun _ hp ↦ ⟨mem_univ _, hp⟩
+  exact h
 
 /-- The partial derivative in `x` of the integrand of the homotopy operator at a parameter `t`,
 within a set `u` that `x' ↦ x₀ + t (x' - x₀)` maps into a set `v` on which `ω` has derivative
@@ -742,18 +762,10 @@ theorem contDiffOn_uncurry_poincareHomotopy {P : Type*} [NormedAddCommGroup P] [
   have hpow : Integrable (fun t : I ↦ (t : ℝ) ^ n) volume :=
     (continuous_subtype_val.pow n).integrable_of_hasCompactSupport (.of_compactSpace _)
   -- The integrand, as a function of the parameter, the point and the time.
-  have hcomp : ContDiffOn ℝ r (fun p : (P × E) × ℝ ↦ ω p.1.1 (lineMap x₀ p.1.2 p.2))
-      ((t ×ˢ s) ×ˢ Icc 0 1) :=
-    hω.comp (contDiff_fst.comp contDiff_fst |>.prodMk
-      (contDiff_const.lineMap (contDiff_snd.comp contDiff_fst) contDiff_snd)).contDiffOn
-      fun p hp ↦ ⟨hp.1.1, (hs.starConvex hx₀).segment_subset hp.1.2
-        (lineMap_mem_segment ℝ x₀ p.1.2 hp.2)⟩
   have hint : ContDiffOn ℝ r
       (fun p : (P × E) × ℝ ↦ (ω p.1.1 (lineMap x₀ p.1.2 p.2)).curryLeft (p.1.2 - x₀))
-      ((t ×ˢ s) ×ˢ Icc 0 1) :=
-    (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
-      (n := n)).toContinuousLinearMap.contDiff.comp_contDiffOn hcomp |>.clm_apply
-        ((contDiff_snd.comp contDiff_fst).sub contDiff_const).contDiffOn
+      ((t ×ˢ s) ×ˢ Icc 0 1) := (contDiffOn_uncurry_integrand (x₀ := x₀) hω).mono fun p hp ↦
+    ⟨hp.1.1, (hs.starConvex hx₀).segment_subset hp.1.2 (lineMap_mem_segment ℝ x₀ p.1.2 hp.2)⟩
   refine ((ht.prod hs).contDiffOn_integral_smul_of_contDiffOn (μ := (volume : Measure I)) hpow
     continuous_subtype_val (htu.prod hsu) ((htu.prod hsu).prod uniqueDiffOn_Icc_zero_one) hint
     fun x hx τ ↦ ⟨hx, τ.2⟩).congr fun x _ ↦ ?_
