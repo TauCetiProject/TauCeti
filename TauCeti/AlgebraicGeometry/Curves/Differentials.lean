@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Curves.HighDegree
 public import TauCeti.AlgebraicGeometry.Curves.Smooth
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Canonical
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Rank
 public import TauCeti.AlgebraicGeometry.Morphisms.Separated
-public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyIntegral
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRoch.GeometricallyIntegral
 
 /-!
@@ -80,17 +80,16 @@ private lemma of_canonicalCurve {P : Prop}
       IsFunctionField k X.functionField → IsIntegrallyClosedIn k X.functionField →
         (∀ y : X, coheight y ≤ 1) → ValuativeCriterion.Existence (X ↘ Spec (.of k)) → P) :
     P := by
+  obtain ⟨hI, hDVR, hcoheight, hF, hk⟩ :=
+    InvertibleSheaf.high_degree_hypotheses_of_smooth (k := k) (X := X)
+  have := hI
+  have := hDVR
   have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of k))
-  have := GeometricallyIntegral.isIntegral_of_subsingleton (X ↘ Spec (.of k))
   have := Scheme.IsCurveOver.of_smooth k X
   have := Scheme.IsCurveOver.isNoetherian k X
   have := Scheme.IsSeparated.of_isSeparated (X ↘ Spec (.of k))
-  have := isDiscreteValuationRing_stalk_of_smooth k (X := X)
   have := isInvertible_relativeDifferentials k (X := X)
-  exact h (Scheme.IsCurveOver.isFunctionField (k := k))
-    isIntegrallyClosedIn_functionField_of_geometricallyIntegral
-    (Scheme.IsCurveOver.coheight_le_one (k := k))
-    (Scheme.IsCurveOver.valuativeCriterion_existence k X)
+  exact h hF hk hcoheight (Scheme.IsCurveOver.valuativeCriterion_existence k X)
 
 /-- **The global differentials have dimension the genus.** On a smooth proper geometrically
 connected curve over `k`, `dim_k H⁰(X, Ω_{X/k}) = g`. -/
@@ -100,7 +99,7 @@ theorem finrank_cohomology_zero_relativeDifferentials_of_smooth :
     finrank_cohomology_zero_relativeDifferentials hF hk hdim hex
 
 /-- On a smooth proper geometrically connected curve over `k`, `H¹(X, Ω_{X/k})` is
-one-dimensional, dual to the constants `H⁰(X, 𝒪_X) = k`. -/
+one-dimensional over `k`, the same dimension as the constants `H⁰(X, 𝒪_X) = k`. -/
 @[simp]
 theorem finrank_cohomology_one_relativeDifferentials_of_smooth :
     finrank k (Scheme.Modules.Cohomology (X.relativeDifferentials k) 1) = 1 :=

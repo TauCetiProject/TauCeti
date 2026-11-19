@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Geometrically.GlobalSections
+public import TauCeti.AlgebraicGeometry.Cohomology.Genus.GeometricallyIntegral
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRoch.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRoch.Finiteness
 
@@ -24,8 +24,10 @@ equivalent to an effective divisor, even on a curve without a rational point. Th
 point-free effectivity input for Abel maps from spaces of effective divisors.
 
 The constant term is a statement about every universally closed geometrically integral scheme
-`X` over `k`: `dim H⁰(X, 𝒪_X) = 1`, so `χ(𝒪_X) = 1 - g`, and therefore every line bundle
-`L` satisfies `χ(L) = deg L + 1 - g` for the Euler-characteristic degree
+`X` over `k`: `dim H⁰(X, 𝒪_X) = 1`, so `χ(𝒪_X) = 1 - g`
+(`eulerCharBelow_trivial_eq_one_sub_genus_of_geometricallyIntegral` in
+`TauCeti.AlgebraicGeometry.Cohomology.Genus.GeometricallyIntegral`), and therefore every line
+bundle `L` satisfies `χ(L) = deg L + 1 - g` for the Euler-characteristic degree
 `deg L = χ(L) - χ(𝒪_X)`. Here `χ` is the truncation `dim H⁰ - dim H¹`. On a proper curve, where
 cohomology vanishes above degree one, this is the Riemann–Roch theorem for line bundles. It
 applies to every smooth proper geometrically connected curve, which is geometrically integral by
@@ -38,8 +40,6 @@ functions with the ground field.
 
 ## Main results
 
-* `eulerCharBelow_trivial_eq_one_sub_genus_of_geometricallyIntegral`: `χ(𝒪_X) = 1 - g` without a
-  rational point;
 * `InvertibleSheaf.eulerCharBelow_eq_eulerDegree_add_one_sub_genus`: Riemann–Roch
   `χ(L) = deg L + 1 - g` for line bundles without a rational point;
 * the `SchemeWeilDivisor` results of the second section: Riemann–Roch for divisor sheaves,
@@ -64,25 +64,7 @@ section ConstantTerm
 
 variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
   [UniversallyClosed (X ↘ Spec (.of k))] [GeometricallyIntegral (X ↘ Spec (.of k))]
-
-/-- **The constants are exact.** On a universally closed geometrically integral scheme over a
-field `k`, `H⁰(X, 𝒪_X)` is one-dimensional over `k`. No rational point is needed. -/
-theorem finrank_cohomology_zero_trivial_eq_one_of_geometricallyIntegral :
-    finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0) = 1 := by
-  have := GeometricallyIntegral.isIntegral_of_subsingleton (X ↘ Spec (.of k))
-  exact finrank_cohomology_zero_trivial_eq_one_of_surjective k
-    (X.baseRingToGlobalSections_bijective_of_geometricallyIntegral k).surjective
-
-variable [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
-
-/-- On a universally closed geometrically integral scheme over a field `k` with
-finite-dimensional `H¹(X, 𝒪_X)`, `χ(𝒪_X) = 1 - g`, where `χ` is the truncation
-`dim H⁰ - dim H¹` and `g` is the genus. No rational point is needed. -/
-theorem eulerCharBelow_trivial_eq_one_sub_genus_of_geometricallyIntegral :
-    Scheme.Modules.eulerCharBelow k X (InvertibleSheaf.trivial X).obj 2 = 1 - X.genus k := by
-  rw [Scheme.Modules.eulerCharBelow_two,
-    finrank_cohomology_zero_trivial_eq_one_of_geometricallyIntegral, Scheme.genus_def,
-    Nat.cast_one]
+  [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
 
 /-- **The Riemann–Roch theorem for line bundles, without a rational point.** On a universally
 closed geometrically integral scheme over a field `k` with finite-dimensional `H¹(X, 𝒪_X)`, every
@@ -92,8 +74,9 @@ this holds on every smooth proper geometrically connected curve over any field. 
 theorem InvertibleSheaf.eulerCharBelow_eq_eulerDegree_add_one_sub_genus
     (L : InvertibleSheaf X) :
     Scheme.Modules.eulerCharBelow k X L.obj 2 = L.eulerDegree k + 1 - X.genus k := by
-  rw [eulerDegree_def, eulerCharBelow_trivial_eq_one_sub_genus_of_geometricallyIntegral]
-  ring
+  have := GeometricallyIntegral.isIntegral_of_subsingleton (X ↘ Spec (.of k))
+  exact InvertibleSheaf.eulerCharBelow_eq_eulerDegree_add_one_sub_genus_of_surjective k
+    (X.baseRingToGlobalSections_bijective_of_geometricallyIntegral k).surjective L
 
 end ConstantTerm
 
