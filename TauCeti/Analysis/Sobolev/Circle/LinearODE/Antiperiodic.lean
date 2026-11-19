@@ -293,11 +293,10 @@ theorem isInvertible_loopOperator_antiperiodicGaugeLoop_iff_det_ne_zero
     rw [← LinearMap.mem_ker, mem_ker_twistedLinearOperator_iff] at hw
     obtain ⟨hwc, hwa⟩ := mem_twistedContDiff.1 w.2
     exact Subtype.ext (h _ hwc.continuous (fun t ↦ by rw [hwa t, neg_one_smul]) hw)
-  · intro h ζ hζc hζa hζ
-    have hdiff : Differentiable ℝ ζ := fun x ↦ (hζ x).differentiableAt
-    have hderiv : deriv ζ = fun x : ℝ ↦ S x (ζ x) := funext fun x ↦ (hζ x).deriv
+  · intro h ζ _ hζa hζ
     have hC1 : ContDiff ℝ 1 ζ :=
-      contDiff_one_iff_deriv.2 ⟨hdiff, hderiv ▸ hM.clm_apply hζc⟩
+      contDiff_one_of_forall_hasDerivAt_clm_apply_add hM continuous_zero
+        fun t ↦ by simpa using hζ t
     set w : twistedContDiff E T (-1) :=
       ⟨ζ, mem_twistedContDiff.2 ⟨hC1, fun t ↦ by rw [hζa t, neg_one_smul]⟩⟩
     have hw : w ∈ LinearMap.ker (twistedLinearOperator hM hper (-1)) :=

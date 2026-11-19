@@ -179,6 +179,13 @@ variable {M : ℝ → X →L[ℝ] X} {d ε : ℝ}
 
 section Operator
 
+/-- A solution of `w' = M w + f` with `M` and `f` continuous is `C¹`. -/
+theorem contDiff_one_of_forall_hasDerivAt_clm_apply_add (hM : Continuous M) {f w : ℝ → X}
+    (hf : Continuous f) (hw : ∀ t, HasDerivAt w (M t (w t) + f t) t) : ContDiff ℝ 1 w :=
+  contDiff_one_iff_deriv.2 ⟨fun t => (hw t).differentiableAt, by
+    rw [funext fun t => (hw t).deriv]
+    exact (hM.clm_apply (continuous_iff_continuousAt.2 fun t => (hw t).continuousAt)).add hf⟩
+
 /-- The operator `L w = w' - M w` from the `C¹` maps twisted by `ε` along `d` to the continuous
 maps twisted by `ε` along `d`, for a continuous path `M` of bounded operators of period `d`. -/
 def twistedLinearOperator (hM : Continuous M) (hper : Function.Periodic M d) (ε : ℝ) :
@@ -398,10 +405,7 @@ theorem mem_range_twistedLinearOperator_iff (hM : Continuous M) (hper : Function
   · rintro ⟨w, hw⟩
     exact ⟨w, (twistedLinearOperator_eq_iff hM hper w f).1 hw, w.2.2⟩
   · rintro ⟨w, hw, htw⟩
-    have hc : ContDiff ℝ 1 w := contDiff_one_iff_deriv.2 ⟨fun t => (hw t).differentiableAt, by
-      rw [funext fun t => (hw t).deriv]
-      exact (hM.clm_apply (continuous_iff_continuousAt.2 fun t => (hw t).continuousAt)).add
-        f.2.1⟩
+    have hc : ContDiff ℝ 1 w := contDiff_one_of_forall_hasDerivAt_clm_apply_add hM f.2.1 hw
     exact ⟨⟨w, hc, htw⟩, (twistedLinearOperator_eq_iff hM hper ⟨w, hc, htw⟩ f).2 hw⟩
 
 /-- For `d > 0` and `ε ≠ 0`, every vector `y` is `∫₀ᵈ Ψ(s)⁻¹ (f s) ds` for some continuous map
@@ -455,9 +459,8 @@ private theorem dysonSeriesLeft_apply_mem_twistedContDiff (hM : Continuous M)
       ContinuousLinearMap.coe_coe, sub_eq_zero] at hx
     exact hx.symm
   have hΨ (t : ℝ) := hasDerivAt_dysonSeriesLeft_apply hM x t
-  refine ⟨contDiff_one_iff_deriv.2 ⟨fun t => (hΨ t).differentiableAt, ?_⟩, fun t => ?_⟩
-  · rw [funext fun t => (hΨ t).deriv]
-    exact hM.clm_apply ((continuous_dysonSeriesLeft hM).clm_apply continuous_const)
+  refine ⟨contDiff_one_of_forall_hasDerivAt_clm_apply_add hM continuous_zero
+    fun t => by simpa using hΨ t, fun t => ?_⟩
   simpa using dysonSeriesLeft_add_natCast_mul_apply_of_eq_smul hM hper (n := 1)
     (by simpa using hPx) t
 
