@@ -44,6 +44,9 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
   `AddCircle (1 : ℚ)` once that multiple is an integer.
 * `AddCircle.coe_add_intCast`: adding an integer does not change a class in
   `AddCircle (1 : 𝕜)`.
+* `AddCircle.coe_eq_coe_iff_exists_zsmul`: two elements have the same class in `AddCircle p`
+  exactly when they differ by an integer multiple of `p`, and
+  `AddCircle.eq_of_coe_eq_of_abs_sub_lt`: two such elements closer than `p` are equal.
 * `AddCircle.intCast_floor_equivIco_add`: the floor of the sum of two representatives in
   `[0, 1)` is their defect of additivity.
 * `AddCircle.natCard_torsionBy_le` and `AddCircle.natCard_torsionBy_pi_le`: when
@@ -137,6 +140,23 @@ theorem coe_add_intCast {𝕜 : Type*} [Ring 𝕜] (x : 𝕜) (n : ℤ) :
     ((x + n : 𝕜) : AddCircle (1 : 𝕜)) = (x : AddCircle (1 : 𝕜)) := by
   rw [coe_add, add_eq_left, coe_eq_zero_iff]
   exact ⟨n, by simp⟩
+
+/-- Two elements have the same class in `AddCircle p` exactly when they differ by an integer
+multiple of the period. -/
+theorem coe_eq_coe_iff_exists_zsmul {𝕜 : Type*} [AddCommGroup 𝕜] {p a b : 𝕜} :
+    (a : AddCircle p) = b ↔ ∃ n : ℤ, n • p = a - b := by
+  rw [← sub_eq_zero, ← coe_sub, coe_eq_zero_iff]
+
+/-- Two elements closer than the period `p` with the same class in `AddCircle p` are equal: both
+lie in the fundamental interval `[m, m + p)` starting at their minimum `m`. -/
+theorem eq_of_coe_eq_of_abs_sub_lt {𝕜 : Type*} [AddCommGroup 𝕜] [LinearOrder 𝕜]
+    [IsOrderedAddMonoid 𝕜] {p a b : 𝕜} (hab : (a : AddCircle p) = b) (hd : |a - b| < p) :
+    a = b := by
+  have hd' : max a b < min a b + p := by
+    rw [← sub_lt_iff_lt_add', max_sub_min_eq_abs']
+    exact hd
+  exact injOn_coe_Ico p (min a b) ⟨min_le_left a b, (le_max_left a b).trans_lt hd'⟩
+    ⟨min_le_right a b, (le_max_right a b).trans_lt hd'⟩ hab
 
 /-- The floor of the sum of the representatives in `[0, 1)` of two points of `AddCircle (1 : 𝕜)`
 is the defect of additivity of the representatives. -/
