@@ -147,7 +147,7 @@ unique; the fraction `a / t` does not depend on the choice. -/
 theorem mapRingEquivOfMemIdeal_symm_algebraMap_eq_mk' {a : A} {b : B} (hab : f a = f t * b) :
     (mapRingEquivOfMemIdeal S Q hker hrange ht).symm (algebraMap B Q b) =
       IsLocalization.mk' S a (⟨t, Submonoid.mem_powers t⟩ : Submonoid.powers t) := by
-  rw [RingEquiv.symm_apply_eq, coe_mapRingEquivOfMemIdeal, map_mk',
-    IsLocalization.eq_mk'_iff_mul_eq, ← map_mul, hab, mul_comm]
+  rw [RingEquiv.symm_apply_eq]
+  simp [map_mk', IsLocalization.eq_mk'_iff_mul_eq, ← map_mul, hab, mul_comm]
 
 end IsLocalization.Away
