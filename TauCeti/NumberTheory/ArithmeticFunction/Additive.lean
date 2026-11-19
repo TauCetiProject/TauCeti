@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.Defs
 public import Mathlib.Algebra.Group.TypeTags.Basic
+public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 
 /-!
 # Additive arithmetic functions and normalization
@@ -27,12 +28,13 @@ PNT+ Iwaniec–Kowalski Chapter 1 formalization.
 `ArithmeticFunction.IsAdditive.isMultiplicative_of_eq_monoidHom` sends a normalized additive
 function through a monoid homomorphism from `Multiplicative A`. Its conclusion uses Mathlib's
 multiplicative predicate, including the cases of zero inputs. Natural powers are a specialization
-through Mathlib's `powersHom`; the output's value at zero is supplied by its arithmetic carrier.
+through Mathlib's `powersHom`: `ArithmeticFunction.powOfAdditive k f` has value `k ^ f n` at every
+positive `n`, for `k` in a monoid with zero and a natural-valued `f`, and
+`IsAdditive.isMultiplicative_powOfAdditive` shows it is multiplicative when `f` is additive.
+In particular `n ↦ k ^ ω n` is multiplicative, and for a commutative base it is Mathlib's
+`prodPrimeFactors` of the constant function `k`.
 
-For complete additivity with an `AddZeroClass` target, Mathlib's non-unital homomorphisms from
-positive naturals to `Multiplicative A` express the unnormalized positive-product law; the unital
-homomorphisms also express the normalization at one. No separate complete-additive predicate is
-introduced here.
+Complete additivity is in `TauCeti.NumberTheory.ArithmeticFunction.CompletelyAdditive`.
 -/
 
 public section
@@ -75,5 +77,49 @@ theorem IsAdditive.isMultiplicative_of_eq_monoidHom {A R : Type*} [AddZeroClass 
   intro m n hm hn hmn
   rw [hg (m * n) (mul_ne_zero hm hn), hf.map_mul hm hn hmn,
     ofAdd_add, map_mul, hg m hm, hg n hn]
+
+section powOfAdditive
+
+variable {R : Type*} [MonoidWithZero R]
+
+/-- The arithmetic function with value `k ^ f n` at every positive `n`. Its value at zero is zero,
+as for every arithmetic function, rather than `k ^ f 0 = 1`. -/
+def powOfAdditive (k : R) (f : ArithmeticFunction ℕ) : ArithmeticFunction R where
+  toFun n := if n = 0 then 0 else k ^ f n
+  map_zero' := ite_eq_left rfl
+
+@[simp]
+theorem powOfAdditive_apply (k : R) (f : ArithmeticFunction ℕ) {n : ℕ} (hn : n ≠ 0) :
+    powOfAdditive k f n = k ^ f n :=
+  ite_eq_right hn
+
+theorem powOfAdditive_apply_zero (k : R) (f : ArithmeticFunction ℕ) : powOfAdditive k f 0 = 0 :=
+  map_zero
+
+theorem powOfAdditive_apply_one (k : R) {f : ArithmeticFunction ℕ} (hf : f 1 = 0) :
+    powOfAdditive k f 1 = 1 := by
+  simp [hf]
+
+/-- Powers along an additive function form a multiplicative arithmetic function. -/
+theorem IsAdditive.isMultiplicative_powOfAdditive {f : ArithmeticFunction ℕ} (hf : IsAdditive f)
+    (k : R) : (powOfAdditive k f).IsMultiplicative :=
+  hf.isMultiplicative_of_eq_monoidHom (powersHom R k) fun n hn => by simp [hn]
+
+/-- The arithmetic function `n ↦ k ^ ω n` is multiplicative. -/
+theorem isMultiplicative_powOfAdditive_cardDistinctFactors (k : R) :
+    (powOfAdditive k cardDistinctFactors).IsMultiplicative :=
+  IsAdditive.isMultiplicative_powOfAdditive
+    { map_one := cardDistinctFactors_one, map_mul := fun _ _ h => cardDistinctFactors_mul h } k
+
+/-- The arithmetic function `n ↦ k ^ ω n` is Mathlib's product over prime factors of the constant
+function `k`, for a commutative base. -/
+theorem powOfAdditive_cardDistinctFactors_eq_prodPrimeFactors {S : Type*} [CommMonoidWithZero S]
+    (k : S) : powOfAdditive k cardDistinctFactors = prodPrimeFactors fun _ => k := by
+  ext n
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  simp [hn, prodPrimeFactors_apply hn, cardDistinctFactors_eq_card_primeFactors]
+
+end powOfAdditive
 
 end ArithmeticFunction
