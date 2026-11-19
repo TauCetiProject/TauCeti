@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Amenable.Average
 public import TauCeti.GroupTheory.Amenable.Reiter
+public import TauCeti.GroupTheory.Amenable.Sequence
 import Mathlib.Analysis.Convex.Combination
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Analysis.Normed.Lp.lpSpace
@@ -46,7 +47,11 @@ assigns it the value `0`. Reiter's condition then yields Følner sets among the 
 * `TauCeti.Amenable.hasFoelnerSets`: an amenable discrete group has Følner sets.
 * `TauCeti.amenable_iff_hasFoelnerSets`: a discrete group is amenable exactly when it has Følner
   sets.
+* `TauCeti.amenable_iff_maxFoelner_neBot`: for any measurable space with measurable singletons, a
+  discrete group is amenable exactly when `maxFoelner G Measure.count` is nontrivial.
 * `TauCeti.amenable_iff_exists_finset`: the same characterization in terms of finite sets.
+* `TauCeti.amenable_iff_exists_seq`: a countable discrete group is amenable exactly when it admits
+  a Følner sequence of finite nonempty sets.
 
 ## References
 
@@ -59,7 +64,7 @@ public section
 
 noncomputable section
 
-open Finset Function
+open Filter Finset Function Topology
 open scoped Pointwise symmDiff
 
 namespace TauCeti
@@ -164,11 +169,26 @@ theorem Amenable.hasFoelnerSets [DiscreteTopology G] [Amenable G] : HasFoelnerSe
 theorem amenable_iff_hasFoelnerSets [DiscreteTopology G] : Amenable G ↔ HasFoelnerSets G :=
   ⟨fun _ ↦ Amenable.hasFoelnerSets, .of_hasFoelnerSets⟩
 
+/-- For any measurable space on `G` with measurable singletons, a discrete group `G` is amenable
+exactly when Mathlib's maximal counting-measure Følner filter `maxFoelner G Measure.count` is
+nontrivial. -/
+theorem amenable_iff_maxFoelner_neBot [DiscreteTopology G] [MeasurableSpace G]
+    [MeasurableSingletonClass G] :
+    Amenable G ↔ NeBot (maxFoelner G (MeasureTheory.Measure.count : MeasureTheory.Measure G)) :=
+  amenable_iff_hasFoelnerSets.trans hasFoelnerSets_iff_maxFoelner_neBot
+
 /-- A discrete group is amenable exactly when for every finite `K ⊆ G` and every `ε > 0` there is
 a finite nonempty `F ⊆ G` with `|gF △ F| < ε · |F|` for all `g ∈ K`. -/
 theorem amenable_iff_exists_finset [DiscreteTopology G] [DecidableEq G] :
     Amenable G ↔ ∀ K : Finset G, ∀ ε : ℝ, 0 < ε →
       ∃ F : Finset G, F.Nonempty ∧ ∀ g ∈ K, (#((g • F) ∆ F) : ℝ) < ε * #F := by
   rw [amenable_iff_hasFoelnerSets, hasFoelnerSets_iff]
+
+/-- A countable discrete group is amenable exactly when there is a sequence of finite nonempty
+sets whose relative translation boundaries tend to zero for every group element. -/
+theorem amenable_iff_exists_seq [DiscreteTopology G] [Countable G] [DecidableEq G] :
+    Amenable G ↔ ∃ F : ℕ → Finset G, (∀ n, (F n).Nonempty) ∧
+      ∀ g : G, Tendsto (fun n => (#((g • F n) ∆ F n) : ℝ) / #(F n)) atTop (𝓝 0) :=
+  amenable_iff_hasFoelnerSets.trans hasFoelnerSets_iff_exists_seq
 
 end TauCeti

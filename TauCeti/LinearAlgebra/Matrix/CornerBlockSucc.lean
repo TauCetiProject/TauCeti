@@ -51,6 +51,11 @@ def cornerBlockSucc (c : α) (B : Matrix (Fin m) (Fin m) α) :
     Matrix (Fin (m + 1)) (Fin (m + 1)) α :=
   of (Fin.cons (Fin.cons c 0) fun i ↦ Fin.cons 0 (B i))
 
+/-- Defining formula for `Matrix.cornerBlockSucc` in terms of `Fin.cons`. -/
+theorem cornerBlockSucc_def (c : α) (B : Matrix (Fin m) (Fin m) α) :
+    cornerBlockSucc c B = of (Fin.cons (Fin.cons c 0) fun i ↦ Fin.cons 0 (B i)) :=
+  (rfl)
+
 @[simp]
 theorem cornerBlockSucc_zero_zero (c : α) (B : Matrix (Fin m) (Fin m) α) :
     cornerBlockSucc c B 0 0 = c :=
