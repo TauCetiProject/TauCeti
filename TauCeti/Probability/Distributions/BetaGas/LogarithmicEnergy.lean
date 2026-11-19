@@ -629,30 +629,24 @@ theorem monotone_truncatedLogarithmicEnergy {V : ℝ → ℝ} (hV : Measurable V
 
 private theorem truncatedLogarithmicEnergy_sub_eq_lintegral {V : ℝ → ℝ} (hV : Measurable V)
     {a : ℝ} (ha : ∀ z, (a : EReal) ≤ logarithmicEnergyKernel V z)
-    (μ : ProbabilityMeasure ℝ) (n : ℕ) :
-    ((truncatedLogarithmicEnergy V (a + n) μ : ℝ) : EReal) - (a : EReal) =
-      ((∫⁻ z, min ((logarithmicEnergyKernel V z - (a : EReal)).toENNReal) (n : ℝ≥0∞)
+    (μ : ProbabilityMeasure ℝ) {M : ℝ} (hM : a ≤ M) :
+    (truncatedLogarithmicEnergy V M μ : EReal) - (a : EReal) =
+      ((∫⁻ z, min ((logarithmicEnergyKernel V z - (a : EReal)).toENNReal)
+        (ENNReal.ofReal (M - a))
         ∂(μ.prod μ).toMeasure : ℝ≥0∞) : EReal) := by
-  let M := a + (n : ℝ)
   let ν := (μ.prod μ).toMeasure
   let g := truncatedLogarithmicEnergyKernel V M
   have hi : Integrable g ν := integrable_truncatedLogarithmicEnergyKernel hV M ha μ
   have hpoint (z : ℝ × ℝ) :
       (g z : EReal) - (a : EReal) =
-        min (logarithmicEnergyKernel V z - (a : EReal)) (n : EReal) := by
+        min (logarithmicEnergyKernel V z - (a : EReal)) ((M - a : ℝ) : EReal) := by
     have hmono : Monotone (fun x : EReal ↦ x - (a : EReal)) :=
       fun _ _ h ↦ EReal.sub_le_sub h le_rfl
-    rw [coe_truncatedLogarithmicEnergyKernel]
-    refine (hmono.map_min.trans ?_)
-    simp only [← EReal.coe_sub]
-    congr 1
-    rw [← EReal.coe_natCast, EReal.coe_injective.eq_iff]
-    dsimp only [M]
-    ring
+    rw [coe_truncatedLogarithmicEnergyKernel, hmono.map_min, EReal.coe_sub]
   have hnonneg (z : ℝ × ℝ) : 0 ≤ g z - a := by
     rw [← EReal.coe_nonneg, EReal.coe_sub, hpoint]
     exact le_min ((EReal.sub_nonneg (.inr (EReal.coe_ne_top _)) (.inr (EReal.coe_ne_bot _))).mpr
-      (ha z)) (by exact_mod_cast Nat.zero_le n)
+      (ha z)) (EReal.coe_nonneg.mpr (sub_nonneg.mpr hM))
   have hint : Integrable (fun z ↦ g z - a) ν := hi.sub (integrable_const a)
   have hι : (∫ z, g z - a ∂ν) = truncatedLogarithmicEnergy V M μ - a := by
     rw [integral_sub hi (integrable_const a), integral_const, probReal_univ, one_smul]
@@ -664,26 +658,34 @@ private theorem truncatedLogarithmicEnergy_sub_eq_lintegral {V : ℝ → ℝ} (h
   apply lintegral_congr
   intro z
   have hmono : Monotone EReal.toENNReal := fun _ _ h ↦ EReal.toENNReal_le_toENNReal h
-  rw [← EReal.real_coe_toENNReal, EReal.coe_sub, hpoint, hmono.map_min]
-  rw [← EReal.coe_natCast, EReal.real_coe_toENNReal, ENNReal.ofReal_natCast]
+  rw [← EReal.real_coe_toENNReal, EReal.coe_sub, hpoint, hmono.map_min, EReal.real_coe_toENNReal]
 
-private theorem lowerSemicontinuous_coe_truncatedLogarithmicEnergy {V : ℝ → ℝ}
+/-- For a lower semicontinuous potential with a lower-bounded kernel, the truncated energy is
+weakly lower semicontinuous at every real cutoff height. -/
+theorem lowerSemicontinuous_truncatedLogarithmicEnergy {V : ℝ → ℝ}
     (hV : LowerSemicontinuous V) {a : ℝ} (ha : ∀ z, (a : EReal) ≤ logarithmicEnergyKernel V z)
-    (n : ℕ) : LowerSemicontinuous (fun μ ↦ (truncatedLogarithmicEnergy V (a + n) μ : EReal)) := by
+    (M : ℝ) : LowerSemicontinuous (truncatedLogarithmicEnergy V M) := by
+  let b := min a M
+  have hb (z : ℝ × ℝ) : (b : EReal) ≤ logarithmicEnergyKernel V z :=
+    (EReal.coe_le_coe_iff.mpr (min_le_left a M)).trans (ha z)
   have heq (μ : ProbabilityMeasure ℝ) :
-      (truncatedLogarithmicEnergy V (a + n) μ : EReal) =
-        ((∫⁻ z, min ((logarithmicEnergyKernel V z - (a : EReal)).toENNReal) (n : ℝ≥0∞)
-          ∂(μ.prod μ).toMeasure : ℝ≥0∞) : EReal) + (a : EReal) := by
-    rw [← truncatedLogarithmicEnergy_sub_eq_lintegral hV.measurable ha μ n,
+      (truncatedLogarithmicEnergy V M μ : EReal) =
+        ((∫⁻ z, min ((logarithmicEnergyKernel V z - (b : EReal)).toENNReal)
+          (ENNReal.ofReal (M - b))
+          ∂(μ.prod μ).toMeasure : ℝ≥0∞) : EReal) + (b : EReal) := by
+    rw [← truncatedLogarithmicEnergy_sub_eq_lintegral hV.measurable hb μ (min_le_right a M),
       EReal.sub_add_cancel]
-  rw [funext heq]
   have hlin := (lowerSemicontinuous_lintegral_probabilityMeasure
-    ((lowerSemicontinuous_logarithmicEnergyKernel_sub_toENNReal hV a).inf
-      (lowerSemicontinuous_const (z := (n : ℝ≥0∞))))).comp
+    ((lowerSemicontinuous_logarithmicEnergyKernel_sub_toENNReal hV b).inf
+      (lowerSemicontinuous_const (z := ENNReal.ofReal (M - b))))).comp
         (ProbabilityMeasure.continuous_prod.comp (continuous_id.prodMk continuous_id))
-  exact (continuous_coe_ennreal_ereal.comp_lowerSemicontinuous hlin
-    EReal.coe_ennreal_strictMono.monotone).add' lowerSemicontinuous_const
-      (fun _ ↦ EReal.continuousAt_add (.inr (EReal.coe_ne_bot _)) (.inr (EReal.coe_ne_top _)))
+  have hcoe : LowerSemicontinuous (fun μ ↦ (truncatedLogarithmicEnergy V M μ : EReal)) := by
+    rw [funext heq]
+    exact (continuous_coe_ennreal_ereal.comp_lowerSemicontinuous hlin
+      EReal.coe_ennreal_strictMono.monotone).add' lowerSemicontinuous_const
+        (fun _ ↦ EReal.continuousAt_add (.inr (EReal.coe_ne_bot _)) (.inr (EReal.coe_ne_top _)))
+  intro μ r hr
+  simpa only [EReal.coe_lt_coe_iff] using hcoe μ (r : EReal) (EReal.coe_lt_coe_iff.mpr hr)
 
 /-- The energy is the increasing supremum of the upper truncations,
 with cutoffs tending to infinity in unit steps from any real lower bound for the kernel. -/
@@ -704,8 +706,10 @@ theorem logarithmicEnergy_eq_iSup_truncated {V : ℝ → ℝ} (hV : Measurable V
     exact lintegral_congr fun z ↦ by
       rw [← inf_iSup_eq, ENNReal.iSup_natCast, inf_top_eq]
   have hfin (n : ℕ) : (J n : EReal) =
-      (truncatedLogarithmicEnergy V (a + n) μ : EReal) - (a : EReal) :=
-    (truncatedLogarithmicEnergy_sub_eq_lintegral hV ha μ n).symm
+      (truncatedLogarithmicEnergy V (a + n) μ : EReal) - (a : EReal) := by
+    have hn : a ≤ a + (n : ℝ) := le_add_of_nonneg_right (Nat.cast_nonneg n)
+    simpa only [J, f, ν, add_sub_cancel_left, ENNReal.ofReal_natCast] using
+      (truncatedLogarithmicEnergy_sub_eq_lintegral hV ha μ hn).symm
   have hsup : ((⨆ n, J n : ℝ≥0∞) : EReal) = ⨆ n, (J n : EReal) :=
     Monotone.map_ciSup_of_continuousAt continuous_coe_ennreal_ereal.continuousAt
       EReal.coe_ennreal_strictMono.monotone
@@ -846,7 +850,9 @@ theorem logarithmicEnergy_le_liminf_offDiag {V : ℝ → ℝ} (hV : LowerSemicon
   let f (p : ProbabilityMeasure ℝ × ℝ) : EReal :=
     (truncatedLogarithmicEnergy V M p.1 : EReal) + ((-p.2 : ℝ) : EReal)
   have hf : LowerSemicontinuous f :=
-    ((lowerSemicontinuous_coe_truncatedLogarithmicEnergy hV ha n).comp continuous_fst).add'
+    (continuous_coe_real_ereal.comp_lowerSemicontinuous
+      ((lowerSemicontinuous_truncatedLogarithmicEnergy hV ha M).comp continuous_fst)
+      EReal.coe_strictMono.monotone).add'
       (continuous_coe_real_ereal.comp continuous_snd.neg).lowerSemicontinuous
       (fun _ ↦ EReal.continuousAt_add (.inr (EReal.coe_ne_bot _)) (.inr (EReal.coe_ne_top _)))
   have hlim := (hf.le_liminf (μ, 0)).trans
