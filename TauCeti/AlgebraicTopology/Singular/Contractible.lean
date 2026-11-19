@@ -109,6 +109,43 @@ theorem isZero_reducedSingularHomologyFunctor_of_contractibleSpace (X : TopCat.{
     exact (isZero_singularHomologyFunctor_of_contractibleSpace R X n.succ_ne_zero).of_iso
       ((reducedSingularHomologySuccIso R n).app X)
 
+/-- A map into a contractible space kills the reduced homology of its source. -/
+@[reassoc (attr := simp)]
+theorem reducedSingularHomologyι_app_comp_map_eq_zero_of_contractibleSpace {X Y : TopCat.{w}}
+    [ContractibleSpace Y] (f : X ⟶ Y) (n : ℕ) :
+    (reducedSingularHomologyι R n).app X ≫ ((singularHomologyFunctor C n).obj R).map f = 0 := by
+  rw [← (reducedSingularHomologyι R n).naturality,
+    (isZero_reducedSingularHomologyFunctor_of_contractibleSpace R Y n).eq_of_tgt
+      ((reducedSingularHomologyFunctor R n).map f) 0, zero_comp]
+
+/-- **The kernel of a map into a contractible space is reduced homology.** For a map `f : X ⟶ Y`
+with `Y` contractible, the inclusion `H~ₙ(X) ⟶ Hₙ(X)` is a kernel of `f_* : Hₙ(X) ⟶ Hₙ(Y)`, in
+every degree: in degree zero `f_*` followed by the augmentation of `Y`, an isomorphism, is the
+augmentation of `X`, and in positive degrees `f_*` is zero. -/
+def isLimitReducedSingularHomologyιOfContractibleSpace {X Y : TopCat.{w}} [ContractibleSpace Y]
+    (f : X ⟶ Y) (n : ℕ) :
+    IsLimit (KernelFork.ofι ((reducedSingularHomologyι R n).app X)
+      (reducedSingularHomologyι_app_comp_map_eq_zero_of_contractibleSpace R f n)) := by
+  cases n with
+  | zero =>
+    -- a morphism killed by `f_*` is killed by the augmentation `f_* ≫ ε_Y = ε_X`
+    refine KernelFork.IsLimit.ofι _ _ (fun k hk ↦ kernel.lift (X.singularHomology₀ε R) k ?_ ≫
+      eqToHom (reducedSingularHomologyFunctor_zero_obj R X).symm) ?_ ?_
+    · rw [← singularHomologyMap_singularHomology₀ε R f, reassoc_of% hk, zero_comp]
+    · intro _ _ _
+      simp [reducedSingularHomologyι_zero_app]
+    · intro _ _ _ m hm
+      rw [← cancel_mono ((reducedSingularHomologyι R 0).app X), hm]
+      simp [reducedSingularHomologyι_zero_app]
+  | succ n =>
+    -- in positive degrees the inclusion of reduced homology is an identity
+    have : IsIso ((reducedSingularHomologyι R (n + 1)).app X) := by
+      rw [reducedSingularHomologyι_succ_app]
+      infer_instance
+    exact KernelFork.IsLimit.ofι _ _
+      (fun k _ ↦ k ≫ inv ((reducedSingularHomologyι R (n + 1)).app X))
+      (fun _ _ ↦ by simp) (fun _ _ m hm ↦ by simp [← hm])
+
 end Contractible
 
 end TauCeti
