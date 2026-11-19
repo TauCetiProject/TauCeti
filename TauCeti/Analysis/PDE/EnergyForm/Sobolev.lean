@@ -252,6 +252,34 @@ theorem memLp_energyIntegrand_of_bounds
   exact (ae_mem_restrict (mu := mu) (Omega := Omega)).mono fun x hx =>
     opNorm_energyIntegrand_le_of_bounds hLam (ha_bound x hx) (hb_bound x hx) (hc_bound x hx)
 
+/-- Bounded measurable principal coefficients and essentially bounded lower-order coefficients
+define an essentially bounded field of pointwise energy forms. This is
+`memLp_energyIntegrand_of_bounds` with the pointwise bounds on `b` and `c` replaced by
+membership in `L^∞(Ω)`. -/
+theorem memLp_energyIntegrand_of_memLp_top
+    (hLam : 0 ≤ Lam) (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (ha_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)),
+      ∀ eta xi : EuclideanSpace ℝ ι,
+        |dotProduct eta (Matrix.mulVec (a x) xi)| ≤ Lam * ‖eta‖ * ‖xi‖)
+    (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega)) :
+    MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega) := by
+  have hbs : eLpNormEssSup b (mu.restrict Omega) ≠ ⊤ :=
+    eLpNorm_exponent_top hb.aestronglyMeasurable ▸ hb.eLpNorm_ne_top
+  have hcs : eLpNormEssSup c (mu.restrict Omega) ≠ ⊤ :=
+    eLpNorm_exponent_top hc.aestronglyMeasurable ▸ hc.eLpNorm_ne_top
+  refine memLp_top_of_bound (f := fun x => energyIntegrand (a x) (b x) (c x))
+    (aestronglyMeasurable_energyIntegrand ha hb.aestronglyMeasurable hc.aestronglyMeasurable)
+    (Lam + (eLpNormEssSup b (mu.restrict Omega)).toReal +
+      (eLpNormEssSup c (mu.restrict Omega)).toReal) ?_
+  filter_upwards [ae_mem_restrict (mu := mu) (Omega := Omega),
+    ae_le_eLpNormEssSup (f := b) (μ := mu.restrict Omega),
+    ae_le_eLpNormEssSup (f := c) (μ := mu.restrict Omega)] with x hx hbx hcx
+  refine opNorm_energyIntegrand_le_of_bounds hLam (ha_bound x hx) ?_ ?_
+  · rw [← toReal_eNorm]
+    exact ENNReal.toReal_mono hbs hbx
+  · rw [← toReal_eNorm]
+    exact ENNReal.toReal_mono hcs hcx
+
 /-- Constant principal coefficients without drift or mass define an essentially bounded field of
 pointwise energy forms. -/
 theorem memLp_energyIntegrand_const_zero_zero (A : Matrix ι ι ℝ) :
