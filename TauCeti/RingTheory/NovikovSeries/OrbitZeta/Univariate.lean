@@ -32,11 +32,13 @@ collects the iterates of period `m`, one for each orbit whose period divides `m`
 
 Multiplied by `m`, it is the integer `∑_{d i ∣ m} d i ε i (m / d i)`
 (`TauCeti.NovikovSeries.natCast_mul_coeff_orbitLog_natCast`). For the periodic orbits of a map
-`f`, with `ε i k` the Lefschetz sign of the orbit through `x i` as a fixed point of `f^(k d i)`,
-the `d i` points of the `i`-th orbit are fixed points of `f^m` exactly when `d i ∣ m`, each with
-the same sign, so this integer is the signed count of the fixed points of `f^m`. Hence the
-univariate orbit zeta function is `exp (∑_m a_m t^m / m)` with these integers `a_m`, the form in
-which it is compared with the Lefschetz numbers of the iterates of `f`.
+`f`, when the points `x i` represent distinct periodic orbits, `d i` is the minimal period of
+`x i`, and `ε i k` is the Lefschetz sign of `x i` as a fixed point of `f^(k d i)`, the `d i`
+points of the `i`-th orbit are fixed points of `f^m` exactly when `d i ∣ m`, each with the same
+sign, so this integer is the signed count of the fixed points of `f^m`. Hence, under these
+conditions, the univariate orbit zeta function is `exp (∑_m a_m t^m / m)` with these integers
+`a_m`, the form in which it is compared with the Lefschetz numbers of the iterates of `f`. The
+results of this file are the purely algebraic identities and assume none of these conditions.
 
 ## Main results
 
@@ -102,11 +104,8 @@ theorem coeff_orbitLog_natCast (hd : ∀ i, 0 < d i) (hfin : Tendsto d cofinite 
   have hcast (i : ι) (k : ℕ) : (k + 1) • (d i : ℤ) = (m : ℤ) ↔ (k + 1) * d i = m := by
     rw [nsmul_eq_mul]
     norm_cast
-  have hsupp : (Function.support fun p : ι × ℕ => if (p.2 + 1) • (d p.1 : ℤ) = (m : ℤ) then
-      (ε p.1 (p.2 + 1) : ℚ) / (p.2 + 1 : ℕ) else 0).Finite :=
-    (finite_setOf_succ_nsmul_eq (intCast_pos hd) (tendsto_intCast hfin) (m : ℤ)).subset
-      (Function.support_subset_iff'.2 fun _ hp => ite_eq_right hp)
-  rw [coeff_orbitLog (intCast_pos hd) (tendsto_intCast hfin), finsum_curry _ hsupp]
+  rw [coeff_orbitLog (intCast_pos hd) (tendsto_intCast hfin), finsum_curry _
+    (finite_support_ite_succ_nsmul_eq (intCast_pos hd) (tendsto_intCast hfin) _ _)]
   congr 1
   exact finsum_congr fun i => by
     simp only [hcast]
@@ -114,7 +113,8 @@ theorem coeff_orbitLog_natCast (hd : ∀ i, 0 < d i) (hfin : Tendsto d cofinite 
 
 /-- **The univariate orbit logarithm has integral numerators.** For `m ≠ 0`, `m` times the
 coefficient of `t^m` in the orbit logarithm of orbits of positive integer periods `d i` is the
-integer `∑_{d i ∣ m} d i ε i (m / d i)`. For the periodic orbits of a map, with `ε i k` the
+integer `∑_{d i ∣ m} d i ε i (m / d i)`. For the periodic orbits of a map, when the `i`-th
+orbit has minimal period `d i`, distinct indices give distinct orbits, and `ε i k` is the
 Lefschetz sign of the `k`-th iterate of the `i`-th orbit, this is the signed count of the fixed
 points of the `m`-th iterate. -/
 theorem natCast_mul_coeff_orbitLog_natCast (hd : ∀ i, 0 < d i) (hfin : Tendsto d cofinite atTop)

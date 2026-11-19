@@ -385,7 +385,7 @@ theorem orbitZeta_natCast_eq_mapRingHom_tprod_fixedPointDerivative
     rw [← RingHom.comp_apply, ← RingHom.comp_apply, mapRingHom_comp, mapRingHom_comp]
     -- Both composite coefficient maps are `Int.castRingHom K`, and both composite exponent maps
     -- are `intTimePeriodHom φ`.
-    congr 2
+    simp only [RingHom.id_comp, RingHom.comp_id, AddMonoidHom.comp_id, AddMonoidHom.id_comp]
   rw [← mapRingHom_intTimePeriodHom_orbitZeta_closedOrbitHomologyClass hφ hx hxd hd _ K,
     orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod_fixedPointDerivative hφ hx hxd hd hE hσ
       hφσ K, hcomm, ← hψ]
