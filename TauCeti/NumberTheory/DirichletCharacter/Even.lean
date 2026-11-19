@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
-import TauCeti.Data.ZMod.OrderOf
+import Mathlib.Algebra.Field.ZMod
 import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.RingTheory.RootsOfUnity.ZMod
 
 /-!
 # Even and odd Dirichlet characters
@@ -111,9 +112,8 @@ theorem two_mul_card_apply_neg_one_mul_apply_neg_one_eq {a b : ℕ} [NeZero a] [
   have hφ (q) (y : rootsOfUnity 2 R) : φ q = y ↔ q.1 (-1) * q.2 (-1) = ((y : Rˣ) : R) := by
     simp [φ, Subtype.ext_iff, Units.ext_iff]
   -- Above level two, `2` divides the exponent of `(ℤ/nℤ)ˣ`, so `R` has the square roots of unity.
-  have : HasEnoughRootsOfUnity R 2 := hab.elim
-    (fun h ↦ .of_dvd R (ZMod.two_dvd_exponent_units (n := a) (by omega) (by omega)))
-    (fun h ↦ .of_dvd R (ZMod.two_dvd_exponent_units (n := b) (by omega) (by omega)))
+  have : HasEnoughRootsOfUnity R 2 :=
+    hab.elim (HasEnoughRootsOfUnity.two_of_two_lt R) (HasEnoughRootsOfUnity.two_of_two_lt R)
   have hcard := HasEnoughRootsOfUnity.natCard_rootsOfUnity R 2
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot R 2
   have : Nontrivial R := ⟨ζ, 1, hζ.ne_one one_lt_two⟩
@@ -184,17 +184,6 @@ theorem two_mul_sum_even [IsDomain R] (f : DirichletCharacter R n → R) :
   · rw [χ.even_or_odd.resolve_left h]
     ring
 
-/-- Above level two, `2` is nonzero in a domain with enough roots of unity for the Dirichlet
-characters of level `n`: the exponent of `(ℤ/nℤ)ˣ` is even, so the domain contains the square
-root of unity `-1 ≠ 1`. -/
-theorem _root_.TauCeti.neZero_two_of_hasEnoughRootsOfUnity_exponent_units
-    (R : Type*) [CommRing R] [IsDomain R] {n : ℕ}
-    [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod n)ˣ)] (hn : 2 < n) : NeZero (2 : R) := by
-  have : HasEnoughRootsOfUnity R 2 :=
-    .of_dvd R (ZMod.two_dvd_exponent_units (n := n) (by omega) (by omega))
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot R 2
-  exact_mod_cast hζ.neZero'
-
 open scoped Classical in
 /-- Removing the trivial character from a sum over the even characters. -/
 theorem sum_even_ne_one [IsDomain R] {M : Type*} [AddCommGroup M]
@@ -211,7 +200,7 @@ open scoped Classical in
 theorem sum_even_eq_totient_div_two_mul (hn : 2 < n) {f : DirichletCharacter R n → R} {c : R}
     (h : 2 * ∑ χ : DirichletCharacter R n with χ.Even, f χ = n.totient * c) :
     ∑ χ : DirichletCharacter R n with χ.Even, f χ = ((n.totient / 2 : ℕ) : R) * c := by
-  have := TauCeti.neZero_two_of_hasEnoughRootsOfUnity_exponent_units R hn
+  have := HasEnoughRootsOfUnity.neZero_two_of_two_lt R hn
   refine mul_left_cancel₀ (two_ne_zero (α := R)) ?_
   have h2 : (2 : R) * ((n.totient / 2 : ℕ) : R) = n.totient := by
     rw [← Nat.cast_two, ← Nat.cast_mul, Nat.two_mul_div_two_of_even (Nat.totient_even hn)]
