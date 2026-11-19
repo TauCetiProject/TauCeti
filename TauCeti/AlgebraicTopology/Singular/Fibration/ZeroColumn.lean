@@ -21,7 +21,7 @@ Its column `p = 0` is `E¹_{0,q} = Hq(p⁻¹(X⁰), p⁻¹(X⁻¹); R)`, the fib
 differential `d¹ : E¹_{1,q} ⟶ E¹_{0,q}`.
 
 This file identifies that cokernel through path transport. A `1`-cell `j` is a path
-`TauCeti.TopCat.cellPath` from `χⱼ(-1)` to `χⱼ(1)` in the `0`-skeleton, along which the fibre
+`TauCeti.cellPath` from `χⱼ(-1)` to `χⱼ(1)` in the `0`-skeleton, along which the fibre
 homology has its transport `τⱼ` (`TauCeti.TopCat.fiberHomologyTransport`, the monodromy of the
 local system of fibre homology `TauCeti.TopCat.serreFiberLocalSystem`). The image of `d¹` is
 spanned by the classes `a - τⱼ a`, for `a` over the end point `χⱼ(-1)`
@@ -29,9 +29,11 @@ spanned by the classes `a - τⱼ a`, for `a` over the end point `χⱼ(-1)`
 
 `E²_{0,q} ≅ Hq(p⁻¹(X⁰), p⁻¹(X⁻¹); R) / ⟨a - τⱼ a⟩`
 
-(`TauCeti.TopCat.serreSpectralSequenceSecondPageXIsoCokernel`). For a connected CW complex this
-is the module of coinvariants `H₀(B; Hq(F))` of the fibre homology under the fundamental group,
-the column `p = 0` of `E²_{p,q} = H_p(B; Hq(F))`.
+(`TauCeti.TopCat.serreSpectralSequenceSecondPageXZeroIsoCokernel`), the projection of the first
+page to the second being read as the quotient map
+(`TauCeti.TopCat.homologyπ_comp_serreSpectralSequenceSecondPageXZeroIsoCokernel_hom`). When `D = ∅`
+and `C` is connected, this quotient is classically the module of coinvariants `H₀(C; Hq(F))` of the
+fibre homology under the fundamental group; that identification is not proved here.
 
 ## The argument
 
@@ -46,10 +48,12 @@ inclusions into `Pⱼ` differ by the transport `τⱼ`, that kernel is `{(a, -τ
 
 ## Main definitions and results
 
-* `TauCeti.TopCat.cellPath`: the path along a `1`-cell.
+* `TauCeti.cellPath`: the path along a `1`-cell.
 * `TauCeti.TopCat.oneCellTransportDifference`: the map `⨁ⱼ Hq(p⁻¹(χⱼ(-1))) ⟶ E¹_{0,q}`,
   `a ↦ a - τⱼ a`.
-* `TauCeti.TopCat.serreSpectralSequenceSecondPageXIsoCokernel`: `E²_{0,q}` is its cokernel.
+* `TauCeti.TopCat.serreSpectralSequenceSecondPageXZeroIsoCokernel`: `E²_{0,q}` is its cokernel.
+* `TauCeti.TopCat.homologyπ_comp_serreSpectralSequenceSecondPageXZeroIsoCokernel_hom`: under this
+  identification, the projection of the first page to the second is the quotient map.
 
 ## References
 
@@ -77,31 +81,6 @@ namespace TopCat
 variable {E B : _root_.TopCat.{u}} {p : E ⟶ B} [T2Space B] {C D : Set B} [RelCWComplex C D]
 
 section Endpoints
-
-variable (C) in
-/-- The end points `χⱼ(-1)` and `χⱼ(1)` of a `1`-cell `j` lie in the `0`-skeleton. -/
-lemma map_mem_skeletonLT_one (j : cell C 1) {c : ℝ} (hc : |c| = 1) :
-    map 1 j (fun _ ↦ c) ∈ (skeletonLT C ((0 + 1 : ℕ) : ℕ∞) : Set B) :=
-  cellFrontier_subset_skeletonLT 1 j
-    ⟨_, mem_sphere_zero_iff_norm.2 (by rw [pi_norm_const, Real.norm_eq_abs, hc]), rfl⟩
-
-variable (C) in
-/-- The path along a `1`-cell `j`: its characteristic map read on `[-1, 1]`, from the end point
-`χⱼ(-1)` to the end point `χⱼ(1)`. -/
-def cellPath (j : cell C 1) : Path (map 1 j (fun _ ↦ -1)) (map 1 j (fun _ ↦ 1)) where
-  toFun t := map 1 j (fun _ ↦ 2 * (t : ℝ) - 1)
-  continuous_toFun := by
-    refine (continuousOn 1 j).comp_continuous (by fun_prop) fun t ↦ ?_
-    rw [mem_closedBall_zero_iff, pi_norm_const, Real.norm_eq_abs, abs_le]
-    constructor <;> linarith [t.2.1, t.2.2]
-  source' := by simp
-  target' := by norm_num
-
-omit [T2Space B] in
-@[simp]
-lemma cellPath_apply (j : cell C 1) (t : unitInterval) :
-    cellPath C j t = map 1 j (fun _ ↦ 2 * (t : ℝ) - 1) :=
-  (rfl)
 
 variable (p C) in
 /-- The inclusion of the fibre of `p` over a point `b` of the `0`-skeleton into the preimage
@@ -137,7 +116,7 @@ variable (C) in
 /-- **The transport differences along the `1`-cells.** The map
 `⨁ⱼ Hq(p⁻¹(χⱼ(-1)); R) ⟶ Hq(p⁻¹(X⁰), p⁻¹(X⁻¹); R)` which sends a class `a` over the end point
 `χⱼ(-1)` of the `1`-cell `j` to `a - τⱼ a`, where `τⱼ` is the transport of fibre homology
-(`TauCeti.TopCat.fiberHomologyTransport`) along the path `TauCeti.TopCat.cellPath` of `j` to its
+(`TauCeti.TopCat.fiberHomologyTransport`) along the path `TauCeti.cellPath` of `j` to its
 other end point `χⱼ(1)`, both classes being read in the homology of `p⁻¹(X⁰)` relative to
 `p⁻¹(X⁻¹)`. -/
 def oneCellTransportDifference (q : ℕ) :
@@ -337,20 +316,18 @@ private lemma cellBoundary_hom_ext (q : ℕ) (j : cell C 1) {Z : ModuleCat.{u} R
   rw [← cancel_epi (H.map val)]
   refine (isColimitCofanSingularHomologyOpens s (ModuleCat.{u} R) (ModuleCat.of R R) q
     hs).hom_ext fun ⟨i⟩ ↦ ?_
-  -- On the part over each end point, read the leg through the fibre over that end point.
+  -- On the part over each end point, read through the fibre over that end point, the leg is the
+  -- fibre inclusion into `∂Pⱼ`.
   let e := cellBoundaryOpensHomeomorph p j (c i) (hc i)
-  refine (cancel_epi (H.map (_root_.TopCat.isoOfHomeo e).hom)).1 ?_
-  have hleg : H.map (_root_.TopCat.isoOfHomeo e).hom ≫
-      (Cofan.mk _ fun i ↦ SSet.homologyMap (_root_.TopCat.toSSet.map
-        (_root_.TopCat.ofHom ⟨TopologicalSpace.Opens.inclusion (le_iSup s i),
-          continuous_inclusion _⟩)) (ModuleCat.of R R) q).ι.app ⟨i⟩ ≫ H.map val =
-      H.map (cellBoundaryFiberι p j (c i) (hc i)) := by
-    erw [Cofan.mk_ι_app]
-    rw [← singularHomologyFunctor_obj_map]
-    simp only [H]
-    erw [← Functor.map_comp, ← Functor.map_comp]
+  have hleg : (_root_.TopCat.isoOfHomeo e).hom ≫ _root_.TopCat.ofHom
+      ⟨TopologicalSpace.Opens.inclusion (le_iSup s i), continuous_inclusion _⟩ ≫ val =
+      cellBoundaryFiberι p j (c i) (hc i) :=
     rfl
-  erw [reassoc_of% hleg, reassoc_of% hleg]
+  refine (cancel_epi (H.map (_root_.TopCat.isoOfHomeo e).hom)).1 ?_
+  have hmap := congrArg H.map hleg
+  rw [Functor.map_comp, Functor.map_comp] at hmap
+  -- The leg of the cofan and `hmap` agree up to unfolding the cofan and the objects `s i`.
+  refine ((reassoc_of% hmap) f).trans (Eq.trans ?_ ((reassoc_of% hmap) f').symm)
   rcases i with _ | _
   · exact hpos
   · exact hneg
@@ -390,17 +367,19 @@ private lemma map_pullbackFiberι_neg (q : ℕ) (j : cell C 1) :
 
 omit [T2Space B] in
 /-- The isomorphism `Hq(p⁻¹(χⱼ(1))) ≅ Hq(Pⱼ)` induced by the inclusion of the fibre over the end
-point `1` into the pullback along the contractible ball. -/
+point `1` into the pullback along the contractible ball, through its boundary `∂Pⱼ`. -/
 private def pullbackFiberιIso (q : ℕ) (j : cell C 1) :
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
         (p.fiber (map 1 j fun _ ↦ 1)) ≅
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
         (cellDiskPullbackPair p C 1 j).fst :=
-  have h := isIso_singularHomologyMap_pullbackFiberι hp (ModuleCat.of R R) q (cellULiftMap C 1 j)
-    (cellULiftMap_ballPoint j 1 (by norm_num))
-  @asIso _ _ _ _ (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
-    (ModuleCat.of R R)).map (p.pullbackFiberι (cellULiftMap C 1 j)
-      (cellULiftMap_ballPoint j 1 (by norm_num)))) h
+  haveI : IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+      (ModuleCat.of R R)).map (cellBoundaryFiberι p j 1 abs_one ≫
+        (cellDiskPullbackPair p C 1 j).map)) := by
+    rw [cellBoundaryFiberι_comp_map]
+    exact isIso_singularHomologyMap_pullbackFiberι hp (ModuleCat.of R R) q (cellULiftMap C 1 j) _
+  asIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+    (ModuleCat.of R R)).map (cellBoundaryFiberι p j 1 abs_one ≫ (cellDiskPullbackPair p C 1 j).map))
 
 variable (p) in
 /-- The connecting map `Hq+1(Pⱼ, ∂Pⱼ) ⟶ Hq(∂Pⱼ)` of the pair over a `1`-cell `j`. -/
@@ -476,9 +455,7 @@ private lemma map_cellBoundaryFiberι_one_comp_cellBoundaryIncl (q : ℕ) (j : c
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
         (ModuleCat.of R R)).map (cellBoundaryFiberι p j 1 (by norm_num)) ≫
       cellBoundaryIncl p R q j = (pullbackFiberιIso R hp q j).hom := by
-  rw [cellBoundaryIncl, ← Functor.map_comp]
-  erw [cellBoundaryFiberι_comp_map]
-  rfl
+  rw [cellBoundaryIncl, ← Functor.map_comp, pullbackFiberιIso, asIso_hom]
 
 omit [T2Space B] in
 /-- Through the boundary `∂Pⱼ`, the fibre inclusions at the two end points differ by the transport
@@ -492,8 +469,8 @@ private lemma map_cellBoundaryFiberι_neg_one_comp_cellBoundaryIncl (q : ℕ) (j
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
           (ModuleCat.of R R)).map (cellBoundaryFiberι p j 1 (by norm_num)) ≫
         cellBoundaryIncl p R q j := by
-  rw [cellBoundaryIncl, ← Functor.map_comp, ← Functor.map_comp]
-  erw [cellBoundaryFiberι_comp_map, cellBoundaryFiberι_comp_map]
+  rw [cellBoundaryIncl, ← Functor.map_comp, ← Functor.map_comp, cellBoundaryFiberι_comp_map,
+    cellBoundaryFiberι_comp_map]
   exact map_pullbackFiberι_neg R hp q j
 
 /-- **The first differential out of the `1`-cells lands in the transport relations.** -/
@@ -555,6 +532,20 @@ private def cokernelSkeletonTripleδIso (q : ℕ) :
   hom_inv_id := by rw [← cancel_epi (cokernel.π _)]; simp
   inv_hom_id := by rw [← cancel_epi (cokernel.π _)]; simp
 
+/-- The cokernel of a morphism `f` composed with isomorphisms on both sides is the cokernel of
+`f`. -/
+private def cokernelConjIso {X X' Y Y' : ModuleCat.{u} R} (a : X' ≅ X) (f : X ⟶ Y) (b : Y' ≅ Y) :
+    cokernel (a.hom ≫ f ≫ b.inv) ≅ cokernel f :=
+  cokernel.mapIso _ f a b (by simp)
+
+/-- On the quotient map, `TauCeti.TopCat.cokernelConjIso` is induced by the isomorphism on the
+target. -/
+private lemma π_comp_cokernelConjIso_trans_hom {X X' Y Y' W : ModuleCat.{u} R} (a : X' ≅ X)
+    (f : X ⟶ Y) (b : Y' ≅ Y) (e : cokernel f ≅ W) :
+    cokernel.π (a.hom ≫ f ≫ b.inv) ≫ (cokernelConjIso R a f b ≪≫ e).hom =
+      b.hom ≫ cokernel.π f ≫ e.hom := by
+  simp [cokernelConjIso]
+
 /-- The comparison `TauCeti.TopCat.cokernelSkeletonTripleδIso` for any triple of subsets equal to
 the first three stages of the skeletal filtration. -/
 private def cokernelTripleδIsoOfEq {s t w : Set E} (h₁ : s ⊆ t) (h₂ : t ⊆ w)
@@ -565,6 +556,20 @@ private def cokernelTripleδIsoOfEq {s t w : Set E} (h₁ : s ⊆ t) (h₂ : t �
       cokernel (oneCellTransportDifference C R hp q) := by
   subst hs ht hw
   exact cokernelSkeletonTripleδIso C R hp q
+
+/-- On the quotient map, `TauCeti.TopCat.cokernelTripleδIsoOfEq` is the quotient map by the
+transport differences. -/
+private lemma π_comp_cokernelTripleδIsoOfEq_hom {s t w : Set E} (h₁ : s ⊆ t) (h₂ : t ⊆ w)
+    (hs : s = p ⁻¹' (skeletonLT C ((0 : ℕ) : ℕ∞) : Set B))
+    (ht : t = p ⁻¹' (skeletonLT C ((0 + 1 : ℕ) : ℕ∞) : Set B))
+    (hw : w = p ⁻¹' (skeletonLT C ((1 + 1 : ℕ) : ℕ∞) : Set B)) (q : ℕ) :
+    cokernel.π _ ≫ (cokernelTripleδIsoOfEq R hp h₁ h₂ hs ht hw q).hom =
+      eqToHom (congrArg (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of R R) q)
+          (show TopPair.ofInclusion h₁ = preimageSkeletonPair p C 0 by subst hs ht; rfl)) ≫
+        cokernel.π (oneCellTransportDifference C R hp q) := by
+  subst hs ht hw
+  simp only [cokernelTripleδIsoOfEq, cokernelSkeletonTripleδIso, eqToHom_refl, Category.id_comp]
+  exact cokernel.π_desc _ _ _
 
 /-- The objects of the first page of the Serre spectral sequence in the row `b = -2` vanish: the
 two stages `p⁻¹(X⁻¹)` of the filtration involved agree. -/
@@ -583,19 +588,13 @@ private lemma isZero_serreSpectralSequence_page_two_X_neg_two (pq : ℤ × ℤ) 
   exact (mem_preimageSkeleton_iff _ _ _).2 this
 
 variable (C) in
-/-- **The column `p = 0` of the second page of the Serre spectral sequence.** For a Serre
-fibration `p : E ⟶ B` and a relative CW complex `C ⊆ B` with skeleta `Xⁿ`, the object `E²_{0,q}` of
-the second page (numbered `3`) of the Serre spectral sequence, at `pq = (a, b)` with `b = -1` and
-`a + b = -q`, is the quotient of `Hq(p⁻¹(X⁰), p⁻¹(X⁻¹); R)`, the fibre homology over the
-`0`-skeleton, by the classes `a - τⱼ a` of the transport differences along the `1`-cells
-(`TauCeti.TopCat.oneCellTransportDifference`): it is the cokernel of the first differential, which
-has the same image as the transport differences. -/
-def serreSpectralSequenceSecondPageXIsoCokernel (q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = -1)
-    (ha : pq.1 + pq.2 = -q) :
-    ((serreSpectralSequence C p R).page 3).X pq ≅ cokernel (oneCellTransportDifference C R hp q) :=
-  eqToIso (congrArg (fun pq ↦ ((serreSpectralSequence C p R).page 3).X pq)
+/-- The homology of the first page at a point of the column `p = 0` is the cokernel of the
+transport differences along the `1`-cells. -/
+private def homologyIsoCokernel (q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = -1) (ha : pq.1 + pq.2 = -q) :
+    ((serreSpectralSequence C p R).page 2 le_rfl).homology pq ≅
+      cokernel (oneCellTransportDifference C R hp q) :=
+  eqToIso (congrArg (fun pq ↦ ((serreSpectralSequence C p R).page 2 le_rfl).homology pq)
       (Prod.ext (by dsimp only; lia) (by dsimp only; lia) : pq = (-1 - (q : ℤ) + 2, 0 - 1))) ≪≫
-    ((serreSpectralSequence C p R).iso 2 3 (-1 - (q : ℤ) + 2, 0 - 1) rfl le_rfl).symm ≪≫
     ((serreSpectralSequence C p R).page 2 le_rfl).isoHomologyι _ (-1 - (q : ℤ) + 2 + 2, 0 - 1 - 1)
       (ComplexShape.next_eq' _ (Prod.ext (by simp only [Prod.fst_add])
         (by simp only [Prod.snd_add]; lia)))
@@ -605,9 +604,89 @@ def serreSpectralSequenceSecondPageXIsoCokernel (q : ℕ) (pq : ℤ × ℤ) (hb 
         (by simp only [Prod.snd_add]; lia)))).coconePointUniqueUpToIso (cokernelIsCokernel _) ≪≫
     cokernelIsoOfEq (filteredSpaceSpectralSequence_first_page_d_eq (ModuleCat.of R R)
       (monotone_preimageSkeleton p) 0 (-1 - q) q (by lia)) ≪≫
-    cokernelEpiComp _ _ ≪≫ @cokernelCompIsIso _ _ _ _ _ _ _ _ _ (Iso.isIso_inv _) ≪≫
+    cokernelConjIso R _ _ _ ≪≫
     cokernelTripleδIsoOfEq R hp _ _ (by rw [preimageSkeleton_def]; rfl)
       (by rw [preimageSkeleton_def]; rfl) (by rw [preimageSkeleton_def]; rfl) q
+
+variable (C) in
+/-- **The column `p = 0` of the second page of the Serre spectral sequence.** For a Serre
+fibration `p : E ⟶ B` and a relative CW complex `C ⊆ B` with skeleta `Xⁿ`, the object `E²_{0,q}` of
+the second page (numbered `3`) of the Serre spectral sequence, at `pq = (a, b)` with `b = -1` and
+`a + b = -q`, is the quotient of `Hq(p⁻¹(X⁰), p⁻¹(X⁻¹); R)`, the fibre homology over the
+`0`-skeleton, by the classes `a - τⱼ a` of the transport differences along the `1`-cells
+(`TauCeti.TopCat.oneCellTransportDifference`): it is the cokernel of the first differential, which
+has the same image as the transport differences. -/
+def serreSpectralSequenceSecondPageXZeroIsoCokernel (q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = -1)
+    (ha : pq.1 + pq.2 = -q) :
+    ((serreSpectralSequence C p R).page 3).X pq ≅ cokernel (oneCellTransportDifference C R hp q) :=
+  ((serreSpectralSequence C p R).iso 2 3 pq rfl le_rfl).symm ≪≫
+    homologyIsoCokernel C R hp q pq hb ha
+
+/-- The first-page identification, read in a fixed pair, does not depend on how the upper stage
+and the total degree are written. -/
+private lemma filteredSpaceSpectralSequenceFirstPageXIso_hom_comp_eqToHom {pq : ℤ × ℤ}
+    {a b b' m m' : ℤ} (ha : a = pq.2) (hb : b = pq.2 + 1) (hb' : b' = pq.2 + 1)
+    (hm : m = pq.1 + pq.2) (hm' : m' = pq.1 + pq.2) {n : ℕ} (hn : m = -n) (hn' : m' = -n)
+    {P : TopPair.{u}}
+    (h : TopPair.ofInclusion (monotone_preimageSkeleton (C := C) p (by lia : a ≤ b)) = P)
+    (h' : TopPair.ofInclusion (monotone_preimageSkeleton (C := C) p (by lia : a ≤ b')) = P) :
+    (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R) (monotone_preimageSkeleton p)
+        pq a b ha hb m hm n hn).hom ≫
+        eqToHom (congrArg (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of R R) n) h) =
+      (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R) (monotone_preimageSkeleton p)
+        pq a b' ha hb' m' hm' n hn').hom ≫
+        eqToHom (congrArg (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of R R) n) h') := by
+  subst hb hb' hm hm'
+  rfl
+
+variable (C) in
+/-- On the cycles, `TauCeti.TopCat.homologyIsoCokernel` is the quotient map by the transport
+differences. -/
+private lemma homologyπ_comp_homologyIsoCokernel_hom (q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = -1)
+    (ha : pq.1 + pq.2 = -q) :
+    ((serreSpectralSequence C p R).page 2).homologyπ pq ≫
+        (homologyIsoCokernel C R hp q pq hb ha).hom =
+      ((serreSpectralSequence C p R).page 2).iCycles pq ≫
+        (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R)
+          (monotone_preimageSkeleton p) pq pq.2 (pq.2 + 1) rfl rfl _ rfl q ha).hom ≫
+        eqToHom (congrArg (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of R R) q)
+          (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair 0 pq.2 (by lia))) ≫
+        cokernel.π (oneCellTransportDifference C R hp q) := by
+  obtain rfl : pq = (-1 - (q : ℤ) + 2, 0 - 1) := Prod.ext (by lia) (by lia)
+  simp only [homologyIsoCokernel, Iso.trans_hom, eqToIso_refl, Iso.refl_hom, Category.id_comp,
+    HomologicalComplex.isoHomologyι_hom, HomologicalComplex.homology_π_ι_assoc]
+  have hπ {X Y Z W : ModuleCat.{u} R} {f : X ⟶ Y} (π : Y ⟶ Z) (w : f ≫ π = 0)
+      (hc : IsColimit (CokernelCofork.ofπ π w)) (g : cokernel f ⟶ W) :
+      π ≫ (hc.coconePointUniqueUpToIso (cokernelIsCokernel f)).hom ≫ g = cokernel.π f ≫ g := by
+    simpa using hc.comp_coconePointUniqueUpToIso_hom (cokernelIsCokernel f) .one =≫ g
+  rw [hπ, π_comp_cokernelIsoOfEq_hom_assoc]
+  -- The first differential is only stated up to unfolding its intermediate objects, so the
+  -- composite is computed by unification rather than by rewriting.
+  refine (_ ≫= π_comp_cokernelConjIso_trans_hom R _ _ _ _).trans ?_
+  refine (_ ≫= _ ≫= π_comp_cokernelTripleδIsoOfEq_hom R hp _ _ _ _ _ q).trans ?_
+  exact _ ≫= (reassoc_of% (filteredSpaceSpectralSequenceFirstPageXIso_hom_comp_eqToHom R
+    (a := 0 - 1) (b := 0) (b' := 0 - 1 + 1) _ _ _ _ _ _ _
+    (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair 0 (0 - 1) (by lia))
+    (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair 0 (0 - 1) (by lia)))) _
+
+variable (C) in
+/-- Under `TauCeti.TopCat.serreSpectralSequenceSecondPageXZeroIsoCokernel`, the projection of the
+first page onto the second is the quotient map of `E¹_{0,q} = Hq(p⁻¹(X⁰), p⁻¹(X⁻¹); R)` by the
+transport differences along the `1`-cells. -/
+@[reassoc]
+lemma homologyπ_comp_serreSpectralSequenceSecondPageXZeroIsoCokernel_hom (q : ℕ) (pq : ℤ × ℤ)
+    (hb : pq.2 = -1) (ha : pq.1 + pq.2 = -q) :
+    ((serreSpectralSequence C p R).page 2).homologyπ pq ≫
+        ((serreSpectralSequence C p R).iso 2 3 pq rfl le_rfl).hom ≫
+        (serreSpectralSequenceSecondPageXZeroIsoCokernel C R hp q pq hb ha).hom =
+      ((serreSpectralSequence C p R).page 2).iCycles pq ≫
+        (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R)
+          (monotone_preimageSkeleton p) pq pq.2 (pq.2 + 1) rfl rfl _ rfl q ha).hom ≫
+        eqToHom (congrArg (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of R R) q)
+          (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair 0 pq.2 (by lia))) ≫
+        cokernel.π (oneCellTransportDifference C R hp q) := by
+  rw [serreSpectralSequenceSecondPageXZeroIsoCokernel, Iso.trans_hom, Iso.symm_hom,
+    Iso.hom_inv_id_assoc, homologyπ_comp_homologyIsoCokernel_hom]
 
 end SecondPage
 

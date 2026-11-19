@@ -7,13 +7,15 @@ module
 
 public import Mathlib.Topology.CWComplex.Classical.Basic
 public import Mathlib.Topology.Category.TopCat.Basic
+public import Mathlib.Topology.Path
 
 /-!
 # Skeletal objects of relative CW complexes
 
 The stages of a relative CW complex's skeletal filtration, bundled as topological spaces.
 Characteristic-map lemmas describe their continuity on the closed unit ball (bundled as
-`TauCeti.cellMap`), how open cells sit outside the lower skeleton, how their coordinates are
+`TauCeti.cellMap`, and for a `1`-cell as the path `TauCeti.cellPath` between its end points in the
+`0`-skeleton), how open cells sit outside the lower skeleton, how their coordinates are
 unique, and how cells account for points in consecutive skeleta, so that a map sends
 `skeletonLT C (n + 1)` into a set exactly when it does so on `skeletonLT C n` and on the closed
 `n`-cells (`TauCeti.mapsTo_skeletonLT_succ_iff`).  Every point of the complex lies in some
@@ -73,6 +75,23 @@ lemma map_eq_map_iff {n : ℕ} {i j : cell C n} {y z : Fin n → ℝ} (hy : ‖y
     refine (disjoint_openCell_of_ne (by simpa using hne)).ne_of_mem
       ⟨y, mem_ball_zero_iff.2 hy, rfl⟩ ⟨z, mem_ball_zero_iff.2 hz, rfl⟩ h
   refine ⟨rfl, (map n i).injOn ?_ ?_ h⟩ <;> rw [source_eq] <;> simpa
+
+variable (C) in
+/-- The path along a `1`-cell `j`: its characteristic map read on `[-1, 1]`, from the end point
+`χⱼ(-1)` to the end point `χⱼ(1)`. -/
+def cellPath (j : cell C 1) : Path (map 1 j (fun _ ↦ -1)) (map 1 j (fun _ ↦ 1)) where
+  toFun t := map 1 j (fun _ ↦ 2 * (t : ℝ) - 1)
+  continuous_toFun := by
+    refine (continuousOn 1 j).comp_continuous (by fun_prop) fun t ↦ ?_
+    rw [mem_closedBall_zero_iff, pi_norm_const, Real.norm_eq_abs, abs_le]
+    constructor <;> linarith [t.2.1, t.2.2]
+  source' := by simp
+  target' := by norm_num
+
+@[simp]
+lemma cellPath_apply (j : cell C 1) (t : unitInterval) :
+    cellPath C j t = map 1 j (fun _ ↦ 2 * (t : ℝ) - 1) :=
+  (rfl)
 
 variable [T2Space X] (C)
 
@@ -138,6 +157,13 @@ lemma map_mem_skeletonLT_succ {n : ℕ} (j : cell C n) {y : Fin n → ℝ} (hy :
     map n j y ∈ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) := by
   rw [Nat.cast_succ]
   exact closedCell_subset_skeletonLT n j ⟨y, mem_closedBall_zero_iff.2 hy, rfl⟩
+
+variable (C) in
+/-- The end points `χⱼ(-1)` and `χⱼ(1)` of a `1`-cell `j` lie in the `0`-skeleton. -/
+lemma map_mem_skeletonLT_one (j : cell C 1) {c : ℝ} (hc : |c| = 1) :
+    map 1 j (fun _ ↦ c) ∈ (skeletonLT C ((0 + 1 : ℕ) : ℕ∞) : Set X) :=
+  cellFrontier_subset_skeletonLT 1 j
+    ⟨_, mem_sphere_zero_iff_norm.2 (by rw [pi_norm_const, Real.norm_eq_abs, hc]), rfl⟩
 
 /-- A map out of a relative CW complex sends `skeletonLT C (n + 1)` into a set `T` exactly when
 it sends `skeletonLT C n` into `T` and sends every closed `n`-cell, read through its
