@@ -161,7 +161,6 @@ theorem fst_add_three_le_two_mul_exp_wordDelay {u : List (ℕ × Fin d)} {a : �
   | cons b u ih =>
     have hb := wordDelay_nonneg u (branchMap_mem_orderedSimplex b hx)
     have hq := branchDenom_pos_of_mem_orderedSimplex b hx
-    have hlog := log_three_halves_le_log_branchDenom b (le_one_half_of_mem_orderedSimplex hx b.2)
     rw [wordDelay_cons, Real.exp_add, Real.exp_log hq]
     rcases List.mem_cons.mp ha with rfl | ha
     · have h := add_three_div_two_le_branchDenom a (le_one_half_of_mem_orderedSimplex hx a.2)
@@ -208,10 +207,8 @@ theorem wordMove_simplexLift (u : List (ℕ × Fin d)) {x : Fin d → ℝ}
   | nil => simp
   | cons a u ih =>
     have hq := branchDenom_pos_of_mem_orderedSimplex a hx
-    rw [wordMove_cons, mul_apply_eq_comp, mul_apply_eq_comp,
-      linearMove_last_pow_linearMove_simplexLift a hq.ne', map_smul,
-      ih (branchMap_mem_orderedSimplex a hx), smul_smul, wordDelay_cons, wordMap_cons,
-      Real.exp_add, Real.exp_log hq]
+    simp [linearMove_last_pow_linearMove_simplexLift a hq.ne',
+      ih (branchMap_mem_orderedSimplex a hx), smul_smul, Real.exp_add, Real.exp_log hq]
 
 /-- **The homogeneous identity** for words on the ordered cone: for `y ∈ H_n` over `w`,
 `γ_u y = y_n e^{T_u (w)} (F_u (w), 1)`. -/
@@ -243,8 +240,8 @@ theorem simplexChart_wordMove (u : List (ℕ × Fin d)) {y : Fin (d + 2) → ℝ
 theorem wordDelay_simplexChart (u : List (ℕ × Fin d)) {y : Fin (d + 2) → ℝ}
     (hy : y ∈ orderedCone d) :
     wordDelay u (simplexChart y) = Real.log (wordMove u y (Fin.last _) / y (Fin.last _)) := by
-  rw [wordMove_of_mem_orderedCone u hy, Pi.smul_apply, simplexLift_last, smul_eq_mul, mul_one,
-    mul_div_cancel_left₀ _ (pos_last_of_mem_orderedCone hy).ne', Real.log_exp]
+  rw [wordMove_of_mem_orderedCone u hy]
+  simp [(pos_last_of_mem_orderedCone hy).ne']
 
 /-! ### The renewal count -/
 
