@@ -108,7 +108,7 @@ instance etale_hom_left {S : Scheme.{u}} {X Y : FiniteEtaleScheme S} (f : X ⟶ 
   exact Etale.of_comp f.hom.left Y.obj.hom
 
 /-- Bundle a scheme with a finite étale structure morphism. -/
-@[expose] def ofHom {S X : Scheme.{u}} (f : X ⟶ S) [IsFinite f] [Etale f] : FiniteEtaleScheme S :=
+def ofHom {S X : Scheme.{u}} (f : X ⟶ S) [IsFinite f] [Etale f] : FiniteEtaleScheme S :=
   ⟨Over.mk f, by
     constructor
     · exact ‹IsFinite f›

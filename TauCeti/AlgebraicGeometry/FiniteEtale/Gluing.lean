@@ -104,7 +104,12 @@ theorem exists_pullback_iso_of_isPullback (h : IsPullback i₁ i₂ j₁ j₂)
       ⟨inferInstance, inferInstance⟩
   have chart₁ := (Scheme.isPullback_pushout_desc_comp_inl h h₁.toCommSq h₂ w).flip
   have chart₂ := (Scheme.isPullback_pushout_desc_comp_inr h h₁ h₂.toCommSq w).flip
-  let Y : FiniteEtaleScheme S := ofHom (pushout.desc (Y₁.obj.hom ≫ j₁) (Y₂.obj.hom ≫ j₂) w)
+  -- Build `Y` with `ofHom`, then use `ofHom_obj` to see its structure morphism as `pushout.desc`.
+  obtain ⟨⟨Y, hY⟩, hYobj⟩ : ∃ Y : FiniteEtaleScheme S,
+      Y.obj = Over.mk (pushout.desc (Y₁.obj.hom ≫ j₁) (Y₂.obj.hom ≫ j₂) w) :=
+    ⟨ofHom _, ofHom_obj _⟩
+  subst hYobj
+  let Y : FiniteEtaleScheme S := ⟨_, hY⟩
   let e₁ : (pullback j₁).obj Y ≅ Y₁ :=
     ObjectProperty.isoMk _ (Over.isoMk chart₁.isoPullback.symm chart₁.isoPullback_inv_snd)
   let e₂ : (pullback j₂).obj Y ≅ Y₂ :=
