@@ -370,6 +370,20 @@ noncomputable def constantPositiveLoop : WithConv (H →ₐ[k] R) →* WithConv 
 
 variable {k H R}
 
+/-- Evaluating a loop at `X = 0` takes the constant coefficient of each of its values. -/
+@[simp]
+theorem ofConv_positiveLoopEvalZero_apply (g : WithConv (H →ₐ[k] R⟦X⟧)) (h : H) :
+    (positiveLoopEvalZero k H R g).ofConv h = PowerSeries.constantCoeff (g.ofConv h) := by
+  rw [positiveLoopEvalZero, AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
+    PowerSeries.constantCoeffAlgHom_apply]
+
+/-- The values of a constant loop are the constant power series on the values of the point. -/
+@[simp]
+theorem ofConv_constantPositiveLoop_apply (g : WithConv (H →ₐ[k] R)) (h : H) :
+    (constantPositiveLoop k H R g).ofConv h = PowerSeries.C (g.ofConv h) := by
+  rw [constantPositiveLoop, AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
+    IsScalarTower.coe_toAlgHom', PowerSeries.algebraMap_eq]
+
 /-- The constant loops are a section of evaluation at `X = 0`. -/
 @[simp]
 theorem positiveLoopEvalZero_constantPositiveLoop (g : WithConv (H →ₐ[k] R)) :
