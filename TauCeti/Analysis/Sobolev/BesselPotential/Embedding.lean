@@ -120,8 +120,8 @@ spaces.
   a Sobolev function to its unique continuous representative.
 * `TauCeti.Wkp.toZeroAtInfty_injective`: the continuous representative determines the Sobolev
   function.
-* `TauCeti.not_memSobolev_one_indicator_Icc`: `1_{[0,1]} ∉ H^{1,2}(ℝ)`, since it has no
-  continuous representative.
+* `TauCeti.not_memSobolev_indicator_Icc`: `1_{[0,1]} ∉ H^{s,2}(ℝ)` for `s > 1 / 2`, in particular
+  `1_{[0,1]} ∉ H^{1,2}(ℝ)`, since it has no continuous representative.
 
 ## References
 
@@ -760,19 +760,21 @@ theorem toZeroAtInfty_injective (hk : finrank ℝ E < 2 * k) :
 end Wkp
 
 open Set in
-/-- **The indicator function of `[0, 1]` is not in `H^{1,2}(ℝ)`.** Since `1 > 1 / 2`, every
-function in `H^{1,2}(ℝ)` has a continuous representative
-(`TemperedDistribution.MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq`), while the indicator
-function jumps at `0`. Its distributional derivative `δ₀ - δ₁` is not a function. -/
-theorem not_memSobolev_one_indicator_Icc :
-    ¬ TemperedDistribution.MemSobolev 1 2 (Complex.ofRealCLM.compLp (indicatorConstLp 2
+/-- **The indicator function of `[0, 1]` is not in `H^{s,2}(ℝ)` for `s > 1 / 2`**, in particular
+not in `H^{1,2}(ℝ)`. Every function in `H^{s,2}(ℝ)` with `s > 1 / 2` has a continuous
+representative (`TemperedDistribution.MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq`), while
+the indicator function jumps at `0`. For `s = 1` this reflects that its distributional derivative
+`δ₀ - δ₁` is not a function. -/
+theorem not_memSobolev_indicator_Icc {s : ℝ} (hs : 1 / 2 < s) :
+    ¬ TemperedDistribution.MemSobolev s 2 (Complex.ofRealCLM.compLp (indicatorConstLp 2
       (measurableSet_Icc (a := (0 : ℝ)) (b := 1)) measure_Icc_lt_top.ne (1 : ℝ) :
         Lp ℝ 2 (volume : Measure ℝ)) : 𝓢'(ℝ, ℂ)) := by
   set g : Lp ℝ 2 (volume : Measure ℝ) :=
     indicatorConstLp 2 (measurableSet_Icc (a := (0 : ℝ)) (b := 1)) measure_Icc_lt_top.ne 1
   have hg : (g : ℝ → ℝ) =ᵐ[volume] (Icc (0 : ℝ) 1).indicator fun _ ↦ 1 := indicatorConstLp_coeFn
   intro hu
-  obtain ⟨f, hf⟩ := hu.exists_zeroAtInftyContinuousMap_ae_eq (by norm_num)
+  obtain ⟨f, hf⟩ :=
+    hu.exists_zeroAtInftyContinuousMap_ae_eq (by rw [Module.finrank_self, Nat.cast_one]; linarith)
   have hae : (f : ℝ → ℂ) =ᵐ[volume]
       fun x ↦ (((Icc (0 : ℝ) 1).indicator fun _ ↦ (1 : ℝ)) x : ℂ) := by
     filter_upwards [hf, Complex.ofRealCLM.coeFn_compLp g, hg] with x h₁ h₂ h₃

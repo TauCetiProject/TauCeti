@@ -92,11 +92,12 @@ open scoped LineDeriv SchwartzMap Real
 
 variable [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
 
-/-- **The Fourier transform of a derivative.** If a tempered distribution `f` has the `L²`
+/-- **The Fourier transform of a derivative.** If a tempered distribution `f` has the `L^q`
 Fourier transform `v` and its derivative in the direction `m` is an `L²` function `d`, then
 `𝓕 d(ξ) = 2πi⟪ξ, m⟫ v(ξ)` almost everywhere. -/
-theorem fourier_ae_eq_of_lineDerivOp_eq {f : 𝓢'(E, F)} {v d : Lp F 2 (volume : Measure E)}
-    (hv : 𝓕 f = v) {m : E} (hd : ∂_{m} f = d) :
+theorem fourier_ae_eq_of_lineDerivOp_eq {f : 𝓢'(E, F)} {q : ℝ≥0∞} [Fact (1 ≤ q)]
+    {v : Lp F q (volume : Measure E)} {d : Lp F 2 (volume : Measure E)} (hv : 𝓕 f = v) {m : E}
+    (hd : ∂_{m} f = d) :
     𝓕 d =ᵐ[volume] fun ξ ↦ (2 * π * Complex.I * inner ℝ ξ m) • v ξ := by
   rw [← toTemperedDistribution_eq_smulLeftCLM_iff (by fun_prop),
     ← fourier_toTemperedDistribution_eq, ← hd, fourier_lineDerivOp_eq, hv]
