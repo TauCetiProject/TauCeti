@@ -240,7 +240,7 @@ instance [IsCancelSMul K Z] : IsCancelSMul G (BalancedProduct K K.RightTranslati
 
 /-- The projection `[g, z] ↦ g K` of `G ×_K Z` onto `G ⧸ K` is `G`-equivariant. -/
 @[simp]
-theorem proj_quotientMk_smul (k : G) (y : BalancedProduct K K.RightTranslation Z) :
+theorem proj_smul_rightTranslation (k : G) (y : BalancedProduct K K.RightTranslation Z) :
     proj Z Subgroup.RightTranslation.quotientMk_smul (k • y) =
       k • proj Z Subgroup.RightTranslation.quotientMk_smul y :=
   y.induction_on_toRightTranslation fun g z ↦ by simp [proj_mk]
