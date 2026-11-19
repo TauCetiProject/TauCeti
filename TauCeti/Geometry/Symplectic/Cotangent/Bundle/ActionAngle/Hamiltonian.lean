@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 
 import Mathlib.Analysis.Calculus.Deriv.Prod

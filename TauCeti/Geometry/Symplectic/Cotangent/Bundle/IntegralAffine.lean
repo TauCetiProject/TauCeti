@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Integer
 public import TauCeti.Geometry.Manifold.DifferentialForm.Torus
-public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle.Basic
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Fiberwise
 
 /-!
