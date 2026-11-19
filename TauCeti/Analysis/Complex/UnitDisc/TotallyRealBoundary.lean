@@ -231,17 +231,11 @@ theorem exists_conjWirtingerDeriv_eq_and_mem {f : ℂ → E}
       hUd).add_const _
   · have hUz : DifferentiableAt ℝ U z := hUd.differentiableAt (isOpen_ball.mem_nhds hz)
     have hproj : ∀ i, conjWirtingerDeriv U z 1 i = A (f z) i := fun i => by
-      let π : (Fin (finrank ℝ Λ) → ℂ) →L[ℂ] ℂ := ContinuousLinearMap.proj i
-      have hπ : π ∘ U = ui i := rfl
-      have h := conjWirtingerDeriv_comp π.differentiableAt hUz
-      rw [ContinuousLinearMap.fderiv, hπ] at h
-      rw [← heq i z hz, h]
-      rfl
-    have h := conjWirtingerDeriv_comp A.symm.differentiableAt hUz
-    rw [Function.comp_def] at h
-    rw [conjWirtingerDeriv_add_const, h, ContinuousLinearEquiv.fderiv,
-      ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, funext hproj,
-      ContinuousLinearEquiv.symm_apply_apply]
+      simpa [U, heq i z hz] using
+        congr($((ContinuousLinearMap.proj (R := ℂ) (φ := fun _ => ℂ) i).conjWirtingerDeriv_comp
+          hUz) 1).symm
+    simpa [funext hproj] using
+      congr($((A.symm : _ →L[ℂ] E).conjWirtingerDeriv_comp hUz) 1)
   · exact Λ.add_mem (hmem w hw) (Λ.sub_mem hv (hmem 1 (by simp)))
   · simp
 

@@ -343,12 +343,12 @@ theorem complexBasis_repr_coe {ι : Type*} (b : Basis ι ℝ L) (x : L) (i : ι)
 theorem mem_iff_forall_conj_complexBasis_repr {ι : Type*} (b : Basis ι ℝ L) {x : E} :
     x ∈ L ↔ ∀ i, starRingEnd ℂ ((hL.complexBasis b).repr x i) = (hL.complexBasis b).repr x i := by
   refine ⟨fun hx i => ?_, fun h => ?_⟩
-  · rw [show x = ((⟨x, hx⟩ : L) : E) from rfl, complexBasis_repr_coe, Complex.conj_ofReal]
+  · lift x to L using hx
+    simp
   · rw [← (hL.complexBasis b).linearCombination_repr x, Finsupp.linearCombination_apply]
     refine Submodule.finsuppSum_mem _ _ _ _ fun i _ => ?_
-    have hi := L.smul_mem ((hL.complexBasis b).repr x i).re (b i).2
-    rwa [← algebraMap_smul ℂ, Complex.coe_algebraMap, Complex.conj_eq_iff_re.mp (h i),
-      ← complexBasis_apply hL] at hi
+    simpa [← algebraMap_smul ℂ, Complex.conj_eq_iff_re.mp (h i)] using
+      L.smul_mem ((hL.complexBasis b).repr x i).re (b i).2
 
 /-- A complex-linear automorphism maps maximal totally real subspaces to maximal totally real
 subspaces. -/
