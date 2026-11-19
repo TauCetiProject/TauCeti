@@ -112,11 +112,9 @@ theorem sectionIndex_toHomologicalOrientation_eq_one {z : M} (hz : s z = 0)
     -- `Λ v` is `e_z (D v)` by definition of the composite.
     rw [← hD, ← e.coe_continuousLinearEquivAt_eq hze]
     rfl
-  -- An isolating neighbourhood of `z` on which `e` reads the fibre orientations as at `z`.
   obtain ⟨U, hUo, hzU, hUz, hUe, hUφ, ho'⟩ := exists_isolating_nhds_of_hasFDerivAt o hF e φ hze hzφ
     hz hA ⟨1, by simpa using AntilipschitzWith.id⟩
-  -- The chart `φ` reads the homological orientation of `oM` at `z` as the local orientation
-  -- selected by the orientation that `e` reads on the fibres.
+  -- The chart carries the manifold orientation to the fibre orientation read in `e`.
   have hmap : (oM.orientationAt z).map _ Λ.toLinearEquiv =
       e.mapOrientation (Fin (n + 1)) hze (o z) := by
     have hΛ : Λ.toLinearEquiv = D.toLinearEquiv.trans (e.linearEquivAt ℝ z hze) :=
@@ -125,11 +123,22 @@ theorem sectionIndex_toHomologicalOrientation_eq_one {z : M} (hz : s z = 0)
     refine (Orientation.map_trans D.toLinearEquiv (e.linearEquivAt ℝ z hze)
       (oM.orientationAt z)).trans ?_
     rw [ho, Trivialization.mapOrientation_apply]
+  -- The index formula centers after `Λ`; linearity identifies it with the canonical chart map.
+  have hσ : (⟨fun x : φ.source ↦ φ x - φ z,
+      φ.continuousOn.domRestrict.sub continuous_const⟩ : C(φ.source, F)) =
+      ((Λ : X →L[ℝ] F) : C(X, F)).comp
+        ((⟨fun y ↦ y - (chartAt X z) z, by fun_prop⟩ : C(X, X)).comp
+          (chartAt X z).sourceRestrict) :=
+    ContinuousMap.ext fun x ↦ by
+      change Λ ((chartAt X z) x) - Λ ((chartAt X z) z) =
+        Λ ((chartAt X z).sourceRestrict x - (chartAt X z) z)
+      simpa only [(chartAt X z).sourceRestrict_apply x] using
+        (map_sub Λ ((chartAt X z) x) ((chartAt X z) z)).symm
   have hφ := (chartAt X z).localHomologyMap_chart_localOrientationOfOrientedChart
-    (mem_chart_source X z) Λ (oM.orientationAt z) hX hF
-    ⟨fun x : φ.source ↦ φ x - φ z, φ.continuousOn.domRestrict.sub continuous_const⟩
-    (fun x ↦ (map_sub Λ _ _).symm)
-    (fun x hx ↦ Subtype.ext (φ.injOn x.2 hzφ (sub_eq_zero.1 hx)))
+    (mem_chart_source X z) Λ (oM.orientationAt z) hX hF (by
+      rw [← hσ]
+      exact fun x hx ↦ Subtype.ext (φ.injOn x.2 hzφ (sub_eq_zero.1 hx)))
+  simp only [← hσ] at hφ
   rw [hmap, ← localOrientationOfManifoldOrientation_eq,
     ← Manifold.Orientation.toHomologicalOrientation_apply] at hφ
   have hdet : (ContinuousLinearMap.id ℝ F).det = 1 := by
