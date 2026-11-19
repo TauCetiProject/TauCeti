@@ -37,6 +37,8 @@ the endpoint `∞` itself is `MeasureTheory.eLpNorm_exponent_top`.
 
 * `TauCeti.eLpNorm_exponent_top_le_liminf` — `eLpNorm f ∞ μ` is at most the `liminf` of the
   finite-exponent seminorms, for every measure;
+* `TauCeti.ae_enorm_le_of_tendsto_of_eLpNorm_le` — bounds `eLpNorm f (p i) μ ≤ a i` along
+  exponents `p i → ∞` with `a i → L` give `‖f‖ₑ ≤ L` almost everywhere;
 * `TauCeti.tendsto_eLpNorm_atTop` — for a finite measure, the finite-exponent seminorms converge
   to `eLpNorm f ∞ μ`.
 
@@ -92,6 +94,20 @@ theorem eLpNorm_exponent_top_le_liminf :
   rw [← ENNReal.rpow_le_rpow_iff hppos, ENNReal.mul_rpow_of_nonneg _ _ hppos.le,
     ← ENNReal.rpow_mul, one_div_mul_cancel hppos.ne', ENNReal.rpow_one]
   exact (mul_le_mul' le_rfl (min_le_left c 1)).trans hcheb
+
+/-- **An `L^∞` bound from `Lᵖ` bounds along exponents tending to `∞`.** If
+`eLpNorm f (p i) μ ≤ a i` eventually along a filter `l`, the exponents `p i` tend to `∞` and the
+bounds `a i` tend to `L`, then `‖f‖ₑ ≤ L` almost everywhere. This is the passage to the limit in
+Moser's iteration. -/
+theorem ae_enorm_le_of_tendsto_of_eLpNorm_le {ι : Type*} {l : Filter ι} [l.NeBot]
+    {p : ι → ℝ≥0} {a : ι → ℝ≥0∞} {L : ℝ≥0∞} (hp : Tendsto p l atTop) (ha : Tendsto a l (𝓝 L))
+    (h : ∀ᶠ i in l, eLpNorm f (p i) μ ≤ a i) :
+    ∀ᵐ x ∂μ, ‖f x‖ₑ ≤ L := by
+  have htop : eLpNorm f ∞ μ ≤ L :=
+    eLpNorm_exponent_top_le_liminf.trans <| hp.liminf_le_liminf_comp.trans <|
+      (liminf_le_liminf h).trans_eq ha.liminf_eq
+  filter_upwards [ae_le_eLpNormEssSup (f := f) (μ := μ)] with x hx
+  exact hx.trans (eLpNormEssSup_le_eLpNorm_top.trans htop)
 
 /-- **The `Lᵖ` seminorms converge to the `L^∞` seminorm.** Against a finite measure, for every
 `f`, `eLpNorm f p μ` tends to `eLpNorm f ∞ μ` as `p → ∞`. For almost everywhere strongly
