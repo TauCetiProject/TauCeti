@@ -70,6 +70,12 @@ theorem mem_cartanP {x : L} : x ∈ θ.cartanP ↔ θ x = -x := by
   simp [cartanP]
 
 variable (θ) in
+/-- `𝔭` is the `-1`-eigenspace of `θ`, viewed as a linear endomorphism of `L`. -/
+theorem cartanP_eq_eigenspace :
+    θ.cartanP = Module.End.eigenspace (θ.toLinearEquiv : Module.End R L) (-1) :=
+  (rfl)
+
+variable (θ) in
 /-- For an involution of a Lie algebra over a ring in which `2` is a unit, the fixed subalgebra
 `𝔨` and the `-1`-eigenspace `𝔭` are complementary: `L = 𝔨 ⊕ 𝔭`. -/
 theorem isCompl_fixedSubalgebra_cartanP (h2 : IsUnit (2 : R)) (hθ : Function.Involutive θ) :

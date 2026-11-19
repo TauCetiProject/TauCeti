@@ -325,9 +325,8 @@ theorem killingForm_cartanInvolution_apply (X Y : sp l K) :
 
 end Field
 
-/-- **`θ X = -Xᵀ` is a Cartan involution of `sp l K`** over an ordered field: `κ(X, θ X) < 0`
-for every nonzero `X`, since `-κ(X, θ X)` is `2 n + 2` times the sum of the squares of the
-entries of `X`. -/
+/-- Over an ordered field, `κ(X, θ X) < 0` for every nonzero `X ∈ sp l K`, where `θ X = -Xᵀ`,
+since `-κ(X, θ X)` is `2 n + 2` times the sum of the squares of the entries of `X`. -/
 theorem killingForm_cartanInvolution_self_neg {K : Type*} [Field K] [LinearOrder K]
     [IsStrictOrderedRing K] {X : sp l K} (hX : X ≠ 0) :
     killingForm K (sp l K) X (cartanInvolution l K X) < 0 := by
