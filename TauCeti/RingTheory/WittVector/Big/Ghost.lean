@@ -116,16 +116,6 @@ section CommRing
 
 variable [CommRing R]
 
-/-- A divisor `d` of `n` that does not divide `n / p` is divisible by `p ^ v_p(n)`. -/
-private theorem pow_multiplicity_dvd_of_not_dvd_div {p n d : ℕ} (hp : p.Prime) (hd : d ∣ n)
-    (hdp : ¬d ∣ n / p) : p ^ multiplicity p n ∣ d := by
-  obtain ⟨c, rfl⟩ := hd
-  have hc : ¬p ∣ c := by
-    rintro ⟨c', rfl⟩
-    exact hdp ⟨c', by rw [mul_left_comm, Nat.mul_div_cancel_left _ hp.pos]⟩
-  exact (Nat.Coprime.pow_left _ ((Nat.Prime.coprime_iff_not_dvd hp).2 hc)).dvd_of_dvd_mul_right
-    (pow_multiplicity_dvd p (d * c))
-
 /-- **The ghost congruence.** If `φ` is a ring endomorphism lifting the `p`-th power map modulo
 `p`, then for every coordinate sequence `x`, `w_n(x) ≡ φ(w_{n/p}(x))` modulo `p ^ v_p(n)`. -/
 theorem ghostPolynomial_sub_map_ghostPolynomial_div_mem {p : ℕ} (hp : p.Prime) (φ : R →+* R)
@@ -150,7 +140,7 @@ theorem ghostPolynomial_sub_map_ghostPolynomial_div_mem {p : ℕ} (hp : p.Prime)
     refine Dvd.dvd.mul_right ?_ _
     have := pow_multiplicity_dvd_of_not_dvd_div hp (Nat.dvd_of_mem_divisors hd)
       (by rw [Nat.mul_div_cancel_left m hp.pos]; exact fun h ↦ hdm (Nat.mem_divisors.2 ⟨h, hm⟩))
-    simpa using Nat.cast_dvd_cast (α := R) this
+    exact_mod_cast Nat.cast_dvd_cast (α := R) this
   · -- for `d ∣ m`, compare `d * x_d ^ (p e)` with `d * φ(x_d) ^ e`, where `m = d e`
     obtain ⟨e, rfl⟩ := Nat.dvd_of_mem_divisors hd
     have hd0 : d ≠ 0 := left_ne_zero_of_mul hm
@@ -167,7 +157,7 @@ theorem ghostPolynomial_sub_map_ghostPolynomial_div_mem {p : ℕ} (hp : p.Prime)
       dvd_sub_pow_of_dvd_sub_of_pow_dvd (Ideal.mem_span_singleton.1 (hφ (x d)))
         (pow_multiplicity_dvd p e)
     rw [← dvd_neg, neg_sub] at key
-    exact mul_dvd_mul (by simpa using Nat.cast_dvd_cast (α := R) (pow_multiplicity_dvd p d)) key
+    exact mul_dvd_mul (natCast_pow_multiplicity_dvd p d) key
 
 open scoped Classical in
 /-- Coordinates chosen in divisor order: the `n`-th coordinate solves
@@ -231,7 +221,7 @@ theorem ghost_image (S : TruncationSet) (φ : ℕ → R →+* R)
     rw [ghostPolynomial_eq_sum_properDivisors_add hn0, hlow (n / p) (Nat.mem_properDivisors.2
       ⟨Nat.div_dvd_of_dvd hpn, Nat.div_lt_self (Nat.pos_of_ne_zero hn0) hp'.one_lt⟩)] at hghost
     have hdiv : (p : R) ^ multiplicity p n ∣ n * ghostPreimage b n :=
-      Dvd.dvd.mul_right (by simpa using Nat.cast_dvd_cast (α := R) (pow_multiplicity_dvd p n)) _
+      (natCast_pow_multiplicity_dvd p n).mul_right _
     have hrem : b n - ∑ d ∈ n.properDivisors, (d : R) * ghostPreimage b d ^ (n / d) =
         b n - φ p (b (n / p)) - (∑ d ∈ n.properDivisors, (d : R) * ghostPreimage b d ^ (n / d) +
           n * ghostPreimage b n - φ p (b (n / p))) + n * ghostPreimage b n := by
@@ -265,7 +255,7 @@ theorem eqOn_ghostPolynomial_iff {S : TruncationSet}
     add_right_inj] at hxy
   refine (isSMulRegular_natCast_iff_forall_mem_primeFactors (S.ne_zero_of_mem hn)).2
     (fun p hp ↦ hS p (S.mem_of_dvd hn (Nat.dvd_of_mem_primeFactors hp))
-      (Nat.prime_of_mem_primeFactors hp)) hxy
+      (Nat.prime_of_mem_primeFactors hp)) (by simpa only [smul_eq_mul] using hxy)
 
 end CommRing
 

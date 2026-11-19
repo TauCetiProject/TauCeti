@@ -31,6 +31,7 @@ integer `n` divides `z` in any commutative ring as soon as each prime power `p ^
 * `IsCoprime.mul_mul_add_sq_add_mul_add_sq`: if `a` and `b` are coprime, so are `a b (a + b)` and
   `a² + a b + b²`.
 * `Finset.prod_primes_pow_dvd`: prime powers dividing `z` combine to their product.
+* `TauCeti.natCast_pow_multiplicity_dvd`: `p ^ v_p(n)` divides `n` in any commutative ring.
 * `TauCeti.natCast_dvd_iff_forall_pow_multiplicity_dvd`: `n ∣ z` iff `p ^ v_p(n) ∣ z` for each
   prime factor `p` of `n ≠ 0`.
 -/
@@ -60,12 +61,16 @@ theorem Finset.prod_primes_pow_dvd {P : Finset ℕ}
 
 namespace TauCeti
 
+/-- The `p`-part `p ^ v_p(n)` of a natural number `n` divides `n` in any commutative ring. -/
+theorem natCast_pow_multiplicity_dvd (p n : ℕ) : (p : R) ^ multiplicity p n ∣ (n : R) := by
+  exact_mod_cast Nat.cast_dvd_cast (α := R) (pow_multiplicity_dvd p n)
+
 /-- In a commutative ring, a positive integer `n` divides `z` if and only if `p ^ v_p(n)` divides
 `z` for each prime factor `p` of `n`. -/
 theorem natCast_dvd_iff_forall_pow_multiplicity_dvd {n : ℕ} (hn : n ≠ 0) {z : R} :
     (n : R) ∣ z ↔ ∀ p ∈ n.primeFactors, (p : R) ^ multiplicity p n ∣ z := by
   refine ⟨fun h p _ ↦ ?_, fun h ↦ ?_⟩
-  · simpa using (Nat.cast_dvd_cast (α := R) (pow_multiplicity_dvd p n)).trans h
+  · exact (natCast_pow_multiplicity_dvd p n).trans h
   · rw [Nat.prod_primeFactors_pow_factorization hn]
     push_cast
     exact Finset.prod_primes_pow_dvd (fun p hp ↦ Nat.prime_of_mem_primeFactors hp) _ fun p hp ↦ by

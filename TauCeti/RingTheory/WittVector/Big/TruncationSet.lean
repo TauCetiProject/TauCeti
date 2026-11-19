@@ -152,7 +152,7 @@ theorem divisors_zero : divisors 0 = ⊥ := by
 theorem divisors_le_iff (hm : m ≠ 0) : divisors m ≤ S ↔ m ∈ S :=
   ⟨fun h ↦ h (mem_divisors_self hm), fun h _ hd ↦ S.mem_of_dvd h (mem_divisors.1 hd).1⟩
 
-theorem divisors_mono (hm : m ≠ 0) (h : k ∣ m) : divisors k ≤ divisors m :=
+theorem divisors_le_divisors_of_dvd (hm : m ≠ 0) (h : k ∣ m) : divisors k ≤ divisors m :=
   fun _ hd ↦ mem_divisors.2 ⟨(mem_divisors.1 hd).1.trans h, hm⟩
 
 /-! ### Quotients `S / n` -/
