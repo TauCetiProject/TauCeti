@@ -59,13 +59,15 @@ inverted when `z⁺` is odd, and by a sign
 `Q`, the componentwise torsions differ by `(f a)⁻¹`, respectively `f a`, and by an element `ε` of
 `Q` with `ε * ε = 1`
 (`HomologicalComplex.exists_componentwiseParityTorsion_eq_of_cancel_one_zero`,
-`HomologicalComplex.exists_componentwiseParityTorsion_eq_of_cancel_zero_one`). The sign `ε` is
-`(-1) ^ q` in each component, where `q` is the rank of the base change of `D.d i' i` there, so it
-need not be a global sign. This is the form of the birth/death identity for the torsion of a
-Floer–Novikov complex over a Novikov ring: at a death the entry `a` is `1 + b`, a unit of the
-Novikov ring, and the componentwise torsions of the complexes before and after the death differ by
-`(1 + b)^(±1)` up to the sign `(-1) ^ q` in every field component of the total quotient ring,
-including the components where both complexes are not acyclic and both torsions vanish.
+`HomologicalComplex.exists_componentwiseParityTorsion_eq_of_cancel_zero_one`). In each component
+where the complexes are acyclic, `ε` is necessarily `(-1) ^ q`, where `q` is the rank of the base
+change of `D.d i' i` there, so `ε` need not be a global sign; in the other components both
+torsions vanish and the identity does not constrain `ε`. This is the form of the birth/death
+identity for the torsion of a Floer–Novikov complex over a Novikov ring: at a death the entry `a`
+is `1 + b`, a unit of the Novikov ring, and the componentwise torsions of the complexes before
+and after the death differ by `(1 + b)^(±1)` up to the sign `(-1) ^ q` in every field component
+of the total quotient ring, including the components where both complexes are not acyclic and
+both torsions vanish.
 
 ## Main results
 
