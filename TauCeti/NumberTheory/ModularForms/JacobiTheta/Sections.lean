@@ -28,7 +28,7 @@ An explicit basis consists of the theta functions with characteristics
 (`TauCeti.characteristicTheta`), where `θ = jacobiTheta₂` is Mathlib's two-variable Jacobi theta
 function. The coordinates of a section `s` in this basis are the Fourier coefficients
 `c_r(s) = ∫₀¹ e^{-2πi(r + α)x} s(x) dx` of the `1`-periodic function `x ↦ e^{-2πiαx} s(x)`
-(`TauCeti.thetaBasis_repr_apply`).
+(`TauCeti.thetaSectionsBasis_repr_apply`).
 
 The proof is the classical Fourier-series argument. Moving the line of integration from `ℝ` to
 `ℝ + τ` (Cauchy's theorem) turns the second automorphy law into the recursion
@@ -42,14 +42,14 @@ surjective; the termwise integration is `TauCeti.integral_cexp_mul_jacobiTheta�
 
 * `TauCeti.thetaSections k τ α β`: the entire functions with the automorphy law above.
 * `TauCeti.characteristicTheta k τ α β r`: the theta function `θ_r` with characteristics.
-* `TauCeti.thetaBasis`: for `k > 0` and `im τ > 0`, the basis `(θ_r)_{0 ≤ r < k}` of
+* `TauCeti.thetaSectionsBasis`: for `k > 0` and `im τ > 0`, the basis `(θ_r)_{0 ≤ r < k}` of
   `thetaSections k τ α β`.
 
 ## Main results
 
 * `TauCeti.characteristicTheta_mem_thetaSections`: each `θ_r` is a section.
-* `TauCeti.thetaBasis_apply`, `TauCeti.thetaBasis_repr_apply`: the basis vectors are the `θ_r`, and
-  the coordinates are the Fourier coefficients `c_r`.
+* `TauCeti.thetaSectionsBasis_apply`, `TauCeti.thetaSectionsBasis_repr_apply`: the basis vectors
+  are the `θ_r`, and the coordinates are the Fourier coefficients `c_r`.
 * `TauCeti.finrank_thetaSections`: for `k > 0` and `im τ > 0`, `thetaSections k τ α β` has
   dimension `k`.
 
@@ -278,29 +278,31 @@ private lemma thetaCoeffMap_bijective (hk : 0 < k) (hτ : 0 < τ.im) :
     simp [Pi.single_apply]
 
 /-- The basis of the level-`k` theta sections given by the theta functions with characteristics
-`θ_r`, `0 ≤ r < k` (`TauCeti.thetaBasis_apply`). The coordinate of a section `s` along `θ_r` is its
-Fourier coefficient `∫₀¹ e^{-2πi(r + α)x} s(x) dx` (`TauCeti.thetaBasis_repr_apply`). -/
-noncomputable def thetaBasis (hk : 0 < k) (hτ : 0 < τ.im) (α β : ℝ) :
+`θ_r`, `0 ≤ r < k` (`TauCeti.thetaSectionsBasis_apply`). The coordinate of a section `s` along
+`θ_r` is its Fourier coefficient `∫₀¹ e^{-2πi(r + α)x} s(x) dx`
+(`TauCeti.thetaSectionsBasis_repr_apply`). -/
+noncomputable def thetaSectionsBasis (hk : 0 < k) (hτ : 0 < τ.im) (α β : ℝ) :
     Module.Basis (Fin k) ℂ (thetaSections k τ α β) :=
   .ofEquivFun (.ofBijective _ (thetaCoeffMap_bijective (α := α) (β := β) hk hτ))
 
-/-- The basis vectors of `TauCeti.thetaBasis` are the theta functions with characteristics. -/
+/-- The basis vectors of `TauCeti.thetaSectionsBasis` are the theta functions with
+characteristics. -/
 @[simp]
-theorem thetaBasis_apply (hk : 0 < k) (hτ : 0 < τ.im) (r : Fin k) :
-    (thetaBasis hk hτ α β r : ℂ → ℂ) = characteristicTheta k τ α β (r : ℕ) := by
+theorem thetaSectionsBasis_apply (hk : 0 < k) (hτ : 0 < τ.im) (r : Fin k) :
+    (thetaSectionsBasis hk hτ α β r : ℂ → ℂ) = characteristicTheta k τ α β (r : ℕ) := by
   have h : (LinearEquiv.ofBijective _ (thetaCoeffMap_bijective (α := α) (β := β) hk hτ)).symm
       (Pi.single r 1) = ⟨_, characteristicTheta_mem_thetaSections k τ α β (r : ℕ)⟩ :=
     (LinearEquiv.symm_apply_eq _).2 (thetaCoeffMap_characteristicTheta hk hτ r).symm
-  rw [thetaBasis, Module.Basis.coe_ofEquivFun]
+  rw [thetaSectionsBasis, Module.Basis.coe_ofEquivFun]
   exact congrArg Subtype.val h
 
-/-- The coordinates of a section in `TauCeti.thetaBasis` are its Fourier coefficients
+/-- The coordinates of a section in `TauCeti.thetaSectionsBasis` are its Fourier coefficients
 `c_r(s) = ∫₀¹ e^{-2πi(r + α)x} s(x) dx`. -/
-theorem thetaBasis_repr_apply (hk : 0 < k) (hτ : 0 < τ.im) (s : thetaSections k τ α β)
+theorem thetaSectionsBasis_repr_apply (hk : 0 < k) (hτ : 0 < τ.im) (s : thetaSections k τ α β)
     (r : Fin k) :
-    (thetaBasis hk hτ α β).repr s r =
+    (thetaSectionsBasis hk hτ α β).repr s r =
       ∫ x in (0 : ℝ)..1, cexp (-(2 * π * I * ((r : ℕ) + α) * x)) * (s : ℂ → ℂ) x := by
-  rw [thetaBasis, Module.Basis.ofEquivFun_repr_apply, LinearEquiv.ofBijective_apply]
+  rw [thetaSectionsBasis, Module.Basis.ofEquivFun_repr_apply, LinearEquiv.ofBijective_apply]
   simp [thetaCoeffMap, thetaCoeff]
 
 /-- **Kähler quantization of the degree-`k` torus.** For `k > 0` and `τ` in the upper half-plane,
@@ -308,6 +310,6 @@ the level-`k` theta line on `ℂ / (ℤ + τℤ)` has exactly `k` linearly indep
 sections, whatever the characteristics `(α, β)`. -/
 theorem finrank_thetaSections (hk : 0 < k) (hτ : 0 < τ.im) (α β : ℝ) :
     Module.finrank ℂ (thetaSections k τ α β) = k := by
-  simp [Module.finrank_eq_card_basis (thetaBasis hk hτ α β)]
+  simp [Module.finrank_eq_card_basis (thetaSectionsBasis hk hτ α β)]
 
 end TauCeti
