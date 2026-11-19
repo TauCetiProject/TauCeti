@@ -146,26 +146,6 @@ private theorem hasDerivAt_endTrajectory (κ c s θ : ℝ) {t : ℝ} (ht : t ∈
     field_simp [hm.ne']
     ring
 
-/-- Near a maximum `c = r₀ + j π` of `δ cos (2 (θ - r₀))` the slope is
-`2 δ sin (2 (θ - c)) / (t (1 - t²))`. -/
-private theorem circleContinuationSlope_eq_of_add_int_mul_pi {δ r₀ t θ : ℝ} {r : ℝ → ℝ}
-    (hr : r t = r₀) (j : ℤ) :
-    circleContinuationSlope δ r t θ =
-      2 * δ * sin (2 * (θ - (r₀ + j * π))) / (t * (1 - t ^ 2)) := by
-  rw [circleContinuationSlope_def, hr,
-    show 2 * (θ - r₀) = 2 * (θ - (r₀ + j * π)) + j * (2 * π) by ring, sin_add_int_mul_two_pi]
-
-/-- Near a minimum `c = r₀ + π / 2 + j π` of `δ cos (2 (θ - r₀))` the slope is
-`2 (-δ) sin (2 (θ - c)) / (t (1 - t²))`. -/
-private theorem circleContinuationSlope_eq_of_add_pi_div_two_add_int_mul_pi {δ r₀ t θ : ℝ}
-    {r : ℝ → ℝ} (hr : r t = r₀) (j : ℤ) :
-    circleContinuationSlope δ r t θ =
-      2 * (-δ) * sin (2 * (θ - (r₀ + π / 2 + j * π))) / (t * (1 - t ^ 2)) := by
-  rw [circleContinuationSlope_def, hr,
-    show 2 * (θ - r₀) = 2 * (θ - (r₀ + π / 2 + j * π)) + π + j * (2 * π) by ring,
-    sin_add_int_mul_two_pi, sin_add_pi]
-  ring
-
 /-- Near a critical point `c` of `δ cos (2 (θ - r₀))`, a zero of `sin (2 (c - r₀))`, the slope is
 `2 κ sin (2 (θ - c)) / (t (1 - t²))` with `κ = δ cos (2 (c - r₀)) = ± δ`. -/
 private theorem circleContinuationSlope_eq_of_sin_eq_zero {δ r₀ c t θ : ℝ} {r : ℝ → ℝ}
@@ -175,6 +155,27 @@ private theorem circleContinuationSlope_eq_of_sin_eq_zero {δ r₀ c t θ : ℝ}
   rw [circleContinuationSlope_def, hr, show 2 * (θ - r₀) = 2 * (θ - c) + 2 * (c - r₀) by ring,
     sin_add, hc, mul_zero, add_zero]
   ring
+
+/-- Near a maximum `c = r₀ + j π` of `δ cos (2 (θ - r₀))` the slope is
+`2 δ sin (2 (θ - c)) / (t (1 - t²))`. -/
+private theorem circleContinuationSlope_eq_of_add_int_mul_pi {δ r₀ t θ : ℝ} {r : ℝ → ℝ}
+    (hr : r t = r₀) (j : ℤ) :
+    circleContinuationSlope δ r t θ =
+      2 * δ * sin (2 * (θ - (r₀ + j * π))) / (t * (1 - t ^ 2)) := by
+  have h : 2 * (r₀ + j * π - r₀) = j * (2 * π) := by ring
+  rw [circleContinuationSlope_eq_of_sin_eq_zero hr
+    (by rw [h, sin_periodic.int_mul_eq, sin_zero]), h, cos_int_mul_two_pi, mul_one]
+
+/-- Near a minimum `c = r₀ + π / 2 + j π` of `δ cos (2 (θ - r₀))` the slope is
+`2 (-δ) sin (2 (θ - c)) / (t (1 - t²))`. -/
+private theorem circleContinuationSlope_eq_of_add_pi_div_two_add_int_mul_pi {δ r₀ t θ : ℝ}
+    {r : ℝ → ℝ} (hr : r t = r₀) (j : ℤ) :
+    circleContinuationSlope δ r t θ =
+      2 * (-δ) * sin (2 * (θ - (r₀ + π / 2 + j * π))) / (t * (1 - t ^ 2)) := by
+  have h : 2 * (r₀ + π / 2 + j * π - r₀) = j * (2 * π) + π := by ring
+  rw [circleContinuationSlope_eq_of_sin_eq_zero hr
+    (by rw [h, sin_add_pi, sin_periodic.int_mul_eq, sin_zero, neg_zero]), h, cos_add_pi,
+    cos_int_mul_two_pi, mul_neg_one]
 
 /-- Through every angle `v` at every parameter `s` passes an explicit solution on `(0, 1)` of the
 equation for a path which is `r₀` wherever the solution is used: the explicit trajectory around the
@@ -196,21 +197,6 @@ private theorem exists_endTrajectory {δ r₀ : ℝ} {r : ℝ → ℝ} (v s : �
   refine ⟨endTrajectory (δ * cos (2 * (c - r₀))) c s v, endTrajectory_self hv, fun t ht hrt ↦ ?_⟩
   rw [circleContinuationSlope_eq_of_sin_eq_zero hrt hc]
   exact hasDerivAt_endTrajectory _ _ _ _ ht
-
-/-- The maxima `r₀ + j π` of `δ cos (2 (θ - r₀))` are stationary while the path is `r₀`. -/
-private theorem hasDerivAt_const_add_int_mul_pi {δ r₀ t : ℝ} {r : ℝ → ℝ} (hr : r t = r₀) (j : ℤ) :
-    HasDerivAt (fun _ ↦ r₀ + j * π) (circleContinuationSlope δ r t (r₀ + j * π)) t := by
-  rw [circleContinuationSlope_eq_of_add_int_mul_pi hr j]
-  simpa using hasDerivAt_const t _
-
-/-- The minima `r₀ + π / 2 + j π` of `δ cos (2 (θ - r₀))` are stationary while the path is
-`r₀`. -/
-private theorem hasDerivAt_const_add_pi_div_two_add_int_mul_pi {δ r₀ t : ℝ} {r : ℝ → ℝ}
-    (hr : r t = r₀) (j : ℤ) :
-    HasDerivAt (fun _ ↦ r₀ + π / 2 + j * π)
-      (circleContinuationSlope δ r t (r₀ + π / 2 + j * π)) t := by
-  rw [circleContinuationSlope_eq_of_add_pi_div_two_add_int_mul_pi hr j]
-  simpa using hasDerivAt_const t _
 
 /-- The explicit trajectory tends to `c` along a filter on which `4 κ (U t - U s) → -∞`. -/
 private theorem tendsto_endTrajectory {l : Filter ℝ} {κ c s θ : ℝ}
@@ -571,8 +557,10 @@ theorem exists_hasDerivAt_circleContinuationSlope_tendsto_add_pi_div_two (hδ : 
     tendsto_const_nhds.congr' (eventuallyEq_of_mem (Ioc_mem_nhdsGT ha) fun t ht ↦
       (eqOn_of_hasDerivWithinAt_circleContinuationSlope ht.1 (hab.trans_lt hb)
         (fun u hu ↦ (hΘ u ⟨ht.1.trans_le hu.1, hu.2.trans_lt (hab.trans_lt hb)⟩).hasDerivWithinAt)
-        (fun u hu ↦ (hasDerivAt_const_add_pi_div_two_add_int_mul_pi
-          (hr₀ u ⟨ht.1.trans_le hu.1, hu.2⟩) j).hasDerivWithinAt)
+        (fun u hu ↦ (hasDerivAt_const_circleContinuationSlope (by
+          rw [hr₀ u ⟨ht.1.trans_le hu.1, hu.2⟩,
+            show 2 * (r₀ + π / 2 + j * π - r₀) = j * (2 * π) + π by ring, sin_add_pi,
+            sin_periodic.int_mul_eq, sin_zero, neg_zero])).hasDerivWithinAt)
         (right_mem_Icc.2 ht.2) hΘa (left_mem_Icc.2 ht.2)).symm)
   exact ⟨Θ, hΘ, hlim,
     tendsto_nhdsLT_one_of_tendsto_nhdsGT_zero_of_hasDerivAt_circleContinuationSlope hδ ha hab hb
@@ -595,8 +583,9 @@ theorem exists_hasDerivAt_circleContinuationSlope_tendsto_add_int_mul_pi (hδ : 
     tendsto_const_nhds.congr' (eventuallyEq_of_mem (Ico_mem_nhdsLT hb) fun t ht ↦
       (eqOn_of_hasDerivWithinAt_circleContinuationSlope (ha.trans_le hab) ht.2
         (fun u hu ↦ (hΘ u ⟨(ha.trans_le hab).trans_le hu.1, hu.2.trans_lt ht.2⟩).hasDerivWithinAt)
-        (fun u hu ↦ (hasDerivAt_const_add_int_mul_pi
-          (hr₁ u ⟨hu.1, hu.2.trans_lt ht.2⟩) k).hasDerivWithinAt)
+        (fun u hu ↦ (hasDerivAt_const_circleContinuationSlope (by
+          rw [hr₁ u ⟨hu.1, hu.2.trans_lt ht.2⟩, show 2 * (r₁ + k * π - r₁) = k * (2 * π) by ring,
+            sin_periodic.int_mul_eq, sin_zero])).hasDerivWithinAt)
         (left_mem_Icc.2 ht.1) hΘb (right_mem_Icc.2 ht.1)).symm)
   exact ⟨Θ, hΘ,
     tendsto_nhdsGT_zero_of_tendsto_nhdsLT_one_of_hasDerivAt_circleContinuationSlope hδ ha hab hb
