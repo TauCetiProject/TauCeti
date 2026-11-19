@@ -527,18 +527,18 @@ theorem isComplexLinear_ofComplexModule_iff_apply_one_add_I_mul_apply_I
         A.toLinearMap ↔
       A 1 + I * A I = -(coefficientEquiv ⟨J, hJ⟩).val * conj (A 1 - I * A I) := by
   set e := linearEquiv (coefficientEquiv ⟨J, hJ⟩).val (normSq_coefficient_ne_one J hJ) with he_def
-  have he : IsComplexLinear J.toLinearMap (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
-      (e : ℂ →L[ℝ] ℂ).toLinearMap := isComplexLinear_of_apply fun v ↦ by
-    simpa only [ContinuousLinearMap.coe_coe, ContinuousLinearEquiv.coe_coe, he_def,
-      linearEquiv_apply, AlmostComplexStructure.ofComplexModule_apply, smul_eq_mul,
-      linearMap_apply] using linearMap_intertwines J hJ v
+  -- The normalizer `e` carries `J` to the standard structure, so `J` is its transport back.
+  have hJe : J = (AlmostComplexStructure.ofComplexModule ℂ).transport e.toLinearEquiv.symm :=
+    transport_linearEquiv_eq_std J hJ ▸ (J.transport_symm_transport e.toLinearEquiv).symm
   -- `A` is complex linear into `J` iff its composite with the normalizer `e` is complex linear.
   have hiff : IsComplexLinear (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
       J.toLinearMap A.toLinearMap ↔
       IsComplexLinear (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
         (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
         ((e : ℂ →L[ℝ] ℂ).comp A).toLinearMap := by
-    rw [ContinuousLinearMap.toLinearMap_comp, he.comp_iff_of_injective e.injective]
+    rw [← isComplexLinearMap_iff_isComplexLinear, ← isComplexLinearMap_iff_isComplexLinear, hJe,
+      e.toLinearEquiv.isComplexLinearMap_transport_symm_iff]
+    rfl
   rw [hiff, isComplexLinear_iff_apply_one_add_I_mul_apply_I _ stdComplexSymplecticForm_tames,
     coefficientEquiv_std]
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, he_def,
