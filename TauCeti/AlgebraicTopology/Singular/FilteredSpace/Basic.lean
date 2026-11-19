@@ -744,7 +744,7 @@ private lemma singularChainFiltrationι_coefficient_naturality (q : ℤ) :
           ComplexShape.embeddingDownNat := by
   rw [singularChainFiltrationι_def, singularChainFiltrationι_def]
   -- The ambient space of `TopPair.ofSubset (X q)` is `Y` only up to unfolding, so the composites
-  -- are formed with `exact` rather than `rw`, as in `extendMap_comp_singularChainFiltrationι`.
+  -- are formed with `exact` rather than `rw`, as in `extendMap_comp_subspaceChainFiltrationι`.
   exact (extendMap_comp _ _ _).symm.trans <|
     (congrArg (extendMap · ComplexShape.embeddingDownNat)
       (((SSet.chainComplexFunctor A).map φ).naturality
@@ -754,12 +754,15 @@ private lemma factors_singularChainFiltration_coefficient (q : ℤ) :
     (singularChainFiltration R' X q).Factors ((singularChainFiltration R X q).arrow ≫
       extendMap (((SSet.chainComplexFunctor A).map φ).app (TopCat.toSSet.obj Y))
         ComplexShape.embeddingDownNat) :=
-  (Subobject.mk_factors_iff _ _).2 ⟨(singularChainFiltrationIso R X q).hom ≫
+  (Subobject.factors_iff _ _).2 ⟨(singularChainFiltrationIso R X q).hom ≫
       extendMap (((SSet.chainComplexFunctor A).map φ).app
-        (TopCat.toSSet.obj (TopPair.ofSubset (X q)).snd)) ComplexShape.embeddingDownNat,
-    (Category.assoc _ _ _).trans <|
-      (congrArg (_ ≫ ·) (singularChainFiltrationι_coefficient_naturality φ q)).trans
-        (singularChainFiltrationIso_hom_comp_singularChainFiltrationι_assoc R X q _)⟩
+        (TopCat.toSSet.obj (TopPair.ofSubset (X q)).snd)) ComplexShape.embeddingDownNat ≫
+        (singularChainFiltrationIso R' X q).inv,
+    (Category.assoc _ _ _).trans <| (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans <|
+      (congrArg (_ ≫ ·) (subspaceChainFiltrationIso_inv_comp_arrow
+        ((singularChainComplexFunctor A).obj R') X q)).trans
+        (singularChainFiltrationι_coefficient_naturality φ q))).trans
+      (singularChainFiltrationIso_hom_comp_singularChainFiltrationι_assoc R X q _)⟩
 
 /-- **The morphism of filtered complexes induced by a morphism of coefficients.** A morphism
 `φ : R ⟶ R'` in the coefficient category induces, on the singular chains of `Y`, a morphism from
