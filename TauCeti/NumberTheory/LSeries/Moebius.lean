@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 public import Mathlib.NumberTheory.LSeries.Convergence
 import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
+import TauCeti.NumberTheory.LSeries.Convergence
 import TauCeti.NumberTheory.LSeries.EulerProduct
 
 /-!
@@ -60,9 +61,9 @@ theorem LSeriesSummable_moebius_sq_iff {s : ℂ} :
 /-- The abscissa of absolute convergence of the Dirichlet series of the square of the Möbius
 function is one. -/
 theorem abscissaOfAbsConv_moebius_sq :
-    _root_.LSeries.abscissaOfAbsConv (fun n ↦ (ArithmeticFunction.moebius n : ℂ) ^ 2) = 1 := by
-  simpa [_root_.LSeries.abscissaOfAbsConv, LSeriesSummable_moebius_sq_iff,
-    Set.Ioi_def, EReal.image_coe_Ioi] using csInf_Ioo (EReal.coe_lt_top 1)
+    _root_.LSeries.abscissaOfAbsConv (fun n ↦ (ArithmeticFunction.moebius n : ℂ) ^ 2) = 1 :=
+  (LSeries.abscissaOfAbsConv_eq_of_LSeriesSummable_iff fun _ ↦
+    LSeriesSummable_moebius_sq_iff).trans EReal.coe_one
 
 private theorem moebius_sq_prime_pow_sum {s : ℂ} {p : Nat.Primes} :
     (∑' e : ℕ, _root_.LSeries.term (fun n ↦ (ArithmeticFunction.moebius n : ℂ) ^ 2)

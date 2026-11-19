@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.LSeries.Moebius
 import Mathlib.NumberTheory.LSeries.Convolution
 import Mathlib.NumberTheory.LSeries.Dirichlet
 import TauCeti.NumberTheory.ArithmeticFunction.Moebius
+import TauCeti.NumberTheory.LSeries.Convergence
 
 /-!
 # The Dirichlet series of `2 ^ ω`
@@ -61,9 +62,9 @@ theorem LSeriesSummable_two_pow_cardDistinctFactors_iff {s : ℂ} :
 
 /-- The abscissa of absolute convergence of the Dirichlet series of `2 ^ ω` is one. -/
 theorem abscissaOfAbsConv_two_pow_cardDistinctFactors :
-    LSeries.abscissaOfAbsConv (fun n ↦ (2 : ℂ) ^ ω n) = 1 := by
-  simpa [LSeries.abscissaOfAbsConv, LSeriesSummable_two_pow_cardDistinctFactors_iff,
-    Set.Ioi_def, EReal.image_coe_Ioi] using csInf_Ioo (EReal.coe_lt_top 1)
+    LSeries.abscissaOfAbsConv (fun n ↦ (2 : ℂ) ^ ω n) = 1 :=
+  (LSeries.abscissaOfAbsConv_eq_of_LSeriesSummable_iff fun _ ↦
+    LSeriesSummable_two_pow_cardDistinctFactors_iff).trans EReal.coe_one
 
 /-- On `Re s > 1` the Dirichlet series of `2 ^ ω` has sum `ζ(s)² / ζ(2s)`. -/
 theorem LSeriesHasSum_two_pow_cardDistinctFactors {s : ℂ} (hs : 1 < s.re) :
