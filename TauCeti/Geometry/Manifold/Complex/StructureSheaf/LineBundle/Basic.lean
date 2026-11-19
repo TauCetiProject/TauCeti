@@ -34,6 +34,8 @@ underlying presheaf of types, which gives its sheaf condition, as for
 
 * `TauCeti.holomorphicBundleSections`: the holomorphic sections of `V` over an open set, as a
   complex subspace of all sections.
+* `TauCeti.holomorphicBundleSections.topEquivContMDiffSection`: global holomorphic sections
+  identified with native analytic sections, preserving their values in the original fibres.
 * `TauCeti.holomorphicSectionSheaf`: the sheaf of holomorphic sections, as a
   `TopCat.Sheaf (ModuleCat ℂ)`.
 * `TauCeti.holomorphicSectionSheaf.homOfLinearMap`: the sheaf morphism induced by a fibrewise
@@ -134,6 +136,33 @@ def holomorphicBundleSections (U : Opens X) : Submodule ℂ ((x : U) → V x) wh
       ?_
     filter_upwards [U.isOpen.mem_nhds x.2] with y (hy : y ∈ U)
     simp [extendSection, hy]
+
+namespace holomorphicBundleSections
+
+/-- Global sections of the holomorphic section sheaf are exactly the native analytic bundle
+sections, with the same values in every original fibre. -/
+def topEquivContMDiffSection :
+    holomorphicBundleSections I F V ⊤ ≃ₗ[ℂ] Cₛ^ω⟮I; F, V⟯ where
+  toFun s :=
+    { toFun x := s.1 ⟨x, trivial⟩
+      contMDiff_toFun x := by
+        apply (contMDiffAt_subtype_iff (U := ⊤) (x := ⟨x, trivial⟩)).mp
+        exact s.2 ⟨x, trivial⟩ }
+  invFun s := ⟨fun x ↦ s x, s.contMDiff.comp contMDiff_subtype_val⟩
+  left_inv s := Subtype.ext (funext fun _ ↦ rfl)
+  right_inv s := ContMDiffSection.ext fun _ ↦ rfl
+  map_add' s t := ContMDiffSection.ext fun _ ↦ rfl
+  map_smul' c s := ContMDiffSection.ext fun _ ↦ rfl
+
+@[simp]
+theorem topEquivContMDiffSection_apply (s : holomorphicBundleSections I F V ⊤) (x : X) :
+    topEquivContMDiffSection I F V s x = s.1 ⟨x, trivial⟩ := (rfl)
+
+@[simp]
+theorem topEquivContMDiffSection_symm_apply (s : Cₛ^ω⟮I; F, V⟯) (x : (⊤ : Opens X)) :
+    ((topEquivContMDiffSection I F V).symm s).1 x = s x := (rfl)
+
+end holomorphicBundleSections
 
 theorem mem_holomorphicBundleSections_iff {U : Opens X} {s : (x : U) → V x} :
     s ∈ holomorphicBundleSections I F V U ↔
