@@ -14,14 +14,14 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import Mathlib.LinearAlgebra.Eigenspace.Minpoly
-import Mathlib.MeasureTheory.Function.Jacobian
-import Mathlib.MeasureTheory.Measure.Haar.Basic
 import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Analysis.Calculus.Sard.EqualDimension
 import TauCeti.Analysis.Complex.IsolatedZero
 import TauCeti.Analysis.Normed.Module.Ball.Radial.ProperExtension
 import TauCeti.Analysis.Normed.Module.Ball.Retraction
 import TauCeti.LinearAlgebra.Complex.Determinant
+import TauCeti.LinearAlgebra.LinearMap.Coprod
 import TauCeti.Topology.Maps.Proper.Metric
 
 /-!
@@ -67,8 +67,8 @@ map `G z = g z + ε ρ(z - x)`, with `ρ` the radial retraction onto the ball of
 never takes the value `f x` outside `B`, and `g` and `G` have the same degree. Now `G` has the
 invertible derivative `Df(x) + ε` at `x`, so by the inverse function theorem `G` maps the interior
 of `B` onto a neighbourhood of `f x`; by the equal-dimensional Sard theorem
-(`MeasureTheory.addHaar_image_eq_zero_of_det_fderivWithin_eq_zero`) this neighbourhood contains a
-value all of whose preimages are regular, and it has at least one. So the degree of `G` is a
+(`TauCeti.dense_setOf_forall_surjective_fderiv`) this neighbourhood contains a value all of whose
+preimages are regular, and it has at least one. So the degree of `G` is a
 positive number of preimages.
 
 ## Main results
@@ -116,31 +116,14 @@ section Holomorphic
 variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E] {n : ℕ}
   (o : HomologicalOrientation E E n) (hE : finrank ℝ E = n)
 
-/-- The underlying real-linear map of an injective complex-linear endomorphism has positive
-determinant. -/
-private theorem det_restrictScalars_pos_of_injective {f' : E →L[ℂ] E}
-    (hf' : Function.Injective f') : 0 < (f'.restrictScalars ℝ).det := by
-  have hdet : LinearMap.det (f' : E →ₗ[ℂ] E) ≠ 0 := fun h ↦
-    LinearMap.det_eq_zero_iff_ker_ne_bot.1 h (LinearMap.ker_eq_bot.2 hf')
-  rw [ContinuousLinearMap.det, ContinuousLinearMap.coe_restrictScalars]
-  exact LinearMap.det_restrictScalars_pos hdet
-
-/-- The underlying real-linear map of a complex-linear endomorphism which is not injective has
-determinant zero. -/
-private theorem det_restrictScalars_eq_zero_of_not_injective {f' : E →L[ℂ] E}
-    (hf' : ¬Function.Injective f') : (f'.restrictScalars ℝ).det = 0 := by
-  have hdet : LinearMap.det (f' : E →ₗ[ℂ] E) = 0 :=
-    LinearMap.det_eq_zero_iff_ker_ne_bot.2 fun h ↦ hf' (LinearMap.ker_eq_bot.1 h)
-  rw [ContinuousLinearMap.det, ContinuousLinearMap.coe_restrictScalars,
-    LinearMap.det_restrictScalars_eq_normSq, hdet, map_zero]
-
 include hE in
 /-- **The local index at a point with invertible complex derivative is `1`.** If `f` is complex
 differentiable at `x` with injective derivative, its local index at `x`, for the same orientation of
 `E` on source and target, is `1`: the real Jacobian determinant `|det_ℂ f'|²` is positive. -/
 theorem localIndex_eq_one_of_hasFDerivAt {f : C(E, E)} {f' : E →L[ℂ] E} {x : E}
     (hf : HasFDerivAt f f' x) (hf' : Function.Injective f') : o.localIndex o f x = 1 := by
-  have hpos := det_restrictScalars_pos_of_injective hf'
+  have hpos : 0 < (f'.restrictScalars ℝ).det :=
+    LinearMap.det_restrictScalars_pos_iff_injective.2 hf'
   rw [o.localIndex_eq_sign_det hE (hf.restrictScalars ℝ) hpos.ne', sign_pos hpos,
     SignType.coe_one]
 
@@ -152,7 +135,8 @@ theorem degree_eq_ncard_of_hasFDerivAt {f : C(E, E)} (hf : IsProperMap f) {f' : 
     {y : E} (hderiv : ∀ x ∈ f ⁻¹' {y}, HasFDerivAt f (f' x) x)
     (hinj : ∀ x ∈ f ⁻¹' {y}, Function.Injective (f' x)) :
     o.degree o hE f = (f ⁻¹' {y}).ncard := by
-  have hpos (x : E) (hx : x ∈ f ⁻¹' {y}) := det_restrictScalars_pos_of_injective (hinj x hx)
+  have hpos (x : E) (hx : x ∈ f ⁻¹' {y}) : 0 < ((f' x).restrictScalars ℝ).det :=
+    LinearMap.det_restrictScalars_pos_iff_injective.2 (hinj x hx)
   have h₁ : {x | 0 < ((f' x).restrictScalars ℝ).det} ∩ f ⁻¹' {y} = f ⁻¹' {y} :=
     inter_eq_right.2 fun x hx ↦ hpos x hx
   have h₂ : {x | ((f' x).restrictScalars ℝ).det < 0} ∩ f ⁻¹' {y} = ∅ :=
@@ -240,29 +224,24 @@ theorem degree_pos_of_hasStrictFDerivAt {G : C(E, E)} (hG : IsProperMap G) {U : 
     refine inter_mem ?_ hfib
     rw [← hGx, ← hstrict'.map_nhds_eq_of_equiv]
     exact image_mem_map hU
-  -- By Sard's theorem the critical values of `G` on `U` are null, so some value in the interior of
+  -- By Sard's theorem the regular values of `G` on `U` are dense, so some value in the interior of
   -- this neighbourhood has only regular preimages.
-  let _ : MeasurableSpace E := borel E
-  have _ : BorelSpace E := ⟨rfl⟩
-  set S : Set E := {z ∈ U | ¬Function.Injective (D z)}
-  have hS : MeasureTheory.Measure.addHaar (G '' S) = 0 :=
-    MeasureTheory.addHaar_image_eq_zero_of_det_fderivWithin_eq_zero _
-      (f' := fun z ↦ (D z).restrictScalars ℝ)
-      (fun z hz ↦ ((hGd z hz.1).restrictScalars ℝ).hasFDerivWithinAt)
-      fun z hz ↦ det_restrictScalars_eq_zero_of_not_injective hz.2
-  obtain ⟨y', hy'W, hy'S⟩ : ∃ y' ∈ interior (G '' U ∩ {y' | G ⁻¹' {y'} ⊆ U}), y' ∉ G '' S :=
-    not_subset.1 fun hsub ↦ (isOpen_interior.measure_pos MeasureTheory.Measure.addHaar
-      ⟨y, mem_interior_iff_mem_nhds.2 hW⟩).ne' (MeasureTheory.measure_mono_null hsub hS)
+  borelize E
+  obtain ⟨y', hy'W, hy'S⟩ := (dense_setOf_forall_surjective_fderiv (s := U) (f := G)
+    (fun z hz ↦ ((hGd z hz).restrictScalars ℝ).differentiableAt) rfl).inter_open_nonempty
+    (interior (G '' U ∩ {y' | G ⁻¹' {y'} ⊆ U})) isOpen_interior
+    ⟨y, mem_interior_iff_mem_nhds.2 hW⟩
   obtain ⟨⟨z₀, -, hGz₀⟩, hy'U⟩ := interior_subset hy'W
   have hreg {z : E} (hz : z ∈ G ⁻¹' {y'}) : Function.Injective (D z) := by
-    by_contra hinj
-    exact hy'S ⟨z, ⟨hy'U hz, hinj⟩, hz⟩
+    have hsurj := hy'S z (hy'U hz) hz
+    rw [((hGd z (hy'U hz)).restrictScalars ℝ).fderiv] at hsurj
+    exact LinearMap.injective_iff_surjective.2 hsurj
   have hfin : (G ⁻¹' {y'}).Finite :=
     (hG.isCompact_preimage isCompact_singleton).finite_of_hasFDerivAt
       (f' := fun z ↦ (D z).restrictScalars ℝ)
       (fun z hz ↦ (hGd z (hy'U hz)).restrictScalars ℝ) fun z hz ↦
         ⟨_, (((D z).restrictScalars ℝ).toContinuousLinearEquivOfDetNeZero
-          (det_restrictScalars_pos_of_injective (hreg hz)).ne').antilipschitzWith⟩
+          (LinearMap.det_restrictScalars_pos_iff_injective.2 (hreg hz)).ne').antilipschitzWith⟩
   rw [o.degree_eq_ncard_of_hasFDerivAt hE hG (f' := D) (y := y')
     (fun z hz ↦ hGd z (hy'U hz)) fun z hz ↦ hreg hz]
   exact_mod_cast (ncard_pos hfin).2 ⟨z₀, hGz₀⟩
@@ -287,8 +266,7 @@ private theorem exists_isProperMap_localIndex_eq_degree {f : C(E, E)} {x : E} {r
   have hρc : Continuous ρ :=
     (lipschitzWith_radialRetraction hr.le).continuous.comp (continuous_id.sub continuous_const)
   have hpert {t : ℝ} (ht : |t| ≤ 1) (z : E) : ‖(t : ℂ) • c • ρ z‖ ≤ ‖c‖ * r := by
-    have hρn : ‖ρ z‖ ≤ r := by
-      simp only [hρ_def, norm_radialRetraction hr.le, min_le_right]
+    have hρn : ‖ρ z‖ ≤ r := by simp only [hρ_def, norm_radialRetraction hr.le, min_le_right]
     rw [norm_smul, norm_smul, Complex.norm_real, Real.norm_eq_abs]
     calc |t| * (‖c‖ * ‖ρ z‖) ≤ 1 * (‖c‖ * r) := by gcongr
       _ = ‖c‖ * r := one_mul _
@@ -312,14 +290,15 @@ private theorem exists_isProperMap_localIndex_eq_degree {f : C(E, E)} {x : E} {r
             ((hρc.comp continuous_snd).const_smul c))
       map_zero_left := fun z ↦ by simp
       map_one_left := fun z ↦ (hG z).symm }
+  -- The values of `H` are given by its defining formula.
+  have hH (p : unitInterval × E) : H p = g p.2 + ((p.1 : ℝ) : ℂ) • c • ρ p.2 := rfl
   have hHc : IsCompact (H ⁻¹' {f x}) := by
     refine (isCompact_univ.prod (isCompact_closedBall x r)).of_isClosed_subset
       (isClosed_singleton.preimage H.continuous) fun p hp ↦ ⟨mem_univ _, ?_⟩
     by_contra hpB
     have h := hfar (by rw [abs_of_nonneg p.1.2.1]; exact p.1.2.2)
       (not_le.1 (mem_closedBall.not.1 hpB)).le
-    have hp' : g p.2 + ((p.1 : ℝ) : ℂ) • c • ρ p.2 = f x := hp
-    rw [hp', sub_self, norm_zero] at h
+    rw [← hH, (hp : H p = f x), sub_self, norm_zero] at h
     linarith
   refine ⟨G, hGp, ?_, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
   · rw [hidx, ← o.localDegree_eq_degree o hE hE hgp (f x),
@@ -429,16 +408,6 @@ private theorem hasFDerivAt_of_apply_eq_sub {F : C(ℂ × ℂ, ℂ × ℂ)} {u�
   rw [hF', hL]
   exact h
 
-/-- The derivative `(s, t) ↦ s • a - t • b` is injective when `a` and `b` are linearly
-independent. -/
-private theorem injective_fst_smulRight_sub_snd_smulRight {a b : ℂ × ℂ}
-    (hab : LinearIndependent ℂ ![a, b]) :
-    Function.Injective ((ContinuousLinearMap.fst ℂ ℂ ℂ).smulRight a -
-      (ContinuousLinearMap.snd ℂ ℂ ℂ).smulRight b) := by
-  refine (injective_iff_map_eq_zero _).2 fun p hp ↦ ?_
-  have h := LinearIndependent.pair_iff.1 hab p.1 (-p.2) (by simpa [sub_eq_add_neg] using hp)
-  exact Prod.ext h.1 (neg_eq_zero.1 h.2)
-
 include hn in
 /-- **Positivity of intersections of holomorphic discs in `ℂ²`.** Let `u₁` and `u₂` be holomorphic
 near `z₀` and `w₀`, meeting at `u₁ z₀ = u₂ w₀` in an isolated point: `u₁ z ≠ u₂ w` for
@@ -465,7 +434,7 @@ theorem localIndex_eq_one_of_apply_eq_sub {F : C(ℂ × ℂ, ℂ × ℂ)} {u₁ 
     (h₂ : HasDerivAt u₂ b w₀) (hab : LinearIndependent ℂ ![a, b]) :
     o.localIndex o F (z₀, w₀) = 1 :=
   o.localIndex_eq_one_of_hasFDerivAt hn (hasFDerivAt_of_apply_eq_sub hF h₁ h₂)
-    (injective_fst_smulRight_sub_snd_smulRight hab)
+    (LinearMap.injective_fst_smulRight_sub_snd_smulRight_iff.2 hab)
 
 /-! #### Examples -/
 
@@ -474,6 +443,13 @@ private theorem hasDerivAt_lineZero (z : ℂ) :
     HasDerivAt (fun z : ℂ ↦ ((z, 0) : ℂ × ℂ)) ((1 : ℂ), (0 : ℂ)) z :=
   (hasDerivAt_id z).prodMk (hasDerivAt_const z 0)
 
+/-- The vectors `(1, 0)` and `(c, d)` of `ℂ²` are linearly independent when `d ≠ 0`. -/
+private theorem linearIndependent_one_zero {c d : ℂ} (hd : d ≠ 0) :
+    LinearIndependent ℂ ![((1 : ℂ), (0 : ℂ)), (c, d)] :=
+  LinearIndependent.pair_iff.2 fun s t hst ↦ by
+    have ht : t = 0 := by simpa [hd] using congrArg Prod.snd hst
+    exact ⟨by simpa [ht] using congrArg Prod.fst hst, ht⟩
+
 include hn in
 /-- The coordinate lines `w = 0` and `z = 0` of `ℂ²` meet at the origin with local intersection
 number `1`. -/
@@ -481,19 +457,14 @@ example : o.localIndex o ⟨fun p ↦ (p.1, -p.2), by fun_prop⟩ (0, 0) = 1 :=
   o.localIndex_eq_one_of_apply_eq_sub hn (u₁ := fun z ↦ (z, 0)) (u₂ := fun w ↦ (0, w))
     (fun p ↦ by simp) (hasDerivAt_lineZero 0)
     ((hasDerivAt_const (0 : ℂ) (0 : ℂ)).prodMk (hasDerivAt_id 0))
-    (LinearIndependent.pair_iff.2 fun s t hst ↦ by simpa using hst)
+    (linearIndependent_one_zero one_ne_zero)
 
 include hn in
 /-- The lines `w = 0` and `w = z` of `ℂ²` meet at the origin with local intersection number `1`. -/
 example : o.localIndex o ⟨fun p ↦ (p.1 - p.2, -p.2), by fun_prop⟩ (0, 0) = 1 :=
   o.localIndex_eq_one_of_apply_eq_sub hn (u₁ := fun z ↦ (z, 0)) (u₂ := fun w ↦ (w, w))
     (fun p ↦ by simp) (hasDerivAt_lineZero 0) ((hasDerivAt_id 0).prodMk (hasDerivAt_id 0))
-    (LinearIndependent.pair_iff.2 fun s t hst ↦ by
-      have h₁ := congrArg Prod.fst hst
-      have h₂ := congrArg Prod.snd hst
-      simp only [Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_one,
-        mul_zero, zero_add, Prod.fst_zero, Prod.snd_zero] at h₁ h₂
-      exact ⟨by linear_combination h₁ - h₂, h₂⟩)
+    (linearIndependent_one_zero one_ne_zero)
 
 /-- On the unit sphere of `ℂ²`, the map `(z, w) ↦ (z - w, -w²)` has norm at least `1 / 4`. -/
 private theorem one_div_four_le_norm_sub_neg_sq {p : ℂ × ℂ} (hp : p ∈ sphere ((0 : ℂ), (0 : ℂ)) 1) :
@@ -554,13 +525,8 @@ example : o.localIndex o ⟨fun p ↦ (p.1 - p.2, -p.2 ^ 2), by fun_prop⟩ (0, 
       rintro h0
       have h := congrArg Prod.snd hp
       simp [h0] at h
-    refine injective_fst_smulRight_sub_snd_smulRight (LinearIndependent.pair_iff.2 fun s t hst ↦ ?_)
-    have h₁ := congrArg Prod.fst hst
-    have h₂ := congrArg Prod.snd hst
-    simp only [Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_one,
-      mul_zero, zero_add, Prod.fst_zero, Prod.snd_zero] at h₁ h₂
-    have ht : t = 0 := (mul_eq_zero.1 h₂).resolve_right (mul_ne_zero two_ne_zero hp2)
-    exact ⟨by simpa [ht] using h₁, ht⟩
+    exact LinearMap.injective_fst_smulRight_sub_snd_smulRight_iff.2
+      (linearIndependent_one_zero (mul_ne_zero two_ne_zero hp2))
 
 include hn in
 /-- The line `w = 0` meets itself along a whole line: `(z, z)` is not isolated among the solutions
