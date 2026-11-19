@@ -10,6 +10,7 @@ import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import TauCeti.Analysis.Normed.Module.Normalize.Lipschitz
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.LpSeminorm.Indicator
@@ -152,16 +153,12 @@ private theorem rpow_le_rpow_sub_two_mul_sq {v c w s : ℝ} (hv : 0 ≤ v) (hvc 
     _ ≤ c ^ (s - 1 - 1) * w ^ 2 := mul_rpow_le_rpow_sub_one_mul_sq hv hvc hvw (by linarith)
     _ = c ^ (s - 2) * w ^ 2 := by ring_nf
 
-/-- The square `‖u‖²` of an `L²` function is integrable. -/
-private theorem integrable_sq_norm (u : Lp E 2 μ) : Integrable (fun x ↦ ‖u x‖ ^ 2) μ :=
-  (memLp_two_iff_integrable_sq_norm (Lp.aestronglyMeasurable u)).1 (Lp.memLp u)
-
 /-- The integrand `‖u‖ min (‖u‖, N) ^ s ≤ N ^ (s - 1) ‖u‖²` of the pairing of `u` with `g_N` is
 integrable. -/
 private theorem integrable_norm_mul_min_rpow (N : ℝ≥0) {s : ℝ} (hs : 1 ≤ s) (u : Lp E 2 μ) :
     Integrable (fun x ↦ ‖u x‖ * min ‖u x‖ N ^ s) μ := by
   have hu := Lp.stronglyMeasurable u
-  refine ((integrable_sq_norm u).const_mul ((N : ℝ) ^ (s - 1))).mono' (hu.norm.measurable.mul
+  refine ((Lp.integrable_sq_norm u).const_mul ((N : ℝ) ^ (s - 1))).mono' (hu.norm.measurable.mul
       ((hu.norm.measurable.min measurable_const).pow_const s)).aestronglyMeasurable
     (ae_of_all _ fun x ↦ ?_)
   rw [Real.norm_of_nonneg (by positivity)]
@@ -512,7 +509,7 @@ private theorem truncRatio_nonneg {N : ℝ≥0} {s : ℝ} {hs : 1 ≤ s} {u : Lp
 /-- For `s ≥ 2` the function `min (‖u‖, N) ^ s ≤ N ^ (s - 2) ‖u‖²` is integrable. -/
 private theorem integrable_min_rpow (N : ℝ≥0) {s : ℝ} (hs : 2 ≤ s) (u : Lp E 2 μ) :
     Integrable (fun x ↦ min ‖u x‖ N ^ s) μ := by
-  refine ((integrable_sq_norm u).const_mul ((N : ℝ) ^ (s - 2))).mono'
+  refine ((Lp.integrable_sq_norm u).const_mul ((N : ℝ) ^ (s - 2))).mono'
     (((Lp.stronglyMeasurable u).norm.measurable.min measurable_const).pow_const s
       |>.aestronglyMeasurable) (ae_of_all _ fun x ↦ ?_)
   rw [Real.norm_of_nonneg (by positivity)]
@@ -649,7 +646,7 @@ private theorem mul_integral_add_sub_le (N : ℝ≥0) (u : Lp E 2 μ) {t t' s : 
         t ^ (s - 1) * ∫ x, ‖u x‖ ^ 2 ∂μ) ≤ ∫ x, ‖u x‖ * min ‖u x‖ N ^ s ∂μ := by
   have hP := measurableSet_lt_min N u t'
   have hJ := integrable_min_rpow N hs u
-  have h2 := integrable_sq_norm u
+  have h2 := Lp.integrable_sq_norm u
   have hind : Integrable ({x | t' < min ‖u x‖ N}.indicator fun _ ↦ (t' - t) * t' ^ s) μ :=
     (integrable_indicator_iff hP).2 (integrableOn_const hPtop)
   have hg : Integrable (fun x ↦ {x | t' < min ‖u x‖ N}.indicator
