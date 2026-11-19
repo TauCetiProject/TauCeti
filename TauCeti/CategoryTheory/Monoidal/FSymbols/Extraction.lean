@@ -47,7 +47,7 @@ needed: coordinates are read off from the scalar endomorphisms of the members.
 
 * `TauCeti.FusionBasis.finrank_hom`: over a nontrivial commutative ring, `N_{ab}^c` is the rank of
   `S a ⊗ S b ⟶ S c`.
-* `TauCeti.FusionBasis.bijective_sumWhiskerRight`, `TauCeti.FusionBasis.bijective_sumWhiskerLeft`:
+* `TauCeti.FusionBasis.sumWhiskerRight_bijective`, `TauCeti.FusionBasis.sumWhiskerLeft_bijective`:
   the decompositions of morphisms out of `Y ⊗ S c` and `S a ⊗ Y`.
 * `TauCeti.FusionBasis.left_eq_fSymbols`: the left family in terms of the right family.
 * `TauCeti.FusionBasis.existsUnique_fSymbols`: the F-symbols with this property are unique.
@@ -108,7 +108,7 @@ variable [MonoidalPreadditive C] [MonoidalLinear R C] [Fintype ι]
 
 /-- The morphism `Y ⊗ S c ⟶ S d` assembled from morphisms `g e j : Y ⟶ S e` and the fusion basis:
 `∑ e, ∑ j, (g e j ▷ S c) ≫ φ^{ec→d}_j`. For a split simple family it is a linear isomorphism
-(`TauCeti.FusionBasis.bijective_sumWhiskerRight`). -/
+(`TauCeti.FusionBasis.sumWhiskerRight_bijective`). -/
 def sumWhiskerRight (Y : C) (c d : ι) :
     (∀ e, Fin (N.N e c d) → (Y ⟶ S e)) →ₗ[R] (Y ⊗ S c ⟶ S d) where
   toFun g := ∑ e, ∑ j, (g e j ▷ S c) ≫ φ.basis e c d j
@@ -121,7 +121,7 @@ theorem sumWhiskerRight_apply (Y : C) (c d : ι) (g : ∀ e, Fin (N.N e c d) →
 
 /-- The morphism `S a ⊗ Y ⟶ S d` assembled from morphisms `g f l : Y ⟶ S f` and the fusion basis:
 `∑ f, ∑ l, (S a ◁ g f l) ≫ φ^{af→d}_l`. For a split simple family it is a linear isomorphism
-(`TauCeti.FusionBasis.bijective_sumWhiskerLeft`). -/
+(`TauCeti.FusionBasis.sumWhiskerLeft_bijective`). -/
 def sumWhiskerLeft (a : ι) (Y : C) (d : ι) :
     (∀ f, Fin (N.N a f d) → (Y ⟶ S f)) →ₗ[R] (S a ⊗ Y ⟶ S d) where
   toFun g := ∑ f, ∑ l, (S a ◁ g f l) ≫ φ.basis a f d l
@@ -182,7 +182,7 @@ private theorem whiskerLeft_comp_sumWhiskerLeft_eq (a : ι) {Y : C} {f : ι} (u 
   · simp
 
 /-- A morphism out of `Y ⊗ S c` determines its decomposition along the fusion basis. -/
-theorem injective_sumWhiskerRight (Y : C) (c d : ι) :
+theorem sumWhiskerRight_injective (Y : C) (c d : ι) :
     Function.Injective (φ.sumWhiskerRight Y c d) := by
   intro g g' h
   funext e j
@@ -195,7 +195,7 @@ theorem injective_sumWhiskerRight (Y : C) (c d : ι) :
     homPairingOfBijective_smul_id]
 
 /-- A morphism out of `S a ⊗ Y` determines its decomposition along the fusion basis. -/
-theorem injective_sumWhiskerLeft (a : ι) (Y : C) (d : ι) :
+theorem sumWhiskerLeft_injective (a : ι) (Y : C) (d : ι) :
     Function.Injective (φ.sumWhiskerLeft a Y d) := by
   intro g g' h
   funext f l
@@ -208,7 +208,7 @@ theorem injective_sumWhiskerLeft (a : ι) (Y : C) (d : ι) :
     homPairingOfBijective_smul_id]
 
 /-- Every morphism out of `Y ⊗ S c` decomposes along the fusion basis. -/
-theorem surjective_sumWhiskerRight (Y : C) (c d : ι) :
+theorem sumWhiskerRight_surjective (Y : C) (c d : ι) :
     Function.Surjective (φ.sumWhiskerRight Y c d) := by
   classical
   intro h
@@ -225,7 +225,7 @@ theorem surjective_sumWhiskerRight (Y : C) (c d : ι) :
   simp only [Linear.comp_smul]
 
 /-- Every morphism out of `S a ⊗ Y` decomposes along the fusion basis. -/
-theorem surjective_sumWhiskerLeft (a : ι) (Y : C) (d : ι) :
+theorem sumWhiskerLeft_surjective (a : ι) (Y : C) (d : ι) :
     Function.Surjective (φ.sumWhiskerLeft a Y d) := by
   classical
   intro h
@@ -243,15 +243,15 @@ theorem surjective_sumWhiskerLeft (a : ι) (Y : C) (d : ι) :
 
 /-- **Decomposition of morphisms out of `Y ⊗ S c`.** For a split simple family with a fusion
 basis, every morphism `Y ⊗ S c ⟶ S d` is uniquely `∑ e, ∑ j, (g e j ▷ S c) ≫ φ^{ec→d}_j`. -/
-theorem bijective_sumWhiskerRight (Y : C) (c d : ι) :
+theorem sumWhiskerRight_bijective (Y : C) (c d : ι) :
     Function.Bijective (φ.sumWhiskerRight Y c d) :=
-  ⟨φ.injective_sumWhiskerRight hS Y c d, φ.surjective_sumWhiskerRight hS Y c d⟩
+  ⟨φ.sumWhiskerRight_injective hS Y c d, φ.sumWhiskerRight_surjective hS Y c d⟩
 
 /-- **Decomposition of morphisms out of `S a ⊗ Y`.** For a split simple family with a fusion
 basis, every morphism `S a ⊗ Y ⟶ S d` is uniquely `∑ f, ∑ l, (S a ◁ g f l) ≫ φ^{af→d}_l`. -/
-theorem bijective_sumWhiskerLeft (a : ι) (Y : C) (d : ι) :
+theorem sumWhiskerLeft_bijective (a : ι) (Y : C) (d : ι) :
     Function.Bijective (φ.sumWhiskerLeft a Y d) :=
-  ⟨φ.injective_sumWhiskerLeft hS a Y d, φ.surjective_sumWhiskerLeft hS a Y d⟩
+  ⟨φ.sumWhiskerLeft_injective hS a Y d, φ.sumWhiskerLeft_surjective hS a Y d⟩
 
 end Decomposition
 
@@ -311,11 +311,11 @@ def leftBasis (a b c d : ι) : Basis (N.Left a b c d) R ((S a ⊗ S b) ⊗ S c �
       refine Fintype.linearIndependent_iffₛ.2 fun w w' hw ⟨e, i, j⟩ ↦ ?_
       rw [sum_smul_left, sum_smul_left] at hw
       have := congrArg (fun g ↦ (φ.basis a b e).repr (g e j) i)
-        (φ.injective_sumWhiskerRight hS _ c d hw)
+        (φ.sumWhiskerRight_injective hS _ c d hw)
       simpa only [Basis.repr_sum_self] using this)
     (by
       rintro h -
-      obtain ⟨g, rfl⟩ := φ.surjective_sumWhiskerRight hS (S a ⊗ S b) c d h
+      obtain ⟨g, rfl⟩ := φ.sumWhiskerRight_surjective hS (S a ⊗ S b) c d h
       refine (Submodule.mem_span_range_iff_exists_fun R).2
         ⟨fun x ↦ (φ.basis a b x.1).repr (g x.1 x.2.2) x.2.1, ?_⟩
       simp [sum_smul_left])
@@ -331,11 +331,11 @@ def rightBasis (a b c d : ι) : Basis (N.Right a b c d) R (S a ⊗ (S b ⊗ S c)
       refine Fintype.linearIndependent_iffₛ.2 fun w w' hw ⟨f, k, l⟩ ↦ ?_
       rw [sum_smul_right, sum_smul_right] at hw
       have := congrArg (fun g ↦ (φ.basis b c f).repr (g f l) k)
-        (φ.injective_sumWhiskerLeft hS a _ d hw)
+        (φ.sumWhiskerLeft_injective hS a _ d hw)
       simpa only [Basis.repr_sum_self] using this)
     (by
       rintro h -
-      obtain ⟨g, rfl⟩ := φ.surjective_sumWhiskerLeft hS a (S b ⊗ S c) d h
+      obtain ⟨g, rfl⟩ := φ.sumWhiskerLeft_surjective hS a (S b ⊗ S c) d h
       refine (Submodule.mem_span_range_iff_exists_fun R).2
         ⟨fun y ↦ (φ.basis b c y.1).repr (g y.1 y.2.2) y.2.1, ?_⟩
       simp [sum_smul_right])
@@ -456,7 +456,7 @@ private theorem fMatrix_pentagon (A B C D E p q r s : ι) (i₁ : Fin (N.N A B p
     (φ.comp_left_eq_pentagon_right hS A B C D E p q i₁ i₂ i₃)
   rw [pentagon_assoc, cancel_epi, cancel_epi] at h
   have h' := congrArg (fun G ↦ (φ.rightBasis hS B C D s).repr (G s n) ⟨r, k, m⟩)
-    (φ.injective_sumWhiskerLeft hS A _ E h)
+    (φ.sumWhiskerLeft_injective hS A _ E h)
   simp only [← coe_rightBasis φ hS, Basis.repr_sum_self] at h'
   rw [h', Fintype.sum_sigma]
   refine Finset.sum_congr rfl fun t _ ↦ ?_
