@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Category.TopPair
 public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.Topology.PathSpace.Moore.Truncate
 
@@ -33,6 +34,8 @@ the chains of the loop space are compared in Brown's theory of twisted tensor pr
 * `TauCeti.MoorePathFrom.endpoint X b`: the end point, which the left loop action preserves.
 * `TauCeti.MoorePathFrom.ofLoop X b`: the inclusion of the Moore loops at `b`, an equivariant
   embedding onto the fibre of the end point over `b`.
+* `TauCeti.MoorePathFrom.loopPair X b`: the pair `(P_b X, Ω_b X)` of the based path space and the
+  Moore loops.
 * `TauCeti.MoorePathFrom.truncateHomotopy`: the homotopy from the constant map at the constant path
   to the identity, by truncation.
 
@@ -181,6 +184,12 @@ theorem range_ofLoop : Set.range (ofLoop X b) = endpoint X b ⁻¹' {b} := by
   refine ⟨?_, fun hγ ↦ ⟨⟨γ.toMoorePath, γ.source, hγ⟩, rfl⟩⟩
   rintro ⟨ω, rfl⟩
   exact endpoint_ofLoop ω
+
+variable (X b) in
+/-- The pair `(P_b X, Ω_b X)` of the Moore paths from `b` and the Moore loops at `b`, the loops
+included as the paths ending at `b` (`TauCeti.MoorePathFrom.ofLoop`). -/
+abbrev loopPair : TopPair :=
+  TopPair.of (TopCat.ofHom (ofLoop X b)) isEmbedding_ofLoop
 
 /-! ### The contraction -/
 

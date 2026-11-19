@@ -64,8 +64,6 @@ product `z · x`. The sign is absorbed in `TauCeti.sphereLoopHomologyMulRightEqu
 
 * `TauCeti.sphereCubeMap h`: the characteristic map of the top cell of `Sⁿ`, read on the cube.
 * `TauCeti.sphereCubePaths h`: the Moore paths from the pole along the images of straight segments.
-* `TauCeti.MoorePathFrom.loopPair X b`: the pair `(P_b X, Ω_b X)` of the based path space and the
-  Moore loops, included by `TauCeti.MoorePathFrom.ofLoop`.
 * `TauCeti.spherePathCube h`: the singular `n`-cube `d ↦ τ d` of `P_b Sⁿ`.
 * `TauCeti.sphereAttachingCycle h k`: the attaching cycle `x`, the signed sum of the faces of the
   path cube, read in the Moore loops.
@@ -100,19 +98,6 @@ open CategoryTheory Limits Metric Set Topology Topology.RelCWComplex Homological
 open scoped unitInterval
 
 namespace TauCeti
-
-/-! ### The pair of the based paths and the loops -/
-
-namespace MoorePathFrom
-
-variable (X : Type*) [TopologicalSpace X] (b : X)
-
-/-- The pair `(P_b X, Ω_b X)` of the Moore paths from `b` and the Moore loops at `b`, the loops
-included as the paths ending at `b` (`TauCeti.MoorePathFrom.ofLoop`). -/
-abbrev loopPair : TopPair :=
-  TopPair.of (TopCat.ofHom (ofLoop X b)) isEmbedding_ofLoop
-
-end MoorePathFrom
 
 /-! ### The top cell of the sphere, read on the cube -/
 
@@ -276,6 +261,10 @@ private theorem isIso_homologyMap_sphereCubePairToLoopPair (k : Type) [CommRing 
         TopPair.Hom.fst (TopCat.spherePreimageSkeletonPairIso h (by omega)).hom
           (TopPair.Hom.fst (TopCat.cellPullbackPairMap p univ (m + 2))
             (TopPair.Hom.fst φ.hom ⟨(d, γ), hx⟩))
+      -- `rw` cannot be used: `TopCat.coe_cellPullbackPairMap_fst_apply` states the codomain of the
+      -- excision map as `TopCat.of (p ⁻¹' skeletonLT _ _)`, and the point `⟨(d, γ), hx⟩` is typed
+      -- in the pullback, while the goal reads both through `TopPair.ofSubset`, which agrees with
+      -- them only after unfolding.
       erw [TopCat.spherePreimageSkeletonPairIso_hom_fst_apply,
         TopCat.coe_cellPullbackPairMap_fst_apply, TopPair.ofSubsetIso_hom,
         TopPair.ofSubsetMap_fst_apply]
@@ -300,6 +289,11 @@ def spherePathCube :
   ⟨fun d ↦ ⟨sphereCubePaths h d, source_sphereCubePaths h d⟩,
     (sphereCubePaths h).continuous.subtype_mk _⟩
 
+@[simp]
+theorem toMoorePath_spherePathCube (d : Fin (m + 1 + 1) → I) :
+    MoorePathFrom.toMoorePath (spherePathCube h d) = sphereCubePaths h d :=
+  MoorePathFrom.toMoorePath_mk _ _
+
 /-- The faces of the path cube are loops: the boundary of the cube is sent to the paths ending at
 the pole. -/
 theorem mapsTo_spherePathCube :
@@ -308,7 +302,7 @@ theorem mapsTo_spherePathCube :
   fun d hd ↦ ⟨⟨sphereCubePaths h d, source_sphereCubePaths h d,
     (target_sphereCubePaths h d).trans (sphereCubeMap_of_mem_boundary h hd)⟩,
       MoorePathFrom.ext ((MoorePathFrom.toMoorePath_ofLoop _).trans
-        (MoorePathFrom.toMoorePath_mk _ _).symm)⟩
+        (toMoorePath_spherePathCube h d).symm)⟩
 
 variable (k : Type) [CommRing k]
 
@@ -357,10 +351,11 @@ private theorem boundary_leftAct_sphereAttachingCycle {q : ℕ}
         (NormalizedCubicalChain.cast k hp ((((normalizedCubicalChainComplex k).obj
           (TopCat.of (MooreLoopSpace Sph (spherePolePoint h)))).iCycles q).hom z)) = 0 := by
     subst hp
-    erw [NormalizedCubicalChain.cast_rfl]
-    exact (normalizedCubicalChainComplex_obj_d_apply
-      (TopCat.of (MooreLoopSpace Sph (spherePolePoint h))) p _).symm.trans
-        (moduleCat_d_iCycles_apply _ (p + 1) p z)
+    exact (congrArg (NormalizedCubicalChain.boundary _ k p)
+      (NormalizedCubicalChain.cast_rfl k _)).trans
+        ((normalizedCubicalChainComplex_obj_d_apply
+          (TopCat.of (MooreLoopSpace Sph (spherePolePoint h))) p _).symm.trans
+            (moduleCat_d_iCycles_apply _ (p + 1) p z))
   rw [NormalizedCubicalChain.boundary_leftAct_of_boundary_eq_zero _ hz,
     boundary_ofCube_spherePathCube h k, map_smul]
   exact congrArg _ ((NormalizedCubicalChain.map_leftAct
@@ -393,19 +388,18 @@ def sphereLoopHomologyMulRightEquiv (q : ℕ) :
       (q + (m + 1) + 1) (q + (m + 1)) rfl)).toLinearEquiv ≪≫ₗ
     LinearEquiv.smulOfUnit ((-1 : kˣ) ^ q)
 
-/-- A map of pairs carries a representative of a relative class to a representative of its
-image. -/
-private theorem isCubicalRepresentative_homologyMap {P P' : TopPair.{0}} (f : P ⟶ P') {n : ℕ}
-    {s : NormalizedCubicalChain P.fst k n} {μ : (P.cubicalChainComplex k).homology n}
-    (hs : P.IsCubicalRepresentative k s μ) :
-    P'.IsCubicalRepresentative k (NormalizedCubicalChain.map k (TopPair.Hom.fst f).hom n s)
-      (homologyMap (TopPair.cubicalChainComplexMap k f) n μ) := by
-  obtain ⟨r, hr, rfl⟩ := (TopPair.isCubicalRepresentative_iff _ _).1 hs
-  refine (TopPair.isCubicalRepresentative_iff _ _).2
-    ⟨cyclesMap (TopPair.cubicalChainComplexMap k f) n r, ?_, ?_⟩
-  · rw [moduleCat_iCycles_cyclesMap_apply, ← hr]
-    exact (TopPair.π_cubicalChainComplexMap_f_apply k f n s).symm
-  · rw [← ModuleCat.comp_apply, ← homologyπ_naturality, ModuleCat.comp_apply]
+/-- The value of `TauCeti.sphereLoopHomologyMulRightEquiv` on a class: the image under the cell
+isomorphism, excision and the connecting morphism, times the sign `(-1) ^ q`. -/
+private theorem sphereLoopHomologyMulRightEquiv_apply (q : ℕ)
+    (μ : ((normalizedCubicalChainComplex k).obj
+      (TopCat.of (MooreLoopSpace Sph (spherePolePoint h)))).homology q) :
+    sphereLoopHomologyMulRightEquiv h k q μ =
+      ((-1 : kˣ) ^ q) • ((MoorePathFrom.loopPair Sph (spherePolePoint h)).cubicalHomologyδ k
+        (q + (m + 1) + 1) (q + (m + 1)) rfl).hom (homologyMap (TopPair.cubicalChainComplexMap k
+          (sphereCubePairToLoopPair h)) (q + (m + 1 + 1))
+            (MoorePathPullback.cubicalHomologyCubeBoundaryEquiv (sphereCubePaths h)
+              (source_sphereCubePaths h) (target_sphereCubePaths h) k q μ)) :=
+  (rfl)
 
 /-- The projection of the section cube of the pullback is the path cube. -/
 private theorem map_sectionCube :
@@ -415,7 +409,7 @@ private theorem map_sectionCube :
       spherePathCube h :=
   ContinuousMap.ext fun d ↦ MoorePathFrom.ext <|
     ((MoorePathPullback.toMoorePathFrom_toMoorePath _).trans
-      (MoorePathPullback.path_sectionCube _ _ _ d)).trans (MoorePathFrom.toMoorePath_mk _ _).symm
+      (MoorePathPullback.path_sectionCube _ _ _ d)).trans (toMoorePath_spherePathCube h d).symm
 
 /-- **The class of `z · σ`**: for a `q`-cycle `z` of the Moore loops, the chain `z · σ` of the based
 path space, for the path cube `σ`, represents the image under the cell isomorphism and excision of
@@ -437,9 +431,9 @@ private theorem isCubicalRepresentative_leftAct_spherePathCube (q : ℕ)
               (TopCat.of (MooreLoopSpace Sph (spherePolePoint h)))).homologyπ q).hom z))) := by
   -- The cell isomorphism is represented by `z · c₀` for the section cube `c₀`.
   obtain ⟨r, hr, hμ⟩ := (TopPair.isCubicalRepresentative_iff _ _).1
-    (isCubicalRepresentative_homologyMap k (sphereCubePairToLoopPair h)
-      (MoorePathPullback.isCubicalRepresentative_cubicalHomologyCubeBoundaryEquiv
-        (sphereCubePaths h) (source_sphereCubePaths h) (target_sphereCubePaths h) k q z))
+    ((MoorePathPullback.isCubicalRepresentative_cubicalHomologyCubeBoundaryEquiv
+      (sphereCubePaths h) (source_sphereCubePaths h) (target_sphereCubePaths h) k q z).map
+        (sphereCubePairToLoopPair h))
   -- The projection to the based path space carries `z · c₀` to `z · σ`.
   have key : NormalizedCubicalChain.map k
         (MoorePathPullback.toMoorePathFrom (f := sphereCubeMap h) (b := spherePolePoint h)) _
@@ -498,15 +492,8 @@ theorem sphereLoopHomologyMulRightEquiv_homologyπ (q : ℕ)
         ((-1 : k) ^ q • w) = (-1 : k) ^ q • (((normalizedCubicalChainComplex k).obj
       (TopCat.of (MooreLoopSpace Sph (spherePolePoint h)))).homologyπ (q + (m + 1))).hom w :=
     map_smul _ _ _
-  -- Unfold the composite; the sign `(-1) ^ q` cancels the one in the definition.
-  change ((-1 : kˣ) ^ q) • ((MoorePathFrom.loopPair Sph (spherePolePoint h)).cubicalHomologyδ k
-    (q + (m + 1) + 1) (q + (m + 1)) rfl).hom (homologyMap (TopPair.cubicalChainComplexMap k
-      (sphereCubePairToLoopPair h)) (q + (m + 1 + 1))
-        (MoorePathPullback.cubicalHomologyCubeBoundaryEquiv (sphereCubePaths h)
-          (source_sphereCubePaths h) (target_sphereCubePaths h) k q
-            ((((normalizedCubicalChainComplex k).obj
-              (TopCat.of (MooreLoopSpace Sph (spherePolePoint h)))).homologyπ q).hom z))) = _
-  rw [h3, Units.smul_def]
+  -- The sign `(-1) ^ q` cancels the one in the definition.
+  rw [sphereLoopHomologyMulRightEquiv_apply, h3, Units.smul_def]
   refine (congrArg _ e2).trans ?_
   -- The two smul instances agree: both are the `k`-module structure of the homology.
   change ((-1 : k) ^ q) • ((-1 : k) ^ q • (((normalizedCubicalChainComplex k).obj

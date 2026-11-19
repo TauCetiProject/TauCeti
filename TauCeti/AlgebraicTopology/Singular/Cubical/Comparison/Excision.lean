@@ -256,25 +256,6 @@ theorem exists_boundary_eq_of_singularHomologyδ_eq (m : ℕ)
 
 /-! ### The connecting morphism of a relative cube -/
 
-variable {P} in
-/-- **The connecting morphism of a relative cube is its boundary.** For a singular cube `c` of `X`
-sending the boundary of the cube into `A`, the connecting morphism `Hₘ₊₁(X, A) ⟶ Hₘ(A)` sends the
-class of `c` to the class of its boundary, read in `A`. -/
-theorem cubicalHomologyδ_homologyπ_cubicalCycleOfCube {m : ℕ} (c : SingularCube P.fst (m + 1))
-    (hc : Set.MapsTo c (Cube.boundary (Fin (m + 1))) (Set.range P.map)) :
-    (P.cubicalHomologyδ k (m + 1) m).hom
-        (((P.cubicalChainComplex k).homologyπ (m + 1)).hom (cubicalCycleOfCube k c hc)) =
-      (((normalizedCubicalChainComplex k).obj P.snd).homologyπ m).hom
-        (cubicalBoundaryCycleOfCube k c hc) := by
-  refine (shortExact_cubicalChainComplexShortComplex k P).moduleCat_δ_homologyπ (m + 1) m rfl _
-    ((normalizedCubicalChainComplexXEquiv P.fst (m + 1)).symm
-      (NormalizedCubicalChain.ofCube P.fst k c)) ?_ _ ?_
-  · rw [iCycles_cubicalCycleOfCube, cubicalChainOfCube_def]
-  · rw [iCycles_cubicalBoundaryCycleOfCube, normalizedCubicalChainComplexXEquiv_symm_apply]
-    exact (normalizedCubicalChainComplex_map_f_apply P.map m _).trans
-      ((map_cubicalBoundaryChainOfCube k c hc).trans
-        (normalizedCubicalChainComplex_obj_d_apply P.fst m _).symm)
-
 variable {k P} in
 /-- **The connecting morphism on a representative.** If a chain `s` of `X` represents a relative
 class `μ` of `Hₙ₊₁(X, A)`, and `w` is an `n`-cycle of `A` whose image in `X` is the boundary of
@@ -293,6 +274,22 @@ theorem IsCubicalRepresentative.cubicalHomologyδ_eq {n : ℕ}
     ((normalizedCubicalChainComplexXEquiv P.fst (n + 1)).symm s) hr w
     ((normalizedCubicalChainComplex_map_f_apply P.map n _).trans
       (hw.trans (normalizedCubicalChainComplex_obj_d_apply P.fst n s).symm))
+
+variable {P} in
+/-- **The connecting morphism of a relative cube is its boundary.** For a singular cube `c` of `X`
+sending the boundary of the cube into `A`, the connecting morphism `Hₘ₊₁(X, A) ⟶ Hₘ(A)` sends the
+class of `c` to the class of its boundary, read in `A`. -/
+theorem cubicalHomologyδ_homologyπ_cubicalCycleOfCube {m : ℕ} (c : SingularCube P.fst (m + 1))
+    (hc : Set.MapsTo c (Cube.boundary (Fin (m + 1))) (Set.range P.map)) :
+    (P.cubicalHomologyδ k (m + 1) m).hom
+        (((P.cubicalChainComplex k).homologyπ (m + 1)).hom (cubicalCycleOfCube k c hc)) =
+      (((normalizedCubicalChainComplex k).obj P.snd).homologyπ m).hom
+        (cubicalBoundaryCycleOfCube k c hc) :=
+  IsCubicalRepresentative.cubicalHomologyδ_eq (s := NormalizedCubicalChain.ofCube P.fst k c)
+    ((isCubicalRepresentative_iff _ _).2 ⟨cubicalCycleOfCube k c hc, by
+      rw [iCycles_cubicalCycleOfCube, cubicalChainOfCube_def,
+        normalizedCubicalChainComplexXEquiv_symm_apply], rfl⟩) _
+    (by rw [iCycles_cubicalBoundaryCycleOfCube, map_cubicalBoundaryChainOfCube])
 
 /-- If the ambient space of a pair is contractible, the connecting morphism
 `Hₘ₊₂(X, A) ⟶ Hₘ₊₁(A)` of cubical homology is an isomorphism: its neighbours `Hₘ₊₂(X)` and
