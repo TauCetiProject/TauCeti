@@ -50,6 +50,10 @@ point factors through `κ`, so the base change `L ⊗[A] B` is the base change o
 `κ → L`; hence the base change of `Spec B ⟶ Spec A` to `Spec L` is finite étale of rank
 `dim_κ (κ ⊗[A] B)`.
 
+Étaleness of a morphism is local on the target
+(`TauCeti.AlgebraicGeometry.isZariskiLocalAtTarget_etale`); this is recorded as an instance because
+instance search does not derive it from Mathlib's ring-map description of `Etale`.
+
 ## Main results
 
 * `AlgebraicGeometry.isOpenImmersion_iff_etale_and_universallyInjective`: the open immersions are
@@ -179,6 +183,12 @@ instance etale_hasPullbacksAlong {X Y : AlgebraicGeometry.Scheme} (f : X ⟶ Y) 
 instance etale_isStableUnderBaseChangeAlong {X Y : AlgebraicGeometry.Scheme} (f : X ⟶ Y) :
     CategoryTheory.MorphismProperty.IsStableUnderBaseChangeAlong @AlgebraicGeometry.Etale f :=
   ⟨CategoryTheory.MorphismProperty.IsStableUnderBaseChange.of_isPullback⟩
+
+/-- Étaleness of a morphism of schemes is local on the target. Instance search does not find
+this from Mathlib's ring-map description of `Etale`, so it is recorded here. -/
+instance isZariskiLocalAtTarget_etale :
+    AlgebraicGeometry.IsZariskiLocalAtTarget @AlgebraicGeometry.Etale.{u} :=
+  AlgebraicGeometry.HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := @RingHom.Etale)
 
 section ClosedFibre
 
