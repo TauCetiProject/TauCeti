@@ -27,18 +27,14 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   {n n' : ℕ∞ω}
 
-/-- Both parameter derivatives of relative density vanish in dimension zero, for any family
+/- Both parameter derivatives of relative density vanish in dimension zero, for any family
 of metrics. -/
-theorem deriv_relativeVolumeDensity_finrank_zero
+example
     (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
     (G : ℝ → ContMDiffRiemannianMetric I n' E (fun x : M ↦ TangentSpace I x))
     (hE : Module.finrank ℝ E = 0) (x : M) (t : ℝ) :
     deriv (fun s ↦ relativeVolumeDensity g (G s) x) t = 0 ∧
       deriv (deriv (fun s ↦ relativeVolumeDensity g (G s) x)) t = 0 := by
-  have h : (fun s ↦ relativeVolumeDensity g (G s) x) = fun _ ↦ 1 := by
-    funext s
-    exact relativeVolumeDensity_finrank_zero g (G s) hE x
-  rw [h]
-  simp
+  simp [hE]
 
 end Bundle.ContMDiffRiemannianMetric
