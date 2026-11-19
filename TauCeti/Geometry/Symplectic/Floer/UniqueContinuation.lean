@@ -64,7 +64,10 @@ field of complex structures `J`, so they also cover operators whose leading part
 
 The proofs read `ℝ × ℝ` as `ℂ` through `Complex.equivRealProdCLM`, under which `∂ₛ` and `∂ₜ` are
 the derivatives in the directions `1` and `i`
-(`TauCeti.fderiv_comp_equivRealProdCLM_one`, `TauCeti.fderiv_comp_equivRealProdCLM_I`).
+(`TauCeti.fderiv_comp_equivRealProdCLM_one`, `TauCeti.fderiv_comp_equivRealProdCLM_I`), and
+transport the conclusions back with `TauCeti.eqOn_zero_of_eqOn_zero_comp_equivRealProdCLM`,
+`TauCeti.isBigO_comp_equivRealProdCLM_pow` and
+`TauCeti.mem_codiscreteWithin_of_comp_equivRealProdCLM`.
 
 ## References
 
@@ -124,47 +127,6 @@ private theorem floerLinearization_eq_zero_complexCoordinate (hΩ : IsOpen Ω)
       ← floerLinearization_eq_add]
     exact hD (e w) hw
 
-section ComplexCoordinate
-
-variable {E : Type*} [NormedAddCommGroup E] {f : ℝ × ℝ → E}
-
-/-- A map vanishing on `Ω` in the complex coordinate `Complex.equivRealProdCLM` vanishes on `Ω`. -/
-private theorem eqOn_zero_of_eqOn_zero_comp_equivRealProdCLM
-    (h : EqOn (f ∘ Complex.equivRealProdCLM) 0 (Complex.equivRealProdCLM ⁻¹' Ω)) :
-    EqOn f 0 Ω := fun z hz ↦ by
-  simpa using h (show Complex.equivRealProdCLM.symm z ∈ _ by simpa using hz)
-
-/-- A map vanishing to infinite order at `z₀` vanishes to infinite order at the corresponding
-point in the complex coordinate `Complex.equivRealProdCLM`: there the vanishing order is measured
-by `‖e w - e w₀‖ ≤ ‖e‖ ‖w - w₀‖`. -/
-private theorem isBigO_comp_equivRealProdCLM_pow {z₀ : ℝ × ℝ}
-    (h₀ : ∀ n : ℕ, f =O[𝓝 z₀] fun z ↦ ‖z - z₀‖ ^ n) (n : ℕ) :
-    (f ∘ Complex.equivRealProdCLM) =O[𝓝 (Complex.equivRealProdCLM.symm z₀)]
-      fun w ↦ (w - Complex.equivRealProdCLM.symm z₀) ^ n := by
-  set e := Complex.equivRealProdCLM
-  have h := (h₀ n).comp_tendsto
-    ((e.continuous.tendsto (e.symm z₀)).trans_eq (by rw [e.apply_symm_apply]))
-  refine h.trans (IsBigO.of_bound (‖(e : ℂ →L[ℝ] ℝ × ℝ)‖ ^ n) (Eventually.of_forall fun w ↦ ?_))
-  have hw : e w - z₀ = e (w - e.symm z₀) := by simp
-  simp only [comp_apply, hw, norm_pow, norm_norm, ← mul_pow]
-  gcongr
-  exact (e : ℂ →L[ℝ] ℝ × ℝ).le_opNorm _
-
-/-- A map whose nonzero set is codiscrete in `e ⁻¹' Ω` in the complex coordinate
-`e = Complex.equivRealProdCLM` has nonzero set codiscrete in `Ω`. -/
-private theorem mem_codiscreteWithin_of_comp_equivRealProdCLM
-    (h : {w | (f ∘ Complex.equivRealProdCLM) w ≠ 0} ∈
-      codiscreteWithin (Complex.equivRealProdCLM ⁻¹' Ω)) :
-    {z | f z ≠ 0} ∈ codiscreteWithin Ω := by
-  set e := Complex.equivRealProdCLM
-  -- Transport the codiscrete set back along the homeomorphism `e`.
-  have := (e.toHomeomorph.isEmbedding.image_mem_codiscreteWithin
-    (s := e ⁻¹' {z | f z ≠ 0}) (t := e ⁻¹' Ω)).2 h
-  simpa only [ContinuousLinearEquiv.coe_toHomeomorph,
-    image_preimage_eq _ e.surjective] using this
-
-end ComplexCoordinate
-
 /-- **Unique continuation for the linearized Floer operator.** Let `J` be `C¹` and the
 Hamiltonians `K_s`, `K_t` be `C²` near the graph of a `C¹` map `u` over a connected open set
 `Ω ⊆ ℝ × ℝ`, with `J(z, u z)² = -1` on `Ω`. A `C¹` solution `ξ` of `D_u ξ = 0` on `Ω` that
@@ -207,7 +169,7 @@ theorem eqOn_zero_of_floerLinearization_eq_zero_of_forall_isBigO (hΩ : IsOpen �
     eqOn_zero_of_contDiffOn_of_forall_isBigO_of_complexStructure hΩ' hΩc' hJ' hJJ' hξ' hCm hCb
       heq (show Complex.equivRealProdCLM.symm z₀ ∈ Complex.equivRealProdCLM ⁻¹' Ω by
         rwa [mem_preimage, ContinuousLinearEquiv.apply_symm_apply])
-      (isBigO_comp_equivRealProdCLM_pow h₀)
+      fun n ↦ isBigO_comp_equivRealProdCLM_pow (h₀ n)
 
 /-- **Isolated zeros of solutions of the linearized Floer operator.** Let `J` be `C¹` and the
 Hamiltonians `K_s`, `K_t` be `C²` near the graph of a `C¹` map `u` over a connected open set
@@ -335,7 +297,7 @@ theorem eqOn_zero_of_floerLinearizationAdjoint_eq_zero_of_forall_isBigO (hΩ : I
     eqOn_zero_of_contDiffOn_of_forall_isBigO_of_complexStructure hΩ' hΩc' hJ' hJJ' hη' hCm hCb
       heq (show Complex.equivRealProdCLM.symm z₀ ∈ Complex.equivRealProdCLM ⁻¹' Ω by
         rwa [mem_preimage, ContinuousLinearEquiv.apply_symm_apply])
-      (isBigO_comp_equivRealProdCLM_pow h₀)
+      fun n ↦ isBigO_comp_equivRealProdCLM_pow (h₀ n)
 
 /-- **Isolated zeros of solutions of the formal adjoint equation.** Let `J` be `C¹` and the
 Hamiltonians `K_s`, `K_t` be `C²` near the graph of a `C¹` map `u` over a connected open set
