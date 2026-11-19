@@ -69,29 +69,6 @@ namespace RootPairing
 variable {ι K M N : Type*} [Field K] [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
   (P : RootPairing ι K M N) (b : P.Base)
 
-/-! ### Products of pairwise orthogonal simple reflections -/
-
-/-- A product of pairwise orthogonal simple reflections subtracts from `m` its components along
-their simple roots. -/
-private theorem noncommProd_smul (s : Finset b.support) (f : b.support → P.weylGroup)
-    (hf : ∀ i, f i = weylGroup.ofIdx P (i : ι))
-    (hs : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → P.pairing i j = 0) (comm) (m : M) :
-    s.noncommProd f comm • m = m - ∑ j ∈ s, P.coroot' j m • P.root j := by
-  classical
-  induction s using Finset.induction_on generalizing m with
-  | empty => simp
-  | insert a s ha ih =>
-    rw [noncommProd_insert_of_notMem _ _ _ _ ha, mul_smul,
-      ih (fun i hi j hj ↦ hs i (mem_insert_of_mem hi) j (mem_insert_of_mem hj)), hf,
-      weylGroup.ofIdx_smul, Equiv.reflection_smul, reflection_apply, sum_insert ha]
-    have h0 : P.coroot' a (∑ j ∈ s, P.coroot' j m • P.root j) = 0 := by
-      rw [map_sum]
-      refine sum_eq_zero fun j hj ↦ ?_
-      rw [map_smul, root_coroot'_eq_pairing, hs j (mem_insert_of_mem hj) a (mem_insert_self a s)
-        (by rintro rfl; exact ha hj), smul_zero]
-    rw [map_sub, h0, sub_zero]
-    abel
-
 variable [P.IsCrystallographic]
 
 /-- The value of a coroot on a real combination of the simple roots is real. -/
@@ -101,31 +78,7 @@ private theorem coroot'_sum_algebraMap_smul_root [Algebra ℝ K] (a : b.support 
   simp only [map_sum, map_smul, root_coroot'_eq_pairing, smul_eq_mul, map_mul, map_intCast,
     ← P.algebraMap_pairingIn ℤ, algebraMap_int_eq, eq_intCast]
 
-variable [CharZero K] [Finite ι]
-
-/-- Distinct simple roots of the same colour are orthogonal. -/
-private theorem pairingIn_eq_zero_of_color_eq (c : (coxeterMatrixOfBase P b).graph.Coloring Bool)
-    {i j : b.support} (hij : i ≠ j) (h : c i = c j) : P.pairingIn ℤ i j = 0 := by
-  have hadj : ¬ (coxeterMatrixOfBase P b).graph.Adj i j := fun hadj ↦ c.valid hadj h
-  rw [graph_coxeterMatrixOfBase, diagramGraph_adj] at hadj
-  rw [← Base.cartanMatrixIn_def]
-  by_contra hne
-  exact hadj ⟨hij, hne, fun h' ↦ hne (b.cartanMatrix_apply_eq_zero_iff_symm.2 h')⟩
-
-variable [P.IsReduced]
-
-/-- The product of the simple reflections of colour `x` subtracts from `m` its components along
-the simple roots of colour `x`. -/
-private theorem colorClassProd_smul (c : (coxeterMatrixOfBase P b).graph.Coloring Bool)
-    (x : Bool) (m : M) :
-    (weylCoxeterSystem P b).colorClassProd c x • m =
-      m - ∑ j, (if c j = x then P.coroot' j m else 0) • P.root j := by
-  classical
-  rw [CoxeterSystem.colorClassProd_def, noncommProd_smul P b _ _ (weylCoxeterSystem_simple P b)]
-  · simp_rw [sum_filter, ite_smul, zero_smul]
-  · intro i hi j hj hij
-    rw [← P.algebraMap_pairingIn ℤ, pairingIn_eq_zero_of_color_eq P b c hij
-      ((mem_filter.1 hi).2.trans (mem_filter.1 hj).2.symm), map_zero]
+variable [CharZero K] [Finite ι] [P.IsReduced]
 
 /-! ### The Coxeter plane -/
 

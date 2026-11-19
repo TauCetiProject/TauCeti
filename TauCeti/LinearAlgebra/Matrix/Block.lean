@@ -131,6 +131,7 @@ public theorem _root_.IsUnit.det_map_toSquareBlockProp {m R S : Type*} [Fintype 
 /-! ### Indecomposability -/
 
 /-- A matrix on a finite index type is indecomposable exactly when its transpose is. -/
+@[simp]
 public theorem isIndecomposable_transpose {m R : Type*} [Finite m] [Zero R] {M : Matrix m m R} :
     Mᵀ.IsIndecomposable ↔ M.IsIndecomposable := by
   simp_rw [isIndecomposable_iff_reflTransGen, transpose_apply]
