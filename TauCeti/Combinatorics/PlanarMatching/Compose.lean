@@ -37,8 +37,9 @@ single circle and `cap ≫ cup` is the generator `e₁ : 2 → 2`, and the ident
 * `TauCeti.TLDiagram.comp_id`, `TauCeti.TLDiagram.id_comp`: the identity diagrams are units for
   composition, and `TauCeti.TLDiagram.comp_cast_id`, `TauCeti.TLDiagram.cast_id_comp`: composing
   with a transported identity diagram transports.
-* `TauCeti.TLDiagram.comp_cast`, `TauCeti.TLDiagram.cast_comp_cast`: composition commutes with
-  transporting the diagrams along equalities of boundary sizes.
+* `TauCeti.TLDiagram.comp_cast`, `TauCeti.TLDiagram.cast_comp`,
+  `TauCeti.TLDiagram.cast_comp_cast`: composition commutes with transporting the diagrams along
+  equalities of boundary sizes.
 * `TauCeti.TLDiagram.cup_comp_cap`, `TauCeti.TLDiagram.cap_comp_cup_matching_val`: a cup followed
   by a cap is one circle, and a cap followed by a cup has the matching of `e₁`.
 
@@ -104,6 +105,13 @@ theorem id_comp (f : TLDiagram n m) : (id n).comp f = f := by
 @[simp]
 theorem comp_cast {p' : ℕ} (f : TLDiagram n m) (g : TLDiagram m p) (h : p = p') :
     f.comp (cast rfl h g) = cast rfl h (f.comp g) := by
+  subst h
+  simp
+
+/-- Composing a diagram whose bottom boundary is transported transports the composite. -/
+@[simp]
+theorem cast_comp {n' : ℕ} (h : n = n') (f : TLDiagram n m) (g : TLDiagram m p) :
+    (cast h rfl f).comp g = cast h rfl (f.comp g) := by
   subst h
   simp
 

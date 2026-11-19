@@ -51,7 +51,7 @@ that closing the identity of `of 2` produces two circles.
 * `TauCeti.TLDiagCat.coevaluation_add_two`, `TauCeti.TLDiagCat.evaluation_add_two`: the
   self-duality of `of (n + 2)` is the tensor product of those of `of 1` and `of (n + 1)`.
 * `TauCeti.TLDiagCat.diagram_coevaluation`, `TauCeti.TLDiagCat.diagram_evaluation`: the
-  coevaluation of `of n` is `n` nested cups and its evaluation `n` nested caps.
+  coevaluation of an object on `n` points is `n` nested cups and its evaluation `n` nested caps.
 * `TauCeti.TLDiagCat.rightDual_eq`, `TauCeti.TLDiagCat.leftDual_eq`: every object is its own
   dual.
 
@@ -454,12 +454,15 @@ theorem rightDual_eq (X : TLDiagCat) : Xᘁ = X := (rfl)
 @[simp]
 theorem leftDual_eq (X : TLDiagCat) : (ᘁX : TLDiagCat) = X := (rfl)
 
-/-- **The coevaluation of `of n` is `n` nested cups**: its diagram joins the top points `i` and
-`2 * n - 1 - i`, and has no circle. -/
+/-- **The coevaluation of an object on `n` points is `n` nested cups**: its diagram joins the
+top points `i` and `2 * n - 1 - i`, and has no circle. -/
 @[simp]
-theorem diagram_coevaluation (n : ℕ) :
-    (η_ (of n) (of n)).diagram =
-      ⟨PlanarMatching.cast (Nat.zero_add _).symm (PlanarMatching.nested n), 0⟩ := by
+theorem diagram_coevaluation (X : TLDiagCat) :
+    (η_ X X).diagram =
+      ⟨PlanarMatching.cast (Nat.zero_add _).symm (PlanarMatching.nested X.as), 0⟩ := by
+  suffices h : ∀ n, (η_ (of n) (of n)).diagram =
+      ⟨PlanarMatching.cast (Nat.zero_add _).symm (PlanarMatching.nested n), 0⟩ from h X.as
+  intro n
   induction n using Nat.twoStepInduction with
   | zero =>
     rw [coevaluation_zero]
@@ -490,12 +493,15 @@ theorem diagram_coevaluation (n : ℕ) :
         TLDiagram.pv_nested_eq, tensorObj_as, show n + 1 + (n + 1) + 2 = n + 2 + (n + 2) by omega]
     · rw [TLDiagram.circles_cast, hc]
 
-/-- **The evaluation of `of n` is `n` nested caps**: its diagram joins the bottom points `i` and
-`2 * n - 1 - i`, and has no circle. -/
+/-- **The evaluation of an object on `n` points is `n` nested caps**: its diagram joins the
+bottom points `i` and `2 * n - 1 - i`, and has no circle. -/
 @[simp]
-theorem diagram_evaluation (n : ℕ) :
-    (ε_ (of n) (of n)).diagram =
-      ⟨PlanarMatching.cast (Nat.add_zero _).symm (PlanarMatching.nested n), 0⟩ := by
+theorem diagram_evaluation (X : TLDiagCat) :
+    (ε_ X X).diagram =
+      ⟨PlanarMatching.cast (Nat.add_zero _).symm (PlanarMatching.nested X.as), 0⟩ := by
+  suffices h : ∀ n, (ε_ (of n) (of n)).diagram =
+      ⟨PlanarMatching.cast (Nat.add_zero _).symm (PlanarMatching.nested n), 0⟩ from h X.as
+  intro n
   induction n using Nat.twoStepInduction with
   | zero =>
     rw [evaluation_zero]
@@ -539,12 +545,12 @@ end TLDiagCat
 matching, pairing the top points `i` and `3 - i`, and it has no circle. -/
 example : (η_ (TLDiagCat.of 2) (TLDiagCat.of 2)).diagram =
     ⟨PlanarMatching.cast (Nat.zero_add 4).symm (PlanarMatching.nested 2), 0⟩ :=
-  TLDiagCat.diagram_coevaluation 2
+  TLDiagCat.diagram_coevaluation (TLDiagCat.of 2)
 
 /-- The evaluation of two boundary points is the two nested caps. -/
 example : (ε_ (TLDiagCat.of 2) (TLDiagCat.of 2)).diagram =
     ⟨PlanarMatching.cast (Nat.add_zero 4).symm (PlanarMatching.nested 2), 0⟩ :=
-  TLDiagCat.diagram_evaluation 2
+  TLDiagCat.diagram_evaluation (TLDiagCat.of 2)
 
 /-- Closing the identity of two boundary points, coevaluation followed by evaluation, gives two
 circles. -/
