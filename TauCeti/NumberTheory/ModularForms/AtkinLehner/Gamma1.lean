@@ -106,7 +106,7 @@ theorem exists_mapGL_mul_atkinLehnerGL_eq (hQ : 0 < Q) (hQN : Q ∣ N)
   obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_right hQN g.2
   refine ⟨⟨δ, hδ⟩, Units.ext ?_, h.toHomUnits_gamma0Map_of_mul_eq_mul hQ.ne' hQN g.2 hδ hmul⟩
   simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, mapGL_coe_matrix,
-    Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
+    Matrix.SpecialLinearGroup.map_apply_coe, algebraMap_int_eq,
     Int.coe_castRingHom, ← Matrix.map_mul_intCast, hmul]
 
 /-- **Moving `W` past `Γ₀(N)` in `GL (Fin 2) ℝ`, with the label shift**: `W g = g' W` for some
@@ -122,7 +122,7 @@ theorem exists_atkinLehnerGL_mul_mapGL_eq (hQ : 0 < Q) (hQN : Q ∣ N)
   obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_left hQN g.2
   refine ⟨⟨δ, hδ⟩, Units.ext ?_, ?_⟩
   · simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, mapGL_coe_matrix,
-      Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
+      Matrix.SpecialLinearGroup.map_apply_coe, algebraMap_int_eq,
       Int.coe_castRingHom, ← Matrix.map_mul_intCast, hmul]
   · rw [h.toHomUnits_gamma0Map_of_mul_eq_mul hQ.ne' hQN hδ g.2 hmul.symm,
       Nat.IsExactDivisor.unitsInvPart_unitsInvPart]
@@ -342,7 +342,7 @@ private theorem atkinLehnerGL_mul_left (hQ : 0 < Q) (hQN : Q ∣ N)
     atkinLehnerGL hQ (h.mul_left hQN hγ) = mapGL ℝ γ * atkinLehnerGL hQ h := by
   refine Units.ext ?_
   simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, mapGL_coe_matrix,
-    Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
+    Matrix.SpecialLinearGroup.map_apply_coe, algebraMap_int_eq,
     Int.coe_castRingHom, ← Matrix.map_mul_intCast]
 
 /-- **The dependence on the Atkin–Lehner matrix**: replacing `W` by `γ W`, for `γ ∈ Γ₀(N)`,
