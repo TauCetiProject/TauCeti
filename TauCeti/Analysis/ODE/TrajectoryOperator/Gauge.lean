@@ -250,7 +250,7 @@ private theorem ae_comp_eq_id (hΦL : ΦL =ᵐ[mu.restrict Omega] Φ)
 
 /-- Multiplication by `Ψ` undoes multiplication by `Φ` on the weak-derivative graph where
 `Ψ Φ = 1`. -/
-theorem gaugeL_gaugeL (hΦ : ContDiffOn ℝ 1 Φ Omega) (hΦL : ΦL =ᵐ[mu.restrict Omega] Φ)
+theorem gaugeL_gaugeL_of_comp_eq_id (hΦ : ContDiffOn ℝ 1 Φ Omega) (hΦL : ΦL =ᵐ[mu.restrict Omega] Φ)
     (hΦ'L : Φ'L =ᵐ[mu.restrict Omega] deriv Φ) (hΨ : ContDiffOn ℝ 1 Ψ Omega)
     (hΨL : ΨL =ᵐ[mu.restrict Omega] Ψ) (hΨ'L : Ψ'L =ᵐ[mu.restrict Omega] deriv Ψ)
     (hΨΦ : ∀ s ∈ (Omega : Set ℝ), Ψ s ∘L Φ s = ContinuousLinearMap.id ℝ F)
@@ -322,8 +322,8 @@ def gaugeEquiv (hΦ : ContDiffOn ℝ 1 Φ Omega) (hΦL : ΦL =ᵐ[mu.restrict Om
     (gaugeL ((hΦ.clm_inverse fun _ hs ↦ (isInvertible_and_inverse_eq hΨΦ hs).1).congr
       fun _ hs ↦ (isInvertible_and_inverse_eq hΨΦ hs).2.symm)
       hΨL (invDerivL_ae_eq hΦ hΦ'L hΨL hΨΦ))
-    (gaugeL_gaugeL hΦ hΦL hΦ'L _ hΨL _ hΨΦ)
-    (gaugeL_gaugeL _ hΨL _ hΦ hΦL hΦ'L (comp_eq_id_of_comp_eq_id hΨΦ))
+    (gaugeL_gaugeL_of_comp_eq_id hΦ hΦL hΦ'L _ hΨL _ hΨΦ)
+    (gaugeL_gaugeL_of_comp_eq_id _ hΨL _ hΦ hΦL hΦ'L (comp_eq_id_of_comp_eq_id hΨΦ))
 
 /-- The automorphism `gaugeEquiv` is multiplication by `Φ`. -/
 @[simp]
