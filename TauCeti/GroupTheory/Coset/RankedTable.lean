@@ -11,11 +11,11 @@ public import TauCeti.GroupTheory.Coset.Table
 # Ranked coset tables
 
 A coset table (`TauCeti.CosetTable`) certifies an upper bound on the index of a subgroup once
-every edge `g t • T.point i = T.point (T.act t i)` is known to hold in the group. The deduction
-certificate of `TauCeti.CosetTable.check` establishes the edges by replaying the deductions of a
-coset enumeration in order, carrying the list of edges known so far. That check is one
-computation whose cost grows quadratically with the table, and it compares the words naming the
-points letter by letter.
+every edge `g t • T.point g a i = T.point g a (T.act t i)` is known to hold in the group. The
+deduction certificate of `TauCeti.CosetTable.check` establishes the edges by replaying the
+deductions of a coset enumeration in order, carrying the list of edges known so far. That check
+is one computation whose cost grows quadratically with the table, and it compares the words
+naming the points letter by letter.
 
 This file gives a certificate for the same statement in which every edge is checked on its own,
 so that the check of a large table is a conjunction of independent finite computations and can be
@@ -102,14 +102,14 @@ def word (i : Fin k) : List (Fin m) :=
 termination_by i.val
 decreasing_by assumption
 
-/-- The word of a point is the word of its parent with the letter of the point in front if the
-point lies below its parent, and is empty otherwise. -/
+/-- The word of a point `i` is the word of its parent with the letter of `i` in front if
+`T.parent i < i`, and is empty otherwise. -/
 theorem word_def (i : Fin k) :
     T.word i = if T.parent i < i then T.letter i :: T.word (T.parent i) else [] := by
   rw [word, dite_eq_ite]
 
-/-- The word of a point below its parent is the word of the parent with the letter of the point
-in front. -/
+/-- The word of a point `i` with `T.parent i < i` is the word of its parent with the letter of
+`i` in front. -/
 theorem word_of_parent_lt {i : Fin k} (h : T.parent i < i) :
     T.word i = T.letter i :: T.word (T.parent i) := by
   rw [word_def, ite_eq_left h]
@@ -163,7 +163,8 @@ def closes (t : Fin m) (j : Fin k) : List (Fin m) → Bool
 
 /-- The check of the edge `(t, j)` for the relators `rels` and the subgroup generators `stab`: it
 is an edge of the forest, or the rotation by `T.rot t j` of the relator at the position
-`T.rel t j` deduces it, or `T.act t j` is a root and the subgroup generator at the position
+`T.rel t j` deduces it, or the position `T.rel t j` lies beyond the relators
+(`rels.length ≤ T.rel t j`), `T.act t j` is a root and the subgroup generator at the position
 `T.rel t j - rels.length` deduces it. -/
 @[expose]
 def checkEdge (rels stab : List (List (Fin m))) (t : Fin m) (j : Fin k) : Bool :=
@@ -320,7 +321,7 @@ the cosets of `H`: if the relators `rels` hold for the generators `g` and the wo
 the hypothesis of the lemmas `TauCeti.CosetTable.surjective_point_of_edges`,
 `TauCeti.CosetTable.index_le_of_edges` and `TauCeti.CosetTable.index_eq_iff_injective_of_edges`
 for `T.toCosetTable`. -/
-theorem smul_point_mk {H : Subgroup G} {rels stab : List (List (Fin m))}
+theorem smul_point_mk_one {H : Subgroup G} {rels stab : List (List (Fin m))}
     (hrels : ∀ r ∈ rels, (r.map g).prod = 1) (hstab : ∀ r ∈ stab, (r.map g).prod ∈ H)
     (hT : ∀ t j, T.checkEdge rels stab t j = true) (t : Fin m) (j : Fin k) :
     g t • T.toCosetTable.point g ((1 : G) : G ⧸ H) j =
@@ -335,7 +336,7 @@ theorem index_le [NeZero k] {H : Subgroup G} {rels stab : List (List (Fin m))}
     (hg : Subgroup.closure (Set.range g) = ⊤) (hrels : ∀ r ∈ rels, (r.map g).prod = 1)
     (hstab : ∀ r ∈ stab, (r.map g).prod ∈ H) (hT : ∀ t j, T.checkEdge rels stab t j = true) :
     H.index ≤ k :=
-  CosetTable.index_le_of_edges hg (smul_point_mk hrels hstab hT)
+  CosetTable.index_le_of_edges hg (smul_point_mk_one hrels hstab hT)
 
 /-- A subgroup `H` has finite index if it admits a nonempty ranked coset table all of whose edges
 pass the check, for generators `g` that generate `G`, relators `rels` that hold for them and words
@@ -344,7 +345,7 @@ theorem finiteIndex [NeZero k] {H : Subgroup G} {rels stab : List (List (Fin m))
     (hg : Subgroup.closure (Set.range g) = ⊤) (hrels : ∀ r ∈ rels, (r.map g).prod = 1)
     (hstab : ∀ r ∈ stab, (r.map g).prod ∈ H) (hT : ∀ t j, T.checkEdge rels stab t j = true) :
     H.FiniteIndex :=
-  CosetTable.finiteIndex_of_edges hg (smul_point_mk hrels hstab hT)
+  CosetTable.finiteIndex_of_edges hg (smul_point_mk_one hrels hstab hT)
 
 end Soundness
 
