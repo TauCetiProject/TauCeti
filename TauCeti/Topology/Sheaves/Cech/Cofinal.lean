@@ -115,15 +115,6 @@ theorem homologyMap_cechComplexMap_comp_toCechCohomology_app {ι κ : Type u} {U
       (toCechCohomology A n U hU).app P :=
   TauCeti.CategoryTheory.homologyMap_cechComplexMap_comp_toCechCohomology_app A _ _ n φ _ P
 
-/-- The members of a finite indexed cover isomorphic to a family `W` are members of `W`. -/
-private lemma FiniteOpenCover.opens_eq_of_iso {ν : Type u} {W : ν → Opens X}
-    {T : FiniteOpenCover X} (e : T.toFormalCoproduct ≅ FormalCoproduct.mk ν W)
-    (i : ULift.{u} (Fin T.n)) : T.opens i = W (e.hom.f i) := by
-  have h : e.inv.f (e.hom.f i) = i := congrArg (fun φ ↦ φ.f i) e.hom_inv_id
-  have h' := leOfHom (e.inv.φ (e.hom.f i))
-  rw [h] at h'
-  exact le_antisymm (leOfHom (e.hom.φ i)) h'
-
 /-- **Covers computing Čech cohomology.** Let `L` be a property of opens such that every open
 cover of `X` is refined by a finite open cover whose members have `L`, and every refinement
 between two finite open covers whose members have `L` induces an isomorphism on the degree `n`

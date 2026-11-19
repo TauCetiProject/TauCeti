@@ -300,6 +300,28 @@ theorem homologyCechComplexIsoCechCohomologyOneAddCommGrpCat_hom
       (toCechCohomology AddCommGrpCat.{u} 1 U (IsOpenCover.mk hU)).app F.obj :=
   (rfl)
 
+/-- **The inverse of `homologyCechComplexIsoCechCohomologyOneAddCommGrpCat` on a coarser cover.**
+For an open cover `V` refined by `U` through `φ`, the structure map of `V` followed by the inverse
+of `homologyCechComplexIsoCechCohomologyOneAddCommGrpCat` is the map `H¹(Č(V, F)) ⟶ H¹(Č(U, F))`
+induced by `φ`. -/
+@[reassoc]
+theorem toCechCohomology_app_comp_homologyCechComplexIsoCechCohomologyOneAddCommGrpCat_inv
+    (hF : ∀ {κ : Type u} (V : κ → Opens X), IsOpenCover V →
+      ∃ (ι : Type u) (_ : Finite ι) (W : ι → Opens X), ⨆ i, W i = ⊤ ∧ (∀ i, ∃ k, W i ≤ V k) ∧
+        ∀ i, Subsingleton (F.H' 1 (W i)))
+    {ι : Type u} [Finite ι] (U : ι → Opens X) (hU : ⨆ i, U i = ⊤)
+    (hFU : ∀ i, Subsingleton (F.H' 1 (U i)))
+    {κ : Type u} {V : κ → Opens X} (hV : IsOpenCover V)
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    (toCechCohomology AddCommGrpCat.{u} 1 V hV).app F.obj ≫
+        (homologyCechComplexIsoCechCohomologyOneAddCommGrpCat F hF U hU hFU).inv =
+      HomologicalComplex.homologyMap (cechComplexMap F.obj φ) 1 :=
+  -- as for `toCechCohomology_app_comp_homologyCechComplexIsoCechCohomologyOne_inv`, the steps are
+  -- combined as terms
+  (Iso.comp_inv_eq _).2 <| (homologyMap_cechComplexMap_comp_toCechCohomology_app _ 1 φ hV
+    (IsOpenCover.mk hU) F.obj).symm.trans
+      (_ ≫= (homologyCechComplexIsoCechCohomologyOneAddCommGrpCat_hom F hF U hU hFU).symm)
+
 end AddCommGrpCat
 
 end CategoryTheory.Sheaf

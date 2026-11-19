@@ -28,9 +28,9 @@ modules whose underlying complex of abelian groups is the Čech complex of the u
 of abelian groups.
 
 If `F` also preserves homology, then `F` applied to the cohomology of `Č(U, P)` is the cohomology
-of `Č(U, P ⋙ F)` (`TauCeti.CategoryTheory.cechComplexFunctorMapHomologyIso`), compatibly with the
-maps induced by morphisms of families. For a faithful `F`, the cohomology of `Č(U, P)` vanishes
-exactly when that of `Č(U, P ⋙ F)` does.
+of `Č(U, P ⋙ F)` (`TauCeti.CategoryTheory.cechComplexFunctorMapHomologyIso`), naturally in `P`
+and compatibly with the maps induced by morphisms of families. For a faithful `F`, the cohomology
+of `Č(U, P)` vanishes exactly when that of `Č(U, P ⋙ F)` does.
 
 When `A` is linear over a ring `R`, the Čech complex functor is `R`-linear
 (`TauCeti.CategoryTheory.cechComplexFunctor_linear`): multiplying a morphism of presheaves by a
@@ -51,6 +51,8 @@ scalar multiplies the induced map of Čech complexes by that scalar.
   with the maps induced by morphisms of families.
 * `TauCeti.CategoryTheory.cechComplexFunctorMapHomologyIso_hom_comp_homologyMap_cechComplexMap`:
   the isomorphism on cohomology commutes with the maps induced by morphisms of families.
+* `TauCeti.CategoryTheory.cechComplexFunctorMapHomologyIso_hom_naturality`: it is natural in the
+  presheaf.
 * `TauCeti.CategoryTheory.isZero_homology_cechComplex_comp_iff`: for a faithful `F`, the cohomology
   of `Č(U, P ⋙ F)` vanishes exactly when that of `Č(U, P)` does.
 * `TauCeti.CategoryTheory.cechComplexFunctor_linear`: the Čech complex functor is linear.
@@ -244,6 +246,25 @@ theorem cechComplexFunctorMapHomologyIso_hom_comp_homologyMap_cechComplexMap {κ
   rw [cechComplexFunctorMapHomologyIso_hom, cechComplexFunctorMapHomologyIso_hom]
   -- `ha` is stated for the composite functors, whose objects and maps unfold to the ones in the
   -- goal, so the steps are combined as terms
+  exact ((reassoc_of% ha) _).trans ((congrArg (_ ≫ ·) h).trans (Category.assoc _ _ _).symm)
+
+/-- **`cechComplexFunctorMapHomologyIso` is natural in the presheaf.** For a morphism of
+presheaves `f : P ⟶ Q`, applying `F` to the map `Hⁿ(Č(U, P)) ⟶ Hⁿ(Č(U, Q))` induced by `f` and
+then identifying with `Hⁿ(Č(U, Q ⋙ F))` is identifying with `Hⁿ(Č(U, P ⋙ F))` and then applying
+the map induced by `whiskerRight f F`. -/
+@[reassoc]
+theorem cechComplexFunctorMapHomologyIso_hom_naturality {P Q : Cᵒᵖ ⥤ A} (f : P ⟶ Q) (n : ℕ) :
+    F.map (HomologicalComplex.homologyMap ((cechComplexFunctor U).map f) n) ≫
+        (cechComplexFunctorMapHomologyIso U F Q n).hom =
+      (cechComplexFunctorMapHomologyIso U F P n).hom ≫
+        HomologicalComplex.homologyMap
+          ((cechComplexFunctor U).map (Functor.whiskerRight f F)) n := by
+  have ha := (F.mapHomologicalComplexCompHomologyFunctorIso _ n).inv.naturality
+    ((cechComplexFunctor U).map f)
+  have h := congrArg (HomologicalComplex.homologyMap · n)
+    ((cechComplexFunctorMapIso U F).hom.naturality f)
+  simp only [HomologicalComplex.homologyMap_comp] at h
+  rw [cechComplexFunctorMapHomologyIso_hom, cechComplexFunctorMapHomologyIso_hom]
   exact ((reassoc_of% ha) _).trans ((congrArg (_ ≫ ·) h).trans (Category.assoc _ _ _).symm)
 
 /-- **Vanishing of Čech cohomology under a faithful change of coefficients.** For a faithful
