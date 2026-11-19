@@ -13,6 +13,7 @@ import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Algebra.Polynomial
 import Mathlib.Topology.Algebra.Valued.NormedValued
 import TauCeti.RingTheory.PowerSeries.Substitution
+import TauCeti.RingTheory.PowerSeries.Trunc
 import TauCeti.RingTheory.Valuation.Polynomial
 
 /-!
@@ -28,7 +29,9 @@ The proof compares truncations. Below both truncation degrees, the composite of 
 `A = ‖x‖` and `S = ‖x‖ / R < 1`, the coefficient bounds give every term of the composite at `x`
 the weighted bound `‖c x ^ k‖ S ≤ A S ^ k` (`Valuation.map_coeff_comp_mul_pow_le`), so the
 difference from `x` is at most `A S ^ (M - 1)` below degree `M`. Letting the truncation degrees
-tend to infinity gives the identity.
+tend to infinity gives the identity. The argument adapts the proof of
+`TauCeti.log_exp_of_mem_maximalIdeal_pow` (`TauCeti.NumberTheory.LocalField.ExpLog`), with norms in
+place of the valuation of the valuative relation.
 
 The coefficients of the exponential series and of the logarithm series satisfy the bound for the
 radius `p ^ (-1 / (p - 1))` in every normed field over `ℚ_[p]`, by Legendre's formula, so this
@@ -63,11 +66,6 @@ private theorem nnNorm_mul_pow_mul_div_le {c : K} {n : ℕ} {R A : ℝ≥0} (hR 
         field_simp
         ring
     _ ≤ A * (A / R) ^ (m + 1) := mul_le_of_le_one_left zero_le hc'
-
-/-- The value at `x` of a truncation of a power series is the partial sum of its series. -/
-private theorem eval_trunc (f : K⟦X⟧) (N : ℕ) (x : K) :
-    (trunc N f).eval x = ∑ n ∈ Finset.range N, coeff n f * x ^ n := by
-  simp only [Polynomial.eval, eval₂_trunc_eq_sum_range, RingHom.id_apply]
 
 /-- **The truncation estimate.** If `f.subst g = X`, the coefficients of `f` and `g` satisfy
 `‖cₙ‖ R ^ (n - 1) ≤ 1` and `‖x‖ ≤ R`, then with `S = ‖x‖ / R`, the composite of the truncations of
@@ -150,7 +148,7 @@ theorem eq_of_hasSum_of_subst_eq_X [IsUltrametricDist K] {f g : K⟦X⟧} (hg0 :
   have hkey := nnNorm_eval_trunc_eval_trunc_sub_mul_le hf0 hg0 hfg hR' hf hg hx.le
   -- Let the truncation degree of `g` tend to infinity.
   have hQlim : Tendsto (fun N ↦ (trunc N g).eval x) atTop (𝓝 y) :=
-    hy.tendsto_sum_nat.congr fun N ↦ (eval_trunc g N x).symm
+    hy.tendsto_sum_nat.congr fun N ↦ (eval_trunc N g x).symm
   have hM (M : ℕ) : ‖(trunc M f).eval y - x‖₊ * S ≤ A * S ^ M := by
     have hlim : Tendsto (fun N ↦ ‖(trunc M f).eval ((trunc N g).eval x) - x‖₊ * S) atTop
         (𝓝 (‖(trunc M f).eval y - x‖₊ * S)) :=
@@ -160,7 +158,7 @@ theorem eq_of_hasSum_of_subst_eq_X [IsUltrametricDist K] {f g : K⟦X⟧} (hg0 :
     simpa [min_eq_left hN] using hkey M N
   -- Let the truncation degree of `f` tend to infinity.
   have hFlim : Tendsto (fun M ↦ ‖(trunc M f).eval y - x‖₊ * S) atTop (𝓝 (‖z - x‖₊ * S)) :=
-    ((hz.tendsto_sum_nat.congr fun M ↦ (eval_trunc f M y).symm).sub_const x).nnNorm.mul_const S
+    ((hz.tendsto_sum_nat.congr fun M ↦ (eval_trunc M f y).symm).sub_const x).nnNorm.mul_const S
   have hzero : Tendsto (fun M : ℕ ↦ A * S ^ M) atTop (𝓝 0) := by
     simpa using (NNReal.tendsto_pow_atTop_nhds_zero_of_lt_one hS1).const_mul A
   have hle : ‖z - x‖₊ * S ≤ 0 := le_of_tendsto_of_tendsto' hFlim hzero hM

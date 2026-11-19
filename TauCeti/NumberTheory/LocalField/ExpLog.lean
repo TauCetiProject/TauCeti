@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.LocalField.Logarithm
 import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.Algebra.Order.Monoid.Unbundled.Pow
 import TauCeti.RingTheory.PowerSeries.Log
+import TauCeti.RingTheory.PowerSeries.Trunc
 import TauCeti.RingTheory.Valuation.Polynomial
 import TauCeti.Topology.Algebra.ValuativeRel.HasSum
 
@@ -295,8 +296,8 @@ private theorem powValuation_eval_trunc_log_exp_sub_one_sub_le [CharZero K] {π 
   -- The truncations of `exp - 1` at `x` converge to `exp x - 1`.
   have hE : Tendsto (fun N => (PowerSeries.trunc N (PowerSeries.exp K - 1)).eval (x : K)) atTop
       (𝓝 (exp (x : K) - 1)) := by
-    refine (hasSum_coeff_exp_sub_one_mul_pow hi x).tendsto_sum_nat.congr fun N => ?_
-    simp only [Polynomial.eval, PowerSeries.eval₂_trunc_eq_sum_range, RingHom.id_apply]
+    exact (hasSum_coeff_exp_sub_one_mul_pow hi x).tendsto_sum_nat.congr fun N =>
+      (PowerSeries.eval_trunc N _ _).symm
   have hlim : Tendsto (fun N => F.eval ((PowerSeries.trunc N (PowerSeries.exp K - 1)).eval
       (x : K)) - x) atTop (𝓝 (F.eval (exp (x : K) - 1) - x)) :=
     ((F.continuous.tendsto _).comp hE).sub_const _
@@ -327,7 +328,7 @@ theorem log_exp_of_mem_maximalIdeal_pow (hi : absoluteRamificationIndex K p < (p
       (unitFiltration_antitone (Nat.one_le_iff_ne_zero.mpr (by rintro rfl; simp at hi)) hu)
     rw [hux] at h
     refine h.tendsto_sum_nat.congr fun M => ?_
-    simp only [Polynomial.eval, PowerSeries.eval₂_trunc_eq_sum_range, RingHom.id_apply]
+    rw [PowerSeries.eval_trunc]
     refine Finset.sum_congr rfl fun n _ => ?_
     rcases eq_or_ne n 0 with rfl | hn
     · simp

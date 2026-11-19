@@ -23,11 +23,14 @@ Let `L` be a normed field that is a normed algebra over `ℚ_[p]`, for instance 
 finite extension of `ℚ_[p]`. Its norm is ultrametric, and Mathlib's exponential series converges
 on the open disc `‖x‖ < r₀` of radius `r₀ = p ^ (-1 / (p - 1))`, which is
 `TauCeti.amiceRadius p 0`. For complete `L`, on this disc the exponential turns sums into
-products, and it is an isometric bijection onto the disc of radius `r₀` about `1`, whose inverse
-is Mathlib's logarithm series.
+products and preserves norms, `‖exp x - 1‖ = ‖x‖`, and Mathlib's logarithm series inverts it on
+the disc of radius `r₀` about `1`. Together, `TauCeti.norm_exp_sub_one_of_norm_lt` and
+`TauCeti.exp_log_of_norm_sub_one_lt` show that the exponential maps the first disc bijectively
+onto the second.
 
-The key estimate is the sharp factorial bound `r₀ ^ (n - 1) ≤ ‖n!‖` for `n ≥ 1`: by Legendre's
-formula `(p - 1) v_p(n!) = n - s_p(n)`, where the digit sum `s_p(n)` is at least one. Hence the
+The key estimate is the sharp factorial bound `r₀ ^ (n - 1) ≤ ‖n!‖` for `n ≥ 1`
+(`TauCeti.amiceRadius_zero_pow_sub_one_le_norm_factorial`): by Legendre's formula
+`(p - 1) v_p(n!) = n - s_p(n)`, where the digit sum `s_p(n)` is at least one. Hence the
 term `xⁿ / n!` has norm at most `‖x‖ (‖x‖ / r₀) ^ (n - 1)`, which is strictly smaller than `‖x‖`
 for `n ≥ 2` and `x ≠ 0`. The bound is attained at every power of `p`, so the exponent `n - 1`
 cannot be lowered; it is sharper than the bound `r₀ ^ n ≤ ‖n!‖` of
@@ -42,15 +45,12 @@ of the inverse identity `exp (log y) = y` cannot be enlarged to the disc of conv
 logarithm: at `p = 2`, `y = -1` has `‖y - 1‖ = r₀` and `log (-1) = 0`.
 
 Over `ℚ_[p]` itself, where nonzero norms are integral powers of `p`, the open disc is the closed
-disc `‖x‖ ≤ p ^ (-i)` of the least depth `i` with `1 < (p - 1) i`. There the results specialize
-to `Padic.norm_exp_sub_one`, `Padic.norm_log`, `Padic.log_exp` and `Padic.exp_log`. The
-statements here hold in every normed field over `ℚ_[p]`, including `ℂ_[p]`, which is not a finite
-extension of `ℚ_[p]`.
+disc `‖x‖ ≤ p ^ (-i)` of the least depth `i` with `1 < (p - 1) i`
+(`TauCeti.zpow_neg_lt_amiceRadius_zero`). The statements here hold in every normed field over
+`ℚ_[p]`, including `ℂ_[p]`, which is not a finite extension of `ℚ_[p]`.
 
 ## Main results
 
-* `TauCeti.inv_lt_amiceRadius_zero_iff`: `p⁻¹ < r₀` exactly when `p ≠ 2`.
-* `TauCeti.amiceRadius_zero_pow_sub_one_le_norm_factorial`: `r₀ ^ (n - 1) ≤ ‖n!‖` for `n ≠ 0`.
 * `TauCeti.norm_pow_div_factorial_le`: `‖xⁿ / n!‖ ≤ ‖x‖ (‖x‖ / r₀) ^ (n - 1)` for `n ≠ 0`.
 * `TauCeti.ofReal_amiceRadius_zero_le_radius_expSeries`: the exponential series converges on
   the disc of radius `r₀`.
@@ -59,8 +59,7 @@ extension of `ℚ_[p]`.
 * `TauCeti.exp_nsmul_of_norm_lt`, `TauCeti.exp_zsmul_of_norm_lt`: `exp (n • x) = exp x ^ n`.
 * `TauCeti.norm_exp_sub_one_of_norm_lt`: `‖exp x - 1‖ = ‖x‖`.
 * `TauCeti.norm_exp_of_norm_lt`: `‖exp x‖ = 1`.
-* `TauCeti.amiceRadius_zero_pow_sub_one_le_norm_natCast`, `TauCeti.norm_pow_div_natCast_le`:
-  the corresponding bounds for the logarithm series.
+* `TauCeti.norm_pow_div_natCast_le`: the corresponding bound for the logarithm series.
 * `TauCeti.hasSum_log_of_norm_sub_one_lt`: for `‖y - 1‖ < r₀`,
   `log y = ∑ (-1) ^ (n + 1) (y - 1) ^ n / n`.
 * `TauCeti.norm_log_of_norm_sub_one_lt`: `‖log y‖ = ‖y - 1‖`.
@@ -81,53 +80,6 @@ open scoped Nat
 namespace TauCeti
 
 variable {p : ℕ} [hp : Fact p.Prime]
-
-/-- The prime `p` lies strictly inside the disc of convergence of the `p`-adic exponential,
-`‖p‖ = p⁻¹ < r₀ = p ^ (-1 / (p - 1))`, exactly when `p` is odd. At `p = 2` the two are equal. -/
-theorem inv_lt_amiceRadius_zero_iff : (p : ℝ)⁻¹ < amiceRadius p 0 ↔ p ≠ 2 := by
-  have h2 := hp.out.two_le
-  have h := pow_lt_pow_iff_right_of_lt_one₀ (amiceRadius_pos (p := p) 0) (amiceRadius_lt_one 0)
-    (m := p - 1) (n := 1)
-  rw [pow_one, amiceRadius_zero_pow_sub_one] at h
-  rw [h]
-  omega
-
-/-- **The sharp factorial bound.** In every normed algebra over `ℚ_[p]`,
-`r₀ ^ (n - 1) ≤ ‖n!‖` for `n ≠ 0`, where `r₀ = p ^ (-1 / (p - 1))`. Equality holds when `n` is a
-power of `p`. -/
-theorem amiceRadius_zero_pow_sub_one_le_norm_factorial {L : Type*} [SeminormedRing L]
-    [NormOneClass L] [NormedAlgebra ℚ_[p] L] {n : ℕ} (hn : n ≠ 0) :
-    amiceRadius p 0 ^ (n - 1) ≤ ‖(n ! : L)‖ := by
-  have hL : ‖(n ! : L)‖ = ‖(n ! : ℚ_[p])‖ := by
-    simpa using norm_algebraMap' L (n ! : ℚ_[p])
-  have hp1 : (1 : ℝ) < p := by exact_mod_cast hp.out.one_lt
-  have hsub : (0 : ℝ) < (p : ℝ) - 1 := sub_pos.mpr hp1
-  rw [hL, amiceRadius_pow, Padic.norm_natCast_eq_zpow (Nat.factorial_ne_zero n),
-    ← Real.rpow_intCast]
-  refine Real.rpow_le_rpow_of_exponent_le hp1.le ?_
-  -- Legendre's formula: `(p - 1) v_p(n!) = n - s_p(n) < n`.
-  have hleg : (((p - 1) * padicValNat p n ! : ℕ) : ℝ) ≤ ((n - 1 : ℕ) : ℝ) := by
-    have h := sub_one_mul_multiplicity_factorial_lt_of_ne_zero p hn
-    rw [← Nat.padicValNat_def] at h
-    exact_mod_cast Nat.le_sub_one_of_lt h
-  rw [Nat.cast_mul, Nat.cast_sub hp.out.one_le, Nat.cast_one] at hleg
-  rw [pow_zero, mul_one, Int.cast_neg, Int.cast_natCast, neg_le_neg_iff, le_div_iff₀ hsub,
-    mul_comm]
-  exact hleg
-
-/-- In every normed algebra over `ℚ_[p]`, `r₀ ^ (n - 1) ≤ ‖n‖` for `n ≠ 0`, where
-`r₀ = p ^ (-1 / (p - 1))`: the factor `n` of `n!` has norm at least `‖n!‖`. This bounds the
-coefficients `(-1) ^ (n + 1) / n` of the logarithm series. -/
-theorem amiceRadius_zero_pow_sub_one_le_norm_natCast {L : Type*} [SeminormedRing L]
-    [NormOneClass L] [NormedAlgebra ℚ_[p] L] {n : ℕ} (hn : n ≠ 0) :
-    amiceRadius p 0 ^ (n - 1) ≤ ‖(n : L)‖ := by
-  have hL : ‖(n : L)‖ = ‖(n : ℚ_[p])‖ := by
-    simpa using norm_algebraMap' L (n : ℚ_[p])
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-  refine (amiceRadius_zero_pow_sub_one_le_norm_factorial (L := ℚ_[p]) hn).trans ?_
-  rw [hL, Nat.factorial_succ, Nat.cast_mul, norm_mul]
-  exact mul_le_of_le_one_right (norm_nonneg _)
-    (IsUltrametricDist.norm_natCast_le_one ℚ_[p] _)
 
 /-- **The exponential series converges on the disc of radius `r₀ = p ^ (-1 / (p - 1))`** in
 every normed algebra over `ℚ_[p]`. -/
@@ -273,7 +225,7 @@ private theorem hasSum_exp_sub_one {x : L} (hx : ‖x‖ < amiceRadius p 0) :
   funext n
   split_ifs with hn <;> simp [hn]
 
-/-- **The `p`-adic exponential is an isometry on its disc.** For `‖x‖ < r₀`,
+/-- **The `p`-adic exponential preserves norms on its disc.** For `‖x‖ < r₀`,
 `‖exp x - 1‖ = ‖x‖`: every term `xⁿ / n!` of degree `n ≥ 2` is strictly smaller than `x`. -/
 theorem norm_exp_sub_one_of_norm_lt {x : L} (hx : ‖x‖ < amiceRadius p 0) :
     ‖exp x - 1‖ = ‖x‖ :=
@@ -286,6 +238,12 @@ theorem norm_exp_of_norm_lt {x : L} (hx : ‖x‖ < amiceRadius p 0) : ‖exp x�
   refine norm_eq_one_of_norm_one_sub_lt_one ?_
   rw [norm_sub_rev, norm_exp_sub_one_of_norm_lt hx]
   exact hx.trans (amiceRadius_lt_one 0)
+
+omit [NormedAlgebra ℚ_[p] L] [CompleteSpace L] in
+/-- The sign of a term of the logarithm series does not change its norm. -/
+private theorem norm_neg_one_pow_mul_div (n : ℕ) (z c : L) :
+    ‖(-1) ^ (n + 1) * z ^ n / c‖ = ‖z ^ n / c‖ := by
+  simp [mul_div_assoc]
 
 /-- **The logarithm series on the disc of radius `r₀` about `1`.** For `‖y - 1‖ < r₀`,
 `log y = ∑ (-1) ^ (n + 1) (y - 1) ^ n / n`. -/
@@ -300,22 +258,22 @@ theorem hasSum_log_of_norm_sub_one_lt {y : L} (hy : ‖y - 1‖ < amiceRadius p 
       (amiceRadius p 0)) fun n ↦ ?_
     rcases eq_or_ne n 0 with rfl | hn
     · simpa using hr.le
-    rw [mul_div_assoc, norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul]
+    rw [norm_neg_one_pow_mul_div]
     refine (norm_pow_div_natCast_le (p := p) (y - 1) hn).trans_eq ?_
     obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
     rw [Nat.add_sub_cancel, _root_.pow_succ', ← mul_assoc, mul_div_cancel₀ _ hr.ne']
   convert hsum.hasSum using 1
   rw [log_eq_tsum ℚ_[p]]
   refine tsum_congr fun n ↦ ?_
-  rw [Algebra.smul_def, map_div₀, map_pow, map_neg, map_one, map_natCast]
+  simp [Algebra.smul_def]
   ring
 
-/-- **The `p`-adic logarithm is an isometry on the disc of radius `r₀` about `1`.** For
+/-- **The `p`-adic logarithm preserves norms on the disc of radius `r₀` about `1`.** For
 `‖y - 1‖ < r₀`, `‖log y‖ = ‖y - 1‖`. -/
 theorem norm_log_of_norm_sub_one_lt {y : L} (hy : ‖y - 1‖ < amiceRadius p 0) :
     ‖log y‖ = ‖y - 1‖ :=
   norm_eq_of_hasSum (hasSum_log_of_norm_sub_one_lt hy) (by simp) (by simp) hy fun n ↦ by
-    rw [mul_div_assoc, norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul]
+    rw [norm_neg_one_pow_mul_div]
     simpa using norm_pow_div_natCast_le (p := p) (y - 1) (n := n + 2) (by omega)
 
 omit [CompleteSpace L] in
@@ -342,6 +300,25 @@ private theorem norm_coeff_log_mul_le [CharZero L] (n : ℕ) :
   rw [hc, norm_div, norm_pow, norm_neg, norm_one, one_pow, one_div_mul_eq_div]
   exact div_le_one_of_le₀ hf (norm_nonneg _)
 
+/-- The series of `exp x - 1` on the disc, with the coefficients of the formal series `exp - 1`. -/
+private theorem hasSum_coeff_exp_sub_one_mul_pow [CharZero L] {x : L}
+    (hx : ‖x‖ < amiceRadius p 0) :
+    HasSum (fun n ↦ PowerSeries.coeff n (PowerSeries.exp L - 1) * x ^ n) (exp x - 1) := by
+  refine (hasSum_exp_sub_one hx).congr_fun fun n ↦ ?_
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  · simp [PowerSeries.coeff_exp, PowerSeries.coeff_one, hn, div_eq_inv_mul]
+
+/-- The series of `log y` on the disc about `1`, with the coefficients of the formal logarithm. -/
+private theorem hasSum_coeff_log_mul_pow [CharZero L] {y : L}
+    (hy : ‖y - 1‖ < amiceRadius p 0) :
+    HasSum (fun n ↦ PowerSeries.coeff n (PowerSeries.log L) * (y - 1) ^ n) (log y) := by
+  refine (hasSum_log_of_norm_sub_one_lt hy).congr_fun fun n ↦ ?_
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  · simp [PowerSeries.coeff_log, hn]
+    ring
+
 /-- **The logarithm inverts the exponential on its disc.** For `‖x‖ < r₀`, `log (exp x) = x`. -/
 theorem log_exp_of_norm_lt {x : L} (hx : ‖x‖ < amiceRadius p 0) : log (exp x) = x := by
   -- The formal series live over the `ℚ`-algebra structure of the characteristic-zero field `L`.
@@ -350,16 +327,8 @@ theorem log_exp_of_norm_lt {x : L} (hx : ‖x‖ < amiceRadius p 0) : log (exp x
   have hy : ‖exp x - 1‖ < amiceRadius p 0 := by rwa [norm_exp_sub_one_of_norm_lt hx]
   refine PowerSeries.eq_of_hasSum_of_subst_eq_X (f := PowerSeries.log L)
     (g := PowerSeries.exp L - 1) (by simp) (PowerSeries.subst_log_exp_sub_one L)
-    norm_coeff_log_mul_le norm_coeff_exp_sub_one_mul_le hx (y := exp x - 1) ?_ ?_
-  · refine (hasSum_exp_sub_one hx).congr_fun fun n ↦ ?_
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · simp [PowerSeries.coeff_exp, PowerSeries.coeff_one, hn, div_eq_inv_mul]
-  · refine (hasSum_log_of_norm_sub_one_lt (p := p) (by simpa using hy)).congr_fun fun n ↦ ?_
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · simp [PowerSeries.coeff_log, hn]
-      ring
+    norm_coeff_log_mul_le norm_coeff_exp_sub_one_mul_le hx (hasSum_coeff_exp_sub_one_mul_pow hx)
+    (by simpa using hasSum_coeff_log_mul_pow (p := p) (y := exp x) (by simpa using hy))
 
 /-- **The exponential inverts the logarithm on the disc of radius `r₀` about `1`.** For
 `‖y - 1‖ < r₀`, `exp (log y) = y`. -/
@@ -371,19 +340,9 @@ theorem exp_log_of_norm_sub_one_lt {y : L} (hy : ‖y - 1‖ < amiceRadius p 0) 
   have hfg : (PowerSeries.exp L - 1).subst (PowerSeries.log L) = PowerSeries.X := by
     rw [PowerSeries.subst_sub PowerSeries.HasSubst.log, PowerSeries.subst_exp_log,
       PowerSeries.subst_one, add_sub_cancel_left]
-  have h := PowerSeries.eq_of_hasSum_of_subst_eq_X (f := PowerSeries.exp L - 1)
-    (g := PowerSeries.log L) (by simp) hfg norm_coeff_exp_sub_one_mul_le norm_coeff_log_mul_le hy
-    (y := log y) (z := exp (log y) - 1) ?_ ?_
-  · exact sub_left_injective h
-  · refine (hasSum_log_of_norm_sub_one_lt hy).congr_fun fun n ↦ ?_
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · simp [PowerSeries.coeff_log, hn]
-      ring
-  · refine (hasSum_exp_sub_one hl).congr_fun fun n ↦ ?_
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · simp [PowerSeries.coeff_exp, PowerSeries.coeff_one, hn, div_eq_inv_mul]
+  exact sub_left_injective <| PowerSeries.eq_of_hasSum_of_subst_eq_X (by simp) hfg
+    norm_coeff_exp_sub_one_mul_le norm_coeff_log_mul_le hy (hasSum_coeff_log_mul_pow hy)
+    (hasSum_coeff_exp_sub_one_mul_pow hl)
 
 /-- **The `p`-adic exponential is injective on its disc** `‖x‖ < r₀`: the logarithm is a left
 inverse there. -/
