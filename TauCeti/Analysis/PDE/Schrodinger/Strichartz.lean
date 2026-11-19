@@ -53,6 +53,7 @@ bounded by the dual estimates for the two pairs, and the Christ–Kiselev lemma 
   estimate on the line at `(4, ∞)`.
 * `TauCeti.exists_enorm_integral_inner_schrodingerPropagator_le_of_finrank_eq_one`: the
   homogeneous estimate on the line at `(4, ∞)`, in weak form.
+* `TauCeti.two_le_of_admissible`: an admissible pair with `2 < q` has `2 ≤ r`.
 * `TauCeti.exists_enorm_integral_schrodingerPropagator_neg_le`: the dual estimate in every
   dimension.
 * `TauCeti.exists_enorm_integral_inner_schrodingerPropagator_le`: the homogeneous estimate in
@@ -165,6 +166,15 @@ section Admissible
 
 variable {p q : ℝ≥0} {r r' : ℝ≥0∞} [r'.HolderConjugate r]
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- Admissibility `2 / q + n / r = n / 2` with `2 < q` forces `n > 0`, hence `1 / r < 1 / 2`, so
+`2 ≤ r`. -/
+theorem two_le_of_admissible (hq : 2 < q) (hr0 : r ≠ 0)
+    (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
+    2 ≤ r := by
+  have hq0 : (0 : ℝ) < 2 / q := div_pos two_pos (by exact_mod_cast zero_lt_two.trans hq)
+  exact ENNReal.two_le_of_toReal_inv_le hr0 (by nlinarith)
+
 /-- In every dimension `n`, the time pairings `S(s) S(t)* = S(s - t)` of the Schrödinger
 propagator decay from `L^{r'}` to `L^r` like `|s - t| ^ (-2 / q)` along an admissible pair
 `2 / q + n / r = n / 2` with `2 < q`. -/
@@ -175,10 +185,7 @@ private theorem eLpNorm_schrodingerPropagator_adjoint_le (hq : 2 < q)
       ENNReal.ofReal ((4 * Real.pi) ^ (-(2 / q : ℝ))) * ‖s - t‖ₑ ^ (-(2 / q : ℝ)) *
         eLpNorm g r' volume := by
   have hst' : s - t ≠ 0 := sub_ne_zero.2 hst
-  have hq0 : (0 : ℝ) < 2 / q := div_pos two_pos (by exact_mod_cast zero_lt_two.trans hq)
-  -- Admissibility with `2 < q` forces `n > 0`, hence `1 / r < 1 / 2`, so `2 ≤ r`.
-  have hr : 2 ≤ r :=
-    ENNReal.two_le_of_toReal_inv_le (ENNReal.HolderConjugate.ne_zero r r') (by nlinarith)
+  have hr := two_le_of_admissible hq (ENNReal.HolderConjugate.ne_zero r r') hqr
   have hk : ENNReal.ofReal ((4 * Real.pi) ^ (-(2 / q : ℝ))) * ‖s - t‖ₑ ^ (-(2 / q : ℝ)) =
       ENNReal.ofReal ((4 * Real.pi * |s - t|) ^
         (-(Module.finrank ℝ E : ℝ) * (1 / 2 - (r⁻¹).toReal))) := by
