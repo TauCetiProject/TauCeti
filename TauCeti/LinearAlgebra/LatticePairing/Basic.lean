@@ -92,9 +92,9 @@ theorem natCard_smul_mem_range (u : LatticePairing X Y) (a : X →ₗ[ℤ] ℤ) 
 
 /-! ### The rank-one pairings -/
 
-/-- The rank-one lattice pairing `(y, x) ↦ n y x` on `ℤ × ℤ`. Unlike the rank-one integral
-lattice `TauCeti.IntegralLattice.rankOne`, it records the coefficient `n` itself and allows
-`n = 0`. -/
+/-- The rank-one lattice pairing `(y, x) ↦ n y x` on `ℤ × ℤ`; `n` may vanish. Unlike the rank-one
+integral lattice `TauCeti.IntegralLattice.rankOne`, which is a symmetric lattice in `ℚ` with a
+`ℚ`-valued form, this is an integral pairing `ℤ × ℤ → ℤ` between two copies of `ℤ`. -/
 def rankOne (n : ℤ) : LatticePairing ℤ ℤ :=
   n • LinearMap.mul ℤ ℤ
 

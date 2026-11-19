@@ -124,24 +124,23 @@ private noncomputable def inverseFormModOne :
       ℚ →+ AddCircle (1 : ℚ)).toIntLinearMap
 
 private theorem inverseFormModOne_apply (a : X →ₗ[ℤ] ℤ) (b : Y →ₗ[ℤ] ℤ) :
-    inverseFormModOne u a b = (inverseForm u a b : AddCircle (1 : ℚ)) :=
-  (rfl)
-
-private theorem coe_intCast_eq_zero (k : ℤ) : ((k : ℚ) : AddCircle (1 : ℚ)) = 0 :=
-  (AddCircle.coe_eq_zero_iff (1 : ℚ)).mpr ⟨k, by simp⟩
+    inverseFormModOne u a b = (inverseForm u a b : AddCircle (1 : ℚ)) := by
+  rw [inverseFormModOne, LinearMap.compr₂_apply, AddMonoidHom.coe_toIntLinearMap,
+    QuotientAddGroup.mk'_apply]
 
 private theorem range_le_ker_inverseFormModOne :
     LinearMap.range u ≤ LinearMap.ker (inverseFormModOne u) := by
   rintro _ ⟨y, rfl⟩
   ext b
-  rw [LinearMap.zero_apply, inverseFormModOne_apply, inverseForm_apply_self, coe_intCast_eq_zero]
+  rw [LinearMap.zero_apply, inverseFormModOne_apply, inverseForm_apply_self,
+    AddCircle.coe_intCast_eq_zero]
 
 private theorem range_flip_le_ker_flip_inverseFormModOne :
     LinearMap.range u.flip ≤ LinearMap.ker (inverseFormModOne u).flip := by
   rintro _ ⟨x, rfl⟩
   ext a
   rw [LinearMap.zero_apply, LinearMap.flip_apply, inverseFormModOne_apply,
-    inverseForm_apply_flip, coe_intCast_eq_zero]
+    inverseForm_apply_flip, AddCircle.coe_intCast_eq_zero]
 
 /-- The discriminant pairing `componentGroup u × componentGroup u.flip → ℚ / ℤ` of a
 nondegenerate lattice pairing: on classes `[a]` and `[b]` it is `b(y) / m` modulo `ℤ` for any
@@ -154,8 +153,10 @@ noncomputable def discriminantPairing :
 
 private theorem discriminantPairing_mk_mk (a : X →ₗ[ℤ] ℤ) (b : Y →ₗ[ℤ] ℤ) :
     u.discriminantPairing (Submodule.Quotient.mk a) (Submodule.Quotient.mk b) =
-      (inverseForm u a b : AddCircle (1 : ℚ)) :=
-  (rfl)
+      (inverseForm u a b : AddCircle (1 : ℚ)) := by
+  rw [discriminantPairing, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe,
+    LinearMap.toAddMonoidHom'_apply, LinearMap.toAddMonoidHom_coe, LinearMap.liftQ₂_mk,
+    inverseFormModOne_apply]
 
 /-- **Evaluation of the discriminant pairing.** If `u♯ y = m a` with `m ≠ 0`, the pairing of the
 classes of `a` and `b` is `b(y) / m` modulo `ℤ`. -/
@@ -237,20 +238,13 @@ instance instIsNondegenerateFlip [Module.IsReflexive ℤ X] : IsNondegenerate u.
     simp only [LinearMap.flip_apply, apply_adjointPreimage, LinearMap.smul_apply,
       nsmul_eq_mul] at hxy
     simpa only [Module.Dual.eval_apply] using hxy
-  finite_componentGroup :=
-    have : Finite (u.componentGroup →+ AddCircle (1 : ℚ)) :=
-      inferInstanceAs (Finite (CharacterModule u.componentGroup))
-    Finite.of_injective _ (u.injective_discriminantPairing_flip)
+  finite_componentGroup := Finite.of_injective _ u.injective_discriminantPairing_flip
 
 /-- The cokernels of a nondegenerate pairing of reflexive modules and of its transpose have the
 same order. -/
 theorem natCard_componentGroup_flip [Module.IsReflexive ℤ X] [Module.IsReflexive ℤ Y] :
-    Nat.card (componentGroup u.flip) = Nat.card u.componentGroup := by
-  have : Finite (u.componentGroup →+ AddCircle (1 : ℚ)) :=
-    inferInstanceAs (Finite (CharacterModule u.componentGroup))
-  have : Finite (componentGroup u.flip →+ AddCircle (1 : ℚ)) :=
-    inferInstanceAs (Finite (CharacterModule (componentGroup u.flip)))
-  exact le_antisymm
+    Nat.card (componentGroup u.flip) = Nat.card u.componentGroup :=
+  le_antisymm
     ((Nat.card_le_card_of_injective _ u.injective_discriminantPairing_flip).trans_eq
       (natCard_characterModule _))
     ((Nat.card_le_card_of_injective _ u.injective_discriminantPairing).trans_eq
@@ -260,20 +254,16 @@ theorem natCard_componentGroup_flip [Module.IsReflexive ℤ X] [Module.IsReflexi
 finite rank), every character of the transpose cokernel is the pairing with a unique class of
 `componentGroup u`. -/
 theorem bijective_discriminantPairing [Module.IsReflexive ℤ X] [Module.IsReflexive ℤ Y] :
-    Function.Bijective u.discriminantPairing := by
-  have : Finite (componentGroup u.flip →+ AddCircle (1 : ℚ)) :=
-    inferInstanceAs (Finite (CharacterModule (componentGroup u.flip)))
-  exact u.injective_discriminantPairing.bijective_of_nat_card_le
+    Function.Bijective u.discriminantPairing :=
+  u.injective_discriminantPairing.bijective_of_nat_card_le
     ((natCard_characterModule _).trans_le u.natCard_componentGroup_flip.le)
 
 /-- **Perfectness of the discriminant pairing**, in the other variable: for reflexive `X` and
 `Y`, every character of `componentGroup u` is the pairing with a unique class of the transpose
 cokernel. -/
 theorem bijective_discriminantPairing_flip [Module.IsReflexive ℤ X] [Module.IsReflexive ℤ Y] :
-    Function.Bijective u.discriminantPairing.flip := by
-  have : Finite (u.componentGroup →+ AddCircle (1 : ℚ)) :=
-    inferInstanceAs (Finite (CharacterModule u.componentGroup))
-  exact u.injective_discriminantPairing_flip.bijective_of_nat_card_le
+    Function.Bijective u.discriminantPairing.flip :=
+  u.injective_discriminantPairing_flip.bijective_of_nat_card_le
     ((natCard_characterModule _).trans_le u.natCard_componentGroup_flip.ge)
 
 /-! ### The rank-one pairings -/

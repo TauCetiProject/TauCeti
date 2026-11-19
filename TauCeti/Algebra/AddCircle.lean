@@ -136,6 +136,12 @@ theorem coe_add_intCast {𝕜 : Type*} [Ring 𝕜] (x : 𝕜) (n : ℤ) :
   rw [coe_add, add_eq_left, coe_eq_zero_iff]
   exact ⟨n, by simp⟩
 
+/-- An integer reduces to zero in `AddCircle (1 : 𝕜)`. -/
+@[simp]
+theorem coe_intCast_eq_zero {𝕜 : Type*} [Ring 𝕜] (n : ℤ) :
+    ((n : 𝕜) : AddCircle (1 : 𝕜)) = 0 :=
+  (coe_eq_zero_iff (1 : 𝕜)).mpr ⟨n, by simp⟩
+
 /-- The floor of the sum of the representatives in `[0, 1)` of two points of `AddCircle (1 : 𝕜)`
 is the defect of additivity of the representatives. -/
 theorem intCast_floor_equivIco_add {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
