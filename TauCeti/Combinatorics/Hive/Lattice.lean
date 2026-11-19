@@ -23,7 +23,9 @@ parameterizes the three sides along the clockwise perimeter `A → B → C → A
 gives the two-variable chart `(y, z) ↦ (n - y - z, y, z)`. `Vertex.chart` gives the triangular
 chart `(i, j) ↦ (n - j, j - i, i)` for `i ≤ j ≤ n`, with boundary equations and the three
 unit-rhombus orientations `isRhombus_chart_left`, `isRhombus_chart_right`, and
-`isRhombus_chart_step`. The planar embedding sends `(x,y,z)`
+`isRhombus_chart_step`. `Vertex.yz` gives the integer `(y, z)` chart coordinates, in which
+`chartStep` lists the six unit lattice steps and `Vertex.sqDist_eq_two_iff` identifies unit lattice
+edges. The planar embedding sends `(x,y,z)`
 to `(z + y/2, √3*y/2)`, so the corners `(n,0,0)`, `(0,n,0)`, `(0,0,n)` occur clockwise.
 
 `IsRhombus a b c d` records a unit rhombus in perimeter order, with **obtuse** corners
@@ -363,6 +365,72 @@ theorem chart_self {n : ℕ} (j : ℕ) (hj : j ≤ n) :
 theorem chart_top {n : ℕ} (i : ℕ) (hi : i ≤ n) :
     chart n i n hi le_rfl = edgePoint n 1 ⟨i, by omega⟩ := by
   ext <;> simp [chart]
+
+/-- The integer `(y, z)` chart coordinates of a vertex; the coordinate `x = n - y - z` is
+determined by them. -/
+def yz (p : Vertex n) : ℤ × ℤ := (p.y, p.z)
+
+@[simp] theorem yz_fst (p : Vertex n) : p.yz.1 = p.y := (rfl)
+@[simp] theorem yz_snd (p : Vertex n) : p.yz.2 = p.z := (rfl)
+
+end Vertex
+
+/-- The six unit lattice steps in the integer `(y, z)` chart, in cyclic order: consecutive steps
+`chartStep k` and `chartStep (k + 1)` are the two edges leaving a corner of a unit triangle, and
+`chartStep (k + 3) = -chartStep k`. -/
+def chartStep : Fin 6 → ℤ × ℤ := ![(1, 0), (0, 1), (-1, 1), (-1, 0), (0, -1), (1, -1)]
+
+theorem chartStep_def : chartStep = ![(1, 0), (0, 1), (-1, 1), (-1, 0), (0, -1), (1, -1)] := (rfl)
+
+namespace Vertex
+
+variable {n : ℕ}
+
+/-- The barycentric squared distance in terms of the `(y, z)` chart differences. -/
+private theorem sqDist_eq_yz (p q : Vertex n) :
+    p.sqDist q = ((q.y : ℤ) - p.y + ((q.z : ℤ) - p.z)) ^ 2 + ((q.y : ℤ) - p.y) ^ 2 +
+      ((q.z : ℤ) - p.z) ^ 2 := by
+  have hx : (p.x : ℤ) - q.x = (q.y : ℤ) - p.y + ((q.z : ℤ) - p.z) := by
+    have := p.sum_eq
+    have := q.sum_eq
+    omega
+  rw [sqDist_def, hx]
+  ring
+
+/-- Two vertices are joined by a unit lattice edge (barycentric squared distance `2`) exactly when
+their `(y, z)` charts differ by one of the six unit steps. -/
+theorem sqDist_eq_two_iff {p q : Vertex n} :
+    p.sqDist q = 2 ↔ ∃ k, q.yz = p.yz + chartStep k := by
+  obtain ⟨a, ha⟩ : ∃ a : ℤ, a = (q.y : ℤ) - p.y := ⟨_, rfl⟩
+  obtain ⟨b, hb⟩ : ∃ b : ℤ, b = (q.z : ℤ) - p.z := ⟨_, rfl⟩
+  rw [sqDist_eq_yz, ← ha, ← hb]
+  constructor
+  · intro h
+    have ha' : a = -1 ∨ a = 0 ∨ a = 1 := by
+      have : -1 ≤ a ∧ a ≤ 1 := by constructor <;> nlinarith [sq_nonneg (a + b), sq_nonneg b]
+      omega
+    have hb' : b = -1 ∨ b = 0 ∨ b = 1 := by
+      have : -1 ≤ b ∧ b ≤ 1 := by constructor <;> nlinarith [sq_nonneg (a + b), sq_nonneg a]
+      omega
+    rcases ha' with rfl | rfl | rfl <;> rcases hb' with rfl | rfl | rfl <;> norm_num at h
+    all_goals first
+      | exact ⟨0, Prod.ext (by simp [chartStep]; omega) (by simp [chartStep]; omega)⟩
+      | exact ⟨1, Prod.ext (by simp [chartStep]; omega) (by simp [chartStep]; omega)⟩
+      | exact ⟨2, Prod.ext (by simp [chartStep]; omega) (by simp [chartStep]; omega)⟩
+      | exact ⟨3, Prod.ext (by simp [chartStep]; omega) (by simp [chartStep]; omega)⟩
+      | exact ⟨4, Prod.ext (by simp [chartStep]; omega) (by simp [chartStep]; omega)⟩
+      | exact ⟨5, Prod.ext (by simp [chartStep]; omega) (by simp [chartStep]; omega)⟩
+  · rintro ⟨k, hk⟩
+    have hy : a = (chartStep k).1 := by
+      have := congrArg Prod.fst hk
+      simp only [yz_fst, Prod.fst_add] at this
+      omega
+    have hz : b = (chartStep k).2 := by
+      have := congrArg Prod.snd hk
+      simp only [yz_snd, Prod.snd_add] at this
+      omega
+    rw [hy, hz]
+    fin_cases k <;> simp [chartStep]
 
 end Vertex
 
