@@ -156,7 +156,7 @@ theorem continuousOn_zeroSectionRescale {h : S × V → S × W}
     rw [zeroSectionRescale_of_ne_zero hp]
     have := hδε p.2.1 _ hpU (by rwa [norm_smul, Real.norm_of_nonneg hp0.le])
     calc ‖(p.1 : ℝ)⁻¹ • (h (p.2.1, (p.1 : ℝ) • p.2.2)).2 - L p.2.1 p.2.2‖
-        ≤ ε / 2 / (‖q.2.2‖ + 1) * ‖p.2.2‖ := ContinuousLinearMap.norm_inv_smul_sub_le hp0 this
+        ≤ ε / 2 / (‖q.2.2‖ + 1) * ‖p.2.2‖ := ContinuousLinearMap.norm_inv_smul_sub_le hp this
       _ ≤ ε / 2 / (‖q.2.2‖ + 1) * (‖q.2.2‖ + 1) := by gcongr
       _ = ε / 2 := div_mul_cancel₀ _ (by positivity)
       _ < ε := half_lt_self hε
@@ -267,14 +267,14 @@ theorem isOpenEmbedding_zeroSectionRescale [CompactSpace S] {g : S × V → S ×
     refine Prod.ext rfl ?_
     dsimp only
     by_cases ht : (q.1 : ℝ) = 0
-    · simp [zeroSectionRescale, ht, ← mul_apply_eq_comp]
-    · simp [zeroSectionRescale, ht, hg'g]
+    · simp [zeroSectionRescale_of_eq_zero, ht, ← mul_apply_eq_comp]
+    · simp [zeroSectionRescale_of_ne_zero, ht, hg'g]
   · -- The family undoes the inverse family on its domain.
     refine Prod.ext rfl ?_
     dsimp only
     by_cases ht : (q.1 : ℝ) = 0
-    · simp [zeroSectionRescale, ht, ← mul_apply_eq_comp]
+    · simp [zeroSectionRescale_of_eq_zero, ht, ← mul_apply_eq_comp]
     · have hq' : (q.2.1, (q.1 : ℝ) • q.2.2) ∈ range g := hq
-      simp [zeroSectionRescale, ht, hgg' _ hq']
+      simp [zeroSectionRescale_of_ne_zero, ht, hgg' _ hq']
 
 end TauCeti

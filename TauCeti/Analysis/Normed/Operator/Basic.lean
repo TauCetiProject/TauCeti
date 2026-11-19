@@ -73,7 +73,7 @@ normed field, then the block-diagonal operator `diag(J, J)` on `V × V` also squ
 (`TauCeti.prodMap_mul_self_eq_neg_one`), and `a + J b = y` holds exactly when `b - J a = -J y`
 (`ContinuousLinearMap.add_apply_eq_iff_sub_apply_eq_neg_apply`).
 
-Two first-order estimates: an estimate `‖w - L (t v)‖ ≤ c ‖t v‖` with `t > 0` rescales to
+Two first-order estimates: an estimate `‖w - L (t v)‖ ≤ c ‖t v‖` with `t ≠ 0` rescales to
 `‖t⁻¹ w - L v‖ ≤ c ‖v‖` (`ContinuousLinearMap.norm_inv_smul_sub_le`), and if `B` inverts `T`
 on `v` and `u` is close to `T v`, then any `B'` close to `B` sends `u` close to `v`
 (`ContinuousLinearMap.norm_sub_apply_le_of_apply_eq`).
@@ -672,15 +672,16 @@ section FirstOrder
 variable {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
 
 /-- A first-order estimate at `t • v` rescales to one at `v`: if `w` is within `c ‖t • v‖` of
-`L (t • v)` with `t > 0`, then `t⁻¹ • w` is within `c ‖v‖` of `L v`. -/
-theorem norm_inv_smul_sub_le [NormedSpace ℝ E] [NormedSpace ℝ F] {t : ℝ} (ht : 0 < t) {w : F}
-    {v : E} {L : E →L[ℝ] F} {c : ℝ} (h : ‖w - L (t • v)‖ ≤ c * ‖t • v‖) :
+`L (t • v)` with `t ≠ 0`, then `t⁻¹ • w` is within `c ‖v‖` of `L v`. -/
+theorem norm_inv_smul_sub_le [NormedSpace 𝕜 E] [NormedSpace 𝕜 F] {t : 𝕜} (ht : t ≠ 0) {w : F}
+    {v : E} {L : E →L[𝕜] F} {c : ℝ} (h : ‖w - L (t • v)‖ ≤ c * ‖t • v‖) :
     ‖t⁻¹ • w - L v‖ ≤ c * ‖v‖ := by
   have : t⁻¹ • w - L v = t⁻¹ • (w - L (t • v)) := by
-    rw [map_smul, smul_sub, inv_smul_smul₀ ht.ne']
-  rw [this, norm_smul, norm_inv, Real.norm_of_nonneg ht.le]
-  rw [norm_smul, Real.norm_of_nonneg ht.le] at h
-  calc t⁻¹ * ‖w - L (t • v)‖ ≤ t⁻¹ * (c * (t * ‖v‖)) := by gcongr
+    rw [map_smul, smul_sub, inv_smul_smul₀ ht]
+  have ht' : 0 < ‖t‖ := norm_pos_iff.2 ht
+  rw [this, norm_smul, norm_inv]
+  rw [norm_smul] at h
+  calc ‖t‖⁻¹ * ‖w - L (t • v)‖ ≤ ‖t‖⁻¹ * (c * (‖t‖ * ‖v‖)) := by gcongr
     _ = c * ‖v‖ := by field_simp
 
 /-- Let `B` invert `T` on `v`, with `‖B‖ ≤ K`, let `u` be within `ε' ‖v‖` of `T v` with

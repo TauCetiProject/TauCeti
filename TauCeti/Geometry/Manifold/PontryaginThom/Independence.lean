@@ -99,10 +99,12 @@ private theorem pontryaginThomCollapseMap_homotopic_comp_radialShrink [CompactSp
     (pontryaginThomCollapseMap hτ).Homotopic
       (pontryaginThomCollapseMap (hτ.comp (isOpenEmbedding_prodMap_radialShrink (X := S) hr
         zero_le_one))) := by
+  -- The isotopy `q ↦ (q.1, τ (q.2.1, radialShrink r q.1 q.2.2))` is `(id × τ) ∘ family`, by
+  -- unfolding `Prod.map` and `∘`.
   refine pontryaginThomCollapseMap_homotopic _ _
     (τ := fun q ↦ τ (q.2.1, radialShrink r q.1 q.2.2))
     ((IsOpenEmbedding.id.prodMap hτ).comp (isOpenEmbedding_radialShrink_family hr))
-    (fun p ↦ by simp) fun p ↦ by rw [comp_apply, Prod.map_apply']; rfl
+    (fun p ↦ by simp) fun p ↦ by simp [Prod.map_apply']
 
 /-! ### The derivative of the transition between two tubes -/
 
@@ -112,7 +114,7 @@ near the core, `τ₁ (x, v) = τ₀ (x', A x v + o(‖v‖))`, uniformly in `x`
 `‖p.2 - A x v‖ ≤ ε ‖v‖`. When the transition `τ₀⁻¹ ∘ τ₁` is `C¹` in the fibre direction near the
 core and `S` is compact, this holds with `A x` the fibre derivative of its normal coordinate at
 `(x, 0)` (`TauCeti.HasTransitionFDeriv.of_hasFDerivAt`). -/
-def HasTransitionFDeriv (τ₀ τ₁ : S × V → M) (A : S → V →L[ℝ] V) : Prop :=
+@[expose] def HasTransitionFDeriv (τ₀ τ₁ : S × V → M) (A : S → V →L[ℝ] V) : Prop :=
   ∀ ε > 0, ∃ δ > 0, ∀ x (v : V), ‖v‖ < δ →
     ∃ p : S × V, τ₁ (x, v) = τ₀ p ∧ ‖p.2 - A x v‖ ≤ ε * ‖v‖
 
@@ -236,7 +238,9 @@ theorem IsFramedTube.pontryaginThomCollapseMap_homotopic_comp_prodUnitsHomeomorp
     exact funext hτ₀g
   have hg0 (x : S) : g (x, 0) = (x, 0) :=
     h₀.isOpenEmbedding.injective (by simp [hτ₀g, h₀.apply_zero, h₁.apply_zero])
-  -- The Alexander isotopy deforms `τ₀ ∘ g` into the reframed tube `τ₀ ∘ (id × A)`.
+  -- The Alexander isotopy deforms `τ₀ ∘ g` into the reframed tube `τ₀ ∘ (id × A)`. As a map
+  -- `q ↦ (q.1, τ₀ (zeroSectionRescale g A q))` it is `(id × τ₀) ∘ (q ↦ (q.1, …))`, by unfolding
+  -- `Prod.map` and `∘`.
   refine (pontryaginThomCollapseMap_homotopic _ _
     (τ := fun q ↦ τ₀ (zeroSectionRescale g (fun x ↦ (A x : V →L[ℝ] V)) q))
     ((IsOpenEmbedding.id.prodMap h₀.isOpenEmbedding).comp (isOpenEmbedding_zeroSectionRescale hg
@@ -247,24 +251,15 @@ theorem IsFramedTube.pontryaginThomCollapseMap_homotopic_comp_prodUnitsHomeomorp
 
 /-- **Independence of the Pontryagin–Thom collapse from the tube.** Let `τ₀` and `τ₁` be framed
 tubes around the same map `f : S → M`, with compact `S` and Hausdorff `M`, such that near the core
-`τ₁ (x, v) = τ₀ (x', A x v + o(‖v‖))` uniformly in `x`, for a continuous family `A` of linear
-automorphisms of `V`. If `A` is homotopic to the identity through linear automorphisms, the
-framings of the two tubes agree up to homotopy, and their Pontryagin–Thom collapses are
-homotopic. -/
+`τ₁ (x, v) = τ₀ (x', B (0, x) v + o(‖v‖))` uniformly in `x`, for a homotopy `B` through linear
+automorphisms of `V` ending at the identity. Then the framings of the two tubes agree up to
+homotopy, and their Pontryagin–Thom collapses are homotopic. -/
 theorem IsFramedTube.pontryaginThomCollapseMap_homotopic [CompactSpace S] [T2Space M]
     {f : S → M} {τ₀ τ₁ : S × V → M} (h₁ : IsFramedTube f τ₁) (h₀ : IsFramedTube f τ₀)
-    {A : S → (V →L[ℝ] V)ˣ} (hA : Continuous A)
-    (hτ : HasTransitionFDeriv τ₀ τ₁ fun x ↦ (A x : V →L[ℝ] V))
-    {B : unitInterval × S → (V →L[ℝ] V)ˣ} (hB : Continuous B) (hB₀ : ∀ x, B (0, x) = A x)
-    (hB₁ : ∀ x, B (1, x) = 1) :
+    {B : unitInterval × S → (V →L[ℝ] V)ˣ} (hB : Continuous B)
+    (hτ : HasTransitionFDeriv τ₀ τ₁ fun x ↦ (B (0, x) : V →L[ℝ] V)) (hB₁ : ∀ x, B (1, x) = 1) :
     (pontryaginThomCollapseMap h₁.isOpenEmbedding).Homotopic
       (pontryaginThomCollapseMap h₀.isOpenEmbedding) := by
-  have e₀ : pontryaginThomCollapseMap
-      (h₀.isOpenEmbedding.comp (prodUnitsHomeomorph A hA).isOpenEmbedding) =
-      pontryaginThomCollapseMap (h₀.isOpenEmbedding.comp (prodUnitsHomeomorph (fun x ↦ B (0, x))
-        (hB.comp (Continuous.prodMk_right 0))).isOpenEmbedding) := by
-    ext m
-    simp [hB₀]
   have e₁ : pontryaginThomCollapseMap (h₀.isOpenEmbedding.comp (prodUnitsHomeomorph
       (fun x ↦ B (1, x)) (hB.comp (Continuous.prodMk_right 1))).isOpenEmbedding) =
       pontryaginThomCollapseMap h₀.isOpenEmbedding := by
@@ -273,21 +268,19 @@ theorem IsFramedTube.pontryaginThomCollapseMap_homotopic [CompactSpace S] [T2Spa
     congr 1
     funext p
     simp
-  have h := h₁.pontryaginThomCollapseMap_homotopic_comp_prodUnitsHomeomorph h₀ hA hτ
-  rw [e₀] at h
   rw [← e₁]
-  exact h.trans
+  exact (h₁.pontryaginThomCollapseMap_homotopic_comp_prodUnitsHomeomorph h₀
+    (hB.comp (Continuous.prodMk_right 0)) hτ).trans
     (pontryaginThomCollapseMap_comp_prodUnitsHomeomorph_homotopic h₀.isOpenEmbedding hB)
 
 /-- **Independence of the collapse onto the sphere from the tube.** For `V = ℝᵏ`, two framed tubes
-around the same map whose transition has a fibre derivative `A` along the core that is homotopic
-to the identity through linear automorphisms have homotopic collapses onto `Sᵏ`. -/
+around the same map whose transition has fibre derivative `B (0, ·)` along the core, for a homotopy
+`B` through linear automorphisms ending at the identity, have homotopic collapses onto `Sᵏ`. -/
 theorem IsFramedTube.pontryaginThomSphereMap_homotopic {k : ℕ} [CompactSpace S] [T2Space M]
     {f : S → M} {τ₀ τ₁ : S × (Fin k → ℝ) → M} (h₁ : IsFramedTube f τ₁) (h₀ : IsFramedTube f τ₀)
-    {A : S → ((Fin k → ℝ) →L[ℝ] (Fin k → ℝ))ˣ} (hA : Continuous A)
-    (hτ : HasTransitionFDeriv τ₀ τ₁ fun x ↦ (A x : (Fin k → ℝ) →L[ℝ] (Fin k → ℝ)))
     {B : unitInterval × S → ((Fin k → ℝ) →L[ℝ] (Fin k → ℝ))ˣ} (hB : Continuous B)
-    (hB₀ : ∀ x, B (0, x) = A x) (hB₁ : ∀ x, B (1, x) = 1)
+    (hτ : HasTransitionFDeriv τ₀ τ₁ fun x ↦ (B (0, x) : (Fin k → ℝ) →L[ℝ] (Fin k → ℝ)))
+    (hB₁ : ∀ x, B (1, x) = 1)
     (s₀ : Metric.sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) :
     (pontryaginThomSphereMap h₁.isOpenEmbedding s₀).Homotopic
       (pontryaginThomSphereMap h₀.isOpenEmbedding s₀) := by
@@ -297,6 +290,6 @@ theorem IsFramedTube.pontryaginThomSphereMap_homotopic {k : ℕ} [CompactSpace S
     ContinuousMap.ext fun m ↦ by simp [coe_pontryaginThomSphereMap]
   rw [e, e]
   exact (ContinuousMap.Homotopic.refl _).comp
-    (h₁.pontryaginThomCollapseMap_homotopic h₀ hA hτ hB hB₀ hB₁)
+    (h₁.pontryaginThomCollapseMap_homotopic h₀ hB hτ hB₁)
 
 end TauCeti
