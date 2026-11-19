@@ -50,6 +50,9 @@ function by a function of temperate growth multiplies the function pointwise
   and their companions: the embedding `Lᵖ → 𝓢'` is linear, stated on the coercion.
 * `MeasureTheory.Lp.toTemperedDistribution_injective`: an `Lᵖ` function is determined by its
   tempered distribution.
+* `MeasureTheory.Lp.toTemperedDistribution_eq_of_ae_eq` and
+  `MeasureTheory.Lp.toTemperedDistribution_eq_add_of_ae_eq`: almost everywhere identities between
+  functions of different `Lᵖ` spaces hold between their tempered distributions.
 * `MeasureTheory.Lp.ae_eq_of_toTemperedDistribution_apply_eq`: an `Lᵖ` function whose pairings
   with Schwartz functions agree with those of a locally integrable `g` is almost everywhere
   equal to `g`.
@@ -131,6 +134,34 @@ theorem toTemperedDistribution_smul (c : ℂ) (f : Lp F p μ) :
 theorem toTemperedDistribution_sum {ι : Type*} (t : Finset ι) (f : ι → Lp F p μ) :
     ((∑ i ∈ t, f i : Lp F p μ) : 𝓢'(E, F)) = ∑ i ∈ t, (f i : 𝓢'(E, F)) :=
   map_sum (toTemperedDistributionCLM F μ p) f t
+
+omit [CompleteSpace F] in
+/-- A Schwartz function times an `Lᵖ` function is integrable, by Hölder's inequality. These are
+the integrands of the pairings of the tempered distribution of the `Lᵖ` function. -/
+theorem integrable_schwartzMap_smul (φ : 𝓢(E, ℂ)) (u : Lp F p μ) :
+    Integrable (fun x ↦ φ x • u x) μ := by
+  have : (1 - p⁻¹)⁻¹.HolderConjugate p :=
+    (ENNReal.HolderConjugate.inv_one_sub_inv' (Fact.out : 1 ≤ p)).symm
+  exact memLp_one_iff_integrable.1 ((φ.memLp (1 - p⁻¹)⁻¹ (μ := μ)).smul (Lp.memLp u))
+
+/-- Functions of two possibly different `Lᵖ` spaces that agree almost everywhere define the same
+tempered distribution. -/
+theorem toTemperedDistribution_eq_of_ae_eq {q : ENNReal} [Fact (1 ≤ q)] {f : Lp F p μ}
+    {g : Lp F q μ} (h : ⇑f =ᵐ[μ] ⇑g) : (f : 𝓢'(E, F)) = (g : 𝓢'(E, F)) := by
+  ext φ
+  simp only [toTemperedDistribution_apply]
+  exact integral_congr_ae (h.mono fun x hx ↦ by simp only [hx])
+
+/-- If a function `h` of `Lʳ` agrees almost everywhere with `f + g`, where `f ∈ Lᵖ` and
+`g ∈ L^q`, then the tempered distribution of `h` is the sum of those of `f` and `g`. -/
+theorem toTemperedDistribution_eq_add_of_ae_eq {q r : ENNReal} [Fact (1 ≤ q)] [Fact (1 ≤ r)]
+    {f : Lp F p μ} {g : Lp F q μ} {h : Lp F r μ} (hfg : ⇑h =ᵐ[μ] ⇑f + ⇑g) :
+    (h : 𝓢'(E, F)) = (f : 𝓢'(E, F)) + (g : 𝓢'(E, F)) := by
+  ext φ
+  rw [add_apply, toTemperedDistribution_apply, toTemperedDistribution_apply,
+    toTemperedDistribution_apply,
+    ← integral_add (integrable_schwartzMap_smul φ f) (integrable_schwartzMap_smul φ g)]
+  exact integral_congr_ae (hfg.mono fun x hx ↦ by simp only [hx, Pi.add_apply, smul_add])
 
 end Linear
 
