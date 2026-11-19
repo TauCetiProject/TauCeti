@@ -77,14 +77,14 @@ theorem exists_permOrbitRel_forall_toSyn_mapDomain_le (e : σ →₀ ℕ) :
   rw [Set.Finite.mem_toFinset] at hf
   refine ⟨f, hf, fun g hg ↦ hmax _ ?_⟩
   rw [Set.Finite.mem_toFinset]
-  exact (permOrbitRel G).iseqv.trans hf (permOrbitRel_mapDomain hg f)
+  exact (permOrbitRel G).trans' hf (permOrbitRel_mapDomain hg f)
 
 /-- The orbit sum of an exponent that is largest in its orbit has that exponent as its leading
 exponent. -/
 theorem degree_orbitSum [Nontrivial R]
     (he : ∀ g ∈ G, m.toSyn (e.mapDomain g) ≤ m.toSyn e) : m.degree (orbitSum R G e) = e := by
   refine m.toSyn.injective (le_antisymm (m.degree_le_iff.2 fun f hf ↦ ?_)
-    (m.le_degree (mem_support_orbitSum.2 ((permOrbitRel G).iseqv.refl e))))
+    (m.le_degree (mem_support_orbitSum.2 ((permOrbitRel G).refl' e))))
   obtain ⟨g, hg, rfl⟩ := permOrbitRel_iff.1 (mem_support_orbitSum.1 hf)
   exact he g hg
 
@@ -93,7 +93,7 @@ theorem monic_orbitSum (he : ∀ g ∈ G, m.toSyn (e.mapDomain g) ≤ m.toSyn e)
     m.Monic (orbitSum R G e) := by
   nontriviality R
   rw [Monic, leadingCoeff, m.degree_orbitSum he,
-    coeff_orbitSum_of_rel ((permOrbitRel G).iseqv.refl e)]
+    coeff_orbitSum_of_rel ((permOrbitRel G).refl' e)]
 
 /-- The leading term of the orbit sum of an exponent that is largest in its orbit is the monomial
 of that exponent. -/

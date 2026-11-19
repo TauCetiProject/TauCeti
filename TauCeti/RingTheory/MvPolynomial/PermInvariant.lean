@@ -201,16 +201,27 @@ theorem mem_support_orbitSum [Nontrivial R] :
 @[simp]
 theorem orbitSum_ne_zero [Nontrivial R] : orbitSum R G e ≠ 0 :=
   ne_zero_iff.2 ⟨e, by
-    rw [coeff_orbitSum_of_rel ((permOrbitRel G).iseqv.refl e)]
+    rw [coeff_orbitSum_of_rel ((permOrbitRel G).refl' e)]
     exact one_ne_zero⟩
+
+/-- An orbit sum has the same coefficient at exponents in the same orbit. -/
+theorem coeff_orbitSum_eq_of_rel {d d' : σ →₀ ℕ} (h : permOrbitRel G d d') :
+    (orbitSum R G e).coeff d = (orbitSum R G e).coeff d' := by
+  by_cases hd : permOrbitRel G e d
+  · rw [coeff_orbitSum_of_rel hd, coeff_orbitSum_of_rel ((permOrbitRel G).trans' hd h)]
+  · rw [coeff_orbitSum_of_not_rel hd, coeff_orbitSum_of_not_rel fun h' ↦
+      hd ((permOrbitRel G).trans' h' ((permOrbitRel G).symm' h))]
+
+/-- The coefficient of `X^f` in the orbit sum of `e` is that of `X^e` in the orbit sum of `f`. -/
+theorem coeff_orbitSum_comm : (orbitSum R G e).coeff f = (orbitSum R G f).coeff e := by
+  by_cases h : permOrbitRel G e f
+  · rw [coeff_orbitSum_of_rel h, coeff_orbitSum_of_rel ((permOrbitRel G).symm' h)]
+  · rw [coeff_orbitSum_of_not_rel h, coeff_orbitSum_of_not_rel (mt (permOrbitRel G).symm' h)]
 
 /-- Exponents in the same orbit have the same orbit sum. -/
 theorem orbitSum_eq_of_rel (h : permOrbitRel G e f) : orbitSum R G e = orbitSum R G f := by
   ext d
-  by_cases hd : permOrbitRel G f d
-  · rw [coeff_orbitSum_of_rel ((permOrbitRel G).iseqv.trans h hd), coeff_orbitSum_of_rel hd]
-  · refine (coeff_orbitSum_of_not_rel fun h' ↦ hd ?_).trans (coeff_orbitSum_of_not_rel hd).symm
-    exact (permOrbitRel G).iseqv.trans ((permOrbitRel G).iseqv.symm h) h'
+  rw [coeff_orbitSum_comm, coeff_orbitSum_eq_of_rel h, coeff_orbitSum_comm]
 
 /-- Over nontrivial coefficients, two orbit sums agree exactly when the exponents lie in the same
 orbit. -/
@@ -219,15 +230,17 @@ theorem orbitSum_eq_orbitSum_iff [Nontrivial R] :
     orbitSum R G e = orbitSum R G f ↔ permOrbitRel G e f := by
   refine ⟨fun h ↦ ?_, orbitSum_eq_of_rel⟩
   have hf : f ∈ (orbitSum R G f).support :=
-    mem_support_orbitSum.2 ((permOrbitRel G).iseqv.refl f)
+    mem_support_orbitSum.2 ((permOrbitRel G).refl' f)
   rwa [← h, mem_support_orbitSum] at hf
 
-theorem orbitSum_mem_permInvariants (e : σ →₀ ℕ) : orbitSum R G e ∈ permInvariants R G := by
-  refine mem_permInvariants_iff_coeff.2 fun d d' hd ↦ ?_
-  by_cases h : permOrbitRel G e d
-  · rw [coeff_orbitSum_of_rel h, coeff_orbitSum_of_rel ((permOrbitRel G).iseqv.trans h hd)]
-  · refine (coeff_orbitSum_of_not_rel h).trans (coeff_orbitSum_of_not_rel fun h' ↦ h ?_).symm
-    exact (permOrbitRel G).iseqv.trans h' ((permOrbitRel G).iseqv.symm hd)
+theorem orbitSum_mem_permInvariants (e : σ →₀ ℕ) : orbitSum R G e ∈ permInvariants R G :=
+  mem_permInvariants_iff_coeff.2 fun _ _ ↦ coeff_orbitSum_eq_of_rel
+
+/-- The orbit sum of a representative of an orbit `O` has coefficient `0` at every exponent outside
+`O`. -/
+private theorem coeff_orbitSum_out_of_ne {O : Quotient (permOrbitRel G)} {d : σ →₀ ℕ}
+    (h : O ≠ ⟦d⟧) : (orbitSum R G O.out).coeff d = 0 :=
+  coeff_orbitSum_of_not_rel (mt Quotient.eq_mk_iff_out.2 h)
 
 open Classical in
 /-- An invariant polynomial is the combination of the orbit sums of the orbits meeting its
@@ -245,9 +258,7 @@ private theorem eq_sum_orbitSum_of_mem_permInvariants {p : MvPolynomial σ R}
   rw [coeff_sum, Finset.sum_eq_single (Quotient.mk (permOrbitRel G) d)]
   · exact hd.symm
   · intro O _ hO
-    rw [coeff_smul, coeff_orbitSum_of_not_rel, smul_zero]
-    intro h
-    exact hO (by rw [← Quotient.out_eq O]; exact Quotient.sound h)
+    rw [coeff_smul, coeff_orbitSum_out_of_ne hO, smul_zero]
   · intro hmem
     rw [hd]
     by_contra hne
@@ -268,6 +279,10 @@ variable (R G) in
 private noncomputable def orbitSumQuotient (O : Quotient (permOrbitRel G)) : permInvariants R G :=
   ⟨orbitSum R G O.out, orbitSum_mem_permInvariants _⟩
 
+private theorem coe_orbitSumQuotient (O : Quotient (permOrbitRel G)) :
+    (orbitSumQuotient R G O : MvPolynomial σ R) = orbitSum R G O.out :=
+  rfl
+
 /-- The coefficient of the monomial `X^(O.out)` in a combination of orbit sums is the coefficient
 of the orbit `O`. -/
 private theorem coeff_linearCombination_orbitSumQuotient (c : Quotient (permOrbitRel G) →₀ R)
@@ -278,12 +293,9 @@ private theorem coeff_linearCombination_orbitSumQuotient (c : Quotient (permOrbi
   rw [Finsupp.linearCombination_apply, Finsupp.sum, AddSubmonoidClass.coe_finsetSum, coeff_sum]
   simp only [SetLike.val_smul, coeff_smul]
   rw [Finset.sum_eq_single O]
-  · rw [orbitSumQuotient, coeff_orbitSum_of_rel ((permOrbitRel G).iseqv.refl _), smul_eq_mul,
-      mul_one]
+  · rw [orbitSumQuotient, coeff_orbitSum_of_rel ((permOrbitRel G).refl' _), smul_eq_mul, mul_one]
   · intro O' _ hO'
-    rw [orbitSumQuotient, coeff_orbitSum_of_not_rel, smul_zero]
-    intro h'
-    exact hO' (by rw [← Quotient.out_eq O, ← Quotient.out_eq O']; exact Quotient.sound h')
+    rw [orbitSumQuotient, coeff_orbitSum_out_of_ne (by rwa [Quotient.out_eq]), smul_zero]
   · intro hO
     rw [Finsupp.notMem_support_iff.1 hO, zero_smul]
 
@@ -302,8 +314,9 @@ noncomputable def permInvariantsBasis :
     classical
     have hp : p = ∑ O ∈ (p : MvPolynomial σ R).support.image (Quotient.mk _),
         (p : MvPolynomial σ R).coeff O.out • orbitSumQuotient R G O := by
-      ext1
-      simpa [orbitSumQuotient] using eq_sum_orbitSum_of_mem_permInvariants p.2
+      refine Subtype.ext ((eq_sum_orbitSum_of_mem_permInvariants p.2).trans ?_)
+      rw [AddSubmonoidClass.coe_finsetSum]
+      simp only [SetLike.val_smul, coe_orbitSumQuotient]
     rw [hp]
     exact Submodule.sum_mem _ fun O _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨O, rfl⟩)
 
