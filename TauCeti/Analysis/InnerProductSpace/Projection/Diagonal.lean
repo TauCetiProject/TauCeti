@@ -44,6 +44,10 @@ fixed points of the torus, mapped to its vertices.
 * `Submodule.sum_projectorDiagonal`: the entries sum to the dimension of `U`.
 * `Submodule.projectorDiagonal_span_single`: the diagonal of a coordinate subspace is the
   indicator of its coordinates.
+* `Submodule.projectorDiagonal_orthogonal`: the diagonal for `Uᗮ` is one minus the diagonal for
+  `U`.
+* `Submodule.projectorDiagonal_span_singleton`: the diagonal of the line spanned by `v` is
+  `(‖vᵢ‖² / ‖v‖²)ᵢ`.
 * `Submodule.finrank_span_image_single`: as a consequence, a coordinate subspace has dimension
   the number of its coordinates.
 * `Submodule.projectorDiagonal_map_piLpCongrRight`: the diagonal is invariant under the diagonal
@@ -160,6 +164,21 @@ theorem projectorDiagonal_bot : (⊥ : Submodule 𝕜 (EuclideanSpace 𝕜 ι)).
 theorem projectorDiagonal_top : (⊤ : Submodule 𝕜 (EuclideanSpace 𝕜 ι)).projectorDiagonal = 1 := by
   ext i
   exact (projectorDiagonal_eq_one_iff _).2 mem_top
+
+/-- The diagonal of the projector onto the orthogonal complement `Uᗮ` is `1 - diag(P_U)`, since
+`P_{Uᗮ} = 1 - P_U`. -/
+@[simp]
+theorem projectorDiagonal_orthogonal : Uᗮ.projectorDiagonal = 1 - U.projectorDiagonal := by
+  ext i
+  simp [projectorDiagonal_def]
+
+/-- The diagonal of the projector onto the line spanned by a vector `v` is
+`(‖vᵢ‖² / ‖v‖²)ᵢ`. For `v = 0` both sides vanish. -/
+theorem projectorDiagonal_span_singleton (v : EuclideanSpace 𝕜 ι) (i : ι) :
+    (𝕜 ∙ v).projectorDiagonal i = ‖v i‖ ^ 2 / ‖v‖ ^ 2 := by
+  simp [projectorDiagonal_def, starProjection_singleton, EuclideanSpace.inner_single_right,
+    div_mul_eq_mul_div, RCLike.conj_mul]
+  norm_cast
 
 /-- The diagonal of the projector onto the coordinate subspace spanned by the basis vectors `eᵢ`
 with `i ∈ s` is the indicator function of `s`. -/

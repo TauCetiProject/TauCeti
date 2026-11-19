@@ -46,8 +46,9 @@ degree of `τ` and the class of `α`.
 
 ## Main declarations
 
-* `TauCeti.sphereMeridian`: the meridian `γ_w : p ⇝ -p`. Off the poles `±p` every point of the
-  sphere lies on exactly one meridian, at exactly one time (`TauCeti.exists_sphereMeridian_eq`,
+* `TauCeti.sphereMeridian`: the meridian `γ_w : p ⇝ -p`, continuous in `w`
+  (`TauCeti.continuous_sphereMeridian`). Off the poles `±p` every point of the sphere lies on
+  exactly one meridian, at exactly one time (`TauCeti.exists_sphereMeridian_eq`,
   `TauCeti.eq_and_eq_of_sphereMeridian_eq`).
 * `TauCeti.meridianLoop`: the loop `γ_w · γ_u⁻¹` at `p`, the map `α`.
 * `TauCeti.meridianContraction`: the path of loops `χ_u`, which stays on the meridian `γ_u`
@@ -117,6 +118,11 @@ theorem _root_.Continuous.sphereMeridian {Y : Type*} [TopologicalSpace Y]
   refine continuous_induced_rng.2 ?_
   simp only [Function.comp_def, coe_sphereMeridian]
   fun_prop
+
+/-- The meridians depend continuously on the direction, as paths from `p` to `-p`. -/
+@[fun_prop]
+theorem continuous_sphereMeridian : Continuous (sphereMeridian p) :=
+  Path.continuous_uncurry_iff.mp (continuous_fst.sphereMeridian p continuous_snd)
 
 /-- The meridians meet only at the poles: a point of the sphere other than `±p` lies on exactly one
 meridian, at exactly one time. -/
