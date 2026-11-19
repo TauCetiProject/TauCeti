@@ -43,8 +43,8 @@ that the later theory transports invariants along:
 * `TauCeti.Hypergeometric.Parameters`: a hypergeometric parameter pair, with its `degree`.
 * `TauCeti.Hypergeometric.Parameters.swap`, the `Neg` and `InvolutiveNeg` instances, and the
   `AddAction (AddCircle (1 : ℚ))` instance of shifts.
-* `TauCeti.Hypergeometric.Parameters.denominator`, with `denominator_dvd_iff`,
-  `isLeast_denominator` and `denominator_eq_one_iff`.
+* `TauCeti.Hypergeometric.Parameters.denominator`, with `denominator_eq_lcm`,
+  `denominator_dvd_iff`, `isLeast_denominator` and `denominator_eq_one_iff`.
 * `TauCeti.Hypergeometric.Parameters.scale`, with `denominator_scale` and `scale_scale`.
 
 ## References
@@ -289,6 +289,9 @@ theorem neg_vadd (μ : AddCircle (1 : ℚ)) : -(μ +ᵥ P) = -μ +ᵥ -P := by
 classes in `α + β`, equivalently the least positive integer killing all of them
 (`isLeast_denominator`). -/
 noncomputable def denominator : ℕ := ((P.α + P.β).map addOrderOf).lcm
+
+/-- The common denominator is the lcm of the additive orders of the classes in `α + β`. -/
+theorem denominator_eq_lcm : P.denominator = ((P.α + P.β).map addOrderOf).lcm := (rfl)
 
 /-- A natural number is a multiple of the common denominator exactly when it kills every class
 of the pair. -/
