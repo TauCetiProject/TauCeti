@@ -91,6 +91,10 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   coordinate bounds for compact subsets of manifolds modelled on a locally compact space.
 * `TauCeti.exists_finite_compact_chart_cover`: a compact manifold modelled on a locally compact
   space is covered by the relative interiors of finitely many compact coordinate sets.
+* `TauCeti.IsCompactChartCover`: compact pieces of extended chart targets of open subsets whose
+  relative interiors `TopologicalSpace.Opens.chartPieceInterior` cover `M`;
+  `TauCeti.exists_finite_compact_chart_cover_subordinate` gives a finite one subordinate to any
+  open cover of a compact manifold modelled on a locally compact space.
 * `TauCeti.CompactChartAtlas`: a finite family of compact coordinate sets whose relative interiors
   cover `M`; `TauCeti.CompactChartAtlas.instNonempty` provides one on a compact manifold modelled
   on a locally compact space.
@@ -665,6 +669,76 @@ theorem exists_finite_compact_chart_cover [CompactSpace M] [LocallyCompactSpace 
     rwa [(extChartAt I (α i)).right_inv z.2] at hmem
   · simpa only [Set.mem_ofPred_eq, (extChartAt I (α i)).left_inv hy] using hyi
 
+/-- The points of an open subset `U` of `M` whose coordinates, in the extended chart of `U` at `x`,
+lie in the relative interior of a compact piece `K` of its target, as an open subset of `M`. -/
+def _root_.TopologicalSpace.Opens.chartPieceInterior (U : TopologicalSpace.Opens M) (x : U)
+    (K : TopologicalSpace.Compacts (extChartAt I x).target) : TopologicalSpace.Opens M :=
+  ⟨Subtype.val '' {w : U | ∃ hw : w ∈ (extChartAt I x).source,
+    (⟨extChartAt I x w, (extChartAt I x).map_source hw⟩ : (extChartAt I x).target) ∈
+      interior (K : Set (extChartAt I x).target)},
+    U.isOpenEmbedding'.isOpenMap _ (isOpen_setOf_extChartAt_mem _ isOpen_interior)⟩
+
+/-- A point lies in `U.chartPieceInterior x K` when it lies in `U` and in the chart source, with
+coordinates in the relative interior of `K`. -/
+theorem _root_.TopologicalSpace.Opens.mem_chartPieceInterior {U : TopologicalSpace.Opens M}
+    {x : U} {K : TopologicalSpace.Compacts (extChartAt I x).target} {y : M} :
+    y ∈ U.chartPieceInterior x K ↔ ∃ hy : y ∈ U, ∃ hs : (⟨y, hy⟩ : U) ∈ (extChartAt I x).source,
+      (⟨extChartAt I x ⟨y, hy⟩, (extChartAt I x).map_source hs⟩ : (extChartAt I x).target) ∈
+        interior (K : Set (extChartAt I x).target) := by
+  constructor
+  · rintro ⟨w, ⟨hw, hwK⟩, rfl⟩
+    exact ⟨w.2, hw, hwK⟩
+  · rintro ⟨hy, hs, hK⟩
+    exact ⟨⟨y, hy⟩, ⟨hs, hK⟩, rfl⟩
+
+/-- The points of `U` with coordinates in the relative interior of a piece lie in `U`. -/
+theorem _root_.TopologicalSpace.Opens.chartPieceInterior_le (U : TopologicalSpace.Opens M) (x : U)
+    (K : TopologicalSpace.Compacts (extChartAt I x).target) : U.chartPieceInterior x K ≤ U := by
+  rintro _ ⟨w, -, rfl⟩
+  exact w.2
+
+/-- Compact pieces `K i` of the extended chart targets of open subsets `U i` of `M`, at points
+`c i`, form a *compact chart cover* when their relative interiors cover `M`: every point of `M`
+lies in some `U i` with coordinates in the relative interior of `K i`. -/
+abbrev IsCompactChartCover {ι : Type*} (U : ι → TopologicalSpace.Opens M) (c : ∀ i, U i)
+    (K : ∀ i, TopologicalSpace.Compacts (extChartAt I (c i)).target) : Prop :=
+  ∀ y : M, ∃ i, y ∈ (U i).chartPieceInterior (c i) (K i)
+
+/-- The open subsets of a compact chart cover cover the manifold. -/
+theorem IsCompactChartCover.exists_mem {ι : Type*} {U : ι → TopologicalSpace.Opens M}
+    {c : ∀ i, U i} {K : ∀ i, TopologicalSpace.Compacts (extChartAt I (c i)).target}
+    (hK : IsCompactChartCover U c K) (y : M) : ∃ i, y ∈ U i :=
+  let ⟨i, hi⟩ := hK y
+  ⟨i, (U i).chartPieceInterior_le (c i) (K i) hi⟩
+
+/-- On a compact manifold modelled on a locally compact space, every open cover has a finite
+compact chart cover subordinate to it: finitely many compact pieces of extended chart targets of
+its members whose relative interiors cover the manifold. -/
+theorem exists_finite_compact_chart_cover_subordinate [CompactSpace M] [LocallyCompactSpace E]
+    {ι : Type*} (U : ι → TopologicalSpace.Opens M) (hcover : ∀ y : M, ∃ i, y ∈ U i) :
+    ∃ (t : Finset M) (r : t → ι) (c : ∀ j, U (r j))
+      (K : ∀ j, TopologicalSpace.Compacts (extChartAt I (c j)).target),
+      IsCompactChartCover (fun j ↦ U (r j)) c K := by
+  choose i hi using hcover
+  let c₀ (y : M) : ↥(U (i y)) := ⟨y, hi y⟩
+  -- A compact neighbourhood of the coordinates of `y` in the chart of `U (i y)` at `y`.
+  have hK (y : M) : ∃ K : TopologicalSpace.Compacts (extChartAt I (c₀ y)).target,
+      (⟨extChartAt I (c₀ y) (c₀ y), (extChartAt I (c₀ y)).map_source (mem_extChartAt_source _)⟩ :
+        (extChartAt I (c₀ y)).target) ∈ interior (K : Set (extChartAt I (c₀ y)).target) :=
+    let ⟨K, hK, hmem⟩ := exists_compact_mem_nhds
+      (⟨extChartAt I (c₀ y) (c₀ y), (extChartAt I (c₀ y)).map_source (mem_extChartAt_source _)⟩ :
+        (extChartAt I (c₀ y)).target)
+    ⟨⟨K, hK⟩, mem_interior_iff_mem_nhds.mpr hmem⟩
+  choose K₀ hyK₀ using hK
+  have hyO (y : M) : y ∈ (U (i y)).chartPieceInterior (c₀ y) (K₀ y) :=
+    TopologicalSpace.Opens.mem_chartPieceInterior.mpr ⟨hi y, mem_extChartAt_source _, hyK₀ y⟩
+  obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover
+    (fun y ↦ ((U (i y)).chartPieceInterior (c₀ y) (K₀ y) : Set M))
+    (fun y ↦ TopologicalSpace.Opens.isOpen _) fun y _ ↦ Set.mem_iUnion.mpr ⟨y, hyO y⟩
+  refine ⟨t, fun j ↦ i j, fun j ↦ c₀ j, fun j ↦ K₀ j, fun y ↦ ?_⟩
+  obtain ⟨z, hzt, hyz⟩ := Set.mem_iUnion₂.mp (ht (Set.mem_univ y))
+  exact ⟨⟨z, hzt⟩, hyz⟩
+
 /-- A *compact chart atlas* of `M`: finitely many points `center i` of `M` with compact subsets
 `piece i` of the extended chart targets at them, whose relative interiors cover `M`. Every compact
 manifold modelled on a locally compact space has one (`TauCeti.CompactChartAtlas.instNonempty`). -/
@@ -903,6 +977,15 @@ theorem extChartAt_target_subset (U : Opens M) (x : U) :
   intro z hz
   simp only [extChartAt, OpenPartialHomeomorph.extend_target] at hz ⊢
   exact ⟨(chartAt H (x : M)).subtypeRestr_target_subset ⟨x⟩ hz.1, hz.2⟩
+
+/-- For nested open subsets `W ≤ U`, the extended chart of `W` at a point has its target inside
+the target of the extended chart of `U` at the same point. -/
+theorem extChartAt_target_subset_of_le {U W : Opens M} (hWU : W ≤ U) (x : W) :
+    (extChartAt I x).target ⊆ (extChartAt I (Opens.inclusion hWU x)).target := by
+  intro z hz
+  rw [W.extChartAt_target_eq x] at hz
+  rw [U.extChartAt_target_eq]
+  exact ⟨hz.1, hWU hz.2⟩
 
 /-- On the inherited chart target, the inverse extended chart followed by inclusion is the
 ambient inverse extended chart. -/

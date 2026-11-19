@@ -268,36 +268,40 @@ theorem continuous_iff_forall_continuous_restrict [IsManifold I n M] [LocallyCom
 
 /-! ### Compact chart seminorms and the strong Whitney topology -/
 
+/-- Two maps whose chart derivatives at `x` and `y` agree along an inclusion of chart targets
+have the same compact chart `C^k` seminorms on `K` and on its image under the inclusion. -/
+private theorem chartCkSeminorm_eq_map_of_chartIteratedFDeriv_eq [IsManifold I n M] {M' : Type*}
+    [TopologicalSpace M'] [ChartedSpace H M'] [IsManifold I n M'] (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯)
+    (g : C^n⟮I, M'; 𝓘(𝕜, F), F⟯) (x : M) {y : M'}
+    (hxy : (extChartAt I x).target ⊆ (extChartAt I y).target)
+    (K : Compacts (extChartAt I x).target) (k : ℕ) (hk : k ≤ n)
+    (h : ∀ (m : ℕ) (hm : m ≤ n) (z : (extChartAt I x).target),
+      chartIteratedFDeriv f x m hm z = chartIteratedFDeriv g y m hm ⟨z, hxy z.2⟩) :
+    chartCkSeminorm x K k hk f =
+      chartCkSeminorm y (K.map (inclusion hxy) (continuous_inclusion _)) k hk g := by
+  apply le_antisymm
+  · refine (chartCkSeminorm_le_iff _ _ _ _ _ (apply_nonneg _ _)).mpr fun m hm z hz ↦ ?_
+    rw [h]
+    refine (chartCkSeminorm_le_iff _ _ _ _ _ (apply_nonneg _ _)).mp le_rfl m hm _ ?_
+    rw [← SetLike.mem_coe, Compacts.coe_map]
+    exact ⟨z, hz, rfl⟩
+  · refine (chartCkSeminorm_le_iff _ _ _ _ _ (apply_nonneg _ _)).mpr ?_
+    rintro m hm _ ⟨z, hz, rfl⟩
+    have h' := (chartCkSeminorm_le_iff x K k hk f (apply_nonneg _ _)).mp le_rfl m hm z hz
+    rwa [h] at h'
+
 /-- A compact chart `C^k` seminorm of a restriction is the ambient seminorm on the same coordinate
 set, read in the ambient chart at the same point. -/
 theorem chartCkSeminorm_restrict [IsManifold I n M] (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (U : Opens M)
     (x : U) (K : Compacts (extChartAt I x).target) (k : ℕ) (hk : k ≤ n) :
     chartCkSeminorm x K k hk (f.restrict U) =
       chartCkSeminorm (x : M)
-        (K.map (inclusion (U.extChartAt_target_subset x)) (continuous_inclusion _)) k hk f := by
-  apply le_antisymm
-  · refine (chartCkSeminorm_le_iff _ _ _ _ _ (apply_nonneg _ _)).mpr fun m hm z hz ↦ ?_
-    rw [chartIteratedFDeriv_restrict_apply]
-    refine (chartCkSeminorm_le_iff _ _ _ _ _ (apply_nonneg _ _)).mp le_rfl m hm _ ?_
-    rw [← SetLike.mem_coe, Compacts.coe_map]
-    exact ⟨z, hz, rfl⟩
-  · refine (chartCkSeminorm_le_iff _ _ _ _ _ (apply_nonneg _ _)).mpr ?_
-    rintro m hm _ ⟨z, hz, rfl⟩
-    have h := (chartCkSeminorm_le_iff x K k hk (f.restrict U) (apply_nonneg _ _)).mp le_rfl
-      m hm z hz
-    rwa [chartIteratedFDeriv_restrict_apply] at h
+        (K.map (inclusion (U.extChartAt_target_subset x)) (continuous_inclusion _)) k hk f :=
+  chartCkSeminorm_eq_map_of_chartIteratedFDeriv_eq (f.restrict U) f x
+    (U.extChartAt_target_subset x) K k hk
+    fun m hm z ↦ chartIteratedFDeriv_restrict_apply f U x m hm z
 
 /-! ### Nested open subsets -/
-
-/-- For nested open subsets `W ≤ U`, the extended chart of `W` at a point has its target inside
-the target of the extended chart of `U` at the same point. -/
-theorem _root_.TopologicalSpace.Opens.extChartAt_target_subset_of_le {U W : Opens M}
-    (hWU : W ≤ U) (x : W) :
-    (extChartAt I x).target ⊆ (extChartAt I (Opens.inclusion hWU x)).target := by
-  intro z hz
-  rw [W.extChartAt_target_eq x] at hz
-  rw [U.extChartAt_target_eq]
-  exact ⟨hz.1, hWU hz.2⟩
 
 /-- For nested open subsets `W ≤ U`, precomposition with the inclusion of `W` into `U` preserves
 the coordinate derivatives in inherited charts. -/
@@ -313,6 +317,8 @@ theorem chartIteratedFDeriv_comp_inclusion_apply [IsManifold I n M] {U W : Opens
   have hW : g' ∘ Subtype.val = g.comp ⟨Opens.inclusion hWU, contMDiff_inclusion hWU⟩ := by
     funext y
     simp only [Function.comp_apply, g', hWU y.2, ↓reduceDIte]
+    -- The inclusion is elaborated as a bare subtype element, so `ContMDiffMap.comp_apply` does
+    -- not match it; both sides are `g` at the point `y` of `U`, by unfolding the composition.
     rfl
   have hU : g' ∘ Subtype.val = g := by
     funext y
@@ -334,19 +340,10 @@ theorem chartCkSeminorm_comp_inclusion [IsManifold I n M] {U W : Opens M} (hWU :
     chartCkSeminorm x K k hk (g.comp ⟨Opens.inclusion hWU, contMDiff_inclusion hWU⟩) =
       chartCkSeminorm (Opens.inclusion hWU x)
         (K.map (inclusion (U.extChartAt_target_subset_of_le hWU x)) (continuous_inclusion _))
-        k hk g := by
-  apply le_antisymm
-  · refine (chartCkSeminorm_le_iff _ _ _ _ _ (apply_nonneg _ _)).mpr fun m hm z hz ↦ ?_
-    rw [chartIteratedFDeriv_comp_inclusion_apply]
-    refine (chartCkSeminorm_le_iff _ _ _ _ _ (apply_nonneg _ _)).mp le_rfl m hm _ ?_
-    rw [← SetLike.mem_coe, Compacts.coe_map]
-    exact ⟨z, hz, rfl⟩
-  · refine (chartCkSeminorm_le_iff _ _ _ _ _ (apply_nonneg _ _)).mpr ?_
-    rintro m hm _ ⟨z, hz, rfl⟩
-    have h := (chartCkSeminorm_le_iff x K k hk
-      (g.comp ⟨Opens.inclusion hWU, contMDiff_inclusion hWU⟩) (apply_nonneg _ _)).mp le_rfl
-      m hm z hz
-    rwa [chartIteratedFDeriv_comp_inclusion_apply] at h
+        k hk g :=
+  chartCkSeminorm_eq_map_of_chartIteratedFDeriv_eq _ g x
+    (U.extChartAt_target_subset_of_le hWU x) K k hk
+    fun m hm z ↦ chartIteratedFDeriv_comp_inclusion_apply hWU g x m hm z
 
 namespace StrongCkControl
 

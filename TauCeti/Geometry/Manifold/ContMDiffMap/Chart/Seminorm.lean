@@ -137,6 +137,16 @@ theorem chartCkSeminorm_le_iff (x : M)
     exact Seminorm.finset_sup_apply_le hr fun m _ ↦
       (chartDerivativeSeminorm_le_iff x K m _ f hr).mpr (h m (by omega))
 
+/-- Each coordinate derivative seminorm of order at most `k` is bounded by the compact chart `C^k`
+seminorm. -/
+theorem chartDerivativeSeminorm_le_chartCkSeminorm (x : M)
+    (K : TopologicalSpace.Compacts (extChartAt I x).target) {m k : ℕ} (hmk : m ≤ k)
+    (hk : k ≤ n) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
+    chartDerivativeSeminorm x K m ((Nat.cast_le.mpr hmk).trans hk) f ≤
+      chartCkSeminorm x K k hk f :=
+  (chartDerivativeSeminorm_le_iff x K m _ f (apply_nonneg _ _)).mpr
+    ((chartCkSeminorm_le_iff x K k hk f (apply_nonneg _ _)).mp le_rfl m hmk)
+
 /-- Raising the derivative order can only increase the compact chart `C^k` seminorm. -/
 theorem chartCkSeminorm_le_of_le (x : M)
     (K : TopologicalSpace.Compacts (extChartAt I x).target) {k l : ℕ} (hkl : k ≤ l)

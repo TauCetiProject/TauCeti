@@ -17,14 +17,15 @@ Let `V` be a smooth vector bundle with model fibre `F` over a manifold `M`, and 
 number. A *finite frame atlas* is a finite family of smooth frames `e i` with frame domains
 `U i`, together with, for each `i`, a point `c i` of `U i` and a compact subset `K i` of the
 extended chart target of the open submanifold `U i` at `c i`, such that every point of `M` has
-coordinates in the relative interior of some `K i`. Its `C^k` seminorm
-(`ContMDiffSection.frameAtlasSeminorm`) is the largest coordinate derivative of order at most `k`
-of the frame coefficients of a section on the pieces `K i`.
+coordinates in the relative interior of some `K i` (`TauCeti.IsCompactChartCover`). Its `C^k`
+seminorm (`ContMDiffSection.frameAtlasSeminorm`) is the largest coordinate derivative of order at
+most `k` of the frame coefficients of a section on the pieces `K i`.
 
 On `C^k` sections this seminorm generates the compact derivative topology
 `ContMDiffSection.frameTopology` of the frames
 (`ContMDiffSection.withSeminorms_frameAtlasSeminorm`). To see this, the frame domains are refined
-to the open sets of points with coordinates in the relative interior of a piece. The refined frames
+to the open sets of points with coordinates in the relative interior of a piece
+(`TopologicalSpace.Opens.chartPieceInterior`). The refined frames
 give the same topology (`ContMDiffSection.frameTopology_eq_of_covers`), and on them every compact
 chart derivative of the coefficients is bounded, through a change of charts, by the derivatives on
 the piece (`ContMDiffSection.exists_chartDerivativeSeminorm_le_frameAtlasSeminorm`). Two finite
@@ -57,9 +58,10 @@ The structures are definitions rather than instances, since they depend on the c
   generates the frame topology on `C^k` sections.
 * `ContMDiffSection.exists_frameAtlasSeminorm_le`: the norms of two finite frame atlases are
   equivalent.
-* `ContMDiffSection.isNormableSpace_frameTopology`: over a compact manifold the `C^k` sections
-  form a normable space.
-* `ContMDiffSection.completeSpace_frameAtlas`: the normed space of `C^k` sections is complete.
+* `ContMDiffSection.isNormableSpace_frameTopology`: over a compact manifold modelled on a locally
+  compact space, the `C^k` sections form a normable space for any covering frame system.
+* `ContMDiffSection.completeSpace_frameAtlas`: over a boundaryless manifold, with complete model
+  fibre and `𝕜 = ℝ` or `ℂ`, the normed space of `C^k` sections is complete.
 
 ## References
 
@@ -74,49 +76,6 @@ noncomputable section
 
 open Bundle Set Filter Topology TopologicalSpace
 open scoped ContDiff Manifold NNReal TauCeti.ManifoldWeakWhitney
-
-namespace TauCeti
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
-/-- On a compact manifold modelled on a locally compact space, every open cover is refined by the
-relative interiors of finitely many compact subsets of extended chart targets of its members. -/
-theorem exists_finite_compact_chart_cover_subordinate [CompactSpace M] [LocallyCompactSpace E]
-    {ι : Type*} (U : ι → Opens M) (hcover : ∀ y : M, ∃ i, y ∈ U i) :
-    ∃ (t : Finset M) (r : t → ι) (c : ∀ j, U (r j))
-      (K : ∀ j, Compacts (extChartAt I (c j)).target),
-      ∀ y : M, ∃ j, ∃ hy : y ∈ U (r j), ∃ hs : (⟨y, hy⟩ : U (r j)) ∈ (extChartAt I (c j)).source,
-        (⟨extChartAt I (c j) ⟨y, hy⟩, (extChartAt I (c j)).map_source hs⟩ :
-          (extChartAt I (c j)).target) ∈ interior (K j : Set (extChartAt I (c j)).target) := by
-  choose i hi using hcover
-  let c₀ (y : M) : ↥(U (i y)) := ⟨y, hi y⟩
-  -- A compact neighbourhood of the coordinates of `y` in the chart of `U (i y)` at `y`.
-  have hK (y : M) : ∃ K : Set (extChartAt I (c₀ y)).target, IsCompact K ∧
-      (⟨extChartAt I (c₀ y) (c₀ y), (extChartAt I (c₀ y)).map_source (mem_extChartAt_source _)⟩ :
-        (extChartAt I (c₀ y)).target) ∈ interior K :=
-    let ⟨K, hK, hmem⟩ := exists_compact_mem_nhds
-      (⟨extChartAt I (c₀ y) (c₀ y), (extChartAt I (c₀ y)).map_source (mem_extChartAt_source _)⟩ :
-        (extChartAt I (c₀ y)).target)
-    ⟨K, hK, mem_interior_iff_mem_nhds.mpr hmem⟩
-  choose K₀ hK₀ hyK₀ using hK
-  -- The points with coordinates in the relative interior of the piece at `y`.
-  let O (y : M) : Set M := Subtype.val '' {w : ↥(U (i y)) | ∃ hw : w ∈ (extChartAt I (c₀ y)).source,
-    (⟨extChartAt I (c₀ y) w, (extChartAt I (c₀ y)).map_source hw⟩ :
-      (extChartAt I (c₀ y)).target) ∈ interior (K₀ y)}
-  have hO (y : M) : IsOpen (O y) :=
-    (U (i y)).isOpenEmbedding'.isOpenMap _ (isOpen_setOf_extChartAt_mem _ isOpen_interior)
-  have hyO (y : M) : y ∈ O y := ⟨c₀ y, ⟨mem_extChartAt_source _, hyK₀ y⟩, rfl⟩
-  obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover O hO
-    fun y _ ↦ mem_iUnion.mpr ⟨y, hyO y⟩
-  refine ⟨t, fun j ↦ i j, fun j ↦ c₀ j, fun j ↦ ⟨K₀ j, hK₀ j⟩, fun y ↦ ?_⟩
-  obtain ⟨z, hzt, hyz⟩ := mem_iUnion₂.mp (ht (mem_univ y))
-  obtain ⟨w, ⟨hw, hwK⟩, rfl⟩ := hyz
-  exact ⟨⟨z, hzt⟩, w.2, hw, hwK⟩
-
-end TauCeti
 
 namespace ContMDiffSection
 
@@ -141,19 +100,31 @@ variable {n : ℕ∞ω} [ContMDiffVectorBundle n F V I] [IsManifold I n M]
 `k` of the coefficients of a section in the frame `e i`, read in the chart of the frame domain
 `U i` at `c i`, on the compact coordinate piece `K i`. -/
 def frameAtlasSeminorm (k : ℕ) (hk : k ≤ n) : Seminorm 𝕜 Cₛ^n⟮I; F, V⟯ :=
-  Finset.univ.sup fun i ↦
-    (ContMDiffMap.chartCkSeminorm (c i) (K i) k hk).comp ((e i).frameCoordinates (hU i))
+  Finset.univ.sup fun i ↦ (e i).chartCkSeminorm (hU i) (c i) (K i) k hk
 
-/-- Each compact chart seminorm of the frame coefficients in a finite frame atlas is bounded by the
-seminorm of the atlas. -/
-theorem chartCkSeminorm_frameCoordinates_le_frameAtlasSeminorm (k : ℕ) (hk : k ≤ n) (i : ι)
+/-- Each compact frame `C^k` seminorm of a finite frame atlas is bounded by the seminorm of the
+atlas. -/
+theorem chartCkSeminorm_le_frameAtlasSeminorm (k : ℕ) (hk : k ≤ n) (i : ι)
     (s : Cₛ^n⟮I; F, V⟯) :
-    ContMDiffMap.chartCkSeminorm (c i) (K i) k hk ((e i).frameCoordinates (hU i) s) ≤
-      frameAtlasSeminorm e U hU c K k hk s := by
-  rw [frameAtlasSeminorm]
-  exact Seminorm.le_finset_sup_apply (p := fun j ↦
-    (ContMDiffMap.chartCkSeminorm (c j) (K j) k hk).comp
-      ((e j).frameCoordinates (I := I) (n := n) (hU j))) (Finset.mem_univ i)
+    (e i).chartCkSeminorm (hU i) (c i) (K i) k hk s ≤ frameAtlasSeminorm e U hU c K k hk s :=
+  Seminorm.le_finset_sup_apply (p := fun j ↦ (e j).chartCkSeminorm (hU j) (c j) (K j) k hk)
+    (Finset.mem_univ i)
+
+/-- A nonnegative bound on the seminorm of a finite frame atlas is exactly a bound on every
+coordinate derivative of order at most `k` of the frame coefficients on every piece. -/
+theorem frameAtlasSeminorm_le_iff (k : ℕ) (hk : k ≤ n) (s : Cₛ^n⟮I; F, V⟯) {r : ℝ}
+    (hr : 0 ≤ r) :
+    frameAtlasSeminorm e U hU c K k hk s ≤ r ↔
+      ∀ i (m : ℕ) (hm : m ≤ k), ∀ z ∈ K i,
+        ‖ContMDiffMap.chartIteratedFDeriv ((e i).frameCoordinates (hU i) s) (c i) m
+          ((Nat.cast_le.mpr hm).trans hk) z‖ ≤ r := by
+  constructor
+  · intro h i
+    exact ((e i).chartCkSeminorm_le_iff (hU i) (c i) (K i) k hk s hr).mp
+      ((chartCkSeminorm_le_frameAtlasSeminorm e U hU c K k hk i s).trans h)
+  · intro h
+    exact Seminorm.finset_sup_apply_le hr fun i _ ↦
+      ((e i).chartCkSeminorm_le_iff (hU i) (c i) (K i) k hk s hr).mpr (h i)
 
 /-- The seminorm of a finite frame atlas is continuous for the frame topology. -/
 theorem continuous_frameAtlasSeminorm (k : ℕ) (hk : k ≤ n) :
@@ -162,29 +133,11 @@ theorem continuous_frameAtlasSeminorm (k : ℕ) (hk : k ≤ n) :
   let _ := frameTopology (I := I) (n := n) e U hU
   have := isTopologicalAddGroup_frameTopology (I := I) (n := n) e U hU
   exact Seminorm.continuous_finsetSup fun i _ ↦
-    (ContMDiffMap.continuous_chartCkSeminorm (c i) (K i) k hk).comp
-      (continuous_frameCoordinates e U hU i)
+    continuous_chartCkSeminorm e U hU i (c i) (K i) k hk
 
 end Seminorm
 
 variable {k : ℕ} [ContMDiffVectorBundle k F V I] [IsManifold I k M]
-
-/-- The covering condition of a finite frame atlas: every point of `M` lies in some frame domain
-`U i` and has coordinates in the relative interior of the piece `K i`. -/
-abbrev IsFrameAtlasCover : Prop :=
-  ∀ y : M, ∃ i, ∃ hy : y ∈ U i, ∃ hs : (⟨y, hy⟩ : U i) ∈ (extChartAt I (c i)).source,
-    (⟨extChartAt I (c i) ⟨y, hy⟩, (extChartAt I (c i)).map_source hs⟩ :
-      (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target)
-
-variable {U c K}
-
-omit [Fintype ι] in
-/-- The frame domains of a finite frame atlas cover the manifold. -/
-theorem IsFrameAtlasCover.exists_mem (hK : IsFrameAtlasCover U c K) (y : M) : ∃ i, y ∈ U i :=
-  let ⟨i, hy, _⟩ := hK y
-  ⟨i, hy⟩
-
-variable (U c K)
 
 /-- On an open subset `W` of a frame domain `U i` all of whose points have coordinates in the
 piece `K i`, every compact chart derivative seminorm of the coefficients in the frame `e i` is
@@ -224,35 +177,27 @@ theorem exists_chartDerivativeSeminorm_le_frameAtlasSeminorm (i : ι) {W : Opens
       ((e i).frameCoordinates_apply (hU i) s (Opens.inclusion hWU y)).symm
   have hderiv : (e i).chartDerivativeSeminorm (fun _ hy ↦ hU i (hWU hy)) x L m hm s ≤
       ContMDiffMap.chartCkSeminorm x L k le_rfl
-        ((e i).frameCoordinates (fun _ hy ↦ hU i (hWU hy)) s) := by
-    have hmk : m ≤ k := by exact_mod_cast hm
-    refine ((e i).chartDerivativeSeminorm_le_iff _ x L m hm s
-      (apply_nonneg _ _)).mpr fun z hz ↦ ?_
-    exact (ContMDiffMap.chartCkSeminorm_le_iff x L k le_rfl _ (apply_nonneg _ _)).mp le_rfl
-      m hmk z hz
+        ((e i).frameCoordinates (fun _ hy ↦ hU i (hWU hy)) s) :=
+    ((e i).chartDerivativeSeminorm_apply _ x L m hm s).trans_le
+      ((ContMDiffMap.chartDerivativeSeminorm_apply x L m hm _).symm.trans_le
+        (ContMDiffMap.chartDerivativeSeminorm_le_chartCkSeminorm x L (by exact_mod_cast hm)
+          le_rfl _))
   rw [hcoe, ContMDiffMap.chartCkSeminorm_comp_inclusion] at hderiv
   exact hderiv.trans ((hC _).trans (mul_le_mul_of_nonneg_left
-    (chartCkSeminorm_frameCoordinates_le_frameAtlasSeminorm e U hU c K k le_rfl i s) hCpos.le))
+    (((e i).chartCkSeminorm_apply (hU i) (c i) (K i) k le_rfl s).symm.trans_le
+      (chartCkSeminorm_le_frameAtlasSeminorm e U hU c K k le_rfl i s)) hCpos.le))
 
 /-- **The seminorm of a finite frame atlas generates the frame topology** on `C^k` sections. -/
-theorem withSeminorms_frameAtlasSeminorm [LocallyCompactSpace E] (hK : IsFrameAtlasCover U c K) :
+theorem withSeminorms_frameAtlasSeminorm [LocallyCompactSpace E]
+    (hK : TauCeti.IsCompactChartCover U c K) :
     let _ := frameTopology (I := I) (n := k) e U hU
     WithSeminorms fun _ : Unit ↦ frameAtlasSeminorm e U hU c K k le_rfl := by
   -- The frame domains refined to the points with coordinates in the interior of a piece. They
   -- give the same topology, and their frame seminorms are bounded by the atlas seminorm.
-  let O (i : ι) : Set ↥(U i) := {w | ∃ hw : w ∈ (extChartAt I (c i)).source,
-    (⟨extChartAt I (c i) w, (extChartAt I (c i)).map_source hw⟩ :
-      (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target)}
-  let W (i : ι) : Opens M := ⟨Subtype.val '' O i,
-    (U i).isOpenEmbedding'.isOpenMap _ (TauCeti.isOpen_setOf_extChartAt_mem _ isOpen_interior)⟩
-  have hWU (i : ι) : W i ≤ U i := by
-    rintro _ ⟨w, -, rfl⟩
-    exact w.2
+  let W (i : ι) : Opens M := (U i).chartPieceInterior (c i) (K i)
+  have hWU (i : ι) : W i ≤ U i := (U i).chartPieceInterior_le (c i) (K i)
   have hW (i : ι) : (W i : Set M) ⊆ (e i).baseSet := fun _ hy ↦ hU i (hWU i hy)
-  have hcoverW : ∀ y : M, ∃ i, y ∈ W i := fun y ↦
-    let ⟨i, hy, hs, hint⟩ := hK y
-    ⟨i, ⟨y, hy⟩, ⟨hs, hint⟩, rfl⟩
-  have htop := frameTopology_eq_of_covers (I := I) (n := k) e U hU hK.exists_mem e W hW hcoverW
+  have htop := frameTopology_eq_of_covers (I := I) (n := k) e U hU hK.exists_mem e W hW hK
   rw [htop]
   let _ := frameTopology (I := I) (n := k) e W hW
   have hp := withSeminorms_frameSeminormFamily (I := I) (n := k) e W hW
@@ -265,13 +210,15 @@ theorem withSeminorms_frameAtlasSeminorm [LocallyCompactSpace E] (hK : IsFrameAt
     exact ⟨s, C, by simpa only [Seminorm.comp_id] using hbound⟩
   · rintro ⟨i, x, ⟨m, hm⟩, L⟩
     obtain ⟨C, -, hC⟩ := exists_chartDerivativeSeminorm_le_frameAtlasSeminorm e U hU c K i
-      (hWU i) (fun ⟨_, w, hw, hwy⟩ ↦ by subst hwy; exact ⟨hw.1, interior_subset hw.2⟩) x L m hm
+      (hWU i) (fun ⟨_, hy⟩ ↦
+        let ⟨_, hs, hint⟩ := Opens.mem_chartPieceInterior.mp hy
+        ⟨hs, interior_subset hint⟩) x L m hm
     refine ⟨{()}, C, fun s ↦ ?_⟩
     simpa only [LinearMap.id_apply, frameSeminormFamily_apply, Finset.sup_singleton] using hC s
 
 /-- **The seminorm of a finite frame atlas is a norm** on `C^k` sections. -/
-theorem frameAtlasSeminorm_eq_zero_iff [LocallyCompactSpace E] (hK : IsFrameAtlasCover U c K)
-    (s : Cₛ^k⟮I; F, V⟯) :
+theorem frameAtlasSeminorm_eq_zero_iff [LocallyCompactSpace E]
+    (hK : TauCeti.IsCompactChartCover U c K) (s : Cₛ^k⟮I; F, V⟯) :
     frameAtlasSeminorm e U hU c K k le_rfl s = 0 ↔ s = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ map_zero _⟩
   let _ := frameTopology (I := I) (n := k) e U hU
@@ -282,12 +229,13 @@ theorem frameAtlasSeminorm_eq_zero_iff [LocallyCompactSpace E] (hK : IsFrameAtla
 
 /-- **Equivalence of the norms of finite frame atlases.** The seminorm of a finite frame atlas is
 bounded by a positive multiple of that of any other, possibly for another frame system. -/
-theorem exists_frameAtlasSeminorm_le [LocallyCompactSpace E] (hK : IsFrameAtlasCover U c K)
+theorem exists_frameAtlasSeminorm_le [LocallyCompactSpace E]
+    (hK : TauCeti.IsCompactChartCover U c K)
     {ι' : Type*} [Fintype ι'] (e' : ι' → Trivialization F (π F V))
     [∀ i, MemTrivializationAtlas (e' i)]
     {U' : ι' → Opens M} (hU' : ∀ i, (U' i : Set M) ⊆ (e' i).baseSet)
     {c' : ∀ i, U' i} {K' : ∀ i, Compacts (extChartAt I (c' i)).target}
-    (hK' : IsFrameAtlasCover U' c' K') :
+    (hK' : TauCeti.IsCompactChartCover U' c' K') :
     ∃ C : ℝ, 0 < C ∧ ∀ s : Cₛ^k⟮I; F, V⟯,
       frameAtlasSeminorm e' U' hU' c' K' k le_rfl s ≤
         C * frameAtlasSeminorm e U hU c K k le_rfl s := by
@@ -311,16 +259,15 @@ theorem isNormableSpace_frameTopology [CompactSpace M] [LocallyCompactSpace E]
     let _ := frameTopology (I := I) (n := k) e U hU
     IsNormableSpace 𝕜 Cₛ^k⟮I; F, V⟯ := by
   obtain ⟨t, r, c, K, hK⟩ := TauCeti.exists_finite_compact_chart_cover_subordinate (I := I) U hcover
-  have hK' : IsFrameAtlasCover (fun j ↦ U (r j)) c K := hK
   rw [frameTopology_eq_of_covers e U hU hcover (fun j ↦ e (r j)) (fun j ↦ U (r j))
-    (fun j ↦ hU (r j)) hK'.exists_mem]
+    (fun j ↦ hU (r j)) hK.exists_mem]
   intro _
   exact ⟨⟨_, withSeminorms_frameAtlasSeminorm (fun j ↦ e (r j)) (fun j ↦ U (r j))
-    (fun j ↦ hU (r j)) c K hK'⟩⟩
+    (fun j ↦ hU (r j)) c K hK⟩⟩
 
 section Normed
 
-variable [LocallyCompactSpace E] (k) (hK : IsFrameAtlasCover U c K)
+variable [LocallyCompactSpace E] (k) (hK : TauCeti.IsCompactChartCover U c K)
 
 include hK in
 /-- The normed group of `C^k` sections with the norm of a finite frame atlas. Its topology is the
