@@ -277,21 +277,21 @@ def localOrientationOfZeroDimChart {M E : Type w} [TopologicalSpace M] [T2Space 
 
 /-- The positive local orientation of a zero-dimensional chart is the actual relative point
 class of the original point. In particular the chart contributes no additional sign. -/
-theorem _root_.OpenPartialHomeomorph.localOrientationOfZeroDimChart_coe
+@[simp]
+theorem localOrientationOfZeroDimChart_coe
     {M E : Type w} [TopologicalSpace M] [T2Space M]
     [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     (φ : OpenPartialHomeomorph M E) {x : M} (hx : x ∈ φ.source) (hE : finrank ℝ E = 0) :
     (localOrientationOfZeroDimChart φ hx hE).val =
-      (singularHomology₀Section (ModuleCat.of ℤ (ULift.{w} ℤ)) (X := TopCat.of M) x ≫
-        (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularHomologyπ
-          (ModuleCat.of ℤ (ULift.{w} ℤ)) 0) (1 : ULift.{w} ℤ) := by
+      localHomologyPointClass (ModuleCat.of ℤ (ULift.{w} ℤ)) {x} x 1 := by
+  rw [localHomologyPointClass_def]
   exact congrArg (fun f ↦ f (1 : ULift.{w} ℤ))
     (singularHomologyComplSingletonIsoOfFinrankEqZero_inv_eq_pointClass
       (ModuleCat.of ℤ (ULift.{w} ℤ)) φ hx hE)
 
 /-- Zero-dimensional charts, even in different real normed models, select the same positive
 local point class. -/
-theorem _root_.OpenPartialHomeomorph.localOrientationOfZeroDimChart_eq
+theorem localOrientationOfZeroDimChart_eq
     {M E F : Type w} [TopologicalSpace M] [T2Space M]
     [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
@@ -299,8 +299,8 @@ theorem _root_.OpenPartialHomeomorph.localOrientationOfZeroDimChart_eq
     (hx : x ∈ φ.source) (hx' : x ∈ ψ.source) (hE : finrank ℝ E = 0) (hF : finrank ℝ F = 0) :
     localOrientationOfZeroDimChart φ hx hE = localOrientationOfZeroDimChart ψ hx' hF := by
   apply Subtype.ext
-  rw [OpenPartialHomeomorph.localOrientationOfZeroDimChart_coe,
-    OpenPartialHomeomorph.localOrientationOfZeroDimChart_coe]
+  rw [localOrientationOfZeroDimChart_coe,
+    localOrientationOfZeroDimChart_coe]
 
 /-- Every point of a zero-dimensional finite-dimensional charted space has a local orientation. -/
 theorem exists_localOrientation_of_zero_dim_chart {M E : Type w} [TopologicalSpace M]

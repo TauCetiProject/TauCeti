@@ -72,7 +72,7 @@ theorem localOrientationOfZeroDim_coe (o : Manifold.Orientation I M (Fin 0)) (x 
   unfold localOrientationOfZeroDim
   split_ifs <;>
     simp only [LocalOrientation.coe_neg,
-      OpenPartialHomeomorph.localOrientationOfZeroDimChart_coe, localHomologyPointClass_def]
+      localOrientationOfZeroDimChart_coe]
 
 open Classical in
 /-- In every zero-dimensional chart, the selected local orientation is the chart's actual point
@@ -84,7 +84,7 @@ theorem localOrientationOfZeroDim_eq_ite {F : Type w} [NormedAddCommGroup F]
       localOrientationOfZeroDimChart φ hx hF else -localOrientationOfZeroDimChart φ hx hF := by
   classical
   have hE : finrank ℝ E = 0 := o.finrank_eq_zero
-  have hz := OpenPartialHomeomorph.localOrientationOfZeroDimChart_eq
+  have hz := localOrientationOfZeroDimChart_eq
     (chartAt E x) φ (mem_chart_source E x) hx hE hF
   unfold localOrientationOfZeroDim
   split_ifs
