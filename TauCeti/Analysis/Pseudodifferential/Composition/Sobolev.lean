@@ -60,17 +60,11 @@ theorem toDistr_quantizeSobolev_sharp {a : Symbol n W U m'} {b : Symbol n V W m}
         (a.sharp b hb).quantizeSobolev (ha.sharp hb) s =
       a.quantizeSobolev ha (s - m) ∘L b.quantizeSobolev hb s := by
     refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun u ↦ ?_
-    -- On a Schwartz function `u`, `Op(b) u` is the test function `w`.
-    set w := (hb.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
-      (b.contDiff_quantizeSchwartzValue u)
-    have hw : b.quantizeSobolev hb s (SchwartzMap.toBesselPotentialSpaceCLM s 2 u) =
-        SchwartzMap.toBesselPotentialSpaceCLM (s - m) 2 w := by
-      refine BesselPotentialSpace.ext ?_
-      ext φ
-      simp [w]
+    -- On a Schwartz function `u`, `Op(b) u` is a compactly supported Schwartz function.
     refine BesselPotentialSpace.ext ?_
     ext φ
-    simp [hw, quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb, w]
+    simp [hb.quantizeSobolev_toBesselPotentialSpaceCLM,
+      quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb]
   simpa using congrArg (fun T ↦ (T u).toDistr) key
 
 /-- **Locality modulo smoothing operators.** Let the symbol `c` with compact spatial support

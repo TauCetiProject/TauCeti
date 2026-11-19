@@ -86,6 +86,18 @@ theorem map {u : R} (hu : IsNormMulUnit u) (φ : R →* S)
   apply (Units.isNormMulUnit_iff_norm_inv (Units.map φ v)).mpr
   exact (hφ _).trans (hv.trans (congrArg (·⁻¹) (hφ _).symm))
 
+/-- If `u : Rˣ` is a multiplicative unit with `‖(u : R)‖ * S₀ = R₀` and `‖a‖ < R₀`, then
+`‖((u⁻¹ : Rˣ) : R) * a‖ < S₀`. -/
+theorem norm_units_inv_mul_lt {u : Rˣ} (hu : IsNormMulUnit (u : R)) {a : R} {S₀ R₀ : ℝ}
+    (ha : ‖a‖ < R₀) (huS : ‖(u : R)‖ * S₀ = R₀) :
+    ‖((u⁻¹ : Rˣ) : R) * a‖ < S₀ := by
+  have hR₀ : 0 < R₀ := (norm_nonneg a).trans_lt ha
+  have hS₀ : 0 < S₀ := pos_of_mul_pos_right (hR₀.trans_eq huS.symm) (norm_nonneg _)
+  have hinv : 0 < ‖((u⁻¹ : Rˣ) : R)‖ :=
+    pos_of_mul_pos_left (hS₀.trans_eq (hu.norm_units_inv_mul_eq hR₀.ne' huS).symm) hR₀.le
+  exact (norm_mul_le _ _).trans_lt <|
+    (mul_lt_mul_of_pos_left ha hinv).trans_eq (hu.norm_units_inv_mul_eq hR₀.ne' huS)
+
 end IsNormMulUnit
 
 end Units

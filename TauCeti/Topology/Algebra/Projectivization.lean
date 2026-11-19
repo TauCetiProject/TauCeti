@@ -62,7 +62,8 @@ of projective space.
   real dimension greater than one, for any division ring `K`.
 * `Projectivization.instPathConnectedSpace`: `ℙ 𝕜 V` is path-connected for a nonzero normed space
   `V` over `ℝ` or `ℂ`.
-* `Projectivization.isOpen_affineOpen`: the standard affine opens are open.
+* `Projectivization.isOpen_affineOpen`: the standard affine opens are open, and
+  `Projectivization.isPreconnected_affineOpen`: over a preconnected field they are preconnected.
 * `Projectivization.affineOpenPartialHomeomorph`: the standard affine chart as an open partial
   homeomorphism from `U_i` onto `Fin n → K`, with
   `Projectivization.isOpenEmbedding_affineChart_symm` showing that its inverse is an open
@@ -333,6 +334,14 @@ theorem continuous_affineChart_symm (i : Fin (n + 1)) :
   rw [funext (affineChart_symm_apply i)]
   exact continuous_mk ((continuous_const (y := (1 : K))).finInsertNth (A := fun _ ↦ K) i
     continuous_id) _
+
+/-- Over a preconnected field, such as `ℝ` or `ℂ`, the standard affine open `U_i` is preconnected:
+it is the image of the affine space `Fin n → K` under the inverse of the affine chart. -/
+theorem isPreconnected_affineOpen [PreconnectedSpace K] (i : Fin (n + 1)) :
+    IsPreconnected (affineOpen (K := K) i) := by
+  rw [← affineChart_source (K := K) i, ← (affineChart i).symm_image_target_eq_source,
+    affineChart_target]
+  exact isPreconnected_univ.image _ (continuous_affineChart_symm i).continuousOn
 
 variable [ContinuousMul K] [ContinuousInv₀ K] [T1Space K]
 
