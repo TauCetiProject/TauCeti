@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.OrdinaryHypergeometric
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.RingTheory.Polynomial.Chebyshev
 public import Mathlib.RingTheory.Polynomial.ShiftedLegendre
 import TauCeti.Algebra.Polynomial.Taylor
@@ -29,8 +28,6 @@ is Mathlib's `ordinaryHypergeometric`.
 
 ## Main results
 
-* `TauCeti.ordinaryHypergeometric_neg_nat_div_two_eq_sum`: a terminating
-  `₂F₁(−n, a; b/2; (1 − x)/2)` as a polynomial in `x − 1`, the common form of 15.9.5 and 15.9.6.
 * `TauCeti.chebyshevT_eq_ordinaryHypergeometric` (DLMF 15.9.5).
 * `TauCeti.chebyshevU_eq_ordinaryHypergeometric` (DLMF 15.9.6).
 * `TauCeti.shiftedLegendre_eval_eq_ordinaryHypergeometric` (DLMF 15.9.7).
@@ -46,7 +43,7 @@ polynomial they are given by `Polynomial.coeff_shiftedLegendre`. The Taylor form
 `TauCeti.ordinaryHypergeometric_neg_nat_eq_sum`.
 -/
 
-@[expose] public section
+public section
 
 open Polynomial Finset
 
@@ -57,8 +54,9 @@ namespace TauCeti
 /-- A terminating `₂F₁(−n, a; b/2; (1 − x)/2)` as a polynomial in `x − 1`: if
 `(−n)ₖ (a)ₖ = (−1)ᵏ Dₖ` for every `k`, then
 `₂F₁(−n, a; b/2; (1 − x)/2) = ∑_{k ≤ n} Dₖ / ∏_{l<k} (2l + b) / k! (x − 1)ᵏ`. Where some `2l + b`
-vanishes, both sides of the `k`-th term take the junk value `0`. -/
-theorem ordinaryHypergeometric_neg_nat_div_two_eq_sum (n : ℕ) (a b x : ℂ) {D : ℕ → ℂ}
+vanishes, both sides of the `k`-th term take the junk value `0`. This is the common form of
+15.9.5 and 15.9.6. -/
+private theorem ordinaryHypergeometric_neg_nat_div_two_eq_sum (n : ℕ) (a b x : ℂ) {D : ℕ → ℂ}
     (hD : ∀ k, (ascPochhammer ℂ k).eval (-n : ℂ) * (ascPochhammer ℂ k).eval a = (-1) ^ k * D k) :
     ₂F₁ (-n : ℂ) a (b / 2) ((1 - x) / 2) =
       ∑ k ∈ range (n + 1), D k / (∏ l ∈ range k, (2 * (l : ℂ) + b)) / k ! * (x - 1) ^ k := by
@@ -91,7 +89,7 @@ theorem chebyshevT_eq_ordinaryHypergeometric (n : ℕ) (x : ℂ) :
   refine sum_congr rfl fun k _ => ?_
   rw [Polynomial.Chebyshev.iterate_derivative_T_eval_one_eq_div]
   push_cast
-  rfl
+  ring
 
 /-- **DLMF 15.9.6.** `Uₙ(x) = (n + 1) ₂F₁(−n, n + 2; 3/2; (1 − x)/2)` for `n : ℕ` and every
 `x : ℂ`. -/
