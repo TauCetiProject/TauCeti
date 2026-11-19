@@ -241,13 +241,11 @@ theorem extendScalars_map_comp_extendScalarsAlgebraMapIso_hom {M N : ModuleCat.{
     (extendScalars (algebraMap R S)).map g ≫ (extendScalarsAlgebraMapIso N).hom =
       (extendScalarsAlgebraMapIso M).hom ≫ ofHom (g.hom.baseChange S) :=
   ExtendScalars.hom_ext fun m ↦ by
-    -- Evaluate both composites at `1 ⊗ m`, written in the tensor product of extension of scalars.
+    -- Evaluate both composites at `1 ⊗ m`; `extendScalarsAlgebraMapIso` sends it to `1 ⊗ m`.
     change (extendScalarsAlgebraMapIso N).hom
         ((extendScalars (algebraMap R S)).map g ((1 : S) ⊗ₜ[R, algebraMap R S] m)) =
-      g.hom.baseChange S ((extendScalarsAlgebraMapIso M).hom ((1 : S) ⊗ₜ[R, algebraMap R S] m))
-    rw [ExtendScalars.map_tmul, extendScalarsAlgebraMapIso_hom_tmul]
-    exact ((congrArg (g.hom.baseChange S) (extendScalarsAlgebraMapIso_hom_tmul M 1 m)).trans
-      (LinearMap.baseChange_tmul _ _ _)).symm
+      g.hom.baseChange S ((1 : S) ⊗ₜ[R] m)
+    rw [ExtendScalars.map_tmul, extendScalarsAlgebraMapIso_hom_tmul, LinearMap.baseChange_tmul]
 
 end AlgebraMap
 

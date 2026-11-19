@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.MapCoefficients
+public import TauCeti.LinearAlgebra.Determinant.Basic
+public import Mathlib.LinearAlgebra.Charpoly.BaseChange
+public import Mathlib.RingTheory.TensorProduct.Free
 
 /-!
 # Flat base change of singular homology
@@ -21,7 +24,9 @@ change of singular homology with coefficients in `R`:
 
 (`TopCat.singularHomologyBaseChangeEquiv`). The identification is natural in `X`: a continuous
 map acts on the right-hand side by the base change of its action on `Hₙ(X; R)`
-(`TopCat.singularHomologyBaseChangeEquiv_naturality`). The main example is `R = ℤ` and `S` a field
+(`TopCat.singularHomologyBaseChangeEquiv_naturality`). So for a continuous self-map `g`, the
+determinant of `𝟙 - g_*` over `S` is the image of its determinant over `R` when `Hₙ(X; R)` is free
+(`TopCat.det_id_sub_singularHomologyMap_baseChange`). The main example is `R = ℤ` and `S` a field
 of characteristic zero, such as `ℚ` or `ℝ`, which is flat over `ℤ` because it is torsion-free.
 Through it, linear-algebra invariants of the action of a map on rational or real homology, such
 as determinants, are computed from its action on integral homology.
@@ -94,5 +99,35 @@ theorem singularHomologyBaseChangeEquiv_naturality {X Y : TopCat.{u}} (g : X ⟶
   rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at h₁ h₂
   rw [singularHomologyBaseChangeEquiv_apply, singularHomologyBaseChangeEquiv_apply]
   exact (congrArg _ h₁).trans h₂
+
+variable {R S} in
+/-- **Wang-type determinants under flat base change.** If `S` is a flat `R`-algebra and
+`Hₙ(X; R)` is free, then for a continuous self-map `g : X ⟶ X` the determinant of `𝟙 - g_*` on
+`Hₙ(X; S)` is the image in `S` of its determinant on `Hₙ(X; R)`. (When `Hₙ(X; R)` has infinite
+rank, both determinants are `1` by convention.) -/
+theorem det_id_sub_singularHomologyMap_baseChange {X : TopCat.{u}} (g : X ⟶ X) (n : ℕ)
+    [Module.Free R (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj X)] :
+    (LinearMap.id -
+        (((singularHomologyFunctor (ModuleCat.{u} S) n).obj (ModuleCat.of S S)).map g).hom).det =
+      algebraMap R S (LinearMap.id -
+        (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).map
+          g).hom).det := by
+  let e := singularHomologyBaseChangeEquiv R S X n
+  nontriviality S
+  by_cases hfin :
+      Module.Finite R (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj X)
+  · -- Under `Hₙ(X; S) ≃ S ⊗[R] Hₙ(X; R)` the endomorphism `𝟙 - g_*` becomes its base change.
+    rw [← LinearMap.det_baseChange, LinearMap.baseChange_sub, LinearMap.baseChange_id]
+    refine LinearMap.det_eq_of_comp_eq e (LinearMap.ext fun x ↦ ?_)
+    simp only [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.id_apply, LinearEquiv.coe_coe,
+      map_sub, singularHomologyBaseChangeEquiv_naturality, e]
+  · -- A free module whose base change to the nontrivial ring `S` is finite is finite.
+    rw [LinearMap.det_eq_one_of_not_module_finite hfin, map_one]
+    refine LinearMap.det_eq_one_of_not_module_finite (fun hS ↦ hfin ?_) _
+    let b := Module.Free.chooseBasis R
+      (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj X)
+    have := Module.Finite.equiv e
+    have := Module.Finite.finite_basis (Algebra.TensorProduct.basis S b)
+    exact Module.Finite.of_basis b
 
 end TopCat

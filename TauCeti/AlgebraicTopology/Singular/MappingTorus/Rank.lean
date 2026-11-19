@@ -8,11 +8,9 @@ module
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.Wang
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.BaseChange
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient.Field
-public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.RingTheory.Flat.TorsionFree
-public import Mathlib.RingTheory.TensorProduct.Free
 
 /-!
 # The first Betti number of a mapping torus
@@ -158,7 +156,8 @@ variable {F : Type w} [TopologicalSpace F] (φ : F ≃ₜ F)
 
 /-- **The Wang determinant under flat base change.** If `S` is a flat `R`-algebra and `Hₙ(F; R)` is
 free, the determinant of `𝟙 - φ_*` on `Hₙ(F; S)` is the image in `S` of its determinant on
-`Hₙ(F; R)`. (When `Hₙ(F; R)` has infinite rank, both determinants are `1` by convention.) -/
+`Hₙ(F; R)`. (When `Hₙ(F; R)` has infinite rank, both determinants are `1` by convention.) This is
+`TopCat.det_id_sub_singularHomologyMap_baseChange` for the monodromy. -/
 theorem det_id_sub_homologyMap_monodromyChainMap_eq_algebraMap (R S : Type w) [CommRing R]
     [CommRing S] [Algebra R S] [Module.Flat R S] (n : ℕ)
     [Module.Free R ((((singularChainComplexFunctor (ModuleCat.{w} R)).obj
@@ -167,32 +166,16 @@ theorem det_id_sub_homologyMap_monodromyChainMap_eq_algebraMap (R S : Type w) [C
       algebraMap R S
         (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of R R)) n).hom).det := by
   -- `singularHomologyFunctor` is by definition the homology of the singular chain complex.
-  let e : (((singularChainComplexFunctor (ModuleCat.{w} S)).obj (ModuleCat.of S S)).obj
-      (TopCat.of F)).homology n ≃ₗ[S] S ⊗[R] (((singularChainComplexFunctor (ModuleCat.{w} R)).obj
-        (ModuleCat.of R R)).obj (TopCat.of F)).homology n :=
-    TopCat.singularHomologyBaseChangeEquiv R S (TopCat.of F) n
-  -- Under `Hₙ(F; S) ≃ S ⊗[R] Hₙ(F; R)` the endomorphism `𝟙 - φ_*` becomes its base change.
-  have h : LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of S S)) n).hom =
-      (e.symm : _ →ₗ[S] _) ∘ₗ (LinearMap.id -
-        (homologyMap (monodromyChainMap φ (ModuleCat.of R R)) n).hom).baseChange S ∘ₗ
-          (e.symm.symm : _ →ₗ[S] _) := by
-    refine LinearMap.ext fun x ↦ e.injective ?_
-    simp only [LinearMap.sub_apply, LinearMap.id_apply, LinearMap.comp_apply,
-      LinearEquiv.coe_coe, LinearEquiv.symm_symm, LinearEquiv.apply_symm_apply, map_sub,
-      LinearMap.baseChange_sub, LinearMap.baseChange_id, ← singularHomologyMap_monodromy_eq]
-    exact congrArg (e x - ·) (TopCat.singularHomologyBaseChangeEquiv_naturality _ n x)
-  nontriviality S
-  by_cases hfin : Module.Finite R ((((singularChainComplexFunctor (ModuleCat.{w} R)).obj
-    (ModuleCat.of R R)).obj (TopCat.of F)).homology n)
-  · rw [h, LinearMap.det_conj, LinearMap.det_baseChange]
-  · -- A free module whose base change to the nontrivial ring `S` is finite is finite.
-    rw [LinearMap.det_eq_one_of_not_module_finite hfin, map_one]
-    refine LinearMap.det_eq_one_of_not_module_finite (fun hS ↦ hfin ?_) _
-    let b := Module.Free.chooseBasis R ((((singularChainComplexFunctor (ModuleCat.{w} R)).obj
-      (ModuleCat.of R R)).obj (TopCat.of F)).homology n)
-    have := Module.Finite.equiv e
-    have := Module.Finite.finite_basis (Algebra.TensorProduct.basis S b)
-    exact Module.Finite.of_basis b
+  have : Module.Free R (((singularHomologyFunctor (ModuleCat.{w} R) n).obj
+      (ModuleCat.of R R)).obj (TopCat.of F)) := ‹_›
+  -- Rewriting with `singularHomologyMap_monodromy_eq` would change the module in which `𝟙` and
+  -- the determinant are taken, so each side is transported through `congrArg` instead.
+  exact (congrArg (fun f ↦ (LinearMap.id - f.hom).det)
+    (singularHomologyMap_monodromy_eq φ (ModuleCat.of S S) n)).symm.trans
+      ((TopCat.det_id_sub_singularHomologyMap_baseChange
+        (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F))) n).trans
+          (congrArg (fun f ↦ algebraMap R S (LinearMap.id - f.hom).det)
+            (singularHomologyMap_monodromy_eq φ (ModuleCat.of R R) n)))
 
 end BaseChange
 
@@ -231,35 +214,18 @@ variable {k : Type w} [Field k] {F : Type w} [TopologicalSpace F] (φ : F ≃ₜ
 /-- **The Wang determinant in cohomology.** Over a field, the determinant of `𝟙 - φ^*` on
 `Hⁿ(F; k)` equals the determinant of `𝟙 - φ_*` on `Hₙ(F; k)`: the universal coefficient theorem
 identifies `φ^*` with the transpose of `φ_*`. (When `Hₙ(F; k)` is infinite-dimensional, so is
-`Hⁿ(F; k)`, and both determinants are `1` by convention.) -/
+`Hⁿ(F; k)`, and both determinants are `1` by convention.) This is
+`TopCat.det_id_sub_singularCohomologyMap_eq_singularHomologyMap` for the monodromy. -/
 theorem det_id_sub_singularCohomologyMap_eq (n : ℕ) :
     (LinearMap.id - (TopCat.singularCohomologyMap (R := ModuleCat.of k k) (k := k)
         (M := ModuleCat.of k k) (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F))) n).hom).det =
-      (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of k k)) n).hom).det := by
-  -- `singularHomologyFunctor` is by definition the homology of the singular chain complex.
-  let e : (TopCat.of F).singularCohomology (ModuleCat.of k k) k (ModuleCat.of k k) n ≃ₗ[k]
-      Dual k ((((singularChainComplexFunctor (ModuleCat.{w} k)).obj (ModuleCat.of k k)).obj
-        (TopCat.of F)).homology n) :=
-    (TopCat.of F).singularCohomologyDualEquiv n
-  -- Under `Hⁿ(F; k) ≃ Dual k Hₙ(F; k)` the endomorphism `𝟙 - φ^*` becomes the transpose of
-  -- `𝟙 - φ_*`.
-  have h : LinearMap.id - (TopCat.singularCohomologyMap (R := ModuleCat.of k k) (k := k)
-      (M := ModuleCat.of k k) (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F))) n).hom =
-      (e.symm : _ →ₗ[k] _) ∘ₗ (LinearMap.id -
-        (homologyMap (monodromyChainMap φ (ModuleCat.of k k)) n).hom).dualMap ∘ₗ
-          (e.symm.symm : _ →ₗ[k] _) := by
-    refine LinearMap.ext fun α ↦ e.injective ?_
-    simp only [LinearMap.sub_apply, LinearMap.id_apply, LinearMap.comp_apply,
-      LinearEquiv.coe_coe, LinearEquiv.symm_symm, LinearEquiv.apply_symm_apply, map_sub,
-      LinearMap.dualMap_apply', LinearMap.comp_sub, LinearMap.comp_id,
-      ← singularHomologyMap_monodromy_eq]
-    exact congrArg (e α - ·) ((TopCat.singularCohomologyDualEquiv_singularCohomologyMap _ n α).trans
-      (Dual.transpose_apply _ _))
-  by_cases hfin : Module.Finite k ((((singularChainComplexFunctor (ModuleCat.{w} k)).obj
-    (ModuleCat.of k k)).obj (TopCat.of F)).homology n)
-  · rw [h, LinearMap.det_conj, LinearMap.det_dualMap]
-  · rw [LinearMap.det_eq_one_of_not_module_finite hfin, LinearMap.det_eq_one_of_not_module_finite]
-    exact fun hc ↦ hfin (((TopCat.of F).finite_singularCohomology_iff n).1 hc)
+      (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of k k)) n).hom).det :=
+  -- As in `det_id_sub_homologyMap_monodromyChainMap_eq_algebraMap`, the right side is transported
+  -- through `congrArg`, since rewriting would change the module in which the determinant is taken.
+  (TopCat.det_id_sub_singularCohomologyMap_eq_singularHomologyMap
+    (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F))) n).trans
+      (congrArg (fun f ↦ (LinearMap.id - f.hom).det)
+        (singularHomologyMap_monodromy_eq φ (ModuleCat.of k k) n))
 
 /-- **The first Betti number of a mapping torus in cohomology.** For a path-connected fibre whose
 first homology is finite-dimensional over a field `k`, `dim H¹(T_φ; k) = 1` if and only if
