@@ -344,11 +344,10 @@ theorem sobolevSingularSupport_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_foral
     (T : 𝓓'(Ω, ℂ)) :
     (∑ i ∈ t, c i • smulLeftCLM (hg i) (∂^{m i} T)).sobolevSingularSupport s =
       T.sobolevSingularSupport (s + M) := by
-  refine subset_antisymm (by simpa using
-    sobolevSingularSupport_sum_smul_smulLeftCLM_iteratedLineDerivOp_subset (s + M) t c hg m hk T)
-    fun x hx ↦ mem_sobolevSingularSupport_iff.2 ⟨(mem_sobolevSingularSupport_iff.1 hx).1,
-      fun hP ↦ (mem_sobolevSingularSupport_iff.1 hx).2
-        (hP.of_sum_smul_smulLeftCLM_iteratedLineDerivOp hg hk (hσ x hP.mem))⟩
+  ext x
+  simp only [mem_sobolevSingularSupport_iff, and_congr_right_iff]
+  exact fun hx ↦ not_congr (isLocallySobolevAt_sum_smul_smulLeftCLM_iteratedLineDerivOp_iff hg hk
+    (hσ x hx))
 
 /-- **Elliptic regularity for the Laplacian.** `T` is `H^(s + 2)` exactly where `Δ T` is `H^s`. -/
 @[simp]
