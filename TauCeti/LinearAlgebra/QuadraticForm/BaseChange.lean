@@ -822,17 +822,14 @@ theorem Nondegenerate.of_baseChange [Invertible (2 : K)]
   exact LinearMap.BilinForm.nondegenerate_of_nondegenerate_baseChange L
     (QuadraticMap.associated Q) (Module.Free.chooseBasis K V) h
 
-/-- A finite-dimensional nondegenerate quadratic form stays nondegenerate after extending its
-base field. -/
+/-- A nondegenerate quadratic form stays nondegenerate after extending its base field. -/
 theorem Nondegenerate.baseChange [Invertible (2 : K)]
-    [FiniteDimensional K V] {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) :
+    {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) :
     (Q.baseChange L).Nondegenerate := by
   let : Invertible (2 : L) :=
     (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-  let b := Module.Free.chooseBasis K V
-  rw [← QuadraticMap.nondegenerate_associated_iff]
-  rw [associated_baseChange]
-  exact (LinearMap.BilinForm.nondegenerate_baseChange_iff (QuadraticMap.associated Q) b).2
+  rw [← QuadraticMap.nondegenerate_associated_iff, associated_baseChange]
+  exact LinearMap.BilinForm.Nondegenerate.baseChange L
     (QuadraticMap.nondegenerate_associated_iff.mpr hQ)
 
 /-- On a space of dimension at most one, a quadratic form is anisotropic exactly when its
