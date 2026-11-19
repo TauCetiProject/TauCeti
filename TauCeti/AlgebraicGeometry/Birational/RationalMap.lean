@@ -219,12 +219,12 @@ include hX in
 schemes are defined everywhere**: let `X` be an integral `S`-scheme whose local rings are valuation
 rings (for instance a normal curve) and `Y` an `S`-scheme universally closed and locally of finite
 type over `S`. Then every `S`-rational map `X ⤏ Y` is defined at every point of `X`. -/
-theorem RationalMap.domain_eq_top_of_valuationRing (f : X ⤏ Y) [f.IsOver S] :
+theorem RationalMap.domain_eq_top_of_valuationRing (f : X ⤏ Y) [f.IsOver (X ↘ S) (Y ↘ S)] :
     f.domain = ⊤ := by
-  obtain ⟨g, hg, rfl⟩ := f.exists_partialMap_over S
+  obtain ⟨g, hg, rfl⟩ := f.exists_partialMap_over (X ↘ S) (Y ↘ S)
   have hφ : g.fromFunctionField ≫ Y ↘ S = X.fromSpecStalk _ ≫ X ↘ S := by
-    rw [PartialMap.fromFunctionField, PartialMap.fromSpecStalkOfMem, Category.assoc, comp_over,
-      ← Opens.ι_comp_over, Opens.fromSpecStalkOfMem_ι_assoc]
+    rw [PartialMap.fromFunctionField, PartialMap.fromSpecStalkOfMem, Category.assoc,
+      g.over (X ↘ S) (Y ↘ S), Opens.fromSpecStalkOfMem_ι_assoc]
   rw [← domain_ofFunctionField_eq_top hX _ hφ]
   congr 1
   exact eq_of_fromFunctionField_eq _ _ (fromFunctionField_ofFunctionField _ _ _ _).symm
@@ -250,9 +250,9 @@ private theorem localExtension_compat (x y : X) :
     (genericPoint_specializes x).mem_open g.domain.2 (mem_domain_localExtension hX φ hφ x)
   have hη' : genericPoint X ∈ g'.domain :=
     (genericPoint_specializes y).mem_open g'.domain.2 (mem_domain_localExtension hX φ hφ y)
-  have : g.IsOver S := ⟨localExtension_hom_comp hX φ hφ x⟩
-  have : g'.IsOver S := ⟨localExtension_hom_comp hX φ hφ y⟩
-  have H := (PartialMap.equiv_iff_of_isSeparated (S := S)).mp
+  have : g.IsOver (X ↘ S) (Y ↘ S) := ⟨localExtension_hom_comp hX φ hφ x⟩
+  have : g'.IsOver (X ↘ S) (Y ↘ S) := ⟨localExtension_hom_comp hX φ hφ y⟩
+  have H := (PartialMap.equiv_iff_of_isSeparated (X ↘ S) (Y ↘ S)).mp
     (PartialMap.equiv_of_fromSpecStalkOfMem_eq g g' hη hη'
       ((fromSpecStalkOfMem_localExtension hX φ hφ x hη).trans
         (fromSpecStalkOfMem_localExtension hX φ hφ y hη').symm))
