@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.MappingTorus
 public import TauCeti.RingTheory.NovikovSeries.OrbitZeta.Basic
+import TauCeti.Dynamics.PeriodicPts.PeriodicPair
 
 /-!
 # The orbit zeta function of a mapping torus as a sum over fixed points
@@ -35,8 +36,9 @@ for points `x i`, one on each periodic orbit, of least periods `d i`,
   = ∑ᵢ ∑_{k ≥ 1} sgn det (1 - d(φ^[d i * k])_(x i)) / k · e^(k [γ_(x i)])`
 
 (`TauCeti.SmoothMappingTorus.hasSum_single_sign_det_div_orbitLog`). Indeed the pairs `(n, y)` are
-the pairs `(d i * k, φ^[j] (x i))` with `k ≥ 1` and `j < d i`, each exactly once. The class of the
-closed orbit of `φ^[j] (x i)` of period `d i * k` is `k [γ_(x i)]`
+the pairs `(d i * k, φ^[j] (x i))` with `k ≥ 1` and `j < d i`, each exactly once
+(`Function.periodicPairEquiv`). The class of the closed orbit of `φ^[j] (x i)` of period `d i * k`
+is `k [γ_(x i)]`
 (`TauCeti.SmoothMappingTorus.closedOrbitHomologyClass_const_mul`,
 `TauCeti.SmoothMappingTorus.closedOrbitHomologyClass_apply_iterate`), its Lefschetz sign is that of
 `x i` (`TauCeti.det_id_sub_fixedPointDerivative_apply_iterate`), and the `d i` points of the orbit
@@ -85,46 +87,6 @@ variable {E H M : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimens
   (hrep : ∀ y ∈ periodicPts φ, ∃! i, ∃ j, (⇑φ)^[j] (x i) = y)
   (K : Type*) [CommRing K] [Algebra ℚ K]
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [CompactSpace M] in
-include hxd hd hmin hrep in
-/-- The map `(i, k, j) ↦ (d i * (k + 1), φ^[j] (x i))`, `j < d i`, from the iterates of the orbits
-of the `x i` with a point of the orbit to the pairs `(n, y)` with `n > 0` and `φ^[n] y = y`, is a
-bijection, when every periodic point lies on the orbit of exactly one `x i` and `d i` is the least
-period of `x i`. -/
-private theorem bijective_periodicPair :
-    Bijective fun q : (p : ι × ℕ) × Fin (d p.1) ↦
-      (⟨(d q.1.1 * (q.1.2 + 1), (⇑φ)^[q.2] (x q.1.1)), Nat.mul_pos (hd q.1.1) q.1.2.succ_pos,
-        ((hxd q.1.1).mul_const _).apply_iterate _⟩ :
-        {q : ℕ × M // 0 < q.1 ∧ IsPeriodicPt φ q.1 q.2}) := by
-  have hper (i : ι) : x i ∈ periodicPts φ := mk_mem_periodicPts (hd i) (hxd i)
-  constructor
-  · rintro ⟨⟨i, k⟩, j⟩ ⟨⟨i', k'⟩, j'⟩ h
-    simp only [Subtype.mk.injEq, Prod.mk.injEq] at h
-    obtain ⟨hn, hy⟩ := h
-    -- The common point lies on the orbits of `x i` and of `x i'`, so `i = i'`.
-    have hii : i = i' := (hrep _ (mk_mem_periodicPts (hd i) ((hxd i).apply_iterate j))).unique
-      ⟨j, rfl⟩ ⟨j', hy.symm⟩
-    subst hii
-    have hkk : k = k' := by
-      have := Nat.eq_of_mul_eq_mul_left (hd i) hn
-      omega
-    subst hkk
-    -- Distinct iterates below the least period give distinct points.
-    have hj : (j : ℕ) < minimalPeriod φ (x i) := by rw [hmin]; exact j.2
-    have hj' : (j' : ℕ) < minimalPeriod φ (x i) := by rw [hmin]; exact j'.2
-    have hjj : (j : ℕ) = j' := iterate_injOn_Iio_minimalPeriod hj hj' hy
-    rw [Fin.ext hjj]
-  · rintro ⟨⟨n, y⟩, hn, hy⟩
-    obtain ⟨i, ⟨j, hj⟩, -⟩ := hrep y (mk_mem_periodicPts hn hy)
-    -- The least period of `y` is `d i`, which divides `n`.
-    have hmy : minimalPeriod φ y = d i := by rw [← hj, minimalPeriod_apply_iterate (hper i), hmin]
-    obtain ⟨m, rfl⟩ : d i ∣ n := hmy ▸ hy.minimalPeriod_dvd
-    have hm : m ≠ 0 := by rintro rfl; simp at hn
-    refine ⟨⟨(i, m - 1), ⟨j % d i, Nat.mod_lt _ (hd i)⟩⟩, ?_⟩
-    simp only [Subtype.mk.injEq, Prod.mk.injEq]
-    refine ⟨by rw [Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hm)], ?_⟩
-    rw [← hj, ← hmin i, iterate_mod_minimalPeriod_eq]
-
 include hφ hxd hd hmin hrep in
 /-- **The fixed points of the iterates sum to the orbit logarithm.** Let `φ` be a diffeomorphism
 of a compact manifold, nondegenerate up to every period, and let `x i` be points of least periods
@@ -150,7 +112,7 @@ theorem hasSum_single_sign_det_div_orbitLog :
     (fun i n ↦ SignType.sign (LinearMap.det (LinearMap.id -
       fixedPointDerivative I (⇑φ)^[d i * n] ⟨x i, ((hxd i).mul_const n).eq⟩)))
     (fun i ↦ (hd i).ne')
-  rw [← (Equiv.ofBijective _ (bijective_periodicPair hxd hd hmin hrep)).hasSum_iff]
+  rw [← (periodicPairEquiv hmin hd hrep).hasSum_iff]
   convert key using 2 with q
   obtain ⟨⟨i, k⟩, j⟩ := q
   -- The closed orbit through `φ^[j] (x i)` of period `d i * (k + 1)` has class
@@ -170,7 +132,7 @@ theorem hasSum_single_sign_det_div_orbitLog :
             ⟨x i, ((hxd i).mul_const (k + 1)).eq⟩)) : ℤ) / (d i * (k + 1) : ℕ)) := by
     rintro _ _ rfl rfl h
     rw [det_id_sub_fixedPointDerivative_apply_iterate ((hxd i).mul_const (k + 1))
-      (φ.contMDiff.mdifferentiable (by simp)) j]
+      (fun _ ↦ φ.contMDiff.mdifferentiable (by simp) _) j]
   dsimp only [Function.comp_apply]
   congr 1
   · exact hclass _ (Nat.mul_comm _ _) _
