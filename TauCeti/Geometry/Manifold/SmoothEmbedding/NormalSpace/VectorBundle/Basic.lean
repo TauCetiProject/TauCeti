@@ -100,16 +100,6 @@ def normalSpaceFiberBundle (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
       f.normalSpaceTrivialization hn hdim x :=
   f.isImmersion.normalSpaceFiberBundle_trivializationAt hn hdim x
 
-/-- The intrinsic normal atlas consists exactly of the chosen complementary charts. -/
-@[simp] theorem mem_normalSpaceFiberBundle_trivializationAtlas_iff
-    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    (e : Trivialization P (π P (fun x => f.NormalSpace x hn))) :
-    letI := f.normalSpaceFiberBundle hn hdim
-    e ∈ trivializationAtlas P (fun x => f.NormalSpace x hn) ↔
-      ∃ x, f.normalSpaceTrivialization hn hdim x = e :=
-  f.isImmersion.mem_normalSpaceFiberBundle_trivializationAtlas_iff hn hdim e
-
 /-- The intrinsic normal fibres form a vector bundle with their quotient topology. -/
 theorem normalSpaceVectorBundle (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) :

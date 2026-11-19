@@ -119,32 +119,30 @@ theorem normalClass_ker (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
 /-- The continuous quotient map from ambient tangent vectors to normal classes. -/
 noncomputable def normalClassL (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     TangentSpace J (f x) →L[𝕜] f.NormalSpace x hn :=
-  (f.tangentRange x hn).mkQL
+  f.isImmersion.normalClassL x hn
 
 /-- The continuous normal-class map gives the normal space its quotient topology. -/
 theorem isQuotientMap_normalClassL (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     Topology.IsQuotientMap (f.normalClassL x hn) :=
-  (f.tangentRange x hn).isQuotientMap_mkQL
+  f.isImmersion.isQuotientMap_normalClassL x hn
 
 /-- The continuous normal-class map is an open quotient map. -/
 theorem isOpenQuotientMap_normalClassL (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     IsOpenQuotientMap (f.normalClassL x hn) :=
-  (f.tangentRange x hn).isOpenQuotientMap_mkQL
+  f.isImmersion.isOpenQuotientMap_normalClassL x hn
 
 /-- The continuous normal-class map has `normalClass` as its underlying linear map. -/
 @[simp]
 theorem normalClassL_toLinearMap (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    (f.normalClassL x hn).toLinearMap = f.normalClass x hn := by
-  simp only [normalClassL, normalClass, Submodule.toLinearMap_mkQL]
-  rfl
+    (f.normalClassL x hn).toLinearMap = f.normalClass x hn :=
+  f.isImmersion.normalClassL_toLinearMap x hn
 
 /-- The continuous normal-class map agrees pointwise with the linear normal-class map. -/
 @[simp]
 theorem normalClassL_apply (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
     (v : TangentSpace J (f x)) :
-    f.normalClassL x hn v = f.normalClass x hn v := by
-  exact congrArg (fun h : TangentSpace J (f x) →ₗ[𝕜] f.NormalSpace x hn => h v)
-    (f.normalClassL_toLinearMap x hn)
+    f.normalClassL x hn v = f.normalClass x hn v :=
+  f.isImmersion.normalClassL_apply x hn v
 
 /-- A continuous linear map vanishing on tangent vectors descends continuously to normal
 classes. -/
@@ -152,11 +150,7 @@ noncomputable def normalLiftL (f : SmoothEmbedding I J n M N) (x : M) (hn : n �
     {V : Type*} [TopologicalSpace V] [AddCommGroup V] [Module 𝕜 V]
     (g : TangentSpace J (f x) →L[𝕜] V)
     (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) : f.NormalSpace x hn →L[𝕜] V :=
-  (f.tangentRange x hn).liftQL g (by
-    intro v hv
-    -- Membership in the continuous linear map's kernel means that its value is zero.
-    change g v = 0
-    exact hg v hv)
+  f.isImmersion.normalLiftL x hn g hg
 
 /-- The continuous quotient lift recovers the original map after composition with the
 continuous normal-class map. -/
@@ -165,12 +159,8 @@ theorem normalLiftL_comp_normalClassL (f : SmoothEmbedding I J n M N) (x : M) (h
     {V : Type*} [TopologicalSpace V] [AddCommGroup V] [Module 𝕜 V]
     (g : TangentSpace J (f x) →L[𝕜] V)
     (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) :
-    (f.normalLiftL x hn g hg).comp (f.normalClassL x hn) = g := by
-  apply ContinuousLinearMap.coe_injective
-  rw [ContinuousLinearMap.toLinearMap_comp]
-  simp only [normalLiftL, normalClassL, Submodule.toLinearMap_liftQL,
-    Submodule.toLinearMap_mkQL]
-  exact (f.tangentRange x hn).liftQ_mkQ g.toLinearMap _
+    (f.normalLiftL x hn g hg).comp (f.normalClassL x hn) = g :=
+  f.isImmersion.normalLiftL_comp_normalClassL x hn g hg
 
 /-- The continuous quotient lift sends the normal class of an ambient tangent vector to the
 value of the original map on that vector. -/
@@ -178,8 +168,8 @@ theorem normalLiftL_normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn : n 
     {V : Type*} [TopologicalSpace V] [AddCommGroup V] [Module 𝕜 V]
     (g : TangentSpace J (f x) →L[𝕜] V)
     (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) (v : TangentSpace J (f x)) :
-    f.normalLiftL x hn g hg (f.normalClass x hn v) = g v := by
-  rw [← normalClassL_apply, ← ContinuousLinearMap.comp_apply, normalLiftL_comp_normalClassL]
+    f.normalLiftL x hn g hg (f.normalClass x hn v) = g v :=
+  f.isImmersion.normalLiftL_normalClass x hn g hg v
 
 /-- Every normal vector has an ambient tangent representative. -/
 theorem normalClass_surjective (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
@@ -254,9 +244,7 @@ noncomputable def normalLift (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠
     {V : Type*} [AddCommGroup V] [Module 𝕜 V]
     (g : TangentSpace J (f x) →ₗ[𝕜] V)
     (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) : f.NormalSpace x hn →ₗ[𝕜] V :=
-  (f.tangentRange x hn).liftQ g (by
-    intro v hv
-    exact (LinearMap.mem_ker).2 (hg v hv))
+  f.isImmersion.normalLift x hn g hg
 
 /-- The underlying linear map of the continuous normal lift is the linear normal lift. -/
 @[simp]
@@ -265,9 +253,8 @@ theorem normalLiftL_toLinearMap (f : SmoothEmbedding I J n M N) (x : M) (hn : n 
     (g : TangentSpace J (f x) →L[𝕜] V)
     (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) :
     (f.normalLiftL x hn g hg).toLinearMap =
-      f.normalLift x hn g.toLinearMap (fun v hv => hg v hv) := by
-  simp only [normalLiftL, normalLift, Submodule.toLinearMap_liftQL]
-  rfl
+      f.normalLift x hn g.toLinearMap (fun v hv => hg v hv) :=
+  f.isImmersion.normalLiftL_toLinearMap x hn g hg
 
 /-- The continuous normal lift agrees pointwise with the linear normal lift. -/
 @[simp]
@@ -276,9 +263,8 @@ theorem normalLiftL_apply (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
     (g : TangentSpace J (f x) →L[𝕜] V)
     (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) (v : f.NormalSpace x hn) :
     f.normalLiftL x hn g hg v =
-      f.normalLift x hn g.toLinearMap (fun w hw => hg w hw) v := by
-  exact congrArg (fun h : f.NormalSpace x hn →ₗ[𝕜] V => h v)
-    (f.normalLiftL_toLinearMap x hn g hg)
+      f.normalLift x hn g.toLinearMap (fun w hw => hg w hw) v :=
+  f.isImmersion.normalLiftL_apply x hn g hg v
 
 /-- Composing the quotient lift with the normal-class map recovers the original linear map. -/
 @[simp]
@@ -287,7 +273,7 @@ theorem normalLift_comp_normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn 
     (g : TangentSpace J (f x) →ₗ[𝕜] V)
     (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) :
     (f.normalLift x hn g hg).comp (f.normalClass x hn) = g :=
-  (f.tangentRange x hn).liftQ_mkQ g _
+  f.isImmersion.normalLift_comp_normalClass x hn g hg
 
 /-- The quotient lift sends the normal class of an ambient tangent vector to the value of the
 original linear map on that vector. -/
@@ -297,7 +283,7 @@ theorem normalLift_normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn : n �
     (g : TangentSpace J (f x) →ₗ[𝕜] V)
     (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) (v : TangentSpace J (f x)) :
     f.normalLift x hn g hg (f.normalClass x hn v) = g v :=
-  LinearMap.congr_fun (f.normalLift_comp_normalClass x hn g hg) v
+  f.isImmersion.normalLift_normalClass x hn g hg v
 
 /-- A map out of the normal space is determined by its values on ambient tangent classes. -/
 theorem normalLift_unique (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
@@ -305,9 +291,8 @@ theorem normalLift_unique (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
     (g : TangentSpace J (f x) →ₗ[𝕜] V)
     (hg : ∀ v ∈ f.tangentRange x hn, g v = 0)
     (h : f.NormalSpace x hn →ₗ[𝕜] V) (hh : h.comp (f.normalClass x hn) = g) :
-    h = f.normalLift x hn g hg := by
-  apply Submodule.linearMap_qext
-  exact hh.trans (f.normalLift_comp_normalClass x hn g hg).symm
+    h = f.normalLift x hn g hg :=
+  f.isImmersion.normalLift_unique x hn g hg h hh
 
 /-- A continuous linear map out of the normal space is determined by its composition with
 the continuous normal-class map. -/
@@ -316,12 +301,8 @@ theorem normalLiftL_unique (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0
     (g : TangentSpace J (f x) →L[𝕜] V)
     (hg : ∀ v ∈ f.tangentRange x hn, g v = 0)
     (h : f.NormalSpace x hn →L[𝕜] V) (hh : h.comp (f.normalClassL x hn) = g) :
-    h = f.normalLiftL x hn g hg := by
-  apply ContinuousLinearMap.coe_injective
-  rw [normalLiftL_toLinearMap]
-  apply f.normalLift_unique x hn g.toLinearMap (fun v hv => hg v hv)
-  simpa only [← normalClassL_toLinearMap, ← ContinuousLinearMap.toLinearMap_comp] using
-    congrArg ContinuousLinearMap.toLinearMap hh
+    h = f.normalLiftL x hn g hg :=
+  f.isImmersion.normalLiftL_unique x hn g hg h hh
 
 /-- The tangent spaces of a positive-regularity embedding into a manifold with
 finite-dimensional model space are finite-dimensional, since the differential is injective. -/

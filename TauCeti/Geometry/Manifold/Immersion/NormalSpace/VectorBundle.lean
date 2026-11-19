@@ -192,25 +192,11 @@ private theorem NormalChartData.coordChangeL (hf : IsImmersion I J n f) (hn : n 
         (mfderiv I J f) x₁ x).quotientRangeCoordinate d₁.complement ∘L
         ((trivializationAt V (TangentSpace J) (f x₀)).coordChangeL 𝕜
           (trivializationAt V (TangentSpace J) (f x₁)) (f x)).toContinuousLinearMap ∘L
-            d₀.complement := by
-  ext v
-  have hx' : x ∈ (d₀.trivialization hf hn).baseSet ∩
-      (d₁.trivialization hf hn).baseSet := by
-    simpa only [NormalChartData.baseSet_trivialization] using hx
-  rw [ContinuousLinearEquiv.coe_coe, Trivialization.coordChangeL_apply' _ _ hx']
-  simp only [NormalChartData.trivialization]
-  rw [hf.normalSpaceTrivializationOfComplement_symm_apply hn x₀ d₀.baseSet
-    d₀.isOpen_baseSet d₀.subset_charts d₀.complement d₀.invertible _ (x, v) hx.1]
-  rw [hf.normalSpaceTrivializationOfComplement_apply hn x₁ d₁.baseSet
-    d₁.isOpen_baseSet d₁.subset_charts d₁.complement d₁.invertible _
-      ⟨x, (hf.normalSpaceEquivOfComplement hn
-        (d₀.subset_charts hx.1).1 (d₀.subset_charts hx.1).2 d₀.complement
-          (d₀.invertible x hx.1)).symm v⟩ hx.2]
-  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe] using
-    hf.normalSpaceEquivOfComplement_apply_symm_eq_quotientRangeCoordinate_coordChangeL
-      hn (d₀.subset_charts hx.1).1 (d₀.subset_charts hx.1).2
-      (d₁.subset_charts hx.2).1 (d₁.subset_charts hx.2).2
-      d₀.complement d₁.complement (d₀.invertible x hx.1) (d₁.invertible x hx.2) v
+            d₀.complement :=
+  hf.normalSpaceTrivializationOfComplement_coordChangeL hn x₀ x₁ d₀.baseSet d₁.baseSet
+    d₀.isOpen_baseSet d₁.isOpen_baseSet d₀.subset_charts d₁.subset_charts d₀.complement
+    d₁.complement d₀.invertible d₁.invertible (d₀.continuous_coordinate_apply hf hn)
+    (d₁.continuous_coordinate_apply hf hn) hx
 
 /-- Transition operators for the preferred intrinsic normal coordinates are continuous. -/
 theorem continuousOn_normalSpaceTrivialization_coordChangeL
