@@ -374,11 +374,8 @@ theorem continuous_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) : Continuous e.con
 under `e`. -/
 theorem range_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) (A : E →L[𝕜] E) :
     (e.conjStarAlgEquiv A).range = A.range.map (e.toLinearEquiv : E →ₗ[𝕜] F) := by
-  rw [conjStarAlgEquiv_apply, ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp,
-    ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp_of_range_eq_top _
-      (LinearMap.range_eq_top_of_surjective (((e.symm : F ≃L[𝕜] E) : F →L[𝕜] E) : F →ₗ[𝕜] E)
-        e.symm.surjective)]
-  rfl
+  ext y
+  simp [e.symm.surjective.exists, ← e.eq_symm_apply]
 
 /-- Conjugation by a linear isometric equivalence preserves the rank of an operator. -/
 @[simp]
