@@ -8,9 +8,9 @@ module
 public import TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet
 public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
 public import Mathlib.Algebra.Group.Commutator
-import TauCeti.GroupTheory.FreeGroup.Basic
-import TauCeti.GroupTheory.FreeGroup.Centralizer
 import Mathlib.Algebra.Group.End
+import Mathlib.GroupTheory.FreeGroup.Center
+import TauCeti.GroupTheory.FreeGroup.Basic
 
 /-!
 # Systems of equations with free variables
@@ -483,7 +483,7 @@ private theorem eq_one_or_eq_one_of_mem_V_commutatorSystem {v : Fin 2 → FreeGr
   obtain ⟨h₀, h₁, h⟩ := mem_V_commutatorSystem.1 hv
   by_contra! hne
   have hab : Commute (of (0 : Fin 2)) (of 1) :=
-    IsFreeGroup.commute_of_commute hne.2 (IsFreeGroup.commute_of_commute hne.1 h₀.symm h) h₁
+    IsFreeGroup.commute_trans (IsFreeGroup.commute_trans h₀.symm h hne.1) h₁ hne.2
   exact absurd hab.eq (by decide)
 
 /-- The commutator `[x, z y z⁻¹]` in `F_{R(S)} ∗ ⟨z⟩`, for `S` the system

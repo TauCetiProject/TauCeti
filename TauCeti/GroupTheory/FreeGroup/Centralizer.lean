@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.FreeGroup.Commuting
 public import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 public import Mathlib.GroupTheory.FreeGroup.Center
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
@@ -35,15 +34,9 @@ commuting with its base, so `u` and `u'` commute.
 
 ## Main results
 
-* `FreeGroup.mem_zpowers_of_of_commute`: an element commuting with a generator `of a` is a power
-  of `of a`.
-* `FreeGroup.centralizer_singleton_of`: the centralizer of a generator `of a` is the cyclic
-  subgroup it generates.
 * `FreeGroup.eq_one_of_commute_of_of_commute_of`: an element commuting with two distinct generators
   is trivial.
 * `FreeGroup.commute_of_zpow_of_zpow_iff`: nonzero powers of distinct generators do not commute.
-* `IsFreeGroup.commute_of_commute`: in a free group, two elements commuting with a common
-  nontrivial element commute with each other.
 * `FreeGroup.commute_of_take_toWord_pow_eq`: if the reduced words of `u ^ L` and `v ^ L` have the
   same first `L` letters for one `L ≥ ‖u‖ ‖v‖`, then `u` and `v` commute.
 
@@ -56,9 +49,8 @@ commuting with its base, so `u` and `u'` commute.
   (centralizers of nontrivial elements of a free group are cyclic).
 -/
 
-/- Acknowledgment: the statements of the centralizer results here follow the shape of the
-interface proposed in Mathlib PR #42677 (`FreeGroup/Center.lean`, centre and centralizers of free
-groups), which has since landed in Mathlib. No proofs from that PR are used. -/
+/- Mathlib's `FreeGroup/Center.lean` now supplies the shared centre, centralizer, and commutation
+API. This file builds the remaining Tau Ceti results on that API. -/
 
 public section
 
@@ -66,27 +58,11 @@ namespace FreeGroup
 
 variable {α : Type*}
 
-/-- An element of a free group commuting with a generator `of a` is a power of `of a`. -/
-theorem mem_zpowers_of_of_commute {a : α} {z : FreeGroup α} (h : Commute z (of a)) :
-    z ∈ Subgroup.zpowers (of a) := by
-  obtain ⟨r, m, n, rfl, hr⟩ := (IsFreeGroup.commute_iff_exists_common_zpow z (of a)).1 h
-  have hn : n * n = 1 := by
-    obtain hn | hn := Int.natAbs_eq_iff.1 (natAbs_eq_one_of_of_eq_zpow hr) <;> simp [hn]
-  have hra : r = of a ^ n := by rw [hr, ← zpow_mul, hn, zpow_one]
-  rw [hra, ← zpow_mul]
-  exact Subgroup.zpow_mem_zpowers _ _
-
-/-- The centralizer of a generator `of a` of a free group is the cyclic subgroup it generates. -/
-theorem centralizer_singleton_of (a : α) : Subgroup.centralizer {of a} = Subgroup.zpowers (of a) :=
-  le_antisymm
-    (fun _ hz => mem_zpowers_of_of_commute (Subgroup.mem_centralizer_singleton_iff.1 hz))
-    (Subgroup.zpowers_le_centralizer_singleton _)
-
 /-- An element of a free group commuting with two distinct generators is trivial. -/
 theorem eq_one_of_commute_of_of_commute_of {a b : α} (hab : a ≠ b) {z : FreeGroup α}
     (ha : Commute z (of a)) (hb : Commute z (of b)) : z = 1 := by
-  obtain ⟨m, rfl⟩ := Subgroup.mem_zpowers_iff.1 (mem_zpowers_of_of_commute ha)
-  obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.1 (mem_zpowers_of_of_commute hb)
+  obtain ⟨m, rfl⟩ := Subgroup.mem_zpowers_iff.1 (commute_of_iff.1 ha.symm)
+  obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.1 (commute_of_iff.1 hb.symm)
   rw [(eq_of_of_zpow_eq_of_zpow hab hn.symm).1, zpow_zero]
 
 end FreeGroup
@@ -117,34 +93,6 @@ theorem isMulCommutative_of_mem_center {x : G} (hx : x ∈ Subgroup.center G) (h
   have : IsMulCommutative (FreeGroup (Generators G)) :=
     FreeGroup.isMulCommutative_iff_subsingleton.2 this
   exact e.symm.surjective.isMulCommutative
-
-/-- Commutation is transitive on the nontrivial elements of a free group: if `x` and `z` both
-commute with a nontrivial element `y`, then `x` and `z` commute. -/
-theorem commute_of_commute {x y z : G} (hy : y ≠ 1) (hxy : Commute x y) (hyz : Commute y z) :
-    Commute x z := by
-  let H := Subgroup.closure ({x, y, z} : Set G)
-  have hle : H ≤ Subgroup.centralizer {y} := by
-    refine (Subgroup.closure_le _).2 ?_
-    rintro w (rfl | rfl | rfl)
-    · exact Subgroup.mem_centralizer_singleton_iff.2 hxy.eq
-    · exact Subgroup.mem_centralizer_singleton_iff.2 rfl
-    · exact Subgroup.mem_centralizer_singleton_iff.2 hyz.eq.symm
-  have hyH : y ∈ H := Subgroup.subset_closure (by simp)
-  have hcen : (⟨y, hyH⟩ : H) ∈ Subgroup.center H :=
-    Subgroup.mem_center_iff.2 fun g ↦
-      Subtype.ext (Subgroup.mem_centralizer_singleton_iff.1 (hle g.2))
-  have : IsMulCommutative H :=
-    isMulCommutative_of_mem_center hcen (by simpa [Subtype.ext_iff] using hy)
-  have hxH : x ∈ H := Subgroup.subset_closure (by simp)
-  have hzH : z ∈ H := Subgroup.subset_closure (by simp)
-  exact congrArg Subtype.val (mul_comm' (⟨x, hxH⟩ : H) ⟨z, hzH⟩)
-
-/-- The centralizer of a nontrivial element of a free group is abelian. -/
-theorem isMulCommutative_centralizer {x : G} (hx : x ≠ 1) :
-    IsMulCommutative (Subgroup.centralizer {x}) :=
-  ⟨⟨fun a b ↦ Subtype.ext <| commute_of_commute hx
-    (Subgroup.mem_centralizer_singleton_iff.1 a.2)
-    (Subgroup.mem_centralizer_singleton_iff.1 b.2).symm⟩⟩
 
 end IsFreeGroup
 
