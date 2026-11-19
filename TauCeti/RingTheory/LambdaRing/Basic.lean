@@ -225,6 +225,12 @@ def equivTotalHom : PreLambdaStructure R ≃
 theorem coe_equivTotalHom_apply : (equivTotalHom Λ : Multiplicative R →* R⟦X⟧) = Λ.totalHom :=
   (rfl)
 
+@[simp]
+theorem equivTotalHom_symm_apply
+    (f : {f : Multiplicative R →* R⟦X⟧ // ∀ x, constantCoeff (f x) = 1 ∧ coeff 1 (f x) = x.toAdd}) :
+    equivTotalHom.symm f = ofTotalHom f.1 (fun x => (f.2 x).1) (fun x => (f.2 x).2) :=
+  (rfl)
+
 /-! ### Line elements -/
 
 /-- A line element of a pre-λ structure: an element `l` with `λ_t l = 1 + l t`, that is
@@ -439,6 +445,7 @@ theorem isLambdaIdeal_bot : Λ.IsLambdaIdeal ⊥ := by
 theorem isLambdaIdeal_top : Λ.IsLambdaIdeal ⊤ :=
   fun _ _ _ _ => Submodule.mem_top
 
+variable {Λ} in
 /-- The preimage of a λ-ideal under a morphism is a λ-ideal. -/
 theorem IsLambdaIdeal.comap {J : Ideal S} (hJ : Λ'.IsLambdaIdeal J) (f : PreLambdaHom Λ Λ') :
     Λ.IsLambdaIdeal (J.comap f) := by
@@ -446,10 +453,12 @@ theorem IsLambdaIdeal.comap {J : Ideal S} (hJ : Λ'.IsLambdaIdeal J) (f : PreLam
   rw [Ideal.mem_comap, PreLambdaHom.map_lambda]
   exact hJ hn _ hx
 
+variable {Λ} in
 /-- The kernel of a morphism is a λ-ideal. -/
 theorem _root_.TauCeti.PreLambdaHom.isLambdaIdeal_ker (f : PreLambdaHom Λ Λ') :
     Λ.IsLambdaIdeal (RingHom.ker f) := by
-  simpa [RingHom.ker] using Λ'.isLambdaIdeal_bot.comap Λ f
+  rw [RingHom.ker_eq_comap_bot]
+  exact Λ'.isLambdaIdeal_bot.comap f
 
 variable {Λ} in
 /-- Modulo a λ-ideal, each `λⁿ` respects congruence. -/
@@ -512,7 +521,7 @@ theorem isLambdaIdeal_iff_exists (I : Ideal R) :
     Λ.IsLambdaIdeal I ↔ ∃ Λ' : PreLambdaStructure (R ⧸ I),
       ∀ n x, Ideal.Quotient.mk I (Λ.lambda n x) = Λ'.lambda n (Ideal.Quotient.mk I x) := by
   refine ⟨fun hI => ⟨Λ.quotient I hI, fun _ _ => rfl⟩, fun ⟨Λ', h⟩ => ?_⟩
-  convert PreLambdaHom.isLambdaIdeal_ker Λ ⟨Ideal.Quotient.mk I, h⟩
+  convert PreLambdaHom.isLambdaIdeal_ker (Λ := Λ) ⟨Ideal.Quotient.mk I, h⟩
   ext x
   simp [Ideal.Quotient.eq_zero_iff_mem]
 
@@ -534,12 +543,14 @@ theorem IsLambdaSubring.lambda_mem {A : Subring R} (hA : Λ.IsLambdaSubring A) (
 theorem isLambdaSubring_top : Λ.IsLambdaSubring ⊤ :=
   fun _ _ _ => Subring.mem_top _
 
+variable {Λ} in
 /-- The range of a morphism is a λ-subring. -/
 theorem _root_.TauCeti.PreLambdaHom.isLambdaSubring_range (f : PreLambdaHom Λ Λ') :
     Λ'.IsLambdaSubring f.toRingHom.range := by
   rintro n _ ⟨x, rfl⟩
   exact ⟨Λ.lambda n x, f.map_lambda n x⟩
 
+variable {Λ} in
 /-- The preimage of a λ-subring under a morphism is a λ-subring. -/
 theorem IsLambdaSubring.comap {B : Subring S} (hB : Λ'.IsLambdaSubring B)
     (f : PreLambdaHom Λ Λ') : Λ.IsLambdaSubring (B.comap f.toRingHom) := by

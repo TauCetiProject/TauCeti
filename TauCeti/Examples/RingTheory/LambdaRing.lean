@@ -56,7 +56,7 @@ def oneAddXAddXSq : (ℤ⟦X⟧)ˣ :=
   (isUnit_iff_constantCoeff.2 (by simp) : IsUnit (1 + X + X ^ 2 : ℤ⟦X⟧)).unit
 
 theorem coe_oneAddXAddXSq : (oneAddXAddXSq : ℤ⟦X⟧) = 1 + X + X ^ 2 :=
-  (rfl)
+  IsUnit.unit_spec _
 
 theorem constantCoeff_zpow_oneAddXAddXSq (m : ℤ) :
     constantCoeff (↑(oneAddXAddXSq ^ m) : ℤ⟦X⟧) = 1 := by

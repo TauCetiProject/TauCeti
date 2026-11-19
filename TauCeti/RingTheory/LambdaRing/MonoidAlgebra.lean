@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.Binomial
 public import TauCeti.Algebra.MonoidAlgebra.Basic
 public import TauCeti.RingTheory.LambdaRing.Basic
+import TauCeti.RingTheory.LambdaRing.Binomial
 
 /-!
 # The line-monomial pre-λ structure on a monoid algebra
@@ -70,8 +71,8 @@ private theorem lineMonomialTotal_single (m : M) (c : ℤ) :
 private theorem coeff_lineMonomialTotal_single (n : ℕ) (m : M) (c : ℤ) :
     coeff n (lineMonomialTotal M (Multiplicative.ofAdd (single m c))) =
       single (m ^ n) (Ring.choose c n) := by
-  rw [lineMonomialTotal_single, coeff_rescale, binomialSeries_coeff, of_apply, single_pow, one_pow,
-    zsmul_eq_mul, mul_one, intCast_def, single_mul_single, mul_one, one_mul, Int.cast_id]
+  rw [lineMonomialTotal_single]
+  simp [coeff_rescale, binomialSeries_coeff, of_apply, single_pow, intCast_def]
 
 private theorem constantCoeff_lineMonomialTotal (x : Multiplicative (MonoidAlgebra ℤ M)) :
     constantCoeff (lineMonomialTotal M x) = 1 := by
@@ -121,7 +122,8 @@ theorem totalSeries_lineMonomial_single (m : M) (c : ℤ) :
 theorem isLine_lineMonomial_of (m : M) : (lineMonomial M).IsLine (of ℤ M m) := by
   refine (isLine_iff _).2 fun n hn => ?_
   have h : Ring.choose (1 : ℤ) n = 0 := by
-    rw [← Nat.cast_one, Ring.choose_natCast, Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero]
+    rw [← binomial_lambda]
+    exact isLine_binomial_one.lambda_eq_zero hn
   rw [of_apply, lineMonomial_lambda_single, h, single_zero]
 
 theorem totalSeries_lineMonomial_of (m : M) :
