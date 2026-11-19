@@ -111,7 +111,7 @@ theorem ae_eq_comp_halfDiscChart_symm {β : Type*} {U : Set ℂ} {x : ℂ} (hx :
   exact hmp.quasiMeasurePreserving.ae_eq_comp (ae_restrict_of_ae_restrict_of_subset hxr hfg)
 
 /-- The open upper half-disc lies in the closed one. -/
-theorem upperHalfDisc_subset (x : ℂ) (r : ℝ) :
+theorem coe_upperHalfDisc_subset_closedBall_inter (x : ℂ) (r : ℝ) :
     (upperHalfDisc x r : Set ℂ) ⊆ closedBall x r ∩ {z | 0 ≤ z.im} :=
   fun _ hz => ⟨ball_subset_closedBall (Opens.mem_upperHalf.1 hz).1,
     le_of_lt (Opens.mem_upperHalf.1 hz).2⟩

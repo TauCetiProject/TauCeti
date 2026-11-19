@@ -27,6 +27,7 @@ traces. This file states it through the trace on the flat segment of the model h
 For a real point `x` the affine isometry `TauCeti.halfDiscChart x`, `z ↦ (im (z - x), re (z - x))`,
 takes the upper half-disc `D_r(x) ∩ {0 < im}` onto the model half-disc `TauCeti.halfDisc r`, whose
 first coordinate is the normal one, and the real interval `[x - r, x + r]` onto its flat segment.
+The chart geometry is in `TauCeti.Analysis.Sobolev.LipschitzDomain.HalfDisc.Complex`.
 
 * `TauCeti.HasZeroRealAxisTrace hp U f` says that a real function `f` has zero trace on the real
   axis inside `U`: for every real point `x` and every `r > 0` with
@@ -50,6 +51,7 @@ of the components (`TauCeti.hasRealAxisTraceIn_ker_im_iff`).
 ## Main declarations
 
 * `TauCeti.HasZeroRealAxisTrace`, `TauCeti.HasRealAxisTraceIn`: the boundary conditions.
+* `TauCeti.hasZeroRealAxisTrace_def`, `TauCeti.hasRealAxisTraceIn_def`: their defining conditions.
 * `TauCeti.HasRealAxisTraceIn.mono`, `TauCeti.HasRealAxisTraceIn.congr_ae`,
   `TauCeti.HasRealAxisTraceIn.add`, `TauCeti.HasRealAxisTraceIn.const_smul`: the structure.
 * `TauCeti.MemWkpLoc.hasRealAxisTraceIn_iff_of_continuousOn`,
@@ -91,6 +93,7 @@ def HasZeroRealAxisTrace (U : Set ℂ) (f : ℂ → ℝ) : Prop :=
       W1p.value v =ᵐ[volume.restrict (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))]
         fun w => f ((halfDiscChart x).symm w)
 
+variable {hp} in
 /-- The defining witnesses of zero real-axis trace, without unfolding the predicate. -/
 theorem hasZeroRealAxisTrace_def (U : Set ℂ) (f : ℂ → ℝ) :
     HasZeroRealAxisTrace hp U f ↔
@@ -124,7 +127,7 @@ theorem HasZeroRealAxisTrace.congr_ae (h : HasZeroRealAxisTrace hp U f)
   intro x hx r hr hxr
   obtain ⟨v, hv, hvf⟩ := h x hx r hr hxr
   exact ⟨v, hv,
-    hvf.trans (ae_eq_comp_halfDiscChart_symm hx ((upperHalfDisc_subset x r).trans hxr) hfg)⟩
+    hvf.trans (ae_eq_comp_halfDiscChart_symm hx ((coe_upperHalfDisc_subset_closedBall_inter x r).trans hxr) hfg)⟩
 
 /-- The zero function has zero trace. -/
 @[simp]
@@ -192,7 +195,7 @@ theorem MemWkpLoc.hasZeroRealAxisTrace_iff_of_continuousOn {Ω : Opens ℂ}
     refine W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_of_continuousOn hp hr
       (hg.comp (halfDiscChart x).symm.continuous.continuousOn
         ((halfDiscChart_symm_mapsTo_closure hx hr).mono_right hxr))
-      (hv.trans (ae_eq_comp_halfDiscChart_symm hx ((upperHalfDisc_subset x r).trans hxr) hfg))
+      (hv.trans (ae_eq_comp_halfDiscChart_symm hx ((coe_upperHalfDisc_subset_closedBall_inter x r).trans hxr) hfg))
   constructor
   · intro h x hxΩ hx
     obtain ⟨r, hr, hrΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen x hxΩ
@@ -222,7 +225,7 @@ theorem HasZeroRealAxisTrace.of_tendsto {fs : ℕ → ℂ → ℝ}
   choose vs hvs hvsf using fun n => hfs n x hx r hr hxr
   have hK := (isCompact_closedBall x r).inter_right (t := {z : ℂ | 0 ≤ z.im})
     (isClosed_le continuous_const Complex.continuous_im)
-  have hD := upperHalfDisc_subset x r
+  have hD := coe_upperHalfDisc_subset_closedBall_inter x r
   -- A representative of `fs n - f` on the model half-disc, for `n` where its norm is finite.
   have hw : ∀ n, eLpNormWkp p (closedBall x r ∩ {z | 0 ≤ z.im}) 1 (fs n - f) ≠ ∞ →
       ∃ w : W1p volume (halfDisc r) p,
