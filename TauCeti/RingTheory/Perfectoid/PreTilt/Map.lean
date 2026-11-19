@@ -41,8 +41,8 @@ the corresponding constructions on the rings themselves.
 
 * `PreTilt.coeff_map`: the coordinates of `PreTilt.map p f x` are the reductions of those of `x`.
 * `PreTilt.map_id`, `PreTilt.map_comp`: functoriality.
-* `PreTilt.untilt_map`: naturality of the sharp map, `(PreTilt.map p f x)♯ = f (x♯)`.
-* `WittVector.fontaineTheta_map`: naturality of Fontaine's map.
+* `PreTilt.untilt_natural`: naturality of the sharp map, `(PreTilt.map p f x)♯ = f (x♯)`.
+* `WittVector.theta_natural`: naturality of Fontaine's map.
 
 ## References
 
@@ -113,7 +113,7 @@ theorem map_comp (g : B →+* C) (f : A →+* B) :
 /-- **Naturality of the sharp map**: for `p`-adically complete `A` and `B`, a ring homomorphism
 `f : A →+* B` satisfies `(PreTilt.map p f x)♯ = f (x♯)`. -/
 @[simp]
-theorem untilt_map [IsAdicComplete (span {(p : A)}) A] [IsAdicComplete (span {(p : B)}) B]
+theorem untilt_natural [IsAdicComplete (span {(p : A)}) A] [IsAdicComplete (span {(p : B)}) B]
     (f : A →+* B) (x : PreTilt A p) : (map p f x).untilt = f x.untilt := by
   rw [← teichmuller₀_equivPerfection, ← teichmuller₀_equivPerfection]
   refine Eq.trans ?_ (Perfection.teichmuller₀_map (J := span {(p : B)}) f ?_ (equivPerfection x))
@@ -132,15 +132,15 @@ variable {p : ℕ} [Fact p.Prime] [Fact ¬IsUnit (p : A)] [Fact ¬IsUnit (p : B)
 
 /-- **Naturality of Fontaine's map**: for `p`-adically complete `A` and `B` and a ring
 homomorphism `f : A →+* B`, `θ_B ∘ W(PreTilt.map p f) = f ∘ θ_A`. -/
-theorem fontaineTheta_comp_map (f : A →+* B) :
+theorem theta_natural_comp (f : A →+* B) :
     (fontaineTheta B p).comp (map (PreTilt.map p f)) = f.comp (fontaineTheta A p) :=
   ringHom_ext_teichmuller fun x ↦ by
     simp [map_teichmuller, fontaineTheta_teichmuller]
 
 /-- **Naturality of Fontaine's map**, elementwise: `θ_B (W(PreTilt.map p f) w) = f (θ_A w)`. -/
 @[simp]
-theorem fontaineTheta_map (f : A →+* B) (w : WittVector p (PreTilt A p)) :
+theorem theta_natural (f : A →+* B) (w : WittVector p (PreTilt A p)) :
     fontaineTheta B p (map (PreTilt.map p f) w) = f (fontaineTheta A p w) :=
-  congr($(fontaineTheta_comp_map f) w)
+  congr($(theta_natural_comp f) w)
 
 end WittVector

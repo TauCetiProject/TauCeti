@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.AdicCompletion.Pi
+public import TauCeti.RingTheory.Perfection.MapEquiv
+public import TauCeti.RingTheory.Perfection.Pi
 public import TauCeti.RingTheory.Perfectoid.PreTilt.Map
 public import TauCeti.RingTheory.WittVector.MapEquiv
 public import TauCeti.RingTheory.WittVector.Pi
@@ -15,9 +17,9 @@ public import TauCeti.RingTheory.WittVector.Pi
 
 Let `(A i)` be an arbitrary family of commutative rings. Reduction modulo `p` commutes with the
 product, `(∏ A i) ⧸ p ≅ ∏ (A i ⧸ p)`, because the ideal `p (∏ A i)` consists of the families of
-multiples of `p`. Taking compatible systems of `p`-th roots coordinatewise, the projections
-induce an isomorphism of tilts `(∏ A i)♭ ≅ ∏ (A i)♭`. Witt vectors are computed coordinatewise as
-well, so `W(∏ R i) ≅ ∏ W(R i)` for any family of rings, and together these give
+multiples of `p`. Perfections are computed coordinatewise (`Perfection.piEquiv`), so the
+projections induce an isomorphism of tilts `(∏ A i)♭ ≅ ∏ (A i)♭`. Witt vectors are computed
+coordinatewise as well, so `W(∏ R i) ≅ ∏ W(R i)` for any family of rings, and together these give
 `A_inf(∏ A i) ≅ ∏ A_inf(A i)`, where `A_inf(A) = W(A♭)`.
 
 When every `A i` is `p`-adically complete, so is the product
@@ -67,9 +69,7 @@ noncomputable def piEquiv : ModP (∀ i, A i) p ≃+* ∀ i, ModP (A i) p :=
     · obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
       rw [Ideal.Quotient.eq_zero_iff_mem, mem_span_singleton, pi_dvd_iff]
       intro i
-      have hi := congr_fun hx i
-      rwa [RingHom.pi_apply, map_mk, Pi.zero_apply, Ideal.Quotient.eq_zero_iff_mem,
-        mem_span_singleton, Pi.evalRingHom_apply, ← Pi.natCast_apply] at hi
+      simpa [Ideal.Quotient.eq_zero_iff_mem, mem_span_singleton] using congr_fun hx i
     · choose a ha using fun i ↦ Ideal.Quotient.mk_surjective (y i)
       refine ⟨Ideal.Quotient.mk _ a, funext fun i ↦ ?_⟩
       rw [RingHom.pi_apply, map_mk, Pi.evalRingHom_apply, ha]
@@ -79,9 +79,15 @@ theorem piEquiv_apply (x : ModP (∀ i, A i) p) (i : ι) :
     piEquiv p x i = map p (Pi.evalRingHom A i) x :=
   (rfl)
 
+@[simp]
 theorem piEquiv_mk (a : ∀ i, A i) :
     piEquiv p (Ideal.Quotient.mk _ a) = fun i ↦ Ideal.Quotient.mk _ (a i) :=
   funext fun i ↦ by simp
+
+@[simp]
+theorem piEquiv_symm_mk (a : ∀ i, A i) :
+    (piEquiv p).symm (fun i ↦ Ideal.Quotient.mk _ (a i)) = Ideal.Quotient.mk _ a :=
+  (piEquiv p).symm_apply_eq.mpr (piEquiv_mk p a).symm
 
 end ModP
 
@@ -97,29 +103,21 @@ namespace PreTilt
 variable (p : ℕ) [Fact p.Prime] [∀ i, Fact ¬IsUnit (p : A i)] [Fact ¬IsUnit (p : ∀ i, A i)]
 
 /-- **The tilt of a product is the product of the tilts**: the projections induce a ring
-isomorphism `(∏ A i)♭ ≃+* ∏ (A i)♭`. -/
+isomorphism `(∏ A i)♭ ≃+* ∏ (A i)♭`, the perfection of `ModP.piEquiv` (`Perfection.mapEquiv`)
+followed by `Perfection.piEquiv`. -/
 noncomputable def piEquiv : PreTilt (∀ i, A i) p ≃+* ∀ i, PreTilt (A i) p :=
-  RingEquiv.ofBijective (RingHom.pi fun i ↦ map p (Pi.evalRingHom A i)) <| by
-    refine ⟨fun x y hxy ↦ ext fun n ↦ (ModP.piEquiv p).injective <| funext fun i ↦ ?_,
-      fun y ↦ ?_⟩
-    · have h := congr(coeff n ($hxy i))
-      rwa [RingHom.pi_apply, RingHom.pi_apply, coeff_map, coeff_map, ← ModP.piEquiv_apply,
-        ← ModP.piEquiv_apply] at h
-    -- the compatible system whose `n`-th coordinate is the family of `n`-th coordinates
-    obtain ⟨z, hz⟩ : ∃ z : Perfection (ModP (∀ i, A i) p) p,
-        ∀ n, Perfection.coeff _ p n z = (ModP.piEquiv p).symm fun i ↦ coeff n (y i) :=
-      ⟨⟨fun n ↦ (ModP.piEquiv p).symm fun i ↦ coeff n (y i), fun n ↦ by
-        rw [← map_pow]; exact congr_arg _ (funext fun i ↦ coeff_pow_p (y i) n)⟩, fun _ ↦ rfl⟩
-    refine ⟨equivPerfection.symm z, funext fun i ↦ ext fun n ↦ ?_⟩
-    rw [RingHom.pi_apply, coeff_map, coeff_equivPerfection_symm, hz, ← ModP.piEquiv_apply,
-      RingEquiv.apply_symm_apply]
+  -- `p` is a unit in the zero ring, so the family is nonempty
+  haveI : Nonempty ι := not_isEmpty_iff.mp fun _ ↦
+    Fact.out (p := ¬IsUnit (p : ∀ i, A i)) (isUnit_of_subsingleton _)
+  equivPerfection.trans <| (Perfection.mapEquiv p (ModP.piEquiv p)).trans <|
+    (Perfection.piEquiv p).trans <| RingEquiv.piCongrRight fun _ ↦ equivPerfection.symm
 
 variable {p}
 
 @[simp]
 theorem piEquiv_apply (x : PreTilt (∀ i, A i) p) (i : ι) :
     piEquiv p x i = map p (Pi.evalRingHom A i) x :=
-  (rfl)
+  ext fun n ↦ by simp [piEquiv]
 
 /-- The coordinates of `(piEquiv p).symm y` are the families of coordinates of the `y i`. -/
 @[simp]
@@ -133,7 +131,7 @@ variable [∀ i, IsAdicComplete (span {(p : A i)}) (A i)]
 /-- The sharp of the `i`-th component of `x ∈ (∏ A j)♭` is the `i`-th component of `x♯`. -/
 theorem untilt_piEquiv_apply (x : PreTilt (∀ i, A i) p) (i : ι) :
     (piEquiv p x i).untilt = x.untilt i := by
-  rw [piEquiv_apply, untilt_map, Pi.evalRingHom_apply]
+  rw [piEquiv_apply, untilt_natural, Pi.evalRingHom_apply]
 
 /-- The sharp of the compatible system corresponding to a family `y` is the family of sharps. -/
 @[simp]
@@ -169,7 +167,7 @@ variable [∀ i, IsAdicComplete (span {(p : A i)}) (A i)]
 theorem fontaineTheta_wittVectorPiEquiv_apply (w : WittVector p (PreTilt (∀ i, A i) p)) (i : ι) :
     WittVector.fontaineTheta (A i) p (wittVectorPiEquiv p w i) =
       WittVector.fontaineTheta (∀ i, A i) p w i := by
-  rw [wittVectorPiEquiv_apply, WittVector.fontaineTheta_map, Pi.evalRingHom_apply]
+  rw [wittVectorPiEquiv_apply, WittVector.theta_natural, Pi.evalRingHom_apply]
 
 /-- **Fontaine's map of a product is the product of Fontaine's maps**: under
 `A_inf(∏ A i) ≃+* ∏ A_inf(A i)`, `θ` of the product is computed componentwise. -/

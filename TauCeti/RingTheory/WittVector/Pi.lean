@@ -39,9 +39,7 @@ noncomputable def piEquiv : WittVector p (∀ i, R i) ≃+* ∀ i, WittVector p 
     refine ⟨fun x y hxy ↦ ext fun n ↦ funext fun i ↦ ?_, fun y ↦
       ⟨mk p fun n i ↦ (y i).coeff n, funext fun i ↦ ext fun n ↦ by
         rw [RingHom.pi_apply, map_coeff, coeff_mk, Pi.evalRingHom_apply]⟩⟩
-    have h := congr(($hxy i).coeff n)
-    rwa [RingHom.pi_apply, RingHom.pi_apply, map_coeff, map_coeff, Pi.evalRingHom_apply,
-      Pi.evalRingHom_apply] at h
+    simpa [map_coeff] using congr(($hxy i).coeff n)
 
 variable {p}
 
