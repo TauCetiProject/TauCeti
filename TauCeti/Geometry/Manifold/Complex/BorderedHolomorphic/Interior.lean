@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.Basic
+public import TauCeti.Geometry.Manifold.Boundary.Charts
 
 /-!
 # The interior of a Riemann surface with boundary
@@ -61,6 +62,9 @@ diffeomorphism between them (`TauCeti.borderedInteriorDiffeomorph`).
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
   Colloquium Publications **52**, 2012, Section 2.4 and Appendix C.
+The exact native half-space transfer has boundary `(borderedInterior M)ᶜ`, as a set of `M`, by
+`TauCeti.boundary_euclideanHalfSpace_eq_compl_borderedInterior`.
+
 -/
 
 public section
@@ -358,5 +362,39 @@ theorem chartAt_borderedInterior_target_eq (x : borderedInterior ClosedUpperHalf
   simp
 
 end ClosedUpperHalfPlane
+
+end TauCeti
+
+/-! ### The native half-space boundary -/
+
+namespace TauCeti
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M]
+
+attribute [local instance] ClosedUpperHalfPlane.euclideanHalfSpaceChartedSpace
+
+/-- For the native half-space transfer, the actual manifold boundary is the gluing locus. -/
+theorem mem_boundary_euclideanHalfSpace_iff_notMem_borderedInterior
+    [IsManifold closedUpperHalfPlaneModel 1 M]
+    (x : M) :
+    x ∈ (𝓡∂ (1 + 1)).boundary M ↔ x ∉ borderedInterior M := by
+  rw [ModelWithCorners.mem_boundary_euclideanHalfSpace_iff
+    (mem_chart_source (EuclideanHalfSpace (1 + 1)) x)]
+  rw [ClosedUpperHalfPlane.chartAt_euclideanHalfSpace]
+  simp only [OpenPartialHomeomorph.coe_trans, Function.comp_apply]
+  -- Evaluate the composite preferred chart through its coordinate homeomorphism.
+  change (ClosedUpperHalfPlane.euclideanHalfSpaceHomeomorph
+    (chartAt ClosedUpperHalfPlane x x)).1 0 = 0 ↔ x ∉ borderedInterior M
+  rw [ClosedUpperHalfPlane.coe_euclideanHalfSpaceHomeomorph,
+    closedUpperHalfPlaneCoordinates_apply_zero]
+  exact im_eq_zero_iff_notMem_borderedInterior (IsManifold.chart_mem_maximalAtlas _)
+    (mem_chart_source _ _)
+
+/-- The actual native half-space boundary is exactly the bordered gluing locus. -/
+theorem boundary_euclideanHalfSpace_eq_compl_borderedInterior
+    [IsManifold closedUpperHalfPlaneModel 1 M] :
+    (𝓡∂ (1 + 1)).boundary M = (borderedInterior M : Set M)ᶜ := by
+  ext x
+  exact mem_boundary_euclideanHalfSpace_iff_notMem_borderedInterior x
 
 end TauCeti
