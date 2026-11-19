@@ -79,6 +79,10 @@ use.
   nonzero diagonal vectors already implies the bounded-unit-set condition.
 * `TauCeti.isOpen_setOf_forall_bilinear_apply_self_pos`: strict diagonal positivity is open
   among all continuous bilinear forms in finite dimensions, without imposing symmetry.
+* `ContinuousLinearMap.apply_self_eq_norm_sq_mul_apply_inv_norm_smul`: the diagonal of a
+  continuous bilinear form at `v` is `‖v‖²` times its value at the unit vector `‖v‖⁻¹ • v`.
+* `TauCeti.mul_norm_sq_le_of_forall_mem_sphere`: a lower bound `c` for the diagonal of a
+  continuous bilinear form on the unit sphere gives `c ‖v‖² ≤ b v v` for every `v`.
 * `IsCompact.exists_pos_forall_mul_norm_sq_le`: in finite dimensions, a family of continuous
   bilinear forms, continuous on a compact set and positive on nonzero diagonal vectors, is bounded
   below on the diagonal by one positive multiple of the squared norm.
@@ -393,7 +397,7 @@ theorem isOpen_setOf_forall_bilinear_apply_self_pos
 
 /-- The diagonal of a continuous bilinear form at `v` is `‖v‖²` times its value at the unit
 vector `‖v‖⁻¹ • v` (both sides vanish at `v = 0`). -/
-private theorem apply_self_eq_norm_sq_mul_apply_inv_norm_smul {E : Type*}
+theorem _root_.ContinuousLinearMap.apply_self_eq_norm_sq_mul_apply_inv_norm_smul {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] (b : E →L[ℝ] E →L[ℝ] ℝ) (v : E) :
     b v v = ‖v‖ ^ 2 * b (‖v‖⁻¹ • v) (‖v‖⁻¹ • v) := by
   rcases eq_or_ne v 0 with rfl | hv
@@ -403,12 +407,12 @@ private theorem apply_self_eq_norm_sq_mul_apply_inv_norm_smul {E : Type*}
 
 /-- On a real normed space, a continuous bilinear form `b` with `c ≤ b u u` on the unit sphere
 satisfies `c ‖v‖² ≤ b v v` for every `v`. -/
-private theorem mul_norm_sq_le_of_forall_mem_sphere {E : Type*} [NormedAddCommGroup E]
+theorem mul_norm_sq_le_of_forall_mem_sphere {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {b : E →L[ℝ] E →L[ℝ] ℝ} {c : ℝ}
     (h : ∀ u ∈ Metric.sphere (0 : E) 1, c ≤ b u u) (v : E) : c * ‖v‖ ^ 2 ≤ b v v := by
   rcases eq_or_ne v 0 with rfl | hv
   · simp
-  rw [apply_self_eq_norm_sq_mul_apply_inv_norm_smul, mul_comm]
+  rw [ContinuousLinearMap.apply_self_eq_norm_sq_mul_apply_inv_norm_smul, mul_comm]
   exact mul_le_mul_of_nonneg_left (h _ (by simp [norm_smul, hv])) (by positivity)
 
 /-- **Uniform coercivity over a compact family.** On a finite-dimensional real normed space, let
@@ -500,7 +504,7 @@ theorem _root_.IsCompact.eventually_exists_pos_forall_mul_norm_sq_le_mul_add
     @IsTopologicalAddGroup.toContinuousAdd _ _ _ ContinuousLinearMap.isTopologicalAddGroup
   obtain ⟨c, hc, hle⟩ := hK.exists_pos_forall_mul_norm_sq_le (b := fun x ↦ t • a x + b x)
     ((ha.const_smul t).add hb) fun x hx v hv ↦ by
-      rw [apply_self_eq_norm_sq_mul_apply_inv_norm_smul]
+      rw [ContinuousLinearMap.apply_self_eq_norm_sq_mul_apply_inv_norm_smul]
       exact mul_pos (by positivity) (by
         simpa only [_root_.add_apply, _root_.smul_apply, smul_eq_mul]
           using ht (x, ‖v‖⁻¹ • v) ⟨hx, by simp [norm_smul, hv]⟩)
