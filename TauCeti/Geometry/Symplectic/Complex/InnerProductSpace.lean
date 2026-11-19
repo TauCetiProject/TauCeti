@@ -17,9 +17,10 @@ The construction preserves the original norm and real scalar action. It is a nam
 structure rather than a global instance, since it depends on `J`.
 
 `TauCeti.AlmostComplexStructure.norm_apply` supplies norm preservation from preservation of the
-real inner product, and `TauCeti.AlmostComplexStructure.inner_apply_self` the orthogonality
-`⟪J v, v⟫ = 0`. Conversely, on a complex normed space whose norm comes from a real inner product,
-multiplication by `i` is orthogonal
+real inner product, and `TauCeti.AlmostComplexStructure.inner_apply_self` and
+`TauCeti.AlmostComplexStructure.inner_self_apply` the orthogonality `⟪J v, v⟫ = ⟪v, J v⟫ = 0`.
+Conversely, on a complex normed space whose norm comes from a real inner product, multiplication
+by `i` is orthogonal
 (`TauCeti.AlmostComplexStructure.inner_ofComplexModule_apply_ofComplexModule_apply`).
 
 This is the usual Hermitian metric associated with an orthogonal complex structure; see
@@ -45,6 +46,11 @@ theorem inner_apply_self {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J
     (v : V) : ⟪J v, v⟫ = 0 := by
   rw [real_inner_comm]
   exact J.bilinForm_apply_apply_self_eq_zero (g := innerₗ V) ⟨fun x y ↦ real_inner_comm y x⟩ hJ v
+
+/-- An orthogonal almost complex structure turns every vector by a right angle, `⟪v, J v⟫ = 0`. -/
+theorem inner_self_apply {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
+    (v : V) : ⟪v, J v⟫ = 0 := by
+  rw [real_inner_comm, inner_apply_self hJ]
 
 /-- Multiplication by `i` is an orthogonal almost complex structure on a complex normed space
 whose norm comes from a real inner product. -/

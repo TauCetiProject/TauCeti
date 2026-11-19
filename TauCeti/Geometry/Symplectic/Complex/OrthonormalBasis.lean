@@ -189,7 +189,6 @@ theorem exists_unitary_orthonormalBasis_of_norm_eq_one {J : AlmostComplexStructu
   classical
   have hskew (v w : V) : ⟪J v, w⟫ = -⟪v, J w⟫ :=
     J.bilinForm_apply_left_eq_neg_apply_right (g := innerₗ V) hJ v w
-  have hself (v : V) : ⟪v, J v⟫ = 0 := by rw [real_inner_comm, J.inner_apply_self hJ]
   obtain ⟨η, hη_norm, hηK⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (𝕜 := ℝ)
     ({ξ, J ξ} : Finset V) (by
       rw [Fact.out (p := finrank ℝ V = 4)]
@@ -200,8 +199,8 @@ theorem exists_unitary_orthonormalBasis_of_norm_eq_one {J : AlmostComplexStructu
   have hJξJη : ⟪J ξ, J η⟫ = 0 := by rw [hJ, hξη]
   have hon₄ : Orthonormal ℝ ![ξ, J ξ, η, J η] := by
     refine ⟨fun i ↦ by fin_cases i <;> simp [hξ, hη_norm, J.norm_apply hJ], fun {i j} hij ↦ ?_⟩
-    have hξJ := hself ξ
-    have hηJη := hself η
+    have hξJ := J.inner_self_apply hJ ξ
+    have hηJη := J.inner_self_apply hJ η
     fin_cases i <;> fin_cases j <;> dsimp only <;> first
       | exact absurd rfl hij
       | exact hξJ | exact hξη | exact hξJη | exact hJξη | exact hJξJη | exact hηJη

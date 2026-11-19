@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Mass
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.CalibratedFrame
+public import TauCeti.Geometry.Symplectic.Wirtinger
 
 /-!
 # The Wirtinger inequality in degree two
@@ -74,27 +75,15 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
   {J : AlmostComplexStructure V} (hJ : ∀ u v, ⟪J u, J v⟫ = ⟪u, v⟫)
 include hJ
 
-/-- The defect in the Wirtinger inequality: `‖v ∧ w‖² - ω(v, w)²`, scaled by `‖v‖²`, is the
-squared norm of the component of `‖v‖² w` orthogonal to the complex line `span {v, J v}`. -/
-private theorem sq_norm_mul_sub_eq_norm_sub_sq (v w : V) :
-    ‖v‖ ^ 2 * (‖ιMulti ℝ 2 ![v, w]‖ ^ 2 - ⟪J v, w⟫ ^ 2) =
-      ‖‖v‖ ^ 2 • w - ⟪v, w⟫ • v - ⟪J v, w⟫ • J v‖ ^ 2 := by
-  have h₁ : ⟪J v, v⟫ = 0 := inner_apply_self hJ v
-  have h₂ : ⟪v, J v⟫ = 0 := by rw [real_inner_comm, h₁]
-  rw [← real_inner_self_eq_norm_sq (ιMulti ℝ 2 ![v, w]), inner_ιMulti_two]
-  simp only [← real_inner_self_eq_norm_sq, inner_sub_left, inner_sub_right, real_inner_smul_left,
-    real_inner_smul_right, h₁, h₂, hJ v v, real_inner_comm v w, real_inner_comm (J v) w]
-  ring
-
 /-- The pair `(v, J v)` is calibrated by the Kähler form whenever `v` is a unit vector. -/
 private theorem isCalibratedFrame_alternatingFormEquiv_kahlerForm_of_norm_eq_one {v : V}
     (hv : ‖v‖ = 1) :
     (alternatingFormEquiv V 2 J.kahlerForm).IsCalibratedFrame ![v, J v] := by
-  have h₂ : ⟪v, J v⟫ = 0 := by rw [real_inner_comm, inner_apply_self hJ]
   refine ⟨?_, ?_⟩
   · rw [orthonormal_iff_ite]
     intro i j
-    fin_cases i <;> fin_cases j <;> simp [hv, norm_apply hJ, inner_apply_self hJ, h₂]
+    fin_cases i <;> fin_cases j <;>
+      simp [hv, norm_apply hJ, inner_apply_self hJ, inner_self_apply hJ]
   · simp [alternatingFormEquiv_kahlerForm_apply hJ, hJ, hv]
 
 /-- **Wirtinger's inequality, frame form**: an ordered pair of vectors is calibrated by the Kähler
@@ -128,33 +117,17 @@ oriented like `(v, J v)`. -/
 theorem alternatingFormEquiv_kahlerForm_apply_eq_norm_ιMulti_iff {v w : V} (hv : v ≠ 0) :
     alternatingFormEquiv V 2 J.kahlerForm ![v, w] = ‖ιMulti ℝ 2 ![v, w]‖ ↔
       ∃ a b : ℝ, 0 ≤ b ∧ w = a • v + b • J v := by
-  have hv₂ : 0 < ‖v‖ ^ 2 := by positivity
-  have key := sq_norm_mul_sub_eq_norm_sub_sq hJ v w
-  simp only [alternatingFormEquiv_kahlerForm_apply hJ, Matrix.cons_val_zero,
-    Matrix.cons_val_one]
-  constructor
-  · intro h
-    rw [← h, sub_self, mul_zero, eq_comm, sq_eq_zero_iff, norm_eq_zero, sub_sub,
-      sub_eq_zero] at key
-    refine ⟨⟪v, w⟫ / ‖v‖ ^ 2, ⟪J v, w⟫ / ‖v‖ ^ 2, div_nonneg (h ▸ norm_nonneg _) hv₂.le, ?_⟩
-    rw [div_eq_inv_mul, div_eq_inv_mul, mul_smul, mul_smul, ← smul_add, ← key, smul_smul,
-      inv_mul_cancel₀ hv₂.ne', one_smul]
-  · rintro ⟨a, b, hb, rfl⟩
-    have h₁ : ⟪J v, v⟫ = 0 := inner_apply_self hJ v
-    have h₂ : ⟪v, J v⟫ = 0 := by rw [real_inner_comm, h₁]
-    have hω : ⟪J v, a • v + b • J v⟫ = b * ‖v‖ ^ 2 := by
-      simp [inner_add_right, real_inner_smul_right, h₁, hJ]
-    have hp : ⟪v, a • v + b • J v⟫ = a * ‖v‖ ^ 2 := by
-      simp [inner_add_right, real_inner_smul_right, h₂]
-    rw [hω, hp] at key
-    have hsq : ‖ιMulti ℝ 2 ![v, a • v + b • J v]‖ ^ 2 = (b * ‖v‖ ^ 2) ^ 2 := by
-      have hzero : ‖v‖ ^ 2 • (a • v + b • J v) - (a * ‖v‖ ^ 2) • v -
-          (b * ‖v‖ ^ 2) • J v = 0 := by
-        module
-      rw [hzero, norm_zero, zero_pow two_ne_zero, mul_eq_zero, sub_eq_zero] at key
-      exact key.resolve_left hv₂.ne'
-    rw [hω]
-    exact ((sq_eq_sq₀ (by positivity) (norm_nonneg _)).1 hsq.symm)
+  let ω := J.symplecticForm hJ
+  have hg (u x : V) : ω u (J x) = ⟪u, x⟫ := by simp [ω, hJ]
+  have hω : ω.Compatible J :=
+    .of_tames (SymplecticForm.invariant_of_apply_apply_eq_inner hg) fun u hu ↦ by
+      rw [hg]; exact real_inner_self_pos.2 hu
+  have hnorm : ‖ιMulti ℝ 2 ![v, w]‖ = ω.wedgeNorm J v w := by
+    rw [SymplecticForm.wedgeNorm_def, norm_eq_sqrt_real_inner, inner_ιMulti_two]
+    simp only [SymplecticForm.associatedBilinForm_apply, hg, real_inner_comm v w, sq]
+  rw [alternatingFormEquiv_kahlerForm_apply hJ, hnorm, Matrix.cons_val_zero, Matrix.cons_val_one,
+    ← symplecticForm_apply hJ]
+  exact hω.apply_eq_wedgeNorm_iff hv w
 
 end TauCeti.AlmostComplexStructure
 
@@ -218,8 +191,8 @@ theorem standardKahlerForm_apply_eq_norm_ιMulti_iff {n : ℕ} {v w : EuclideanS
       AlmostComplexStructure.inner_ofComplexModule_apply_ofComplexModule_apply hv]
   simp only [AlmostComplexStructure.ofComplexModule_apply]
   have hc (c : ℂ) : c • v = c.re • v + c.im • Complex.I • v := by
-    conv_lhs => rw [← Complex.re_add_im c]
-    rw [add_smul, mul_comm, mul_smul, Complex.coe_smul, Complex.coe_smul, smul_comm]
+    nth_rw 1 [← Complex.re_add_im c]
+    simp
   exact ⟨fun ⟨a, b, hb, hw⟩ ↦ ⟨⟨a, b⟩, hb, hw.trans (hc ⟨a, b⟩).symm⟩,
     fun ⟨c, hc', hw⟩ ↦ ⟨c.re, c.im, hc', hw.trans (hc c)⟩⟩
 
