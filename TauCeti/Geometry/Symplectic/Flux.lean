@@ -478,7 +478,7 @@ every closed two-form preserved by their common final diffeomorphism. -/
 theorem Homotopic.flux_eq (σ : closedForms J M 2) (h : Φ.Homotopic Ψ)
     (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1)
     (hΨ : Ψ.final ∈ SmoothForm.diffeomorphStabilizer σ.1) : Φ.flux σ hΦ = Ψ.flux σ hΨ := by
-  obtain ⟨G, hG, hG₀, hG₁, h₀, h₁⟩ := homotopic_iff.mp h
+  obtain ⟨G, -, hG, hG₀, hG₁, h₀, h₁, -⟩ := homotopic_iff.mp h
   exact (Φ.flux_eq_of_homotopy σ hΦ hG hG₀ hG₁ h₀ h₁).symm
 
 /-- A diffeotopy whose motion is homotopic, through a smooth homotopy fixing both time ends, to the

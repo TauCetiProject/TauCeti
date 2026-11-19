@@ -34,12 +34,13 @@ neighbourhoods of both time ends. Native diffeotopies carry no collar data, so c
 separately specified subclass. It is closed under `trans`, `symm` and `reverse`, and every
 concatenation is collared, whether or not its two factors are.
 
-The temporal operations agree with the pointwise ones up to homotopy fixing both time ends
-(`TauCeti.Diffeotopy.Homotopic`). A reparametrization fixing both ends of the interval is
-homotopic to the original diffeotopy, through the straight-line homotopy of time maps. Hence the
-concatenation of `Φ` and `Ψ` is homotopic to `Φ.trans Ψ`, and the reversal of `Φ` is homotopic to
-`Φ.symm`, through `((x, t), s) ↦ φ_{(1 - s)(1 - t)} (φ_{(1 - s) + s t}⁻¹ x)`. So on homotopy classes
-concatenation is the pointwise product and reversal is the inverse, and both respect homotopy.
+The temporal operations agree with the pointwise ones up to homotopy through diffeotopies fixing
+both time ends (`TauCeti.Diffeotopy.Homotopic`). A reparametrization fixing both ends of the
+interval is homotopic to the original diffeotopy, through the straight-line homotopy of time maps.
+Hence the concatenation of `Φ` and `Ψ` is homotopic to `Φ.trans Ψ`, and the reversal of `Φ` is
+homotopic to `Φ.symm`, through `((x, t), s) ↦ φ_{(1 - s)(1 - t)} (φ_{(1 - s) + s t}⁻¹ x)`. So on
+homotopy classes concatenation is the pointwise product and reversal is the inverse, and both
+respect homotopy.
 
 ## Main definitions
 
@@ -355,10 +356,14 @@ section Homotopy
 straight-line homotopy `((x, t), s) ↦ φ_{(1 - s) ρ t + s t} x` of time maps. -/
 theorem reparam_homotopic {ρ : C^n⟮𝓡∂ 1, I; 𝓡∂ 1, I⟯} (h₀ : ρ 0 = 0) (h₁ : ρ 1 = 1) :
     (Φ.reparam ρ).Homotopic Φ := by
+  have hτ : ContMDiff ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) ((𝓡∂ 1).prod J) n
+      fun q : (M × I) × I ↦ (Set.Icc.convexComb (ρ q.1.2) q.1.2 q.2, q.1.1) :=
+    ((ρ.contMDiff.comp (contMDiff_snd.comp contMDiff_fst)).convexComb
+      (contMDiff_snd.comp contMDiff_fst) contMDiff_snd).prodMk (contMDiff_fst.comp contMDiff_fst)
   refine homotopic_iff.mpr ⟨fun q ↦ Φ (Set.Icc.convexComb (ρ q.1.2) q.1.2 q.2, q.1.1),
-    Φ.contMDiff.comp (((ρ.contMDiff.comp (contMDiff_snd.comp contMDiff_fst)).convexComb
-      (contMDiff_snd.comp contMDiff_fst) contMDiff_snd).prodMk (contMDiff_fst.comp contMDiff_fst)),
-    fun p ↦ ?_, fun p ↦ ?_, fun x s ↦ ?_, fun x s ↦ ?_⟩
+    fun q ↦ Φ.symm (Set.Icc.convexComb (ρ q.1.2) q.1.2 q.2, q.1.1), Φ.contMDiff.comp hτ,
+    fun p ↦ ?_, fun p ↦ ?_, fun x s ↦ ?_, fun x s ↦ ?_, Φ.symm.contMDiff.comp hτ,
+    fun x t s ↦ symm_apply_apply_mk _ _ _, fun x t s ↦ apply_symm_apply_mk _ _ _⟩
   · simp only [Set.Icc.convexComb_zero, cylinderMap_apply, reparam_apply_of_map_zero _ h₀]
   · simp only [Set.Icc.convexComb_one, cylinderMap_apply]
   · simp only [h₀, Set.Icc.convexComb_eq, apply_zero]
@@ -373,13 +378,24 @@ theorem concat_homotopic_trans (hn : n ≤ ∞) : (Φ.concat Ψ hn).Homotopic (�
 /-- **The path-class law of time reversal.** The reversal `φ_{1 - t} ∘ φ₁⁻¹` is homotopic to the
 pointwise inverse `φ_t⁻¹`, through `((x, t), s) ↦ φ_{(1 - s)(1 - t)} (φ_{(1 - s) + s t}⁻¹ x)`. -/
 theorem reverse_homotopic_symm : Φ.reverse.Homotopic Φ.symm := by
+  have ha : ContMDiff ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) (𝓡∂ 1) n
+      fun q : (M × I) × I ↦ Set.Icc.convexComb (σ q.1.2) 0 q.2 :=
+    (contMDiff_symm.comp (contMDiff_snd.comp contMDiff_fst)).convexComb contMDiff_const
+      contMDiff_snd
+  have hb : ContMDiff ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) (𝓡∂ 1) n
+      fun q : (M × I) × I ↦ Set.Icc.convexComb 1 q.1.2 q.2 :=
+    contMDiff_const.convexComb (contMDiff_snd.comp contMDiff_fst) contMDiff_snd
+  -- The inverse homotopy is `((x, t), s) ↦ φ_{(1 - s) + s t} (φ_{(1 - s)(1 - t)}⁻¹ x)`.
   refine homotopic_iff.mpr ⟨fun q ↦ Φ (Set.Icc.convexComb (σ q.1.2) 0 q.2,
       Φ.symm (Set.Icc.convexComb 1 q.1.2 q.2, q.1.1)),
-    Φ.contMDiff.comp (((contMDiff_symm.comp (contMDiff_snd.comp contMDiff_fst)).convexComb
-      contMDiff_const contMDiff_snd).prodMk (Φ.symm.contMDiff.comp
-        ((contMDiff_const.convexComb (contMDiff_snd.comp contMDiff_fst) contMDiff_snd).prodMk
-          (contMDiff_fst.comp contMDiff_fst)))),
-    fun p ↦ ?_, fun p ↦ ?_, fun x s ↦ ?_, fun x s ↦ ?_⟩
+    fun q ↦ Φ (Set.Icc.convexComb 1 q.1.2 q.2, Φ.symm (Set.Icc.convexComb (σ q.1.2) 0 q.2, q.1.1)),
+    Φ.contMDiff.comp (ha.prodMk (Φ.symm.contMDiff.comp
+      (hb.prodMk (contMDiff_fst.comp contMDiff_fst)))),
+    fun p ↦ ?_, fun p ↦ ?_, fun x s ↦ ?_, fun x s ↦ ?_,
+    Φ.contMDiff.comp (hb.prodMk (Φ.symm.contMDiff.comp
+      (ha.prodMk (contMDiff_fst.comp contMDiff_fst)))),
+    fun x t s ↦ by simp only [symm_apply_apply_mk, apply_symm_apply_mk],
+    fun x t s ↦ by simp only [symm_apply_apply_mk, apply_symm_apply_mk]⟩
   · simp only [Set.Icc.convexComb_zero, cylinderMap_apply, reverse_apply]
   · simp only [Set.Icc.convexComb_one, cylinderMap_apply, apply_zero]
   · simp only [symm_zero, apply_symm_apply_mk]
