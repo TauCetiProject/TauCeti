@@ -83,6 +83,8 @@ it is a corollary of the analytic density theorem, proved in
 * `TauCeti.mul_mem_representativeSubmodule`, `TauCeti.star_mem_representativeSubmodule`: the same
   closure properties for their span.
 * `ContRepresentation.character_mem_representativeSubmodule`: characters lie in `𝓡(G)`.
+* `TauCeti.finiteDimensional_span_range_comp_mulRight`: the right translates of a function in
+  `𝓡(G)` span a finite-dimensional space.
 
 The uniform density of this algebra in `C(G)` is the analytic core of Peter-Weyl. The mathematical
 development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2, and
@@ -159,6 +161,46 @@ theorem matrixCoeff_mem_representativeSubmodule (π : ContRepresentation 𝕜 G 
   mem_representativeSubmodule_of_isRepresentative (isRepresentative_matrixCoeff π hπ v w)
 
 end Membership
+
+section Translation
+
+variable {𝕜 G : Type*} [RCLike 𝕜] [Monoid G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+
+/-- **The right translates of a function in `𝓡(G)` span a finite-dimensional space.** For a
+matrix coefficient of a representation on `V`, they are matrix coefficients of the same
+representation with the same second vector, so their span has dimension at most `dim V`. -/
+theorem finiteDimensional_span_range_comp_mulRight {f : C(G, 𝕜)}
+    (hf : f ∈ representativeSubmodule 𝕜 G) :
+    FiniteDimensional 𝕜
+      (Submodule.span 𝕜 (Set.range fun g : G => f.comp (ContinuousMap.mulRight g))) := by
+  induction hf using Submodule.span_induction with
+  | mem f hf =>
+    obtain ⟨n, π, hπ, v, w, rfl⟩ := hf
+    refine Submodule.finiteDimensional_of_le (S₂ := LinearMap.range ((matrixCoeffₛₗ π hπ).flip w))
+      (Submodule.span_le.2 ?_)
+    rintro _ ⟨g, rfl⟩
+    exact ⟨π g v, by simp⟩
+  | zero =>
+    refine Submodule.finiteDimensional_of_le (S₂ := ⊥) (Submodule.span_le.2 ?_)
+    rintro _ ⟨g, rfl⟩
+    simp
+  | add f₁ f₂ _ _ h₁ h₂ =>
+    refine Submodule.finiteDimensional_of_le
+      (S₂ := Submodule.span 𝕜 (Set.range fun g : G => f₁.comp (ContinuousMap.mulRight g)) ⊔
+        Submodule.span 𝕜 (Set.range fun g : G => f₂.comp (ContinuousMap.mulRight g)))
+      (Submodule.span_le.2 ?_)
+    rintro _ ⟨g, rfl⟩
+    simp only [SetLike.mem_coe, ContinuousMap.add_comp]
+    exact Submodule.add_mem_sup (Submodule.subset_span ⟨g, rfl⟩) (Submodule.subset_span ⟨g, rfl⟩)
+  | smul c f _ h =>
+    refine Submodule.finiteDimensional_of_le
+      (S₂ := Submodule.span 𝕜 (Set.range fun g : G => f.comp (ContinuousMap.mulRight g)))
+      (Submodule.span_le.2 ?_)
+    rintro _ ⟨g, rfl⟩
+    simp only [SetLike.mem_coe, ContinuousMap.smul_comp]
+    exact Submodule.smul_mem _ c (Submodule.subset_span ⟨g, rfl⟩)
+
+end Translation
 
 section Algebra
 
