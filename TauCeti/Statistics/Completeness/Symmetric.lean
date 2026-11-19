@@ -9,10 +9,11 @@ public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import TauCeti.Statistics.Completeness.Basic
 import Mathlib.Combinatorics.Enumerative.InclusionExclusion
-import Mathlib.GroupTheory.Perm.Fin
+import TauCeti.GroupTheory.Perm.Fin
 import TauCeti.MeasureTheory.Constructions.Pi
 import TauCeti.MeasureTheory.Integral.Pi
 import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 
 /-!
 # Completeness of symmetric statistics
@@ -66,42 +67,6 @@ namespace TauCeti
 
 variable {X : Type*} [MeasurableSpace X] {C : Set (ProbabilityMeasure X)} {n : ℕ}
 
-/-- In a set of laws closed under binary mixtures, the uniform mixture of finitely many members
-is a member. -/
-private lemma exists_mem_eq_smul_sum
-    (hconv : ∀ P ∈ C, ∀ Q ∈ C, ∀ a : ℝ≥0, a ≤ 1 →
-      ∃ R ∈ C, (R : Measure X) = (a : ℝ≥0∞) • (P : Measure X) +
-        ((1 - a : ℝ≥0) : ℝ≥0∞) • (Q : Measure X))
-    {ι : Type*} {Q : ι → ProbabilityMeasure X} (hQ : ∀ i, Q i ∈ C) {s : Finset ι}
-    (hs : s.Nonempty) :
-    ∃ R ∈ C, (R : Measure X) = (#s : ℝ≥0)⁻¹ • ∑ i ∈ s, (Q i : Measure X) := by
-  induction hs using Finset.Nonempty.cons_induction with
-  | singleton a => exact ⟨Q a, hQ a, by simp⟩
-  | cons a s ha hs ih =>
-    obtain ⟨R, hR, hReq⟩ := ih
-    have hk : (#s : ℝ≥0) ≠ 0 := by simpa using hs.ne_empty
-    have hw : ((#s : ℝ≥0) + 1)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ le_add_self
-    obtain ⟨R', hR', hR'eq⟩ := hconv (Q a) (hQ a) R hR _ hw
-    refine ⟨R', hR', ?_⟩
-    have hcoef : (1 - ((#s : ℝ≥0) + 1)⁻¹) * (#s : ℝ≥0)⁻¹ = ((#s : ℝ≥0) + 1)⁻¹ := by
-      have hk' : (#s : ℝ) ≠ 0 := by exact_mod_cast hk
-      rw [← NNReal.coe_inj]
-      push_cast [NNReal.coe_sub hw]
-      field_simp
-      ring
-    rw [hR'eq, hReq, card_cons, Nat.cast_succ, sum_cons, ← ENNReal.smul_def, ← ENNReal.smul_def,
-      smul_smul, hcoef, smul_add]
-
-/-- The `n`-th power of the uniform mixture of the laws `Q i`, `i ∈ s`, expanded multilinearly. -/
-private lemma pi_eq_smul_sum_pi {Q : Fin n → ProbabilityMeasure X} {s : Finset (Fin n)}
-    {R : ProbabilityMeasure X} (hR : (R : Measure X) = (#s : ℝ≥0)⁻¹ • ∑ i ∈ s, (Q i : Measure X)) :
-    Measure.pi (fun _ : Fin n ↦ (R : Measure X)) =
-      ((#s : ℝ≥0)⁻¹ ^ n) • ∑ f ∈ Fintype.piFinset fun _ ↦ s,
-        Measure.pi fun k ↦ (Q (f k) : Measure X) := by
-  simp_rw [hR]
-  rw [Measure.pi_smul (fun _ ↦ (#s : ℝ≥0)⁻¹) (fun _ ↦ ∑ i ∈ s, (Q i : Measure X)), prod_const,
-    card_univ, Fintype.card_fin, Measure.pi_finsetSum (fun _ ↦ s) fun _ i ↦ (Q i : Measure X)]
-
 /-- **Expansion step.** If the uniform mixture of the `Q i`, `i ∈ s`, is in `C`, then `g` is
 integrable against each product `Q_{f 0} ⊗ ⋯ ⊗ Q_{f (n - 1)}` with `f` taking values in `s`, and
 these integrals sum to `0`. -/
@@ -116,8 +81,15 @@ private lemma integrable_and_sum_integral_eq_zero {g : (Fin n → X) → ℝ}
     ∑ f ∈ Fintype.piFinset (fun _ ↦ s), ∫ x, g x ∂Measure.pi (fun k ↦ (Q (f k) : Measure X)) =
       0 := by
   have hc : (#s : ℝ≥0)⁻¹ ^ n ≠ 0 := by simp [hs.ne_empty]
+  -- Expand the `n`-th power of the uniform mixture `R` multilinearly.
+  have hpi : Measure.pi (fun _ : Fin n ↦ (R : Measure X)) =
+      ((#s : ℝ≥0)⁻¹ ^ n) • ∑ f ∈ Fintype.piFinset fun _ ↦ s,
+        Measure.pi fun k ↦ (Q (f k) : Measure X) := by
+    simp_rw [hR]
+    rw [Measure.pi_smul (fun _ ↦ (#s : ℝ≥0)⁻¹) (fun _ ↦ ∑ i ∈ s, (Q i : Measure X)), prod_const,
+      card_univ, Fintype.card_fin, Measure.pi_finsetSum (fun _ ↦ s) fun _ i ↦ (Q i : Measure X)]
   obtain ⟨hgi, hg0⟩ := hint R hRC
-  rw [pi_eq_smul_sum_pi hR] at hgi hg0
+  rw [hpi] at hgi hg0
   rw [ENNReal.smul_def, integrable_smul_measure (by simpa using hc) ENNReal.coe_ne_top,
     integrable_finsetSum_measure] at hgi
   refine ⟨hgi, ?_⟩
@@ -142,7 +114,7 @@ private lemma integrable_and_integral_pi_eq_zero [NeZero n]
         Integrable g (Measure.pi fun k ↦ (Q (f k) : Measure X))) ∧
       ∑ f ∈ Fintype.piFinset (fun _ ↦ s),
         ∫ x, g x ∂Measure.pi (fun k ↦ (Q (f k) : Measure X)) = 0 := by
-    obtain ⟨R, hRC, hR⟩ := exists_mem_eq_smul_sum hconv hQ hs
+    obtain ⟨R, hRC, hR⟩ := MeasureTheory.exists_mem_eq_smul_sum hconv hQ hs
     exact integrable_and_sum_integral_eq_zero hint hs hRC hR
   set I : (Fin n → Fin n) → ℝ := fun f ↦ ∫ x, g x ∂Measure.pi (fun k ↦ (Q (f k) : Measure X))
   refine ⟨(hexp univ univ_nonempty).1 id (by simp), ?_⟩
@@ -170,17 +142,6 @@ private lemma integrable_and_integral_pi_eq_zero [NeZero n]
   refine (smul_eq_zero.mp hie).resolve_left ?_
   exact card_ne_zero.mpr ⟨id, by simp [Function.surjective_id]⟩
 
-omit [MeasurableSpace X] in
-/-- Prepending a fixed first coordinate commutes with permuting the other coordinates: the
-permutation `σ` of the last `n` coordinates extends to a permutation of `Fin (n + 1)` that fixes
-`0`. -/
-private lemma finCons_comp_perm (a : X) (y : Fin n → X) (σ : Equiv.Perm (Fin n)) :
-    (Fin.cons a (y ∘ σ) : Fin (n + 1) → X) =
-      (Fin.cons a y : Fin (n + 1) → X) ∘ Equiv.Perm.decomposeFin.symm (0, σ) := by
-  funext i
-  cases i using Fin.cases <;>
-    simp [Equiv.Perm.decomposeFin_symm_apply_zero, Equiv.Perm.decomposeFin_symm_apply_succ]
-
 /-- **Two laws.** For `R, Q ∈ C`, a symmetric `g` of `n + 1` observations with mean `0` under every
 `Pⁿ⁺¹`, `P ∈ C`, composed with `Fin.cons`, is integrable with mean `0` under `R ⊗ Qⁿ`. -/
 private lemma integrable_and_integral_prod_eq_zero
@@ -196,7 +157,7 @@ private lemma integrable_and_integral_prod_eq_zero
         ((R : Measure X).prod (Measure.pi fun _ ↦ (Q : Measure X))) ∧
       ∫ p : X × (Fin n → X), g (Fin.cons p.1 p.2)
         ∂(R : Measure X).prod (Measure.pi fun _ ↦ (Q : Measure X)) = 0 := by
-  have hmp := measurePreserving_finCons (n := n) (R : Measure X) (Q : Measure X)
+  have hmp := Measure.measurePreserving_finCons (R : Measure X) fun _ : Fin n ↦ (Q : Measure X)
   have hT : (Fin.cons (R : Measure X) fun _ ↦ (Q : Measure X) : Fin (n + 1) → Measure X) =
       fun k ↦ ((Fin.cons R fun _ ↦ Q : Fin (n + 1) → ProbabilityMeasure X) k : Measure X) := by
     funext k
@@ -236,7 +197,7 @@ private lemma ae_eq_zero_pi_succ
     refine ih _
       (hGm.stronglyMeasurable.integral_prod_left' (μ := (P : Measure X).restrict A)).measurable
       (fun σ y ↦ ?_) fun Q hQ ↦ ?_
-    · simp only [G, finCons_comp_perm, hsym]
+    · simp only [G, Fin.cons_comp_perm, hsym]
     have hGA :
         Integrable G (((P : Measure X).restrict A).prod (Measure.pi fun _ ↦ (Q : Measure X))) := by
       rw [← Measure.restrict_univ (μ := Measure.pi fun _ ↦ (Q : Measure X)), Measure.prod_restrict]
@@ -260,7 +221,7 @@ private lemma ae_eq_zero_pi_succ
       (ν := Measure.pi fun _ : Fin n ↦ (P : Measure X)) A B
     rw [← hAB, integral_prod_symm G (hGi.mono_measure (hAB ▸ Measure.restrict_le_self))]
     exact integral_eq_zero_of_ae (ae_restrict_of_ae (hsection A))
-  have hmp := measurePreserving_finCons (n := n) (P : Measure X) (P : Measure X)
+  have hmp := Measure.measurePreserving_finCons (P : Measure X) fun _ : Fin n ↦ (P : Measure X)
   have hT : (Fin.cons (P : Measure X) fun _ ↦ (P : Measure X) : Fin (n + 1) → Measure X) =
       fun _ ↦ (P : Measure X) := by
     funext k

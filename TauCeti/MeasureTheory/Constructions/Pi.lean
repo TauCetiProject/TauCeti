@@ -23,7 +23,8 @@ still independent.
 **Splitting off the first coordinate.** `MeasurableEquiv.piFinSuccAbove` at `0` is `Fin.cons` in
 the reverse direction; composing a measurable function with `Fin.cons` is measurable on the product
 of the head and the tail. Read forwards, `Fin.cons` carries the product of a measure `μ` with
-`n` copies of `ν` to the product measure `Fin.cons μ fun _ ↦ ν` on `Fin (n + 1) → β`.
+the product measure `Measure.pi ν` on `Fin n → β` to the product measure `Fin.cons μ ν` on
+`Fin (n + 1) → β`.
 
 **Currying.** A product measure over the pairs `⟨i, j⟩` of a sigma type is the product over `i`
 of the product measures over `j`: `MeasurableEquiv.piCurry` carries one to the other. Mathlib has
@@ -88,8 +89,8 @@ product of a mixture of laws into products of its components.
 
 * `TauCeti.measurePreserving_pi_comp_embedding` — restricting a product assignment along an
   embedding is measure preserving;
-* `TauCeti.measurePreserving_finCons` — prepending a coordinate with `Fin.cons` is measure
-  preserving;
+* `MeasureTheory.Measure.measurePreserving_finCons` — prepending a coordinate with `Fin.cons` is
+  measure preserving;
 * `TauCeti.measurePreserving_piCurry` — currying a product measure over a sigma type is measure
   preserving;
 * `TauCeti.measurePreserving_pi_fiberwise` — applying measure-preserving maps to disjoint fibres
@@ -172,16 +173,15 @@ theorem measurePreserving_pi_comp_embedding {ι κ : Type*} [Fintype ι] [Fintyp
   exact (measurePreserving_eval μ (e i)).map_eq
 
 /-- **Prepending a coordinate.** `Fin.cons` carries the product of a measure `μ` with the product
-of `n` copies of `ν` to the product measure on `Fin (n + 1) → β` whose first factor is `μ` and
-whose other factors are `ν`. -/
-theorem measurePreserving_finCons {β : Type*} [MeasurableSpace β] {n : ℕ} (μ ν : Measure β)
-    [SigmaFinite μ] [SigmaFinite ν] :
+measure `Measure.pi ν` on `Fin n → β` to the product measure `Measure.pi (Fin.cons μ ν)` on
+`Fin (n + 1) → β`, whose first factor is `μ` and whose other factors are the `ν i`. -/
+theorem _root_.MeasureTheory.Measure.measurePreserving_finCons {β : Type*} [MeasurableSpace β]
+    {n : ℕ} (μ : Measure β) (ν : Fin n → Measure β) [SigmaFinite μ] [∀ i, SigmaFinite (ν i)] :
     MeasurePreserving (fun p : β × (Fin n → β) ↦ (Fin.cons p.1 p.2 : Fin (n + 1) → β))
-      (μ.prod (Measure.pi fun _ : Fin n ↦ ν)) (Measure.pi (Fin.cons μ fun _ ↦ ν)) := by
-  have (i : Fin (n + 1)) : SigmaFinite ((Fin.cons μ fun _ ↦ ν : Fin (n + 1) → Measure β) i) := by
-    cases i using Fin.cases <;> simpa
-  have h := (measurePreserving_piFinSuccAbove
-    (Fin.cons μ fun _ ↦ ν : Fin (n + 1) → Measure β) 0).symm
+      (μ.prod (Measure.pi ν)) (Measure.pi (Fin.cons μ ν)) := by
+  have (i : Fin (n + 1)) : SigmaFinite ((Fin.cons μ ν : Fin (n + 1) → Measure β) i) := by
+    cases i using Fin.cases <;> simp only [Fin.cons_zero, Fin.cons_succ] <;> infer_instance
+  have h := (measurePreserving_piFinSuccAbove (Fin.cons μ ν : Fin (n + 1) → Measure β) 0).symm
   simp only [Fin.cons_zero, Fin.succAbove_zero, Fin.cons_succ] at h
   convert h using 1
   exact funext fun p ↦ (MeasurableEquiv.piFinSuccAbove_zero_symm_apply_eq_cons p.1 p.2).symm
