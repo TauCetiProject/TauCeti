@@ -268,8 +268,9 @@ theorem disjoint_evenPeriodPolynomials_oddPeriodPolynomials
 private lemma binaryFormRep_S_sq_of_odd (hw : Odd w) (P : homogeneousSubmodule (Fin 2) R w) :
     binaryFormRep R w (op (S : Matrix (Fin 2) (Fin 2) ℤ))
       (binaryFormRep R w (op (S : Matrix (Fin 2) (Fin 2) ℤ)) P) = -P := by
-  rw [← binaryFormRep_op_mul_apply, S_mul_S_eq, binaryFormRep_op_neg, hw.neg_one_pow, op_one,
-    map_one, LinearMap.smul_apply, one_apply_eq_self, neg_one_smul]
+  rw [← binaryFormRep_op_mul_apply, ← SpecialLinearGroup.coe_mul, S_mul_S_eq,
+    SpecialLinearGroup.coe_neg, SpecialLinearGroup.coe_one, binaryFormRep_op_neg, hw.neg_one_pow,
+    op_one, map_one, LinearMap.smul_apply, one_apply_eq_self, neg_one_smul]
 
 /-- For odd `w` there are no nonzero period polynomials when multiplication by `2` is injective:
 the central element `S² = -1` acts by `-1` but fixes every `P` with `P ∣ S = -P`. -/
@@ -370,7 +371,9 @@ private lemma U_mul_S_eq_neg_T :
 /-- For even `w`, `S` acts on `V_w` as an involution, since `S² = -1` acts trivially. -/
 theorem binaryFormRep_S_sq_of_even (hw : Even w) :
     binaryFormRep R w (op (S : Matrix (Fin 2) (Fin 2) ℤ)) ^ 2 = 1 := by
-  rw [← map_pow, ← op_pow, sq, S_mul_S_eq, binaryFormRep_op_neg_of_even hw, op_one, map_one]
+  rw [← map_pow, ← op_pow, sq, ← SpecialLinearGroup.coe_mul, S_mul_S_eq,
+    SpecialLinearGroup.coe_neg, SpecialLinearGroup.coe_one, binaryFormRep_op_neg_of_even hw, op_one,
+    map_one]
 
 /-- For even `w`, `U = T S` acts on `V_w` with cube `1`, since `U³ = -1` acts trivially. -/
 theorem binaryFormRep_U_pow_three_of_even (hw : Even w) :

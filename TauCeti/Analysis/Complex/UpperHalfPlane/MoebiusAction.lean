@@ -344,7 +344,7 @@ theorem denom_mapGL_STS_inv_pow (r : ℕ) (z : ℍ) :
       Matrix.SpecialLinearGroup.coe_neg, coe_S, coe_T_zpow]
     norm_num [Matrix.mul_apply, Fin.sum_univ_two]
   rw [hg, denom, mapGL_coe_matrix, map_apply_coe]
-  simp only [RingHom.mapMatrix_apply, Matrix.map_apply, h10, h11]
+  simp only [Matrix.map_apply, h10, h11]
   simp [algebraMap_int_eq]
 
 open Matrix.SpecialLinearGroup in

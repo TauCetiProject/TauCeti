@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Projective
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RingTheory.Finiteness.Basic
-public import TauCeti.Algebra.Module.Projective.Trans
 
 /-!
 # Semilinear maps, finite generation and projectivity under restriction of scalars
@@ -154,7 +154,7 @@ theorem projective_restrictScalars_of_projective (f : R →+* S)
   have : IsScalarTower R S M := ⟨fun r s m ↦ mul_smul (f r) s m⟩
   -- Elaborated before being matched against the goal, so that the `R`-module structure of `M`
   -- is the local one carrying the scalar tower; the goal's is defeq but not syntactically equal.
-  have hRM : Module.Projective R M := Module.Projective.trans S M
+  have hRM : Module.Projective R M := Module.Projective.trans R S M
   exact hRM
 
 /-- **Restriction of scalars on finitely generated modules.** A ring homomorphism
