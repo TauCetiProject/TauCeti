@@ -353,12 +353,14 @@ example : ¬ ∃ v : ℝ, 2 * v ≤ 0 ∧ (v, 1, Real.log 3) ∈ cone := by
   exact not_le.mpr (mul_pos two_pos (Real.exp_pos _))
 
 example : 2 * Real.exp (∑ _j : Fin 1, 1 * Real.log 3) ≤ -1 * -3 + 3 ∧
+    (∃ v : ℝ, 2 * v ≤ -1 * -3 + 3 ∧ (v, 1, ∑ _j : Fin 1, 1 * Real.log 3) ∈ cone) ∧
     Real.log 2 + (∑ _j : Fin 1, 1 * Real.log 3) ≤ Real.log (-1 * -3 + 3) := by
   have h : 2 * Real.exp (∑ _j : Fin 1, 1 * Real.log 3) ≤ -1 * -3 + 3 := by
     simp only [Finset.univ_unique, one_mul, Finset.sum_const, Finset.card_singleton, one_smul]
     rw [Real.exp_log (by norm_num)]
     norm_num
-  exact ⟨h, ((Real.mul_exp_le_iff_log_add_le_log two_pos).mp h).2⟩
+  exact ⟨h, (mul_exp_le_iff_exists_mem_cone zero_le_two).mp h,
+    ((Real.mul_exp_le_iff_log_add_le_log two_pos).mp h).2⟩
 
 example (q x : Fin 0 → ℝ) : ¬ (1 * Real.exp (∑ j, q j * x j) ≤ 0 * 0 + 0) ∧
     ¬ (0 < (0 : ℝ) * 0 + 0 ∧ Real.log 1 + (∑ j, q j * x j) ≤ Real.log (0 * 0 + 0)) := by
