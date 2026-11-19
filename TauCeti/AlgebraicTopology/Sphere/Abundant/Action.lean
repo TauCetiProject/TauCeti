@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
 public import TauCeti.AlgebraicTopology.Sphere.Abundant.Basic
 public import TauCeti.Topology.MappingSpace.Action
 import TauCeti.Algebra.Group.ZMultiples
@@ -15,6 +14,7 @@ import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.FirstHomology
 import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Hurewicz
 import TauCeti.AlgebraicTopology.Singular.Reduced
 import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
+import TauCeti.Topology.MappingSpace.Sphere.PathComponent
 
 /-!
 # Abundance with 2-spheres from a group action
@@ -53,7 +53,7 @@ positive degree (`TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_zpo
 `ℓ = 1` one of the two applies as soon as some higher homotopy group `π_{k}(M, x₀)`, `k ≥ 2`, is
 nontrivial, for instance when the path-connected manifold `M` is not aspherical, which is
 Proposition 6.29
-(`TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_homologyMap_eq_fundamentalClass`).
+(`TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_exists_nontrivial_homotopyGroup`).
 
 This is the argument of Propositions 6.29 and 6.33 of Barraud–Damian–Humilière–Oancea, for
 classes of diffeomorphisms coming from a group action. There the group is the identity component
@@ -99,7 +99,7 @@ localization of `A` with `α` (`TauCeti.fiberLocalization_singularHomologyCross_
 * `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_nontrivial_homotopyGroup_two`,
   `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_zpow_ne_one`: Proposition 6.33, when
   `π₂(M) ≠ 0`, or when the first nontrivial higher homotopy group is not `ℓ`-torsion.
-* `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_homologyMap_eq_fundamentalClass`:
+* `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_exists_nontrivial_homotopyGroup`:
   Proposition 6.29, a non-aspherical manifold covered by such an action is abundant with
   2-spheres.
 
@@ -469,7 +469,7 @@ degree-zero counterpart
 `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_smul_sub_homologyMap_const_ne_zero`;
 see `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_nontrivial_homotopyGroup_two`,
 `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_zpow_ne_one` and
-`TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_homologyMap_eq_fundamentalClass`.
+`TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_exists_nontrivial_homotopyGroup`.
 
 Let a topological group `G` act on a compact oriented `d`-manifold `M`, with orbit map
 `π : G → M`, `g ↦ g • x₀`, having continuous local sections around every point, and with
@@ -553,7 +553,7 @@ theorem isAbundantWithTwoSpheres_of_nontrivial_homotopyGroup_two {x₀ : M} (π 
   let y₀ : Y := ⟨ContinuousMap.const Sphere2 x₀, rfl⟩
   -- `Map_*(S², M) ≃ₜ Ω²M` is not path connected, so some `y₁` is not joined to the constant
   -- sphere `y₀`.
-  obtain ⟨y₁, hy₁⟩ := exists_not_joined_of_nontrivial_homotopyGroup_two x₀ y₀
+  obtain ⟨y₁, hy₁⟩ := exists_not_joined_of_nontrivial_homotopyGroup 2 x₀ Sphere2.north y₀
   refine o.isAbundantWithTwoSpheres_of_smul_sub_homologyMap_const_ne_zero hd π hπ hloc hstab hA
     (α := (singularHomology₀Section R (X := TopCat.of Y) y₁).hom (ULift.up 1)) ?_
   -- `c_* [y₁] = [y₀]`, and `ℓ • ([y₁] - [y₀]) ≠ 0`.
@@ -618,7 +618,7 @@ continuous local sections around every point, and with path-connected stabilizer
 `A ∈ H_d(G; ℤ)` satisfies `π_* A = [M]` and some higher homotopy group `π_{n+2}(M, x₀)` is
 nontrivial, then `M` is abundant with 2-spheres at `x₀`. For path-connected `M` the latter says
 that `M` is not aspherical (`TauCeti.IsAspherical`). -/
-theorem isAbundantWithTwoSpheres_of_homologyMap_eq_fundamentalClass
+theorem isAbundantWithTwoSpheres_of_exists_nontrivial_homotopyGroup
     {x₀ : M} (π : C(G, M)) (hπ : ∀ g, π g = g • x₀)
     (hloc : ∀ y : M, ∃ U : Set M, IsOpen U ∧ y ∈ U ∧ ∃ s : M → G, ContinuousOn s U ∧
       ∀ z ∈ U, s z • x₀ = z)

@@ -14,6 +14,7 @@ import Mathlib.Geometry.Manifold.Instances.Sphere
 import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 import TauCeti.AlgebraicTopology.Singular.Reduced
+import TauCeti.Topology.MappingSpace.Sphere.PathComponent
 
 /-!
 # Topological groups abundant with two-spheres
@@ -269,7 +270,7 @@ theorem isAbundantWithTwoSpheres_of_not_isAspherical [PathConnectedSpace G] (b :
   · -- `π₂(G) ≠ 0`, so `Map_*(S², G) ≃ₜ Ω²G` has a point `y₁` not joined to the constant
     -- sphere `1`, and the class of `y₁` is not fixed by the constant self-map at `1`.
     have := not_subsingleton_iff_nontrivial.1 h₂
-    obtain ⟨y₁, hy₁⟩ := exists_not_joined_of_nontrivial_homotopyGroup_two (1 : G) y₀
+    obtain ⟨y₁, hy₁⟩ := exists_not_joined_of_nontrivial_homotopyGroup 2 (1 : G) Sphere2.north y₀
     have hr : (ULift.up 1 : R) ≠ 0 := fun h ↦ one_ne_zero (congrArg ULift.down h)
     refine o.isAbundantWithTwoSpheres_of_homologyMap_const_ne hn b
       (α := (singularHomology₀Section R (X := TopCat.of Y) y₁).hom (ULift.up 1)) ?_

@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 
@@ -18,6 +20,10 @@ without requiring the small-chain subdivision theory.
 It also records the degree-zero component of Mathlib's identification of the singular chains of
 a totally disconnected space with an alternating constant complex
 (`TauCeti.ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_hom_f_zero`).
+With coefficients in a module, it states on elements that homology carries commuting squares of
+continuous maps to commuting squares (`TauCeti.homologyMap_homologyMap_apply_of_comp_eq`), and that
+coefficient morphisms commute with the maps induced by continuous maps
+(`TauCeti.homologyMap_chainComplexFunctor_map_apply`).
 -/
 
 public section
@@ -79,6 +85,41 @@ lemma ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_ho
   -- The constant-set isomorphism evaluates a simplex at an arbitrary point of the topological
   -- `0`-simplex, which is the unique point there.
   exact congrArg _ (congrArg (TopCat.toSSetObjEquiv X _ σ) (Subsingleton.elim _ _))
+
+section ModuleCat
+
+/-- A commuting square `ρ ∘ Φ = Φ' ∘ γ` of continuous maps commutes on homology, on elements:
+`ρ_* (Φ_* x) = Φ'_* (γ_* x)`. -/
+theorem homologyMap_homologyMap_apply_of_comp_eq {k : Type v} [Ring k] (M : ModuleCat.{w} k)
+    {X X' Z Z' : Type w} [TopologicalSpace X] [TopologicalSpace X'] [TopologicalSpace Z]
+    [TopologicalSpace Z'] {Φ : C(X, Z)} {ρ : C(Z, Z')} {γ : C(X, X')} {Φ' : C(X', Z')}
+    (h : ρ.comp Φ = Φ'.comp γ) {m : ℕ}
+    (x : ((TopCat.toSSet.obj (TopCat.of X)).homology M m : ModuleCat.{w} k)) :
+    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom ρ)) M m).hom
+        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom Φ)) M m).hom x) =
+      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom Φ')) M m).hom
+        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom γ)) M m).hom x) := by
+  simp only [← ConcreteCategory.comp_apply, ← SSet.homologyMap_comp, ← Functor.map_comp,
+    ← TopCat.ofHom_comp, h]
+
+/-- A coefficient morphism `φ : M ⟶ N` commutes with the map induced on homology by a continuous
+map: this is the naturality of `AlgebraicTopology.singularHomologyFunctor` in the coefficients, on
+elements. -/
+theorem homologyMap_chainComplexFunctor_map_apply {k : Type v} [Ring k] {M N : ModuleCat.{w} k}
+    (φ : M ⟶ N) {X Y : Type w} [TopologicalSpace X] [TopologicalSpace Y] (f : C(X, Y)) {m : ℕ}
+    (x : ((TopCat.toSSet.obj (TopCat.of X)).homology M m : ModuleCat.{w} k)) :
+    (HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{w} k)).map
+      φ).app (TopCat.toSSet.obj (TopCat.of Y))) m).hom
+        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) M m).hom x) =
+      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) N m).hom
+        ((HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{w} k)).map
+          φ).app (TopCat.toSSet.obj (TopCat.of X))) m).hom x) :=
+  -- The naturality square of `singularHomologyFunctor`, read through its definition as the
+  -- homology of `TopCat.toSSet`.
+  (ConcreteCategory.congr_hom (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} k)
+    m).map φ).naturality (TopCat.ofHom f)) x)
+
+end ModuleCat
 
 end TauCeti
 

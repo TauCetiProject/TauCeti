@@ -11,7 +11,6 @@ public import TauCeti.Topology.MappingSpace.Sphere.Basic
 public import TauCeti.Topology.Sphere.Suspension
 public import Mathlib.Topology.Homotopy.HomotopyGroup
 import TauCeti.AlgebraicTopology.Singular.Reduced
-import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 
 /-!
 # Manifolds abundant with two-spheres
@@ -47,17 +46,12 @@ connected oriented `n`-manifolds, where it is the source's definition. Coefficie
 integers, written `ULift ℤ` as for the integral fundamental classes of
 `TauCeti.HomologicalOrientation`. Witnesses are built as cross products of integral classes, with
 coefficients `ℤ ⊗ ℤ` identified with `ℤ` (`TauCeti.uliftIntTensorIso`), from classes of the double
-loop space carried to `Map_*(S², Q)` (`TauCeti.doubleLoopSpaceHomologyIsoBasedMap`). The
-identification of coefficients commutes with continuous maps
-(`TauCeti.homologyMap_chainComplexFunctor_map_apply`), and so does homology with commuting squares
-of continuous maps (`TauCeti.homologyMap_homologyMap_apply_of_comp_eq`).
+loop space carried to `Map_*(S², Q)` (`TauCeti.doubleLoopSpaceHomologyIsoBasedMap`).
 
 ## Main definitions
 
 * `TauCeti.IsAbundantWithTwoSpheres Q n b`: `Q` is abundant with 2-spheres at `b`, in
   dimension `n`, characterized by `TauCeti.isAbundantWithTwoSpheres_iff`.
-* `TauCeti.uliftIntTensorIso`: `ℤ ⊗ ℤ ≅ ℤ`, for the coefficients `ULift ℤ`, which multiplies the
-  integers (`TauCeti.uliftIntTensorIso_hom_tmul`).
 * `TauCeti.doubleLoopSpaceHomologyIsoBasedMap`: `Hₘ(Ω²Q; ℤ) ≅ Hₘ(Map_*(S², Q); ℤ)`.
 
 ## Main results
@@ -69,8 +63,6 @@ of continuous maps (`TauCeti.homologyMap_homologyMap_apply_of_comp_eq`).
 * `TauCeti.isAbundantWithTwoSpheres_of_livesOverFundamentalClass_sub`: this holds for a class `α`
   of degree `n` when both `α` and `α - ρ_* α` live over the fundamental class, where `ρ` is the
   self-map `f ↦ const (f(north))` of `Map(S², Q)`.
-* `TauCeti.exists_not_joined_of_nontrivial_homotopyGroup_two`: if `π₂(Q, x) ≠ 0`, every based
-  sphere at `x` has a based sphere not joined to it, a degree-zero witness for the above.
 
 ## References
 
@@ -83,10 +75,8 @@ public section
 
 noncomputable section
 
-universe w v
-
-open CategoryTheory MonoidalCategory
-open scoped Topology Topology.Homotopy TensorProduct
+open CategoryTheory
+open scoped Topology Topology.Homotopy
 
 namespace TauCeti
 
@@ -189,69 +179,6 @@ theorem isAbundantWithTwoSpheres_of_livesOverFundamentalClass_sub {n : ℕ} {b :
   refine (livesOverFundamentalClass_iff _ _ _ _).1 hρα ?_
   rw [map_sub]
   exact sub_eq_zero.2 key.symm
-
-/-- **Based spheres outside a path component.** If `π₂(Q, x)` is nontrivial, then the based
-mapping space `Map_*(S², Q) ≃ₜ Ω²Q` is not path connected: for every based sphere `y₀` some based
-sphere `y₁` is not joined to `y₀` by a path. -/
-theorem exists_not_joined_of_nontrivial_homotopyGroup_two (x : Q) [Nontrivial (π_ 2 Q x)]
-    (y₀ : BasedMap Sphere2 Q Sphere2.north x) :
-    ∃ y₁ : BasedMap Sphere2 Q Sphere2.north x, ¬Joined y₁ y₀ := by
-  let e := BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2 ⟨Q, x⟩ Sphere2.north
-  by_contra! h
-  have : PathConnectedSpace (BasedMap Sphere2 Q Sphere2.north x) :=
-    ⟨⟨y₀⟩, fun y y' ↦ (h y).trans (h y').symm⟩
-  exact not_subsingleton (π_ 2 Q x)
-    ((pathConnectedSpace_doubleLoopSpace_iff x).1 (e.surjective.pathConnectedSpace e.continuous))
-
-/-- The identification of the coefficients `ℤ ⊗ ℤ` of a cross product of integral classes with
-`ℤ`, both written `ULift ℤ` as in `TauCeti.IsAbundantWithTwoSpheres`. -/
-def uliftIntTensorIso :
-    ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ) ≅ ModuleCat.of ℤ (ULift.{0} ℤ) :=
-  -- `ModuleCat.of ℤ ℤ`, the target of `uliftIntIso`, is the tensor unit `𝟙_ (ModuleCat ℤ)`.
-  tensorIso uliftIntIso uliftIntIso ≪≫ λ_ (𝟙_ _) ≪≫ uliftIntIso.symm
-
-/-- `TauCeti.uliftIntTensorIso` multiplies the integers. -/
-@[simp]
-theorem uliftIntTensorIso_hom_tmul (a b : ℤ) :
-    uliftIntTensorIso.hom.hom (ULift.up a ⊗ₜ[ℤ] ULift.up b) = ULift.up (a * b) := by
-  simp only [uliftIntTensorIso, Iso.trans_hom, Iso.symm_hom, tensorIso_hom, ModuleCat.hom_comp,
-    LinearMap.comp_apply, ModuleCat.hom_tensorHom]
-  -- `ModuleCat.of ℤ ℤ` is the tensor unit, on which the left unitor multiplies. The tensor product
-  -- and the unit of `ModuleCat` are not syntactically `TensorProduct` and `ℤ`, so `simp` does not
-  -- apply the remaining steps.
-  rw [TensorProduct.map_tmul, ModuleCat.MonoidalCategory.leftUnitor_hom_apply,
-    uliftIntIso_hom_apply, uliftIntIso_hom_apply, uliftIntIso_inv_apply, smul_eq_mul]
-
-/-- A commuting square `ρ ∘ Φ = Φ' ∘ γ` of continuous maps commutes on homology, on elements:
-`ρ_* (Φ_* x) = Φ'_* (γ_* x)`. -/
-theorem homologyMap_homologyMap_apply_of_comp_eq {k : Type v} [Ring k] (M : ModuleCat.{w} k)
-    {X X' Z Z' : Type w} [TopologicalSpace X] [TopologicalSpace X'] [TopologicalSpace Z]
-    [TopologicalSpace Z'] {Φ : C(X, Z)} {ρ : C(Z, Z')} {γ : C(X, X')} {Φ' : C(X', Z')}
-    (h : ρ.comp Φ = Φ'.comp γ) {m : ℕ}
-    (x : ((TopCat.toSSet.obj (TopCat.of X)).homology M m : ModuleCat.{w} k)) :
-    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom ρ)) M m).hom
-        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom Φ)) M m).hom x) =
-      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom Φ')) M m).hom
-        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom γ)) M m).hom x) := by
-  simp only [← ConcreteCategory.comp_apply, ← SSet.homologyMap_comp, ← Functor.map_comp,
-    ← TopCat.ofHom_comp, h]
-
-/-- A coefficient morphism `φ : M ⟶ N` commutes with the map induced on homology by a continuous
-map: this is the naturality of `AlgebraicTopology.singularHomologyFunctor` in the coefficients, on
-elements. -/
-theorem homologyMap_chainComplexFunctor_map_apply {k : Type v} [Ring k] {M N : ModuleCat.{w} k}
-    (φ : M ⟶ N) {X Y : Type w} [TopologicalSpace X] [TopologicalSpace Y] (f : C(X, Y)) {m : ℕ}
-    (x : ((TopCat.toSSet.obj (TopCat.of X)).homology M m : ModuleCat.{w} k)) :
-    (HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{w} k)).map
-      φ).app (TopCat.toSSet.obj (TopCat.of Y))) m).hom
-        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) M m).hom x) =
-      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) N m).hom
-        ((HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{w} k)).map
-          φ).app (TopCat.toSSet.obj (TopCat.of X))) m).hom x) :=
-  -- The naturality square of `singularHomologyFunctor`, read through its definition as the
-  -- homology of `TopCat.toSSet`.
-  (ConcreteCategory.congr_hom (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} k)
-    m).map φ).naturality (TopCat.ofHom f)) x)
 
 /-- The integral homology of the double loop space `Ω²Q` at `x` is that of the based mapping space
 `Map_*(S², Q)` of maps sending the north pole to `x`, with the coefficients `ULift ℤ` of
