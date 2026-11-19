@@ -146,10 +146,8 @@ include hF in
 theorem exists_mem_apply_eq_of_localDegree_restrict_ne_zero {U : Opens M} {f : C(M, N)} {y : N}
     (h : (o.comap U.isOpenEmbedding').localDegree o' hE (f.restrict U) y ≠ 0) :
     ∃ x ∈ U, f x = y := by
-  by_contra hne
-  push Not at hne
-  exact h <| (o.comap U.isOpenEmbedding').localDegree_eq_zero_of_notMem_range o' hE hF _
-    fun ⟨x, hx⟩ ↦ hne x x.2 hx
+  obtain ⟨x, hx⟩ := (o.comap U.isOpenEmbedding').mem_range_of_localDegree_ne_zero o' hE hF h
+  exact ⟨x, x.2, hx⟩
 
 include hF in
 /-- **Excision.** When every solution of `f x = y` lies in `U`, the local degree of `f` on `U` at
