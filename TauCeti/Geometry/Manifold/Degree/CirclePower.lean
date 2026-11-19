@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Degree.Global
 public import TauCeti.Geometry.Manifold.Orientation.Sphere
-import Mathlib.Analysis.Calculus.Deriv.ZPow
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.Analysis.Complex.Circle
 import TauCeti.Geometry.Sphere.Connected
@@ -18,8 +17,9 @@ import TauCeti.Geometry.Sphere.Connected
 The unit circle `S¹ = sphere (0 : ℂ) 1` is a group, and for every integer `k` the power map
 `z ↦ z ^ k` is a smooth self-map of it (`TauCeti.contMDiff_zpow_sphere`). Read in `ℂ`, its
 derivative at `z` is multiplication by `k z ^ (k - 1)` (`TauCeti.mvfderiv_coe_zpow_sphere_apply`).
-A tangent vector `w` at `z` is counterclockwise exactly when `Im (conj z * w) > 0`
-(`Complex.orientation_eq_orientationAt_sphereOrientation_iff`), and since `conj z = z⁻¹` on the
+A self-map of the circle preserves (reverses) orientation at `z` exactly when it carries a tangent
+vector `w` at `z` with `Im (conj z * w) > 0` to a counterclockwise (clockwise) one
+(`TauCeti.isOrientationPreservingAt_sphere_iff_im_conj_mul`), and since `conj z = z⁻¹` on the
 circle, `Im (conj (z ^ k) * k z ^ (k - 1) w) = k Im (conj z * w)`. So the power map preserves the
 orientation of the circle at every point when `k > 0` and reverses it when `k < 0`, and its
 orientation sign is `Int.sign k` everywhere, for each of the two orientations of the circle
@@ -34,9 +34,6 @@ conjugation, which is `z ↦ z⁻¹` on the circle, has degree `-1`.
 
 ## Main results
 
-* `TauCeti.contMDiff_zpow_sphere`: the power maps of the circle are smooth.
-* `TauCeti.mvfderiv_coe_zpow_sphere_apply`: read in `ℂ`, the derivative of `z ↦ z ^ k` at `z` is
-  multiplication by `k z ^ (k - 1)`.
 * `TauCeti.isOrientationPreservingAt_zpow_sphere`, `TauCeti.isOrientationReversingAt_zpow_sphere`:
   the power map preserves the counterclockwise orientation for `k > 0` and reverses it for
   `k < 0`.
@@ -67,35 +64,6 @@ namespace TauCeti
 
 attribute [local instance] finrank_real_complex_fact'
 
-/-- The power maps `z ↦ z ^ k` of the unit circle of `ℂ`, for `k : ℤ`, are smooth. -/
-theorem contMDiff_zpow_sphere (k : ℤ) {m : ℕ∞ω} :
-    ContMDiff (𝓡 1) (𝓡 1) m fun z : sphere (0 : ℂ) 1 ↦ z ^ k := by
-  refine ContMDiff.codRestrict_sphere (f := fun z : sphere (0 : ℂ) 1 ↦ (z : ℂ) ^ k)
-    (fun z ↦ ?_) fun z ↦ by simp
-  exact ((analyticAt_id.zpow (ne_zero_of_mem_unit_sphere z)).contDiffAt.contMDiffAt.comp z
-    (contMDiff_coe_sphere z))
-
-/-- **The derivative of a power map of the circle.** Read in `ℂ` through the derivative of the
-inclusion, the derivative of `z ↦ z ^ k` at `z` is multiplication by `k z ^ (k - 1)`. -/
-theorem mvfderiv_coe_zpow_sphere_apply (k : ℤ) (z : sphere (0 : ℂ) 1)
-    (v : TangentSpace (𝓡 1) z) :
-    mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) (z ^ k)
-        (mfderiv (𝓡 1) (𝓡 1) (fun w : sphere (0 : ℂ) 1 ↦ w ^ k) z v) =
-      (k * (z : ℂ) ^ (k - 1)) * mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) z v := by
-  have hι (w : sphere (0 : ℂ) 1) := (contMDiff_coe_sphere (E := ℂ) (n := 1) (m := 1)
-    w).mdifferentiableAt one_ne_zero
-  have hpow : HasDerivAt (fun w : ℂ ↦ w ^ k) (k * (z : ℂ) ^ (k - 1)) (z : ℂ) :=
-    hasDerivAt_zpow k (z : ℂ) (Or.inl (ne_zero_of_mem_unit_sphere z))
-  rw [← mvfderiv_comp_apply (f := fun w : sphere (0 : ℂ) 1 ↦ w ^ k) z (hι _)
-    (((contMDiff_zpow_sphere k (m := 1)) z).mdifferentiableAt one_ne_zero)]
-  -- Read in `ℂ`, the power map of the circle is the power map of `ℂ` after the inclusion.
-  rw [show ((↑) ∘ fun w : sphere (0 : ℂ) 1 ↦ w ^ k) =
-      (fun w : ℂ ↦ w ^ k) ∘ ((↑) : sphere (0 : ℂ) 1 → ℂ) from
-        funext fun w ↦ by simp,
-    mvfderiv_comp_apply z (hpow.differentiableAt.restrictScalars ℝ).mdifferentiableAt (hι z),
-    mvfderiv_eq_fderiv, (hpow.hasFDerivAt.restrictScalars ℝ).fderiv]
-  simp [mvfderiv, mul_comm]
-
 /-- Read in `ℂ`, the derivative of `z ↦ z ^ k` multiplies the counterclockwise component
 `Im (conj z * w)` of a tangent vector `w` at `z` by `k`. -/
 private theorem im_conj_mul_mvfderiv_zpow_sphere (k : ℤ) (z : sphere (0 : ℂ) 1)
@@ -113,39 +81,17 @@ private theorem im_conj_mul_mvfderiv_zpow_sphere (k : ℤ) (z : sphere (0 : ℂ)
   rw [mvfderiv_coe_zpow_sphere_apply, ← mul_assoc, key, mul_assoc]
   simp
 
-/-- The derivative of `z ↦ z ^ k`, for `k ≠ 0`, carries the positive tangent basis
-`TauCeti.circleTangentBasis z` to a basis at `z ^ k`, which is positive exactly when `k > 0`. -/
-private theorem exists_basis_mfderiv_zpow_sphere {k : ℤ} (hk : k ≠ 0) (z : sphere (0 : ℂ) 1) :
-    ∃ b' : Basis (Fin 1) ℝ (TangentSpace (𝓡 1) (z ^ k)),
-      (∀ i, mfderiv (𝓡 1) (𝓡 1) (fun w : sphere (0 : ℂ) 1 ↦ w ^ k) z
-        (circleTangentBasis z i) = b' i) ∧
-      (b'.orientation = Complex.orientation.sphereOrientation.orientationAt (z ^ k) ↔ 0 < k) := by
-  set c := circleTangentBasis z
-  have hpos := (Complex.orientation_eq_orientationAt_sphereOrientation_iff c).1
-    (orientation_circleTangentBasis z)
-  have him := im_conj_mul_mvfderiv_zpow_sphere k z (c 0)
-  have hcz :
-      0 < (conj (z : ℂ) * mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) z (c 0)).im := by
-    simp only [Complex.mul_im, Complex.conj_re, Complex.conj_im]
-    linarith
-  have hne : mfderiv (𝓡 1) (𝓡 1) (fun w : sphere (0 : ℂ) 1 ↦ w ^ k) z (c 0) ≠ 0 :=
-      fun h0 ↦ by
+/-- For `k ≠ 0`, the derivative of `z ↦ z ^ k` does not vanish on the positive tangent vector
+`TauCeti.circleTangentBasis z 0`. -/
+private theorem mfderiv_zpow_sphere_circleTangentBasis_ne_zero {k : ℤ} (hk : k ≠ 0)
+    (z : sphere (0 : ℂ) 1) :
+    mfderiv (𝓡 1) (𝓡 1) (fun w : sphere (0 : ℂ) 1 ↦ w ^ k) z (circleTangentBasis z 0) ≠ 0 :=
+  fun h0 ↦ by
+    have him := im_conj_mul_mvfderiv_zpow_sphere k z (circleTangentBasis z 0)
     rw [h0, map_zero, mul_zero, Complex.zero_im] at him
-    exact (mul_ne_zero (Int.cast_ne_zero.2 hk) hcz.ne') him.symm
-  let b' : Basis (Fin 1) ℝ (TangentSpace (𝓡 1) (z ^ k)) :=
-    basisOfLinearIndependentOfCardEqFinrank
-      ((linearIndependent_unique_iff
-        (v := fun _ : Fin 1 ↦ mfderiv (𝓡 1) (𝓡 1) (fun w : sphere (0 : ℂ) 1 ↦ w ^ k) z
-          (c 0))).2 hne)
-      ((Fintype.card_fin 1).trans
-        (Complex.orientation.sphereOrientation.finrank_tangentSpace_eq (z ^ k)).symm)
-  refine ⟨b', fun i ↦ by fin_cases i; simp [b'], ?_⟩
-  rw [Complex.orientation_eq_orientationAt_sphereOrientation_iff]
-  have hb : b' 0 = mfderiv (𝓡 1) (𝓡 1) (fun w : sphere (0 : ℂ) 1 ↦ w ^ k) z (c 0) := by
-    simp [b']
-  rw [hb, show ∀ u w : ℂ, u.re * w.im - u.im * w.re = (conj u * w).im from fun u w ↦ by
-    simp only [Complex.mul_im, Complex.conj_re, Complex.conj_im]; ring, him,
-    mul_pos_iff_of_pos_right hcz, Int.cast_pos]
+    exact (mul_ne_zero (Int.cast_ne_zero.2 hk)
+      ((Complex.orientation_eq_orientationAt_sphereOrientation_iff_im_conj_mul _).1
+        (orientation_circleTangentBasis z)).ne') him.symm
 
 /-- **The positive power maps preserve the orientation of the circle.** For `k > 0`, the map
 `z ↦ z ^ k` preserves the counterclockwise orientation of the unit circle of `ℂ` at every
@@ -153,11 +99,11 @@ point. -/
 theorem isOrientationPreservingAt_zpow_sphere {k : ℤ} (hk : 0 < k) (z : sphere (0 : ℂ) 1) :
     Manifold.Orientation.IsOrientationPreservingAt Complex.orientation.sphereOrientation
       Complex.orientation.sphereOrientation (fun w : sphere (0 : ℂ) 1 ↦ w ^ k) z := by
-  obtain ⟨b', hb', hpos⟩ := exists_basis_mfderiv_zpow_sphere hk.ne' z
-  rw [Manifold.Orientation.isOrientationPreservingAt_iff_of_basis
-    (f := fun w : sphere (0 : ℂ) 1 ↦ w ^ k) _ b' hb',
-    iff_true_left (orientation_circleTangentBasis z)]
-  exact hpos.2 hk
+  rw [isOrientationPreservingAt_sphere_iff_im_conj_mul
+    (mfderiv_zpow_sphere_circleTangentBasis_ne_zero hk.ne' z), im_conj_mul_mvfderiv_zpow_sphere]
+  exact mul_pos (Int.cast_pos.2 hk)
+    ((Complex.orientation_eq_orientationAt_sphereOrientation_iff_im_conj_mul _).1
+      (orientation_circleTangentBasis z))
 
 /-- **The negative power maps reverse the orientation of the circle.** For `k < 0`, the map
 `z ↦ z ^ k` reverses the counterclockwise orientation of the unit circle of `ℂ` at every
@@ -165,14 +111,11 @@ point. -/
 theorem isOrientationReversingAt_zpow_sphere {k : ℤ} (hk : k < 0) (z : sphere (0 : ℂ) 1) :
     Manifold.Orientation.IsOrientationReversingAt Complex.orientation.sphereOrientation
       Complex.orientation.sphereOrientation (fun w : sphere (0 : ℂ) 1 ↦ w ^ k) z := by
-  obtain ⟨b', hb', hpos⟩ := exists_basis_mfderiv_zpow_sphere hk.ne z
-  rw [Manifold.Orientation.isOrientationReversingAt_iff_of_basis
-    (f := fun w : sphere (0 : ℂ) 1 ↦ w ^ k) _ b' hb',
-    iff_true_left (orientation_circleTangentBasis z),
-    ← Orientation.ne_iff_eq_neg _ _
-      (Complex.orientation.sphereOrientation.finrank_tangentSpace_eq (z ^ k)).symm, Ne, hpos,
-    not_lt]
-  exact hk.le
+  rw [isOrientationReversingAt_sphere_iff_im_conj_mul
+    (mfderiv_zpow_sphere_circleTangentBasis_ne_zero hk.ne z), im_conj_mul_mvfderiv_zpow_sphere]
+  exact mul_neg_of_neg_of_pos (Int.cast_lt_zero.2 hk)
+    ((Complex.orientation_eq_orientationAt_sphereOrientation_iff_im_conj_mul _).1
+      (orientation_circleTangentBasis z))
 
 /-- **The orientation sign of a power map of the circle.** For every orientation of the unit
 circle of `ℂ`, the map `z ↦ z ^ k` has orientation sign `Int.sign k` at every point. -/
