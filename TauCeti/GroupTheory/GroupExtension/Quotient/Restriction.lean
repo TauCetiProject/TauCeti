@@ -35,7 +35,7 @@ splitting theorem and of Sylow complement detection:
   has a complement in `G` (`Subgroup.IsLocalComplement.exists_isComplement'_of_coprime_exponent`).
   Coprimality with `|N|` implies coprimality with the exponent. More generally, restriction to the
   image of `H` is injective in every degree when `[G : H]` is prime to the exponent of `N`
-  (`Subgroup.map_subtype_injective_of_coprime_index`). The exponent form covers infinite
+  (`Subgroup.map_subtype_injective_of_coprime_exponent`). The exponent form covers infinite
   abelian normal subgroups of bounded exponent, which the transfer proof in
   `TauCeti/GroupTheory/Complement/Gaschutz.lean` does not; that proof, in turn, is
   universe-polymorphic and produces an explicit complement.
@@ -66,7 +66,7 @@ cohomological proofs of Gaschütz's splitting theorem and of Sylow complement de
   criteria.
 * `Subgroup.IsLocalComplement.index_nsmul_cohomologyClass_eq_zero`: a local complement in `H`
   forces `[G : H]` to kill the class of the quotient extension.
-* `Subgroup.map_subtype_injective_of_coprime_index`: injectivity of restriction across an index
+* `Subgroup.map_subtype_injective_of_coprime_exponent`: injectivity of restriction across an index
   prime to the exponent of `N`.
 * `Subgroup.cohomologyClass_factorSet_quotientExtension_eq_zero_iff_of_coprime_index`: detection of
   the extension class across an index prime to `|N|`.
@@ -282,7 +282,7 @@ theorem IsLocalComplement.index_nsmul_cohomologyClass_eq_zero {K : Subgroup G}
 /-- When `[G : H]` is prime to the exponent of `N`, restriction
 `Hⁿ(G ⧸ N, N) ⟶ Hⁿ(H.map (QuotientGroup.mk' N), N)` is injective in every degree `n`. Coprimality
 of `[G : H]` with `|N|` implies the hypothesis, by `Group.exponent_dvd_nat_card`. -/
-theorem map_subtype_injective_of_coprime_index
+theorem map_subtype_injective_of_coprime_exponent
     (hcop : Nat.Coprime H.index (Monoid.exponent N)) (n : ℕ) :
     Function.Injective (groupCohomology.map (H.map (QuotientGroup.mk' N)).subtype
       (𝟙 (Rep.res (H.map (QuotientGroup.mk' N)).subtype
@@ -322,7 +322,7 @@ theorem cohomologyClass_factorSet_quotientExtension_eq_zero_iff_of_coprime_index
     (relIndex_sup_of_le_normalizer (le_normalizer_of_normal (H := N)) ▸
       relIndex_dvd_index_of_le le_sup_left)
     (H.relIndex_dvd_card N)
-  exact (map_eq_zero_iff _ (map_subtype_injective_of_coprime_index
+  exact (map_eq_zero_iff _ (map_subtype_injective_of_coprime_exponent
       (hcop.coprime_dvd_right Group.exponent_dvd_nat_card) 2)).symm.trans
     (map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff hNH σ hσ τ hτ)
 
