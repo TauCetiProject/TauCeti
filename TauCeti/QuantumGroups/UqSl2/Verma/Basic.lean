@@ -490,9 +490,7 @@ theorem e_smul_vec_succ_eq_zero_iff (hq : q ≠ 0) (hμ : μ ≠ 0) (j : ℕ)
       linear_combination h
     exact hj (by rw [pow_mul, hsq, one_pow])
   have hqi : quantumInteger q (j + 1) ≠ 0 := fun h => hj (by
-    have h2 := (quantumInteger_eq_zero_iff hq (j + 1)).mp h
-    rwa [show 2 * ((j : ℤ) + 1) = ((2 * (j + 1) : ℕ) : ℤ) by push_cast; ring,
-      zpow_natCast] at h2)
+    exact_mod_cast (quantumInteger_eq_zero_iff hq (j + 1)).mp h)
   rw [e_smul_vec_succ, smul_eq_zero, or_iff_left (vec_ne_zero hq hμ j),
     div_eq_zero_iff, or_iff_left hsub, mul_eq_zero, or_iff_right hqi, sub_eq_zero, inv_pow,
     pow_mul']
