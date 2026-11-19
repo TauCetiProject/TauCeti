@@ -20,6 +20,9 @@ with a nonempty bounded open interval (`Set.OrdConnected.exists_ae_eq_Ioo`): fin
 bounds it, and it lies between the open and the closed interval spanned by its infimum and
 supremum.
 
+Translation of a closed interval preserves almost-everywhere statements after translating the
+argument (`TauCeti.ae_restrict_Icc_add_iff`).
+
 Pulling real Lebesgue measure on `(0,T]` back to `ℝ≥0` commutes with restriction,
 and the resulting finite-horizon measure has total mass `T`.
 
@@ -55,6 +58,18 @@ theorem comap_volume_restrict_Ioc_univ (T : ℝ≥0) :
 end NNReal
 
 namespace TauCeti
+
+/-- Almost-everywhere statements on a translated closed interval pull back by the translation. -/
+theorem ae_restrict_Icc_add_iff {a b c : ℝ} {P : ℝ → Prop} :
+    (∀ᵐ t ∂volume.restrict (Icc (a + c) (b + c)), P t) ↔
+      ∀ᵐ s ∂volume.restrict (Icc a b), P (s + c) := by
+  have hmap : (volume.restrict (Icc a b)).map (· + c) =
+      volume.restrict (Icc (a + c) (b + c)) := by
+    have := (measurableEmbedding_addRight c).restrict_map volume (Icc (a + c) (b + c))
+    rw [map_add_right_eq_self, preimage_add_const_Icc, add_sub_cancel_right,
+      add_sub_cancel_right] at this
+    exact this.symm
+  rw [← hmap, (measurableEmbedding_addRight c).ae_map_iff]
 
 /-- Centering intervals can only decrease the length of a one-sided difference. -/
 theorem volume_eball_sdiff_le (s u : Set ℝ) :
