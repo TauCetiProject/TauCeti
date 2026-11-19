@@ -214,20 +214,12 @@ theorem exists_basis_span_range_comp_inl_eq :
     rw [linearIndependent_iff_card_eq_finrank_span, Fintype.card_fin, Set.finrank,
       ← Submodule.span_span_of_tower ℤ, hspan]
     exact (setFinrank_real_eq_finrank_int L.toIntSubmodule).symm
-  -- Complete it to a real basis and count the new vectors.
-  let B₀ := Basis.sumExtend hv
-  have := Module.Finite.finite_basis B₀
-  have : Finite (Basis.sumExtendIndex hv) :=
-    .of_injective (Sum.inr : _ → Fin r ⊕ _) Sum.inr_injective
-  have hcard : Nat.card (Basis.sumExtendIndex hv) = finrank ℝ E - r := by
-    rw [Module.finrank_eq_nat_card_basis B₀, Nat.card_sum, Nat.card_fin]
-    omega
-  let e := (Finite.equivFin (Basis.sumExtendIndex hv)).trans (finCongr hcard)
-  refine ⟨B₀.reindex (Equiv.sumCongr (Equiv.refl _) e), ?_⟩
-  have hB : (B₀.reindex (Equiv.sumCongr (Equiv.refl _) e)) ∘ Sum.inl = v := by
-    ext i
-    simp [B₀]
-  rw [hB, hspan, AddSubgroup.toIntSubmodule_toAddSubgroup]
+  -- Complete it to a real basis.
+  have hr : r ≤ finrank ℝ E := by simpa using hv.fintype_card_le_finrank
+  obtain ⟨B, hB⟩ := Basis.exists_basis_sum_apply_inl (κ := Fin (finrank ℝ E - r)) hv
+    (by simp; omega)
+  refine ⟨B, ?_⟩
+  rw [show B ∘ Sum.inl = v from funext hB, hspan, AddSubgroup.toIntSubmodule_toAddSubgroup]
 
 /-- **The quotient by a discrete subgroup is a cylinder.** If `L` is a discrete subgroup of rank `r`
 of a real space `E` of dimension `n`, then `E ⧸ L` is isomorphic as a topological group to

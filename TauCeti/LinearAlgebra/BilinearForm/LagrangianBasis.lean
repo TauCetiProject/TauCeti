@@ -10,10 +10,12 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.SymplecticGroup
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.Basis.SumExtend
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
-# Symplectic bases extending a prescribed Lagrangian basis
+# Symplectic bases extending a prescribed isotropic basis
 
 Every basis of a Lagrangian subspace of a finite-dimensional symplectic space extends to a
 symplectic basis, with the original vectors at the `Sum.inl` positions. In particular, an
@@ -30,12 +32,20 @@ no division by two and is proved over a commutative ring.
 The resulting family has Gram matrix `Matrix.J`, so it is a basis by
 `LinearMap.BilinForm.linearIndependent_of_apply_eq_J` and dimension counting.
 
+More generally, every isotropic submodule for an alternating form lies in a Lagrangian one
+(`LinearMap.BilinForm.IsAlt.exists_le_eq_orthogonal`). Hence a basis of an isotropic subspace of
+any dimension also extends to a symplectic basis
+(`LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_J_inl_inl_eq`); comparing two such bases
+gives Witt's theorem for isotropic subspaces,
+`LinearMap.BilinForm.IsAlt.exists_mem_isometryGroup_map_eq` in
+`TauCeti.LinearAlgebra.BilinearForm.Isometry`.
+
 Our convention is Mathlib's `Matrix.J`: the dual vector pairs to `1` with its prescribed
 partner, and the prescribed vector pairs to `-1` with its dual.
 
 ## References
 
-* E. Artin, *Geometric Algebra* (1957), Theorem 3.7.
+* E. Artin, *Geometric Algebra* (1957), Theorems 3.7 and 3.9.
 * J. S. Milne, *Algebraic Groups* (2017), §24.6 (symplectic groups and isotropic flags).
 -/
 
@@ -133,6 +143,29 @@ theorem IsAlt.exists_basis_toMatrix_eq_J_inl_eq
   rw [orthogonal_top_eq_bot hnd, inf_bot_eq, finrank_bot, add_zero, ← hU,
     finrank_eq_card_basis e] at hdim
   exact hB.exists_basis_toMatrix_eq_J_inl_eq_of_finrank hnd e hU.le hdim
+
+/-- A prescribed basis of an isotropic subspace extends to a symplectic basis. For a nondegenerate
+alternating form on a space of dimension `2 (|ι| + |κ|)` and a basis `e` of an isotropic subspace
+`U`, there is a basis indexed by `(ι ⊕ κ) ⊕ (ι ⊕ κ)` in which the matrix of the form is
+`Matrix.J (ι ⊕ κ) K` and whose vectors at the positions `Sum.inl (Sum.inl i)` are the `e i`, in
+their given order. This holds in characteristic two as well. -/
+theorem IsAlt.exists_basis_toMatrix_eq_J_inl_inl_eq {κ : Type*} [Fintype κ] [DecidableEq κ]
+    (hB : B.IsAlt) (hnd : B.Nondegenerate) {U : Submodule K V} (e : Basis ι K U)
+    (hU : U ≤ B.orthogonal U) (hdim : 2 * (Fintype.card ι + Fintype.card κ) = finrank K V) :
+    ∃ b : Basis ((ι ⊕ κ) ⊕ (ι ⊕ κ)) K V,
+      toMatrix b B = Matrix.J (ι ⊕ κ) K ∧ ∀ i, b (Sum.inl (Sum.inl i)) = (e i : V) := by
+  obtain ⟨L, hUL, hL⟩ := hB.exists_le_eq_orthogonal hU
+  have hLdim : finrank K L = Fintype.card ι + Fintype.card κ := by
+    have h := finrank_orthogonal hnd L
+    rw [← hL] at h
+    have := Submodule.finrank_le L
+    omega
+  -- the basis `e`, viewed in `L`, extends to a basis of `L` indexed by `ι ⊕ κ`
+  obtain ⟨c, hc⟩ := Basis.exists_basis_sum_apply_inl (κ := κ)
+    (e.linearIndependent.map' _ (Submodule.ker_inclusion U L hUL))
+    (by simp [hLdim])
+  obtain ⟨b, hbJ, hb⟩ := hB.exists_basis_toMatrix_eq_J_inl_eq hnd c hL
+  exact ⟨b, hbJ, fun i ↦ by simp [hb, hc]⟩
 
 end Field
 
