@@ -27,6 +27,12 @@ with coefficient ring `R[q]` and `q = X` it gives polynomial identities. In part
 `(q; q)_N = ∏_{i = 1}^{N} (1 - q ^ i)` is the factorial polynomial whose multiples define the
 cyclotomic (Habiro) completion of `R[q]`.
 
+These are the asymmetric (Gaussian) conventions of basic hypergeometric series. The q-integers
+here are not the symmetric quantum integers `TauCeti.qInt` (at a loop parameter) or
+`TauCeti.quantumInteger`, and `TauCeti.qFactorial` is not built from them; see
+`TauCeti.quantumFactorial` and `TauCeti.laurentQuantumFactorial` for the symmetric quantum
+factorial.
+
 ## Main definitions
 
 * `TauCeti.qFactorial q n`: the q-factorial `[n]_q! = ∏_{i < n} ∑_{j ≤ i} q ^ j`.
@@ -69,7 +75,8 @@ section CommSemiring
 variable {R S : Type*} [CommSemiring R] [CommSemiring S]
 
 /-- The q-factorial `[n]_q! = [1]_q [2]_q ⋯ [n]_q`, where `[i]_q = ∑_{j < i} q ^ j` is the
-q-integer. -/
+q-integer. This is the asymmetric (Gaussian) q-factorial; it is not built from the symmetric
+quantum integer `TauCeti.qInt`, and `TauCeti.quantumFactorial` is the symmetric convention. -/
 def qFactorial (q : R) (n : ℕ) : R :=
   ∏ i ∈ range n, ∑ j ∈ range (i + 1), q ^ j
 
