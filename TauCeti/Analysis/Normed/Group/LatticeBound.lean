@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Group.Int
 public import TauCeti.Analysis.Normed.Group.Pi
+import TauCeti.Analysis.Normed.Operator.RingOpNorm
 import Mathlib.Algebra.Category.Grp.Injective
 import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import Mathlib.LinearAlgebra.FreeModule.PID
@@ -21,27 +22,27 @@ bounded by the sup norm of `n`: there is a constant `C` with `‖f g‖ ≤ C * 
 (`AddMonoidHom.exists_norm_le_mul_norm_of_injective`). For real-valued `f` this is because `ℝ`
 is divisible, hence an injective `ℤ`-module, so `f` extends along `n` to an additive map on all
 of `κ → ℤ`; such a map is bounded by the sup norm, with the sum of the norms of the images of
-the standard basis vectors as constant (`AddMonoidHom.norm_le_sum_mul_norm`). In general `G` is
-free of finite rank, as a subgroup of `κ → ℤ`, and `f` is bounded through the coordinates of a
-basis, which are real-valued after casting. A nonzero integer vector has sup norm at least `1`
+the standard basis vectors as constant (`LinearMap.norm_pi_apply_le_sum` over `ℤ`). In general
+`G` is free of finite rank, as a subgroup of `κ → ℤ`, and `f` is bounded through the coordinates
+of a basis, which are real-valued after casting. A nonzero integer vector has sup norm at least `1`
 (`TauCeti.one_le_pi_norm_of_ne_zero`), so these are bounds on the whole lattice with no restriction
 on the size of the coefficients, and `‖n g‖` is a norm detecting `g ≠ 0`.
 
 The bound is the arithmetic of the winding argument by which Ozsváth and Szabó make a Heegaard
 diagram admissible. For two additive maps `n` and `b` from `G` to `κ → ℤ` with `n` injective,
-and a real number `t`, consider the integers `b g i + t * n g i` and `b g i - t * n g i`: when
-`G` is the group of periodic domains, `n g i` is the multiplicity of the boundary of `g` on the
-`i`-th attaching curve, and winding `t` times in both directions along a curve dual to it
-produces regions with these multiplicities. At a coordinate `i` where `|n g i|` attains the sup
-norm of `n g`, one of them is at least `(t - B) * ‖n g‖` and the other at most
-`-((t - B) * ‖n g‖)`, for a constant `B` depending only on `n` and `b`
+and a real number `t`, consider the real numbers `b g i + t * |n g i|` and
+`b g i - t * |n g i|`: when `G` is the group of periodic domains, `n g i` is the multiplicity of
+the boundary of `g` on the `i`-th attaching curve, and winding `t` times in both directions along
+a curve dual to it produces regions with multiplicities `b g i + t * n g i` and
+`b g i - t * n g i`, which are these two numbers in some order. At a coordinate `i` where
+`|n g i|` attains the sup norm of `n g`, the first is at least `(t - B) * ‖n g‖` and the second
+at most `-((t - B) * ‖n g‖)`, for a constant `B` depending only on `n` and `b`
 (`AddMonoidHom.exists_forall_exists_le_add_mul_abs_and_sub_mul_abs_le`). So winding amounts `t`
 larger than `B` make the positive and negative multiplicities of every nonzero `g` grow linearly
 in `‖n g‖`, uniformly in `g`, and dominate any additive functional, such as the Maslov index.
 
 ## Main results
 
-* `AddMonoidHom.norm_le_sum_mul_norm`: an additive map on `κ → ℤ` is bounded by the sup norm.
 * `AddMonoidHom.exists_norm_le_mul_norm_of_injective`: an additive map on a subgroup of an
   integer lattice is bounded by the sup norm.
 * `AddMonoidHom.exists_forall_exists_le_add_mul_abs_and_sub_mul_abs_le`: the winding estimate.
@@ -63,18 +64,6 @@ namespace AddMonoidHom
 
 variable {G κ F : Type*} [AddCommGroup G] [Fintype κ]
 
-/-- An additive map on the integer lattice `κ → ℤ` is bounded by the sup norm, with constant the
-sum of the norms of the images of the standard basis vectors. -/
-theorem norm_le_sum_mul_norm [DecidableEq κ] [SeminormedAddCommGroup F] (ψ : (κ → ℤ) →+ F)
-    (v : κ → ℤ) : ‖ψ v‖ ≤ (∑ i, ‖ψ (Pi.single i 1)‖) * ‖v‖ := by
-  conv_lhs => rw [← Finset.univ_sum_single v, map_sum]
-  rw [sum_mul]
-  refine (norm_sum_le _ _).trans (sum_le_sum fun i _ ↦ ?_)
-  rw [← mul_one (v i), ← smul_eq_mul, Pi.single_smul', map_zsmul]
-  refine (norm_zsmul_le _ _).trans ?_
-  rw [mul_comm]
-  exact mul_le_mul_of_nonneg_left (norm_le_pi_norm v i) (norm_nonneg _)
-
 /-- The real-valued case of `AddMonoidHom.exists_norm_le_mul_norm_of_injective`: as `ℝ` is
 divisible, `f` extends along `n` to an additive map on all of `κ → ℤ`. -/
 private theorem exists_abs_le_mul_norm_of_injective (f : G →+ ℝ) {n : G →+ (κ → ℤ)}
@@ -83,7 +72,7 @@ private theorem exists_abs_le_mul_norm_of_injective (f : G →+ ℝ) {n : G →+
   obtain ⟨ψ, hψ⟩ := (Module.Baer.of_divisible ℝ).extension_property_addMonoidHom n hn f
   refine ⟨∑ i, ‖ψ (Pi.single i 1)‖, sum_nonneg fun i _ ↦ norm_nonneg _, fun g ↦ ?_⟩
   rw [← hψ, comp_apply, ← Real.norm_eq_abs]
-  exact norm_le_sum_mul_norm ψ (n g)
+  exact ψ.toIntLinearMap.norm_pi_apply_le_sum (n g)
 
 /-- **Additive maps on a subgroup of an integer lattice are bounded by the sup norm.** If
 `n : G →+ (κ → ℤ)` is injective and `κ` is finite, every additive map `f` from `G` to a
