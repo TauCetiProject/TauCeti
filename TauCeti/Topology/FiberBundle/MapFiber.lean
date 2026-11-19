@@ -62,8 +62,7 @@ variable {B P F : Type*}
 
 /-- The fibre `{p // proj p = b}` of a map `proj : P → B` over `b`. With their subspace topologies
 the fibres of a locally trivial map form a fibre bundle over `B`, whose total space is `P`. -/
--- The body is exposed so that points of a fibre can be used as points of `P` downstream.
-@[expose] def MapFiber (proj : P → B) (b : B) : Type _ := {p : P // proj p = b}
+abbrev MapFiber (proj : P → B) (b : B) : Type _ := {p : P // proj p = b}
 
 namespace MapFiber
 
@@ -82,6 +81,7 @@ def mulAction (hproj : ∀ (m : M) (p : P), proj (m • p) = proj p) (b : B) :
   mul_smul m m' p := Subtype.ext (mul_smul m m' p.1)
 
 /-- The restricted action is the action on `P`, read on points of a fibre. -/
+@[simp]
 theorem coe_smul (hproj : ∀ (m : M) (p : P), proj (m • p) = proj p) {b : B} (m : M)
     (p : MapFiber proj b) :
     letI := mulAction hproj
@@ -91,10 +91,6 @@ theorem coe_smul (hproj : ∀ (m : M) (p : P), proj (m • p) = proj p) {b : B} 
 end MulAction
 
 variable [TopologicalSpace P]
-
-/-- A fibre of a map carries the subspace topology. -/
-instance (b : B) : TopologicalSpace (MapFiber proj b) :=
-  inferInstanceAs (TopologicalSpace {p : P // proj p = b})
 
 /-- The total space of the fibres of `proj` carries the topology of `P`, induced by
 `⟨b, p⟩ ↦ p`. -/

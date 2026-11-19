@@ -259,7 +259,6 @@ theorem existsUnique_contMDiff_comp_eq [Nonempty F] {g : P → M} (hg : ContMDif
     (hfib : FactorsThrough g proj) :
     ∃! h : B → M, ContMDiff IB IM n h ∧ h ∘ proj = g := by
   let := A.fiberBundle
-  have := A.contMDiffFiberBundle hA
   let Φ := A.totalSpaceDiffeomorph hA
   obtain ⟨h, ⟨hh, hcomp⟩, huniq⟩ :=
     ManifoldTotalSpace.existsUnique_contMDiff_comp_proj_eq (F := F) (E := MapFiber proj)
