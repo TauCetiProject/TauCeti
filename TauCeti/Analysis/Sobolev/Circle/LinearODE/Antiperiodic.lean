@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.ODE.Periodic
 public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Basic
 
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.Deriv.Mul
+import TauCeti.LinearAlgebra.Complex.Determinant
 
 /-!
 # The antiperiodic loop operator in the periodic gauge
@@ -144,8 +144,8 @@ real-linear. -/
 private theorem periodic_gaugeFun (S : C(AddCircle T, E →L[ℝ] E)) :
     Function.Periodic (gaugeFun T S) T := fun t ↦ by
   ext v
-  rw [gaugeFun_apply, gaugeFun_apply, phase_add_period, AddCircle.coe_add_period, neg_smul,
-    map_neg, inv_neg, neg_smul, smul_neg, neg_neg]
+  simp only [gaugeFun_apply, phase_add_period, AddCircle.coe_add_period]
+  simp
 
 /-- **The antiperiodic operator in the periodic gauge.** For a continuous loop `S` of real-linear
 maps of a complex space `E`, the `T`-periodic loop
@@ -313,8 +313,7 @@ theorem isInvertible_loopOperator_antiperiodicGaugeLoop_iff_det_one_add_ne_zero
     (loopOperator T (antiperiodicGaugeLoop T S)).IsInvertible ↔
       LinearMap.det (1 + (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)) ≠ 0 := by
   rw [isInvertible_loopOperator_antiperiodicGaugeLoop_iff_det_ne_zero, neg_one_smul, ← neg_add',
-    ← neg_one_smul ℝ (1 + _), LinearMap.det_smul, finrank_real_of_complex, pow_mul, neg_one_sq,
-    one_pow, one_mul]
+    LinearMap.det_neg_of_complex]
 
 end CircleSobolev
 
