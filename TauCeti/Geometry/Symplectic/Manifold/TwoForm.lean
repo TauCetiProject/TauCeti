@@ -71,6 +71,8 @@ example.
   partial-diffeomorphism pullback characterizations
   (`TauCeti.SymplecticForm.eval₂_constSmooth_mfderiv_eq`,
   `TauCeti.SmoothTwoForm.mpullback_constSmooth_eq_mpullback_subtype_val_iff`).
+* `TauCeti.SymplecticForm.IsSymplectomorphism.mpullback_constSmooth`: a linear symplectomorphism
+  pulls one constant symplectic form back to the other.
 
 The definitions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.2.
@@ -537,6 +539,19 @@ lemma compatible_constSmooth_iff {omegaForm : SymplecticForm V} {J : AlmostCompl
     exact ⟨invariant_constSmooth_iff.mp h.invariant, tames_constSmooth_iff.mp h.tames⟩
   · rintro ⟨hinv, htame⟩
     exact ⟨invariant_constSmooth_iff.mpr hinv, tames_constSmooth_iff.mpr htame⟩
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] [FiniteDimensional ℝ W] in
+/-- A linear symplectomorphism pulls the constant symplectic form of its target back to that of its
+source. -/
+theorem IsSymplectomorphism.mpullback_constSmooth {σ₁ : SymplecticForm V} {σ₂ : SymplecticForm W}
+    {e : V ≃L[ℝ] W} (he : IsSymplectomorphism σ₁ σ₂ e) :
+    SmoothForm.mpullback e.toDiffeomorph e.toDiffeomorph.contMDiff σ₂.constSmooth =
+      σ₁.constSmooth := by
+  refine SmoothBundleForm.ext_eval₂ fun x v w ↦ ?_
+  rw [SmoothForm.eval₂_mpullback, ContinuousLinearEquiv.coe_toDiffeomorph,
+    ContinuousLinearEquiv.mfderiv_eq, fromTangentSpace_constSmooth_apply,
+    fromTangentSpace_constSmooth_apply]
+  exact he.apply _ _
 
 end SymplecticForm
 
