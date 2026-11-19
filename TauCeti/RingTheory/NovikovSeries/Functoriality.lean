@@ -229,6 +229,12 @@ theorem mapRingHom_comp (ρ' : S →+* T) (φ' : H' →+ H'')
       mapRingHom (ρ'.comp ρ) (φ'.comp φ) (exists_period_rescale_comp hφ hφ') :=
   RingHom.ext <| map_map (ρ : R →+ S) φ hφ (ρ' : S →+ T) φ' hφ'
 
+/-- The pushforward ring homomorphism along injective coefficient and exponent maps is
+injective. -/
+theorem mapRingHom_injective (hρ : Function.Injective ρ) (hinj : Function.Injective φ) :
+    Function.Injective (mapRingHom ρ φ hφ) :=
+  map_injective (ρ : R →+ S) φ hφ hρ hinj
+
 end RingHom
 
 section AlgHom
