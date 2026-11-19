@@ -49,7 +49,7 @@ calculus:
 * `TauCeti.ContinuousKaehlerDifferential.residue_map`: residues commute with extension of
   coefficients.
 * `TauCeti.ContinuousKaehlerDifferential.ker_residue`: in characteristic zero, the kernel of the
-  residue is the image of `d`.
+  residue is the subspace spanned by the exact forms.
 * `TauCeti.ContinuousKaehlerDifferential.D_eq_D_iff`: in characteristic zero, primitives are
   unique up to a constant.
 
@@ -196,11 +196,13 @@ theorem exists_D_eq_iff (ω : ContinuousKaehlerDifferential K) :
   refine exists_congr fun g ↦ ?_
   rw [← (equivLaurentSeries K).injective.eq_iff, equivLaurentSeries_D]
 
-/-- In characteristic zero, the kernel of the residue is the image of `d`. -/
-theorem ker_residue :
-    (LinearMap.ker (residue K) : Set (ContinuousKaehlerDifferential K)) = Set.range (D K) := by
-  ext ω
-  rw [SetLike.mem_coe, LinearMap.mem_ker, ← exists_D_eq_iff, Set.mem_range]
+/-- In characteristic zero, the kernel of the residue is the subspace spanned by the exact forms
+`dg`; by `exists_D_eq_iff` every element of it is itself exact. -/
+theorem ker_residue : LinearMap.ker (residue K) = Submodule.span K (Set.range (D K)) := by
+  refine le_antisymm (fun ω hω ↦ Submodule.subset_span ((exists_D_eq_iff ω).2 hω)) ?_
+  rw [Submodule.span_le]
+  rintro _ ⟨g, rfl⟩
+  exact residue_D g
 
 /-- **Primitives are unique up to a constant.** In characteristic zero, `df = dg` exactly when
 `f` and `g` differ by a constant. -/
