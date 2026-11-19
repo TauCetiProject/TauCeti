@@ -10,8 +10,6 @@ public import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 public import Mathlib.Topology.MetricSpace.Equicontinuity
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-import Mathlib.Topology.ContinuousMap.SecondCountableSpace
-import Mathlib.Topology.Sequences
 import TauCeti.Topology.ContinuousMap.Ascoli
 
 /-!

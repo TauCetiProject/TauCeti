@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+public import Mathlib.RingTheory.Flat.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
@@ -24,11 +25,21 @@ whenever `(M ⧸ P) ⊗[R] Q → (M ⧸ P) ⊗[R] N` is injective. This is the s
 submodule of a coalgebra whose comultiplication lands in both one-sided tensor products to a
 subcoalgebra.
 
+For linear maps `f : M → M'` and `g : N → N'` the same identity computes a common kernel: when the
+modules involved are flat, the kernel of `f ⊗ 1` is the image of `ker f ⊗ N` and the kernel of
+`1 ⊗ g` is the image of `M ⊗ ker g`, so
+
+```text
+ker (f ⊗ 1) ∩ ker (1 ⊗ g) = ker f ⊗ ker g.
+```
+
 ## Main results
 
 * `Submodule.range_map_subtype_subtype`: the image of `P ⊗[R] Q` in `M ⊗[R] N` is the
   intersection of the images of `M ⊗[R] Q` and `P ⊗[R] N`, when `(M ⧸ P) ⊗[R] Q → (M ⧸ P) ⊗[R] N`
   is injective, for instance when `M ⧸ P` is flat.
+* `LinearMap.ker_rTensor_inf_ker_lTensor`: the common kernel of `f ⊗ 1` and `1 ⊗ g` is the image
+  of `ker f ⊗[R] ker g`, when `M`, `N` and `M ⧸ ker f` are flat.
 
 ## References
 
@@ -71,3 +82,21 @@ theorem range_map_subtype_subtype (P : Submodule R M) (Q : Submodule R N)
   exact ⟨z, by rw [← lTensor_comp_rTensor, comp_apply]⟩
 
 end Submodule
+
+namespace LinearMap
+
+variable {R : Type*} {M M' N N' : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup M'] [Module R M'] [AddCommGroup N] [Module R N] [AddCommGroup N'] [Module R N']
+
+/-- The common kernel of `f ⊗ 1` and `1 ⊗ g` is the image of `ker f ⊗[R] ker g`, when `M`, `N`
+and `M ⧸ ker f` are flat; over a field every module is flat. -/
+theorem ker_rTensor_inf_ker_lTensor (f : M →ₗ[R] M') (g : N →ₗ[R] N') [Module.Flat R M]
+    [Module.Flat R N] [Module.Flat R (M ⧸ ker f)] :
+    ker (f.rTensor N) ⊓ ker (g.lTensor M) =
+      range (TensorProduct.map (ker f).subtype (ker g).subtype) := by
+  rw [Submodule.range_map_subtype_subtype _ _
+      (Module.Flat.lTensor_preserves_injective_linearMap _ (ker g).injective_subtype),
+    (Module.Flat.rTensor_exact N f.exact_subtype_ker_map).linearMap_ker_eq,
+    (Module.Flat.lTensor_exact M g.exact_subtype_ker_map).linearMap_ker_eq, inf_comm]
+
+end LinearMap

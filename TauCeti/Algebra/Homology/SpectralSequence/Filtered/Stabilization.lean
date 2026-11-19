@@ -46,15 +46,11 @@ lemma isZero_spectralObject_H_bot (a m : ℤ)
     IsZero (((spectralObject (filtrationFunctor F hF)).H m).obj
       (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ a)))) := by
   refine IsZero.of_iso ?_ (spectralObjectHIsoCokernel _ _ m)
-  have hz : (filtrationFunctor F hF).map (homOfLE (bot_le : (⊥ : EInt) ≤ a)) = 0 := by
-    refine IsZero.eq_of_src ?_ _ _
-    rw [filtrationFunctor_obj, filtrationEInt_bot]
-    exact IsZero.of_iso (isZero_zero _) Subobject.botCoeIsoZero
   have h' : IsZero (((filtrationFunctor F hF).obj (a : EInt)).homology m) := by
     rw [filtrationFunctor_obj_coe]
     exact h
   exact IsZero.of_iso h' ((HomologicalComplex.homologyFunctor C _ m).mapIso
-    (cokernelIsoOfEq hz ≪≫ cokernelZeroIsoTarget))
+    (cokernelIsoOfEq (filtrationFunctor_map_bot F hF a) ≪≫ cokernelZeroIsoTarget))
 
 /-- `H^m(b ≤ ⊤)` vanishes for the spectral object of a filtration when `H^m(K / F_b)` does. -/
 lemma isZero_spectralObject_H_top (b m : ℤ)
@@ -62,17 +58,14 @@ lemma isZero_spectralObject_H_top (b m : ℤ)
     IsZero (((spectralObject (filtrationFunctor F hF)).H m).obj
       (mk₁ (homOfLE (le_top : (b : EInt) ≤ ⊤)))) := by
   refine IsZero.of_iso ?_ (spectralObjectHIsoCokernel _ _ m)
-  have : IsIso (filtrationEInt F ⊤).arrow := by
-    rw [filtrationEInt_top]
-    infer_instance
   -- The transition map to `⊤` followed by the inclusion `K ≅ ⊤ ⟶ K` is the inclusion of `F_b`.
   have e : (filtrationFunctor F hF).map (homOfLE (le_top : (b : EInt) ≤ ⊤)) ≫
       (filtrationFunctorObjIso F hF ⊤).hom ≫ (filtrationEInt F ⊤).arrow =
       (filtrationFunctorObjIso F hF b).hom ≫ (filtrationEInt F b).arrow := by
     rw [reassoc_of% filtrationFunctor_map_comp_objIso_hom, Subobject.ofLE_arrow]
   refine IsZero.of_iso ?_ ((HomologicalComplex.homologyFunctor C _ m).mapIso
-    ((cokernelCompIsIso _ ((filtrationFunctorObjIso F hF ⊤).hom ≫
-      (filtrationEInt F ⊤).arrow)).symm ≪≫ cokernelIsoOfEq e ≪≫ cokernelEpiComp _ _))
+    ((cokernelCompIsIso _ (filtrationFunctorArrow F hF ⊤)).symm ≪≫ cokernelIsoOfEq e ≪≫
+      cokernelEpiComp _ _))
   rw [HomologicalComplex.homologyFunctor_obj]
   convert h using 1
   rw [filtrationEInt_coe]

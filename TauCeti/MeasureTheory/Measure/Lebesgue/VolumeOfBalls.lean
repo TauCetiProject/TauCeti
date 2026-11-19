@@ -19,8 +19,9 @@ form used in normalizing constants. It also shows that every finite-dimensional 
 product space has a closed ball of volume one about the origin, that a closed ball of
 radius `r` in a one-dimensional space has volume `2 * r`, that balls of the same radius in two
 real inner product spaces of the same dimension have the same volume
-(`TauCeti.volume_ball_eq_of_finrank_eq`), and that a disc of radius `r` in `ℂ` has real volume
-`π * r ^ 2`, so that a constant `c` on it has `L²` norm `‖c‖ r √π`.
+(`TauCeti.volume_ball_eq_of_finrank_eq`), that a ball of radius `r` in `ℝ × ℝ`, a square of side
+`2 * r` for the sup norm, has real volume `(2 * r) ^ 2`, and that a disc of radius `r` in `ℂ` has
+real volume `π * r ^ 2`, so that a constant `c` on it has `L²` norm `‖c‖ r √π`.
 -/
 
 public section
@@ -82,6 +83,20 @@ theorem volume_ball_eq_of_finrank_eq {k : ℕ} (hk : finrank ℝ V = k) (x : V)
     map_zero]
 
 end TauCeti
+
+namespace Real
+
+open MeasureTheory Metric
+
+/-- A ball of radius `r ≥ 0` in `ℝ × ℝ`, a square of side `2 * r` for the sup norm, has real volume
+`(2 * r) ^ 2`. -/
+theorem volume_real_ball_prod (z : ℝ × ℝ) {r : ℝ} (hr : 0 ≤ r) :
+    volume.real (ball z r) = (2 * r) ^ 2 := by
+  rw [measureReal_def, ← ball_prod_same, Measure.volume_eq_prod, Measure.prod_prod,
+    Real.volume_ball, Real.volume_ball, ← ENNReal.ofReal_mul (by positivity),
+    ENNReal.toReal_ofReal (by positivity), sq]
+
+end Real
 
 namespace Complex
 
