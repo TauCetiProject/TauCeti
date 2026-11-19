@@ -17,7 +17,6 @@ import TauCeti.Analysis.Matrix.SymplecticGroup.L2OpNorm
 import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Crossing
 import TauCeti.Geometry.Lie.Subgroup.Symplectic
 import TauCeti.LinearAlgebra.Eigenspace.Matrix
-import TauCeti.LinearAlgebra.Matrix.Determinant.Smul
 import TauCeti.LinearAlgebra.SymplecticGroup
 
 /-!
@@ -305,7 +304,8 @@ private theorem det_cayleyGen_ne_zero {S : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hdet
     isUnit_exp_smul_J_mul_sub_one hdet (ht.1.lt_of_ne' ht0)
       (by nlinarith [norm_nonneg S, ht.2, Real.pi_pos])
   rw [cayleyGen, symplecticCayley_def, det_mul]
-  exact mul_ne_zero ((isUnit_iff_isUnit_det _).1 (isUnit_J_mul_one_sub h1)).ne_zero
+  exact mul_ne_zero
+    ((isUnit_iff_isUnit_det _).1 ((isUnit_J n ℝ).mul (IsUnit.sub_iff.1 h1))).ne_zero
     ((isUnit_iff_isUnit_det _).1 (isUnit_nonsing_inv_iff.2
       (isUnit_one_add_exp_smul_J_mul hSπ ht))).ne_zero
 
@@ -341,7 +341,7 @@ private theorem conleyZehnderIndex_expPath_J_mul_of_norm_lt_pi {S : Matrix (n �
     (fun t ht hdt ↦ by
       obtain rfl : t = 0 := by_contra fun h0 ↦ hdetA t ht h0 hdt
       rw [hA0]
-      exact nondegenerate_crossingForm_zero (hS.smul _) (det_smul_ne_zero (by norm_num) hdet))
+      exact nondegenerate_crossingForm_zero (hS.smul _) (by simp [hdet]))
   rw [conleyZehnderIndex_def, hmas, hA0, sigPos_sub_sigNeg_crossingForm_zero,
     signature_smul_of_pos (by norm_num),
     sigPos_sub_sigNeg_crossingForm_eq_zero (hA 1 (right_mem_Icc.2 zero_le_one)).isSymm
@@ -360,6 +360,7 @@ private theorem conleyZehnderIndex_expPath_J_mul_eq_neg_signature_div_two
   set X := J n ℝ * S
   have hXsp : X ∈ LieAlgebra.Symplectic.sp n ℝ := LieAlgebra.Symplectic.J_mul_mem_sp_iff.2 hS
   have hS' : ((2⁻¹ : ℝ) • S).IsSymm := hS.smul _
+  have hdet' : ((2⁻¹ : ℝ) • S).det ≠ 0 := by simp [hdet]
   have hX' : J n ℝ * ((2⁻¹ : ℝ) • S) = (2⁻¹ : ℝ) • X := Matrix.mul_smul _ _ _
   -- The second half `t ↦ exp (t X)`, `t ∈ [1/2, 1]`, of the path.
   let δ : Path (expOfMemSp (J n ℝ * ((2⁻¹ : ℝ) • S)) (LieAlgebra.Symplectic.J_mul_mem_sp_iff.2 hS'))
@@ -399,8 +400,8 @@ private theorem conleyZehnderIndex_expPath_J_mul_eq_neg_signature_div_two
     have hs : 0 < (1 + (s : ℝ)) / 2 := by linarith [s.2.1]
     rw [one_smul, hδ]
     exact isUnit_exp_smul_J_mul_sub_one hdet hs (by nlinarith [s.2.2, norm_nonneg S])
-  rw [← hsplit, conleyZehnderIndex_trans, conleyZehnderIndex_expPath_J_mul_of_norm_lt_pi hS'
-    (det_smul_ne_zero (by norm_num) hdet) hnorm,
+  rw [← hsplit, conleyZehnderIndex_trans,
+    conleyZehnderIndex_expPath_J_mul_of_norm_lt_pi hS' hdet' hnorm,
     signature_smul_of_pos (by norm_num), conleyZehnderIndex_eq_zero_of_finrank_eigenspace_eq δ
     (k := 0) fun s ↦ finrank_eigenspace_toLin'_eq_zero (hδ1 s), add_zero]
 

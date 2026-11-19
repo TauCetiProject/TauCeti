@@ -45,7 +45,6 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 
 * `Matrix.J_mul_neg_J`, `Matrix.neg_J_mul_J` and `Matrix.isUnit_J`: the canonical skew-symmetric
   matrix is a unit, with inverse `-J`.
-* `Matrix.isUnit_J_mul_one_sub`: `J (1 - A)` is invertible when `A - 1` is.
 * `Matrix.det_J`: its determinant is `1`.
 * `Matrix.star_J` and `Matrix.J_mem_unitaryGroup`: over any star ring its adjoint is `-J`, so
   it is unitary (orthogonal over `ℝ`).
@@ -110,12 +109,6 @@ theorem neg_J_mul_J : (-J l R) * J l R = 1 := by
 /-- The canonical skew-symmetric matrix is a unit, with inverse `-J`, because `J * J = -1`. -/
 theorem isUnit_J : IsUnit (J l R) :=
   ⟨⟨J l R, -J l R, J_mul_neg_J l R, neg_J_mul_J l R⟩, rfl⟩
-
-variable {l R} in
-/-- If `A` has no eigenvalue `1`, that is `A - 1` is invertible, then `J (1 - A)` is invertible. -/
-theorem isUnit_J_mul_one_sub {A : Matrix (l ⊕ l) (l ⊕ l) R} (h1 : IsUnit (A - 1)) :
-    IsUnit (J l R * (1 - A)) :=
-  (isUnit_J l R).mul (IsUnit.sub_iff.1 h1)
 
 /-- The canonical skew-symmetric matrix has determinant one. Mathlib records only
 `det J * det J = 1` (`Matrix.J_det_mul_J_det`), which leaves the sign open. -/
