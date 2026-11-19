@@ -23,11 +23,11 @@ Likewise the pair groupoid `Codiscrete N` has objects `C^n` diffeomorphic to `N`
 `C^n` diffeomorphic to `N × N`, in (target, source) coordinates
 (`TauCeti.PairGroupoid.objectDiffeomorph`, `TauCeti.PairGroupoid.arrowDiffeomorph`).
 
-Over a smooth manifold with a boundaryless finite-dimensional real model, both are Lie groupoids:
-the unit groupoid when `N` is second-countable (`TauCeti.UnitGroupoid.lieGroupoid`), and the pair
-groupoid when `N` is moreover Hausdorff, which makes its source fibres, copies of `N`, Hausdorff
-(`TauCeti.PairGroupoid.lieGroupoid`). The unit groupoid is étale, while the arrow manifold of
-the pair groupoid has twice the dimension of its object manifold.
+Over a Hausdorff second-countable smooth manifold with a boundaryless finite-dimensional real
+model, both are Lie groupoids (`TauCeti.UnitGroupoid.lieGroupoid`,
+`TauCeti.PairGroupoid.lieGroupoid`); the source fibres of the pair groupoid are copies of `N`.
+The unit groupoid is étale, while the arrow manifold of the pair groupoid has twice the dimension
+of its object manifold.
 
 ## Main declarations
 
@@ -168,10 +168,10 @@ private theorem contMDiff_inverse : ContMDiff I I ∞ fun a : Quiver.Total (Disc
   refine ((arrowDiffeomorph I ∞ N).contMDiff_diffeomorph_comp_iff le_rfl).1 ?_
   simpa [Function.comp_def] using contMDiff_arrow (I := I) (N := N)
 
-/-- The unit groupoid of a second-countable smooth manifold is a Lie groupoid. Its arrow manifold
-is the object manifold, every structure map is the identity in these coordinates, and its source
-fibres are points. -/
-instance lieGroupoid [SecondCountableTopology N] : LieGroupoid I I (Discrete N) where
+/-- The unit groupoid of a Hausdorff second-countable smooth manifold is a Lie groupoid. Its arrow
+manifold is the object manifold, every structure map is the identity in these coordinates, and its
+source fibres are points. -/
+instance lieGroupoid [T2Space N] [SecondCountableTopology N] : LieGroupoid I I (Discrete N) where
   isSubmersion_source := isSubmersion_source
   contMDiff_unit :=
     coe_sourceDiffeomorph_symm I ∞ (N := N) ▸ (sourceDiffeomorph I ∞ N).symm.contMDiff
@@ -180,6 +180,7 @@ instance lieGroupoid [SecondCountableTopology N] : LieGroupoid I I (Discrete N) 
   -- projection.
   contMDiff_comp := contMDiff_comp_of_eq isSubmersion_source contMDiff_inverse contMDiff_fst
     fun p ↦ (arrowHomeomorph N).injective (by simp)
+  t2Space_objects := inferInstance
   secondCountableTopology_arrows := inferInstance
   t2Space_sourceFiber _ := ⟨fun a b hab ↦ (hab (Subtype.ext ((arrowHomeomorph N).injective
     (by simp [a.2, b.2])))).elim⟩
@@ -297,6 +298,7 @@ instance lieGroupoid [T2Space N] [SecondCountableTopology N] :
       ((arrowDiffeomorph I ∞ N).symm.contMDiff.comp
         ((ha.comp contMDiff_snd).fst.prodMk (ha.comp contMDiff_fst).snd))
       fun p ↦ (arrowHomeomorph N).injective (by simp)
+  t2Space_objects := (objectHomeomorph N).symm.t2Space
   secondCountableTopology_arrows := inferInstance
   t2Space_sourceFiber _ := inferInstance
 

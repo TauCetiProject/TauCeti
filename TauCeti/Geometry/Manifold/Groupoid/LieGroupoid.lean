@@ -34,10 +34,10 @@ whenever `a` and `b` are smooth maps into `Γ` with `right ∘ a = left ∘ b`
 (`ContMDiff.totalComp`). Conversely, composition is smooth as soon as it is the restriction of a
 smooth map on `Γ × Γ` (`TauCeti.contMDiff_comp_of_eq`).
 
-The arrow manifold need not be Hausdorff: it is locally Hausdorff through its charts and is
-required to be second-countable, while each source fibre `{a : Γ // a.left = x}` is required to
-be Hausdorff in its subspace topology. This is the setting of Crainic and Fernandes, which admits
-the non-Hausdorff integrations of regular foliations.
+The object manifold is required to be Hausdorff. The arrow manifold need not be: it is locally
+Hausdorff through its charts and is required to be second-countable, while each source fibre
+`{a : Γ // a.left = x}` is required to be Hausdorff in its subspace topology. This is the setting
+of Crainic and Fernandes, which admits the non-Hausdorff integrations of regular foliations.
 
 From the axioms, inversion is a diffeomorphism (`TauCeti.LieGroupoid.inverseDiffeomorph`),
 which exchanges source and target, so the target is a submersion as well
@@ -149,8 +149,8 @@ end ComposablePairs
 /-- A **Lie groupoid**: a groupoid `C` whose objects form a smooth manifold modelled on `I` and
 whose total arrows form a smooth manifold modelled on `J`, with smooth submersive source, smooth
 units and inversion, and composition smooth on the transverse fibre product of target and source.
-The arrow manifold is second-countable, and each source fibre is Hausdorff in its subspace
-topology; the arrow manifold itself need not be Hausdorff. -/
+The object manifold is Hausdorff, the arrow manifold is second-countable, and each source fibre
+is Hausdorff in its subspace topology; the arrow manifold itself need not be Hausdorff. -/
 class LieGroupoid : Prop where
   /-- The source map is a smooth submersion. -/
   isSubmersion_source : IsSubmersion J I ∞ (Quiver.Total.left : Quiver.Total C → C)
@@ -165,6 +165,8 @@ class LieGroupoid : Prop where
     ContMDiff 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J ∞
       fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
         p.1.1.comp p.1.2 p.2
+  /-- The object manifold is Hausdorff. -/
+  t2Space_objects : T2Space C
   /-- The arrow manifold is second-countable. -/
   secondCountableTopology_arrows : SecondCountableTopology (Quiver.Total C)
   /-- Every source fibre is Hausdorff. -/
