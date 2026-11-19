@@ -169,6 +169,17 @@ private theorem stripColumnMean_congr {ρ' : ℝ × ℝ → ℝ} (h : EqOn ρ' �
   funext fun x ↦ integral_congr fun y hy ↦
     h ⟨mem_univ _, by rwa [uIcc_of_le zero_le_one] at hy⟩
 
+/-- On the strip, the density normalization only reads `ρ` there. -/
+private theorem stripDensityNormalization_congr {ρ' : ℝ × ℝ → ℝ}
+    (h : EqOn ρ' ρ (univ ×ˢ Icc 0 1)) :
+    EqOn (stripDensityNormalization ρ') (stripDensityNormalization ρ) (univ ×ˢ Icc 0 1) := by
+  have hcm := stripColumnMean_congr h
+  refine fun p hp ↦ Prod.ext ?_ ?_
+  · simp only [stripDensityNormalization_fst, stripAreaFraction_def, annulusArea_def, hcm]
+  · simp only [stripDensityNormalization_snd, hcm]
+    exact congrArg _ (integral_congr fun y hy ↦ h ⟨mem_univ _,
+      Icc_subset_Icc_right hp.2.2 (by rwa [uIcc_of_le hp.2.1] at hy)⟩)
+
 theorem continuous_stripColumnMean (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1)) :
     Continuous (stripColumnMean ρ) := by
   obtain ⟨ρ', hρ', h⟩ := hρ.exists_continuous_eqOn_univ_prod_Icc zero_le_one
@@ -512,13 +523,7 @@ theorem bijOn_stripDensityNormalization (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 
     BijOn (stripDensityNormalization ρ) (univ ×ˢ Icc 0 1) (univ ×ˢ Icc 0 1) := by
   -- On the strip the normalization only reads `ρ` there, so `ρ` may be taken continuous.
   obtain ⟨ρ', hc, hρρ'⟩ := hρ.exists_continuous_eqOn_univ_prod_Icc zero_le_one
-  have hcm := stripColumnMean_congr hρρ'
-  refine BijOn.congr (f₁ := stripDensityNormalization ρ') ?_ fun p hp ↦ Prod.ext ?_ ?_
-  rotate_left
-  · simp only [stripDensityNormalization_fst, stripAreaFraction_def, annulusArea_def, hcm]
-  · simp only [stripDensityNormalization_snd, hcm]
-    exact congrArg _ (integral_congr fun y hy ↦ hρρ' ⟨mem_univ _,
-      Icc_subset_Icc_right hp.2.2 (by rwa [uIcc_of_le hp.2.1] at hy)⟩)
+  refine BijOn.congr (f₁ := stripDensityNormalization ρ') ?_ (stripDensityNormalization_congr hρρ')
   replace hper x y (hy : y ∈ Icc (0 : ℝ) 1) : ρ' (x + 1, y) = ρ' (x, y) := by
     rw [hρρ' ⟨mem_univ _, hy⟩, hρρ' ⟨mem_univ _, hy⟩, hper x y hy]
   replace hpos x y (hy : y ∈ Icc (0 : ℝ) 1) : 0 < ρ' (x, y) := by
@@ -564,11 +569,6 @@ theorem stripDensityNormalization_snd_mem_Ioo_iff (hρ : ContinuousOn ρ (univ �
   obtain ⟨x, y⟩ := p
   -- On the strip the normalization only reads `ρ` there, so `ρ` may be taken continuous.
   obtain ⟨ρ', hc, hρρ'⟩ := hρ.exists_continuous_eqOn_univ_prod_Icc zero_le_one
-  have hv' {y : ℝ} (hy : y ∈ Icc (0 : ℝ) 1) :
-      (stripDensityNormalization ρ (x, y)).2 = (stripDensityNormalization ρ' (x, y)).2 := by
-    simp only [stripDensityNormalization_snd, stripColumnMean_congr hρρ']
-    exact congrArg _ (integral_congr fun r hr ↦ (hρρ' ⟨mem_univ _,
-      Icc_subset_Icc_right hy.2 (by rwa [uIcc_of_le hy.1] at hr)⟩).symm)
   replace hpos x y (hy : y ∈ Icc (0 : ℝ) 1) : 0 < ρ' (x, y) := by
     rw [hρρ' ⟨mem_univ _, hy⟩]
     exact hpos x y hy
@@ -578,8 +578,8 @@ theorem stripDensityNormalization_snd_mem_Ioo_iff (hρ : ContinuousOn ρ (univ �
     univ_prod_Icc_subset_stripDensityNormalizationSource hpos ⟨mem_univ _, hy⟩
   have h0 := hmem (left_mem_Icc.2 zero_le_one)
   have h1 := hmem (right_mem_Icc.2 zero_le_one)
-  rw [hv' (y := y) hp, mem_Ioo, mem_Ioo, ← hv.lt_iff_lt h0 (hmem hp),
-    ← hv.lt_iff_lt (hmem hp) h1]
+  rw [← stripDensityNormalization_congr hρρ' ⟨mem_univ _, hp⟩, mem_Ioo, mem_Ioo,
+    ← hv.lt_iff_lt h0 (hmem hp), ← hv.lt_iff_lt (hmem hp) h1]
   simp only [stripDensityNormalization_snd_mk_zero, stripDensityNormalization_snd_mk_one hs.ne']
 
 /-- For a density positive on the strip, the normalization maps a point of the strip into the
