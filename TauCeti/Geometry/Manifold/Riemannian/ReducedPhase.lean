@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.ODE.ExistUnique
 import TauCeti.Analysis.ODE.LocalFlow
 import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Local reduced phase endpoints
@@ -61,11 +62,35 @@ def reducedPhaseCovector (G : ℝ × E → E →L[ℝ] E →L[ℝ] ℝ)
         (ContinuousLinearMap.apply ℝ (E →L[ℝ] ℝ) v)).comp
         ((fderiv ℝ G z).comp (ContinuousLinearMap.inr ℝ ℝ E)))
 
+/-- Evaluation of the Euler covector on a spatial direction. -/
+@[simp]
+theorem reducedPhaseCovector_apply (G : ℝ × E → E →L[ℝ] E →L[ℝ] ℝ)
+    (R : ℝ × E → ℝ) (z : ℝ × E) (v w : E) :
+    reducedPhaseCovector G R z v w =
+      2 * z.1 ^ 2 * fderiv ℝ R z (0, w) - fderiv ℝ G z (1, 0) v w -
+        fderiv ℝ G z (0, v) v w + (1 / 2 : ℝ) * fderiv ℝ G z (0, w) v v :=
+  (rfl)
+
 /-- The position-velocity phase field, with the native inverse of the coordinate metric. -/
 def reducedPhase (G : ℝ × E → E →L[ℝ] E →L[ℝ] ℝ)
     (R : ℝ × E → ℝ) (q : ℝ × (E × E)) : E × E :=
   (q.2.2, (G (q.1, q.2.1)).inverse
     (reducedPhaseCovector G R (q.1, q.2.1) q.2.2))
+
+/-- The position component of the phase field is the current velocity. -/
+@[simp]
+theorem reducedPhase_fst (G : ℝ × E → E →L[ℝ] E →L[ℝ] ℝ)
+    (R : ℝ × E → ℝ) (q : ℝ × (E × E)) :
+    (reducedPhase G R q).1 = q.2.2 :=
+  (rfl)
+
+/-- The velocity component is the inverse metric applied to the Euler covector. -/
+@[simp]
+theorem reducedPhase_snd (G : ℝ × E → E →L[ℝ] E →L[ℝ] ℝ)
+    (R : ℝ × E → ℝ) (q : ℝ × (E × E)) :
+    (reducedPhase G R q).2 =
+      (G (q.1, q.2.1)).inverse (reducedPhaseCovector G R (q.1, q.2.1) q.2.2) :=
+  (rfl)
 
 /-- Smoothness of the actual phase on an open coordinate domain. -/
 theorem contDiffOn_reducedPhase (G : ℝ × E → E →L[ℝ] E →L[ℝ] ℝ)
@@ -84,15 +109,15 @@ theorem contDiffOn_reducedPhase (G : ℝ × E → E →L[ℝ] E →L[ℝ] ℝ)
   let : NormedSpace ℝ (ℝ × E →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
   have hP : ContDiff ℝ ∞ P := contDiff_fst.prodMk (contDiff_fst.comp contDiff_snd)
   have hV : ContDiff ℝ ∞ V := contDiff_snd.comp contDiff_snd
+  have hPU : MapsTo P W U := fun _ h ↦ by simpa only [W, P, mem_ofPred_eq] using h
   have hDG : ContDiffOn ℝ ∞ (fun q ↦ fderiv ℝ G (P q)) W :=
-    (hG.fderiv_of_isOpen hU (by simp)).comp hP.contDiffOn (fun _ h ↦ show P _ ∈ U from h)
+    (hG.fderiv_of_isOpen hU (by simp)).comp hP.contDiffOn hPU
   have hDR : ContDiffOn ℝ ∞ (fun q ↦ fderiv ℝ R (P q)) W :=
-    (hR.fderiv_of_isOpen hU (by simp)).comp hP.contDiffOn (fun _ h ↦ show P _ ∈ U from h)
+    (hR.fderiv_of_isOpen hU (by simp)).comp hP.contDiffOn hPU
   have hInv' : ContDiffOn ℝ ∞ (fun z ↦ (G z).inverse) U := by
     intro z hz
-    obtain ⟨A, -⟩ := hInv z hz
     have : CompleteSpace E :=
-      (completeSpace_congr (e := A.toLinearEquiv.toEquiv) A.isUniformEmbedding).mpr inferInstance
+      ContinuousLinearMap.completeSpace_of_isInvertible (hInv z hz)
     exact (hInv z hz).contDiffAt_map_inverse.comp_contDiffWithinAt z (hG z hz)
   have hRsp : ContDiffOn ℝ ∞
       (fun q ↦ (fderiv ℝ R (P q)).comp (ContinuousLinearMap.inr ℝ ℝ E)) W :=
@@ -115,7 +140,7 @@ theorem contDiffOn_reducedPhase (G : ℝ × E → E →L[ℝ] E →L[ℝ] ℝ)
     ((((contDiffOn_const.mul (contDiffOn_fst.pow 2)).smul hRsp).sub hTime).sub hSpace).add
       ((contDiffOn_const (c := (1 / 2 : ℝ))).smul hQuad)
   exact hV.contDiffOn.prodMk
-    ((hInv'.comp hP.contDiffOn (fun _ h ↦ h)).clm_apply hC)
+    ((hInv'.comp hP.contDiffOn hPU).clm_apply hC)
 
 /-- Pairing the phase acceleration with the metric recovers its defining Euler covector. -/
 theorem reducedPhase_pairing (G : ℝ × E → E →L[ℝ] E →L[ℝ] ℝ)
@@ -123,9 +148,8 @@ theorem reducedPhase_pairing (G : ℝ × E → E →L[ℝ] E →L[ℝ] ℝ)
     G z (reducedPhase G R (z.1, (z.2, v))).2 w =
       2 * z.1 ^ 2 * fderiv ℝ R z (0, w) - fderiv ℝ G z (1, 0) v w -
         fderiv ℝ G z (0, v) v w + (1 / 2 : ℝ) * fderiv ℝ G z (0, w) v v := by
-  change G z ((G z).inverse (reducedPhaseCovector G R z v)) w = _
-  rw [hinv.self_apply_inverse]
-  rfl
+  simp only [reducedPhase_snd, Prod.mk.eta,
+    hinv.self_apply_inverse, reducedPhaseCovector_apply]
 
 /-- The suspended reduced phase has a smooth local flow with its actual clock and domain. -/
 private theorem exists_local_reducedPhase_clockFlow
@@ -141,9 +165,8 @@ private theorem exists_local_reducedPhase_clockFlow
         ∀ z ∈ W, ∀ t ∈ Ioo a b,
           (Φ z t).1 = z.1 + t ∧ ((Φ z t).1, (Φ z t).2.1) ∈ U ∧
           HasDerivAt (Φ z) ((1, reducedPhase G R (Φ z t))) t := by
-  obtain ⟨A₀, -⟩ := hInv (z₀.1, z₀.2.1) hz₀
   have : CompleteSpace E :=
-    (completeSpace_congr (e := A₀.toLinearEquiv.toEquiv) A₀.isUniformEmbedding).mpr inferInstance
+    ContinuousLinearMap.completeSpace_of_isInvertible (hInv (z₀.1, z₀.2.1) hz₀)
   let S : Set (ℝ × (E × E)) := {q | (q.1, q.2.1) ∈ U}
   let A : (ℝ × (E × E)) → (ℝ × (E × E)) :=
     fun q ↦ (1, reducedPhase G R q)
@@ -154,11 +177,9 @@ private theorem exists_local_reducedPhase_clockFlow
       (continuous_fst.prodMk (continuous_fst.comp continuous_snd)) |>.mem_nhds hz₀)
   have hΦ := hflow.contDiffAt (hV.mem_nhds hbase)
   have hstay : ∀ᶠ p in nhds (z₀, 0), Φ p.1 p.2 ∈ S := by
-    apply hΦ.continuousAt.eventually
-    change S ∈ nhds (Φ z₀ 0)
+    apply hΦ.continuousAt.eventually_mem
     rw [hΦ0]
-    exact hU.preimage
-      (continuous_fst.prodMk (continuous_fst.comp continuous_snd)) |>.mem_nhds hz₀
+    exact (hU.preimage (continuous_fst.prodMk (continuous_fst.comp continuous_snd))).mem_nhds hz₀
   have hboth := (hderiv.and hstay).and (hV.mem_nhds hbase)
   rw [nhds_prod_eq, eventually_prod_iff] at hboth
   obtain ⟨w, hw, j, hj, hprop⟩ := hboth
@@ -240,26 +261,6 @@ theorem exists_contDiffOn_localReducedPhase
   rw [← hinit] at hfield
   exact hfield.ode_eventuallyEq_nhdsWithin hJ hJ0 hinit hη hβderiv
 
-private theorem curveVelocity_chartInverse_eq
-    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-    (x : M) {γ : ℝ → E} {v : E}
-    (htarget : (extChartAt I x).target ∈ nhds (extChartAt I x x))
-    (hγ0 : γ 0 = extChartAt I x x) (hγ : HasDerivAt γ v 0) :
-    curveVelocity I ((extChartAt I x).symm ∘ γ) 0 = v := by
-  have hc : MDifferentiableAt 𝓘(ℝ, E) I (extChartAt I x).symm (γ 0) := by
-    rw [hγ0]
-    exact ((contMDiffWithinAt_extChartAt_symm_target_self x).contMDiffAt htarget).mdifferentiableAt
-      one_ne_zero
-  have hdiff := hc.comp 0 hγ.differentiableAt.mdifferentiableAt
-  have hbase : ((extChartAt I x).symm ∘ γ) 0 = x := by simp [Function.comp_def, hγ0]
-  have heq : (extChartAt I x) ∘ ((extChartAt I x).symm ∘ γ) =ᶠ[nhds 0] γ := by
-    filter_upwards [hγ.continuousAt.preimage_mem_nhds (hγ0.symm ▸ htarget)] with s hs
-    exact (extChartAt I x).right_inv hs
-  have hvel := hasDerivAt_extChartAt_comp_curve (hasMFDerivAt_curveVelocity hdiff)
-  rw [hbase] at hvel
-  exact hvel.unique (hγ.congr_of_eventuallyEq heq)
-
 end TauCeti.Manifold
 
 namespace TauCeti.Manifold
@@ -277,11 +278,28 @@ def squareTimeChartMetric
     (T : ℝ) (x : M) (z : ℝ × E) : E →L[ℝ] E →L[ℝ] ℝ :=
   (g (T - z.1 ^ 2)).toNondegenerateMetric.chartMetric x z.2
 
+omit [FiniteDimensional ℝ E] [T2Space M] in
+/-- Evaluation of the square-time metric coefficients in the chosen spatial chart. -/
+theorem squareTimeChartMetric_apply
+    (g : ℝ → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (T : ℝ) (x : M) (z : ℝ × E) :
+    squareTimeChartMetric g T x z =
+      (g (T - z.1 ^ 2)).toNondegenerateMetric.chartMetric x z.2 :=
+  (rfl)
+
 /-- The scalar curvature of the native moving metric, in the same square-time chart. -/
 def squareTimeChartScalar
     (g : ℝ → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
     (T : ℝ) (x : M) (z : ℝ × E) : ℝ :=
   (g (T - z.1 ^ 2)).scalarCurvature ((extChartAt I x).symm z.2)
+
+/-- Evaluation of the square-time scalar coefficient at the inverse chart point. -/
+theorem squareTimeChartScalar_apply
+    (g : ℝ → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (T : ℝ) (x : M) (z : ℝ × E) :
+    squareTimeChartScalar g T x z =
+      (g (T - z.1 ^ 2)).scalarCurvature ((extChartAt I x).symm z.2) :=
+  (rfl)
 
 /-- A smooth family of native metric coefficients and its actual scalar curvature produces a
 normalised local reduced Euler family. Its curves start at `x` with velocity `2Z`, solve the
@@ -313,8 +331,10 @@ theorem exists_contMDiffOn_reducedEulerFamily
   obtain ⟨β, W, hW, hWo, a, b, hab, hβ, hβ0, hβode⟩ :=
     exists_contDiffOn_localReducedPhase (squareTimeChartMetric g T x)
       (squareTimeChartScalar g T x) U hU hG hR
-      (fun z hz ↦ ContinuousLinearMap.isInvertible_of_separatingLeft
-        ((g (T - z.1 ^ 2)).toNondegenerateMetric.nondegenerate_chartMetric (hchart z hz)).1)
+      (fun z hz ↦ by
+        rw [squareTimeChartMetric_apply]
+        exact ContinuousLinearMap.isInvertible_of_separatingLeft
+          ((g (T - z.1 ^ 2)).toNondegenerateMetric.nondegenerate_chartMetric (hchart z hz)).1)
       (extChartAt I x x) Z₀ h0
   let Γ : E → ℝ → M := fun Z s ↦ (extChartAt I x).symm (β Z s).1
   have hΓ0 (Z : E) : Γ Z 0 = x := by simp [Γ, hβ0]
@@ -334,7 +354,7 @@ theorem exists_contMDiffOn_reducedEulerFamily
   obtain ⟨hode, huniq⟩ := hβode Z hZ
   have hcoord : HasDerivAt (fun s ↦ (β Z s).1) ((2 : ℝ) • Z) 0 := by
     have hd := (ContinuousLinearMap.fst ℝ E E).hasFDerivAt.comp_hasDerivAt 0 (hode 0 hab).2
-    simpa only [Function.comp_def, ContinuousLinearMap.coe_fst', reducedPhase, hβ0] using hd
+    simpa only [Function.comp_def, ContinuousLinearMap.coe_fst', reducedPhase_fst, hβ0] using hd
   exact ⟨TauCeti.Manifold.curveVelocity_chartInverse_eq x htarget
     (congrArg Prod.fst (hβ0 Z)) hcoord, hode, huniq⟩
 
