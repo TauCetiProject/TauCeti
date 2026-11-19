@@ -15,6 +15,7 @@ public import TauCeti.Geometry.Sphere.LinearIsometry
 
 import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
@@ -571,12 +572,12 @@ theorem contMDiffAt_circle_arg {n : WithTop ℕ∞} {z : Circle} (hz : |Complex.
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- `Circle.exp : ℝ → S¹` is a smooth local diffeomorphism at every point. -/
-theorem isLocalDiffeomorphAt_circleExp (t : ℝ) :
-    IsLocalDiffeomorphAt 𝓘(ℝ, ℝ) (𝓡 1) 1 Circle.exp t :=
+/-- `Circle.exp : ℝ → S¹` is a `C^n` local diffeomorphism at every point, for `1 ≤ n`. -/
+theorem isLocalDiffeomorphAt_circleExp {n : WithTop ℕ∞} (hn : 1 ≤ n) (t : ℝ) :
+    IsLocalDiffeomorphAt 𝓘(ℝ, ℝ) (𝓡 1) n Circle.exp t :=
   isLocalDiffeomorphAt_of_injective_mfderiv
-    (contMDiff_circleExp (m := 1)).contMDiffOn isOpen_univ (Set.mem_univ t)
-    BoundarylessManifold.isInteriorPoint le_rfl (injective_mfderiv_circleExp t)
+    (contMDiff_circleExp (m := n)).contMDiffOn isOpen_univ (Set.mem_univ t)
+    BoundarylessManifold.isInteriorPoint hn (injective_mfderiv_circleExp t)
     (by simp)
 
 /-- The chain rule for a map `f` of the circle read along `Circle.exp`: the derivative of
@@ -590,7 +591,7 @@ theorem toSpanSingleton_deriv_comp_circleExp {f : Circle → V} {t : ℝ} :
   swap
   · -- Neither `f` nor `f ∘ Circle.exp` is differentiable, so both sides are zero.
     have hγ : ¬ DifferentiableAt ℝ (f ∘ Circle.exp) t := fun h ↦ hf
-      (((isLocalDiffeomorphAt_circleExp t).mdifferentiableAt_comp_iff one_ne_zero).1
+      (((isLocalDiffeomorphAt_circleExp le_rfl t).mdifferentiableAt_comp_iff one_ne_zero).1
         (mdifferentiableAt_iff_differentiableAt.2 h))
     rw [deriv_zero_of_not_differentiableAt hγ, mfderiv_zero_of_not_mdifferentiableAt hf]
     ext
@@ -752,18 +753,9 @@ theorem smul_deriv_coe_comp_circleExp
 the sphere: it is orthogonal to the point of the loop. -/
 theorem inner_deriv_coe_comp_circleExp_eq_zero :
     ⟪(f (Circle.exp t) : E), deriv (fun s => (f (Circle.exp s) : E)) t⟫_ℝ = 0 := by
-  by_cases hF : DifferentiableAt ℝ (fun s => (f (Circle.exp s) : E)) t
-  · -- The squared norm of the loop is constant, so its derivative vanishes.
-    have h := hF.hasDerivAt.inner ℝ hF.hasDerivAt
-    have hc : (fun s => ⟪(f (Circle.exp s) : E), (f (Circle.exp s) : E)⟫_ℝ) = fun _ => 1 := by
-      funext s
-      rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere (f (Circle.exp s))]
-      norm_num
-    rw [hc] at h
-    have h0 := h.unique (hasDerivAt_const t (1 : ℝ))
-    rw [real_inner_comm (f (Circle.exp t) : E)] at h0
-    linarith
-  · rw [deriv_zero_of_not_differentiableAt hF, inner_zero_right]
+  have hext : IsLocalExtr (fun s => ‖(f (Circle.exp s) : E)‖) t :=
+    isLocalExtr_const.congr (.of_forall fun s => (norm_eq_of_mem_sphere (f (Circle.exp s))).symm)
+  simpa [fderiv_apply_one_eq_deriv] using hext.inner_fderiv_eq_zero 1
 
 /-- A loop in a sphere with injective derivative at `exp (t i)`, read along `Circle.exp` in the
 ambient space, has nonzero velocity at `t`. -/
