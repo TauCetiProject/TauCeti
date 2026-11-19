@@ -83,27 +83,6 @@ namespace FormalVertexAxioms
 variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
 variable {ι : Type*} {vac : V} {T : Module.End R V} {F : ι → VertexOperator R V}
 
-/-! ### The identity field -/
-
-/-- The identity field `Y(|0⟩, z) = id`, with `id₍₋₁₎ = 1` and all other modes zero. -/
-private def idField : VertexOperator R V :=
-  of_coeff (fun m ↦ if m = 0 then 1 else 0) fun _ ↦
-    ((Set.finite_singleton (0 : ℤ)).subset fun m hm ↦ by
-      by_contra h
-      exact hm (by simp_all)).bddBelow
-
-private theorem ncoeff_idField (n : ℤ) :
-    (idField : VertexOperator R V)[[n]] = if n = -1 then 1 else 0 := by
-  rw [idField, ncoeff_of_coeff]
-  exact if_congr (by omega) rfl rfl
-
-private theorem isLocalOfOrder_idField (B : VertexOperator R V) :
-    (idField : VertexOperator R V).IsLocalOfOrder B 0 :=
-  isLocalOfOrder_zero_iff.2 fun m n ↦ by
-    rw [ncoeff_idField]
-    split_ifs
-    exacts [Commute.one_left _, Commute.zero_left _]
-
 /-! ### Admissible fields -/
 
 variable (vac T F) in
@@ -189,10 +168,8 @@ private theorem derivative_mem_admissible {B : VertexOperator R V}
 private theorem vacuumCoeff_derivative (hT : T vac = 0) {B : VertexOperator R V}
     (hB : B ∈ admissible vac T F) :
     vacuumCoeff vac (derivative B) = T (vacuumCoeff vac B) := by
-  have h := LinearMap.congr_fun (hB.2.1 (-1)) vac
-  rw [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp, hT, map_zero,
-    sub_zero] at h
-  rw [vacuumCoeff_apply, vacuumCoeff_apply, h]
+  rw [vacuumCoeff_apply, vacuumCoeff_apply, apply_ncoeff_apply_of_lie hT hB.2.1, ncoeff_derivative,
+    LinearMap.smul_apply]
 
 /-- **Uniqueness.** An admissible field `B` with `B₍₋₁₎ vac = 0` vanishes. -/
 private theorem eq_zero_of_mem_admissible [HasUniqueDiv V] (hT : T vac = 0)

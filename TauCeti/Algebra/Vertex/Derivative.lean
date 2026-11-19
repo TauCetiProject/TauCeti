@@ -18,8 +18,10 @@ The formal derivative of a field is again a field: differentiating a Laurent ser
 its lower bound by at most one. In normalized mode indexing its coefficients are
 `(∂A)[[n]] = -n • A[[n - 1]]`. This construction is linear over the coefficient ring and
 requires no characteristic-zero assumption. When an endomorphism `T` kills a vector `vac` and acts
-as `∂` by commutation on a field `B`, iterating this mode formula yields the division-free creation
-identity `k! • B₍₋ₖ₋₁₎ vac = Tᵏ (B₍₋₁₎ vac)` (`VertexOperator.factorial_smul_ncoeff_apply`).
+as `∂` by commutation on a field `B`, this mode formula gives the recursion
+`T (B₍ₘ₎ vac) = -m • B₍ₘ₋₁₎ vac` (`VertexOperator.apply_ncoeff_apply_of_lie`), and iterating it
+yields the division-free creation identity `k! • B₍₋ₖ₋₁₎ vac = Tᵏ (B₍₋₁₎ vac)`
+(`VertexOperator.factorial_smul_ncoeff_apply`).
 Descending from the truncation of `B(z) vac`, the same recursion shows that the nonnegative modes
 of `B` kill `vac` when `V` has unique divisibility (`VertexOperator.ncoeff_apply_of_nonneg`).
 
@@ -73,19 +75,24 @@ theorem ncoeff_derivative (A : VertexOperator R V) (n : ℤ) :
   have h₂ : -(n - 1) - 1 = -n := by omega
   rw [h₁, h₂]
 
+/-- **Creation recursion.** If an endomorphism `T` kills `vac` and acts as `∂` on a field `B` by
+commutation, then `T (B₍ₘ₎ vac) = -m • B₍ₘ₋₁₎ vac` for every `m : ℤ`. -/
+theorem apply_ncoeff_apply_of_lie {T : Module.End R V} {vac : V} (hvac : T vac = 0)
+    {B : VertexOperator R V} (hT : ∀ m : ℤ, ⁅T, B[[m]]⁆ = (derivative B)[[m]]) (m : ℤ) :
+    T ((B[[m]]) vac) = (-m) • (B[[m - 1]]) vac := by
+  have h := LinearMap.congr_fun (hT m) vac
+  rwa [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp, hvac, map_zero,
+    sub_zero, ncoeff_derivative, LinearMap.smul_apply] at h
+
 /-- **Division-free creation recursion.** If an endomorphism `T` kills `vac` and acts as `∂` on a
 field `B` by commutation, then `k! • B₍₋ₖ₋₁₎ vac = Tᵏ (B₍₋₁₎ vac)` for every `k : ℕ`. -/
 theorem factorial_smul_ncoeff_apply {T : Module.End R V} {vac : V} (hvac : T vac = 0)
     {B : VertexOperator R V} (hT : ∀ m : ℤ, ⁅T, B[[m]]⁆ = (derivative B)[[m]]) (k : ℕ) :
     k.factorial • (B[[-k - 1]]) vac = (T ^ k) ((B[[-1]]) vac) := by
-  have hrec (m : ℤ) : T ((B[[m]]) vac) = (-m) • (B[[m - 1]]) vac := by
-    have h := LinearMap.congr_fun (hT m) vac
-    rwa [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp, hvac, map_zero,
-      sub_zero, ncoeff_derivative, LinearMap.smul_apply] at h
   induction k with
   | zero => simp
   | succ k ih =>
-    have h := hrec (-(k : ℤ) - 1)
+    have h := apply_ncoeff_apply_of_lie hvac hT (-(k : ℤ) - 1)
     have h₁ : -(-(k : ℤ) - 1) = ((k + 1 : ℕ) : ℤ) := by push_cast; ring
     have h₂ : -(k : ℤ) - 1 - 1 = -((k + 1 : ℕ) : ℤ) - 1 := by push_cast; ring
     rw [h₁, h₂, natCast_zsmul] at h
@@ -108,11 +115,9 @@ theorem ncoeff_apply_of_nonneg [HasUniqueDiv V] {T : Module.End R V} {vac : V}
   | zero => exact fun k hk ↦ hP k (by omega)
   | succ d ih =>
     intro k hk
-    have h := LinearMap.congr_fun (hT (k + 1)) vac
-    rw [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp, hvac, map_zero,
-      sub_zero, ncoeff_derivative, LinearMap.smul_apply, add_sub_cancel_right,
-      show ((k : ℤ) + 1) = ((k + 1 : ℕ) : ℤ) by push_cast; ring, ih (k + 1) (by omega), map_zero,
-      eq_comm, neg_smul, neg_eq_zero, natCast_zsmul] at h
+    have h := apply_ncoeff_apply_of_lie hvac hT ((k + 1 : ℕ) : ℤ)
+    have hk' : ((k + 1 : ℕ) : ℤ) - 1 = k := by push_cast; ring
+    rw [hk', ih (k + 1) (by omega), map_zero, eq_comm, neg_smul, neg_eq_zero, natCast_zsmul] at h
     exact nsmul_right_injective k.succ_ne_zero (h.trans (smul_zero _).symm)
 
 namespace IsLocalOfOrder

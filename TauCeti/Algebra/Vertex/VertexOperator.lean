@@ -35,6 +35,7 @@ larger order (`VertexOperator.IsLocalOfOrder.mono`), and it is symmetric in `A` 
 ## Main definitions
 
 * `VertexOperator.IsLocalOfOrder`: mutual locality of order at most `N`.
+* `VertexOperator.idField`: the identity field, with `id₍₋₁₎ = 1` and all other modes zero.
 
 ## Main results
 
@@ -46,6 +47,8 @@ larger order (`VertexOperator.IsLocalOfOrder.mono`), and it is symmetric in `A` 
   structure, so it passes from generating families to their spans.
 * `VertexOperator.IsLocalOfOrder.ncoeff_apply_ncoeff_apply_eq_zero`: if all modes of `A` kill
   `v` and `A` is local with `B`, then they kill every `B₍ₘ₎ v`.
+* `VertexOperator.isLocalOfOrder_idField`: the identity field is local of order `0` with every
+  field.
 
 ## References
 
@@ -215,31 +218,41 @@ theorem isLocalOfOrder_zero_iff {A B : VertexOperator R V} :
     A.IsLocalOfOrder B 0 ↔ ∀ m n : ℤ, Commute (A[[m]]) (B[[n]]) := by
   simp [isLocalOfOrder_iff, commute_iff_eq, sub_eq_zero]
 
+/-- The identity field `Y(|0⟩, z) = id`, with `id₍₋₁₎ = 1` and all other modes zero. -/
+def idField : VertexOperator R V :=
+  of_coeff (fun m ↦ if m = 0 then 1 else 0) fun _ ↦
+    ((Set.finite_singleton (0 : ℤ)).subset fun m hm ↦ by
+      by_contra h
+      exact hm (by simp_all)).bddBelow
+
+/-- The only nonzero mode of the identity field is `id₍₋₁₎ = 1`. -/
+@[simp]
+theorem ncoeff_idField (n : ℤ) :
+    (idField : VertexOperator R V)[[n]] = if n = -1 then 1 else 0 := by
+  rw [idField, ncoeff_of_coeff]
+  exact if_congr (by omega) rfl rfl
+
+/-- The identity field is local of order `0` with every field. -/
+theorem isLocalOfOrder_idField (B : VertexOperator R V) :
+    (idField : VertexOperator R V).IsLocalOfOrder B 0 :=
+  isLocalOfOrder_zero_iff.2 fun m n ↦ by
+    rw [ncoeff_idField]
+    split_ifs
+    exacts [Commute.one_left _, Commute.zero_left _]
+
 /-- If every field of `s` is local, of some order, with every field of `t`, then so is every field
 in the span of `s` with every field in the span of `t`. -/
 theorem exists_isLocalOfOrder_of_mem_span {s t : Set (VertexOperator R V)}
     (h : ∀ A ∈ s, ∀ B ∈ t, ∃ N, A.IsLocalOfOrder B N) {A B : VertexOperator R V}
-    (hA : A ∈ Submodule.span R s) (hB : B ∈ Submodule.span R t) : ∃ N, A.IsLocalOfOrder B N := by
-  have hs : ∀ A ∈ s, ∃ N, A.IsLocalOfOrder B N := fun A hA' ↦ by
-    induction hB using Submodule.span_induction with
-    | mem B hB' => exact h A hA' B hB'
-    | zero => exact ⟨0, .zero_right A 0⟩
-    | add B B' _ _ ihB ihB' =>
-      obtain ⟨N, hN⟩ := ihB
-      obtain ⟨N', hN'⟩ := ihB'
-      exact ⟨max N N', (hN.mono (le_max_left N N')).add_right (hN'.mono (le_max_right N N'))⟩
-    | smul r B _ ihB =>
-      obtain ⟨N, hN⟩ := ihB
-      exact ⟨N, hN.smul_right r⟩
-  induction hA using Submodule.span_induction with
-  | mem A hA' => exact hs A hA'
-  | zero => exact ⟨0, .zero_left B 0⟩
-  | add A A' _ _ ihA ihA' =>
-    obtain ⟨N, hN⟩ := ihA
-    obtain ⟨N', hN'⟩ := ihA'
-    exact ⟨max N N', (hN.mono (le_max_left N N')).add_left (hN'.mono (le_max_right N N'))⟩
-  | smul r A _ ihA =>
-    obtain ⟨N, hN⟩ := ihA
-    exact ⟨N, hN.smul_left r⟩
+    (hA : A ∈ Submodule.span R s) (hB : B ∈ Submodule.span R t) : ∃ N, A.IsLocalOfOrder B N :=
+  Submodule.span_induction₂ (p := fun A B _ _ ↦ ∃ N, A.IsLocalOfOrder B N)
+    (fun A B hA hB ↦ h A hA B hB)
+    (fun B _ ↦ ⟨0, .zero_left B 0⟩) (fun A _ ↦ ⟨0, .zero_right A 0⟩)
+    (fun _ _ _ _ _ _ ⟨N, hN⟩ ⟨N', hN'⟩ ↦
+      ⟨max N N', (hN.mono (le_max_left N N')).add_left (hN'.mono (le_max_right N N'))⟩)
+    (fun _ _ _ _ _ _ ⟨N, hN⟩ ⟨N', hN'⟩ ↦
+      ⟨max N N', (hN.mono (le_max_left N N')).add_right (hN'.mono (le_max_right N N'))⟩)
+    (fun r _ _ _ _ ⟨N, hN⟩ ↦ ⟨N, hN.smul_left r⟩) (fun r _ _ _ _ ⟨N, hN⟩ ↦ ⟨N, hN.smul_right r⟩)
+    hA hB
 
 end VertexOperator
