@@ -17,9 +17,10 @@ import TauCeti.Topology.OpenPartialHomeomorph.Basic
 Let `S` be a topological space and `V` a real normed space. A map `h : S × V → S × V` fixing the
 zero section is rescaled along it by `h_t (x, w) = ((h (x, t w)).1, t⁻¹ (h (x, t w)).2)` for
 `t ∈ (0, 1]`, extended at `t = 0` by a family `L` of linear maps, `(x, w) ↦ (x, L x w)`
-(`TauCeti.zeroSectionRescale`). At `t = 1` it is `h`. If `h` is continuous near the zero section
-and has fibre derivative `L` along it uniformly in `x`, with `L` continuous, the family is
-continuous, also at `t = 0` (`TauCeti.continuousOn_zeroSectionRescale`).
+(`TauCeti.zeroSectionRescale`). At `t = 1` it is `h`. If `h` is continuous on an open set
+`U ⊇ S × {0}` and has fibre derivative `L` along the zero section uniformly in `x`, with `L`
+continuous, the family is continuous on the open set of `(t, x, w)` with `(x, t w) ∈ U`, also at
+`t = 0` (`TauCeti.continuousOn_zeroSectionRescale`); for `U = S × V` it is continuous.
 
 For an open embedding `g` of `S × V` fixing the zero section, with `S` compact and fibre
 derivative a continuous family `A` of linear automorphisms of `V`, the rescalings form an isotopy
@@ -37,8 +38,9 @@ neighbourhoods are unique up to isotopy.
 ## Main results
 
 * `TauCeti.zeroSectionRescale_zero`, `TauCeti.zeroSectionRescale_one`: the endpoints.
-* `TauCeti.continuousOn_zeroSectionRescale`: the rescaling is continuous when `h` is continuous
-  near the zero section and has fibre derivative a continuous family `L` along it.
+* `TauCeti.continuousOn_zeroSectionRescale`: the rescaling is continuous on the open set of
+  `(t, x, w)` with `(x, t w) ∈ U` when `h` is continuous on an open set `U ⊇ S × {0}` and has fibre
+  derivative a continuous family `L` along the zero section.
 * `TauCeti.exists_norm_snd_inverse_sub_le`: the inverse of an open embedding with fibre derivative
   `A` has fibre derivative `A⁻¹`.
 * `TauCeti.isOpenEmbedding_zeroSectionRescale`: the rescalings of an open embedding form an
@@ -64,10 +66,10 @@ variable {S V W : Type*} [TopologicalSpace S] [NormedAddCommGroup V] [NormedSpac
 
 /-- The rescaling of a map `h : S × V → S × W` along the zero section, with limit `L` at `t = 0`:
 at `(t, x, w)` it is `(h (x, t w)).1, t⁻¹ (h (x, t w)).2` for `t ≠ 0`, and `(x, L x w)` for
-`t = 0`. For `t = 1` it is `h`. If `h` is continuous near the zero section, fixes it, and has
-fibre derivative a continuous family `L` along it, this is continuous
-(`TauCeti.continuousOn_zeroSectionRescale`): it is the deformation of `h` into its linearization
-along the zero section. -/
+`t = 0`. For `t = 1` it is `h`. If `h` is continuous on an open set `U ⊇ S × {0}`, fixes the
+zero section, and has fibre derivative a continuous family `L` along it, this is continuous on
+`{(t, x, w) | (x, t w) ∈ U}` (`TauCeti.continuousOn_zeroSectionRescale`): it is the deformation
+of `h` into its linearization along the zero section. -/
 noncomputable def zeroSectionRescale (h : S × V → S × W) (L : S → V →L[ℝ] W)
     (q : unitInterval × (S × V)) : S × W :=
   if (q.1 : ℝ) = 0 then (q.2.1, L q.2.1 q.2.2)
