@@ -99,62 +99,75 @@ theorem a5FourthD4BlockRotation_symm_eq :
 /-- The rotation of the marked block fixes position `0`. -/
 @[simp]
 theorem a5FourthD4BlockRotation_apply_mk_zero (h : 0 < a5FourthD4.components.length) :
-    a5FourthD4BlockRotation ⟨0, h⟩ = ⟨0, h⟩ :=
-  (rfl)
+    a5FourthD4BlockRotation ⟨0, h⟩ = ⟨0, h⟩ := by
+  rw [a5FourthD4BlockRotation_def]
+  exact List.formPerm_apply_of_notMem (by simp)
 
 /-- The rotation of the marked block moves position `1` to position `2`. -/
 @[simp]
 theorem a5FourthD4BlockRotation_apply_mk_one (h : 1 < a5FourthD4.components.length) :
-    a5FourthD4BlockRotation ⟨1, h⟩ = ⟨2, by decide⟩ :=
-  (rfl)
+    a5FourthD4BlockRotation ⟨1, h⟩ = ⟨2, by decide⟩ := by
+  rw [a5FourthD4BlockRotation_def]
+  exact List.formPerm_apply_getElem (α := Fin a5FourthD4.components.length)
+    [⟨1, by decide⟩, ⟨2, by decide⟩, ⟨3, by decide⟩] (by decide) 0 (by decide)
 
 /-- The rotation of the marked block moves position `2` to position `3`. -/
 @[simp]
 theorem a5FourthD4BlockRotation_apply_mk_two (h : 2 < a5FourthD4.components.length) :
-    a5FourthD4BlockRotation ⟨2, h⟩ = ⟨3, by decide⟩ :=
-  (rfl)
+    a5FourthD4BlockRotation ⟨2, h⟩ = ⟨3, by decide⟩ := by
+  rw [a5FourthD4BlockRotation_def]
+  exact List.formPerm_apply_getElem (α := Fin a5FourthD4.components.length)
+    [⟨1, by decide⟩, ⟨2, by decide⟩, ⟨3, by decide⟩] (by decide) 1 (by decide)
 
 /-- The rotation of the marked block moves position `3` to position `1`. -/
 @[simp]
 theorem a5FourthD4BlockRotation_apply_mk_three (h : 3 < a5FourthD4.components.length) :
-    a5FourthD4BlockRotation ⟨3, h⟩ = ⟨1, by decide⟩ :=
-  (rfl)
+    a5FourthD4BlockRotation ⟨3, h⟩ = ⟨1, by decide⟩ := by
+  rw [a5FourthD4BlockRotation_def]
+  exact List.formPerm_apply_getElem (α := Fin a5FourthD4.components.length)
+    [⟨1, by decide⟩, ⟨2, by decide⟩, ⟨3, by decide⟩] (by decide) 2 (by decide)
 
 /-- The rotation of the marked block fixes position `4`. -/
 @[simp]
 theorem a5FourthD4BlockRotation_apply_mk_four (h : 4 < a5FourthD4.components.length) :
-    a5FourthD4BlockRotation ⟨4, h⟩ = ⟨4, h⟩ :=
-  (rfl)
+    a5FourthD4BlockRotation ⟨4, h⟩ = ⟨4, h⟩ := by
+  rw [a5FourthD4BlockRotation_def]
+  exact List.formPerm_apply_of_notMem (by simp)
 
 /-- The inverse of the rotation of the marked block fixes position `0`. -/
 @[simp]
 theorem a5FourthD4BlockRotation_symm_apply_mk_zero (h : 0 < a5FourthD4.components.length) :
-    a5FourthD4BlockRotation.symm ⟨0, h⟩ = ⟨0, h⟩ :=
-  (rfl)
+    a5FourthD4BlockRotation.symm ⟨0, h⟩ = ⟨0, h⟩ := by
+  rw [a5FourthD4BlockRotation_symm_eq]
+  exact List.formPerm_apply_of_notMem (x := (0 : Fin 5)) (by decide)
 
 /-- The inverse of the rotation of the marked block moves position `1` to position `3`. -/
 @[simp]
 theorem a5FourthD4BlockRotation_symm_apply_mk_one (h : 1 < a5FourthD4.components.length) :
-    a5FourthD4BlockRotation.symm ⟨1, h⟩ = ⟨3, by decide⟩ :=
-  (rfl)
+    a5FourthD4BlockRotation.symm ⟨1, h⟩ = ⟨3, by decide⟩ := by
+  rw [a5FourthD4BlockRotation_symm_eq]
+  exact List.formPerm_apply_getElem [(1 : Fin 5), 3, 2] (by decide) 0 (by decide)
 
 /-- The inverse of the rotation of the marked block moves position `2` to position `1`. -/
 @[simp]
 theorem a5FourthD4BlockRotation_symm_apply_mk_two (h : 2 < a5FourthD4.components.length) :
-    a5FourthD4BlockRotation.symm ⟨2, h⟩ = ⟨1, by decide⟩ :=
-  (rfl)
+    a5FourthD4BlockRotation.symm ⟨2, h⟩ = ⟨1, by decide⟩ := by
+  rw [a5FourthD4BlockRotation_symm_eq]
+  exact List.formPerm_apply_getElem [(1 : Fin 5), 3, 2] (by decide) 2 (by decide)
 
 /-- The inverse of the rotation of the marked block moves position `3` to position `2`. -/
 @[simp]
 theorem a5FourthD4BlockRotation_symm_apply_mk_three (h : 3 < a5FourthD4.components.length) :
-    a5FourthD4BlockRotation.symm ⟨3, h⟩ = ⟨2, by decide⟩ :=
-  (rfl)
+    a5FourthD4BlockRotation.symm ⟨3, h⟩ = ⟨2, by decide⟩ := by
+  rw [a5FourthD4BlockRotation_symm_eq]
+  exact List.formPerm_apply_getElem [(1 : Fin 5), 3, 2] (by decide) 1 (by decide)
 
 /-- The inverse of the rotation of the marked block fixes position `4`. -/
 @[simp]
 theorem a5FourthD4BlockRotation_symm_apply_mk_four (h : 4 < a5FourthD4.components.length) :
-    a5FourthD4BlockRotation.symm ⟨4, h⟩ = ⟨4, h⟩ :=
-  (rfl)
+    a5FourthD4BlockRotation.symm ⟨4, h⟩ = ⟨4, h⟩ := by
+  rw [a5FourthD4BlockRotation_symm_eq]
+  exact List.formPerm_apply_of_notMem (x := (4 : Fin 5)) (by decide)
 
 /-- A function on the component positions of `A₅⁴ D₄` lists its five values. -/
 private theorem ofFn_a5FourthD4 {α : Type*} (f : Fin a5FourthD4.components.length → α) :
@@ -173,12 +186,12 @@ theorem ofFn_comp_a5FourthD4BlockRotation {α : Type*}
     List.ofFn (fun k ↦ f (a5FourthD4BlockRotation k)) =
       [f ⟨0, by decide⟩, f ⟨2, by decide⟩, f ⟨3, by decide⟩, f ⟨1, by decide⟩,
         f ⟨4, by decide⟩] := by
-  rw [ofFn_a5FourthD4 (fun k ↦ f (a5FourthD4BlockRotation k)),
-    show a5FourthD4BlockRotation ⟨0, by decide⟩ = ⟨0, by decide⟩ by decide,
-    show a5FourthD4BlockRotation ⟨1, by decide⟩ = ⟨2, by decide⟩ by decide,
-    show a5FourthD4BlockRotation ⟨2, by decide⟩ = ⟨3, by decide⟩ by decide,
-    show a5FourthD4BlockRotation ⟨3, by decide⟩ = ⟨1, by decide⟩ by decide,
-    show a5FourthD4BlockRotation ⟨4, by decide⟩ = ⟨4, by decide⟩ by decide]
+  simp only [ofFn_a5FourthD4,
+    a5FourthD4BlockRotation_apply_mk_zero,
+    a5FourthD4BlockRotation_apply_mk_one,
+    a5FourthD4BlockRotation_apply_mk_two,
+    a5FourthD4BlockRotation_apply_mk_three,
+    a5FourthD4BlockRotation_apply_mk_four]
 
 /-- **The values of the inverse block rotation**: reading a function `f` on the component positions
 along the inverse block rotation lists its values in the positions `0, 3, 1, 2, 4`. -/
@@ -187,12 +200,12 @@ theorem ofFn_comp_a5FourthD4BlockRotation_symm {α : Type*}
     List.ofFn (fun k ↦ f (a5FourthD4BlockRotation.symm k)) =
       [f ⟨0, by decide⟩, f ⟨3, by decide⟩, f ⟨1, by decide⟩, f ⟨2, by decide⟩,
         f ⟨4, by decide⟩] := by
-  rw [ofFn_a5FourthD4 (fun k ↦ f (a5FourthD4BlockRotation.symm k)),
-    show a5FourthD4BlockRotation.symm ⟨0, by decide⟩ = ⟨0, by decide⟩ by decide,
-    show a5FourthD4BlockRotation.symm ⟨1, by decide⟩ = ⟨3, by decide⟩ by decide,
-    show a5FourthD4BlockRotation.symm ⟨2, by decide⟩ = ⟨1, by decide⟩ by decide,
-    show a5FourthD4BlockRotation.symm ⟨3, by decide⟩ = ⟨2, by decide⟩ by decide,
-    show a5FourthD4BlockRotation.symm ⟨4, by decide⟩ = ⟨4, by decide⟩ by decide]
+  simp only [ofFn_a5FourthD4,
+    a5FourthD4BlockRotation_symm_apply_mk_zero,
+    a5FourthD4BlockRotation_symm_apply_mk_one,
+    a5FourthD4BlockRotation_symm_apply_mk_two,
+    a5FourthD4BlockRotation_symm_apply_mk_three,
+    a5FourthD4BlockRotation_symm_apply_mk_four]
 
 /-- The cube of the block rotation is the identity. -/
 @[simp]
@@ -200,6 +213,7 @@ theorem a5FourthD4BlockRotation_pow_three : a5FourthD4BlockRotation ^ 3 = 1 := b
   decide
 
 /-- The rotation of the marked block has order three. -/
+@[simp]
 theorem orderOf_a5FourthD4BlockRotation : orderOf a5FourthD4BlockRotation = 3 :=
   orderOf_eq_prime (by decide) (by decide)
 
@@ -290,6 +304,7 @@ theorem a5FourthD4BlockRotation_notMem_glueSymmetries :
   decide +kernel
 
 /-- **No nontrivial power of the marked rotation of `A₅⁴ D₄` is a glue symmetry.** -/
+@[simp]
 theorem zpowers_a5FourthD4BlockRotation_inf_glueSymmetries_eq_bot :
     Subgroup.zpowers a5FourthD4BlockRotation ⊓ a5FourthD4.glueSymmetries = ⊥ := by
   refine (Subgroup.eq_bot_iff_forall _).mpr fun x hx ↦ ?_
@@ -578,6 +593,7 @@ theorem a5FourthD4TrialityIsometry_apply_mk_four
 
 /-- **On an `A₅` component, `a5FourthD4TrialityIsometry` reads the coordinates in position `k`
 from position `ρ⁻¹ k`**, where `ρ` is the block rotation. -/
+@[simp]
 theorem a5FourthD4TrialityIsometry_apply_of_ne
     (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) {k : Fin a5FourthD4.components.length}
     (hk : k ≠ a5FourthD4D4Index) (j : Fin (a5FourthD4.componentType k).rank) :
@@ -610,6 +626,7 @@ theorem a5FourthD4TrialityIsometry_pow_three : a5FourthD4TrialityIsometry ^ 3 = 
     exact Fin.apply_cast_eq_apply_cast x (a5FourthD4BlockRotation_symm_symm_symm k) _ rfl j
 
 /-- **The rotation combined with triality has order three.** -/
+@[simp]
 theorem orderOf_a5FourthD4TrialityIsometry : orderOf a5FourthD4TrialityIsometry = 3 := by
   refine orderOf_eq_prime a5FourthD4TrialityIsometry_pow_three fun h ↦ ?_
   -- The vector supported on the second A₅ component is moved to the third component.
