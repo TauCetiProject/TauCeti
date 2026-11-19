@@ -69,8 +69,9 @@ For strong continuity, the block `Δⱼ u` has frequencies in the ball of radius
 block of `e^{tΔ} u - u` is also at most twice that of `u`. For `q < ∞` dominated convergence in
 the sum `∑ⱼ (2^{js} ‖Δⱼ (e^{tΔ} u - u)‖_p)^q` gives the convergence; for `q = ∞` the decay of the
 weighted blocks of `u` controls the high blocks uniformly in `t`. Conversely, for `t > 0` the
-heat flow `e^{tΔ} u` lies in `B^{s+1}_{p,∞}`, so its weighted blocks in `B^s_{p,∞}` decay like
-`2^{-j}`, and this decay passes to the limit `u`.
+heat flow `e^{tΔ} u` lies in `B^{s+1}_{p,∞} ⊆ B^s_{p,1}`, so its weighted blocks in
+`B^s_{p,∞}` vanish at high frequency. Since this is a closed condition
+(`TauCeti.BesovSpace.isClosed_setOfPred_tendsto_rpow_mul_norm_block`), it passes to the limit `u`.
 
 ## Main declarations
 
