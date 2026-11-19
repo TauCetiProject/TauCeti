@@ -16,7 +16,7 @@ public import Mathlib.Data.Finset.Sort
 The category `FinPointed` has one object `⟨n⟩` for each natural number `n`, standing for the
 pointed set `Fin (n + 1)` with basepoint `0`, and its morphisms are the pointed maps. Through the
 fully faithful functor `FinPointed.toPointed` it is a skeleton of the full subcategory of
-`Pointed` spanned by the finite pointed types (`FinPointed.exists_iso_toPointed_obj`): this is the
+`Pointed` spanned by the finite pointed types (`Pointed.exists_iso_finPointed`): this is the
 category `Fin_*` over whose nerve symmetric monoidal quasicategories are coCartesian
 fibrations.
 
@@ -39,7 +39,7 @@ basepoint; these are the maps along which the Segal condition is stated.
 
 ## Main results
 
-* `TauCeti.FinPointed.exists_iso_toPointed_obj`: every finite pointed type is isomorphic to some
+* `CategoryTheory.Pointed.exists_iso_finPointed`: every finite pointed type is isomorphic to some
   `⟨n⟩`.
 * `TauCeti.FinPointed.isInert_ρ`: the projections `ρ i` are inert.
 
@@ -119,18 +119,6 @@ def fullyFaithfulToPointed : toPointed.{u}.FullyFaithful where
 instance : toPointed.{u}.Full := fullyFaithfulToPointed.full
 
 instance : toPointed.{u}.Faithful := fullyFaithfulToPointed.faithful
-
-/-- Every finite pointed type is isomorphic to `⟨n⟩` for some `n`: `FinPointed` is a skeleton of
-the finite pointed types. -/
-lemma exists_iso_toPointed_obj (X : Pointed.{u}) [Finite X] :
-    ∃ n : FinPointed.{u}, Nonempty (X ≅ toPointed.obj n) := by
-  obtain ⟨k, ⟨e⟩⟩ := Finite.exists_equiv_fin X
-  obtain ⟨n, rfl⟩ : ∃ n, k = n + 1 := Nat.exists_eq_add_one.2
-    (Fin.pos_iff_nonempty.2 ⟨e X.point⟩)
-  -- Compose `e` with the transposition exchanging `e X.point` and `0`.
-  let e' : X ≃ ULift.{u} (Fin (n + 1)) := (e.trans (Equiv.swap (e X.point) 0)).trans
-    Equiv.ulift.symm
-  exact ⟨mk n, ⟨Pointed.Iso.mk e' (ULift.ext (Equiv.swap_apply_left _ _))⟩⟩
 
 /-! ### Inert and active maps -/
 
@@ -271,3 +259,21 @@ instance : MorphismProperty.HasFactorization inert.{u} active.{u} :=
 end FinPointed
 
 end TauCeti
+
+namespace CategoryTheory.Pointed
+
+open TauCeti
+
+/-- Every finite pointed type is isomorphic to `⟨n⟩` for some `n`: `FinPointed` is a skeleton of
+the finite pointed types (through `TauCeti.FinPointed.toPointed`). -/
+lemma exists_iso_finPointed (X : Pointed.{u}) [Finite X] :
+    ∃ n : FinPointed.{u}, Nonempty (X ≅ FinPointed.toPointed.obj n) := by
+  obtain ⟨k, ⟨e⟩⟩ := Finite.exists_equiv_fin X
+  obtain ⟨n, rfl⟩ : ∃ n, k = n + 1 := Nat.exists_eq_add_one.2
+    (Fin.pos_iff_nonempty.2 ⟨e X.point⟩)
+  -- Compose `e` with the transposition exchanging `e X.point` and `0`.
+  let e' : X ≃ ULift.{u} (Fin (n + 1)) := (e.trans (Equiv.swap (e X.point) 0)).trans
+    Equiv.ulift.symm
+  exact ⟨FinPointed.mk n, ⟨Pointed.Iso.mk e' (ULift.ext (Equiv.swap_apply_left _ _))⟩⟩
+
+end CategoryTheory.Pointed
