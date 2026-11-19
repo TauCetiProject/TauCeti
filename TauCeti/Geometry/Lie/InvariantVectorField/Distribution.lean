@@ -140,9 +140,14 @@ differential at the identity of left translation by `g` is injective. -/
 theorem finrank_mulInvariantDistribution (g : G) :
     finrank 𝕜 (mulInvariantDistribution S g) = finrank 𝕜 S := by
   refine (LinearEquiv.finrank_eq (Submodule.equivMapOfInjective _ (fun a b hab ↦ ?_) S)).symm
+  -- `hab` compares the values at `a` and `b` of the differential of left translation by `g`,
+  -- read as a linear map into `TangentSpace I g`; these values are the invariant vector fields.
+  have hab' : mulInvariantVectorField a g = mulInvariantVectorField b g := by
+    rw [GroupLieAlgebra.mulInvariantVectorField_apply,
+      GroupLieAlgebra.mulInvariantVectorField_apply]
+    exact hab
   -- Translating back to the identity recovers the generators.
-  have h := congrArg (mfderiv I I (g⁻¹ * ·) g)
-    (show mulInvariantVectorField a g = mulInvariantVectorField b g from hab)
+  have h := congrArg (mfderiv I I (g⁻¹ * ·) g) hab'
   rwa [mfderiv_inv_mul_mulInvariantVectorField, mfderiv_inv_mul_mulInvariantVectorField] at h
 
 end Translation

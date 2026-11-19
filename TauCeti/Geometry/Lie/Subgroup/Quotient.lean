@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.GroupAction.Quotient
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 public import TauCeti.Topology.Algebra.Group.Quotient.RightRel
 import TauCeti.Geometry.Lie.IntegralCurve
+import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Geometry.Manifold.Submersion.Basic
@@ -227,41 +228,28 @@ attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField in
 one-parameter subgroup `t ↦ exp (t ξ)` lies in the closed subgroup `K`, the curve
 `t ↦ g exp (t ξ)` stays in the coset `g K`, so its velocity `ξ^L(g)` at `t = 0` lies in the kernel
 of the differential of the projection `G → G ⧸ K`. -/
-theorem mfderiv_quotientMk_mulInvariantVectorField [T2Space G] (hK : IsClosed (K : Set G))
-    {ξ : GroupLieAlgebra I G} (hξ : ∀ t : ℝ, mulInvariantExp (I := I) (t • ξ) ∈ K) (g : G) :
+theorem mfderiv_quotientMk_mulInvariantVectorField_eq_zero [T2Space G]
+    (hK : IsClosed (K : Set G)) {ξ : GroupLieAlgebra I G}
+    (hξ : ∀ t : ℝ, mulInvariantExp (I := I) (t • ξ) ∈ K) (g : G) :
     letI := quotientChartedSpaceOfIsClosed I hK
     mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) g
       (mulInvariantVectorField ξ g) = 0 := by
   let _ := quotientChartedSpaceOfIsClosed I hK
   have hπ := isSubmersion_quotientMk (I := I) hK
-  -- The curve `t ↦ g exp (t ξ)` is the integral curve of `ξ^L` through `g`.
-  have hc := isMIntegralCurve_mulInvariantIntegralCurve ξ g 0
-  have hπg : HasMFDerivAt I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K)
-      (mulInvariantIntegralCurve ξ g 0)
-      (mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) g) := by
-    rw [mulInvariantIntegralCurve_zero]
-    exact (hπ.contMDiff.mdifferentiableAt (by simp)).hasMFDerivAt
-  have hπc := hπg.comp 0 hc
-  -- The composite with the projection is constant, so its derivative vanishes.
-  have hconst : (QuotientGroup.mk : G → G ⧸ K) ∘ mulInvariantIntegralCurve ξ g =
-      fun _ ↦ (g : G ⧸ K) := by
-    funext t
-    rw [comp_apply, mulInvariantIntegralCurve_eq_const_mul]
+  -- The curve `t ↦ g exp (t ξ)` is the integral curve of `ξ^L` through `g`, and it stays in the
+  -- coset `g K`, so the projection is constant along it.
+  have hconst (t : ℝ) :
+      (QuotientGroup.mk (mulInvariantIntegralCurve ξ g t) : G ⧸ K) = QuotientGroup.mk g := by
+    rw [mulInvariantIntegralCurve_eq_const_mul]
     beta_reduce
     rw [← mulInvariantExp_smul]
     refine QuotientGroup.eq.2 ?_
     rw [mul_inv_rev, inv_mul_cancel_right]
     exact K.inv_mem (hξ t)
-  rw [hconst] at hπc
-  have h := DFunLike.congr_fun
-    (hπc.mfderiv.symm.trans (hasMFDerivAt_const (I := 𝓘(ℝ, ℝ)) (g : G ⧸ K) (0 : ℝ)).mfderiv)
-    (1 : ℝ)
-  convert h using 1
-  -- Unfold the composite derivative at `1`; the tangent spaces are all the model spaces.
-  change _ = mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) g
-    ((1 : ℝ →L[ℝ] ℝ).smulRight (mulInvariantVectorField ξ (mulInvariantIntegralCurve ξ g 0)) 1)
-  rw [ContinuousLinearMap.smulRight_apply, one_apply_eq_self, one_smul,
-    mulInvariantIntegralCurve_zero]
+  have h := ((isMIntegralCurve_mulInvariantIntegralCurve ξ g).isMIntegralCurveAt 0)
+    |>.mfderiv_apply_eq_zero_of_eventuallyEq_const (J := 𝓘(ℝ, QuotientModelSpace I K))
+      (hπ.contMDiff.mdifferentiableAt (by simp)) (Filter.Eventually.of_forall hconst)
+  rwa [mulInvariantIntegralCurve_zero] at h
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField in
 /-- **The vertical directions of the projection onto a homogeneous space are the left translates
@@ -283,9 +271,8 @@ theorem ker_mfderiv_quotientMk_eq_mulInvariantDistribution [T2Space G]
   · intro v hv
     obtain ⟨w, hw, rfl⟩ := mem_mulInvariantDistribution.mp hv
     obtain ⟨X, hX, rfl⟩ := Submodule.mem_map.mp hw
-    refine mfderiv_quotientMk_mulInvariantVectorField hK (fun t ↦ ?_) g
-    change mulInvariantExp (t • e X) ∈ K
-    rw [← map_smul e, ← lieExp_eq_mulInvariantExp]
+    refine mfderiv_quotientMk_mulInvariantVectorField_eq_zero hK (fun t ↦ ?_) g
+    rw [LinearEquiv.coe_toLinearMap, ← map_smul e, ← lieExp_eq_mulInvariantExp]
     exact Lie.lieExp_smul_mem_of_mem_lieSubalgebraOfSubgroup hK hX t
   -- Both sides have the dimension of `𝔨`: the kernel by rank-nullity for the surjective
   -- differential of the projection, the translate of `𝔨` because left translation is injective.
