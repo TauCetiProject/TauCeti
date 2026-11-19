@@ -13,6 +13,7 @@ import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Reciprocal
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Normed.Module.Cone
 
 /-!
 # Microlocal elliptic regularity for differential operators
@@ -284,22 +285,15 @@ theorem exists_nhds_cone_le_norm_principalSymbol {ι : Type*} {s : Finset ι}
     linarith [norm_pos_iff.2 hξ]
   obtain ⟨U, hU, V, hV, hUV⟩ := mem_nhds_prod_iff.1 (hO.mem_nhds hxξ)
   -- The cone over `interior V`.
-  refine ⟨U, hU, {η | ∃ t : ℝ, 0 < t ∧ t • η ∈ interior V}, ?_,
-    ⟨1, one_pos, by simpa using mem_interior_iff_mem_nhds.2 hV⟩, ?_, c₀, hc₀, ?_⟩
-  · have : {η : E | ∃ t : ℝ, 0 < t ∧ t • η ∈ interior V} =
-        ⋃ t ∈ Ioi (0 : ℝ), (fun η : E ↦ t • η) ⁻¹' interior V := by
-      ext η
-      simp
-    rw [this]
-    exact isOpen_biUnion fun t _ ↦ isOpen_interior.preimage (continuous_const_smul t)
-  · rintro t ht η ⟨u, hu, hη⟩
-    exact ⟨u / t, div_pos hu ht, by rwa [smul_smul, div_mul_cancel₀ _ ht.ne']⟩
-  · rintro y hy η ⟨t, ht, hη⟩
-    have h : c₀ * ‖t • η‖ ^ M < ‖σ (y, t • η)‖ := hUV (mk_mem_prod hy (interior_subset hη))
-    simp only [σ, principalSymbol_smul, norm_mul, norm_pow, Complex.norm_real,
-      norm_smul, Real.norm_of_nonneg ht.le, mul_pow] at h
-    refine (lt_of_mul_lt_mul_left ?_ (pow_pos ht M).le).le
-    linarith
+  obtain ⟨Γ, hΓ, hξΓ, hcone, hmem⟩ :=
+    isOpen_interior.exists_cone_exists_smul_mem (mem_interior_iff_mem_nhds.2 hV)
+  refine ⟨U, hU, Γ, hΓ, hξΓ, hcone, c₀, hc₀, fun y hy η hη ↦ ?_⟩
+  obtain ⟨t, ht, hη⟩ := hmem η hη
+  have h : c₀ * ‖t • η‖ ^ M < ‖σ (y, t • η)‖ := hUV (mk_mem_prod hy (interior_subset hη))
+  simp only [σ, principalSymbol_smul, norm_mul, norm_pow, Complex.norm_real,
+    norm_smul, Real.norm_of_nonneg ht.le, mul_pow] at h
+  refine (lt_of_mul_lt_mul_left ?_ (pow_pos ht M).le).le
+  linarith
 
 /-- **An elliptic cone.** If the principal symbol does not vanish at `ξ`, then it is bounded
 below by `c₀ ‖η‖ ^ M` on an open cone around `ξ`, for some `c₀ > 0`. -/
