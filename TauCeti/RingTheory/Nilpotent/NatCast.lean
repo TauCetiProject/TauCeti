@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.RingTheory.Nilpotent.Defs
 import Mathlib.Data.Nat.Factorial.NatCast
+import Mathlib.RingTheory.Nilpotent.Basic
 
 /-!
 # Natural numbers that are units modulo a nilpotent prime
@@ -39,9 +40,7 @@ theorem isUnit_natCast_iff_not_dvd [Nontrivial R] {ℓ n : ℕ} (hℓ : ℓ.Prim
   refine ⟨fun hn hdvd ↦ ?_,
     fun hn ↦ IsUnit.natCast_of_isNilpotent_of_coprime h (hℓ.coprime_iff_not_dvd.2 hn)⟩
   obtain ⟨c, rfl⟩ := hdvd
-  obtain ⟨k, hk⟩ := (Nat.cast_commute ℓ (c : R)).isNilpotent_mul_right h
   rw [Nat.cast_mul] at hn
-  -- `(ℓ * c) ^ k` is both a unit and zero.
-  exact not_isUnit_zero (hk ▸ hn.pow k)
+  exact ((Nat.cast_commute ℓ (c : R)).isNilpotent_mul_right h).not_isUnit hn
 
 end IsNilpotent
