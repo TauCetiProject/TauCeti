@@ -344,12 +344,7 @@ def lineCoord : E b ≃L[𝕜] 𝕜 :=
 @[simp]
 theorem lineCoord_symm_apply (c : 𝕜) : (lineCoord 𝕜 hv).symm c = c • v := by
   have hb := FiberBundle.mem_baseSet_trivializationAt' (F := 𝕜) (E := E) b
-  simp only [lineCoord, ContinuousLinearEquiv.symm_trans_apply,
-    ContinuousLinearEquiv.unitsEquivAut_apply_symm, inv_inv, Units.val_mk0,
-    Bundle.Trivialization.continuousLinearEquivAt_symm_apply,
-    Bundle.Trivialization.continuousLinearEquivAt_apply]
-  rw [← smul_eq_mul, Bundle.Trivialization.symm_apply_smul _ hb,
-    Bundle.Trivialization.symm_apply_apply_mk _ hb]
+  simp [lineCoord, ← smul_eq_mul, Bundle.Trivialization.symm_apply_apply_mk _ hb]
 
 theorem lineCoord_apply_smul (c : 𝕜) : lineCoord 𝕜 hv (c • v) = c := by
   rw [← lineCoord_symm_apply hv, ContinuousLinearEquiv.apply_symm_apply]
@@ -422,8 +417,8 @@ instance isLinear_sectionTrivialization : (sectionTrivialization hs hs₀).IsLin
 @[simp]
 theorem sectionTrivialization_symm_apply (b : B) (c : 𝕜) :
     (sectionTrivialization hs hs₀).symm b c = c • s b := by
-  rw [Trivialization.symm_apply _ (mem_univ b)]
-  rfl
+  simpa [lineCoord_apply_smul] using
+    (sectionTrivialization hs hs₀).symm_apply_apply_mk (mem_univ b) (c • s b)
 
 omit hs in
 /-- **Line bundles with a nowhere-vanishing section are trivial.** A vector bundle with model fibre
