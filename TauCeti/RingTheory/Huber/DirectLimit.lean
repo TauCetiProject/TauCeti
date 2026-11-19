@@ -42,9 +42,9 @@ spectrum of a colimit of Tate pairs with the inverse limit of the adic spectra.
 
 ## Main results
 
-* `TauCeti.Huber.exists_isTopologicallyNilpotent_eq_of_mem_idealOfDefinition`: the ideal of
-  definition `ϖ L₀` of a colimit of Tate rings consists of images of topologically nilpotent
-  elements of the stages.
+* `TauCeti.Huber.exists_isTopologicallyNilpotent_eq_of_mem_idealOfDefinition`: an ideal of
+  definition contained in `ϖ L₀` of a colimit of Tate rings consists of images of topologically
+  nilpotent elements of the stages.
 * `TauCeti.Huber.DirectLimit.isLocalization_away`: the colimit is `L₀[1/ϖ']`.
 * `TauCeti.Huber.DirectLimit.continuous_of_hasBasis`: the maps into the colimit are continuous for
   the `ϖ'`-adic topology.
