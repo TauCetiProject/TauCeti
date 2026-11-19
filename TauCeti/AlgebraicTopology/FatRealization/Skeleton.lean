@@ -6,9 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.FatRealization
-public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
-public import TauCeti.Geometry.Convex.ConvexSpace.Topology
-import TauCeti.Geometry.Convex.ConvexSpace.Defs
 public import TauCeti.Topology.Category.TopCat.Limits.Basic
 public import TauCeti.Topology.Category.TopCat.Normal
 public import TauCeti.Topology.Category.TopCat.Paracompact
@@ -46,9 +43,10 @@ as needed for partitions of unity and numerable covers on it.
 The combinatorial input concerns topological simplices. Every point of `Δⁿ` lies off the boundary
 of a unique face, its carrier, spanned by the vertices at which its barycentric coordinates
 (`SemiSimplexCategory.toTopWeights`) are nonzero (`SemiSimplexCategory.exists_toTop_map_eq`,
-`SemiSimplexCategory.eq_and_eq_of_toTop_map_eq`). Consequently a point of `‖X‖` has a unique
-representative `[x, t]` with `t` off the boundary `∂Δⁿ` (`SemiSimplexCategory.toTopBoundary`) of
-its simplex (`TauCeti.fatRealization.injOn_ι`).
+`SemiSimplexCategory.eq_and_eq_of_toTop_map_eq`). Consequently distinct points `(x, t)` of
+`Xₙ × Δⁿ` with `t` off the boundary `∂Δⁿ` (`SemiSimplexCategory.toTopBoundary`) have distinct
+images in `‖X‖` (`TauCeti.fatRealization.injOn_ι`), so the characteristic map of level `n + 1` is
+injective off the attaching subspace.
 
 ## References
 
@@ -67,147 +65,6 @@ open scoped Simplicial
 
 universe u
 
-namespace SemiSimplexCategory
-
-variable {m n : SemiSimplexCategory}
-
-/-- The barycentric coordinates of a point of the topological simplex `Δⁿ`, indexed by its
-`n + 1` vertices. -/
-def toTopWeights (t : toTop.{u}.obj n) : Fin (n.len + 1) →₀ ℝ :=
-  t.down.weights
-
-/-- A point of a topological simplex is determined by its barycentric coordinates. -/
-theorem toTopWeights_injective : Function.Injective (toTopWeights.{u} (n := n)) := fun _ _ h ↦
-  ULift.ext (StdSimplex.ext h)
-
-/-- Each barycentric coordinate is continuous on the topological simplex. -/
-@[continuity, fun_prop]
-theorem continuous_toTopWeights_apply (i : Fin (n.len + 1)) :
-    Continuous fun t : toTop.{u}.obj n ↦ toTopWeights t i :=
-  (StdSimplex.continuous_weights_apply ℝ i).comp continuous_uliftDown
-
-/-- Some barycentric coordinate of a point of a topological simplex is nonzero. -/
-theorem support_toTopWeights_nonempty (t : toTop.{u}.obj n) : (toTopWeights t).support.Nonempty :=
-  t.down.support_weights_nonempty
-
-/-- The barycentric coordinates of the image of a point under a face inclusion are pushed forward
-along the order embedding. -/
-theorem toTopWeights_toTop_map (f : m ⟶ n) (t : toTop.{u}.obj m) :
-    toTopWeights (toTop.map f t) = (toTopWeights t).mapDomain (homEquiv f) :=
-  (rfl)
-
-/-- The boundary `∂Δⁿ` of the topological simplex `Δⁿ`: the points with a vanishing barycentric
-coordinate, that is, the union of the proper faces of `Δⁿ`. -/
-def toTopBoundary (n : SemiSimplexCategory) : Set (toTop.{u}.obj n) :=
-  {t | ∃ i, toTopWeights t i = 0}
-
-/-- A point lies on `∂Δⁿ` exactly when one of its barycentric coordinates vanishes. -/
-theorem mem_toTopBoundary_iff {t : toTop.{u}.obj n} :
-    t ∈ toTopBoundary n ↔ ∃ i, toTopWeights t i = 0 :=
-  Iff.rfl
-
-/-- The boundary of a topological simplex is closed. -/
-theorem isClosed_toTopBoundary (n : SemiSimplexCategory) : IsClosed (toTopBoundary.{u} n) := by
-  have : toTopBoundary.{u} n = ⋃ i, {t : toTop.{u}.obj n | toTopWeights t i = 0} := by
-    ext; simp [toTopBoundary]
-  rw [this]
-  exact isClosed_iUnion_of_finite fun i ↦ isClosed_eq (continuous_toTopWeights_apply i)
-    continuous_const
-
-/-- A point of `Δⁿ` lies off the boundary exactly when all `n + 1` of its barycentric coordinates
-are nonzero. -/
-theorem notMem_toTopBoundary_iff {t : toTop.{u}.obj n} :
-    t ∉ toTopBoundary n ↔ #(toTopWeights t).support = n.len + 1 := by
-  have := Finset.card_eq_iff_eq_univ (toTopWeights t).support
-  rw [Fintype.card_fin] at this
-  rw [this, Finset.eq_univ_iff_forall]
-  simp [toTopBoundary]
-
-/-- A point of `Δⁿ` has at most `n + 1` nonzero barycentric coordinates. -/
-theorem card_support_toTopWeights_le (t : toTop.{u}.obj n) :
-    #(toTopWeights t).support ≤ n.len + 1 :=
-  (Finset.card_le_univ _).trans (by simp)
-
-/-- A face inclusion preserves the number of nonzero barycentric coordinates. -/
-theorem card_support_toTopWeights_toTop_map (f : m ⟶ n) (t : toTop.{u}.obj m) :
-    #(toTopWeights (toTop.map f t)).support = #(toTopWeights t).support := by
-  classical
-  rw [toTopWeights_toTop_map, Finsupp.mapDomain_support_of_injective (homEquiv f).injective,
-    Finset.card_image_of_injective _ (homEquiv f).injective]
-
-/-- Face inclusions of topological simplices are injective. -/
-theorem toTop_map_injective (f : m ⟶ n) : Function.Injective (toTop.{u}.map f) := fun _ _ h ↦
-  ULift.ext (StdSimplex.map_injective (homEquiv f).injective (congrArg ULift.down h))
-
-/-- **Carrier faces.** Every point of a topological simplex is the image, under a face inclusion,
-of a point off the boundary of that face: the face spanned by its nonzero barycentric
-coordinates. -/
-theorem exists_toTop_map_eq (t : toTop.{u}.obj n) :
-    ∃ (a : SemiSimplexCategory) (f : a ⟶ n) (s : toTop.{u}.obj a),
-      s ∉ toTopBoundary a ∧ toTop.map f s = t := by
-  classical
-  obtain ⟨k, hk⟩ : ∃ k, #(toTopWeights t).support = k + 1 :=
-    Nat.exists_eq_add_one.2 (Finset.card_pos.2 (support_toTopWeights_nonempty t))
-  set e := (toTopWeights t).support.orderEmbOfFin hk
-  have he : ((toTopWeights t).support : Set (Fin (n.len + 1))) ⊆ range e := by
-    simp [e, Finset.range_orderEmbOfFin]
-  refine ⟨⦋k⦌ₛ, homEquiv.symm e, ⟨StdSimplex.comap e.injective t.down he⟩, ?_,
-    ULift.ext (StdSimplex.map_comap e.injective t.down he)⟩
-  rintro ⟨i, hi⟩
-  exact Finsupp.mem_support_iff.1 ((toTopWeights t).support.orderEmbOfFin_mem hk i)
-    ((StdSimplex.weights_comap_apply e.injective t.down he i).symm.trans hi)
-
-/-- **Uniqueness of carrier faces, dimension.** If a point of `Δⁿ` is the image of points off the
-boundaries of two faces, the two faces have the same dimension. -/
-theorem eq_of_toTop_map_eq {a b : SemiSimplexCategory} {f : a ⟶ n} {g : b ⟶ n}
-    {s : toTop.{u}.obj a} {s' : toTop.{u}.obj b} (hs : s ∉ toTopBoundary a)
-    (hs' : s' ∉ toTopBoundary b) (h : toTop.map f s = toTop.map g s') : a = b := by
-  have := card_support_toTopWeights_toTop_map f s
-  rw [h, card_support_toTopWeights_toTop_map, notMem_toTopBoundary_iff.1 hs,
-    notMem_toTopBoundary_iff.1 hs'] at this
-  exact SemiSimplexCategory.ext (by omega)
-
-/-- **Uniqueness of carrier faces.** If a point of `Δⁿ` is the image of points off the boundary of
-`Δᵐ` under two face inclusions, the face inclusions and the points coincide. -/
-theorem eq_and_eq_of_toTop_map_eq {f g : m ⟶ n} {s s' : toTop.{u}.obj m}
-    (hs : s ∉ toTopBoundary m) (hs' : s' ∉ toTopBoundary m) (h : toTop.map f s = toTop.map g s') :
-    f = g ∧ s = s' := by
-  classical
-  have hrange (f : m ⟶ n) (s : toTop.{u}.obj m) (hs : s ∉ toTopBoundary m) :
-      range (homEquiv f) = ((toTopWeights (toTop.map f s)).support : Set _) := by
-    rw [toTopWeights_toTop_map, Finsupp.mapDomain_support_of_injective (homEquiv f).injective,
-      Finset.coe_image, (Finset.card_eq_iff_eq_univ _).1
-        ((notMem_toTopBoundary_iff.1 hs).trans (Fintype.card_fin _).symm), Finset.coe_univ,
-      Set.image_univ]
-  obtain rfl : f = g := hom_ext <| OrderEmbedding.range_inj_of_wellFoundedLT.1 <| by
-    rw [hrange f s hs, hrange g s' hs', h]
-  exact ⟨rfl, toTop_map_injective f h⟩
-
-/-- Topological simplices are compact. -/
-instance (n : SemiSimplexCategory) : CompactSpace (toTop.{u}.obj n) :=
-  inferInstanceAs (CompactSpace (ULift (StdSimplex ℝ (Fin (n.len + 1)))))
-
-/-- Topological simplices are Hausdorff. -/
-instance (n : SemiSimplexCategory) : T2Space (toTop.{u}.obj n) :=
-  inferInstanceAs (T2Space (ULift (StdSimplex ℝ (Fin (n.len + 1)))))
-
-/-- There are finitely many face inclusions between two objects of the semi-simplex category. -/
-instance : Finite (m ⟶ n) :=
-  Finite.of_injective (fun f ↦ ⇑(homEquiv f)) fun _ _ h ↦ hom_ext (DFunLike.coe_injective h)
-
-/-- Face inclusions of topological simplices are closed embeddings. -/
-theorem isClosedEmbedding_toTop_map (f : m ⟶ n) : IsClosedEmbedding (toTop.{u}.map f) :=
-  (toTop.map f).hom.continuous.isClosedEmbedding (toTop_map_injective f)
-
-/-- A point of `Δⁿ` lies on the boundary exactly when fewer than `n + 1` of its barycentric
-coordinates are nonzero. -/
-theorem mem_toTopBoundary_iff_card_lt {t : toTop.{u}.obj n} :
-    t ∈ toTopBoundary n ↔ #(toTopWeights t).support < n.len + 1 := by
-  rw [← not_iff_not, notMem_toTopBoundary_iff, not_lt]
-  exact ⟨fun h ↦ h.ge, fun h ↦ (card_support_toTopWeights_le t).antisymm h⟩
-
-end SemiSimplexCategory
-
 namespace TauCeti.fatRealization
 
 open SemiSimplexCategory TauCeti.TopCat
@@ -221,13 +78,19 @@ def skeleton (n : ℕ) : Set (fatRealization X) :=
 
 variable {X}
 
+/-- A point lies in the `n`-skeleton exactly when it is in the image of the characteristic map of
+some level `k ≤ n`. -/
+theorem mem_skeleton_iff {p : fatRealization X} {n : ℕ} :
+    p ∈ skeleton X n ↔ ∃ k ≤ n, p ∈ range (ι X ⦋k⦌ₛ) := by
+  simp [skeleton]
+
 /-- The image of the characteristic map of a level `k ≤ n` lies in the `n`-skeleton. -/
 theorem range_ι_subset_skeleton {k n : ℕ} (h : k ≤ n) : range (ι X ⦋k⦌ₛ) ⊆ skeleton X n :=
-  fun _ hp ↦ mem_iUnion₂.2 ⟨k, h, hp⟩
+  fun _ hp ↦ mem_skeleton_iff.2 ⟨k, h, hp⟩
 
 /-- The skeleta of the fat realization increase. -/
 theorem monotone_skeleton : Monotone (skeleton X) := fun _ _ h _ hp ↦ by
-  obtain ⟨k, hk, hp⟩ := mem_iUnion₂.1 hp
+  obtain ⟨k, hk, hp⟩ := mem_skeleton_iff.1 hp
   exact range_ι_subset_skeleton (hk.trans h) hp
 
 /-- The skeleta exhaust the fat realization. -/
@@ -248,7 +111,7 @@ theorem ι_mem_skeleton_iff {m : SemiSimplexCategory} {x : X.obj (op m)} {t : to
     {n : ℕ} : ι X m (x, t) ∈ skeleton X n ↔ #(toTopWeights t).support ≤ n + 1 := by
   constructor
   · intro hp
-    obtain ⟨k, hk, ⟨y, s⟩, h⟩ := mem_iUnion₂.1 hp
+    obtain ⟨k, hk, ⟨y, s⟩, h⟩ := mem_skeleton_iff.1 hp
     have hcard : card (ι X ⦋k⦌ₛ (y, s)) = card (ι X m (x, t)) := congrArg _ h
     simp only [card, lift_ι] at hcard
     have : _ ≤ k + 1 := card_support_toTopWeights_le s
@@ -294,8 +157,8 @@ private theorem reps_ι_of_notMem {n : SemiSimplexCategory} {x : X.obj (op n)}
     exact ⟨hu, 𝟙 n, by rw [CategoryTheory.Functor.map_id, TopCat.id_app],
       by rw [op_id, CategoryTheory.Functor.map_id, TopCat.id_app]⟩
 
-/-- The characteristic map of level `n` is injective off `Xₙ × ∂Δⁿ`: the points `[x, t]` with `t`
-off the boundary are identified with no other point. -/
+/-- The characteristic map of level `n` is injective off `Xₙ × ∂Δⁿ`: distinct points `(x, t)` of
+`Xₙ × Δⁿ` with `t` off the boundary have distinct images in `‖X‖`. -/
 theorem injOn_ι (n : SemiSimplexCategory) : InjOn (ι X n) {p | p.2 ∉ toTopBoundary n} :=
   fun p hp q hq h ↦ by
     have := congrArg (reps n) h
@@ -332,37 +195,47 @@ theorem isClosed_skeleton (n : ℕ) : IsClosed (skeleton X n) :=
     rw [preimage_eq_univ_iff.2 (range_ι_subset_skeleton hk)]
     exact isClosed_univ
 
-/-- The preimage of a subset of the `n`-skeleton under the characteristic map of a level `k ≤ n`
-is its preimage under the corestriction of that map to the skeleton. -/
-private theorem preimage_ι_image_val {n k : ℕ} (hk : k ≤ n) (C : Set (skeleton X n)) :
-    ι X ⦋k⦌ₛ ⁻¹' (Subtype.val '' C) =
-      (fun p ↦ (⟨ι X ⦋k⦌ₛ p, range_ι_subset_skeleton hk ⟨p, rfl⟩⟩ : skeleton X n)) ⁻¹' C := by
-  ext p
-  refine ⟨fun ⟨q, hq, hqp⟩ ↦ ?_, fun hp ↦ ⟨_, hp, rfl⟩⟩
-  rwa [show q = ⟨ι X ⦋k⦌ₛ p, range_ι_subset_skeleton hk ⟨p, rfl⟩⟩ from Subtype.ext hqp] at hq
+variable (X) in
+/-- The characteristic map `Xₖ × Δᵏ → skₙ ‖X‖` of a level `k ≤ n`, into the `n`-skeleton. -/
+def skeletonιOfLE {k n : ℕ} (h : k ≤ n) :
+    TopCat.of (X.obj (op ⦋k⦌ₛ) × toTop.{u}.obj ⦋k⦌ₛ) ⟶ TopCat.of (skeleton X n) :=
+  TopCat.ofHom ⟨fun p ↦ ⟨ι X ⦋k⦌ₛ p, range_ι_subset_skeleton h ⟨p, rfl⟩⟩,
+    (ι X ⦋k⦌ₛ).continuous.subtype_mk _⟩
 
-/-- A subset of the `n`-skeleton is closed in the skeleton as soon as its preimages under the
-corestrictions of the characteristic maps of the levels `k ≤ n` are closed. -/
-private theorem isClosed_of_preimage {n : ℕ} {C : Set (skeleton X n)}
-    (h : ∀ k (hk : k ≤ n), IsClosed
-      ((fun p ↦ (⟨ι X ⦋k⦌ₛ p, range_ι_subset_skeleton hk ⟨p, rfl⟩⟩ : skeleton X n)) ⁻¹' C)) :
-    IsClosed C :=
-  (isClosed_skeleton n).isClosedEmbedding_subtypeVal.isClosed_iff_image_isClosed.2 <|
-    isClosed_of_subset_skeleton (Subtype.coe_image_subset _ C) fun k hk ↦ by
-      rw [preimage_ι_image_val hk]
-      exact h k hk
+@[simp]
+theorem coe_skeletonιOfLE_apply {k n : ℕ} (h : k ≤ n)
+    (p : X.obj (op ⦋k⦌ₛ) × toTop.{u}.obj ⦋k⦌ₛ) :
+    (skeletonιOfLE X h p : fatRealization X) = ι X ⦋k⦌ₛ p :=
+  (rfl)
 
 variable (X) in
 /-- The characteristic map `Xₙ × Δⁿ → skₙ ‖X‖` of the level `n`, into the `n`-skeleton. -/
 def skeletonι (n : ℕ) :
     TopCat.of (X.obj (op ⦋n⦌ₛ) × toTop.{u}.obj ⦋n⦌ₛ) ⟶ TopCat.of (skeleton X n) :=
-  TopCat.ofHom ⟨fun p ↦ ⟨ι X ⦋n⦌ₛ p, range_ι_subset_skeleton le_rfl ⟨p, rfl⟩⟩,
-    (ι X ⦋n⦌ₛ).continuous.subtype_mk _⟩
+  skeletonιOfLE X le_rfl
 
 @[simp]
 theorem coe_skeletonι_apply (n : ℕ) (p : X.obj (op ⦋n⦌ₛ) × toTop.{u}.obj ⦋n⦌ₛ) :
     (skeletonι X n p : fatRealization X) = ι X ⦋n⦌ₛ p :=
   (rfl)
+
+/-- The preimage of a subset of the `n`-skeleton under the characteristic map of a level `k ≤ n`
+is its preimage under the corestriction of that map to the skeleton. -/
+private theorem preimage_ι_image_val {n k : ℕ} (hk : k ≤ n) (C : Set (skeleton X n)) :
+    ι X ⦋k⦌ₛ ⁻¹' (Subtype.val '' C) = skeletonιOfLE X hk ⁻¹' C := by
+  ext p
+  refine ⟨fun ⟨q, hq, hqp⟩ ↦ ?_, fun hp ↦ ⟨_, hp, rfl⟩⟩
+  rwa [show q = skeletonιOfLE X hk p from Subtype.ext hqp] at hq
+
+/-- A subset of the `n`-skeleton is closed in the skeleton as soon as its preimages under the
+corestrictions of the characteristic maps of the levels `k ≤ n` are closed. -/
+private theorem isClosed_of_preimage {n : ℕ} {C : Set (skeleton X n)}
+    (h : ∀ k (hk : k ≤ n), IsClosed (skeletonιOfLE X hk ⁻¹' C)) :
+    IsClosed C :=
+  (isClosed_skeleton n).isClosedEmbedding_subtypeVal.isClosed_iff_image_isClosed.2 <|
+    isClosed_of_subset_skeleton (Subtype.coe_image_subset _ C) fun k hk ↦ by
+      rw [preimage_ι_image_val hk]
+      exact h k hk
 
 /-- The points of `Xₙ₊₁ × ∂Δⁿ⁺¹` are mapped into the `n`-skeleton. -/
 theorem ι_mem_skeleton_of_mem_toTopBoundary {n : ℕ} (x : X.obj (op ⦋n + 1⦌ₛ))
@@ -395,9 +268,11 @@ theorem isPushout_skeleton (n : ℕ) :
       ((subspaceDiagram (monotone_skeleton (X := X))).map (homOfLE n.le_succ))
       (skeletonι X (n + 1)) := by
   refine IsPushout.of_isPushout_forget ?_ fun s hs hs' ↦ ?_
-  · refine @Types.isPushout_of_isPullback_of_mono' _ _ _ _ _ _ _ _ ?_
-      ((mono_iff_injective _).2 (inclusion_injective (monotone_skeleton n.le_succ))) ?_ ?_
-    · refine (Types.isPullback_iff _ _ _ _).2 ⟨rfl, ?_, ?_⟩
+  · -- The instance argument `Mono` of the inclusion of skeleta is not found by unification, so
+    -- it is left as the last goal.
+    apply +allowSynthFailures Types.isPushout_of_isPullback_of_mono'
+    case h₁ =>
+      refine (Types.isPullback_iff _ _ _ _).2 ⟨rfl, ?_, ?_⟩
       · rintro p q ⟨-, h⟩
         have h₁ := congrArg Prod.fst h
         have h₂ := congrArg Prod.snd h
@@ -406,21 +281,23 @@ theorem isPushout_skeleton (n : ℕ) :
         obtain rfl : p = ι X _ (x, t) := congrArg Subtype.val h
         have : _ ≤ n + 1 := ι_mem_skeleton_iff.1 hp
         exact ⟨(x, ⟨t, mem_toTopBoundary_iff_card_lt.2 (show _ < n + 1 + 1 by omega)⟩), rfl, rfl⟩
-    · refine eq_univ_of_forall fun ⟨p, hp⟩ ↦ ?_
-      obtain ⟨k, hk, q, rfl⟩ := mem_iUnion₂.1 hp
+    case h₂ =>
+      refine eq_univ_of_forall fun ⟨p, hp⟩ ↦ ?_
+      obtain ⟨k, hk, q, rfl⟩ := mem_skeleton_iff.1 hp
       rcases Nat.of_le_succ hk with hk | rfl
-      · exact Or.inl ⟨⟨_, range_ι_subset_skeleton hk ⟨q, rfl⟩⟩, rfl⟩
+      · exact Or.inl ⟨skeletonιOfLE X hk q, rfl⟩
       · exact Or.inr ⟨q, rfl⟩
-    · rintro ⟨x, t⟩ ⟨y, t'⟩ ht ht' h
+    case H =>
+      rintro ⟨x, t⟩ ⟨y, t'⟩ ht ht' h
       refine injOn_ι _ (fun hb ↦ ht ⟨(x, ⟨t, hb⟩), rfl⟩) (fun hb ↦ ht' ⟨(y, ⟨t', hb⟩), rfl⟩)
         (congrArg Subtype.val h)
+    exact (mono_iff_injective _).2 (inclusion_injective (monotone_skeleton n.le_succ))
   · -- The complement of `s` is closed, as its preimages under the characteristic maps of the
     -- levels `k ≤ n` factor through the `n`-skeleton.
     rw [← isClosed_compl_iff] at hs hs' ⊢
     refine isClosed_of_preimage fun k hk ↦ ?_
     rcases Nat.of_le_succ hk with hk | rfl
-    · exact hs.preimage (f := fun p ↦ (⟨ι X ⦋k⦌ₛ p, range_ι_subset_skeleton hk ⟨p, rfl⟩⟩ :
-        skeleton X n)) (by fun_prop)
+    · exact hs.preimage (skeletonιOfLE X hk).hom.continuous
     · exact hs'
 
 /-- The `0`-skeleton of the fat realization is a copy of `X₀ × Δ⁰`. -/
@@ -436,7 +313,7 @@ theorem isHomeomorph_skeletonι_zero : IsHomeomorph (skeletonι X 0) := by
   · obtain rfl : k = 0 := Nat.le_zero.1 hk
     exact (congrArg IsClosed (hinj.preimage_image D)).mpr hD
   · rintro ⟨p, hp⟩
-    obtain ⟨k, hk, q, rfl⟩ := mem_iUnion₂.1 hp
+    obtain ⟨k, hk, q, rfl⟩ := mem_skeleton_iff.1 hp
     obtain rfl : k = 0 := Nat.le_zero.1 hk
     exact ⟨q, rfl⟩
 
@@ -444,9 +321,8 @@ variable (X) in
 /-- The fat realization is the colimit in `TopCat` of its skeleta along their inclusions: its
 topology is coherent with the skeleta. -/
 def isColimitSkeleton : IsColimit (subspaceCocone (monotone_skeleton (X := X))) :=
-  isColimitOfIsCoherentWith _ iUnion_skeleton <| .of_isClosed fun C hC ↦ (isClosed_iff X).2 fun m ↦
-    (hC _ ⟨m.len, rfl⟩).preimage (f := fun p ↦
-      (⟨ι X m p, range_ι_subset_skeleton le_rfl ⟨p, rfl⟩⟩ : skeleton X m.len)) (by fun_prop)
+  isColimitOfIsCoherentWith _ iUnion_skeleton <| .of_isClosed fun _ hC ↦ (isClosed_iff X).2 fun m ↦
+    (hC _ ⟨m.len, rfl⟩).preimage (skeletonιOfLE X le_rfl).hom.continuous
 
 /-- The boundary inclusion `Xₙ × ∂Δⁿ → Xₙ × Δⁿ` is a closed embedding. -/
 private theorem isClosedEmbedding_boundary (n : ℕ) :

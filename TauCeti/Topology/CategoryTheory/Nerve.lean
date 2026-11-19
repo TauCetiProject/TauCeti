@@ -33,6 +33,13 @@ The *fat classifying space* `TauCeti.fatClassifyingSpace C` is the fat realizati
 (`TauCeti.fatRealization`) of the underlying semi-simplicial space, obtained by forgetting
 degeneracies along `SemiSimplexCategory.toSimplexCategory`.
 
+When the total arrows form a regular, `T1`, second-countable space, so do the strings of
+composable arrows (the `T1Space`, `RegularSpace` and `SecondCountableTopology` instances on
+`ComposableArrows C n`). The levels of the topological nerve are then regular, `T1` and Lindelöf,
+so the fat classifying space is paracompact and `T4`
+(`TauCeti.fatClassifyingSpace.paracompactSpace`, `TauCeti.fatClassifyingSpace.t4Space`), by
+paracompactness of fat realizations (`TauCeti.fatRealization.paracompactSpace`).
+
 A functor `Φ : C ⥤ D` whose action on total arrows (`Prefunctor.mapTotal`) is continuous induces
 maps `TauCeti.topologicalNerveMap Φ` of topological nerves and `TauCeti.fatClassifyingSpaceMap Φ`
 of fat classifying spaces, by applying `Φ` to strings of composable arrows. A family of functors
