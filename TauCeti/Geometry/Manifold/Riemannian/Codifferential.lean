@@ -619,8 +619,8 @@ private theorem mextDerivₗ_funSMulₗ_eq_gradWedge (f : C^∞⟮I, M; ℝ⟯) 
     rw [innerSL_apply_apply, Manifold.inner_mgradient]
   ext v
   rw [mextDerivₗ_funSMulₗ, Submodule.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
-    extDerivWedgeₗ_def, cast_apply, coe_wedge_apply, mextDerivₗ_apply, coe_ofFunction, mextDeriv_ofFunction, hdf,
-    add_comm]
+    extDerivWedgeₗ_def, cast_apply, coe_wedge_apply, mextDerivₗ_apply, coe_ofFunction,
+    mextDeriv_ofFunction, hdf, add_comm]
   simp only [coe_funSMulₗ, gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
     alternatingFormEquiv_wedgeLeft_apply, LinearEquiv.apply_symm_apply,
     ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
@@ -712,8 +712,8 @@ private theorem extDerivWedgeₗ_apply_eq_gradWedge (f : C^∞⟮I, M; ℝ⟯) (
     (x : M) : (extDerivWedgeₗ f k α).1 x = gradWedge f k x (α.1 x) := by
   have h := congrArg (fun φ : SmoothForm I M ℝ (k + 1) ↦ φ.1 x) (mextDerivₗ_funSMulₗ f α)
   simp only [Submodule.coe_add, Pi.add_apply, coe_funSMulₗ] at h
-  rw [mextDerivₗ_funSMulₗ_eq_gradWedge, add_comm] at h
-  exact (add_left_cancel h).symm
+  rw [mextDerivₗ_funSMulₗ_eq_gradWedge] at h
+  exact (add_left_cancel (h.trans (add_comm _ _))).symm
 
 /-- **The Koszul identity** for exterior multiplication by `df` and contraction with `grad g` on
 forms of positive degree: `df ∧ ι_(grad g) α + ι_(grad g) (df ∧ α) = ⟪grad g, grad f⟫ α`. -/
