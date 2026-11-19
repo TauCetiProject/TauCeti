@@ -30,7 +30,8 @@ there (`floerLinearization_congr_of_eventuallyEq`), and on the Floer data only t
 values at that point (`floerLinearization_congr_data`). For `C¹` coefficients `J` and `C²`
 Hamiltonians it is continuous wherever the map and the direction are `C¹`
 (`continuousAt_floerLinearization`), and continuous everywhere when they are so everywhere
-(`continuous_floerLinearization`), so its `L²` norms over compact sets are finite.
+(`continuous_floerLinearization`), so its `L²` norms over compact sets are finite; any operator
+`∂s + J ∂t + A` with continuous `J` and `A` is continuous on `C¹` maps (`continuous_cauchyRiemann`).
 It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
 (`floerLinearization_eq_add`), whose coefficient is continuous in `z` where the data are `C¹`
 (`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`).
@@ -236,6 +237,17 @@ theorem _root_.TauCeti.cauchyRiemann_smul_fst (J A : ℝ × ℝ → V →L[ℝ] 
     ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul,
     Function.comp_apply, toSpanSingleton_apply, one_smul, zero_smul, add_zero]
   module
+
+omit [FiniteDimensional ℝ V] in
+/-- The real Cauchy–Riemann operator `P = ∂s + J ∂t + A` sends a `C¹` map `ξ` to a continuous map
+when its coefficients `J` and `A` are continuous. -/
+theorem _root_.TauCeti.continuous_cauchyRiemann {J A : ℝ × ℝ → V →L[ℝ] V} (hJ : Continuous J)
+    (hA : Continuous A) {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) :
+    Continuous fun z ↦
+      fderiv ℝ ξ z stdComplexLineReal + J z (fderiv ℝ ξ z stdComplexLineImag) + A z (ξ z) := by
+  have hdξ (v : ℝ × ℝ) : Continuous fun z ↦ fderiv ℝ ξ z v :=
+    (hξ.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  exact ((hdξ _).add (hJ.clm_apply (hdξ _))).add (hA.clm_apply hξ.continuous)
 
 /-- **Multiplying by a cutoff in `s`.** If `β` has derivative `β'` at `s`, the linearization at
 `z = (s, t)` sends `β(s) ξ` to `β(s) D ξ + β' ξ`: the factor only differentiates in the `s`

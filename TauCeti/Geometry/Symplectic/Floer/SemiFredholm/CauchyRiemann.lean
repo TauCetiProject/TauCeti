@@ -113,16 +113,6 @@ private theorem continuous_sobolev {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1
   have := hξ.continuous_fderiv one_ne_zero
   fun_prop
 
-/-- `P ξ` is continuous for a `C¹` map `ξ` and continuous coefficients. -/
-theorem _root_.TauCeti.continuous_cauchyRiemann {J : ℝ × ℝ → AlmostComplexStructure V}
-    {A : ℝ × ℝ → V →L[ℝ] V} (hJc : Continuous fun z ↦ (J z).toLinearMap.toContinuousLinearMap)
-    (hAc : Continuous A) {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) :
-    Continuous fun z ↦
-      fderiv ℝ ξ z stdComplexLineReal + J z (fderiv ℝ ξ z stdComplexLineImag) + A z (ξ z) := by
-  have hdξ (v : ℝ × ℝ) : Continuous fun z ↦ fderiv ℝ ξ z v :=
-    (hξ.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  exact ((hdξ _).add (hJc.clm_apply (hdξ _))).add (hAc.clm_apply hξ.continuous)
-
 /-- **The `L²` norm of `P` on a cut-off section.** For a cutoff `β(s)` with `|β| ≤ 1`,
 `|β'| ≤ M` and `β'` supported in `[-T, T]`, the `L²` norm of `P (β ξ) = β P ξ + β' ξ` is
 bounded by those of `P ξ` and of `ξ` over `[-T, T] × [0, 1]`. -/
