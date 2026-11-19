@@ -42,8 +42,8 @@ an algebra homomorphism; it gives the comparisons used in Weierstrass division a
 * `TauCeti.PowerSeries.not_isRestricted_mk_pow`: for `a ≠ 0` and a multiplicative norm, `∑ aⁿ Xⁿ`
   is not restricted at the radius `‖a‖⁻¹`, and `TauCeti.PowerSeries.not_isRestricted_mk_one`:
   over a nontrivial normed ring, `∑ Xⁿ` is not restricted at the radius `1`.
-* `PowerSeries.IsRestricted.rescale`: if `f(X)` is restricted at `‖a‖ * c`, then `f(aX)`
-  is restricted at `c`.
+* `PowerSeries.IsRestricted.rescale` and `PowerSeries.IsRestricted.rescale_of_le`: if `f(X)` is
+  restricted at `‖a‖ * c` (or at `r ≥ ‖a‖ * c` with `0 ≤ c`), then `f(aX)` is restricted at `c`.
 * `TauCeti.PowerSeries.coe_algebraMap_isRestrictedSubring` and
   `TauCeti.PowerSeries.coe_smul_isRestrictedSubring`: scalar maps and scalar multiplication agree
   with those on the ambient formal series.
@@ -111,6 +111,15 @@ theorem _root_.PowerSeries.IsRestricted.rescale {R : Type*} [NormedCommRing R] {
   rw [PowerSeries.coeff_rescale, abs_mul, abs_norm, mul_pow, ← mul_assoc, mul_comm _ (‖a‖ ^ n)]
   gcongr
   exact (norm_mul_le _ _).trans (by gcongr)
+
+/-- **Rescaling at a bounded radius.** Over any normed commutative ring, if `f` is restricted at
+`r`, `0 ≤ s`, and `‖u‖ * s ≤ r`, then `rescale u f` is restricted at `s`. -/
+theorem _root_.PowerSeries.IsRestricted.rescale_of_le {R : Type*} [NormedCommRing R] {r s : ℝ}
+    {u : R} {f : PowerSeries R} (hf : f.IsRestricted r) (hs : 0 ≤ s) (hsr : ‖u‖ * s ≤ r) :
+    (PowerSeries.rescale u f).IsRestricted s := by
+  have hus : 0 ≤ ‖u‖ * s := mul_nonneg (norm_nonneg u) hs
+  exact (isRestricted_of_abs_le hf
+    (by rw [abs_of_nonneg hus, abs_of_nonneg (hus.trans hsr)]; exact hsr)).rescale
 
 /-- For `a ≠ 0` over a ring with multiplicative norm, the geometric series `∑ aⁿ Xⁿ` is not
 restricted at the radius `‖a‖⁻¹`: all its weighted coefficient norms there equal `1`. -/
