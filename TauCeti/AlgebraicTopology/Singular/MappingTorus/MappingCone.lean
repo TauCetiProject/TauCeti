@@ -67,8 +67,10 @@ variable {F : Type w} [TopologicalSpace F] (φ : F ≃ₜ F)
 `x ↦ (φ x, 0)` of the fibre after the monodromy to the deck transformation after the inclusion,
 `x ↦ (φ x, 1)`. -/
 private def cylinderMonodromyHomotopy :
-    ((cylinderHomotopyEquiv F).invFun.comp (⟨φ, φ.continuous⟩ : C(F, F))).Homotopy
-      ((deck φ : C(F × ℝ, F × ℝ)).comp (cylinderHomotopyEquiv F).invFun) where
+    ((ContinuousMap.HomotopyEquiv.prodZeroSection F ℝ).symm.invFun.comp
+        (⟨φ, φ.continuous⟩ : C(F, F))).Homotopy
+      ((deck φ : C(F × ℝ, F × ℝ)).comp
+        (ContinuousMap.HomotopyEquiv.prodZeroSection F ℝ).symm.invFun) where
   toFun p := (φ p.2, p.1)
   continuous_toFun := by fun_prop
   map_zero_left x := by simp
@@ -84,8 +86,10 @@ composites of `TopCat.ofHom` maps unfolds to a homotopy between the underlying c
 which is the type of `cylinderMonodromyHomotopy φ`. -/
 private def cylinderMonodromyTopHomotopy :
     TopCat.Homotopy
-      (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F)) ≫ TopCat.ofHom (cylinderHomotopyEquiv F).invFun)
-      (TopCat.ofHom (cylinderHomotopyEquiv F).invFun ≫ TopCat.ofHom (deck φ : C(F × ℝ, F × ℝ))) :=
+      (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F)) ≫
+        TopCat.ofHom (ContinuousMap.HomotopyEquiv.prodZeroSection F ℝ).symm.invFun)
+      (TopCat.ofHom (ContinuousMap.HomotopyEquiv.prodZeroSection F ℝ).symm.invFun ≫
+        TopCat.ofHom (deck φ : C(F × ℝ, F × ℝ))) :=
   cylinderMonodromyHomotopy φ
 
 section Preadditive
@@ -97,14 +101,16 @@ variable (F) in
 private def sectionChainMap :
     ((singularChainComplexFunctor C).obj R).obj (TopCat.of F) ⟶
       ((singularChainComplexFunctor C).obj R).obj (TopCat.of (F × ℝ)) :=
-  ((singularChainComplexFunctor C).obj R).map (TopCat.ofHom (cylinderHomotopyEquiv F).invFun)
+  ((singularChainComplexFunctor C).obj R).map
+    (TopCat.ofHom (ContinuousMap.HomotopyEquiv.prodZeroSection F ℝ).symm.invFun)
 
 variable (F) in
 /-- The map on singular chains induced by the projection `F × ℝ → F`. -/
 private def projChainMap :
     ((singularChainComplexFunctor C).obj R).obj (TopCat.of (F × ℝ)) ⟶
       ((singularChainComplexFunctor C).obj R).obj (TopCat.of F) :=
-  ((singularChainComplexFunctor C).obj R).map (TopCat.ofHom (cylinderHomotopyEquiv F).toFun)
+  ((singularChainComplexFunctor C).obj R).map
+    (TopCat.ofHom (ContinuousMap.HomotopyEquiv.prodZeroSection F ℝ).symm.toFun)
 
 /-- The projection is a retraction of the inclusion at height zero. -/
 @[reassoc]
@@ -142,9 +148,9 @@ private def cylinderSingularChainHomotopy :
     Homotopy
       (((singularChainComplexFunctor C).obj R).map
         (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F)) ≫
-          TopCat.ofHom (cylinderHomotopyEquiv F).invFun))
+          TopCat.ofHom (ContinuousMap.HomotopyEquiv.prodZeroSection F ℝ).symm.invFun))
       (((singularChainComplexFunctor C).obj R).map
-        (TopCat.ofHom (cylinderHomotopyEquiv F).invFun ≫
+        (TopCat.ofHom (ContinuousMap.HomotopyEquiv.prodZeroSection F ℝ).symm.invFun ≫
           TopCat.ofHom (deck φ : C(F × ℝ, F × ℝ)))) :=
   (cylinderMonodromyTopHomotopy φ).singularChainComplexFunctorObjMap R
 
