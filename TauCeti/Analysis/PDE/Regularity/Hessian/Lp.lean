@@ -103,11 +103,12 @@ open scoped ENNReal NNReal Laplacian LineDeriv SchwartzMap
 variable {n : ℕ} {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
 
 /-- **The size estimate for the kernel of the Hessian multiplier**:
-`|D²Gₙ(z)(v, w)| ≤ C ‖z‖⁻ⁿ`. -/
+`|D²Gₙ(z)(v, w)| ≤ C / ‖z‖ⁿ`. -/
 private theorem abs_iteratedFDeriv_two_newtonianKernel_apply_le (v w z : EuclideanSpace ℝ (Fin n)) :
     |iteratedFDeriv ℝ 2 (newtonianKernel n) z ![v, w]| ≤
       ((n : ℝ) + 1) * ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
-        (‖v‖ * ‖w‖) * ‖z‖ ^ (-(n : ℝ)) := by
+        (‖v‖ * ‖w‖) / ‖z‖ ^ n := by
+  rw [div_eq_mul_inv, ← Real.rpow_natCast, ← Real.rpow_neg (norm_nonneg _)]
   have hM : |iteratedFDeriv ℝ 2 (newtonianKernel n) z ![v, w]| ≤
       ‖iteratedFDeriv ℝ 2 (newtonianKernel n) z‖ * (‖v‖ * ‖w‖) := by
     simpa [Fin.prod_univ_two] using (iteratedFDeriv ℝ 2 (newtonianKernel n) z).le_opNorm ![v, w]
@@ -115,13 +116,14 @@ private theorem abs_iteratedFDeriv_two_newtonianKernel_apply_le (v w z : Euclide
     (by positivity)).trans_eq (by ring))
 
 /-- **The smoothness estimate for the kernel of the Hessian multiplier**:
-`|D²Gₙ(a)(v, w) - D²Gₙ(b)(v, w)| ≤ C ‖a - b‖ ‖b‖⁻ⁿ⁻¹` when `2 ‖a - b‖ ≤ ‖b‖`. -/
+`|D²Gₙ(a)(v, w) - D²Gₙ(b)(v, w)| ≤ C ‖a - b‖ / ‖b‖ⁿ⁺¹` when `2 ‖a - b‖ ≤ ‖b‖`. -/
 private theorem abs_iteratedFDeriv_two_newtonianKernel_apply_sub_le
     (v w : EuclideanSpace ℝ (Fin n)) {a b : EuclideanSpace ℝ (Fin n)} (hab : 2 * ‖a - b‖ ≤ ‖b‖) :
     |iteratedFDeriv ℝ 2 (newtonianKernel n) a ![v, w] -
         iteratedFDeriv ℝ 2 (newtonianKernel n) b ![v, w]| ≤
       2 ^ (n + 1) * ((n : ℝ) + 5) * (volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
-        (‖v‖ * ‖w‖) * (‖a - b‖ * ‖b‖ ^ (-((n : ℝ) + 1))) := by
+        (‖v‖ * ‖w‖) * ‖a - b‖ ^ (1 : ℝ) / ‖b‖ ^ ((n : ℝ) + 1) := by
+  rw [Real.rpow_one, div_eq_mul_inv, ← Real.rpow_neg (norm_nonneg _)]
   have hM := (iteratedFDeriv ℝ 2 (newtonianKernel n) a -
     iteratedFDeriv ℝ 2 (newtonianKernel n) b).le_opNorm ![v, w]
   simp only [sub_apply, Fin.prod_univ_two, Matrix.cons_val_zero,
@@ -280,30 +282,24 @@ theorem hasStandardKernel_fourierMultiplierCLM_hessianSymbolLp (hn : 3 ≤ n)
   exponent_pos := one_pos
   norm_le x y _ := by
     have hvol := volume_real_unitBall_pos n
-    have hn' : (3 : ℝ) ≤ n := by exact_mod_cast hn
-    have h := abs_iteratedFDeriv_two_newtonianKernel_apply_le v w (x - y)
-    rw [Real.rpow_neg (norm_nonneg _), Real.rpow_natCast, ← dist_eq_norm] at h
+    have hn' : (1 : ℝ) ≤ n := by exact_mod_cast (by omega : 1 ≤ n)
     rw [Complex.norm_real, norm_neg, Real.norm_eq_abs, Real.coe_toNNReal _ (by positivity),
-      finrank_euclideanSpace_fin, div_eq_mul_inv]
-    refine h.trans (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right ?_ (by positivity))
-      (by positivity))
-    rw [mul_inv, ← mul_assoc]
-    refine mul_le_mul_of_nonneg_right ?_ (by positivity)
-    rw [← div_eq_mul_inv, div_le_iff₀ (by positivity)]
-    have hP : (1 : ℝ) ≤ 2 ^ (n + 2) := one_le_pow₀ one_le_two
-    nlinarith [mul_nonneg (sub_nonneg.2 hP) (by positivity : (0 : ℝ) ≤ ((n : ℝ) + 5) * n)]
+      finrank_euclideanSpace_fin, dist_eq_norm]
+    refine (abs_iteratedFDeriv_two_newtonianKernel_apply_le v w (x - y)).trans ?_
+    gcongr
+    · exact (by linarith : (n : ℝ) + 1 ≤ n + 5).trans
+        (le_mul_of_one_le_left (by positivity) (one_le_pow₀ one_le_two))
+    · exact le_mul_of_one_le_left hvol.le hn'
   norm_sub_add_norm_sub_le x y y' hy := by
     have hvol := volume_real_unitBall_pos n
     refine (norm_sub_add_norm_sub_le_of_norm_sub_le
       (k := fun z ↦ ((-iteratedFDeriv ℝ 2 (newtonianKernel n) z ![v, w] : ℝ) : ℂ))
       (c := 2 ^ (n + 1) * ((n : ℝ) + 5) *
         (volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ * (‖v‖ * ‖w‖)) (δ := 1)
-      (e := Module.finrank ℝ (EuclideanSpace ℝ (Fin n)) + 1) (fun a b hab ↦ ?_) hy).trans_eq ?_
-    · rw [← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs, neg_sub_neg, abs_sub_comm,
-        finrank_euclideanSpace_fin, Real.rpow_one, div_eq_mul_inv, ← Real.rpow_neg (norm_nonneg _),
-        mul_assoc _ ‖a - b‖]
+      (e := (n : ℝ) + 1) (fun a b hab ↦ ?_) hy).trans_eq ?_
+    · rw [← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs, neg_sub_neg, abs_sub_comm]
       exact abs_iteratedFDeriv_two_newtonianKernel_apply_sub_le v w hab.le
-    · rw [Real.coe_toNNReal _ (by positivity), pow_succ]
+    · rw [Real.coe_toNNReal _ (by positivity), finrank_euclideanSpace_fin, pow_succ]
       ring
   ae_apply_eq_integral f s hs hf := by
     filter_upwards [ae_fourierMultiplierCLM_hessianSymbolLp_eq_neg_integral hn v w f hs hf]

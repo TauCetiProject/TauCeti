@@ -307,6 +307,21 @@ end OpKernel
 
 variable [CompleteSpace F]
 
+omit [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [MeasurableSpace V]
+  [BorelSpace V] in
+/-- The adjoint of the operator kernel is the operator kernel of the conjugate transposed kernel
+`(x, y) ↦ conj (K y x)`. -/
+private theorem adjoint_opKernel (x y : V) :
+    ContinuousLinearMap.adjoint (opKernel F ℂ K x y) =
+      opKernel F ℂ (fun x y ↦ conj (K y x)) y x := by
+  ext v
+  by_cases hxy : x = y
+  · simp [opKernel, offDiag, hxy]
+  · have hid : ContinuousLinearMap.lsmul ℂ ℂ (K x y) = K x y • ContinuousLinearMap.id ℂ F := by
+      ext; simp
+    simp [opKernel, offDiag_of_ne hxy, offDiag_of_ne (Ne.symm hxy), hid, map_smulₛₗ,
+      ContinuousLinearMap.adjoint_id]
+
 /-- **Calderón–Zygmund operators are closed under adjoints.** The adjoint of a Calderón–Zygmund
 operator with kernel `K` is a Calderón–Zygmund operator with the conjugate transposed kernel
 `(x, y) ↦ conj (K y x)`, with the same constants. -/
@@ -324,15 +339,9 @@ theorem adjoint (h : HasStandardKernel T K C δ) :
             (Real.rpow_le_rpow_of_nonpos hr hxy (neg_nonpos.2 (Nat.cast_nonneg _))) C.2)⟩
     filter_upwards [ContinuousLinearMap.ae_adjoint_apply_eq_integral T
       h.stronglyMeasurable_opKernel hk h.ae_apply_eq_integral_opKernel g hs hg] with x hx hxs
-    rw [hx hxs, ← integral_offDiag_smul (fun x y ↦ conj (K y x)) hg hxs]
-    refine integral_congr_ae (.of_forall fun z ↦ ?_)
-    by_cases hxz : x = z
-    · simp [opKernel, offDiag, hxz]
-    · have hid (c : ℂ) : ContinuousLinearMap.lsmul ℂ ℂ c = c • ContinuousLinearMap.id ℂ F := by
-        ext; simp
-      dsimp only
-      rw [opKernel, offDiag_of_ne hxz, offDiag_of_ne (Ne.symm hxz), hid, map_smulₛₗ,
-        ContinuousLinearMap.adjoint_id, smul_apply, ContinuousLinearMap.id_apply]
+    simp_rw [hx hxs, adjoint_opKernel]
+    rw [← integral_offDiag_smul (fun x y ↦ conj (K y x)) hg hxs]
+    simp [opKernel]
 
 /-- **Calderón–Zygmund operators are of weak type `(1, 1)`, uniformly.** Given `C`, `δ` and `M`,
 there is a constant `A` with `t · |{x | ‖T f x‖ > t}| ≤ A ‖f‖₁` for every `f ∈ L²` and every `t`,

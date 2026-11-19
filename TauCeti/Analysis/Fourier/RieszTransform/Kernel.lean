@@ -726,12 +726,10 @@ theorem hasStandardKernel_rieszTransform (v : E) :
   exponent_pos := one_pos
   norm_le x y _ := by
     have hc := rieszConst_nonneg E
-    rw [Complex.norm_real, Real.norm_eq_abs, Real.coe_toNNReal _ (by positivity), dist_eq_norm,
-      mul_assoc _ (rieszConst E)]
-    refine (abs_rieszKernel_le v _).trans (div_le_div_of_nonneg_right ?_ (by positivity))
-    refine le_mul_of_one_le_left (by positivity) ?_
-    exact one_le_mul_of_one_le_of_one_le one_le_two (one_le_mul_of_one_le_of_one_le
-      (by linarith [(finrank ℝ E).cast_nonneg (α := ℝ)]) (one_le_pow₀ (by norm_num)))
+    rw [Complex.norm_real, Real.norm_eq_abs, Real.coe_toNNReal _ (by positivity), dist_eq_norm]
+    refine (abs_rieszKernel_le v _).trans ?_
+    gcongr
+    exact le_mul_of_one_le_left hc (by exact_mod_cast Nat.one_le_iff_ne_zero.2 (by positivity))
   norm_sub_add_norm_sub_le x y y' hy := by
     refine (norm_sub_add_norm_sub_le_of_norm_sub_le (k := fun z ↦ (rieszKernel v z : ℂ))
       (c := rieszConst E * ((finrank ℝ E + 2) * 4 ^ (finrank ℝ E + 1)) * ‖v‖) (δ := 1)
