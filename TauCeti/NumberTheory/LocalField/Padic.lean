@@ -16,6 +16,7 @@ import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.NumberTheory.LegendreSymbol.Basic
 import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.Algebra.Group.Units.Basic
+import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
@@ -29,6 +30,7 @@ concrete p-adic norm and valuation APIs.
 * `Padic.toAdd_normalizedValuation_eq_valuation` identifies the additive normalized
   valuation with `Padic.valuation`; `Padic.toAdd_normalizedValuation_mk0_natCast_pow` computes
   it on `p ^ n`, and `Padic.toAdd_normalizedValuation_eq_zero_of_coe_eq` on units of `ℤ_[p]`.
+  Consequently `Padic.continuous_valuation_units`: the valuation is continuous on `ℚ_[p]ˣ`.
 * `Padic.valuation_le_valuation_iff_norm_le`, `Padic.valuation_eq_valuation_iff_norm_eq` and
   `Padic.valuation_le_valuation_natCast_pow_iff` compare the valuation of the valuative relation
   on `ℚ_[p]` with Mathlib's norm.
@@ -113,6 +115,13 @@ theorem toAdd_normalizedValuation_eq_zero_of_coe_eq {a : ℚ_[p]ˣ} {u : ℤ_[p]
     (ha : (a : ℚ_[p]) = u) : (TauCeti.normalizedValuation ℚ_[p] a).toAdd = 0 := by
   rw [toAdd_normalizedValuation_eq_valuation, ha, PadicInt.valuation_coe,
     PadicInt.valuation_eq_zero_of_isUnit u.isUnit, Nat.cast_zero]
+
+variable {p} in
+/-- The `p`-adic valuation is continuous on `ℚ_pˣ`: it is the normalized valuation, which is
+locally constant. -/
+theorem continuous_valuation_units : Continuous fun x : ℚ_[p]ˣ ↦ (x : ℚ_[p]).valuation := by
+  simp_rw [← toAdd_normalizedValuation_eq_valuation]
+  exact continuous_of_discreteTopology.comp (TauCeti.continuous_normalizedValuation ℚ_[p])
 
 variable {p} in
 /-- On `ℚ_[p]` the valuation of the valuative relation and the norm induce the same order. -/

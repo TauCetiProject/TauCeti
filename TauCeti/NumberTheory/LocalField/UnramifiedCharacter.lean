@@ -110,8 +110,7 @@ theorem apply_eq_unramifiedCharacter_of_isUniformizer {δ : Kˣ →* G}
   set n := (normalizedValuation K x).toAdd
   have hu : valuation K ((x * π ^ (-n) : Kˣ) : K) = 1 := (mem_unitFiltration_zero _).1
     (mul_zpow_neg_mem_unitFiltration_zero ((isUniformizer_def π).1 hπ) x)
-  calc δ x = δ (π ^ n * (x * π ^ (-n))) := by
-        rw [mul_left_comm, ← zpow_add, add_neg_cancel, zpow_zero, mul_one]
+  calc δ x = δ (π ^ n * (x * π ^ (-n))) := by simp [zpow_neg, mul_left_comm]
     _ = unramifiedCharacter K (δ π) x := by
         rw [map_mul, map_zpow, hδ _ hu, mul_one, unramifiedCharacter_apply]
 

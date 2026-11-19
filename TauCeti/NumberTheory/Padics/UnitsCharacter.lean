@@ -78,12 +78,6 @@ def padicIntUnitsInclusion : ℤ_[p]ˣ →ₜ* ℚ_[p]ˣ :=
 
 variable {p}
 
-/-- The `p`-adic valuation is continuous on `ℚ_pˣ`: it is the normalized valuation, which is
-locally constant. -/
-theorem continuous_padicValuation_units : Continuous fun x : ℚ_[p]ˣ ↦ (x : ℚ_[p]).valuation := by
-  simp_rw [← Padic.toAdd_normalizedValuation_eq_valuation]
-  exact continuous_of_discreteTopology.comp (continuous_normalizedValuation ℚ_[p])
-
 /-- The inclusion `ℤ_pˣ → ℚ_pˣ` is the identity on underlying `p`-adic numbers. -/
 @[simp]
 theorem coe_padicIntUnitsInclusion_apply (u : ℤ_[p]ˣ) :
@@ -107,7 +101,7 @@ def padicUnitPart : ℚ_[p]ˣ →ₜ* ℤ_[p]ˣ where
       continuous_induced_rng.2 ?_
     exact (Units.continuous_val.mul
       ((continuous_of_discreteTopology (f := fun n : ℤ ↦ (p : ℚ_[p]) ^ (-n))).comp
-        continuous_padicValuation_units))
+        Padic.continuous_valuation_units))
 
 /-- The unit part of `x` is `x p ^ (-v(x))`. -/
 @[simp]
@@ -118,9 +112,8 @@ theorem coe_padicUnitPart_apply (x : ℚ_[p]ˣ) :
 /-- **Every nonzero `p`-adic number is `p ^ v(x)` times its unit part.** -/
 theorem coe_eq_zpow_valuation_mul_padicUnitPart (x : ℚ_[p]ˣ) :
     (x : ℚ_[p]) = (p : ℚ_[p]) ^ (x : ℚ_[p]).valuation * (padicUnitPart p x : ℤ_[p]) := by
-  rw [coe_padicUnitPart_apply, mul_left_comm,
-    ← zpow_add₀ (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero), add_neg_cancel, zpow_zero,
-    mul_one]
+  have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero
+  simp [mul_left_comm, zpow_ne_zero, hp]
 
 /-- **The unit part of `p ^ k u` is `u`.** In particular `x|x|` sends `p` to `1` and is the
 identity on `ℤ_pˣ`. -/
@@ -131,8 +124,8 @@ theorem padicUnitPart_apply_of_eq {x : ℚ_[p]ˣ} {k : ℤ} {u : ℤ_[p]ˣ}
     rw [hx, Padic.valuation_p_zpow_mul k (by simp), PadicInt.valuation_coe,
       PadicInt.valuation_eq_zero_of_isUnit u.isUnit, Nat.cast_zero, add_zero]
   refine Units.ext <| PadicInt.ext ?_
-  rw [coe_padicUnitPart_apply, hv, hx, mul_right_comm, ← zpow_add₀ hp, add_neg_cancel,
-    zpow_zero, one_mul]
+  rw [coe_padicUnitPart_apply, hv, hx, zpow_neg]
+  field_simp
 
 /-- `x|x|` sends `p` to `1`. -/
 @[simp]

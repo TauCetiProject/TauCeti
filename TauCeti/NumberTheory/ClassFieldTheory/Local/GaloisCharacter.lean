@@ -42,6 +42,8 @@ Composing a corresponding Galois character with the arithmetic Artin map gives `
 
 * `ContinuousMonoidHom.padicGaloisCharacter δ`: the continuous character of `G_{ℚ_p}^ab`
   corresponding to a continuous character `δ` of `ℚ_pˣ` with profinite values.
+* `TauCeti.ClassFieldTheory.padicGaloisCharacterEquiv p A`: the correspondence
+  `(ℚ_pˣ →ₜ* A) ≃* (G_{ℚ_p}^ab →ₜ* A)`, with inverse `ψ ↦ ψ ∘ Art_geo`.
 
 ## Main results
 
@@ -54,7 +56,9 @@ Composing a corresponding Galois character with the arithmetic Artin map gives `
   character corresponding to `δ`.
 * `ContinuousMonoidHom.padicGaloisCharacter_padicUnitPart`: the Galois character of `x|x|` is
   the cyclotomic character.
-* `ContinuousMonoidHom.padicGaloisCharacter_mul`: the correspondence is multiplicative.
+* `ContinuousMonoidHom.padicGaloisCharacter_mul`, `ContinuousMonoidHom.padicGaloisCharacter_inv`
+  and `ContinuousMonoidHom.padicGaloisCharacter_injective`: the correspondence is an injective
+  homomorphism.
 
 ## References
 
@@ -157,13 +161,25 @@ def padicGaloisCharacter (δ : ℚ_[p]ˣ →ₜ* A) :
   (δ.comp (padicIntUnitsInclusion p)).comp (abelianizedLocalCyclotomicCharacter p ℚ_[p]) *
     (zHat.lift (δ (padicPrimeUnit p))⁻¹).comp (unramifiedCoordinate ℚ_[p])
 
+/-- The Galois character of `δ` evaluated at `σ`: `δ` of the cyclotomic character of `σ`, times
+`δ(p)` raised to minus the unramified coordinate of `σ`. -/
+theorem padicGaloisCharacter_apply (δ : ℚ_[p]ˣ →ₜ* A)
+    (σ : Field.absoluteGaloisGroupAbelianization ℚ_[p]) :
+    padicGaloisCharacter δ σ =
+      δ (padicIntUnitsInclusion p (abelianizedLocalCyclotomicCharacter p ℚ_[p] σ)) *
+        zHat.lift (δ (padicPrimeUnit p))⁻¹ (unramifiedCoordinate ℚ_[p] σ) :=
+  (rfl)
+
 /-- **The Galois character of `δ` corresponds to `δ`**: it sends the geometric Artin symbol of `x`
 to `δ(x)`. -/
 theorem padicGaloisCharacter_geometricArtinMap (δ : ℚ_[p]ˣ →ₜ* A) (x : ℚ_[p]ˣ) :
     padicGaloisCharacter δ (geometricArtinMap ℚ_[p] x) = δ x := by
-  rw [DFunLike.congr_fun δ.eq_unramifiedCharacter_mul_comp_padicUnitPart x]
-  simp [padicGaloisCharacter, mul_comm, abelianizedLocalCyclotomicCharacter_artinMap_padic p
-    (coe_eq_zpow_valuation_mul_padicUnitPart x)]
+  -- The cyclotomic factor gives `δ(x|x|)` and the unramified factor gives `δ(p) ^ v(x)`.
+  conv_rhs => rw [DFunLike.congr_fun δ.eq_unramifiedCharacter_mul_comp_padicUnitPart x]
+  rw [padicGaloisCharacter_apply, abelianizedLocalCyclotomicCharacter_geometricArtinMap_padic,
+    unramifiedCoordinate_geometricArtinMap, map_inv, zHat.lift_ofInt, inv_zpow, inv_inv,
+    mul_apply, unramifiedCharacter_apply]
+  exact mul_comm _ _
 
 /-- **Uniqueness of the corresponding Galois character.** A continuous character of `G_{ℚ_p}^ab`
 that sends the geometric Artin symbol of every `x` to `δ(x)` is `padicGaloisCharacter δ`. -/
@@ -214,5 +230,65 @@ theorem padicGaloisCharacter_unramifiedCharacter_apply_of_isArithFrobeniusLift_i
   (comp_geometricArtinMap_eq_unramifiedCharacter_iff
     (ψ := (unramifiedCharacter ℚ_[p] a).padicGaloisCharacter.toMonoidHom) |>.1
     (padicGaloisCharacter_geometricArtinMap _)).2 σ hσ
+
+end ContinuousMonoidHom
+
+namespace TauCeti.ClassFieldTheory
+
+open _root_.ContinuousMonoidHom
+
+variable (p : ℕ) [Fact p.Prime]
+variable (A : Type*) [CommGroup A] [TopologicalSpace A] [IsTopologicalGroup A] [CompactSpace A]
+  [TotallyDisconnectedSpace A]
+
+/-- **Characters of `ℚ_pˣ` are Galois characters.** For a profinite commutative group `A`, the
+correspondence `δ ↦ padicGaloisCharacter δ` between continuous characters of `ℚ_pˣ` and of
+`G_{ℚ_p}^ab` is a multiplicative bijection; its inverse composes a Galois character with the
+geometric local Artin map. -/
+def padicGaloisCharacterEquiv :
+    (ℚ_[p]ˣ →ₜ* A) ≃* (Field.absoluteGaloisGroupAbelianization ℚ_[p] →ₜ* A) where
+  toFun := padicGaloisCharacter
+  invFun ψ := ψ.comp ⟨geometricArtinMap ℚ_[p], continuous_geometricArtinMap ℚ_[p]⟩
+  left_inv δ := ContinuousMonoidHom.ext (padicGaloisCharacter_geometricArtinMap δ)
+  right_inv _ := (eq_padicGaloisCharacter fun _ ↦ rfl).symm
+  map_mul' := padicGaloisCharacter_mul
+
+variable {p A}
+
+/-- `TauCeti.ClassFieldTheory.padicGaloisCharacterEquiv` sends `δ` to its Galois character. -/
+@[simp]
+theorem padicGaloisCharacterEquiv_apply (δ : ℚ_[p]ˣ →ₜ* A) :
+    padicGaloisCharacterEquiv p A δ = padicGaloisCharacter δ :=
+  (rfl)
+
+/-- The inverse of `TauCeti.ClassFieldTheory.padicGaloisCharacterEquiv` evaluates a Galois
+character on geometric Artin symbols. -/
+@[simp]
+theorem padicGaloisCharacterEquiv_symm_apply_apply
+    (ψ : Field.absoluteGaloisGroupAbelianization ℚ_[p] →ₜ* A) (x : ℚ_[p]ˣ) :
+    (padicGaloisCharacterEquiv p A).symm ψ x = ψ (geometricArtinMap ℚ_[p] x) :=
+  (rfl)
+
+end TauCeti.ClassFieldTheory
+
+namespace ContinuousMonoidHom
+
+open TauCeti.ClassFieldTheory
+
+variable {p : ℕ} [Fact p.Prime]
+variable {A : Type*} [CommGroup A] [TopologicalSpace A] [IsTopologicalGroup A] [CompactSpace A]
+  [TotallyDisconnectedSpace A]
+
+/-- **The correspondence is injective**: a character of `ℚ_pˣ` is determined by its Galois
+character. -/
+theorem padicGaloisCharacter_injective :
+    Function.Injective (padicGaloisCharacter : (ℚ_[p]ˣ →ₜ* A) → _) :=
+  (padicGaloisCharacterEquiv p A).injective
+
+/-- **The correspondence commutes with inverses.** -/
+@[simp]
+theorem padicGaloisCharacter_inv (δ : ℚ_[p]ˣ →ₜ* A) :
+    padicGaloisCharacter δ⁻¹ = (padicGaloisCharacter δ)⁻¹ :=
+  map_inv (padicGaloisCharacterEquiv p A) δ
 
 end ContinuousMonoidHom
