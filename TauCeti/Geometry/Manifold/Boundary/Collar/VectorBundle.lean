@@ -153,17 +153,8 @@ omit [IsManifold (𝓡∂ (n + 1)) ∞ M] [T2Space ↥((𝓡∂ (n + 1)).boundar
   [CompactSpace ↥((𝓡∂ (n + 1)).boundary M)] in
 private def sourceBase (c : SmoothCollar n ∞ M) (ε : ℝ) :
     C^∞⟮(𝓡 n).prod (𝓡∂ 1), ↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens ε;
-      𝓡∂ (n + 1), M⟯ := by
-  refine ⟨fun p ↦ (p.1 : M), ?_⟩
-  have hz : ContMDiff ((𝓡 n).prod (𝓡∂ 1)) ((𝓡 n).prod (𝓡∂ 1)) ∞
-      (fun p : ↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens ε ↦
-        (p.1, normalIioOpensZero one_pos)) :=
-    contMDiff_fst.prodMk contMDiff_const
-  have heq : (fun p : ↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens ε ↦ (p.1 : M)) =
-      c ∘ (fun p ↦ (p.1, normalIioOpensZero one_pos)) :=
-    funext fun p ↦ (c.apply_zero p.1).symm
-  rw [heq]
-  exact c.contMDiff.comp hz
+      𝓡∂ (n + 1), M⟯ :=
+  ⟨fun p ↦ (p.1 : M), c.contMDiff_subtypeVal_boundary.comp contMDiff_fst⟩
 
 omit [IsManifold (𝓡∂ (n + 1)) ∞ M] [T2Space ↥((𝓡∂ (n + 1)).boundary M)]
   [CompactSpace ↥((𝓡∂ (n + 1)).boundary M)] in
@@ -680,11 +671,6 @@ theorem BundleComparison.hasLocalContMDiffSubbundleFrames_transport
           mem_normalIioOpens.mpr (lt_trans (mem_normalIioOpens.mp ht) hε1))).comp continuous_snd))⟩
     HasLocalContMDiffSubbundleFrames ((𝓡 n).prod (𝓡∂ 1)) ∞ F ι
       (E := (b₁ : _ → M) *ᵖ V) (B.transportSubspace L) := by
-  have hi : ContMDiff (𝓡 n) (𝓡∂ (n + 1)) ∞
-      (Subtype.val : ↥((𝓡∂ (n + 1)).boundary M) → M) := by
-    have h := c.contMDiff.comp (contMDiff_id.prodMk
-      (contMDiff_const (c := normalIioOpensZero one_pos)))
-    exact h.congr fun y ↦ (c.apply_zero y).symm
   apply hasLocalContMDiffSubbundleFrames_iff.mpr
   intro p
   obtain ⟨U, hU, hp, σ, hX, hσ⟩ := hasLocalContMDiffSubbundleFrames_iff.mp hLs p.1
@@ -692,7 +678,8 @@ theorem BundleComparison.hasLocalContMDiffSubbundleFrames_transport
       (fun y : ↥((𝓡∂ (n + 1)).boundary M) ↦
         TotalSpace.mk' F (E := V) (y : M) (σ i y)) U :=
     (Pullback.contMDiff_lift (F := F) (E := V)
-      (ContinuousMap.subtypeVal ((𝓡∂ (n + 1)).boundary M)) hi).comp_contMDiffOn (hσ i)
+      (ContinuousMap.subtypeVal ((𝓡∂ (n + 1)).boundary M))
+      c.contMDiff_subtypeVal_boundary).comp_contMDiffOn (hσ i)
   obtain ⟨hτ, hτs⟩ := B.isSubbundleFrameOn_transport hX hσ'
   exact ⟨Prod.fst ⁻¹' U, hU.preimage continuous_fst, hp,
     (fun i q ↦ B.equiv q (σ i q.1)), hτ, hτs⟩
