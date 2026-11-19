@@ -56,17 +56,19 @@ pushforward `μ.map f` with `ν`. -/
 theorem bind_map_add_eq_conv {β : Type*} [MeasurableSpace β] (μ : Measure β) (ν : Measure M)
     [SFinite ν] {f : β → M} (hf : Measurable f) :
     μ.bind (fun y ↦ ν.map (f y + ·)) = μ.map f ∗ ν := by
+  have hpre (s : Set M) (y : β) :
+      (f y + ·) ⁻¹' s = Prod.mk (f y) ⁻¹' ((fun p : M × M ↦ p.1 + p.2) ⁻¹' s) := by
+    simp only [Set.preimage_preimage]
   have hm : Measurable fun y ↦ ν.map (f y + ·) := by
     refine measurable_of_measurable_coe _ fun s hs ↦ ?_
-    simp_rw [map_apply (measurable_const_add _) hs]
+    simp_rw [map_apply (measurable_const_add _) hs, hpre]
     exact (measurable_measure_prodMk_left (measurable_add hs)).comp hf
   ext s hs
   rw [bind_apply hs hm.aemeasurable, conv, map_apply measurable_add hs,
     prod_apply (measurable_add hs),
     lintegral_map (measurable_measure_prodMk_left (measurable_add hs)) hf]
   refine lintegral_congr fun y ↦ ?_
-  rw [map_apply (measurable_const_add _) hs]
-  simp only [Set.preimage_preimage]
+  rw [map_apply (measurable_const_add _) hs, hpre]
 
 end AddMonoid
 
