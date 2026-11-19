@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Constructions.DoubleAlong.Separation
+public import TauCeti.Topology.Constructions.DoubleAlong.Basic
 public import TauCeti.Topology.VectorBundle.FiniteRank.Conjugate
 
 /-!
-# Doubling a complex bundle core along a closed subset
+# Doubling a complex bundle core along a subset
 
-Let `C` be a complex point-indexed finite-rank core over `X` and `A ⊆ X` a closed subset. Suppose
+Let `C` be a complex point-indexed finite-rank core over `X` and `A ⊆ X` a subset. Suppose
 that the transitions of `C` are *real at the points of `A`*: each transition at a point of `A`
 commutes with coordinatewise complex conjugation (`FiniteRankBundleCore.IsRealAlong`). Then the
 real subspaces `ℝⁿ ⊆ ℂⁿ` of the charts at the points of `A` agree, so they form a subbundle `F` of
@@ -30,14 +30,14 @@ The restrictions of the double to the two sheets are `C` (`doubleAlongInlIso`) a
 (`doubleAlongInrIso`), by the identity in coordinates. Coordinatewise conjugation covering the
 sheet swap `TauCeti.DoubleAlong.swap` is a homeomorphism of the total space of the double
 (`doubleAlongSwap`). It is a conjugate-linear involution on fibres, and its fixed points are
-exactly the vectors with real coordinates over the image of `A` (`doubleAlongSwap_eq_self_iff`,
+exactly the vectors with real coordinates over the image of `A` (`doubleAlongSwap_mk_eq_self_iff`,
 `doubleAlongSwap_mk_inl_eq_self_iff`). The trivial core is real along every subset, and its
 double is again trivial (`doubleAlongTrivialIso`); there the involution is
 `(z, v) ↦ (swap z, conj v)`.
 
-This is the topological doubling of PH7.1 of the Tau Ceti pseudoholomorphic curve analysis
-roadmap, applied there to the Schottky double of a Riemann surface with boundary. Smoothness of the
-double via collars, and independence of the choices up to isomorphism, are not treated here.
+No closedness of `A` is needed. For the boundary of a Riemann surface with boundary this is the
+topological doubled bundle over the Schottky double. Smoothness of the double via collars, and
+independence of the choices up to isomorphism, are not treated here.
 
 ## References
 
@@ -89,7 +89,7 @@ noncomputable def doubleAlongCoordChange (C : FiniteRankBundleCore ℂ X) (A : S
   simp [doubleAlongCoordChange]
 
 /-- On the second sheet the doubled transition is the conjugate transition of `C`, at points of the
-two charts. At points of `A` this uses that `C` is real there. -/
+two charts. -/
 theorem doubleAlongCoordChange_inr {C : FiniteRankBundleCore ℂ X} (hC : C.IsRealAlong A)
     {i j : DoubleAlong A} {x : X} (hi : x ∈ C.core.baseSet (DoubleAlong.fold A i))
     (hj : x ∈ C.core.baseSet (DoubleAlong.fold A j)) :
@@ -138,36 +138,39 @@ theorem doubleAlongCoordChange_comp {C : FiniteRankBundleCore ℂ X} (hC : C.IsR
       ContinuousLinearMap.intrinsicStar_apply, ContinuousLinearMap.intrinsicStar_apply, star_star,
       C.core.coordChange_comp _ _ _ x ⟨⟨hi, hj⟩, hk⟩]
 
-/-- Along a closed subset, the doubled transitions are continuous on the overlap of the folded
-charts: the two sheet formulas agree on the frontier of the first sheet, which lies over `A`. -/
-theorem continuousOn_doubleAlongCoordChange {C : FiniteRankBundleCore ℂ X} (hA : IsClosed A)
+/-- The doubled transitions are continuous on the overlap of the folded charts. -/
+theorem continuousOn_doubleAlongCoordChange {C : FiniteRankBundleCore ℂ X}
     (hC : C.IsRealAlong A) (i j : DoubleAlong A) :
     ContinuousOn (doubleAlongCoordChange C A i j)
       (DoubleAlong.fold A ⁻¹' C.core.baseSet (DoubleAlong.fold A i) ∩
         DoubleAlong.fold A ⁻¹' C.core.baseSet (DoubleAlong.fold A j)) := by
-  classical
-  have hc : ContinuousOn
-      (fun y => C.core.coordChange (DoubleAlong.fold A i) (DoubleAlong.fold A j)
-        (DoubleAlong.fold A y))
-      (DoubleAlong.fold A ⁻¹' C.core.baseSet (DoubleAlong.fold A i) ∩
-        DoubleAlong.fold A ⁻¹' C.core.baseSet (DoubleAlong.fold A j)) :=
-    (C.core.continuousOn_coordChange _ _).comp
-      (DoubleAlong.fold A).continuous.continuousOn fun _ hy => hy
-  refine ContinuousOn.piecewise ?_ (hc.mono inter_subset_left)
-    ((ContinuousLinearMap.continuous_intrinsicStar.comp_continuousOn hc).mono
-      inter_subset_left)
-  rintro y ⟨⟨hyi, hyj⟩, hfr⟩
-  obtain ⟨x, hx, rfl⟩ := (DoubleAlong.frontier_range_inl A hA).subset hfr
-  simp only [mem_preimage, DoubleAlong.fold_inl] at hyi hyj ⊢
-  exact (hC _ _ x (hA.frontier_subset hx) hyi hyj).symm
+  set U := C.core.baseSet (DoubleAlong.fold A i) ∩ C.core.baseSet (DoubleAlong.fold A j)
+  have hU : IsOpen U := (C.core.isOpen_baseSet _).inter (C.core.isOpen_baseSet _)
+  have hc : ContinuousOn (C.core.coordChange (DoubleAlong.fold A i) (DoubleAlong.fold A j)) U :=
+    C.core.continuousOn_coordChange _ _
+  have hs : IsOpen (DoubleAlong.fold A ⁻¹' U) := hU.preimage (DoubleAlong.fold A).continuous
+  -- Check continuity on each sheet of `X ⊕ X`, through the quotient map onto the double.
+  rw [← preimage_inter, (DoubleAlong.isQuotientMap_quotientMap A).continuousOn_isOpen_iff hs,
+    (hs.preimage (DoubleAlong.quotientMap A).continuous).continuousOn_iff]
+  rintro (x | x) hx
+  · rw [mem_preimage, DoubleAlong.quotientMap_inl, mem_preimage, DoubleAlong.fold_inl] at hx
+    rw [← IsOpenEmbedding.inl.continuousAt_iff]
+    refine (hc.continuousAt (hU.mem_nhds hx)).congr (Eventually.of_forall fun y => ?_)
+    simp [DoubleAlong.quotientMap_inl]
+  · rw [mem_preimage, DoubleAlong.quotientMap_inr, mem_preimage, DoubleAlong.fold_inr] at hx
+    rw [← IsOpenEmbedding.inr.continuousAt_iff]
+    refine (ContinuousLinearMap.continuous_intrinsicStar.continuousAt.comp
+      (hc.continuousAt (hU.mem_nhds hx))).congr (mem_of_superset (hU.mem_nhds hx) fun y hy => ?_)
+    simp only [Function.comp_apply, DoubleAlong.quotientMap_inr]
+    exact (doubleAlongCoordChange_inr hC hy.1 hy.2).symm
 
-/-- The double of a complex core along a closed subset `A` on which its transitions are real:
+/-- The double of a complex core along a subset `A` on which its transitions are real:
 `C` on the first sheet and its conjugate on the second sheet, glued along `A` by the identity in
 coordinates. The chart at `z` lies over the chart of `C` at the folded point. -/
 -- Expose the rank projection so the dependent fibre model reduces to `Fin C.rank → ℂ`.
 @[expose]
-noncomputable def doubleAlong (C : FiniteRankBundleCore ℂ X) (hA : IsClosed A)
-    (hC : C.IsRealAlong A) : FiniteRankBundleCore ℂ (DoubleAlong A) where
+noncomputable def doubleAlong (C : FiniteRankBundleCore ℂ X) (hC : C.IsRealAlong A) :
+    FiniteRankBundleCore ℂ (DoubleAlong A) where
   rank := C.rank
   core :=
     { baseSet := fun z => DoubleAlong.fold A ⁻¹' C.core.baseSet (DoubleAlong.fold A z)
@@ -177,32 +180,35 @@ noncomputable def doubleAlong (C : FiniteRankBundleCore ℂ X) (hA : IsClosed A)
       mem_baseSet_at := fun z => C.mem_baseSet_self (DoubleAlong.fold A z)
       coordChange := doubleAlongCoordChange C A
       coordChange_self := fun i y hy v => doubleAlongCoordChange_self hC i y hy v
-      continuousOn_coordChange := continuousOn_doubleAlongCoordChange hA hC
+      continuousOn_coordChange := continuousOn_doubleAlongCoordChange hC
       coordChange_comp := fun i j k y hy v =>
         doubleAlongCoordChange_comp hC i j k y hy.1.1 hy.1.2 hy.2 v }
   indexAt_eq := fun _ => rfl
 
 section Double
 
-variable (C : FiniteRankBundleCore ℂ X) (hA : IsClosed A) (hC : C.IsRealAlong A)
+variable (C : FiniteRankBundleCore ℂ X) (hC : C.IsRealAlong A)
 
-@[simp] theorem rank_doubleAlong : (C.doubleAlong hA hC).rank = C.rank := (rfl)
+@[simp] theorem rank_doubleAlong : (C.doubleAlong hC).rank = C.rank := (rfl)
 
 @[simp] theorem localTriv_baseSet_doubleAlong (z : DoubleAlong A) :
-    ((C.doubleAlong hA hC).core.localTriv z).baseSet =
+    ((C.doubleAlong hC).core.localTriv z).baseSet =
       DoubleAlong.fold A ⁻¹' C.core.baseSet (DoubleAlong.fold A z) := (rfl)
 
+theorem mem_baseSet_doubleAlong {y z : DoubleAlong A} :
+    y ∈ (C.doubleAlong hC).core.baseSet z ↔
+      DoubleAlong.fold A y ∈ C.core.baseSet (DoubleAlong.fold A z) := Iff.rfl
+
 @[simp] theorem coordChange_doubleAlong (i j y : DoubleAlong A) :
-    (C.doubleAlong hA hC).core.coordChange i j y = doubleAlongCoordChange C A i j y := (rfl)
+    (C.doubleAlong hC).core.coordChange i j y = doubleAlongCoordChange C A i j y := (rfl)
 
 /-- The double restricted to the first sheet is the original core, by the identity in
 coordinates. -/
-noncomputable def doubleAlongInlIso : (C.doubleAlong hA hC).pullback (DoubleAlong.inl A) ≅ C :=
+noncomputable def doubleAlongInlIso : (C.doubleAlong hC).pullback (DoubleAlong.inl A) ≅ C :=
   constIso (fun i => by
       ext x
-      change DoubleAlong.fold A (DoubleAlong.inl A x) ∈
-        C.core.baseSet (DoubleAlong.fold A (DoubleAlong.inl A i)) ↔ _
-      rw [DoubleAlong.fold_inl, DoubleAlong.fold_inl])
+      simp only [VectorBundleCore.baseSet_at, localTriv_baseSet_pullback,
+        localTriv_baseSet_doubleAlong, mem_preimage, DoubleAlong.fold_inl])
     (ContinuousLinearEquiv.refl ℂ (Fin C.rank → ℂ)) fun i j x _ _ => by
     -- State the identity on standard coordinates to fix the inherited fibre instances.
     have h : (ContinuousLinearMap.id ℂ (Fin C.rank → ℂ)).comp
@@ -215,62 +221,56 @@ noncomputable def doubleAlongInlIso : (C.doubleAlong hA hC).pullback (DoubleAlon
 /-- The double restricted to the second sheet is the conjugate core, by the identity in
 coordinates. -/
 noncomputable def doubleAlongInrIso :
-    (C.doubleAlong hA hC).pullback (DoubleAlong.inr A) ≅ (conjugate X).obj C :=
+    (C.doubleAlong hC).pullback (DoubleAlong.inr A) ≅ (conjugate X).obj C :=
   constIso (fun i => by
       ext x
-      change DoubleAlong.fold A (DoubleAlong.inr A x) ∈
-        C.core.baseSet (DoubleAlong.fold A (DoubleAlong.inr A i)) ↔ _
-      rw [DoubleAlong.fold_inr, DoubleAlong.fold_inr]
-      rfl)
+      simp only [VectorBundleCore.baseSet_at, localTriv_baseSet_pullback,
+        localTriv_baseSet_doubleAlong, localTriv_baseSet_conjugate_obj, mem_preimage,
+        DoubleAlong.fold_inr])
     (ContinuousLinearEquiv.refl ℂ (Fin C.rank → ℂ)) fun i j x hi hj => by
-    replace hi : x ∈ C.core.baseSet (DoubleAlong.fold A (DoubleAlong.inr A i)) := by
-      change DoubleAlong.fold A (DoubleAlong.inr A x) ∈
-        C.core.baseSet (DoubleAlong.fold A (DoubleAlong.inr A i)) at hi
-      simpa only [DoubleAlong.fold_inr] using hi
-    replace hj : x ∈ C.core.baseSet (DoubleAlong.fold A (DoubleAlong.inr A j)) := by
-      change DoubleAlong.fold A (DoubleAlong.inr A x) ∈
-        C.core.baseSet (DoubleAlong.fold A (DoubleAlong.inr A j)) at hj
-      simpa only [DoubleAlong.fold_inr] using hj
+    simp only [VectorBundleCore.baseSet_at, localTriv_baseSet_pullback,
+      localTriv_baseSet_doubleAlong, mem_preimage, DoubleAlong.fold_inr] at hi hj
+    rw [← VectorBundleCore.baseSet_at] at hi hj
     -- State the identity on standard coordinates to fix the inherited fibre instances.
     have h : (ContinuousLinearMap.id ℂ (Fin C.rank → ℂ)).comp
         (doubleAlongCoordChange C A (DoubleAlong.inr A i) (DoubleAlong.inr A j)
           (DoubleAlong.inr A x)) =
         (star (toConv (C.core.coordChange i j x))).ofConv.comp
           (ContinuousLinearMap.id ℂ (Fin C.rank → ℂ)) := by
-      rw [doubleAlongCoordChange_inr hC hi hj]
+      rw [doubleAlongCoordChange_inr hC (by rwa [DoubleAlong.fold_inr])
+        (by rwa [DoubleAlong.fold_inr])]
       simp
     exact h
 
 @[simp] theorem fiberMap_doubleAlongInlIso_hom (x : X) :
-    (C.doubleAlongInlIso hA hC).hom.fiberMap x = ContinuousLinearMap.id ℂ (Fin C.rank → ℂ) := by
+    (C.doubleAlongInlIso hC).hom.fiberMap x = ContinuousLinearMap.id ℂ (Fin C.rank → ℂ) := by
   rw [doubleAlongInlIso]
   exact fiberMap_constIso_hom _ _ _ x
 
 @[simp] theorem fiberMap_doubleAlongInlIso_inv (x : X) :
-    (C.doubleAlongInlIso hA hC).inv.fiberMap x = ContinuousLinearMap.id ℂ (Fin C.rank → ℂ) := by
+    (C.doubleAlongInlIso hC).inv.fiberMap x = ContinuousLinearMap.id ℂ (Fin C.rank → ℂ) := by
   rw [doubleAlongInlIso]
   exact fiberMap_constIso_inv _ _ _ x
 
 @[simp] theorem fiberMap_doubleAlongInrIso_hom (x : X) :
-    (C.doubleAlongInrIso hA hC).hom.fiberMap x = ContinuousLinearMap.id ℂ (Fin C.rank → ℂ) := by
+    (C.doubleAlongInrIso hC).hom.fiberMap x = ContinuousLinearMap.id ℂ (Fin C.rank → ℂ) := by
   rw [doubleAlongInrIso]
   exact fiberMap_constIso_hom _ _ _ x
 
 @[simp] theorem fiberMap_doubleAlongInrIso_inv (x : X) :
-    (C.doubleAlongInrIso hA hC).inv.fiberMap x = ContinuousLinearMap.id ℂ (Fin C.rank → ℂ) := by
+    (C.doubleAlongInrIso hC).inv.fiberMap x = ContinuousLinearMap.id ℂ (Fin C.rank → ℂ) := by
   rw [doubleAlongInrIso]
   exact fiberMap_constIso_inv _ _ _ x
 
 /-- The doubled transitions between swapped charts at a swapped point are the conjugates of the
 original ones. -/
 theorem doubleAlongCoordChange_swap {i j y : DoubleAlong A}
-    (hi : y ∈ (C.doubleAlong hA hC).core.baseSet i)
-    (hj : y ∈ (C.doubleAlong hA hC).core.baseSet j) (v : Fin C.rank → ℂ) :
+    (hi : y ∈ (C.doubleAlong hC).core.baseSet i)
+    (hj : y ∈ (C.doubleAlong hC).core.baseSet j) (v : Fin C.rank → ℂ) :
     doubleAlongCoordChange C A (DoubleAlong.swap A i) (DoubleAlong.swap A j)
         (DoubleAlong.swap A y) (star v) =
       star (doubleAlongCoordChange C A i j y v) := by
-  replace hi : DoubleAlong.fold A y ∈ C.core.baseSet (DoubleAlong.fold A i) := hi
-  replace hj : DoubleAlong.fold A y ∈ C.core.baseSet (DoubleAlong.fold A j) := hj
+  rw [mem_baseSet_doubleAlong] at hi hj
   induction y using DoubleAlong.induction_on with
   | hl x =>
     simp only [DoubleAlong.fold_inl] at hi hj
@@ -283,28 +283,18 @@ theorem doubleAlongCoordChange_swap {i j y : DoubleAlong A}
       ContinuousLinearMap.intrinsicStar_apply, star_star]
     simp
 
-/-- Points of the total space of the double agree exactly when their base points and coordinate
-vectors do. -/
-private theorem mk_eq_mk_iff {z w : DoubleAlong A} {v u : Fin C.rank → ℂ} :
-    (⟨z, v⟩ : (C.doubleAlong hA hC).core.TotalSpace) = ⟨w, u⟩ ↔ z = w ∧ v = u := by
-  constructor
-  · intro h
-    cases h
-    exact ⟨rfl, rfl⟩
-  · rintro ⟨rfl, rfl⟩
-    rfl
-
 /-- Coordinatewise conjugation covering the sheet swap, as a map of total spaces. -/
-private noncomputable def doubleAlongSwapFun (p : (C.doubleAlong hA hC).core.TotalSpace) :
-    (C.doubleAlong hA hC).core.TotalSpace :=
+private noncomputable def doubleAlongSwapFun (p : (C.doubleAlong hC).core.TotalSpace) :
+    (C.doubleAlong hC).core.TotalSpace :=
   ⟨DoubleAlong.swap A p.proj, (star : (Fin C.rank → ℂ) → Fin C.rank → ℂ) p.2⟩
 
 private theorem doubleAlongSwapFun_involutive :
-    Function.Involutive (doubleAlongSwapFun C hA hC) := fun ⟨z, v⟩ =>
-  (mk_eq_mk_iff C hA hC).2 ⟨DoubleAlong.swap_swap A z, star_star (R := Fin C.rank → ℂ) v⟩
+    Function.Involutive (doubleAlongSwapFun C hC) := fun ⟨z, v⟩ =>
+  (C.doubleAlong hC).core.mk_eq_mk_iff.2
+    ⟨DoubleAlong.swap_swap A z, star_star (R := Fin C.rank → ℂ) v⟩
 
-private theorem continuous_doubleAlongSwapFun : Continuous (doubleAlongSwapFun C hA hC) := by
-  set D := C.doubleAlong hA hC
+private theorem continuous_doubleAlongSwapFun : Continuous (doubleAlongSwapFun C hC) := by
+  set D := C.doubleAlong hC
   refine continuous_iff_continuousAt.2 fun p => ?_
   refine (FiberBundle.continuousAt_totalSpace _ _).2 ⟨((DoubleAlong.swap A).continuous.comp
     D.core.continuous_proj).continuousAt, ?_⟩
@@ -319,45 +309,52 @@ private theorem continuous_doubleAlongSwapFun : Continuous (doubleAlongSwapFun C
   refine hcont.congr (mem_of_superset hsrc fun q hq => ?_)
   rw [VectorBundleCore.mem_localTriv_source] at hq
   simp only [mem_ofPred_eq, VectorBundleCore.localTriv_apply, D.indexAt_eq]
-  exact (doubleAlongCoordChange_swap C hA hC (D.mem_baseSet_self q.proj) hq q.2).symm
+  exact (doubleAlongCoordChange_swap C hC (D.mem_baseSet_self q.proj) hq q.2).symm
 
 /-- The lift of the sheet swap to the double: coordinatewise conjugation on fibres, covering
 `DoubleAlong.swap`. It is a homeomorphism of total spaces and an involution. -/
 noncomputable def doubleAlongSwap :
-    (C.doubleAlong hA hC).core.TotalSpace ≃ₜ (C.doubleAlong hA hC).core.TotalSpace where
-  toFun := doubleAlongSwapFun C hA hC
-  invFun := doubleAlongSwapFun C hA hC
-  left_inv := doubleAlongSwapFun_involutive C hA hC
-  right_inv := doubleAlongSwapFun_involutive C hA hC
-  continuous_toFun := continuous_doubleAlongSwapFun C hA hC
-  continuous_invFun := continuous_doubleAlongSwapFun C hA hC
+    (C.doubleAlong hC).core.TotalSpace ≃ₜ (C.doubleAlong hC).core.TotalSpace where
+  toFun := doubleAlongSwapFun C hC
+  invFun := doubleAlongSwapFun C hC
+  left_inv := doubleAlongSwapFun_involutive C hC
+  right_inv := doubleAlongSwapFun_involutive C hC
+  continuous_toFun := continuous_doubleAlongSwapFun C hC
+  continuous_invFun := continuous_doubleAlongSwapFun C hC
 
 /-- The lifted swap conjugates coordinates and swaps the sheets. Coordinatewise conjugation is the
 conjugate-linear equivalence `starL ℂ`, so the lift is conjugate-linear on fibres. -/
 @[simp] theorem doubleAlongSwap_mk (z : DoubleAlong A) (v : Fin C.rank → ℂ) :
-    C.doubleAlongSwap hA hC ⟨z, v⟩ = ⟨DoubleAlong.swap A z, (star v : Fin C.rank → ℂ)⟩ := (rfl)
+    C.doubleAlongSwap hC ⟨z, v⟩ = ⟨DoubleAlong.swap A z, (star v : Fin C.rank → ℂ)⟩ := (rfl)
+
+/-- The lifted swap conjugates the coordinates of every point. -/
+@[simp] theorem snd_doubleAlongSwap (p : (C.doubleAlong hC).core.TotalSpace) :
+    ((C.doubleAlongSwap hC p).2 : Fin C.rank → ℂ) =
+      (star : (Fin C.rank → ℂ) → Fin C.rank → ℂ) p.2 := (rfl)
 
 /-- The lifted swap covers the sheet swap. -/
-@[simp] theorem proj_doubleAlongSwap (p : (C.doubleAlong hA hC).core.TotalSpace) :
-    (C.doubleAlongSwap hA hC p).proj = DoubleAlong.swap A p.proj := (rfl)
+@[simp] theorem proj_doubleAlongSwap (p : (C.doubleAlong hC).core.TotalSpace) :
+    (C.doubleAlongSwap hC p).proj = DoubleAlong.swap A p.proj := (rfl)
 
-@[simp] theorem doubleAlongSwap_doubleAlongSwap (p : (C.doubleAlong hA hC).core.TotalSpace) :
-    C.doubleAlongSwap hA hC (C.doubleAlongSwap hA hC p) = p :=
-  doubleAlongSwapFun_involutive C hA hC p
+@[simp] theorem doubleAlongSwap_doubleAlongSwap (p : (C.doubleAlong hC).core.TotalSpace) :
+    C.doubleAlongSwap hC (C.doubleAlongSwap hC p) = p :=
+  doubleAlongSwapFun_involutive C hC p
 
 @[simp] theorem symm_doubleAlongSwap :
-    (C.doubleAlongSwap hA hC).symm = C.doubleAlongSwap hA hC := (rfl)
+    (C.doubleAlongSwap hC).symm = C.doubleAlongSwap hC := (rfl)
 
 /-- A point of the double's total space is fixed by the lifted swap exactly when it lies over the
 image of `A` and its coordinates are real. -/
 theorem doubleAlongSwap_mk_eq_self_iff (z : DoubleAlong A) (v : Fin C.rank → ℂ) :
-    C.doubleAlongSwap hA hC ⟨z, v⟩ = ⟨z, v⟩ ↔ DoubleAlong.fold A z ∈ A ∧ star v = v := by
-  rw [doubleAlongSwap_mk, mk_eq_mk_iff, DoubleAlong.swap_eq_self_iff]
+    C.doubleAlongSwap hC ⟨z, v⟩ = ⟨z, v⟩ ↔ DoubleAlong.fold A z ∈ A ∧ star v = v := by
+  rw [doubleAlongSwap_mk]
+  exact (C.doubleAlong hC).core.mk_eq_mk_iff.trans
+    (and_congr (DoubleAlong.swap_eq_self_iff A z) .rfl)
 
 /-- Over a point of `A`, the fixed vectors of the lifted swap are exactly the real coordinate
 vectors: the fixed set is the totally real subbundle `ℝⁿ` encoded by `C`. -/
 theorem doubleAlongSwap_mk_inl_eq_self_iff {a : X} (ha : a ∈ A) (v : Fin C.rank → ℂ) :
-    C.doubleAlongSwap hA hC ⟨DoubleAlong.inl A a, v⟩ = ⟨DoubleAlong.inl A a, v⟩ ↔
+    C.doubleAlongSwap hC ⟨DoubleAlong.inl A a, v⟩ = ⟨DoubleAlong.inl A a, v⟩ ↔
       ∃ r : Fin C.rank → ℝ, v = fun k => (r k : ℂ) := by
   rw [doubleAlongSwap_mk_eq_self_iff, DoubleAlong.fold_inl]
   simp only [ha, true_and, funext_iff, Pi.star_apply, Complex.star_def, Complex.conj_eq_iff_real]
@@ -368,8 +365,8 @@ end Double
 /-- The double of a trivial core is trivial, by the identity in coordinates. Under this
 identification the lifted swap `doubleAlongSwap` is `(z, v) ↦ (swap z, conj v)`
 (`doubleAlongSwap_mk`). -/
-noncomputable def doubleAlongTrivialIso (hA : IsClosed A) (n : ℕ) :
-    (trivial ℂ X n).doubleAlong hA (isRealAlong_trivial n A) ≅ trivial ℂ (DoubleAlong A) n :=
+noncomputable def doubleAlongTrivialIso (n : ℕ) :
+    (trivial ℂ X n).doubleAlong (isRealAlong_trivial n A) ≅ trivial ℂ (DoubleAlong A) n :=
   constIso (fun _ => Set.preimage_univ) (ContinuousLinearEquiv.refl ℂ (Fin n → ℂ))
     fun i j y _ _ => by
     -- State the identity on standard coordinates to fix the inherited fibre instances.
@@ -380,23 +377,21 @@ noncomputable def doubleAlongTrivialIso (hA : IsClosed A) (n : ℕ) :
       change doubleAlongCoordChange (trivial ℂ X n) A i j y v = v
       induction y using DoubleAlong.induction_on with
       | hl x =>
-        rw [doubleAlongCoordChange_inl]
-        rfl
+        rw [doubleAlongCoordChange_inl, coordChange_trivial]
+        exact ContinuousLinearMap.id_apply v
       | hr x =>
         rw [doubleAlongCoordChange_inr (isRealAlong_trivial n A) (mem_univ x) (mem_univ x),
           ContinuousLinearMap.intrinsicStar_apply]
         exact star_star v
     exact h
 
-@[simp] theorem fiberMap_doubleAlongTrivialIso_hom (hA : IsClosed A) (n : ℕ)
-    (z : DoubleAlong A) :
-    (doubleAlongTrivialIso hA n).hom.fiberMap z = ContinuousLinearMap.id ℂ (Fin n → ℂ) := by
+@[simp] theorem fiberMap_doubleAlongTrivialIso_hom (n : ℕ) (z : DoubleAlong A) :
+    (doubleAlongTrivialIso n).hom.fiberMap z = ContinuousLinearMap.id ℂ (Fin n → ℂ) := by
   rw [doubleAlongTrivialIso]
   exact fiberMap_constIso_hom _ _ _ z
 
-@[simp] theorem fiberMap_doubleAlongTrivialIso_inv (hA : IsClosed A) (n : ℕ)
-    (z : DoubleAlong A) :
-    (doubleAlongTrivialIso hA n).inv.fiberMap z = ContinuousLinearMap.id ℂ (Fin n → ℂ) := by
+@[simp] theorem fiberMap_doubleAlongTrivialIso_inv (n : ℕ) (z : DoubleAlong A) :
+    (doubleAlongTrivialIso n).inv.fiberMap z = ContinuousLinearMap.id ℂ (Fin n → ℂ) := by
   rw [doubleAlongTrivialIso]
   exact fiberMap_constIso_inv _ _ _ z
 

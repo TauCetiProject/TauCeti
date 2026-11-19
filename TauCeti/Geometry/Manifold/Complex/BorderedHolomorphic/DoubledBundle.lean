@@ -19,9 +19,9 @@ coordinate subspaces over the boundary form a maximal totally real subbundle `F`
 `TauCeti.SchottkyDouble.doubledBundleCore C hC` is the doubled bundle `E_F` over the Schottky double
 `TauCeti.SchottkyDouble M`: the core `C` on the first copy of `M` glued along the boundary to its
 conjugate on the second copy, through the antilinear involution of `C` over the boundary with
-fixed set `F`. It is `TauCeti.FiniteRankBundleCore.doubleAlong` along the boundary, which is
-closed. The general API applies to it directly, since `TauCeti.SchottkyDouble M` is a reducible
-abbreviation of the double along the boundary:
+fixed set `F`. It is `TauCeti.FiniteRankBundleCore.doubleAlong` along the boundary
+(`doubledBundleCore_eq`), and `TauCeti.SchottkyDouble M` is a reducible abbreviation of the double
+along the boundary, so after rewriting with `doubledBundleCore_eq` the general API applies:
 
 * `TauCeti.FiniteRankBundleCore.doubleAlongInlIso` and
   `TauCeti.FiniteRankBundleCore.doubleAlongInrIso`: the doubled bundle is `C` on the first copy and
@@ -32,9 +32,8 @@ abbreviation of the double along the boundary:
 * `TauCeti.FiniteRankBundleCore.doubleAlongSwap_mk_inl_eq_self_iff`: over a boundary point the
   fixed vectors of the lift are exactly the vectors of `F`.
 
-This is the topological part of the doubled bundle of PH7.1 in the Tau Ceti pseudoholomorphic
-curve analysis roadmap. Its smooth structure through collars, and independence of the choices up
-to isomorphism, are not treated here.
+Only the topological doubled bundle is constructed. Its smooth structure through collars, and
+independence of the choices up to isomorphism, are not treated here.
 
 ## References
 
@@ -55,7 +54,11 @@ and its conjugate on the second copy, glued along the boundary. -/
 noncomputable def doubledBundleCore (C : FiniteRankBundleCore ℂ M)
     (hC : C.IsRealAlong (borderedInterior M : Set M)ᶜ) :
     FiniteRankBundleCore ℂ (SchottkyDouble M) :=
-  C.doubleAlong (borderedInterior M).isOpen.isClosed_compl hC
+  C.doubleAlong hC
+
+theorem doubledBundleCore_eq (C : FiniteRankBundleCore ℂ M)
+    (hC : C.IsRealAlong (borderedInterior M : Set M)ᶜ) :
+    doubledBundleCore C hC = C.doubleAlong hC := (rfl)
 
 @[simp] theorem rank_doubledBundleCore (C : FiniteRankBundleCore ℂ M)
     (hC : C.IsRealAlong (borderedInterior M : Set M)ᶜ) :
