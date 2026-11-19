@@ -597,11 +597,11 @@ private theorem heatSemigroup_sub_eq_fourierMultiplierCLM {χ : 𝓢(E, ℂ)} {R
 variable [CompleteSpace F]
 
 /-- **The heat flow of band-limited functions tends to the identity, uniformly.** For every `R`
-there is a function `c` of time, independent of `p`, `t` and `f`, with `c t → 0` as `t → 0`, such
-that for every `1 ≤ p ≤ ∞`, every `t ≥ 0` and every `f ∈ Lᵖ` whose Fourier transform vanishes
-outside the closed ball of radius `R`, `e^{tΔ} f - f` is an `Lᵖ` function `g` with
-`‖g‖_p ≤ c t ‖f‖_p`. This includes `p = ∞`, where the heat semigroup is not strongly continuous on
-all of `L^∞`. -/
+there is a function `c` of time, depending on `R` but not on `p` or `f`, with `c t → 0` as
+`t → 0`, such that for every `1 ≤ p ≤ ∞`, every `t ≥ 0` and every `f ∈ Lᵖ` whose Fourier
+transform vanishes outside the closed ball of radius `R`, `e^{tΔ} f - f` is an `Lᵖ` function `g`
+with `‖g‖_p ≤ c t ‖f‖_p`. This includes `p = ∞`, where the heat semigroup is not strongly
+continuous on all of `L^∞`. -/
 theorem exists_heatSemigroup_sub_eq_and_norm_le_of_isVanishingOn_fourier (R : ℝ) :
     ∃ c : ℝ≥0 → ℝ, Tendsto c (𝓝 0) (𝓝 0) ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (t : ℝ≥0)
       (f : Lp F p (volume : Measure E)),
