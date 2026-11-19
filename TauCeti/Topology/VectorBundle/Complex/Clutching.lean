@@ -191,13 +191,9 @@ theorem continuousOn_clutchingFunction
   -- A total family of automorphisms of `F` agreeing with `e ∘ φ` over the base set.
   let A : B → F ≃L[ℂ] F := fun y ↦ if hy : f y ∈ e.baseSet then
     (φ y).trans (e.continuousLinearEquivAt ℂ (f y) hy) else ContinuousLinearEquiv.refl ℂ F
-  have hA : ContinuousOn (fun y ↦ (A y : F →L[ℂ] F)) (f ⁻¹' e.baseSet) := by
-    refine continuousOn_clm_apply.2 fun v ↦ ?_
-    have hc : ContinuousOn (fun y ↦ (e (TotalSpace.mk' F (f y) (φ y v))).2) (f ⁻¹' e.baseSet) :=
-      continuous_snd.comp_continuousOn (e.continuousOn.comp
-        (hφ.comp (Continuous.prodMk_left v)).continuousOn fun y hy ↦ e.mem_source.2 hy)
-    refine hc.congr fun y (hy : f y ∈ e.baseSet) ↦ ?_
-    simp [A, hy]
+  have hA : ContinuousOn (fun y ↦ (A y : F →L[ℂ] F)) (f ⁻¹' e.baseSet) :=
+    (continuousOn_continuousLinearMapAt_comp hφ e).congr fun y (hy : f y ∈ e.baseSet) ↦
+      ContinuousLinearMap.ext fun v ↦ by simp [A, hy, e.coe_linearMapAt_of_mem hy]
   refine hA.normalizedDet.inv.congr fun y (hy : f y ∈ e.baseSet) ↦ ?_
   simp [A, clutchingFunction_of_mem hy, hy]
 
@@ -230,6 +226,16 @@ variable [VectorBundle ℂ F E] [∀ x, IsTopologicalAddGroup (E x)] [∀ x, Con
 /-- The finite-dimensional model fibre is complete, as `TauCeti.exists_continuous_frame` needs. -/
 private local instance : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
 
+omit [VectorBundle ℂ F E] [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)] in
+/-- The clutching function of a continuous frame along a sphere based at `x`, read in a
+trivialization defined at `x`, is continuous on the boundary of the square. -/
+theorem continuousOn_clutchingFunction_boundary (p : Ω^ (Fin 2) X x)
+    {φ : ∀ y, F ≃L[ℂ] E (p y)}
+    (hφ : Continuous fun q : (Fin 2 → I) × F ↦ TotalSpace.mk' F (p q.1) (φ q.1 q.2))
+    (e : Trivialization F (π F E)) [e.IsLinear ℂ] (hx : x ∈ e.baseSet) :
+    ContinuousOn (clutchingFunction p φ e) (Cube.boundary (Fin 2)) :=
+  (continuousOn_clutchingFunction hφ e).mono fun y hy ↦ by simp [GenLoop.boundary p y hy, hx]
+
 variable (F E) in
 /-- The **clutching number** of a complex vector bundle `E` on a sphere `p : I² → X` based at `x`
 (sending the boundary of the square to `x`): the degree around the boundary of the square of the
@@ -254,8 +260,7 @@ theorem clutchingNumber_eq_squareBoundaryDegree (p : Ω^ (Fin 2) X x)
   set φ₀ := (exists_continuous_frame (𝕜 := ℂ) (F := F) (E := E) (map_continuous p)).choose
   set e₀ := trivializationAt F E x
   have hx₀ : x ∈ e₀.baseSet := mem_baseSet_trivializationAt F E x
-  have hc₀ : ContinuousOn (clutchingFunction p φ₀ e₀) (Cube.boundary (Fin 2)) :=
-    (continuousOn_clutchingFunction hφ₀ e₀).mono fun y hy ↦ by simp [GenLoop.boundary p y hy, hx₀]
+  have hc₀ := continuousOn_clutchingFunction_boundary p hφ₀ e₀ hx₀
   have hK : Continuous fun y ↦ ((φ y).trans (φ₀ y).symm).normalizedDet⁻¹ :=
     (continuous_normalizedDet_trans_symm hφ₀ hφ).inv
   -- On the boundary, the clutching function of `φ` in `e` is that of `φ₀` in `e₀`, times a factor
@@ -403,7 +408,7 @@ private local instance : CompleteSpace F := FiniteDimensional.completeSpace ℂ 
 linear isomorphisms of the fibres `T z : E z ≃ E' z` depending continuously on the point of the
 total space, have the same clutching number on every sphere. -/
 theorem clutchingNumber_eq_of_continuousLinearEquiv (T : ∀ z, E z ≃L[ℂ] E' z)
-    (hT : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F v.proj (T v.proj v.2))
+    (hT : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F v.proj (T v.proj v.snd))
     (p : Ω^ (Fin 2) X x) : clutchingNumber F E' p = clutchingNumber F E p := by
   obtain ⟨φ, hφ⟩ := exists_continuous_frame (𝕜 := ℂ) (F := F) (E := E) (map_continuous p)
   set e := trivializationAt F E x
@@ -441,7 +446,7 @@ variable (x) in
 /-- **Invariance under isomorphisms.** Isomorphic complex vector bundles have the same clutching
 number homomorphism `π₂(X, x) → ℤ`. -/
 theorem clutchingNumberHom_eq_of_continuousLinearEquiv (T : ∀ z, E z ≃L[ℂ] E' z)
-    (hT : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F v.proj (T v.proj v.2)) :
+    (hT : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F v.proj (T v.proj v.snd)) :
     clutchingNumberHom F E' x = clutchingNumberHom F E x := by
   refine AddMonoidHom.ext fun a ↦ ?_
   obtain ⟨p, hp⟩ := Quotient.exists_rep a.toMul
