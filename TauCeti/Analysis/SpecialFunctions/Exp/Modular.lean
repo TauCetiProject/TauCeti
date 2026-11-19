@@ -28,8 +28,11 @@ vortices.
 
 In the other direction, the potential is quadratic on every half-line `t ≤ M`:
 `exp (2t) - 1 - 2t ≤ 2 exp (2M) t²` for `0 ≤ M`
-(`Real.exp_two_mul_sub_one_sub_two_mul_le_mul_sq`). Its midpoint convexity defect is exactly a
-square: `Φ(a) + Φ(b) - 2 Φ((a + b) / 2) = (exp a - exp b)²` for `Φ(t) = exp (2t) - 1 - 2t`
+(`Real.exp_two_mul_sub_one_sub_two_mul_le_mul_sq`), and on the same half-line its derivative
+`2 (exp (2t) - 1)` is at most `4 exp (2M) |t|` (`Real.abs_exp_two_mul_sub_one_le_mul_abs`). The
+potential lies above its tangent lines (`Real.exp_two_mul_sub_one_sub_two_mul_add_mul_le`), which
+makes a critical point of such a functional its minimizer. Its midpoint convexity defect is exactly
+a square: `Φ(a) + Φ(b) - 2 Φ((a + b) / 2) = (exp a - exp b)²` for `Φ(t) = exp (2t) - 1 - 2t`
 (`Real.exp_two_mul_sub_one_sub_two_mul_midpoint_defect_eq_sq`), the strict convexity behind the
 stability of the minimizer of such a functional.
 
@@ -41,6 +44,9 @@ stability of the minimizer of such a functional.
   `√(1 + t²) - 1 ≤ exp (2t) - 1 - 2t`.
 * `Real.exp_two_mul_sub_one_sub_two_mul_le_mul_sq`: for `t ≤ M` with `0 ≤ M`,
   `exp (2t) - 1 - 2t ≤ 2 exp (2M) t²`.
+* `Real.abs_exp_two_mul_sub_one_le_mul_abs`: for `t ≤ M` with `0 ≤ M`,
+  `|exp (2t) - 1| ≤ 2 exp (2M) |t|`.
+* `Real.exp_two_mul_sub_one_sub_two_mul_add_mul_le`: the potential lies above its tangent lines.
 * `Real.exp_two_mul_sub_one_sub_two_mul_midpoint_defect_eq_sq`: the midpoint convexity defect of
   `exp (2t) - 1 - 2t` is `(exp a - exp b)²`.
 -/
@@ -96,6 +102,34 @@ theorem exp_two_mul_sub_one_sub_two_mul_le_mul_sq {M t : ℝ} (hM : 0 ≤ M) (ht
     rw [abs_of_nonneg (by linarith)] at h
     have h1 : exp (2 * t) ≤ exp (2 * M) := exp_le_exp.2 (by linarith)
     nlinarith [sq_nonneg t]
+
+/-- On the half-line `t ≤ M`, `0 ≤ M`, the function `exp (2t) - 1` is at most `2 exp (2M) |t|` in
+absolute value. -/
+theorem abs_exp_two_mul_sub_one_le_mul_abs {M t : ℝ} (hM : 0 ≤ M) (ht : t ≤ M) :
+    |exp (2 * t) - 1| ≤ 2 * exp (2 * M) * |t| := by
+  have hM1 : 1 ≤ exp (2 * M) := one_le_exp (by linarith)
+  rcases le_total t 0 with h0 | h0
+  · have h := add_one_le_exp (2 * t)
+    have hle : exp (2 * t) ≤ 1 := exp_le_one_iff.2 (by linarith)
+    rw [abs_of_nonpos (by linarith), abs_of_nonpos h0]
+    nlinarith
+  · have h := add_one_le_exp (-(2 * t))
+    have hge : 1 ≤ exp (2 * t) := one_le_exp (by linarith)
+    have hmul : exp (2 * t) * exp (-(2 * t)) = 1 := by
+      rw [← exp_add, add_neg_cancel, exp_zero]
+    have hexp : exp (2 * t) ≤ exp (2 * M) := exp_le_exp.2 (by linarith)
+    rw [abs_of_nonneg (by linarith), abs_of_nonneg h0]
+    nlinarith [mul_le_mul_of_nonneg_left h (by positivity : 0 ≤ exp (2 * t))]
+
+/-- **The tangent line inequality for the potential** `Φ(t) = exp (2t) - 1 - 2t`:
+`Φ(a) + Φ'(a) (b - a) ≤ Φ(b)`, where `Φ'(a) = 2 (exp (2a) - 1)`. -/
+theorem exp_two_mul_sub_one_sub_two_mul_add_mul_le (a b : ℝ) :
+    exp (2 * a) - 1 - 2 * a + 2 * (exp (2 * a) - 1) * (b - a) ≤ exp (2 * b) - 1 - 2 * b := by
+  have h := add_one_le_exp (2 * (b - a))
+  have hb : exp (2 * b) = exp (2 * a) * exp (2 * (b - a)) := by
+    rw [← exp_add]
+    ring_nf
+  nlinarith [exp_pos (2 * a), mul_le_mul_of_nonneg_left h (exp_pos (2 * a)).le]
 
 /-- The midpoint convexity defect of the potential `Φ(t) = exp (2t) - 1 - 2t` is a square:
 `Φ(a) + Φ(b) - 2 Φ((a + b) / 2) = (exp a - exp b)²`. -/
