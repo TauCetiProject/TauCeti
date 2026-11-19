@@ -14,6 +14,8 @@ This file contains the basic regularity theorem that a solution of a first-order
 derivative over a right-hand side that is already differentiable on its range. The parameter
 set only needs unique derivatives, so the result also applies at closed interval endpoints. It
 holds over any nontrivially normed field and for finite or infinite order of differentiability.
+A solution of a time-dependent equation `x' = X(t, x)` with a jointly continuous right-hand side
+is `C¹` (`TauCeti.contDiff_one_of_hasDerivAt`).
 -/
 
 public section
@@ -41,6 +43,16 @@ theorem contDiffOn_succ_of_hasDerivWithinAt_comp {𝕜 F : Type*} [NontriviallyN
       exact ((hv.of_le (mod_cast hmn)).comp (ih (hmn.trans le_self_add)) hfu).congr
         fun t ht ↦ (hf t ht).derivWithin (hs t ht)
   exact_mod_cast contDiffOn_iff_forall_nat_le.mpr key
+
+/-- A solution of a time-dependent first-order equation `x' = X(t, x)` with a jointly continuous
+right-hand side is `C¹`. -/
+theorem contDiff_one_of_hasDerivAt {𝕜 F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {X : 𝕜 → F → F} {x : 𝕜 → F}
+    (hX : Continuous (Function.uncurry X)) (hx : ∀ t, HasDerivAt x (X t (x t)) t) :
+    ContDiff 𝕜 1 x := by
+  refine contDiff_one_iff_deriv.2 ⟨fun t ↦ (hx t).differentiableAt, ?_⟩
+  rw [funext fun t ↦ (hx t).deriv]
+  exact hX.comp (continuous_id.prodMk (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt))
 
 end TauCeti
 

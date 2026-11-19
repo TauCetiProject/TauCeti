@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.Algebra.Monoid
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Monoid
 import TauCeti.Geometry.Manifold.VectorField.Related
+import TauCeti.Algebra.Lie.Basic
 
 /-!
 # The Lie functor on smooth homomorphisms
@@ -29,6 +30,8 @@ Lie-group exponential.
 
 ## Main results
 
+* `ContMDiffMonoidMorphism.groupLieAlgebraLieHom`: the differential at the identity of a smooth
+  homomorphism, as a homomorphism of the tangent Lie algebras.
 * `lieMap`: the Lie-algebra homomorphism induced by a smooth monoid morphism.
 * `ContMDiffMonoidMorphism.groupLieAlgebraMap_lie`: the differential at the identity of a smooth
   homomorphism preserves the Lie bracket.
@@ -117,18 +120,34 @@ theorem ContMDiffMonoidMorphism.groupLieAlgebraMap_lie
   rw [map_one] at h
   exact h
 
+/-- The differential at the identity of a smooth homomorphism, as a homomorphism of the tangent
+Lie algebras. -/
+def ContMDiffMonoidMorphism.groupLieAlgebraLieHom [CompleteSpace E] [CompleteSpace E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G') :
+    GroupLieAlgebra I G →ₗ⁅ℝ⁆ GroupLieAlgebra I' G' where
+  toLinearMap := φ.toMonoidHom.groupLieAlgebraMap I I'
+  map_lie' := φ.groupLieAlgebraMap_lie _ _
+
+@[simp]
+theorem ContMDiffMonoidMorphism.coe_groupLieAlgebraLieHom [CompleteSpace E] [CompleteSpace E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G') :
+    ⇑φ.groupLieAlgebraLieHom = φ.toMonoidHom.groupLieAlgebraMap I I' :=
+  (rfl)
+
+@[simp]
+theorem ContMDiffMonoidMorphism.toLinearMap_groupLieAlgebraLieHom [CompleteSpace E]
+    [CompleteSpace E'] (φ : ContMDiffMonoidMorphism I I' ∞ G G') :
+    (φ.groupLieAlgebraLieHom : GroupLieAlgebra I G →ₗ[ℝ] GroupLieAlgebra I' G') =
+      (φ.toMonoidHom.groupLieAlgebraMap I I' : GroupLieAlgebra I G →ₗ[ℝ] GroupLieAlgebra I' G') :=
+  (rfl)
+
 /-- The Lie functor on morphisms: the differential at the identity of a smooth homomorphism. -/
 noncomputable def lieMap [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
     (φ : ContMDiffMonoidMorphism I I' ∞ G G') :
     LeftInvariantDerivation I G →ₗ⁅ℝ⁆ LeftInvariantDerivation I' G' :=
-  let tangentMap : GroupLieAlgebra I G →ₗ⁅ℝ⁆ GroupLieAlgebra I' G' :=
-    { toLinearMap := φ.toMonoidHom.groupLieAlgebraMap I I'
-      map_lie' := by
-        intro X Y
-        exact φ.groupLieAlgebraMap_lie X Y }
   (leftInvariantDerivationLieEquivGroupLieAlgebra
       (I := I') (G := G') (ContMDiffMul.isInteriorPoint (n := ∞) (by simp) 1)).symm.toLieHom.comp
-    (tangentMap.comp
+    (φ.groupLieAlgebraLieHom.comp
       (leftInvariantDerivationLieEquivGroupLieAlgebra
         (I := I) (G := G) (ContMDiffMul.isInteriorPoint (n := ∞) (by simp) 1)).toLieHom)
 

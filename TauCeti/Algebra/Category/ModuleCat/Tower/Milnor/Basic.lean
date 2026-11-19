@@ -7,12 +7,9 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
-public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Homology.HomologySequence
-public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Category.ModuleCat.AB
-public import TauCeti.Algebra.Category.ModuleCat.Tower.Exact
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Subsequence.LimOne
 public import TauCeti.Algebra.Homology.ShortComplex.Limit
 
@@ -167,10 +164,20 @@ theorem limComplex_X (i : ι) : C.limComplex.X i = ModuleCat.of R (C.term i).lim
 
 /-- The differential of the limit complex is the map induced on limits by the differentials of the
 tower. -/
-@[simp]
+-- Not `@[simp]`: the right-hand side lives on `(C.term i).lim`, which agrees with the carrier of
+-- `C.limComplex.X i` only after unfolding `limComplex`, so the tower simp set cannot fire after
+-- rewriting; use `limComplex_d_hom_apply` instead.
 theorem limComplex_d_hom (i j : ι) :
     (C.limComplex.d i j).hom = ModuleTower.limMap (C.dTower i j) :=
   (rfl)
+
+/-- The differential of the limit complex acts coordinatewise on the projections to the tower.
+Not tagged `@[simp]`: `simp` rewrites the codomain of `limπ` to `(C.obj (op n)).X j`, so the
+left-hand side is not in simp normal form. -/
+theorem limComplex_d_hom_apply (i j : ι) (x : C.limComplex.X i) (n : ℕ) :
+    (C.term j).limπ n ((C.limComplex.d i j).hom x) =
+      (C.obj (op n)).d i j ((C.term i).limπ n x) :=
+  LinearMap.congr_fun (ModuleTower.limπ_comp_limMap (C.dTower i j) n) x
 
 /-- The product complex of a tower of complexes: in degree `i`, the product of the degree-`i`
 terms, with the product of the differentials. -/
@@ -191,10 +198,18 @@ theorem productComplex_X (i : ι) : C.productComplex.X i = ModuleCat.of R (C.ter
 
 /-- The differential of the product complex is the map induced on products by the differentials of
 the tower. -/
-@[simp]
+-- Not `@[simp]`: the right-hand side lives on `(C.term i).Product`, which agrees with the carrier
+-- of `C.productComplex.X i` only after unfolding `productComplex`, so the tower simp set cannot
+-- fire after rewriting; use `productComplex_d_hom_apply` instead.
 theorem productComplex_d_hom (i j : ι) :
     (C.productComplex.d i j).hom = ModuleTower.productMap (C.dTower i j) :=
   (rfl)
+
+/-- The differential of the product complex acts coordinatewise. -/
+@[simp]
+theorem productComplex_d_hom_apply (i j : ι) (x : C.productComplex.X i) (n : ℕ) :
+    (C.productComplex.d i j).hom x n = (C.obj (op n)).d i j (x n) :=
+  ModuleTower.productMap_apply (C.dTower i j) x n
 
 /-- The inclusion of the limit complex into the product complex. -/
 def limComplexι : C.limComplex ⟶ C.productComplex where
@@ -437,9 +452,6 @@ theorem homologyToLim_injective_of_forall_not_rel {j : ι} (hj : ∀ i, ¬c.Rel 
       rw [← ConcreteCategory.comp_apply, ← HomologicalComplex.homologyπ_naturality,
         ConcreteCategory.comp_apply, ← coe_homologyToLim_apply, hx, ZeroMemClass.coe_zero,
         Pi.zero_apply]
-      -- The `n`-th term of the tower `Hⱼ(C)` is `(homologyFunctor j).obj Cₙ`, which unfolds to
-      -- `Hⱼ(Cₙ)`; the two zeros agree definitionally but not syntactically.
-      rfl
     rw [← ConcreteCategory.comp_apply, ← HomologicalComplex.cyclesMap_i,
       ConcreteCategory.comp_apply, (injective_iff_map_eq_zero _).1 (hπ _).1 _ h, map_zero]
   have : C.limComplex.iCycles j y = 0 :=

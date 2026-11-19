@@ -23,7 +23,9 @@ the pullback is `C^n`.
 ## Main declarations
 
 * `OpenPartialHomeomorph.pullbackEnd`: the pulled-back endomorphism field.
-* `OpenPartialHomeomorph.contDiffOn_pullbackEnd`: the pullback costs one derivative.
+* `OpenPartialHomeomorph.contDiffOn_pullbackEnd`: the pullback costs one derivative;
+  `OpenPartialHomeomorph.contDiffOn_pullbackEnd_of_mapsTo` is the version on a subset of the
+  source.
 * `OpenPartialHomeomorph.fderiv_comp_pullbackEnd`: the derivative of `e` intertwines the
   pullback with `J`.
 * `OpenPartialHomeomorph.symm_pullbackEnd_comp_fderiv`: the derivative of `e` intertwines `J`
@@ -47,11 +49,27 @@ derivative of `e.symm`, so no inversion of operators is involved. -/
 def pullbackEnd (e : OpenPartialHomeomorph E F) (J : F → F →L[𝕜] F) (p : E) : E →L[𝕜] E :=
   (fderiv 𝕜 e.symm (e p)).comp ((J (e p)).comp (fderiv 𝕜 e p))
 
+/-- The pulled-back endomorphism field as a composite of continuous linear maps. -/
+theorem pullbackEnd_def (J : F → F →L[𝕜] F) (p : E) :
+    e.pullbackEnd J p = (fderiv 𝕜 e.symm (e p)).comp ((J (e p)).comp (fderiv 𝕜 e p)) :=
+  (rfl)
+
 /-- Evaluate a pulled-back endomorphism field. -/
 @[simp]
 theorem pullbackEnd_apply (J : F → F →L[𝕜] F) (p v : E) :
     e.pullbackEnd J p v = fderiv 𝕜 e.symm (e p) (J (e p) (fderiv 𝕜 e p v)) := by
   simp only [pullbackEnd, ContinuousLinearMap.comp_apply]
+
+/-- **Pulling back on a subset of the source.** If an open partial homeomorphism and its inverse
+are `C^ℓ`, `s` is a subset of its source sent into `t`, and the field `J` is `C^n` on `t` with
+`n + 1 ≤ ℓ`, the pulled-back field is `C^n` on `s`. -/
+theorem contDiffOn_pullbackEnd_of_mapsTo {J : F → F →L[𝕜] F} {ℓ n : ℕ∞ω} {s : Set E} {t : Set F}
+    (hs : s ⊆ e.source) (he : ContDiffOn 𝕜 ℓ e e.source) (hes : ContDiffOn 𝕜 ℓ e.symm e.target)
+    (hJ : ContDiffOn 𝕜 n J t) (hst : Set.MapsTo e s t) (hn : n + 1 ≤ ℓ) :
+    ContDiffOn 𝕜 n (e.pullbackEnd J) s := by
+  have he' := (he.of_le (le_self_add.trans hn)).mono hs
+  exact ((hes.fderiv_of_isOpen e.open_target hn).comp he' (e.mapsTo.mono_left hs)).clm_comp
+    ((hJ.comp he' hst).clm_comp ((he.fderiv_of_isOpen e.open_source hn).mono hs))
 
 /-- **Pulling back costs one derivative.** If an open partial homeomorphism and its inverse are
 `C^ℓ` and the field `J` is `C^n` on the target with `n + 1 ≤ ℓ`, the pulled-back field is
@@ -59,10 +77,8 @@ theorem pullbackEnd_apply (J : F → F →L[𝕜] F) (p v : E) :
 theorem contDiffOn_pullbackEnd {J : F → F →L[𝕜] F} {ℓ n : ℕ∞ω}
     (he : ContDiffOn 𝕜 ℓ e e.source) (hes : ContDiffOn 𝕜 ℓ e.symm e.target)
     (hJ : ContDiffOn 𝕜 n J e.target) (hn : n + 1 ≤ ℓ) :
-    ContDiffOn 𝕜 n (e.pullbackEnd J) e.source := by
-  have he' := he.of_le (le_self_add.trans hn)
-  exact ((hes.fderiv_of_isOpen e.open_target hn).comp he' e.mapsTo).clm_comp
-    ((hJ.comp he' e.mapsTo).clm_comp (he.fderiv_of_isOpen e.open_source hn))
+    ContDiffOn 𝕜 n (e.pullbackEnd J) e.source :=
+  e.contDiffOn_pullbackEnd_of_mapsTo subset_rfl he hes hJ e.mapsTo hn
 
 /-- The derivative of `e` intertwines the pulled-back field with `J`. -/
 theorem fderiv_comp_pullbackEnd (J : F → F →L[𝕜] F) {p : E} (hp : p ∈ e.source)

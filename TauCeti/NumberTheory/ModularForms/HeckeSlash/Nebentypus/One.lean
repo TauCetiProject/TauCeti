@@ -56,7 +56,7 @@ repository's.
 
 public section
 
-open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup DoubleCoset
+open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup DoubleCoset TauCeti
   HeckeRing.GLn
 open scoped MatrixGroups ModularForm HeckeCosetModule
 

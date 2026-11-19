@@ -9,10 +9,12 @@ public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Analysis.Calculus.ContDiff.Comp
+import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Derivatives of functions of temperate growth
@@ -21,7 +23,9 @@ A smooth function whose iterated derivatives are all bounded has temperate growt
 are smooth functions which outside a ball agree with a homogeneous function of degree at most `0`.
 So does a smooth function satisfying symbol estimates
 `‖D^k f(x)‖ ≤ C_k (1 + ‖x‖ ^ 2) ^ ((m - k) / 2)` of some real order `m`, and the rescaled
-Bessel potential `x ↦ (1 + ‖c • x‖ ^ 2) ^ r`.
+Bessel potential `x ↦ (1 + ‖c • x‖ ^ 2) ^ r`. On a real inner product space, so does the
+logarithm `x ↦ log (1 + ‖x‖ ^ 2)` of the squared Japanese bracket, which enters the complex powers
+of the Japanese bracket.
 
 The derivative `Df` of a function `f` of temperate growth has temperate growth, since the iterated
 derivatives of `Df` are those of `f` shifted by one order. So does each directional derivative
@@ -45,9 +49,12 @@ A measure of temperate growth is finite on compact sets.
   give temperate growth.
 * `Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow`: the rescaled Bessel potential has
   temperate growth.
+* `Function.hasTemperateGrowth_log_one_add_norm_sq`: `x ↦ log (1 + ‖x‖ ^ 2)` has temperate growth.
 * `Function.hasTemperateGrowth_norm_sub_pow`: `y ↦ ‖x - y‖ ^ (2N)` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv`: `Df` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv_apply`: `x ↦ Df(x) v` has temperate growth.
+* `Function.HasTemperateGrowth.basis_repr_fderiv_apply`: so do the coordinates of `Df(x) v` in a
+  basis.
 * `Function.HasTemperateGrowth.prod`: finite products of functions of temperate growth.
 * `ContinuousLinearMap.hasTemperateGrowth_det`, `Function.HasTemperateGrowth.det_fderiv`: the
   determinant and the Jacobian determinant have temperate growth.
@@ -89,9 +96,7 @@ theorem of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow {m : ℝ} (hf : ContDiff 
             have := Nat.le_ceil m
             have : (0 : ℝ) ≤ k := k.cast_nonneg
             linarith)
-      _ ≤ (1 + ‖x‖) ^ (⌈m⌉₊ : ℝ) :=
-          TauCeti.one_add_norm_sq_rpow_half_le_one_add_norm_rpow x (Nat.cast_nonneg _)
-      _ = (1 + ‖x‖) ^ ⌈m⌉₊ := Real.rpow_natCast _ _
+      _ ≤ (1 + ‖x‖) ^ ⌈m⌉₊ := TauCeti.one_add_norm_sq_rpow_le_one_add_norm_pow x ⌈m⌉₊
   calc C * (1 + ‖x‖ ^ 2) ^ ((m - k) / 2) ≤ max C 0 * (1 + ‖x‖ ^ 2) ^ ((m - k) / 2) :=
         mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
     _ ≤ max C 0 * (1 + ‖x‖) ^ ⌈m⌉₊ := mul_le_mul_of_nonneg_left hw (le_max_right _ _)
@@ -107,6 +112,20 @@ growth. -/
 theorem fderiv_apply (hf : f.HasTemperateGrowth) (v : E) :
     (fun x ↦ _root_.fderiv ℝ f x v).HasTemperateGrowth :=
   (ContinuousLinearMap.apply ℝ F v).hasTemperateGrowth.comp hf.fderiv
+
+/-- The coordinates in a basis `b` of the directional derivative `x ↦ Df(x) v` of a function `f` of
+temperate growth have temperate growth. These are the coefficients of the chain rule for
+composition with `f`. -/
+theorem basis_repr_fderiv_apply {𝕜 ι : Type*} [RCLike 𝕜] [Finite ι]
+    (hf : f.HasTemperateGrowth) (b : Module.Basis ι ℝ F) (v : E) (i : ι) :
+    (fun x ↦ ((b.repr (_root_.fderiv ℝ f x v) i : ℝ) : 𝕜)).HasTemperateGrowth := by
+  have h : (fun x ↦ ((b.repr (_root_.fderiv ℝ f x v) i : ℝ) : 𝕜)) =
+      ((RCLike.ofRealCLM (K := 𝕜)).comp ((ContinuousLinearMap.proj i).comp
+        b.equivFunL.toContinuousLinearMap)) ∘ fun x ↦ _root_.fderiv ℝ f x v := by
+    ext x
+    simp
+  rw [h]
+  exact (ContinuousLinearMap.hasTemperateGrowth _).comp (hf.fderiv_apply v)
 
 /-- A finite product of functions of temperate growth has temperate growth. -/
 theorem prod {ι R : Type*} [NormedCommRing R] [NormedAlgebra ℝ R] {f : ι → E → R}
@@ -192,6 +211,32 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
 theorem hasTemperateGrowth_one_add_norm_smul_sq_rpow (c r : ℝ) :
     (fun x : H ↦ (1 + ‖c • x‖ ^ 2) ^ r).HasTemperateGrowth :=
   (hasTemperateGrowth_one_add_norm_sq_rpow H r).comp (by fun_prop)
+
+/-- On a real inner product space `H`, the logarithm `x ↦ log (1 + ‖x‖ ^ 2)` of the squared
+Japanese bracket has temperate growth. -/
+@[fun_prop]
+theorem hasTemperateGrowth_log_one_add_norm_sq :
+    (fun x : H ↦ Real.log (1 + ‖x‖ ^ 2)).HasTemperateGrowth := by
+  -- The function is bounded by `‖x‖ ^ 2`, and its derivative `(1 + ‖x‖ ^ 2)⁻¹ D‖x‖ ^ 2` has
+  -- temperate growth.
+  have hderiv (x : H) : HasFDerivAt (fun x : H ↦ Real.log (1 + ‖x‖ ^ 2))
+      ((1 + ‖x‖ ^ 2) ^ (-1 : ℝ) • fderiv ℝ (fun x : H ↦ ‖x‖ ^ 2) x) x := by
+    have h := (((contDiff_norm_sq ℝ (E := H) (n := 1)).differentiable one_ne_zero).differentiableAt
+      (x := x)).hasFDerivAt.const_add 1
+    rw [Real.rpow_neg_one]
+    exact h.log (ne_of_gt (by positivity))
+  have hfd : fderiv ℝ (fun x : H ↦ Real.log (1 + ‖x‖ ^ 2)) =
+      (fun x : H ↦ (1 + ‖x‖ ^ 2) ^ (-1 : ℝ)) • fderiv ℝ (fun x : H ↦ ‖x‖ ^ 2) :=
+    funext fun x ↦ (hderiv x).fderiv
+  refine HasTemperateGrowth.of_fderiv (k := 2) (C := 1) ?_
+    (fun x ↦ (hderiv x).differentiableAt) fun x ↦ ?_
+  · rw [hfd]
+    exact (hasTemperateGrowth_one_add_norm_sq_rpow H (-1)).smul
+      (hasTemperateGrowth_norm_sq H).fderiv
+  · have hle : 1 ≤ 1 + ‖x‖ ^ 2 := by nlinarith [sq_nonneg ‖x‖]
+    rw [Real.norm_of_nonneg (Real.log_nonneg hle), one_mul]
+    have := Real.log_le_sub_one_of_pos (by linarith : (0 : ℝ) < 1 + ‖x‖ ^ 2)
+    nlinarith [norm_nonneg x]
 
 /-- An even power `y ↦ ‖x - y‖ ^ (2N)` of the distance to a point has temperate growth. -/
 theorem hasTemperateGrowth_norm_sub_pow (x : H) (N : ℕ) :

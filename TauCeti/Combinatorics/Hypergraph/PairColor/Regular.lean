@@ -49,7 +49,8 @@ schedule `F : ℕ → ℝ` at the lower complexity, the number of vertex cells p
 * `TauCeti.PairSkeleton3.IsPairColorRegular`: every pair of vertex cells is regular.
 * `TauCeti.PairSkeleton3.isPairColorRegular_bot`: the partition into singletons is regular.
 * `TauCeti.PairSkeleton3.LowerSkeletonRegular`: regularity at the lower complexity.
-* `TauCeti.PairSkeleton3.relabel`: renaming the pair palette along an equivalence.
+* `TauCeti.PairSkeleton3.relabel`: renaming the pair palette along an equivalence, preserving
+  `IsRegularPair`, `IsPairColorRegular`, and `LowerSkeletonRegular`.
 
 ## References
 
@@ -158,6 +159,12 @@ theorem isRegularPair_singleton (hε : 0 < ε) (u v : V) : S.IsRegularPair ε {u
   obtain rfl | rfl := subset_singleton_iff.mp ht'
   · exact absurd ht (by simpa using hε)
   simpa using hε.le
+
+/-- Renaming the palette along an equivalence preserves `IsRegularPair`. -/
+theorem IsRegularPair.relabel {κ' : Type*} (h : S.IsRegularPair ε s t) (e : κ ≃ κ') :
+    (S.relabel e).IsRegularPair ε s t := by
+  intro c s' hs' t' ht' hs ht
+  simpa only [pairColorDensity_relabel] using h (e.symm c) s' hs' t' ht' hs ht
 
 section Discrepancy
 
@@ -310,6 +317,18 @@ theorem relabel_vertexPart {κ' : Type*} (e : κ ≃ κ') : (S.relabel e).vertex
 theorem relabel_pairColors {κ' : Type*} (e : κ ≃ κ') :
     (S.relabel e).pairColors = S.pairColors.relabel e :=
   (rfl)
+
+/-- Renaming the palette along an equivalence preserves `IsPairColorRegular`. -/
+theorem IsPairColorRegular.relabel {κ' : Type*} (h : S.IsPairColorRegular ε) (e : κ ≃ κ') :
+    (S.relabel e).IsPairColorRegular ε :=
+  fun A hA B hB ↦ (h A hA B hB).relabel e
+
+/-- Renaming the palette along an equivalence preserves `LowerSkeletonRegular`. -/
+theorem LowerSkeletonRegular.relabel {κ' : Type*} [Fintype κ] [Fintype κ'] {F : ℕ → ℝ}
+    (h : S.LowerSkeletonRegular F) (e : κ ≃ κ') :
+    (S.relabel e).LowerSkeletonRegular F := by
+  rw [lowerSkeletonRegular_iff, relabel_vertexPart, Fintype.card_congr e.symm]
+  exact IsPairColorRegular.relabel h e
 
 end PairSkeleton3
 
