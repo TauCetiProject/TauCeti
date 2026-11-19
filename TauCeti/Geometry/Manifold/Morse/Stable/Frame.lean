@@ -69,6 +69,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   the tangent space of the stable manifold, and are onto.
 * `range_unstableFrame`, `injective_unstableFrame`: the frame is an isomorphism onto the tangent
   space of the unstable manifold.
+* `neg_linearForwardTimes`, `neg_linearBackwardTimes`: the times of linear flow of `-X` in the
+  negated Morse chart are those of `X`, in the opposite direction.
 * `stableNormal_mfderiv_flow`, `unstableFrame_flow`: along the flow, the derivative of the time-`t`
   map carries the normal coordinates and the frame to positive multiples of themselves.
 * `injective_unstableFrame_of_mem`, `surjective_stableNormal_of_mem`: the frame is injective and
@@ -394,6 +396,18 @@ theorem neg_linearForwardTimes (hf : IsMorse 𝓘(ℝ, E) f)
   ext T
   simp only [linearForwardTimes, linearBackwardTimes, mem_ofPred_eq, hX.neg_flow hf,
     Flow.reverse_apply, MorseChart.neg_toChart, MorseChart.neg_coord, φ.neg_linearFlow h]
+  refine and_congr_right fun _ ↦ ⟨fun h t ht ↦ ?_, fun h t ht ↦ h _ (by linarith)⟩
+  simpa using h (-t) (by linarith)
+
+omit hφ in
+/-- The times of linear backward flow of `-X` in the negated Morse chart are the times of linear
+forward flow of `X`. -/
+theorem neg_linearBackwardTimes (hf : IsMorse 𝓘(ℝ, E) f)
+    (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) (y : M) :
+    (hX.neg hf).linearBackwardTimes (φ.neg h) y = hX.linearForwardTimes φ y := by
+  ext T
+  simp only [linearForwardTimes, linearBackwardTimes, mem_ofPred_eq, hX.neg_flow hf,
+    Flow.reverse_apply, neg_neg, MorseChart.neg_toChart, MorseChart.neg_coord, φ.neg_linearFlow h]
   refine and_congr_right fun _ ↦ ⟨fun h t ht ↦ ?_, fun h t ht ↦ h _ (by linarith)⟩
   simpa using h (-t) (by linarith)
 

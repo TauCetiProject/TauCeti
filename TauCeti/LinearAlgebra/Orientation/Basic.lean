@@ -36,6 +36,7 @@ compatibility under linear equivalences.
   `Orientation.eq_or_eq_neg_of_card_eq_finrank`, and
   `Orientation.ne_iff_eq_neg_of_card_eq_finrank`: the finite-dimensional facts about orientation
   transport and equality, valid without finite-dimensionality (the index type is then empty).
+* `Orientation.map_smulOfNeZero_of_pos`: scaling by a positive scalar fixes every orientation.
 * `Orientation.intCast_units_smul_eq_ite`: an integer unit acts by retention or reversal.
 * `Orientation.intCast_units_smul_injective`: the two signs give distinct orientations.
 * `Orientation.reindex_perm`: reindexing along a permutation multiplies by its sign.
@@ -183,6 +184,17 @@ theorem Orientation.map_eq_iff_det_pos_of_card_eq_finrank (x : Orientation R M �
     Orientation.map ι f x = x ↔ 0 < LinearMap.det (f : M →ₗ[R] M) := by
   rw [map_eq_det_inv_smul_of_card_eq_finrank x f h, units_inv_smul, units_smul_eq_self_iff,
     LinearEquiv.coe_det]
+
+/-- Scaling by a positive scalar fixes every orientation. -/
+theorem Orientation.map_smulOfNeZero_of_pos (x : Orientation R M ι) {a : R} (ha : 0 < a)
+    (h : Fintype.card ι = finrank R M) :
+    Orientation.map ι (LinearEquiv.smulOfNeZero R M a ha.ne') x = x := by
+  rw [map_eq_iff_det_pos_of_card_eq_finrank x _ h]
+  have hf : (LinearEquiv.smulOfNeZero R M a ha.ne' : M →ₗ[R] M) = a • LinearMap.id := by
+    ext
+    simp
+  rw [hf, LinearMap.det_smul, LinearMap.det_id, mul_one]
+  positivity
 
 /-- If the index type has cardinality equal to the dimension, any two orientations are equal or
 negations. Unlike `Orientation.eq_or_eq_neg`, this needs no `FiniteDimensional` hypothesis: a
