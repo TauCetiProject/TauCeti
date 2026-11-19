@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorField.MappingTorus.Orbit
 public import TauCeti.Geometry.Symplectic.Manifold.Harmonic
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.PeriodicTorus
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.VerticalArea
-public import TauCeti.Geometry.Symplectic.Manifold.TorusCover
+public import TauCeti.Geometry.Symplectic.Manifold.Torus.Cover
 
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
