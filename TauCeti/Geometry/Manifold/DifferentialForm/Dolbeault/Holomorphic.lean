@@ -82,21 +82,21 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [NormedAddCommGroup F] [NormedSpace ℂ F] (J : SmoothAlmostComplexStructure I M)
 
+/-- The function underlying a smooth `0`-form is smooth. -/
+private theorem contMDiff_apply_zero (f : SmoothForm I M F 0) :
+    ContMDiff I 𝓘(ℝ, F) ∞ fun y ↦ f.1 y 0 := by
+  rw [← isSmoothForm_ofFunction_iff, ← RoughForm.eq_ofFunction]
+  exact f.isSmoothForm
+
 /-- **`∂bar f = 0` is the Cauchy–Riemann equation.** On any almost complex manifold, `∂bar f`
 vanishes at a point exactly when `f` is pseudoholomorphic there as a map into the complex vector
 space `F`, whose almost complex structure is multiplication by `i`. -/
 theorem delBar_apply_eq_zero_iff_isPseudoholomorphicAt (f : SmoothForm I M F 0) (x : M) :
     (J.delBar f).1 x = 0 ↔
       IsPseudoholomorphicAt J (ofComplexManifold F F) (fun y ↦ f.1 y 0) x := by
-  have hf : ContMDiff I 𝓘(ℝ, F) ∞ fun y ↦ f.1 y 0 := by
-    rw [← isSmoothForm_ofFunction_iff, ← RoughForm.eq_ofFunction]
-    exact f.isSmoothForm
-  rw [delBar_apply_eq_zero_iff]
-  simp only [mvfderiv_apply_eq_mfderiv_apply]
-  exact ⟨fun h ↦ isPseudoholomorphicAt_of_hasMFDerivAt
-      (hf.mdifferentiableAt (by simp)).hasMFDerivAt fun w ↦
-        (h w).trans (ofComplexManifold_apply (E := F) _ _).symm,
-    fun h v ↦ (h.mfderiv_apply_commute v).trans (ofComplexManifold_apply (E := F) _ _)⟩
+  rw [delBar_apply_eq_zero_iff_dbarFunction_eq_zero]
+  exact J.dbarFunction_eq_zero_iff_isPseudoholomorphicAt
+    ((contMDiff_apply_zero f).mdifferentiableAt (by simp))
 
 /-- On any almost complex manifold, `∂bar f = 0` exactly when `f` is pseudoholomorphic as a map
 into the complex vector space `F`. -/
@@ -122,7 +122,9 @@ there. -/
 theorem delBar_ofComplexManifold_apply_eq_zero_iff (f : SmoothForm 𝓘(ℝ, E) M F 0) (x : M) :
     ((ofComplexManifold E M).delBar f).1 x = 0 ↔
       MDifferentiableAt 𝓘(ℂ, E) 𝓘(ℂ, F) (fun y ↦ f.1 y 0) x := by
-  rw [delBar_apply_eq_zero_iff_isPseudoholomorphicAt, isPseudoholomorphicAt_ofComplexManifold_iff]
+  rw [delBar_apply_eq_zero_iff_dbarFunction_eq_zero]
+  exact dbarFunction_ofComplexManifold_eq_zero_iff
+    ((contMDiff_apply_zero f).mdifferentiableAt (by simp))
 
 /-- **The `∂bar`-closed functions are the holomorphic functions.** On a complex manifold, a smooth
 function `f` satisfies `∂bar f = 0` exactly when it is holomorphic. -/
