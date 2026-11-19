@@ -35,8 +35,8 @@ complexes with the maps which are weak homotopy equivalences.
 
 ## Main declarations
 
-* `SSet.rlp_monomorphisms_of_homotopy`: a Kan fibration with source a Kan complex which is a
-  simplicial homotopy equivalence is a trivial fibration.
+* `SSet.rlp_monomorphisms_of_homotopy_inverse`: a Kan fibration with source a Kan complex which
+  is a simplicial homotopy equivalence is a trivial fibration.
 * `SSet.rlp_monomorphisms_iff_exists_homotopy_inverse`: the corresponding characterization.
 * `SSet.rlp_monomorphisms_iff_isWeakHomotopyEquivalence`: a Kan fibration with target a Kan
   complex is a trivial fibration exactly when it is a weak homotopy equivalence.
@@ -66,28 +66,23 @@ variable {X Y : SSet.{u}}
 
 /-- A Kan fibration whose source is a Kan complex and which is a simplicial homotopy equivalence
 has the right lifting property with respect to all monomorphisms: it is a trivial fibration. -/
-theorem rlp_monomorphisms_of_homotopy (p : X ⟶ Y) [Fibration p] [KanComplex X] (g : Y ⟶ X)
-    (H₁ : Homotopy (p ≫ g) (𝟙 X)) (H₂ : Homotopy (g ≫ p) (𝟙 Y)) :
+theorem rlp_monomorphisms_of_homotopy_inverse (p : X ⟶ Y) [Fibration p] [KanComplex X]
+    (g : Y ⟶ X) (H₁ : Homotopy (p ≫ g) (𝟙 X)) (H₂ : Homotopy (g ≫ p) (𝟙 Y)) :
     (monomorphisms SSet.{u}).rlp p := by
   -- Lift `H₂` along `p`, starting at `g`: its other end is a section `s` of `p`, homotopic to `g`.
   have := (anodyneExtensions.horn_ι (n := 1) 0).whiskerLeft Y p (mem_fibrations p)
-  have hι : Y ◁ Λ[1, 0].ι = fst _ _ ≫ ι₀ := CartesianMonoidalCategory.hom_ext _ _
-    (by simp) (by simp [horn_one_ι_eq_const, comp_const])
   have h₀ : ι₀ ≫ H₂.h = g ≫ p := H₂.h₀
   have h₁ : ι₁ ≫ H₂.h = 𝟙 Y := H₂.h₁
   have sq : CommSq (fst Y _ ≫ g) (Y ◁ Λ[1, 0].ι) p H₂.h :=
-    ⟨by rw [hι]; simp only [Category.assoc]; rw [h₀]⟩
+    ⟨by rw [whiskerLeft_horn_one_zero_ι]; simp only [Category.assoc]; rw [h₀]⟩
   let s : Y ⟶ X := ι₁ ≫ sq.lift
   have hs : s ≫ p = 𝟙 Y := by rw [Category.assoc, sq.fac_right, h₁]
   -- The end `ι₀` of the cylinder factors through `Y ⊗ Λ[1, 0]`, by way of its vertex.
-  let t : Y ⟶ Y ⊗ Δ[0] := lift (𝟙 Y) (stdSimplex.isTerminalObj₀.from Y)
-  have ht : t ≫ fst Y Δ[0] = 𝟙 Y := lift_fst _ _
   have e : horn.ι 0 1 (by decide) ≫ Λ[1, 0].ι = stdSimplex.{u}.δ 1 := horn.ι_ι _ _ _
-  have hι₀ : (ι₀ : Y ⟶ Y ⊗ Δ[1]) = t ≫ Y ◁ stdSimplex.δ 1 := by
-    rw [whiskerLeft_stdSimplex_δ_one, reassoc_of% ht]
   have L : Homotopy g s := .mk' sq.lift (by
-    rw [hι₀, ← e, MonoidalCategory.whiskerLeft_comp, Category.assoc, Category.assoc,
-      sq.fac_left, whiskerLeft_fst_assoc, reassoc_of% ht]) rfl
+    rw [← fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_one_assoc, ← e,
+      MonoidalCategory.whiskerLeft_comp_assoc, sq.fac_left]
+    simp) rfl
   -- Since `X` is a Kan complex, `p ≫ s` is homotopic to `p ≫ g`, hence to `𝟙 X`.
   obtain ⟨K⟩ := (L.precomp p).nonempty_symm
   obtain ⟨K⟩ := K.nonempty_trans H₁
@@ -99,7 +94,8 @@ equivalence. -/
 theorem rlp_monomorphisms_iff_exists_homotopy_inverse (p : X ⟶ Y) [Fibration p] [KanComplex X] :
     (monomorphisms SSet.{u}).rlp p ↔
       ∃ g : Y ⟶ X, Nonempty (Homotopy (p ≫ g) (𝟙 X)) ∧ Nonempty (Homotopy (g ≫ p) (𝟙 Y)) := by
-  refine ⟨fun hp ↦ ?_, fun ⟨g, ⟨H₁⟩, ⟨H₂⟩⟩ ↦ rlp_monomorphisms_of_homotopy p g H₁ H₂⟩
+  refine ⟨fun hp ↦ ?_,
+    fun ⟨g, ⟨H₁⟩, ⟨H₂⟩⟩ ↦ rlp_monomorphisms_of_homotopy_inverse p g H₁ H₂⟩
   have := isSplitEpi_of_rlp_monomorphisms hp
   let h := Shrinking.ofRLP hp (section_ p) (IsSplitEpi.id p)
   exact ⟨h.section_, ⟨h.homotopy⟩, ⟨.ofEq (congrArg _ h.section_comp)⟩⟩

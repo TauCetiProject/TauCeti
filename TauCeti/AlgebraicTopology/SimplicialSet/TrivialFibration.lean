@@ -163,12 +163,14 @@ lemma Homotopy.exists_lift_horn₂₀ [Fibration p] {Z : SSet.{u}} {f₀ f₁ f�
     horn₂₀.isPushout.{u}.map (tensorLeft Z)
   have e₁ : horn₂₀.ι₀₁ ≫ Λ[2, 0].ι = stdSimplex.{u}.δ 2 := horn.ι_ι _ _ _
   have e₂ : horn₂₀.ι₀₂ ≫ Λ[2, 0].ι = stdSimplex.{u}.δ 1 := horn.ι_ι _ _ _
-  have d₁ : stdSimplex.{u}.δ (1 : Fin 2) ≫ stdSimplex.δ (0 : Fin 3) =
-      stdSimplex.δ 0 ≫ stdSimplex.δ 2 :=
-    (CosimplicialObject.δ_comp_δ _ (i := 0) (j := 1) (by decide)).symm
-  have d₂ : stdSimplex.{u}.δ (0 : Fin 2) ≫ stdSimplex.δ (0 : Fin 3) =
-      stdSimplex.δ 0 ≫ stdSimplex.δ 1 :=
-    (CosimplicialObject.δ_comp_δ _ (i := 0) (j := 0) (by decide)).symm
+  have d₁ : Z ◁ stdSimplex.{u}.δ (1 : Fin 2) ≫ Z ◁ stdSimplex.δ (0 : Fin 3) =
+      Z ◁ stdSimplex.δ 0 ≫ Z ◁ stdSimplex.δ 2 := by
+    simp only [← MonoidalCategory.whiskerLeft_comp]
+    exact congrArg _ (CosimplicialObject.δ_comp_δ stdSimplex (i := 0) (j := 1) (by decide)).symm
+  have d₂ : Z ◁ stdSimplex.{u}.δ (0 : Fin 2) ≫ Z ◁ stdSimplex.δ (0 : Fin 3) =
+      Z ◁ stdSimplex.δ 0 ≫ Z ◁ stdSimplex.δ 1 := by
+    simp only [← MonoidalCategory.whiskerLeft_comp]
+    exact congrArg _ (CosimplicialObject.δ_comp_δ stdSimplex (i := 0) (j := 0) (by decide)).symm
   have h₀ : ι₀ ≫ H₀₁.h = ι₀ ≫ H₀₂.h := by rw [H₀₁.h₀, H₀₂.h₀]
   have h₁ : ι₁ ≫ H₀₁.h = f₁ := H₀₁.h₁
   have h₂ : ι₁ ≫ H₀₂.h = f₂ := H₀₂.h₁
@@ -178,21 +180,17 @@ lemma Homotopy.exists_lift_horn₂₀ [Fibration p] {Z : SSet.{u}} {f₀ f₁ f�
     (by rw [hpo.inl_desc_assoc, ← whiskerLeft_comp_assoc, e₁, h₀₁])
     (by rw [hpo.inr_desc_assoc, ← whiskerLeft_comp_assoc, e₂, h₀₂])⟩
   have := (anodyneExtensions.horn_ι (n := 2) 0).whiskerLeft Z p (mem_fibrations p)
-  -- The ends `ι₀` and `ι₁` of the cylinder factor through the projection `Z ⊗ Δ[0] ⟶ Z`, which
-  -- has the section `t`.
-  let t : Z ⟶ Z ⊗ Δ[0] := lift (𝟙 Z) (stdSimplex.isTerminalObj₀.from Z)
-  have ht : t ≫ fst Z Δ[0] = 𝟙 Z := lift_fst _ _
-  have hι₀ : (ι₀ : Z ⟶ Z ⊗ Δ[1]) = t ≫ Z ◁ stdSimplex.δ 1 := by
-    rw [whiskerLeft_stdSimplex_δ_one, reassoc_of% ht]
-  have hι₁ : (ι₁ : Z ⟶ Z ⊗ Δ[1]) = t ≫ Z ◁ stdSimplex.δ 0 := by
-    rw [whiskerLeft_stdSimplex_δ_zero, reassoc_of% ht]
+  -- The faces `0 → 1` and `0 → 2` of the extension are `H₀₁` and `H₀₂`.
+  have l₀₁ : Z ◁ stdSimplex.δ 2 ≫ sq.lift = H₀₁.h := by
+    rw [← e₁, MonoidalCategory.whiskerLeft_comp_assoc, sq.fac_left, hpo.inl_desc]
+  have l₀₂ : Z ◁ stdSimplex.δ 1 ≫ sq.lift = H₀₂.h := by
+    rw [← e₂, MonoidalCategory.whiskerLeft_comp_assoc, sq.fac_left, hpo.inr_desc]
+  -- The ends of the face `1 → 2` are the ends `1` and `2` of these faces.
   refine ⟨.mk' (Z ◁ stdSimplex.δ 0 ≫ sq.lift) ?_ ?_, ?_⟩
-  · rw [hι₀, Category.assoc, ← whiskerLeft_comp_assoc, d₁, ← e₁,
-      MonoidalCategory.whiskerLeft_comp_assoc, MonoidalCategory.whiskerLeft_comp_assoc,
-      sq.fac_left, hpo.inl_desc, ← Category.assoc, ← hι₁, h₁]
-  · rw [hι₁, Category.assoc, ← whiskerLeft_comp_assoc, d₂, ← e₂,
-      MonoidalCategory.whiskerLeft_comp_assoc, MonoidalCategory.whiskerLeft_comp_assoc,
-      sq.fac_left, hpo.inr_desc, ← Category.assoc, ← hι₁, h₂]
+  · rw [← fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_one_assoc, reassoc_of% d₁, l₀₁,
+      fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_zero_assoc, h₁]
+  · rw [← fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_zero_assoc, reassoc_of% d₂, l₀₂,
+      fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_zero_assoc, h₂]
   · rw [Homotopy.mk'_h, Category.assoc, sq.fac_right]
 
 /-- Let `p` be a Kan fibration with a section `s` such that `p ≫ s` is homotopic to `𝟙 X`. Then
@@ -219,8 +217,8 @@ private lemma exists_homotopy_over_of_homotopy [Fibration p] (s : Y ⟶ X) (hs :
       Homotopy.mk'_h, Category.assoc, Category.assoc, hs, Category.comp_id])
     (by rw [← whiskerLeft_comp_assoc, d₂, MonoidalCategory.whiskerLeft_id, Category.id_comp])
   refine ⟨K, ?_⟩
-  rw [hK, ← whiskerLeft_comp_assoc, d₀, MonoidalCategory.whiskerLeft_comp_assoc,
-    whiskerLeft_stdSimplex_δ_zero, Category.assoc, reassoc_of% h₁, whiskerLeft_fst_assoc]
+  rw [hK, ← whiskerLeft_comp_assoc, d₀]
+  simp [whiskerLeft_stdSimplex_δ_zero]
 
 /-- A section `s` of a Kan fibration `p` such that `p ≫ s` is homotopic to `𝟙 X`, through a
 homotopy which need not lie over `Y`, extends to a shrinking of `p`. -/
@@ -252,9 +250,7 @@ theorem rlp_monomorphisms [Fibration p] (h : Shrinking p) : (monomorphisms SSet.
   have := hP p (mem_fibrations p)
   let φ : P.pt ⟶ X := P.isPushout.desc (fst _ _ ≫ b ≫ h.section_) (a ▷ _ ≫ h.homotopy.h) (by
     have e : X ◁ Λ[1, 0].ι ≫ h.homotopy.h = fst _ _ ≫ p ≫ h.section_ := by
-      have hι : X ◁ Λ[1, 0].ι = fst _ _ ≫ ι₀ := CartesianMonoidalCategory.hom_ext _ _
-        (by simp) (by simp [horn_one_ι_eq_const, comp_const])
-      rw [hι, Category.assoc, Homotopy.h₀]
+      rw [whiskerLeft_horn_one_zero_ι, Category.assoc, Homotopy.h₀]
     dsimp
     rw [whisker_exchange_assoc, e]
     simp [sq.w_assoc])
