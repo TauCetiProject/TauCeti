@@ -52,30 +52,59 @@ def primeInterval (x y z : ℝ) : BoundingSieve where
       ArithmeticFunction.id_apply, one_div]
     exact inv_lt_one_of_one_lt₀ (by exact_mod_cast hp.one_lt)
 
+/-- The interval sieve is supported on the natural numbers between its floored endpoints. -/
+@[simp]
+theorem primeInterval_support (x y z : ℝ) :
+    (primeInterval x y z).support = Ioc ⌊x⌋₊ ⌊x + y⌋₊ := by
+  rfl
+
+/-- The interval sieve removes all primes at most its cutoff. -/
+@[simp]
+theorem primeInterval_prodPrimes (x y z : ℝ) :
+    (primeInterval x y z).prodPrimes = primorial ⌊z⌋₊ := by
+  rfl
+
+/-- Every member of an interval sieve has unit weight. -/
+@[simp]
+theorem primeInterval_weights (x y z : ℝ) :
+    (primeInterval x y z).weights = fun _ ↦ 1 := by
+  rfl
+
+/-- The main-term mass of an interval sieve is its interval length. -/
+@[simp]
+theorem primeInterval_totalMass (x y z : ℝ) :
+    (primeInterval x y z).totalMass = y := by
+  rfl
+
+/-- The local density is the reciprocal of the natural index, including zero. -/
+@[simp]
+theorem primeInterval_nu_apply (x y z : ℝ) (d : ℕ) :
+    (primeInterval x y z).nu d = (d : ℝ)⁻¹ := by
+  by_cases hd : d = 0 <;> simp [primeInterval, hd]
+
 /-- The multiple count for an interval sieve is an exact difference of integer quotients. -/
 theorem multSum_primeInterval (x y z : ℝ) (d : ℕ) :
     (primeInterval x y z).multSum d = (⌊x + y⌋₊ / d - ⌊x⌋₊ / d : ℕ) := by
-  simp only [multSum, primeInterval, sum_boole, Nat.cast_inj]
+  simp only [multSum, primeInterval_support, primeInterval_weights, sum_boole, Nat.cast_inj]
   exact Nat.Ioc_filter_dvd_card _ _ _
 
 /-- On intervals of nonnegative length, the remainder is a difference of floor errors. -/
 theorem rem_primeInterval (x y z : ℝ) (hy : 0 ≤ y) (d : ℕ) :
     (primeInterval x y z).rem d =
       (⌊(x + y) / d⌋₊ : ℝ) - ⌊x / d⌋₊ - y / d := by
-  by_cases hd : d = 0
-  · subst d
-    simp [rem, primeInterval]
-  rw [rem, multSum_primeInterval, Nat.cast_sub
+  rw [rem, multSum_primeInterval, primeInterval_nu_apply, primeInterval_totalMass, Nat.cast_sub
     (Nat.div_le_div_right (Nat.floor_mono (by linarith : x ≤ x + y)))]
   rw [Nat.floor_div_natCast, Nat.floor_div_natCast]
-  simp [primeInterval, ite_eq_right hd, div_eq_mul_inv, mul_comm]
+  simp [div_eq_mul_inv, mul_comm]
 
 /-- The interval remainder is strictly less than one at every natural index. -/
 theorem abs_rem_primeInterval_lt_one (x y z : ℝ) (hx : 0 ≤ x) (hy : 0 ≤ y)
     (d : ℕ) : |(primeInterval x y z).rem d| < 1 := by
-  have h₁ := Nat.floor_le (show 0 ≤ (x + y) / d by positivity)
+  have hxy : 0 ≤ (x + y) / d := by positivity
+  have hx' : 0 ≤ x / d := by positivity
+  have h₁ := Nat.floor_le hxy
   have h₂ := Nat.lt_floor_add_one ((x + y) / d)
-  have h₃ := Nat.floor_le (show 0 ≤ x / d by positivity)
+  have h₃ := Nat.floor_le hx'
   have h₄ := Nat.lt_floor_add_one (x / d)
   rw [rem_primeInterval x y z hy d, abs_lt]
   constructor <;> linarith [add_div x y (d : ℝ)]
@@ -85,7 +114,7 @@ theorem siftedSum_primeInterval (x y z : ℝ) :
     (primeInterval x y z).siftedSum =
       (((Ioc ⌊x⌋₊ ⌊x + y⌋₊).filter (Nat.Coprime (primorial ⌊z⌋₊))).card : ℝ) := by
   classical
-  simp only [siftedSum, primeInterval]
+  simp only [siftedSum, primeInterval_support, primeInterval_prodPrimes, primeInterval_weights]
   exact (natCast_card_filter _ _).symm
 
 /-- A prime in the interval either survives sifting or is at most the sieving cutoff. -/
