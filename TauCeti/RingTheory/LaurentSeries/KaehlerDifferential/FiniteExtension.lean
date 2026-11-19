@@ -65,13 +65,13 @@ their differential trace. For every separable level chart this is exactly the
 coefficient residue in its level parameter. -/
 noncomputable def residueBaseChange :
     L ⊗[K⸨X⸩] ContinuousKaehlerDifferential K →+ K where
-  toFun η := (equivLaurentSeries K (traceBaseChange L η)).coeff (-1)
+  toFun η := residue K (traceBaseChange L η)
   map_zero' := by simp
   map_add' η θ := by simp
 
-/-- The residue is the coefficient of `t⁻¹` in the differential trace. -/
+/-- The residue on scalar-extended forms is the residue of the differential trace. -/
 theorem residueBaseChange_apply (η : L ⊗[K⸨X⸩] ContinuousKaehlerDifferential K) :
-    residueBaseChange L η = (equivLaurentSeries K (traceBaseChange L η)).coeff (-1) :=
+    residueBaseChange L η = residue K (traceBaseChange L η) :=
   (rfl)
 
 /-- On a pure tensor `x ⊗ f dt`, the residue is the coefficient of `t⁻¹` in
@@ -80,14 +80,13 @@ theorem residueBaseChange_apply (η : L ⊗[K⸨X⸩] ContinuousKaehlerDifferent
 theorem residueBaseChange_tmul (x : L) (ω : ContinuousKaehlerDifferential K) :
     residueBaseChange L (x ⊗ₜ ω) =
       (Algebra.trace K⸨X⸩ L x * equivLaurentSeries K ω).coeff (-1) := by
-  simp [residueBaseChange_apply]
+  simp [residueBaseChange_apply, residue_apply]
 
 /-- The residue of a form pulled back from the base is multiplied by the degree. -/
 theorem residueBaseChange_one_tmul (ω : ContinuousKaehlerDifferential K) :
     residueBaseChange L (1 ⊗ₜ ω) =
-      Module.finrank K⸨X⸩ L • (equivLaurentSeries K ω).coeff (-1) := by
-  rw [residueBaseChange_apply, traceBaseChange_one_tmul]
-  simp only [map_nsmul, HahnSeries.coeff_nsmul, Pi.smul_apply]
+      Module.finrank K⸨X⸩ L • residue K ω := by
+  rw [residueBaseChange_apply, traceBaseChange_one_tmul, map_nsmul]
 
 end TauCeti.ContinuousKaehlerDifferential
 
@@ -162,7 +161,7 @@ theorem residueBaseChange_eq_coeff (e : L ≃ₐ[K⸨X⸩] TauCeti.LaurentSeries
         (TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential.equivLevel K d
           (e.laurentDifferentialTensorEquiv η))).coeff (-1) := by
   rw [residueBaseChange_apply, ← trace_laurentDifferentialTensorEquiv e]
-  exact coeff_neg_one_equivLaurentSeries_trace _
+  exact residue_trace _
 
 /-- **Independence of the level chart.** Two isomorphisms with ramified levels give
 the same coefficient residue on scalar-extended forms. The levels need not be
