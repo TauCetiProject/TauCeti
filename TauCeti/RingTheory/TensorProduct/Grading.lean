@@ -122,12 +122,10 @@ theorem tensorGradedPart_zpow_mul_zpow_neg_mul (k : ℤ) (g : GA) (h : GB) :
       tensorGradedPart Ag Bg lA lB (g, h) := by
   refine le_antisymm (tensorGradedPart_le_iff.2 fun n a ha b hb ↦ ?_)
     (tensorGradedPart_le_iff.2 fun n a ha b hb ↦ ?_)
-  · refine tmul_mem_tensorGradedPart_of_zpow (n + k) ?_ ?_
-    · rwa [zpow_add, mul_assoc]
-    · rwa [neg_add, zpow_add, mul_assoc]
-  · refine tmul_mem_tensorGradedPart_of_zpow (n - k) ?_ ?_
-    · rwa [← mul_assoc, ← zpow_add, sub_add_cancel]
-    · rwa [← mul_assoc, ← zpow_add, show -(n - k) + -k = -n by ring]
+  · exact tmul_mem_tensorGradedPart_of_zpow (n + k) (by convert ha using 2; group)
+      (by convert hb using 2; group)
+  · exact tmul_mem_tensorGradedPart_of_zpow (n - k) (by convert ha using 2; group)
+      (by convert hb using 2; group)
 
 /-- The parts are invariant under multiplication of the degree by `(l_A, l_B⁻¹)`. -/
 private theorem tensorGradedPart_mk_inv_mul (g : GA × GB) :
@@ -179,33 +177,21 @@ theorem mul_mem_tensorGradedPart
     intro m
     rw [Submodule.mul_iSup, iSup_le_iff]
     intro n
-    rw [Submodule.mul_le]
-    intro x hx y hy
     -- Both factors are spans of pure tensors, and products of pure tensors are pure tensors.
-    rw [Submodule.map₂_eq_span_image2] at hx hy
-    induction hx using Submodule.span_induction with
-    | mem x hx =>
-      induction hy using Submodule.span_induction with
-      | mem y hy =>
-        obtain ⟨a, ha, b, hb, rfl⟩ := hx
-        obtain ⟨a', ha', b', hb', rfl⟩ := hy
-        simp only [TensorProduct.mk_apply, Algebra.TensorProduct.tmul_mul_tmul]
-        refine tmul_mem_tensorGradedPart_of_zpow (m + n) ?_ ?_
-        · -- The central factor `l_Aⁿ` commutes past `g.1`.
-          have hc : Commute g.1 (lA ^ n) :=
-            Subgroup.mem_center_iff.mp (Subgroup.zpow_mem _ hlA n) g.1
-          rw [Prod.fst_mul, zpow_add, ← hc.mul_mul_mul_comm]
-          exact hA ha ha'
-        · have hc : Commute g.2 (lB ^ (-n)) :=
-            Subgroup.mem_center_iff.mp (Subgroup.zpow_mem _ hlB (-n)) g.2
-          rw [Prod.snd_mul, neg_add, zpow_add, ← hc.mul_mul_mul_comm]
-          exact hB hb hb'
-      | zero => rw [mul_zero]; exact zero_mem _
-      | add y y' _ _ hy hy' => rw [mul_add]; exact add_mem hy hy'
-      | smul r y _ hy => rw [mul_smul_comm]; exact Submodule.smul_mem _ r hy
-    | zero => rw [zero_mul]; exact zero_mem _
-    | add x x' _ _ hx hx' => rw [add_mul]; exact add_mem hx hx'
-    | smul r x _ hx => rw [smul_mul_assoc]; exact Submodule.smul_mem _ r hx
+    rw [Submodule.map₂_eq_span_image2, Submodule.map₂_eq_span_image2, Submodule.span_mul_span,
+      Submodule.span_le]
+    rintro _ ⟨_, ⟨a, ha, b, hb, rfl⟩, _, ⟨a', ha', b', hb', rfl⟩, rfl⟩
+    simp only [TensorProduct.mk_apply, Algebra.TensorProduct.tmul_mul_tmul, SetLike.mem_coe]
+    refine tmul_mem_tensorGradedPart_of_zpow (m + n) ?_ ?_
+    · -- The central factor `l_Aⁿ` commutes past `g.1`.
+      have hc : Commute g.1 (lA ^ n) :=
+        Subgroup.mem_center_iff.mp (Subgroup.zpow_mem _ hlA n) g.1
+      rw [Prod.fst_mul, zpow_add, ← hc.mul_mul_mul_comm]
+      exact hA ha ha'
+    · have hc : Commute g.2 (lB ^ (-n)) :=
+        Subgroup.mem_center_iff.mp (Subgroup.zpow_mem _ hlB (-n)) g.2
+      rw [Prod.snd_mul, neg_add, zpow_add, ← hc.mul_mul_mul_comm]
+      exact hB hb hb'
   exact key (Submodule.mul_mem_mul hx hy)
 
 /-- **Homogeneous matrices for the tensor grading.** A matrix over `A ⊗ B` is homogeneous of
@@ -268,14 +254,10 @@ theorem ungradedTensorDifferential_mem_tensorGradedPart {dA : A →ₗ[R] A} {dB
     -- `d_A a ⊗ b` keeps the index `n`; `a ⊗ d_B b` moves to the index `n - 1`.
     refine add_mem (tmul_mem_tensorGradedPart_of_zpow n ?_ ?_)
       (tmul_mem_tensorGradedPart_of_zpow (n - 1) ?_ ?_)
-    · simp only [Prod.fst_mul]
-      rw [← mul_assoc, ← (Commute.self_zpow lA n).eq, mul_assoc]
-      exact hdA ha
+    · convert hdA ha using 2; simp only [Prod.fst_mul]; group
     · simpa only [Prod.snd_mul, one_mul] using hb
     · simpa only [Prod.fst_mul, ← mul_assoc, ← zpow_add_one, sub_add_cancel] using ha
-    · simp only [Prod.snd_mul, one_mul]
-      rw [show -(n - 1) = 1 + -n by ring, zpow_add, zpow_one, mul_assoc]
-      exact hdB hb
+    · convert hdB hb using 2; simp only [Prod.snd_mul, one_mul]; group
   exact key hx
 
 end Differential

@@ -150,11 +150,9 @@ theorem homogeneousMatrices_mul_left_eq {z : G} (hz : ∀ g, Ag (z * g) = Ag g) 
   simp only [mem_homogeneousMatrices_iff]
   refine forall₂_congr fun x x' ↦ ?_
   -- Multiplying the degree by `z` matches the two index sets of the suprema.
-  let e : {g : G // g • gr' x' = c • gr x} ≃ {g : G // g • gr' x' = (z * c) • gr x} :=
-    { toFun g := ⟨z * g.1, by rw [mul_smul, g.2, ← mul_smul]⟩
-      invFun g := ⟨z⁻¹ * g.1, by rw [mul_smul, g.2, ← mul_smul, inv_mul_cancel_left]⟩
-      left_inv g := Subtype.ext (inv_mul_cancel_left z g.1)
-      right_inv g := Subtype.ext (mul_inv_cancel_left z g.1) }
+  let e := (Equiv.mulLeft z).subtypeEquiv (p := fun g : G ↦ g • gr' x' = c • gr x)
+    (q := fun g ↦ g • gr' x' = (z * c) • gr x) fun g ↦ by
+      simp only [Equiv.coe_mulLeft, mul_smul, smul_left_cancel_iff]
   rw [e.iSup_congr (f := fun g ↦ Ag g.1) (g := fun g ↦ Ag g.1) fun g ↦ hz g.1]
 
 /-- A **block matrix** is homogeneous of degree `c` for the gradings of the sums of the index
