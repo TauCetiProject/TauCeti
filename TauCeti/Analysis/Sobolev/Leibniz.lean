@@ -409,35 +409,23 @@ theorem HasWeakLineDerivOn.contDiffOn_clm_apply_of_ne_zero [FiniteDimensional �
     (hΦ : ContDiffOn ℝ n Φ Ω) (hn : n ≠ 0) :
     HasWeakLineDerivOn μ Ω (fun x => Φ x (u x)) (fun x => Φ x (u' x) + fderiv ℝ Φ x v (u x))
       v := by
-  -- Expand `Φ x = ∑ᵢⱼ Φᵢⱼ x • Mᵢⱼ` in the coordinates of bases `(bⱼ)` of `F` and `(eᵢ)` of `G`,
-  -- with `Mᵢⱼ y = cⱼ y • eᵢ`; the scalar `C¹` Leibniz rule applies to each `Φᵢⱼ x • Mᵢⱼ (u x)`.
-  set b := Module.finBasis ℝ F
-  set e := Module.finBasis ℝ G
-  let c : Fin (Module.finrank ℝ F) → F →L[ℝ] ℝ := fun j =>
-    LinearMap.toContinuousLinearMap (b.coord j)
-  let d : Fin (Module.finrank ℝ G) → G →L[ℝ] ℝ := fun i =>
-    LinearMap.toContinuousLinearMap (e.coord i)
-  let L : Fin (Module.finrank ℝ G) × Fin (Module.finrank ℝ F) → (F →L[ℝ] G) →L[ℝ] ℝ :=
-    fun ij => (d ij.1).comp (ContinuousLinearMap.apply ℝ G (b ij.2))
-  let M : Fin (Module.finrank ℝ G) × Fin (Module.finrank ℝ F) → F →L[ℝ] G :=
-    fun ij => (c ij.2).smulRight (e ij.1)
-  have hexp (T : F →L[ℝ] G) (y : F) : ∑ ij, L ij T • M ij y = T y := by
-    conv_rhs => rw [← b.sum_repr y, map_sum]
-    rw [Fintype.sum_prod_type, Finset.sum_comm]
-    refine Finset.sum_congr rfl fun j _ => ?_
-    rw [map_smul, ← e.sum_repr (T (b j)), Finset.smul_sum]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    simp only [L, M, c, d, ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply,
-      ContinuousLinearMap.smulRight_apply, LinearMap.coe_toContinuousLinearMap',
-      Module.Basis.coord_apply, smul_smul, mul_comm]
-  have hsum := HasWeakLineDerivOn.sum (F := G) Finset.univ fun ij _ =>
-    (h.clm_comp (M ij)).contDiffOn_smul_of_ne_zero ((L ij).contDiff.comp_contDiffOn hΦ) hn
+  -- Expand `Φ x = ∑ₘ cₘ (Φ x) • bₘ` in a basis `(bₘ)` of `F →L[ℝ] G`; the scalar `C¹` Leibniz
+  -- rule applies to each `cₘ (Φ x) • bₘ (u x)`.
+  set b := Module.finBasis ℝ (F →L[ℝ] G)
+  let c : Fin (Module.finrank ℝ (F →L[ℝ] G)) → (F →L[ℝ] G) →L[ℝ] ℝ := fun m =>
+    LinearMap.toContinuousLinearMap (b.coord m)
+  have hexp (T : F →L[ℝ] G) (y : F) : ∑ m, c m T • b m y = T y := by
+    calc ∑ m, c m T • b m y = (∑ m, b.repr T m • b m) y := by
+          simp [-Module.Basis.sum_repr, c]
+      _ = T y := by rw [b.sum_repr]
+  have hsum := HasWeakLineDerivOn.sum (F := G) Finset.univ fun m _ =>
+    (h.clm_comp (b m)).contDiffOn_smul_of_ne_zero ((c m).contDiff.comp_contDiffOn hΦ) hn
   refine (hsum.congr_ae (Filter.Eventually.of_forall fun x => hexp (Φ x) (u x))).congr_ae_deriv ?_
   filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet] with x hx
   have hd : DifferentiableAt ℝ Φ x :=
     ((hΦ.of_le (ENat.one_le_iff_ne_zero_withTop.2 hn)).differentiableOn one_ne_zero x
       hx).differentiableAt (Ω.isOpen.mem_nhds hx)
-  simp only [Finset.sum_add_distrib, fderiv_comp x (L _).differentiableAt hd,
+  simp only [Finset.sum_add_distrib, fderiv_comp x (c _).differentiableAt hd,
     ContinuousLinearMap.fderiv, ContinuousLinearMap.comp_apply, Function.comp_apply, hexp]
 
 /-- **A bounded Lipschitz factor keeps an `Lᵖ` weak derivative.** If `u ∈ Lᵖ(Ω)` has a weak

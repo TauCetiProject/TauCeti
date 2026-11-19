@@ -24,6 +24,12 @@ be. For a simple function `a`, which lies in `L^∞`, the operator factors throu
 functions are dense in `L^p`, the operator depends continuously on `a`, and compact operators form
 a closed set. For a bounded coefficient `α ∈ L^∞` the composite `u ↦ (V u) α` is compact directly,
 since Hölder multiplication `L^∞ × L^q → L^q` is bounded.
+
+Pointwise application `f ↦ (x ↦ Φ x (f x))` of an `L^∞` function `Φ` of operators on `E` is
+Hölder multiplication `L^∞ × L^p → L^p`. Where `Ψ Φ = 1` almost everywhere it is undone by
+application of `Ψ` (`ContinuousLinearMap.holder_holder_of_comp_eq_id`), so for a two-sided
+pointwise inverse it is a continuous linear automorphism `MeasureTheory.Lp.pointwiseApplyEquiv`
+of `L^p`.
 -/
 
 public section
@@ -84,7 +90,59 @@ theorem isCompactOperator_holderL_comp_of_ae_eq {α 𝕜 X E F G : Type*} [Measu
   rw [hfac]
   exact hV.clm_comp (B.holderL μ ∞ q q g)
 
+/-- Pointwise application of an `L^∞` function `Ψ` of operators undoes pointwise application of
+`Φ` on `L^p` where `Ψ Φ = 1` almost everywhere. -/
+theorem holder_holder_of_comp_eq_id {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] {p : ℝ≥0∞}
+    {Φ Ψ : Lp (E →L[𝕜] E) ∞ μ} (hΨΦ : ∀ᵐ x ∂μ, Ψ x ∘L Φ x = ContinuousLinearMap.id 𝕜 E)
+    (f : Lp E p μ) :
+    (ContinuousLinearMap.id 𝕜 (E →L[𝕜] E)).holder p Ψ
+      ((ContinuousLinearMap.id 𝕜 (E →L[𝕜] E)).holder p Φ f) = f := by
+  let H := ContinuousLinearMap.id 𝕜 (E →L[𝕜] E)
+  apply Lp.ext
+  filter_upwards [H.coeFn_holder (r := p) Ψ (H.holder p Φ f), H.coeFn_holder (r := p) Φ f, hΨΦ]
+    with x h₁ h₂ hx
+  rw [h₁, h₂]
+  simpa [H] using congrArg (fun T : E →L[𝕜] E ↦ T (f x)) hx
+
 end ContinuousLinearMap
+
+namespace MeasureTheory.Lp
+
+variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+  {Φ Ψ : Lp (E →L[𝕜] E) ∞ μ}
+
+variable (p) in
+/-- **Pointwise application of an invertible `L^∞` function of operators** on `L^p`,
+`f ↦ (x ↦ Φ x (f x))`, as a continuous linear automorphism, with inverse the pointwise application
+of the pointwise inverse `Ψ`. -/
+noncomputable def pointwiseApplyEquiv
+    (hΨΦ : ∀ᵐ x ∂μ, Ψ x ∘L Φ x = ContinuousLinearMap.id 𝕜 E)
+    (hΦΨ : ∀ᵐ x ∂μ, Φ x ∘L Ψ x = ContinuousLinearMap.id 𝕜 E) : Lp E p μ ≃L[𝕜] Lp E p μ :=
+  ContinuousLinearEquiv.equivOfInverse
+    ((ContinuousLinearMap.id 𝕜 (E →L[𝕜] E)).holderL μ ∞ p p Φ)
+    ((ContinuousLinearMap.id 𝕜 (E →L[𝕜] E)).holderL μ ∞ p p Ψ)
+    (ContinuousLinearMap.holder_holder_of_comp_eq_id hΨΦ)
+    (ContinuousLinearMap.holder_holder_of_comp_eq_id hΦΨ)
+
+/-- The automorphism `pointwiseApplyEquiv` is pointwise application of `Φ`. -/
+@[simp]
+theorem pointwiseApplyEquiv_apply (hΨΦ : ∀ᵐ x ∂μ, Ψ x ∘L Φ x = ContinuousLinearMap.id 𝕜 E)
+    (hΦΨ : ∀ᵐ x ∂μ, Φ x ∘L Ψ x = ContinuousLinearMap.id 𝕜 E) (f : Lp E p μ) :
+    pointwiseApplyEquiv p hΨΦ hΦΨ f = (ContinuousLinearMap.id 𝕜 (E →L[𝕜] E)).holder p Φ f :=
+  (rfl)
+
+/-- The inverse of `pointwiseApplyEquiv` is pointwise application of `Ψ`. -/
+@[simp]
+theorem pointwiseApplyEquiv_symm_apply
+    (hΨΦ : ∀ᵐ x ∂μ, Ψ x ∘L Φ x = ContinuousLinearMap.id 𝕜 E)
+    (hΦΨ : ∀ᵐ x ∂μ, Φ x ∘L Ψ x = ContinuousLinearMap.id 𝕜 E) (f : Lp E p μ) :
+    (pointwiseApplyEquiv p hΨΦ hΦΨ).symm f =
+      (ContinuousLinearMap.id 𝕜 (E →L[𝕜] E)).holder p Ψ f :=
+  (rfl)
+
+end MeasureTheory.Lp
 
 namespace TauCeti
 
