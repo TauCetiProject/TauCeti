@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
+import TauCeti.Algebra.Group.Pow
 
 /-!
 # The quadratic refinement of a symmetric pairing of odd order
@@ -47,12 +48,6 @@ public section
 namespace TauCeti
 
 universe u v
-
-/-- In odd order `n`, halving by `(n + 1) / 2` inverts doubling on elements killed by `n`. -/
-private theorem nsmul_two_nsmul_of_odd {M : Type*} [AddMonoid M] {n : ℕ} (hn : Odd n) {a : M}
-    (ha : n • a = 0) : ((n + 1) / 2) • (2 • a) = a := by
-  obtain ⟨t, rfl⟩ := hn
-  rw [smul_smul, show (2 * t + 1 + 1) / 2 * 2 = 2 * t + 1 + 1 by omega, succ_nsmul, ha, zero_add]
 
 namespace FiniteBilinearModule
 
