@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import TauCeti.Analysis.Distribution.SchwartzSpace.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.TemperateGrowth
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.MeasureTheory.Function.Jacobian
 
@@ -40,6 +42,13 @@ If the Jacobian of `φ` is bounded below, `c ≤ |det Dφ|` with `c > 0`, the pu
 `Lᵖ` space to itself, with norm at most `c^{-1/p}`
 (`exists_compCLM_toTemperedDistribution_eq_and_norm_le`).
 
+Along a linear isometry `A` of an inner product space the pullback is `T ↦ T (· ∘ A⁻¹)`
+(`compCLM_linearIsometryEquiv_apply_apply`). It commutes with the Fourier transform and its
+inverse (`fourier_compCLM_linearIsometryEquiv`, `fourierInv_compCLM_linearIsometryEquiv`), hence
+with every Fourier multiplier whose symbol is invariant under `A`
+(`fourierMultiplierCLM_compCLM_linearIsometryEquiv`), and it sends the distribution of an `Lᵖ`
+function `u` to that of `u ∘ A` (`compCLM_linearIsometryEquiv_toTemperedDistribution`).
+
 This is the global change of variables on `𝓢'` against which the Bessel-potential spaces `H^s`,
 which are subspaces of `𝓢'`, are compared under diffeomorphisms of `E`. It needs no bound on the
 derivatives beyond temperate growth: the shear `(x, y) ↦ (x, y + x³)` of `ℝ²` and its inverse are
@@ -52,8 +61,8 @@ polynomial, with unbounded derivatives, and they pull back tempered distribution
 
 public noncomputable section
 
-open MeasureTheory
-open scoped SchwartzMap LineDeriv
+open MeasureTheory FourierTransform
+open scoped SchwartzMap ENNReal LineDeriv
 
 namespace TemperedDistribution
 
@@ -219,5 +228,89 @@ theorem compCLM_delta (hφ : (φ : E → E).HasTemperateGrowth)
   rw [Equiv.symm_apply_apply] at h
   ext f
   simp [eq_inv_of_mul_eq_one_left h, abs_inv]
+
+section LinearIsometry
+
+/-! ### Pullback along a linear isometry
+
+On an inner product space the pullback along a linear isometry `A` is `T ↦ T (· ∘ A⁻¹)`, and it
+commutes with the Fourier transform, because `𝓕 (f ∘ A⁻¹) = (𝓕 f) ∘ A⁻¹`. -/
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+
+section LinearIsometryTVS
+
+variable [AddCommGroup F] [Module ℂ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  [ContinuousConstSMul ℂ F]
+
+/-- The pullback of a tempered distribution along a linear isometry `A` is `T ↦ T (· ∘ A⁻¹)`. -/
+theorem compCLM_linearIsometryEquiv_apply_apply (A : V ≃ₗᵢ[ℝ] V)
+    (hφ : ((A.toEquiv : V ≃ V) : V → V).HasTemperateGrowth)
+    (hψ : ((A.toEquiv.symm : V ≃ V) : V → V).HasTemperateGrowth) (T : 𝓢'(V, F)) (f : 𝓢(V, ℂ)) :
+    compCLM F A.toEquiv hφ hψ T f =
+      T (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A.symm.toContinuousLinearEquiv f) := by
+  rw [compCLM_apply_apply, SchwartzMap.pushforwardCLM_linearIsometryEquiv]
+
+variable [MeasurableSpace V] [BorelSpace V]
+
+/-- **The Fourier transform commutes with the pullback along a linear isometry.** -/
+theorem fourier_compCLM_linearIsometryEquiv (A : V ≃ₗᵢ[ℝ] V)
+    (hφ : ((A.toEquiv : V ≃ V) : V → V).HasTemperateGrowth)
+    (hψ : ((A.toEquiv.symm : V ≃ V) : V → V).HasTemperateGrowth) (T : 𝓢'(V, F)) :
+    𝓕 (compCLM F A.toEquiv hφ hψ T) = compCLM F A.toEquiv hφ hψ (𝓕 T) := by
+  ext f
+  simp only [fourier_apply, compCLM_linearIsometryEquiv_apply_apply]
+  congr 1
+  ext w
+  simp [SchwartzMap.fourier_coe, Real.fourier_comp_linearIsometry]
+
+/-- **The inverse Fourier transform commutes with the pullback along a linear isometry.** -/
+theorem fourierInv_compCLM_linearIsometryEquiv (A : V ≃ₗᵢ[ℝ] V)
+    (hφ : ((A.toEquiv : V ≃ V) : V → V).HasTemperateGrowth)
+    (hψ : ((A.toEquiv.symm : V ≃ V) : V → V).HasTemperateGrowth) (T : 𝓢'(V, F)) :
+    𝓕⁻ (compCLM F A.toEquiv hφ hψ T) = compCLM F A.toEquiv hφ hψ (𝓕⁻ T) := by
+  ext f
+  simp only [fourierInv_apply, compCLM_linearIsometryEquiv_apply_apply]
+  congr 1
+  ext w
+  simp [SchwartzMap.fourierInv_coe, Real.fourierInv_comp_linearIsometry]
+
+end LinearIsometryTVS
+
+variable [NormedAddCommGroup F] [NormedSpace ℂ F] [MeasurableSpace V] [BorelSpace V]
+
+/-- A Fourier multiplier whose symbol is invariant under a linear isometry `A` commutes with the
+pullback along `A`. -/
+theorem fourierMultiplierCLM_compCLM_linearIsometryEquiv (A : V ≃ₗᵢ[ℝ] V)
+    (hφ : ((A.toEquiv : V ≃ V) : V → V).HasTemperateGrowth)
+    (hψ : ((A.toEquiv.symm : V ≃ V) : V → V).HasTemperateGrowth) {g : V → ℂ}
+    (hg : g.HasTemperateGrowth) (hgA : ∀ x, g (A x) = g x) (T : 𝓢'(V, F)) :
+    fourierMultiplierCLM F g (compCLM F A.toEquiv hφ hψ T) =
+      compCLM F A.toEquiv hφ hψ (fourierMultiplierCLM F g T) := by
+  have hg' : g ∘ (A.toEquiv : V → V) = g := funext hgA
+  rw [fourierMultiplierCLM_apply, fourierMultiplierCLM_apply,
+    fourier_compCLM_linearIsometryEquiv, ← hg', ← compCLM_smulLeftCLM hφ hψ hg, hg',
+    fourierInv_compCLM_linearIsometryEquiv]
+
+variable [CompleteSpace F]
+
+/-- The pullback along a linear isometry `A` of the distribution of an `Lᵖ` function `u` is the
+distribution of `u ∘ A`. -/
+theorem compCLM_linearIsometryEquiv_toTemperedDistribution (A : V ≃ₗᵢ[ℝ] V)
+    (hφ : ((A.toEquiv : V ≃ V) : V → V).HasTemperateGrowth)
+    (hψ : ((A.toEquiv.symm : V ≃ V) : V → V).HasTemperateGrowth) {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (u : Lp F p (volume : Measure V)) :
+    compCLM F A.toEquiv hφ hψ (u : 𝓢'(V, F)) =
+      (Lp.compMeasurePreserving A A.measurePreserving u : 𝓢'(V, F)) := by
+  ext f
+  rw [compCLM_linearIsometryEquiv_apply_apply, Lp.toTemperedDistribution_apply,
+    Lp.toTemperedDistribution_apply, ← A.measurePreserving.integral_comp
+      A.toHomeomorph.measurableEmbedding]
+  refine integral_congr_ae ?_
+  filter_upwards [Lp.coeFn_compMeasurePreserving u A.measurePreserving] with x hx
+  rw [hx]
+  simp
+
+end LinearIsometry
 
 end TemperedDistribution

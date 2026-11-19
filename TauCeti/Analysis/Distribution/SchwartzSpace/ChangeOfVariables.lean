@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import TauCeti.Analysis.Distribution.TemperateGrowth
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import Mathlib.Analysis.InnerProductSpace.NormDet
 import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Topology.Algebra.Module.Determinant
 
@@ -50,6 +51,9 @@ The pushforward of a derivative is a sum of derivatives of pushforwards: for a b
 the chain rule for the pullback of tempered distributions. It is proved by pairing both sides with
 test functions and integrating by parts; the Jacobian factor of the pushforward is never
 differentiated.
+
+Along a linear isometry `A` of an inner product space the Jacobian factor is `1`, so the pushforward
+is composition with `A⁻¹` (`SchwartzMap.pushforwardCLM_linearIsometryEquiv`).
 
 ## References
 
@@ -228,5 +232,30 @@ theorem pushforwardCLM_lineDerivOp (b : Module.Basis ι ℝ E)
   exact congrFun ((Continuous.ae_eq_iff_eq _ A.continuous B.continuous).1 hae) x
 
 end LineDeriv
+
+section LinearIsometry
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-- The pushforward of a Schwartz density along a linear isometry `A` is the composition with `A⁻¹`:
+the Jacobian factor `|det A⁻¹|` is `1`. -/
+@[simp]
+theorem pushforwardCLM_linearIsometryEquiv (A : V ≃ₗᵢ[ℝ] V)
+    (hφ : ((A.toEquiv : V ≃ V) : V → V).HasTemperateGrowth)
+    (hψ : ((A.toEquiv.symm : V ≃ V) : V → V).HasTemperateGrowth) (f : 𝓢(V, F)) :
+    pushforwardCLM 𝕜 A.toEquiv hφ hψ f =
+      compCLMOfContinuousLinearEquiv 𝕜 A.symm.toContinuousLinearEquiv f := by
+  ext y
+  have hdet : |LinearMap.det ((A.symm.toContinuousLinearEquiv : V →L[ℝ] V) : V →ₗ[ℝ] V)| = 1 := by
+    rw [← Real.norm_eq_abs, ← LinearMap.normDet_eq_norm_det]
+    exact A.symm.toLinearIsometry.normDet_eq_one
+  have hfd : fderiv ℝ (A.toEquiv.symm : V → V) y = A.symm.toContinuousLinearEquiv :=
+    A.symm.toContinuousLinearEquiv.fderiv
+  rw [pushforwardCLM_apply, hfd]
+  simp only [ContinuousLinearMap.det]
+  rw [hdet]
+  simp
+
+end LinearIsometry
 
 end SchwartzMap

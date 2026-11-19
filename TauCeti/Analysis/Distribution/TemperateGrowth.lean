@@ -49,6 +49,9 @@ A measure of temperate growth is finite on compact sets.
   give temperate growth.
 * `Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow`: the rescaled Bessel potential has
   temperate growth.
+* `LinearIsometryEquiv.hasTemperateGrowth_toEquiv`,
+  `LinearIsometryEquiv.hasTemperateGrowth_toEquiv_symm`: a linear isometry and its inverse have
+  temperate growth.
 * `Function.hasTemperateGrowth_log_one_add_norm_sq`: `x ↦ log (1 + ‖x‖ ^ 2)` has temperate growth.
 * `Function.hasTemperateGrowth_norm_sub_pow`: `y ↦ ‖x - y‖ ^ (2N)` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv`: `Df` has temperate growth.
@@ -201,6 +204,18 @@ theorem Function.HasTemperateGrowth.abs_det_fderiv_symm {E : Type*} [NormedAddCo
   hψ.det_fderiv.abs fun y h ↦ by
     simpa [h] using φ.det_fderiv_symm_mul_det_fderiv (hφ.1.differentiable (by simp) _)
       (hψ.1.differentiable (by simp) y)
+
+/-- A linear isometry, as a bijection of `E`, has temperate growth. Together with
+`LinearIsometryEquiv.hasTemperateGrowth_toEquiv_symm` this is the hypothesis under which it pulls
+back tempered distributions. -/
+theorem LinearIsometryEquiv.hasTemperateGrowth_toEquiv {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (A : E ≃ₗᵢ[ℝ] E) : ((A.toEquiv : E ≃ E) : E → E).HasTemperateGrowth :=
+  A.toContinuousLinearEquiv.toContinuousLinearMap.hasTemperateGrowth
+
+/-- The inverse of a linear isometry, as a bijection of `E`, has temperate growth. -/
+theorem LinearIsometryEquiv.hasTemperateGrowth_toEquiv_symm {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (A : E ≃ₗᵢ[ℝ] E) : ((A.toEquiv.symm : E ≃ E) : E → E).HasTemperateGrowth :=
+  A.symm.toContinuousLinearEquiv.toContinuousLinearMap.hasTemperateGrowth
 
 namespace Function
 
