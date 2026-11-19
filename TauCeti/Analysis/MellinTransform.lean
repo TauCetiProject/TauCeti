@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.MellinTransform
-import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
+public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
+import Mathlib.Analysis.SpecialFunctions.Gamma.Deriv
 
 /-!
 # Mellin transforms of dilations, exponentials, and a continuous cutoff
@@ -18,8 +19,9 @@ For `c > 0` the Mellin transform of `t ↦ e^(-c t)` converges on `0 < Re z`
 (`TauCeti.mellinConvergent_exp_neg_mul`). At `c = 1` this is the convergence of Euler's integral
 for `Γ(z)` (`Complex.GammaIntegral_convergent`), and the scaling `t ↦ c t` is Mathlib's
 `MellinConvergent.comp_mul_left`. Its value `c^(-z) Γ(z)` is Mathlib's
-`Complex.integral_cpow_mul_exp_neg_mul_Ioi`. These are the gamma integrals produced by Gaussians
-`e^(-π a² t)` in Hecke's integral representations of zeta and L-functions.
+`Complex.integral_cpow_mul_exp_neg_mul_Ioi`; at `c = 1` it is `Γ(z)` (`TauCeti.hasMellin_exp_neg`).
+These are the gamma integrals produced by Gaussians `e^(-π a² t)` in Hecke's integral
+representations of zeta and L-functions.
 
 The Mellin transform reads a function only on `(0, ∞)`, so functions agreeing there have the same
 transform, with the same convergence (`TauCeti.hasMellin_congr`). Kernels that are extended by zero
@@ -77,6 +79,13 @@ theorem mellinConvergent_exp_neg_mul {c : ℝ} (hc : 0 < c) {z : ℂ} (hz : 0 < 
     MellinConvergent (fun t : ℝ ↦ (Real.exp (-(c * t)) : ℂ)) z := by
   refine (MellinConvergent.comp_mul_left (f := fun t : ℝ ↦ (Real.exp (-t) : ℂ)) hc).mpr ?_
   exact (GammaIntegral_convergent hz).congr_fun (fun t _ ↦ mul_comm _ _) measurableSet_Ioi
+
+/-- Euler's integral as a Mellin transform: on `0 < Re z` the Mellin transform of `t ↦ e^(-t)`
+converges and equals `Γ(z)`. -/
+theorem hasMellin_exp_neg {z : ℂ} (hz : 0 < z.re) :
+    HasMellin (fun t : ℝ ↦ (Real.exp (-t) : ℂ)) z (Gamma z) :=
+  ⟨(GammaIntegral_convergent hz).congr_fun (fun t _ ↦ mul_comm _ _) measurableSet_Ioi,
+    by rw [← GammaIntegral_eq_mellin, Gamma_eq_integral hz]⟩
 
 end TauCeti
 
