@@ -18,8 +18,9 @@ The differentials of a diffeomorphism and its inverse undo each other, and the d
 diffeomorphism undoes the pullback of vector fields along it.
 Differentiability at a point is also preserved by precomposition and postcomposition with a
 diffeomorphism, so the chain rule for such compositions holds without differentiability
-assumptions, and the tangent images of a map, the ranges of its differentials, are unchanged by
-precomposition with a diffeomorphism and are mapped by the differential under postcomposition.
+assumptions, including for maps conjugated by a diffeomorphism near a point, and the tangent
+images of a map, the ranges of its differentials, are unchanged by precomposition with a
+diffeomorphism and are mapped by the differential under postcomposition.
 These facts support inverse isometries and transport of curve differentiability through
 diffeomorphisms. The underlying equivalence of a diffeomorphism viewed as a partial
 diffeomorphism is also characterized, for composition with partial coordinates.
@@ -27,8 +28,8 @@ diffeomorphism is also characterized, for composition with partial coordinates.
 
 public section
 
-open Bundle Manifold
-open scoped ContDiff Manifold
+open Bundle Manifold Filter
+open scoped ContDiff Manifold Topology
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -176,6 +177,17 @@ theorem mfderiv_comp_diffeomorph (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (f 
       (h.mdifferentiableAt_comp_diffeomorph_iff hn).not.mpr hf
     rw [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hfh,
       ContinuousLinearMap.zero_comp]
+
+/-- **Chain rule for conjugation by a diffeomorphism.** If `h ∘ f` and `g ∘ h` agree near `x`,
+then `dg_(h x) ∘ dh_x = dh_(f x) ∘ df_x`. No differentiability of `f` or `g` is assumed. -/
+theorem mfderiv_apply_mfderiv_of_comp_eventuallyEq (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
+    {f : M → M} {g : N → N} {x : M} (hfg : h ∘ f =ᶠ[𝓝 x] g ∘ h) (v : TangentSpace I x) :
+    mfderiv J J g (h x) (mfderiv I J h x v) = mfderiv I J h (f x) (mfderiv I I f x v) := by
+  have h₁ := h.mfderiv_diffeomorph_comp (K := I) hn f x
+  have h₂ := h.mfderiv_comp_diffeomorph (K := J) hn g x
+  have h₃ := congrArg (· v) (hfg.mfderiv_eq (I := I) (I' := J))
+  simp only [h₁, h₂, ContinuousLinearMap.comp_apply] at h₃
+  exact h₃.symm
 
 /-- Postcomposition with a diffeomorphism maps tangent images by its differential: the range of
 the differential of `h ∘ f` at `x` is the image of the range of the differential of `f` under the

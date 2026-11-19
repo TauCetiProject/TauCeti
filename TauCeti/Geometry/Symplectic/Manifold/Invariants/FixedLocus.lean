@@ -66,8 +66,10 @@ of smooth symplectic actions of compact Lie groups, such as torus actions.
 * `IsNondegenerate.exists_isSymplecticSubmanifoldEmbedding_fixedPointsOfFinrank`:
   each `M^K_d` is an embedded symplectic submanifold with tangent spaces the fixed tangent
   subspaces.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.isSymplectomorphism_fixedTangentSubspaceEquiv`: an
-  equivariant symplectomorphism restricts to a linear symplectomorphism of the fixed tangent
+* `TauCeti.SmoothTwoForm.IsNondegenerate.nondegenerate_restrict_fixedTangentSubspace_apply`,
+  `TauCeti.SmoothTwoForm.IsNondegenerate.isSymplectomorphism_fixedTangentSubspaceEquiv`: an
+  equivariant symplectomorphism carries a nondegenerate restricted form at `p` to a nondegenerate
+  restricted form at `ψ p`, and restricts to a linear symplectomorphism of the fixed tangent
   subspaces with their restricted forms.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.map_orthogonal_fixedTangentSubspace`: it carries the
   symplectic normal spaces of the fixed locus onto each other.
@@ -182,17 +184,39 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 include hψ hK
 
+/-- The restriction of `τ_(ψ p)` to the fixed tangent subspace at `ψ p` is nondegenerate when the
+restriction of `σ_p` to the fixed tangent subspace at `p` is, for a diffeomorphism `ψ` pulling `τ`
+back to `σ` and commuting near `p` with the action of every element of `K`. -/
+theorem IsNondegenerate.nondegenerate_restrict_fixedTangentSubspace_apply
+    (h₁ : ((hσ.symplecticFormAt p).toBilinForm.restrict
+      (fixedTangentSubspace I K p)).Nondegenerate) :
+    ((hτ.symplecticFormAt (ψ p)).toBilinForm.restrict
+      (fixedTangentSubspace I₂ K (ψ p))).Nondegenerate := by
+  have he := SymplecticForm.isSymplectomorphism_iff_transport_eq.2
+    (hσ.symplecticFormAt_transport (hσ₂ := hτ) ψ hψ p)
+  set e := ψ.fixedTangentSubspaceEquiv (by simp) hK with e_def
+  convert h₁.congr e using 1
+  ext v w
+  obtain ⟨v, rfl⟩ := e.surjective v
+  obtain ⟨w, rfl⟩ := e.surjective w
+  simp only [LinearMap.BilinForm.congr_apply, LinearEquiv.symm_apply_apply,
+    LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply, e_def,
+    Diffeomorph.coe_fixedTangentSubspaceEquiv_apply]
+  rw [← ψ.mfderivToContinuousLinearEquiv_coe (by simp), ContinuousLinearEquiv.coe_coe]
+  exact he.apply (v : TangentSpace I p) w
+
 /-- **Equivariant symplectomorphisms transport the restricted forms of the fixed locus.** The
 differential at `p` of a diffeomorphism pulling `τ` back to `σ` and commuting near `p` with the
 action of every element of `K` restricts to a linear symplectomorphism from the fixed tangent
 subspace at `p`, with the restriction of `σ_p`, to the fixed tangent subspace at `ψ p`, with the
 restriction of `τ_(ψ p)`. -/
 theorem IsNondegenerate.isSymplectomorphism_fixedTangentSubspaceEquiv
-    (h₁ : ((hσ.symplecticFormAt p).toBilinForm.restrict (fixedTangentSubspace I K p)).Nondegenerate)
-    (h₂ : ((hτ.symplecticFormAt (ψ p)).toBilinForm.restrict
-      (fixedTangentSubspace I₂ K (ψ p))).Nondegenerate) :
+    (h₁ : ((hσ.symplecticFormAt p).toBilinForm.restrict
+      (fixedTangentSubspace I K p)).Nondegenerate) :
     SymplecticForm.IsSymplectomorphism ((hσ.symplecticFormAt p).restrict _ h₁)
-      ((hτ.symplecticFormAt (ψ p)).restrict _ h₂) (ψ.fixedTangentSubspaceEquiv (by simp) hK) := by
+      ((hτ.symplecticFormAt (ψ p)).restrict _
+        (hσ.nondegenerate_restrict_fixedTangentSubspace_apply ψ hψ hK h₁))
+      (ψ.fixedTangentSubspaceEquiv (by simp) hK) := by
   have he := SymplecticForm.isSymplectomorphism_iff_transport_eq.2
     (hσ.symplecticFormAt_transport (hσ₂ := hτ) ψ hψ p)
   refine SymplecticForm.isSymplectomorphism_iff.2 fun v w ↦ ?_
