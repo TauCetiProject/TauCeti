@@ -11,6 +11,7 @@ public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.RingTheory.Coprime.Basic
 public import Mathlib.Topology.Instances.AddCircle.Defs
 import TauCeti.Algebra.AddCircle
+import TauCeti.Algebra.Group.Coprime
 
 /-!
 # Hypergeometric parameter pairs
@@ -278,6 +279,7 @@ theorem degree_vadd (μ : AddCircle (1 : ℚ)) : (μ +ᵥ P).degree = P.degree :
 @[simp]
 theorem swap_vadd (μ : AddCircle (1 : ℚ)) : (μ +ᵥ P).swap = μ +ᵥ P.swap := (rfl)
 
+@[simp]
 theorem neg_vadd (μ : AddCircle (1 : ℚ)) : -(μ +ᵥ P) = -μ +ᵥ -P := by
   ext1 <;> simp [Multiset.map_map, add_comm]
 
@@ -341,17 +343,6 @@ theorem denominator_neg : (-P).denominator = P.denominator := by
 
 /-! ### Scaling by units -/
 
-/-- An integer `u` prime to the common denominator has an inverse `v` on the classes killed by
-the denominator: `v • u • a = a`. -/
-private theorem exists_zsmul_zsmul_eq {u : ℤ} (hu : IsCoprime u P.denominator) :
-    ∃ v : ℤ, ∀ a : AddCircle (1 : ℚ), P.denominator • a = 0 → v • u • a = a := by
-  obtain ⟨v, w, h⟩ := hu
-  refine ⟨v, fun a ha ↦ ?_⟩
-  have ha' : (P.denominator : ℤ) • a = 0 := by rwa [natCast_zsmul]
-  calc v • u • a = (v * u + w * P.denominator) • a := by
-        rw [add_zsmul, mul_zsmul, mul_zsmul, ha', zsmul_zero, add_zero]
-    _ = a := by rw [h, one_zsmul]
-
 /-- The scaling `(α, β) ↦ (uα, uβ)` by an integer `u` prime to the common denominator. Such a
 `u` is injective on the classes of the pair, which keeps the scaled multisets disjoint. -/
 def scale {u : ℤ} (hu : IsCoprime u P.denominator) : Parameters where
@@ -359,11 +350,12 @@ def scale {u : ℤ} (hu : IsCoprime u P.denominator) : Parameters where
   β := P.β.map (u • ·)
   card_eq := by simp [P.card_eq]
   disjoint := by
-    obtain ⟨v, hv⟩ := P.exists_zsmul_zsmul_eq hu
+    obtain ⟨v, hv⟩ := hu.exists_zsmul_zsmul_eq_of_zsmul_eq_zero (G := AddCircle (1 : ℚ))
     refine Multiset.disjoint_map_map.2 fun a ha b hb h ↦ ?_
     refine Multiset.disjoint_iff_ne.1 P.disjoint a ha b hb ?_
-    rw [← hv a (P.denominator_nsmul_eq_zero (Multiset.mem_add.2 (.inl ha))),
-      ← hv b (P.denominator_nsmul_eq_zero (Multiset.mem_add.2 (.inr hb))), h]
+    have hN {c} (hc : c ∈ P.α + P.β) : (P.denominator : ℤ) • c = 0 := by
+      rw [natCast_zsmul, P.denominator_nsmul_eq_zero hc]
+    rw [← hv a (hN (Multiset.mem_add.2 (.inl ha))), ← hv b (hN (Multiset.mem_add.2 (.inr hb))), h]
 
 variable {u : ℤ} (hu : IsCoprime u P.denominator)
 
@@ -380,7 +372,7 @@ theorem degree_scale : (P.scale hu).degree = P.degree := by
 /-- Scaling by a unit preserves the common denominator. -/
 @[simp]
 theorem denominator_scale : (P.scale hu).denominator = P.denominator := by
-  obtain ⟨v, hv⟩ := P.exists_zsmul_zsmul_eq hu
+  obtain ⟨v, hv⟩ := hu.exists_zsmul_zsmul_eq_of_zsmul_eq_zero (G := AddCircle (1 : ℚ))
   refine Nat.dvd_antisymm ((P.scale hu).denominator_dvd_iff.2 fun a ha ↦ ?_)
     (P.denominator_dvd_iff.2 fun a ha ↦ ?_)
   · obtain ⟨b, hb, rfl⟩ : ∃ b ∈ P.α + P.β, u • b = a := by
@@ -392,11 +384,13 @@ theorem denominator_scale : (P.scale hu).denominator = P.denominator := by
         exact Multiset.mem_map_of_mem _ ha
     have hN : P.denominator • (P.scale hu).denominator • a = 0 := by
       rw [smul_comm, P.denominator_nsmul_eq_zero ha, smul_zero]
-    rw [← hv _ hN, smul_comm u, hua, smul_zero]
+    rw [← hv _ ((natCast_zsmul _ _).trans hN), smul_comm u, hua, smul_zero]
 
+@[simp]
 theorem scale_one : P.scale (u := 1) isCoprime_one_left = P := by
   ext1 <;> simp
 
+@[simp]
 theorem scale_neg_one : P.scale (u := -1) isCoprime_one_left.neg_left = -P := by
   ext1 <;> simp
 
@@ -409,6 +403,7 @@ theorem scale_scale {v : ℤ} (hv : IsCoprime v (P.scale hu).denominator) :
 @[simp]
 theorem swap_scale : (P.scale hu).swap = P.swap.scale (P.denominator_swap ▸ hu) := (rfl)
 
+@[simp]
 theorem neg_scale : -(P.scale hu) = (-P).scale (P.denominator_neg ▸ hu) := by
   ext1 <;> simp [Multiset.map_map]
 
