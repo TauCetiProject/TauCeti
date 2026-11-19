@@ -69,7 +69,7 @@ namespace TauCeti.Manifold
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  {M : Type*} [MetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {M : Type*} [EMetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   [IsRiemannianManifold I M] [CompleteSpace M]
@@ -81,8 +81,7 @@ theorem isLocalDiffeomorph_riemannianExp_of_sectionalCurvature_nonpos
       (leviCivitaConnection I M).sectionalCurvature (isMetricCompatible_leviCivitaConnection I)
         x u w ≤ 0) (p : M) :
     IsLocalDiffeomorph 𝓘(ℝ, TangentSpace I p) I ∞ (riemannianExp I M p) := by
-  have hdom : expDomain I M p = univ :=
-    expDomain_eq_univ_iff.2 (isGeodesicallyCompleteAt_of_completeSpace p)
+  have hdom : expDomain I M p = univ := expDomain_eq_univ_of_completeSpace p
   exact fun v ↦ isLocalDiffeomorphAt_riemannianExp_of_sectionalCurvature_nonpos
     (hdom ▸ mem_univ v) fun t _ ↦ hK (riemannianExp I M p (t • v))
 
@@ -93,8 +92,7 @@ theorem cartanHadamard_isCoveringMap
       (leviCivitaConnection I M).sectionalCurvature (isMetricCompatible_leviCivitaConnection I)
         x u w ≤ 0) (p : M) :
     IsCoveringMap (riemannianExp I M p) := by
-  have hdom : expDomain I M p = univ :=
-    expDomain_eq_univ_iff.2 (isGeodesicallyCompleteAt_of_completeSpace p)
+  have hdom : expDomain I M p = univ := expDomain_eq_univ_of_completeSpace p
   exact isCoveringMap_of_norm_le_norm_mfderiv
     (isLocalDiffeomorph_riemannianExp_of_sectionalCurvature_nonpos hK p) fun v w ↦
       norm_le_norm_mfderiv_riemannianExp_of_sectionalCurvature_nonpos (hdom ▸ mem_univ v)
