@@ -696,10 +696,7 @@ theorem IsAsymptoticSum.isAsymptoticSum_inclusion_iff_isSmoothing_sub {m : ℕ �
     (inclusion hc c).IsAsymptoticSum a ↔ (p - inclusion h c).IsSmoothing := by
   rw [hb.isAsymptoticSum_iff_isSmoothing_sub hm',
     show inclusion hc c - inclusion hp p = -inclusion hp (p - inclusion h c) from
-      Symbol.ext (funext fun _ ↦ by simp)]
-  refine ⟨fun h' ↦ isSmoothing_iff.2 fun m'' ↦ ?_, fun h' ↦ (h'.inclusion hp).neg⟩
-  obtain ⟨r, hr⟩ := isSmoothing_iff.1 h' m''
-  exact ⟨-r, by rw [coefficient_neg, hr, coefficient_neg, coefficient_inclusion, neg_neg]⟩
+      Symbol.ext (funext fun _ ↦ by simp), isSmoothing_neg_iff, isSmoothing_inclusion_iff]
 
 /-- **Asymptotic summation with parameters** (Borel). Let `m₀ ≥ m₁ ≥ ⋯` be real orders tending to
 `-∞`, let `T` be a compact space, and let `aⱼ : T → S^{mⱼ}` be continuous families of symbols.
