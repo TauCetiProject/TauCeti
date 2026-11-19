@@ -7,38 +7,31 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Valuation
 public import Mathlib.RingTheory.Valuation.RamificationGroup
-public import TauCeti.NumberTheory.NumberField.AutomorphismAction
 public import TauCeti.RingTheory.DedekindDomain.HeightOneSpectrumAction
 
 /-!
-# The Galois action on the finite places of a number field
+# Group actions on the valuation subrings at the places of a Dedekind domain
 
-For an extension of number fields `L/K`, the automorphism group `Gal(L/K) = L ≃ₐ[K] L` acts on
-the finite places `HeightOneSpectrum (𝓞 L)` through the pointwise action of
-`IsDedekindDomain.HeightOneSpectrum.pointwiseMulAction`, so that
-`(σ • w).asIdeal = σ • w.asIdeal`, the preimage of `w.asIdeal` under `σ⁻¹`. The contraction of
-`σ • w` to `𝓞 K` is that of `w` (`IsDedekindDomain.HeightOneSpectrum.under_smul`). For `L/K`
-finite Galois, Mathlib's `IsGaloisGroup Gal(L/K) (𝓞 K) (𝓞 L)` instance (in
-`Mathlib.FieldTheory.Galois.IsGaloisGroup`) makes `𝓞 L` invariant over `𝓞 K`, so
-`IsDedekindDomain.HeightOneSpectrum.mem_orbit_iff_under_eq` says that the places above a given
-place of `K` form a single orbit.
+Let `R` be a Dedekind domain with fraction field `L`, and let a group `G` act on `R` and `L` by
+ring automorphisms, compatibly (`SMulDistribClass G R L`). Then `G` acts on the places
+`HeightOneSpectrum R` through `IsDedekindDomain.HeightOneSpectrum.pointwiseMulAction`, with
+`(σ • w).asIdeal = σ • w.asIdeal`. This file compares that action with Mathlib's pointwise action
+on valuation subrings of `L`: the localization of `R` at `σ • w`, as a valuation subring of `L`,
+is the image under `σ` of the localization at `w`. Since the localization is the valuation subring
+of the `w`-adic valuation, which determines the place (Mathlib's
+`valuationSubringAtPrime_eq_valuationSubring` and `valuationSubring_valuation_injective`), the
+stabilizer of `w` under `Gal(L/K) = L ≃ₐ[K] L` is Mathlib's decomposition subgroup
+`ValuationSubring.decompositionSubgroup` of the valuation subring `valuationSubringAtPrime L w`.
 
-This file compares the action with Mathlib's pointwise action on valuation subrings of `L`: the
-localization of `𝓞 L` at `σ • w`, as a valuation subring of `L`, is the image under `σ` of the
-localization at `w`. Both results hold for any Dedekind domain `R` with fraction field `L` and a
-group acting on `R` and `L` compatibly (`SMulDistribClass`), which `𝓞 L` satisfies. Since the
-localization is the valuation subring of the `w`-adic valuation, which determines the place
-(Mathlib's `valuationSubringAtPrime_eq_valuationSubring` and
-`valuationSubring_valuation_injective`), the stabilizer of `w` is
-Mathlib's decomposition subgroup `ValuationSubring.decompositionSubgroup` of the valuation subring
-`valuationSubringAtPrime L w`.
+For an extension of number fields `L/K` and `R = 𝓞 L`, this is the Galois action on the finite
+places of `L`, and the stabilizer of a finite place is its decomposition group.
 
 ## Main results
 
 * `IsDedekindDomain.HeightOneSpectrum.smul_valuationSubringAtPrime`:
   `σ • valuationSubringAtPrime L w = valuationSubringAtPrime L (σ • w)`.
 * `IsDedekindDomain.HeightOneSpectrum.stabilizer_eq_decompositionSubgroup`: the stabilizer of a
-  finite place is the decomposition subgroup of its valuation subring.
+  place is the decomposition subgroup of its valuation subring.
 
 ## References
 
