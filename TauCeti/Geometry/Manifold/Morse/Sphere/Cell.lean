@@ -134,28 +134,6 @@ private theorem contractibleSpace_sublevelPair_snd_sphereHeight (v : sphere (0 :
 
 variable {n : ℕ} [Fact (finrank ℝ E = n + 1)]
 
-/-- The height read in the stereographic chart is at most `a < 1` exactly on the closed ball of
-radius `√(4 (1 + a) / (1 - a))`. -/
-private theorem neg_stereographicHeight_le_iff {F : Type*} [NormedAddCommGroup F] {a : ℝ}
-    (ha : -1 ≤ a) (ha' : a < 1) (w : F) :
-    -stereographicHeight w ≤ a ↔ ‖w‖ ≤ √(4 * (1 + a) / (1 - a)) := by
-  have h1 : 0 < 1 - a := by linarith
-  have h4 : 0 < ‖w‖ ^ 2 + 4 := by positivity
-  rw [stereographicHeight_apply, ← neg_div, div_le_iff₀ h4, Real.le_sqrt (norm_nonneg w)
-    (div_nonneg (by linarith) h1.le), le_div_iff₀ h1]
-  constructor <;> intro h <;> nlinarith
-
-/-- The height read in the stereographic chart equals `a < 1` exactly on the sphere of radius
-`√(4 (1 + a) / (1 - a))`. -/
-private theorem neg_stereographicHeight_eq_iff {F : Type*} [NormedAddCommGroup F] {a : ℝ}
-    (ha : -1 ≤ a) (ha' : a < 1) (w : F) :
-    -stereographicHeight w = a ↔ ‖w‖ = √(4 * (1 + a) / (1 - a)) := by
-  have h1 : 0 < 1 - a := by linarith
-  have h4 : 0 < ‖w‖ ^ 2 + 4 := by positivity
-  rw [stereographicHeight_apply, ← neg_div, div_eq_iff h4.ne', eq_comm (a := ‖w‖),
-    Real.sqrt_eq_iff_eq_sq (div_nonneg (by linarith) h1.le) (norm_nonneg w), div_eq_iff h1.ne']
-  constructor <;> intro h <;> nlinarith
-
 /-- **The lower sublevels of the height are closed discs.** For `-1 < a < 1`, the sublevel
 `{x | ⟪x, v⟫ ≤ a}` of the unit sphere `Sⁿ` is homeomorphic to the closed disc `𝔻 n`, by a
 homeomorphism carrying the level `{x | ⟪x, v⟫ = a}` onto the boundary sphere of the disc. It is the

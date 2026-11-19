@@ -40,7 +40,9 @@ multiple of `x`.
 
 * `TauCeti.stereographicHeight`: the height function in the stereographic chart at the north pole,
   with `TauCeti.isNondegenerateCriticalPoint_stereographicHeight_zero` and
-  `TauCeti.morseIndex_stereographicHeight_zero` computing its Morse data at the origin.
+  `TauCeti.morseIndex_stereographicHeight_zero` computing its Morse data at the origin, and
+  `TauCeti.neg_stereographicHeight_le_iff` and `TauCeti.neg_stereographicHeight_eq_iff`
+  describing its sublevels and levels below the maximum as closed balls and spheres.
 * `TauCeti.sphereHeight`: the height function on the unit sphere in the direction of a unit vector.
 * `TauCeti.sphereHeight_comp_extChartAt_symm`: in the preferred chart at the north pole it is
   `stereographicHeight`.
@@ -95,6 +97,26 @@ theorem stereographicHeight_le_stereographicHeight {u w : F} (h : ‖u‖ ≤ �
   rw [stereographicHeight_apply, stereographicHeight_apply,
     div_le_div_iff₀ (by positivity) (by positivity)]
   nlinarith [pow_le_pow_left₀ (norm_nonneg u) h 2]
+
+/-- The height read in the stereographic chart is at most `a < 1` exactly on the closed ball of
+radius `√(4 (1 + a) / (1 - a))`. -/
+theorem neg_stereographicHeight_le_iff {a : ℝ} (ha : -1 ≤ a) (ha' : a < 1) (w : F) :
+    -stereographicHeight w ≤ a ↔ ‖w‖ ≤ √(4 * (1 + a) / (1 - a)) := by
+  have h1 : 0 < 1 - a := by linarith
+  have h4 : 0 < ‖w‖ ^ 2 + 4 := by positivity
+  rw [stereographicHeight_apply, ← neg_div, div_le_iff₀ h4, Real.le_sqrt (norm_nonneg w)
+    (div_nonneg (by linarith) h1.le), le_div_iff₀ h1]
+  constructor <;> intro h <;> nlinarith
+
+/-- The height read in the stereographic chart equals `a < 1` exactly on the sphere of radius
+`√(4 (1 + a) / (1 - a))`. -/
+theorem neg_stereographicHeight_eq_iff {a : ℝ} (ha : -1 ≤ a) (ha' : a < 1) (w : F) :
+    -stereographicHeight w = a ↔ ‖w‖ = √(4 * (1 + a) / (1 - a)) := by
+  have h1 : 0 < 1 - a := by linarith
+  have h4 : 0 < ‖w‖ ^ 2 + 4 := by positivity
+  rw [stereographicHeight_apply, ← neg_div, div_eq_iff h4.ne', eq_comm (a := ‖w‖),
+    Real.sqrt_eq_iff_eq_sq (div_nonneg (by linarith) h1.le) (norm_nonneg w), div_eq_iff h1.ne']
+  constructor <;> intro h <;> nlinarith
 
 variable [InnerProductSpace ℝ F]
 

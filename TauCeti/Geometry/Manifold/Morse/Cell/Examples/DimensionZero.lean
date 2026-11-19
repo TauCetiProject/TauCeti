@@ -85,9 +85,7 @@ theorem exists_homeomorph_sublevel_sum_of_subsingleton (f : M → ℝ) {c δ : �
       refine ⟨fun x ↦ ?_⟩
       obtain ⟨p, y, -⟩ := (TopCat.sigmaIsoSigma _).hom x
       exact (hS₀ (hk p)).false y
-    exact IsInitial.ofUniqueHom (fun Y ↦ TopCat.ofHom ⟨fun x ↦ (hX.false x).elim,
-      continuous_def.2 fun _ _ ↦ by convert isOpen_empty; ext x; exact (hX.false x).elim⟩)
-      fun Y m ↦ TopCat.ext fun x ↦ (hX.false x).elim
+    exact TopCat.isInitialPEmpty.ofIso (TopCat.isoOfHomeo Homeomorph.empty)
   -- So the pushout is the coproduct of the lower sublevel and the handles `𝔻 0 × 𝔻 0`, which are
   -- points, one for each critical point on the level.
   have hc := isCoproductOfIsInitialIsPushout _ _ _ _ hinit hpush.isColimit
