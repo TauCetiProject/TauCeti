@@ -125,9 +125,7 @@ private theorem periodMap_symbol_binaryFormRep (hk : k = w + 2) (f : CuspForm �
 
 /-- `S⁻¹ = -S`, written so that the two-term Manin relation applies. -/
 private theorem S_inv_eq : (S⁻¹ : SL(2, ℤ)) = -1 * S := by
-  have hS : S * S = (-1 : SL(2, ℤ)) := Subtype.ext <| by
-    simpa only [Matrix.SpecialLinearGroup.coe_mul, coe_neg, Matrix.SpecialLinearGroup.coe_one]
-      using S_mul_S_eq
+  have hS : S * S = (-1 : SL(2, ℤ)) := S_mul_S_eq
   exact inv_eq_of_mul_eq_one_right (by rw [neg_one_mul, mul_neg, hS, neg_neg])
 
 /-- `U⁻¹ = -U²`, written so that the three-term Manin relation applies. -/

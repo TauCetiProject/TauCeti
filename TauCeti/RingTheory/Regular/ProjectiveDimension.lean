@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.RingTheory.Ideal.Span
 public import Mathlib.RingTheory.Regular.IsSMulRegular
+public import TauCeti.CategoryTheory.ObjectProperty.Syzygy
 import Mathlib.Algebra.Category.ModuleCat.Ext.DimensionShifting
 import Mathlib.Algebra.Category.ModuleCat.Projective
 import Mathlib.RingTheory.Flat.TorsionFree
@@ -56,6 +57,11 @@ because `x` is regular on `M`; the reduction of the projective module `P` is pro
 This is the change-of-rings step in Serre's theorem that a Noetherian local ring whose residue
 field has finite projective dimension is regular.
 
+When every `R`-module has projective dimension at most a uniform finite bound, each projective
+syzygy step `0 → X₁ → P → X₃ → 0` over `R ⧸ (x)` has middle term of projective dimension at most
+one over `R`, so dimension shifting lowers the bound on `R`-projective dimension by one per step
+until it reaches one.
+
 ## Main results
 
 * `ModuleCat.hasProjectiveDimensionLT_restrictScalars_of_projective`: a projective
@@ -69,12 +75,20 @@ field has finite projective dimension is regular.
 * `ModuleCat.hasProjectiveDimensionLE_quotient_smul_top`: if `x` is regular on an `R`-module `M`
   of projective dimension at most `n`, then `M ⧸ x M` has projective dimension at most `n` over
   `R ⧸ (x)`.
+* `ModuleCat.hasProjectiveDimensionLE_restrictScalars_of_isSyzygy`: if every `R`-module has
+  projective dimension at most `r + 1 + k`, every `k`-th projective syzygy over `R ⧸ (x)` has
+  projective dimension at most `r + 1` over `R`.
+* `ModuleCat.hasProjectiveDimensionLE_one_restrictScalars_of_isSyzygy`: if every `R`-module has
+  projective dimension at most `d` and `d ≤ k + 1`, every `k`-th projective syzygy over `R ⧸ (x)`
+  has projective dimension at most one over `R`.
 
 No finiteness or locality is assumed: the bounds hold for all modules.
 
 ## References
 
 * H. Matsumura, *Commutative Ring Theory*, Section 19, the lemmas preceding Theorem 19.2.
+* D. Eisenbud, *Homological algebra on a complete intersection, with an application to group
+  representations*, Trans. Amer. Math. Soc. **260** (1980), Section 5.
 -/
 
 public section
@@ -224,5 +238,47 @@ theorem hasProjectiveDimensionLE_quotient_smul_top (hx : x ∈ nonZeroDivisors R
       ((span {x}).mapQSMulTop_surjective hS.surjective_g)
     exact hT.hasProjectiveDimensionLT_X₃ (n + 1) inferInstance
       (hasProjectiveDimensionLT_of_ge _ 1 _ (by omega))
+
+/-- Every `k`-th projective syzygy over `R ⧸ (x)`, for a nonzerodivisor `x`, lowers a uniform
+projective-dimension bound `r + 1 + k` over `R` to `r + 1`: each projective syzygy step has middle
+term of projective dimension at most one over `R`. -/
+theorem hasProjectiveDimensionLE_restrictScalars_of_isSyzygy
+    (hx : x ∈ nonZeroDivisors R) {k r : ℕ}
+    {M : ModuleCat.{v} (R ⧸ span {x})}
+    (hM : (isProjective (ModuleCat.{v} (R ⧸ span {x}))).IsSyzygy k M)
+    (hd : ∀ N : ModuleCat.{v} R, HasProjectiveDimensionLE N (r + 1 + k)) :
+    HasProjectiveDimensionLE
+      ((restrictScalars.{v} (Ideal.Quotient.mk (span {x}))).obj M) (r + 1) := by
+  let F := restrictScalars.{v} (Ideal.Quotient.mk (span {x}))
+  induction k generalizing r M with
+  | zero => exact hd (F.obj M)
+  | succ k ih =>
+    obtain ⟨T, hT, ⟨e⟩, hP, hX₃⟩ :=
+      ((isProjective (ModuleCat.{v} (R ⧸ span {x}))).isSyzygy_succ_iff k M).1 hM
+    have : Projective T.X₂ := hP
+    have : HasProjectiveDimensionLT (F.obj T.X₂) 2 :=
+      hasProjectiveDimensionLT_restrictScalars_of_projective hx T.X₂
+    have hX₃_dim : HasProjectiveDimensionLE (F.obj T.X₃) ((r + 1) + 1) :=
+      ih (r := r + 1) hX₃ fun N ↦
+        haveI := hd N
+        hasProjectiveDimensionLT_of_ge N (r + 1 + (k + 1) + 1) ((r + 1) + 1 + k + 1) (by omega)
+    have : HasProjectiveDimensionLT (F.obj T.X₁) (r + 2) :=
+      (hT.map_of_exact F).hasProjectiveDimensionLT_X₁ (r + 2)
+        (hasProjectiveDimensionLT_of_ge (F.obj T.X₂) 2 (r + 2) (by omega)) hX₃_dim
+    exact hasProjectiveDimensionLT_of_iso (F.mapIso e.symm) (r + 2)
+
+/-- Over `R ⧸ (x)`, for a nonzerodivisor `x` of a ring `R` of global dimension at most `d`, every
+`k`-th projective syzygy of an `R ⧸ (x)`-module with `d ≤ k + 1` (in particular every `d`-th
+syzygy) has projective dimension at most one over `R`. -/
+theorem hasProjectiveDimensionLE_one_restrictScalars_of_isSyzygy
+    (hx : x ∈ nonZeroDivisors R) {d k : ℕ} (hdk : d ≤ k + 1)
+    {M : ModuleCat.{v} (R ⧸ span {x})}
+    (hM : (isProjective (ModuleCat.{v} (R ⧸ span {x}))).IsSyzygy k M)
+    (hd : ∀ N : ModuleCat.{v} R, HasProjectiveDimensionLE N d) :
+    HasProjectiveDimensionLE
+      ((restrictScalars.{v} (Ideal.Quotient.mk (span {x}))).obj M) 1 :=
+  hasProjectiveDimensionLE_restrictScalars_of_isSyzygy (r := 0) hx hM fun N ↦
+    haveI := hd N
+    hasProjectiveDimensionLT_of_ge N (d + 1) (0 + 1 + k + 1) (by omega)
 
 end ModuleCat
