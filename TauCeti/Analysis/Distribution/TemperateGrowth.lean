@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TemperateGrowth
-public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
@@ -18,8 +17,6 @@ import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Topology.Instances.Sign
 import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
-import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
@@ -44,11 +41,9 @@ real function of temperate growth without zeros has temperate growth: on the con
 the function has constant sign. These give the Jacobian factor `|det Dφ⁻¹|` of a change of
 variables `φ` of Schwartz functions.
 
-The derivatives of the coefficients `x ↦ (b.repr (Dg(x) v))ᵢ` of the chain rule in an orthonormal
-basis `b` are bounded by those of `g` of one order higher, and when the derivatives of positive
-order of `φ⁻¹` are bounded, so are all derivatives of the Jacobian factor `|det Dφ⁻¹|`. These are
-the inputs of the Sobolev estimates for changes of variables in
-`TauCeti.Analysis.Sobolev.BesselPotential.ChangeOfVariables`.
+When the derivatives of positive order of `φ⁻¹` are bounded, so are all derivatives of the
+Jacobian factor `|det Dφ⁻¹|`. This is an input of the Sobolev estimates for changes of variables
+in `TauCeti.Analysis.Sobolev.BesselPotential.ChangeOfVariables`.
 
 If `g ∘ f = id` and `g` has temperate growth, then `‖x‖` is
 bounded by a polynomial in `‖f x‖`, the growth condition of Mathlib's `SchwartzMap.compCLM`.
@@ -78,8 +73,6 @@ A measure of temperate growth is finite on compact sets.
 * `Function.HasTemperateGrowth.exists_norm_iteratedFDeriv_abs_det_fderiv_symm_le`: the Jacobian
   factor `|det Dφ⁻¹|` has a bounded derivative of order `n` when those of `φ⁻¹` of orders `1` to
   `n + 1` are bounded.
-* `ContDiff.norm_iteratedFDeriv_basis_repr_fderiv_apply_le`: the derivatives of the chain-rule
-  coefficient `x ↦ (b.repr (Dg(x) v))ᵢ` in an orthonormal basis are bounded by those of `g`.
 * `Function.HasTemperateGrowth.exists_norm_le_of_leftInverse`: a polynomial lower bound for
   `‖f x‖` from a left inverse of temperate growth.
 * `MeasureTheory.Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts`: a measure of temperate
@@ -241,34 +234,6 @@ theorem Function.HasTemperateGrowth.exists_norm_iteratedFDeriv_abs_det_fderiv_sy
   exact ((ε • Complex.ofRealCLM).norm_iteratedFDeriv_comp_left
     ((ContinuousLinearMap.hasTemperateGrowth_det.1.comp hψ.fderiv.1).contDiffAt) (by simp)).trans
     (mul_le_mul_of_nonneg_left (hC y) (norm_nonneg _))
-
-section InnerProduct
-
-/-- The derivatives of the coordinate `x ↦ (b.repr (Dg(x) v))ᵢ` of a directional derivative in an
-orthonormal basis `b`, the coefficient of the chain rule for composition with `g`, are bounded by
-those of `g`: `‖Dⁿ (x ↦ (b.repr (Dg(x) v))ᵢ)(x)‖ ≤ ‖D^{n+1} g(x)‖ ‖v‖`. -/
-theorem ContDiff.norm_iteratedFDeriv_basis_repr_fderiv_apply_le {E F ι : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    [Fintype ι] {g : E → F} {N : WithTop ℕ∞} (hg : ContDiff ℝ N g) {n : ℕ} (hn : n + 1 ≤ N)
-    (b : OrthonormalBasis ι ℝ F) (v : E) (i : ι) (x : E) :
-    ‖iteratedFDeriv ℝ n (fun x ↦ ((b.toBasis.repr (_root_.fderiv ℝ g x v) i : ℝ) : ℂ)) x‖ ≤
-      ‖iteratedFDeriv ℝ (n + 1) g x‖ * ‖v‖ := by
-  set A : F →L[ℝ] ℂ := Complex.ofRealCLM.comp (innerSL ℝ (b i))
-  have hA : ‖A‖ ≤ 1 := by
-    refine A.opNorm_le_bound zero_le_one fun y ↦ ?_
-    simpa [A, b.orthonormal.1 i] using norm_inner_le_norm (𝕜 := ℝ) (b i) y
-  have hfun : (fun x ↦ ((b.toBasis.repr (_root_.fderiv ℝ g x v) i : ℝ) : ℂ)) =
-      A ∘ fun x ↦ _root_.fderiv ℝ g x v := by
-    ext x
-    simp [A, b.repr_apply_apply]
-  have hd : ContDiff ℝ n (fun x ↦ _root_.fderiv ℝ g x v) :=
-    (hg.fderiv_right (mod_cast hn)).clm_apply contDiff_const
-  rw [hfun]
-  refine (A.norm_iteratedFDeriv_comp_left hd.contDiffAt le_rfl).trans ?_
-  refine (mul_le_of_le_one_left (norm_nonneg _) hA).trans ?_
-  exact hg.norm_iteratedFDeriv_fderiv_apply_le (by simpa using hn) v x
-
-end InnerProduct
 
 namespace Function
 

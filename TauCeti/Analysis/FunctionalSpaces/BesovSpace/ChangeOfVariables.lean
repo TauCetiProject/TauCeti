@@ -10,6 +10,7 @@ public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
+import TauCeti.Analysis.Calculus.IteratedFDeriv.OrthonormalBasis
 import TauCeti.Analysis.Distribution.SchwartzSpace.ChangeOfVariables
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein

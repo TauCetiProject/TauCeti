@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
+import TauCeti.Analysis.Calculus.IteratedFDeriv.OrthonormalBasis
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Sobolev.BesselPotential.ComplexInterpolation
 import TauCeti.Analysis.Sobolev.BesselPotential.Duality
