@@ -233,11 +233,10 @@ private theorem measure_abs_sum_mul_sub_energyCutoff_ge_le
   have hb₂ (i : ℕ) (hi : i < n) : MemLp (b i) 2 P :=
     memLp_energyCutoff hτ ha δ hi
   have hsecond := integral_sq_sum_mul_sub_energyCutoff_le hW hτ ha hδ
-  have hcheb := TauCeti.meas_ge_le_integral_norm_sq_div_sq
-    (Y := fun ω ↦ ∑ i ∈ range n, b i ω * (W (τ (i + 1)) ω - W (τ i) ω))
-    (by simpa only [Real.norm_eq_abs, sq_abs] using
-      (hW.memLp_sum_mul_sub hτ hb hb₂).integrable_sq) hε
-  simp only [Real.norm_eq_abs, sq_abs] at hcheb
+  have hcheb := TauCeti.meas_ge_le_integral_sq_div_sq
+    (Y := fun ω ↦ |∑ i ∈ range n, b i ω * (W (τ (i + 1)) ω - W (τ i) ω)|)
+    (by simpa only [sq_abs] using (hW.memLp_sum_mul_sub hτ hb hb₂).integrable_sq) hε
+  simp only [sq_abs] at hcheb
   exact hcheb.trans
     (ENNReal.ofReal_le_ofReal (div_le_div_of_nonneg_right hsecond (sq_nonneg ε)))
 
