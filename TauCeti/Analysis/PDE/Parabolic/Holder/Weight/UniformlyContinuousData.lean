@@ -76,7 +76,6 @@ public section
 namespace TauCeti.ParabolicC2HolderSpace
 
 open Set ParabolicSpaceTime Real BoundedContinuousFunction
-open CkHolderSpace (toBUC toBUC_apply)
 open scoped NNReal
 
 variable {α : ℝ≥0} {ι : Type*} [Fintype ι] [DecidableEq ι] {T : ℝ≥0}
@@ -116,30 +115,12 @@ theorem abs_sub_le_exp_mul_of_eq_exp_mul_euclideanCauchySolutionBUC (hℓ : Cont
     (hinit : ∀ x, u' x 0 = exp (ℓ x) * g' x) (x : EuclideanSpace ℝ ι) (t : Icc (0 : ℝ) T) :
     |u x t - u' x t| ≤ exp (ℓ x) *
       (Real.exp (‖euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ‖ * T) * (1 + T) * δ) := by
-  set V := euclideanCauchySolutionBUC hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
-    (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha
   -- The classical solution `u'` is `exp ℓ` times the classical solution of the conjugated problem.
   have hv := (eq_euclideanInitialDataCLE_symm_iff_exp_mul hα₀ hα₁ hT b c ha hℓ hdℓ hd2ℓ v hu' f
     g').2 ⟨hP, hinit⟩
-  have hδ : 0 ≤ δ := (abs_nonneg _).trans (hg' 0)
-  have hnorm : ‖g - toBUC g'‖ ≤ δ := by
-    rw [← ClosedSubmodule.norm_coe]
-    refine (norm_le hδ).2 fun y ↦ ?_
-    have hy := hg' y
-    rwa [← toBUC_apply, ← Real.norm_eq_abs, ← _root_.sub_apply] at hy
-  -- By linearity, `V (f, g) - v` is the extended solution with data `(0, g - g')`.
-  have hsub : V (f, g) - valueL v = V (0, g - toBUC g') := by
-    rw [hv, ← euclideanCauchySolutionBUC_toBUC, ← map_sub, Prod.mk_sub_mk, sub_self]
-  have hn := norm_euclideanCauchySolutionBUC_apply_le hα₀ hα₁ hT
-    (b := euclideanWeightedFirstOrderCoeff a b dℓ)
-    (c := euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha (0, g - toBUC g')
-  rw [Prod.norm_def, norm_zero, max_eq_right (norm_nonneg _), ← hsub] at hn
-  rw [hu x t, hu' x t, ← mul_sub, abs_mul, abs_of_pos (exp_pos _)]
-  refine mul_le_mul_of_nonneg_left ?_ (exp_pos _).le
-  calc |V (f, g) (slabMk x t) - v (slabMk x t)| = ‖(V (f, g) - valueL v) (slabMk x t)‖ := by
-        rw [Real.norm_eq_abs, _root_.sub_apply, valueL_apply]
-    _ ≤ ‖V (f, g) - valueL v‖ := norm_coe_le_norm _ _
-    _ ≤ _ := hn.trans (mul_le_mul_of_nonneg_left hnorm (by positivity))
+  rw [hu x t, hu' x t, ← mul_sub, abs_mul, abs_of_pos (exp_pos _), hv]
+  exact mul_le_mul_of_nonneg_left
+    (abs_euclideanCauchySolutionBUC_apply_sub_le hα₀ hα₁ hT ha f g g' hg' _) (exp_pos _).le
 
 /-- **Agreement with the classical weighted solution.** If the initial datum `g` of
 `abs_sub_le_exp_mul_of_eq_exp_mul_euclideanCauchySolutionBUC` is a bounded `C^{2,α}` function `g'`,
