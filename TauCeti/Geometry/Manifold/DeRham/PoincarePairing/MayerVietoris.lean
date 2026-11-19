@@ -106,19 +106,6 @@ private theorem integralTopForm_wedge_extendByZero_eq_neg
   congr 2
   exact integralTopForm_wedge_extendByZero (k := k) (l := l + 1) _ hTS α θ.2
 
-omit [BoundarylessManifold I M] [T2Space M] [SigmaCompactSpace M] in
-/-- Wedging with a fixed compactly supported form and integrating is additive in the other form:
-the form of subtraction. -/
-private theorem integralTopForm_wedge_sub_left (o : Manifold.Orientation I M (Fin (k + l)))
-    (A B : SmoothForm I M ℝ k) {θ : SmoothForm I M ℝ l} (hθ : θ ∈ compactlySupportedForms I M l) :
-    integralTopForm o (RoughForm.wedge (A - B).1 θ.1) =
-      integralTopForm o (RoughForm.wedge A.1 θ.1) -
-        integralTopForm o (RoughForm.wedge B.1 θ.1) := by
-  simp only [← SmoothForm.coe_wedge, map_sub, LinearMap.sub_apply]
-  exact integralTopForm_sub_of_mem_compactlySupportedForms o
-    (SmoothForm.wedge_mem_compactlySupportedForms _ hθ)
-    (SmoothForm.wedge_mem_compactlySupportedForms _ hθ)
-
 /-- The computation of `⟨δ x, y⟩` on representatives: with `σ` restricting to `dα` on `U` and to
 `dβ` on `V`, and `θ` extending by zero to `da` on `U` and to `-db` on `V`,
 `∫ σ ∧ (ext a + ext b) = -(-1)^k (∫ α ∧ θ - ∫ β ∧ θ)`, the last two integrals over `U ⊓ V`. -/

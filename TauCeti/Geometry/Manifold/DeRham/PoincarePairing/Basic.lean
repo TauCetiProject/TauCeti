@@ -40,6 +40,8 @@ representative formula pairs it with the class of the constant function `1` to g
 * `TauCeti.integralTopForm_add_of_mem_compactlySupportedForms` and
   `TauCeti.integralTopForm_sub_of_mem_compactlySupportedForms`: the integral is additive on
   compactly supported smooth top forms.
+* `TauCeti.integralTopForm_wedge_sub_left`: wedging with a fixed compactly supported form and
+  integrating is additive in the other form, `∫ (A - B) ∧ θ = ∫ A ∧ θ - ∫ B ∧ θ`.
 * `TauCeti.integralTopForm_cast_mextDerivₗ_wedge`: integration by parts,
   `∫ dα ∧ a = -(-1)^k ∫ α ∧ da` for a compactly supported form `a`.
 * `TauCeti.integralTopForm_wedge_extendByZero`: for open subsets `U ≤ W`,
@@ -117,6 +119,19 @@ theorem integralTopForm_sub_of_mem_compactlySupportedForms (o : Manifold.Orienta
     integralTopForm o (A - B).1 = integralTopForm o A.1 - integralTopForm o B.1 := by
   rw [eq_sub_iff_add_eq,
     ← integralTopForm_add_of_mem_compactlySupportedForms o (sub_mem hA hB) hB, sub_add_cancel]
+
+omit [BoundarylessManifold I M] [T2Space M] [SigmaCompactSpace M] in
+/-- Wedging with a fixed compactly supported form and integrating is additive in the other form:
+the form of subtraction. -/
+theorem integralTopForm_wedge_sub_left (o : Manifold.Orientation I M (Fin (k + l)))
+    (A B : SmoothForm I M ℝ k) {θ : SmoothForm I M ℝ l} (hθ : θ ∈ compactlySupportedForms I M l) :
+    integralTopForm o (RoughForm.wedge (A - B).1 θ.1) =
+      integralTopForm o (RoughForm.wedge A.1 θ.1) -
+        integralTopForm o (RoughForm.wedge B.1 θ.1) := by
+  simp only [← SmoothForm.coe_wedge, map_sub, LinearMap.sub_apply]
+  exact integralTopForm_sub_of_mem_compactlySupportedForms o
+    (SmoothForm.wedge_mem_compactlySupportedForms _ hθ)
+    (SmoothForm.wedge_mem_compactlySupportedForms _ hθ)
 
 /-- **Integration by parts against a compactly supported form.** On an oriented boundaryless
 manifold of dimension `k + l + 1`, a smooth `k`-form `α` and a compactly supported smooth `l`-form
