@@ -33,12 +33,18 @@ the error terms that derived limits of towers cannot see.
 * `CategoryTheory.Functor.isProZero_iff_forall_exists_le`: the form of the condition for inverse
   systems indexed by a preorder.
 * `CategoryTheory.Functor.IsProZero.isZero_of_isLimit`: a limit of a pro-zero diagram is zero.
+* `CategoryTheory.MorphismProperty.forall_exists_iff_forall_exists_le` and
+  `CategoryTheory.MorphismProperty.forall_exists_map_iff_of_initial`: the preorder form and the
+  cofinal reindexing of the condition that every object is the target of a morphism with a given
+  property, shared by pro-zero and pro-`r`-torsion diagrams.
 * `CategoryTheory.Functor.isProZero_comp_iff`: being pro-zero is invariant under reindexing along an
   initial functor out of a cofiltered category; `CategoryTheory.Functor.isProZero_monotone_comp_iff`
   is the case of a cofinal monotone reindexing of inverse systems.
 * `CategoryTheory.Functor.IsProTorsionBy`: in an `R`-linear category, the diagrams that `r : R`
-  kills as pro-objects, with the same reindexing lemmas, closure under addition of scalars
-  (`CategoryTheory.Functor.IsProTorsionBy.add`) and closure under subobjects and quotients.
+  kills as pro-objects, with the same reindexing lemmas, closure of the killing scalars under
+  addition and multiplication (`CategoryTheory.Functor.IsProTorsionBy.add`,
+  `CategoryTheory.Functor.IsProTorsionBy.mul_left`), the case `r = 1`
+  (`CategoryTheory.Functor.isProTorsionBy_one_iff`) and closure under subobjects and quotients.
 * `CategoryTheory.Functor.isSerreClass_isProZero`: in an abelian category, pro-zero diagrams form a
   Serre class.
 * `CategoryTheory.Functor.proIsomorphisms`: the pro-isomorphisms of diagrams.
@@ -59,6 +65,44 @@ namespace CategoryTheory
 open Limits ZeroObject
 
 universe w v₁ v₂ v₃ u₁ u₂ u₃ u₄
+
+namespace MorphismProperty
+
+/-- Over the opposite of a preorder, every object is the target of a morphism satisfying `P`
+exactly when every `i` has some `j ≥ i` whose transition `j ⟶ i` satisfies `P`. -/
+lemma forall_exists_iff_forall_exists_le {ι : Type u₃} [Preorder ι] (P : MorphismProperty ιᵒᵖ) :
+    (∀ j, ∃ (i : ιᵒᵖ) (f : i ⟶ j), P f) ↔ ∀ i, ∃ (j : ι) (h : i ≤ j), P (homOfLE h).op := by
+  refine ⟨fun hP i ↦ ?_, fun hP i ↦ ?_⟩
+  · obtain ⟨j, f, hf⟩ := hP (Opposite.op i)
+    exact ⟨j.unop, leOfHom f.unop, by rwa [Subsingleton.elim (homOfLE _).op f]⟩
+  · obtain ⟨j, h, hj⟩ := hP i.unop
+    exact ⟨Opposite.op j, (homOfLE h).op, hj⟩
+
+/-- **Cofinal reindexing.** Let `P` be a property of morphisms of `J` that is stable under
+precomposition and postcomposition with arbitrary morphisms. For an initial functor `G : I ⥤ J` out
+of a cofiltered category, every object of `J` is the target of a morphism satisfying `P` exactly
+when every object of `I` is the target of a morphism whose image under `G` satisfies `P`. -/
+theorem forall_exists_map_iff_of_initial {J : Type u₁} [Category.{v₁} J] (P : MorphismProperty J)
+    {I : Type u₃} [Category.{v₃} I] [IsCofilteredOrEmpty I] (G : I ⥤ J) [G.Initial]
+    (hpre : ∀ {i j k : J} (f : i ⟶ j) (g : j ⟶ k), P g → P (f ≫ g))
+    (hpost : ∀ {i j k : J} (f : i ⟶ j) (g : j ⟶ k), P f → P (f ≫ g)) :
+    (∀ i, ∃ (c : I) (f : c ⟶ i), P (G.map f)) ↔ ∀ j, ∃ (i : J) (f : i ⟶ j), P f := by
+  have hG := ((Functor.initial_iff_of_isCofiltered G).1 inferInstance).1
+  refine ⟨fun hP j ↦ ?_, fun hP i ↦ ?_⟩
+  · obtain ⟨c, ⟨u⟩⟩ := hG j
+    obtain ⟨i, g, hg⟩ := hP c
+    exact ⟨G.obj i, G.map g ≫ u, hpost _ _ hg⟩
+  · -- Find `f : j ⟶ G i` satisfying `P`, reach `j` from some `G c`, and compare the resulting
+    -- map `G c ⟶ G i` with a map in the image of `G` over a common lower bound of `c` and `i`.
+    obtain ⟨j, f, hf⟩ := hP (G.obj i)
+    obtain ⟨c, ⟨u⟩⟩ := hG j
+    obtain ⟨c', t, ht⟩ := Functor.Initial.exists_eq G
+      (G.map (IsCofiltered.minToLeft c i) ≫ u ≫ f) (G.map (IsCofiltered.minToRight c i))
+    refine ⟨c', t ≫ IsCofiltered.minToRight c i, ?_⟩
+    rw [G.map_comp, ← ht, ← Category.assoc, ← Category.assoc]
+    exact hpre _ _ hf
+
+end MorphismProperty
 
 namespace Functor
 
@@ -88,12 +132,8 @@ lemma isProZero_zero [HasZeroObject C] : (0 : J ⥤ C).IsProZero :=
 /-- A diagram indexed by the opposite of a preorder is pro-zero exactly when every term is killed by
 the transition from some later term. -/
 lemma isProZero_iff_forall_exists_le {ι : Type u₃} [Preorder ι] (F : ιᵒᵖ ⥤ C) :
-    F.IsProZero ↔ ∀ i, ∃ (j : ι) (h : i ≤ j), F.map (homOfLE h).op = 0 := by
-  refine ⟨fun hF i ↦ ?_, fun hF i ↦ ?_⟩
-  · obtain ⟨j, f, hf⟩ := hF (Opposite.op i)
-    exact ⟨j.unop, leOfHom f.unop, by rwa [Subsingleton.elim (homOfLE _).op f]⟩
-  · obtain ⟨j, h, hj⟩ := hF i.unop
-    exact ⟨Opposite.op j, (homOfLE h).op, hj⟩
+    F.IsProZero ↔ ∀ i, ∃ (j : ι) (h : i ≤ j), F.map (homOfLE h).op = 0 :=
+  MorphismProperty.forall_exists_iff_forall_exists_le fun _ _ f ↦ F.map f = 0
 
 /-- A tower whose successive transitions are zero is pro-zero, whatever its terms. -/
 lemma isProZero_of_map_succ_eq_zero (F : ℕᵒᵖ ⥤ C)
@@ -112,21 +152,9 @@ lemma IsProZero.isZero_of_isLimit {F : J ⥤ C} (hF : F.IsProZero) {c : Cone F} 
 /-- **Cofinal reindexing.** For an initial functor `G : I ⥤ J` out of a cofiltered category, a
 diagram `F : J ⥤ C` is pro-zero exactly when `G ⋙ F` is. -/
 theorem isProZero_comp_iff {I : Type u₃} [Category.{v₃} I] [IsCofilteredOrEmpty I]
-    (G : I ⥤ J) [G.Initial] (F : J ⥤ C) : (G ⋙ F).IsProZero ↔ F.IsProZero := by
-  have hG := ((initial_iff_of_isCofiltered G).1 inferInstance).1
-  refine ⟨fun hF j ↦ ?_, fun hF i ↦ ?_⟩
-  · obtain ⟨c, ⟨u⟩⟩ := hG j
-    obtain ⟨i, g, hg⟩ := hF c
-    exact ⟨G.obj i, G.map g ≫ u, by rw [F.map_comp, ← comp_map, hg, zero_comp]⟩
-  · -- Kill `F (G i)` by some `f : j ⟶ G i`, reach `j` from some `G c`, and compare the resulting
-    -- map `G c ⟶ G i` with a map in the image of `G` over a common lower bound of `c` and `i`.
-    obtain ⟨j, f, hf⟩ := hF (G.obj i)
-    obtain ⟨c, ⟨u⟩⟩ := hG j
-    obtain ⟨c', t, ht⟩ := Initial.exists_eq G
-      (G.map (IsCofiltered.minToLeft c i) ≫ u ≫ f) (G.map (IsCofiltered.minToRight c i))
-    refine ⟨c', t ≫ IsCofiltered.minToRight c i, ?_⟩
-    rw [comp_map, G.map_comp, ← ht]
-    simp [hf]
+    (G : I ⥤ J) [G.Initial] (F : J ⥤ C) : (G ⋙ F).IsProZero ↔ F.IsProZero :=
+  MorphismProperty.forall_exists_map_iff_of_initial (fun _ _ f ↦ F.map f = 0) G
+    (fun _ _ h ↦ by rw [F.map_comp, h, comp_zero]) (fun _ _ h ↦ by rw [F.map_comp, h, zero_comp])
 
 /-- **Cofinal monotone reindexing of inverse systems.** If `φ : ι → κ` is monotone and cofinal and
 `ι` is directed, then an inverse system `F` indexed by `κ` is pro-zero exactly when its
@@ -159,15 +187,27 @@ lemma IsProZero.isProTorsionBy {F : J ⥤ C} (hF : F.IsProZero) (r : R) : F.IsPr
     have ⟨i, f, hf⟩ := hF j
     ⟨i, f, by rw [hf, smul_zero]⟩
 
+/-- Every diagram is pro-`0`-torsion. -/
+@[simp]
+lemma isProTorsionBy_zero (F : J ⥤ C) : F.IsProTorsionBy (0 : R) :=
+  fun j ↦ ⟨j, 𝟙 j, zero_smul R _⟩
+
+/-- A diagram is pro-`1`-torsion exactly when it is pro-zero. -/
+@[simp]
+lemma isProTorsionBy_one_iff {F : J ⥤ C} : F.IsProTorsionBy (1 : R) ↔ F.IsProZero := by
+  simp only [isProTorsionBy_iff, isProZero_iff, one_smul]
+
+/-- If `r` kills a diagram as a pro-object, then so does every left multiple `s * r`. -/
+lemma IsProTorsionBy.mul_left {F : J ⥤ C} {r : R} (s : R) (h : F.IsProTorsionBy r) :
+    F.IsProTorsionBy (s * r) := fun j ↦
+  have ⟨i, f, hf⟩ := h j
+  ⟨i, f, by rw [mul_smul, hf, smul_zero]⟩
+
 /-- A diagram indexed by the opposite of a preorder is pro-`r`-torsion exactly when `r` kills, for
 every `i`, the transition into `F i` from some later term. -/
 lemma isProTorsionBy_iff_forall_exists_le {ι : Type u₃} [Preorder ι] (F : ιᵒᵖ ⥤ C) (r : R) :
-    F.IsProTorsionBy r ↔ ∀ i, ∃ (j : ι) (h : i ≤ j), r • F.map (homOfLE h).op = 0 := by
-  refine ⟨fun hF i ↦ ?_, fun hF i ↦ ?_⟩
-  · obtain ⟨j, f, hf⟩ := hF (Opposite.op i)
-    exact ⟨j.unop, leOfHom f.unop, by rwa [Subsingleton.elim (homOfLE _).op f]⟩
-  · obtain ⟨j, h, hj⟩ := hF i.unop
-    exact ⟨Opposite.op j, (homOfLE h).op, hj⟩
+    F.IsProTorsionBy r ↔ ∀ i, ∃ (j : ι) (h : i ≤ j), r • F.map (homOfLE h).op = 0 :=
+  MorphismProperty.forall_exists_iff_forall_exists_le fun _ _ f ↦ r • F.map f = 0
 
 /-- Over a cofiltered index category, the scalars `r` for which a diagram is pro-`r`-torsion are
 closed under addition. -/
@@ -185,22 +225,10 @@ lemma IsProTorsionBy.add [IsCofilteredOrEmpty J] {F : J ⥤ C} {r s : R} (hr : F
 diagram `F : J ⥤ C` is pro-`r`-torsion exactly when `G ⋙ F` is. -/
 theorem isProTorsionBy_comp_iff {I : Type u₃} [Category.{v₃} I] [IsCofilteredOrEmpty I]
     (G : I ⥤ J) [G.Initial] (F : J ⥤ C) (r : R) :
-    (G ⋙ F).IsProTorsionBy r ↔ F.IsProTorsionBy r := by
-  have hG := ((initial_iff_of_isCofiltered G).1 inferInstance).1
-  refine ⟨fun hF j ↦ ?_, fun hF i ↦ ?_⟩
-  · obtain ⟨c, ⟨u⟩⟩ := hG j
-    obtain ⟨i, g, hg⟩ := hF c
-    refine ⟨G.obj i, G.map g ≫ u, ?_⟩
-    rw [F.map_comp, ← Linear.smul_comp, ← comp_map, hg, zero_comp]
-  · -- Kill `F (G i)` by `r` along some `f : j ⟶ G i`, reach `j` from some `G c`, and compare the
-    -- resulting map `G c ⟶ G i` with a map in the image of `G` over a common lower bound.
-    obtain ⟨j, f, hf⟩ := hF (G.obj i)
-    obtain ⟨c, ⟨u⟩⟩ := hG j
-    obtain ⟨c', t, ht⟩ := Initial.exists_eq G
-      (G.map (IsCofiltered.minToLeft c i) ≫ u ≫ f) (G.map (IsCofiltered.minToRight c i))
-    refine ⟨c', t ≫ IsCofiltered.minToRight c i, ?_⟩
-    rw [comp_map, G.map_comp, ← ht]
-    simp only [Functor.map_comp, ← Linear.comp_smul, hf, comp_zero]
+    (G ⋙ F).IsProTorsionBy r ↔ F.IsProTorsionBy r :=
+  MorphismProperty.forall_exists_map_iff_of_initial (fun _ _ f ↦ r • F.map f = 0) G
+    (fun _ _ h ↦ by rw [F.map_comp, ← Linear.comp_smul, h, comp_zero])
+    (fun _ _ h ↦ by rw [F.map_comp, ← Linear.smul_comp, h, zero_comp])
 
 /-- **Cofinal monotone reindexing of inverse systems.** If `φ : ι → κ` is monotone and cofinal and
 `ι` is directed, then an inverse system `F` indexed by `κ` is pro-`r`-torsion exactly when its
@@ -210,6 +238,12 @@ theorem isProTorsionBy_monotone_comp_iff {ι : Type u₃} {κ : Type u₄} [Preo
     (F : κᵒᵖ ⥤ C) (r : R) : (hφ.functor.op ⋙ F).IsProTorsionBy r ↔ F.IsProTorsionBy r :=
   have := (hφ.final_functor_iff).2 hcof
   isProTorsionBy_comp_iff _ F r
+
+/-- Over a commutative ring of scalars, if `r` kills a diagram as a pro-object, then so does every
+multiple `r * s`. -/
+lemma IsProTorsionBy.mul_right {R : Type w} [CommSemiring R] [Linear R C] {F : J ⥤ C} {r : R}
+    (s : R) (h : F.IsProTorsionBy r) : F.IsProTorsionBy (r * s) :=
+  mul_comm s r ▸ h.mul_left s
 
 end Linear
 

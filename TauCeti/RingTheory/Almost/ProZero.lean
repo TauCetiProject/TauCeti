@@ -106,10 +106,9 @@ theorem isAlmostProZero_of_isProZero {F : J ⥤ C} (hF : F.IsProZero) : S.IsAlmo
 /-- For the classical setup `m = V`, almost-pro-zero means pro-zero. -/
 @[simp]
 theorem isAlmostProZero_classical_iff {F : J ⥤ C} :
-    (classical V).IsAlmostProZero F ↔ F.IsProZero := by
-  refine ⟨fun hF ↦ (Functor.isProZero_iff F).mpr fun j ↦ ?_, isAlmostProZero_of_isProZero⟩
-  obtain ⟨i, f, hf⟩ := (isAlmostProZero_iff F).mp hF 1 (by simp [classical_ideal]) j
-  exact ⟨i, f, by rwa [one_smul] at hf⟩
+    (classical V).IsAlmostProZero F ↔ F.IsProZero :=
+  ⟨fun hF ↦ Functor.isProTorsionBy_one_iff.mp (hF 1 (by simp [classical_ideal])),
+    isAlmostProZero_of_isProZero⟩
 
 section RootSetup
 
@@ -120,11 +119,10 @@ iff every root `ϖ k` kills, for every `j`, some map of the diagram into `F j`. 
 theorem ofCompatibleRoots_isAlmostProZero_iff (F : J ⥤ C) :
     (ofCompatibleRoots hp hϖ).IsAlmostProZero F ↔
       ∀ k j, ∃ (i : J) (f : i ⟶ j), ϖ k • F.map f = 0 := by
-  rw [isAlmostProZero_iff]
-  refine ⟨fun hF k ↦ hF _ (root_mem_ofCompatibleRoots_ideal hp hϖ k), fun hF ε hε j ↦ ?_⟩
+  refine ⟨fun hF k ↦ (F.isProTorsionBy_iff _).mp (hF _ (root_mem_ofCompatibleRoots_ideal hp hϖ k)),
+    fun hF ε hε ↦ ?_⟩
   obtain ⟨k, c, rfl⟩ := (mem_ofCompatibleRoots_ideal hp hϖ).mp hε
-  obtain ⟨i, f, hf⟩ := hF k j
-  exact ⟨i, f, by rw [mul_comm, mul_smul, hf, smul_zero]⟩
+  exact ((F.isProTorsionBy_iff _).mpr (hF k)).mul_right c
 
 /-- **Bhatt's condition.** A tower of modules is almost-pro-zero for the root setup of `ϖ` iff
 for all `k` and `n` there is `n' ≥ n` such that `ϖ k` kills the image of the transition
