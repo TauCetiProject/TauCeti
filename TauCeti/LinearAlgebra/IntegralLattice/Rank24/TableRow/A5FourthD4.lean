@@ -30,7 +30,8 @@ permutes the three words.  So the rotation combined with triality is a symmetry 
 induces the self-isometry `TauCeti.RootfulNiemeierType.a5FourthD4TrialityIsometry` of the glued
 lattice `N_{A₅⁴ D₄}`.  This isometry moves the component in position `k` to position `ρ k`, where
 `ρ` is the block rotation, and applies triality to the `D₄` component.  It has order three
-(`TauCeti.RootfulNiemeierType.orderOf_a5FourthD4TrialityIsometry`), as does the rotation.
+(`TauCeti.RootfulNiemeierType.orderOf_a5FourthD4TrialityIsometry`), as does the rotation
+(`TauCeti.RootfulNiemeierType.orderOf_a5FourthD4BlockRotation`).
 
 Concretely, the block rotation `ρ` maps the positions `1 ↦ 2 ↦ 3 ↦ 1` and fixes `0` and `4`, and
 the induced map on glue words reads a digit word `[a b c d e]` as `[a d b c τ(e)]`, where
@@ -42,8 +43,9 @@ the induced map on glue words reads a digit word `[a b c d e]` as `[a d b c τ(e
   `[2(024)0]`, generating the indicated symmetries of that pattern
   (`map_symmetries_cyclic_a5FourthD4`), unfolded by `a5FourthD4BlockRotation_def`.  Its values
   are given by `ofFn_comp_a5FourthD4BlockRotation` and `ofFn_comp_a5FourthD4BlockRotation_symm`, it
-  fixes the `D₄` position (`a5FourthD4BlockRotation_d4Index`), and it has order three
-  (`a5FourthD4BlockRotation_pow_three`).
+  fixes the `D₄` position (`a5FourthD4BlockRotation_d4Index`), its cube is the identity
+  (`a5FourthD4BlockRotation_pow_three`), and its order is exactly three
+  (`orderOf_a5FourthD4BlockRotation`).
 * `TauCeti.RootfulNiemeierType.a5FourthD4BlockRotation_notMem_glueSymmetries`: the rotation alone
   is not a glue symmetry. No nontrivial power is a glue symmetry either
   (`zpowers_a5FourthD4BlockRotation_inf_glueSymmetries_eq_bot`).
@@ -192,7 +194,7 @@ theorem ofFn_comp_a5FourthD4BlockRotation_symm {α : Type*}
     show a5FourthD4BlockRotation.symm ⟨3, by decide⟩ = ⟨2, by decide⟩ by decide,
     show a5FourthD4BlockRotation.symm ⟨4, by decide⟩ = ⟨4, by decide⟩ by decide]
 
-/-- **The block rotation has order three.** -/
+/-- The cube of the block rotation is the identity. -/
 @[simp]
 theorem a5FourthD4BlockRotation_pow_three : a5FourthD4BlockRotation ^ 3 = 1 := by
   decide
@@ -561,6 +563,8 @@ theorem a5FourthD4TrialityIsometry_apply_four
     (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) :
     a5FourthD4TrialityIsometry x (4 : Fin 5) =
       typeD4Triality (isSimplyLaced_D 4) (x (4 : Fin 5)) :=
+  -- Unfolding `a5FourthD4D4Index`, the numeral `(4 : Fin 5)`, and `a5FourthD4.components`
+  -- identifies both indices with `⟨4, _⟩`; the bound proofs agree by proof irrelevance.
   a5FourthD4TrialityIsometry_apply_d4Index x
 
 /-- On the `D₄` component in position `⟨4, h⟩`, the combined symmetry applies triality. -/
@@ -568,6 +572,8 @@ theorem a5FourthD4TrialityIsometry_apply_four
 theorem a5FourthD4TrialityIsometry_apply_mk_four
     (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) (h : 4 < a5FourthD4.components.length) :
     a5FourthD4TrialityIsometry x ⟨4, h⟩ = typeD4Triality (isSimplyLaced_D 4) (x ⟨4, h⟩) :=
+  -- Unfolding `a5FourthD4D4Index` gives `⟨4, _⟩`, which agrees with `⟨4, h⟩`
+  -- by proof irrelevance of the bound proofs.
   a5FourthD4TrialityIsometry_apply_d4Index x
 
 /-- **On an `A₅` component, `a5FourthD4TrialityIsometry` reads the coordinates in position `k`
