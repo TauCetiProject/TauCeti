@@ -805,6 +805,20 @@ lemma Compatible.tames {ω : SymplecticForm V} {J : AlmostComplexStructure V}
     (h : ω.Compatible J) : ω.Tames J :=
   (ω.tames_iff_associated_pos J).mpr h.positive
 
+/-- **Structures tamed by a common form are nowhere opposite.** If `ω` tames both `J₀` and `J₁`,
+no nonzero vector `v` has `J₁ v = -J₀ v`, since `ω(v, J₀ v)` and `ω(v, J₁ v)` are both positive:
+the map `J₀ + J₁` is injective. It is complex linear from `(V, J₀)` to `(V, J₁)`, since
+`(J₀ + J₁) J₀ = J₁ J₀ - 1 = J₁ (J₀ + J₁)`. -/
+theorem Tames.injective_add {ω : SymplecticForm V} {J₀ J₁ : AlmostComplexStructure V}
+    (h₀ : ω.Tames J₀) (h₁ : ω.Tames J₁) :
+    Function.Injective (J₀.toLinearMap + J₁.toLinearMap) := by
+  refine (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_
+  by_contra hv₀
+  have h : ω v (J₁ v) = -ω v (J₀ v) := by
+    rw [eq_neg_of_add_eq_zero_right hv]
+    exact map_neg (ω.toBilinForm v) (J₀ v)
+  linarith [h₀ v hv₀, h₁ v hv₀]
+
 lemma Compatible.invariant_apply {ω : SymplecticForm V} {J : AlmostComplexStructure V}
     (h : ω.Compatible J) (v w : V) : ω (J v) (J w) = ω v w :=
   (ω.invariant_iff J).mp h.invariant v w

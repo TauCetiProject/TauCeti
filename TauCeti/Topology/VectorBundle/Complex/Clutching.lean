@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.Contractible
 public import TauCeti.Analysis.Complex.NormalizedDeterminant
 public import TauCeti.Topology.Circle.Degree.Square
 public import TauCeti.Topology.Homotopy.HomotopyGroup.TransAt
+public import TauCeti.Topology.VectorBundle.Complex.Structure
 public import TauCeti.Topology.VectorBundle.Contractible
 
 /-!
@@ -60,7 +61,12 @@ bundles have the same clutching numbers (`TauCeti.clutchingNumber_eq_of_continuo
 The bundle may be the tangent bundle `(TX, J)` of a manifold with an almost complex structure `J`,
 made a complex vector bundle by
 `TauCeti.ContMDiffAlmostComplexStructure.toContinuousComplexStructure`; this gives the clutching
-number of the almost complex tangent bundle on spheres.
+number of the almost complex tangent bundle on spheres. More generally, a continuous complex
+structure `J` on a real vector bundle `V` makes it a complex vector bundle `J.Fiber`. Two such
+structures `J₀` and `J₁` that are nowhere opposite, `J₁ v ≠ -J₀ v` for `v ≠ 0`, give isomorphic
+complex vector bundles, hence the same clutching numbers
+(`TauCeti.Bundle.ContinuousComplexStructure.clutchingNumberHom_eq_of_injective_add`); this is the
+case for any two almost complex structures tamed by a common symplectic form.
 
 ## Main definitions
 
@@ -78,6 +84,8 @@ number of the almost complex tangent bundle on spheres.
 * `TauCeti.clutchingNumber_eq_of_continuousLinearEquiv`,
   `TauCeti.clutchingNumberHom_eq_of_continuousLinearEquiv`: invariance under isomorphisms of
   complex vector bundles.
+* `TauCeti.Bundle.ContinuousComplexStructure.clutchingNumberHom_eq_of_injective_add`: nowhere
+  opposite complex structures on a real vector bundle have the same clutching numbers.
 
 ## References
 
@@ -421,5 +429,31 @@ theorem clutchingNumberHom_eq_of_continuousLinearEquiv (Φ : ∀ x, E x ≃L[ℂ
     | h p => exact clutchingNumber_eq_of_continuousLinearEquiv Φ hΦ p
 
 end Equiv
+
+/-! ### Changing the complex structure -/
+
+section ComplexStructure
+
+variable {F₀ : Type*} [NormedAddCommGroup F₀] [NormedSpace ℝ F₀] [FiniteDimensional ℝ F₀]
+  {V : X → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [TopologicalSpace (TotalSpace F₀ V)] [FiberBundle F₀ V] [VectorBundle ℝ F₀ V]
+  [FiniteDimensional ℂ F] [Fact (Module.finrank ℝ F₀ = 2 * Module.finrank ℂ F)]
+
+variable (F) in
+/-- **Nowhere opposite complex structures have the same clutching numbers.** If two continuous
+complex structures `J₀` and `J₁` on a real vector bundle `V` satisfy `J₁ b v ≠ -J₀ b v` for every
+nonzero `v`, the complex vector bundles they define have the same clutching number homomorphism,
+since `J₀ + J₁` is an isomorphism between them
+(`TauCeti.Bundle.ContinuousComplexStructure.fiberCongr`). This applies to any two almost complex
+structures tamed by a common symplectic form. -/
+theorem Bundle.ContinuousComplexStructure.clutchingNumberHom_eq_of_injective_add
+    (J₀ J₁ : Bundle.ContinuousComplexStructure F₀ V) (h : ∀ b, Function.Injective (J₀ b + J₁ b))
+    (x : X) :
+    clutchingNumberHom F J₁.Fiber x = clutchingNumberHom F J₀.Fiber x :=
+  clutchingNumberHom_eq_of_continuousLinearEquiv (J₀.fiberCongr J₁ h)
+    (J₀.continuous_fiberCongr F J₁ h) x
+
+end ComplexStructure
 
 end TauCeti
