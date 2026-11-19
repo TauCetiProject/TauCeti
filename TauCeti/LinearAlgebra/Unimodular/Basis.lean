@@ -101,7 +101,9 @@ theorem projective_quotient [Module.Projective R M] (hv : IsUnimodular R v) :
   have hc := LinearMap.isCompl_span_singleton_ker hf
   let e := Submodule.quotientEquivOfIsCompl _ _ hc
   exact .of_split ((LinearMap.ker f).subtype ∘ₗ e.toLinearMap) (R ∙ v).mkQ
-    (LinearMap.ext fun x ↦ Submodule.mk_quotientEquivOfIsCompl_apply hc x)
+    (LinearMap.ext fun x ↦ by
+      rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, Submodule.subtype_apply,
+        Submodule.mkQ_apply, Submodule.mk_quotientEquivOfIsCompl_apply, LinearMap.id_apply])
 
 /-- A unimodular vector `v` followed by lifts of the vectors of any basis `b` of `M ⧸ R ∙ v` is a
 basis of `M`. -/
@@ -172,21 +174,25 @@ namespace Module
 
 variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
 
+/-- The scalars `(1 : Submodule R A)` are the line `R ∙ 1`, so the two quotients are free
+together. -/
+private theorem free_quotient_one_iff :
+    Module.Free R (A ⧸ (1 : Submodule R A)) ↔ Module.Free R (A ⧸ R ∙ (1 : A)) := by
+  rw [Submodule.one_eq_span]
+
 /-- Over a local ring, the quotient of a finite free algebra by its scalars is free. -/
 instance free_quotient_one_of_isLocalRing [IsLocalRing R] [Module.Finite R A] [Module.Free R A] :
     Module.Free R (A ⧸ (1 : Submodule R A)) := by
   cases subsingleton_or_nontrivial A
   · infer_instance
-  rw [Submodule.one_eq_span]
-  exact Module.Free.isUnimodular_one.free_quotient_of_isLocalRing
+  exact free_quotient_one_iff.2 Module.Free.isUnimodular_one.free_quotient_of_isLocalRing
 
 /-- Over a principal ideal domain, the quotient of a finite free algebra by its scalars is free. -/
 instance free_quotient_one_of_isPrincipalIdealRing [IsDomain R] [IsPrincipalIdealRing R]
     [Module.Finite R A] [Module.Free R A] : Module.Free R (A ⧸ (1 : Submodule R A)) := by
   cases subsingleton_or_nontrivial A
   · infer_instance
-  rw [Submodule.one_eq_span]
-  exact Module.Free.isUnimodular_one.free_quotient_of_isPrincipalIdealRing
+  exact free_quotient_one_iff.2 Module.Free.isUnimodular_one.free_quotient_of_isPrincipalIdealRing
 
 namespace Free
 
@@ -197,7 +203,7 @@ local ring or a principal ideal domain), has rank one less than the algebra. -/
 theorem finrank_quotient_one_add_one [Module.Finite R A] [Nontrivial A] :
     finrank R (A ⧸ (1 : Submodule R A)) + 1 = finrank R A := by
   have : Nontrivial R := Module.nontrivial R A
-  have : Module.Free R (A ⧸ R ∙ (1 : A)) := Submodule.one_eq_span (R := R) (A := A) ▸ ‹_›
+  have : Module.Free R (A ⧸ R ∙ (1 : A)) := free_quotient_one_iff.1 ‹_›
   rw [Submodule.one_eq_span]
   exact isUnimodular_one.finrank_quotient_add_one
 
@@ -210,10 +216,8 @@ theorem exists_basis_zero_eq_one {n : ℕ} (hA : finrank R A = n + 1) :
   · have := Module.subsingleton R A
     exact ⟨.ofRepr (.ofSubsingleton _ _), Subsingleton.elim _ _⟩
   have := Module.finite_of_finrank_eq_succ hA
-  have : Nontrivial A := not_subsingleton_iff_nontrivial.mp fun _ ↦ by
-    rw [finrank_zero_of_subsingleton] at hA
-    exact Nat.succ_ne_zero n hA.symm
-  have : Module.Free R (A ⧸ R ∙ (1 : A)) := Submodule.one_eq_span (R := R) (A := A) ▸ ‹_›
+  have : Nontrivial A := Module.nontrivial_of_finrank_eq_succ hA
+  have : Module.Free R (A ⧸ R ∙ (1 : A)) := free_quotient_one_iff.1 ‹_›
   exact isUnimodular_one.exists_basis_zero_eq_of_free_quotient hA
 
 end Free
