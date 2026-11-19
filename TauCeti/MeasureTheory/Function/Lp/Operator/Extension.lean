@@ -25,8 +25,9 @@ The construction uses Mathlib's `Lp.simpleFunc.dense` and `LinearMap.extendOfNor
 
 When the operator is composed with multiplication by an unbounded function `b`, as in a
 commutator `[b, T]`, the dense domain must also keep `b u` in `L^q`. On a σ-finite measure space
-the `u ∈ Lᵖ` with `u ∈ L^q` and `b u ∈ L^q` are dense in `Lᵖ` for every `q`
-(`MeasureTheory.dense_setOf_memLp_and_memLp_smul`): truncating `u` to the sets of finite measure
+the `u ∈ Lᵖ` with `u ∈ L^q` and `b u ∈ L^q`, which form the submodule
+`MeasureTheory.memLpSmulSubmodule b q`, are dense in `Lᵖ` for every `q`
+(`MeasureTheory.dense_memLpSmulSubmodule`): truncating `u` to the sets of finite measure
 where `‖u‖` and `|b|` are bounded gives such functions converging to `u` in `Lᵖ`. An `Lᵖ` bound
 for `b T u - T (b u)` on these `u` therefore extends it uniquely to a bounded operator on `Lᵖ`
 (`ContinuousLinearMap.exists_continuousLinearMap_apply_ae_eq_smul_sub`).
@@ -127,6 +128,60 @@ theorem lpTwoSubmodule.toL2_ae (f : lpTwoSubmodule (E := E) (p := p) (μ := μ))
   have hf := lpTwoSubmodule.memLp f
   exact hf.coeFn_toLp
 
+/-- The `u ∈ Lᵖ` with `u ∈ L^q` and `b u ∈ L^q`, a dense subspace of `Lᵖ` on a σ-finite measure
+space (`MeasureTheory.dense_memLpSmulSubmodule`). -/
+def memLpSmulSubmodule (b : α → ℝ) (q : ℝ≥0∞) : Submodule ℝ (Lp E p μ) where
+  carrier := {u | MemLp u q μ ∧ MemLp (fun x => b x • u x) q μ}
+  zero_mem' := by
+    refine ⟨MemLp.zero.ae_eq (Lp.coeFn_zero E p μ).symm, MemLp.zero.ae_eq ?_⟩
+    filter_upwards [Lp.coeFn_zero E p μ] with x h
+    simp only [h, Pi.zero_apply, smul_zero]
+  add_mem' {u v} hu hv := by
+    refine ⟨(hu.1.add hv.1).ae_eq (Lp.coeFn_add u v).symm, (hu.2.add hv.2).ae_eq ?_⟩
+    filter_upwards [Lp.coeFn_add u v] with x h
+    simp only [h, Pi.add_apply, smul_add]
+  smul_mem' c u hu := by
+    refine ⟨(hu.1.const_smul c).ae_eq (Lp.coeFn_smul c u).symm, (hu.2.const_smul c).ae_eq ?_⟩
+    filter_upwards [Lp.coeFn_smul c u] with x h
+    simp only [h, Pi.smul_apply, smul_comm c (b x)]
+
+/-- Membership in `memLpSmulSubmodule b q` means that `u` and `b u` have finite `L^q` norm. -/
+theorem mem_memLpSmulSubmodule {b : α → ℝ} {q : ℝ≥0∞} {u : Lp E p μ} :
+    u ∈ memLpSmulSubmodule (μ := μ) b q ↔ MemLp u q μ ∧ MemLp (fun x => b x • u x) q μ :=
+  Iff.rfl
+
+/-- An element `u` of `memLpSmulSubmodule b q`, read as the pair `(u, b u)` in `L^q × L^q`. -/
+def memLpSmulSubmodule.toLpPair (b : α → ℝ) (q : ℝ≥0∞) :
+    memLpSmulSubmodule (E := E) (p := p) (μ := μ) b q →ₗ[ℝ] Lp E q μ × Lp E q μ where
+  toFun u := ((mem_memLpSmulSubmodule.1 u.2).1.toLp u,
+    (mem_memLpSmulSubmodule.1 u.2).2.toLp fun x => b x • u.1 x)
+  map_add' u v := by
+    rw [Prod.mk_add_mk, ← MemLp.toLp_add, ← MemLp.toLp_add]
+    congr 1
+    · exact MemLp.toLp_congr _ _ (Lp.coeFn_add u.1 v.1)
+    refine MemLp.toLp_congr _ _ ?_
+    filter_upwards [Lp.coeFn_add u.1 v.1] with x h
+    simp only [Submodule.coe_add, h, Pi.add_apply, smul_add]
+  map_smul' c u := by
+    rw [RingHom.id_apply, Prod.smul_mk, ← MemLp.toLp_const_smul, ← MemLp.toLp_const_smul]
+    congr 1
+    · exact MemLp.toLp_congr _ _ (Lp.coeFn_smul c u.1)
+    refine MemLp.toLp_congr _ _ ?_
+    filter_upwards [Lp.coeFn_smul c u.1] with x h
+    simp only [Submodule.coe_smul, h, Pi.smul_apply, smul_comm (b x) c]
+
+/-- The first component of `toLpPair b q u` is `u` almost everywhere. -/
+theorem memLpSmulSubmodule.toLpPair_fst_ae {b : α → ℝ} {q : ℝ≥0∞}
+    (u : memLpSmulSubmodule (E := E) (p := p) (μ := μ) b q) :
+    ((toLpPair b q u).1 : α → E) =ᵐ[μ] (u : Lp E p μ) :=
+  (mem_memLpSmulSubmodule.1 u.2).1.coeFn_toLp
+
+/-- The second component of `toLpPair b q u` is `b u` almost everywhere. -/
+theorem memLpSmulSubmodule.toLpPair_snd_ae {b : α → ℝ} {q : ℝ≥0∞}
+    (u : memLpSmulSubmodule (E := E) (p := p) (μ := μ) b q) :
+    ((toLpPair b q u).2 : α → E) =ᵐ[μ] fun x => b x • (u : Lp E p μ) x :=
+  (mem_memLpSmulSubmodule.1 u.2).2.coeFn_toLp
+
 variable [Fact (1 ≤ p)]
 
 /-- The intersection `Lᵖ ∩ L²` is dense in `Lᵖ` when `p < ∞`. -/
@@ -168,9 +223,9 @@ function. For every exponent `q`, the functions `u ∈ Lᵖ` with `u ∈ L^q` an
 in `Lᵖ`. This is a dense domain on which an operator given on `L^q` can be composed with
 multiplication by an unbounded `b`, as in the commutator `[b, T]` of a singular integral
 operator `T` with a function `b` of bounded mean oscillation. -/
-theorem dense_setOf_memLp_and_memLp_smul [SigmaFinite μ] {b : α → ℝ}
+theorem dense_memLpSmulSubmodule [SigmaFinite μ] {b : α → ℝ}
     (hb : AEStronglyMeasurable b μ) (hp : p ≠ ∞) (q : ℝ≥0∞) :
-    Dense {u : Lp E p μ | MemLp u q μ ∧ MemLp (fun x => b x • u x) q μ} := by
+    Dense (memLpSmulSubmodule (E := E) (p := p) (μ := μ) b q : Set (Lp E p μ)) := by
   intro φ
   -- Truncate `φ` to `Sₖ = spanningSets μ k ∩ {‖φ‖ ≤ k, |b'| ≤ k}`, where `b' = b` a.e. is
   -- strongly measurable. The truncations converge to `φ` in `Lᵖ` by dominated convergence.
@@ -180,9 +235,9 @@ theorem dense_setOf_memLp_and_memLp_smul [SigmaFinite μ] {b : α → ℝ}
   have hφs (k : ℕ) (r : ℝ≥0∞) : MemLp (φs k) r μ ∧ MemLp (fun x => b' x • φs k x) r μ :=
     memLp_indicator_and_memLp_smul_indicator (Lp.stronglyMeasurable φ)
       hb.stronglyMeasurable_mk k r
-  have hmem (k : ℕ) : (hφs k p).1.toLp (φs k) ∈
-      {u : Lp E p μ | MemLp u q μ ∧ MemLp (fun x => b x • u x) q μ} := by
-    refine ⟨(hφs k q).1.ae_eq (hφs k p).1.coeFn_toLp.symm, (hφs k q).2.ae_eq ?_⟩
+  have hmem (k : ℕ) : (hφs k p).1.toLp (φs k) ∈ memLpSmulSubmodule (μ := μ) b q := by
+    refine mem_memLpSmulSubmodule.2
+      ⟨(hφs k q).1.ae_eq (hφs k p).1.coeFn_toLp.symm, (hφs k q).2.ae_eq ?_⟩
     filter_upwards [hb.ae_eq_mk, (hφs k p).1.coeFn_toLp] with x h₁ h₂
     rw [h₁, h₂]
   refine mem_closure_of_tendsto (TauCeti.tendsto_toLp_of_ae_tendsto_of_norm_le (l := Filter.atTop)
@@ -408,73 +463,44 @@ variable {α E F : Type*} [MeasurableSpace α] {μ : Measure α}
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {p : ℝ≥0∞}
 
-/-- The `u ∈ Lᵖ` with `u ∈ L^q` and `b u ∈ L^q`, a dense subspace of `Lᵖ`
-(`MeasureTheory.dense_setOf_memLp_and_memLp_smul`). -/
-private def memLpSmulSubmodule (b : α → ℝ) (q : ℝ≥0∞) : Submodule ℝ (Lp E p μ) where
-  carrier := {u | MemLp u q μ ∧ MemLp (fun x => b x • u x) q μ}
-  zero_mem' := by
-    refine ⟨MemLp.zero.ae_eq (Lp.coeFn_zero E p μ).symm, MemLp.zero.ae_eq ?_⟩
-    filter_upwards [Lp.coeFn_zero E p μ] with x h
-    simp only [h, Pi.zero_apply, smul_zero]
-  add_mem' {u v} hu hv := by
-    refine ⟨(hu.1.add hv.1).ae_eq (Lp.coeFn_add u v).symm, (hu.2.add hv.2).ae_eq ?_⟩
-    filter_upwards [Lp.coeFn_add u v] with x h
-    simp only [h, Pi.add_apply, smul_add]
-  smul_mem' c u hu := by
-    refine ⟨(hu.1.const_smul c).ae_eq (Lp.coeFn_smul c u).symm, (hu.2.const_smul c).ae_eq ?_⟩
-    filter_upwards [Lp.coeFn_smul c u] with x h
-    simp only [h, Pi.smul_apply, smul_comm c (b x)]
-
-private theorem mem_memLpSmulSubmodule {b : α → ℝ} {q : ℝ≥0∞} {u : Lp E p μ} :
-    u ∈ memLpSmulSubmodule (μ := μ) b q ↔ MemLp u q μ ∧ MemLp (fun x => b x • u x) q μ :=
-  Iff.rfl
-
-/-- An element `u` of `memLpSmulSubmodule b q`, read as the pair `(u, b u)` in `L^q × L^q`. -/
-private def memLpSmulSubmodule.toLpPair (b : α → ℝ) (q : ℝ≥0∞) :
-    memLpSmulSubmodule (E := E) (p := p) (μ := μ) b q →ₗ[ℝ] Lp E q μ × Lp E q μ where
-  toFun u := ((mem_memLpSmulSubmodule.1 u.2).1.toLp u,
-    (mem_memLpSmulSubmodule.1 u.2).2.toLp fun x => b x • u.1 x)
-  map_add' u v := by
-    rw [Prod.mk_add_mk, ← MemLp.toLp_add, ← MemLp.toLp_add]
-    congr 1
-    · exact MemLp.toLp_congr _ _ (Lp.coeFn_add u.1 v.1)
-    refine MemLp.toLp_congr _ _ ?_
-    filter_upwards [Lp.coeFn_add u.1 v.1] with x h
-    simp only [Submodule.coe_add, h, Pi.add_apply, smul_add]
-  map_smul' c u := by
-    rw [RingHom.id_apply, Prod.smul_mk, ← MemLp.toLp_const_smul, ← MemLp.toLp_const_smul]
-    congr 1
-    · exact MemLp.toLp_congr _ _ (Lp.coeFn_smul c u.1)
-    refine MemLp.toLp_congr _ _ ?_
-    filter_upwards [Lp.coeFn_smul c u.1] with x h
-    simp only [Submodule.coe_smul, h, Pi.smul_apply, smul_comm (b x) c]
-
 /-- The map `u ↦ b T u - T (b u)` on `memLpSmulSubmodule b q`, with values in `Lᵖ`, given that
 it takes values in `Lᵖ`. -/
 private def memLpSmulSubmodule.smulSub {q : ℝ≥0∞} [Fact (1 ≤ q)] (T : Lp E q μ →L[ℝ] Lp F q μ)
     {b : α → ℝ} (hmem : ∀ u : memLpSmulSubmodule (E := E) (p := p) (μ := μ) b q,
-      MemLp (fun x => b x • T (toLpPair b q u).1 x - T (toLpPair b q u).2 x) p μ) :
+      MemLp (fun x => b x • T (memLpSmulSubmodule.toLpPair b q u).1 x -
+        T (memLpSmulSubmodule.toLpPair b q u).2 x) p μ) :
     memLpSmulSubmodule (E := E) (p := p) (μ := μ) b q →ₗ[ℝ] Lp F p μ where
   toFun u := (hmem u).toLp _
   map_add' u v := by
     refine (MemLp.toLp_congr _ _ ?_).trans (MemLp.toLp_add _ _)
-    filter_upwards [Lp.coeFn_add (T (toLpPair b q u).1) (T (toLpPair b q v).1),
-      Lp.coeFn_add (T (toLpPair b q u).2) (T (toLpPair b q v).2)] with x h₁ h₂
+    filter_upwards [Lp.coeFn_add (T (memLpSmulSubmodule.toLpPair b q u).1)
+        (T (memLpSmulSubmodule.toLpPair b q v).1),
+      Lp.coeFn_add (T (memLpSmulSubmodule.toLpPair b q u).2)
+        (T (memLpSmulSubmodule.toLpPair b q v).2)] with x h₁ h₂
     simp only [map_add, Prod.fst_add, Prod.snd_add, Pi.add_apply, h₁, h₂, smul_add]
     abel
   map_smul' a u := by
     refine (MemLp.toLp_congr _ _ ?_).trans (MemLp.toLp_const_smul _ _)
-    filter_upwards [Lp.coeFn_smul a (T (toLpPair b q u).1),
-      Lp.coeFn_smul a (T (toLpPair b q u).2)] with x h₁ h₂
+    filter_upwards [Lp.coeFn_smul a (T (memLpSmulSubmodule.toLpPair b q u).1),
+      Lp.coeFn_smul a (T (memLpSmulSubmodule.toLpPair b q u).2)] with x h₁ h₂
     simp only [map_smul, Prod.smul_fst, Prod.smul_snd, Pi.smul_apply, RingHom.id_apply, h₁, h₂,
       smul_sub, smul_comm (b x) a]
+
+private theorem memLpSmulSubmodule.smulSub_apply {q : ℝ≥0∞} [Fact (1 ≤ q)]
+    (T : Lp E q μ →L[ℝ] Lp F q μ) {b : α → ℝ}
+    (hmem : ∀ u : memLpSmulSubmodule (E := E) (p := p) (μ := μ) b q,
+      MemLp (fun x => b x • T (memLpSmulSubmodule.toLpPair b q u).1 x -
+        T (memLpSmulSubmodule.toLpPair b q u).2 x) p μ)
+    (u : memLpSmulSubmodule (E := E) (p := p) (μ := μ) b q) :
+    memLpSmulSubmodule.smulSub T hmem u = (hmem u).toLp _ :=
+  rfl
 
 /-- **Extension of an operator composed with multiplication.** Let `1 ≤ p < ∞`, let `T` be a
 bounded operator on `L^q` of a σ-finite measure space, and let `b` be a real a.e. strongly
 measurable function. If `‖b T f - T g‖_p ≤ B ‖f‖_p` for all `f, g ∈ L^q` with `g = b f` and
 `f ∈ Lᵖ`, as for a commutator `[b, T]`, then there is a bounded operator `S` on `Lᵖ` with
 `‖S‖ ≤ B` and `S f = b T f - T g` for all such `f, g`. These `f` are dense in `Lᵖ`
-(`MeasureTheory.dense_setOf_memLp_and_memLp_smul`), so `S` is the only bounded operator with the
+(`MeasureTheory.dense_memLpSmulSubmodule`), so `S` is the only bounded operator with the
 latter property. -/
 theorem exists_continuousLinearMap_apply_ae_eq_smul_sub [SigmaFinite μ] [Fact (1 ≤ p)]
     [CompleteSpace F] {q : ℝ≥0∞} [Fact (1 ≤ q)]
@@ -490,9 +516,9 @@ theorem exists_continuousLinearMap_apply_ae_eq_smul_sub [SigmaFinite μ] [Fact (
   set D := memLpSmulSubmodule (E := E) (p := p) (μ := μ) b q
   set j := memLpSmulSubmodule.toLpPair (E := E) (p := p) (μ := μ) b q
   -- `j u = (u, b u)`, read in `L^q × L^q`.
-  have hj₁ (u : D) : ((j u).1 : α → E) =ᵐ[μ] u := (mem_memLpSmulSubmodule.1 u.2).1.coeFn_toLp
+  have hj₁ (u : D) : ((j u).1 : α → E) =ᵐ[μ] u := memLpSmulSubmodule.toLpPair_fst_ae u
   have hj₂ (u : D) : ((j u).2 : α → E) =ᵐ[μ] fun x => b x • (j u).1 x := by
-    filter_upwards [MemLp.coeFn_toLp (mem_memLpSmulSubmodule.1 u.2).2, hj₁ u] with x h₁ h₂
+    filter_upwards [memLpSmulSubmodule.toLpPair_snd_ae u, hj₁ u] with x h₁ h₂
     rw [h₂]
     exact h₁
   have hjp (u : D) : MemLp (j u).1 p μ := (Lp.memLp u.1).ae_eq (hj₁ u).symm
@@ -502,12 +528,12 @@ theorem exists_continuousLinearMap_apply_ae_eq_smul_sub [SigmaFinite μ] [Fact (
   set c := memLpSmulSubmodule.smulSub T hmem
   have hc (u : D) : c u =ᵐ[μ] fun x => b x • T (j u).1 x - T (j u).2 x := (hmem u).coeFn_toLp
   have hnorm (u : D) : ‖c u‖ ≤ B * ‖D.subtype u‖ := by
-    rw [show c u = (hmem u).toLp _ from rfl, Lp.norm_toLp, Submodule.subtype_apply, Lp.norm_def,
+    rw [memLpSmulSubmodule.smulSub_apply, Lp.norm_toLp, Submodule.subtype_apply, Lp.norm_def,
       ← eLpNorm_congr_ae (hj₁ u), ← ENNReal.coe_toReal, ← ENNReal.toReal_mul]
     exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top (hjp u).eLpNorm_ne_top)
       (hB _ _ (hjp u) (hj₂ u))
   have hdense : DenseRange D.subtype :=
-    denseRange_subtype_val.2 (dense_setOf_memLp_and_memLp_smul hb hp q)
+    denseRange_subtype_val.2 (dense_memLpSmulSubmodule hb hp q)
   refine ⟨c.extendOfNorm D.subtype, LinearMap.opNorm_extendOfNorm_le hdense B.2 hnorm,
     fun f g hf hg => ?_, fun S' hS' => ?_⟩
   · -- `f`, read in `Lᵖ`, lies in `D`, and `j` sends it back to `(f, g)`.
@@ -518,8 +544,9 @@ theorem exists_continuousLinearMap_apply_ae_eq_smul_sub [SigmaFinite μ] [Fact (
       refine Prod.ext (Lp.ext ((hj₁ _).trans hf.coeFn_toLp)) (Lp.ext ((hj₂ _).trans ?_))
       filter_upwards [hj₁ ⟨_, hu⟩, hf.coeFn_toLp, hg] with x h₁ h₂ h₃
       rw [h₁, h₂, h₃]
-    rw [show hf.toLp f = D.subtype ⟨_, hu⟩ from rfl,
-      LinearMap.extendOfNorm_eq hdense ⟨B, hnorm⟩]
+    have h := LinearMap.extendOfNorm_eq hdense ⟨B, hnorm⟩ ⟨_, hu⟩
+    rw [Submodule.subtype_apply, Submodule.coe_mk] at h
+    rw [h]
     simpa only [hju] using hc ⟨_, hu⟩
   · refine (LinearMap.extendOfNorm_unique hdense B hnorm S'
       (LinearMap.ext fun u => Lp.ext ?_)).symm
