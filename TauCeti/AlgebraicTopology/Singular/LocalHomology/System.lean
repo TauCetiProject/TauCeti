@@ -43,8 +43,9 @@ compatibility with composition characterizes the transport
   bijective.
 * `TauCeti.localHomologySingletonLinearEquiv`: with coefficients `N ≃ₗ[Λ] Λ`, the local homology
   `Hₙ(M, M ∖ {x}; N)` of an `n`-manifold is a copy of `Λ`.
-* `TauCeti.existsUnique_forall_localHomology_eq_zsmul`: with coefficients `L ≃ₗ[ℤ] ℤ`, every
-  linear endomorphism of `Hₙ(M, M ∖ {x}; L)` is multiplication by a unique integer.
+* `TauCeti.existsUnique_forall_localHomology_eq_smul`: over a commutative ring `Λ`, with
+  coefficients `L ≃ₗ[Λ] Λ`, every linear endomorphism of `Hₙ(M, M ∖ {x}; L)` is multiplication
+  by a unique scalar.
 * `TauCeti.localHomologyMap`: for a continuous map `j : M → N` with `j ⁻¹' T ⊆ S`, the map
   `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j`. It is functorial, is the restriction map for `j`
   the identity, is the identity for `j` fixing every point (`TauCeti.localHomologyMap_eq_id`),
@@ -232,24 +233,25 @@ def localHomologySingletonLinearEquiv [T1Space M] {E : Type w} [NormedAddCommGro
   ((hn ▸ singularHomologyComplSingletonFinrankIso N (chartAt E x) (mem_chart_source E x) :
     localHomology N ({x} : Set M) n ≅ N).toLinearEquiv).trans eN
 
-/-- With coefficients `L ≃ₗ[ℤ] ℤ`, every linear endomorphism of the local homology
-`Hₙ(M, M ∖ {x}; L) ≅ ℤ` of a manifold of dimension `n` at a point `x` is multiplication by a
-unique integer. -/
-theorem existsUnique_forall_localHomology_eq_zsmul [T1Space M] {E : Type w}
+/-- Over a commutative ring `Λ`, with coefficients `L ≃ₗ[Λ] Λ`, every linear endomorphism of the
+local homology `Hₙ(M, M ∖ {x}; L) ≅ Λ` of a manifold of dimension `n` at a point `x` is
+multiplication by a unique scalar. -/
+theorem existsUnique_forall_localHomology_eq_smul [T1Space M] {E : Type w}
     [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M] {n : ℕ}
-    (hn : Module.finrank ℝ E = n) {L : ModuleCat.{w} ℤ} (eL : L ≃ₗ[ℤ] ℤ) (x : M)
-    (φ : (localHomology L ({x} : Set M) n : ModuleCat.{w} ℤ) →ₗ[ℤ]
-      (localHomology L ({x} : Set M) n : ModuleCat.{w} ℤ)) :
-    ∃! c : ℤ, ∀ z, φ z = c • z := by
-  -- The local homology is a copy of `ℤ`, so it is free of rank one.
+    (hn : Module.finrank ℝ E = n) {Λ : Type*} [CommRing Λ] {L : ModuleCat.{w} Λ}
+    (eL : L ≃ₗ[Λ] Λ) (x : M)
+    (φ : (localHomology L ({x} : Set M) n : ModuleCat.{w} Λ) →ₗ[Λ]
+      (localHomology L ({x} : Set M) n : ModuleCat.{w} Λ)) :
+    ∃! c : Λ, ∀ z, φ z = c • z := by
+  -- The local homology is a copy of `Λ`, and the scalar is the image of `φ` at the generator.
   let e := localHomologySingletonLinearEquiv L hn eL x
-  have := Module.Free.of_equiv e.symm
-  obtain ⟨c, hc, hu⟩ := LinearMap.existsUnique_eq_smul_id_of_finrank_eq_one
-    (e.finrank_eq.trans (Module.finrank_self ℤ)) φ
-  -- The scalar action of the `ℤ`-module `localHomology L {x} n` is the `ℤ`-action `zsmul` of
-  -- its additive group.
-  exact ⟨c, fun z ↦ (LinearMap.congr_fun hc z).trans (int_smul_eq_zsmul _ c z),
-    fun c' hc' ↦ hu c' (LinearMap.ext fun z ↦ (hc' z).trans (int_smul_eq_zsmul _ c' z).symm)⟩
+  refine ⟨e (φ (e.symm 1)), fun z ↦ e.injective ?_, fun c hc ↦ ?_⟩
+  · have hz : e z • e.symm 1 = z := by
+      rw [← map_smul, smul_eq_mul, mul_one, LinearEquiv.symm_apply_apply]
+    calc e (φ z) = e (φ (e z • e.symm 1)) := by rw [hz]
+      _ = e (e (φ (e.symm 1)) • z) := by
+        rw [map_smul, map_smul, map_smul, smul_eq_mul, smul_eq_mul, mul_comm]
+  · rw [hc, map_smul, LinearEquiv.apply_symm_apply, smul_eq_mul, mul_one]
 
 end SingularHomology
 

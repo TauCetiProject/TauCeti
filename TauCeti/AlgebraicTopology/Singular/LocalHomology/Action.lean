@@ -245,7 +245,7 @@ variable [ContinuousConstSMul G M] [T2Space M] {E : Type w} [NormedAddCommGroup 
 
 /-- The integer by which an element of the stabilizer of `x` acts on `H_d(M, M ∖ {x}; ℤ)`. -/
 private def stabilizerScalar (hd : finrank ℝ E = d) (x : M) (h : stabilizer G x) : ℤ :=
-  (existsUnique_forall_localHomology_eq_zsmul hd ULift.moduleEquiv x
+  (existsUnique_forall_localHomology_eq_smul hd ULift.moduleEquiv x
     (localHomologySMulIso (ModuleCat.of ℤ (ULift.{w} ℤ)) (h : G) (mem_stabilizer_iff.1 h.2)
       d).hom.hom).choose
 
@@ -253,15 +253,19 @@ private lemma stabilizerScalar_spec (hd : finrank ℝ E = d) (x : M) (h : stabil
     (z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d) :
     (localHomologySMulIso (ModuleCat.of ℤ (ULift.{w} ℤ)) (h : G) (mem_stabilizer_iff.1 h.2)
       d).hom z = stabilizerScalar hd x h • z :=
-  (existsUnique_forall_localHomology_eq_zsmul hd ULift.moduleEquiv x _).choose_spec.1 z
+  -- The scalar action of the `ℤ`-module `localHomology L {x} d` is the `ℤ`-action `zsmul` of
+  -- its additive group.
+  ((existsUnique_forall_localHomology_eq_smul hd ULift.moduleEquiv x _).choose_spec.1 z).trans
+    (int_smul_eq_zsmul _ _ z)
 
 /-- `stabilizerScalar hd x h` is the only integer by which `h` acts. -/
 private lemma stabilizerScalar_eq (hd : finrank ℝ E = d) (x : M) (h : stabilizer G x) {c : ℤ}
     (hc : ∀ z, (localHomologySMulIso (ModuleCat.of ℤ (ULift.{w} ℤ)) (h : G)
       (mem_stabilizer_iff.1 h.2) d).hom z = c • z) :
     stabilizerScalar hd x h = c :=
-  (existsUnique_forall_localHomology_eq_zsmul hd ULift.moduleEquiv x _).unique
-    (stabilizerScalar_spec hd x h) hc
+  (existsUnique_forall_localHomology_eq_smul hd ULift.moduleEquiv x _).unique
+    (existsUnique_forall_localHomology_eq_smul hd ULift.moduleEquiv x _).choose_spec.1
+    fun z ↦ (hc z).trans (int_smul_eq_zsmul _ c z).symm
 
 private lemma stabilizerScalar_one (hd : finrank ℝ E = d) (x : M) :
     stabilizerScalar hd x (1 : stabilizer G x) = 1 :=
