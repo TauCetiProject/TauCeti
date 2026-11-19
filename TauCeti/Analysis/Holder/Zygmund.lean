@@ -1058,23 +1058,20 @@ private theorem toHolderSpace_mem_littleHolder_of_tendsto (hα0 : 0 < α) (hα1 
     {u : BesovSpace F φ α ∞ ∞}
     (hu : Tendsto (fun j : ℕ ↦ 2 ^ ((α : ℝ) * j) * ‖u.block j‖) atTop (𝓝 0)) :
     toHolderSpace F φ hα0 hα1 u ∈ HolderSpace.littleHolder α E F := by
-  set T := toHolderSpace F φ hα0 hα1
-  rw [← SetLike.mem_coe, ← HolderSpace.isClosed_littleHolder.closure_eq]
-  refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
-  obtain ⟨N, v, hv, huv⟩ := exists_toDistr_eq_sum_block_and_norm_sub_le hu
-    (ε := ε / (2 * (‖T‖ + 1))) (by positivity)
-  -- The truncation `v = S_N u` has vanishing blocks from `N + L` on.
+  -- `u` is a limit of the truncations `v = S_N u`, which have vanishing blocks from `N + L` on.
   obtain ⟨L, hL⟩ := exists_sum_littlewoodPaleyBlock_littlewoodPaleyBlock (F := F) φ
-  refine ⟨T v, toHolderSpace_mem_littleHolder_of_littlewoodPaleyBlock_eq_zero φ hα0 hα1 hv
-    (M := N + L) fun k hk ↦ ?_, ?_⟩
-  · simp only [Lp.toTemperedDistribution_sum, coe_block]
-    exact (hL k N).2 hk u.toDistr
-  · rw [dist_eq_norm, ← map_sub]
-    calc ‖T (u - v)‖ ≤ ‖T‖ * ‖u - v‖ := T.le_opNorm _
-      _ ≤ ‖T‖ * (ε / (2 * (‖T‖ + 1))) := by gcongr
-      _ < ε := by
-        rw [← mul_div_assoc, div_lt_iff₀ (by positivity)]
-        nlinarith [norm_nonneg T]
+  have hmem : u ∈ closure {v : BesovSpace F φ α ∞ ∞ | ∃ (r : Lp F ∞ (volume : Measure E)) (M : ℕ),
+      v.toDistr = r ∧ ∀ k, M ≤ k → littlewoodPaleyBlock F φ k (r : 𝓢'(E, F)) = 0} := by
+    refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
+    obtain ⟨N, v, hv, huv⟩ := exists_toDistr_eq_sum_block_and_norm_sub_le hu (half_pos hε)
+    refine ⟨v, ⟨_, N + L, hv, fun k hk ↦ ?_⟩, ?_⟩
+    · simp only [Lp.toTemperedDistribution_sum, coe_block]
+      exact (hL k N).2 hk u.toDistr
+    · rw [dist_eq_norm]
+      linarith
+  exact HolderSpace.isClosed_littleHolder.closure_subset
+    (map_mem_closure (toHolderSpace F φ hα0 hα1).continuous hmem fun _ ⟨_, _, hvr, hr⟩ ↦
+      toHolderSpace_mem_littleHolder_of_littlewoodPaleyBlock_eq_zero φ hα0 hα1 hvr hr)
 
 /-- If the Hölder representative of `u ∈ 𝒞^α` is little Hölder, then the weighted blocks of `u`
 vanish at high frequency: the representative is a limit in `C^{0,α}` of smooth Lipschitz functions

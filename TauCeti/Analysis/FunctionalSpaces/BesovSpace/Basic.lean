@@ -659,22 +659,15 @@ Besov norm. -/
 theorem isClosed_setOfPred_tendsto_rpow_mul_norm_block :
     IsClosed {u : BesovSpace F φ s p q |
       Tendsto (fun j : ℕ ↦ 2 ^ (s * j) * ‖u.block j‖) atTop (𝓝 0)} := by
-  refine isClosed_of_closure_subset fun u hu ↦ Metric.tendsto_atTop.2 fun ε hε ↦ ?_
-  obtain ⟨v, hv, huv⟩ := Metric.mem_closure_iff.1 hu (ε / 2) (half_pos hε)
-  obtain ⟨N, hN⟩ := Metric.tendsto_atTop.1 hv (ε / 2) (half_pos hε)
-  refine ⟨N, fun j hj ↦ ?_⟩
-  have hvj := hN j hj
-  rw [Real.dist_0_eq_abs, abs_of_nonneg (by positivity)] at hvj ⊢
-  rw [dist_eq_norm] at huv
-  have hsub : 2 ^ (s * j) * ‖(u - v).block j‖ ≤ ‖u - v‖ := rpow_mul_norm_block_le _ j
-  rw [block_sub] at hsub
-  calc 2 ^ (s * j) * ‖u.block j‖
-      ≤ 2 ^ (s * j) * ‖u.block j - v.block j‖ + 2 ^ (s * j) * ‖v.block j‖ := by
-        rw [← mul_add]
+  refine (Metric.equicontinuous_of_continuity_modulus id tendsto_id
+    (fun (j : ℕ) (u : BesovSpace F φ s p q) ↦ 2 ^ (s * j) * ‖u.block j‖) fun u v j ↦ ?_
+    ).isClosed_setOfPred_tendsto continuous_const
+  rw [Real.dist_eq, ← mul_sub, abs_mul, abs_of_nonneg (by positivity), id, dist_eq_norm]
+  calc 2 ^ (s * j) * |‖u.block j‖ - ‖v.block j‖| ≤ 2 ^ (s * j) * ‖(u - v).block j‖ := by
+        rw [block_sub]
         gcongr
-        exact norm_le_norm_sub_add _ _
-    _ < ε / 2 + ε / 2 := add_lt_add_of_le_of_lt (hsub.trans huv.le) hvj
-    _ = ε := add_halves ε
+        exact abs_norm_sub_norm_le _ _
+    _ ≤ ‖u - v‖ := rpow_mul_norm_block_le _ j
 
 /-- For `q = 2` the squared Besov norm is the sum `∑ⱼ (2^{js} ‖Δⱼ u‖_p)²`. -/
 theorem hasSum_norm_sq (u : BesovSpace F φ s p 2) :

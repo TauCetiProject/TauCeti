@@ -58,8 +58,8 @@ constant, depending on `N`, times `‖S_N u - g‖_p`.
   `TauCeti.BesovSpace.block_mem_closure_of_mem_littleBesov` and
   `TauCeti.BesovSpace.mem_littleBesov_of_tendsto`.
 * `TauCeti.BesovSpace.exists_toDistr_eq_sum_block_and_norm_sub_le`: if the weighted blocks of `u`
-  vanish at high frequency, then `u` is the limit of its low-pass truncations `S_N u` in
-  `B^s_{p,∞}`.
+  vanish at high frequency, then for every `ε > 0` some element represented by a low-pass
+  truncation `S_N u` lies within `ε` of `u` in `B^s_{p,∞}`.
 * `TauCeti.BesovSpace.mem_littleBesov_iff_tendsto`: for `p < ∞`, by the decay of the weighted
   blocks alone.
 * `TauCeti.BesovSpace.map_mem_littleBesov`: the embeddings of the Besov scale preserve the little
