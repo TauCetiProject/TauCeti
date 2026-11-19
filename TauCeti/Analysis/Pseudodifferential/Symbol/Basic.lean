@@ -665,6 +665,14 @@ theorem fderiv_coefficient_single (a : Symbol n V W m) (j : Fin n) (x ξ : Coord
       (spatialDeriv j a).coefficient (x, ξ) := by
   rw [coefficient_spatialDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
 
+/-- The derivative of a symbol along `(u, v)`, expanded in `∂_{x_k} a` and `∂_{ξ_k} a`. -/
+theorem fderiv_coefficient_apply (a : Symbol n V W m) (q : CoordinateSpace n × CoordinateSpace n)
+    (u v : CoordinateSpace n) :
+    fderiv ℝ a.coefficient q (u, v) =
+      ∑ k, u k • (spatialDeriv k a).coefficient q +
+        ∑ k, v k • (frequencyDeriv k a).coefficient q :=
+  fderiv_apply_eq_sum_coordinateDeriv (a.contDiff_coefficient.differentiable (by simp) q) (u, v)
+
 /-- The position derivative of a symbol of order `m` is bounded by `C ⟨ξ⟩ ^ m` locally uniformly in
 the position. -/
 theorem exists_bound_fderiv_coefficient (a : Symbol n V W m) (K : Set (CoordinateSpace n))

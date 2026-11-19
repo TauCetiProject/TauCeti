@@ -14,6 +14,8 @@ import Mathlib.Analysis.PSeries
 import TauCeti.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 import TauCeti.Analysis.Fourier.FourierTransformDeriv
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Decay of Fourier transforms and Fourier coefficients of smooth functions
@@ -48,6 +50,8 @@ strip around the real axis has exponentially decaying Fourier coefficients, by C
 * `TauCeti.one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset`: if `f` is `C^N`, its closed
   support `tsupport f` is contained in any set `S` of finite outer volume and its derivatives of
   order at most `N` are bounded by `C`, then `(1 + ‖w‖) ^ N ‖𝓕 f w‖ ≤ 2 ^ N C vol(S)`.
+* `TauCeti.norm_fourier_le_of_tsupport_subset`: the same bound when the derivatives are bounded by
+  `C ⟨2π w⟩ ^ m` at the frequency `w`, in the form `‖𝓕 f w‖ ≤ C' ⟨w⟩ ^ (|m| - N)`.
 * `TauCeti.fourier_fderiv_apply`: the Fourier transform of the directional derivative `∂_v f` of an
   integrable differentiable function with integrable derivative is `2πi ⟪w, v⟫ 𝓕 f w`.
 * `TauCeti.integral_exp_smul_eq_fourier`: the integral `∫ exp(-i ⟪v, ξ⟫) f v dv` in angular
@@ -177,6 +181,44 @@ theorem one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset {N : ℕ} (hf : 
           gcongr
           nlinarith [two_le_pi]
       _ ≤ 2 ^ N * (C * volume.real (tsupport f)) := by gcongr
+
+open MeasureTheory Real in
+/-- **Fourier decay with a frequency-dependent bound.** If `f` is `C^N`, its closed support
+`tsupport f` is contained in a set `S` of finite outer volume, and its derivatives of order at most
+`N` are bounded by `C ⟨2π w⟩ ^ m`, then
+`‖𝓕 f w‖ ≤ 2 ^ N C vol(S) (2π) ^ |m| ⟨w⟩ ^ (|m| - N)`. This is the form needed for a family of
+functions indexed by a frequency `w`, such as rescaled slices of an amplitude, whose derivatives
+grow like a power of `⟨2π w⟩`. -/
+theorem norm_fourier_le_of_tsupport_subset {N : ℕ} (hf : ContDiff ℝ N f) {S : Set V}
+    (hS' : volume S ≠ ⊤) (hfS : tsupport f ⊆ S) {C m : ℝ} (w : V)
+    (hC : ∀ p ≤ N, ∀ x, ‖iteratedFDeriv ℝ p f x‖ ≤ C * (1 + ‖(2 * π) • w‖ ^ 2) ^ (m / 2)) :
+    ‖𝓕 f w‖ ≤ 2 ^ N * C * volume.real S * (2 * π) ^ |m| *
+      (1 + ‖w‖ ^ 2) ^ (-((N : ℝ) - |m|) / 2) := by
+  have h := one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset hf hS' hfS hC w
+  have hw : (1 + ‖w‖ ^ 2) ^ ((N : ℝ) / 2) ≤ (1 + ‖w‖) ^ N := by
+    simpa using one_add_norm_sq_rpow_le_one_add_norm_rpow w (Nat.cast_nonneg (α := ℝ) N)
+  have h2π : (1 + ‖(2 * π) • w‖ ^ 2) ^ (m / 2) ≤ (2 * π) ^ |m| * (1 + ‖w‖ ^ 2) ^ (|m| / 2) := by
+    refine (one_add_norm_smul_sq_rpow_le (by nlinarith [two_le_pi]) m w).trans ?_
+    gcongr
+    · nlinarith [sq_nonneg ‖w‖]
+    · linarith [le_abs_self m]
+  have hsplit : (1 + ‖w‖ ^ 2) ^ (|m| / 2) * (1 + ‖w‖ ^ 2) ^ (-(N : ℝ) / 2) =
+      (1 + ‖w‖ ^ 2) ^ (-((N : ℝ) - |m|) / 2) := by
+    rw [← Real.rpow_add (by positivity)]
+    ring_nf
+  have hF : ‖𝓕 f w‖ ≤
+      2 ^ N * (C * (1 + ‖(2 * π) • w‖ ^ 2) ^ (m / 2) * volume.real S) *
+        (1 + ‖w‖ ^ 2) ^ (-(N : ℝ) / 2) := by
+    rw [neg_div, Real.rpow_neg (by positivity), ← div_eq_mul_inv, le_div_iff₀ (by positivity)]
+    exact (mul_le_mul_of_nonneg_left hw (norm_nonneg _)).trans (by rw [mul_comm]; exact h)
+  have hC0 : 0 ≤ C := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hC 0 (Nat.zero_le N) 0))
+    (by positivity)
+  calc ‖𝓕 f w‖
+      ≤ 2 ^ N * (C * ((2 * π) ^ |m| * (1 + ‖w‖ ^ 2) ^ (|m| / 2)) * volume.real S) *
+          (1 + ‖w‖ ^ 2) ^ (-(N : ℝ) / 2) := hF.trans (by gcongr)
+    _ = 2 ^ N * C * volume.real S * (2 * π) ^ |m| *
+          ((1 + ‖w‖ ^ 2) ^ (|m| / 2) * (1 + ‖w‖ ^ 2) ^ (-(N : ℝ) / 2)) := by ring
+    _ = _ := by rw [hsplit]
 
 open MeasureTheory Real in
 open scoped RealInnerProductSpace in
