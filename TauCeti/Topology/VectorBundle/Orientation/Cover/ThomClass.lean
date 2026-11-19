@@ -99,6 +99,19 @@ private abbrev deckFiberEquiv (p : VectorBundleOrientationCover F E ι) :
       ((projection : VectorBundleOrientationCover F E ι → B) *ᵖ E) (deckMap p) :=
   ContinuousLinearEquiv.refl ℝ (E p.proj)
 
+/-- The identity of `E p.proj`, from the fibre at `p` to the fibre at `deckMap p`, carries the
+tautological orientation at `p` to the opposite of the one at `deckMap p`. -/
+private theorem map_deckFiberEquiv_tautologicalOrientation
+    (p : VectorBundleOrientationCover F E ι) :
+    Orientation.map ι (deckFiberEquiv p).toLinearEquiv (tautologicalOrientation p) =
+      -tautologicalOrientation (deckMap p) := by
+  -- Both fibres of the pulled-back bundle are `E p.proj` only after unfolding the pull-back, and
+  -- `deckMap p` has orientation `-p.orientation` by definition, so restate the goal in `E p.proj`.
+  change Orientation.map ι (LinearEquiv.refl ℝ (E p.proj)) (tautologicalOrientation p) =
+    -tautologicalOrientation (deckMap p)
+  rw [Orientation.map_refl, tautologicalOrientation_apply, tautologicalOrientation_apply]
+  exact (neg_neg (G := Orientation ℝ (E p.proj) ι) _).symm
+
 private theorem continuous_deckMap_totalSpace :
     Continuous fun v : TotalSpace F ((projection : VectorBundleOrientationCover F E ι → B) *ᵖ E) ↦
       TotalSpace.mk' F (deckMap v.proj) (deckFiberEquiv v.proj v.2) := by
@@ -122,6 +135,33 @@ theorem deckThomPairMap_fst_comp_thomPairProj :
   rw [← deckMap_eq]
   exact thomPairMapOfFiberwise_fst_comp_thomPairProj _
 
+/-- The lifted deck involution sends a vector `v` over `p` to the same vector of `E_{π p}`, now
+over the point `⟨π p, -p.orientation⟩`, which is `deck p` (`deck_apply`). -/
+-- Not `@[simp]`: simp rewrites the coercion of the continuous map on the left-hand side, so the
+-- statement is not in simp normal form.
+theorem deckThomPairMap_fst_apply
+    (v : TotalSpace F ((projection : VectorBundleOrientationCover F E ι → B) *ᵖ E)) :
+    TopPair.Hom.fst (deckThomPairMap (F := F) (E := E) (ι := ι)) v =
+      TotalSpace.mk' F (⟨v.proj.proj, -v.proj.orientation⟩ : VectorBundleOrientationCover F E ι)
+        v.2 :=
+  thomPairMapOfFiberwise_fst_apply continuous_deckMap_totalSpace v
+
+/-- The lifted deck involution is an involution. -/
+@[simp]
+theorem deckThomPairMap_comp_self :
+    deckThomPairMap (F := F) (E := E) (ι := ι) ≫ deckThomPairMap = 𝟙 _ := by
+  refine TopPair.hom_ext_of_fst _ (TopCat.ext fun
+    (v : TotalSpace F ((projection : VectorBundleOrientationCover F E ι → B) *ᵖ E)) ↦ ?_)
+  -- The carrier of the Thom pair is the total space only up to unfolding, so first state the goal
+  -- on the total space.
+  change TopPair.Hom.fst (deckThomPairMap (F := F) (E := E) (ι := ι))
+    (TopPair.Hom.fst deckThomPairMap v) = v
+  simp only [deckThomPairMap_fst_apply]
+  exact congrArg (fun o : Orientation ℝ (E v.proj.proj) ι ↦
+    (TotalSpace.mk' F ⟨v.proj.proj, o⟩ v.2 :
+      TotalSpace F ((projection : VectorBundleOrientationCover F E ι → B) *ᵖ E)))
+    (neg_neg (G := Orientation ℝ (E v.proj.proj) ι) _)
+
 variable [Fintype ι] [FiniteDimensional ℝ F] (hι : Fintype.card ι = finrank ℝ F)
   (ω : Orientation ℝ F ι)
 
@@ -140,11 +180,7 @@ theorem singularCohomologyMap_deckThomPairMap_thomClassOfModel :
         ((tautologicalOrientation (F := F) (E := E) (ι := ι)).thomClassOfModel hι ω g) =
       -(tautologicalOrientation (F := F) (E := E) (ι := ι)).thomClassOfModel hι ω g := by
   refine singularCohomologyMap_thomPairMapOfFiberwise_thomClassOfModel_of_map_eq_neg
-    hι _ _ ω g continuous_deckMap_totalSpace fun p ↦ ?_
-  -- The fibre map is the identity of `E p.proj`, and the orientation at `deck p` is the
-  -- opposite of that at `p`.
-  erw [tautologicalOrientation_apply, tautologicalOrientation_apply, Orientation.map_refl]
-  exact (neg_neg (G := Orientation ℝ (E p.proj) ι) _).symm
+    hι _ _ ω g continuous_deckMap_totalSpace map_deckFiberEquiv_tautologicalOrientation
 
 end Cohomology
 

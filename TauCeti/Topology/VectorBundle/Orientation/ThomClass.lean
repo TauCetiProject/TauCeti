@@ -424,6 +424,7 @@ theorem eq_thomClassOfModel_of_forall {u : (thomPair F E).singularCohomology R' 
     (existsUnique_singularCohomology_thomPair_fiber hι o ω g).exists.choose_spec
 
 /-- **Reversing the orientation negates the Thom class** `thomClassOfModel o hι ω g`. -/
+@[simp]
 theorem thomClassOfModel_neg : (-o).thomClassOfModel hι ω g = -o.thomClassOfModel hι ω g := by
   refine (eq_thomClassOfModel_of_forall (-o) fun e _ b hb ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩).symm <;>
     rw [neg_apply, Trivialization.mapOrientation_neg] at h
