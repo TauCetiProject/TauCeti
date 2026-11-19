@@ -42,15 +42,16 @@ results give `A f ∈ H^{k,p}(E, G)` for `f ∈ H^{k,p}(E, F)`. The closed graph
 into a bounded operator `H^{k,p}(E, F) → H^{k,p}(E, G)`, and pointwise inverse frame changes give
 mutually inverse operators, hence an isomorphism `H^{k,p}(E, F) ≃L[ℂ] H^{k,p}(E, G)`.
 
-Both proofs are by induction on `k`, starting from `H^{0,p} = Lᵖ`, which a bounded `g` multiplies
-into itself (`TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_le`). Going up, a distribution
-lies in `H^{k+1,p}` exactly when it lies in `Lᵖ` and its directional derivatives lie in `H^{k,p}`
-(`TemperedDistribution.memSobolev_natCast_add_one_iff`, which uses `1 < p < ∞`). By the Leibniz
-rule (`TemperedDistribution.lineDerivOp_smulLeftCLM`) `∂_v (g f) = (∂_v g) f + g ∂_v f`, and both
-terms are of order `k`: `∂_v g` has bounded derivatives up to order `k` and `f ∈ H^{k,p}`, while
-`∂_v f ∈ H^{k,p}`. Going down, a distribution lies in `H^{-k-1,p}` exactly when it is
-`u + ∑ᵢ ∂ᵢ wᵢ` with `u` and `wᵢ` in `H^{-k,p}` (`TemperedDistribution.memSobolev_sub_one_iff`).
-The Leibniz rule turns `g f` into `g u - ∑ᵢ (∂ᵢ g) wᵢ + ∑ᵢ ∂ᵢ (g wᵢ)`, again of this form.
+Both scalar results are proved by induction on `k`, starting from `H^{0,p} = Lᵖ`, which a
+bounded `g` multiplies into itself (`TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_le`). Going
+up, a distribution lies in `H^{k+1,p}` exactly when it lies in `Lᵖ` and its directional derivatives
+lie in `H^{k,p}` (`TemperedDistribution.memSobolev_natCast_add_one_iff`, which uses `1 < p < ∞`).
+By the Leibniz rule (`TemperedDistribution.lineDerivOp_smulLeftCLM`)
+`∂_v (g f) = (∂_v g) f + g ∂_v f`, and both terms are of order `k`: `∂_v g` has bounded derivatives
+up to order `k` and `f ∈ H^{k,p}`, while `∂_v f ∈ H^{k,p}`. Going down, a distribution lies in
+`H^{-k-1,p}` exactly when it is `u + ∑ᵢ ∂ᵢ wᵢ` with `u` and `wᵢ` in `H^{-k,p}`
+(`TemperedDistribution.memSobolev_sub_one_iff`). The Leibniz rule turns `g f` into
+`g u - ∑ᵢ (∂ᵢ g) wᵢ + ∑ᵢ ∂ᵢ (g wᵢ)`, again of this form.
 
 ## Main results
 
@@ -65,8 +66,9 @@ The Leibniz rule turns `g f` into `g u - ∑ᵢ (∂ᵢ g) wᵢ + ∑ᵢ ∂ᵢ 
   combined, for `H^{k,p}` with `k ∈ ℤ` and bounded derivatives up to order `|k|`.
 * `TemperedDistribution.MemSobolev.applyLeftCLM_of_forall_smulLeftCLM`: a matrix-valued multiplier
   `A` preserves `H^{s,p}` if each scalar multiplier `ℓ ∘ A` does.
-* `TemperedDistribution.MemSobolev.applyLeftCLM_of_norm_iteratedFDeriv_le_intCast`: the same for a
-  matrix-valued multiplier `A`, from `H^{k,p}(E, F)` to `H^{k,p}(E, G)`.
+* `TemperedDistribution.MemSobolev.applyLeftCLM_of_norm_iteratedFDeriv_le_intCast`: a
+  matrix-valued `A` of temperate growth with bounded derivatives up to order `|k|` maps
+  `H^{k,p}(E, F)` into `H^{k,p}(E, G)`, for `k ∈ ℤ` and `1 < p < ∞`.
 * `BesselPotentialSpace.applyLeftCLM`: multiplication by `A` as a bounded operator
   `H^{k,p}(E, F) →L[ℂ] H^{k,p}(E, G)`.
 * `BesselPotentialSpace.applyLeftEquiv`: for pointwise inverse `A` and `B` with bounded
@@ -99,6 +101,25 @@ theorem MemSobolev.smulLeftCLM_of_norm_le [NormedSpace ℂ F] [CompleteSpace F] 
   obtain ⟨v, hv, -⟩ := Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le hg hC f'
   rw [hv]
   exact memSobolev_zero_iff.2 ⟨_, rfl⟩
+
+section Reduction
+
+variable [NormedSpace ℂ F] [CompleteSpace F] [FiniteDimensional ℂ F] {G : Type*}
+  [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G] [FiniteDimensional ℂ G]
+
+/-- **Reduction of matrix multipliers to scalar ones.** If multiplication by each scalar function
+`x ↦ ℓ (A x)`, for `ℓ` a linear functional on `F →L[ℂ] G`, sends `f` into `H^{s,p}(E, F)`, then
+`A f ∈ H^{s,p}(E, G)`: `A f = ∑ᵢ bᵢ (gᵢ f)` for a basis `(bᵢ)` of `F →L[ℂ] G`, with coordinates
+`gᵢ = bᵢ* ∘ A`. -/
+theorem MemSobolev.applyLeftCLM_of_forall_smulLeftCLM {s : ℝ} {A : E → F →L[ℂ] G} {f : 𝓢'(E, F)}
+    (h : ∀ ℓ : (F →L[ℂ] G) →L[ℂ] ℂ, MemSobolev s p (smulLeftCLM F (fun x ↦ ℓ (A x)) f)) :
+    MemSobolev s p (applyLeftCLM A f) := by
+  rw [applyLeftCLM_def]
+  simp only [sum_apply, ContinuousLinearMap.comp_apply]
+  exact MemSobolev.sum fun i _ ↦
+    (h ((Module.finBasis ℂ (F →L[ℂ] G)).coord i).toContinuousLinearMap).postcomp _
+
+end Reduction
 
 variable [InnerProductSpace ℂ F] [CompleteSpace F]
 
@@ -171,18 +192,6 @@ section Matrix
 
 variable [FiniteDimensional ℂ F] {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
   [CompleteSpace G] [FiniteDimensional ℂ G]
-
-/-- **Reduction of matrix multipliers to scalar ones.** If multiplication by each scalar function
-`x ↦ ℓ (A x)`, for `ℓ` a linear functional on `F →L[ℂ] G`, sends `f` into `H^{s,p}(E, F)`, then
-`A f ∈ H^{s,p}(E, G)`: `A f = ∑ᵢ bᵢ (gᵢ f)` for a basis `(bᵢ)` of `F →L[ℂ] G`, with coordinates
-`gᵢ = bᵢ* ∘ A`. -/
-theorem MemSobolev.applyLeftCLM_of_forall_smulLeftCLM {s : ℝ} {A : E → F →L[ℂ] G} {f : 𝓢'(E, F)}
-    (h : ∀ ℓ : (F →L[ℂ] G) →L[ℂ] ℂ, MemSobolev s p (smulLeftCLM F (fun x ↦ ℓ (A x)) f)) :
-    MemSobolev s p (applyLeftCLM A f) := by
-  rw [applyLeftCLM_def]
-  simp only [sum_apply, ContinuousLinearMap.comp_apply]
-  exact MemSobolev.sum fun i _ ↦
-    (h ((Module.finBasis ℂ (F →L[ℂ] G)).coord i).toContinuousLinearMap).postcomp _
 
 /-- **Matrix multipliers with bounded derivatives act on `H^{k,p}` for every integer `k`.** Let
 `1 < p < ∞`, let `F` and `G` be finite-dimensional, and let `A : E → (F →L[ℂ] G)` be a function of
