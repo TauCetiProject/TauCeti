@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Conj
 public import Mathlib.Algebra.Ring.Idempotent
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.LinearCombination
@@ -23,11 +24,15 @@ self-adjoint unitary `IsStarProjection.two_mul_sub_one_mem_unitary`. Conversely,
 (`u * v + v * u = 0`), the sandwich `(1 + u) * (1 + v) * (1 + u)` also reduces to
 `(1 + u) + (1 + u)`.
 
+Two idempotents `p` and `e` of any ring with `e * p = p` and `p * e = e`, that is, generating the
+same right ideal, are similar: the unit `1 - (e - p)` conjugates `p` to `e`.
+
 ## Main results
 
 * `IsIdempotentElem.mul_add_one_sub_mul`: elements of the form `e x + (1 - e) y` multiply
   componentwise.
 * `IsIdempotentElem.two_mul_sub_one_mul_self`: `(2 p - 1) * (2 p - 1) = 1`.
+* `IsIdempotentElem.isConj_of_mul_eq`: idempotents generating the same right ideal are conjugate.
 * `TauCeti.one_add_mul_self_of_mul_self_eq_one`: if `u * u = 1`, then
   `(1 + u) * (1 + u) = (1 + u) + (1 + u)`.
 * `TauCeti.one_add_mul_one_add_mul_one_add_of_mul_self_eq_one`: if `u * u = 1` and
@@ -52,12 +57,25 @@ end CommRing
 
 section Ring
 
-variable {R : Type*} [Ring R] {p : R}
+variable {R : Type*} [Ring R] {p e : R}
 
 /-- For an idempotent `p`, `2 p - 1` squares to `1`. -/
 theorem two_mul_sub_one_mul_self (hp : IsIdempotentElem p) : (2 * p - 1) * (2 * p - 1) = 1 := by
   simp only [two_mul, add_mul, mul_add, sub_mul, mul_sub, one_mul, mul_one, hp.eq]
   abel
+
+/-- **Similar idempotents**: idempotents `p` and `e` with `e * p = p` and `p * e = e`, that is,
+generating the same right ideal, are conjugate. The unit `u = 1 - (e - p)`, with inverse
+`1 + (e - p)`, satisfies `u * p = e * u`. -/
+theorem isConj_of_mul_eq (hp : IsIdempotentElem p) (he : IsIdempotentElem e) (hep : e * p = p)
+    (hpe : p * e = e) : IsConj p e := by
+  have hd : (e - p) * (e - p) = 0 := by
+    simp only [sub_mul, mul_sub, he.eq, hp.eq, hep, hpe, sub_self]
+  refine ⟨⟨1 - (e - p), 1 + (e - p), ?_, ?_⟩, ?_⟩
+  · rw [sub_mul, one_mul, mul_add, mul_one, hd, add_zero, add_sub_cancel_right]
+  · rw [add_mul, one_mul, mul_sub, mul_one, hd, sub_zero, sub_add_cancel]
+  · simp only [SemiconjBy, sub_mul, mul_sub, one_mul, mul_one, he.eq, hp.eq, hep]
+    abel
 
 end Ring
 
