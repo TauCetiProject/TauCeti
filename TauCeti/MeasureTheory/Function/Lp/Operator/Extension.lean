@@ -24,9 +24,9 @@ This is the final density step in the Calderón–Zygmund strong-type theorem.
 The construction uses Mathlib's `Lp.simpleFunc.dense` and `LinearMap.extendOfNorm`.
 
 When the operator is composed with multiplication by an unbounded function `b`, as in a
-commutator `[b, T]`, the dense domain must also keep `b u` in `L^q`. On a σ-finite measure space
-the `u ∈ Lᵖ` with `u ∈ L^q` and `b u ∈ L^q`, which form the submodule
-`MeasureTheory.memLpSmulSubmodule b q`, are dense in `Lᵖ` for every `q`
+commutator `[b, T]`, the dense domain must also keep `b u` in `L^q`. On a σ-finite measure space,
+for `p < ∞` and a.e. strongly measurable `b`, the `u ∈ Lᵖ` with `u ∈ L^q` and `b u ∈ L^q`, which
+form the submodule `MeasureTheory.memLpSmulSubmodule b q`, are dense in `Lᵖ` for every `q`
 (`MeasureTheory.dense_memLpSmulSubmodule`): truncating `u` to the sets of finite measure
 where `‖u‖` and `|b|` are bounded gives such functions converging to `u` in `Lᵖ`. An `Lᵖ` bound
 for `b T u - T (b u)` on these `u` therefore extends it uniquely to a bounded operator on `Lᵖ`
@@ -138,8 +138,9 @@ theorem lpTwoSubmodule.toL2_ae (f : lpTwoSubmodule (E := E) (p := p) (μ := μ))
   have hf := lpTwoSubmodule.memLp f
   exact hf.coeFn_toLp
 
-/-- The `u ∈ Lᵖ` with `u ∈ L^q` and `b u ∈ L^q`, a dense subspace of `Lᵖ` on a σ-finite measure
-space (`MeasureTheory.dense_memLpSmulSubmodule`). -/
+/-- The `u ∈ Lᵖ` with `u ∈ L^q` and `b u ∈ L^q`. On a σ-finite measure space this subspace is
+dense in `Lᵖ` for `p < ∞` and a.e. strongly measurable `b`
+(`MeasureTheory.dense_memLpSmulSubmodule`). -/
 def memLpSmulSubmodule (b : α → ℝ) (q : ℝ≥0∞) : Submodule ℝ (Lp E p μ) where
   carrier := {u | MemLp u q μ ∧ MemLp (fun x => b x • u x) q μ}
   zero_mem' := by
