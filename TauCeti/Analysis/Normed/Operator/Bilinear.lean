@@ -13,7 +13,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 /-!
 # Continuous bilinear maps
 
-A finite family of continuous bilinear maps gives a continuous bilinear map into the product
+A family of continuous bilinear maps gives a continuous bilinear map into the product
 (`ContinuousLinearMap.piBilin`), with coordinatewise evaluation.
 
 A continuous linear map `u : W →L[𝕜] V` pulls a continuous bilinear map `B` on `V` back to the
@@ -57,25 +57,18 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {V W G : Type*} [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
   [SeminormedAddCommGroup W] [NormedSpace 𝕜 W] [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
 
-/-- A finite family of continuous bilinear maps is a continuous bilinear map into the product. -/
-def piBilin {ι : Type*} [Fintype ι] {G : ι → Type*}
+/-- A family of continuous bilinear maps is a continuous bilinear map into the product. -/
+def piBilin {ι : Type*} {G : ι → Type*}
     [∀ i, SeminormedAddCommGroup (G i)] [∀ i, NormedSpace 𝕜 (G i)]
     (B : ∀ i, V →L[𝕜] W →L[𝕜] G i) : V →L[𝕜] W →L[𝕜] ∀ i, G i :=
-  (LinearMap.mk₂ 𝕜 (fun x y i ↦ B i x y)
-    (by intros; ext i; simp) (by intros; ext i; simp)
-    (by intros; ext i; simp) (by intros; ext i; simp)).mkContinuous₂
-      (∑ i, ‖B i‖) fun x y ↦ by
-        refine (pi_norm_le_iff_of_nonneg (by positivity)).2 fun i ↦ ?_
-        refine (B i |>.le_opNorm₂ x y).trans ?_
-        gcongr
-        exact Finset.single_le_sum (fun j _ ↦ norm_nonneg (B j)) (Finset.mem_univ i)
+  (ContinuousLinearMap.piEquivL 𝕜 W G).toContinuousLinearMap.comp (ContinuousLinearMap.pi B)
 
 @[simp]
-theorem piBilin_apply {ι : Type*} [Fintype ι] {G : ι → Type*}
+theorem piBilin_apply {ι : Type*} {G : ι → Type*}
     [∀ i, SeminormedAddCommGroup (G i)] [∀ i, NormedSpace 𝕜 (G i)]
     (B : ∀ i, V →L[𝕜] W →L[𝕜] G i) (x : V) (y : W) (i : ι) :
-    piBilin B x y i = B i x y := by
-  simp only [piBilin, LinearMap.mkContinuous₂_apply, LinearMap.mk₂_apply]
+    piBilin B x y i = B i x y :=
+  (rfl)
 
 /-- Pulling a continuous bilinear map back along a continuous linear map `u`,
 `B ↦ B (u ·) (u ·)`, as a continuous linear map in `B`. -/

@@ -65,9 +65,7 @@ theorem chartValueL_conjCoeff_ae (p : ℝ≥0) [Fact (1 ≤ (p : ℝ≥0∞))] (
   have h := SobolevSection.chartValueL_ofContMDiffSection_ae
     (A.hom (𝕜 := ℝ) A.closure_dom_subset_baseSet) μ p 0 conjSection i
   rw [FiniteBundleAtlas.image_hom] at h
-  change (A.hom (𝕜 := ℝ) A.closure_dom_subset_baseSet).sectionChartData.chartValueL μ p 0 i
-    (SobolevSection.ofContMDiffSection (A.hom (𝕜 := ℝ) A.closure_dom_subset_baseSet)
-      μ p 0 conjSection) =ᵐ[μ.restrict (A.image i)] _
+  rw [conjCoeff]
   refine h.trans (Filter.Eventually.of_forall fun y ↦ ?_)
   rw [FiniteBundleAtlas.coord_hom]
   simp only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
@@ -80,8 +78,7 @@ omit [T2Space M] in
 theorem conjCoeff_ne_zero [Nonempty M] (p : ℝ≥0) [Fact (1 ≤ (p : ℝ≥0∞))] :
     conjCoeff A μ p ≠ 0 := by
   intro h
-  change SobolevSection.ofContMDiffSection
-    (A.hom (𝕜 := ℝ) A.closure_dom_subset_baseSet) μ p 0 conjSection = 0 at h
+  rw [conjCoeff] at h
   have hz := map_zero (SobolevSection.ofContMDiffSection
     (A.hom (𝕜 := ℝ) A.closure_dom_subset_baseSet) μ p 0)
   have hs : (conjSection (M := M)) = 0 :=

@@ -378,25 +378,21 @@ theorem exists_homMulL (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : q ≤ p) :
       D α ξ ∈ B.sectionChartData.sobolevSections μ q 0 := by
     obtain ⟨φ, hφ⟩ := exists_section_ae_eq_coord (A.hom (𝕜 := ℝ) h) μ p 0 α
     obtain ⟨s, hs⟩ := exists_section_ae_eq_coord A μ q 1 ξ
-    refine (B.sectionChartData.mem_sobolevSections_iff μ q 0).2 ⟨fun x ↦ φ x (s x), ?_⟩
-    change ∀ j : Fin A.n, B.sectionChartData.chartValueL μ q 0 j (D α ξ)
-      =ᵐ[μ.restrict (B.sectionChartData.image j)] B.sectionChartData.coord j (fun x ↦ φ x (s x))
-    intro j
-    change B.sectionChartData.chartValueL μ q 0 j (D α ξ)
-      =ᵐ[μ.restrict (B.image j)] B.sectionChartData.coord j (fun x ↦ φ x (s x))
-    have hφA : (A.hom (𝕜 := ℝ) h).sectionChartData.chartValueL μ p 0 j α
-        =ᵐ[μ.restrict (A.image j)] (A.hom (𝕜 := ℝ) h).coord j φ := by
-      simpa only [FiniteBundleAtlas.image_hom] using hφ j
-    have hg := chartHomProduct_ae_coord A h μ α ξ φ s j hφA (hs j)
-    have hgB : (fun y ↦ (A.hom (𝕜 := ℝ) h).sectionChartData.chartValueL μ p 0 j α y
-        (A.sectionChartData.chartValueL μ q 1 j ξ y))
-        =ᵐ[μ.restrict (B.image j)] B.coord j (fun x ↦ φ x (s x)) := by
-      simpa only [B, FiniteBundleAtlas.image_ofBaseSet] using hg
-    exact (hD α ξ j).trans (hgB.trans (B.sectionChartData_coord_ae_eq μ j _).symm)
+    have hcoord (j : Fin A.n) : B.sectionChartData.chartValueL μ q 0 j (D α ξ)
+        =ᵐ[μ.restrict (B.image j)] B.sectionChartData.coord j (fun x ↦ φ x (s x)) := by
+      have hφA : (A.hom (𝕜 := ℝ) h).sectionChartData.chartValueL μ p 0 j α
+          =ᵐ[μ.restrict (A.image j)] (A.hom (𝕜 := ℝ) h).coord j φ := by
+        simpa only [FiniteBundleAtlas.image_hom] using hφ j
+      have hg := chartHomProduct_ae_coord A h μ α ξ φ s j hφA (hs j)
+      have hgB : (fun y ↦ (A.hom (𝕜 := ℝ) h).sectionChartData.chartValueL μ p 0 j α y
+          (A.sectionChartData.chartValueL μ q 1 j ξ y))
+          =ᵐ[μ.restrict (B.image j)] B.coord j (fun x ↦ φ x (s x)) := by
+        simpa only [B, FiniteBundleAtlas.image_ofBaseSet] using hg
+      exact (hD α ξ j).trans (hgB.trans (B.sectionChartData_coord_ae_eq μ j _).symm)
+    -- The membership criterion uses `Fin B.sectionChartData.n` and `B.sectionChartData.image`;
+    -- these are `Fin A.n` and `B.image` by definition, so this fact needs no index cast.
+    exact (B.sectionChartData.mem_sobolevSections_iff μ q 0).2 ⟨fun x ↦ φ x (s x), hcoord⟩
   refine ⟨D.codRestrictBilin (B.sectionChartData.sobolevSections μ q 0) hmem, fun α ξ j ↦ ?_⟩
-  change B.sectionChartData.chartValueL μ q 0 j
-    (Subtype.val (D.codRestrictBilin (B.sectionChartData.sobolevSections μ q 0) hmem α ξ))
-      =ᵐ[μ.restrict (B.image j)] _
   have hco := ContinuousLinearMap.coe_codRestrictBilin_apply D
     (B.sectionChartData.sobolevSections μ q 0) hmem α ξ
   have hL := congrArg (fun z ↦ (B.sectionChartData.chartValueL μ q 0 j z : E → F₂)) hco
