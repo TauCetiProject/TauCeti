@@ -41,6 +41,8 @@ smoothing remainders, on the compactly supported Schwartz functions.
   `ε` whose composition symbols with `a` on both sides are `1` up to smoothing symbols.
 * `TauCeti.Symbol.quantizeSchwartzValue_quantizeSchwartzValue_eq_add`: the operator identity
   `Op(q) (Op(a) u) = u + Op(q.properSharp hq a - 1) u` behind the parametrix statements.
+* `TauCeti.Symbol.exists_hasPropagationLE_quantizeSchwartzValue_eq_add_of_isAsymptoticSum`:
+  a left parametrix symbol yields a properly supported left parametrix.
 * `TauCeti.Symbol.IsEllipticAbove.exists_hasPropagationLE_quantizeSchwartzValue_eq_add`: **the
   properly supported left parametrix** of an elliptic symbol.
 * `TauCeti.Symbol.IsEllipticAbove.exists_hasPropagationLE_quantizeSchwartzValue_eq_add_and_eq_add`:
@@ -81,15 +83,10 @@ theorem isSmoothing_properSharp_sub_iff_left {a : Symbol n V W m} {b : Symbol n 
     (hb : b.HasPropagationLE ε) :
     (b.properSharp hb a - inclusion (neg_add_cancel m).ge (const (.id ℂ V))).IsSmoothing ↔
       IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k) (inclusion (by simp) (const (.id ℂ V)))
-        (b.sharpTerm a) := by
-  rw [(isAsymptoticSum_properSharp hb a).isAsymptoticSum_iff_isSmoothing_sub
-    (m := fun k : ℕ ↦ -m + m - k) (tendsto_atBot_add_const_left atTop (-m + m)
-      (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop))]
-  constructor <;> intro h
-  · convert h.neg.inclusion (show -m + m ≤ -m + m - ((0 : ℕ) : ℝ) by simp) using 1
-    exact Symbol.ext (funext fun p ↦ by simp)
-  · convert h.neg.inclusion (show -m + m - ((0 : ℕ) : ℝ) ≤ -m + m by simp) using 1
-    exact Symbol.ext (funext fun p ↦ by simp)
+        (b.sharpTerm a) :=
+  ((isAsymptoticSum_properSharp hb a).isAsymptoticSum_inclusion_iff_isSmoothing_sub
+    (tendsto_atBot_add_const_left atTop (-m + m)
+      (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)) _ _ _).symm
 
 /-- **Right parametrix symbols of finite propagation.** For a symbol `a` of order `m` and finite
 propagation, a symbol `b` of order `-m` is a right parametrix symbol of `a`,
@@ -100,15 +97,10 @@ theorem isSmoothing_properSharp_sub_iff_right {a : Symbol n V W m} (ha : a.HasPr
     {b : Symbol n W V (-m)} :
     (a.properSharp ha b - inclusion (add_neg_cancel m).ge (const (.id ℂ W))).IsSmoothing ↔
       IsAsymptoticSum (m := fun k : ℕ ↦ m + -m - k) (inclusion (by simp) (const (.id ℂ W)))
-        (a.sharpTerm b) := by
-  rw [(isAsymptoticSum_properSharp ha b).isAsymptoticSum_iff_isSmoothing_sub
-    (m := fun k : ℕ ↦ m + -m - k) (tendsto_atBot_add_const_left atTop (m + -m)
-      (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop))]
-  constructor <;> intro h
-  · convert h.neg.inclusion (show m + -m ≤ m + -m - ((0 : ℕ) : ℝ) by simp) using 1
-    exact Symbol.ext (funext fun p ↦ by simp)
-  · convert h.neg.inclusion (show m + -m - ((0 : ℕ) : ℝ) ≤ m + -m by simp) using 1
-    exact Symbol.ext (funext fun p ↦ by simp)
+        (a.sharpTerm b) :=
+  ((isAsymptoticSum_properSharp ha b).isAsymptoticSum_inclusion_iff_isSmoothing_sub
+    (tendsto_atBot_add_const_left atTop (m + -m)
+      (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)) _ _ _).symm
 
 /-- **Uniqueness of properly supported parametrices.** A left parametrix `q` of finite propagation
 and a right parametrix `q'` of a symbol `a` of finite propagation, in the sense that
@@ -158,6 +150,29 @@ theorem quantizeSchwartzValue_quantizeSchwartzValue_eq_add {μ μ' : ℝ} {a : S
     ← coefficient_sub, quantizeSchwartzValue_coefficient_add, add_comm, coefficient_inclusion,
     funext (coefficient_const (n := n) (.id ℂ V)), quantizeSchwartzValue_id]
 
+/-- **The properly supported left parametrix of a left parametrix symbol.** Let `b` be a left
+parametrix symbol of a symbol `a` of order `m`, `1 ∼ ∑ₖ sharpTerm b a k`, with no condition on the
+spatial support of `a`. For every `ε > 0` there are a symbol `q` of order `-m` and propagation at
+most `ε` and a smoothing symbol `r` with
+
+`Op(q) (Op(a) u) = u + Op(r) u`
+
+for every Schwartz function `u` such that `Op(a) u` has compact support. -/
+theorem exists_hasPropagationLE_quantizeSchwartzValue_eq_add_of_isAsymptoticSum
+    {a : Symbol n V W m} {b : Symbol n W V (-m)}
+    (hb : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k) (inclusion (by simp) (const (.id ℂ V)))
+      (b.sharpTerm a)) (hε : 0 < ε) :
+    ∃ q : Symbol n W V (-m), q.HasPropagationLE ε ∧ ∃ r : Symbol n V V (-m + m), r.IsSmoothing ∧
+      ∀ (u : SchwartzMap (CoordinateSpace n) V)
+        (hu : HasCompactSupport (quantizeSchwartzValue a.coefficient u)) (x : CoordinateSpace n),
+        quantizeSchwartzValue q.coefficient
+          (hu.toSchwartzMap (a.contDiff_quantizeSchwartzValue u)) x =
+          u x + quantizeSchwartzValue r.coefficient u x := by
+  obtain ⟨q, hqb, hq⟩ := exists_isSmoothing_sub_and_hasPropagationLE b hε
+  exact ⟨q, hq, _, (isSmoothing_properSharp_sub_iff_left hq).2
+    (isAsymptoticSum_sharpTerm_of_isSmoothing_sub_left hb hqb),
+    fun u hu x ↦ quantizeSchwartzValue_quantizeSchwartzValue_eq_add hq _ hu x⟩
+
 /-- **The properly supported left parametrix.** Let `a` be a symbol of order `m` elliptic above
 some radius, with no condition on its spatial support. For every `ε > 0` there are a symbol `q` of
 order `-m` and propagation at most `ε` and a smoothing symbol `r` with
@@ -173,9 +188,8 @@ theorem IsEllipticAbove.exists_hasPropagationLE_quantizeSchwartzValue_eq_add
         quantizeSchwartzValue q.coefficient
           (hu.toSchwartzMap (a.contDiff_quantizeSchwartzValue u)) x =
           u x + quantizeSchwartzValue r.coefficient u x := by
-  obtain ⟨q, hq, hL, -⟩ := ha.exists_hasPropagationLE_isSmoothing_properSharp_sub hε
-  exact ⟨q, hq, _, hL, fun u hu x ↦
-    quantizeSchwartzValue_quantizeSchwartzValue_eq_add hq _ hu x⟩
+  obtain ⟨b, hb, -⟩ := ha.exists_isAsymptoticSum_sharpTerm
+  exact exists_hasPropagationLE_quantizeSchwartzValue_eq_add_of_isAsymptoticSum hb hε
 
 /-- **The two-sided properly supported parametrix.** Let `a` be a symbol of order `m` elliptic
 above some radius and of propagation at most `ε' ≥ 0`, so that `Op(a)` is properly supported. For
@@ -235,10 +249,7 @@ theorem IsElliptic.exists_hasPropagationLE_quantizeSchwartzValue_eq_add
           (hu.toSchwartzMap (a.toSymbol.contDiff_quantizeSchwartzValue u)) x =
           u x + quantizeSchwartzValue r.coefficient u x := by
   obtain ⟨b, hb⟩ := ha.exists_isAsymptoticSum_sharpTerm_left
-  obtain ⟨q, hqb, hq⟩ := Symbol.exists_isSmoothing_sub_and_hasPropagationLE b hε
-  exact ⟨q, hq, _, (Symbol.isSmoothing_properSharp_sub_iff_left hq).2
-    (Symbol.isAsymptoticSum_sharpTerm_of_isSmoothing_sub_left hb hqb),
-    fun u hu x ↦ Symbol.quantizeSchwartzValue_quantizeSchwartzValue_eq_add hq _ hu x⟩
+  exact Symbol.exists_hasPropagationLE_quantizeSchwartzValue_eq_add_of_isAsymptoticSum hb hε
 
 end ClassicalSymbol
 
