@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
+public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
@@ -38,6 +39,9 @@ It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearization
 linearized operators differ pointwise by the differences of their coefficients
 (`norm_floerLinearization_sub_floerLinearization_le`). Translating the data and the direction
 translates the operator (`floerLinearization_comp_add_right`).
+For jointly continuous `J` and jointly `C¹` Hamiltonians, the Floer operator of an almost
+everywhere strongly measurable map is almost everywhere strongly measurable
+(`aestronglyMeasurable_floerOperator`), so its `Lᵖ` norms are defined.
 The universal variation theorem identifies its direction field with the actual parameter derivative
 of the map, using equality of mixed derivatives rather than assuming it. The endomorphism field need
 not square to minus one for differentiation. For an almost complex structure the zero equation
@@ -388,6 +392,33 @@ theorem continuous_floerLinearization (ω : SymplecticForm V)
     (hξ : ContDiff ℝ 1 ξ) : Continuous (ω.floerLinearization J Ks Kt u ξ) :=
   continuous_iff_continuousAt.2 fun z ↦
     ω.continuousAt_floerLinearization (hJ z) (hKs z) (hKt z) hu.contDiffAt hξ.contDiffAt
+
+/-- **Measurability of the Floer operator.** Let the coefficients `J` be jointly continuous and the
+Hamiltonians `Ks`, `Kt` jointly `C¹`. Then the Floer operator of an almost everywhere strongly
+measurable map is almost everywhere strongly measurable for the same measure on `ℝ × ℝ`: it is a
+continuous function of the point, the value of the map and its two partial derivatives, which are
+measurable. -/
+theorem aestronglyMeasurable_floerOperator (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} (hJ : Continuous (Function.uncurry J))
+    (hKs : ContDiff ℝ 1 (Function.uncurry Ks)) (hKt : ContDiff ℝ 1 (Function.uncurry Kt))
+    {u : ℝ × ℝ → V} {μ : MeasureTheory.Measure (ℝ × ℝ)}
+    (hu : MeasureTheory.AEStronglyMeasurable u μ) :
+    MeasureTheory.AEStronglyMeasurable (ω.floerOperator J Ks Kt u) μ := by
+  borelize V
+  have hS := (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) hKs).continuous
+  have hT := (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) hKt).continuous
+  have hpt : Continuous fun q : (ℝ × ℝ) × V × V × V ↦ (q.1, q.2.1) :=
+    continuous_fst.prodMk continuous_snd.fst
+  have hG : Continuous fun q : (ℝ × ℝ) × V × V × V ↦
+      q.2.2.1 - ω.hamiltonianVectorField (Ks q.1) q.2.1 +
+        J q.1 q.2.1 (q.2.2.2 - ω.hamiltonianVectorField (Kt q.1) q.2.1) :=
+    (continuous_snd.snd.fst.sub (hS.comp hpt)).add
+      ((hJ.comp hpt).clm_apply (continuous_snd.snd.snd.sub (hT.comp hpt)))
+  have hd (e : ℝ × ℝ) : MeasureTheory.AEStronglyMeasurable (fun z ↦ fderiv ℝ u z e) μ :=
+    (measurable_fderiv_apply_const ℝ _ e).aestronglyMeasurable
+  rw [funext (ω.floerOperator_def J Ks Kt u)]
+  exact hG.comp_aestronglyMeasurable (aestronglyMeasurable_id.prodMk
+    (hu.prodMk ((hd stdComplexLineReal).prodMk (hd stdComplexLineImag))))
 
 section Families
 
