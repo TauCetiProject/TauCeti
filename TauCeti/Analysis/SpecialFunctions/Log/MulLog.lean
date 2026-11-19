@@ -255,10 +255,8 @@ private theorem abs_add_one_mul_log_add_add_sub_one_mul_log_sub_sub_two_mul_mul_
     have hsq : t ^ 2 ≤ 4 := by nlinarith
     calc |(t + 1) * log (t + 1) + (t - 1) * log (t - 1) - 2 * (t * log t)|
         ≤ |(t + 1) * log (t + 1)| + |(t - 1) * log (t - 1)| + 2 * |t * log t| := by
-          have := abs_sub (((t + 1) * log (t + 1)) + ((t - 1) * log (t - 1))) (2 * (t * log t))
-          have := abs_add_le ((t + 1) * log (t + 1)) ((t - 1) * log (t - 1))
-          rw [abs_mul, abs_two] at *
-          linarith
+          simpa [sub_eq_add_neg, abs_mul] using
+            abs_add_three ((t + 1) * log (t + 1)) ((t - 1) * log (t - 1)) (-(2 * (t * log t)))
       _ ≤ 30 := by nlinarith
 
 /-- **`x ↦ x * log x` satisfies Zygmund's condition.** Its second differences are at most a

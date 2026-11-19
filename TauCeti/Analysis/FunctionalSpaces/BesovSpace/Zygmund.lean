@@ -81,10 +81,7 @@ private theorem abs_zygmundWitness_add_add_sub_two_mul_le (x h : ℝ) :
   have h₂ := hD (x - 1)
   have h₃ := hD x
   calc |D (x + 1) + D (x - 1) - 2 * D x| ≤ |D (x + 1)| + |D (x - 1)| + 2 * |D x| := by
-        have := abs_sub (D (x + 1) + D (x - 1)) (2 * D x)
-        have := abs_add_le (D (x + 1)) (D (x - 1))
-        rw [abs_mul, abs_two] at *
-        linarith
+        simpa [sub_eq_add_neg, abs_mul] using abs_add_three (D (x + 1)) (D (x - 1)) (-(2 * D x))
     _ ≤ 120 * |h| := by linarith
 
 private theorem zygmundWitness_zero : zygmundWitness 0 = 0 := by
@@ -119,9 +116,9 @@ private theorem not_lipschitzWith_zygmundWitness (K : ℝ≥0) :
   have ht0 : 0 < t := exp_pos _
   have ht1 : t < 1 := Real.exp_lt_one_iff.mpr (by linarith [K.coe_nonneg])
   have hlog : log t = -((K : ℝ) + 1) := log_exp _
-  have hdist := hK.dist_le_mul t 0
-  rw [Complex.dist_eq, ← Complex.ofReal_sub, Complex.norm_real, zygmundWitness_zero, sub_zero,
-    dist_zero_right, norm_of_nonneg ht0.le, norm_eq_abs] at hdist
+  have hdist : |zygmundWitness t| ≤ K * t := by
+    simpa [Complex.dist_eq, ← Complex.ofReal_sub, zygmundWitness_zero, abs_of_pos ht0] using
+      hK.dist_le_mul t 0
   have hlow := neg_two_mul_mul_log_le_zygmundWitness ht0 ht1
   rw [hlog] at hlow
   have := le_abs_self (zygmundWitness t)
@@ -139,13 +136,12 @@ theorem exists_toDistr_eq_toLpTop_and_forall_lipschitzWith_toDistr_ne (ψ : Cont
   let f : ℝ →ᵇ ℂ := BoundedContinuousFunction.ofNormedAddCommGroup
     (fun t ↦ (zygmundWitness t : ℂ)) (Complex.continuous_ofReal.comp continuous_zygmundWitness)
     30 fun t ↦ by simpa [Complex.norm_real] using abs_zygmundWitness_le t
-  have hf (t : ℝ) : f t = zygmundWitness t := rfl
+  have hf (t : ℝ) : f t = zygmundWitness t := congrFun (coe_ofNormedAddCommGroup ..) t
   obtain ⟨C, -, hC⟩ := exists_toDistr_eq_and_norm_le_of_norm_add_add_sub_two_nsmul_le (F := ℂ) ψ 1
   obtain ⟨w, hw, -⟩ := hC f (H := 120) fun x h ↦ by
-    rw [hf, hf, hf, NNReal.coe_one, rpow_one, two_nsmul, ← Complex.ofReal_add,
-      ← Complex.ofReal_add, ← Complex.ofReal_sub, Complex.norm_real, norm_eq_abs, norm_eq_abs,
-      ← two_mul]
-    exact_mod_cast abs_zygmundWitness_add_add_sub_two_mul_le x h
+    have := abs_zygmundWitness_add_add_sub_two_mul_le x h
+    rw [← norm_eq_abs, ← Complex.norm_real] at this
+    simpa [hf, two_nsmul, ← two_mul] using this
   refine ⟨f, w, hw, fun K g hg heq ↦ not_lipschitzWith_zygmundWitness K ?_⟩
   have hfg : f = g :=
     BoundedContinuousFunction.toTemperedDistribution_toLpTop_injective (μ := volume)
