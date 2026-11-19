@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Bijection
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.DeckGroup
 public import TauCeti.Geometry.Manifold.Topology
 public import TauCeti.Geometry.Manifold.Instances.UniversalCover
-public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
@@ -38,10 +37,6 @@ under the deck group, with `P` the period homomorphism on the deck group.
 The same holds on the universal cover itself: a primitive of the pulled-back form takes the value
 `f (mk x refl) + ∫_q θ` at the point represented by a path class `q`
 (`UniversalCover.apply_mk_eq_apply_mk_refl_add_pathClassIntegral`).
-
-Integration commutes with continuous linear maps of the coefficients,
-`∫_γ L ∘ φ = L (∫_γ φ)` (`pathClassIntegral_mapCoeff`): applying `L` to the values of a lift of
-`γ` to the covering space of local primitives of `φ` gives a lift for `L ∘ φ`.
 
 The construction uses the subgroup-cover classification and the period exactness criterion.
 Our universal-cover action prepends inverse loops; consequently the deck transformation labelled
@@ -204,56 +199,6 @@ theorem apply_deckSubgroupQuotientProjEquivOfNormal_mk_apply [PathConnectedSpace
 end UniversalCover
 
 end Primitive
-
-section MapCoeff
-
-variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-  [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G] {φ : RoughForm I M F 1} {x y : M}
-
-omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] [CompleteSpace F] [CompleteSpace G] in
-/-- A primitive of `φ` followed by `L` is a primitive of the form `L ∘ φ`. -/
-private theorem IsPrimitiveOn.mapCoeff (L : F →L[ℝ] G) {g : M → F} {U : Set M}
-    (hg : IsPrimitiveOn φ g U) : IsPrimitiveOn (RoughForm.mapCoeff L φ) (L ∘ g) U := by
-  refine ⟨hg.isOpen, L.mdifferentiable.comp_mdifferentiableOn hg.mdifferentiableOn,
-    fun y hy ↦ ?_⟩
-  have hgy := (hg.mdifferentiableOn y hy).mdifferentiableAt (hg.isOpen.mem_nhds hy)
-  ext v
-  rw [RoughForm.mapCoeff_apply, ← hg.mextDeriv_eq y hy]
-  simp only [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
-    mvfderiv_apply_eq_mfderiv_apply, mfderiv_comp y L.mdifferentiableAt hgy, L.mfderiv_eq]
-  -- `NormedSpace.fromTangentSpace` is the identity
-  rfl
-
-/-- **Integrals are natural in the coefficients.** A continuous linear map `L` of coefficient
-spaces carries the integral of a closed `C¹` form `φ` along a path class to the integral of the
-form `L ∘ φ`. -/
-theorem pathClassIntegral_mapCoeff (L : F →L[ℝ] G) (hφ : IsSmoothForm I 1 φ)
-    (hclosed : mextDeriv φ = 0) (γ : Path.Homotopic.Quotient x y) :
-    pathClassIntegral (RoughForm.mapCoeff L φ) γ = L (pathClassIntegral φ γ) := by
-  induction γ with | mk γ =>
-  have hp := PrimitiveSpace.isCoveringMap_proj (r := 1) le_rfl hφ hclosed
-  -- A lift `Γ` of `γ` for `φ`; applying `L` to its values gives a lift `Λ` for `L ∘ φ`.
-  obtain ⟨Γ, hΓγ, -⟩ := hp.exists_path_lifts γ.toContinuousMap (PrimitiveSpace.graph φ 0 x)
-    (by simp)
-  have hΓγ' (t : unitInterval) : PrimitiveSpace.proj φ (Γ t) = γ t := congrFun hΓγ t
-  let Λ (t : unitInterval) : PrimitiveSpace (RoughForm.mapCoeff L φ) :=
-    PrimitiveSpace.graph _ (fun _ ↦ L (PrimitiveSpace.value φ (Γ t))) (γ t)
-  have hΛ : Continuous Λ := continuous_iff_continuousAt.mpr fun t₀ ↦ by
-    obtain ⟨g, -, U, hxU, hgU, c, hc⟩ :=
-      PrimitiveSpace.exists_isPrimitiveOn_eventually_value_eq le_rfl hφ hclosed
-        Γ.continuous.continuousAt (t := t₀)
-    refine PrimitiveSpace.continuousAt_of_eventually_value_eq
-      (by simp only [Λ, PrimitiveSpace.proj_graph]; exact γ.continuous.continuousAt)
-      ((hgU.mapCoeff L).add_const (L c)) (by simpa [Λ, hΓγ'] using hxU) ?_
-    filter_upwards [hc] with s hcs
-    simp [Λ, hcs.2, hΓγ']
-  rw [pathClassIntegral_mk_eq_sub (hφ.mapCoeff L)
-      (by rw [mextDeriv_mapCoeff L hφ, hclosed, RoughForm.mapCoeff_zero]) hΛ
-      fun t ↦ PrimitiveSpace.proj_graph (γ t),
-    pathClassIntegral_mk_eq_sub hφ hclosed Γ.continuous hΓγ']
-  simp [Λ]
-
-end MapCoeff
 
 namespace PeriodCover
 

@@ -156,22 +156,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type} [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] [SigmaCompactSpace M] [PathConnectedSpace M]
 
-omit [T2Space M] [SigmaCompactSpace M] in
-/-- Two homomorphisms out of `H₁(M; ℤ)` agree once they agree on the Hurewicz classes of loops
-at `x`. -/
-private theorem addMonoidHom_ext_hurewiczHomologyAddEquiv {A : Type*} [AddMonoid A] (x : M)
-    {h₁ h₂ : ((singularChains ℤ).obj (.of M)).homology 1 →+ A}
-    (h : ∀ g : FundamentalGroup M x,
-      h₁ (hurewiczHomologyAddEquiv (X := .of M) x (Additive.ofMul (Group.Abelianization.of g))) =
-        h₂ (hurewiczHomologyAddEquiv (X := .of M) x
-          (Additive.ofMul (Group.Abelianization.of g)))) :
-    h₁ = h₂ := by
-  refine AddMonoidHom.ext fun y ↦ ?_
-  obtain ⟨a, rfl⟩ := (hurewiczHomologyAddEquiv (X := .of M) x).surjective y
-  obtain ⟨g, hg⟩ := Group.Abelianization.surjective_of _ (Additive.toMul a)
-  rw [← ofMul_toMul a, ← hg]
-  exact h g
-
 namespace deRhamCohomology
 
 /-- On a path-connected σ-compact manifold, every homomorphism `H₁(M; ℤ) → ℝ` is the period
@@ -184,9 +168,11 @@ theorem homologyPeriod_surjective : Function.Surjective (homologyPeriod (I := I)
     ((hurewiczHomologyAddEquiv (X := .of M) x).toAddMonoidHom.comp
       (MonoidHom.toAdditive Group.Abelianization.of)))
   obtain ⟨φ, rfl⟩ := mk_surjective I 1 c
-  refine ⟨mk I 1 φ, addMonoidHom_ext_hurewiczHomologyAddEquiv x fun g ↦ ?_⟩
+  refine ⟨mk I 1 φ,
+    homology_one_addMonoidHom_ext_of_fundamentalGroup (X := .of M) x fun g ↦ ?_⟩
   rw [homologyPeriod_mk, homologyPeriodHom_hurewiczHomologyAddEquiv, ← period_mk, hc]
-  rfl
+  simp only [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply, toMul_ofMul,
+    AddEquiv.coe_toAddMonoidHom]
 
 variable (I M) in
 /-- **The de Rham theorem in degree one.** On a path-connected σ-compact manifold, the periods on
@@ -222,11 +208,10 @@ theorem circlePeriodHom_surjective : Function.Surjective (circlePeriodHom I M) :
   obtain ⟨x⟩ : Nonempty M := inferInstance
   have hL : homologyPeriodHom (RoughForm.mapCoeff L (ψ.1 : RoughForm I M ℝ 1)) =
       (L : ℝ →+ ℂ).comp (homologyPeriodHom (ψ.1 : RoughForm I M ℝ 1)) :=
-    addMonoidHom_ext_hurewiczHomologyAddEquiv x fun g ↦ by
+    homology_one_addMonoidHom_ext_of_fundamentalGroup (X := .of M) x fun g ↦ by
       rw [AddMonoidHom.comp_apply, homologyPeriodHom_hurewiczHomologyAddEquiv (I := I),
         homologyPeriodHom_hurewiczHomologyAddEquiv (I := I), periodHom_apply, periodHom_apply,
-        pathClassIntegral_mapCoeff L (hψ.of_le (by simp)) hψc]
-      rfl
+        pathClassIntegral_mapCoeff L (hψ.of_le (by simp)) hψc, AddMonoidHom.coe_ofClass]
   refine mem_range_circlePeriodHom_iff.mpr ⟨RoughForm.mapCoeff L ψ.1, hψ.mapCoeff L,
     by rw [mextDeriv_mapCoeff L (hψ.of_le (by simp)), hψc, RoughForm.mapCoeff_zero],
     fun y v ↦ by simp [L], fun y ↦ ?_⟩

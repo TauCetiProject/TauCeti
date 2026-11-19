@@ -47,8 +47,6 @@ The inverse-free computation rule is `inv_smul_mk`.
   different fibers. It is additive in the action (`TauCeti.UniversalCover.fiberShift_smul_left`)
   and locally constant along two continuous lifts of the same map
   (`TauCeti.UniversalCover.eventually_fiberShift_eq`).
-* `TauCeti.UniversalCover.exists_continuousOn_proj_eq`: over a path-connected base, the
-  projection has a continuous section near every point.
 -/
 
 public section
@@ -220,7 +218,7 @@ theorem monodromy_basepointLift [LocallyPathConnectedSpace X]
         Path.Homotopic.Quotient.refl_trans]
       exact (Path.Homotopic.Quotient.trans_refl _).symm
 
-/-! ### Fiber shifts and local sections -/
+/-! ### Fiber shifts -/
 
 section FiberShift
 
@@ -277,21 +275,6 @@ theorem eventually_fiberShift_eq [LocallyPathConnectedSpace X] [SemilocallySimpl
   have h₂ : ∀ᶠ y' in 𝓝 y, g • t y' ∈ U := hgt (by simpa [hg] using hU.mem_nhds hsU)
   filter_upwards [h₁, h₂, hst] with y' h₁ h₂ h₃
   rw [← hinj h₂ h₁ (by rw [proj_smul, h₃]), ← hg, fiberShift_smul_self, fiberShift_smul_self]
-
-variable (x₀) in
-/-- Over a neighbourhood of each point of a path-connected base, the universal cover has a
-continuous section. -/
-theorem exists_continuousOn_proj_eq [LocallyPathConnectedSpace X]
-    [SemilocallySimplyConnectedSpace X] [PathConnectedSpace X] (z : X) :
-    ∃ U : Set X, IsOpen U ∧ z ∈ U ∧
-      ∃ s : X → UniversalCover x₀, ContinuousOn s U ∧ ∀ y ∈ U, (s y).proj = y := by
-  obtain ⟨p, rfl⟩ := proj_surjective (x₀ := x₀) z
-  obtain ⟨e, hpe, he⟩ := (isCoveringMap x₀).isLocalHomeomorph p
-  refine ⟨e.target, e.open_target, ?_, e.symm, e.continuousOn_symm, fun y hy ↦ ?_⟩
-  · rw [he]
-    exact e.map_source hpe
-  · rw [he]
-    exact e.right_inv hy
 
 end FiberShift
 

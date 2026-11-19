@@ -172,7 +172,16 @@ theorem exists_contMDiff_smul_eq_add (P : Additive (FundamentalGroup M x₀) →
     ∃ F : UniversalCover x₀ → ℝ, ContMDiff I 𝓘(ℝ) ∞ F ∧
       ∀ (g : FundamentalGroup M x₀) (p : UniversalCover x₀),
         F (g • p) = F p + P (Additive.ofMul g) := by
-  choose U hUo hzU σ hσc hσp using exists_continuousOn_proj_eq x₀
+  -- Local sections `σ z` of the projection: local inverses at points `p₀ z` over each `z`.
+  choose p₀ hp₀ using proj_surjective (x₀ := x₀)
+  have hproj := (isCoveringMap x₀).isLocalHomeomorph
+  set σ : M → OpenPartialHomeomorph M (UniversalCover x₀) := fun z ↦ hproj.localInverseAt (p₀ z)
+  set U : M → Set M := fun z ↦ (σ z).source
+  have hUo (z : M) : IsOpen (U z) := (σ z).open_source
+  have hzU (z : M) : z ∈ U z := by
+    simpa only [hp₀] using hproj.apply_self_mem_localInverseAt_source (x := p₀ z)
+  have hσp (z y : M) (hy : y ∈ U z) : (σ z y).proj = y := hproj.apply_localInverseAt_of_mem hy
+  have hσc (z : M) : ContinuousOn (σ z) (U z) := (σ z).continuousOn
   obtain ⟨ρ, hρ⟩ := SmoothPartitionOfUnity.exists_isSubordinate I isClosed_univ U hUo
     fun z _ ↦ mem_iUnion.mpr ⟨z, hzU z⟩
   -- The terms of the sum defining `F`, and the fact that they only matter over `U z`.
