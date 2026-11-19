@@ -166,9 +166,10 @@ private theorem coe_standardFrame_one :
       EuclideanSpace ℝ (Fin 3)) = !₂[0, 0, 1] :=
   (rfl)
 
-/-- The double loop sweeping `S² ⊆ ℝ³` at the north pole for the standard frame `(e₁, e₂)`, as a
-map `S² → S²`. -/
-private def standardSphereMap : C(Sphere2, Sphere2) :=
+/-- The double loop sweeping `S² ⊆ ℝ³` at the north pole `e₀` for the standard frame `(e₁, e₂)`, as
+a map `S² → S²`. Its coordinates are the coefficients of every two-sphere `σ_{p,u,v}` in the frame
+`(p, u, v)` (`TauCeti.coe_stiefelSphereFamily_apply`). -/
+def standardStiefelSphereMap : C(Sphere2, Sphere2) :=
   (stiefelSphereFamilyFiber Sphere2.north standardFrame).1
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
@@ -181,24 +182,25 @@ standard basis to `(p, u, v)` (`Orthonormal.synthesisMapIsometry`). -/
 def stiefelSphereFamily : C(stiefel E 3, C(Sphere2, sphere (0 : E) 1)) :=
   ContinuousMap.curry
     { toFun := fun q =>
-        (mem_stiefel_iff.1 q.1.2).synthesisMapIsometry.unitSphereMap (standardSphereMap q.2)
+        (mem_stiefel_iff.1 q.1.2).synthesisMapIsometry.unitSphereMap (standardStiefelSphereMap q.2)
       continuous_toFun := continuous_induced_rng.2 <| by
         simp only [Function.comp_def, LinearIsometry.coe_unitSphereMap_apply,
           Orthonormal.synthesisMapIsometry_apply]
         refine continuous_finsetSum _ fun i _ => Continuous.smul ?_ ?_
         · exact (PiLp.continuous_apply 2 _ i).comp (continuous_subtype_val.comp
-            (standardSphereMap.continuous.comp continuous_snd))
+            (standardStiefelSphereMap.continuous.comp continuous_snd))
         · exact (continuous_apply i).comp (continuous_subtype_val.comp continuous_fst) }
 
 /-- The two-sphere `σ_{p,u,v}` is the image of the standard double loop under the linear map
-`ℝ³ → E` sending the standard basis to `(p, u, v)`. -/
-private theorem coe_stiefelSphereFamily_apply (x : stiefel E 3) (y : Sphere2) :
+`ℝ³ → E` sending the standard basis to `(p, u, v)`: the linear combination of `p`, `u` and `v`
+whose coefficients are the coordinates of `TauCeti.standardStiefelSphereMap`. -/
+theorem coe_stiefelSphereFamily_apply (x : stiefel E 3) (y : Sphere2) :
     (stiefelSphereFamily x y : E) =
-      ∑ i, (standardSphereMap y : EuclideanSpace ℝ (Fin 3)) i • (x : Fin 3 → E) i := by
+      ∑ i, (standardStiefelSphereMap y : EuclideanSpace ℝ (Fin 3)) i • (x : Fin 3 → E) i := by
   simp [stiefelSphereFamily]
 
 private theorem coe_stiefelSphereFamily_apply_three (x : stiefel E 3) {y : Sphere2} {a b c : ℝ}
-    (hy : (standardSphereMap y : EuclideanSpace ℝ (Fin 3)) = !₂[a, b, c]) :
+    (hy : (standardStiefelSphereMap y : EuclideanSpace ℝ (Fin 3)) = !₂[a, b, c]) :
     (stiefelSphereFamily x y : E) =
       a • (x : Fin 3 → E) 0 + b • (x : Fin 3 → E) 1 + c • (x : Fin 3 → E) 2 := by
   simp [coe_stiefelSphereFamily_apply, hy, Fin.sum_univ_three]
@@ -208,7 +210,7 @@ two-sphere `σ_{p,u,v}` goes to `p`. -/
 @[simp]
 theorem stiefelSphereFamily_apply_north (x : stiefel E 3) :
     stiefelSphereFamily x Sphere2.north = stiefelProj E 3 0 x := by
-  have h : standardSphereMap Sphere2.north = Sphere2.north :=
+  have h : standardStiefelSphereMap Sphere2.north = Sphere2.north :=
     stiefelSphereFamilyFiber_apply_north Sphere2.north standardFrame
   refine Subtype.ext ?_
   rw [coe_stiefelSphereFamily_apply_three x (by rw [h, Sphere2.coe_north])]
@@ -237,7 +239,7 @@ theorem stiefelSphereFamily_stiefelFrameIncl (p : sphere (0 : E) 1)
   ext w
   obtain ⟨z, rfl⟩ := sphereCollapse_surjective 2 Sphere2.north w
   rw [stiefelSphereFamilyFiber_apply_sphereCollapse, coe_stiefelSphereFamily_apply,
-    standardSphereMap, stiefelSphereFamilyFiber_apply_sphereCollapse]
+    standardStiefelSphereMap, stiefelSphereFamilyFiber_apply_sphereCollapse]
   rw [← synthesisMap_apply (𝕜 := ℝ)]
   refine LinearMap.map_stiefelDoubleLoop _ ?_ (fun i => ?_) _ _
   · simp [Sphere2.coe_north, Fin.sum_univ_three]
