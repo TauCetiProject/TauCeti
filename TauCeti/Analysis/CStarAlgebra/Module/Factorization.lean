@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Module.Action
-public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 
 /-!
 # The special factorization of vectors in Hilbert C⋆-modules
@@ -104,6 +103,27 @@ theorem inner_self_eq_nnrpow_of_inner_self_smul_eq {x y : E} (h : inner A y y �
 
 /-! ### Estimates for the approximants `f_ε(s) • x`, with `f_ε(u) = u / (u ^ 2 + ε ^ 2)` -/
 
+/-- The approximant `f_ε(u) = u / (u ^ 2 + ε ^ 2)` of `u ↦ u⁻¹`, which vanishes at `0`. -/
+private noncomputable def invApprox (ε u : ℝ) : ℝ := u / (u ^ 2 + ε ^ 2)
+
+/-- For `ε > 0`, the denominator `u ^ 2 + ε ^ 2` never vanishes, so `f_ε` is continuous. -/
+private lemma continuous_invApprox {ε : ℝ} (hε : 0 < ε) : Continuous (invApprox ε) :=
+  continuous_id.div (by fun_prop) fun u ↦ (by positivity : 0 < u ^ 2 + ε ^ 2).ne'
+
+/-- `f_ε(0) = 0`, so only the nonunital functional calculus is needed. -/
+@[simp]
+private lemma invApprox_zero (ε : ℝ) : invApprox ε 0 = 0 := by
+  simp [invApprox]
+
+/-- The scalar bound `u (c ^ 2 / (u ^ 2 + c ^ 2)) ^ 2 ≤ c / 2` behind the approximation
+estimates. -/
+private lemma mul_sq_div_sq_add_sq_le (u : ℝ) {c : ℝ} (hc : 0 < c) :
+    u * (c ^ 2 / (u ^ 2 + c ^ 2)) ^ 2 ≤ c / 2 := by
+  rw [div_pow, mul_div_assoc', div_le_div_iff₀ (by positivity) two_pos]
+  have h1 : 2 * u * c ≤ u ^ 2 + c ^ 2 := two_mul_le_add_sq u c
+  have h2 : c ^ 2 ≤ u ^ 2 + c ^ 2 := by nlinarith [sq_nonneg u]
+  nlinarith [mul_le_mul_of_nonneg_left (mul_le_mul h1 h2 (by positivity) (by positivity)) hc.le]
+
 section Approximants
 
 variable {x : E} {s : A} (hs : 0 ≤ s)
@@ -112,30 +132,26 @@ include hs
 /-- If `⟪y, y⟫_A = s` and `s • y = x`, then `‖f_ε(s) • x - y‖ ^ 2 ≤ ε / 2`. -/
 private lemma norm_cfcₙ_smul_sub_sq_le_of_inner_self_eq {y : E} (hyy : inner A y y = s)
     (hsy : s • y = x) {ε : ℝ} (hε : 0 < ε) :
-    ‖cfcₙ (fun u ↦ u / (u ^ 2 + ε ^ 2)) s • x - y‖ ^ 2 ≤ ε / 2 := by
-  have hf : Continuous fun u : ℝ ↦ u / (u ^ 2 + ε ^ 2) :=
-    continuous_id.div (by fun_prop) fun u ↦ (by positivity : 0 < u ^ 2 + ε ^ 2).ne'
-  have hg : Continuous fun u : ℝ ↦ u / (u ^ 2 + ε ^ 2) * u := hf.mul continuous_id
+    ‖cfcₙ (invApprox ε) s • x - y‖ ^ 2 ≤ ε / 2 := by
+  have hf := continuous_invApprox hε
+  have hg : Continuous fun u : ℝ ↦ invApprox ε u * u := hf.mul continuous_id
   -- `f_ε(s) • (s • y) = g(s) • y` with `g(u) = u ^ 2 / (u ^ 2 + ε ^ 2)`.
-  have hfs : cfcₙ (fun u : ℝ ↦ u / (u ^ 2 + ε ^ 2)) s * s =
-      cfcₙ (fun u : ℝ ↦ u / (u ^ 2 + ε ^ 2) * u) s := by
-    rw [cfcₙ_mul (fun u : ℝ ↦ u / (u ^ 2 + ε ^ 2)) (fun u ↦ u) s hf.continuousOn (by simp)
-      continuousOn_id rfl, cfcₙ_id' ℝ s]
+  have hfs : cfcₙ (invApprox ε) s * s = cfcₙ (fun u : ℝ ↦ invApprox ε u * u) s := by
+    rw [cfcₙ_mul (invApprox ε) (fun u ↦ u) s hf.continuousOn (by simp) continuousOn_id rfl,
+      cfcₙ_id' ℝ s]
   rw [← hsy, ← (semigroupAction A E).mul_smul, hfs, norm_sq_eq A,
     inner_cfcₙ_smul_sub_self continuous_id' rfl ((cfcₙ_id' ℝ s).trans hyy.symm) hg (by simp)]
   refine norm_cfcₙ_le fun u hu ↦ ?_
   have hu : 0 ≤ u := quasispectrum_nonneg_of_nonneg s hs u hu
-  -- The integrand is `u (1 - g(u)) ^ 2 = u ε ^ 4 / (u ^ 2 + ε ^ 2) ^ 2 ≤ ε / 2`.
-  have heq : u / (u ^ 2 + ε ^ 2) * u * u * (u / (u ^ 2 + ε ^ 2) * u) -
-      u * (u / (u ^ 2 + ε ^ 2) * u) - (u / (u ^ 2 + ε ^ 2) * u * u - u) =
-      u * ε ^ 4 / (u ^ 2 + ε ^ 2) ^ 2 := by
+  -- The integrand is `u (1 - g(u)) ^ 2 = u (ε ^ 2 / (u ^ 2 + ε ^ 2)) ^ 2 ≤ ε / 2`.
+  have heq : invApprox ε u * u * u * (invApprox ε u * u) -
+      u * (invApprox ε u * u) - (invApprox ε u * u * u - u) =
+      u * (ε ^ 2 / (u ^ 2 + ε ^ 2)) ^ 2 := by
+    unfold invApprox
     field_simp
     ring
-  rw [Real.norm_eq_abs, heq, abs_of_nonneg (by positivity),
-    div_le_div_iff₀ (by positivity) two_pos]
-  have h1 : 2 * u * ε ≤ u ^ 2 + ε ^ 2 := by nlinarith [sq_nonneg (u - ε)]
-  have h2 : ε ^ 2 ≤ u ^ 2 + ε ^ 2 := by nlinarith [sq_nonneg u]
-  nlinarith [mul_le_mul_of_nonneg_left (mul_le_mul h1 h2 (by positivity) (by positivity)) hε.le]
+  rw [Real.norm_eq_abs, heq, abs_of_nonneg (by positivity)]
+  exact mul_sq_div_sq_add_sq_le u hε
 
 variable (hss : s * s * s = inner A x x)
 include hss
@@ -147,80 +163,68 @@ private lemma cfcₙ_cube_eq_inner_self : cfcₙ (fun u : ℝ ↦ u * u * u) s =
 
 /-- The Cauchy estimate `‖f_ε(s) • x - f_δ(s) • x‖ ^ 2 ≤ ε + δ`. -/
 private lemma norm_cfcₙ_smul_sub_cfcₙ_smul_sq_le {ε δ : ℝ} (hε : 0 < ε) (hδ : 0 < δ) :
-    ‖cfcₙ (fun u ↦ u / (u ^ 2 + ε ^ 2)) s • x - cfcₙ (fun u ↦ u / (u ^ 2 + δ ^ 2)) s • x‖ ^ 2 ≤
-      ε + δ := by
-  have hf : ∀ c : ℝ, 0 < c → Continuous fun u : ℝ ↦ u / (u ^ 2 + c ^ 2) := fun c hc ↦
-    continuous_id.div (by fun_prop) fun u ↦ (by positivity : 0 < u ^ 2 + c ^ 2).ne'
-  have hd : Continuous fun u : ℝ ↦ u / (u ^ 2 + ε ^ 2) - u / (u ^ 2 + δ ^ 2) :=
-    (hf ε hε).sub (hf δ hδ)
-  rw [← CStarModule.sub_smul, ← cfcₙ_sub (fun u : ℝ ↦ u / (u ^ 2 + ε ^ 2))
-    (fun u ↦ u / (u ^ 2 + δ ^ 2)) s (hf ε hε).continuousOn (by simp) (hf δ hδ).continuousOn
+    ‖cfcₙ (invApprox ε) s • x - cfcₙ (invApprox δ) s • x‖ ^ 2 ≤ ε + δ := by
+  have hd : Continuous fun u : ℝ ↦ invApprox ε u - invApprox δ u :=
+    (continuous_invApprox hε).sub (continuous_invApprox hδ)
+  rw [← CStarModule.sub_smul, ← cfcₙ_sub (invApprox ε) (invApprox δ) s
+    (continuous_invApprox hε).continuousOn (by simp) (continuous_invApprox hδ).continuousOn
     (by simp), norm_sq_eq A, inner_cfcₙ_smul_cfcₙ_smul (by fun_prop) (by simp)
       (cfcₙ_cube_eq_inner_self hs hss) hd (by simp) hd (by simp)]
   refine norm_cfcₙ_le fun u hu ↦ ?_
   have hu : 0 ≤ u := quasispectrum_nonneg_of_nonneg s hs u hu
   -- With `P = ε ^ 2 / (u ^ 2 + ε ^ 2)` and `Q = δ ^ 2 / (u ^ 2 + δ ^ 2)`, the integrand is
   -- `u (Q - P) ^ 2 ≤ u P ^ 2 + u Q ^ 2`, and `u P ^ 2 ≤ ε / 2`, `u Q ^ 2 ≤ δ / 2`.
-  have key : ∀ c : ℝ, 0 < c → u * (c ^ 2 / (u ^ 2 + c ^ 2)) ^ 2 ≤ c / 2 := fun c hc ↦ by
-    rw [div_pow, mul_div_assoc', div_le_div_iff₀ (by positivity) two_pos]
-    have h1 : 2 * u * c ≤ u ^ 2 + c ^ 2 := by nlinarith [sq_nonneg (u - c)]
-    have h2 : c ^ 2 ≤ u ^ 2 + c ^ 2 := by nlinarith [sq_nonneg u]
-    nlinarith [mul_le_mul_of_nonneg_left (mul_le_mul h1 h2 (by positivity) (by positivity)) hc.le]
-  have heq : (u / (u ^ 2 + ε ^ 2) - u / (u ^ 2 + δ ^ 2)) * (u * u * u) *
-      (u / (u ^ 2 + ε ^ 2) - u / (u ^ 2 + δ ^ 2)) =
+  have heq : (invApprox ε u - invApprox δ u) * (u * u * u) * (invApprox ε u - invApprox δ u) =
       u * (δ ^ 2 / (u ^ 2 + δ ^ 2) - ε ^ 2 / (u ^ 2 + ε ^ 2)) ^ 2 := by
+    unfold invApprox
     field_simp
     ring
   rw [Real.norm_eq_abs, heq, abs_of_nonneg (by positivity)]
   have hPQ : 0 ≤ u * (2 * (δ ^ 2 / (u ^ 2 + δ ^ 2)) * (ε ^ 2 / (u ^ 2 + ε ^ 2))) := by
     positivity
-  nlinarith [key ε hε, key δ hδ]
+  nlinarith [mul_sq_div_sq_add_sq_le u hε, mul_sq_div_sq_add_sq_le u hδ]
 
 /-- `‖⟪f_ε(s) • x, f_ε(s) • x⟫_A - s‖ ≤ ε`. -/
 private lemma norm_inner_cfcₙ_smul_sub_le {ε : ℝ} (hε : 0 < ε) :
-    ‖inner A (cfcₙ (fun u ↦ u / (u ^ 2 + ε ^ 2)) s • x)
-      (cfcₙ (fun u ↦ u / (u ^ 2 + ε ^ 2)) s • x) - s‖ ≤ ε := by
-  have hf : Continuous fun u : ℝ ↦ u / (u ^ 2 + ε ^ 2) :=
-    continuous_id.div (by fun_prop) fun u ↦ (by positivity : 0 < u ^ 2 + ε ^ 2).ne'
+    ‖inner A (cfcₙ (invApprox ε) s • x) (cfcₙ (invApprox ε) s • x) - s‖ ≤ ε := by
+  have hf := continuous_invApprox hε
   rw [inner_cfcₙ_smul_cfcₙ_smul (by fun_prop) (by simp) (cfcₙ_cube_eq_inner_self hs hss) hf
     (by simp) hf (by simp)]
   nth_rw 2 [← cfcₙ_id' ℝ s]
-  rw [← cfcₙ_sub (fun u ↦ u / (u ^ 2 + ε ^ 2) * (u * u * u) * (u / (u ^ 2 + ε ^ 2)))
-    (fun u : ℝ ↦ u) s (by fun_prop (disch := assumption)) (by simp)]
+  rw [← cfcₙ_sub (fun u ↦ invApprox ε u * (u * u * u) * invApprox ε u) (fun u : ℝ ↦ u) s
+    ((hf.mul (by fun_prop)).mul hf).continuousOn (by simp)]
   refine norm_cfcₙ_le fun u hu ↦ ?_
   have hu : 0 ≤ u := quasispectrum_nonneg_of_nonneg s hs u hu
   -- The integrand is `-u ε ^ 2 (2 u ^ 2 + ε ^ 2) / (u ^ 2 + ε ^ 2) ^ 2`.
-  have heq : u / (u ^ 2 + ε ^ 2) * (u * u * u) * (u / (u ^ 2 + ε ^ 2)) - u =
+  have heq : invApprox ε u * (u * u * u) * invApprox ε u - u =
       -(u * ε ^ 2 * (2 * u ^ 2 + ε ^ 2) / (u ^ 2 + ε ^ 2) ^ 2) := by
+    unfold invApprox
     field_simp
     ring
   rw [Real.norm_eq_abs, heq, abs_neg, abs_of_nonneg (by positivity),
     div_le_iff₀ (by positivity)]
-  have h1 : 2 * u * ε ≤ u ^ 2 + ε ^ 2 := by nlinarith [sq_nonneg (u - ε)]
-  nlinarith [mul_le_mul_of_nonneg_left h1 (by positivity : 0 ≤ ε * (u ^ 2 + ε ^ 2)),
-    mul_nonneg hu (sq_nonneg ε)]
+  nlinarith [mul_le_mul_of_nonneg_left (two_mul_le_add_sq u ε)
+      (by positivity : 0 ≤ ε * (u ^ 2 + ε ^ 2)), mul_nonneg hu (sq_nonneg ε)]
 
 /-- `‖s • f_ε(s) • x - x‖ ^ 2 ≤ ε ^ 3`. -/
 private lemma norm_smul_cfcₙ_smul_sub_sq_le {ε : ℝ} (hε : 0 < ε) :
-    ‖s • cfcₙ (fun u ↦ u / (u ^ 2 + ε ^ 2)) s • x - x‖ ^ 2 ≤ ε ^ 3 := by
-  have hf : Continuous fun u : ℝ ↦ u / (u ^ 2 + ε ^ 2) :=
-    continuous_id.div (by fun_prop) fun u ↦ (by positivity : 0 < u ^ 2 + ε ^ 2).ne'
-  have hg : Continuous fun u : ℝ ↦ u * (u / (u ^ 2 + ε ^ 2)) := continuous_id.mul hf
+    ‖s • cfcₙ (invApprox ε) s • x - x‖ ^ 2 ≤ ε ^ 3 := by
+  have hf := continuous_invApprox hε
+  have hg : Continuous fun u : ℝ ↦ u * invApprox ε u := continuous_id.mul hf
   -- `s • f_ε(s) • x = g(s) • x` with `g(u) = u ^ 2 / (u ^ 2 + ε ^ 2)`.
-  have hsf : s * cfcₙ (fun u : ℝ ↦ u / (u ^ 2 + ε ^ 2)) s =
-      cfcₙ (fun u : ℝ ↦ u * (u / (u ^ 2 + ε ^ 2))) s := by
-    rw [cfcₙ_mul (fun u : ℝ ↦ u) (fun u ↦ u / (u ^ 2 + ε ^ 2)) s continuousOn_id rfl
-      hf.continuousOn (by simp), cfcₙ_id' ℝ s]
+  have hsf : s * cfcₙ (invApprox ε) s = cfcₙ (fun u : ℝ ↦ u * invApprox ε u) s := by
+    rw [cfcₙ_mul (fun u : ℝ ↦ u) (invApprox ε) s continuousOn_id rfl hf.continuousOn (by simp),
+      cfcₙ_id' ℝ s]
   rw [← (semigroupAction A E).mul_smul, hsf, norm_sq_eq A,
     inner_cfcₙ_smul_sub_self (by fun_prop) (by simp) (cfcₙ_cube_eq_inner_self hs hss) hg
       (by simp)]
   refine norm_cfcₙ_le fun u hu ↦ ?_
   have hu : 0 ≤ u := quasispectrum_nonneg_of_nonneg s hs u hu
   -- The integrand is `u ^ 3 (1 - g(u)) ^ 2 = u ^ 3 ε ^ 4 / (u ^ 2 + ε ^ 2) ^ 2 ≤ ε ^ 3`.
-  have heq : u * (u / (u ^ 2 + ε ^ 2)) * (u * u * u) * (u * (u / (u ^ 2 + ε ^ 2))) -
-      u * u * u * (u * (u / (u ^ 2 + ε ^ 2))) -
-      (u * (u / (u ^ 2 + ε ^ 2)) * (u * u * u) - u * u * u) =
+  have heq : u * invApprox ε u * (u * u * u) * (u * invApprox ε u) -
+      u * u * u * (u * invApprox ε u) - (u * invApprox ε u * (u * u * u) - u * u * u) =
       u ^ 3 * ε ^ 4 / (u ^ 2 + ε ^ 2) ^ 2 := by
+    unfold invApprox
     field_simp
     ring
   rw [Real.norm_eq_abs, heq, abs_of_nonneg (by positivity), div_le_iff₀ (by positivity)]
@@ -244,7 +248,7 @@ private lemma exists_inner_self_eq_and_smul_eq {x : E} {s : A} (hs : 0 ≤ s)
     (hss : s * s * s = inner A x x) : ∃ y : E, inner A y y = s ∧ s • y = x := by
   have hε0 : Tendsto (fun n : ℕ ↦ 1 / ((n : ℝ) + 1)) atTop (𝓝 0) :=
     tendsto_one_div_add_atTop_nhds_zero_nat
-  set z : ℕ → E := fun n ↦ cfcₙ (fun u ↦ u / (u ^ 2 + (1 / ((n : ℝ) + 1)) ^ 2)) s • x
+  set z : ℕ → E := fun n ↦ cfcₙ (invApprox (1 / ((n : ℝ) + 1))) s • x
   -- `‖z n - z m‖ ^ 2 ≤ 1 / (n + 1) + 1 / (m + 1)`, so `z` is a Cauchy sequence.
   obtain ⟨y, hy⟩ : ∃ y, Tendsto z atTop (𝓝 y) := by
     refine cauchySeq_tendsto_of_complete (cauchySeq_of_le_tendsto_0
@@ -262,14 +266,15 @@ private lemma exists_inner_self_eq_and_smul_eq {x : E} {s : A} (hs : 0 ≤ s)
     have hlim : Tendsto (fun n ↦ inner A (z n) (z n)) atTop (𝓝 s) :=
       tendsto_iff_norm_sub_tendsto_zero.mpr <| squeeze_zero (fun _ ↦ norm_nonneg _)
         (fun _ ↦ norm_inner_cfcₙ_smul_sub_le hs hss Nat.one_div_pos_of_nat) hε0
-    let _ : NormedSpace ℂ E := ⟨fun c v ↦ ((normedSpaceCore A).norm_smul c v).le⟩
+    let _ : NormedSpace ℂ E := .ofCore (normedSpaceCore A)
     exact tendsto_nhds_unique
       ((continuous_inner (A := A)).tendsto (y, y) |>.comp (hy.prodMk_nhds hy)) hlim
   · -- `s • z n → s • y` since the action of `s` is bounded, and `s • z n → x`.
     let _ := distribSMul A E
     have hsy : Tendsto (fun n ↦ s • z n) atTop (𝓝 (s • y)) :=
       tendsto_iff_norm_sub_tendsto_zero.mpr <| squeeze_zero (fun _ ↦ norm_nonneg _)
-        (fun n ↦ (smul_sub s (z n) y).symm ▸ CStarModule.norm_smul_le s _)
+        (fun n ↦ show ‖s • z n - s • y‖ ≤ ‖s‖ * ‖z n - y‖ by
+          rw [← smul_sub]; exact CStarModule.norm_smul_le s _)
         (by simpa using (tendsto_iff_norm_sub_tendsto_zero.mp hy).const_mul ‖s‖)
     have hb : Tendsto (fun n : ℕ ↦ √((1 / ((n : ℝ) + 1)) ^ 3)) atTop (𝓝 0) := by
       simpa using (hε0.pow 3).sqrt
@@ -301,8 +306,8 @@ theorem existsUnique_inner_self_smul_eq (x : E) : ∃! y : E, inner A y y • y 
   have hb : Tendsto (fun n : ℕ ↦ √(1 / ((n : ℝ) + 1) / 2)) atTop (𝓝 0) := by
     simpa using (hε0.div_const 2).sqrt
   have hlim : ∀ {v : E}, inner A v v = s → s • v = x →
-      Tendsto (fun n : ℕ ↦ cfcₙ (fun u ↦ u / (u ^ 2 + (1 / ((n : ℝ) + 1)) ^ 2)) s • x) atTop
-        (𝓝 v) := fun hvv hsv ↦
+      Tendsto (fun n : ℕ ↦ cfcₙ (invApprox (1 / ((n : ℝ) + 1))) s • x) atTop (𝓝 v) :=
+    fun hvv hsv ↦
     tendsto_iff_norm_sub_tendsto_zero.mpr <| squeeze_zero (fun _ ↦ norm_nonneg _)
       (fun _ ↦ (Real.le_sqrt (norm_nonneg _) (by positivity)).mpr
         (norm_cfcₙ_smul_sub_sq_le_of_inner_self_eq hs hvv hsv Nat.one_div_pos_of_nat)) hb
