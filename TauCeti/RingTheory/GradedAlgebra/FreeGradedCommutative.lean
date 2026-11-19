@@ -12,9 +12,9 @@ public import Mathlib.Data.Multiset.Sort
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
-public import TauCeti.Algebra.CharP.Invertible
 public import TauCeti.Data.Finsupp.Multiset
 public import TauCeti.Data.Multiset.Sort
+public import TauCeti.RingTheory.GradedAlgebra.Supercommutativity
 
 /-!
 # Free graded-commutative algebras
@@ -46,8 +46,6 @@ algebra map out of it sends `e` to `u` and `e²` to `v` in the graded-commutativ
 
 ## Main results
 
-* `TauCeti.mul_self_eq_zero_of_negOnePow_odd`: when `2` is invertible, an element whose square is
-  fixed by the Koszul sign of an odd degree squares to zero.
 * `TauCeti.mul_standardMonomial`: a generator times a standard monomial is the Koszul sign times a
   standard monomial; `TauCeti.mul_standardMonomial_eq_zero`: it is zero when the generator
   squares to zero and already occurs.
@@ -77,15 +75,6 @@ namespace TauCeti
 
 open Finsupp
 
-/-- If `2` is invertible in the scalars, an element `a` with `a * a = (-1) ^ (n * n) • (a * a)`
-for an odd `n` squares to zero: in a graded-commutative algebra, every element of odd degree
-squares to zero. -/
-theorem mul_self_eq_zero_of_negOnePow_odd {K B : Type*} [Semiring K] [Invertible (2 : K)]
-    [Ring B] [Module K B] {a : B} {n : ℤ} (hn : Odd n)
-    (ha : a * a = (n * n).negOnePow • (a * a)) : a * a = 0 :=
-  eq_zero_of_eq_neg_of_invertible_two (R := K) <| by
-    rwa [Int.negOnePow_mul_self, Int.negOnePow_odd _ hn, Units.neg_smul, one_smul] at ha
-
 section Monomial
 
 variable {ι : Type*} [LinearOrder ι] {R : Type*}
@@ -111,8 +100,13 @@ theorem standardMonomial_zero : standardMonomial x 0 = 1 := by
   simp [standardMonomial]
 
 @[simp]
+theorem standardMonomial_single (i : ι) (n : ℕ) : standardMonomial x (single i n) = x i ^ n := by
+  rw [standardMonomial_def, toMultiset_single, Multiset.nsmul_singleton, ← Multiset.coe_replicate,
+    ((Multiset.eq_sort_iff _).2 ⟨List.pairwise_replicate.2 (Or.inr le_rfl), rfl⟩).symm]
+  simp
+
 theorem standardMonomial_single_one (i : ι) : standardMonomial x (single i 1) = x i := by
-  simp [standardMonomial]
+  simp
 
 /-- A monoid homomorphism maps standard monomials in the `x i` to standard monomials in their
 images. -/
