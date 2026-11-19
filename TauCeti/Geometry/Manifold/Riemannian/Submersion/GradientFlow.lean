@@ -22,9 +22,10 @@ negative gradient flows `V = -grad (g ∘ f)` on `M` and `W = -grad g` on `N`. F
 `g` on the base of a fibre bundle, `g ∘ f` is the Morse–Bott function whose critical submanifolds
 are the fibres over the critical points of `g`, used to compare Morse–Bott and Morse homology of
 fibre bundles. The results here describe its trajectories: each is determined by its projection,
-a trajectory of `W`, and its value at time `0` in a fibre, and over a trajectory joining
-nondegenerate critical points `x` and `y` of `g` it converges, exponentially fast, to points of
-the fibres over `x` and `y`.
+a trajectory of `W`, and its value at time `0` in a fibre. A trajectory of `V` over a trajectory
+of `W` running from a nondegenerate critical point `x` of `g` to another one `y` converges
+exponentially fast to a point of the fibre over `y` as `t → ∞` when it stays in a compact set,
+and to a point of the fibre over `x` as `t → -∞` when `M` is compact.
 
 * **Projection.** `f` maps integral curves of `V` to integral curves of `W`
   (`TauCeti.IsRiemannianSubmersion.isMIntegralCurveOn_comp`), so the maximal flow of `V` covers
@@ -86,25 +87,6 @@ variable
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
   {f : M → N} {g : N → ℝ}
-
-/-! ### The lifted gradient field -/
-
-section Pointwise
-
-variable [IsManifold I 1 M] [IsManifold J 1 N] (h : IsRiemannianSubmersion I J f) {x : M}
-include h
-
-/-- A pulled-back negative gradient projects to the negative gradient on the base. -/
-theorem mfderiv_neg_mgradient_comp (hg : MDifferentiableAt J 𝓘(ℝ) g (f x)) :
-    mfderiv I J f x (-mgradient I (g ∘ f) x) = -mgradient J g (f x) := by
-  rw [map_neg, h.mfderiv_mgradient_comp hg]
-
-/-- A pulled-back gradient has the length of the gradient on the base. -/
-theorem norm_mgradient_comp (hg : MDifferentiableAt J 𝓘(ℝ) g (f x)) :
-    ‖mgradient I (g ∘ f) x‖ = ‖mgradient J g (f x)‖ := by
-  rw [h.mgradient_comp hg, LinearIsometry.norm_map]
-
-end Pointwise
 
 /-! ### Projection of trajectories -/
 
@@ -196,22 +178,16 @@ theorem pathELength_maximalIntegralCurve (hg : ContMDiff J 𝓘(ℝ) 2 g) {z : M
   have : IsManifold J 1 N := IsManifold.of_le one_le_two
   have : IsManifold I 1 M := IsManifold.of_le one_le_two
   have hg1 : MDifferentiable J 𝓘(ℝ) g := hg.mdifferentiable (by norm_num)
-  -- Write both trajectories as maximal flows, whose velocities are the two gradient fields.
-  have eV : maximalIntegralCurve (-mgradient I (g ∘ f)) z =
-      fun s ↦ flowOf (-mgradient I (g ∘ f)) s z := funext fun s ↦ (flowOf_apply _ _ _).symm
-  have eW : maximalIntegralCurve (-mgradient J g) (f z) =
-      fun s ↦ flowOf (-mgradient J g) s (f z) := funext fun s ↦ (flowOf_apply _ _ _).symm
-  rw [eV, eW, pathELength_eq_setLIntegral_enorm_curveVelocity_Ioo,
+  rw [pathELength_eq_setLIntegral_enorm_curveVelocity_Ioo,
     pathELength_eq_setLIntegral_enorm_curveVelocity_Ioo]
   refine MeasureTheory.setLIntegral_congr_fun measurableSet_Ioo fun t ht ↦ ?_
   have htV : t ∈ maximalIntegralCurveInterval (-mgradient I (g ∘ f)) z :=
     hab (Ioo_subset_Icc_self ht)
   have htW := h.maximalIntegralCurveInterval_subset hg1 z htV
-  rw [curveVelocity_flowOf (contMDiff_neg_mgradient_one (h.contMDiff_comp hg))
-      (mem_flowDomain.2 htV),
-    curveVelocity_flowOf (contMDiff_neg_mgradient_one hg) (mem_flowDomain.2 htW), Pi.neg_apply,
-    Pi.neg_apply, ← ofReal_norm, ← ofReal_norm, norm_neg, norm_neg, h.norm_mgradient_comp (hg1 _),
-    flowOf_apply, flowOf_apply, h.apply_maximalIntegralCurve hg htV]
+  simp only [curveVelocity_maximalIntegralCurve_neg_mgradient (h.contMDiff_comp hg) htV,
+    curveVelocity_maximalIntegralCurve_neg_mgradient hg htW, ← ofReal_norm, norm_neg,
+    h.norm_mgradient_comp (hg1 _)]
+  rw [h.apply_maximalIntegralCurve hg htV]
 
 /-! ### Lifting trajectories -/
 
@@ -390,22 +366,10 @@ theorem exists_tendsto_atBot_and_riemannianEDist_le_mul_exp_maximalIntegralCurve
       (hg.mdifferentiable (by norm_num)) (isMIntegralCurve_iff_isMIntegralCurveOn.1 hγ))
   -- Reversing time turns trajectories of `-grad φ` into trajectories of `-grad (-φ)`.
   have hg' : ContMDiff J 𝓘(ℝ) 2 (-g) := hg.neg
-  have hcomp : (-g) ∘ f = -(g ∘ f) := rfl
-  have hγrev : maximalIntegralCurve (-mgradient I ((-g) ∘ f)) z = γ ∘ (· * -1) := by
-    have hrev : IsMIntegralCurve (γ ∘ (· * -1)) (-mgradient I ((-g) ∘ f)) := by
-      convert hγ.comp_mul (-1) using 1
-      funext y
-      simp [hcomp, mgradient_neg]
-    funext t
-    simpa [γ] using hrev.maximalIntegralCurve_eq
-      (contMDiff_neg_mgradient_one (h.contMDiff_comp hg')) t
-  have hcrev : maximalIntegralCurve (-mgradient J (-g)) (f z) = c ∘ (· * -1) := by
-    have hrev : IsMIntegralCurve (c ∘ (· * -1)) (-mgradient J (-g)) := by
-      convert hc.comp_mul (-1) using 1
-      funext y
-      simp [mgradient_neg]
-    funext t
-    simpa [c] using hrev.maximalIntegralCurve_eq (contMDiff_neg_mgradient_one hg') t
+  have hγrev : maximalIntegralCurve (-mgradient I ((-g) ∘ f)) z = γ ∘ (· * -1) :=
+    maximalIntegralCurve_neg_mgradient_neg (h.contMDiff_comp hg) hγ
+  have hcrev : maximalIntegralCurve (-mgradient J (-g)) (f z) = c ∘ (· * -1) :=
+    maximalIntegralCurve_neg_mgradient_neg hg hc
   have htop : Tendsto (fun t : ℝ ↦ t * -1) atTop atBot := by
     simpa only [mul_neg_one] using tendsto_neg_atTop_atBot
   have hbot : Tendsto (fun t : ℝ ↦ t * -1) atBot atTop := by
