@@ -44,6 +44,12 @@ theorem TopologicalSpace.Opens.upperHalf_mono {V W : Opens ℂ} (h : V ≤ W) :
     V.upperHalf ≤ W.upperHalf :=
   fun _ hz => Opens.mem_upperHalf.2 ⟨h (Opens.mem_upperHalf.1 hz).1, (Opens.mem_upperHalf.1 hz).2⟩
 
+/-- The upper half of an open set with compact closure has compact closure. -/
+theorem TopologicalSpace.Opens.isCompact_closure_upperHalf {W : Opens ℂ}
+    (hWc : IsCompact (closure (W : Set ℂ))) : IsCompact (closure (W.upperHalf : Set ℂ)) :=
+  hWc.of_isClosed_subset isClosed_closure
+    (closure_mono (by rw [Opens.coe_upperHalf]; exact Set.inter_subset_left))
+
 /-- The upper half of an open planar set lies in its closed upper half. -/
 theorem TopologicalSpace.Opens.coe_upperHalf_subset (W : Opens ℂ) :
     (W.upperHalf : Set ℂ) ⊆ (W : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im} :=
