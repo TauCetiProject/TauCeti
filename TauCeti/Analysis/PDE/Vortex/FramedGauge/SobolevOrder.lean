@@ -165,8 +165,8 @@ theorem sobolevVortexModuliDivisor_sobolevVortexModuliEquivOfLE {hs : 1 < (k : �
   rw [sobolevVortexModuliEquivOfLE, Equiv.trans_apply, ← sobolevVortexModuliEquiv_apply hk,
     Equiv.apply_symm_apply, sobolevVortexModuliEquiv_apply]
 
-/-- The inverse bijection of moduli preserves the divisor: every `G_(k+1)`-orbit of `C²` vortices of
-`A_m^k` contains a vortex of `A_m^(k')` with the same divisor. -/
+/-- The inverse bijection of moduli preserves the divisor: the divisor of the order-`k'` orbit
+assigned to an order-`k` orbit `q` is the divisor of `q`. -/
 @[simp]
 theorem sobolevVortexModuliDivisor_sobolevVortexModuliEquivOfLE_symm {hs : 1 < (k : ℝ) + 1}
     {hs' : 1 < (k' : ℝ) + 1} (hk : 3 < k) (h : k ≤ k')
