@@ -632,7 +632,14 @@ theorem filteredSpaceSpectralSequence_first_page_d_eq (p : ℤ) (n : ℕ)
       (cokernelFiltrationFunctorMapIso R hX _) ≪≫ extendHomologyIso _ _ _)).2
     ((δ_comp_extendHomologyIso_hom R hX q n _ _ hn (by lia) rfl).trans
       (Category.assoc _ _ _).symm)]
-  exact (Category.assoc _ _ _).trans (Category.assoc _ _ _)
+  -- The remaining chain only reassociates the composite. It closes by `exact` because
+  -- `((homologyFunctor A _ (p + q)).mapIso (cokernelFiltrationFunctorMapIso R hX _)).hom` is
+  -- definitionally `homologyMap (gradedShortComplexHom R hX q).τ₃ (p + q)`, and the inverse of the
+  -- `Iso.trans` above agrees with the composite of inverses only up to unfolding.
+  refine (Category.assoc _ _ _).trans ?_
+  refine (Category.assoc _ _ _).trans ?_
+  refine (Category.assoc _ _ _).trans ?_
+  exact congrArg (_ ≫ ·) (congrArg (_ ≫ ·) (congrArg (_ ≫ ·) (Category.assoc _ _ _)))
 
 end FirstDifferential
 
