@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Basic
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Basic
 public import TauCeti.AlgebraicTopology.Singular.IntervalGenerator
+import TauCeti.Algebra.Group.ZMultiples
 
 /-!
 # Comparison of the two Hurewicz maps in degree one
@@ -37,6 +38,11 @@ homology of the singular chain complex.
 * `HomotopyGroup.hurewiczHom_hom_one_eq_neg_hurewiczHomologyAddEquiv`: the same, for a
   path-connected space, against the Hurewicz isomorphism
   `TauCeti.HurewiczOne.hurewiczHomologyAddEquiv`.
+* `HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom_abelianization`: for a
+  path-connected space, the Hurewicz class of a loop generates `H₁(X; ℤ)` freely exactly when
+  the abelianized class of the loop generates the abelianization of `π₁(X, x)` freely.
+* `HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom_of_commute`: when `π₁(X, x)` is
+  moreover commutative, exactly when the class of the loop generates `π₁(X, x)` freely.
 -/
 
 public section
@@ -182,5 +188,63 @@ theorem hurewiczHom_hom_one_eq_neg_hurewiczHomologyAddEquiv [PathConnectedSpace 
   refine (hurewiczHom_hom_one_eq_neg_hurewicz₁ a).trans (congrArg Neg.neg ?_)
   exact (congrArg (H₁AddEquivHomology (TopCat.of X)) (hurewiczAb_ofMul_of x _).symm).trans
     (hurewiczHomologyAddEquiv_apply _).symm
+
+/-- **The Hurewicz class of a loop generates exactly when its abelianized class does.** For a
+path-connected space, the Hurewicz class of a loop `p` is an isomorphism `ℤ ≅ H₁(X; ℤ)` exactly
+when the image of its class in the abelianization of `π₁(X, x)` generates it freely:
+`k ↦ k • [p]` is bijective. -/
+theorem isIso_hurewicz_iff_bijective_zmultiplesHom_abelianization [PathConnectedSpace X]
+    (p : Ω^ (Fin 1) X x) :
+    IsIso (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p) ↔
+      Function.Bijective
+        (zmultiplesHom (Additive (Group.Abelianization (HomotopyGroup (Fin 1) X x)))
+          (Additive.ofMul (Group.Abelianization.of ⟦p⟧))) := by
+  -- Minus the Hurewicz isomorphism, read on `π₁(X, x)`, sends the class of `p` to its Hurewicz
+  -- class.
+  let e : Additive (Group.Abelianization (HomotopyGroup (Fin 1) X x)) ≃+
+      ((singularChains ℤ).obj (TopCat.of X)).homology 1 :=
+    ((pi1MulEquivFundamentalGroup (X := X) (x := x)).abelianizationCongr.toAdditive.trans
+      (hurewiczHomologyAddEquiv (X := TopCat.of X) x)).trans
+        (AddEquiv.neg (((singularChains ℤ).obj (TopCat.of X)).homology 1))
+  have he : e (Additive.ofMul (Group.Abelianization.of ⟦p⟧)) =
+      (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom 1 := by
+    refine Eq.trans ?_ ((hurewiczHom_hom_one_eq_neg_hurewiczHomologyAddEquiv
+      (Additive.ofMul ⟦p⟧)).symm.trans (congrArg (fun f ↦ ModuleCat.Hom.hom f 1)
+        ((hurewiczHom_apply _ 0 _).trans (hurewicz_mk _ 0 p))))
+    simp only [e, AddEquiv.trans_apply, MulEquiv.toAdditive_apply_apply, toMul_ofMul,
+      AddEquiv.neg_apply]
+    -- `pi1MulEquivFundamentalGroup` and `homotopyGroupOfUniqueMulEquivFundamentalGroup (Fin 1)`
+    -- have the same underlying equivalence `pi1EquivFundamentalGroup`; they differ only in the
+    -- decidable equality on `Fin 1` behind the group law, which is why `e` uses the former.
+    rfl
+  have h : ⇑(GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom =
+      e ∘ zmultiplesHom (Additive (Group.Abelianization (HomotopyGroup (Fin 1) X x)))
+        (Additive.ofMul (Group.Abelianization.of ⟦p⟧)) := by
+    funext t
+    have ht : (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom t =
+        t • (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom 1 := by
+      rw [← map_zsmul, smul_eq_mul, mul_one]
+    rw [ht, Function.comp_apply, zmultiplesHom_apply, map_zsmul, he]
+    -- The two sides are the same multiple, taken in the two descriptions of `H₁(X; ℤ)`: the value
+    -- of the singular homology functor and the homology of the singular chain complex.
+    rfl
+  rw [ConcreteCategory.isIso_iff_bijective, h]
+  exact e.bijective.of_comp_iff' _
+
+/-- **The Hurewicz class of a loop generates exactly when its homotopy class does**, for a
+path-connected space whose fundamental group is commutative, such as a path-connected loop space:
+the Hurewicz class of a loop `p` is an isomorphism `ℤ ≅ H₁(X; ℤ)` exactly when the class of `p`
+generates `π₁(X, x)` freely. This is the degree-one analogue of
+`HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom`, under the extra hypothesis that
+`π₁(X, x)` is commutative. -/
+theorem isIso_hurewicz_iff_bijective_zmultiplesHom_of_commute [PathConnectedSpace X]
+    (hX : ∀ a b : HomotopyGroup (Fin 1) X x, a * b = b * a) (p : Ω^ (Fin 1) X x) :
+    IsIso (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p) ↔
+      Function.Bijective
+        (zmultiplesHom (Additive (HomotopyGroup (Fin 1) X x)) (Additive.ofMul ⟦p⟧)) := by
+  let _ : CommGroup (HomotopyGroup (Fin 1) X x) := { mul_comm := hX }
+  rw [isIso_hurewicz_iff_bijective_zmultiplesHom_abelianization]
+  exact (Group.Abelianization.equivOfComm (H := HomotopyGroup (Fin 1) X x)).toAdditive
+    |>.bijective_zmultiplesHom_apply_iff (Additive.ofMul ⟦p⟧)
 
 end HomotopyGroup

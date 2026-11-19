@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.PosDef
-public import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
+public import TauCeti.LinearAlgebra.Matrix.BilinearForm
+import Mathlib.LinearAlgebra.Determinant
 
 /-!
 # Ratios of Gram determinants

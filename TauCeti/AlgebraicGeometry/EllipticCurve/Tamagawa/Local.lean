@@ -54,8 +54,7 @@ elliptic curve over a field `F` that is complete with respect to `v`, or more ge
 with perfect residue field, this is the local Tamagawa number `c_v`. Over other fields it is the
 index over `F` itself, which can be smaller than `c_v`; for a global field, apply it to the
 completion, as `WeierstrassCurve.tamagawaNumberAt` does. -/
-noncomputable def tamagawaNumber (E : WeierstrassCurve F)
-    (v : Valuation F Γ₀) [IsDiscreteValuationRing v.valuationSubring] : ℕ :=
+noncomputable def tamagawaNumber : ℕ :=
   ((E.minimal v.valuationSubring).toAffine.nonsingularReduction v).index
 
 open scoped Classical in
@@ -99,6 +98,21 @@ theorem tamagawaNumber_smul (C : VariableChange F) :
   obtain ⟨D, hD⟩ := exists_smul_eq_minimal v.valuationSubring (C • E)
   exact (tamagawaNumber_def (C • E) v).trans
     (tamagawaNumber_eq_index_of_isMinimal_smul E v (D * C) (by rw [mul_smul, hD])).symm
+
+/-- Equivalent valuations define the same Tamagawa number. -/
+theorem tamagawaNumber_congr {Γ₀' : Type*} [LinearOrderedCommGroupWithZero Γ₀']
+    {v' : Valuation F Γ₀'} [IsDiscreteValuationRing v'.valuationSubring] (h : v.IsEquiv v') :
+    E.tamagawaNumber v = E.tamagawaNumber v' := by
+  classical
+  obtain ⟨C, hC⟩ := E.exists_smul_eq_minimal v.valuationSubring
+  have hmin : ∀ (T : ValuationSubring F) [IsDiscreteValuationRing T],
+      v.valuationSubring = T → IsMinimal T (E.minimal v.valuationSubring) := by
+    rintro T _ rfl
+    infer_instance
+  have : IsMinimal v'.valuationSubring (E.minimal v.valuationSubring) :=
+    hmin v'.valuationSubring ((Valuation.isEquiv_iff_valuationSubring v v').1 h)
+  rw [tamagawaNumber_def, tamagawaNumber_eq_index_of_isMinimal_smul E v' C hC,
+    Affine.nonsingularReduction_congr _ h]
 
 omit [E.IsElliptic] in
 /-- Good reduction contributes a factor of one. -/
