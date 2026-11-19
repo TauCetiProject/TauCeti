@@ -117,23 +117,6 @@ private theorem exists_add_beltramiOperator_eq (hα : 0 < α) (hα1 : α < 1) (h
       _ ≤ ‖μ‖ + 4⁻¹ * ‖k‖ := by gcongr
   linarith [norm_nonneg μ]
 
-/-- Regularity of `T h` for a source supported in the disc: it is `C¹` on `ball c (r + 1)` with
-`\bar∂ T h = h` there, and on the disc its real derivative is the bounded derivative operator
-applied to `h`. -/
-private theorem cauchy_regularity (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r)
-    (h : supportedHolderSubmodule (Y := ℂ) α (closedBall c r)) :
-    let T : ℂ → ℂ := fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • (h : HolderSpace α ℂ ℂ) z
-    ContDiffOn ℝ 1 T (ball c (r + 1)) ∧
-      (∀ z ∈ ball c (r + 1), conjWirtingerDeriv T z 1 = (h : HolderSpace α ℂ ℂ) z) ∧
-      ∀ z (hz : z ∈ closedBall c r), fderiv ℝ T z = cauchyDerivativeCLM hα hα1 hr hr h ⟨z, hz⟩ := by
-  obtain ⟨C₀, hC₀⟩ :=
-    exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul (F := ℂ) hα hα1 c hr hr
-  obtain ⟨hTC, -, -, hTbar⟩ := hC₀ (f := (h : HolderSpace α ℂ ℂ))
-    (M := ‖(h : HolderSpace α ℂ ℂ).toBoundedContinuousFunction‖₊)
-    (support_subset_of_mem_supportedHolderSubmodule h.2) (h : HolderSpace α ℂ ℂ).holderWith
-    (fun z ↦ by simpa using (h : HolderSpace α ℂ ℂ).toBoundedContinuousFunction.norm_coe_le_norm z)
-  exact ⟨hTC, hTbar, fun z hz ↦ (cauchyDerivativeCLM_apply hα hα1 hr hr h ⟨z, hz⟩).symm⟩
-
 /-- If the real derivative of `ψ` on the disc is the identity plus the bounded derivative operator
 `D` applied to a source `h`, then it is `α`-Hölder there with constant `‖D h‖`. -/
 private theorem holderOnWith_fderiv_of_eq_id_add (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r)
@@ -193,8 +176,16 @@ theorem exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv (hα : 0 < α) (hα1 : �
     nlinarith [norm_nonneg μ, mul_nonneg hD (norm_nonneg μ)]
   obtain ⟨h, hfix, hh⟩ := exists_add_beltramiOperator_eq hα hα1 hr μ' hA
   rw [hμ'] at hh
-  obtain ⟨hTC, hTbar, hDT⟩ := cauchy_regularity hα hα1 hr h
   set T : ℂ → ℂ := fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • (h : HolderSpace α ℂ ℂ) z
+  have hT : cauchyTransform (h : HolderSpace α ℂ ℂ) = T := funext (cauchyTransform_apply _)
+  have hTC : ContDiffOn ℝ 1 T (ball c (r + 1)) := by
+    rw [← hT]
+    exact (contDiff_cauchyTransform_of_mem_supportedHolderSubmodule hα hα1 hr h.2).contDiffOn
+  have hTbar : ∀ z, conjWirtingerDeriv T z 1 = (h : HolderSpace α ℂ ℂ) z := by
+    rw [← hT]
+    exact conjWirtingerDeriv_cauchyTransform_of_mem_supportedHolderSubmodule hα hα1 hr h.2
+  have hDT : ∀ z (hz : z ∈ closedBall c r), fderiv ℝ T z = D h ⟨z, hz⟩ := fun z hz ↦
+    (cauchyDerivativeCLM_apply hα hα1 hr hr h ⟨z, hz⟩).symm
   have hsub : closedBall c r ⊆ ball c (r + 1) := closedBall_subset_ball (by linarith)
   have hTd : ∀ z ∈ ball c (r + 1), DifferentiableAt ℝ T z := fun z hz ↦
     (hTC.contDiffAt (isOpen_ball.mem_nhds hz)).differentiableAt one_ne_zero
@@ -223,7 +214,7 @@ theorem exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv (hα : 0 < α) (hα1 : �
   have hψbar : ∀ z ∈ ball c (r + 1), conjWirtingerDeriv (id + T) z 1 = (h : HolderSpace α ℂ ℂ) z :=
     fun z hz ↦ by
       rw [conjWirtingerDeriv_add differentiableAt_id (hTd z hz), conjWirtingerDeriv_id, zero_add]
-      exact hTbar z hz
+      exact hTbar z
   refine ⟨h, h.2, hh, contDiffOn_id.add hTC, hψbar, fun z hz ↦ ?_, fun z hz ↦ ?_,
     ?_, fun z hz ↦ ?_⟩
   · rw [hψT, hψbar z hz,
