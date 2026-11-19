@@ -14,6 +14,7 @@ import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Adjoint
 import TauCeti.MeasureTheory.Measure.LocallyNull
+import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
 # `Lᵖ` boundedness of uniform symbols of order zero
@@ -176,15 +177,6 @@ private theorem IsUniform.exists_integralOperator_truncKernel (ha : a.IsUniform)
 
 /-! ### Kernel representation of the `L²` extension and of its adjoint -/
 
-/-- If the `δ`-thickenings of `A` and `s` are disjoint, every point of `A` is at distance at least
-`δ / 2` from the closed `δ / 2`-thickening of `s`. -/
-private theorem half_le_dist_of_disjoint_thickening {X : Type*} [PseudoMetricSpace X]
-    {A s : Set X} {δ : ℝ} (hδ : 0 < δ) (h : Disjoint (thickening δ A) (thickening δ s)) {x y : X}
-    (hx : x ∈ A) (hy : y ∈ cthickening (δ / 2) s) : δ / 2 ≤ dist x y := by
-  by_contra! hxy
-  exact disjoint_left.1 h (mem_thickening_iff.2 ⟨x, hx, by rw [dist_comm]; linarith⟩)
-    (cthickening_subset_thickening' hδ (half_lt_self hδ) s hy)
-
 variable {T : Lp V 2 (volume : Measure (CoordinateSpace n)) →L[ℂ]
   Lp W 2 (volume : Measure (CoordinateSpace n))}
 
@@ -201,7 +193,7 @@ private theorem IsUniform.ae_restrict_eq_integral_offDiagonalKernel (ha : a.IsUn
   set B := cthickening (δ / 2) s
   have hB : IsCompact B := hs.cthickening
   have hsep : ∀ x ∈ A, ∀ y ∈ B, δ / 2 ≤ dist x y := fun _ hx _ hy ↦
-    half_le_dist_of_disjoint_thickening hδ hdisj hx hy
+    hdisj.half_le_dist_of_mem_cthickening hδ hx hy
   obtain ⟨R, hR, -⟩ := ha.exists_integralOperator_truncKernel hA.measurableSet hA.isBounded
     hB.measurableSet hB.isBounded (half_pos hδ) hsep
   -- On `A`, `R g` is given by the kernel for every `g` vanishing outside `B`.
@@ -268,7 +260,7 @@ private theorem IsUniform.adjoint_ae_restrict_eq_integral_offDiagonalKernel (ha 
   set B := cthickening (δ / 2) A
   have hB : IsCompact B := hA.cthickening
   have hsep : ∀ x ∈ s, ∀ y ∈ B, δ / 2 ≤ dist x y := fun _ hx _ hy ↦
-    half_le_dist_of_disjoint_thickening hδ hdisj.symm hx hy
+    hdisj.symm.half_le_dist_of_mem_cthickening hδ hx hy
   obtain ⟨R, hR, hR'⟩ := ha.exists_integralOperator_truncKernel hs.measurableSet hs.isBounded
     hB.measurableSet hB.isBounded (half_pos hδ) hsep
   -- `T φ = R φ` on `s` for every `φ` vanishing outside `A`.
