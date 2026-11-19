@@ -123,8 +123,8 @@ theorem continuousLinearMapAt_trivializationAt_self (x : M) (p : TangentSpace I 
   rw [hom_trivializationAt_apply]
   exact inCoordinates_self x p
 
-/-- **The fibre over a point is smoothly embedded.** The covectors at a fixed point `x` form a
-smooth family: the inclusion of the fibre over `x` into the cotangent bundle is smooth. -/
+/-- **The inclusion of a fibre is smooth.** The covectors at a fixed point `x` form a smooth
+family: the inclusion of the fibre over `x` into the cotangent bundle is smooth. -/
 theorem contMDiff_mk (x : M) {n : WithTop ℕ∞} :
     ContMDiff 𝓘(𝕜, E →L[𝕜] 𝕜) (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) n
       fun p : E →L[𝕜] 𝕜 ↦
