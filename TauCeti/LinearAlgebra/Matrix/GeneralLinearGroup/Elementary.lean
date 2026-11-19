@@ -213,6 +213,21 @@ theorem coe_blockComplGL (g : GL (Tᶜ : Set n) A) :
         (Equiv.Set.sumCompl T).symm (Equiv.Set.sumCompl T).symm := by
   simp [blockComplGL]
 
+/-- The entries of `blockComplGL A T g`: those of `g` outside `T`, and those of the identity
+matrix in the rows and columns indexed by `T`. -/
+theorem coe_blockComplGL_apply (g : GL (Tᶜ : Set n) A) (i j : n) :
+    (blockComplGL A T g : Matrix n n A) i j =
+      if hij : i ∉ T ∧ j ∉ T then (g : Matrix (Tᶜ : Set n) (Tᶜ : Set n) A) ⟨i, hij.1⟩ ⟨j, hij.2⟩
+      else (1 : Matrix n n A) i j := by
+  rw [coe_blockComplGL]
+  by_cases hi : i ∈ T <;> by_cases hj : j ∈ T
+  · simp [hi, hj, Equiv.Set.sumCompl_symm_apply_of_mem, Matrix.one_apply, Subtype.ext_iff]
+  · simp [hi, hj, Equiv.Set.sumCompl_symm_apply_of_mem, Equiv.Set.sumCompl_symm_apply_of_notMem,
+      ne_of_mem_of_not_mem hi hj]
+  · simp [hi, hj, Equiv.Set.sumCompl_symm_apply_of_mem, Equiv.Set.sumCompl_symm_apply_of_notMem,
+      (ne_of_mem_of_not_mem hj hi).symm]
+  · simp [hi, hj, Equiv.Set.sumCompl_symm_apply_of_notMem]
+
 variable (A T) in
 /-- The block diagonal embedding `g ↦ diag(1, g)` is injective. -/
 theorem blockComplGL_injective : Function.Injective (blockComplGL A T) := by

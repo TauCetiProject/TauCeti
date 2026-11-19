@@ -282,48 +282,33 @@ section Square
 
 variable [Ring R] (T : Set n) [DecidablePred (· ∈ T)]
 
-/-- Membership in the square group `G^(T,T)` through the block decomposition along `T` and its
-complement: the three blocks touching `T` are those of the identity matrix. -/
-private theorem mem_vanDerKallenSubgroup_self_iff_toBlocks (g : GL n R) :
-    g ∈ vanDerKallenSubgroup R T T ↔
-      ∃ D : Matrix (Tᶜ : Set n) (Tᶜ : Set n) R,
-        ↑((Equiv.Set.sumCompl T).symm.reindexGL R g) = fromBlocks (1 : Matrix T T R) 0 0 D := by
+/-- A matrix of the square group `G^(T,T)`, decomposed into blocks along `T` and its complement,
+has the identity matrix as its three blocks touching `T`. -/
+private theorem exists_reindexGL_eq_fromBlocks_of_mem {g : GL n R}
+    (hg : g ∈ vanDerKallenSubgroup R T T) :
+    ∃ D : Matrix (Tᶜ : Set n) (Tᶜ : Set n) R,
+      ↑((Equiv.Set.sumCompl T).symm.reindexGL R g) = fromBlocks (1 : Matrix T T R) 0 0 D := by
   set g' : Matrix (T ⊕ (Tᶜ : Set n)) (T ⊕ (Tᶜ : Set n)) R :=
     ↑((Equiv.Set.sumCompl T).symm.reindexGL R g)
-  rw [mem_vanDerKallenSubgroup_iff_apply]
-  constructor
-  · rintro ⟨hP, hQ⟩
-    refine ⟨g'.toBlocks₂₂, ?_⟩
-    conv_lhs => rw [← fromBlocks_toBlocks g']
-    congr 1 <;> ext i j
-    · simpa [g', toBlocks₁₁, Matrix.one_apply, Subtype.ext_iff] using hQ i i.2 j
-    · simpa [g', toBlocks₁₂, Matrix.one_apply, ne_of_mem_of_not_mem i.2 j.2] using hQ i i.2 j
-    · simpa [g', toBlocks₂₁, Matrix.one_apply, (ne_of_mem_of_not_mem j.2 i.2).symm] using
-        hP j j.2 i
-  · rintro ⟨D, hD⟩
-    -- an entry in a row or column indexed by `T` lies in one of the identity blocks
-    have hT (i j : n) (h : i ∈ T ∨ j ∈ T) : (g : Matrix n n R) i j = (1 : Matrix n n R) i j := by
-      have key : (g : Matrix n n R) i j =
-          fromBlocks 1 0 0 D ((Equiv.Set.sumCompl T).symm i) ((Equiv.Set.sumCompl T).symm j) := by
-        simp [← hD, g']
-      rw [key]
-      by_cases hi : i ∈ T <;> by_cases hj : j ∈ T
-      · simp [hi, hj, Equiv.Set.sumCompl_symm_apply_of_mem, Matrix.one_apply, Subtype.ext_iff]
-      · simp [hi, hj, Equiv.Set.sumCompl_symm_apply_of_mem,
-          Equiv.Set.sumCompl_symm_apply_of_notMem, ne_of_mem_of_not_mem hi hj]
-      · simp [hi, hj, Equiv.Set.sumCompl_symm_apply_of_mem,
-          Equiv.Set.sumCompl_symm_apply_of_notMem, (ne_of_mem_of_not_mem hj hi).symm]
-      · exact absurd h (by simp [hi, hj])
-    exact ⟨fun j hj i ↦ hT i j (.inr hj), fun i hi j ↦ hT i j (.inl hi)⟩
+  obtain ⟨hP, hQ⟩ := mem_vanDerKallenSubgroup_iff_apply.1 hg
+  refine ⟨g'.toBlocks₂₂, ?_⟩
+  conv_lhs => rw [← fromBlocks_toBlocks g']
+  congr 1 <;> ext i j
+  · simpa [g', toBlocks₁₁, Matrix.one_apply, Subtype.ext_iff] using hQ i i.2 j
+  · simpa [g', toBlocks₁₂, Matrix.one_apply, ne_of_mem_of_not_mem i.2 j.2] using hQ i i.2 j
+  · simpa [g', toBlocks₂₁, Matrix.one_apply, (ne_of_mem_of_not_mem j.2 i.2).symm] using
+      hP j j.2 i
 
 /-- The block diagonal matrices `diag(1, g)` are exactly the square group `G^(T,T)`. -/
 theorem range_blockComplGL : (blockComplGL R T).range = vanDerKallenSubgroup R T T := by
   ext g
-  rw [MonoidHom.mem_range, mem_vanDerKallenSubgroup_self_iff_toBlocks]
   constructor
   · rintro ⟨g', rfl⟩
-    exact ⟨g', by rw [reindexGL_symm_blockComplGL, coe_fromBlocksGL, Units.val_one]⟩
-  · rintro ⟨D, hD⟩
+    exact mem_vanDerKallenSubgroup_iff_apply.2
+      ⟨fun j hj i ↦ by simp [coe_blockComplGL_apply, hj],
+        fun i hi j ↦ by simp [coe_blockComplGL_apply, hi]⟩
+  · intro hg
+    obtain ⟨D, hD⟩ := exists_reindexGL_eq_fromBlocks_of_mem (R := R) (T := T) hg
     obtain ⟨u, -, hu⟩ := exists_fromBlocksGL_one_eq hD
     refine ⟨u, ((Equiv.Set.sumCompl T).symm.reindexGL R).injective ?_⟩
     rw [reindexGL_symm_blockComplGL, hu]
@@ -339,6 +324,7 @@ variable {R T}
 
 /-- The inverse of `vanDerKallenSubgroupEquiv` is the block diagonal embedding
 `g ↦ diag(1, g)`. -/
+@[simp]
 theorem coe_vanDerKallenSubgroupEquiv_symm (g : GL (Tᶜ : Set n) R) :
     ((vanDerKallenSubgroupEquiv R T).symm g : GL n R) = blockComplGL R T g := by
   simp [vanDerKallenSubgroupEquiv, MonoidHom.ofInjective_apply]
@@ -349,14 +335,7 @@ theorem coe_vanDerKallenSubgroupEquiv_symm_apply (g : GL (Tᶜ : Set n) R) (i j 
     (((vanDerKallenSubgroupEquiv R T).symm g : GL n R) : Matrix n n R) i j =
       if hij : i ∉ T ∧ j ∉ T then (g : Matrix (Tᶜ : Set n) (Tᶜ : Set n) R) ⟨i, hij.1⟩ ⟨j, hij.2⟩
       else (1 : Matrix n n R) i j := by
-  rw [coe_vanDerKallenSubgroupEquiv_symm, coe_blockComplGL]
-  by_cases hi : i ∈ T <;> by_cases hj : j ∈ T
-  · simp [hi, hj, Equiv.Set.sumCompl_symm_apply_of_mem, Matrix.one_apply, Subtype.ext_iff]
-  · simp [hi, hj, Equiv.Set.sumCompl_symm_apply_of_mem, Equiv.Set.sumCompl_symm_apply_of_notMem,
-      ne_of_mem_of_not_mem hi hj]
-  · simp [hi, hj, Equiv.Set.sumCompl_symm_apply_of_mem, Equiv.Set.sumCompl_symm_apply_of_notMem,
-      (ne_of_mem_of_not_mem hj hi).symm]
-  · simp [hi, hj, Equiv.Set.sumCompl_symm_apply_of_notMem]
+  rw [coe_vanDerKallenSubgroupEquiv_symm, coe_blockComplGL_apply]
 
 /-- `vanDerKallenSubgroupEquiv` sends a matrix of `G^(T,T)` to its block of the coordinates
 outside `T`. -/
