@@ -104,17 +104,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   [mu.IsAddHaarMeasure] {lam Lam : ℝ} {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
 
-/-- The density `⟨a ∇u, ∇w⟩` of the principal energy form is integrable on `Ω` for a measurable
-uniformly elliptic `a` and `u, w ∈ H¹(Ω)`. -/
-private theorem integrable_matrixBilinearForm_gradient
-    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (ha : AEStronglyMeasurable a (mu.restrict Omega)) (u w : W1p mu Omega 2) :
-    Integrable (fun x => matrixBilinearForm (a x) (W1p.gradient w x) (W1p.gradient u x))
-      (mu.restrict Omega) := by
-  simpa using h.integrable_energyIntegrand_jetField ha (b := 0) (c := 0) (beta := 0)
-    (gamma := 0) aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
-    (fun _ _ => by simp) u w
-
 /-- The pointwise step of the test-function argument: for `ε > 0`, the energy density of `u`
 against `min(u⁺, ε v) = u⁺ - (u⁺ - ε v)⁺` dominates `ε` times the density of `u` against `v` cut
 off to `{u⁺ > ε v}`. -/
@@ -228,8 +217,8 @@ private theorem setIntegral_indicator_matrixBilinearForm_le
   have htest := hu ⟨_, hmem⟩ hm0
   rw [energyFormH1_zero_zero_eq_setIntegral] at htest
   have hle := (integral_mono_ae
-    (((integrable_matrixBilinearForm_gradient h ha u v).indicator hFm).const_mul ε)
-    (integrable_matrixBilinearForm_gradient h ha u _)
+    (((h.integrable_matrixBilinearForm_gradient ha u v).indicator hFm).const_mul ε)
+    (h.integrable_matrixBilinearForm_gradient ha u _)
     (mul_indicator_le_matrixBilinearForm_gradient h u v)).trans (htest.trans hfm)
   rw [integral_const_mul] at hle
   exact le_of_mul_le_mul_left hle hε
@@ -254,7 +243,7 @@ theorem energyFormH1_posPart_left_le_setIntegral
       ∫ x in Omega, max (f x) 0 * W1p.value v x ∂mu := by
   set g : EuclideanSpace ℝ ι → ℝ :=
     fun x => matrixBilinearForm (a x) (W1p.gradient v x) (W1p.gradient u x)
-  have hg : Integrable g (mu.restrict Omega) := integrable_matrixBilinearForm_gradient h ha u v
+  have hg : Integrable g (mu.restrict Omega) := h.integrable_matrixBilinearForm_gradient ha u v
   have hFm (ε : ℝ) : MeasurableSet {x | ε * W1p.value v x < max (W1p.value u x) 0} :=
     measurableSet_lt ((Lp.stronglyMeasurable (W1p.value v)).measurable.const_mul ε)
       ((Lp.stronglyMeasurable (W1p.value u)).measurable.max measurable_const)
@@ -409,7 +398,7 @@ private theorem exists_uniformlyEllipticOn_top_extendByZeroL_posPart
   -- The values of the extension: `u⁺` on `Ω` and `0` off `Ω`.
   have hval : ∀ᵐ x ∂mu, W1p.value ub x =
       (Omega : Set (EuclideanSpace ℝ ι)).indicator (fun y => max (W1p.value u y) 0) x := by
-    have hext := coeFn_extendByZeroLpₗᵢ ℝ hOm
+    have hext := coeFn_extendByZeroLpₗᵢ ℝ hOm.nullMeasurableSet
       (SetLike.coe_subset_coe.mpr (le_top : Omega ≤ ⊤)) (W1p.value (W1p.posPart (p := 2)
         (mu := mu) (Omega := Omega) (by norm_num) u))
     simp only [Opens.coe_top, Measure.restrict_univ] at hext
@@ -450,7 +439,7 @@ private theorem energyFormH1_restrictL_sub_nonpos [Nonempty ι] {U : Opens (Eucl
     (fun _x hx eta xi => h'.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
   -- The zero extension `v₀` of `v` is a nonnegative test function on the whole space, and
   -- `g v₀` is integrable.
-  have hext := coeFn_extendByZeroLpₗᵢ ℝ hUm (SetLike.coe_subset_coe.mpr hU)
+  have hext := coeFn_extendByZeroLpₗᵢ ℝ hUm.nullMeasurableSet (SetLike.coe_subset_coe.mpr hU)
     (W1p.value (v : W1p mu U 2))
   have hvt : ∀ᵐ x ∂mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)),
       0 ≤ W1p.value (W1p0.extendByZeroL hU v : W1p mu ⊤ 2) x := by

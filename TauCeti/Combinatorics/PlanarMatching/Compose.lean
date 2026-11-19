@@ -35,7 +35,8 @@ single circle and `cap ≫ cup` is the generator `e₁ : 2 → 2`, and the ident
 ## Main results
 
 * `TauCeti.TLDiagram.comp_id`, `TauCeti.TLDiagram.id_comp`: the identity diagrams are units for
-  composition.
+  composition, and `TauCeti.TLDiagram.comp_cast_id`, `TauCeti.TLDiagram.cast_id_comp`: composing
+  with a transported identity diagram transports.
 * `TauCeti.TLDiagram.cup_comp_cap`, `TauCeti.TLDiagram.cap_comp_cup_matching_val`: a cup followed
   by a cap is one circle, and a cap followed by a cup has the matching of `e₁`.
 
@@ -96,6 +97,20 @@ theorem id_comp (f : TLDiagram n m) : (id n).comp f = f := by
   · rw [matching_comp, matching_id, PlanarMatching.glueMiddle_nested_append]
   · rw [circles_comp, matching_id, PlanarMatching.glueMiddleCircles_nested_append, circles_id,
       zero_add, add_zero]
+
+/-- Composing with a transported identity diagram on the right transports the diagram. -/
+@[simp]
+theorem comp_cast_id {m' : ℕ} (f : TLDiagram n m) (h : m = m') :
+    f.comp (cast rfl h (id m)) = cast rfl h f := by
+  subst h
+  simp
+
+/-- Composing with a transported identity diagram on the left transports the diagram. -/
+@[simp]
+theorem cast_id_comp {n' : ℕ} (h : n = n') (f : TLDiagram n' m) :
+    (cast rfl h (id n)).comp f = cast h.symm rfl f := by
+  subst h
+  simp
 
 private theorem val_mk_eq_mk_iff {K : ℕ} (x : PlanarMatching K) {q r : ℕ} (hq : q < K)
     (hr : r < K) : x.1.val ⟨q, hq⟩ = ⟨r, hr⟩ ↔ PlanarMatching.pv x q = r := by

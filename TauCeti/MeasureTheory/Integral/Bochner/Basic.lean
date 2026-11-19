@@ -41,6 +41,8 @@ for set and probability integrals.
 * `TauCeti.MeasureTheory.enorm_integral_sub_integral_le_lintegral_enorm_sub` bounds the difference
   of two integrals by the integral of the norm of the difference, with no integrability
   assumption.
+* `TauCeti.MeasureTheory.norm_integral_le_of_eLpNorm_one_le` bounds the norm of an integral by any
+  real bound on the `L¹` norm of the integrand.
 
 ## Counting measures of multisets
 
@@ -295,6 +297,14 @@ theorem enorm_integral_sub_integral_le_lintegral_enorm_sub {α E : Type*} [Measu
   · have hui : ¬Integrable u μ := fun hui =>
       hvi ((hui.sub huv).congr (.of_forall fun x => by simp))
     simp [integral_undef hui, integral_undef hvi]
+
+/-- An integral is bounded in norm by any real bound on the `L¹` norm of the integrand. -/
+theorem norm_integral_le_of_eLpNorm_one_le {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : α → E} {ε : ℝ} (hε : 0 ≤ ε)
+    (h : eLpNorm f 1 μ ≤ ENNReal.ofReal ε) : ‖∫ x, f x ∂μ‖ ≤ ε := by
+  have h1 := eNorm_integral_le_lintegral_eNorm (μ := μ) f
+  rw [← ofReal_norm] at h1
+  exact (ENNReal.ofReal_le_ofReal_iff hε).1 (h1.trans (lintegral_eNorm_le_eLpNorm_one.trans h))
 
 /-- An even function obtained by composing with absolute value is integrable on the whole real
 line whenever the original function is integrable on the positive half-line. -/

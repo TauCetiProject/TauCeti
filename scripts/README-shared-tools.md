@@ -3,16 +3,19 @@
 Reusable Python and shell implementations live in TauCetiProject/TauCetiTools. Every TauCeti
 workflow, script and service uses TauCetiTools `main`: `tauceti.toml` says `ref = "main"`, and
 workflows write `@main`. CI prepares the trusted project or gate checkout
-with the setup action before invoking scripts. Local Python callers need `tauceti-tools`
-installed; shell entrypoints run the same `main` through uvx. To prepare all helpers locally:
+with the setup action before invoking scripts. The implementations are not checked in here:
+only `check-expired-mathlib-shims.py`, `lint-env.sh`, `lake-cache-get.sh` and
+`toolchain_tags.py` remain as thin callers, for tools that run them from a plain checkout.
+To prepare all helpers locally:
 
 ```sh
 uv tool install git+https://github.com/TauCetiProject/TauCetiTools@main
 tauceti-tools materialize scripts --conf tauceti.toml --policy-dir scripts
 ```
 
-Materialization is a local generated change: do not commit generated implementations over the
-thin callers. Project policy files (`*.txt`, `*.json`) stay here and override supplied defaults.
+Materialization is a local generated change: do not commit the materialized files, including
+those over the remaining thin callers. Project policy files (`*.txt`, `*.json`) stay here and
+override supplied defaults.
 Lean drivers and static data remain checked in so direct Lake commands work from a checkout.
 A change to common tooling is a TauCetiTools PR, and it reaches TauCeti when it merges.
 Review and progress pins, runner selection and merge policy are separate.
