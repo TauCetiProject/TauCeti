@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
 import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+import TauCeti.Algebra.Group.Subgroup.Normalizer
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.GroupTheory.Solvable
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
@@ -90,10 +91,8 @@ theorem closure_setOfPred_trace_ne_zero_eq_top (H : Subgroup (GL (Fin 2) K))
   apply hH
   have htr (x : H) (hx : x ∉ N) : trace ((x : GL (Fin 2) K) : Matrix (Fin 2) (Fin 2) K) = 0 :=
     not_not.mp fun h ↦ hx (subset_closure h)
-  have : N.Normal := ⟨fun n hn g ↦ by
-    have hle : N ≤ N.comap (MulAut.conj g).toMonoidHom := (closure_le _).mpr fun y hy ↦
-      subset_closure (by simpa [trace_conj (g : GL (Fin 2) K).isUnit] using hy)
-    simpa using hle hn⟩
+  have : N.Normal := closure_normal_of_forall_conj_mem fun g y hy ↦ by
+    simpa [trace_conj (g : GL (Fin 2) K).isUnit] using hy
   -- `Z` is the subgroup of scalar matrices in `H`.
   set Z := (center (GL (Fin 2) K)).comap H.subtype
   have hZ (z : H) (hz : z ∈ Z) (y : H) : z * y = y * z :=
