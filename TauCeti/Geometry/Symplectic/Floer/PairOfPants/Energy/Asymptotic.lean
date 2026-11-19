@@ -8,8 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Bochner.Set
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 /-!
 # The energy identity on the whole pair of pants
@@ -99,22 +99,18 @@ theorem tendsto_intervalIntegral_endLoop {M : Type*} [TopologicalSpace M]
     Tendsto (fun R : ℝ ↦ ∫ t in (0 : ℝ)..1, H q t (u (Complex.equivRealProdCLM
         (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))))) atTop
       (𝓝 (∫ t in (0 : ℝ)..1, H q t (x t))) := by
-  refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence (fun _ ↦ B q) ?_
-    (Eventually.of_forall fun R ↦ ae_of_all _ fun t _ ↦ (Real.norm_eq_abs _).trans_le (hB q _ _))
-    intervalIntegrable_const
-    (ae_of_all _ fun t _ ↦ ((hHc q).tendsto (t, x t)).comp (tendsto_const_nhds.prodMk_nhds (hx t)))
+  refine tendsto_intervalIntegral_comp_of_continuousOn (hHc q)
+    (fun _ ↦ (Real.norm_eq_abs _).trans_le (hB q _ _)) hu
+    (y := fun R t ↦ Complex.equivRealProdCLM
+      (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))
+    (Eventually.of_forall fun R ↦ (Complex.equivRealProdCLM.continuous.comp
+      ((q.contDiff_cylindricalEndLift 0).continuous.comp (by fun_prop))).continuousOn) ?_
+    fun t _ ↦ hx t
   -- For `R > 0` the circle `±s = R` lies in `S`, where `u` is continuous.
-  filter_upwards [eventually_gt_atTop 0] with R hR
-  have hmem (t : ℝ) : Complex.equivRealProdCLM
-      (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)) ∈ thricePuncturedSphereReal := by
-    rw [mem_thricePuncturedSphereReal_iff, ContinuousLinearEquiv.symm_apply_apply]
-    refine cylindricalEndLift_ne_zero_and_ne_one q ?_
-    rcases endSign_eq_one_or_eq_neg_one q with h | h <;> simp [h, hR]
-  have hloop : Continuous fun t : ℝ ↦ u (Complex.equivRealProdCLM
-      (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))) :=
-    hu.comp_continuous (Complex.equivRealProdCLM.continuous.comp
-      ((q.contDiff_cylindricalEndLift 0).continuous.comp (by fun_prop))) hmem
-  exact ((hHc q).comp (continuous_id.prodMk hloop)).aestronglyMeasurable
+  filter_upwards [eventually_gt_atTop 0] with R hR t _
+  rw [mem_thricePuncturedSphereReal_iff, ContinuousLinearEquiv.symm_apply_apply]
+  refine cylindricalEndLift_ne_zero_and_ne_one q ?_
+  rcases endSign_eq_one_or_eq_neg_one q with h | h <;> simp [h, hR]
 
 end Floer
 
