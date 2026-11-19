@@ -140,6 +140,7 @@ theorem compress_self_mul {q : M →L[R] M} (hq : IsIdempotentElem q) (p T : M �
 variable [IsTopologicalAddGroup M]
 
 /-- Compression is additive. -/
+@[simp]
 theorem compress_add (p q S T : M →L[R] M) :
     compress p q (S + T) = compress p q S + compress p q T := by
   ext x
@@ -152,6 +153,7 @@ theorem compress_neg (p q T : M →L[R] M) : compress p q (-T) = -compress p q T
   simp
 
 /-- Compression commutes with subtraction. -/
+@[simp]
 theorem compress_sub (p q S T : M →L[R] M) :
     compress p q (S - T) = compress p q S - compress p q T := by
   ext x
