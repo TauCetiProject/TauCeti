@@ -67,9 +67,9 @@ theorem subsingleton_deRhamCohomology_one_prod_univ_sup_univ_prod [SimplyConnect
   -- Both pieces are products of simply connected sets; as types, `U` and `V` are these products
   -- by definition of the coercion of an open set.
   have : SimplyConnectedSpace U :=
-    (hD.prod (isSimplyConnected_univ_iff.mpr ‹_›)).simplyConnectedSpace
+    (hD.prod (simplyConnectedSpace_iff_univ.mp ‹_›)).simplyConnectedSpace
   have : SimplyConnectedSpace V :=
-    ((isSimplyConnected_univ_iff.mpr ‹_›).prod hD').simplyConnectedSpace
+    ((simplyConnectedSpace_iff_univ.mp ‹_›).prod hD').simplyConnectedSpace
   -- They meet in `D × D'`, which is connected.
   have hUV : ((U ⊓ V : Opens (M × N)) : Set (M × N)) = (D : Set M) ×ˢ (D' : Set N) := by
     simp only [U, V, Opens.coe_inf, Opens.coe_mk, prod_inter_prod, inter_univ, univ_inter]
