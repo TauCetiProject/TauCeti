@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Skyscraper
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pushforward.Stalk
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Defs
 
 /-!
 # Skyscraper sheaves of modules
@@ -17,18 +17,11 @@ module over the stalk `R_x`. The skyscraper presheaf of modules
 sheaf of modules `TauCeti.SheafOfModules.skyscraper R x T`, right adjoint to the stalk at `x`:
 morphisms `M ⟶ x_* T` of sheaves of modules correspond to `R_x`-linear maps `M_x → T`.
 
-For a morphism of ringed spaces `(f, φ) : Y → X`, a point `y` of `Y` and an `𝒪_{Y,y}`-module `T`,
-the pushforward along `φ` of the skyscraper at `y` with value `T` is the skyscraper at `f y` with
-value `T`, an `𝒪_{X,f(y)}`-module by restriction of scalars along the stalk map of `(f, φ)`
-(`TauCeti.SheafOfModules.pushforwardSkyscraperIso`). Together with the adjunction between
-pullback and pushforward, this computes linear maps out of the stalks of a pulled-back module.
-
 ## Main declarations
 
 * `TauCeti.SheafOfModules.skyscraper`: the skyscraper sheaf of modules at `x` with value `T`;
 * `TauCeti.SheafOfModules.skyscraperHomEquiv`: `(M_x →ₗ[R_x] T) ≃ (M ⟶ x_* T)`, natural in `M`
-  (`TauCeti.SheafOfModules.skyscraperHomEquiv_naturality_left`);
-* `TauCeti.SheafOfModules.pushforwardSkyscraperIso`: `f_* (y_* T) ≅ (f y)_* T`.
+  (`TauCeti.SheafOfModules.skyscraperHomEquiv_naturality_left`).
 -/
 
 public section
@@ -42,8 +35,6 @@ namespace TauCeti
 noncomputable section
 
 namespace SheafOfModules
-
-section Skyscraper
 
 variable {X : TopCat.{u}} (R : Sheaf (Opens.grothendieckTopology X) CommRingCat.{u}) (x : X)
   (T : Type u) [AddCommGroup T] [Module ↑(TopCat.Presheaf.stalk R.obj x) T]
@@ -109,51 +100,6 @@ lemma skyscraperHomEquiv_naturality_left {M' : _root_.SheafOfModules.{u} (ringCa
       β ≫ skyscraperHomEquiv x T M g :=
   _root_.SheafOfModules.Hom.ext
     (PresheafOfModules.skyscraperHomEquiv_naturality_left (S := R.obj) x T M.val β.val g)
-
-end Skyscraper
-
-section Pushforward
-
-variable {X Y : TopCat.{u}} {𝒪X : Sheaf (Opens.grothendieckTopology X) CommRingCat.{u}}
-  {𝒪Y : Sheaf (Opens.grothendieckTopology Y) CommRingCat.{u}} {f : Y ⟶ X}
-  (φ : ringCatSheaf 𝒪X ⟶
-    ((Opens.map f).sheafPushforwardContinuous RingCat.{u} _ _).obj (ringCatSheaf 𝒪Y))
-  (y : Y) (T : Type u) [AddCommGroup T] [Module ↑(TopCat.Presheaf.stalk 𝒪Y.obj y) T]
-  [Module ↑(TopCat.Presheaf.stalk 𝒪X.obj (f y)) T]
-
-/-- The pushforward along `(f, φ)` of the skyscraper at `y` with value `T` is the skyscraper at
-`f y` with value `T`, for any `𝒪_{X,f(y)}`-module structure on `T` that is restriction of scalars
-along the stalk map `ringStalkMap φ y`. On sections over `U` both sides are `T` when `f y ∈ U` and
-`0` otherwise. -/
-def pushforwardSkyscraperIso (hT : ∀ (a : ↑(TopCat.Presheaf.stalk 𝒪X.obj (f y))) (t : T),
-      a • t = ringStalkMap φ y a • t) :
-    (_root_.SheafOfModules.pushforward φ).obj (skyscraper 𝒪Y y T) ≅ skyscraper 𝒪X (f y) T :=
-  (_root_.SheafOfModules.fullyFaithfulForget _).preimageIso
-    (_root_.PresheafOfModules.isoMk (fun U ↦ LinearEquiv.toModuleIso
-      (R := (ringCatSheaf 𝒪X).obj.obj U)
-      (X₁ := ((_root_.SheafOfModules.pushforward φ).obj (skyscraper 𝒪Y y T)).val.obj U)
-      (m₁ := ModuleCat.isModule _)
-      (X₂ := (skyscraper 𝒪X (f y) T).val.obj U) (m₂ := ModuleCat.isModule _)
-      { toFun s p := s ⟨p.down⟩
-        invFun s p := s ⟨p.down⟩
-        map_add' _ _ := rfl
-        map_smul' r s := funext fun p ↦ by
-          refine (congrArg (· • s ⟨p.down⟩) (ringStalkMap_germ φ y U.unop p.down r).symm).trans ?_
-          exact (hT _ _).symm
-        left_inv _ := rfl
-        right_inv _ := rfl }) (fun _ _ _ ↦ rfl))
-
-/-- On sections, `pushforwardSkyscraperIso` is the identity of the values at `y`. -/
-@[simp]
-lemma pushforwardSkyscraperIso_hom_val_app_apply
-    (hT : ∀ (a : ↑(TopCat.Presheaf.stalk 𝒪X.obj (f y))) (t : T), a • t = ringStalkMap φ y a • t)
-    (U : (Opens X)ᵒᵖ)
-    (s : (skyscraper 𝒪Y y T).val.obj (op ((Opens.map f).obj U.unop))) (p : PLift (f y ∈ U.unop)) :
-    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
-    ((pushforwardSkyscraperIso φ y T hT).hom.val.app U s p = s ⟨p.down⟩) :=
-  (rfl)
-
-end Pushforward
 
 end SheafOfModules
 

@@ -100,7 +100,7 @@ variable (x T) (N : _root_.PresheafOfModules.{u} (S ⋙ forget₂ CommRingCat Ri
 
 /-- The morphism into the skyscraper induced by a linear map `g` out of the stalk at `x`: a
 section `m` over `U ∋ x` goes to `g (m_x)`. -/
-def toSkyscraper (g : ↑(TopCat.Presheaf.stalk N.presheaf x) →ₗ[S.stalk x] T) :
+private def toSkyscraper (g : ↑(TopCat.Presheaf.stalk N.presheaf x) →ₗ[S.stalk x] T) :
     N ⟶ skyscraper S x T where
   app U := ModuleCat.ofHom (X := N.obj U) (Y := (skyscraper S x T).obj U)
     { toFun m p := g (TopCat.Presheaf.germ N.presheaf U.unop x p.down m)

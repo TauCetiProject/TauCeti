@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackContinuous
 public import Mathlib.LinearAlgebra.TensorProduct.Lift
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Skyscraper
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pushforward.Stalk
 
 /-!
 # Stalks of the pullback of a sheaf of modules
@@ -29,7 +29,8 @@ same linear maps into every `T`, and the comparison is the map inducing this bij
 ## Main declarations
 
 * `TauCeti.SheafOfModules.pullbackStalkHomEquiv`: linear maps out of `(f^* G)_y` are the
-  semilinear maps out of `G_{f(y)}`, through the germs of the unit;
+  `𝒪_{X,f(y)}`-linear maps out of `G_{f(y)}`, for `T` with `𝒪_{X,f(y)}` acting through the stalk
+  map, through the germs of the unit;
 * `TauCeti.SheafOfModules.pullbackStalkEquiv`: the linear equivalence
   `𝒪_{Y,y} ⊗_{𝒪_{X,f(y)}} G_{f(y)} ≃ (f^* G)_y`, computed on pure tensors by
   `TauCeti.SheafOfModules.pullbackStalkEquiv_tmul_germ`;
@@ -198,17 +199,18 @@ def pullbackStalkEquiv :
     ((pullbackStalkHomEquiv φ G y _ fun _ _ ↦ rfl).injective <| LinearMap.ext fun s ↦ by
       obtain ⟨U, hy, m, rfl⟩ := TopCat.Presheaf.exists_germ_eq G.val.presheaf s
       -- Both sides send `m_{f(y)}` to `(η m)_y`.
-      exact (pullbackStalkHomEquiv_apply_germ φ G y _ _ _ U hy m).trans
-        ((congrArg (pullbackStalkComparison φ G y) (ofPullbackStalk_germ φ G y U hy m)).trans
-          ((pullbackStalkComparison_tmul_germ φ G y 1 U hy m).trans ((one_smul _ _).trans
-            (toPullbackStalk_germ φ G y U hy m).symm))))
+      refine (pullbackStalkHomEquiv_apply_germ φ G y _ _ _ U hy m).trans ?_
+      refine (congrArg (pullbackStalkComparison φ G y) (ofPullbackStalk_germ φ G y U hy m)).trans ?_
+      refine (pullbackStalkComparison_tmul_germ φ G y 1 U hy m).trans ?_
+      rw [one_smul]
+      exact (toPullbackStalk_germ φ G y U hy m).symm)
     (TensorProduct.AlgebraTensorModule.ext fun a s ↦ by
       obtain ⟨U, hy, m, rfl⟩ := TopCat.Presheaf.exists_germ_eq G.val.presheaf s
       -- Both sides send `a ⊗ m_{f(y)}` to `a ⊗ m_{f(y)}`.
       refine (congrArg (ofPullbackStalk φ G y)
-        (pullbackStalkComparison_tmul_germ φ G y a U hy m)).trans
-          (((ofPullbackStalk φ G y).map_smul a _).trans
-            ((congrArg (a • ·) (ofPullbackStalk_germ φ G y U hy m)).trans ?_))
+        (pullbackStalkComparison_tmul_germ φ G y a U hy m)).trans ?_
+      refine ((ofPullbackStalk φ G y).map_smul a _).trans ?_
+      refine (congrArg (a • ·) (ofPullbackStalk_germ φ G y U hy m)).trans ?_
       rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one, LinearMap.id_apply])
 
 /-- The equivalence sends `a ⊗ m_{f(y)}` to `a · (η m)_y`. -/
@@ -253,14 +255,10 @@ theorem pullbackStalkEquiv_naturality {G' : _root_.SheafOfModules.{u} (ringCatSh
         (pullbackUnitApp φ G U m) :=
     congr(($((_root_.SheafOfModules.pullbackPushforwardAdjunction φ).unit.naturality g)).val.app
       (op U) m)
-  refine (congrArg (fun t ↦ pullbackStalkEquiv φ G' y (a ⊗ₜ t))
-    (PresheafOfModules.stalkMapCommRing_germ (S := 𝒪X.obj) (f y) g.val U hy m)).trans ?_
-  refine ((pullbackStalkEquiv_tmul_germ φ G' y a U hy _).trans ?_).trans
-    (congrArg (PresheafOfModules.stalkMapCommRing (S := 𝒪Y.obj) y _)
-      (pullbackStalkEquiv_tmul_germ φ G y a U hy m)).symm
-  rw [map_smul]
-  exact congrArg (a • ·) ((congrArg _ hη).trans
-    (PresheafOfModules.stalkMapCommRing_germ (S := 𝒪Y.obj) y _ _ hy _).symm)
+  dsimp only [_root_.PresheafOfModules.presheaf_obj_coe] at m hη ⊢
+  rw [PresheafOfModules.stalkMapCommRing_germ, pullbackStalkEquiv_tmul_germ,
+    pullbackStalkEquiv_tmul_germ, map_smul, hη]
+  exact congrArg (a • ·) (PresheafOfModules.stalkMapCommRing_germ (S := 𝒪Y.obj) y _ _ hy _).symm
 
 end SheafOfModules
 
