@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.BetaGas.Basic
-import Mathlib.MeasureTheory.Integral.Asymptotics
-
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 
 /-!
@@ -29,7 +27,7 @@ then positive and the beta-gas measure is a probability. The Gaussian case is a 
 public section
 noncomputable section
 
-open Asymptotics MeasureTheory Real Set
+open MeasureTheory Real Set
 
 namespace TauCeti.Probability
 

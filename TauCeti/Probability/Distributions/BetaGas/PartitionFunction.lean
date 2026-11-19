@@ -8,7 +8,7 @@ module
 public import TauCeti.MeasureTheory.Integral.Gamma
 public import TauCeti.Probability.Distributions.BetaGas.Basic
 
-import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Integral
 import TauCeti.MeasureTheory.Measure.Lebesgue.DifferenceMidpoint
 
 /-!
@@ -96,14 +96,6 @@ private lemma betaGas_difference_integral {β : ℝ} (hβ : 0 < β) :
   rw [neg_div] at h
   simpa only [neg_mul] using h
 
-private lemma betaGas_center_integral {β : ℝ} (hβ : 0 < β) :
-    (∫ z : ℝ, exp (-(β * z ^ 2))) = β ^ (-(1 : ℝ) / 2) * sqrt π := by
-  have hGaussian : (∫ z : ℝ, exp (-(β * z ^ 2))) = sqrt (π / β) := by
-    simpa only [neg_mul] using integral_gaussian β
-  rw [hGaussian, Real.sqrt_div Real.pi_pos.le, Real.sqrt_eq_rpow β,
-    neg_div, Real.rpow_neg hβ.le]
-  ring
-
 private theorem twoParticleGaussianBetaGasPartitionFunction_eq {β : ℝ} (hβ : 0 < β) :
     twoParticleGaussianBetaGasPartitionFunction β =
       2 ^ (β + 1) * sqrt π * β ^ (-(β + 2) / 2) * Gamma ((β + 1) / 2) := by
@@ -126,7 +118,7 @@ private theorem twoParticleGaussianBetaGasPartitionFunction_eq {β : ℝ} (hβ :
       (β / 4) ^ (-((β + 1) / 2)) * Gamma ((β + 1) / 2) := by
     exact betaGas_difference_integral hβ
   have hh : ∫ z : ℝ, h z = β ^ (-(1 : ℝ) / 2) * sqrt π := by
-    exact betaGas_center_integral hβ
+    exact integral_exp_neg_mul_sq_eq_rpow hβ
   dsimp only [f] at hchange
   rw [hchange, integral_prod_mul, hg, hh]
   exact betaGas_integral_algebra hβ

@@ -116,7 +116,7 @@ theorem betaGasPartitionFunction_pos_of_integrable (n : ℕ) (β : ℝ) (V : ℝ
       have h := (dist_pi_lt_iff (by norm_num : (0 : ℝ) < 1 / 2)).mp hx
       intro i
       simpa [Real.dist_eq, x₀] using h i
-    change betaGasWeight n β V x ≠ 0
+    rw [Function.mem_support]
     apply (betaGasWeight_pos n β V ?_).ne'
     intro i j hij
     apply Fin.ext
@@ -124,11 +124,13 @@ theorem betaGasPartitionFunction_pos_of_integrable (n : ℕ) (β : ℝ) (V : ℝ
     have hi := abs_lt.mp (hdist i)
     have hj := abs_lt.mp (hdist j)
     rcases lt_or_gt_of_ne hne with hlt | hgt
-    · have hcast : (i.val : ℝ) + 1 ≤ j.val := by
-        exact_mod_cast (show i.val + 1 ≤ j.val by omega)
+    · have hnat : i.val + 1 ≤ j.val := by omega
+      have hcast : (i.val : ℝ) + 1 ≤ j.val := by
+        exact_mod_cast hnat
       linarith
-    · have hcast : (j.val : ℝ) + 1 ≤ i.val := by
-        exact_mod_cast (show j.val + 1 ≤ i.val by omega)
+    · have hnat : j.val + 1 ≤ i.val := by omega
+      have hcast : (j.val : ℝ) + 1 ≤ i.val := by
+        exact_mod_cast hnat
       linarith
   rw [betaGasPartitionFunction_def]
   apply (integral_pos_iff_support_of_nonneg (betaGasWeight_nonneg n β V) hint).mpr

@@ -32,9 +32,11 @@ def differenceMidpointEquiv : (ℝ × ℝ) ≃ᵐ (ℝ × ℝ) where
   right_inv p := by
     ext <;> dsimp <;> ring
   measurable_toFun := by
+    -- Expose the coordinate map so `fun_prop` can see its measurable components.
     change Measurable (fun p : ℝ × ℝ => (p.2 + p.1 / 2, p.2 - p.1 / 2))
     fun_prop
   measurable_invFun := by
+    -- Expose the inverse coordinate map for `fun_prop`.
     change Measurable (fun p : ℝ × ℝ => (p.1 - p.2, p.2 + (p.1 - p.2) / 2))
     fun_prop
 
