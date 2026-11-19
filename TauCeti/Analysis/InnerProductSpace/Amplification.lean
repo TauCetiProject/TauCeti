@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 
+import TauCeti.Analysis.InnerProductSpace.PiL2
+
 /-!
 # Amplification of operators to a finite Hilbert sum
 
@@ -16,7 +18,13 @@ acts diagonally on the Hilbert sum `PiLp 2 (fun _ : ι => H)` of copies of `H`, 
 `s ⊕ ⋯ ⊕ s`. This diagonal amplification is a star algebra homomorphism,
 `PiLp.diagStarAlgHom`. Conversely, every operator `T` on the Hilbert sum has matrix entries
 `ContinuousLinearMap.piLpEntry T i j : H →L[𝕜] H`, and `T` acts through them
-(`ContinuousLinearMap.apply_eq_sum_piLpEntry`). The amplification of `s` has `s` on the diagonal
+(`ContinuousLinearMap.apply_eq_sum_piLpEntry`), so it is determined by them
+(`ContinuousLinearMap.ext_piLpEntry`); every family of entries arises from the operator
+`ContinuousLinearMap.ofPiLpEntries`. Entries compute products as matrix products
+(`ContinuousLinearMap.piLpEntry_mul`) and adjoints as conjugate transposes
+(`ContinuousLinearMap.piLpEntry_star`), and are bounded in norm by the operator
+(`ContinuousLinearMap.norm_piLpEntry_le`); the adjoint formula reads coordinates off through
+`PiLp.inner_single_left`. The amplification of `s` has `s` on the diagonal
 and `0` off it (`ContinuousLinearMap.piLpEntry_diagStarAlgHom`).
 
 Amplification turns statements about finitely many vectors of `H` into statements about a single
@@ -56,6 +64,88 @@ theorem apply_eq_sum_piLpEntry [Fintype ι]
     simp [Pi.single_apply]
   conv_lhs => rw [hw]
   simp [map_sum]
+
+/-- Two operators on the Hilbert sum with the same matrix entries are equal. -/
+theorem ext_piLpEntry [Finite ι]
+    {T U : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)}
+    (h : ∀ i j, T.piLpEntry i j = U.piLpEntry i j) : T = U := by
+  have := Fintype.ofFinite ι
+  ext w i
+  simp only [apply_eq_sum_piLpEntry, h]
+
+@[simp]
+theorem piLpEntry_zero (i j : ι) :
+    (0 : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)).piLpEntry i j = 0 := by
+  ext; simp
+
+@[simp]
+theorem piLpEntry_one (i j : ι) :
+    (1 : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)).piLpEntry i j =
+      if i = j then 1 else 0 := by
+  ext h
+  by_cases hij : i = j
+  · subst hij; simp
+  · simp [hij]
+
+variable [Fintype ι]
+
+/-- The matrix entries of a product are the matrix products of the entries. -/
+theorem piLpEntry_mul (T U : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H))
+    (i k : ι) : (T * U).piLpEntry i k = ∑ j, T.piLpEntry i j * U.piLpEntry j k := by
+  ext h
+  rw [piLpEntry_apply, mul_apply_eq_comp, apply_eq_sum_piLpEntry T, sum_apply]
+  simp only [mul_apply_eq_comp, piLpEntry_apply]
+
+/-- The matrix entries of the adjoint are the adjoints of the transposed entries. -/
+@[simp]
+theorem piLpEntry_star [CompleteSpace H]
+    (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) (i j : ι) :
+    (star T).piLpEntry i j = star (T.piLpEntry j i) := by
+  refine ContinuousLinearMap.ext fun h => ext_inner_left 𝕜 fun u => ?_
+  rw [star_eq_adjoint, star_eq_adjoint, piLpEntry_apply, adjoint_inner_right, piLpEntry_apply,
+    ← PiLp.inner_single_left (F := fun _ : ι => H) i u, adjoint_inner_right, ← inner_conj_symm,
+    PiLp.inner_single_left (F := fun _ : ι => H) j, inner_conj_symm]
+
+/-- Every matrix entry of an operator on the Hilbert sum has norm at most that of the operator. -/
+theorem norm_piLpEntry_le (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H))
+    (i j : ι) : ‖T.piLpEntry i j‖ ≤ ‖T‖ :=
+  opNorm_le_bound _ (norm_nonneg T) fun h => by
+    rw [piLpEntry_apply]
+    exact (PiLp.norm_apply_le (T (PiLp.single 2 j h)) i).trans
+      ((T.le_opNorm _).trans_eq (by rw [PiLp.norm_single]))
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable [Fintype ι]
+
+/-- The operator on the Hilbert sum with prescribed matrix entries `A i j`: it sends `w` to the
+vector with components `∑ j, A i j (w j)`. -/
+noncomputable def ofPiLpEntries (A : ι → ι → H →L[𝕜] H) :
+    PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H) :=
+  (PiLp.continuousLinearEquiv 2 𝕜 (fun _ : ι => H)).symm.toContinuousLinearMap ∘L
+    ContinuousLinearMap.pi fun i => ∑ j, A i j ∘L PiLp.proj 2 (fun _ : ι => H) j
+
+@[simp]
+theorem ofPiLpEntries_apply (A : ι → ι → H →L[𝕜] H) (w : PiLp 2 (fun _ : ι => H)) (i : ι) :
+    ofPiLpEntries A w i = ∑ j, A i j (w j) := by
+  simp [ofPiLpEntries, sum_apply]
+
+variable [DecidableEq ι]
+
+@[simp]
+theorem piLpEntry_ofPiLpEntries (A : ι → ι → H →L[𝕜] H) (i j : ι) :
+    (ofPiLpEntries A).piLpEntry i j = A i j := by
+  ext h
+  rw [piLpEntry_apply, ofPiLpEntries_apply,
+    Finset.sum_eq_single j (fun b _ hb => by simp [hb]) (by simp)]
+  simp
+
+@[simp]
+theorem ofPiLpEntries_piLpEntry (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) :
+    ofPiLpEntries T.piLpEntry = T :=
+  ext_piLpEntry fun i j => piLpEntry_ofPiLpEntries _ i j
 
 end ContinuousLinearMap
 
@@ -108,5 +198,23 @@ theorem piLpEntry_diagStarAlgHom (s : H →L[𝕜] H) (i j : ι) :
   by_cases hij : i = j
   · subst hij; simp
   · simp [hij]
+
+/-- Multiplying on the right by the diagonal amplification of `s` multiplies every matrix entry
+on the right by `s`. -/
+@[simp]
+theorem piLpEntry_mul_diagStarAlgHom
+    (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) (s : H →L[𝕜] H) (i j : ι) :
+    (T * PiLp.diagStarAlgHom 𝕜 H ι s).piLpEntry i j = T.piLpEntry i j * s := by
+  ext h
+  simp [mul_apply_eq_comp]
+
+/-- Multiplying on the left by the diagonal amplification of `s` multiplies every matrix entry
+on the left by `s`. -/
+@[simp]
+theorem piLpEntry_diagStarAlgHom_mul
+    (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) (s : H →L[𝕜] H) (i j : ι) :
+    (PiLp.diagStarAlgHom 𝕜 H ι s * T).piLpEntry i j = s * T.piLpEntry i j := by
+  ext h
+  simp [mul_apply_eq_comp]
 
 end ContinuousLinearMap

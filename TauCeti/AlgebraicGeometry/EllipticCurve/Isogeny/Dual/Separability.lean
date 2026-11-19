@@ -26,6 +26,8 @@ valued field this splits the valuation of `deg φ` between `φ` and its dual.
 * `TauCeti.Isogeny.isSeparable_dual_and_self_iff`: `φ` and `φ̂` are both separable exactly when
   `deg φ ≠ 0` in the base field.
 * `TauCeti.Isogeny.mul_eq_degree_of_pullbackDifferential_eq_smul`: `c c' = deg φ`.
+* `TauCeti.Isogeny.ne_zero_of_pullbackDifferential_eq_smul_of_degree_ne_zero`: if `φ^*ω₂ = c ω₁`
+  and `deg φ ≠ 0` in the base field, then `c ≠ 0`.
 
 ## References
 
@@ -85,6 +87,16 @@ theorem mul_eq_degree_of_pullbackDifferential_eq_smul {c c' : F}
     hc', map_smul, hc, smul_smul, ← Int.cast_smul_eq_zsmul F, Int.cast_natCast] at h
   rw [mul_comm]
   exact smul_left_injective F (invariantDifferential_ne_zero (E := W₁)) h
+
+/-- **Invertible degree implies a nonzero differential scalar**: if `φ^*ω₂ = c ω₁` and `deg φ ≠ 0`
+in the base field `F`, then `c ≠ 0`. -/
+theorem ne_zero_of_pullbackDifferential_eq_smul_of_degree_ne_zero {c : F}
+    (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁)
+    (h : (φ.degree : F) ≠ 0) :
+    c ≠ 0 := by
+  have hne : φ.pullbackDifferential (invariantDifferential W₂) ≠ 0 :=
+    (isSeparable_iff_pullbackDifferential_ne_zero φ).mp (φ.isSeparable_dual_and_self_iff.mpr h).2
+  rwa [hc, smul_ne_zero_iff_left (invariantDifferential_ne_zero W₁)] at hne
 
 end TauCeti.Isogeny
 
