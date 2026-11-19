@@ -23,6 +23,9 @@ with finite projective quotients of the prescribed ranks. The flag incidence ide
 is the sum of the content ideals of `N i → (A ⊗[R] M) ⧸ N j` for `i < j`. Thus its
 closed subscheme classifies nested families over arbitrary test algebras.
 
+The ambient product has a lift and projectionwise extensionality for arbitrary
+test schemes over `Spec R`, in addition to its affine-point classification.
+
 For finite projective `M` of constant rank `d`, the submodule ranks of such
 flags are `d - q i`. Using quotient ranks lets the construction work for any
 ambient module and includes the empty list. See M. Brion, *Lectures on the
@@ -59,6 +62,34 @@ theorem flagGrassmannianProductπ_toSpec (i : Fin n) :
       (flagGrassmannianProduct R M q).hom :=
   Over.w (Pi.π (flagFactors R M q) i)
 
+/-- A family of morphisms to the Grassmannians over `Spec R` induces a morphism to
+their product, for any test scheme over `Spec R`. -/
+noncomputable def flagGrassmannianProductLift {X : Over (Spec (.of R))}
+    (f : ∀ i, X.left ⟶ Module.Grassmannian.scheme R M (q i))
+    (hf : ∀ i, f i ≫ Module.Grassmannian.toSpec R M (q i) = X.hom) :
+    X ⟶ flagGrassmannianProduct R M q :=
+  Pi.lift fun i ↦ Over.homMk (f i) (hf i)
+
+/-- The lift to the ambient product has the prescribed Grassmannian projections. -/
+@[reassoc (attr := simp)]
+theorem flagGrassmannianProductLift_π {X : Over (Spec (.of R))}
+    (f : ∀ i, X.left ⟶ Module.Grassmannian.scheme R M (q i))
+    (hf : ∀ i, f i ≫ Module.Grassmannian.toSpec R M (q i) = X.hom) (i : Fin n) :
+    (flagGrassmannianProductLift R M q f hf).left ≫ flagGrassmannianProductπ R M q i =
+      f i :=
+  congrArg Over.Hom.left (Pi.lift_comp_π (f := flagFactors R M q)
+    (fun j ↦ Over.homMk (f j) (hf j)) i)
+
+/-- Morphisms over `Spec R` to the ambient product are determined by their
+Grassmannian projections. This also applies to the empty family. -/
+theorem flagGrassmannianProduct_hom_ext {X : Over (Spec (.of R))}
+    {f g : X ⟶ flagGrassmannianProduct R M q}
+    (h : ∀ i, f.left ≫ flagGrassmannianProductπ R M q i =
+      g.left ≫ flagGrassmannianProductπ R M q i) : f = g := by
+  apply Pi.hom_ext (f := flagFactors R M q)
+  intro i
+  exact Over.OverMorphism.ext (h i)
+
 variable {R M q}
 variable {A B : Type u} [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
 
@@ -80,16 +111,13 @@ private theorem toSchemeHom_productPointFamily
 
 private noncomputable def productPoint (N : ∀ i, G(q i, A ⊗[R] M; A)) :
     affineOver (R := R) A ⟶ flagGrassmannianProduct R M q :=
-  Pi.lift fun i ↦ Over.homMk (toSchemeHom (N i)) (toSchemeHom_toSpec (N i))
+  flagGrassmannianProductLift R M q (fun i ↦ toSchemeHom (N i))
+    (fun i ↦ toSchemeHom_toSpec (N i))
 
 @[reassoc]
 private theorem productPoint_left_π (N : ∀ i, G(q i, A ⊗[R] M; A)) (i : Fin n) :
-    (productPoint N).left ≫ flagGrassmannianProductπ R M q i = toSchemeHom (N i) := by
-  let p (j : Fin n) : affineOver (R := R) A ⟶ flagFactors R M q j :=
-    Over.homMk (toSchemeHom (N j)) (toSchemeHom_toSpec (N j))
-  have h := congrArg (fun (a : affineOver (R := R) A ⟶ flagFactors R M q i) ↦ a.left)
-    (Pi.lift_comp_π p i)
-  exact h
+    (productPoint N).left ≫ flagGrassmannianProductπ R M q i = toSchemeHom (N i) :=
+  flagGrassmannianProductLift_π R M q _ _ i
 
 private theorem productPointFamily_productPoint (N : ∀ i, G(q i, A ⊗[R] M; A)) (i : Fin n) :
     productPointFamily (productPoint N) i = N i :=
@@ -98,9 +126,8 @@ private theorem productPointFamily_productPoint (N : ∀ i, G(q i, A ⊗[R] M; A
 private theorem productPoint_productPointFamily
     (g : affineOver (R := R) A ⟶ flagGrassmannianProduct R M q) :
     productPoint (productPointFamily g) = g := by
-  apply Pi.hom_ext (f := flagFactors R M q)
+  apply flagGrassmannianProduct_hom_ext R M q
   intro i
-  apply Over.OverMorphism.ext
   exact (productPoint_left_π _ _).trans (toSchemeHom_productPointFamily _ _)
 
 /-- An affine point of the ambient product is a family of Grassmannian points. -/
@@ -228,9 +255,8 @@ theorem flagScheme_hom_ext {T : Scheme} {f g : T ⟶ (flagScheme R M q).left}
   let g' : Over.mk (f ≫ (flagScheme R M q).hom) ⟶ flagScheme R M q := Over.homMk g hbase.symm
   apply (cancel_mono (flagSchemeι R M q).left).1
   have h : f' ≫ flagSchemeι R M q = g' ≫ flagSchemeι R M q := by
-    apply Pi.hom_ext (f := flagFactors R M q)
+    apply flagGrassmannianProduct_hom_ext R M q
     intro i
-    apply Over.OverMorphism.ext
     exact (Category.assoc _ _ _).trans ((hπ i).trans (Category.assoc _ _ _).symm)
   exact congrArg Over.Hom.left h
 
