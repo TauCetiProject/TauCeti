@@ -89,9 +89,9 @@ universe w v u
 
 namespace TauCeti
 
-section Pair
+section ZeroSectionCompl
 
-variable {B : Type w} (F : Type*) (E : B → Type w) [∀ b, Zero (E b)]
+variable {B : Type*} (F : Type*) (E : B → Type*) [∀ b, Zero (E b)]
 
 /-- The complement `E₀` of the zero section in the total space of a bundle: its nonzero
 vectors. -/
@@ -114,6 +114,12 @@ theorem zeroSectionCompl_eq_compl_range :
     exact hx rfl
   · intro h hx
     exact h b (by rw [hx]; rfl)
+
+end ZeroSectionCompl
+
+section Pair
+
+variable {B : Type w} (F : Type*) (E : B → Type w) [∀ b, Zero (E b)]
 
 variable [TopologicalSpace (TotalSpace F E)]
 
@@ -242,8 +248,8 @@ end Pair
 
 section Open
 
-variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+variable {B : Type*} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
 
 variable (F E) in
