@@ -37,8 +37,8 @@ particular the results apply to sets of infinite volume or infinite perimeter.
 * `LinearIsometryEquiv.perimeter_preimage_le`, `LinearIsometryEquiv.perimeter_preimage`,
   `LinearIsometryEquiv.perimeter_comap` and `LinearIsometryEquiv.perimeter_image`: the
   corresponding statements for perimeter.
-* `AffineIsometryEquiv.totalVariationOn_comap` and `AffineIsometryEquiv.perimeter_comap`:
-  invariance under affine isometry equivalences.
+* `AffineIsometryEquiv.totalVariationOn_comap`, `AffineIsometryEquiv.totalVariationOn_comp` and
+  `AffineIsometryEquiv.perimeter_comap`: invariance under affine isometry equivalences.
 
 ## References
 
@@ -175,6 +175,15 @@ theorem totalVariationOn_comap (f : E ≃ᵃⁱ[ℝ] E')
     simp [hfx x]
   rw [hdom, hfun, L.totalVariationOn_comap hL,
     totalVariationOn_comap_add_right]
+
+/-- **Invariance of total variation under affine isometries**, for any open set `V` which a
+measure-preserving affine isometry equivalence `f` identifies with `Ω`. -/
+theorem totalVariationOn_comp (f : E ≃ᵃⁱ[ℝ] E')
+    (hf : MeasurePreserving f μ ν) (hVO : MapsTo f V Ω) (hOV : MapsTo f.symm Ω V) :
+    totalVariationOn μ V (u ∘ f) = totalVariationOn ν Ω u := by
+  obtain rfl : V = Opens.comap ⟨f, f.continuous⟩ Ω :=
+    Opens.ext <| Set.ext fun x => ⟨fun hx => hVO hx, fun hx => by simpa using hOV hx⟩
+  exact totalVariationOn_comap f hf
 
 /-- **Invariance of perimeter under affine isometries.** Pulling a set and its open domain back
 along a measure-preserving affine isometry equivalence into a space with a translation-invariant
