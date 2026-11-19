@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Double
-import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Ladder
-import Mathlib.Algebra.Field.ZMod
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Ladder
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Double
+public import Mathlib.Algebra.Field.ZMod
+import TauCeti.Examples.AlgebraicGeometry.EllipticCurve.Montgomery.CurveX3AddX
 
 /-!
 # Examples of the odd Montgomery-ladder step and scalar-multiple sequences
@@ -23,12 +24,20 @@ addition of the coordinate pairs of `[2]P`, `P` and `P` is nonzero and represent
 On `y² = x³ + x` over `𝔽₅`, the point `(2, 0)` is a non-distinguished point of order two.
 The odd step is nonzero for every index at this base point, not just at points of odd order.
 In contrast, at the distinguished point `(0, 0)` it is always zero; its multiples alternate
-between that point and infinity. The alternation remains valid in characteristic two.
+between that point and infinity, and already at `k = 0` the sum `[1]T₀ + [0]T₀ = T₀` is nonzero
+while `diffAdd` degenerates to `(0, 0)`. The alternation remains valid in characteristic two.
+
+## References
+
+* P. L. Montgomery, *Speeding the Pollard and elliptic curve methods of factorization*,
+  Math. Comp. 48 (1987), 243–264, §10.3.1, p. 261: the binary ladder relations.
 -/
+
+public section
 
 namespace TauCeti.Montgomery
 
-open WeierstrassCurve
+open WeierstrassCurve TauCeti.Examples.Montgomery.CurveX3AddX
 
 section Exceptional
 
@@ -36,10 +45,7 @@ variable [Fact (Nat.Prime 2)] [Fact (Nat.Prime 5)] [Fact (Nat.Prime 7)]
 
 -- Use three independently scaled representatives of the non-distinguished point of order two.
 example (k : ℕ) :
-    let T : (model (0 : ZMod 5) 1).toAffine.Point := .some 2 0 (by
-      simp only [Affine.nonsingular_iff, Affine.equation_iff,
-        model_a₁, model_a₂, model_a₃, model_a₄, model_a₆]
-      decide +revert)
+    let T := pointTwoZeroFive
     let R := diffAdd ((2 : ZMod 5) • coordinates (0 : ZMod 5) 1 ((k + 1) • T))
       ((3 : ZMod 5) • coordinates (0 : ZMod 5) 1 (k • T))
       ((4 : ZMod 5) • coordinates (0 : ZMod 5) 1 T)
@@ -49,25 +55,21 @@ example (k : ℕ) :
   have h₂ : (2 : ZMod 5) ≠ 0 := by decide +revert
   have h₃ : (3 : ZMod 5) ≠ 0 := by decide +revert
   have h₄ : (4 : ZMod 5) ≠ 0 := by decide +revert
-  have nonsingular_two_zero : (model (0 : ZMod 5) 1).toAffine.Nonsingular 2 0 := by
-    simp only [Affine.nonsingular_iff, Affine.equation_iff,
-      model_a₁, model_a₂, model_a₃, model_a₄, model_a₆]
-    decide +revert
   have hscale (a : ZMod 5) (ha : a ≠ 0) (Q : (model (0 : ZMod 5) 1).toAffine.Point) :
       a • coordinates 0 1 Q ≠ 0 := by
     rw [Ne, Pair.smul_eq_zero, not_or]
     exact ⟨ha, coordinates_ne_zero hB Q⟩
   refine ⟨diffAdd_cross_two_mul_add_one_nsmul_eq_zero_of_cross_eq_zero
-    (.some 2 0 nonsingular_two_zero) k (by simp) (by simp) (by simp), ?_⟩
+    pointTwoZeroFive k (by simp) (by simp) (by simp), ?_⟩
   have h := diffAdd_nsmul_ne_zero_iff_of_cross_eq_zero h₂ hB
-    (A := 0) (.some 2 0 nonsingular_two_zero) k
-    (SNext := (2 : ZMod 5) • coordinates 0 1 ((k + 1) • .some 2 0 nonsingular_two_zero))
-    (SCurrent := (3 : ZMod 5) • coordinates 0 1 (k • .some 2 0 nonsingular_two_zero))
-    (SBase := (4 : ZMod 5) • coordinates 0 1 (.some 2 0 nonsingular_two_zero))
+    (A := 0) pointTwoZeroFive k
+    (SNext := (2 : ZMod 5) • coordinates 0 1 ((k + 1) • pointTwoZeroFive))
+    (SCurrent := (3 : ZMod 5) • coordinates 0 1 (k • pointTwoZeroFive))
+    (SBase := (4 : ZMod 5) • coordinates 0 1 pointTwoZeroFive)
     (hscale 2 h₂ _) (hscale 3 h₃ _) (hscale 4 h₄ _)
     (by simp) (by simp) (by simp)
   apply h.mpr ⟨Affine.Point.some_ne_zero _, ?_⟩
-  exact (some_eq_twoTorsionPoint_iff hB nonsingular_two_zero).not.mpr h₂
+  exact (some_eq_twoTorsionPoint_iff hB nonsingular_two_zero_five).not.mpr h₂
 
 -- The distinguished point alternates, while its odd differential-addition step degenerates.
 example (k : ℕ) :
@@ -98,6 +100,17 @@ example (k : ℕ) :
     diffAdd (coordinates (0 : ZMod 7) 1 ((k + 1) • (0 : (model (0 : ZMod 7) 1).toAffine.Point)))
       (coordinates (0 : ZMod 7) 1 (k • 0)) (coordinates (0 : ZMod 7) 1 0) = 0 := by
   ext <;> simp
+
+-- For `T₀ = (0, 0)` over `𝔽₇` at `k = 0`, `[1]T₀ + [0]T₀ = T₀ ≠ 0`, whereas `diffAdd` of the
+-- coordinate pairs of `[1]T₀`, `[0]T₀` and `T₀` is `(0, 0)`.
+example :
+    let T₀ := twoTorsionPoint (0 : ZMod 7) one_ne_zero
+    (1 : ℕ) • T₀ + (0 : ℕ) • T₀ = T₀ ∧
+    T₀ ≠ 0 ∧
+    diffAdd (coordinates 0 1 ((1 : ℕ) • T₀)) (coordinates 0 1 ((0 : ℕ) • T₀))
+      (coordinates 0 1 T₀) = 0 := by
+  refine ⟨by simp, twoTorsionPoint_ne_zero 0 one_ne_zero, ?_⟩
+  simp
 
 end Exceptional
 
@@ -175,85 +188,46 @@ end Seven
 
 section ModThirtyFive
 
--- Modulo `35`, the odd step `diffAdd (21, 25) (22, 1) (22, 1) = (1, 8)` has `gcd(8, 35) = 1`;
--- modulo `5` it represents `[3](2, 0) = (2, 0)`.
-example :
-    letI : Fact (Nat.Prime 5) := ⟨by decide⟩
-    let R := diffAdd (⟨21, 25⟩ : Pair (ZMod 35)) ⟨22, 1⟩ ⟨22, 1⟩
-    let hP₅ : (model (0 : ZMod 5) 1).toAffine.Nonsingular 2 0 := by
-      simp only [Affine.nonsingular_iff, Affine.equation_iff,
-        model_a₁, model_a₂, model_a₃, model_a₄, model_a₆]
-      decide
-    let P₅ : (model (0 : ZMod 5) 1).toAffine.Point := .some 2 0 hP₅
-    R = ⟨1, 8⟩ ∧ Nat.gcd R.z.val 35 = 1 ∧ 3 • P₅ = P₅ ∧
-      (R.map (ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5))).cross
-        (coordinates 0 1 (3 • P₅)) = 0 :=
-  letI : Fact (Nat.Prime 5) := ⟨by decide⟩
-  by
-    intro R hP₅ P₅
-    have hR : R = ⟨1, 8⟩ := by
-      ext <;> simp only [R, diffAdd_x, diffAdd_z, Pair.cross_def] <;> decide
-    have h2 : 2 • P₅ = 0 := by
-      rw [two_nsmul]
-      exact Affine.Point.add_self_of_Y_eq (by simp [Affine.negY])
-    have h3 : 3 • P₅ = P₅ := by
-      have h3eq : (3 : ℕ) = 2 + 1 := rfl
-      rw [h3eq, add_nsmul, h2, zero_add, one_nsmul]
-    refine ⟨hR, by rw [hR]; decide, h3, ?_⟩
-    rw [map_diffAdd]
-    have hc₁ :
-        ((⟨22, 1⟩ : Pair (ZMod 35)).map (ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5))).cross
-          (coordinates 0 1 P₅) = 0 := by
-      simp only [P₅, coordinates_some, Pair.cross_def, Pair.map_x, Pair.map_z]
-      decide
-    refine diffAdd_cross_two_mul_add_one_nsmul_eq_zero_of_cross_eq_zero P₅ 1 ?_
-      (by rwa [one_nsmul]) hc₁
-    rw [h2, coordinates_zero, Pair.cross_def]
-    simp only [Pair.map_x, Pair.map_z]
-    decide
+local instance ladderPrimeFive : Fact (Nat.Prime 5) := ⟨by decide⟩
+local instance ladderPrimeSeven : Fact (Nat.Prime 7) := ⟨by decide⟩
 
--- Modulo `7`, the same odd-step output `(1, 8)` represents `[3](1, 3) = (1, 4)`.
+-- Modulo `35`, `diffAdd` of `(21, 25)`, `(22, 1)`, `(22, 1)` is `(1, 8)` with `gcd(8, 35) = 1`,
+-- whose reductions modulo `5` and `7` represent `[3](2, 0) = (2, 0)` over `𝔽₅` and
+-- `[3](1, 3) = (1, 4)` over `𝔽₇`.
 example :
-    letI : Fact (Nat.Prime 7) := ⟨by decide⟩
-    let R := diffAdd (⟨21, 25⟩ : Pair (ZMod 35)) ⟨22, 1⟩ ⟨22, 1⟩
-    let h₁₃ : (model (0 : ZMod 7) 1).toAffine.Nonsingular 1 3 := by
-      simp only [Affine.nonsingular_iff, Affine.equation_iff,
-        model_a₁, model_a₂, model_a₃, model_a₄, model_a₆]
-      decide
-    let h₁₄ : (model (0 : ZMod 7) 1).toAffine.Nonsingular 1 4 := by
-      simp only [Affine.nonsingular_iff, Affine.equation_iff,
-        model_a₁, model_a₂, model_a₃, model_a₄, model_a₆]
-      decide
-    let P₇ : (model (0 : ZMod 7) 1).toAffine.Point := .some 1 3 h₁₃
-    3 • P₇ = .some 1 4 h₁₄ ∧
-      (R.map (ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7))).cross
-        (coordinates 0 1 (3 • P₇)) = 0 :=
-  letI : Fact (Nat.Prime 7) := ⟨by decide⟩
-  by
-    intro R h₁₃ h₁₄ P₇
-    have h2 : 2 • P₇ = twoTorsionPoint 0 one_ne_zero := by
+    let R₃₅ := diffAdd (⟨21, 25⟩ : Pair (ZMod 35)) ⟨22, 1⟩ ⟨22, 1⟩
+    R₃₅ = ⟨1, 8⟩ ∧
+    Nat.gcd R₃₅.z.val 35 = 1 ∧
+    (3 : ℕ) • pointTwoZeroFive = pointTwoZeroFive ∧
+    (3 : ℕ) • pointOneThreeSeven = pointOneFourSeven ∧
+    (R₃₅.map (ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5))).cross
+      (coordinates 0 1 ((3 : ℕ) • pointTwoZeroFive)) = 0 ∧
+    (R₃₅.map (ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7))).cross
+      (coordinates 0 1 ((3 : ℕ) • pointOneThreeSeven)) = 0 := by
+  dsimp only
+  have hR : diffAdd (⟨21, 25⟩ : Pair (ZMod 35)) ⟨22, 1⟩ ⟨22, 1⟩ = ⟨1, 8⟩ := by
+    ext <;> simp only [diffAdd_x, diffAdd_z, Pair.cross_def] <;> decide
+  have hT₅ : (3 : ℕ) • pointTwoZeroFive = pointTwoZeroFive := by
+    have h₂ : (2 : ℕ) • pointTwoZeroFive = 0 := by
+      rw [two_nsmul, pointTwoZeroFive]
+      exact Affine.Point.add_of_Y_eq rfl (by simp only [Affine.negY, model_a₁, model_a₃]; decide)
+    rw [succ_nsmul, h₂, zero_add]
+  have hP₇ : (3 : ℕ) • pointOneThreeSeven = pointOneFourSeven := by
+    have h₂ : (2 : ℕ) • pointOneThreeSeven = twoTorsionPoint 0 one_ne_zero := by
       rw [two_nsmul]
-      exact (add_self_eq_twoTorsionPoint_iff one_ne_zero h₁₃).mpr rfl
-    have h4 : 3 • P₇ + P₇ = 0 := by
-      have h4eq : 3 • P₇ + P₇ = 2 • P₇ + 2 • P₇ := by
-        rw [← succ_nsmul, ← add_nsmul]
-      rw [h4eq, h2, twoTorsionPoint_add_self]
-    have h3 : 3 • P₇ = .some 1 4 h₁₄ := by
-      rw [eq_neg_of_add_eq_zero_left h4]
-      simp only [P₇, Affine.Point.neg_some, Affine.negY, model_a₁, model_a₃,
-        Affine.Point.some.injEq]
-      decide
-    refine ⟨h3, ?_⟩
-    rw [map_diffAdd]
-    have hc₁ :
-        ((⟨22, 1⟩ : Pair (ZMod 35)).map (ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7))).cross
-          (coordinates 0 1 P₇) = 0 := by
-      simp only [P₇, coordinates_some, Pair.cross_def, Pair.map_x, Pair.map_z]
-      decide
-    refine diffAdd_cross_two_mul_add_one_nsmul_eq_zero_of_cross_eq_zero P₇ 1 ?_
-      (by rwa [one_nsmul]) hc₁
-    rw [h2, coordinates_twoTorsionPoint, Pair.cross_def]
-    simp only [Pair.map_x, Pair.map_z]
+      exact (add_self_eq_twoTorsionPoint_iff one_ne_zero nonsingular_one_three_seven).mpr
+        (by decide)
+    have hsum : (3 : ℕ) • pointOneThreeSeven + (1 : ℕ) • pointOneThreeSeven = 0 := by
+      have h4 : 3 + 1 = 2 + 2 := rfl
+      rw [← add_nsmul, h4, add_nsmul, h₂, twoTorsionPoint_add_self]
+    rw [eq_neg_of_add_eq_zero_left hsum, one_nsmul]
+    simp only [pointOneThreeSeven, pointOneFourSeven, Affine.Point.neg_some, Affine.negY,
+      model_a₁, model_a₃, Affine.Point.some.injEq]
+    decide
+  refine ⟨hR, by rw [hR]; decide, hT₅, hP₇, ?_, ?_⟩
+  · rw [hR, hT₅, pointTwoZeroFive, coordinates_some, Pair.cross_def, Pair.map_x, Pair.map_z]
+    decide
+  · rw [hR, hP₇, pointOneFourSeven, coordinates_some, Pair.cross_def, Pair.map_x, Pair.map_z]
     decide
 
 end ModThirtyFive
