@@ -66,8 +66,8 @@ variable {G : Type*} [Group G] [TopologicalSpace G]
 a topological group `G`. It is continuous because the normalized valuation is locally constant. -/
 def unramifiedCharacter (a : G) : Kˣ →ₜ* G where
   toMonoidHom := (zpowersHom G a).comp (normalizedValuation K)
-  continuous_toFun := (continuous_of_discreteTopology (f := fun n : Multiplicative ℤ ↦
-    a ^ n.toAdd)).comp (continuous_normalizedValuation K)
+  continuous_toFun := (continuous_of_discreteTopology (f := ⇑(zpowersHom G a))).comp
+    (continuous_normalizedValuation K)
 
 variable {K}
 
