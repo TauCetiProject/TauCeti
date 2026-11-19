@@ -296,37 +296,37 @@ namespace ContinuousMulEquiv
 
 variable {G H : Type*} [Group G] [TopologicalSpace G] [Group H] [TopologicalSpace H]
 
-/-- The image of a compact open subgroup under a topological group isomorphism. -/
-private def mapCompactOpenSubgroup (e : G ≃ₜ* H) (U : TauCeti.CompactOpenSubgroup G) :
-    TauCeti.CompactOpenSubgroup H where
-  toSubgroup := e.toMulEquiv.mapSubgroup U.toSubgroup
-  -- Each field is stated for the carrier; restate it through the set coercion, which
-  -- `Subgroup.coe_map` computes as an image.
-  isOpen' := by
-    change IsOpen (e.toMulEquiv.mapSubgroup U.toSubgroup : Set H)
-    rw [MulEquiv.coe_mapSubgroup, Subgroup.coe_map]
-    exact e.toHomeomorph.isOpen_image.mpr U.isOpen
-  isCompact' := by
-    change IsCompact (e.toMulEquiv.mapSubgroup U.toSubgroup : Set H)
-    rw [MulEquiv.coe_mapSubgroup, Subgroup.coe_map]
-    exact U.isCompact.image e.continuous
-
-/-- An element lies in the image of a compact open subgroup exactly when its inverse image lies in
-the original one. -/
-private theorem mem_mapCompactOpenSubgroup (e : G ≃ₜ* H) (U : TauCeti.CompactOpenSubgroup G)
-    {h : H} : h ∈ mapCompactOpenSubgroup e U ↔ e.symm h ∈ U :=
-  -- `ContinuousMulEquiv.symm` is built from `MulEquiv.symm`: `e.symm h` is `e.toMulEquiv.symm h`.
-  Subgroup.mem_map_equiv
-
 /-- A topological group isomorphism transports compact open subgroups, preserving inclusion. -/
 def compactOpenSubgroupOrderIso (e : G ≃ₜ* H) :
     TauCeti.CompactOpenSubgroup G ≃o TauCeti.CompactOpenSubgroup H where
-  toFun := mapCompactOpenSubgroup e
-  invFun := mapCompactOpenSubgroup e.symm
-  left_inv U := TauCeti.CompactOpenSubgroup.ext fun g ↦ by
-    rw [mem_mapCompactOpenSubgroup, mem_mapCompactOpenSubgroup, symm_symm, symm_apply_apply]
-  right_inv V := TauCeti.CompactOpenSubgroup.ext fun h ↦ by
-    rw [mem_mapCompactOpenSubgroup, mem_mapCompactOpenSubgroup, symm_symm, apply_symm_apply]
+  -- Each topological field is stated for the carrier; restate it through the set coercion, which
+  -- `Subgroup.coe_map` computes as an image.
+  toFun U :=
+    { toSubgroup := e.toMulEquiv.mapSubgroup U.toSubgroup
+      isOpen' := by
+        change IsOpen (e.toMulEquiv.mapSubgroup U.toSubgroup : Set H)
+        rw [MulEquiv.coe_mapSubgroup, Subgroup.coe_map]
+        exact e.toHomeomorph.isOpen_image.mpr U.isOpen
+      isCompact' := by
+        change IsCompact (e.toMulEquiv.mapSubgroup U.toSubgroup : Set H)
+        rw [MulEquiv.coe_mapSubgroup, Subgroup.coe_map]
+        exact U.isCompact.image e.continuous }
+  invFun V :=
+    { toSubgroup := e.toMulEquiv.mapSubgroup.symm V.toSubgroup
+      isOpen' := by
+        change IsOpen (e.toMulEquiv.mapSubgroup.symm V.toSubgroup : Set G)
+        rw [MulEquiv.symm_mapSubgroup, MulEquiv.coe_mapSubgroup, Subgroup.coe_map]
+        exact e.toHomeomorph.symm.isOpen_image.mpr V.isOpen
+      isCompact' := by
+        change IsCompact (e.toMulEquiv.mapSubgroup.symm V.toSubgroup : Set G)
+        rw [MulEquiv.symm_mapSubgroup, MulEquiv.coe_mapSubgroup, Subgroup.coe_map]
+        exact V.isCompact.image e.symm.continuous }
+  left_inv U :=
+    TauCeti.CompactOpenSubgroup.toSubgroup_injective
+      (e.toMulEquiv.mapSubgroup.left_inv U.toSubgroup)
+  right_inv V :=
+    TauCeti.CompactOpenSubgroup.toSubgroup_injective
+      (e.toMulEquiv.mapSubgroup.right_inv V.toSubgroup)
   map_rel_iff' := e.toMulEquiv.mapSubgroup.map_rel_iff
 
 /-- The underlying subgroup transported by `ContinuousMulEquiv.compactOpenSubgroupOrderIso` is the
@@ -363,18 +363,14 @@ the original one. -/
 @[simp]
 theorem mem_compactOpenSubgroupOrderIso (e : G ≃ₜ* H) (U : TauCeti.CompactOpenSubgroup G)
     {h : H} : h ∈ e.compactOpenSubgroupOrderIso U ↔ e.symm h ∈ U :=
-  mem_mapCompactOpenSubgroup e U
+  Subgroup.mem_map_equiv
 
 /-- An element lies in an inversely transported compact open subgroup exactly when its image lies
 in the original one. -/
 @[simp]
 theorem mem_compactOpenSubgroupOrderIso_symm (e : G ≃ₜ* H) (V : TauCeti.CompactOpenSubgroup H)
-    {g : G} : g ∈ e.compactOpenSubgroupOrderIso.symm V ↔ e g ∈ V := by
-  -- `OrderIso.symm` of the structure literal above applies its `invFun` field, so the inverse
-  -- transport is `mapCompactOpenSubgroup e.symm` by `rfl`; this exposes the private membership
-  -- lemma, which is the one place the unfolding of `symm` is documented.
-  rw [show e.compactOpenSubgroupOrderIso.symm V = mapCompactOpenSubgroup e.symm V from rfl,
-    mem_mapCompactOpenSubgroup, symm_symm]
+    {g : G} : g ∈ e.compactOpenSubgroupOrderIso.symm V ↔ e g ∈ V :=
+  Subgroup.mem_map_equiv
 
 /-- The image of an element lies in a transported compact open subgroup exactly when the element
 lies in the original one. This is not marked `@[simp]`: `simp` already reaches `g ∈ U` through
