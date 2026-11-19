@@ -101,7 +101,8 @@ families of operators.
   extensions of quantizations are compatible with isomorphisms of the fibres.
 * `TauCeti.Symbol.exists_quantizeSobolev`: the mapping property for finite-dimensional normed
   `V` and `W`.
-* `TauCeti.Symbol.exists_one_add_norm_pow_mul_norm_fourier_le_sum_seminorm` and
+* `TauCeti.Symbol.exists_one_add_norm_pow_mul_norm_fourier_le_sum_seminorm`,
+  `TauCeti.Symbol.exists_norm_fourier_slice_le_sum_seminorm` and
   `TauCeti.Symbol.exists_norm_quantizeSobolev_le_sum_seminorm`: the decay of `â` and the operator
   norm of `Op(a)` are bounded by finitely many seminorms of the position derivatives of `a`,
   uniformly over the symbols vanishing outside a fixed compact set.
@@ -331,14 +332,18 @@ theorem HasCompactSpatialSupport.exists_one_add_norm_pow_mul_norm_fourier_le
   exact ⟨C * ∑ α ∈ t, Symbol.seminorm ⟨K, hK⟩ α [] a,
     mul_nonneg hC (Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _), h a hKa⟩
 
-/-- **Rapid decay.** For every `r`, the Fourier transform of the position slice satisfies
-`‖â(η, ξ)‖ ≤ C ⟨ξ⟩ ^ m ⟨η⟩ ^ (-r)`. -/
-theorem HasCompactSpatialSupport.exists_norm_fourier_slice_le (ha : a.HasCompactSpatialSupport)
-    (r : ℝ) : ∃ C, 0 ≤ C ∧ ∀ η ξ : CoordinateSpace n,
-      ‖𝓕 (fun y ↦ a.coefficient (y, ξ)) η‖ ≤
-        C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
-  obtain ⟨C, hC0, hC⟩ := ha.exists_one_add_norm_pow_mul_norm_fourier_le ⌈r⌉₊
-  refine ⟨C, hC0, fun η ξ ↦ ?_⟩
+/-- **Rapid decay with seminorm constants.** For a compact set `K` and every `r` there are finitely
+many words `α` and a constant `C` such that every symbol `a` of order `m` vanishing at positions
+outside `K` satisfies `‖â(η, ξ)‖ ≤ C (∑_α p_{K,α,[]}(a)) ⟨ξ⟩ ^ m ⟨η⟩ ^ (-r)`. -/
+theorem exists_norm_fourier_slice_le_sum_seminorm (K : Compacts (CoordinateSpace n)) (r : ℝ) :
+    ∃ (t : Finset (List (Fin n))) (C : ℝ), 0 ≤ C ∧ ∀ a : Symbol n V W m,
+      (∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0) → ∀ η ξ : CoordinateSpace n,
+        ‖𝓕 (fun y ↦ a.coefficient (y, ξ)) η‖ ≤
+          C * (∑ α ∈ t, Symbol.seminorm K α [] a) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) *
+            (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+  obtain ⟨t, C, hC0, hC⟩ :=
+    exists_one_add_norm_pow_mul_norm_fourier_le_sum_seminorm (V := V) (W := W) (m := m) K ⌈r⌉₊
+  refine ⟨t, C, hC0, fun a haK η ξ ↦ ?_⟩
   -- `⟨η⟩ ^ r ≤ (1 + ‖η‖) ^ ⌈r⌉₊`
   have hw : (1 + ‖η‖ ^ 2) ^ (r / 2) ≤ (1 + ‖η‖) ^ ⌈r⌉₊ :=
     one_add_norm_sq_rpow_le_one_add_norm_pow_of_le η (Nat.le_ceil r)
@@ -347,7 +352,20 @@ theorem HasCompactSpatialSupport.exists_norm_fourier_slice_le (ha : a.HasCompact
     le_div_iff₀ hpos]
   calc ‖𝓕 (fun y ↦ a.coefficient (y, ξ)) η‖ * (1 + ‖η‖ ^ 2) ^ (r / 2)
       ≤ ‖𝓕 (fun y ↦ a.coefficient (y, ξ)) η‖ * (1 + ‖η‖) ^ ⌈r⌉₊ := by gcongr
-    _ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by rw [mul_comm]; exact hC η ξ
+    _ ≤ C * (∑ α ∈ t, Symbol.seminorm K α [] a) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+      rw [mul_comm]; exact hC a haK η ξ
+
+/-- **Rapid decay.** For every `r`, the Fourier transform of the position slice satisfies
+`‖â(η, ξ)‖ ≤ C ⟨ξ⟩ ^ m ⟨η⟩ ^ (-r)`. -/
+theorem HasCompactSpatialSupport.exists_norm_fourier_slice_le (ha : a.HasCompactSpatialSupport)
+    (r : ℝ) : ∃ C, 0 ≤ C ∧ ∀ η ξ : CoordinateSpace n,
+      ‖𝓕 (fun y ↦ a.coefficient (y, ξ)) η‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
+  obtain ⟨t, C, hC, h⟩ :=
+    exists_norm_fourier_slice_le_sum_seminorm (V := V) (W := W) (m := m) ⟨K, hK⟩ r
+  exact ⟨C * ∑ α ∈ t, Symbol.seminorm ⟨K, hK⟩ α [] a,
+    mul_nonneg hC (Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _), h a hKa⟩
 
 /-! ### Regularity of the Fourier transform in the position -/
 

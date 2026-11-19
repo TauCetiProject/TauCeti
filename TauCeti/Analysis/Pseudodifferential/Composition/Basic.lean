@@ -49,7 +49,8 @@ composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic ex
   smoothing symbols form an ideal for `#`.
 * `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_comp_fourier_slice_le`: the decay
   `‖a(x, ξ + y) ∘ b̂(η, ξ)‖ ≤ C ⟨ξ⟩ ^ (m' + m) ⟨η⟩ ^ (-r)` of the integrand for frequency shifts
-  `‖y‖ ≤ R ‖η‖`.
+  `‖y‖ ≤ R ‖η‖`, with the explicit constant in terms of bounds for `a` and `b̂` given by
+  `TauCeti.Symbol.norm_comp_fourier_slice_le`.
 * `TauCeti.Symbol.sharpIntegrand`: the integrand `exp(2πi ⟪η, x⟫) a(x, ξ + sη) ∘ b̂(η, ξ)` with a
   scaled frequency shift, with its decay, continuity and integrability
   (`TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_sharpIntegrand_le` and its companions).
@@ -238,22 +239,18 @@ private theorem compIntegrand_eq_bilinear (p : CoordinateSpace n × CoordinateSp
   simp only [compIntegrand, sharpIntegrand_apply,
     ContinuousLinearMap.bilinearRestrictScalars_apply_apply, ContinuousLinearMap.compL_apply]
 
-/-- **Decay of the composition integrand.** For a symbol `b` with compact spatial support and a
-frequency shift `y` with `‖y‖ ≤ R ‖η‖`, `R ≥ 1`, the composition `a(x, ξ + y) ∘ b̂(η, ξ)` decays in
-`η` faster than every power, with the weight `⟨ξ⟩ ^ (m' + m)` in the frequency, uniformly for
-positions in any set `K` on which `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m'`: a compact set
-(`Symbol.exists_bound_coefficient`), or all positions if `a` is uniform
-(`Symbol.IsUniform.exists_bound_coefficient`). -/
-theorem HasCompactSpatialSupport.exists_norm_comp_fourier_slice_le
-    (hb : b.HasCompactSpatialSupport) {K : Set (CoordinateSpace n)}
-    (ha : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
-    (r : ℝ) {R : ℝ} (hR : 1 ≤ R) :
-    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ η y : CoordinateSpace n, ‖y‖ ≤ R * ‖η‖ →
-      ‖(a.coefficient (x, ξ + y)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)‖ ≤
-        C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
-  obtain ⟨Ca, hCa0, hCa⟩ := ha
-  obtain ⟨Cb, hCb0, hCb⟩ := hb.exists_norm_fourier_slice_le (r + |m'|)
-  refine ⟨Ca * 2 ^ (|m'| / 2) * R ^ |m'| * Cb, by positivity, fun x hx ξ η y hy ↦ ?_⟩
+/-- **Decay of the composition integrand, with explicit constants.** If `‖a(x, ζ)‖ ≤ A ⟨ζ⟩ ^ m'`
+at `ζ = ξ + y` and `‖b̂(η, ξ)‖ ≤ B ⟨ξ⟩ ^ m ⟨η⟩ ^ (-(r + |m'|))`, then for a frequency shift `y` with
+`‖y‖ ≤ R ‖η‖`, `R ≥ 1`, the composition `a(x, ξ + y) ∘ b̂(η, ξ)` is at most
+`A 2 ^ (|m'| / 2) R ^ |m'| B ⟨ξ⟩ ^ (m' + m) ⟨η⟩ ^ (-r)`, by Peetre's inequality. -/
+theorem norm_comp_fourier_slice_le {A B r R : ℝ} (hA : 0 ≤ A) (hR : 1 ≤ R)
+    {x ξ η y : CoordinateSpace n} (hy : ‖y‖ ≤ R * ‖η‖)
+    (ha : ‖a.coefficient (x, ξ + y)‖ ≤ A * (1 + ‖ξ + y‖ ^ 2) ^ (m' / 2))
+    (hb : ‖𝓕 (fun y ↦ b.coefficient (y, ξ)) η‖ ≤
+      B * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |m'|) / 2)) :
+    ‖(a.coefficient (x, ξ + y)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)‖ ≤
+      A * 2 ^ (|m'| / 2) * R ^ |m'| * B * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) *
+        (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
   have hshift : (1 + ‖y‖ ^ 2) ^ (|m'| / 2) ≤ R ^ |m'| * (1 + ‖η‖ ^ 2) ^ (|m'| / 2) := by
     have hy' : ‖y‖ ≤ ‖R • η‖ := by rwa [norm_smul, Real.norm_of_nonneg (zero_le_one.trans hR)]
     refine (Real.rpow_le_rpow (by positivity)
@@ -269,17 +266,34 @@ theorem HasCompactSpatialSupport.exists_norm_comp_fourier_slice_le
   calc ‖(a.coefficient (x, ξ + y)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)‖
       ≤ ‖a.coefficient (x, ξ + y)‖ * ‖𝓕 (fun y ↦ b.coefficient (y, ξ)) η‖ :=
         ContinuousLinearMap.opNorm_comp_le _ _
-    _ ≤ (Ca * (2 ^ (|m'| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m' / 2) *
+    _ ≤ (A * (2 ^ (|m'| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m' / 2) *
           (R ^ |m'| * (1 + ‖η‖ ^ 2) ^ (|m'| / 2)))) *
-        (Cb * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |m'|) / 2)) := by
+        (B * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |m'|) / 2)) := by
         gcongr
-        · exact (hCa x hx _).trans
-            (by gcongr; exact (one_add_norm_add_sq_rpow_le_mul m' ξ y).trans (by gcongr))
-        · exact hCb η ξ
-    _ = Ca * 2 ^ (|m'| / 2) * R ^ |m'| * Cb *
+        exact ha.trans
+          (by gcongr; exact (one_add_norm_add_sq_rpow_le_mul m' ξ y).trans (by gcongr))
+    _ = A * 2 ^ (|m'| / 2) * R ^ |m'| * B *
           ((1 + ‖ξ‖ ^ 2) ^ (m' / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) *
           ((1 + ‖η‖ ^ 2) ^ (|m'| / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |m'|) / 2)) := by ring
     _ = _ := by rw [hξ, hη]
+
+/-- **Decay of the composition integrand.** For a symbol `b` with compact spatial support and a
+frequency shift `y` with `‖y‖ ≤ R ‖η‖`, `R ≥ 1`, the composition `a(x, ξ + y) ∘ b̂(η, ξ)` decays in
+`η` faster than every power, with the weight `⟨ξ⟩ ^ (m' + m)` in the frequency, uniformly for
+positions in any set `K` on which `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m'`: a compact set
+(`Symbol.exists_bound_coefficient`), or all positions if `a` is uniform
+(`Symbol.IsUniform.exists_bound_coefficient`). -/
+theorem HasCompactSpatialSupport.exists_norm_comp_fourier_slice_le
+    (hb : b.HasCompactSpatialSupport) {K : Set (CoordinateSpace n)}
+    (ha : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
+    (r : ℝ) {R : ℝ} (hR : 1 ≤ R) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ η y : CoordinateSpace n, ‖y‖ ≤ R * ‖η‖ →
+      ‖(a.coefficient (x, ξ + y)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+  obtain ⟨Ca, hCa0, hCa⟩ := ha
+  obtain ⟨Cb, hCb0, hCb⟩ := hb.exists_norm_fourier_slice_le (r + |m'|)
+  exact ⟨Ca * 2 ^ (|m'| / 2) * R ^ |m'| * Cb, by positivity, fun x hx ξ η y hy ↦
+    norm_comp_fourier_slice_le hCa0 hR hy (hCa x hx _) (hCb η ξ)⟩
 
 /-- **Decay of the shifted composition integrand.** For frequency shifts `sη` with `|s| ≤ R`, the
 integrand `sharpIntegrand a b s (x, ξ) η` decays in `η` faster than every power, with the weight

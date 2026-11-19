@@ -832,23 +832,36 @@ theorem coefficient_frequencyLaplacianPow_succ' (N : ℕ) (a : Symbol n V W m) :
     rw [coefficient_frequencyLaplacianPow_succ, ih, coefficient_frequencyLaplacian,
       coefficient_frequencyLaplacian, coefficient_frequencyLaplacianPow_succ]
 
+/-- If a symbol vanishes for all frequencies at the position `x`, so does each of its frequency
+derivatives. -/
+theorem coefficient_frequencyDeriv_eq_zero {a : Symbol n V W m} {x : CoordinateSpace n}
+    (ha : ∀ ξ, a.coefficient (x, ξ) = 0) (j : Fin n) (ξ : CoordinateSpace n) :
+    (frequencyDeriv j a).coefficient (x, ξ) = 0 := by
+  rw [coefficient_frequencyDeriv, show (fun η => a.coefficient (x, η)) = 0 from funext ha,
+    coordinateDeriv_zero, Pi.zero_apply]
+
+/-- If a symbol vanishes at all positions outside a closed set `K`, so does each of its position
+derivatives. -/
+theorem coefficient_spatialDeriv_eq_zero {a : Symbol n V W m} {K : Set (CoordinateSpace n)}
+    (hK : IsClosed K) (ha : ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0) (j : Fin n)
+    {x : CoordinateSpace n} (hx : x ∉ K) (ξ : CoordinateSpace n) :
+    (spatialDeriv j a).coefficient (x, ξ) = 0 := by
+  have h : (fun y => a.coefficient (y, ξ)) =ᶠ[nhds x] 0 :=
+    Filter.eventually_of_mem (hK.isOpen_compl.mem_nhds hx) fun y hy => ha y hy ξ
+  rw [coefficient_spatialDeriv, (h.coordinateDeriv [j]).eq_of_nhds, coordinateDeriv_zero,
+    Pi.zero_apply]
+
 theorem HasCompactSpatialSupport.frequencyDeriv {a : Symbol n V W m}
     (ha : a.HasCompactSpatialSupport) (j : Fin n) :
     (frequencyDeriv j a).HasCompactSpatialSupport := by
   obtain ⟨K, hK, hKa⟩ := ha
-  refine ⟨K, hK, fun x hx ξ => ?_⟩
-  rw [coefficient_frequencyDeriv, show (fun η => a.coefficient (x, η)) = 0 from funext (hKa x hx),
-    coordinateDeriv_zero, Pi.zero_apply]
+  exact ⟨K, hK, fun x hx ξ => coefficient_frequencyDeriv_eq_zero (hKa x hx) j ξ⟩
 
 theorem HasCompactSpatialSupport.spatialDeriv {a : Symbol n V W m}
     (ha : a.HasCompactSpatialSupport) (j : Fin n) :
     (spatialDeriv j a).HasCompactSpatialSupport := by
   obtain ⟨K, hK, hKa⟩ := ha
-  refine ⟨K, hK, fun x hx ξ => ?_⟩
-  have h : (fun y => a.coefficient (y, ξ)) =ᶠ[nhds x] 0 :=
-    Filter.eventually_of_mem (hK.isClosed.isOpen_compl.mem_nhds hx) fun y hy => hKa y hy ξ
-  rw [coefficient_spatialDeriv, (h.coordinateDeriv [j]).eq_of_nhds, coordinateDeriv_zero,
-    Pi.zero_apply]
+  exact ⟨K, hK, fun x hx ξ => coefficient_spatialDeriv_eq_zero hK.isClosed hKa j hx ξ⟩
 
 end Deriv
 
