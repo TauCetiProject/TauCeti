@@ -217,10 +217,11 @@ theorem cappedPerturbation_add_const (a L : ℝ) (H : Puncture → ℝ → M →
   simp only [cappedPerturbation_def, mul_add, add_smul, Finset.sum_add_distrib]
 
 /-- The capped perturbation of target-independent Hamiltonians does not depend on the target
-point. -/
-theorem cappedPerturbation_const_target (a L : ℝ) (c : Puncture → ℝ → ℝ) (w : ℂ) (x y : M) :
+point, nor on the target type. -/
+theorem cappedPerturbation_const_target {N : Type*} (a L : ℝ) (c : Puncture → ℝ → ℝ) (w : ℂ)
+    (x : M) (y : N) :
     cappedPerturbation a L (fun q t (_ : M) ↦ c q t) w x =
-      cappedPerturbation a L (fun q t (_ : M) ↦ c q t) w y := by
+      cappedPerturbation a L (fun q t (_ : N) ↦ c q t) w y := by
   simp only [cappedPerturbation_def]
 
 /-- Where the datum is nonzero, some end has signed longitudinal coordinate in `(1, L + 3)`. -/

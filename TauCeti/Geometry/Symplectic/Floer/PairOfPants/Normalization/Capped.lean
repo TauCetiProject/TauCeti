@@ -83,11 +83,12 @@ namespace Floer
 variable {M : Type*} {a L : ℝ}
 
 /-- The components of the capped perturbation of target-independent Hamiltonians, as functions of
-the domain point alone: their values at any target point `y`. -/
-private theorem cappedPerturbation_const_target_fun (c : Puncture → ℝ → ℝ) (y : M) (v : ℂ) :
+the domain point alone: their values at any target point `y`, of any target type. -/
+private theorem cappedPerturbation_const_target_fun {N : Type*} (c : Puncture → ℝ → ℝ) (y : N)
+    (v : ℂ) :
     (fun z (x : M) ↦ cappedPerturbation a L (fun q t (_ : M) ↦ c q t)
         (Complex.equivRealProdCLM.symm z) x v) =
-      fun z _ ↦ cappedPerturbation a L (fun q t (_ : M) ↦ c q t)
+      fun z _ ↦ cappedPerturbation a L (fun q t (_ : N) ↦ c q t)
         (Complex.equivRealProdCLM.symm z) y v := by
   funext z x
   rw [cappedPerturbation_const_target a L c _ x y]
@@ -105,6 +106,13 @@ private theorem cappedPerturbation_add_const_fun (H : Puncture → ℝ → M →
   funext z x
   rw [cappedPerturbation_add_const, add_apply,
     cappedPerturbation_const_target a L c _ x y]
+
+/-- Normalizing period-one end Hamiltonians by period-one functions of time leaves them of period
+one. -/
+private theorem periodic_sub_const {H : Puncture → ℝ → M → ℝ} {c : Puncture → ℝ → ℝ}
+    (hH : ∀ q, Periodic (H q) 1) (hc : ∀ q, Periodic (c q) 1) (q : Puncture) :
+    Periodic (fun t x ↦ H q t x - c q t) 1 := fun t ↦ funext fun x ↦
+  congrArg₂ (· - ·) (congrFun (hH q t) x) (hc q t)
 
 end Floer
 
@@ -164,7 +172,7 @@ theorem hamiltonianCurvature_cappedPerturbation_const_target (ω : SymplecticFor
           (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedPerturbation a L (fun q t (_ : V) ↦ c q t)
           (Complex.equivRealProdCLM.symm z) x Complex.I) z y := by
-  rw [cappedPerturbation_const_target_fun c 0, cappedPerturbation_const_target_fun c 0,
+  rw [cappedPerturbation_const_target_fun c (0 : V), cappedPerturbation_const_target_fun c (0 : V),
     hamiltonianCurvature_const, hamiltonianCurvature_const]
 
 /-- For `C¹` functions `c_q` of time, the curvature of the capped perturbation of the
@@ -190,7 +198,7 @@ theorem integrable_hamiltonianCurvature_cappedPerturbation_const (ω : Symplecti
   have hkc (v : ℂ) (w : ℝ × ℝ) : Continuous fun z ↦ fderiv ℝ (fun z ↦ cappedPerturbation a L
       (fun q t (_ : V) ↦ c q t) (Complex.equivRealProdCLM.symm z) 0 v) z w :=
     ((hk v).continuous_fderiv one_ne_zero).clm_apply continuous_const
-  rw [cappedPerturbation_const_target_fun c 0, cappedPerturbation_const_target_fun c 0]
+  rw [cappedPerturbation_const_target_fun c (0 : V), cappedPerturbation_const_target_fun c (0 : V)]
   simp only [hamiltonianCurvature_const]
   exact ((hkc _ _).sub (hkc _ _)).integrable_of_hasCompactSupport ((hks _ _).sub (hks _ _))
 
@@ -215,8 +223,8 @@ theorem integral_hamiltonianCurvature_cappedPerturbation_const (ω : SymplecticF
       (fun z x ↦ cappedPerturbation a L (fun q t (_ : V) ↦ c q t)
         (Complex.equivRealProdCLM.symm z) x Complex.I) (fun _ ↦ (0 : V)) = 0 := by
     funext z
-    rw [cappedPerturbation_const_target_fun c 0, cappedPerturbation_const_target_fun c 0,
-      floerEnergyDensity_def, perturbedFDeriv_const]
+    rw [cappedPerturbation_const_target_fun c (0 : V),
+      cappedPerturbation_const_target_fun c (0 : V), floerEnergyDensity_def, perturbedFDeriv_const]
     simp
   -- The energy identity for the constant map `0` leaves only the curvature.
   have h := ω.setIntegral_floerEnergyDensity_cappedPerturbation
@@ -345,6 +353,27 @@ theorem hamiltonianCurvature_cappedPerturbation_add_const (ω : SmoothTwoForm I 
       (differentiableAt_cappedPerturbation_domain hc' hcs' a L z x Complex.I),
     cappedPerturbation_const_target_fun c x, cappedPerturbation_const_target_fun c x]
 
+/-- The curvature of the capped perturbation of target-independent Hamiltonians on `M` is the one on
+`ℂ` with its standard symplectic form: whatever the target, it is the exterior derivative of the
+same one-form on the domain. -/
+private theorem hamiltonianCurvature_cappedPerturbation_const_eq_stdComplexSymplecticForm
+    (ω : SmoothTwoForm I M) (a L : ℝ) (c : Puncture → ℝ → ℝ) (z : ℝ × ℝ) (x : M) :
+    ω.hamiltonianCurvature
+        (fun z x ↦ cappedPerturbation a L (fun q t (_ : M) ↦ c q t)
+          (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedPerturbation a L (fun q t (_ : M) ↦ c q t)
+          (Complex.equivRealProdCLM.symm z) x Complex.I) z x =
+      stdComplexSymplecticForm.hamiltonianCurvature
+        (fun z x ↦ cappedPerturbation a L (fun q t (_ : ℂ) ↦ c q t)
+          (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedPerturbation a L (fun q t (_ : ℂ) ↦ c q t)
+          (Complex.equivRealProdCLM.symm z) x Complex.I) z 0 := by
+  rw [cappedPerturbation_const_target_fun (M := M) c (0 : ℂ),
+    cappedPerturbation_const_target_fun (M := M) c (0 : ℂ), hamiltonianCurvature_const,
+    cappedPerturbation_const_target_fun (M := ℂ) c (0 : ℂ),
+    cappedPerturbation_const_target_fun (M := ℂ) c (0 : ℂ),
+    SymplecticForm.hamiltonianCurvature_const]
+
 /-- **The curvature of a normalization integrates to zero, for a manifold target.** For
 period-one `C¹` functions `c_q` of time, the curvature of the capped perturbation of the
 target-independent Hamiltonians `c_q` on `M` integrates to zero over the plane, along any map
@@ -356,24 +385,8 @@ theorem integral_hamiltonianCurvature_cappedPerturbation_const (ω : SmoothTwoFo
           (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedPerturbation a L (fun q t (_ : M) ↦ c q t)
           (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) = 0 := by
-  -- The curvature of a target-independent datum is the exterior derivative of a one-form on the
-  -- domain, whatever the target; on `ℂ` with its standard symplectic form it was computed above.
-  have h (z : ℝ × ℝ) : ω.hamiltonianCurvature
-      (fun z x ↦ cappedPerturbation a L (fun q t (_ : M) ↦ c q t)
-        (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ cappedPerturbation a L (fun q t (_ : M) ↦ c q t)
-        (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) =
-      stdComplexSymplecticForm.hamiltonianCurvature
-        (fun z x ↦ cappedPerturbation a L (fun q t (_ : ℂ) ↦ c q t)
-          (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ cappedPerturbation a L (fun q t (_ : ℂ) ↦ c q t)
-          (Complex.equivRealProdCLM.symm z) x Complex.I) z 0 := by
-    rw [cappedPerturbation_const_target_fun c (u z), cappedPerturbation_const_target_fun c (u z),
-      hamiltonianCurvature_const, cappedPerturbation_const_target_fun c (0 : ℂ),
-      cappedPerturbation_const_target_fun c (0 : ℂ), SymplecticForm.hamiltonianCurvature_const]
-    -- Both sides are the same exterior derivative of a one-form on the domain.
-    simp only [cappedPerturbation_def]
-  rw [integral_congr_ae (Filter.Eventually.of_forall h)]
+  rw [integral_congr_ae (Filter.Eventually.of_forall fun z ↦
+    ω.hamiltonianCurvature_cappedPerturbation_const_eq_stdComplexSymplecticForm a L c z (u z))]
   exact stdComplexSymplecticForm.integral_hamiltonianCurvature_cappedPerturbation_const hc hcs a L
     fun _ ↦ 0
 
@@ -386,14 +399,10 @@ theorem integrable_hamiltonianCurvature_cappedPerturbation_const (ω : SmoothTwo
           (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedPerturbation a L (fun q t (_ : M) ↦ c q t)
           (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) := by
-  rw [cappedPerturbation_const_target_fun c (u 0), cappedPerturbation_const_target_fun c (u 0)]
-  simp only [hamiltonianCurvature_const]
-  have h := stdComplexSymplecticForm.integrable_hamiltonianCurvature_cappedPerturbation_const hc
-    hcs a L fun _ ↦ 0
-  rw [cappedPerturbation_const_target_fun c (0 : ℂ), cappedPerturbation_const_target_fun c (0 : ℂ)]
-    at h
-  simp only [SymplecticForm.hamiltonianCurvature_const] at h
-  simpa only [cappedPerturbation_def] using h
+  exact (stdComplexSymplecticForm.integrable_hamiltonianCurvature_cappedPerturbation_const hc hcs
+    a L fun _ ↦ 0).congr (Filter.Eventually.of_forall fun z ↦
+      (ω.hamiltonianCurvature_cappedPerturbation_const_eq_stdComplexSymplecticForm a L c z
+        (u z)).symm)
 
 /-- Normalizing the end Hamiltonians does not change the integrability of the curvature of the
 capped perturbation along a map. -/
@@ -493,26 +502,19 @@ theorem abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le_of_a
       ∫ z, (SmoothBundleForm.eval₂ ω (u z)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)| ≤ 2 * ∑ q, B q := by
-  -- Write `H_q = G_q + c_q`; the datum built from `G_q` has the same energy density.
-  obtain ⟨G, hG⟩ : ∃ G : Puncture → ℝ → M → ℝ, ∀ q t x, G q t x = H q t x - c q t :=
-    ⟨_, fun _ _ _ ↦ rfl⟩
-  have hHG : H = fun q t x ↦ G q t x + c q t := by
-    funext q t x
-    rw [hG, sub_add_cancel]
-  have hGp (q : Puncture) : Periodic (G q) 1 := fun t ↦ funext fun x ↦ by
-    rw [hG, hG, congrFun (hH q t) x, hc q t]
-  have hGs (q : Puncture) : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (G q)) := by
-    have h : uncurry (G q) = fun p ↦ uncurry (H q) p - c q p.1 :=
-      funext fun p ↦ hG q p.1 p.2
-    rw [h]
-    exact (hHs q).sub ((hcs q).contMDiff.comp contMDiff_fst)
-  have hGB (q : Puncture) (t : ℝ) (x : M) : |G q t x| ≤ B q := hG q t x ▸ hB q t x
+  -- Write `H_q = (H_q - c_q) + c_q`; the datum built from `H_q - c_q` has the same energy density.
+  have hHG : H = fun q t x ↦ (H q t x - c q t) + c q t :=
+    funext fun q ↦ funext fun t ↦ funext fun x ↦ (sub_add_cancel _ _).symm
+  have hGp := periodic_sub_const hH hc
+  have hGs (q : Puncture) :
+      ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry fun t x ↦ H q t x - c q t) :=
+    (hHs q).sub ((hcs q).contMDiff.comp contMDiff_fst)
   rw [hHG] at hE hR ⊢
   simp only [cappedComparisonPerturbation_def, floerEnergyDensity_cappedPerturbation_add_const]
     at hE hR ⊢
   rw [ω.integrable_hamiltonianCurvature_cappedPerturbation_add_const_iff hGp hGs hc hcs] at hR
   simp only [← cappedComparisonPerturbation_def] at hE hR ⊢
-  exact hω.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le hGp hGs hGB hR₀ hu
+  exact hω.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le hGp hGs hB hR₀ hu
     hE hR
 
 end IsNondegenerate
@@ -600,25 +602,17 @@ theorem abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le_of_a
         u z) -
       ∫ z, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)| ≤
         2 * ∑ q, B q := by
-  -- Write `H_q = G_q + c_q`; the datum built from `G_q` has the same energy density.
-  obtain ⟨G, hG⟩ : ∃ G : Puncture → ℝ → V → ℝ, ∀ q t x, G q t x = H q t x - c q t :=
-    ⟨_, fun _ _ _ ↦ rfl⟩
-  have hHG : H = fun q t x ↦ G q t x + c q t := by
-    funext q t x
-    rw [hG, sub_add_cancel]
-  have hGp (q : Puncture) : Periodic (G q) 1 := fun t ↦ funext fun x ↦ by
-    rw [hG, hG, congrFun (hH q t) x, hc q t]
-  have hGs (q : Puncture) : ContDiff ℝ 1 (uncurry (G q)) := by
-    have h : uncurry (G q) = fun p ↦ uncurry (H q) p - c q p.1 :=
-      funext fun p ↦ hG q p.1 p.2
-    rw [h]
-    exact (hHs q).sub ((hcs q).comp contDiff_fst)
-  have hGB (q : Puncture) (t : ℝ) (x : V) : |G q t x| ≤ B q := hG q t x ▸ hB q t x
+  -- Write `H_q = (H_q - c_q) + c_q`; the datum built from `H_q - c_q` has the same energy density.
+  have hHG : H = fun q t x ↦ (H q t x - c q t) + c q t :=
+    funext fun q ↦ funext fun t ↦ funext fun x ↦ (sub_add_cancel _ _).symm
+  have hGs (q : Puncture) : ContDiff ℝ 1 (uncurry fun t x ↦ H q t x - c q t) :=
+    (hHs q).sub ((hcs q).comp contDiff_fst)
   rw [hHG] at hE ⊢
   simp only [cappedComparisonPerturbation_def, floerEnergyDensity_cappedPerturbation_add_const]
     at hE ⊢
   simp only [← cappedComparisonPerturbation_def] at hE ⊢
-  exact ω.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le hGp hGs hGB hR₀ hu hE
+  exact ω.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le
+    (periodic_sub_const hH hc) hGs hB hR₀ hu hE
 
 end SymplecticForm
 
