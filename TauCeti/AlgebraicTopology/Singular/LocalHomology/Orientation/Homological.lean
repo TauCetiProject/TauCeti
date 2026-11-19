@@ -145,11 +145,11 @@ theorem eq_or_eq_neg [ConnectedSpace M] (hd : finrank ℝ E = d)
     (o o' : HomologicalOrientation M E d) : o' = o ∨ o' = -o := by
   subst hd
   obtain ⟨x⟩ := ConnectedSpace.toNonempty (α := M)
-  rcases IsLocalOrientation.eq_or_eq_neg
+  rcases LocalOrientation.eq_or_eq_neg
       (singularHomologyComplSingletonFinrankIso _ (chartAt E x) (mem_chart_source E x))
-      (o x).property (o' x).property with h | h
-  · exact Or.inl (eq_of_apply_eq (x := x) (Subtype.ext h))
-  · exact Or.inr (eq_of_apply_eq (x := x) (Subtype.ext h))
+      (o' x) (o x) with h | h
+  · exact Or.inl (eq_of_apply_eq (x := x) h)
+  · exact Or.inr (eq_of_apply_eq (x := x) h)
 
 /-- In the dimension of a nonempty manifold, an orientation differs from its reversal. -/
 theorem neg_ne [Nonempty M] (hd : finrank ℝ E = d) (o : HomologicalOrientation M E d) :

@@ -248,6 +248,13 @@ theorem IsLocalOrientation.neg_ne {M : Type w} [TopologicalSpace M] {x : M} {d :
     exact neg_add_cancel z
   exact two_ne_zero ((hz.zsmul_eq_zero_iff e).1 h2)
 
+/-- In a local homology fibre isomorphic to `ℤ`, two local orientations agree up to sign. -/
+theorem LocalOrientation.eq_or_eq_neg {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ}
+    (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
+      ModuleCat.of ℤ (ULift.{w} ℤ))
+    (z z₀ : LocalOrientation M x d) : z = z₀ ∨ z = -z₀ :=
+  (z₀.property.eq_or_eq_neg e z.property).imp Subtype.ext Subtype.ext
+
 /-- In a local homology fibre isomorphic to `ℤ`, a local orientation `z` identifies `ℤ` with the
 fibre: every class is a unique integral multiple `c • z` of `z`. -/
 def IsLocalOrientation.linearEquiv {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ}
@@ -261,14 +268,23 @@ def IsLocalOrientation.linearEquiv {M : Type w} [TopologicalSpace M] {x : M} {d 
         (hz.zsmul_eq_zero_iff e).1 ((int_smul_eq_zsmul _ c z).symm.trans hc),
       fun y ↦ let ⟨c, hc⟩ := hz y; ⟨c, (int_smul_eq_zsmul _ c z).trans hc⟩⟩
 
-/-- The identification of `ℤ` with the fibre given by a local orientation `z` sends `1` to `z`. -/
+/-- The identification of `ℤ` with the fibre given by a local orientation `z` sends `c` to
+`c • z`. -/
 @[simp]
+theorem IsLocalOrientation.linearEquiv_apply {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ}
+    (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
+      ModuleCat.of ℤ (ULift.{w} ℤ))
+    {z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d}
+    (hz : IsLocalOrientation x d z) (c : ℤ) : hz.linearEquiv e c = c • z :=
+  (LinearMap.toSpanSingleton_apply ℤ _ z c).trans (int_smul_eq_zsmul _ c z)
+
+/-- The identification of `ℤ` with the fibre given by a local orientation `z` sends `1` to `z`. -/
 theorem IsLocalOrientation.linearEquiv_apply_one {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ}
     (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
       ModuleCat.of ℤ (ULift.{w} ℤ))
     {z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d}
     (hz : IsLocalOrientation x d z) : hz.linearEquiv e 1 = z :=
-  LinearMap.toSpanSingleton_apply_one ℤ _ z
+  (hz.linearEquiv_apply e 1).trans (one_smul ℤ z)
 
 /-- The identification of `ℤ` with the fibre given by a local orientation `z` sends `z` back
 to `1`. -/

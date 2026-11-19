@@ -70,20 +70,12 @@ variable {E F G E' F' : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup F'] [NormedSpace ℝ F']
   {m n p d : ℕ}
 
-/-- Two local orientations of `E` at the origin agree up to sign. -/
-private theorem eq_or_eq_neg (hE : finrank ℝ E = m + 1) (z z₀ : LocalOrientation E 0 (m + 1)) :
-    z = z₀ ∨ z = -z₀ :=
-  (z₀.property.eq_or_eq_neg (singularHomologyComplSingletonIsoOfFinrankEq _
-    (OpenPartialHomeomorph.refl E) (Set.mem_univ (0 : E)) hE) z.property).imp Subtype.ext
-      Subtype.ext
-
 /-- The identification of the orientation line `o_E` with the unit `ℤ` of the tensor product,
 sending a local orientation `z` of `E` at the origin to `1`. -/
 private def unitIso (hE : finrank ℝ E = m + 1) (z : LocalOrientation E 0 (m + 1)) :
     localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) ({0} : Set E) (m + 1) ≅
       𝟙_ (ModuleCat.{0} ℤ) :=
-  (z.property.linearEquiv (singularHomologyComplSingletonIsoOfFinrankEq _
-    (OpenPartialHomeomorph.refl E) (Set.mem_univ (0 : E)) hE)).symm.toModuleIso
+  (z.property.linearEquiv (singularHomologyComplZeroIso hE)).symm.toModuleIso
 
 @[simp]
 private theorem unitIso_inv_one (hE : finrank ℝ E = m + 1) (z : LocalOrientation E 0 (m + 1)) :
@@ -141,8 +133,10 @@ theorem tensorIso_hom_tmul (hE : finrank ℝ E = m + 1) (hF : finrank ℝ F = n 
         (Classical.arbitrary (LocalOrientation F 0 (n + 1))).val) =
       (prod hE hF hd (Classical.arbitrary _) (Classical.arbitrary _)).val := by
     simp [tensorIso]
-  rcases eq_or_eq_neg hE z (Classical.arbitrary _) with rfl | rfl <;>
-    rcases eq_or_eq_neg hF z' (Classical.arbitrary _) with rfl | rfl <;>
+  rcases eq_or_eq_neg (singularHomologyComplZeroIso hE) z (Classical.arbitrary _)
+    with rfl | rfl <;>
+    rcases eq_or_eq_neg (singularHomologyComplZeroIso hF) z' (Classical.arbitrary _)
+      with rfl | rfl <;>
     simp [key, TensorProduct.neg_tmul, TensorProduct.tmul_neg]
 
 /-- The inverse of the tensor identification sends `z × z'` to `z ⊗ z'`. -/
@@ -157,6 +151,7 @@ theorem tensorIso_inv_prod (hE : finrank ℝ E = m + 1) (hF : finrank ℝ F = n 
 `f : E ≃L[ℝ] E'` and `g : F ≃L[ℝ] F'`, identifying `o_E' ⊗ o_F'` with `o_{E' × F'}` after
 transporting along `f` and `g` agrees with transporting along `f × g` after identifying
 `o_E ⊗ o_F` with `o_{E × F}`. -/
+@[reassoc]
 theorem tensorIso_hom_naturality (hE : finrank ℝ E = m + 1) (hF : finrank ℝ F = n + 1)
     (hE' : finrank ℝ E' = m + 1) (hF' : finrank ℝ F' = n + 1) (hd : m + 1 + (n + 1) = d + 1)
     (f : E ≃L[ℝ] E') (g : F ≃L[ℝ] F') :
@@ -176,6 +171,7 @@ theorem tensorIso_hom_naturality (hE : finrank ℝ E = m + 1) (hF : finrank ℝ 
 /-- **The exchange sign of the tensor identification.** Transport along the exchange
 `E × F ≃ F × E` corresponds to `(-1) ^ ((m + 1) * (n + 1))` times the exchange of tensor factors
 `o_E ⊗ o_F ≅ o_F ⊗ o_E`, where `m + 1` and `n + 1` are the dimensions of `E` and `F`. -/
+@[reassoc]
 theorem tensorIso_hom_comp_prodComm (hE : finrank ℝ E = m + 1) (hF : finrank ℝ F = n + 1)
     (hd : m + 1 + (n + 1) = d + 1) (hd' : n + 1 + (m + 1) = d + 1) :
     (tensorIso hE hF hd).hom ≫ TopPair.singularHomologyMap
@@ -195,6 +191,7 @@ theorem tensorIso_hom_comp_prodComm (hE : finrank ℝ E = m + 1) (hF : finrank �
 
 /-- **Associativity of the tensor identification.** Transport along `(E × F) × G ≃ E × (F × G)`
 corresponds to the associator `(o_E ⊗ o_F) ⊗ o_G ≅ o_E ⊗ (o_F ⊗ o_G)` of tensor products. -/
+@[reassoc]
 theorem tensorIso_hom_comp_prodAssoc {e f : ℕ} (hE : finrank ℝ E = m + 1)
     (hF : finrank ℝ F = n + 1) (hG : finrank ℝ G = p + 1) (he : m + 1 + (n + 1) = e + 1)
     (hf : n + 1 + (p + 1) = f + 1) (hd : e + 1 + (p + 1) = d + 1)
