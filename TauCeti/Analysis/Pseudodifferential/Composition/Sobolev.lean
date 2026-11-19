@@ -17,8 +17,9 @@ symbol `a # b` (`TauCeti.Symbol.sharp`) quantizes on Schwartz functions to `Op(a
 to the bounded extensions `H^s → H^{s - m}` of `TauCeti.Symbol.quantizeSobolev`: the operator
 `Op(a # b) : H^s → H^{s - (m' + m)}` is `Op(a) ∘ Op(b)`, as maps of tempered distributions
 (`TauCeti.Symbol.toDistr_quantizeSobolev_sharp`). In particular, multiplying `Op(a) v` by a
-Schwartz function `ψ` gives `Op(ψ # a) v` (`TauCeti.Symbol.smulLeftCLM_toDistr_quantizeSobolev`),
-and `ψ # a` vanishes at positions outside `tsupport ψ`
+compactly supported Schwartz function `ψ` gives `Op(ψ # a) v`
+(`TauCeti.Symbol.smulLeftCLM_toDistr_quantizeSobolev`), and `ψ # a` vanishes at positions outside
+`tsupport ψ`
 (`TauCeti.Symbol.coefficient_ofSpatial_smul_id_sharp_of_notMem_tsupport`).
 
 Combined with the locality of the composition symbol
@@ -86,8 +87,10 @@ theorem coefficient_ofSpatial_smul_id_sharp_of_notMem_tsupport {a : Symbol n V W
   rw [coefficient_sharp_of_coefficient_eq_smul (a := F) (a' := F) ha (t := 0)
     (fun η ↦ by simp [F, image_eq_zero_of_notMem_tsupport hx]), zero_smul]
 
-/-- **Multiplication after quantization.** For a Schwartz function `ψ` and a symbol `a` with
-compact spatial support, multiplying `Op(a) v` by `ψ` gives `Op(ψ # a) v` for every `v ∈ H^t`. -/
+/-- **Multiplication after quantization.** For a Schwartz function `ψ` whose multiplication symbol
+`ψ(x) id` has compact spatial support (for instance `ψ` compactly supported,
+`TauCeti.Symbol.hasCompactSpatialSupport_ofSpatial_smul_id`) and a symbol `a` with compact spatial
+support, multiplying `Op(a) v` by `ψ` gives `Op(ψ # a) v` for every `v ∈ H^t`. -/
 theorem smulLeftCLM_toDistr_quantizeSobolev {a : Symbol n V W m}
     (ha : a.HasCompactSpatialSupport) {ψ : 𝓢(CoordinateSpace n, ℂ)}
     (hψ : (ofSpatial (fun y ↦ ψ y • ContinuousLinearMap.id ℂ W)
