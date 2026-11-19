@@ -36,8 +36,8 @@ cyclotomic (Habiro) completion of `R[q]`.
 
 * `TauCeti.qFactorial_base_one`: `[n]_1! = n!`.
 * `TauCeti.map_qFactorial`, `TauCeti.map_qPochhammer`: both products commute with ring
-  homomorphisms; `TauCeti.Polynomial.map_qFactorial`, `TauCeti.Polynomial.map_qPochhammer`
-  and the `eval` versions are the coefficient-change and evaluation forms on `R[X]`.
+  homomorphisms; `Polynomial.map_qFactorial`, `Polynomial.map_qPochhammer` and the `eval`
+  versions are the coefficient-change and evaluation forms on `R[X]`.
 * `TauCeti.qPochhammer_add`: concatenation, `(x; q)_{m + n} = (x; q)_m (x q ^ m; q)_n`, with
   the shift law `TauCeti.qPochhammer_succ'`: `(x; q)_{n + 1} = (1 - x) (x q; q)_n`.
 * `TauCeti.one_sub_pow_mul_qFactorial`: `(1 - q) ^ n [n]_q! = (q; q)_n`.
@@ -208,11 +208,7 @@ theorem qPochhammer_inv_self (q : Rˣ) (n : ℕ) :
     qPochhammer (↑q⁻¹ : R) ↑q⁻¹ n =
       (-1) ^ n * (↑q⁻¹ : R) ^ (n * (n + 1) / 2) * qPochhammer (q : R) q n := by
   have hexp : n * (n + 1) / 2 = n + n * (n - 1) / 2 := by
-    have h : n * (n + 1) = n * (n - 1) + n * 2 := by
-      cases n with
-      | zero => rfl
-      | succ k => rw [Nat.add_sub_cancel]; ring
-    rw [h, Nat.add_mul_div_right _ _ two_pos, add_comm]
+    simpa [mul_comm, add_comm] using Nat.triangle_succ n
   rw [qPochhammer_inv, hexp, pow_add, mul_assoc ((-1 : R) ^ n)]
 
 end CommRing
@@ -222,32 +218,32 @@ end CommRing
 With coefficient ring `R[X]` these give the coefficient-change and evaluation behaviour of the
 polynomial products such as `(X; X)_n`. -/
 
-namespace Polynomial
+section Polynomial
 
-open _root_.Polynomial
+open Polynomial
 
 /-- Coefficient change commutes with the q-factorial. -/
 @[simp]
-theorem map_qFactorial {R S : Type*} [CommSemiring R] [CommSemiring S] (f : R →+* S) (q : R[X])
-    (n : ℕ) : (qFactorial q n).map f = qFactorial (q.map f) n :=
+theorem _root_.Polynomial.map_qFactorial {R S : Type*} [CommSemiring R] [CommSemiring S]
+    (f : R →+* S) (q : R[X]) (n : ℕ) : (qFactorial q n).map f = qFactorial (q.map f) n :=
   TauCeti.map_qFactorial (mapRingHom f) q n
 
 /-- Evaluation commutes with the q-factorial. -/
 @[simp]
-theorem eval_qFactorial {R : Type*} [CommSemiring R] (a : R) (q : R[X]) (n : ℕ) :
-    (qFactorial q n).eval a = qFactorial (q.eval a) n :=
+theorem _root_.Polynomial.eval_qFactorial {R : Type*} [CommSemiring R] (a : R) (q : R[X])
+    (n : ℕ) : (qFactorial q n).eval a = qFactorial (q.eval a) n :=
   TauCeti.map_qFactorial (evalRingHom a) q n
 
 /-- Coefficient change commutes with the finite q-Pochhammer product. -/
 @[simp]
-theorem map_qPochhammer {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S) (x q : R[X])
-    (n : ℕ) : (qPochhammer x q n).map f = qPochhammer (x.map f) (q.map f) n :=
+theorem _root_.Polynomial.map_qPochhammer {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S)
+    (x q : R[X]) (n : ℕ) : (qPochhammer x q n).map f = qPochhammer (x.map f) (q.map f) n :=
   TauCeti.map_qPochhammer (mapRingHom f) x q n
 
 /-- Evaluation commutes with the finite q-Pochhammer product. -/
 @[simp]
-theorem eval_qPochhammer {R : Type*} [CommRing R] (a : R) (x q : R[X]) (n : ℕ) :
-    (qPochhammer x q n).eval a = qPochhammer (x.eval a) (q.eval a) n :=
+theorem _root_.Polynomial.eval_qPochhammer {R : Type*} [CommRing R] (a : R) (x q : R[X])
+    (n : ℕ) : (qPochhammer x q n).eval a = qPochhammer (x.eval a) (q.eval a) n :=
   TauCeti.map_qPochhammer (evalRingHom a) x q n
 
 end Polynomial
