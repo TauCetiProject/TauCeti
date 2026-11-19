@@ -27,7 +27,8 @@ the Bessel-potential spaces `H^s = H^{s,2}(ℝⁿ; V)`. This file proves this op
 its consequence:
 
 * `TauCeti.Symbol.IsEllipticAbove.exists_isSmoothing_sharp_sub_ofSpatial` is the symbol identity:
-  a symbol `q` of order `-m` with compact spatial support such that `q # a - φ` is smoothing.
+  a symbol `q` of order `-m` with compact spatial support such that `q # a - φ` is smoothing,
+  again with compact spatial support.
 * `TauCeti.Symbol.IsEllipticAbove.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_smulLeftCLM_add`
   is the operator identity: for an elliptic `p`, there are a symbol `q` of order `-m` and a
   smoothing symbol `r`, both with compact spatial support, with `Op(q) Op(a) u = φ u + Op(r) u`
@@ -89,21 +90,22 @@ variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V
 /-- **The local parametrix symbol of an elliptic symbol.** Let `p` be elliptic of order `m`, let
 `φ` be a compactly supported Schwartz function, and let `a` be a symbol with compact spatial support
 that agrees with `p` on a neighbourhood of `tsupport φ`. There is a symbol `q` of order `-m` with
-compact spatial support such that `q # a - φ` is smoothing. -/
+compact spatial support such that `q # a - φ` is smoothing and has compact spatial support. -/
 theorem IsEllipticAbove.exists_isSmoothing_sharp_sub_ofSpatial (hp : p.IsEllipticAbove R)
     (ha : a.HasCompactSpatialSupport) {φ : 𝓢(CoordinateSpace n, ℂ)} (hφ : HasCompactSupport φ)
     (hap : ∀ᶠ x in 𝓝ˢ (tsupport φ), ∀ ξ, a.coefficient (x, ξ) = p.coefficient (x, ξ)) :
     ∃ q : Symbol n W V (-m), q.HasCompactSpatialSupport ∧
-      (q.sharp a ha - inclusion (neg_add_cancel m).ge
-        (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
-          ((φ.smooth ⊤).smul contDiff_const))).IsSmoothing := by
+      let r := q.sharp a ha - inclusion (neg_add_cancel m).ge
+        (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) ((φ.smooth ⊤).smul contDiff_const))
+      r.HasCompactSpatialSupport ∧ r.IsSmoothing := by
   obtain ⟨b, hL, -⟩ := hp.exists_isAsymptoticSum_sharpTerm
   have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := V) hφ
   set F := ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) ((φ.smooth ⊤).smul contDiff_const)
   set q := inclusion (zero_add (-m)).le (F.comp b)
   have hqb : ∀ x ξ, q.coefficient (x, ξ) = φ x • b.coefficient (x, ξ) := fun x ξ ↦ by
     simp [q, F]
-  exact ⟨q, (hF.comp_right b).inclusion _,
+  have hq : q.HasCompactSpatialSupport := (hF.comp_right b).inclusion _
+  exact ⟨q, hq, (hq.sharp ha).sub (hF.inclusion _),
     isSmoothing_sharp_sub_ofSpatial hL (φ.smooth ⊤) hqb ha hap⟩
 
 /-- **The local parametrix of an elliptic operator.** Let `p` be elliptic of order `m`, let `φ`
@@ -121,11 +123,10 @@ theorem IsEllipticAbove.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_smulLe
           (q.quantizeSobolev hq (s - m) (a.quantizeSobolev ha s u)).toDistr =
             (BesselPotentialSpace.smulLeftCLM s φ u).toDistr +
               (r.quantizeSobolev hr s u).toDistr := by
-  obtain ⟨q, hq, hrS⟩ := hp.exists_isSmoothing_sharp_sub_ofSpatial ha hφ hap
+  obtain ⟨q, hq, hr, hrS⟩ := hp.exists_isSmoothing_sharp_sub_ofSpatial ha hφ hap
   have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := V) hφ
   set F := ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) ((φ.smooth ⊤).smul contDiff_const)
   have hF' := hF.inclusion (neg_add_cancel m).ge
-  have hr := (hq.sharp ha).sub hF'
   refine ⟨q, hq, _, hr, hrS, fun s u ↦ ?_⟩
   rw [← toDistr_quantizeSobolev_sharp hq ha,
     toDistr_quantizeSobolev_congr
@@ -177,11 +178,10 @@ theorem IsEllipticAbove.exists_isSmoothing_and_quantizeTempered_eq_smulLeftCLM_a
         ∀ T : 𝓢'(CoordinateSpace n, F),
           quantizeTempered F q hq.isUniform (quantizeTempered F a ha.isUniform T) =
             TemperedDistribution.smulLeftCLM F φ T + quantizeTempered F r hr.isUniform T := by
-  obtain ⟨q, hq, hrS⟩ := hp.exists_isSmoothing_sharp_sub_ofSpatial ha hφ hap
+  obtain ⟨q, hq, hr, hrS⟩ := hp.exists_isSmoothing_sharp_sub_ofSpatial ha hφ hap
   have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := ℂ) hφ
   set M := ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ ℂ) ((φ.smooth ⊤).smul contDiff_const)
   have hF' := hF.inclusion (neg_add_cancel m).ge
-  have hr := (hq.sharp ha).sub hF'
   refine ⟨q, hq, _, hr, hrS, fun T ↦ ?_⟩
   rw [← ContinuousLinearMap.comp_apply, ← quantizeTempered_sharp hq.isUniform ha,
     quantizeTempered_congr (hq.sharp ha).isUniform (hF'.add hr).isUniform
