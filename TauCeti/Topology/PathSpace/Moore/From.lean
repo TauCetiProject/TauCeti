@@ -31,6 +31,8 @@ the chains of the loop space are compared in Brown's theory of twisted tensor pr
 * `TauCeti.MoorePathFrom.refl X b`: the constant path of length zero at `b`.
 * `TauCeti.MoorePathFrom.leftAct`: concatenation of a Moore loop at `b` in front of a path.
 * `TauCeti.MoorePathFrom.endpoint X b`: the end point, which the left loop action preserves.
+* `TauCeti.MoorePathFrom.ofLoop X b`: the inclusion of the Moore loops at `b`, an equivariant
+  embedding onto the fibre of the end point over `b`.
 * `TauCeti.MoorePathFrom.truncateHomotopy`: the homotopy from the constant map at the constant path
   to the identity, by truncation.
 
@@ -142,6 +144,43 @@ theorem endpoint_apply (γ : MoorePathFrom X b) : endpoint X b γ = γ.toMoorePa
 theorem endpoint_leftAct (ω : MooreLoopSpace X b) (γ : MoorePathFrom X b) :
     endpoint X b (leftAct ω γ) = endpoint X b γ := by
   simp [endpoint_apply]
+
+/-! ### Moore loops as paths -/
+
+variable (X b) in
+/-- The **inclusion of the Moore loops** at `b` into the paths from `b`: a loop is a path from `b`
+which ends at `b`. It is the orbit map `ω ↦ ω • refl X b` of the constant path
+(`TauCeti.MoorePathFrom.ofLoop_eq_smul_refl`), and an embedding onto the fibre of the end point
+over `b`. -/
+def ofLoop : C(MooreLoopSpace X b, MoorePathFrom X b) :=
+  ⟨fun ω ↦ ⟨ω.toMoorePath, ω.source_eq⟩, by fun_prop⟩
+
+@[simp]
+theorem toMoorePath_ofLoop (ω : MooreLoopSpace X b) :
+    (ofLoop X b ω).toMoorePath = ω.toMoorePath :=
+  (rfl)
+
+@[simp]
+theorem endpoint_ofLoop (ω : MooreLoopSpace X b) : endpoint X b (ofLoop X b ω) = b :=
+  ω.target_eq
+
+theorem ofLoop_eq_smul_refl (ω : MooreLoopSpace X b) : ofLoop X b ω = ω • refl X b :=
+  ext (by simp)
+
+/-- The inclusion of the loops is equivariant for the loop actions by multiplication and by
+concatenation in front. -/
+theorem ofLoop_mul (ω ω' : MooreLoopSpace X b) :
+    ofLoop X b (ω * ω') = ω • ofLoop X b ω' :=
+  ext (by simp)
+
+theorem isEmbedding_ofLoop : Topology.IsEmbedding (ofLoop X b) :=
+  (Topology.IsEmbedding.subtypeVal.of_comp_iff).1 MooreLoopSpace.isEmbedding_toMoorePath
+
+theorem range_ofLoop : Set.range (ofLoop X b) = endpoint X b ⁻¹' {b} := by
+  ext γ
+  refine ⟨?_, fun hγ ↦ ⟨⟨γ.toMoorePath, γ.source, hγ⟩, rfl⟩⟩
+  rintro ⟨ω, rfl⟩
+  exact endpoint_ofLoop ω
 
 /-! ### The contraction -/
 
