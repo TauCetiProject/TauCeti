@@ -104,9 +104,7 @@ theorem sectionIndex_eq_analyticOrderNatAt (φ : OpenPartialHomeomorph M ℂ) {z
     (hφ : localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
         (⟨fun x : φ.source ↦ φ x - φ z, φ.continuousOn.domRestrict.sub continuous_const⟩ :
           C(φ.source, ℂ)) (S := {⟨z, hzφ⟩}) (T := {0})
-        (by
-          rintro x hx
-          exact Subtype.ext (φ.injOn x.2 hzφ (sub_eq_zero.1 hx))) (1 + 1)
+        (φ.sub_preimage_zero_subset hzφ) (1 + 1)
         ((φ.open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hzφ⟩
           (1 + 1)).symm (oM z)).val =
       (ω.localOrientation hF).val)
@@ -125,7 +123,7 @@ theorem sectionIndex_eq_analyticOrderNatAt (φ : OpenPartialHomeomorph M ℂ) {z
       exact (e.snd_apply_ne_zero_iff ℝ (v := TotalSpace.mk' ℂ z (s z)) hze).2 hsz
     rw [o.sectionIndex_of_ne_zero hF oM hs hsz, analyticOrderNatAt,
       analyticOrderAt_eq_zero.2 (Or.inr hf0)]
-    rfl
+    simp
   -- The common domain `U` of `e` and `φ`, the orientation `oF` of `ℂ` selected by `ω`, and the
   -- restriction of `φ` to `U`.
   let U : TopologicalSpace.Opens M := ⟨φ.source ∩ e.baseSet, φ.open_source.inter e.open_baseSet⟩
@@ -165,9 +163,7 @@ theorem sectionIndex_pos_of_analyticAt (φ : OpenPartialHomeomorph M ℂ) {z : M
     (hφ : localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
         (⟨fun x : φ.source ↦ φ x - φ z, φ.continuousOn.domRestrict.sub continuous_const⟩ :
           C(φ.source, ℂ)) (S := {⟨z, hzφ⟩}) (T := {0})
-        (by
-          rintro x hx
-          exact Subtype.ext (φ.injOn x.2 hzφ (sub_eq_zero.1 hx))) (1 + 1)
+        (φ.sub_preimage_zero_subset hzφ) (1 + 1)
         ((φ.open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hzφ⟩
           (1 + 1)).symm (oM z)).val =
       (ω.localOrientation hF).val)
@@ -222,9 +218,7 @@ theorem evalFundamentalClass_eulerClass_eq_sum_analyticOrderNatAt (hZ : {x | s x
         (⟨fun x : (φ z).source ↦ φ z x - φ z z,
           (φ z).continuousOn.domRestrict.sub continuous_const⟩ : C((φ z).source, ℂ))
         (S := {⟨z, hzφ z hz⟩}) (T := {0})
-        (by
-          rintro x hx
-          exact Subtype.ext ((φ z).injOn x.2 (hzφ z hz) (sub_eq_zero.1 hx))) (1 + 1)
+        ((φ z).sub_preimage_zero_subset (hzφ z hz)) (1 + 1)
         (((φ z).open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hzφ z hz⟩
           (1 + 1)).symm (oM z)).val =
       ((ω z).localOrientation hF).val)
@@ -254,9 +248,7 @@ theorem evalFundamentalClass_eulerClass_nonneg_of_analyticAt (hZ : {x | s x = 0}
         (⟨fun x : (φ z).source ↦ φ z x - φ z z,
           (φ z).continuousOn.domRestrict.sub continuous_const⟩ : C((φ z).source, ℂ))
         (S := {⟨z, hzφ z hz⟩}) (T := {0})
-        (by
-          rintro x hx
-          exact Subtype.ext ((φ z).injOn x.2 (hzφ z hz) (sub_eq_zero.1 hx))) (1 + 1)
+        ((φ z).sub_preimage_zero_subset (hzφ z hz)) (1 + 1)
         (((φ z).open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hzφ z hz⟩
           (1 + 1)).symm (oM z)).val =
       ((ω z).localOrientation hF).val)
@@ -322,7 +314,9 @@ theorem sectionIndex_trivial_conj (hω : oM 0 = ω.localOrientation hF)
     (⊤ : TopologicalSpace.Opens ℂ).isOpenEmbedding' IsOpenEmbedding.id
     (f := fiberCoord hs (Bundle.Trivial.trivialization ℂ ℂ) hUe)
     (g := ⟨starRingEnd ℂ, Complex.continuous_conj⟩) (x := ⟨0, mem_univ 0⟩)
-    (.of_forall fun _ ↦ by rw [fiberCoord_apply]; rfl)
+    (.of_forall fun _ ↦ by
+      rw [fiberCoord_apply, Trivial.trivialization_apply]
+      simp only [ContinuousMap.coe_mk, id_eq])
   rw [HomologicalOrientation.comap_id] at h
   exact h.trans (oM.localIndex_conj 0)
 

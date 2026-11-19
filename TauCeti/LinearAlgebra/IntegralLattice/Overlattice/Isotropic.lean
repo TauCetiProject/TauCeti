@@ -141,11 +141,11 @@ theorem IsEven.isIntegral {M : L.IntermediateCarrier} (hM : IsEven M) : IsIntegr
 
 section IsLattice
 
-variable {M : L.IntermediateCarrier} [M.1.IsLattice ℚ]
+variable {M : L.IntermediateCarrier} [M.1.IsFullLattice ℚ]
 
 /-- An integral intermediate carrier which is itself a full `ℤ`-lattice is an integral lattice,
 for the same ambient rational form. Over a nondegenerate lattice every intermediate carrier is
-such a lattice, by `TauCeti.IntegralLattice.instIsLatticeIntermediateCarrier`. -/
+such a lattice, by `TauCeti.IntegralLattice.instIsFullLatticeIntermediateCarrier`. -/
 def IsIntegral.toIntegralLattice (hM : IsIntegral M) : IntegralLattice V :=
   IntegralLattice.ofSubmodule M.1 L.form L.isSymm fun _ hx ↦
     L.form.mem_dualSubmodule.mpr fun _ hy ↦ isIntegral_def.mp hM _ hx _ hy
@@ -294,7 +294,7 @@ theorem isEven_toIntermediateCarrier (hN : N.IsEven) :
 overlattice. -/
 @[simp]
 theorem toIntegralLattice_toIntermediateCarrier
-    [(N.toIntermediateCarrier hform hle).1.IsLattice ℚ]
+    [(N.toIntermediateCarrier hform hle).1.IsFullLattice ℚ]
     (h : IntermediateCarrier.IsIntegral (N.toIntermediateCarrier hform hle)) :
     h.toIntegralLattice = N :=
   IntegralLattice.ext (h.toIntegralLattice_carrier.trans (N.coe_toIntermediateCarrier hform hle))

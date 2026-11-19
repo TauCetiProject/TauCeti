@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 public import TauCeti.Basic.Real.Sign
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Sum
 public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
 public import TauCeti.Topology.Circle.Degree
 
@@ -52,7 +53,9 @@ The index has the formal properties of the Robbin–Salamon Maslov index for pat
   (`Matrix.UnitaryGroup.maslovIndex_eq_of_homotopic`);
 * it is additive under catenation (`Matrix.UnitaryGroup.maslovIndex_trans`) and changes sign under
   reversal (`Matrix.UnitaryGroup.maslovIndex_symm`);
-* it is additive under direct sums (`Matrix.UnitaryGroup.maslovIndex_sum`);
+* it is additive under direct sums (`Matrix.UnitaryGroup.maslovIndex_sum`), also when they are
+  read in the regrouped coordinates of symplectic direct sums
+  (`Matrix.UnitaryGroup.maslovIndex_eq_add_of_coe_eq_symplecticSum`);
 * on a path whose Lagrangians close up, it is the degree of the loop `t ↦ det (U t) ^ 2`, the
   Maslov index of the loop of Lagrangians (`Matrix.UnitaryGroup.maslovIndex_eq_degree`), and on a
   loop of frames it is twice the degree of `t ↦ det (U t)`
@@ -148,6 +151,17 @@ theorem spectralAngleSum_fromBlocks_zero₂₁ (A : Matrix n n ℂ) (B : Matrix 
   rw [spectralAngleSum, charpoly_fromBlocks_zero₂₁,
     roots_mul (mul_ne_zero (charpoly_monic A).ne_zero (charpoly_monic D).ne_zero),
     Multiset.map_add, Multiset.sum_add, spectralAngleSum, spectralAngleSum]
+
+/-- The spectral angle sum is additive under symplectic direct sums, which are block-diagonal sums
+read in regrouped coordinates. -/
+@[simp]
+theorem spectralAngleSum_symplecticSum (A : Matrix (n ⊕ n) (n ⊕ n) ℂ)
+    (B : Matrix (m ⊕ m) (m ⊕ m) ℂ) :
+    spectralAngleSum (symplecticSum A B) = spectralAngleSum A + spectralAngleSum B := by
+  have h : symplecticSum A B = reindex (Equiv.sumSumSumComm n m n m).symm
+      (Equiv.sumSumSumComm n m n m).symm (fromBlocks A 0 0 B) := by
+    rw [symplecticSum_def, reindex_apply, Equiv.symm_symm]
+  rw [h, spectralAngleSum, charpoly_reindex, ← spectralAngleSum, spectralAngleSum_fromBlocks_zero₂₁]
 
 /-- The spectral angle sum is invariant under conjugation by an invertible matrix `P` with
 inverse `Q`. -/
@@ -362,6 +376,29 @@ theorem maslovIndex_sum {U V : unitaryGroup n ℂ} {U' V' : unitaryGroup m ℂ} 
     Circle.angleChange_congr _ _ fun t => by simp
   rw [maslovIndex, hpath, Circle.angleChange_mul, maslovIndex, maslovIndex]
   simp only [souriau_sum, coe_sum, spectralAngleSum_fromBlocks_zero₂₁]
+  ring
+
+/-- **The direct-sum axiom for symplectic direct sums.** A path of frames that is pointwise the
+symplectic direct sum `Matrix.symplecticSum` of two paths of frames, the block-diagonal sum read in
+the coordinates `(n ⊕ m) ⊕ (n ⊕ m)`, has the sum of their Maslov indices. -/
+theorem maslovIndex_eq_add_of_coe_eq_symplecticSum {U V : unitaryGroup (n ⊕ n) ℂ}
+    {U' V' : unitaryGroup (m ⊕ m) ℂ} {W W' : unitaryGroup ((n ⊕ m) ⊕ (n ⊕ m)) ℂ}
+    (γ₁ : Path U V) (γ₂ : Path U' V') (δ : Path W W')
+    (h : ∀ t, (δ t : Matrix ((n ⊕ m) ⊕ (n ⊕ m)) ((n ⊕ m) ⊕ (n ⊕ m)) ℂ) =
+      symplecticSum (γ₁ t : Matrix (n ⊕ n) (n ⊕ n) ℂ) (γ₂ t : Matrix (m ⊕ m) (m ⊕ m) ℂ)) :
+    maslovIndex δ = maslovIndex γ₁ + maslovIndex γ₂ := by
+  have hs (t : I) : (souriau (δ t) : Matrix ((n ⊕ m) ⊕ (n ⊕ m)) ((n ⊕ m) ⊕ (n ⊕ m)) ℂ) =
+      symplecticSum (souriau (γ₁ t) : Matrix (n ⊕ n) (n ⊕ n) ℂ)
+        (souriau (γ₂ t) : Matrix (m ⊕ m) (m ⊕ m) ℂ) := by
+    rw [coe_souriau, h t, symplecticSum_transpose, ← symplecticSum_mul, coe_souriau, coe_souriau]
+  have hpath : Circle.angleChange (detSouriauPath δ) =
+      Circle.angleChange ((detSouriauPath γ₁).mul (detSouriauPath γ₂)) :=
+    Circle.angleChange_congr _ _ fun t => Circle.ext (by simp [h t, mul_pow])
+  have h₀ := hs 0
+  have h₁ := hs 1
+  simp only [Path.source, Path.target] at h₀ h₁
+  rw [maslovIndex, hpath, Circle.angleChange_mul, maslovIndex, maslovIndex, h₀, h₁,
+    spectralAngleSum_symplecticSum, spectralAngleSum_symplecticSum]
   ring
 
 /-- **Naturality under the real orthogonal group.** Moving a path of frames by a fixed unitary

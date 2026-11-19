@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Degree
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
 public import Mathlib.Geometry.Manifold.HasGroupoid
+public import TauCeti.Topology.OpenPartialHomeomorph.Basic
 import Mathlib.Analysis.Complex.Tietze
 import Mathlib.Topology.Homotopy.Affine
 
@@ -264,7 +265,9 @@ theorem localIndex_eq_iff_of_preimage_subset (f : C(M, N)) {x : M} {y : N} (hxy 
   rw [o.localIndex_eq_iff o' hF f hxy isOpen_univ (mem_univ x) fun z _ hz ↦ h hz,
     ← isOpen_univ.isOpenEmbedding_subtypeVal.localHomologyMap_localOrientationEquiv_symm
       ⟨x, mem_univ x⟩ (o x) hincl, ← ConcreteCategory.comp_apply, localHomologyMap_comp]
-  rfl
+  have hmap : f.comp (⟨Subtype.val, continuous_subtype_val⟩ : C((univ : Set M), M)) =
+      f.restrict univ := ContinuousMap.ext fun _ ↦ by simp
+  rw [localHomologyMap_congr _ hmap]
 
 /-- **The local index only depends on the orientations at the point and its image**: if `o` and
 `p` agree at `x`, and `o'` and `p'` agree at `f x`, the two local indices of `f` at `x` agree. The
@@ -577,10 +580,7 @@ theorem localHomologyMap_refl_sub_localOrientationEquiv_symm (z : E) :
             OpenPartialHomeomorph.refl E z,
           (OpenPartialHomeomorph.refl E).continuousOn.domRestrict.sub continuous_const⟩ :
           C((OpenPartialHomeomorph.refl E).source, E)) (S := {⟨z, mem_univ z⟩}) (T := {0})
-        (by
-          rintro x hx
-          exact Subtype.ext ((OpenPartialHomeomorph.refl E).injOn x.2 (mem_univ z)
-            (sub_eq_zero.1 hx))) n
+        ((OpenPartialHomeomorph.refl E).sub_preimage_zero_subset (mem_univ z)) n
         (((OpenPartialHomeomorph.refl E).open_source.isOpenEmbedding_subtypeVal
           |>.localOrientationEquiv ⟨z, mem_univ z⟩ n).symm (o z)).val =
       (o 0).val := by
@@ -610,9 +610,7 @@ theorem comap_apply_eq_of_localHomologyMap_chart_sub {M : Type} [TopologicalSpac
     (hφ : localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
         (⟨fun x : φ.source ↦ φ x - φ z, φ.continuousOn.domRestrict.sub continuous_const⟩ :
           C(φ.source, E)) (S := {⟨z, hVφ hz⟩}) (T := {0})
-        (by
-          rintro x hx
-          exact Subtype.ext (φ.injOn x.2 (hVφ hz) (sub_eq_zero.1 hx))) n
+        (φ.sub_preimage_zero_subset (hVφ hz)) n
         ((φ.open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hVφ hz⟩
           n).symm (oM z)).val =
       (o 0).val)
@@ -626,7 +624,7 @@ theorem comap_apply_eq_of_localHomologyMap_chart_sub {M : Type} [TopologicalSpac
   let τ : C(W, E) := ⟨fun x ↦ φ x - φ z, φ.continuousOn.domRestrict.sub continuous_const⟩
   have hτ : (oM.comap W.isOpenEmbedding').localIndex o τ ⟨z, hVφ hz⟩ = 1 := by
     rw [localIndex_eq_iff_of_preimage_subset _ o hE τ (x := ⟨z, hVφ hz⟩) (sub_self _)
-      (fun x hx ↦ Subtype.ext (φ.injOn x.2 (hVφ hz) (sub_eq_zero.1 (hx : φ x - φ z = 0)))),
+      (φ.sub_preimage_zero_subset (hVφ hz)),
       one_smul, comap_apply]
     exact hφ
   -- ... so does its restriction to `V`, for the orientation of `V` restricted from `oM` ...

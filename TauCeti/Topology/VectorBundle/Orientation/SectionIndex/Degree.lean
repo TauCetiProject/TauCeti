@@ -286,9 +286,7 @@ theorem sectionIndex_eq_sign_det_of_hasFDerivAt (φ : OpenPartialHomeomorph M F)
     (hφ : localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
         (⟨fun x : φ.source ↦ φ x - φ z, φ.continuousOn.domRestrict.sub continuous_const⟩ :
           C(φ.source, F)) (S := {⟨z, hUφ hz⟩}) (T := {0})
-        (by
-          rintro x hx
-          exact Subtype.ext (φ.injOn x.2 (hUφ hz) (sub_eq_zero.1 hx))) (n + 1)
+        (φ.sub_preimage_zero_subset (hUφ hz)) (n + 1)
         ((φ.open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hUφ hz⟩
           (n + 1)).symm (oM z)).val =
       (ω.localOrientation hF).val)
@@ -346,9 +344,8 @@ theorem sectionIndex_eq_sign_det_of_hasFDerivAt (φ : OpenPartialHomeomorph M F)
   -- The translated chart `τ y = φ y - φ z` on the source of `φ`, which reads `oM z` as the local
   -- orientation selected by `ω` by `hφ`.
   let τ : C(φ.source, F) := ⟨fun x ↦ φ x - φ z, φ.continuousOn.domRestrict.sub continuous_const⟩
-  have hτz : τ ⁻¹' {0} ⊆ {⟨z, hUφ hz⟩} := by
-    rintro x hx
-    exact Subtype.ext (φ.injOn x.2 (hUφ hz) (sub_eq_zero.1 hx))
+  have hτz : τ ⁻¹' {0} ⊆ {⟨z, hUφ hz⟩} :=
+    φ.sub_preimage_zero_subset (hUφ hz)
   have hUz' : ContinuousMap.inclusion hUφ ⁻¹' {⟨z, hUφ hz⟩} ⊆ {⟨z, hz⟩} := by
     rintro x (hx : _ = _)
     exact Subtype.ext (congrArg Subtype.val hx :)
