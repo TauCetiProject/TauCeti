@@ -218,12 +218,8 @@ base germ pulled back to `(b, x)`. -/
 theorem restrictHyperplane_nodeBaseExtension (a : A) :
     restrictHyperplane (b, (0 : ℂ)) 0 (nodeBaseExtension b a) =
       stalkPrecomp 𝓘(ℂ, E × ℂ) (E × ℂ) Prod.fst contDiff_fst.contMDiff (b, 0) a := by
-  obtain ⟨f, _, hf⟩ := exists_toFilterGerm_eq b a
-  apply toFilterGerm_nhds_injective (b, (0 : ℂ))
-  rw [toFilterGerm_restrictHyperplane, toFilterGerm_nodeBaseExtension b (hf _ le_rfl),
-    toFilterGerm_stalkPrecomp, hf _ le_rfl, Germ.coe_compTendsto, Germ.coe_compTendsto]
-  -- Both sides are `f` composed with the projection `(b, w) ↦ b`.
-  congr 1
+  simp only [nodeBaseExtension, RingHom.comp_apply]
+  exact restrictHyperplane_stalkPrecomp_fst (b, 0) 0 _
 
 /-- A germ vanishes on the zero section exactly when it belongs to `(x,y)`. -/
 theorem ker_nodeBaseRestriction :

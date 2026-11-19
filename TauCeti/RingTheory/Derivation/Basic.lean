@@ -32,7 +32,7 @@ unit, without factoring it.
 
 A derivation over any scalars `S` which vanishes on the image of `R` is `R`-linear
 (`Derivation.ofMapAlgebraMap`). An `R`-algebra isomorphism `e : A ≃ₐ[R] B` transports a derivation
-`D` of `A` to the derivation `e ∘ D ∘ e⁻¹` of `B` (`Derivation.mapAlgEquiv`).
+`D` of `A` to the derivation `e ∘ D ∘ e⁻¹` of `B` (`Derivation.conjAlgEquiv`).
 
 ## Main results
 
@@ -46,7 +46,7 @@ A derivation over any scalars `S` which vanishes on the image of `R` is `R`-line
 * `Derivation.exists_iterate_smul_eq_zero`: scalar multiples preserve local nilpotence.
 * `Derivation.squarefree_of_isUnit`: an element whose derivative is a unit is squarefree.
 * `Derivation.ofMapAlgebraMap`: a derivation killing the image of `R` as an `R`-derivation.
-* `Derivation.mapAlgEquiv`: a derivation transported along an algebra isomorphism.
+* `Derivation.conjAlgEquiv`: a derivation transported along an algebra isomorphism.
 -/
 
 public section
@@ -166,23 +166,23 @@ theorem coe_ofMapAlgebraMap (D : Derivation S A M) (hD : ∀ r : R, D (algebraMa
 
 end OfMapAlgebraMap
 
-section MapAlgEquiv
+section ConjAlgEquiv
 
 variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [CommSemiring B] [Algebra R A]
   [Algebra R B]
 
 /-- A derivation of `A` transported along an `R`-algebra isomorphism `e : A ≃ₐ[R] B`: the
 derivation `e ∘ D ∘ e⁻¹` of `B`. -/
-def mapAlgEquiv (D : Derivation R A A) (e : A ≃ₐ[R] B) : Derivation R B B where
+def conjAlgEquiv (D : Derivation R A A) (e : A ≃ₐ[R] B) : Derivation R B B where
   toLinearMap := (e.toLinearMap : A →ₗ[R] B) ∘ₗ D.toLinearMap ∘ₗ (e.symm.toLinearMap : B →ₗ[R] A)
   map_one_eq_zero' := by simp
   leibniz' x y := by simp [D.leibniz, smul_eq_mul]
 
 @[simp]
-theorem mapAlgEquiv_apply (D : Derivation R A A) (e : A ≃ₐ[R] B) (x : B) :
-    D.mapAlgEquiv e x = e (D (e.symm x)) :=
+theorem conjAlgEquiv_apply (D : Derivation R A A) (e : A ≃ₐ[R] B) (x : B) :
+    D.conjAlgEquiv e x = e (D (e.symm x)) :=
   (rfl)
 
-end MapAlgEquiv
+end ConjAlgEquiv
 
 end Derivation

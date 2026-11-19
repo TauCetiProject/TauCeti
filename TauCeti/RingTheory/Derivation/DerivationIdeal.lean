@@ -24,7 +24,7 @@ parameter from the algebra alone.
 A derivation over any scalars which vanishes on the image of `R` is `R`-linear
 (`Derivation.ofMapAlgebraMap`), so its values also lie in the derivation ideal
 (`Derivation.apply_mem_derivationIdeal_of_map_algebraMap`). Invariance under isomorphisms comes
-from transporting derivations along them (`Derivation.mapAlgEquiv`).
+from transporting derivations along them (`Derivation.conjAlgEquiv`).
 -/
 
 public section
@@ -70,7 +70,7 @@ private theorem AlgEquiv.map_derivationIdeal_le (e : A ≃ₐ[R] B) :
     (derivationIdeal R A).map e ≤ derivationIdeal R B := by
   rw [derivationIdeal, Ideal.map_span, Ideal.span_le]
   rintro _ ⟨_, ⟨_, ⟨D, rfl⟩, a, rfl⟩, rfl⟩
-  simpa using (D.mapAlgEquiv e).apply_mem_derivationIdeal (e a)
+  simpa using (D.conjAlgEquiv e).apply_mem_derivationIdeal (e a)
 
 /-- An `R`-algebra isomorphism carries the derivation ideal of `A` onto that of `B`. -/
 theorem AlgEquiv.map_derivationIdeal (e : A ≃ₐ[R] B) :
