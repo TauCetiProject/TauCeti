@@ -155,10 +155,6 @@ private theorem ne_zero_and_norm_tail_lt_one {c : Fin m → ℂ} {z : ℂ}
   have hsum : ∑ i, ‖c i‖ < ‖z‖ := lt_of_pow_lt_pow_left₀ 2 hz0.le (hcs.trans_lt (by linarith))
   exact ⟨norm_pos_iff.1 hz0, (norm_tail_le c hz1).trans_lt ((div_lt_one hz0).2 hsum)⟩
 
-private theorem tendsto_norm_sq_cocompact :
-    Tendsto (fun z : ℂ ↦ ‖z‖ ^ 2) (cocompact ℂ) atTop :=
-  (tendsto_pow_atTop two_ne_zero).comp tendsto_norm_cocompact_atTop
-
 private theorem one_add_tail_mem_slitPlane {c : Fin m → ℂ} {z : ℂ} (hz : 0 ≤ cutoffArg c z) :
     1 + tail c z ∈ slitPlane :=
   mem_slitPlane_of_norm_lt_one (ne_zero_and_norm_tail_lt_one hz).2
@@ -546,8 +542,9 @@ private theorem eventually_nonneg_of_tendsto_sectionValue {c : Fin m → ℂ}
   have hre : Tendsto (fun z ↦ (sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹).re) (cocompact ℂ)
       (𝓝 1) := by
     simpa only [Function.comp_def, one_re] using (continuous_re.tendsto 1).comp hframe
-  filter_upwards [tendsto_norm_sq_cocompact.eventually_ge_atTop (m * ∑ i, ‖c i‖ ^ 2 + 1),
+  filter_upwards [tendsto_normSq_cocompact_atTop.eventually_ge_atTop (m * ∑ i, ‖c i‖ ^ 2 + 1),
     hre.eventually (lt_mem_nhds one_pos)] with z hz h1
+  rw [normSq_eq_norm_sq] at hz
   obtain ⟨hz0, htail⟩ := ne_zero_and_norm_tail_lt_one (c := c) (z := z)
     (by unfold cutoffArg; linarith)
   have hnz : (‖z‖ : ℂ) ≠ 0 := ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz0)
@@ -581,8 +578,8 @@ theorem gaugeTransform_polynomialGauge_mem_framedFieldSpace (f : ContDiffBump (0
           =O[cocompact ℂ] fun z ↦ Real.exp (-(c' * ‖z‖)) := by
   refine gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq f
     (polynomialGauge_mem_framedGaugeGroup c) hx hsol hframe ?_
-  filter_upwards [tendsto_norm_sq_cocompact.eventually_ge_atTop (m * ∑ i, ‖c i‖ ^ 2 + 2),
+  filter_upwards [tendsto_normSq_cocompact_atTop.eventually_ge_atTop (m * ∑ i, ‖c i‖ ^ 2 + 2),
     eventually_nonneg_of_tendsto_sectionValue hframe hsec] with z hz hρ
-  exact sectionValue_gaugeTransform_polynomialGauge hρ (hsec z) hz
+  exact sectionValue_gaugeTransform_polynomialGauge hρ (hsec z) (normSq_eq_norm_sq z ▸ hz)
 
 end TauCeti.Vortex
