@@ -105,14 +105,9 @@ theorem exists_nhds_cone_forall_memLp_of_eventually_forall_isMicrolocallySobolev
     rw [mem_ball, Prod.dist_eq]
     exact max_lt (lt_of_le_of_lt hy (half_lt_self hρ)) (lt_of_le_of_lt hη (half_lt_self hρ)))
   -- `Γ` is the open cone over `ball ξ r`.
-  set Γ : Set E := ⋃ t ∈ Ioi (0 : ℝ), (t • ·) ⁻¹' ball ξ r
-  have hmem {η : E} : η ∈ Γ ↔ ∃ t : ℝ, 0 < t ∧ t • η ∈ ball ξ r := by simp [Γ]
-  have hcone : ∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ := fun t ht η hη ↦ by
-    obtain ⟨u, hu, huη⟩ := hmem.1 hη
-    exact hmem.2 ⟨u / t, div_pos hu ht, by rwa [smul_smul, div_mul_cancel₀ _ ht.ne']⟩
-  refine ⟨ball x r, ball_mem_nhds x hr, Γ,
-    isOpen_biUnion fun t _ ↦ isOpen_ball.preimage (continuous_const_smul t),
-    hmem.2 ⟨1, one_pos, by simpa using hr⟩, hcone, fun s ↦ ?_⟩
+  obtain ⟨Γ, hΓ, hξΓ, hcone, hmem⟩ :=
+    IsOpen.exists_cone_exists_smul_mem (isOpen_ball (x := ξ)) (mem_ball_self hr)
+  refine ⟨ball x r, ball_mem_nhds x hr, Γ, hΓ, hξΓ, hcone, fun s ↦ ?_⟩
   -- Over each point of `closedBall x r`: finitely many cones cover `closedBall ξ r`, hence `Γ`.
   have hinner : ∀ y ∈ closedBall x r, ∃ V ∈ 𝓝 y, ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ V →
       MemLp (fun η ↦ (1 + ‖η‖ ^ 2) ^ (s / 2) • T.localFourier ψ η) 2 (volume.restrict Γ) := by
@@ -124,7 +119,7 @@ theorem exists_nhds_cone_forall_memLp_of_eventually_forall_isMicrolocallySobolev
     refine ⟨⋂ η ∈ t, U η, (biInter_finset_mem t).2 fun η _ ↦ hU η, fun ψ hψ ↦ ?_⟩
     refine MemLp.restrict_of_subset_iUnion (t := fun η : t ↦ Γ' η) (fun ζ hζ ↦ ?_)
       fun η ↦ hL η ψ (hψ.trans (biInter_subset_of_mem η.2))
-    obtain ⟨u, hu, huζ⟩ := hmem.1 hζ
+    obtain ⟨u, hu, huζ⟩ := hmem ζ hζ
     obtain ⟨η, hηt, hη⟩ := mem_iUnion₂.1 (ht (ball_subset_closedBall huζ))
     refine mem_iUnion.2 ⟨⟨η, hηt⟩, ?_⟩
     simpa [smul_smul, inv_mul_cancel₀ hu.ne'] using hcone' η u⁻¹ (inv_pos.2 hu) _ hη

@@ -199,8 +199,7 @@ theorem norm_iteratedFDeriv_one_sub_fourierAtom_le {q : W} (hq : ‖q‖ ≤ 1) 
   · -- The derivatives of positive order are those of `-fourierAtom q`.
     have hderiv : iteratedFDeriv ℝ (k + 1) (fun w ↦ 1 - fourierAtom q w) v =
         -iteratedFDeriv ℝ (k + 1) (fourierAtom q) v := by
-      rw [show (fun w ↦ 1 - fourierAtom q w) = (fun _ ↦ (1 : ℂ)) - fourierAtom q from rfl,
-        iteratedFDeriv_sub_apply contDiffAt_const (contDiff_fourierAtom q).contDiffAt,
+      rw [fun_iteratedFDeriv_sub_apply contDiffAt_const (contDiff_fourierAtom q).contDiffAt,
         iteratedFDeriv_const_of_ne (Nat.succ_ne_zero k)]
       simp
     have h2π : 1 ≤ 2 * Real.pi := by linarith [Real.two_le_pi]
