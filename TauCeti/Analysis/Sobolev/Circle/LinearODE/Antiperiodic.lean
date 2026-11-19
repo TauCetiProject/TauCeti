@@ -295,7 +295,7 @@ theorem isInvertible_loopOperator_antiperiodicGaugeLoop_iff_det_ne_zero
     obtain ⟨hwc, hwa⟩ := mem_twistedContDiff.1 w.2
     exact Subtype.ext (h _ hwc.continuous (fun t ↦ by rw [hwa t, neg_one_smul]) hw)
   · intro h ζ _ hζa hζ
-    have hC1 : ContDiff ℝ 1 ζ := contDiff_one_of_hasDerivAt (X := fun t v ↦ S t v)
+    have hC1 : ContDiff ℝ 1 ζ := contDiff_one_of_hasDerivAt (X := fun (t : ℝ) v ↦ S t v)
       ((hM.comp continuous_fst).clm_apply continuous_snd) hζ
     set w : twistedContDiff E T (-1) :=
       ⟨ζ, mem_twistedContDiff.2 ⟨hC1, fun t ↦ by rw [hζa t, neg_one_smul]⟩⟩
