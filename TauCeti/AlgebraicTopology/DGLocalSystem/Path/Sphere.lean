@@ -239,6 +239,11 @@ private theorem isIso_homologyMap_sphereCubePairToLoopPair (k : Type) [CommRing 
   let φ : sphereCubePair h ≅ TopCat.cellPullbackPair p univ (m + 2) :=
     TopPair.ofSubsetIso (sphereCubePullbackHomeomorph h) fun ⟨⟨d, γ⟩, hx⟩ ↦ by
       simp [sphereCubePullbackHomeomorph, norm_cubeHomeomorphClosedBall_eq_one_iff]
+  -- The ambient map of `φ` is the homeomorphism, read on the points of `sphereCubePair h`.
+  have hφ (x : (sphereCubePair h).fst) :
+      TopPair.Hom.fst φ.hom x = sphereCubePullbackHomeomorph h x :=
+    (congrArg (fun f ↦ TopPair.Hom.fst f x) (TopPair.ofSubsetIso_hom _ _)).trans
+      (TopPair.ofSubsetMap_fst_apply _ _ x)
   -- The fibre of the end point over the pole is the space of loops.
   let l : TopPair.ofSubset (p ⁻¹' {b}) ⟶ MoorePathFrom.loopPair Sph b :=
     TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨x.1.toMoorePath, MoorePathFrom.source x.1,
@@ -254,20 +259,10 @@ private theorem isIso_homologyMap_sphereCubePairToLoopPair (k : Type) [CommRing 
   have hfac : sphereCubePairToLoopPair h = φ.hom ≫ TopCat.cellPullbackPairMap p univ (m + 2) ≫
       (TopCat.spherePreimageSkeletonPairIso h (by omega)).hom ≫ l :=
     TopPair.hom_ext_of_fst _ (by
-      ext ⟨⟨d, γ⟩, hx⟩
-      -- Composition in `TopCat` is composition of functions, and the ambient map of `l` is the
-      -- identity, so the composite is read one map at a time.
-      change MoorePathPullback.toMoorePathFrom ⟨(d, γ), hx⟩ =
-        TopPair.Hom.fst (TopCat.spherePreimageSkeletonPairIso h (by omega)).hom
-          (TopPair.Hom.fst (TopCat.cellPullbackPairMap p univ (m + 2))
-            (TopPair.Hom.fst φ.hom ⟨(d, γ), hx⟩))
-      -- `rw` cannot be used: `TopCat.coe_cellPullbackPairMap_fst_apply` states the codomain of the
-      -- excision map as `TopCat.of (p ⁻¹' skeletonLT _ _)`, and the point `⟨(d, γ), hx⟩` is typed
-      -- in the pullback, while the goal reads both through `TopPair.ofSubset`, which agrees with
-      -- them only after unfolding.
-      erw [TopCat.spherePreimageSkeletonPairIso_hom_fst_apply,
-        TopCat.coe_cellPullbackPairMap_fst_apply, TopPair.ofSubsetIso_hom,
-        TopPair.ofSubsetMap_fst_apply]
+      ext x
+      rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, TopCat.comp_app,
+        TopCat.comp_app, TopCat.comp_app,
+        TopCat.spherePreimageSkeletonPairIso_hom_fst_cellPullbackPairMap_fst_apply, hφ]
       exact MoorePathFrom.ext ((MoorePathPullback.toMoorePathFrom_toMoorePath _).trans
         (MoorePathPullback.path_mk _ _ _)))
   have := TopCat.isIso_singularHomologyMap_cellPullbackPairMap univ

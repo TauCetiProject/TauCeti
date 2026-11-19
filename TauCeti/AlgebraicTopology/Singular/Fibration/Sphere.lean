@@ -182,6 +182,18 @@ lemma spherePreimageSkeletonPairIso_hom_fst_apply (hn : 1 ≤ n)
     TopPair.Hom.fst (spherePreimageSkeletonPairIso h hn).hom x = x.1 :=
   TopPair.ofInclusionIsoOfSubset_hom_fst_apply ..
 
+/-- The projection of the pullback over the top cell, read in the pair `(E, F)`, sends a point of
+the pullback to its point of `E`. -/
+@[simp]
+lemma spherePreimageSkeletonPairIso_hom_fst_cellPullbackPairMap_fst_apply (hn : 1 ≤ n)
+    (x : letI := sphereRelCWComplex h
+      (cellPullbackPair p (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) n).fst) :
+    letI := sphereRelCWComplex h
+    TopPair.Hom.fst (spherePreimageSkeletonPairIso h hn).hom
+      (TopPair.Hom.fst (cellPullbackPairMap p univ n) x) = x.1.2 :=
+  letI := sphereRelCWComplex h
+  (spherePreimageSkeletonPairIso_hom_fst_apply ..).trans (coe_cellPullbackPairMap_fst_apply ..)
+
 variable (hp : serreFibrations p) (R : Type u) [Ring R]
 
 include hp
