@@ -98,10 +98,7 @@ private theorem sphereRotationMatrix_smul (p : sphere (0 : EuclideanSpace ℝ (F
     (x : sphere (0 : (ℝ ∙ (p : EuclideanSpace ℝ (Fin N)))ᗮ) 1 × sphere (0 : ℂ) 1) :
     sphereRotationMatrix p x • p = sphereRotationFamily p x := by
   apply Subtype.ext
-  rw [coe_specialUnitaryGroup_smul_unitSphere, coe_sphereRotationMatrix,
-    ← sphereRotationIsometry_apply_self, ← UnitaryGroup.coe_smul_unitSphere,
-    UnitaryGroup.smul_unitSphere_def, UnitaryGroup.toLinearIsometryEquiv_ofLinearIsometryEquiv,
-    LinearIsometryEquiv.coe_smul_unitSphere]
+  simp [coe_sphereRotationMatrix, sphereRotationIsometry_apply_self]
 
 end Rotation
 

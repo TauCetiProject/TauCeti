@@ -40,7 +40,6 @@ living over the fundamental class.
 
 ## Main results
 
-* `TauCeti.sphereRotation_smul`: the rotation `sphereRotation b y` takes `b` to `y` for `y ≠ -b`.
 * `TauCeti.exists_continuousOn_specialOrthogonalGroup_smul_eq`: local sections of the orbit map.
 * `TauCeti.isPathConnected_setOf_specialOrthogonalGroup_smul_eq`: the stabilizers are
   path-connected.
@@ -57,12 +56,6 @@ open Matrix Metric
 namespace TauCeti
 
 variable {N : ℕ}
-
-/-- The rotation `TauCeti.sphereRotation b y` takes `b` to `y` when `y ≠ -b`. -/
-theorem sphereRotation_smul {b y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1} (h : y ≠ -b) :
-    sphereRotation b y • b = y :=
-  Subtype.ext (by
-    rw [coe_specialUnitaryGroup_smul_unitSphere, sphereRotation_mulVec h, WithLp.toLp_ofLp])
 
 /-- **Local sections of the orbit maps of the rotation group on the sphere.** For `N ≥ 2` and
 points `x₀`, `y` of the unit sphere of `ℝᴺ`, there is an open neighbourhood `U` of `y` and a map
@@ -97,6 +90,12 @@ theorem isPathConnected_setOf_specialOrthogonalGroup_smul_eq (hN : 3 ≤ N)
   have : Nonempty ((TopCat.ofHom ⟨fun g : specialOrthogonalGroup (Fin N) ℝ ↦ g • x₀,
       by fun_prop⟩).fiber x₀) := ⟨⟨1, one_smul _ x₀⟩⟩
   -- The fibre of the orbit map over `x₀` is the stabilizer of `x₀`.
+  have hfib : (TopCat.ofHom ⟨fun g : specialOrthogonalGroup (Fin N) ℝ ↦ g • x₀,
+      by fun_prop⟩ : _root_.TopCat.of _ ⟶ _root_.TopCat.of _) ⁻¹' {x₀} =
+        {g | g • x₀ = x₀} := by
+    ext g
+    simp
+  rw [← hfib]
   exact isPathConnected_iff_pathConnectedSpace.2
     (TopCat.pathConnectedSpace_fiber_of_mem_serreFibrations hp hB)
 

@@ -72,7 +72,7 @@ diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
   topology (`Matrix.UnitaryGroup.continuous_toLinearIsometryEquiv`), and its action on the unit
   sphere is jointly continuous
   (`Matrix.UnitaryGroup.continuous_toLinearIsometryEquiv_smul_unitSphere`);
-* `Matrix.UnitaryGroup.ofLinearIsometryEquiv` — the inverse group homomorphism, taking a linear
+* `Matrix.UnitaryGroup.ofLinearIsometryEquiv` — the inverse group isomorphism, taking a linear
   isometry to its unitary matrix, continuous in families
   (`Matrix.UnitaryGroup.continuous_ofLinearIsometryEquiv`);
 * the actions of the unitary and special unitary groups on the unit sphere of Euclidean space by
@@ -343,38 +343,53 @@ theorem UnitaryGroup.continuous_toLinearIsometryEquiv_smul_unitSphere :
   simp [toLpLin_apply]
 
 /-- **The unitary matrix of a linear isometry** of `EuclideanSpace 𝕜 ι`, its matrix in the
-standard basis, as a group homomorphism. It is inverse to
-`Matrix.UnitaryGroup.toLinearIsometryEquiv`
-(`Matrix.UnitaryGroup.toLinearIsometryEquiv_ofLinearIsometryEquiv`,
-`Matrix.UnitaryGroup.ofLinearIsometryEquiv_toLinearIsometryEquiv`). -/
+standard basis, as a group isomorphism. Its inverse is `Matrix.UnitaryGroup.toLinearIsometryEquiv`
+(`Matrix.UnitaryGroup.ofLinearIsometryEquiv_symm_apply`). -/
 noncomputable def UnitaryGroup.ofLinearIsometryEquiv :
-    (EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) →* unitaryGroup ι 𝕜 :=
-  (Unitary.map (.ofClass (toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm)).toMonoidHom.comp
-    Unitary.linearIsometryEquiv.symm.toMonoidHom
+    (EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) ≃* unitaryGroup ι 𝕜 :=
+  (MulEquiv.ofBijective UnitaryGroup.toLinearIsometryEquiv
+    ⟨UnitaryGroup.toLinearIsometryEquiv_injective,
+      UnitaryGroup.toLinearIsometryEquiv_surjective⟩).symm
 
-/-- The unitary matrix of a linear isometry is the matrix of its continuous linear map. -/
-theorem UnitaryGroup.coe_ofLinearIsometryEquiv
-    (g : EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :
-    (UnitaryGroup.ofLinearIsometryEquiv g : Matrix ι ι 𝕜) =
-      (toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm
-        (g.toContinuousLinearEquiv : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) :=
+/-- The inverse of `Matrix.UnitaryGroup.ofLinearIsometryEquiv` is the linear isometry of a
+unitary matrix. -/
+@[simp]
+theorem UnitaryGroup.ofLinearIsometryEquiv_symm_apply (A : unitaryGroup ι 𝕜) :
+    UnitaryGroup.ofLinearIsometryEquiv.symm A = UnitaryGroup.toLinearIsometryEquiv A :=
   (rfl)
 
 /-- The linear isometry of the unitary matrix of a linear isometry is the linear isometry. -/
 @[simp]
 theorem UnitaryGroup.toLinearIsometryEquiv_ofLinearIsometryEquiv
     (g : EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :
-    UnitaryGroup.toLinearIsometryEquiv (UnitaryGroup.ofLinearIsometryEquiv g) = g := by
-  ext x : 1
-  rw [UnitaryGroup.toLinearIsometryEquiv_apply, UnitaryGroup.coe_ofLinearIsometryEquiv,
-    ← toEuclideanCLM_toLp, WithLp.toLp_ofLp, StarAlgEquiv.apply_symm_apply,
-    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+    UnitaryGroup.toLinearIsometryEquiv (UnitaryGroup.ofLinearIsometryEquiv g) = g :=
+  UnitaryGroup.ofLinearIsometryEquiv.symm_apply_apply g
 
 /-- The unitary matrix of the linear isometry of a unitary matrix is the matrix. -/
 @[simp]
 theorem UnitaryGroup.ofLinearIsometryEquiv_toLinearIsometryEquiv (A : unitaryGroup ι 𝕜) :
     UnitaryGroup.ofLinearIsometryEquiv (UnitaryGroup.toLinearIsometryEquiv A) = A :=
-  UnitaryGroup.toLinearIsometryEquiv_injective (by simp)
+  UnitaryGroup.ofLinearIsometryEquiv.apply_symm_apply A
+
+/-- The unitary matrix of a linear isometry acts on `EuclideanSpace 𝕜 ι` as the linear
+isometry. -/
+@[simp]
+theorem UnitaryGroup.toLp_ofLinearIsometryEquiv_mulVec
+    (g : EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) (x : EuclideanSpace 𝕜 ι) :
+    WithLp.toLp 2 ((UnitaryGroup.ofLinearIsometryEquiv g : Matrix ι ι 𝕜) *ᵥ x.ofLp) = g x := by
+  rw [← UnitaryGroup.toLinearIsometryEquiv_apply,
+    UnitaryGroup.toLinearIsometryEquiv_ofLinearIsometryEquiv]
+
+/-- The unitary matrix of a linear isometry is the matrix of its continuous linear map. -/
+theorem UnitaryGroup.coe_ofLinearIsometryEquiv
+    (g : EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :
+    (UnitaryGroup.ofLinearIsometryEquiv g : Matrix ι ι 𝕜) =
+      (toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm
+        (g.toContinuousLinearEquiv : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) := by
+  rw [StarAlgEquiv.eq_symm_apply]
+  ext x : 1
+  rw [toEuclideanCLM_apply, toLpLin_apply, toLp_ofLinearIsometryEquiv_mulVec,
+    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
 
 /-- The unitary matrix of a family of linear isometries, continuous in the operator norm, depends
 continuously on the parameter. -/
@@ -383,8 +398,8 @@ theorem UnitaryGroup.continuous_ofLinearIsometryEquiv {X : Type*} [TopologicalSp
     (hg : Continuous fun x ↦
       ((g x).toContinuousLinearEquiv : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι)) :
     Continuous fun x ↦ UnitaryGroup.ofLinearIsometryEquiv (g x) :=
-  (continuous_toEuclideanCLM_symm.comp hg).subtype_mk fun x ↦
-    (UnitaryGroup.ofLinearIsometryEquiv (g x)).2
+  continuous_induced_rng.2 <| (continuous_toEuclideanCLM_symm.comp hg).congr fun x ↦
+    (UnitaryGroup.coe_ofLinearIsometryEquiv (g x)).symm
 
 /-- The unitary group acts on the unit sphere of `EuclideanSpace 𝕜 ι` through the linear
 isometries of its matrices. -/
@@ -397,6 +412,14 @@ theorem UnitaryGroup.smul_unitSphere_def (A : unitaryGroup ι 𝕜)
     (x : Metric.sphere (0 : EuclideanSpace 𝕜 ι) 1) :
     A • x = UnitaryGroup.toLinearIsometryEquiv A • x :=
   (rfl)
+
+/-- The unitary matrix of a linear isometry acts on the unit sphere as the linear isometry. -/
+@[simp]
+theorem UnitaryGroup.ofLinearIsometryEquiv_smul_unitSphere
+    (g : EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι)
+    (x : Metric.sphere (0 : EuclideanSpace 𝕜 ι) 1) :
+    UnitaryGroup.ofLinearIsometryEquiv g • x = g • x := by
+  rw [UnitaryGroup.smul_unitSphere_def, UnitaryGroup.toLinearIsometryEquiv_ofLinearIsometryEquiv]
 
 /-- A unitary matrix acts on the unit sphere by matrix-vector multiplication. -/
 @[simp]
