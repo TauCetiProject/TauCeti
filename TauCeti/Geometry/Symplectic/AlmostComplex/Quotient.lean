@@ -123,6 +123,7 @@ noncomputable def descend (J : AlmostComplexStructure V) (π : V →ₗ[ℝ] W)
   (J.quotient (LinearMap.ker π) fun v hv ↦
     LinearMap.mem_ker.2 (hJ v (LinearMap.mem_ker.1 hv))).transport (π.quotKerEquivOfSurjective hπ)
 
+/-- The induced structure is characterized by `J_W (π v) = π (J v)`. -/
 @[simp]
 theorem descend_apply (J : AlmostComplexStructure V) (π : V →ₗ[ℝ] W)
     (hπ : Function.Surjective π) (hJ : ∀ v, π v = 0 → π (J v) = 0) (v : V) :
