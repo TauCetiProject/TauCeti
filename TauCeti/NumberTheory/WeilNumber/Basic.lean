@@ -146,10 +146,12 @@ theorem not_isWeilNumber_zero : ¬IsWeilNumber q n (0 : K) :=
 
 /-- Field homomorphisms preserve and reflect Weil numbers. -/
 @[simp]
-theorem isWeilNumber_map_iff (f : K →+* L) : IsWeilNumber q n (f α) ↔ IsWeilNumber q n α := by
-  have hmin : minpoly ℚ (f α) = minpoly ℚ α := minpoly.algHom_eq f.toRatAlgHom f.injective α
+theorem isWeilNumber_map_iff {F : Type*} [FunLike F K L] [RingHomClass F K L] (f : F) :
+    IsWeilNumber q n (f α) ↔ IsWeilNumber q n α := by
+  have hmin : minpoly ℚ (f α) = minpoly ℚ α :=
+    minpoly.algHom_eq (f : K →+* L).toRatAlgHom (f : K →+* L).injective α
   have hint : IsIntegral ℚ (f α) ↔ IsIntegral ℚ α :=
-    isIntegral_algHom_iff f.toRatAlgHom f.injective
+    isIntegral_algHom_iff (f : K →+* L).toRatAlgHom (f : K →+* L).injective
   rw [isWeilNumber_iff, isWeilNumber_iff, hmin, hint]
 
 /-- Over a field algebraic over `ℚ`, an element is a Weil `q`-number of weight `n` if and only
@@ -168,18 +170,29 @@ theorem isWeilNumber_iff_forall_norm_apply_eq [Algebra.IsAlgebraic ℚ K] :
 /-- An algebraic element `α` is a Weil `q`-number of weight `n` if and only if `1 < q` and every
 field embedding into `ℂ` of the algebraic closure of `ℚ` in `K` sends `α` to a complex number of
 absolute value `q ^ (n / 2)`. -/
+-- The `ℚ`-algebra structure found by instance search on the subfield is
+-- `DivisionRing.toRatAlgebra`, not the subfield's own, so algebraicity is transported by hand.
+private theorem isAlgebraic_algebraicClosure : Algebra.IsAlgebraic ℚ (algebraicClosure ℚ K) := by
+  have h := algebraicClosure.isAlgebraic (F := ℚ) (E := K)
+  rwa [Subsingleton.elim (algebraicClosure ℚ K).algebra' DivisionRing.toRatAlgebra] at h
+
+attribute [local instance] isAlgebraic_algebraicClosure
+
+/-- An algebraic element of `K` lies in the algebraic closure of `ℚ` in `K`. Weil-number
+statements about such elements are transported to that subfield with `isWeilNumber_map_iff`. -/
+private theorem exists_algebraicClosure_val_eq (hα : IsIntegral ℚ α) :
+    ∃ a : algebraicClosure ℚ K, (algebraicClosure ℚ K).val a = α :=
+  ⟨⟨α, mem_algebraicClosure_iff'.mpr hα⟩, IntermediateField.val_mk _ _⟩
+
+/-- An algebraic element `α` is a Weil `q`-number of weight `n` if and only if `1 < q` and every
+field embedding into `ℂ` of the algebraic closure of `ℚ` in `K` sends `α` to a complex number of
+absolute value `q ^ (n / 2)`. -/
 theorem isWeilNumber_iff_forall_algebraicClosure (hα : IsIntegral ℚ α) :
     IsWeilNumber q n α ↔
       1 < q ∧ ∀ σ : algebraicClosure ℚ K →+* ℂ,
-        ‖σ ⟨α, mem_algebraicClosure_iff'.mpr hα⟩‖ = q ^ ((n : ℝ) / 2) := by
-  -- The `ℚ`-algebra structure found by instance search on the subfield is
-  -- `DivisionRing.toRatAlgebra`, not the subfield's own, so algebraicity is transported by hand.
-  have : Algebra.IsAlgebraic ℚ (algebraicClosure ℚ K) := by
-    have h := algebraicClosure.isAlgebraic (F := ℚ) (E := K)
-    rwa [Subsingleton.elim (algebraicClosure ℚ K).algebra' DivisionRing.toRatAlgebra] at h
-  let f : algebraicClosure ℚ K →+* K := (algebraicClosure ℚ K).val
-  exact (isWeilNumber_map_iff
-    (α := (⟨α, mem_algebraicClosure_iff'.mpr hα⟩ : algebraicClosure ℚ K)) f).trans
+        ‖σ ⟨α, mem_algebraicClosure_iff'.mpr hα⟩‖ = q ^ ((n : ℝ) / 2) :=
+  (isWeilNumber_map_iff (algebraicClosure ℚ K).val
+    (α := ⟨α, mem_algebraicClosure_iff'.mpr hα⟩)).trans
     (isWeilNumber_iff_forall_norm_apply_eq (K := algebraicClosure ℚ K))
 
 /-- A root of unity is a Weil `q`-number of weight `0` for every `q > 1`. -/
@@ -201,32 +214,27 @@ namespace IsWeilNumber
 `n + m`. -/
 theorem mul (hα : IsWeilNumber q n α) (hβ : IsWeilNumber q m β) :
     IsWeilNumber q (n + m) (α * β) := by
-  have hαi := hα.isIntegral
-  have hβi := hβ.isIntegral
-  have hαβ := hαi.mul hβi
   have hq : 0 < q := zero_lt_one.trans hα.one_lt
-  rw [isWeilNumber_iff_forall_algebraicClosure hαi] at hα
-  rw [isWeilNumber_iff_forall_algebraicClosure hβi] at hβ
-  refine (isWeilNumber_iff_forall_algebraicClosure hαβ).mpr ⟨hα.1, fun σ ↦ ?_⟩
-  have hmul : (⟨α * β, mem_algebraicClosure_iff'.mpr hαβ⟩ : algebraicClosure ℚ K) =
-      ⟨α, mem_algebraicClosure_iff'.mpr hαi⟩ * ⟨β, mem_algebraicClosure_iff'.mpr hβi⟩ :=
-    Subtype.ext (IntermediateField.coe_mul _ ⟨α, _⟩ ⟨β, _⟩).symm
-  rw [hmul, map_mul, norm_mul, hα.2, hβ.2, ← Real.rpow_add hq]
+  obtain ⟨a, rfl⟩ := exists_algebraicClosure_val_eq hα.isIntegral
+  obtain ⟨b, rfl⟩ := exists_algebraicClosure_val_eq hβ.isIntegral
+  rw [isWeilNumber_map_iff, isWeilNumber_iff_forall_norm_apply_eq] at hα hβ
+  rw [← map_mul, isWeilNumber_map_iff, isWeilNumber_iff_forall_norm_apply_eq]
+  refine ⟨hα.1, fun σ ↦ ?_⟩
+  rw [map_mul, norm_mul, hα.2, hβ.2, ← Real.rpow_add hq]
+  congr 1
   push_cast
-  ring_nf
+  ring
 
 /-- The inverse of a Weil `q`-number of weight `n` is a Weil `q`-number of weight `-n`. -/
 theorem inv (h : IsWeilNumber q n α) : IsWeilNumber q (-n) α⁻¹ := by
-  have hαi := h.isIntegral
-  have hinv := hαi.inv
-  rw [isWeilNumber_iff_forall_algebraicClosure hαi] at h
-  refine (isWeilNumber_iff_forall_algebraicClosure hinv).mpr ⟨h.1, fun σ ↦ ?_⟩
-  have hα : (⟨α⁻¹, mem_algebraicClosure_iff'.mpr hinv⟩ : algebraicClosure ℚ K) =
-      (⟨α, mem_algebraicClosure_iff'.mpr hαi⟩)⁻¹ :=
-    Subtype.ext (IntermediateField.coe_inv _ ⟨α, _⟩).symm
-  rw [hα, map_inv₀, norm_inv, h.2, ← Real.rpow_neg (zero_lt_one.trans h.1).le]
+  obtain ⟨a, rfl⟩ := exists_algebraicClosure_val_eq h.isIntegral
+  rw [isWeilNumber_map_iff, isWeilNumber_iff_forall_norm_apply_eq] at h
+  rw [← map_inv₀, isWeilNumber_map_iff, isWeilNumber_iff_forall_norm_apply_eq]
+  refine ⟨h.1, fun σ ↦ ?_⟩
+  rw [map_inv₀, norm_inv, h.2, ← Real.rpow_neg (zero_lt_one.trans h.1).le]
+  congr 1
   push_cast
-  ring_nf
+  ring
 
 /-- A natural power `α ^ k` of a Weil `q`-number `α` of weight `n` is a Weil `q`-number of weight
 `k * n`. -/
@@ -299,13 +307,12 @@ finite field with `q` elements by its extension of degree `r`. -/
 theorem isWeilNumber_pow_iff {r : ℕ} (hr : r ≠ 0) (hq : 0 ≤ q) :
     IsWeilNumber (q ^ r) n (α ^ r) ↔ IsWeilNumber q n α := by
   by_cases hα : IsIntegral ℚ α
-  · rw [isWeilNumber_iff_forall_algebraicClosure (hα.pow r),
-      isWeilNumber_iff_forall_algebraicClosure hα, one_lt_pow_iff_of_nonneg hq hr]
+  · obtain ⟨a, rfl⟩ := exists_algebraicClosure_val_eq hα
+    rw [← map_pow, isWeilNumber_map_iff, isWeilNumber_map_iff,
+      isWeilNumber_iff_forall_norm_apply_eq, isWeilNumber_iff_forall_norm_apply_eq,
+      one_lt_pow_iff_of_nonneg hq hr]
     refine and_congr_right fun _ ↦ forall_congr' fun σ ↦ ?_
-    have hpow : (⟨α ^ r, mem_algebraicClosure_iff'.mpr (hα.pow r)⟩ : algebraicClosure ℚ K) =
-        (⟨α, mem_algebraicClosure_iff'.mpr hα⟩) ^ r :=
-      Subtype.ext (IntermediateField.coe_pow _ ⟨α, _⟩ r).symm
-    rw [hpow, map_pow, norm_pow, ← Real.rpow_pow_comm hq,
+    rw [map_pow, norm_pow, ← Real.rpow_pow_comm hq,
       pow_left_inj₀ (norm_nonneg _) (Real.rpow_nonneg hq _) hr]
   · exact iff_of_false (fun h ↦ hα (IsIntegral.of_pow (Nat.pos_of_ne_zero hr) h.isIntegral))
       fun h ↦ hα h.isIntegral
