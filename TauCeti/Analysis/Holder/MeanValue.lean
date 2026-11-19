@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.MeanValue
 public import TauCeti.Topology.MetricSpace.Holder
+
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 
 /-!
 # Hölder bounds from bounds on a function and its derivative
@@ -30,6 +33,7 @@ functions are the constants, which is why Hölder exponents are taken in `(0, 1]
   derivative zero there.
 * `HolderOnWith.eq_of_one_lt`: a function `r`-Hölder on a preconnected open set, with `r > 1`, is
   constant there.
+* `ContDiffOn.exists_holderOnWith`: a function `C¹` on a compact convex set is Hölder there.
 -/
 
 public section
@@ -132,3 +136,14 @@ theorem holderOnWith_thickening_of_norm_fderiv_le {Ω K : Set E} {g : E → F} {
     linarith [dist_le_norm_add_norm (g x) (g y), hg0 x (hU hx), hg0 y (hU hy)]
 
 end TauCeti
+
+/-- A function that is `C¹` on a compact convex set is `α`-Hölder there for every `α ≤ 1`: it is
+Lipschitz and bounded on that set. -/
+theorem ContDiffOn.exists_holderOnWith {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {s : Set E} {g : E → F} (hg : ContDiffOn ℝ 1 g s)
+    (hs : Convex ℝ s) (hs' : IsCompact s) {α : ℝ≥0} (hα : α ≤ 1) :
+    ∃ C, HolderOnWith C α g s := by
+  obtain ⟨K, hK⟩ := hg.exists_lipschitzOnWith one_ne_zero hs hs'
+  obtain ⟨M, hM⟩ := hs'.exists_bound_of_continuousOn hg.continuousOn
+  exact ⟨_, hK.holderOnWith_of_norm_le (M := M.toNNReal)
+    (fun x hx ↦ (hM x hx).trans (Real.le_coe_toNNReal M)) hα⟩

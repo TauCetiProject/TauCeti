@@ -41,6 +41,9 @@ virtual characters induced from `p`-elementary subgroups.
   `AddCommute.zsmul_zsmul_add_zsmul_eq_of_zsmul_eq_zsmul`: the explicit common root for integer
   exponents: if `x ^ m = y ^ n` and `u * m + v * n = 1`, then `x ^ v * y ^ u` is an `n`-th root of
   `x`, and, exchanging `x` and `y`, an `m`-th root of `y`.
+* `TauCeti.pow_left_inj_of_pow_eq_one_of_coprime` and its additive form
+  `TauCeti.nsmul_right_inj_of_nsmul_eq_zero_of_coprime`: if `x ^ m = 1` and `y ^ m = 1` in a monoid
+  with `m` coprime to `n`, then `x ^ n = y ^ n ↔ x = y`.
 * `TauCeti.mem_of_forall_prime_exists_pow_mem` and its additive form
   `TauCeti.mem_of_forall_prime_exists_nsmul_mem`: membership from prime-to-`p` powers, one
   prime at a time, in any subgroup (or additive subgroup) of a group.
@@ -121,6 +124,27 @@ theorem _root_.Commute.zpow_mul_zpow_zpow_eq_of_zpow_eq_zpow {G : Type*} [Group 
         rw [(hxy.zpow_zpow v u).mul_zpow, ← zpow_mul, ← zpow_mul, ← zpow_mul, mul_comm u n]
     _ = x ^ (v * n + m * u) := by rw [← h, ← zpow_mul, zpow_add]
     _ = x := by rw [mul_comm m u, add_comm, huv, zpow_one]
+
+/-- **Injectivity of coprime powers on torsion elements.** In a monoid, if `x ^ m = 1` and
+`y ^ m = 1` with `m` coprime to `n`, then `x ^ n = y ^ n` if and only if `x = y`. -/
+@[to_additive nsmul_right_inj_of_nsmul_eq_zero_of_coprime
+/-- **Injectivity of coprime multiples on torsion elements.** In an additive monoid, if
+`m • x = 0` and `m • y = 0` with `m` coprime to `n`, then `n • x = n • y` if and only if
+`x = y`. -/]
+theorem pow_left_inj_of_pow_eq_one_of_coprime {M : Type*} [Monoid M] {x y : M} {m n : ℕ}
+    (hx : x ^ m = 1) (hy : y ^ m = 1) (hmn : m.Coprime n) :
+    x ^ n = y ^ n ↔ x = y := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
+  rcases eq_or_ne m 0 with rfl | hm
+  · rw [Nat.Coprime, Nat.gcd_zero_left] at hmn
+    simpa [hmn] using h
+  let ux : Mˣ := Units.ofPowEqOne x m hx hm
+  let uy : Mˣ := Units.ofPowEqOne y m hy hm
+  obtain ⟨i, j, hij⟩ := exists_zpow_mul_zpow_eq_of_coprime (G := Mˣ) hmn
+  have huxm : ux ^ m = 1 := Units.pow_ofPowEqOne hx hm
+  have huym : uy ^ m = 1 := Units.pow_ofPowEqOne hy hm
+  have huxyn : ux ^ n = uy ^ n := Units.ext h
+  exact congr_arg Units.val ((hij ux).symm.trans (by rw [huxm, huxyn, ← huym, hij uy]))
 
 /-- **Membership from prime-to-`p` powers.** If for every prime `p` some power `x ^ m` with
 `p ∤ m` lies in the subgroup `H`, then `x` lies in `H`. -/
