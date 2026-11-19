@@ -103,6 +103,10 @@ theorem isWeilNumber_iff : IsWeilNumber q n α ↔
 
 namespace IsWeilNumber
 
+/-- The base of a Weil number is positive. -/
+theorem pos (h : IsWeilNumber q n α) : 0 < q :=
+  zero_lt_one.trans h.one_lt
+
 /-- Every field embedding into `ℂ` sends a Weil `q`-number of weight `n` to a complex number of
 absolute value `q ^ (n / 2)`. -/
 theorem norm_apply_eq (h : IsWeilNumber q n α) (σ : K →+* ℂ) :
@@ -125,7 +129,7 @@ theorem ne_zero (h : IsWeilNumber q n α) : α ≠ 0 := by
   rintro rfl
   have h0 := h.norm_eq_of_mem_aroots (z := 0) (by simp [minpoly.zero])
   rw [norm_zero] at h0
-  exact (Real.rpow_pos_of_pos (zero_lt_one.trans h.one_lt) _).ne' h0.symm
+  exact (Real.rpow_pos_of_pos h.pos _).ne' h0.symm
 
 /-- The weight of a Weil `q`-number is unique. -/
 theorem unique (h : IsWeilNumber q n α) (h' : IsWeilNumber q m α) : n = m := by
@@ -133,7 +137,7 @@ theorem unique (h : IsWeilNumber q n α) (h' : IsWeilNumber q m α) : n = m := b
     (minpoly.degree_pos h.isIntegral).ne'
   have hmem : z ∈ (minpoly ℚ α).aroots ℂ := mem_aroots.mpr ⟨minpoly.ne_zero h.isIntegral, hz⟩
   have := (h.norm_eq_of_mem_aroots hmem).symm.trans (h'.norm_eq_of_mem_aroots hmem)
-  rw [Real.rpow_right_inj (zero_lt_one.trans h.one_lt) h.one_lt.ne',
+  rw [Real.rpow_right_inj h.pos h.one_lt.ne',
     div_left_inj₀ two_ne_zero] at this
   exact_mod_cast this
 
@@ -161,8 +165,7 @@ theorem isWeilNumber_iff_forall_norm_apply_eq [Algebra.IsAlgebraic ℚ K] :
     IsWeilNumber q n α ↔ 1 < q ∧ ∀ σ : K →+* ℂ, ‖σ α‖ = q ^ ((n : ℝ) / 2) := by
   refine ⟨fun h ↦ ⟨h.one_lt, h.norm_apply_eq⟩, fun ⟨hq, h⟩ ↦
     ⟨hq, Algebra.IsIntegral.isIntegral α, fun z hz ↦ ?_⟩⟩
-  have hz' : z ∈ (minpoly ℚ α).rootSet ℂ := by
-    simpa [rootSet] using hz
+  have hz' : z ∈ (minpoly ℚ α).rootSet ℂ := mem_rootSet.mpr (mem_aroots.mp hz)
   rw [← Algebra.IsAlgebraic.range_eval_eq_rootSet_minpoly] at hz'
   obtain ⟨ψ, rfl⟩ := hz'
   exact h ψ.toRingHom
@@ -203,7 +206,7 @@ namespace IsWeilNumber
 `n + m`. -/
 theorem mul (hα : IsWeilNumber q n α) (hβ : IsWeilNumber q m β) :
     IsWeilNumber q (n + m) (α * β) := by
-  have hq : 0 < q := zero_lt_one.trans hα.one_lt
+  have hq : 0 < q := hα.pos
   obtain ⟨a, rfl⟩ := exists_algebraicClosure_val_eq hα.isIntegral
   obtain ⟨b, rfl⟩ := exists_algebraicClosure_val_eq hβ.isIntegral
   rw [isWeilNumber_map_iff, isWeilNumber_iff_forall_norm_apply_eq] at hα hβ
@@ -217,10 +220,11 @@ theorem mul (hα : IsWeilNumber q n α) (hβ : IsWeilNumber q m β) :
 /-- The inverse of a Weil `q`-number of weight `n` is a Weil `q`-number of weight `-n`. -/
 theorem inv (h : IsWeilNumber q n α) : IsWeilNumber q (-n) α⁻¹ := by
   obtain ⟨a, rfl⟩ := exists_algebraicClosure_val_eq h.isIntegral
+  have hq : 0 < q := h.pos
   rw [isWeilNumber_map_iff, isWeilNumber_iff_forall_norm_apply_eq] at h
   rw [← map_inv₀, isWeilNumber_map_iff, isWeilNumber_iff_forall_norm_apply_eq]
   refine ⟨h.1, fun σ ↦ ?_⟩
-  rw [map_inv₀, norm_inv, h.2, ← Real.rpow_neg (zero_lt_one.trans h.1).le]
+  rw [map_inv₀, norm_inv, h.2, ← Real.rpow_neg hq.le]
   congr 1
   push_cast
   ring
@@ -249,7 +253,7 @@ theorem conj_apply (h : IsWeilNumber q n α) (σ : K →+* ℂ) :
   have hσ : σ α ≠ 0 := (map_ne_zero σ).mpr h.ne_zero
   have hnorm : (‖σ α‖ : ℂ) ^ 2 = (q : ℂ) ^ n := by
     rw [h.norm_apply_eq, ← Complex.ofReal_pow, ← Real.rpow_natCast,
-      ← Real.rpow_mul (zero_lt_one.trans h.one_lt).le]
+      ← Real.rpow_mul h.pos.le]
     norm_num [Real.rpow_intCast]
   rw [eq_div_iff hσ, mul_comm, Complex.mul_conj', hnorm]
 
@@ -259,9 +263,7 @@ conjugation. -/
 theorem conj_apply_add_zpow_mul_inv {q : ℚ} (h : IsWeilNumber (q : ℝ) n α) (σ : K →+* ℂ) :
     starRingEnd ℂ (σ (α + (q : K) ^ n * α⁻¹)) = σ (α + (q : K) ^ n * α⁻¹) := by
   have hσ : σ α ≠ 0 := (map_ne_zero σ).mpr h.ne_zero
-  have hq : (q : ℂ) ≠ 0 := by
-    have := zero_lt_one.trans h.one_lt
-    exact_mod_cast this.ne'
+  have hq : (q : ℂ) ≠ 0 := by exact_mod_cast h.pos.ne'
   have hc := h.conj_apply σ
   simp only [map_add, map_mul, map_zpow₀, map_ratCast, map_inv₀, Complex.ofReal_ratCast] at hc ⊢
   rw [hc]
@@ -349,11 +351,11 @@ theorem not_isWeilNumber_one_add_sqrt_two : ¬IsWeilNumber q n (1 + √2 : ℝ) 
     have hdeg : (X ^ 2 - 2 * X - 1 : ℚ[X]).natDegree = 2 := by compute_degree!
     refine irreducible_of_degree_le_three_of_not_isRoot (by simp [hdeg]) fun r hr ↦ ?_
     simp only [IsRoot, eval_sub, eval_mul, eval_pow, eval_X, eval_ofNat, eval_one] at hr
+    have hr' : ((r : ℝ) - 1) ^ 2 = 2 := by
+      exact_mod_cast (by linear_combination hr : ((r - 1) ^ 2 : ℚ) = 2)
     refine irrational_sqrt_two ⟨|r - 1|, ?_⟩
-    rw [Rat.cast_abs, Rat.cast_sub, Rat.cast_one, ← Real.sqrt_sq_eq_abs]
-    congr 1
-    have : ((r - 1) ^ 2 : ℚ) = 2 := by linear_combination hr
-    exact_mod_cast this
+    push_cast
+    rw [← Real.sqrt_sq_eq_abs, hr']
   have hroot (x : ℝ) (hx : x ^ 2 - 2 * x - 1 = 0) : ‖(x : ℂ)‖ = q ^ ((n : ℝ) / 2) := by
     refine h.norm_eq_of_mem_aroots (mem_aroots.mpr ⟨minpoly.ne_zero h.isIntegral, ?_⟩)
     rw [← hP]
@@ -362,9 +364,7 @@ theorem not_isWeilNumber_one_add_sqrt_two : ¬IsWeilNumber q n (1 + √2 : ℝ) 
   have h₁ := hroot (1 + √2) (by linear_combination hs)
   have h₂ := hroot (1 - √2) (by linear_combination hs)
   rw [Complex.norm_real, Real.norm_eq_abs] at h₁ h₂
-  have hlt : 1 < √2 := by
-    rw [show (1 : ℝ) = √1 by simp]
-    exact Real.sqrt_lt_sqrt zero_le_one one_lt_two
+  have hlt := Real.one_lt_sqrt_two
   rw [abs_of_pos (by linarith), ← h₂, abs_of_neg (by linarith)] at h₁
   linarith
 
