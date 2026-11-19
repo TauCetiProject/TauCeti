@@ -181,6 +181,9 @@ theorem Scheme.Hom.natCard_preimage_singleton_eq_finrank {Y : Scheme.{u}} (f : X
     [IsFinite f] [Etale f] (y : Y) [IsSepClosed (Y.residueField y)] :
     Nat.card (f ⁻¹' {y}) = f.finrank y := by
   let g : f.fiber y ⟶ Spec (.of (Y.residueField y)) := f.fiberToSpecResidueField y
+  -- Mathlib registers no finiteness or étaleness instances for `f.fiberToSpecResidueField y`. It
+  -- is defined as the base change `pullback.snd f (Y.fromSpecResidueField y)` of `f`, so we read
+  -- off both from the base change instances, unfolding that definition.
   have : IsFinite g := inferInstanceAs (IsFinite (Limits.pullback.snd f (Y.fromSpecResidueField y)))
   have : Etale g := inferInstanceAs (Etale (Limits.pullback.snd f (Y.fromSpecResidueField y)))
   obtain ⟨s⟩ : Nonempty (Spec (Y.residueField y)) := inferInstance
