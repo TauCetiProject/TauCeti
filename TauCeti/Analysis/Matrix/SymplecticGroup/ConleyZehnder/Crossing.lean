@@ -27,7 +27,8 @@ when its crossing form is nondegenerate.
 
 This file proves the crossing form formula for the Conley–Zehnder index
 `TauCeti.GLSymplectic.conleyZehnderIndex` of a path that never has the eigenvalue `-1` and whose
-crossings are regular (`TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_crossingForm_add_finsum`):
+crossings are regular
+(`TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_crossingForm_add_finsum_of_isUnit_det_add_one`):
 
 `CZ(Ψ) = -((sign Γ(Ψ, 0) + sign Γ(Ψ, 1)) / 2 + ∑ᶠ t ∈ (0, 1), sign Γ(Ψ, t))`.
 
@@ -54,8 +55,9 @@ have the same kernel when `Ψ t + 1` is invertible
 
 * `Matrix.crossingForm_sub_one_neg_J_mul_J_mul_mul`: for `Ψ' = J S Ψ`, the crossing form is the
   form of `S` on the fixed vectors of `Ψ`.
-* `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_crossingForm_add_finsum`: the crossing form
-  formula for the Conley–Zehnder index of a path avoiding `-1` with regular crossings.
+* `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_crossingForm_add_finsum_of_isUnit_det_add_one`:
+  the crossing form formula for the Conley–Zehnder index of a path avoiding `-1` with regular
+  crossings.
 
 ## References
 
@@ -77,17 +79,6 @@ namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n] {R : Type*} [CommRing R]
 
-/-- On every vector, the quadratic form of `Bᵀ J - J B` is twice the quadratic form of
-`-(J B)`. -/
-private theorem dotProduct_transpose_mul_J_sub_J_mul_mulVec (B : Matrix (n ⊕ n) (n ⊕ n) R)
-    (v : n ⊕ n → R) :
-    v ⬝ᵥ (Bᵀ * J n R - J n R * B) *ᵥ v = 2 * (v ⬝ᵥ (-(J n R * B)) *ᵥ v) := by
-  have h : v ⬝ᵥ (Bᵀ * J n R) *ᵥ v = -(v ⬝ᵥ (J n R * B) *ᵥ v) := by
-    rw [← dotProduct_transpose_mulVec, transpose_mul, transpose_transpose, J_transpose,
-      Matrix.neg_mul, neg_mulVec, dotProduct_neg]
-  rw [sub_mulVec, dotProduct_sub, h, neg_mulVec, dotProduct_neg]
-  ring
-
 /-- **The crossing form of a Hamiltonian path.** If `Ψ' = J S Ψ`, the crossing form of `Ψ` with
 derivative `Ψ'` is the quadratic form of `S` on the fixed vectors of `Ψ`. -/
 theorem crossingForm_sub_one_neg_J_mul_J_mul_mul (Ψ S : Matrix (n ⊕ n) (n ⊕ n) R) :
@@ -95,8 +86,7 @@ theorem crossingForm_sub_one_neg_J_mul_J_mul_mul (Ψ S : Matrix (n ⊕ n) (n ⊕
   ext x
   have hfix : Ψ *ᵥ (x : n ⊕ n → R) = x := by
     simpa [sub_mulVec, sub_eq_zero] using LinearMap.mem_ker.1 x.2
-  rw [crossingForm_apply, crossingForm_apply, ← Matrix.mul_assoc, ← Matrix.mul_assoc, J_squared,
-    Matrix.neg_mul, Matrix.one_mul, Matrix.neg_mul, neg_neg, ← mulVec_mulVec, hfix]
+  simp [crossingForm_apply, ← Matrix.mul_assoc, J_squared, ← mulVec_mulVec, hfix]
 
 /-- Away from the eigenvalue `-1`, the crossing form of `Ψᵀ J - J Ψ` with derivative
 `Ψ'ᵀ J - J Ψ'` is isometric to twice the crossing form of `Ψ` with derivative `Ψ'`. -/
@@ -202,7 +192,8 @@ derivative `Ψ' t` within `[0, 1]` and the crossing form
 of `Ψ t`, is nondegenerate. Then the Conley–Zehnder index of `γ` is minus the sum of the
 signatures of the crossing forms, the crossings at the endpoints counting one half. Parameters
 that are not crossings contribute zero. -/
-theorem conleyZehnderIndex_eq_neg_crossingForm_add_finsum {A B : GLSymplectic n ℝ} (γ : Path A B)
+theorem conleyZehnderIndex_eq_neg_crossingForm_add_finsum_of_isUnit_det_add_one
+    {A B : GLSymplectic n ℝ} (γ : Path A B)
     {Ψ Ψ' : ℝ → Matrix (n ⊕ n) (n ⊕ n) ℝ}
     (hγ : ∀ t : I, ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) = Ψ t)
     (h₁ : ∀ t ∈ Icc (0 : ℝ) 1, IsUnit (Ψ t + 1).det)

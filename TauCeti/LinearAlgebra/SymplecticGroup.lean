@@ -69,7 +69,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
   `2 • S`. For symplectic `Ψ` it factors as `(Ψ + 1)ᵀ * -(J * (Ψ - 1))`
   (`Matrix.transpose_mul_J_sub_J_mul_eq_transpose_mul_neg_J_mul`), so away from the eigenvalue
   `-1` its kernel is the space of fixed vectors of `Ψ`
-  (`Matrix.ker_mulVecLin_transpose_mul_J_sub_J_mul`).
+  (`Matrix.ker_mulVecLin_transpose_mul_J_sub_J_mul`). On every vector its quadratic form is twice
+  that of `-(J * Ψ)` (`Matrix.dotProduct_transpose_mul_J_sub_J_mul_mulVec`).
 * `Matrix.exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero`: the linearized symplectic
   equation `E + X * J + J * Xᵀ = 0` is solvable with entries of `X` in an ideal `I` for every
   alternating `E` with entries in `I`, without dividing by two.
@@ -258,6 +259,17 @@ theorem ker_mulVecLin_transpose_mul_J_sub_J_mul {Ψ : Matrix (l ⊕ l) (l ⊕ l)
     neg_eq_zero, transpose_mul_J_sub_J_mul_eq_transpose_mul_neg_J_mul hΨ]
   rw [← mulVec_mulVec]
   exact ⟨fun hv ↦ hinj (hv.trans (mulVec_zero _).symm), fun hv ↦ by rw [hv, mulVec_zero]⟩
+
+/-- On every vector, the quadratic form of `Bᵀ * J - J * B` is twice the quadratic form of
+`-(J * B)`. -/
+theorem dotProduct_transpose_mul_J_sub_J_mul_mulVec (B : Matrix (l ⊕ l) (l ⊕ l) R)
+    (v : l ⊕ l → R) :
+    v ⬝ᵥ (Bᵀ * J l R - J l R * B) *ᵥ v = 2 * (v ⬝ᵥ (-(J l R * B)) *ᵥ v) := by
+  have h : v ⬝ᵥ (Bᵀ * J l R) *ᵥ v = -(v ⬝ᵥ (J l R * B) *ᵥ v) := by
+    rw [← dotProduct_transpose_mulVec, transpose_mul, transpose_transpose, J_transpose,
+      Matrix.neg_mul, neg_mulVec, dotProduct_neg]
+  rw [sub_mulVec, dotProduct_sub, h, neg_mulVec, dotProduct_neg]
+  ring
 
 /-- For a symmetric `S` and `K = J * S`, the matrix `Kᵀ * J - J * K` is `2 • S`. This is the
 linearization at `Ψ = 1` of `Ψᵀ * J - J * Ψ` along `Ψ = 1 + K`. -/
