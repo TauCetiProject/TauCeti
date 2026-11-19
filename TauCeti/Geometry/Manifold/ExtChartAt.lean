@@ -79,6 +79,8 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
 * `TauCeti.measurableSet_image_extChartAt_iff`: for Borel measurable spaces on the manifold and
   the model space, a subset of a chart source is measurable exactly when its image in the model
   space is.
+* `ContinuousOn.extend_comp_extend_symm`: the coordinate expression of a map continuous on a set
+  is continuous on its domain, for extended charts over any models.
 * `TauCeti.locallyCompactSpace_extChartAt_target`: over a locally compact model, every extended
   chart target is locally compact.
 * `TauCeti.exists_countable_chartExhaustion`: a sigma-compact manifold with locally compact model
@@ -582,6 +584,20 @@ theorem measurableSet_extChartAt_target [MeasurableSpace E] [OpensMeasurableSpac
   rw [extChartAt_target]
   exact ((chartAt H x).open_target.preimage I.continuous_symm).measurableSet.inter
     I.isClosed_range.measurableSet
+
+omit [ChartedSpace H M] in
+/-- The coordinate expression `ψ.extend I ∘ u ∘ (φ.extend J).symm` of a map continuous on `s` is
+continuous on its domain, the part of the extended target of `φ` over `s` where `u` maps into the
+source of `ψ`. The two models may be over different fields. -/
+theorem _root_.ContinuousOn.extend_comp_extend_symm {𝕜' : Type*} [NontriviallyNormedField 𝕜']
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜' E'] {H' : Type*} [TopologicalSpace H']
+    {J : ModelWithCorners 𝕜' E' H'} {X : Type*} [TopologicalSpace X] {u : X → M} {s : Set X}
+    (hu : ContinuousOn u s) (φ : OpenPartialHomeomorph X H') (ψ : OpenPartialHomeomorph M H) :
+    ContinuousOn (ψ.extend I ∘ u ∘ (φ.extend J).symm)
+      ((φ.extend J).target ∩ (φ.extend J).symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) := by
+  refine ψ.continuousOn_extend.comp (hu.comp (φ.continuousOn_extend_symm.mono
+    Set.inter_subset_left) fun _ hz ↦ hz.2.1) fun _ hz ↦ ?_
+  simpa using hz.2.2
 
 /-- On a manifold with locally compact model, each extended chart target is locally compact: it is
 the intersection of an open subset with the closed range of the model. -/
