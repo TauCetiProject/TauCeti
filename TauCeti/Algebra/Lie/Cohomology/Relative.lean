@@ -32,17 +32,22 @@ For a `(𝔤, K)`-module the differentiated action of `K` is the action of `𝔨
 follows from `K`-equivariance, and this is the complex `C^•(𝔤, K; M) = Hom_K(⋀^• (𝔤 ⧸ 𝔨), M)` of
 relative `(𝔤, K)`-cohomology, used to compute the cohomology of locally symmetric spaces. No Lie
 group structure on `K` is needed to build the complex, so `𝔨`-invariance is imposed separately.
+Both the relative and the equivariant relative complex are instances of `cochainSubcomplex`, the
+subcomplex cut out by a family of submodules of cochains which the differential preserves.
 
 In degree zero the relative cocycles are the `L`-invariant elements of `M`, so `H⁰(L, 𝔨; M)` is
-the module `M^L` (`relativeCohomologyZeroEquiv`).
+the module `M^L` (`relativeCohomologyZeroEquiv`). This identification is adapted from Mathlib's
+`groupCohomology.cocyclesIso₀`: it compares the categorical cycles with the kernel of the first
+differential by `KernelFork.mapIsoOfIsLimit` against `cyclesIsKernel`.
 
 ## Main definitions
 
+* `TauCeti.LieModule.Cohomology.cochainSubcomplex`: the subcomplex of the Chevalley–Eilenberg
+  complex cut out by a family of submodules preserved by the differential, with its inclusion
+  `TauCeti.LieModule.Cohomology.cochainSubcomplex.ι`.
 * `TauCeti.LieModule.Cohomology.relativeCochains`: the relative cochains `C^n(L, 𝔨; M)`.
 * `TauCeti.LieModule.Cohomology.relativeCochainComplex`: the relative cochain complex.
 * `TauCeti.LieModule.Cohomology.relativeCohomology`: relative Lie algebra cohomology.
-* `TauCeti.LieModule.Cohomology.relativeCochainComplex.ι`: the inclusion into the
-  Chevalley–Eilenberg complex.
 * `TauCeti.LieModule.Cohomology.equivariantRelativeCochains`,
   `TauCeti.LieModule.Cohomology.equivariantRelativeCochainComplex`,
   `TauCeti.LieModule.Cohomology.equivariantRelativeCohomology`: the `K`-equivariant relative
@@ -74,6 +79,63 @@ namespace TauCeti.LieModule.Cohomology
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 variable (M : Type*) [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+
+/-! ### Subcomplexes of the Chevalley–Eilenberg complex -/
+
+section Subcomplex
+
+variable {M} (P : ∀ n : ℕ, Submodule R (L [⋀^Fin n]→ₗ[R] M))
+  (hP : ∀ {n} {ω}, ω ∈ P n → d R L M n ω ∈ P (n + 1))
+
+/-- The restriction of the Chevalley–Eilenberg differential to a family of submodules of cochains
+which it preserves. -/
+def restrictD (n : ℕ) : P n →ₗ[R] P (n + 1) :=
+  (d R L M n).restrict fun _ ↦ hP
+
+/-- The restricted differential is the Chevalley–Eilenberg differential. -/
+@[simp]
+theorem coe_restrictD_apply (n : ℕ) (ω : P n) :
+    (restrictD P hP n ω : L [⋀^Fin (n + 1)]→ₗ[R] M) = d R L M n ω :=
+  (rfl)
+
+/-- The restricted differential squares to zero. -/
+theorem restrictD_comp_restrictD (n : ℕ) : restrictD P hP (n + 1) ∘ₗ restrictD P hP n = 0 := by
+  ext ω : 2
+  simp
+
+/-- The subcomplex of the Chevalley–Eilenberg complex whose degree `n` term is `P n`, for a
+family of submodules of cochains preserved by the differential. -/
+@[expose] noncomputable def cochainSubcomplex : CochainComplex (ModuleCat R) ℕ :=
+  CochainComplex.of (fun n ↦ ModuleCat.of R (P n)) (fun n ↦ ModuleCat.ofHom (restrictD P hP n))
+    fun n ↦ by rw [← ModuleCat.ofHom_comp, restrictD_comp_restrictD, ModuleCat.ofHom_zero]
+
+/-- The degree `n` term of the subcomplex is `P n`. -/
+@[simp]
+theorem cochainSubcomplex_X (n : ℕ) : (cochainSubcomplex P hP).X n = ModuleCat.of R (P n) :=
+  (rfl)
+
+/-- The differential of the subcomplex from degree `n` to degree `n + 1`. -/
+@[simp]
+theorem cochainSubcomplex_d_succ (n : ℕ) :
+    (cochainSubcomplex P hP).d n (n + 1) = ModuleCat.ofHom (restrictD P hP n) := by
+  simp [cochainSubcomplex]
+
+/-- The inclusion of the subcomplex into the Chevalley–Eilenberg complex. -/
+noncomputable def cochainSubcomplex.ι : cochainSubcomplex P hP ⟶ cochainComplex R L M :=
+  CochainComplex.ofHom (fun n ↦ ModuleCat.ofHom (P n).subtype) fun n ↦ by
+    rw [cochainComplex_d_succ, cochainSubcomplex_d_succ]
+    ext ω : 2
+    -- Both composites send `ω` to `d ω`; `ModuleCat.hom_comp` does not fire because the objects
+    -- are the terms of the complexes rather than `ModuleCat.of`.
+    exact (coe_restrictD_apply P hP n ω).symm
+
+/-- In each degree, the inclusion of the subcomplex is the inclusion of submodules. -/
+@[simp]
+theorem cochainSubcomplex.ι_f (n : ℕ) :
+    (cochainSubcomplex.ι P hP).f n = ModuleCat.ofHom (P n).subtype :=
+  (rfl)
+
+end Subcomplex
 
 /-! ### Cochains relative to a subalgebra -/
 
@@ -155,74 +217,28 @@ theorem d_mem_relativeCochains {𝔨 : LieSubalgebra R L} {n : ℕ} {ω : L [⋀
 
 variable (M)
 
-/-- The differential of the relative cochain complex, the restriction of the Chevalley–Eilenberg
-differential. -/
-def relativeD (𝔨 : LieSubalgebra R L) (n : ℕ) :
-    relativeCochains M 𝔨 n →ₗ[R] relativeCochains M 𝔨 (n + 1) :=
-  (d R L M n).restrict fun _ ↦ d_mem_relativeCochains
-
-/-- The relative differential is the Chevalley–Eilenberg differential. -/
-@[simp]
-theorem coe_relativeD_apply (𝔨 : LieSubalgebra R L) (n : ℕ) (ω : relativeCochains M 𝔨 n) :
-    (relativeD M 𝔨 n ω : L [⋀^Fin (n + 1)]→ₗ[R] M) = d R L M n ω :=
-  (rfl)
-
-/-- The relative differential squares to zero. -/
-theorem relativeD_comp_relativeD (𝔨 : LieSubalgebra R L) (n : ℕ) :
-    relativeD M 𝔨 (n + 1) ∘ₗ relativeD M 𝔨 n = 0 := by
-  ext ω : 2
-  simp
-
 /-- The cochain complex of `L` relative to `𝔨` with coefficients in `M`, whose degree `n` term
 is the module of relative `n`-cochains. -/
-@[expose] noncomputable def relativeCochainComplex (𝔨 : LieSubalgebra R L) :
+noncomputable abbrev relativeCochainComplex (𝔨 : LieSubalgebra R L) :
     CochainComplex (ModuleCat R) ℕ :=
-  CochainComplex.of (fun n ↦ ModuleCat.of R (relativeCochains M 𝔨 n))
-    (fun n ↦ ModuleCat.ofHom (relativeD M 𝔨 n)) fun n ↦ by
-      rw [← ModuleCat.ofHom_comp, relativeD_comp_relativeD, ModuleCat.ofHom_zero]
-
-/-- The degree `n` term of the relative complex is the module of relative `n`-cochains. -/
-@[simp]
-theorem relativeCochainComplex_X (𝔨 : LieSubalgebra R L) (n : ℕ) :
-    (relativeCochainComplex M 𝔨).X n = ModuleCat.of R (relativeCochains M 𝔨 n) :=
-  (rfl)
-
-/-- The differential of the relative complex from degree `n` to degree `n + 1`. -/
-@[simp]
-theorem relativeCochainComplex_d_succ (𝔨 : LieSubalgebra R L) (n : ℕ) :
-    (relativeCochainComplex M 𝔨).d n (n + 1) = ModuleCat.ofHom (relativeD M 𝔨 n) := by
-  simp [relativeCochainComplex]
+  cochainSubcomplex (relativeCochains M 𝔨) d_mem_relativeCochains
 
 /-- The `n`-th Lie algebra cohomology of `L` relative to `𝔨` with coefficients in `M`, the
 homology of the relative cochain complex in degree `n`. -/
 noncomputable abbrev relativeCohomology (𝔨 : LieSubalgebra R L) (n : ℕ) : ModuleCat R :=
   (relativeCochainComplex M 𝔨).homology n
 
-/-- The inclusion of the relative cochain complex into the Chevalley–Eilenberg complex. -/
-noncomputable def relativeCochainComplex.ι (𝔨 : LieSubalgebra R L) :
-    relativeCochainComplex M 𝔨 ⟶ cochainComplex R L M :=
-  CochainComplex.ofHom (fun n ↦ ModuleCat.ofHom (relativeCochains M 𝔨 n).subtype) fun n ↦ by
-    rw [cochainComplex_d_succ, relativeCochainComplex_d_succ]
-    ext ω : 2
-    -- Both composites send `ω` to `d ω`; `ModuleCat.hom_comp` does not fire because the objects
-    -- are the terms of the complexes rather than `ModuleCat.of`.
-    exact (coe_relativeD_apply M 𝔨 n ω).symm
-
-/-- In each degree, the inclusion of the relative complex is the inclusion of submodules. -/
-@[simp]
-theorem relativeCochainComplex.ι_f (𝔨 : LieSubalgebra R L) (n : ℕ) :
-    (relativeCochainComplex.ι M 𝔨).f n = ModuleCat.ofHom (relativeCochains M 𝔨 n).subtype :=
-  (rfl)
-
 /-! ### Relative cohomology in degree zero -/
 
 /-- The relative `0`-cocycles are the `L`-invariant elements of `M`: a `0`-cochain `ω` is a
 cocycle exactly when `⁅x, ω ![]⁆ = 0` for every `x : L`. -/
 def kerRelativeDZeroEquiv (𝔨 : LieSubalgebra R L) :
-    LinearMap.ker (relativeD M 𝔨 0) ≃ₗ[R] LieModule.maxTrivSubmodule R L M where
+    LinearMap.ker (restrictD (relativeCochains M 𝔨) d_mem_relativeCochains 0) ≃ₗ[R]
+      LieModule.maxTrivSubmodule R L M where
   toFun ω := ⟨(ω : L [⋀^Fin 0]→ₗ[R] M) ![], (LieModule.mem_maxTrivSubmodule R L M _).2 fun x ↦ by
     have h : d R L M 0 ω = 0 :=
-      (coe_relativeD_apply M 𝔨 0 ω).symm.trans (congrArg Subtype.val (LinearMap.mem_ker.1 ω.2))
+      (coe_restrictD_apply (relativeCochains M 𝔨) d_mem_relativeCochains 0 ω).symm.trans
+        (congrArg Subtype.val (LinearMap.mem_ker.1 ω.2))
     simpa using congr($h ![x])⟩
   invFun m :=
     ⟨⟨constOfIsEmpty R L (Fin 0) (m : M), mem_relativeCochains_zero_iff.2 fun x _ ↦ by
@@ -239,27 +255,39 @@ def kerRelativeDZeroEquiv (𝔨 : LieSubalgebra R L) :
 /-- A relative `0`-cocycle `ω` corresponds to the invariant element `ω ![]`. -/
 @[simp]
 theorem coe_kerRelativeDZeroEquiv_apply (𝔨 : LieSubalgebra R L)
-    (ω : LinearMap.ker (relativeD M 𝔨 0)) :
+    (ω : LinearMap.ker (restrictD (relativeCochains M 𝔨) d_mem_relativeCochains 0)) :
     (kerRelativeDZeroEquiv M 𝔨 ω : M) = (ω : L [⋀^Fin 0]→ₗ[R] M) ![] :=
+  (rfl)
+
+/-- An invariant element `m` corresponds to the constant `0`-cocycle with value `m`. -/
+@[simp]
+theorem coe_kerRelativeDZeroEquiv_symm_apply (𝔨 : LieSubalgebra R L)
+    (m : LieModule.maxTrivSubmodule R L M) :
+    (((kerRelativeDZeroEquiv M 𝔨).symm m : relativeCochains M 𝔨 0) : L [⋀^Fin 0]→ₗ[R] M) =
+      constOfIsEmpty R L (Fin 0) (m : M) :=
   (rfl)
 
 /-- The relative `0`-cycles in the categorical sense are the kernel of the first differential. -/
 private noncomputable def relativeCyclesZeroIso (𝔨 : LieSubalgebra R L) :
-    (relativeCochainComplex M 𝔨).cycles 0 ≅ ModuleCat.of R (LinearMap.ker (relativeD M 𝔨 0)) :=
+    (relativeCochainComplex M 𝔨).cycles 0 ≅
+      ModuleCat.of R (LinearMap.ker (restrictD (relativeCochains M 𝔨) d_mem_relativeCochains 0)) :=
   let S : ShortComplex (ModuleCat R) :=
-    .mk (ModuleCat.ofHom (LinearMap.ker (relativeD M 𝔨 0)).subtype)
-      (ModuleCat.ofHom (relativeD M 𝔨 0)) (by ext ω : 2; exact ω.2)
+    .mk (ModuleCat.ofHom
+        (LinearMap.ker (restrictD (relativeCochains M 𝔨) d_mem_relativeCochains 0)).subtype)
+      (ModuleCat.ofHom (restrictD (relativeCochains M 𝔨) d_mem_relativeCochains 0))
+      (by ext ω : 2; exact ω.2)
   haveI : Mono S.f :=
     (ModuleCat.mono_iff_injective _).2 (Submodule.injective_subtype _)
   Limits.KernelFork.mapIsoOfIsLimit
     ((relativeCochainComplex M 𝔨).cyclesIsKernel 0 1 (by simp))
     (S.moduleCat_exact_iff.2 fun ω hω ↦ ⟨⟨ω, hω⟩, rfl⟩).fIsKernel
     (Arrow.isoMk (Iso.refl _) (Iso.refl _) <| by
-      rw [relativeCochainComplex_d_succ]
+      rw [cochainSubcomplex_d_succ]
       exact (Category.id_comp _).trans (Category.comp_id _).symm)
 
 private theorem relativeCyclesZeroIso_hom_comp (𝔨 : LieSubalgebra R L) :
-    (relativeCyclesZeroIso M 𝔨).hom ≫ ModuleCat.ofHom (LinearMap.ker (relativeD M 𝔨 0)).subtype =
+    (relativeCyclesZeroIso M 𝔨).hom ≫ ModuleCat.ofHom
+        (LinearMap.ker (restrictD (relativeCochains M 𝔨) d_mem_relativeCochains 0)).subtype =
       (relativeCochainComplex M 𝔨).iCycles 0 := by
   simp only [relativeCyclesZeroIso, Limits.KernelFork.mapIsoOfIsLimit_hom]
   exact (Limits.KernelFork.mapOfIsLimit_ι _ _ _).trans (Category.comp_id _)
@@ -281,11 +309,22 @@ theorem relativeCohomologyZeroEquiv_homologyπ_apply (𝔨 : LieSubalgebra R L)
   have h₂ : (relativeCochainComplex M 𝔨).isoHomologyπ₀.inv
       ((relativeCochainComplex M 𝔨).homologyπ 0 z) = z :=
     (relativeCochainComplex M 𝔨).isoHomologyπ₀.hom_inv_id_apply z
-  rw [relativeCohomologyZeroEquiv, LinearEquiv.trans_apply, coe_kerRelativeDZeroEquiv_apply,
-    Iso.toLinearEquiv_apply, Iso.trans_hom, Iso.symm_hom, ConcreteCategory.comp_apply, h₂]
+  rw [relativeCohomologyZeroEquiv, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply]
   -- `h₁` identifies the two cochains as elements of `(relativeCochainComplex M 𝔨).X 0`, whose
-  -- carrier is `relativeCochains M 𝔨 0` by `relativeCochainComplex_X`.
+  -- carrier is `relativeCochains M 𝔨 0` by `cochainSubcomplex_X`.
+  simp only [Iso.trans_hom, Iso.symm_hom, ModuleCat.hom_comp, LinearMap.coe_comp,
+    Function.comp_apply, coe_kerRelativeDZeroEquiv_apply, h₂]
   exact congrArg (fun ω : relativeCochains M 𝔨 0 ↦ (ω : L [⋀^Fin 0]→ₗ[R] M) ![]) h₁
+
+/-- An invariant element `m` corresponds to the class of any relative `0`-cocycle `z` with
+`z ![] = m`. -/
+theorem relativeCohomologyZeroEquiv_symm_apply (𝔨 : LieSubalgebra R L)
+    (m : LieModule.maxTrivSubmodule R L M) (z : (relativeCochainComplex M 𝔨).cycles 0)
+    (hz : ((relativeCochains M 𝔨 0).subtype ∘ₗ ((relativeCochainComplex M 𝔨).iCycles 0).hom) z
+      ![] = m) :
+    (relativeCohomologyZeroEquiv M 𝔨).symm m = (relativeCochainComplex M 𝔨).homologyπ 0 z :=
+  (LinearEquiv.symm_apply_eq _).2 <| Subtype.ext <| by
+    rw [relativeCohomologyZeroEquiv_homologyπ_apply, hz]
 
 /-! ### Equivariant relative cochains -/
 
@@ -327,54 +366,12 @@ theorem d_mem_equivariantRelativeCochains {𝔨 : LieSubalgebra R L} {ρ : K →
 
 variable (M)
 
-/-- The differential of the equivariant relative cochain complex, the restriction of the
-Chevalley–Eilenberg differential. -/
-def equivariantRelativeD (𝔨 : LieSubalgebra R L) {ρ : K → L →ₗ⁅R⁆ L} {σ : K → M →ₗ[R] M}
-    (hσ : ∀ k x m, σ k ⁅x, m⁆ = ⁅ρ k x, σ k m⁆) (n : ℕ) :
-    equivariantRelativeCochains M 𝔨 ρ σ n →ₗ[R] equivariantRelativeCochains M 𝔨 ρ σ (n + 1) :=
-  (d R L M n).restrict fun _ ↦ d_mem_equivariantRelativeCochains hσ
-
-/-- The equivariant relative differential is the Chevalley–Eilenberg differential. -/
-@[simp]
-theorem coe_equivariantRelativeD_apply (𝔨 : LieSubalgebra R L) {ρ : K → L →ₗ⁅R⁆ L}
-    {σ : K → M →ₗ[R] M} (hσ : ∀ k x m, σ k ⁅x, m⁆ = ⁅ρ k x, σ k m⁆) (n : ℕ)
-    (ω : equivariantRelativeCochains M 𝔨 ρ σ n) :
-    (equivariantRelativeD M 𝔨 hσ n ω : L [⋀^Fin (n + 1)]→ₗ[R] M) = d R L M n ω :=
-  (rfl)
-
-/-- The differential of the equivariant relative complex squares to zero. -/
-theorem equivariantRelativeD_comp_equivariantRelativeD (𝔨 : LieSubalgebra R L)
-    {ρ : K → L →ₗ⁅R⁆ L} {σ : K → M →ₗ[R] M} (hσ : ∀ k x m, σ k ⁅x, m⁆ = ⁅ρ k x, σ k m⁆)
-    (n : ℕ) : equivariantRelativeD M 𝔨 hσ (n + 1) ∘ₗ equivariantRelativeD M 𝔨 hσ n = 0 := by
-  ext ω : 2
-  simp
-
 /-- The equivariant relative cochain complex of `L` relative to `𝔨` with coefficients in `M`;
 for a `(𝔤, K)`-module, the complex `C^•(𝔤, K; M)`. -/
-@[expose] noncomputable def equivariantRelativeCochainComplex (𝔨 : LieSubalgebra R L)
+noncomputable abbrev equivariantRelativeCochainComplex (𝔨 : LieSubalgebra R L)
     {ρ : K → L →ₗ⁅R⁆ L} {σ : K → M →ₗ[R] M} (hσ : ∀ k x m, σ k ⁅x, m⁆ = ⁅ρ k x, σ k m⁆) :
     CochainComplex (ModuleCat R) ℕ :=
-  CochainComplex.of (fun n ↦ ModuleCat.of R (equivariantRelativeCochains M 𝔨 ρ σ n))
-    (fun n ↦ ModuleCat.ofHom (equivariantRelativeD M 𝔨 hσ n)) fun n ↦ by
-      rw [← ModuleCat.ofHom_comp, equivariantRelativeD_comp_equivariantRelativeD,
-        ModuleCat.ofHom_zero]
-
-/-- The degree `n` term of the equivariant relative complex is the module of equivariant
-relative `n`-cochains. -/
-@[simp]
-theorem equivariantRelativeCochainComplex_X (𝔨 : LieSubalgebra R L) {ρ : K → L →ₗ⁅R⁆ L}
-    {σ : K → M →ₗ[R] M} (hσ : ∀ k x m, σ k ⁅x, m⁆ = ⁅ρ k x, σ k m⁆) (n : ℕ) :
-    (equivariantRelativeCochainComplex M 𝔨 hσ).X n =
-      ModuleCat.of R (equivariantRelativeCochains M 𝔨 ρ σ n) :=
-  (rfl)
-
-/-- The differential of the equivariant relative complex from degree `n` to degree `n + 1`. -/
-@[simp]
-theorem equivariantRelativeCochainComplex_d_succ (𝔨 : LieSubalgebra R L) {ρ : K → L →ₗ⁅R⁆ L}
-    {σ : K → M →ₗ[R] M} (hσ : ∀ k x m, σ k ⁅x, m⁆ = ⁅ρ k x, σ k m⁆) (n : ℕ) :
-    (equivariantRelativeCochainComplex M 𝔨 hσ).d n (n + 1) =
-      ModuleCat.ofHom (equivariantRelativeD M 𝔨 hσ n) := by
-  simp [equivariantRelativeCochainComplex]
+  cochainSubcomplex (equivariantRelativeCochains M 𝔨 ρ σ) (d_mem_equivariantRelativeCochains hσ)
 
 /-- The `n`-th equivariant relative Lie algebra cohomology of `L` relative to `𝔨` with
 coefficients in `M`; for a `(𝔤, K)`-module, the relative cohomology `H^n(𝔤, K; M)`. -/

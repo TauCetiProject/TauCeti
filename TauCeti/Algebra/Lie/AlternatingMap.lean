@@ -26,7 +26,7 @@ derivatives and interior products.
 
 The action is natural: maps of arguments and values intertwining the action of `y` with that of
 `x` intertwine `⁅y, -⁆` with `⁅x, -⁆` on alternating maps
-(`AlternatingMap.lie_compLinearMap_eq_compAlternatingMap`).
+(`AlternatingMap.compLinearMap_lie_eq_compAlternatingMap_lie`).
 
 ## References
 
@@ -114,7 +114,8 @@ theorem curryLeft_lie {n : ℕ} (x : L) (ω : M [⋀^Fin (n + 1)]→ₗ[R] N) (y
 
 /-- Naturality of the action: if `g : M' → M` and `f : N' → N` intertwine the action of `y` with
 that of `x`, then `ω ∘ g = f ∘ ω'` implies `⁅x, ω⁆ ∘ g = f ∘ ⁅y, ω'⁆`. -/
-theorem lie_compLinearMap_eq_compAlternatingMap {L' M' N' : Type*} [LieRing L'] [LieAlgebra R L']
+theorem compLinearMap_lie_eq_compAlternatingMap_lie {L' M' N' : Type*} [LieRing L']
+    [LieAlgebra R L']
     [AddCommGroup M'] [Module R M'] [LieRingModule L' M'] [LieModule R L' M']
     [AddCommGroup N'] [Module R N'] [LieRingModule L' N'] [LieModule R L' N']
     {g : M' →ₗ[R] M} {f : N' →ₗ[R] N} {x : L} {y : L'} (hg : ∀ m, g ⁅y, m⁆ = ⁅x, g m⁆)

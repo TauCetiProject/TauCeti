@@ -215,14 +215,14 @@ theorem compLinearMap_d_eq_compAlternatingMap {L' M' : Type*} [LieRing L'] [LieA
   induction n with
   | zero =>
     refine curryLeft_injective (LinearMap.ext fun y ↦ ?_)
-    simpa using lie_compLinearMap_eq_compAlternatingMap (hφ y) (hf y) h
+    simpa using compLinearMap_lie_eq_compAlternatingMap_lie (hφ y) (hf y) h
   | succ n ih =>
     refine curryLeft_injective (LinearMap.ext fun y ↦ ?_)
     have hι : (ω.curryLeft (φ y)).compLinearMap (φ : L' →ₗ[R] L) =
         f.compAlternatingMap (ω'.curryLeft y) := by
       simpa using congr(($h).curryLeft y)
     ext v
-    have h₁ := congr($(lie_compLinearMap_eq_compAlternatingMap (hφ y) (hf y) h) v)
+    have h₁ := congr($(compLinearMap_lie_eq_compAlternatingMap_lie (hφ y) (hf y) h) v)
     have h₂ := congr($(ih hι) v)
     simp only [curryLeft_compLinearMap, curryLeft_compAlternatingMap, curryLeft_d_succ,
       compLinearMap_apply, LinearMap.compAlternatingMap_apply, sub_apply, map_sub] at h₁ h₂ ⊢
