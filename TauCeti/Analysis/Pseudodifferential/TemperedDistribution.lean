@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Adjoint.Transpose
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
+public import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.Pseudodifferential.Recovery
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 
@@ -50,10 +52,29 @@ In particular, for a symbol of order `m` with compact spatial support, `Op(a)` m
 distributions of Sobolev order `s` to tempered distributions of Sobolev order `s - m`
 (`TauCeti.Symbol.memSobolev_quantizeTempered`).
 
+The full symbol is recovered exactly from the operator on tempered distributions by testing on
+exponentials. The exponential `e_ξ(y) = exp(i ⟪y, ξ⟫)` is not a Schwartz function, but it has
+temperate growth, hence is a tempered distribution, and
+
+`Op(a) e_ξ = (x ↦ exp(i ⟪x, ξ⟫) a(x, ξ))`
+
+as tempered distributions (`TauCeti.Symbol.quantizeTempered_toTemperedDistribution_exp_mul_I`,
+with the tested form `TauCeti.Symbol.quantizeTempered_toTemperedDistribution_exp_mul_I_apply`),
+that is, `a(x, ξ) = exp(-i ⟪x, ξ⟫) (Op(a) e_ξ)(x)`. The function on the right has temperate
+growth since the position slices of a uniform symbol have bounded derivatives
+(`TauCeti.Symbol.IsUniform.hasTemperateGrowth_coefficient_slice`). The proof tests the transpose
+identity on the cut-off exponentials `y ↦ exp(i ⟪y, ξ⟫) ψ(ε y)`, with `ψ(0) = 1`, and lets `ε → 0`:
+on one side they tend to `e_ξ` as tempered distributions
+(`SchwartzMap.tendsto_integral_mul_cutoffExponential`), on the other their quantizations tend to
+`exp(i ⟪x, ξ⟫) a(x, ξ)` boundedly in `x`
+(`TauCeti.Symbol.IsUniform.tendsto_integral_smul_quantizeSchwartzValue_cutoffExponential`).
+
 ## References
 
 * M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, §1.
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1.
+* R. Melrose, *Pseudodifferential operators on Euclidean space*, Chapter 2, MIT 18.199 (2008),
+  §2.8, (2.75)–(2.77), for the recovery of the full symbol from exponentials.
 -/
 
 public section
@@ -230,6 +251,81 @@ theorem memSobolev_quantizeTempered {a : Symbol n ℂ ℂ m} (ha : a.HasCompactS
   exact BesselPotentialSpace.memSobolev_toDistr _
 
 end Sobolev
+
+/-! ### Recovery of the symbol from exponentials -/
+
+section Exponential
+
+open scoped Topology FourierTransform ContDiff
+
+/-- The position slice `x ↦ a(x, ξ)` of a symbol with estimates uniform in the position has
+temperate growth: all its derivatives are bounded. -/
+theorem IsUniform.hasTemperateGrowth_coefficient_slice {V W : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {a : Symbol n V W m}
+    (ha : a.IsUniform) (ξ : CoordinateSpace n) :
+    (fun x ↦ a.coefficient (x, ξ)).HasTemperateGrowth := by
+  refine .of_norm_iteratedFDeriv_le (a.contDiff_coefficient_slice ξ) fun p ↦ ?_
+  choose B _ hB using isUniform_iff.1 ha
+  refine ⟨∑ r : Fin p → Fin n, B (List.ofFn r) [] * (1 + ‖ξ‖ ^ 2) ^ (m / 2), fun x ↦ ?_⟩
+  refine (norm_iteratedFDeriv_le_sum_coordinateDeriv
+    (contDiff_infty.1 (a.contDiff_coefficient_slice ξ) p) x).trans
+    (Finset.sum_le_sum fun r _ ↦ ?_)
+  simpa [mixedDeriv_def, coordinateDeriv_nil] using hB (List.ofFn r) [] x ξ
+
+/-- **Recovery of the symbol from exponentials, on tempered distributions.** For a scalar symbol
+`a` with estimates uniform in the position, `Op(a)` sends the exponential
+`e_ξ(y) = exp(i ⟪y, ξ⟫)`, as a tempered distribution, to the function
+`x ↦ exp(i ⟪x, ξ⟫) a(x, ξ)`: for every Schwartz function `φ`,
+
+`(Op(a) e_ξ) φ = ∫ φ(x) exp(i ⟪x, ξ⟫) a(x, ξ) dx`.
+
+Thus `a(x, ξ) = exp(-i ⟪x, ξ⟫) (Op(a) e_ξ)(x)` holds exactly, for the action of `Op(a)` on
+tempered distributions by duality; see
+`TauCeti.Symbol.quantizeTempered_toTemperedDistribution_exp_mul_I` for the identity of tempered
+distributions. -/
+theorem quantizeTempered_toTemperedDistribution_exp_mul_I_apply (a : Symbol n ℂ ℂ m)
+    (ha : a.IsUniform) (ξ : CoordinateSpace n) (φ : 𝓢(CoordinateSpace n, ℂ)) :
+    quantizeTempered ℂ a ha (Function.HasTemperateGrowth.toTemperedDistribution volume
+        (Function.hasTemperateGrowth_exp_inner_mul_I ξ)) φ =
+      ∫ x, φ x * (Complex.exp (⟪x, ξ⟫ * I) * a.coefficient (x, ξ) 1) := by
+  -- A Schwartz function `ψ` with `ψ 0 = 1`, the cutoff of the exponentials.
+  obtain ⟨ψ, hψ⟩ : ∃ ψ : 𝓢(CoordinateSpace n, ℂ), ψ 0 = 1 := by
+    obtain ⟨b⟩ : Nonempty (ContDiffBump (0 : CoordinateSpace n)) :=
+      ⟨⟨1, 2, one_pos, one_lt_two⟩⟩
+    have hb : HasCompactSupport (fun y ↦ (b y : ℂ)) :=
+      b.hasCompactSupport.comp_left Complex.ofReal_zero
+    have hbc : ContDiff ℝ ∞ (fun y ↦ (b y : ℂ)) := Complex.ofRealCLM.contDiff.comp b.contDiff
+    refine ⟨hb.toSchwartzMap hbc, (HasCompactSupport.toSchwartzMap_toFun hb hbc 0).trans ?_⟩
+    rw [b.one_of_mem_closedBall (Metric.mem_closedBall_self b.rIn_pos.le), Complex.ofReal_one]
+  -- Pair the transpose identity `∫ φ Op(a) u = ∫ Op(a)ᵗ φ u` on the cut-off exponentials
+  -- `u = (y ↦ exp(i ⟪y, ξ⟫) ψ(ε y))`, and let `ε → 0` on both sides.
+  set t := transposeUniformCLM a ha φ
+  have hleft := ha.tendsto_integral_smul_quantizeSchwartzValue_cutoffExponential ξ hψ 1
+    φ.integrable
+  have hright := ψ.tendsto_integral_mul_cutoffExponential t.integrable ξ
+  have hlim := tendsto_nhds_unique hright (hleft.congr fun ε ↦ by
+    simpa only [smul_eq_mul, quantizeUniformCLM_apply] using
+      integral_mul_quantizeUniformCLM a ha (ψ.cutoffExponential ε ξ 1) φ)
+  simpa only [quantizeTempered_apply_apply, hψ, one_mul, smul_eq_mul,
+    Function.HasTemperateGrowth.toTemperedDistribution_apply] using hlim
+
+/-- **Recovery of the symbol from exponentials, on tempered distributions.** For a scalar symbol
+`a` with estimates uniform in the position, `Op(a)` sends the tempered distribution of the
+exponential `e_ξ(y) = exp(i ⟪y, ξ⟫)` to that of the function `x ↦ exp(i ⟪x, ξ⟫) a(x, ξ)`. -/
+theorem quantizeTempered_toTemperedDistribution_exp_mul_I (a : Symbol n ℂ ℂ m)
+    (ha : a.IsUniform) (ξ : CoordinateSpace n) :
+    quantizeTempered ℂ a ha (Function.HasTemperateGrowth.toTemperedDistribution volume
+        (Function.hasTemperateGrowth_exp_inner_mul_I ξ)) =
+      Function.HasTemperateGrowth.toTemperedDistribution volume
+        ((Function.hasTemperateGrowth_exp_inner_mul_I ξ).mul
+          (((ContinuousLinearMap.apply ℂ ℂ (1 : ℂ)).restrictScalars ℝ).hasTemperateGrowth.comp
+            (ha.hasTemperateGrowth_coefficient_slice ξ))) := by
+  ext φ
+  rw [quantizeTempered_toTemperedDistribution_exp_mul_I_apply]
+  simp only [Function.HasTemperateGrowth.toTemperedDistribution_apply]
+  rfl
+
+end Exponential
 
 end Symbol
 
