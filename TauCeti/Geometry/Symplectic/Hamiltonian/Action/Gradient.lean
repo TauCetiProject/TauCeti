@@ -84,7 +84,7 @@ theorem SmoothTwoForm.IsNondegenerate.apply_eq_symmetrizedBilinForm_gradientOper
     (hJ : (h.symplecticFormAt x).Tames J) (a ξ : TangentSpace I x) :
     σ.1 x ![a, ξ] =
       (h.symplecticFormAt x).symmetrizedBilinForm J ξ (hJ.gradientOperator a) / 2 := by
-  rw [hJ.symmetrizedBilinForm_apply_gradientOperator, h.symplecticFormAt_apply,
+  rw [hJ.symmetrizedBilinForm_gradientOperator_right, h.symplecticFormAt_apply,
     SmoothBundleForm.eval₂_apply]
   ring
 
