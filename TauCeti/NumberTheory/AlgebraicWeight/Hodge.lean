@@ -166,7 +166,7 @@ theorem hodgeMultiset_zero :
     ring
   rw [hodgeMultiset, ← Multiset.map_univ_val_equiv Fin.revPerm, Multiset.map_map]
   simp only [Function.comp_def, Fin.revPerm_apply, h]
-  simp [Fin.univ_val_map, List.ofFn_eq_map, Multiset.range, ← List.map_coe_finRange_eq_range,
+  simp [← Finset.range_val, ← Nat.Iio_eq_range, ← Fin.map_valEmbedding_univ, Finset.map_val,
     Function.comp_def]
 
 /-- For `GL 2` the Hodge–Tate multiset of `(λ₁, λ₂)` is `{λ₁ + 1, λ₂}`; for the weight

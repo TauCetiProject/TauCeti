@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Fin.Rev
+import Mathlib.Tactic.Abel
 
 /-!
 # Reversal on `Fin`
@@ -46,7 +47,9 @@ theorem forall_imp_sub_iff_forall_le {n : ℕ} {p q : ℕ → Prop} :
 without the truncated subtraction of `Fin.val_rev`. -/
 theorem natCast_val_rev {R : Type*} [AddCommGroupWithOne R] {n : ℕ} (i : Fin n) :
     ((i.rev : ℕ) : R) = n - 1 - i := by
-  rw [Fin.val_rev, Nat.cast_sub i.isLt, Nat.cast_succ, sub_sub, add_comm (1 : R)]
+  rw [Fin.val_rev, Nat.cast_sub i.isLt]
+  push_cast
+  abel
 
 /-- Reversing both indices of a pair in `Fin n` preserves the parity of their sum, so the sign
 `(-1) ^ (i + j + 1)` attached to a root `ε_i - ε_j` is unchanged by the reversal. -/
