@@ -138,9 +138,11 @@ theorem finite_image_fixedPoints [CompactSpace M]
       continuous_subtype_val.continuousOn) (image_subset_iff.2 fun z _ ↦ z.2)
       (mem_image_of_mem _ mem_connectedComponent)
       (mem_image_of_mem _ (connectedComponent_eq_iff_mem.1 hxy.symm))
-  rw [image_eq_range, ← range_quotient_lift (s := connectedComponentSetoid _) hμ]
-  -- `ConnectedComponents X` is by definition the quotient by `connectedComponentSetoid X`.
-  exact finite_range (ι := ConnectedComponents (MulAction.fixedPoints G M)) _
+  refine (finite_range fun c : ConnectedComponents (MulAction.fixedPoints G M) ↦
+    μ (ConnectedComponents.surjective_coe c).choose).subset ?_
+  rintro _ ⟨x, hx, rfl⟩
+  exact ⟨.mk ⟨x, hx⟩, hμ _ _ (ConnectedComponents.coe_eq_coe.1
+    (ConnectedComponents.surjective_coe _).choose_spec)⟩
 
 end Riemannian
 
