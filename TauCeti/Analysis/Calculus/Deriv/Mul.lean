@@ -17,8 +17,8 @@ multiple at a zero of the scalar factor assuming only continuity of the vector f
 scalar factor may take values in a normed algebra over the parameter field.
 
 At a point where the scalar factor `u` is nonzero and `u' = u c`, multiplication by `u` is a gauge
-transformation: `hasDerivAt_smul_iff_of_hasDerivAt` states that `η' = u⁻¹ w - c η` exactly when
-`(u η)' = w`.
+transformation: `HasDerivAt.hasDerivAt_iff_hasDerivAt_smul` states that `η' = u⁻¹ w - c η`
+exactly when `(u η)' = w`.
 -/
 
 public section
@@ -50,8 +50,8 @@ variable {𝕜 𝕜' F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNorm
 
 /-- **The gauge identity.** For a scalar factor `u` with `u x ≠ 0` and `u' = u c` at `x`,
 `η' = u⁻¹ w - c η` at `x` exactly when `(u η)' = w` at `x`. -/
-theorem hasDerivAt_smul_iff_of_hasDerivAt {u : 𝕜 → 𝕜'} {c : 𝕜'} {η : 𝕜 → F} {w : F} {x : 𝕜}
-    (hu : HasDerivAt u (u x * c) x) (hu0 : u x ≠ 0) :
+theorem HasDerivAt.hasDerivAt_iff_hasDerivAt_smul {u : 𝕜 → 𝕜'} {c : 𝕜'} {η : 𝕜 → F} {w : F}
+    {x : 𝕜} (hu : HasDerivAt u (u x * c) x) (hu0 : u x ≠ 0) :
     HasDerivAt η ((u x)⁻¹ • w - c • η x) x ↔ HasDerivAt (fun t ↦ u t • η t) w x := by
   constructor
   · intro h
