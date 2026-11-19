@@ -19,6 +19,18 @@ The holomorphic structure is constructed from the local kernel frames of the giv
 operator. A fibre type copy allows its holomorphic atlas and the original real smooth atlas to
 coexist, while retaining the original fibres and total-space topology.
 
+## Main definitions and results
+
+* `HolomorphicLineOperator` packages the original operator and its covariant smoothness.
+* `HolomorphicLineOperator.Fiber` carries the native holomorphic bundle constructed from its
+  local kernel frames, with no additional atlas input.
+* `HolomorphicLineOperator.toOriginalDiffeomorph` is the smooth fibrewise complex-linear identity
+  with the original bundle.
+* `HolomorphicLineOperator.contMDiffOn_toBundleSection_iff` identifies its holomorphic sections
+  with the original smooth kernel on every open set.
+* `HolomorphicLineOperator.compare` and `HolomorphicLineOperator.compare_trans` give the canonical
+  holomorphic comparisons and their cocycle law.
+
 ## References
 
 * D. McDuff, D. Salamon, *J-holomorphic Curves and Symplectic Topology*, Appendix C.1.
@@ -62,34 +74,34 @@ variable {D} (A : HolomorphicLineOperator (F := F) D)
 
 /-- The fibres of the operator's holomorphic bundle, retaining the original vector spaces.
 The parameter records which operator supplies the new atlas. -/
-def Bundle (_A : HolomorphicLineOperator (F := F) D) (x : M) : Type _ := V x
+def Fiber (_A : HolomorphicLineOperator (F := F) D) (x : M) : Type _ := V x
 
-instance instTopologicalSpaceFiber (x : M) : TopologicalSpace (A.Bundle x) :=
+instance instTopologicalSpaceFiber (x : M) : TopologicalSpace (A.Fiber x) :=
   inferInstanceAs (TopologicalSpace (V x))
 
-instance instAddCommGroupFiber (x : M) : AddCommGroup (A.Bundle x) :=
+instance instAddCommGroupFiber (x : M) : AddCommGroup (A.Fiber x) :=
   inferInstanceAs (AddCommGroup (V x))
 
-instance instModuleComplexFiber (x : M) : Module ℂ (A.Bundle x) :=
+instance instModuleComplexFiber (x : M) : Module ℂ (A.Fiber x) :=
   inferInstanceAs (Module ℂ (V x))
 
-instance instModuleRealFiber (x : M) : Module ℝ (A.Bundle x) :=
+instance instModuleRealFiber (x : M) : Module ℝ (A.Fiber x) :=
   inferInstanceAs (Module ℝ (V x))
 
-instance instIsScalarTowerFiber (x : M) : IsScalarTower ℝ ℂ (A.Bundle x) :=
+instance instIsScalarTowerFiber (x : M) : IsScalarTower ℝ ℂ (A.Fiber x) :=
   inferInstanceAs (IsScalarTower ℝ ℂ (V x))
 
-instance instIsTopologicalAddGroupFiber (x : M) : IsTopologicalAddGroup (A.Bundle x) :=
+instance instIsTopologicalAddGroupFiber (x : M) : IsTopologicalAddGroup (A.Fiber x) :=
   inferInstanceAs (IsTopologicalAddGroup (V x))
 
-instance instContinuousSMulRealFiber (x : M) : ContinuousSMul ℝ (A.Bundle x) :=
+instance instContinuousSMulRealFiber (x : M) : ContinuousSMul ℝ (A.Fiber x) :=
   inferInstanceAs (ContinuousSMul ℝ (V x))
 
-instance instContinuousSMulComplexFiber (x : M) : ContinuousSMul ℂ (A.Bundle x) :=
+instance instContinuousSMulComplexFiber (x : M) : ContinuousSMul ℂ (A.Fiber x) :=
   inferInstanceAs (ContinuousSMul ℂ (V x))
 
 /-- The operator holomorphic bundle carries precisely the original total-space topology. -/
-instance instTopologicalSpaceTotalSpace : TopologicalSpace (TotalSpace F A.Bundle) :=
+instance instTopologicalSpaceTotalSpace : TopologicalSpace (TotalSpace F A.Fiber) :=
   inferInstanceAs (TopologicalSpace (TotalSpace F V))
 
 /-- A local nonzero smooth kernel frame of the given operator. -/
@@ -102,7 +114,8 @@ structure Frame (D₀ : (Π x : M, V x) →
   /-- Smoothness, nonvanishing and the actual original kernel equation. -/
   isHolomorphic : IsNonvanishingHolomorphicOn F D₀ sectionMap domain
 
-private def modelBasis : Basis Unit ℂ F :=
+/-- The singleton model basis induced by the chosen complex coordinate. -/
+def modelBasis : Basis Unit ℂ F :=
   (Basis.singleton Unit ℂ).map A.modelEquiv.symm.toLinearEquiv
 
 include A in
@@ -111,7 +124,8 @@ theorem exists_frame (x : M) : ∃ s : Frame (F := F) D, x ∈ s.domain := by
   have hR := A.isReal
   obtain ⟨U, hU, hxU, σ, hσ⟩ :=
     hR.exists_isNonvanishingHolomorphicOn_of_contMDiffCovariantDerivativeOn
-      A.isComplex A.regularity A.modelEquiv x
+      A.isComplex A.regularity isOpen_univ
+      (A.modelEquiv.finrank_eq.trans (finrank_self ℂ)) x (mem_univ x)
   exact ⟨⟨⟨U, hU⟩, σ, hσ⟩, hxU⟩
 
 /-- A chosen local kernel frame containing the specified point. -/
@@ -122,85 +136,89 @@ theorem mem_frameAt (x : M) : x ∈ (frameAt A x).domain :=
   Classical.choose_spec (A.exists_frame x)
 
 /-- The trivialization of the new bundle supplied by a local kernel frame. -/
-def Frame.trivialization (s : Frame (F := F) D) : Trivialization F (π F A.Bundle) :=
-  s.isHolomorphic.trivialization A.modelBasis s.domain.isOpen
+def Frame.trivialization (s : Frame (F := F) D) (b : Basis Unit ℂ F) :
+    Trivialization F (π F A.Fiber) :=
+  s.isHolomorphic.trivialization b s.domain.isOpen
 
 omit [T2Space M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
 /-- The kernel frame trivialization has precisely its stated open domain. -/
 @[simp]
-theorem Frame.baseSet_trivialization (s : Frame (F := F) D) :
-    (s.trivialization A).baseSet = (s.domain : Set M) := by
-  exact s.isHolomorphic.baseSet_trivialization A.modelBasis s.domain.isOpen
+theorem Frame.baseSet_trivialization (s : Frame (F := F) D) (b : Basis Unit ℂ F) :
+    (s.trivialization A b).baseSet = (s.domain : Set M) := by
+  exact s.isHolomorphic.baseSet_trivialization b s.domain.isOpen
 
 /-- The atlas consists of the trivializations supplied by all local kernel frames. -/
-instance instFiberBundle : FiberBundle F A.Bundle where
+instance instFiberBundle : FiberBundle F A.Fiber where
   totalSpaceMk_isInducing' x := by
-    unfold instTopologicalSpaceFiber instTopologicalSpaceTotalSpace Bundle
+    unfold instTopologicalSpaceFiber instTopologicalSpaceTotalSpace Fiber
     exact FiberBundle.totalSpaceMk_isInducing F V x
-  trivializationAtlas' := range (Frame.trivialization A)
-  trivializationAt' x := (frameAt A x).trivialization A
+  trivializationAtlas' := range (fun p : Frame (F := F) D × Basis Unit ℂ F ↦
+    p.1.trivialization A p.2)
+  trivializationAt' x := (frameAt A x).trivialization A A.modelBasis
   mem_baseSet_trivializationAt' x := by
     simpa only [Frame.trivialization, IsNonvanishingHolomorphicOn.baseSet_trivialization,
       SetLike.mem_coe] using mem_frameAt A x
-  trivialization_mem_atlas' x := mem_range_self (frameAt A x)
+  trivialization_mem_atlas' x := mem_range_self (frameAt A x, A.modelBasis)
+
+/-- Every kernel frame, with every complex model basis, belongs to the holomorphic atlas. -/
+instance Frame.memTrivializationAtlas (s : Frame (F := F) D) (b : Basis Unit ℂ F) :
+    MemTrivializationAtlas (s.trivialization A b) := ⟨mem_range_self (s, b)⟩
 
 /-- The kernel frame atlas is a complex vector bundle atlas. -/
-instance instVectorBundleComplex : VectorBundle ℂ F A.Bundle where
+instance instVectorBundleComplex : VectorBundle ℂ F A.Fiber where
   trivialization_linear' e he := by
-    obtain ⟨s, rfl⟩ := he.out
-    exact s.isHolomorphic.isLinear_trivialization A.modelBasis s.domain.isOpen
+    obtain ⟨⟨s, b⟩, rfl⟩ := he.out
+    exact s.isHolomorphic.isLinear_trivialization b s.domain.isOpen
   continuousOn_coordChange' e e' he he' := by
-    obtain ⟨s, rfl⟩ := he.out
-    obtain ⟨s', rfl⟩ := he'.out
-    convert (A.isReal.contMDiffOn_frameCoordChangeL A.isComplex s.isHolomorphic
-      s'.isHolomorphic A.modelBasis A.modelBasis s.domain.isOpen s'.domain.isOpen).continuousOn
-      using 1 <;> first
+    obtain ⟨⟨s, b⟩, rfl⟩ := he.out
+    obtain ⟨⟨s', b'⟩, rfl⟩ := he'.out
+    convert (A.isReal.contMDiffOn_coordChangeL_trivialization A.isComplex s.isHolomorphic
+      s'.isHolomorphic b b' s.domain.isOpen s'.domain.isOpen).continuousOn using 1 <;> first
     | rfl
     | simp only [Frame.trivialization, IsNonvanishingHolomorphicOn.baseSet_trivialization]
 
 /-- The underlying real vector bundle uses the same kernel-frame atlas. -/
-instance instVectorBundleReal : VectorBundle ℝ F A.Bundle :=
-  VectorBundle.restrictScalars ℝ ℂ F A.Bundle
+instance instVectorBundleReal : VectorBundle ℝ F A.Fiber :=
+  VectorBundle.restrictScalars ℝ ℂ F A.Fiber
 
 /-- The frame transitions are holomorphic, giving the actual native holomorphic bundle. -/
-instance instContMDiffVectorBundleComplex : ContMDiffVectorBundle ω F A.Bundle 𝓘(ℂ) where
+instance instContMDiffVectorBundleComplex : ContMDiffVectorBundle ω F A.Fiber 𝓘(ℂ) where
   contMDiffOn_coordChangeL e e' he he' := by
-    obtain ⟨s, rfl⟩ := he.out
-    obtain ⟨s', rfl⟩ := he'.out
-    convert A.isReal.contMDiffOn_frameCoordChangeL A.isComplex s.isHolomorphic
-      s'.isHolomorphic A.modelBasis A.modelBasis s.domain.isOpen s'.domain.isOpen
-      using 1 <;> first
+    obtain ⟨⟨s, b⟩, rfl⟩ := he.out
+    obtain ⟨⟨s', b'⟩, rfl⟩ := he'.out
+    convert A.isReal.contMDiffOn_coordChangeL_trivialization A.isComplex s.isHolomorphic
+      s'.isHolomorphic b b' s.domain.isOpen s'.domain.isOpen using 1 <;> first
     | rfl
     | simp only [Frame.trivialization, IsNonvanishingHolomorphicOn.baseSet_trivialization]
 
 /-- The kernel-frame atlas is smooth for the original real smooth structure on the surface. -/
-instance instContMDiffVectorBundleReal : ContMDiffVectorBundle ∞ F A.Bundle 𝓘(ℝ, ℂ) where
+instance instContMDiffVectorBundleReal : ContMDiffVectorBundle ∞ F A.Fiber 𝓘(ℝ, ℂ) where
   contMDiffOn_coordChangeL e e' he he' := by
-    obtain ⟨s, rfl⟩ := he.out
-    obtain ⟨s', rfl⟩ := he'.out
-    let : (s.isHolomorphic.trivialization A.modelBasis s.domain.isOpen).IsLinear ℝ :=
+    obtain ⟨⟨s, b⟩, rfl⟩ := he.out
+    obtain ⟨⟨s', b'⟩, rfl⟩ := he'.out
+    let : (s.isHolomorphic.trivialization b s.domain.isOpen).IsLinear ℝ :=
       Trivialization.isLinear_restrictScalars ℝ ℂ _
-    let : (s'.isHolomorphic.trivialization A.modelBasis s'.domain.isOpen).IsLinear ℝ :=
+    let : (s'.isHolomorphic.trivialization b' s'.domain.isOpen).IsLinear ℝ :=
       Trivialization.isLinear_restrictScalars ℝ ℂ _
     convert Trivialization.contMDiffOn_coordChangeL_of_mem_maximalAtlas
-      (s.isHolomorphic.trivialization_mem_maximalAtlas A.modelBasis s.domain.isOpen)
-      (s'.isHolomorphic.trivialization_mem_maximalAtlas A.modelBasis s'.domain.isOpen)
+      (s.isHolomorphic.trivialization_mem_maximalAtlas b s.domain.isOpen)
+      (s'.isHolomorphic.trivialization_mem_maximalAtlas b' s'.domain.isOpen)
       using 1 <;> rfl
 
 /-- The identity on each original fibre, as a continuous complex-linear equivalence. -/
-def toOriginalFiberEquiv (x : M) : A.Bundle x ≃L[ℂ] V x := by
-  unfold Bundle instTopologicalSpaceFiber instAddCommGroupFiber instModuleComplexFiber
+def toOriginalFiberEquiv (x : M) : A.Fiber x ≃L[ℂ] V x := by
+  unfold Fiber instTopologicalSpaceFiber instAddCommGroupFiber instModuleComplexFiber
   exact ContinuousLinearEquiv.refl ℂ (V x)
 
 /-- The identity on total spaces, with the original topology on both sides. -/
-def toOriginalHomeomorph : TotalSpace F A.Bundle ≃ₜ TotalSpace F V := by
-  unfold Bundle instTopologicalSpaceTotalSpace
+def toOriginalHomeomorph : TotalSpace F A.Fiber ≃ₜ TotalSpace F V := by
+  unfold Fiber instTopologicalSpaceTotalSpace
   exact Homeomorph.refl (TotalSpace F V)
 
 omit [T2Space M] [VectorBundle ℂ F V] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
 /-- The total-space identity covers the identity of the base. -/
 @[simp]
-theorem proj_toOriginalHomeomorph (p : TotalSpace F A.Bundle) :
+theorem proj_toOriginalHomeomorph (p : TotalSpace F A.Fiber) :
     (A.toOriginalHomeomorph p).proj = p.proj := by rfl
 
 omit [T2Space M] [VectorBundle ℂ F V] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
@@ -212,7 +230,7 @@ theorem proj_toOriginalHomeomorph_symm (p : TotalSpace F V) :
 omit [T2Space M] [VectorBundle ℂ F V] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
 /-- The total-space identity acts by the complex-linear identity on each fibre. -/
 @[simp]
-theorem toOriginalHomeomorph_mk (x : M) (v : A.Bundle x) :
+theorem toOriginalHomeomorph_mk (x : M) (v : A.Fiber x) :
     A.toOriginalHomeomorph ⟨x, v⟩ = ⟨x, A.toOriginalFiberEquiv x v⟩ := by rfl
 
 omit [T2Space M] [VectorBundle ℂ F V] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
@@ -221,64 +239,66 @@ omit [T2Space M] [VectorBundle ℂ F V] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ,
 theorem toOriginalHomeomorph_symm_mk (x : M) (v : V x) :
     A.toOriginalHomeomorph.symm ⟨x, v⟩ = ⟨x, (A.toOriginalFiberEquiv x).symm v⟩ := by rfl
 
+private theorem contMDiffAt_toOriginalHomeomorph_iff
+    {G H Q : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [TopologicalSpace H]
+    (J : ModelWithCorners ℝ G H) [TopologicalSpace Q] [ChartedSpace H Q]
+    {f : Q → TotalSpace F A.Fiber} {q : Q} :
+    ContMDiffAt J (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞ (A.toOriginalHomeomorph ∘ f) q ↔
+      ContMDiffAt J (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞ f q := by
+  let s := A.frameAt (f q).proj
+  let e := s.trivialization A A.modelBasis
+  have hx : (f q).proj ∈ s.domain := A.mem_frameAt (f q).proj
+  have hnew : f q ∈ e.source := e.mem_source.2 (by
+    rw [Frame.baseSet_trivialization]
+    exact hx)
+  have hold : A.toOriginalHomeomorph (f q) ∈
+      (s.isHolomorphic.trivialization A.modelBasis s.domain.isOpen).source := by
+    rw [Trivialization.mem_source, IsNonvanishingHolomorphicOn.baseSet_trivialization,
+      proj_toOriginalHomeomorph]
+    exact hx
+  rw [Trivialization.contMDiffAt_iff_of_mem_maximalAtlas
+    (f := A.toOriginalHomeomorph ∘ f)
+    (s.isHolomorphic.trivialization_mem_maximalAtlas A.modelBasis s.domain.isOpen) hold,
+    e.contMDiffAt_iff hnew]
+  rfl
+
 private theorem contMDiff_toOriginalHomeomorph :
     ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞
       A.toOriginalHomeomorph := by
   intro p
-  let s := A.frameAt p.proj
-  let e := s.trivialization A
-  let : MemTrivializationAtlas e := ⟨mem_range_self s⟩
-  have hx : p.proj ∈ s.domain := A.mem_frameAt p.proj
-  have hpe : p ∈ e.source := e.mem_source.2 (by
-    rw [Frame.baseSet_trivialization]
-    simpa only [SetLike.mem_coe] using hx)
-  have hid : ContMDiffAt (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞
-      (fun q : TotalSpace F A.Bundle ↦ q) p := contMDiffAt_id
-  have hnew := (e.contMDiffAt_iff hpe).1 hid
-  apply (Trivialization.contMDiffAt_iff_of_mem_maximalAtlas
-    (s.isHolomorphic.trivialization_mem_maximalAtlas A.modelBasis s.domain.isOpen) ?_).2
-  · constructor
-    · convert hnew.1 using 1; rfl
-    · convert hnew.2 using 1; rfl
-  · apply (Trivialization.mem_source _).mpr
-    rw [IsNonvanishingHolomorphicOn.baseSet_trivialization, proj_toOriginalHomeomorph]
-    simpa only [SetLike.mem_coe] using hx
+  exact (contMDiffAt_toOriginalHomeomorph_iff A _).2 contMDiffAt_id
 
 private theorem contMDiff_toOriginalHomeomorph_symm :
     ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞
       A.toOriginalHomeomorph.symm := by
   intro p
-  let s := A.frameAt p.proj
-  let e := s.trivialization A
-  let : MemTrivializationAtlas e := ⟨mem_range_self s⟩
-  have hx : p.proj ∈ s.domain := A.mem_frameAt p.proj
-  have hpe : p ∈ (s.isHolomorphic.trivialization A.modelBasis s.domain.isOpen).source := by
-    apply (Trivialization.mem_source _).mpr
-    rw [IsNonvanishingHolomorphicOn.baseSet_trivialization]
-    simpa only [SetLike.mem_coe] using hx
-  have hid : ContMDiffAt (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞
-      (fun q : TotalSpace F V ↦ q) p := contMDiffAt_id
-  have hold := (Trivialization.contMDiffAt_iff_of_mem_maximalAtlas
-    (s.isHolomorphic.trivialization_mem_maximalAtlas A.modelBasis s.domain.isOpen) hpe).1 hid
-  apply (e.contMDiffAt_iff ?_).2
-  · constructor
-    · convert hold.1 using 1; rfl
-    · convert hold.2 using 1; rfl
-  · apply e.mem_source.mpr
-    rw [Frame.baseSet_trivialization, proj_toOriginalHomeomorph_symm]
-    simpa only [SetLike.mem_coe] using hx
+  apply (contMDiffAt_toOriginalHomeomorph_iff A _).1
+  simpa only [Homeomorph.self_comp_symm] using
+    (contMDiffAt_id : ContMDiffAt (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F))
+      (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞ id p)
 
 /-- The identity comparison with the original bundle is a real smooth diffeomorphism and is
 complex linear on every fibre, as expressed by `toOriginalHomeomorph_mk`. -/
 def toOriginalDiffeomorph :
-    TotalSpace F A.Bundle ≃ₘ^∞⟮𝓘(ℝ, ℂ).prod 𝓘(ℝ, F), 𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)⟯
+    TotalSpace F A.Fiber ≃ₘ^∞⟮𝓘(ℝ, ℂ).prod 𝓘(ℝ, F), 𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)⟯
       TotalSpace F V where
   toEquiv := A.toOriginalHomeomorph.toEquiv
   contMDiff_toFun := contMDiff_toOriginalHomeomorph A
   contMDiff_invFun := contMDiff_toOriginalHomeomorph_symm A
 
+/-- The smooth comparison acts by the complex-linear identity on each fibre. -/
+@[simp]
+theorem toOriginalDiffeomorph_mk (x : M) (v : A.Fiber x) :
+    A.toOriginalDiffeomorph ⟨x, v⟩ = ⟨x, A.toOriginalFiberEquiv x v⟩ := by rfl
+
+/-- The inverse smooth comparison acts by the inverse complex-linear identity. -/
+@[simp]
+theorem toOriginalDiffeomorph_symm_mk (x : M) (v : V x) :
+    A.toOriginalDiffeomorph.symm ⟨x, v⟩ =
+      ⟨x, (A.toOriginalFiberEquiv x).symm v⟩ := by rfl
+
 /-- Read an original section as a section of the operator's holomorphic bundle. -/
-def toBundleSection (τ : Π x, V x) : Π x, A.Bundle x :=
+def toBundleSection (τ : Π x, V x) : Π x, A.Fiber x :=
   fun x ↦ (A.toOriginalFiberEquiv x).symm (τ x)
 
 omit [T2Space M] [VectorBundle ℂ F V] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
@@ -305,14 +325,13 @@ theorem contMDiffOn_toBundleSection_iff (τ : Π x, V x) {W : Set M} (hW : IsOpe
       (fun x ↦ TotalSpace.mk' F x (A.toBundleSection τ x)) W ↔
       ContMDiffOn 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞ (T% τ) W ∧
         ∀ x ∈ W, D τ x = 0 := by
-  let : FiniteDimensional ℂ F := .of_injective A.modelEquiv.toLinearMap A.modelEquiv.injective
+  have : FiniteDimensional ℂ F := .of_injective A.modelEquiv.toLinearMap A.modelEquiv.injective
   constructor
   · intro hτ
     have hτR := contMDiffOn_of_toBundleSection A τ hτ
     refine ⟨hτR, fun x hxW ↦ ?_⟩
     let s := A.frameAt x
-    let e := s.trivialization A
-    let : MemTrivializationAtlas e := ⟨mem_range_self s⟩
+    let e := s.trivialization A A.modelBasis
     have hU := s.domain.isOpen.inter hW
     have hc := (e.contMDiffOn_section_iff hU (by
       simp only [e, Frame.baseSet_trivialization, inter_subset_left])).1
@@ -321,15 +340,14 @@ theorem contMDiffOn_toBundleSection_iff (τ : Π x, V x) {W : Set M} (hW : IsOpe
         (fun y ↦ (s.isHolomorphic.trivialization A.modelBasis s.domain.isOpen ⟨y, τ y⟩).2)
         ((s.domain : Set M) ∩ W) := by
       convert hc.mdifferentiableOn (by simp) using 1; rfl
-    exact ((A.isReal.mdifferentiableOn_frameCoord_iff A.isComplex s.isHolomorphic
+    exact ((A.isReal.mdifferentiableOn_trivialization_iff A.isComplex s.isHolomorphic
       A.modelBasis s.domain.isOpen hU inter_subset_left (hτR.mono inter_subset_right)).1 hold)
         x ⟨A.mem_frameAt x, hxW⟩
   · rintro ⟨hτR, hker⟩ x hxW
     let s := A.frameAt x
-    let e := s.trivialization A
-    let : MemTrivializationAtlas e := ⟨mem_range_self s⟩
+    let e := s.trivialization A A.modelBasis
     have hU := s.domain.isOpen.inter hW
-    have hc := (A.isReal.mdifferentiableOn_frameCoord_iff A.isComplex s.isHolomorphic
+    have hc := (A.isReal.mdifferentiableOn_trivialization_iff A.isComplex s.isHolomorphic
       A.modelBasis s.domain.isOpen hU inter_subset_left (hτR.mono inter_subset_right)).2
         (fun y hy ↦ hker y hy.2)
     have hω := hc.contMDiffOn (n := ω) hU
@@ -341,43 +359,22 @@ theorem contMDiffOn_toBundleSection_iff (τ : Π x, V x) {W : Set M} (hW : IsOpe
 
 private theorem contMDiff_compare (B : HolomorphicLineOperator (F := F) D) :
     ContMDiff (𝓘(ℂ).prod 𝓘(ℂ, F)) (𝓘(ℂ).prod 𝓘(ℂ, F)) ω
-      (fun p : TotalSpace F A.Bundle ↦ B.toOriginalHomeomorph.symm (A.toOriginalHomeomorph p)) := by
+      (fun p : TotalSpace F A.Fiber ↦ B.toOriginalHomeomorph.symm (A.toOriginalHomeomorph p)) := by
   intro p
   let s := A.frameAt p.proj
-  let eA := s.trivialization A
-  let eB := s.trivialization B
-  let : MemTrivializationAtlas eA := ⟨mem_range_self s⟩
-  let : MemTrivializationAtlas eB := ⟨mem_range_self s⟩
+  let eA := s.trivialization A A.modelBasis
+  let eB := s.trivialization B A.modelBasis
   have hx : p.proj ∈ s.domain := A.mem_frameAt p.proj
   have hpe : p ∈ eA.source := eA.mem_source.2 (by
     rw [Frame.baseSet_trivialization]
     exact hx)
   have hid : ContMDiffAt (𝓘(ℂ).prod 𝓘(ℂ, F)) (𝓘(ℂ).prod 𝓘(ℂ, F)) ω
-      (fun q : TotalSpace F A.Bundle ↦ q) p := contMDiffAt_id
+      (fun q : TotalSpace F A.Fiber ↦ q) p := contMDiffAt_id
   have hA := (eA.contMDiffAt_iff hpe).1 hid
-  let oA := s.isHolomorphic.trivialization A.modelBasis s.domain.isOpen
-  let oB := s.isHolomorphic.trivialization B.modelBasis s.domain.isOpen
-  have hL : ContMDiffOn 𝓘(ℂ) 𝓘(ℂ, F →L[ℂ] F) ω
-      (fun x ↦ (oA.coordChangeL ℂ oB x : F →L[ℂ] F)) s.domain := by
-    simpa only [inter_self] using A.isReal.contMDiffOn_frameCoordChangeL A.isComplex
-      s.isHolomorphic s.isHolomorphic A.modelBasis B.modelBasis s.domain.isOpen s.domain.isOpen
-  have hvec := ((hL.contMDiffAt (s.domain.isOpen.mem_nhds hx)).comp p hA.1).clm_apply hA.2
   apply (eB.contMDiffAt_iff ?_).2
   · constructor
     · convert hA.1 using 1; rfl
-    · apply hvec.congr_of_eventuallyEq
-      filter_upwards [hA.1.continuousAt.preimage_mem_nhds (s.domain.isOpen.mem_nhds hx)]
-        with q hq
-      have hxA : q.proj ∈ oA.baseSet := by
-        rw [IsNonvanishingHolomorphicOn.baseSet_trivialization]
-        exact hq
-      have hxB : q.proj ∈ oB.baseSet := by
-        rw [IsNonvanishingHolomorphicOn.baseSet_trivialization]
-        exact hq
-      have hc := oA.coordChangeL_apply (R := ℂ) oB ⟨hxA, hxB⟩
-        (oA ⟨q.proj, A.toOriginalFiberEquiv q.proj q.2⟩).2
-      rw [oA.symm_apply_apply_mk hxA] at hc
-      convert hc.symm using 1 <;> rfl
+    · convert hA.2 using 1; rfl
   · apply eB.mem_source.2
     rw [Frame.baseSet_trivialization, proj_toOriginalHomeomorph_symm,
       proj_toOriginalHomeomorph]
@@ -386,17 +383,38 @@ private theorem contMDiff_compare (B : HolomorphicLineOperator (F := F) D) :
 /-- The canonical comparison between the holomorphic structures built from two choices of
 model coordinate for the same operator. It is the fibrewise complex-linear identity. -/
 def compare (B : HolomorphicLineOperator (F := F) D) :
-    TotalSpace F A.Bundle ≃ₘ^ω⟮𝓘(ℂ).prod 𝓘(ℂ, F), 𝓘(ℂ).prod 𝓘(ℂ, F)⟯
-      TotalSpace F B.Bundle where
+    TotalSpace F A.Fiber ≃ₘ^ω⟮𝓘(ℂ).prod 𝓘(ℂ, F), 𝓘(ℂ).prod 𝓘(ℂ, F)⟯
+      TotalSpace F B.Fiber where
   toEquiv := (A.toOriginalHomeomorph.trans B.toOriginalHomeomorph.symm).toEquiv
   contMDiff_toFun := contMDiff_compare A B
   contMDiff_invFun := contMDiff_compare B A
 
 /-- The canonical holomorphic comparison acts by the complex-linear identity on fibres. -/
 @[simp]
-theorem compare_mk (B : HolomorphicLineOperator (F := F) D) (x : M) (v : A.Bundle x) :
+theorem compare_mk (B : HolomorphicLineOperator (F := F) D) (x : M) (v : A.Fiber x) :
     A.compare B ⟨x, v⟩ =
       ⟨x, (B.toOriginalFiberEquiv x).symm (A.toOriginalFiberEquiv x v)⟩ := by rfl
+
+/-- Comparing a holomorphic structure with itself gives the identity. -/
+@[simp]
+theorem compare_self : A.compare A = Diffeomorph.refl _ _ ω := by
+  apply DFunLike.ext
+  intro p
+  rfl
+
+/-- Reversing the choices reverses the canonical holomorphic comparison. -/
+@[simp]
+theorem compare_symm (B : HolomorphicLineOperator (F := F) D) :
+    (A.compare B).symm = B.compare A := by
+  apply DFunLike.ext
+  intro p
+  rfl
+
+/-- The canonical holomorphic comparison preserves the comparison with the original bundle. -/
+@[simp]
+theorem toOriginalHomeomorph_compare (B : HolomorphicLineOperator (F := F) D)
+    (p : TotalSpace F A.Fiber) :
+    B.toOriginalHomeomorph (A.compare B p) = A.toOriginalHomeomorph p := by rfl
 
 /-- The canonical comparisons satisfy the cocycle law. -/
 theorem compare_trans (B C : HolomorphicLineOperator (F := F) D) :
@@ -417,7 +435,7 @@ def IsRealCauchyRiemannOperator.toHolomorphicLineOperator
       (SmoothAlmostComplexStructure.ofComplexManifold ℂ M) D)
     (hDℂ : IsComplexLinearOperator F D) (hDs : ContMDiffCovariantDerivativeOn F ∞ D univ)
     (hF : finrank ℂ F = 1) : HolomorphicLineOperator (F := F) D := by
-  let : FiniteDimensional ℂ F := .of_finrank_pos (by rw [hF]; exact Nat.zero_lt_one)
+  have : FiniteDimensional ℂ F := .of_finrank_pos (by rw [hF]; exact Nat.zero_lt_one)
   exact ⟨ContinuousLinearEquiv.ofFinrankEq (by simpa only [finrank_self] using hF),
     hD, hDℂ, hDs⟩
 

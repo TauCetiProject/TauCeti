@@ -32,7 +32,7 @@ is a holomorphic structure on `V`, whose holomorphic sections are the kernel of 
 
 The frame near `x₀` is built from the frame `s` of the trivialization `e` of `V` at `x₀` and the
 chart `φ` at `x₀`. Over the chart domain and the base set of `e`, `D s = (B • conj dz) ⊗ s` for
-the coefficient `B = TauCeti.cauchyRiemannChartCoeff D x₀`
+the coefficient `B = TauCeti.cauchyRiemannChartCoeff D b x₀`
 (`TauCeti.IsRealCauchyRiemannOperator.apply_localFrame_mfderivWithin_extChartAt_symm`), assumed
 smooth near the chart point of `x₀`. A smooth solution `g` of `∂bar g = -B`
 (`TauCeti.exists_contDiff_conjWirtingerDeriv_apply_one_eventually_eq`) gives the holomorphic frame
@@ -56,8 +56,9 @@ smooth near the chart point of `x₀`. A smooth solution `g` of `∂bar g = -B`
 
 ## Implementation notes
 
-The model fibre may be any complex rank-one normed space. A continuous complex-linear
-equivalence `b` with `ℂ` chooses the scalar coordinate. This file assumes that coordinate smooth
+In the curve construction, the model fibre may be any complex rank-one normed space. A
+continuous complex-linear equivalence `b` with `ℂ` chooses the scalar coordinate. The chart
+coefficient is assumed smooth
 near the chart centre. `HolomorphicFrame.Smooth` derives the assumption from native covariant
 regularity of the given operator; `CauchyRiemann.HolomorphicBundle` constructs its actual
 holomorphic bundle and the smooth comparison with the original bundle.
@@ -368,13 +369,10 @@ private theorem apply_exp_smul_localFrame_one_eq_zero (x₀ : M) {G : ℂ → �
       congr($(mfderiv_extChartAt_comp_mfderivWithin_extChartAt_symm (I := 𝓘(ℝ, ℂ)) hz) w)
   have hdI : mvfderiv 𝓘(ℝ, ℂ) f y (ofComplexManifold ℂ M y (L (1 : ℂ))) =
       fderiv ℝ H z Complex.I := by
-    have h : L (Complex.I • (1 : ℂ)) =
-        (Complex.I • ContinuousLinearMap.id ℝ ℂ) (L (1 : ℂ)) :=
-      mfderivWithin_extChartAt_symm_smul ℝ (𝕜' := ℂ) hz Complex.I (1 : ℂ)
-    rw [smul_eq_mul, mul_one] at h
-    have hLI : ofComplexManifold ℂ M y (L (1 : ℂ)) = L Complex.I :=
-      (ofComplexManifold_apply (E := ℂ) _ _).trans h.symm
-    exact (congrArg (mvfderiv 𝓘(ℝ, ℂ) f y) hLI).trans (hchain Complex.I)
+    rw [show ofComplexManifold ℂ M y (L (1 : ℂ)) = L Complex.I by
+      simpa only [smul_eq_mul, mul_one] using
+        ofComplexManifold_apply_mfderivWithin_extChartAt_symm (v := (1 : ℂ)) hz]
+    exact hchain Complex.I
   have hs1 : e.continuousLinearMapAt ℂ y (s y) = b.symm 1 := by
     rw [Manifold.continuousLinearMapAt_localFrame _ hze, Module.Basis.map_apply,
       Module.Basis.singleton_apply]

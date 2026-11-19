@@ -44,29 +44,29 @@ omit [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] in
 theorem eventually_contDiffAt_cauchyRiemannChartCoeff
     (hD : IsRealCauchyRiemannOperator F
       (SmoothAlmostComplexStructure.ofComplexManifold ℂ M) D)
-    (hDs : ContMDiffCovariantDerivativeOn F ∞ D univ) (b : F ≃L[ℂ] ℂ) (x₀ : M) :
+    {u : Set M} (hDs : ContMDiffCovariantDerivativeOn F ∞ D u)
+    (hu : IsOpen u) (b : F ≃L[ℂ] ℂ) (x₀ : M) (hx₀ : x₀ ∈ u) :
     ∀ᶠ z in 𝓝 (extChartAt 𝓘(ℝ, ℂ) x₀ x₀),
       ContDiffAt ℝ ∞ (cauchyRiemannChartCoeff D b x₀) z := by
-  let : FiniteDimensional ℂ F := .of_injective b.toLinearMap b.injective
+  have : FiniteDimensional ℂ F := .of_injective b.toLinearMap b.injective
   let e := trivializationAt F V x₀
   let φ := extChartAt 𝓘(ℝ, ℂ) x₀
   let s := e.localFrame ((Basis.singleton Unit ℂ).map b.symm.toLinearEquiv) ()
-  let a : Set M := (chartAt ℂ x₀).source ∩ e.baseSet
-  have ha : IsOpen a := (chartAt ℂ x₀).open_source.inter e.open_baseSet
+  let a : Set M := (chartAt ℂ x₀).source ∩ (e.baseSet ∩ u)
+  have ha : IsOpen a := (chartAt ℂ x₀).open_source.inter (e.open_baseSet.inter hu)
   have hs : ContMDiffOn 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞ (T% s) e.baseSet := by
     rw [e.contMDiffOn_section_iff e.open_baseSet subset_rfl]
     refine (contMDiffOn_const (c := b.symm 1)).congr fun x hx ↦ ?_
     rw [← e.continuousLinearMapAt_apply_of_mem (R := ℂ) hx,
       Manifold.continuousLinearMapAt_localFrame _ hx, Basis.map_apply, Basis.singleton_apply]
     rfl
-  have hDa := hD.contMDiffCovariantDerivativeOn_mono_of_isOpen hDs ha (subset_univ a)
+  have hDa := hD.contMDiffCovariantDerivativeOn_mono_of_isOpen hDs ha (fun _ hx ↦ hx.2.2)
   let eHom := trivializationAt (ℂ →L[ℝ] F)
     (fun x ↦ TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) x₀
   have hω := (eHom.contMDiffOn_section_iff ha (by
     intro x hx
     simpa only [eHom, hom_trivializationAt_baseSet, TangentBundle.trivializationAt_baseSet]
-      using hx)).1 (hDa.contMDiff (by simpa using hs.mono (inter_subset_right (s :=
-        (chartAt ℂ x₀).source) (t := e.baseSet))))
+      using ⟨hx.1, hx.2.1⟩)).1 (hDa.contMDiff (hs.mono (fun _ hx ↦ hx.2.1)))
   have hchart := contMDiffOn_iff_contDiffOn.1 (hω.comp
     ((contMDiffOn_extChartAt_symm (I := 𝓘(ℝ, ℂ)) x₀).mono inter_subset_left)
     inter_subset_right)
@@ -76,7 +76,7 @@ theorem eventually_contDiffAt_cauchyRiemannChartCoeff
   have hxW : φ x₀ ∈ W := by
     refine ⟨mem_extChartAt_target x₀, ?_⟩
     rw [mem_preimage, φ.left_inv (mem_extChartAt_source x₀)]
-    exact ⟨mem_chart_source ℂ x₀, mem_baseSet_trivializationAt F V x₀⟩
+    exact ⟨mem_chart_source ℂ x₀, mem_baseSet_trivializationAt F V x₀, hx₀⟩
   have hc : ContDiffOn ℝ ∞ (cauchyRiemannChartCoeff D b x₀) W := by
     refine (((b.toContinuousLinearMap.restrictScalars ℝ).contDiff.comp_contDiffOn
       (hchart.clm_apply (contDiffOn_const (c := (1 : ℂ)))))).congr ?_
@@ -87,8 +87,8 @@ theorem eventually_contDiffAt_cauchyRiemannChartCoeff
       ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]
     rw [TangentBundle.symmL_trivializationAt hy, φ.right_inv hz.1]
     rw [cauchyRiemannChartCoeff_apply,
-      (trivializationAt F V x₀).continuousLinearMapAt_apply_of_mem (R := ℂ) hz.2.2,
-      (trivializationAt F V x₀).continuousLinearMapAt_apply_of_mem (R := ℝ) hz.2.2]
+      (trivializationAt F V x₀).continuousLinearMapAt_apply_of_mem (R := ℂ) hz.2.2.1,
+      (trivializationAt F V x₀).continuousLinearMapAt_apply_of_mem (R := ℝ) hz.2.2.1]
     rfl
   filter_upwards [hW.mem_nhds hxW] with z hz
   exact (hc z hz).contDiffAt (hW.mem_nhds hz)
@@ -98,11 +98,15 @@ frame near every point, with no independently assumed smooth chart coefficient. 
 theorem exists_isNonvanishingHolomorphicOn_of_contMDiffCovariantDerivativeOn
     (hD : IsRealCauchyRiemannOperator F
       (SmoothAlmostComplexStructure.ofComplexManifold ℂ M) D)
-    (hDℂ : IsComplexLinearOperator F D) (hDs : ContMDiffCovariantDerivativeOn F ∞ D univ)
-    (b : F ≃L[ℂ] ℂ) (x₀ : M) :
+    (hDℂ : IsComplexLinearOperator F D) {u : Set M}
+    (hDs : ContMDiffCovariantDerivativeOn F ∞ D u) (hu : IsOpen u)
+    (hF : finrank ℂ F = 1) (x₀ : M) (hx₀ : x₀ ∈ u) :
     ∃ U : Set M, IsOpen U ∧ x₀ ∈ U ∧ ∃ σ : Π x : M, V x,
-      IsNonvanishingHolomorphicOn F D σ U :=
-  hD.exists_isNonvanishingHolomorphicOn b hDℂ x₀
-    (hD.eventually_contDiffAt_cauchyRiemannChartCoeff hDs b x₀)
+      IsNonvanishingHolomorphicOn F D σ U := by
+  have : FiniteDimensional ℂ F := .of_finrank_pos (by rw [hF]; exact Nat.zero_lt_one)
+  let b : F ≃L[ℂ] ℂ := ContinuousLinearEquiv.ofFinrankEq
+    (by simpa only [finrank_self] using hF)
+  exact hD.exists_isNonvanishingHolomorphicOn b hDℂ x₀
+    (hD.eventually_contDiffAt_cauchyRiemannChartCoeff hDs hu b x₀ hx₀)
 
 end TauCeti.IsRealCauchyRiemannOperator

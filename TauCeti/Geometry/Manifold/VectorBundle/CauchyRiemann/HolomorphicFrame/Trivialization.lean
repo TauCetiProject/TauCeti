@@ -86,24 +86,16 @@ include hσ b in
 private theorem realFrame :
     IsLocalFrameOn 𝓘(ℝ, E) F ∞ (fun i : Fin 2 × Unit ↦ Complex.basisOneI i.1 • σ) U where
   linearIndependent {x} hx := by
-    let hV : finrank ℂ (V x) = 1 :=
-      ((trivializationAt F V x).linearEquivAt ℂ x
-        (FiberBundle.mem_baseSet_trivializationAt' x)).finrank_eq.trans
-        (by simpa using finrank_eq_card_basis b)
-    let c := FiniteDimensional.basisSingleton Unit hV (σ x) (hσ.ne_zero x hx)
+    let c := (complexFrame hσ b).toBasisAt hx
     convert (Complex.basisOneI.smulTower c).linearIndependent using 1
     ext i
-    simp only [Basis.smulTower_apply, c, FiniteDimensional.basisSingleton_apply, Pi.smul_apply]
+    simp only [Basis.smulTower_apply, c, IsLocalFrameOn.toBasisAt_coe, Pi.smul_apply]
   generating {x} hx := by
-    let hV : finrank ℂ (V x) = 1 :=
-      ((trivializationAt F V x).linearEquivAt ℂ x
-        (FiberBundle.mem_baseSet_trivializationAt' x)).finrank_eq.trans
-        (by simpa using finrank_eq_card_basis b)
-    let c := FiniteDimensional.basisSingleton Unit hV (σ x) (hσ.ne_zero x hx)
+    let c := (complexFrame hσ b).toBasisAt hx
     convert (Complex.basisOneI.smulTower c).span_eq.ge using 1
     congr 2
     ext i
-    simp only [Basis.smulTower_apply, c, FiniteDimensional.basisSingleton_apply, Pi.smul_apply]
+    simp only [Basis.smulTower_apply, c, IsLocalFrameOn.toBasisAt_coe, Pi.smul_apply]
   contMDiffOn i :=
     ContMDiffOn.smul_totalSpace (a := fun _ ↦ Complex.basisOneI i.1)
       contMDiffOn_const hσ.contMDiffOn

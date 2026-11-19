@@ -66,7 +66,7 @@ namespace IsRealCauchyRiemannOperator
 
 /-- In a holomorphic kernel frame, the coordinates of an originally smooth section are
 holomorphic exactly when the original operator vanishes on that section. -/
-theorem mdifferentiableOn_frameCoord_iff
+theorem mdifferentiableOn_trivialization_iff
     (hD : IsRealCauchyRiemannOperator F
       (SmoothAlmostComplexStructure.ofComplexManifold E M) D)
     (hDℂ : IsComplexLinearOperator F D) (hσ : IsNonvanishingHolomorphicOn F D σ U)
@@ -75,7 +75,7 @@ theorem mdifferentiableOn_frameCoord_iff
     (hτ : ContMDiffOn 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F)) ∞ (T% τ) W) :
     MDifferentiableOn 𝓘(ℂ, E) 𝓘(ℂ, F)
       (fun x ↦ (hσ.trivialization b hU ⟨x, τ x⟩).2) W ↔ ∀ x ∈ W, D τ x = 0 := by
-  let : FiniteDimensional ℂ F := .of_basis b
+  have : FiniteDimensional ℂ F := .of_basis b
   let e := hσ.trivialization b hU
   let c : M → F := fun x ↦ (e ⟨x, τ x⟩).2
   let f : M → ℂ := fun x ↦ b.coord () (c x)
@@ -104,7 +104,7 @@ theorem mdifferentiableOn_frameCoord_iff
 
 /-- Changes between actual kernel frames are holomorphic families of complex-linear maps.
 Both model bases may be chosen independently. -/
-theorem contMDiffOn_frameCoordChangeL [FiniteDimensional ℂ E]
+theorem contMDiffOn_coordChangeL_trivialization [FiniteDimensional ℂ E]
     (hD : IsRealCauchyRiemannOperator F
       (SmoothAlmostComplexStructure.ofComplexManifold E M) D)
     (hDℂ : IsComplexLinearOperator F D) (hσ : IsNonvanishingHolomorphicOn F D σ U)
@@ -113,8 +113,8 @@ theorem contMDiffOn_frameCoordChangeL [FiniteDimensional ℂ E]
     ContMDiffOn 𝓘(ℂ, E) 𝓘(ℂ, F →L[ℂ] F) ω
       (fun x ↦ ((hσ.trivialization b hU).coordChangeL ℂ
         (hσ'.trivialization b' hU') x : F →L[ℂ] F)) (U ∩ U') := by
-  let : FiniteDimensional ℂ F := .of_basis b
-  have hc := (hD.mdifferentiableOn_frameCoord_iff hDℂ hσ' b' hU' (hU.inter hU')
+  have : FiniteDimensional ℂ F := .of_basis b
+  have hc := (hD.mdifferentiableOn_trivialization_iff hDℂ hσ' b' hU' (hU.inter hU')
     inter_subset_right (hσ.contMDiffOn.mono inter_subset_left)).2
       (fun x hx ↦ hσ.apply_eq_zero x hx.1)
   have hω : ContMDiffOn 𝓘(ℂ, E) 𝓘(ℂ, F) ω
