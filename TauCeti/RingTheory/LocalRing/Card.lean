@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- `IsLocalRing.ResidueField` and `IsLocalRing.ResidueField.map` occur in the statements below.
+-- `IsLocalRing.ResidueField` occurs in the statements below.
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+-- Non-public: `TauCeti.residueFieldAlgEquivOfSurjective` gives the bijection of residue fields.
+import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 -- `Module.IsUnimodular` occurs in the statements below; the coordinate criterion
 -- `TauCeti.Module.isUnimodular_iff_exists_isUnit` is what the count runs on.
 public import TauCeti.LinearAlgebra.Unimodular
@@ -60,13 +62,9 @@ open _root_.IsLocalRing
 the residue field of a quotient `A ⧸ I` by a proper ideal has as many elements as that of `A`. -/
 theorem card_residueField_of_surjective {A B : Type*} [CommRing A] [IsLocalRing A] [CommRing B]
     [IsLocalRing B] {f : A →+* B} (hf : Function.Surjective f) :
-    Nat.card (ResidueField B) = Nat.card (ResidueField A) := by
-  have : IsLocalHom f := IsLocalHom.of_surjective f hf
-  refine (Nat.card_eq_of_bijective (ResidueField.map f)
-    ⟨(ResidueField.map f).injective, fun y ↦ ?_⟩).symm
-  obtain ⟨b, rfl⟩ := residue_surjective y
-  obtain ⟨a, rfl⟩ := hf b
-  exact ⟨residue A a, ResidueField.map_residue f a⟩
+    Nat.card (ResidueField B) = Nat.card (ResidueField A) :=
+  (Nat.card_congr (residueFieldAlgEquivOfSurjective (ψ := ((residue B).comp f).toIntAlgHom)
+    (residue_surjective.comp hf)).toEquiv).symm
 
 variable {R : Type*} [CommRing R] [IsLocalRing R]
 

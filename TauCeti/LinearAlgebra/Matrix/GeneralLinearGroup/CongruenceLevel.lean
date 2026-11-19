@@ -17,9 +17,9 @@ public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.GroupTheory.GroupAction.Quotient
 -- `IsDiscreteValuationRing` occurs in the statements of the specialization to `𝔭ᵉ`.
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
--- Non-public: the norm of a power of a prime ideal, and the finiteness of `A ⧸ 𝔭ᵉ`, are used only
--- in the proofs for `𝔭ᵉ`.
-import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+-- Non-public: `#(A ⧸ 𝔭ᵉ) = qᵉ` and the finiteness of `A ⧸ 𝔭ᵉ` are used only in the proofs for
+-- `𝔭ᵉ`.
+import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import Mathlib.RingTheory.LocalRing.Quotient
 
 /-!
@@ -469,14 +469,6 @@ open _root_.IsLocalRing
 variable [IsDomain A] [IsDiscreteValuationRing A] [Finite (ResidueField A)] {e : ℕ}
 
 omit [Finite (ResidueField A)] in
-/-- `#(A ⧸ 𝔭ᵉ) = qᵉ` for a discrete valuation ring. -/
-private theorem card_quotient_maximalIdeal_pow (e : ℕ) :
-    Nat.card (A ⧸ maximalIdeal A ^ e) = Nat.card (ResidueField A) ^ e := by
-  rw [← Submodule.cardQuot_apply, cardQuot_pow_of_prime (IsDiscreteValuationRing.not_a_field A),
-    Submodule.cardQuot_apply]
-  rfl
-
-omit [Finite (ResidueField A)] in
 private theorem maximalIdeal_pow_ne_top (he : e ≠ 0) : maximalIdeal A ^ e ≠ ⊤ :=
   ne_top_of_le_ne_top (maximalIdeal.isMaximal A).ne_top (Ideal.pow_le_self he)
 
@@ -486,7 +478,7 @@ theorem GL2K0.index_maximalIdeal_pow (he : e ≠ 0) :
     (GL2K0 (maximalIdeal A ^ e)).index =
       Nat.card (ResidueField A) ^ (e - 1) * (Nat.card (ResidueField A) + 1) := by
   have h := GL2K0.card_residueField_mul_index (maximalIdeal_pow_ne_top (A := A) he)
-  rw [card_quotient_maximalIdeal_pow] at h
+  rw [TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow] at h
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero he
   refine Nat.eq_of_mul_eq_mul_left (Nat.card_pos : 0 < Nat.card (ResidueField A)) ?_
   rw [h, Nat.add_sub_cancel, pow_succ]
@@ -498,7 +490,7 @@ theorem GL2K1.index_maximalIdeal_pow (he : e ≠ 0) :
     (GL2K1 (maximalIdeal A ^ e)).index =
       Nat.card (ResidueField A) ^ (2 * e - 2) * (Nat.card (ResidueField A) ^ 2 - 1) := by
   have h := GL2K1.card_residueField_sq_mul_index (maximalIdeal_pow_ne_top (A := A) he)
-  rw [card_quotient_maximalIdeal_pow] at h
+  rw [TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow] at h
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero he
   refine Nat.eq_of_mul_eq_mul_left
     (pow_pos Nat.card_pos 2 : 0 < Nat.card (ResidueField A) ^ 2) ?_
@@ -511,7 +503,7 @@ theorem GL2K1.relIndex_maximalIdeal_pow (he : e ≠ 0) :
     (GL2K1 (maximalIdeal A ^ e)).relIndex (GL2K0 (maximalIdeal A ^ e)) =
       Nat.card (ResidueField A) ^ (e - 1) * (Nat.card (ResidueField A) - 1) := by
   have h := GL2K1.card_residueField_mul_relIndex (maximalIdeal_pow_ne_top (A := A) he)
-  rw [card_quotient_maximalIdeal_pow] at h
+  rw [TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow] at h
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero he
   refine Nat.eq_of_mul_eq_mul_left (Nat.card_pos : 0 < Nat.card (ResidueField A)) ?_
   rw [h, Nat.add_sub_cancel, pow_succ]
