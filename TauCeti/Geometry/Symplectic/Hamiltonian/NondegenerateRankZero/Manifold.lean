@@ -220,7 +220,8 @@ private theorem isNondegenerateRankZeroPoint_iff_comp_right_aux
   have hQ (h : mvfderiv I F (φ y) = 0) (ℓ : G →L[ℝ] ℝ) :
       (criticalHessian I' (ℓ ∘ F ∘ φ) y).toBilinForm.toQuadraticMap =
         (criticalHessian I (ℓ ∘ F) (φ y)).toBilinForm.toQuadraticMap.comp e.toLinearEquiv := by
-    rw [toQuadraticMap_toBilinForm_criticalHessian_comp hφ hF (by rw [h, ℓ.comp_zero]), ← he]; rfl
+    rw [toQuadraticMap_toBilinForm_criticalHessian_comp hφ hF (by rw [h, ℓ.comp_zero]), ← he,
+      ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
   have hsymp : SymplecticForm.IsSymplectomorphism η (hσ.symplecticFormAt (φ y)) e.toLinearEquiv :=
     SymplecticForm.isSymplectomorphism_iff.2 fun u w ↦ by simp [← hη, ← he]
   refine ⟨fun ⟨_, h, hfam⟩ ↦ ⟨hF, h0.1 h, ?_⟩, fun h ↦ ⟨hF.comp y hφ, h0.2 h.mvfderiv_eq_zero, ?_⟩⟩
