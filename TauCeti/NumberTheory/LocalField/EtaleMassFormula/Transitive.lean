@@ -12,6 +12,7 @@ import Mathlib.Tactic.FieldSimp
 import TauCeti.Algebra.BigOperators.Group.Finset.Defs
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.FieldTheory.Galois.FixedField
+import TauCeti.GroupTheory.GroupAction.Hom
 
 /-!
 # Splitting symbols of Galois sets and the transitive mass
@@ -213,7 +214,7 @@ theorem splittingSymbol_eq_of_equiv {m : ℕ} (ρ : GaloisSet K n) (τ : GaloisS
   dsimp only [Function.comp_def, Equiv.coe_toEmbedding]
   rw [τ.orbitSymbol_of_mk_eq hE, ρ.orbitSymbol_def]
   dsimp only
-  rw [MulAction.stabilizer_eq_of_injective e e.injective he]
+  rw [MulAction.stabilizer_eq_of_injective e e.injective (he · _)]
 
 /-- Relabelling a Galois set does not change its splitting symbol. -/
 @[simp]
