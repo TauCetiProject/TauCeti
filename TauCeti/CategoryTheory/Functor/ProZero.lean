@@ -36,13 +36,15 @@ the error terms that derived limits of towers cannot see.
 * `CategoryTheory.Functor.isProZero_comp_iff`: being pro-zero is invariant under reindexing along an
   initial functor out of a cofiltered category; `CategoryTheory.Functor.isProZero_monotone_comp_iff`
   is the case of a cofinal monotone reindexing of inverse systems.
+* `CategoryTheory.Functor.IsProTorsionBy`: in an `R`-linear category, the diagrams that `r : R`
+  kills as pro-objects, with the same reindexing lemmas, closure under addition of scalars
+  (`CategoryTheory.Functor.IsProTorsionBy.add`) and closure under subobjects and quotients.
 * `CategoryTheory.Functor.isSerreClass_isProZero`: in an abelian category, pro-zero diagrams form a
   Serre class.
 * `CategoryTheory.Functor.proIsomorphisms`: the pro-isomorphisms of diagrams.
 * `CategoryTheory.Functor.proIsomorphisms_kernel_ι_smul_id_iff`: in an `R`-linear abelian
   category, the inclusion of the kernel of `r • 𝟙 F` (for a tower of modules, the subtower of
-  `r`-torsion) is a pro-isomorphism exactly when `r` kills, for every `j`, some map `F i ⟶ F j`
-  of the diagram.
+  `r`-torsion) is a pro-isomorphism exactly when `F` is pro-`r`-torsion.
 
 ## References
 
@@ -56,7 +58,7 @@ namespace CategoryTheory
 
 open Limits ZeroObject
 
-universe v₁ v₂ v₃ u₁ u₂ u₃ u₄
+universe w v₁ v₂ v₃ u₁ u₂ u₃ u₄
 
 namespace Functor
 
@@ -137,6 +139,80 @@ theorem isProZero_monotone_comp_iff {ι : Type u₃} {κ : Type u₄} [Preorder 
 
 end HasZeroMorphisms
 
+section Linear
+
+variable [Preadditive C] {R : Type w} [Semiring R] [Linear R C]
+
+/-- A diagram `F : J ⥤ C` in an `R`-linear category is *pro-`r`-torsion* if `r` kills, for every
+`j`, some map `F.map f : F i ⟶ F j` of the diagram. For a cofiltered `J` this says that `r` kills
+`F` as a pro-object. -/
+def IsProTorsionBy (F : J ⥤ C) (r : R) : Prop :=
+  ∀ j, ∃ (i : J) (f : i ⟶ j), r • F.map f = 0
+
+lemma isProTorsionBy_iff (F : J ⥤ C) (r : R) :
+    F.IsProTorsionBy r ↔ ∀ j, ∃ (i : J) (f : i ⟶ j), r • F.map f = 0 :=
+  Iff.rfl
+
+/-- A pro-zero diagram is pro-`r`-torsion for every `r`. -/
+lemma IsProZero.isProTorsionBy {F : J ⥤ C} (hF : F.IsProZero) (r : R) : F.IsProTorsionBy r :=
+  fun j ↦
+    have ⟨i, f, hf⟩ := hF j
+    ⟨i, f, by rw [hf, smul_zero]⟩
+
+/-- A diagram indexed by the opposite of a preorder is pro-`r`-torsion exactly when `r` kills, for
+every `i`, the transition into `F i` from some later term. -/
+lemma isProTorsionBy_iff_forall_exists_le {ι : Type u₃} [Preorder ι] (F : ιᵒᵖ ⥤ C) (r : R) :
+    F.IsProTorsionBy r ↔ ∀ i, ∃ (j : ι) (h : i ≤ j), r • F.map (homOfLE h).op = 0 := by
+  refine ⟨fun hF i ↦ ?_, fun hF i ↦ ?_⟩
+  · obtain ⟨j, f, hf⟩ := hF (Opposite.op i)
+    exact ⟨j.unop, leOfHom f.unop, by rwa [Subsingleton.elim (homOfLE _).op f]⟩
+  · obtain ⟨j, h, hj⟩ := hF i.unop
+    exact ⟨Opposite.op j, (homOfLE h).op, hj⟩
+
+/-- Over a cofiltered index category, the scalars `r` for which a diagram is pro-`r`-torsion are
+closed under addition. -/
+lemma IsProTorsionBy.add [IsCofilteredOrEmpty J] {F : J ⥤ C} {r s : R} (hr : F.IsProTorsionBy r)
+    (hs : F.IsProTorsionBy s) : F.IsProTorsionBy (r + s) := fun j ↦ by
+  obtain ⟨i₁, f₁, h₁⟩ := hr j
+  obtain ⟨i₂, f₂, h₂⟩ := hs j
+  obtain ⟨k, g₁, g₂, hg⟩ := IsCofiltered.cospan f₁ f₂
+  refine ⟨k, g₁ ≫ f₁, ?_⟩
+  rw [add_smul]
+  nth_rw 2 [hg]
+  simp only [F.map_comp, ← Linear.comp_smul, h₁, h₂, comp_zero, add_zero]
+
+/-- **Cofinal reindexing.** For an initial functor `G : I ⥤ J` out of a cofiltered category, a
+diagram `F : J ⥤ C` is pro-`r`-torsion exactly when `G ⋙ F` is. -/
+theorem isProTorsionBy_comp_iff {I : Type u₃} [Category.{v₃} I] [IsCofilteredOrEmpty I]
+    (G : I ⥤ J) [G.Initial] (F : J ⥤ C) (r : R) :
+    (G ⋙ F).IsProTorsionBy r ↔ F.IsProTorsionBy r := by
+  have hG := ((initial_iff_of_isCofiltered G).1 inferInstance).1
+  refine ⟨fun hF j ↦ ?_, fun hF i ↦ ?_⟩
+  · obtain ⟨c, ⟨u⟩⟩ := hG j
+    obtain ⟨i, g, hg⟩ := hF c
+    refine ⟨G.obj i, G.map g ≫ u, ?_⟩
+    rw [F.map_comp, ← Linear.smul_comp, ← comp_map, hg, zero_comp]
+  · -- Kill `F (G i)` by `r` along some `f : j ⟶ G i`, reach `j` from some `G c`, and compare the
+    -- resulting map `G c ⟶ G i` with a map in the image of `G` over a common lower bound.
+    obtain ⟨j, f, hf⟩ := hF (G.obj i)
+    obtain ⟨c, ⟨u⟩⟩ := hG j
+    obtain ⟨c', t, ht⟩ := Initial.exists_eq G
+      (G.map (IsCofiltered.minToLeft c i) ≫ u ≫ f) (G.map (IsCofiltered.minToRight c i))
+    refine ⟨c', t ≫ IsCofiltered.minToRight c i, ?_⟩
+    rw [comp_map, G.map_comp, ← ht]
+    simp only [Functor.map_comp, ← Linear.comp_smul, hf, comp_zero]
+
+/-- **Cofinal monotone reindexing of inverse systems.** If `φ : ι → κ` is monotone and cofinal and
+`ι` is directed, then an inverse system `F` indexed by `κ` is pro-`r`-torsion exactly when its
+reindexing along `φ` is. -/
+theorem isProTorsionBy_monotone_comp_iff {ι : Type u₃} {κ : Type u₄} [Preorder ι]
+    [IsDirectedOrder ι] [Preorder κ] {φ : ι → κ} (hφ : Monotone φ) (hcof : ∀ k, ∃ i, k ≤ φ i)
+    (F : κᵒᵖ ⥤ C) (r : R) : (hφ.functor.op ⋙ F).IsProTorsionBy r ↔ F.IsProTorsionBy r :=
+  have := (hφ.final_functor_iff).2 hcof
+  isProTorsionBy_comp_iff _ F r
+
+end Linear
+
 section Abelian
 
 variable [Abelian C]
@@ -185,12 +261,32 @@ example : (proIsomorphisms J C).IsMultiplicative := inferInstance
 
 example : (proIsomorphisms J C).HasTwoOutOfThreeProperty := inferInstance
 
+section Linear
+
+variable {R : Type w} [Semiring R] [Linear R C] {r : R}
+
+/-- A subdiagram of a pro-`r`-torsion diagram is pro-`r`-torsion. -/
+lemma IsProTorsionBy.of_mono {X Y : J ⥤ C} (f : X ⟶ Y) [Mono f] (hY : Y.IsProTorsionBy r) :
+    X.IsProTorsionBy r := fun j ↦ by
+  obtain ⟨i, g, hg⟩ := hY j
+  refine ⟨i, g, (cancel_mono (f.app j)).1 ?_⟩
+  rw [Linear.smul_comp, f.naturality, ← Linear.comp_smul, hg]
+  simp
+
+/-- A quotient of a pro-`r`-torsion diagram is pro-`r`-torsion. -/
+lemma IsProTorsionBy.of_epi {X Y : J ⥤ C} (f : X ⟶ Y) [Epi f] (hX : X.IsProTorsionBy r) :
+    Y.IsProTorsionBy r := fun j ↦ by
+  obtain ⟨i, g, hg⟩ := hX j
+  refine ⟨i, g, (cancel_epi (f.app i)).1 ?_⟩
+  rw [Linear.comp_smul, ← f.naturality, ← Linear.smul_comp, hg]
+  simp
+
 /-- **Torsion subdiagrams.** In an `R`-linear abelian category, the inclusion of the kernel of
 `r • 𝟙 F` (for a tower of modules, the subtower of `r`-torsion elements) is a pro-isomorphism
-exactly when `r` kills, for every `j`, some map `F.map f : F i ⟶ F j` of the diagram. -/
-theorem proIsomorphisms_kernel_ι_smul_id_iff {R : Type u₃} [Semiring R] [Linear R C] (r : R)
-    (F : J ⥤ C) :
-    proIsomorphisms J C (kernel.ι (r • 𝟙 F)) ↔ ∀ j, ∃ (i : J) (f : i ⟶ j), r • F.map f = 0 := by
+exactly when `F` is pro-`r`-torsion: `r` kills, for every `j`, some map `F.map f : F i ⟶ F j` of
+the diagram. -/
+theorem proIsomorphisms_kernel_ι_smul_id_iff (r : R) (F : J ⥤ C) :
+    proIsomorphisms J C (kernel.ι (r • 𝟙 F)) ↔ F.IsProTorsionBy r := by
   -- The inclusion is a monomorphism, so it is a pro-isomorphism iff its cokernel, the coimage of
   -- `r • 𝟙 F`, is pro-zero. The coimage sits between the epimorphism `coimage.π` out of `F` and
   -- the monomorphism `factorThruCoimage` into `F`, whose composite is `r • 𝟙 F`.
@@ -204,6 +300,8 @@ theorem proIsomorphisms_kernel_ι_smul_id_iff {R : Type u₃} [Semiring R] [Line
     simp [g]
   refine (ObjectProperty.isoModSerre_iff_of_mono (P := IsProZero) (kernel.ι g)).trans ?_
   exact forall_congr' fun j ↦ exists_congr fun i ↦ exists_congr fun f ↦ key f
+
+end Linear
 
 end Abelian
 
