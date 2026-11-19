@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Asymptotics.Theta
 public import TauCeti.Analysis.Fredholm.FiniteRank
-public import TauCeti.Analysis.Sobolev.Circle.Basic
+public import TauCeti.Analysis.Sobolev.Circle.Laurent
 
 /-!
 # Fourier multipliers on the circle Sobolev spaces and their elliptic theory
@@ -27,13 +27,13 @@ symbol of order `m` and `s + m = t`:
 
 * `P` has a **two-sided parametrix** `G`, the multiplier with the symbol `n ↦ (p n)⁻¹` of order
   `-m`, with `P G = 1 - Π` and `G P = 1 - Π`, where `Π` is the projection onto the finitely many
-  Fourier modes at which `p` vanishes (`TauCeti.CircleSobolev.modeProjection`);
+  Fourier modes at which `p` vanishes (the frequency projection `TauCeti.CircleSobolev.indicator`);
 * **elliptic regularity**: if the formal series with coefficients `p n • c n` lies in `H^s`, then
   `c` is the coefficient sequence of an element of `H^(s + m)`, for any sequence `c`; in particular
   every solution of `P a = 0` lies in every `H^u`;
-* the **kernel** consists of the elements supported on the zero modes of `p`, and the **range**
-  of the elements whose coefficients vanish at those modes: `P a = b` is solvable exactly when these
-  finitely many compatibility conditions hold;
+* the **kernel** is the subspace `supported` on the zero modes of `p`, and the **range** and the
+  orthogonal complement of the kernel are the subspace supported off those modes: `P a = b` is
+  solvable exactly when the finitely many coefficients of `b` at those modes vanish;
 * `P` is **Fredholm of index zero** when `E` is finite-dimensional;
 * the **elliptic estimate** `‖a‖_{H^t} ≤ C (‖P a‖_{H^s} + ‖a‖_{H^r})` holds for every `r ≤ t`;
   on the orthogonal complement of the kernel the lower-order term can be dropped, and when `P`
@@ -45,15 +45,15 @@ symbol of order `m` and `s + m = t`:
   of order `m`, for `s + m ≤ t`.
 * `TauCeti.CircleSobolev.fourierMultiplierEquiv`: for an elliptic symbol without zeros, the
   multiplier as an isomorphism `H^t ≃ H^s`, `s + m = t`.
-* `TauCeti.CircleSobolev.modeProjection S`: the projection keeping the Fourier modes in `S`.
 
 ## Main statements
 
 * `TauCeti.CircleSobolev.fourierMultiplier_fourierMultiplier_inv`,
   `TauCeti.CircleSobolev.fourierMultiplier_inv_fourierMultiplier`: the parametrix identities.
 * `TauCeti.CircleSobolev.exists_coeff_eq_of_coeff_eq_smul`: elliptic regularity.
-* `TauCeti.CircleSobolev.fourierMultiplier_eq_zero_iff`,
-  `TauCeti.CircleSobolev.mem_range_fourierMultiplier_iff`: kernel and range.
+* `TauCeti.CircleSobolev.ker_fourierMultiplier`, `TauCeti.CircleSobolev.range_fourierMultiplier`,
+  `TauCeti.CircleSobolev.orthogonal_ker_fourierMultiplier`: kernel, range and the orthogonal
+  complement of the kernel.
 * `TauCeti.CircleSobolev.isFredholm_fourierMultiplier`,
   `TauCeti.CircleSobolev.index_fourierMultiplier`: the Fredholm property and the index.
 * `TauCeti.CircleSobolev.exists_norm_le_add`: the elliptic estimate with a lower-order term.
@@ -116,11 +116,6 @@ theorem isBigO_inv (he : weight m =O[cofinite] p) :
   have h := he.inv_rev (Eventually.of_forall fun n hn ↦ absurd hn (weight_pos m n).ne')
   convert h using 1
   exact funext fun n ↦ weight_neg m n
-
-/-- The indicator function of a set of frequencies is a symbol of order `0`. -/
-theorem isBigO_indicator_one (S : Set ℤ) : S.indicator (1 : ℤ → ℂ) =O[cofinite] weight 0 :=
-  IsBigO.of_bound' (Eventually.of_forall fun n ↦ by
-    by_cases hn : n ∈ S <;> simp [hn, weight_zero_left])
 
 /-- A symbol vanishing outside a finite set is a symbol of every order. -/
 theorem isBigO_of_forall_notMem_eq_zero {F : Finset ℤ} (hF : ∀ n ∉ F, q n = 0) (m : ℝ) :
@@ -258,21 +253,17 @@ theorem fourierMultiplierEquiv_symm_apply (hp : p =Θ[cofinite] weight m) (hz : 
 
 /-! ### Projections onto Fourier modes -/
 
-/-- The projection of `H^s` onto the Fourier modes in `S`: it keeps the Fourier coefficients
-indexed by `S` and replaces the others by `0`. -/
-def modeProjection (S : Set ℤ) : CircleSobolev s E →L[ℂ] CircleSobolev s E :=
-  fourierMultiplier (S.indicator 1) (isBigO_indicator_one S) (by simp)
-
-@[simp]
-theorem coeff_modeProjection (S : Set ℤ) (a : CircleSobolev s E) (n : ℤ) :
-    (modeProjection S a).coeff n = S.indicator a.coeff n := by
-  by_cases hn : n ∈ S <;> simp [modeProjection, hn]
-
-/-- The projection onto finitely many Fourier modes has finite rank when `E` is
+/-- The frequency projection onto finitely many Fourier modes has finite rank when `E` is
 finite-dimensional. -/
-theorem hasFiniteRange_modeProjection [FiniteDimensional ℂ E] {S : Set ℤ} (hS : S.Finite) :
-    (modeProjection S : CircleSobolev s E →L[ℂ] CircleSobolev s E).toLinearMap.HasFiniteRange :=
-  hasFiniteRange_fourierMultiplier _ _ (F := hS.toFinset) fun n hn ↦ by simp_all
+theorem hasFiniteRange_indicator [FiniteDimensional ℂ E] {S : Set ℤ} (hS : S.Finite) :
+    (indicator S : CircleSobolev s E →L[ℂ] CircleSobolev s E).toLinearMap.HasFiniteRange := by
+  have hF : ∀ n ∉ hS.toFinset, S.indicator (1 : ℤ → ℂ) n = 0 := fun n hn ↦ by simp_all
+  have heq : (indicator S : CircleSobolev s E →L[ℂ] CircleSobolev s E) =
+      fourierMultiplier _ (isBigO_of_forall_notMem_eq_zero hF 0) (by simp) :=
+    ContinuousLinearMap.ext fun a ↦ CircleSobolev.ext (funext fun n ↦ by
+      by_cases hn : n ∈ S <;> simp [hn])
+  rw [heq]
+  exact hasFiniteRange_fourierMultiplier _ _ hF
 
 /-! ### The parametrix -/
 
@@ -284,7 +275,7 @@ theorem fourierMultiplier_fourierMultiplier_inv (hp : p =Θ[cofinite] weight m) 
     (b : CircleSobolev s E) :
     fourierMultiplier p hp.1 h.le
         (fourierMultiplier (fun n ↦ (p n)⁻¹) (isBigO_inv hp.2) (show t + -m ≤ s by linarith) b) =
-      b - modeProjection {n | p n = 0} b :=
+      b - indicator {n | p n = 0} b :=
   CircleSobolev.ext (funext fun n ↦ by
     by_cases hn : p n = 0
     · simp [hn]
@@ -296,7 +287,7 @@ theorem fourierMultiplier_inv_fourierMultiplier (hp : p =Θ[cofinite] weight m) 
     (a : CircleSobolev t E) :
     fourierMultiplier (fun n ↦ (p n)⁻¹) (isBigO_inv hp.2) (show t + -m ≤ s by linarith)
         (fourierMultiplier p hp.1 h.le a) =
-      a - modeProjection {n | p n = 0} a :=
+      a - indicator {n | p n = 0} a :=
   CircleSobolev.ext (funext fun n ↦ by
     by_cases hn : p n = 0
     · simp [hn]
@@ -304,30 +295,33 @@ theorem fourierMultiplier_inv_fourierMultiplier (hp : p =Θ[cofinite] weight m) 
 
 /-! ### Kernel, range and regularity -/
 
-/-- The kernel of a Fourier multiplier consists of the elements whose Fourier coefficients vanish
-at every frequency where the symbol does not. -/
-theorem fourierMultiplier_eq_zero_iff (hp : p =O[cofinite] weight m) (h : s + m ≤ t)
-    (a : CircleSobolev t E) :
-    fourierMultiplier p hp h a = 0 ↔ ∀ n, p n ≠ 0 → a.coeff n = 0 := by
-  refine ⟨fun ha n hn ↦ ?_, fun ha ↦ CircleSobolev.ext (funext fun n ↦ ?_)⟩
-  · have := congr_arg (fun b : CircleSobolev s E ↦ b.coeff n) ha
-    simpa [hn] using this
+/-- The kernel of a Fourier multiplier is the subspace of elements whose Fourier coefficients are
+supported on the frequencies where the symbol vanishes. -/
+theorem ker_fourierMultiplier (hp : p =O[cofinite] weight m) (h : s + m ≤ t) :
+    (fourierMultiplier p hp h : CircleSobolev t E →L[ℂ] CircleSobolev s E).ker =
+      supported t E {n | p n = 0} := by
+  refine Submodule.ext fun a ↦ ⟨fun ha ↦ mem_supported'.2 fun n hn ↦ ?_,
+    fun ha ↦ CircleSobolev.ext (funext fun n ↦ ?_)⟩
+  · have hn' : p n ≠ 0 := hn
+    have := congr_arg (fun b : CircleSobolev s E ↦ b.coeff n) ha
+    simpa [hn'] using this
   · by_cases hn : p n = 0
     · simp [hn]
-    · simp [ha n hn]
+    · simp [mem_supported'.1 ha n hn]
 
 /-- **Solvability.** For an elliptic symbol `p` of order `m` and `s + m = t`, the equation
-`P a = b` has a solution `a ∈ H^t` exactly when `b ∈ H^s` satisfies the finitely many
-compatibility conditions `b.coeff n = 0` at the frequencies where `p` vanishes. -/
-theorem mem_range_fourierMultiplier_iff (hp : p =Θ[cofinite] weight m) (h : s + m = t)
-    (b : CircleSobolev s E) :
-    b ∈ (fourierMultiplier p hp.1 h.le : CircleSobolev t E →L[ℂ] CircleSobolev s E).range ↔
-      ∀ n, p n = 0 → b.coeff n = 0 := by
-  refine ⟨?_, fun hb ↦ ⟨_, fourierMultiplier_fourierMultiplier_inv hp h b |>.trans ?_⟩⟩
-  · rintro ⟨a, rfl⟩ n hn
-    simp [hn]
-  · refine CircleSobolev.ext (funext fun n ↦ ?_)
-    by_cases hn : p n = 0 <;> simp [hn, hb]
+`P a = b` has a solution `a ∈ H^t` exactly when the Fourier coefficients of `b ∈ H^s` vanish at
+the finitely many frequencies where `p` vanishes. -/
+theorem range_fourierMultiplier (hp : p =Θ[cofinite] weight m) (h : s + m = t) :
+    (fourierMultiplier p hp.1 h.le : CircleSobolev t E →L[ℂ] CircleSobolev s E).range =
+      supported s E {n | p n = 0}ᶜ := by
+  refine Submodule.ext fun b ↦
+    ⟨?_, fun hb ↦ ⟨_, fourierMultiplier_fourierMultiplier_inv hp h b |>.trans ?_⟩⟩
+  · rintro ⟨a, rfl⟩
+    refine mem_supported'.2 fun n hn ↦ ?_
+    have hn' : p n = 0 := not_not.1 hn
+    simp [hn']
+  · rw [indicator_eq_zero_iff.2 hb, sub_zero]
 
 /-- **Elliptic regularity.** Let `p` be elliptic of order `m`. If the formal Fourier series with
 coefficients `p n • c n` is an element of `H^s`, then `c` is the coefficient sequence of an
@@ -364,14 +358,14 @@ theorem exists_coeff_eq_of_fourierMultiplier_eq_zero (hp : p =Θ[cofinite] weigh
 /-- **The lower bound off the zero modes.** For an elliptic symbol `p` of order `m` and
 `s + m = t`, there is `C` with `‖a - Π a‖_{H^t} ≤ C ‖P a‖_{H^s}` for every `a ∈ H^t`, where `Π` is
 the projection onto the Fourier modes at which `p` vanishes. -/
-theorem exists_norm_sub_modeProjection_le (hp : p =Θ[cofinite] weight m) (h : s + m = t) :
+theorem exists_norm_sub_indicator_le (hp : p =Θ[cofinite] weight m) (h : s + m = t) :
     ∃ C, ∀ a : CircleSobolev t E,
-      ‖a - modeProjection {n | p n = 0} a‖ ≤ C * ‖fourierMultiplier p hp.1 h.le a‖ := by
+      ‖a - indicator {n | p n = 0} a‖ ≤ C * ‖fourierMultiplier p hp.1 h.le a‖ := by
   obtain ⟨c, hc, hle⟩ := exists_pos_forall_le_norm_of_isBigO hp.2
   refine ⟨c⁻¹, fun a ↦ norm_le_of_forall_le fun n ↦ ?_⟩
   by_cases hn : p n = 0
   · simp [hn]
-  · rw [coeff_sub, Pi.sub_apply, coeff_modeProjection, Set.indicator_of_notMem hn, sub_zero,
+  · rw [coeff_sub, Pi.sub_apply, coeff_indicator, Set.indicator_of_notMem hn, sub_zero,
       coeff_fourierMultiplier, norm_smul, show weight t n = weight s n * weight m n by
         rw [← h, weight_add]]
     calc weight s n * weight m n * ‖a.coeff n‖
@@ -383,17 +377,17 @@ theorem exists_norm_sub_modeProjection_le (hp : p =Θ[cofinite] weight m) (h : s
       _ = c⁻¹ * (weight s n * (‖p n‖ * ‖a.coeff n‖)) := by ring
 
 /-- The projection onto finitely many Fourier modes is bounded from `H^r` to `H^t`. -/
-private theorem exists_norm_modeProjection_le {S : Set ℤ} (hS : S.Finite) (hr : r ≤ t) :
-    ∃ K, 0 ≤ K ∧ ∀ a : CircleSobolev t E, ‖modeProjection S a‖ ≤ K * ‖inclusion hr a‖ := by
+private theorem exists_norm_indicator_le {S : Set ℤ} (hS : S.Finite) (hr : r ≤ t) :
+    ∃ K, 0 ≤ K ∧ ∀ a : CircleSobolev t E, ‖indicator S a‖ ≤ K * ‖inclusion hr a‖ := by
   obtain ⟨K, hK⟩ := (hS.image (weight (t - r))).bddAbove
   refine ⟨max K 0, le_max_right _ _, fun a ↦ norm_le_of_forall_le fun n ↦ ?_⟩
   by_cases hn : n ∈ S
-  · rw [coeff_modeProjection, Set.indicator_of_mem hn, coeff_inclusion,
+  · rw [coeff_indicator, Set.indicator_of_mem hn, coeff_inclusion,
       show weight t n = weight (t - r) n * weight r n by rw [← weight_add, sub_add_cancel],
       mul_assoc]
     exact mul_le_mul_of_nonneg_right ((hK ⟨n, hn, rfl⟩).trans (le_max_left _ _))
       (mul_nonneg (weight_nonneg r n) (norm_nonneg _))
-  · rw [coeff_modeProjection, Set.indicator_of_notMem hn, norm_zero, mul_zero]
+  · rw [coeff_indicator, Set.indicator_of_notMem hn, norm_zero, mul_zero]
     exact mul_nonneg (le_max_right _ _) (mul_nonneg (weight_nonneg r n) (norm_nonneg _))
 
 /-- **The elliptic estimate.** For an elliptic symbol `p` of order `m`, `s + m = t` and any
@@ -401,10 +395,10 @@ private theorem exists_norm_modeProjection_le {S : Set ℤ} (hS : S.Finite) (hr 
 theorem exists_norm_le_add (hp : p =Θ[cofinite] weight m) (h : s + m = t) (hr : r ≤ t) :
     ∃ C, ∀ a : CircleSobolev t E,
       ‖a‖ ≤ C * (‖fourierMultiplier p hp.1 h.le a‖ + ‖inclusion hr a‖) := by
-  obtain ⟨C, hC⟩ := exists_norm_sub_modeProjection_le (E := E) hp h
-  obtain ⟨K, -, hK⟩ := exists_norm_modeProjection_le (E := E) (finite_setOf_eq_zero hp.2) hr
+  obtain ⟨C, hC⟩ := exists_norm_sub_indicator_le (E := E) hp h
+  obtain ⟨K, -, hK⟩ := exists_norm_indicator_le (E := E) (finite_setOf_eq_zero hp.2) hr
   refine ⟨max C K, fun a ↦ ?_⟩
-  calc ‖a‖ = ‖(a - modeProjection {n | p n = 0} a) + modeProjection {n | p n = 0} a‖ := by
+  calc ‖a‖ = ‖(a - indicator {n | p n = 0} a) + indicator {n | p n = 0} a‖ := by
         rw [sub_add_cancel]
     _ ≤ C * ‖fourierMultiplier p hp.1 h.le a‖ + K * ‖inclusion hr a‖ :=
         (norm_add_le _ _).trans (add_le_add (hC a) (hK a))
@@ -429,33 +423,12 @@ section Inner
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
 
-/-- The inner product of `H^s` with a Fourier monomial picks out one weighted Fourier
-coefficient. -/
-theorem inner_single_left (n : ℤ) (x : F) (a : CircleSobolev s F) :
-    inner ℂ (single n x) a = (weight (2 * s) n : ℂ) * inner ℂ x (a.coeff n) := by
-  rw [← (hasSum_inner (single n x) a).tsum_eq, tsum_eq_single n fun k hk ↦ by simp [hk]]
-  simp
-
-/-- The orthogonal complement of the kernel of a Fourier multiplier consists of the elements whose
-Fourier coefficients vanish at every frequency where the symbol vanishes. -/
-theorem mem_orthogonal_ker_fourierMultiplier_iff (hp : p =O[cofinite] weight m) (h : s + m ≤ t)
-    (a : CircleSobolev t F) :
-    a ∈ (fourierMultiplier p hp h : CircleSobolev t F →L[ℂ] CircleSobolev s F).kerᗮ ↔
-      ∀ n, p n = 0 → a.coeff n = 0 := by
-  rw [Submodule.mem_orthogonal]
-  refine ⟨fun ha n hn ↦ ?_, fun ha b hb ↦ ?_⟩
-  · have hmem : single n (a.coeff n) ∈
-        (fourierMultiplier p hp h : CircleSobolev t F →L[ℂ] CircleSobolev s F).ker := by
-      simp [hn]
-    have h₀ := ha _ hmem
-    rw [inner_single_left, mul_eq_zero, inner_self_eq_zero] at h₀
-    exact h₀.resolve_left (Complex.ofReal_ne_zero.2 (weight_pos _ n).ne')
-  · have hb' := (fourierMultiplier_eq_zero_iff hp h b).1 hb
-    rw [← (hasSum_inner b a).tsum_eq]
-    refine (tsum_congr fun n ↦ ?_).trans tsum_zero
-    by_cases hn : p n = 0
-    · simp [ha n hn]
-    · simp [hb' n hn]
+/-- The orthogonal complement of the kernel of a Fourier multiplier is the subspace of elements
+whose Fourier coefficients vanish at every frequency where the symbol vanishes. -/
+theorem orthogonal_ker_fourierMultiplier (hp : p =O[cofinite] weight m) (h : s + m ≤ t) :
+    (fourierMultiplier p hp h : CircleSobolev t F →L[ℂ] CircleSobolev s F).kerᗮ =
+      supported t F {n | p n = 0}ᶜ := by
+  rw [ker_fourierMultiplier, orthogonal_supported]
 
 /-- **The estimate on the orthogonal complement of the kernel.** For an elliptic symbol `p` of
 order `m` and `s + m = t`, the lower-order term of `exists_norm_le_add` can be dropped on the
@@ -463,13 +436,10 @@ orthogonal complement of the kernel of `P`. -/
 theorem exists_norm_le_of_mem_orthogonal_ker (hp : p =Θ[cofinite] weight m) (h : s + m = t) :
     ∃ C, ∀ a ∈ (fourierMultiplier p hp.1 h.le : CircleSobolev t F →L[ℂ] CircleSobolev s F).kerᗮ,
       ‖a‖ ≤ C * ‖fourierMultiplier p hp.1 h.le a‖ := by
-  obtain ⟨C, hC⟩ := exists_norm_sub_modeProjection_le (E := F) hp h
+  obtain ⟨C, hC⟩ := exists_norm_sub_indicator_le (E := F) hp h
   refine ⟨C, fun a ha ↦ ?_⟩
-  have ha' := (mem_orthogonal_ker_fourierMultiplier_iff hp.1 h.le a).1 ha
-  have hproj : modeProjection {n | p n = 0} a = 0 :=
-    CircleSobolev.ext (funext fun n ↦ by
-      by_cases hn : p n = 0 <;> simp [hn, ha' n])
-  simpa [hproj] using hC a
+  rw [orthogonal_ker_fourierMultiplier, ← indicator_eq_zero_iff] at ha
+  simpa [ha] using hC a
 
 end Inner
 

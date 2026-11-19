@@ -151,25 +151,29 @@ theorem laplacian_eq_neg_derivative_comp_derivative {u : ℝ} (h₁ : s + 1 ≤ 
   rw [Complex.I_sq]
   ring
 
+/-- The frequency projection onto the zero modes of the Laplacian is the projection onto the
+constants. -/
+theorem indicator_setOf_laplacianSymbol_eq_zero (a : CircleSobolev s E) :
+    indicator {n | laplacianSymbol T n = 0} a = single 0 (a.coeff 0) := by
+  rw [setOf_laplacianSymbol_eq_zero]
+  exact CircleSobolev.ext (funext fun n ↦ by
+    rcases eq_or_ne n 0 with rfl | hn <;> simp [*])
+
 /-- **The kernel of the Laplacian is the constants**: `Δ a = 0` exactly when every Fourier
 coefficient of `a` other than the zeroth one vanishes. -/
 theorem laplacian_eq_zero_iff (h : s + 2 ≤ t) (a : CircleSobolev t E) :
     laplacian T h a = 0 ↔ a = single 0 (a.coeff 0) := by
-  rw [laplacian, fourierMultiplier_eq_zero_iff]
-  refine ⟨fun ha ↦ CircleSobolev.ext (funext fun n ↦ ?_), fun ha n hn ↦ ?_⟩
-  · rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · simp [hn, ha n ((laplacianSymbol_eq_zero_iff T n).not.2 hn)]
-  · rw [ha]
-    simp [(laplacianSymbol_eq_zero_iff T n).not.1 hn]
+  rw [← indicator_setOf_laplacianSymbol_eq_zero T, eq_comm (a := a), indicator_eq_self_iff,
+    ← ker_fourierMultiplier (isTheta_laplacianSymbol T).1 h]
+  rfl
 
 /-- **Solvability of `Δ a = b`**: for `s + 2 = t`, an element `b ∈ H^s` is `Δ a` for some
 `a ∈ H^t` exactly when it has mean zero, `b.coeff 0 = 0`. -/
 theorem mem_range_laplacian_iff (h : s + 2 = t) (b : CircleSobolev s E) :
     b ∈ (laplacian T h.le : CircleSobolev t E →L[ℂ] CircleSobolev s E).range ↔ b.coeff 0 = 0 := by
-  rw [laplacian, mem_range_fourierMultiplier_iff (isTheta_laplacianSymbol T) h]
-  exact ⟨fun hb ↦ hb 0 ((laplacianSymbol_eq_zero_iff T 0).2 rfl),
-    fun hb n hn ↦ (laplacianSymbol_eq_zero_iff T n).1 hn ▸ hb⟩
+  rw [laplacian, range_fourierMultiplier (isTheta_laplacianSymbol T) h,
+    setOf_laplacianSymbol_eq_zero, mem_supported']
+  simp
 
 /-- **`Δ u = 1` has no solution**: a nonzero constant is not in the range of the Laplacian,
 since it does not have mean zero. -/
@@ -188,20 +192,11 @@ theorem not_exists_norm_le_laplacian [Nontrivial E] (h : s + 2 ≤ t) :
 `‖a‖_{H^t} ≤ C ‖Δ a‖_{H^s}` for every `a ∈ H^t` of mean zero. -/
 theorem exists_norm_le_laplacian_of_coeff_zero_eq_zero (h : s + 2 = t) :
     ∃ C, ∀ a : CircleSobolev t E, a.coeff 0 = 0 → ‖a‖ ≤ C * ‖laplacian T h.le a‖ := by
-  obtain ⟨C, hC⟩ := exists_norm_sub_modeProjection_le (E := E) (isTheta_laplacianSymbol T) h
+  obtain ⟨C, hC⟩ := exists_norm_sub_indicator_le (E := E) (isTheta_laplacianSymbol T) h
   refine ⟨C, fun a ha ↦ ?_⟩
-  have hproj : modeProjection {n | laplacianSymbol T n = 0} a = 0 := by
-    rw [setOf_laplacianSymbol_eq_zero]
-    exact CircleSobolev.ext (funext fun n ↦ by
-      rcases eq_or_ne n 0 with rfl | hn <;> simp [*])
+  have hproj : indicator {n | laplacianSymbol T n = 0} a = 0 := by
+    rw [indicator_setOf_laplacianSymbol_eq_zero, ha, map_zero]
   simpa [laplacian, hproj] using hC a
-
-/-- The projection onto the zero modes of the Laplacian is the projection onto the constants. -/
-theorem modeProjection_setOf_laplacianSymbol_eq_zero (a : CircleSobolev s E) :
-    modeProjection {n | laplacianSymbol T n = 0} a = single 0 (a.coeff 0) := by
-  rw [setOf_laplacianSymbol_eq_zero]
-  exact CircleSobolev.ext (funext fun n ↦ by
-    rcases eq_or_ne n 0 with rfl | hn <;> simp [*])
 
 /-- **The Green operator of the Laplacian**: the multiplier `G` with symbol `(2πn/T)⁻²` for
 `n ≠ 0` and `0` for `n = 0` satisfies `Δ G b = b - b.coeff 0`. -/
@@ -210,7 +205,7 @@ theorem laplacian_greenOperator (h : s + 2 = t) (b : CircleSobolev s E) :
         (isBigO_inv (isTheta_laplacianSymbol T).2) (show t + -2 ≤ s by linarith) b) =
       b - single 0 (b.coeff 0) := by
   rw [laplacian, fourierMultiplier_fourierMultiplier_inv (isTheta_laplacianSymbol T) h,
-    modeProjection_setOf_laplacianSymbol_eq_zero]
+    indicator_setOf_laplacianSymbol_eq_zero]
 
 /-- **The Green operator of the Laplacian** is also a left inverse up to the constants:
 `G Δ a = a - a.coeff 0`. -/
@@ -220,7 +215,7 @@ theorem greenOperator_laplacian (h : s + 2 = t) (a : CircleSobolev t E) :
         (laplacian T h.le a) =
       a - single 0 (a.coeff 0) := by
   rw [laplacian, fourierMultiplier_inv_fourierMultiplier (isTheta_laplacianSymbol T) h,
-    modeProjection_setOf_laplacianSymbol_eq_zero]
+    indicator_setOf_laplacianSymbol_eq_zero]
 
 /-- The Laplacian `H^t → H^s`, `s + 2 = t`, is a Fredholm operator. -/
 theorem isFredholm_laplacian [FiniteDimensional ℂ E] (h : s + 2 = t) :
