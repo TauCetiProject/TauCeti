@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.Local.Compactness
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Transfer
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
 import TauCeti.Data.ENNReal.InterpolatedExponent
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Embedding
 
 /-!
@@ -163,17 +164,6 @@ theorem isCompactOperator_lowerOrderL [T2Space M] (hp : p ≠ ⊤) :
 
 variable {p} {q : ℝ≥0∞} [Fact (1 ≤ q)]
 
-/-- An exponent between two bounds: if `a ≤ 1`, `ν < 1`, `b ≠ 0` and `a < b + ν`, some `t` with
-`a ≤ t ≤ 1` lies strictly between `ν` and `b + ν`. Read through `t = p'⁻¹`, this lowers `p` to an
-exponent `p'` with a finite Sobolev exponent, losing none of the margin `p⁻¹ < q⁻¹ + ν`. -/
-private theorem exists_le_lt_lt {a b ν : ℝ≥0∞} (ha : a ≤ 1) (hν : ν < 1) (hb : b ≠ 0)
-    (hab : a < b + ν) : ∃ t, a ≤ t ∧ t ≤ 1 ∧ ν < t ∧ t < b + ν := by
-  rcases lt_or_ge ν a with h | h
-  · exact ⟨a, le_rfl, ha, h, hab⟩
-  obtain ⟨t, h₁, h₂⟩ := exists_between
-    (lt_min hν (add_comm ν b ▸ ENNReal.lt_add_right hν.ne_top hb))
-  exact ⟨t, h.trans h₁.le, (h₂.trans_le (min_le_left _ _)).le, h₁, h₂.trans_le (min_le_right _ _)⟩
-
 omit [IsManifold 𝓘(ℝ, E) ∞ M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] in
 /-- Lowering the exponent of the source keeps a compact map with prescribed chart data compact,
 with the same chart data. -/
@@ -255,8 +245,8 @@ theorem exists_isCompactOperator_of_inv_lt_inv_add [T2Space M] (hn : 1 < finrank
   induction r generalizing p with
   | zero =>
     -- Lower `p` to an exponent `p' = t⁻¹` with finite Sobolev exponent `s`, `s⁻¹ = t - 1/n`.
-    obtain ⟨t, hpt, ht₁, hνt, htq⟩ := exists_le_lt_lt (ENNReal.inv_le_one.2 Fact.out) hν hq₀
-      (by simpa using hpq)
+    obtain ⟨t, hpt, ht₁, hνt, htq⟩ :=
+      ENNReal.exists_le_lt_lt_add (ENNReal.inv_le_one.2 Fact.out) hν hq₀ (by simpa using hpq)
     have : Fact (1 ≤ t⁻¹) := ⟨ENNReal.one_le_inv.2 ht₁⟩
     refine exists_isCompactOperator_of_ofExponentLE A μ k (ENNReal.inv_le_iff_inv_le.1 hpt) ?_
     rcases le_or_gt q t⁻¹ with hqt | htq'
@@ -268,8 +258,8 @@ theorem exists_isCompactOperator_of_inv_lt_inv_add [T2Space M] (hn : 1 < finrank
         exact ENNReal.sub_lt_of_lt_add hνt.le htq
   | succ r ih =>
     -- Lose one derivative from `p'` to the finite exponent `s`, then `r + 1` more by induction.
-    obtain ⟨t, hpt, ht₁, hνt, htq⟩ := exists_le_lt_lt (ENNReal.inv_le_one.2 Fact.out) hν
-      (b := q⁻¹ + (r + 1 : ℕ) * ν) (by simp [hq₀]) (by convert hpq using 1; push_cast; ring)
+    obtain ⟨t, hpt, ht₁, hνt, htq⟩ := ENNReal.exists_le_lt_lt_add (ENNReal.inv_le_one.2 Fact.out)
+      hν (b := q⁻¹ + (r + 1 : ℕ) * ν) (by simp [hq₀]) (by convert hpq using 1; push_cast; ring)
     have : Fact (1 ≤ t⁻¹) := ⟨ENNReal.one_le_inv.2 ht₁⟩
     have hexp : ((t - ν)⁻¹)⁻¹ + ν = (t⁻¹)⁻¹ := by
       rw [inv_inv, inv_inv, tsub_add_cancel_of_le hνt.le]
