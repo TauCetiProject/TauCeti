@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Haar.DistribChar
 public import TauCeti.NumberTheory.LocalField.Uniformizer
+import TauCeti.MeasureTheory.Constructions.Pi
 import TauCeti.MeasureTheory.Group.LocalFieldScaling
 import TauCeti.NumberTheory.LocalField.Topology
 import TauCeti.RingTheory.Valuation.Integers

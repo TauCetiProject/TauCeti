@@ -68,10 +68,6 @@ integers of an extension of `K` in an integral basis and `k` is the valuation of
   inside an integer box of finite measure is null.
 * `MeasureTheory.Measure.addHaar_image_mulVec`: for a Haar measure `μ`,
   `μ (A '' s) = q ^ (-k) * μ s` for every set `s`.
-* `MeasureTheory.Measure.isAddLeftInvariant_map_constAddMonoidHom`,
-  `MeasureTheory.Measure.map_constAddMonoidHom_univ_pi`: the constant map `K → (Unit → K)`
-  carries a left-invariant measure to a left-invariant measure giving each box
-  `Set.univ.pi fun _ ↦ S` the mass of `S`, so the box formulas apply to `K` itself.
 
 ## References
 
@@ -181,31 +177,6 @@ end TauCeti
 namespace MeasureTheory.Measure
 
 open TauCeti
-
-section ConstMap
-
-variable {G : Type*} [AddMonoid G] [MeasurableSpace G] {ι : Type*}
-
-/-- Carrying a left-invariant measure on `G` to `ι → G` along the constant map, an additive
-bijection when `ι` has exactly one element, gives a left-invariant measure. -/
-theorem isAddLeftInvariant_map_constAddMonoidHom [MeasurableAdd G] [Unique ι] (μ : Measure G)
-    [μ.IsAddLeftInvariant] : (μ.map (Pi.constAddMonoidHom ι G)).IsAddLeftInvariant :=
-  isAddLeftInvariant_map (Pi.constAddMonoidHom ι G).toAddHom
-    (.of_eval fun _ ↦ measurable_id) fun g ↦ ⟨g default, funext fun i ↦ by
-      rw [Unique.eq_default i]; rfl⟩
-
-/-- Carrying a measure on `G` to `ι → G` along the constant map, with `ι` nonempty and countable,
-gives each box `Set.univ.pi fun _ ↦ S` the mass of `S`. This transports the box formulas on
-`ι → K` to `K` when `ι` has a single element. -/
-theorem map_constAddMonoidHom_univ_pi [Countable ι] [Nonempty ι] (μ : Measure G) {S : Set G}
-    (hS : MeasurableSet S) : μ.map (Pi.constAddMonoidHom ι G) (univ.pi fun _ ↦ S) = μ S := by
-  rw [map_apply (f := Pi.constAddMonoidHom ι G) (.of_eval fun _ ↦ measurable_id)
-    (MeasurableSet.univ_pi fun _ ↦ hS)]
-  congr 1
-  ext x
-  simp
-
-end ConstMap
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] {ι : Type*} [Fintype ι] [DecidableEq ι]
