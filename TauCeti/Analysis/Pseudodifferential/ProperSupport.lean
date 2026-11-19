@@ -60,7 +60,9 @@ spatial support, and they are the pieces that are patched together on manifolds.
   (`TauCeti.Symbol.HasPropagationLE.quantizeSchwartzValue_congr`) and `Op(a)` preserves compact
   supports (`TauCeti.Symbol.HasPropagationLE.hasCompactSupport_quantizeSchwartzValue`). The kernel
   cutoff by a `χ` supported in the ball of radius `ε` has propagation at most `ε`
-  (`TauCeti.Symbol.hasPropagationLE_kernelCutoff`).
+  (`TauCeti.Symbol.hasPropagationLE_kernelCutoff`), and multiplication operators have
+  propagation at most every `ε > 0` (`TauCeti.Symbol.hasPropagationLE_ofSpatial`,
+  `TauCeti.Symbol.hasPropagationLE_const`).
 * `TauCeti.Symbol.exists_isSmoothing_sub_and_hasPropagationLE`: for every `ε > 0`, every symbol is,
   up to a smoothing symbol, a symbol of propagation at most `ε`.
 
@@ -648,6 +650,20 @@ theorem hasPropagationLE_kernelCutoff [CompleteSpace V] [CompleteSpace W]
   fun u x hu ↦ quantizeSchwartzValue_kernelCutoff_eq_zero χ b fun y hy ↦ hu y <| by
     have h := hχ hy
     rwa [Metric.mem_ball, dist_zero_right, ← dist_eq_norm, dist_comm] at h
+
+/-- The symbol `f(x)` of multiplication by `f` has propagation at most every `ε > 0`: the kernel
+of a multiplication operator is supported on the diagonal. -/
+theorem hasPropagationLE_ofSpatial [CompleteSpace V] [CompleteSpace W]
+    (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f) (hε : 0 < ε) :
+    (ofSpatial f hf).HasPropagationLE ε := fun u x hu ↦ by
+  rw [funext (coefficient_ofSpatial f hf), quantizeSchwartzValue_comp_fst,
+    hu x (Metric.mem_ball_self hε), map_zero]
+
+/-- A constant symbol has propagation at most every `ε > 0`. -/
+theorem hasPropagationLE_const [CompleteSpace V] [CompleteSpace W] (T : V →L[ℂ] W) (hε : 0 < ε) :
+    (const T : Symbol n V W 0).HasPropagationLE ε := fun u x hu ↦ by
+  rw [funext (coefficient_const (n := n) T), quantizeSchwartzValue_comp_fst (fun _ ↦ T),
+    hu x (Metric.mem_ball_self hε), map_zero]
 
 end Propagation
 
