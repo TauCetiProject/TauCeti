@@ -118,9 +118,9 @@ theorem dominates_iff_forall_prefixSum_le [AddCommMonoid M] [LE M] {a g : Fin n 
   refine and_congr_right fun _ ↦ ⟨fun h k ↦ ?_, fun h k hk ↦ ?_⟩
   · rcases le_or_gt k n with hk | hk
     · simpa only [prefixSum_eq_sum_castLE hk] using h k hk
-    · rw [prefixSum_of_le hk.le, prefixSum_of_le hk.le, ← prefixSum_of_le le_rfl a,
-        ← prefixSum_of_le le_rfl g]
-      simpa only [prefixSum_eq_sum_castLE le_rfl] using h n le_rfl
+    · -- Only `LE M` is available, so the totals are compared through `h n` rather than
+      -- through their equality and reflexivity.
+      simpa only [prefixSum_of_le hk.le, Fin.castLE_rfl, id] using h n le_rfl
   · simpa only [prefixSum_eq_sum_castLE hk] using h k
 
 /-- On vectors of length one, dominance is equality: only the totals are compared. -/

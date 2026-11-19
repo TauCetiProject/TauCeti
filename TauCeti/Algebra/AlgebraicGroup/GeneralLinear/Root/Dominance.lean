@@ -61,7 +61,7 @@ theorem dominates_iff_rootLE_flip {n : ℕ} {ν μ : ULift.{u} (Fin (n + 1)) →
       (diagonalSimpleRootIndex n i) = fun j ↦ (∑ i, c i •
         (Pi.single i.castSucc 1 - Pi.single i.succ 1 : Fin (n + 1) → ℤ)) j.down := by
     funext ⟨j⟩
-    simp only [Finset.sum_apply, Pi.smul_apply]
+    simp only [RootPairing.flip_root, Finset.sum_apply, Pi.smul_apply]
     exact Finset.sum_congr rfl fun i _ ↦
       congrArg _ (diagonalRootDatum_coroot_diagonalSimpleRootIndex_apply n i j)
   rw [hcoroot]
