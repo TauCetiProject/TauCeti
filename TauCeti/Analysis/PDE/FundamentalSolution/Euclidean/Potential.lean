@@ -262,7 +262,7 @@ theorem exists_norm_newtonianKernel_convolution_le {G H : Type*} [NormedAddCommG
 
 /-- The Newtonian potential of a difference of continuous functions with compact support is the
 difference of their potentials. -/
-theorem newtonianKernel_convolution_sub {a b : EuclideanSpace ℝ (Fin n) → ℝ}
+theorem newtonianKernel_convolution_sub {a b : EuclideanSpace ℝ (Fin n) → F}
     (ha : Continuous a) (hac : HasCompactSupport a) (hb : Continuous b)
     (hbc : HasCompactSupport b) :
     newtonianKernel n ⋆ (a - b) = newtonianKernel n ⋆ a - newtonianKernel n ⋆ b := by
@@ -274,11 +274,11 @@ theorem newtonianKernel_convolution_sub {a b : EuclideanSpace ℝ (Fin n) → �
 /-- For `n ≥ 3`, the derivatives of every order of the Newtonian potential of a smooth function
 with compact support are bounded. -/
 theorem exists_norm_iteratedFDeriv_newtonianKernel_convolution_le (hn : 3 ≤ n)
-    {g : EuclideanSpace ℝ (Fin n) → ℝ} (hg : ContDiff ℝ ∞ g) (hc : HasCompactSupport g) (i : ℕ) :
+    {g : EuclideanSpace ℝ (Fin n) → F} (hg : ContDiff ℝ ∞ g) (hc : HasCompactSupport g) (i : ℕ) :
     ∃ C, ∀ x, ‖iteratedFDeriv ℝ i (newtonianKernel n ⋆ g) x‖ ≤ C := by
   obtain ⟨R, hR⟩ := hc.isCompact.isBounded.subset_closedBall 0
   obtain ⟨C₀, -, hC₀⟩ := exists_norm_newtonianKernel_convolution_le
-    (G := EuclideanSpace ℝ (Fin n) [×i]→L[ℝ] ℝ) (H := EuclideanSpace ℝ (Fin n) [×i]→L[ℝ] ℝ) hn R
+    (G := EuclideanSpace ℝ (Fin n) [×i]→L[ℝ] F) (H := EuclideanSpace ℝ (Fin n) [×i]→L[ℝ] F) hn R
   obtain ⟨M, hM⟩ := (hg.continuous_iteratedFDeriv (mod_cast le_top)
     ).bounded_above_of_compact_support (hc.iteratedFDeriv i)
   rw [HasCompactSupport.iteratedFDeriv_convolution_right (L := lsmul ℝ ℝ) hc

@@ -25,9 +25,9 @@ for every bounded `C²` function `u` with globally `α`-Hölder Hessian, with `C
 `n` and `α` (`TauCeti.PDE.exists_holderWith_iteratedFDeriv_two_of_holderWith_laplacian`). The
 dilation `u_t(z) = u(t z)` multiplies `[D²u]_α` and `[Δu]_α` by the same factor `t^(2+α)` and
 leaves `‖u‖_∞` unchanged, so the global estimate for `u_t` reads
-`[D²u]_α ≤ C ([Δu]_α + t^(-2-α) ‖u‖_∞)`, and letting `t → ∞` removes the supremum. The bound on
-`u` is still needed qualitatively: a harmonic polynomial of degree three has `Δu = 0` and a
-nonconstant Hessian.
+`[D²u]_α ≤ C ([Δu]_α + t^(-2-α) ‖u‖_∞)`, and letting `t → ∞` removes the supremum. The
+boundedness of `u` is used only so that the global estimate applies to the dilations; it does not
+enter the final constant.
 
 ## Main declarations
 
