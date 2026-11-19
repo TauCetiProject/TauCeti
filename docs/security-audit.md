@@ -87,22 +87,46 @@ at most 20 commits, and the workload target can select fewer. Audit-only workers
 inspect any nonempty backlog. Audit blocks preserve the cursor and release gate,
 while the combined worker can continue bump/progress work.
 
-When private Zulip notifications are configured on the trusted worker, a source
-finding or explained code-safety uncertainty sends an immediate direct message
-marked **Human review required**, with the affected commit range, recorded diagnostic
-and local evidence paths. Routine unfinished turns and provider failures stay in
-local logs while automatic recovery handles them. An **Operational stall** DM is
-sent only if the same cursor has remained held for at least one hour after the
-first observed operational pause. It explains that no source finding is recorded
-and eligible automatic recovery continues. The timer is durable across retries,
-changed attempts and Worker restarts; cursor advancement starts a fresh delay.
-These notification rules never clear a block, waive source review or change recovery
-eligibility. Repeated alerts for the same blocked range and kind are suppressed
-using durable receipts. Failed delivery backs off and is retried on subsequent audit
-rounds. No GitHub issue is created. The bot credential and configuration path are
-excluded from the isolated reviewer's environment. Without notification configuration,
-reporting remains in the local evidence and worker logs. Failed notification delivery
-does not clear an audit block or prevent unrelated maintenance.
+With private Zulip notifications configured on the trusted worker, the operator always
+either sees the cursor advance or has a direct message. A recorded source concern sends an
+immediate DM marked **Human review required**, with the affected commit range, the recorded
+diagnostic and local evidence paths. Every other reason for the cursor to stop is reported
+by one cursor watchdog. It runs on every audit round, on every pass of a parallel pool and
+as a standalone command for a timer. Once audit work is due at a cursor (enough pending
+commits to admit work, or work already started there) and that cursor has not moved for an
+hour, it sends an **Operational stall** DM, then a new one daily while the cursor stays held.
+An unobservable cursor counts as held, and the DM names the error. Off-host monitoring
+remains responsible for detecting a dead worker host. Alerts never clear a block, waive
+source review or change recovery eligibility. Durable receipts and local locks send each
+alert once. Failed delivery backs off for 15 minutes and is retried on later checks, and
+the cause of the failure is logged. No GitHub issue is created. The bot credential and
+configuration path are excluded from the isolated reviewer's environment. Without
+notification configuration, reporting remains in the local evidence and worker logs.
+
+New inspections use judgment protocol 5. The reviewer returns `pass`, `finding` or
+`unfinished`; there is no `incomplete`. Genuine uncertainty about whether a construct is
+safe is a `finding`: a concern requiring human review, not necessarily a demonstrated
+vulnerability. Unread pages or lost context are never findings; the reviewer returns
+`unfinished` with no findings and the Worker continues the same session. Any concern
+recorded anywhere in an attempt (its native history, captured output, continuations or the
+ledger) binds that range and sends the immediate DM, whatever the final answer says and
+even if the attempt later failed. Unreadable or ambiguous evidence is treated as a possible
+concern: it holds the range and sends a DM rather than starting a fresh inspection.
+
+An attempt that ends without a judgment and without any recorded concern (an exhausted
+continuation budget, malformed output, a provider failure or an unexpected tool call) never
+binds. The Worker bisects the range: it replaces it with two consecutive ranges, splitting
+its ordered commit list in half, and inspects each in a fresh session with complete
+per-commit input. It repeats this down to single commits. A single commit without a judgment
+is inspected again in a fresh session, preferring a different available reviewer, with
+persisted backoff. Each replacement range needs its own complete passing judgment with full
+served coverage, and ranges advance strictly in order. These are complete inspections of
+smaller commit ranges; pages or partial approvals from different attempts are never
+combined. Codex exposes built-in MCP resource helpers whenever an MCP server is configured,
+and they cannot be disabled. Their descriptions mark them unavailable, the only configured
+server is the read-only audit reader, which serves no resources, and calls to them count as
+no coverage. Inspections retained from protocols 1 to 4 keep their historical rules below.
+In particular, an explained protocol-4 `incomplete` remains binding.
 
 Automatic mechanical repair requires an empty-finding pass, complete page
 coverage and a final-output validation failure, such as a damaged reader token or
