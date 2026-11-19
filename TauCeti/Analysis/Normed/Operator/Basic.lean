@@ -87,6 +87,11 @@ normed field, then the block-diagonal operator `diag(J, J)` on `V × V` also squ
 (`TauCeti.prodMap_mul_self_eq_neg_one`), and `a + J b = y` holds exactly when `b - J a = -J y`
 (`ContinuousLinearMap.add_apply_eq_iff_sub_apply_eq_neg_apply`).
 
+Two first-order estimates: an estimate `‖w - L (t v)‖ ≤ c ‖t v‖` with `t ≠ 0` rescales to
+`‖t⁻¹ w - L v‖ ≤ c ‖v‖` (`ContinuousLinearMap.norm_inv_smul_sub_le`), and if `B` inverts `T`
+on `v` and `u` is close to `T v`, then any `B'` close to `B` sends `u` close to `v`
+(`ContinuousLinearMap.norm_sub_apply_le_of_apply_eq`).
+
 If `a₀ ‖w‖² ≤ g w` and `‖S‖ ≤ m`, then `‖p‖² + ‖q‖² + ‖v‖²` is bounded by
 `(2 + 2 m²) / a₀ (g p + g (q - S v) + g v)`, comparing an energy density with a perturbed middle
 term to the squared norms (`TauCeti.norm_sq_add_norm_sq_add_norm_sq_le`).
@@ -828,6 +833,54 @@ theorem add_apply_eq_iff_sub_apply_eq_neg_apply {A : V →L[𝕜] V} (hA : A * A
 instance instContinuousSMul {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
     [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] : ContinuousSMul (E →L[𝕜] E) E where
   continuous_smul := continuous_fst.clm_apply continuous_snd
+
+section FirstOrder
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
+
+/-- A first-order estimate at `t • v` rescales to one at `v`: if `w` is within `c ‖t • v‖` of
+`L (t • v)` with `t ≠ 0`, then `t⁻¹ • w` is within `c ‖v‖` of `L v`. -/
+theorem norm_inv_smul_sub_le [NormedSpace 𝕜 E] [NormedSpace 𝕜 F] {t : 𝕜} (ht : t ≠ 0) {w : F}
+    {v : E} {L : E →L[𝕜] F} {c : ℝ} (h : ‖w - L (t • v)‖ ≤ c * ‖t • v‖) :
+    ‖t⁻¹ • w - L v‖ ≤ c * ‖v‖ := by
+  have : t⁻¹ • w - L v = t⁻¹ • (w - L (t • v)) := by
+    rw [map_smul, smul_sub, inv_smul_smul₀ ht]
+  have ht' : 0 < ‖t‖ := norm_pos_iff.2 ht
+  rw [this, norm_smul, norm_inv]
+  rw [norm_smul] at h
+  calc ‖t‖⁻¹ * ‖w - L (t • v)‖ ≤ ‖t‖⁻¹ * (c * (‖t‖ * ‖v‖)) := by gcongr
+    _ = c * ‖v‖ := by field_simp
+
+/-- Let `B` invert `T` on `v`, with `‖B‖ ≤ K`, let `u` be within `ε' ‖v‖` of `T v` with
+`K ε' ≤ 1 / 2`, and let `B'` be within `η` of `B`. Then `v` is within `(2 K² ε' + η) ‖u‖` of
+`B' u`. -/
+theorem norm_sub_apply_le_of_apply_eq [NormedSpace 𝕜 E] [NormedSpace 𝕜 F] {T : E →L[𝕜] F}
+    {B B' : F →L[𝕜] E} {u : F} {v : E} {K ε' η : ℝ} (hBT : B (T v) = v) (hB : ‖B‖ ≤ K)
+    (hKε : K * ε' ≤ 1 / 2) (hε' : 0 ≤ ε') (hu : ‖u - T v‖ ≤ ε' * ‖v‖) (hη : ‖B' - B‖ ≤ η) :
+    ‖v - B' u‖ ≤ (2 * K ^ 2 * ε' + η) * ‖u‖ := by
+  have hK : 0 ≤ K := (norm_nonneg _).trans hB
+  have hTv : ‖T v‖ ≤ ‖u‖ + ε' * ‖v‖ :=
+    (norm_le_insert' (T v) u).trans (by rw [norm_sub_rev]; gcongr)
+  -- First, `‖v‖ ≤ 2 K ‖u‖`.
+  have hv : ‖v‖ ≤ 2 * K * ‖u‖ := by
+    have : ‖v‖ ≤ K * (‖u‖ + ε' * ‖v‖) :=
+      calc ‖v‖ = ‖B (T v)‖ := by rw [hBT]
+        _ ≤ ‖B‖ * ‖T v‖ := B.le_opNorm _
+        _ ≤ K * (‖u‖ + ε' * ‖v‖) := mul_le_mul hB hTv (norm_nonneg _) hK
+    nlinarith [norm_nonneg v, norm_nonneg u]
+  have key : v - B' u = B (T v - u) + (B - B') u := by
+    rw [map_sub, hBT, sub_apply]
+    abel
+  calc ‖v - B' u‖ ≤ ‖B‖ * ‖T v - u‖ + ‖B - B'‖ * ‖u‖ := by
+        rw [key]
+        exact norm_add_le_of_le (B.le_opNorm _) ((B - B').le_opNorm _)
+    _ ≤ K * (ε' * (2 * K * ‖u‖)) + η * ‖u‖ := by
+        rw [norm_sub_rev, norm_sub_rev B]
+        gcongr
+        exact hu.trans (by gcongr)
+    _ = (2 * K ^ 2 * ε' + η) * ‖u‖ := by ring
+
+end FirstOrder
 
 end ContinuousLinearMap
 
