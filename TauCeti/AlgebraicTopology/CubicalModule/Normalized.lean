@@ -435,10 +435,14 @@ degenerate cubes. -/
 theorem normalizedComplex_X (n : ℕ) : A.normalizedComplex.X n = ModuleCat.of R (A.normalized n) :=
   (rfl)
 
+theorem normalizedComplex_d (n : ℕ) :
+    A.normalizedComplex.d (n + 1) n = ModuleCat.ofHom (A.normalizedBoundary n) := by
+  simp only [normalizedComplex, ChainComplex.of_d]
+
 @[simp]
 theorem normalizedComplex_d_apply (n : ℕ) (x : A.normalized (n + 1)) :
     A.normalizedComplex.d (n + 1) n x = A.normalizedBoundary n x := by
-  simp only [normalizedComplex, ChainComplex.of_d, ModuleCat.hom_ofHom]
+  rw [normalizedComplex_d]
   -- The two sides differ only in the module instances on the carrier of `ModuleCat.of`.
   rfl
 
@@ -447,20 +451,24 @@ theorem degeneracyQuotientComplex_X (n : ℕ) :
     A.degeneracyQuotientComplex.X n = ModuleCat.of R (A.X n ⧸ A.degenerate n) :=
   (rfl)
 
+theorem degeneracyQuotientComplex_d (n : ℕ) :
+    A.degeneracyQuotientComplex.d (n + 1) n = ModuleCat.ofHom (A.degeneracyQuotientBoundary n) := by
+  simp only [degeneracyQuotientComplex, ChainComplex.of_d]
+
 @[simp]
 theorem degeneracyQuotientComplex_d_mk (n : ℕ) (x : A.X (n + 1)) :
     A.degeneracyQuotientComplex.d (n + 1) n (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk (A.boundary n x) := by
-  simp only [degeneracyQuotientComplex, ChainComplex.of_d, ModuleCat.hom_ofHom]
+  rw [degeneracyQuotientComplex_d]
   -- The two sides differ only in the module instances on the carrier of `ModuleCat.of`.
   rfl
 
 /-- The inclusion of the normalized complex into the cubical boundary complex. -/
 def normalizedComplexι : A.normalizedComplex ⟶ A.complex :=
   ChainComplex.ofHom (fun n ↦ ModuleCat.ofHom (A.normalized n).subtype) fun n ↦ by
-    simp only [complex, normalizedComplex, ChainComplex.of_d, ← ModuleCat.ofHom_comp]
-    refine congr_arg ModuleCat.ofHom (LinearMap.ext fun x ↦ ?_)
-    simp
+    rw [complex_d, normalizedComplex_d]
+    exact congr_arg ModuleCat.ofHom
+      (LinearMap.ext fun x ↦ (A.coe_normalizedBoundary_apply n x).symm)
 
 @[simp]
 theorem normalizedComplexι_f_apply (n : ℕ) (x : A.normalized n) :
@@ -470,8 +478,8 @@ theorem normalizedComplexι_f_apply (n : ℕ) (x : A.normalized n) :
 /-- The projection of the cubical boundary complex onto its degeneracy quotient. -/
 def degeneracyQuotientComplexπ : A.complex ⟶ A.degeneracyQuotientComplex :=
   ChainComplex.ofHom (fun n ↦ ModuleCat.ofHom (A.degenerate n).mkQ) fun n ↦ by
-    simp only [complex, degeneracyQuotientComplex, ChainComplex.of_d, ← ModuleCat.ofHom_comp,
-      degeneracyQuotientBoundary, Submodule.mapQ_mkQ]
+    rw [complex_d, degeneracyQuotientComplex_d]
+    exact congr_arg ModuleCat.ofHom (LinearMap.ext (A.degeneracyQuotientBoundary_mk n))
 
 @[simp]
 theorem degeneracyQuotientComplexπ_f_apply (n : ℕ) (x : A.X n) :
@@ -504,10 +512,9 @@ def normalizedComplexIsoDegeneracyQuotient :
   HomologicalComplex.Hom.isoOfComponents
     (fun n ↦ (A.normalizedEquivDegeneracyQuotient n).toModuleIso) fun i j hij ↦ by
       obtain rfl : i = j + 1 := hij.symm
-      simp only [normalizedComplex, degeneracyQuotientComplex, ChainComplex.of_d,
-        LinearEquiv.toModuleIso_hom, ← ModuleCat.ofHom_comp]
-      refine congr_arg ModuleCat.ofHom (LinearMap.ext fun x ↦ ?_)
-      simp
+      rw [normalizedComplex_d, degeneracyQuotientComplex_d]
+      exact congr_arg ModuleCat.ofHom
+        (LinearMap.ext fun x : A.normalized (j + 1) ↦ A.degeneracyQuotientBoundary_mk j x)
 
 @[simp]
 theorem normalizedComplexIsoDegeneracyQuotient_hom :
@@ -563,10 +570,8 @@ cubical complex. -/
   obj A := A.normalizedComplex
   map φ := ChainComplex.ofHom
     (fun n ↦ ModuleCat.ofHom ((φ.f n).restrict fun _ hx ↦ φ.f_mem_normalized hx)) fun n ↦ by
-      simp only [normalizedComplex, ChainComplex.of_d, ← ModuleCat.ofHom_comp]
-      congr 1
-      ext x
-      simp
+      rw [normalizedComplex_d, normalizedComplex_d]
+      exact congr_arg ModuleCat.ofHom (LinearMap.ext fun x : _ ↦ Subtype.ext (φ.boundary_f x.1))
 
 @[simp]
 theorem normalizedComplexFunctor_obj : normalizedComplexFunctor.obj A = A.normalizedComplex :=
@@ -585,10 +590,9 @@ cubical boundary complex by the degenerate cubes. -/
   map {A B} φ := ChainComplex.ofHom
     (fun n ↦ ModuleCat.ofHom ((A.degenerate n).mapQ (B.degenerate n) (φ.f n) fun _ hx ↦
       φ.f_mem_degenerate hx)) fun n ↦ by
-      simp only [degeneracyQuotientComplex, ChainComplex.of_d, ← ModuleCat.ofHom_comp]
-      congr 1
-      ext x
-      simp
+      rw [degeneracyQuotientComplex_d, degeneracyQuotientComplex_d]
+      exact congr_arg ModuleCat.ofHom (Submodule.linearMap_qext _
+        (LinearMap.ext fun x ↦ congr_arg Submodule.Quotient.mk (φ.boundary_f x)))
   -- On a class `[x]`, both sides of `map_id` are `[x]` and both sides of `map_comp` are
   -- `[ψ (φ x)]` by the definition of `mapQ`; `degeneracyQuotientComplexFunctor_map_f_mk` is only
   -- available after this declaration.

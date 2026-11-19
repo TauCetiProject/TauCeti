@@ -40,6 +40,7 @@ theorem faceSwap_def {n : ℕ} (p : Fin (n + 2) × Fin (n + 1)) :
     faceSwap p = (p.1.succAbove p.2, p.2.predAbove p.1) :=
   (rfl)
 
+@[simp]
 theorem faceSwap_faceSwap {n : ℕ} (p : Fin (n + 2) × Fin (n + 1)) : faceSwap (faceSwap p) = p := by
   obtain ⟨i, j⟩ := p
   simp [faceSwap, succAbove_succAbove_predAbove, predAbove_predAbove_succAbove]

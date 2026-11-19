@@ -169,9 +169,12 @@ theorem boundary_boundary (n : ℕ) (x : A.X (n + 2)) : A.boundary n (A.boundary
 theorem complex_X (n : ℕ) : A.complex.X n = A.X n :=
   (rfl)
 
+theorem complex_d (n : ℕ) : A.complex.d (n + 1) n = ModuleCat.ofHom (A.boundary n) := by
+  simp only [complex, ChainComplex.of_d]
+
 @[simp]
 theorem complex_d_apply (n : ℕ) (x : A.X (n + 1)) : A.complex.d (n + 1) n x = A.boundary n x := by
-  simp only [complex, ChainComplex.of_d, ModuleCat.hom_ofHom]
+  rw [complex_d]
   -- The two sides differ only in the module instances on the carrier of `ModuleCat.of`.
   rfl
 
@@ -242,7 +245,8 @@ complex. -/
 @[expose] def complexFunctor : CubicalModule.{v} R ⥤ ChainComplex (ModuleCat.{v} R) ℕ where
   obj A := A.complex
   map φ := ChainComplex.ofHom (fun n ↦ ModuleCat.ofHom (φ.f n)) fun n ↦ by
-    simp only [complex, ChainComplex.of_d, ← ModuleCat.ofHom_comp, φ.boundary_comp_f]
+    rw [complex_d, complex_d]
+    exact congr_arg ModuleCat.ofHom (φ.boundary_comp_f n)
 
 @[simp]
 theorem complexFunctor_obj : complexFunctor.obj A = A.complex :=
