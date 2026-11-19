@@ -66,6 +66,8 @@ exists: it is `√2 u₁^(1,0), …, √2 u_ℓ^(1,0)` for an adapted orthonorma
   is a `*`-representation for it.
 * `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_exteriorAlgebra_eq`: the metric does not depend
   on the orthonormal basis.
+* `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_ιMulti_ιMulti`: the metric is the exterior Gram
+  metric `det (h (xᵢ, yⱼ))` of `h`.
 * `TauCeti.AlmostComplexStructure.exists_basis_polar_tmulConj`: orthonormal bases exist for
   `Q (v) = -‖v‖²`.
 
@@ -274,6 +276,19 @@ theorem toLinearMapₛₗ₂_exteriorAlgebra_eq {ι' : Type*} [Fintype ι'] [Lin
     LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ by
       rw [J.toLinearMapₛₗ₂_apply_eq_polar hQJ hQ b hb,
         J.toLinearMapₛₗ₂_apply_eq_polar hQJ hQ b' hb']
+
+/-- **The Fock metric is the exterior Gram metric of `h`**: for an orthonormal basis `b` of `W` and
+the metric `H` making its wedge basis orthonormal,
+`H (x₁ ∧ ⋯ ∧ xₚ) (y₁ ∧ ⋯ ∧ yₚ) = det (h (xᵢ, yⱼ))` with `h (x, y) = -(1/2) polar Q_ℂ (conj x, y)`.
+In the geometric convention `Q (v) = -g (v, v)` this is `det (g_ℂ (conj xᵢ, yⱼ))`. -/
+theorem toLinearMapₛₗ₂_ιMulti_ιMulti {p : ℕ} (x y : Fin p → (J.spinPolarizationData hQJ hQ).W) :
+    toLinearMapₛₗ₂ (starRingEnd ℂ) b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset ι) (Finset ι) ℂ) (ExteriorAlgebra.ιMulti ℂ p x)
+        (ExteriorAlgebra.ιMulti ℂ p y) =
+      (Matrix.of fun i j ↦
+        -(2 : ℂ)⁻¹ * polar (Q.baseChange ℂ) (tmulConj V (x i : ℂ ⊗[ℝ] V)) (y j)).det := by
+  simp only [ExteriorAlgebra.toLinearMapₛₗ₂_ιMulti_ιMulti,
+    J.toLinearMapₛₗ₂_apply_eq_polar hQJ hQ b hb]
 
 end Metric
 

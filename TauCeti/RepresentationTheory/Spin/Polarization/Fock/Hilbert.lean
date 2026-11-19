@@ -33,6 +33,10 @@ built into the Fock action, so the real Fock action satisfies the geometric conv
 `AlgHom.IsGeometricClifford`. These identities supply the Hermitian hypothesis of the
 half-spin representation and its restriction to either chirality eigenspace.
 
+Without reference to a basis, the native inner product is the exterior Gram metric
+`⟪x₁ ∧ ⋯ ∧ xₚ, y₁ ∧ ⋯ ∧ yₚ⟫ = det (g_ℂ (conj xᵢ, yⱼ))`, and exterior powers of distinct degrees
+are orthogonal.
+
 ## References
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
@@ -129,6 +133,27 @@ theorem orthonormal_fock {ι : Type*} [Finite ι] [LinearOrder ι] (b : Basis ι
   let := Fintype.ofFinite ι
   exact orthonormal_iff_ite.mpr fun i j ↦ by
     rw [J.inner_fock hQJ hQnd hQ b hb, toLinearMapₛₗ₂_apply_basis, Matrix.one_apply]
+
+/-- **The native Fock inner product is the exterior Gram metric**:
+`⟪x₁ ∧ ⋯ ∧ xₚ, y₁ ∧ ⋯ ∧ yₚ⟫ = det (h (xᵢ, yⱼ))` for
+`h (x, y) = -(1/2) polar Q_ℂ (conj x, y)`, which is `g_ℂ (conj x, y)` since `Q v = -‖v‖²`. -/
+theorem inner_fock_ιMulti_ιMulti {p : ℕ} (x y : Fin p → W) :
+    letI := J.fockNormedAddCommGroup hQJ hQnd hQ
+    letI := J.fockInnerProductSpace hQJ hQnd hQ
+    inner ℂ (ExteriorAlgebra.ιMulti ℂ p x) (ExteriorAlgebra.ιMulti ℂ p y) =
+      (Matrix.of fun i j ↦ -(2 : ℂ)⁻¹ *
+        QuadraticMap.polar (Q.baseChange ℂ) (tmulConj V (x i : ℂ ⊗[ℝ] V)) (y j)).det :=
+  (J.inner_fock hQJ hQnd hQ _ (J.fockMetricBasis_polar hQJ hQnd hQ) _ _).trans
+    (J.toLinearMapₛₗ₂_ιMulti_ιMulti hQJ hQnd _ (J.fockMetricBasis_polar hQJ hQnd hQ) x y)
+
+/-- **Exterior powers of distinct degrees are orthogonal** in the native Fock metric. -/
+theorem inner_fock_eq_zero_of_mem_exteriorPower {p q : ℕ} (hpq : p ≠ q) {s t : S}
+    (hs : s ∈ ⋀[ℂ]^p W) (ht : t ∈ ⋀[ℂ]^q W) :
+    letI := J.fockNormedAddCommGroup hQJ hQnd hQ
+    letI := J.fockInnerProductSpace hQJ hQnd hQ
+    inner ℂ s t = 0 :=
+  (J.inner_fock hQJ hQnd hQ _ (J.fockMetricBasis_polar hQJ hQnd hQ) s t).trans
+    (ExteriorAlgebra.toLinearMapₛₗ₂_eq_zero_of_mem_exteriorPower _ hpq hs ht)
 
 /-- The vacuum of the normalized Fock module has inner product one with itself. -/
 private theorem inner_fock_one_one : letI := J.fockNormedAddCommGroup hQJ hQnd hQ

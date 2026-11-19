@@ -28,7 +28,10 @@ for which the wedge basis is orthonormal. Over `ℝ` and `ℂ` this is the exter
 This file proves that **exterior multiplication by `x` is adjoint to contraction by `h(x, ·)`**:
 `H (x ∧ s) t = H s (h(x, ·) ⌋ t)`. Since `⋀ M` is generated from `1` by exterior multiplication,
 the adjointness and the normalization `H 1 1 = 1` determine `H`, so `H` depends only on `h`
-and not on the orthonormal basis used to build it.
+and not on the orthonormal basis used to build it. Explicitly, `H` is the exterior Gram metric
+of `h`: `H (x₁ ∧ ⋯ ∧ xₚ) (y₁ ∧ ⋯ ∧ yₚ) = det (h (xᵢ, yⱼ))` in every degree `p`, and exterior
+powers of distinct degrees are orthogonal. Moving `x₁` across as a contraction and expanding the
+determinant along its first row gives the same alternating sum.
 
 These are the identities behind the creation and annihilation operators of a Fock space: in the
 spinor module `⋀ W` of a complex structure, the Clifford action of a vector is a sum of a
@@ -43,6 +46,10 @@ normalized Fock actions compare.
 * `ExteriorAlgebra.toLinearMapₛₗ₂_ι_mul_left`: `H (x ∧ s) t = H s (h(x, ·) ⌋ t)`.
 * `ExteriorAlgebra.toLinearMapₛₗ₂_ι_mul_right`: `H s (x ∧ t) = H (h(x, ·) ⌋ s) t`.
 * `ExteriorAlgebra.toLinearMapₛₗ₂_apply_one_one`: `H 1 1 = 1`.
+* `ExteriorAlgebra.toLinearMapₛₗ₂_ιMulti_ιMulti`: the Gram formula
+  `H (x₁ ∧ ⋯ ∧ xₚ) (y₁ ∧ ⋯ ∧ yₚ) = det (h (xᵢ, yⱼ))`.
+* `ExteriorAlgebra.toLinearMapₛₗ₂_eq_zero_of_mem_exteriorPower`: exterior powers of distinct
+  degrees are orthogonal.
 * `ExteriorAlgebra.toLinearMapₛₗ₂_eq_of_toLinearMapₛₗ₂_eq`: two bases with the same
   Hermitian form on `M` give the same Hermitian form on `⋀ M`.
 * `ExteriorAlgebra.toLinearMapₛₗ₂_degreeScaling_left`: `H (T_r s) t = H s (T_{star r} t)`.
@@ -52,6 +59,7 @@ normalized Fock actions compare.
 ## References
 
 * W. Greub, *Multilinear Algebra*, 2nd ed., Springer (1978), Chapter 5.
+* L. I. Nicolaescu, *Lectures on the Geometry of Manifolds*, 2nd ed. (2007), §2.2.4.
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
 -/
 
@@ -199,5 +207,58 @@ theorem toLinearMapₛₗ₂_degreeScaling_degreeScaling_of_mem_exteriorPower (r
     smul_eq_mul]
   simp only [Units.coe_star, starRingEnd_apply, star_pow, star_star]
   ring
+
+
+/-- **The exterior Gram formula**: for the Hermitian form `h` making `b` orthonormal and the form
+`H` making the wedge basis orthonormal, `H (x₁ ∧ ⋯ ∧ xₚ) (y₁ ∧ ⋯ ∧ yₚ) = det (h (xᵢ, yⱼ))`. In
+degree zero this is `H 1 1 = 1`, the empty determinant. -/
+theorem toLinearMapₛₗ₂_ιMulti_ιMulti {p : ℕ} (x y : Fin p → M) :
+    toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset I) (Finset I) R) (ιMulti R p x) (ιMulti R p y) =
+      (Matrix.of fun i j ↦
+        toLinearMapₛₗ₂ (starRingEnd R) b b (1 : Matrix I I R) (x i) (y j)).det := by
+  induction p with
+  | zero => rw [ιMulti_zero_apply, ιMulti_zero_apply, toLinearMapₛₗ₂_apply_one_one, det_fin_zero]
+  | succ p ih =>
+    -- Move the first factor of `x` across as a contraction, and expand along the first row.
+    rw [ιMulti_succ_apply, toLinearMapₛₗ₂_ι_mul_left, contractLeft_ιMulti, map_sum,
+      det_succ_row_zero]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [map_smul, ih, smul_eq_mul]
+    refine congrArg (_ * ·) (congrArg det (Matrix.ext fun i k ↦ ?_))
+    simp only [of_apply, submatrix_apply, Matrix.vecTail, Function.comp_apply,
+      Fin.removeNth_apply]
+
+/-- The vacuum is orthogonal to every exterior power of positive degree. -/
+private theorem toLinearMapₛₗ₂_one_eq_zero_of_mem_exteriorPower_succ {q : ℕ}
+    {t : _root_.ExteriorAlgebra R M} (ht : t ∈ ⋀[R]^(q + 1) M) :
+    toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
+      (1 : Matrix (Finset I) (Finset I) R) 1 t = 0 := by
+  rw [_root_.ExteriorAlgebra.exteriorPower, pow_succ'] at ht
+  induction ht using Submodule.mul_induction_on' with
+  | mem_mul_mem m hm x _ =>
+    obtain ⟨v, rfl⟩ := hm
+    rw [toLinearMapₛₗ₂_ι_mul_right, contractLeft_one, map_zero, LinearMap.zero_apply]
+  | add x _ y _ hx hy => rw [map_add, hx, hy, add_zero]
+
+/-- **Exterior powers of distinct degrees are orthogonal** for the form `H` making the wedge basis
+orthonormal. -/
+theorem toLinearMapₛₗ₂_eq_zero_of_mem_exteriorPower {p q : ℕ} (hpq : p ≠ q)
+    {s t : _root_.ExteriorAlgebra R M} (hs : s ∈ ⋀[R]^p M) (ht : t ∈ ⋀[R]^q M) :
+    toLinearMapₛₗ₂ (starRingEnd R) b.ExteriorAlgebra b.ExteriorAlgebra
+      (1 : Matrix (Finset I) (Finset I) R) s t = 0 := by
+  induction hs using Submodule.pow_induction_on_left' generalizing q t with
+  | algebraMap r =>
+    obtain ⟨q, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hpq.symm
+    rw [Algebra.algebraMap_eq_smul_one, map_smulₛₗ, LinearMap.smul_apply,
+      toLinearMapₛₗ₂_one_eq_zero_of_mem_exteriorPower_succ b ht, smul_zero]
+  | add x y i _ _ ihx ihy => rw [map_add, LinearMap.add_apply, ihx hpq ht, ihy hpq ht, add_zero]
+  | mem_mul m hm i x _ ih =>
+    obtain ⟨v, rfl⟩ := hm
+    rw [toLinearMapₛₗ₂_ι_mul_left]
+    -- The contraction of `t` lies one degree lower, or vanishes in degree zero.
+    rcases q with _ | q
+    · rw [contractLeft_eq_zero_of_mem_exteriorPower_zero _ ht, map_zero]
+    · exact ih (by omega) (contractLeft_mem_exteriorPower _ ht)
 
 end ExteriorAlgebra
