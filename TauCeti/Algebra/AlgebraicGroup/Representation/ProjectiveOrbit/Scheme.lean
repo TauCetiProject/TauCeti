@@ -26,7 +26,9 @@ the group; when the group is reduced, so is the orbit scheme.
 
 If the geometric orbit is closed, its inclusion is a closed immersion into projective space,
 so `Comodule.isProper_projectiveOrbitToSpec_of_isClosed` makes the orbit scheme proper over
-the base field, without reducedness or connectedness assumptions on the group.
+the base field, without reducedness or connectedness assumptions on the group. Conversely, a
+proper orbit scheme has closed geometric image, since projective space is separated
+(`Comodule.isProper_projectiveOrbitToSpec_iff_isClosed_range`).
 
 The construction combines `Comodule.isLocallyClosed_range_projectiveOrbitMap` with
 `Scheme.Hom.locallyClosedImage` and its factorization API.
@@ -158,6 +160,30 @@ theorem isProper_projectiveOrbitToSpec_of_isClosed
       simpa only [range_projectiveOrbitι] using hclosed)
   rw [projectiveOrbitToSpec_def]
   infer_instance
+
+/-- A projective orbit scheme that is proper over the base field has closed geometric image:
+its inclusion into the separated projective space is then proper, hence closed. -/
+theorem isClosed_range_projectiveOrbitMap_of_isProper
+    (m : M) (hm : Module.IsUnimodular k m)
+    [IsProper (projectiveOrbitToSpec (H := H) m hm)] :
+    IsClosed (Set.range (projectiveOrbitMap (H := H) m hm)) := by
+  have : IsProper (projectiveOrbitι (H := H) m hm ≫
+      SymmetricAlgebra.projToSpec k (Module.Dual k M)) :=
+    inferInstanceAs (IsProper (projectiveOrbitToSpec (H := H) m hm))
+  have : IsProper (projectiveOrbitι (H := H) m hm) :=
+    IsProper.of_comp _ (SymmetricAlgebra.projToSpec k (Module.Dual k M))
+  rw [← range_projectiveOrbitι]
+  exact (projectiveOrbitι (H := H) m hm).isClosedMap.isClosed_range
+
+/-- **Properness of a projective orbit is closedness of the orbit.** The projective orbit
+scheme is proper over the base field exactly when the geometric orbit is closed in projective
+space. -/
+theorem isProper_projectiveOrbitToSpec_iff_isClosed_range
+    (m : M) (hm : Module.IsUnimodular k m) :
+    IsProper (projectiveOrbitToSpec (H := H) m hm) ↔
+      IsClosed (Set.range (projectiveOrbitMap (H := H) m hm)) :=
+  ⟨fun _ ↦ isClosed_range_projectiveOrbitMap_of_isProper m hm,
+    isProper_projectiveOrbitToSpec_of_isClosed M m hm⟩
 
 /-- The orbit factorization is a morphism over the base field. -/
 @[reassoc (attr := simp)]
