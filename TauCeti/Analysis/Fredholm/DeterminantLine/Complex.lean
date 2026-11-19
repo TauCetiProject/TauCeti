@@ -57,7 +57,7 @@ complex-linear operators which is continuous and Fredholm on `s` is coherent on 
 (`TauCeti.isDetLineCoherentOn_of_isComplexPositiveDetLine`): near each parameter, one complex
 kernel chart reads any two complex positive elements as positive multiples of each other, and
 coherence may be checked in that chart
-(`TauCeti.isDetLineCoherentWithinAt_iff_eventually_sameRay`). Hence orientation transport along a
+(`TauCeti.isDetLineCoherentWithinAt_of_eventually_sameRay`). Hence orientation transport along a
 path of complex-linear Fredholm operators carries the complex orientation
 (`ContinuousLinearMap.IsFredholm.complexDetLineOrientation`) at one end to the complex
 orientation at the other (`TauCeti.detLineOrientationTransport_complexDetLineOrientation`).
@@ -407,8 +407,8 @@ theorem isDetLineCoherentOn_of_isComplexPositiveDetLine (hT : ContinuousOn T s)
     (restrictScalarsIsometry ℂ E F ℝ ℝ).continuous.continuousAt.comp_continuousWithinAt
       (hT x₀ hx₀)
   have := (hF x₀ hx₀).finite_coker
-  refine (isDetLineCoherentWithinAt_iff_eventually_sameRay hTℝ ((hF x₀ hx₀).restrictScalars ℝ)
-    (hinvℝ x₀ hxU)).2 ⟨(hv x₀ hx₀).ne_zero, ?_⟩
+  refine isDetLineCoherentWithinAt_of_eventually_sameRay hTℝ ((hF x₀ hx₀).restrictScalars ℝ)
+    (hv x₀ hx₀).ne_zero (hinvℝ x₀ hxU) ?_
   filter_upwards [(hT x₀ hx₀).tendsto.eventually (hU.mem_nhds hxU), self_mem_nhdsWithin]
     with x hxU' hx
   exact ⟨hinvℝ x hxU', sameRay_detLineChartEquiv_of_isComplexPositiveDetLine _ _ (hv x₀ hx₀)

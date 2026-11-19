@@ -32,7 +32,10 @@ coefficient systems between the permutation local system and the constant system
   sheets (`IsCoveringMap.singularChainComplexPermutationIso_hom_comp_augmentation`);
 * when the fibres are finite, the transfer `C(B; R) ⟶ C(E; R)` is induced by the map sending `r`
   to the sum of all sheets with coefficient `r`
-  (`IsCoveringMap.transfer_comp_singularChainComplexPermutationIso_inv`).
+  (`IsCoveringMap.transfer_comp_singularChainComplexPermutationIso_inv`);
+* for a continuous map `σ : E → E` over the base, `σ_* : C(E; R) ⟶ C(E; R)` is induced by the
+  endomorphism moving each sheet by `σ`
+  (`IsCoveringMap.chainComplexMap_comp_singularChainComplexPermutationIso_hom`).
 
 These descriptions do not need the covering to be regular, so they describe the transfer of an
 arbitrary finite covering through its permutation local system.
@@ -345,5 +348,46 @@ theorem transfer_comp_singularHomologyPermutationIso_inv (hfin : ∀ b, Finite �
   simp only [HomologicalComplex.homologyMap_comp] at h
   rw [singularHomologyPermutationIso_inv, twistedHomologyConstantIso_inv]
   exact h
+
+section FiberMap
+
+variable (σ : C(E, E)) (hσ : ⇑p ∘ ⇑σ = ⇑p)
+
+/-- **The map of chains induced by a map over the base, as a coefficient map**: under the
+comparison of singular chains of `E` with chains of `B` twisted by the permutation local system,
+`σ_* : C(E; R) ⟶ C(E; R)` is induced by the endomorphism moving the sheets by `σ`. -/
+theorem chainComplexMap_comp_singularChainComplexPermutationIso_hom :
+    SSet.chainComplexMap (TopCat.toSSet.map (TopCat.ofHom σ)) (ModuleCat.of R R) ≫
+        (hp.singularChainComplexPermutationIso R).hom =
+      (hp.singularChainComplexPermutationIso R).hom ≫
+        twistedChainComplexCoefficientMap (hp.permutationLocalSystemFiberMap R σ hσ) := by
+  have hσp : TopCat.ofHom σ ≫ p = p := TopCat.hom_ext (ContinuousMap.ext (congrFun hσ))
+  refine HomologicalComplex.hom_ext _ _ fun k ↦ SSet.chainComplex_hom_ext fun τ ↦ ?_
+  simp only [HomologicalComplex.comp_f, SSet.ι_chainComplexMap_f_assoc,
+    ιChainComplex_singularChainComplexPermutationIso_hom_f,
+    ιChainComplex_singularChainComplexPermutationIso_hom_f_assoc,
+    ιTwistedChainComplex_twistedChainComplexCoefficientMap_f,
+    permutationLocalSystemSingle_fiberMap_app_assoc]
+  -- Moving `τ` by `σ` does not change `p ∘ τ`, and moves its initial sheet by `σ`.
+  exact single_initialSheet_ιTwistedChainComplex hp R
+    (by conv_rhs => rw [← hσp]
+        rw [Functor.map_comp, NatTrans.comp_app, ConcreteCategory.comp_apply])
+    ((DFunLike.congr_fun (TauCeti.TopCat.simplexMap_app _ τ) _).trans
+      (Function.fiberMap_apply_coe σ hσ _ (initialSheet τ)).symm)
+
+/-- **The map on homology induced by a map over the base, as a coefficient map**: under the
+comparison of singular homology of `E` with homology of `B` twisted by the permutation local
+system, `σ_*` is induced by the endomorphism moving the sheets by `σ`. -/
+@[reassoc]
+theorem homologyMap_comp_singularHomologyPermutationIso_hom (k : ℕ) :
+    SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom σ)) (ModuleCat.of R R) k ≫
+        (hp.singularHomologyPermutationIso R k).hom =
+      (hp.singularHomologyPermutationIso R k).hom ≫
+        twistedHomologyCoefficientMap (hp.permutationLocalSystemFiberMap R σ hσ) k := by
+  rw [singularHomologyPermutationIso_hom, ← HomologicalComplex.homologyMap_comp,
+    ← HomologicalComplex.homologyMap_comp,
+    chainComplexMap_comp_singularChainComplexPermutationIso_hom]
+
+end FiberMap
 
 end IsCoveringMap
