@@ -34,6 +34,9 @@ Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a
   everywhere when `a.card ≤ b.card`, absolutely by `Complex.summable_norm_regularizedHGFun`.
 * `Complex.hasSum_deriv_regularizedHGFun` — the termwise differentiated series converges to the
   derivative.
+* `Complex.hasDerivAt_regularizedHGFun`: the derivative of `regularizedHGFun a b` is
+  `(∏ a) · regularizedHGFun (a + 1) (b + 1)`, so that of `₀F₁(; b; z)` is `₀F₁(; b + 1; z)`
+  (`Complex.hasDerivAt_regularizedHGFun_zero_singleton`).
 * `Complex.regularizedHGFunCoeff_one_singleton` — the coefficients `1 / Γ(b + n)` of the Kummer
   function `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)`.
 * `Complex.sum_regularizedHGFunCoeff_zero_singleton_mul` and
@@ -110,6 +113,38 @@ theorem hasSum_deriv_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.car
     rw [norm_mul, norm_mul, norm_pow, norm_pow, Complex.norm_real,
       Real.norm_of_nonneg (by positivity)]
     gcongr
+
+/-- When there are at most as many upper as lower parameters, the derivative of
+`regularizedHGFun a b` at `z` is `(∏ a) · regularizedHGFun (a + 1) (b + 1) z`, each parameter
+shifted by one. -/
+theorem hasDerivAt_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.card) (z : ℂ) :
+    HasDerivAt (regularizedHGFun a b)
+      (a.prod * regularizedHGFun (a.map (· + 1)) (b.map (· + 1)) z) z := by
+  convert (analyticAt_regularizedHGFun_of_card_le h z).differentiableAt.hasDerivAt using 1
+  refine ((hasSum_regularizedHGFun (by simpa using h) z).mul_left a.prod).unique ?_
+  convert hasSum_deriv_regularizedHGFun h z using 1
+  ext n
+  have ha : (a.map (ascPochhammer ℂ (n + 1)).eval).prod =
+      a.prod * ((a.map (· + 1)).map (ascPochhammer ℂ n).eval).prod := by
+    simp only [ascPochhammer_succ_left, Polynomial.eval_mul, Polynomial.eval_X,
+      Polynomial.eval_comp, Polynomial.eval_add, Polynomial.eval_one, Multiset.prod_map_mul,
+      Multiset.map_id', Multiset.map_map, Function.comp_def]
+  have hb : (b.map (Gamma <| · + ((n + 1 : ℕ) : ℂ))).prod =
+      ((b.map (· + 1)).map (Gamma <| · + (n : ℂ))).prod := by
+    rw [Multiset.map_map]
+    congr 2
+    ext β
+    simp only [Function.comp_apply]
+    push_cast
+    ring_nf
+  simp only [regularizedHGFunCoeff, ha, hb, Nat.factorial_succ]
+  push_cast
+  field_simp
+
+/-- The derivative of `₀F₁(; b; z)` in `z` is `₀F₁(; b + 1; z)`, for every complex `b`. -/
+theorem hasDerivAt_regularizedHGFun_zero_singleton (b z : ℂ) :
+    HasDerivAt (regularizedHGFun 0 {b}) (regularizedHGFun 0 {b + 1} z) z := by
+  simpa using hasDerivAt_regularizedHGFun (a := 0) (b := {b}) (by simp) z
 
 /-- The coefficients of the Kummer function `𝐌(1, b, z) = ₁F₁(1; b; z) / Γ(b)` are
 `1 / Γ(b + n)`. -/
