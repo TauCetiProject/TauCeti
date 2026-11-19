@@ -114,15 +114,24 @@ theorem IsInvertibleOn.of_hom {Y : Scheme.{u}} (f : Y ⟶ X) [IsInvertibleOn n X
   intro y
   simpa using (IsInvertibleOn.isUnit_stalk (n := n) (f y)).map (f.stalkMap y).hom
 
+/-- A jointly surjective family of morphisms detects invertibility of an order;
+no flatness is needed. -/
+theorem isInvertibleOn_of_jointlySurjective {ι : Type*} {Y : ι → Scheme.{u}}
+    (f : ∀ i, Y i ⟶ X) (hf : ∀ x, ∃ i y, f i y = x)
+    [∀ i, IsInvertibleOn n (Y i)] : IsInvertibleOn n X := by
+  constructor
+  intro x
+  obtain ⟨i, y, rfl⟩ := hf x
+  exact (isUnit_map_iff ((f i).stalkMap y).hom _).mp
+    (by simpa using IsInvertibleOn.isUnit_stalk (n := n) y)
+
 /-- A surjective morphism detects invertibility of an order; no flatness is needed. -/
 theorem isInvertibleOn_iff_of_surjective {Y : Scheme.{u}} (f : Y ⟶ X)
     (hf : Function.Surjective f) : IsInvertibleOn n Y ↔ IsInvertibleOn n X := by
   constructor
   · intro h
-    constructor
-    intro x
-    obtain ⟨y, rfl⟩ := hf x
-    exact (isUnit_map_iff (f.stalkMap y).hom _).mp (by simpa using h.isUnit_stalk y)
+    let : ∀ _ : Unit, IsInvertibleOn n Y := fun _ ↦ h
+    exact isInvertibleOn_of_jointlySurjective (fun _ : Unit ↦ f) (fun x ↦ ⟨(), hf x⟩)
   · intro h
     exact IsInvertibleOn.of_hom f
 
@@ -173,13 +182,11 @@ theorem isInvertibleOn_iff_of_iSup_eq_top {ι : Type*} (U : ι → X.Opens)
   · intro h i
     infer_instance
   · intro h
-    constructor
+    let : ∀ i, IsInvertibleOn n (U i).toScheme := h
+    apply isInvertibleOn_of_jointlySurjective (fun i ↦ (U i).ι)
     intro x
     obtain ⟨i, hi⟩ := TopologicalSpace.Opens.mem_iSup.mp (hU.ge (Set.mem_univ x))
-    obtain ⟨y, rfl⟩ : ∃ y : (U i).toScheme, (U i).ι y = x :=
-      ⟨⟨x, hi⟩, Scheme.Opens.ι_apply (U i) _⟩
-    exact (isUnit_map_iff ((U i).ι.stalkMap y).hom _).mp
-      (by simpa using (h i).isUnit_stalk y)
+    exact ⟨i, ⟨x, hi⟩, Scheme.Opens.ι_apply (U i) _⟩
 
 /-- On a nonempty scheme over a field, an order is invertible exactly when its image
 in the field is nonzero. Nonemptiness is essential: every order is invertible on the
