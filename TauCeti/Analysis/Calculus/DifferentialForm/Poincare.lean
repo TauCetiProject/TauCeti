@@ -19,6 +19,7 @@ import Mathlib.Topology.MetricSpace.Thickening
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
+import TauCeti.Analysis.Calculus.ParametricIntegral.Segment
 import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Analysis.Convex.Topology
@@ -858,25 +859,9 @@ theorem exists_contDiffOn_forall_extDeriv_eq (hs : StarConvex ℝ x₀ s) (hso :
 theorem poincareHomotopy_extDerivWithin_eq_sub (hs : StarConvex ℝ x₀ s) (hsu : UniqueDiffOn ℝ s)
     {ω : E → E [⋀^Fin 0]→L[ℝ] F} (hω : ContDiffOn ℝ 1 ω s) {x : E} (hx : x ∈ s) :
     poincareHomotopy x₀ (extDerivWithin ω s) x = ω x - ω x₀ := by
-  have hmaps : MapsTo (lineMap x₀ x) (Icc (0 : ℝ) 1) s := fun _ ht ↦
-    hs.segment_subset hx (lineMap_mem_segment ℝ x₀ x ht)
-  have hderiv (t : ℝ) (ht : t ∈ Ioo (0 : ℝ) 1) :
-      HasDerivAt (fun t : ℝ ↦ ω (lineMap x₀ x t))
-        (fderivWithin ℝ ω s (lineMap x₀ x t) (x - x₀)) t := by
-    have hω' : HasDerivWithinAt (fun t : ℝ ↦ ω (lineMap x₀ x t))
-        (fderivWithin ℝ ω s (lineMap x₀ x t) (x - x₀)) (Icc 0 1) t :=
-      (hω.differentiableOn one_ne_zero _ (hmaps (Ioo_subset_Icc_self ht))).hasFDerivWithinAt
-        |>.comp_hasDerivWithinAt t hasDerivAt_lineMap.hasDerivWithinAt hmaps
-    exact hω'.hasDerivAt (Icc_mem_nhds ht.1 ht.2)
-  have hcont : ContinuousOn (fun t : ℝ ↦ ω (lineMap x₀ x t)) (Icc 0 1) :=
-    hω.continuousOn.comp lineMap_continuous.continuousOn hmaps
-  have hint : IntervalIntegrable
-      (fun t : ℝ ↦ fderivWithin ℝ ω s (lineMap x₀ x t) (x - x₀)) volume 0 1 :=
-    ((ContinuousLinearMap.apply ℝ _ (x - x₀)).continuous.comp_continuousOn
-      ((hω.continuousOn_fderivWithin hsu le_rfl).comp lineMap_continuous.continuousOn
-        hmaps)).intervalIntegrable_of_Icc zero_le_one
-  have hftc : ∫ t in (0 : ℝ)..1, fderivWithin ℝ ω s (lineMap x₀ x t) (x - x₀) = ω x - ω x₀ := by
-    simpa using intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le zero_le_one hcont hderiv hint
+  have hftc : ∫ t in (0 : ℝ)..1, fderivWithin ℝ ω s (lineMap x₀ x t) (x - x₀) = ω x - ω x₀ :=
+    (hs.sub_eq_intervalIntegral_lineMap_apply (hω.continuousOn_fderivWithin hsu le_rfl)
+      (fun z hz ↦ (hω.differentiableOn one_ne_zero z hz).hasFDerivWithinAt) hx).symm
   rw [← hftc, poincareHomotopy_apply]
   refine intervalIntegral.integral_congr fun t _ ↦ ?_
   ext v
