@@ -18,6 +18,7 @@ import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Cutoff
 import TauCeti.Analysis.Normed.Module.LocalFactorization
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
+import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
 import TauCeti.Analysis.PDE.Vortex.Divisor
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
@@ -285,42 +286,24 @@ theorem integral_laplacian_mul_log_normSq_of_eq_one
 
 /-! ### Moments against harmonic weights -/
 
-/-- Off a large disc, `|log |α|²| ≤ 2 (1 - |α|²)` for a vortex with `|α| → 1` at infinity. -/
-private theorem eventually_abs_log_normSq_le
-    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
-    (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
-    ∀ᶠ z in cocompact ℂ, |Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2))| ≤
-      2 * (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) := by
-  filter_upwards [hlim.eventually (le_mem_nhds (by norm_num : (1 / 2 : ℝ) < 1))] with z hs₂
-  set s := 4 * (x z 2 ^ 2 + x z 3 ^ 2)
-  have hs₁ : s ≤ 1 := normSq_le_one_of_tendsto hp hq hsol hlim z
-  have hs₀ : 0 < s := by linarith
-  -- `|log s| = log s⁻¹ ≤ s⁻¹ - 1 = (1 - s) / s ≤ 2 (1 - s)`.
-  rw [abs_of_nonpos (Real.log_nonpos hs₀.le hs₁), ← Real.log_inv]
-  have h := Real.log_le_sub_one_of_pos (inv_pos.2 hs₀)
-  have h' : s⁻¹ - 1 ≤ 2 * (1 - s) := by
-    rw [inv_eq_one_div, div_sub_one hs₀.ne', div_le_iff₀ hs₀]
-    nlinarith
-  linarith
-
 /-- `‖z‖ʲ log |α|² → 0` at infinity for a vortex with `|α| → 1` at infinity. -/
 private theorem tendsto_norm_pow_smul_log_normSq
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) (j : ℕ) :
     Tendsto (fun z ↦ ‖z‖ ^ j • Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2))) (cocompact ℂ) (𝓝 0) := by
-  refine IsBigO.trans_tendsto ?_ (Real.tendsto_exp_atBot.comp (tendsto_neg_atTop_atBot.comp
-    (tendsto_norm_cocompact_atTop.const_mul_atTop (by norm_num : (0 : ℝ) < 1 / 8))))
-  refine (IsBigO.of_bound 2 ?_).trans (isBigO_norm_pow_mul_one_sub_normSq hp hq hsol hlim j)
-  filter_upwards [eventually_abs_log_normSq_le hp hq hsol hlim] with z hz
-  have h₀ : 0 ≤ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) :=
-    sub_nonneg.2 (normSq_le_one_of_tendsto hp hq hsol hlim z)
-  rw [smul_eq_mul, norm_mul, norm_pow, norm_norm, Real.norm_eq_abs,
-    Real.norm_of_nonneg (by positivity)]
-  calc ‖z‖ ^ j * |Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2))|
-      ≤ ‖z‖ ^ j * (2 * (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2))) := by gcongr
-    _ = 2 * (‖z‖ ^ j * (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2))) := by ring
+  have hlog : (fun z ↦ Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2))) =O[cocompact ℂ]
+      fun z ↦ Real.exp (-(1 / 4 * ‖z‖)) := .of_norm_left <| by
+    simpa only [norm_iteratedFDeriv_zero] using (isBigO_iteratedFDeriv_log_normSq hp hq hsol hlim
+      (by norm_num : (1 / 4 : ℝ) < 1 / 2) 0).norm_left
+  have hpow : (fun z : ℂ ↦ ‖z‖ ^ j) =O[cocompact ℂ] fun z ↦ Real.exp (1 / 8 * ‖z‖) :=
+    ((isLittleO_pow_exp_pos_mul_atTop j (by norm_num : (0 : ℝ) < 1 / 8)).comp_tendsto
+      tendsto_norm_cocompact_atTop).isBigO
+  refine ((hpow.smul hlog).congr_right fun z ↦ ?_).trans_tendsto (Real.tendsto_exp_atBot.comp
+    (tendsto_neg_atTop_atBot.comp
+      (tendsto_norm_cocompact_atTop.const_mul_atTop (by norm_num : (0 : ℝ) < 1 / 8))))
+  rw [smul_eq_mul, ← Real.exp_add, Function.comp_apply, Function.comp_apply]
+  ring_nf
 
 /-- **The moments of a plane vortex against a harmonic weight.** Let `x` be a `C²` vortex on the
 whole plane whose section satisfies `|α| → 1` at infinity, with zero multiplicities `n`. Let `h` be

@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
+import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.Analysis.Polynomial.AtInfinity
 
 /-!
@@ -114,12 +115,7 @@ private theorem integral_clm_eval_mul_one_sub_normSq_eq
       (((isBigO_refl _ _).const_mul_left ‖L‖).trans (isBigO_cocompact_eval_norm_pow_of_natDegree_le
         ((natDegree_derivative_le P).trans (Nat.sub_le _ _))).norm_left))
   -- The sum against the multiplicities of `D` is the sum over `D`.
-  rw [h, finsum_eq_sum_of_support_subset _ (s := D.toFinset) fun a ha ↦ ?_,
-    Finset.sum_multiset_map_count]
-  · simp only [nsmul_eq_mul]
-  rw [Function.mem_support] at ha
-  exact Finset.mem_coe.2 <| Multiset.mem_toFinset.2 <|
-    Multiset.count_ne_zero.1 fun h ↦ ha (by simp [h])
+  simp_rw [h, ← nsmul_eq_mul, Multiset.finsum_count_nsmul_eq_sum_map]
 
 /-- **The holomorphic moments of a plane vortex.** Let `x` be a `C²` vortex on the whole plane
 whose section satisfies `|α| → 1` at infinity, with zero divisor `D`. For every complex polynomial
