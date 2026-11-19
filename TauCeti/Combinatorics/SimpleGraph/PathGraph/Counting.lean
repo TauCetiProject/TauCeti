@@ -30,9 +30,9 @@ recurrence, including the vanishing of the upper boundary term.
 
 public section
 
-namespace SimpleGraph
+namespace TauCeti
 
-open Finset TauCeti
+open Finset SimpleGraph
 
 /-- The ballot vector evolves under the path adjacency matrix by one step, before
 the upper boundary can affect the count at `v`. -/
@@ -113,4 +113,4 @@ theorem sum_sq_card_walk_length_pathGraph {N n : ℕ} (hn : n ≤ N) :
       simp [halfCount_eq_zero_of_lt (by omega : n < k)]
     _ = catalan n := sum_halfCount_sq n
 
-end SimpleGraph
+end TauCeti
