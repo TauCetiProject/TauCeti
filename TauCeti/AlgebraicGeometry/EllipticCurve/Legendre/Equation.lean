@@ -63,7 +63,9 @@ The scaled equations serve as normal forms for elliptic curves whose cubic split
 * `TauCeti.isElliptic_legendre_iff_ne_zero`, `TauCeti.isElliptic_scaledLegendre_iff_ne_zero`:
   ellipticity over a field with `2 ≠ 0`; `TauCeti.isElliptic_legendre_iff` and
   `TauCeti.isElliptic_scaledLegendre_iff` are the criteria over a commutative ring.
-* `TauCeti.legendre_j`, `TauCeti.scaledLegendre_j`: the `j`-invariant, independent of the scalar.
+* `TauCeti.legendre_j`, `TauCeti.scaledLegendre_j`: the `j`-invariant;
+  `TauCeti.scaledLegendre_j_eq_legendre_j`: over a commutative ring it does not depend on the
+  scalar.
 * `TauCeti.quadraticTwistOf_legendre`, `TauCeti.scaledLegendre_eq_quadraticTwistOf`: the scaled
   equation is a quadratic twist of the Legendre equation.
 * `TauCeti.smul_scaledLegendre`: scaling by `u⁻¹` carries the scalar `d` to `u² d`.
@@ -233,6 +235,32 @@ theorem quadraticTwistOf_legendre (n : R) :
   ext <;> simp
   ring
 
+/-- If the scaled Legendre equation with some scalar is elliptic, so is the Legendre equation. -/
+theorem isElliptic_legendre_of_scaledLegendre (h : (scaledLegendre d l).IsElliptic) :
+    (legendre l).IsElliptic := by
+  rw [isElliptic_scaledLegendre_iff] at h
+  rw [isElliptic_legendre_iff]
+  simp only [IsUnit.mul_iff] at h ⊢
+  exact ⟨⟨h.1.1.1, h.1.2⟩, h.2⟩
+
+/-- **The `j`-invariant of an elliptic scaled Legendre equation does not depend on the
+scalar:** the scaled equation is a quadratic twist of the Legendre equation
+(`quadraticTwistOf_legendre`), and `j` is a twist invariant (`j_quadraticTwistOf`). -/
+theorem scaledLegendre_j_eq_legendre_j [(legendre l).IsElliptic]
+    [(scaledLegendre d l).IsElliptic] : (scaledLegendre d l).j = (legendre l).j := by
+  have h := (isElliptic_scaledLegendre_iff d l).mp ‹_›
+  simp only [IsUnit.mul_iff] at h
+  have h4 : IsUnit (4 : R) := by
+    convert h.1.1.1.mul h.1.1.1
+    norm_num
+  have e : (legendre l).quadraticTwistOf 0 (-(d * ↑h4.unit⁻¹)) = scaledLegendre d l := by
+    rw [quadraticTwistOf_legendre]
+    congr 1
+    linear_combination d * h4.mul_val_inv
+  have : ((legendre l).quadraticTwistOf 0 (-(d * ↑h4.unit⁻¹))).IsElliptic := e ▸ ‹_›
+  convert j_quadraticTwistOf (legendre l) 0 _ this using 2
+  exact e.symm
+
 /-- **The change of variables with scaling `u⁻¹` multiplies the scalar by `u²`.** It is
 `x = u⁻² x'`, `y = u⁻³ y'`, so a point `(x, y)` of the scaled Legendre equation with scalar `d`
 corresponds to the point `(u² x, u³ y)` of the one with scalar `u² d`. -/
@@ -279,16 +307,13 @@ theorem legendre_j [(legendre l).IsElliptic] :
   field_simp
   ring
 
-/-- **The `j`-invariant of an elliptic scaled Legendre equation does not depend on the
-scalar.** -/
-theorem scaledLegendre_j [(legendre l).IsElliptic] [(scaledLegendre d l).IsElliptic] :
-    (scaledLegendre d l).j = (legendre l).j := by
-  have hd : d ≠ 0 := fun h0 ↦ by
-    simpa [h0] using (isElliptic_scaledLegendre_iff d l).mp ‹_›
-  have hΔ : (legendre l).Δ ≠ 0 := (legendre l).isUnit_Δ.ne_zero
-  rw [legendre_Δ] at hΔ
-  rw [j_eq, j_eq, scaledLegendre_Δ, scaledLegendre_c₄, legendre_Δ, legendre_c₄]
-  field_simp
+/-- The `j`-invariant of an elliptic scaled Legendre equation is
+`256 (l² - l + 1)³ / (l² (1 - l)²)`, whatever the scalar. -/
+@[simp]
+theorem scaledLegendre_j [(scaledLegendre d l).IsElliptic] :
+    (scaledLegendre d l).j = 256 * (l ^ 2 - l + 1) ^ 3 / (l ^ 2 * (1 - l) ^ 2) := by
+  have := isElliptic_legendre_of_scaledLegendre d l ‹_›
+  rw [scaledLegendre_j_eq_legendre_j, legendre_j]
 
 /-- **Over a field with `2 ≠ 0`, the scaled Legendre equation is a quadratic twist of the Legendre
 equation:** the twist with parameters `(0, -d / 4)`, whose twisting discriminant is `d`. -/
