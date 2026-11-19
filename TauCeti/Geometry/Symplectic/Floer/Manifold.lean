@@ -119,7 +119,8 @@ form they recover the vector-space definitions.
   `SmoothTwoForm.hamiltonianCurvature_perturbationPullback`: naturality of the perturbed
   derivative, and the energy density, the area density and the curvature as two-forms on the
   domain. Consequently holomorphic changes of coordinates preserve the Floer equation
-  (`SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_perturbationPullback`).
+  (`SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_perturbationPullback`); for the exchange
+  `w ↦ 1 - w`, see `TauCeti.Geometry.Symplectic.Floer.Manifold.Exchange`.
 * `SmoothTwoForm.integral_floerEnergyDensity_image`,
   `SmoothTwoForm.integral_eval₂_mfderiv_stdComplexLine_image`,
   `SmoothTwoForm.integral_hamiltonianCurvature_image`,

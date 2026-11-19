@@ -99,7 +99,7 @@ The basis of its weight lattice is the standard basis of fundamental weights. -/
         (M := t.scModule ht))
   lattice := (t.scLattice ht).toAddSubgroup
   representation_mem_lattice := t.kostantForm_apply_mem_scLattice ht
-  span_lattice_eq_top := Submodule.IsLattice.span_eq_top (R := ℤ) (A := ℚ)
+  span_lattice_eq_top := Submodule.IsFullLattice.span_eq_top (R := ℤ) (A := ℚ)
   dim := t.scWeightBasisCard ht
   basis := t.scWeightBasis ht
   weight := t.scWeight ht
