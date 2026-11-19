@@ -263,14 +263,52 @@ theorem norm_parameterIteratedFDeriv_zero (f : (CoordinateSpace n × CoordinateS
     ‖parameterIteratedFDeriv 0 f p‖ = ‖f p‖ := by
   simp [parameterIteratedFDeriv_eq_iteratedFDeriv_comp, Prod.mk_zero_zero]
 
-private theorem parameterIteratedFDeriv_mk_eq
+/-- The dilated derivatives at `p` only depend on the function near `p`. -/
+theorem parameterIteratedFDeriv_congr {f g : (CoordinateSpace n × CoordinateSpace n) × ℂ → A}
+    {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (h : f =ᶠ[𝓝 p] g) (k : ℕ) :
+    parameterIteratedFDeriv k f p = parameterIteratedFDeriv k g p := by
+  unfold parameterIteratedFDeriv
+  rw [(h.iteratedFDeriv (𝕜 := ℝ) k).eq_of_nhds]
+
+/-- The dilated derivatives of a function vanishing near `p` vanish at `p`. -/
+theorem parameterIteratedFDeriv_eq_zero_of_eventuallyEq_zero
+    {f : (CoordinateSpace n × CoordinateSpace n) × ℂ → A}
+    {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (h : f =ᶠ[𝓝 p] 0) (k : ℕ) :
+    parameterIteratedFDeriv k f p = 0 := by
+  rw [parameterIteratedFDeriv_congr h, parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
+  simp
+
+/-- The dilated derivatives of a finite sum of functions smooth at `p` are the sums of their
+dilated derivatives. -/
+theorem parameterIteratedFDeriv_sum {ι : Type*} {s : Finset ι}
+    {f : ι → (CoordinateSpace n × CoordinateSpace n) × ℂ → A}
+    {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} {k : ℕ}
+    (hf : ∀ j ∈ s, ContDiffAt ℝ k (f j) p) :
+    parameterIteratedFDeriv k (fun q => ∑ j ∈ s, f j q) p =
+      ∑ j ∈ s, parameterIteratedFDeriv k (f j) p := by
+  ext v
+  simp [parameterIteratedFDeriv_apply, iteratedFDeriv_fun_sum_apply hf]
+
+/-- The dilated derivatives of a difference of functions smooth at `p` are the differences of their
+dilated derivatives. -/
+theorem parameterIteratedFDeriv_sub {f g : (CoordinateSpace n × CoordinateSpace n) × ℂ → A}
+    {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} {k : ℕ} (hf : ContDiffAt ℝ k f p)
+    (hg : ContDiffAt ℝ k g p) :
+    parameterIteratedFDeriv k (fun q => f q - g q) p =
+      parameterIteratedFDeriv k f p - parameterIteratedFDeriv k g p := by
+  ext v
+  simp [parameterIteratedFDeriv_apply, fun_iteratedFDeriv_sub_apply hf hg]
+
+/-- `TauCeti.parameterIteratedFDeriv_eq_iteratedFDeriv_comp` at a point given by its position,
+frequency and spectral parameter. -/
+theorem parameterIteratedFDeriv_mk_eq
     (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → A) (x ξ : CoordinateSpace n) (z : ℂ)
     (k : ℕ) : parameterIteratedFDeriv k f ((x, ξ), z) = iteratedFDeriv ℝ k
       (fun v => f (((x, ξ), z) + parameterDilation n (parameterWeight ξ z) v)) 0 :=
   parameterIteratedFDeriv_eq_iteratedFDeriv_comp f _ k
 
 /-- The pullback of a function smooth on `univ ×ˢ Λ` is smooth on an open neighbourhood of `0`. -/
-private theorem contDiffOn_comp_dilation {Λ : Set ℂ} (hΛ : IsOpen Λ)
+theorem contDiffOn_comp_parameterDilation {Λ : Set ℂ} (hΛ : IsOpen Λ)
     {f : (CoordinateSpace n × CoordinateSpace n) × ℂ → A} (hf : ContDiffOn ℝ ∞ f (univ ×ˢ Λ))
     {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : p.2 ∈ Λ) (t : ℝ) :
     IsOpen ((fun v => p + parameterDilation n t v) ⁻¹' (univ ×ˢ Λ)) ∧
@@ -324,8 +362,7 @@ private theorem Bounds.congr {g : (CoordinateSpace n × CoordinateSpace n) × �
       f =ᶠ[𝓝 p] g) : Bounds Λ m f := fun K hK k => by
   obtain ⟨C, hC, hg⟩ := h K hK k
   refine ⟨C, hC, fun x hx ξ z hz => ?_⟩
-  unfold parameterIteratedFDeriv
-  rw [((hfg _ hz).iteratedFDeriv (𝕜 := ℝ) k).eq_of_nhds]
+  rw [parameterIteratedFDeriv_congr (hfg _ hz)]
   exact hg x hx ξ z hz
 
 private theorem Bounds.add (hΛ : IsOpen Λ) {g : (CoordinateSpace n × CoordinateSpace n) × ℂ → A}
@@ -334,9 +371,9 @@ private theorem Bounds.add (hΛ : IsOpen Λ) {g : (CoordinateSpace n × Coordina
   obtain ⟨C, hC, hf'⟩ := hbf K hK k
   obtain ⟨D, hD, hg'⟩ := hbg K hK k
   refine ⟨C + D, add_nonneg hC hD, fun x hx ξ z hz => ?_⟩
-  obtain ⟨hU, h0, hfT⟩ := contDiffOn_comp_dilation hΛ hf (p := ((x, ξ), z)) hz
+  obtain ⟨hU, h0, hfT⟩ := contDiffOn_comp_parameterDilation hΛ hf (p := ((x, ξ), z)) hz
     (parameterWeight ξ z)
-  obtain ⟨-, -, hgT⟩ := contDiffOn_comp_dilation hΛ hg (p := ((x, ξ), z)) hz
+  obtain ⟨-, -, hgT⟩ := contDiffOn_comp_parameterDilation hΛ hg (p := ((x, ξ), z)) hz
     (parameterWeight ξ z)
   have h₁ := hf' x hx ξ z hz
   have h₂ := hg' x hx ξ z hz
@@ -357,7 +394,7 @@ private theorem Bounds.comp_left (hΛ : IsOpen Λ) {A' : Type*} [NormedAddCommGr
     Bounds Λ m (fun p => L (f p)) := fun K hK k => by
   obtain ⟨C, hC, hf'⟩ := hb K hK k
   refine ⟨‖L‖ * C, mul_nonneg (norm_nonneg L) hC, fun x hx ξ z hz => ?_⟩
-  obtain ⟨hU, h0, hfT⟩ := contDiffOn_comp_dilation hΛ hf (p := ((x, ξ), z)) hz
+  obtain ⟨hU, h0, hfT⟩ := contDiffOn_comp_parameterDilation hΛ hf (p := ((x, ξ), z)) hz
     (parameterWeight ξ z)
   have := hf' x hx ξ z hz
   rw [parameterIteratedFDeriv_eq_iteratedFDeriv_comp] at *
@@ -378,9 +415,9 @@ private theorem Bounds.bilinear (hΛ : IsOpen Λ) (B : X →L[ℝ] Y →L[ℝ] Z
   obtain ⟨E, hE, hB⟩ := exists_norm_iteratedFDeriv_bilinear_le
     ((CoordinateSpace n × CoordinateSpace n) × ℂ) B k
   refine ⟨E * (C * D), by positivity, fun x hx ξ z hz => ?_⟩
-  obtain ⟨hU, h0, hfT⟩ := contDiffOn_comp_dilation hΛ hf (p := ((x, ξ), z)) hz
+  obtain ⟨hU, h0, hfT⟩ := contDiffOn_comp_parameterDilation hΛ hf (p := ((x, ξ), z)) hz
     (parameterWeight ξ z)
-  obtain ⟨-, -, hgT⟩ := contDiffOn_comp_dilation hΛ hg (p := ((x, ξ), z)) hz
+  obtain ⟨-, -, hgT⟩ := contDiffOn_comp_parameterDilation hΛ hg (p := ((x, ξ), z)) hz
     (parameterWeight ξ z)
   have hk : ((k : ℕ∞ω)) ≤ ∞ := by exact_mod_cast le_top
   rw [parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
@@ -409,7 +446,7 @@ private theorem Bounds.inverse (hΛ : IsOpen Λ) {V W : Type*} [NormedAddCommGro
     (E := (CoordinateSpace n × CoordinateSpace n) × ℂ) (V := V) (W := W) k A B
   refine ⟨max c 0, le_max_right _ _, fun x hx ξ z hz => ?_⟩
   have hs := rpow_parameterWeight_pos ξ z m
-  obtain ⟨hU, h0, haT⟩ := contDiffOn_comp_dilation hΛ ha (p := ((x, ξ), z)) hz
+  obtain ⟨hU, h0, haT⟩ := contDiffOn_comp_parameterDilation hΛ ha (p := ((x, ξ), z)) hz
     (parameterWeight ξ z)
   rw [parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
   have h := hc _ _ 0 _ hs hU h0 haT (fun y hy => hinv _ hy.2) (fun j hj => ?_) ?_ k le_rfl
@@ -471,7 +508,7 @@ private theorem Bounds.fderiv_apply (hΛ : IsOpen Λ) (hf : ContDiffOn ℝ ∞ f
   refine ⟨‖e‖ * C, mul_nonneg (norm_nonneg e) hC, fun x hx ξ z hz => ?_⟩
   have ht := parameterWeight_pos ξ z
   have htd : 0 < parameterWeight ξ z ^ d := pow_pos ht d
-  obtain ⟨hU, h0, hgT⟩ := contDiffOn_comp_dilation hΛ hf (p := ((x, ξ), z)) hz
+  obtain ⟨hU, h0, hgT⟩ := contDiffOn_comp_parameterDilation hΛ hf (p := ((x, ξ), z)) hz
     (parameterWeight ξ z)
   -- With `g` the pullback of `f` along the dilation, `fderiv f · e = t⁻ᵈ • fderiv g · e`.
   let L : ((((CoordinateSpace n × CoordinateSpace n) × ℂ) →L[ℝ] A) →L[ℝ] A) :=
@@ -685,12 +722,19 @@ theorem coefficient_comp (b : ParameterSymbol n Λ W U m') (a : ParameterSymbol 
 
 /-! ### Derivatives in the position and frequency directions -/
 
+/-- The coefficient of a parameter-dependent symbol is smooth at every point whose spectral
+parameter lies in `Λ`. -/
+theorem contDiffAt_coefficient (a : ParameterSymbol n Λ V W m)
+    {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : p.2 ∈ Λ) :
+    ContDiffAt ℝ ∞ a.coefficient p :=
+  (a.contDiffOn_coefficient p ⟨mem_univ _, hp⟩).contDiffAt
+    ((isOpen_univ.prod Λ.isOpen).mem_nhds ⟨mem_univ _, hp⟩)
+
 /-- The coefficient is differentiable at every point with spectral parameter in `Λ`. -/
 theorem differentiableAt_coefficient (a : ParameterSymbol n Λ V W m)
     {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : p.2 ∈ Λ) :
     DifferentiableAt ℝ a.coefficient p :=
-  (a.contDiffOn_coefficient.contDiffAt
-    ((isOpen_univ.prod Λ.isOpen).mem_nhds ⟨mem_univ _, hp⟩)).differentiableAt (by simp)
+  (a.contDiffAt_coefficient hp).differentiableAt (by simp)
 
 open scoped Classical in
 /-- The derivative of the coefficient in a direction `e` that the dilations scale by `t ^ d`, a
@@ -844,6 +888,99 @@ theorem frequencyDeriv_inclusion (h : m ≤ m') (a : ParameterSymbol n Λ V W m)
     (inclusion h a).frequencyDeriv w = inclusion (sub_le_sub_right h 1) (a.frequencyDeriv w) :=
   ext_of_mem fun x ξ z hz => by
     simp [coefficient_frequencyDeriv_eq_fderiv _ _ _ _ hz, coefficient_inclusion]
+
+/-! ### Smoothing symbols -/
+
+/-- A parameter-dependent symbol is *smoothing*, or of order `-∞`, if its coefficient is a
+parameter-dependent symbol of every real order: the estimates
+`‖∂ₓ^α ∂_ξ^β ∂_z^γ a((x, ξ), z)‖ ≤ C (1 + ‖ξ‖ + ‖z‖ ^ (1 / 2)) ^ (-N)` hold for every `N`, so the
+symbol decays rapidly in the frequency and the spectral parameter jointly. -/
+def IsSmoothing (a : ParameterSymbol n Λ V W m) : Prop :=
+  ∀ m' : ℝ, ∃ b : ParameterSymbol n Λ V W m', b.coefficient = a.coefficient
+
+theorem isSmoothing_iff {a : ParameterSymbol n Λ V W m} :
+    a.IsSmoothing ↔ ∀ m' : ℝ, ∃ b : ParameterSymbol n Λ V W m', b.coefficient = a.coefficient :=
+  Iff.rfl
+
+/-- The estimates characterizing parameter-dependent smoothing symbols: a symbol is smoothing
+exactly when, for every real order `m'`, every compact set `K` of positions and every derivative
+order `k`, the dilated derivatives of order `k` are bounded by `C (1 + ‖ξ‖ + ‖z‖ ^ (1 / 2)) ^ m'`
+for all `x ∈ K`, all frequencies `ξ` and all `z ∈ Λ`. -/
+theorem isSmoothing_iff_forall_exists_bound {a : ParameterSymbol n Λ V W m} :
+    a.IsSmoothing ↔ ∀ m' : ℝ, ∀ K : Set (CoordinateSpace n), IsCompact K → ∀ k : ℕ,
+      ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ∀ z ∈ Λ,
+        ‖parameterIteratedFDeriv k a.coefficient ((x, ξ), z)‖ ≤ C * parameterWeight ξ z ^ m' := by
+  refine ⟨fun h m' K hK k => ?_, fun h m' =>
+    ⟨⟨a.coefficient, a.contDiffOn_coefficient, a.coefficient_of_notMem, h m'⟩, rfl⟩⟩
+  obtain ⟨b, hb⟩ := h m'
+  exact hb ▸ b.exists_bound K hK k
+
+/-- A parameter-dependent symbol is smoothing iff for every `N` its coefficient is that of a
+parameter-dependent symbol of order `m - N`. -/
+theorem isSmoothing_iff_forall_nat {a : ParameterSymbol n Λ V W m} :
+    a.IsSmoothing ↔
+      ∀ N : ℕ, ∃ b : ParameterSymbol n Λ V W (m - N), b.coefficient = a.coefficient := by
+  refine ⟨fun h N => h _, fun h m' => (h ⌈m - m'⌉₊).elim fun b hb => ?_⟩
+  exact ⟨inclusion (by linarith [Nat.le_ceil (m - m')]) b, by rw [coefficient_inclusion, hb]⟩
+
+@[simp]
+theorem isSmoothing_zero : (0 : ParameterSymbol n Λ V W m).IsSmoothing :=
+  fun _ => ⟨0, rfl⟩
+
+theorem IsSmoothing.add {a b : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing)
+    (hb : b.IsSmoothing) : (a + b).IsSmoothing := fun m' => by
+  obtain ⟨a', ha'⟩ := ha m'
+  obtain ⟨b', hb'⟩ := hb m'
+  exact ⟨a' + b', by simp [ha', hb']⟩
+
+theorem IsSmoothing.smul {a : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing) (c : ℂ) :
+    (c • a).IsSmoothing := fun m' => by
+  obtain ⟨a', ha'⟩ := ha m'
+  exact ⟨c • a', by simp [ha']⟩
+
+theorem IsSmoothing.neg {a : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing) :
+    (-a).IsSmoothing := fun m' => by
+  obtain ⟨a', ha'⟩ := ha m'
+  exact ⟨-a', by simp [ha']⟩
+
+theorem IsSmoothing.sub {a b : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing)
+    (hb : b.IsSmoothing) : (a - b).IsSmoothing := by
+  rw [sub_eq_add_neg]
+  exact ha.add hb.neg
+
+theorem IsSmoothing.inclusion {a : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing) (h : m ≤ m') :
+    (inclusion h a).IsSmoothing :=
+  fun m'' => (ha m'').imp fun _ hb => by rw [hb, coefficient_inclusion]
+
+theorem IsSmoothing.spatialDeriv {a : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing)
+    (v : CoordinateSpace n) : (a.spatialDeriv v).IsSmoothing := fun m' => by
+  obtain ⟨a', ha'⟩ := ha m'
+  refine ⟨a'.spatialDeriv v, funext fun ⟨⟨x, ξ⟩, z⟩ => ?_⟩
+  by_cases hz : z ∈ Λ
+  · simp [coefficient_spatialDeriv_eq_fderiv _ _ _ _ hz, ha']
+  · rw [coefficient_of_notMem _ _ hz, coefficient_of_notMem _ _ hz]
+
+theorem IsSmoothing.frequencyDeriv {a : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing)
+    (w : CoordinateSpace n) : (a.frequencyDeriv w).IsSmoothing := fun m' => by
+  obtain ⟨a', ha'⟩ := ha (m' + 1)
+  refine ⟨ParameterSymbol.inclusion (by linarith) (a'.frequencyDeriv w),
+    funext fun ⟨⟨x, ξ⟩, z⟩ => ?_⟩
+  rw [coefficient_inclusion]
+  by_cases hz : z ∈ Λ
+  · simp [coefficient_frequencyDeriv_eq_fderiv _ _ _ _ hz, ha']
+  · rw [coefficient_of_notMem _ _ hz, coefficient_of_notMem _ _ hz]
+
+/-- Smoothing symbols form a right ideal under composition. -/
+theorem IsSmoothing.comp_right {b : ParameterSymbol n Λ W U m'} (hb : b.IsSmoothing)
+    (a : ParameterSymbol n Λ V W m) : (b.comp a).IsSmoothing := fun m'' => by
+  obtain ⟨b', hb'⟩ := hb (m'' - m)
+  exact ⟨ParameterSymbol.inclusion (by linarith) (b'.comp a), funext fun p => by simp [hb']⟩
+
+/-- Smoothing symbols form a left ideal under composition. -/
+theorem IsSmoothing.comp_left {a : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing)
+    (b : ParameterSymbol n Λ W U m') : (b.comp a).IsSmoothing := fun m'' => by
+  obtain ⟨a', ha'⟩ := ha (m'' - m')
+  exact ⟨ParameterSymbol.inclusion (by linarith) (b.comp a'), funext fun p => by simp [ha']⟩
 
 /-! ### Parameter-ellipticity and the inverse -/
 
