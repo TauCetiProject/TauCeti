@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Quadratic.EmbeddingBound
 public import TauCeti.NumberTheory.NumberField.Quadratic.Model
 public import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
-public import TauCeti.RingTheory.Norm.Divisibility
+public import TauCeti.RingTheory.NormTrace.Prod
 public import Mathlib.LinearAlgebra.Basis.Prod
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
@@ -65,10 +65,11 @@ private theorem gaussian_scalar_divides :
     let e := QuadraticAlgebra.ringOfIntegersEquiv (d := -1) isUnit_neg_one.squarefree
       (by norm_num)
     (2 : 𝓞 (QuadraticAlgebra ℚ ((-1 : ℤ) : ℚ) 0)) ∣ e.symm ⟨2, 2⟩ := by
+  have hdvd : (2 : QuadraticAlgebra ℤ (-1) 0) ∣ ⟨2, 2⟩ := ⟨⟨1, 1⟩, rfl⟩
   simpa only [map_ofNat] using map_dvd
     (QuadraticAlgebra.ringOfIntegersEquiv (d := -1) isUnit_neg_one.squarefree
       (by norm_num)).symm
-    (show (2 : QuadraticAlgebra ℤ (-1) 0) ∣ ⟨2, 2⟩ from ⟨⟨1, 1⟩, rfl⟩)
+    hdvd
 
 /-- The scalar-divisibility theorem supplies the full degree-two factor `2²` in the integral
 norm, rather than a single factor `2`. -/
@@ -101,10 +102,11 @@ private theorem gaussian_one_add_i_divides_two :
     let e := QuadraticAlgebra.ringOfIntegersEquiv (d := -1) isUnit_neg_one.squarefree
       (by norm_num)
     e.symm ⟨1, 1⟩ ∣ (2 : 𝓞 (QuadraticAlgebra ℚ ((-1 : ℤ) : ℚ) 0)) := by
+  have hdvd : (⟨1, 1⟩ : QuadraticAlgebra ℤ (-1) 0) ∣ 2 := ⟨⟨1, -1⟩, rfl⟩
   simpa only [map_ofNat] using map_dvd
     (QuadraticAlgebra.ringOfIntegersEquiv (d := -1) isUnit_neg_one.squarefree
       (by norm_num)).symm
-    (show (⟨1, 1⟩ : QuadraticAlgebra ℤ (-1) 0) ∣ 2 from ⟨⟨1, -1⟩, rfl⟩)
+    hdvd
 
 /-- The generator and the scalar `2` lie in the prime ideal `(1+i)`, but the generator's norm
 is not divisible by `4`. Prime-ideal membership does not give scalar norm divisibility. -/
@@ -134,10 +136,7 @@ example (e : ℕ) (he : 0 < e)
 a domain hypothesis on the algebra. -/
 example :
     ((1 : ℚ), (0 : ℚ)) ≠ 0 ∧ Algebra.norm ℚ ((1 : ℚ), (0 : ℚ)) = 0 := by
-  refine ⟨by norm_num, ?_⟩
-  rw [Algebra.norm_apply, LinearMap.det_eq_zero_iff_ker_ne_bot]
-  exact (Submodule.ne_bot_iff _).2 ⟨((0 : ℚ), (1 : ℚ)),
-    by simp [LinearMap.mem_ker, Algebra.coe_lmul_eq_mul], by norm_num⟩
+  norm_num [TauCeti.Algebra.norm_prod]
 
 /-! ### Prime-power divisors and logarithms -/
 
@@ -153,13 +152,14 @@ does not divide `12`. -/
 example :
     (4 : ℤ) ∣ 12 ∧ (3 : ℤ) ∣ 12 ∧ (4 : ℤ) * 3 ∣ 12 ∧ ¬ (8 : ℤ) ∣ 12 := by
   refine ⟨by norm_num, by norm_num, ?_, by norm_num⟩
-  exact (show IsCoprime (4 : ℤ) 3 from ⟨1, -1, by norm_num⟩).mul_dvd (by norm_num) (by norm_num)
+  have hc : IsCoprime (4 : ℤ) 3 := ⟨1, -1, by norm_num⟩
+  exact hc.mul_dvd (by norm_num) (by norm_num)
 
 /-- The exponent-sensitive lower bound is an equality for `12 = 2² · 3`. -/
 example :
     2 * Real.log 2 + Real.log 3 = Real.log 12 := by
-  rw [show (12 : ℝ) = 2 ^ 2 * 3 by norm_num, Real.log_mul (by norm_num) (by norm_num),
-    Real.log_pow]
+  have h12 : (12 : ℝ) = 2 ^ 2 * 3 := by norm_num
+  rw [h12, Real.log_mul (by norm_num) (by norm_num), Real.log_pow]
   norm_num
 
 /-- The empty prime family contributes zero, with product divisor `1`. -/
@@ -242,10 +242,13 @@ example :
     rw [abs_of_nonpos (by linarith [Real.one_lt_sqrt_two])]
     ring
 
+private theorem prime_neg_five : Prime (-5 : ℤ) :=
+  Int.prime_iff_natAbs_prime.mpr Nat.prime_five
+
 /-- In `ℚ(√−5)`, the algebraic integer `2+√−5` has integral norm `9`. -/
 example :
     let e := QuadraticAlgebra.ringOfIntegersEquiv (d := -5)
-      (show Prime (-5 : ℤ) from Int.prime_iff_natAbs_prime.mpr Nat.prime_five).squarefree
+      prime_neg_five.squarefree
       (by norm_num)
     Algebra.norm ℤ (e.symm ⟨2, 1⟩) = 9 := by
   norm_num [QuadraticAlgebra.norm_ringOfIntegersEquiv_symm]
@@ -253,7 +256,7 @@ example :
 /-- The distinguished complex embedding sends `2+√−5` to a complex number of modulus `3`. -/
 private theorem sqrt_neg_five_distinguished_embedding_norm :
     let e := QuadraticAlgebra.ringOfIntegersEquiv (d := -5)
-      (show Prime (-5 : ℤ) from Int.prime_iff_natAbs_prime.mpr Nat.prime_five).squarefree
+      prime_neg_five.squarefree
       (by norm_num)
     ‖QuadraticAlgebra.complexEmbedding (by norm_num : ((-5 : ℤ) : ℚ) ≤ 0)
       (e.symm ⟨2, 1⟩)‖ = 3 := by
@@ -262,16 +265,12 @@ private theorem sqrt_neg_five_distinguished_embedding_norm :
   norm_num [Complex.norm_def, Complex.normSq_apply,
     Real.mul_self_sqrt (by norm_num : 0 ≤ (5 : ℝ))]
 
-end TauCeti.NormDivisibilityExamples
-
-namespace RingHom
-
 /-- Every complex embedding of `ℚ(√−5)` sends the algebraic integer `2+√−5` to a number of
 modulus `3`. -/
 private theorem norm_integral_two_add_sqrt_neg_five
     (σ : QuadraticAlgebra ℚ ((-5 : ℤ) : ℚ) 0 →+* ℂ) :
     let e := QuadraticAlgebra.ringOfIntegersEquiv (d := -5)
-      (show Prime (-5 : ℤ) from Int.prime_iff_natAbs_prime.mpr Nat.prime_five).squarefree
+      prime_neg_five.squarefree
       (by norm_num)
     ‖σ (e.symm ⟨2, 1⟩)‖ = 3 := by
   dsimp only
@@ -295,22 +294,18 @@ example
   · rw [NumberField.ComplexEmbedding.conjugate_coe_eq, Complex.norm_conj]
     exact TauCeti.NormDivisibilityExamples.gaussian_distinguished_embedding_norm
 
-end RingHom
-
-namespace TauCeti.NormDivisibilityExamples
-
 /-- The common embedding bound `3` yields the sharp degree-two upper bound `3²` on the
 absolute integral norm of `2+√−5`. -/
 example :
     let e := QuadraticAlgebra.ringOfIntegersEquiv (d := -5)
-      (show Prime (-5 : ℤ) from Int.prime_iff_natAbs_prime.mpr Nat.prime_five).squarefree
+      prime_neg_five.squarefree
       (by norm_num)
     |(Algebra.norm ℤ (e.symm ⟨2, 1⟩) : ℝ)| ≤ 3 ^ (2 : ℕ) := by
   have h := NumberField.RingOfIntegers.abs_norm_le_pow (C := 3)
     ((QuadraticAlgebra.ringOfIntegersEquiv (d := -5)
-      (show Prime (-5 : ℤ) from Int.prime_iff_natAbs_prime.mpr Nat.prime_five).squarefree
+      prime_neg_five.squarefree
       (by norm_num)).symm ⟨2, 1⟩)
-    (fun σ ↦ (σ.norm_integral_two_add_sqrt_neg_five).le)
+    (fun σ ↦ (norm_integral_two_add_sqrt_neg_five σ).le)
   rw [QuadraticAlgebra.finrank_eq_two] at h
   exact h
 
