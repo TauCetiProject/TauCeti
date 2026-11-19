@@ -11,9 +11,10 @@ public import Mathlib.Analysis.Fourier.FourierTransform
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.PositiveDefinite.FourierAtom
+import TauCeti.Topology.Circle.Metric
 
 /-!
-# Derivatives of the Fourier phases
+# Derivatives and Lipschitz bounds of the Fourier phases
 
 On a real inner-product space, the phases `ζ ↦ 𝐞 ⟪ζ, x⟫` and `y ↦ 𝐞 (-⟪y, ζ⟫)` of the inverse and
 direct Fourier integrals have directional derivatives `2πi ⟪v, x⟫ 𝐞 ⟪ζ, x⟫` and
@@ -27,6 +28,11 @@ The plane wave `x ↦ 𝐞 ⟪η, x⟫ = exp(2πi ⟪η, x⟫)` of frequency `η
 order `k` bounded by `(2π ‖η‖) ^ k` at every point; in particular it has temperate growth, so it
 multiplies Schwartz functions and tempered distributions.
 
+The Fourier character `𝐞 t = Circle.exp (2πt)` is `2π`-Lipschitz, since `Circle.exp` is
+`1`-Lipschitz (`TauCeti.lipschitzWith_one_circleExp`). Hence the phase `z ↦ 𝐞 ⟪ζ, z⟫` changes by
+at most `2π ‖ζ‖ ‖z - z'‖`, which is how increments of oscillatory integrals in the spatial variable
+are bounded by a first frequency moment.
+
 ## Main results
 
 * `Real.hasLineDerivAt_fourierChar_inner`: the directional derivative of `ζ ↦ 𝐞 ⟪ζ, x⟫`.
@@ -34,6 +40,9 @@ multiplies Schwartz functions and tempered distributions.
   `y ↦ 𝐞 (-⟪y, ζ⟫)`.
 * `Real.norm_iteratedFDeriv_fourierChar_inner_le`: `‖D^k 𝐞 ⟪η, ·⟫‖ ≤ (2π ‖η‖) ^ k`.
 * `Real.hasTemperateGrowth_fourierChar_inner`: the plane waves have temperate growth.
+* `Real.norm_fourierChar_sub_fourierChar_le`: `‖𝐞 t - 𝐞 t'‖ ≤ 2π |t - t'|`.
+* `Real.norm_fourierChar_smul_sub_fourierChar_smul_le`:
+  `‖𝐞 ⟪ζ, z⟫ • v - 𝐞 ⟪ζ, z'⟫ • v‖ ≤ 2π ‖ζ‖ ‖z - z'‖ ‖v‖`.
 -/
 
 public section
@@ -91,5 +100,30 @@ theorem hasTemperateGrowth_fourierChar_inner (η : E) :
     (fun x : E ↦ (𝐞 ⟪η, x⟫ : ℂ)).HasTemperateGrowth :=
   .of_norm_iteratedFDeriv_le (contDiff_fourierChar_inner η) fun k ↦
     ⟨_, norm_iteratedFDeriv_fourierChar_inner_le η k⟩
+
+/-- The Fourier character is `2π`-Lipschitz: `‖𝐞 t - 𝐞 t'‖ ≤ 2π |t - t'|`, since
+`𝐞 t = Circle.exp (2πt)` and `Circle.exp` is `1`-Lipschitz. -/
+theorem norm_fourierChar_sub_fourierChar_le (t t' : ℝ) :
+    ‖(𝐞 t : ℂ) - 𝐞 t'‖ ≤ 2 * π * |t - t'| := by
+  have h := TauCeti.lipschitzWith_one_circleExp.dist_le_mul (2 * π * t) (2 * π * t')
+  rw [← fourierChar_apply', ← fourierChar_apply'] at h
+  calc ‖(𝐞 t : ℂ) - 𝐞 t'‖ = dist (𝐞 t) (𝐞 t') := (Circle.dist_eq_norm_coe_sub _ _).symm
+    _ ≤ 2 * π * |t - t'| := by
+        simpa [Real.dist_eq, ← mul_sub, abs_mul, abs_of_pos two_pi_pos] using h
+
+/-- The phase `z ↦ 𝐞 ⟪ζ, z⟫` acting on a vector `v` is `2π ‖ζ‖ ‖v‖`-Lipschitz:
+`‖𝐞 ⟪ζ, z⟫ • v - 𝐞 ⟪ζ, z'⟫ • v‖ ≤ 2π ‖ζ‖ ‖z - z'‖ ‖v‖`. -/
+theorem norm_fourierChar_smul_sub_fourierChar_smul_le {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℂ F] (ζ z z' : E) (v : F) :
+    ‖𝐞 ⟪ζ, z⟫ • v - 𝐞 ⟪ζ, z'⟫ • v‖ ≤ 2 * π * ‖ζ‖ * ‖z - z'‖ * ‖v‖ := by
+  rw [Circle.smul_def, Circle.smul_def, ← sub_smul, norm_smul]
+  gcongr
+  calc ‖(𝐞 ⟪ζ, z⟫ : ℂ) - 𝐞 ⟪ζ, z'⟫‖ ≤ 2 * π * |⟪ζ, z⟫ - ⟪ζ, z'⟫| :=
+        norm_fourierChar_sub_fourierChar_le _ _
+    _ ≤ 2 * π * (‖ζ‖ * ‖z - z'‖) := by
+        rw [← inner_sub_right]
+        gcongr
+        exact abs_real_inner_le_norm _ _
+    _ = 2 * π * ‖ζ‖ * ‖z - z'‖ := by ring
 
 end Real
