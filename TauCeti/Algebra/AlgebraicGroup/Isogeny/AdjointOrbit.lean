@@ -17,7 +17,8 @@ Over an algebraically closed field, an affine isogeny is surjective on rational 
 Its differential therefore maps each rational adjoint orbit onto the corresponding orbit.
 When the differential is injective, it also reflects conjugacy. In characteristic zero it
 is a Lie algebra isomorphism, preserves and reflects ad-nilpotence, and preserves the
-dimensions of the actual scheme-theoretic adjoint orbits.
+dimensions of the actual scheme-theoretic adjoint orbits. An isogeny with étale kernel, over any
+commutative base ring, also preserves and reflects ad-nilpotence.
 
 The coordinate arrow `f : H ⟶ K` represents `Spec K → Spec H`, so the differential and
 orbit comparisons go from the cotangent dual of `K` to that of `H`. These results apply in
@@ -39,24 +40,33 @@ namespace TauCeti.CommHopfAlgCat.IsIsogeny
 
 open Derivation
 
-universe u
+universe u v
+
+/-- An isogeny with étale kernel preserves and reflects ad-nilpotence, in any characteristic and
+over any commutative base ring. Neither group needs to be smooth or of finite type. -/
+theorem isNilpotent_ad_dualCotangentMap_iff_of_etaleKernel {R : Type u} [CommRing R]
+    {H K : _root_.CommHopfAlgCat.{v} R} {f : H ⟶ K} (hf : IsIsogeny f)
+    (hker : Algebra.Etale R (K ⧸ (kernelHopfIdeal f).toIdeal))
+    (x : Module.Dual R (Bialgebra.CotangentSpace R K)) :
+    IsNilpotent (LieAlgebra.ad R _ (dualCotangentMap f.hom x)) ↔
+      IsNilpotent (LieAlgebra.ad R _ x) := by
+  rw [← hf.cotangentDualLieEquivOfEtaleKernel_apply hker x]
+  exact (hf.cotangentDualLieEquivOfEtaleKernel hker).isNilpotent_ad_apply_iff x
+
+/-- A characteristic-zero affine isogeny preserves and reflects ad-nilpotence.
+For semisimple Lie algebras this is the comparison of nilpotent elements. -/
+theorem isNilpotent_ad_dualCotangentMap_iff_of_charZero {k : Type u} [Field k] [CharZero k]
+    {H K : _root_.CommHopfAlgCat.{v} k} {f : H ⟶ K} (hf : IsIsogeny f)
+    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
+    IsNilpotent (LieAlgebra.ad k _ (dualCotangentMap f.hom x)) ↔
+      IsNilpotent (LieAlgebra.ad k _ x) := by
+  rw [← hf.cotangentDualLieEquivOfCharZero_apply x]
+  exact hf.cotangentDualLieEquivOfCharZero.isNilpotent_ad_apply_iff x
 
 variable {k : Type u} [Field k] [IsAlgClosed k]
   {H K : _root_.CommHopfAlgCat.{u} k} [Algebra.FiniteType k H] {f : H ⟶ K}
 
 attribute [local instance] Derivation.adjointComodule Comodule.prodTrivial
-
-omit [IsAlgClosed k] [Algebra.FiniteType k H] in
-/-- A smooth affine isogeny with étale kernel preserves and reflects ad-nilpotence,
-including in positive characteristic. -/
-theorem isNilpotent_ad_dualCotangentMap_iff_of_etaleKernel (hf : IsIsogeny f)
-    [Algebra.Smooth k H] [Algebra.Smooth k K]
-    (hker : Algebra.Etale k (K ⧸ (kernelHopfIdeal f).toIdeal))
-    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
-    IsNilpotent (LieAlgebra.ad k _ (dualCotangentMap f.hom x)) ↔
-      IsNilpotent (LieAlgebra.ad k _ x) := by
-  rw [← hf.cotangentDualLieEquivOfEtaleKernel_apply hker x]
-  exact (hf.cotangentDualLieEquivOfEtaleKernel hker).isNilpotent_ad_apply_iff x
 
 section CharZero
 
@@ -74,16 +84,6 @@ theorem exists_basePointsRepresentation_eq_iff_of_charZero (hf : IsIsogeny f)
   let _ := hf.finiteType_target
   exact CommHopfAlgCat.exists_basePointsRepresentation_eq_iff_of_injective hf.injective
     hf.dualCotangentMap_bijective_of_charZero.injective x y
-
-omit [IsAlgClosed k] in
-/-- A characteristic-zero affine isogeny preserves and reflects ad-nilpotence.
-For semisimple Lie algebras this is the comparison of nilpotent elements. -/
-theorem isNilpotent_ad_dualCotangentMap_iff_of_charZero (hf : IsIsogeny f)
-    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
-    IsNilpotent (LieAlgebra.ad k _ (dualCotangentMap f.hom x)) ↔
-      IsNilpotent (LieAlgebra.ad k _ x) := by
-  rw [← hf.cotangentDualLieEquivOfCharZero_apply x]
-  exact hf.cotangentDualLieEquivOfCharZero.isNilpotent_ad_apply_iff x
 
 /-- The actual scheme-theoretic adjoint orbits of corresponding elements have equal
 dimensions under a characteristic-zero affine isogeny. -/
