@@ -116,6 +116,7 @@ theorem measureAverageForm_zero :
   simp only [measureAverageForm_def, mpullback_zero]
   exact integral_zero G (E [⋀^Fin k]→L[ℝ] F)
 
+@[simp]
 theorem measureAverageForm_smul (c : ℝ) (α : RoughForm I M F k) :
     measureAverageForm μ (c • α) = c • measureAverageForm μ α := by
   funext x
@@ -162,13 +163,6 @@ private theorem inChartAt_mpullback_smul (hsmul : ∀ a : G, MDifferentiable I I
 
 variable [IsManifold J 1 G]
 
-omit [MeasurableSpace G] [I.Boundaryless] [IsManifold I 1 M] in
-/-- Over the model space, the fibre coordinates of a form are its values. -/
-private theorem inCoordinates_modelSpace (φ : RoughForm 𝓘(ℝ, E) E F k) (x₀ x : E) :
-    ContinuousAlternatingMap.inCoordinates E F x₀ x x₀ x (φ x) = φ x :=
-  (RoughForm.inCoordinates_eq_inChartAt φ (by simp)).trans
-    (congrFun (RoughForm.inChartAt_modelSpace φ x₀) _)
-
 omit [MeasurableSpace G] in
 /-- **Joint smoothness of the pulled-back forms.** For a `C^m` form `α` and a `C^n` action with
 `m + 1 ≤ n`, the chart expressions at `x₀` of the pullbacks `(a •)^* α` are jointly `C^m` in the
@@ -195,7 +189,8 @@ theorem contMDiffAt_inChartAt_mpullback_smul {m n : WithTop ℕ∞} [IsManifold 
   have hcoord := ((contMDiffAt_continuousAlternatingMap_bundle _).mp hfam).2
   refine hcoord.congr_of_eventuallyEq ?_
   filter_upwards [(hT.prod isOpen_univ).mem_nhds (mk_mem_prod hy (mem_univ a))] with p hp
-  exact (inChartAt_mpullback_smul hsmul α p.2 x₀ hp.1).trans (inCoordinates_modelSpace _ _ _).symm
+  exact (inChartAt_mpullback_smul hsmul α p.2 x₀ hp.1).trans
+    (RoughForm.inCoordinates_modelSpace _ _ _).symm
 
 end Chart
 
@@ -239,27 +234,13 @@ theorem measureAverageForm_apply [ContMDiffSMul J I 1 G M] {α : RoughForm I M F
   rw [measureAverageForm_def]
   exact h.symm.trans (integral_congr_ae (Eventually.of_forall fun a ↦ mpullback_apply _ α x v))
 
-omit [MeasurableSpace G] [I.Boundaryless] [IsManifold I 1 M] [CompleteSpace F] in
-/-- The chart expression of a form at a point is its value there composed with the derivative of
-the inverse chart. -/
-private theorem inChartAt_eq_compContinuousLinearMapCLM (φ : RoughForm I M F k) (x₀ : M) (y : E) :
-    φ.inChartAt x₀ y =
-      ContinuousAlternatingMap.compContinuousLinearMapCLM (ι := Fin k) (F := F)
-        (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x₀).symm (range I) y : E →L[ℝ] E)
-        (φ ((extChartAt I x₀).symm y)) := by
-  ext v
-  rw [RoughForm.inChartAt_apply]
-  -- Both sides evaluate `φ` at the same point on the same vectors; the right side only differs by
-  -- the unfolding of `compContinuousLinearMapCLM`.
-  rfl
-
 /-- In every chart, the averaged form is the average of the chart expressions of the pulled-back
 forms. -/
 theorem inChartAt_measureAverageForm [ContMDiffSMul J I 1 G M] {α : RoughForm I M F k}
     (hα : IsSmoothForm I 0 α) (x₀ : M) (y : E) :
     (measureAverageForm μ α).inChartAt x₀ y =
       ∫ a, (mpullback I I (a • ·) α).inChartAt x₀ y ∂μ := by
-  simp only [inChartAt_eq_compContinuousLinearMapCLM _ x₀ y]
+  simp only [RoughForm.inChartAt_eq_compContinuousLinearMapCLM _ x₀ y]
   rw [measureAverageForm_def]
   exact (ContinuousLinearMap.integral_comp_comm _
     (integrable_mpullback_smul μ J hα ((extChartAt I x₀).symm y))).symm
@@ -288,19 +269,16 @@ theorem mpullback_smul_measureAverageForm (hα : IsSmoothForm I 0 α) (g : G) :
   have hsmul (b : G) : MDifferentiable I I (b • · : M → M) :=
     (ContMDiffSMul.contMDiff_const_smul (I := J) (I' := I) b).mdifferentiable one_ne_zero
   funext x
-  refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  rw [mpullback_apply, measureAverageForm_apply μ J hα, measureAverageForm_apply μ J hα]
-  refine Eq.trans ?_ (integral_mul_right_eq_self (μ := μ)
-    (fun a ↦ α (a • x) fun i ↦ mfderiv I I (a • ·) x (v i)) g)
-  refine integral_congr_ae (Eventually.of_forall fun a ↦ ?_)
-  have hc : mfderiv I I ((a * g) • · : M → M) x =
-      (mfderiv I I (a • ·) (g • x)).comp (mfderiv I I (g • ·) x) := by
-    rw [show ((a * g) • · : M → M) = (a • ·) ∘ (g • ·) from funext fun y ↦ mul_smul a g y,
-      mfderiv_comp x (hsmul a _) (hsmul g x)]
-  simp only [hc]
-  rw [mul_smul]
-  -- The remaining difference is the application of the composite `A.comp B` to `v i`.
-  rfl
+  rw [mpullback_apply_eq_compContinuousLinearMapCLM, measureAverageForm_def,
+    measureAverageForm_def]
+  refine (ContinuousLinearMap.integral_comp_comm _
+    (integrable_mpullback_smul μ J hα (g • x))).symm.trans <|
+      (integral_congr_ae (G := E [⋀^Fin k]→L[ℝ] F) (Eventually.of_forall fun a ↦ ?_)).trans
+        (integral_mul_right_eq_self (E := E [⋀^Fin k]→L[ℝ] F) (μ := μ)
+          (fun a ↦ mpullback I I (a • ·) α x) g)
+  exact (mpullback_apply_eq_compContinuousLinearMapCLM _ _ x).symm.trans <|
+    (mpullback_comp_at (hsmul g x) (hsmul a (g • x)) α).symm.trans <|
+      congrArg (fun f : M → M ↦ mpullback I I f α x) (funext (mul_smul a g)).symm
 
 /-- For a right-invariant probability measure, averaging fixes exactly the invariant continuous
 forms. -/
@@ -356,23 +334,22 @@ private theorem continuousOn_fderiv_inChartAt_mpullback_smul (hα : IsSmoothForm
     continuous_swap.continuousAt).continuousWithinAt
 
 /-- **Differentiation under the average.** In the chart at `x₀`, the derivative of the chart
-expression of the average of a `C¹` form at the chart point of `x₀` is the average of the
+expression of the average of a `C¹` form at any point of the chart target is the average of the
 derivatives of the chart expressions of the pullbacks. -/
-theorem hasFDerivAt_inChartAt_measureAverageForm (hα : IsSmoothForm I 1 α) (x₀ : M) :
+theorem hasFDerivAt_inChartAt_measureAverageForm (hα : IsSmoothForm I 1 α) (x₀ : M) {y : E}
+    (hy : y ∈ (extChartAt I x₀).target) :
     HasFDerivAt ((measureAverageForm μ α).inChartAt x₀)
-      (∫ a, fderiv ℝ ((mpullback I I (a • ·) α).inChartAt x₀) (extChartAt I x₀ x₀) ∂μ)
-      (extChartAt I x₀ x₀) := by
+      (∫ a, fderiv ℝ ((mpullback I I (a • ·) α).inChartAt x₀) y ∂μ) y := by
   have : ContMDiffSMul J I 1 G M := ContMDiffSMul.of_le one_le_two
   set u := (extChartAt I x₀).target
   set f : E → G → E [⋀^Fin k]→L[ℝ] F := fun y a ↦ (mpullback I I (a • ·) α).inChartAt x₀ y
-  have hu : u ∈ 𝓝 (extChartAt I x₀ x₀) :=
-    (isOpen_extChartAt_target x₀).mem_nhds (mem_extChartAt_target x₀)
-  have hB : ∀ y ∈ u, ∀ a, ContMDiffAt (𝓘(ℝ, E).prod J) 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F) 1
-      (uncurry f) (y, a) := fun y hy a ↦
-    contMDiffAt_inChartAt_mpullback_smul J (m := 1) (n := 2) (by norm_num) hα x₀ hy a
-  have hF₂ : ∀ a ∈ (univ : Set G), DifferentiableOn ℝ (fun y ↦ f y a) u := fun a _ y hy ↦
+  have hu : u ∈ 𝓝 y := (isOpen_extChartAt_target x₀).mem_nhds hy
+  have hB : ∀ z ∈ u, ∀ a, ContMDiffAt (𝓘(ℝ, E).prod J) 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F) 1
+      (uncurry f) (z, a) := fun z hz a ↦
+    contMDiffAt_inChartAt_mpullback_smul J (m := 1) (n := 2) (by norm_num) hα x₀ hz a
+  have hF₂ : ∀ a ∈ (univ : Set G), DifferentiableOn ℝ (fun z ↦ f z a) u := fun a _ z hz ↦
     (mdifferentiableAt_iff_differentiableAt.1 <|
-      ((hB y hy a).comp y (contMDiffAt_id.prodMk contMDiffAt_const)).mdifferentiableAt
+      ((hB z hz a).comp z (contMDiffAt_id.prodMk contMDiffAt_const)).mdifferentiableAt
         one_ne_zero).differentiableWithinAt
   have hD := hasFDerivAt_integral_of_continuousOn_fderiv (μ := μ) hu isCompact_univ
     MeasurableSet.univ (measure_ne_top μ univ) subset_rfl
@@ -383,31 +360,31 @@ theorem hasFDerivAt_inChartAt_measureAverageForm (hα : IsSmoothForm I 1 α) (x�
   exact hD
 
 omit [CompleteSpace F] in
-/-- The derivatives at the chart point of `x₀` of the chart expressions of the pullbacks are
-integrable in the group element. -/
-private theorem integrable_fderiv_inChartAt_mpullback_smul (hα : IsSmoothForm I 1 α) (x₀ : M) :
-    Integrable (fun a ↦ fderiv ℝ ((mpullback I I (a • ·) α).inChartAt x₀) (extChartAt I x₀ x₀))
-      μ :=
+/-- At every point of the target of the chart at `x₀`, the derivatives of the chart expressions of
+the pullbacks are integrable in the group element. -/
+private theorem integrable_fderiv_inChartAt_mpullback_smul (hα : IsSmoothForm I 1 α) (x₀ : M)
+    {y : E} (hy : y ∈ (extChartAt I x₀).target) :
+    Integrable (fun a ↦ fderiv ℝ ((mpullback I I (a • ·) α).inChartAt x₀) y) μ :=
   integrableOn_univ.1 <| ((continuousOn_fderiv_inChartAt_mpullback_smul J hα x₀).comp_continuous
     (continuous_const.prodMk continuous_id) fun a ↦
-      ⟨mem_extChartAt_target x₀, mem_univ a⟩).continuousOn.integrableOn_compact isCompact_univ
+      ⟨hy, mem_univ a⟩).continuousOn.integrableOn_compact isCompact_univ
 
 /-- **Averaging commutes with the exterior derivative.** For a `C¹` form `α` and a `C²` action of
 a compact group on a boundaryless `C²` manifold, `d (∫ a^* α dμ(a)) = ∫ a^* (d α) dμ(a)`. -/
 theorem mextDeriv_measureAverageForm (hα : IsSmoothForm I 1 α) :
     mextDeriv (measureAverageForm μ α) = measureAverageForm μ (mextDeriv α) := by
   funext x₀
-  rw [mextDeriv_def, I.range_eq_univ, extDerivWithin_univ, extDeriv,
-    (hasFDerivAt_inChartAt_measureAverageForm μ J hα x₀).fderiv,
+  rw [mextDeriv_eq_extDeriv_inChartAt, extDeriv,
+    (hasFDerivAt_inChartAt_measureAverageForm μ J hα x₀ (mem_extChartAt_target x₀)).fderiv,
     ← ContinuousAlternatingMap.alternatizeUncurryFinCLM_apply,
     ← ContinuousLinearMap.integral_comp_comm _
-      (integrable_fderiv_inChartAt_mpullback_smul μ J hα x₀),
+      (integrable_fderiv_inChartAt_mpullback_smul μ J hα x₀ (mem_extChartAt_target x₀)),
     measureAverageForm_def]
   refine congrArg (integral (G := E [⋀^Fin (k + 1)]→L[ℝ] F) μ) (funext fun a ↦ ?_)
   have hsmul : ContMDiff I I 2 (a • · : M → M) :=
     ContMDiffSMul.contMDiff_const_smul (I := J) (I' := I) a
-  rw [mpullback_mextDeriv hsmul ((isSmoothBundleForm_def 1 α).mpr hα.contMDiff), mextDeriv_def,
-    I.range_eq_univ, extDerivWithin_univ, ContinuousAlternatingMap.alternatizeUncurryFinCLM_apply,
+  rw [mpullback_mextDeriv hsmul ((isSmoothBundleForm_def 1 α).mpr hα.contMDiff),
+    mextDeriv_eq_extDeriv_inChartAt, ContinuousAlternatingMap.alternatizeUncurryFinCLM_apply,
     extDeriv]
 
 /-- The average of a closed `C¹` form over a `C²` action of a compact group is closed. -/
@@ -425,7 +402,7 @@ theorem hasFDerivAt_inChartAt_measureAverageForm_of_apply_eq_zero (hα : IsSmoot
     {x : M} (hx : x ∈ s) :
     HasFDerivAt ((measureAverageForm μ α).inChartAt x) (0 : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F)
       (extChartAt I x x) := by
-  have h := hasFDerivAt_inChartAt_measureAverageForm μ J hα x
+  have h := hasFDerivAt_inChartAt_measureAverageForm μ J hα x (mem_extChartAt_target x)
   convert h using 1
   refine (integral_eq_zero_of_ae (G := E →L[ℝ] E [⋀^Fin k]→L[ℝ] F)
     (Eventually.of_forall fun a ↦ ?_)).symm
