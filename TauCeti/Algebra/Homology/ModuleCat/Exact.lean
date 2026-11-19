@@ -106,7 +106,7 @@ lemma moduleCat_opcyclesToCycles_pOpcycles_apply (i j : ι) (x : K.X i) :
 generated. -/
 instance moduleFinite_cycles [IsNoetherianRing R] (i : ι) [Module.Finite R (K.X i)] :
     Module.Finite R (K.cycles i) :=
-  .of_injective (K.iCycles i).hom (ModuleCat.mono_iff_injective _ |>.1 inferInstance)
+  .of_injective (K.iCycles i).hom (K.moduleCat_iCycles_injective i)
 
 /-- The opcycles of a finitely generated term of a complex are finitely generated. -/
 instance moduleFinite_opcycles (i : ι) [Module.Finite R (K.X i)] :
@@ -116,6 +116,6 @@ instance moduleFinite_opcycles (i : ι) [Module.Finite R (K.X i)] :
 /-- The homology of a complex is finitely generated where its cycles are. -/
 instance moduleFinite_homology (i : ι) [Module.Finite R (K.cycles i)] :
     Module.Finite R (K.homology i) :=
-  .of_surjective (K.homologyπ i).hom (ModuleCat.epi_iff_surjective _ |>.1 inferInstance)
+  .of_surjective (K.homologyπ i).hom (K.moduleCat_homologyπ_surjective i)
 
 end HomologicalComplex
