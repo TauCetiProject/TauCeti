@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Stabilizer
 public import TauCeti.Geometry.Lie.Subgroup.Quotient
 public import TauCeti.Geometry.Symplectic.Coadjoint.LieGroup
 public import TauCeti.Geometry.Symplectic.Manifold.Descent
-import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
+public import TauCeti.RepresentationTheory.Stabilizer
 
 /-!
 # The Kirillov–Kostant–Souriau form on a coadjoint orbit
@@ -37,23 +37,20 @@ In particular `ω_ν([g])(dπ ξ^L, dπ η^L) = ν ⁅ξ, η⁆` for all `g`
 (`Module.Dual.mpullback_smul_orbitKKSForm`). The dimensions of `G ⧸ G_ν` and `𝔤_ν` add up to that
 of `G` (`Module.Dual.finrank_quotientModelSpace_stabilizer_add_finrank_lieAnnihilator`).
 
-The **orbit map** `ι : G ⧸ G_ν → 𝔤*`, `[g] ↦ Ad*_g ν` (`Module.Dual.coadjointOrbitMap`), is
-injective, has the coadjoint orbit of `ν` as its range, and is a coadjoint-equivariant moment map
-for `ω_ν` (`Module.Dual.isEquivariantMomentMap_orbitKKSForm`): the inclusion of the coadjoint
-orbit into `𝔤*` is a moment map for its KKS form. Consequently the KKS form takes its defining
-values on the fundamental vector fields `ξ_O` of the action of `G` on `G ⧸ G_ν`: at every point
-`x`, `ω_ν(ξ_O, η_O) = ι(x) ⁅ξ, η⁆`, which is `ν ⁅ξ, η⁆` at the base point `[1]`
-(`Module.Dual.eval₂_orbitKKSForm_fundamentalVectorField`).
+The **orbit map** `ι : G ⧸ G_ν → 𝔤*`, `[g] ↦ Ad*_g ν`, of the coadjoint representation
+(`Representation.orbitMap`) is injective, has the coadjoint orbit of `ν` as its range, and is a
+coadjoint-equivariant moment map for `ω_ν` (`Module.Dual.isEquivariantMomentMap_orbitKKSForm`):
+the inclusion of the coadjoint orbit into `𝔤*` is a moment map for its KKS form. Consequently the
+KKS form takes its defining values on the fundamental vector fields `ξ_O` of the action of `G` on
+`G ⧸ G_ν`: at every point `x`, `ω_ν(ξ_O, η_O) = ι(x) ⁅ξ, η⁆`, which is `ν ⁅ξ, η⁆` at the base
+point `[1]` (`Module.Dual.eval₂_orbitKKSForm_fundamentalVectorField`).
 
 ## Main definitions
 
-* `Module.Dual.coadjointOrbitMap ν`: the orbit map `[g] ↦ Ad*_g ν`.
 * `Module.Dual.orbitKKSForm ν`: the KKS symplectic form on `G ⧸ G_ν`.
 
 ## Main results
 
-* `Module.Dual.injective_coadjointOrbitMap`, `Module.Dual.range_coadjointOrbitMap`: the orbit map
-  is a bijection onto the coadjoint orbit.
 * `Module.Dual.finrank_quotientModelSpace_stabilizer_add_finrank_lieAnnihilator`: the dimension of
   the orbit.
 * `Module.Dual.ker_bilinFormAt_leftInvariantKirillovForm_eq_ker_mfderiv`: the kernel of `σ_ν` is
@@ -81,58 +78,6 @@ open scoped Manifold ContDiff
 noncomputable section
 
 namespace Module.Dual
-
-section OrbitMap
-
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
-  [LieGroup I 1 G] (ν : Module.Dual ℝ (GroupLieAlgebra I G))
-
-/-! ### The orbit map -/
-
-/-- The **coadjoint orbit map** `[g] ↦ Ad*_g ν` from `G ⧸ G_ν` to `𝔤*`. It is a bijection onto the
-coadjoint orbit of `ν` (`Module.Dual.injective_coadjointOrbitMap`,
-`Module.Dual.range_coadjointOrbitMap`), and an equivariant moment map for the KKS form
-(`Module.Dual.isEquivariantMomentMap_orbitKKSForm`). -/
-def coadjointOrbitMap :
-    G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν → Module.Dual ℝ (GroupLieAlgebra I G) :=
-  Quotient.lift (s := QuotientGroup.leftRel _) (fun g : G ↦ coadjointRepresentation ℝ I G g ν)
-    fun g h hgh ↦ by
-    have hk : coadjointRepresentation ℝ I G (g⁻¹ * h) ν = ν :=
-      Representation.mem_stabilizer.1 (QuotientGroup.leftRel_apply.1 hgh)
-    rw [← mul_inv_cancel_left g h, map_mul, mul_apply_eq_comp, hk]
-
-/-- The coadjoint orbit map sends the coset of `g` to `Ad*_g ν`. -/
-@[simp]
-theorem coadjointOrbitMap_mk (g : G) :
-    ν.coadjointOrbitMap (g : G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) =
-      coadjointRepresentation ℝ I G g ν :=
-  (rfl)
-
-/-- The coadjoint orbit map is equivariant for the action of `G` on `G ⧸ G_ν` and the coadjoint
-action on `𝔤*`. -/
-theorem coadjointOrbitMap_smul (h : G) (x : G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) :
-    ν.coadjointOrbitMap (h • x) = coadjointRepresentation ℝ I G h (ν.coadjointOrbitMap x) := by
-  induction x using QuotientGroup.induction_on with
-  | H g => rw [MulAction.Quotient.smul_coe, smul_eq_mul, coadjointOrbitMap_mk,
-    coadjointOrbitMap_mk, map_mul, mul_apply_eq_comp]
-
-/-- The coadjoint orbit map is injective: `Ad*_g ν = Ad*_h ν` exactly when `g⁻¹ h ∈ G_ν`. -/
-theorem injective_coadjointOrbitMap : Function.Injective ν.coadjointOrbitMap := by
-  intro x y hxy
-  induction x using QuotientGroup.induction_on with | H g =>
-  induction y using QuotientGroup.induction_on with | H h =>
-  refine QuotientGroup.eq.2 (Representation.mem_stabilizer.2 ?_)
-  rw [coadjointOrbitMap_mk, coadjointOrbitMap_mk] at hxy
-  rw [map_mul, mul_apply_eq_comp, ← hxy, ← mul_apply_eq_comp, ← map_mul, inv_mul_cancel,
-    map_one, one_apply_eq_self]
-
-/-- The range of the coadjoint orbit map is the coadjoint orbit `{Ad*_g ν | g ∈ G}` of `ν`. -/
-theorem range_coadjointOrbitMap :
-    Set.range ν.coadjointOrbitMap = Set.range fun g : G ↦ coadjointRepresentation ℝ I G g ν :=
-  (QuotientGroup.mk_surjective.range_comp ν.coadjointOrbitMap).symm
-
-end OrbitMap
 
 section Smooth
 
@@ -185,55 +130,6 @@ theorem finrank_quotientModelSpace_stabilizer_add_finrank_lieAnnihilator :
 
 /-! ### The kernel of the Kirillov form is vertical -/
 
-/-- Left translates of the infinitesimal stabilizer `𝔤_ν` are vertical for `G → G ⧸ G_ν`: the curve
-`t ↦ g exp (t ξ)` stays in the coset `g G_ν` when `ξ ∈ 𝔤_ν`. -/
-private theorem mfderiv_quotientMk_mulInvariantVectorField [T2Space G] {ξ : GroupLieAlgebra I G}
-    (hξ : ξ ∈ lieAnnihilator ℝ (GroupLieAlgebra I G) ν) (g : G) :
-    mfderiv I
-      𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
-      (QuotientGroup.mk : G → G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) g
-      (mulInvariantVectorField ξ g) = 0 := by
-  set K := (coadjointRepresentation ℝ I G).stabilizer ν
-  have hπ := isSubmersion_quotientMk_stabilizer ν
-  -- The curve `c t = g exp (t ξ)` and its derivative at `0`.
-  have hmul : HasMFDerivAt I I (g * ·) 1 (mfderiv I I (g * ·) 1) :=
-    (contMDiffAt_mul_left (I := I) (n := ∞) (a := g) (b := (1 : G))).mdifferentiableAt
-      (by simp) |>.hasMFDerivAt
-  have hexp : HasMFDerivAt 𝓘(ℝ, ℝ) I (fun t : ℝ ↦ mulInvariantExp (I := I) (G := G) (t • ξ)) 0
-      ((1 : ℝ →L[ℝ] ℝ).smulRight ξ) := hasMFDerivAt_mulInvariantExp_smul_zero ξ
-  have hexp1 : mulInvariantExp (I := I) (G := G) ((0 : ℝ) • ξ) = 1 := by
-    rw [zero_smul, mulInvariantExp_zero]
-  have hc : HasMFDerivAt 𝓘(ℝ, ℝ) I (fun t : ℝ ↦ g * mulInvariantExp (I := I) (G := G) (t • ξ)) 0
-      ((mfderiv I I (g * ·) 1).comp ((1 : ℝ →L[ℝ] ℝ).smulRight ξ)) :=
-    (show HasMFDerivAt I I (g * ·) (mulInvariantExp (I := I) (G := G) ((0 : ℝ) • ξ))
-      (mfderiv I I (g * ·) 1) by rw [hexp1]; exact hmul).comp 0 hexp
-  have hc0 : g * mulInvariantExp (I := I) (G := G) ((0 : ℝ) • ξ) = g := by rw [hexp1, mul_one]
-  have hπg : HasMFDerivAt I
-      𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
-      (QuotientGroup.mk : G → G ⧸ K) (g * mulInvariantExp (I := I) (G := G) ((0 : ℝ) • ξ))
-      (mfderiv I
-        𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
-        (QuotientGroup.mk : G → G ⧸ K) g) := by
-    rw [hc0]
-    exact (hπ.contMDiff.mdifferentiableAt (by simp)).hasMFDerivAt
-  have hπc := hπg.comp 0 hc
-  -- The composite with the projection is constant, so its derivative vanishes.
-  have hconst : ((QuotientGroup.mk : G → G ⧸ K) ∘
-      fun t : ℝ ↦ g * mulInvariantExp (I := I) (G := G) (t • ξ)) = fun _ ↦ (g : G ⧸ K) := by
-    funext t
-    refine QuotientGroup.eq.2 ?_
-    rw [mul_inv_rev, inv_mul_cancel_right]
-    exact K.inv_mem (mulInvariantExp_smul_mem_stabilizer_coadjointRepresentation_iff.2 hξ t)
-  rw [hconst] at hπc
-  have h := hπc.mfderiv.symm.trans (hasMFDerivAt_const (I := 𝓘(ℝ, ℝ)) (g : G ⧸ K) (0 : ℝ)).mfderiv
-  have h1 := DFunLike.congr_fun h (1 : ℝ)
-  convert h1 using 1
-  -- Unfold the composite derivative at `1`; the tangent spaces are all the model spaces.
-  change _ = mfderiv I _ (QuotientGroup.mk : G → G ⧸ K) g
-    (mfderiv I I (g * ·) 1 ((1 : ℝ →L[ℝ] ℝ).smulRight ξ (1 : ℝ)))
-  rw [ContinuousLinearMap.smulRight_apply, one_apply_eq_self, one_smul]
-  rfl
-
 /-- **The kernel of the left-invariant Kirillov form is vertical.** At every `g`, the kernel of
 `σ_ν` is the kernel of the differential of the projection `G → G ⧸ G_ν`, the tangent space of the
 coset `g G_ν`. -/
@@ -243,26 +139,18 @@ theorem ker_bilinFormAt_leftInvariantKirillovForm_eq_ker_mfderiv (g : G) :
         𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
         (QuotientGroup.mk : G → G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) g).ker := by
   have : T2Space G := I.t2Space_of_lieGroup ∞
-  set K := (coadjointRepresentation ℝ I G).stabilizer ν
-  have hπ := isSubmersion_quotientMk_stabilizer ν
-  rw [ker_bilinFormAt_leftInvariantKirillovForm]
-  refine Submodule.eq_of_le_of_finrank_eq ?_ ?_
-  · intro v hv
-    obtain ⟨w, hw, rfl⟩ := mem_mulInvariantDistribution.mp hv
-    exact mfderiv_quotientMk_mulInvariantVectorField ν hw g
-  -- Both sides have the dimension of `𝔤_ν`: the kernel by rank-nullity for the surjective
-  -- differential of the projection, the translate of `𝔤_ν` because left translation is injective.
-  have hrn := LinearMap.finrank_range_add_finrank_ker
-    (mfderiv I 𝓘(ℝ, Subgroup.QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) g).toLinearMap
-  rw [LinearMap.range_eq_top.2 (hπ.surjective_mfderiv (by simp) g), finrank_top] at hrn
-  have hdim := finrank_quotientModelSpace_stabilizer_add_finrank_lieAnnihilator ν
-  rw [finrank_mulInvariantDistribution]
-  -- The tangent spaces of `G` and of `G ⧸ G_ν` are their model spaces, so rank-nullity reads
-  -- `dim (G ⧸ G_ν) + dim ker = dim G`.
-  have hker : finrank ℝ (Subgroup.QuotientModelSpace I K) +
-      finrank ℝ (LinearMap.ker (mfderiv I 𝓘(ℝ, Subgroup.QuotientModelSpace I K)
-        (QuotientGroup.mk : G → G ⧸ K) g).toLinearMap) = finrank ℝ E := hrn
-  exact Nat.add_left_cancel (hdim.trans hker.symm)
+  rw [ker_bilinFormAt_leftInvariantKirillovForm,
+    Subgroup.ker_mfderiv_quotientMk_eq_mulInvariantDistribution
+      (isClosed_stabilizer_coadjointRepresentation I ν),
+    lieSubalgebraOfSubgroup_stabilizer_coadjointRepresentation BoundarylessManifold.isInteriorPoint]
+  -- The Lie algebra of `G_ν`, read in `𝔤`, is `𝔤_ν`.
+  congr 1
+  ext ξ
+  simp only [Submodule.mem_map, LieSubalgebra.mem_toSubmodule, LieSubalgebra.mem_comap,
+    LieEquiv.coe_toLieHom, leftInvariantDerivationLieEquivGroupLieAlgebra_apply,
+    LinearEquiv.coe_toLinearMap]
+  exact ⟨fun hξ ↦ ⟨_, by rwa [LinearEquiv.apply_symm_apply], LinearEquiv.apply_symm_apply _ ξ⟩,
+    by rintro ⟨X, hX, rfl⟩; exact hX⟩
 
 /-! ### The KKS form -/
 
@@ -371,12 +259,14 @@ theorem mpullback_smul_orbitKKSForm (h : G) :
     mpullback_quotientMk_orbitKKSForm, mpullback_mul_left_leftInvariantKirillovForm]
 
 /-- Each component `[g] ↦ (Ad*_g ν) ξ` of the coadjoint orbit map is smooth. -/
-theorem contMDiff_coadjointOrbitMap_apply (ξ : GroupLieAlgebra I G) :
+theorem contMDiff_orbitMap_coadjointRepresentation_apply (ξ : GroupLieAlgebra I G) :
     ContMDiff 𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
       𝓘(ℝ) ∞ fun x : G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν ↦
-      ν.coadjointOrbitMap x ξ :=
+      (coadjointRepresentation ℝ I G).orbitMap ν x ξ :=
   ((isSubmersion_quotientMk_stabilizer ν).contMDiff_comp_iff QuotientGroup.mk_surjective
-    le_rfl).1 (contMDiff_coadjointRepresentation_apply ν ξ)
+    le_rfl).1 (by
+      simpa only [comp_def, Representation.orbitMap_mk] using
+        contMDiff_coadjointRepresentation_apply ν ξ)
 
 /-- **The coadjoint orbit map is an equivariant moment map for the KKS form.** For the action of
 `G` on `G ⧸ G_ν`, the orbit map `[g] ↦ Ad*_g ν` satisfies `d⟨ι, ξ⟩ = ι_(ξ_O) ω_ν` and
@@ -384,13 +274,14 @@ theorem contMDiff_coadjointOrbitMap_apply (ξ : GroupLieAlgebra I G) :
 `g ↦ Ad*_g ν` of the left-invariant Kirillov form
 (`Module.Dual.isEquivariantMomentMap_leftInvariantKirillovForm`). -/
 theorem isEquivariantMomentMap_orbitKKSForm :
-    ν.orbitKKSForm.IsEquivariantMomentMap ν.coadjointOrbitMap := by
+    ν.orbitKKSForm.IsEquivariantMomentMap ((coadjointRepresentation ℝ I G).orbitMap ν) := by
   have : T2Space G := I.t2Space_of_lieGroup ∞
   set K := (coadjointRepresentation ℝ I G).stabilizer ν
   have hπ := isSubmersion_quotientMk_stabilizer ν
   have hG := ν.isEquivariantMomentMap_leftInvariantKirillovForm
-  refine ⟨⟨ν.contMDiff_coadjointOrbitMap_apply, fun ξ ↦
-    SmoothTwoForm.isHamiltonianVectorField_iff.2 fun x v ↦ ?_⟩, ν.coadjointOrbitMap_smul⟩
+  refine ⟨⟨ν.contMDiff_orbitMap_coadjointRepresentation_apply, fun ξ ↦
+    SmoothTwoForm.isHamiltonianVectorField_iff.2 fun x v ↦ ?_⟩,
+    (coadjointRepresentation ℝ I G).orbitMap_smul ν⟩
   obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
   obtain ⟨w, rfl⟩ := hπ.surjective_mfderiv (x := g) (by simp) v
   -- The projection carries the fundamental vector field of `ξ` on `G` to that on `G ⧸ G_ν`.
@@ -400,10 +291,13 @@ theorem isEquivariantMomentMap_orbitKKSForm :
       ((ContMDiffSMul.contMDiff_smul_const (n := ∞) g).mdifferentiableAt (by simp))
       (fun h ↦ (MulAction.Quotient.smul_coe K h g).symm) ξ
   -- The component of the orbit map pulls back to the component of `g ↦ Ad*_g ν`.
-  have hcomp : (fun x : G ⧸ K ↦ ν.coadjointOrbitMap x ξ) ∘ (QuotientGroup.mk : G → G ⧸ K) =
-      fun g ↦ coadjointRepresentation ℝ I G g ν ξ := rfl
+  have hcomp : (fun x : G ⧸ K ↦ (coadjointRepresentation ℝ I G).orbitMap ν x ξ) ∘
+      (QuotientGroup.mk : G → G ⧸ K) =
+      fun g ↦ coadjointRepresentation ℝ I G g ν ξ :=
+    funext fun g ↦ by rw [comp_apply, Representation.orbitMap_mk]
   rw [InfinitesimalAction.fundamental_apply, ← hfund, eval₂_orbitKKSForm_mfderiv,
-    ← mvfderiv_comp_apply g ((ν.contMDiff_coadjointOrbitMap_apply ξ).mdifferentiableAt (by simp))
+    ← mvfderiv_comp_apply g
+      ((ν.contMDiff_orbitMap_coadjointRepresentation_apply ξ).mdifferentiableAt (by simp))
       (hπ.contMDiff.mdifferentiableAt (by simp)), hcomp]
   have h := SmoothTwoForm.isHamiltonianVectorField_iff.1 (hG.isHamiltonianVectorField ξ) g w
   simpa only [InfinitesimalAction.fundamental_apply] using h
@@ -415,7 +309,7 @@ theorem eval₂_orbitKKSForm_fundamentalVectorField (ξ η : GroupLieAlgebra I G
     (x : G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) :
     SmoothBundleForm.eval₂ ν.orbitKKSForm x (fundamentalVectorField _ ξ x)
         (fundamentalVectorField _ η x) =
-      ν.coadjointOrbitMap x ⁅ξ, η⁆ := by
+      (coadjointRepresentation ℝ I G).orbitMap ν x ⁅ξ, η⁆ := by
   have h := SmoothTwoForm.momentCocycle_eq_zero_iff.1
     ((isEquivariantMomentMap_orbitKKSForm ν).momentCocycle_eq_zero x) ξ η
   simpa only [InfinitesimalAction.fundamental_apply] using h
@@ -427,7 +321,7 @@ theorem eval₂_orbitKKSForm_fundamentalVectorField_one (ξ η : GroupLieAlgebra
         ((1 : G) : G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν)
         (fundamentalVectorField _ ξ _) (fundamentalVectorField _ η _) =
       ν ⁅ξ, η⁆ := by
-  rw [eval₂_orbitKKSForm_fundamentalVectorField, coadjointOrbitMap_mk, map_one,
+  rw [eval₂_orbitKKSForm_fundamentalVectorField, Representation.orbitMap_mk, map_one,
     one_apply_eq_self]
 
 end Smooth
