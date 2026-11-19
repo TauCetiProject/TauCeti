@@ -66,8 +66,8 @@ private theorem constantConnection_defect (a x u v : ℝ) (X : TangentSpace 𝓘
   ring
 
 /-- The metric correction removes every constant scalar connection form. -/
-theorem constantConnection_metricCompatible (a : ℝ) :
-    (constantConnection a).metricCompatible = flatConnection := by
+theorem constantConnection_metricCorrected (a : ℝ) :
+    (constantConnection a).metricCorrected = flatConnection := by
   apply CovariantDerivative.ext
   funext σ x
   apply ContinuousLinearMap.ext
@@ -78,18 +78,18 @@ theorem constantConnection_metricCompatible (a : ℝ) :
     rw [CovariantDerivative.inner_metricCorrection, constantConnection_defect]
     simp [constantOneForm, ContinuousLinearMap.smulRightL_apply_apply]
     ring
-  rw [CovariantDerivative.metricCompatible_apply]
+  rw [CovariantDerivative.metricCorrected_apply]
   simp only [constantConnection, CovariantDerivative.addOneForm_apply, add_apply] at hc ⊢
   rw [hc]
   simp
 
 example : flatConnection.IsMetricCompatible := by
-  have h := (constantConnection 0).isMetricCompatible_metricCompatible
-  rw [constantConnection_metricCompatible] at h
+  have h := (constantConnection 0).isMetricCompatible_metricCorrected
+  rw [constantConnection_metricCorrected] at h
   exact h
 
 example (cov : CovariantDerivative 𝓘(ℝ) ℝ (Trivial ℝ ℝ))
-    (h : cov.IsMetricCompatible) : cov.metricCompatible = cov := h.metricCompatible_eq
+    (h : cov.IsMetricCompatible) : cov.metricCorrected = cov := h.metricCorrected_eq
 
 private def standardMetric : ContMDiffRiemannianMetric 𝓘(ℝ) ∞ ℝ (Trivial ℝ ℝ) where
   inner _ := innerSL ℝ
@@ -97,7 +97,14 @@ private def standardMetric : ContMDiffRiemannianMetric 𝓘(ℝ) ∞ ℝ (Trivia
   pos _ _ hv := by rw [innerSL_apply_apply]; exact real_inner_self_pos.mpr hv
   isVonNBounded _ :=
     ((ContinuousLinearEquiv.refl ℝ ℝ).mem_setOfPred_symm_pos_isVonNBounded_of_inner
-      (g := innerSL ℝ) (by intro u v; rw [innerSL_apply_apply]; rfl)).2.2
+      (g := innerSL ℝ) (by
+        intro u v
+        calc
+          innerSL ℝ u v = u * v := by rw [innerSL_apply_apply, Real.inner_apply]
+          _ = inner ℝ ((ContinuousLinearEquiv.refl ℝ ℝ) u)
+              ((ContinuousLinearEquiv.refl ℝ ℝ) v) := by
+            rw [ContinuousLinearEquiv.refl_apply, ContinuousLinearEquiv.refl_apply,
+              Real.inner_apply])).2.2
   contMDiff := IsContMDiffRiemannianBundle.contMDiff_innerSL
 
 private def scaledStandardMetric := standardMetric.rescale (fun x : ℝ ↦ Real.exp (2*x))
@@ -105,11 +112,11 @@ private def scaledStandardMetric := standardMetric.rescale (fun x : ℝ ↦ Real
 
 
 -- The automatic instance also matches the literal continuity order.
-example : flatConnection.metricCompatible.ContMDiffCovariantDerivative 0 := by
+example : flatConnection.metricCorrected.ContMDiffCovariantDerivative 0 := by
   infer_instance
 
 -- Automatic correction regularity for every finite or smooth order, including zero.
-example (n : ℕ∞) : flatConnection.metricCompatible.ContMDiffCovariantDerivative n := by
+example (n : ℕ∞) : flatConnection.metricCorrected.ContMDiffCovariantDerivative n := by
   infer_instance
 
 example (n : ℕ∞) : ∃ cov : CovariantDerivative 𝓘(ℝ) ℝ (Trivial ℝ ℝ),
@@ -184,7 +191,11 @@ private theorem exp_inner (x : ℝ) (u v : MetricLine x) :
       -- rescaling theorem uses the original topological/module bundle structures.
       erw [Bundle.ContMDiffRiemannianMetric.rescale_inner]
       dsimp only [standardMetric]
-      congr 1
+      -- Express the trivial-fibre Riesz map through `toReal`; evaluate the real inner
+      -- product by `Real.inner_apply` rather than unfolding it.
+      change Real.exp (2*x) * (innerSL ℝ (MetricLine.toReal u) (MetricLine.toReal v)) =
+        Real.exp (2*x) * (MetricLine.toReal v * MetricLine.toReal u)
+      rw [innerSL_apply_apply, Real.inner_apply, mul_comm (MetricLine.toReal u)]
 
 
 private theorem MetricLine.toReal_injective {x : ℝ} :
@@ -251,11 +262,11 @@ private theorem exponentialFlatConnection_defect (x : ℝ) (u v : MetricLine x)
 
 /-- For the metric `exp(2x)`, correcting the flat connection adds the one-form `dx`.
 The formula holds on all sections, including nondifferentiable sections. -/
-theorem exponentialFlatConnection_metricCompatible_apply (u : Π x, MetricLine x) (x : ℝ)
+theorem exponentialFlatConnection_metricCorrected_apply (u : Π x, MetricLine x) (x : ℝ)
     (X : TangentSpace 𝓘(ℝ) x) :
-    exponentialFlatConnection.metricCompatible u x X =
+    exponentialFlatConnection.metricCorrected u x X =
       exponentialFlatConnection u x X + (NormedSpace.fromTangentSpace x) X • u x := by
-  rw [CovariantDerivative.metricCompatible_apply]
+  rw [CovariantDerivative.metricCorrected_apply]
   simp only [add_apply]
   congr 1
   apply ext_inner_right ℝ
@@ -264,7 +275,7 @@ theorem exponentialFlatConnection_metricCompatible_apply (u : Π x, MetricLine x
   simp only [MetricLine.toReal_smul]
   ring
 
-example : exponentialFlatConnection.metricCompatible.ContMDiffCovariantDerivative ∞ := by
+example : exponentialFlatConnection.metricCorrected.ContMDiffCovariantDerivative ∞ := by
   have : ContMDiffVectorBundle (∞ + 1) ℝ MetricLine 𝓘(ℝ) :=
     .of_le (show (∞ : ℕ∞ω) + 1 ≤ ∞ by simp)
   have : IsContMDiffRiemannianBundle 𝓘(ℝ) (∞ + 1) ℝ MetricLine :=
@@ -279,9 +290,9 @@ theorem parallelSection_ne_zero (x : ℝ) : parallelSection x ≠ 0 := Real.exp_
 
 /-- The section `exp(-x)` is parallel for the corrected connection. -/
 theorem parallelSection_parallel (x : ℝ) (X : TangentSpace 𝓘(ℝ) x) :
-    exponentialFlatConnection.metricCompatible parallelSection x X = 0 := by
+    exponentialFlatConnection.metricCorrected parallelSection x X = 0 := by
   apply MetricLine.toReal_injective
-  rw [MetricLine.toReal_zero, exponentialFlatConnection_metricCompatible_apply,
+  rw [MetricLine.toReal_zero, exponentialFlatConnection_metricCorrected_apply,
     MetricLine.toReal_add, exponentialFlatConnection_apply, MetricLine.toReal_smul]
   have hd : deriv (fun y ↦ (parallelSection y).toReal) x = -Real.exp (-x) := by
     simpa [parallelSection, MetricLine.toReal] using ((hasDerivAt_id x).neg.exp).deriv

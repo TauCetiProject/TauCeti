@@ -30,10 +30,10 @@ dimension zero and empty bases are included.
 
 ## Main results
 
-* `CovariantDerivative.metricCompatible`: correction of an arbitrary native connection.
-* `CovariantDerivative.isMetricCompatible_metricCompatible`: metric compatibility.
-* `CovariantDerivative.IsMetricCompatible.metricCompatible_eq`: exact fixedness.
-* `CovariantDerivative.ContMDiffCovariantDerivative.metricCompatible`: preservation of
+* `CovariantDerivative.metricCorrected`: correction of an arbitrary native connection.
+* `CovariantDerivative.isMetricCompatible_metricCorrected`: metric compatibility.
+* `CovariantDerivative.IsMetricCompatible.metricCorrected_eq`: exact fixedness.
+* `CovariantDerivative.ContMDiffCovariantDerivative.metricCorrected`: preservation of
   `C^n` regularity for every `n : ℕ∞`, including smoothness.
 * `CovariantDerivative.exists_contMDiffCovariantDerivative_isMetricCompatible`: existence.
 
@@ -151,19 +151,19 @@ theorem inner_metricCorrection (cov : CovariantDerivative I F V) (x : M)
 
 /-- Correct a connection by adding half its metric defect, with one fibre slot raised by the
 metric (`metricCorrection`). -/
-def metricCompatible (cov : CovariantDerivative I F V) : CovariantDerivative I F V :=
+def metricCorrected (cov : CovariantDerivative I F V) : CovariantDerivative I F V :=
   cov.addOneForm cov.metricCorrection
 
 /-- Evaluation of the corrected connection on any section, including sections that are not
 differentiable. -/
 @[simp]
-theorem metricCompatible_apply (cov : CovariantDerivative I F V) (σ : Π x, V x)
-    (x : M) : cov.metricCompatible σ x = cov σ x + cov.metricCorrection x (σ x) :=
+theorem metricCorrected_apply (cov : CovariantDerivative I F V) (σ : Π x, V x)
+    (x : M) : cov.metricCorrected σ x = cov σ x + cov.metricCorrection x (σ x) :=
   cov.addOneForm_apply _ _ _
 
 /-- The metric correction makes every connection metric-compatible. -/
-theorem isMetricCompatible_metricCompatible (cov : CovariantDerivative I F V) :
-    cov.metricCompatible.IsMetricCompatible := by
+theorem isMetricCompatible_metricCorrected (cov : CovariantDerivative I F V) :
+    cov.metricCorrected.IsMetricCompatible := by
   rw [isMetricCompatible_iff_derivMetricTensor_eq_zero]
   ext x u v X
   have hsymm := cov.derivBilinearTensor_apply_comm
@@ -174,7 +174,7 @@ theorem isMetricCompatible_metricCompatible (cov : CovariantDerivative I F V) :
       erw [innerSL_apply_apply, innerSL_apply_apply]
       exact (real_inner_comm a b).symm) u v
   rw [cov.derivBilinearTensor_eq_derivMetricTensor (fun _ _ _ ↦ rfl)] at hsymm
-  simp only [metricCompatible, derivMetricTensor_addOneForm, zero_apply,
+  simp only [metricCorrected, derivMetricTensor_addOneForm, zero_apply,
     inner_metricCorrection, real_inner_comm (cov.metricCorrection x v X) u,
     hsymm]
   ring
@@ -182,11 +182,11 @@ theorem isMetricCompatible_metricCompatible (cov : CovariantDerivative I F V) :
 /-- An already metric-compatible connection is unchanged as a native connection, on every
 input section rather than just differentiable sections. -/
 @[simp]
-theorem IsMetricCompatible.metricCompatible_eq {cov : CovariantDerivative I F V}
-    (hcov : cov.IsMetricCompatible) : cov.metricCompatible = cov := by
+theorem IsMetricCompatible.metricCorrected_eq {cov : CovariantDerivative I F V}
+    (hcov : cov.IsMetricCompatible) : cov.metricCorrected = cov := by
   have hzero := isMetricCompatible_iff_derivMetricTensor_eq_zero.mp hcov
   ext σ x X
-  rw [metricCompatible_apply]
+  rw [metricCorrected_apply]
   have hz : cov.metricCorrection x (σ x) X = 0 := by
     apply ext_inner_right ℝ
     intro v
@@ -231,7 +231,7 @@ theorem contMDiff_metricCorrection [FiniteDimensional ℝ E] [T2Space M]
 omit [ContMDiffVectorBundle 1 F V I] [IsContMDiffRiemannianBundle I 1 F V] in
 /-- Correcting a `C^n` connection using a `C^(n+1)` metric preserves its order of regularity,
 including continuity and smoothness. -/
-instance ContMDiffCovariantDerivative.metricCompatible [FiniteDimensional ℝ E] [T2Space M]
+instance ContMDiffCovariantDerivative.metricCorrected [FiniteDimensional ℝ E] [T2Space M]
     [IsManifold I ∞ M] {n : ℕ∞ω} [ENat.LEInfty n]
     [ContMDiffVectorBundle (n + 1) F V I] [IsContMDiffRiemannianBundle I (n + 1) F V]
     {cov : CovariantDerivative I F V} [hcov : ContMDiffCovariantDerivative cov n] :
@@ -239,7 +239,7 @@ instance ContMDiffCovariantDerivative.metricCompatible [FiniteDimensional ℝ E]
       .of_le (show (1 : ℕ∞ω) ≤ n + 1 from le_add_self)
     let _ : IsContMDiffRiemannianBundle I 1 F V :=
       .of_le (show (1 : ℕ∞ω) ≤ n + 1 from le_add_self)
-    ContMDiffCovariantDerivative cov.metricCompatible n := by
+    ContMDiffCovariantDerivative cov.metricCorrected n := by
   intro bundleOne metricOne
   lift n to ℕ∞ using ENat.LEInfty.ne_top n
   exact hcov.addOneForm cov.contMDiff_metricCorrection
@@ -260,6 +260,6 @@ theorem exists_contMDiffCovariantDerivative_isMetricCompatible
   have : ContMDiffVectorBundle (n + 1) F V I := .of_le hk
   have : IsContMDiffRiemannianBundle I (n + 1) F V := .of_le hk
   obtain ⟨cov, hcov⟩ := exists_contMDiffCovariantDerivative (I := I) (F := F) (V := V) hk
-  exact ⟨cov.metricCompatible, inferInstance, cov.isMetricCompatible_metricCompatible⟩
+  exact ⟨cov.metricCorrected, inferInstance, cov.isMetricCompatible_metricCorrected⟩
 
 end CovariantDerivative
