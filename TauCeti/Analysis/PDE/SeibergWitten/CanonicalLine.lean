@@ -77,12 +77,15 @@ and the Clifford map sends `u₀` to `u₀`, `-i β₀` and `β₀` along `e₀ 
   it vanishes exactly when both `∂bar`-components vanish, that is when the covector is complex
   linear.
 * `TauCeti.SeibergWitten.pairedSpinor`, `TauCeti.SeibergWitten.norm_pairedSpinor` and
-  `TauCeti.SeibergWitten.inner_pairedSpinor_eq_zero`: the paired spinor completes `u₀` to a
-  unitary frame.
-* `TauCeti.SeibergWitten.sum_smul_ι_apply_pairedSpinor`: the Dirac symbol on the paired spinor
-  in terms of the two `∂`-components.
-* `TauCeti.SeibergWitten.cliffordRestriction_ιMulti_zero_one_apply` and its companions: the
-  Clifford map along `e₀ ∧ e₁`, `e₀ ∧ e₂`, `e₀ ∧ e₃` on the frame `(u₀, β₀)`.
+  `TauCeti.SeibergWitten.inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self`: the
+  paired spinor completes `u₀` to a unitary frame.
+* `TauCeti.SeibergWitten.sum_smul_ι_apply_pairedSpinor_of_cliffordProjection_apply_eq_self`: the
+  Dirac symbol on the paired spinor in terms of the two `∂`-components.
+* `cliffordRestriction_ιMulti_zero_one_apply_of_cliffordProjection_apply_eq_self`,
+  `cliffordRestriction_ιMulti_zero_two_apply` and
+  `cliffordRestriction_ιMulti_zero_three_apply_of_cliffordProjection_apply_eq_self` (all in
+  `TauCeti.SeibergWitten`): the Clifford map along `e₀ ∧ e₁`, `e₀ ∧ e₂`, `e₀ ∧ e₃` on the frame
+  `(u₀, β₀)`.
 
 ## References
 

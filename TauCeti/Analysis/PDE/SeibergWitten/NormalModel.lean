@@ -255,6 +255,15 @@ theorem pairedConnection_apply (η : ℂ → EuclideanSpace ℝ (Fin 4)) (y v : 
       η (normalCoord e y) 0 * ⟪e 0, v⟫ - η (normalCoord e y) 1 * ⟪e 1, v⟫ := by
   simp [pairedConnection]
 
+/-- The paired connection is differentiable where the plane field is. -/
+theorem differentiableAt_pairedConnection {η : ℂ → EuclideanSpace ℝ (Fin 4)} {y : V}
+    (hη : DifferentiableAt ℝ η (normalCoord e y)) :
+    DifferentiableAt ℝ (pairedConnection e η) y := by
+  have hc (i : Fin 4) : DifferentiableAt ℝ (fun y' ↦ η (normalCoord e y') i) y :=
+    (differentiableAt_euclidean.1 hη i).comp y (normalCoord e).differentiableAt
+  exact (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ)
+    (0 : Fin 1)).differentiableAt.comp y (((hc 0).smul_const _).sub ((hc 1).smul_const _))
+
 /-- The paired connection of the zero plane field vanishes. -/
 @[simp]
 theorem pairedConnection_zero : pairedConnection e (0 : ℂ → EuclideanSpace ℝ (Fin 4)) = 0 := by
@@ -398,28 +407,8 @@ theorem fderiv_normalModelConnection_apply_three (hξ : DifferentiableAt ℝ ξ 
 /-- The connection of the normal model is differentiable where its plane fields are. -/
 theorem differentiableAt_normalModelConnection (hξ : DifferentiableAt ℝ ξ (normalCoord e y))
     (hη : DifferentiableAt ℝ η (normalCoord e y)) :
-    DifferentiableAt ℝ (normalModelConnection e ξ η) y := by
-  have hc {c : ℂ → EuclideanSpace ℝ (Fin 4)} (hc : DifferentiableAt ℝ c (normalCoord e y))
-      (i : Fin 4) : DifferentiableAt ℝ (fun y' ↦ c (normalCoord e y') i) y :=
-    (differentiableAt_euclidean.1 hc i).comp y (normalCoord e).differentiableAt
-  have h : normalModelConnection e ξ η = fun y' ↦
-      ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ) (0 : Fin 1)
-        ((ξ (normalCoord e y') 0 • innerSL ℝ (e 2) + ξ (normalCoord e y') 1 • innerSL ℝ (e 3)) +
-          (η (normalCoord e y') 0 • innerSL ℝ (e 0) -
-            η (normalCoord e y') 1 • innerSL ℝ (e 1))) := by
-    funext y'
-    ext v
-    have hv : v = fun _ ↦ v 0 := funext fun i ↦ by rw [Subsingleton.elim i 0]
-    rw [hv, normalModelConnection_apply]
-    simp only [Fin.isValue, ContinuousAlternatingMap.ofSubsingletonLIE_apply,
-      ContinuousAlternatingMap.ofSubsingleton_apply_apply, add_apply, smul_apply,
-      coe_innerSL_apply, smul_eq_mul, sub_apply]
-    ring
-  rw [h]
-  exact (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ)
-    (0 : Fin 1)).differentiableAt.comp y
-      ((((hc hξ 0).smul_const _).add ((hc hξ 1).smul_const _)).add
-        (((hc hη 0).smul_const _).sub ((hc hη 1).smul_const _)))
+    DifferentiableAt ℝ (normalModelConnection e ξ η) y :=
+  (differentiableAt_normalConnection hξ).add (differentiableAt_pairedConnection hη)
 
 variable [Fact (finrank ℝ V = 4)] [FiniteDimensional ℂ W] (hQ : ∀ v, Q v = -‖v‖ ^ 2)
   (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientation = o)

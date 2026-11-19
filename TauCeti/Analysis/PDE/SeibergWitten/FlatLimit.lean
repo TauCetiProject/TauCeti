@@ -224,6 +224,14 @@ theorem covariantDeriv_normalConnection (hx : DifferentiableAt ℝ x (normalCoor
     fderiv_comp_normalCoord_apply (Vortex.differentiableAt_sectionValue_of_differentiableAt hx),
     normalConnection_apply]
 
+/-- The pulled-back connection is differentiable where the plane field is. -/
+theorem differentiableAt_normalConnection (hx : DifferentiableAt ℝ x (normalCoord e y)) :
+    DifferentiableAt ℝ (normalConnection e x) y := by
+  have hc (i : Fin 4) : DifferentiableAt ℝ (fun y' ↦ x (normalCoord e y') i) y :=
+    (differentiableAt_euclidean.1 hx i).comp y (normalCoord e).differentiableAt
+  exact (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ)
+    (0 : Fin 1)).differentiableAt.comp y (((hc 0).smul_const _).add ((hc 1).smul_const _))
+
 variable [FiniteDimensional ℝ V]
 
 /-- **`∂bar_a α` of a pulled-back field**: in a unitary frame,
@@ -272,13 +280,6 @@ theorem alternatingFormEquiv_symm_neg_extDeriv_normalConnection
     (EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp _ hx
   have hc (i : Fin 4) : DifferentiableAt ℝ (fun y' ↦ x (π y') i) y :=
     (hd i).comp y π.differentiableAt
-  have hb : DifferentiableAt ℝ (normalConnection e x) y := by
-    unfold normalConnection
-    have h : DifferentiableAt ℝ
-        (fun y' ↦ x (π y') 0 • innerSL ℝ (e 2) + x (π y') 1 • innerSL ℝ (e 3)) y :=
-      ((hc 0).smul_const _).add ((hc 1).smul_const _)
-    exact (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ)
-      (0 : Fin 1)).differentiableAt.comp y h
   -- The derivative of the coefficient `b(w) = b₁(z) Re z(w) + b₂(z) Im z(w)` along `v`.
   have key (v w : V) : fderiv ℝ (fun y' ↦ normalConnection e x y' (fun _ ↦ w)) y v =
       fderiv ℝ (fun z ↦ x z 0) (π y) (π v) * (π w).re +
@@ -291,7 +292,8 @@ theorem alternatingFormEquiv_symm_neg_extDeriv_normalConnection
     ring
   refine ext_inner_ιMulti_two fun u w ↦ ?_
   rw [inner_alternatingFormEquiv_symm_ιMulti, real_inner_smul_left, inner_ιMulti_two,
-    ContinuousAlternatingMap.neg_apply, extDeriv_apply_pair_of_differentiableAt hb, key, key,
+    ContinuousAlternatingMap.neg_apply, extDeriv_apply_pair_of_differentiableAt
+      (differentiableAt_normalConnection hx), key, key,
     Vortex.curvature_apply]
   -- Expand each derivative of a plane coefficient in the frame `(1, i)`.
   simp only [ContinuousLinearMap.apply_eq_re_smul_one_add_im_smul_I _ (π u),
