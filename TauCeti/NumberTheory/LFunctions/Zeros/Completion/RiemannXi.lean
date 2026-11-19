@@ -5,7 +5,6 @@ Authors: Matteo Cipollina, The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 public import TauCeti.NumberTheory.LFunctions.Dirichlet.Basic
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta
 
@@ -27,12 +26,18 @@ than the pointwise product, which would vanish at `0` and `1`: here `ξ(0) = ξ(
   the poles.
 * `TauCeti.LFunctions.two_mul_riemannXi_eq_dirichletData_entireCompletion`: `2ξ` is the entire
   completion of the L-function record of the character modulo `1`.
-* The values `ξ(0) = ξ(1) = 1/2` and `ξ(2) = ξ(-1) = π/6`, using
+* The values `ξ(0) = ξ(1) = 1/2` and `ξ(2) = ξ(-1) = π/6`, the latter using
   `TauCeti.completedRiemannZeta_two`.
 
 ## References
 
 * K. S. Kedlaya, *Notes on analytic number theory*, §5.1.
+
+This file is adapted from the Prime Number Theorem and more project by Alex Kontorovich,
+Terence Tao and contributors, specifically
+`PrimeNumberTheoremAnd/Mathlib/Analysis/SpecialFunctions/CompletedXi.lean` and
+`PrimeNumberTheoremAnd/Mathlib/NumberTheory/LSeries/RiemannZetaValues.lean`; the proofs here
+are rerouted through `zetaEntireCompletion`.
 -/
 
 public section
@@ -41,15 +46,6 @@ open Complex
 open scoped Real
 
 namespace TauCeti
-
-/-- The completed Riemann zeta function takes the value `π / 6` at `2`. -/
-@[simp]
-theorem completedRiemannZeta_two : completedRiemannZeta 2 = (π : ℂ) / 6 := by
-  have h := riemannZeta_def_of_ne_zero (s := 2) two_ne_zero
-  rw [riemannZeta_two, eq_div_iff (Gammaℝ_ne_zero_of_re_pos (by simp))] at h
-  rw [← h, Gammaℝ_def]
-  norm_num [cpow_neg_one]
-  field_simp
 
 namespace LFunctions
 
@@ -75,14 +71,17 @@ theorem two_mul_riemannXi_eq_dirichletData_entireCompletion (χ : DirichletChara
 
 /-- The ξ-function is entire. -/
 theorem differentiable_riemannXi : Differentiable ℂ riemannXi := by
-  rw [funext riemannXi_def]
-  exact (((differentiable_id.mul (differentiable_id.sub_const 1)).mul
-    differentiable_completedZeta₀).add_const 1).div_const 2
+  have h : riemannXi = fun s ↦ zetaEntireCompletion s / 2 := by
+    funext s
+    rw [← two_mul_riemannXi]
+    ring
+  rw [h]
+  exact differentiable_zetaEntireCompletion.div_const 2
 
 /-- The reflection `ξ(1 - s) = ξ(s)`. -/
 theorem riemannXi_one_sub (s : ℂ) : riemannXi (1 - s) = riemannXi s := by
-  rw [riemannXi_def, riemannXi_def, completedRiemannZeta₀_one_sub]
-  ring
+  apply mul_left_cancel₀ (two_ne_zero' ℂ)
+  rw [two_mul_riemannXi, two_mul_riemannXi, zetaEntireCompletion_one_sub]
 
 /-- Away from `0` and `1`, `ξ(s) = s (s - 1) Λ(s) / 2`. -/
 theorem riemannXi_eq_mul_completedRiemannZeta {s : ℂ} (hs0 : s ≠ 0) (hs1 : s ≠ 1) :
