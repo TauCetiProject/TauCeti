@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Tactic.NormNum.RealSqrt
 import TauCeti.NumberTheory.NumberField.Quadratic.EmbeddingBound
 import TauCeti.NumberTheory.QuadraticOrder.CoordinateReduction
 import TauCeti.NumberTheory.QuadraticOrder.Reduction
@@ -52,8 +53,11 @@ example : ¬Set.InjOn (mapRingHom (Int.castRingHom (ZMod 3)) (20 : ℤ) 0)
   simpa using h (x₁ := 0) (x₂ := 3) (by norm_num) (by norm_num) (by decide)
 
 /-- The singleton rectangle shows why the ambient `m²` bound needs a positive modulus. -/
-example : (0 : ℕ) ^ 2 <
-    {z : QuadraticAlgebra ℤ 20 0 | z.re ∈ ({0} : Set ℤ) ∧ z.im ∈ ({0} : Set ℤ)}.ncard := by
+example : Set.InjOn (Int.cast : ℤ → ZMod 0) ({0} : Set ℤ) ∧
+    Set.InjOn (Int.cast : ℤ → ZMod 0) ({0} : Set ℤ) ∧
+    (0 : ℕ) ^ 2 <
+      {z : QuadraticAlgebra ℤ 20 0 | z.re ∈ ({0} : Set ℤ) ∧ z.im ∈ ({0} : Set ℤ)}.ncard := by
+  refine ⟨Set.injOn_singleton _ _, Set.injOn_singleton _ _, ?_⟩
   rw [ncard_setOf_re_mem_im_mem]
   norm_num
 
@@ -83,8 +87,7 @@ example : (⟨-2, 1⟩ : QuadraticAlgebra ℚ 4 0) ≠ 0 ∧
     sqrtEmbedding 4 (⟨-2, 1⟩ : QuadraticAlgebra ℚ 4 0) = 0 ∧
     ‖sqrtEmbedding 4 (⟨-2, 1⟩ : QuadraticAlgebra ℚ 4 0)‖ ≤ 4 := by
   norm_num [sqrtEmbedding_apply, sqrtRadicand_of_nonneg (by norm_num : (0 : ℚ) ≤ 4),
-    QuadraticAlgebra.ext_iff,
-    show Real.sqrt 4 = 2 from (Real.sqrt_eq_iff_eq_sq (by norm_num) (by norm_num)).2 (by norm_num)]
+    QuadraticAlgebra.ext_iff]
 
 /-- At the repeated-root parameter zero the two complex algebra maps coincide. -/
 example : sqrtEmbedding 0 = negSqrtEmbedding 0 := by
