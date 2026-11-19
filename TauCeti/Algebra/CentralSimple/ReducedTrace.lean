@@ -14,13 +14,15 @@ public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.SimpleRing.Matrix
 public import TauCeti.Algebra.CentralSimple.BaseChange
 -- Used only in proofs: the separable and algebraic closures and infinite Galois descent, the
--- Skolem-Noether theorem, splitting over a separably closed field, the scalar-factor Galois action
--- and tower base change, and the trace of left multiplication on matrices.
+-- Skolem-Noether theorem, splitting over a separably closed field, the Galois twist of a splitting
+-- and tower base change, the trace of a reindexed matrix and of left multiplication on matrices.
 import Mathlib.FieldTheory.Galois.Infinite
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.FieldTheory.IsSepClosed
 import TauCeti.Algebra.CentralSimple.SkolemNoether
 import TauCeti.Algebra.CentralSimple.Splitting
+import TauCeti.Algebra.CrossedProduct.Splitting.Basic
+import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 import TauCeti.LinearAlgebra.Matrix.Trace.LinearMap
 -- Used only by the worked examples: the real numbers and the real quaternions, with their
 -- centrality and the trace of left multiplication by a quaternion.
@@ -121,8 +123,7 @@ private theorem trace_splitting_eq [IsSimpleRing A] [FiniteDimensional K A]
   simp only [AlgEquiv.trans_apply, AlgEquiv.symm_apply_apply,
     Matrix.coe_reindexAlgEquiv] at h
   rw [← Matrix.trace_units_conj u (e x), ← h]
-  simp only [Matrix.trace, Matrix.diag, Matrix.reindex_apply, Matrix.submatrix_apply]
-  exact Equiv.sum_comp r.symm (fun i ↦ e' x i i)
+  exact Matrix.trace_reindex_self r (e' x)
 
 /-- A splitting over `L` extends to a splitting over any field `Ω` above `L`, and the trace
 moves along `L → Ω`. -/
@@ -149,22 +150,12 @@ private theorem galois_trace_splitting {L : Type*} [Field L] [Algebra K L]
     {m : Type*} [Fintype m] [DecidableEq m] (e : L ⊗[K] A ≃ₐ[L] Matrix m m L)
     (σ : L ≃ₐ[K] L) (a : A) :
     σ (e (1 ⊗ₜ a)).trace = (e (1 ⊗ₜ a)).trace := by
-  -- The `σ`-twist `X ↦ σ (e ((σ⁻¹ ⊗ id) X))` of `e` is `L`-linear, so it is again a splitting.
-  let f : L ⊗[K] A ≃ₐ[K] Matrix m m L :=
-    (ScalarAut.toAlgAut (A := A) σ.symm).trans ((e.restrictScalars K).trans σ.mapMatrix)
-  let eσ : L ⊗[K] A ≃ₐ[L] Matrix m m L := AlgEquiv.ofRingEquiv (f := f.toRingEquiv) fun c ↦ by
-    have hc : ScalarAut.toAlgAut (A := A) σ.symm (algebraMap L (L ⊗[K] A) c) =
-        algebraMap L (L ⊗[K] A) (σ.symm c) := ScalarAut.toAlgAut_tmul σ.symm c 1
-    simp only [f, AlgEquiv.coe_toRingEquiv, AlgEquiv.trans_apply, hc,
-      AlgEquiv.restrictScalars_apply, AlgEquiv.commutes, AlgEquiv.mapMatrix_apply,
-      Matrix.algebraMap_eq_diagonal, Matrix.diagonal_map (map_zero σ)]
-    congr 1
-    ext
+  -- The `σ`-twist of `e` by the `L`-algebra automorphism `splittingAut e σ` is again a splitting.
+  have h : (e.trans (splittingAut e σ).symm) (1 ⊗ₜ a) = (e (1 ⊗ₜ a)).map σ := by
+    rw [AlgEquiv.trans_apply, AlgEquiv.symm_apply_eq, splittingAut_map, AlgEquiv.symm_apply_apply]
     simp
-  have h : eσ (1 ⊗ₜ a) = (e (1 ⊗ₜ a)).map σ := by
-    simp [eσ, f]
   rw [AddMonoidHom.map_trace, ← h]
-  exact trace_splitting_eq eσ e _
+  exact trace_splitting_eq _ e _
 
 end Galois
 
@@ -266,11 +257,9 @@ theorem eq_zero_of_forall_reducedTrace_mul_eq_zero {a : A}
     induction t using TensorProduct.inductionOn with
     | add t u ht hu => rw [map_add, mul_add, Matrix.trace_add, ht, hu, add_zero]
     | tmul l b =>
-      have hl : l ⊗ₜ[K] b = l • ((1 : SeparableClosure K) ⊗ₜ[K] b) := by
-        rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-      rw [hl, map_smul, mul_smul_comm, Matrix.trace_smul, ← map_mul,
-        Algebra.TensorProduct.tmul_mul_tmul, one_mul, ← algebraMap_reducedTrace e, h, map_zero,
-        smul_zero]
+      rw [TensorProduct.tmul_eq_smul_one_tmul l b, map_smul, mul_smul_comm, Matrix.trace_smul,
+        ← map_mul, Algebra.TensorProduct.tmul_mul_tmul, one_mul, ← algebraMap_reducedTrace e, h,
+        map_zero, smul_zero]
   have hX : e (1 ⊗ₜ a) = 0 := by
     ext i j
     simpa [Matrix.trace_mul_single] using hzero (e.symm (Matrix.single j i 1))
@@ -320,9 +309,7 @@ the reduced trace of `l ⊗ a` is `l` times the reduced trace of `a`. -/
 @[simp]
 theorem reducedTrace_tmul (L : Type*) [Field L] [Algebra K L] (l : L) (a : A) :
     reducedTrace L (L ⊗[K] A) (l ⊗ₜ a) = l * algebraMap K L (reducedTrace K A a) := by
-  have hl : l ⊗ₜ[K] a = l • ((1 : L) ⊗ₜ[K] a) := by
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  rw [hl, map_smul, smul_eq_mul]
+  rw [TensorProduct.tmul_eq_smul_one_tmul l a, map_smul, smul_eq_mul]
   congr 1
   let Ω := AlgebraicClosure L
   obtain ⟨e⟩ := (isSplittingField_of_isSepClosed L (L ⊗[K] A) Ω).nonempty_algEquiv_matrix_deg
