@@ -152,6 +152,25 @@ theorem _root_.ContinuousOn.memLpLoc (hf : ContinuousOn f U) : MemLpLoc p U f :=
   fun _K hK hc => (hf.mono hK).memLp_restrict_of_subset_isCompact
     hc hc.measurableSet subset_rfl p
 
+open scoped Topology in
+/-- An a.e.-strongly measurable function on `U` that is bounded near every point of `U` is locally
+`Lᵖ` on `U` for every exponent, including infinity: it is bounded on each compact subset. -/
+theorem memLpLoc_of_forall_eventually_norm_le (hf : AEStronglyMeasurable f (volume.restrict U))
+    (hb : ∀ z ∈ U, ∃ M, ∀ᶠ w in 𝓝 z, ‖f w‖ ≤ M) : MemLpLoc p U f := by
+  intro K hKU hK
+  have : IsFiniteMeasure (volume.restrict K) := isFiniteMeasure_restrict.2 hK.measure_lt_top.ne
+  -- a bound on `K`, glued from the local bounds by compactness
+  obtain ⟨M, hM⟩ : ∃ M, ∀ w ∈ K, ‖f w‖ ≤ M := by
+    refine hK.induction_on (p := fun t ↦ ∃ M, ∀ w ∈ t, ‖f w‖ ≤ M) ⟨0, by simp⟩
+      (fun _ _ hst ⟨M, hM⟩ ↦ ⟨M, fun w hw ↦ hM w (hst hw)⟩)
+      (fun _ _ ⟨M, hM⟩ ⟨N, hN⟩ ↦ ⟨max M N, fun w hw ↦ hw.elim
+        (fun h ↦ (hM w h).trans (le_max_left M N)) fun h ↦ (hN w h).trans (le_max_right M N)⟩)
+      fun z hz ↦ ?_
+    obtain ⟨M, hM⟩ := hb z (hKU hz)
+    exact ⟨_, mem_nhdsWithin_of_mem_nhds hM, M, fun _ hw ↦ hw⟩
+  exact MemLp.of_bound (hf.mono_measure (Measure.restrict_mono hKU le_rfl)) M
+    (ae_restrict_of_forall_mem hK.measurableSet hM)
+
 /-- Every constant function is locally `Lᵖ` for all exponents, including infinity. -/
 @[simp]
 theorem memLpLoc_const (c : F) : MemLpLoc p U (fun _ => c) :=
