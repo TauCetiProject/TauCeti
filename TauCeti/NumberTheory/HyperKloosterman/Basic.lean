@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.Group.AddChar
 public import Mathlib.Algebra.GroupWithZero.Units.Fintype
-import TauCeti.Algebra.Group.AddChar
 
 /-!
 # Hyper-Kloosterman sums
@@ -41,7 +40,7 @@ Selberg eigenvalue conjecture, where they arise from powers of Gauss sums.
   `r` to `a ^ k r`.
 * `TauCeti.hyperKloosterman_ringEquiv`, `TauCeti.hyperKloosterman_ringHomComp`: transport along
   an isomorphism of the finite ring and along a ring homomorphism of the coefficients.
-* `TauCeti.hyperKloosterman_succ_one`: for the trivial additive character the sum of rank
+* `TauCeti.hyperKloosterman_one_addChar_succ`: for the trivial additive character the sum of rank
   `k + 1` counts the tuples, `#Rˣ ^ k`.
 
 ## References
@@ -114,6 +113,7 @@ theorem sum_add_mul_prod_inv_eq_hyperKloosterman [Fintype R] [DecidableEq R] (n 
   · simp only [Fin.sum_univ_castSucc, Fin.snoc_castSucc, Fin.snoc_last]
 
 /-- At rank zero the only tuple is the empty one, whose product is `1`. -/
+@[simp]
 theorem hyperKloosterman_zero [DecidableEq R] (ψ : AddChar R K) (r : Rˣ) :
     hyperKloosterman R 0 ψ r = if r = 1 then 1 else 0 := by
   have := Fintype.ofFinite R
@@ -184,7 +184,7 @@ theorem hyperKloosterman_ringHomComp {K' : Type*} [CommSemiring K'] (f : K →+*
 `(k + 1)`-tuples of units with product `r`: the first `k` units are free and determine the last.
 Over a finite field `F` this is `(#F - 1) ^ k`. -/
 @[simp]
-theorem hyperKloosterman_succ_one (k : ℕ) (r : Rˣ) :
+theorem hyperKloosterman_one_addChar_succ (k : ℕ) (r : Rˣ) :
     hyperKloosterman R (k + 1) (1 : AddChar R K) r = Nat.card Rˣ ^ k := by
   classical
   have := Fintype.ofFinite R

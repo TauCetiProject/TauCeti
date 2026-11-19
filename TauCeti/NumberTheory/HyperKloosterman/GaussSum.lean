@@ -34,7 +34,8 @@ conjugate of `χ (r)` (`MulChar.star_apply'`).
 ## Main statements
 
 * `TauCeti.sum_inv_apply_mul_gaussSum_pow`: the average over all Dirichlet characters.
-* `TauCeti.two_mul_sum_even_inv_apply_mul_gaussSum_pow`: the average over the even characters.
+* `TauCeti.two_mul_sum_even_inv_apply_mul_gaussSum_pow`,
+  `TauCeti.sum_even_inv_apply_mul_gaussSum_pow`: the average over the even characters.
 * `TauCeti.sum_even_ne_one_inv_apply_mul_gaussSum_pow`: the average over the even nontrivial
   characters at an odd prime level.
 
@@ -91,6 +92,18 @@ theorem two_mul_sum_even_inv_apply_mul_gaussSum_pow (ψ : AddChar (ZMod n) R) (k
     ← sum_inv_apply_mul_gaussSum_pow]
   simp_rw [← mul_assoc, h]
 
+open scoped Classical in
+/-- **Gauss-power average over the even characters**, above level two: the average of
+`χ⁻¹ (r) τ(χ) ^ k` over the even Dirichlet characters of level `n` is `φ(n) / 2` times the sum of
+the hyper-Kloosterman sums of rank `k` at `r` and at `-r`. -/
+theorem sum_even_inv_apply_mul_gaussSum_pow (hn : 2 < n) (ψ : AddChar (ZMod n) R) (k : ℕ)
+    (r : (ZMod n)ˣ) :
+    ∑ χ : DirichletCharacter R n with χ.Even, χ⁻¹ r * gaussSum χ ψ ^ k =
+      ((n.totient / 2 : ℕ) : R) *
+        (hyperKloosterman (ZMod n) k ψ r + hyperKloosterman (ZMod n) k ψ (-r)) :=
+  DirichletCharacter.sum_even_eq_totient_div_two_mul hn
+    (two_mul_sum_even_inv_apply_mul_gaussSum_pow ψ k r)
+
 end Level
 
 open scoped Classical in
@@ -105,17 +118,7 @@ theorem sum_even_ne_one_inv_apply_mul_gaussSum_pow {q : ℕ} [Fact q.Prime]
     ∑ χ : DirichletCharacter R q with χ.Even ∧ χ ≠ 1, χ⁻¹ r * gaussSum χ ψ ^ k =
       (((q - 1) / 2 : ℕ) : R) *
         (hyperKloosterman (ZMod q) k ψ r + hyperKloosterman (ZMod q) k ψ (-r)) - (-1) ^ k := by
-  have := DirichletCharacter.neZero_two_of_two_lt R hq
-  have h1 : (1 : DirichletCharacter R q) ∈ ({χ | χ.Even} : Finset _) := by simp
-  rw [← filter_filter, filter_ne', sum_erase_eq_sub h1, inv_one, MulChar.one_apply r.isUnit,
-    gaussSum_one_left hψ, one_mul]
-  congr 1
-  -- Halve the average over the even characters, using `φ(q) = 2 * ((q - 1) / 2)`.
-  obtain ⟨m, hm⟩ := Nat.totient_even hq
-  refine mul_left_cancel₀ (two_ne_zero (α := R)) ?_
-  rw [two_mul_sum_even_inv_apply_mul_gaussSum_pow, ← Nat.totient_prime Fact.out, hm, ← two_mul,
-    Nat.mul_div_cancel_left m two_pos]
-  push_cast
-  ring
+  rw [DirichletCharacter.sum_even_ne_one, sum_even_inv_apply_mul_gaussSum_pow hq, inv_one,
+    MulChar.one_apply r.isUnit, gaussSum_one_left hψ, one_mul, Nat.totient_prime Fact.out]
 
 end TauCeti
