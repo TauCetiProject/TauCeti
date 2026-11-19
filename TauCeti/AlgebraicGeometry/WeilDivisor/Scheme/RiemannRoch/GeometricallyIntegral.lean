@@ -23,10 +23,27 @@ global functions. Consequently every divisor of degree at least the genus is lin
 equivalent to an effective divisor, even on a curve without a rational point. This is the
 point-free effectivity input for Abel maps from spaces of effective divisors.
 
+The constant term is a statement about every universally closed geometrically integral scheme
+`X` over `k`: `dim H⁰(X, 𝒪_X) = 1`, so `χ(𝒪_X) = 1 - g`, and therefore every line bundle
+`L` satisfies `χ(L) = deg L + 1 - g` for the Euler-characteristic degree
+`deg L = χ(L) - χ(𝒪_X)`. Here `χ` is the truncation `dim H⁰ - dim H¹`. On a proper curve, where
+cohomology vanishes above degree one, this is the Riemann–Roch theorem for line bundles. It
+applies to every smooth proper geometrically connected curve, which is geometrically integral by
+`TauCeti.AlgebraicGeometry.Smooth.geometricallyIntegral`.
+
 The divisor-degree formula `SchemeWeilDivisor.eulerCharBelow_sheaf_eq_relativeDegree_add`
 relates the Euler characteristics of a divisor sheaf and the structure sheaf.
 `Scheme.baseRingToGlobalSections_bijective_of_geometricallyIntegral` identifies global
 functions with the ground field.
+
+## Main results
+
+* `eulerCharBelow_trivial_eq_one_sub_genus_of_geometricallyIntegral`: `χ(𝒪_X) = 1 - g` without a
+  rational point;
+* `InvertibleSheaf.eulerCharBelow_eq_eulerDegree_add_one_sub_genus`: Riemann–Roch
+  `χ(L) = deg L + 1 - g` for line bundles without a rational point;
+* the `SchemeWeilDivisor` results of the second section: Riemann–Roch for divisor sheaves,
+  Riemann's inequality and effectivity in degree at least the genus, without a rational point.
 
 ## References
 
@@ -39,9 +56,48 @@ public section
 open CategoryTheory AlgebraicGeometry Order
 open Module (finrank)
 
-namespace TauCeti.AlgebraicGeometry.SchemeWeilDivisor
+namespace TauCeti.AlgebraicGeometry
 
 universe u
+
+section ConstantTerm
+
+variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
+  [UniversallyClosed (X ↘ Spec (.of k))] [GeometricallyIntegral (X ↘ Spec (.of k))]
+
+/-- **The constants are exact.** On a universally closed geometrically integral scheme over a
+field `k`, `H⁰(X, 𝒪_X)` is one-dimensional over `k`. No rational point is needed. -/
+theorem finrank_cohomology_zero_trivial_eq_one_of_geometricallyIntegral :
+    finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0) = 1 := by
+  have := GeometricallyIntegral.isIntegral_of_subsingleton (X ↘ Spec (.of k))
+  exact finrank_cohomology_zero_trivial_eq_one_of_surjective k
+    (X.baseRingToGlobalSections_bijective_of_geometricallyIntegral k).surjective
+
+variable [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
+
+/-- On a universally closed geometrically integral scheme over a field `k` with
+finite-dimensional `H¹(X, 𝒪_X)`, `χ(𝒪_X) = 1 - g`, where `χ` is the truncation
+`dim H⁰ - dim H¹` and `g` is the genus. No rational point is needed. -/
+theorem eulerCharBelow_trivial_eq_one_sub_genus_of_geometricallyIntegral :
+    Scheme.Modules.eulerCharBelow k X (InvertibleSheaf.trivial X).obj 2 = 1 - X.genus k := by
+  rw [Scheme.Modules.eulerCharBelow_two,
+    finrank_cohomology_zero_trivial_eq_one_of_geometricallyIntegral, Scheme.genus_def,
+    Nat.cast_one]
+
+/-- **The Riemann–Roch theorem for line bundles, without a rational point.** On a universally
+closed geometrically integral scheme over a field `k` with finite-dimensional `H¹(X, 𝒪_X)`, every
+line bundle `L` satisfies `χ(L) = deg L + 1 - g`. Here `χ(L) = dim H⁰(X, L) - dim H¹(X, L)`,
+`deg L = χ(L) - χ(𝒪_X)` is the Euler-characteristic degree and `g` is the genus. For instance,
+this holds on every smooth proper geometrically connected curve over any field. -/
+theorem InvertibleSheaf.eulerCharBelow_eq_eulerDegree_add_one_sub_genus
+    (L : InvertibleSheaf X) :
+    Scheme.Modules.eulerCharBelow k X L.obj 2 = L.eulerDegree k + 1 - X.genus k := by
+  rw [eulerDegree_def, eulerCharBelow_trivial_eq_one_sub_genus_of_geometricallyIntegral]
+  ring
+
+end ConstantTerm
+
+namespace SchemeWeilDivisor
 
 variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
   [IsIntegral X] [IsProper (X ↘ Spec (.of k))]
@@ -68,9 +124,7 @@ theorem finrank_cohomology_zero_sheaf_sub_finrank_cohomology_one_sheaf_of_geomet
   have := finiteDimensional_cohomology_one_trivial_of_isProper k hdim
   rw [← Scheme.Modules.eulerCharBelow_two,
     eulerCharBelow_sheaf_eq_relativeDegree_add k hcoheight D,
-    eulerCharBelow_trivial_eq_one_sub_genus_of_surjective k
-      (X.baseRingToGlobalSections_bijective_of_geometricallyIntegral k).surjective,
-    Scheme.genus_def]
+    eulerCharBelow_trivial_eq_one_sub_genus_of_geometricallyIntegral k, Scheme.genus_def]
   ring
 
 /-- Riemann's inequality on a geometrically integral proper curve, without assuming a rational
@@ -111,4 +165,6 @@ theorem nonempty_completeLinearSystem_of_genus_le_relativeDegree_of_geometricall
     (X.baseRingToGlobalSections_bijective_of_geometricallyIntegral k).surjective
     ((Scheme.genus_def k X).symm ▸ hD)
 
-end TauCeti.AlgebraicGeometry.SchemeWeilDivisor
+end SchemeWeilDivisor
+
+end TauCeti.AlgebraicGeometry
