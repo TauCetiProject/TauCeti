@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
+import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Floer.Translation.Basic
 
 /-!
@@ -127,8 +128,8 @@ theorem exists_periodic_hasDerivAt_lintegral_floerEnergyDensity_eq
       hu.contDiffOn (fun s _ ↦ hper s) hK (fun s _ ↦ huK s) hc (fun z hz ↦ hJc z (hsub hz))
       (fun z hz ↦ hJM z (hsub hz)) (fun z hz ↦ hfloer z (hsub hz)) hEsub
   refine ⟨x₀, x₁, ⟨hx₀per, hx₀, hlimK hux₀⟩, ⟨hx₁per, hx₁, hlimK hux₁⟩, hbot, htop, ?_⟩
-  have hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz v hv ↦
-    (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
+  have hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz ↦
+    tames_of_mul_norm_sq_le hc (hJc z hz)
   exact ω.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction hJ hH isOpen_univ
     hu.contDiffOn (subset_univ _) (fun s ↦ by simpa using hper s 0)
     (fun z hz ↦ by
@@ -180,8 +181,8 @@ theorem exists_pos_forall_ofReal_le_lintegral_floerEnergyDensity
   have hlt : A x₀ < A x₁ := by
     by_contra! hle
     obtain ⟨s, t, hst⟩ := hns
-    have hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz v hv ↦
-      (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
+    have hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz ↦
+      tames_of_mul_norm_sq_le hc (hJc z hz)
     have hstat := (ω.lintegral_floerEnergyDensity_eq_zero_iff hH isOpen_univ
       (hu.of_le one_le_two).contDiffOn (subset_univ _) hJ hfloer).1
       (hEeq.trans (ENNReal.ofReal_eq_zero.2 (sub_nonpos.2 hle)))
@@ -224,12 +225,10 @@ theorem exists_lt_tendsto_hamiltonianAction_of_floer (hH : ContDiff ℝ 1 (uncur
       a₀ < a₁ ∧ Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) atBot (𝓝 a₀) ∧
         Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) atTop (𝓝 a₁) := by
   set A : ℝ → ℝ := fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))
-  have hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz v hv ↦
-    (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
+  have hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz ↦
+    tames_of_mul_norm_sq_le hc (hJc z hz)
   -- The action is monotone and bounded, so the energy is finite.
-  have hmono : Monotone A := monotoneOn_univ.1
-    (ω.monotoneOn_hamiltonianAction_of_floer isOpen_univ hH hu.contDiffOn (fun s _ ↦ hper s)
-      (fun z hz ↦ hJ z (by simpa using hz)) fun z hz ↦ hfloer z (by simpa using hz))
+  have hmono : Monotone A := ω.monotone_hamiltonianAction_of_floer hH hu hper hJ hfloer
   obtain ⟨B, hB⟩ := ω.exists_forall_abs_hamiltonianAction_le hH.continuous hK L
   have hbdd (s : ℝ) := abs_le.1 (hB (hu.of_le one_le_two) hper huK hL s)
   have hE : ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
