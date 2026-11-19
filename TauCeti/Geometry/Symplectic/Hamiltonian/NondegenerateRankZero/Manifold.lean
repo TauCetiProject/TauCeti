@@ -193,6 +193,28 @@ variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteD
   [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [I'.Boundaryless] [TopologicalSpace N]
   [ChartedSpace H' N] {φ : N → M} {y : N}
 
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [FiniteDimensional ℝ E'] in
+/-- **Hessians of `ℓ ∘ F` under a change of coordinates.** Let `φ` be `C²` at `y`, with invertible
+differential `e = dφ_y`, and let `F` be `C²` at `φ y`. For a linear functional `ℓ` on `G` vanishing
+on the image of `dF_{φ y}`, the point `φ y` is critical for `ℓ ∘ F`, and the second-order chain
+rule identifies the critical Hessian of `ℓ ∘ F ∘ φ` at `y` with that of `ℓ ∘ F` at `φ y`
+precomposed with `e`. -/
+theorem _root_.TauCeti.toQuadraticMap_toBilinForm_criticalHessian_comp {F : M → G}
+    (hφ : ContMDiffAt I' I 2 φ y) (e : TangentSpace I' y ≃L[ℝ] TangentSpace I (φ y))
+    (he : (e : TangentSpace I' y →L[ℝ] TangentSpace I (φ y)) = mfderiv I' I φ y)
+    (hF : ContMDiffAt I 𝓘(ℝ, G) 2 F (φ y)) {ℓ : G →L[ℝ] ℝ}
+    (hℓ : ℓ.comp (mvfderiv I F (φ y)) = 0) :
+    (criticalHessian I' (ℓ ∘ F ∘ φ) y).toBilinForm.toQuadraticMap =
+      (criticalHessian I (ℓ ∘ F) (φ y)).toBilinForm.toQuadraticMap.comp
+        (e.toLinearEquiv : TangentSpace I' y →ₗ[ℝ] TangentSpace I (φ y)) := by
+  have hcrit : φ y ∈ criticalPoints I (ℓ ∘ F) := by
+    refine mem_criticalPoints.2 (ContinuousLinearMap.ext fun v ↦ ?_)
+    rw [ℓ.mvfderiv_comp_apply (hF.mdifferentiableAt two_ne_zero)]
+    simpa using congr($hℓ v)
+  ext u
+  simp [← Function.comp_assoc,
+    criticalHessian_comp_apply rfl (ℓ.contMDiff.contMDiffAt.comp _ hF) hφ hcrit, ← he]
+
 /-- The common core of the invariance theorems: if `φ` is `C²` at `y` with invertible differential
 `dφ_y`, which carries a symplectic form `η` on `T_y N` to `σ` at `φ y`, then the critical Hessians
 of the functions `ℓ ∘ F ∘ φ` form a nondegenerate family for `η` exactly when those of the functions
@@ -217,17 +239,9 @@ private theorem isNondegenerateRankZeroPoint_iff_comp_right_aux
       fun h ↦ by rw [h, ContinuousLinearMap.zero_comp]⟩
     simpa using congr($h (e.symm v))
   -- At a critical point of `F`, the chain rule identifies the Hessians through `dφ_y`.
-  have hQ (h : mvfderiv I F (φ y) = 0) (ℓ : G →L[ℝ] ℝ) :
-      (criticalHessian I' (ℓ ∘ F ∘ φ) y).toBilinForm.toQuadraticMap =
-        (criticalHessian I (ℓ ∘ F) (φ y)).toBilinForm.toQuadraticMap.comp
-          (e.toLinearEquiv : TangentSpace I' y →ₗ[ℝ] TangentSpace I (φ y)) := by
-    have hcrit : φ y ∈ criticalPoints I (ℓ ∘ F) := by
-      refine mem_criticalPoints.2 (ContinuousLinearMap.ext fun v ↦ ?_)
-      rw [ℓ.mvfderiv_comp_apply hFd, h]
-      simp
-    ext u
-    simp [← Function.comp_assoc,
-      criticalHessian_comp_apply rfl (ℓ.contMDiff.contMDiffAt.comp _ hF) hφ hcrit, ← he]
+  have hQ (h : mvfderiv I F (φ y) = 0) (ℓ : G →L[ℝ] ℝ) :=
+    toQuadraticMap_toBilinForm_criticalHessian_comp hφ e he hF (ℓ := ℓ)
+      (by rw [h, ContinuousLinearMap.comp_zero])
   have hsymp : SymplecticForm.IsSymplectomorphism η (hσ.symplecticFormAt (φ y)) e.toLinearEquiv :=
     SymplecticForm.isSymplectomorphism_iff.2 fun u w ↦ by simp [← hη, ← he]
   refine ⟨fun ⟨_, h, hfam⟩ ↦ ⟨hF, h0.1 h, ?_⟩, fun h ↦ ⟨hF.comp y hφ, h0.2 h.mvfderiv_eq_zero, ?_⟩⟩

@@ -186,17 +186,8 @@ private theorem isNondegeneratePoint_iff_comp_right_aux
   have hT : mvfderiv I' (F ∘ φ) y = (mvfderiv I F (φ y)).comp (e : TangentSpace I' y →L[ℝ] _) := by
     rw [mvfderiv_comp y hFd hφd, ← he]
   -- For `ℓ` killing the image of `dF`, the chain rule identifies the Hessians through `dφ_y`.
-  have hQ (ℓ : G →L[ℝ] ℝ) (hℓ : ℓ.comp (mvfderiv I F (φ y)) = 0) :
-      (criticalHessian I' (ℓ ∘ F ∘ φ) y).toBilinForm.toQuadraticMap =
-        (criticalHessian I (ℓ ∘ F) (φ y)).toBilinForm.toQuadraticMap.comp
-          (e.toLinearEquiv : TangentSpace I' y →ₗ[ℝ] TangentSpace I (φ y)) := by
-    have hcrit : φ y ∈ criticalPoints I (ℓ ∘ F) := by
-      refine mem_criticalPoints.2 (ContinuousLinearMap.ext fun v ↦ ?_)
-      rw [ℓ.mvfderiv_comp_apply hFd]
-      simpa using congr($hℓ v)
-    ext u
-    simp [← Function.comp_assoc,
-      criticalHessian_comp_apply rfl (ℓ.contMDiff.contMDiffAt.comp _ hF) hφ hcrit, ← he]
+  have hQ (ℓ : G →L[ℝ] ℝ) (hℓ : ℓ.comp (mvfderiv I F (φ y)) = 0) :=
+    toQuadraticMap_toBilinForm_criticalHessian_comp hφ e he hF hℓ
   have hsymp : SymplecticForm.IsSymplectomorphism η (hσ.symplecticFormAt (φ y)) e.toLinearEquiv :=
     SymplecticForm.isSymplectomorphism_iff.2 fun u w ↦ by simp [← hη, ← he]
   have key := SymplecticForm.isTransversallyNondegenerate_comp_iff e hsymp
