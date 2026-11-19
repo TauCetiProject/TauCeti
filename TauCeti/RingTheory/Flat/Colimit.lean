@@ -126,6 +126,7 @@ theorem of_isColimit_codomain {J : Type u} [SmallCategory J] [IsFiltered J]
     (hg : ∀ j, (c.ι.app j).hom.comp (ψ j) = g) (hflat : ∀ j, (ψ j).Flat) : g.Flat := by
   classical
   algebraize [g]
+  have hι (j : J) (r : R) : c.ι.app j (ψ j r) = g r := congr($(hg j) r)
   refine Module.Flat.of_forall_isTrivialRelation fun {l f x} hfx => ?_
   -- The finitely many elements `x i` come from a common stage `k`.
   choose j y hy using fun i => Concrete.isColimit_exists_rep F hc (x i)
@@ -138,8 +139,7 @@ theorem of_isColimit_codomain {J : Type u} [SmallCategory J] [IsFiltered J]
   -- The relation holds at stage `k` up to an element dying in the colimit, so it holds at a
   -- later stage `m`.
   have h0 : c.ι.app k (∑ i, ψ k (f i) * y' i) = c.ι.app k 0 := by
-    have hk (r : R) : c.ι.app k (ψ k r) = g r := congr($(hg k) r)
-    simpa [Algebra.smul_def, RingHom.algebraMap_toAlgebra, hk, hy'] using hfx
+    simpa [Algebra.smul_def, RingHom.algebraMap_toAlgebra, hι, hy'] using hfx
   obtain ⟨m, t, t', ht⟩ := Concrete.isColimit_exists_of_rep_eq F hc _ _ h0
   let := (ψ m).toAlgebra
   have : Module.Flat R (F.obj m) := hflat m
@@ -151,8 +151,7 @@ theorem of_isColimit_codomain {J : Type u} [SmallCategory J] [IsFiltered J]
   obtain ⟨n, a, z, hz, ha⟩ := Module.Flat.isTrivialRelation_of_sum_smul_eq_zero hrel
   refine ⟨n, a, fun s => c.ι.app m (z s), fun i => ?_, ha⟩
   have hi := congrArg (c.ι.app m) (hz i)
-  have hm' (r : R) : c.ι.app m (ψ m r) = g r := congr($(hg m) r)
-  simp only [Algebra.smul_def, RingHom.algebraMap_toAlgebra, map_sum, map_mul, hm'] at hi ⊢
+  simp only [Algebra.smul_def, RingHom.algebraMap_toAlgebra, map_sum, map_mul, hι] at hi ⊢
   rw [← hi, ← hy' i, ← c.w t, ConcreteCategory.comp_apply]
 
 end RingHom.Flat
