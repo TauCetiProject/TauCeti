@@ -237,23 +237,51 @@ open TauCeti
 variable {α : Type*} [LinearOrder α] (K : AbstractSimplicialComplex α)
 
 /-- The **barycentric subdivision** of `K`, with its vertices, the faces of `K`, ordered by a linear
-extension of inclusion, so that its ordered chain complex is defined. -/
+extension of inclusion, so that its ordered chain complex is defined.
+
+`LinearExtension β` is a type synonym for `β`, so this is `barycentricSubdivision` itself with only
+the order on its vertices changed; `ofSubdivisionVertex` and `toLinearExtension` pass between a
+vertex and the face of `K` it is. -/
 def orderedBarycentricSubdivision :
     _root_.AbstractSimplicialComplex
       (LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)) :=
   PreAbstractSimplicialComplex.barycentricSubdivision K.toPreAbstractSimplicialComplex
 
-/-- The face of `K` that a vertex of `orderedBarycentricSubdivision K` is. -/
+/-- The face of `K` that a vertex of `orderedBarycentricSubdivision K` is, as an element of
+`TauCeti.SetLike.Face K`. This is the identity, since `LinearExtension β` is the type synonym `β`;
+it is the inverse of `toLinearExtension`, and the only place the synonym is unfolded. -/
+def ofSubdivisionVertex
+    (p : LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)) :
+    TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex :=
+  p
+
+omit [LinearOrder α] in
+/-- The face of `K` underlying a face regarded as a vertex of the subdivision is that face. -/
+@[simp]
+theorem ofSubdivisionVertex_toLinearExtension
+    (τ : TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex) :
+    ofSubdivisionVertex K (toLinearExtension τ) = τ :=
+  (rfl)
+
+omit [LinearOrder α] in
+/-- A vertex of the subdivision is its underlying face of `K`, regarded as a vertex. -/
+@[simp]
+theorem toLinearExtension_ofSubdivisionVertex
+    (p : LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)) :
+    toLinearExtension (ofSubdivisionVertex K p) = p :=
+  (rfl)
+
+/-- The face of `K` that a vertex of `orderedBarycentricSubdivision K` is, as a finite set. -/
 def subdivisionFace (p : LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)) :
     Finset α :=
-  Subtype.val (p : TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)
+  (ofSubdivisionVertex K p).1
 
 omit [LinearOrder α] in
 /-- The face underlying a vertex of the subdivision is a face of `K`. -/
 theorem subdivisionFace_mem
     (p : LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)) :
     subdivisionFace K p ∈ K :=
-  Subtype.prop (p : TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)
+  (ofSubdivisionVertex K p).2
 
 omit [LinearOrder α] in
 /-- A finite set of faces of `K` spans a face of the barycentric subdivision exactly when it is
@@ -262,17 +290,17 @@ theorem mem_orderedBarycentricSubdivision_iff
     {s : Finset (LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex))} :
     s ∈ orderedBarycentricSubdivision K ↔ s.Nonempty ∧ ∀ p ∈ s, ∀ q ∈ s,
       subdivisionFace K p ⊆ subdivisionFace K q ∨ subdivisionFace K q ⊆ subdivisionFace K p :=
+  -- `orderedBarycentricSubdivision K` is `barycentricSubdivision K` on the type synonym
+  -- `LinearExtension`, and `subdivisionFace K p` is the face `p` itself.
   PreAbstractSimplicialComplex.mem_barycentricSubdivision_iff'
 
 omit [LinearOrder α] in
 /-- Inclusion of the underlying faces implies the order of the linear extension. -/
 theorem le_of_subdivisionFace_subset
     {p q : LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)}
-    (h : subdivisionFace K p ⊆ subdivisionFace K q) : p ≤ q :=
-  -- `LinearExtension β` is the type synonym `β` and `toLinearExtension` is the identity, so `p`
-  -- and `q` are themselves faces and `h` is their inclusion.
-  (toLinearExtension (α := TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)).monotone
-    (a := p) (b := q) h
+    (h : subdivisionFace K p ⊆ subdivisionFace K q) : p ≤ q := by
+  rw [← toLinearExtension_ofSubdivisionVertex K p, ← toLinearExtension_ofSubdivisionVertex K q]
+  exact toLinearExtension.monotone h
 
 /-- The barycenter of a face of `K` in the barycentric subdivision: the face itself, regarded as a
 vertex. -/
@@ -284,8 +312,8 @@ omit [LinearOrder α] in
 /-- The face underlying the barycenter of a face is that face. -/
 @[simp]
 theorem subdivisionFace_subdivisionBarycenter (τ : TauCeti.SetLike.Face K) :
-    subdivisionFace K (subdivisionBarycenter K τ) = τ.1 :=
-  (rfl)
+    subdivisionFace K (subdivisionBarycenter K τ) = τ.1 := by
+  rw [subdivisionFace, subdivisionBarycenter, ofSubdivisionVertex_toLinearExtension]
 
 omit [LinearOrder α] in
 /-- Barycenters of larger faces are larger in the linear extension of inclusion. -/
@@ -342,8 +370,8 @@ theorem lastVertexMap_apply
 
 /-- The last-vertex map sends the barycenter of a face to its largest vertex. -/
 theorem lastVertexMap_subdivisionBarycenter (τ : TauCeti.SetLike.Face K) :
-    lastVertexMap K (subdivisionBarycenter K τ) = τ.1.max' (K.isRelLowerSet_faces τ.2).1 :=
-  (rfl)
+    lastVertexMap K (subdivisionBarycenter K τ) = τ.1.max' (K.isRelLowerSet_faces τ.2).1 := by
+  simp only [lastVertexMap_apply, subdivisionFace_subdivisionBarycenter]
 
 end AbstractSimplicialComplex
 
