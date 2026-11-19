@@ -127,9 +127,7 @@ theorem fixedOn_eq_of_mem {s₀ s₁ : Cₛ^n⟮I; F, V⟯} {S : Set M} (h : s�
 
 theorem fixedOn_antitone (s₀ : Cₛ^n⟮I; F, V⟯) :
     Antitone (fixedOn s₀ : Set M → AffineSubspace 𝕜 _) :=
-  fun _ _ hST s hs ↦ by
-    rw [mem_fixedOn] at hs ⊢
-    exact fun x hx ↦ hs x (hST hx)
+  fun _ _ hST ↦ (AffineSubspace.mk'_le_mk'_iff s₀).2 (vanishingOn_antitone hST)
 
 theorem fixedOn_union (s₀ : Cₛ^n⟮I; F, V⟯) (S T : Set M) :
     fixedOn s₀ (S ∪ T) = fixedOn s₀ S ⊓ fixedOn s₀ T := by

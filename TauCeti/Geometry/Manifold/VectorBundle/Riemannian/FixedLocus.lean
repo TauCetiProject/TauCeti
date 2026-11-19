@@ -168,10 +168,9 @@ theorem exists_fixedOn_iUnion_eq_setOf {n : ℕ∞} [∀ b, ContinuousConstSMul 
 theorem convexCombination_mem_fixedOn [FiniteDimensional ℝ F]
     {g₀ g h : ContMDiffRiemannianMetric IB n F V} {S : Set B}
     (hg : g ∈ fixedOn g₀ S) (hh : h ∈ fixedOn g₀ S) (t : unitInterval) :
-    g.convexCombination h t ∈ fixedOn g₀ S := by
-  intro x hx
-  ext v w
-  simp [hg x hx, hh x hx, ← add_mul]
+    g.convexCombination h t ∈ fixedOn g₀ S :=
+  fun x hx ↦ (convexCombination_inner_eq_of_eq g h t ((hg x hx).trans (hh x hx).symm)).trans
+    (hg x hx)
 
 /-- As symmetric sections, the metrics equal to `g₀` on `S` are the positive-definite sections
 equal to the section of `g₀` on `S`. -/
