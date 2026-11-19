@@ -99,7 +99,8 @@ section Rank
 variable [FiniteDimensional ℝ E]
 
 /-- In coordinates intertwining multiplication by `i` with `-j`, `(0,1)`-forms are complex
-linear maps. This comparison uses only linear coordinates, without changing the tangent norm. -/
+linear maps. Finite real tangent dimension makes the inverse of an arbitrary algebraic
+coordinate map continuous; no tangent norm is changed. -/
 def zeroOneFormLinearEquiv {G : Type*} [AddCommGroup G] [Module ℝ G] [Module ℂ G]
     [IsScalarTower ℝ ℂ G] (x : M) (φ : G ≃ₗ[ℝ] TangentSpace I x)
     (hφ : ∀ z, φ (Complex.I • z) = -(j x (φ z))) :
@@ -169,21 +170,12 @@ end Rank
 /-- The native `(0,1)`-projection with codomain restricted to its actual complex range. -/
 def zeroOnePartToRange (x : M) :
     (TangentSpace I x →L[ℝ] V x) →ₗ[ℂ] j.zeroOneFormSubmodule (V := V) x :=
-  (j.zeroOnePartLinearMap x).codRestrict _ fun η ↦
-    (j.mem_zeroOneFormSubmodule_iff x _).mpr (j.isZeroOneForm_zeroOnePart η)
+  (j.zeroOnePartLinearMap x).rangeRestrict
 
 @[simp]
 theorem coe_zeroOnePartToRange (x : M) (η : TangentSpace I x →L[ℝ] V x) :
     (j.zeroOnePartToRange x η : TangentSpace I x →L[ℝ] V x) = j.zeroOnePart η := by
-  simp only [zeroOnePartToRange, LinearMap.codRestrict_apply, zeroOnePartLinearMap_apply]
-
-/-- Projection followed by the native submodule inclusion is the original `(0,1)`-projection. -/
-theorem subtype_comp_zeroOnePartToRange (x : M) :
-    (j.zeroOneFormSubmodule (V := V) x).subtype.comp (j.zeroOnePartToRange x) =
-      j.zeroOnePartLinearMap x := by
-  ext η v
-  simp only [LinearMap.comp_apply, Submodule.subtype_apply, coe_zeroOnePartToRange,
-    zeroOnePartLinearMap_apply]
+  exact LinearMap.congr_fun (LinearMap.subtype_comp_rangeRestrict (j.zeroOnePartLinearMap x)) η
 
 /-- The range projection fixes every `(0,1)`-form. -/
 @[simp]
