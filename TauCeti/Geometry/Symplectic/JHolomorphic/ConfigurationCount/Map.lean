@@ -36,10 +36,12 @@ computed by the same counts, taken with the classes `φ ∘ cls` in place of `cl
   `N' (φ h) = c * N h`. Then only finitely many classes of each fibre of `φ` have a nonzero count,
   and the pushforward of Novikov series along `φ` (`TauCeti.NovikovSeries.map`) sends the
   generating series of the counts to the series whose coefficient at `A'` is the count in class
-  `A'` for the classes `φ ∘ cls` (`TauCeti.coeff_map_configurationCountSeries`). For pairwise
-  compatible candidates, such as the disjoint orbit tori of a mapping torus, with weights given by
-  local series `f c`, the specialized generating series is therefore the infinite product
-  `∏_c f c (e ^ φ (cls c))` of the local series at the specialized classes
+  `A'` for the classes `φ ∘ cls` (`TauCeti.coeff_map_configurationCountSeries`), that is, to the
+  generating series for the classes `φ ∘ cls` (`TauCeti.mapRingHom_configurationCountSeries`).
+  Finiteness below each cutoff passes along `φ` (`TauCeti.NovikovSeries.finite_setOf_map_le`).
+  For pairwise compatible candidates, such as the disjoint orbit tori of a mapping torus, with
+  weights given by local series `f c`, the specialized generating series is therefore the
+  infinite product `∏_c f c (e ^ φ (cls c))` of the local series at the specialized classes
   (`TauCeti.hasProd_ofPowerSeries_mapRingHom_configurationCountSeries`).
 
 The candidates, their classes and weights, and the map `φ` are inputs here; identifying the
@@ -58,6 +60,8 @@ orbit, is separate.
   the counts.
 * `TauCeti.coeff_map_configurationCountSeries`: the pushforward of the generating series along a
   period-rescaling `φ` has the counts for the classes `φ ∘ cls` as coefficients.
+* `TauCeti.mapRingHom_configurationCountSeries`: the pushforward of the generating series is the
+  generating series for the classes `φ ∘ cls`.
 * `TauCeti.hasProd_ofPowerSeries_mapRingHom_configurationCountSeries`: the pushforward of the
   generating series is the product of the local series at the specialized classes.
 
@@ -202,16 +206,6 @@ section Series
 variable [AddCommMonoid H] [AddCommMonoid H'] {N : H →+ ℝ} {N' : H' →+ ℝ} {r : ι → ι → Prop}
   {cls : ι → H} {s : Set ι} {φ : H →+ H'}
 
-/-- If `φ` rescales periods by a positive constant, finitely many candidates below each cutoff
-for `N` give finitely many below each cutoff for `N'` and the classes `φ ∘ cls`. -/
-private theorem finite_setOf_comp_le (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
-    (hfin : ∀ C : ℝ, {c ∈ s | N (cls c) ≤ C}.Finite) (C : ℝ) :
-    {c ∈ s | N' ((φ ∘ cls) c) ≤ C}.Finite := by
-  obtain ⟨k, hk, hkφ⟩ := hφ
-  refine (hfin (C / k)).subset fun c hc ↦ ⟨hc.1, (le_div_iff₀' hk).2 ?_⟩
-  rw [← hkφ]
-  exact hc.2
-
 section CommSemiring
 
 variable [CommSemiring R] {w : ι → ℕ → R}
@@ -238,7 +232,20 @@ theorem coeff_map_configurationCountSeries {S : Type*} [AddCommMonoid S] (ρ : R
   rw [NovikovSeries.coeff_map]
   simp only [coeff_configurationCountSeries]
   rw [configurationCount_comp (finite_compatibleConfigurations hpos'
-    (finite_setOf_comp_le ⟨k, hk, hkφ⟩ hfin _)), AddMonoidHom.map_finsum_mem' ρ hsupp]
+    (finite_setOf_map_le ⟨k, hk, hkφ⟩ hfin _)), AddMonoidHom.map_finsum_mem' ρ hsupp]
+
+/-- **The specialized generating series.** Let the candidates have positive period `N`, finitely
+many below each cutoff, and let `φ` rescale periods by a positive constant. The pushforward along
+`φ` of the generating series of the counts for the classes `cls` is the generating series of the
+counts for the classes `φ ∘ cls`. -/
+theorem mapRingHom_configurationCountSeries (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
+    (hpos : ∀ c ∈ s, 0 < N (cls c)) (hpos' : ∀ c ∈ s, 0 < N' (φ (cls c)))
+    (hfin : ∀ C : ℝ, {c ∈ s | N (cls c) ≤ C}.Finite) :
+    mapRingHom (RingHom.id R) φ hφ (configurationCountSeries r cls w hpos hfin) =
+      configurationCountSeries r (φ ∘ cls) w hpos' (finite_setOf_map_le hφ hfin) := by
+  ext A'
+  rw [mapRingHom_apply, coeff_map_configurationCountSeries, coeff_configurationCountSeries]
+  simp only [AddMonoidHom.coe_ofClass, RingHom.id_apply]
 
 end CommSemiring
 
@@ -256,14 +263,9 @@ theorem hasProd_ofPowerSeries_mapRingHom_configurationCountSeries (hs : s.Pairwi
     (hw : ∀ c ∈ s, ∀ k, w c k = coeff k (f c)) (hf : ∀ c ∈ s, constantCoeff (f c) = 1) :
     HasProd (fun c : s ↦ ofPowerSeries (φ (cls c)) (hpos' c c.2) (f c))
       (mapRingHom (RingHom.id R) φ hφ (configurationCountSeries r cls w hpos hfin)) := by
-  have hfin' := finite_setOf_comp_le hφ hfin
-  have h : mapRingHom (RingHom.id R) φ hφ (configurationCountSeries r cls w hpos hfin) =
-      configurationCountSeries r (φ ∘ cls) w hpos' hfin' := by
-    ext A'
-    rw [mapRingHom_apply, coeff_map_configurationCountSeries, coeff_configurationCountSeries]
-    simp only [AddMonoidHom.coe_ofClass, RingHom.id_apply]
-  rw [h]
-  exact hasProd_ofPowerSeries_configurationCountSeries hs hpos' hfin' hw hf
+  rw [mapRingHom_configurationCountSeries hφ hpos hpos' hfin]
+  exact hasProd_ofPowerSeries_configurationCountSeries hs hpos' (finite_setOf_map_le hφ hfin) hw
+    hf
 
 end Series
 
