@@ -122,12 +122,8 @@ private theorem pathElem_smul_dart_eq_of_bassSerreDart_eq {b₀ b c b' c' : T.qu
   obtain rfl : y = y' := by
     simpa using congrArg (bassSerreProjection D.graphOfGroups b₀).mapE h
   obtain ⟨c₀, hc₀⟩ := bassSerreDart_eq_bassSerreDart_iff.1 h
-  rw [pathElem_congr hc₀, pathElem_cons_vertex, mul_smul, αArrow_mk]
-  -- `α_y(c₀)` fixes `d_y`.
-  have hα : (D.graphOfGroups.α y c₀).1 ∈ stabilizer G (D.dart y) := by
-    rw [← SetLike.mem_coe, ← range_val_α]
-    exact ⟨c₀, rfl⟩
-  rw [mem_stabilizer_iff.1 hα]
+  rw [pathElem_congr hc₀, pathElem_cons_vertex, mul_smul, αArrow_mk,
+    mem_stabilizer_iff.1 (coe_α_apply_mem_stabilizer y c₀)]
 
 variable (D)
 
@@ -172,9 +168,8 @@ noncomputable def bassSerreHom (b₀ : T.quotient.V) :
     exact src_smul ..
   map_rev d := by
     obtain ⟨b, c, p, ⟨y, rfl, rfl⟩, rfl⟩ := bassSerreDart_surjective d
-    rw [rev_bassSerreDart, bassSerreMapE_bassSerreDart, bassSerreMapE_bassSerreDart,
-      pathElem_cons_dart, reverse_val, dart_rev, mul_smul, smul_inv_smul]
-    exact (rev_smul ..).symm
+    rw [rev_bassSerreDart, bassSerreMapE_bassSerreDart, bassSerreMapE_bassSerreDart]
+    simp [pathElem_cons_dart, dart_rev, mul_smul]
 
 variable {D}
 
@@ -225,8 +220,7 @@ private theorem bassSerreHom_locallyInjective (b₀ : T.quotient.V)
   have hgy : g.1 ∈ stabilizer G (D.dart y) := by
     rw [pathElem_congr hg, pathElem_cons_vertex, mul_smul, smul_left_cancel_iff] at h
     exact mem_stabilizer_iff.2 h.symm
-  rw [← SetLike.mem_coe, ← range_val_α] at hgy
-  obtain ⟨c₀, hc₀⟩ := hgy
+  obtain ⟨c₀, hc₀⟩ := exists_coe_α_apply_eq_of_mem_stabilizer hgy
   obtain rfl : D.graphOfGroups.α y c₀ = g := Subtype.ext hc₀
   rw [bassSerreDart_congr hg, ← αArrow_mk, bassSerreDart_cons_vertex_αArrow]
 
@@ -243,9 +237,7 @@ private theorem bassSerreHom_locallySurjective (b₀ : T.quotient.V) (d : T.E)
     rw [src_smul, ← hx, inv_smul_smul])
   set y := T.quotientMap.mapE ((D.pathElem p)⁻¹ • d)
   have hy : T.quotient.src y = b := by
-    apply D.vertex_injective
-    rw [← src_dart, ← smul_left_cancel_iff s, ← src_smul, hse, src_smul, ← hx, inv_smul_smul]
-    exact (mem_stabilizer_iff.1 hs).symm
+    simp [y, Hom.map_src, ← hx]
   obtain ⟨s, rfl⟩ : ∃ s' : D.graphOfGroups.vertexGroup b, s'.1 = s := ⟨⟨s, hs⟩, rfl⟩
   refine ⟨bassSerreDart (p.cons (.vertex s)) (⟨y, hy, rfl⟩ : b ⟶ T.quotient.tgt y), ?_⟩
   rw [bassSerreHom_mapE_bassSerreDart, ← pathElem_def, pathElem_cons_vertex, mul_smul, hse,
@@ -281,9 +273,7 @@ noncomputable def bassSerreIso (b₀ : T.quotient.V) :
 /-! ### The fundamental group -/
 
 /-- **The structure theorem for groups acting on trees, for the group.** The homomorphism
-`π₁(𝔹, v₀) →* G` is injective: an element of its kernel fixes every vertex of the Bass–Serre tree,
-hence lies in the image of the vertex group `B_{v₀}`, on which it is the inclusion of a
-stabilizer. -/
+`π₁(𝔹, v₀) →* G` is injective. -/
 theorem π₁Hom_injective (b₀ : T.quotient.V) : Function.Injective (D.π₁Hom b₀) := by
   refine (injective_iff_map_eq_one _).2 fun γ hγ => ?_
   -- `γ` fixes the vertex `B_{v₀}` of the empty path.
@@ -293,9 +283,7 @@ theorem π₁Hom_injective (b₀ : T.quotient.V) : Function.Injective (D.π₁Ho
     simp only [bassSerreIso_equivV_apply, bassSerreHom_mapV_smul, hγ, one_smul]
   rw [stabilizer_bassSerreVertex] at hfix
   obtain ⟨g, rfl⟩ := hfix
-  have hg : g.1 = 1 := by
-    rw [π₁.vertexHom_nil_apply, π₁Hom_mk, Path.toπ₁Tree_ofVertex] at hγ
-    exact (π₁TreeHom_of D b₀ g).symm.trans hγ
+  have hg : g.1 = 1 := (D.π₁Hom_vertexHom_nil g).symm.trans hγ
   rw [show g = 1 from Subtype.ext hg, map_one]
 
 /-- The homomorphism `π₁(𝔹, S) →* G` is injective. -/
@@ -313,6 +301,13 @@ noncomputable def π₁MulEquiv (b₀ : T.quotient.V) : π₁ D.graphOfGroups b�
 @[simp] theorem π₁MulEquiv_apply (b₀ : T.quotient.V) (g : π₁ D.graphOfGroups b₀) :
     D.π₁MulEquiv b₀ g = D.π₁Hom b₀ g :=
   (rfl)
+
+/-- The inverse of `π₁(𝔹, v₀) ≃* G` sends an element `g` of the vertex group `B_{v₀}`, read in `G`,
+to the image of `g` in `π₁(𝔹, v₀)`. -/
+@[simp] theorem π₁MulEquiv_symm_apply_coe {b₀ : T.quotient.V}
+    (g : D.graphOfGroups.vertexGroup b₀) :
+    (D.π₁MulEquiv b₀).symm g.1 = π₁.vertexHom Quiver.Path.nil g :=
+  (D.π₁MulEquiv b₀).symm_apply_eq.2 (D.π₁Hom_vertexHom_nil g).symm
 
 end GTree.Lifting
 

@@ -29,8 +29,8 @@ Hence sending each vertex group to `G` by the inclusion and each dart `y` to `t_
 defining relations of `π₁(𝔹, S)`, and defines a homomorphism `π₁(𝔹, S) →* G`
 (`GTree.Lifting.π₁TreeHom`), and with `π₁(𝔹, v) ≃* π₁(𝔹, S)` a homomorphism `π₁(𝔹, v) →* G` at
 every vertex `v` (`GTree.Lifting.π₁Hom`). Since the stabilizers of the lifted vertices and the
-elements `t_y` generate `G` (`GTree.Lifting.iSup_stabilizer_sup_closure_range_twist`), these
-homomorphisms are surjective. They are also injective, by the structure theorem of Bass–Serre
+elements `t_y` generate `G` (`GTree.Lifting.iSup_stabilizer_sup_closure_range_twist_eq_top`),
+these homomorphisms are surjective. They are also injective, by the structure theorem of Bass–Serre
 theory (`TauCeti.GroupTheory.GTree.StructureTheorem`), which compares `T` with the Bass–Serre tree
 of `𝔹`.
 
@@ -203,9 +203,9 @@ of `y`. -/
 private theorem mem_stabilizer_dart_rev_iff (y : T.quotient.E) {g : G} :
     g ∈ stabilizer G (D.dart (T.quotient.rev y)) ↔
       D.twist y * g * (D.twist y)⁻¹ ∈ stabilizer G (D.dart y) := by
-  rw [dart_rev, mem_stabilizer_iff, mem_stabilizer_iff, ← rev_smul, ← rev_smul,
-    T.rev_injective.eq_iff, ← smul_left_cancel_iff (D.twist y), smul_inv_smul]
-  simp only [mul_smul]
+  simp only [dart_rev, mem_stabilizer_iff, ← rev_smul, T.rev_injective.eq_iff, mul_smul]
+  -- Both sides say that `g` fixes `t_y⁻¹ • d_y`.
+  rw [← smul_left_cancel_iff (D.twist y), smul_inv_smul]
 
 /-- The image of `α_y` in `G` is the stabilizer of the lift of `y`. -/
 theorem range_val_α (y : T.quotient.E) :
@@ -219,14 +219,28 @@ theorem range_val_α (y : T.quotient.E) :
     rw [h, mem_stabilizer_dart_rev_iff]
     simp [mul_assoc]
 
+/-- The boundary monomorphism `α_y` takes values in the stabilizer of the lift of `y`. -/
+theorem coe_α_apply_mem_stabilizer (y : T.quotient.E)
+    (c : D.graphOfGroups.edgeGroup (T.quotient.toGeomEdge y)) :
+    (D.graphOfGroups.α y c).1 ∈ stabilizer G (D.dart y) := by
+  rw [← SetLike.mem_coe, ← range_val_α]
+  exact ⟨c, rfl⟩
+
+/-- Every element of the stabilizer of the lift of `y` is the image of an element of the edge
+group under `α_y`. -/
+theorem exists_coe_α_apply_eq_of_mem_stabilizer {y : T.quotient.E} {g : G}
+    (hg : g ∈ stabilizer G (D.dart y)) : ∃ c, (D.graphOfGroups.α y c).1 = g := by
+  rwa [← SetLike.mem_coe, ← range_val_α] at hg
+
 /-- The image of `ω_y` in `G` is the stabilizer of the lift of `rev y`. -/
 theorem range_val_ω (y : T.quotient.E) :
     Set.range (fun c => (D.graphOfGroups.ω y c).1) = stabilizer G (D.dart (T.quotient.rev y)) := by
   ext g
   rcases GeomEdge.out_toGeomEdge_eq_or_eq_rev T.quotient y with h | h
   · simp only [Set.mem_range, coe_ω_apply_of_out_eq h, SetLike.mem_coe]
-    rw [← inv_inv (D.twist y), inv_inv (D.twist y)⁻¹, exists_conj_val_eq_iff, h,
-      mem_stabilizer_dart_rev_iff, inv_inv]
+    -- `ω_y` is the conjugation by `t = t_y⁻¹`.
+    simpa only [inv_inv, h, mem_stabilizer_dart_rev_iff] using
+      exists_conj_val_eq_iff (ε := T.quotient.toGeomEdge y) (t := (D.twist y)⁻¹) (g := g)
   · simp only [Set.mem_range, coe_ω_apply_of_out_eq_rev h, exists_val_eq_iff, SetLike.mem_coe]
     rw [h]
 
@@ -257,7 +271,7 @@ noncomputable def π₁TreeHom : π₁Tree D.graphOfGroups D.tree.darts →* G :
 and the elements `t_y` generate `G`. -/
 theorem π₁TreeHom_surjective : Function.Surjective D.π₁TreeHom := by
   refine MonoidHom.range_eq_top.1 ((π₁Tree.range_lift ..).trans ?_)
-  rw [← D.iSup_stabilizer_sup_closure_range_twist]
+  rw [← D.iSup_stabilizer_sup_closure_range_twist_eq_top]
   congr! with b
   exact Subgroup.range_subtype _
 
@@ -274,6 +288,12 @@ theorem coe_π₁Hom (b : T.quotient.V) :
 @[simp] theorem π₁Hom_mk {b : T.quotient.V} (p : D.graphOfGroups.Path ⟨b⟩ ⟨b⟩) :
     D.π₁Hom b (π₁.mk p) = D.π₁TreeHom (p.toπ₁Tree D.tree.darts) := by
   simp [π₁Hom]
+
+/-- On the vertex group at the base vertex, the homomorphism `π₁(𝔹, v) →* G` is the inclusion of
+the stabilizer of the lifted vertex. -/
+theorem π₁Hom_vertexHom_nil {b : T.quotient.V} (g : D.graphOfGroups.vertexGroup b) :
+    D.π₁Hom b (π₁.vertexHom Quiver.Path.nil g) = g.1 := by
+  simp
 
 /-- The homomorphism `π₁(𝔹, v) →* G` is surjective. -/
 theorem π₁Hom_surjective (b : T.quotient.V) : Function.Surjective (D.π₁Hom b) :=
