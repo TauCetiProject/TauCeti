@@ -221,7 +221,7 @@ theorem norm_indicatorMultiplication_le (hs : MeasurableSet s) :
     simpa only [one_mul] using norm_indicatorMultiplication_apply_le hs f
 
 /-- The `Lʳ` seminorm of `1_s f` is the `Lʳ` seminorm of `f` on `s`, for every exponent `r`. -/
-theorem eLpNorm_indicatorMultiplication (hs : MeasurableSet s) (f : Lp E p μ) (r : ℝ≥0∞) :
+@[simp] theorem eLpNorm_indicatorMultiplication (hs : MeasurableSet s) (f : Lp E p μ) (r : ℝ≥0∞) :
     eLpNorm (indicatorMultiplication 𝕜 p hs f) r μ = eLpNorm f r (μ.restrict s) := by
   rw [eLpNorm_congr_ae (indicatorMultiplication_ae hs f),
     eLpNorm_indicator_eq_eLpNorm_restrict hs.nullMeasurableSet]
