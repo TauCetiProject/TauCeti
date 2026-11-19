@@ -149,9 +149,7 @@ element of `G ⧸ M` squares to one, so the quotient is commutative as well. -/
 theorem _root_.Group.isSolvable_of_forall_notMem_mul_self_eq_one {G : Type*} [Group G]
     {M : Subgroup G} [M.Normal] (hM : M ≠ ⊤) (h : ∀ x ∉ M, x * x = 1) :
     Group.IsSolvable G := by
-  obtain ⟨x, hx⟩ : ∃ x, x ∉ M := by
-    by_contra! hall
-    exact hM (eq_top_iff.mpr fun y _ ↦ hall y)
+  obtain ⟨x, hx⟩ := SetLike.exists_notMem_of_ne_top M hM
   have hxx := h x hx
   have hinv : ∀ m ∈ M, x * m * x = m⁻¹ := fun m hm ↦ by
     have hxm : x * m ∉ M := fun hxm ↦ hx (by simpa using M.mul_mem hxm (M.inv_mem hm))
