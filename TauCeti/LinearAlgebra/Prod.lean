@@ -60,6 +60,12 @@ quadratic forms with the subgroup preserving both summands.
   `LinearMap.surjective_coprod_neg_of_comp_right`: surjectivity of `f.coprod g` survives
   removing a precomposition from either map. In particular transversality passes from `α ∘ h`
   and `β`, or from `α` and `β ∘ h`, to `α` and `β`.
+* `LinearMap.injective_domRestrict_of_injective_prod`,
+  `LinearMap.bijective_domRestrict_of_bijective_prod`: when the augmented map `f.prod g` is
+  injective or bijective, `g` is injective or bijective on the kernel of `f`.
+  Consequently the kernel of `f` is finite when the target of `g` is Noetherian
+  (`LinearMap.finite_ker_of_injective_prod`), and the cokernel of `f` is zero
+  (`LinearMap.subsingleton_quotient_range_of_surjective_prod`).
 * `LinearMap.surjective_coprod_neg_assoc_outer` and its converse
   `LinearMap.surjective_coprod_neg_assoc_symm_outer`: transversality of one bracketing of an
   iterated fibre product gives transversality of the outer fibre product of the other; the inner
@@ -263,6 +269,24 @@ theorem surjective_coprod_of_comp_right {f : M₁ →ₗ[R] M₃} {g : M₂ →�
   obtain ⟨x, hx⟩ := H y
   exact ⟨LinearMap.id.prodMap h x, by simpa using hx⟩
 
+/-- If `f.prod g` is injective, `g` is injective on the kernel of `f`. -/
+theorem injective_domRestrict_of_injective_prod {f : M₁ →ₗ[R] M₂} {g : M₁ →ₗ[R] M₃}
+    (h : Function.Injective (f.prod g)) : Function.Injective (g.domRestrict (ker f)) :=
+  fun x y hxy ↦ Subtype.ext (h (Prod.ext ((mem_ker.mp x.property).trans
+      (mem_ker.mp y.property).symm) hxy))
+
+/-- If `f.prod g` is bijective, `g` maps the kernel of `f` bijectively onto its target. -/
+theorem bijective_domRestrict_of_bijective_prod {f : M₁ →ₗ[R] M₂} {g : M₁ →ₗ[R] M₃}
+    (h : Function.Bijective (f.prod g)) : Function.Bijective (g.domRestrict (ker f)) :=
+  ⟨injective_domRestrict_of_injective_prod h.1, fun v ↦
+    let ⟨m, hm⟩ := h.2 (0, v)
+    ⟨⟨m, congrArg Prod.fst hm⟩, congrArg Prod.snd hm⟩⟩
+
+/-- If `f.prod g` is injective and the target of `g` is Noetherian, the kernel of `f` is finite. -/
+theorem finite_ker_of_injective_prod [IsNoetherian R M₃] {f : M₁ →ₗ[R] M₂} {g : M₁ →ₗ[R] M₃}
+    (h : Function.Injective (f.prod g)) : Module.Finite R (ker f) :=
+  Module.Finite.of_injective _ (injective_domRestrict_of_injective_prod h)
+
 end Semiring
 
 /-- The difference coproduct `(x, y) ↦ f x - g y` of two linear maps is surjective if and only if
@@ -272,6 +296,14 @@ theorem surjective_coprod_neg_iff {R M₁ M₂ M₃ : Type*} [Ring R]
     [AddCommGroup M₃] [Module R M₃] (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₃) :
     Function.Surjective (f.coprod (-g)) ↔ range f ⊔ range g = ⊤ := by
   rw [surjective_coprod_iff, range_neg]
+
+/-- If `f.prod g` is onto, the cokernel of `f` is zero. -/
+theorem subsingleton_quotient_range_of_surjective_prod {R M₁ M₂ M₃ : Type*} [Ring R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂] [AddCommGroup M₃]
+    [Module R M₃] {f : M₁ →ₗ[R] M₂} {g : M₁ →ₗ[R] M₃} (h : Function.Surjective (f.prod g)) :
+    Subsingleton (M₂ ⧸ range f) :=
+  -- `f` is `fst ∘ₗ f.prod g` by definition (`LinearMap.fst_prod` is proved by `rfl`).
+  Submodule.Quotient.subsingleton_iff.mpr (range_eq_top.mpr (Prod.fst_surjective.comp h))
 
 section Ring
 
