@@ -56,6 +56,8 @@ measure (`TauCeti.SymplecticForm.liouvilleMeasure_constSmooth_stdSymplecticForm`
 * `TauCeti.SmoothTwoForm.isLocallyFiniteMeasure_liouvilleMeasure`: it is locally finite.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isOpenPosMeasure_liouvilleMeasure`: for nondegenerate
   `σ` it is positive on nonempty open sets.
+* `TauCeti.SmoothTwoForm.nullSingletonClass_liouvilleMeasure`: in positive dimension, points have
+  Liouville measure zero.
 * `Homeomorph.measurePreserving_liouvilleMeasure`: maps pulling `τ` back to `σ` carry the
   Liouville measure of `σ` to that of `τ`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.measurePreserving_globalFlowDiffeomorph_liouvilleMeasure`:
@@ -130,6 +132,11 @@ theorem liouvilleMeasure_apply_of_subset {α : M} {s : Set M} (hs : MeasurableSe
 manifold. -/
 instance isLocallyFiniteMeasure_liouvilleMeasure : IsLocallyFiniteMeasure (σ.liouvilleMeasure n) :=
   RoughForm.isLocallyFiniteMeasure_measure ((σ.volumeForm n).isSmoothForm.of_le bot_le)
+
+/-- The Liouville measure gives points measure zero on a manifold of positive dimension. -/
+instance nullSingletonClass_liouvilleMeasure [Nontrivial E] :
+    NullSingletonClass (σ.liouvilleMeasure n) :=
+  RoughForm.nullSingletonClass_measure _
 
 /-- The Liouville measure of a nondegenerate two-form is positive on nonempty open sets. -/
 theorem IsNondegenerate.isOpenPosMeasure_liouvilleMeasure (h : σ.IsNondegenerate) :

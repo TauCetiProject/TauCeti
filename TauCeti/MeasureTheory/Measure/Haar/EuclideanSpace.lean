@@ -26,6 +26,8 @@ times that of the Euclidean ball of radius `r`, since that ball contains the cub
 * `EuclideanSpace.exists_map_toLp_symm_eq_smul`: an additive Haar measure is carried by `ofLp` to
   a positive finite multiple of Lebesgue measure.
 * `EuclideanSpace.measure_preimage_ofLp`: the measure of a preimage under `ofLp`.
+* `EuclideanSpace.volume_preimage_ofLp`, `EuclideanSpace.volume_preimage_ofLp_pi`: `ofLp`
+  preserves volume, so a box has volume the product of the lengths of its sides.
 * `EuclideanSpace.measure_preimage_ofLp_closedBall`, `EuclideanSpace.measure_preimage_ofLp_ball`:
   the measure of a cube.
 * `EuclideanSpace.measure_preimage_ofLp_closedBall_le`: a cube has measure at most `√nⁿ` times
@@ -61,6 +63,18 @@ theorem measure_preimage_ofLp {μ : Measure (EuclideanSpace ℝ ι)} {a : ℝ≥
     μ (ofLp ⁻¹' S) = a * volume S := by
   rw [← MeasurableEquiv.coe_toLp_symm, ← MeasurableEquiv.map_apply, he, _root_.smul_apply,
     smul_eq_mul]
+
+/-- The volume of the preimage under `ofLp` of any set `S ⊆ ι → ℝ` is its Lebesgue measure. -/
+theorem volume_preimage_ofLp (S : Set (ι → ℝ)) :
+    volume (ofLp ⁻¹' S : Set (EuclideanSpace ℝ ι)) = volume S := by
+  rw [← MeasurableEquiv.coe_toLp_symm, ← MeasurableEquiv.map_apply,
+    (volume_preserving_symm_measurableEquiv_toLp ι).map_eq]
+
+/-- The volume of the box `∏ i, s i` of Euclidean space is the product of the lengths of its
+sides. -/
+theorem volume_preimage_ofLp_pi (s : ι → Set ℝ) :
+    volume (ofLp ⁻¹' Set.univ.pi s : Set (EuclideanSpace ℝ ι)) = ∏ i, volume (s i) := by
+  rw [volume_preimage_ofLp, volume_pi_pi]
 
 /-- If `ofLp` carries `μ` to `a • volume`, then `μ` gives the cube of half-side `r ≥ 0` the
 measure `a (2r)ⁿ`. -/
