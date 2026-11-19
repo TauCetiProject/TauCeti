@@ -78,6 +78,11 @@ private theorem apply_adjointPreimage (a : X →ₗ[ℤ] ℤ) :
     u (adjointPreimage u a) = Nat.card u.componentGroup • a := by
   simp [adjointPreimage, ← LinearEquiv.ofInjective_apply (h := IsNondegenerate.injective)]
 
+/-- On the adjoint of `y`, the preimage is `n y`. -/
+private theorem adjointPreimage_apply_self (y : Y) :
+    adjointPreimage u (u y) = (Nat.card u.componentGroup : ℤ) • y :=
+  IsNondegenerate.injective (u := u) (by rw [apply_adjointPreimage, map_zsmul, natCast_zsmul])
+
 private theorem natCard_componentGroup_ne_zero : Nat.card u.componentGroup ≠ 0 :=
   Nat.card_pos.ne'
 
@@ -113,8 +118,8 @@ private theorem inverseForm_apply_flip (a : X →ₗ[ℤ] ℤ) (x : X) :
     Nat.cast_ne_zero.mpr (natCard_componentGroup_ne_zero u)
   have h : u (adjointPreimage u a) = (Nat.card u.componentGroup : ℤ) • a := by
     rw [apply_adjointPreimage, natCast_zsmul]
-  rw [inverseForm_apply_of_eq u hn h, LinearMap.flip_apply, h, LinearMap.smul_apply, smul_eq_mul,
-    Int.cast_mul, mul_div_cancel_left₀ _ (Int.cast_ne_zero.mpr hn)]
+  rw [inverseForm_apply_of_eq u hn h]
+  simp [h, natCard_componentGroup_ne_zero u]
 
 /-- The inverse form reduced modulo `ℤ`. -/
 private noncomputable def inverseFormModOne :
@@ -125,8 +130,7 @@ private noncomputable def inverseFormModOne :
 
 private theorem inverseFormModOne_apply (a : X →ₗ[ℤ] ℤ) (b : Y →ₗ[ℤ] ℤ) :
     inverseFormModOne u a b = (inverseForm u a b : AddCircle (1 : ℚ)) := by
-  rw [inverseFormModOne, LinearMap.compr₂_apply, AddMonoidHom.coe_toIntLinearMap,
-    QuotientAddGroup.mk'_apply]
+  simp [inverseFormModOne]
 
 private theorem range_le_ker_inverseFormModOne :
     LinearMap.range u ≤ LinearMap.ker (inverseFormModOne u) := by
@@ -154,9 +158,7 @@ noncomputable def discriminantPairing :
 private theorem discriminantPairing_mk_mk (a : X →ₗ[ℤ] ℤ) (b : Y →ₗ[ℤ] ℤ) :
     u.discriminantPairing (Submodule.Quotient.mk a) (Submodule.Quotient.mk b) =
       (inverseForm u a b : AddCircle (1 : ℚ)) := by
-  rw [discriminantPairing, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe,
-    LinearMap.toAddMonoidHom'_apply, LinearMap.toAddMonoidHom_coe, LinearMap.liftQ₂_mk,
-    inverseFormModOne_apply]
+  simp [discriminantPairing, inverseFormModOne_apply]
 
 /-- **Evaluation of the discriminant pairing.** If `u♯ y = m a` with `m ≠ 0`, the pairing of the
 classes of `a` and `b` is `b(y) / m` modulo `ℤ`. -/
@@ -220,11 +222,9 @@ theorem injective_discriminantPairing_flip [Module.IsReflexive ℤ X] :
         (DFunLike.congr_fun hc (Submodule.Quotient.mk a))
   rw [Submodule.Quotient.mk_eq_zero]
   refine ⟨(Module.evalEquiv ℤ X).symm g, LinearMap.ext fun y ↦ ?_⟩
-  -- On `a = u♯ y`, the preimage is `n y`.
-  have hpre : adjointPreimage u (u y) = (Nat.card u.componentGroup : ℤ) • y :=
-    IsNondegenerate.injective (u := u) (by rw [apply_adjointPreimage, map_zsmul, natCast_zsmul])
   have hy := LinearMap.congr_fun hg (u y)
-  rw [LinearMap.smul_apply, LinearMap.comp_apply, hpre, map_zsmul, smul_eq_mul, smul_eq_mul] at hy
+  simp only [LinearMap.smul_apply, LinearMap.comp_apply, adjointPreimage_apply_self, map_zsmul,
+    smul_eq_mul] at hy
   rw [LinearMap.flip_apply, Module.apply_evalEquiv_symm_apply]
   exact isLeftRegular_natCard_componentGroup u hy
 
