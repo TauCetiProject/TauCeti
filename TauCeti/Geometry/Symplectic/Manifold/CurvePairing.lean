@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.Geometry.Manifold.TwoForm.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 
+import TauCeti.Geometry.Manifold.DeRham.Map
 import TauCeti.Geometry.Manifold.DeRham.NormedSpace
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
@@ -59,11 +60,11 @@ and `u^* θ` is exact, Stokes' theorem gives `∫_C u^* θ = 0`, so `u` is const
 on a real normed space (`TauCeti.apply_eq_of_mem_closedForms_normedSpace`). In particular a closed
 connected curve that is pseudoholomorphic for a constant linear complex structure `J₀` on a normed
 space, tamed by an alternating bilinear form, is constant
-(`TauCeti.apply_eq_of_isPseudoholomorphicAt_const`). This is the case of a curve contained in one
-normal fibre of an embedded pseudoholomorphic curve, for the normal linearization of the almost
-complex structure: on each fibre it is the constant structure given by its normal block. So a
-closed connected curve in one normal fibre, pseudoholomorphic for the normal linearization, is a
-point once that block is tamed by a constant two-form on the fibre.
+(`TauCeti.apply_eq_of_isPseudoholomorphicAt_const`). This is motivated by curves contained in one
+normal fibre of an embedded pseudoholomorphic curve: the normal linearization
+`TauCeti.normalLinearization` acts on vertical vectors `(0, n)` by the constant block
+`J_NN(z, 0)`, a linear complex structure when `J(z, 0)` preserves `E × {0}`. Applying the constant
+case to such a vertical curve needs that reduction, which is not formalized here.
 
 ## References
 
@@ -186,7 +187,7 @@ theorem mfderiv_eq_zero_of_integralTopForm_mpullback_eq_zero [CompactSpace C]
     ((SmoothForm.isSmoothForm _).of_le (by simp))
     (isClosed_tsupport _).isCompact hnn hpos).ne' h
 
-variable [BoundarylessManifold I' C] [T2Space C] [CompactSpace C] [ConnectedSpace C]
+variable [BoundarylessManifold I' C] [T2Space C] [CompactSpace C] [PreconnectedSpace C]
 
 /-- **Closed pseudoholomorphic curves with exact pairing are constant.** Let `u` be a smooth
 pseudoholomorphic map from a closed connected surface `C`, oriented so that the frames `(e, j e)`
@@ -218,10 +219,8 @@ theorem apply_eq_of_mem_exactForms (hu : ContMDiff I' I ∞ u)
     (hθ : ∀ c (v : TangentSpace I (u c)), v ≠ 0 →
       0 < SmoothBundleForm.eval₂ θ (u c) v (J (u c) v))
     (hex : θ ∈ exactForms I X 2) (c c' : C) : u c = u c' := by
-  obtain ⟨α, rfl⟩ := (exactForms_succ I (M := X) 1).le hex
   refine apply_eq_of_mpullback_mem_exactForms hu ho hhol hθ ?_ c c'
-  rw [← SmoothForm.mextDerivₗ_mpullback]
-  exact (exactForms_succ I' (M := C) 1).ge (LinearMap.mem_range_self (mextDerivₗ I' 1) _)
+  simpa using closedForms.mpullback_mem_exactForms u hu 2 ⟨θ, exactForms_le_closedForms I 2 hex⟩ hex
 
 /-- **Closed pseudoholomorphic curves in a normed space are constant.** On a real normed space `V`
 with an almost complex structure tamed along the map by a closed two-form, every smooth
@@ -239,16 +238,15 @@ theorem apply_eq_of_mem_closedForms_normedSpace {V : Type*} [NormedAddCommGroup 
   apply_eq_of_mem_exactForms hu ho hhol hθ
     ((exactForms_succ_eq_closedForms_normedSpace V 1).ge hcl) c c'
 
-/-- **No closed curves in a complex vector space.** Let `Jc` be a linear complex structure on a
-real normed space `V`, tamed by an alternating bilinear form `B`: `B v (Jc v) > 0` for `v ≠ 0`.
-Every smooth map from a closed connected surface that is pseudoholomorphic for the constant
-structure `Jc` is constant.
+/-- **Closed pseudoholomorphic curves for a tamed constant complex structure are constant.** Let
+`Jc` be a linear complex structure on a real normed space `V`, tamed by an alternating bilinear
+form `B`: `B v (Jc v) > 0` for `v ≠ 0`. Every smooth map from a closed connected surface that is
+pseudoholomorphic for the constant structure `Jc` is constant.
 
-Along an embedded pseudoholomorphic curve, the normal linearization of the almost complex structure
-(`TauCeti.normalLinearization`) restricts on each normal fibre to the constant structure given by
-its normal block. So a closed connected curve contained in one normal fibre and pseudoholomorphic
-for the normal linearization is a point, whenever that normal block is tamed by a constant
-two-form on the fibre. -/
+This is motivated by vertical curves along an embedded pseudoholomorphic curve: the normal
+linearization `TauCeti.normalLinearization` acts on vertical vectors `(0, n)` by the constant block
+`J_NN(z, 0)`, which is a linear complex structure when `J(z, 0)` preserves `E × {0}`. Applying
+this theorem to a curve in one normal fibre needs that reduction, which is not formalized here. -/
 theorem apply_eq_of_isPseudoholomorphicAt_const {V : Type*} [NormedAddCommGroup V]
     [NormedSpace ℝ V] {Jc : V →L[ℝ] V} (hJc : ∀ v, Jc (Jc v) = -v) {B : V →L[ℝ] V →L[ℝ] ℝ}
     (hB : ∀ v, B v v = 0) (hBJ : ∀ v, v ≠ 0 → 0 < B v (Jc v)) {u : C → V}
