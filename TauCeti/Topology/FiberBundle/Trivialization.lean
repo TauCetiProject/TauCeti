@@ -33,6 +33,8 @@ fibre is a bijection onto the base.
 * `IsCompact.exists_finset_subset_preimage_biUnion_baseSet`: a compact subset of the total
   space lies over a finite union of preferred trivializing base sets.
 * `TauCeti.continuous_of_forall_exists_trivialization`: a locally trivial map is continuous.
+* `FiberBundle.continuous_of_forall_trivialization`: chart formulas continuous at each point give
+  continuity of a map of total spaces over the identity.
 * `FiberBundle.exists_trivialization_mem_baseSet`: the projection of a fibre bundle is locally
   trivial.
 * `Bundle.Trivialization.continuousOn_coordChange`: coordinate changes are jointly continuous over
@@ -408,3 +410,33 @@ theorem bijective_proj_of_subsingleton [∀ b, Zero (E b)] : Function.Bijective 
 end Subsingleton
 
 end TauCeti
+
+namespace FiberBundle
+
+variable {B : Type*} [TopologicalSpace B]
+
+/-- A map of total spaces over the identity of the base into a fibre bundle is continuous as soon
+as, around each point, it is read in some trivialization of the source and the preferred
+trivialization of the target by a function continuous at that point. -/
+theorem continuous_of_forall_trivialization {F₁ F₂ : Type*} [TopologicalSpace F₁]
+    [TopologicalSpace F₂] {E₁ E₂ : B → Type*} [TopologicalSpace (TotalSpace F₁ E₁)]
+    [TopologicalSpace (TotalSpace F₂ E₂)] [∀ x, TopologicalSpace (E₂ x)] [FiberBundle F₂ E₂]
+    (Φ : TotalSpace F₁ E₁ → TotalSpace F₂ E₂) (hΦ : ∀ p, (Φ p).proj = p.proj)
+    (hproj : Continuous (π F₁ E₁))
+    (h : ∀ p : TotalSpace F₁ E₁, ∃ (e : Trivialization F₁ (π F₁ E₁)) (ψ : B → F₁ → F₂),
+      p.proj ∈ e.baseSet ∧ ContinuousAt (fun q ↦ ψ q.proj (e q).2) p ∧
+      ∀ q : TotalSpace F₁ E₁, q.proj ∈ e.baseSet →
+        q.proj ∈ (trivializationAt F₂ E₂ p.proj).baseSet →
+        (trivializationAt F₂ E₂ p.proj (Φ q)).2 = ψ q.proj (e q).2) :
+    Continuous Φ := by
+  refine continuous_iff_continuousAt.2 fun p ↦ ?_
+  obtain ⟨e, ψ, hp, hψ, heq⟩ := h p
+  rw [FiberBundle.continuousAt_totalSpace, hΦ p]
+  refine ⟨(hproj.congr fun q ↦ (hΦ q).symm).continuousAt, hψ.congr_of_eventuallyEq ?_⟩
+  filter_upwards [hproj.continuousAt.preimage_mem_nhds (e.open_baseSet.mem_nhds hp),
+    hproj.continuousAt.preimage_mem_nhds ((trivializationAt F₂ E₂ p.proj).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt F₂ E₂ p.proj))] with q hq hq'
+  exact heq q hq hq'
+
+
+end FiberBundle

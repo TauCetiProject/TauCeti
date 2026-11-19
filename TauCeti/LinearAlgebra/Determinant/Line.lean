@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.Ray
-public import TauCeti.LinearAlgebra.ExteriorPower.Basis
+public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.Invertible
 public import TauCeti.LinearAlgebra.LinearMap.Ker
 public import TauCeti.LinearAlgebra.LinearMap.Range
@@ -92,8 +92,6 @@ the linear algebra itself is standard.
 * `LinearMap.detLineCongrKerCoker_refl`, `LinearMap.detLineCongrKerCoker_trans` and
   `LinearMap.detLineCongrKerCoker_symm`: the isomorphisms induced on kernels and cokernels are
   functorial.
-* `Module.Basis.exteriorPowerTopEquiv_exteriorPower`: an automorphism acts on the top exterior
-  power by its determinant in the coordinate given by any finite basis.
 * `LinearMap.detLineEquivOfBijective_detLineCongrKerCoker`: for bijective maps, the isomorphism
   induced by isomorphisms of kernels and cokernels respects the trivializations.
 
@@ -252,24 +250,6 @@ theorem detLineEquivOfFinrankEqZero_smul_ιMulti (h : finrank R V = 0) (x : detL
   (detLineEquivOfFinrankEqZero h).injective (by simp)
 
 end TauCeti
-
-namespace Module.Basis
-
-open TauCeti
-
-variable {R : Type*} [CommRing R] {V : Type*} [AddCommGroup V] [Module R V]
-
-/-- In the coordinate `Module.Basis.exteriorPowerTopEquiv`, an automorphism `e` of `V` acts on the
-determinant line by multiplication by its determinant. -/
-theorem exteriorPowerTopEquiv_exteriorPower {n : ℕ} (b : Basis (Fin n) R V) (e : V ≃ₗ[R] V)
-    (x : ⋀[R]^n V) :
-    b.exteriorPowerTopEquiv (e.exteriorPower n x) =
-      LinearMap.det (e : V →ₗ[R] V) * b.exteriorPowerTopEquiv x := by
-  rw [← LinearEquiv.coe_toLinearMap (e.exteriorPower n), LinearEquiv.exteriorPower_toLinearMap,
-    b.map_exteriorPower_top_eq_det_smul, LinearMap.smul_apply, LinearMap.id_apply, map_smul,
-    smul_eq_mul]
-
-end Module.Basis
 
 namespace LinearMap
 
