@@ -91,17 +91,14 @@ theorem exists_homeomorph_sublevel_sum_of_subsingleton (f : M → ℝ) {c δ : �
   have hc := isCoproductOfIsInitialIsPushout _ _ _ _ hinit hpush.isColimit
   refine (TopCat.homeoOfIso (hc.coconePointUniqueUpToIso
     (TopCat.binaryCofanIsColimit _ _))).trans (Homeomorph.sumCongr (.refl _) ?_)
-  have hpt : ∀ p : ↥(criticalPoints I f ∩ f ⁻¹' {c}), Subsingleton
+  have : ∀ p : ↥(criticalPoints I f ∩ f ⁻¹' {c}), Unique
       (TopCat.disk.{u} (manifoldMorseIndex I f p) ×
         TopCat.disk.{u} (finrank ℝ E - manifoldMorseIndex I f p)) := fun p ↦
     have := hD₀ (hk p)
     have := hD₀ (hl p)
-    inferInstance
-  refine (TopCat.homeoOfIso (TopCat.sigmaIsoSigma _)).trans
-    { toFun := Sigma.fst
-      invFun := fun p ↦ ⟨p, (hD₀ (hk p)).default, (hD₀ (hl p)).default⟩
-      left_inv := fun ⟨p, y⟩ ↦ Sigma.ext rfl (heq_of_eq ((hpt p).elim _ _))
-      right_inv := fun _ ↦ rfl
+    uniqueOfSubsingleton (default, default)
+  exact (TopCat.homeoOfIso (TopCat.sigmaIsoSigma _)).trans
+    { Equiv.sigmaUnique _ _ with
       continuous_toFun := continuous_sigma fun _ ↦ continuous_const
       continuous_invFun := continuous_of_discreteTopology }
 
