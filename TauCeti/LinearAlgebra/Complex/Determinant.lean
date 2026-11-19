@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.RingTheory.Complex
 public import Mathlib.RingTheory.Norm.Transitivity
 
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.LinearAlgebra.Complex.Finrank
 
 /-!
 # Real determinants of complex and real-linear maps
@@ -57,8 +57,8 @@ theorem det_restrictScalars_pos {f : E →ₗ[ℂ] E} (hf : f.det ≠ 0) :
 /-- Negating a real-linear endomorphism of a complex module does not change its real
 determinant, because the real dimension is even. -/
 theorem det_neg_of_complex (f : E →ₗ[ℝ] E) : (-f).det = f.det := by
-  rw [← neg_one_smul ℝ f, det_smul, ← Module.finrank_mul_finrank ℝ ℂ E,
-    Complex.finrank_real_complex, (even_two_mul _).neg_one_pow, one_mul]
+  rw [← neg_one_smul ℝ f, det_smul, TauCeti.finrank_real_eq_two_mul_finrank_complex,
+    (even_two_mul _).neg_one_pow, one_mul]
 
 end LinearMap
 
