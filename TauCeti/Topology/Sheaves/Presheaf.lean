@@ -28,6 +28,8 @@ intersection of their domains glue to a section over the union.
   sections.
 * `TopCat.Presheaf.map_map_apply`: two successive restrictions of a section agree with any single
   restriction between the same opens.
+* `TopCat.Presheaf.map_map_apply_eq_map_map_apply`: two composites of two restrictions between the
+  same opens agree on sections.
 * `TopCat.Presheaf.isCompatible_of_directed`: a family of sections, any two of which are
   restrictions of a common member, is compatible.
 * `TopCat.Presheaf.IsSheaf.exists_gluing_sup`: two sections of a sheaf of types that agree on the
@@ -68,6 +70,15 @@ theorem map_map_apply {FC : C → C → Type*} {CC : C → Type*}
     {V W Y : Opens T} (i : op Y ⟶ op W) (j : op W ⟶ op V) (k : op Y ⟶ op V)
     (s : ToType (F.obj (op Y))) : F.map j (F.map i s) = F.map k s := by
   rw [← ConcreteCategory.comp_apply, ← F.map_comp, Subsingleton.elim (i ≫ j) k]
+
+/-- Two composites of two restriction maps with the same source and target opens agree on
+sections, whatever the intermediate opens. -/
+theorem map_map_apply_eq_map_map_apply {FC : C → C → Type*} {CC : C → Type*}
+    [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC] (F : Presheaf C T)
+    {V W₁ W₂ Y : Opens T} (a : op Y ⟶ op W₁) (b : op W₁ ⟶ op V) (c : op Y ⟶ op W₂)
+    (d : op W₂ ⟶ op V) (s : ToType (F.obj (op Y))) :
+    F.map b (F.map a s) = F.map d (F.map c s) := by
+  rw [map_map_apply F a b (a ≫ b), map_map_apply F c d (a ≫ b)]
 
 /-- A family of sections over a directed family of opens is compatible as soon as any two of its
 sections are restrictions of a common section in the family. -/

@@ -96,12 +96,6 @@ namespace TauCeti.Topology.CechOne
 
 variable {X : TopCat.{u}} {R : Type r} [Ring R]
 
-/-- Two composites of restriction maps with the same source and target agree on sections. -/
-private lemma map_map_apply_eq (P : (Opens X)ᵒᵖ ⥤ ModuleCat.{v} R) {V W₁ W₂ Y : Opens X}
-    (a : op Y ⟶ op W₁) (b : op W₁ ⟶ op V) (c : op Y ⟶ op W₂) (d : op W₂ ⟶ op V)
-    (s : P.obj (op Y)) : P.map b (P.map a s) = P.map d (P.map c s) := by
-  rw [TopCat.Presheaf.map_map_apply P a b (a ≫ b), TopCat.Presheaf.map_map_apply P c d (a ≫ b)]
-
 section Cochains
 
 variable (P : (Opens X)ᵒᵖ ⥤ ModuleCat.{v} R) {ι : Type w} (U : ι → Opens X)
@@ -249,7 +243,7 @@ theorem cochainsMap₁_d₀₁ (b : ∀ i, P.obj (op (U i))) :
     cochainsMap₁ φ (d₀₁ P U b) = d₀₁ P V (cochainsMap₀ φ b) := by
   funext k l
   simp only [cochainsMap₁_apply, d₀₁_apply, cochainsMap₀_apply, map_sub]
-  congr 1 <;> exact map_map_apply_eq P _ _ _ _ _
+  congr 1 <;> exact TopCat.Presheaf.map_map_apply_eq_map_map_apply P _ _ _ _ _
 
 theorem cochainsMap₁_mem_cocycles₁ {c : ∀ i j, P.obj (op (U i ⊓ U j))} (hc : c ∈ cocycles₁ P U) :
     cochainsMap₁ φ c ∈ cocycles₁ P V := by
@@ -590,7 +584,7 @@ private lemma map_map_coord_eq {n : ℕ} {b b' : Fin (n + 1) → ι} (h : b = b'
     (x : (K P U).X n) :
     P.map f.op (P.map g.op (coord P U b x)) = P.map f'.op (P.map g'.op (coord P U b' x)) := by
   subst h
-  exact map_map_apply_eq P _ _ _ _ _
+  exact TopCat.Presheaf.map_map_apply_eq_map_map_apply P _ _ _ _ _
 
 /-- The coordinates of the Čech differential, as an alternating sum of restrictions. -/
 private lemma coord_d {n : ℕ} (x : (K P U).X n) (k : Fin (n + 2) → ι) :
