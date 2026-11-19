@@ -99,15 +99,13 @@ example (χ : DirichletCharacter ℂ 9) (hχ : orderOf χ = 3) :
   · norm_num [hc, Nat.totient_prime Nat.prime_three] at hd
   · exact (isPrimitive_def χ).mpr hc
 
-section LevelTwentyFive
-
-local instance : Fact (Nat.Prime 5) := ⟨by decide⟩
-
 -- The Legendre lift retains conductor five and vanishes on the nonunits of level twenty-five.
 example :
+    let : Fact (Nat.Prime 5) := ⟨by decide⟩
     let χ : DirichletCharacter ℂ 25 := changeLevel (by decide : 5 ∣ 25)
       ((quadraticChar (ZMod 5)).ringHomComp (Int.castRingHom ℂ))
     χ (2 : ℕ) = -1 ∧ χ 5 = 0 ∧ χ 10 = 0 ∧ χ.conductor = 5 := by
+  let : Fact (Nat.Prime 5) := ⟨by decide⟩
   dsimp only
   refine ⟨?_, MulChar.map_nonunit _ (by decide : ¬IsUnit (5 : ZMod 25)),
     MulChar.map_nonunit _ (by decide : ¬IsUnit (10 : ZMod 25)),
@@ -115,8 +113,6 @@ example :
   rw [changeLevel_natCast_of_coprime _ _ (by decide : Nat.Coprime 2 25),
     MulChar.ringHomComp_apply, show quadraticChar (ZMod 5) (2 : ℕ) = -1 by decide]
   simp
-
-end LevelTwentyFive
 
 /-! ## The four quadratic characters at level sixteen -/
 
