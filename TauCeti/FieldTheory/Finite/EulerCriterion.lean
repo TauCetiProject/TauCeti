@@ -144,9 +144,8 @@ theorem exists_pow_eq_algebraMap_iff {p : ℕ} (hp : p.Prime) {a : F} :
       have hζp : ζ ^ p = 1 := by
         rw [← pow_mul, Nat.div_mul_cancel hpq]
         simpa [Nat.card_eq_fintype_card] using FiniteField.pow_card_sub_one_eq_one a ha
-      have hord : orderOf ζ = p :=
-        ((Nat.dvd_prime hp).mp (orderOf_dvd_of_pow_eq_one hζp)).resolve_left
-          (orderOf_eq_one_iff.not.mpr hζ)
+      let : Fact p.Prime := ⟨hp⟩
+      have hord : orderOf ζ = p := orderOf_eq_prime hζp hζ
       rw [← orderOf_dvd_iff_pow_eq_one, hord, iff_false_intro hζ, false_or]
   · have hcop : (Nat.card Fˣ).Coprime p := by
       rw [Nat.card_units]
