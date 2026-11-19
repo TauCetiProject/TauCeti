@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Vertex.VertexOperator
 public import TauCeti.RingTheory.LaurentSeries.HahnModuleDerivative
+public import Mathlib.Algebra.Lie.OfAssociative
 import TauCeti.Data.Nat.Choose.Sum
 import Mathlib.Tactic.Module
 
@@ -16,7 +17,9 @@ import Mathlib.Tactic.Module
 The formal derivative of a field is again a field: differentiating a Laurent series lowers
 its lower bound by at most one. In normalized mode indexing its coefficients are
 `(∂A)[[n]] = -n • A[[n - 1]]`. This construction is linear over the coefficient ring and
-requires no characteristic-zero assumption.
+requires no characteristic-zero assumption. When an endomorphism `T` kills a vector `vac` and acts
+as `∂` by commutation on a field `B`, iterating this mode formula yields the division-free creation
+identity `k! • B₍₋ₖ₋₁₎ vac = Tᵏ (B₍₋₁₎ vac)` (`VertexOperator.factorial_smul_ncoeff_apply`).
 
 Differentiation preserves mutual locality, increasing a locality bound by one. More generally,
 iterated derivatives in the two variables increase the bound by the sum of their orders.
@@ -67,6 +70,25 @@ theorem ncoeff_derivative (A : VertexOperator R V) (n : ℤ) :
   have h₁ : -n - 1 + 1 = -n := by omega
   have h₂ : -(n - 1) - 1 = -n := by omega
   rw [h₁, h₂]
+
+/-- **Division-free creation recursion.** If an endomorphism `T` kills `vac` and acts as `∂` on a
+field `B` by commutation, then `k! • B₍₋ₖ₋₁₎ vac = Tᵏ (B₍₋₁₎ vac)` for every `k : ℕ`. -/
+theorem factorial_smul_ncoeff_apply {T : Module.End R V} {vac : V} (hvac : T vac = 0)
+    {B : VertexOperator R V} (hT : ∀ m : ℤ, ⁅T, B[[m]]⁆ = (derivative B)[[m]]) (k : ℕ) :
+    k.factorial • (B[[-k - 1]]) vac = (T ^ k) ((B[[-1]]) vac) := by
+  have hrec (m : ℤ) : T ((B[[m]]) vac) = (-m) • (B[[m - 1]]) vac := by
+    have h := LinearMap.congr_fun (hT m) vac
+    rwa [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp, hvac, map_zero,
+      sub_zero, ncoeff_derivative, LinearMap.smul_apply] at h
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    have h := hrec (-(k : ℤ) - 1)
+    have h₁ : -(-(k : ℤ) - 1) = ((k + 1 : ℕ) : ℤ) := by push_cast; ring
+    have h₂ : -(k : ℤ) - 1 - 1 = -((k + 1 : ℕ) : ℤ) - 1 := by push_cast; ring
+    rw [h₁, h₂, natCast_zsmul] at h
+    rw [pow_succ', mul_apply_eq_comp, ← ih, map_nsmul, h, Nat.factorial_succ, mul_nsmul,
+      smul_comm]
 
 namespace IsLocalOfOrder
 

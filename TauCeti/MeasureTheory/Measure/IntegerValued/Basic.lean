@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 public import Mathlib.MeasureTheory.Measure.Count
 public import Mathlib.MeasureTheory.Measure.Map
 public import Mathlib.MeasureTheory.Measure.Restrict
@@ -223,6 +224,36 @@ theorem isIntegerValued_of_restrict {s : ℕ → Set X}
     simpa only [restrict_restrict hA, Set.inter_comm] using (hμ n).restrict (A := A)
   obtain ⟨n, hn⟩ := hint MeasurableSet.univ (measure_lt_top _ _)
   exact ⟨n, by simpa only [restrict_apply_univ] using hn⟩
+
+/-- A measure on a second-countable ordered Borel space is integer-valued if its mass on every
+initial interval `Set.Iic a` is a natural number. No finite-total-mass or nonempty assumption is
+needed. -/
+theorem isIntegerValued_of_Iic {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
+    [SecondCountableTopology α] [LinearOrder α] [OrderTopology α] [BorelSpace α]
+    {μ : Measure α} (hμ : ∀ a, ∃ n : ℕ, μ (Set.Iic a) = n) : μ.IsIntegerValued := by
+  by_cases hne : Nonempty α
+  · obtain ⟨s, hsc, hsd, -, hst⟩ := exists_countable_dense_bot_top α
+    have hsne : s.Nonempty := by
+      obtain ⟨x⟩ := hne
+      obtain ⟨a, ha, -⟩ := hsd.exists_ge' hst x
+      exact ⟨a, ha⟩
+    obtain ⟨f, hf⟩ := hsc.exists_eq_range hsne
+    apply isIntegerValued_of_restrict (s := fun n => Set.Iic (f n))
+    · ext x
+      simp only [Set.mem_iUnion, Set.mem_Iic, Set.mem_univ, iff_true]
+      obtain ⟨a, ha, hxa⟩ := hsd.exists_ge' hst x
+      rw [hf] at ha
+      obtain ⟨n, rfl⟩ := ha
+      exact ⟨n, hxa⟩
+    · intro n
+      apply isIntegerValued_of_isPiSystem (μ := μ.restrict (Set.Iic (f n)))
+        (BorelSpace.measurable_eq.trans (borel_eq_generateFrom_Iic (α := α))) isPiSystem_Iic
+      · rintro _ ⟨a, rfl⟩
+        simpa [Measure.restrict_apply measurableSet_Iic, Set.Iic_inter_Iic] using hμ (min a (f n))
+      · simpa [Measure.restrict_apply_univ] using hμ (f n)
+  · intro A _ _
+    have : IsEmpty α := not_nonempty_iff.mp hne
+    exact ⟨0, by simp [Set.eq_empty_of_isEmpty A]⟩
 
 /-- Removing one occurrence preserves integer multiplicities, including absent and infinite
 atoms. No local-finiteness or sigma-finiteness assumption is needed. -/

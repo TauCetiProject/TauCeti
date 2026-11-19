@@ -192,7 +192,6 @@ private theorem exists_norm_iteratedFDeriv_shiftedMultiplier_le_mul (k : ℕ) (r
   rw [Finset.sum_mul, Finset.sum_mul, Finset.sum_mul]
   refine Finset.sum_le_sum fun i hi ↦ ?_
   have hik : i ≤ k := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
-  have hζ : 0 < 1 + ‖ζ‖ ^ 2 := by positivity
   have hη : 1 ≤ 1 + ‖η‖ ^ 2 := by nlinarith [sq_nonneg ‖η‖]
   have hA0 := hA0 i
   calc (k.choose i : ℝ) * ‖iteratedFDeriv ℝ i (fun ζ ↦ (1 + ‖ζ + η‖ ^ 2) ^ (-t / 2)) ζ‖ *
@@ -209,7 +208,7 @@ private theorem exists_norm_iteratedFDeriv_shiftedMultiplier_le_mul (k : ℕ) (r
           ((1 + ‖η‖ ^ 2) ^ ((|-t| + i) / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |-t| + k) / 2)) := by ring
     _ = (k.choose i : ℝ) * A i * E (k - i) * B * (1 + ‖ζ‖ ^ 2) ^ (-(k : ℝ) / 2) *
           (1 + ‖η‖ ^ 2) ^ ((i - k - r) / 2) := by
-        rw [← Real.rpow_add hζ, ← Real.rpow_add (by positivity), Nat.cast_sub hik]
+        rw [← one_add_norm_sq_rpow_add, ← one_add_norm_sq_rpow_add, Nat.cast_sub hik]
         congr 2 <;> ring_nf
     _ ≤ (k.choose i : ℝ) * A i * E (k - i) * B * (1 + ‖ζ‖ ^ 2) ^ (-(k : ℝ) / 2) *
           (1 + ‖η‖ ^ 2) ^ (-r / 2) := by

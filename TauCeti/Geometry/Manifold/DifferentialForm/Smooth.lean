@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
+import TauCeti.Topology.Algebra.Module.Alternating.Basic
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 import TauCeti.Topology.FiberBundle.Separation
 
@@ -275,7 +276,7 @@ theorem eval₂_self (φ : SmoothBundleForm I F V 2) (x : M) (v : TangentSpace I
 theorem eval₂_swap (φ : SmoothBundleForm I F V 2) (x : M)
     (v w : TangentSpace I x) :
     φ.eval₂ x v w = -φ.eval₂ x w v := by
-  simpa [eval₂] using (φ.1 x).map_swap ![w, v] (i := 0) (j := 1) Fin.zero_ne_one
+  simpa [eval₂] using (φ.1 x).apply_vecCons_swap w v
 
 @[simp]
 theorem eval₂_apply (φ : SmoothBundleForm I F V 2) (x : M)
@@ -816,6 +817,13 @@ theorem bilinFormAt_eq_zero_iff (φ : SmoothForm I M ℝ 2) (x : M) :
     simpa using LinearMap.congr_fun₂ h (v 0) (v 1)
   · ext v w
     simp [h]
+
+/-- A tangent vector lies in the kernel of the bilinear form of a degree-two smooth form exactly
+when the form vanishes on every pair with that vector as its first argument. -/
+theorem mem_ker_bilinFormAt_iff {φ : SmoothForm I M ℝ 2} {x : M} {v : TangentSpace I x} :
+    v ∈ LinearMap.ker (φ.bilinFormAt x) ↔ ∀ w, φ.1 x ![v, w] = 0 := by
+  simp only [LinearMap.mem_ker, LinearMap.ext_iff, bilinFormAt_apply,
+    SmoothBundleForm.eval₂_apply, LinearMap.zero_apply]
 
 section SectionView
 
