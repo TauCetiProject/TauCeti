@@ -67,7 +67,7 @@ private theorem sum_neighborFinset_pathGraph_halfCount {N n : ℕ}
 
 /-- The ballot formula for the entries of a path adjacency-matrix power starting at zero.
 The bound ensures that a walk cannot cross the upper boundary and return to `v`. -/
-theorem pathGraph_adjMatrix_pow_zero {N n : ℕ} {v : Fin (N + 1)}
+theorem pathGraph_adjMatrix_pow_apply_zero_eq_halfCount {N n : ℕ} {v : Fin (N + 1)}
     (hn : n + v ≤ 2 * N + 1) :
     ((pathGraph (N + 1)).adjMatrix ℕ ^ n) 0 v = halfCount n v := by
   induction n generalizing v with
@@ -92,7 +92,7 @@ theorem card_walk_length_pathGraph {N n : ℕ} {v : Fin (N + 1)}
     _ = ((pathGraph (N + 1)).adjMatrix ℕ ^ n) 0 v := by
       simpa only [Nat.cast_id] using
         (adjMatrix_pow_apply_eq_card_walk (G := pathGraph (N + 1)) n 0 v (α := ℕ)).symm
-    _ = halfCount n v := pathGraph_adjMatrix_pow_zero hn
+    _ = halfCount n v := pathGraph_adjMatrix_pow_apply_zero_eq_halfCount hn
 
 /-- The sum of the squared endpoint multiplicities of `n`-step walks on a path graph
 with at least `n + 1` vertices is the Catalan number `catalan n`. In the half-line
