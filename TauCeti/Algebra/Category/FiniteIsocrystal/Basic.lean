@@ -369,12 +369,17 @@ noncomputable def biproductIsoPi : ⨁ D ≅ pi D :=
 theorem ι_comp_biproductIsoPi_hom (j : J) :
     biproduct.ι D j ≫ (biproductIsoPi D).hom = piι D j := by
   rw [biproductIsoPi, Iso.symm_hom, biproduct.uniqueUpToIso_inv]
+  -- `biproduct.desc (bicone D).ι` has target `(bicone D).pt`, which is `pi D` only up to the
+  -- definitional equality `bicone_pt`, so `rw [biproduct.ι_desc]` and `simp` cannot apply here;
+  -- `exact` closes the goal using that definitional equality.
   exact (biproduct.ι_desc _ j).trans (bicone_ι D j)
 
 @[reassoc (attr := simp)]
 theorem biproductIsoPi_inv_comp_π (j : J) :
     (biproductIsoPi D).inv ≫ biproduct.π D j = piπ D j := by
   rw [biproductIsoPi, Iso.symm_inv, biproduct.uniqueUpToIso_hom]
+  -- As in `ι_comp_biproductIsoPi_hom`, `exact` uses the definitional equality `bicone_pt`,
+  -- here for the source of `biproduct.lift (bicone D).π`.
   exact (biproduct.lift_π _ j).trans (bicone_π D j)
 
 @[reassoc (attr := simp)]
