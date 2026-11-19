@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
-public import Mathlib.Topology.Connected.Basic
 public import TauCeti.Geometry.Manifold.GroupAction.TangentRepresentation
-import Mathlib.Topology.Homeomorph.Lemmas
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.GroupTheory.GroupAction.Hom
 
@@ -65,8 +63,6 @@ zero.
   equivariant near `p` carries the fixed tangent subspace at `p` onto that at `ψ p`.
 * `Diffeomorph.fixedTangentSubspaceEquiv`: this differential as a linear equivalence between the
   fixed tangent subspaces.
-* `Homeomorph.image_connectedComponentIn_fixedPoints`: an equivariant homeomorphism carries each
-  connected component of the fixed set onto the connected component through the image point.
 * `Diffeomorph.image_fixedPointsOfFinrank`: an equivariant diffeomorphism carries each part
   `M^K_d` of the fixed set onto the corresponding part of the target.
 -/
@@ -163,21 +159,7 @@ end FixedTangentSubspace
 
 end TauCeti
 
-/-! ### Naturality under equivariant homeomorphisms and diffeomorphisms -/
-
-namespace Homeomorph
-
-/-- An equivariant homeomorphism carries each connected component of the fixed set onto the
-connected component of the fixed set through the image point. -/
-theorem image_connectedComponentIn_fixedPoints {K M N : Type*} [Monoid K] [TopologicalSpace M]
-    [TopologicalSpace N] [MulAction K M] [MulAction K N] (ψ : M ≃ₜ N)
-    (hψ : ∀ (k : K) (x : M), ψ (k • x) = k • ψ x) {x : M} (hx : x ∈ MulAction.fixedPoints K M) :
-    ψ '' connectedComponentIn (MulAction.fixedPoints K M) x =
-      connectedComponentIn (MulAction.fixedPoints K N) (ψ x) := by
-  rw [← TauCeti.MulAction.image_fixedPoints_of_bijective ψ.bijective hψ]
-  exact ψ.image_connectedComponentIn hx
-
-end Homeomorph
+/-! ### Naturality under equivariant diffeomorphisms -/
 
 namespace Diffeomorph
 
