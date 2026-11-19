@@ -61,17 +61,17 @@ variable (p : ℕ) [Fact p.Prime]
 
 /-- An upper-triangular matrix `!![a, b; 0, d]` over `ℚ_p` lies in `GL₂(ℤ_p)` exactly when its
 diagonal entries are units of `ℤ_p` and its upper-right entry lies in `ℤ_p`. -/
+@[simp]
 theorem GL2Borel.mk_mem_glPadicInt_iff (a d : ℚ_[p]ˣ) (b : ℚ_[p]) :
     GL2Borel.mk a d b ∈ GLPadicInt (Fin 2) p ↔
       ‖(a : ℚ_[p])‖ = 1 ∧ ‖(d : ℚ_[p])‖ = 1 ∧ ‖b‖ ≤ 1 := by
-  simp only [GLPadicInt.mem_iff, GL2Borel.coe_mk, Fin.forall_fin_two, Matrix.of_apply,
-    Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.empty_val',
-    Matrix.cons_val_fin_one, Matrix.det_fin_two_of, mul_zero, sub_zero, norm_mul, norm_zero]
+  simp only [GLPadicInt.mem_iff, GL2Borel.coe_mk, Fin.forall_fin_two, Matrix.det_fin_two_of]
   constructor
   · rintro ⟨⟨⟨ha, hb⟩, -, hd⟩, hdet⟩
+    simp only [mul_zero, sub_zero, norm_mul] at hdet
     -- Two norms at most `1` with product `1` are both `1`.
-    refine ⟨le_antisymm ha ?_, le_antisymm hd ?_, hb⟩ <;>
-      nlinarith [norm_nonneg (a : ℚ_[p]), norm_nonneg (d : ℚ_[p])]
+    exact ⟨le_antisymm ha (hdet ▸ mul_le_of_le_one_right (norm_nonneg _) hd),
+      le_antisymm hd (hdet ▸ mul_le_of_le_one_left (norm_nonneg _) ha), hb⟩
   · rintro ⟨ha, hd, hb⟩
     simp [ha, hd, hb]
 
@@ -143,16 +143,14 @@ theorem mem_and_inv_mem_iff {g : GL (Fin 2) ℚ_[p]} :
     -- The determinants of `g` and `g⁻¹` have norm at most `1` and product `1`, so both are units.
     have hprod : ‖(g : Matrix (Fin 2) (Fin 2) ℚ_[p]).det‖ *
         ‖((g⁻¹ : GL (Fin 2) ℚ_[p]) : Matrix (Fin 2) (Fin 2) ℚ_[p]).det‖ = 1 := by
-      rw [← norm_mul, ← Matrix.det_mul, ← Units.val_mul, mul_inv_cancel, Units.val_one,
-        Matrix.det_one, norm_one]
-    have h₁ := norm_det_le_one hg
-    have h₂ := norm_det_le_one hg'
+      rw [← norm_mul, ← Matrix.det_mul, ← Units.val_mul]
+      simp
     refine ⟨hg.1, GLPadicInt.mem_iff.mpr ⟨fun i j ↦ ?_, ?_⟩⟩
     · fin_cases i <;> fin_cases j
       exacts [hg.2.1, hg.2.2, by simp [(GL2Mirabolic.mem_iff.mp hg.1).1],
         by simp [(GL2Mirabolic.mem_iff.mp hg.1).2]]
-    · nlinarith [norm_nonneg ((g : Matrix (Fin 2) (Fin 2) ℚ_[p]).det),
-        norm_nonneg (((g⁻¹ : GL (Fin 2) ℚ_[p]) : Matrix (Fin 2) (Fin 2) ℚ_[p]).det)]
+    · exact le_antisymm (norm_det_le_one hg)
+        (hprod ▸ mul_le_of_le_one_right (norm_nonneg _) (norm_det_le_one hg'))
   · -- An element of `P ∩ GL₂(ℤ_p)` has integral entries, and so has its inverse.
     have key : ∀ x ∈ GL2Mirabolic ℚ_[p] ⊓ GLPadicInt (Fin 2) p, x ∈ GL2MirabolicPlus p :=
       fun x hx ↦ ⟨(Subgroup.mem_inf.mp hx).1,
@@ -189,6 +187,15 @@ theorem coe_frobenius :
       !![(p : ℚ_[p]), 0; 0, 1] := by
   simpa using coe_frobenius_pow (p := p) 1
 
+/-- The underlying matrix of `φ⁻¹` is `!![p⁻¹, 0; 0, 1]`. -/
+-- Not a simp lemma: `simp` first rewrites the coercion of an inverse by `Matrix.coe_units_inv`.
+theorem coe_frobenius_inv :
+    (((frobenius p)⁻¹ : GL (Fin 2) ℚ_[p]) : Matrix (Fin 2) (Fin 2) ℚ_[p]) =
+      !![(p : ℚ_[p])⁻¹, 0; 0, 1] := by
+  rw [Matrix.coe_units_inv, coe_frobenius, Matrix.inv_def, Matrix.adjugate_fin_two_of,
+    Matrix.det_fin_two_of]
+  simp
+
 variable (p) in
 /-- `φ = !![p, 0; 0, 1]` lies in `P⁺`. -/
 theorem frobenius_mem : frobenius p ∈ GL2MirabolicPlus p := by
@@ -218,9 +225,8 @@ theorem exists_frobenius_pow_mul_mem {g : GL (Fin 2) ℚ_[p]} (hg : g ∈ GL2Mir
       mul_one]
     exact hx.le
   refine ⟨k, mul_mem (pow_mem (frobenius_mem p).1 k) hg, ?_, ?_⟩ <;>
-    simp only [Units.val_mul, coe_frobenius_pow, Matrix.mul_apply, Fin.sum_univ_two,
-      Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.empty_val', Matrix.cons_val_fin_one, zero_mul, add_zero]
+    simp only [Units.val_mul, coe_frobenius_pow, Matrix.mul_apply, Fin.sum_univ_two] <;>
+    simp only [Matrix.of_apply, Matrix.cons_val_zero, Matrix.cons_val_one, zero_mul, add_zero]
   exacts [key _ ((le_max_left _ _).trans_lt hk), key _ ((le_max_right _ _).trans_lt hk)]
 
 variable (p) in

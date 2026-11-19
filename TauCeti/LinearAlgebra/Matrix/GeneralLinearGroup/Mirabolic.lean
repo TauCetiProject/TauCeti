@@ -23,12 +23,12 @@ linear form `(x, y) ↦ y`, and `!![a, b; 0, 1]` acts on the column vectors `(x,
 map `x ↦ a x + b`; this identifies `P` with the affine group `R ⋊ Rˣ` of the line. Over
 `R = ℚ_p` it is the group through which Colmez's construction of the `p`-adic local Langlands
 correspondence for `GL₂(ℚ_p)` starts: an étale `(φ, Γ)`-module is a module over a submonoid of
-`P(ℚ_p)`, and adding an action of the Weyl element `w = !![0, 1; 1, 0]` and of the centre is all
-that is needed to obtain an action of the whole group, because `P`, the centre `Z` and `w`
-generate `GL₂` over a field.
+`P(ℚ_p)`. Since `P`, the centre `Z` and the Weyl element `w = !![0, 1; 1, 0]` generate `GL₂` over
+a field, an action of `GL₂` is determined by its restriction to `P`, `Z` and `w`.
 
-Everything except the generation statement is proved over an arbitrary commutative ring. The
-proofs only use that `P` sits inside the Borel subgroup `B = TauCeti.GL2Borel R` and that every
+The subgroup, its normal form and its identification with the affine group are set up over an
+arbitrary ring; the comparison with the Borel subgroup `B = TauCeti.GL2Borel R` and the centre `Z`
+is proved over an arbitrary commutative ring. It only uses that `P` sits inside `B` and that every
 element of `B` is a scalar matrix times an element of `P`, which gives `B = Z ⊔ P`; with the
 Bruhat-cell generation `TauCeti.GL2Borel.closure_insert_gl2WeylElement_eq_top` this gives the
 generation of `GL₂` over a field.
@@ -65,9 +65,9 @@ open Matrix
 
 universe u
 
-section CommRing
+section Ring
 
-variable (R : Type u) [CommRing R]
+variable (R : Type u) [Ring R]
 
 /-- The **mirabolic subgroup** of `GL₂(R)`: the invertible matrices `!![a, b; 0, 1]` whose lower
 row is `(0, 1)`. -/
@@ -77,12 +77,9 @@ def GL2Mirabolic : Subgroup (GL (Fin 2) R) where
   mul_mem' {g h} hg hh := by
     simp [Matrix.mul_apply, Fin.sum_univ_two, hg.1, hg.2, hh.1, hh.2]
   inv_mem' {g} hg := by
-    -- The inverse is upper triangular, and its lower-right entry is read off from `g⁻¹ g = 1`.
-    have h10 : ((g⁻¹ : GL (Fin 2) R) : Matrix (Fin 2) (Fin 2) R) 1 0 = 0 :=
-      GL2Borel.mem_iff.mp (inv_mem (GL2Borel.mem_iff.mpr hg.1))
-    have h11 := congrFun (congrFun g.inv_mul 1) 1
-    simp only [Matrix.mul_apply, Fin.sum_univ_two, hg.2, h10, Matrix.one_apply_eq] at h11
-    exact ⟨h10, by simpa using h11⟩
+    -- The lower row of `g g⁻¹ = 1` is the lower row of `g⁻¹`, since that of `g` is `(0, 1)`.
+    have h := congrFun (congrFun g.mul_inv 1)
+    simpa [Matrix.mul_apply, Fin.sum_univ_two, hg.1, hg.2] using And.intro (h 0) (h 1)
 
 namespace GL2Mirabolic
 
@@ -106,49 +103,33 @@ theorem apply_one_one (g : GL2Mirabolic R) :
     ((g : GL (Fin 2) R) : Matrix (Fin 2) (Fin 2) R) 1 1 = 1 :=
   (mem_iff.mp g.2).2
 
-/-- The determinant of a mirabolic matrix `!![a, b; 0, 1]` is its upper-left entry `a`. -/
-theorem det_eq {g : GL (Fin 2) R} (hg : g ∈ GL2Mirabolic R) :
-    (g : Matrix (Fin 2) (Fin 2) R).det = (g : Matrix (Fin 2) (Fin 2) R) 0 0 := by
-  rw [Matrix.det_fin_two, (mem_iff.mp hg).1, (mem_iff.mp hg).2, mul_one, mul_zero, sub_zero]
-
-variable (R) in
-/-- The mirabolic subgroup lies in the Borel subgroup. -/
-theorem le_gl2Borel : GL2Mirabolic R ≤ GL2Borel R :=
-  fun _ hg ↦ GL2Borel.mem_iff.mpr (mem_iff.mp hg).1
-
 /-- The upper-triangular matrix `!![a, b; 0, d]` is mirabolic exactly when `d = 1`. -/
 @[simp]
 theorem mk_mem_iff (a d : Rˣ) (b : R) : GL2Borel.mk a d b ∈ GL2Mirabolic R ↔ d = 1 := by
   simp only [mem_iff, GL2Borel.coe_mk]
   simp [Units.val_eq_one]
 
-/-- **Normal form**: the elements of the mirabolic subgroup are exactly the matrices
-`!![a, b; 0, 1]` with `a` a unit. -/
-theorem mem_iff_exists_mk {g : GL (Fin 2) R} :
-    g ∈ GL2Mirabolic R ↔ ∃ (a : Rˣ) (b : R), g = GL2Borel.mk a 1 b := by
-  refine ⟨fun hg ↦ ?_, ?_⟩
-  · obtain ⟨a, d, b, rfl⟩ := GL2Borel.mem_iff_exists_mk.mp (le_gl2Borel R hg)
-    exact ⟨a, b, by rw [(mk_mem_iff a d b).mp hg]⟩
-  · rintro ⟨a, b, rfl⟩
-    exact (mk_mem_iff a 1 b).mpr rfl
-
 variable (R) in
 /-- **The mirabolic subgroup is the affine group of the line**: the affine map `x ↦ a x + b`,
 the element `(b, a)` of `R ⋊ Rˣ`, corresponds to the matrix `!![a, b; 0, 1]`. -/
 def affineGroupMulEquiv : AffineGroup R ≃* GL2Mirabolic R where
   toFun g := ⟨GL2Borel.mk g.right 1 g.left.toAdd, (mk_mem_iff _ 1 _).mpr rfl⟩
+  -- The upper-left entries of `g` and `g⁻¹` are inverse to each other, as `g` and `g⁻¹` are
+  -- upper triangular.
   invFun g := ⟨Multiplicative.ofAdd (((g : GL (Fin 2) R) : Matrix (Fin 2) (Fin 2) R) 0 1),
-    (GL2Borel.diag ⟨g, le_gl2Borel R g.2⟩).1⟩
+    ⟨((g : GL (Fin 2) R) : Matrix (Fin 2) (Fin 2) R) 0 0,
+      (((g : GL (Fin 2) R)⁻¹ : GL (Fin 2) R) : Matrix (Fin 2) (Fin 2) R) 0 0, by
+        have h := congrFun (congrFun (g : GL (Fin 2) R).mul_inv 0) 0
+        simpa [Matrix.mul_apply, Fin.sum_univ_two, (mem_iff.mp (inv_mem g.2)).1] using h, by
+        have h := congrFun (congrFun (g : GL (Fin 2) R).inv_mul 0) 0
+        simpa [Matrix.mul_apply, Fin.sum_univ_two] using h⟩⟩
   left_inv g := by
-    refine SemidirectProduct.ext ?_ ?_
-    · simp
-    · simp only [GL2Borel.diag_mk]
+    refine SemidirectProduct.ext ?_ (Units.ext ?_) <;> simp
   right_inv g := by
-    obtain ⟨g, hg⟩ := g
-    obtain ⟨a, b, rfl⟩ := mem_iff_exists_mk.mp hg
-    simp
+    refine Subtype.ext (Units.ext (Matrix.ext fun i j ↦ ?_))
+    fin_cases i <;> fin_cases j <;> simp
   map_mul' g h := by
-    refine Subtype.ext (Matrix.GeneralLinearGroup.ext fun i j ↦ ?_)
+    refine Subtype.ext (Units.ext (Matrix.ext fun i j ↦ ?_))
     fin_cases i <;> fin_cases j <;>
       simp [Matrix.mul_apply, Fin.sum_univ_two, add_comm]
 
@@ -157,6 +138,33 @@ theorem coe_affineGroupMulEquiv_apply (g : AffineGroup R) :
     ((affineGroupMulEquiv R g : GL2Mirabolic R) : GL (Fin 2) R) =
       GL2Borel.mk g.right 1 g.left.toAdd :=
   (rfl)
+
+/-- The translation part of the affine map attached to a mirabolic matrix `!![a, b; 0, 1]` is its
+upper-right entry `b`. -/
+@[simp]
+theorem toAdd_affineGroupMulEquiv_symm_apply_left (g : GL2Mirabolic R) :
+    ((affineGroupMulEquiv R).symm g).left.toAdd =
+      ((g : GL (Fin 2) R) : Matrix (Fin 2) (Fin 2) R) 0 1 :=
+  (rfl)
+
+/-- The linear part of the affine map attached to a mirabolic matrix `!![a, b; 0, 1]` is its
+upper-left entry `a`. -/
+@[simp]
+theorem coe_affineGroupMulEquiv_symm_apply_right (g : GL2Mirabolic R) :
+    (((affineGroupMulEquiv R).symm g).right : R) =
+      ((g : GL (Fin 2) R) : Matrix (Fin 2) (Fin 2) R) 0 0 :=
+  (rfl)
+
+/-- **Normal form**: the elements of the mirabolic subgroup are exactly the matrices
+`!![a, b; 0, 1]` with `a` a unit. -/
+theorem mem_iff_exists_mk {g : GL (Fin 2) R} :
+    g ∈ GL2Mirabolic R ↔ ∃ (a : Rˣ) (b : R), g = GL2Borel.mk a 1 b := by
+  refine ⟨fun hg ↦ ?_, ?_⟩
+  · set x := (affineGroupMulEquiv R).symm ⟨g, hg⟩
+    exact ⟨x.right, x.left.toAdd, by
+      rw [← coe_affineGroupMulEquiv_apply, MulEquiv.apply_symm_apply]⟩
+  · rintro ⟨a, b, rfl⟩
+    exact (mk_mem_iff a 1 b).mpr rfl
 
 variable (R) in
 /-- The upper unipotent matrices `!![1, b; 0, 1]` are mirabolic. -/
@@ -169,6 +177,28 @@ theorem scalar_mem_iff (u : Rˣ) :
     GeneralLinearGroup.scalar (Fin 2) u ∈ GL2Mirabolic R ↔ u = 1 := by
   simp only [mem_iff, GeneralLinearGroup.coe_scalar, Matrix.scalar_apply]
   simp [Units.val_eq_one]
+
+end GL2Mirabolic
+
+end Ring
+
+section CommRing
+
+variable (R : Type u) [CommRing R]
+
+namespace GL2Mirabolic
+
+variable {R}
+
+/-- The determinant of a mirabolic matrix `!![a, b; 0, 1]` is its upper-left entry `a`. -/
+theorem det_eq {g : GL (Fin 2) R} (hg : g ∈ GL2Mirabolic R) :
+    (g : Matrix (Fin 2) (Fin 2) R).det = (g : Matrix (Fin 2) (Fin 2) R) 0 0 := by
+  rw [Matrix.det_fin_two, (mem_iff.mp hg).1, (mem_iff.mp hg).2, mul_one, mul_zero, sub_zero]
+
+variable (R) in
+/-- The mirabolic subgroup lies in the Borel subgroup. -/
+theorem le_gl2Borel : GL2Mirabolic R ≤ GL2Borel R :=
+  fun _ hg ↦ GL2Borel.mem_iff.mpr (mem_iff.mp hg).1
 
 variable (R) in
 /-- **`P ∩ Z = 1`**: the only central element of the mirabolic subgroup is the identity. -/
