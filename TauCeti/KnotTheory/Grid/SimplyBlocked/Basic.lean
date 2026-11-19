@@ -394,6 +394,34 @@ theorem simplyBlockedSpecialization_surjective :
   unfold simplyBlockedSpecialization
   exact hf
 
+/-- Including the surviving variables `V_c`, `c ≠ i`, in the full polynomial ring, coefficientwise.
+It is a section of the specialization at `V_i = 0`
+(`TauCeti.simplyBlockedSpecialization_simplyBlockedLift`), linear over the ground semiring and
+semilinear along the inclusion of the surviving variables (`TauCeti.simplyBlockedLift_smul`). -/
+noncomputable def simplyBlockedLift : GridChainHat R n i →ₗ[R] GridChainMinus R n :=
+  Finsupp.mapRange.linearMap (MvPolynomial.rename Subtype.val).toLinearMap
+
+/-- The lift renames each coefficient into the full polynomial ring. -/
+@[simp]
+theorem simplyBlockedLift_apply (c : GridChainHat R n i) (x : GridState n) :
+    simplyBlockedLift R i c x = MvPolynomial.rename Subtype.val (c x) :=
+  (rfl)
+
+/-- Specializing the lift of a chain at `V_i = 0` recovers the chain. -/
+@[simp]
+theorem simplyBlockedSpecialization_simplyBlockedLift (c : GridChainHat R n i) :
+    simplyBlockedSpecialization R i (simplyBlockedLift R i c) = c := by
+  ext x
+  rw [simplyBlockedSpecialization_apply, simplyBlockedLift_apply, killCompl_rename_app]
+
+/-- The lift of a polynomial multiple is the multiple of the lift by the included polynomial. -/
+theorem simplyBlockedLift_smul (a : MvPolynomial {c : Fin n // c ≠ i} R)
+    (c : GridChainHat R n i) :
+    simplyBlockedLift R i (a • c) =
+      MvPolynomial.rename Subtype.val a • simplyBlockedLift R i c := by
+  ext x
+  simp only [simplyBlockedLift_apply, Finsupp.smul_apply, smul_eq_mul, map_mul]
+
 /-- Multiplication by the blocked variable `V_i` is injective on the unblocked grid chain
 module. -/
 theorem X_smul_gridChainMinus_injective :
