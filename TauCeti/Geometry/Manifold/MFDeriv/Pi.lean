@@ -28,7 +28,9 @@ read forms and vector fields on a product, such as the coordinate time forms of 
 the factors. The smoothness of the coordinate insertions is `TauCeti.contMDiff_update`.
 
 A map into the product has derivative the product of the derivatives of its components
-(`TauCeti.hasMFDerivAt_pi`, `TauCeti.mfderiv_pi`).
+(`TauCeti.hasMFDerivAt_pi`, `TauCeti.mfderiv_pi`). Appending a differentiable component to a
+differentiable family of maps into normed spaces with `Fin.snoc` gives a differentiable family
+(`MDifferentiableAt.finSnoc`).
 
 ## Main declarations
 
@@ -37,6 +39,7 @@ A map into the product has derivative the product of the derivatives of its comp
 * `TauCeti.hasMFDerivAt_update`, `TauCeti.mfderiv_update`: the derivative of a coordinate
   insertion.
 * `TauCeti.hasMFDerivAt_pi`, `TauCeti.mfderiv_pi`: the derivative of a map into a product.
+* `MDifferentiableAt.finSnoc`: appending a differentiable component with `Fin.snoc`.
 
 ## References
 
@@ -48,6 +51,26 @@ public section
 
 open Set Function
 open scoped Manifold Topology
+
+section FinSnoc
+
+variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
+  {k : ℕ} {E' : Fin (k + 1) → Type*} [∀ i, NormedAddCommGroup (E' i)] [∀ i, NormedSpace 𝕜 (E' i)]
+  {F : M → ∀ j : Fin k, E' j.castSucc} {g : M → E' (Fin.last k)}
+
+/-- Appending a differentiable component `g` to a differentiable family `F` with `Fin.snoc` gives
+a differentiable family. -/
+theorem MDifferentiableAt.finSnoc {x : M}
+    (hF : MDifferentiableAt I 𝓘(𝕜, ∀ j : Fin k, E' j.castSucc) F x)
+    (hg : MDifferentiableAt I 𝓘(𝕜, E' (Fin.last k)) g x) :
+    MDifferentiableAt I 𝓘(𝕜, ∀ i, E' i) (fun y ↦ Fin.snoc (α := E') (F y) (g y)) x := by
+  refine mdifferentiableAt_pi_space.2 fun i ↦ ?_
+  induction i using Fin.lastCases with
+  | last => simpa using hg
+  | cast j => simpa using mdifferentiableAt_pi_space.1 hF j
+
+end FinSnoc
 
 namespace TauCeti
 

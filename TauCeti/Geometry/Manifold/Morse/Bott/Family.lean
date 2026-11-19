@@ -42,11 +42,10 @@ each critical point lies on exactly one of them
 (`TauCeti.IsMorseBottFamily.existsUnique_mem_range`), only finitely many of them meet a compact set
 (by `LocallyFinite.finite_nonempty_inter_compact`), and on a compact manifold there are finitely
 many (`TauCeti.IsMorseBottFamily.finite`). Each piece is closed
-(`TauCeti.IsMorseBottFamily.isClosed_range`), so on a compact manifold each piece is compact
-(`TauCeti.IsMorseBottFamily.compactSpace`). The function takes a single value on each piece
+(`TauCeti.IsMorseBottFamily.isClosed_range`). The function takes a single value on each piece
 (`TauCeti.IsMorseBottFamily.subsingleton_image_range`), so a critical point on a level lies on a
-piece on that level (`TauCeti.IsMorseBottFamily.mem_iUnion_range_of_mem_criticalPoints`) and on a
-compact manifold `f` has finitely many critical values
+piece on that level (`TauCeti.IsMorseBottFamily.mem_iUnion_range_of_apply_eq`), and on a compact
+manifold `f` has finitely many critical values
 (`TauCeti.IsMorseBottFamily.finite_image_criticalPoints`). The same family
 exhibits `-f` as a Morse–Bott function (`TauCeti.IsMorseBottFamily.neg`). The conditions only
 involve the underlying maps of the embeddings, so a family with the same maps and possibly another
@@ -184,10 +183,6 @@ theorem isClosed_range [IsManifold I 1 M] (a : ι) : IsClosed (range (i a)) := b
   rw [h.range_eq_connectedComponentIn a s]
   exact (isClosed_criticalPoints (h.contMDiff.of_le (by simp))).connectedComponentIn
 
-/-- On a compact manifold each piece is compact, as a closed embedded submanifold. -/
-theorem compactSpace [CompactSpace M] [IsManifold I 1 M] (a : ι) : CompactSpace (S a) :=
-  (Topology.IsClosedEmbedding.mk (i a).isEmbedding (h.isClosed_range a)).compactSpace
-
 /-- **A Morse–Bott function takes a single value on each piece**, its critical value: `f ∘ i a` is
 locally constant, and the piece is connected because its image is a connected component of the
 critical set. -/
@@ -203,9 +198,9 @@ theorem subsingleton_image_range [∀ a, IsManifold (J a) 1 (S a)] (hn : n ≠ 0
   rintro _ ⟨_, ⟨s, rfl⟩, rfl⟩ _ ⟨_, ⟨s', rfl⟩, rfl⟩
   exact hloc.apply_eq_of_preconnectedSpace s s'
 
-/-- **A critical point on the level `c` lies on a piece on the level `c`**, since `f` takes a
-single value on each piece. -/
-theorem mem_iUnion_range_of_mem_criticalPoints [∀ a, IsManifold (J a) 1 (S a)] (hn : n ≠ 0)
+/-- A critical point on the level `f = c` lies on a piece on that level, since a Morse–Bott
+function takes a single value on each piece. -/
+theorem mem_iUnion_range_of_apply_eq [∀ a, IsManifold (J a) 1 (S a)] (hn : n ≠ 0)
     (hx : x ∈ criticalPoints I f) {c : ℝ} (hfx : f x = c) :
     x ∈ ⋃ a : {a // ∀ s, f (i a s) = c}, range (i a) := by
   obtain ⟨a, s, rfl⟩ := mem_iUnion.1 (h.criticalPoints_subset_iUnion_range hx)
