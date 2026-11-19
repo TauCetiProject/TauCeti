@@ -94,10 +94,10 @@ theorem surjective_sectionLinearization_mvfderiv_iff [FiniteDimensional ℝ E]
       (E := fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) I (fun y ↦ y) (mvfderiv I f) x) ↔
       IsManifoldNondegenerateCriticalPoint I f x := by
   rw [sectionLinearization_mvfderiv hf, isManifoldNondegenerateCriticalPoint_iff_criticalHessian]
-  -- The critical Hessian maps `TangentSpace I x`, which is `E`, to its dual, of the same
-  -- dimension, so it is invertible exactly when it is onto.
+  -- The critical Hessian maps `TangentSpace I x` to its dual, of the same dimension, so it is
+  -- invertible exactly when it is onto.
   exact ⟨fun hs ↦ ⟨hf, mem_criticalPoints.1 hx,
-      ContinuousLinearMap.isInvertible_of_surjective (E := E) hs⟩,
+      ContinuousLinearMap.isInvertible_of_surjective hs⟩,
     fun ⟨_, _, hinv⟩ ↦ hinv.surjective⟩
 
 end TauCeti

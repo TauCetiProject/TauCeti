@@ -45,6 +45,9 @@ one, are fundamental classes in this sense.
   `μ` exactly when `r` is a unit.
 * `TauCeti.isFundamentalClass_iff_ne_zero`: over a division ring, on a compact connected manifold,
   the fundamental classes are exactly the nonzero top-dimensional classes.
+* `TauCeti.IsFundamentalClass.exists_linearEquiv_isUnit`: on a compact connected manifold, with
+  coefficients free of rank one over a Dedekind-finite ring `k`, the top homology carrying a
+  fundamental class `μ` is a copy of `k` in which `μ` is a unit.
 * `TauCeti.isFundamentalClass_iff_forall_isLocalOrientation`: with integral coefficients, `μ` is a
   fundamental class exactly when its image at each point is a local orientation.
 * `TauCeti.HomologicalOrientation.isFundamentalClass_fundamentalClass`: the integral fundamental
@@ -190,6 +193,30 @@ theorem isFundamentalClass_iff_ne_zero [T2Space M] [CompactSpace M] [ConnectedSp
   refine fun x ↦ isUnit_iff_ne_zero.2 ((LinearEquiv.map_ne_zero_iff _).2 ?_)
   rw [← map_zero (singularHomologyToLocalHomology (ModuleCat.of K K) x _)]
   exact (singularHomologyToLocalHomology_injective _ rfl x).ne hμ
+
+include hn in
+/-- **The top homology of a manifold with a fundamental class is free of rank one.** On a compact
+connected `n`-manifold, with coefficients `R ≃ₗ[k] k` over a Dedekind-finite ring `k` (for instance
+a commutative ring or a domain), if `μ ∈ Hₙ(M; R)` is a fundamental class then `Hₙ(M; R)` is
+isomorphic to `k` by an equivalence sending `μ` to a unit: restriction to the local homology at a
+point is injective (`TauCeti.singularHomologyToLocalHomology_injective`), surjective since its
+image contains the generator given by `μ`, and carries `μ` to a generator. -/
+theorem IsFundamentalClass.exists_linearEquiv_isUnit [T2Space M] [CompactSpace M]
+    [ConnectedSpace M] {k : Type w} [Ring k] [IsDedekindFiniteMonoid k] {R : ModuleCat.{w} k}
+    (eR : R ≃ₗ[k] k) {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology R n : ModuleCat.{w} k)}
+    (hμ : IsFundamentalClass μ) :
+    ∃ e : ((TopCat.toSSet.obj (TopCat.of M)).homology R n : ModuleCat.{w} k) ≃ₗ[k] k,
+      IsUnit (e μ) := by
+  obtain ⟨x⟩ : Nonempty M := ConnectedSpace.toNonempty
+  have hsurj : Function.Surjective (singularHomologyToLocalHomology R x n) := by
+    rw [← LinearMap.range_eq_top, eq_top_iff, ← (isFundamentalClass_iff μ).1 hμ x,
+      Submodule.span_le, Set.singleton_subset_iff]
+    exact LinearMap.mem_range_self _ μ
+  let eL := localHomologySingletonLinearEquiv R hn eR x
+  refine ⟨(LinearEquiv.ofBijective _
+    ⟨singularHomologyToLocalHomology_injective R hn x, hsurj⟩).trans eL, ?_⟩
+  -- The image of `μ` generates the local homology, so its coordinate is a unit.
+  exact eL.span_singleton_eq_top_iff_isUnit.1 ((isFundamentalClass_iff μ).1 hμ x)
 
 end Manifold
 
