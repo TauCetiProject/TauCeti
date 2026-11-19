@@ -8,6 +8,7 @@ module
 import Mathlib.Algebra.Field.ZMod
 public import Mathlib.GroupTheory.PGroup
 import Mathlib.RingTheory.Idempotents
+import TauCeti.Algebra.MonoidAlgebra.Frobenius
 public import TauCeti.Algebra.MonoidAlgebra.Torsion
 
 /-!
@@ -41,8 +42,6 @@ every element differs from its augmentation by a nilpotent. No finiteness assump
 on the group is needed. -/
 theorem isNilpotent_sub_algebraMap_counit_of_isPGroup (hG : IsPGroup p G) (x : R[G]) :
     IsNilpotent (x - algebraMap R R[G] (Coalgebra.counit (R := R) x)) := by
-  have _ : ExpChar R[G] p :=
-    expChar_of_injective_algebraMap (Bialgebra.algebraMap_injective (R := R) R[G]) p
   induction x using MonoidAlgebra.induction_linear with
   | zero => simp
   | add x y hx hy =>

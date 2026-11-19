@@ -52,7 +52,9 @@ Everything here concerns one completion. The comparison of two completions along
   `isLinearTopology_adicCompletionIntegers` and `fact_isAdic_maximalIdeal_adicCompletionIntegers`
   (in the same namespace) record this for formal-group points with parameters in `𝔪`.
 * `IsDedekindDomain.HeightOneSpectrum.exists_valued_sub_le`: every element of `𝒪_v` is
-  congruent to an element of `R` modulo any power of the maximal ideal, so `R` is dense in `𝒪_v`.
+  congruent to an element of `R` modulo any power of the maximal ideal, so `R` is dense in `𝒪_v`;
+  `IsDedekindDomain.HeightOneSpectrum.exists_algebraMap_sub_mem_span_singleton` states the same
+  approximation modulo any nonzero principal ideal of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.denseRange_algebraMap_adicCompletionIntegers`: the
   corresponding density statement for the canonical map `R → 𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.residueFieldEquivAdicCompletionIntegers`: consequently the
@@ -470,6 +472,18 @@ theorem exists_valued_sub_le (x : v.adicCompletionIntegers K) (n : ℕ) :
     exact ha.le
   rw [← sub_add_sub_cancel _ (y : v.adicCompletion K)]
   exact Valuation.map_add_le _ hxy hza
+
+/-- Every element of `𝒪_v` is congruent to the image of an element of `R` modulo any nonzero
+element of `𝒪_v`. -/
+theorem exists_algebraMap_sub_mem_span_singleton (x : v.adicCompletionIntegers K)
+    {y : v.adicCompletionIntegers K} (hy : y ≠ 0) :
+    ∃ a : R, algebraMap R (v.adicCompletionIntegers K) a - x ∈ Ideal.span {y} := by
+  obtain ⟨n, hn⟩ := exists_maximalIdeal_pow_eq_of_principal _
+    (IsPrincipalIdealRing.principal _) _ (Ideal.span_singleton_eq_bot.not.mpr hy)
+  obtain ⟨a, ha⟩ := v.exists_valued_sub_le (K := K) x n
+  refine ⟨a, ?_⟩
+  rw [hn, v.mem_maximalIdeal_pow_iff, AddSubgroupClass.coe_sub, Valuation.map_sub_swap]
+  exact ha
 
 /-- **`R` is dense in the ring of integers of its completion at `v`.** Equivalently, every
 neighbourhood of an element of `𝒪_v` contains the image of an element of `R`. -/

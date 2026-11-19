@@ -28,8 +28,12 @@ is a monomorphism (`TopPair.mono_cubicalChainComplexMap_prodLeftMap`): a normali
 is short exact (`TopPair.shortExact_cubicalChainComplexProdShortComplex`). The complex is
 functorial in both pairs (`TopPair.cubicalChainComplexProdMap`).
 
-No hypothesis is placed on the subspaces. When `A` and `B` are open, the homology of `N(P × Q)`
-is the relative singular homology of `(X × Y, A × Y ∪ X × B)`
+No hypothesis is placed on the subspaces. When `A × Y` and `X × B` form an excisive couple, for
+instance when `A` and `B` are open, the homology of `N(P × Q)` is the relative homology of
+`(X × Y, A × Y ∪ X × B)`
+(`TopPair.quasiIso_cubicalChainComplexProdComparison_of_isIso`, in
+`TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Excisive`). When `A` and `B` are
+open, this is the relative singular homology of `(X × Y, A × Y ∪ X × B)`
 (`TauCeti.quasiIso_cubicalChainComplexProdToSingular`, in
 `TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Excisive`).
 

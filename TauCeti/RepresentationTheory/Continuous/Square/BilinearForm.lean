@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.BilinearForm
+public import TauCeti.Analysis.InnerProductSpace.BilinearForm.Basic
 public import TauCeti.RepresentationTheory.Continuous.Square.Basic
 public import TauCeti.RepresentationTheory.InvariantForm
 
@@ -14,7 +14,7 @@ public import TauCeti.RepresentationTheory.InvariantForm
 
 On an inner product space the inner product turns a tensor `t` of the tensor square `V ⊗[𝕜] V` into
 the bilinear form `B_t (v, w) = ⟪t, v ⊗ₜ w⟫`, `TauCeti.BilinForm.ofTensor`, built in
-`TauCeti/Analysis/InnerProductSpace/BilinearForm.lean` together with its injectivity, its
+`TauCeti/Analysis/InnerProductSpace/BilinearForm/Basic.lean` together with its injectivity, its
 surjectivity **in finite dimensions** -- only there is it an identification of the tensor square
 with all of `BilinForm 𝕜 V` -- and the fact that it carries the symmetric tensors to the symmetric
 forms and the antisymmetric tensors to the alternating ones.
