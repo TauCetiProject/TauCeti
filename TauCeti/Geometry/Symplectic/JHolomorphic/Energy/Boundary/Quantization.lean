@@ -145,6 +145,58 @@ theorem exists_pos_forall_le_setIntegral_norm_fderivWithin_one_sq_of_ne
   exact hzw ((convex_halfSpace_im_ge 0).is_const_of_fderivWithin_eq_zero
     (hu.differentiableOn (by norm_num)) hfderiv hz hw)
 
+/-- The pointwise small-energy bound behind the Lipschitz and concentration theorems. Let `δ`
+be a threshold for the boundary mean-value inequality `hmean` and `a` a bound for `‖J‖` on `K`. A
+curve with energy less than `δ` on `{0 ≤ im z} ∩ ball z₀ R` has `‖du(z)‖ ≤ (1 + max a 0) * B`,
+with `B = 1 + 16 δ / (π ρ²)`, at every `z` of the closed upper half-plane with
+`closedBall z ρ ⊆ ball z₀ R`: the mean-value inequality on `{0 ≤ im z} ∩ ball z ρ` bounds
+`‖∂ₛu(z)‖` by `B`, and then the Cauchy--Riemann equation bounds `‖du(z)‖`. -/
+private theorem norm_fderivWithin_le_of_small_energy {δ a ρ R : ℝ} {z₀ z : ℂ} {u : ℂ → V}
+    (hmean : ∀ ⦃u : ℂ → V⦄ ⦃x₀ : ℂ⦄ ⦃r : ℝ⦄, 0 ≤ x₀.im → 0 ≤ r →
+      ContDiffOn ℝ 3 u ({z | 0 ≤ z.im} ∩ ball x₀ r) →
+      ContinuousOn (fun y ↦ fderivWithin ℝ u {z | 0 ≤ z.im} y 1)
+        ({z | 0 ≤ z.im} ∩ closedBall x₀ r) →
+      (∀ y ∈ {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r,
+        fderivWithin ℝ u {z | 0 ≤ z.im} y I = J (u y) (fderivWithin ℝ u {z | 0 ≤ z.im} y 1)) →
+      (∀ y ∈ ball x₀ r, y.im = 0 → u y ∈ L) →
+      (∀ y ∈ {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, u y ∈ K) →
+      ∫ y in {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, ‖fderivWithin ℝ u {z | 0 ≤ z.im} y 1‖ ^ 2 < δ →
+      Real.pi * r ^ 2 * ‖fderivWithin ℝ u {z | 0 ≤ z.im} x₀ 1‖ ^ 2 ≤
+        16 * ∫ y in {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r,
+          ‖fderivWithin ℝ u {z | 0 ≤ z.im} y 1‖ ^ 2)
+    (ha : ∀ x ∈ K, ‖J x‖ ≤ a) (hz : 0 ≤ z.im) (hρ : 0 < ρ) (hsub : closedBall z ρ ⊆ ball z₀ R)
+    (hu : ContDiffOn ℝ 3 u ({z | 0 ≤ z.im} ∩ ball z₀ R))
+    (hCR : ∀ y ∈ {z : ℂ | 0 ≤ z.im} ∩ ball z₀ R,
+      fderivWithin ℝ u {z | 0 ≤ z.im} y I = J (u y) (fderivWithin ℝ u {z | 0 ≤ z.im} y 1))
+    (huL : ∀ y ∈ ball z₀ R, y.im = 0 → u y ∈ L) (huK : MapsTo u ({z | 0 ≤ z.im} ∩ ball z₀ R) K)
+    (hInt : IntegrableOn (fun y ↦ ‖fderivWithin ℝ u {z | 0 ≤ z.im} y 1‖ ^ 2)
+      ({z | 0 ≤ z.im} ∩ ball z₀ R))
+    (hE : ∫ y in {z : ℂ | 0 ≤ z.im} ∩ ball z₀ R, ‖fderivWithin ℝ u {z | 0 ≤ z.im} y 1‖ ^ 2 < δ) :
+    ‖fderivWithin ℝ u {z | 0 ≤ z.im} z‖ ≤
+      (1 + max a 0) * (1 + 16 * δ / (Real.pi * ρ ^ 2)) := by
+  set H : Set ℂ := {z | 0 ≤ z.im}
+  have hsub' : ball z ρ ⊆ ball z₀ R := ball_subset_closedBall.trans hsub
+  have hDu : ContinuousOn (fderivWithin ℝ u H) (H ∩ ball z₀ R) :=
+    continuousOn_fderivWithin_setOfPred_le_im_inter isOpen_ball hu (by norm_num)
+  have hmono : ∫ y in H ∩ ball z ρ, ‖fderivWithin ℝ u H y 1‖ ^ 2 ≤
+      ∫ y in H ∩ ball z₀ R, ‖fderivWithin ℝ u H y 1‖ ^ 2 :=
+    setIntegral_mono_set hInt
+      (ae_restrict_of_forall_mem ((measurableSet_le measurable_const
+        continuous_im.measurable).inter measurableSet_ball) fun _ _ ↦ sq_nonneg _)
+      (Eventually.of_forall (inter_subset_inter_right _ hsub'))
+  have h := hmean hz hρ.le (hu.mono (inter_subset_inter_right _ hsub'))
+    ((hDu.clm_apply continuousOn_const).mono (inter_subset_inter_right _ hsub))
+    (fun y hy ↦ hCR y ⟨hy.1, hsub' hy.2⟩) (fun y hy hy0 ↦ huL y (hsub' hy) hy0)
+    (fun y hy ↦ huK ⟨hy.1, hsub' hy.2⟩) (hmono.trans_lt hE)
+  have hp : 0 < Real.pi * ρ ^ 2 := by positivity
+  have hsq : ‖fderivWithin ℝ u H z 1‖ ^ 2 ≤ 16 * δ / (Real.pi * ρ ^ 2) := by
+    rw [le_div_iff₀ hp]
+    nlinarith
+  have hzr : z ∈ H ∩ ball z₀ R := ⟨hz, hsub (mem_closedBall_self hρ.le)⟩
+  exact (fderivWithin ℝ u H z).norm_le_of_apply_I_eq (hCR z hzr)
+    ((ha _ (huK hzr)).trans (le_max_left _ _))
+    (by nlinarith [sq_nonneg (‖fderivWithin ℝ u H z 1‖ - 1)])
+
 /-- **Small-energy Lipschitz bound up to the boundary.** Let `J` be `C²` on an open set `W`
 containing a compact set `K`, with `J(x)² = -1` on `K`, and let `L` be a closed subspace such that
 `J(p)` maps `L` into `Lᗮ` for every `p ∈ L ∩ W`. There is a threshold `δ > 0` such that for every
@@ -175,33 +227,11 @@ theorem exists_pos_forall_lipschitzOnWith_setOfPred_le_im_inter_of_small_energy
   refine ⟨⟨(1 + max a 0) * B, by positivity⟩, fun z₀ u hu hCR huL huK hInt hE ↦ ?_⟩
   set H : Set ℂ := {z | 0 ≤ z.im}
   have hinner : closedBall z₀ (r / 2) ⊆ ball z₀ r := closedBall_subset_ball (by linarith)
-  have hDu : ContinuousOn (fderivWithin ℝ u H) (H ∩ ball z₀ r) :=
-    continuousOn_fderivWithin_setOfPred_le_im_inter isOpen_ball hu (by norm_num)
   -- The mean-value inequality on `H ∩ ball z (r / 4)` bounds `‖∂ₛu‖` by `B` on the smaller set,
   -- and then the Cauchy--Riemann equation bounds `‖du‖` there by `(1 + max a 0) * B`.
-  have hop : ∀ z ∈ H ∩ closedBall z₀ (r / 2), ‖fderivWithin ℝ u H z‖ ≤ (1 + max a 0) * B := by
-    intro z hz
-    have hsub : closedBall z (r / 4) ⊆ ball z₀ r :=
-      closedBall_subset_ball' (by linarith [mem_closedBall.mp hz.2])
-    have hsub' : ball z (r / 4) ⊆ ball z₀ r := ball_subset_closedBall.trans hsub
-    have hmono : ∫ y in H ∩ ball z (r / 4), ‖fderivWithin ℝ u H y 1‖ ^ 2 ≤
-        ∫ y in H ∩ ball z₀ r, ‖fderivWithin ℝ u H y 1‖ ^ 2 :=
-      setIntegral_mono_set hInt
-        (ae_restrict_of_forall_mem ((measurableSet_le measurable_const
-          continuous_im.measurable).inter measurableSet_ball) fun _ _ ↦ sq_nonneg _)
-        (Eventually.of_forall (inter_subset_inter_right _ hsub'))
-    have h := hmean hz.1 (by positivity : 0 ≤ r / 4) (hu.mono (inter_subset_inter_right _ hsub'))
-      ((hDu.clm_apply continuousOn_const).mono (inter_subset_inter_right _ hsub))
-      (fun y hy ↦ hCR y ⟨hy.1, hsub' hy.2⟩) (fun y hy hy0 ↦ huL y (hsub' hy) hy0)
-      (fun y hy ↦ huK ⟨hy.1, hsub' hy.2⟩) (hmono.trans_lt hE)
-    have hp : 0 < Real.pi * (r / 4) ^ 2 := by positivity
-    have hsq : ‖fderivWithin ℝ u H z 1‖ ^ 2 ≤ 16 * δ / (Real.pi * (r / 4) ^ 2) := by
-      rw [le_div_iff₀ hp]
-      nlinarith
-    have hzr : z ∈ H ∩ ball z₀ r := ⟨hz.1, hinner hz.2⟩
-    exact (fderivWithin ℝ u H z).norm_le_of_apply_I_eq (hCR z hzr)
-      ((ha _ (huK hzr)).trans (le_max_left _ _))
-      (by nlinarith [sq_nonneg (‖fderivWithin ℝ u H z 1‖ - 1)])
+  have hop : ∀ z ∈ H ∩ closedBall z₀ (r / 2), ‖fderivWithin ℝ u H z‖ ≤ (1 + max a 0) * B :=
+    fun z hz ↦ norm_fderivWithin_le_of_small_energy hmean ha hz.1 (by positivity)
+      (closedBall_subset_ball' (by linarith [mem_closedBall.mp hz.2])) hu hCR huL huK hInt hE
   have hconv : Convex ℝ (H ∩ closedBall z₀ (r / 2)) :=
     (convex_halfSpace_im_ge 0).inter (convex_closedBall z₀ (r / 2))
   refine hconv.lipschitzOnWith_of_nnNorm_hasFDerivWithin_le (fun z hz ↦ ?_)
@@ -249,33 +279,12 @@ theorem exists_pos_forall_eventually_le_setIntegral_norm_fderivWithin_one_sq_int
   filter_upwards [hz.eventually (ball_mem_nhds z₀ (half_pos hε)),
     hblow.eventually_gt_atTop ((1 + max a 0) * B)] with i hzi hbig
   by_contra! hE
-  have hsub : closedBall (z i) (ε / 2) ⊆ ball z₀ ε :=
-    closedBall_subset_ball' (by linarith [mem_ball.mp hzi])
-  have hsub' : ball (z i) (ε / 2) ⊆ ball z₀ ε := ball_subset_closedBall.trans hsub
-  have hεr' : ball z₀ ε ⊆ ball z₀ r := ball_subset_ball hεr
-  have hzr : z i ∈ H ∩ ball z₀ r := ⟨hzH i, hεr' (hsub (mem_closedBall_self (half_pos hε).le))⟩
-  have hDu : ContinuousOn (fderivWithin ℝ (u i) H) (H ∩ ball z₀ r) :=
-    continuousOn_fderivWithin_setOfPred_le_im_inter isOpen_ball (hu i) (by norm_num)
-  have hmono : ∫ y in H ∩ ball (z i) (ε / 2), ‖fderivWithin ℝ (u i) H y 1‖ ^ 2 ≤
-      ∫ y in H ∩ ball z₀ ε, ‖fderivWithin ℝ (u i) H y 1‖ ^ 2 :=
-    setIntegral_mono_set ((hInt i).mono_set (inter_subset_inter_right _ hεr'))
-      (ae_restrict_of_forall_mem ((measurableSet_le measurable_const
-        continuous_im.measurable).inter measurableSet_ball) fun _ _ ↦ sq_nonneg _)
-      (Eventually.of_forall (inter_subset_inter_right _ hsub'))
-  have h := hmean (hzH i) (half_pos hε).le
-    ((hu i).mono (inter_subset_inter_right _ (hsub'.trans hεr')))
-    ((hDu.clm_apply continuousOn_const).mono (inter_subset_inter_right _ (hsub.trans hεr')))
-    (fun y hy ↦ hCR i y ⟨hy.1, hεr' (hsub' hy.2)⟩) (fun y hy hy0 ↦ huL i y (hεr' (hsub' hy)) hy0)
-    (fun y hy ↦ huK i ⟨hy.1, hεr' (hsub' hy.2)⟩) (hmono.trans_lt hE)
-  have hp : 0 < Real.pi * (ε / 2) ^ 2 := by positivity
-  have hsq : ‖fderivWithin ℝ (u i) H (z i) 1‖ ^ 2 ≤ 16 * δ / (Real.pi * (ε / 2) ^ 2) := by
-    rw [le_div_iff₀ hp]
-    nlinarith
-  have hreal : ‖fderivWithin ℝ (u i) H (z i) 1‖ ≤ B := by
-    nlinarith [sq_nonneg (‖fderivWithin ℝ (u i) H (z i) 1‖ - 1)]
+  have hεr' : H ∩ ball z₀ ε ⊆ H ∩ ball z₀ r := inter_subset_inter_right _ (ball_subset_ball hεr)
   have hop : ‖fderivWithin ℝ (u i) H (z i)‖ ≤ (1 + max a 0) * B :=
-    (fderivWithin ℝ (u i) H (z i)).norm_le_of_apply_I_eq (hCR i (z i) hzr)
-      ((ha _ (huK i hzr)).trans (le_max_left _ _)) hreal
+    norm_fderivWithin_le_of_small_energy hmean ha (hzH i) (half_pos hε)
+      (closedBall_subset_ball' (by linarith [mem_ball.mp hzi])) ((hu i).mono hεr')
+      (fun y hy ↦ hCR i y (hεr' hy)) (fun y hy hy0 ↦ huL i y (ball_subset_ball hεr hy) hy0)
+      ((huK i).mono_left hεr') ((hInt i).mono_set hεr') hE
   linarith
 
 /-- **Finitely many bubbling points, up to the boundary.** Let `J` be `C²` on an open set `W`
