@@ -51,6 +51,8 @@ All in the namespace `TauCeti.Vortex`:
   derivative of `x - x_ref` is `O(exp (-c |z|))` for every `c < 1 / 2`.
 * `exists_framedGaugeGroup_smul_mem_framedFieldSpace`: every smooth framed vortex has a smooth
   framed gauge representative lying in `A_m^s` for every `s`, with this decay.
+* `exists_contDiff_sobolevVortexDivisor_eq`: every point of `Sym ℂ m` is the divisor of a smooth
+  vortex of `A_m^k` lying in every `A_m^s`, with this decay.
 * `sobolevVortexDivisor_surjective`: every point of `Sym ℂ m` is the divisor of a `C²` vortex of
   `A_m^k`.
 * `sobolevVortexModuliEquiv`: for `k ≥ 4`, the Sobolev moduli of framed vortices are `Sym ℂ m`.
@@ -170,19 +172,33 @@ theorem exists_framedGaugeGroup_smul_mem_framedFieldSpace (f : ContDiffBump (0 :
 
 variable {k : ℕ} [Fact (1 < k)]
 
-/-- **Existence on the Sobolev scale.** For `k ≥ 2`, every effective divisor of degree `m`,
-repeated points included, is the divisor of a `C²` vortex of `A_m^k`. -/
-theorem sobolevVortexDivisor_surjective :
-    Function.Surjective (sobolevVortexDivisor (f := f) (m := m) (k := k)) := fun D ↦ by
+/-- **Smooth existence on the Sobolev scale.** For `k ≥ 2`, every effective divisor of degree `m`,
+repeated points included, is the divisor of a smooth vortex of `A_m^k` lying in the affine Sobolev
+space `A_m^s` for every real `s`, such that every derivative of its difference with the reference
+field is `O(exp (-c |z|))` at infinity for every rate `c < 1 / 2`. -/
+theorem exists_contDiff_sobolevVortexDivisor_eq (D : Sym ℂ m) :
+    ∃ x : sobolevVortices f m k, sobolevVortexDivisor x = D ∧
+      ContDiff ℝ ∞ (x : ℂ → EuclideanSpace ℝ (Fin 4)) ∧
+      (∀ s : ℝ, (x : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ framedFieldSpace f m s) ∧
+      ∀ c < 1 / 2, ∀ n : ℕ,
+        iteratedFDeriv ℝ n ((x : ℂ → EuclideanSpace ℝ (Fin 4)) - referenceField f m)
+          =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)) := by
   obtain ⟨x, hx⟩ := framedVortexDivisor_surjective one_pos m D
   obtain ⟨hxc, hxsol, hxfr⟩ := mem_framedVortexSubMulAction.1 x.property
   simp only [coupledEquation_one] at hxsol
-  obtain ⟨u, hu, -⟩ := exists_framedGaugeGroup_smul_mem_framedFieldSpace f hxc hxsol hxfr
+  obtain ⟨u, hu, hdec⟩ := exists_framedGaugeGroup_smul_mem_framedFieldSpace f hxc hxsol hxfr
   obtain ⟨hyc, hysol, -⟩ := mem_framedVortexSubMulAction.1 (u • x).property
+  rw [SubMulAction.val_smul] at hyc hysol
   refine ⟨⟨⟨u • (x : ℂ → EuclideanSpace ℝ (Fin 4)), hu k⟩,
-    mem_sobolevVortices.2 ⟨hyc.of_le (by simp), by simpa using hysol⟩⟩, ?_⟩
+    mem_sobolevVortices.2 ⟨hyc.of_le (by simp), by simpa using hysol⟩⟩, ?_, hyc, hu, hdec⟩
   rw [sobolevVortexDivisor_eq_framedVortexDivisor _ (u • x) (SubMulAction.val_smul u x).symm,
     framedVortexDivisor_smul, hx]
+
+/-- **Existence on the Sobolev scale.** For `k ≥ 2`, every effective divisor of degree `m`,
+repeated points included, is the divisor of a `C²` vortex of `A_m^k`. -/
+theorem sobolevVortexDivisor_surjective :
+    Function.Surjective (sobolevVortexDivisor (f := f) (m := m) (k := k)) := fun D ↦
+  (exists_contDiff_sobolevVortexDivisor_eq D).imp fun _ hx ↦ hx.left
 
 /-- For `k ≥ 4`, every point of `Sym ℂ m` is the divisor of a `G_(k+1)`-orbit of `C²` vortices of
 `A_m^k`. -/
