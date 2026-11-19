@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.Excision
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Functoriality
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Small.Relative
 public import TauCeti.Algebra.Homology.ModuleCat.QuasiIso
+import TauCeti.Algebra.Homology.ComplexShape.Basic
 import TauCeti.Topology.Closure
 
 /-!
@@ -188,7 +189,7 @@ theorem quasiIso_twistedChainComplexMap_of_open_cover : QuasiIso (twistedChainCo
   rw [quasiIso_iff]
   intro n
   rw [HomologicalComplex.moduleCat_quasiIsoAt_iff _ (n := n) (p := n + 1) (m := n - 1) (by simp)
-    (by cases n <;> simp [ChainComplex.next_nat_zero, ChainComplex.next_nat_succ])]
+    (ChainComplex.next_nat n)]
   exact ⟨fun y hy ↦ exists_sub_twistedChainComplexMap_f_eq_d f L hf hsnd U hU hcov hUf y hy,
     fun x hx b hb ↦
       exists_d_eq_of_twistedChainComplexMap_f_eq_d f L hf hsnd U hU hcov hUf x hx b hb⟩

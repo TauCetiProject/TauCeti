@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.InfiniteAdele
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.InfiniteGaloisAction
-public import TauCeti.RepresentationTheory.Pi
+public import TauCeti.RepresentationTheory.Pi.Basic
 
 /-!
 # The infinite ideles as a Galois representation
