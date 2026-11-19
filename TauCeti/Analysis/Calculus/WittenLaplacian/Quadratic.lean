@@ -58,6 +58,10 @@ nonzero and `t > 0`, `μ(k, s) = 0` exactly when `k = 0` and `s` is the set of i
 `aᵢ < 0` (`TauCeti.diagonalQuadraticWittenEigenvalue_eq_zero_iff`): the ground state is a
 multiple of the Gaussian `e^{-t ∑ᵢ |aᵢ| xᵢ² / 2} dx^s`
 (`TauCeti.diagonalQuadraticWittenEigenform_zero_apply`), a form whose degree is the Morse index.
+Its pointwise squared norm is `π^{-n/2} e^{-t ∑ᵢ |aᵢ| xᵢ²}`
+(`TauCeti.sum_sq_diagonalQuadraticWittenEigenform_zero_apply`), and translated to a point `p` it is
+annihilated by the Witten Laplacian of the translated model `y ↦ b + ∑ᵢ aᵢ (yᵢ - pᵢ)² / 2`
+(`TauCeti.euclideanWittenLaplacian_diagonalQuadraticWittenEigenform_zero_filter_neg_comp_sub`).
 Every other Hermite eigenform has `μ(k, s)` at least `2t minᵢ |aᵢ|`
 (`TauCeti.two_mul_mul_le_diagonalQuadraticWittenEigenvalue`), a gap growing linearly in `t`. For
 the standard model `f = -|x⁻|² + |x⁺|²` all `|aᵢ|` are `2`, the ground state is a multiple of
@@ -89,6 +93,11 @@ the Morse lemma, and its derivatives are in `TauCeti.Analysis.Calculus.FDeriv.Di
   `TauCeti.two_mul_mul_le_diagonalQuadraticWittenEigenvalue`: the eigenvalues are nonnegative,
   vanish exactly at the Gaussian ground state in the degree of the Morse index, and are otherwise
   bounded below by `2t minᵢ |aᵢ|`.
+* `TauCeti.diagonalQuadraticWittenEigenform_zero_apply`,
+  `TauCeti.sum_sq_diagonalQuadraticWittenEigenform_zero_apply`: the ground state is a Gaussian, and
+  its pointwise squared norm.
+* `TauCeti.euclideanWittenLaplacian_diagonalQuadraticWittenEigenform_zero_filter_neg_comp_sub`: the
+  translated model annihilates the translated ground state.
 
 ## References
 
@@ -295,6 +304,38 @@ theorem diagonalQuadraticWittenEigenform_zero_apply (a : ι → ℝ) {t : ℝ} (
   rw [Finset.mul_sum, ← Finset.sum_neg_distrib, Finset.sum_div]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   ring
+
+/-- The pointwise squared norm of the ground state is `π^{-n/2} e^{-t ∑ᵢ |aᵢ| xᵢ²}`, for `t ≥ 0`
+and `n` the dimension. -/
+theorem sum_sq_diagonalQuadraticWittenEigenform_zero_apply (a : ι → ℝ) {t : ℝ} (ht : 0 ≤ t)
+    (s : Finset ι) (x : ι → ℝ) :
+    ∑ s', diagonalQuadraticWittenEigenform a t 0 s x s' ^ 2 =
+      Real.exp (-(t * ∑ i, |a i| * x i ^ 2)) / √Real.pi ^ Fintype.card ι := by
+  -- The square of the Gaussian factor.
+  have h : (Real.exp (-(t * ∑ i, |a i| * x i ^ 2) / 2) / √(√Real.pi) ^ Fintype.card ι) ^ 2 =
+      Real.exp (-(t * ∑ i, |a i| * x i ^ 2)) / √Real.pi ^ Fintype.card ι := by
+    rw [div_pow, ← Real.exp_natCast_mul, pow_right_comm, Real.sq_sqrt (Real.sqrt_nonneg _)]
+    congr 2
+    ring
+  rw [diagonalQuadraticWittenEigenform_zero_apply a ht, ← h]
+  simp [Pi.single_apply]
+
+/-- **The translated ground state.** For `t ≥ 0`, the Witten Laplacian of the model
+`y ↦ b + ∑ᵢ aᵢ (yᵢ - pᵢ)² / 2` annihilates the translated ground state `Ψ_{0,s₀}(· - p)` in the
+degree `s₀ = {i | aᵢ < 0}`. -/
+theorem euclideanWittenLaplacian_diagonalQuadraticWittenEigenform_zero_filter_neg_comp_sub
+    (a p : ι → ℝ) (b : ℝ) {t : ℝ} (ht : 0 ≤ t) :
+    euclideanWittenLaplacian (fun y ↦ b + diagonalQuadratic a (y - p)) t
+      (fun x ↦ diagonalQuadraticWittenEigenform a t 0 (Finset.univ.filter fun i ↦ a i < 0)
+        (x - p)) = 0 := by
+  rw [euclideanWittenLaplacian_const_add]
+  have h := euclideanWittenLaplacian_comp_add_right (diagonalQuadratic a) t
+    (diagonalQuadraticWittenEigenform a t 0 (Finset.univ.filter fun i ↦ a i < 0)) (-p)
+  simp only [← sub_eq_add_neg] at h
+  rw [h, euclideanWittenLaplacian_diagonalQuadraticWittenEigenform a ht,
+    diagonalQuadraticWittenEigenvalue_zero_filter_neg, zero_smul]
+  funext _
+  simp only [Pi.zero_apply]
 
 end Eigenvalue
 
