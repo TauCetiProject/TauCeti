@@ -34,9 +34,12 @@ in `U`, and a **null-homologous, closed** piecewise-`C¹` **immersion** `γ` in 
 poles, under the regularity conditions (A′) and (B), the set-level Cauchy principal value of `f`
 along `γ` exists and equals `2πi · Σ_{s ∈ S} n_s(γ) · Res_s f` — with the generalized
 (non-integer) winding numbers as weights, valid when singularities lie **on** the curve; a point
-of `S` outside `U` has winding number `0` and contributes nothing. The half-residue case
-(`S = {s}`, `n_s(γ) = ½`) evaluates to `πi · Res_s f`, the value the valence formula needs at the
-smooth boundary point `i` of the fundamental domain.
+of `S` outside `U` has winding number `0` and contributes nothing. A singularity `s` on `γ` with
+`n_s(γ) = ½` contributes the summand `πi · Res_s f` to that sum. In the valence formula `f` is the
+logarithmic derivative of a modular form, with simple poles at the zeros of the form, and a zero at
+the smooth boundary point `i` of the modular fundamental domain contributes such a summand. The
+single-singularity case `S = {s}` with `n_s(γ) = ½` is `hasCauchyPV_half_residue`: there `s` is
+the only singularity of `f` in `U`, and the principal value is `πi · Res_s f`.
 
 The proof instantiates the canonical polar decomposition, discharges the conditions into the
 per-pole hypotheses, and assembles the residue sum; a reversed parametrization (`b ≤ a`) reduces to
@@ -51,11 +54,13 @@ must add several curves up before any of them bounds.
   the null-homology-free splitting of the principal value into the analytic remainder's contour
   integral and the winding-weighted residue sum, in either parametrization orientation.
 * `Contour.hungerbuhlerWasem_residueTheorem` — HW Thm 3.3.
-* `Contour.hasCauchyPV_half_residue` — the winding-`½` on-cycle case.
-* `Contour.hungerbuhlerWasem_residueTheorem_of_simple_poles`,
-  `Contour.hasCauchyPV_half_residue_of_simple_pole` — the simple-pole forms, with conditions
-  (A′) and (B) discharged automatically; the forms the argument principle and the valence
-  formula need.
+* `Contour.hasCauchyPV_half_residue` — the single-singularity (`S = {s}`), winding-`½` on-cycle
+  case.
+* `Contour.hungerbuhlerWasem_residueTheorem_of_simple_poles` — the simple-pole form, with
+  conditions (A′) and (B) discharged automatically; the form the argument principle and the
+  valence formula need, since a logarithmic derivative has only simple poles.
+* `Contour.hasCauchyPV_half_residue_of_simple_pole` — its `S = {s}`, winding-`½` specialization,
+  the simple-pole form of `Contour.hasCauchyPV_half_residue`.
 
 ## Provenance
 
@@ -276,10 +281,14 @@ theorem hungerbuhlerWasem_residueTheorem_of_simple_poles {f : ℂ → ℂ} {U : 
           · rwa [min_eq_right h, ← hclosed]) h_simple)
     (conditionB_of_simple_poles hU hγU hf h_simple)
 
-/-- **The half-residue theorem at a simple pole**: the winding-`½` case with the conditions
-discharged automatically — an on-cycle simple pole crossed by the immersion contributes
-`πi · Res_s f`. This is the form the valence formula needs at `i`; at the `π/3` corners `ρ` and
-`ρ + 1` of the fundamental domain the winding number is `1/6` instead. -/
+/-- **The half-residue theorem at a simple pole**: the `S = {s}`, winding-`½` specialization of
+`hungerbuhlerWasem_residueTheorem_of_simple_poles`, with conditions (A′) and (B) discharged
+automatically. Since `f` is differentiable on `U ∖ {s}`, the point `s`, at worst a simple pole, is
+the only singularity of `f` in `U`, and the principal value is `πi · Res_s f`, for example when `γ`
+is the boundary of a half-disc and `s` an interior point of its diameter. With several
+singularities, such as the poles of a logarithmic derivative in the argument principle or the
+valence formula, use `hungerbuhlerWasem_residueTheorem_of_simple_poles`, where each pole with
+winding number `½` contributes the summand `πi · Res_s f`. -/
 theorem hasCauchyPV_half_residue_of_simple_pole {f : ℂ → ℂ} {U : Set ℂ} (hU : IsOpen U)
     (γ : ℝ → ℂ) (a b : ℝ) (s : ℂ) (hγ_imm : IsPwC1ImmersionOn γ a b)
     (hclosed : γ a = γ b) (hγa : γ a ≠ s)

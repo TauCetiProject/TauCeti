@@ -13,6 +13,8 @@ public import TauCeti.MeasureTheory.Measure.Atom
 public import TauCeti.MeasureTheory.Measure.Dirac
 public import TauCeti.MeasureTheory.Measure.Prod
 
+import TauCeti.MeasureTheory.Measure.AEMeasurable
+
 /-!
 # Conditioning laws, source atoms and connected sources
 
@@ -38,8 +40,17 @@ Adjoining a coordinate with an s-finite measure to a random variable gives the p
 measure. Completing the source measure preserves every random variable's law.
 Nonnegative random variables whose real coercions have a common law are identically distributed.
 
+Finite product laws are characterized by coordinate independence and marginal laws;
+measurable equivalences let these characterizations pass to other representations.
+
 ## Main results
 
+* `TauCeti.Probability.hasLaw_pi_iff` — a finite product law is equivalent to independence
+  and the prescribed marginal laws;
+* `MeasurableEquiv.hasLaw_map_iff` — laws transport in both directions along a measurable
+  equivalence;
+* `ProbabilityTheory.HasLaw.ae` — almost-everywhere properties of a law transfer to any random
+  variable with that law, without requiring the property to be measurable;
 * `ProbabilityTheory.HasLaw.cond` — conditioning transports a prescribed law;
 * `ProbabilityTheory.HasLaw.aemeasurable_of_ae_eq_comp` — a map almost everywhere equal to an
   a.e. measurable map composed with a random variable of the right law is a.e. measurable;
@@ -49,6 +60,10 @@ Nonnegative random variables whose real coercions have a common law are identica
   null on singletons;
 * `ProbabilityTheory.HasLaw.prod_extension` — adjoining a coordinate with an s-finite measure to
   a random variable gives the pair the product measure;
+* `ProbabilityTheory.IndepFun.hasLaw_apply_bind` — applying an indexed family to an independent
+  selector and noise variable gives a measure bind;
+* `ProbabilityTheory.HasLaw.eval_bind` — evaluating a countable family at an independent selector
+  gives the bind of its component laws;
 * `AEMeasurable.exists_map_restrict_eq_smul_dirac_of_atom` — the image of a finite positive
   measurable atom under an a.e.-measurable map to a standard Borel space is a point mass;
 * `ProbabilityTheory.HasLaw.exists_measure_atom_le_measure_singleton` — a law receiving such an
@@ -78,6 +93,41 @@ namespace Probability
 
 variable {X : Type*} {Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {T : X → Y}
 variable {μ : Measure X} {ν : Measure Y}
+
+/-- A random finite family has product law exactly when its coordinates are independent
+and have the prescribed probability laws. No prior source probability assumption is needed. -/
+theorem hasLaw_pi_iff {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι]
+    {α : ι → Type*} [∀ i, MeasurableSpace (α i)] {μ : ∀ i, Measure (α i)}
+    [∀ i, IsProbabilityMeasure (μ i)] {P : Measure Ω} {X : Ω → ∀ i, α i} :
+    HasLaw X (Measure.pi μ) P ↔
+      iIndepFun (fun i ω ↦ X ω i) P ∧ ∀ i, HasLaw (fun ω ↦ X ω i) (μ i) P := by
+  constructor
+  · intro hX
+    have hentry := fun i ↦ (measurePreserving_eval μ i).hasLaw.comp hX
+    have : IsProbabilityMeasure P := hX.isProbabilityMeasure
+    exact ⟨(iIndepFun_iff_hasLaw_pi_pi hentry).2 hX, hentry⟩
+  · rintro ⟨hind, hentry⟩
+    exact hind.hasLaw_pi hentry
+
+/-- Transport by a measurable equivalence can be undone when identifying a law. -/
+theorem _root_.MeasurableEquiv.hasLaw_map_iff {Ω α β : Type*}
+    [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace β]
+    (e : α ≃ᵐ β) {μ : Measure α} {P : Measure Ω} {X : Ω → β} :
+    HasLaw X (μ.map e) P ↔ HasLaw (fun ω ↦ e.symm (X ω)) μ P := by
+  constructor
+  · intro hX
+    have h := (hasLaw_map e.symm.measurable.aemeasurable).comp hX
+    simpa only [Measure.map_map e.symm.measurable e.measurable,
+      e.symm_comp_self, Measure.map_id, Function.comp_def] using h
+  · intro hX
+    have h := (hasLaw_map e.measurable.aemeasurable).comp hX
+    simpa only [Function.comp_def, e.apply_symm_apply] using h
+
+/-- A property holding almost everywhere under a law holds almost surely for any random
+variable with that law, without a measurability assumption on the property. -/
+protected theorem _root_.ProbabilityTheory.HasLaw.ae (hT : HasLaw T ν μ) {p : Y → Prop}
+    (hp : ∀ᵐ y ∂ν, p y) : ∀ᵐ x ∂μ, p (T x) :=
+  ae_of_ae_map hT.aemeasurable (hT.map_eq ▸ hp)
 
 /-- Conditioning a random variable on the preimage of a measurable event gives its law
 conditioned on that event. The statement includes events of zero or infinite mass, when both
@@ -140,8 +190,7 @@ theorem not_hasLaw_of_measure_atom [NullSingletonClass ν] {A : Set X} (hAfin : 
     (hAatom : μ.IsAtom A) (T : X → Y) : ¬HasLaw T ν μ := by
   intro hT
   obtain ⟨y, hy⟩ := hT.exists_measure_atom_le_measure_singleton hAfin hAatom
-  exact (not_le_of_gt (Measure.isAtom_iff.mp hAatom).2.1)
-    (hy.trans_eq (measure_singleton y))
+  exact not_le_of_gt hAatom.pos (hy.trans_eq (measure_singleton y))
 
 end Atom
 
@@ -201,6 +250,87 @@ theorem _root_.ProbabilityTheory.HasLaw.prod_extension_dirac
     [SFinite μ] (y : E) :
     HasLaw (fun ω => (X ω, y)) (μ.prod (Measure.dirac y)) P := by
   convert (measurePreserving_prodMk_right_dirac μ y).fun_comp_hasLaw hX using 1
+
+/-- Applying an indexed family to an independent selector and noise variable gives the bind of the
+component pushforwards. -/
+theorem _root_.ProbabilityTheory.IndepFun.hasLaw_apply_bind_map
+    {Ω I A B : Type*} [MeasurableSpace Ω] [MeasurableSpace I] [MeasurableSpace A]
+    [MeasurableSpace B] {P : Measure Ω} {Z : Ω → I} {U : Ω → A} {μ : Measure I}
+    {ρ : Measure A} {f : I → A → B} [IsFiniteMeasure μ] (hZU : IndepFun Z U P)
+    (hZ : HasLaw Z μ P) (hU : HasLaw U ρ P)
+    (hf : AEMeasurable (Function.uncurry f) (μ.prod ρ)) :
+    HasLaw (fun ω ↦ f (Z ω) (U ω)) (μ.bind fun i ↦ ρ.map (f i)) P := by
+  let _ : IsFiniteMeasure P := hZ.isFiniteMeasure
+  let _ : IsFiniteMeasure ρ := hU.isFiniteMeasure_iff.mp inferInstance
+  exact (HasLaw.mk hf (Measure.map_uncurry_prod_eq_bind_map μ ρ hf)).fun_comp
+    (hZU.hasLaw_prod hZ hU)
+
+/-- Applying an indexed family to an independent selector and noise variable gives the bind of any
+component kernel that agrees almost everywhere with the component pushforwards. -/
+theorem _root_.ProbabilityTheory.IndepFun.hasLaw_apply_bind
+    {Ω I A B : Type*} [MeasurableSpace Ω] [MeasurableSpace I] [MeasurableSpace A]
+    [MeasurableSpace B] {P : Measure Ω} {Z : Ω → I} {U : Ω → A} {μ : Measure I}
+    {ρ : Measure A} {K : I → Measure B} {f : I → A → B} [IsFiniteMeasure μ]
+    (hZU : IndepFun Z U P) (hZ : HasLaw Z μ P) (hU : HasLaw U ρ P)
+    (hf : AEMeasurable (Function.uncurry f) (μ.prod ρ))
+    (hK : (fun i ↦ ρ.map (f i)) =ᵐ[μ] K) :
+    HasLaw (fun ω ↦ f (Z ω) (U ω)) (μ.bind K) P := by
+  have h := hZU.hasLaw_apply_bind_map hZ hU hf
+  rw [Measure.bind_congr_right hK] at h
+  exact h
+
+/-- Evaluating a countable family of potential random variables at a selector gives the bind of
+their laws when the selector is independent of almost every component. Dependence between the
+potential variables themselves is allowed. -/
+theorem _root_.ProbabilityTheory.HasLaw.eval_bind
+    {Ω I B : Type*} [MeasurableSpace Ω] [Countable I] [MeasurableSpace I]
+    [MeasurableSingletonClass I] [MeasurableSpace B] {P : Measure Ω} {Z : Ω → I}
+    {μ : Measure I} {K : I → Measure B} {Y : I → Ω → B} (hZ : HasLaw Z μ P)
+    (hZY : ∀ᵐ i ∂μ, IndepFun Z (Y i) P) (hY : ∀ᵐ i ∂μ, HasLaw (Y i) (K i) P) :
+    HasLaw (fun ω ↦ Y (Z ω) ω) (μ.bind K) P := by
+  have hZi (i : I) : P (Z ⁻¹' {i}) = μ {i} := hZ.measure_eq (measurableSet_singleton i)
+  have hZY' := ae_iff_of_countable.1 hZY
+  have hY' := ae_iff_of_countable.1 hY
+  have hsel : AEMeasurable (fun ω ↦ Y (Z ω) ω) P :=
+    hZ.aemeasurable.eval_selector_of_countable fun i hi ↦
+      (hY' i (hZi i ▸ hi)).aemeasurable
+  refine ⟨hsel, ?_⟩
+  have hK : Measurable K := Measurable.of_discrete
+  have hbind : μ.bind K = Measure.sum (fun i ↦ μ {i} • K i) := by
+    calc
+      μ.bind K = (Measure.sum fun i ↦ μ {i} • Measure.dirac i).bind K := by
+        rw [Measure.sum_smul_dirac]
+      _ = Measure.sum (fun i ↦ (μ {i} • Measure.dirac i).bind K) :=
+        Measure.bind_sum _ _ hK.aemeasurable
+      _ = Measure.sum (fun i ↦ μ {i} • K i) := by
+        congr 1
+        funext i
+        rw [Measure.bind_smul _ _ hK.aemeasurable, Measure.dirac_bind hK]
+  ext s hs
+  rw [Measure.map_apply_of_aemeasurable hsel hs, hbind, Measure.sum_apply _ hs]
+  have hpre : (fun ω ↦ Y (Z ω) ω) ⁻¹' s = ⋃ i, Z ⁻¹' {i} ∩ Y i ⁻¹' s := by
+    ext ω
+    simp only [Set.mem_preimage, Set.mem_iUnion, Set.mem_inter_iff, Set.mem_singleton_iff]
+    exact ⟨fun h ↦ ⟨Z ω, rfl, h⟩, fun ⟨_i, hi, h⟩ ↦ hi ▸ h⟩
+  rw [hpre, measure_iUnion₀]
+  · simp only [smul_apply, smul_eq_mul]
+    apply tsum_congr
+    intro i
+    by_cases hi : μ {i} = 0
+    · rw [measure_mono_null Set.inter_subset_left (hZi i |>.trans hi), hi, zero_mul]
+    · have hYi : P (Y i ⁻¹' s) = K i s := (hY' i hi).measure_eq hs
+      rw [(hZY' i hi).measure_inter_preimage_eq_mul {i} s (measurableSet_singleton i) hs,
+        hZi i, hYi]
+  · intro i j hij
+    exact Disjoint.aedisjoint
+      (Disjoint.mono Set.inter_subset_left Set.inter_subset_left
+        ((Set.disjoint_singleton.2 hij).preimage Z))
+  · intro i
+    by_cases hi : μ {i} = 0
+    · exact NullMeasurableSet.of_null
+        (measure_mono_null Set.inter_subset_left (hZi i |>.trans hi))
+    · exact (hZ.aemeasurable.nullMeasurableSet_preimage (measurableSet_singleton i)).inter
+        ((hY' i hi).aemeasurable.nullMeasurableSet_preimage hs)
 
 /-- **A nonzero source singleton has no transport onto a law that is null on singletons.** This
 is the basic infeasibility of the Monge problem: no map can push such a source measure onto such
