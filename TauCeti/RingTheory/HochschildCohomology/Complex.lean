@@ -52,6 +52,9 @@ coboundaries and the cocycles are the traces.
 * `TauCeti.hochschildCohomology.mk_surjective`, `TauCeti.hochschildCohomology.mk_eq_zero_iff`:
   Hochschild cohomology is the quotient of the cocycles by the coboundaries.
 * `TauCeti.mem_hochschildCocycles_zero_iff`: the Hochschild `0`-cocycles are the traces.
+* `TauCeti.apply_mem_hochschildCocycles`, `TauCeti.apply_mem_hochschildCoboundaries`: a degreewise
+  linear map of cochains commuting with the Hochschild coboundary preserves cocycles and
+  coboundaries.
 
 ## References
 
@@ -126,6 +129,40 @@ variable {R A M} in
 theorem mem_hochschildCocycles_zero_iff {φ : MultilinearMap (RingHom.id R) (fun _ : Fin 1 ↦ A) M} :
     φ ∈ hochschildCocycles R A M 0 ↔ ∀ x y : A, φ (fun _ ↦ x * y) = φ (fun _ ↦ y * x) := by
   rw [mem_hochschildCocycles_iff, hochschildCoboundary_zero_eq_zero_iff]
+
+section Map
+
+variable {R A M} {B N : Type*} [NonUnitalSemiring B] [Module R B] [IsScalarTower R B B]
+  [SMulCommClass R B B] [AddCommGroup N] [Module R N] [SMulCommClass R R N]
+
+/-- A degreewise linear map of cochains commuting with the Hochschild coboundary maps Hochschild
+cocycles to Hochschild cocycles. -/
+theorem apply_mem_hochschildCocycles
+    (f : ∀ n, MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M →ₗ[R]
+      MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ B) N)
+    (hf : ∀ n φ, hochschildCoboundary R B N n (f n φ) = f (n + 1) (hochschildCoboundary R A M n φ))
+    {n : ℕ} {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M}
+    (hφ : φ ∈ hochschildCocycles R A M n) : f n φ ∈ hochschildCocycles R B N n := by
+  rw [mem_hochschildCocycles_iff] at hφ ⊢
+  rw [hf, hφ, map_zero]
+
+/-- A degreewise linear map of cochains commuting with the Hochschild coboundary maps Hochschild
+coboundaries to Hochschild coboundaries. -/
+theorem apply_mem_hochschildCoboundaries
+    (f : ∀ n, MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M →ₗ[R]
+      MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ B) N)
+    (hf : ∀ n φ, hochschildCoboundary R B N n (f n φ) = f (n + 1) (hochschildCoboundary R A M n φ))
+    {n : ℕ} {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M}
+    (hφ : φ ∈ hochschildCoboundaries R A M n) : f n φ ∈ hochschildCoboundaries R B N n := by
+  cases n with
+  | zero =>
+    rw [hochschildCoboundaries_zero, Submodule.mem_bot] at hφ ⊢
+    rw [hφ, map_zero]
+  | succ n =>
+    obtain ⟨χ, rfl⟩ := mem_hochschildCoboundaries_succ_iff.1 hφ
+    exact mem_hochschildCoboundaries_succ_iff.2 ⟨f n χ, hf n χ⟩
+
+end Map
 
 end Cocycles
 

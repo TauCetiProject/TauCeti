@@ -61,7 +61,6 @@ public theorem LinearMap.apply_eq_sum_sum_smul_single {ι κ R M : Type*} [Finty
 
 /-- The inclusion `a ↦ a Eᵢᵢ` of the coefficients into the `(i, i)` corner of the matrix algebra,
 as a homomorphism of nonunital algebras. -/
-@[expose]
 public def Matrix.singleNonUnitalAlgHom (R : Type*) {n α : Type*} [Monoid R]
     [NonUnitalNonAssocSemiring α] [DistribMulAction R α] [DecidableEq n] [Fintype n] (i : n) :
     α →ₙₐ[R] Matrix n n α where
@@ -76,11 +75,11 @@ public def Matrix.singleNonUnitalAlgHom (R : Type*) {n α : Type*} [Monoid R]
 public theorem Matrix.singleNonUnitalAlgHom_apply (R : Type*) {n α : Type*} [Monoid R]
     [NonUnitalNonAssocSemiring α] [DistribMulAction R α] [DecidableEq n] [Fintype n] (i : n)
     (a : α) : Matrix.singleNonUnitalAlgHom R i a = Matrix.single i i a :=
-  rfl
+  (rfl)
 
 /-- The linear map underlying `Matrix.singleNonUnitalAlgHom R i` is `Matrix.singleLinearMap`. -/
 public theorem Matrix.toLinearMap_singleNonUnitalAlgHom (R : Type*) {n α : Type*} [Semiring R]
     [NonUnitalNonAssocSemiring α] [Module R α] [DecidableEq n] [Fintype n] (i : n) :
     ((Matrix.singleNonUnitalAlgHom R i : α →ₙₐ[R] Matrix n n α) : α →ₗ[R] Matrix n n α) =
       Matrix.singleLinearMap R i i :=
-  LinearMap.ext fun _ ↦ rfl
+  LinearMap.ext fun _ ↦ (rfl)

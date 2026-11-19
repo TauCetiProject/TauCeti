@@ -80,17 +80,13 @@ section NatFace
 
 variable {A : Type*}
 
-/-- Cyclic rotation `(b₀, …, bₙ) ↦ (bₙ, b₀, …, bₙ₋₁)` of a sequence of length `n + 1`. -/
-private def natRotate (n : ℕ) (b : ℕ → A) (k : ℕ) : A :=
-  if k = 0 then b n else b (k - 1)
-
 private theorem comp_finRotate_symm_comp_val {n : ℕ} (b : ℕ → A) :
     (fun k : Fin (n + 1) ↦ b k) ∘ (finRotate (n + 1)).symm =
       fun k : Fin (n + 1) ↦ natRotate n b k := by
   funext k
   rcases k with ⟨_ | k, hk⟩
-  · simp [natRotate, Fin.coe_neg_one]
-  · simp [natRotate, finRotate_symm_apply, Fin.val_sub_one_of_ne_zero]
+  · simp [natRotate_apply, Fin.coe_neg_one]
+  · simp [finRotate_symm_apply, Fin.val_sub_one_of_ne_zero]
 
 section Semigroup
 
@@ -98,21 +94,21 @@ variable [Semigroup A]
 
 private theorem natContract_natContract {i j : ℕ} (hij : i ≤ j) (b : ℕ → A) (k : ℕ) :
     natContract i (natContract (j + 1) b) k = natContract j (natContract i b) k := by
-  simp only [natContract]
+  simp only [natContract_apply]
   split_ifs <;> first | omega | simp_all [mul_assoc]
 
 private theorem natContract_natContract_natRotate {n i : ℕ} (hi : i ≤ n) (b : ℕ → A) {k : ℕ}
     (hk : k ≤ n) :
     natContract i (natContract 0 (natRotate (n + 2) b)) k =
       natContract 0 (natRotate (n + 1) (natContract i b)) k := by
-  simp only [natContract, natRotate]
+  simp only [natContract_apply, natRotate_apply]
   split_ifs <;> first | omega | simp_all [mul_assoc]
 
 private theorem natContract_natRotate_natContract_natRotate {n : ℕ} (b : ℕ → A) {k : ℕ}
     (hk : k ≤ n) :
     natContract 0 (natRotate (n + 1) (natContract 0 (natRotate (n + 2) b))) k =
       natContract 0 (natRotate (n + 1) (natContract (n + 1) b)) k := by
-  simp only [natContract, natRotate]
+  simp only [natContract_apply, natRotate_apply]
   split_ifs <;> first | omega | simp_all [mul_assoc]
 
 end Semigroup
@@ -123,13 +119,13 @@ variable [Mul A]
 
 private theorem natContract_succ_natRotate {n i : ℕ} (hi : i < n) (b : ℕ → A) (k : ℕ) :
     natContract (i + 1) (natRotate (n + 1) b) k = natRotate n (natContract i b) k := by
-  simp only [natContract, natRotate]
+  simp only [natContract_apply, natRotate_apply]
   split_ifs <;> first | omega | simp_all [Nat.sub_one_add_one]
 
 private theorem natContract_natRotate_natRotate {n : ℕ} (b : ℕ → A) {k : ℕ} (hk : k ≤ n) :
     natContract 0 (natRotate (n + 1) (natRotate (n + 1) b)) k =
       natRotate n (natContract n b) k := by
-  simp only [natContract, natRotate]
+  simp only [natContract_apply, natRotate_apply]
   split_ifs <;> first | omega | simp_all
 
 end Mul
@@ -146,7 +142,7 @@ private theorem natContractPos_lt {n j k : ℕ} (hj : j < n + 1) (hk : k < n + 2
 private theorem natContract_update_of_ne [Mul A] {j k m : ℕ}
     (hm : m ≠ natContractPos j k) (b : ℕ → A) (x : A) :
     natContract j (update b k x) m = natContract j b m := by
-  simp only [natContract, natContractPos, update_apply] at hm ⊢
+  simp only [natContract_apply, natContractPos, update_apply] at hm ⊢
   split_ifs at hm ⊢ <;> first | omega | rfl
 
 /-- Updating one entry of a tuple only changes one entry of a contraction of it. -/
@@ -171,14 +167,14 @@ private theorem natContract_update_add [Distrib A] (j k : ℕ) (b : ℕ → A)
     natContract j (update b k (x + y)) (natContractPos j k) =
       natContract j (update b k x) (natContractPos j k) +
         natContract j (update b k y) (natContractPos j k) := by
-  simp only [natContract, natContractPos, update_apply]
+  simp only [natContract_apply, natContractPos, update_apply]
   split_ifs <;> first | omega | simp [add_mul, mul_add]
 
 private theorem natContract_update_smul {R : Type*} [Mul A] [SMul R A]
     [IsScalarTower R A A] [SMulCommClass R A A] (j k : ℕ) (b : ℕ → A) (c : R) (x : A) :
     natContract j (update b k (c • x)) (natContractPos j k) =
       c • natContract j (update b k x) (natContractPos j k) := by
-  simp only [natContract, natContractPos, update_apply]
+  simp only [natContract_apply, natContractPos, update_apply]
   split_ifs <;> first | omega | simp [smul_mul_assoc, mul_smul_comm]
 
 end NatFace
@@ -221,7 +217,7 @@ theorem hochschildFace_last (a : Fin (n + 2) → A) :
   obtain rfl : a = fun k : Fin _ ↦ b k := hb.symm
   rw [hochschildFace_last_eq_contractNth, comp_finRotate_symm_comp_val, contractNth_comp_val]
   funext k
-  cases k using Fin.cases <;> simp [natContract, natRotate]
+  cases k using Fin.cases <;> simp [natRotate_apply]
 
 /-- A Hochschild face other than the last one, on a tuple read off a sequence indexed by `ℕ`, is
 read off the contracted sequence. -/
@@ -230,7 +226,9 @@ theorem hochschildFace_castSucc_comp_val (j : Fin (n + 1)) (b : ℕ → A) :
       fun k : Fin (n + 1) ↦ natContract j b k := by
   rw [hochschildFace_castSucc, contractNth_comp_val, Fin.val_castSucc]
 
-private theorem hochschildFace_last_comp_val (b : ℕ → A) :
+/-- The last Hochschild face, on a tuple read off a sequence indexed by `ℕ`, is read off the
+contraction of the first two entries of the rotated sequence. -/
+theorem hochschildFace_last_comp_val (b : ℕ → A) :
     hochschildFace (Fin.last (n + 1)) (fun k : Fin (n + 2) ↦ b k) =
       fun k : Fin (n + 1) ↦ natContract 0 (natRotate (n + 1) b) k := by
   rw [hochschildFace_last_eq_contractNth, comp_finRotate_symm_comp_val, contractNth_comp_val,

@@ -82,11 +82,23 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   with common difference `2` is `J (D + J)`.
 * `Finset.sum_range_min_add_one_sub_two_mul`: the Clebsch–Gordan dimension count
   `∑_{k ≤ min m n} (m + n - 2k + 1) = (m + 1)(n + 1)`.
+* `Finset.sum_range_succ_sum_range_succ`: peel the last row and column off a double sum over two
+  ranges.
 -/
 
 public section
 
 namespace Finset
+
+/-- Peel the last row and column off a double sum over two ranges. -/
+theorem sum_range_succ_sum_range_succ {M : Type*} [AddCommMonoid M] (F : ℕ → ℕ → M) (a b : ℕ) :
+    ∑ j ∈ range (a + 1), ∑ l ∈ range (b + 1), F l j =
+      ∑ j ∈ range a, ∑ l ∈ range b, F l j + ∑ j ∈ range a, F b j +
+        ∑ l ∈ range (b + 1), F l a := by
+  rw [sum_range_succ _ a]
+  congr 1
+  rw [← sum_add_distrib]
+  exact sum_congr rfl fun j _ ↦ sum_range_succ _ _
 
 /-- Regroup a sum whose initial term is `g 0` and whose successive terms are
 `g (k + 1) + h k`, retaining the final contribution `g n`. -/

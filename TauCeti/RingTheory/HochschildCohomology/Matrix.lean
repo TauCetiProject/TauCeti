@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.CyclicCohomology.Matrix
 public import TauCeti.RingTheory.HochschildCohomology.Complex
 import Mathlib.LinearAlgebra.Multilinear.Curry
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Data.Fin.Basic
 import TauCeti.Data.Fin.Tuple.Basic
 import TauCeti.Data.Matrix.Basis
@@ -77,26 +78,6 @@ section NatTuple
 
 variable {B ι : Type*}
 
-/-- The last face `(gₘ g₀, g₁, …, gₘ₋₁)` of a tuple `(g₀, …, gₘ)` indexed by `ℕ`. -/
-private def natLastFace [Mul B] (m : ℕ) (g : ℕ → B) (t : ℕ) : B :=
-  if t = 0 then g m * g 0 else g t
-
-private theorem hochschildFace_last_val [Mul B] {m : ℕ} (g : ℕ → B) :
-    hochschildFace (Fin.last (m + 1)) (fun s : Fin (m + 2) ↦ g s) =
-      fun t : Fin (m + 1) ↦ natLastFace (m + 1) g t := by
-  rw [hochschildFace_last]
-  funext t
-  cases t using Fin.cases <;> simp [natLastFace]
-
-private theorem insertNth_val {m : ℕ} (p : Fin (m + 1)) (v : B) (f : ℕ → B) (t : Fin (m + 1)) :
-    p.insertNth (α := fun _ ↦ B) v (fun s : Fin m ↦ f s) t =
-      if (t : ℕ) < p then f t else if (t : ℕ) = p then v else f (t - 1) := by
-  cases t using Fin.succAboveCases p with
-  | x => simp
-  | p s =>
-    rw [Fin.insertNth_apply_succAbove, Fin.val_succAbove]
-    split_ifs with h₁ h₂ h₃ <;> simp_all <;> omega
-
 /-- The left factors `1, y κ₀, y κ₁, …` of the homotopy tuples. -/
 private def natLeft [One B] (y : ι → B) (κ : ℕ → ι) (t : ℕ) : B :=
   if t = 0 then 1 else y (κ (t - 1))
@@ -140,18 +121,19 @@ private theorem clampIndex_insertNth {j : ℕ} (l : Fin (j + 2)) (c : ι) (k : F
   have ht' : min t (j + 1) = t := Nat.min_eq_left ht
   rw [clampIndex]
   conv_lhs => rw [hk]
-  rw [insertNth_val]
+  rw [insertNth_comp_val]
   simp only [ht', natInsert]
 
 /-- The `l`-th Hochschild face of a tuple `(g₀, …, gₘ)` indexed by `ℕ`. -/
 private def natFaceAt [Mul B] (m l : ℕ) (g : ℕ → B) : ℕ → B :=
-  if l < m then natContract l g else natLastFace m g
+  if l < m then natContract l g else natContract 0 (natRotate m g)
 
 private theorem natFaceAt_of_lt [Mul B] {m l : ℕ} (h : l < m) (g : ℕ → B) :
     natFaceAt m l g = natContract l g :=
   ite_eq_left h
 
-private theorem natFaceAt_self [Mul B] (m : ℕ) (g : ℕ → B) : natFaceAt m m g = natLastFace m g :=
+private theorem natFaceAt_self [Mul B] (m : ℕ) (g : ℕ → B) :
+    natFaceAt m m g = natContract 0 (natRotate m g) :=
   ite_eq_right (lt_irrefl m)
 
 private theorem hochschildFace_val [Mul B] {m : ℕ} (l : Fin (m + 2)) (g : ℕ → B) :
@@ -159,7 +141,7 @@ private theorem hochschildFace_val [Mul B] {m : ℕ} (l : Fin (m + 2)) (g : ℕ 
       fun t : Fin (m + 1) ↦ natFaceAt (m + 1) l g t := by
   induction l using Fin.lastCases with
   | last =>
-    rw [hochschildFace_last_val]
+    rw [hochschildFace_last_comp_val]
     simp [natFaceAt]
   | cast l =>
     rw [hochschildFace_castSucc_comp_val]
@@ -176,7 +158,7 @@ private theorem natContract_natHomotopy_natInsert {l j : ℕ} (hlj : l ≤ j) (c
       else natHomotopy x y j κ (natContract l g) t := by
   funext t
   rcases lt_trichotomy t l with h | rfl | h <;> rcases lt_trichotomy t (j + 1) with h' | h' | h' <;>
-    first | omega | simp (disch := omega) only [natContract, natHomotopy, natLeft, natInsert,
+    first | omega | simp (disch := omega) only [natContract_apply, natHomotopy, natLeft, natInsert,
       ite_eq_left, ite_eq_right, ite_true, Nat.add_sub_cancel, Nat.sub_add_cancel, mul_assoc, h']
 
 /-- The face merging the last conjugated entry with the inserted entry removes its index. -/
@@ -187,7 +169,7 @@ private theorem natContract_natHomotopy_natInsert_self {l : ℕ} (hl : 1 ≤ l) 
       else natContract l (natHomotopy x y (l - 1) κ g) t := by
   funext t
   rcases lt_trichotomy t l with h | rfl | h <;>
-    first | omega | simp (disch := omega) only [natContract, natHomotopy, natLeft, natInsert,
+    first | omega | simp (disch := omega) only [natContract_apply, natHomotopy, natLeft, natInsert,
       ite_eq_left, ite_eq_right, ite_true, Nat.add_sub_cancel, Nat.sub_add_cancel, mul_assoc,
       mul_one]
 
@@ -196,16 +178,18 @@ private theorem natContract_natHomotopy {l j : ℕ} (hjl : j + 1 < l) (κ : ℕ 
     natContract l (natHomotopy x y j κ g) = natHomotopy x y j κ (natContract (l - 1) g) := by
   funext t
   rcases lt_trichotomy t (j + 1) with h | h | h <;> rcases lt_trichotomy t l with h' | h' | h' <;>
-    first | omega | simp (disch := omega) only [natContract, natHomotopy, ite_eq_left, ite_eq_right,
-      ite_true, Nat.add_sub_cancel, Nat.sub_add_cancel, h, h']
+    first | omega | simp (disch := omega) only [natContract_apply, natHomotopy, ite_eq_left,
+      ite_eq_right, ite_true, Nat.add_sub_cancel, Nat.sub_add_cancel, h, h']
 
 /-- The last face of a homotopy tuple not reaching the last entry commutes with the homotopy. -/
-private theorem natLastFace_natHomotopy {m j : ℕ} (hjm : j < m) (κ : ℕ → ι) (g : ℕ → B) :
-    natLastFace (m + 1) (natHomotopy x y j κ g) = natHomotopy x y j κ (natLastFace m g) := by
+private theorem natContract_zero_natRotate_natHomotopy {m j : ℕ} (hjm : j < m) (κ : ℕ → ι)
+    (g : ℕ → B) :
+    natContract 0 (natRotate (m + 1) (natHomotopy x y j κ g)) =
+      natHomotopy x y j κ (natContract 0 (natRotate m g)) := by
   funext t
   rcases Nat.eq_zero_or_pos t with h | h <;> rcases lt_trichotomy t (j + 1) with h' | h' | h' <;>
-    first | omega | simp (disch := omega) only [natLastFace, natHomotopy, natLeft, ite_eq_left,
-      ite_eq_right, ite_true, Nat.add_sub_cancel, mul_assoc, one_mul, h, h']
+    first | omega | simp (disch := omega) only [natContract_apply, natRotate_apply, natHomotopy,
+      natLeft, ite_eq_left, ite_eq_right, ite_true, Nat.add_sub_cancel, mul_assoc, one_mul, h, h']
 
 /-- The zeroth face of the zeroth homotopy tuple merges its first two entries. -/
 private theorem natContract_zero_natHomotopy_zero (κ : ℕ → ι) (g : ℕ → B) :
@@ -213,7 +197,7 @@ private theorem natContract_zero_natHomotopy_zero (κ : ℕ → ι) (g : ℕ →
       if t = 0 then 1 * g 0 * x (κ 0) * (y (κ 0) * 1) else g t := by
   funext t
   rcases Nat.eq_zero_or_pos t with h | h <;>
-    simp (disch := omega) only [natContract, natHomotopy, natLeft, ite_eq_left, ite_eq_right,
+    simp (disch := omega) only [natContract_apply, natHomotopy, natLeft, ite_eq_left, ite_eq_right,
       ite_true, Nat.add_sub_cancel, mul_one, h]
 
 end NatTuple
@@ -227,16 +211,6 @@ variable {M : Type*} [AddCommGroup M]
 private theorem neg_one_pow_succ_smul_add (m : ℕ) (a : M) :
     (-1 : ℤ) ^ (m + 1) • a + (-1 : ℤ) ^ m • a = 0 := by
   rw [pow_succ, mul_neg_one, neg_smul, neg_add_cancel]
-
-/-- Peel the last row and column off a double sum over two ranges. -/
-private theorem sum_range_succ_sum_range_succ (F : ℕ → ℕ → M) (a b : ℕ) :
-    ∑ j ∈ Finset.range (a + 1), ∑ l ∈ Finset.range (b + 1), F l j =
-      ∑ j ∈ Finset.range a, ∑ l ∈ Finset.range b, F l j + ∑ j ∈ Finset.range a, F b j +
-        ∑ l ∈ Finset.range (b + 1), F l a := by
-  rw [Finset.sum_range_succ _ a]
-  congr 1
-  rw [← Finset.sum_add_distrib]
-  exact Finset.sum_congr rfl fun j _ ↦ Finset.sum_range_succ _ _
 
 /-- The last column of the `D`-sum of a presimplicial homotopy cancels the last column of its
 `E`-sum, up to one term. -/
@@ -290,8 +264,8 @@ private theorem sum_presimplicial_homotopy (N : ℕ) (D E : ℕ → ℕ → M)
     have h₁ := sum_last_column N D E fun j hj ↦ hc (N + 2) j (by omega) le_rfl
     have h₂ := sum_last_row N D E (fun l hl ↦ ha l (N + 1) hl le_rfl)
       (hb (N + 1) (by omega) le_rfl)
-    rw [sum_range_succ_sum_range_succ _ (N + 1) (N + 2),
-      sum_range_succ_sum_range_succ (fun l j ↦ (-1 : ℤ) ^ (l + j) • E j l) N (N + 1)]
+    rw [Finset.sum_range_succ_sum_range_succ _ (N + 1) (N + 2),
+      Finset.sum_range_succ_sum_range_succ (fun l j ↦ (-1 : ℤ) ^ (l + j) • E j l) N (N + 1)]
     linear_combination (norm := abel) ih + h₁ + h₂
 
 end Signs
@@ -355,7 +329,7 @@ private theorem homotopyTerm_val {n : ℕ} (j : Fin (n + 1)) (k : Fin (j + 1) �
     MultilinearMap.curryMid_apply_apply]
   congr 1
   funext t
-  rw [insertNth_val j.succ _ (fun s ↦ LinearMap.mulLeftRight R (homotopyPair x y k s) (g s))]
+  rw [insertNth_comp_val j.succ _ (fun s ↦ LinearMap.mulLeftRight R (homotopyPair x y k s) (g s))]
   simp only [natHomotopy, homotopyPair, Fin.val_succ]
   split_ifs <;> first | rfl | omega | simp [clampIndex_self]
 
@@ -403,6 +377,29 @@ noncomputable def frameCochainHomotopy (n : ℕ) :
     ext a
     simp [homotopyTerm, MultilinearMap.compLinearMap_apply, MultilinearMap.curryMid_apply_apply,
       Finset.smul_sum, smul_comm c]
+
+/-- The formula for the homotopy: `(Hψ)(a₀, …, aₙ)` is the alternating sum over `j` of the sums
+over the index tuples `k : Fin (j + 1) → ι` of `ψ` evaluated on
+`(a₀ x k₀, y k₀ a₁ x k₁, …, y kⱼ₋₁ aⱼ x kⱼ, y kⱼ, aⱼ₊₁, …, aₙ)`, the entry `y kⱼ` inserted at
+position `j + 1`. -/
+theorem frameCochainHomotopy_apply (n : ℕ)
+    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ B) M) (a : Fin (n + 1) → B) :
+    frameCochainHomotopy R M x y n ψ a =
+      ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j : ℕ) • ∑ k : Fin (j + 1) → ι,
+        ψ (j.succ.insertNth (y (k (Fin.last j))) fun s ↦
+          if h : (s : ℕ) ≤ j then
+            (if (s : ℕ) = 0 then 1 else y (k ⟨s - 1, by omega⟩)) * a s * x (k ⟨s, by omega⟩)
+          else a s) := by
+  simp only [frameCochainHomotopy, LinearMap.coe_mk, AddHom.coe_mk, sum_apply, smul_apply,
+    homotopyTerm, MultilinearMap.compLinearMap_apply, MultilinearMap.curryMid_apply_apply]
+  refine Finset.sum_congr rfl fun j _ ↦ congrArg _ <| Finset.sum_congr rfl fun k _ ↦
+    congrArg ψ <| congrArg _ <| funext fun s ↦ ?_
+  simp only [homotopyPair]
+  split_ifs with h h₀
+  · simp [LinearMap.mulLeftRight_apply, natLeft, clampIndex, h₀]
+  · simp [LinearMap.mulLeftRight_apply, natLeft, clampIndex, h₀, Nat.min_eq_left h,
+      Nat.min_eq_left (show (s : ℕ) - 1 ≤ j by omega)]
+  · simp [LinearMap.mulLeftRight_apply]
 
 private theorem frameCochainHomotopy_val (n : ℕ)
     (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ B) M) (g : ℕ → B) :
@@ -492,7 +489,7 @@ private theorem faceHomotopySum_of_lt (hxy : ∑ c, x c * y c = 1) {m : ℕ}
     (fun k c ↦ ?_) fun k ↦ ?_
   · rw [natHomotopy_congr x y (fun t ht ↦ clampIndex_insertNth _ c k ht) g,
       natContract_natHomotopy_natInsert x y (by omega)]
-  · simp (disch := omega) only [natHomotopy, natContract, ite_eq_left, ite_eq_right, ite_true,
+  · simp (disch := omega) only [natHomotopy, natContract_apply, ite_eq_left, ite_eq_right, ite_true,
       mul_assoc]
 
 omit [IsScalarTower R B B] [SMulCommClass R B B] in
@@ -509,7 +506,7 @@ private theorem faceHomotopySum_self (hxy : ∑ c, x c * y c = 1) {m : ℕ}
     (fun k ↦ natLeft y (clampIndex k) (l + 1) * g (l + 1)) (fun _ ↦ 1) (fun k c ↦ ?_) fun k ↦ ?_
   · rw [natHomotopy_congr x y (fun t ht ↦ clampIndex_insertNth _ c k ht) g, Fin.val_last,
       natContract_natHomotopy_natInsert_self x y (by omega), Nat.add_sub_cancel]
-  · simp (disch := omega) only [natHomotopy, natContract, natLeft, ite_eq_left, ite_eq_right,
+  · simp (disch := omega) only [natHomotopy, natContract_apply, natLeft, ite_eq_left, ite_eq_right,
       ite_true, Nat.add_sub_cancel, mul_one]
 
 omit [IsScalarTower R B B] [SMulCommClass R B B] in
@@ -521,7 +518,8 @@ private theorem faceHomotopySum_of_add_one_lt {m : ℕ}
   simp only [faceHomotopySum, homotopyFaceSum]
   rcases hlm.lt_or_eq with hlm | rfl
   · simp (disch := omega) only [natFaceAt_of_lt, natContract_natHomotopy x y hjl]
-  · simp only [Nat.add_sub_cancel, natFaceAt_self, natLastFace_natHomotopy x y (by omega : j < m)]
+  · simp only [Nat.add_sub_cancel, natFaceAt_self,
+      natContract_zero_natRotate_natHomotopy x y (by omega : j < m)]
 
 omit [IsScalarTower R B B] [SMulCommClass R B B] in
 /-- The zeroth face of the zeroth homotopy tuple gives back the original tuple. -/
@@ -553,10 +551,10 @@ private theorem faceHomotopySum_last {m : ℕ}
   cases t using Fin.cases with
   | zero =>
     rw [Fin.finRotate_symm_zero, ← clampIndex_self k, ← clampIndex_val k 0]
-    simp [natLastFace, natHomotopy, natLeft, mul_assoc]
+    simp [natRotate_apply, natHomotopy, natLeft, mul_assoc]
   | succ t =>
     rw [Fin.finRotate_symm_succ, ← clampIndex_val k t.succ, ← clampIndex_val k t.castSucc]
-    simp [natLastFace, natHomotopy, natLeft]
+    simp [natHomotopy, natLeft]
 
 /-- In degree zero, `H(bψ) = ψ - θψ`: frame conjugation is homotopic to the identity. -/
 theorem frameCochainHomotopy_hochschildCoboundary_zero (hxy : ∑ c, x c * y c = 1)
@@ -648,73 +646,24 @@ variable [Semiring R] [NonUnitalSemiring A] [Module R A] [IsScalarTower R A A]
 theorem matrixCochainExtension_mem_hochschildCocycles
     {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M}
     (hφ : φ ∈ hochschildCocycles R A M n) :
-    matrixCochainExtension ι n φ ∈ hochschildCocycles R (Matrix ι ι A) M n := by
-  rw [mem_hochschildCocycles_iff] at hφ ⊢
-  rw [← matrixCochainExtension_hochschildCoboundary, hφ, map_zero]
+    matrixCochainExtension ι n φ ∈ hochschildCocycles R (Matrix ι ι A) M n :=
+  apply_mem_hochschildCocycles (fun n ↦ matrixCochainExtension ι n)
+    (fun n χ ↦ (matrixCochainExtension_hochschildCoboundary ι n χ).symm) hφ
 
 /-- Matrix extension maps Hochschild coboundaries to Hochschild coboundaries. -/
 theorem matrixCochainExtension_mem_hochschildCoboundaries
     {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M}
     (hφ : φ ∈ hochschildCoboundaries R A M n) :
-    matrixCochainExtension ι n φ ∈ hochschildCoboundaries R (Matrix ι ι A) M n := by
-  cases n with
-  | zero =>
-    rw [hochschildCoboundaries_zero, Submodule.mem_bot] at hφ ⊢
-    rw [hφ, map_zero]
-  | succ n =>
-    obtain ⟨χ, rfl⟩ := mem_hochschildCoboundaries_succ_iff.1 hφ
-    exact mem_hochschildCoboundaries_succ_iff.2
-      ⟨_, (matrixCochainExtension_hochschildCoboundary ι n χ).symm⟩
+    matrixCochainExtension ι n φ ∈ hochschildCoboundaries R (Matrix ι ι A) M n :=
+  apply_mem_hochschildCoboundaries (fun n ↦ matrixCochainExtension ι n)
+    (fun n χ ↦ (matrixCochainExtension_hochschildCoboundary ι n χ).symm) hφ
 
 end NonUnital
 
-variable [CommRing R] [Semiring A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
-  [AddCommGroup M] [Module R M]
+section CommRing
 
-/-- Restriction of a cochain on matrices to the `(r, r)` corner. -/
-private def cornerRestriction [DecidableEq ι] (r : ι) {n : ℕ}
-    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ Matrix ι ι A) M) :
-    MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M :=
-  ψ.compLinearMap fun _ ↦ Matrix.singleLinearMap R r r
-
-omit [IsScalarTower R A A] [SMulCommClass R A A] in
-private theorem cornerRestriction_matrixCochainExtension [DecidableEq ι] (r : ι) (n : ℕ)
-    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
-    cornerRestriction r (matrixCochainExtension ι n φ) = φ := by
-  ext a
-  simp [cornerRestriction, MultilinearMap.compLinearMap_apply]
-
-private theorem hochschildCoboundary_cornerRestriction [DecidableEq ι] (r : ι) (n : ℕ)
-    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ Matrix ι ι A) M) :
-    hochschildCoboundary R A M n (cornerRestriction r ψ) =
-      cornerRestriction r (hochschildCoboundary R (Matrix ι ι A) M n ψ) := by
-  simpa only [cornerRestriction, Matrix.toLinearMap_singleNonUnitalAlgHom] using
-    hochschildCoboundary_compLinearMap (Matrix.singleNonUnitalAlgHom R r) ψ
-
-/-- Matrix extension composed with corner restriction is homotopic to the identity, in degree
-zero. -/
-private theorem matrixCochainExtension_cornerRestriction_zero [DecidableEq ι] (r : ι)
-    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin 1 ↦ Matrix ι ι A) M) :
-    ψ - matrixCochainExtension ι 0 (cornerRestriction r ψ) =
-      frameCochainHomotopy R M (fun c ↦ Matrix.single c r (1 : A))
-        (fun c ↦ Matrix.single r c (1 : A)) 0 (hochschildCoboundary R (Matrix ι ι A) M 0 ψ) := by
-  rw [frameCochainHomotopy_hochschildCoboundary_zero (by simp [Matrix.sum_single_one]),
-    frameCochainConjugation_single, cornerRestriction]
-
-/-- Matrix extension composed with corner restriction is homotopic to the identity, in positive
-degree. -/
-private theorem matrixCochainExtension_cornerRestriction_succ [DecidableEq ι] (r : ι) (n : ℕ)
-    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ Matrix ι ι A) M) :
-    ψ - matrixCochainExtension ι (n + 1) (cornerRestriction r ψ) =
-      hochschildCoboundary R (Matrix ι ι A) M n (frameCochainHomotopy R M
-          (fun c ↦ Matrix.single c r (1 : A)) (fun c ↦ Matrix.single r c (1 : A)) n ψ) +
-        frameCochainHomotopy R M (fun c ↦ Matrix.single c r (1 : A))
-          (fun c ↦ Matrix.single r c (1 : A)) (n + 1)
-          (hochschildCoboundary R (Matrix ι ι A) M (n + 1) ψ) := by
-  rw [hochschildCoboundary_frameCochainHomotopy_add_frameCochainHomotopy_hochschildCoboundary
-    (by simp [Matrix.sum_single_one]), frameCochainConjugation_single, cornerRestriction]
-
-variable {n : ℕ}
+variable [CommRing R] [NonUnitalSemiring A] [Module R A] [IsScalarTower R A A]
+  [SMulCommClass R A A] [AddCommGroup M] [Module R M] {n : ℕ}
 
 namespace hochschildCohomology
 
@@ -736,6 +685,62 @@ theorem matrixExtension_mk (φ : hochschildCocycles R A M n) :
         matrixCochainExtension_mem_hochschildCocycles φ.2⟩ :=
   desc_mk _ _ _ φ
 
+end hochschildCohomology
+
+end CommRing
+
+variable [CommRing R] [Semiring A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
+  [AddCommGroup M] [Module R M]
+
+/-- Restriction of cochains on matrices to the `(r, r)` corner. -/
+private noncomputable def cornerRestriction [DecidableEq ι] (r : ι) (n : ℕ) :
+    MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ Matrix ι ι A) M →ₗ[R]
+      MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M :=
+  MultilinearMap.compLinearMapₗ fun _ ↦ Matrix.singleLinearMap R r r
+
+omit [IsScalarTower R A A] [SMulCommClass R A A] in
+private theorem cornerRestriction_matrixCochainExtension [DecidableEq ι] (r : ι) (n : ℕ)
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
+    cornerRestriction r n (matrixCochainExtension ι n φ) = φ := by
+  ext a
+  simp [cornerRestriction, MultilinearMap.compLinearMap_apply]
+
+private theorem hochschildCoboundary_cornerRestriction [DecidableEq ι] (r : ι) (n : ℕ)
+    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ Matrix ι ι A) M) :
+    hochschildCoboundary R A M n (cornerRestriction r n ψ) =
+      cornerRestriction r (n + 1) (hochschildCoboundary R (Matrix ι ι A) M n ψ) := by
+  simpa only [cornerRestriction, MultilinearMap.compLinearMapₗ_apply,
+    Matrix.toLinearMap_singleNonUnitalAlgHom] using
+    hochschildCoboundary_compLinearMap (Matrix.singleNonUnitalAlgHom R r) ψ
+
+/-- Matrix extension composed with corner restriction is homotopic to the identity, in degree
+zero. -/
+private theorem matrixCochainExtension_cornerRestriction_zero [DecidableEq ι] (r : ι)
+    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin 1 ↦ Matrix ι ι A) M) :
+    ψ - matrixCochainExtension ι 0 (cornerRestriction r 0 ψ) =
+      frameCochainHomotopy R M (fun c ↦ Matrix.single c r (1 : A))
+        (fun c ↦ Matrix.single r c (1 : A)) 0 (hochschildCoboundary R (Matrix ι ι A) M 0 ψ) := by
+  rw [frameCochainHomotopy_hochschildCoboundary_zero (by simp [Matrix.sum_single_one]),
+    frameCochainConjugation_single, cornerRestriction, MultilinearMap.compLinearMapₗ_apply]
+
+/-- Matrix extension composed with corner restriction is homotopic to the identity, in positive
+degree. -/
+private theorem matrixCochainExtension_cornerRestriction_succ [DecidableEq ι] (r : ι) (n : ℕ)
+    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ Matrix ι ι A) M) :
+    ψ - matrixCochainExtension ι (n + 1) (cornerRestriction r (n + 1) ψ) =
+      hochschildCoboundary R (Matrix ι ι A) M n (frameCochainHomotopy R M
+          (fun c ↦ Matrix.single c r (1 : A)) (fun c ↦ Matrix.single r c (1 : A)) n ψ) +
+        frameCochainHomotopy R M (fun c ↦ Matrix.single c r (1 : A))
+          (fun c ↦ Matrix.single r c (1 : A)) (n + 1)
+          (hochschildCoboundary R (Matrix ι ι A) M (n + 1) ψ) := by
+  rw [hochschildCoboundary_frameCochainHomotopy_add_frameCochainHomotopy_hochschildCoboundary
+    (by simp [Matrix.sum_single_one]), frameCochainConjugation_single, cornerRestriction,
+    MultilinearMap.compLinearMapₗ_apply]
+
+variable {n : ℕ}
+
+namespace hochschildCohomology
+
 /-- **Matrix Morita invariance of Hochschild cohomology.** For a nonempty finite index type `ι`,
 matrix extension `φ ↦ φ#Tr` induces a bijection
 `HHⁿ(A, Hom_R(A, M)) → HHⁿ(Matrix ι ι A, Hom_R(Matrix ι ι A, M))` in every degree. Its inverse is
@@ -745,29 +750,17 @@ theorem bijective_matrixExtension [Nonempty ι] :
     Function.Bijective (matrixExtension (R := R) (A := A) M ι n) := by
   classical
   obtain ⟨r⟩ := ‹Nonempty ι›
-  have hρ {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ Matrix ι ι A) M}
-      (hφ : φ ∈ hochschildCocycles R (Matrix ι ι A) M n) :
-      cornerRestriction r φ ∈ hochschildCocycles R A M n := by
-    rw [mem_hochschildCocycles_iff] at hφ ⊢
-    rw [hochschildCoboundary_cornerRestriction, hφ, cornerRestriction,
-      MultilinearMap.zero_compLinearMap]
   constructor
   · refine (injective_iff_map_eq_zero _).2 fun z hz ↦ ?_
     obtain ⟨φ, rfl⟩ := mk_surjective R A M n z
     rw [matrixExtension_mk, mk_eq_zero_iff] at hz
     rw [mk_eq_zero_iff, ← cornerRestriction_matrixCochainExtension r n φ.1]
-    cases n with
-    | zero =>
-      rw [hochschildCoboundaries_zero, Submodule.mem_bot] at hz ⊢
-      simp only at hz
-      rw [hz, cornerRestriction, MultilinearMap.zero_compLinearMap]
-    | succ n =>
-      obtain ⟨χ, hχ⟩ := mem_hochschildCoboundaries_succ_iff.1 hz
-      exact mem_hochschildCoboundaries_succ_iff.2
-        ⟨cornerRestriction r χ, by rw [hochschildCoboundary_cornerRestriction, hχ]⟩
+    exact apply_mem_hochschildCoboundaries (cornerRestriction r)
+      (hochschildCoboundary_cornerRestriction r) hz
   · intro z
     obtain ⟨ψ, rfl⟩ := mk_surjective R (Matrix ι ι A) M n z
-    refine ⟨mk R A M n ⟨cornerRestriction r ψ.1, hρ ψ.2⟩, ?_⟩
+    refine ⟨mk R A M n ⟨cornerRestriction r n ψ.1, apply_mem_hochschildCocycles
+      (cornerRestriction r) (hochschildCoboundary_cornerRestriction r) ψ.2⟩, ?_⟩
     rw [matrixExtension_mk, mk_eq_mk_iff]
     have hψ := mem_hochschildCocycles_iff.1 ψ.2
     cases n with

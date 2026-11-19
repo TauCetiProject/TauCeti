@@ -73,6 +73,9 @@ once.
   the right one that never steps back steps from left to right exactly once.
 * `TauCeti.contractNth_comp_val`: contracting two adjacent entries of a tuple read off a sequence
   indexed by `ℕ` is reading off the contracted sequence `TauCeti.natContract`.
+* `TauCeti.natRotate`: cyclic rotation of the first entries of a sequence indexed by `ℕ`.
+* `TauCeti.insertNth_comp_val`: inserting an entry into a tuple read off a sequence indexed by `ℕ`
+  shifts the later entries by one.
 -/
 
 public section
@@ -457,12 +460,36 @@ end Fin
 
 namespace TauCeti
 
-variable {α : Type*} [Mul α]
+variable {α : Type*}
+
+section Mul
+
+variable [Mul α]
 
 /-- Contraction `(b₀, …, bᵢ bᵢ₊₁, bᵢ₊₂, …)` of the entries `i` and `i + 1` of a sequence indexed
 by `ℕ`. On the first `n + 2` entries it is `Fin.contractNth` (`TauCeti.contractNth_comp_val`). -/
-@[expose] def natContract (i : ℕ) (b : ℕ → α) (k : ℕ) : α :=
+def natContract (i : ℕ) (b : ℕ → α) (k : ℕ) : α :=
   if k < i then b k else if k = i then b k * b (k + 1) else b (k + 1)
+
+/-- The entries of the contraction `TauCeti.natContract i b`, by cases on the position. -/
+theorem natContract_apply (i : ℕ) (b : ℕ → α) (k : ℕ) :
+    natContract i b k = if k < i then b k else if k = i then b k * b (k + 1) else b (k + 1) :=
+  (rfl)
+
+/-- Below the contracted position the contraction keeps the entries. -/
+@[simp]
+theorem natContract_of_lt {i k : ℕ} (h : k < i) (b : ℕ → α) : natContract i b k = b k := by
+  rw [natContract_apply, ite_eq_left h]
+
+/-- At the contracted position the contraction multiplies two adjacent entries. -/
+@[simp]
+theorem natContract_self (i : ℕ) (b : ℕ → α) : natContract i b i = b i * b (i + 1) := by
+  rw [natContract_apply, ite_eq_right (lt_irrefl i), ite_eq_left rfl]
+
+/-- Beyond the contracted position the contraction shifts the entries by one. -/
+@[simp]
+theorem natContract_of_gt {i k : ℕ} (h : i < k) (b : ℕ → α) : natContract i b k = b (k + 1) := by
+  rw [natContract_apply, ite_eq_right (by omega), ite_eq_right (by omega)]
 
 /-- Contracting two adjacent entries of a tuple read off a sequence indexed by `ℕ` is reading off
 the contracted sequence. -/
@@ -470,6 +497,41 @@ theorem contractNth_comp_val {n : ℕ} (j : Fin (n + 2)) (b : ℕ → α) :
     Fin.contractNth j (· * ·) (fun k : Fin (n + 2) ↦ b k) =
       fun k : Fin (n + 1) ↦ natContract j b k := by
   funext k
-  simp only [Fin.contractNth, Fin.val_castSucc, Fin.val_succ, natContract]
+  simp only [Fin.contractNth, Fin.val_castSucc, Fin.val_succ, natContract_apply]
+
+end Mul
+
+/-- Cyclic rotation `(b₀, …, bₙ) ↦ (bₙ, b₀, …, bₙ₋₁)` of the first `n + 1` entries of a sequence
+indexed by `ℕ`. -/
+def natRotate (n : ℕ) (b : ℕ → α) (k : ℕ) : α :=
+  if k = 0 then b n else b (k - 1)
+
+/-- The entries of the rotation `TauCeti.natRotate n b`, by cases on the position. -/
+theorem natRotate_apply (n : ℕ) (b : ℕ → α) (k : ℕ) :
+    natRotate n b k = if k = 0 then b n else b (k - 1) :=
+  (rfl)
+
+/-- The rotation moves the entry `n` to the front. -/
+@[simp]
+theorem natRotate_zero (n : ℕ) (b : ℕ → α) : natRotate n b 0 = b n :=
+  ite_eq_left rfl
+
+/-- The rotation shifts the other entries back by one. -/
+@[simp]
+theorem natRotate_succ (n : ℕ) (b : ℕ → α) (k : ℕ) : natRotate n b (k + 1) = b k :=
+  ite_eq_right k.succ_ne_zero
+
+/-- Inserting an entry into a tuple read off a sequence indexed by `ℕ` keeps the entries before
+the insertion and shifts the later entries by one. -/
+theorem insertNth_comp_val {m : ℕ} (p : Fin (m + 1)) (v : α) (f : ℕ → α) :
+    p.insertNth (α := fun _ ↦ α) v (fun s : Fin m ↦ f s) =
+      fun t : Fin (m + 1) ↦ if (t : ℕ) < p then f t else if (t : ℕ) = p then v else f (t - 1) := by
+  funext t
+  cases t using Fin.succAboveCases p with
+  | x => simp
+  | p s =>
+    rw [Fin.insertNth_apply_succAbove]
+    unfold Fin.succAbove
+    split_ifs <;> simp_all [Fin.lt_def] <;> omega
 
 end TauCeti
