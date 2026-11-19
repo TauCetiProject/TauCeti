@@ -18,8 +18,9 @@ form a functor `SingleObj G ⥤ TopPair` sending the unique object to `(X, S)`
 `TopCat.actionFunctor X G`.
 
 Composed with a relative homology theory, it is the action of `G` on the relative homology of
-`(X, S)`; for instance, for the quotient covering of a finite group action, the relative homology of
-the base is the object of invariants of this action, by the transfer.
+`(X, S)`; for instance, for the quotient covering of a finite group action `G` and coefficients on
+which `|G|` is invertible, the relative homology of the base is the object of invariants of this
+action, by the transfer (`IsQuotientCoveringMap.isLimitHomologyMapConePairTransferCone`).
 -/
 
 public section
