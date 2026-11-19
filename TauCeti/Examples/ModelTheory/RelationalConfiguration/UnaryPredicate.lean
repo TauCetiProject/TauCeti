@@ -10,6 +10,7 @@ public import TauCeti.ModelTheory.RelationalConfiguration.BackAndForth
 public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
 public import TauCeti.ModelTheory.Scott.Height
 import Mathlib.Topology.Baire.LocallyCompactRegular
+import TauCeti.Data.Set.Card
 import TauCeti.GroupTheory.Perm.Basic
 import all TauCeti.ModelTheory.RelationalConfiguration.Basic
 import TauCeti.SetTheory.Descriptive.EZero
@@ -25,8 +26,6 @@ On a countable carrier, the two extended natural cardinalities of the predicate 
 complement classify the orbits. Each orbit is Borel and defined by a sentence specifying the
 two sizes. Back-and-forth equivalence at ω already decides isomorphism. The set of codes on ℕ
 with a finite predicate is a Borel invariant set that is not Gδ.
-
-This is the unary-predicate worked example of the CountableStructureSpaces roadmap.
 -/
 
 public section
@@ -63,9 +62,9 @@ private def atomEquiv : V ≃ Atom language V where
   right_inv := by
     rintro ⟨n, r, x⟩
     cases r
+    -- The tuple of a unary atom is determined by its entry at zero.
     have hx : (fun _ : Fin 1 => x 0) = x := funext fun i => congrArg x (Subsingleton.elim 0 i)
-    change atom (L := language) Relation.pred (fun _ => x 0) =
-      atom (L := language) Relation.pred x
+    simp only [atom]
     rw [hx]
 
 /-- Reading the unary predicate at each point gives a homeomorphism to the Boolean product.
@@ -90,7 +89,9 @@ theorem eval_coordinates_symm (f : V → Bool) (v : V) :
 /-- Relabelling permutes the coordinates by precomposition with the inverse permutation. -/
 theorem coordinates_smul (σ : Equiv.Perm V) (c : RelationalConfiguration language V) (v : V) :
     coordinates (σ • c) v = coordinates c (σ.symm v) := by
-  simp only [coordinates_apply, eval_perm_smul]
+  rw [coordinates_apply, eval_perm_smul,
+    @Atom.map_atom language V V σ.symm 1 Relation.pred (fun _ => v), coordinates_apply]
+  -- Composing the constant unary tuple with the permutation is pointwise evaluation.
   rfl
 
 /-- The points at which the predicate holds. -/
@@ -116,10 +117,20 @@ noncomputable section
 def cardinalities (c : RelationalConfiguration language V) : ℕ∞ × ℕ∞ :=
   ((predicateSet c).encard, (predicateSet c)ᶜ.encard)
 
+/-- The first coordinate counts the elements satisfying the predicate. -/
+@[simp]
+theorem cardinalities_fst (c : RelationalConfiguration language V) :
+    (cardinalities c).1 = (predicateSet c).encard := by rfl
+
+/-- The second coordinate counts the elements failing the predicate. -/
+@[simp]
+theorem cardinalities_snd (c : RelationalConfiguration language V) :
+    (cardinalities c).2 = (predicateSet c)ᶜ.encard := by rfl
+
 /-- The two cardinalities add to the cardinality of the carrier. -/
 theorem cardinalities_add (c : RelationalConfiguration language V) :
-    (cardinalities c).1 + (cardinalities c).2 = ENat.card V :=
-  encard_add_encard_compl _
+    (cardinalities c).1 + (cardinalities c).2 = ENat.card V := by
+  rw [cardinalities_fst, cardinalities_snd, encard_add_encard_compl]
 
 /-- A pair of extended natural numbers occurs as predicate-class sizes on ℕ exactly when
 their sum is infinite. -/
@@ -133,44 +144,37 @@ theorem range_cardinalities_nat :
       simp [c]
     exact ⟨c, by rw [cardinalities, hc]⟩
   have hfin (n : ℕ) : (Iio n).encard = n := by
-    change ENat.card {i : ℕ // i < n} = n
-    rw [← ENat.card_congr (Fin.equivSubtype (n := n))]
-    simp
+    rw [← Finset.coe_range, encard_coe_eq_coe_finsetCard, Finset.card_range]
   have hinf (n : ℕ) : (Iio n)ᶜ.encard = ⊤ := (finite_Iio n).infinite_compl.encard_eq
   refine subset_antisymm ?_ ?_
   · rintro _ ⟨c, rfl⟩
     exact (cardinalities_add c).trans ENat.card_eq_top_of_infinite
   · rintro ⟨a, b⟩ hab
-    change a + b = ⊤ at hab
+    simp only [mem_ofPred_eq] at hab
     by_cases ha : a = ⊤
     · subst a
       by_cases hb : b = ⊤
       · subst b
+        -- The even and odd progressions give infinitely many points on each side.
         let s := range (fun n : ℕ => n + n)
         have hs : s.Infinite := infinite_range_of_injective (by
           intro i j h
-          change i + i = j + j at h
+          dsimp at h
           omega)
         have ht : sᶜ.Infinite := by
           refine (infinite_range_of_injective (f := fun n : ℕ => n + n + 1)
             (by
               intro i j h
-              change i + i + 1 = j + j + 1 at h
+              dsimp at h
               omega)).mono ?_
           rintro _ ⟨i, rfl⟩ ⟨j, hj⟩
-          change j + j = i + i + 1 at hj
+          dsimp at hj
           omega
         simpa only [hs.encard_eq, ht.encard_eq] using realize s
       · simpa only [compl_compl, hfin, hinf, ENat.natCast_toNat hb] using realize (Iio b.toNat)ᶜ
     · have hb := (ENat.add_eq_top.mp hab).resolve_left ha
       subst b
       simpa only [hfin, hinf, ENat.natCast_toNat ha] using realize (Iio a.toNat)
-
-private theorem encard_eq_iff_nonempty_equiv [Countable V] (s t : Set V) :
-    s.encard = t.encard ↔ Nonempty (s ≃ t) := by
-  rw [encard, encard, ← Cardinal.toENat_mk, ← Cardinal.toENat_mk,
-    Cardinal.toENat_eq_iff_of_le_aleph0 Cardinal.mk_le_aleph0 Cardinal.mk_le_aleph0,
-    Cardinal.eq]
 
 /-- Two configurations on a countable carrier are isomorphic exactly when their predicate
 classes have the same cardinalities. -/
@@ -182,11 +186,13 @@ theorem isoSetoid_iff_cardinalities_eq [Countable V] {c d : RelationalConfigurat
   · rintro ⟨σ, rfl⟩
     have h (v : V) : v ∈ predicateSet c ↔ σ v ∈ predicateSet (σ • c) := by
       simp only [mem_predicateSet, coordinates_smul, Equiv.symm_apply_apply]
-    exact Prod.ext (encard_congr (σ.subtypeEquiv h))
-      (encard_congr (σ.subtypeEquiv fun v => not_congr (h v)))
+    simp only [Prod.ext_iff, cardinalities_fst, cardinalities_snd]
+    exact ⟨encard_congr (σ.subtypeEquiv h),
+      encard_congr (σ.subtypeEquiv fun v => not_congr (h v))⟩
   · intro h
-    obtain ⟨e⟩ := (encard_eq_iff_nonempty_equiv _ _).mp (congrArg Prod.fst h)
-    obtain ⟨f⟩ := (encard_eq_iff_nonempty_equiv _ _).mp (congrArg Prod.snd h)
+    simp only [Prod.ext_iff, cardinalities_fst, cardinalities_snd] at h
+    obtain ⟨e⟩ := (encard_eq_iff_nonempty_equiv (to_countable _) (to_countable _)).mp h.1
+    obtain ⟨f⟩ := (encard_eq_iff_nonempty_equiv (to_countable _) (to_countable _)).mp h.2
     let σ : Equiv.Perm V := Equiv.subtypeCongr e f
     have hσ (v : V) : v ∈ predicateSet c ↔ σ v ∈ predicateSet d := by
       by_cases hv : v ∈ predicateSet c
@@ -195,7 +201,7 @@ theorem isoSetoid_iff_cardinalities_eq [Countable V] {c d : RelationalConfigurat
         simpa [σ, Equiv.subtypeCongr, hv] using hd
     refine ⟨σ, coordinates.injective (funext fun v => ?_)⟩
     rw [coordinates_smul, Bool.eq_iff_iff]
-    simpa only [predicateSet, mem_ofPred_eq, Equiv.apply_symm_apply] using hσ (σ.symm v)
+    simpa only [mem_predicateSet, Equiv.apply_symm_apply] using hσ (σ.symm v)
 
 /-- The unary predicate space on a countable carrier has only countably many orbits. -/
 theorem countable_quotient_isoSetoid [Countable V] :
@@ -228,7 +234,7 @@ private theorem realize_cardAtLeast (c : RelationalConfiguration language V) (b 
   apply exists_congr
   intro xs
   rw [Function.injective_iff_pairwise_ne]
-  change _ ∧ (∀ i j, i ≠ j → xs i ≠ xs j) ↔ _
+  simp only [Pairwise, Function.onFun]
   apply and_congr_left
   intro _
   let := c.toStructure
@@ -239,8 +245,7 @@ private theorem realize_cardAtLeast (c : RelationalConfiguration language V) (b 
     simpa only [Function.comp_apply, Term.realize_var, Sum.elim_inr, Matrix.cons_val_zero,
       mem_predicateSet] using relMap_pred c ![xs i]
   cases b
-  · change (∀ i, ¬ _) ↔ _
-    simp only [hrel, ← Bool.eq_false_iff]
+  · simp only [Bool.false_eq_true, ite_false, BoundedFormula.realize_not, hrel, ← Bool.eq_false_iff]
   · exact forall_congr' hrel
 
 -- The size of a color class is specified by all its finite cardinal lower bounds.
@@ -277,9 +282,11 @@ theorem mem_modelsOf_cardinalitiesSentence (c : RelationalConfiguration language
     ext v
     simp only [mem_predicateSet, mem_compl_iff, mem_ofPred_eq]
     cases coordinates c v <;> decide
-  simp only [mem_modelsOf, cardinalitiesSentence, SentenceInf.realize_inf,
-    realize_cardSentence, h, cardinalities]
-  exact (Prod.ext_iff (x := ((predicateSet c).encard, (predicateSet c)ᶜ.encard)) (y := sizes)).symm
+  have hp : {v | coordinates c v = true} = predicateSet c :=
+    Set.ext fun _ => mem_predicateSet.symm
+  rw [Prod.ext_iff]
+  simp only [mem_modelsOf, cardinalitiesSentence, SentenceInf.realize_inf, realize_cardSentence,
+    hp, h, cardinalities_fst, cardinalities_snd]
 
 /-- On a countable carrier, each orbit is exactly the model class of its sizes sentence. -/
 theorem modelsOf_cardinalitiesSentence_eq_isoClass [Countable V]
@@ -303,16 +310,14 @@ private theorem exists_automorphism_of_sameAtomicType (c : RelationalConfigurati
   let := c.toStructure
   have h (i : Fin n) : coordinates c (a i) = coordinates c (b i) := by
     rw [Bool.eq_iff_iff]
-    simpa only [relMap_pred, Function.comp_apply, predicateSet, mem_ofPred_eq]
+    simpa only [relMap_pred, Function.comp_apply, mem_predicateSet]
       using hab.rel_iff Relation.pred (fun _ => i)
   obtain ⟨σ, hσ, hσab⟩ := exists_perm_apply_eq_of_eq_iff (coordinates c) hab.eq_iff h
   refine ⟨{ toEquiv := σ, map_fun' := fun f => isEmptyElim f, map_rel' := ?_ },
     funext hσab⟩
   intro k r x
   cases r
-  simp only [relMap_pred, Function.comp_apply, mem_predicateSet]
-  change coordinates c (σ (x 0)) = true ↔ coordinates c (x 0) = true
-  rw [hσ]
+  simp only [relMap_pred, Function.comp_apply, mem_predicateSet, Equiv.toFun_as_coe, hσ]
 
 /-- Every unary configuration has external Scott height at most ω. Agreement at level zero
 already gives an automorphism taking one tuple to the other within the structure. -/
@@ -347,6 +352,11 @@ theorem measurableSet_isoSetoid [Countable V] :
 def finitePredicate : Set (RelationalConfiguration language ℕ) :=
   {c | (predicateSet c).Finite}
 
+/-- A code belongs to the finite-predicate class exactly when its predicate is finite. -/
+@[simp]
+theorem mem_finitePredicate {c : RelationalConfiguration language ℕ} :
+    c ∈ finitePredicate ↔ (predicateSet c).Finite := Iff.rfl
+
 private theorem finitePredicate_eq_preimage_eZero :
     finitePredicate = coordinates ⁻¹' {f | eZero (fun _ => false) f} := by
   ext c
@@ -354,7 +364,7 @@ private theorem finitePredicate_eq_preimage_eZero :
     ext n
     simp only [mem_predicateSet, mem_ofPred_eq]
     cases coordinates c n <;> decide
-  simp only [finitePredicate, mem_ofPred_eq, mem_preimage, eZero_iff_finite, h]
+  simp only [mem_finitePredicate, mem_ofPred_eq, mem_preimage, eZero_iff_finite, h]
 
 /-- Only countably many codes on ℕ have a finite predicate. -/
 theorem countable_finitePredicate : finitePredicate.Countable := by
@@ -365,10 +375,9 @@ theorem countable_finitePredicate : finitePredicate.Countable := by
 theorem isomorphismInvariant_finitePredicate : IsomorphismInvariant finitePredicate := by
   apply isomorphismInvariant_iff.mpr
   intro c d h hc
-  change (predicateSet c).Finite at hc
-  change (predicateSet d).Finite
-  have h' : (predicateSet c).encard = (predicateSet d).encard :=
-    congrArg Prod.fst (isoSetoid_iff_cardinalities_eq.mp h)
+  simp only [mem_finitePredicate] at hc ⊢
+  have h' := congrArg Prod.fst (isoSetoid_iff_cardinalities_eq.mp h)
+  rw [cardinalities_fst, cardinalities_fst] at h'
   exact encard_lt_top_iff.mp (h' ▸ hc.encard_lt_top)
 
 /-- The finite-predicate class is the union of the orbits of its members, indexed by the

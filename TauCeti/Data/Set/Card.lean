@@ -65,6 +65,20 @@ public section
 
 namespace Set
 
+universe u v
+
+/-- Countable sets have the same extended cardinality exactly when they are equivalent. -/
+theorem encard_eq_iff_nonempty_equiv {α : Type u} {β : Type v} {s : Set α} {t : Set β}
+    (hs : s.Countable) (ht : t.Countable) : s.encard = t.encard ↔ Nonempty (s ≃ t) := by
+  calc
+    s.encard = t.encard ↔
+        (Cardinal.lift.{v} (Cardinal.mk s)).toENat =
+          (Cardinal.lift.{u} (Cardinal.mk t)).toENat := by
+      simp only [Cardinal.toENat_lift, Cardinal.toENat_mk, encard]
+    _ ↔ Nonempty (s ≃ t) :=
+      (Cardinal.toENat_eq_iff_of_le_aleph0 (Cardinal.lift_le_aleph0.mpr hs.le_aleph0)
+        (Cardinal.lift_le_aleph0.mpr ht.le_aleph0)).trans Cardinal.lift_mk_eq'
+
 /-- Two maps that identify the same pairs of indices take equally many values on every set of
 indices. -/
 theorem encard_image_eq_encard_image_of_eq_iff {ι α β : Type*} {f : ι → α} {g : ι → β}
