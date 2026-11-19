@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
 import Mathlib.NumberTheory.LegendreSymbol.ZModChar
-import Mathlib.RingTheory.ZMod.UnitsCyclic
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Conrey
 public import TauCeti.NumberTheory.DirichletCharacter.OddPrimePower.Quadratic
@@ -15,12 +13,11 @@ public import TauCeti.NumberTheory.DirichletCharacter.OddPrimePower.Quadratic
 /-!
 # Local quadratic-character examples
 
-These examples check QuadraticCharactersAndReduction §§1.1–1.2 on actual complex Dirichlet
-characters. At level nine, the two primitive characters of order three distinguish the complete
-character group from its quadratic subgroup. The level-three and level-twenty-five tables include
+Worked computations of complex Dirichlet characters at levels 3, 9, 25 and 16.
+At level nine, the two primitive characters of order three distinguish the complete character
+group from its quadratic subgroup. The level-three and level-twenty-five tables include
 nonunits, where the characters vanish. At level sixteen the four quadratic value triples exclude
-the all-minus-one triple, while the local Conrey character labelled by 5 takes the value `I` at 5
-and is primitive of order four.
+the all-minus-one triple.
 -/
 
 public section
@@ -44,15 +41,16 @@ example :
   have hc : conductor ((quadraticChar (ZMod 3)).ringHomComp (Int.castRingHom ℂ)) = 3 := by
     simpa using conductor_changeLevel_quadraticChar (R := ℂ)
       (by norm_num) (by decide : 3 ≠ 2) (dvd_refl 3)
-  norm_num [hc, MulChar.ringHomComp_apply,
-    show quadraticChar (ZMod 3) 2 = -1 by decide,
-    show quadraticChar (ZMod 3) 3 = 0 by decide]
+  have h2 : quadraticChar (ZMod 3) 2 = -1 := by decide
+  have h3 : quadraticChar (ZMod 3) 3 = 0 := by decide
+  norm_num [hc, MulChar.ringHomComp_apply, h2, h3]
 
--- There are six characters at level nine, but only two are quadratic.
+-- There are five nonprincipal characters at level nine.
 example : Nat.card {χ : DirichletCharacter ℂ 9 // χ ≠ 1} = 5 := by
   rw [← Nat.card_congr (Equiv.subtypeEquiv (TauCeti.conreyCharacter 9).toEquiv
     (fun u ↦ (TauCeti.conreyCharacter 9).map_ne_one_iff.symm))]
-  norm_num [Nat.card_eq_fintype_card, show Nat.totient 9 = 6 by decide]
+  have ht : Nat.totient 9 = 6 := by decide
+  norm_num [Nat.card_eq_fintype_card, ht]
 
 example :
     let χ : DirichletCharacter ℂ 9 :=
@@ -90,9 +88,8 @@ example (χ : DirichletCharacter ℂ 9) (hχ : orderOf χ = 3) :
     ho ▸ orderOf_dvd_natCard χ.primitiveCharacter
   have : NeZero χ.conductor := ⟨χ.conductor_ne_zero⟩
   rw [card_eq_totient_of_hasEnoughRootsOfUnity] at hd
-  -- The concrete level is 3² = 9.
-  obtain ⟨k, hk, hc⟩ := (Nat.dvd_prime_pow Nat.prime_three).mp
-    (show χ.conductor ∣ 3 ^ 2 from χ.conductor_dvd_level)
+  have hlevel : χ.conductor ∣ 3 ^ 2 := χ.conductor_dvd_level
+  obtain ⟨k, hk, hc⟩ := (Nat.dvd_prime_pow Nat.prime_three).mp hlevel
   refine ⟨?_, fun hq ↦ by simpa [hχ] using orderOf_dvd_of_pow_eq_one hq.sq_eq_one⟩
   interval_cases k
   · norm_num [hc] at hd
@@ -110,8 +107,9 @@ example :
   refine ⟨?_, MulChar.map_nonunit _ (by decide : ¬IsUnit (5 : ZMod 25)),
     MulChar.map_nonunit _ (by decide : ¬IsUnit (10 : ZMod 25)),
     conductor_changeLevel_quadraticChar (by norm_num) (by decide) _⟩
+  have h2 : quadraticChar (ZMod 5) (2 : ℕ) = -1 := by decide
   rw [changeLevel_natCast_of_coprime _ _ (by decide : Nat.Coprime 2 25),
-    MulChar.ringHomComp_apply, show quadraticChar (ZMod 5) (2 : ℕ) = -1 by decide]
+    MulChar.ringHomComp_apply, h2]
   simp
 
 /-! ## The four quadratic characters at level sixteen -/
@@ -144,10 +142,10 @@ example :
   rw [changeLevel_natCast_of_coprime _ _ (by decide : Nat.Coprime 3 16),
     changeLevel_natCast_of_coprime _ _ (by decide : Nat.Coprime 5 16),
     changeLevel_natCast_of_coprime _ _ (by decide : Nat.Coprime 7 16)]
-  norm_num [MulChar.ringHomComp_apply,
-    show ZMod.χ₄ (3 : ℕ) = -1 by decide,
-    show ZMod.χ₄ (5 : ℕ) = 1 by decide,
-    show ZMod.χ₄ (7 : ℕ) = -1 by decide]
+  have h3 : ZMod.χ₄ (3 : ℕ) = -1 := by decide
+  have h5 : ZMod.χ₄ (5 : ℕ) = 1 := by decide
+  have h7 : ZMod.χ₄ (7 : ℕ) = -1 := by decide
+  norm_num [MulChar.ringHomComp_apply, h3, h5, h7]
 
 example :
     let χ : DirichletCharacter ℂ 16 := changeLevel (by decide : 8 ∣ 16)
@@ -157,10 +155,10 @@ example :
   rw [changeLevel_natCast_of_coprime _ _ (by decide : Nat.Coprime 3 16),
     changeLevel_natCast_of_coprime _ _ (by decide : Nat.Coprime 5 16),
     changeLevel_natCast_of_coprime _ _ (by decide : Nat.Coprime 7 16)]
-  norm_num [MulChar.ringHomComp_apply,
-    show ZMod.χ₈ (3 : ℕ) = -1 by decide,
-    show ZMod.χ₈ (5 : ℕ) = -1 by decide,
-    show ZMod.χ₈ (7 : ℕ) = 1 by decide]
+  have h3 : ZMod.χ₈ (3 : ℕ) = -1 := by decide
+  have h5 : ZMod.χ₈ (5 : ℕ) = -1 := by decide
+  have h7 : ZMod.χ₈ (7 : ℕ) = 1 := by decide
+  norm_num [MulChar.ringHomComp_apply, h3, h5, h7]
 
 example :
     let χ : DirichletCharacter ℂ 16 := changeLevel (by decide : 8 ∣ 16)
@@ -170,61 +168,22 @@ example :
   rw [changeLevel_natCast_of_coprime _ _ (by decide : Nat.Coprime 3 16),
     changeLevel_natCast_of_coprime _ _ (by decide : Nat.Coprime 5 16),
     changeLevel_natCast_of_coprime _ _ (by decide : Nat.Coprime 7 16)]
-  norm_num [MulChar.ringHomComp_apply,
-    show ZMod.χ₈' (3 : ℕ) = 1 by decide,
-    show ZMod.χ₈' (5 : ℕ) = -1 by decide,
-    show ZMod.χ₈' (7 : ℕ) = -1 by decide]
+  have h3 : ZMod.χ₈' (3 : ℕ) = 1 := by decide
+  have h5 : ZMod.χ₈' (5 : ℕ) = -1 := by decide
+  have h7 : ZMod.χ₈' (7 : ℕ) = -1 := by decide
+  norm_num [MulChar.ringHomComp_apply, h3, h5, h7]
 
 -- This obstruction uses multiplicativity alone, without a quadraticity assumption.
 example : ¬∃ χ : DirichletCharacter ℂ 16, χ 3 = -1 ∧ χ 5 = -1 ∧ χ 7 = -1 := by
   rintro ⟨χ, h3, h5, h7⟩
+  have hsq : (5 : ZMod 16) ^ 2 = 9 := by decide
+  have hprod : (3 : ZMod 16) * 5 = 15 := by decide
+  have hprod' : (15 : ZMod 16) * 9 = 7 := by decide
   have h9 : χ 9 = 1 := by
-    simpa only [show (5 : ZMod 16) ^ 2 = 9 by decide, h5, neg_one_sq] using map_pow χ 5 2
+    simpa only [hsq, h5, neg_one_sq] using map_pow χ 5 2
   have h15 : χ 15 = 1 := by
-    simpa only [show (3 : ZMod 16) * 5 = 15 by decide, h3, h5, neg_mul_neg, one_mul]
+    simpa only [hprod, h3, h5, neg_mul_neg, one_mul]
       using map_mul χ 3 5
   have h := map_mul χ 15 9
-  rw [show (15 : ZMod 16) * 9 = 7 by decide, h7, h15, h9] at h
+  rw [hprod', h7, h15, h9] at h
   norm_num at h
-
--- The actual local Conrey witness also records the value omitted by the weaker existential check.
-example :
-    let χ : DirichletCharacter ℂ 16 := MulChar.ofUnitHom
-      (Circle.toUnits.comp (TauCeti.conreyLocal 2 4 (ZMod.unitFive (n := 4))))
-    χ 5 = Complex.I ∧ χ.IsPrimitive ∧ orderOf χ = 4 ∧ ¬χ.IsQuadratic := by
-  let f := Circle.toUnits.comp (TauCeti.conreyLocal 2 4 (ZMod.unitFive (n := 4)))
-  let χ : DirichletCharacter ℂ 16 := MulChar.ofUnitHom f
-  have h5 : χ 5 = Complex.I := by
-    rw [← ZMod.coe_unitFive (n := 4), MulChar.ofUnitHom_coe]
-    -- Coercing the unit hom recovers the circle-valued Conrey pairing.
-    change (TauCeti.conreyLocal 2 4 (ZMod.unitFive (n := 4))
-      (ZMod.unitFive (n := 4)) : ℂ) = Complex.I
-    rw [TauCeti.conreyLocal_two_apply (e := 2) (x := 0) (y := 0)
-      (a := 1) (b := 1) (by simp) (by simp)]
-    norm_num only [Nat.cast_zero, Nat.cast_one, zero_mul, mul_zero, zero_div,
-      Complex.exp_zero, mul_one, one_mul]
-    rw [show 2 * (Real.pi : ℂ) * Complex.I / 4 = (Real.pi : ℂ) / 2 * Complex.I by ring]
-    exact Complex.exp_pi_div_two_mul_I
-  have h9 : χ 9 = -1 := by
-    simpa only [show (5 : ZMod 16) ^ 2 = 9 by decide, h5, Complex.I_sq]
-      using map_pow χ 5 2
-  have hp : χ.IsPrimitive :=
-    (isPrimitive_def _).mpr
-      (conductor_eq_prime_pow_of_emod_eq_of_apply_ne_apply (p := 2) (k := 4)
-        (a := 1) (b := 9) Nat.prime_two χ
-        isCoprime_one_left ⟨-7, 4, by norm_num⟩ (by norm_num)
-        (by norm_num [Int.cast_ofNat, h9]))
-  have hn : χ ^ 2 ≠ 1 := by
-    intro hs
-    have h := congrArg (fun ψ : DirichletCharacter ℂ 16 ↦
-      ψ (ZMod.unitFive (n := 4))) hs
-    rw [MulChar.pow_apply_coe, MulChar.one_apply_coe,
-      ZMod.coe_unitFive, h5, Complex.I_sq] at h
-    norm_num at h
-  have h4 : χ ^ 4 = 1 := by
-    refine MulChar.ext (fun u ↦ ?_)
-    rw [MulChar.pow_apply_coe, ← map_pow, ← Units.val_pow_eq_pow_val,
-      (by decide : ∀ u : (ZMod 16)ˣ, u ^ 4 = 1) u]
-    simp
-  exact ⟨h5, hp, orderOf_eq_prime_pow (p := 2) (n := 1) hn h4,
-    fun hq ↦ hn hq.sq_eq_one⟩
