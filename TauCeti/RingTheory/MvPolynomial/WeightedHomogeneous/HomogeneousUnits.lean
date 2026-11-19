@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.ZMod.QuotientGroup
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.RingTheory.GradedAlgebra.Localization.HomogeneousUnits
 
@@ -94,22 +93,11 @@ theorem homogeneousUnitDegrees_awayGrading_weightedHomogeneousSubmodule_of_prime
 
 /-- For integer weights and a weighted homogeneous prime `f` of weight `e` in `MvPolynomial σ R`
 over a cancellative semiring, the shift classes of the localization `R[σ]_f` form `ZMod |e|`. -/
-noncomputable def shiftClassGroupAwayGradingWeightedEquiv (w : σ → ℤ) {f : MvPolynomial σ R}
+noncomputable abbrev shiftClassGroupAwayGradingWeightedEquiv (w : σ → ℤ) {f : MvPolynomial σ R}
     {e : ℤ} (hf : f ∈ weightedHomogeneousSubmodule R w e) (hprime : Prime f) :
     ShiftClassGroup (GradedAlgebra.awayGrading (weightedHomogeneousSubmodule R w) hf) ≃+
       ZMod e.natAbs :=
-  (QuotientAddGroup.quotientAddEquivOfEq
-    (homogeneousUnitDegrees_awayGrading_weightedHomogeneousSubmodule_of_prime w hf hprime)).trans
-    (Int.quotientZMultiplesEquivZMod e)
-
-/-- The identification of the shift classes of `R[σ]_f` with `ZMod |e|` sends the class of a shift
-`c` to `c mod |e|`. -/
-@[simp]
-theorem shiftClassGroupAwayGradingWeightedEquiv_mk (w : σ → ℤ) {f : MvPolynomial σ R} {e : ℤ}
-    (hf : f ∈ weightedHomogeneousSubmodule R w e) (hprime : Prime f) (c : ℤ) :
-    shiftClassGroupAwayGradingWeightedEquiv w hf hprime c = c := by
-  -- Both quotient equivalences are induced by maps on representatives, and the last one is the
-  -- cast `ℤ → ZMod |e|`; Mathlib states no lemma evaluating them on a class.
-  rfl
+  ShiftClassGroup.equivZMod
+    (homogeneousUnitDegrees_awayGrading_weightedHomogeneousSubmodule_of_prime w hf hprime)
 
 end TauCeti
