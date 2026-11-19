@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.ODE.TrajectoryOperator
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Analysis.Calculus.Deriv.Support
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.ODE.Caratheodory
@@ -58,6 +59,8 @@ difference of dimensions of spaces of square-integrable solutions is
   solution of `v' = g - A v`, with `g ∈ Lᵖ`, is the value of an element `u` with `D_A u = g`.
 * `TauCeti.WeakDerivStep.exists_trajectoryOperator_eq_zero_of_hasDerivAt`: an `Lᵖ` classical
   solution of `v' = -A v` is the value of an element of the kernel of `D_A`.
+* `TauCeti.WeakDerivStep.exists_prev_ae_eq_of_contDiff_of_hasCompactSupport`: a compactly
+  supported `C¹` path is the value of an element of the weak-derivative graph over `Lᵖ(ℝ, F)`.
 * `TauCeti.WeakDerivStep.kerTrajectoryOperatorEquiv`: the kernel of `D_A` on `W^{1,2}(ℝ, F)` is
   linearly equivalent to `TauCeti.squareIntegrableSolutions A`.
 * `TauCeti.WeakDerivStep.finrank_ker_trajectoryOperator`: the kernel of `D_A` on
@@ -356,6 +359,22 @@ theorem exists_trajectoryOperator_eq_zero_of_hasDerivAt
   obtain ⟨u, hu, hux⟩ := exists_trajectoryOperator_ae_eq_of_hasDerivAt hAL (g := 0)
     (fun s ↦ by simpa using hv s) hvp MemLp.zero
   exact ⟨u, Lp.eq_zero_iff_ae_eq_zero.2 hu, hux⟩
+
+/-- A compactly supported `C¹` path is the value of an element of the weak-derivative graph over
+`Lᵖ(ℝ, F)`. -/
+theorem exists_prev_ae_eq_of_contDiff_of_hasCompactSupport {v : ℝ → F} (hv : ContDiff ℝ 1 v)
+    (hvs : HasCompactSupport v) :
+    ∃ u : WeakDerivStep volume ⊤ p
+        (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))),
+      ⇑(prev (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u)
+        =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] v := by
+  -- For the zero coefficient `D_0 u = u'`, so `v` solves `v' = v' - 0 v` with `v, v' ∈ Lᵖ`.
+  obtain ⟨u, -, hu⟩ := exists_trajectoryOperator_ae_eq_of_hasDerivAt (p := p) (A := fun _ ↦ 0)
+    (AL := 0) (Lp.coeFn_zero _ _ _) (g := deriv v)
+    (fun s ↦ by simpa using (hv.differentiable one_ne_zero s).hasDerivAt)
+    (hv.continuous.memLp_of_hasCompactSupport hvs)
+    ((hv.continuous_deriv le_rfl).memLp_of_hasCompactSupport hvs.deriv)
+  exact ⟨u, hu⟩
 
 end Banach
 
