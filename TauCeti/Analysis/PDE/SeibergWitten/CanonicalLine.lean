@@ -292,7 +292,7 @@ variable (e) in
 /-- The **paired spinor** `c(e₂) c(e₀) u₀` of a positive spinor `u₀`, for an orthonormal frame
 `e`. When `u₀` spans the canonical eigenspace, it spans the complementary eigenspace of `W⁺`, and
 together with `u₀` it gives a unitary frame of `W⁺` when `W⁺` has rank two (`norm_pairedSpinor`,
-`inner_pairedSpinor_eq_zero`). -/
+`inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self`). -/
 def pairedSpinor (u₀ : positiveHalfSpinors o ρ) : positiveHalfSpinors o ρ :=
   ⟨ρ (ι Q (e 2)) (ρ (ι Q (e 0)) u₀), by
     have h := map_ι_apply_mem_eigenspace_chirality_neg o
@@ -345,7 +345,8 @@ variable {u₀ : positiveHalfSpinors o ρ} (hu₀ : cliffordProjection o ρ J.ka
 
 include hQ hkl he h₀ h₂ hρ hu₀ in
 /-- The paired spinor of a canonical spinor `u₀` is orthogonal to `u₀`. -/
-theorem inner_pairedSpinor_eq_zero : ⟪u₀, pairedSpinor e u₀⟫_ℂ = 0 := by
+theorem inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self :
+    ⟪u₀, pairedSpinor e u₀⟫_ℂ = 0 := by
   rw [Submodule.coe_inner, coe_pairedSpinor, ← LinearMap.adjoint_inner_left, hρ,
     LinearMap.neg_apply, inner_neg_left,
     inner_ι_apply_ι_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hρ hu₀, h₀,
@@ -363,7 +364,7 @@ private theorem ι_three_apply : ρ (ι Q (e 3)) u₀ = I • ρ (ι Q (e 2)) u�
   exact ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀ (e 2)
 
 /-- `c(e₁) β₀ = -i c(e₂) u₀` for the paired spinor `β₀ = c(e₂) c(e₀) u₀`. -/
-theorem ι_one_apply_pairedSpinor :
+theorem ι_one_apply_pairedSpinor_of_cliffordProjection_apply_eq_self :
     ρ (ι Q (e 1)) (pairedSpinor e u₀ : W) = -I • ρ (ι Q (e 2)) u₀ := by
   rw [coe_pairedSpinor,
     map_ι_apply_map_ι_apply_comm_of_isOrtho ρ (e.isOrtho_apply hQ (by decide : (1 : Fin 4) ≠ 2)),
@@ -372,7 +373,7 @@ theorem ι_one_apply_pairedSpinor :
   simp [hQ, e.orthonormal.1 0]
 
 /-- `c(e₃) β₀ = i c(e₀) u₀` for the paired spinor `β₀ = c(e₂) c(e₀) u₀`. -/
-theorem ι_three_apply_pairedSpinor :
+theorem ι_three_apply_pairedSpinor_of_cliffordProjection_apply_eq_self :
     ρ (ι Q (e 3)) (pairedSpinor e u₀ : W) = I • ρ (ι Q (e 0)) u₀ := by
   rw [coe_pairedSpinor,
     map_ι_apply_map_ι_apply_comm_of_isOrtho ρ (e.isOrtho_apply hQ (by decide : (3 : Fin 4) ≠ 2)),
@@ -387,16 +388,17 @@ canonical spinor `u₀`,
 `y₀ - i y₁` and `y₂ - i y₃` survive, and they land on the two frame vectors `c(e₂) u₀` and
 `c(e₀) u₀` of `W⁻` in the opposite order from the canonical eigenspace
 (`sum_smul_ι_apply_of_cliffordProjection_apply_eq_self`). -/
-theorem sum_smul_ι_apply_pairedSpinor (y : Fin 4 → ℂ) :
+theorem sum_smul_ι_apply_pairedSpinor_of_cliffordProjection_apply_eq_self (y : Fin 4 → ℂ) :
     ∑ k, y k • ρ (ι Q (e k)) (pairedSpinor e u₀ : W) =
       (y 0 - I * y 1) • ρ (ι Q (e 2)) u₀ - (y 2 - I * y 3) • ρ (ι Q (e 0)) u₀ := by
   rw [Fin.sum_univ_four, ι_zero_apply_pairedSpinor hQ,
-    ι_one_apply_pairedSpinor hQ hkl he h₀ h₂ hu₀, ι_two_apply_pairedSpinor hQ,
-    ι_three_apply_pairedSpinor hQ hkl he h₀ h₂ hu₀]
+    ι_one_apply_pairedSpinor_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀,
+    ι_two_apply_pairedSpinor hQ,
+    ι_three_apply_pairedSpinor_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀]
   module
 
 /-- `C(i e₀ ∧ e₁) u₀ = u₀` for a canonical spinor `u₀`. -/
-theorem cliffordRestriction_ιMulti_zero_one_apply :
+theorem cliffordRestriction_ιMulti_zero_one_apply_of_cliffordProjection_apply_eq_self :
     cliffordRestriction o ρ (ιMulti ℝ 2 ![e 0, e 1]) u₀ = u₀ := by
   apply Subtype.ext
   rw [coe_cliffordRestriction_ιMulti_apply_of_inner_eq_zero o ρ hQ (e.orthonormal.2 (by decide)),
@@ -404,7 +406,7 @@ theorem cliffordRestriction_ιMulti_zero_one_apply :
   simp [hQ, e.orthonormal.1 0]
 
 /-- `C(i e₀ ∧ e₃) u₀ = β₀` for a canonical spinor `u₀` and its paired spinor `β₀`. -/
-theorem cliffordRestriction_ιMulti_zero_three_apply :
+theorem cliffordRestriction_ιMulti_zero_three_apply_of_cliffordProjection_apply_eq_self :
     cliffordRestriction o ρ (ιMulti ℝ 2 ![e 0, e 3]) u₀ = pairedSpinor e u₀ := by
   apply Subtype.ext
   rw [coe_cliffordRestriction_ιMulti_apply_of_inner_eq_zero o ρ hQ (e.orthonormal.2 (by decide)),

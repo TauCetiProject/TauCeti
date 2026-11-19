@@ -26,9 +26,10 @@ Fix a positively oriented unitary frame `(e₀, e₁, e₂, e₃)`, `J e₀ = e�
 plane `⟨e₀, e₁⟩` and normal coordinate `z = ⟪e₂, ·⟫ + i ⟪e₃, ·⟫` (`normalCoord`), and a unit
 spinor `u₀` of the canonical line `P_α u₀ = u₀`. The **paired spinor** `β₀ = c(e₂) c(e₀) u₀`
 (`pairedSpinor`) is a unit spinor orthogonal to `u₀` (`norm_pairedSpinor`,
-`inner_pairedSpinor_eq_zero`), so `(u₀, β₀)` is a unitary frame of `W⁺` when `W⁺` has rank two,
-and `c(e₀) u₀`, `c(e₂) u₀` are orthonormal in `W⁻`. Clifford multiplication of a complex covector
-on `β₀` sees only its `∂`-components (`sum_smul_ι_apply_pairedSpinor`),
+`inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self`), so `(u₀, β₀)` is a unitary
+frame of `W⁺` when `W⁺` has rank two, and `c(e₀) u₀`, `c(e₂) u₀` are orthonormal in `W⁻`.
+Clifford multiplication of a complex covector on `β₀` sees only its `∂`-components
+(`sum_smul_ι_apply_pairedSpinor_of_cliffordProjection_apply_eq_self`),
 
 `∑ₖ y_k c(e_k) β₀ = (y₀ - i y₁) c(e₂) u₀ - (y₂ - i y₃) c(e₀) u₀`,
 
@@ -122,9 +123,11 @@ include hQ hkl he h₀ h₂ hρ hu₀
 theorem inner_quadraticTwoFormPolar_ιMulti_zero_one (hu₀₁ : ‖u₀‖ = 1) (α f g : ℂ) :
     ⟪(quadraticTwoFormPolar o ρ hkl (α • u₀) (f • u₀ + g • pairedSpinor e u₀) : ⋀[ℝ]^2 V),
         ιMulti ℝ 2 ![e 0, e 1]⟫ = (conj α * f).re / 2 := by
-  have h0 := inner_pairedSpinor_eq_zero hQ hkl he h₀ h₂ hρ hu₀
+  have h0 := inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hρ hu₀
   rw [inner_quadraticTwoFormPolar_eq_re_inner o hQ hkl hρ, map_smul,
-    cliffordRestriction_ιMulti_zero_one_apply hQ hkl he h₀ h₂ hu₀, inner_add_left,
+    cliffordRestriction_ιMulti_zero_one_apply_of_cliffordProjection_apply_eq_self
+      hQ hkl he h₀ h₂ hu₀,
+    inner_add_left,
     inner_smul_left, inner_smul_left, inner_smul_right, inner_smul_right,
     inner_self_eq_norm_sq_to_K, hu₀₁, ← inner_conj_symm, h0]
   simp [mul_comm]
@@ -134,7 +137,7 @@ theorem inner_quadraticTwoFormPolar_ιMulti_zero_one (hu₀₁ : ‖u₀‖ = 1)
 theorem inner_quadraticTwoFormPolar_ιMulti_zero_two (hu₀₁ : ‖u₀‖ = 1) (α f g : ℂ) :
     ⟪(quadraticTwoFormPolar o ρ hkl (α • u₀) (f • u₀ + g • pairedSpinor e u₀) : ⋀[ℝ]^2 V),
         ιMulti ℝ 2 ![e 0, e 2]⟫ = (α * conj g).im / 2 := by
-  have h0 := inner_pairedSpinor_eq_zero hQ hkl he h₀ h₂ hρ hu₀
+  have h0 := inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hρ hu₀
   have h1 : ‖pairedSpinor e u₀‖ = 1 := by rw [norm_pairedSpinor hQ hρ, hu₀₁]
   rw [inner_quadraticTwoFormPolar_eq_re_inner o hQ hkl hρ, map_smul,
     cliffordRestriction_ιMulti_zero_two_apply hQ, inner_add_left,
@@ -147,10 +150,12 @@ theorem inner_quadraticTwoFormPolar_ιMulti_zero_two (hu₀₁ : ‖u₀‖ = 1)
 theorem inner_quadraticTwoFormPolar_ιMulti_zero_three (hu₀₁ : ‖u₀‖ = 1) (α f g : ℂ) :
     ⟪(quadraticTwoFormPolar o ρ hkl (α • u₀) (f • u₀ + g • pairedSpinor e u₀) : ⋀[ℝ]^2 V),
         ιMulti ℝ 2 ![e 0, e 3]⟫ = (α * conj g).re / 2 := by
-  have h0 := inner_pairedSpinor_eq_zero hQ hkl he h₀ h₂ hρ hu₀
+  have h0 := inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hρ hu₀
   have h1 : ‖pairedSpinor e u₀‖ = 1 := by rw [norm_pairedSpinor hQ hρ, hu₀₁]
   rw [inner_quadraticTwoFormPolar_eq_re_inner o hQ hkl hρ, map_smul,
-    cliffordRestriction_ιMulti_zero_three_apply hQ hkl he h₀ h₂ hu₀, inner_add_left,
+    cliffordRestriction_ιMulti_zero_three_apply_of_cliffordProjection_apply_eq_self
+      hQ hkl he h₀ h₂ hu₀,
+    inner_add_left,
     inner_smul_left, inner_smul_left, inner_smul_right, inner_smul_right,
     inner_self_eq_norm_sq_to_K, h1, h0]
   simp [mul_comm]
@@ -434,7 +439,7 @@ theorem flatDeformationGauge_normalModel (hu₀₁ : ‖u₀‖ = 1)
       Vortex.gaugeAdjoint x ξ (normalCoord e y) := by
   have hβ : ⟪(u₀ : W), (pairedSpinor e u₀ : W)⟫_ℂ = 0 := by
     rw [← Submodule.coe_inner]
-    exact inner_pairedSpinor_eq_zero hQ hkl he h₀ h₂ hρ hu₀
+    exact inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hρ hu₀
   have hu : ⟪(u₀ : W), (u₀ : W)⟫_ℂ = 1 := by
     rw [inner_self_eq_norm_sq_to_K, Submodule.norm_coe, hu₀₁]
     simp
@@ -638,7 +643,7 @@ theorem flatDeformationDirac_normalModel (hξ : DifferentiableAt ℝ ξ (normalC
         ∑ k, X k • ρ (ι Q (e k)) u₀ + ∑ k, Y k • ρ (ι Q (e k)) (pairedSpinor e u₀ : W) :=
     flatDeformationDirac_normalModel_eq_sum x hξ hη
   rw [hsum, sum_smul_ι_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀,
-    sum_smul_ι_apply_pairedSpinor hQ hkl he h₀ h₂ hu₀]
+    sum_smul_ι_apply_pairedSpinor_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀]
   -- Compare the two coefficients, after evaluating `X` and `Y` on the frame.
   have hAB : X 0 + I * X 1 - (Y 2 - I * Y 3) =
         2 * ((Vortex.gaugeFixedAdjoint x η (normalCoord e y) 2 : ℂ) +
