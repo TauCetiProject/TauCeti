@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Degree
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.RiemannRoch
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
-import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Sphere
+import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Sphere.Basic
 import TauCeti.Topology.Sheaves.Cech.Functoriality
 
 /-!

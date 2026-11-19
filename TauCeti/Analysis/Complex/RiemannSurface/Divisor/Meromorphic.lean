@@ -39,7 +39,7 @@ degree on a compact connected Riemann surface has no nonzero global sections.
 
 public noncomputable section
 
-open Filter OnePoint Set TopologicalSpace Topology
+open CategoryTheory Filter OnePoint Opposite Set TopologicalSpace Topology
 open scoped Manifold ContDiff
 
 namespace TauCeti.RiemannSurface
@@ -158,7 +158,36 @@ theorem exists_toMeromorphic_notMem_range_algebraMap (D : WeilDivisor X)
     Module.finrank_self] at hdim
   omega
 
+/-- On a compact connected Riemann surface a divisor of negative degree has no nonzero global
+sections: the divisor of the meromorphic image of a nonzero section is bounded below by `-D` and
+has degree zero. -/
+theorem eq_zero_of_degree_neg [CompactSpace X] [T2Space X] (hD : WeilDivisor.degree D < 0)
+    (f : divisorSections D ⊤) : f = 0 := by
+  by_contra hf
+  have hne : toMeromorphic D f ≠ 0 := (map_ne_zero_iff _ (toMeromorphic_injective D)).2 hf
+  let u : Additive (MeromorphicFunction X)ˣ := Additive.ofMul (Units.mk0 _ hne)
+  have hle : -D ≤ (MeromorphicFunction.orderSystem X).principalDivisor u := fun x ↦ by
+    rw [Finsupp.neg_apply, ← WithTop.coe_le_coe]
+    exact (neg_le_order_toMeromorphic f x).trans_eq
+      (MeromorphicFunction.coe_coeff_principalDivisor_orderSystem u x).symm
+  have h := WeilDivisor.degree_nonneg (sub_nonneg.2 hle)
+  rw [map_sub, MeromorphicFunction.degree_principalDivisor, map_neg] at h
+  omega
+
 end divisorSections
+
+section DegreeNeg
+
+variable [CompactSpace X] [T2Space X] {D : WeilDivisor X}
+
+/-- On a compact connected Riemann surface, `H⁰(𝒪(D))` vanishes when `deg D < 0`. -/
+theorem isZero_divisorSheaf_globalSections_of_degree_neg (hD : WeilDivisor.degree D < 0) :
+    Limits.IsZero ((divisorSheaf D).obj.obj (op ⊤)) :=
+  ModuleCat.isZero_iff_subsingleton.2 ⟨fun f g ↦ (divisorSheafSectionsEquiv D ⊤).injective <| by
+    rw [divisorSections.eq_zero_of_degree_neg hD (divisorSheafSectionsEquiv D ⊤ f),
+      divisorSections.eq_zero_of_degree_neg hD (divisorSheafSectionsEquiv D ⊤ g)]⟩
+
+end DegreeNeg
 
 /-- A dimension bound on global divisor sections produces an actual finite holomorphic map
 from a compact connected Riemann surface to the sphere. The order of its affine part is bounded
@@ -180,31 +209,9 @@ theorem exists_finiteHolomorphicMap_of_one_lt_finrank_divisorSections [CompactSp
 function whose principal divisor is at least `-D`, and principal divisors have degree zero. -/
 theorem finrank_divisorSheaf_eq_zero_of_degree_neg [CompactSpace X] [T2Space X]
     {D : WeilDivisor X} (hD : WeilDivisor.degree D < 0) :
-    Module.finrank ℂ ((divisorSheaf D).obj.obj (Opposite.op ⊤)) = 0 := by
-  rw [(divisorSheafSectionsEquiv D ⊤).finrank_eq]
-  suffices h : ∀ f : divisorSections D ⊤, f = 0 by
-    have : Subsingleton (divisorSections D ⊤) := ⟨fun f g ↦ by rw [h f, h g]⟩
-    exact Module.finrank_zero_of_subsingleton
-  intro f
-  by_contra hf
-  have hm : divisorSections.toMeromorphic D f ≠ 0 := fun h ↦
-    hf (divisorSections.toMeromorphic_injective D (h.trans (map_zero _).symm))
-  let u : Additive (MeromorphicFunction X)ˣ := Additive.ofMul (Units.mk0 _ hm)
-  have hle : 0 ≤ (MeromorphicFunction.orderSystem X).principalDivisor u + D := by
-    rw [WeilDivisor.nonneg_iff]
-    intro x
-    have hx : ((-D x : ℤ) : WithTop ℤ) ≤
-        MeromorphicFunction.order x (u.toMul : MeromorphicFunction X) :=
-      divisorSections.neg_le_order_toMeromorphic f x
-    rw [← MeromorphicFunction.coe_coeff_principalDivisor_orderSystem u x] at hx
-    rw [WeilDivisor.coeff_add]
-    have : -D x ≤ WeilDivisor.coeff ((MeromorphicFunction.orderSystem X).principalDivisor u) x :=
-      WithTop.coe_le_coe.mp hx
-    simp only [WeilDivisor.coeff] at this ⊢
-    omega
-  have := WeilDivisor.degree_nonneg hle
-  rw [map_add, MeromorphicFunction.degree_principalDivisor, zero_add] at this
-  omega
+    Module.finrank ℂ ((divisorSheaf D).obj.obj (Opposite.op ⊤)) = 0 :=
+  have := ModuleCat.isZero_iff_subsingleton.1 (isZero_divisorSheaf_globalSections_of_degree_neg hD)
+  Module.finrank_zero_of_subsingleton
 
 /-- **A second section of `𝒪(x)` gives a degree-one map to `ℙ¹`.** If the global sections of the
 divisor of a point `x` on a compact connected Riemann surface have dimension greater than one,
