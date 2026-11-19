@@ -5,18 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Boundary.UniqueExtremum
+public import TauCeti.Geometry.Manifold.Morse.Boundary.ChainComplex
+public import TauCeti.Geometry.Manifold.Morse.Boundary.IndexOne
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 
 /-!
-# The mod-two Morse complex of the real projective plane
+# The Morse complex of the real projective plane
 
 On the real projective plane `ℝℙ² = ℙ ℝ (Fin 3 → ℝ)`, the moment function
 `[v] ↦ (∑ i, w i * v i ^ 2) / ∑ i, v i ^ 2` with three distinct weights `w` is a Morse function
 (`TauCeti.isMorse_projectiveMomentFunction`) with one critical point of each index `0`, `1` and
 `2` (`TauCeti.criticalCount_projectiveMomentFunction_real`): a minimum, a saddle and a maximum.
-This file computes the trajectories between them and the mod-two Morse complex, for every
-pseudo-gradient `X` adapted to this function.
+This file computes the trajectories between them, the mod-two Morse complex and the integral
+boundary of the saddle, for every pseudo-gradient `X` adapted to this function.
 
 * `X` is Morse–Smale, whatever its choice. The saddle is the only critical point whose index is
   neither `0` nor `2`, so `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.of_subsingleton` applies.
@@ -25,12 +26,18 @@ pseudo-gradient `X` adapted to this function.
   from the only critical point of index `2`; its unstable manifold is a line, whose two halves both
   go to the only critical point of index `0`.
 * So the mod-two Morse boundary vanishes, and the mod-two Morse complex is `𝔽₂ → 𝔽₂ → 𝔽₂` with
-  zero differentials, whose homology is the mod-two homology of `ℝℙ²`.
+  zero differentials. Its homology is `𝔽₂` in degrees `0`, `1` and `2` and zero above, the
+  mod-two homology of `ℝℙ²`.
 
 Over `ℤ` the same two pairs of trajectories give the differentials `±2` from the maximum to the
 saddle and `0` from the saddle to the minimum, recovering `H₁(ℝℙ²; ℤ) = ℤ/2`: the two trajectories
 into the saddle carry the same sign and the two out of it opposite signs. Those signs come from
-orientations of the unstable manifolds, which the mod-two complex does not see.
+orientations of the unstable manifolds, which the mod-two complex does not see. The differential
+`d₁` from the saddle to the minimum is computed here: the integral boundary of the saddle
+vanishes, for every adapted pseudo-gradient and every choice of orientations
+(`signedMorseBoundary_single_eq_zero_projectiveMomentFunction_real`), since the minimum is the
+only critical point of index `0`. The differential `d₂ = ±2` from the maximum to the saddle, which
+depends on the non-orientability of `ℝℙ²`, is not proved in this file.
 
 ## Main declarations
 
@@ -41,6 +48,10 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `ncard_morseTrajectorySlice_projectiveMomentFunction_real`: between critical points whose indices
   differ by one there are exactly two trajectories.
 * `IsMorseSmale.morseBoundary_projectiveMomentFunction_real`: the mod-two Morse boundary is zero.
+* `IsMorseSmale.finrank_homology_morseComplex_projectiveMomentFunction_real`: the mod-two Morse
+  homology has dimension `1` in degrees `0`, `1` and `2` and dimension `0` above.
+* `signedMorseBoundary_single_eq_zero_projectiveMomentFunction_real`: the integral Morse boundary
+  of the saddle is zero.
 
 ## References
 
@@ -52,7 +63,7 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 public section
 
-open Function
+open Function Module
 open scoped LinearAlgebra.Projectivization Manifold
 
 namespace TauCeti
@@ -117,7 +128,33 @@ theorem morseBoundary_projectiveMomentFunction_real : h.morseBoundary hf = 0 := 
     (subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real hw 2)
     (subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real hw 0)
 
+/-- **The mod-two Morse homology of `ℝℙ²`.** For distinct weights, so that the moment function on
+the real projective plane is Morse, and every pseudo-gradient adapted to it, the mod-two Morse
+homology has dimension `1` in degrees `0`, `1` and `2`, and dimension `0` in higher degrees. -/
+theorem finrank_homology_morseComplex_projectiveMomentFunction_real (n : ℕ) :
+    finrank (ZMod 2) ((h.morseComplex hf).homology n) = if n ≤ 2 then 1 else 0 := by
+  rw [h.finrank_homology_morseComplex_of_morseBoundary_eq_zero hf
+      (h.morseBoundary_projectiveMomentFunction_real hf),
+    criticalCount_projectiveMomentFunction_real (isMorse_projectiveMomentFunction_iff.1 hf)]
+  split_ifs <;> simp
+
 end IsMorseSmale
+
+/-- **The integral Morse boundary of the saddle of `ℝℙ²` is zero.** For every pseudo-gradient
+adapted to the moment function on the real projective plane and every choice of orientations of
+the unstable manifolds, the two trajectories from the saddle to the minimum carry opposite signs,
+so the Morse boundary of the saddle vanishes, with coefficients in any ring. -/
+theorem signedMorseBoundary_single_eq_zero_projectiveMomentFunction_real
+    (hX : IsAdaptedPseudoGradient (projectiveMomentFunction ℝ w) X)
+    (hf : IsMorse 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w)) {R : Type*} [Ring R]
+    (𝔬 : MorseOrientation (projectiveMomentFunction ℝ w) X)
+    {p : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w)}
+    (hp : manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p = 1) (a : R) :
+    hX.signedMorseBoundary 𝔬 hf R (Finsupp.single p a) = 0 :=
+  have hw := isMorse_projectiveMomentFunction_iff.1 hf
+  IsMorseSmale.signedMorseBoundary_single_eq_zero_of_unique_index_zero
+    (hX.isMorseSmale_projectiveMomentFunction_real hw) hf 𝔬 hp
+    (subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real hw 0) a
 
 end IsAdaptedPseudoGradient
 
