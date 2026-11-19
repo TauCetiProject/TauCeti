@@ -521,6 +521,14 @@ theorem bergmanSection_apply (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
     τ.holomorphicSectionLinearEquiv_symm_apply q hτa hτ
       (RiemannSurface.chartSection he hU u) x, RiemannSurface.chartSection_apply he hU u x]
 
+/-- The chosen scalar coordinate of a realized section is its original Bergman representative. -/
+theorem bergmanSection_coordinate_self (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
+    (hU : (U : Set X) ⊆ e.source) (hτ : (U : Set X) ⊆ τ.baseSet)
+    (u : bergmanSpace ℂ (e.imageOpens U)) (x : U) :
+    q (τ.continuousLinearMapAt ℂ x (τ.bergmanSection q hτa he hU hτ u x)) =
+      BergmanSpace.representative u (e x) := by
+  rw [bergmanSection_apply, τ.continuousLinearMapAt_symmL (hτ x.2), q.apply_symm_apply]
+
 /-- Realization in a line-bundle frame retains every Bergman class. -/
 theorem bergmanSection_injective (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
     (hU : (U : Set X) ⊆ e.source) (hτ : (U : Set X) ⊆ τ.baseSet) :
@@ -550,6 +558,13 @@ namespace OpenPartialHomeomorph
 
 open CategoryTheory MeasureTheory Opposite Set TopologicalSpace
 open TauCeti
+
+private theorem isFiniteMeasure_restrict_imageOpens
+    {X : Type} [TopologicalSpace X] (e : OpenPartialHomeomorph X ℂ) {W : Opens X}
+    (hK : IsCompact (closure (W : Set X))) (hKe : closure (W : Set X) ⊆ e.source) :
+    IsFiniteMeasure (volume.restrict (e.imageOpens W : Set ℂ)) :=
+  isFiniteMeasure_restrict.2 ((measure_mono subset_closure).trans_lt
+    (e.isCompact_closure_imageOpens hK hKe).measure_lt_top).ne
 
 variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X]
   (e : OpenPartialHomeomorph X ℂ) (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
@@ -593,8 +608,7 @@ def holomorphicSectionToBergman :
     (holomorphicStructureSheafModules 𝓘(ℂ) X).obj.obj (op U) →ₗ[ℂ]
       bergmanSpace ℂ (e.imageOpens W) := by
   letI : IsFiniteMeasure (volume.restrict (e.imageOpens W : Set ℂ)) :=
-    isFiniteMeasure_restrict.2 ((measure_mono subset_closure).trans_lt
-      (e.isCompact_closure_imageOpens hK (hKU.trans hU)).measure_lt_top).ne
+    e.isFiniteMeasure_restrict_imageOpens hK (hKU.trans hU)
   let T : (holomorphicStructureSheafModules 𝓘(ℂ) X).obj.obj (op U) →ₗ[ℂ]
       boundedHolomorphicFunctions ℂ (e.imageOpens W) :=
     { toFun := holomorphicSectionBoundedAux e he hU hK hKU
@@ -617,8 +631,7 @@ theorem holomorphicSectionToBergman_apply
     BergmanSpace.representative (e.holomorphicSectionToBergman he hU hK hKU s) (e x) =
       s ⟨x, hKU (subset_closure x.2)⟩ := by
   let : IsFiniteMeasure (volume.restrict (e.imageOpens W : Set ℂ)) :=
-    isFiniteMeasure_restrict.2 ((measure_mono subset_closure).trans_lt
-      (e.isCompact_closure_imageOpens hK (hKU.trans hU)).measure_lt_top).ne
+    e.isFiniteMeasure_restrict_imageOpens hK (hKU.trans hU)
   have hx := map_mem_imageOpens (hU (hKU (subset_closure x.2))) x.2
   calc
     BergmanSpace.representative (e.holomorphicSectionToBergman he hU hK hKU s) (e x) =
@@ -832,15 +845,12 @@ theorem mem_cocycles₁_iff_toBundleSections₁_apply
   simp only [map_add, map_sub, L, ContinuousLinearEquiv.trans_apply,
     Trivialization.coe_continuousLinearEquivAt_eq, toBundleSections₁_apply]
   rw [(τ j).bergmanSection_coordinate (q j) (hτa j) (he j)
-      (inf_subset_source hW j k) (fun _ hy ↦ hτ j hy.1) (τ i) (q i)
-      (ξ j k) ⟨x, hx.1.2, hx.2⟩ (hτ i hx.1.1),
-    (τ i).bergmanSection_coordinate (q i) (hτa i) (he i)
-      (inf_subset_source hW i k) (fun _ hy ↦ hτ i hy.1) (τ i) (q i)
-      (ξ i k) ⟨x, hx.1.1, hx.2⟩ (hτ i hx.1.1),
-    (τ i).bergmanSection_coordinate (q i) (hτa i) (he i)
-      (inf_subset_source hW i j) (fun _ hy ↦ hτ i hy.1) (τ i) (q i)
-      (ξ i j) ⟨x, hx.1⟩ (hτ i hx.1.1)]
-  simp only [Trivialization.scalarCoordChange_self _ _ (hτ i hx.1.1), one_mul]
+    (inf_subset_source hW j k) (fun _ hy ↦ hτ j hy.1) (τ i) (q i)
+    (ξ j k) ⟨x, hx.1.2, hx.2⟩ (hτ i hx.1.1)]
+  rw [(τ i).bergmanSection_coordinate_self (q i) (hτa i) (he i)
+      (inf_subset_source hW i k) (fun _ hy ↦ hτ i hy.1) (ξ i k) ⟨x, hx.1.1, hx.2⟩,
+    (τ i).bergmanSection_coordinate_self (q i) (hτa i) (he i)
+      (inf_subset_source hW i j) (fun _ hy ↦ hτ i hy.1) (ξ i j) ⟨x, hx.1⟩]
 
 /-- A native overlap section on a larger cover becomes square-integrable after shrinking
 both indices. Compact containment of only one of the two opens is not assumed to suffice. -/
@@ -921,16 +931,9 @@ theorem mem_cocycles₁_iff_toBundleSections₁
             (homOfLE inf_le_left).op (toBundleSections₁ τ q hτa he hW hτ ξ i j) = 0 := by
   rw [mem_cocycles₁_iff_toBundleSections₁_apply τ q hτa he hW hτ]
   refine forall₃_congr fun i j k ↦ ?_
-  constructor
-  · intro h
-    apply holomorphicSectionSheaf.ext
-    intro x
-    simpa only [holomorphicSectionSheaf.add_apply, holomorphicSectionSheaf.sub_apply,
-      holomorphicSectionSheaf.map_apply, holomorphicSectionSheaf.zero_apply] using h x x.2
-  · intro h x hx
-    simpa only [holomorphicSectionSheaf.add_apply, holomorphicSectionSheaf.sub_apply,
-      holomorphicSectionSheaf.map_apply, holomorphicSectionSheaf.zero_apply] using
-      congrArg (fun s ↦ holomorphicSectionSheaf.toFun 𝓘(ℂ) F V s ⟨x, hx⟩) h
+  rw [holomorphicSectionSheaf.ext_iff, Subtype.forall]
+  simp only [holomorphicSectionSheaf.add_apply, holomorphicSectionSheaf.sub_apply,
+    holomorphicSectionSheaf.map_apply, holomorphicSectionSheaf.zero_apply]
 
 private theorem bundleSections_coboundary_iff
     (h' : ∀ i, W' i ≤ W i) (h'' : ∀ i, W'' i ≤ W' i)
@@ -967,22 +970,19 @@ private theorem bundleSections_coboundary_iff
     toBundleSections₀_apply τ q hτa he
       (subset_source_of_le (subset_source_of_le hW h') h'')
       (fun i _ hx ↦ hτ i (h' i (h'' i hx))) t.2.2 i]
-  rw [(τ i).bergmanSection_coordinate (q i) (hτa i) (he i)
+  rw [(τ j).bergmanSection_coordinate (q j) (hτa j) (he j)
+    (subset_source_of_le (subset_source_of_le hW h') h'' j)
+    (fun _ hy ↦ hτ j (h' j (h'' j hy))) (τ i) (q i) (t.2.2 j)
+    ⟨x, hx.2⟩ (hτ i (h' i (h'' i hx.1)))]
+  rw [(τ i).bergmanSection_coordinate_self (q i) (hτa i) (he i)
       (inf_subset_source (subset_source_of_le hW h') i j)
-      (fun _ hy ↦ hτ i (h' i hy.1)) (τ i) (q i) (t.2.1 i j)
-      ⟨x, h'' i hx.1, h'' j hx.2⟩ (hτ i (h' i (h'' i hx.1))),
-    (τ i).bergmanSection_coordinate (q i) (hτa i) (he i)
-      (inf_subset_source hW i j) (fun _ hy ↦ hτ i hy.1) (τ i) (q i) (t.1 i j)
-      ⟨x, h' i (h'' i hx.1), h' j (h'' j hx.2)⟩ (hτ i (h' i (h'' i hx.1))),
-    (τ j).bergmanSection_coordinate (q j) (hτa j) (he j)
-      (subset_source_of_le (subset_source_of_le hW h') h'' j)
-      (fun _ hy ↦ hτ j (h' j (h'' j hy))) (τ i) (q i) (t.2.2 j)
-      ⟨x, hx.2⟩ (hτ i (h' i (h'' i hx.1))),
-    (τ i).bergmanSection_coordinate (q i) (hτa i) (he i)
+      (fun _ hy ↦ hτ i (h' i hy.1)) (t.2.1 i j) ⟨x, h'' i hx.1, h'' j hx.2⟩,
+    (τ i).bergmanSection_coordinate_self (q i) (hτa i) (he i)
+      (inf_subset_source hW i j) (fun _ hy ↦ hτ i hy.1) (t.1 i j)
+      ⟨x, h' i (h'' i hx.1), h' j (h'' j hx.2)⟩,
+    (τ i).bergmanSection_coordinate_self (q i) (hτa i) (he i)
       (subset_source_of_le (subset_source_of_le hW h') h'' i)
-      (fun _ hy ↦ hτ i (h' i (h'' i hy))) (τ i) (q i) (t.2.2 i)
-      ⟨x, hx.1⟩ (hτ i (h' i (h'' i hx.1)))]
-  simp only [Trivialization.scalarCoordChange_self _ _ (hτ i (h' i (h'' i hx.1))), one_mul]
+      (fun _ hy ↦ hτ i (h' i (h'' i hy))) (t.2.2 i) ⟨x, hx.1⟩]
 
 /-- Compatible twisted triples have the actual native coboundary on the innermost overlaps.
 No assertion that multiplication by the frame changes is bounded on the larger Bergman
@@ -1013,17 +1013,9 @@ theorem mem_compatibleTriples_iff_toBundleSections
                 (fun i _ hx ↦ hτ i (h' i (h'' i hx))) t.2.2 i)) := by
   rw [mem_compatibleTriples_iff]
   refine and_congr_right' (and_congr_right' (forall₂_congr fun i j ↦ ?_))
-  have hp := bundleSections_coboundary_iff τ q hτa he hW hτ h' h'' t i j
-  constructor
-  · intro h
-    apply holomorphicSectionSheaf.ext
-    intro x
-    simpa only [holomorphicSectionSheaf.add_apply, holomorphicSectionSheaf.sub_apply,
-      holomorphicSectionSheaf.map_apply] using (hp x x.2).1 (h x x.2)
-  · intro h x hx
-    apply (hp x hx).2
-    simpa only [holomorphicSectionSheaf.add_apply, holomorphicSectionSheaf.sub_apply,
-      holomorphicSectionSheaf.map_apply] using
-      congrArg (fun s ↦ holomorphicSectionSheaf.toFun 𝓘(ℂ) F V s ⟨x, hx⟩) h
+  rw [holomorphicSectionSheaf.ext_iff, Subtype.forall]
+  simpa only [holomorphicSectionSheaf.add_apply, holomorphicSectionSheaf.sub_apply,
+    holomorphicSectionSheaf.map_apply] using
+      (forall₂_congr fun x hx ↦ bundleSections_coboundary_iff τ q hτa he hW hτ h' h'' t i j x hx)
 
 end TauCeti.RiemannSurface.ChartBergman

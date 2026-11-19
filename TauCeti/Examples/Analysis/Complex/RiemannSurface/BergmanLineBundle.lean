@@ -139,6 +139,8 @@ def oOneRealization (i : OnePoint ℂ) (U : Opens (OnePoint ℂ))
     (hU : (U : Set (OnePoint ℂ)) ⊆ (chartAt ℂ i).source) :
     bergmanSpace ℂ ((chartAt ℂ i).imageOpens U) →ₗ[ℂ]
       (holomorphicSectionSheaf 𝓘(ℂ) ℂ (OnePoint.twistCore (𝕜 := ℂ) 1).Fiber).obj.obj (op U) := by
+  -- The core atlas contains this local trivialization. Supply its atlas witness for the
+  -- holomorphic maximal-atlas criterion.
   letI : MemTrivializationAtlas ((OnePoint.twistCore (𝕜 := ℂ) 1).localTriv i) := ⟨⟨i, rfl⟩⟩
   exact ((OnePoint.twistCore (𝕜 := ℂ) 1).localTriv i).bergmanSection
     (ContinuousLinearEquiv.refl ℂ ℂ)
@@ -150,7 +152,7 @@ def oOneRealization (i : OnePoint ℂ) (U : Opens (OnePoint ℂ))
 theorem oOneRealization_injective (i : OnePoint ℂ) (U : Opens (OnePoint ℂ))
     (hU : (U : Set (OnePoint ℂ)) ⊆ (chartAt ℂ i).source) :
     Function.Injective (oOneRealization i U hU) := by
-  let : MemTrivializationAtlas ((OnePoint.twistCore (𝕜 := ℂ) 1).localTriv i) := ⟨⟨i, rfl⟩⟩
+  rw [oOneRealization]
   exact Trivialization.bergmanSection_injective _ _ _ _ _ _
 
 /-- There are no artificial constraints or choices on an empty overlap. -/
