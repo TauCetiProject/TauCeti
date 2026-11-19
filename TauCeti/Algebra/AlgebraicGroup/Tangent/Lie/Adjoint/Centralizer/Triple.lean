@@ -94,13 +94,11 @@ theorem centralizerHopfIdeal_lie_le_sup (x y : 𝔤) :
     centralizerHopfIdeal H ⁅x, y⁆ ≤ centralizerHopfIdeal H x ⊔ centralizerHopfIdeal H y := by
   refine (HopfIdeal.le_iff_forall_quotientPointsSubgroup_le
     (H := _root_.CommHopfAlgCat.of k H) _ _).mpr fun A g hg ↦ ?_
-  have hfix (z : 𝔤) : g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
-      (centralizerHopfIdeal H z) A ↔
-        Comodule.endOfPoint 𝔤 g.ofConv (1 ⊗ₜ[k] z) = 1 ⊗ₜ[k] z :=
-    centralizerHopfIdeal_def H z ▸
-      Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint (A := A) z g
-  rw [CommHopfAlgCat.quotientPointsSubgroup_sup, Subgroup.mem_inf, hfix, hfix] at hg
-  rw [hfix, ← mul_one (1 : A), ← LieAlgebra.ExtendScalars.bracket_tmul,
+  rw [CommHopfAlgCat.quotientPointsSubgroup_sup, Subgroup.mem_inf,
+    mem_quotientPointsSubgroup_centralizerHopfIdeal_iff_endOfPoint,
+    mem_quotientPointsSubgroup_centralizerHopfIdeal_iff_endOfPoint] at hg
+  rw [mem_quotientPointsSubgroup_centralizerHopfIdeal_iff_endOfPoint, ← mul_one (1 : A),
+    ← LieAlgebra.ExtendScalars.bracket_tmul,
     Derivation.endOfPoint_adjointComodule_bracket, hg.1, hg.2]
 
 variable (H) in
@@ -145,10 +143,9 @@ theorem mem_quotientPointsSubgroup_tripleCentralizerHopfIdeal_iff_endOfPoint
           Comodule.endOfPoint 𝔤 g.ofConv (1 ⊗ₜ[k] f) = 1 ⊗ₜ[k] f := by
   rw [tripleCentralizerHopfIdeal_def, CommHopfAlgCat.quotientPointsSubgroup_sup,
     CommHopfAlgCat.quotientPointsSubgroup_sup, Subgroup.mem_inf, Subgroup.mem_inf,
-    centralizerHopfIdeal_def, centralizerHopfIdeal_def, centralizerHopfIdeal_def,
-    Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint,
-    Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint,
-    Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint, and_assoc]
+    mem_quotientPointsSubgroup_centralizerHopfIdeal_iff_endOfPoint,
+    mem_quotientPointsSubgroup_centralizerHopfIdeal_iff_endOfPoint,
+    mem_quotientPointsSubgroup_centralizerHopfIdeal_iff_endOfPoint, and_assoc]
 
 /-- A rational point lies in the centralizer of `(h, e, f)` exactly when its adjoint action fixes
 `h`, `e` and `f`. -/
@@ -160,10 +157,9 @@ theorem mem_quotientPointsSubgroup_tripleCentralizerHopfIdeal_iff (g : WithConv 
           Comodule.basePointsRepresentation 𝔤 g f = f := by
   rw [tripleCentralizerHopfIdeal_def, CommHopfAlgCat.quotientPointsSubgroup_sup,
     CommHopfAlgCat.quotientPointsSubgroup_sup, Subgroup.mem_inf, Subgroup.mem_inf,
-    centralizerHopfIdeal_def, centralizerHopfIdeal_def, centralizerHopfIdeal_def,
-    Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff,
-    Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff,
-    Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff, and_assoc]
+    mem_quotientPointsSubgroup_centralizerHopfIdeal_iff_basePointsRepresentation,
+    mem_quotientPointsSubgroup_centralizerHopfIdeal_iff_basePointsRepresentation,
+    mem_quotientPointsSubgroup_centralizerHopfIdeal_iff_basePointsRepresentation, and_assoc]
 
 /-- **The centralizer of `(⁅e, f⁆, e, f)` is `C_G(e) ∩ C_G(f)`.** This holds as closed subgroup
 schemes over every field. It applies to every `sl₂` triple `(h, e, f)`. -/
@@ -202,11 +198,10 @@ theorem ringKrullDim_quotient_tripleCentralizerHopfIdeal [CharZero k] [Algebra.F
         LinearMap.ker (LieAlgebra.ad k 𝔤 f)).map c.toLinearEquiv.toLinearMap := by
     rw [lieSubalgebra_tripleCentralizerHopfIdeal]
     ext d
-    rw [Submodule.mem_map_equiv]
-    generalize hy : c.toLinearEquiv.symm d = y
-    obtain rfl : d = c y := by rw [← hy]; exact (c.toLinearEquiv.apply_symm_apply d).symm
-    simp only [Submodule.mem_inf, LinearMap.mem_ker, LieAlgebra.ad_apply, ← LieEquiv.map_lie,
-      EmbeddingLike.map_eq_zero_iff, c]
+    obtain ⟨y, rfl⟩ := c.toLinearEquiv.surjective d
+    rw [Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply]
+    simp only [LieEquiv.coe_toLinearEquiv, Submodule.mem_inf, LinearMap.mem_ker,
+      LieAlgebra.ad_apply, ← LieEquiv.map_lie, EmbeddingLike.map_eq_zero_iff, c]
   rw [HopfIdeal.ringKrullDim_quotient_eq_finrank_lieSubalgebra,
     ← LinearEquiv.finrank_map_eq c.toLinearEquiv, ← hmap]
   -- A Lie subalgebra and its underlying submodule have the same carrier, as `k`-modules.
@@ -251,9 +246,9 @@ theorem _root_.IsSl2Triple.tripleCentralizerHopfIdeal_eq_sup {h e f : 𝔤} (t :
   apply HopfIdeal.eq_of_quotientPointsSubgroup_eq (H := G) (K := k)
   ext g
   rw [mem_quotientPointsSubgroup_tripleCentralizerHopfIdeal_iff,
-    CommHopfAlgCat.quotientPointsSubgroup_sup, Subgroup.mem_inf, centralizerHopfIdeal_def,
-    centralizerHopfIdeal_def, Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff,
-    Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff]
+    CommHopfAlgCat.quotientPointsSubgroup_sup, Subgroup.mem_inf,
+    mem_quotientPointsSubgroup_centralizerHopfIdeal_iff_basePointsRepresentation,
+    mem_quotientPointsSubgroup_centralizerHopfIdeal_iff_basePointsRepresentation]
   refine ⟨fun hg ↦ ⟨hg.1, hg.2.1⟩, fun ⟨hh, he⟩ ↦ ⟨hh, he, ?_⟩⟩
   have t' := t.basePointsRepresentation_adjointComodule g
   rw [hh, he] at t'
@@ -312,7 +307,7 @@ theorem _root_.IsSl2Triple.basePointsRepresentation_contractingAction_apply [Cha
       (centralizerHopfIdeal H h) (CommAlgCat.of k k)) (c : kˣ) (x : 𝔤) :
     Comodule.basePointsRepresentation 𝔤 g (t.contractingAction c x) =
       t.contractingAction c (Comodule.basePointsRepresentation 𝔤 g x) := by
-  rw [centralizerHopfIdeal_def, Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff] at hg
+  rw [mem_quotientPointsSubgroup_centralizerHopfIdeal_iff_basePointsRepresentation] at hg
   simpa using t.map_contractingAction_apply
     (Derivation.basePointsAdjointLieEquiv (R := k) (H := H) g : 𝔤 →ₗ⁅k⁆ 𝔤) (by simpa using hg) c x
 

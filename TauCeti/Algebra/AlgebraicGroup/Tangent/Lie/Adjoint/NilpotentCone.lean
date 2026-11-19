@@ -297,6 +297,7 @@ theorem lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials
 
 /-- **The nilpotent cone is stable under rational group points.** An element lies on the
 nilpotent cone exactly when its image under the adjoint action of a rational point does. -/
+@[simp]
 theorem nilpotentConeIdeal_le_ker_lift_eval_basePointsRepresentation_iff
     (g : WithConv (H →ₐ[k] k)) (x : 𝔤) :
     nilpotentConeIdeal k H ≤ RingHom.ker
