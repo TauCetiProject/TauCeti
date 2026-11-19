@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Commutative
 public import TauCeti.Geometry.Lie.Subgroup.OneParameter
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Basic
-import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
 import TauCeti.RepresentationTheory.Continuous.Basic
 
 /-!
@@ -28,7 +27,8 @@ for the coadjoint representation are in
 The same holds on the tangent Lie algebra `𝔤 = GroupLieAlgebra I G`, for the stabilizer of
 `μ ∈ 𝔤` under `TauCeti.Lie.adjointRepresentation`. Conjugation by `g` carries `exp (t μ)` to
 `exp (t Ad_g μ)`, so `Ad_g μ = μ` exactly when `g` commutes with every `exp (t μ)`; the converse
-direction compares the initial velocities of the two lines. Since the centralizer of `g` is
+direction is the derivation-level `TauCeti.Lie.Ad_apply_eq_self_of_forall_commute`, read through
+evaluation at the identity. Since the centralizer of `g` is
 closed, `g` then commutes with the whole closed one-parameter subgroup `T_μ`, the closure of
 `{exp (t μ) | t ∈ ℝ}` (`TauCeti.Lie.closedOneParameterSubgroup`).
 
@@ -45,6 +45,11 @@ closed, `g` then commutes with the whole closed one-parameter subgroup `T_μ`, t
   stabilizer of `μ` is the centralizer of `{exp (t μ) | t ∈ ℝ}`.
 * `TauCeti.Lie.stabilizer_adjointRepresentation_eq_centralizer_closedOneParameterSubgroup`: it is
   the centralizer of the closed one-parameter subgroup `T_μ`.
+
+## References
+
+* T. Bröcker and T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
+  Chapter IV, § 1.
 -/
 
 public section
@@ -114,20 +119,17 @@ theorem stabilizer_adjointRepresentation_eq_centralizer (μ : GroupLieAlgebra I 
     rw [conj_mulInvariantExp, tangentAd_apply, map_smul]
   refine ⟨fun h t ↦ ?_, fun h ↦ ?_⟩
   · rw [eq_comm, ← mul_inv_eq_iff_eq_mul, hconj, h]
-  · -- Both lines agree, so their initial velocities `Ad_g μ` and `μ` agree.
-    have hline : (fun t : ℝ ↦ mulInvariantExp (I := I) (t • adjointContinuousLinearMap
-        (I := I) g μ)) = fun t : ℝ ↦ mulInvariantExp (I := I) (G := G) (t • μ) := by
-      funext t
-      rw [← hconj, ← h t, mul_inv_cancel_right]
-    have h1 := DFunLike.congr_fun (hasMFDerivAt_unique
-      (hasMFDerivAt_mulInvariantExp_smul_zero (I := I) (G := G)
-        (adjointContinuousLinearMap (I := I) g μ))
-      (hline ▸ hasMFDerivAt_mulInvariantExp_smul_zero (I := I) (G := G) μ)) (1 : ℝ)
-    -- `smulRight 1 X` sends `1` to `1 • X` by definition; as in
-    -- `forall_mulInvariantExp_smul_eq_one_iff`, the rewriting lemmas do not fire through the
-    -- tangent-space types, so the evaluation is read off definitionally.
-    have h2 : (1 : ℝ) • adjointContinuousLinearMap (I := I) g μ = (1 : ℝ) • μ := h1
-    rwa [one_smul, one_smul] at h2
+  · -- Transport `Ad_apply_eq_self_of_forall_commute` along evaluation at the identity.
+    let e := leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+    have hAd : Ad (I := I) g (e.symm μ) = e.symm μ :=
+      Ad_apply_eq_self_of_forall_commute fun t ↦ by
+        rw [lieExp_eq_mulInvariantExp, map_smul,
+          ← leftInvariantDerivationLieEquivGroupLieAlgebra_apply, e.apply_symm_apply]
+        exact (h t).symm
+    have := congrArg e hAd
+    rwa [leftInvariantDerivationLieEquivGroupLieAlgebra_Ad, e.apply_symm_apply,
+      tangentAd_apply] at this
 
 section TopologicalGroup
 

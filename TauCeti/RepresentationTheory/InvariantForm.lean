@@ -71,8 +71,8 @@ representation, makes `G` a group, as does averaging over `G`
   homomorphism and to a subrepresentation.
 * `TauCeti.Representation.isInvariantForm_iff_isIntertwiningMap`: a form is invariant exactly when
   it intertwines `ρ` with `ρ.dual`.
-* `TauCeti.Representation.IsInvariantForm.stabilizer_dual_apply`: for an injective invariant form,
-  the stabilizer of the covector `B v` is the stabilizer of `v`.
+* `TauCeti.Representation.IsInvariantForm.stabilizer_dual_apply_eq_stabilizer`: for an injective
+  invariant form, the stabilizer of the covector `B v` is the stabilizer of `v`.
 * `TauCeti.Representation.invariantForms_eq_invariants_linHom_dual`: the invariant forms are the
   invariants of `linHom ρ ρ.dual`.
 * `TauCeti.Representation.symmetricInvariantForms_inf_alternatingInvariantForms`: away from
@@ -347,7 +347,7 @@ theorem isInvariantForm_iff_isIntertwiningMap (ρ : Representation k G V) (B : B
 /-- **Stabilizers of covectors given by an invariant form.** An injective invariant form `B`
 identifies `V` with a subrepresentation of the dual, so `g` fixes the covector `B v` under the
 dual representation exactly when it fixes `v`. -/
-theorem IsInvariantForm.stabilizer_dual_apply (hB : IsInvariantForm ρ B)
+theorem IsInvariantForm.stabilizer_dual_apply_eq_stabilizer (hB : IsInvariantForm ρ B)
     (hB' : Function.Injective B) (v : V) :
     _root_.Representation.stabilizer ρ.dual (B v) = _root_.Representation.stabilizer ρ v := by
   ext g

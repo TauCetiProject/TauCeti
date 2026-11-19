@@ -12,6 +12,8 @@ public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.LinearAlgebra.Quotient.Prod
 
+import TauCeti.Algebra.Lie.Dual
+
 /-!
 # The Kirillov–Kostant–Souriau form on a coadjoint tangent space
 
@@ -64,7 +66,7 @@ the sum of the two factor forms.
 An invariant form `B` on `L`, with `B ⁅ξ, μ⁆ η = -B μ ⁅ξ, η⁆`, is a map of Lie modules
 `μ ↦ B μ` from `L` to `L*` (`LinearMap.BilinForm.map_lie_of_lieInvariant`). So when `B` has
 trivial left radical the stabilizer of the covector `B μ` is the centralizer `{ξ | ⁅ξ, μ⁆ = 0}`
-of `μ` (`TauCeti.lieAnnihilator_apply_eq_of_lieInvariant`).
+of `μ` (`TauCeti.lieAnnihilator_bilinForm_apply_eq_of_lieInvariant`).
 
 Finally, the positive Lie–Poisson tensor of `L*` at `ν`, `{ℓ_α, ℓ_β}(ν) = ν ⁅α, β⁆`, is the Kirillov
 form on covectors `α, β ∈ L`, with sharp map `β(π♯α) = π(α, β)`. Its sharp image
@@ -98,8 +100,8 @@ structure.
   the orbit derivative of `[-α]`.
 * `Module.Dual.kksForm_eq_kirillovForm_of_coadjointTangentMap_eq`: the KKS form inverts the
   Lie–Poisson sharp map.
-* `TauCeti.lieAnnihilator_apply_eq_of_lieInvariant`: for an invariant form `B` with trivial left
-  radical, the stabilizer of `B μ` is the centralizer of `μ`.
+* `TauCeti.lieAnnihilator_bilinForm_apply_eq_of_lieInvariant`: for an invariant form `B` with
+  trivial left radical, the stabilizer of `B μ` is the centralizer of `μ`.
 
 ## References
 
@@ -437,20 +439,6 @@ end Module.Dual
 
 /-! ### Covectors of an invariant form -/
 
-namespace LinearMap.BilinForm
-
-variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] {B : LinearMap.BilinForm R L}
-
-/-- **An invariant form is a map of Lie modules into the coadjoint module.** If
-`B ⁅ξ, μ⁆ η = -B μ ⁅ξ, η⁆`, then `μ ↦ B μ` sends the bracket `⁅ξ, μ⁆` to the coadjoint action
-`⁅ξ, B μ⁆ = -(B μ) ∘ ad ξ` of `ξ` on the covector `B μ`. -/
-theorem map_lie_of_lieInvariant (hB : B.lieInvariant L) (ξ μ : L) :
-    B ⁅ξ, μ⁆ = ⁅ξ, B μ⁆ := by
-  ext η
-  rw [Dual.lie_apply, hB]
-
-end LinearMap.BilinForm
-
 namespace TauCeti
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] {B : LinearMap.BilinForm R L}
@@ -458,7 +446,7 @@ variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] {B : LinearMap.
 /-- **The coadjoint stabilizer of an invariant-form covector is a centralizer.** For an invariant
 form `B` with trivial left radical, the infinitesimal coadjoint stabilizer of the covector
 `B μ = B(μ, ·)` is the centralizer `{ξ | ⁅ξ, μ⁆ = 0}` of `μ`. -/
-theorem lieAnnihilator_apply_eq_of_lieInvariant (hB : B.lieInvariant L)
+theorem lieAnnihilator_bilinForm_apply_eq_of_lieInvariant (hB : B.lieInvariant L)
     (hB' : LinearMap.SeparatingLeft B) (μ : L) :
     lieAnnihilator R L (B μ) = lieAnnihilator R L μ := by
   ext ξ
