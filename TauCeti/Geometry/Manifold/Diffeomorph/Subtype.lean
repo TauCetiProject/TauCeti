@@ -23,7 +23,7 @@ smoothly embedded manifold is smooth exactly when its composite with the embeddi
 The restriction is compatible with forms: if `F` pulls a smooth form `τ` back to `σ`, then the
 restriction pulls the restriction of `τ` to `t` back to the restriction of `σ` to `s`
 (`Diffeomorph.mpullback_subtypeOfIsSmoothEmbedding_mpullback_subtype_val`). This is how
-restricted forms on embedded submanifolds, such as the symplectic forms on the components of the
+restricted forms on embedded submanifolds, such as the symplectic forms on the parts `M^K_d` of the
 fixed locus of a group action, are transported along diffeomorphisms.
 
 ## Main definitions
@@ -63,14 +63,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The restriction of a `C^n` diffeomorphism `F : M → N` to a `C^n` diffeomorphism between
 smoothly embedded subsets `s ⊆ M` and `t ⊆ N`, when `F` maps `s` onto `t`. -/
-@[expose] def subtypeOfIsSmoothEmbedding (F : M ≃ₘ^n⟮I, I'⟯ N)
+def subtypeOfIsSmoothEmbedding (F : M ≃ₘ^n⟮I, I'⟯ N)
     (hs : IsSmoothEmbedding J I n (Subtype.val : s → M))
     (ht : IsSmoothEmbedding J' I' n (Subtype.val : t → N)) (h : ∀ x, x ∈ s ↔ F x ∈ t) :
     s ≃ₘ^n⟮J, J'⟯ t where
-  toFun x := ⟨F x, (h x).1 x.2⟩
-  invFun y := ⟨F.symm y, (h _).2 (by simp)⟩
-  left_inv x := Subtype.ext (F.symm_apply_apply x)
-  right_inv y := Subtype.ext (F.apply_symm_apply y)
+  toEquiv := F.toEquiv.subtypeEquiv h
   contMDiff_toFun := ht.contMDiff_iff_comp.2 (F.contMDiff.comp hs.contMDiff)
   contMDiff_invFun := hs.contMDiff_iff_comp.2 (F.symm.contMDiff.comp ht.contMDiff)
 
@@ -81,18 +78,18 @@ variable (F : M ≃ₘ^n⟮I, I'⟯ N) (hs : IsSmoothEmbedding J I n (Subtype.va
 @[simp]
 theorem subtypeOfIsSmoothEmbedding_apply_coe (x : s) :
     (F.subtypeOfIsSmoothEmbedding hs ht h x : N) = F x :=
-  rfl
+  (rfl)
 
 /-- The inverse of the restriction evaluates as the inverse diffeomorphism. -/
 @[simp]
 theorem subtypeOfIsSmoothEmbedding_symm_apply_coe (y : t) :
     ((F.subtypeOfIsSmoothEmbedding hs ht h).symm y : M) = F.symm y :=
-  rfl
+  (rfl)
 
 /-- The restriction is `F` read through the inclusions: `ι_t ∘ F|_s = F ∘ ι_s`. -/
 theorem subtype_val_comp_subtypeOfIsSmoothEmbedding :
     Subtype.val ∘ F.subtypeOfIsSmoothEmbedding hs ht h = F ∘ Subtype.val :=
-  rfl
+  (rfl)
 
 end Diffeomorph
 

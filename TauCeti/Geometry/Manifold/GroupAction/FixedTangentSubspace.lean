@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.LocalDiffeomorph
-public import Mathlib.Topology.Homeomorph.Lemmas
+public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.GroupAction.TangentRepresentation
+public import TauCeti.GroupTheory.GroupAction.Hom
 
 /-!
 # The fixed tangent subspace of a group action
@@ -34,13 +34,13 @@ then differentiating `f ∘ (k • ·) = (k • ·) ∘ f` at a point `p` fixed 
 intertwines the differentials of `k` at `p` and at `f p`
 (`TauCeti.mfderiv_comp_mfderiv_smul_of_smul_eq`). So `df_p` sends `V_p` into `V_(f p)` as soon as
 every element fixing `f p` also fixes `p` (`TauCeti.map_mfderiv_fixedTangentSubspace_le`), and when
-`f` is injective and `df_p` is injective, `V_p` is exactly the preimage of `V_(f p)`
+moreover `df_p` is injective, `V_p` is exactly the preimage of `V_(f p)`
 (`TauCeti.comap_mfderiv_fixedTangentSubspace`). For an equivariant diffeomorphism `F : M → N`
 this gives `dF_p (V_p) = V_(F p)` (`Diffeomorph.map_mfderiv_fixedTangentSubspace`), hence
 `F (M^K_d) = N^K_d` (`Diffeomorph.image_fixedPointsOfFinrank`). Already an equivariant bijection
 carries `M^K` onto `N^K` (`Equiv.image_fixedPoints`), and an equivariant homeomorphism carries each
 connected component of `M^K` onto the component of `N^K` through the image point
-(`Homeomorph.image_connectedComponentIn_fixedPoints`).
+(`Homeomorph.image_connectedComponentIn_fixedPoints`); these two hold for any monoid action.
 
 ## Main definitions
 
@@ -57,15 +57,13 @@ connected component of `M^K` onto the component of `N^K` through the image point
   vectors of the tangent representation.
 * `TauCeti.iUnion_fixedPointsOfFinrank`, `TauCeti.pairwise_disjoint_fixedPointsOfFinrank`: the
   sets `M^K_d` partition the fixed set.
-* `TauCeti.comap_mfderiv_fixedTangentSubspace`: an injective equivariant map with injective
-  differential pulls the fixed tangent subspace at `f p` back to the one at `p`.
+* `TauCeti.comap_mfderiv_fixedTangentSubspace`: an equivariant map with injective differential,
+  preserving the stabilizer of `p`, pulls the fixed tangent subspace at `f p` back to the one at
+  `p`.
 * `Diffeomorph.map_mfderiv_fixedTangentSubspace`: an equivariant diffeomorphism carries fixed
   tangent subspaces onto fixed tangent subspaces.
 * `Diffeomorph.image_fixedPointsOfFinrank`: it carries the parts of the fixed set of each dimension
   onto those of the target.
-* `Equiv.image_fixedPoints`, `Homeomorph.image_connectedComponentIn_fixedPoints`: equivariant
-  bijections carry fixed sets onto fixed sets, and equivariant homeomorphisms carry their connected
-  components onto connected components.
 -/
 
 public section
@@ -160,22 +158,6 @@ end FixedTangentSubspace
 
 section Map
 
-/-- An injective equivariant map does not change stabilizers. -/
-private theorem stabilizer_apply_eq_of_injective {K M N : Type*} [Group K] [MulAction K M]
-    [MulAction K N] {f : M → N} (hf : ∀ (k : K) (x : M), f (k • x) = k • f x)
-    (hinj : Function.Injective f) (p : M) : stabilizer K (f p) = stabilizer K p := by
-  ext k
-  rw [mem_stabilizer_iff, mem_stabilizer_iff, ← hf, hinj.eq_iff]
-
-/-- An injective equivariant map sends a point into the fixed set exactly when the point lies in the
-fixed set. -/
-theorem apply_mem_fixedPoints_iff_of_injective {K M N : Type*} [Group K] [MulAction K M]
-    [MulAction K N] {f : M → N} (hf : ∀ (k : K) (x : M), f (k • x) = k • f x)
-    (hinj : Function.Injective f) {x : M} :
-    f x ∈ fixedPoints K N ↔ x ∈ fixedPoints K M := by
-  simp only [mem_fixedPoints]
-  exact forall_congr' fun k ↦ by rw [← hf, hinj.eq_iff]
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {K : Type*} [Group K]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [MulAction K M]
@@ -187,8 +169,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- **Equivariant maps intertwine the differentials of the actions.** If `f (k • x) = k • f x`
 for all `x`, and `k` fixes `p`, then `df_p ∘ d(k •)_p = d(k •)_(f p) ∘ df_p`. Where `f` is not
 differentiable both sides vanish. -/
-theorem mfderiv_comp_mfderiv_smul_of_smul_eq (hf : ∀ (k : K) (x : M), f (k • x) = k • f x)
-    {k : K} (hk : k • p = p) (hkM : MDifferentiableAt I I (k • ·) p)
+theorem mfderiv_comp_mfderiv_smul_of_smul_eq {k : K} (hf : ∀ x : M, f (k • x) = k • f x)
+    (hk : k • p = p) (hkM : MDifferentiableAt I I (k • ·) p)
     (hkN : MDifferentiableAt I' I' (k • ·) (f p)) :
     (mfderiv I I' f p).comp (mfderiv I I (k • ·) p) =
       (mfderiv I' I' (k • ·) (f p)).comp (mfderiv I I' f p) := by
@@ -196,7 +178,7 @@ theorem mfderiv_comp_mfderiv_smul_of_smul_eq (hf : ∀ (k : K) (x : M), f (k •
   swap
   · rw [mfderiv_zero_of_not_mdifferentiableAt hfp]
     exact (ContinuousLinearMap.zero_comp _).trans (ContinuousLinearMap.comp_zero _).symm
-  have hcomm : f ∘ (fun x : M ↦ k • x) = (fun y : N ↦ k • y) ∘ f := funext fun x ↦ hf k x
+  have hcomm : f ∘ (fun x : M ↦ k • x) = (fun y : N ↦ k • y) ∘ f := funext hf
   have h := mfderiv_comp_of_eq hfp hkM hk
   rw [hcomm, mfderiv_comp p hkN hfp] at h
   -- `mfderiv_comp_of_eq` takes the derivative of `f` at `k • p`; replace that point by `p`.
@@ -216,46 +198,31 @@ theorem map_mfderiv_fixedTangentSubspace_le (hf : ∀ (k : K) (x : M), f (k • 
       fixedTangentSubspace I' K (f p) := by
   rintro _ ⟨v, hv, rfl⟩ k hk
   have h := congrArg (· v)
-    (mfderiv_comp_mfderiv_smul_of_smul_eq hf (hstab hk) (hdM k hk) (hdN k hk))
+    (mfderiv_comp_mfderiv_smul_of_smul_eq (hf k) (hstab hk) (hdM k hk) (hdN k hk))
   exact h.symm.trans (congrArg (mfderiv I I' f p) (hv k (hstab hk)))
 
-/-- **Fixed tangent vectors are detected after an injective equivariant map.** If `f` is injective
-and equivariant with injective differential at `p`, then a tangent vector at `p` is fixed by the
-stabilizer of `p` exactly when its image under `df_p` is fixed by the stabilizer of `f p`. -/
+/-- **Fixed tangent vectors are detected by an equivariant map with injective differential.** If
+`f` is equivariant with injective differential at `p`, and every element fixing `f p` also fixes
+`p` (for instance when `f` is injective), then a tangent vector at `p` is fixed by the stabilizer of
+`p` exactly when its image under `df_p` is fixed by the stabilizer of `f p`. -/
 theorem comap_mfderiv_fixedTangentSubspace (hf : ∀ (k : K) (x : M), f (k • x) = k • f x)
-    (hinj : Function.Injective f) (hdf : Function.Injective (mfderiv I I' f p))
+    (hstab : stabilizer K (f p) ≤ stabilizer K p) (hdf : Function.Injective (mfderiv I I' f p))
     (hdM : ∀ k ∈ stabilizer K p, MDifferentiableAt I I (k • ·) p)
     (hdN : ∀ k ∈ stabilizer K p, MDifferentiableAt I' I' (k • ·) (f p)) :
     (fixedTangentSubspace I' K (f p)).comap (mfderiv I I' f p).toLinearMap =
       fixedTangentSubspace I K p := by
-  have hstab := stabilizer_apply_eq_of_injective hf hinj p
+  -- Every element fixing `p` fixes `f p` by equivariance, so the two stabilizers agree.
+  replace hstab : stabilizer K (f p) = stabilizer K p :=
+    hstab.antisymm fun k hk ↦ by rw [mem_stabilizer_iff, ← hf, mem_stabilizer_iff.1 hk]
   refine le_antisymm (fun v hv k hk ↦ ?_) (Submodule.map_le_iff_le_comap.1 <|
     map_mfderiv_fixedTangentSubspace_le hf hstab.le (hstab ▸ hdM) (hstab ▸ hdN))
   have h := congrArg (· v)
-    (mfderiv_comp_mfderiv_smul_of_smul_eq hf hk (hdM k hk) (hdN k hk))
+    (mfderiv_comp_mfderiv_smul_of_smul_eq (hf k) hk (hdM k hk) (hdN k hk))
   exact hdf (h.trans (hv k (hstab ▸ hk)))
 
 end Map
 
 end TauCeti
-
-/-- **An equivariant bijection carries the fixed set onto the fixed set.** -/
-theorem Equiv.image_fixedPoints {K M N : Type*} [Group K] [MulAction K M] [MulAction K N]
-    (e : M ≃ N) (he : ∀ (k : K) (x : M), e (k • x) = k • e x) :
-    e '' fixedPoints K M = fixedPoints K N := by
-  refine Set.ext fun y ↦ ?_
-  rw [← e.apply_symm_apply y, e.injective.mem_set_image,
-    TauCeti.apply_mem_fixedPoints_iff_of_injective he e.injective]
-
-/-- **An equivariant homeomorphism carries connected components of the fixed set onto connected
-components of the fixed set.** -/
-theorem Homeomorph.image_connectedComponentIn_fixedPoints {K M N : Type*} [Group K]
-    [TopologicalSpace M] [TopologicalSpace N] [MulAction K M] [MulAction K N] (e : M ≃ₜ N)
-    (he : ∀ (k : K) (x : M), e (k • x) = k • e x) {p : M} (hp : p ∈ fixedPoints K M) :
-    e '' connectedComponentIn (fixedPoints K M) p =
-      connectedComponentIn (fixedPoints K N) (e p) := by
-  rw [← e.toEquiv.image_fixedPoints he]
-  exact e.image_connectedComponentIn hp
 
 namespace Diffeomorph
 
@@ -276,10 +243,11 @@ theorem map_mfderiv_fixedTangentSubspace (hn : n ≠ 0)
     (hF : ∀ (k : K) (x : M), F (k • x) = k • F x) (p : M) :
     (fixedTangentSubspace I K p).map (mfderiv I I' F p).toLinearMap =
       fixedTangentSubspace I' K (F p) := by
-  have hsurj := (F.mfderivToContinuousLinearEquiv hn p).surjective
-  have hinj := (F.mfderivToContinuousLinearEquiv hn p).injective
-  rw [← ContinuousLinearEquiv.coe_coe, F.mfderivToContinuousLinearEquiv_coe hn] at hsurj hinj
-  rw [← comap_mfderiv_fixedTangentSubspace hF (EquivLike.injective F) hinj
+  have hsurj := (F.mfderivToContinuousLinearEquiv hn p).toLinearEquiv.surjective
+  have hinj := (F.mfderivToContinuousLinearEquiv hn p).toLinearEquiv.injective
+  rw [← LinearEquiv.coe_coe, F.mfderivToContinuousLinearEquiv_toLinearMap hn] at hsurj hinj
+  rw [← comap_mfderiv_fixedTangentSubspace hF
+      (MulAction.stabilizer_apply_eq_of_injective hF (EquivLike.injective F) p).le hinj
       (fun k _ ↦ (contMDiff_const_smul k).mdifferentiable hn p)
       (fun k _ ↦ (contMDiff_const_smul k).mdifferentiable hn (F p)),
     Submodule.map_comap_eq_of_surjective hsurj]
@@ -289,7 +257,8 @@ theorem finrank_fixedTangentSubspace_apply (hn : n ≠ 0)
     (hF : ∀ (k : K) (x : M), F (k • x) = k • F x) (p : M) :
     Module.finrank ℝ (fixedTangentSubspace I' K (F p)) =
       Module.finrank ℝ (fixedTangentSubspace I K p) := by
-  rw [← F.map_mfderiv_fixedTangentSubspace hn hF p, ← F.mfderivToContinuousLinearEquiv_coe hn]
+  rw [← F.map_mfderiv_fixedTangentSubspace hn hF p,
+    ← F.mfderivToContinuousLinearEquiv_toLinearMap hn]
   exact (F.mfderivToContinuousLinearEquiv hn p).toLinearEquiv.finrank_map_eq _
 
 /-- An equivariant diffeomorphism maps a point into the part `N^K_d` of the fixed set exactly when
@@ -298,7 +267,7 @@ theorem apply_mem_fixedPointsOfFinrank_iff (hn : n ≠ 0)
     (hF : ∀ (k : K) (x : M), F (k • x) = k • F x) {d : ℕ} {x : M} :
     F x ∈ fixedPointsOfFinrank I' K N d ↔ x ∈ fixedPointsOfFinrank I K M d := by
   rw [mem_fixedPointsOfFinrank, mem_fixedPointsOfFinrank,
-    apply_mem_fixedPoints_iff_of_injective hF (EquivLike.injective F),
+    MulAction.apply_mem_fixedPoints_iff_of_injective hF (EquivLike.injective F),
     F.finrank_fixedTangentSubspace_apply hn hF]
 
 /-- **An equivariant diffeomorphism carries each part of the fixed set of a given dimension onto
