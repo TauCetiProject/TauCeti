@@ -12,7 +12,7 @@ import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 import TauCeti.Analysis.Complex.RealDeriv
 import TauCeti.Analysis.Normed.Operator.Basic
-import TauCeti.LinearAlgebra.Complex.Module
+import Mathlib.LinearAlgebra.Complex.Module
 import TauCeti.MeasureTheory.Function.Jacobian
 
 /-!
@@ -47,8 +47,8 @@ with invertible derivative has a density, so preimages of null sets are null.
 * `TauCeti.isWeakCauchyRiemannOn_image_iff_comp_openPartialHomeomorph`: for a holomorphic open
   partial homeomorphism `φ`, the invariance is an equivalence, since the inverse is holomorphic
   with derivative `1 / φ'` (`OpenPartialHomeomorph.hasDerivAt_symm_of_differentiableOn`)
-  and, when `J² = -1`, the map `a + b i ↦ a - b J` is multiplicative
-  (`TauCeti.re_smul_sub_im_smul_apply_mul`), so the two transformations of `η` compose
+  and the native real-algebra map `Complex.liftAux (-J(w, u w))` is multiplicative, so the two
+  transformations of `η` compose
   to multiplication by `φ'(z) · (1 / φ'(z)) = 1`.
 * `TauCeti.IsWeakCauchyRiemannOn.comp_differentiableOn_homogeneous`: the homogeneous equation is
   invariant.
@@ -186,10 +186,14 @@ theorem isWeakCauchyRiemannOn_image_iff_comp_openPartialHomeomorph
       refine (ae_restrict_iff' measurableSet_interior).2 (.of_forall fun w hw => ?_)
     · simp only [φ.right_inv (hUt (interior_subset hw))]
     · have hwt := hUt (interior_subset hw)
-      rw [(hsd hwt).deriv, φ.right_inv hwt,
-        re_smul_sub_im_smul_apply_mul (fun y => by simpa using congr($(hJ w hw) y)),
-        inv_mul_cancel₀ (hφ' _ (φ.map_target hwt)), one_re, one_im, one_smul, zero_smul,
-        sub_zero]
+      rw [(hsd hwt).deriv, φ.right_inv hwt]
+      let A := Complex.liftAux (-J w (u w)) ((neg_mul_neg _ _).trans (hJ w hw))
+      have hA : A (deriv φ (φ.symm w))⁻¹ * A (deriv φ (φ.symm w)) = 1 := by
+        rw [← map_mul, inv_mul_cancel₀ (hφ' _ (φ.map_target hwt)), map_one]
+      have heval := congrArg (fun B : V →L[ℝ] V ↦ B (η w (u w))) hA
+      simpa only [A, Complex.liftAux_apply, mul_apply_eq_comp,
+        add_apply, smul_apply, ContinuousLinearMap.algebraMap_apply, neg_apply, smul_neg,
+        one_apply_eq_self, sub_eq_add_neg] using heval
 
 /-- **The homogeneous equation is invariant** under biholomorphic changes of the domain variable,
 with the field `J ∘ φ`. -/

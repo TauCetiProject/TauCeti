@@ -25,8 +25,10 @@ For a real-linear map `L` into a complex module, its defect from complex lineari
 A real-linear map is unchanged by conjugating its argument exactly when it vanishes at `I`
 (`LinearMap.forall_apply_conj_eq_iff`). A real-linear map with `L I = A (L 1)`, for `A`
 squaring to `-1`, satisfies `L (b * I) = A (L b)` for every `b`
-(`LinearMap.apply_mul_I_eq_of_apply_I_eq`), and a real-linear map intertwines multiplication by
-`I` with such an `A` exactly when `L 1 + A (L I) = 0` (`LinearMap.forall_apply_I_mul_eq_iff`).
+(`LinearMap.apply_mul_I_eq_of_apply_I_eq`), so it vanishes once it vanishes at one nonzero point
+(`LinearMap.eq_zero_of_apply_I_eq_of_apply_eq_zero`), and a real-linear map intertwines
+multiplication by `I` with such an `A` exactly when `L 1 + A (L I) = 0`
+(`LinearMap.forall_apply_I_mul_eq_iff`).
 A real-bilinear map is unchanged by conjugating both arguments exactly when it vanishes at
 `(1, I)` and `(I, 1)` (`LinearMap.forall_apply_conj_apply_conj_eq_iff`).
 Multiplication by `I` and by `-I` are mutually inverse on any complex multiplication action.
@@ -44,9 +46,7 @@ conjugacy `g z = w * f z * w⁻¹` by a unit `w` between two such maps holds eve
 at `I` (`Units.conj_complexAlgHom_apply`).
 
 The real part `ℜ a = (a + a*) / 2` of an element of a complex star module is `a` corrected by
-half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`). For a real-linear `J`
-with `J ∘ J = -1`, the map `a + b i ↦ a - b J` from `ℂ` is multiplicative
-(`TauCeti.re_smul_sub_im_smul_apply_mul`).
+half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`).
 
 A vector lies in the real span of a complex basis exactly when its coordinates are real
 (`Module.Basis.mem_span_real_range_iff`). In particular, the real span of the standard basis of
@@ -150,6 +150,23 @@ theorem apply_mul_I_eq_of_apply_I_eq {F : Type*} [AddCommGroup F] [Module ℝ F]
   simp [hA]
   module
 
+/-- A real-linear map out of the complex plane with `L I = A (L 1)`, where `A` squares to `-1`,
+vanishes as soon as it vanishes at a single nonzero point. -/
+theorem eq_zero_of_apply_I_eq_of_apply_eq_zero {F : Type*} [AddCommGroup F] [Module ℝ F]
+    (L : ℂ →ₗ[ℝ] F) {A : F →ₗ[ℝ] F} (hL : L I = A (L 1)) (hA : ∀ v, A (A v) = -v) {w : ℂ}
+    (hw : w ≠ 0) (h : L w = 0) : L = 0 := by
+  have hwI : L (w * I) = 0 := by rw [L.apply_mul_I_eq_of_apply_I_eq hL hA, h, map_zero]
+  ext v
+  -- Every `v` is a real combination of `w` and `w * I`.
+  have hv : v = (v / w).re • w + (v / w).im • (w * I) :=
+    calc v = v / w * w := (div_mul_cancel₀ v hw).symm
+      _ = _ := by
+        conv_lhs => rw [← re_add_im (v / w)]
+        rw [real_smul, real_smul]
+        ring
+  rw [hv]
+  simp [-real_smul, h, hwI]
+
 /-- A real-linear map `L` out of the complex plane intertwines multiplication by `I` with an
 endomorphism `A` squaring to `-1` exactly when `L 1 + A (L I) = 0`: the value at `I` is then
 determined by the value at `1`. -/
@@ -193,15 +210,6 @@ theorem realPart_eq_add_half_star_sub {A : Type*} [AddCommGroup A] [Module ℂ A
 theorem mem_span_real_range_basisFun_iff {ι : Type*} [Finite ι] (w : ι → ℂ) :
     w ∈ Submodule.span ℝ (Set.range (Pi.basisFun ℂ ι)) ↔ ∀ i, (w i).im = 0 := by
   simp [(Pi.basisFun ℂ ι).mem_span_real_range_iff]
-
-/-- When `J ∘ J = -1` for a real-linear `J`, the map `a + b i ↦ a - b J` from `ℂ` is
-multiplicative: transforming by `d` and then by `c` is transforming by `c * d`. -/
-theorem re_smul_sub_im_smul_apply_mul {V F : Type*} [AddCommGroup V] [Module ℝ V] [FunLike F V V]
-    [LinearMapClass F ℝ V V] {J : F} (hJ : ∀ y, J (J y) = -y) (c d : ℂ) (x : V) :
-    c.re • (d.re • x - d.im • J x) - c.im • J (d.re • x - d.im • J x) =
-      (c * d).re • x - (c * d).im • J x := by
-  rw [map_sub, map_smul, map_smul, hJ, Complex.mul_re, Complex.mul_im]
-  module
 
 end TauCeti
 
