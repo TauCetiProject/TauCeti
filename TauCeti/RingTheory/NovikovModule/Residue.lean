@@ -50,6 +50,8 @@ soon as `δ ≠ 0`, and then the homogeneous integer pieces need not span the co
   scalars for which the pieces are submodules.
 * `TauCeti.NovikovModule.iSupIndep_gradeBy`: the homogeneous pieces are independent over the
   ground ring, for every degree function.
+* `TauCeti.NovikovModule.mem_iSup_gradeBy_iff`: the pieces span exactly the combinations with
+  nonzero coefficients in finitely many degrees.
 * `TauCeti.NovikovModule.smul_mem_gradeBy_of_forall_vadd_eq`: every Novikov series preserves the
   homogeneous pieces of an orbit-invariant degree.
 * `TauCeti.NovikovModule.isInternal_novikovGradeBy`: the completion is the direct sum of its
@@ -107,6 +109,21 @@ theorem iSupIndep_of_forall_mem_iff (hA : ∀ k a, a ∈ A k ↔ a ∈ gradeBy R
 function. -/
 theorem iSupIndep_gradeBy (d : S → D) : iSupIndep (gradeBy R F d) :=
   iSupIndep_of_forall_mem_iff fun _ _ => Iff.rfl
+
+/-- The homogeneous pieces span exactly the combinations whose nonzero coefficients occur at
+generators of finitely many degrees. -/
+theorem mem_iSup_gradeBy_iff {a : NovikovModule R F} :
+    a ∈ ⨆ k, gradeBy R F d k ↔ (d '' Function.support a.val).Finite := by
+  refine ⟨fun ha => ?_, fun ha => ?_⟩
+  · refine Submodule.iSup_induction (motive := fun b => (d '' Function.support b.val).Finite) _ ha
+      (fun k b hb => (finite_singleton k).subset ?_) (by simp) fun b c hb hc => ?_
+    · rintro _ ⟨s, hs, rfl⟩
+      exact mem_gradeBy_iff.1 hb s hs
+    · exact (hb.union hc).subset
+        ((image_mono (Function.support_add _ _)).trans (image_union _ _ _).le)
+  · rw [← sum_homogeneousComponent (T := ha.toFinset) fun s hs => ha.mem_toFinset.2 ⟨s, hs, rfl⟩]
+    exact Submodule.sum_mem _ fun k _ =>
+      Submodule.mem_iSup_of_mem k (homogeneousComponent_mem_gradeBy d k a)
 
 /-- The homogeneous component of degree `k` of a sum of homogeneous combinations, one in each
 piece, is the summand of degree `k`. -/

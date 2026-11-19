@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.NovikovModule.Grading
+public import TauCeti.RingTheory.NovikovModule.Residue
 public import TauCeti.RingTheory.NovikovModule.Topology
 
 /-!
@@ -31,11 +31,12 @@ summable exactly when only finitely many of its members have a nonzero coefficie
 potential cutoff.
 
 The span of the pieces consists of the combinations whose nonzero coefficients occur in finitely
-many degrees. It contains the finite combinations and is therefore dense, so it is closed exactly
-when it is the whole module. Closedness of each piece does not give closedness of their sum: on
-`S = ℕ` with potential `n ↦ -n` and degree `n ↦ n`, the pieces are the lines through the
-generators, and the combination with every coefficient `1` is a limit of finite combinations
-outside their span.
+many degrees (`TauCeti.NovikovModule.mem_iSup_gradeBy_iff`, in
+`TauCeti.RingTheory.NovikovModule.Residue`). It contains the finite combinations and is
+therefore dense, so it is closed exactly when it is the whole module. Closedness of each piece
+does not give closedness of their sum: on `S = ℕ` with potential `n ↦ -n` and degree `n ↦ n`,
+the pieces are the lines through the generators, and the combination with every coefficient `1`
+is a limit of finite combinations outside their span.
 
 For graded Novikov modules of capped generators, with degree given by a Conley–Zehnder or
 Chern grading, these are the statements that a completed state module, or a completed Floer
@@ -48,8 +49,6 @@ description of the potential-cutoff topology in `TauCeti.RingTheory.NovikovModul
 
 ## Main results
 
-* `TauCeti.NovikovModule.mem_iSup_gradeBy_iff`: the pieces span exactly the combinations with
-  nonzero coefficients in finitely many degrees.
 * `TauCeti.NovikovModule.isClosed_gradeBy`: each homogeneous piece is closed.
 * `TauCeti.NovikovModule.hasSum_homogeneousComponent`: a completed combination is the sum of its
   homogeneous components.
@@ -73,26 +72,6 @@ open Filter Function Set Topology
 namespace TauCeti.NovikovModule
 
 variable {R S D : Type*}
-
-section Semiring
-
-variable [Semiring R] {F : S → ℝ} {d : S → D} {k : D} {a : NovikovModule R F}
-
-/-- The homogeneous pieces span exactly the combinations whose nonzero coefficients occur at
-generators of finitely many degrees. -/
-theorem mem_iSup_gradeBy_iff :
-    a ∈ ⨆ k, gradeBy R F d k ↔ (d '' Function.support a.val).Finite := by
-  refine ⟨fun ha => ?_, fun ha => ?_⟩
-  · refine Submodule.iSup_induction (motive := fun b => (d '' Function.support b.val).Finite) _ ha
-      (fun k b hb => (finite_singleton k).subset ?_) (by simp) fun b c hb hc => ?_
-    · rintro _ ⟨s, hs, rfl⟩
-      exact mem_gradeBy_iff.1 hb s hs
-    · exact (hb.union hc).subset ((image_mono (support_add _ _)).trans (image_union _ _ _).le)
-  · rw [← sum_homogeneousComponent (T := ha.toFinset) fun s hs => ha.mem_toFinset.2 ⟨s, hs, rfl⟩]
-    exact Submodule.sum_mem _ fun k _ =>
-      Submodule.mem_iSup_of_mem k (homogeneousComponent_mem_gradeBy d k a)
-
-end Semiring
 
 section Ring
 
@@ -173,10 +152,9 @@ theorem dense_iSup_gradeBy (d : S → D) :
 when every completed combination has nonzero coefficients in only finitely many degrees. -/
 theorem isClosed_iSup_gradeBy_iff :
     IsClosed ((⨆ k, gradeBy R F d k : Submodule R (NovikovModule R F)) : Set (NovikovModule R F)) ↔
-      ⨆ k, gradeBy R F d k = ⊤ := by
-  refine ⟨fun h => ?_, fun h => h ▸ isClosed_univ⟩
-  rw [← SetLike.coe_set_eq, Submodule.top_coe, ← h.closure_eq]
-  exact (dense_iSup_gradeBy d).closure_eq
+      ⨆ k, gradeBy R F d k = ⊤ :=
+  ⟨fun h => SetLike.coe_injective ((h.dense_iff.1 (dense_iSup_gradeBy d)).trans
+    Submodule.top_coe.symm), fun h => h ▸ isClosed_univ⟩
 
 end Ring
 
