@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.Pochhammer
+import TauCeti.Data.Nat.Factorial.NatCast
 import Mathlib.Tactic.FieldSimp
 
 /-!
@@ -37,14 +38,6 @@ namespace Nat
 
 variable {K : Type*} [Field K]
 
-/-- In a field where `3 = 0`, the factorial `n!` vanishes for `n ≥ 3`. -/
-private theorem cast_factorial_eq_zero_of_three_eq_zero (h3 : (3 : K) = 0) {n : ℕ}
-    (hn : 3 ≤ n) : ((n ! : ℕ) : K) = 0 := by
-  obtain ⟨m, hm⟩ := Nat.dvd_factorial (by norm_num : 0 < 3) hn
-  rw [hm]
-  push_cast
-  rw [h3, zero_mul]
-
 /-- Triplication of factorials: `(3k)! = 27^k k! (⅓)_k (⅔)_k`. -/
 theorem factorial_three_mul (k : ℕ) :
     (((3 * k)! : ℕ) : K) =
@@ -54,7 +47,8 @@ theorem factorial_three_mul (k : ℕ) :
     cases k with
     | zero => simp
     | succ k =>
-      simp [cast_factorial_eq_zero_of_three_eq_zero h3 (by omega : 3 ≤ 3 * (k + 1)), h3]
+      simp [cast_factorial_eq_zero_of_le (m := 3) (by norm_num) (by exact_mod_cast h3)
+        (by omega : 3 ≤ 3 * (k + 1)), h3]
   · induction k with
     | zero => simp
     | succ k ih =>
@@ -74,7 +68,8 @@ theorem factorial_three_mul_add_one (k : ℕ) :
   · cases k with
     | zero => simp
     | succ k =>
-      simp [cast_factorial_eq_zero_of_three_eq_zero h3 (by omega : 3 ≤ 3 * (k + 1) + 1), h3]
+      simp [cast_factorial_eq_zero_of_le (m := 3) (by norm_num) (by exact_mod_cast h3)
+        (by omega : 3 ≤ 3 * (k + 1) + 1), h3]
   · induction k with
     | zero => simp
     | succ k ih =>
