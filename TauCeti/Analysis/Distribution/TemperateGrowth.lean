@@ -28,7 +28,8 @@ So does a smooth function satisfying symbol estimates
 `‖D^k f(x)‖ ≤ C_k (1 + ‖x‖ ^ 2) ^ ((m - k) / 2)` of some real order `m`, and the rescaled
 Bessel potential `x ↦ (1 + ‖c • x‖ ^ 2) ^ r`. On a real inner product space, so does the
 logarithm `x ↦ log (1 + ‖x‖ ^ 2)` of the squared Japanese bracket, which enters the complex powers
-of the Japanese bracket.
+of the Japanese bracket. So does the exponential `y ↦ exp(i ⟪y, ξ⟫)` of an angular frequency
+`ξ`, which therefore defines a tempered distribution.
 
 The derivative `Df` of a function `f` of temperate growth has temperate growth, since the iterated
 derivatives of `Df` are those of `f` shifted by one order. So does each directional derivative
@@ -264,6 +265,12 @@ theorem hasTemperateGrowth_log_one_add_norm_sq :
     rw [Real.norm_of_nonneg (Real.log_nonneg hle), one_mul]
     have := Real.log_le_sub_one_of_pos (by linarith : (0 : ℝ) < 1 + ‖x‖ ^ 2)
     nlinarith [norm_nonneg x]
+
+/-- The exponential `y ↦ exp(i ⟪y, ξ⟫)` of angular frequency `ξ` has temperate growth. -/
+@[fun_prop]
+theorem hasTemperateGrowth_exp_inner_mul_I (ξ : H) :
+    (fun y : H ↦ Complex.exp (inner ℝ y ξ * Complex.I)).HasTemperateGrowth :=
+  Complex.hasTemperateGrowth_exp_mul_I.comp (by fun_prop)
 
 /-- An even power `y ↦ ‖x - y‖ ^ (2N)` of the distance to a point has temperate growth. -/
 theorem hasTemperateGrowth_norm_sub_pow (x : H) (N : ℕ) :
