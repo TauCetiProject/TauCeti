@@ -15,8 +15,6 @@ import TauCeti.Order.Hom.PowersetCard
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
 import Mathlib.Data.Fin.Tuple.Reflection
 import Mathlib.Data.Rat.Cast.Order
-import Mathlib.Tactic.GCongr
-import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
 /-!
@@ -376,26 +374,17 @@ private theorem abs_card_filter_topHolds_sub_le
   have hsplit := Fintype.sum_piFinset_eq_sum_filter_sum_sum_sum_update (M := ℝ) hij.ne hil.ne
     hjl.ne A (hg₀' t.1.1) (hg₀' t.1.2.1) (hg₀' t.1.2.2)
   -- The box volume is the number of fibres times the volume of the cells at `t`.
-  have hvol : (∏ m, (#(A m) : ℝ)) =
-      #{h ∈ Fintype.piFinset A | h t.1.1 = g₀ t.1.1 ∧ h t.1.2.1 = g₀ t.1.2.1 ∧
-        h t.1.2.2 = g₀ t.1.2.2} * (#(A t.1.1) * #(A t.1.2.1) * #(A t.1.2.2)) := by
-    have := hsplit fun _ ↦ (1 : ℝ)
-    simp only [sum_const, nsmul_eq_mul, mul_one, Fintype.card_piFinset] at this
-    push_cast at this
-    linear_combination this
+  have hvol := congrArg ((↑) : ℕ → ℝ) (Fintype.prod_card_eq_card_filter_piFinset_mul_mul_mul hij.ne
+    hil.ne hjl.ne A (hg₀' t.1.1) (hg₀' t.1.2.1) (hg₀' t.1.2.2))
+  push_cast at hvol
   rw [hsplit, hvol]
   refine (abs_sum_le_card_nsmul (B := η * (#(A t.1.1) * #(A t.1.2.1) * #(A t.1.2.2)))
     fun h _ ↦ ?_).trans_eq (by rw [nsmul_eq_mul]; ring)
   -- Over each fibre, rank-one top regularity bounds the color discrepancy on the slice.
   simp only [G]
   rw [sum_sum_sum_update_eq ht h d, abs_mul, Nat.abs_cast]
-  calc _ ≤ η * #P.support := (hP.abs_relDensityOn_sub_mul_card_le c _)
-    _ ≤ η * (#(A t.1.1) * #(A t.1.2.1) * #(A t.1.2.2)) := by
-      gcongr
-      have := P.card_support_le
-      simp only [P, PairColorPlacement3.polyad_c₀, PairColorPlacement3.polyad_c₁,
-        PairColorPlacement3.polyad_c₂] at this
-      exact_mod_cast this
+  refine (hP.abs_relDensityOn_sub_mul_card_le c _).trans (mul_le_mul_of_nonneg_left ?_ hη)
+  exact_mod_cast ψ.card_support_polyad_le t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2
 
 omit [DecidableEq κ] [Fintype V] in
 /-- For an injective `g`, giving the increasing pattern triple `t` its pattern color is a

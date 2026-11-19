@@ -77,6 +77,8 @@ structure Interaction (R L S : Type*) [Zero R] [Star R] where
 
 namespace Interaction
 
+section
+
 variable {R L S : Type*}
 
 section Basic
@@ -190,6 +192,10 @@ theorem localHamiltonian_mul_inclusion_sub_inclusion_mul (Φ : Interaction R L S
   exact sub_eq_zero.2 (commute_inclusion_inclusion _ h (Finset.mem_filter.1 hX).2 _ a).eq
 
 end Commutator
+
+end
+
+variable {L S : Type*} [DecidableEq L] [Fintype S] [DecidableEq S] {Λ Λ' : Finset L}
 
 section Dynamics
 

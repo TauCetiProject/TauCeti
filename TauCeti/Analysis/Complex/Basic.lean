@@ -22,8 +22,11 @@ Conjugation also preserves norms (Mathlib's `Complex.norm_conj`), so the norm of
 expression is the denominator of the Möbius automorphisms of the unit disc and of the
 pseudo-hyperbolic expression.
 
-Inversion preserves the open right half-plane: `z⁻¹` has positive real part exactly when `z`
-does (`Complex.inv_re_pos`).
+Inversion preserves both the open and closed right half-planes: `z⁻¹` has positive
+(respectively nonnegative) real part exactly when `z` does (`Complex.inv_re_pos`,
+`Complex.inv_re_nonneg`). Under a reflection symmetry `f (a - z) = c * conj (f (conj z))`, a
+one-sided upper bound `Re ρ ≤ B` on all zeros of `f` confines every zero to the bounded vertical
+strip `|Re ρ| ≤ max B |Re a - B|` (`TauCeti.abs_re_le_max_of_re_le_of_sub_conj`).
 
 The map `y ↦ r² / y` (inversion in the circle of radius `r` followed by conjugation) satisfies
 `‖conj x - r² / y‖ ≤ 3 ‖x - y‖` for `‖x‖ ≤ r ≤ ‖y‖` (`Complex.norm_conj_sub_sq_div_le`).
@@ -39,6 +42,10 @@ The canonical embedding of an `RCLike` field into `ℂ` is bundled as
 
 Dividing by a natural number does not increase the norm, so `‖(a z + b) / M‖ ≤ ‖a‖ C + ‖b‖`
 whenever `‖z‖ ≤ C` (`Complex.norm_mul_add_div_natCast_le`).
+
+The real coordinates `equivRealProdCLM : ℂ ≃L[ℝ] ℝ × ℝ` do not increase distances, so they map the
+disc of radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)` of `ℝ × ℝ`
+(`Complex.dist_equivRealProdCLM_le`).
 -/
 
 public section
@@ -50,6 +57,14 @@ theorem Complex.inv_re_pos {z : ℂ} : 0 < z⁻¹.re ↔ 0 < z.re := by
   rcases eq_or_ne z 0 with rfl | hz
   · simp
   · rw [inv_re, div_pos_iff_of_pos_right (normSq_pos.mpr hz)]
+
+/-- A complex number and its inverse lie in the closed right half-plane together. -/
+theorem Complex.inv_re_nonneg {z : ℂ} : 0 ≤ z⁻¹.re ↔ 0 ≤ z.re := by
+  have hzero : z⁻¹.re = 0 ↔ z.re = 0 := by
+    rcases eq_or_ne z 0 with rfl | hz
+    · simp
+    · simp [inv_re, hz]
+  simpa only [le_iff_eq_or_lt, eq_comm (a := (0 : ℝ))] using or_congr hzero Complex.inv_re_pos
 
 /-- The scalar Cayley expression has unit norm at real `r`, including when `z = r`
 under the totalized inverse convention. -/
@@ -153,6 +168,23 @@ theorem not_mapsTo_I_mul_setOf_im_eq_zero :
     ¬ Set.MapsTo (fun z : ℂ => Complex.I * z) {z | z.im = 0} {z | z.im = 0} := fun h => by
   simpa using h (show (1 : ℂ) ∈ {z : ℂ | z.im = 0} by simp)
 
+/-- Under a reflection symmetry `f (a - z) = c * conj (f (conj z))`, a one-sided upper bound
+`ρ.re ≤ B` on all zeros of `f` also gives `a.re - ρ.re ≤ B`, hence confines every zero to the
+bounded vertical strip `|ρ.re| ≤ max B |a.re - B|`. -/
+theorem abs_re_le_max_of_re_le_of_sub_conj {f : ℂ → ℂ} {B : ℝ}
+    (hre : ∀ ρ : ℂ, f ρ = 0 → ρ.re ≤ B)
+    {a c : ℂ} (hfe : ∀ z : ℂ, f (a - z) = c * conj (f (conj z)))
+    {ρ : ℂ} (hρ : f ρ = 0) : |ρ.re| ≤ max B |a.re - B| := by
+  have hsym : f (a - conj ρ) = 0 := by
+    have := hfe (conj ρ)
+    simpa [hρ] using this
+  have h1 := hre (a - conj ρ) hsym
+  simp only [Complex.sub_re, Complex.conj_re] at h1
+  have hlow : -max B |a.re - B| ≤ a.re - B := by
+    have := neg_abs_le (a.re - B)
+    linarith [le_max_right B |a.re - B|]
+  exact abs_le.mpr ⟨by linarith, (hre ρ hρ).trans (le_max_left _ _)⟩
+
 variable {E : Type*} [TopologicalSpace E] {τ : E → E} {U : Set E} {ρ : ℝ}
 
 /-- The parameter map `τ` composed with conjugation of the disc coordinate is continuous on the
@@ -231,5 +263,12 @@ theorem norm_mul_add_div_natCast_le (M : ℕ) (a b : ℂ) {z : ℂ} {C : ℝ} (h
   rw [norm_div, Complex.norm_natCast]
   exact (div_nat_le_self_of_nonneg (norm_nonneg _) M).trans
     (norm_add_le_of_le (norm_mul_le_of_le le_rfl hz) le_rfl)
+
+/-- The real coordinates `equivRealProdCLM` do not increase distances, so they map the disc of
+radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)` of `ℝ × ℝ`. -/
+theorem dist_equivRealProdCLM_le (y : ℂ) (z₀ : ℝ × ℝ) :
+    dist (equivRealProdCLM y) z₀ ≤ dist y (equivRealProdCLM.symm z₀) := by
+  conv_lhs => rw [← equivRealProdCLM.apply_symm_apply z₀]
+  exact (lipschitz_equivRealProd.dist_le_mul y _).trans (by simp)
 
 end Complex
