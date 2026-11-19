@@ -17,7 +17,10 @@ number at index `n` equals the magnitude of the `n`-th coefficient. Retaining th
 coordinates attains the best rank-at-most-`n` approximation. The formula applies to all
 sequence spaces `lp` with `1 ≤ p ≤ ∞`, in particular to real and complex `ℓ²`. Conversely, every
 antitone `ℕ → ℝ≥0` sequence defines an `ℓ^∞` sequence (`lp.ofAntitone`) whose diagonal operator
-has those approximation numbers (`lp.exists_singularValue_diagonalCLM_eq`).
+has those approximation numbers (`lp.exists_singularValue_diagonalCLM_eq`). For coefficients in
+any order and on any index type, if all coefficients outside a set of at most `n` indices have
+norm at most `C`, then the approximation number at index `n` is at most `C`
+(`lp.singularValue_diagonalCLM_le`).
 
 The general compactness theorem `lp.isCompactOperator_diagonalCLM` in the multiplier module
 shows that, over a locally compact scalar field, coefficients tending to zero give a
@@ -35,7 +38,16 @@ open Filter
 
 namespace lp
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+variable {ι 𝕜 : Type*} [NontriviallyNormedField 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- **Upper bound for a diagonal operator.** If all coefficients outside a set of at most `n`
+indices have norm at most `C`, then the approximation number at index `n` is at most `C`. -/
+theorem singularValue_diagonalCLM_le (d : ℓ^∞(ι, 𝕜)) {n : ℕ} {s : Finset ι} (hs : s.card ≤ n)
+    {C : ℝ≥0} (hC : ∀ i ∉ s, ‖d i‖₊ ≤ C) : (diagonalCLM (p := p) d).singularValue n ≤ C := by
+  classical
+  refine ((diagonalCLM (p := p) d).singularValue_le_nnnorm_sub
+    ((rank_diagonalTruncation_le d s).trans (by exact_mod_cast hs))).trans ?_
+  exact_mod_cast norm_diagonalCLM_sub_diagonalTruncation_le d s C.2 fun i hi ↦ hC i hi
 
 /-- The approximation numbers of a diagonal operator with decreasing coefficient magnitudes
 are exactly those magnitudes. No convergence-to-zero assumption is needed. -/
@@ -45,9 +57,8 @@ theorem singularValue_diagonalCLM (d : ℓ^∞(ℕ, 𝕜))
     (diagonalCLM (p := p) d).singularValue n = ‖d n‖₊ := by
   have hp : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
   refine le_antisymm ?_ ?_
-  · exact ((diagonalCLM (p := p) d).singularValue_le_nnnorm_sub
-      (rank_diagonalTruncation_range_le d n)).trans
-        (nnnorm_diagonalCLM_sub_diagonalTruncation_range_le d hd n)
+  · exact singularValue_diagonalCLM_le d (Finset.card_range n).le fun i hi ↦
+      hd (by simpa using hi)
   · let v : Fin (n + 1) → ℓ^p(ℕ, 𝕜) := fun i ↦ lp.single p (i : ℕ) 1
     have hv : LinearIndependent 𝕜 v := by
       exact (linearIndependent_single_one (p := p) (𝕜 := 𝕜)).comp _ Fin.val_injective
