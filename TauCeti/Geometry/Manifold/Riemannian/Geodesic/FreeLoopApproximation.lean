@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Broken
 public import TauCeti.Topology.PathSpace.Moore.BrokenPath
-import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # Approximating compact families of free loops by broken geodesics
@@ -16,9 +15,8 @@ Let `M` be a Riemannian manifold whose distance is the Riemannian distance, and 
 radius such that the tangent ball of radius `r` at every point is a normal domain. Points at
 distance less than `r` are joined by the radial geodesic between them, which gives a path
 interpolation `TauCeti.Manifold.geodesicInterpolation` on the pairs of points at distance less
-than `r` (`TauCeti.Manifold.isPathInterpolation_geodesicInterpolation`). Run at unit speed on
-each arc, the broken Moore path through `q 0, …, q n` for this interpolation is the broken
-geodesic through these points
+than `r`. Run at unit speed on each arc, the broken Moore path through `q 0, …, q n` for this
+interpolation is the broken geodesic through these points
 (`TauCeti.Manifold.brokenGeodesic_eq_brokenMoorePath`).
 
 Sample a free Moore loop `γ` at the `n + 1` times `i L / (n + 1)`, `L` its duration, and suppose
@@ -41,13 +39,12 @@ than `r`, every sufficiently fine sampling maps `K` into the distance cut
 the broken geodesic map `geoⁿ : 𝓛ⁿM → 𝓛M` (`TauCeti.Manifold.cyclicDistanceCutBrokenGeodesic`) is
 homotopic to the inclusion of `K`
 (`TauCeti.Manifold.exists_cyclicDistanceCutBrokenGeodesic_comp_homotopic`). This is the
-compact-family approximation of the free loop space by broken geodesics, which makes the colimit of
-the finite-dimensional approximations `𝓛ⁿM` compute the homology of the free loop space.
+compact-family approximation of the free loop space by broken geodesics, the first of the two
+hypotheses under which the colimit of the finite-dimensional approximations `𝓛ⁿM` computes the
+homology of the free loop space.
 
 ## Main definitions
 
-* `TauCeti.Manifold.geodesicInterpolation`: the radial geodesics between points closer than `r`,
-  on the unit interval.
 * `TauCeti.Manifold.sampleBrokenGeodesicLoop`: the closed broken geodesic through the sampled
   vertices of a free Moore loop with arcs of radius less than `r`.
 * `TauCeti.Manifold.brokenPathDurationHomotopy`: the linear change of the arc durations, from the
@@ -57,8 +54,6 @@ the finite-dimensional approximations `𝓛ⁿM` compute the homology of the fre
 
 ## Main results
 
-* `TauCeti.Manifold.brokenGeodesic_eq_brokenMoorePath`: broken geodesics are the broken Moore paths
-  of the geodesic interpolation with the distances as durations.
 * `TauCeti.Manifold.exists_cyclicDistanceCutBrokenGeodesic_comp_homotopic`: on a compact family of
   free loops, every sufficiently fine `geoⁿ ∘ evₙ` is homotopic to the inclusion.
 
@@ -89,102 +84,7 @@ variable
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   [IsRiemannianManifold I M] {r : ℝ} (hr : ∀ q : M, IsNormalDomain I M q (ball 0 r))
 
-/-! ### Geodesic interpolation -/
-
-section Interpolation
-
-include hr
-
-/-- **Geodesic interpolation**: for points `x`, `y` at distance less than `r`, the radial geodesic
-`s ↦ exp_x (s • log_x y)` from `x` to `y` on the unit interval, and the constant path at `x`
-otherwise. -/
-def geodesicInterpolation (p : M × M) : C(unitInterval, M) :=
-  if h : dist p.1 p.2 < r then geodesicSegmentUnitPath hr ⟨p, h⟩ else ContinuousMap.const _ p.1
-
-theorem geodesicInterpolation_of_dist_lt (p : M × M) (h : dist p.1 p.2 < r) :
-    geodesicInterpolation hr p = geodesicSegmentUnitPath hr ⟨p, h⟩ := by
-  simp only [geodesicInterpolation, h, ↓reduceDIte]
-
-/-- **The radial geodesics interpolate** between the points at distance less than `r`. -/
-theorem isPathInterpolation_geodesicInterpolation :
-    IsPathInterpolation (geodesicInterpolation hr) {p : M × M | dist p.1 p.2 < r} where
-  continuousOn := by
-    rw [continuousOn_iff_continuous_domRestrict]
-    exact ((geodesicSegmentUnitPath hr).continuous.comp
-      (continuous_subtype_val.subtype_mk fun p : {p : M × M | dist p.1 p.2 < r} ↦ p.2)).congr
-      fun p ↦ (geodesicInterpolation_of_dist_lt hr p.1 p.2).symm
-  apply_zero p hp := by
-    rw [geodesicInterpolation_of_dist_lt hr p hp, geodesicSegmentUnitPath_zero]
-  apply_one p hp := by
-    rw [geodesicInterpolation_of_dist_lt hr p hp, geodesicSegmentUnitPath_one]
-  apply_diag x hx := by
-    ext s
-    rw [geodesicInterpolation_of_dist_lt hr _ hx, geodesicSegmentUnitPath_of_eq hr _ rfl]
-    rfl
-
-/-- Broken geodesics are the broken Moore paths of the geodesic interpolation in which each arc
-lasts the distance between its end points. -/
-theorem brokenGeodesic_eq_brokenMoorePath (n : ℕ) (q : Fin (n + 1) → M)
-    (h : ∀ i : Fin n, dist (q i.castSucc) (q i.succ) < r) :
-    brokenGeodesic hr n q h = brokenMoorePath (isPathInterpolation_geodesicInterpolation hr) n q
-      (fun i ↦ nndist (q i.castSucc) (q i.succ)) fun i ↦ ⟨h i, nndist_eq_zero.1⟩ := by
-  induction n with
-  | zero => rw [brokenGeodesic_zero, brokenMoorePath_zero]
-  | succ n ih =>
-    have htail : ∀ i : Fin n, dist (Fin.tail q i.castSucc) (Fin.tail q i.succ) < r := fun i ↦ by
-      simpa only [Fin.tail, Fin.succ_castSucc] using h i.succ
-    rw [brokenGeodesic_succ hr n q h htail, brokenMoorePath_succ _ n q _ _ fun i ↦
-      ⟨htail i, nndist_eq_zero.1⟩]
-    congr 1
-    · rw [geodesicSegment_def, geodesicInterpolation_of_dist_lt hr _ (h 0)]
-    · rw [ih _ htail]
-      exact brokenMoorePath_congr _ _ _ rfl (funext fun i ↦ by
-        simp only [Fin.tail, Fin.succ_castSucc])
-
-end Interpolation
-
 /-! ### Sampled vertices of free loops -/
-
-section Sample
-
-omit [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- The vertices `q 0, …, q n, q 0` of a free Moore loop sampled at `n + 1` times are the points
-`i / (n + 1)` of its reparametrization to the unit interval. -/
-private theorem snoc_sample_eq_toUnitPath {n : ℕ} (γ : MooreFreeLoopSpace M) (i : Fin (n + 2)) :
-    (Fin.snoc (γ.toMoorePath.sample (n + 1)) (γ.toMoorePath.sample (n + 1) 0) :
-      Fin (n + 2) → M) i = γ.toMoorePath.toUnitPath (unitInterval.arcPoint (n + 1) i 0) := by
-  induction i using Fin.lastCases with
-  | last =>
-    rw [Fin.snoc_last, MoorePath.sample_zero, Fin.val_last,
-      unitInterval.arcPoint_self_zero n.succ_pos, MoorePath.toUnitPath_one,
-      γ.target_eq_source]
-  | cast j =>
-    rw [Fin.snoc_castSucc, MoorePath.sample_eq_toUnitPath_arcPoint, Fin.val_castSucc]
-
-omit [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- The consecutive sampled vertices of a free Moore loop whose arcs lie within distance `r` of
-their initial vertices are at distance less than `r`. -/
-private theorem snoc_sample_mem {n : ℕ}
-    (γ : MooreFreeLoopSpace.arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1)) (i : Fin (n + 1)) :
-    ((Fin.snoc ((γ : MooreFreeLoopSpace M).toMoorePath.sample (n + 1))
-        ((γ : MooreFreeLoopSpace M).toMoorePath.sample (n + 1) 0) : Fin (n + 2) → M) i.castSucc,
-      (Fin.snoc ((γ : MooreFreeLoopSpace M).toMoorePath.sample (n + 1))
-        ((γ : MooreFreeLoopSpace M).toMoorePath.sample (n + 1) 0) : Fin (n + 2) → M) i.succ) ∈
-      {p : M × M | dist p.1 p.2 < r} := by
-  rw [snoc_sample_eq_toUnitPath, snoc_sample_eq_toUnitPath, Fin.val_castSucc, Fin.val_succ,
-    ← unitInterval.arcPoint_one]
-  exact MooreFreeLoopSpace.mem_arcsWithin.1 γ.2 i i.2 1
-
-omit [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- All the sampled vertices of a free Moore loop of length zero are equal. -/
-private theorem snoc_sample_eq_of_length_eq_zero {n : ℕ} {γ : MooreFreeLoopSpace M}
-    (hγ : γ.length = 0) (i j : Fin (n + 2)) :
-    (Fin.snoc (γ.toMoorePath.sample (n + 1)) (γ.toMoorePath.sample (n + 1) 0) :
-      Fin (n + 2) → M) i =
-      (Fin.snoc (γ.toMoorePath.sample (n + 1)) (γ.toMoorePath.sample (n + 1) 0) :
-        Fin (n + 2) → M) j := by
-  rw [snoc_sample_eq_toUnitPath, snoc_sample_eq_toUnitPath, MoorePath.toUnitPath_apply,
-    MoorePath.toUnitPath_apply, MooreFreeLoopSpace.length_toMoorePath, hγ, zero_mul, zero_mul]
 
 omit [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- Each sampled vertex of a free Moore loop whose arcs lie within distance `r` of their initial
@@ -193,11 +93,8 @@ private theorem dist_sample_lt {n : ℕ}
     (γ : MooreFreeLoopSpace.arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1)) (i : Fin (n + 1)) :
     dist ((γ : MooreFreeLoopSpace M).toMoorePath.sample (n + 1) i)
       ((γ : MooreFreeLoopSpace M).toMoorePath.sample (n + 1) (i - 1)) < r := by
-  have h := snoc_sample_mem γ (i - 1)
-  rw [mem_ofPred_eq, Fin.snoc_castSucc, Fin.snoc_self_zero_succ, sub_add_cancel] at h
-  rwa [dist_comm]
-
-end Sample
+  rw [dist_comm]
+  exact MooreFreeLoopSpace.sample_sub_one_mem_of_mem_arcsWithin γ.2 i
 
 /-! ### Changing the durations of the arcs -/
 
@@ -211,27 +108,22 @@ sampled vertices are at distance `d`. -/
 private def arcDuration (s : unitInterval) (γ : MooreFreeLoopSpace M) (i : Fin (n + 1)) : ℝ≥0 :=
   unitInterval.toNNReal (unitInterval.symm s) * (γ.length / (n + 1)) +
     unitInterval.toNNReal s *
-      nndist ((Fin.snoc (γ.toMoorePath.sample (n + 1)) (γ.toMoorePath.sample (n + 1) 0) :
-          Fin (n + 2) → M) i.castSucc)
-        ((Fin.snoc (γ.toMoorePath.sample (n + 1)) (γ.toMoorePath.sample (n + 1) 0) :
-          Fin (n + 2) → M) i.succ)
+      nndist (γ.closedSample (n + 1) i.castSucc) (γ.closedSample (n + 1) i.succ)
 
 omit [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- An arc of duration zero joins equal vertices. -/
 private theorem eq_of_arcDuration_eq_zero {s : unitInterval} {γ : MooreFreeLoopSpace M}
     {i : Fin (n + 1)} (h : arcDuration n s γ i = 0) :
-    (Fin.snoc (γ.toMoorePath.sample (n + 1)) (γ.toMoorePath.sample (n + 1) 0) :
-      Fin (n + 2) → M) i.castSucc =
-      (Fin.snoc (γ.toMoorePath.sample (n + 1)) (γ.toMoorePath.sample (n + 1) 0) :
-        Fin (n + 2) → M) i.succ := by
+    γ.closedSample (n + 1) i.castSucc = γ.closedSample (n + 1) i.succ := by
   obtain ⟨h₁, h₂⟩ := add_eq_zero.1 h
   rcases mul_eq_zero.1 h₂ with hs | hd
   · -- At `s = 0` the duration is `L / (n + 1)`, which only vanishes for a loop of length zero.
     have hs : s = 0 := Subtype.ext (congrArg NNReal.toReal hs)
     rw [hs, unitInterval.symm_zero, unitInterval.toNNReal_one, one_mul,
       div_eq_zero_iff] at h₁
-    exact snoc_sample_eq_of_length_eq_zero
-      (h₁.resolve_right (by exact_mod_cast n.succ_ne_zero)) _ _
+    have hγ := h₁.resolve_right (by exact_mod_cast n.succ_ne_zero)
+    rw [MooreFreeLoopSpace.closedSample_of_length_eq_zero hγ,
+      MooreFreeLoopSpace.closedSample_of_length_eq_zero hγ]
   · exact nndist_eq_zero.1 hd
 
 include hr
@@ -241,20 +133,19 @@ private def arcDurationMap :
     C(unitInterval × MooreFreeLoopSpace.arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1),
       MooreFreeLoopSpace M) where
   toFun p := ⟨brokenMoorePath (isPathInterpolation_geodesicInterpolation hr) (n + 1)
-      (Fin.snoc ((p.2 : MooreFreeLoopSpace M).toMoorePath.sample (n + 1))
-        ((p.2 : MooreFreeLoopSpace M).toMoorePath.sample (n + 1) 0))
-      (arcDuration n p.1 (p.2 : MooreFreeLoopSpace M))
-      fun i ↦ ⟨snoc_sample_mem p.2 i, eq_of_arcDuration_eq_zero n⟩, by
-    rw [target_brokenMoorePath, source_brokenMoorePath, Fin.snoc_last, Fin.snoc_apply_zero]⟩
+      ((p.2 : MooreFreeLoopSpace M).closedSample (n + 1))
+      (arcDuration n p.1 (p.2 : MooreFreeLoopSpace M)) fun i ↦
+        ⟨MooreFreeLoopSpace.closedSample_mem_of_mem_arcsWithin p.2.2 n.succ_pos i,
+          eq_of_arcDuration_eq_zero n⟩, by
+    rw [target_brokenMoorePath, source_brokenMoorePath, MooreFreeLoopSpace.closedSample_last,
+      MooreFreeLoopSpace.closedSample_zero]⟩
   continuous_toFun := by
     refine MooreFreeLoopSpace.isEmbedding_toMoorePath.continuous_iff.2 ?_
-    have hγ : Continuous fun p : unitInterval ×
+    have hq : Continuous fun p : unitInterval ×
         MooreFreeLoopSpace.arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1) ↦
-        (p.2 : MooreFreeLoopSpace M).toMoorePath.sample (n + 1) :=
-      (MoorePath.continuous_sample _).comp
-        (MooreFreeLoopSpace.continuous_toMoorePath.comp
-          (continuous_subtype_val.comp continuous_snd))
-    have hq := Continuous.finSnoc (A := fun _ ↦ M) hγ ((continuous_apply 0).comp hγ)
+        (p.2 : MooreFreeLoopSpace M).closedSample (n + 1) :=
+      (MooreFreeLoopSpace.continuous_closedSample _).comp
+        (continuous_subtype_val.comp continuous_snd)
     refine continuous_brokenMoorePath _ (n + 1) hq
       (L := fun (p : unitInterval ×
         MooreFreeLoopSpace.arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1)) i ↦
@@ -278,9 +169,12 @@ private theorem arcDurationMap_one
         (dist_sample_lt γ) := by
   refine MooreFreeLoopSpace.ext ?_
   simp only [arcDurationMap, ContinuousMap.coe_mk]
-  rw [toMoorePath_brokenGeodesicLoop hr n _ _ fun i ↦ snoc_sample_mem γ i,
+  rw [toMoorePath_brokenGeodesicLoop hr n _ _ fun i ↦ by
+      rw [← MooreFreeLoopSpace.closedSample_eq_snoc]
+      exact MooreFreeLoopSpace.closedSample_mem_of_mem_arcsWithin γ.2 n.succ_pos i,
     brokenGeodesic_eq_brokenMoorePath hr]
-  exact brokenMoorePath_congr _ _ _ rfl (funext fun i ↦ by simp [arcDuration])
+  exact brokenMoorePath_congr _ _ _ (MooreFreeLoopSpace.closedSample_eq_snoc _ _)
+    (funext fun i ↦ by simp [arcDuration, MooreFreeLoopSpace.closedSample_eq_snoc])
 
 /-- **The closed broken geodesic through the sampled vertices** of a free Moore loop whose `n + 1`
 arcs lie within distance `r` of their initial vertices, as a continuous map. -/
@@ -318,10 +212,12 @@ def brokenPathDurationHomotopy :
     simp only [arcDurationMap, MooreFreeLoopSpace.toMoorePath_brokenPathMap]
     rw [MoorePath.brokenPathMap_eq_brokenMoorePath _ _ (fun i ↦ by
       rw [MooreFreeLoopSpace.coe_toArcsWithin]
-      exact snoc_sample_eq_toUnitPath (γ : MooreFreeLoopSpace M) i) fun i ↦
-        ⟨snoc_sample_mem γ i, fun h ↦ snoc_sample_eq_of_length_eq_zero (by
-          rw [MooreFreeLoopSpace.coe_toArcsWithin, MooreFreeLoopSpace.length_toMoorePath] at h
-          exact (div_eq_zero_iff.1 h).resolve_right (by positivity)) _ _⟩]
+      exact MooreFreeLoopSpace.closedSample_eq_toUnitPath (γ : MooreFreeLoopSpace M) n.succ_pos i)
+      fun i ↦ ⟨MooreFreeLoopSpace.closedSample_mem_of_mem_arcsWithin γ.2 n.succ_pos i, fun h ↦ by
+        rw [MooreFreeLoopSpace.coe_toArcsWithin, MooreFreeLoopSpace.length_toMoorePath] at h
+        have hγ := (div_eq_zero_iff.1 h).resolve_right (by positivity)
+        rw [MooreFreeLoopSpace.closedSample_of_length_eq_zero hγ,
+          MooreFreeLoopSpace.closedSample_of_length_eq_zero hγ]⟩]
     exact brokenMoorePath_congr _ _ _ rfl (funext fun i ↦ by simp [arcDuration])
   map_one_left := arcDurationMap_one hr n
 
@@ -376,10 +272,8 @@ theorem exists_cyclicDistanceCutBrokenGeodesic_comp_homotopic {K : Set (MooreFre
   have he : (cyclicDistanceCutBrokenGeodesic hr hδ).comp e =
       (sampleBrokenGeodesicLoop hr n).comp ι :=
     ContinuousMap.ext fun γ ↦ by
-      rw [ContinuousMap.comp_apply, ContinuousMap.comp_apply,
-        cyclicDistanceCutBrokenGeodesic_apply,
-        sampleBrokenGeodesicLoop_apply hr n _ (dist_sample_lt (ι γ))]
-      rfl
+      simp only [ContinuousMap.comp_apply, cyclicDistanceCutBrokenGeodesic_apply, e, ι,
+        ContinuousMap.coe_mk, sampleBrokenGeodesicLoop_apply hr n _ (dist_sample_lt _)]
   rw [he]
   exact ⟨((sampleBrokenGeodesicLoopHomotopy hr n).compContinuousMap ι).symm⟩
 

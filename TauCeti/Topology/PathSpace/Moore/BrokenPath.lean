@@ -24,7 +24,7 @@ vertices, which deforms a broken path run with equal arc durations into one run 
 on each arc. The arc-straightening homotopy `TauCeti.MoorePath.arcStraightening`
 ends at the broken path `TauCeti.MoorePath.brokenPathMap` through the sampled vertices, with the
 duration of the original path split equally among the arcs. It is the broken Moore path through
-the same vertices with all durations equal to `γ.length / r`
+the same vertices with all `n + 1` durations equal to `γ.length / (n + 1)`
 (`TauCeti.MoorePath.brokenPathMap_eq_brokenMoorePath`).
 
 ## Main definitions
@@ -34,6 +34,8 @@ the same vertices with all durations equal to `γ.length / r`
 
 ## Main results
 
+* `TauCeti.continuous_rescale_ofUnitPath`: interpolating arcs depend continuously on their end
+  points and durations.
 * `TauCeti.brokenMoorePath_succ`: a broken Moore path is its first arc followed by the broken
   Moore path through the remaining points.
 * `TauCeti.length_brokenMoorePath`: its length is the sum of the durations.
@@ -78,6 +80,22 @@ private theorem target_rescale_ofUnitPath (hρ : IsPathInterpolation ρ U) {x y 
   · rw [MoorePath.rescale_zero, MoorePath.target_refl, MoorePath.source_ofUnitPath,
       hρ.apply_zero _ hxy, hℓ rfl]
   · rw [MoorePath.target_rescale _ hℓ0, MoorePath.target_ofUnitPath, hρ.apply_one _ hxy]
+
+/-- **Interpolating arcs depend continuously on their end points and durations**, also where
+durations vanish, provided that an arc of duration zero joins equal points. -/
+theorem continuous_rescale_ofUnitPath (hρ : IsPathInterpolation ρ U) {F : Y → X × X}
+    {L : Y → ℝ≥0} (hF : Continuous F) (hL : Continuous L) (hFU : ∀ y, F y ∈ U)
+    (h : ∀ y, L y = 0 → (F y).1 = (F y).2) :
+    Continuous fun y ↦ (MoorePath.ofUnitPath (ρ (F y))).rescale (L y) := by
+  refine (MoorePath.continuous_ofUnitPath.comp
+    (hρ.continuousOn.comp_continuous hF hFU)).moorePath_rescale_of_forall_eq_source hL
+    fun y hy t ↦ ?_
+  -- An arc of duration zero joins equal points, along which the interpolating path is constant.
+  have hxy : F y = ((F y).1, (F y).1) := Prod.ext rfl (h y hy).symm
+  have hU := hFU y
+  rw [hxy] at hU
+  simp only [Function.comp_apply, MoorePath.ofUnitPath_apply, MoorePath.source_ofUnitPath]
+  rw [hxy, hρ.apply_diag _ hU, ContinuousMap.const_apply, ContinuousMap.const_apply]
 
 end Arc
 
@@ -171,8 +189,7 @@ theorem length_brokenMoorePath (n : ℕ) (q : Fin (n + 1) → X) (ℓ : Fin n �
   | zero => simp
   | succ n ih =>
     rw [brokenMoorePath_succ hρ n q ℓ h (forall_tail_mem h), MoorePath.length_trans,
-      MoorePath.length_rescale, ih, Fin.sum_univ_succ]
-    rfl
+      MoorePath.length_rescale, ih, Fin.sum_univ_succ, Fin.tail_def]
 
 /-- **Broken Moore paths depend continuously on their points and durations**, also where
 durations vanish. -/
@@ -187,20 +204,9 @@ theorem continuous_brokenMoorePath (n : ℕ) {F : Y → Fin (n + 1) → X} {L : 
     exact MoorePath.continuous_refl.comp ((continuous_apply 0).comp hF)
   | succ n ih =>
     simp only [fun y ↦ brokenMoorePath_succ hρ n (F y) (L y) (h y) (forall_tail_mem (h y))]
-    -- The first arc is continuous, since an arc of duration zero joins equal points, along
-    -- which the interpolating path is constant.
-    have hρF : Continuous fun y ↦ ρ (F y (Fin.castSucc 0), F y (Fin.succ 0)) :=
-      hρ.continuousOn.comp_continuous (by fun_prop) fun y ↦ (h y 0).1
-    have harc : Continuous fun y ↦
-        (MoorePath.ofUnitPath (ρ (F y (Fin.castSucc 0), F y (Fin.succ 0)))).rescale (L y 0) := by
-      refine (MoorePath.continuous_ofUnitPath.comp hρF).moorePath_rescale_of_forall_eq_source
-        ((continuous_apply 0).comp hL) fun y hy t ↦ ?_
-      have hxy := (h y 0).2 hy
-      have hU := (h y 0).1
-      rw [← hxy] at hU
-      simp only [Function.comp_apply, MoorePath.ofUnitPath_apply, MoorePath.source_ofUnitPath,
-        ← hxy, hρ.apply_diag _ hU, ContinuousMap.const_apply]
-    exact harc.moorePath_trans (ih hF.finTail hL.finTail fun y ↦ forall_tail_mem (h y)) _
+    exact (continuous_rescale_ofUnitPath hρ (by fun_prop) ((continuous_apply 0).comp hL)
+      (fun y ↦ (h y 0).1) fun y ↦ (h y 0).2).moorePath_trans
+        (ih hF.finTail hL.finTail fun y ↦ forall_tail_mem (h y)) _
 
 /-- **A broken Moore path with equal durations, on its `i`-th arc.** If every arc is run in time
 `c`, then at time `i * c + τ`, for `τ ≤ c`, the broken Moore path is at time `τ` of the
@@ -269,10 +275,10 @@ private theorem brokenPathMap_apply_of_lt {n : ℕ} (γ : arcsWithin U (n + 1))
   conv_lhs => rw [hts, ← hlen, ← toUnitPath_apply, toUnitPath_brokenPathMap,
     brokenPath_arcPoint_of_arcsWithin hρ (mem_arcsWithin.1 γ.2) hi]
   rw [hti, brokenMoorePath_apply_mul_add hρ q _ h ⟨i, hi⟩
-    (mul_le_of_le_one_left zero_le (toNNReal_le_one a)), rescale_apply, length_ofUnitPath,
-    one_mul, mul_div_cancel_right₀ _ (div_ne_zero hL (by positivity)), ofUnitPath_apply,
-    coe_toNNReal, projIcc_val, hq (⟨i, hi⟩ : Fin (n + 1)).succ, hq (⟨i, hi⟩ : Fin (n + 1)).castSucc,
-    Fin.val_castSucc, Fin.val_succ]
+    (mul_le_of_le_one_left zero_le (toNNReal_le_one a))]
+  -- Run in time `c = L / (n + 1)`, the interpolating path is at time `a` at time `a c`.
+  simp [hq, rescale_apply, mul_div_cancel_right₀ _ (div_ne_zero hL (by positivity) :
+    L / (n + 1) ≠ 0)]
 
 /-- The broken path at the end of the arc-straightening homotopy of a Moore path `γ` whose arcs
 lie in `U` is the broken Moore path through the vertices `γ.toUnitPath (i / (n + 1))`, `i ≤ n + 1`,
