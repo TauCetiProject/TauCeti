@@ -546,6 +546,93 @@ theorem bijOn_stripDensityNormalization (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 
       (by simpa [stripDensityNormalization_snd_mk_one (hs x).ne'] using hq.2)
     exact ⟨(x, y), ⟨mem_univ _, hy⟩, Prod.ext (by simpa using hx) hxy⟩
 
+/-- For a density positive on the strip, the area fraction maps `[0, 1)` onto `[0, 1)` and nothing
+else into it. -/
+theorem stripAreaFraction_mem_Ico_iff (hρ : ContinuousOn ρ (univ ×ˢ Icc 0 1))
+    (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) {x : ℝ} :
+    stripAreaFraction ρ x ∈ Ico (0 : ℝ) 1 ↔ x ∈ Ico (0 : ℝ) 1 := by
+  have hu := stripAreaFraction_strictMono hρ (stripColumnMean_pos_of_forall hρ hpos)
+  have h1 := stripAreaFraction_one (annulusArea_pos_of_forall hρ hpos).ne'
+  rw [mem_Ico, mem_Ico]
+  conv_rhs => rw [← hu.le_iff_le, ← hu.lt_iff_lt, stripAreaFraction_zero, h1]
+
+/-- For a density positive on the strip, the normalization maps a point `(x, y)` of the strip to an
+interior height, `0 < v(x, y) < 1`, exactly when `0 < y < 1`. -/
+theorem stripDensityNormalization_snd_mem_Ioo_iff (hρ : Continuous ρ)
+    (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) {p : ℝ × ℝ} (hp : p.2 ∈ Icc (0 : ℝ) 1) :
+    (stripDensityNormalization ρ p).2 ∈ Ioo (0 : ℝ) 1 ↔ p.2 ∈ Ioo (0 : ℝ) 1 := by
+  obtain ⟨x, y⟩ := p
+  have hs := stripColumnMean_pos_of_forall hρ.continuousOn hpos x
+  have hv := strictMonoOn_stripDensityNormalization_snd (by fun_prop) hs
+  have hmem {y : ℝ} (hy : y ∈ Icc (0 : ℝ) 1) : (x, y) ∈ stripDensityNormalizationSource ρ :=
+    univ_prod_Icc_subset_stripDensityNormalizationSource hpos ⟨mem_univ _, hy⟩
+  have h0 := hmem (left_mem_Icc.2 zero_le_one)
+  have h1 := hmem (right_mem_Icc.2 zero_le_one)
+  rw [mem_Ioo, mem_Ioo, ← hv.lt_iff_lt h0 (hmem hp), ← hv.lt_iff_lt (hmem hp) h1]
+  simp only [stripDensityNormalization_snd_mk_zero, stripDensityNormalization_snd_mk_one hs.ne']
+
+/-- For a density positive on the strip, the normalization maps a point of the strip into the
+half-open fundamental domain `[0, 1) × (0, 1)` of the interior of the annulus exactly when the
+point lies there. -/
+theorem stripDensityNormalization_mem_Ico_prod_Ioo_iff (hρ : Continuous ρ)
+    (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) {p : ℝ × ℝ} (hp : p.2 ∈ Icc (0 : ℝ) 1) :
+    stripDensityNormalization ρ p ∈ Ico (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1 ↔
+      p ∈ Ico (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1 := by
+  rw [mem_prod, mem_prod, stripDensityNormalization_fst,
+    stripAreaFraction_mem_Ico_iff hρ.continuousOn hpos,
+    stripDensityNormalization_snd_mem_Ioo_iff hρ hpos hp]
+
+section
+
+variable {hρ₁ : ContDiff ℝ 1 ρ} {hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)}
+
+@[simp]
+theorem stripDensityNormalizationOpenPartialHomeomorph_symm_apply {p : ℝ × ℝ}
+    (hp : p ∈ stripDensityNormalizationSource ρ) :
+    (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hpos).symm
+      (stripDensityNormalization ρ p) = p :=
+  (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hpos).left_inv hp
+
+/-- For a density positive and `1`-periodic on the strip, the strip lies in the target of the
+normalization. -/
+theorem univ_prod_Icc_subset_stripDensityNormalizationOpenPartialHomeomorph_target
+    (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y)) :
+    univ ×ˢ Icc (0 : ℝ) 1 ⊆ (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hpos).target :=
+  fun _ hq ↦
+    have ⟨_, hp, hpq⟩ := (bijOn_stripDensityNormalization hρ₁.continuous.continuousOn hper
+      hpos).surjOn hq
+    hpq ▸ ⟨_, univ_prod_Icc_subset_stripDensityNormalizationSource hpos hp, rfl⟩
+
+/-- For a density positive and `1`-periodic on the strip, the inverse of the normalization maps the
+strip into itself. -/
+theorem mapsTo_stripDensityNormalizationOpenPartialHomeomorph_symm
+    (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y)) :
+    MapsTo (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hpos).symm
+      (univ ×ˢ Icc (0 : ℝ) 1) (univ ×ˢ Icc (0 : ℝ) 1) := by
+  intro q hq
+  obtain ⟨p, hp, rfl⟩ :=
+    (bijOn_stripDensityNormalization hρ₁.continuous.continuousOn hper hpos).surjOn hq
+  rwa [stripDensityNormalizationOpenPartialHomeomorph_symm_apply
+    (univ_prod_Icc_subset_stripDensityNormalizationSource hpos hp)]
+
+/-- On the strip, the inverse of the normalization commutes with the deck translation. -/
+theorem stripDensityNormalizationOpenPartialHomeomorph_symm_add_fst
+    (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y)) {q : ℝ × ℝ}
+    (hq : q.2 ∈ Icc (0 : ℝ) 1) :
+    (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hpos).symm (q + (1, 0)) =
+      (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hpos).symm q + (1, 0) := by
+  have hc := hρ₁.continuous.continuousOn (s := univ ×ˢ Icc 0 1)
+  obtain ⟨p, hp, rfl⟩ :=
+    (bijOn_stripDensityNormalization hc hper hpos).surjOn ⟨mem_univ _, hq⟩
+  have hp' : (p + (1, 0)).2 ∈ Icc (0 : ℝ) 1 := by simpa using hp.2
+  rw [← stripDensityNormalization_add_fst hc hper (annulusArea_pos_of_forall hc hpos).ne' hp.2,
+    stripDensityNormalizationOpenPartialHomeomorph_symm_apply
+      (univ_prod_Icc_subset_stripDensityNormalizationSource hpos ⟨mem_univ _, hp'⟩),
+    stripDensityNormalizationOpenPartialHomeomorph_symm_apply
+      (univ_prod_Icc_subset_stripDensityNormalizationSource hpos hp)]
+
+end
+
 /-! ### Conjugating area-preserving maps -/
 
 /-- **Conjugation by the density normalization.** Let `F` be differentiable at a point `p` of the
