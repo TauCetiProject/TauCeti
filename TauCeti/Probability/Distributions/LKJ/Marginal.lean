@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import TauCeti.Probability.Distributions.Beta.Uniform
 public import TauCeti.Probability.Distributions.LKJ.EntryVariance
 public import TauCeti.Probability.Distributions.LKJ.PartialCorrelation
 public import TauCeti.Probability.Distributions.LKJ.PrincipalBlock
@@ -34,6 +35,8 @@ the independent-Beta construction become marginal laws of `TauCeti.Probability.l
 
 * `TauCeti.Probability.map_coe_apply_lkjMeasure_of_ne` and
   `TauCeti.Probability.map_coe_apply_add_one_div_two_lkjMeasure_of_ne`: off-diagonal entry laws;
+* `TauCeti.Probability.map_coe_apply_lkjMeasure_two_shape_one_of_ne`: in dimension two and at
+  shape one, the free correlation is uniform on `(-1, 1)`;
 * `TauCeti.Probability.map_coe_apply_self_lkjMeasure`: diagonal entry laws;
 * `TauCeti.Probability.variance_coe_apply_lkjMeasure_of_ne` and
   `TauCeti.Probability.covariance_coe_apply_lkjMeasure`: entry variances and covariances.
@@ -136,6 +139,18 @@ theorem map_coe_apply_add_one_div_two_lkjMeasure_of_ne (hη : 0 < η) {i j : Fin
   funext x
   simp only [Function.comp_apply, id_eq]
   ring
+
+/-- In dimension two, every off-diagonal entry of an LKJ matrix of shape one is uniform on
+`(-1, 1)`. -/
+theorem map_coe_apply_lkjMeasure_two_shape_one_of_ne {i j : Fin 2} (hij : i ≠ j) :
+    (lkjMeasure 2 1).map
+        (fun R : selfAdjoint.submodule ℝ (Matrix (Fin 2) (Fin 2) ℝ) ↦
+          (R : Matrix (Fin 2) (Fin 2) ℝ) i j) =
+      uniformMeasure (-1) 1 := by
+  rw [map_coe_apply_lkjMeasure_of_ne one_pos hij]
+  norm_num [betaMeasure_one_one]
+  convert map_uniformMeasure_affine (by norm_num : (-1 : ℝ) < 1) using 1
+  norm_num
 
 /-- **Diagonal entries of LKJ matrices.** For `η > 0`, every diagonal entry of an LKJ matrix
 is almost surely one, so its law is the Dirac mass at one. -/

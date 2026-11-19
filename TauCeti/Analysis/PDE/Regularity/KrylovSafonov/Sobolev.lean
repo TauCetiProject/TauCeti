@@ -7,19 +7,31 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.PowerDecay
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+public import TauCeti.Analysis.Sobolev.Wkp.PreciseRepresentative
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Sobolev
+import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.LocalMaximumPrinciple
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.Holder
+import TauCeti.Analysis.Sobolev.Wkp.InteriorMorrey
 import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube.Euclidean
+import TauCeti.Topology.Order.OrderClosed
 
 /-!
-# Power decay for strong supersolutions
+# Krylov–Safonov estimates for strong solutions
 
-The Krylov–Safonov power decay `TauCeti.PDE.exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul`
-is proved for classical supersolutions: functions `C²` in a ball satisfying `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` at
-every point. Equations with measurable coefficients have, in general, only strong solutions:
-functions `u ∈ W^{2,n}`, `n` the dimension, with a continuous representative `ū`, satisfying the
-inequality almost everywhere with the weak Hessian `D²u`. This file proves the power decay for
-them, by approximation with the classical supersolutions of
-`TauCeti.PDE.exists_contDiff_div_le_and_sum_mul_fderiv_fderiv_le_of_wkp`, which needs no
+The Krylov–Safonov power decay `TauCeti.PDE.exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul`,
+the local maximum principle `TauCeti.PDE.exists_le_mul_rpow_mul_eLpNorm_posPart_add` and the
+interior Hölder estimate `TauCeti.PDE.exists_holderOnWith_of_abs_sum_mul_fderiv_fderiv_le` are
+proved for classical functions: functions `C²` in a ball satisfying `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f`, `≥ f`,
+respectively `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f`, at every point. Equations with measurable coefficients have,
+in general, only strong solutions: functions `u ∈ W^{2,n}`, `n` the dimension, satisfying the
+inequality almost everywhere with the weak Hessian `D²u`; they are continuous
+(`TauCeti.Wkp.continuousOn_preciseRepresentative`). This file proves these estimates for them, by
+approximation with the smooth functions of
+`TauCeti.PDE.exists_contDiff_div_le_and_sum_mul_fderiv_fderiv_le_of_wkp`,
+`TauCeti.PDE.exists_contDiff_sub_le_and_le_sum_mul_fderiv_fderiv_of_wkp` and
+`TauCeti.PDE.exists_contDiff_abs_sub_le_and_abs_sum_mul_fderiv_fderiv_le_of_wkp`, which need no
 regularity or measurability of the coefficients.
 
 The power decay reads: if `u ≥ 0` is a strong supersolution near the closed ball `B(c, R)`,
@@ -30,8 +42,25 @@ in `B(c, 2 ℓ √n)` and `R ‖f⁺‖_{Lⁿ(B(c, R))} ≤ ε₀ λ`, then
 
 (`TauCeti.PDE.exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp`), for coefficients with
 ellipticity constants `λ ≤ Λ ≤ κ λ` and with `C`, `ε` and `ε₀` depending only on `n` and `κ`. It is
-the step from the measure estimate to the weak Harnack inequality and to the interior Hölder
-estimate of Krylov and Safonov for strong solutions.
+the step from the measure estimate to the weak Harnack inequality.
+
+The Hölder estimate reads: if `|u| ≤ M` and `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f` almost everywhere in
+`B(x₀, 2 r)`, with `f ∈ Lⁿ`, then the precise representative `ū` of `u` satisfies
+
+`|ū x - ū y| ≤ C r^(-α) (M + r ‖f‖_{Lⁿ(B(x₀, 2 r))} / λ) ‖x - y‖^α` for `x, y ∈ B(x₀, r)`
+
+(`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradient_le`), with
+`0 < α ≤ 1` and `C` depending only on `n` and `κ`. This is the interior Hölder estimate of Krylov
+and Safonov for strong solutions.
+
+The local maximum principle reads: if `u` is a strong subsolution, `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≥ f`, near the
+closed ball `closedBall c R`, then for every `p > 0`, with `B = B(c, R)`,
+
+`ū x ≤ C (R^(-n/p) ‖ū⁺‖_{Lᵖ(B)} + R ‖f⁻‖_{Lⁿ(B)} / λ)` for `x ∈ B(c, R / 2)`
+
+(`TauCeti.PDE.exists_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp`), with `C` depending only on `n`,
+`κ` and `p`. Together with the weak Harnack inequality it gives the Harnack inequality for strong
+solutions.
 
 ## The argument
 
@@ -41,17 +70,39 @@ power decay. It is nonnegative on the closed ball and at most `1` where `ū ≤ 
 `Q₀ ⊆ closedBall c R`, `w ≥ ū / (1 + 3 ζ)`, so `{ū ≥ t} ∩ Q₀` lies in the superlevel set of `w` at
 `t / (1 + 3 ζ)`. Letting `ζ → 0` gives the bound at `t`.
 
+For the Hölder estimate, an almost-everywhere bound `|u| ≤ M` holds everywhere for the continuous
+representative `ū`. Let `x, y ∈ B(x₀, r)`. When `‖x - y‖ ≥ r / 4`, the bound `|ū| ≤ M` suffices.
+Otherwise take, for `η > 0`, a smooth `v` within `η` of `ū` on `closedBall x (r / 2)` whose
+principal part is within `e` of that of `u` almost everywhere on `B(x, r / 2)`, with
+`‖e‖_{Lⁿ} ≤ η`. Then `|v| ≤ M + η` there, and `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼv|` is bounded at every point by a
+function equal to `f + e` almost everywhere. So the classical estimate on `B(x, r / 2)` bounds
+`|v x - v y|`, and `|ū x - ū y|` up to `2 η`. Letting `η → 0` gives the bound.
+
+For the local maximum principle, given `ε > 0` take a smooth classical subsolution `w` with
+`ū - ε ≤ w ≤ ū` on `closedBall c R` and right-hand side within `ε` of `f⁻` in `Lⁿ(B)`. Then
+`w⁺ ≤ ū⁺`, so the classical estimate for `w` bounds `ū x ≤ w x + ε` by the claimed right-hand side
+up to a multiple of `ε`.
+
 ## Main declarations
 
 * `TauCeti.PDE.exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp`: the power decay
   `|{ū ≥ t} ∩ Q₀| ≤ C t^(-ε) |Q₀|` for strong supersolutions.
+* `TauCeti.PDE.exists_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp`: the local maximum principle for
+  strong subsolutions.
+* `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradient_le`:
+  the interior Hölder estimate of Krylov and Safonov for `W^{2,n}` functions with
+  `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f`.
+* `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_sum_mul_iteratedGradient_eq`: the
+  same estimate for strong solutions of `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu = f`.
 
 ## References
 
 * D. Gilbarg and N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Section 9.7 (the Krylov–Safonov estimates for `W^{2,n}` solutions).
+  Section 9.7 (the Krylov–Safonov estimates for `W^{2,n}` solutions), Corollary 9.24.
+* D. Gilbarg and N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
+  Theorem 9.20 (the local maximum principle).
 * L. A. Caffarelli and X. Cabré, *Fully Nonlinear Elliptic Equations*, AMS Colloquium
-  Publications **43** (1995), Lemma 4.6.
+  Publications **43** (1995), Lemma 4.6 and Proposition 4.10.
 -/
 
 public section
@@ -59,7 +110,7 @@ public section
 noncomputable section
 
 open Filter Metric MeasureTheory Set TopologicalSpace Topology
-open scoped ENNReal Gradient
+open scoped ENNReal Gradient NNReal
 
 namespace TauCeti
 
@@ -73,15 +124,12 @@ private theorem le_ofReal_mul_rpow_neg_mul_of_forall_div {C ε t : ℝ} (ht : 0 
     {m V : ℝ≥0∞} (hV : V ≠ ∞)
     (h : ∀ ζ : ℝ, 0 < ζ → m ≤ ENNReal.ofReal (C * (t / (1 + 3 * ζ)) ^ (-ε)) * V) :
     m ≤ ENNReal.ofReal (C * t ^ (-ε)) * V := by
-  have hlim : Tendsto (fun ζ : ℝ ↦ ENNReal.ofReal (C * (t / (1 + 3 * ζ)) ^ (-ε)) * V)
-      (𝓝[>] 0) (𝓝 (ENNReal.ofReal (C * t ^ (-ε)) * V)) := by
-    refine ENNReal.Tendsto.mul_const ?_ (Or.inr hV)
-    refine (ENNReal.continuous_ofReal.tendsto _).comp (tendsto_nhdsWithin_of_tendsto_nhds ?_)
-    have h : ContinuousAt (fun ζ : ℝ ↦ C * (t / (1 + 3 * ζ)) ^ (-ε)) 0 := by
-      refine continuousAt_const.mul (ContinuousAt.rpow_const ?_ (Or.inl (by simp [ht.ne'])))
-      exact continuousAt_const.div (by fun_prop) (by norm_num)
-    simpa using h.tendsto
-  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall fun ζ hζ ↦ h ζ hζ)
+  have hφ : ContinuousAt (fun ζ : ℝ ↦ C * (t / (1 + 3 * ζ)) ^ (-ε)) 0 := by
+    refine continuousAt_const.mul (ContinuousAt.rpow_const ?_ (Or.inl (by simp [ht.ne'])))
+    exact continuousAt_const.div (by fun_prop) (by norm_num)
+  have hg := (ENNReal.continuous_mul_const hV).continuousAt.comp
+    (ENNReal.continuous_ofReal.continuousAt.comp hφ)
+  simpa using hg.continuousWithinAt.le_of_forall_gt_le h
 
 /-- **Power decay of the superlevel sets of a strong supersolution** (Gilbarg–Trudinger,
 Section 9.7; Caffarelli–Cabré, Lemma 4.6). Let `κ > 0`. There are constants `C > 0`, `ε > 0` and
@@ -164,6 +212,256 @@ theorem exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp
   -- On the cube, `w ≥ ū / σ`.
   rintro y ⟨hy1, hy2⟩
   exact ⟨(div_le_div_of_nonneg_right hy1 hσ.le).trans (hwū y (hQ hy2)).1, hy2⟩
+
+/-- **The local maximum principle for strong subsolutions** (Gilbarg–Trudinger, Theorem 9.20,
+without lower-order terms). Let `p > 0` and `κ` be given. There is a constant `C`, depending only
+on the dimension `n ≥ 1`, on `κ` and on `p`, with the following property. Let `Ω` be an open set
+containing `closedBall c R`, let the coefficient matrix `a` be uniformly elliptic on `B = B(c, R)`
+with constants `λ ≤ Λ ≤ κ λ`, and let `u ∈ W^{2,n}(Ω)` have a representative `ū` continuous on
+`Ω`, with `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≥ f` almost everywhere in `B` for the weak Hessian and `f⁻ ∈ Lⁿ(B)`. Then
+for every `x ∈ B(c, R / 2)`,
+
+`ū x ≤ C (R^(-n/p) ‖ū⁺‖_{Lᵖ(B)} + R ‖f⁻‖_{Lⁿ(B)} / λ)`.
+
+The constant is that of the classical estimate
+`TauCeti.PDE.exists_le_mul_rpow_mul_eLpNorm_posPart_add`. The coefficients need not be measurable
+or symmetric. -/
+theorem exists_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp
+    [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] {κ p : ℝ} (hp : 0 < p) :
+    ∃ C : ℝ, 0 < C ∧
+      ∀ ⦃lam Lam R : ℝ⦄ ⦃c : EuclideanSpace ℝ ι⦄ ⦃Ω : Opens (EuclideanSpace ℝ ι)⦄
+        ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃ū f : EuclideanSpace ℝ ι → ℝ⦄
+        (u : Wkp volume Ω (Fintype.card ι) 2), closedBall c R ⊆ Ω →
+        UniformlyEllipticOn (ball c R) a lam Lam → Lam ≤ κ * lam →
+        ContinuousOn ū Ω → (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict Ω] ū →
+        (∀ᵐ x ∂volume.restrict (ball c R),
+          f x ≤ ∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i) →
+        MemLp (fun x ↦ (f x)⁻) (Fintype.card ι) (volume.restrict (ball c R)) →
+        ∀ x ∈ ball c (R / 2), ū x ≤ C * (R ^ (-(Fintype.card ι : ℝ) / p) *
+          (eLpNorm (fun y ↦ (ū y)⁺) (ENNReal.ofReal p) (volume.restrict (ball c R))).toReal +
+          R / lam * (eLpNorm (fun y ↦ (f y)⁻) (Fintype.card ι)
+            (volume.restrict (ball c R))).toReal) := by
+  have : Nonempty ι := Fintype.card_pos_iff.1 (by
+    have h : (1 : ℝ≥0∞) ≤ Fintype.card ι := Fact.out
+    exact_mod_cast h)
+  obtain ⟨C, hC, H⟩ := exists_le_mul_rpow_mul_eLpNorm_posPart_add (ι := ι) (κ := κ) hp
+  refine ⟨C, hC, fun lam Lam R c Ω a ū f u hRΩ ha hLam hcont hū hsub hf x hx ↦ ?_⟩
+  set n := Fintype.card ι
+  have hR : 0 < R := by linarith [pos_of_mem_ball hx]
+  have hlam : 0 < lam := ha.pos
+  set B := C * (R / lam) + 1 with hBdef
+  have hB : 0 < B := by positivity
+  -- `ū⁺` is continuous on the closed ball, so it lies in `Lᵖ(B)`.
+  have hūp : MemLp (fun y ↦ (ū y)⁺) (ENNReal.ofReal p) (volume.restrict (ball c R)) :=
+    ContinuousOn.memLp_restrict_of_subset_isCompact
+      (continuous_posPart.comp_continuousOn (hcont.mono hRΩ)) (isCompact_closedBall c R)
+      measurableSet_ball ball_subset_closedBall _
+  -- For every `ε > 0` the classical estimate, applied to a smooth `w` with `ū - ε / B ≤ w ≤ ū`
+  -- on the closed ball, bounds `ū x` up to `ε`.
+  refine le_of_forall_pos_le_add fun ε hε ↦ ?_
+  obtain ⟨w, g, hw, hwū, hwg, hg⟩ :=
+    exists_contDiff_sub_le_and_le_sum_mul_fderiv_fderiv_of_wkp (ENNReal.natCast_ne_top n) u
+      hcont hū (isCompact_closedBall c R) hRΩ ball_subset_closedBall
+      ((ae_restrict_mem measurableSet_ball).mono fun x hx ↦ ha.abs_apply_le hx) hsub
+      (div_pos hε hB)
+  have hw2 : ContDiff ℝ 2 w := contDiff_infty.1 hw 2
+  have hgf : eLpNorm (fun x ↦ (f x)⁻) n (volume.restrict (ball c R)) +
+      ENNReal.ofReal (ε / B) ≠ ⊤ := ENNReal.add_ne_top.2 ⟨hf.eLpNorm_ne_top, ENNReal.ofReal_ne_top⟩
+  have hcl := H ha hLam hw2.continuous.continuousOn hw2.contDiffOn hwg
+    (hg.trans_lt hgf.lt_top) x hx
+  -- `w⁺ ≤ ū⁺` on the ball, and the right-hand side of `w` is within `ε / B` of `f⁻` in `Lⁿ`.
+  have hwp : (eLpNorm (fun y ↦ (w y)⁺) (ENNReal.ofReal p) (volume.restrict (ball c R))).toReal ≤
+      (eLpNorm (fun y ↦ (ū y)⁺) (ENNReal.ofReal p) (volume.restrict (ball c R))).toReal := by
+    refine ENNReal.toReal_mono hūp.eLpNorm_ne_top (eLpNorm_mono_ae
+      (continuous_posPart.comp hw2.continuous).aestronglyMeasurable ?_)
+    filter_upwards [ae_restrict_mem measurableSet_ball] with y hy
+    rw [Real.norm_of_nonneg (posPart_nonneg _), Real.norm_of_nonneg (posPart_nonneg _)]
+    exact posPart_mono (hwū y (ball_subset_closedBall hy)).2
+  have hgF : (eLpNorm (fun x ↦ (g x)⁻) n (volume.restrict (ball c R))).toReal ≤
+      (eLpNorm (fun x ↦ (f x)⁻) n (volume.restrict (ball c R))).toReal + ε / B := by
+    refine (ENNReal.toReal_mono hgf hg).trans_eq ?_
+    rw [ENNReal.toReal_add hf.eLpNorm_ne_top ENNReal.ofReal_ne_top,
+      ENNReal.toReal_ofReal (div_pos hε hB).le]
+  have hux : ū x ≤ w x + ε / B := by
+    linarith [(hwū x (ball_subset_closedBall (ball_subset_ball (by linarith) hx))).1]
+  calc ū x ≤ C * (R ^ (-(n : ℝ) / p) *
+          (eLpNorm (fun y ↦ (ū y)⁺) (ENNReal.ofReal p) (volume.restrict (ball c R))).toReal +
+          R / lam * ((eLpNorm (fun y ↦ (f y)⁻) n (volume.restrict (ball c R))).toReal +
+            ε / B)) + ε / B := by
+        refine hux.trans (add_le_add_left (hcl.trans ?_) _)
+        gcongr
+    _ = _ := by
+        have hBε : B * (ε / B) = ε := mul_div_cancel₀ _ hB.ne'
+        linear_combination hBε - ε / B * hBdef
+
+/-- The interior Hölder estimate of Krylov and Safonov for a `W^{2,n}(Ω)` function with a
+continuous representative `ū`, on a ball whose closure lies in `Ω`, with `|ū| ≤ M` on the doubled
+ball. This is the classical estimate
+`TauCeti.PDE.exists_holderOnWith_of_abs_sum_mul_fderiv_fderiv_le`, applied to the smooth
+approximations of `TauCeti.PDE.exists_contDiff_abs_sub_le_and_abs_sum_mul_fderiv_fderiv_le_of_wkp`,
+in the limit. -/
+private theorem exists_holderOnWith_of_closedBall_subset [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))]
+    {κ : ℝ} (hκ : 0 < κ) :
+    ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧
+      ∀ ⦃lam Lam r M : ℝ⦄ ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃Ω : Opens (EuclideanSpace ℝ ι)⦄
+        ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃ū f : EuclideanSpace ℝ ι → ℝ⦄
+        (u : Wkp volume Ω (Fintype.card ι) 2), 0 < r → closedBall x₀ (2 * r) ⊆ Ω →
+        UniformlyEllipticOn (ball x₀ (2 * r)) a lam Lam → Lam ≤ κ * lam → ContinuousOn ū Ω →
+        (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict Ω] ū →
+        (∀ x ∈ ball x₀ (2 * r), |ū x| ≤ M) →
+        (∀ᵐ x ∂volume.restrict (ball x₀ (2 * r)),
+          |∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i| ≤ f x) →
+        MemLp f (Fintype.card ι) (volume.restrict (ball x₀ (2 * r))) →
+        HolderOnWith (C * r ^ (-(α : ℝ)) * (M + r * (eLpNorm f (Fintype.card ι)
+          (volume.restrict (ball x₀ (2 * r)))).toReal / lam)).toNNReal α ū (ball x₀ r) := by
+  have : Nonempty ι := Fintype.card_pos_iff.1 (by
+    have h : (1 : ℝ≥0∞) ≤ Fintype.card ι := Fact.out
+    exact_mod_cast h)
+  obtain ⟨α, C, hα0, hα1, hC, H⟩ := exists_holderOnWith_of_abs_sum_mul_fderiv_fderiv_le (ι := ι) hκ
+  refine ⟨α, C, hα0, hα1, hC, ?_⟩
+  intro lam Lam r M x₀ Ω a ū f u hr hΩ ha hLam hcont hū hM hu hf
+  set n := Fintype.card ι
+  set B := ball x₀ (2 * r)
+  set F := (eLpNorm f n (volume.restrict B)).toReal
+  have hlam : 0 < lam := ha.pos
+  have hF : 0 ≤ F := ENNReal.toReal_nonneg
+  have hM0 : 0 ≤ M := (abs_nonneg _).trans (hM x₀ (mem_ball_self (by linarith)))
+  refine HolderOnWith.of_dist_le fun x hx y hy ↦ ?_
+  refine le_trans ?_ (mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal _) (by positivity))
+  -- For every `η > 0`, the classical estimate for a smooth `v` within `η` of `ū`; then `η → 0`.
+  refine le_of_forall_pos_mul_le (C := 2 + C * r ^ (-(α : ℝ)) * (1 + r / lam) *
+    dist x y ^ (α : ℝ)) fun η hη ↦ ?_
+  obtain ⟨v, g, hv, hvū, hvg, hg⟩ :=
+    exists_contDiff_abs_sub_le_and_abs_sum_mul_fderiv_fderiv_le_of_wkp
+      (ENNReal.natCast_ne_top n) u hcont hū (isCompact_closedBall x₀ (2 * r)) hΩ
+      ball_subset_closedBall
+      ((ae_restrict_mem measurableSet_ball).mono fun z hz ↦ ha.abs_apply_le hz) hu hη
+  have hgF : eLpNorm g n (volume.restrict B) ≤ ENNReal.ofReal (F + η) := by
+    rw [ENNReal.ofReal_add hF hη.le, ENNReal.ofReal_toReal hf.eLpNorm_ne_top]
+    exact hg
+  have hvM : ∀ z ∈ B, |v z| ≤ M + η := fun z hz ↦ by
+    have h1 := hvū z (ball_subset_closedBall hz)
+    have h2 := hM z hz
+    linarith [abs_sub_abs_le_abs_sub (v z) (ū z)]
+  have hHv := (H hr ha hLam (contDiff_infty.1 hv 2).contDiffOn hvM hvg
+    (hgF.trans_lt ENNReal.ofReal_lt_top)).dist_le hx hy
+  rw [Real.coe_toNNReal _ (by positivity)] at hHv
+  have hxy : ∀ z ∈ ball x₀ r, dist (ū z) (v z) ≤ η := fun z hz ↦ by
+    rw [dist_comm]
+    exact hvū z (ball_subset_closedBall (ball_subset_ball (by linarith) hz))
+  calc dist (ū x) (ū y) ≤ dist (ū x) (v x) + dist (v x) (v y) + dist (v y) (ū y) :=
+        dist_triangle4 _ _ _ _
+    _ ≤ η + C * r ^ (-(α : ℝ)) * (M + η + r * (F + η) / lam) * dist x y ^ (α : ℝ) + η := by
+        gcongr
+        · exact hxy x hx
+        · exact hHv.trans (by gcongr; exact ENNReal.toReal_le_of_le_ofReal (by positivity) hgF)
+        · rw [dist_comm]
+          exact hxy y hy
+    _ = _ := by ring
+
+/-- **The interior Hölder estimate of Krylov and Safonov for strong solutions**
+(Gilbarg–Trudinger, Corollary 9.24; Caffarelli–Cabré, Proposition 4.10). Let `κ > 0`. There are
+`0 < α ≤ 1` and `C > 0`, depending only on the dimension `n ≥ 1` and on `κ`, with the following
+property. Let `a` be uniformly elliptic on `B(x₀, 2 r)` with constants `λ ≤ Λ ≤ κ λ`, let `Ω` be an
+open set containing `B(x₀, 2 r)`, and let `u ∈ W^{2,n}(Ω)` satisfy `|u| ≤ M` and
+`|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f` almost everywhere in `B(x₀, 2 r)`, for the weak Hessian and some
+`f ∈ Lⁿ(B(x₀, 2 r))`. Then the precise representative `ū` of `u` is `α`-Hölder on `B(x₀, r)` with
+constant `C r^(-α) (M + r ‖f‖_{Lⁿ(B(x₀, 2 r))} / λ)`.
+
+The coefficients need no regularity, not even measurability, and need not be symmetric. -/
+theorem exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradient_le
+    [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] {κ : ℝ} (hκ : 0 < κ) :
+    ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧
+      ∀ ⦃lam Lam r M : ℝ⦄ ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃Ω : Opens (EuclideanSpace ℝ ι)⦄
+        ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃f : EuclideanSpace ℝ ι → ℝ⦄
+        (u : Wkp volume Ω (Fintype.card ι) 2), 0 < r → ball x₀ (2 * r) ⊆ Ω →
+        UniformlyEllipticOn (ball x₀ (2 * r)) a lam Lam → Lam ≤ κ * lam →
+        (∀ᵐ x ∂volume.restrict (ball x₀ (2 * r)), |Wkp.value 2 u x| ≤ M) →
+        (∀ᵐ x ∂volume.restrict (ball x₀ (2 * r)),
+          |∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i| ≤ f x) →
+        MemLp f (Fintype.card ι) (volume.restrict (ball x₀ (2 * r))) →
+        HolderOnWith (C * r ^ (-(α : ℝ)) * (M + r * (eLpNorm f (Fintype.card ι)
+          (volume.restrict (ball x₀ (2 * r)))).toReal / lam)).toNNReal α
+          (MeasureTheory.preciseRepresentative volume (Wkp.value 2 u)) (ball x₀ r) := by
+  obtain ⟨α, C, hα0, hα1, hC, H⟩ := exists_holderOnWith_of_closedBall_subset (ι := ι) hκ
+  refine ⟨α, (C + 2) * 4 ^ (α : ℝ), hα0, hα1, by positivity, ?_⟩
+  intro lam Lam r M x₀ Ω a f u hr hΩ ha hLam hM hu hf
+  set B := ball x₀ (2 * r)
+  set ū := MeasureTheory.preciseRepresentative volume (Wkp.value 2 u)
+  set Q := M + r * (eLpNorm f (Fintype.card ι) (volume.restrict B)).toReal / lam
+  have hlam : 0 < lam := ha.pos
+  have hMū (x : EuclideanSpace ℝ ι) (hx : x ∈ B) : |ū x| ≤ M :=
+    Wkp.abs_preciseRepresentative_le (by simp) u isOpen_ball hΩ hM hx
+  have hM0 : 0 ≤ M := (abs_nonneg _).trans (hMū x₀ (mem_ball_self (by linarith)))
+  have hQ : 0 ≤ Q := add_nonneg hM0 (by positivity)
+  -- Points of `B(x₀, r)` closer than `s = r / 4` are compared by the estimate on `B(x, s)`, where
+  -- `closedBall x (2 s) ⊆ B`; farther points by `|ū| ≤ M`. Both give the bound
+  -- `(C + 2) Q s^(-α) ‖x - y‖^α`, and `s^(-α) = 4^α r^(-α)`.
+  set s := r / 4 with hs_def
+  have hs : 0 < s := by positivity
+  refine HolderOnWith.of_dist_le fun x hx y hy ↦ ?_
+  refine le_trans ?_ (mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal _) (by positivity))
+  suffices h : dist (ū x) (ū y) ≤ (C + 2) * Q * (s ^ (-(α : ℝ)) * dist x y ^ (α : ℝ)) by
+    refine h.trans_eq ?_
+    rw [hs_def, Real.div_rpow hr.le (by norm_num), Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 4),
+      div_inv_eq_mul]
+    ring
+  have hQd : 0 ≤ Q * (s ^ (-(α : ℝ)) * dist x y ^ (α : ℝ)) := by positivity
+  rcases lt_or_ge (dist x y) s with hd | hd
+  · have hxB : closedBall x (2 * s) ⊆ B := fun z hz ↦ mem_ball.2 (by
+      linarith [dist_triangle z x x₀, mem_closedBall.1 hz, mem_ball.1 hx, hs_def])
+    have hSB : ball x (2 * s) ⊆ B := ball_subset_closedBall.trans hxB
+    have h0 := (H u hs (hxB.trans hΩ) (ha.mono_set hSB) hLam
+      (Wkp.continuousOn_preciseRepresentative (by simp) u) (Wkp.ae_eq_preciseRepresentative 2 u)
+      (fun z hz ↦ hMū z (hSB hz)) (ae_restrict_of_ae_restrict_of_subset hSB hu)
+      (hf.mono_measure (Measure.restrict_mono hSB le_rfl))).dist_le (mem_ball_self hs)
+      (by rwa [mem_ball, dist_comm])
+    rw [Real.coe_toNNReal _ (mul_nonneg (by positivity) (add_nonneg hM0 (by positivity)))] at h0
+    have h1 := ENNReal.toReal_mono hf.eLpNorm_ne_top
+      (eLpNorm_mono_measure f (Measure.restrict_mono hSB le_rfl))
+    calc _ ≤ C * s ^ (-(α : ℝ)) * Q * dist x y ^ (α : ℝ) :=
+          h0.trans (by gcongr; exact add_le_add_right (div_le_div_of_nonneg_right
+            (mul_le_mul (by linarith) h1 ENNReal.toReal_nonneg hr.le) hlam.le) M)
+      _ ≤ _ := by nlinarith
+  · -- At distance at least `s`, `|ū x - ū y| ≤ 2 M ≤ 2 Q ≤ 2 Q (‖x - y‖ / s)^α`.
+    have h1 : 1 ≤ s ^ (-(α : ℝ)) * dist x y ^ (α : ℝ) := by
+      rw [Real.rpow_neg hs.le, inv_mul_eq_div, ← Real.div_rpow dist_nonneg hs.le]
+      exact Real.one_le_rpow ((one_le_div hs).2 hd) α.coe_nonneg
+    have hM1 := hMū x (ball_subset_ball (by linarith) hx)
+    have hM2 := hMū y (ball_subset_ball (by linarith) hy)
+    have hMQ : M ≤ Q := le_add_of_nonneg_right (by positivity)
+    rw [Real.dist_eq]
+    nlinarith [abs_sub (ū x) (ū y), mul_nonneg hC.le hQd]
+
+/-- **The interior Hölder estimate of Krylov and Safonov for strong solutions**
+(Gilbarg–Trudinger, Corollary 9.24). Let `κ > 0`. There are `0 < α ≤ 1` and `C > 0`, depending
+only on the dimension `n ≥ 1` and on `κ`, with the following property. Let `a` be uniformly
+elliptic on `B(x₀, 2 r)` with constants `λ ≤ Λ ≤ κ λ`, let `Ω` be an open set containing
+`B(x₀, 2 r)`, and let `u ∈ W^{2,n}(Ω)` be a strong solution of `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu = f` in
+`B(x₀, 2 r)`, with `f ∈ Lⁿ(B(x₀, 2 r))` and `|u| ≤ M` almost everywhere there. Then the precise
+representative `ū` of `u` is `α`-Hölder on `B(x₀, r)` with constant
+`C r^(-α) (M + r ‖f‖_{Lⁿ(B(x₀, 2 r))} / λ)`.
+
+The coefficients need no regularity, not even measurability, and need not be symmetric. -/
+theorem exists_holderOnWith_preciseRepresentative_of_sum_mul_iteratedGradient_eq
+    [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] {κ : ℝ} (hκ : 0 < κ) :
+    ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧
+      ∀ ⦃lam Lam r M : ℝ⦄ ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃Ω : Opens (EuclideanSpace ℝ ι)⦄
+        ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃f : EuclideanSpace ℝ ι → ℝ⦄
+        (u : Wkp volume Ω (Fintype.card ι) 2), 0 < r → ball x₀ (2 * r) ⊆ Ω →
+        UniformlyEllipticOn (ball x₀ (2 * r)) a lam Lam → Lam ≤ κ * lam →
+        (∀ᵐ x ∂volume.restrict (ball x₀ (2 * r)), |Wkp.value 2 u x| ≤ M) →
+        (∀ᵐ x ∂volume.restrict (ball x₀ (2 * r)),
+          ∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i = f x) →
+        MemLp f (Fintype.card ι) (volume.restrict (ball x₀ (2 * r))) →
+        HolderOnWith (C * r ^ (-(α : ℝ)) * (M + r * (eLpNorm f (Fintype.card ι)
+          (volume.restrict (ball x₀ (2 * r)))).toReal / lam)).toNNReal α
+          (MeasureTheory.preciseRepresentative volume (Wkp.value 2 u)) (ball x₀ r) := by
+  obtain ⟨α, C, hα0, hα1, hC, H⟩ :=
+    exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradient_le (ι := ι) hκ
+  refine ⟨α, C, hα0, hα1, hC, fun lam Lam r M x₀ Ω a f u hr hΩ ha hLam hM heq hf ↦ ?_⟩
+  rw [← eLpNorm_norm f hf.aestronglyMeasurable]
+  exact H u hr hΩ ha hLam hM (heq.mono fun x hx ↦ hx.symm ▸ (Real.norm_eq_abs _).ge) hf.norm
 
 end PDE
 

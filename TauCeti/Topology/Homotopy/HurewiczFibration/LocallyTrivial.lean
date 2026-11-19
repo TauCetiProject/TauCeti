@@ -13,8 +13,9 @@ public import TauCeti.Topology.Homotopy.HurewiczFibration.Numerable
 
 Every local trivialization `e : Bundle.Trivialization F p` makes the restriction
 `p ⁻¹' e.baseSet → e.baseSet` a Hurewicz fibration
-(`Bundle.Trivialization.isHurewiczFibration_restrict`). Combining this with Dold's local-to-global
-theorem over numerable covers (`TauCeti.isHurewiczFibration_of_partitionOfUnity`) shows that:
+(`Bundle.Trivialization.isHurewiczFibration_restrictPreimage`). Combining this with Dold's
+local-to-global theorem over numerable covers (`TauCeti.isHurewiczFibration_of_partitionOfUnity`)
+shows that:
 
 * a map `p : E → B` equipped with an explicit numerable trivializing cover — a family of
   trivializations `(e i : Bundle.Trivialization F p)` and a partition of unity
@@ -32,9 +33,9 @@ assumption on them, and the fibre `F`, total space `E`, and base `B` may lie in 
 
 ## Main results
 
-* `Bundle.Trivialization.hasHomotopyLiftingProperty_restrict` and
-  `Bundle.Trivialization.isHurewiczFibration_restrict`: the restriction of `p` over the base set of
-  a local trivialization is a Hurewicz fibration.
+* `Bundle.Trivialization.hasHomotopyLiftingProperty_restrictPreimage` and
+  `Bundle.Trivialization.isHurewiczFibration_restrictPreimage`: the restriction of `p` over the base
+  set of a local trivialization is a Hurewicz fibration.
 * `TauCeti.hasHomotopyLiftingProperty_of_partitionOfUnity_trivialization` and
   `TauCeti.isHurewiczFibration_of_partitionOfUnity_trivialization`: a map with an explicit
   numerable trivializing cover is a Hurewicz fibration.
@@ -65,22 +66,20 @@ variable {E : Type u} {B : Type v} {F : Type uF}
 
 /-- Over the base set of a local trivialization `e`, the restricted projection
 `p ⁻¹' e.baseSet → e.baseSet` is a Hurewicz fibration. -/
-theorem isHurewiczFibration_restrict (e : Trivialization F p) :
-    TauCeti.IsHurewiczFibration.{w}
-      (Set.MapsTo.restrict p (p ⁻¹' e.baseSet) e.baseSet (mapsTo_preimage p e.baseSet)) := by
+theorem isHurewiczFibration_restrictPreimage (e : Trivialization F p) :
+    TauCeti.IsHurewiczFibration.{w} (e.baseSet.restrictPreimage p) := by
   have heq : (Prod.fst : e.baseSet × F → e.baseSet) ∘ e.preimageHomeomorph subset_rfl =
-      Set.MapsTo.restrict p (p ⁻¹' e.baseSet) e.baseSet (mapsTo_preimage p e.baseSet) := by
+      e.baseSet.restrictPreimage p := by
     ext x
-    simp [Set.MapsTo.restrict, Subtype.map]
+    simp
   exact heq ▸ (TauCeti.isHurewiczFibration_fst F).comp_homeomorph (e.preimageHomeomorph subset_rfl)
 
 /-- Over the base set of a local trivialization `e`, the restricted projection
 `p ⁻¹' e.baseSet → e.baseSet` has the homotopy lifting property with respect to every space `A`. -/
-theorem hasHomotopyLiftingProperty_restrict (e : Trivialization F p) (A : Type w)
+theorem hasHomotopyLiftingProperty_restrictPreimage (e : Trivialization F p) (A : Type w)
     [TopologicalSpace A] :
-    TauCeti.HasHomotopyLiftingProperty
-      (Set.MapsTo.restrict p (p ⁻¹' e.baseSet) e.baseSet (mapsTo_preimage p e.baseSet)) A :=
-  e.isHurewiczFibration_restrict.hasHomotopyLiftingProperty A
+    TauCeti.HasHomotopyLiftingProperty (e.baseSet.restrictPreimage p) A :=
+  e.isHurewiczFibration_restrictPreimage.hasHomotopyLiftingProperty A
 
 end Bundle.Trivialization
 
@@ -99,7 +98,7 @@ theorem hasHomotopyLiftingProperty_of_partitionOfUnity_trivialization
     (hρ : ∀ i, support (ρ i) ⊆ (e i).baseSet) (A : Type w) [TopologicalSpace A] :
     HasHomotopyLiftingProperty p A :=
   HasHomotopyLiftingProperty.of_partitionOfUnity ρ hρ
-    fun i W _ ↦ (e i).hasHomotopyLiftingProperty_restrict W
+    fun i W _ ↦ (e i).hasHomotopyLiftingProperty_restrictPreimage W
 
 /-- A map equipped with an explicit numerable trivializing cover — a family of trivializations
 `e i` and a partition of unity `ρ` on `B` with `support (ρ i) ⊆ (e i).baseSet` — is a Hurewicz
@@ -112,7 +111,7 @@ theorem isHurewiczFibration_of_partitionOfUnity_trivialization
     let ⟨i, hi⟩ := ρ.exists_pos (mem_univ (p x))
     (e i).continuousAt_proj ((e i).mem_source.2 (hρ i hi.ne'))
   exact isHurewiczFibration_of_partitionOfUnity hp ρ hρ
-    fun i ↦ (e i).isHurewiczFibration_restrict
+    fun i ↦ (e i).isHurewiczFibration_restrictPreimage
 
 /-- Convenience form of `TauCeti.isHurewiczFibration_of_partitionOfUnity_trivialization` when `ρ`
 is subordinate to `(e i).baseSet` in the closed-support sense
@@ -133,7 +132,7 @@ theorem hasHomotopyLiftingProperty_of_exists_trivialization
   choose e he using h
   exact HasHomotopyLiftingProperty.of_isOpenCover
     (fun b ↦ (e b).open_baseSet) (fun b ↦ ⟨b, he b⟩)
-    fun b W _ ↦ (e b).hasHomotopyLiftingProperty_restrict W
+    fun b W _ ↦ (e b).hasHomotopyLiftingProperty_restrictPreimage W
 
 /-- Over a normal paracompact base (including every paracompact Hausdorff base), a locally trivial
 map is a Hurewicz fibration. -/
@@ -145,7 +144,7 @@ theorem isHurewiczFibration_of_exists_trivialization
   choose e he using h
   exact isHurewiczFibration_of_isOpenCover hp
     (fun b ↦ (e b).open_baseSet) (fun b ↦ ⟨b, he b⟩)
-    fun b ↦ (e b).isHurewiczFibration_restrict
+    fun b ↦ (e b).isHurewiczFibration_restrictPreimage
 
 end Trivializations
 

@@ -30,6 +30,11 @@ form a complex vector space, and these operations are complex-linear or conjugat
   map as a semilinear map of alternating maps.
 * `ContinuousAlternatingMap.eq_zero_iff_forall_apply_fin_one`: an alternating map of one vector
   vanishes exactly when it vanishes on every vector.
+* `ContinuousAlternatingMap.apply_vecCons_swap`: an alternating map of two vectors changes sign
+  when they are exchanged.
+* `ContinuousAlternatingMap.apply_vecCons_eq_sum_repr`,
+  `ContinuousAlternatingMap.apply_vecCons_eq_sum_repr_fin_four`: a two-form in the coordinates of
+  a basis, and its six-term form on a four-dimensional space.
 * `ContinuousAlternatingMap.compContinuousLinearMap_compContinuousLinearMap`: pulling back along
   `A` and then along `B` is pulling back along `A.comp B`.
 -/
@@ -79,6 +84,66 @@ theorem eq_zero_iff_forall_apply_fin_one {R M N : Type*} [Semiring R]
   ext w
   obtain ⟨v, rfl⟩ : ∃ v, w = ![v] := ⟨w 0, funext fun i ↦ by rw [Fin.fin_one_eq_zero i]; rfl⟩
   exact h v
+
+/-- A continuous alternating map of two vectors changes sign when they are exchanged. -/
+theorem apply_vecCons_swap {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [AddCommGroup N] [Module R N] [TopologicalSpace N]
+    (f : M [⋀^Fin 2]→L[R] N) (v w : M) : f ![w, v] = -f ![v, w] := by
+  simpa using f.map_swap ![v, w] (i := 0) (j := 1) Fin.zero_ne_one
+
+section Coordinates
+
+variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+  [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+
+/-- **A two-form in coordinates.** In the coordinates of a basis `b`, a two-form `ω` is
+`ω(u, v) = ∑ᵢ ∑ⱼ uᵢ vⱼ ω(bᵢ, bⱼ)`. -/
+theorem apply_vecCons_eq_sum_repr {ι : Type*} [Fintype ι] (b : Module.Basis ι R M)
+    (ω : M [⋀^Fin 2]→L[R] N) (u v : M) :
+    ω ![u, v] = ∑ i, ∑ j, (b.repr u i * b.repr v j) • ω ![b i, b j] := by
+  -- `ω` is linear in each argument (`MultilinearMap.toLinearMap`), so expand both in `b`.
+  have h (m : Fin 2 → M) (k : Fin 2) (x : M) :
+      ω (Function.update m k x) = ∑ i, b.repr x i • ω (Function.update m k (b i)) := by
+    simpa [b.sum_repr] using
+      _root_.map_sum (ω.toMultilinearMap.toLinearMap m k) (fun i ↦ b.repr x i • b i) Finset.univ
+  have h₀ (x y z : M) : Function.update ![x, y] 0 z = ![z, y] := by
+    ext k; fin_cases k <;> simp
+  have h₁ (x y z : M) : Function.update ![x, y] 1 z = ![x, z] := by
+    ext k; fin_cases k <;> simp
+  have hu := h ![u, v] 0 u
+  have hv (x : M) := h ![x, v] 1 v
+  simp only [h₀, h₁] at hu hv
+  simp only [hu, hv, Finset.smul_sum, smul_smul]
+
+end Coordinates
+
+section FinFour
+
+variable {R M N : Type*} [Ring R] [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+  [AddCommGroup N] [Module R N] [TopologicalSpace N]
+
+/-- **A two-form on a four-dimensional space in coordinates.** In the coordinates of a basis `b`
+indexed by `Fin 4`, a two-form `ω` is `ω(u, v) = ∑_{i < j} (uᵢ vⱼ - uⱼ vᵢ) ω(bᵢ, bⱼ)`. -/
+theorem apply_vecCons_eq_sum_repr_fin_four (b : Module.Basis (Fin 4) R M)
+    (ω : M [⋀^Fin 2]→L[R] N) (u v : M) :
+    ω ![u, v] =
+      (b.repr u 0 * b.repr v 1 - b.repr u 1 * b.repr v 0) • ω ![b 0, b 1] +
+      (b.repr u 0 * b.repr v 2 - b.repr u 2 * b.repr v 0) • ω ![b 0, b 2] +
+      (b.repr u 0 * b.repr v 3 - b.repr u 3 * b.repr v 0) • ω ![b 0, b 3] +
+      (b.repr u 1 * b.repr v 2 - b.repr u 2 * b.repr v 1) • ω ![b 1, b 2] +
+      (b.repr u 1 * b.repr v 3 - b.repr u 3 * b.repr v 1) • ω ![b 1, b 3] +
+      (b.repr u 2 * b.repr v 3 - b.repr u 3 * b.repr v 2) • ω ![b 2, b 3] := by
+  have hzero : ∀ i, ω ![b i, b i] = 0 := fun i ↦
+    ω.map_eq_zero_of_eq ![b i, b i] (i := 0) (j := 1) rfl Fin.zero_ne_one
+  rw [apply_vecCons_eq_sum_repr b]
+  simp only [Fin.sum_univ_four, hzero, smul_zero, apply_vecCons_swap ω (b 0) (b 1),
+    apply_vecCons_swap ω (b 0) (b 2), apply_vecCons_swap ω (b 0) (b 3),
+    apply_vecCons_swap ω (b 1) (b 2), apply_vecCons_swap ω (b 1) (b 3),
+    apply_vecCons_swap ω (b 2) (b 3), smul_neg, sub_smul]
+  abel
+
+end FinFour
 
 section CompComp
 

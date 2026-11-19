@@ -103,10 +103,24 @@ theorem apply_ι_coroot_rootEquiv_of_isCartanWeightVector {μ : Fin t.rank → �
   simp only [map_sum, map_zsmul, LinearMap.sum_apply, LinearMap.smul_apply, hv,
     Int.cast_sum, Int.cast_mul, Finset.sum_smul, mul_smul, Int.cast_smul_eq_zsmul ℚ]
 
+/-- An integral Cartan weight vector is a weight vector for the single Cartan vector of a
+numbered coroot, with weight given by the native coroot coordinates. -/
+theorem isCartanWeightVector_coroot_rootEquiv {μ : Fin t.rank → ℤ} {v : V}
+    (hv : IsCartanWeightVector (t.lieBasis ht).h ρ μ v) (α : Fin t.numRoots) :
+    IsCartanWeightVector
+      (fun _ : Unit => ((coroot (t.rootEquiv ht α : LieModule.Weight ℚ (t.cartanSubalgebra ht)
+        (t.lieAlgebra ht)) : t.cartanSubalgebra ht) : t.lieAlgebra ht)) ρ
+      (fun _ => ∑ i, (t.simplyConnectedRootDatum ht).coroot α i * μ i) v := by
+  rw [isCartanWeightVector_iff]
+  exact fun _ => apply_ι_coroot_rootEquiv_of_isCartanWeightVector ρ hv α
+
 attribute [local instance high] Algebra.toModule
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-private theorem rootSubgroupParam_coroot_eq (α γ : Fin t.numRoots) (A : CommAlgCat ℤ)
+/-- The root maps presented with the single Cartan vector of a numbered coroot are the root
+subgroups `chevalleyRootSubgroup` presented with the simple Cartan vectors. -/
+theorem kostantRootSubgroupParam_coroot_eq_chevalleyRootSubgroup (α γ : Fin t.numRoots)
+    (A : CommAlgCat ℤ)
     (u : Multiplicative A) :
     kostantRootSubgroupParam (t.chevalleySystem ht)
       (fun _ : Unit => ((coroot (t.rootEquiv ht α : LieModule.Weight ℚ
@@ -118,6 +132,20 @@ private theorem rootSubgroupParam_coroot_eq (α γ : Fin t.numRoots) (A : CommAl
   rw [kostantRootSubgroupParam_val_apply, chevalleyRootSubgroup_val]
 
 variable {η : Type*} (b : Module.Basis η ℤ M) (wt : η → Fin t.rank → ℤ)
+
+omit [Module ℚ V] in
+/-- The coordinate cocharacter of the coroot weights `j ↦ ⟨wt j, α^∨⟩` is the full-weight torus
+point with coordinates `i ↦ s ^ α^∨(i)`. -/
+theorem kostantCoordinateCocharacter_coroot_eq_kostantTorusPoints (α : Fin t.numRoots)
+    (A : CommAlgCat ℤ) (s : Aˣ) :
+    kostantCoordinateCocharacter M b
+        (fun j _ => ∑ i, (t.simplyConnectedRootDatum ht).coroot α i * wt j i) A () s =
+      kostantTorusPoints M b wt A (fun i => s ^ (t.simplyConnectedRootDatum ht).coroot α i) := by
+  refine Units.ext (Module.Basis.ext (b.baseChange A) fun j => ?_)
+  simp only [Module.Basis.baseChange_apply, kostantCoordinateCocharacter_tmul_basis,
+    kostantTorusPoints_tmul_basis, torusCharacter_def, ← zpow_mul,
+    Finset.prod_zpow_eq_zpow_sum]
+
 variable (hwt : ∀ j, IsCartanWeightVector (t.lieBasis ht).h ρ (wt j) (b j : V))
 
 include hwt in
@@ -175,9 +203,8 @@ theorem chevalleyRootSubgroup_mul_mul_eq_kostantTorusPoints_mul (α : Fin t.numR
   let W : η → Unit → ℤ := fun j _ => ∑ i, (t.simplyConnectedRootDatum ht).coroot α i * wt j i
   let hM' := fun u hu v hv => kostantForm_chevalleySystem_coroot_apply_mem ρ M hM hnil α
     (u := u) hu (v := v) hv
-  have hw j : IsCartanWeightVector H ρ (W j) (b j : V) := by
-    rw [isCartanWeightVector_iff]
-    exact fun _ => apply_ι_coroot_rootEquiv_of_isCartanWeightVector ρ (hwt j) α
+  have hw j : IsCartanWeightVector H ρ (W j) (b j : V) :=
+    isCartanWeightVector_coroot_rootEquiv ρ (hwt j) α
   have hα : ∀ j, ⁅H j, t.chevalleySystem ht α⁆ = ((fun _ : Unit => 2) j : ℚ) •
       t.chevalleySystem ht α := fun _ => (t.isSl2Triple_chevalleySystem ht α).lie_h_e_smul ℚ
   have hneg : ∀ j, ⁅H j, t.chevalleySystem ht
@@ -185,12 +212,6 @@ theorem chevalleyRootSubgroup_mul_mul_eq_kostantTorusPoints_mul (α : Fin t.numR
       -(((fun _ : Unit => 2) j : ℚ) • t.chevalleySystem ht
         ((t.simplyConnectedRootDatum ht).reflectionPerm α α)) := fun _ =>
     (t.isSl2Triple_chevalleySystem ht α).lie_lie_smul_f ℚ
-  have htorus : kostantCoordinateCocharacter M b W A () s =
-      kostantTorusPoints M b wt A (fun i => s ^ (t.simplyConnectedRootDatum ht).coroot α i) := by
-    refine Units.ext (Module.Basis.ext (b.baseChange A) fun j => ?_)
-    simp only [Module.Basis.baseChange_apply, kostantCoordinateCocharacter_tmul_basis,
-      kostantTorusPoints_tmul_basis, W, torusCharacter_def, ← zpow_mul,
-      Finset.prod_zpow_eq_zpow_sum]
   by_cases hH : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (H ())) = 0
   · obtain ⟨he0, hf0, htorus_one⟩ :=
       root_operators_and_torus_eq_of_coroot_apply_eq_zero ρ M b wt hwt α hH A s
@@ -203,9 +224,10 @@ theorem chevalleyRootSubgroup_mul_mul_eq_kostantTorusPoints_mul (α : Fin t.numR
       (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
       (isNilpotent_apply_ι_chevalleySystem ρ hnil _) hα hneg A s
     rw [kostantWeylGL_eq_kostantRootSubgroupParam_mul] at h
-    -- Expose the local Cartan family so that the change-of-presentation lemma matches it.
-    dsimp only [H] at h
-    simpa only [rootSubgroupParam_coroot_eq ρ M hM hnil α _ A, htorus] using h
+    -- Expose the local Cartan family and weights so that the change-of-presentation lemmas match.
+    dsimp only [H, W] at h
+    simpa only [kostantRootSubgroupParam_coroot_eq_chevalleyRootSubgroup ρ M hM hnil α _ A,
+      kostantCoordinateCocharacter_coroot_eq_kostantTorusPoints M b wt α A s] using h
 
 end Representation
 

@@ -561,6 +561,64 @@ theorem IsPath.isTrail {p : G.Walk x y} (hp : p.IsPath) : p.IsTrail :=
 theorem IsPath.support_nodup {p : G.Walk x y} (hp : p.IsPath) : p.support.Nodup :=
   hp
 
+-- The append criteria and trail projections below are adapted from
+-- `SimpleGraph.Walk.isTrail_append`, `SimpleGraph.Walk.isPath_append`, and
+-- `SimpleGraph.Walk.isPath_append'` in `Mathlib.Combinatorics.SimpleGraph.Paths`.
+
+/-- A concatenation is a trail exactly when both parts are trails and use disjoint edge
+identities. -/
+@[simp]
+theorem isTrail_append (p : G.Walk x y) (q : G.Walk y z) :
+    (p.append q).IsTrail ↔ p.IsTrail ∧ q.IsTrail ∧ p.edges.Disjoint q.edges := by
+  simp [isTrail_def, List.nodup_append']
+
+/-- The left part of a concatenated trail is a trail. -/
+theorem IsTrail.of_append_left {p : G.Walk x y} {q : G.Walk y z}
+    (hpq : (p.append q).IsTrail) : p.IsTrail := by
+  simpa using (isTrail_append p q).mp hpq |>.1
+
+/-- The right part of a concatenated trail is a trail. -/
+theorem IsTrail.of_append_right {p : G.Walk x y} {q : G.Walk y z}
+    (hpq : (p.append q).IsTrail) : q.IsTrail := by
+  simpa using (isTrail_append p q).mp hpq |>.2.1
+
+/-- The left part of a concatenated path is a path. -/
+theorem IsPath.of_append_left {p : G.Walk x y} {q : G.Walk y z}
+    (hpq : (p.append q).IsPath) : p.IsPath := by
+  rw [isPath_def, support_append] at hpq
+  exact hpq.of_append_left
+
+/-- The right part of a concatenated path is a path. -/
+theorem IsPath.of_append_right {p : G.Walk x y} {q : G.Walk y z}
+    (hpq : (p.append q).IsPath) : q.IsPath := by
+  rw [isPath_def, support_append_eq_support_dropLast_append] at hpq
+  exact hpq.of_append_right
+
+/-- A concatenation is a path exactly when both parts are paths and the support of the left
+part is disjoint from the support of the right part after its initial vertex. -/
+theorem isPath_append (p : G.Walk x y) (q : G.Walk y z) :
+    (p.append q).IsPath ↔
+      p.IsPath ∧ q.IsPath ∧ p.support.Disjoint q.support.tail := by
+  refine ⟨fun hpq ↦ ⟨hpq.of_append_left, hpq.of_append_right, ?_⟩,
+    fun ⟨hp, hq, hd⟩ ↦ ?_⟩
+  · rw [isPath_def, support_append] at hpq
+    exact List.disjoint_of_nodup_append hpq
+  · rw [isPath_def, support_append]
+    exact List.Nodup.append hp.support_nodup hq.support_nodup.tail hd
+
+/-- Symmetric form of `isPath_append`, using the support of the left part before its terminal
+vertex. -/
+theorem isPath_append' (p : G.Walk x y) (q : G.Walk y z) :
+    (p.append q).IsPath ↔
+      p.IsPath ∧ q.IsPath ∧ p.support.dropLast.Disjoint q.support := by
+  refine ⟨fun hpq ↦ ⟨hpq.of_append_left, hpq.of_append_right, ?_⟩,
+    fun ⟨hp, hq, hd⟩ ↦ ?_⟩
+  · rw [isPath_def, support_append_eq_support_dropLast_append] at hpq
+    exact List.disjoint_of_nodup_append hpq
+  · rw [isPath_def, support_append_eq_support_dropLast_append]
+    exact List.Nodup.append (p.support.dropLast_sublist.nodup hp.support_nodup)
+      hq.support_nodup hd
+
 @[simp]
 theorem _root_.Graph.IsLink.isPath_toWalk_iff {e : β} (h : G.IsLink e x y) :
     (IsLink.toWalk h).IsPath ↔ x ≠ y := by

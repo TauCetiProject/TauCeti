@@ -35,11 +35,16 @@ isomorphism `ℂ ≃ₐ[ℂ] H⁰(X, 𝒪)`. The inverse is evaluation at any po
 which point is chosen. In particular, the space of global sections has dimension one.
 
 The function coercions and algebra instance use the bundled analytic-map representation.
-Pointwise computation is provided by section evaluation lemmas.
+Pointwise computation is provided by section evaluation lemmas, and restriction along inclusions of
+open sets is bundled as the `ℂ`-algebra homomorphism `restrictAlgHom`.
 The sheaf of modules has exactly the same underlying presheaf of functions.
 Evaluation of germs gives a surjective ring homomorphism from each stalk to `ℂ`.
 Holomorphic maps induce morphisms to the pushed-forward structure sheaf by precomposition,
 and pull back holomorphic germs (`stalkPrecomp`), functorially and preserving their values.
+The same precomposition is a morphism of presheaves of complex vector spaces
+(`holomorphicStructureSheafModules.homOfContMDiff`), an isomorphism when the map has a holomorphic
+inverse (`holomorphicStructureSheafModules.isIso_homOfContMDiff`); this is how the Čech cohomology
+of the structure sheaf is compared along biholomorphisms.
 
 The sheaf construction follows `smoothSheafCommRing` in
 `Mathlib/Geometry/Manifold/Sheaf/Smooth.lean` by Heather Macbeth and Adam Topaz, using
@@ -156,6 +161,71 @@ theorem map_apply {U V : (Opens (TopCat.of X))ᵒᵖ} (h : U ⟶ V)
 @[simp]
 theorem algebraMap_apply (U : (Opens (TopCat.of X))ᵒᵖ) (c : ℂ) (x : ↥(unop U)) :
     algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj U) c x = c := (rfl)
+
+variable (I) in
+/-- Restriction of holomorphic sections along an inclusion `V ≤ U` of open subsets, bundled as a
+`ℂ`-algebra homomorphism. -/
+def restrictAlgHom {U V : Opens X} (h : V ≤ U) :
+    (holomorphicStructureSheaf I X).obj.obj (op U) →ₐ[ℂ]
+      (holomorphicStructureSheaf I X).obj.obj (op V) where
+  toRingHom := ((holomorphicStructureSheaf I X).obj.map (op (homOfLE h))).hom
+  commutes' c := ext fun x ↦
+    (map_apply (op (homOfLE h)) (algebraMap ℂ _ c) x).trans
+      ((algebraMap_apply (op U) c _).trans (algebraMap_apply (op V) c x).symm)
+
+/-- Restricting a holomorphic section evaluates it on the smaller open set. -/
+@[simp]
+theorem restrictAlgHom_apply {U V : Opens X} (h : V ≤ U)
+    (s : (holomorphicStructureSheaf I X).obj.obj (op U)) (x : V) :
+    (no_index (restrictAlgHom I h s)) x = s (Opens.inclusion h x) :=
+  map_apply (op (homOfLE h)) s x
+
+variable (I) in
+/-- Forgetting the `ℂ`-algebra structure on `restrictAlgHom` recovers the underlying sheaf
+restriction ring homomorphism. -/
+@[simp]
+theorem coe_restrictAlgHom_ringHom {U V : Opens X} (h : V ≤ U) :
+    RingHomClass.toRingHom
+      (F := no_index ((holomorphicStructureSheaf I X).obj.obj (op U) →ₐ[ℂ]
+        (holomorphicStructureSheaf I X).obj.obj (op V)))
+      (α := no_index ((holomorphicStructureSheaf I X).obj.obj (op U)))
+      (β := no_index ((holomorphicStructureSheaf I X).obj.obj (op V)))
+      (restrictAlgHom I h) =
+      ((holomorphicStructureSheaf I X).obj.map (op (homOfLE h))).hom := (rfl)
+
+/-- Taking the stalk germ at `x ∈ V` after `restrictAlgHom` recovers the germ of the original
+section on `U`. -/
+@[simp]
+theorem germ_restrictAlgHom {U V : Opens X} (h : V ≤ U) (x : X) (hx : x ∈ V)
+    (s : (holomorphicStructureSheaf I X).obj.obj (op U)) :
+    DFunLike.coe (F := no_index _) (α := no_index _) (β := no_index _)
+      (ConcreteCategory.hom (C := CommRingCat) (X := no_index _) (Y := no_index _)
+        ((holomorphicStructureSheaf I X).presheaf.germ V x hx))
+      (DFunLike.coe (F := no_index _) (α := no_index _) (β := no_index _)
+        (restrictAlgHom I h) s) =
+      (holomorphicStructureSheaf I X).presheaf.germ U x (h hx) s := by
+  rw [← RingHom.coe_coe (restrictAlgHom I h), coe_restrictAlgHom_ringHom]
+  exact (holomorphicStructureSheaf I X).presheaf.germ_res_apply (homOfLE h) x hx s
+
+variable (I) in
+/-- Restricting holomorphic sections along `U ≤ U` is the identity `ℂ`-algebra homomorphism. -/
+@[simp]
+theorem restrictAlgHom_id (U : Opens X) :
+    restrictAlgHom I (le_refl U) = AlgHom.id ℂ _ := by
+  ext s x
+  exact restrictAlgHom_apply (le_refl U) s x
+
+variable (I) in
+/-- Restricting holomorphic sections along a composite inclusion `W ≤ V ≤ U` is the composition of
+the `ℂ`-algebra restrictions. -/
+@[simp]
+theorem restrictAlgHom_comp {U V W : Opens X} (h₂ : W ≤ V) (h₁ : V ≤ U) :
+    AlgHom.comp (R := ℂ) (A := no_index _) (B := no_index _) (C := no_index _)
+      (restrictAlgHom I h₂) (restrictAlgHom I h₁) = restrictAlgHom I (h₂.trans h₁) := by
+  ext s x
+  exact (restrictAlgHom_apply h₂ (restrictAlgHom I h₁ s) x).trans
+    ((restrictAlgHom_apply h₁ s (Opens.inclusion h₂ x)).trans
+      (congrArg s (Set.inclusion_inclusion h₂ h₁ x)))
 
 /-- A section of the structure sheaf is holomorphic on its domain. -/
 theorem mdifferentiable {U : (Opens (TopCat.of X))ᵒᵖ}
@@ -488,6 +558,71 @@ theorem map_apply {U V : (Opens (TopCat.of X))ᵒᵖ} (h : U ⟶ V)
 theorem forget_eq :
     (holomorphicStructureSheafModules I X).obj ⋙ forget (ModuleCat ℂ) =
       (holomorphicStructureSheaf I X).obj ⋙ forget CommRingCat := (rfl)
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℂ E' H'}
+  {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y]
+
+/-- Precomposition by a complex analytic map `f`, on the complex vector spaces of holomorphic
+sections over an open set `U` and over its inverse image: the ring homomorphism
+`holomorphicStructureSheaf.precomp`, read as a linear map. -/
+def precompLinearMap (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒᵖ) :
+    (holomorphicStructureSheafModules J Y).obj.obj U →ₗ[ℂ]
+      (holomorphicStructureSheafModules I X).obj.obj
+        (op (α := Opens X) ((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj (unop U))) where
+  toFun := holomorphicStructureSheaf.precomp I X f hf U
+  map_add' := map_add _
+  map_smul' _ _ := rfl
+
+@[simp]
+theorem precompLinearMap_apply (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒᵖ)
+    (g : (holomorphicStructureSheafModules J Y).obj.obj U)
+    (x : ↥((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj (unop U))) :
+    precompLinearMap I X f hf U g x = g ⟨f x.1, x.2⟩ :=
+  holomorphicStructureSheaf.precomp_apply I X f hf U g x
+
+/-- A complex analytic map `f` induces a morphism `𝒪_Y ⟶ f_*𝒪_X` of presheaves of complex vector
+spaces by precomposition. It is the linear counterpart of
+`holomorphicStructureSheaf.homOfContMDiff`. -/
+def homOfContMDiff (f : X → Y) (hf : ContMDiff I J ω f) :
+    (holomorphicStructureSheafModules J Y).obj ⟶
+      (TopCat.Presheaf.pushforward (ModuleCat ℂ) (TopCat.ofHom ⟨f, hf.continuous⟩)).obj
+        (holomorphicStructureSheafModules I X).obj where
+  app U := ModuleCat.ofHom (precompLinearMap I X f hf U)
+  naturality _ _ _ := rfl
+
+@[simp]
+theorem homOfContMDiff_app (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒᵖ) :
+    (homOfContMDiff I X f hf).app U = ModuleCat.ofHom (precompLinearMap I X f hf U) :=
+  (rfl)
+
+/-- Precomposition by a complex analytic map `f` with a complex analytic inverse `g` is bijective
+on sections: a holomorphic function `h` on `f ⁻¹' U` is the pullback of the holomorphic function
+`y ↦ h (g y)` on `U`, and only of it. -/
+theorem precompLinearMap_bijective (f : X → Y) (hf : ContMDiff I J ω f) (g : Y → X)
+    (hg : ContMDiff J I ω g) (hgf : Function.LeftInverse g f) (hfg : Function.RightInverse g f)
+    (U : (Opens Y)ᵒᵖ) : Function.Bijective (precompLinearMap I X f hf U) := by
+  -- `g` maps `U` into its inverse image under `f`.
+  let k : ↥(unop U) → ↥((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj (unop U)) :=
+    fun y ↦ ⟨g y.1, ((hfg y.1).symm ▸ y.2 : f (g y.1) ∈ unop U)⟩
+  have hk : ContMDiff J I ω k := by
+    rw [← ContMDiff.subtypeVal_comp_iff]
+    exact hg.comp contMDiff_subtype_val
+  have hfk (y : ↥(unop U)) : (⟨f (k y).1, (k y).2⟩ : ↥(unop U)) = y := Subtype.ext (hfg y.1)
+  refine ⟨fun h₁ h₂ h ↦ ext fun y ↦ ?_, fun h ↦ ⟨ofContMDiff (fun y ↦ h (k y))
+    ((contMDiff h).comp hk), ext fun x ↦ ?_⟩⟩
+  · simpa only [precompLinearMap_apply, hfk] using congr($h (k y))
+  · rw [precompLinearMap_apply, ofContMDiff_apply]
+    exact congrArg h (Subtype.ext (hgf x.1))
+
+/-- Precomposition by a complex analytic map `f` with a complex analytic inverse `g` identifies
+`𝒪_Y` with `f_*𝒪_X`. -/
+theorem isIso_homOfContMDiff (f : X → Y) (hf : ContMDiff I J ω f) (g : Y → X)
+    (hg : ContMDiff J I ω g) (hgf : Function.LeftInverse g f) (hfg : Function.RightInverse g f) :
+    IsIso (homOfContMDiff I X f hf) := by
+  refine (NatTrans.isIso_iff_isIso_app _).2 fun U ↦ ?_
+  rw [homOfContMDiff_app, ConcreteCategory.isIso_iff_bijective]
+  exact precompLinearMap_bijective I X f hf g hg hgf hfg U
 
 end holomorphicStructureSheafModules
 
