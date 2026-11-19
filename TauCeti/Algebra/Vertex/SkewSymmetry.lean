@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Vertex.Axioms
+import TauCeti.Algebra.BigOperators.Finset.Range
 
 /-!
 # Skew symmetry in formal vertex algebras
@@ -60,14 +61,6 @@ open Finset
 namespace TauCeti.FormalVertexAxioms
 
 variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V] (A : FormalVertexAxioms R V)
-
-/-- Shifting the index of a `range` sum whose terms vanish at the top index `K`. -/
-private theorem sum_range_eq_add_sum_range_succ {M : Type*} [AddCommMonoid M] (F : ℕ → M)
-    {K : ℕ} (hF : F K = 0) :
-    ∑ l ∈ range K, F l = F 0 + ∑ l ∈ range K, F (l + 1) := by
-  have h := sum_range_succ F K
-  rw [sum_range_succ', hF, add_zero] at h
-  rw [← h, add_comm]
 
 /-- `ncoeff_field_apply_ncoeff_field_apply_vacuum_eq_sum` for the creation vectors
 `a₍₋ₖ₋₁₎|0⟩ = T^{(k)} a`. -/
