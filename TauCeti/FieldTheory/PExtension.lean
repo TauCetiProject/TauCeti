@@ -75,14 +75,20 @@ section AlgHom
 
 variable [Algebra K M]
 
+/-- A finite extension `E / K` has `P`-number degree if it is `K`-isomorphic to an extension `E'`
+whose degree is a `P`-number once `E' / K` is known to be finite. -/
+private theorem isPNumber_finrank_of_algEquiv {E E' : Type*} [Field E] [Field E'] [Algebra K E]
+    [Algebra K E'] (e : E ≃ₐ[K] E') [FiniteDimensional K E]
+    (h : ∀ [FiniteDimensional K E'], IsPNumber P (finrank K E')) : IsPNumber P (finrank K E) := by
+  have := e.toLinearEquiv.finiteDimensional
+  rw [e.toLinearEquiv.finrank_eq]
+  exact h
+
 /-- If `L` embeds into a `P`-extension `M` of `K`, then `L / K` is a `P`-extension. In particular,
 every subextension of a `P`-extension is a `P`-extension. -/
 theorem IsPExtension.of_algHom (h : IsPExtension P K M) (f : L →ₐ[K] M) : IsPExtension P K L where
   isAlgebraic := have := h.isAlgebraic; .of_injective f f.injective
-  isPNumber_finrank E _ := by
-    let e := (E.equivMap f).toLinearEquiv
-    have : FiniteDimensional K (E.map f) := e.finiteDimensional
-    exact e.finrank_eq ▸ h.isPNumber_finrank (E.map f)
+  isPNumber_finrank E _ := isPNumber_finrank_of_algEquiv (E.equivMap f) (h.isPNumber_finrank _)
 
 /-- Being a `P`-extension is invariant under `K`-algebra isomorphism. -/
 theorem isPExtension_congr (e : L ≃ₐ[K] M) : IsPExtension P K L ↔ IsPExtension P K M :=
@@ -99,12 +105,8 @@ theorem isPExtension_intermediateField_iff {E : IntermediateField K M} :
     IsPExtension P K E ↔ Algebra.IsAlgebraic K E ∧
       ∀ F : IntermediateField K M, F ≤ E → FiniteDimensional K F → IsPNumber P (finrank K F) := by
   refine ⟨fun h ↦ ⟨h.isAlgebraic, fun F hF _ ↦ ?_⟩, fun ⟨halg, h⟩ ↦ ⟨halg, fun F _ ↦ ?_⟩⟩
-  · let e := (restrictAlgEquiv hF).toLinearEquiv
-    have : FiniteDimensional K (restrict hF) := e.finiteDimensional
-    exact e.finrank_eq ▸ h.isPNumber_finrank (restrict hF)
-  · let e := (liftAlgEquiv F).toLinearEquiv
-    have : FiniteDimensional K (lift F) := e.finiteDimensional
-    exact e.finrank_eq ▸ h (lift F) (lift_le F) this
+  · exact isPNumber_finrank_of_algEquiv (restrictAlgEquiv hF) (h.isPNumber_finrank _)
+  · exact isPNumber_finrank_of_algEquiv (liftAlgEquiv F) (h (lift F) (lift_le F) ‹_›)
 
 end AlgHom
 

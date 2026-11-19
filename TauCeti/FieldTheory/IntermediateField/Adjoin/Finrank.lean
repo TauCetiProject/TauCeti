@@ -24,6 +24,8 @@ equal to `0`, and so does the minimal polynomial of a transcendental element.
 * `IntermediateField.finrank_biSup_le_prod`, `IntermediateField.finrank_iSup_le_prod`:
   `[⨆ i, Eᵢ : K] ≤ ∏ i, [Eᵢ : K]` for finitely many intermediate fields `Eᵢ`.
 * `IntermediateField.finrank_adjoin_range_le_prod`: `[K(x₁, …, xₙ) : K] ≤ ∏ i, deg xᵢ`.
+* `IntermediateField.finrank_adjoin_eq_finrank_span`: if `s` spans the algebraic intermediate field
+  `F` over `K`, then `[A(F) : A]` is the dimension of the `A`-span of `s`.
 * `IntermediateField.exists_finiteDimensional_finrank_adjoin_eq`: for an algebraic extension
   `L / K` inside `M` and a finite subextension `F` of `M / K`, some finite subextension `L₀` of
   `L / K` has `[L₀(F) : L₀] = [L(F) : L]`.
@@ -77,11 +79,12 @@ variable {M : Type*} [Field M] [Algebra K M] [Algebra L M] [IsScalarTower K L M]
 
 /-- If `s` spans the algebraic intermediate field `F` of `M / K` over `K`, then `[A(F) : A]` is
 the dimension of the `A`-span of `s`, for every field `A` between `K` and `M`. -/
-private theorem finrank_adjoin_eq_finrank_span {A : Type*} [Field A] [Algebra K A] [Algebra A M]
+theorem finrank_adjoin_eq_finrank_span {A : Type*} [Field A] [Algebra K A] [Algebra A M]
     [IsScalarTower K A M] (F : IntermediateField K M) [Algebra.IsAlgebraic K F] {s : Set M}
     (hs : Submodule.span K s = Subalgebra.toSubmodule F.toSubalgebra) :
     finrank A (adjoin A (F : Set M)) = finrank A (Submodule.span A s) := by
-  have hF : (F : Set M) = Submodule.span K s := by rw [hs]; rfl
+  have hF : (F : Set M) = Submodule.span K s := by
+    rw [hs, Subalgebra.coe_toSubmodule, IntermediateField.coe_toSubalgebra]
   rw [← finrank_eq_finrank_subalgebra, ← Subalgebra.finrank_toSubmodule,
     adjoin_intermediateField_toSubalgebra_of_isAlgebraic_right, Algebra.adjoin_coe_eq_span, hF,
     Submodule.span_span_of_tower]

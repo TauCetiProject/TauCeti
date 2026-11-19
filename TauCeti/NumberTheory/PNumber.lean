@@ -81,6 +81,7 @@ theorem IsPNumber.mul (ha : IsPNumber P a) (hb : IsPNumber P b) : IsPNumber P (a
 
 /-- A product is a `P`-number exactly when both factors are. No positivity hypothesis is needed:
 if a factor is zero, both sides fail. -/
+@[simp]
 theorem isPNumber_mul_iff : IsPNumber P (a * b) ↔ IsPNumber P a ∧ IsPNumber P b :=
   ⟨fun h ↦ ⟨h.of_dvd (dvd_mul_right a b), h.of_dvd (dvd_mul_left b a)⟩, fun h ↦ h.1.mul h.2⟩
 
@@ -94,12 +95,14 @@ theorem IsPNumber.mono (hPQ : P ⊆ Q) (h : IsPNumber P n) : IsPNumber Q n :=
   ⟨h.pos, fun _ hq hqn ↦ hPQ (h.mem_of_prime_of_dvd hq hqn)⟩
 
 /-- A prime `q` is a `P`-number exactly when it lies in `P`. -/
+@[simp]
 theorem isPNumber_prime_iff {q : ℕ} (hq : q.Prime) : IsPNumber P q ↔ q ∈ P :=
   ⟨fun h ↦ h.mem_of_prime_of_dvd hq dvd_rfl, fun h ↦ ⟨hq.pos, fun _ hr hrq ↦
     ((Nat.prime_dvd_prime_iff_eq hr hq).1 hrq) ▸ h⟩⟩
 
 /-- Only the primes of `P` matter: `n` is a `P`-number exactly when it is a
 `(P ∩ primes)`-number. -/
+@[simp]
 theorem isPNumber_inter_setOf_prime_iff :
     IsPNumber (P ∩ {q | q.Prime}) n ↔ IsPNumber P n :=
   ⟨IsPNumber.mono Set.inter_subset_left, fun h ↦ ⟨h.pos, fun _ hq hqn ↦
