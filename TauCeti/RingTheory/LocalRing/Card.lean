@@ -38,6 +38,8 @@ pairs not both even. These are the counts behind the indices of the congruence l
 
 ## Main results
 
+* `TauCeti.IsLocalRing.card_eq_card_maximalIdeal_mul_card_residueField`: `#R = #𝔪 · q`, for any
+  local ring.
 * `TauCeti.IsLocalRing.card_residueField_mul_card_units`: `q · #Rˣ = #R · (q - 1)`.
 * `TauCeti.IsLocalRing.card_residueField_pow_mul_card_isUnimodular`:
   `qⁿ · #{v : ι → R | v unimodular} = #Rⁿ · (qⁿ - 1)` for `n = #ι`.
@@ -67,7 +69,7 @@ private theorem mul_eq_of_add_eq {q u m r : ℕ} (hr : r = m * q) (h : u + m = r
 variable (R) in
 /-- The maximal ideal has index `q` in `R`: `#R = #𝔪 · q`, as `R ⧸ 𝔪` is the residue field
 (`TauCeti.quotientEquivResidueField`). -/
-private theorem card_eq_card_maximalIdeal_mul_card_residueField :
+theorem card_eq_card_maximalIdeal_mul_card_residueField :
     Nat.card R = Nat.card (maximalIdeal R) * Nat.card (ResidueField R) := by
   rw [Submodule.card_eq_card_quotient_mul_card (maximalIdeal R),
     Nat.card_congr (quotientEquivResidueField (maximalIdeal.isMaximal R)).toEquiv]

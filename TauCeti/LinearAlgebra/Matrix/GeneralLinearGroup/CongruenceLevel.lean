@@ -21,8 +21,9 @@ public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 -- `𝔭ᵉ`.
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import Mathlib.RingTheory.LocalRing.Quotient
--- Non-public, used only in the proofs: solving `v ᵥ* g⁻¹ = w`, lifting units modulo an ideal in
--- the Jacobson radical, the residue field of a quotient, and the properness of `𝔭ᵉ`.
+-- Non-public, used only in the proofs: solving `v ᵥ* g⁻¹ = w`, lifting units modulo a proper
+-- ideal of a local ring, the quotient as a local ring and its residue field, and the properness of
+-- `𝔭ᵉ`.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
 import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
 import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
@@ -115,6 +116,7 @@ namespace GL2K0
 
 variable {I}
 
+/-- `g ∈ K₀(I)` exactly when its lower-left entry lies in `I`. -/
 theorem mem_iff {g : GL (Fin 2) A} :
     g ∈ GL2K0 I ↔ (g : Matrix (Fin 2) (Fin 2) A) 1 0 ∈ I := by
   rw [GL2K0, Subgroup.mem_comap, GL2Borel.mem_iff, Matrix.GeneralLinearGroup.map_apply,
@@ -149,6 +151,8 @@ namespace GL2K1
 
 variable {I}
 
+/-- `g ∈ K₁(I)` exactly when its lower-left entry lies in `I` and its lower-right entry is `1`
+modulo `I`. -/
 theorem mem_iff {g : GL (Fin 2) A} :
     g ∈ GL2K1 I ↔ (g : Matrix (Fin 2) (Fin 2) A) 1 0 ∈ I ∧
       (g : Matrix (Fin 2) (Fin 2) A) 1 1 - 1 ∈ I := by
@@ -232,9 +236,8 @@ variable {I}
 /-- An element lies in `K₁(I)` exactly when its bottom row is `(0, 1)` modulo `I`. -/
 theorem mem_iff_bottomRowMod {g : GL (Fin 2) A} :
     g ∈ GL2K1 I ↔ bottomRowMod I g = Pi.single 1 1 := by
-  rw [mem_iff, funext_iff, Fin.forall_fin_two, bottomRowMod_apply, bottomRowMod_apply,
-    Pi.single_eq_of_ne (by decide), Pi.single_eq_same, Ideal.Quotient.eq_zero_iff_mem,
-    ← map_one (Ideal.Quotient.mk I), Ideal.Quotient.eq]
+  simp [mem_iff, funext_iff, Fin.forall_fin_two, Ideal.Quotient.eq_zero_iff_mem,
+    ← Ideal.Quotient.eq]
 
 /-- **Right cosets of `K₁(I)`**: over every commutative ring, `g` and `g'` lie in one right coset
 `K₁(I) g` exactly when their bottom rows agree modulo `I`. -/
@@ -292,13 +295,9 @@ theorem exists_bottomRowMod_eq {v : Fin 2 → A ⧸ I} (hv : Module.IsUnimodular
   by_cases hI : I = ⊤
   · have : Subsingleton (A ⧸ I) := Ideal.Quotient.subsingleton_iff.mpr hI
     exact ⟨1, Subsingleton.elim _ _⟩
-  have : Nontrivial (A ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr hI
-  have : IsLocalRing (A ⧸ I) := .of_surjective' _ Ideal.Quotient.mk_surjective
+  have : IsLocalRing (A ⧸ I) := isLocalRing_quotient hI
   obtain ⟨i, hi⟩ := TauCeti.Module.isUnimodular_iff_exists_isUnit.mp hv
-  obtain ⟨u, hu⟩ := Ideal.unitsMap_quotientMk_surjective
-    -- A proper ideal of a local ring lies in the maximal ideal, the Jacobson radical.
-    ((IsLocalRing.le_maximalIdeal hI).trans_eq
-      (IsLocalRing.jacobson_eq_maximalIdeal ⊥ bot_ne_top).symm) hi.unit
+  obtain ⟨u, hu⟩ := Ideal.unitsMap_quotientMk_surjective_of_ne_top hI hi.unit
   have hu' : Ideal.Quotient.mk I (u : A) = v i := congrArg Units.val hu
   obtain ⟨x, hx⟩ := Ideal.Quotient.mk_surjective (v 0)
   obtain ⟨y, hy⟩ := Ideal.Quotient.mk_surjective (v 1)
@@ -317,10 +316,7 @@ theorem GL2K0.lowerRight_surjective : Function.Surjective (GL2K0.lowerRight I) :
   by_cases hI : I = ⊤
   · have : Subsingleton (A ⧸ I) := Ideal.Quotient.subsingleton_iff.mpr hI
     exact ⟨1, Subsingleton.elim _ _⟩
-  obtain ⟨u, hu⟩ := Ideal.unitsMap_quotientMk_surjective
-    -- A proper ideal of a local ring lies in the maximal ideal, the Jacobson radical.
-    ((IsLocalRing.le_maximalIdeal hI).trans_eq
-      (IsLocalRing.jacobson_eq_maximalIdeal ⊥ bot_ne_top).symm) w
+  obtain ⟨u, hu⟩ := Ideal.unitsMap_quotientMk_surjective_of_ne_top hI w
   refine ⟨⟨GL2Borel.mk 1 u 0, GL2K0.mem_iff.mpr (by simp)⟩, Units.ext ?_⟩
   simp [← hu]
 
@@ -405,8 +401,7 @@ open _root_.IsLocalRing in
 private theorem isLocalRing_quotient_and_card_residueField (hI : I ≠ ⊤) :
     ∃ _ : IsLocalRing (A ⧸ I),
       Nat.card (ResidueField (A ⧸ I)) = Nat.card (ResidueField A) := by
-  have : Nontrivial (A ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr hI
-  have : IsLocalRing (A ⧸ I) := .of_surjective' _ Ideal.Quotient.mk_surjective
+  have : IsLocalRing (A ⧸ I) := isLocalRing_quotient hI
   exact ⟨this, card_residueField_of_surjective Ideal.Quotient.mk_surjective⟩
 
 open _root_.IsLocalRing
@@ -461,6 +456,13 @@ open _root_.IsLocalRing
 
 variable [IsDomain A] [IsDiscreteValuationRing A] [Finite (ResidueField A)] {e : ℕ}
 
+/-- Cancelling `q > 0` from `q · x = qᵉ · c` with `e ≥ 1`: the step shared by the three indices at
+`𝔭ᵉ`, where `#(A ⧸ 𝔭ᵉ) = qᵉ`. -/
+private theorem eq_pow_sub_one_mul_of_mul_eq {q x c : ℕ} (hq : 0 < q) (he : e ≠ 0)
+    (h : q * x = q ^ e * c) : x = q ^ (e - 1) * c := by
+  refine Nat.eq_of_mul_eq_mul_left hq ?_
+  rw [h, ← mul_assoc, ← pow_succ', Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr he)]
+
 /-- **`[GL₂(A) : K₀(𝔭ᵉ)] = qᵉ⁻¹ (q + 1)`** for a discrete valuation ring with finite residue field
 of size `q` and `e ≥ 1`. -/
 theorem GL2K0.index_maximalIdeal_pow (he : e ≠ 0) :
@@ -468,10 +470,7 @@ theorem GL2K0.index_maximalIdeal_pow (he : e ≠ 0) :
       Nat.card (ResidueField A) ^ (e - 1) * (Nat.card (ResidueField A) + 1) := by
   have h := GL2K0.card_residueField_mul_index (IsLocalRing.maximalIdeal_pow_ne_top (R := A) he)
   rw [TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow] at h
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero he
-  refine Nat.eq_of_mul_eq_mul_left (Nat.card_pos : 0 < Nat.card (ResidueField A)) ?_
-  rw [h, Nat.add_sub_cancel, pow_succ]
-  ring
+  exact eq_pow_sub_one_mul_of_mul_eq Nat.card_pos he h
 
 /-- **`[GL₂(A) : K₁(𝔭ᵉ)] = q²ᵉ⁻² (q² - 1)`** for a discrete valuation ring with finite residue
 field of size `q` and `e ≥ 1`. -/
@@ -479,12 +478,10 @@ theorem GL2K1.index_maximalIdeal_pow (he : e ≠ 0) :
     (GL2K1 (maximalIdeal A ^ e)).index =
       Nat.card (ResidueField A) ^ (2 * e - 2) * (Nat.card (ResidueField A) ^ 2 - 1) := by
   have h := GL2K1.card_residueField_sq_mul_index (IsLocalRing.maximalIdeal_pow_ne_top (R := A) he)
-  rw [TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow] at h
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero he
-  refine Nat.eq_of_mul_eq_mul_left
-    (pow_pos Nat.card_pos 2 : 0 < Nat.card (ResidueField A) ^ 2) ?_
-  rw [h, show 2 * (k + 1) - 2 = 2 * k by omega]
-  ring
+  rw [TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow, ← pow_mul, mul_comm e,
+    pow_mul] at h
+  rw [show 2 * e - 2 = 2 * (e - 1) by omega, pow_mul]
+  exact eq_pow_sub_one_mul_of_mul_eq (pow_pos Nat.card_pos 2) he h
 
 /-- **`[K₀(𝔭ᵉ) : K₁(𝔭ᵉ)] = qᵉ⁻¹ (q - 1)`**, the number of units of `A ⧸ 𝔭ᵉ`, for a discrete
 valuation ring with finite residue field of size `q` and `e ≥ 1`. -/
@@ -493,10 +490,7 @@ theorem GL2K1.relIndex_maximalIdeal_pow (he : e ≠ 0) :
       Nat.card (ResidueField A) ^ (e - 1) * (Nat.card (ResidueField A) - 1) := by
   have h := GL2K1.card_residueField_mul_relIndex (IsLocalRing.maximalIdeal_pow_ne_top (R := A) he)
   rw [TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow] at h
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero he
-  refine Nat.eq_of_mul_eq_mul_left (Nat.card_pos : 0 < Nat.card (ResidueField A)) ?_
-  rw [h, Nat.add_sub_cancel, pow_succ]
-  ring
+  exact eq_pow_sub_one_mul_of_mul_eq Nat.card_pos he h
 
 end IsDiscreteValuationRing
 
