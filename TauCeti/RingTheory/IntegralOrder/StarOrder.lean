@@ -34,8 +34,7 @@ statement about overorders or maximality is made about the underlying `ℤ`-suba
 
 * `TauCeti.StarOrder.toSubalgebra_le_toSubalgebra`: inclusions of star-orders are inclusions of
   the underlying subalgebras.
-* `TauCeti.StarOrder.not_isOrder_top_rat`: the subring `ℚ ⊆ ℚ` is star-stable and spans `ℚ`, but
-  is not an order.
+* `TauCeti.StarOrder.mem_int`: the integer order of `ℚ` consists of the integers.
 * `TauCeti.StarOrder.single_mem_matrix`: `M_n(ℤ)` contains the standard matrix units.
 
 ## References
@@ -101,7 +100,6 @@ theorem coe_toStarSubalgebra : (O.toStarSubalgebra : Set B) = O :=
   rfl
 
 /-- The underlying subring of a star-order. -/
-@[expose]
 def toSubring : Subring B :=
   O.toSubalgebra.toSubring
 
@@ -135,23 +133,20 @@ instance instStarRing : StarRing O :=
   StarSubalgebra.starRing O.toStarSubalgebra
 
 /-- A star-stable `ℤ`-subalgebra which is an order is a star-order. -/
-@[expose]
 def ofSubalgebra (Λ : Subalgebra ℤ B) (h : IsOrder ℚ Λ) (hstar : star Λ = Λ) : StarOrder B where
   toSubalgebra := Λ
   star_mem' {x} hx := by
-    change star x ∈ Λ
-    rwa [← Subalgebra.mem_star_iff, hstar]
+    rwa [Subalgebra.mem_carrier, ← Subalgebra.mem_star_iff, hstar]
   isOrder := h
 
 /-- The star-order built from a star-stable order has that order as its underlying subalgebra. -/
 @[simp]
 theorem toSubalgebra_ofSubalgebra (Λ : Subalgebra ℤ B) (h : IsOrder ℚ Λ) (hstar : star Λ = Λ) :
     (ofSubalgebra Λ h hstar).toSubalgebra = Λ :=
-  rfl
+  (rfl)
 
 /-- **Star-orders as star-stable orders.** A star-order is the same as a `ℤ`-subalgebra of `B`
 which is a `ℤ`-order and is star-stable. Both directions retain the carrier. -/
-@[expose]
 def orderEquiv : StarOrder B ≃ {Λ : Subalgebra ℤ B // IsOrder ℚ Λ ∧ star Λ = Λ} where
   toFun O := ⟨O.toSubalgebra, O.isOrder, O.star_toSubalgebra⟩
   invFun Λ := ofSubalgebra Λ.1 Λ.2.1 Λ.2.2
@@ -161,16 +156,15 @@ def orderEquiv : StarOrder B ≃ {Λ : Subalgebra ℤ B // IsOrder ℚ Λ ∧ st
 /-- `StarOrder.orderEquiv` forgets the star structure to the underlying subalgebra. -/
 @[simp]
 theorem coe_orderEquiv_apply : (orderEquiv O : Subalgebra ℤ B) = O.toSubalgebra :=
-  rfl
+  (rfl)
 
 /-- The inverse of `StarOrder.orderEquiv` retains the given subalgebra. -/
 @[simp]
 theorem toSubalgebra_orderEquiv_symm (Λ : {Λ : Subalgebra ℤ B // IsOrder ℚ Λ ∧ star Λ = Λ}) :
     (orderEquiv.symm Λ).toSubalgebra = Λ.1 :=
-  rfl
+  (rfl)
 
 /-- In an algebra with trivial involution, every `ℤ`-order is a star-order. -/
-@[expose]
 def ofTrivialStar [TrivialStar B] (Λ : Subalgebra ℤ B) (h : IsOrder ℚ Λ) : StarOrder B :=
   ofSubalgebra Λ h <| SetLike.ext fun x => by rw [Subalgebra.mem_star_iff, star_trivial]
 
@@ -178,39 +172,34 @@ def ofTrivialStar [TrivialStar B] (Λ : Subalgebra ℤ B) (h : IsOrder ℚ Λ) :
 @[simp]
 theorem toSubalgebra_ofTrivialStar [TrivialStar B] (Λ : Subalgebra ℤ B) (h : IsOrder ℚ Λ) :
     (ofTrivialStar Λ h).toSubalgebra = Λ :=
-  rfl
+  (rfl)
 
 /-! ### Examples -/
 
-/-- `1 / 2` is not the image of an integer in `ℚ`. -/
-private theorem half_notMem_range_intCast : (1 / 2 : ℚ) ∉ Set.range (algebraMap ℤ ℚ) := by
-  rintro ⟨n, hn⟩
-  have h : ((n * 2 : ℤ) : ℚ) = 1 := by push_cast; rw [← eq_intCast (algebraMap ℤ ℚ), hn]; norm_num
-  have : n * 2 = 1 := by exact_mod_cast h
-  omega
-
 /-- The integer order `ℤ ⊆ ℚ`, a star-order for the identity involution of `ℚ`. -/
-@[expose]
 def int : StarOrder ℚ :=
   ofTrivialStar ⊥ isOrder_bot
 
+/-- The integer order of `ℚ` consists of the images of the integers. -/
+@[simp]
+theorem mem_int {x : ℚ} : x ∈ int ↔ ∃ m : ℤ, (m : ℚ) = x := by
+  refine (Algebra.mem_bot (R := ℤ) (A := ℚ)).trans ?_
+  simp only [Set.mem_range, eq_intCast]
+
 /-- `StarOrder.orderEquiv` sends the integer order of `ℚ` to the scalar order `⊥`. -/
 theorem orderEquiv_int : (orderEquiv int : Subalgebra ℤ ℚ) = ⊥ :=
-  rfl
+  (rfl)
 
 /-- The integer order of `ℚ` contains `2`. -/
 theorem two_mem_int : (2 : ℚ) ∈ int :=
-  ⟨2, by simp⟩
+  mem_int.2 ⟨2, by simp⟩
 
 /-- The integer order of `ℚ` does not contain `1 / 2`. -/
-theorem half_notMem_int : (1 / 2 : ℚ) ∉ int :=
-  half_notMem_range_intCast
-
-/-- The subring `ℚ ⊆ ℚ` is star-stable and spans `ℚ`, but it is not finitely generated over `ℤ`,
-so it is not an order and does not underlie a star-order. -/
-theorem not_isOrder_top_rat : ¬IsOrder ℚ (⊤ : Subalgebra ℤ ℚ) := fun h =>
-  half_notMem_range_intCast <|
-    IsIntegrallyClosed.isIntegral_iff.1 (h.isIntegral (x := (1 / 2 : ℚ)) trivial)
+theorem half_notMem_int : (1 / 2 : ℚ) ∉ int := fun h => by
+  obtain ⟨m, hm⟩ := mem_int.1 h
+  have hden := congrArg Rat.den hm
+  rw [Rat.den_intCast] at hden
+  norm_num at hden
 
 section Matrix
 
@@ -218,7 +207,6 @@ variable (n : Type*) [Fintype n] [DecidableEq n]
 
 /-- The star-order `M_n(ℤ)` in `M_n(ℚ)`, where the involution of `M_n(ℚ)` is the conjugate
 transpose, which is the transpose since the involution of `ℚ` is trivial. -/
-@[expose]
 def matrix : StarOrder (Matrix n n ℚ) where
   toSubalgebra := (Algebra.ofId ℤ ℚ).mapMatrix.range
   star_mem' {x} := by
@@ -235,6 +223,7 @@ def matrix : StarOrder (Matrix n n ℚ) where
 variable {n}
 
 /-- A matrix lies in `M_n(ℤ)` exactly when all of its entries are integers. -/
+@[simp]
 theorem mem_matrix {x : Matrix n n ℚ} : x ∈ matrix n ↔ ∀ i j, ∃ m : ℤ, (m : ℚ) = x i j := by
   refine ⟨?_, fun h => ?_⟩
   · rintro ⟨y, rfl⟩ i j
