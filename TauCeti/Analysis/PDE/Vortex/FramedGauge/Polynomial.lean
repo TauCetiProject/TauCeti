@@ -19,12 +19,12 @@ import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 Taubes's plane vortex with zero divisor `D ∈ Sym ℂ m` has section `exp(u) P`, where `u` is real
 and `P = Wᵐ + c_(m-1) Wᵐ⁻¹ + ⋯ + c₀` is the monic polynomial with root multiset `D`. Its lower
 coefficients `c = (c₀, …, c_(m-1))` are the symmetric coordinates of `D`
-(`Sym.coeffHomeomorph`). The phase `P / |P|` of the section tends to the winding phase
-`(z / |z|)ᵐ` only like `1 / |z|`, so the vortex itself does not lie in the affine Sobolev space
-`A_m^k = x_m + H^k` (`TauCeti.Vortex.framedFieldSpace`), and a framed gauge must normalize its
-phase near infinity. This file constructs one such gauge for every coefficient tuple, depending
-smoothly on the coefficients, and normalizing on a common exterior over each compact window of
-coefficients or divisors.
+(`Sym.coeffHomeomorph`). When `c_(m-1) ≠ 0`, the phase `P / |P|` of the section tends to the
+winding phase `(z / |z|)ᵐ` only like `1 / |z|`, so the vortex itself need not lie in the affine
+Sobolev space `A_m^k = x_m + H^k` (`TauCeti.Vortex.framedFieldSpace`), and a framed gauge must
+normalize its phase near infinity. This file constructs one such gauge for every coefficient
+tuple, depending smoothly on the coefficients, and normalizing on a common exterior over each
+compact window of coefficients or divisors.
 
 For `z ≠ 0` write `P_c(z) = zᵐ (1 + q_c(z))` with `q_c(z) = ∑ᵢ cᵢ zⁱ / zᵐ`. If
 `‖z‖² ≥ m ∑ᵢ ‖cᵢ‖² + 1` then `‖q_c(z)‖ < 1`, by the Cauchy–Schwarz inequality, so
@@ -41,8 +41,9 @@ with the smooth transition `χ` vanishing on `(-∞, 0]` and equal to one on `[1
 * `g_c = 1` on the disc `‖z‖² ≤ m ∑ᵢ ‖cᵢ‖² + 1` (`TauCeti.Vortex.polynomialGauge_eq_one`).
 * Outside the slightly larger disc `‖z‖² ≥ m ∑ᵢ ‖cᵢ‖² + 2`, it turns the phase of `P_c` into the
   winding phase: `g_c(z) P_c(z) = |P_c(z)| (z / |z|)ᵐ`
-  (`TauCeti.Vortex.polynomialGauge_mul_eval`). There its logarithmic derivative is
-  `m dθ - d arg P_c`, that is `Im (g⁻¹ dg)(v) = m Im (v / z) - Im (P_c'(z) v / P_c(z))`
+  (`TauCeti.Vortex.polynomialGauge_mul_eval`). Where `‖z‖² > m ∑ᵢ ‖cᵢ‖² + 2`, its logarithmic
+  derivative is `m dθ - d arg P_c`, that is
+  `Im (g⁻¹ dg)(v) = m Im (v / z) - Im (P_c'(z) v / P_c(z))`
   (`TauCeti.Vortex.gaugeForm_polynomialGauge_apply`).
 * The radius depends on `c` only through `∑ᵢ ‖cᵢ‖²`, so one radius serves a bounded set of
   coefficients (`TauCeti.Vortex.exists_forall_polynomialGauge_mul_eval`) and a compact set of
