@@ -31,6 +31,8 @@ zero divisors exactly when it is minimal.
   containing `g` contains `P`.
 * `Ideal.mem_minimalPrimes_iff_disjoint_nonZeroDivisors`: in a reduced ring with finitely many
   minimal primes, a prime ideal is minimal if and only if it consists of zero divisors.
+* `Ideal.exists_eq_of_mem_minimalPrimes_of_inf_le`: if finitely many primes over `I` intersect
+  inside the radical of `I`, every minimal prime over `I` is one of them.
 -/
 
 public section
@@ -72,5 +74,14 @@ theorem mem_minimalPrimes_iff_disjoint_nonZeroDivisors {A : Type*} [CommRing A] 
   obtain ⟨q, hq, hpq⟩ := (subset_union_prime_finite hfin (f := id) 0 0
     fun q hq _ _ ↦ hq.isPrime).mp hsub
   rwa [le_antisymm hpq (hq.2 ⟨‹_›, bot_le⟩ hpq)]
+
+/-- If finitely many primes `f i` over an ideal `I` intersect inside the radical of `I`, then every
+minimal prime over `I` is one of them. For `I = ⊥` this says that the minimal primes of a ring are
+among any finite family of primes whose elements in common are nilpotent. -/
+theorem exists_eq_of_mem_minimalPrimes_of_inf_le {A ι : Type*} [CommSemiring A] {I : Ideal A}
+    {s : Finset ι} {f : ι → Ideal A} (hf : ∀ i ∈ s, (f i).IsPrime) (hIf : ∀ i ∈ s, I ≤ f i)
+    (hs : s.inf f ≤ I.radical) {P : Ideal A} (hP : P ∈ I.minimalPrimes) : ∃ i ∈ s, P = f i := by
+  obtain ⟨i, hi, hiP⟩ := hP.1.1.inf_le'.mp (hs.trans (hP.1.1.radical_le_iff.2 hP.1.2))
+  exact ⟨i, hi, le_antisymm (hP.2 ⟨hf i hi, hIf i hi⟩ hiP) hiP⟩
 
 end Ideal

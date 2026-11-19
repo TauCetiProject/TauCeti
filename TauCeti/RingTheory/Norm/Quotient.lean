@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.Norm.Basic
 public import Mathlib.RingTheory.TensorProduct.Quotient
 import Mathlib.LinearAlgebra.Charpoly.Basic
+import TauCeti.RingTheory.Norm.NonZeroDivisors
 import TauCeti.RingTheory.NormTrace.BaseChange
 
 /-!
@@ -23,6 +25,12 @@ By Cayley–Hamilton, if an `R`-algebra homomorphism `τ : S →ₐ[R] T` kills 
 `algebraMap R T (Algebra.norm R b) = 0` (`AlgHom.algebraMap_norm_eq_zero_of_map_eq_zero`); in
 particular `Algebra.norm R b = 0` when `T = R` and `Algebra.norm R b ∈ I` when `T = R ⧸ I`.
 
+For a finite free algebra `S` and a maximal ideal `p` of `R`, the norm of `x` lies in `p` exactly
+when `x` lies in a prime of `S` over `p` (`Algebra.norm_mem_iff_exists_liesOver`): the class of
+`x` in the finite-dimensional algebra `S ⧸ pS` over the field `R ⧸ p` is a unit exactly when its
+norm is nonzero. When a single prime `P` lies over `p`, this says that `x` vanishes in the
+residue ring `S ⧸ P` exactly when its norm vanishes in `R ⧸ p`.
+
 ## Main results
 
 * `TauCeti.Algebra.norm_quotient_mk`: the norm of `S ⧸ IS` over `R ⧸ I` of the class of `x` is
@@ -30,6 +38,8 @@ particular `Algebra.norm R b = 0` when `T = R` and `Algebra.norm R b ∈ I` when
 * `AlgHom.algebraMap_norm_eq_zero_of_map_eq_zero`, `AlgHom.norm_eq_zero_of_map_eq_zero`, and
   `AlgHom.norm_mem_of_map_eq_zero`: vanishing of `Algebra.norm R b` under `R`-algebra maps killing
   `b`.
+* `Algebra.norm_mem_iff_exists_liesOver`: the norm lies in a maximal ideal `p` exactly when the
+  element lies in a prime over `p`.
 -/
 
 public section
@@ -82,3 +92,36 @@ theorem norm_mem_of_map_eq_zero {I : Ideal R} (τ : S →ₐ[R] R ⧸ I) {b : S}
   Ideal.Quotient.eq_zero_iff_mem.mp (τ.algebraMap_norm_eq_zero_of_map_eq_zero hb)
 
 end AlgHom
+
+namespace Algebra
+
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] [Module.Free R S]
+  [Module.Finite R S]
+
+/-- **The norm lies in a maximal ideal exactly over the primes containing the element.** For a
+finite free algebra `S` over `R` and a maximal ideal `p` of `R`, the norm of `x` lies in `p`
+exactly when `x` lies in some prime ideal of `S` lying over `p`. -/
+theorem norm_mem_iff_exists_liesOver (p : Ideal R) [p.IsMaximal] (x : S) :
+    norm R x ∈ p ↔ ∃ P : Ideal S, P.IsPrime ∧ P.LiesOver p ∧ x ∈ P := by
+  constructor
+  · intro hx
+    let I := p.map (algebraMap R S)
+    let : Field (R ⧸ p) := Ideal.Quotient.field p
+    have : Module.Finite (R ⧸ p) (S ⧸ I) := .of_restrictScalars_finite R _ _
+    -- The class of `x` in `S ⧸ pS` is not a unit: its norm over the field `R ⧸ p` vanishes.
+    have hnu : Ideal.Quotient.mk I x ∈ nonunits (S ⧸ I) := fun hu => by
+      have := (isUnit_norm_iff (R := R ⧸ p)).2 hu
+      rw [TauCeti.Algebra.norm_quotient_mk, Ideal.Quotient.eq_zero_iff_mem.2 hx] at this
+      exact not_isUnit_zero this
+    obtain ⟨M, hM, hxM⟩ := exists_max_ideal_of_mem_nonunits hnu
+    have hMp := Ideal.comap_isMaximal_of_surjective _ Ideal.Quotient.mk_surjective (K := M)
+    refine ⟨M.comap (Ideal.Quotient.mk I), hMp.isPrime, ⟨?_⟩, hxM⟩
+    refine ‹p.IsMaximal›.eq_of_le (Ideal.IsPrime.ne_top inferInstance) fun r hr => ?_
+    rw [Ideal.under, Ideal.mem_comap, Ideal.mem_comap, Ideal.Quotient.eq_zero_iff_mem.2
+      (Ideal.mem_map_of_mem _ hr)]
+    exact M.zero_mem
+  · rintro ⟨P, -, hP, hxP⟩
+    rw [Ideal.mem_of_liesOver P p]
+    exact Ideal.mem_of_dvd _ (dvd_algebraMap_norm x) hxP
+
+end Algebra
