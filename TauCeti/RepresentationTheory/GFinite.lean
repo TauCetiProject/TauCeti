@@ -107,6 +107,16 @@ theorem isGFinite_iff (v : V) :
     ρ.IsGFinite v ↔ FiniteDimensional k (Submodule.span k (Set.range fun g : G => ρ g v)) :=
   (Iff.rfl)
 
+/-- The **`G`-finite vectors** of a representation, as a submodule: the vectors whose images under
+the family of maps `ρ g` span a finite-dimensional subspace. -/
+def gFiniteSubmodule : Submodule k V :=
+  finiteSpanRangeSubmodule fun g : G => ρ g
+
+/-- Membership in the `G`-finite submodule is `G`-finiteness. -/
+@[simp]
+theorem mem_gFiniteSubmodule {v : V} : v ∈ ρ.gFiniteSubmodule ↔ ρ.IsGFinite v :=
+  mem_finiteSpanRangeSubmodule.trans (ρ.isGFinite_iff v).symm
+
 /-- The span of the orbit of a vector is invariant under the representation. -/
 theorem apply_mem_span_range_apply (v : V) (g : G) {w : V}
     (hw : w ∈ Submodule.span k (Set.range fun h : G => ρ h v)) :
@@ -143,16 +153,17 @@ theorem IsGFinite.of_finiteDimensional [FiniteDimensional k V] (v : V) : ρ.IsGF
 /-- The zero vector is `G`-finite. -/
 @[simp]
 theorem IsGFinite.zero : ρ.IsGFinite 0 :=
-  (finiteSpanRangeSubmodule fun g : G => ρ g).zero_mem
+  ρ.mem_gFiniteSubmodule.1 ρ.gFiniteSubmodule.zero_mem
 
 /-- A sum of `G`-finite vectors is `G`-finite. -/
 theorem IsGFinite.add {v w : V} (hv : ρ.IsGFinite v) (hw : ρ.IsGFinite w) :
     ρ.IsGFinite (v + w) :=
-  (finiteSpanRangeSubmodule fun g : G => ρ g).add_mem hv hw
+  ρ.mem_gFiniteSubmodule.1 <|
+    ρ.gFiniteSubmodule.add_mem (ρ.mem_gFiniteSubmodule.2 hv) (ρ.mem_gFiniteSubmodule.2 hw)
 
 /-- A scalar multiple of a `G`-finite vector is `G`-finite. -/
 theorem IsGFinite.smul {v : V} (hv : ρ.IsGFinite v) (c : k) : ρ.IsGFinite (c • v) :=
-  (finiteSpanRangeSubmodule fun g : G => ρ g).smul_mem c hv
+  ρ.mem_gFiniteSubmodule.1 <| ρ.gFiniteSubmodule.smul_mem c (ρ.mem_gFiniteSubmodule.2 hv)
 
 /-- The image of a `G`-finite vector under the representation is `G`-finite. -/
 theorem IsGFinite.apply {v : V} (hv : ρ.IsGFinite v) (g : G) : ρ.IsGFinite (ρ g v) := by
@@ -179,33 +190,21 @@ theorem IsGFinite.map (f : IntertwiningMap ρ σ) {v : V} (hv : ρ.IsGFinite v) 
 
 variable (ρ)
 
-/-- The **`G`-finite vectors** of a representation, as a submodule. -/
-def gFiniteSubmodule : Submodule k V where
-  carrier := {v | ρ.IsGFinite v}
-  add_mem' := IsGFinite.add
-  zero_mem' := IsGFinite.zero
-  smul_mem' c _ hv := hv.smul c
-
-/-- Membership in the `G`-finite submodule is `G`-finiteness. -/
-@[simp]
-theorem mem_gFiniteSubmodule {v : V} : v ∈ ρ.gFiniteSubmodule ↔ ρ.IsGFinite v :=
-  (Iff.rfl)
-
 /-- The `G`-finite vectors are invariant under the representation. -/
 theorem apply_mem_gFiniteSubmodule {v : V} (hv : v ∈ ρ.gFiniteSubmodule) (g : G) :
     ρ g v ∈ ρ.gFiniteSubmodule :=
-  IsGFinite.apply hv g
+  ρ.mem_gFiniteSubmodule.2 ((ρ.mem_gFiniteSubmodule.1 hv).apply g)
 
 variable {ρ} in
 /-- An intertwining map carries the `G`-finite vectors into the `G`-finite vectors. -/
 theorem map_gFiniteSubmodule_le (f : IntertwiningMap ρ σ) :
     ρ.gFiniteSubmodule.map f.toLinearMap ≤ σ.gFiniteSubmodule := by
   rintro _ ⟨v, hv, rfl⟩
-  exact hv.map f
+  exact σ.mem_gFiniteSubmodule.2 ((ρ.mem_gFiniteSubmodule.1 hv).map f)
 
 /-- In a finite-dimensional representation every vector is `G`-finite. -/
 @[simp]
 theorem gFiniteSubmodule_eq_top [FiniteDimensional k V] : ρ.gFiniteSubmodule = ⊤ :=
-  eq_top_iff.2 fun v _ => IsGFinite.of_finiteDimensional v
+  eq_top_iff.2 fun v _ => ρ.mem_gFiniteSubmodule.2 (IsGFinite.of_finiteDimensional v)
 
 end Representation
