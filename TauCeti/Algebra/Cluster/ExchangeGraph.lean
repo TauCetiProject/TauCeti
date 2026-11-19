@@ -46,7 +46,7 @@ variable {K : Type*}
 
 /-- A reduced mutation word: a word in the directions `K` in which no two adjacent letters
 coincide. Words are read from left to right, so the last letter is the latest mutation. -/
-abbrev ReducedWord (K : Type*) := {w : List K // w.IsChain (· ≠ ·)}
+abbrev ReducedWord (K : Type*) : Type _ := {w : List K // w.IsChain (· ≠ ·)}
 
 namespace ReducedWord
 
