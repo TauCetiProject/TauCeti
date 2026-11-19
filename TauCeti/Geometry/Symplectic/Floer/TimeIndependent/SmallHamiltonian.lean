@@ -73,7 +73,9 @@ mixed boundary conditions
 `∫₀¹ ‖∂s ξ‖² = ∫₀¹ ‖∂t ξ - dX_H(u) ξ‖²` below by `(C - a)² f`, and `‖∂s S‖ ≤ c M`. Hence
 `f'' ≥ (4 (C - a)² - 2 c M) f` with a positive constant. A nonnegative bounded function with
 `f'' ≥ κ f`, `κ > 0`, is convex and bounded, hence zero
-(`TauCeti.eq_zero_of_hasDerivAt_of_mul_le_of_bddAbove`). So `ξ = 0`.
+(`TauCeti.eq_zero_of_hasDerivAt_of_mul_le_of_bddAbove`). So `ξ = 0`
+(`TauCeti.SymplecticForm.eq_zero_of_fderiv_apply_real_eq` for cylinders). This step only uses
+that `ξ` is a bounded solution of the linearized equation along `u`.
 
 The constant structure `J` covers flat targets. On a torus `V / Λ` with a flat compatible
 structure, a Floer cylinder whose loops are contractible lifts to a solution on `V` of period one
@@ -360,8 +362,8 @@ strip. Suppose that its slices satisfy the Wirtinger-type bound `C² ∫₀¹ �
 that the boundary term `⟪J ξ, ∂s ξ⟫` takes the same value at `t = 0` and at `t = 1`. If
 `‖dX_H‖ ≤ a < C`, `‖d²X_H‖ ≤ c`, `‖du‖ ≤ M` on the closed strip and `c M < 2 (C - a)²`, then `ξ`
 vanishes on the closed strip. -/
-private theorem eq_zero_of_fderiv_apply_real_eq (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
-    {a c M B C : ℝ} (hH : ContDiff ℝ 3 H)
+private theorem eq_zero_of_fderiv_apply_real_eq_of_mul_integral_le
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) {a c M B C : ℝ} (hH : ContDiff ℝ 3 H)
     (ha : ∀ x, ‖fderiv ℝ (ω.hamiltonianVectorField H) x‖ ≤ a)
     (hc : ∀ x, ‖fderiv ℝ (fderiv ℝ (ω.hamiltonianVectorField H)) x‖ ≤ c)
     (haC : a < C) (hcM : c * M < 2 * (C - a) ^ 2)
@@ -412,15 +414,9 @@ private theorem eq_zero_of_fderiv_apply_real_eq (hg : ∀ v w, ω v (J w) = ⟪v
   rw [closure_Ioc zero_ne_one] at hcl
   simpa using hcl ht
 
-end Slice
-
-section Main
-
-variable {a c M : ℝ}
-
 /-- **Wirtinger's inequality on the slices of a cylinder.** If `ξ` has period one in `t` and mean
 zero on every slice, then `(2π)² ∫₀¹ ‖ξ(s, t)‖² dt ≤ ∫₀¹ ‖∂t ξ(s, t)‖² dt`. -/
-private theorem mul_integral_norm_sq_slice_le_of_periodic {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ)
+private theorem mul_integral_norm_sq_slice_le_of_periodic (hξ : ContDiff ℝ 1 ξ)
     (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (hmean : ∀ s, ∫ t in (0 : ℝ)..1, ξ (s, t) = 0)
     (s : ℝ) :
     (2 * π) ^ 2 * ∫ t in (0 : ℝ)..1, ‖ξ (s, t)‖ ^ 2 ≤
@@ -431,6 +427,42 @@ private theorem mul_integral_norm_sq_slice_le_of_periodic {ξ : ℝ × ℝ → V
   rw [sub_zero, div_pow, one_pow, div_mul_eq_mul_div, one_mul,
     le_div_iff₀ (by positivity)] at h
   linarith
+
+/-- **Bounded solutions of the linearized equation with mean-zero slices vanish.** Let `ξ` be a
+bounded `C²` solution of `∂s ξ = -J ∂t ξ + J dX_H(u) ξ`, of period one in `t`, whose slices
+`t ↦ ξ(s, t)` have mean zero. If `‖dX_H‖ ≤ a < 2π`, `‖d²X_H‖ ≤ c`, `‖du‖ ≤ M` and
+`c M < 2 (2π - a)²`, then `ξ = 0`. -/
+theorem eq_zero_of_fderiv_apply_real_eq (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) {a c M B : ℝ}
+    (hH : ContDiff ℝ 3 H) (ha : ∀ x, ‖fderiv ℝ (ω.hamiltonianVectorField H) x‖ ≤ a)
+    (hc : ∀ x, ‖fderiv ℝ (fderiv ℝ (ω.hamiltonianVectorField H)) x‖ ≤ c)
+    (ha2π : a < 2 * π) (hcM : c * M < 2 * (2 * π - a) ^ 2)
+    (hu : ContDiff ℝ 1 u) (hM : ∀ z, ‖fderiv ℝ u z‖ ≤ M) (hξ : ContDiff ℝ 2 ξ)
+    (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (hmean : ∀ s, ∫ t in (0 : ℝ)..1, ξ (s, t) = 0)
+    (hξeq : ∀ z, fderiv ℝ ξ z (1, 0) =
+      -J (fderiv ℝ ξ z (0, 1)) + J (fderiv ℝ (ω.hamiltonianVectorField H) (u z) (ξ z)))
+    (hB : ∀ z, ‖ξ z‖ ≤ B) (z : ℝ × ℝ) : ξ z = 0 := by
+  -- The boundary term has period one.
+  have hbd (s : ℝ) : ⟪J (ξ (s, 1)), fderiv ℝ ξ (s, 1) (1, 0)⟫ =
+      ⟪J (ξ (s, 0)), fderiv ℝ ξ (s, 0) (1, 0)⟫ := by
+    have h := fderiv_add_snd_of_periodic_snd (𝕜 := ℝ) hper s 0
+    rw [zero_add] at h
+    rw [h, show ξ (s, 1) = ξ (s, 0) by simpa using hper s 0]
+  have hzero := eq_zero_of_fderiv_apply_real_eq_of_mul_integral_le hg hH ha hc ha2π hcM hu
+    (fun s t _ ↦ hM (s, t)) hξ
+    (mul_integral_norm_sq_slice_le_of_periodic (hξ.of_le (by norm_num)) hper hmean) hbd
+    (fun z _ ↦ hξeq z) fun s t _ ↦ hB (s, t)
+  -- By periodicity, `ξ` vanishes everywhere.
+  obtain ⟨s, t⟩ := z
+  obtain ⟨t', ht', hξt⟩ :=
+    (show Function.Periodic (fun t ↦ ξ (s, t)) 1 from hper s).exists_mem_Ioc zero_lt_one t 0
+  rw [zero_add] at ht'
+  simpa [hξt] using hzero s (Ioc_subset_Icc_self ht')
+
+end Slice
+
+section Main
+
+variable {a c M : ℝ}
 
 /-- **Floer cylinders of a small autonomous Hamiltonian are time-independent.** Let the inner
 product of `V` be the metric `ω(·, J ·)` of a constant compatible almost complex structure `J`,
@@ -448,32 +480,21 @@ theorem eq_comp_fst_of_isComplexLinearMap_perturbedFDeriv (hg : ∀ v w, ω v (J
     (hM : ∀ z, ‖fderiv ℝ u z‖ ≤ M) :
     u = fun z ↦ u (z.1, 0) := by
   have hu1 : ContDiff ℝ 1 u := hu.of_le (by norm_num)
-  -- `ξ = ∂t u` is a bounded solution of the linearized equation with mean-zero slices, and its
-  -- boundary term has period one.
+  -- `ξ = ∂t u` is a bounded solution of the linearized equation with mean-zero slices.
   set ξ : ℝ × ℝ → V := fun y ↦ fderiv ℝ u y (0, 1)
   have hξ : ContDiff ℝ 2 ξ := (hu.fderiv_right (m := 2) (by norm_num)).clm_apply contDiff_const
   have hξper (s t : ℝ) : ξ (s, t + 1) = ξ (s, t) := by
     simp only [ξ, fderiv_add_snd_of_periodic_snd hper]
-  have hbd (s : ℝ) : ⟪J (ξ (s, 1)), fderiv ℝ ξ (s, 1) (1, 0)⟫ =
-      ⟪J (ξ (s, 0)), fderiv ℝ ξ (s, 0) (1, 0)⟫ := by
-    have h := fderiv_add_snd_of_periodic_snd (𝕜 := ℝ) hξper s 0
-    rw [zero_add] at h
-    rw [h, show ξ (s, 1) = ξ (s, 0) by simpa using hξper s 0]
   have hB (z : ℝ × ℝ) : ‖ξ z‖ ≤ M :=
     ((fderiv ℝ u z).le_opNorm _).trans (by simpa using hM z)
-  have hzero := eq_zero_of_fderiv_apply_real_eq hg hH ha hc ha2π hcM hu1 (fun s t _ ↦ hM (s, t))
-    hξ (mul_integral_norm_sq_slice_le_of_periodic (hξ.of_le (by norm_num)) hξper
-      (integral_fderiv_apply_zero_one_eq_zero hu1 hper)) hbd
-    (fun z _ ↦ fderiv_imag_apply_real (hH.of_le (by norm_num)) (hu.of_le (by norm_num))
-      (Eventually.of_forall hfl)) fun s t _ ↦ hB (s, t)
-  -- By periodicity, `ξ` vanishes everywhere, so every slice `t ↦ u(s, t)` is constant.
+  have hzero := eq_zero_of_fderiv_apply_real_eq hg hH ha hc ha2π hcM hu1 hM hξ hξper
+    (integral_fderiv_apply_zero_one_eq_zero hu1 hper)
+    (fun z ↦ fderiv_imag_apply_real (hH.of_le (by norm_num)) (hu.of_le (by norm_num))
+      (Eventually.of_forall hfl)) hB
+  -- So every slice `t ↦ u(s, t)` has vanishing derivative.
   funext ⟨s, t⟩
   have hd (t : ℝ) : HasDerivAt (fun t ↦ u (s, t)) 0 t := by
-    have hpers : Function.Periodic (fun t ↦ ξ (s, t)) 1 := hξper s
-    obtain ⟨t', ht', hξt⟩ := hpers.exists_mem_Ioc zero_lt_one t 0
-    rw [zero_add] at ht'
-    have h0 : ξ (s, t) = 0 := by simpa [hξt] using hzero s (Ioc_subset_Icc_self ht')
-    simpa [ξ, h0] using hasDerivAt_slice_right (hu1.differentiable one_ne_zero (s, t))
+    simpa [ξ, hzero (s, t)] using hasDerivAt_slice_right (hu1.differentiable one_ne_zero (s, t))
   exact is_const_of_deriv_eq_zero (fun t ↦ (hd t).differentiableAt) (fun t ↦ (hd t).deriv) t 0
 
 /-- **Floer cylinders of a small autonomous Hamiltonian are gradient lines.** Under the hypotheses
@@ -595,7 +616,7 @@ theorem eqOn_comp_fst_of_isComplexLinearMap_perturbedFDeriv_of_isIsotropic
   have hJξ₁ (s : ℝ) : J (ξ (s, 1)) ∈ L :=
     apply_fderiv_apply_mem hg hHL hud hu1 (hfl (s, 1) ⟨zero_le_one, le_rfl⟩)
   have hξd : Differentiable ℝ ξ := hξ.differentiable (by norm_num)
-  have hzero := eq_zero_of_fderiv_apply_real_eq hg hH ha hc haπ hcM hu₁
+  have hzero := eq_zero_of_fderiv_apply_real_eq_of_mul_integral_le hg hH ha hc haπ hcM hu₁
     (fun s t ht ↦ hM (s, t) ht) hξ
     (fun s ↦ mul_integral_norm_sq_slice_le_of_isIsotropic hg hL (hu.of_le (by norm_num)) hu0
       hu1 s (hJξ₀ s) (hJξ₁ s))
