@@ -87,6 +87,14 @@ noncomputable def graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) : Matrix (n �
     (A.toBlocks₁₂.map (↑) + Complex.I • A.toBlocks₂₂.map (↑))
 
 omit [Fintype n] in
+/-- The defining block form of the graph frame. -/
+theorem graphFrame_def (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    graphFrame A = fromBlocks 1 (-(Complex.I • 1))
+      (A.toBlocks₁₁.map (↑) + Complex.I • A.toBlocks₂₁.map (↑))
+      (A.toBlocks₁₂.map (↑) + Complex.I • A.toBlocks₂₂.map (↑)) :=
+  (rfl)
+
+omit [Fintype n] in
 /-- The graph frame of a symplectic direct sum is the symplectic direct sum of the graph frames:
 the graph of `A ⊕ B` is the product of the graphs of `A` and `B`, in regrouped coordinates. -/
 theorem graphFrame_symplecticSum {m : Type*} [DecidableEq m]
