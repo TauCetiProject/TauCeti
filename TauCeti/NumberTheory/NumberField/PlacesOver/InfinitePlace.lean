@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Ramification
 import TauCeti.Analysis.Normed.Algebra.GelfandMazur
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Real
 
 /-!
 # Absolute values above an infinite place
@@ -23,12 +24,11 @@ over an infinite place, as Diophantine approximation with algebraic targets requ
 to mention a completion.
 
 The argument runs in the completion `F_w`. Since `w` restricts to `v` on `K`, the completion
-`K_v` embeds isometrically into `F_w` (`AbsoluteValue.Completion.isometry_map`), and `K_v` is
-`ℝ` or `ℂ` (`NumberField.InfinitePlace.Completion.ringEquivRealOfIsReal`,
-`NumberField.InfinitePlace.Completion.ringEquivComplexOfIsComplex`). So `F_w` is a normed field
-containing an isometric copy of `ℝ`, that is, a normed `ℝ`-algebra, and it embeds isometrically
-into `ℂ` by `NormedAlgebra.Real.exists_algHom_complex_isometry`, a strengthening of
-Gelfand–Mazur. Composing with `F → F_w` gives the complex embedding. Gelfand–Mazur asks neither
+`K_v` embeds isometrically into `F_w` (`AbsoluteValue.Completion.isometry_map`), and `K_v`
+contains an isometric copy of `ℝ` (`NumberField.InfinitePlace.Completion.ofReal`). So `F_w` is a
+normed field containing an isometric copy of `ℝ`, that is, a normed `ℝ`-algebra, and it embeds
+isometrically into `ℂ` by `NormedAlgebra.Real.exists_algHom_complex_isometry`, a strengthening
+of Gelfand–Mazur. Composing with `F → F_w` gives the complex embedding. Gelfand–Mazur asks neither
 for the completeness of `F_w` nor for its finite dimension over `K_v`.
 
 ## Main results
@@ -65,23 +65,13 @@ absolute value of a field extension `F` lying over an infinite place of `K` is a
 of `F`, the norm of a complex embedding. -/
 theorem isInfinitePlace_of_liesOver (v : InfinitePlace K) (w : AbsoluteValue F ℝ)
     [w.LiesOver v.1] : IsInfinitePlace w := by
-  -- `K_v` is `ℝ` or `ℂ`, so it contains an isometric copy of `ℝ`.
-  obtain ⟨j, hj⟩ : ∃ j : ℝ →+* v.Completion, ∀ r, ‖j r‖ = ‖r‖ := by
-    rcases v.isReal_or_isComplex with hv | hv
-    · exact ⟨(InfinitePlace.Completion.ringEquivRealOfIsReal hv).symm.toRingHom, fun r ↦
-        (InfinitePlace.Completion.isometryEquivRealOfIsReal hv).symm.isometry.norm_map_of_map_zero
-          (map_zero (InfinitePlace.Completion.ringEquivRealOfIsReal hv).symm) r⟩
-    · refine ⟨(InfinitePlace.Completion.ringEquivComplexOfIsComplex hv).symm.toRingHom.comp
-        Complex.ofRealHom, fun r ↦ ?_⟩
-      have h := (InfinitePlace.Completion.isometryEquivComplexOfIsComplex hv).symm.isometry
-        |>.norm_map_of_map_zero
-          (map_zero (InfinitePlace.Completion.ringEquivComplexOfIsComplex hv).symm) (r : ℂ)
-      rwa [Complex.norm_real] at h
-  -- The copy of `ℝ` in `K_v` maps isometrically into `F_w`, making `F_w` a normed `ℝ`-algebra.
-  let ι : ℝ →+* w.Completion := (Completion.map v.1 w).comp j
+  -- `K_v` contains an isometric copy of `ℝ`, which maps isometrically into `F_w`, making `F_w`
+  -- a normed `ℝ`-algebra.
+  let ι : ℝ →+* w.Completion := (Completion.map v.1 w).comp (InfinitePlace.Completion.ofReal v)
   have hι (r : ℝ) : ‖ι r‖ = ‖r‖ := by
     rw [RingHom.comp_apply,
-      (AddMonoidHomClass.isometry_iff_norm _).mp (Completion.isometry_map v.1 w), hj]
+      (AddMonoidHomClass.isometry_iff_norm _).mp (Completion.isometry_map v.1 w),
+      InfinitePlace.Completion.norm_ofReal, Real.norm_eq_abs]
   let : NormedAlgebra ℝ w.Completion :=
     { ι.toAlgebra with
       norm_smul_le r x := by
