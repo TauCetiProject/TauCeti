@@ -641,8 +641,7 @@ private theorem exists_eLpNorm_le_mul_eLpNorm_tsum [Countable ι] [Nontrivial V]
           (fun x ↦ (∑' i, ‖Lp.fourierMultiplierCLM F (m i) f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ)) p volume := by
   -- The conjugate exponent `q = (1 - p⁻¹)⁻¹` also lies in `(1, ∞)`.
   set q : ℝ≥0∞ := (1 - p⁻¹)⁻¹
-  have : p.HolderConjugate q := ENNReal.holderConjugate_iff.2 (by
-    rw [inv_inv, add_tsub_cancel_of_le (ENNReal.inv_le_one.2 hp.le)])
+  have : p.HolderConjugate q := ENNReal.HolderConjugate.inv_one_sub_inv' hp.le
   have hq : 1 < q := (ENNReal.HolderConjugate.lt_top_iff_one_lt p q).1 hp_top.lt_top
   have hq_top : q ≠ (∞ : ℝ≥0∞) := (ENNReal.HolderConjugate.ne_top_iff_ne_one q p).2 hp.ne'
   obtain ⟨C, hC⟩ := exists_eLpNorm_tsum_le (F := F) hP hq hq_top
@@ -769,12 +768,16 @@ theorem tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley
     Tendsto (fun N ↦ ∑ j ∈ Finset.range N, fourierMultiplierCLM F (m j) f) atTop (𝓝 f) := by
   -- The partial sums of the symbols are `∑_{j < N} ψⱼ = φ (2^{1-N} ·)`, with values in `[0, 1]`,
   -- and tend to `1` at every frequency.
-  refine tendsto_sum_fourierMultiplierCLM_of_tendsto hm _ (fun N ξ ↦ ?_)
-    (.of_forall fun ξ ↦ (φ.hasSum_inhomogeneousLittlewoodPaley ξ).tendsto_sum_nat) f
-  rcases N with _ | N
-  · simp
-  · rw [φ.sum_inhomogeneousLittlewoodPaley_range, abs_of_nonneg φ.nonneg]
-    exact φ.le_one
+  refine tendsto_sum_fourierMultiplierCLM_of_tendsto hm _ (C := 1) (fun N ξ ↦ ?_)
+    (.of_forall fun ξ ↦ ?_) f
+  · rw [← Complex.ofReal_sum, Complex.norm_real, Real.norm_eq_abs]
+    rcases N with _ | N
+    · simp
+    · rw [φ.sum_inhomogeneousLittlewoodPaley_range, abs_of_nonneg φ.nonneg]
+      exact φ.le_one
+  · simpa only [Function.comp_def, Complex.ofReal_sum, Complex.ofReal_one] using
+      (Complex.continuous_ofReal.tendsto _).comp
+        (φ.hasSum_inhomogeneousLittlewoodPaley ξ).tendsto_sum_nat
 
 /-- **Homogeneous Littlewood–Paley reconstruction in `L²`.** On a nontrivial space, the partial
 sums `∑_{|j| ≤ N} Pⱼ f` of the homogeneous Littlewood–Paley blocks of `f ∈ L²(V, F)` converge to
@@ -788,8 +791,9 @@ theorem tendsto_sum_fourierMultiplierCLM_littlewoodPaley [Nontrivial V]
       (𝓝 f) := by
   -- The partial sums of the symbols telescope to a difference of two values of `φ`, and tend to
   -- `1` away from the origin, which is a null set.
-  refine tendsto_sum_fourierMultiplierCLM_of_tendsto hm _ (fun N ξ ↦ ?_) ?_ f
-  · have hIcc : Finset.Icc (-(N : ℤ)) N = Finset.Ioc (-(N : ℤ) - 1) N := by
+  refine tendsto_sum_fourierMultiplierCLM_of_tendsto hm _ (C := 1) (fun N ξ ↦ ?_) ?_ f
+  · rw [← Complex.ofReal_sum, Complex.norm_real, Real.norm_eq_abs]
+    have hIcc : Finset.Icc (-(N : ℤ)) N = Finset.Ioc (-(N : ℤ) - 1) N := by
       ext j
       simp only [Finset.mem_Icc, Finset.mem_Ioc]
       omega
@@ -801,7 +805,9 @@ theorem tendsto_sum_fourierMultiplierCLM_littlewoodPaley [Nontrivial V]
     have hcov : ∀ j : ℤ, ∃ N : ℕ, j ∈ Finset.Icc (-(N : ℤ)) N := fun j ↦
       ⟨j.natAbs, by simp only [Finset.mem_Icc]; omega⟩
     filter_upwards [Measure.ae_ne volume 0] with ξ hξ
-    exact (φ.hasSum_littlewoodPaley hξ).comp (tendsto_atTop_finset_of_monotone hmono hcov)
+    simpa only [Function.comp_def, Complex.ofReal_sum, Complex.ofReal_one] using
+      (Complex.continuous_ofReal.tendsto _).comp
+        ((φ.hasSum_littlewoodPaley hξ).comp (tendsto_atTop_finset_of_monotone hmono hcov))
 
 end MeasureTheory.Lp
 

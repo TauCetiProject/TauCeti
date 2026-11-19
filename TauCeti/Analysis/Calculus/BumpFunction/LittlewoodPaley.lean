@@ -308,14 +308,16 @@ every `ξ` at most `L` cutoffs `ψⱼ` are nonzero, over any finite set of indic
 theorem exists_card_filter_littlewoodPaley_ne_zero_le :
     ∃ L : ℕ, ∀ (s : Finset ℤ) (ξ : E), (s.filter fun j ↦ φ.littlewoodPaley j ξ ≠ 0).card ≤ L := by
   obtain ⟨L, hL⟩ := φ.exists_littlewoodPaley_mul_eq_zero φ
-  exact ⟨L, card_filter_ne_zero_le_of_mul_eq_zero Function.injective_id hL⟩
+  exact ⟨L, fun s ξ ↦ card_filter_ne_zero_le_of_mul_eq_zero Function.injective_id
+    (fun j k h ↦ hL j k h ξ) s⟩
 
 /-- **Bounded sum of squares of the dyadic cutoffs.** There is `L`, depending only on `φ`, with
 `∑ⱼ ψⱼ ξ ² ≤ L` for every `ξ`, over any finite set of indices `j ∈ ℤ`. -/
 theorem exists_sum_sq_littlewoodPaley_le :
     ∃ L : ℕ, ∀ (s : Finset ℤ) (ξ : E), ∑ j ∈ s, φ.littlewoodPaley j ξ ^ 2 ≤ L := by
   obtain ⟨L, hL⟩ := φ.exists_littlewoodPaley_mul_eq_zero φ
-  exact ⟨L, sum_sq_le_of_mul_eq_zero Function.injective_id hL φ.abs_littlewoodPaley_le_one⟩
+  exact ⟨L, fun s ξ ↦ sum_sq_le_of_mul_eq_zero Function.injective_id (fun j k h ↦ hL j k h ξ)
+    (φ.abs_littlewoodPaley_le_one · ξ) s⟩
 
 /-- **The neighbouring cutoffs sum to `1` on the support of `ψⱼ`.** If the cutoffs whose indices
 differ by at least `L` have disjoint supports, then `(∑_{|k - j| < L} ψₖ) ψⱼ = ψⱼ`. -/
@@ -324,7 +326,8 @@ theorem sum_Ico_littlewoodPaley_mul_littlewoodPaley {L : ℕ}
     (j : ℤ) (ξ : E) :
     (∑ k ∈ Finset.Ico (j + 1 - L) (j + L), φ.littlewoodPaley k ξ) * φ.littlewoodPaley j ξ =
       φ.littlewoodPaley j ξ := by
-  refine sum_mul_eq_right_of_mul_eq_zero (e := id) hL (fun h ↦ φ.hasSum_littlewoodPaley ?_)
+  refine sum_mul_eq_right_of_mul_eq_zero (e := id) (fun j k h ↦ hL j k h ξ)
+    (fun h ↦ φ.hasSum_littlewoodPaley ?_)
     fun k hk ↦ ?_
   · rintro rfl
     exact h (φ.littlewoodPaley_apply_zero j)
@@ -545,7 +548,8 @@ theorem enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley {L : ℕ}
     φ.enlargedLittlewoodPaley L j ξ * φ.inhomogeneousLittlewoodPaley j ξ =
       φ.inhomogeneousLittlewoodPaley j ξ := by
   rw [enlargedLittlewoodPaley_apply]
-  refine sum_mul_eq_right_of_mul_eq_zero (e := Nat.cast) (fun j k h ↦ hL j k (by exact_mod_cast h))
+  refine sum_mul_eq_right_of_mul_eq_zero (e := Nat.cast)
+    (fun j k h ↦ hL j k (by exact_mod_cast h) ξ)
     (fun _ ↦ φ.hasSum_inhomogeneousLittlewoodPaley ξ) fun k hk ↦ ?_
   rw [abs_sub_lt_iff] at hk
   rw [Finset.mem_Ico]
@@ -650,8 +654,8 @@ theorem exists_card_filter_inhomogeneousLittlewoodPaley_ne_zero_le :
     ∃ L : ℕ, ∀ (s : Finset ℕ) (ξ : E),
       (s.filter fun j ↦ φ.inhomogeneousLittlewoodPaley j ξ ≠ 0).card ≤ L := by
   obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
-  exact ⟨L, card_filter_ne_zero_le_of_mul_eq_zero Nat.cast_injective
-    fun j k h ↦ hL j k (by exact_mod_cast h)⟩
+  exact ⟨L, fun s ξ ↦ card_filter_ne_zero_le_of_mul_eq_zero Nat.cast_injective
+    (fun j k h ↦ hL j k (by exact_mod_cast h) ξ) s⟩
 
 /-- **Bounded sum of squares.** There is `L`, depending only on `φ`, with `∑ⱼ ψⱼ ξ ² ≤ L` for every
 `ξ`, over any finite set of indices: at each `ξ` at most `L` consecutive pieces are nonzero, and
@@ -659,8 +663,8 @@ each lies in `[-1, 1]`. -/
 theorem exists_sum_sq_inhomogeneousLittlewoodPaley_le :
     ∃ L : ℕ, ∀ (s : Finset ℕ) (ξ : E), ∑ j ∈ s, φ.inhomogeneousLittlewoodPaley j ξ ^ 2 ≤ L := by
   obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
-  exact ⟨L, sum_sq_le_of_mul_eq_zero Nat.cast_injective (fun j k h ↦ hL j k (by exact_mod_cast h))
-    φ.abs_inhomogeneousLittlewoodPaley_le_one⟩
+  exact ⟨L, fun s ξ ↦ sum_sq_le_of_mul_eq_zero Nat.cast_injective
+    (fun j k h ↦ hL j k (by exact_mod_cast h) ξ) (φ.abs_inhomogeneousLittlewoodPaley_le_one · ξ) s⟩
 
 /-- At every `ξ` the squares `ψⱼ ξ ²` of the pieces are summable over `j`. -/
 theorem summable_inhomogeneousLittlewoodPaley_sq (ξ : E) :
