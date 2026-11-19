@@ -66,6 +66,16 @@ def exponentialFamilyMeasure (ν : Measure X) (T : X → E) (η : E) : Measure X
 theorem exponentialFamilyMeasure_def (ν : Measure X) (T : X → E) (η : E) :
     exponentialFamilyMeasure ν T η = ν.tilted (fun x ↦ ⟪η, T x⟫) := (rfl)
 
+/-- The integral of a real observable under an exponential-family measure is its weighted
+reference integral divided by the normalizing integral. -/
+theorem integral_exponentialFamilyMeasure_eq_div (g : X → ℝ) :
+    (∫ x, g x ∂exponentialFamilyMeasure ν T η) =
+      (∫ x, exp ⟪η, T x⟫ * g x ∂ν) / ∫ x, exp ⟪η, T x⟫ ∂ν := by
+  rw [exponentialFamilyMeasure_def, integral_tilted, div_eq_inv_mul, ← integral_const_mul]
+  congr with x
+  simp only [smul_eq_mul]
+  ring
+
 @[simp]
 theorem exponentialFamilyMeasure_zero_measure (T : X → E) (η : E) :
     exponentialFamilyMeasure (0 : Measure X) T η = 0 := by

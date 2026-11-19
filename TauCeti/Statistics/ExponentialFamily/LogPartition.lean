@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Moments.Covariance
+public import TauCeti.Analysis.Analytic.ExponentialIntegral
 public import TauCeti.Statistics.ExponentialFamily.Moments
-public import TauCeti.Statistics.ExponentialFamily.PowerSeries
 
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
@@ -68,15 +68,6 @@ theorem analyticOnNhd_logPartition :
   have ha : AnalyticAt ℝ Z η := hp.analyticAt
   have hpos : 0 < Z η := integral_exp_pos (mem_naturalParameterSpace.mp (interior_subset hη))
   simpa only [Function.comp_def, Z] using (analyticAt_log hpos).comp ha
-
-omit [FiniteDimensional ℝ E] in
-private theorem integral_exponentialFamilyMeasure_eq_div (g : X → ℝ) :
-    (∫ x, g x ∂exponentialFamilyMeasure ν T η) =
-      (∫ x, exp ⟪η, T x⟫ * g x ∂ν) / ∫ x, exp ⟪η, T x⟫ ∂ν := by
-  rw [exponentialFamilyMeasure_def, integral_tilted, div_eq_inv_mul, ← integral_const_mul]
-  congr with x
-  simp only [smul_eq_mul]
-  ring
 
 private theorem fderiv_logPartition_apply_eq_integral
     (hη : η ∈ interior (naturalParameterSpace ν T)) (v : E) :
