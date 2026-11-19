@@ -55,11 +55,6 @@ universe u
 
 variable {X : Type u} [TopologicalSpace X]
 
-/-- The intrinsic conjugate of a coordinate operator evaluates as `conj ∘ f ∘ conj`. -/
-private theorem ofConv_star_apply {m n : ℕ} (f : (Fin m → ℂ) →L[ℂ] (Fin n → ℂ))
-    (v : Fin m → ℂ) : (star (toConv f)).ofConv v = star (f (star v)) :=
-  ContinuousLinearMap.intrinsicStar_apply (toConv f) v
-
 /-- The transitions of a complex core are *real along* `A` when every transition at a point of
 `A`, between charts containing that point, commutes with coordinatewise conjugation. The real
 coordinate subspaces of the charts over `A` then form a maximal totally real subbundle. -/
@@ -71,7 +66,7 @@ def IsRealAlong (C : FiniteRankBundleCore ℂ X) (A : Set X) : Prop :=
 theorem isRealAlong_trivial (n : ℕ) (A : Set X) : (trivial ℂ X n).IsRealAlong A :=
   fun _ _ _ _ _ _ => by
     ext v : 1
-    rw [ofConv_star_apply]
+    rw [ContinuousLinearMap.intrinsicStar_apply]
     exact star_star v
 
 variable {A : Set X}
@@ -120,7 +115,7 @@ theorem doubleAlongCoordChange_self {C : FiniteRankBundleCore ℂ X} (hC : C.IsR
     exact C.core.coordChange_self _ x (by simpa using hy) v
   | hr x =>
     have hx : x ∈ C.core.baseSet (DoubleAlong.fold A i) := by simpa using hy
-    rw [doubleAlongCoordChange_inr hC hx hx, ofConv_star_apply,
+    rw [doubleAlongCoordChange_inr hC hx hx, ContinuousLinearMap.intrinsicStar_apply,
       C.core.coordChange_self _ x hx, star_star]
 
 /-- The doubled transitions satisfy the cocycle condition. -/
@@ -139,8 +134,9 @@ theorem doubleAlongCoordChange_comp {C : FiniteRankBundleCore ℂ X} (hC : C.IsR
   | hr x =>
     simp only [DoubleAlong.fold_inr] at hi hj hk
     rw [doubleAlongCoordChange_inr hC hi hj, doubleAlongCoordChange_inr hC hj hk,
-      doubleAlongCoordChange_inr hC hi hk, ofConv_star_apply, ofConv_star_apply,
-      ofConv_star_apply, star_star, C.core.coordChange_comp _ _ _ x ⟨⟨hi, hj⟩, hk⟩]
+      doubleAlongCoordChange_inr hC hi hk, ContinuousLinearMap.intrinsicStar_apply,
+      ContinuousLinearMap.intrinsicStar_apply, ContinuousLinearMap.intrinsicStar_apply, star_star,
+      C.core.coordChange_comp _ _ _ x ⟨⟨hi, hj⟩, hk⟩]
 
 /-- Along a closed subset, the doubled transitions are continuous on the overlap of the folded
 charts: the two sheet formulas agree on the frontier of the first sheet, which lies over `A`. -/
@@ -279,12 +275,12 @@ theorem doubleAlongCoordChange_swap {i j y : DoubleAlong A}
   | hl x =>
     simp only [DoubleAlong.fold_inl] at hi hj
     rw [DoubleAlong.swap_inl, doubleAlongCoordChange_inr hC (by simpa using hi) (by simpa using hj),
-      doubleAlongCoordChange_inl, ofConv_star_apply, star_star]
+      doubleAlongCoordChange_inl, ContinuousLinearMap.intrinsicStar_apply, star_star]
     simp
   | hr x =>
     simp only [DoubleAlong.fold_inr] at hi hj
     rw [DoubleAlong.swap_inr, doubleAlongCoordChange_inl, doubleAlongCoordChange_inr hC hi hj,
-      ofConv_star_apply, star_star]
+      ContinuousLinearMap.intrinsicStar_apply, star_star]
     simp
 
 /-- Points of the total space of the double agree exactly when their base points and coordinate
@@ -388,7 +384,7 @@ noncomputable def doubleAlongTrivialIso (hA : IsClosed A) (n : ℕ) :
         rfl
       | hr x =>
         rw [doubleAlongCoordChange_inr (isRealAlong_trivial n A) (mem_univ x) (mem_univ x),
-          ofConv_star_apply]
+          ContinuousLinearMap.intrinsicStar_apply]
         exact star_star v
     exact h
 
