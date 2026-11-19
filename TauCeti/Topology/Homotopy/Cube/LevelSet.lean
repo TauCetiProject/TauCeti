@@ -8,8 +8,7 @@ module
 public import Mathlib.Topology.Maps.Proper.Basic
 public import Mathlib.Topology.Order.ProjIcc
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
-public import TauCeti.Topology.Category.TopPair
-public import TauCeti.Topology.Homotopy.DeformationRetract
+public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Pair
 
 /-!
 # Zero level sets of monotone families on a cube deform onto their diagonal roots
@@ -38,17 +37,21 @@ deforms onto the graph of its *diagonal root*, fibrewise over `X`.
   `(x, u) ↦ (x, cubeLevelPoint G x ((1 - s) u + s t(x) · 1))` in `Z` from the identity to the map
   `(x, u) ↦ (x, t(x) · 1)` (`TauCeti.cubeLevelSetHomotopy`). It preserves the first coordinate
   and fixes the graph of the diagonal root, so it is a strong deformation retraction of `Z`
-  onto that graph. Hence the section `x ↦ (x, t(x) · 1)` is a homotopy equivalence `X ≃ₕ Z`
-  with homotopy inverse the projection `Z → X` (`TauCeti.cubeLevelSetHomotopyEquiv`).
-* Since the deformation preserves `x`, for any `A ⊆ X` the projection is also a homotopy
+  onto that graph. Hence the projection `Z → X` and the section `x ↦ (x, t(x) · 1)` form a fibre
+  homotopy equivalence over `X` (`TauCeti.cubeLevelSetFiberHomotopyEquiv`), and in particular
+  the section is a homotopy equivalence `X ≃ₕ Z` (`TauCeti.cubeLevelSetHomotopyEquiv`).
+* Since the equivalence is fibrewise, for any `A ⊆ X` the projection is also a homotopy
   equivalence of pairs `(Z, Z ∩ (A × [0, 1]^ι)) → (X, A)`, so it induces isomorphisms on relative
-  singular homology (`TauCeti.isIso_singularHomologyMap_cubeLevelSetProjPair`).
+  singular homology
+  (`TauCeti.isIso_singularHomologyMap_preimagePairMap_cubeLevelSetFiberHomotopyEquiv`).
 
-This is the pair deformation in the isolating-block proof of the Poincaré–Birkhoff theorem by
-generating functions. There `x` collects the base point on the circle and the negative incoming
-momenta `v ∈ [0, 1]^K`, `u ∈ [0, 1]^K` are the positive incoming momenta, and `G` is the closing
-defect of the broken orbit. Taking `A` to be the points with `v` on the boundary of the cube gives
-the homotopy equivalence of the block with its exit set to `S¹ × ([0, 1]^K, ∂[0, 1]^K)`.
+This is meant for the pair deformation in the isolating-block proof of the Poincaré–Birkhoff
+theorem by generating functions. There `x` collects the base point on the circle and the negative
+incoming momenta `v ∈ [0, 1]^K`, `u ∈ [0, 1]^K` are the positive incoming momenta, and `G` is the
+closing defect of the broken orbit. Once that defect is shown to be strictly increasing in `u`
+with the endpoint signs above, and the block and its exit set are identified with `Z` and with
+the points of `Z` whose `v` lies on the boundary of the cube, taking `A` to be those points
+yields the homotopy equivalence of the block with its exit set to `S¹ × ([0, 1]^K, ∂[0, 1]^K)`.
 
 ## References
 
@@ -84,13 +87,11 @@ lemma clampShift_zero (a : ι → I) : clampShift a 0 = a := by
 
 lemma clampShift_of_le_neg_one (a : ι → I) {τ : ℝ} (hτ : τ ≤ -1) : clampShift a τ = 0 := by
   ext i
-  rw [clampShift_apply, projIcc_of_le_left _ (by linarith [(a i).2.2])]
-  rfl
+  simp [clampShift_apply, projIcc_of_le_left _ (by linarith [(a i).2.2] : a i + τ ≤ 0)]
 
 lemma clampShift_of_one_le (a : ι → I) {τ : ℝ} (hτ : 1 ≤ τ) : clampShift a τ = 1 := by
   ext i
-  rw [clampShift_apply, projIcc_of_right_le _ (by linarith [(a i).2.1])]
-  rfl
+  simp [clampShift_apply, projIcc_of_right_le _ (by linarith [(a i).2.1] : 1 ≤ a i + τ)]
 
 /-- The clamped shifts of the corner `0` are the points of the diagonal. -/
 lemma clampShift_zero_left (τ : ℝ) :
@@ -123,7 +124,7 @@ variable {X : Type*} {G : X → (ι → I) → ℝ} {x : X} {a : ι → I}
 /-- The *level point* of `a` for `G x`: the clamped diagonal shift `clampShift a τ` of `a`, with
 `τ ∈ [-1, 1]`, at which `G x` vanishes, or `a` itself if there is none. When each `G x` is
 continuous and strictly increasing with `G x 0 ≤ 0 ≤ G x 1`, this point exists
-(`TauCeti.apply_cubeLevelPoint`) and is unique
+(`TauCeti.apply_cubeLevelPoint_eq_zero`) and is unique
 (`TauCeti.cubeLevelPoint_eq_of_apply_clampShift_eq_zero`),
 and it depends continuously on `(x, a)` (`TauCeti.continuous_cubeLevelPoint`). -/
 def cubeLevelPoint (G : X → (ι → I) → ℝ) (x : X) (a : ι → I) : ι → I :=
@@ -162,8 +163,8 @@ theorem cubeLevelPoint_eq_self (hmono : StrictMono (G x)) (h : G x a = 0) :
 
 /-- **Existence of the level point.** If `G x` is continuous with `G x 0 ≤ 0 ≤ G x 1`, it vanishes
 at the level point of every point `a` of the cube. -/
-theorem apply_cubeLevelPoint (hG : Continuous (G x)) (h₀ : G x 0 ≤ 0) (h₁ : 0 ≤ G x 1) (a : ι → I) :
-    G x (cubeLevelPoint G x a) = 0 := by
+theorem apply_cubeLevelPoint_eq_zero (hG : Continuous (G x)) (h₀ : G x 0 ≤ 0) (h₁ : 0 ≤ G x 1)
+    (a : ι → I) : G x (cubeLevelPoint G x a) = 0 := by
   have hc : ContinuousOn (fun τ ↦ G x (clampShift a τ)) (Icc (-1) 1) :=
     (hG.comp (continuous_clampShift.comp (continuous_const.prodMk continuous_id))).continuousOn
   obtain ⟨τ, hτ, h⟩ := intermediate_value_Icc (by norm_num : (-1 : ℝ) ≤ 1) hc
@@ -177,7 +178,8 @@ theorem apply_cubeLevelPoint (hG : Continuous (G x)) (h₀ : G x 0 ≤ 0) (h₁ 
 theorem cubeLevelPoint_eq_clampShift_iff (hG : Continuous (G x)) (hmono : StrictMono (G x))
     (h₀ : G x 0 ≤ 0) (h₁ : 0 ≤ G x 1) {τ : ℝ} :
     cubeLevelPoint G x a = clampShift a τ ↔ G x (clampShift a τ) = 0 :=
-  ⟨fun h ↦ h ▸ apply_cubeLevelPoint hG h₀ h₁ a, cubeLevelPoint_eq_of_apply_clampShift_eq_zero hmono⟩
+  ⟨fun h ↦ h ▸ apply_cubeLevelPoint_eq_zero hG h₀ h₁ a,
+    cubeLevelPoint_eq_of_apply_clampShift_eq_zero hmono⟩
 
 /-- **Continuity of the level point**, jointly in the parameter and the point of the cube, for a
 jointly continuous family of strictly increasing functions with `G x 0 ≤ 0 ≤ G x 1`. -/
@@ -201,7 +203,7 @@ theorem continuous_cubeLevelPoint [TopologicalSpace X] (hG : Continuous (uncurry
     constructor
     · rintro rfl
       obtain ⟨τ, hτ, h⟩ := exists_cubeLevelPoint_eq_clampShift G x a
-      exact ⟨apply_cubeLevelPoint (hG.uncurry_left x) (h₀ x) (h₁ x) a, x, a,
+      exact ⟨apply_cubeLevelPoint_eq_zero (hG.uncurry_left x) (h₀ x) (h₁ x) a, x, a,
         cubeLevelPoint G x a, τ, hτ, h, rfl⟩
     · rintro ⟨hw, x', a', w', τ, -, hw', heq⟩
       simp only [Prod.mk.injEq] at heq
@@ -232,9 +234,15 @@ theorem exists_cubeDiagonalRoot_eq_const (G : X → (ι → I) → ℝ) (x : X) 
   obtain ⟨τ, -, h⟩ := exists_cubeLevelPoint_eq_clampShift G x 0
   exact ⟨projIcc 0 1 zero_le_one τ, by rw [cubeDiagonalRoot_def, h, clampShift_zero_left]⟩
 
-theorem apply_cubeDiagonalRoot (hG : Continuous (G x)) (h₀ : G x 0 ≤ 0) (h₁ : 0 ≤ G x 1) :
-    G x (cubeDiagonalRoot G x) = 0 :=
-  apply_cubeLevelPoint hG h₀ h₁ 0
+theorem apply_cubeDiagonalRoot_eq_zero (hG : Continuous (G x)) (h₀ : G x 0 ≤ 0)
+    (h₁ : 0 ≤ G x 1) : G x (cubeDiagonalRoot G x) = 0 :=
+  apply_cubeLevelPoint_eq_zero hG h₀ h₁ 0
+
+/-- The diagonal root of a continuous, strictly increasing `G x` is its own level point. -/
+theorem cubeLevelPoint_cubeDiagonalRoot (hG : Continuous (G x)) (hmono : StrictMono (G x))
+    (h₀ : G x 0 ≤ 0) (h₁ : 0 ≤ G x 1) :
+    cubeLevelPoint G x (cubeDiagonalRoot G x) = cubeDiagonalRoot G x :=
+  cubeLevelPoint_eq_self hmono (apply_cubeDiagonalRoot_eq_zero hG h₀ h₁)
 
 /-- **Uniqueness of the diagonal root.** A point of the diagonal on which the strictly increasing
 function `G x` vanishes is the diagonal root. -/
@@ -248,7 +256,7 @@ theorem cubeDiagonalRoot_eq_of_apply_eq_zero (hmono : StrictMono (G x)) {t : I}
 theorem cubeDiagonalRoot_apply_mem_Ioo (hG : Continuous (G x)) (h₀ : G x 0 < 0) (h₁ : 0 < G x 1)
     (i : ι) : (cubeDiagonalRoot G x i : ℝ) ∈ Ioo 0 1 := by
   obtain ⟨t, ht⟩ := exists_cubeDiagonalRoot_eq_const G x
-  have hroot := apply_cubeDiagonalRoot hG h₀.le h₁.le
+  have hroot := apply_cubeDiagonalRoot_eq_zero hG h₀.le h₁.le
   rw [ht] at hroot ⊢
   refine ⟨lt_of_le_of_ne t.2.1 fun h ↦ h₀.ne ?_, lt_of_le_of_ne t.2.2 fun h ↦ h₁.ne' ?_⟩
   · have : (fun _ ↦ t : ι → I) = 0 := funext fun _ ↦ Subtype.ext h.symm
@@ -287,7 +295,8 @@ variable (hG : Continuous (uncurry G)) (hmono : ∀ x, StrictMono (G x)) (h₀ :
 
 /-- The section `x ↦ (x, t(x) · 1)` of the zero level set through the diagonal roots. -/
 def cubeLevelSetSection : C(X, cubeLevelSet G) where
-  toFun x := ⟨(x, cubeDiagonalRoot G x), apply_cubeDiagonalRoot (hG.uncurry_left x) (h₀ x) (h₁ x)⟩
+  toFun x := ⟨(x, cubeDiagonalRoot G x),
+    apply_cubeDiagonalRoot_eq_zero (hG.uncurry_left x) (h₀ x) (h₁ x)⟩
   continuous_toFun :=
     (continuous_id.prodMk (continuous_cubeDiagonalRoot hG hmono h₀ h₁)).subtype_mk _
 
@@ -309,13 +318,14 @@ private lemma continuous_segmentToRoot (hd : Continuous (cubeDiagonalRoot G)) :
 /-- **The deformation of the zero level set onto the diagonal roots.** At time `s` it sends
 `(x, u)` to `(x, cubeLevelPoint G x ((1 - s) u + s t(x) · 1))`. It starts at the identity, ends at
 `(x, u) ↦ (x, t(x) · 1)`, preserves `x` (`TauCeti.cubeLevelSetHomotopy_apply_fst`) and fixes the
-graph of the diagonal root at all times. -/
+graph of the diagonal root at all times. Its second coordinate is
+`TauCeti.cubeLevelSetHomotopy_apply_snd`. -/
 def cubeLevelSetHomotopy :
     ContinuousMap.HomotopyRel (ContinuousMap.id (cubeLevelSet G))
       ((cubeLevelSetSection hG hmono h₀ h₁).comp (cubeLevelSetProj G))
       (range (cubeLevelSetSection hG hmono h₀ h₁)) where
   toFun q := ⟨(q.2.1.1, cubeLevelPoint G q.2.1.1 (segmentToRoot G q.1 q.2.1)),
-    apply_cubeLevelPoint (hG.uncurry_left _) (h₀ _) (h₁ _) _⟩
+    apply_cubeLevelPoint_eq_zero (hG.uncurry_left _) (h₀ _) (h₁ _) _⟩
   continuous_toFun := by
     refine Continuous.subtype_mk (Continuous.prodMk (by fun_prop) ?_) _
     exact (continuous_cubeLevelPoint hG hmono h₀ h₁).comp
@@ -333,21 +343,27 @@ def cubeLevelSetHomotopy :
     have hseg : segmentToRoot G 1 p.1 = cubeDiagonalRoot G p.1.1 := by
       ext i
       simp [segmentToRoot]
-    simpa [hseg] using cubeLevelPoint_eq_self (hmono _)
-      (apply_cubeDiagonalRoot (hG.uncurry_left _) (h₀ _) (h₁ _))
+    simpa [hseg] using cubeLevelPoint_cubeDiagonalRoot (hG.uncurry_left _) (hmono _) (h₀ _) (h₁ _)
   prop' s := by
     rintro _ ⟨x, rfl⟩
     refine Subtype.ext (Prod.ext rfl ?_)
     have hseg : segmentToRoot G s (x, cubeDiagonalRoot G x) = cubeDiagonalRoot G x := by
       ext i
       simp [segmentToRoot, Icc.convexComb_eq]
-    simpa [hseg] using cubeLevelPoint_eq_self (hmono _)
-      (apply_cubeDiagonalRoot (hG.uncurry_left _) (h₀ _) (h₁ _))
+    simpa [hseg] using cubeLevelPoint_cubeDiagonalRoot (hG.uncurry_left _) (hmono _) (h₀ _) (h₁ _)
 
 /-- The deformation of the zero level set preserves the parameter `x`. -/
 @[simp]
 theorem cubeLevelSetHomotopy_apply_fst (s : I) (p : cubeLevelSet G) :
     (cubeLevelSetHomotopy hG hmono h₀ h₁ (s, p) : X × (ι → I)).1 = p.1.1 :=
+  (rfl)
+
+/-- The deformation of the zero level set at time `s` sends `(x, u)` to the level point of the
+point `(1 - s) u + s t(x) · 1` of the segment from `u` to the diagonal root. -/
+@[simp]
+theorem cubeLevelSetHomotopy_apply_snd (s : I) (p : cubeLevelSet G) :
+    (cubeLevelSetHomotopy hG hmono h₀ h₁ (s, p) : X × (ι → I)).2 =
+      cubeLevelPoint G p.1.1 fun i ↦ Icc.convexComb (p.1.2 i) (cubeDiagonalRoot G p.1.1 i) s :=
   (rfl)
 
 /-- The deformation of the zero level set moves points only within their fibre, so it commutes
@@ -356,22 +372,48 @@ theorem cubeLevelSetProj_cubeLevelSetHomotopy (s : I) (p : cubeLevelSet G) :
     cubeLevelSetProj G (cubeLevelSetHomotopy hG hmono h₀ h₁ (s, p)) = cubeLevelSetProj G p :=
   (rfl)
 
+/-- **The zero level set is fibre homotopy equivalent to the parameter space** over `X`: the
+projection `(x, u) ↦ x` and the section through the diagonal roots are inverse fibre homotopy
+equivalences, by the fibrewise deformation onto the diagonal roots
+(`TauCeti.cubeLevelSetHomotopy`). -/
+def cubeLevelSetFiberHomotopyEquiv :
+    FiberHomotopyEquiv (cubeLevelSetProj G) (ContinuousMap.id X) where
+  toFun := cubeLevelSetProj G
+  invFun := cubeLevelSetSection hG hmono h₀ h₁
+  comp_toFun := rfl
+  comp_invFun := rfl
+  left_inv := ⟨{ (cubeLevelSetHomotopy hG hmono h₀ h₁).toHomotopy.symm with prop' := fun _ ↦ rfl }⟩
+  right_inv := .refl _ rfl
+
+@[simp]
+lemma cubeLevelSetFiberHomotopyEquiv_toFun :
+    (cubeLevelSetFiberHomotopyEquiv hG hmono h₀ h₁).toFun = cubeLevelSetProj G :=
+  (rfl)
+
+@[simp]
+lemma cubeLevelSetFiberHomotopyEquiv_invFun :
+    (cubeLevelSetFiberHomotopyEquiv hG hmono h₀ h₁).invFun = cubeLevelSetSection hG hmono h₀ h₁ :=
+  (rfl)
+
 /-- **The zero level set is homotopy equivalent to the parameter space**: the section through
 the diagonal roots is a homotopy equivalence `X ≃ₕ cubeLevelSet G`, with homotopy inverse the
 projection. -/
 def cubeLevelSetHomotopyEquiv : X ≃ₕ cubeLevelSet G :=
-  ContinuousMap.HomotopyEquiv.ofDeformationRetraction (cubeLevelSetSection hG hmono h₀ h₁)
-    (cubeLevelSetProj G) (fun _ ↦ rfl) ⟨(cubeLevelSetHomotopy hG hmono h₀ h₁).toHomotopy.symm⟩
+  (cubeLevelSetFiberHomotopyEquiv hG hmono h₀ h₁).symm.toHomotopyEquiv
 
 @[simp]
 lemma cubeLevelSetHomotopyEquiv_toFun :
     (cubeLevelSetHomotopyEquiv hG hmono h₀ h₁).toFun = cubeLevelSetSection hG hmono h₀ h₁ :=
-  ContinuousMap.HomotopyEquiv.ofDeformationRetraction_toFun _ _ _ _
+  ContinuousMap.ext fun x ↦
+    ((cubeLevelSetFiberHomotopyEquiv hG hmono h₀ h₁).symm.toHomotopyEquiv_apply x).trans <| by
+      rw [FiberHomotopyEquiv.symm_toFun, cubeLevelSetFiberHomotopyEquiv_invFun]
 
 @[simp]
 lemma cubeLevelSetHomotopyEquiv_invFun :
     (cubeLevelSetHomotopyEquiv hG hmono h₀ h₁).invFun = cubeLevelSetProj G :=
-  ContinuousMap.HomotopyEquiv.ofDeformationRetraction_invFun _ _ _ _
+  ContinuousMap.ext fun p ↦
+    ((cubeLevelSetFiberHomotopyEquiv hG hmono h₀ h₁).symm.toHomotopyEquiv_symm_apply p).trans <| by
+      rw [FiberHomotopyEquiv.symm_invFun, cubeLevelSetFiberHomotopyEquiv_toFun]
 
 end Cube
 
@@ -385,49 +427,20 @@ variable {X ι : Type u} [TopologicalSpace X] {G : X → (ι → I) → ℝ}
   (hG : Continuous (uncurry G)) (hmono : ∀ x, StrictMono (G x)) (h₀ : ∀ x, G x 0 ≤ 0)
   (h₁ : ∀ x, 0 ≤ G x 1) (A : Set X)
 
-/-- The projection of pairs `(Z, Z ∩ (A × [0, 1]^ι)) ⟶ (X, A)` from the zero level set `Z`. -/
-def cubeLevelSetProjPair :
-    TopPair.ofSubset (X := TopCat.of (cubeLevelSet G)) (cubeLevelSetProj G ⁻¹' A) ⟶
-      TopPair.ofSubset (X := TopCat.of X) A :=
-  TopPair.ofSubsetMap (TopCat.ofHom (cubeLevelSetProj G)) fun _ h ↦ h
-
-/-- The section of pairs `(X, A) ⟶ (Z, Z ∩ (A × [0, 1]^ι))` through the diagonal roots. -/
-def cubeLevelSetSectionPair :
-    TopPair.ofSubset (X := TopCat.of X) A ⟶
-      TopPair.ofSubset (X := TopCat.of (cubeLevelSet G)) (cubeLevelSetProj G ⁻¹' A) :=
-  TopPair.ofSubsetMap (TopCat.ofHom (cubeLevelSetSection hG hmono h₀ h₁)) fun _ h ↦ h
-
-/-- The section followed by the projection is the identity of `(X, A)`. -/
-theorem cubeLevelSetSectionPair_comp_cubeLevelSetProjPair :
-    cubeLevelSetSectionPair hG hmono h₀ h₁ A ≫ cubeLevelSetProjPair A = 𝟙 _ := by
-  rw [← TopPair.ofSubsetMap_id (fun _ h ↦ h)]
-  exact TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (by ext; rfl)
-
-/-- The projection followed by the section is homotopic to the identity of
-`(Z, Z ∩ (A × [0, 1]^ι))` through maps of pairs, by the fibrewise deformation onto the diagonal
-roots. -/
-def cubeLevelSetPairHomotopy :
-    TopPair.Homotopy (cubeLevelSetProjPair A ≫ cubeLevelSetSectionPair hG hmono h₀ h₁ A)
-      (𝟙 _) := by
-  rw [show cubeLevelSetProjPair A ≫ cubeLevelSetSectionPair hG hmono h₀ h₁ A =
-      TopPair.ofSubsetMap
-        (TopCat.ofHom ((cubeLevelSetSection hG hmono h₀ h₁).comp (cubeLevelSetProj G)))
-        (fun _ h ↦ h) from TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ rfl,
-    ← TopPair.ofSubsetMap_id (fun _ h ↦ h)]
-  exact TopPair.ofSubsetHomotopy (g₀ := TopCat.ofHom _) (g₁ := 𝟙 _)
-    (cubeLevelSetHomotopy hG hmono h₀ h₁).toHomotopy.symm fun _ _ h ↦ h
-
-include hG hmono h₀ h₁ in
 /-- **The projection of pairs `(Z, Z ∩ (A × [0, 1]^ι)) ⟶ (X, A)` induces isomorphisms on relative
-singular homology** in every degree. -/
-theorem isIso_singularHomologyMap_cubeLevelSetProjPair {C : Type*} [Category C]
-    [Limits.HasCoproducts.{u} C] [Preadditive C] [CategoryWithHomology C] (R : C) (n : ℕ) :
+singular homology** in every degree: the fibre homotopy equivalence of the zero level set `Z`
+with the parameter space restricts to a homotopy equivalence of these pairs. -/
+theorem isIso_singularHomologyMap_preimagePairMap_cubeLevelSetFiberHomotopyEquiv {C : Type*}
+    [Category C] [Limits.HasCoproducts.{u} C] [Preadditive C] [CategoryWithHomology C] (R : C)
+    (n : ℕ) :
     IsIso ((TopPair.ofSubset (X := TopCat.of (cubeLevelSet G))
-      (cubeLevelSetProj G ⁻¹' A)).singularHomologyMap (cubeLevelSetProjPair A) R n) :=
-  TopPair.isIso_singularHomologyMap _ (cubeLevelSetSectionPair hG hmono h₀ h₁ A)
-    (cubeLevelSetPairHomotopy hG hmono h₀ h₁ A)
-    (cubeLevelSetSectionPair_comp_cubeLevelSetProjPair hG hmono h₀ h₁ A ▸ TopPair.Homotopy.refl _)
-    R n
+      (cubeLevelSetProj G ⁻¹' A)).singularHomologyMap
+        ((cubeLevelSetFiberHomotopyEquiv hG hmono h₀ h₁).preimagePairMap A) R n) := by
+  set Φ := cubeLevelSetFiberHomotopyEquiv hG hmono h₀ h₁
+  -- The homotopy for the other composite comes from `Φ.symm`, whose `symm` is `Φ` again.
+  have H' := Φ.symm.preimagePairCompHomotopy A
+  rw [FiberHomotopyEquiv.symm_symm] at H'
+  exact TopPair.isIso_singularHomologyMap _ _ (Φ.preimagePairCompHomotopy A) H' R n
 
 end Pair
 
