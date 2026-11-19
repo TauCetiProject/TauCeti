@@ -240,16 +240,19 @@ temperate growth and its iterated derivatives of order at most `⌈|s|⌉` are b
 `g f ∈ H^s` for every tempered distribution `f ∈ H^s`. -/
 theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil {s : ℝ} {g : E → ℂ}
     (hg : g.HasTemperateGrowth) (hbd : ∀ n ≤ ⌈|s|⌉₊, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C)
-    {f : 𝓢'(E, F)} (hf : MemSobolev s 2 f) : MemSobolev s 2 (smulLeftCLM F g f) := by
+    {f : 𝓢'(E, F)} (hf : MemSobolev s 2 f) :
+    MemSobolev s 2 (TemperedDistribution.smulLeftCLM F g f) := by
   obtain ⟨T, hT⟩ := SchwartzMap.hasSobolevExtension_iff.1
     (SchwartzMap.hasSobolevExtension_smulLeftCLM (F := F) s hg hbd)
   -- The extension acts on the underlying tempered distributions as multiplication by `g`: both
   -- sides are continuous and agree on the dense subspace of Schwartz functions.
-  have hdist : (fun U : H^{s}(E, F) ↦ (T U).toDistr) = fun U ↦ smulLeftCLM F g U.toDistr := by
+  have hdist : (fun U : H^{s}(E, F) ↦ (T U).toDistr) =
+      fun U ↦ TemperedDistribution.smulLeftCLM F g U.toDistr := by
     refine (SchwartzMap.denseRange_toBesselPotentialSpaceCLM (E := E) (F := F) s (p := 2)
       ENNReal.ofNat_ne_top).equalizer
       (BesselPotentialSpace.continuous_toDistr.comp T.continuous)
-      ((smulLeftCLM F g).continuous.comp BesselPotentialSpace.continuous_toDistr) ?_
+      ((TemperedDistribution.smulLeftCLM F g).continuous.comp
+        BesselPotentialSpace.continuous_toDistr) ?_
     funext u
     have hu : T (SchwartzMap.toBesselPotentialSpaceCLM s 2 u) =
         SchwartzMap.toBesselPotentialSpaceCLM s 2 (SchwartzMap.smulLeftCLM F g u) :=

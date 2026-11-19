@@ -140,7 +140,8 @@ function `g` of temperate growth, then the `Lᵖ` function of `w` is almost ever
 that of `u`. -/
 theorem coeFn_inclusionLp_ae_eq_smul_of_toDistr_eq_smulLeftCLM (hr : 0 ≤ r) (hs : 0 ≤ s)
     {g : E → ℂ} (hg : g.HasTemperateGrowth) {C : ℝ} (hC : ∀ x, ‖g x‖ ≤ C)
-    {u : H^{s, p}(E, F)} {w : H^{r, p}(E, F)} (hw : w.toDistr = smulLeftCLM F g u.toDistr) :
+    {u : H^{s, p}(E, F)} {w : H^{r, p}(E, F)}
+    (hw : w.toDistr = TemperedDistribution.smulLeftCLM F g u.toDistr) :
     ⇑(inclusionLp hr w) =ᵐ[volume] fun x ↦ g x • inclusionLp hs u x := by
   have hmem : MemLp g ⊤ (volume : Measure E) :=
     memLp_top_of_bound hg.1.continuous.aestronglyMeasurable C (ae_of_all _ hC)

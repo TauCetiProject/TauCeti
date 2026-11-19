@@ -123,16 +123,16 @@ theorem exists_norm_subOne_expGauge_sub_le (hs : 1 < s) :
   refine ⟨C, hC, fun {F G R} hFR hGR ↦ ?_⟩
   have h : 0 ≤ s := zero_le_one.trans hs.le
   have hd := finrank_real_complex_lt_two_mul hs
-  have hae (F : realSubmodule ℂ h) :
-      (inclusion h (F : H^{s}(ℂ))).toLp =ᵐ[volume] fun z ↦ (continuousRep F z : ℂ) := by
-    rw [toLp_inclusion]
-    exact coeFn_inclusionLp_ae_eq_continuousRep hd F
-  have key := hlip (hae F) (hae G)
+  have hexp (F : realSubmodule ℂ (zero_le_one.trans hs.le)) :
+      inclusionLp h (subOne (expGauge hs F)) =ᵐ[volume]
+        fun z ↦ (Circle.exp (continuousRep F z) : ℂ) - 1 := by
+    simpa only [toLp_inclusion] using coeFn_toLp_inclusion_subOne_expGauge hs h F
+  have key := hlip (coeFn_inclusionLp_ae_eq_continuousRep hd F)
+    (coeFn_inclusionLp_ae_eq_continuousRep hd G)
     (memSobolev_inclusionLp h _) (memSobolev_inclusionLp h _) (R := R)
     (by rwa [toBesselPotentialSpace_memSobolev_inclusionLp])
     (by rwa [toBesselPotentialSpace_memSobolev_inclusionLp])
-    (coeFn_toLp_inclusion_subOne_expGauge hs h F) (coeFn_toLp_inclusion_subOne_expGauge hs h G)
-    (memSobolev_inclusionLp h _) (memSobolev_inclusionLp h _)
+    (hexp F) (hexp G) (memSobolev_inclusionLp h _) (memSobolev_inclusionLp h _)
   simp only [toBesselPotentialSpace_memSobolev_inclusionLp] at key
   exact key
 
@@ -157,8 +157,11 @@ theorem exists_expGauge_eq_and_norm_le (hs : 1 < s) :
   obtain ⟨C, hC, harg⟩ := exists_memSobolev_ae_eq_arg_and_norm_sub_le hs
   refine ⟨C, hC, fun {u R} huR hCR ↦ ?_⟩
   have h : 0 ≤ s := zero_le_one.trans hs.le
-  obtain ⟨A, A', hA, hA', hAs, hAs', hle⟩ := harg (coeFn_toLp_inclusion_subOne h u)
-    (coeFn_toLp_inclusion_subOne h (1 : SobolevTopologicalGaugeGroup hs))
+  have hsub (v : SobolevTopologicalGaugeGroup hs) :
+      inclusionLp h (subOne v) =ᵐ[volume] fun z ↦ ((toSubgroup hs v : ℂ → Circle) z : ℂ) - 1 := by
+    simpa only [toLp_inclusion] using coeFn_toLp_inclusion_subOne h v
+  obtain ⟨A, A', hA, hA', hAs, hAs', hle⟩ := harg (hsub u)
+    (hsub (1 : SobolevTopologicalGaugeGroup hs))
     (memSobolev_inclusionLp h _)
     (memSobolev_inclusionLp h _) (R := R)
     (by rwa [toBesselPotentialSpace_memSobolev_inclusionLp])
