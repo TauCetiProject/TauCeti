@@ -162,8 +162,8 @@ theorem image_comap_subtype_conductor :
 theorem map_comap_subtype_conductor :
     (A.conductor.comap A.subtype).map A.subtype = A.conductor := by
   refine le_antisymm Ideal.map_comap_le fun b hb ↦ ?_
-  exact Ideal.mem_map_of_mem A.subtype
-    (Ideal.mem_comap.mpr hb : (⟨b, conductor_subset hb⟩ : A) ∈ A.conductor.comap A.subtype)
+  obtain ⟨a, ha, rfl⟩ := image_comap_subtype_conductor.symm.subset hb
+  exact Ideal.mem_map_of_mem _ ha
 
 variable (S Q : Type*) [CommRing S] [CommRing Q] [Algebra A S] [Algebra B Q] {t : A}
   [IsLocalization.Away t S] [IsLocalization.Away (A.subtype t) Q]
@@ -174,10 +174,9 @@ theorem awayMap_subtype_bijective_of_mem_conductor (ht : (t : B) ∈ A.conductor
     Function.Bijective (IsLocalization.Away.map S Q A.subtype t) := by
   have hker : RingHom.ker A.subtype ⊓ A.conductor.comap A.subtype = ⊥ := by
     rw [(RingHom.injective_iff_ker_eq_bot _).mp A.subtype_injective, bot_inf_eq]
-  have himage : ((A.conductor.comap A.subtype).map A.subtype : Set B) ⊆
-      A.subtype '' (A.conductor.comap A.subtype) := by
-    rw [map_comap_subtype_conductor, image_comap_subtype_conductor]
-  exact IsLocalization.Away.map_bijective_of_mem_ideal S Q hker himage ht
+  have hrange : ((A.conductor.comap A.subtype).map A.subtype : Set B) ⊆ Set.range A.subtype :=
+    fun b hb ↦ ⟨⟨b, conductor_subset (Ideal.map_comap_le hb)⟩, rfl⟩
+  exact IsLocalization.Away.map_bijective_of_mem_ideal S Q hker hrange ht
 
 end Subring
 

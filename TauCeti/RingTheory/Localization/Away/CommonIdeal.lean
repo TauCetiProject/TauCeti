@@ -83,6 +83,18 @@ theorem map_mk' (a : A) (s : Submonoid.powers t) :
       mk' Q (f a) ⟨f s, Submonoid.map_powers f t ▸ Submonoid.mem_map_of_mem f s.2⟩ :=
   IsLocalization.map_mk' _ _ _
 
+variable {f t} {I : Ideal A}
+
+/-- If every element of the ideal `I.map f` lies in the image of `f` and `t ∈ I`, then
+`A_t → B_{f t}` is surjective. This holds in particular when `f(I)` is already the ideal
+`I.map f`. -/
+theorem map_surjective_of_coe_map_subset_range (hrange : (I.map f : Set B) ⊆ Set.range f)
+    (ht : t ∈ I) : Function.Surjective (map S Q f t) := by
+  refine (map_surjective_iff S Q f t).mpr fun b ↦ ?_
+  -- `f t * b` lies in the ideal `I.map f`, hence is the image of some `a`
+  obtain ⟨a, ha⟩ := hrange ((I.map f).mul_mem_right b (Ideal.mem_map_of_mem f ht))
+  exact ⟨a, 1, by rw [ha, pow_one]⟩
+
 end Semiring
 
 variable {A B : Type*} [CommRing A] [CommRing B] {f : A →+* B} {I : Ideal A} {t : A}
@@ -95,52 +107,45 @@ theorem map_injective_of_ker_inf_eq_bot (hker : RingHom.ker f ⊓ I = ⊥) (ht :
   (map_injective_iff (S := S) Q f t).mpr fun _ ha ↦
     ⟨1, by simpa using TauCeti.mul_eq_zero_of_ker_inf_eq_bot hker ht ha⟩
 
-/-- If every element of the ideal `I.map f` lies in the image of `f` and `t ∈ I`, then
-`A_t → B_{f t}` is surjective. This holds in particular when `f(I)` is already the ideal
-`I.map f`. -/
-theorem map_surjective_of_coe_map_subset_range (hrange : (I.map f : Set B) ⊆ Set.range f)
-    (ht : t ∈ I) : Function.Surjective (map S Q f t) := by
-  refine (map_surjective_iff S Q f t).mpr fun b ↦ ?_
-  -- `f t * b` lies in the ideal `I.map f`, hence is the image of some `a`
-  obtain ⟨a, ha⟩ := hrange ((I.map f).mul_mem_right b (Ideal.mem_map_of_mem f ht))
-  exact ⟨a, 1, by rw [ha, pow_one]⟩
-
-/-- **Ferrand's localization of a common ideal.** If `f` maps the ideal `I` bijectively onto the
-ideal `I.map f`, then for `t ∈ I` the induced map `A_t → B_{f t}` is bijective. -/
+/-- **Ferrand's localization of a common ideal.** If `f` is injective on the ideal `I` and every
+element of the ideal `I.map f` lies in the image of `f`, then for `t ∈ I` the induced map
+`A_t → B_{f t}` is bijective. This holds in particular when `f` maps `I` bijectively onto the
+ideal `I.map f`. -/
 theorem map_bijective_of_mem_ideal (hker : RingHom.ker f ⊓ I = ⊥)
-    (himage : (I.map f : Set B) ⊆ f '' I) (ht : t ∈ I) : Function.Bijective (map S Q f t) :=
+    (hrange : (I.map f : Set B) ⊆ Set.range f) (ht : t ∈ I) : Function.Bijective (map S Q f t) :=
   ⟨map_injective_of_ker_inf_eq_bot S Q hker ht,
-    map_surjective_of_coe_map_subset_range S Q (himage.trans (Set.image_subset_range _ _)) ht⟩
+    map_surjective_of_coe_map_subset_range S Q hrange ht⟩
 
 /-- The ring isomorphism `A_t ≃+* B_{f t}` of `IsLocalization.Away.map_bijective_of_mem_ideal`,
-for `f` mapping the ideal `I` bijectively onto the ideal `I.map f` and `t ∈ I`. -/
+for `f` injective on the ideal `I` with `I.map f` contained in the image of `f`, and `t ∈ I`. -/
 noncomputable def mapRingEquivOfMemIdeal (hker : RingHom.ker f ⊓ I = ⊥)
-    (himage : (I.map f : Set B) ⊆ f '' I) (ht : t ∈ I) : S ≃+* Q :=
-  RingEquiv.ofBijective (map S Q f t) (map_bijective_of_mem_ideal S Q hker himage ht)
+    (hrange : (I.map f : Set B) ⊆ Set.range f) (ht : t ∈ I) : S ≃+* Q :=
+  RingEquiv.ofBijective (map S Q f t) (map_bijective_of_mem_ideal S Q hker hrange ht)
 
-variable {S Q} (hker : RingHom.ker f ⊓ I = ⊥) (himage : (I.map f : Set B) ⊆ f '' I) (ht : t ∈ I)
+variable {S Q} (hker : RingHom.ker f ⊓ I = ⊥) (hrange : (I.map f : Set B) ⊆ Set.range f)
+  (ht : t ∈ I)
 
 @[simp]
 theorem coe_mapRingEquivOfMemIdeal :
-    ⇑(mapRingEquivOfMemIdeal S Q hker himage ht) = map S Q f t :=
+    ⇑(mapRingEquivOfMemIdeal S Q hker hrange ht) = map S Q f t :=
   RingEquiv.coe_ofBijective _ _
 
 @[simp]
 theorem mapRingEquivOfMemIdeal_algebraMap (a : A) :
-    mapRingEquivOfMemIdeal S Q hker himage ht (algebraMap A S a) = algebraMap B Q (f a) := by
+    mapRingEquivOfMemIdeal S Q hker hrange ht (algebraMap A S a) = algebraMap B Q (f a) := by
   simp
 
 @[simp]
 theorem mapRingEquivOfMemIdeal_symm_algebraMap (a : A) :
-    (mapRingEquivOfMemIdeal S Q hker himage ht).symm (algebraMap B Q (f a)) =
+    (mapRingEquivOfMemIdeal S Q hker hrange ht).symm (algebraMap B Q (f a)) =
       algebraMap A S a := by
   rw [RingEquiv.symm_apply_eq, mapRingEquivOfMemIdeal_algebraMap]
 
 /-- The inverse of `A_t ≃+* B_{f t}` sends `b` to the fraction `a / t` for any `a : A` with
-`f a = f t * b`. Such an `a` exists by the image condition, but it need not lie in `I` or be
+`f a = f t * b`. Such an `a` exists by the range condition, but it need not lie in `I` or be
 unique; the fraction `a / t` does not depend on the choice. -/
 theorem mapRingEquivOfMemIdeal_symm_algebraMap_eq_mk' {a : A} {b : B} (hab : f a = f t * b) :
-    (mapRingEquivOfMemIdeal S Q hker himage ht).symm (algebraMap B Q b) =
+    (mapRingEquivOfMemIdeal S Q hker hrange ht).symm (algebraMap B Q b) =
       IsLocalization.mk' S a (⟨t, Submonoid.mem_powers t⟩ : Submonoid.powers t) := by
   rw [RingEquiv.symm_apply_eq, coe_mapRingEquivOfMemIdeal, map_mk',
     IsLocalization.eq_mk'_iff_mul_eq, ← map_mul, hab, mul_comm]
