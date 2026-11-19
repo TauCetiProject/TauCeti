@@ -17,7 +17,8 @@ character sums over a finite field, the cuspidal characters of `GL₂(F)` — wa
 statement that a primitive character differs from the trivial one, which is primitivity read at
 the shift by `1`. Over a field the converse is Mathlib's `AddChar.IsPrimitive.of_ne_one`. Through
 it, a nontrivial additive character of a finite field has vanishing character sum, and this file
-records the punctured form of that sum, over the units of the field.
+records the punctured form of that sum, over the units of the field. Without a domain hypothesis,
+the full character sum still vanishes when some value minus one is a non-zero-divisor.
 
 ## Main results
 
@@ -29,6 +30,10 @@ records the punctured form of that sum, over the units of the field.
   `-1` over the nonzero elements, even after multiplication by a unit. This is the punctured form
   of Mathlib's `AddChar.sum_eq_zero_of_ne_one`, reindexed by `Fˣ`, which is the shape character
   computations over a finite field consume directly.
+* `AddChar.sum_eq_zero_of_sub_one_mem_nonZeroDivisors`: the values of an additive character of a
+  finite group sum to zero as soon as `φ b - 1` is a non-zero-divisor for one `b`. This drops the
+  domain hypothesis of Mathlib's `AddChar.sum_eq_zero_of_ne_one`, which is the case where every
+  nonzero `φ b - 1` qualifies.
 -/
 
 public section
@@ -68,5 +73,15 @@ theorem sum_units_mul_eq_neg_one {F : Type*} [Field F] [Fintype F] [DecidableEq 
     ← Fintype.sum_equiv unitsEquivNeZero (fun d : Fˣ ↦ ψ ((c : F) * (d : F))) _
       fun d ↦ by rw [unitsEquivNeZero_apply_coe]] at hsum
   exact eq_neg_of_add_eq_zero_right hsum
+
+/-- The values of an additive character of a finite group sum to zero as soon as `φ b - 1` is a
+non-zero-divisor for some `b`. Over a domain this is `AddChar.sum_eq_zero_of_ne_one`; in general
+it applies, for instance, when `φ b - 1` is a unit. -/
+theorem sum_eq_zero_of_sub_one_mem_nonZeroDivisors {A S : Type*} [AddGroup A] [Fintype A]
+    [CommRing S] {φ : AddChar A S} {b : A} (hb : φ b - 1 ∈ nonZeroDivisors S) :
+    ∑ a, φ a = 0 := by
+  have h : ∑ a, φ (b + a) = ∑ a, φ a := Fintype.sum_equiv (Equiv.addLeft b) _ _ fun _ ↦ rfl
+  simp_rw [map_add_eq_mul, ← Finset.mul_sum] at h
+  rw [← mul_left_mem_nonZeroDivisors_eq_zero_iff hb, sub_mul, one_mul, h, sub_self]
 
 end AddChar
