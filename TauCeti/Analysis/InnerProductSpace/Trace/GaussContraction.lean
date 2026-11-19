@@ -52,7 +52,7 @@ theorem sum_gauss_curvature_commutator (b : OrthonormalBasis ι ℝ V)
       LinearMap.trace ℝ V (S.toLinearMap.comp S.toLinearMap) := by
     rw [LinearMap.trace_eq_sum_inner _ b]
     apply Finset.sum_congr rfl
-    intro i hi
+    intro i _
     exact hS (b i) (S (b i))
   have htrace : ∑ i, inner ℝ (S (b i)) (b i) =
       LinearMap.trace ℝ V S.toLinearMap := by
