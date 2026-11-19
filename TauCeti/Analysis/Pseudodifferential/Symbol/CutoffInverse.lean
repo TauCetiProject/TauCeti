@@ -35,9 +35,10 @@ holds with a constant independent of the position, `b` satisfies uniform estimat
 (`TauCeti.Symbol.IsUniform.cutoffInverse`). This is the first step of the construction of a
 parametrix of an elliptic operator: `b` is the leading term of its symbol.
 
-If `a(x, ξ)` is invertible at every point, with the inverse bound at all frequencies, no cutoff is
-needed: the same estimates make the pointwise inverse `a(x, ξ)⁻¹` itself a symbol of order `-m`
-(`TauCeti.Symbol.inverse`), such as `(1 + ⟨ξ⟩)⁻¹` of order `-1`.
+If `a(x, ξ)` is invertible at every point, with the same inverse bound at large frequencies, no
+cutoff is needed: the inverse bound extends to the remaining compact set of frequencies by
+continuity, and the same estimates make the pointwise inverse `a(x, ξ)⁻¹` itself a symbol of order
+`-m` (`TauCeti.Symbol.inverse`), such as `(1 + ⟨ξ⟩)⁻¹` of order `-1`.
 
 ## Implementation notes
 
@@ -352,6 +353,23 @@ private theorem contDiff_cutoffInverse (a : Symbol n V W m)
     exact (χ.contDiff_comp_inv_smul_snd R).contDiffAt.smul
       (a.contDiff_coefficient.contDiffAt.clm_inverse hq)
 
+omit [CompleteSpace V] in
+/-- A smooth function with a symbol estimate of order `μ` along the word of the mixed derivative
+`∂_x^α ∂_ξ^β` at `(x, ξ)` satisfies the corresponding estimate of that mixed derivative. -/
+private theorem norm_mixedDeriv_le_of_wordBound
+    {f : CoordinateSpace n × CoordinateSpace n → W →L[ℂ] V} (hf : ContDiff ℝ ∞ f)
+    (α β : List (Fin n)) {μ C : ℝ} {x ξ : CoordinateSpace n}
+    (h : ‖iteratedFDerivAlong ℝ ((α.map Sum.inl ++ β.map Sum.inr).map mixedDirection) f (x, ξ)‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ ((μ - (freqLetters (α.map Sum.inl ++ β.map Sum.inr)).length) / 2)) :
+    ‖mixedDeriv α β f x ξ‖ ≤ max C 0 * (1 + ‖ξ‖ ^ 2) ^ ((μ - β.length) / 2) := by
+  rw [mixedDeriv_eq_iteratedFDerivAlong α β (hf.of_le (by exact_mod_cast le_top))]
+  simp only [List.map_append, List.map_map, Function.comp_def, mixedDirection_inl,
+    mixedDirection_inr, ← mixedDirections_def] at h
+  have hβ : freqLetters (α.map Sum.inl ++ β.map Sum.inr) = β := by
+    simp [freqLetters, Function.comp_def]
+  rw [hβ] at h
+  exact h.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))
+
 /-- The estimates of the cut-off inverse at the positions of a set `T`, from those of the symbol
 and of its inverse there. -/
 private theorem exists_bound_cutoffInverse (a : Symbol n V W m)
@@ -372,20 +390,16 @@ private theorem exists_bound_cutoffInverse (a : Symbol n V W m)
     (wordBounds_inverse a ha (fun x _ ξ hξ => hinv x ξ hξ) hC _)
   obtain ⟨C, hC⟩ := hb _ le_rfl
   refine ⟨max C 0, le_max_right _ _, fun x hx ξ => ?_⟩
-  rw [mixedDeriv_eq_iteratedFDerivAlong α β
-    ((contDiff_cutoffInverse a χ R hinv).of_le (by exact_mod_cast le_top))]
   by_cases hξ : ‖R⁻¹ • ξ‖ < 1
-  · rw [iteratedFDerivAlong_eq_zero_of_eventuallyEq_zero
-      (χ.comp_inv_smul_snd_smul_eventuallyEq_zero R (fun p => (a.coefficient p).inverse)
-        (p := (x, ξ)) hξ), norm_zero]
+  · rw [mixedDeriv_eq_iteratedFDerivAlong α β
+      ((contDiff_cutoffInverse a χ R hinv).of_le (by exact_mod_cast le_top)),
+      iteratedFDerivAlong_eq_zero_of_eventuallyEq_zero
+        (χ.comp_inv_smul_snd_smul_eventuallyEq_zero R (fun p => (a.coefficient p).inverse)
+          (p := (x, ξ)) hξ), norm_zero]
     positivity
   · have h := hC (x, ξ) ⟨hx, abs_le_norm_of_one_le_norm_inv_smul (not_lt.1 hξ)⟩
-    simp only [ContinuousLinearMap.lsmul_apply, zero_add, List.map_append, List.map_map,
-      Function.comp_def, mixedDirection_inl, mixedDirection_inr, ← mixedDirections_def] at h
-    have hβ : freqLetters (α.map Sum.inl ++ β.map Sum.inr) = β := by
-      simp [freqLetters, Function.comp_def]
-    rw [hβ] at h
-    exact h.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))
+    simp only [ContinuousLinearMap.lsmul_apply, zero_add] at h
+    exact norm_mixedDeriv_le_of_wordBound (contDiff_cutoffInverse a χ R hinv) α β h
 
 /-- The cut-off inverse `χ(ξ / R) a(x, ξ)⁻¹` of a symbol `a` of order `m` that is invertible at
 all frequencies `|R| ≤ ‖ξ‖`, with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)` there for a constant `C` depending on
@@ -463,59 +477,73 @@ private theorem contDiff_inverse (a : Symbol n V W m) (hinv : ∀ p, (a.coeffici
   contDiff_iff_contDiffAt.2 fun p => a.contDiff_coefficient.contDiffAt.clm_inverse (hinv p)
 
 /-- The estimates of the pointwise inverse of a symbol that is invertible at every point, at the
-positions of a compact set. -/
+positions of a compact set. On the compact set `K × closedBall 0 |R|` the continuous inverse is
+bounded, so the inverse bound at frequencies `|R| ≤ ‖ξ‖` extends to all frequencies. -/
 private theorem exists_bound_inverse (a : Symbol n V W m)
-    (hinv : ∀ p, (a.coefficient p).IsInvertible) {K : Set (CoordinateSpace n)} (hK : IsCompact K)
-    (hC : ∃ C, ∀ x ∈ K, ∀ ξ, ‖(a.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2))
+    (hinv : ∀ p, (a.coefficient p).IsInvertible) (R : ℝ) {K : Set (CoordinateSpace n)}
+    (hK : IsCompact K)
+    (hC : ∃ C, ∀ x ∈ K, ∀ ξ, |R| ≤ ‖ξ‖ →
+      ‖(a.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2))
     (α β : List (Fin n)) :
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
       ‖mixedDeriv α β (fun p => (a.coefficient p).inverse) x ξ‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ ((-m - β.length) / 2) := by
-  have hb := wordBounds_inverse a (T := K) (R := 0)
-    (fun α β => (a.exists_bound K hK α β).imp fun _ h => h.2) (fun x _ ξ _ => hinv (x, ξ))
-    (hC.imp fun _ h x hx ξ _ => h x hx ξ) (α.map Sum.inl ++ β.map Sum.inr).length
-  obtain ⟨C, hC⟩ := hb _ le_rfl
-  refine ⟨max C 0, le_max_right _ _, fun x hx ξ => ?_⟩
-  rw [mixedDeriv_eq_iteratedFDerivAlong α β
-    ((contDiff_inverse a hinv).of_le (by exact_mod_cast le_top))]
-  have h := hC (x, ξ) ⟨hx, by simp⟩
-  simp only [List.map_append, List.map_map, Function.comp_def, mixedDirection_inl,
-    mixedDirection_inr, ← mixedDirections_def] at h
-  have hβ : freqLetters (α.map Sum.inl ++ β.map Sum.inr) = β := by
-    simp [freqLetters, Function.comp_def]
-  rw [hβ] at h
-  exact h.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))
+  obtain ⟨C, hC⟩ := hC
+  have hw : Continuous fun p : CoordinateSpace n × CoordinateSpace n =>
+      (1 + ‖p.2‖ ^ 2) ^ (-m / 2) :=
+    (continuous_const.add ((continuous_norm.comp continuous_snd).pow 2)).rpow_const
+      fun p => Or.inl (by positivity : (0 : ℝ) < 1 + ‖p.2‖ ^ 2).ne'
+  obtain ⟨M, hM⟩ := (hK.prod (isCompact_closedBall 0 |R|)).exists_bound_of_continuousOn
+    ((contDiff_inverse a hinv).continuous.norm.div hw fun p => (by positivity : 0 <
+      (1 + ‖p.2‖ ^ 2) ^ (-m / 2)).ne').continuousOn
+  have hC' : ∃ C, ∀ x ∈ K, ∀ ξ, |(0 : ℝ)| ≤ ‖ξ‖ →
+      ‖(a.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2) := by
+    refine ⟨max C M, fun x hx ξ _ => ?_⟩
+    have hw0 : 0 < (1 + ‖ξ‖ ^ 2) ^ (-m / 2) := by positivity
+    rcases le_total |R| ‖ξ‖ with hξ | hξ
+    · exact (hC x hx ξ hξ).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hw0.le)
+    · have h := hM (x, ξ) ⟨hx, mem_closedBall_zero_iff.2 hξ⟩
+      rw [Pi.div_apply, Real.norm_of_nonneg (by positivity), div_le_iff₀ hw0] at h
+      exact h.trans (mul_le_mul_of_nonneg_right (le_max_right _ _) hw0.le)
+  obtain ⟨C, hC⟩ := wordBounds_inverse a (T := K) (R := 0)
+    (fun α β => (a.exists_bound K hK α β).imp fun _ h => h.2) (fun x _ ξ _ => hinv (x, ξ)) hC'
+    (α.map Sum.inl ++ β.map Sum.inr).length _ le_rfl
+  exact ⟨max C 0, le_max_right _ _, fun x hx ξ =>
+    norm_mixedDeriv_le_of_wordBound (contDiff_inverse a hinv) α β (hC (x, ξ) ⟨hx, by simp⟩)⟩
 
 /-- The pointwise inverse `a(x, ξ)⁻¹` of a symbol `a` of order `m` that is invertible at every
-point, with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)` for a constant `C` depending on a compact set of positions.
-It is a symbol of order `-m`, a two-sided inverse of `a` at every point
-(`TauCeti.Symbol.coefficient_comp_coefficient_inverse`,
-`TauCeti.Symbol.coefficient_inverse_comp_coefficient`). Unlike `TauCeti.Symbol.cutoffInverse`, it
-needs invertibility at low frequencies as well, and involves no cutoff. -/
-def inverse (a : Symbol n V W m) (hinv : ∀ p, (a.coefficient p).IsInvertible)
-    (hbound : ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C, ∀ x ∈ K, ∀ ξ,
+point, with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)` at the frequencies `|R| ≤ ‖ξ‖` for a constant `C` depending
+on a compact set of positions. It is a symbol of order `-m`, a two-sided inverse of `a` at every
+point (`TauCeti.Symbol.coefficient_comp_coefficient_inverse`,
+`TauCeti.Symbol.coefficient_inverse_comp_coefficient`). Its hypotheses are those of
+`TauCeti.Symbol.cutoffInverse` together with invertibility at low frequencies, and it involves no
+cutoff. -/
+def inverse (a : Symbol n V W m) (hinv : ∀ p, (a.coefficient p).IsInvertible) (R : ℝ)
+    (hbound : ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C, ∀ x ∈ K, ∀ ξ, |R| ≤ ‖ξ‖ →
       ‖(a.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2)) :
     Symbol n W V (-m) where
   coefficient p := (a.coefficient p).inverse
   contDiff_coefficient := contDiff_inverse a hinv
-  exists_bound _ hK := exists_bound_inverse a hinv hK (hbound _ hK)
+  exists_bound _ hK := exists_bound_inverse a hinv R hK (hbound _ hK)
 
-variable (a : Symbol n V W m) (hinv : ∀ p, (a.coefficient p).IsInvertible)
-  (hbound : ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C, ∀ x ∈ K, ∀ ξ,
+variable (a : Symbol n V W m) (hinv : ∀ p, (a.coefficient p).IsInvertible) (R : ℝ)
+  (hbound : ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C, ∀ x ∈ K, ∀ ξ, |R| ≤ ‖ξ‖ →
     ‖(a.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2))
 
 @[simp]
 theorem coefficient_inverse (p : CoordinateSpace n × CoordinateSpace n) :
-    (a.inverse hinv hbound).coefficient p = (a.coefficient p).inverse := (rfl)
+    (a.inverse hinv R hbound).coefficient p = (a.coefficient p).inverse := (rfl)
 
 /-- The symbol composed with its inverse is the identity at every point. -/
 theorem coefficient_comp_coefficient_inverse (p : CoordinateSpace n × CoordinateSpace n) :
-    (a.coefficient p).comp ((a.inverse hinv hbound).coefficient p) = ContinuousLinearMap.id ℂ W :=
+    (a.coefficient p).comp ((a.inverse hinv R hbound).coefficient p) =
+      ContinuousLinearMap.id ℂ W :=
   (hinv p).self_comp_inverse
 
 /-- The inverse composed with the symbol is the identity at every point. -/
 theorem coefficient_inverse_comp_coefficient (p : CoordinateSpace n × CoordinateSpace n) :
-    ((a.inverse hinv hbound).coefficient p).comp (a.coefficient p) = ContinuousLinearMap.id ℂ V :=
+    ((a.inverse hinv R hbound).coefficient p).comp (a.coefficient p) =
+      ContinuousLinearMap.id ℂ V :=
   (hinv p).inverse_comp_self
 
 end Inverse

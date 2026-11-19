@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Pseudodifferential.AsymptoticSum
 public import TauCeti.Analysis.Pseudodifferential.Symbol.CutoffInverse
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
+import TauCeti.Analysis.Pseudodifferential.Symbol.HighFrequency
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
@@ -74,8 +76,17 @@ private theorem coefficient_besselPotential_add_one {s : ℝ} (hs : 0 ≤ s)
     (besselPotential s + inclusion hs (const (ContinuousLinearMap.id ℂ V)) :
       Symbol n V V s).coefficient p =
       ((bracket p.2 ^ s + 1 : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V := by
-  rw [coefficient_add, Pi.add_apply, coefficient_besselPotential_eq, coefficient_inclusion,
+  simp only [coefficient_add, Pi.add_apply, coefficient_besselPotential_eq, coefficient_inclusion,
     coefficient_const, Complex.ofReal_add, Complex.ofReal_one, add_smul, one_smul]
+
+private theorem norm_ofReal_smul_id_le (u : ℝ) :
+    ‖((u : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V‖ ≤ |u| := by
+  rw [norm_smul, Complex.norm_real, Real.norm_eq_abs]
+  exact mul_le_of_le_one_right (abs_nonneg u) ContinuousLinearMap.norm_id_le
+
+private theorem norm_ofReal_smul_id [Nontrivial V] (u : ℝ) :
+    ‖((u : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V‖ = |u| := by
+  simp [norm_smul]
 
 /-! ### A symbol of order `s` without a classical expansion of order `s` -/
 
@@ -129,19 +140,6 @@ private theorem one_le_bracket_rpow_add_one_sub {s : ℝ} (hs : 0 ≤ s) (ξ : C
           linarith
   linarith
 
-/-- For `s < 1`, the bound `C ⟨t ξ⟩ ^ (s - 1)` of order `s - 1` tends to `0` as `t → ∞`. -/
-private theorem tendsto_mul_one_add_norm_smul_sq_rpow {s : ℝ} (hs : s < 1) (C : ℝ)
-    {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
-    Tendsto (fun t : ℝ ↦ C * (1 + ‖t • ξ‖ ^ 2) ^ ((s - 1) / 2)) atTop (𝓝 0) := by
-  have hgrow : Tendsto (fun t : ℝ ↦ 1 + ‖t • ξ‖ ^ 2) atTop atTop := by
-    refine tendsto_atTop_add_const_left _ _ ((tendsto_pow_atTop two_ne_zero).comp ?_)
-    simp only [norm_smul, Real.norm_eq_abs]
-    exact tendsto_abs_atTop_atTop.atTop_mul_const (norm_pos_iff.2 hξ)
-  have h := ((tendsto_rpow_neg_atTop (y := (1 - s) / 2) (by linarith)).comp hgrow).const_mul C
-  rw [mul_zero] at h
-  refine h.congr fun t ↦ ?_
-  simp [show -((1 - s) / 2) = (s - 1) / 2 by ring]
-
 /-- For `0 < s < 1` and `n ≥ 1`, the symbol `r ^ s + 1` of order `s` has no classical expansion of
 order `s`: its principal symbol is `‖ξ / 2π‖ ^ s`, and after this term the constant `1` remains,
 which is not of the negative order `s - 1`. -/
@@ -166,26 +164,30 @@ example [Nontrivial V] (hn : 0 < n) {s : ℝ} (hs0 : 0 < s) (hs1 : s < 1) :
       (tendsto_rpow_neg_mul_bracket_rpow_add_one hs0 ξ₀) |>.smul_const _).congr fun t ↦ ?_
     simp only [Function.comp_apply, id_eq, hcoeff, ← Complex.coe_smul, smul_smul,
       Complex.ofReal_mul]
-  -- After the principal term, the remainder `r ^ s - (t c) ^ s + 1 ≥ 1` remains at `t ξ₀`, but it
-  -- is bounded by `C ⟨t ξ₀⟩ ^ (s - 1) → 0`.
-  obtain ⟨C, hC⟩ := a.exists_norm_toSymbol_sub_principal_le isCompact_singleton
-  have hge : ∀ᶠ t : ℝ in atTop, 1 ≤ C * (1 + ‖t • ξ₀‖ ^ 2) ^ ((s - 1) / 2) := by
+  -- After the principal term, the remainder `e` has the negative order `s - 1`, so it vanishes
+  -- along `t ξ₀` as `t → ∞`; but there it is `r(t ξ₀) ^ s + 1 - (t c) ^ s ≥ 1` at large `t`.
+  obtain ⟨e, he⟩ := a.exists_sub_cutoffSymbol_principal default
+  have hlim : Tendsto (fun t : ℝ ↦ e.coefficient (0, t • ξ₀)) atTop (𝓝 0) := by
+    refine ((e.tendsto_rpow_neg_smul_coefficient_smul_zero (m := 0) (x := 0) (by linarith)
+      hξ₀).comp (tendsto_id.prodMk tendsto_const_nhds)).congr fun t ↦ ?_
+    simp
+  have hge : ∀ᶠ t : ℝ in atTop, 1 ≤ ‖e.coefficient (0, t • ξ₀)‖ := by
     filter_upwards [eventually_ge_atTop (2 / ‖ξ₀‖)] with t ht
-    have ht0 : 0 ≤ t := (by positivity : 0 ≤ 2 / ‖ξ₀‖).trans ht
+    have ht0 : 0 < t := (by positivity : 0 < 2 / ‖ξ₀‖).trans_le ht
     have h2 : 2 ≤ ‖t • ξ₀‖ := by
-      rw [norm_smul, Real.norm_of_nonneg ht0]
+      rw [norm_smul, Real.norm_of_nonneg ht0.le]
       rwa [div_le_iff₀ (norm_pos_iff.2 hξ₀)] at ht
-    have htpos : 0 < t := lt_of_le_of_ne ht0 (by rintro rfl; norm_num at h2)
-    refine le_trans ?_ (hC 0 rfl (t • ξ₀) h2)
-    rw [a.principal.homogeneous _ _ _ htpos, hprincipal, hcoeff, ← Complex.coe_smul, smul_smul,
-      ← Complex.ofReal_mul, ← sub_smul, ← Complex.ofReal_sub, norm_smul,
-      ContinuousLinearMap.norm_id, mul_one, Complex.norm_real, Real.norm_eq_abs,
-      ← Real.mul_rpow htpos.le hc.le]
-    have h := one_le_bracket_rpow_add_one_sub hs0.le ξ₀ htpos.le
-    rw [abs_of_nonneg (by linarith)]
-    exact h
-  obtain ⟨t, ht₁, ht₂⟩ := (hge.and ((tendsto_mul_one_add_norm_smul_sq_rpow hs1 C hξ₀).eventually
-    (gt_mem_nhds zero_lt_one))).exists
+    have h := one_le_bracket_rpow_add_one_sub hs0.le ξ₀ ht0.le
+    rw [Real.mul_rpow ht0.le hc.le] at h
+    rw [he, coefficient_sub, Pi.sub_apply,
+      HomogeneousSymbol.coefficient_cutoffSymbol_of_two_le_norm _ _ h2,
+      a.principal.homogeneous _ _ _ ht0, hprincipal, hcoeff]
+    refine (h.trans (le_abs_self _)).trans_eq ?_
+    rw [← norm_ofReal_smul_id (V := V)]
+    congr 1
+    simp only [Complex.ofReal_sub, Complex.ofReal_mul, sub_smul, ← Complex.coe_smul, smul_smul]
+  obtain ⟨t, ht₁, ht₂⟩ := (hge.and (hlim.norm.eventually
+    (gt_mem_nhds (by simp : ‖(0 : V →L[ℂ] V)‖ < 1)))).exists
   linarith
 
 /-! ### An asymptotic sum which is not a pointwise sum -/
@@ -245,19 +247,11 @@ variable [CompleteSpace V]
 /-- `(r + 1)⁻¹ ≤ 2π ⟨ξ⟩ ^ (-1)`, the inverse bound of order `-1`. -/
 private theorem inv_bracket_add_one_le (ξ : CoordinateSpace n) :
     (bracket ξ + 1)⁻¹ ≤ 2 * π * (1 + ‖ξ‖ ^ 2) ^ (-1 / 2 : ℝ) := by
-  -- `⟨ξ⟩ ≤ 2π r(ξ)`, since `1 + ‖ξ‖² ≤ (2π)² (1 + ‖ξ / 2π‖²)`.
+  -- `⟨ξ⟩ ≤ 2π r(ξ)`, the comparison of the brackets of `ξ` and `ξ / 2π`.
   have hle : (1 + ‖ξ‖ ^ 2) ^ (1 / 2 : ℝ) ≤ 2 * π * bracket ξ := by
-    have hnorm : ‖(2 * π)⁻¹ • ξ‖ = ‖ξ‖ / (2 * π) := by
-      rw [norm_smul, norm_inv, Real.norm_of_nonneg (by positivity), inv_mul_eq_div]
-    rw [bracket, hnorm]
-    calc (1 + ‖ξ‖ ^ 2) ^ (1 / 2 : ℝ)
-        ≤ ((2 * π) ^ 2 * (1 + (‖ξ‖ / (2 * π)) ^ 2)) ^ (1 / 2 : ℝ) := by
-          gcongr
-          rw [div_pow, mul_add, mul_one, mul_div_cancel₀ _ (by positivity)]
-          nlinarith [Real.two_le_pi]
-      _ = 2 * π * (1 + (‖ξ‖ / (2 * π)) ^ 2) ^ (1 / 2 : ℝ) := by
-          rw [Real.mul_rpow (by positivity) (by positivity), ← Real.sqrt_eq_rpow,
-            Real.sqrt_sq (by positivity)]
+    have h := one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) 1
+      ((2 * π)⁻¹ • ξ)
+    rwa [smul_inv_smul₀ (by positivity), abs_one, Real.rpow_one] at h
   have hq : 0 < (1 + ‖ξ‖ ^ 2) ^ (1 / 2 : ℝ) := by positivity
   rw [show (-1 / 2 : ℝ) = -(1 / 2) by ring, Real.rpow_neg (by positivity), ← div_eq_mul_inv,
     le_div_iff₀ hq, inv_mul_le_iff₀ (by linarith [bracket_pos ξ])]
@@ -266,11 +260,11 @@ private theorem inv_bracket_add_one_le (ξ : CoordinateSpace n) :
 /-- The symbol `b = (r + 1)⁻¹` of order `-1`. -/
 private def inverseBracketAddOne : Symbol n V V (-1) :=
   (besselPotential 1 + inclusion zero_le_one (const (ContinuousLinearMap.id ℂ V))).inverse
-    isInvertible_coefficient_bracketAddOne fun _ _ ↦ ⟨2 * π, fun x _ ξ ↦ by
-      rw [inverse_coefficient_bracketAddOne, norm_smul, Complex.norm_real, Real.norm_eq_abs,
-        abs_of_pos (inv_pos.2 (by linarith [bracket_pos ξ]))]
-      exact (mul_le_of_le_one_right (inv_pos.2 (by linarith [bracket_pos ξ])).le
-        ContinuousLinearMap.norm_id_le).trans (inv_bracket_add_one_le ξ)⟩
+    isInvertible_coefficient_bracketAddOne 0 fun _ _ ↦ ⟨2 * π, fun x _ ξ _ ↦ by
+      rw [inverse_coefficient_bracketAddOne]
+      refine (norm_ofReal_smul_id_le _).trans ?_
+      rw [abs_of_pos (inv_pos.2 (by linarith [bracket_pos ξ]))]
+      exact inv_bracket_add_one_le ξ⟩
 
 private theorem coefficient_inverseBracketAddOne (p : CoordinateSpace n × CoordinateSpace n) :
     (inverseBracketAddOne : Symbol n V V (-1)).coefficient p =
@@ -303,10 +297,10 @@ example : (asymptoticSum : Symbol n V V (order 0)).IsAsymptoticSum term := by
   refine isAsymptoticSum_iff.2 fun N ↦ ⟨((-1 : ℂ) ^ N) •
     inclusion (m' := order N) (le_of_eq (by simp only [order]; ring))
       ((besselPotential (-(N : ℝ))).comp inverseBracketAddOne), funext fun p ↦ ?_⟩
-  rw [coefficient_asymptoticSum_sub_sum, coefficient_smul, Pi.smul_apply, coefficient_inclusion,
-    coefficient_comp, coefficient_besselPotential_eq, coefficient_inverseBracketAddOne,
-    ContinuousLinearMap.smul_comp, ContinuousLinearMap.id_comp, smul_smul, smul_smul,
-    Real.rpow_neg (bracket_pos p.2).le, Real.rpow_natCast]
+  simp only [coefficient_asymptoticSum_sub_sum, coefficient_smul, Pi.smul_apply,
+    coefficient_inclusion, coefficient_comp, coefficient_besselPotential_eq,
+    coefficient_inverseBracketAddOne, ContinuousLinearMap.smul_comp, ContinuousLinearMap.id_comp,
+    smul_smul, Real.rpow_neg (bracket_pos p.2).le, Real.rpow_natCast]
   push_cast
   ring_nf
 
