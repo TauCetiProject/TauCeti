@@ -36,8 +36,8 @@ and it is a trajectory of `X` from `p` to `p'`. Hence the boundary coefficients 
 
 and on chains `∂ (p ⊗ q) = ∂ p ⊗ q + p ⊗ ∂ q`. Over `ZMod 2` there is no Koszul sign; with integral
 coefficients the second term carries the sign `(-1)^{ind p}`, which comes from orienting the
-unstable manifold of `(p, q)` by the unstable manifold of `p` followed by that of `q`, and is not
-treated here.
+unstable manifold of `(p, q)` by the unstable manifold of `p` followed by that of `q`
+(`TauCeti.Geometry.Manifold.Morse.Boundary.Prod.Integral`).
 
 This is the manifold form of `TauCeti.Analysis.Calculus.Morse.Boundary.Prod`, which treats
 separated sums on Euclidean spaces. On compact manifolds no sublevel or Lipschitz hypothesis is
@@ -96,6 +96,10 @@ attribute [local instance] isManifold_chartedSpaceProd
 variable (f g) in
 /-- **The critical points of a separated sum are the pairs of critical points**, as an equivalence
 of critical sets, for differentiable `f` and `g`. -/
+-- The body is exposed: orientation data on the product (`TauCeti.MorseOrientation.prod`) attach to
+-- the critical point `(p, q)` objects whose types mention the pair of points, which must reduce to
+-- `(p, q)`.
+@[expose]
 noncomputable def criticalPointsCompFstAddCompSndEquiv (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
     (hg : MDifferentiable 𝓘(ℝ, E') 𝓘(ℝ) g) :
     criticalPoints 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) ≃
@@ -130,6 +134,17 @@ theorem coe_criticalPointsCompFstAddCompSndEquiv_symm
       ((pq.1 : M), (pq.2 : N)) :=
   (rfl)
 
+/-- The Morse index of the separated sum at the critical point attached to `(p, q)` is the sum of
+the indices of `p` and `q`. -/
+theorem manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm [FiniteDimensional ℝ E]
+    [FiniteDimensional ℝ E'] (hf' : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) 2 f)
+    (hg' : ContMDiff 𝓘(ℝ, E') 𝓘(ℝ) 2 g) (p : criticalPoints 𝓘(ℝ, E) f)
+    (q : criticalPoints 𝓘(ℝ, E') g) :
+    manifoldMorseIndex 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd)
+        ((criticalPointsCompFstAddCompSndEquiv f g hf hg).symm (p, q) : M × N) =
+      manifoldMorseIndex 𝓘(ℝ, E) f p + manifoldMorseIndex 𝓘(ℝ, E') g q :=
+  manifoldMorseIndex_comp_fst_add_comp_snd_chartedSpaceProd (hf' _) (hg' _)
+
 end Equiv
 
 variable (f g) in
@@ -147,6 +162,14 @@ section Chain
 
 variable {R : Type*} [CommSemiring R] {hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f}
   {hg : MDifferentiable 𝓘(ℝ, E') 𝓘(ℝ) g}
+
+/-- The defining formula of the identification of the chains of a separated sum with the tensor
+product of chains. -/
+theorem morseChainProdEquiv_def (R : Type*) [CommSemiring R] :
+    morseChainProdEquiv f g R hf hg =
+      (Finsupp.domLCongr (criticalPointsCompFstAddCompSndEquiv f g hf hg)).trans
+        (finsuppTensorFinsupp' R _ _).symm :=
+  (rfl)
 
 /-- The chain `a • (p, q)` corresponds to `a • p ⊗ q`. -/
 @[simp]
@@ -250,12 +273,12 @@ theorem morseBoundaryCoeff_prod (p p' : criticalPoints 𝓘(ℝ, E) f)
   set e := criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable hY.mdifferentiable
   have h := hXs.prod hYs
   have hfg := hf.comp_fst_add_comp_snd_chartedSpaceProd hg
-  have hindP := manifoldMorseIndex_comp_fst_add_comp_snd_chartedSpaceProd
-    ((hf.contMDiff _).of_le (by norm_num)) ((hg.contMDiff _).of_le (by norm_num))
-    (p := e.symm (p, q))
-  have hindQ := manifoldMorseIndex_comp_fst_add_comp_snd_chartedSpaceProd
-    ((hf.contMDiff _).of_le (by norm_num)) ((hg.contMDiff _).of_le (by norm_num))
-    (p := e.symm (p', q'))
+  have hindP := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm
+    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable)
+    (hf.contMDiff.of_le (by norm_num)) (hg.contMDiff.of_le (by norm_num)) p q
+  have hindQ := manifoldMorseIndex_criticalPointsCompFstAddCompSndEquiv_symm
+    (hf := hX.mdifferentiable) (hg := hY.mdifferentiable)
+    (hf.contMDiff.of_le (by norm_num)) (hg.contMDiff.of_le (by norm_num)) p' q'
   by_cases hind : manifoldMorseIndex 𝓘(ℝ, E) f p + manifoldMorseIndex 𝓘(ℝ, E') g q =
     manifoldMorseIndex 𝓘(ℝ, E) f p' + manifoldMorseIndex 𝓘(ℝ, E') g q' + 1
   swap
