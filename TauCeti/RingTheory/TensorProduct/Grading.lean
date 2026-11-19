@@ -11,6 +11,7 @@ public import Mathlib.GroupTheory.Subgroup.Center
 public import Mathlib.RingTheory.TensorProduct.Basic
 public import TauCeti.Algebra.Homology.DG.Ungraded
 public import TauCeti.Algebra.Matrix.Grading
+public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 
 /-!
 # Tensor products of algebras graded by groups with distinguished elements
@@ -177,21 +178,17 @@ theorem mul_mem_tensorGradedPart
     intro m
     rw [Submodule.mul_iSup, iSup_le_iff]
     intro n
-    -- Both factors are spans of pure tensors, and products of pure tensors are pure tensors.
-    rw [Submodule.map₂_eq_span_image2, Submodule.map₂_eq_span_image2, Submodule.span_mul_span,
-      Submodule.span_le]
-    rintro _ ⟨_, ⟨a, ha, b, hb, rfl⟩, _, ⟨a', ha', b', hb', rfl⟩, rfl⟩
-    simp only [TensorProduct.mk_apply, Algebra.TensorProduct.tmul_mul_tmul, SetLike.mem_coe]
+    refine (Submodule.map₂_tmul_mul_le _ _ _ _).trans (Submodule.map₂_le.2 fun a ha b hb ↦ ?_)
     refine tmul_mem_tensorGradedPart_of_zpow (m + n) ?_ ?_
     · -- The central factor `l_Aⁿ` commutes past `g.1`.
       have hc : Commute g.1 (lA ^ n) :=
         Subgroup.mem_center_iff.mp (Subgroup.zpow_mem _ hlA n) g.1
       rw [Prod.fst_mul, zpow_add, ← hc.mul_mul_mul_comm]
-      exact hA ha ha'
+      exact Submodule.mul_le.2 (fun _ ha _ ha' ↦ hA ha ha') ha
     · have hc : Commute g.2 (lB ^ (-n)) :=
         Subgroup.mem_center_iff.mp (Subgroup.zpow_mem _ hlB (-n)) g.2
       rw [Prod.snd_mul, neg_add, zpow_add, ← hc.mul_mul_mul_comm]
-      exact hB hb hb'
+      exact Submodule.mul_le.2 (fun _ hb _ hb' ↦ hB hb hb') hb
   exact key (Submodule.mul_mem_mul hx hy)
 
 /-- **Homogeneous matrices for the tensor grading.** A matrix over `A ⊗ B` is homogeneous of
