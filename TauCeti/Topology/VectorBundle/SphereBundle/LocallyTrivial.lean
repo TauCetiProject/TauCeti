@@ -54,6 +54,8 @@ that of its base and fibres.
 * `TauCeti.TopCat.mem_serreFibrations_sphereBundleProj`,
   `TauCeti.isHurewiczFibration_sphereBundleProj`: it is a Serre fibration, and a Hurewicz
   fibration over a normal paracompact base.
+* `TauCeti.isNConnected_sphereBundleFiberIncl`: over an `n`-connected base, the inclusion of the
+  sphere of a fibre is `n`-connected.
 * `TauCeti.isNConnected_sphereBundleProj`, `TauCeti.simplyConnectedSpace_sphereBundle_iff`: its
   connectivity.
 * `TauCeti.isCoveringMap_sphereBundleProj`: in rank one it is a covering map.
@@ -310,6 +312,31 @@ theorem isNConnected_sphereBundleProj (hnorm : Continuous fun v : TotalSpace F E
     fun x k hk ↦ ?_⟩
   have := subsingleton_homotopyGroup_sphere_of_lt hF (N := Fin k) (by simpa using hk) (h x)
   exact (HomotopyGroup.homeomorphEquiv h x).subsingleton
+
+variable (F E) in
+/-- **Over an `n`-connected base, the sphere of a fibre is `n`-connected in the sphere bundle.**
+If the fibre norm of a real vector bundle is continuous on the total space and `π_k(B, b)` is
+trivial for every `k ≤ n` (for `k = 0` this says that `B` is path-connected), then the inclusion
+`S(E_b) → S(E)` of the unit sphere of the fibre over `b` induces isomorphisms on `π_k` for `k < n`
+and surjections on `πₙ`, and every point of `S(E)` is joined to `S(E_b)`. -/
+theorem isNConnected_sphereBundleFiberIncl (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖)
+    {b : B} {n : ℕ} (hB : ∀ k ≤ n, Subsingleton (π_ k B b)) :
+    (sphereBundleFiberIncl F E b).IsNConnected n := by
+  -- The sphere of the fibre is homeomorphic to the fibre of the Serre fibration `S(E) → B`, whose
+  -- inclusion is `n`-connected.
+  let h : sphere (0 : E b) 1 ≃ₜ sphereBundleProj F E ⁻¹' {b} :=
+    (isEmbedding_sphereBundleFiberIncl F E b).toHomeomorph.trans
+      (Homeomorph.setCongr (range_sphereBundleFiberIncl F E b))
+  have hfib := TopCat.isNConnected_fiberι_of_mem_serreFibrations
+    (TopCat.mem_serreFibrations_sphereBundleProj F E hnorm) hB
+  have hcomp : (TopCat.Hom.fiberι (TopCat.ofHom (sphereBundleProj F E)) b).hom.comp
+      h.toHomotopyEquiv.toFun = sphereBundleFiberIncl F E b :=
+    -- `Homeomorph.setCongr` has no evaluation lemma; its coercion is definitionally the identity.
+    ContinuousMap.ext fun x ↦
+      (TopCat.Hom.fiberι_apply (TopCat.ofHom (sphereBundleProj F E)) b (h x)).trans
+        ((isEmbedding_sphereBundleFiberIncl F E b).toHomeomorph_apply_coe x)
+  rw [← hcomp]
+  exact h.toHomotopyEquiv.isWeakHomotopyEquivalence.isNConnected_comp_iff'.2 hfib
 
 variable (E) in
 /-- **An `n`-sphere bundle with `n ≥ 2` is simply connected exactly when its base is.** If the fibre
