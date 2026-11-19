@@ -9,6 +9,7 @@ public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.GroupAction.TangentRepresentation
 public import TauCeti.GroupTheory.GroupAction.Hom
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 
 /-!
 # The fixed tangent subspace of a group action
@@ -179,12 +180,7 @@ theorem mfderiv_comp_mfderiv_of_comp_eq {g : M → M} {h : N → N} (hfg : f ∘
   swap
   · rw [mfderiv_zero_of_not_mdifferentiableAt hfp]
     exact (ContinuousLinearMap.zero_comp _).trans (ContinuousLinearMap.comp_zero _).symm
-  have hc := mfderiv_comp_of_eq hfp hg hp
-  rw [hfg, mfderiv_comp p hh hfp] at hc
-  -- `mfderiv_comp_of_eq` takes the derivative of `f` at `g p`; replace that point by `p`.
-  generalize hz : g p = z at hc
-  obtain rfl : z = p := hz.symm.trans hp
-  exact hc.symm
+  rw [← mfderiv_comp_of_apply_eq_self hfp hg hp, hfg, mfderiv_comp p hh hfp]
 
 /-- **Equivariant maps preserve fixed tangent vectors.** If `f` is equivariant, and every element
 fixing `f p` also fixes `p` (for instance when `p` lies in the fixed set, or when `f` is
@@ -196,7 +192,10 @@ theorem map_mfderiv_fixedTangentSubspace_le (hf : ∀ (k : K) (x : M), f (k • 
     (hdN : ∀ k ∈ stabilizer K (f p), MDifferentiableAt I' I' (k • ·) (f p)) :
     (fixedTangentSubspace I K p).map (mfderiv I I' f p).toLinearMap ≤
       fixedTangentSubspace I' K (f p) := by
-  rintro _ ⟨v, hv, rfl⟩ k hk
+  intro w hw
+  obtain ⟨v, hv, rfl⟩ := Submodule.mem_map.1 hw
+  rw [mem_fixedTangentSubspace] at hv ⊢
+  intro k hk
   have h := congrArg (· v)
     (mfderiv_comp_mfderiv_of_comp_eq (funext (hf k)) (hstab hk) (hdM k hk) (hdN k hk))
   exact h.symm.trans (congrArg (mfderiv I I' f p) (hv k (hstab hk)))
@@ -214,8 +213,11 @@ theorem comap_mfderiv_fixedTangentSubspace (hf : ∀ (k : K) (x : M), f (k • x
   -- Every element fixing `p` fixes `f p` by equivariance, so the two stabilizers agree.
   replace hstab : stabilizer K (f p) = stabilizer K p :=
     hstab.antisymm fun k hk ↦ by rw [mem_stabilizer_iff, ← hf, mem_stabilizer_iff.1 hk]
-  refine le_antisymm (fun v hv k hk ↦ ?_) (Submodule.map_le_iff_le_comap.1 <|
+  refine le_antisymm (fun v hv ↦ ?_) (Submodule.map_le_iff_le_comap.1 <|
     map_mfderiv_fixedTangentSubspace_le hf hstab.le (hstab ▸ hdM) (hstab ▸ hdN))
+  rw [Submodule.mem_comap, mem_fixedTangentSubspace] at hv
+  rw [mem_fixedTangentSubspace]
+  intro k hk
   have h := congrArg (· v)
     (mfderiv_comp_mfderiv_of_comp_eq (funext (hf k)) hk (hdM k hk) (hdN k hk))
   exact hdf (h.trans (hv k (hstab ▸ hk)))
