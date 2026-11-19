@@ -66,9 +66,9 @@ every derivative of `Φᵢ` of positive order is `O(τᵢ)` there. Then
 `‖∫ φ(x) 𝐞(Φᵢ(x)) dx‖ ≤ C_N τᵢ^(-N)`, uniformly in `i`
 
 (`TauCeti.exists_norm_integral_mul_fourierChar_le`). The proof integrates by parts `N` times in
-the direction `wᵢ` only: the `k`-th amplitude `uₖ₊₁ = D((DΦᵢ · wᵢ)⁻¹ uₖ) wᵢ` has derivatives of size
-`O(τᵢ⁻ᵏ)`, by the Leibniz rule and the bounds `O(τᵢ⁻¹)` for the derivatives of the reciprocal
-`(DΦᵢ · wᵢ)⁻¹` (`TauCeti.exists_norm_iteratedFDeriv_inv_le_div`).
+the direction `wᵢ` only: the amplitudes `u₀ = φ`, `uₖ₊₁ = D((DΦᵢ · wᵢ)⁻¹ uₖ) wᵢ`, where `uₖ` has
+derivatives of size `O(τᵢ⁻ᵏ)`, by the Leibniz rule and the bounds `O(τᵢ⁻¹)` for the derivatives
+of the reciprocal `(DΦᵢ · wᵢ)⁻¹` (`TauCeti.exists_norm_iteratedFDeriv_inv_le_div`).
 
 ## Changes of variables in a Fourier integral
 
