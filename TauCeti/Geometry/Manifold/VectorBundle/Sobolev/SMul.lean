@@ -62,7 +62,7 @@ components of the section `x ↦ φ x • s x`
   multiplicativity in the multiplier.
 * `TauCeti.SobolevSection.contMDiffSMulL_contMDiffSMulL_of_eqOn`: a multiplier equal to `1` on
   the support of `φ` fixes `φ • w`.
-* `TauCeti.SobolevSection.sum_contMDiffSMulL`,
+* `TauCeti.SobolevSection.contMDiffSMulL_finsetSum`,
   `TauCeti.SobolevSection.sum_contMDiffSMulL_apply_eq_self`: additivity over finite sums of
   multipliers; multipliers summing to `1`, such as a smooth partition of unity, decompose `w`.
 * `TauCeti.SobolevSection.lowerOrderL_contMDiffSMulL`: multiplication commutes with the inclusion
@@ -336,17 +336,18 @@ theorem contMDiffSMulL_congr (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
   rfl
 
 /-- Smooth multiplication is additive in the multiplier over finite sums. -/
-theorem sum_contMDiffSMulL {ι : Type*} (s : Finset ι) {φ : ι → M → ℝ}
+theorem contMDiffSMulL_finsetSum {ι : Type*} (s : Finset ι) {φ : ι → M → ℝ}
     (hφ : ∀ i, ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ (φ i)) :
-    ∑ i ∈ s, contMDiffSMulL A μ p k (hφ i) =
-      contMDiffSMulL A μ p k (contMDiff_finsetSum (t := s) fun i _ ↦ hφ i) := by
+    contMDiffSMulL A μ p k (contMDiff_finsetSum (t := s) fun i _ ↦ hφ i) =
+      ∑ i ∈ s, contMDiffSMulL A μ p k (hφ i) := by
   induction s using Finset.cons_induction with
   | empty =>
+    symm
     rw [Finset.sum_empty, contMDiffSMulL_congr _ (contMDiff_const (c := (0 : ℝ)))
       (funext fun _ ↦ Finset.sum_empty), contMDiffSMulL_const]
     exact (zero_smul ℝ _).symm
   | cons a s ha ih =>
-    rw [Finset.sum_cons, ih, ← contMDiffSMulL_add]
+    rw [Finset.sum_cons, ← ih, ← contMDiffSMulL_add]
     exact contMDiffSMulL_congr _ _ (funext fun _ ↦ by rw [Pi.add_apply, Finset.sum_cons])
 
 /-- For smooth functions `φ i` summing to `1`, such as a smooth partition of unity, the products
@@ -356,9 +357,9 @@ theorem sum_contMDiffSMulL_apply_eq_self {ι : Type*} [Fintype ι] {φ : ι → 
     (w : SobolevSection A μ p k) :
     ∑ i, contMDiffSMulL A μ p k (hφ i) w = w := by
   have h := congrArg (fun T : SobolevSection A μ p k →L[ℝ] SobolevSection A μ p k ↦ T w)
-    (sum_contMDiffSMulL Finset.univ hφ)
+    (contMDiffSMulL_finsetSum Finset.univ hφ)
   simp only [FunLike.coe_sum, Finset.sum_apply] at h
-  rw [h, contMDiffSMulL_congr _ contMDiff_const (funext h1), contMDiffSMulL_const, one_smul,
+  rw [← h, contMDiffSMulL_congr _ contMDiff_const (funext h1), contMDiffSMulL_const, one_smul,
     ContinuousLinearMap.id_apply]
 
 /-- Smooth multiplication is multiplicative in the multiplier: `(φ ψ) • w = φ • (ψ • w)`. -/
