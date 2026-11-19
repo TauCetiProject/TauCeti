@@ -77,8 +77,6 @@ spaces.
 
 ## Main declarations
 
-* `BesselPotentialSpace.fourier_toLp_ae_eq`: for `h ∈ H^{s,2}` whose tempered distribution has the
-  Fourier transform `v ∈ L^q`, the `L²` Fourier transform of `J^s h` is `(1 + ‖ξ‖²)^{s/2} v`.
 * `TemperedDistribution.MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq`: an `L²` function in
   `H^s`, `2s > n`, agrees almost everywhere with a continuous function vanishing at infinity.
 * `MemSobolev.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialSpace` (in
@@ -142,24 +140,6 @@ open scoped FourierTransform SchwartzMap ZeroAtInfty ENNReal Real
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E]
-
-namespace BesselPotentialSpace
-
-open TemperedDistribution
-open scoped BesselPotentialSpace
-
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
-
-/-- **The Fourier transform of the Bessel potential.** If `h ∈ H^{s,2}` has a tempered distribution
-whose Fourier transform is an `L^q` function `v`, for any `1 ≤ q ≤ ∞`, then the Fourier transform of
-the `L²` function `J^s h` is `(1 + ‖ξ‖²)^{s/2} v(ξ)` almost everywhere. -/
-theorem fourier_toLp_ae_eq {s : ℝ} (h : H^{s}(E, F)) {q : ℝ≥0∞} [Fact (1 ≤ q)]
-    {v : Lp F q (volume : Measure E)} (hv : 𝓕 h.toDistr = v) :
-    𝓕 h.toLp =ᵐ[volume] fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • v ξ := by
-  rw [← Lp.toTemperedDistribution_eq_smulLeftCLM_iff (by fun_prop),
-    toTemperedDistribution_fourier_toLp, hv]
-
-end BesselPotentialSpace
 
 namespace TemperedDistribution
 

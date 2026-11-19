@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Fourier.LpSpace
 public import TauCeti.Analysis.Sobolev.BesselPotential.NormEquivalence
-public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
-import TauCeti.Analysis.Fourier.LpSpace
-import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
@@ -31,8 +28,9 @@ an orthonormal basis,
 
 `‖u‖²_{H^{1,2}} = ∫ (1 + ‖ξ‖²) ‖𝓕u(ξ)‖² dξ = ‖u‖²_{L²} + (2π)⁻² ∑ᵢ ‖∂ᵢu‖²_{L²}`
 
-(`BesselPotentialSpace.norm_sq_eq_norm_sq_add_mul_sum_norm_sq`; for Schwartz functions,
-`SchwartzMap.norm_toBesselPotentialSpaceCLM_one_sq`), whereas the `W^{1,2}` norm is
+(`BesselPotentialSpace.norm_sq_eq_norm_sq_add_mul_sum_norm_sq` in
+`TauCeti.Analysis.Sobolev.BesselPotential.Schwartz`, which also proves the case of Schwartz
+functions, `SchwartzMap.norm_toBesselPotentialSpaceCLM_one_sq`), whereas the `W^{1,2}` norm is
 `‖u‖²_{W^{1,2}} = ‖u‖²_{L²} + ‖∇u‖²_{L²}`, the integral of `1 + 4π²‖ξ‖²` against `‖𝓕u‖²`. So for
 `u ∈ W^{1,2}(E)` (`TauCeti.Wkp.norm_toBesselPotentialSpace_sq`)
 
@@ -45,18 +43,12 @@ weigh the gradient differently, by `(2π)⁻²` and by `1`. The constants `1` an
 values of the ratio `((1 + 4π²‖ξ‖²) / (1 + ‖ξ‖²))^{1/2}` of the two symbols, approached at low and
 at high frequencies.
 
-The Fourier-side ingredients are `BesselPotentialSpace.fourier_toLp_ae_eq`, for the symbol of
-`J^s`, and `MeasureTheory.Lp.fourier_ae_eq_of_lineDerivOp_eq`, for the symbol of `∂_m`.
+This file applies that identity to `W^{1,2}(E)`, whose weak derivatives along an orthonormal basis
+are the components `⟪bᵢ, ∇u⟫` of the weak gradient.
 
 ## Main declarations
 
-* `BesselPotentialSpace.norm_sq_eq_norm_sq_add_mul_sum_norm_sq`: Plancherel's identity
-  `‖h‖²_{H^{1,2}} = ‖h‖²_{L²} + (2π)⁻² ∑ᵢ ‖∂ᵢh‖²_{L²}`.
-* `SchwartzMap.norm_toBesselPotentialSpaceCLM_one_sq`: the same identity for a Schwartz function,
-  `‖u‖²_{H¹} = ∫ ‖u‖² + (2π)⁻² ∑ᵢ ∫ ‖∂_{bᵢ} u‖²`.
-* `SchwartzMap.inv_two_pi_sq_mul_integral_norm_lineDerivOp_sq_le`: the `H¹` norm of a Schwartz
-  function bounds the `L²` norm of each of its first derivatives.
-* `TauCeti.Wkp.norm_toBesselPotentialSpace_sq`: the same identity on `W^{1,2}(E)`.
+* `TauCeti.Wkp.norm_toBesselPotentialSpace_sq`: Plancherel's identity on `W^{1,2}(E)`.
 * `TauCeti.Wkp.norm_toBesselPotentialSpace_le`,
   `TauCeti.Wkp.norm_le_two_mul_pi_mul_norm_toBesselPotentialSpace`: the explicit norm equivalence.
 
@@ -77,74 +69,6 @@ open scoped ENNReal NNReal LineDeriv SchwartzMap BesselPotentialSpace Real
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [CompleteSpace F]
-
-namespace BesselPotentialSpace
-
-/-- **Plancherel's identity for `H^{1,2}`.** Let `b` be an orthonormal basis of `E` and let
-`h ∈ H^{1,2}(E, F)` be the `L²` function `g`, with derivatives `∂_{bᵢ} h` the `L²` functions `dᵢ`.
-Then `‖h‖² = ‖g‖² + (2π)⁻² ∑ᵢ ‖dᵢ‖²`. The factor `(2π)⁻²` comes from Mathlib's normalisation of the
-Fourier transform, under which `∂_{bᵢ}` has symbol `2πi⟪ξ, bᵢ⟫` and `J¹` has symbol
-`(1 + ‖ξ‖²)^{1/2}`. -/
-theorem norm_sq_eq_norm_sq_add_mul_sum_norm_sq {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E)
-    (h : H^{1}(E, F)) {g : Lp F 2 (volume : Measure E)} (hg : h.toDistr = g)
-    {d : ι → Lp F 2 (volume : Measure E)} (hd : ∀ i, ∂_{b i} h.toDistr = d i) :
-    ‖h‖ ^ 2 = ‖g‖ ^ 2 + (2 * π)⁻¹ ^ 2 * ∑ i, ‖d i‖ ^ 2 := by
-  have hv : 𝓕 h.toDistr = 𝓕 g := by rw [hg, Lp.fourier_toTemperedDistribution_eq]
-  have hint (f : Lp F 2 (volume : Measure E)) : Integrable (fun ξ ↦ ‖f ξ‖ ^ 2) :=
-    (Lp.memLp f).integrable_norm_pow two_ne_zero
-  -- On the Fourier side, `‖𝓕 (J¹ h)‖² = (1 + ‖ξ‖²) ‖𝓕 g‖²` and `‖𝓕 dᵢ‖² = 4π² ⟪ξ, bᵢ⟫² ‖𝓕 g‖²`.
-  have hpt : (fun ξ ↦ ‖𝓕 h.toLp ξ‖ ^ 2) =ᵐ[volume]
-      fun ξ ↦ ‖𝓕 g ξ‖ ^ 2 + (2 * π)⁻¹ ^ 2 * ∑ i, ‖𝓕 (d i) ξ‖ ^ 2 := by
-    filter_upwards [fourier_toLp_ae_eq h hv,
-      ae_all_iff.2 fun i ↦ Lp.fourier_ae_eq_of_lineDerivOp_eq hv (hd i)] with ξ hξ hξd
-    have hsum : ∑ i, ‖𝓕 (d i) ξ‖ ^ 2 = (2 * π) ^ 2 * ‖ξ‖ ^ 2 * ‖𝓕 g ξ‖ ^ 2 := by
-      simp only [hξd, norm_smul, Complex.norm_mul, Complex.norm_ofNat, Complex.norm_real,
-        Complex.norm_I, Real.norm_eq_abs, abs_of_pos Real.pi_pos, mul_one, mul_pow, sq_abs,
-        ← Finset.sum_mul, ← Finset.mul_sum, b.sum_sq_inner_left]
-    rw [hξ, hsum, norm_smul, mul_pow, Complex.norm_real, Real.norm_eq_abs, sq_abs,
-      ← Real.sqrt_eq_rpow, Real.sq_sqrt (by positivity)]
-    field_simp
-  rw [← norm_fourier_toLp_eq h, ← Lp.integral_norm_sq_eq_norm_sq, integral_congr_ae hpt,
-    integral_add (hint _) ((integrable_finsetSum _ fun i _ ↦ hint _).const_mul _),
-    integral_const_mul, integral_finsetSum _ fun i _ ↦ hint _]
-  simp only [Lp.integral_norm_sq_eq_norm_sq, Lp.norm_fourier_eq]
-
-end BesselPotentialSpace
-
-namespace SchwartzMap
-
-/-- **The `H¹` norm of a Schwartz function** in terms of its first derivatives: for an orthonormal
-basis `b` of `E`,
-
-`‖u‖²_{H¹} = ∫ ‖u‖² + (2π)⁻² ∑ᵢ ∫ ‖∂_{bᵢ} u‖²`.
-
-The factor `(2π)⁻²` comes from the Fourier transform of `∂_v u` being `2πi ⟪ξ, v⟫ 𝓕 u`. -/
-theorem norm_toBesselPotentialSpaceCLM_one_sq {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) (u : 𝓢(E, F)) :
-    ‖toBesselPotentialSpaceCLM 1 2 u‖ ^ 2 =
-      (∫ x, ‖u x‖ ^ 2) + (2 * π)⁻¹ ^ 2 * ∑ i, ∫ x, ‖∂_{b i} u x‖ ^ 2 := by
-  have hint (g : 𝓢(E, F)) : ∫ x, ‖g x‖ ^ 2 = ‖g.toLp 2 (volume : Measure E)‖ ^ 2 := by
-    rw [← Lp.integral_norm_sq_eq_norm_sq]
-    exact integral_congr_ae ((g.coeFn_toLp 2 volume).mono fun x hx ↦ by simp only [hx])
-  simp only [hint]
-  refine BesselPotentialSpace.norm_sq_eq_norm_sq_add_mul_sum_norm_sq b _ ?_ fun i ↦ ?_
-  · rw [toDistr_toBesselPotentialSpaceCLM, Lp.toTemperedDistribution_toLp_eq]
-  · rw [toDistr_toBesselPotentialSpaceCLM, Lp.toTemperedDistribution_toLp_eq]
-    exact lineDerivOp_toTemperedDistributionCLM_eq u (b i)
-
-/-- The `H¹` norm of a Schwartz function bounds the `L²` norm of each of its first derivatives
-along an orthonormal basis `b`: `(2π)⁻² ∫ ‖∂_{bᵢ} u‖² ≤ ‖u‖²_{H¹}`. -/
-theorem inv_two_pi_sq_mul_integral_norm_lineDerivOp_sq_le {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) (u : 𝓢(E, F)) (i : ι) :
-    (2 * π)⁻¹ ^ 2 * ∫ x, ‖∂_{b i} u x‖ ^ 2 ≤ ‖toBesselPotentialSpaceCLM 1 2 u‖ ^ 2 := by
-  rw [norm_toBesselPotentialSpaceCLM_one_sq b]
-  have hi : ∫ x, ‖∂_{b i} u x‖ ^ 2 ≤ ∑ j, ∫ x, ‖∂_{b j} u x‖ ^ 2 :=
-    Finset.single_le_sum (f := fun j ↦ ∫ x, ‖∂_{b j} u x‖ ^ 2)
-      (fun j _ ↦ integral_nonneg fun _ ↦ by positivity) (Finset.mem_univ i)
-  have h0 : 0 ≤ ∫ x, ‖u x‖ ^ 2 := integral_nonneg fun _ ↦ by positivity
-  nlinarith [mul_le_mul_of_nonneg_left hi (by positivity : (0 : ℝ) ≤ (2 * π)⁻¹ ^ 2)]
-
-end SchwartzMap
 
 namespace TauCeti
 
@@ -198,7 +122,8 @@ theorem norm_toBesselPotentialSpace_sq (u : Wkp (volume : Measure E) ⊤ 2 1) :
 theorem norm_toBesselPotentialSpace_le (u : Wkp (volume : Measure E) ⊤ 2 1) :
     ‖toBesselPotentialSpace Nat.one_lt_ofNat ENNReal.ofNat_ne_top 1 u‖ ≤ ‖u‖ := by
   refine (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
-  rw [norm_toBesselPotentialSpace_sq, norm_sq_eq_norm_value_sq_add_norm_iteratedGradient_sq]
+  rw [norm_toBesselPotentialSpace_sq,
+    norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq 0 u, lowerOrder_zero, value_one]
   have : (2 * π)⁻¹ ^ 2 ≤ 1 := pow_le_one₀ (by positivity) (inv_le_one_of_one_le₀ (by
     linarith [Real.two_le_pi]))
   nlinarith [sq_nonneg ‖iteratedGradient 0 u‖]
@@ -210,9 +135,10 @@ theorem norm_le_two_mul_pi_mul_norm_toBesselPotentialSpace (u : Wkp (volume : Me
   have h2 : (2 * π) ^ 2 * (2 * π)⁻¹ ^ 2 = 1 := by
     rw [← mul_pow, mul_inv_cancel₀ (by positivity), one_pow]
   rw [mul_pow, norm_toBesselPotentialSpace_sq,
-    norm_sq_eq_norm_value_sq_add_norm_iteratedGradient_sq, mul_add, ← mul_assoc, h2, one_mul]
+    norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq 0 u, lowerOrder_zero, value_one,
+    mul_add, ← mul_assoc, h2, one_mul]
   have : 1 ≤ (2 * π) ^ 2 := one_le_pow₀ (by linarith [Real.two_le_pi])
-  nlinarith [sq_nonneg ‖value 1 u‖]
+  nlinarith [sq_nonneg ‖W1p.value u‖]
 
 end Wkp
 
