@@ -87,7 +87,7 @@ public section
 noncomputable section
 
 open Filter Set
-open scoped Topology
+open scoped ContDiff Topology
 
 namespace ContinuousLinearMap.FredholmPackage
 
@@ -183,11 +183,8 @@ theorem det_fderiv_mul_det_eq (hT : HasStrictFDerivAt f T a)
   set u : (pkg.decCodom.X₁ × pkg.decDom.X₀) →L[ℝ] E :=
     pkg.decCodom.X₁.subtypeL.comp (ContinuousLinearMap.fst ℝ _ _) +
       pkg.decCodom.X₀.subtypeL.comp (fderiv ℝ q y) with hu
-  have h₂ : HasFDerivAt (fun y' ↦ f (Φ.symm y')) u y := by
-    refine ((pkg.decCodom.X₁.subtypeL.hasFDerivAt.comp y hasFDerivAt_fst).add
-      (pkg.decCodom.X₀.subtypeL.hasFDerivAt.comp y hq.hasFDerivAt)).congr_of_eventuallyEq ?_
-    filter_upwards [Φ.open_target.mem_nhds hy] with y' hy'
-    exact pkg.apply_normalFormOpenPartialHomeomorph_symm hT hy'
+  have h₂ : HasFDerivAt (fun y' ↦ f (Φ.symm y')) u y :=
+    pkg.hasFDerivAt_comp_normalFormOpenPartialHomeomorph_symm hT hy hq
   have hLP : L.comp P = u := h₁.unique h₂
   have hslice : fderiv ℝ (pkg.obstructionSlice hT y.1) y.2 =
       (fderiv ℝ q y).comp (ContinuousLinearMap.inr ℝ pkg.decCodom.X₁ pkg.decDom.X₀) :=
@@ -259,27 +256,18 @@ theorem eventually_sign_det_fderiv_eq (hT : HasStrictFDerivAt f T a) (hf : ContD
           (fderiv ℝ f ((pkg.normalFormOpenPartialHomeomorph hT).symm y) : E →ₗ[ℝ] E)) =
         pkg.reductionSign ι * SignType.sign (LinearMap.det (ι.toLinearMap ∘ₗ
           (fderiv ℝ (pkg.obstructionSlice hT y.1) y.2).toLinearMap)) := by
-  set Φ := pkg.normalFormOpenPartialHomeomorph hT with hΦdef
-  set y₀ : pkg.decCodom.X₁ × pkg.decDom.X₀ := (pkg.decCodom.proj (f a), 0)
-  have hy₀ : y₀ ∈ Φ.target := pkg.normalFormOpenPartialHomeomorph_self_mem_target hT
-  have hsymy₀ : Φ.symm y₀ = a := pkg.normalFormOpenPartialHomeomorph_symm_proj_self hT
-  have hqC : ContDiffAt ℝ 1 (pkg.obstructionMap hT) y₀ :=
-    pkg.contDiffAt_obstructionMap_self hT hf
-  have hsymC : ContDiffAt ℝ 1 Φ.symm y₀ :=
-    pkg.contDiffAt_normalFormOpenPartialHomeomorph_symm_self hT hf
-  have hfd : ∀ᶠ y in 𝓝 y₀, DifferentiableAt ℝ f (Φ.symm y) := by
-    have hev := (hf.eventually (by simp)).mono fun x hx ↦ hx.differentiableAt one_ne_zero
-    rw [← hsymy₀] at hev
-    exact hsymC.continuousAt hev
-  filter_upwards [Φ.open_target.mem_nhds hy₀, hqC.eventually (by simp),
-    hsymC.eventually (by simp), hfd,
-    pkg.eventually_sign_det_fderiv_symm_comp_codomainEquiv hT hf ι] with y hy hq hsymm hfy hcy
-  have hqd : DifferentiableAt ℝ (pkg.obstructionMap hT) y := hq.differentiableAt one_ne_zero
+  have hf' : ContDiffAt ℝ ((1 : ℕ) : ℕ∞ω) f a := by simpa using hf
+  filter_upwards [pkg.eventually_mem_target_contDiffAt_normalForm hT le_rfl hf',
+    pkg.eventually_sign_det_fderiv_symm_comp_codomainEquiv hT hf ι]
+    with y hy hcy
+  obtain ⟨hy, hq, hsymm, -, hfy⟩ := hy
+  have hqd : DifferentiableAt ℝ (pkg.obstructionMap hT) y := hq.differentiableAt (by simp)
   refine ⟨hy, ?_, ?_⟩
   · rw [funext (pkg.obstructionSlice_apply hT y.1)]
     exact hqd.comp y.2 (differentiableAt_const _ |>.prodMk differentiableAt_id)
   · have h := congrArg SignType.sign
-      (pkg.det_fderiv_mul_det_eq hT ι hy (hsymm.differentiableAt one_ne_zero) hfy)
+      (pkg.det_fderiv_mul_det_eq hT ι hy (hsymm.differentiableAt (by simp))
+        (hfy.differentiableAt (by simp)))
     rw [sign_mul, hcy] at h
     rw [← h, mul_comm _ (pkg.reductionSign ι), ← mul_assoc]
     have hσ := pkg.reductionSign_ne_zero ι
