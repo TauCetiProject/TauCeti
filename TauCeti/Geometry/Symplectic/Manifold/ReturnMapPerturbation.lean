@@ -266,15 +266,15 @@ theorem IsSymplectic.exists_diffeomorph_isNondegenerateFixedPt_iterate
   intro v hv
   -- `L` conjugates the return map to `B` followed by the rotation by `θ`.
   set Bθ : Module.End ℝ ℂ := B * Algebra.lmul ℝ ℂ (exp (θ * Complex.I))
-  have hpow (m : ℕ) (u : TangentSpace I p) :
-      L ((A.comp ((L.symm : ℂ →L[ℝ] TangentSpace I p).comp
-        ((exp (θ * Complex.I) • ContinuousLinearMap.id ℝ ℂ).comp
-          (L : TangentSpace I p →L[ℝ] ℂ))) ^ m) u) = (Bθ ^ m) (L u) := by
-    induction m generalizing u with
-    | zero => rfl
-    | succ m ih =>
-      rw [pow_succ, mul_apply_eq_comp, ContinuousLinearMap.comp_apply, ih, pow_succ]
-      simp [Bθ, B]
+  set D : TangentSpace I p →L[ℝ] TangentSpace I p :=
+    A.comp ((L.symm : ℂ →L[ℝ] TangentSpace I p).comp
+      ((exp (θ * Complex.I) • ContinuousLinearMap.id ℝ ℂ).comp (L : TangentSpace I p →L[ℝ] ℂ)))
+  have hD : L.toLinearEquiv.conjAlgEquiv ℝ (D : Module.End ℝ (TangentSpace I p)) = Bθ := by
+    ext z
+    simp [D, Bθ, B]
+  have hpow (u : TangentSpace I p) : L ((D ^ n) u) = (Bθ ^ n) (L u) := by
+    rw [← hD, ← map_pow, LinearEquiv.conjAlgEquiv_apply, ← ContinuousLinearMap.toLinearMap_pow]
+    simp [-ContinuousLinearMap.toLinearMap_pow]
   have hinj : Injective ((1 : Module.End ℝ ℂ) - Bθ ^ n) := by
     have hdet : LinearMap.det ((1 : Module.End ℝ ℂ) - Bθ ^ n) ≠ 0 := fun h ↦ hθ ⟨n, hn.ne', h⟩
     exact ((Module.End.isUnit_iff _).1
