@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
 import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
@@ -73,6 +75,8 @@ compact set. Symbols with compact spatial support are uniform
 uniform exactly when all derivatives of `f` are bounded (`TauCeti.Symbol.isUniform_ofSpatial_iff`),
 so the local estimates alone do not give uniform ones: a coordinate function `x_j` is a symbol of
 order `0` that is not uniform (`TauCeti.Symbol.not_isUniform_ofSpatial_smul`).
+The position slices of a uniform symbol have temperate growth
+(`TauCeti.Symbol.IsUniform.hasTemperateGrowth_coefficient_slice`).
 Composition preserves uniform estimates (`TauCeti.Symbol.IsUniform.comp`) and compact spatial
 support of either factor. Composing with the symbol of multiplication by a compactly supported
 smooth function (`TauCeti.Symbol.hasCompactSpatialSupport_ofSpatial_iff`) is therefore a spatial
@@ -288,6 +292,19 @@ theorem IsUniform.exists_norm_iteratedFDeriv_le {a : Symbol n V W m} (ha : a.IsU
     have h := hB' [] (List.ofFn r) x ξ
     simp only [mixedDeriv_def, coordinateDeriv_nil] at h
     exact h.trans (le_add_of_nonneg_left (hB0 _ _))
+
+/-- The position slice `x ↦ a(x, ξ)` of a symbol with estimates uniform in the position has
+temperate growth: all its derivatives are bounded. -/
+theorem IsUniform.hasTemperateGrowth_coefficient_slice {a : Symbol n V W m} (ha : a.IsUniform)
+    (ξ : CoordinateSpace n) : (fun x ↦ a.coefficient (x, ξ)).HasTemperateGrowth := by
+  refine .of_norm_iteratedFDeriv_le (a.contDiff_coefficient_slice ξ) fun p ↦ ?_
+  choose B _ hB using isUniform_iff.1 ha
+  refine ⟨∑ r : Fin p → Fin n, B (List.ofFn r) [] * (1 + ‖ξ‖ ^ 2) ^ (m / 2), fun x ↦ ?_⟩
+  refine (norm_iteratedFDeriv_le_sum_coordinateDeriv
+    (contDiff_infty.1 (a.contDiff_coefficient_slice ξ) p) x).trans
+    (Finset.sum_le_sum fun r _ ↦ ?_)
+  simpa only [mixedDeriv_def, coordinateDeriv_nil, List.length_nil, CharP.cast_eq_zero,
+    sub_zero] using hB (List.ofFn r) [] x ξ
 
 /-- A position slice `x ↦ a(x, ξ)` of a symbol with compact spatial support has compact
 support. -/
