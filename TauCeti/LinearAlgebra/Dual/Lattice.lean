@@ -115,12 +115,13 @@ variable {R K V : Type*} [CommRing R] [IsDomain R] [Field K] [Algebra R K]
   [IsFractionRing R K] [AddCommGroup V] [Module K V] [Module R V] [IsScalarTower R K V]
 
 /-- The integral dual of a free full lattice is again a full lattice. -/
-instance isLattice_dualLattice (N : Submodule R V) [N.IsLattice K] [Module.Free R N] :
-    (N.dualLattice K).IsLattice K := by
+instance isFullLattice_dualLattice (N : Submodule R V) [N.IsFullLattice K] [Module.Free R N] :
+    (N.dualLattice K).IsFullLattice K := by
   classical
+  have := IsLattice.finite K N
   let b := Module.Free.chooseBasis R N
-  rw [← b.span_range_extendOfIsLattice (K := K), (b.extendOfIsLattice K).dualLattice_span]
-  exact isLattice_span (Set.finite_range _) (b.extendOfIsLattice K).dualBasis.span_eq
+  rw [← b.span_range_extendOfIsFullLattice (K := K), (b.extendOfIsFullLattice K).dualLattice_span]
+  exact isFullLattice_span (Set.finite_range _) (b.extendOfIsFullLattice K).dualBasis.span_eq
 
 section Pairing
 
@@ -152,20 +153,21 @@ variable {R K V : Type*} [CommRing R] [Field K] [Algebra R K] [IsFractionRing R 
 /-- **The integral dual of a free full lattice is its `R`-linear dual.** Evaluation pairs the
 integral dual of `N` perfectly with `N`: every `R`-linear functional on `N` extends uniquely to a
 `K`-linear functional on the ambient space. -/
-instance isPerfPair_dualLatticePairing (N : Submodule R V) [N.IsLattice K] [Module.Free R N] :
+instance isPerfPair_dualLatticePairing (N : Submodule R V) [N.IsFullLattice K] [Module.Free R N] :
     (N.dualLatticePairing K).IsPerfPair := by
+  have := IsLattice.finite K N
   refine .of_bijective _ ⟨fun φ ψ h ↦ ?_, fun g ↦ ?_⟩
-  · refine Subtype.ext <| LinearMap.ext_on (IsLattice.span_eq_top (A := K) (M := N))
+  · refine Subtype.ext <| LinearMap.ext_on (IsFullLattice.span_eq_top (A := K) (M := N))
       fun x hx ↦ ?_
     simpa using congr(algebraMap R K ($h ⟨x, hx⟩))
   · -- Extend `g` along the `K`-basis of `V` given by an `R`-basis of `N`.
     let b := Module.Free.chooseBasis R N
-    let φ : Module.Dual K V := (b.extendOfIsLattice K).constr K fun i ↦ algebraMap R K (g (b i))
+    let φ : Module.Dual K V := (b.extendOfIsFullLattice K).constr K fun i ↦ algebraMap R K (g (b i))
     have hφ (x : N) : φ x = algebraMap R K (g x) := by
       have : (φ.restrictScalars R).comp N.subtype = (Algebra.linearMap R K).comp g :=
         b.ext fun i ↦ by
           rw [LinearMap.comp_apply, Submodule.subtype_apply,
-            ← Module.Basis.extendOfIsLattice_apply K b, LinearMap.restrictScalars_apply,
+            ← Module.Basis.extendOfIsFullLattice_apply K b, LinearMap.restrictScalars_apply,
             Module.Basis.constr_basis, LinearMap.comp_apply, Algebra.linearMap_apply]
       exact congr($this x)
     refine ⟨⟨φ, (mem_dualLattice N φ).mpr fun x hx ↦

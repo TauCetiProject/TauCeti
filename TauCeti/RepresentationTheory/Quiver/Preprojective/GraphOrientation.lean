@@ -500,7 +500,7 @@ theorem not_exists_forall_vertexCorner_eq_smul_of_not_isBipartite
     hG (SimpleGraph.isBipartite_iff_forall_walk_even_length.mpr h)
   push Not at hwalk
   obtain ⟨v, p, hp⟩ := hwalk
-  have hpodd : Odd p.length := Nat.not_even_iff_odd.mp hp
+  have hpodd : Odd p.length := hp
   let q₀ := (unsymmetrifyMap G o).mapPath (walkToPath G p)
   have hq₀odd : Odd q₀.length := by simpa [q₀] using hpodd
   have hobj : (unsymmetrifyMap G o).obj (vertex G v) =

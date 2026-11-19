@@ -821,7 +821,7 @@ private lemma intCast_apply_modEq_one_of_mem_Gamma (N : ℕ) (γ : SL(2, ℤ))
     ((1 : SL(2, ℤ)) i j : ℤ) ≡ (γ i j : ℤ) [ZMOD (N : ℤ)] := by
   rw [Gamma_mem'] at hγ
   have h := congr_fun₂ (congr_arg Subtype.val hγ) i j
-  simp only [Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
+  simp only [Matrix.SpecialLinearGroup.map_apply_coe, Matrix.map_apply,
     Matrix.SpecialLinearGroup.coe_one, Int.coe_castRingHom] at h
   rw [← ZMod.intCast_eq_intCast_iff]
   simpa [Matrix.one_apply] using h.symm
