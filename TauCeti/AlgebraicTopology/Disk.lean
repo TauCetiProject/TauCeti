@@ -340,7 +340,7 @@ instance isEmpty_diskBoundary_zero : IsEmpty (TopCat.diskBoundary.{u} 0) :=
 
 /-- The `0`-disk is a single point, the origin of the zero space. -/
 instance uniqueDiskZero : Unique (TopCat.disk.{u} 0) where
-  default := ULift.up ⟨0, Metric.mem_closedBall_self zero_le_one⟩
+  default := diskCenter 0
   uniq _ := ULift.ext (Subtype.ext (Subsingleton.elim _ _))
 
 /-- A point of the boundary `S⁰` of the `1`-disk is determined by its coordinate. -/
