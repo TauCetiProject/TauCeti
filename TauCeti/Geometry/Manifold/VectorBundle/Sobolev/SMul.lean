@@ -60,6 +60,11 @@ components of the section `x ↦ φ x • s x`
 * `TauCeti.SobolevSection.contMDiffSMulL_const`, `TauCeti.SobolevSection.contMDiffSMulL_add`,
   `TauCeti.SobolevSection.contMDiffSMulL_mul`: multiplication by constants, additivity and
   multiplicativity in the multiplier.
+* `TauCeti.SobolevSection.contMDiffSMulL_contMDiffSMulL_of_eqOn`: a multiplier equal to `1` on
+  the support of `φ` fixes `φ • w`.
+* `TauCeti.SobolevSection.sum_contMDiffSMulL`,
+  `TauCeti.SobolevSection.sum_contMDiffSMulL_apply_eq_self`: additivity over finite sums of
+  multipliers; multipliers summing to `1`, such as a smooth partition of unity, decompose `w`.
 * `TauCeti.SobolevSection.lowerOrderL_contMDiffSMulL`: multiplication commutes with the inclusion
   `W^{k+1,p}(V) → W^{k,p}(V)`.
 
@@ -323,12 +328,55 @@ theorem contMDiffSMulL_add (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
     contMDiffSMulL A μ p k (hφ.add hψ) = contMDiffSMulL A μ p k hφ + contMDiffSMulL A μ p k hψ :=
   A.sectionChartData.contDiffOnSMulL_add μ p k _ _ _ _ _ _ _
 
+/-- Smooth multiplication depends only on the multiplier, not on the proof of its smoothness. -/
+theorem contMDiffSMulL_congr (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
+    (hψ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ ψ) (h : φ = ψ) :
+    contMDiffSMulL A μ p k hφ = contMDiffSMulL A μ p k hψ := by
+  subst h
+  rfl
+
+/-- Smooth multiplication is additive in the multiplier over finite sums. -/
+theorem sum_contMDiffSMulL {ι : Type*} (s : Finset ι) {φ : ι → M → ℝ}
+    (hφ : ∀ i, ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ (φ i)) :
+    ∑ i ∈ s, contMDiffSMulL A μ p k (hφ i) =
+      contMDiffSMulL A μ p k (contMDiff_finsetSum (t := s) fun i _ ↦ hφ i) := by
+  induction s using Finset.cons_induction with
+  | empty =>
+    rw [Finset.sum_empty, contMDiffSMulL_congr _ (contMDiff_const (c := (0 : ℝ)))
+      (funext fun _ ↦ Finset.sum_empty), contMDiffSMulL_const]
+    exact (zero_smul ℝ _).symm
+  | cons a s ha ih =>
+    rw [Finset.sum_cons, ih, ← contMDiffSMulL_add]
+    exact contMDiffSMulL_congr _ _ (funext fun _ ↦ by rw [Pi.add_apply, Finset.sum_cons])
+
+/-- For smooth functions `φ i` summing to `1`, such as a smooth partition of unity, the products
+`φ i • w` sum to `w`. -/
+theorem sum_contMDiffSMulL_apply_eq_self {ι : Type*} [Fintype ι] {φ : ι → M → ℝ}
+    (hφ : ∀ i, ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ (φ i)) (h1 : ∀ x, ∑ i, φ i x = 1)
+    (w : SobolevSection A μ p k) :
+    ∑ i, contMDiffSMulL A μ p k (hφ i) w = w := by
+  have h := congrArg (fun T : SobolevSection A μ p k →L[ℝ] SobolevSection A μ p k ↦ T w)
+    (sum_contMDiffSMulL Finset.univ hφ)
+  simp only [FunLike.coe_sum, Finset.sum_apply] at h
+  rw [h, contMDiffSMulL_congr _ contMDiff_const (funext h1), contMDiffSMulL_const, one_smul,
+    ContinuousLinearMap.id_apply]
+
 /-- Smooth multiplication is multiplicative in the multiplier: `(φ ψ) • w = φ • (ψ • w)`. -/
 theorem contMDiffSMulL_mul (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ ψ) :
     contMDiffSMulL A μ p k (hφ.mul hψ) =
       (contMDiffSMulL A μ p k hφ).comp (contMDiffSMulL A μ p k hψ) :=
   A.sectionChartData.contDiffOnSMulL_mul μ p k _ _ _ _ _ _ _
+
+/-- If `ψ = 1` on the support of `φ`, then `ψ • (φ • w) = φ • w`. -/
+theorem contMDiffSMulL_contMDiffSMulL_of_eqOn (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
+    (hψ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ ψ) (h : EqOn ψ 1 (tsupport φ)) (w : SobolevSection A μ p k) :
+    contMDiffSMulL A μ p k hψ (contMDiffSMulL A μ p k hφ w) = contMDiffSMulL A μ p k hφ w := by
+  rw [← ContinuousLinearMap.comp_apply, ← contMDiffSMulL_mul]
+  refine congrArg (· w) (contMDiffSMulL_congr _ _ (funext fun x ↦ ?_))
+  by_cases hx : x ∈ tsupport φ
+  · simp [h hx]
+  · simp [image_eq_zero_of_notMem_tsupport hx]
 
 /-- Smooth multiplication commutes with the inclusion `W^{k+1,p}(V) → W^{k,p}(V)`. -/
 theorem lowerOrderL_contMDiffSMulL (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)

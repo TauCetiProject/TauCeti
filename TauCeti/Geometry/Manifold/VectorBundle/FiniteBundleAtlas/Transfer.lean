@@ -36,6 +36,9 @@ These pieces are built from the shrinking
   `TauCeti.FiniteBundleAtlas.overlap_subset_transferDomain`: membership in transfer domains, which
   contain the overlaps of chart domains.
 * `TauCeti.FiniteBundleAtlas.exists_transfer_cover`: the transfer cover of the chart images.
+* `TauCeti.FiniteBundleAtlas.exists_transfer_piece`: for a compact set inside the domain of chart
+  `i`, the image of chart `j` is covered by a transfer piece from chart `i` and an open set avoiding
+  the compact set.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_coordChangeL_transferDomain`: the coordinate change of the
   bundle, read in chart `j`, is `C^n` on the transfer domain.
 -/
@@ -146,6 +149,60 @@ theorem exists_transfer_cover [T2Space E] [T2Space M] :
     obtain ⟨x, hx, rfl⟩ := A.mem_image.1 hy
     obtain ⟨i, hi⟩ := hcov x
     exact Opens.mem_iSup.2 ⟨i, ⟨x, ⟨hx, hi⟩, rfl⟩⟩
+
+/-- **Transfer piece of a compact set.** Let `K` be compact, and `U` an open neighbourhood of `K`
+whose closure lies in the domain of chart `i`. In chart `j` there are open sets `P` and `R` covering
+the image of chart `j` such that `P` lies in the overlap of the domains of charts `i` and `j`, has
+compact closure in the transfer domain and is mapped by the chart coordinate change into the image
+of chart `i`, while `R` lies in the image of chart `j` and avoids the points of `K`. Chart-`j` data
+of a section vanishing outside `K` are thus transferred from chart `i` on `P` and vanish on `R`. -/
+theorem exists_transfer_piece [T2Space E] {K U : Set M} {i : Fin A.n} (hKU : K ⊆ U)
+    (hU : IsOpen U) (hUi : closure U ⊆ A.dom i) (hK : IsCompact K) (j : Fin A.n) :
+    ∃ P R : Opens E, (P : Set E) ⊆ A.overlap i j ∧ IsCompact (closure (P : Set E)) ∧
+      closure (P : Set E) ⊆ A.transferDomain i j ∧
+      MapsTo ((A.chart j).symm ≫ₕ A.chart i) P (A.image i) ∧ R ≤ A.image j ∧
+      A.image j ≤ P ⊔ R ∧ ∀ y ∈ (R : Set E), (A.chart j).symm y ∉ K := by
+  have hsj := A.closure_dom_subset_source j
+  have hUi' : closure U ⊆ (A.chart i).source := hUi.trans (A.dom_subset_chart_source i)
+  -- The image of the compact set `closure U ∩ closure (dom j)` under chart `j` is compact.
+  have hLc : IsCompact (A.chart j '' (closure U ∩ closure (A.dom j))) :=
+    ((A.isCompact_closure_dom j).inter_left isClosed_closure).image_of_continuousOn
+      ((A.chart j).continuousOn.mono (inter_subset_right.trans hsj))
+  have hKc : IsCompact (A.chart j '' (K ∩ closure (A.dom j))) :=
+    (hK.inter_right isClosed_closure).image_of_continuousOn
+      ((A.chart j).continuousOn.mono (inter_subset_right.trans hsj))
+  let P : Opens E := ⟨A.chart j '' (U ∩ A.dom j), (A.chart j).isOpen_image_of_subset_source
+    (hU.inter (A.isOpen_dom j)) (inter_subset_right.trans (A.dom_subset_chart_source j))⟩
+  let R : Opens E := ⟨(A.image j : Set E) \ A.chart j '' (K ∩ closure (A.dom j)),
+    (A.image j).isOpen.sdiff hKc.isClosed⟩
+  have hPL : closure (P : Set E) ⊆ A.chart j '' (closure U ∩ closure (A.dom j)) :=
+    closure_minimal (image_mono (inter_subset_inter subset_closure subset_closure))
+      hLc.isClosed
+  refine ⟨P, R, ?_, hLc.of_isClosed_subset isClosed_closure hPL, hPL.trans ?_, ?_, sdiff_subset,
+    ?_, ?_⟩
+  · rintro _ ⟨x, ⟨hxU, hxj⟩, rfl⟩
+    exact A.mem_overlap.2 ⟨x, ⟨hUi (subset_closure hxU), hxj⟩, rfl⟩
+  · rintro _ ⟨x, ⟨hxU, hxj⟩, rfl⟩
+    have hx := hsj hxj
+    refine A.mem_transferDomain.2 ⟨(A.chart j).map_source hx, ?_⟩
+    rw [(A.chart j).left_inv hx]
+    exact ⟨hUi' hxU, A.closure_dom_subset_baseSet j hxj,
+      A.dom_subset_baseSet i (hUi hxU)⟩
+  · rintro _ ⟨x, ⟨hxU, hxj⟩, rfl⟩
+    rw [OpenPartialHomeomorph.coe_trans, Function.comp_apply,
+      (A.chart j).left_inv (A.dom_subset_chart_source j hxj)]
+    exact A.mem_image.2 ⟨x, hUi (subset_closure hxU), rfl⟩
+  · intro y hy
+    obtain ⟨x, hxj, rfl⟩ := A.mem_image.1 hy
+    by_cases hxK : x ∈ K
+    · exact Or.inl ⟨x, ⟨hKU hxK, hxj⟩, rfl⟩
+    · refine Or.inr ⟨hy, ?_⟩
+      rintro ⟨x', ⟨hx'K, hx'j⟩, hx'⟩
+      exact hxK ((A.chart j).injOn (hsj hx'j) (A.dom_subset_chart_source j hxj) hx' ▸ hx'K)
+  · rintro y ⟨hy, hyK⟩ hK'
+    obtain ⟨x, hxj, rfl⟩ := A.mem_image.1 hy
+    rw [(A.chart j).left_inv (A.dom_subset_chart_source j hxj)] at hK'
+    exact hyK ⟨x, ⟨hK', subset_closure hxj⟩, rfl⟩
 
 end FiniteBundleAtlas
 

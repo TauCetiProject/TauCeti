@@ -35,7 +35,8 @@ from the gluing theorem `TauCeti.Wkp.exists_glue_of_restrictL_eq`.
 * `TauCeti.Wkp.compatibleFamilies`: the closed subspace of compatible families.
 * `TauCeti.Wkp.restrictCompatibleL`: restriction to the members of a cover, as a continuous
   linear map into the compatible families.
-* `TauCeti.Wkp.norm_le_sum_norm_restrictL`: `‖u‖ ≤ ∑ᵢ ‖u|_{V i}‖` for a finite open cover.
+* `TauCeti.Wkp.norm_le_sum_norm_restrictL`: `‖u‖ ≤ ∑ᵢ ‖u|_{V i}‖` for a finite open cover, and
+  `TauCeti.Wkp.norm_le_norm_restrictL_add_norm_restrictL` for a cover by two open sets.
 * `TauCeti.Wkp.restrictCompatibleEquiv`: `W^{k,p}(Ω) ≃L[ℝ]` compatible families over a finite
   open cover.
 * `TauCeti.Wkp.isCompactOperator_of_restrictL`: compactness of maps into `W^{k,p}(Ω)` is local on
@@ -145,6 +146,15 @@ theorem norm_le_sum_norm_restrictL [Fintype ι] {V : ι → Opens E} (hle : ∀ 
   obtain ⟨v, hv, hvn⟩ := exists_glue_of_restrictL_eq hle hcov k (fun i => restrictL (hle i) k u)
     (restrictL_mem_compatibleFamilies hle k u)
   rwa [ext_of_restrictL_eq hle hcov k hv] at hvn
+
+/-- The case of `norm_le_sum_norm_restrictL` for a cover of `Ω` by two open sets `U` and `U'`:
+`‖u‖ ≤ ‖u|_U‖ + ‖u|_{U'}‖`. -/
+theorem norm_le_norm_restrictL_add_norm_restrictL {U U' : Opens E} (hU : U ≤ Omega)
+    (hU' : U' ≤ Omega) (hcov : Omega ≤ U ⊔ U') (k : ℕ) (u : Wkp mu Omega p k) :
+    ‖u‖ ≤ ‖restrictL hU k u‖ + ‖restrictL hU' k u‖ := by
+  exact (norm_le_sum_norm_restrictL (V := fun b ↦ cond b U U') (Bool.forall_bool.2 ⟨hU', hU⟩)
+    (hcov.trans (sup_le (le_iSup_of_le true le_rfl) (le_iSup_of_le false le_rfl))) k u).trans_eq
+      (Fintype.sum_bool _)
 
 /-- Restriction to the members of a family of open subsets does not increase the norm, for the
 sup norm on the product. -/
