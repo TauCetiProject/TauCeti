@@ -43,8 +43,9 @@ set of real resolvent points.
 * `IsSelfAdjoint.inner_resolvent_self_eq_integral`: the resolvent formula
   `⟪ξ, (z - A)⁻¹ ξ⟫ = ∫ (z - s)⁻¹ dμ_ξ(s)`.
 * `IsSelfAdjoint.commute_spectralPVM_proj_resolvent`,
-  `IsSelfAdjoint.spectralPVM_proj_apply_mem_domain`: spectral projections commute with every
-  resolvent and preserve the domain.
+  `IsSelfAdjoint.spectralPVM_proj_apply_mem_domain`,
+  `IsSelfAdjoint.apply_spectralPVM_proj_apply`: spectral projections commute with every
+  resolvent, preserve the domain and commute with `A` there.
 * `IsSelfAdjoint.spectralPVM_proj_eq_zero_of_subset_resolventSet`: the spectral measure vanishes
   on Borel sets of resolvent points.
 
@@ -62,15 +63,6 @@ noncomputable section
 
 open MeasureTheory TauCeti
 open scoped InnerProductSpace ComplexConjugate
-
-namespace Complex
-
-@[fun_prop]
-theorem measurable_invCayley : Measurable invCayley := by
-  rw [show invCayley = fun w => (I * (1 + w) / (1 - w)).re from funext invCayley_apply]
-  fun_prop
-
-end Complex
 
 open Complex
 
@@ -227,30 +219,36 @@ theorem spectralPVM_proj_apply_mem_domain (hA : IsSelfAdjoint A) {B : Set ℝ}
     (commute_spectralPVM_proj_resolvent_of_im_ne_zero hA hB (by simp)).eq, mul_apply_eq_comp]
   exact LinearPMap.resolvent_mem_domain hI _
 
+/-- Every spectral projection of `A` commutes with `A` on its domain:
+`A (P_A(B) x) = P_A(B) (A x)`. -/
+theorem apply_spectralPVM_proj_apply (hA : IsSelfAdjoint A) {B : Set ℝ} (hB : MeasurableSet B)
+    (x : A.domain) :
+    A ⟨(A.spectralPVM hA).proj B hB x, hA.spectralPVM_proj_apply_mem_domain hB x.2⟩ =
+      (A.spectralPVM hA).proj B hB (A x) := by
+  set P := (A.spectralPVM hA).proj B hB
+  have hI : I ∈ A.resolventSet := hA.mem_resolventSet_of_im_ne_zero (by simp)
+  -- `P` commutes with `R(i) = (i - A)⁻¹`, whose range is the domain of `A`.
+  have hPx : P x = A.resolvent I (P (I • (x : H) - A x)) := by
+    rw [← mul_apply_eq_comp,
+      ← (commute_spectralPVM_proj_resolvent_of_im_ne_zero hA hB (z := I) (by simp)).eq,
+      mul_apply_eq_comp, LinearPMap.resolvent_smul_sub_apply hI]
+  have hx : (⟨P x, hA.spectralPVM_proj_apply_mem_domain hB x.2⟩ : A.domain) =
+      ⟨A.resolvent I (P (I • (x : H) - A x)), LinearPMap.resolvent_mem_domain hI _⟩ :=
+    Subtype.ext hPx
+  rw [hx, LinearPMap.apply_resolvent hI, ← hPx, map_sub, map_smul, sub_sub_cancel]
+
 /-- Every spectral projection of `A` commutes with every resolvent of `A`, at real resolvent
 points as well as nonreal ones. -/
 theorem commute_spectralPVM_proj_resolvent (hA : IsSelfAdjoint A) {B : Set ℝ}
     (hB : MeasurableSet B) {z : ℂ} (hz : z ∈ A.resolventSet) :
     Commute ((A.spectralPVM hA).proj B hB) (A.resolvent z) := by
-  set P := (A.spectralPVM hA).proj B hB
-  have hI : I ∈ A.resolventSet := hA.mem_resolventSet_of_im_ne_zero (by simp)
-  have hPdom (x : A.domain) : P x ∈ A.domain := hA.spectralPVM_proj_apply_mem_domain hB x.2
-  -- `P` commutes with `A` on the domain, since it commutes with `R(i) = (i - A)⁻¹`.
-  have hPA (x : A.domain) : A ⟨P x, hPdom x⟩ = P (A x) := by
-    have hPx : P x = A.resolvent I (P (I • (x : H) - A x)) := by
-      rw [← mul_apply_eq_comp,
-        ← (commute_spectralPVM_proj_resolvent_of_im_ne_zero hA hB (z := I) (by simp)).eq,
-        mul_apply_eq_comp, LinearPMap.resolvent_smul_sub_apply hI]
-    have hx : (⟨P x, hPdom x⟩ : A.domain) =
-        ⟨A.resolvent I (P (I • (x : H) - A x)), LinearPMap.resolvent_mem_domain hI _⟩ :=
-      Subtype.ext hPx
-    rw [hx, LinearPMap.apply_resolvent hI, ← hPx, map_sub, map_smul, sub_sub_cancel]
-  -- Hence `P` commutes with `z - A` on the domain, and therefore with its inverse `R(z)`.
+  -- `P` commutes with `z - A` on the domain, and therefore with its inverse `R(z)`.
   ext y
   obtain ⟨x, rfl⟩ := (LinearPMap.isResolventAt_resolvent hz).smul_sub_surjective y
   rw [mul_apply_eq_comp, mul_apply_eq_comp, LinearPMap.resolvent_smul_sub_apply hz, map_sub,
-    map_smul, ← hPA x]
-  exact (LinearPMap.resolvent_smul_sub_apply hz ⟨P x, hPdom x⟩).symm
+    map_smul, ← hA.apply_spectralPVM_proj_apply hB x]
+  exact (LinearPMap.resolvent_smul_sub_apply hz
+    ⟨_, hA.spectralPVM_proj_apply_mem_domain hB x.2⟩).symm
 
 /-! ### Spectral support -/
 

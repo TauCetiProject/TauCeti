@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
+public import Mathlib.MeasureTheory.Function.SpecialFunctions.RCLike
 public import TauCeti.Analysis.Complex.UnitDisc.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Normed.Field.Lemmas
@@ -66,7 +67,9 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
   two maps are analytic away from their poles `-ζ` and `-i`.
 * `Complex.invCayley`: the inverse transform `w ↦ i (1 + w) / (1 - w)` read as a real number,
   which inverts the transform on the real line (`Complex.invCayley_cayley`) and agrees with the
-  complex expression on the unit circle (`Complex.ofReal_invCayley`).
+  complex expression on the unit circle (`Complex.ofReal_invCayley`), where it is
+  `w ↦ -Im w / (1 - Re w)` (`Complex.invCayley_eq_neg_im_div`); it is measurable
+  (`Complex.measurable_invCayley`).
 
 ## References
 
@@ -487,5 +490,26 @@ theorem ofReal_invCayley {w : ℂ} (hw : ‖w‖ = 1) :
   have him : (I * (1 + w) / (1 - w)).im = 0 := by
     simpa [normSq_eq_norm_sq, hw, sub_eq_add_neg] using TauCeti.im_I_mul_sub_div_add 1 (-w)
   exact Complex.ext (by simp [invCayley_apply]) (by simp [him])
+
+/-- On the unit circle the inverse Cayley map is `w ↦ -Im w / (1 - Re w)`. -/
+theorem invCayley_eq_neg_im_div {w : ℂ} (hw : ‖w‖ = 1) : invCayley w = -w.im / (1 - w.re) := by
+  have hre : w.re ^ 2 + w.im ^ 2 = 1 := by
+    have := normSq_eq_norm_sq w
+    rw [hw, normSq_apply] at this
+    nlinarith
+  rw [invCayley_apply]
+  simp only [div_re, mul_re, mul_im, I_re, I_im, add_re, add_im, sub_re, sub_im, one_re, one_im,
+    normSq_apply]
+  by_cases h1 : 1 - w.re = 0
+  · have : w.im = 0 := by nlinarith
+    simp [this, show w.re = 1 by linarith]
+  · field_simp
+    linear_combination w.im * hre
+
+/-- The inverse Cayley map is measurable. -/
+@[fun_prop]
+theorem measurable_invCayley : Measurable invCayley := by
+  rw [show invCayley = fun w => (I * (1 + w) / (1 - w)).re from funext invCayley_apply]
+  fun_prop
 
 end Complex
