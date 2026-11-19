@@ -99,15 +99,14 @@ theorem trans_mem_maximalAtlas (e : Structomorph G M M') {φ : OpenPartialHomeom
 
 /-- **Corresponding charts.** For a `G`-structomorphism `e : M → M'`, every chart `φ'` of the
 maximal `G`-atlas of `M` corresponds to a chart `φ` of the maximal `G`-atlas of `M'`, namely
-`e⁻¹ ≫ φ'`, with the same target and with `e ∘ φ'⁻¹ = φ⁻¹`. -/
+`e⁻¹ ≫ φ'`, with the same target and with `φ⁻¹ = e ∘ φ'⁻¹`. -/
 theorem exists_mem_maximalAtlas_symm_eq_comp (e : Structomorph G M M')
     {φ' : OpenPartialHomeomorph M H} (hφ' : φ' ∈ G.maximalAtlas M) :
-    ∃ φ ∈ G.maximalAtlas M', φ.target = φ'.target ∧ e.toHomeomorph ∘ φ'.symm = φ.symm := by
+    ∃ φ ∈ G.maximalAtlas M', φ.target = φ'.target ∧ φ.symm = e.toHomeomorph ∘ φ'.symm := by
   refine ⟨_, e.symm.trans_mem_maximalAtlas hφ', ?_, ?_⟩
   · rw [trans_target]
     exact inter_univ _
-  · rw [coe_trans_symm]
-    rfl
+  · simp [coe_trans_symm]
 
 end Structomorph
 
@@ -125,12 +124,8 @@ theorem exists_mem_maximalAtlas_comp_symm_eq [IsManifold I m M] (f : M ≃ₘ^n�
     (hmn : m ≤ n) {φ : OpenPartialHomeomorph N H} (hφ : φ ∈ IsManifold.maximalAtlas I m N) :
     ∃ φ' ∈ IsManifold.maximalAtlas I m M, φ'.target = φ.target ∧ f ∘ φ'.symm = φ.symm := by
   have hΦ : (f.toPartialDiffeomorph.ofLE hmn).toOpenPartialHomeomorph =
-      f.toHomeomorph.toOpenPartialHomeomorph :=
-    OpenPartialHomeomorph.toPartialEquiv_injective (by
-      dsimp only
-      rw [PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
-        PartialDiffeomorph.ofLE_toPartialEquiv, Diffeomorph.toPartialDiffeomorph_toPartialEquiv]
-      rfl)
+      f.toHomeomorph.toOpenPartialHomeomorph := by
+    ext x <;> simp
   have hφ' := (f.toPartialDiffeomorph.ofLE hmn).trans_mem_maximalAtlas hφ
   rw [hΦ] at hφ'
   refine ⟨_, hφ', ?_, ?_⟩
@@ -142,14 +137,14 @@ theorem exists_mem_maximalAtlas_comp_symm_eq [IsManifold I m M] (f : M ≃ₘ^n�
 
 /-- A chart `φ'` of the maximal `C^m` atlas of `M` corresponds, for a `C^n` diffeomorphism
 `f : M → N` with `m ≤ n`, to a chart `φ` of the maximal `C^m` atlas of `N` with the same target
-and with `f ∘ φ'⁻¹ = φ⁻¹`, namely `f⁻¹ ≫ φ'`. -/
+and with `φ⁻¹ = f ∘ φ'⁻¹`, namely `f⁻¹ ≫ φ'`. -/
 theorem exists_mem_maximalAtlas_symm_eq_comp [IsManifold I m N] (f : M ≃ₘ^n⟮I, I⟯ N)
     (hmn : m ≤ n) {φ' : OpenPartialHomeomorph M H} (hφ' : φ' ∈ IsManifold.maximalAtlas I m M) :
-    ∃ φ ∈ IsManifold.maximalAtlas I m N, φ.target = φ'.target ∧ f ∘ φ'.symm = φ.symm := by
+    ∃ φ ∈ IsManifold.maximalAtlas I m N, φ.target = φ'.target ∧ φ.symm = f ∘ φ'.symm := by
   obtain ⟨φ, hφ, htarget, hcomp⟩ := f.symm.exists_mem_maximalAtlas_comp_symm_eq hmn hφ'
   refine ⟨φ, hφ, htarget, ?_⟩
   rw [← hcomp]
   funext z
-  exact f.apply_symm_apply _
+  exact (f.apply_symm_apply _).symm
 
 end Diffeomorph

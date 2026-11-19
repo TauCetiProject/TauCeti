@@ -219,7 +219,7 @@ theorem _root_.Diffeomorph.isWeakPseudoholomorphicOn_comp_diffeomorph_iff
     exact (f.isWeakCauchyRiemannOn_chart_comp_iff hφ' hsymm htarget ψ).1 (h φ' hφ' ψ hψ)
   · -- Test `u ∘ f` in `φ'` through a chart `φ` of `X` with `φ⁻¹ = f ∘ φ'⁻¹`.
     obtain ⟨φ, hφ, htarget, hsymm⟩ := f.exists_mem_maximalAtlas_symm_eq_comp hn hφ'
-    exact (f.isWeakCauchyRiemannOn_chart_comp_iff hφ' hsymm htarget.symm ψ).2 (h φ hφ ψ hψ)
+    exact (f.isWeakCauchyRiemannOn_chart_comp_iff hφ' hsymm.symm htarget.symm ψ).2 (h φ hφ ψ hψ)
 
 /-- **Invariance under biholomorphisms of the domain.** For a biholomorphism `f : X' → X`, a map
 `u : X → M` is weakly pseudoholomorphic for `(J, ν)` exactly when `u ∘ f` is weakly

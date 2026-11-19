@@ -66,12 +66,12 @@ variable {H' : Type*} [TopologicalSpace H'] {G : StructureGroupoid H'} {J : Mode
 
 /-- **Chart reindexing.** Let `g : X' → X` be continuous and such that every chart `φ'` of the
 maximal `G`-atlas of `X'` has a chart `φ` of the maximal `G`-atlas of `X` with the same target and
-with `g ∘ φ'⁻¹ = φ⁻¹`. If `u` is a local Sobolev map on `s`, then `u ∘ g` is one on `g ⁻¹' s`, of
+with `φ⁻¹ = g ∘ φ'⁻¹`. If `u` is a local Sobolev map on `s`, then `u ∘ g` is one on `g ⁻¹' s`, of
 the same order and exponent: in `φ'` it reads as `u` reads in `φ`. -/
 theorem MemWkpLocMapOnGroupoid.comp_of_forall_mem_maximalAtlas
     (hu : MemWkpLocMapOnGroupoid G J I p k u s) {g : X' → X} (hg : Continuous g)
     (hchart : ∀ φ' ∈ G.maximalAtlas X', ∃ φ ∈ G.maximalAtlas X,
-      φ.target = φ'.target ∧ g ∘ φ'.symm = φ.symm) :
+      φ.target = φ'.target ∧ φ.symm = g ∘ φ'.symm) :
     MemWkpLocMapOnGroupoid G J I p k (u ∘ g) (g ⁻¹' s) := by
   refine memWkpLocMapOnGroupoid_iff.2
     ⟨hu.continuousOn.comp hg.continuousOn (mapsTo_preimage _ _), fun φ' hφ' ψ hψ ↦ ?_⟩
@@ -79,7 +79,7 @@ theorem MemWkpLocMapOnGroupoid.comp_of_forall_mem_maximalAtlas
   have ht : (φ.extend J).target = (φ'.extend J).target := by
     rw [OpenPartialHomeomorph.extend_target, OpenPartialHomeomorph.extend_target, htarget]
   have hs : ⇑(φ.extend J).symm = g ∘ (φ'.extend J).symm := by
-    rw [OpenPartialHomeomorph.extend_coe_symm, OpenPartialHomeomorph.extend_coe_symm, ← hsymm]
+    rw [OpenPartialHomeomorph.extend_coe_symm, OpenPartialHomeomorph.extend_coe_symm, hsymm]
     rfl
   have h := hu.memWkpLoc_chart hφ hψ
   rw [ht, hs] at h
