@@ -43,6 +43,12 @@ nowhere-vanishing continuous section has zero Euler class
 (`TauCeti.eulerClass_eq_zero_of_forall_ne_zero`): every relative class restricts to zero on `E₀`.
 So a trivial bundle of positive rank has zero Euler class (`TauCeti.eulerClass_trivial_eq_zero`).
 
+The projection `π : E ⟶ B` followed by the zero section is homotopic to the identity of `E` through
+`t • v` (`TauCeti.thomPairProjZeroSectionHomotopy`), so `π^*` and the pull-back along the zero
+section are inverse isomorphisms between the cohomology of `B` and that of `E`
+(`TauCeti.singularCohomologyMap_zeroSectionHom_comp_thomPairProj`,
+`TauCeti.isIso_singularCohomologyMap_thomPairProj`).
+
 Cohomology is the singular cohomology of `TauCeti/AlgebraicTopology/Cohomology/`, with the same
 general coefficients: `Hom(C(X; R), M)` in a `k`-linear abelian category `C`. Integral cohomology
 uses `C := ModuleCat ℤ`, `k := ℤ`, and `R = M = ModuleCat.of ℤ ℤ`.
@@ -64,6 +70,8 @@ uses `C := ModuleCat ℤ`, `k := ℤ`, and `R = M = ModuleCat.of ℤ ℤ`.
 * `TauCeti.IsThomClass`: a relative class restricting to a generator on every fibre.
 * `TauCeti.zeroSectionHomotopy`: the straight-line homotopy `t • s` from the zero section to a
   continuous section `s`.
+* `TauCeti.thomPairProjZeroSectionHomotopy`: the straight-line homotopy `t • v` from the projection
+  followed by the zero section to the identity of the total space.
 * `TauCeti.eulerClass`: the Euler class `Hⁿ(E, E₀) ⟶ Hⁿ(B)`.
 * `TauCeti.negTotalSpace`, `TauCeti.negThomPairMap`: fibrewise negation, as a self-map of the
   total space and of the Thom pair; it does not change Euler classes
@@ -597,6 +605,85 @@ def zeroSectionHomotopy {s : ∀ b, E b} (hs : Continuous fun b ↦ TotalSpace.m
   map_zero_left b := (congrArg (TotalSpace.mk' F b) (zero_smul ℝ (s b))).trans
     (zeroSectionHom_apply F E b).symm
   map_one_left b := congrArg (TotalSpace.mk' F b) (one_smul ℝ (s b))
+
+/-- The zero section followed by the projection is the identity of the base. -/
+@[reassoc (attr := simp)]
+theorem zeroSectionHom_comp_thomPairProj : zeroSectionHom F E ≫ thomPairProj F E = 𝟙 _ :=
+  TopCat.ext fun b ↦ by
+    rw [ConcreteCategory.comp_apply, zeroSectionHom_apply, thomPairProj_apply]
+    simp only [zeroSection_proj, TopCat.hom_id, ContinuousMap.id_apply]
+
+/-- The straight-line homotopy `(t, v) ↦ t • v` from the projection followed by the zero section
+to the identity of the total space. -/
+def thomPairProjZeroSectionHomotopy :
+    TopCat.Homotopy (thomPairProj F E ≫ zeroSectionHom F E) (𝟙 _) where
+  toFun p := TotalSpace.mk' F p.2.proj ((p.1 : ℝ) • p.2.2)
+  continuous_toFun := (TauCeti.VectorBundle.continuous_smul ℝ F E).comp
+    ((continuous_subtype_val.comp continuous_fst).prodMk continuous_snd)
+  map_zero_left v := by
+    refine (congrArg (TotalSpace.mk' F v.proj) (zero_smul ℝ v.2)).trans ?_
+    rw [ConcreteCategory.comp_apply]
+    exact ((zeroSectionHom_apply F E _).trans
+      (congrArg (zeroSection F E) (thomPairProj_apply F E v))).symm
+  map_one_left v := congrArg (TotalSpace.mk' F v.proj) (one_smul ℝ v.2)
+
+@[simp]
+theorem thomPairProjZeroSectionHomotopy_apply (p : unitInterval × (thomPair F E).fst) :
+    thomPairProjZeroSectionHomotopy F E p = TotalSpace.mk' F p.2.proj ((p.1 : ℝ) • p.2.2) :=
+  (rfl)
+
+/-- Pulling back along the projection and then along the zero section is the identity of the
+cohomology of the base. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+theorem singularCohomologyMap_thomPairProj_comp_zeroSectionHom (n : ℕ) :
+    TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (thomPairProj F E) n ≫
+      TopCat.singularCohomologyMap (zeroSectionHom F E) n = 𝟙 _ := by
+  rw [← TopCat.singularCohomologyMap_comp, zeroSectionHom_comp_thomPairProj,
+    TopCat.singularCohomologyMap_id]
+
+/-- **The total space has the cohomology of the base**: pulling back along the zero section and
+then along the projection is the identity of the cohomology of the total space, since the zero
+section followed by the projection is homotopic to the identity through `t • v`. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+theorem singularCohomologyMap_zeroSectionHom_comp_thomPairProj (n : ℕ) :
+    TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (zeroSectionHom F E) n ≫
+      TopCat.singularCohomologyMap (thomPairProj F E) n = 𝟙 _ := by
+  rw [← TopCat.singularCohomologyMap_comp,
+    (thomPairProjZeroSectionHomotopy F E).congr_singularCohomologyMap R k M n,
+    TopCat.singularCohomologyMap_id]
+
+/-- Pulling back along the projection is an isomorphism `Hⁿ(B) ≅ Hⁿ(E)`, with inverse the pull-back
+along the zero section. -/
+instance isIso_singularCohomologyMap_thomPairProj (n : ℕ) :
+    IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (thomPairProj F E) n) :=
+  ⟨_, singularCohomologyMap_thomPairProj_comp_zeroSectionHom F E n,
+    singularCohomologyMap_zeroSectionHom_comp_thomPairProj F E n⟩
+
+/-- Pulling back along the zero section is an isomorphism `Hⁿ(E) ≅ Hⁿ(B)`, with inverse the
+pull-back along the projection. -/
+instance isIso_singularCohomologyMap_zeroSectionHom (n : ℕ) :
+    IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (zeroSectionHom F E) n) :=
+  ⟨_, singularCohomologyMap_zeroSectionHom_comp_thomPairProj F E n,
+    singularCohomologyMap_thomPairProj_comp_zeroSectionHom F E n⟩
+
+@[simp]
+theorem inv_singularCohomologyMap_thomPairProj (n : ℕ) :
+    inv (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (thomPairProj F E) n) =
+      TopCat.singularCohomologyMap (zeroSectionHom F E) n :=
+  IsIso.inv_eq_of_hom_inv_id (singularCohomologyMap_thomPairProj_comp_zeroSectionHom F E n)
+
+@[simp]
+theorem inv_singularCohomologyMap_zeroSectionHom (n : ℕ) :
+    inv (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (zeroSectionHom F E) n) =
+      TopCat.singularCohomologyMap (thomPairProj F E) n :=
+  IsIso.inv_eq_of_hom_inv_id (singularCohomologyMap_zeroSectionHom_comp_thomPairProj F E n)
+
+/-- Pulling back along the projection is injective on cohomology: the zero section pulls it back. -/
+theorem singularCohomologyMap_thomPairProj_injective (n : ℕ) :
+    Function.Injective
+      (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (thomPairProj F E) n) :=
+  Function.LeftInverse.injective
+    (singularCohomologyMap_thomPairProj_comp_zeroSectionHom_apply F E n)
 
 variable (R k M) in
 /-- The Euler class `e(u) ∈ Hⁿ(B)` of a relative class `u ∈ Hⁿ(E, E₀)` of a real vector bundle, as
