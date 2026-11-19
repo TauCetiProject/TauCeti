@@ -433,6 +433,8 @@ theorem comap_id :
 theorem comap_comap (g : C(Y'', Y')) (hg : IsPseudoholomorphic J'' J' g)
     (hginj : Function.Injective g) :
     (A.comap f hf hinj).comap g hg hginj = A.comap (f.comp g) (hf.comp hg) (hinj.comp hginj) :=
+  -- The `charge` fields agree because `ContinuousMap.comp_assoc` and `Set.preimage_comp` hold by
+  -- `rfl`; the remaining fields are proofs, which agree by proof irrelevance.
   (rfl)
 
 end Naturality
@@ -446,6 +448,12 @@ def restrictOpen (U : TopologicalSpace.Opens Y) :
     PositiveCohomologyAssignment (J.restrictOpen U) ((Subtype.val : U → Y) ⁻¹' Z) :=
   A.comap ⟨Subtype.val, continuous_subtype_val⟩ (J.isPseudoholomorphic_subtype_val U)
     Subtype.val_injective
+
+/-- The restricted assignment is the pullback along the inclusion `U → Y`. -/
+theorem restrictOpen_def (U : TopologicalSpace.Opens Y) :
+    A.restrictOpen U = A.comap ⟨Subtype.val, continuous_subtype_val⟩
+      (J.isPseudoholomorphic_subtype_val U) Subtype.val_injective :=
+  (rfl)
 
 /-- The integer of a disc `σ'` in an open subset `U` for the restricted assignment is the integer
 of any disc `σ` in `Y` that agrees with `σ'`. -/
@@ -474,6 +482,12 @@ def pullback (h : Y' ≃ₘ⟮I', I⟯ Y) :
     PositiveCohomologyAssignment (J.pullback h) (h ⁻¹' Z) :=
   A.comap ⟨h, h.continuous⟩ (SmoothAlmostComplexStructure.isPseudoholomorphic_pullback h J)
     h.injective
+
+/-- The transported assignment is the pullback along the underlying map of `h`. -/
+theorem pullback_def (h : Y' ≃ₘ⟮I', I⟯ Y) :
+    A.pullback h = A.comap ⟨h, h.continuous⟩
+      (SmoothAlmostComplexStructure.isPseudoholomorphic_pullback h J) h.injective :=
+  (rfl)
 
 /-- The integer of a disc for the transported assignment is the integer of its image. -/
 theorem charge_pullback (h : Y' ≃ₘ⟮I', I⟯ Y) {σ' : C(𝔻, Y')} {σ : C(𝔻, Y)}
