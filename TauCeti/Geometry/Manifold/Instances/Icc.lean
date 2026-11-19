@@ -54,8 +54,10 @@ instance : ContMDiffMul (𝓡∂ 1) ω I where
       ((contMDiff_subtypeVal_Icc (x := 0) (y := 1) (n := ω)).comp contMDiff_fst).mul
         ((contMDiff_subtypeVal_Icc (x := 0) (y := 1) (n := ω)).comp contMDiff_snd)
 
-/-- `Real.smoothTransition` as a map into the unit interval. -/
-noncomputable def smoothTransition (s : ℝ) : I :=
+/-- `Real.smoothTransition` as a map into the unit interval. Its body is exposed so that it agrees
+definitionally with the anonymous subtype map `⟨Real.smoothTransition s, _, _⟩` in importing
+modules, where that form still appears in statements. -/
+@[expose] noncomputable def smoothTransition (s : ℝ) : I :=
   ⟨Real.smoothTransition s, Real.smoothTransition.nonneg s, Real.smoothTransition.le_one s⟩
 
 @[simp]
@@ -82,8 +84,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- Applying the smooth transition function gives a smooth map into the unit interval.
 This applies to finite regularity and `C^∞`, without asserting analyticity. -/
 theorem ContMDiff.smoothTransition (hf : ContMDiff I 𝓘(ℝ) n f) (hn : n ≤ ∞) :
-    ContMDiff I (𝓡∂ 1) n (fun x => (⟨Real.smoothTransition (f x),
-      Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩ : unitInterval)) := by
+    ContMDiff I (𝓡∂ 1) n (fun x => unitInterval.smoothTransition (f x)) := by
   apply contMDiff_iff_comp_subtypeVal_Icc.mpr
   refine ⟨(Real.smoothTransition.continuous.comp hf.continuous).subtype_mk _, ?_⟩
   exact ((Real.smoothTransition.contDiff (n := ⊤)).contMDiff.of_le hn).comp hf
@@ -94,8 +95,7 @@ namespace TauCeti
 unit interval: a smooth transition from `0` to `1` which is constant on neighborhoods of both ends
 of the unit interval. -/
 noncomputable def collaredSmoothTransitionUnit (t : ℝ) : unitInterval :=
-  ⟨Real.smoothTransition (2 * t - 1 / 2), Real.smoothTransition.nonneg _,
-    Real.smoothTransition.le_one _⟩
+  unitInterval.smoothTransition (2 * t - 1 / 2)
 
 /-- The collared smooth transition at `t` is `Real.smoothTransition (2 * t - 1 / 2)`. -/
 @[simp]
