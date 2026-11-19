@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Boundary.Derivative
 public import TauCeti.Geometry.Manifold.Boundary.Orientation
 public import TauCeti.Geometry.Manifold.Boundary.SmoothMap
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
-public import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
 # The tangent space of the boundary
@@ -22,12 +21,10 @@ carries the boundaryless manifold structure `TauCeti.boundaryChartedSpace`, and 
 form and the convexity conditions of the boundary live.
 
 The normal coordinate of a half-space chart `e` is `x ↦ (e x) 0`, which is nonnegative and vanishes
-exactly on `∂M`. At a boundary point it attains its minimum, so by Fermat's theorem on the model
-half-space its differential is nonnegative on the inward half-space of the preferred chart. Together
-with the invertibility of the differentials of charts, this shows that the differentials of the
-normal coordinates of any two charts of the maximal atlas are positive multiples of each other.
-Hence `T_q ∂M` is the kernel of any of them, and each tangent vector at `q` is exactly one of
-outward, tangent to the boundary, or inward, independently of the chart.
+exactly on `∂M`. By `TauCeti.exists_pos_mvfderiv_normal_eq_smul` the differentials of the normal
+coordinates of any two charts of the maximal atlas at a boundary point are positive multiples of
+each other. Hence `T_q ∂M` is the kernel of any of them, and each tangent vector at `q` is exactly
+one of outward, tangent to the boundary, or inward, independently of the chart.
 
 ## Main definitions
 
@@ -37,13 +34,11 @@ outward, tangent to the boundary, or inward, independently of the chart.
 ## Main results
 
 * `TauCeti.finrank_boundaryTangentSpace`: `T_q ∂M` is a hyperplane, of dimension `n`.
-* `TauCeti.exists_pos_mvfderiv_normal_eq_smul`: the differentials of the normal coordinates of two
-  charts of the maximal atlas at a boundary point are positive multiples of each other.
-* `TauCeti.isOutwardPointing_iff_mvfderiv_neg`, `TauCeti.boundaryTangentSpace_eq_ker_mvfderiv`:
-  outward vectors and boundary tangent vectors, read in any chart of the maximal atlas.
+* `TauCeti.boundaryTangentSpace_eq_ker_mvfderiv`: boundary tangent vectors, read in any chart of
+  the maximal atlas.
 * `TauCeti.isOutwardPointing_or_mem_boundaryTangentSpace_or_isOutwardPointing_neg` and
-  `TauCeti.mem_boundaryTangentSpace_iff_not_isOutwardPointing`: the trichotomy outward, tangent,
-  inward.
+  `TauCeti.mem_boundaryTangentSpace_iff_not_isOutwardPointing_and_not_isOutwardPointing_neg`: the
+  trichotomy outward, tangent, inward.
 * `TauCeti.frontier_setOf_isOutwardPointing`, `TauCeti.frontier_setOf_isOutwardPointing_neg`: the
   outward and the inward vectors are open half-spaces whose common frontier is `T_q ∂M`.
 * `TauCeti.not_isOutwardPointing_curveVelocityWithin_Ici`,
@@ -157,45 +152,13 @@ theorem _root_.Diffeomorph.map_boundaryTangentSpace
   have hcoe : ((Φ.mfderivToContinuousLinearEquiv hk (q : M)).toLinearEquiv :
       TangentSpace (𝓡∂ (n + 1)) (q : M) →ₗ[ℝ] TangentSpace (𝓡∂ (n + 1)) (Φ q)) =
         (mfderiv (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) Φ q).toLinearMap := by
-    rw [← Φ.mfderivToContinuousLinearEquiv_coe hk]
-    -- Both sides are the same linear map, reached through two chains of forgetful coercions.
-    rfl
+    rw [← Φ.mfderivToContinuousLinearEquiv_coe hk,
+      ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
   rw [hcoe] at hmap
   exact Submodule.eq_of_le_of_finrank_eq hle ((hmap.trans (finrank_boundaryTangentSpace q)).trans
     (finrank_boundaryTangentSpace (Φb q)).symm)
 
 end Naturality
-
-/-- A vector and its negative are never both outward. -/
-theorem IsOutwardPointing.not_isOutwardPointing_neg {x : M} {v : TangentSpace (𝓡∂ (n + 1)) x}
-    (hv : IsOutwardPointing x v) : ¬ IsOutwardPointing x (-v) := by
-  intro hnv
-  exact (hv.add hnv).ne_zero (add_neg_cancel v)
-
-/-- The outward vectors at a point form an open subset of the tangent space. -/
-theorem isOpen_setOf_isOutwardPointing (x : M) :
-    IsOpen {v : TangentSpace (𝓡∂ (n + 1)) x | IsOutwardPointing x v} := by
-  by_cases hx : x ∈ (𝓡∂ (n + 1)).boundary M
-  · simp only [isOutwardPointing_iff, hx, true_and]
-    exact isOpen_lt (((EuclideanSpace.proj (0 : Fin (n + 1))).continuous.comp
-      (NormedSpace.fromTangentSpace (extChartAt (𝓡∂ (n + 1)) x x)).continuous).comp
-        (mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))
-          (extChartAt (𝓡∂ (n + 1)) x) x).continuous) continuous_const
-  · simp only [isOutwardPointing_iff, hx, false_and, ofPred_false, isOpen_empty]
-
-/-- The inward vectors at a point, those whose negative is outward, form an open subset of the
-tangent space. -/
-theorem isOpen_setOf_isOutwardPointing_neg (x : M) :
-    IsOpen {v : TangentSpace (𝓡∂ (n + 1)) x | IsOutwardPointing x (-v)} :=
-  (isOpen_setOf_isOutwardPointing x).preimage continuous_neg
-
-omit [ChartedSpace (EuclideanHalfSpace (n + 1)) M] in
-/-- The normal coordinate of a chart is the zeroth coordinate of the extended chart. -/
-private theorem normal_eq_proj_comp_extend
-    (e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))) :
-    (fun y ↦ (e y).1 0) = EuclideanSpace.proj (0 : Fin (n + 1)) ∘ e.extend (𝓡∂ (n + 1)) := by
-  ext y
-  simp
 
 /-- The preferred chart at a boundary point has vanishing normal coordinate there. -/
 private theorem normal_chartAt_self {q : M} (hq : q ∈ (𝓡∂ (n + 1)).boundary M) :
@@ -208,33 +171,8 @@ private theorem normal_chartAt_self_le {q : M} (hq : q ∈ (𝓡∂ (n + 1)).bou
       (chartAt (EuclideanHalfSpace (n + 1)) q y).1 0 :=
   (normal_chartAt_self hq).trans_le (chartAt (EuclideanHalfSpace (n + 1)) q y).2
 
-/-- The normal coordinate of a chart of the maximal atlas is differentiable on its source. -/
-private theorem mdifferentiableAt_normal
-    {e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))}
-    (he : e ∈ IsManifold.maximalAtlas (𝓡∂ (n + 1)) 1 M) {q : M} (hqe : q ∈ e.source) :
-    MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ) (fun y ↦ (e y).1 0) q := by
-  rw [normal_eq_proj_comp_extend]
-  exact (EuclideanSpace.proj (0 : Fin (n + 1)) :
-    EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ).mdifferentiableAt.comp q
-      (e.mdifferentiableAt_extend he hqe)
-
 variable [IsManifold (𝓡∂ (n + 1)) 1 M]
 
-/-- In the preferred chart, the differential of the normal coordinate reads off the zeroth
-coordinate of a tangent vector. -/
-private theorem mvfderiv_chartAt_normal_apply (x : M) (v : TangentSpace (𝓡∂ (n + 1)) x) :
-    mvfderiv (𝓡∂ (n + 1)) (fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) x y).1 0) x v =
-      tangentSpaceCastModel (𝓡∂ (n + 1)) x v 0 := by
-  have hext := (TauCeti.hasMFDerivAt_extChartAt_self (I := 𝓡∂ (n + 1)) x).mdifferentiableAt
-  have hfun : (fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) x y).1 0) =
-      EuclideanSpace.proj (0 : Fin (n + 1)) ∘ extChartAt (𝓡∂ (n + 1)) x := by
-    ext y
-    simp
-  rw [hfun, (EuclideanSpace.proj (0 : Fin (n + 1))).mvfderiv_comp_apply
-    (I := 𝓡∂ (n + 1)) hext, mvfderiv_apply_eq_mfderiv_apply, mfderiv_extChartAt_self]
-  -- Both sides evaluate `v` in slot `0`; the tangent-space wrappers around the model space
-  -- block the rewriting lemmas for the identity map and for `proj 0`.
-  rfl
 /-- In the preferred chart at a boundary point, the boundary tangent space is the kernel of the
 differential of the normal coordinate. -/
 private theorem mem_boundaryTangentSpace_iff_chartAt (q : (𝓡∂ (n + 1)).boundary M)
@@ -242,117 +180,10 @@ private theorem mem_boundaryTangentSpace_iff_chartAt (q : (𝓡∂ (n + 1)).boun
     v ∈ boundaryTangentSpace q ↔
       mvfderiv (𝓡∂ (n + 1)) (fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) (q : M) y).1 0)
         (q : M) v = 0 := by
-  rw [mvfderiv_chartAt_normal_apply, mem_boundaryTangentSpace_iff, mfderiv_subtypeVal_boundary]
+  rw [mvfderiv_chartAt_normal_apply, mfderiv_extChartAt_self, mem_boundaryTangentSpace_iff,
+    mfderiv_subtypeVal_boundary]
   exact (Set.ext_iff.mp (range_euclideanHalfSpaceBoundaryParam n) v).trans
     mem_euclideanHalfSpaceBoundary
-
-/-- The differential of the normal coordinate of the preferred chart takes the value `1` on the
-first standard basis vector. -/
-private theorem mvfderiv_chartAt_normal_single (x : M) :
-    mvfderiv (𝓡∂ (n + 1)) (fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) x y).1 0) x
-      ((tangentSpaceCastModel (𝓡∂ (n + 1)) x).symm (EuclideanSpace.single 0 1)) = 1 := by
-  rw [mvfderiv_chartAt_normal_apply, ContinuousLinearEquiv.apply_symm_apply]
-  simp
-
-/-- Fermat's theorem at a boundary point: the normal coordinate of any chart of the maximal atlas
-is nonnegative and vanishes at a boundary point, so its differential is nonnegative on the vectors
-that are inward or tangent in the preferred chart. -/
-private theorem mvfderiv_normal_nonneg {e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))}
-    (he : e ∈ IsManifold.maximalAtlas (𝓡∂ (n + 1)) 1 M) {q : M}
-    (hq : q ∈ (𝓡∂ (n + 1)).boundary M) (hqe : q ∈ e.source)
-    (v : TangentSpace (𝓡∂ (n + 1)) q)
-    (hv : 0 ≤ mvfderiv (𝓡∂ (n + 1))
-      (fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) q y).1 0) q v) :
-    0 ≤ mvfderiv (𝓡∂ (n + 1)) (fun y ↦ (e y).1 0) q v := by
-  let I := 𝓡∂ (n + 1)
-  let y := extChartAt I q q
-  let f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ := fun z ↦ (e ((extChartAt I q).symm z)).1 0
-  -- The manifold derivative of the normal coordinate is the derivative within the model
-  -- half-space of its coordinate expression `f` in the preferred chart.
-  have hf := (mdifferentiableAt_normal he hqe).hasMFDerivAt.2
-  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
-    Function.id_comp] at hf
-  have hy0 : y 0 = 0 := by simpa [y, I] using normal_chartAt_self hq
-  have hmin : IsLocalMinOn f (range I) y := by
-    refine Filter.Eventually.of_forall fun z ↦ ?_
-    have hf0 : f y = 0 := by
-      simp only [f, y, (extChartAt I q).left_inv (mem_extChartAt_source q)]
-      exact (ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hqe).mp hq
-    rw [hf0]
-    exact (e ((extChartAt I q).symm z)).2
-  have hcone : tangentSpaceCastModel I q v ∈ posTangentConeAt (range I) y := by
-    apply mem_posTangentConeAt_of_segment_subset
-    apply I.convex_range.segment_subset (mem_range_self (chartAt _ q q))
-    rw [range_modelWithCornersEuclideanHalfSpace]
-    rw [mvfderiv_chartAt_normal_apply] at hv
-    simp only [mem_ofPred_eq, PiLp.add_apply, hy0, zero_add]
-    exact hv
-  have h := hmin.hasFDerivWithinAt_nonneg hf hcone
-  simpa [I, mvfderiv, NormedSpace.fromTangentSpace] using h
-
-/-- The differential of the normal coordinate of a chart of the maximal atlas is a positive
-multiple of that of the preferred chart. -/
-private theorem exists_pos_mvfderiv_normal_eq_smul_chartAt
-    {e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))}
-    (he : e ∈ IsManifold.maximalAtlas (𝓡∂ (n + 1)) 1 M) {q : M}
-    (hq : q ∈ (𝓡∂ (n + 1)).boundary M) (hqe : q ∈ e.source) :
-    ∃ a : ℝ, 0 < a ∧ mvfderiv (𝓡∂ (n + 1)) (fun y ↦ (e y).1 0) q =
-      a • mvfderiv (𝓡∂ (n + 1)) (fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) q y).1 0) q := by
-  let I := 𝓡∂ (n + 1)
-  set ℓ := mvfderiv I (fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) q y).1 0) q
-  set ℓe := mvfderiv I (fun y ↦ (e y).1 0) q
-  set w : TangentSpace I q := (tangentSpaceCastModel I q).symm (EuclideanSpace.single 0 1)
-  have hw : ℓ w = 1 := mvfderiv_chartAt_normal_single q
-  have hfactor (u : TangentSpace I q) : ℓe u = ℓe w * ℓ u :=
-    Module.Dual.apply_eq_mul_apply_of_nonneg (ℓ : TangentSpace I q →ₗ[ℝ] ℝ)
-      (ℓe : TangentSpace I q →ₗ[ℝ] ℝ) hw (mvfderiv_normal_nonneg he hq hqe) u
-  -- The differential of the normal coordinate of `e` is nonzero, since `e` has invertible
-  -- differential and the zeroth coordinate projection is surjective.
-  have hne : ℓe ≠ 0 := by
-    obtain ⟨u, hu⟩ := (isInvertible_mfderiv_extend he hqe).surjective
-      (EuclideanSpace.single (0 : Fin (n + 1)) (1 : ℝ))
-    intro h0
-    have h := (EuclideanSpace.proj (0 : Fin (n + 1))).mvfderiv_comp_apply (I := I)
-      (e.mdifferentiableAt_extend he hqe) u
-    rw [← normal_eq_proj_comp_extend, mvfderiv_apply_eq_mfderiv_apply (f := e.extend I), hu] at h
-    have h1 : ℓe u = 1 := by simpa [ℓe] using h
-    simp [h0] at h1
-  refine ⟨ℓe w, lt_of_le_of_ne (mvfderiv_normal_nonneg he hq hqe w (by rw [hw]; exact zero_le_one))
-    fun h0 ↦ hne ?_, ?_⟩
-  · ext u
-    rw [hfactor u, ← h0, zero_mul, zero_apply]
-  · ext u
-    rw [hfactor u, smul_apply, smul_eq_mul]
-
-/-- At a boundary point, the differentials of the normal coordinates of two charts of the maximal
-atlas are positive multiples of each other. -/
-theorem exists_pos_mvfderiv_normal_eq_smul
-    {e e' : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))}
-    (he : e ∈ IsManifold.maximalAtlas (𝓡∂ (n + 1)) 1 M)
-    (he' : e' ∈ IsManifold.maximalAtlas (𝓡∂ (n + 1)) 1 M) {q : M}
-    (hq : q ∈ (𝓡∂ (n + 1)).boundary M) (hqe : q ∈ e.source) (hqe' : q ∈ e'.source) :
-    ∃ a : ℝ, 0 < a ∧ mvfderiv (𝓡∂ (n + 1)) (fun y ↦ (e y).1 0) q =
-      a • mvfderiv (𝓡∂ (n + 1)) (fun y ↦ (e' y).1 0) q := by
-  obtain ⟨a, ha, h⟩ := exists_pos_mvfderiv_normal_eq_smul_chartAt he hq hqe
-  obtain ⟨a', ha', h'⟩ := exists_pos_mvfderiv_normal_eq_smul_chartAt he' hq hqe'
-  refine ⟨a / a', div_pos ha ha', ?_⟩
-  rw [h, h', smul_smul, div_mul_cancel₀ a ha'.ne']
-
-/-- A tangent vector at a boundary point is outward exactly when the differential of the normal
-coordinate of any chart of the maximal atlas is negative on it. -/
-theorem isOutwardPointing_iff_mvfderiv_neg
-    {e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))}
-    (he : e ∈ IsManifold.maximalAtlas (𝓡∂ (n + 1)) 1 M) {q : M}
-    (hq : q ∈ (𝓡∂ (n + 1)).boundary M) (hqe : q ∈ e.source)
-    (v : TangentSpace (𝓡∂ (n + 1)) q) :
-    IsOutwardPointing q v ↔ mvfderiv (𝓡∂ (n + 1)) (fun y ↦ (e y).1 0) q v < 0 := by
-  obtain ⟨a, ha, h⟩ := exists_pos_mvfderiv_normal_eq_smul_chartAt he hq hqe
-  rw [h, smul_apply, smul_neg_iff_of_pos_left ha,
-    mvfderiv_chartAt_normal_apply, isOutwardPointing_iff, and_iff_right hq,
-    mfderiv_extChartAt_self]
-  -- Both sides evaluate `v` in slot `0`, read through the identification of the tangent space
-  -- with the model space.
-  rfl
 
 /-- The tangent space of the boundary is the kernel of the differential of the normal coordinate
 of any chart of the maximal atlas. -/
@@ -362,7 +193,8 @@ theorem boundaryTangentSpace_eq_ker_mvfderiv
     (hqe : (q : M) ∈ e.source) :
     boundaryTangentSpace q =
       LinearMap.ker (mvfderiv (𝓡∂ (n + 1)) (fun y ↦ (e y).1 0) (q : M)).toLinearMap := by
-  obtain ⟨a, ha, h⟩ := exists_pos_mvfderiv_normal_eq_smul_chartAt he q.2 hqe
+  obtain ⟨a, ha, h⟩ := exists_pos_mvfderiv_normal_eq_smul he
+    (IsManifold.chart_mem_maximalAtlas (q : M)) q.2 hqe (mem_chart_source _ (q : M))
   ext v
   rw [mem_boundaryTangentSpace_iff_chartAt, LinearMap.mem_ker, ContinuousLinearMap.coe_coe, h,
     smul_apply, smul_eq_mul, mul_eq_zero, or_iff_right ha.ne']
@@ -397,8 +229,8 @@ theorem isOutwardPointing_or_mem_boundaryTangentSpace_or_isOutwardPointing_neg
 
 /-- A tangent vector at a boundary point is tangent to the boundary exactly when neither it nor
 its negative is outward. -/
-theorem mem_boundaryTangentSpace_iff_not_isOutwardPointing (q : (𝓡∂ (n + 1)).boundary M)
-    (v : TangentSpace (𝓡∂ (n + 1)) (q : M)) :
+theorem mem_boundaryTangentSpace_iff_not_isOutwardPointing_and_not_isOutwardPointing_neg
+    (q : (𝓡∂ (n + 1)).boundary M) (v : TangentSpace (𝓡∂ (n + 1)) (q : M)) :
     v ∈ boundaryTangentSpace q ↔
       ¬ IsOutwardPointing (q : M) v ∧ ¬ IsOutwardPointing (q : M) (-v) := by
   refine ⟨fun hv ↦ ⟨fun h ↦ h.notMem_boundaryTangentSpace hv,
@@ -414,9 +246,10 @@ theorem frontier_setOf_isOutwardPointing (q : (𝓡∂ (n + 1)).boundary M) :
       boundaryTangentSpace q := by
   set ℓ := mvfderiv (𝓡∂ (n + 1))
     (fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) (q : M) y).1 0) (q : M)
+  obtain ⟨w, hw⟩ := DFunLike.ne_iff.mp (mvfderiv_normal_ne_zero (n := n)
+    (IsManifold.chart_mem_maximalAtlas (q : M)) (mem_chart_source _ (q : M)))
   have hsurj : Function.Surjective ℓ := fun r ↦
-    ⟨r • (tangentSpaceCastModel (𝓡∂ (n + 1)) (q : M)).symm (EuclideanSpace.single 0 1), by
-      rw [map_smul, mvfderiv_chartAt_normal_single, smul_eq_mul, mul_one]⟩
+    ⟨(r / ℓ w) • w, by rw [map_smul, smul_eq_mul, div_mul_cancel₀ r hw]⟩
   have hopen : IsOpenMap ℓ :=
     LinearMap.isOpenMap_of_finiteDimensional (ℓ : TangentSpace (𝓡∂ (n + 1)) (q : M) →ₗ[ℝ] ℝ)
       hsurj
