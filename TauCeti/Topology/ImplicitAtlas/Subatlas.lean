@@ -308,6 +308,14 @@ theorem regLocus_restrict (S : Set A)
     (𝒜.restrict S hS).regLocus I = 𝒜.regLocus (I.map (.subtype (· ∈ S))) :=
   (rfl)
 
+/-- The zero sets of the subatlas on `S` are those of `𝒜`. -/
+theorem kuranishiZeroSet_restrict (S : Set A)
+    (hS : ⋃ (I : Finset A) (_ : (I : Set A) ⊆ S), 𝒜.footprint I = univ) (I J : Finset S) :
+    kuranishiZeroSet (T := fun J ↦ T (J.map (.subtype (· ∈ S)))) (E := fun α : S ↦ E α)
+        (𝒜.restrict S hS).kuranishi I J =
+      kuranishiZeroSet 𝒜.kuranishi (I.map (.subtype (· ∈ S))) (J.map (.subtype (· ∈ S))) :=
+  kuranishiZeroSet_relabel ..
+
 /-- The footprint maps of the subatlas on `S` are those of `𝒜`. -/
 theorem footprintMap_restrict (S : Set A)
     (hS : ⋃ (I : Finset A) (_ : (I : Set A) ⊆ S), 𝒜.footprint I = univ) {I J : Finset S}
@@ -315,8 +323,7 @@ theorem footprintMap_restrict (S : Set A)
     (x : kuranishiZeroSet (T := fun J ↦ T (J.map (.subtype (· ∈ S)))) (E := fun α : S ↦ E α)
       (𝒜.restrict S hS).kuranishi I J) :
     (𝒜.restrict S hS).footprintMap h x =
-      𝒜.footprintMap (map_subset_map.2 h) ⟨x.1,
-        kuranishiZeroSet_relabelKuranishi _ 𝒜.kuranishi I J ▸ 𝒜.kuranishi_restrict S hS ▸ x.2⟩ :=
+      𝒜.footprintMap (map_subset_map.2 h) ⟨x.1, 𝒜.kuranishiZeroSet_restrict S hS I J ▸ x.2⟩ :=
   (rfl)
 
 /-- **Finite subatlases.** On a compact space, the regular footprints `V_I` with `I` contained
