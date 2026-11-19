@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.ModularForms.OrderAtInfty
 public import TauCeti.NumberTheory.ModularForms.DedekindEta.Transformation
 import TauCeti.Analysis.Complex.Sqrt
-import TauCeti.Analysis.SpecialFunctions.QPochhammer
 import TauCeti.NumberTheory.ModularForms.DedekindEta.Basic
 
 /-!
@@ -27,16 +26,20 @@ with `C ≠ 0`, `e(x) = exp(2 π i x)`, the principal square root, and
 `f ∣[k] σ` is bounded, or tends to zero, at `i ∞`: these are the cusp conditions that make an eta
 quotient a modular form or a cusp form.
 
-In the local parameter `e(τ / w)` of the cusp `a / c` of `Γ₀(N)`, of width `w = N / gcd(N, c²)`
-(`TauCeti.conj_T_zpow_mem_Gamma0_iff_width_dvd`), the order of `f` is `w L`. For a cusp with
-denominator `d ∣ N` this is Ligozat's formula
+For a cusp with denominator `d ∣ N`, of width `w = N / gcd(N, d²)` for `Γ₀(N)`
+(`TauCeti.conj_T_zpow_mem_Gamma0_iff_width_dvd`), the file proves the arithmetic identity
 
-  `(N / 24) ∑_{δ ∣ N} gcd(d, δ)² r_δ / (gcd(d, N / d) d δ)`.
+  `w L = (N / 24) ∑_{δ ∣ N} gcd(d, δ)² r_δ / (gcd(d, N / d) d δ)`,
+
+whose right side is Ligozat's formula. Since `L` is the order in `e(τ)`, `w L` is to be read as
+the order in the local parameter `e(τ / w)` of the cusp; that reading is an interpretation, and
+no statement about the parameter `e(τ / w)` is formalized here.
 
 Each factor is treated separately. With `A = gcd(δ, c)`, the first column `(δ a, c)` of
 `diag(δ, 1) σ` has gcd `A`, so `diag(δ, 1) σ = σ' (A B; 0 δ / A)` with `σ' ∈ SL(2, ℤ)`, and the
 transformation law of `η` at `σ'` gives `η(δ σ τ) = C √(c τ + d) η(A (A τ + B) / δ)`. Since
-`η(z) ~ e(z / 24)` as `Im z → ∞`, the factor `η(δ σ τ)` has leading exponent `A² / (24 δ)`.
+`η(z) ~ e(z / 24)` as `Im z → ∞` (`TauCeti.ModularForm.tendsto_eta_div_exp`), the factor
+`η(δ σ τ)` has leading exponent `A² / (24 δ)`.
 
 ## Main definitions
 
@@ -45,7 +48,8 @@ transformation law of `η` at `σ'` gives `η(δ σ τ) = C √(c τ + d) η(A (
 
 ## Main results
 
-* `TauCeti.ModularForm.tendsto_eta_div_exp`: `η(z) / e(z / 24) → 1` as `Im z → ∞`.
+* `TauCeti.ModularForm.etaQuotient_ne_zero`, `TauCeti.ModularForm.mdifferentiable_etaQuotient`:
+  an eta quotient is nonvanishing and holomorphic on the upper half-plane.
 * `TauCeti.ModularForm.exists_eta_natCast_mul_smul_eq`:
   `η(δ σ τ) = C √(c τ + d) η(A (A τ + B) / δ)` with `A = gcd(δ, c)`.
 * `TauCeti.ModularForm.exists_tendsto_etaQuotient_smul_div`: the leading term of `f(σ τ)`.
@@ -53,7 +57,7 @@ transformation law of `η` at `σ'` gives `η(δ σ τ) = C √(c τ + d) η(A (
 * `TauCeti.ModularForm.isBoundedAtImInfty_etaQuotient_slash_iff`,
   `TauCeti.ModularForm.isZeroAtImInfty_etaQuotient_slash_iff`: `f ∣[k] σ` is bounded at `i ∞`
   exactly when `0 ≤ L`, and tends to zero exactly when `0 < L`.
-* `TauCeti.ModularForm.natCast_div_gcd_mul_etaQuotientOrder`: Ligozat's formula for `w L`.
+* `TauCeti.ModularForm.natCast_div_gcd_mul_etaQuotientOrder`: `w L` equals Ligozat's expression.
 
 ## References
 
@@ -67,25 +71,20 @@ public section
 
 open Complex Filter Topology
 open UpperHalfPlane (atImInfty IsBoundedAtImInfty IsZeroAtImInfty orderAtInfty)
-open scoped Real ModularForm MatrixGroups UpperHalfPlane
+open scoped Real ModularForm MatrixGroups UpperHalfPlane Manifold
 
 namespace TauCeti.ModularForm
 
-/-! ### The leading term of `η` -/
-
-/-- `η(z) ~ e^{2 π i z / 24}` as `Im z → ∞`: the quotient `η(z) / e^{2 π i z / 24}` is the Euler
-product `∏_{n ≥ 1} (1 - qⁿ)`, which tends to `1` as `q = e^{2 π i z} → 0`. -/
-theorem tendsto_eta_div_exp :
-    Tendsto (fun z : ℂ ↦ η z / cexp (2 * π * I * z / 24)) (comap im atTop) (𝓝 1) := by
-  have hq : Tendsto (fun z : ℂ ↦ cexp (2 * π * I * z)) (comap im atTop) (𝓝 0) :=
-    ((Function.Periodic.qParam_tendsto one_pos).mono_right nhdsWithin_le_nhds).congr
-      fun z ↦ by simp [Function.Periodic.qParam]
-  refine (tendsto_tprod_one_sub_pow_mul (w := fun _ ↦ 1) hq (by simpa using hq)).congr
-    fun z ↦ ?_
-  simp only [mul_one]
-  rw [eta_eq_exp_mul_tprod, mul_div_cancel_left₀ _ (exp_ne_zero _)]
-
 /-! ### `η(δ τ)` at an arbitrary cusp -/
+
+/-- The automorphy factor `c τ + d` of `σ = (a b; c d) ∈ SL(2, ℤ)` does not vanish on `ℍ`. -/
+private theorem denom_ne_zero (σ : SL(2, ℤ)) (τ : ℍ) : (σ 1 0 : ℂ) * τ + σ 1 1 ≠ 0 := by
+  simpa [UpperHalfPlane.denom] using UpperHalfPlane.denom_ne_zero (σ : GL (Fin 2) ℝ) τ
+
+/-- The principal square root `√(c τ + d)` does not vanish on `ℍ`. -/
+private theorem sqrt_denom_ne_zero (σ : SL(2, ℤ)) (τ : ℍ) :
+    Complex.sqrt ((σ 1 0 : ℂ) * τ + σ 1 1) ≠ 0 :=
+  Complex.sqrt_eq_zero_iff.not.2 (denom_ne_zero σ τ)
 
 /-- The integer data of the factorization `diag(δ, 1) σ = σ' (A B; 0 D)`: with `A = gcd(δ, c)`,
 `δ = A D` with `D > 0`, `c = A c'`, and Bézout coefficients `A = δ x + c y`. -/
@@ -163,12 +162,11 @@ theorem exists_eta_natCast_mul_smul_eq (δ : ℕ) [NeZero δ] (σ : SL(2, ℤ)) 
     simp only [algebraMap_int_eq, eq_intCast, Complex.ofReal_intCast]
     rw [hden]
     simpa [σ', hwC] using smul_eq_of_gcd_decomposition (τ := τ) hδC hbezC
-      (by exact_mod_cast hdet) hA hD0 (by
-        simpa [UpperHalfPlane.denom] using UpperHalfPlane.denom_ne_zero (σ : GL (Fin 2) ℝ) τ)
-  have harg : arg ((D : ℂ)⁻¹) = 0 := by
-    rw [← ofReal_intCast, ← ofReal_inv, arg_ofReal_of_nonneg (by positivity)]
-  rw [← hsmul, eta_smul σ' w, hden, Complex.sqrt, Complex.sqrt, Complex.sqrt,
-    mul_cpow (by rw [harg, zero_add]; exact arg_mem_Ioc _), hwC]
+      (by exact_mod_cast hdet) hA hD0 (denom_ne_zero σ τ)
+  have hsqrt := Complex.sqrt_ofReal_mul (r := (D : ℝ)⁻¹) (by positivity)
+    ((σ 1 0 : ℂ) * τ + σ 1 1)
+  push_cast at hsqrt
+  rw [← hsmul, eta_smul σ' w, hden, hsqrt, hwC]
   ring
 
 /-- `η(δ σ τ) ~ C √(c τ + d) e(gcd(δ, c)² τ / (24 δ))` as `Im τ → ∞`, with `C ≠ 0`. -/
@@ -194,8 +192,6 @@ private theorem exists_tendsto_eta_natCast_mul_smul_div (δ : ℕ) [NeZero δ] (
   have := (tendsto_eta_div_exp.comp hu).const_mul (C * E)
   rw [mul_one] at this
   refine this.congr fun τ ↦ ?_
-  have hj : Complex.sqrt ((σ 1 0 : ℂ) * τ + σ 1 1) ≠ 0 := Complex.sqrt_eq_zero_iff.not.2 (by
-    simpa [UpperHalfPlane.denom] using UpperHalfPlane.denom_ne_zero (σ : GL (Fin 2) ℝ) τ)
   have hexp : cexp (2 * π * I * u τ / 24) =
       cexp (2 * π * I * ((A ^ 2 / (24 * δ) : ℚ) : ℂ) * τ) * E := by
     rw [← exp_add]
@@ -208,7 +204,7 @@ private theorem exists_tendsto_eta_natCast_mul_smul_div (δ : ℕ) [NeZero δ] (
       have hE : E ≠ 0 := exp_ne_zero _
       field_simp
   rw [Function.comp_apply, h τ, hexp]
-  exact key _ _ _ hj (exp_ne_zero _)
+  exact key _ _ _ (sqrt_denom_ne_zero σ τ) (exp_ne_zero _)
 
 /-! ### Eta quotients -/
 
@@ -220,12 +216,34 @@ theorem etaQuotient_apply (N : ℕ) (r : ℕ → ℤ) (τ : ℂ) :
     etaQuotient N r τ = ∏ δ ∈ N.divisors, η (δ * τ) ^ r δ :=
   (rfl)
 
+/-- An eta quotient does not vanish on the upper half-plane. -/
+theorem etaQuotient_ne_zero (N : ℕ) (r : ℕ → ℤ) {τ : ℂ} (hτ : 0 < τ.im) :
+    etaQuotient N r τ ≠ 0 :=
+  Finset.prod_ne_zero_iff.2 fun δ hδ ↦ zpow_ne_zero _ <| _root_.ModularForm.eta_ne_zero <| by
+    simpa using mul_pos (Nat.cast_pos.2 (Nat.pos_of_mem_divisors hδ)) hτ
+
+/-- An eta quotient is complex differentiable at every point of the upper half-plane. -/
+theorem differentiableAt_etaQuotient (N : ℕ) (r : ℕ → ℤ) {τ : ℂ} (hτ : 0 < τ.im) :
+    DifferentiableAt ℂ (etaQuotient N r) τ := by
+  refine DifferentiableAt.fun_finsetProd fun δ hδ ↦ ?_
+  have hδτ : 0 < ((δ : ℂ) * τ).im := by
+    simpa using mul_pos (Nat.cast_pos.2 (Nat.pos_of_mem_divisors hδ)) hτ
+  exact ((_root_.ModularForm.differentiableAt_eta_of_mem_upperHalfPlaneSet hδτ).comp τ
+    (differentiableAt_id.const_mul _)).zpow
+      (Or.inl (_root_.ModularForm.eta_ne_zero hδτ))
+
+/-- An eta quotient is holomorphic on the upper half-plane. -/
+theorem mdifferentiable_etaQuotient (N : ℕ) (r : ℕ → ℤ) :
+    MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (fun τ : ℍ ↦ etaQuotient N r τ) := fun τ ↦
+  (differentiableAt_etaQuotient N r τ.im_pos).mdifferentiableAt.comp τ τ.mdifferentiable_coe
+
 /-- **The order of an eta quotient at a cusp**, `∑_{δ ∣ N} gcd(δ, c)² r δ / (24 δ)`. For
 `σ ∈ SL(2, ℤ)` with lower-left entry `c` it is the order at `i ∞`, in the parameter `e(τ)`, of
 `etaQuotient N r` transported by `σ` (`orderAtInfty_etaQuotient_slash`); this is the order of
-`etaQuotient N r` at the cusp `σ ∞`. In the local parameter `e(τ / w)` of that cusp of `Γ₀(N)`,
-of width `w = N / gcd(N, c²)`, the order is `w` times this (Ligozat's formula,
-`natCast_div_gcd_mul_etaQuotientOrder`). -/
+`etaQuotient N r` at the cusp `σ ∞`. For `c ∣ N`, `natCast_div_gcd_mul_etaQuotientOrder` shows
+that `w` times this, with `w = N / gcd(N, c²)` the width of that cusp of `Γ₀(N)`, equals
+Ligozat's expression; it is read as the order in the local parameter `e(τ / w)`, but that
+reading is not formalized. -/
 def etaQuotientOrder (N : ℕ) (r : ℕ → ℤ) (c : ℤ) : ℚ :=
   ∑ δ ∈ N.divisors, (Nat.gcd δ c.natAbs ^ 2 * r δ : ℚ) / (24 * δ)
 
@@ -242,9 +260,14 @@ theorem etaQuotientOrder_zero (N : ℕ) (r : ℕ → ℤ) :
   rw [Int.natAbs_zero, Nat.gcd_zero_right]
   field_simp
 
-/-- **Ligozat's formula.** At a cusp `a / d` of `Γ₀(N)` with `d ∣ N`, of width
-`w = N / gcd(N, d²)`, the order of `∏_{δ ∣ N} η(δ τ) ^ r δ` in the local parameter `e(τ / w)` is
-`(N / 24) ∑_{δ ∣ N} gcd(d, δ)² r δ / (gcd(d, N / d) d δ)`. -/
+/-- **Ligozat's formula**, as an identity in `ℚ`. For `d ∣ N` and `w = N / gcd(N, d²)`,
+`w · etaQuotientOrder N r d = (N / 24) ∑_{δ ∣ N} gcd(d, δ)² r δ / (gcd(d, N / d) d δ)`.
+
+Interpretation (not formalized here): `etaQuotientOrder N r d` is the order of
+`∏_{δ ∣ N} η(δ τ) ^ r δ` in the parameter `e(τ)` at a cusp `a / d`
+(`orderAtInfty_etaQuotient_slash`), and `w` is the width of that cusp of `Γ₀(N)`
+(`TauCeti.conj_T_zpow_mem_Gamma0_iff_width_dvd`), so the left side is read as the order in the
+local parameter `e(τ / w)`. -/
 theorem natCast_div_gcd_mul_etaQuotientOrder (N : ℕ) (r : ℕ → ℤ) {d : ℕ} (hd : d ∣ N) :
     ((N / Nat.gcd N (d ^ 2) : ℕ) : ℚ) * etaQuotientOrder N r d = N / 24 *
       ∑ δ ∈ N.divisors, (Nat.gcd d δ ^ 2 * r δ : ℚ) / (Nat.gcd d (N / d) * d * δ) := by
@@ -284,8 +307,7 @@ theorem exists_tendsto_etaQuotient_smul_div (N : ℕ) (r : ℕ → ℤ) (σ : SL
   refine (tendsto_finsetProd _ fun δ hδ ↦ (hT δ hδ).zpow₀ (r δ) (Or.inl (hC δ hδ))).congr
     fun τ ↦ ?_
   set s := Complex.sqrt ((σ 1 0 : ℂ) * τ + σ 1 1)
-  have hs : s ≠ 0 := Complex.sqrt_eq_zero_iff.not.2 (by
-    simpa [UpperHalfPlane.denom] using UpperHalfPlane.denom_ne_zero (σ : GL (Fin 2) ℝ) τ)
+  have hs : s ≠ 0 := sqrt_denom_ne_zero σ τ
   have hpow (t : Finset ℕ) : ∏ δ ∈ t, s ^ r δ = s ^ ∑ δ ∈ t, r δ := by
     induction t using Finset.cons_induction with
     | empty => simp
@@ -311,7 +333,9 @@ private theorem isTheta_etaQuotient_smul_div (N : ℕ) (r : ℕ → ℤ) (σ : S
     hC).symm.trans (Asymptotics.IsTheta.of_norm_eventuallyEq (Eventually.of_forall fun τ ↦ ?_))
   simp only [norm_exp]
   congr 1
-  simp
+  simp only [mul_re, re_ofNat, ofReal_re, im_ofNat, ofReal_im, mul_zero, sub_zero, I_re, mul_im,
+    zero_mul, add_zero, I_im, mul_one, sub_self, ratCast_re, ratCast_im, UpperHalfPlane.coe_re,
+    zero_add, UpperHalfPlane.coe_im, zero_sub, neg_inj]
   ring
 
 /-- For integral `k` with `∑_δ r δ = 2 k`, `etaQuotient N r ∣[k] σ` is
@@ -370,6 +394,8 @@ theorem isZeroAtImInfty_etaQuotient_slash_iff (N : ℕ) (r : ℕ → ℤ) {k : �
         atBot :=
       (tendsto_comap : Tendsto UpperHalfPlane.im atImInfty atTop).const_mul_atTop_of_neg
         (by simp [Real.pi_pos, h])
-    exact (Real.tendsto_exp_atBot.comp hlin).congr fun τ ↦ by simp; ring
+    exact (Real.tendsto_exp_atBot.comp hlin).congr fun τ ↦ by
+      simp only [neg_mul, Function.comp_apply, Real.exp_eq_exp, neg_inj]
+      ring
 
 end TauCeti.ModularForm
