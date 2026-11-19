@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.CauchyRiemann.RealBoundaryReflection
+public import TauCeti.Analysis.Complex.CauchyRiemann.RealBoundary.Reflection
 public import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
 
 /-!
@@ -17,12 +17,11 @@ closed upper part. Let `ξ` be continuous on `Ω⁺`, real on the real axis, and
 `∂ₛξ + i ∂ₜξ + C ξ = 0` on `Ω⁺` with the real boundary condition, in the sense of
 `TauCeti.HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ (fun z ↦ -(2 : ℂ)⁻¹ • C z (ξ z))`, for a
 field `C` of real-linear endomorphisms of `F` that is locally `Lᵖ` up to the boundary, `p > 2`.
-This is the boundary version of the similarity principle and its consequences, PH3.5 of the
-PseudoholomorphicCurveAnalysis roadmap, for the structure `i` and the totally real boundary
-condition `ℝⁿ ⊆ ℂⁿ` (with `F = Fin n → ℂ`).
+This is the boundary version of the similarity principle and its consequences, for the structure
+`i` and the totally real boundary condition `ℝⁿ ⊆ ℂⁿ` (with `F = Fin n → ℂ`).
 
 The reflection `TauCeti.starSchwarzReflection ξ` solves the reflected equation weakly on all of
-`Ω` (`TauCeti.Analysis.Complex.CauchyRiemann.RealBoundaryReflection`), so the interior theorems
+`Ω` (`TauCeti.Analysis.Complex.CauchyRiemann.RealBoundary.Reflection`), so the interior theorems
 of `TauCeti.Analysis.Complex.CauchyRiemann.Similarity` apply to it, and their conclusions
 restrict to `Ω⁺`, where the reflection is `ξ`.
 
@@ -40,9 +39,8 @@ restrict to `Ω⁺`, where the reflection is `ξ`.
 * `TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_hasWeakConjWirtingerDerivRealBoundaryOn`: the
   zeros of a solution not identically zero are isolated in `Ω⁺`, up to the boundary.
 * `TauCeti.exists_analyticOrderAt_eq_of_hasWeakConjWirtingerDerivRealBoundaryOn`: each zero in
-  `Ω⁺` has a finite positive order `m`, with `‖ξ z‖ ≍ ‖z - z₀‖ ^ m` within `Ω⁺`.
-* `TauCeti.exists_analyticOrderAt_eq_of_hasWeakConjWirtingerDerivOn`: the positive orders of the
-  zeros of interior weak solutions, used for the reflection.
+  `Ω⁺` of a solution not identically zero there has a finite positive order `m`, with
+  `‖ξ z‖ ≍ ‖z - z₀‖ ^ m` within `Ω⁺`.
 
 ## References
 
@@ -57,83 +55,11 @@ open scoped ComplexConjugate ENNReal
 
 namespace TauCeti
 
-/-! ### Positive orders in the interior -/
-
-section Interior
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V]
-  {Ω : Opens ℂ} {ξ : ℂ → V} {C : ℂ → V →L[ℝ] V} {p : ℝ≥0∞}
-
-/-- **Positive orders** of the zeros of weak solutions with `Lᵖ` coefficients, `p > 2`. On a
-connected open set `Ω`, let `ξ` be a continuous weak solution of `∂ₛξ + i ∂ₜξ + C ξ = 0` that is
-not identically zero. At a zero `z₀ ∈ Ω`, every similarity factorization `ξ = Φ σ` has `σ` of the
-same finite positive analytic order `m`, and `‖ξ z‖` is comparable to `‖z - z₀‖ ^ m` near
-`z₀`. -/
-theorem exists_analyticOrderAt_eq_of_hasWeakConjWirtingerDerivOn (hp : 2 < p)
-    (hΩc : IsPreconnected (Ω : Set ℂ)) (hC : MemLpLoc p Ω C) (hξ : ContinuousOn ξ Ω)
-    (heq : HasWeakConjWirtingerDerivOn volume Ω ξ (fun z ↦ (2 : ℂ)⁻¹ • -C z (ξ z)))
-    (hne : ∃ z ∈ Ω, ξ z ≠ 0) {z₀ : ℂ} (hz₀ : z₀ ∈ Ω) (hξ₀ : ξ z₀ = 0) :
-    ∃ m : ℕ, 0 < m ∧ (ξ =Θ[𝓝 z₀] fun z ↦ (z - z₀) ^ m) ∧
-      ∀ (Φ : ℂ → V →L[ℝ] V) (σ : ℂ → V), ContinuousAt Φ z₀ → IsUnit (Φ z₀) →
-        AnalyticAt ℂ σ z₀ → (∀ᶠ z in 𝓝 z₀, ξ z = Φ z (σ z)) → analyticOrderAt σ z₀ = m := by
-  have := FiniteDimensional.completeSpace ℂ V
-  exact exists_analyticOrderAt_eq_of_hasSimilarityFactorizationAt Ω.isOpen hΩc hξ
-    (fun _ hz _ ↦ hasSimilarityFactorizationAt_of_hasWeakConjWirtingerDerivOn hp hC hξ heq hz)
-    hne hz₀ hξ₀
-
-end Interior
-
 /-! ### The reflected solution -/
-
-/-- If the closed upper part of a conjugation-invariant open set `Ω` is preconnected, it lies in a
-preconnected open subset of `Ω`: `Ω` itself when the upper part meets the real axis, and the
-upper part, which is then open, otherwise. -/
-private theorem exists_isPreconnected_opens {Ω : Opens ℂ} (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
-    (hΩc : IsPreconnected ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) :
-    ∃ W : Opens ℂ, W ≤ Ω ∧ IsPreconnected (W : Set ℂ) ∧
-      (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ W := by
-  by_cases hr : ∃ x ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}, x.im = 0
-  · obtain ⟨x, hx, hx0⟩ := hr
-    refine ⟨Ω, le_rfl, ?_, inter_subset_left⟩
-    have hcx : conj x = x := Complex.conj_eq_iff_im.2 hx0
-    -- `Ω` is the union of its upper part and the conjugate of it, which share `x`
-    have hU : (Ω : Set ℂ) = (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} ∪
-        starRingEnd ℂ '' ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) := by
-      refine Subset.antisymm (fun z hz ↦ ?_) (union_subset inter_subset_left ?_)
-      · rcases le_or_gt 0 z.im with h | h
-        · exact Or.inl ⟨hz, h⟩
-        · exact Or.inr ⟨conj z, ⟨hΩ hz, by simpa using h.le⟩, conj_conj z⟩
-      · rintro _ ⟨w, hw, rfl⟩
-        exact hΩ hw.1
-    rw [hU]
-    exact IsPreconnected.union x hx ⟨x, hx, hcx⟩ hΩc
-      (hΩc.image _ Complex.continuous_conj.continuousOn)
-  · push Not at hr
-    have hU : (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} = (Ω : Set ℂ) ∩ {z | 0 < z.im} :=
-      Subset.antisymm (fun z hz ↦ ⟨hz.1, hz.2.out.lt_of_ne (hr z hz).symm⟩)
-        fun z hz ↦ ⟨hz.1, hz.2.out.le⟩
-    exact ⟨⟨_, Ω.isOpen.inter (isOpen_lt continuous_const Complex.continuous_im)⟩,
-      fun z hz ↦ hz.1, by rw [Opens.coe_mk, ← hU]; exact hΩc, hU.subset⟩
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℂ F]
   [StarAddMonoid F] [StarModule ℂ F] [ContinuousStar F]
   {Ω : Opens ℂ} {ξ : ℂ → F} {C : ℂ → F →L[ℝ] F} {p : ℝ≥0∞}
-
-omit [FiniteDimensional ℂ F] in
-/-- The reflection of a solution with real boundary values solves the reflected equation on the
-doubled domain, in the form consumed by the interior similarity principle. -/
-private theorem hasWeakConjWirtingerDerivOn_reflection
-    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
-    (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ fun z ↦ -(2 : ℂ)⁻¹ • C z (ξ z)) :
-    HasWeakConjWirtingerDerivOn volume Ω (starSchwarzReflection ξ)
-      (fun z ↦ (2 : ℂ)⁻¹ • -starSchwarzReflectionCoeff C z (starSchwarzReflection ξ z)) := by
-  -- The normalizing factor `-1/2` is real, so it commutes with the reflection.
-  have hs (x : F) : -(2 : ℂ)⁻¹ • x = (-(2 : ℝ)⁻¹) • x := by
-    rw [← Complex.coe_smul]
-    norm_num
-  have hw := h.hasWeakConjWirtingerDerivOn_starSchwarzReflection hΩ
-  simp only [hs, starSchwarzReflection_const_smul, starSchwarzReflection_clm_apply] at hw
-  simpa only [smul_neg, ← neg_smul, hs] using hw
 
 /-- **Similarity factorization of the reflection.** Let `p > 2`, let `Ω` be conjugation invariant,
 and let `ξ` be continuous on `Ω ∩ {0 ≤ im}` and real on `Ω ∩ ℝ`, solving
@@ -149,7 +75,7 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.hasSimilarityFactorizationAt_sta
     (hz₀ : z₀ ∈ Ω) : HasSimilarityFactorizationAt (starSchwarzReflection ξ) z₀ :=
   hasSimilarityFactorizationAt_of_hasWeakConjWirtingerDerivOn hp (hC.starSchwarzReflectionCoeff hΩ)
     (continuousOn_starSchwarzReflection_of_symmetric hΩ hξc hξr)
-    (hasWeakConjWirtingerDerivOn_reflection hΩ h) hz₀
+    (h.hasWeakConjWirtingerDerivOn_reflection_clm hΩ) hz₀
 
 /-- **The similarity principle up to a real boundary.** Let `p > 2`, let `Ω` be conjugation
 invariant, and let `ξ` be continuous on `Ω ∩ {0 ≤ im}` and real on `Ω ∩ ℝ`, solving
@@ -170,7 +96,7 @@ theorem exists_similarity_of_hasWeakConjWirtingerDerivRealBoundaryOn (hp : 2 < p
   obtain ⟨r, hr, hrΩ, Φ, σ, hΦ, hΦu, hσ, hξσ⟩ := exists_similarity_of_hasWeakConjWirtingerDerivOn
     hp (hC.starSchwarzReflectionCoeff hΩ)
     (continuousOn_starSchwarzReflection_of_symmetric hΩ hξc hξr)
-    (hasWeakConjWirtingerDerivOn_reflection hΩ h) hz₀
+    (h.hasWeakConjWirtingerDerivOn_reflection_clm hΩ) hz₀
   exact ⟨r, hr, hrΩ, Φ, σ, hΦ, hΦu, hσ, fun z hz ↦
     (starSchwarzReflection_of_im_nonneg hz.2.out).symm.trans (hξσ hz.1)⟩
 
@@ -188,10 +114,11 @@ private theorem exists_opens_reflection (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
       ContinuousOn (starSchwarzReflection ξ) W ∧
       HasWeakConjWirtingerDerivOn volume W (starSchwarzReflection ξ)
         (fun z ↦ (2 : ℂ)⁻¹ • -starSchwarzReflectionCoeff C z (starSchwarzReflection ξ z)) := by
-  obtain ⟨W, hWΩ, hWc, hW⟩ := exists_isPreconnected_opens hΩ hΩc
-  exact ⟨W, hWc, hW, (hC.starSchwarzReflectionCoeff hΩ).mono_set hWΩ,
+  obtain ⟨W, hWΩ, hWo, hWc, hW⟩ :=
+    exists_isPreconnected_isOpen_superset_inter_im_nonneg_of_symmetric Ω.isOpen hΩ hΩc
+  exact ⟨⟨W, hWo⟩, hWc, hW, (hC.starSchwarzReflectionCoeff hΩ).mono_set hWΩ,
     (continuousOn_starSchwarzReflection_of_symmetric hΩ hξc hξr).mono hWΩ,
-    (hasWeakConjWirtingerDerivOn_reflection hΩ h).mono hWΩ⟩
+    (h.hasWeakConjWirtingerDerivOn_reflection_clm hΩ).mono hWΩ⟩
 
 omit [NormedSpace ℂ F] [FiniteDimensional ℂ F] [StarModule ℂ F] [ContinuousStar F] in
 /-- If the reflection of `ξ` vanishes on `T`, then `ξ` vanishes on every part of `T` in the closed
