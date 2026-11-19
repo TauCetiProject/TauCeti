@@ -60,43 +60,6 @@ open scoped Manifold ContDiff TauCeti.ManifoldWeakWhitney
 
 namespace ContMDiffMap
 
-section Bounded
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {n : WithTop ℕ∞} [IsManifold I n M]
-
-/-- A set of vector-valued maps is von Neumann bounded in the weak Whitney topology exactly when,
-on each compact subset of each chart target, each coordinate derivative of its members is bounded
-uniformly over the set. -/
-theorem isVonNBounded_iff_forall_exists_norm_chartIteratedFDeriv_le
-    {s : Set C^n⟮I, M; 𝓘(𝕜, F), F⟯} :
-    IsVonNBounded 𝕜 s ↔ ∀ (x : M) (m : ℕ) (hm : m ≤ n)
-      (K : TopologicalSpace.Compacts (extChartAt I x).target),
-      ∃ R, ∀ f ∈ s, ∀ y ∈ K, ‖chartIteratedFDeriv f x m hm y‖ ≤ R := by
-  rw [withSeminorms_manifoldWeakWhitney.isVonNBounded_iff_seminorm_bounded]
-  constructor
-  · rintro h x m hm K
-    obtain ⟨r, -, hr⟩ := h ⟨x, ⟨m, hm⟩, K⟩
-    refine ⟨r, fun f hf y hy ↦ ?_⟩
-    have hle := ContinuousMap.norm_coe_le_norm
-      ((chartIteratedFDeriv f x m hm).restrict (K : Set _)) ⟨y, hy⟩
-    have hrf := hr f hf
-    rw [chartSeminormFamily_apply, chartDerivativeSeminorm_apply] at hrf
-    exact hle.trans hrf.le
-  · rintro h ⟨x, ⟨m, hm⟩, K⟩
-    obtain ⟨R, hR⟩ := h x m hm K
-    refine ⟨max R 0 + 1, by positivity, fun f hf ↦ ?_⟩
-    rw [chartSeminormFamily_apply, chartDerivativeSeminorm_apply]
-    refine ((ContinuousMap.norm_le _ (le_max_right R 0)).2 fun y ↦ ?_).trans_lt
-      (lt_add_one _)
-    exact (hR f hf y y.2).trans (le_max_left R 0)
-
-end Bounded
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
