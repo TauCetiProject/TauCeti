@@ -43,7 +43,7 @@ closed when `σ` is closed, and since reversing a diffeotopy negates its flux
 * `TauCeti.Diffeotopy.eulerianFluxForm_eq_neg_fluxForm_symm`: for a symplectic isotopy, the
   Eulerian flux form is minus the flux form of the inverse diffeotopy.
 * `TauCeti.Diffeotopy.isSmoothForm_eulerianFluxForm`,
-  `TauCeti.Diffeotopy.mextDeriv_eulerianFluxForm`: it is smooth, and closed for closed `σ`.
+  `TauCeti.Diffeotopy.mextDeriv_eulerianFluxForm_eq_zero`: it is smooth, and closed for closed `σ`.
 * `TauCeti.Diffeotopy.flux_eq_mk_eulerianFluxForm`: the flux of a symplectic isotopy is the
   de Rham class of its Eulerian flux form.
 * `TauCeti.Diffeotopy.eulerianFluxForm_globalFlowDiffeotopy`: running a complete vector field `v`
@@ -96,7 +96,8 @@ theorem eulerianFluxForm_refl (σ : SmoothForm J M ℝ 2) :
   rw [eulerianFluxForm_apply, Pi.zero_apply]
   refine (intervalIntegral.integral_congr (g := fun _ ↦ (0 : E [⋀^Fin 1]→L[ℝ] ℝ))
     fun t _ ↦ ?_).trans intervalIntegral.integral_zero
-  rw [velocity_refl, RoughForm.interior_zero_field]
+  rw [velocity_refl, RoughForm.interior_zero_field, Pi.zero_apply]
+  -- The two zeros differ only in reading the form's values over `TangentSpace J x` or over `E`.
   rfl
 
 /-- **The homotopy-operator integrand of the inverse diffeotopy.** If every time slice `φ_t`
@@ -114,20 +115,19 @@ theorem apply_vecCons_mfderiv_cylinderMap_symm {k : ℕ} {σ : SmoothForm J M �
       -σ.1 p.1 (Matrix.vecCons (Φ.velocity p.2 p.1) v) := by
   obtain ⟨x, t⟩ := p
   set h := Φ.timeSlice t
-  have hy : Φ.symm (t, x) = Φ.symm.cylinderMap (x, t) := (Φ.symm.cylinderMap_apply (x, t)).symm
   have hhy : h (Φ.symm.cylinderMap (x, t)) = x := by
-    rw [← hy, ← symm_timeSlice_apply]
-    exact h.apply_symm_apply x
+    rw [cylinderMap_apply, timeSlice_apply]
+    exact Φ.apply_mk_symm_apply t x
   -- The value of `σ` at a point only depends on the point, read in the model space.
   have hpt : ∀ {z z' : M}, z = z' → ∀ w : Fin (k + 1) → E, σ.1 z w = σ.1 z' w := by
     rintro z _ rfl w
     rfl
   -- The time derivative of `φ_t⁻¹ x` is carried by `dφ_t` to `-X_t x`.
   have htime := Φ.mfderiv_timeSlice_mfderiv_cylinderMap_symm (by simp) t x
-  rw [hy] at htime
+  rw [← Φ.symm.cylinderMap_apply (x, t)] at htime
   -- The spatial derivative of `φ_t⁻¹` at `x` is undone by `dφ_t`.
   have hspace := Φ.mfderiv_timeSlice_mfderiv_cylinderMap_symm_inl (by simp) t x
-  rw [hy] at hspace
+  rw [← Φ.symm.cylinderMap_apply (x, t)] at hspace
   -- Since `φ_t` preserves `σ`, evaluate `σ` after pushing every vector forward by `dφ_t`.
   have hpres := (SmoothForm.mem_diffeomorphStabilizer_iff_forall.1 (hΦ t))
     (Φ.symm.cylinderMap (x, t))
@@ -161,7 +161,7 @@ theorem isSmoothForm_eulerianFluxForm {σ : SmoothForm J M ℝ 2}
   exact (-Φ.symm.fluxForm σ).isSmoothForm
 
 /-- For a closed two-form `σ` and a symplectic isotopy, the Eulerian flux form is closed. -/
-theorem mextDeriv_eulerianFluxForm {σ : SmoothForm J M ℝ 2} (hσ : σ.IsClosed)
+theorem mextDeriv_eulerianFluxForm_eq_zero {σ : SmoothForm J M ℝ 2} (hσ : σ.IsClosed)
     (hΦ : ∀ t, Φ.timeSlice t ∈ SmoothForm.diffeomorphStabilizer σ) :
     mextDeriv (Φ.eulerianFluxForm σ) = 0 := by
   have hclosed := Φ.symm.fluxForm_mem_closedForms hσ
@@ -178,7 +178,7 @@ theorem flux_eq_mk_eulerianFluxForm (σ : closedForms J M 2)
     Φ.flux σ (SmoothForm.final_mem_diffeomorphStabilizer hΦ) =
       deRhamCohomology.mk J 1
         ⟨⟨Φ.eulerianFluxForm σ.1, (Φ.isSmoothForm_eulerianFluxForm hΦ).mem_smoothBundleForms⟩,
-          (mem_closedForms J _).2 (Φ.mextDeriv_eulerianFluxForm
+          (mem_closedForms J _).2 (Φ.mextDeriv_eulerianFluxForm_eq_zero
             ((SmoothForm.isClosed_def _).mpr ((mem_closedForms J σ.1).mp σ.2)) hΦ)⟩ := by
   have hsymm := SmoothForm.final_mem_diffeomorphStabilizer
     (SmoothForm.timeSlice_symm_mem_diffeomorphStabilizer hΦ)
@@ -212,8 +212,7 @@ theorem eulerianFluxForm_globalFlowDiffeotopy
     rw [velocity_globalFlowDiffeotopy]
     exact ((σ.1 x).vecCons_smul w a (v x)).trans
       (congrArg (a • ·) (RoughForm.interior_apply _ _ x w).symm)
-  · rw [intervalIntegral.integral_const, sub_zero, one_smul]
-    rfl
+  · rw [intervalIntegral.integral_const, sub_zero, one_smul, Pi.smul_apply]
 
 end Flow
 

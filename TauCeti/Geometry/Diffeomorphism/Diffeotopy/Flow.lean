@@ -171,12 +171,10 @@ theorem mfderiv_cylinderMap_globalFlowDiffeotopy_space (hn : 1 ≤ n)
     (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     (hcomplete : IsCompleteVectorField v) (a : ℝ) (p : M × unitInterval) (w : E) :
     mfderiv (I.prod (𝓡∂ 1)) I (globalFlowDiffeotopy hn hv hcomplete a).cylinderMap p
-      (w, (0 : EuclideanSpace ℝ (Fin 1))) = mfderiv I I (flowOf v (a * p.2)) p.1 w := by
-  refine (mfderiv_prod_eq_add_apply ((globalFlowDiffeotopy hn hv hcomplete
-    a).contMDiff_cylinderMap.mdifferentiableAt
-      (zero_lt_one.trans_le (by exact_mod_cast hn)).ne')).trans ?_
-  rw [cylinderMap_globalFlowDiffeotopy]
-  exact add_eq_left.2 (map_zero _)
+      (w, (0 : EuclideanSpace ℝ (Fin 1))) = mfderiv I I (flowOf v (a * p.2)) p.1 w :=
+  ((globalFlowDiffeotopy hn hv hcomplete a).mfderiv_cylinderMap_inl
+    (by exact_mod_cast hn) p w).trans
+    (by rw [timeSlice_globalFlowDiffeotopy])
 
 /-- **The velocity field of the flow diffeotopy.** The diffeotopy which runs a complete vector field
 `v` for duration `a` has the time-independent velocity field `a v`. -/
@@ -185,9 +183,7 @@ theorem velocity_globalFlowDiffeotopy (hn : 1 ≤ n)
     (hcomplete : IsCompleteVectorField v) (a : ℝ) (t : unitInterval) (x : M) :
     (globalFlowDiffeotopy hn hv hcomplete a).velocity t x = a • v x := by
   set Φ := globalFlowDiffeotopy hn hv hcomplete a
-  obtain ⟨y, rfl⟩ : ∃ y, Φ (t, y) = x := ⟨Φ.symm (t, x), by
-    rw [symm_apply]
-    exact Φ.apply_symm_apply (t, x)⟩
+  obtain ⟨y, rfl⟩ : ∃ y, Φ (t, y) = x := ⟨Φ.symm (t, x), Φ.apply_mk_symm_apply t x⟩
   rw [velocity_apply, mfderiv_cylinderMap_globalFlowDiffeotopy_time, globalFlowDiffeotopy_apply,
     flowOf_apply]
 

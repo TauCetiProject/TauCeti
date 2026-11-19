@@ -44,11 +44,6 @@ velocity field: the time derivative of `φ_t⁻¹ x` is carried by `dφ_t` to `-
 * `TauCeti.Diffeotopy.velocity_eq_eulerianField`: comparison with the Eulerian field of an
   extension of the diffeotopy to all times.
 * `TauCeti.Diffeotopy.velocity_refl`: the constant diffeotopy has zero velocity.
-* `TauCeti.Diffeotopy.mfderiv_cylinderMap_inl`: the spatial derivative of the motion is the
-  differential of the time slice.
-* `TauCeti.Diffeotopy.mfderiv_cylinderMap_mfderiv_cylinderMap_symm`: the derivative of
-  `φ_t (φ_t⁻¹ x) = x` on the cylinder.
-* `TauCeti.Diffeotopy.mfderiv_timeSlice_mfderiv_cylinderMap_symm_inl`: `dφ_t ∘ d(φ_t⁻¹) = id`.
 * `TauCeti.Diffeotopy.mfderiv_timeSlice_mfderiv_cylinderMap_symm`: the velocity of the inverse
   diffeotopy, `dφ_t (∂ₜ (φ_t⁻¹ x)) = -X_t x`.
 
@@ -76,19 +71,6 @@ namespace Diffeotopy
 
 variable (Φ : Diffeotopy J n M)
 
-/-- **The spatial derivative of the motion.** The motion `(x, t) ↦ φ_t x` of a diffeotopy of
-positive order acts on spatial tangent vectors at `(x, t)` by the differential of the time slice
-`φ_t`. -/
-theorem mfderiv_cylinderMap_inl (hn : 1 ≤ n) (p : M × I) (v : E) :
-    mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p (v, (0 : TangentSpace (𝓡∂ 1) p.2)) =
-      mfderiv J J (Φ.timeSlice p.2) p.1 v := by
-  refine (mfderiv_prod_eq_add_apply (Φ.contMDiff_cylinderMap.mdifferentiableAt
-    (zero_lt_one.trans_le (by exact_mod_cast hn)).ne')).trans ?_
-  have hslice : (fun z ↦ Φ.cylinderMap (z, p.2)) = Φ.timeSlice p.2 :=
-    funext fun z ↦ by rw [cylinderMap_apply, timeSlice_apply]
-  rw [hslice]
-  exact add_eq_left.2 (map_zero _)
-
 /-- The **velocity field** `X_t = (∂ₜ φ_t) ∘ φ_t⁻¹` of a diffeotopy at time `t`: at `x` it is the
 time derivative of the motion `(y, t) ↦ φ_t y` at the point `(φ_t⁻¹ x, t)`, the velocity of the
 trajectory currently passing through `x`. -/
@@ -107,10 +89,7 @@ field is the time derivative `∂ₜ φ_t y` of the trajectory of `y`. -/
 theorem velocity_apply (t : I) (y : M) :
     Φ.velocity t (Φ (t, y)) = mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap (y, t)
       ((0 : E), (1 : TangentSpace (𝓡∂ 1) t)) := by
-  have hy : Φ.symm (t, Φ (t, y)) = y := by
-    rw [symm_apply]
-    exact Φ.symm_apply_apply (t, y)
-  rw [velocity_def, hy]
+  rw [velocity_def, symm_apply_mk_apply]
 
 /-- **The velocity field is the Eulerian field of an extension.** Let `φ : ℝ → M ≃ M` be a family
 of bijections which agrees with the diffeotopy at the times of `[0, 1]`. Where the trajectory
@@ -125,8 +104,7 @@ theorem velocity_eq_eulerianField (hn : 1 ≤ n) {φ : ℝ → M ≃ M}
     have hx : Φ (t, y) = x := by
       rw [← hφ]
       exact (φ t).apply_symm_apply x
-    rw [← hx, symm_apply]
-    exact Φ.symm_apply_apply (t, y)
+    rw [← hx, symm_apply_mk_apply]
   -- Along the time direction, the motion is the trajectory `u ↦ φ_u y` restricted to `[0, 1]`.
   have htraj : (fun s : I ↦ Φ.cylinderMap (y, s)) = (fun u ↦ φ u y) ∘ Subtype.val :=
     funext fun s ↦ by rw [cylinderMap_apply, Function.comp_apply, hφ]
@@ -146,35 +124,10 @@ theorem velocity_refl (t : I) : (refl J n M).velocity t = 0 := by
   have hcyl : (refl J n M).cylinderMap = Prod.fst := funext fun p ↦ by simp
   funext x
   rw [velocity_def, hcyl, mfderiv_fst]
+  -- The spatial component of `(0, ∂ₜ)` is `0`. The tangent space of the product is `E × ℝ¹` only
+  -- up to unfolding `TangentSpace`, so `ContinuousLinearMap.coe_fst'` does not rewrite here and
+  -- the projection is computed by `rfl`.
   rfl
-
-/-- **The motion followed by its inverse.** Differentiating `φ_t (φ_t⁻¹ x) = x` on the cylinder: for
-a tangent vector `w = (u, s)` at `(x, t)`, the differential of the motion at `(φ_t⁻¹ x, t)` sends
-the image `(d(φ⁻¹) w, s)` of `w` under the level-preserving inverse motion to `u`. -/
-theorem mfderiv_cylinderMap_mfderiv_cylinderMap_symm (hn : 1 ≤ n) (p : M × I)
-    (w : TangentSpace (J.prod (𝓡∂ 1)) p) :
-    mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap (Φ.symm.cylinderMap p, p.2)
-      (mfderiv (J.prod (𝓡∂ 1)) J Φ.symm.cylinderMap p w, w.2) = w.1 := by
-  have hn₀ : n ≠ 0 := (zero_lt_one.trans_le (by exact_mod_cast hn)).ne'
-  -- The motion of `φ_t ∘ φ_t⁻¹`, the constant diffeotopy, is the projection to `M`.
-  have hcomp : Φ.cylinderMap ∘ (fun q ↦ (Φ.symm.cylinderMap q, q.2)) = Prod.fst := by
-    rw [← cylinderMap_trans, symm_trans_self]
-    exact funext fun q ↦ by simp
-  have h := mfderiv_comp_apply p (Φ.contMDiff_cylinderMap.mdifferentiableAt hn₀)
-    (Φ.symm.contMDiff_cylinderMap_prodMk_snd.mdifferentiableAt hn₀) w
-  rw [hcomp, mfderiv_fst] at h
-  exact (congrArg _ (Φ.symm.mfderiv_cylinderMap_prodMk_snd hn p w)).symm.trans h.symm
-
-/-- **The spatial derivative of the inverse diffeotopy.** The differential of `φ_t` undoes the
-spatial derivative `d(φ_t⁻¹)` of the inverse diffeotopy at `(x, t)`. -/
-theorem mfderiv_timeSlice_mfderiv_cylinderMap_symm_inl (hn : 1 ≤ n) (t : I) (x : M) (u : E) :
-    mfderiv J J (Φ.timeSlice t) (Φ.symm (t, x))
-        (mfderiv (J.prod (𝓡∂ 1)) J Φ.symm.cylinderMap (x, t)
-          (u, (0 : TangentSpace (𝓡∂ 1) t))) = u := by
-  have hy : Φ.symm (t, x) = Φ.symm.cylinderMap (x, t) := (Φ.symm.cylinderMap_apply (x, t)).symm
-  rw [hy]
-  exact (Φ.mfderiv_cylinderMap_inl hn (Φ.symm.cylinderMap (x, t), t) _).symm.trans
-    (Φ.mfderiv_cylinderMap_mfderiv_cylinderMap_symm hn (x, t) (u, 0))
 
 /-- **The velocity of the inverse diffeotopy.** Differentiating `φ_t (φ_t⁻¹ x) = x` in time, the
 differential of `φ_t` carries the time derivative `∂ₜ (φ_t⁻¹ x)` of the inverse diffeotopy to
@@ -184,8 +137,7 @@ theorem mfderiv_timeSlice_mfderiv_cylinderMap_symm (hn : 1 ≤ n) (t : I) (x : M
         (mfderiv (J.prod (𝓡∂ 1)) J Φ.symm.cylinderMap (x, t)
           ((0 : E), (1 : TangentSpace (𝓡∂ 1) t))) =
       -Φ.velocity t x := by
-  have hy : Φ.symm (t, x) = Φ.symm.cylinderMap (x, t) := (Φ.symm.cylinderMap_apply (x, t)).symm
-  rw [velocity_def, hy]
+  rw [velocity_def, ← Φ.symm.cylinderMap_apply (x, t)]
   set V : E := mfderiv (J.prod (𝓡∂ 1)) J Φ.symm.cylinderMap (x, t)
     ((0 : E), (1 : TangentSpace (𝓡∂ 1) t))
   -- `dΦ (V, ∂ₜ) = 0` at `(φ_t⁻¹ x, t)`; split `(V, ∂ₜ)` into its spatial and time parts.
