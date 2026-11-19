@@ -134,28 +134,11 @@ theorem tendsto_rpow_mul_norm_block_of_mem_littleBesov {u : BesovSpace F φ s p 
     (hu : u ∈ littleBesov F φ s p) :
     Tendsto (fun j : ℕ ↦ 2 ^ (s * j) * ‖u.block j‖) atTop (𝓝 0) := by
   rw [← SetLike.mem_coe, coe_littleBesov] at hu
-  refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
-  obtain ⟨_, ⟨f, rfl⟩, hf⟩ := Metric.mem_closure_iff.1 hu (ε / 2) (half_pos hε)
+  refine closure_minimal ?_ isClosed_setOfPred_tendsto_rpow_mul_norm_block hu
   -- A Schwartz function also lies in `B^s_{p,1}`, with the same blocks.
-  have hdecay : Tendsto (fun j : ℕ ↦
-      2 ^ (s * j) * ‖(SchwartzMap.toBesovSpaceCLM F φ s p ∞ f).block j‖) atTop (𝓝 0) := by
-    simpa only [block_toBesovSpaceCLM] using
-      tendsto_rpow_mul_norm_block ENNReal.one_ne_top (SchwartzMap.toBesovSpaceCLM F φ s p 1 f)
-  obtain ⟨N, hN⟩ := Metric.tendsto_atTop.1 hdecay (ε / 2) (half_pos hε)
-  refine ⟨N, fun j hj ↦ ?_⟩
-  set v := SchwartzMap.toBesovSpaceCLM F φ s p ∞ f
-  have hv := hN j hj
-  rw [Real.dist_0_eq_abs, abs_of_nonneg (by positivity)] at hv ⊢
-  rw [dist_eq_norm] at hf
-  have hsub : 2 ^ (s * j) * ‖(u - v).block j‖ ≤ ‖u - v‖ := rpow_mul_norm_block_le _ j
-  rw [block_sub] at hsub
-  calc 2 ^ (s * j) * ‖u.block j‖
-      ≤ 2 ^ (s * j) * ‖u.block j - v.block j‖ + 2 ^ (s * j) * ‖v.block j‖ := by
-        rw [← mul_add]
-        gcongr
-        exact norm_le_norm_sub_add _ _
-    _ < ε / 2 + ε / 2 := add_lt_add_of_le_of_lt (hsub.trans hf.le) hv
-    _ = ε := add_halves ε
+  rintro _ ⟨f, rfl⟩
+  simpa only [Set.mem_ofPred_eq, block_toBesovSpaceCLM] using
+    tendsto_rpow_mul_norm_block ENNReal.one_ne_top (SchwartzMap.toBesovSpaceCLM F φ s p 1 f)
 
 /-- **The blocks of an element of `b^s_{p,∞}` are limits of Schwartz functions in `Lᵖ`.** -/
 theorem block_mem_closure_of_mem_littleBesov {u : BesovSpace F φ s p ∞}
@@ -166,15 +149,17 @@ theorem block_mem_closure_of_mem_littleBesov {u : BesovSpace F φ s p ∞}
   rintro _ ⟨f, rfl⟩
   exact ⟨_, (block_toBesovSpaceCLM f j).symm⟩
 
-/-- **Truncation.** If the weighted blocks of `u` tend to zero, then `u` is within `ε` of the
-low-pass truncation `S_N u = ∑_{j ≤ N} Δⱼ u` for some `N`: away from the transition range the
-blocks of `u - S_N u` are either zero or the small high-frequency blocks of `u`, and in the
-transition range they are at most `(1 + K)` times those of `u`. -/
+/-- **Truncation.** If the weighted blocks of `u` tend to zero, then for every `ε > 0` there are
+`N` and an element `v` of `B^s_{p,∞}`, represented by the low-pass truncation
+`S_N u = ∑_{j ≤ N} Δⱼ u`, with `‖u - v‖ ≤ ε`. -/
 theorem exists_toDistr_eq_sum_block_and_norm_sub_le {u : BesovSpace F φ s p ∞}
     (hdecay : Tendsto (fun j : ℕ ↦ 2 ^ (s * j) * ‖u.block j‖) atTop (𝓝 0)) {ε : ℝ} (hε : 0 < ε) :
     ∃ N : ℕ, ∃ v : BesovSpace F φ s p ∞,
       v.toDistr = ((∑ j ∈ Finset.range (N + 1), u.block j : Lp F p (volume : Measure E)) :
         𝓢'(E, F)) ∧ ‖u - v‖ ≤ ε := by
+  -- Away from the transition range the blocks of `u - S_N u` are either zero or the small
+  -- high-frequency blocks of `u`; in the transition range they are at most `(1 + K)` times those
+  -- of `u`, where `K` bounds the low-pass truncations on `Lᵖ`.
   obtain ⟨L, hL⟩ := exists_sum_littlewoodPaleyBlock_littlewoodPaleyBlock (F := F) φ
   set K : ℝ := ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖
   have hK0 : 0 ≤ K := integral_nonneg fun _ ↦ norm_nonneg _

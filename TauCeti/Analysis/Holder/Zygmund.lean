@@ -1078,53 +1078,26 @@ private theorem toHolderSpace_mem_littleHolder_of_tendsto (hα0 : 0 < α) (hα1 
 
 /-- If the Hölder representative of `u ∈ 𝒞^α` is little Hölder, then the weighted blocks of `u`
 vanish at high frequency: the representative is a limit in `C^{0,α}` of smooth Lipschitz functions
-`g`, which lie in `𝒞¹`, so their weighted blocks of order `α < 1` vanish at high frequency, and the
-weighted blocks are bounded by the norm of `𝒞^α`. -/
+`g`, which lie in `𝒞¹`, so their weighted blocks of order `α < 1` vanish at high frequency, and
+block decay is a closed condition in `𝒞^α`. -/
 private theorem tendsto_of_toHolderSpace_mem_littleHolder (hα0 : 0 < α) (hα1 : α < 1)
     {u : BesovSpace F φ α ∞ ∞} (hu : toHolderSpace F φ hα0 hα1 u ∈ HolderSpace.littleHolder α E F) :
     Tendsto (fun j : ℕ ↦ 2 ^ ((α : ℝ) * j) * ‖u.block j‖) atTop (𝓝 0) := by
-  set S := ofHolderSpace F φ α
-  refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
-  obtain ⟨g, -, ⟨K, hK⟩, hug⟩ := HolderSpace.exists_contDiff_lipschitzWith_norm_sub_lt _ hu
-    (ε := ε / (2 * (‖S‖ + 1))) (by positivity)
+  rw [← SetLike.mem_coe, HolderSpace.littleHolder_eq_closure hα1] at hu
+  rw [← ofHolderSpace_toHolderSpace φ hα0 hα1 u]
+  refine isClosed_setOfPred_tendsto_rpow_mul_norm_block.closure_subset
+    (map_mem_closure (ofHolderSpace F φ α).continuous hu fun g ⟨_, K, hK⟩ ↦ ?_)
   -- The Lipschitz function `g` is an element `w` of `𝒞¹`, so its weighted blocks of order
   -- `α < 1` vanish at high frequency.
   obtain ⟨_, -, hC⟩ := exists_toDistr_eq_and_norm_le_of_holderWith (F := F) φ 1
   obtain ⟨w, hw, -⟩ := hC g.toBoundedContinuousFunction (H := K) <| by
     rw [HolderSpace.coe_toBoundedContinuousFunction]
     exact hK.holderWith
-  have hdecay : Tendsto (fun j : ℕ ↦ 2 ^ ((α : ℝ) * j) * ‖(S g).block j‖) atTop (𝓝 0) := by
-    have hlt : (α : ℝ) < ((1 : ℝ≥0) : ℝ) := by exact_mod_cast hα1
-    have hblock (j : ℕ) : (S g).block j = w.block j :=
-      block_eq_of_toDistr_eq ((toDistr_ofHolderSpace φ g).trans hw.symm) j
-    simpa only [block_inclusionOfLT, hblock] using
-      tendsto_rpow_mul_norm_block ENNReal.one_ne_top (inclusionOfLT F φ ∞ ∞ 1 hlt w)
-  obtain ⟨J, hJ⟩ := Metric.tendsto_atTop.1 hdecay (ε / 2) (half_pos hε)
-  refine ⟨J, fun j hj ↦ ?_⟩
-  have hJj := hJ j hj
-  rw [Real.dist_0_eq_abs, abs_of_nonneg (by positivity)] at hJj
-  rw [Real.dist_0_eq_abs, abs_of_nonneg (by positivity)]
-  -- `u = S (T u - g) + S g`, and `S (T u - g)` is small in `𝒞^α`.
-  have hu' : u = S (toHolderSpace F φ hα0 hα1 u - g) + S g := by
-    rw [map_sub, sub_add_cancel, ofHolderSpace_toHolderSpace]
-  have hsmall : ‖S (toHolderSpace F φ hα0 hα1 u - g)‖ < ε / 2 :=
-    calc ‖S (toHolderSpace F φ hα0 hα1 u - g)‖ ≤ ‖S‖ * ‖toHolderSpace F φ hα0 hα1 u - g‖ :=
-          S.le_opNorm _
-      _ ≤ ‖S‖ * (ε / (2 * (‖S‖ + 1))) := by gcongr
-      _ < ε / 2 := by
-        rw [← mul_div_assoc, div_lt_div_iff₀ (by positivity) two_pos]
-        nlinarith [norm_nonneg S]
-  calc 2 ^ ((α : ℝ) * j) * ‖u.block j‖
-      ≤ 2 ^ ((α : ℝ) * j) * ‖(S (toHolderSpace F φ hα0 hα1 u - g)).block j‖ +
-          2 ^ ((α : ℝ) * j) * ‖(S g).block j‖ := by
-        conv_lhs => rw [hu']
-        rw [block_add, ← mul_add]
-        gcongr
-        exact norm_add_le _ _
-    _ ≤ ‖S (toHolderSpace F φ hα0 hα1 u - g)‖ + 2 ^ ((α : ℝ) * j) * ‖(S g).block j‖ := by
-        gcongr
-        exact rpow_mul_norm_block_le _ j
-    _ < ε := by linarith
+  have hlt : (α : ℝ) < ((1 : ℝ≥0) : ℝ) := by exact_mod_cast hα1
+  have hblock (j : ℕ) : (ofHolderSpace F φ α g).block j = w.block j :=
+    block_eq_of_toDistr_eq ((toDistr_ofHolderSpace φ g).trans hw.symm) j
+  simpa only [Set.mem_ofPred_eq, block_inclusionOfLT, hblock] using
+    tendsto_rpow_mul_norm_block ENNReal.one_ne_top (inclusionOfLT F φ ∞ ∞ 1 hlt w)
 
 /-- **Little Hölder continuity is block decay.** Let `0 < α < 1` and let `f` be
 a bounded continuous function representing `u ∈ 𝒞^α = B^α_{∞,∞}`. Then `f` is little

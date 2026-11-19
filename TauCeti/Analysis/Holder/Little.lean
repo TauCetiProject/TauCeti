@@ -144,16 +144,8 @@ theorem MemLittleHolder.neg (hf : MemLittleHolder α f) : MemLittleHolder α (-f
 
 /-- A scalar multiple of a little Hölder function is little Hölder. -/
 theorem MemLittleHolder.const_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 Y]
-    (hf : MemLittleHolder α f) (c : 𝕜) : MemLittleHolder α (c • f) := by
-  intro ε hε
-  obtain ⟨δ, hδ, h⟩ := hf (ε / (‖c‖ + 1)) (by positivity)
-  refine ⟨δ, hδ, fun x y hxy ↦ ?_⟩
-  have hc : ‖c‖ / (‖c‖ + 1) ≤ 1 := (div_le_one (by positivity)).2 (by linarith)
-  calc dist ((c • f) x) ((c • f) y) = ‖c‖ * dist (f x) (f y) := by
-        rw [Pi.smul_apply, Pi.smul_apply, dist_smul₀]
-    _ ≤ ‖c‖ * (ε / (‖c‖ + 1) * dist x y ^ (α : ℝ)) := by gcongr; exact h x y hxy
-    _ = ‖c‖ / (‖c‖ + 1) * (ε * dist x y ^ (α : ℝ)) := by ring
-    _ ≤ ε * dist x y ^ (α : ℝ) := mul_le_of_le_one_left (by positivity) hc
+    (hf : MemLittleHolder α f) (c : 𝕜) : MemLittleHolder α (c • f) :=
+  (lipschitzWith_smul c).comp_memLittleHolder hf
 
 /-- The difference of two little Hölder functions is little Hölder. -/
 theorem MemLittleHolder.sub (hf : MemLittleHolder α f) (hg : MemLittleHolder α g) :
