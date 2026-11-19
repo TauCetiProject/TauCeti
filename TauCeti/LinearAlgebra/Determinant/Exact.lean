@@ -76,6 +76,8 @@ that enlarging the stabilization changes the identification of determinant lines
   four-term exact sequence `0 → A → B → C → D → 0`.
 * `TauCeti.detLineFourTermEquiv_tmul`, `TauCeti.detLineFourTermEquiv_tmul_eq_smul_tmul`: its value
   on exterior products, which determine it by `TauCeti.rid_lTensor_eval_injective`.
+* `TauCeti.detLineFourTermEquiv_ιMulti_tmul_of_finrank_eq_zero`: when all four terms are zero, it
+  matches the empty exterior products tensored with their normalized functionals.
 * `TauCeti.detLineFourTermEquiv_congr`: it is natural for isomorphisms of four-term exact
   sequences.
 * `TauCeti.detLineShortExactCancelEquiv`: the isomorphism `det V ⊗ (det V')^* ≃ det U ⊗ (det U')^*`
@@ -265,6 +267,27 @@ theorem detLineFourTermEquiv_tmul_eq_smul_tmul (u : Fin (finrank K A) → A)
   rw [← Module.Invertible.rid_lTensor_eval_tmul_eq_self hξ
     (detLineFourTermEquiv hf hfg hgh hh (β ⊗ₜ φ)), detLineFourTermEquiv_tmul hf hfg hgh hh u v z hβ
     hγ φ, TensorProduct.smul_tmul']
+
+/-- **`TauCeti.detLineFourTermEquiv` of a sequence of zero spaces.** When all four terms of the
+exact sequence have dimension zero, the isomorphism sends the empty exterior product of `B`
+tensored with the functional taking the value `1` on the empty exterior product of `C` to the
+empty exterior product of `A` tensored with the functional taking the value `1` on the empty
+exterior product of `D`. -/
+theorem detLineFourTermEquiv_ιMulti_tmul_of_finrank_eq_zero (hA : finrank K A = 0)
+    (hB : finrank K B = 0) (hC : finrank K C = 0) (hD : finrank K D = 0)
+    (u : Fin (finrank K A) → A) (b : Fin (finrank K B) → B) :
+    detLineFourTermEquiv hf hfg hgh hh
+        (exteriorPower.ιMulti K _ b ⊗ₜ (detLineEquivOfFinrankEqZero hC).toLinearMap) =
+      exteriorPower.ιMulti K _ u ⊗ₜ (detLineEquivOfFinrankEqZero hD).toLinearMap := by
+  have hg : finrank K (LinearMap.range g) = 0 :=
+    Nat.eq_zero_of_le_zero ((Submodule.finrank_le _).trans hC.le)
+  rw [detLineFourTermEquiv_tmul_eq_smul_tmul hf hfg hgh hh u 0 0
+      (γ := exteriorPower.ιMulti K _ 0) ?_ ?_ _ (detLineEquivOfFinrankEqZero_ιMulti hD _),
+    LinearEquiv.coe_coe, detLineEquivOfFinrankEqZero_ιMulti, one_smul]
+  · rw [exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_of_eq_zero hB,
+      ExteriorAlgebra.ιMulti_of_eq_zero (by rw [hA, hg])]
+  · rw [exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_of_eq_zero hC,
+      ExteriorAlgebra.ιMulti_of_eq_zero (by rw [hg, hD])]
 
 /-- Pairing the dual factor with a nonzero element `ω` of a line `L` is injective on `M ⊗ L^*`.
 With `TauCeti.detLineFourTermEquiv_tmul`, taking `L = det D` and `ω` the exterior product of the

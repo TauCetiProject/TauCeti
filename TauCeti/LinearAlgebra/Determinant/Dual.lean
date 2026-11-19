@@ -264,12 +264,6 @@ theorem detLineEquivDualOfKerCoker_apply_detLineEquivOfBijective_symm_one
     (hg : Function.Bijective g) (a : g.detLine) :
     detLineEquivDualOfKerCoker e₁ e₂ a ((detLineEquivOfBijective hf).symm 1) =
       detLineEquivOfBijective hg a := by
-  have hcf : finrank K (N ⧸ range f) = 0 :=
-    have := Submodule.Quotient.subsingleton_iff.mpr (range_eq_top.mpr hf.2)
-    finrank_zero_of_subsingleton
-  have hcg : finrank K (Q ⧸ range g) = 0 :=
-    have := Submodule.Quotient.subsingleton_iff.mpr (range_eq_top.mpr hg.2)
-    finrank_zero_of_subsingleton
   -- Both sides are linear in `a`, and `g.detLine` is spanned by `(detLineEquivOfBijective hg)⁻¹ 1`,
   -- the tensor of the empty exterior product of the kernel with a functional taking the value `1`
   -- on the empty exterior product of the cokernel; the same holds for `f`.
@@ -277,10 +271,8 @@ theorem detLineEquivDualOfKerCoker_apply_detLineEquivOfBijective_symm_one
     ⟨detLineEquivOfBijective hg a, by rw [← map_smul, smul_eq_mul, mul_one,
       LinearEquiv.symm_apply_apply]⟩
   rw [map_smul, map_smul, LinearMap.smul_apply, LinearEquiv.apply_symm_apply,
-    detLineEquivOfBijective_symm_one hg 0 (TauCeti.detLineEquivOfFinrankEqZero hcg).toLinearMap 0
-      (TauCeti.detLineEquivOfFinrankEqZero_ιMulti hcg _),
-    detLineEquivOfBijective_symm_one hf 0 (TauCeti.detLineEquivOfFinrankEqZero hcf).toLinearMap 0
-      (TauCeti.detLineEquivOfFinrankEqZero_ιMulti hcf _),
+    detLineEquivOfBijective_symm_one_eq_ιMulti_tmul hg,
+    detLineEquivOfBijective_symm_one_eq_ιMulti_tmul hf,
     detLineEquivDualOfKerCoker_tmul_tmul]
   simp [TauCeti.detLineEquivOfFinrankEqZero_ιMulti]
 
