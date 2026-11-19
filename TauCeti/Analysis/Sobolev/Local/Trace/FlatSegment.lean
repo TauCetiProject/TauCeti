@@ -32,9 +32,9 @@ takes the upper half-disc `D_r(x) ∩ {0 < im}` onto the model half-disc `TauCet
 first coordinate is the normal one, and the real interval `[x - r, x + r]` onto its flat segment.
 
 * `TauCeti.HasZeroRealAxisTrace hp U f` says that a real function `f` has zero trace on the real
-  axis inside `U`: for every real point `x` and every `r > 0` with `D̄_r(x) ∩ {0 ≤ im} ⊆ U`, the
-  function `f` transported to `TauCeti.halfDisc r` is represented by an element of
-  `W^{1,p}(halfDisc r)` whose trace vanishes on the flat segment.
+  axis inside `U`: for every real point `x` and every `r > 0` with
+  `closedBall x r ∩ {0 ≤ im} ⊆ U`, the function `f` transported to `TauCeti.halfDisc r` is
+  represented by an element of `W^{1,p}(halfDisc r)` whose trace vanishes on the flat segment.
 * `TauCeti.HasRealAxisTraceIn hp U L u` says that the trace of `u` on the real axis lies in `L`:
   `ℓ ∘ u` has zero trace for every continuous linear functional `ℓ` vanishing on `L`.
 
@@ -131,7 +131,7 @@ theorem halfDiscChart_symm_preimage {x : ℂ} (hx : x.im = 0) (r : ℝ) :
   simp only [SetLike.mem_coe, mem_halfDisc, mem_preimage, Opens.mem_upperHalf, Opens.mem_mk,
     mem_ball, dist_eq_norm, norm_halfDiscChart_symm_sub, im_halfDiscChart_symm hx]
 
-/-- The chart maps the closed model half-disc into `D̄_r(x) ∩ {0 ≤ im}`. -/
+/-- The chart maps the closed model half-disc into `closedBall x r ∩ {0 ≤ im}`. -/
 private theorem halfDiscChart_symm_mapsTo_closure {x : ℂ} (hx : x.im = 0) {r : ℝ} (hr : 0 < r) :
     MapsTo (halfDiscChart x).symm (closure (halfDisc r : Set (WithLp 2 (ℝ × ℝ))))
       (closedBall x r ∩ {z | 0 ≤ z.im}) := by
@@ -141,7 +141,7 @@ private theorem halfDiscChart_symm_mapsTo_closure {x : ℂ} (hx : x.im = 0) {r :
             exact mem_closedBall_zero_iff.1 hw.1,
     by rw [mem_ofPred_eq, im_halfDiscChart_symm hx]; exact hw.2⟩
 
-/-- The chart maps the flat segment into the real points of `D̄_r(x)`. -/
+/-- The chart maps the flat segment into the real points of `closedBall x r`. -/
 private theorem halfDiscChart_symm_mapsTo_flatSegment {x : ℂ} (hx : x.im = 0) {r : ℝ} :
     MapsTo (halfDiscChart x).symm (halfDiscFlatSegment r) (closedBall x r ∩ {z | z.im = 0}) :=
   fun w hw => ⟨by rw [mem_closedBall, dist_eq_norm, norm_halfDiscChart_symm_sub]
@@ -173,9 +173,10 @@ private theorem upperHalfDisc_subset (x : ℂ) (r : ℝ) :
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
 
 /-- **Zero trace on the real axis.** A real function `f` has zero trace on the real axis inside
-`U ⊆ ℂ` if for every real point `x` and every `r > 0` with `D̄_r(x) ∩ {0 ≤ im} ⊆ U`, the transported
-function `f ∘ (TauCeti.halfDiscChart x)⁻¹` on the model half-disc `TauCeti.halfDisc r` is
-represented by an element of `W^{1,p}(halfDisc r)` with zero trace on the flat segment. -/
+`U ⊆ ℂ` if for every real point `x` and every `r > 0` with `closedBall x r ∩ {0 ≤ im} ⊆ U`, the
+transported function `f ∘ (TauCeti.halfDiscChart x)⁻¹` on the model half-disc
+`TauCeti.halfDisc r` is represented by an element of `W^{1,p}(halfDisc r)` with zero trace on the
+flat segment. -/
 def HasZeroRealAxisTrace (U : Set ℂ) (f : ℂ → ℝ) : Prop :=
   ∀ x : ℂ, x.im = 0 → ∀ r : ℝ, 0 < r → closedBall x r ∩ {z | 0 ≤ z.im} ⊆ U →
     ∃ v ∈ W1p.halfDiscFlatTraceZeroSubmodule hp r,
@@ -253,8 +254,8 @@ theorem HasZeroRealAxisTrace.sum {ι : Type*} {s : Finset ι} {f : ι → ℂ �
 /-! ### Existence of the transported Sobolev function -/
 
 /-- **A half-disc Sobolev function is Sobolev on every admissible model half-disc.** If
-`f ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) 1` is real, `x` is real and `D̄_r(x) ∩ {0 ≤ im} ⊆ Ω`, then the
-transported function `f ∘ (TauCeti.halfDiscChart x)⁻¹` is represented by an element of
+`f ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) 1` is real, `x` is real and `closedBall x r ∩ {0 ≤ im} ⊆ Ω`,
+then the transported function `f ∘ (TauCeti.halfDiscChart x)⁻¹` is represented by an element of
 `W^{1,p}(halfDisc r)`. -/
 theorem MemWkpLoc.exists_w1p_halfDisc {Ω : Opens ℂ}
     (hf : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 f) {x : ℂ} (hx : x.im = 0) {r : ℝ}
