@@ -232,15 +232,14 @@ theorem realCliffordFourZeroVolume_mem_evenOdd_zero :
   rw [realCliffordFourZeroVolume_eq_prod]
   exact prod_map_ι_mem_evenOdd_zero_of_even_length (by decide)
 
+/-- `(2 + ω) (2 - ω) = (2 - ω) (2 + ω) = 3`. -/
 private theorem mul_volume_sub_volume :
-    (2 + realCliffordFourZeroVolume) * (2 - realCliffordFourZeroVolume) = 3 := by
-  rw [← (Commute.ofNat_left 2 _).mul_self_sub_mul_self_eq, realCliffordFourZeroVolume_mul_self]
-  norm_num
-
-private theorem sub_mul_volume_add_volume :
-    (2 - realCliffordFourZeroVolume) * (2 + realCliffordFourZeroVolume) = 3 := by
-  rw [← (Commute.ofNat_left 2 _).mul_self_sub_mul_self_eq', realCliffordFourZeroVolume_mul_self]
-  norm_num
+    (2 + realCliffordFourZeroVolume) * (2 - realCliffordFourZeroVolume) = 3 ∧
+      (2 - realCliffordFourZeroVolume) * (2 + realCliffordFourZeroVolume) = 3 := by
+  have h := algebraMap_add_smul_mul_algebraMap_sub_smul
+    (realCliffordFourZeroVolume_mul_self.trans (map_one _).symm) (2 : ℝ) 1
+  norm_num [map_ofNat] at h
+  exact h
 
 private theorem ι_single_zero_mul_volume :
     ι (realCliffordForm 4 0) (Pi.single 0 1) * realCliffordFourZeroVolume =
@@ -254,11 +253,11 @@ noncomputable def realCliffordFourZeroVolumeUnit : (CliffordAlgebra (realCliffor
   val := 2 + realCliffordFourZeroVolume
   inv := (3⁻¹ : ℝ) • (2 - realCliffordFourZeroVolume)
   val_inv := by
-    rw [mul_smul_comm, mul_volume_sub_volume, Algebra.smul_def,
+    rw [mul_smul_comm, mul_volume_sub_volume.1, Algebra.smul_def,
       ← map_ofNat (algebraMap ℝ (CliffordAlgebra (realCliffordForm 4 0))) 3, ← map_mul]
     norm_num
   inv_val := by
-    rw [smul_mul_assoc, sub_mul_volume_add_volume, Algebra.smul_def,
+    rw [smul_mul_assoc, mul_volume_sub_volume.2, Algebra.smul_def,
       ← map_ofNat (algebraMap ℝ (CliffordAlgebra (realCliffordForm 4 0))) 3, ← map_mul]
     norm_num
 
@@ -312,20 +311,12 @@ theorem realCliffordFourZeroVolumeConj_ι_single_zero :
       (5 / 3 : ℝ) • ι (realCliffordForm 4 0) (Pi.single 0 1) -
         (4 / 3 : ℝ) • (ι (realCliffordForm 4 0) (Pi.single 1 1) * ι _ (Pi.single 2 1) *
           ι _ (Pi.single 3 1)) := by
-  set e := ι (realCliffordForm 4 0) (Pi.single 0 1)
-  have key : (2 + realCliffordFourZeroVolume) * e * (2 - realCliffordFourZeroVolume) =
-      5 * e - 4 * (e * realCliffordFourZeroVolume) := by
-    have h : (2 + realCliffordFourZeroVolume) * e * (2 - realCliffordFourZeroVolume) =
-        4 * e - 2 * (e * realCliffordFourZeroVolume) + 2 * (realCliffordFourZeroVolume * e) -
-          realCliffordFourZeroVolume * e * realCliffordFourZeroVolume := by
-      noncomm_ring
-    rw [h, realCliffordFourZeroVolume_mul_ι, neg_mul, mul_assoc,
-      realCliffordFourZeroVolume_mul_self, mul_one]
-    noncomm_ring
-  rw [realCliffordFourZeroVolumeConj_apply, mul_smul_comm, key, ι_single_zero_mul_volume,
-    ← map_ofNat (algebraMap ℝ (CliffordAlgebra (realCliffordForm 4 0))) 5,
-    ← map_ofNat (algebraMap ℝ (CliffordAlgebra (realCliffordForm 4 0))) 4,
-    ← Algebra.smul_def, ← Algebra.smul_def]
+  have key := algebraMap_add_smul_mul_ι_mul_algebraMap_sub_smul
+    (realCliffordFourZeroVolume_mul_self.trans (map_one _).symm)
+    (realCliffordFourZeroVolume_mul_ι (Pi.single 0 1)) (2 : ℝ) 1
+  norm_num [map_ofNat] at key
+  rw [realCliffordFourZeroVolumeConj_apply, mul_smul_comm, key, realCliffordFourZeroVolume_mul_ι,
+    ι_single_zero_mul_volume]
   module
 
 /-- Conjugation by `2 + ω` moves the generator `e₁` out of the first step of the word
