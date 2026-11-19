@@ -58,8 +58,8 @@ formula, has the sign and normalization of the native loop invariant, which coun
 the determinant of a frame. Through the loop comparison, Souriau's index of paths whose Lagrangians
 close up inherits the invariance of the native index under free homotopies, along which the
 endpoints move (`Matrix.UnitaryGroup.maslovIndex_eq_of_homotopy_of_souriau_eq`). For a general
-path it is not invariant under arbitrary free homotopies, only under homotopies along whose
-endpoints the eigenvalue `1` of the Souriau map keeps its multiplicity
+path it is not invariant under arbitrary free homotopies, but it is invariant under homotopies
+along whose endpoints the eigenvalue `1` of the Souriau map keeps its multiplicity
 (`Matrix.UnitaryGroup.maslovIndex_eq_of_homotopy_of_rootMultiplicity_eq`).
 
 ## Main declarations
