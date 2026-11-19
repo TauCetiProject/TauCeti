@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import Mathlib.RingTheory.Ideal.Span
 public import TauCeti.LinearAlgebra.Multilinear.Span
 import TauCeti.LinearAlgebra.BilinearMap.Multilinear
+import TauCeti.LinearAlgebra.Prod
 import Mathlib.LinearAlgebra.SpecialLinearGroup
 import Mathlib.LinearAlgebra.Matrix.Adjugate
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
@@ -79,6 +80,8 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   `f` between two modules with bases `b` and `b'`.
 * `Module.Basis.prod_det_sumElim`: the determinant in a product basis of a family split between
   the two factors is the product of the two determinants.
+* `Module.Basis.det_reindex_prod_sumElim`: the same for the concatenation of two bases indexed by
+  `Fin n × Fin k` and `Fin m × Fin k`, listed in the flattened order of `Fin (n + m) × Fin k`.
 * `Module.Basis.exists_prod_det_eq_sign_smul_mul`: the same up to sign for a family with exactly
   as many members in the first factor as the rank of the first factor.
 * `Module.Basis.det_smul_smul_vecCons`: rescaling the first two of three vectors by `r` and `r'`
@@ -182,6 +185,25 @@ theorem prod_det_sumElim (b : Basis ι R M) (b' : Basis ι' R M') (v : ι → M)
       (LinearMap.inr R M M' ∘ v')) = Matrix.fromBlocks (b.toMatrix v) 0 0 (b'.toMatrix v') := by
     ext (i | i) (j | j) <;> simp [Basis.toMatrix_apply]
   rw [det_apply, h, Matrix.det_fromBlocks_zero₂₁, det_apply, det_apply]
+
+/-- The determinant in the concatenation `b ⊕ c` of bases indexed by `Fin n × Fin k` and
+`Fin m × Fin k`, indexed by `Fin (n + m) × Fin k` and flattened along `finProdFinEquiv`, of the
+family `(v₁, 0), …, (v_p, 0), (0, w₁), …, (0, w_q)` is the product of the determinants of `v` and
+`w` in the flattenings of `b` and `c`. -/
+theorem det_reindex_prod_sumElim {n m k p q r : ℕ} (b : Basis (Fin n × Fin k) R M)
+    (c : Basis (Fin m × Fin k) R M') (hp : n * k = p) (hq : m * k = q) (hr : (n + m) * k = r)
+    (hpq : p + q = r) (v : Fin p → M) (w : Fin q → M') :
+    (((b.prod c).reindex
+        ((Equiv.sumProdDistrib _ _ _).symm.trans (finSumFinEquiv.prodCongr (Equiv.refl _)))).reindex
+        (finProdFinEquiv.trans (finCongr hr))).det
+      (fun i ↦ Sum.elim (fun i ↦ (v i, 0)) (fun j ↦ (0, w j))
+        (finSumFinEquiv.symm (Fin.cast hpq.symm i))) =
+      (b.reindex (finProdFinEquiv.trans (finCongr hp))).det v *
+        (c.reindex (finProdFinEquiv.trans (finCongr hq))).det w := by
+  rw [← prod_reindex_finProdFinEquiv b c hp hq hr hpq, det_reindex, ← prod_det_sumElim]
+  congr 1
+  funext i
+  rcases i with i | j <;> simp
 
 /-- If the members of a family satisfying `P` lie in the first factor, the others lie in the
 second factor, and exactly `card ι` members satisfy `P`, then, after a permutation `σ` moving the

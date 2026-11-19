@@ -35,6 +35,9 @@ quadratic forms with the subgroup preserving both summands.
 * `Module.Basis.det_prod`: changes between product bases have the product determinant.
 * `Module.Basis.map_prodAssoc_prod`: reassociating a triple product carries the ordered product
   basis `(b × c) × d` to `b × (c × d)`, up to relabelling the index.
+* `Module.Basis.prod_reindex_finProdFinEquiv`: concatenating two bases indexed by `Fin n × Fin k`
+  and `Fin m × Fin k`, flattened lexicographically, is the flattening of their concatenation
+  indexed by `Fin (n + m) × Fin k`.
 * `LinearEquiv.det_skewProd`: the same determinant formula for block triangular
   automorphisms, independently of the off-diagonal block.
 * `LinearEquiv.nonempty_linearEquiv_of_isUnit_snd_comp_inr`: a linear equivalence `M × P ≃ N × P`
@@ -511,6 +514,41 @@ theorem map_prodAssoc_prod {R E F G : Type*} [Semiring R] [AddCommMonoid E] [Mod
     have h : Fin.cast (add_assoc m n p) (Fin.natAdd (m + n) k) =
         Fin.natAdd m (Fin.natAdd n k) := Fin.ext (Nat.add_assoc m n k)
     simp [Basis.prod_apply, h]
+
+/-- Flattening bases `b` and `c` indexed by `Fin n × Fin k` and `Fin m × Fin k` along
+`finProdFinEquiv` and concatenating them gives the basis `b ⊕ c` indexed by `Fin (n + m) × Fin k`,
+flattened along `finProdFinEquiv`: position `k i + a` lies in the first block exactly when
+`i < n`. -/
+theorem prod_reindex_finProdFinEquiv {R E F : Type*} [Semiring R] [AddCommMonoid E] [Module R E]
+    [AddCommMonoid F] [Module R F] {n m k p q r : ℕ} (b : Basis (Fin n × Fin k) R E)
+    (c : Basis (Fin m × Fin k) R F) (hp : n * k = p) (hq : m * k = q) (hr : (n + m) * k = r)
+    (hpq : p + q = r) :
+    ((b.reindex (finProdFinEquiv.trans (finCongr hp))).prod
+        (c.reindex (finProdFinEquiv.trans (finCongr hq)))).reindex
+        (finSumFinEquiv.trans (finCongr hpq)) =
+      ((b.prod c).reindex ((Equiv.sumProdDistrib _ _ _).symm.trans
+        (finSumFinEquiv.prodCongr (Equiv.refl _)))).reindex
+        (finProdFinEquiv.trans (finCongr hr)) := by
+  set e : (Fin n × Fin k) ⊕ (Fin m × Fin k) ≃ Fin (n + m) × Fin k :=
+    (Equiv.sumProdDistrib _ _ _).symm.trans (finSumFinEquiv.prodCongr (Equiv.refl _))
+  set G := (Equiv.sumCongr (finProdFinEquiv.trans (finCongr hp))
+    (finProdFinEquiv.trans (finCongr hq))).trans (finSumFinEquiv.trans (finCongr hpq))
+  have hG (x) : G x = finProdFinEquiv.trans (finCongr hr) (e x) := by
+    rcases x with ⟨i, a⟩ | ⟨j, a⟩
+    · ext
+      simp [G, e]
+    · ext
+      simp only [Equiv.trans_apply, Equiv.sumCongr_apply, Equiv.coe_trans, Sum.map_inr,
+        Function.comp_apply, finCongr_apply, finSumFinEquiv_apply_right, Fin.val_cast,
+        Fin.val_natAdd, finProdFinEquiv_apply_val, Equiv.sumProdDistrib_symm_apply_right,
+        Equiv.prodCongr_apply, Equiv.coe_refl, Prod.map_apply, id_eq, G, e]
+      rw [← hp]
+      ring
+  refine Basis.eq_of_apply_eq fun x ↦ ?_
+  obtain ⟨x, rfl⟩ := G.surjective x
+  conv_rhs => rw [Basis.reindex_apply, Basis.reindex_apply, hG, Equiv.symm_apply_apply,
+    Equiv.symm_apply_apply]
+  rcases x with x | x <;> simp [G, Basis.reindex_apply, Basis.prod_apply]
 
 end Module.Basis
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Measure
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Measure.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm

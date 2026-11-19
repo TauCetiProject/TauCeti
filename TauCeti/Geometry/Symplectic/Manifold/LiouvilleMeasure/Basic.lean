@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Measure
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Measure.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CommutingFlow
 public import TauCeti.Geometry.Symplectic.Manifold.Volume
 public import TauCeti.Geometry.Symplectic.Darboux.EuclideanBasis
