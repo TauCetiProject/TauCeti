@@ -47,9 +47,11 @@ plane. This file proves the resulting interior part of Gromov–Floer compactnes
   namespace `TauCeti.SmoothTwoForm.IsNondegenerate`).
 
 Both statements hold for the positive and for the negative plane. Since `ε a ≥ -B` for every
-solution, the bound `A + B` on the energy is nonnegative. Localizing the images of small discs
-into charts on a closed manifold, the bubbles at the points of `Z`, and breaking along the end are
-not treated here.
+solution, the bound `A + B` on the energy is nonnegative. Windows that move off to `∞` along the
+end, where Floer cylinders break off, are treated in
+`TauCeti.Geometry.Symplectic.Floer.Plane.Compactness.End`. Localizing the images of small discs
+into charts on a closed manifold, the bubbles at the points of `Z`, and the assembly of broken
+configurations are not treated here.
 
 ## References
 
