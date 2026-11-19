@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Module.LinearMap.FiniteRange
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
+public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.RingTheory.TensorProduct.Finite
 public import Mathlib.Tactic.Module
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 
@@ -594,6 +596,17 @@ theorem tensorEquivComplexification_baseChange {X Y : Type*}
     (T : X →L[ℝ] Y) (u : ℂ ⊗[ℝ] X) :
     tensorEquivComplexification Y (T.toLinearMap.baseChange ℂ u) =
       T.complexify (tensorEquivComplexification X u) := by ext <;> simp
+
+/-- The complexification of a finite-dimensional real vector space is finite-dimensional over
+`ℂ`. -/
+instance Complexification.instFiniteComplex [Module.Finite ℝ W] :
+    Module.Finite ℂ (Complexification W) :=
+  .equiv (tensorEquivComplexification W)
+
+/-- The complexification of a real vector space has complex dimension its real dimension. -/
+@[simp] theorem Complexification.finrank_complex :
+    Module.finrank ℂ (Complexification W) = Module.finrank ℝ W :=
+  (tensorEquivComplexification W).finrank_eq.symm.trans Module.finrank_baseChange
 
 end TauCeti
 
