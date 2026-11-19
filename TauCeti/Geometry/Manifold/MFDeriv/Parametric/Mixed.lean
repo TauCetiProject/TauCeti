@@ -64,6 +64,8 @@ theorem fderiv_mvfderiv_apply
   have hmv : DifferentiableAt 𝕜 (fun r ↦ (mvfderiv I (F r) x : E →L[𝕜] F')) a :=
     ((contMDiffAt_mvfderiv_of_contMDiffAt_uncurry (m := 1) hF h2).mdifferentiableAt
       one_ne_zero).differentiableAt
+  -- `TangentSpace I x` is `E` by definition but carries no normed-space instances, so `v` is
+  -- read in `E` to evaluate at it.
   have hdiff : DifferentiableAt 𝕜 (fun r ↦ mvfderiv I (F r) x v) a :=
     (ContinuousLinearMap.apply 𝕜 F' (show E from v)).differentiableAt.comp a hmv
   have hlhs : HasDerivAt (fun t : 𝕜 ↦ mvfderiv I (F (a + t • b)) x v)

@@ -189,6 +189,20 @@ end Smooth
 
 section Differential
 
+/-- The derivative of the projection `((q, Q), a) ↦ q`. -/
+private theorem hasMFDerivAt_fst_fst (z : (M × N) × A) :
+    HasMFDerivAt ((I.prod J).prod 𝓘(ℝ, A)) I (fun z : (M × N) × A ↦ z.1.1) z
+      ((ContinuousLinearMap.fst ℝ E F).comp (ContinuousLinearMap.fst ℝ (E × F) A)) :=
+  (hasMFDerivAt_fst (I := I) (I' := J) z.1).comp z
+    (hasMFDerivAt_fst (I := I.prod J) (I' := 𝓘(ℝ, A)) z)
+
+/-- The derivative of the projection `((q, Q), a) ↦ Q`. -/
+private theorem hasMFDerivAt_snd_fst (z : (M × N) × A) :
+    HasMFDerivAt ((I.prod J).prod 𝓘(ℝ, A)) J (fun z : (M × N) × A ↦ z.1.2) z
+      ((ContinuousLinearMap.snd ℝ E F).comp (ContinuousLinearMap.fst ℝ (E × F) A)) :=
+  (hasMFDerivAt_snd (I := I) (I' := J) z.1).comp z
+    (hasMFDerivAt_fst (I := I.prod J) (I' := 𝓘(ℝ, A)) z)
+
 variable [IsManifold I ∞ M] [IsManifold J ∞ N]
 
 /-- **The family relation pulls the Liouville primitive back to `dS - ∂_a S (da)`.** At every
@@ -209,12 +223,10 @@ theorem mpullback_familyCorrespondence_liouvilleForm_apply
       mvfderiv ((I.prod J).prod 𝓘(ℝ, A)) S z (v 0) - familyFiberDeriv S z (v 0).2 := by
   have hq : mfderiv ((I.prod J).prod 𝓘(ℝ, A)) I (fun z : (M × N) × A ↦ z.1.1) z (v 0) =
       ((v 0).1.1 : E) :=
-    DFunLike.congr_fun ((hasMFDerivAt_fst (I := I) (I' := J) z.1).comp z
-      (hasMFDerivAt_fst (I := I.prod J) (I' := 𝓘(ℝ, A)) z)).mfderiv (v 0)
+    DFunLike.congr_fun (hasMFDerivAt_fst_fst z).mfderiv (v 0)
   have hQ : mfderiv ((I.prod J).prod 𝓘(ℝ, A)) J (fun z : (M × N) × A ↦ z.1.2) z (v 0) =
       ((v 0).1.2 : F) :=
-    DFunLike.congr_fun ((hasMFDerivAt_snd (I := I) (I' := J) z.1).comp z
-      (hasMFDerivAt_fst (I := I.prod J) (I' := 𝓘(ℝ, A)) z)).mfderiv (v 0)
+    DFunLike.congr_fun (hasMFDerivAt_snd_fst z).mfderiv (v 0)
   have hSz : MDifferentiableAt ((I.prod J).prod 𝓘(ℝ, A)) 𝓘(ℝ) S z :=
     (hS z).mdifferentiableAt (by simp)
   have hSx : MDifferentiableAt (I.prod J) 𝓘(ℝ) (fun x ↦ S (x, z.2)) z.1 :=
@@ -258,15 +270,11 @@ private theorem fst_eq_zero_of_mfderiv_familyCorrespondence_eq_zero
   rw [h₂, map_zero] at hπ₂
   -- The base points of the two components are `q` and `Q`.
   rw [show (π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) ∘
-      fun z ↦ (familyCorrespondence I J S z).1) = Prod.fst ∘ Prod.fst from
-    funext fun _ ↦ by simp [familyCorrespondence],
-    ((hasMFDerivAt_fst (I := I) (I' := J) z.1).comp z
-      (hasMFDerivAt_fst (I := I.prod J) (I' := 𝓘(ℝ, A)) z)).mfderiv] at hπ₁
+      fun z ↦ (familyCorrespondence I J S z).1) = fun z ↦ z.1.1 from
+    funext fun _ ↦ by simp [familyCorrespondence], (hasMFDerivAt_fst_fst z).mfderiv] at hπ₁
   rw [show (π (F →L[ℝ] ℝ) (fun y : N ↦ TangentSpace J y →L[ℝ] ℝ) ∘
-      fun z ↦ (familyCorrespondence I J S z).2) = Prod.snd ∘ Prod.fst from
-    funext fun _ ↦ by simp [familyCorrespondence],
-    ((hasMFDerivAt_snd (I := I) (I' := J) z.1).comp z
-      (hasMFDerivAt_fst (I := I.prod J) (I' := 𝓘(ℝ, A)) z)).mfderiv] at hπ₂
+      fun z ↦ (familyCorrespondence I J S z).2) = fun z ↦ z.1.2 from
+    funext fun _ ↦ by simp [familyCorrespondence], (hasMFDerivAt_snd_fst z).mfderiv] at hπ₂
   exact Prod.ext hπ₁ hπ₂
 
 /-- If the source covector `d_q S` of the family relation does not move in the direction `(0, b)`,
@@ -299,11 +307,7 @@ private theorem fderiv_mvfderiv_fst_apply_eq_zero
     exact (mfderiv_comp_apply z.2
       ((contMDiff_familyCorrespondence_fst hS _).mdifferentiableAt (by simp)) hι b).trans
         (by rw [mfderiv_prod_right]; exact h₁)
-  rw [(hasMFDerivAt_mk (I := I) z.1.1 hd.hasFDerivAt.hasMFDerivAt).mfderiv] at h
-  -- The tangent spaces of `A` and of the model `E × (E →L[ℝ] ℝ)` are these spaces themselves.
-  have h' : (ContinuousLinearMap.inr ℝ E (E →L[ℝ] ℝ) ∘L fderiv ℝ c z.2) b = 0 := h
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inr_apply, Prod.mk_eq_zero] at h'
-  exact h'.2
+  exact (mfderiv_mk_apply_eq_zero_iff z.1.1 hd.hasFDerivAt.hasMFDerivAt b).mp h
 
 /-- If the target covector `-d_Q S` of the family relation does not move in the direction
 `(0, b)`, then `a ↦ d_Q S((q, Q), a)` is differentiable with zero derivative in the direction
@@ -336,13 +340,10 @@ private theorem fderiv_mvfderiv_snd_apply_eq_zero
     exact (mfderiv_comp_apply z.2
       ((contMDiff_familyCorrespondence_snd hS _).mdifferentiableAt (by simp)) hι b).trans
         (by rw [mfderiv_prod_right]; exact h₂)
-  rw [(hasMFDerivAt_mk (I := J) (c := fun a ↦ -c a) z.1.2
-    hd.hasFDerivAt.neg.hasMFDerivAt).mfderiv] at h
-  -- The tangent spaces of `A` and of the model `F × (F →L[ℝ] ℝ)` are these spaces themselves.
-  have h' : (ContinuousLinearMap.inr ℝ F (F →L[ℝ] ℝ) ∘L (-fderiv ℝ c z.2)) b = 0 := h
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inr_apply, Prod.mk_eq_zero,
-    neg_apply, neg_eq_zero] at h'
-  exact h'.2
+  -- The tangent space of `A` at `z.2` is `A` itself.
+  have h' : (-fderiv ℝ c z.2) b = 0 := (mfderiv_mk_apply_eq_zero_iff (c := fun a ↦ -c a) z.1.2
+    hd.hasFDerivAt.neg.hasMFDerivAt b).mp h
+  rwa [neg_apply, neg_eq_zero] at h'
 
 /-- If neither covector of the family relation moves in the direction `(0, b)`, then the fibre
 derivative `∂_a S(·)(b)` does not move on `M × N` either: by the symmetry of mixed derivatives its
@@ -488,6 +489,14 @@ private theorem finrank_sub_finrank_strongDual :
   rw [finrank_prod, finrank_prod, ContinuousLinearMap.dual_finrank_eq]
   omega
 
+omit [TopologicalSpace H] [TopologicalSpace H'] in
+/-- The fibre-critical set has half the dimension of `T*M × T*N`. -/
+private theorem two_mul_finrank_eq_finrank_cotangent :
+    2 * finrank ℝ (Fin (finrank ℝ E + finrank ℝ F) → ℝ) =
+      finrank ℝ ((E × (E →L[ℝ] ℝ)) × (F × (F →L[ℝ] ℝ))) := by
+  simp only [finrank_fin_fun, finrank_prod, ContinuousLinearMap.dual_finrank_eq]
+  ring
+
 /-- The **fibre-critical set** `{z | ∂_a S z = 0}` of a smooth transverse family, as a charted space
 modelled on `Fin (dim M + dim N) → ℝ`: it is a regular level of the fibre derivative, with the
 atlas of `TauCeti.regularLevelChartedSpace`. -/
@@ -602,10 +611,9 @@ theorem isExactLagrangianMap_familyCorrespondence_comp_coe :
   have hcoe := (isSmoothEmbedding_coe_familyCriticalSet hS hreg).isImmersion.contMDiff
   refine (SmoothTwoForm.IsNondegenerate.isExactLagrangianMap_iff_of_finrank
     (twistedProd_symplecticForm I M J N) ((contMDiff_familyCorrespondence hS).comp hcoe)
-    (injective_mfderiv_familyCorrespondence_comp_coe hS hreg) ?_).mpr
+    (injective_mfderiv_familyCorrespondence_comp_coe hS hreg)
+    two_mul_finrank_eq_finrank_cotangent).mpr
       ⟨hS.comp hcoe, mpullback_familyCorrespondence_comp_coe_liouvilleForm hS hreg⟩
-  simp only [finrank_fin_fun, finrank_prod, ContinuousLinearMap.dual_finrank_eq]
-  ring
 
 /-- **A transverse generating family defines a Lagrangian immersion.** On finite-dimensional
 boundaryless manifolds `M` and `N`, the family relation `((q, Q), a) ↦ ((q, d_q S), (Q, -d_Q S))`
@@ -625,9 +633,7 @@ theorem isLagrangianImmersion_familyCorrespondence_comp_coe :
       (isSmoothEmbedding_coe_familyCriticalSet hS hreg).isImmersion.contMDiff
       ).isImmersion_of_injective_mfderiv (by simp)
       (injective_mfderiv_familyCorrespondence_comp_coe hS hreg),
-    hL.isLagrangianMap.isIsotropicMap, ?_⟩
-  simp only [finrank_fin_fun, finrank_prod, ContinuousLinearMap.dual_finrank_eq]
-  ring
+    hL.isLagrangianMap.isIsotropicMap, two_mul_finrank_eq_finrank_cotangent⟩
 
 end CriticalSet
 
