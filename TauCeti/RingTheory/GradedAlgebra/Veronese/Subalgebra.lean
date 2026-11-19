@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import Mathlib.RingTheory.GradedAlgebra.RingHom
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.RingTheory.GradedAlgebra.Nakayama
+import TauCeti.Algebra.DirectSum.Supported
 
 /-!
 # The Veronese subalgebra of a graded algebra
@@ -259,12 +260,9 @@ theorem coe_decompose_veroneseGrading [NeZero d] (x : veronese 𝒜 d) (k : ℕ)
 variable {𝒜 d} in
 /-- An element of the Veronese subalgebra has no component in a degree not divisible by `d`. -/
 theorem decompose_coe_eq_zero_of_not_dvd (x : veronese 𝒜 d) {n : ℕ} (hn : ¬d ∣ n) :
-    (decompose 𝒜 (x : A) n : A) = 0 := by
-  obtain ⟨x, hx⟩ := x
-  induction hx using Submodule.iSup_induction' with
-  | mem k x hx => exact decompose_of_mem_ne 𝒜 hx fun h ↦ hn ⟨k, h.symm⟩
-  | zero => simp
-  | add x y _ _ hx hy => simp [hx, hy]
+    (decompose 𝒜 (x : A) n : A) = 0 :=
+  (TauCeti.DirectSum.mem_iSup_iff_decompose_eq_zero 𝒜 (Set.range (d * ·))).mp
+    ((iSup_range' 𝒜 (d * ·)).symm ▸ mem_veronese.mp x.2) n fun ⟨k, hk⟩ ↦ hn ⟨k, hk.symm⟩
 
 end GradedAlgebra
 
