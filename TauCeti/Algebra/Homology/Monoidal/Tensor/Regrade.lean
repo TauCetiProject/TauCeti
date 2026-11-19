@@ -96,23 +96,6 @@ instance [K.HasTensor L] :
 
 variable [K.HasTensor L]
 
-/-- Identifying the degrees of the two factors of a summand of the tensor product of the
-regradings along equalities of indices does not change its inclusion. -/
-private lemma restrictionXIso_inv_tensorHom_restrictionXIso_inv_ιTensorObj
-    {a b a' b' : ℤ}
-    (ha : (embeddingUpIntDownIntSub n₁).f a' = (embeddingUpIntDownIntSub n₁).f a)
-    (hb : (embeddingUpIntDownIntSub n₂).f b' = (embeddingUpIntDownIntSub n₂).f b) (k : ℤ)
-    (h : a + b = k) (h' : a' + b' = k) :
-    ((K.restrictionXIso (embeddingUpIntDownIntSub n₁) ha).inv ⊗ₘ
-        (L.restrictionXIso (embeddingUpIntDownIntSub n₂) hb).inv) ≫
-      ιTensorObj (K.restriction (embeddingUpIntDownIntSub n₁))
-        (L.restriction (embeddingUpIntDownIntSub n₂)) a' b' k h' =
-      ιTensorObj (K.restriction (embeddingUpIntDownIntSub n₁))
-        (L.restriction (embeddingUpIntDownIntSub n₂)) a b k h := by
-  obtain rfl := (embeddingUpIntDownIntSub n₁).injective_f ha
-  obtain rfl := (embeddingUpIntDownIntSub n₂).injective_f hb
-  simp [restrictionXIso, -embeddingUpIntDownIntSub_f]
-
 /-- The component of the comparison between regradings of tensor products on the summand
 `K_(n₁ - a) ⊗ L_(n₂ - b)` of the tensor product of the regradings: the inclusion of this summand
 into `(K ⊗ L)_(n₁ + n₂ - k)`, with the sign `(-1)^(n₁ (n₂ - b))`. -/
@@ -236,7 +219,10 @@ private lemma regradeTensorSummand_comp_regradeTensorInvF (a b k : ℤ) (h : a +
         (L.restriction (embeddingUpIntDownIntSub n₂)) a b k h := by
   rw [Linear.units_smul_comp, ι_regradeTensorInvF, regradeTensorInvSummand_def, smul_smul,
     Int.units_mul_self, one_smul]
-  exact restrictionXIso_inv_tensorHom_restrictionXIso_inv_ιTensorObj n₁ n₂ K L _ _ k h _
+  -- `restrictionXIso` is `XIsoOfEq` of the regraded complex up to the definitional identification
+  -- `C^k = K_(n-k)`, so the index-relabelling lemma for `ιTensorObj` applies to the regradings.
+  exact XIsoOfEq_hom_tensorHom_XIsoOfEq_hom_ιTensorObj (K.restriction _) (L.restriction _)
+    (sub_sub_cancel n₁ a).symm (sub_sub_cancel n₂ b).symm k h _
 
 private lemma ι_regradeTensorInvF_comp_regradeTensorHom_f (p q k : ℤ)
     (h : p + q = n₁ + n₂ - k) :
