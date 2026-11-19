@@ -49,7 +49,9 @@ counting the countable models of an infinitary sentence.
   equivalence of tuples, and hence each level, has Borel graph;
 * `TauCeti.RelationalConfiguration.exists_limit_of_bfEquiv_chain` — a chain of configurations on
   `ℕ` whose consecutive members are equivalent at depth `α i + ω`, for a monotone `α`, has a limit
-  configuration equivalent to its `i`-th member at depth `α i`.
+  configuration equivalent to its `i`-th member at depth `α i`;
+* `TauCeti.RelationalConfiguration.exists_bfEquiv_of_chain` — the same when consecutive members
+  are equivalent at depth `α i` and the depths grow by at least `ω` at each step.
 
 ## References
 
@@ -219,5 +221,17 @@ theorem exists_limit_of_bfEquiv_chain {c : ℕ → RelationalConfiguration L ℕ
   refine ⟨@ofStructure L ℕ S, fun i => bfEquivSetoid_apply.mpr ?_⟩
   rw [toStructure_ofStructure]
   exact hS i
+
+/-- If each configuration of a sequence on `ℕ` is equivalent at depth `α i` to the previous one,
+and the depths grow by at least `ω` at each step, some configuration is equivalent at depth `α i`
+to the `i`-th member, for every `i`. -/
+theorem exists_bfEquiv_of_chain {c : ℕ → RelationalConfiguration L ℕ} {α : ℕ → Ordinal.{o}}
+    (hα : ∀ i, α i + Ordinal.omega0 ≤ α (i + 1))
+    (hc : ∀ i, bfEquivSetoid L ℕ (α i) (c i) (c (i + 1))) :
+    ∃ d, ∀ i, bfEquivSetoid L ℕ (α i) d (c i) := by
+  obtain ⟨d, hd⟩ := exists_limit_of_bfEquiv_chain (c := fun i => c (i + 1))
+    (monotone_nat_of_le_succ fun i => le_self_add.trans (hα i))
+    fun i => bfEquivSetoid_anti (hα i) (hc (i + 1))
+  exact ⟨d, fun i => (bfEquivSetoid L ℕ _).trans (hd i) ((bfEquivSetoid L ℕ _).symm (hc i))⟩
 
 end TauCeti.RelationalConfiguration

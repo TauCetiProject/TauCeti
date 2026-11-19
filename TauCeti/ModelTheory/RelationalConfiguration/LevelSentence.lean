@@ -9,6 +9,7 @@ public import TauCeti.Data.Setoid.Basic
 public import TauCeti.ModelTheory.RelationalConfiguration.BackAndForth
 public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
 public import TauCeti.ModelTheory.Scott.Formula
+import TauCeti.ModelTheory.BackAndForth.Karp
 
 /-!
 # Back-and-forth levels are model classes
@@ -25,6 +26,11 @@ So below `ω₁` every back-and-forth class of configurations is cut out by a si
 what lets counting arguments split a class of countable models along a back-and-forth level using
 only sentences, as in the analysis of minimal counterexamples to Vaught's conjecture.
 
+Conversely, for each sentence with countable branching, back-and-forth equivalence at every level
+from its quantifier rank on preserves satisfaction of it, and that rank is countable. So the model
+class of such a sentence is a union of level classes from some countable level on. This needs no
+countability of the carrier or of the vocabulary.
+
 ## Main definitions
 
 * `TauCeti.RelationalConfiguration.scottSentenceAtLevel c α`: the Scott formula at level `α` of
@@ -39,6 +45,9 @@ only sentences, as in the analysis of minimal counterexamples to Vaught's conjec
   `c.scottSentenceAtLevel α` on the carrier of `c` is the `bfEquivSetoid L V α`-class of `c`.
 * `TauCeti.RelationalConfiguration.modelsOf_scottSentenceAtLevel_eq_iff`: two configurations have
   the same level-`α` model class exactly when they are `α`-equivalent.
+* `TauCeti.RelationalConfiguration.exists_bfLevel_saturated_modelsOf`: for each sentence with
+  countable branching, back-and-forth equivalence from some countable level on preserves
+  satisfaction of it.
 
 ## References
 
@@ -52,7 +61,7 @@ only sentences, as in the analysis of minimal counterexamples to Vaught's conjec
 
 public section
 
-universe u v w w' o
+universe u v w w' o uι
 
 open FirstOrder FirstOrder.Language
 open scoped Ordinal
@@ -123,5 +132,35 @@ theorem modelsOf_scottSentenceAtLevel_eq_iff {c d : RelationalConfiguration L V}
     Set.ext fun _ => Setoid.comm' _
   rw [modelsOf_scottSentenceAtLevel c hα, modelsOf_scottSentenceAtLevel d hα, hclass, hclass]
   exact Setoid.ofPred_rel_eq_iff
+
+end TauCeti.RelationalConfiguration
+
+namespace TauCeti.RelationalConfiguration
+
+variable {L : Language.{u, v}} [L.IsRelational]
+
+/-- **Saturation of a sentence.** For each sentence `θ` with countable branching there is a
+countable level `α` such that configurations on `V` that are back-and-forth equivalent at any level
+`β ≥ α` agree on `θ`. The level is the quantifier rank of `θ`, which is countable; no countability
+of the carrier or of the vocabulary is needed. -/
+theorem exists_bfLevel_saturated_modelsOf {V : Type w} {ι : Type uι} [Countable ι]
+    (θ : L.SentenceInf ι) :
+    ∃ α : Ordinal.{o}, α < ω₁ ∧ ∀ β ≥ α, ∀ c d : RelationalConfiguration L V,
+      bfEquivSetoid L V β c d → (c ∈ modelsOf θ ↔ d ∈ modelsOf θ) := by
+  -- the quantifier rank of `θ` is countable, so it is the lift of a countable level `α`
+  have hθ : Ordinal.lift.{o} θ.qrank ≤ Ordinal.lift.{uι} (ω₁ : Ordinal.{o}) := by
+    simpa only [Ordinal.lift_omega, Ordinal.lift_one] using
+      Ordinal.lift_le.{o}.2 (BoundedFormulaInf.qrank_lt_omega_one θ).le
+  obtain ⟨α, hα⟩ := Ordinal.mem_range_lift_of_le hθ
+  refine ⟨α, ?_, fun β hβ c d hcd => ?_⟩
+  · rw [← Ordinal.lift_lt.{uι}, hα]
+    simpa only [Ordinal.lift_omega, Ordinal.lift_one] using
+      Ordinal.lift_lt.{o}.2 (BoundedFormulaInf.qrank_lt_omega_one θ)
+  · have h := @BFEquiv.realize_iff_of_qrank_le L V V c.toStructure d.toStructure _ ι 0 θ β
+      Fin.elim0 Fin.elim0 (bfEquivSetoid_apply.1 hcd) (hα ▸ Ordinal.lift_le.2 hβ)
+      Empty.elim Empty.elim
+    simpa only [mem_modelsOf, SentenceInf.realize_def, FormulaInf.realize_def,
+      Subsingleton.elim default (Fin.elim0 : Fin 0 → V),
+      Subsingleton.elim default (Empty.elim : Empty → V)] using h
 
 end TauCeti.RelationalConfiguration
