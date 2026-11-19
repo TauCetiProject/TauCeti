@@ -23,6 +23,9 @@ The norm of `T` is the operator norm of the underlying map, and the adjoint is i
 `T ↦ (T, T†)` is then an isometry onto the closed set of pairs satisfying the adjoint identity,
 `AdjointableMap A E F` is complete when `E` and `F` are. The ring structure on
 `AdjointableMap A E E` is assembled with `FunLike.compRing`, as for `ContinuousLinearMap`.
+Storing a map together with a partner map, and the completeness argument (the range of
+`T ↦ (T, T†)` is an intersection of closed equations), follow Mathlib's `DoubleCentralizer`
+(`Mathlib/Analysis/CStarAlgebra/Multiplier.lean`).
 
 For right Hilbert `A`-modules, instantiate the coefficient type with `Aᵐᵒᵖ`. No unit,
 fullness, countable generation or nonzero-module hypothesis is needed: for the zero module,
@@ -102,8 +105,8 @@ instance instFunLike : FunLike (AdjointableMap A E F) E F where
     obtain ⟨S, S', hS⟩ := S
     obtain ⟨T, T', hT⟩ := T
     obtain rfl : S = T := ContinuousLinearMap.coe_injective (DFunLike.coe_injective h)
-    obtain rfl : S' = T' := ContinuousLinearMap.ext fun y =>
-      ext_inner_left (A := A) fun x => (hS x y).symm.trans (hT x y)
+    obtain rfl : S' = T' := DFunLike.coe_injective
+      ((isAdjointPair_inner_iff.mpr hS).unique_right_cstarModule (isAdjointPair_inner_iff.mpr hT))
     rfl
 
 instance instContinuousSemilinearMapClass :
@@ -155,7 +158,8 @@ theorem adjoint_adjoint (T : AdjointableMap A E F) : T.adjoint.adjoint = T := (r
 theorem eq_adjoint_iff (S : AdjointableMap A E F) (T : AdjointableMap A F E) :
     S = T.adjoint ↔ ∀ x y, inner A (S x) y = inner A x (T y) := by
   refine ⟨fun h x y => h ▸ T.adjoint_inner_left x y, fun h => ext fun x => ?_⟩
-  exact ext_inner_right (A := A) fun y => (h x y).trans (T.adjoint_inner_left x y).symm
+  exact congrFun ((isAdjointPair_inner_iff.mpr h).unique_left_cstarModule
+    (isAdjointPair_inner_iff.mpr T.adjoint.inner_map_left)) x
 
 /-- An adjointable map and its adjoint form an adjoint pair in the sense of
 `LinearMap.IsAdjointPair` for the flipped module inner products. -/
@@ -387,15 +391,16 @@ variable [StarOrderedRing A]
 
 /-- The adjoint is isometric: `‖T†‖ = ‖T‖`. -/
 @[simp]
-theorem norm_adjoint (T : AdjointableMap A E F) : ‖T.adjoint‖ = ‖T‖ :=
-  T.isAdjointPair.norm_eq_cstarModule (T := T.toContinuousLinearMap)
-    (S := T.adjointMap)
+theorem norm_adjoint (T : AdjointableMap A E F) : ‖T.adjoint‖ = ‖T‖ := by
+  rw [← norm_toContinuousLinearMap, ← norm_toContinuousLinearMap, ← adjointMap_eq]
+  exact T.isAdjointPair.norm_eq_cstarModule
 
 /-- The C⋆-identity for adjointable maps: `‖T† ∘ T‖ = ‖T‖ ^ 2`. -/
 theorem norm_adjoint_comp_self (T : AdjointableMap A E F) :
-    ‖T.adjoint.comp T‖ = ‖T‖ ^ 2 :=
-  T.isAdjointPair.norm_adjoint_comp_self_cstarModule (T := T.toContinuousLinearMap)
-    (S := T.adjointMap)
+    ‖T.adjoint.comp T‖ = ‖T‖ ^ 2 := by
+  rw [← norm_toContinuousLinearMap, ← norm_toContinuousLinearMap, toContinuousLinearMap_comp,
+    ← adjointMap_eq]
+  exact T.isAdjointPair.norm_adjoint_comp_self_cstarModule
 
 /-- The map `T ↦ (T, T†)` into pairs of bounded maps is an isometry for the supremum norm. -/
 private theorem isometry_prodMk_adjointMap :
@@ -507,6 +512,12 @@ def toContinuousLinearMapAlgHom : AdjointableMap A E E →ₐ[ℂ] E →L[ℂ] E
 theorem toContinuousLinearMapAlgHom_apply (T : AdjointableMap A E E) :
     toContinuousLinearMapAlgHom A E T = T.toContinuousLinearMap := (rfl)
 
+@[simp]
+theorem toContinuousLinearMap_algebraMap (c : ℂ) :
+    (algebraMap ℂ (AdjointableMap A E E) c).toContinuousLinearMap =
+      algebraMap ℂ (E →L[ℂ] E) c :=
+  (toContinuousLinearMapAlgHom A E).commutes c
+
 noncomputable instance instNormedRing : NormedRing (AdjointableMap A E E) where
   __ := instNormedAddCommGroup
   __ := instRing
@@ -519,6 +530,13 @@ instance instStar : Star (AdjointableMap A E E) where
   star := adjoint
 
 theorem star_eq_adjoint (T : AdjointableMap A E E) : star T = T.adjoint := (rfl)
+
+@[simp]
+theorem coe_star (T : AdjointableMap A E E) : ⇑(star T) = T.adjoint := (rfl)
+
+@[simp]
+theorem toContinuousLinearMap_star (T : AdjointableMap A E E) :
+    (star T).toContinuousLinearMap = T.adjoint.toContinuousLinearMap := (rfl)
 
 instance instStarRing : StarRing (AdjointableMap A E E) where
   star_involutive := adjoint_adjoint
