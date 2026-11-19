@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.CoverGeneration
 public import TauCeti.Topology.MetricSpace.Lebesgue
 public import Mathlib.CategoryTheory.Functor.OfSequence
+import TauCeti.Topology.Path.Basic
 import TauCeti.Topology.UnitInterval.Contractible
 
 /-!
@@ -276,20 +277,13 @@ private lemma locVal_congr_index (i j : ι) {x y : X} (P : Path x y) (hi : ∀ t
   rw [h']
   simp
 
-omit hF in
-/-- A concatenation of two paths lying in a set lies in that set. -/
-private lemma trans_mem_of_mem {x y z : X} (P : Path x y) (Q : Path y z) {s : Set X}
-    (hP : ∀ t, P t ∈ s) (hQ : ∀ t, Q t ∈ s) : ∀ t, P.trans Q t ∈ s :=
-  range_subset_iff.1 <| (Path.trans_range _ _).trans_subset <|
-    union_subset (range_subset_iff.2 hP) (range_subset_iff.2 hQ)
-
 /-- The local value of a concatenation is the composite of the local values. -/
 private lemma locVal_trans (i : ι) {x y z : X} (P : Path x y) (Q : Path y z)
     (hP : ∀ t, P t ∈ U i) (hQ : ∀ t, Q t ∈ U i) :
-    locVal hU F hF i (P.trans Q) (trans_mem_of_mem P Q hP hQ) =
+    locVal hU F hF i (P.trans Q) (Path.trans_mem_of_mem P Q hP hQ) =
       locVal hU F hF i P hP ≫ locVal hU F hF i Q hQ := by
   have h : (P.trans Q).codRestrict (x := ⟨x, P.source ▸ hP 0⟩) (y := ⟨z, Q.target ▸ hQ 1⟩)
-      (trans_mem_of_mem P Q hP hQ) =
+      (Path.trans_mem_of_mem P Q hP hQ) =
       (P.codRestrict (x := ⟨x, P.source ▸ hP 0⟩) (y := ⟨y, P.target ▸ hP 1⟩) hP).trans
         (Q.codRestrict (x := ⟨y, P.target ▸ hP 1⟩) (y := ⟨z, Q.target ▸ hQ 1⟩) hQ) := by
     ext t
