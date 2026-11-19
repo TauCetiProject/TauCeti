@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.VaryingStructure
 
 /-!
 # Local-coordinate linearization of the inhomogeneous Floer equation
@@ -23,15 +24,15 @@ the derivative is `Y(u)(∂t u - X_Kt)` (`hasDerivAt_floerOperator_add_smul`).
 
 `floerLinearization` is the map-direction operator with coefficients fixed. On a direction
 multiplied by a cutoff `β(s)` it acts as `β D ξ + β' ξ` (`floerLinearization_smul_fst`), a case
-of the same rule for any operator `∂s + J ∂t + A` (`cauchyRiemann_smul_fst`); in particular,
+of the same rule for any operator `∂s + J ∂t + A` (`TauCeti.cauchyRiemann_smul_fst` in
+`TauCeti.Geometry.Symplectic.JHolomorphic.Energy.VaryingStructure`); in particular,
 conjugated by an exponential weight `e^{δ s}` it becomes `floerLinearization - δ`
 (`floerLinearization_exp_smul`). Its value at a point depends only on the germ of the direction
 there (`floerLinearization_congr_of_eventuallyEq`), and on the Floer data only through their
 values at that point (`floerLinearization_congr_data`). For `C¹` coefficients `J` and `C²`
 Hamiltonians it is continuous wherever the map and the direction are `C¹`
 (`continuousAt_floerLinearization`), and continuous everywhere when they are so everywhere
-(`continuous_floerLinearization`), so its `L²` norms over compact sets are finite; any operator
-`∂s + J ∂t + A` with continuous `J` and `A` is continuous on `C¹` maps (`continuous_cauchyRiemann`).
+(`continuous_floerLinearization`), so its `L²` norms over compact sets are finite.
 It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
 (`floerLinearization_eq_add`), whose coefficient is continuous in `z` where the data are `C¹`
 (`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`).
@@ -219,35 +220,6 @@ theorem floerLinearization_eq_add (ω : SymplecticForm V)
         ω.floerLinearizationCoeff J Ks Kt u z (ξ z) := by
   simp only [floerLinearization_def, floerLinearizationCoeff_apply, map_sub]
   abel
-
-omit [FiniteDimensional ℝ V] in
-/-- **Multiplying by a cutoff in `s`.** If `β` has derivative `β'` at `s`, the real Cauchy–Riemann
-operator `P = ∂s + J ∂t + A` sends `β(s) ξ` to `β(s) P ξ + β' ξ` at `z = (s, t)`: the factor only
-differentiates in the `s` direction, where `P` has the leading term `∂s`. -/
-theorem _root_.TauCeti.cauchyRiemann_smul_fst (J A : ℝ × ℝ → V →L[ℝ] V) {ξ : ℝ × ℝ → V} {z : ℝ × ℝ}
-    {β : ℝ → ℝ} {β' : ℝ} (hβ : HasDerivAt β β' z.1) (hξ : DifferentiableAt ℝ ξ z) :
-    fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineReal +
-        J z (fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineImag) + A z (β z.1 • ξ z) =
-      β z.1 • (fderiv ℝ ξ z stdComplexLineReal + J z (fderiv ℝ ξ z stdComplexLineImag) +
-        A z (ξ z)) + β' • ξ z := by
-  have hd : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1 • ξ w) _ z :=
-    (hβ.hasFDerivAt.comp z hasFDerivAt_fst).smul hξ.hasFDerivAt
-  rw [hd.fderiv]
-  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, comp_apply,
-    ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul,
-    Function.comp_apply, toSpanSingleton_apply, one_smul, zero_smul, add_zero]
-  module
-
-omit [FiniteDimensional ℝ V] in
-/-- The real Cauchy–Riemann operator `P = ∂s + J ∂t + A` sends a `C¹` map `ξ` to a continuous map
-when its coefficients `J` and `A` are continuous. -/
-theorem _root_.TauCeti.continuous_cauchyRiemann {J A : ℝ × ℝ → V →L[ℝ] V} (hJ : Continuous J)
-    (hA : Continuous A) {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) :
-    Continuous fun z ↦
-      fderiv ℝ ξ z stdComplexLineReal + J z (fderiv ℝ ξ z stdComplexLineImag) + A z (ξ z) := by
-  have hdξ (v : ℝ × ℝ) : Continuous fun z ↦ fderiv ℝ ξ z v :=
-    (hξ.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  exact ((hdξ _).add (hJ.clm_apply (hdξ _))).add (hA.clm_apply hξ.continuous)
 
 /-- **Multiplying by a cutoff in `s`.** If `β` has derivative `β'` at `s`, the linearization at
 `z = (s, t)` sends `β(s) ξ` to `β(s) D ξ + β' ξ`: the factor only differentiates in the `s`
