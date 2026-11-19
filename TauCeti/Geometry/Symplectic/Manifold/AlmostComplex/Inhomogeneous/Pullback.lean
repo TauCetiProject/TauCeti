@@ -12,9 +12,10 @@ import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 /-!
 # Pulling back inhomogeneous terms along diffeomorphisms of the target
 
-Let `g : M → N` be a `Cʳ` diffeomorphism and `A` a jointly `Cⁿ` section, over `P × N`, of the
-bundle of linear maps from the tangent spaces of `P` to those of `N`, with `n + 1 ≤ r`. Its
-pullback `(p, x) ↦ (dg_x)⁻¹ ∘ A(p, g x)` is again a jointly `Cⁿ` section, now over `P × M`
+Let `g : M → N` be a `Cʳ` diffeomorphism, where `M` and `N` may be modelled on different spaces,
+and `A` a jointly `Cⁿ` section, over `P × N`, of the bundle of linear maps from the tangent spaces
+of `P` to those of `N`, with `n + 1 ≤ r`. Its pullback `(p, x) ↦ (dg_x)⁻¹ ∘ A(p, g x)` is again a
+jointly `Cⁿ` section, now over `P × M`
 (`TauCeti.DomainDependentHomSection.pullback`). Regularity is read on total spaces: the
 pulled-back section moves a vector tangent to `P` at `p` to `A(p, g x)` of it, tangent to `N`
 at `g x`, and then applies the tangent map of `g⁻¹`, which is `Cⁿ` since `n + 1 ≤ r`.
@@ -29,7 +30,8 @@ intertwines `g^* J` with `J`. Read in a chart `φ` of `P` and the chart `g ≫ �
 
 * `TauCeti.DomainDependentHomSection.pullback`: the pulled-back Hom section, with
   `TauCeti.DomainDependentHomSection.mfderiv_tangentHom_pullback_apply`.
-* `TauCeti.InhomogeneousTerm.pullback`: the pulled-back inhomogeneous term.
+* `TauCeti.InhomogeneousTerm.pullback`: the pulled-back inhomogeneous term, whose underlying
+  Hom section is the pulled-back Hom section (`TauCeti.InhomogeneousTerm.val_pullback`).
 * `TauCeti.InhomogeneousTerm.chartTerm_pullback`,
   `TauCeti.InhomogeneousTerm.chartTerm_pullback_trans`: transport in charts.
 
@@ -46,10 +48,11 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-variable {E H M H' N EP HP P : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E H M E' H' N EP HP P : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E H'}
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {I' : ModelWithCorners ℝ E' H'}
   [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' ∞ N]
   [NormedAddCommGroup EP] [NormedSpace ℝ EP] [FiniteDimensional ℝ EP] [TopologicalSpace HP]
   {IP : ModelWithCorners ℝ EP HP} [TopologicalSpace P] [ChartedSpace HP P] [IsManifold IP ∞ P]
@@ -123,7 +126,8 @@ end DomainDependentHomSection
 
 namespace InhomogeneousTerm
 
-variable [FiniteDimensional ℝ E] {j : ContMDiffAlmostComplexStructure IP n P}
+variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+  {j : ContMDiffAlmostComplexStructure IP n P}
   {J : ContMDiffAlmostComplexStructureFamily I' N IP P n}
 
 /-- The pullback `g^* ν` of an inhomogeneous term for `(j, J)` along a `Cʳ` diffeomorphism
@@ -149,22 +153,30 @@ def pullback (ν : InhomogeneousTerm j J) (g : M ≃ₘ^r⟮I, I'⟯ N) (hnr : n
     erw [ContMDiffAlmostComplexStructure.horizontalEndomorphism_apply]
     exact h⟩
 
+/-- The underlying Hom section of the pulled-back term is the pullback of the Hom section. -/
+@[simp]
+theorem val_pullback (ν : InhomogeneousTerm j J) (g : M ≃ₘ^r⟮I, I'⟯ N) (hnr : n + 1 ≤ r) :
+    (ν.pullback g hnr).val = ν.val.pullback g hnr :=
+  (rfl)
+
+omit [FiniteDimensional ℝ EP] [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] in
+/-- Two terms are equal when their readings in the tangent spaces agree. -/
+private theorem ext_tangentHom {J' : ContMDiffAlmostComplexStructureFamily I M IP P n}
+    {ν₁ ν₂ : InhomogeneousTerm j J'}
+    (h : ∀ q v, ν₁.val.tangentHom q v = ν₂.val.tangentHom q v) : ν₁ = ν₂ :=
+  InhomogeneousTerm.ext fun q v ↦ (DomainDependentHomSection.tangentHom_apply _ q v).symm.trans
+    ((h q v).trans (DomainDependentHomSection.tangentHom_apply _ q v))
+
 /-- The pullback of the zero term is zero. -/
 @[simp]
 theorem pullback_zero (g : M ≃ₘ^r⟮I, I'⟯ N) (hnr : n + 1 ≤ r) :
-    (0 : InhomogeneousTerm j J).pullback g hnr = 0 := by
-  ext q v
-  change DomainDependentHomSection.pullbackField g
-    (0 : DomainDependentHomSection I' N IP P n) q v = 0
-  simp only [DomainDependentHomSection.pullbackField, DomainDependentHomSection.tangentHom_zero,
-    ContinuousLinearMap.comp_zero]
-  -- The zero maps of the pulled-back and original tangent fibres agree.
-  rfl
+    (0 : InhomogeneousTerm j J).pullback g hnr = 0 :=
+  ext_tangentHom fun q v ↦ by simp [DomainDependentHomSection.tangentHom_pullback]
 
 variable (ν : InhomogeneousTerm j J) (g : M ≃ₘ^r⟮I, I'⟯ N) (hnr : n + 1 ≤ r)
 
-/-- The differential of `g` carries the pulled-back term to the original one. -/
-@[simp]
+/-- The differential of `g` carries the pulled-back term to the original one (`simp` proves it
+from `TauCeti.InhomogeneousTerm.val_pullback`). -/
 theorem mfderiv_tangentHom_pullback_apply (q : P × M) (v : TangentSpace IP q.1) :
     mfderiv I I' g q.2 ((ν.pullback g hnr).val.tangentHom q v) = ν.val.tangentHom (q.1, g q.2) v :=
   DomainDependentHomSection.mfderiv_tangentHom_pullback_apply g ν.val hnr q v

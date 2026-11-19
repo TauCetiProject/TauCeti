@@ -52,11 +52,12 @@ namespace TauCeti
 
 namespace ContMDiffAlmostComplexStructureFamily
 
-variable {E H M H' N EP HP P : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E H M E' H' N EP HP P : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E H'}
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
   [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' ∞ N]
   [NormedAddCommGroup EP] [NormedSpace ℝ EP] [TopologicalSpace HP]
   {IP : ModelWithCorners ℝ EP HP} [TopologicalSpace P] [ChartedSpace HP P]
@@ -96,7 +97,6 @@ theorem mfderiv_pullback_apply (q : P × M) (v : TangentSpace I q.2) :
       J.tangentEndomorphism (q.1, g q.2) (mfderiv I I' g q.2 v) := by
   rw [← freeze_apply, freeze_pullback, ContMDiffAlmostComplexStructure.mfderiv_pullback_apply,
     freeze_apply]
-
 
 /-- A structure independent of the domain point pulls back to the pullback of the structure. -/
 @[simp]
