@@ -42,6 +42,9 @@ order `k + 1` is `α`-Hölder (`CkHolderSpace.holderWith_iteratedFDeriv_of_le`, 
 `α ≤ 1` enters), and `φ` is `‖Dφ‖`-Lipschitz. The difference of two such compositions is
 estimated term by term by
 `OrderedFinpartition.norm_compAlongOrderedFinpartition_sub_compAlongOrderedFinpartition_le`.
+This estimate is a quantitative, uniform version of Mathlib's
+`FormalMultilinearSeries.taylorComp_sub_taylorComp_isBigO`, which follows the same steps to give
+the pointwise asymptotic bound used in `ContDiffPointwiseHolderAt.comp_of_differentiableAt`.
 
 ## Main declarations
 
