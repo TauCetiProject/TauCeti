@@ -19,7 +19,8 @@ product of the exterior powers: `⟪u ∧ x, y⟫ = ⟪x, ι_u y⟫`. Here `ε_u
 `TauCeti.ExteriorAlgebra.wedgeLeft u` and `ι_u` is the Koszul differential
 `TauCeti.koszulDifferential (innerₗ V u)`, the contraction `⋀ᵏ⁺¹ V → ⋀ᵏ V`. Together with the
 Koszul homotopy identity `TauCeti.wedgeLeft_comp_koszulDifferential_add`, read with
-`φ = ⟪u, ·⟫`, this says that `ε_u ε_u* + ε_u* ε_u = ‖u‖²`.
+`φ = ⟪u, ·⟫`, this says that `ε_u ε_u* + ε_u* ε_u = ‖u‖²`
+(`TauCeti.wedgeLeft_comp_adjoint_add_adjoint_comp_wedgeLeft`).
 
 On an oriented space the Hodge star intertwines the two operations up to sign: for `x ∈ ⋀ᵏ V`,
 `ι_u (⋆x) = (-1) ^ k ⋆(u ∧ x)`, and for `x ∈ ⋀ᵏ⁺¹ V`, `⋆(ι_u x) = (-1) ^ k u ∧ ⋆x`. Consequently
@@ -34,6 +35,8 @@ the identity above as its symbol.
 
 * `TauCeti.inner_wedgeLeft_eq_inner_koszulDifferential`: `⟪u ∧ x, y⟫ = ⟪x, ι_u y⟫` in every
   degree, and `TauCeti.adjoint_wedgeLeft`: the adjoint of `ε_u` is `ι_u`.
+* `TauCeti.wedgeLeft_comp_adjoint_add_adjoint_comp_wedgeLeft`: `ε_u ε_u* + ε_u* ε_u = ‖u‖²` on
+  `⋀ᵏ⁺¹ V`, and `TauCeti.adjoint_wedgeLeft_comp_wedgeLeft_zero`: `ε_u* ε_u = ‖u‖²` on `⋀⁰ V`.
 * `Orientation.koszulDifferential_hodgeStar`: `ι_u (⋆x) = (-1) ^ k ⋆(u ∧ x)` for `x ∈ ⋀ᵏ V`.
 * `Orientation.hodgeStar_koszulDifferential`: `⋆(ι_u x) = (-1) ^ k u ∧ ⋆x` for `x ∈ ⋀ᵏ⁺¹ V`.
 * `Orientation.koszulDifferential_eq_smul_hodgeStar_wedgeLeft_hodgeStar`: on `⋀ᵏ⁺¹ V` with
@@ -76,6 +79,25 @@ theorem adjoint_wedgeLeft (u : V) (n : ℕ) :
     LinearMap.adjoint (ExteriorAlgebra.wedgeLeft u n) = koszulDifferential (innerₗ V u) n :=
   ((LinearMap.eq_adjoint_iff _ _).2 fun y x ↦ by
     rw [real_inner_comm, ← inner_wedgeLeft_eq_inner_koszulDifferential, real_inner_comm]).symm
+
+/-- On `⋀⁰ V`, contracting after wedging with `u` is multiplication by `‖u‖²`:
+`ε_u* ε_u = ‖u‖²`. -/
+theorem adjoint_wedgeLeft_comp_wedgeLeft_zero (u : V) :
+    LinearMap.adjoint (ExteriorAlgebra.wedgeLeft u 0) ∘ₗ ExteriorAlgebra.wedgeLeft (R := ℝ) u 0 =
+      (‖u‖ ^ 2) • LinearMap.id := by
+  rw [adjoint_wedgeLeft, koszulDifferential_comp_wedgeLeft_zero, innerₗ_apply_apply,
+    real_inner_self_eq_norm_sq]
+
+/-- **Wedging and contracting with `u` anticommute to `‖u‖²`**: on `⋀ⁿ⁺¹ V`,
+`ε_u ε_u* + ε_u* ε_u = ‖u‖²`. This is the Koszul homotopy identity for the functional
+`⟪u, ·⟫`. -/
+theorem wedgeLeft_comp_adjoint_add_adjoint_comp_wedgeLeft (u : V) (n : ℕ) :
+    ExteriorAlgebra.wedgeLeft u n ∘ₗ LinearMap.adjoint (ExteriorAlgebra.wedgeLeft (R := ℝ) u n) +
+        LinearMap.adjoint (ExteriorAlgebra.wedgeLeft u (n + 1)) ∘ₗ
+          ExteriorAlgebra.wedgeLeft (R := ℝ) u (n + 1) =
+      (‖u‖ ^ 2) • LinearMap.id := by
+  rw [adjoint_wedgeLeft, adjoint_wedgeLeft, wedgeLeft_comp_koszulDifferential_add,
+    innerₗ_apply_apply, real_inner_self_eq_norm_sq]
 
 end TauCeti
 

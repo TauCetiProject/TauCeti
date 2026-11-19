@@ -76,7 +76,8 @@ and moving the remaining factors by vectors of that subspace does not change the
   the vectors, and `ExteriorAlgebra.ιInv` recovers the vector from its image.
 * `TauCeti.ExteriorAlgebra.ι_mul_mem_exteriorPower` and `TauCeti.ExteriorAlgebra.wedgeLeft`:
   left multiplication by a vector carries `⋀ⁿ M` into `⋀ⁿ⁺¹ M`, packaged as the linear map
-  `v ↦ m ∧ v` with values in degree `n + 1`.
+  `v ↦ m ∧ v` with values in degree `n + 1`; it is linear in `m` and squares to zero
+  (`TauCeti.ExteriorAlgebra.wedgeLeft_comp_wedgeLeft`).
 * `exteriorPower.not_finite_of_not_finite`: a positive exterior power of an infinite-dimensional
   vector space is infinite-dimensional.
 * `TauCeti.exteriorPower.finrank_range_map`: over a field, the image of `⋀ⁿ V` under the map
@@ -533,6 +534,28 @@ theorem wedgeLeft_ιMulti (m : M) (n : ℕ) (v : Fin n → M) :
     wedgeLeft m n (exteriorPower.ιMulti R n v) = exteriorPower.ιMulti R (n + 1) (Fin.cons m v) := by
   ext
   simp [_root_.ExteriorAlgebra.ιMulti_succ_apply, Matrix.vecTail]
+
+/-- Exterior multiplication is additive in the vector: `(m + m') ∧ x = m ∧ x + m' ∧ x`. -/
+theorem wedgeLeft_add (m m' : M) (n : ℕ) :
+    wedgeLeft (R := R) (m + m') n = wedgeLeft m n + wedgeLeft m' n :=
+  LinearMap.ext fun x ↦ Subtype.ext <| by simp [add_mul]
+
+/-- Exterior multiplication is homogeneous in the vector: `(r • m) ∧ x = r • (m ∧ x)`. -/
+theorem wedgeLeft_smul (r : R) (m : M) (n : ℕ) :
+    wedgeLeft (r • m) n = r • wedgeLeft (R := R) m n :=
+  LinearMap.ext fun x ↦ Subtype.ext <| by simp
+
+/-- Wedging twice with the same vector gives zero: `m ∧ m ∧ x = 0`. -/
+@[simp]
+theorem wedgeLeft_wedgeLeft (m : M) (n : ℕ) (x : ⋀[R]^n M) :
+    wedgeLeft m (n + 1) (wedgeLeft m n x) = 0 :=
+  Subtype.ext <| by simp [← mul_assoc]
+
+/-- Exterior multiplication by a fixed vector squares to zero, so it makes the exterior powers a
+cochain complex. -/
+theorem wedgeLeft_comp_wedgeLeft (m : M) (n : ℕ) :
+    wedgeLeft m (n + 1) ∘ₗ wedgeLeft (R := R) m n = 0 :=
+  LinearMap.ext <| wedgeLeft_wedgeLeft m n
 
 end ExteriorAlgebra
 

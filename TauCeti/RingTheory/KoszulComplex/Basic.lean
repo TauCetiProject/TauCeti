@@ -30,6 +30,9 @@ Koszul complex `K(x)` of the sequence, whose zeroth homology is `R ⧸ (x₁, �
   the alternating-deletion formula `TauCeti.koszulDifferential_ιMulti`.
 * `TauCeti.zeroEquiv_koszulDifferential_zero`: under `⋀⁰ M ≅ R` and `⋀¹ M ≅ M`, the first
   differential is `φ` itself.
+* `TauCeti.exact_wedgeLeft_of_isUnit`: if `φ(m)` is a unit, exterior multiplication by `m` is
+  exact, by the homotopy identity `d(m ∧ v) + m ∧ d(v) = φ(m) v`; and
+  `TauCeti.injective_wedgeLeft_zero_of_isUnit` gives injectivity on `⋀⁰ M`.
 * `TauCeti.exact_koszulDifferential_of_retract`: exactness of a Koszul complex passes to a
   retract along linear maps compatible with the functionals.
 * `TauCeti.exact_koszulDifferential_of_subsingleton`: the Koszul complex on the zero module is
@@ -268,6 +271,28 @@ theorem wedgeLeft_comp_koszulDifferential_add (m : M) (n : ℕ) :
         koszulDifferential φ (n + 1) ∘ₗ ExteriorAlgebra.wedgeLeft m (n + 1) =
       φ m • LinearMap.id :=
   LinearMap.ext fun x ↦ Subtype.ext <| by simp [contractLeft_ι_mul]
+
+variable {φ}
+
+/-- If `φ(m)` is a unit, exterior multiplication by `m` is injective on `⋀⁰ M`. -/
+theorem injective_wedgeLeft_zero_of_isUnit {m : M} (hm : IsUnit (φ m)) :
+    Function.Injective (ExteriorAlgebra.wedgeLeft (R := R) m 0) := fun x y h ↦ by
+  have key := LinearMap.congr_fun (koszulDifferential_comp_wedgeLeft_zero φ m)
+  simp only [LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.id_apply] at key
+  simpa [key, hm.smul_left_cancel] using congrArg (koszulDifferential φ 0) h
+
+/-- **Exterior multiplication by a vector is exact** when some functional `φ` takes a unit value
+`φ(m)` on the vector: if `m ∧ x = 0` for `x ∈ ⋀ⁿ⁺¹ M`, then `x = m ∧ y` with
+`y = φ(m)⁻¹ d(x)`, by the Koszul homotopy identity. -/
+theorem exact_wedgeLeft_of_isUnit {m : M} (hm : IsUnit (φ m)) (n : ℕ) :
+    Function.Exact (ExteriorAlgebra.wedgeLeft (R := R) m n)
+      (ExteriorAlgebra.wedgeLeft m (n + 1)) :=
+  Function.Exact.of_comp_of_mem_range (funext <| ExteriorAlgebra.wedgeLeft_wedgeLeft m n)
+    fun x hx ↦ ⟨(↑hm.unit⁻¹ : R) • koszulDifferential φ n x, by
+      have key := LinearMap.congr_fun (wedgeLeft_comp_koszulDifferential_add φ m n) x
+      simp only [LinearMap.add_apply, LinearMap.comp_apply, hx, map_zero, add_zero,
+        LinearMap.smul_apply, LinearMap.id_apply] at key
+      rw [map_smul, key, smul_smul, IsUnit.val_inv_mul, one_smul]⟩
 
 end Differential
 
