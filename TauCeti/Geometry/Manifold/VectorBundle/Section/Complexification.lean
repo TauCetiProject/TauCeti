@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Complexification
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Topology
-import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.CLMApply
 import TauCeti.Geometry.Manifold.VectorBundle.Section.ScalarTopology
 
 /-!
@@ -60,37 +59,27 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 def realPartCLM :
     letI := frameTopology (I := I) (n := n) e U hU
     letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU)
+      (Trivialization.subset_baseSet_complexification e hU)
     Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯ →L[ℝ] Cₛ^n⟮I; F, V⟯ := by
   letI := frameTopology (I := I) (n := n) e U hU
   letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-    (by simpa only [Trivialization.baseSet_complexification] using hU)
+    (Trivialization.subset_baseSet_complexification e hU)
   refine ⟨realPartLinearMap I F n V, ?_⟩
   rw [LinearMap.toFun_eq_coe]
-  apply (continuous_frameTopology_iff_frameCoordinates e U hU).mpr
-  intro i
-  let A : C^n⟮I, U i; 𝓘(ℝ, Complexification F →L[ℝ] F), Complexification F →L[ℝ] F⟯ :=
-    ContMDiffMap.const (Complexification.reCLM F)
-  have hc := (ContMDiffMap.continuous_clmApplyLinearMap A).comp
-    (continuous_frameCoordinates (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU) i)
-  refine hc.congr fun σ ↦ ?_
-  apply ContMDiffMap.ext
-  intro x
-  dsimp only [Function.comp_apply]
-  rw [ContMDiffMap.clmApplyLinearMap_apply]
-  simp only [A, ContMDiffMap.const, ContMDiffMap.coeFn_mk]
-  rw [Trivialization.frameCoordinates_apply, Trivialization.frameCoordinates_apply,
-    realPartLinearMap_apply, Complexification.reCLM_apply,
-    Trivialization.complexification_apply_re]
-  simp only [(e i).coe_linearMapAt_of_mem (hU i x.2)]
+  apply continuous_frameTopology_of_frameCoordinates_eq_clm_apply
+    (fun i ↦ (e i).complexification) U (Trivialization.subset_baseSet_complexification e hU)
+    e hU (fun _ ↦ Complexification.reCLM F)
+  intro i σ x
+  simp only [Trivialization.frameCoordinates_apply, realPartLinearMap_apply,
+    Complexification.reCLM_apply, Trivialization.complexification_apply_re,
+    (e i).coe_linearMapAt_of_mem (hU i x.2)]
 
 /-- Real-part continuity leaves the existing section map unchanged. -/
 @[simp]
 theorem realPartCLM_apply (σ : Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯) :
     letI := frameTopology (I := I) (n := n) e U hU
     letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU)
+      (Trivialization.subset_baseSet_complexification e hU)
     ContMDiffSection.realPartCLM e U hU σ = realPartLinearMap I F n V σ := by
   rfl
 
@@ -98,37 +87,27 @@ theorem realPartCLM_apply (σ : Cₛ^n⟮I; Complexification F, fun x ↦ ℂ �
 def imaginaryPartCLM :
     letI := frameTopology (I := I) (n := n) e U hU
     letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU)
+      (Trivialization.subset_baseSet_complexification e hU)
     Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯ →L[ℝ] Cₛ^n⟮I; F, V⟯ := by
   letI := frameTopology (I := I) (n := n) e U hU
   letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-    (by simpa only [Trivialization.baseSet_complexification] using hU)
+    (Trivialization.subset_baseSet_complexification e hU)
   refine ⟨imaginaryPartLinearMap I F n V, ?_⟩
   rw [LinearMap.toFun_eq_coe]
-  apply (continuous_frameTopology_iff_frameCoordinates e U hU).mpr
-  intro i
-  let A : C^n⟮I, U i; 𝓘(ℝ, Complexification F →L[ℝ] F), Complexification F →L[ℝ] F⟯ :=
-    ContMDiffMap.const (Complexification.imCLM F)
-  have hc := (ContMDiffMap.continuous_clmApplyLinearMap A).comp
-    (continuous_frameCoordinates (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU) i)
-  refine hc.congr fun σ ↦ ?_
-  apply ContMDiffMap.ext
-  intro x
-  dsimp only [Function.comp_apply]
-  rw [ContMDiffMap.clmApplyLinearMap_apply]
-  simp only [A, ContMDiffMap.const, ContMDiffMap.coeFn_mk]
-  rw [Trivialization.frameCoordinates_apply, Trivialization.frameCoordinates_apply,
-    imaginaryPartLinearMap_apply, Complexification.imCLM_apply,
-    Trivialization.complexification_apply_im]
-  simp only [(e i).coe_linearMapAt_of_mem (hU i x.2)]
+  apply continuous_frameTopology_of_frameCoordinates_eq_clm_apply
+    (fun i ↦ (e i).complexification) U (Trivialization.subset_baseSet_complexification e hU)
+    e hU (fun _ ↦ Complexification.imCLM F)
+  intro i σ x
+  simp only [Trivialization.frameCoordinates_apply, imaginaryPartLinearMap_apply,
+    Complexification.imCLM_apply, Trivialization.complexification_apply_im,
+    (e i).coe_linearMapAt_of_mem (hU i x.2)]
 
 /-- Imaginary-part continuity leaves the existing section map unchanged. -/
 @[simp]
 theorem imaginaryPartCLM_apply (σ : Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯) :
     letI := frameTopology (I := I) (n := n) e U hU
     letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU)
+      (Trivialization.subset_baseSet_complexification e hU)
     ContMDiffSection.imaginaryPartCLM e U hU σ = imaginaryPartLinearMap I F n V σ := by
   rfl
 
@@ -136,26 +115,17 @@ theorem imaginaryPartCLM_apply (σ : Cₛ^n⟮I; Complexification F, fun x ↦ �
 def oneTmulCLM :
     letI := frameTopology (I := I) (n := n) e U hU
     letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU)
+      (Trivialization.subset_baseSet_complexification e hU)
     Cₛ^n⟮I; F, V⟯ →L[ℝ] Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯ := by
   letI := frameTopology (I := I) (n := n) e U hU
   letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-    (by simpa only [Trivialization.baseSet_complexification] using hU)
+    (Trivialization.subset_baseSet_complexification e hU)
   refine ⟨oneTmulLinearMap I F n V, ?_⟩
   rw [LinearMap.toFun_eq_coe]
-  apply (continuous_frameTopology_iff_frameCoordinates (fun i ↦ (e i).complexification) U
-    (by simpa only [Trivialization.baseSet_complexification] using hU)).mpr
-  intro i
-  let A : C^n⟮I, U i; 𝓘(ℝ, F →L[ℝ] Complexification F), F →L[ℝ] Complexification F⟯ :=
-    ContMDiffMap.const (Complexification.ofRealLI F).toContinuousLinearMap
-  have hc := (ContMDiffMap.continuous_clmApplyLinearMap A).comp
-    (continuous_frameCoordinates e U hU i)
-  refine hc.congr fun s ↦ ?_
-  apply ContMDiffMap.ext
-  intro x
-  dsimp only [Function.comp_apply]
-  rw [ContMDiffMap.clmApplyLinearMap_apply]
-  simp only [A, ContMDiffMap.const, ContMDiffMap.coeFn_mk]
+  apply continuous_frameTopology_of_frameCoordinates_eq_clm_apply e U hU
+    (fun i ↦ (e i).complexification) (Trivialization.subset_baseSet_complexification e hU)
+    (fun _ ↦ (Complexification.ofRealLI F).toContinuousLinearMap)
+  intro i σ x
   ext <;> simp [Trivialization.complexification_apply_re,
     Trivialization.complexification_apply_im, (e i).coe_linearMapAt_of_mem (hU i x.2),
     ((e i).linear ℝ (hU i x.2)).map_zero]
@@ -165,7 +135,7 @@ def oneTmulCLM :
 theorem oneTmulCLM_apply (σ : Cₛ^n⟮I; F, V⟯) :
     letI := frameTopology (I := I) (n := n) e U hU
     letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU)
+      (Trivialization.subset_baseSet_complexification e hU)
     ContMDiffSection.oneTmulCLM e U hU σ = oneTmulLinearMap I F n V σ := by
   rfl
 
@@ -173,14 +143,14 @@ theorem oneTmulCLM_apply (σ : Cₛ^n⟮I; F, V⟯) :
 def ITmulCLM :
     letI := frameTopology (I := I) (n := n) e U hU
     letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU)
+      (Trivialization.subset_baseSet_complexification e hU)
     Cₛ^n⟮I; F, V⟯ →L[ℝ] Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯ := by
   letI := frameTopology (I := I) (n := n) e U hU
   letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-    (by simpa only [Trivialization.baseSet_complexification] using hU)
+    (Trivialization.subset_baseSet_complexification e hU)
   letI := continuousSMul_frameTopology_ofNormedAlgebra (𝕜' := ℂ) (I := I) (n := n)
     (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU)
+      (Trivialization.subset_baseSet_complexification e hU)
   refine ⟨ITmulLinearMap I F n V, ?_⟩
   rw [LinearMap.toFun_eq_coe]
   exact ((ContMDiffSection.oneTmulCLM (I := I) (n := n) e U hU).continuous.const_smul
@@ -192,7 +162,7 @@ def ITmulCLM :
 theorem ITmulCLM_apply (σ : Cₛ^n⟮I; F, V⟯) :
     letI := frameTopology (I := I) (n := n) e U hU
     letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU)
+      (Trivialization.subset_baseSet_complexification e hU)
     ContMDiffSection.ITmulCLM e U hU σ = ITmulLinearMap I F n V σ := by
   rfl
 
@@ -201,15 +171,15 @@ frame topologies. No covering or local-compactness assumption is used. -/
 def complexificationEquivProdCLE :
     letI := frameTopology (I := I) (n := n) e U hU
     letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU)
+      (Trivialization.subset_baseSet_complexification e hU)
     Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯ ≃L[ℝ]
       Cₛ^n⟮I; F, V⟯ × Cₛ^n⟮I; F, V⟯ := by
   letI := frameTopology (I := I) (n := n) e U hU
   letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-    (by simpa only [Trivialization.baseSet_complexification] using hU)
+    (Trivialization.subset_baseSet_complexification e hU)
   letI := isTopologicalAddGroup_frameTopology (I := I) (n := n)
     (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU)
+      (Trivialization.subset_baseSet_complexification e hU)
   refine { complexificationEquivProd I F n V with
     continuous_toFun := ?_
     continuous_invFun := ?_ }
@@ -229,7 +199,7 @@ theorem complexificationEquivProdCLE_apply
     (σ : Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯) :
     letI := frameTopology (I := I) (n := n) e U hU
     letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU)
+      (Trivialization.subset_baseSet_complexification e hU)
     complexificationEquivProdCLE e U hU σ = complexificationEquivProd I F n V σ := by
   rfl
 
@@ -238,7 +208,7 @@ theorem complexificationEquivProdCLE_apply
 theorem complexificationEquivProdCLE_symm_apply (p : Cₛ^n⟮I; F, V⟯ × Cₛ^n⟮I; F, V⟯) :
     letI := frameTopology (I := I) (n := n) e U hU
     letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU)
+      (Trivialization.subset_baseSet_complexification e hU)
     (complexificationEquivProdCLE e U hU).symm p =
       oneTmulLinearMap I F n V p.1 + ITmulLinearMap I F n V p.2 := by
   exact complexificationEquivProd_symm_apply p
@@ -247,12 +217,12 @@ theorem complexificationEquivProdCLE_symm_apply (p : Cₛ^n⟮I; F, V⟯ × Cₛ
 coordinates it acts by the continuous map `(s, t) ↦ (s, -t)`. -/
 def conjCLE :
     letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU)
+      (Trivialization.subset_baseSet_complexification e hU)
     Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯ ≃L⋆[ℂ]
       Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯ := by
   letI := frameTopology (I := I) (n := n) e U hU
   letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-    (by simpa only [Trivialization.baseSet_complexification] using hU)
+    (Trivialization.subset_baseSet_complexification e hU)
   letI := isTopologicalAddGroup_frameTopology (I := I) (n := n) e U hU
   let L := complexificationEquivProdCLE (I := I) (n := n) e U hU
   have hc : Continuous (fun σ ↦ L.symm ((L σ).1, -(L σ).2)) :=
@@ -271,7 +241,7 @@ def conjCLE :
 @[simp]
 theorem conjCLE_apply (σ : Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯) :
     letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU)
+      (Trivialization.subset_baseSet_complexification e hU)
     conjCLE e U hU σ = conjEquiv I F n V σ := by
   rfl
 
@@ -279,7 +249,7 @@ theorem conjCLE_apply (σ : Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[�
 @[simp]
 theorem conjCLE_symm_apply (σ : Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯) :
     letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU)
+      (Trivialization.subset_baseSet_complexification e hU)
     (conjCLE e U hU).symm σ = conjEquiv I F n V σ := by
   exact congrArg (fun g ↦ g σ) (conjEquiv_symm (IB := I) (F := F) (n := n) (E := V))
 
@@ -288,11 +258,11 @@ submodule of conjugation, with its subspace topology from complexified frame coo
 def realPointsConjEquivCLE :
     letI := frameTopology (I := I) (n := n) e U hU
     letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU)
+      (Trivialization.subset_baseSet_complexification e hU)
     Cₛ^n⟮I; F, V⟯ ≃L[ℝ] realPoints (conjEquiv I F n V).toLinearMap := by
   letI := frameTopology (I := I) (n := n) e U hU
   letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-    (by simpa only [Trivialization.baseSet_complexification] using hU)
+    (Trivialization.subset_baseSet_complexification e hU)
   refine { realPointsConjEquiv I F n V with
     continuous_toFun := ?_
     continuous_invFun := ?_ }
@@ -310,7 +280,7 @@ def realPointsConjEquivCLE :
 theorem realPointsConjEquivCLE_apply (s : Cₛ^n⟮I; F, V⟯) :
     letI := frameTopology (I := I) (n := n) e U hU
     letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU)
+      (Trivialization.subset_baseSet_complexification e hU)
     realPointsConjEquivCLE e U hU s = realPointsConjEquiv I F n V s := by
   rfl
 
@@ -319,7 +289,7 @@ theorem realPointsConjEquivCLE_apply (s : Cₛ^n⟮I; F, V⟯) :
 theorem realPointsConjEquivCLE_symm_apply (σ : realPoints (conjEquiv I F n V).toLinearMap) :
     letI := frameTopology (I := I) (n := n) e U hU
     letI := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-      (by simpa only [Trivialization.baseSet_complexification] using hU)
+      (Trivialization.subset_baseSet_complexification e hU)
     (realPointsConjEquivCLE e U hU).symm σ = realPartLinearMap I F n V σ := by
   exact realPointsConjEquiv_symm_apply σ
 

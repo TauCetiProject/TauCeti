@@ -71,7 +71,7 @@ private def complexSectionTopology (F : Type*) [NormedAddCommGroup F] [NormedSpa
       Cₛ^n⟮𝓘(ℝ, ℝ); Complexification F, fun x ↦ ℂ ⊗[ℝ] Bundle.Trivial ℝ F x⟯ :=
   ContMDiffSection.frameTopology (I := 𝓘(ℝ, ℝ)) (n := n)
     (fun i ↦ (realFrames F i).complexification) realDomains
-      (by simpa only [Trivialization.baseSet_complexification] using realDomains_subset F)
+      (Trivialization.subset_baseSet_complexification (realFrames F) (realDomains_subset F))
 
 attribute [local instance] realSectionTopology complexSectionTopology
 
@@ -180,7 +180,7 @@ example :
       emptyFrames emptyDomains emptyDomain_subset
     letI := ContMDiffSection.frameTopology (I := 𝓘(ℝ, ℝ)) (n := ω)
       (fun i ↦ (emptyFrames i).complexification) emptyDomains
-      (by simpa only [Trivialization.baseSet_complexification] using emptyDomain_subset)
+      (Trivialization.subset_baseSet_complexification emptyFrames emptyDomain_subset)
     Nonempty (Cₛ^ω⟮𝓘(ℝ, ℝ); Complexification ℝ, fun _ : Empty ↦ ℂ ⊗[ℝ] ℝ⟯ ≃L[ℝ]
       Cₛ^ω⟮𝓘(ℝ, ℝ); ℝ, Bundle.Trivial Empty ℝ⟯ × Cₛ^ω⟮𝓘(ℝ, ℝ); ℝ, Bundle.Trivial Empty ℝ⟯) :=
   ⟨ContMDiffSection.complexificationEquivProdCLE (I := 𝓘(ℝ, ℝ)) (n := ω)
@@ -241,7 +241,7 @@ example :
       tangentFrames tangentDomains tangentDomain_subset
     letI := ContMDiffSection.frameTopology (I := 𝓡 2) (n := ∞)
       (fun x ↦ (tangentFrames x).complexification) tangentDomains
-      (by simpa only [Trivialization.baseSet_complexification] using tangentDomain_subset)
+      (Trivialization.subset_baseSet_complexification tangentFrames tangentDomain_subset)
     Nonempty (Cₛ^∞⟮𝓡 2; Complexification TwoModel,
         fun x : TwoSphere ↦ ℂ ⊗[ℝ] TangentSpace (𝓡 2) x⟯ ≃L[ℝ]
       Cₛ^∞⟮𝓡 2; TwoModel, (TangentSpace (𝓡 2) : TwoSphere → Type)⟯ ×
