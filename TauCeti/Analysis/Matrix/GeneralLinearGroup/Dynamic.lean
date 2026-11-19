@@ -67,9 +67,11 @@ is not made here.
 * `Subgroup.tendsto_dynamicLevi_mul_dynamicUnipotent`: the conjugates of `l * u`, with `l` Levi and
   `u` unipotent, tend to `l`.
 * `Subgroup.mem_dynamicParabolic_diagonal_iff`, `Subgroup.mem_dynamicUnipotent_diagonal_iff`,
+  `Subgroup.mem_dynamicLevi_diagonal_iff`,
   `Subgroup.mem_dynamicParabolic_units_conj_diagonal_iff`,
-  `Subgroup.mem_dynamicUnipotent_units_conj_diagonal_iff`: the block triangular and block
-  unipotent coordinate descriptions for `X = O * diagonal d * O⁻¹`.
+  `Subgroup.mem_dynamicUnipotent_units_conj_diagonal_iff`,
+  `Subgroup.mem_dynamicLevi_units_conj_diagonal_iff`: the block triangular, block unipotent and
+  block diagonal coordinate descriptions for `X = O * diagonal d * O⁻¹`.
 * `Subgroup.isClosed_dynamicLevi`, `Subgroup.isClosed_dynamicParabolic`,
   `Subgroup.isClosed_dynamicUnipotent`: closedness, the last two for symmetric `X`.
 * `Subgroup.dynamicParabolic_inf_map_inverseTranspose`: for symmetric `X` and `θ`-stable `G`, the
@@ -535,6 +537,22 @@ theorem mem_dynamicUnipotent_units_conj_diagonal_iff :
   have h := tendsto_flow_iff_diagonal (O := O) (d := d) rfl (g : Matrix m m ℝ) 1
   rw [Matrix.mul_one, Units.inv_mul] at h
   exact h.trans (tendsto_flow_diagonal_one_iff _)
+
+/-- For diagonal `X = diagonal d`, the dynamic Levi subgroup is block diagonal: `g ∈ G` lies in it
+exactly when its entries `(i, j)` with `d i ≠ d j` vanish. -/
+theorem mem_dynamicLevi_diagonal_iff :
+    g ∈ G.dynamicLevi (diagonal d) ↔
+      g ∈ G ∧ ∀ i j, d i ≠ d j → (g : Matrix m m ℝ) i j = 0 :=
+  and_congr_right fun _ ↦ Commute.symm_iff.trans TauCeti.commute_diagonal_iff
+
+/-- For `X = O * diagonal d * O⁻¹`, for instance a symmetric `X` in an orthonormal eigenbasis,
+`g ∈ G` lies in the dynamic Levi subgroup exactly when the entries `(i, j)` of `O⁻¹ * g * O` with
+`d i ≠ d j` vanish. -/
+theorem mem_dynamicLevi_units_conj_diagonal_iff :
+    g ∈ G.dynamicLevi (O * diagonal d * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ)) ↔
+      g ∈ G ∧ ∀ i j, d i ≠ d j → (((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * g * O) i j = 0 :=
+  and_congr_right fun _ ↦ (commute_iff_diagonal rfl _).trans
+    (Commute.symm_iff.trans TauCeti.commute_diagonal_iff)
 
 end Symmetric
 
