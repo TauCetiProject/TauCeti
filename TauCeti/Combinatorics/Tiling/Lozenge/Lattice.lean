@@ -201,6 +201,7 @@ theorem edge_mem_edges (f : TriFace) (k : Fin 3) : f.edge k ∈ f.edges :=
 theorem edge_injective (f : TriFace) : Function.Injective f.edge :=
   fun k k' h => by simpa using congrArg TriEdge.k h
 
+/-- A face has three edges. -/
 @[simp] theorem card_edges (f : TriFace) : f.edges.card = 3 := by
   have : f.edges = Finset.univ.image f.edge := by
     ext e
@@ -254,10 +255,10 @@ end TriFace
 
 namespace TriEdge
 
-theorem mem_whiteFace_edges (e : TriEdge) : e ∈ e.whiteFace.edges :=
+@[simp] theorem mem_whiteFace_edges (e : TriEdge) : e ∈ e.whiteFace.edges :=
   TriFace.mem_edges_iff.2 (Or.inl rfl)
 
-theorem mem_blackFace_edges (e : TriEdge) : e ∈ e.blackFace.edges :=
+@[simp] theorem mem_blackFace_edges (e : TriEdge) : e ∈ e.blackFace.edges :=
   TriFace.mem_edges_iff.2 (Or.inr rfl)
 
 @[simp] theorem mem_faces {e : TriEdge} {f : TriFace} : f ∈ e.faces ↔ e ∈ f.edges := by
@@ -293,6 +294,7 @@ def vertexFaces (v : ℤ × ℤ) : Finset TriFace :=
   {⟨v, true⟩, ⟨v - (1, 0), true⟩, ⟨v - (1, 1), true⟩,
     ⟨v, false⟩, ⟨v - (0, 1), false⟩, ⟨v - (1, 1), false⟩}
 
+/-- The faces in `vertexFaces v` are exactly those having `v` as a vertex. -/
 @[simp] theorem mem_vertexFaces {v : ℤ × ℤ} {f : TriFace} :
     f ∈ vertexFaces v ↔ v ∈ f.vertices := by
   obtain ⟨⟨a, b⟩, c⟩ := f
@@ -376,11 +378,12 @@ namespace TriEdge
 
 end TriEdge
 
-theorem vertexFaces_vadd (w v : ℤ × ℤ) : vertexFaces (w + v) = w +ᵥ vertexFaces v := by
+theorem vertexFaces_add (w v : ℤ × ℤ) : vertexFaces (w + v) = w +ᵥ vertexFaces v := by
   simp [vertexFaces, Finset.vadd_finset_insert, add_sub_assoc]
 
+/-- Exactly six faces contain a vertex. -/
 @[simp] theorem card_vertexFaces (v : ℤ × ℤ) : (vertexFaces v).card = 6 := by
-  rw [← add_zero v, vertexFaces_vadd, Finset.card_vadd_finset]
+  rw [← add_zero v, vertexFaces_add, Finset.card_vadd_finset]
   decide
 
 /-- `ℤ²` acts on configurations `ω : TriEdge → Bool` by `(w +ᵥ ω) e = ω (-w +ᵥ e)`
@@ -437,18 +440,24 @@ namespace TriEdge
 /-- The rotation `ρ` on edges. It maps the segment from `v` to `v + e_k` onto the segment between
 `ρ v` and `ρ (v + e_k)`, of direction `k + 1`; since `ρ e₁ = e₂` is positive while `ρ e₂ = -e₃`
 and `ρ e₃ = -e₁` are negative, the initial vertex of the image is `ρ v` for `k = 1` and
-`ρ (v + e_k)` otherwise. -/
+`ρ (v + e_k)` otherwise (`TriEdge.rot_v`, `TriEdge.target_rot`). -/
 def rot : Equiv.Perm TriEdge where
   toFun e := ⟨if e.k = 0 then latticeRot e.v else latticeRot e.target, e.k + 1⟩
   invFun e := ⟨latticeRot.symm (if e.k = 1 then e.v else e.v + latticeDir e.k), e.k + 2⟩
   left_inv e := by
     obtain ⟨⟨x, y⟩, k⟩ := e
-    fin_cases k <;> simp +decide [TriEdge.ext_iff]
-    omega
+    fin_cases k
+    · simp +decide
+    · simp +decide [TriEdge.ext_iff]
+      omega
+    · simp +decide
   right_inv e := by
     obtain ⟨⟨x, y⟩, k⟩ := e
-    fin_cases k <;> simp +decide [TriEdge.ext_iff]
-    omega
+    fin_cases k
+    · simp +decide [TriEdge.ext_iff]
+      omega
+    · simp +decide
+    · simp +decide
 
 theorem rot_apply (e : TriEdge) :
     rot e = ⟨if e.k = 0 then latticeRot e.v else latticeRot e.target, e.k + 1⟩ := (rfl)
@@ -456,9 +465,21 @@ theorem rot_apply (e : TriEdge) :
 /-- `ρ` sends the edges of direction `k` to direction `k + 1`. -/
 @[simp] theorem rot_k (e : TriEdge) : (rot e).k = e.k + 1 := (rfl)
 
+/-- The initial vertex of `ρ e` is `ρ v` for `k = 1` and `ρ (v + e_k)` otherwise. -/
+@[simp] theorem rot_v (e : TriEdge) :
+    (rot e).v = if e.k = 0 then latticeRot e.v else latticeRot e.target := (rfl)
+
+/-- The final vertex of `ρ e` is `ρ (v + e_k)` for `k = 1` and `ρ v` otherwise, so `ρ e` is the
+segment between `ρ v` and `ρ (v + e_k)`. -/
+@[simp] theorem target_rot (e : TriEdge) :
+    (rot e).target = if e.k = 0 then latticeRot e.target else latticeRot e.v := by
+  obtain ⟨⟨x, y⟩, k⟩ := e
+  fin_cases k <;> simp [rot_apply] <;> omega
+
 theorem rot_pow_three : rot ^ 3 = 1 := by
   ext ⟨⟨x, y⟩, k⟩ <;> fin_cases k <;> simp +decide [pow_succ, rot_apply] <;> omega
 
+/-- `ρ` has order three on edges. -/
 theorem orderOf_rot : orderOf rot = 3 := by
   refine orderOf_eq_prime rot_pow_three fun h => ?_
   simpa [rot_apply] using congrArg (fun φ : Equiv.Perm TriEdge => (φ ⟨0, 0⟩).k) h
@@ -486,12 +507,22 @@ def rot : Equiv.Perm TriFace where
 theorem rot_apply (f : TriFace) :
     rot f = ⟨latticeRot f.v - if f.isWhite then (1, 0) else (1, 1), f.isWhite⟩ := (rfl)
 
+@[simp] theorem rot_mk_true (v : ℤ × ℤ) :
+    rot ⟨v, true⟩ = ⟨latticeRot v - (1, 0), true⟩ := (rfl)
+
+@[simp] theorem rot_mk_false (v : ℤ × ℤ) :
+    rot ⟨v, false⟩ = ⟨latticeRot v - (1, 1), false⟩ := (rfl)
+
+@[simp] theorem rot_v (f : TriFace) :
+    (rot f).v = latticeRot f.v - if f.isWhite then (1, 0) else (1, 1) := (rfl)
+
 /-- `ρ` preserves colours. -/
 @[simp] theorem rot_isWhite (f : TriFace) : (rot f).isWhite = f.isWhite := (rfl)
 
 theorem rot_pow_three : rot ^ 3 = 1 := by
   ext ⟨⟨x, y⟩, c⟩ <;> cases c <;> simp [pow_succ, rot_apply] <;> omega
 
+/-- `ρ` has order three on faces. -/
 theorem orderOf_rot : orderOf rot = 3 := by
   refine orderOf_eq_prime rot_pow_three fun h => ?_
   simpa [rot_apply] using congrArg (fun φ : Equiv.Perm TriFace => (φ ⟨0, true⟩).v) h

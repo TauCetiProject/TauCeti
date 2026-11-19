@@ -200,12 +200,16 @@ instance : hexGraph.LocallyFinite := fun f =>
     rw [Finset.mem_erase, Finset.mem_biUnion, SimpleGraph.mem_neighborSet, hexGraph_adj, ne_comm]
     simp only [TriEdge.mem_faces]
 
+/-- The neighbours of the white face `W(v)` are `B(v)`, `B(v - e₂)` and `B(v + e₁)`, as a
+`Finset`. -/
 theorem hexGraph_neighborFinset_mk_true (v : ℤ × ℤ) :
     hexGraph.neighborFinset ⟨v, true⟩ = {⟨v, false⟩, ⟨v - (0, 1), false⟩, ⟨v + (1, 0), false⟩} := by
   ext g
   rw [SimpleGraph.mem_neighborFinset, ← SimpleGraph.mem_neighborSet, hexGraph_neighborSet_mk_true]
   simp
 
+/-- The neighbours of the black face `B(v)` are `W(v)`, `W(v - e₁)` and `W(v + e₂)`, as a
+`Finset`. -/
 theorem hexGraph_neighborFinset_mk_false (v : ℤ × ℤ) :
     hexGraph.neighborFinset ⟨v, false⟩ = {⟨v, true⟩, ⟨v - (1, 0), true⟩, ⟨v + (0, 1), true⟩} := by
   ext g
