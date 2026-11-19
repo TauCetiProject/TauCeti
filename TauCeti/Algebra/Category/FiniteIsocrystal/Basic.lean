@@ -203,12 +203,8 @@ theorem isoMk_inv_hom (e : D ≃ₗ[L] D') (he : ∀ x, e (D.frobenius x) = D'.f
 /-- A morphism of finite isocrystals is an isomorphism iff its underlying linear map is
 bijective: the inverse linear map automatically intertwines the Frobenii. -/
 theorem isIso_iff_bijective (f : D ⟶ D') : IsIso f ↔ Function.Bijective f.hom := by
-  refine ⟨fun _ => ?_, fun hf => ?_⟩
-  · have h₁ : (inv f).hom.comp f.hom = LinearMap.id := by rw [← hom_comp]; simp
-    have h₂ : f.hom.comp (inv f).hom = LinearMap.id := by rw [← hom_comp]; simp
-    exact Function.bijective_iff_has_inverse.mpr
-      ⟨(inv f).hom, LinearMap.congr_fun h₁, LinearMap.congr_fun h₂⟩
-  · exact (isoMk (LinearEquiv.ofBijective f.hom hf) f.hom_frobenius).isIso_hom
+  refine ⟨fun _ => ConcreteCategory.bijective_of_isIso f, fun hf => ?_⟩
+  exact (isoMk (LinearEquiv.ofBijective f.hom hf) f.hom_frobenius).isIso_hom
 
 instance : (forget₂ (FiniteIsocrystal.{u} σ) (ModuleCat.{u} L)).ReflectsIsomorphisms where
   reflects f _ := by
@@ -261,9 +257,10 @@ instance : (forget₂ (FiniteIsocrystal.{u} σ) (ModuleCat.{u} L)).Additive wher
 
 @[simp]
 theorem hom_sum {ι : Type*} (s : Finset ι) (f : ι → (D ⟶ D')) :
-    (∑ i ∈ s, f i).hom = ∑ i ∈ s, (f i).hom :=
-  map_sum (ModuleCat.homAddEquiv.toAddMonoidHom.comp
-    (forget₂ (FiniteIsocrystal σ) (ModuleCat L)).mapAddHom) f s
+    (∑ i ∈ s, f i).hom = ∑ i ∈ s, (f i).hom := by
+  have := congrArg ModuleCat.Hom.hom
+    (map_sum (forget₂ (FiniteIsocrystal σ) (ModuleCat L)).mapAddHom f s)
+  simpa only [Functor.mapAddHom_apply, forget₂_map, ModuleCat.hom_sum] using this
 
 instance : Module E (D ⟶ D') where
   one_smul _ := by ext; simp
@@ -347,10 +344,13 @@ def bicone [DecidableEq ι] : Bicone D where
 
 @[simp] theorem bicone_ι [DecidableEq ι] (i : ι) : (bicone D).ι i = piι D i := (rfl)
 
+/-- The projections and inclusions of `pi D` sum to the identity. -/
+theorem sum_piπ_comp_piι [Fintype ι] [DecidableEq ι] : ∑ i, piπ D i ≫ piι D i = 𝟙 (pi D) :=
+  hom_ext <| LinearMap.ext fun x => by simpa using Finset.univ_sum_single x
+
 /-- The direct sum `pi D` is a biproduct of the finite family `D`. -/
 def isBilimitBicone [Fintype ι] [DecidableEq ι] : (bicone D).IsBilimit :=
-  isBilimitOfTotal _ <| show ∑ i, piπ D i ≫ piι D i = 𝟙 (pi D) from
-    hom_ext <| LinearMap.ext fun x => by simpa using Finset.univ_sum_single x
+  isBilimitOfTotal _ (sum_piπ_comp_piι D)
 
 end Pi
 
@@ -365,8 +365,16 @@ variable {J : Type} [Fintype J] [DecidableEq J] (D : J → FiniteIsocrystal.{u} 
 noncomputable def biproductIsoPi : ⨁ D ≅ pi D where
   hom := biproduct.desc (piι D)
   inv := biproduct.lift (piπ D)
-  hom_inv_id := (biproduct.uniqueUpToIso D (isBilimitBicone.{0} D)).inv_hom_id
-  inv_hom_id := (biproduct.uniqueUpToIso D (isBilimitBicone.{0} D)).hom_inv_id
+  hom_inv_id := biproduct.hom_ext' _ _ fun j => biproduct.hom_ext _ _ fun k => by
+    simp only [biproduct.ι_desc_assoc, Category.assoc, biproduct.lift_π, Category.comp_id]
+    obtain rfl | hjk := eq_or_ne j k
+    · rw [biproduct.ι_π_self]
+      ext
+      simp
+    · rw [biproduct.ι_π_ne _ hjk]
+      ext
+      simp [hjk]
+  inv_hom_id := by rw [biproduct.lift_desc, sum_piπ_comp_piι]
 
 @[reassoc (attr := simp)]
 theorem ι_comp_biproductIsoPi_hom (j : J) :
