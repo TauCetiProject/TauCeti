@@ -37,7 +37,8 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
 
 * `Matrix.UnitaryGroup.detCircle`: the determinant of a complex unitary matrix, as a continuous
   group morphism `U(n) →* Circle`. It is multiplicative on block-diagonal sums
-  (`Matrix.UnitaryGroup.detCircle_sum`).
+  (`Matrix.UnitaryGroup.detCircle_sum`) and inverted by complex conjugation of the entries
+  (`Matrix.UnitaryGroup.detCircle_map_star`).
 -/
 
 public section
@@ -187,5 +188,21 @@ theorem detCircle_sum (p : unitaryGroup n ℂ × unitaryGroup m ℂ) :
   exact det_fromBlocks_zero₂₁ _ _ _
 
 end Sum
+
+/-! ### Complex conjugation -/
+
+/-- Conjugating the entries of a unitary matrix (`Matrix.UnitaryGroup.map_star`) is continuous. -/
+theorem continuous_map_star {α : Type*} [CommRing α] [StarRing α] [TopologicalSpace α]
+    [ContinuousStar α] : Continuous (map_star : unitaryGroup n α → unitaryGroup n α) :=
+  Continuous.subtype_mk (continuous_subtype_val.matrix_map continuous_star) _
+
+/-- The determinant of the complex conjugate of a unitary matrix is the inverse of its
+determinant. -/
+@[simp]
+theorem detCircle_map_star (U : unitaryGroup n ℂ) : detCircle (map_star U) = (detCircle U)⁻¹ := by
+  refine Circle.ext ?_
+  rw [coe_detCircle, map_star_coe, Circle.coe_inv_eq_conj, coe_detCircle, RingHom.map_det]
+  -- `(starRingEnd ℂ).mapMatrix U` is `U.map star` by definition.
+  rfl
 
 end Matrix.UnitaryGroup
