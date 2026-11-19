@@ -35,6 +35,8 @@ identified explicitly with its codimension-one faces.
 * `TauCeti.OrderedSimplicialChain`: finite linear combinations of ordered simplicial cells.
 * `TauCeti.OrderedSimplicialChain.boundary`: the alternating simplicial boundary.
 * `TauCeti.orderedSimplicialChainComplex`: the resulting chain complex of modules.
+* `TauCeti.orderedSimplicialChainComplexHomOfLinear`: the morphism of ordered chain complexes
+  given by linear maps of chains commuting with the boundary.
 * `TauCeti.orderedSimplicialChainComplexAugmentation`: the augmentation of the ordered chain
   complex, a chain map to the coefficient ring in degree `0`.
 
@@ -249,6 +251,41 @@ theorem exact_orderedSimplicialChainComplex_d_iff {n : ℕ} {M N : ModuleCat.{ma
       (eqToIso (orderedSimplicialChainComplex_X R n)) e (by simp [S]) (by simp [S, ← hg])),
     ShortComplex.moduleCat_exact_iff]
   simp only [S, ModuleCat.hom_ofHom]
+
+section Hom
+
+variable {κ : Type u} [LinearOrder κ] {L : _root_.AbstractSimplicialComplex κ}
+
+/-- The morphism of ordered simplicial chain complexes given in each degree by a linear map of
+ordered chains that commutes with the boundary. -/
+def orderedSimplicialChainComplexHomOfLinear
+    (φ : ∀ n, OrderedSimplicialChain K R n →ₗ[R] OrderedSimplicialChain L R n)
+    (h : ∀ n, OrderedSimplicialChain.boundary R n ∘ₗ φ (n + 1) =
+      φ n ∘ₗ OrderedSimplicialChain.boundary R n) :
+    orderedSimplicialChainComplex K R ⟶ orderedSimplicialChainComplex L R where
+  f n := eqToHom (orderedSimplicialChainComplex_X R n) ≫
+    ModuleCat.ofHom (φ n) ≫ eqToHom (orderedSimplicialChainComplex_X R n).symm
+  comm' i j hij := by
+    subst i
+    simp only [orderedSimplicialChainComplex_d, Category.assoc, eqToHom_trans_assoc,
+      eqToHom_refl, Category.id_comp]
+    congr 1
+    simp only [← Category.assoc]
+    congr 1
+    exact ModuleCat.hom_ext (h j)
+
+/-- In each degree the morphism built from linear maps of chains is that linear map. -/
+@[simp]
+theorem orderedSimplicialChainComplexHomOfLinear_f
+    (φ : ∀ n, OrderedSimplicialChain K R n →ₗ[R] OrderedSimplicialChain L R n)
+    (h : ∀ n, OrderedSimplicialChain.boundary R n ∘ₗ φ (n + 1) =
+      φ n ∘ₗ OrderedSimplicialChain.boundary R n) (n : ℕ) :
+    (orderedSimplicialChainComplexHomOfLinear R φ h).f n =
+      eqToHom (orderedSimplicialChainComplex_X R n) ≫
+        ModuleCat.ofHom (φ n) ≫ eqToHom (orderedSimplicialChainComplex_X R n).symm :=
+  (rfl)
+
+end Hom
 
 section Augmentation
 

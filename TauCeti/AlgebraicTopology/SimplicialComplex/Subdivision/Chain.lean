@@ -192,10 +192,7 @@ theorem forall_lt_and_insert_mem_of_mem_support_subdivision_boundary {n : ℕ}
   have hlt : ∀ w ∈ e.1.1, ∃ τ < c.1, b τ = w := fun w hw ↦ by
     obtain ⟨τ, hτ, rfl⟩ :=
       exists_le_eq_of_mem_support_subdivision (c.face j) (Finsupp.support_smul he) hw
-    refine ⟨τ, lt_of_le_of_lt hτ (lt_of_le_of_ne (c.face_val_subset j) fun h ↦ ?_), rfl⟩
-    have hcard := congrArg (fun σ : TauCeti.SetLike.Face K ↦ σ.1.card) h
-    simp only [(c.face j).2, c.2] at hcard
-    omega
+    exact ⟨τ, lt_of_le_of_lt hτ (c.face_val_ssubset j), rfl⟩
   refine ⟨fun w hw ↦ ?_, hL e.1.2 c.1 hlt⟩
   obtain ⟨τ, hτ, rfl⟩ := hlt w hw
   exact hb hτ
@@ -293,17 +290,8 @@ variable {α ι : Type u} [LinearOrder α] [LinearOrder ι]
 with the face and can be adjoined to every face of `L` spanned by barycenters of proper
 subfaces. -/
 def subdivisionChainMap :
-    orderedSimplicialChainComplex K R ⟶ orderedSimplicialChainComplex L R where
-  f n := eqToHom (orderedSimplicialChainComplex_X R n) ≫
-    ModuleCat.ofHom (subdivision R b n) ≫ eqToHom (orderedSimplicialChainComplex_X R n).symm
-  comm' i j h := by
-    subst i
-    simp only [orderedSimplicialChainComplex_d, Category.assoc, eqToHom_trans_assoc,
-      eqToHom_refl, Category.id_comp]
-    congr 1
-    simp only [← Category.assoc]
-    congr 1
-    exact ModuleCat.hom_ext (boundary_comp_subdivision hb hL j)
+    orderedSimplicialChainComplex K R ⟶ orderedSimplicialChainComplex L R :=
+  orderedSimplicialChainComplexHomOfLinear R (subdivision R b) (boundary_comp_subdivision hb hL)
 
 /-- The degreewise subdivision chain map is the subdivision operator. -/
 @[simp]
@@ -311,7 +299,7 @@ theorem subdivisionChainMap_f (n : ℕ) :
     (subdivisionChainMap R hb hL).f n =
       eqToHom (orderedSimplicialChainComplex_X R n) ≫
         ModuleCat.ofHom (subdivision R b n) ≫ eqToHom (orderedSimplicialChainComplex_X R n).symm :=
-  (rfl)
+  orderedSimplicialChainComplexHomOfLinear_f R _ _ n
 
 /-- A simplicial map sending the barycenter of every face to a vertex of that face is a left
 inverse of the subdivision chain map. -/
