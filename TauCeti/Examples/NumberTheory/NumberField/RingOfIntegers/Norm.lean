@@ -176,15 +176,6 @@ example :
 
 /-! ### Embedding moduli in quadratic fields -/
 
-/-- Nonpositive rational radicands give equal complex image norms, including `a = 0`. -/
-private theorem norm_ringHom_eq_norm_complexEmbedding
-    {a : ℚ} (ha : a ≤ 0) (φ : QuadraticAlgebra ℚ a 0 →+* ℂ)
-    (z : QuadraticAlgebra ℚ a 0) :
-    ‖φ z‖ = ‖QuadraticAlgebra.complexEmbedding ha z‖ := by
-  rcases QuadraticAlgebra.algHom_eq_or_eq_comp_starAlgEquiv ha φ.toRatAlgHom with h | h
-  · exact congrArg norm (AlgHom.congr_fun h z)
-  · simpa using congrArg norm (AlgHom.congr_fun h z)
-
 /-- The product of the moduli of the complex conjugates of `1+i` is its absolute integral
 norm, namely `2`. -/
 example :
@@ -281,7 +272,7 @@ private theorem norm_integral_two_add_sqrt_neg_five
       prime_neg_five.squarefree
       (by norm_num)
     ‖σ (e.symm ⟨2, 1⟩)‖ = 3 := by
-  exact (norm_ringHom_eq_norm_complexEmbedding (by norm_num) σ _).trans
+  exact (QuadraticAlgebra.norm_ringHom_eq_norm_complexEmbedding (by norm_num) σ _).trans
     sqrt_neg_five_distinguished_embedding_norm
 
 /-- Every complex embedding of `ℚ(i)` sends the algebraic integer `1+i` to a number of
@@ -291,7 +282,7 @@ example
     let e := QuadraticAlgebra.ringOfIntegersEquiv (d := -1) isUnit_neg_one.squarefree
       (by norm_num)
     ‖σ (e.symm ⟨1, 1⟩)‖ = Real.sqrt 2 := by
-  exact (norm_ringHom_eq_norm_complexEmbedding (by norm_num) σ _).trans
+  exact (QuadraticAlgebra.norm_ringHom_eq_norm_complexEmbedding (by norm_num) σ _).trans
     gaussian_distinguished_embedding_norm
 
 /-- The common embedding bound `3` yields the sharp degree-two upper bound `3²` on the
