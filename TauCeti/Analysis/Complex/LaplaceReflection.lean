@@ -244,7 +244,8 @@ private def lapIntegrand (φ : ℂ → ℝ) (a b c : ℂ → V) (z : ℂ) : V :=
 private theorem integrable_rhs (φ : 𝓓(Ω, ℝ)) {b c : ℂ → V} (hb : LocallyIntegrableOn b Ω)
     (hc : LocallyIntegrableOn c Ω) :
     Integrable fun z ↦ fderiv ℝ (φ : ℂ → ℝ) z 1 • b z + fderiv ℝ (φ : ℂ → ℝ) z I • c z :=
-  (φ.integrable_fderiv_apply_smul 1 hb).fun_add (φ.integrable_fderiv_apply_smul I hc)
+  (integrable_fderiv_smul_of_locallyIntegrableOn hb φ 1).fun_add
+    (integrable_fderiv_smul_of_locallyIntegrableOn hc φ I)
 
 private theorem integrable_lapIntegrand (φ : 𝓓(Ω, ℝ)) {a b c : ℂ → V}
     (ha : LocallyIntegrableOn a Ω) (hb : LocallyIntegrableOn b Ω)
