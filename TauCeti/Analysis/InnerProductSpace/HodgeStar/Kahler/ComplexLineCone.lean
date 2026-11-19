@@ -31,7 +31,15 @@ through an orthonormal eigenbasis (`exists_eq_smul_sum_of_mem_positiveCone`).
 **Pairing with taming forms.** If a two-form `Ω` is nonnegative on the complex lines of `J`, it
 pairs nonnegatively with the whole cone (`inner_nonneg_of_mem_complexLineCone`). If moreover
 `Ω(v, J v) ≥ c₀ ‖v‖²` and `‖J v‖ ≤ K ‖v‖`, then `c₀ ‖κ‖ ≤ K ⟪Ω, κ⟫` for every `κ` in the cone
-(`mul_norm_le_mul_inner_of_mem_complexLineCone`). No orthogonality of `J` is needed.
+(`mul_norm_le_mul_inner_of_mem_complexLineCone`). No orthogonality of `J` is needed. For an
+orthogonal `J`, where `K = 1` and the cone is the positive cone, these give the norm control of
+positive `(1,1)`-forms: `‖κ‖ ≤ ⟪ω, κ⟫` (`norm_le_inner_kahlerForm_of_mem_positiveCone`),
+`⟪Ω, κ⟫ ≥ 0` and `c₀ ‖κ‖ ≤ ⟪Ω, κ⟫` (`inner_nonneg_of_mem_positiveCone`,
+`mul_norm_le_inner_of_mem_positiveCone`), and, for every two-form `η`,
+
+`c₀ ‖η‖ ≤ ⟪Ω, η⟫ + (‖Ω‖ + c₀) dist(η, positiveCone)`
+
+(`mul_norm_le_inner_add_mul_infDist_positiveCone`).
 
 **Changing the almost complex structure.** Let `J` be orthogonal and `J'` arbitrary, with
 `‖J' v - J v‖ ≤ ε ‖v‖`. Replacing each complex line `bᵢ ∧ J bᵢ` of a positive `(1,1)`-form
@@ -42,14 +50,18 @@ two-vector `η`,
 `dist(η, cone(J')) ≤ dist(η, positiveCone(J)) + ε ‖ω‖ (‖η‖ + dist(η, positiveCone(J)))`
 
 (`infDist_complexLineCone_le`), with `‖ω‖² = dim V / 2`. Integrated against a measure, the cone
-defect of a field of two-vectors for `J'` is bounded by its cone defect for `J` plus `ε ‖ω‖` times
-its mass (`integral_infDist_complexLineCone_le`).
+defect of a field `ξ` of two-vectors for `J'` satisfies
+
+`∫ dist(ξ, cone(J')) ≤ (1 + ε ‖ω‖) ∫ dist(ξ, positiveCone(J)) + ε ‖ω‖ ∫ ‖ξ‖`
+
+(`integral_infDist_complexLineCone_le`), where the last integral is the mass of `ξ`.
 
 In Taubes's passage from Seiberg–Witten solutions to pseudoholomorphic curves, the rescaled
 curvature currents near a curve are approximately positive for the dilated structure `J_a`, which
 converges to the normal linearization `J_N` at rate `O(a)` (`TauCeti.normalDilation`); `J_N` is in
-general not orthogonal for the fixed rescaled metric. These estimates bound the cone defect for
-`J_N` by the cone defect for `J_a` plus `O(a)` times the mass.
+general not orthogonal for the fixed rescaled metric. When `J_a` is orthogonal for the metric in
+use, these estimates, with `J = J_a` and `J' = J_N`, bound the cone defect for `J_N` by
+`1 + O(a)` times the cone defect for `J_a` plus `O(a)` times the mass.
 
 ## Main definitions
 
@@ -67,6 +79,10 @@ In the namespace `TauCeti.AlmostComplexStructure`:
   `(1,1)`-forms.
 * `inner_nonneg_of_mem_complexLineCone`, `mul_norm_le_mul_inner_of_mem_complexLineCone`: pairing
   with forms that are nonnegative, respectively positive, on complex lines.
+* `norm_le_inner_kahlerForm_of_mem_positiveCone`, `inner_nonneg_of_mem_positiveCone`,
+  `mul_inner_kahlerForm_le_inner_of_mem_positiveCone`, `mul_norm_le_inner_of_mem_positiveCone`,
+  `mul_norm_le_inner_add_mul_infDist_positiveCone`: norm control of positive `(1,1)`-forms, and of
+  every two-form by its distance to the positive cone, for an orthogonal `J`.
 * `infDist_complexLineCone_le_of_mem_positiveCone`, `infDist_complexLineCone_le`,
   `infDist_positiveCone_le_infDist_positiveCone_add`: Lipschitz dependence of the cone on the
   almost complex structure.
@@ -112,7 +128,7 @@ theorem ιMulti_mem_complexLineCone (J : AlmostComplexStructure V) (v : V) :
 theorem complexLineCone_le_iff {J : AlmostComplexStructure V} {C : PointedCone ℝ (⋀[ℝ]^2 V)} :
     J.complexLineCone ≤ C ↔ ∀ v, ιMulti ℝ 2 ![v, J v] ∈ C := by
   rw [complexLineCone, PointedCone.hull, Submodule.span_le, Set.range_subset_iff]
-  rfl
+  simp only [SetLike.mem_coe]
 
 /-- A nonnegative multiple of a complex line is a complex line:
 `c (v ∧ J v) = (√c v) ∧ J (√c v)` for `c ≥ 0`. -/
@@ -126,20 +142,21 @@ theorem mem_complexLineCone_iff {J : AlmostComplexStructure V} {η : ⋀[ℝ]^2 
     η ∈ J.complexLineCone ↔ ∃ (n : ℕ) (v : Fin n → V), η = ∑ i, ιMulti ℝ 2 ![v i, J (v i)] := by
   refine ⟨fun h ↦ ?_, fun ⟨n, v, hη⟩ ↦ hη ▸
     Submodule.sum_mem _ fun i _ ↦ J.ιMulti_mem_complexLineCone (v i)⟩
-  induction h using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨w, rfl⟩ := hx
-    exact ⟨1, fun _ ↦ w, by simp⟩
-  | zero => exact ⟨0, Fin.elim0, by simp⟩
-  | add x y _ _ hx hy =>
-    obtain ⟨n, v, rfl⟩ := hx
-    obtain ⟨n', v', rfl⟩ := hy
-    exact ⟨n + n', Fin.append v v', by simp [Fin.sum_univ_add]⟩
-  | smul c x _ hx =>
-    obtain ⟨n, v, rfl⟩ := hx
-    refine ⟨n, fun i ↦ √(c : ℝ) • v i, ?_⟩
-    rw [← Nonneg.coe_smul, Finset.smul_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ J.smul_ιMulti_eq_ιMulti c.2 (v i)
+  obtain ⟨n, c, g, rfl⟩ := Submodule.mem_span_set'.1 h
+  choose v hv using fun i ↦ (g i).2
+  refine ⟨n, fun i ↦ √(c i : ℝ) • v i, Finset.sum_congr rfl fun i _ ↦ ?_⟩
+  rw [← hv i, ← Nonneg.coe_smul]
+  exact J.smul_ιMulti_eq_ιMulti (c i).2 (v i)
+
+/-- A nonnegative combination `c ∑ᵢ μᵢ vᵢ ∧ J vᵢ` of complex lines lies in the cone of complex
+lines. -/
+theorem smul_sum_smul_ιMulti_mem_complexLineCone (J : AlmostComplexStructure V) {ι : Type*}
+    {s : Finset ι} {c : ℝ} (hc : 0 ≤ c) {μ : ι → ℝ} (hμ : ∀ i ∈ s, 0 ≤ μ i) (v : ι → V) :
+    c • ∑ i ∈ s, μ i • ιMulti ℝ 2 ![v i, J (v i)] ∈ J.complexLineCone := by
+  rw [Finset.smul_sum]
+  refine Submodule.sum_mem _ fun i hi ↦ ?_
+  rw [smul_smul, J.smul_ιMulti_eq_ιMulti (mul_nonneg hc (hμ i hi))]
+  exact J.ιMulti_mem_complexLineCone _
 
 /-- **The complex lines are `J`-invariant**: every element `η` of the cone of complex lines
 satisfies `D_J η = 0`, that is, it is a `(1,1)` two-vector. -/
@@ -149,22 +166,24 @@ theorem lieMap_eq_zero_of_mem_complexLineCone {J : AlmostComplexStructure V} {η
   rw [map_sum]
   exact Finset.sum_eq_zero fun i _ ↦ lieMap_ιMulti_apply J (v i)
 
+/-- A complex-linear map `f`, `f ∘ J = J' ∘ f`, carries the complex line `v ∧ J v` of `J` to the
+complex line `f v ∧ J' (f v)` of `J'`. -/
+private theorem comp_vecCons_eq {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
+    {f : V →ₗ[ℝ] W} (hf : IsComplexLinearMap J J' f) (v : V) :
+    f ∘ ![v, J v] = ![f v, J' (f v)] := by
+  ext j
+  fin_cases j <;> simp [(isComplexLinearMap_iff_apply J J' f).1 hf]
+
 /-- **Naturality of the cone of complex lines**: a complex-linear map `f`, `f ∘ J = J' ∘ f`,
 carries complex lines of `J` to complex lines of `J'`, so `⋀² f` maps the cone of `J` into the
 cone of `J'`. -/
 theorem map_complexLineCone_le {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
     {f : V →ₗ[ℝ] W} (hf : IsComplexLinearMap J J' f) :
     J.complexLineCone.map (exteriorPower.map 2 f) ≤ J'.complexLineCone := by
-  have hf' := (isComplexLinearMap_iff_apply J J' f).1 hf
   rintro _ ⟨η, hη, rfl⟩
   obtain ⟨n, v, rfl⟩ := mem_complexLineCone_iff.1 hη
-  simp only [LinearMap.coe_restrictScalars, map_sum, map_apply_ιMulti]
-  refine Submodule.sum_mem _ fun i _ ↦ ?_
-  have h : f ∘ ![v i, J (v i)] = ![f (v i), J' (f (v i))] := by
-    ext j
-    fin_cases j <;> simp [hf']
-  rw [h]
-  exact J'.ιMulti_mem_complexLineCone _
+  simp only [LinearMap.coe_restrictScalars, map_sum, map_apply_ιMulti, comp_vecCons_eq hf]
+  exact Submodule.sum_mem _ fun i _ ↦ J'.ιMulti_mem_complexLineCone _
 
 /-- For a surjective complex-linear map `f`, `⋀² f` maps the cone of complex lines of `J` onto
 the cone of complex lines of `J'`. In particular a complex-linear isomorphism, such as a change of
@@ -175,11 +194,7 @@ theorem map_complexLineCone {J : AlmostComplexStructure V} {J' : AlmostComplexSt
   refine le_antisymm (map_complexLineCone_le hf) (complexLineCone_le_iff.2 fun w ↦ ?_)
   obtain ⟨v, rfl⟩ := hsurj w
   refine ⟨ιMulti ℝ 2 ![v, J v], J.ιMulti_mem_complexLineCone v, ?_⟩
-  rw [LinearMap.coe_restrictScalars, map_apply_ιMulti,
-    ← (isComplexLinearMap_iff_apply J J' f).1 hf v]
-  congr 1
-  ext j
-  fin_cases j <;> rfl
+  rw [LinearMap.coe_restrictScalars, map_apply_ιMulti, comp_vecCons_eq hf]
 
 end Module
 
@@ -208,9 +223,7 @@ theorem mul_norm_le_mul_inner_of_mem_complexLineCone {Ω κ : ⋀[ℝ]^2 V} {c�
   -- Each line satisfies `c₀ ‖v ∧ J v‖ ≤ c₀ ‖v‖ ‖J v‖ ≤ K c₀ ‖v‖² ≤ K Ω(v, J v)`.
   have hline (w : V) : c₀ * ‖ιMulti ℝ 2 ![w, J w]‖ ≤ K * ⟪Ω, ιMulti ℝ 2 ![w, J w]⟫ := by
     rcases eq_or_ne w 0 with rfl | hw
-    · have h0 : ιMulti ℝ 2 ![(0 : V), 0] = 0 := by
-        simpa using ιMulti_two_smul_left (0 : V) 0 (0 : ℝ)
-      simp [h0]
+    · simp [(ιMulti ℝ 2).map_coord_zero (m := ![(0 : V), 0]) 0 rfl]
     have hK₀ : 0 ≤ K := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hK w))
       (norm_pos_iff.2 hw)
     calc c₀ * ‖ιMulti ℝ 2 ![w, J w]‖ ≤ c₀ * (‖w‖ * (K * ‖w‖)) :=
@@ -223,36 +236,85 @@ theorem mul_norm_le_mul_inner_of_mem_complexLineCone {Ω κ : ⋀[ℝ]^2 V} {c�
     (by rw [Finset.mul_sum]; exact Finset.sum_le_sum fun i _ ↦ hline (v i))
 
 /-- **For an orthogonal almost complex structure the cone of complex lines is the cone of positive
-`(1,1)`-forms.** Complex lines are positive, and conversely a positive `(1,1)`-form is the
-nonnegative combination `(1 / 2) ∑ᵢ μᵢ bᵢ ∧ J bᵢ` of complex lines through an orthonormal
-eigenbasis. -/
+`(1,1)`-forms.** -/
 theorem complexLineCone_eq_positiveCone (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) :
     J.complexLineCone = J.positiveCone := by
   refine le_antisymm (complexLineCone_le_iff.2 (ιMulti_mem_positiveCone hJ)) fun κ hκ ↦ ?_
   obtain ⟨b, μ, hμ, rfl⟩ := exists_eq_smul_sum_of_mem_positiveCone hJ hκ
-  rw [Finset.smul_sum]
-  refine Submodule.sum_mem _ fun i _ ↦ ?_
-  rw [smul_smul, J.smul_ιMulti_eq_ιMulti (mul_nonneg (by norm_num) (hμ i))]
-  exact J.ιMulti_mem_complexLineCone _
+  exact J.smul_sum_smul_ιMulti_mem_complexLineCone (by norm_num) (fun i _ ↦ hμ i) b
+
+/-! ### Positive `(1,1)`-forms and taming forms -/
+
+/-- **The norm of a positive `(1,1)`-form is at most its pairing with `ω`**: `‖κ‖ ≤ ⟪ω, κ⟫`, for
+an orthogonal complex structure. -/
+theorem norm_le_inner_kahlerForm_of_mem_positiveCone (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
+    {κ : ⋀[ℝ]^2 V} (hκ : κ ∈ J.positiveCone) : ‖κ‖ ≤ ⟪J.kahlerForm, κ⟫ := by
+  simpa using mul_norm_le_mul_inner_of_mem_complexLineCone zero_le_one
+    (fun v ↦ by rw [one_mul, inner_kahlerForm_ιMulti hJ, hJ, real_inner_self_eq_norm_sq])
+    (fun v ↦ (norm_apply hJ v).trans_le (one_mul _).ge)
+    ((complexLineCone_eq_positiveCone hJ).ge hκ)
+
+/-- **Positive `(1,1)`-forms pair nonnegatively with forms that are nonnegative on complex
+lines**: if `Ω(v, J v) ≥ 0` for every `v`, then `⟪Ω, κ⟫ ≥ 0` for every positive `(1,1)`-form
+`κ`. The form `Ω` need not be `J`-invariant. -/
+theorem inner_nonneg_of_mem_positiveCone (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {Ω κ : ⋀[ℝ]^2 V}
+    (hΩ : ∀ v, 0 ≤ ⟪Ω, ιMulti ℝ 2 ![v, J v]⟫) (hκ : κ ∈ J.positiveCone) : 0 ≤ ⟪Ω, κ⟫ :=
+  inner_nonneg_of_mem_complexLineCone hΩ ((complexLineCone_eq_positiveCone hJ).ge hκ)
+
+/-- If `Ω(v, J v) ≥ c₀ ‖v‖²` for every `v`, then `c₀ ⟪ω, κ⟫ ≤ ⟪Ω, κ⟫` for every positive
+`(1,1)`-form `κ`. -/
+theorem mul_inner_kahlerForm_le_inner_of_mem_positiveCone (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
+    {Ω κ : ⋀[ℝ]^2 V} {c₀ : ℝ} (hΩ : ∀ v, c₀ * ‖v‖ ^ 2 ≤ ⟪Ω, ιMulti ℝ 2 ![v, J v]⟫)
+    (hκ : κ ∈ J.positiveCone) : c₀ * ⟪J.kahlerForm, κ⟫ ≤ ⟪Ω, κ⟫ := by
+  have h := inner_nonneg_of_mem_positiveCone hJ (Ω := Ω - c₀ • J.kahlerForm)
+    (fun v ↦ by
+      rw [inner_sub_left, real_inner_smul_left, inner_kahlerForm_ιMulti hJ, hJ,
+        real_inner_self_eq_norm_sq]
+      linarith [hΩ v]) hκ
+  rw [inner_sub_left, real_inner_smul_left] at h
+  linarith
+
+/-- **A taming form controls the norm of positive `(1,1)`-forms**: if `Ω(v, J v) ≥ c₀ ‖v‖²` for
+every `v`, with `c₀ ≥ 0`, then `c₀ ‖κ‖ ≤ ⟪Ω, κ⟫` for every positive `(1,1)`-form `κ`. -/
+theorem mul_norm_le_inner_of_mem_positiveCone (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
+    {Ω κ : ⋀[ℝ]^2 V} {c₀ : ℝ} (hc₀ : 0 ≤ c₀)
+    (hΩ : ∀ v, c₀ * ‖v‖ ^ 2 ≤ ⟪Ω, ιMulti ℝ 2 ![v, J v]⟫) (hκ : κ ∈ J.positiveCone) :
+    c₀ * ‖κ‖ ≤ ⟪Ω, κ⟫ := by
+  simpa using mul_norm_le_mul_inner_of_mem_complexLineCone hc₀ hΩ
+    (fun v ↦ (norm_apply hJ v).trans_le (one_mul _).ge)
+    ((complexLineCone_eq_positiveCone hJ).ge hκ)
+
+/-- **Norm control by a taming form and the distance to the positive cone**: if
+`Ω(v, J v) ≥ c₀ ‖v‖²` for every `v`, with `c₀ ≥ 0`, then every two-form `η` satisfies
+`c₀ ‖η‖ ≤ ⟪Ω, η⟫ + (‖Ω‖ + c₀) dist(η, positiveCone)`. -/
+theorem mul_norm_le_inner_add_mul_infDist_positiveCone (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
+    {Ω : ⋀[ℝ]^2 V} {c₀ : ℝ} (hc₀ : 0 ≤ c₀) (hΩ : ∀ v, c₀ * ‖v‖ ^ 2 ≤ ⟪Ω, ιMulti ℝ 2 ![v, J v]⟫)
+    (η : ⋀[ℝ]^2 V) :
+    c₀ * ‖η‖ ≤ ⟪Ω, η⟫ + (‖Ω‖ + c₀) * infDist η (J.positiveCone : Set (⋀[ℝ]^2 V)) := by
+  obtain ⟨κ, hκ, hd⟩ := (isClosed_positiveCone J).exists_infDist_eq_dist
+    ⟨0, zero_mem J.positiveCone⟩ η
+  rw [hd, dist_eq_norm]
+  have hκη := mul_norm_le_inner_of_mem_positiveCone hJ hc₀ hΩ hκ
+  have htri : ‖η‖ ≤ ‖κ‖ + ‖η - κ‖ := norm_le_norm_add_norm_sub' η κ
+  have hpair : ⟪Ω, κ - η⟫ ≤ ‖Ω‖ * ‖η - κ‖ := by
+    rw [← norm_neg (η - κ), neg_sub]
+    exact real_inner_le_norm Ω (κ - η)
+  rw [inner_sub_right] at hpair
+  nlinarith [norm_nonneg (η - κ)]
 
 /-! ### Changing the almost complex structure -/
 
 /-- **A positive `(1,1)`-form is close to the cone of a nearby almost complex structure.** Let `J`
 be orthogonal and `J'` an arbitrary almost complex structure with `‖J' v - J v‖ ≤ ε ‖v‖` for every
 `v`. Every positive `(1,1)`-form `κ` of `J` is at distance at most `ε ⟪ω, κ⟫` from the cone of
-complex lines of `J'`, where `ω` is the Kähler two-vector of `J`: writing
-`κ = (1 / 2) ∑ᵢ μᵢ bᵢ ∧ J bᵢ` in an orthonormal eigenbasis, the two-vector
-`(1 / 2) ∑ᵢ μᵢ bᵢ ∧ J' bᵢ` lies in the cone of `J'`. -/
+complex lines of `J'`, where `ω` is the Kähler two-vector of `J`. -/
 theorem infDist_complexLineCone_le_of_mem_positiveCone (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
     {J' : AlmostComplexStructure V} {ε : ℝ} (hε : ∀ v, ‖J' v - J v‖ ≤ ε * ‖v‖) {κ : ⋀[ℝ]^2 V}
     (hκ : κ ∈ J.positiveCone) :
     infDist κ (J'.complexLineCone : Set (⋀[ℝ]^2 V)) ≤ ε * ⟪J.kahlerForm, κ⟫ := by
   obtain ⟨b, μ, hμ, rfl⟩ := exists_eq_smul_sum_of_mem_positiveCone hJ hκ
-  have hκ' : (2⁻¹ : ℝ) • ∑ i, μ i • ιMulti ℝ 2 ![b i, J' (b i)] ∈ J'.complexLineCone := by
-    rw [Finset.smul_sum]
-    refine Submodule.sum_mem _ fun i _ ↦ ?_
-    rw [smul_smul, J'.smul_ιMulti_eq_ιMulti (mul_nonneg (by norm_num) (hμ i))]
-    exact J'.ιMulti_mem_complexLineCone _
+  have hκ' : (2⁻¹ : ℝ) • ∑ i, μ i • ιMulti ℝ 2 ![b i, J' (b i)] ∈ J'.complexLineCone :=
+    J'.smul_sum_smul_ιMulti_mem_complexLineCone (by norm_num) (fun i _ ↦ hμ i) b
   -- Each unit complex line `bᵢ ∧ J bᵢ` moves by `‖bᵢ ∧ (J bᵢ - J' bᵢ)‖ ≤ ε` and pairs with `ω`
   -- to `1`.
   have hline (i) : ‖ιMulti ℝ 2 ![b i, J (b i)] - ιMulti ℝ 2 ![b i, J' (b i)]‖ ≤ ε := by
