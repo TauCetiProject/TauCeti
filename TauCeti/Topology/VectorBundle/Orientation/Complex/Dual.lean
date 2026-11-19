@@ -63,6 +63,7 @@ theorem complexEulerClass_dual_of_continuousFiberNorm (hF : finrank ℂ (StrongD
     complexEulerClass (StrongDual ℂ F) (fun b ↦ StrongDual ℂ (E b)) hF =
       (-1 : ℤ) ^ (r + 1) •
         complexEulerClass F E (ContinuousLinearMap.dual_finrank_eq.symm.trans hF) := by
+  have := FiniteDimensional.completeSpace ℂ F
   have h := complexEulerClass_eq_neg_one_pow_smul_of_conjugateFiberwise hF
     (ContinuousLinearMap.dual_finrank_eq.symm.trans hF)
     (φ := fun b ↦ (bundleToDual F E ℂ b).toContinuousLinearEquiv) (continuous_bundleToDual ℂ)

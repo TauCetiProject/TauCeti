@@ -32,7 +32,7 @@ vector bundle.
 ## Main definitions
 
 * `TauCeti.ContinuousFiberNorm F E`: the fibre norm is continuous on the total space.
-* `TauCeti.bundleToDual F E 𝕜 b`: for a finite-dimensional model fibre `F`, the Riesz isometric
+* `TauCeti.bundleToDual F E 𝕜 b`: for a complete model fibre `F`, the Riesz isometric
   isomorphism `E_b ≃ E_b*`, `v ↦ ⟪v, ·⟫`.
 
 ## Main results
@@ -187,31 +187,29 @@ theorem Continuous.inner_bundle_of_continuousFiberNorm
 
 namespace TauCeti
 
-variable [FiniteDimensional 𝕜 F]
+variable [CompleteSpace F]
 
 variable (F E 𝕜) in
-include F in
 omit [ContinuousFiberNorm F E] in
 /-- The fibrewise Riesz isomorphism `v ↦ ⟪v, ·⟫` of a bundle `E` of inner product spaces over `𝕜`
-with finite-dimensional model fibre `F`, a conjugate-linear isometric isomorphism `E_b ≃ E_b*`. -/
+with complete model fibre `F`, a conjugate-linear isometric isomorphism `E_b ≃ E_b*`. -/
 noncomputable def bundleToDual (b : B) : E b ≃ₗᵢ⋆[𝕜] StrongDual 𝕜 (E b) :=
-  haveI := FiniteDimensional.completeSpace 𝕜 F
   haveI := VectorBundle.completeSpace (R := 𝕜) F E b
   InnerProductSpace.toDual 𝕜 (E b)
 
 omit [ContinuousFiberNorm F E] in
 @[simp] theorem bundleToDual_apply (b : B) (v w : E b) :
     bundleToDual F E 𝕜 b v w = ⟪v, w⟫_𝕜 :=
-  haveI := FiniteDimensional.completeSpace 𝕜 F
   haveI := VectorBundle.completeSpace (R := 𝕜) F E b
   InnerProductSpace.toDual_apply_apply
 
 omit [ContinuousFiberNorm F E] in
 @[simp] theorem bundleToDual_symm_apply (b : B) (φ : StrongDual 𝕜 (E b)) (w : E b) :
     ⟪(bundleToDual F E 𝕜 b).symm φ, w⟫_𝕜 = φ w :=
-  haveI := FiniteDimensional.completeSpace 𝕜 F
   haveI := VectorBundle.completeSpace (R := 𝕜) F E b
   InnerProductSpace.toDual_symm_apply
+
+variable [FiniteDimensional 𝕜 F]
 
 variable (𝕜) in
 /-- **The Riesz isomorphism of a bundle with continuous fibre norm is continuous.** If the model
