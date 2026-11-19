@@ -289,6 +289,8 @@ theorem map_subtype_injective_of_coprime_exponent
         (Rep.ofMulDistribMulAction (G ⧸ N) N))) n) :=
   TauCeti.groupCohomology.map_subtype_injective_of_coprime _
     (A := Rep.ofMulDistribMulAction (G ⧸ N) N)
+    -- `nsmul` on the carrier of `Rep.ofMulDistribMulAction` is `Additive.ofMul` of `pow` on `N`
+    -- by definition, so `exponent N • a = 0` is `Additive.ofMul` of `pow_exponent_eq_one`.
     (fun a ↦ congrArg Additive.ofMul (Monoid.pow_exponent_eq_one (G := N) a.toMul))
     (hcop.of_dvd_left (H.index_map_dvd (QuotientGroup.mk'_surjective N))) n
 
