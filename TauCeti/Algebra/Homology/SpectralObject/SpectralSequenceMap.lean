@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Homology.SpectralObject.FirstPage
 public import Mathlib.Algebra.Homology.SpectralObject.SpectralSequence
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.LeftHomology
+public import TauCeti.Algebra.Homology.SpectralSequence.Comparison
 -- The statement of `SpectralObject.spectralSequence_iso` refers to private auxiliary proofs of
 -- this file, so that it may only be used with access to its private declarations.
 import all Mathlib.Algebra.Homology.SpectralObject.SpectralSequence
@@ -39,6 +40,9 @@ which is functorial in `φ`.
   next page.
 * `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_id`,
   `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_comp`: functoriality.
+* An isomorphism of spectral objects induces an isomorphism of spectral sequences (an instance on
+  `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap`), hence on every page and on every
+  object of every page.
 * `spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom`: on the first page, identified
   with objects `H^n(f)`, the morphism is the component of `φ`.
 
@@ -277,6 +281,27 @@ lemma spectralSequenceMap_comp :
     spectralSequenceMap data (φ ≫ ψ) = spectralSequenceMap data φ ≫ spectralSequenceMap data ψ := by
   ext r hr : 2
   simp
+
+section IsIso
+
+variable [IsIso φ]
+
+/-- An isomorphism of spectral objects induces an isomorphism of spectral sequences. -/
+instance : IsIso (spectralSequenceMap data φ) :=
+  ⟨spectralSequenceMap data (inv φ), by simp [← spectralSequenceMap_comp],
+    by simp [← spectralSequenceMap_comp]⟩
+
+/-- An isomorphism of spectral objects induces an isomorphism on every page. -/
+instance (r : ℤ) (hr : r₀ ≤ r) : IsIso (spectralSequencePageMap data φ r hr) := by
+  rw [← spectralSequenceMap_hom]
+  infer_instance
+
+/-- An isomorphism of spectral objects induces an isomorphism on every object of every page. -/
+instance (r : ℤ) (hr : r₀ ≤ r) (pq : κ) : IsIso (spectralSequencePageXMap data φ r hr pq) := by
+  rw [← spectralSequencePageMap_f]
+  infer_instance
+
+end IsIso
 
 section FirstPage
 
