@@ -278,7 +278,7 @@ theorem exists_pos_forall_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdj
       _ ≤ m * μ (Metric.ball 0 ρ) := by
         gcongr
         exact_mod_cast hm ▸ Multiset.toFinset_card_le D
-  · -- A point where `4 |α|² ≤ 1/2` lies within `ρ` of a zero.
+  · -- A point where `2 P < 1/4`, so `|α|² ≤ 1/2`, lies within `ρ` of a zero.
     by_contra! hlt
     obtain ⟨a, haD, ha⟩ := exists_mem_mul_norm_sub_sq_lt hx hsol hframe hD
       (by simp [C] : 16 * (m : ℝ) < C) (by norm_num : (1 : ℝ) / 2 < 1) (z := z) (by linarith)
