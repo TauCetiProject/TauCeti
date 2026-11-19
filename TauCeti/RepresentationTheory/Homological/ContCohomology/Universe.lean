@@ -97,8 +97,8 @@ theorem d_comp_resolutionXUniverseIso_hom (n : ℕ) :
       (resolutionXUniverseIso X n).hom ≫ d.{w, u, v} X n := by
   induction n with
   | zero =>
-    rw [resolutionXUniverseIso_succ, resolutionXUniverseIso_zero, Functor.mapIso_refl,
-      Iso.refl_hom, Iso.refl_hom, Category.comp_id, Category.id_comp]
+    simp only [resolutionXUniverseIso_succ, resolutionXUniverseIso_zero, Functor.mapIso_refl,
+      Iso.refl_hom, Category.comp_id, Category.id_comp]
     -- both sides are `ofHom X.ρ.coind₁ι`, built at the two universe parameters
     rfl
   | succ n ih =>
@@ -106,8 +106,9 @@ theorem d_comp_resolutionXUniverseIso_hom (n : ℕ) :
     -- naturality of `coind₁ι`, the second by the induction hypothesis
     rw [d_succ, d_succ, Preadditive.sub_comp, Preadditive.comp_sub]
     refine congrArg₂ (· - ·) (coind₁ι.naturality (resolutionXUniverseIso X (n + 1)).hom).symm ?_
-    rw [resolutionXUniverseIso_succ, Functor.mapIso_hom, ← Functor.map_comp, ih,
-      Functor.map_comp, ← Functor.mapIso_hom, ← resolutionXUniverseIso_succ]
+    -- the second term is `coind₁Functor` applied to both sides of the induction hypothesis
+    exact ((coind₁Functor k G).map_comp _ _).symm.trans <|
+      (congrArg (coind₁Functor k G).map ih).trans ((coind₁Functor k G).map_comp _ _)
 
 /-- The comparison of the shifted coinduced resolutions, as an isomorphism of complexes. -/
 private noncomputable def resolution'UniverseIso :
@@ -191,9 +192,9 @@ theorem resolutionMap_comp_resolutionXUniverseIso_hom (φ : H →ₜ* G) (f : re
         resolutionMap.{w, u, v} φ f n := by
   induction n with
   | zero =>
-    rw [resolutionMap_zero, resolutionMap_zero, resolutionXUniverseIso_zero,
-      resolutionXUniverseIso_zero, Iso.refl_hom, Iso.refl_hom, CategoryTheory.Functor.map_id,
-      Category.comp_id, Category.id_comp]
+    -- in degree zero `resolutionMap φ f 0` is `f` and both comparisons are identities
+    exact (Category.comp_id f).trans <| (Category.id_comp f).symm.trans <|
+      congrArg (· ≫ f) ((resFunctor (φ : H →* G)).map_id X).symm
   | succ n ih =>
     rw [resolutionMap_succ, resolutionMap_succ, resolutionXUniverseIso_succ,
       resolutionXUniverseIso_succ, Functor.mapIso_hom, Functor.mapIso_hom]
