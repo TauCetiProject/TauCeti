@@ -16,17 +16,23 @@ import TauCeti.Topology.Compactness.Compact
 
 Let `ω` be a nondegenerate two-form on a boundaryless manifold `M` with finite-dimensional model
 space, such as a closed symplectic manifold, and let `u` solve the Floer equation
-`(du - X_K)^{0,1} = 0` for a perturbation `K = K_s ds + K_t dt` and domain-dependent almost complex
-structures `J(z, x)` tamed by `ω`, with values in a compact set `K ⊆ M`. This file proves the
-interior part of Gromov–Floer compactness for such solutions without assuming that their images
-stay in a single chart.
+`(du - X_{K_s} ds - X_{K_t} dt)^{0,1} = 0` for a perturbation `K_s ds + K_t dt` and
+domain-dependent almost complex structures `J(z, x)` tamed by `ω`, with values in a compact set
+`K ⊆ M`. This file proves the interior part of Gromov–Floer compactness for such solutions without
+assuming that their images stay in a single chart.
 
 The derivatives of the solutions are measured through a map `e : M → F` into a normed space,
 injective and differentiable on `K`, such as the Whitney embedding of a closed manifold, with the
 structures uniformly tame with respect to `e`, `c ‖d e v‖² ≤ ω(v, J v)`, as in
-`TauCeti.Geometry.Symplectic.Floer.Compactness.BoundedDensity`. The two results, in the namespace
+`TauCeti.Geometry.Symplectic.Floer.Compactness.BoundedDensity`. The three results, in the namespace
 `TauCeti.SmoothTwoForm`, are the following.
 
+* **The mean-value inequality in a compact subset of the manifold**
+  (`IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_dist_lt`). There are
+  constants `δ > 0`, `C ≥ 0` and `θ > 0`, uniform over `K`, such that
+  `r² ρ(u)(z₀) ≤ C (r² + ∫_{B_r(z₀)} ρ(u))` for every solution on a disc `B_r(z₀)` of energy
+  `r² + ∫_{B_r(z₀)} ρ(u) < δ` that maps the disc into `K` with images through `e` within `θ` of
+  `e (u z₀)`. No chart is prescribed.
 * **Energy concentrates at blow-up points**
   (`IsNondegenerate.exists_pos_forall_eventually_le_setIntegral_floerEnergyDensity`).
   There is a threshold `δ > 0`, depending only on the data and on a compact window `D` of the
@@ -42,7 +48,9 @@ structures uniformly tame with respect to `e`, `c ‖d e v‖² ≤ ω(v, J v)`,
   with values in `K`.
 
 The threshold comes from the mean-value inequality in a chart
-(`IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_small_energy`).
+(`IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_small_energy`), made uniform
+over `K` in the first result
+(`IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_dist_lt`).
 The point is to bring the discs where it is applied into a chart. Cover `K` by finitely many
 charts. Near a blow-up point, choose centres `cᵢ` and scales `εᵢ → 0` as in bubbling analysis
 (`TauCeti.SmoothTwoForm.exists_rescale_isComplexLinearMap_perturbedMFDeriv`): the energy density is
@@ -150,15 +158,15 @@ be a nondegenerate two-form on a boundaryless manifold `M` with finite-dimension
 `e : M → F` be continuous and injective on `K`.
 
 Then there are `δ > 0`, `C ≥ 0` and `θ > 0` with the following property. Let `u` be a `C³`
-solution of the Floer equation `(du - X_K)^{0,1} = 0` on an open set containing a closed disc
-`closedBall z₀ r ⊆ D`, mapping the disc into `K` with images through `e` within `θ` of
-`e (u z₀)`. If its Floer energy density `ρ(u)` is integrable on `B_r(z₀)` and
+solution of the Floer equation `(du - X_{K_s} ds - X_{K_t} dt)^{0,1} = 0` on an open set
+containing a closed disc `closedBall z₀ r ⊆ D`, mapping the disc into `K` with images through `e`
+within `θ` of `e (u z₀)`. If its Floer energy density `ρ(u)` is integrable on `B_r(z₀)` and
 `r² + ∫_{B_r(z₀)} ρ(u) < δ`, then
 
 `r² ρ(u)(z₀) ≤ C (r² + ∫_{B_r(z₀)} ρ(u))`.
 
-Such a disc need not map into a prescribed chart, but it maps into one chart of a finite cover of
-`K` by compact coordinate balls. -/
+Unlike `IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_small_energy`, the disc
+is not required to map into a prescribed chart, and the constants do not depend on a chart. -/
 theorem IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_dist_lt
     (hω : ω.IsNondegenerate) (hU : IsOpen U) (hDU : D ⊆ U) (hD : IsCompact D) (hK : IsCompact K)
     (hJ : ∀ x ∈ K,
@@ -180,34 +188,20 @@ theorem IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_dist_l
       r ^ 2 * ω.floerEnergyDensity Ks Kt u z₀ ≤
         C * (r ^ 2 + ∫ y in ball z₀ r, ω.floerEnergyDensity Ks Kt u y) := by
   -- The mean-value inequality near each point of `K`.
-  have hdata : ∀ x : M, ∃ δ > 0, ∃ C ≥ 0, ∃ θ > 0, x ∈ K →
-      ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃u : ℝ × ℝ → M⦄ ⦃z₀ : ℝ × ℝ⦄ ⦃r : ℝ⦄,
-      IsOpen Ω → 0 ≤ r → closedBall z₀ r ⊆ Ω → closedBall z₀ r ⊆ D →
-      ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 u Ω →
-      (∀ y ∈ Ω, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J y (u y))
-        (ω.perturbedMFDeriv Ks Kt u y).toLinearMap) →
-      (∀ y ∈ closedBall z₀ r, u y ∈ K ∧ dist (e (u y)) (e x) < θ) →
-      IntegrableOn (ω.floerEnergyDensity Ks Kt u) (ball z₀ r) →
-      r ^ 2 + ∫ y in ball z₀ r, ω.floerEnergyDensity Ks Kt u y < δ →
-      r ^ 2 * ω.floerEnergyDensity Ks Kt u z₀ ≤
-        C * (r ^ 2 + ∫ y in ball z₀ r, ω.floerEnergyDensity Ks Kt u y) := by
-    intro x
-    by_cases hx : x ∈ K
-    · obtain ⟨δ, hδ, C, hC, θ, hθ, h⟩ :=
-        hω.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_dist_lt_chart hU hDU hD hK hx
-          (hJ x hx) (hXs x hx) (hXt x hx) hJt he he_inj
-      exact ⟨δ, hδ, C, hC, θ, hθ, fun _ ↦ h⟩
-    · exact ⟨1, one_pos, 0, le_rfl, 1, one_pos, fun h ↦ (hx h).elim⟩
-  choose δ hδ C hC θ hθ hmv using hdata
+  choose! δ hδ C hC θ hθ hmv using fun x (hx : x ∈ K) ↦
+    hω.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_dist_lt_chart hU hDU hD hK hx
+      (hJ x hx) (hXs x hx) (hXt x hx) hJt he he_inj
   -- Finitely many of the sets `{y ∈ K | dist (e y) (e x) < θ x / 2}` cover `K`.
   obtain ⟨b, hbK, hb, hcov⟩ := (hK.image_of_continuousOn he).elim_finite_subcover_image
     (b := K) (c := fun x ↦ ball (e x) (θ x / 2)) (fun _ _ ↦ isOpen_ball)
-    fun _ ⟨x, hx, hxy⟩ ↦ mem_iUnion₂.2 ⟨x, hx, hxy ▸ mem_ball_self (half_pos (hθ x))⟩
+    fun _ ⟨x, hx, hxy⟩ ↦ mem_iUnion₂.2 ⟨x, hx, hxy ▸ mem_ball_self (half_pos (hθ x hx))⟩
   -- Constants uniform over the cover.
-  obtain ⟨m, hmb, hm⟩ := ((((eventually_all_finite hb).2 fun x _ ↦
-      (eventually_le_nhds (hδ x)).and (eventually_le_nhds (half_pos (hθ x)))).filter_mono
+  obtain ⟨m, hmb, hm⟩ := ((((eventually_all_finite hb).2 fun x hx ↦
+      (eventually_le_nhds (hδ x (hbK hx))).and
+        (eventually_le_nhds (half_pos (hθ x (hbK hx))))).filter_mono
       nhdsWithin_le_nhds).and (eventually_mem_nhdsWithin (s := Ioi (0 : ℝ)) (a := 0))).exists
-  refine ⟨m, hm, ∑ x ∈ hb.toFinset, C x, Finset.sum_nonneg fun x _ ↦ hC x, m, hm,
+  have hCb : ∀ x ∈ hb.toFinset, 0 ≤ C x := fun x hx ↦ hC x (hbK (hb.mem_toFinset.1 hx))
+  refine ⟨m, hm, ∑ x ∈ hb.toFinset, C x, Finset.sum_nonneg hCb, m, hm,
     fun Ω u z₀ r hΩ hr hBΩ hBD hu hfl hθu hint hE ↦ ?_⟩
   obtain ⟨x, hxb, hxc⟩ :=
     mem_iUnion₂.1 (hcov (mem_image_of_mem e (hθu z₀ (mem_closedBall_self hr)).1))
@@ -217,7 +211,7 @@ theorem IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_dist_l
         (hfl y (hBΩ (ball_subset_closedBall hy))))
   refine (hmv x (hbK hxb) hΩ hr hBΩ hBD hu hfl (fun y hy ↦ ⟨(hθu y hy).1, ?_⟩) hint
     (hE.trans_le (hmb x hxb).1)).trans (mul_le_mul_of_nonneg_right
-      (Finset.single_le_sum (fun x _ ↦ hC x) (hb.mem_toFinset.2 hxb)) hI)
+      (Finset.single_le_sum hCb (hb.mem_toFinset.2 hxb)) hI)
   calc dist (e (u y)) (e x) ≤ dist (e (u y)) (e (u z₀)) + dist (e (u z₀)) (e x) :=
         dist_triangle _ _ _
     _ < θ x / 2 + θ x / 2 := add_lt_add ((hθu y hy).2.trans_le (hmb x hxb).2) (mem_ball.1 hxc)
@@ -265,29 +259,18 @@ private theorem IsNondegenerate.dist_comp_le_of_floerEnergyDensity_le (hω : ω.
     _ = η * (4 / √c + 2 * (B * ε)) := by field_simp; ring
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] in
-/-- **The mean-value inequality at the scale of a bubble.** Suppose the mean-value inequality holds
-with constants `δ`, `C` on discs whose images through `e` stay within `θ` of the image of the
-centre. Let `u` be a solution whose Floer energy density is `ε⁻²` at `c₀` and at most `4 ε⁻²` on
-the closed disc of radius `η ε` about `c₀`, where `η (4 / √c + 2) < θ` and `B ε ≤ 1`. Then the
-disc of radius `r = η ε` carries `r² + ∫_{B_r(c₀)} ρ(u) ≥ min δ (η² / (C + 1))`. -/
+/-- **The mean-value inequality at the scale of a bubble.** Let `u` be a solution whose Floer
+energy density is `ε⁻²` at `c₀` and at most `4 ε⁻²` on the closed disc of radius `r = η ε` about
+`c₀`, where `η (4 / √c + 2) < θ` and `B ε ≤ 1`, so that the disc maps into `K` with images through
+`e` within `θ` of `e (u c₀)`. If the mean-value inequality `hmv` with constants `δ`, `C` holds on
+this disc for such solutions, then the disc carries `r² + ∫_{B_r(c₀)} ρ(u) ≥ min δ (η² / (C + 1))`.
+-/
 private theorem IsNondegenerate.min_le_sq_add_setIntegral_floerEnergyDensity
-    (hω : ω.IsNondegenerate) {δ C θ : ℝ}
-    (hmv : ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃u : ℝ × ℝ → M⦄ ⦃z₀ : ℝ × ℝ⦄ ⦃r : ℝ⦄,
-      IsOpen Ω → 0 ≤ r → closedBall z₀ r ⊆ Ω → closedBall z₀ r ⊆ D →
-      ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 u Ω →
-      (∀ y ∈ Ω, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J y (u y))
-        (ω.perturbedMFDeriv Ks Kt u y).toLinearMap) →
-      (∀ y ∈ closedBall z₀ r, u y ∈ K ∧ dist (e (u y)) (e (u z₀)) < θ) →
-      IntegrableOn (ω.floerEnergyDensity Ks Kt u) (ball z₀ r) →
-      r ^ 2 + ∫ y in ball z₀ r, ω.floerEnergyDensity Ks Kt u y < δ →
-      r ^ 2 * ω.floerEnergyDensity Ks Kt u z₀ ≤
-        C * (r ^ 2 + ∫ y in ball z₀ r, ω.floerEnergyDensity Ks Kt u y))
-    (hC : 0 ≤ C) {Ω : Set (ℝ × ℝ)} (hΩ : IsOpen Ω) (hΩD : Ω ⊆ D) {u : ℝ × ℝ → M}
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 u Ω)
+    (hω : ω.IsNondegenerate) {δ C θ : ℝ} (hC : 0 ≤ C) {Ω : Set (ℝ × ℝ)} (hΩ : IsOpen Ω)
+    (hΩD : Ω ⊆ D) {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 u Ω)
     (hfl : ∀ y ∈ Ω, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J y (u y))
       (ω.perturbedMFDeriv Ks Kt u y).toLinearMap)
-    (huK : MapsTo u Ω K) (hint : IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω)
-    (hJt : ∀ z ∈ D, ∀ y, (hω.symplecticFormAt y).Tames (J z y))
+    (huK : MapsTo u Ω K) (hJt : ∀ z ∈ D, ∀ y, (hω.symplecticFormAt y).Tames (J z y))
     (he : ∀ x ∈ K, MDifferentiableAt I 𝓘(ℝ, F) e x) {c B : ℝ} (hc : 0 < c) (hB : 0 ≤ B)
     (hJc : ∀ z ∈ D, ∀ x ∈ K, ∀ v,
       c * ‖mvfderiv I e x v‖ ^ 2 ≤ hω.symplecticFormAt x v (J z x v))
@@ -296,10 +279,13 @@ private theorem IsNondegenerate.min_le_sq_add_setIntegral_floerEnergyDensity
     {c₀ : ℝ × ℝ} {ε η : ℝ} (hε : 0 < ε) (hη : 0 ≤ η) (hηθ : η * (4 / √c + 2) < θ)
     (hBε : B * ε ≤ 1) (hBΩ : closedBall c₀ (η * ε) ⊆ Ω)
     (hcen : ε ^ 2 * ω.floerEnergyDensity Ks Kt u c₀ = 1)
-    (hdens : ∀ y ∈ closedBall c₀ (η * ε), ω.floerEnergyDensity Ks Kt u y ≤ 4 / ε ^ 2) :
+    (hdens : ∀ y ∈ closedBall c₀ (η * ε), ω.floerEnergyDensity Ks Kt u y ≤ 4 / ε ^ 2)
+    (hmv : (∀ y ∈ closedBall c₀ (η * ε), u y ∈ K ∧ dist (e (u y)) (e (u c₀)) < θ) →
+      (η * ε) ^ 2 + ∫ y in ball c₀ (η * ε), ω.floerEnergyDensity Ks Kt u y < δ →
+      (η * ε) ^ 2 * ω.floerEnergyDensity Ks Kt u c₀ ≤
+        C * ((η * ε) ^ 2 + ∫ y in ball c₀ (η * ε), ω.floerEnergyDensity Ks Kt u y)) :
     min δ (η ^ 2 / (C + 1)) ≤
       (η * ε) ^ 2 + ∫ y in ball c₀ (η * ε), ω.floerEnergyDensity Ks Kt u y := by
-  have hr : 0 ≤ η * ε := mul_nonneg hη hε.le
   -- The disc maps into `K` with images within `θ` of `e (u c₀)`.
   have hmove : ∀ y ∈ closedBall c₀ (η * ε), u y ∈ K ∧ dist (e (u y)) (e (u c₀)) < θ :=
     fun y hy ↦ ⟨huK (hBΩ hy), (hω.dist_comp_le_of_floerEnergyDensity_le hΩ hu hfl huK he hc hB
@@ -311,12 +297,30 @@ private theorem IsNondegenerate.min_le_sq_add_setIntegral_floerEnergyDensity
       (hJt y (hΩD (hBΩ (ball_subset_closedBall hy))) _) (hfl y (hBΩ (ball_subset_closedBall hy)))
   by_cases hsmall : (η * ε) ^ 2 + ∫ y in ball c₀ (η * ε), ω.floerEnergyDensity Ks Kt u y < δ
   · -- At the centre, `r² ρ(u) = η²`.
-    have h := hmv hΩ hr hBΩ (hBΩ.trans hΩD) hu hfl hmove
-      (hint.mono_set (ball_subset_closedBall.trans hBΩ)) hsmall
+    have h := hmv hmove hsmall
     rw [mul_pow, mul_assoc, hcen, mul_one] at h
     refine (min_le_right _ _).trans ((div_le_iff₀ (by linarith)).2 ?_)
     nlinarith [sq_nonneg (η * ε)]
   · exact (min_le_left _ _).trans (not_lt.1 hsmall)
+
+/-- Let `cᵢ → z₀ ∈ Ω`, with `Ω` open, and `εᵢ → 0`. For `r > 0`, `a > 0` and constants `η` and
+`B`, eventually the closed disc of radius `η εᵢ` about `cᵢ` lies in `B_r(z₀) ∩ Ω`,
+`η² εᵢ² < a` and `B εᵢ ≤ 1`. -/
+private theorem eventually_closedBall_subset_ball_inter_of_tendsto {ι : Type*} {l : Filter ι}
+    {Ω : Set (ℝ × ℝ)} (hΩ : IsOpen Ω) {z₀ : ℝ × ℝ} (hz₀ : z₀ ∈ Ω) {c : ι → ℝ × ℝ} {ε : ι → ℝ}
+    (hc : Tendsto c l (𝓝 z₀)) (hε : Tendsto ε l (𝓝 0)) {r a : ℝ} (hr : 0 < r) (ha : 0 < a)
+    (η B : ℝ) :
+    ∀ᶠ i in l, closedBall (c i) (η * ε i) ⊆ ball z₀ r ∩ Ω ∧ η ^ 2 * ε i ^ 2 < a ∧ B * ε i ≤ 1 := by
+  obtain ⟨s, hs, hsB⟩ := Metric.mem_nhds_iff.1 (inter_mem (ball_mem_nhds z₀ hr) (hΩ.mem_nhds hz₀))
+  have h1 : Tendsto (fun i ↦ η * ε i) l (𝓝 0) := by simpa using hε.const_mul η
+  have h2 : Tendsto (fun i ↦ η ^ 2 * ε i ^ 2) l (𝓝 0) := by
+    simpa using (hε.pow 2).const_mul (η ^ 2)
+  have h3 : Tendsto (fun i ↦ B * ε i) l (𝓝 0) := by simpa using hε.const_mul B
+  filter_upwards [h1.eventually (gt_mem_nhds (half_pos hs)),
+    hc.eventually (ball_mem_nhds z₀ (half_pos hs)), h2.eventually (gt_mem_nhds ha),
+    h3.eventually (ge_mem_nhds one_pos)] with i h1 hci h2 h3
+  refine ⟨fun y hy ↦ hsB (mem_ball.2 ?_), h2, h3⟩
+  linarith [dist_triangle y (c i) z₀, mem_closedBall.1 hy, mem_ball.1 hci]
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [NormedAddCommGroup F] [NormedSpace ℝ F] in
 /-- If the rescaled map `w ↦ u(c + ε w)` has Floer energy density at most `a` for the rescaled
@@ -346,9 +350,9 @@ respect to `e`, `c ‖d e v‖² ≤ ω(v, J v)` with `c > 0`, and the pushforwa
 `d e (X_{K_t})` at most `B` on `D × K`.
 
 Then there is a threshold `δ > 0` with the following property. Let `uᵢ` be `C³` solutions of the
-Floer equation `(du - X_K)^{0,1} = 0` on an open set `Ω ⊆ D` with values in `K`, with continuous
-and integrable Floer energy densities `ρ(uᵢ)`. If `ρ(uᵢ)(zᵢ) → ∞` along points `zᵢ → z₀ ∈ Ω`, then
-for every `r > 0`, eventually `δ ≤ ∫_{B_r(z₀) ∩ Ω} ρ(uᵢ)`. -/
+Floer equation `(du - X_{K_s} ds - X_{K_t} dt)^{0,1} = 0` on an open set `Ω ⊆ D` with values in
+`K`, with continuous and integrable Floer energy densities `ρ(uᵢ)`. If `ρ(uᵢ)(zᵢ) → ∞` along points
+`zᵢ → z₀ ∈ Ω`, then for every `r > 0`, eventually `δ ≤ ∫_{B_r(z₀) ∩ Ω} ρ(uᵢ)`. -/
 theorem IsNondegenerate.exists_pos_forall_eventually_le_setIntegral_floerEnergyDensity
     (hω : ω.IsNondegenerate) (hU : IsOpen U) (hDU : D ⊆ U) (hD : IsCompact D) (hK : IsCompact K)
     (hJ : ∀ x ∈ K,
@@ -388,27 +392,13 @@ theorem IsNondegenerate.exists_pos_forall_eventually_le_setIntegral_floerEnergyD
   obtain ⟨cc, ε, R, hε, hcc, hε0, hR, -, hev⟩ :=
     ω.exists_rescale_isComplexLinearMap_perturbedMFDeriv hΩ hz₀ hcont (Eventually.of_forall hfl)
       hz hblow
-  -- A closed disc about `z₀` inside `B_r(z₀) ∩ Ω`.
-  obtain ⟨s₁, hs₁, hs₁Ω⟩ := Metric.isOpen_iff.1 hΩ z₀ hz₀
-  set s := min s₁ r / 3
-  have hs : 0 < s := div_pos (lt_min hs₁ hr) three_pos
-  have hsB : closedBall z₀ (2 * s) ⊆ ball z₀ r ∩ Ω := fun y hy ↦ by
-    have h2s : 2 * s < min s₁ r := by simp only [s]; linarith [lt_min hs₁ hr]
-    exact ⟨mem_ball.2 ((mem_closedBall.1 hy).trans_lt (h2s.trans_le (min_le_right _ _))),
-      hs₁Ω (mem_ball.2 ((mem_closedBall.1 hy).trans_lt (h2s.trans_le (min_le_left _ _))))⟩
-  have h1 : Tendsto (fun i ↦ η * ε i) l (𝓝 0) := by simpa using hε0.const_mul η
-  have h2 : Tendsto (fun i ↦ η ^ 2 * ε i ^ 2) l (𝓝 0) := by
-    simpa using (hε0.pow 2).const_mul (η ^ 2)
-  have h3 : Tendsto (fun i ↦ B * ε i) l (𝓝 0) := by simpa using hε0.const_mul B
-  filter_upwards [hev, h1.eventually (gt_mem_nhds hs), hR.eventually_ge_atTop η,
-    h2.eventually (gt_mem_nhds (half_pos hδ₁)), h3.eventually (ge_mem_nhds one_pos),
-    hcc.eventually (ball_mem_nhds z₀ hs)] with i ⟨hcen, h4⟩ hηs hηR hηδ hBε hci
-  have hciΩ : cc i ∈ Ω := (hsB (mem_closedBall.2 (by linarith [mem_ball.1 hci]))).2
-  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hBs _ (hΩD hciΩ) _ (huK i hciΩ))
+  filter_upwards [hev, hR.eventually_ge_atTop η,
+    eventually_closedBall_subset_ball_inter_of_tendsto hΩ hz₀ hcc hε0 hr (half_pos hδ₁) η B]
+    with i ⟨hcen, h4⟩ hηR ⟨hball, hηδ, hBε⟩
   set ρr := η * ε i with hρr_def
   have hρr : 0 ≤ ρr := (mul_pos hη (hε i)).le
-  have hball : closedBall (cc i) ρr ⊆ ball z₀ r ∩ Ω := fun y hy ↦ hsB (mem_closedBall.2 (by
-    linarith [dist_triangle y (cc i) z₀, mem_closedBall.1 hy, mem_ball.1 hci]))
+  have hciΩ : cc i ∈ Ω := (hball (mem_closedBall_self hρr)).2
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hBs _ (hΩD hciΩ) _ (huK i hciΩ))
   -- The energy density is `ε i⁻²` at the centre and at most `4 ε i⁻²` on the disc.
   rw [ω.floerEnergyDensity_rescale, smul_zero, add_zero] at hcen
   have hdens : ∀ y ∈ closedBall (cc i) ρr, ω.floerEnergyDensity Ks Kt (u i) y ≤ 4 / ε i ^ 2 :=
@@ -417,8 +407,11 @@ theorem IsNondegenerate.exists_pos_forall_eventually_le_setIntegral_floerEnergyD
   -- The mean-value inequality on the disc forces energy at least `δ₁ - ρr²` into it.
   set I₀ := ∫ y in ball (cc i) ρr, ω.floerEnergyDensity Ks Kt (u i) y
   have hkey : δ₁ ≤ ρr ^ 2 + I₀ :=
-    hω.min_le_sq_add_setIntegral_floerEnergyDensity hmv hC hΩ hΩD (hu i) (hfl i) (huK i) (hint i)
-      hJt he hc hB0 hJc hBs hBt (hε i) hη.le hηθ hBε (fun y hy ↦ (hball hy).2) hcen hdens
+    hω.min_le_sq_add_setIntegral_floerEnergyDensity hC hΩ hΩD (hu i) (hfl i) (huK i) hJt he hc
+      hB0 hJc hBs hBt (hε i) hη.le hηθ hBε (fun y hy ↦ (hball hy).2) hcen hdens
+      fun hmove hsmall ↦ hmv hΩ hρr (fun y hy ↦ (hball hy).2) (fun y hy ↦ hΩD (hball hy).2)
+        (hu i) (hfl i) hmove ((hint i).mono_set fun y hy ↦ (hball (ball_subset_closedBall hy)).2)
+        hsmall
   have hmono : I₀ ≤ ∫ y in ball z₀ r ∩ Ω, ω.floerEnergyDensity Ks Kt (u i) y :=
     setIntegral_mono_set ((hint i).mono_set inter_subset_right)
       (ae_restrict_of_forall_mem (measurableSet_ball.inter hΩ.measurableSet) fun y hy ↦
@@ -430,9 +423,9 @@ theorem IsNondegenerate.exists_pos_forall_eventually_le_setIntegral_floerEnergyD
 hypotheses of `IsNondegenerate.exists_pos_forall_eventually_le_setIntegral_floerEnergyDensity` on
 `ω`, `J`, the perturbation `K_s ds + K_t dt`, the compact set `K ⊆ M`, the compact window `D ⊆ U`
 and the map `e : M → F`, there is a threshold `δ > 0` with the following property. Let `uₖ` be
-`C³` solutions of the Floer equation `(du - X_K)^{0,1} = 0` on an open set `Ω ⊆ D` with values in
-`K`, with continuous and integrable Floer energy densities `ρ(uₖ)` and Floer energy
-`∫_Ω ρ(uₖ) ≤ A`. Then there are a subsequence `u_{φ n}` and a finite set `Z ⊆ Ω` of bubbling
+`C³` solutions of the Floer equation `(du - X_{K_s} ds - X_{K_t} dt)^{0,1} = 0` on an open set
+`Ω ⊆ D` with values in `K`, with continuous and integrable Floer energy densities `ρ(uₖ)` and Floer
+energy `∫_Ω ρ(uₖ) ≤ A`. Then there are a subsequence `u_{φ n}` and a finite set `Z ⊆ Ω` of bubbling
 points with `#Z δ ≤ A` such that
 
 * energy at least `δ` concentrates at every point of `Z`: for `z ∈ Z` and `r > 0`, eventually
