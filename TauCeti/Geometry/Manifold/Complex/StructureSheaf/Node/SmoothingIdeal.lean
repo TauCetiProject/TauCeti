@@ -196,21 +196,13 @@ theorem nodeFstZeroRestriction_nodeBaseExtension (a : A) :
 
 @[simp]
 theorem restrictHyperplane_nodeFstCoordinate :
-    restrictHyperplane (b, (0 : ℂ)) 0 (nodeFstCoordinate b) = hyperplaneCoordinateGerm b 0 := by
-  apply toFilterGerm_nhds_injective (b, (0 : ℂ))
-  rw [toFilterGerm_restrictHyperplane, toFilterGerm_nodeFstCoordinate, Germ.coe_compTendsto,
-    OpenPartialHomeomorph.toFilterGerm_holomorphicLinearCoordinateGerm]
-  congr 1
-  funext w
-  simp
+    restrictHyperplane (b, (0 : ℂ)) 0 (nodeFstCoordinate b) = hyperplaneCoordinateGerm b 0 :=
+  restrictHyperplane_stalkPrecomp_fst (b, (0 : ℂ)) 0 (hyperplaneCoordinateGerm b 0)
 
 @[simp]
 theorem restrictHyperplane_nodeSndCoordinate :
-    restrictHyperplane (b, (0 : ℂ)) 0 (nodeSndCoordinate b) = 0 := by
-  apply toFilterGerm_nhds_injective (b, (0 : ℂ))
-  rw [toFilterGerm_restrictHyperplane, toFilterGerm_nodeSndCoordinate, Germ.coe_compTendsto,
-    map_zero]
-  simp [← Germ.coe_zero, Pi.zero_def, Function.comp_def]
+    restrictHyperplane (b, (0 : ℂ)) 0 (nodeSndCoordinate b) = 0 :=
+  restrictHyperplane_hyperplaneCoordinateGerm (b, (0 : ℂ)) 0
 
 /-- Restricting a base germ pulled back to the node chart to the plane `y = 0` gives the same
 base germ pulled back to `(b, x)`. -/
