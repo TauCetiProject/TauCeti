@@ -52,6 +52,15 @@ neighbourhoods, for every finite order at most `n`.
   to zero at infinity contains no nonzero constant map, while every weak neighbourhood of `0`
   contains the small ones
   (`ContMDiffMap.manifoldStrongWhitneyTopology_ne_manifoldWeakWhitneyTopology`).
+* `ContMDiffMap.setOf_forall_norm_sub_lt_mem_nhds_manifoldStrongWhitney`: for a continuous
+  positive tolerance `ε`, the maps `g` with `‖g x - f x‖ < ε x` everywhere form a strong
+  neighbourhood of `f`; a map in a strong `C^k` neighbourhood is within the tolerance of `f` on
+  each of its compact coordinate sets (`ContMDiffMap.StrongCkControl.norm_sub_lt_of_mem_ball`).
+* `ContMDiffMap.hasBasis_nhds_manifoldStrongWhitney_finite`: on a compact manifold, controls with
+  finitely many compact coordinate sets suffice; the constant maps then depend continuously on
+  their value (`ContMDiffMap.continuous_const_manifoldStrongWhitney`), and on a single point
+  evaluation is a homeomorphism onto the values
+  (`ContMDiffMap.isHomeomorph_eval_manifoldStrongWhitney`).
 * `ContMDiffMap.hasBasis_nhds_manifoldStrongWhitney_atlasCkControl`: **chart-family
   independence**. The same neighbourhoods may be read in arbitrary charts of the maximal atlas
   (`ContMDiffMap.AtlasCkControl`), and for any family of such charts covering `M`, those read in
@@ -142,6 +151,17 @@ theorem mem_ball_iff_forall_norm_sub_lt {c : StrongCkControl I M n}
             c.tolerance i := by
   simp only [ball, mem_iInter]
   exact forall_congr' fun i ↦ mem_ball_chartCkSeminorm_iff _ _ _ _ f g (c.tolerance_pos i)
+
+/-- A strong `C^k` neighbourhood bounds the values: a map in it differs from `f` by less than the
+`i`th tolerance at every point represented by the `i`th compact coordinate set. -/
+theorem norm_sub_lt_of_mem_ball {c : StrongCkControl I M n} {f g : C^n⟮I, M; 𝓘(𝕜, F), F⟯}
+    (hg : g ∈ c.ball f) (i : c.ι) {z : (extChartAt I (c.center i)).target}
+    (hz : z ∈ c.compact i) :
+    ‖g ((extChartAt I (c.center i)).symm z) - f ((extChartAt I (c.center i)).symm z)‖ <
+      c.tolerance i := by
+  have h := (chartCkSeminorm_lt_iff _ _ _ _ (g - f) (c.tolerance_pos i)).mp (mem_ball.mp hg i)
+    0 (Nat.zero_le _) z hz
+  rwa [chartIteratedFDeriv_self_target_apply, norm_iteratedFDerivWithin_zero] at h
 
 /-- A strong `C^k` neighbourhood of `f` contains `f`. -/
 theorem mem_ball_self (c : StrongCkControl I M n) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
@@ -497,6 +517,103 @@ theorem manifoldStrongWhitneyTopology_eq_manifoldWeakWhitneyTopology_iff [Nontri
   exact manifoldStrongWhitneyTopology_ne_manifoldWeakWhitneyTopology h
 
 end Compact
+
+/-! ### Finite controls, constant maps and continuous tolerances -/
+
+section Tolerance
+
+attribute [local instance] manifoldStrongWhitneyTopology
+
+/-- **On a compact manifold finitely many compact coordinate sets suffice.** The strong `C^k`
+neighbourhoods of `f` given by controls with finitely many compact coordinate sets form a basis of
+its neighbourhood filter: a locally finite family on a compact manifold has only finitely many
+nonempty members, and the empty ones impose no condition. -/
+theorem hasBasis_nhds_manifoldStrongWhitney_finite [CompactSpace M]
+    (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
+    (𝓝 f).HasBasis (fun c : StrongCkControl I M n ↦ Finite c.ι) fun c ↦ c.ball f := by
+  refine (hasBasis_nhds_manifoldStrongWhitney f).to_hasBasis (fun c _ ↦ ?_)
+    fun c _ ↦ ⟨c, trivial, subset_rfl⟩
+  -- Keep the members of the family with a nonempty compact coordinate set.
+  let c' : StrongCkControl I M n :=
+    { ι := {i // (c.compact i : Set (extChartAt I (c.center i)).target).Nonempty}
+      center := fun i ↦ c.center i
+      compact := fun i ↦ c.compact i
+      order := c.order
+      order_le := c.order_le
+      tolerance := fun i ↦ c.tolerance i
+      tolerance_pos := fun i ↦ c.tolerance_pos i
+      locallyFinite := c.locallyFinite.comp_injective Subtype.val_injective }
+  have hfin : {i | (c.compact i : Set (extChartAt I (c.center i)).target).Nonempty}.Finite := by
+    simpa only [image_nonempty] using c.locallyFinite.finite_nonempty_of_compact
+  refine ⟨c', hfin.to_subtype, fun g hg ↦ StrongCkControl.mem_ball.mpr fun i ↦ ?_⟩
+  by_cases hi : (c.compact i : Set (extChartAt I (c.center i)).target).Nonempty
+  · exact StrongCkControl.mem_ball.mp hg ⟨i, hi⟩
+  · exact (chartCkSeminorm_lt_iff _ _ _ _ _ (c.tolerance_pos i)).mpr
+      fun m hm z hz ↦ absurd ⟨z, hz⟩ hi
+
+/-- **On a compact manifold the constant maps depend continuously on their value** in the strong
+Whitney topology. On a noncompact manifold this fails: some strong neighbourhood of `0` contains no
+nonzero constant map (`ContMDiffMap.manifoldStrongWhitneyTopology_ne_manifoldWeakWhitneyTopology`).
+-/
+theorem continuous_const_manifoldStrongWhitney [CompactSpace M] :
+    Continuous fun v : F ↦ (const v : C^n⟮I, M; 𝓘(𝕜, F), F⟯) := by
+  refine continuous_iff_continuousAt.mpr fun v ↦
+    (hasBasis_nhds_manifoldStrongWhitney_finite _).tendsto_right_iff.mpr fun c hc ↦ ?_
+  filter_upwards [eventually_all.mpr fun i ↦ Metric.ball_mem_nhds v (c.tolerance_pos i)]
+    with w hw
+  refine StrongCkControl.mem_ball.mpr fun i ↦ ?_
+  have hsub : (const w : C^n⟮I, M; 𝓘(𝕜, F), F⟯) - const v = const (w - v) :=
+    ContMDiffMap.ext fun _ ↦ by simp
+  rw [hsub]
+  exact (chartCkSeminorm_const_le _ _ _ _ _).trans_lt (by simpa [dist_eq_norm] using hw i)
+
+/-- **On a point the strong Whitney topology is the topology of the values.** On a one-point
+manifold every map is constant, and evaluation at the point is a homeomorphism onto `F`, whose
+inverse sends a vector to the constant map. -/
+theorem isHomeomorph_eval_manifoldStrongWhitney [Unique M] :
+    IsHomeomorph fun f : C^n⟮I, M; 𝓘(𝕜, F), F⟯ ↦ f default := by
+  have hconst (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) : const (f default) = f :=
+    ContMDiffMap.ext fun x ↦ by rw [const_apply, Unique.eq_default x]
+  let e : C^n⟮I, M; 𝓘(𝕜, F), F⟯ ≃ₜ F :=
+    { toFun := fun f ↦ f default
+      invFun := fun v ↦ const v
+      left_inv := hconst
+      right_inv := fun _ ↦ rfl
+      -- Evaluation is weak Whitney continuous, and the strong topology is finer.
+      continuous_toFun := @Continuous.comp _ _ _ manifoldStrongWhitneyTopology
+        manifoldWeakWhitneyTopology _ _root_.id _
+        (continuous_eval_const_manifoldWeakWhitney default)
+        (continuous_id_of_le manifoldStrongWhitneyTopology_le_manifoldWeakWhitneyTopology)
+      continuous_invFun := continuous_const_manifoldStrongWhitney }
+  exact e.isHomeomorph
+
+/-- **Continuous tolerances give strong neighbourhoods.** For a continuous positive function `ε`
+on a Hausdorff σ-compact manifold with a locally compact model, the maps `g` with
+`‖g x - f x‖ < ε x` at every point form a strong Whitney neighbourhood of `f`. The tolerance may
+tend to zero at infinity, unlike the uniform bound on a compact set given by a weak neighbourhood
+(`ContMDiffMap.eventually_forall_dist_lt`). -/
+theorem setOf_forall_norm_sub_lt_mem_nhds_manifoldStrongWhitney [LocallyCompactSpace H]
+    [SigmaCompactSpace M] [T2Space M] (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) {ε : M → ℝ}
+    (hε : Continuous ε) (hε₀ : ∀ x, 0 < ε x) :
+    {g : C^n⟮I, M; 𝓘(𝕜, F), F⟯ | ∀ x, ‖g x - f x‖ < ε x} ∈ 𝓝 f := by
+  obtain ⟨α, a, K, hlf, hcover⟩ := TauCeti.exists_locallyFinite_compact_extChartAt_cover
+    (I := I) (M := M)
+  -- On the compact image of each coordinate set the tolerance has a positive lower bound.
+  have hbound (i : α) : ∃ t, 0 < t ∧ ∀ y ∈ (extChartAt I (a i)).symm ''
+      (Subtype.val '' (K i : Set (extChartAt I (a i)).target)), t ≤ ε y := by
+    have hcpt : IsCompact ((extChartAt I (a i)).symm ''
+        (Subtype.val '' (K i : Set (extChartAt I (a i)).target))) :=
+      ((K i).isCompact.image continuous_subtype_val).image_of_continuousOn
+        ((continuousOn_extChartAt_symm (a i)).mono (by rintro _ ⟨z, -, rfl⟩; exact z.2))
+    exact hcpt.exists_forall_le' hε.continuousOn fun y _ ↦ hε₀ y
+  choose t ht hle using hbound
+  let c : StrongCkControl I M n := ⟨α, a, K, 0, by simp, t, ht, hlf⟩
+  refine mem_nhds_manifoldStrongWhitney_iff.mpr ⟨c, fun g hg x ↦ ?_⟩
+  obtain ⟨i, _, ⟨z, hz, rfl⟩, rfl⟩ := mem_iUnion.mp (hcover.symm ▸ mem_univ x)
+  exact (StrongCkControl.norm_sub_lt_of_mem_ball (c := c) hg i hz).trans_le
+    (hle i _ ⟨_, ⟨z, hz, rfl⟩, rfl⟩)
+
+end Tolerance
 
 /-! ### Strong neighbourhoods in arbitrary charts -/
 
