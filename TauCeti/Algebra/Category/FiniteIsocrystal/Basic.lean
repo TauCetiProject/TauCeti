@@ -76,7 +76,7 @@ structure FiniteIsocrystal (σ : L ≃ₐ[E] L) where
   /-- The Frobenius, a `σ`-semilinear map. -/
   frobenius : toModuleCat →ₛₗ[(σ : L →+* L)] toModuleCat
   /-- The Frobenius is bijective. -/
-  bijective_frobenius : Function.Bijective frobenius
+  frobenius_bijective : Function.Bijective frobenius
 
 namespace FiniteIsocrystal
 
@@ -92,13 +92,13 @@ abbrev of (σ : L ≃ₐ[E] L) (V : Type u) [AddCommGroup V] [Module L V] [Modul
   toModuleCat := ModuleCat.of L V
   finite := ‹Module.Finite L V›
   frobenius := Φ
-  bijective_frobenius := hΦ
+  frobenius_bijective := hΦ
 
 theorem frobenius_injective (D : FiniteIsocrystal.{u} σ) : Function.Injective D.frobenius :=
-  D.bijective_frobenius.injective
+  D.frobenius_bijective.injective
 
 theorem frobenius_surjective (D : FiniteIsocrystal.{u} σ) : Function.Surjective D.frobenius :=
-  D.bijective_frobenius.surjective
+  D.frobenius_bijective.surjective
 
 /-- The Frobenius commutes with scalars from `E`, since `σ` fixes them. -/
 theorem frobenius_algebraMap_smul (D : FiniteIsocrystal.{u} σ) (c : E) (x : D) :
@@ -299,15 +299,15 @@ def piFrobenius : (∀ i, D i) →ₛₗ[(σ : L →+* L)] (∀ i, D i) where
 theorem piFrobenius_apply (x : ∀ i, D i) (i : ι) : piFrobenius D x i = (D i).frobenius (x i) :=
   (rfl)
 
-theorem bijective_piFrobenius : Function.Bijective (piFrobenius D) :=
-  Function.Bijective.piMap fun i => (D i).bijective_frobenius
+theorem piFrobenius_bijective : Function.Bijective (piFrobenius D) :=
+  Function.Bijective.piMap fun i => (D i).frobenius_bijective
 
 variable [Finite ι]
 
 /-- The direct sum of a finite family of finite isocrystals: the product of the underlying spaces
 with the coordinatewise Frobenius. -/
 abbrev pi : FiniteIsocrystal.{max w u} σ :=
-  of σ (∀ i, D i) (piFrobenius D) (bijective_piFrobenius D)
+  of σ (∀ i, D i) (piFrobenius D) (piFrobenius_bijective D)
 
 /-- The projection from the direct sum onto a summand. -/
 def piπ (i : ι) : pi D ⟶ D i := ofHom (LinearMap.proj i) fun _ => rfl
@@ -362,29 +362,20 @@ section BiproductIsoPi
 variable {J : Type} [Fintype J] [DecidableEq J] (D : J → FiniteIsocrystal.{u} σ)
 
 /-- The chosen biproduct of a finite family of finite isocrystals is isomorphic to `pi D`. -/
-noncomputable def biproductIsoPi : ⨁ D ≅ pi D where
-  hom := biproduct.desc (piι D)
-  inv := biproduct.lift (piπ D)
-  hom_inv_id := biproduct.hom_ext' _ _ fun j => biproduct.hom_ext _ _ fun k => by
-    simp only [biproduct.ι_desc_assoc, Category.assoc, biproduct.lift_π, Category.comp_id]
-    obtain rfl | hjk := eq_or_ne j k
-    · rw [biproduct.ι_π_self]
-      ext
-      simp
-    · rw [biproduct.ι_π_ne _ hjk]
-      ext
-      simp [hjk]
-  inv_hom_id := by rw [biproduct.lift_desc, sum_piπ_comp_piι]
+noncomputable def biproductIsoPi : ⨁ D ≅ pi D :=
+  (biproduct.uniqueUpToIso D (isBilimitBicone.{0} D)).symm
 
 @[reassoc (attr := simp)]
 theorem ι_comp_biproductIsoPi_hom (j : J) :
     biproduct.ι D j ≫ (biproductIsoPi D).hom = piι D j := by
-  simp [biproductIsoPi]
+  rw [biproductIsoPi, Iso.symm_hom, biproduct.uniqueUpToIso_inv]
+  exact (biproduct.ι_desc _ j).trans (bicone_ι D j)
 
 @[reassoc (attr := simp)]
 theorem biproductIsoPi_inv_comp_π (j : J) :
     (biproductIsoPi D).inv ≫ biproduct.π D j = piπ D j := by
-  simp [biproductIsoPi]
+  rw [biproductIsoPi, Iso.symm_inv, biproduct.uniqueUpToIso_hom]
+  exact (biproduct.lift_π _ j).trans (bicone_π D j)
 
 @[reassoc (attr := simp)]
 theorem piι_comp_biproductIsoPi_inv (j : J) :
