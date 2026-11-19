@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -200,9 +201,7 @@ theorem ker_mvfderiv {g : M → E'} :
 scalar field using `mvfderiv`. No differentiability hypothesis is needed. -/
 theorem isRegularPoint_iff_mvfderiv_ne_zero {g : M → 𝕜} :
     IsRegularPoint I 𝓘(𝕜) g x ↔ mvfderiv I g x ≠ 0 := by
-  rw [isRegularPoint_iff_surjective_mvfderiv]
-  refine (LinearMap.surjective_iff_ne_zero (f := (mvfderiv I g x).toLinearMap)).trans ?_
-  exact not_congr (ContinuousLinearMap.coe_inj (f := mvfderiv I g x) (g := 0))
+  rw [isRegularPoint_iff_surjective_mvfderiv, ContinuousLinearMap.surjective_iff_ne_zero]
 
 /-- For a map between normed spaces, a regular point is a point at which the Fréchet derivative
 is surjective. -/
