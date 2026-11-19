@@ -21,7 +21,7 @@ It is étale over `R` for every system, by Mathlib's submersive presentations: t
 presentation of `R[X] ⧸ (p i)` has Jacobian the class of `jacobian p`, so it becomes submersive of
 relative dimension zero once that class is inverted. No finiteness over `R` follows in general;
 over a field, an étale algebra is a finite product of finite separable field extensions
-(`Algebra.FormallyEtale.iff_exists_algEquiv_prod`).
+(`Algebra.Etale.iff_exists_algEquiv_prod`).
 
 Its `R`-algebra maps to an `R`-algebra `A` are its `A`-points: tuples `x : σ → A` at which every
 equation vanishes and the Jacobian determinant is a unit (`TauCeti.JacobianOpenAlgebra.homEquiv`).
