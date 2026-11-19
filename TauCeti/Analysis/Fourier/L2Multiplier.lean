@@ -197,6 +197,8 @@ theorem fourierMultiplierCLM_compL_fourierMultiplierCLM :
     coeFn_lpSMul (r := 2) m₂ (𝓕 f),
     coeFn_lpSMul (r := 2) (m₁ • m₂ : Lp ℂ ∞ (volume : Measure E)) (𝓕 f),
     coeFn_lpSMul (r := ∞) m₁ m₂] with x h₁ h₂ h₃ h₄
+  -- With the `L^∞` algebra instances in scope, `smul_eq_mul` and `Lp.smul_eq_mul` would rewrite
+  -- the Hölder product `m₁ • m₂` to `m₁ * m₂`, so `h₃` and `h₄` would no longer match.
   simp [h₁, h₂, h₃, h₄, smul_smul, -smul_eq_mul, -Lp.smul_eq_mul]
 
 theorem fourierMultiplierCLM_fourierMultiplierCLM_apply :
