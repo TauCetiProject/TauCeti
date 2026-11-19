@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.DirectSum.Finsupp
 public import TauCeti.GroupTheory.Perm.SumCongr
 public import TauCeti.LowDimTopology.Heegaard.HatDifferential
+import TauCeti.Algebra.BigOperators.Pi
 
 /-!
 # Adding a basepoint to a Heegaard diagram
@@ -432,13 +433,6 @@ theorem addBasepointEuler_inr (χ : Region → ℤ) (r₀ : Region) (k : Fin 3) 
 
 variable [Fintype Point] [Fintype Region]
 
-/-- Lowering the Euler characteristic of the region `r₀` by `c` lowers the Euler sum
-`∑ χ(R) g(R)` by `c g(r₀)`. -/
-theorem sum_intCast_sub_single_mul (χ : Region → ℤ) (r₀ : Region) (c : ℤ) (g : Region → ℚ) :
-    ∑ r, ((χ r - (Pi.single r₀ c : Region → ℤ) r : ℤ) : ℚ) * g r =
-      ∑ r, (χ r : ℚ) * g r - c * g r₀ := by
-  simp [sub_mul, Finset.sum_sub_distrib, Pi.single_apply]
-
 /-- The Maslov index of a domain of the diagram with an added basepoint is
 `μ(D|_old) + D(C_α) + D(C_β) + D(L) - D(r₀)`, where `D|_old` is its restriction to the old
 regions. -/
@@ -451,7 +445,7 @@ theorem maslovIndex_addBasepoint (χ : Region → ℤ) (x y : H.Generator) (i j 
   simp only [maslovIndex_apply, eulerMeasure_eq_sub_sum_pointMeasure,
     generatorPointMeasure_addBasepointGenerator, Fintype.sum_sum_type, addBasepointEuler_inl,
     addBasepointEuler_inr, pointMeasure_addBasepoint_inl, pointMeasure_addBasepoint_inr,
-    Fin.sum_univ_three, Fin.sum_univ_two, Function.comp_apply, sum_intCast_sub_single_mul]
+    Fin.sum_univ_three, Fin.sum_univ_two, Function.comp_apply, Fintype.sum_intCast_sub_single_mul]
   push_cast
   ring
 

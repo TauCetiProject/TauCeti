@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LowDimTopology.Heegaard.AddBasepoint
 public import TauCeti.LowDimTopology.Heegaard.MapRegion
+import TauCeti.Algebra.BigOperators.Pi
 
 /-!
 # Connected sum of a Heegaard diagram with the diagram of `S¹ × S²`
@@ -123,6 +124,12 @@ theorem sumCircleTimesSphereRegion_inr_zero :
 @[simp]
 theorem sumCircleTimesSphereRegion_inr_one :
     sumCircleTimesSphereRegion r₀ (Sum.inr 1) = Sum.inr 1 :=
+  (rfl)
+
+/-- The old regions are kept. -/
+@[simp]
+theorem sumCircleTimesSphereRegion_comp_inl :
+    sumCircleTimesSphereRegion r₀ ∘ Sum.inl = (Sum.inl : Region → Region ⊕ Fin 2) :=
   (rfl)
 
 /-- The lens is joined to `r₀`. -/
@@ -322,7 +329,7 @@ theorem maslovIndex_sumCircleTimesSphere_eq_maslovIndex_addBasepoint_sub (χ : R
     addBasepointEuler_inl, addBasepointEuler_inr, Fin.sum_univ_two, Fin.sum_univ_three,
     sumCircleTimesSphereRegion_inl, sumCircleTimesSphereRegion_inr_zero,
     sumCircleTimesSphereRegion_inr_one, sumCircleTimesSphereRegion_inr_two,
-    sum_intCast_sub_single_mul]
+    Fintype.sum_intCast_sub_single_mul]
   push_cast
   ring
 
@@ -338,7 +345,7 @@ theorem maslovIndex_sumCircleTimesSphere (χ : Region → ℤ) (x y : H.Generato
   simp only [comp_apply, sumCircleTimesSphereRegion_inl, sumCircleTimesSphereRegion_inr_zero,
     sumCircleTimesSphereRegion_inr_one, sumCircleTimesSphereRegion_inr_two]
   -- The pullback restricted to the old regions is the restriction of `D`.
-  rw [comp_assoc, sumCircleTimesSphereRegion, Sum.elim_comp_inl]
+  rw [comp_assoc, sumCircleTimesSphereRegion_comp_inl]
   ring
 
 end MaslovIndex
