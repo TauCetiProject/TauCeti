@@ -30,9 +30,10 @@ a real parameter. Witten's deformation `d_t = e^{-t f} ∘ d ∘ e^{t f}` of the
 (`TauCeti.integralTopForm_inner_wittenExtDerivₗ_eq_inner_wittenCodifferential`), because
 multiplication by the positive function `e^{± t f}` is symmetric for the pointwise inner product
 of forms and does not change supports. Like `d^*`, the operator `d_t^*` squares to zero, and like
-`d_t = d + t df ∧ ·` it is a local operator: `d_t^* = d^* + t ι_(grad f)`, where the contraction
-`ι_(grad f)` with the gradient of `f` is the pointwise adjoint of `df ∧ ·`
-(`TauCeti.wittenCodifferential_eq_add_smul_gradInteriorₗ`), and in terms of the Hodge star
+`d_t = d + t df ∧ ·` it is a local operator: `d_t^* = d^* + t ι_(grad f)` for the contraction
+`ι_(grad f)` with the gradient of `f` (`TauCeti.wittenCodifferential_eq_add_smul_gradInteriorₗ`).
+Classically `ι_(grad f)` is the pointwise adjoint of `df ∧ ·`; that adjointness is not proved
+here. In terms of the Hodge star
 `d_t^* β = d^* β + t (-1) ^ (m (k + 2)) ⋆(df ∧ ⋆β)` on `(k + 1)`-forms
 (`TauCeti.wittenCodifferential_eq_add_smul`).
 
@@ -354,40 +355,39 @@ theorem wittenLaplacian_expSMulEquiv_neg_ofFunction_one (o : Manifold.Orientatio
 
 /-! ### The expansion `Δ_t = Δ + t K_f + t² |df|²` -/
 
-/-- **The Witten codifferential is `d_t^* = d^* + t ι_(grad f)`**: the contraction with the
-gradient of `f` (`TauCeti.SmoothForm.gradInteriorₗ`) is the pointwise adjoint of the term
-`t df ∧ ·` of `d_t = d + t df ∧ ·` (`TauCeti.wittenExtDerivₗ_eq_add_smul`). -/
+/-- **The Witten codifferential is `d_t^* = d^* + t ι_(grad f)`**, for the contraction with the
+gradient of `f` (`TauCeti.SmoothForm.gradInteriorₗ`), just as `d_t = d + t df ∧ ·`
+(`TauCeti.wittenExtDerivₗ_eq_add_smul`). -/
 theorem wittenCodifferential_eq_add_smul_gradInteriorₗ (o : Manifold.Orientation I M (Fin m))
     (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (hkl : k + 1 + l = m) :
     wittenCodifferential o f t hkl =
       SmoothForm.codifferential o hkl + t • SmoothForm.gradInteriorₗ f k := by
-  -- `e^{-t f} β = h β` for the smooth function `h = e^{-t f}`, whose gradient is
+  -- `e^{-t f} β = h β` for the smooth function `h = expMul f (-t) = e^{-t f}`, whose gradient is
   -- `-t e^{-t f} grad f`; then `d^*(h β) = h d^*β + t e^{-t f} ι_(grad f) β`.
-  let h : C^∞⟮I, M; ℝ⟯ := ⟨fun x ↦ Real.exp (-t * f x),
-    Real.contDiff_exp.comp_contMDiff (contMDiff_const.mul f.contMDiff)⟩
-  have hgrad : Manifold.mgradient I h =
+  have hgrad : Manifold.mgradient I (expMul f (-t)) =
       fun x ↦ (-t * Real.exp (-t * f x)) • Manifold.mgradient I f x := by
     funext x
     have hd : HasDerivAt (fun s ↦ Real.exp (-t * s)) (Real.exp (-t * f x) * (-t * 1)) (f x) :=
       ((hasDerivAt_id' (f x)).const_mul (-t)).exp
-    rw [ContMDiffMap.coeFn_mk, ← Function.comp_def (fun s ↦ Real.exp (-t * s)) f,
-      Manifold.mgradient_comp_hasDerivAt hd (f.contMDiff.mdifferentiableAt (by simp))]
+    have he : ⇑(expMul f (-t)) = (fun s ↦ Real.exp (-t * s)) ∘ f :=
+      funext fun y ↦ expMul_apply f (-t) y
+    rw [he, Manifold.mgradient_comp_hasDerivAt hd (f.contMDiff.mdifferentiableAt (by simp))]
     congr 1
     ring
   ext β : 1
-  have he : expSMulEquiv (k + 1) f (-t) β = SmoothForm.funSMulₗ h β :=
-    Subtype.ext (by rw [coe_expSMulEquiv, SmoothForm.coe_funSMulₗ, ContMDiffMap.coeFn_mk])
+  have h1 := expMul_mul_expMul_neg f t
+  simp only [expMul_apply] at h1
+  have he := LinearMap.congr_fun (expSMulEquiv_eq_funSMulₗ (k := k + 1) f (-t)) β
+  rw [LinearEquiv.coe_coe] at he
   rw [wittenCodifferential_def, he, SmoothForm.codifferential_funSMulₗ]
   apply Subtype.ext
   funext x
-  have h1 : Real.exp (t * f x) * Real.exp (-t * f x) = 1 := by
-    rw [← Real.exp_add, neg_mul, add_neg_cancel, Real.exp_zero]
   simp only [coe_expSMulEquiv, Submodule.coe_sub, SmoothForm.coe_funSMulₗ,
     SmoothForm.coe_gradInteriorₗ, hgrad, RoughForm.interior_smul_field, LinearMap.add_apply,
     LinearMap.smul_apply, Submodule.coe_add, Submodule.coe_smul, Pi.add_apply, Pi.sub_apply,
-    Pi.smul_apply, smul_sub, smul_smul]
-  rw [ContMDiffMap.coeFn_mk, h1,
-    show Real.exp (t * f x) * (-t * Real.exp (-t * f x)) = -t by linear_combination -t * h1,
+    Pi.smul_apply, smul_sub, smul_smul, expMul_apply]
+  rw [h1 x,
+    show Real.exp (t * f x) * (-t * Real.exp (-t * f x)) = -t by linear_combination -t * h1 x,
     one_smul, neg_smul, sub_neg_eq_add]
 
 /-- **The Hessian term of the Witten Laplacian** on smooth `k`-forms of an oriented Riemannian
@@ -453,10 +453,8 @@ theorem wittenLaplacian_apply (o : Manifold.Orientation I M (Fin m)) (f : C^∞�
         (t ^ 2 * ‖Manifold.mgradient I f x‖ ^ 2) • α.1 x := by
   have hP := SmoothForm.laplacian_extDerivWedgeₗ_gradInteriorₗ_apply (I := I)
     (o.fact_finrank_tangentSpace x).out f hkl α x
-  rw [wittenLaplacian_eq_add_smul_add_smul, LinearMap.add_apply, LinearMap.add_apply,
-    LinearMap.smul_apply, LinearMap.smul_apply, Submodule.coe_add, Submodule.coe_add,
-    Submodule.coe_smul, Submodule.coe_smul, Pi.add_apply, Pi.add_apply, Pi.smul_apply,
-    Pi.smul_apply, hP, smul_smul]
+  simp only [wittenLaplacian_eq_add_smul_add_smul, LinearMap.add_apply, LinearMap.smul_apply,
+    Submodule.coe_add, Submodule.coe_smul, Pi.add_apply, Pi.smul_apply, hP, smul_smul]
 
 /-- **The Hessian term is a zeroth-order operator**: it is linear over smooth functions,
 `K_f (g α) = g K_f α`. The first-order terms `dg ∧ ·` and `ι_(grad g)` produced by the Leibniz
@@ -481,19 +479,14 @@ theorem wittenHessianTerm_funSMulₗ (o : Manifold.Orientation I M (Fin m)) (f :
       Submodule.coe_add, Submodule.coe_sub, SmoothForm.coe_funSMulₗ, Pi.add_apply, Pi.sub_apply,
       SmoothForm.gradInteriorₗ_extDerivWedgeₗ_zero_apply, hgf]
     abel
-  · -- In the top degree `dg ∧ α = 0` and `df ∧ α = 0`, so the Koszul identity reads
-    -- `dg ∧ ι_(grad f) α = ⟪grad f, grad g⟫ α`, and symmetrically.
-    have hε (u v : C^∞⟮I, M; ℝ⟯) :
-        (SmoothForm.extDerivWedgeₗ u k (SmoothForm.gradInteriorₗ v k α)).1 x =
-          ⟪Manifold.mgradient I v x, Manifold.mgradient I u x⟫ • α.1 x := by
-      have h := SmoothForm.extDerivWedgeₗ_gradInteriorₗ_add_apply u v α x
-      rwa [SmoothForm.eq_zero_of_finrank_lt (by omega) (SmoothForm.extDerivWedgeₗ u (k + 1) α),
-        map_zero, ZeroMemClass.coe_zero, Pi.zero_apply, add_zero] at h
+  · -- In the top degree the Koszul identity reads `dg ∧ ι_(grad f) α = ⟪grad f, grad g⟫ α`,
+    -- and symmetrically.
+    have hm' : Module.finrank ℝ E = k + 1 := by omega
     simp only [wittenHessianTerm_def, LinearMap.add_apply, SmoothForm.laplacian_add_one_zero,
       SmoothForm.mextDerivₗ_funSMulₗ, SmoothForm.extDerivWedgeₗ_funSMulₗ,
       SmoothForm.codifferential_funSMulₗ, map_add, map_sub, SmoothForm.gradInteriorₗ_funSMulₗ,
       Submodule.coe_add, Submodule.coe_sub, SmoothForm.coe_funSMulₗ, Pi.add_apply, Pi.sub_apply,
-      hε, hgf]
+      SmoothForm.extDerivWedgeₗ_gradInteriorₗ_apply_top hm', hgf]
     abel
   · have h : k + 1 + 1 + l = m := by omega
     simp only [wittenHessianTerm_def, LinearMap.add_apply,
@@ -515,18 +508,13 @@ theorem wittenHessianTerm_ofFunction (o : Manifold.Orientation I M (Fin m)) (f :
       SmoothForm.funSMulₗ g (SmoothForm.hodgeLaplacian o hl (SmoothForm.ofFunction f)) := by
   -- `g = g · 1`, and `K_f 1 = ι_(grad f) (d 1) + d^* (df ∧ 1) = d^* df`.
   set one := SmoothForm.ofFunction (I := I) (M := M) (ContMDiffMap.const (1 : ℝ))
-  have hfun (u : C^∞⟮I, M; ℝ⟯) : SmoothForm.ofFunction u = SmoothForm.funSMulₗ u one := by
-    apply Subtype.ext
-    funext x
-    ext v
-    simp [one, RoughForm.ofFunction_apply, ContMDiffMap.const_apply]
   have hd1 : mextDerivₗ I 0 one = 0 := mextDerivₗ_ofFunction_const I 1
-  rw [hfun g, wittenHessianTerm_funSMulₗ]
+  rw [SmoothForm.ofFunction_eq_funSMulₗ_one g, wittenHessianTerm_funSMulₗ]
   congr 1
   rcases l with _ | l
   · simp [wittenHessianTerm_def]
   · have hε : SmoothForm.extDerivWedgeₗ f 0 one = mextDerivₗ I 0 (SmoothForm.ofFunction f) := by
-      rw [hfun f, SmoothForm.mextDerivₗ_funSMulₗ, hd1, map_zero]
+      rw [SmoothForm.ofFunction_eq_funSMulₗ_one f, SmoothForm.mextDerivₗ_funSMulₗ, hd1, map_zero]
       exact (zero_add _).symm
     rw [wittenHessianTerm_def, LinearMap.add_apply, SmoothForm.laplacian_zero_add_one _ _ hl
       (by omega), SmoothForm.laplacian_zero_add_one _ _ hl (by omega), hd1, map_zero, zero_add, hε,
@@ -545,26 +533,12 @@ theorem wittenHessianTerm_apply_top (o : Manifold.Orientation I M (Fin m)) (f : 
   · obtain rfl : m = 0 := by omega
     simp [wittenHessianTerm_def]
   obtain rfl : m = k + 1 := by omega
-  -- Write `α = g vol` for the smooth function `g = ⋆α` and the volume form `vol = ⋆1`.
+  -- Write `α = g vol` for a smooth function `g` and the volume form `vol = ⋆1`.
+  obtain ⟨g, hα⟩ := SmoothForm.exists_eq_funSMulₗ_hodgeStar_ofFunction_one o hkl hl α
   set one := SmoothForm.ofFunction (I := I) (M := M) (ContMDiffMap.const (1 : ℝ))
   set vol := SmoothForm.hodgeStar o hl one
-  have hvol : (vol : RoughForm I M ℝ (k + 1)) = riemannianVolumeForm o := by
-    rw [SmoothForm.coe_hodgeStar, SmoothForm.coe_ofFunction, RoughForm.hodgeStar_ofFunction]
-    funext y
-    simp
-  have hβ := RoughForm.eq_ofFunction (SmoothForm.hodgeStar o hkl α).1
-  let g : C^∞⟮I, M; ℝ⟯ := ⟨fun y ↦ (SmoothForm.hodgeStar o hkl α).1 y 0,
-    isSmoothForm_ofFunction_iff.1 (hβ ▸ (SmoothForm.hodgeStar o hkl α).isSmoothForm)⟩
-  have hα : α = SmoothForm.funSMulₗ g vol := by
-    have hg : SmoothForm.hodgeStar o hkl α = SmoothForm.funSMulₗ g one := by
-      apply Subtype.ext
-      rw [hβ, SmoothForm.coe_funSMulₗ, SmoothForm.coe_ofFunction]
-      funext y
-      ext v
-      simp [g]
-    have h2 := SmoothForm.hodgeStar_hodgeStar o hkl hl α
-    rw [mul_zero, pow_zero, one_smul] at h2
-    rw [← h2, hg, SmoothForm.hodgeStar_funSMulₗ]
+  have hvol : (vol : RoughForm I M ℝ (k + 1)) = riemannianVolumeForm o :=
+    SmoothForm.coe_hodgeStar_ofFunction_one o hl
   -- `K_f vol = d ι_(grad f) vol + df ∧ d^* vol`, and `d^* vol = ±⋆ d (⋆⋆1) = ±⋆ d 1 = 0`.
   have hcod : SmoothForm.codifferential o hkl vol = 0 := by
     have h2 := SmoothForm.hodgeStar_hodgeStar o hl hkl one

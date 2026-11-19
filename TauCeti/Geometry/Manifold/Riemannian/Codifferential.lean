@@ -100,7 +100,8 @@ whose Laplacian is computed in powers of `t` by `TauCeti.SmoothForm.laplacian_ad
 * `TauCeti.SmoothForm.coe_codifferential_funSMulₗ`, `TauCeti.SmoothForm.codifferential_funSMulₗ`:
   the Leibniz rule `d*(f β) = f d*β - ι_(grad f) β`.
 * `TauCeti.SmoothForm.extDerivWedgeₗ_gradInteriorₗ_add_apply`,
-  `TauCeti.SmoothForm.gradInteriorₗ_extDerivWedgeₗ_zero_apply`: the Koszul identity
+  `TauCeti.SmoothForm.gradInteriorₗ_extDerivWedgeₗ_zero_apply`,
+  `TauCeti.SmoothForm.extDerivWedgeₗ_gradInteriorₗ_apply_top`: the Koszul identity
   `df ∧ ι_(grad g) + ι_(grad g) (df ∧ ·) = ⟪grad g, grad f⟫`.
 * `TauCeti.SmoothForm.laplacian_extDerivWedgeₗ_gradInteriorₗ_apply`: the Laplacian of the pair
   `(df ∧ ·, ι_(grad f))` is multiplication by `|df|²`.
@@ -655,23 +656,17 @@ private theorem codifferential_funSMulₗ_apply (o : Manifold.Orientation I M (F
 
 /-! ### Exterior multiplication by `df` and contraction with `grad f` -/
 
-/-- The gradient of a smooth function is a smooth vector field. -/
-private theorem contMDiff_mgradient_smooth (f : C^∞⟮I, M; ℝ⟯) :
-    ContMDiff I I.tangent ∞ (fun x ↦ (⟨x, Manifold.mgradient I f x⟩ : TangentBundle I M)) :=
-  -- `∞ + 1 = ∞` holds by `rfl`, but instance search does not see it.
-  have : IsManifold I (∞ + 1) M := ‹IsManifold I ∞ M›
-  Manifold.contMDiff_mgradient (n := ∞) f.contMDiff
-
 /-- **The contraction `ι_(grad f)`** of smooth `(k + 1)`-forms with the gradient of a smooth
 function `f`, as a linear map to smooth `k`-forms. It is the commutator `-[d*, f]` of the
-codifferential with multiplication by `f` (`TauCeti.SmoothForm.codifferential_funSMulₗ`), and the
-pointwise adjoint of exterior multiplication by `df` (`TauCeti.SmoothForm.extDerivWedgeₗ`): the
-two satisfy the Koszul identity `df ∧ ι_(grad g) α + ι_(grad g) (df ∧ α) = ⟪grad g, grad f⟫ α`
+codifferential with multiplication by `f` (`TauCeti.SmoothForm.codifferential_funSMulₗ`). With
+exterior multiplication by `df` (`TauCeti.SmoothForm.extDerivWedgeₗ`) it satisfies the Koszul
+identity `df ∧ ι_(grad g) α + ι_(grad g) (df ∧ α) = ⟪grad g, grad f⟫ α`
 (`TauCeti.SmoothForm.extDerivWedgeₗ_gradInteriorₗ_add_apply`). -/
 def gradInteriorₗ (f : C^∞⟮I, M; ℝ⟯) (k : ℕ) :
     SmoothForm I M ℝ (k + 1) →ₗ[ℝ] SmoothForm I M ℝ k where
   toFun β := ⟨RoughForm.interior (Manifold.mgradient I f) β.1,
-    (β.isSmoothForm.interior (contMDiff_mgradient_smooth f)).mem_smoothBundleForms⟩
+    (β.isSmoothForm.interior
+      (Manifold.contMDiff_mgradient_infty f.contMDiff)).mem_smoothBundleForms⟩
   map_add' β γ := Subtype.ext (RoughForm.interior_add _ β.1 γ.1)
   map_smul' c β := Subtype.ext (RoughForm.interior_smul c _ β.1)
 
@@ -721,6 +716,16 @@ theorem extDerivWedgeₗ_gradInteriorₗ_add_apply (f g : C^∞⟮I, M; ℝ⟯)
     ← gradContr_apply, extDerivWedgeₗ_apply_eq_gradWedge]
   exact gradWedge_gradContr_add f g k x (α.1 x)
 
+/-- **The Koszul identity in the top degree**: on a manifold of dimension `k + 1`,
+`df ∧ ι_(grad g) α = ⟪grad g, grad f⟫ α` for a top-degree form `α`, since `df ∧ α` vanishes. -/
+theorem extDerivWedgeₗ_gradInteriorₗ_apply_top (hm : Module.finrank ℝ E = k + 1)
+    (f g : C^∞⟮I, M; ℝ⟯) (α : SmoothForm I M ℝ (k + 1)) (x : M) :
+    (extDerivWedgeₗ f k (gradInteriorₗ g k α)).1 x =
+      ⟪Manifold.mgradient I g x, Manifold.mgradient I f x⟫ • α.1 x := by
+  have h := extDerivWedgeₗ_gradInteriorₗ_add_apply f g α x
+  rwa [eq_zero_of_finrank_lt (by omega) (extDerivWedgeₗ f (k + 1) α), map_zero,
+    ZeroMemClass.coe_zero, Pi.zero_apply, add_zero] at h
+
 /-- **The Koszul identity on functions**: `ι_(grad g) (df ∧ φ) = ⟪grad g, grad f⟫ φ` for a smooth
 `0`-form `φ`. -/
 theorem gradInteriorₗ_extDerivWedgeₗ_zero_apply (f g : C^∞⟮I, M; ℝ⟯) (φ : SmoothForm I M ℝ 0)
@@ -746,11 +751,8 @@ theorem laplacian_extDerivWedgeₗ_gradInteriorₗ_apply (hm : Module.finrank �
     simp
   · rw [laplacian_zero_add_one _ _ hkl (by omega), gradInteriorₗ_extDerivWedgeₗ_zero_apply,
       real_inner_self_eq_norm_sq]
-  · -- In the top degree `df ∧ α` vanishes, so only `df ∧ ι_(grad f) α` remains.
-    have h := extDerivWedgeₗ_gradInteriorₗ_add_apply f f α x
-    rw [eq_zero_of_finrank_lt (by omega) (extDerivWedgeₗ f (k + 1) α), map_zero,
-      ZeroMemClass.coe_zero, Pi.zero_apply, add_zero, real_inner_self_eq_norm_sq] at h
-    rw [laplacian_add_one_zero, h]
+  · rw [laplacian_add_one_zero, extDerivWedgeₗ_gradInteriorₗ_apply_top (by omega),
+      real_inner_self_eq_norm_sq]
   · rw [laplacian_add_one_add_one _ _ hkl (by omega), Submodule.coe_add, Pi.add_apply,
       ← real_inner_self_eq_norm_sq]
     exact (add_comm _ _).trans (extDerivWedgeₗ_gradInteriorₗ_add_apply f f α x)

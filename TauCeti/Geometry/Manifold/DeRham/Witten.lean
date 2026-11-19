@@ -46,6 +46,7 @@ state of the harmonic oscillator obtained from the Witten Laplacian at a nondege
 
 ## Main definitions
 
+* `TauCeti.expMul f t`: the smooth function `e^{t f}`.
 * `TauCeti.expSMulEquiv f t k`: multiplication of smooth `k`-forms by `e^{t f}`.
 * `TauCeti.wittenExtDerivₗ f t k`: the Witten deformation `d_t` of the exterior derivative.
 * `TauCeti.wittenComplex f t`: the cochain complex of smooth forms with differential `d_t`.
@@ -119,15 +120,18 @@ end RoughForm
 section SmoothForm
 
 /-- The smooth function `e^{t f}`. -/
-private def expMul (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) : C^∞⟮I, M; ℝ⟯ :=
+def expMul (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) : C^∞⟮I, M; ℝ⟯ :=
   ⟨fun x ↦ Real.exp (t * f x),
     ((Real.contDiff_exp.comp (contDiff_const.mul contDiff_id)).comp_contMDiff f.contMDiff :)⟩
 
-private theorem expMul_apply (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (x : M) :
+/-- The value of `e^{t f}` at `x` is `Real.exp (t * f x)`. -/
+@[simp]
+theorem expMul_apply (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (x : M) :
     expMul f t x = Real.exp (t * f x) :=
   (rfl)
 
-private theorem expMul_mul_expMul_neg (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (x : M) :
+/-- `e^{t f} e^{-t f} = 1`. -/
+theorem expMul_mul_expMul_neg (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (x : M) :
     expMul f t x * expMul f (-t) x = 1 := by
   rw [expMul_apply, expMul_apply, ← Real.exp_add, neg_mul, add_neg_cancel, Real.exp_zero]
 
@@ -153,6 +157,12 @@ def expSMulEquiv (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) : SmoothForm I M ℝ k ≃
 theorem coe_expSMulEquiv (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (φ : SmoothForm I M ℝ k) :
     (expSMulEquiv k f t φ : RoughForm I M ℝ k) = fun x ↦ Real.exp (t * f x) • φ.1 x := by
   simp [expSMulEquiv, expMul_apply]
+
+/-- Multiplication by `e^{t f}` is `SmoothForm.funSMulₗ` of the smooth function `e^{t f}`. -/
+theorem expSMulEquiv_eq_funSMulₗ (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) :
+    (expSMulEquiv k f t : SmoothForm I M ℝ k →ₗ[ℝ] SmoothForm I M ℝ k) =
+      SmoothForm.funSMulₗ (expMul f t) :=
+  (rfl)
 
 /-- The inverse of multiplication by `e^{t f}` is multiplication by `e^{-t f}`. -/
 @[simp]
