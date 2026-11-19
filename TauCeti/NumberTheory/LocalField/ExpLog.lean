@@ -120,8 +120,8 @@ private theorem powValuation_coeff_log_mul_pow_le [CharZero K] {π : 𝒪[K]}
   have hnK : (n : K) ≠ 0 := Nat.cast_ne_zero.mpr hn
   have hcoeff :
       valuation K (PowerSeries.coeff n (PowerSeries.log K)) * valuation K (n : K) = 1 := by
-    rw [← map_mul]
-    simp [PowerSeries.coeff_log, hn, hnK]
+    rw [← map_mul, PowerSeries.coeff_log_eq_neg_one_pow_div]
+    simp [hnK]
   have hv : valuation K (n : K) ≠ 0 := by simpa using hnK
   -- `(p - 1) * v_p(n) < n`, since `p ^ v_p(n)` divides `n`.
   have hq : (p - 1) * padicValNat p n < n := by
@@ -327,11 +327,7 @@ theorem log_exp_of_mem_maximalIdeal_pow (hi : absoluteRamificationIndex K p < (p
       (unitFiltration_antitone (Nat.one_le_iff_ne_zero.mpr (by rintro rfl; simp at hi)) hu)
     rw [hux] at h
     refine h.tendsto_sum_nat.congr fun M => ?_
-    rw [PowerSeries.eval_trunc]
-    refine Finset.sum_congr rfl fun n _ => ?_
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · simp [PowerSeries.coeff_log, hn]
+    simp only [PowerSeries.eval_trunc, PowerSeries.coeff_log_eq_neg_one_pow_div]
   -- A nonzero `log (exp x) - x` would violate the bound `A * S ^ M` for large `M`.
   by_contra hne
   have hy : log (exp (x : K)) - x ≠ 0 := sub_ne_zero.mpr hne
