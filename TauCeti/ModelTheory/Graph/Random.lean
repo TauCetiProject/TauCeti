@@ -42,7 +42,9 @@ noncomputable def graphExtensionAxiom (m n : ℕ) : Language.graph.Sentence :=
         (adj.boundedFormula₂ (&z) (&(j.natAdd m).castSucc)).not
   (disjoint.imp (positive ⊓ negative).ex).alls
 
-private theorem realize_graphExtensionAxiom {V : Type*} (G : SimpleGraph V) (m n : ℕ) :
+/-- A graph satisfies the extension axiom for tuple lengths `m` and `n` exactly when each
+pair of disjoint tuples of those lengths has a vertex with the required adjacencies. -/
+theorem _root_.SimpleGraph.realize_graphExtensionAxiom {V : Type*} (G : SimpleGraph V) (m n : ℕ) :
     @Sentence.Realize Language.graph V G.structure (graphExtensionAxiom m n) ↔
       ∀ a : Fin m → V, ∀ b : Fin n → V, (∀ i j, a i ≠ b j) →
         ∃ z, (∀ i, G.Adj z (a i)) ∧ ∀ j, z ≠ b j ∧ ¬G.Adj z (b j) := by
@@ -51,7 +53,7 @@ private theorem realize_graphExtensionAxiom {V : Type*} (G : SimpleGraph V) (m n
       ∀ v : Fin (m + n) → V, (∀ i : Fin m, ∀ j : Fin n, v (i.castAdd n) ≠ v (j.natAdd m)) →
         ∃ z, (∀ i : Fin m, G.Adj z (v (i.castAdd n))) ∧
           ∀ j : Fin n, z ≠ v (j.natAdd m) ∧ ¬G.Adj z (v (j.natAdd m)) := by
-    change Formula.Realize (graphExtensionAxiom m n) (default : Empty → V) ↔ _
+    rw [Sentence.Realize]
     have hAdj (x y : V) : Structure.RelMap adj ![x, y] ↔ G.Adj x y := Iff.rfl
     simp [graphExtensionAxiom, -Fin.castSucc_natAdd, hAdj]
   rw [h]
@@ -62,29 +64,35 @@ private theorem realize_graphExtensionAxiom {V : Type*} (G : SimpleGraph V) (m n
 noncomputable def Theory.randomGraph : Language.graph.Theory :=
   Theory.simpleGraph ∪ Set.range (fun p : ℕ × ℕ => graphExtensionAxiom p.1 p.2)
 
+/-- A sentence belongs to the random-graph theory if it is a simple-graph axiom or one of the
+extension axioms. -/
+@[simp]
+theorem Theory.mem_randomGraph {φ : Language.graph.Sentence} :
+    φ ∈ Theory.randomGraph ↔ φ ∈ Theory.simpleGraph ∨ ∃ m n, graphExtensionAxiom m n = φ := by
+  simp only [Theory.randomGraph, Set.mem_union, Set.mem_range, Prod.exists]
+
 /-- The random-graph theory includes the simple-graph axioms. -/
 theorem Theory.simpleGraph_subset_randomGraph : Theory.simpleGraph ⊆ Theory.randomGraph :=
   Set.subset_union_left
 
 /-- On a simple graph, the random-graph axioms hold exactly when the graph has the extension
 property. -/
-theorem Theory.randomGraph_model_iff {V : Type*} (G : SimpleGraph V) :
+theorem _root_.SimpleGraph.randomGraph_model_iff {V : Type*} (G : SimpleGraph V) :
     @Theory.Model Language.graph V G.structure Theory.randomGraph ↔ G.HasExtensionProperty := by
   classical
   let _ := G.structure
   have hsimple : V ⊨ Theory.simpleGraph := inferInstance
   rw [Theory.randomGraph, Theory.model_union_iff, and_iff_right hsimple]
-  simp only [Theory.model_iff, Set.forall_mem_range, Prod.forall, realize_graphExtensionAxiom,
-    SimpleGraph.hasExtensionProperty_def]
+  simp only [Theory.model_iff, Set.forall_mem_range, Prod.forall,
+    SimpleGraph.realize_graphExtensionAxiom, SimpleGraph.hasExtensionProperty_def]
   constructor
   · intro h s t hst
     let a i := ((s.equivFin).symm i : V)
     let b j := ((t.equivFin).symm j : V)
     obtain ⟨z, ha, hb⟩ := h s.card t.card a b fun i j hij => by
-      apply Finset.disjoint_left.mp hst ((s.equivFin).symm i).2
-      change a i ∈ t
-      rw [hij]
-      exact ((t.equivFin).symm j).2
+      have hi : a i ∈ s := ((s.equivFin).symm i).2
+      have hj : b j ∈ t := ((t.equivFin).symm j).2
+      exact Finset.disjoint_left.mp hst hi (hij.symm ▸ hj)
     refine ⟨z, fun hz => (hb (t.equivFin ⟨z, hz⟩)).1 (by simp [b]), ?_, ?_⟩
     · intro u hu
       simpa [a] using ha (s.equivFin ⟨u, hu⟩)

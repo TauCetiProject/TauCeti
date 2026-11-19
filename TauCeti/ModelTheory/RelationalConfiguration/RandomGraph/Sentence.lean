@@ -37,7 +37,7 @@ theorem modelsOf_randomGraphSentence :
     have _ : ℕ ⊨ Theory.simpleGraph := hmodel.mono Theory.simpleGraph_subset_randomGraph
     let G := simpleGraphOfStructure ℕ
     have hstructure : G.structure = c.toStructure := structure_simpleGraphOfStructure
-    refine ⟨G, nonempty_iso_radoGraph_iff.mpr ((Theory.randomGraph_model_iff G).mp ?_), ?_⟩
+    refine ⟨G, nonempty_iso_radoGraph_iff.mpr (G.randomGraph_model_iff.mp ?_), ?_⟩
     · rw [hstructure]
       exact hmodel
     · apply equivStructure.injective
@@ -45,6 +45,6 @@ theorem modelsOf_randomGraphSentence :
   · rintro ⟨G, hG, rfl⟩
     rw [SimpleGraph.toStructure_toRelationalConfiguration]
     exact (@realize_randomGraphSentence_iff ℕ G.structure).mpr
-      ((Theory.randomGraph_model_iff G).mpr (nonempty_iso_radoGraph_iff.mp hG))
+      (G.randomGraph_model_iff.mpr (nonempty_iso_radoGraph_iff.mp hG))
 
 end TauCeti.RelationalConfiguration
