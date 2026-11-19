@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.InnerProductSpace.Adjoint
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
 
 /-!
 # The orthogonal projection onto the range of an operator
@@ -378,19 +379,11 @@ namespace ContinuousLinearMap
 
 variable {P : E →L[𝕜] E}
 
-/-- A star projection composed with itself is itself: idempotence, with `*` unfolded to `∘L`. -/
-private theorem _root_.IsStarProjection.comp_self (hP : IsStarProjection P) : P ∘L P = P := by
-  rw [← mul_def, hP.isIdempotentElem.eq]
-
-/-- Idempotence of a star projection, in the left-associated form `simp [← comp_assoc]` leaves. -/
-private theorem _root_.IsStarProjection.comp_comp_self {G : Type*} [AddCommMonoid G] [Module 𝕜 G]
-    [TopologicalSpace G] (hP : IsStarProjection P) (X : E →L[𝕜] G) : (X ∘L P) ∘L P = X ∘L P := by
-  rw [comp_assoc, hP.comp_self]
-
 /-- The adjoint of `L ∘L P` takes values in the range of `P`. -/
 private theorem starProjection_comp_adjoint_comp (L : E →L[𝕜] F) (hP : IsStarProjection P) :
     P ∘L adjoint (L ∘L P) = adjoint (L ∘L P) := by
-  simp [adjoint_comp, hP.isSelfAdjoint.adjoint_eq, ← comp_assoc, hP.comp_self]
+  simp [adjoint_comp, hP.isSelfAdjoint.adjoint_eq, ← comp_assoc,
+    IsIdempotentElem.comp_self hP.isIdempotentElem]
 
 /-- The corrected Gram operator `(L P)† (L P) + (1 - P)` of `L` and `P`. -/
 private noncomputable def imageGram (L : E →L[𝕜] F) (P : E →L[𝕜] E) : E →L[𝕜] E :=
@@ -427,7 +420,8 @@ theorem isUnit_adjoint_comp_add_one_sub_iff_injOn [FiniteDimensional 𝕜 E] (L 
   have hinj : Set.InjOn L (P.range : Set E) ↔
       Disjoint P.range (LinearMap.ker (L : E →ₗ[𝕜] F)) := by
     rw [LinearMap.disjoint_ker_iff_injOn, coe_coe]
-  have hPP (y : E) : P (P y) = P y := congr($hP.comp_self y)
+  have hPP (y : E) : P (P y) = P y :=
+    congr($(IsIdempotentElem.comp_self hP.isIdempotentElem) y)
   rw [← imageGram, hinj, isUnit_iff_isUnit_toLinearMap,
     LinearMap.isUnit_iff_ker_eq_bot, LinearMap.ker_eq_bot', Submodule.disjoint_def]
   simp only [coe_coe, LinearMap.mem_range, LinearMap.mem_ker]
@@ -438,11 +432,10 @@ theorem isUnit_adjoint_comp_add_one_sub_iff_injOn [FiniteDimensional 𝕜 E] (L 
   · intro h x hx
     -- Applying `P` gives `Q† Q x = 0`, so `Q x = 0`; then `x - P x = 0`, so `x = P x`.
     have h1 : (adjoint (L ∘L P) ∘L (L ∘L P)) x = 0 := by rw [← hPA, mul_apply_eq_comp, hx, map_zero]
-    have hQ : (L ∘L P) x = 0 := LinearMap.mem_ker.1 <|
-      (SetLike.ext_iff.1 (ker_adjoint_comp_self (L ∘L P)) x).1 (LinearMap.mem_ker.2 h1)
-    rw [imageGram, add_apply, h1, zero_add, sub_apply, one_apply_eq_self, sub_eq_zero] at hx
-    refine h x ⟨x, hx.symm⟩ ?_
-    rw [hx]
+    have hQ : (L ∘L P) x = 0 := (ker_adjoint_comp_self (L ∘L P)).le h1
+    have hxP : x = P x := by simpa [imageGram, sub_eq_zero] using congr($hx - $h1)
+    refine h x ⟨x, hxP.symm⟩ ?_
+    rw [hxP]
     exact hQ
 
 omit [CompleteSpace E] [CompleteSpace F] in
@@ -503,8 +496,9 @@ theorem comp_comp_adjoint_eq_starProjection_range_comp {B : E →L[𝕜] F} (hB 
     rw [comp_assoc, (isometry_iff_adjoint_comp_self B).1 hB, one_def, comp_id]
   -- With `Q = B P`: `Q† Q = P B† B P = P`, so `Q† Q P Q† = P P B† = Q†` and `Q P Q† = B P B†`.
   refine Eq.symm <| (starProjection_range_eq_comp_comp_adjoint (G := P) ?_).trans ?_ <;>
-    simp [adjoint_comp, hP.isSelfAdjoint.adjoint_eq, ← comp_assoc, hBB, hP.comp_self,
-      hP.comp_comp_self]
+    simp [adjoint_comp, hP.isSelfAdjoint.adjoint_eq, ← comp_assoc, hBB,
+      IsIdempotentElem.comp_self hP.isIdempotentElem,
+      IsIdempotentElem.comp_comp_self hP.isIdempotentElem]
 
 end ContinuousLinearMap
 
