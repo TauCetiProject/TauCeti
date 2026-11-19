@@ -41,9 +41,9 @@ satisfies `‖e‖ = 1` and the interval formula above. The constructed norm sat
 such a norm the positive cone is closed, `e` is an interior point of it, and the order is
 recovered from the norm and `e`: `0 ≤ a ↔ ‖‖a‖ • e - a‖ ≤ ‖a‖`. A unital linear order embedding
 between two such spaces is isometric. The predicate is stable under restriction to a subspace
-containing `e` and under finite products with the coordinatewise order and the supremum norm, and
-`ℝ` and `C(K, ℝ)` for nonempty compact `K`, with `e = 1`, satisfy it. The self-adjoint part of a
-unital C⋆-algebra is treated in `TauCeti.Analysis.CStarAlgebra.OrderUnit`.
+containing `e` and under finite nonempty products with the coordinatewise order and the supremum
+norm, and `ℝ` and `C(K, ℝ)` for nonempty compact `K`, with `e = 1`, satisfy it. The self-adjoint
+part of a unital C⋆-algebra is treated in `TauCeti.Analysis.CStarAlgebra.OrderUnit`.
 
 ## Main definitions
 
@@ -72,7 +72,8 @@ unital C⋆-algebra is treated in `TauCeti.Analysis.CStarAlgebra.OrderUnit`.
   interior point.
 * `TauCeti.IsOrderUnitNorm.submodule`, `TauCeti.IsOrderUnitNorm.prod`,
   `TauCeti.IsOrderUnitNorm.pi`, `TauCeti.isOrderUnitNorm_real_one`,
-  `TauCeti.isOrderUnitNorm_continuousMap_one`: subspaces, finite products and examples.
+  `TauCeti.isOrderUnitNorm_continuousMap_one`: subspaces, finite nonempty products and
+  examples.
 
 ## References
 
