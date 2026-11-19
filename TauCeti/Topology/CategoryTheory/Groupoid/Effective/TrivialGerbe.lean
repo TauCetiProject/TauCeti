@@ -220,7 +220,7 @@ omit [TopologicalSpace K] in
 @[simp]
 theorem isomorphismClassesHomeomorph_mk (x : SingleObj K × Discrete N) :
     isomorphismClassesHomeomorph K N (_root_.Quotient.mk _ x) = x.2.as := by
-  simp [isomorphismClassesHomeomorph]; rfl
+  simp [isomorphismClassesHomeomorph]
 
 omit [TopologicalSpace K] in
 @[simp]
