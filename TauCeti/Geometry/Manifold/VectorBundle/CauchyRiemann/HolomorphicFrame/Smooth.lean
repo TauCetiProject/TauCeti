@@ -40,7 +40,8 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(
   {D : (Π x : M, V x) → Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x}
 
 omit [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] in
-/-- A smooth operator has a smooth scalar coefficient near every chart centre. -/
+/-- On the open set `u` where the operator is covariantly smooth, its scalar coefficient is
+smooth near every chart centre in `u`. -/
 theorem eventually_contDiffAt_cauchyRiemannChartCoeff
     (hD : IsRealCauchyRiemannOperator F
       (SmoothAlmostComplexStructure.ofComplexManifold ℂ M) D)
@@ -84,8 +85,9 @@ theorem eventually_contDiffAt_cauchyRiemannChartCoeff
   filter_upwards [hW.mem_nhds hxW] with z hz
   exact (hc z hz).contDiffAt (hW.mem_nhds hz)
 
-/-- A smooth complex-linear real Cauchy–Riemann line operator has a nonzero smooth kernel
-frame near every point, with no independently assumed smooth chart coefficient. -/
+/-- If `finrank ℂ F = 1`, a complex-linear real Cauchy–Riemann operator covariantly smooth on
+an open set `u` has a nonzero smooth kernel frame near every point of `u`, with no independently
+assumed smooth chart coefficient. -/
 theorem exists_isNonvanishingHolomorphicOn_of_contMDiffCovariantDerivativeOn
     (hD : IsRealCauchyRiemannOperator F
       (SmoothAlmostComplexStructure.ofComplexManifold ℂ M) D)
