@@ -18,7 +18,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 
 An **Ehresmann connection** on a map `f : P → B` is a distribution `D` on `P`, the *horizontal*
 distribution, which is complementary to the vertical space `ker (df_x)` at every point `x` of
-a map with surjective derivative, and is a `C^n` distribution of rank `dim B`
+a differentiable map with surjective derivative, and is a `C^n` distribution of rank `dim B`
 (`TauCeti.IsEhresmannConnection`). At every point the derivative `df_x` then restricts to a
 linear isomorphism from the horizontal space `D x` onto `T_(f x) B`; its inverse is the
 **horizontal lift** of tangent vectors of the base
@@ -83,13 +83,15 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {n : ℕ∞ω}
 
 variable (I J n) in
-/-- A distribution `D` on `P` is a `C^n` **Ehresmann connection** on `f : P → B` when at every
-point `x` the derivative `df_x` is surjective and the horizontal space `D x` is a complement of
-the vertical space `ker (df_x)` in `T_x P`, and `D` is a `C^n` distribution of rank `dim B`, the
-dimension of the model space `F` of `B`. -/
+/-- A distribution `D` on `P` is a `C^n` **Ehresmann connection** on `f : P → B` when `f` is
+differentiable, at every point `x` the derivative `df_x` is surjective and the horizontal space
+`D x` is a complement of the vertical space `ker (df_x)` in `T_x P`, and `D` is a `C^n`
+distribution of rank `dim B`, the dimension of the model space `F` of `B`. -/
 @[mk_iff]
 structure IsEhresmannConnection (f : P → B) (D : Π x : P, Submodule 𝕜 (TangentSpace I x)) :
     Prop where
+  /-- The map `f` is differentiable, so that `df_x` is its actual derivative. -/
+  mdifferentiable : MDifferentiable I J f
   /-- The horizontal space at `x` is a complement of the vertical space `ker (df_x)`. -/
   isCompl_ker (x : P) : IsCompl (D x) (mfderiv I J f x).ker
   /-- The derivative of `f` is surjective at every point, so that every tangent vector of the
@@ -312,6 +314,7 @@ theorem isEhresmannConnection_orthogonal_ker [IsManifold I (m + 1) P]
     [IsContMDiffRiemannianBundle I m E (fun x : P ↦ TangentSpace I x)]
     (hf : IsSubmersion I J n f) (hmn : m + 1 ≤ n) :
     IsEhresmannConnection I J m f (fun x ↦ (mfderiv I J f x).kerᗮ) where
+  mdifferentiable := hf.contMDiff.mdifferentiable fun h ↦ by simp [h] at hmn
   isCompl_ker x := by
     have : FiniteDimensional ℝ (TangentSpace I x) := inferInstanceAs (FiniteDimensional ℝ E)
     exact (Submodule.isCompl_orthogonal (mfderiv I J f x).ker).symm
