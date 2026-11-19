@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Analytic.Binomial
 public import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.RingTheory.Binomial
 
 /-!
@@ -197,7 +198,7 @@ private theorem exists_abs_bracketRemainder_le [ProperSpace E] (hc : c ≠ 0)
   obtain ⟨B, -, hB⟩ := (contDiff_bracketRemainder hc hψ hψ0 r K).continuous
     |>.exists_norm_le_one_add_norm_sq_rpow_of_norm_le R₁ (2 * (r - K))
   rw [mul_div_cancel_left₀ _ two_ne_zero] at hB
-  refine ⟨max B (|A| * ((c ^ 2 / 2) ^ (r - K) + (c ^ 2) ^ (r - K))), fun ξ ↦ ?_⟩
+  refine ⟨max B (|A| * ((c ^ 2) ^ (r - K) * 2 ^ (|2 * (r - K)| / 2))), fun ξ ↦ ?_⟩
   rcases le_or_gt ‖ξ‖ R₁ with hξ | hξ
   · exact (hB ξ hξ).trans (by gcongr; exact le_max_left _ _)
   have h1 : 1 ≤ ‖ξ‖ := (le_max_right _ _).trans ((le_max_left _ _).trans hξ.le)
@@ -222,10 +223,16 @@ private theorem exists_abs_bracketRemainder_le [ProperSpace E] (hc : c ≠ 0)
     _ = A * (‖c • ξ‖ ^ 2) ^ (r - K) := by
         rw [Real.rpow_sub hG, Real.rpow_natCast, inv_pow]
         ring
-    _ ≤ |A| * (((c ^ 2 / 2) ^ (r - K) + (c ^ 2) ^ (r - K)) * (1 + ‖ξ‖ ^ 2) ^ (r - K)) :=
-        mul_le_mul (le_abs_self A) (norm_smul_sq_rpow_le hc _ h1) (by positivity) (abs_nonneg A)
+    _ = A * ((c ^ 2) ^ (r - K) * ‖ξ‖ ^ (2 * (r - K))) := by
+        rw [hGeq, Real.mul_rpow (sq_nonneg c) (sq_nonneg _), Real.rpow_mul (norm_nonneg ξ),
+          Real.rpow_two]
+    _ ≤ |A| * ((c ^ 2) ^ (r - K) * (2 ^ (|2 * (r - K)| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r - K))) := by
+        have h := norm_rpow_le_one_add_norm_sq_rpow h1 (2 * (r - K))
+        rw [mul_div_cancel_left₀ _ two_ne_zero] at h
+        exact mul_le_mul (le_abs_self A) (by gcongr) (by positivity) (abs_nonneg A)
+    _ = |A| * ((c ^ 2) ^ (r - K) * 2 ^ (|2 * (r - K)| / 2)) * (1 + ‖ξ‖ ^ 2) ^ (r - K) := by
+        ring
     _ ≤ _ := by
-        rw [← mul_assoc]
         gcongr
         exact le_max_right _ _
 

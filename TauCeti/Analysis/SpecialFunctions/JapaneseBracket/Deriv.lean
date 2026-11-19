@@ -56,8 +56,6 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
   `O(R ^ m / R ^ k)` in its `k`-th derivative.
 * `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le`: the derivative bounds for the
   bracket power `(1 + ‖c x‖ ^ 2) ^ r` of a rescaled argument.
-* `TauCeti.norm_smul_sq_rpow_le`: for `1 ≤ ‖ξ‖`, the power `(‖c ξ‖ ^ 2) ^ μ` is at most a
-  constant times `(1 + ‖ξ‖ ^ 2) ^ μ`.
 * `TauCeti.hasFDerivAt_norm_smul_sq_rpow`: the derivative of `(‖c ξ‖ ^ 2) ^ μ` away from `0`.
 * `TauCeti.hasFDerivAt_one_add_norm_smul_sq_rpow`: the derivative of `(1 + ‖c ξ‖ ^ 2) ^ r`.
 * `TauCeti.contDiff_norm_smul_sq_rpow_smul`: `(‖c ξ‖ ^ 2) ^ μ` times a smooth function vanishing
@@ -192,29 +190,6 @@ theorem exists_norm_iteratedFDeriv_cutoff_smul_le {w : E → G} {N : ℕ} (hw : 
   rw [← Finset.sum_mul, mul_div_assoc]
   gcongr
   exact Finset.single_le_sum (fun k hk ↦ hS0 hk) (Finset.mem_range.2 (Nat.lt_succ_of_le hk))
-
-/-- Away from the unit ball, a power of the rescaled norm `‖c ξ‖ ^ 2` is at most a constant times
-the same power of `1 + ‖ξ‖ ^ 2`: for `1 ≤ ‖ξ‖`,
-`(‖c ξ‖ ^ 2) ^ μ ≤ ((c ^ 2 / 2) ^ μ + (c ^ 2) ^ μ) (1 + ‖ξ‖ ^ 2) ^ μ`. -/
-theorem norm_smul_sq_rpow_le {c : ℝ} (hc : c ≠ 0) (μ : ℝ) {ξ : E} (h1 : 1 ≤ ‖ξ‖) :
-    (‖c • ξ‖ ^ 2) ^ μ ≤ ((c ^ 2 / 2) ^ μ + (c ^ 2) ^ μ) * (1 + ‖ξ‖ ^ 2) ^ μ := by
-  have hw : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
-  have hc2 : 0 < c ^ 2 := by positivity
-  -- The ratio `‖c ξ‖ ^ 2 / (1 + ‖ξ‖ ^ 2)` lies between `c ^ 2 / 2` and `c ^ 2`.
-  have hratio : c ^ 2 / 2 ≤ ‖c • ξ‖ ^ 2 / (1 + ‖ξ‖ ^ 2) ∧
-      ‖c • ξ‖ ^ 2 / (1 + ‖ξ‖ ^ 2) ≤ c ^ 2 := by
-    have h1sq : 1 ≤ ‖ξ‖ ^ 2 := one_le_pow₀ h1
-    rw [norm_smul, Real.norm_eq_abs, mul_pow, sq_abs, le_div_iff₀ hw, div_le_iff₀ hw]
-    constructor <;> nlinarith [mul_nonneg hc2.le (sub_nonneg.2 h1sq)]
-  have hpow : (‖c • ξ‖ ^ 2 / (1 + ‖ξ‖ ^ 2)) ^ μ ≤ (c ^ 2 / 2) ^ μ + (c ^ 2) ^ μ := by
-    rcases le_total 0 μ with hμ | hμ
-    · exact (Real.rpow_le_rpow (by positivity) hratio.2 hμ).trans
-        (le_add_of_nonneg_left (by positivity))
-    · exact (Real.rpow_le_rpow_of_nonpos (by positivity) hratio.1 hμ).trans
-        (le_add_of_nonneg_right (by positivity))
-  calc (‖c • ξ‖ ^ 2) ^ μ = (‖c • ξ‖ ^ 2 / (1 + ‖ξ‖ ^ 2)) ^ μ * (1 + ‖ξ‖ ^ 2) ^ μ := by
-        rw [← Real.mul_rpow (by positivity) hw.le, div_mul_cancel₀ _ hw.ne']
-    _ ≤ _ := by gcongr
 
 end NormedSpace
 
