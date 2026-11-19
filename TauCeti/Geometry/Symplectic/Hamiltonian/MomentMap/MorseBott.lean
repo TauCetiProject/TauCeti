@@ -49,9 +49,10 @@ particular of a Hamiltonian torus action, is Morse–Bott
 `T` and a generic `ξ`, `T_ξ = T`; when `T_ξ = G`, the critical submanifolds are the sets `M^G_d`,
 the unions of the `d`-dimensional components of the fixed-point set `M^G`.
 
-For a compact group acting by symplectomorphisms, the Morse index and the coindex of `μ^ξ` at every
-critical point `p` are even (`even_manifoldMorseIndex`, `even_manifoldMorseIndex_neg`). The Hessian
-at `p` is `σ_p(A v, w)` for the infinitesimal isotropy action `A` of `ξ` on `T_p M`
+For a compact group acting by symplectomorphisms on a σ-compact manifold, the Morse index and the
+coindex of `μ^ξ` at every critical point `p` are even (`even_manifoldMorseIndex`,
+`even_manifoldMorseIndex_neg`). The Hessian at `p` is `σ_p(A v, w)` for the infinitesimal isotropy
+action `A` of `ξ` on `T_p M`
 (`TauCeti.SmoothTwoForm.IsMomentMap.criticalHessian_apply_eq_eval₂_deriv`). Being the derivative of
 a curve of symplectic maps commuting with an invariant compatible complex structure `J_p`, `A` lies
 in `sp(T_p M, σ_p)` and is complex linear for `J_p`, so it rotates the planes of a Darboux basis
@@ -73,9 +74,10 @@ All declarations are in the namespace `TauCeti.SmoothTwoForm.IsMomentMap`.
   a smooth metric, each `M^{T_ξ}_d` is a Morse–Bott critical submanifold of `μ^ξ`, with tangent
   spaces the fixed tangent subspaces.
 * `exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank_of_compactSpace`: the same for
-  a compact group, without a metric.
+  a compact group acting on a σ-compact manifold, without a metric.
 * `even_manifoldMorseIndex`, `even_manifoldMorseIndex_neg`: for a compact group acting by
-  symplectomorphisms, the index and the coindex of `μ^ξ` at every critical point are even.
+  symplectomorphisms on a σ-compact manifold, the index and the coindex of `μ^ξ` at every critical
+  point are even.
 
 ## References
 
@@ -153,10 +155,11 @@ section Index
 
 variable [CompactSpace G] [SigmaCompactSpace M]
 
-/-- At a critical point `p` of `μ^ξ`, for a compact group acting by symplectomorphisms, the Hessian
-of `μ^ξ` is twice the quadratic Hamiltonian of an element `A` of `sp(T_p M, σ_p)` which is complex
-linear for a complex structure compatible with `σ_p`. Here `A` is the infinitesimal isotropy action
-of `ξ` at `p`, and the complex structure is the value at `p` of an invariant compatible one. -/
+/-- At a critical point `p` of `μ^ξ`, for a compact group acting by symplectomorphisms on a
+σ-compact manifold, the Hessian of `μ^ξ` is twice the quadratic Hamiltonian of an element `A` of
+`sp(T_p M, σ_p)` which is complex linear for a complex structure compatible with `σ_p`. Here `A` is
+the infinitesimal isotropy action of `ξ` at `p`, and the complex structure is the value at `p` of an
+invariant compatible one. -/
 private theorem exists_toQuadraticMap_criticalHessian_eq
     (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (hσ : σ.IsNondegenerate)
     (hσG : ∀ (a : G) (x : M) (u v : TangentSpace I' x),
