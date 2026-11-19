@@ -36,4 +36,14 @@ theorem choose_mul_pow_le_choose_mul_pow {k n : ℕ} (hkn : k ≤ n) (m : ℕ) :
     rw [Nat.sub_mul, Nat.sub_mul, Nat.mul_comm n k]
     exact Nat.sub_le_sub_left (Nat.mul_le_mul_left i hkn) _
 
+/-- A multiplicative upper bound on the ratio of binomial coefficients also bounds the
+ratio of the corresponding powers. -/
+theorem pow_le_mul_pow_of_choose_le_mul_choose {k n m N : ℕ} (hm : m ≤ k) (hkn : k ≤ n)
+    (h : n.choose m ≤ N * k.choose m) : n ^ m ≤ N * k ^ m := by
+  apply Nat.le_of_mul_le_mul_left (c := k.choose m) _ (choose_pos hm)
+  calc
+    k.choose m * n ^ m ≤ n.choose m * k ^ m := choose_mul_pow_le_choose_mul_pow hkn m
+    _ ≤ (N * k.choose m) * k ^ m := Nat.mul_le_mul_right _ h
+    _ = k.choose m * (N * k ^ m) := by ac_rfl
+
 end Nat
