@@ -315,68 +315,6 @@ theorem inl_injective (he₁ : Injective e₁) (he₂ : Injective e₂) : Inject
   rw [← mk_inl, ← mk_inl, mk_eq_mk_iff he₁ he₂] at h
   simpa using h
 
-/-- If the first ball is injective, the second punctured summand embeds into the connected sum,
-and a point `e₁ v` of the first summand is recorded as the point `e₂ (inversion 0 1 v)` of the
-second: there is a function on the connected sum recording this. -/
-private theorem exists_eq_some_comp_inr (he₁ : Injective e₁) :
-    ∃ Ψ : ConnectedSum e₁ e₂ → Option N, (∀ y, Ψ (inr e₁ e₂ y) = some y.1) ∧
-      (∀ x v, v ≠ 0 → e₁ v = x.1 → Ψ (inl e₁ e₂ x) = some (e₂ (inversion 0 1 v))) ∧
-      ∀ x, (¬ ∃ v ≠ 0, e₁ v = x.1) → Ψ (inl e₁ e₂ x) = none := by
-  classical
-  let ψ : puncture e₁ ⊕ puncture e₂ → Option N := Sum.elim
-    (fun x ↦ if h : ∃ v ≠ 0, e₁ v = x.1 then some (e₂ (inversion 0 1 h.choose)) else none)
-    fun y ↦ some y.1
-  have hψ : ∀ x v, v ≠ 0 → e₁ v = x.1 → ψ (.inl x) = some (e₂ (inversion 0 1 v)) := by
-    intro x v hv hx
-    have hex : ∃ v ≠ 0, e₁ v = x.1 := ⟨v, hv, hx⟩
-    have hc : hex.choose = v := he₁ (hex.choose_spec.2.trans hx.symm)
-    simp only [ψ, Sum.elim_inl, dite_eq_left hex, hc]
-  refine ⟨Quot.lift ψ ?_, fun y ↦ rfl, hψ, fun x hx ↦ dite_eq_right hx⟩
-  rintro (x | x) (y | y) h
-  · exact h.elim
-  · obtain ⟨v, hv, hx, hy⟩ := h
-    rw [hψ x v hv hx]
-    simp [ψ, hy]
-  · exact h.elim
-  · exact h.elim
-
-theorem inr_injective (he₁ : Injective e₁) : Injective (inr e₁ e₂) := by
-  obtain ⟨Ψ, hΨ, -⟩ := exists_eq_some_comp_inr (e₂ := e₂) he₁
-  intro x y h
-  have := congrArg Ψ h
-  rw [hΨ, hΨ] at this
-  exact Subtype.ext (Option.some.inj this)
-
-/-- **The two punctured summands meet along the glued punctured balls**: `x` and `y` are
-identified exactly when `x = e₁ v` and `y = e₂ (inversion 0 1 v)` for some `v ≠ 0`. -/
-theorem inl_eq_inr_iff (he₁ : Injective e₁) {x : puncture e₁} {y : puncture e₂} :
-    inl e₁ e₂ x = inr e₁ e₂ y ↔ ∃ v ≠ 0, e₁ v = x ∧ e₂ (inversion 0 1 v) = y := by
-  refine ⟨fun h ↦ ?_, fun ⟨v, hv, hx, hy⟩ ↦ Quot.sound ⟨v, hv, hx, hy⟩⟩
-  obtain ⟨Ψ, hΨ₁, hΨ₂, hΨ₃⟩ := exists_eq_some_comp_inr (e₂ := e₂) he₁
-  have h' := congrArg Ψ h
-  rw [hΨ₁] at h'
-  by_cases hv : ∃ v ≠ 0, e₁ v = x.1
-  · obtain ⟨v, hv0, hvx⟩ := hv
-    rw [hΨ₂ x v hv0 hvx] at h'
-    exact ⟨v, hv0, hvx, Option.some.inj h'⟩
-  · rw [hΨ₃ x hv] at h'
-    exact absurd h' (by simp)
-
-/-- The glued points determined by a nonzero vector `v`. -/
-theorem inl_eq_inr (v : E) (hx : e₁ v ∈ puncture e₁)
-    (hy : e₂ (inversion 0 1 v) ∈ puncture e₂) :
-    inl e₁ e₂ ⟨e₁ v, hx⟩ = inr e₁ e₂ ⟨e₂ (inversion 0 1 v), hy⟩ :=
-  Quot.sound ⟨v, ne_zero_of_apply_mem_puncture hx, rfl, rfl⟩
-
-/-- The glued points determined by a nonzero vector `w`, read from the second ball: `e₂ w` is glued
-to `e₁ (inversion 0 1 w)`, as the inversion is an involution. -/
-theorem inl_inversion_eq_inr {w : E} (hx : e₁ (inversion 0 1 w) ∈ puncture e₁)
-    (hy : e₂ w ∈ puncture e₂) :
-    inl e₁ e₂ ⟨e₁ (inversion 0 1 w), hx⟩ = inr e₁ e₂ ⟨e₂ w, hy⟩ :=
-  Quot.sound ⟨inversion 0 1 w, by
-    simpa [inversion_eq_center one_ne_zero] using ne_zero_of_apply_mem_puncture hy, rfl,
-    by rw [inversion_inversion (0 : E) one_ne_zero]⟩
-
 section lift
 
 variable {Z : Type*} (f : puncture e₁ → Z) (g : puncture e₂ → Z)
@@ -420,6 +358,61 @@ theorem continuous_lift [TopologicalSpace Z] (hf : Continuous f) (hg : Continuou
   (isQuotientMap_mk e₁ e₂).continuous_iff.2 (by rw [lift_comp_mk]; exact hf.sumElim hg)
 
 end lift
+
+/-- If the first ball is injective, the second punctured summand embeds into the connected sum,
+and a point `e₁ v` of the first summand is recorded as the point `e₂ (inversion 0 1 v)` of the
+second: there is a function on the connected sum recording this. -/
+private theorem exists_eq_some_comp_inr (he₁ : Injective e₁) :
+    ∃ Ψ : ConnectedSum e₁ e₂ → Option N, (∀ y, Ψ (inr e₁ e₂ y) = some y.1) ∧
+      (∀ x v, v ≠ 0 → e₁ v = x.1 → Ψ (inl e₁ e₂ x) = some (e₂ (inversion 0 1 v))) ∧
+      ∀ x, (¬ ∃ v ≠ 0, e₁ v = x.1) → Ψ (inl e₁ e₂ x) = none := by
+  classical
+  let f : puncture e₁ → Option N :=
+    fun x ↦ if h : ∃ v ≠ 0, e₁ v = x.1 then some (e₂ (inversion 0 1 h.choose)) else none
+  have hf : ∀ x v, v ≠ 0 → e₁ v = x.1 → f x = some (e₂ (inversion 0 1 v)) := by
+    intro x v hv hx
+    have hex : ∃ v ≠ 0, e₁ v = x.1 := ⟨v, hv, hx⟩
+    have hc : hex.choose = v := he₁ (hex.choose_spec.2.trans hx.symm)
+    simp only [f, dite_eq_left hex, hc]
+  exact ⟨lift f (fun y ↦ some y.1) fun v hv _ _ ↦ hf _ v hv rfl, fun y ↦ rfl,
+    fun x v hv hx ↦ hf x v hv hx, fun x hx ↦ dite_eq_right hx⟩
+
+theorem inr_injective (he₁ : Injective e₁) : Injective (inr e₁ e₂) := by
+  obtain ⟨Ψ, hΨ, -⟩ := exists_eq_some_comp_inr (e₂ := e₂) he₁
+  intro x y h
+  have := congrArg Ψ h
+  rw [hΨ, hΨ] at this
+  exact Subtype.ext (Option.some.inj this)
+
+/-- **The two punctured summands meet along the glued punctured balls**: `x` and `y` are
+identified exactly when `x = e₁ v` and `y = e₂ (inversion 0 1 v)` for some `v ≠ 0`. -/
+theorem inl_eq_inr_iff (he₁ : Injective e₁) {x : puncture e₁} {y : puncture e₂} :
+    inl e₁ e₂ x = inr e₁ e₂ y ↔ ∃ v ≠ 0, e₁ v = x ∧ e₂ (inversion 0 1 v) = y := by
+  refine ⟨fun h ↦ ?_, fun ⟨v, hv, hx, hy⟩ ↦ Quot.sound ⟨v, hv, hx, hy⟩⟩
+  obtain ⟨Ψ, hΨ₁, hΨ₂, hΨ₃⟩ := exists_eq_some_comp_inr (e₂ := e₂) he₁
+  have h' := congrArg Ψ h
+  rw [hΨ₁] at h'
+  by_cases hv : ∃ v ≠ 0, e₁ v = x.1
+  · obtain ⟨v, hv0, hvx⟩ := hv
+    rw [hΨ₂ x v hv0 hvx] at h'
+    exact ⟨v, hv0, hvx, Option.some.inj h'⟩
+  · rw [hΨ₃ x hv] at h'
+    exact absurd h' (by simp)
+
+/-- The glued points determined by a nonzero vector `v`. -/
+theorem inl_eq_inr (v : E) (hx : e₁ v ∈ puncture e₁)
+    (hy : e₂ (inversion 0 1 v) ∈ puncture e₂) :
+    inl e₁ e₂ ⟨e₁ v, hx⟩ = inr e₁ e₂ ⟨e₂ (inversion 0 1 v), hy⟩ :=
+  Quot.sound ⟨v, ne_zero_of_apply_mem_puncture hx, rfl, rfl⟩
+
+/-- The glued points determined by a nonzero vector `w`, read from the second ball: `e₂ w` is glued
+to `e₁ (inversion 0 1 w)`, as the inversion is an involution. -/
+theorem inl_inversion_eq_inr {w : E} (hx : e₁ (inversion 0 1 w) ∈ puncture e₁)
+    (hy : e₂ w ∈ puncture e₂) :
+    inl e₁ e₂ ⟨e₁ (inversion 0 1 w), hx⟩ = inr e₁ e₂ ⟨e₂ w, hy⟩ :=
+  Quot.sound ⟨inversion 0 1 w, by
+    simpa [inversion_eq_center one_ne_zero] using ne_zero_of_apply_mem_puncture hy, rfl,
+    by rw [inversion_inversion (0 : E) one_ne_zero]⟩
 
 /-- The quotient map of the connected sum is open: the saturation of an open set adds to it the
 points of the other summand glued to it, which form an open set. -/
