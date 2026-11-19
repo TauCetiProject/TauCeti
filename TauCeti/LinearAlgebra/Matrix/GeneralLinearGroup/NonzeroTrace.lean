@@ -141,12 +141,9 @@ theorem closure_setOfPred_trace_ne_zero_eq_top (ρ : G →* GL (Fin 2) K)
     Subgroup.closure {g | trace ((ρ g : GL (Fin 2) K) : Matrix (Fin 2) (Fin 2) K) ≠ 0} = ⊤ := by
   set S := {g | trace ((ρ g : GL (Fin 2) K) : Matrix (Fin 2) (Fin 2) K) ≠ 0}
   have himage : ρ.rangeRestrict '' S =
-      {x : ρ.range | trace ((x : GL (Fin 2) K) : Matrix (Fin 2) (Fin 2) K) ≠ 0} := by
-    ext ⟨x, g, rfl⟩
-    refine ⟨?_, fun hx ↦ ⟨g, hx, rfl⟩⟩
-    rintro ⟨g', hg', hgg'⟩
-    rw [Set.mem_ofPred_eq, ← congrArg Subtype.val hgg']
-    simpa [S] using hg'
+      {x : ρ.range | trace ((x : GL (Fin 2) K) : Matrix (Fin 2) (Fin 2) K) ≠ 0} :=
+    Set.image_preimage_eq {x : ρ.range | trace ((x : GL (Fin 2) K) : Matrix (Fin 2) (Fin 2) K) ≠ 0}
+      ρ.rangeRestrict_surjective
   have hmap : (Subgroup.closure S).map ρ.rangeRestrict = ⊤ := by
     rw [MonoidHom.map_closure, himage, ρ.range.closure_setOfPred_trace_ne_zero_eq_top hρ]
   obtain ⟨g₀, hg₀⟩ : S.Nonempty := by
