@@ -7,12 +7,15 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Comodule.Dual
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Fixed
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.Invariants
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.BasePoints
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Differential
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ComoduleAlgebra
 public import TauCeti.Algebra.Lie.AdjointAction.InvariantZeroLocus
 public import TauCeti.Algebra.Lie.TracePowerPolynomial
 public import TauCeti.Algebra.Lie.Reductive.InvariantZeroLocus
+import TauCeti.Algebra.Lie.Basic
 
 /-!
 # The nilpotent cone of an affine group
@@ -28,6 +31,18 @@ vanishing at the origin. It is a homogeneous ideal, so the cone is stable under 
 a subcomodule, so the cone is stable under the adjoint action of `G`
 (`TauCeti.nilpotentConeSubcomodule`). The quotient ring is the full coordinate ring of the zero
 fibre; no reduction is taken.
+
+Adjoint-invariant polynomials are constant on rational adjoint orbits and, for a finite-type group
+over an algebraically closed field, across the closure order on `TauCeti.Comodule.VectorOrbit k H 𝔤`
+(`TauCeti.lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials`,
+`TauCeti.lift_eval_eq_of_mk_le_mk_of_mem_adjointInvariantPolynomials`), so the nilpotent cone is
+closed under orbit specialization (`TauCeti.nilpotentConeIdeal_le_ker_lift_eval_of_mk_le_mk`).
+Similarly, the predicate `TauCeti.Comodule.VectorOrbit.IsNilpotentAd` of nilpotent rational adjoint
+orbits is downward closed in the closure order (`TauCeti.Comodule.VectorOrbit.IsNilpotentAd.of_le`)
+without any characteristic, connectedness, or Killing hypothesis, and the `k`-rational vectors
+`{y : 𝔤 | mk y ≤ O}` whose orbit lies below a nilpotent orbit `O` decompose into `O` together with
+the union of all strictly smaller nilpotent orbits
+(`TauCeti.Comodule.VectorOrbit.setOf_mk_le_eq_union_biUnion_of_isNilpotentAd`).
 
 The infinitesimal adjoint action of `x ∈ 𝔤` on `O(𝔤)` is the coadjoint action of `x` by
 derivations (`TauCeti.differential_adjointPolynomialComoduleAlgebra`), so every group invariant is
@@ -62,6 +77,15 @@ central element and a point of the cone
 * `TauCeti.nilpotentConeIdeal`: the ideal of the zero fibre of the adjoint quotient.
 * `TauCeti.nilpotentConeIdeal_isHomogeneous` and `TauCeti.nilpotentConeSubcomodule`: it is
   stable under scaling and under the adjoint action.
+* `TauCeti.lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials`,
+  `TauCeti.lift_eval_eq_of_mk_le_mk_of_mem_adjointInvariantPolynomials`, and
+  `TauCeti.nilpotentConeIdeal_le_ker_lift_eval_of_mk_le_mk`: invariance of adjoint-invariant
+  polynomials and stability of the nilpotent cone along the adjoint orbit closure order.
+* `TauCeti.Comodule.VectorOrbit.IsNilpotentAd`, `TauCeti.Comodule.VectorOrbit.IsNilpotentAd.of_le`,
+  and `TauCeti.Comodule.VectorOrbit.setOf_mk_le_eq_union_biUnion_of_isNilpotentAd`: nilpotent
+  rational adjoint orbits, downward closure in the closure order, and decomposition of the
+  `k`-rational vectors `{y : 𝔤 | mk y ≤ O}` whose orbit lies in the closure of a nilpotent orbit
+  `O`.
 * `TauCeti.nilpotentConeIdeal_le_ker_lift_eval_iff`: its `k`-points are the `ad`-nilpotent
   elements, with the two inclusions `TauCeti.nilpotentConeIdeal_le_ker_lift_eval_of_isNilpotent`
   and `TauCeti.isNilpotent_ad_of_nilpotentConeIdeal_le_ker_lift_eval`. More generally, points of
@@ -87,7 +111,7 @@ central element and a point of the cone
 * B. Kostant, *Lie group representations on polynomial rings*, Amer. J. Math. 85 (1963),
   327–404.
 * D. H. Collingwood and W. M. McGovern, *Nilpotent Orbits in Semisimple Lie Algebras*, Van
-  Nostrand Reinhold, 1993, §1.3 and §3.2.
+  Nostrand Reinhold, 1993, §1.3, §3.2, and §6.2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 10.
 -/
 
@@ -97,7 +121,7 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-universe u
+universe u v
 
 attribute [local instance] Derivation.adjointComodule
 
@@ -260,6 +284,36 @@ theorem nilpotentConeIdeal_le_ker_lift_eval_of_isNilpotent [CharZero k]
     isNilpotent_ad_iff_forall_lift_eval_eq_zero.mp hx p
       (adjointInvariantPolynomials_le_lieInvariants hp) hp₀
 
+/-- **Adjoint-invariant polynomials are preserved by rational group points.** -/
+theorem lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials
+    (g : WithConv (H →ₐ[k] k)) (x : 𝔤) {p : SymmetricAlgebra k (Module.Dual k 𝔤)}
+    (hp : p ∈ adjointInvariantPolynomials k H) :
+    SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 (Comodule.basePointsRepresentation 𝔤 g x)) p =
+      SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x) p := by
+  let _ := Comodule.dual k H 𝔤
+  exact Comodule.lift_eval_basePointsRepresentation_of_mem_coinvariants x g hp
+
+/-- **Adjoint-invariant polynomials are constant on adjoint orbit closures.** -/
+theorem lift_eval_eq_of_mk_le_mk_of_mem_adjointInvariantPolynomials [IsAlgClosed k]
+    [Algebra.FiniteType k H] {x y : 𝔤}
+    (h : (Comodule.VectorOrbit.mk y : Comodule.VectorOrbit k H 𝔤) ≤ Comodule.VectorOrbit.mk x)
+    {p : SymmetricAlgebra k (Module.Dual k 𝔤)} (hp : p ∈ adjointInvariantPolynomials k H) :
+    SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 y) p =
+      SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x) p := by
+  let _ := Comodule.dual k H 𝔤
+  exact Comodule.VectorOrbit.lift_eval_eq_of_mk_le_mk_of_mem_coinvariants h hp
+
+/-- **The nilpotent cone is closed under adjoint orbit specialization.** If the adjoint orbit of `y`
+lies below that of `x` in the closure order and `x` lies on the nilpotent cone, so does `y`. -/
+theorem nilpotentConeIdeal_le_ker_lift_eval_of_mk_le_mk [IsAlgClosed k] [Algebra.FiniteType k H]
+    {x y : 𝔤}
+    (h : (Comodule.VectorOrbit.mk y : Comodule.VectorOrbit k H 𝔤) ≤ Comodule.VectorOrbit.mk x)
+    (hx : nilpotentConeIdeal k H ≤ RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x))) :
+    nilpotentConeIdeal k H ≤ RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 y)) :=
+  nilpotentConeIdeal_le_iff.mpr fun p hp hp₀ ↦ by
+    rw [RingHom.mem_ker, lift_eval_eq_of_mk_le_mk_of_mem_adjointInvariantPolynomials h hp]
+    exact nilpotentConeIdeal_le_iff.mp hx p hp hp₀
+
 end Basic
 
 section Connected
@@ -387,5 +441,97 @@ theorem isNilpotent_ad_iff_exists_mem_center_add_nilpotentConeIdeal_le_ker_lift_
     and_assoc]
 
 end Connected
+
+namespace Comodule.VectorOrbit
+
+section Predicate
+
+variable {k : Type u} {H : Type v} [Field k] [CommRing H] [HopfAlgebra k H]
+  [Module.Finite k (Bialgebra.CotangentSpace k H)]
+
+local notation "𝔤" => Module.Dual k (Bialgebra.CotangentSpace k H)
+
+/-- A rational adjoint orbit is **nilpotent** when its elements act nilpotently under `ad`. -/
+def IsNilpotentAd (O : VectorOrbit k H 𝔤) : Prop :=
+  O.lift (fun x ↦ IsNilpotent (LieAlgebra.ad k 𝔤 x)) fun g x ↦ by
+    rw [← Derivation.basePointsAdjointLieEquiv_apply]
+    exact propext ((Derivation.basePointsAdjointLieEquiv g).isNilpotent_ad_apply_iff x)
+
+/-- The orbit of `x ∈ 𝔤` is nilpotent precisely when `ad x` is nilpotent. -/
+@[simp]
+theorem isNilpotentAd_mk_iff {x : 𝔤} :
+    (mk x : VectorOrbit k H 𝔤).IsNilpotentAd ↔ IsNilpotent (LieAlgebra.ad k 𝔤 x) := by
+  rw [IsNilpotentAd, lift_mk]
+
+/-- The zero adjoint orbit is nilpotent. -/
+theorem isNilpotentAd_mk_zero : (mk (0 : 𝔤) : VectorOrbit k H 𝔤).IsNilpotentAd := by
+  simp
+
+end Predicate
+
+section Closure
+
+variable {k H : Type u} [Field k] [IsAlgClosed k] [CommRing H] [HopfAlgebra k H]
+  [Algebra.FiniteType k H]
+
+local notation "𝔤" => Module.Dual k (Bialgebra.CotangentSpace k H)
+
+/-- **Nilpotent orbits are downward closed in the closure order.** For any finite-type affine group
+over an algebraically closed field, any rational adjoint orbit in the closure of a nilpotent orbit
+is again nilpotent. -/
+theorem IsNilpotentAd.of_le {O O' : VectorOrbit k H 𝔤} (hle : O' ≤ O)
+    (hO : O.IsNilpotentAd) : O'.IsNilpotentAd := by
+  classical
+  induction O using VectorOrbit.ind with | h x =>
+  induction O' using VectorOrbit.ind with | h y =>
+  rw [isNilpotentAd_mk_iff] at hO ⊢
+  obtain ⟨n, hn⟩ := hO
+  refine ⟨n, ?_⟩
+  let c := Module.Free.chooseBasis k 𝔤
+  have hmat (z : 𝔤) :
+      LinearMap.toMatrix c c (LieAlgebra.ad k 𝔤 z ^ n) =
+        (genericActionMatrix k 𝔤 c ^ n).map (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 z)) := by
+    rw [← LinearMap.toMatrix_pow, ← AlgHom.mapMatrix_apply, map_pow, AlgHom.mapMatrix_apply,
+      map_lift_eval_genericActionMatrix]
+    rfl
+  apply (LinearMap.toMatrix c c).injective
+  rw [map_zero, hmat y]
+  ext p q
+  rw [Matrix.map_apply, Matrix.zero_apply]
+  refine lift_eval_eq_zero_of_mk_le_mk_of_forall_lift_eval_basePointsRepresentation_eq_zero hle
+    fun g ↦ ?_
+  have hgn : (LieAlgebra.ad k 𝔤 (basePointsRepresentation 𝔤 g x)) ^ n = 0 := by
+    ext z
+    rw [LinearMap.zero_apply, ← Derivation.basePointsAdjointLieEquiv_apply]
+    have hmap := LieHom.map_ad_pow (Derivation.basePointsAdjointLieEquiv g).toLieHom x n
+      ((Derivation.basePointsAdjointLieEquiv g).symm z)
+    rw [LieEquiv.coe_toLieHom, LieEquiv.apply_symm_apply] at hmap
+    rw [← hmap, hn, LinearMap.zero_apply, map_zero]
+  have h0 := congrArg (fun M ↦ M p q) (hmat (basePointsRepresentation 𝔤 g x))
+  rw [hgn, map_zero, Matrix.zero_apply, Matrix.map_apply] at h0
+  exact h0.symm
+
+/-- **Decomposition of the `k`-rational vectors below a nilpotent orbit.** The `k`-rational vectors
+`{y : 𝔤 | mk y ≤ O}` whose orbit lies in the closure of a nilpotent orbit `O` decompose into `O`
+together with the union of all strictly smaller nilpotent orbits. -/
+theorem setOf_mk_le_eq_union_biUnion_of_isNilpotentAd {O : VectorOrbit k H 𝔤}
+    (hO : O.IsNilpotentAd) :
+    {y : 𝔤 | (mk y : VectorOrbit k H 𝔤) ≤ O} =
+      {y : 𝔤 | mk y = O} ∪
+        ⋃ O' ∈ {O' : VectorOrbit k H 𝔤 | O'.IsNilpotentAd ∧ O' < O},
+          {y : 𝔤 | mk y = O'} := by
+  ext y
+  simp only [Set.mem_ofPred_eq, Set.mem_union, Set.mem_iUnion, exists_prop]
+  refine ⟨fun hle ↦ ?_, ?_⟩
+  · rcases eq_or_lt_of_le hle with rfl | hlt
+    · exact Or.inl rfl
+    · exact Or.inr ⟨mk y, ⟨hO.of_le hle, hlt⟩, rfl⟩
+  · rintro (rfl | ⟨_, ⟨-, hlt⟩, rfl⟩)
+    · exact le_rfl
+    · exact hlt.le
+
+end Closure
+
+end Comodule.VectorOrbit
 
 end TauCeti

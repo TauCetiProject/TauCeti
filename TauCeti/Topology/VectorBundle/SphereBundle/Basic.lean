@@ -59,6 +59,10 @@ space `E₀` in the long exact sequence of the Thom pair is that of the sphere b
 Gysin sequence. No orientation, finite-dimensionality, norm on the fibres or condition on the base
 is needed. The rank zero case is included: there `S_ρ(E)` and `E₀` are empty and `D_ρ(E) = E`.
 
+The disc bundle of a fibre gauge also contracts radially onto the zero section, so its projection
+to the base is a homotopy equivalence with homotopy inverse the zero section
+(`TauCeti.gaugeDiscBundleProjHomotopyEquiv`).
+
 ## References
 
 * J. W. Milnor, J. D. Stasheff, *Characteristic Classes*, Annals of Mathematics Studies 76,
@@ -128,7 +132,7 @@ def discBundle : Set (TotalSpace F E) :=
 
 /-- The unit sphere bundle `S(E)` of a bundle with normed fibres: the vectors of norm one, the
 sphere bundle of the fibre norm. -/
-def sphereBundle : Set (TotalSpace F E) :=
+@[expose] def sphereBundle : Set (TotalSpace F E) :=
   gaugeSphereBundle fun v : TotalSpace F E ↦ ‖v.2‖
 
 variable {F E} in
@@ -380,6 +384,8 @@ theorem isCompact_discBundle_inter_proj_preimage_singleton (b : B) :
 
 end Proper
 
+section GaugePair
+
 variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type w} [∀ b, AddCommGroup (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)]
   [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
@@ -510,5 +516,75 @@ theorem isIso_singularHomologyMap_gaugeDiscSpherePairMap
     IsIso (TopPair.singularHomologyMap (gaugeDiscSpherePairMap hρ) R n) :=
   TopPair.isIso_singularHomologyMap_of_homotopyEquiv _ _ _ (gaugeDiscSpherePairMap_fst hρ)
     (gaugeDiscSpherePairMap_snd hρ) R n
+
+/-! ### The disc bundle and the base -/
+
+/-- The zero section, as a map into the disc bundle of a fibre gauge. -/
+private def zeroSectionGaugeDisc : C(B, gaugeDiscBundle ρ) :=
+  ⟨fun b ↦ ⟨zeroSection F E b, (hρ.eq_zero_of_snd_eq_zero rfl).trans_le zero_le_one⟩,
+    (Trivialization.continuous_zeroSection ℝ).subtype_mk _⟩
+
+/-- The projection of the disc bundle of a fibre gauge. -/
+private def gaugeDiscProjMap : C(gaugeDiscBundle ρ, B) :=
+  ⟨fun v ↦ (v : TotalSpace F E).proj, (FiberBundle.continuous_proj F E).comp continuous_subtype_val⟩
+
+/-- The radial contraction `(t, v) ↦ t • v` of the disc bundle of a fibre gauge onto the zero
+section. -/
+private def gaugeDiscBundleContraction :
+    ContinuousMap.Homotopy ((zeroSectionGaugeDisc hρ).comp gaugeDiscProjMap)
+      (ContinuousMap.id (gaugeDiscBundle ρ)) where
+  toFun p := ⟨TotalSpace.mk' F (p.2 : TotalSpace F E).proj ((p.1 : ℝ) • (p.2 : TotalSpace F E).2),
+    by
+      rw [mem_gaugeDiscBundle, hρ.smul_of_nonneg p.1.2.1]
+      exact (mul_le_of_le_one_left (hρ.nonneg _) p.1.2.2).trans (mem_gaugeDiscBundle.1 p.2.2)⟩
+  continuous_toFun := by
+    refine Continuous.subtype_mk ?_ _
+    exact (continuous_subtype_val.comp continuous_fst).smul_totalSpace
+      (continuous_subtype_val.comp continuous_snd)
+  map_zero_left v := by
+    ext : 1
+    simp [zeroSectionGaugeDisc, gaugeDiscProjMap, zeroSection]
+  map_one_left v := by
+    ext : 1
+    simp
+
+/-- **The disc bundle of a fibre gauge is homotopy equivalent to the base**: its projection is a
+homotopy equivalence, with homotopy inverse the zero section. -/
+def gaugeDiscBundleProjHomotopyEquiv : gaugeDiscBundle ρ ≃ₕ B where
+  toFun := gaugeDiscProjMap
+  invFun := zeroSectionGaugeDisc hρ
+  left_inv := ⟨gaugeDiscBundleContraction hρ⟩
+  right_inv := by
+    have h : gaugeDiscProjMap.comp (zeroSectionGaugeDisc hρ) = ContinuousMap.id B := by
+      ext
+      rfl
+    rw [h]
+
+@[simp]
+theorem gaugeDiscBundleProjHomotopyEquiv_apply (v : gaugeDiscBundle ρ) :
+    gaugeDiscBundleProjHomotopyEquiv hρ v = (v : TotalSpace F E).proj :=
+  (rfl)
+
+/-- The homotopy inverse of `D_ρ(E) ≃ₕ B` is the zero section. -/
+@[simp]
+theorem coe_gaugeDiscBundleProjHomotopyEquiv_symm_apply (b : B) :
+    ((gaugeDiscBundleProjHomotopyEquiv hρ).symm b : TotalSpace F E) = zeroSection F E b :=
+  (rfl)
+
+end GaugePair
+
+/-- For the fibre norm, the projection `D(E) → B` restricts on `S(E)` to the projection of the
+sphere bundle. -/
+@[reassoc]
+theorem gaugeDiscSpherePair_map_comp_gaugeDiscBundleProjHomotopyEquiv_norm {B : Type w}
+    [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {E : B → Type w}
+    [∀ b, NormedAddCommGroup (E b)] [∀ b, NormedSpace ℝ (E b)] [TopologicalSpace (TotalSpace F E)]
+    [FiberBundle F E] [VectorBundle ℝ F E] (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
+    (gaugeDiscSpherePair fun v : TotalSpace F E ↦ ‖v.2‖).map ≫
+        TopCat.ofHom (gaugeDiscBundleProjHomotopyEquiv (isFiberGauge_norm hnorm)).toFun =
+      TopCat.ofHom (sphereBundleProj F E) := by
+  ext v
+  exact (gaugeDiscBundleProjHomotopyEquiv_apply (isFiberGauge_norm hnorm) _).trans
+    (sphereBundleProj_apply F E v).symm
 
 end TauCeti
