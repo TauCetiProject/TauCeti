@@ -56,8 +56,9 @@ is the concatenation of the lists of its values on the blocks (`List.ofFn_sum`),
 says for blocks of equal length.
 For a multi-index `α : Fin n → ℕ`, the blocks of lengths `αᵢ` give the word
 `TauCeti.multiIndexWord α` listing each index `i` exactly `αᵢ` times, in increasing order
-(`TauCeti.card_multiIndexWord`); a product over its letters is the monomial `∏ᵢ gᵢ ^ αᵢ`
-(`TauCeti.prod_multiIndexWord`).
+(`TauCeti.card_filter_multiIndexWord_eq`); a product over its letters is the monomial
+`∏ᵢ gᵢ ^ αᵢ` (`TauCeti.prod_multiIndexWord`), and a sum over its letters is `∑ᵢ αᵢ • gᵢ`
+(`TauCeti.sum_multiIndexWord`).
 -/
 
 public section
@@ -345,7 +346,7 @@ theorem multiIndexWord_finSigmaFinEquiv {n : ℕ} (α : Fin n → ℕ) (p : (i :
 open Finset in
 /-- Each index `i` occurs exactly `αᵢ` times in `TauCeti.multiIndexWord α`. -/
 @[simp]
-theorem card_multiIndexWord {n : ℕ} (α : Fin n → ℕ) (i : Fin n) :
+theorem card_filter_multiIndexWord_eq {n : ℕ} (α : Fin n → ℕ) (i : Fin n) :
     #{j | multiIndexWord α j = i} = α i := by
   rw [card_filter, ← Fintype.sum_equiv finSigmaFinEquiv (fun p ↦ if p.1 = i then 1 else 0)
     (fun j ↦ if multiIndexWord α j = i then 1 else 0) fun p ↦ by simp,
@@ -353,7 +354,8 @@ theorem card_multiIndexWord {n : ℕ} (α : Fin n → ℕ) (i : Fin n) :
   simp [apply_ite]
 
 /-- A product over the letters of `TauCeti.multiIndexWord α` is the monomial `∏ᵢ gᵢ ^ αᵢ`. -/
-@[simp]
+@[to_additive (attr := simp) /-- A sum over the letters of `TauCeti.multiIndexWord α` is
+`∑ᵢ αᵢ • gᵢ`. -/]
 theorem prod_multiIndexWord {n : ℕ} {M : Type*} [CommMonoid M] (α : Fin n → ℕ) (g : Fin n → M) :
     ∏ j, g (multiIndexWord α j) = ∏ i, g i ^ α i := by
   rw [← Fintype.prod_equiv finSigmaFinEquiv (fun p ↦ g p.1) _ fun p ↦ by simp]
