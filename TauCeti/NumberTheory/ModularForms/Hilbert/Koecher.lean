@@ -56,8 +56,9 @@ namespace TauCeti.HilbertCusp
 
 variable {F : Type*} [Field F] [NumberField F] [IsTotallyReal F] {U : Subgroup (𝓞 F)ˣ}
 
-/-- Along the orbit of squares of a finite-index group of units, the pairing of a nonzero, not
-totally positive element with a vector of positive weights is unbounded below. -/
+/-- When `F` has degree greater than `1`, along the orbit of squares of a finite-index group of
+units, the pairing of a nonzero, not totally positive element with a vector of positive weights is
+unbounded below. -/
 theorem exists_mem_sum_lt_of_not_isTotallyPositive (hU : U.index ≠ 0)
     (hF : 1 < Fintype.card (InfinitePlace F)) {ξ : F} (hξ : ξ ≠ 0)
     (hξ' : ¬IsTotallyPositive ξ) {y : InfinitePlace F → ℝ} (hy : ∀ w, 0 < y w) (B : ℝ) :
@@ -90,7 +91,8 @@ theorem exists_mem_sum_lt_of_not_isTotallyPositive (hU : U.index ≠ 0)
 
 /-- **Koecher support, for sets.** Let `S ⊆ F` be stable under multiplication by squares of units
 in a finite-index subgroup `U`, and let the pairing `ξ ↦ ∑_w τ_w(ξ) y_w` with a vector `y` of
-positive weights be bounded below on `S`. Then every element of `S` is `0` or totally positive. -/
+positive weights be bounded below on `S`. If `F` has degree greater than `1`, every element of `S`
+is `0` or totally positive. -/
 theorem eq_zero_or_isTotallyPositive_of_bddBelow (hU : U.index ≠ 0)
     (hF : 1 < Fintype.card (InfinitePlace F)) {S : Set F}
     (hS : ∀ u ∈ U, ∀ ξ ∈ S, ((u : 𝓞 F) : F) ^ 2 * ξ ∈ S) {y : InfinitePlace F → ℝ}
