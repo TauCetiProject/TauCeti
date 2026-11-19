@@ -72,9 +72,8 @@ theorem classFunctions_baseChange_eq_equalizer :
 /-- A class function of `H`, extended by scalars, is a class function of `S ⊗[R] H`. -/
 theorem tmul_mem_classFunctions_baseChange (s : S) {f : H} (hf : f ∈ classFunctions R H) :
     s ⊗ₜ[R] f ∈ classFunctions S (S ⊗[R] H) := by
-  rw [classFunctions_baseChange_eq_equalizer, AlgHom.mem_equalizer,
-    Algebra.TensorProduct.map_tmul, Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
-    mem_classFunctions_iff.mp hf, Algebra.TensorProduct.includeRight_apply]
+  rw [classFunctions_baseChange_eq_equalizer]
+  simp [mem_classFunctions_iff.mp hf]
 
 end Semiring
 
