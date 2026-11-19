@@ -140,8 +140,8 @@ theorem denseRange_smul_sub_iff [CompleteSpace E] {A : E →ₗ.[𝕜] E}
   constructor
   · intro h y hy
     refine h.eq_zero_of_inner_left 𝕜 fun x ↦ ?_
-    rw [inner_sub_right, inner_smul_right, ← adjoint_isFormalAdjoint hdense y x, hy,
-      inner_smul_left, RCLike.conj_conj, sub_self]
+    rw [inner_sub_right, inner_smul_right, ← adjoint_isFormalAdjoint hdense y x, hy]
+    simp [inner_smul_left]
   · intro h
     rw [DenseRange, ← A.coe_range_smulSub c]
     refine Submodule.dense_iff_topologicalClosure_eq_top.mpr

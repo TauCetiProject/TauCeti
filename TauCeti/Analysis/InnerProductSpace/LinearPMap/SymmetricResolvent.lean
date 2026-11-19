@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Resolvent
 import Mathlib.Analysis.Complex.ReImTopology
 import Mathlib.Analysis.Convex.PathConnected
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.PairShift
+import TauCeti.Analysis.Normed.Operator.Resolvent.Characterization
 import TauCeti.Analysis.Normed.Operator.Resolvent.Unbounded
 
 /-!
@@ -52,8 +53,8 @@ and a vector orthogonal to that range is an eigenvector of the adjoint `A†` fo
 * `LinearPMap.IsFormalAdjoint.resolventSet_alternatives` and
   `LinearPMap.IsFormalAdjoint.spectrum_alternatives`: the four alternatives for the resolvent set
   and the spectrum of a symmetric operator over `ℂ`.
-* `LinearPMap.IsFormalAdjoint.isSelfAdjoint_iff_spectrum_subset`: a symmetric operator over `ℂ`
-  is self-adjoint if and only if its spectrum is real.
+* `LinearPMap.IsFormalAdjoint.isSelfAdjoint_iff_spectrum_subset_im_eq_zero`: a symmetric
+  operator over `ℂ` is self-adjoint if and only if its spectrum is real.
 
 ## References
 
@@ -145,13 +146,11 @@ theorem IsFormalAdjoint.mem_resolventSet_iff_forall_adjoint_apply_eq_smul
     (hz : RCLike.im z ≠ 0) :
     z ∈ A.resolventSet ↔
       ∀ y : A†.domain, A† y = (starRingEnd 𝕜) z • (y : E) → (y : E) = 0 := by
-  refine ⟨fun hρ ↦ (denseRange_smul_sub_iff hdense).mp (smul_sub_bijective hρ).2.denseRange,
-    fun hker ↦ ?_⟩
-  have hrange : range (fun x : A.domain ↦ z • (x : E) - A x) = univ := by
-    rw [← (hA.isClosed_range_smul_sub hcl hz).closure_eq,
-      ((denseRange_smul_sub_iff hdense).mpr hker).closure_range]
-  exact mem_resolventSet_of_surjective_of_norm_le (range_eq_univ.mp hrange) (abs_pos.mpr hz)
-    (hA.abs_im_mul_norm_le_norm_smul_sub z)
+  refine ⟨fun hρ ↦ (denseRange_smul_sub_iff hdense).mp
+    (mem_resolventSet_iff_isClosed_denseRange_norm_le.mp hρ).2.1, fun hker ↦ ?_⟩
+  exact mem_resolventSet_iff_isClosed_denseRange_norm_le.mpr ⟨hA.isClosed_range_smul_sub hcl hz,
+    (denseRange_smul_sub_iff hdense).mpr hker, _, abs_pos.mpr hz,
+    hA.abs_im_mul_norm_le_norm_smul_sub z⟩
 
 end RCLike
 
@@ -225,7 +224,8 @@ theorem IsFormalAdjoint.spectrum_alternatives (hA : A.IsFormalAdjoint A) :
 
 /-- **Self-adjointness criterion.** A symmetric partial linear map on a complex Hilbert space is
 self-adjoint if and only if its spectrum is contained in the real axis. -/
-theorem IsFormalAdjoint.isSelfAdjoint_iff_spectrum_subset (hA : A.IsFormalAdjoint A) :
+theorem IsFormalAdjoint.isSelfAdjoint_iff_spectrum_subset_im_eq_zero
+    (hA : A.IsFormalAdjoint A) :
     IsSelfAdjoint A ↔ A.spectrum ⊆ {z | z.im = 0} := by
   refine ⟨fun h ↦ by simpa using h.spectrum_subset_im_eq_zero, fun h ↦ ?_⟩
   have hρ : ∀ z : ℂ, z.im ≠ 0 → z ∈ A.resolventSet := fun z hz ↦
