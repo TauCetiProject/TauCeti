@@ -14,8 +14,8 @@ import Mathlib.Data.SetLike.Fintype
 import Mathlib.GroupTheory.QuotientGroup.Simple
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import Mathlib.Order.Atoms.Finite
-import Mathlib.Tactic.Group
 import TauCeti.Algebra.Group.Subgroup.Map
+import TauCeti.GroupTheory.Index.Two
 
 /-!
 # Derived words and solvable groups
@@ -151,8 +151,9 @@ theorem _root_.Group.isSolvable_of_forall_notMem_mul_self_eq_one {G : Type*} [Gr
     Group.IsSolvable G := by
   obtain ⟨x, hx⟩ := SetLike.exists_notMem_of_ne_top M hM
   have hxx := h x hx
-  have hinv : ∀ m ∈ M, x * m * x = m⁻¹ := fun m hm ↦ by
+  have hinv : ∀ m ∈ M, x * m * x⁻¹ = m⁻¹ := fun m hm ↦ by
     have hxm : x * m ∉ M := fun hxm ↦ hx (by simpa using M.mul_mem hxm (M.inv_mem hm))
+    rw [inv_eq_of_mul_eq_one_right hxx]
     exact eq_inv_of_mul_eq_one_left (by simpa only [mul_assoc] using h _ hxm)
   have hsq : ∀ q : G ⧸ M, q * q = 1 := fun q ↦ by
     induction q using QuotientGroup.induction_on with
@@ -161,14 +162,9 @@ theorem _root_.Group.isSolvable_of_forall_notMem_mul_self_eq_one {G : Type*} [Gr
       · rw [(QuotientGroup.eq_one_iff g).mpr hg, one_mul]
       · rw [← QuotientGroup.mk_mul, h g hg, QuotientGroup.mk_one]
   rw [Group.isSolvable_iff_subgroup_quotient M]
-  refine ⟨Group.isSolvable_of_comm fun a b ↦ Subtype.ext ?_, Group.isSolvable_of_comm fun a b ↦ ?_⟩
-  · have key : ((a : G) * b)⁻¹ = (a : G)⁻¹ * (b : G)⁻¹ := by
-      rw [← hinv _ (M.mul_mem a.2 b.2), ← hinv _ a.2, ← hinv _ b.2]
-      calc x * (a * b) * x = x * a * (x * x) * b * x := by rw [hxx]; group
-        _ = x * a * x * (x * b * x) := by group
-    simpa [mul_inv_rev] using congrArg (·⁻¹) key
-  · exact (Commute.of_orderOf_dvd_two
-      (fun q ↦ orderOf_dvd_of_pow_eq_one ((sq q).trans (hsq q))) a b).eq
+  have := TauCeti.isMulCommutative_of_conj_eq_inv hinv
+  exact ⟨inferInstance, Group.isSolvable_of_comm fun a b ↦ (Commute.of_orderOf_dvd_two
+    (fun q ↦ orderOf_dvd_of_pow_eq_one ((sq q).trans (hsq q))) a b).eq⟩
 
 universe u v
 
