@@ -44,8 +44,9 @@ quadrant if and only if `D = U (y ^ γ / x)` there for a `C¹` profile `U` with 
   `U z = D z⁻¹ 1` (`TauCeti.Finance.eq_consistentDemand_of_scaling`). This holds for every real
   `γ`; the profile on the line `x = 1` is `z ↦ D 1 (z ^ γ⁻¹)` when `γ ≠ 0`
   (`TauCeti.Finance.consistentDemand_one_rpow_inv`).
-* The profile has derivative `U'(z) = -D_x(z⁻¹, 1) / z²`, so negative spot derivative gives
-  `U' > 0`; strict monotonicity of `D` in spot alone would not give this derivative bound.
+* The profile has derivative `U'(z) = -D_x(z⁻¹, 1) / z²`
+  (`TauCeti.Finance.hasDerivAt_profile_inv_one`), so negative spot derivative gives `U' > 0`;
+  strict monotonicity of `D` in spot alone would not give this derivative bound.
 * Conversely, every profile with nonvanishing derivative on `(0, ∞)` gives a consistent demand
   (`TauCeti.Finance.isConsistentDemand_consistentDemand`), with `D_x = -(y ^ γ / x ²) U'` and
   `D_y = γ y ^ (γ - 1) / x U'`; in particular `U' > 0` gives `D_x < 0` and, for `γ > 0`,
@@ -129,7 +130,8 @@ theorem hasDerivAt_consistentDemand_income {u : ℝ} (hU : HasDerivAt U u (y ^ �
     rw [consistentDemand_def]
   · ring
 
-/-- A profile with positive derivative gives a demand decreasing in spot. -/
+/-- If the profile has positive derivative at `y ^ γ / x`, the spot derivative of the demand at
+`(x, y)` is negative. -/
 theorem deriv_consistentDemand_spot_neg (hx : x ≠ 0) (hy : 0 < y)
     (hU : 0 < deriv U (y ^ γ / x)) :
     deriv (fun x' => consistentDemand γ U x' y) x < 0 := by
@@ -138,8 +140,8 @@ theorem deriv_consistentDemand_spot_neg (hx : x ≠ 0) (hy : 0 < y)
   have : 0 < y ^ γ / x ^ 2 := div_pos (Real.rpow_pos_of_pos hy γ) (by positivity)
   nlinarith
 
-/-- A profile with positive derivative gives, for a positive exponent `γ`, a demand increasing
-in income. -/
+/-- If the profile has positive derivative at `y ^ γ / x`, then for a positive exponent `γ` the
+income derivative of the demand at `(x, y)` is positive. -/
 theorem deriv_consistentDemand_income_pos (hγ : 0 < γ) (hx : 0 < x) (hy : 0 < y)
     (hU : 0 < deriv U (y ^ γ / x)) :
     0 < deriv (consistentDemand γ U x) y := by
@@ -151,7 +153,12 @@ theorem deriv_consistentDemand_income_pos (hγ : 0 < γ) (hx : 0 < x) (hy : 0 < 
 /-! ### The consistency relation -/
 
 /-- A reference demand `D x y`, at spot `x` and income `y`, is **consistent** with exponent `γ`
-if `D_y / D_x = -γ x / y` at every point of the open positive quadrant. -/
+if `D_y / D_x = -γ x / y` at every point of the open positive quadrant.
+
+The partial derivatives are Mathlib's `deriv`, which is `0` where the demand is not
+differentiable, and the quotient is Lean's division, which is `0` where `D_x = 0`. So the identity
+is meaningful only where `D_x ≠ 0`, which every theorem about it here assumes; without that
+assumption, for `γ = 0` the predicate holds for any demand with `D_x ≡ 0`, such as `D x y = y`. -/
 def IsConsistentDemand (γ : ℝ) (D : ℝ → ℝ → ℝ) : Prop :=
   ∀ x y, 0 < x → 0 < y → deriv (D x) y / deriv (fun x' => D x' y) x = -γ * x / y
 
@@ -247,11 +254,12 @@ theorem IsConsistentDemand.eq_consistentDemand (h : IsConsistentDemand γ D)
     D x y = consistentDemand γ (fun z => D z⁻¹ 1) x y :=
   eq_consistentDemand_of_scaling hD ((isConsistentDemand_iff_of_deriv_ne_zero hDx).1 h) hx hy
 
-/-- The profile `z ↦ D z⁻¹ 1` has derivative `-D_x(z⁻¹, 1) / z²`. -/
-private theorem hasDerivAt_inv_one (hD : DifferentiableAt ℝ (uncurry D) (x⁻¹, 1)) (hx : x ≠ 0) :
-    HasDerivAt (fun z => D z⁻¹ 1) (deriv (fun x' => D x' 1) x⁻¹ * -(x ^ 2)⁻¹) x :=
-  (TauCeti.hasDerivAt_parameterCurve_uncurry hD).differentiableAt.hasDerivAt.comp x
-    (hasDerivAt_inv hx)
+/-- The profile `U z = D z⁻¹ 1` of a demand `D` has derivative `U'(z) = -D_x(z⁻¹, 1) / z²`
+wherever the demand at unit income is differentiable in spot at `z⁻¹`. -/
+theorem hasDerivAt_profile_inv_one {z : ℝ} (hD : DifferentiableAt ℝ (fun x' => D x' 1) z⁻¹)
+    (hz : z ≠ 0) :
+    HasDerivAt (fun z => D z⁻¹ 1) (-deriv (fun x' => D x' 1) z⁻¹ / z ^ 2) z :=
+  (hD.hasDerivAt.comp z (hasDerivAt_inv hz)).congr_deriv (by ring)
 
 /-- **Profile characterization of consistent demand.** A consistent demand that is `C¹` on the
 open positive quadrant with negative spot derivative there is `U (y ^ γ / x)` for a profile `U`
@@ -268,8 +276,9 @@ theorem IsConsistentDemand.exists_profile (h : IsConsistentDemand γ D)
     h.eq_consistentDemand hdiff (fun x y hx hy => (hDx x y hx hy).ne) hx hy⟩
   · exact hD.comp ((contDiffOn_id.inv fun z (hz : 0 < z) => hz.ne').prodMk contDiffOn_const)
       fun z (hz : 0 < z) => mk_mem_prod (inv_pos.2 hz) one_pos
-  · rw [(hasDerivAt_inv_one (hdiff _ _ (inv_pos.2 hz) one_pos) hz.ne').deriv]
-    exact mul_pos_of_neg_of_neg (hDx _ _ (inv_pos.2 hz) one_pos) (by simpa using pow_pos hz 2)
+  · rw [(hasDerivAt_profile_inv_one (TauCeti.hasDerivAt_parameterCurve_uncurry
+      (hdiff _ _ (inv_pos.2 hz) one_pos)).differentiableAt hz.ne').deriv]
+    exact div_pos (neg_pos.2 (hDx _ _ (inv_pos.2 hz) one_pos)) (pow_pos hz 2)
 
 /-- **Consistent demands are exactly demands through the invariant coordinate.** For a demand
 that is `C¹` on the open positive quadrant with negative spot derivative there, the consistency
