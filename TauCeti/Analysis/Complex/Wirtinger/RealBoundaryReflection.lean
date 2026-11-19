@@ -213,6 +213,16 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.congr_ae_deriv {η' : ℂ → F}
   · rw [image_eq_zero_of_notMem_tsupport (fun h' ↦ hzΩ (χ.tsupport_subset h'))]
     simp
 
+/-- The weak real-boundary equation restricts to smaller open sets. -/
+theorem HasWeakConjWirtingerDerivRealBoundaryOn.mono {Ω' : Opens ℂ}
+    (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η) (hΩ : Ω' ≤ Ω) :
+    HasWeakConjWirtingerDerivRealBoundaryOn Ω' ξ η := by
+  obtain ⟨hF, hξ, hη, hχ⟩ := hasWeakConjWirtingerDerivRealBoundaryOn_iff.1 h
+  have hs : (Ω' : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} :=
+    inter_subset_inter_left _ hΩ
+  exact hasWeakConjWirtingerDerivRealBoundaryOn_iff.2 ⟨hF, hξ.mono_set hs, hη.mono_set hs,
+    fun χ hχr ↦ hχ ⟨χ, χ.contDiff, χ.hasCompactSupport, χ.tsupport_subset.trans hΩ⟩ hχr⟩
+
 /-! ### Test functions -/
 
 /-- Conjugation, as a continuous real-linear equivalence, maps a conjugation-invariant open set

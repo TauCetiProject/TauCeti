@@ -10,6 +10,7 @@ import TauCeti.Analysis.Complex.Wirtinger.Regularity
 import TauCeti.Analysis.Sobolev.Local.Morrey
 import Mathlib.Analysis.Complex.ReImTopology
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Pointwise real boundary values of weak real-boundary solutions
@@ -23,8 +24,6 @@ with `q > 2`.
 
 ## Main results
 
-* `TauCeti.HasWeakConjWirtingerDerivRealBoundaryOn.mono`: the weak real-boundary equation restricts
-  to smaller open sets.
 * `TauCeti.HasWeakConjWirtingerDerivRealBoundaryOn.star_eq_of_continuousOn`: a weak real-boundary
   solution with finite-dimensional coefficients and data locally `Lᵖ` up to the axis, `p > 2`,
   which is continuous on `Ω ∩ {0 ≤ im}`, is real on `Ω ∩ ℝ`. No conjugation invariance of `Ω` is
@@ -54,25 +53,7 @@ namespace TauCeti
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [StarAddMonoid F] [StarModule ℂ F]
   {Ω : Opens ℂ} {ξ η : ℂ → F}
 
-/-- The weak real-boundary equation restricts to smaller open sets. -/
-theorem HasWeakConjWirtingerDerivRealBoundaryOn.mono {Ω' : Opens ℂ}
-    (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η) (hΩ : Ω' ≤ Ω) :
-    HasWeakConjWirtingerDerivRealBoundaryOn Ω' ξ η := by
-  obtain ⟨hF, hξ, hη, hχ⟩ := hasWeakConjWirtingerDerivRealBoundaryOn_iff.1 h
-  have hs : (Ω' : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} :=
-    inter_subset_inter_left _ hΩ
-  exact hasWeakConjWirtingerDerivRealBoundaryOn_iff.2 ⟨hF, hξ.mono_set hs, hη.mono_set hs,
-    fun χ hχr ↦ hχ ⟨χ, χ.contDiff, χ.hasCompactSupport, χ.tsupport_subset.trans hΩ⟩ hχr⟩
-
 variable [FiniteDimensional ℂ F] {p : ENNReal}
-
-/-- With finite-dimensional coefficients `star` is continuous, being real-linear. -/
-private theorem continuousStar_of_finiteDimensional : ContinuousStar F := by
-  let L : F →ₗ[ℝ] F :=
-    { toFun := star
-      map_add' := star_add
-      map_smul' := fun r x ↦ by simp [← Complex.coe_smul, star_smul] }
-  exact ⟨L.continuous_of_finiteDimensional⟩
 
 /-- The pointwise boundary values on a conjugation-invariant open set, for a finite exponent. -/
 private theorem star_eq_of_continuousOn_of_mapsTo [ContinuousStar F]
@@ -142,7 +123,7 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.star_eq_of_continuousOn (hp : 2 
     (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η) :
     ∀ x : ℝ, (x : ℂ) ∈ Ω → star (ξ x) = ξ x := by
   intro x hx
-  have := continuousStar_of_finiteDimensional (F := F)
+  have := FiniteDimensional.continuousStar ℝ F
   -- Shrink `Ω` to the conjugation-invariant open set `Ω ∩ conj Ω` and `p` to a finite exponent.
   let Ω' : Opens ℂ := ⟨(Ω : Set ℂ) ∩ conj ⁻¹' Ω, Ω.isOpen.inter (Ω.isOpen.preimage continuous_conj)⟩
   have hΩ' : Ω' ≤ Ω := fun z hz ↦ hz.1
