@@ -28,9 +28,10 @@ import Mathlib.Tactic.LinearCombination
 Fix a real number `q > 1` and an integer `n`. An element `α` of a field `K` of characteristic zero
 is a *Weil `q`-number of weight `n`* (Deligne: *pure of weight `n` relative to `q`*) if `α` is
 algebraic over `ℚ` and every complex root of its minimal polynomial over `ℚ` has absolute value
-`q ^ (n / 2)`. These are the possible eigenvalues of geometric Frobenius on the `ℓ`-adic
-cohomology of a smooth projective variety over a finite field with `q` elements, and the weight
-of a Frobenius module is read off from them.
+`q ^ (n / 2)`. By Deligne, the eigenvalues of geometric Frobenius on the `ℓ`-adic cohomology
+`H^i` of a smooth projective variety over a finite field with `q` elements are Weil `q`-numbers
+of weight `i` (and algebraic integers), and the weight of a Frobenius module is read off from
+them.
 
 The predicate only depends on the minimal polynomial of `α`, so it is preserved and reflected by
 field homomorphisms and does not depend on the ambient field. It is equivalent to the condition
@@ -56,6 +57,8 @@ in `K`. Algebraicity is part of the definition: a transcendental element has min
   its weight is unique.
 * `TauCeti.IsWeilNumber.mul`, `TauCeti.IsWeilNumber.inv`, `TauCeti.IsWeilNumber.zpow`: weights
   add under products and are negated by inverses.
+* `TauCeti.isWeilNumber_inv_iff`: `α⁻¹` is a Weil `q`-number of weight `n` if and only if `α` is
+  one of weight `-n`.
 * `TauCeti.IsWeilNumber.conj_apply`: the complex conjugate of `σ α` is `q ^ n / σ α`.
 * `TauCeti.isWeilNumber_pow_iff`: `α` is a Weil `q`-number of weight `n` if and only if `α ^ r`
   is a Weil `q ^ r`-number of weight `n`, for `r ≠ 0`.
@@ -89,8 +92,8 @@ structure IsWeilNumber (q : ℝ) (n : ℤ) (α : K) : Prop where
   one_lt : 1 < q
   /-- A Weil number is algebraic over `ℚ`. -/
   isIntegral : IsIntegral ℚ α
-  /-- Every complex conjugate of a Weil `q`-number of weight `n` has absolute value
-  `q ^ (n / 2)`. -/
+  /-- Every complex root of the minimal polynomial of `α` over `ℚ` (every Galois conjugate of `α`
+  in `ℂ`) has absolute value `q ^ (n / 2)`. -/
   norm_eq_of_mem_aroots ⦃z : ℂ⦄ : z ∈ (minpoly ℚ α).aroots ℂ → ‖z‖ = q ^ ((n : ℝ) / 2)
 
 /-- Unbundled form of the definition of a Weil number. -/
@@ -167,14 +170,16 @@ field embedding into `ℂ` of the algebraic closure of `ℚ` in `K` sends `α` t
 absolute value `q ^ (n / 2)`. -/
 theorem isWeilNumber_iff_forall_algebraicClosure (hα : IsIntegral ℚ α) :
     IsWeilNumber q n α ↔
-      1 < q ∧ ∀ σ : algebraicClosure ℚ K →+* ℂ, ‖σ ⟨α, hα⟩‖ = q ^ ((n : ℝ) / 2) := by
+      1 < q ∧ ∀ σ : algebraicClosure ℚ K →+* ℂ,
+        ‖σ ⟨α, mem_algebraicClosure_iff'.mpr hα⟩‖ = q ^ ((n : ℝ) / 2) := by
   -- The `ℚ`-algebra structure found by instance search on the subfield is
   -- `DivisionRing.toRatAlgebra`, not the subfield's own, so algebraicity is transported by hand.
   have : Algebra.IsAlgebraic ℚ (algebraicClosure ℚ K) := by
     have h := algebraicClosure.isAlgebraic (F := ℚ) (E := K)
     rwa [Subsingleton.elim (algebraicClosure ℚ K).algebra' DivisionRing.toRatAlgebra] at h
   let f : algebraicClosure ℚ K →+* K := (algebraicClosure ℚ K).val
-  exact (isWeilNumber_map_iff (α := (⟨α, hα⟩ : algebraicClosure ℚ K)) f).trans
+  exact (isWeilNumber_map_iff
+    (α := (⟨α, mem_algebraicClosure_iff'.mpr hα⟩ : algebraicClosure ℚ K)) f).trans
     (isWeilNumber_iff_forall_norm_apply_eq (K := algebraicClosure ℚ K))
 
 /-- A root of unity is a Weil `q`-number of weight `0` for every `q > 1`. -/
@@ -203,7 +208,9 @@ theorem mul (hα : IsWeilNumber q n α) (hβ : IsWeilNumber q m β) :
   rw [isWeilNumber_iff_forall_algebraicClosure hαi] at hα
   rw [isWeilNumber_iff_forall_algebraicClosure hβi] at hβ
   refine (isWeilNumber_iff_forall_algebraicClosure hαβ).mpr ⟨hα.1, fun σ ↦ ?_⟩
-  have hmul : (⟨α * β, hαβ⟩ : algebraicClosure ℚ K) = ⟨α, hαi⟩ * ⟨β, hβi⟩ := rfl
+  have hmul : (⟨α * β, mem_algebraicClosure_iff'.mpr hαβ⟩ : algebraicClosure ℚ K) =
+      ⟨α, mem_algebraicClosure_iff'.mpr hαi⟩ * ⟨β, mem_algebraicClosure_iff'.mpr hβi⟩ :=
+    Subtype.ext (IntermediateField.coe_mul _ ⟨α, _⟩ ⟨β, _⟩).symm
   rw [hmul, map_mul, norm_mul, hα.2, hβ.2, ← Real.rpow_add hq]
   push_cast
   ring_nf
@@ -214,7 +221,9 @@ theorem inv (h : IsWeilNumber q n α) : IsWeilNumber q (-n) α⁻¹ := by
   have hinv := hαi.inv
   rw [isWeilNumber_iff_forall_algebraicClosure hαi] at h
   refine (isWeilNumber_iff_forall_algebraicClosure hinv).mpr ⟨h.1, fun σ ↦ ?_⟩
-  have hα : (⟨α⁻¹, hinv⟩ : algebraicClosure ℚ K) = (⟨α, hαi⟩)⁻¹ := rfl
+  have hα : (⟨α⁻¹, mem_algebraicClosure_iff'.mpr hinv⟩ : algebraicClosure ℚ K) =
+      (⟨α, mem_algebraicClosure_iff'.mpr hαi⟩)⁻¹ :=
+    Subtype.ext (IntermediateField.coe_inv _ ⟨α, _⟩).symm
   rw [hα, map_inv₀, norm_inv, h.2, ← Real.rpow_neg (zero_lt_one.trans h.1).le]
   push_cast
   ring_nf
@@ -247,8 +256,9 @@ theorem conj_apply (h : IsWeilNumber q n α) (σ : K →+* ℂ) :
     norm_num [Real.rpow_intCast]
   rw [eq_div_iff hσ, mul_comm, Complex.mul_conj', hnorm]
 
-/-- If `q` is rational and `α` is a Weil `q`-number of weight `n`, then `α + q ^ n * α⁻¹` is
-totally real: it is fixed by complex conjugation at every complex embedding. -/
+/-- If `q` is rational and `α` is a Weil `q`-number of weight `n`, then the image of
+`α + q ^ n * α⁻¹` under every field embedding of `K` into `ℂ` is fixed by complex
+conjugation. -/
 theorem conj_apply_add_zpow_mul_inv {q : ℚ} (h : IsWeilNumber (q : ℝ) n α) (σ : K →+* ℂ) :
     starRingEnd ℂ (σ (α + (q : K) ^ n * α⁻¹)) = σ (α + (q : K) ^ n * α⁻¹) := by
   have hσ : σ α ≠ 0 := (map_ne_zero σ).mpr h.ne_zero
@@ -262,6 +272,12 @@ theorem conj_apply_add_zpow_mul_inv {q : ℚ} (h : IsWeilNumber (q : ℝ) n α) 
   ring
 
 end IsWeilNumber
+
+/-- The inverse `α⁻¹` is a Weil `q`-number of weight `n` if and only if `α` is a Weil `q`-number
+of weight `-n`. -/
+@[simp]
+theorem isWeilNumber_inv_iff : IsWeilNumber q n α⁻¹ ↔ IsWeilNumber q (-n) α :=
+  ⟨fun h ↦ by simpa only [inv_inv] using h.inv, fun h ↦ by simpa only [neg_neg] using h.inv⟩
 
 /-- A rational number `q > 1` is a Weil `q`-number of weight `2`. -/
 theorem isWeilNumber_ratCast {q : ℚ} (hq : 1 < q) : IsWeilNumber (q : ℝ) 2 (q : K) := by
@@ -286,7 +302,9 @@ theorem isWeilNumber_pow_iff {r : ℕ} (hr : r ≠ 0) (hq : 0 ≤ q) :
   · rw [isWeilNumber_iff_forall_algebraicClosure (hα.pow r),
       isWeilNumber_iff_forall_algebraicClosure hα, one_lt_pow_iff_of_nonneg hq hr]
     refine and_congr_right fun _ ↦ forall_congr' fun σ ↦ ?_
-    have hpow : (⟨α ^ r, hα.pow r⟩ : algebraicClosure ℚ K) = (⟨α, hα⟩) ^ r := rfl
+    have hpow : (⟨α ^ r, mem_algebraicClosure_iff'.mpr (hα.pow r)⟩ : algebraicClosure ℚ K) =
+        (⟨α, mem_algebraicClosure_iff'.mpr hα⟩) ^ r :=
+      Subtype.ext (IntermediateField.coe_pow _ ⟨α, _⟩ r).symm
     rw [hpow, map_pow, norm_pow, ← Real.rpow_pow_comm hq,
       pow_left_inj₀ (norm_nonneg _) (Real.rpow_nonneg hq _) hr]
   · exact iff_of_false (fun h ↦ hα (IsIntegral.of_pow (Nat.pos_of_ne_zero hr) h.isIntegral))
@@ -330,7 +348,8 @@ theorem not_isWeilNumber_one_add_sqrt_two : ¬IsWeilNumber q n (1 + √2 : ℝ) 
   have hs : √2 ^ 2 = 2 := Real.sq_sqrt zero_le_two
   have hP : (X ^ 2 - 2 * X - 1 : ℚ[X]) = minpoly ℚ (1 + √2 : ℝ) := by
     refine minpoly.eq_of_irreducible_of_monic ?_
-      (by simp [map_ofNat]; ring_nf; linarith) (by monicity!)
+      (by simp only [map_sub, map_mul, map_pow, aeval_X, map_ofNat, map_one]
+          linear_combination hs) (by monicity!)
     have hdeg : (X ^ 2 - 2 * X - 1 : ℚ[X]).natDegree = 2 := by compute_degree!
     refine irreducible_of_degree_le_three_of_not_isRoot (by simp [hdeg]) fun r hr ↦ ?_
     simp only [IsRoot, eval_sub, eval_mul, eval_pow, eval_X, eval_ofNat, eval_one] at hr
@@ -344,8 +363,8 @@ theorem not_isWeilNumber_one_add_sqrt_two : ¬IsWeilNumber q n (1 + √2 : ℝ) 
     rw [← hP]
     simp only [map_sub, map_mul, map_pow, aeval_X, map_ofNat, map_one]
     exact_mod_cast hx
-  have h₁ := hroot (1 + √2) (by ring_nf; linarith)
-  have h₂ := hroot (1 - √2) (by ring_nf; linarith)
+  have h₁ := hroot (1 + √2) (by linear_combination hs)
+  have h₂ := hroot (1 - √2) (by linear_combination hs)
   rw [Complex.norm_real, Real.norm_eq_abs] at h₁ h₂
   have hlt : 1 < √2 := by
     rw [show (1 : ℝ) = √1 by simp]
@@ -360,10 +379,10 @@ theorem isWeilNumber_inv_natCast {q : ℕ} (hq : 2 ≤ q) :
   have hq' : (1 : ℚ) < q := by exact_mod_cast hq
   simpa using (isWeilNumber_ratCast (K := ℚ) hq').inv
 
-/-- For a natural number `q ≥ 2`, the rational number `q⁻¹` is not an algebraic integer, although
+/- For a natural number `q ≥ 2`, the rational number `q⁻¹` is not an algebraic integer, although
 it is a Weil `q`-number (`TauCeti.isWeilNumber_inv_natCast`): being a Weil number does not imply
 integrality. -/
-theorem not_isIntegral_inv_natCast {q : ℕ} (hq : 2 ≤ q) : ¬IsIntegral ℤ ((q : ℚ)⁻¹) := by
+example {q : ℕ} (hq : 2 ≤ q) : ¬IsIntegral ℤ ((q : ℚ)⁻¹) := by
   rw [IsIntegrallyClosed.isIntegral_iff]
   rintro ⟨y, hy⟩
   rw [eq_intCast] at hy
