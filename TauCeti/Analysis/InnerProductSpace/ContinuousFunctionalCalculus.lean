@@ -407,8 +407,7 @@ theorem cfcₙ_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) (f : ℝ → ℝ) (A :
     cfcₙ f (e.conjStarAlgEquiv A) = e.conjStarAlgEquiv (cfcₙ f A) :=
   (cfcₙ_eq_cfcₙ_transfer (p := IsSelfAdjoint) (q := IsSelfAdjoint)
     (e.conjStarAlgEquiv.restrictScalars ℝ) e.continuous_conjStarAlgEquiv
-    (fun x ↦ ⟨fun hx ↦ hx.map e.conjStarAlgEquiv,
-      fun hx ↦ e.conjStarAlgEquiv.symm_apply_apply x ▸ hx.map e.conjStarAlgEquiv.symm⟩)
+    (fun _ ↦ (e.conjStarAlgEquiv.injective.isSelfAdjoint_apply_iff e.conjStarAlgEquiv).symm)
     f (e.conjStarAlgEquiv A)).trans
     (congrArg (fun X ↦ e.conjStarAlgEquiv (cfcₙ f X)) (e.conjStarAlgEquiv.symm_apply_apply A))
 
@@ -425,8 +424,7 @@ theorem cfc_conjStarAlgEquiv [ContinuousFunctionalCalculus ℝ (E →L[𝕜] E) 
     (A : E →L[𝕜] E) : cfc f (e.conjStarAlgEquiv A) = e.conjStarAlgEquiv (cfc f A) :=
   (cfc_eq_cfc_transfer (p := IsSelfAdjoint) (q := IsSelfAdjoint)
     (e.conjStarAlgEquiv.restrictScalars ℝ) e.continuous_conjStarAlgEquiv
-    (fun x ↦ ⟨fun hx ↦ hx.map e.conjStarAlgEquiv,
-      fun hx ↦ e.conjStarAlgEquiv.symm_apply_apply x ▸ hx.map e.conjStarAlgEquiv.symm⟩)
+    (fun _ ↦ (e.conjStarAlgEquiv.injective.isSelfAdjoint_apply_iff e.conjStarAlgEquiv).symm)
     f (e.conjStarAlgEquiv A)).trans
     (congrArg (fun X ↦ e.conjStarAlgEquiv (cfc f X)) (e.conjStarAlgEquiv.symm_apply_apply A))
 
