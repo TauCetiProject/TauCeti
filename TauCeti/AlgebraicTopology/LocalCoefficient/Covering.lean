@@ -203,6 +203,18 @@ theorem permutationLocalSystemTransfer_app (hfin : ∀ b, Finite ↥(p ⁻¹' {b
   refine LinearMap.ext_ring ?_
   simp [Finsupp.equivFunOnFinite_symm_eq_sum]
 
+/-- The transfer of the permutation local system has coefficient `r` at every sheet. -/
+theorem permutationLocalSystemTransfer_app_hom_apply_apply (hfin : ∀ b, Finite ↥(p ⁻¹' {b}))
+    (x : FundamentalGroupoid B) (r : R) (e : p ⁻¹' {x.as}) :
+    DFunLike.coe (F := (p ⁻¹' {x.as}) →₀ R)
+      (((hp.permutationLocalSystemTransfer R hfin).app x).hom r) e = r := by
+  have := hfin x.as
+  -- The fibres of the constant and permutation systems are `R` and formal sums of sheets only
+  -- after unfolding their definitions, so `change` states the component as the multiple of the
+  -- formal sum of all sheets that it is defined as.
+  change (r • Finsupp.equivFunOnFinite.symm (1 : p ⁻¹' {x.as} → R)) e = r
+  simp
+
 end Transfer
 
 section FiberMap

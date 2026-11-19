@@ -57,6 +57,9 @@ that of its base and fibres.
 * `TauCeti.isNConnected_sphereBundleProj`, `TauCeti.simplyConnectedSpace_sphereBundle_iff`: its
   connectivity.
 * `TauCeti.isCoveringMap_sphereBundleProj`: in rank one it is a covering map.
+* `TauCeti.natCard_sphereBundleProj_preimage_singleton`,
+  `TauCeti.finite_sphereBundleProj_preimage_singleton`: in rank one its fibres have exactly two
+  points.
 
 ## References
 
@@ -328,5 +331,26 @@ theorem isCoveringMap_sphereBundleProj (hnorm : Continuous fun v : TotalSpace F 
     (hF : finrank ℝ F = 1) : IsCoveringMap (sphereBundleProj F E) :=
   haveI := discreteTopology_sphere_of_finrank_eq_one hF (0 : F) 1
   IsFiberBundle.isCoveringMap (exists_trivialization_sphereBundleProj F E hnorm)
+
+variable (F E) in
+/-- In rank one, every fibre of the sphere bundle `S(E) → B` consists of exactly two points, the two
+unit vectors of the fibre of `E`. -/
+theorem natCard_sphereBundleProj_preimage_singleton (hF : finrank ℝ F = 1) (b : B) :
+    Nat.card (sphereBundleProj F E ⁻¹' {b}) = 2 := by
+  have hE : finrank ℝ (E b) = 1 := ((trivializationAt F E b).continuousLinearEquivAt ℝ b
+    (mem_baseSet_trivializationAt F E b)).toLinearEquiv.finrank_eq.trans hF
+  have : Nontrivial (E b) := Module.nontrivial_of_finrank_eq_succ hE
+  -- The unit sphere of the line `E b` is a unit vector `v` and its antipode `-v ≠ v`.
+  obtain ⟨v, hv⟩ := (NormedSpace.sphere_nonempty (x := (0 : E b))).2 zero_le_one
+  rw [← range_sphereBundleFiberIncl,
+    Nat.card_range_of_injective (isEmbedding_sphereBundleFiberIncl F E b).injective,
+    sphere_eq_pair_of_finrank_eq_one hE hv, Nat.card_coe_set_eq, Set.ncard_pair]
+  exact fun h ↦ ne_neg_of_mem_unit_sphere ℝ ⟨v, hv⟩ (Subtype.ext h)
+
+variable (F E) in
+/-- In rank one, the fibres of the sphere bundle `S(E) → B` are finite. -/
+theorem finite_sphereBundleProj_preimage_singleton (hF : finrank ℝ F = 1) (b : B) :
+    Finite (sphereBundleProj F E ⁻¹' {b}) :=
+  Nat.finite_of_card_ne_zero (by simp [natCard_sphereBundleProj_preimage_singleton F E hF b])
 
 end TauCeti
