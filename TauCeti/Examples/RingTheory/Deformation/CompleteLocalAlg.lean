@@ -13,9 +13,9 @@ public import TauCeti.RingTheory.Deformation.CompleteLocalAlg
 
 The `p`-adic integers `ℤ_[p]`, reduced modulo `p`, form an object of the complete local coefficient
 category over `ℤ` with residue field `𝔽_p`, but not of the Artinian coefficient category: the
-chain of ideals `p ^ n ℤ_[p]` does not stabilise, so a definition of `Ĉ_Λ` that also imposed the
-Artinian condition would exclude it. Its truncations are the quotients `ℤ_[p] ⧸ 𝔪 ^ (n + 1)`, and
-level `0` reduces to the residue field.
+chain of ideals `p ^ n ℤ_[p]` does not stabilise, so a definition of `\hat{C}_Λ` that also imposed
+the Artinian condition would exclude it. Its truncations are the quotients `ℤ_[p] ⧸ 𝔪 ^ (n + 1)`,
+and level `0` reduces to the residue field.
 -/
 
 public section
@@ -28,7 +28,7 @@ open Deformation CompleteLocalAlg
 
 variable (p : ℕ) [Fact p.Prime]
 
-/-- `ℤ_[p]` with its reduction modulo `p` is an object of `Ĉ_ℤ` with residue field `𝔽_p`. -/
+/-- `ℤ_[p]` with its reduction modulo `p` is an object of `\hat{C}_ℤ` with residue field `𝔽_p`. -/
 example : IsCompleteLocalAug ℤ (ZMod p)
     (Over.mk (CommAlgCat.ofHom (PadicInt.toZMod (p := p)).toIntAlgHom)) :=
   ⟨(inferInstance : IsNoetherianRing ℤ_[p]), (inferInstance : IsLocalRing ℤ_[p]),

@@ -14,33 +14,33 @@ import TauCeti.RingTheory.AdicCompletion.Nilpotent
 /-!
 # The complete local coefficient category
 
-Fix a commutative ring `Λ` and a field `k` with a `Λ`-algebra structure. The category `Ĉ_Λ` has as
-objects the complete Noetherian local `Λ`-algebras `A` together with a surjective `Λ`-algebra map
-`A → k`, and as morphisms the `Λ`-algebra maps compatible with these maps to `k` (Stacks,
-Definition 90.4.1 (06GW)). As for the Artinian coefficient category `C_Λ` of
+Fix a commutative ring `Λ` and a field `k` with a `Λ`-algebra structure. The category `\hat{C}_Λ`
+has as objects the complete Noetherian local `Λ`-algebras `A` together with a surjective
+`Λ`-algebra map `A → k`, and as morphisms the `Λ`-algebra maps compatible with these maps to `k`
+(Stacks, Definition 90.4.1 (06GW)). As for the Artinian coefficient category `C_Λ` of
 `TauCeti.RingTheory.Deformation.ArtinLocalAlg`, the kernel of the augmentation is the maximal ideal,
 so the augmentation identifies the residue field with `k`, and every morphism is local. We realise
-`Ĉ_Λ` as a full subcategory of `Over (CommAlgCat.of Λ k)`, the ambient category of `C_Λ`.
+`\hat{C}_Λ` as a full subcategory of `Over (CommAlgCat.of Λ k)`, the ambient category of `C_Λ`.
 
 An Artinian local ring is Noetherian, and complete since its maximal ideal is nilpotent, so `C_Λ`
-is a full subcategory of `Ĉ_Λ` (`TauCeti.Deformation.ArtinLocalAlg.toCompleteLocalAlg`).
-Conversely, every object `A` of `Ĉ_Λ` is assembled from objects of `C_Λ`: its truncations
+is a full subcategory of `\hat{C}_Λ` (`TauCeti.Deformation.ArtinLocalAlg.toCompleteLocalAlg`).
+Conversely, every object `A` of `\hat{C}_Λ` is assembled from objects of `C_Λ`: its truncations
 `A ⧸ 𝔪_A ^ (n + 1)` are Artinian local with the induced augmentation, so they are objects of `C_Λ`,
 indexed so that level `0` is the residue field `k`. Completeness of `A` says exactly that `A` is
-the limit in `Ĉ_Λ` of its truncations: a morphism `B ⟶ A` is the same as a compatible family of
-morphisms from `B` to all truncations of `A`. On the other side, a morphism from `A` to an object
-of `C_Λ` kills a power of `𝔪_A`, as the maximal ideal of the target is nilpotent, and so factors
-through a truncation of `A`. These are the two facts used to evaluate a functor on `C_Λ` at an
-object of `Ĉ_Λ` through its truncations (Stacks, Section 90.7).
+the limit in `\hat{C}_Λ` of its truncations: a morphism `B ⟶ A` is the same as a compatible family
+of morphisms from `B` to all truncations of `A`. On the other side, a morphism from `A` to an
+object of `C_Λ` kills a power of `𝔪_A`, as the maximal ideal of the target is nilpotent, and so
+factors through a truncation of `A`. These are the two facts used to evaluate a functor on `C_Λ`
+at an object of `\hat{C}_Λ` through its truncations (Stacks, Section 90.7).
 
 ## Main definitions
 
 * `TauCeti.Deformation.IsCompleteLocalAug Λ k`: the property of an object of
   `Over (CommAlgCat.of Λ k)` of being a complete Noetherian local algebra with surjective
   augmentation.
-* `TauCeti.Deformation.CompleteLocalAlg Λ k`: the complete local coefficient category `Ĉ_Λ`.
+* `TauCeti.Deformation.CompleteLocalAlg Λ k`: the complete local coefficient category `\hat{C}_Λ`.
 * `TauCeti.Deformation.ArtinLocalAlg.toCompleteLocalAlg`: the fully faithful inclusion of `C_Λ` in
-  `Ĉ_Λ`.
+  `\hat{C}_Λ`.
 * `TauCeti.Deformation.CompleteLocalAlg.truncation A n`: the object `A ⧸ 𝔪_A ^ (n + 1)` of `C_Λ`,
   with the quotient morphism `TauCeti.Deformation.CompleteLocalAlg.toTruncation` and the
   transition morphisms `TauCeti.Deformation.CompleteLocalAlg.truncationMap`.
@@ -50,12 +50,12 @@ object of `Ĉ_Λ` through its truncations (Stacks, Section 90.7).
 ## Main results
 
 * `TauCeti.Deformation.CompleteLocalAlg.ker_augmentation`: the kernel of the augmentation is the
-  maximal ideal, and `TauCeti.Deformation.CompleteLocalAlg.isLocalHom`: morphisms of `Ĉ_Λ` are
+  maximal ideal, and `TauCeti.Deformation.CompleteLocalAlg.isLocalHom`: morphisms of `\hat{C}_Λ` are
   local homomorphisms.
-* `TauCeti.Deformation.CompleteLocalAlg.isLimitTruncationCone`: every object of `Ĉ_Λ` is the
+* `TauCeti.Deformation.CompleteLocalAlg.isLimitTruncationCone`: every object of `\hat{C}_Λ` is the
   limit of its truncations.
 * `TauCeti.Deformation.CompleteLocalAlg.exists_toTruncation_comp_eq`: a morphism from an object
-  of `Ĉ_Λ` to an object of `C_Λ` factors through a truncation.
+  of `\hat{C}_Λ` to an object of `C_Λ` factors through a truncation.
 
 ## References
 
@@ -87,9 +87,9 @@ structure IsCompleteLocalAug (A : Over (CommAlgCat.of Λ k)) : Prop where
   /-- The augmentation `A → k` is surjective. -/
   surjective : Function.Surjective A.hom.hom
 
-/-- The *complete local coefficient category* `Ĉ_Λ`: complete Noetherian local `Λ`-algebras `A`
-with a surjective `Λ`-algebra map `A → k`, and `Λ`-algebra maps compatible with these maps. Stacks,
-Definition 90.4.1 (06GW). -/
+/-- The *complete local coefficient category* `\hat{C}_Λ`: complete Noetherian local `Λ`-algebras
+`A` with a surjective `Λ`-algebra map `A → k`, and `Λ`-algebra maps compatible with these maps.
+Stacks, Definition 90.4.1 (06GW). -/
 abbrev CompleteLocalAlg := ObjectProperty.FullSubcategory (IsCompleteLocalAug Λ k)
 
 namespace CompleteLocalAlg
@@ -103,39 +103,39 @@ instance (A : CompleteLocalAlg Λ k) : IsLocalRing A.obj.left := A.property.isLo
 instance (A : CompleteLocalAlg Λ k) : IsAdicComplete (maximalIdeal A.obj.left) A.obj.left :=
   A.property.isAdicComplete
 
-/-- The augmentation `A → k` of an object `A` of `Ĉ_Λ`. -/
+/-- The augmentation `A → k` of an object `A` of `\hat{C}_Λ`. -/
 def augmentation (A : CompleteLocalAlg Λ k) : A.obj.left →ₐ[Λ] k :=
   A.obj.hom.hom
 
-/-- The augmentation of an object of `Ĉ_Λ` is the structure map of its underlying object of
+/-- The augmentation of an object of `\hat{C}_Λ` is the structure map of its underlying object of
 `Over (CommAlgCat.of Λ k)`. -/
 theorem augmentation_def (A : CompleteLocalAlg Λ k) : A.augmentation = A.obj.hom.hom :=
   (rfl)
 
-/-- The augmentation of an object of `Ĉ_Λ` is surjective. -/
+/-- The augmentation of an object of `\hat{C}_Λ` is surjective. -/
 theorem augmentation_surjective (A : CompleteLocalAlg Λ k) :
     Function.Surjective A.augmentation :=
   A.property.surjective
 
-/-- The kernel of the augmentation of an object of `Ĉ_Λ` is its maximal ideal. -/
+/-- The kernel of the augmentation of an object of `\hat{C}_Λ` is its maximal ideal. -/
 theorem ker_augmentation (A : CompleteLocalAlg Λ k) :
     RingHom.ker A.augmentation = maximalIdeal A.obj.left :=
   eq_maximalIdeal (RingHom.ker_isMaximal_of_surjective _ A.augmentation_surjective)
 
-/-- An element of an object of `Ĉ_Λ` has augmentation zero exactly when it lies in the maximal
+/-- An element of an object of `\hat{C}_Λ` has augmentation zero exactly when it lies in the maximal
 ideal. -/
 @[simp]
 theorem augmentation_eq_zero_iff {A : CompleteLocalAlg Λ k} {a : A.obj.left} :
     A.augmentation a = 0 ↔ a ∈ maximalIdeal A.obj.left := by
   rw [← RingHom.mem_ker, ker_augmentation]
 
-/-- Morphisms of `Ĉ_Λ` are determined by their underlying `Λ`-algebra maps. -/
+/-- Morphisms of `\hat{C}_Λ` are determined by their underlying `Λ`-algebra maps. -/
 @[ext]
 theorem hom_ext {A B : CompleteLocalAlg Λ k} {f g : A ⟶ B}
     (h : f.hom.left.hom = g.hom.left.hom) : f = g :=
   ObjectProperty.hom_ext _ (Over.OverMorphism.ext (CommAlgCat.hom_ext h))
 
-/-- Morphisms of `Ĉ_Λ` are compatible with the augmentations. -/
+/-- Morphisms of `\hat{C}_Λ` are compatible with the augmentations. -/
 @[simp]
 theorem augmentation_comp {A B : CompleteLocalAlg Λ k} (f : A ⟶ B) :
     B.augmentation.comp f.hom.left.hom = A.augmentation :=
@@ -147,7 +147,7 @@ theorem augmentation_hom_apply {A B : CompleteLocalAlg Λ k} (f : A ⟶ B) (a : 
     B.augmentation (f.hom.left.hom a) = A.augmentation a :=
   DFunLike.congr_fun (augmentation_comp f) a
 
-/-- Every morphism of `Ĉ_Λ` is a local homomorphism. -/
+/-- Every morphism of `\hat{C}_Λ` is a local homomorphism. -/
 instance isLocalHom {A B : CompleteLocalAlg Λ k} (f : A ⟶ B) : IsLocalHom f.hom.left.hom where
   map_nonunit a ha := by
     rw [← not_not (a := IsUnit a), ← mem_nonunits_iff, ← mem_maximalIdeal,
@@ -155,7 +155,7 @@ instance isLocalHom {A B : CompleteLocalAlg Λ k} (f : A ⟶ B) : IsLocalHom f.h
       mem_maximalIdeal, mem_nonunits_iff, not_not]
     exact ha
 
-/-- The object of `Ĉ_Λ` given by a complete Noetherian local `Λ`-algebra `A` and a surjective
+/-- The object of `\hat{C}_Λ` given by a complete Noetherian local `Λ`-algebra `A` and a surjective
 `Λ`-algebra map `π : A → k`. -/
 -- Exposed because the carrier of `mk' A π hπ` is `A` by definitional unfolding.
 @[expose] def mk' (A : Type v) [CommRing A] [Algebra Λ A] [IsNoetherianRing A] [IsLocalRing A]
@@ -170,13 +170,13 @@ theorem augmentation_mk' (A : Type v) [CommRing A] [Algebra Λ A] [IsNoetherianR
     (hπ : Function.Surjective π) : (mk' A π hπ).augmentation = π :=
   (rfl)
 
-/-- The underlying algebra map of a composite in `Ĉ_Λ`. -/
+/-- The underlying algebra map of a composite in `\hat{C}_Λ`. -/
 @[simp]
 theorem comp_hom_left_hom_apply {A B C : CompleteLocalAlg Λ k} (f : A ⟶ B) (g : B ⟶ C)
     (a : A.obj.left) : (f ≫ g).hom.left.hom a = g.hom.left.hom (f.hom.left.hom a) :=
   (rfl)
 
-/-- The morphism of `Ĉ_Λ` given by a `Λ`-algebra map compatible with the augmentations. -/
+/-- The morphism of `\hat{C}_Λ` given by a `Λ`-algebra map compatible with the augmentations. -/
 def homMk' {A B : CompleteLocalAlg Λ k} (f : A.obj.left →ₐ[Λ] B.obj.left)
     (h : B.augmentation.comp f = A.augmentation) : A ⟶ B :=
   ObjectProperty.homMk (Over.homMk (CommAlgCat.ofHom f) (CommAlgCat.hom_ext h))
@@ -207,19 +207,19 @@ theorem IsArtinLocalAug.isCompleteLocalAug {A : Over (CommAlgCat.of Λ k)}
   exact ⟨inferInstance, inferInstance, isAdicComplete_of_pow_smul_eq_bot hsmul, hA.surjective⟩
 
 variable (Λ k) in
-/-- The Artinian coefficient category `C_Λ` is contained in `Ĉ_Λ`. -/
+/-- The Artinian coefficient category `C_Λ` is contained in `\hat{C}_Λ`. -/
 theorem isArtinLocalAug_le_isCompleteLocalAug : IsArtinLocalAug Λ k ≤ IsCompleteLocalAug Λ k :=
   fun _ hA ↦ hA.isCompleteLocalAug
 
 variable (Λ k) in
-/-- The inclusion of the Artinian coefficient category `C_Λ` in `Ĉ_Λ`. -/
--- Exposed because an object of `C_Λ` and its image in `Ĉ_Λ` have the same underlying object of
--- `Over (CommAlgCat.of Λ k)` by definitional unfolding.
+/-- The inclusion of the Artinian coefficient category `C_Λ` in `\hat{C}_Λ`. -/
+-- Exposed because an object of `C_Λ` and its image in `\hat{C}_Λ` have the same underlying object
+-- of `Over (CommAlgCat.of Λ k)` by definitional unfolding.
 @[expose] def ArtinLocalAlg.toCompleteLocalAlg : ArtinLocalAlg Λ k ⥤ CompleteLocalAlg Λ k :=
   ObjectProperty.ιOfLE (isArtinLocalAug_le_isCompleteLocalAug Λ k)
 
 variable (Λ k) in
-/-- The inclusion of `C_Λ` in `Ĉ_Λ` is fully faithful, as both are full subcategories of
+/-- The inclusion of `C_Λ` in `\hat{C}_Λ` is fully faithful, as both are full subcategories of
 `Over (CommAlgCat.of Λ k)`. -/
 def ArtinLocalAlg.fullyFaithfulToCompleteLocalAlg : (toCompleteLocalAlg Λ k).FullyFaithful :=
   ObjectProperty.fullyFaithfulιOfLE _
@@ -230,15 +230,15 @@ instance : (ArtinLocalAlg.toCompleteLocalAlg Λ k).Full :=
 instance : (ArtinLocalAlg.toCompleteLocalAlg Λ k).Faithful :=
   (ArtinLocalAlg.fullyFaithfulToCompleteLocalAlg Λ k).faithful
 
-/-- The augmentation of an object of `C_Λ`, regarded as an object of `Ĉ_Λ`, is its augmentation in
-`C_Λ`. -/
+/-- The augmentation of an object of `C_Λ`, regarded as an object of `\hat{C}_Λ`, is its
+augmentation in `C_Λ`. -/
 @[simp]
 theorem ArtinLocalAlg.augmentation_toCompleteLocalAlg_obj (A : ArtinLocalAlg Λ k) :
     ((toCompleteLocalAlg Λ k).obj A).augmentation = A.augmentation := by
   rw [CompleteLocalAlg.augmentation_def, ArtinLocalAlg.augmentation_def]
   rfl
 
-/-- The underlying algebra map of a morphism of `C_Λ`, regarded as a morphism of `Ĉ_Λ`, is
+/-- The underlying algebra map of a morphism of `C_Λ`, regarded as a morphism of `\hat{C}_Λ`, is
 unchanged. -/
 @[simp]
 theorem ArtinLocalAlg.toCompleteLocalAlg_map_hom_left_hom {A B : ArtinLocalAlg Λ k}
@@ -260,7 +260,7 @@ theorem augmentation_eq_zero_of_mem_maximalIdeal_pow (n : ℕ) {a : A.obj.left}
     (ha : a ∈ maximalIdeal A.obj.left ^ (n + 1)) : A.augmentation a = 0 :=
   augmentation_eq_zero_iff.mpr (Ideal.pow_le_self n.succ_ne_zero ha)
 
-/-- The truncation `A ⧸ 𝔪_A ^ (n + 1)` of an object `A` of `Ĉ_Λ`, an object of `C_Λ` with the
+/-- The truncation `A ⧸ 𝔪_A ^ (n + 1)` of an object `A` of `\hat{C}_Λ`, an object of `C_Λ` with the
 augmentation induced by that of `A`. Level `0` is the residue field `k`. -/
 -- Exposed because the carrier of `truncation A n` is `A ⧸ 𝔪_A ^ (n + 1)` by definitional
 -- unfolding.
@@ -281,7 +281,7 @@ theorem augmentation_truncation_mk (n : ℕ) (a : A.obj.left) :
   rw [ArtinLocalAlg.augmentation_def]
   rfl
 
-/-- The quotient morphism `A ⟶ A ⧸ 𝔪_A ^ (n + 1)` of `Ĉ_Λ`. -/
+/-- The quotient morphism `A ⟶ A ⧸ 𝔪_A ^ (n + 1)` of `\hat{C}_Λ`. -/
 noncomputable def toTruncation (n : ℕ) : A ⟶ (toCompleteLocalAlg Λ k).obj (A.truncation n) :=
   homMk' (Ideal.Quotient.mkₐ Λ (maximalIdeal A.obj.left ^ (n + 1))) <| by
     ext a
@@ -301,7 +301,7 @@ theorem toTruncation_surjective (n : ℕ) :
   exact ⟨a, A.toTruncation_hom_left_hom_apply n a⟩
 
 variable {A} in
-/-- An element of an object of `Ĉ_Λ` is determined by its images in all truncations. -/
+/-- An element of an object of `\hat{C}_Λ` is determined by its images in all truncations. -/
 theorem eq_of_forall_toTruncation_eq {a b : A.obj.left}
     (h : ∀ n, (A.toTruncation n).hom.left.hom a = (A.toTruncation n).hom.left.hom b) : a = b := by
   refine (IsHausdorff.eq_iff_smodEq (I := maximalIdeal A.obj.left)).mpr fun n ↦ ?_
@@ -367,7 +367,7 @@ noncomputable def truncationDiagram : ℕᵒᵖ ⥤ ArtinLocalAlg Λ k where
   map_id _ := A.truncationMap_refl _
   map_comp _ _ := (A.truncationMap_comp_truncationMap _ _).symm
 
-/-- The cone over the tower of truncations of `A`, regarded in `Ĉ_Λ`, with vertex `A` and the
+/-- The cone over the tower of truncations of `A`, regarded in `\hat{C}_Λ`, with vertex `A` and the
 quotient morphisms as legs. -/
 -- Exposed so that its vertex and legs are `A` and the quotient morphisms by definitional
 -- unfolding, as recorded by the generated `simps` lemmas.
@@ -448,9 +448,9 @@ private theorem mk_coneLift (n : ℕ) (x : s.pt.obj.left) :
   mk_liftSucc _ _ _ n x
 
 variable (A) in
-/-- **Every object of `Ĉ_Λ` is the limit of its truncations.** A compatible family of morphisms
-from an object `B` of `Ĉ_Λ` to the truncations `A ⧸ 𝔪_A ^ (n + 1)` comes from a unique morphism
-`B ⟶ A`. -/
+/-- **Every object of `\hat{C}_Λ` is the limit of its truncations.** A compatible family of
+morphisms from an object `B` of `\hat{C}_Λ` to the truncations `A ⧸ 𝔪_A ^ (n + 1)` comes from a
+unique morphism `B ⟶ A`. -/
 noncomputable def isLimitTruncationCone : IsLimit A.truncationCone where
   lift s := homMk' (coneLift s) <| by
     ext x
@@ -467,8 +467,8 @@ noncomputable def isLimitTruncationCone : IsLimit A.truncationCone where
     exact (congrArg (fun φ ↦ φ.hom.left.hom x) (hf (.op n))).trans
       ((mk_coneLift s n x).symm.trans (A.toTruncation_hom_left_hom_apply n _).symm)
 
-/-- Two morphisms into an object of `Ĉ_Λ` agreeing after composition with every quotient morphism
-to its truncations are equal. -/
+/-- Two morphisms into an object of `\hat{C}_Λ` agreeing after composition with every quotient
+morphism to its truncations are equal. -/
 theorem hom_ext_of_toTruncation {f g : B ⟶ A}
     (h : ∀ n, f ≫ A.toTruncation n = g ≫ A.toTruncation n) : f = g :=
   (isLimitTruncationCone A).hom_ext fun n ↦ h n.unop
@@ -477,8 +477,8 @@ end Limit
 
 section Factorization
 
-/-- A morphism of `Ĉ_Λ` from `A` to an object of `C_Λ` kills a power of the maximal ideal of `A`:
-it is local, and the maximal ideal of the Artinian target is nilpotent. -/
+/-- A morphism of `\hat{C}_Λ` from `A` to an object of `C_Λ` kills a power of the maximal ideal of
+`A`: it is local, and the maximal ideal of the Artinian target is nilpotent. -/
 theorem exists_maximalIdeal_pow_le_ker {B : ArtinLocalAlg Λ k}
     (f : A ⟶ (toCompleteLocalAlg Λ k).obj B) :
     ∃ n, maximalIdeal A.obj.left ^ (n + 1) ≤ RingHom.ker f.hom.left.hom := by
@@ -499,7 +499,7 @@ theorem exists_maximalIdeal_pow_le_ker {B : ArtinLocalAlg Λ k}
       _ = RingHom.ker φ := by rw [hn, Ideal.zero_eq_bot, RingHom.ker_eq_comap_bot]
   exact ⟨n, hker⟩
 
-/-- **Factorization through a truncation.** A morphism of `Ĉ_Λ` from `A` to an object of `C_Λ`
+/-- **Factorization through a truncation.** A morphism of `\hat{C}_Λ` from `A` to an object of `C_Λ`
 factors through the quotient morphism to some truncation `A ⧸ 𝔪_A ^ (n + 1)`. -/
 theorem exists_toTruncation_comp_eq {B : ArtinLocalAlg Λ k}
     (f : A ⟶ (toCompleteLocalAlg Λ k).obj B) :
