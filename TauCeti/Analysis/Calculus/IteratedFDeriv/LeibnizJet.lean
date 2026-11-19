@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Bilinear
 public import Mathlib.Analysis.Normed.Module.Multilinear.Curry
 import Mathlib.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 
 /-!
 # The Leibniz rule on jets of multilinear maps
@@ -325,14 +326,6 @@ theorem hasFDerivAt_leibnizJet {n : ℕ} {f : E → (i : Fin (n + 2)) → E [×i
   rw [curryLeft_leibnizJet_succ, add_comm]
   simp only [add_apply, precompR_apply, precompL_apply, compL_apply, comp_apply]
 
-/-- The `i`-th iterated derivative of a `C^n` map, `i < n`, has derivative the `(i + 1)`-th
-iterated derivative, curried on the left. -/
-private theorem hasFDerivAt_iteratedFDeriv_of_lt {X : Type*} [NormedAddCommGroup X]
-    [NormedSpace 𝕜 X] {n : WithTop ℕ∞} {u : E → X} (hu : ContDiff 𝕜 n u) {i : ℕ}
-    (hi : (i : WithTop ℕ∞) < n) (x : E) :
-    HasFDerivAt (iteratedFDeriv 𝕜 i u) (iteratedFDeriv 𝕜 (i + 1) u x).curryLeft x :=
-  ((hu.differentiable_iteratedFDeriv hi) x).hasFDerivAt
-
 /-- **The Leibniz rule.** For `n` times continuously differentiable maps `f` and `g`, the `m`-th
 derivative of `y ↦ B (f y) (g y)`, `m ≤ n`, is the Leibniz map of order `m` applied to the jets
 `(Dⁱ f (x))ᵢ` and `(Dⁱ g (x))ᵢ`. -/
@@ -352,8 +345,8 @@ theorem iteratedFDeriv_bilinear_eq_leibnizJet {n : WithTop ℕ∞} {f : E → F}
     have hD := hasFDerivAt_leibnizJet B (n := m) (x := x)
       (f := fun y (i : Fin (m + 2)) ↦ iteratedFDeriv 𝕜 i f y)
       (g := fun y (i : Fin (m + 2)) ↦ iteratedFDeriv 𝕜 i g y)
-      (fun i ↦ hasFDerivAt_iteratedFDeriv_of_lt hf (hi i) x)
-      (fun i ↦ hasFDerivAt_iteratedFDeriv_of_lt hg (hi i) x)
+      (fun i ↦ hf.hasFDerivAt_iteratedFDeriv (hi i) x)
+      (fun i ↦ hg.hasFDerivAt_iteratedFDeriv (hi i) x)
     have hfun : iteratedFDeriv 𝕜 m (fun y ↦ B (f y) (g y)) = fun y ↦
         leibnizJet B E m (jetInit 𝕜 E F m fun i : Fin (m + 2) ↦ iteratedFDeriv 𝕜 i f y)
           (jetInit 𝕜 E G m fun i : Fin (m + 2) ↦ iteratedFDeriv 𝕜 i g y) :=
