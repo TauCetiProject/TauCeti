@@ -999,8 +999,8 @@ theorem exists_enorm_inner_le_mul_tsum [Nontrivial V] (γ : ℝ) :
     refine Finset.sum_congr rfl fun d _ ↦ ?_
     rw [← (Equiv.subRight d).tsum_eq, ← ENNReal.tsum_mul_left]
     refine tsum_congr fun j ↦ ?_
-    simp only [Equiv.subRight_apply, add_sub_cancel, hshift, mul_assoc]
-    rfl
+    simp only [Equiv.subRight_apply, add_sub_cancel, hshift, mul_assoc,
+      ENNReal.ofNNReal_toNNReal]
   refine le_of_tendsto' ((continuous_eNorm.tendsto _).comp
     (tendsto_const_nhds.inner (φ.tendsto_sum_fourierMultiplierCLM_littlewoodPaley hm g)))
     fun N ↦ ?_

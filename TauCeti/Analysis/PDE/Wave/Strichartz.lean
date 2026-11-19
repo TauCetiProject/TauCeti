@@ -142,7 +142,7 @@ private theorem adjoint_halfWavePropagator_comp_apply
       halfWavePropagator ℂ (-t) (Lp.fourierMultiplierCLM ℂ m g) := by
   rw [ContinuousLinearMap.adjoint_comp, Lp.adjoint_fourierMultiplierCLM,
     Lp.star_eq_self_of_ae_eq_ofReal hm, adjoint_halfWavePropagator,
-    ← halfWavePropagator_comp_fourierMultiplierCLM, ContinuousLinearMap.comp_apply]
+    ContinuousLinearMap.comp_apply, fourierMultiplierCLM_halfWavePropagator_apply]
 
 /-- The time pairings of the family `U(t) = W₊(t) Pⱼ` are `U(s) U(t)* = W₊(s - t) Pⱼ Pⱼ`. -/
 private theorem halfWavePropagator_comp_apply_adjoint_apply
@@ -153,9 +153,7 @@ private theorem halfWavePropagator_comp_apply_adjoint_apply
       halfWavePropagator ℂ (s - t)
         (Lp.fourierMultiplierCLM ℂ m (Lp.fourierMultiplierCLM ℂ m g)) := by
   rw [adjoint_halfWavePropagator_comp_apply hm, ContinuousLinearMap.comp_apply,
-    ← ContinuousLinearMap.comp_apply (Lp.fourierMultiplierCLM ℂ m) (halfWavePropagator ℂ (-t)),
-    ← halfWavePropagator_comp_fourierMultiplierCLM, ContinuousLinearMap.comp_apply,
-    sub_eq_add_neg, halfWavePropagator_add_apply]
+    fourierMultiplierCLM_halfWavePropagator_apply, sub_eq_add_neg, halfWavePropagator_add_apply]
 
 /-- In dimension `0` the cutoffs vanish, and so do the blocks. -/
 private theorem fourierMultiplierCLM_littlewoodPaley_eq_zero

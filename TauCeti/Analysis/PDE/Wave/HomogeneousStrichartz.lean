@@ -63,15 +63,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] [Nontrivial E] (φ : ContDiffBump (0 : E))
   {p q : ℝ≥0} {r r' : ℝ≥0∞} [r'.HolderConjugate r]
 
-omit [Nontrivial E] in
-/-- The blocks commute with the propagator: `Pₖ W₊(t) g = W₊(t) Pₖ g`. -/
-private theorem fourierMultiplierCLM_halfWavePropagator_apply (m : Lp ℂ ∞ (volume : Measure E))
-    (t : ℝ) (g : Lp ℂ 2 (volume : Measure E)) :
-    Lp.fourierMultiplierCLM ℂ m (halfWavePropagator ℂ t g) =
-      halfWavePropagator ℂ t (Lp.fourierMultiplierCLM ℂ m g) := by
-  simpa only [ContinuousLinearMap.comp_apply] using
-    congr($(halfWavePropagator_comp_fourierMultiplierCLM (F := ℂ) t m) g).symm
-
 /-- **The Strichartz estimate for the half-wave propagator with data in `\dot B^γ_{2,1}`**, in weak
 form. Let `E` be nontrivial of dimension `n`, let `ψⱼ` be the Littlewood–Paley cutoffs built from
 `φ`, and let `Pⱼ` be the `L²` Fourier multiplier with symbol `ψⱼ`. Let `(q, r)` be sharp
