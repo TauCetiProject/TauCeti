@@ -228,12 +228,15 @@ has range `S`: the integral leaf subgroup has Lie algebra `S`. -/
 theorem range_lieMapToHom_integralLeafSubgroupData
     (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)) :
     (S.integralLeafSubgroupData (I := I)).lieMapToHom.range = S := by
-  let eG := leftInvariantDerivationLieEquivGroupLieAlgebra
+  -- Both ranges have the same image under the Lie algebra equivalence `eG`, which is injective.
+  have h := LieSubalgebra.toSubmodule_injective <|
+    (S.integralLeafSubgroupData (I := I)).range_mfderiv_toHom_one.symm.trans
+      (range_mfderiv_leafHom_one S)
+  set eG := leftInvariantDerivationLieEquivGroupLieAlgebra
     (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
-  apply LieSubalgebra.toSubmodule_injective
-  apply Submodule.map_injective_of_injective eG.toLinearEquiv.injective
-  exact (S.integralLeafSubgroupData (I := I)).range_mfderiv_toHom_one.symm.trans
-    (range_mfderiv_leafHom_one S)
+  ext D
+  simpa only [LieSubalgebra.mem_map, LieEquiv.coe_toLieHom, EmbeddingLike.apply_eq_iff_eq,
+    exists_eq_right] using SetLike.ext_iff.mp h (eG D)
 
 /-- **Existence of connected immersed Lie subgroups.** Every Lie subalgebra `S` of the Lie algebra
 of a second-countable Lie group `G` is the range of the differential of a connected immersed Lie
