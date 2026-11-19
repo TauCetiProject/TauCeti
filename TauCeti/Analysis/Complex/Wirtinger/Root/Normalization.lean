@@ -55,7 +55,7 @@ The proof first extends continuous roots over the punctured disc across the cent
 (`TauCeti.Polynomial.exists_continuousOn_prod_X_sub_C_add_pow`). Off the centre a branch agrees
 with the `C¹` branch through a simple root given by the implicit function theorem
 (`TauCeti.exists_root_branch_conjWirtingerDeriv_add_add_eq_zero`), and the chain rule
-`TauCeti.conjWirtingerDeriv_comp_eq_comp_fderiv` pulls its equation back along `ζ ↦ x + ζⁿ`.
+`TauCeti.conjWirtingerDeriv_comp_eq_conj_smul` pulls its equation back along `ζ ↦ x + ζⁿ`.
 The continuous branch acquires no point mass at the centre
 (`TauCeti.HasWeakConjWirtingerDerivOn.of_diff_singleton`).
 
@@ -129,19 +129,16 @@ private theorem contDiffAt_and_conjWirtingerDeriv_add_smul_eq_zero {n : ℕ}
       ← Multiset.prod_map_sub_eq_pow_add_sum_esymm hcard]
     exact Multiset.prod_eq_zero (Multiset.mem_map.2 ⟨u z, hzR, sub_self _⟩)
   have hderiv : HasDerivAt h (n * ζ ^ (n - 1)) ζ := (hasDerivAt_pow n ζ).const_add x
-  -- an antilinear form precomposed with multiplication by `a` is `\bar a` times the form
-  have hcomp (L : ℂ →L⋆[ℂ] ℂ) (a : ℂ) :
-      L.comp (ContinuousLinearMap.toSpanSingleton ℂ a) = conj a • L := by
-    ext v
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul,
-      mul_comm, ← smul_eq_mul, map_smulₛₗ, smul_apply]
   refine ⟨(hvc.comp ζ (by fun_prop)).congr_of_eventuallyEq huv, ?_⟩
-  rw [huv.conjWirtingerDeriv_eq, conjWirtingerDeriv_comp_eq_comp_fderiv
-      (hvc.differentiableAt one_ne_zero) hderiv.differentiableAt, hderiv.hasFDerivAt.fderiv,
-    huv.self_of_nhds, Function.comp_apply,
-    eq_neg_of_add_eq_zero_left ((add_assoc _ _ _).symm.trans hveq.self_of_nhds),
-    ContinuousLinearMap.neg_comp, hcomp]
-  simp only [h]
+  -- the chain rule pulls `\bar∂v` back along `h`
+  have hpull : conjWirtingerDeriv u ζ = conj (n * ζ ^ (n - 1)) • conjWirtingerDeriv v (h ζ) := by
+    rw [huv.conjWirtingerDeriv_eq]
+    exact conjWirtingerDeriv_comp_eq_conj_smul (hvc.differentiableAt one_ne_zero) hderiv
+  -- the equation of `v` at `h ζ`, where `v (h ζ) = u ζ`
+  have hv : conjWirtingerDeriv v (h ζ) = -(u ζ • ν (h ζ) + conj (u ζ) • μ (h ζ)) := by
+    rw [huv.self_of_nhds, Function.comp_apply]
+    exact eq_neg_of_add_eq_zero_left ((add_assoc _ _ _).symm.trans hveq.self_of_nhds)
+  rw [hpull, hv]
   module
 
 /-- The roots of `∏_{w ∈ R(y)} (X - w)` continue across the collision at `x` after the substitution

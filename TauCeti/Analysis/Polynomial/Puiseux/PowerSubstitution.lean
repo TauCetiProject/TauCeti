@@ -153,16 +153,14 @@ theorem exists_continuousOn_prod_X_sub_C_add_pow {F : ℂ → ℂ[X]} {c : ℂ} 
       (∀ ζ ∈ ball (0 : ℂ) R', F (c + ζ ^ n) = ∏ i, (X - C (u i ζ))) ∧
       ∀ ζ ∈ ball (0 : ℂ) R', ζ ≠ 0 → Injective fun i => u i ζ := by
   classical
-  have hmem : ∀ w ∈ ball (0 : ℂ) R, c + w ∈ ball c R := fun w hw => by
-    simpa [mem_ball_iff_norm] using hw
   obtain ⟨v, hvc, hvF, hvinj⟩ :=
     exists_continuousOn_prod_X_sub_C_add_pow_of_ne hF hmonic hdeg hsep hn hR hdvd
   rcases le_or_gt R' 0 with hR' | hR'
   · exact ⟨v, fun i => by simp [ball_eq_empty.2 hR'], by simp [ball_eq_empty.2 hR'],
       by simp [ball_eq_empty.2 hR']⟩
   -- the substituted family `F (c + ζ ^ n)` near `ζ = 0`
-  have hpow : ∀ ζ ∈ ball (0 : ℂ) R', c + ζ ^ n ∈ ball c R := fun ζ hζ =>
-    hmem _ (mapsTo_pow_ball_zero hn hR hζ)
+  have hpow : ∀ ζ ∈ ball (0 : ℂ) R', c + ζ ^ n ∈ ball c R := fun ζ hζ => by
+    simpa [mem_ball_iff_norm] using mapsTo_pow_ball_zero hn hR hζ
   have hG : ∀ i ≤ d, ContinuousAt (fun ζ : ℂ => (F (c + ζ ^ n)).coeff i) 0 := fun i hi =>
     ((hF i hi).continuousAt (isOpen_ball.mem_nhds (hpow 0 (mem_ball_self hR')))).comp_of_eq
       (f := fun ζ : ℂ => c + ζ ^ n) (by fun_prop) rfl

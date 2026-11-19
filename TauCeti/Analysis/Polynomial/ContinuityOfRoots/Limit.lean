@@ -16,15 +16,15 @@ import TauCeti.Topology.Algebra.Polynomial.Basic
 /-!
 # Roots and factorizations at a puncture
 
-Let `F y` be complex polynomials of bounded degree whose coefficients are continuous at a point
-`c`. A root of `F y`, continuous on a punctured ball about `c` in a real normed space of dimension
-greater than one, converges at `c` to a root of `F c`
+Let `F y` be complex polynomials whose coefficients are continuous at a point `c`. If `F y` has
+degree exactly `d` near `c`, a root of `F y`, continuous on a punctured ball about `c` in a real
+normed space of dimension greater than one, converges at `c` to a root of `F c`
 (`TauCeti.Polynomial.exists_isRoot_tendsto_of_continuousOn`): near `c` the roots of `F y` lie close
 to the finitely many roots of `F c` (`Polynomial.eventually_rel_roots_norm_sub_lt`), and the
 connected punctured ball cannot be split between two of them
-(`TauCeti.exists_mem_tendsto_of_forall_eventually_exists_dist_lt`). A splitting of `F y` into
-linear factors with roots continuous at `c` passes to the limit
-(`TauCeti.Polynomial.eq_prod_X_sub_C_of_continuousAt`).
+(`TauCeti.exists_mem_tendsto_of_forall_eventually_exists_dist_lt`). If `F y` has degree at most
+`d` near `c`, a splitting of `F y` into `d` linear factors with roots continuous at `c` passes to
+the limit (`TauCeti.Polynomial.eq_prod_X_sub_C_of_continuousAt`).
 -/
 
 public section
