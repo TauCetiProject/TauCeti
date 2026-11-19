@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Contour.Residue.Basic
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.Analysis.Contour.Residue.Rectangle
+import TauCeti.Analysis.Complex.NormSq
 import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
@@ -208,43 +209,6 @@ theorem mellinInv_eq_mellinInv_add_sum_residue_of_norm_le
       ((eventually_ne_atTop (0 : ℝ)).mono fun T hT u ↦ by simpa using hT)
       (hbound.mono fun T hT u hu ↦ (hT u hu).1)
 
-private lemma sqrt_endpoint_le_norm {a c t : ℝ} (ha : 0 ≤ a) (hac : a ≤ |c|) :
-    Real.sqrt (a ^ 2 + t ^ 2) ≤ ‖(c : ℂ) + t * I‖ := by
-  apply (Real.sqrt_le_left (norm_nonneg _)).mpr
-  rw [Complex.sq_norm, Complex.normSq_add_mul_I]
-  nlinarith only [ha, hac, sq_abs c]
-
-private lemma mixed_le_cauchy {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (t : ℝ) :
-    1 / (Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2)) ≤
-      ((min a b) ^ 2 + t ^ 2)⁻¹ := by
-  have hd : 0 < min a b := lt_min ha hb
-  rw [one_div]
-  apply inv_anti₀ (add_pos_of_pos_of_nonneg (sq_pos_of_pos hd) (sq_nonneg t))
-  calc
-    (min a b) ^ 2 + t ^ 2 =
-        Real.sqrt ((min a b) ^ 2 + t ^ 2) * Real.sqrt ((min a b) ^ 2 + t ^ 2) :=
-      (Real.mul_self_sqrt (by positivity)).symm
-    _ ≤ _ := by
-      gcongr <;> nlinarith [min_le_left a b, min_le_right a b]
-
-private lemma mixed_integrable {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
-    Integrable (fun t : ℝ ↦ 1 /
-      (Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2))) := by
-  have hdcont : Continuous (fun t : ℝ ↦
-      Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2)) :=
-    (continuous_sqrt.comp (continuous_const.add (continuous_id.pow 2))).mul
-      (continuous_sqrt.comp (continuous_const.add (continuous_id.pow 2)))
-  have hcont : Continuous (fun t : ℝ ↦ 1 /
-      (Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2))) :=
-    continuous_const.div hdcont (fun t ↦ by
-      exact (mul_pos (Real.sqrt_pos.2 (by positivity))
-        (Real.sqrt_pos.2 (by positivity))).ne')
-  have hC : Integrable (fun t : ℝ ↦ ((min a b) ^ 2 + t ^ 2)⁻¹) := by
-    simpa only [add_comm] using TauCeti.integrable_inv_sq_add_sq (lt_min ha hb).ne'
-  refine hC.mono' hcont.aestronglyMeasurable (Eventually.of_forall fun t ↦ ?_)
-  rw [Real.norm_of_nonneg (by positivity)]
-  exact mixed_le_cauchy ha hb t
-
 private lemma endpoints_le_pochhammer (j : ℕ) (hj : 1 ≤ j) (c t : ℝ)
     (hmid : ∀ k : ℕ, 0 < k → k < j → 1 ≤ |c + k|) :
     ‖(c : ℂ) + t * I‖ * ‖((c + j : ℝ) : ℂ) + t * I‖ ≤
@@ -296,7 +260,8 @@ theorem integrable_and_integral_norm_cpow_div_ascPochhammer_le
   have hc : c ≠ 0 := abs_pos.mp (ha.trans_le hac)
   have hden (t : ℝ) : Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2) ≤
       ‖(ascPochhammer ℂ (j + 1)).eval ((c : ℂ) + t * I)‖ :=
-    (mul_le_mul (sqrt_endpoint_le_norm ha.le hac) (sqrt_endpoint_le_norm hb.le hbc)
+    (mul_le_mul (Complex.sqrt_sq_add_sq_le_norm_add_mul_I ha.le hac)
+      (Complex.sqrt_sq_add_sq_le_norm_add_mul_I hb.le hbc)
       (Real.sqrt_nonneg _) (norm_nonneg _)).trans (endpoints_le_pochhammer j hj c t hmid)
   have hne (t : ℝ) : (ascPochhammer ℂ (j + 1)).eval ((c : ℂ) + t * I) ≠ 0 := by
     apply norm_pos_iff.mp
@@ -308,7 +273,7 @@ theorem integrable_and_integral_norm_cpow_div_ascPochhammer_le
     simp only [Complex.ofReal_zero, Complex.zero_cpow (hz _), zero_div, norm_zero,
       integral_zero, Real.zero_rpow hc, zero_mul]
     exact ⟨integrable_zero ℝ ℂ volume, le_rfl⟩
-  have hmajor := (mixed_integrable ha hb).const_mul (x ^ c)
+  have hmajor := (integrable_one_div_sqrt_mul_sqrt ha hb).const_mul (x ^ c)
   have hcont : Continuous (fun t : ℝ ↦ (x : ℂ) ^ ((c : ℂ) + t * I) /
       (ascPochhammer ℂ (j + 1)).eval ((c : ℂ) + t * I)) :=
     (Continuous.const_cpow (by fun_prop) (Or.inl (ofReal_ne_zero.mpr hx.ne'))).div
