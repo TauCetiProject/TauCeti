@@ -148,6 +148,17 @@ theorem memLp_jet_of_contDiff (hξ : ContDiff ℝ 1 ξ) {R : ℝ}
   exact MemLp.of_bound (continuous_jet hξ).aestronglyMeasurable C
     ((ae_restrict_mem hK.measurableSet).mono hC)
 
+/-- For a section vanishing for `|s| ≥ R`, the integral over the strip of a function vanishing
+wherever the jet of the section vanishes is its integral over `[-R, R] × [0, 1]`. -/
+theorem integral_strip_eq_setIntegral_of_jet_eq_zero {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {R : ℝ} (hR : ∀ s t, R ≤ |s| → ξ (s, t) = 0) {F : ℝ × ℝ → E}
+    (hF : ∀ z, jet ξ z = 0 → F z = 0) :
+    ∫ z, F z ∂stripMeasure = ∫ z in Icc (-R) R ×ˢ Icc (0 : ℝ) 1, F z :=
+  setIntegral_eq_of_subset_of_forall_sdiff_eq_zero (MeasurableSet.univ.prod measurableSet_Icc)
+    (prod_mono (subset_univ _) subset_rfl) fun z hz ↦ hF z (jet_eq_zero_of_lt_abs hR (by
+      have h : z.1 ∉ Icc (-R) R := fun h ↦ hz.2 ⟨h, hz.1.2⟩
+      rwa [mem_Icc, ← abs_le, not_le] at h))
+
 /-! ### Translation in the `s` direction -/
 
 /-- Translation by `a` in the `s` direction preserves the strip measure. -/
