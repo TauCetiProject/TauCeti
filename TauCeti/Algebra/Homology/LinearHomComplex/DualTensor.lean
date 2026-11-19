@@ -131,8 +131,7 @@ noncomputable def linearHomComplexFromTensorUnitIso (K : CochainComplex (ModuleC
   HomologicalComplex.Hom.isoOfComponents
     (fun n => (cochainFromTensorUnitLinearEquiv R K n).toModuleIso) fun n m _ => by
       ext z
-      obtain ⟨f, rfl⟩ := Cochain.fromSingleMk_surjective z n (zero_add n)
-      exact (cochainFromTensorUnitLinearEquiv_δ K n m (Cochain.fromSingleMk f (zero_add n))).symm
+      exact (cochainFromTensorUnitLinearEquiv_δ K n m z).symm
 
 /-- The isomorphism `linearHomComplexFromTensorUnitIso` evaluates a cochain of degree `n` at
 `1`. -/
@@ -163,12 +162,7 @@ lemma linearHomComplexFromTensorUnitIso_hom_naturality {K₁ K₂ : CochainCompl
       (linearHomComplexFromTensorUnitIso R K₁).hom ≫ ψ := by
   ext n (z : ModuleCat.of R (Cochain (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) K₁ n))
   obtain ⟨f, rfl⟩ := Cochain.fromSingleMk_surjective z n (zero_add n)
-  simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.coe_comp,
-    Function.comp_apply]
-  rw [linearHomComplexPostcomp_f_apply, ← Cochain.fromSingleMk_postcomp,
-    linearHomComplexFromTensorUnitIso_hom_f_apply, linearHomComplexFromTensorUnitIso_hom_f_apply,
-    cochainFromTensorUnitLinearEquiv_fromSingleMk, cochainFromTensorUnitLinearEquiv_fromSingleMk,
-    ModuleCat.hom_comp, LinearMap.comp_apply]
+  simp [← Cochain.fromSingleMk_postcomp]
 
 /-- The inverse of evaluation at `1` is natural in the target complex. -/
 @[reassoc]
@@ -327,11 +321,8 @@ private lemma vLinearMap_linearHomComplexDualTensor_eq {p q n : ℤ} (h : p + q 
     Cochain.vLinearMap A B n i p (by omega) (((linearHomComplexDualTensor R A B).f n).hom
         ((HomologicalComplex.ιTensorObj B (linearHomComplex R A _) p q n h).hom t)) =
       dualTensorSummandEquiv A B hi t := by
-  rw [vLinearMap_linearHomComplexDualTensor A B h hi t, dualTensorSummandEquiv,
-    LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    ← LinearEquiv.coe_toLinearMap (dualTensorHomEquiv _ _ _), toLinearMap_dualTensorHomEquiv,
-    ← LinearEquiv.coe_toLinearMap (TensorProduct.congr _ _), TensorProduct.toLinearMap_congr,
-    LinearEquiv.refl_toLinearMap]
+  simp [dualTensorSummandEquiv, vLinearMap_linearHomComplexDualTensor A B h hi t,
+    ← toLinearMap_dualTensorHomEquiv, TensorProduct.congr]
 
 /-- The inverse of the dual-tensor comparison in degree `n`, when `Aⁱ` vanishes for `i ∉ S`: the
 component of a cochain on `Aⁱ` is sent back to the summand `Bⁱ⁺ⁿ ⊗ Hom(A, R[0])⁻ⁱ`. -/
