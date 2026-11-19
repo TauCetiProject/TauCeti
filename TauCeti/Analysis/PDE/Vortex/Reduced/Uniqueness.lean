@@ -96,16 +96,14 @@ private theorem memLp_mul_exp_two_mul_sub_one {u : W1p (volume : Measure ℂ) �
         (W1p.memLp_value u).aestronglyMeasurable)
   refine ((W1p.memLp_value u).norm.const_mul (2 * Real.exp (2 * M))).of_le hmeas ?_
   filter_upwards [huM] with z hz
-  have h0 : 0 ≤ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) := by positivity
+  have h0 : 0 ≤ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) := by
+    simpa only [backgroundWeight_def] using backgroundWeight_nonneg P.eval z
   have h1 : ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ≤ 1 := by
-    rw [div_le_one (by positivity)]
-    linarith
-  rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_mul, abs_of_nonneg h0, Real.norm_eq_abs,
-    abs_mul, abs_abs, abs_of_nonneg (by positivity : (0 : ℝ) ≤ 2 * Real.exp (2 * M))]
-  calc ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * |Real.exp (2 * W1p.value u z) - 1|
-      ≤ 1 * |Real.exp (2 * W1p.value u z) - 1| := by gcongr
-    _ ≤ 2 * Real.exp (2 * M) * |W1p.value u z| := by
-      rw [one_mul]; exact Real.abs_exp_two_mul_sub_one_le_mul_abs hM hz
+    simpa only [backgroundWeight_def] using (backgroundWeight_lt_one P.eval z).le
+  have hpos : 0 ≤ 2 * Real.exp (2 * M) := by positivity
+  simp only [Real.norm_eq_abs, abs_mul, abs_abs, abs_of_nonneg h0, abs_of_nonneg hpos]
+  exact (mul_le_of_le_one_left (abs_nonneg _) h1).trans
+    (Real.abs_exp_two_mul_sub_one_le_mul_abs hM hz)
 
 /-- The source `(exp (2u) h - 1) / 8 + g` of the reduced equation is `h (exp (2u) - 1) / 8` plus
 the coefficient `g - (1 + ‖P‖²)⁻¹ / 8` of the linear term of Taubes's functional. -/
@@ -132,27 +130,6 @@ private theorem memLp_source (hm : 0 < P.natDegree) {u : W1p (volume : Measure �
   rw [source_eq P _ z, Pi.add_apply]
   ring
 
-/-- For `u ∈ H¹(ℂ)` bounded above, the potential `h (exp (2u) - 1 - 2u)` of Taubes's functional is
-integrable, so the functional is finite at `u`. -/
-private theorem integrable_potential {u : W1p (volume : Measure ℂ) ⊤ 2} {M : ℝ} (hM : 0 ≤ M)
-    (huM : ∀ᵐ z, W1p.value u z ≤ M) :
-    Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-      (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) := by
-  refine (((W1p.memLp_value u).integrable_sq).const_mul (2 * Real.exp (2 * M))).mono'
-    (aestronglyMeasurable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul u) ?_
-  filter_upwards [huM] with z hz
-  have h0 : 0 ≤ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) := by positivity
-  have h1 : ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ≤ 1 := by
-    rw [div_le_one (by positivity)]
-    linarith
-  have hΦ := Real.exp_two_mul_sub_one_sub_two_mul_nonneg (W1p.value u z)
-  rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg h0 hΦ)]
-  calc ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-        (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)
-      ≤ 1 * (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) := by gcongr
-    _ ≤ 2 * Real.exp (2 * M) * W1p.value u z ^ 2 := by
-      rw [one_mul]; exact Real.exp_two_mul_sub_one_sub_two_mul_le_mul_sq hM hz
-
 /-! ### Bounded-above weak solutions minimize Taubes's functional -/
 
 /-- The potential `∫ h (exp (2w) - 1 - 2w)` of Taubes's functional lies above its tangent at `u`:
@@ -170,7 +147,8 @@ private theorem integral_potential_add_le {u v : ℂ → ℝ}
       ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * v z) - 1 - 2 * v z) := by
   rw [← integral_const_mul, ← integral_add hu (hB.const_mul 2)]
   refine integral_mono (hu.add (hB.const_mul 2)) hv fun z ↦ ?_
-  have h0 : 0 ≤ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) := by positivity
+  have h0 : 0 ≤ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) := by
+    simpa only [backgroundWeight_def] using backgroundWeight_nonneg P.eval z
   have ht := mul_le_mul_of_nonneg_left
     (Real.exp_two_mul_sub_one_sub_two_mul_add_mul_le (u z) (v z)) h0
   simp only
@@ -215,7 +193,7 @@ private theorem sobolevReducedFunctional_le_of_forall_integral_eq_zero (hm : 0 <
           2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2) * φ z = 0)
     (v : W1p (volume : Measure ℂ) ⊤ 2) :
     sobolevReducedFunctional P u ≤ sobolevReducedFunctional P v := by
-  have hu := integrable_potential (P := P) hM huM
+  have hu := integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul (P := P) hM huM
   by_cases hv : Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
       (Real.exp (2 * W1p.value v z) - 1 - 2 * W1p.value v z)
   swap
