@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Basic
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Localization
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import TauCeti.Analysis.Normed.Module.Cone
+import TauCeti.Analysis.Pseudodifferential.FourierSchur
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
@@ -42,7 +43,7 @@ On Schwartz functions, `𝓕 (Op(a) u) ξ = ∫ â(ξ - ζ, 2πζ) 𝓕 u ζ dζ
 Fourier transform of the position slice `x ↦ a(x, ξ)`
 (`TauCeti.Symbol.HasCompactSpatialSupport.fourier_quantizeSchwartzValue`). The weighted kernel
 `⟨ξ⟩ ^ (t - m) ⟨ζ⟩ ^ (-t) â(ξ - ζ, 2πζ)` is bounded by an integrable function of `ξ - ζ`
-(`TauCeti.Symbol.rpow_mul_norm_fourier_apply_le`), so by Schur's test it defines a bounded
+(`TauCeti.rpow_mul_norm_fourier_apply_le`), so by Schur's test it defines a bounded
 operator on `L²` (`TauCeti.integralOperatorLp`). Both this operator and `Op(a)` are continuous on
 `H^t`, and they agree on the dense subspace of Schwartz functions, so the convolution formula holds
 almost everywhere for every `u ∈ H^t`
@@ -137,7 +138,7 @@ private theorem HasCompactSpatialSupport.exists_rpow_mul_norm_fourier_apply_le
   have hpt : (1 + ‖ξ‖ ^ 2) ^ ((s - m) / 2) *
       ‖𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (ξ - ζ) v‖ ≤
         B₀ * d ^ (-((N : ℝ) - |s - m|)) * ((1 + ‖ζ‖ ^ 2) ^ (s / 2) * ‖v‖) :=
-    rpow_mul_norm_fourier_apply_le hC₀ hdecay ξ ζ v
+    rpow_mul_norm_fourier_apply_le hdecay ξ ζ v
   have hd : 1 ≤ d := le_add_of_nonneg_right (norm_nonneg _)
   -- The decay exponent `N - |s - m|` exceeds `r` by `|s - t|`.
   have hsplit :
