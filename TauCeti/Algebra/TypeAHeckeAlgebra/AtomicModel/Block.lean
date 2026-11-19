@@ -78,15 +78,17 @@ theorem signedChecked_castAdd_mapDomain_append (x : TypeAHeckeAlgebra R q a) (v 
     signedChecked pos q (castAdd R q a b x) (mapDomain (fun u ↦ Fin.append u v) w) =
       mapDomain (fun u ↦ Fin.append u v) (signedChecked pos q x w) := by
   set L := lmapDomain R R (fun u : Fin a → ι ↦ Fin.append u v)
-  suffices h : (signedChecked pos q (castAdd R q a b x)).comp L = L.comp (signedChecked pos q x)
+  suffices h :
+      ((signedChecked pos q).comp (castAdd R q a b) x).comp L = L.comp (signedChecked pos q x)
     by simpa [L] using LinearMap.congr_fun h w
-  refine signedChecked_comp_eq_of_forall_T pos q _ L (fun i ↦ ?_) x
+  refine comp_eq_of_forall_T (signedChecked pos q) ((signedChecked pos q).comp (castAdd R q a b))
+    L (fun i ↦ ?_) x
   have hj : BraidGroup.strand (Fin.castLE (by omega) i : Fin (a + b - 1)) =
       Fin.castAdd b (BraidGroup.strand i) := Fin.ext (by simp)
   have hk : BraidGroup.strandSucc (Fin.castLE (by omega) i : Fin (a + b - 1)) =
       Fin.castAdd b (BraidGroup.strandSucc i) := Fin.ext (by simp)
-  rw [castAdd_T, signedChecked_T, signedChecked_T, LinearMap.smul_comp, LinearMap.comp_smul,
-    hj, hk, signedCheckedR_castAdd_comp_lmapDomain_append]
+  rw [AlgHom.comp_apply, castAdd_T, signedChecked_T, signedChecked_T, LinearMap.smul_comp,
+    LinearMap.comp_smul, hj, hk, signedCheckedR_castAdd_comp_lmapDomain_append]
 
 /-- An element placed on the last `b` of `a + b` strands acts on the last `b` letters of a word,
 holding the first `a` letters fixed. -/
@@ -96,15 +98,17 @@ theorem signedChecked_natAdd_mapDomain_append (y : TypeAHeckeAlgebra R q b) (u :
     signedChecked pos q (natAdd R q a b y) (mapDomain (fun v ↦ Fin.append u v) w) =
       mapDomain (fun v ↦ Fin.append u v) (signedChecked pos q y w) := by
   set L := lmapDomain R R (fun v : Fin b → ι ↦ Fin.append u v)
-  suffices h : (signedChecked pos q (natAdd R q a b y)).comp L = L.comp (signedChecked pos q y)
+  suffices h :
+      ((signedChecked pos q).comp (natAdd R q a b) y).comp L = L.comp (signedChecked pos q y)
     by simpa [L] using LinearMap.congr_fun h w
-  refine signedChecked_comp_eq_of_forall_T pos q _ L (fun j ↦ ?_) y
+  refine comp_eq_of_forall_T (signedChecked pos q) ((signedChecked pos q).comp (natAdd R q a b))
+    L (fun j ↦ ?_) y
   have hj : BraidGroup.strand (⟨a + j, by omega⟩ : Fin (a + b - 1)) =
       Fin.natAdd a (BraidGroup.strand j) := Fin.ext (by simp)
   have hk : BraidGroup.strandSucc (⟨a + j, by omega⟩ : Fin (a + b - 1)) =
       Fin.natAdd a (BraidGroup.strandSucc j) := Fin.ext (by simp [Nat.add_assoc])
-  rw [natAdd_T, signedChecked_T, signedChecked_T, LinearMap.smul_comp, LinearMap.comp_smul,
-    hj, hk, signedCheckedR_natAdd_comp_lmapDomain_append]
+  rw [AlgHom.comp_apply, natAdd_T, signedChecked_T, signedChecked_T, LinearMap.smul_comp,
+    LinearMap.comp_smul, hj, hk, signedCheckedR_natAdd_comp_lmapDomain_append]
 
 /-- The coefficient at `Fin.append u v` of the image of a word `Fin.append u v'` under an element
 placed on the first block vanishes unless `v' = v`, and is then the coefficient of the action on

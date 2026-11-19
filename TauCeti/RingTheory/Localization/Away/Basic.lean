@@ -64,6 +64,9 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   `f` carries `R` into `R'` and `T` into `T'`.
 * `IsLocalization.Away.of_dvd_of_dvd_pow`: inverting `x` also localizes away from `g` when
   `g ∣ x` and `x` divides a power of `g`.
+* `IsLocalization.Away.awayToAwayLeft_injective` and
+  `IsLocalization.Away.awayToAwayRight_injective`: injectivity of the refinement maps
+  `awayToAwayLeft` and `awayToAwayRight` when the newly inverted factor is regular.
 * `IsLocalization.Away.isSMulRegular_algebraMap`: an element whose annihilator is killed by `r`
   becomes a nonzerodivisor after inverting `r`.
 * `RingHom.map_comp_algebraMap_eq_algebraMap_comp_awayMap`: localization maps commute with away maps
@@ -498,6 +501,34 @@ theorem isSMulRegular_algebraMap {r a : A} [IsLocalization.Away r B]
   refine ⟨⟨r ^ (n + 1), n + 1, rfl⟩, ?_⟩
   have := h (r ^ n * c) (by linear_combination hn)
   linear_combination this
+
+/-- Over a commutative semiring, the canonical homomorphism `awayToAwayLeft x y` from a
+localization `S` away from `x` to a localization `P` away from `y * x` is injective whenever `y` is
+regular in `R`. -/
+theorem awayToAwayLeft_injective {R S P : Type*} [CommSemiring R] (x y : R) [CommSemiring S]
+    [Algebra R S] [IsLocalization.Away x S] [CommSemiring P] [Algebra R P]
+    [IsLocalization.Away (y * x) P] (hy : IsRegular y) :
+    Function.Injective (IsLocalization.Away.awayToAwayLeft (S := S) (P := P) x y) := by
+  rw [IsLocalization.Away.awayToAwayLeft, IsLocalization.Away.lift,
+    IsLocalization.lift_injective_iff]
+  intro a b
+  refine ⟨fun hab ↦ ?_, fun hab ↦ ?_⟩
+  · rw [← IsLocalization.Away.awayToAwayLeft_eq (S := S) (P := P) x y a,
+      ← IsLocalization.Away.awayToAwayLeft_eq (S := S) (P := P) x y b, hab]
+  · obtain ⟨⟨_, n, rfl⟩, hn⟩ :=
+      (IsLocalization.eq_iff_exists (Submonoid.powers (y * x)) P).mp hab
+    exact (IsLocalization.eq_iff_exists (Submonoid.powers x) S).mpr
+      ⟨⟨x ^ n, n, rfl⟩, (hy.pow n).left (by simpa only [mul_pow, mul_assoc] using hn)⟩
+
+/-- Over a commutative semiring, the canonical homomorphism `awayToAwayRight x y` from a
+localization `S` away from `x` to a localization `P` away from `x * y` is injective whenever `y` is
+regular in `R`. -/
+theorem awayToAwayRight_injective {R S P : Type*} [CommSemiring R] (x y : R) [CommSemiring S]
+    [Algebra R S] [IsLocalization.Away x S] [CommSemiring P] [Algebra R P]
+    [IsLocalization.Away (x * y) P] (hy : IsRegular y) :
+    Function.Injective (IsLocalization.Away.awayToAwayRight (S := S) (P := P) x y) :=
+  have : IsLocalization.Away (y * x) P := mul_comm x y ▸ inferInstance
+  awayToAwayLeft_injective x y hy
 
 end IsLocalization.Away
 

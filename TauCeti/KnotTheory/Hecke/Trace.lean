@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.AdjoinRoot
 public import TauCeti.Algebra.TypeAHeckeAlgebra.MarkovTrace
 public import TauCeti.KnotTheory.Markov.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.RingTheory.AdjoinRoot.Basic
 
 /-!
 # The braid invariant of a Hecke Markov trace
@@ -21,13 +23,21 @@ algebra. The positive and negative stabilization constants are respectively `z` 
 
 is unchanged by both stabilizations and conjugation. Here `γ_n` is the canonical braid
 representation in the universal Hecke algebra, not a tensor representation. The construction
-works over a commutative ring once the normalization parameters have been chosen; it does not
-assert that the required square roots exist in that ring.
+works over a commutative ring once the normalization parameters have been chosen; when the
+stabilization constants `a, b` are units, adjoining a root of `heckeRootPoly a b = X ^ 2 - b * a⁻¹`
+embeds `R` injectively and supplies a canonical unit root `heckeRootUnit a b`.
 
 `MarkovBraid.heckeTrace` is this normalized expression, and `heckeBraidInvariant` is its descent
 to the quotient by ordinary unframed Markov equivalence. The unknot value is one, the
 `n`-component unlink value is `C ^ (n - 1)`, and the skein coefficients are
 `(l⁻¹, -l, -(q - q⁻¹))`. No geometric link carrier or geometric Markov theorem is used.
+
+## Main definitions
+
+* `TauCeti.MarkovBraid.heckeTrace` and `TauCeti.heckeBraidInvariant`: the normalized Hecke braid
+  trace and its descent to `Quot MarkovEquiv`.
+* `TauCeti.heckeRootPoly` and `TauCeti.heckeRootUnit`: the quadratic root-extension polynomial
+  `X ^ 2 - b * a⁻¹` and its adjoined unit root `l` in `AdjoinRoot (heckeRootPoly a b)`.
 
 ## Main results
 
@@ -35,6 +45,12 @@ to the quotient by ordinary unframed Markov equivalence. The unknot value is one
   `TauCeti.MarkovBraid.heckeTrace_one_strand`: the split-unknot factor and unknot value.
 * `LinearMap.heckeTrace_skein_of_eq_zero`: the skein relation attached to a linear
   relation between a generator and its inverse.
+* `TauCeti.MarkovBraid.heckeTrace_sigma` and `TauCeti.MarkovBraid.heckeTrace_sigma_inv`:
+  the normalized Hecke traces of a single positive or negative elementary crossing on `n + 1`
+  strands.
+* `TauCeti.exists_heckeNormalization_iff_isSquare` and `TauCeti.heckeNormalization_adjoinRoot`:
+  normalization parameters `(C, l)` exist in `R` for unit stabilization constants `a, b : Rˣ` if
+  and only if `b * a⁻¹` is a square in `Rˣ`, and always exist in `AdjoinRoot (heckeRootPoly a b)`.
 
 ## References
 
@@ -215,5 +231,184 @@ theorem heckeBraidInvariant_mk (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
     (hpos : C * (l : R) * z = 1)
     (hneg : C * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) = 1) (β : MarkovBraid) :
     heckeBraidInvariant hτ C l hpos hneg (Quot.mk MarkovEquiv β) = β.heckeTrace τ C l := (rfl)
+
+namespace MarkovBraid
+
+/-- On a single positive crossing `σ i` on `n + 1` strands, the normalized Hecke trace of a Markov
+trace is `C ^ n * l * z`. -/
+theorem heckeTrace_sigma (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ) (i : Fin n) :
+    heckeTrace ⟨n, BraidGroup.sigma (n := n + 1) i⟩ τ C l = C ^ n * (l : R) * z := by
+  have h : τ (T q i.val) = z := by
+    simpa only [one_mul, hτ.map_one, mul_one] using hτ.map_mul_T (n := i.val) (one_mem _)
+  rw [heckeTrace_def, BraidGroup.exponentSum_sigma]
+  simp [h]
+
+/-- On a single negative crossing `(σ i)⁻¹` on `n + 1` strands, the normalized Hecke trace of a
+Markov trace is `C ^ n * l⁻¹ * (z - (q - q⁻¹))`. -/
+theorem heckeTrace_sigma_inv (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ) (i : Fin n) :
+    heckeTrace ⟨n, (BraidGroup.sigma (n := n + 1) i)⁻¹⟩ τ C l =
+      C ^ n * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) := by
+  have h : τ (T q i.val) = z := by
+    simpa only [one_mul, hτ.map_one, mul_one] using hτ.map_mul_T (n := i.val) (one_mem _)
+  rw [heckeTrace_def, map_inv, BraidGroup.exponentSum_sigma]
+  simp [h, hτ.map_algebraMap]
+
+end MarkovBraid
+
+/-! ### Normalization equations and square-root characterization -/
+
+/-- From the two Markov normalization equations `C * l * z = 1` and `C * l⁻¹ * (z - d) = 1`, the
+product `C * d` equals `l⁻¹ - l`. -/
+theorem mul_eq_val_inv_sub_of_heckeNormalization {C : R} {l : Rˣ} {z d : R}
+    (hpos : C * (l : R) * z = 1) (hneg : C * (↑l⁻¹ : R) * (z - d) = 1) :
+    C * d = (↑l⁻¹ : R) - l := by
+  linear_combination (↑l⁻¹ : R) * hpos - (l : R) * hneg - C * d * l.mul_inv
+
+/-- Converse of `mul_eq_val_inv_sub_of_heckeNormalization`: when `c * C = 1` and
+`C * d = l⁻¹ - l`, setting `z = c * l⁻¹` solves both Markov normalization equations
+`C * l * z = 1` and `C * l⁻¹ * (z - d) = 1`. -/
+theorem heckeNormalization_of_mul_eq_val_inv_sub {C c d z : R} {l : Rˣ}
+    (hc : c * C = 1) (hd : C * d = (↑l⁻¹ : R) - l) (hz : z = c * ↑l⁻¹) :
+    C * (l : R) * z = 1 ∧ C * (↑l⁻¹ : R) * (z - d) = 1 := by
+  subst hz
+  exact ⟨by linear_combination hc + c * C * l.mul_inv,
+    by linear_combination ((↑l⁻¹ : R) ^ 2) * hc - (↑l⁻¹ : R) * hd + l.inv_mul⟩
+
+/-- Given unit stabilization constants `a` and `b` and a unit root `l` with `l ^ 2 = b * a⁻¹`,
+setting `C = (l * a)⁻¹` solves both Markov normalization equations `C * l * a = 1` and
+`C * l⁻¹ * b = 1`. -/
+theorem heckeNormalization_of_sq_eq {a b l : Rˣ} (hl : l ^ 2 = b * a⁻¹) :
+    (↑((l * a)⁻¹) : R) * (l : R) * (a : R) = 1 ∧
+      (↑((l * a)⁻¹) : R) * (↑l⁻¹ : R) * (b : R) = 1 := by
+  refine ⟨by simpa only [Units.val_mul, mul_assoc] using Units.inv_mul (l * a), ?_⟩
+  have hu : (l * a)⁻¹ * l⁻¹ * b = 1 := by
+    calc (l * a)⁻¹ * l⁻¹ * b = a⁻¹ * (l ^ 2)⁻¹ * b := by
+          rw [sq]
+          simp [mul_comm, mul_left_comm]
+      _ = 1 := by
+          rw [hl]
+          simp [mul_comm, mul_left_comm]
+  simpa only [Units.val_mul, Units.val_one] using congrArg (fun u : Rˣ ↦ (u : R)) hu
+
+/-- Any solution `(C, l)` of the Markov normalization equations `C * l * a = 1` and
+`C * l⁻¹ * b = 1` for unit stabilization constants `a, b : Rˣ` satisfies `C = (l * a)⁻¹` and
+`l ^ 2 = b * a⁻¹`. -/
+theorem sq_eq_of_heckeNormalization {a b l : Rˣ} {C : R}
+    (hpos : C * (l : R) * (a : R) = 1) (hneg : C * (↑l⁻¹ : R) * (b : R) = 1) :
+    C = ↑((l * a)⁻¹) ∧ l ^ 2 = b * a⁻¹ := by
+  have hC : C = ↑((l * a)⁻¹) := by
+    have hmul : ↑(l * a) * (↑((l * a)⁻¹) : R) = 1 := Units.mul_inv (l * a)
+    rw [Units.val_mul] at hmul
+    linear_combination (↑((l * a)⁻¹) : R) * hpos - C * hmul
+  refine ⟨hC, Units.ext ?_⟩
+  rw [Units.val_pow_eq_pow_val, Units.val_mul]
+  have hCb : C * (b : R) = l := by
+    linear_combination (l : R) * hneg - C * (b : R) * l.inv_mul
+  linear_combination -(l : R) * hCb + (b : R) * (↑a⁻¹ : R) * hpos -
+    C * (l : R) * (b : R) * a.mul_inv
+
+/-- **Root-choice criterion for Hecke Markov normalization.** For unit stabilization constants
+`a, b : Rˣ`, normalization parameters `(C, l)` solving `C * l * a = 1` and `C * l⁻¹ * b = 1` exist
+in `R` if and only if `b * a⁻¹` is a square in `Rˣ`. -/
+theorem exists_heckeNormalization_iff_isSquare (a b : Rˣ) :
+    (∃ (C : R) (l : Rˣ), C * (l : R) * (a : R) = 1 ∧ C * (↑l⁻¹ : R) * (b : R) = 1) ↔
+      IsSquare (b * a⁻¹) := by
+  constructor
+  · rintro ⟨C, l, hpos, hneg⟩
+    refine ⟨l, ?_⟩
+    rw [← sq]
+    exact (sq_eq_of_heckeNormalization hpos hneg).2.symm
+  · rintro ⟨l, hl⟩
+    exact ⟨↑((l * a)⁻¹), l, heckeNormalization_of_sq_eq (by rw [sq, hl])⟩
+
+/-! ### Quadratic coefficient extension for Markov normalization -/
+
+section RootExtension
+
+/-- The monic quadratic polynomial `X ^ 2 - b * a⁻¹` adjoining the writhe normalization root `l`
+for unit positive and negative Markov stabilization constants `a, b : Rˣ`. -/
+noncomputable def heckeRootPoly (a b : Rˣ) : Polynomial R :=
+  Polynomial.X ^ 2 - Polynomial.C (↑(b * a⁻¹) : R)
+
+/-- Defining formula for `heckeRootPoly a b`. -/
+theorem heckeRootPoly_def (a b : Rˣ) :
+    heckeRootPoly a b = Polynomial.X ^ 2 - Polynomial.C (↑(b * a⁻¹) : R) :=
+  (rfl)
+
+/-- Evaluating `heckeRootPoly a b` along `f : R →+* S` at `x : S` gives `x ^ 2 - f (b * a⁻¹)`. -/
+@[simp]
+theorem eval₂_heckeRootPoly {S : Type*} [CommRing S] (f : R →+* S) (x : S) (a b : Rˣ) :
+    Polynomial.eval₂ f x (heckeRootPoly a b) = x ^ 2 - f (↑(b * a⁻¹) : R) := by
+  simp [heckeRootPoly_def]
+
+/-- `heckeRootPoly a b` is monic. -/
+theorem monic_heckeRootPoly (a b : Rˣ) : (heckeRootPoly a b).Monic :=
+  Polynomial.monic_X_pow_sub_C (↑(b * a⁻¹) : R) two_ne_zero
+
+/-- The canonical coefficient map `R →+* AdjoinRoot (heckeRootPoly a b)` is injective over every
+commutative ring `R`. -/
+theorem adjoinRootOf_heckeRootPoly_injective (a b : Rˣ) :
+    Function.Injective (AdjoinRoot.of (heckeRootPoly a b)) := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact Function.injective_of_subsingleton _
+  · refine AdjoinRoot.of.injective_of_monic_of_degree_pos (monic_heckeRootPoly a b) ?_
+    rw [heckeRootPoly_def, Polynomial.degree_X_pow_sub_C two_pos]
+    decide
+
+/-- In `AdjoinRoot (heckeRootPoly a b)`, the adjoined root squares to the image of `b * a⁻¹`. -/
+@[simp]
+theorem root_heckeRootPoly_sq (a b : Rˣ) :
+    AdjoinRoot.root (heckeRootPoly a b) ^ 2 =
+      AdjoinRoot.of (heckeRootPoly a b) (↑(b * a⁻¹) : R) :=
+  AdjoinRoot.root_X_pow_sub_C_pow 2 _
+
+/-- The adjoined writhe root in `AdjoinRoot (heckeRootPoly a b)` as a unit. -/
+noncomputable def heckeRootUnit (a b : Rˣ) : (AdjoinRoot (heckeRootPoly a b))ˣ :=
+  (AdjoinRoot.isUnit_root_X_pow_sub_C (b * a⁻¹).isUnit two_ne_zero).unit
+
+/-- Coercing `heckeRootUnit a b` gives the adjoined root. -/
+@[simp]
+theorem val_heckeRootUnit (a b : Rˣ) :
+    (heckeRootUnit a b : AdjoinRoot (heckeRootPoly a b)) =
+      AdjoinRoot.root (heckeRootPoly a b) :=
+  IsUnit.unit_spec _
+
+/-- The inverse of `heckeRootUnit a b` is `root (heckeRootPoly a b) * of (a * b⁻¹)`. -/
+@[simp]
+theorem val_inv_heckeRootUnit (a b : Rˣ) :
+    (↑(heckeRootUnit a b)⁻¹ : AdjoinRoot (heckeRootPoly a b)) =
+      AdjoinRoot.root (heckeRootPoly a b) *
+        AdjoinRoot.of (heckeRootPoly a b) (↑(a * b⁻¹) : R) := by
+  apply Units.inv_eq_of_mul_eq_one_right
+  have hmul : (b * a⁻¹) * (a * b⁻¹) = 1 := by simp [mul_left_comm]
+  rw [val_heckeRootUnit, ← mul_assoc, ← sq, root_heckeRootPoly_sq, ← map_mul,
+    ← Units.val_mul, hmul, Units.val_one, map_one]
+
+/-- `heckeRootUnit a b` squares to the mapped unit `b * a⁻¹`. -/
+@[simp]
+theorem heckeRootUnit_sq (a b : Rˣ) :
+    heckeRootUnit a b ^ 2 =
+      Units.map (AdjoinRoot.of (heckeRootPoly a b)).toMonoidHom (b * a⁻¹) :=
+  Units.ext (by simp)
+
+/-- **Markov normalization in the quadratic root extension.** Over `AdjoinRoot (heckeRootPoly a b)`,
+`l = heckeRootUnit a b` and `C = (l * a)⁻¹` satisfy both positive and negative Markov
+normalization equations for the mapped stabilization constants `a` and `b`. -/
+theorem heckeNormalization_adjoinRoot (a b : Rˣ) :
+    (↑((heckeRootUnit a b * Units.map (AdjoinRoot.of (heckeRootPoly a b)).toMonoidHom a)⁻¹) :
+        AdjoinRoot (heckeRootPoly a b)) *
+      (heckeRootUnit a b : AdjoinRoot (heckeRootPoly a b)) *
+      AdjoinRoot.of (heckeRootPoly a b) a = 1 ∧
+    (↑((heckeRootUnit a b * Units.map (AdjoinRoot.of (heckeRootPoly a b)).toMonoidHom a)⁻¹) :
+        AdjoinRoot (heckeRootPoly a b)) *
+      (↑(heckeRootUnit a b)⁻¹ : AdjoinRoot (heckeRootPoly a b)) *
+      AdjoinRoot.of (heckeRootPoly a b) b = 1 := by
+  have hsq : heckeRootUnit a b ^ 2 =
+      Units.map (AdjoinRoot.of (heckeRootPoly a b)).toMonoidHom b *
+        (Units.map (AdjoinRoot.of (heckeRootPoly a b)).toMonoidHom a)⁻¹ := by
+    rw [heckeRootUnit_sq, map_mul, map_inv]
+  simpa using heckeNormalization_of_sq_eq hsq
+
+end RootExtension
 
 end TauCeti

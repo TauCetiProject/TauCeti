@@ -19,12 +19,16 @@ normalization.
 After importing `TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace`, the canonical specialization
 is obtained by taking `τ = ocneanuTrace R q z` and
 `hτ = isMarkovTrace_ocneanuTrace z`. In this case the invariant is the braid-closure invariant
-Jones constructs from the Ocneanu trace. Its comparison with the HOMFLY invariant built from
-Jimbo representations is not made here. The skein relation itself needs only linearity of `τ`.
+Jones constructs from the Ocneanu trace; its naturality and character specializations, its
+comparisons with the finite-colour Jimbo traces, and its comparison with the two-variable HOMFLY
+polynomial are proved in `TauCeti.KnotTheory.Hecke.Ocneanu`, `TauCeti.KnotTheory.Hecke.Jimbo`, and
+`TauCeti.KnotTheory.Hecke.Homfly`. The skein relation itself needs only linearity of `τ`.
 
 ## Main results
 
 * `TauCeti.MarkovBraid.eq_heckeTrace_of_skein`: the skein characterization.
+* `TauCeti.MarkovBraid.heckeTrace_eq_one`: when both Markov normalization equations hold with
+  `C = 1`, `heckeTrace` is identically `1`.
 
 ## References
 
@@ -64,5 +68,19 @@ theorem MarkovBraid.eq_heckeTrace_of_skein (hτ : IsMarkovTrace z τ)
     (by simpa only [smul_eq_mul] using hι)
     (fun n b ↦ by rw [smul_eq_mul, τ.heckeTrace_strandIncl])
     (by rw [h₁, heckeTrace_one_strand hτ.map_one])
+
+/-- When both Markov normalization equations hold with unlink factor `C = 1`, the normalized Hecke
+trace of any Markov trace is identically `1`. -/
+theorem MarkovBraid.heckeTrace_eq_one (hτ : IsMarkovTrace z τ)
+    (hpos : (l : R) * z = 1) (hneg : (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) = 1)
+    (β : MarkovBraid) :
+    β.heckeTrace τ 1 l = 1 := by
+  have hpos' : (1 : R) * (l : R) * z = 1 := by rwa [one_mul]
+  have hneg' : (1 : R) * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) = 1 := by rwa [one_mul]
+  have hd := mul_eq_val_inv_sub_of_heckeNormalization hpos' hneg'
+  have heq := eq_heckeTrace_of_skein hτ hpos' hneg' (F := fun _ ↦ (1 : R))
+    (fun _ _ _ ↦ rfl) (fun _ _ _ ↦ by simpa only [mul_one, one_mul] using hd.symm)
+    (fun _ _ ↦ (one_mul 1).symm) rfl
+  exact (congrFun heq β).symm
 
 end TauCeti
