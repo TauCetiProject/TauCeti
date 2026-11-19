@@ -15,11 +15,11 @@ The open upper half `W ∩ {0 < im}` of an open set `W ⊆ ℂ` is packaged as a
 `TopologicalSpace.Opens.upperHalf`. A relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper
 half-plane has interior `Ω ∩ {0 < im}` (`TauCeti.interior_inter_setOf_im_nonneg`), which as an
 open set is the upper half of `Ω`
-(`TopologicalSpace.Opens.interior_inter_setOf_im_nonneg_eq_upperHalf`). A local property holds on
+(`TopologicalSpace.Opens.interior_inter_setOf_im_nonneg_eq_upperHalf`), and every point of
+`Ω ∩ {0 ≤ im}` is a limit of interior points
+(`TauCeti.subset_closure_interior_inter_setOf_im_nonneg`). A local property holds on
 `Ω ∩ {0 ≤ im}` once it holds on the upper half of `Ω` and on the half-discs centred on the real
-axis (`TauCeti.inter_setOf_im_nonneg_induction`). Every point of a relatively open piece of the
-closed half-plane lies in the closure of its interior
-(`TauCeti.subset_closure_interior_setOfPred_le_im_inter`).
+axis (`TauCeti.inter_setOf_im_nonneg_induction`).
 -/
 
 public noncomputable section
@@ -60,13 +60,13 @@ theorem interior_inter_setOf_im_nonneg {Ω : Set ℂ} (hΩ : IsOpen Ω) :
     interior (Ω ∩ {z : ℂ | 0 ≤ z.im}) = Ω ∩ {z : ℂ | 0 < z.im} := by
   rw [interior_inter, hΩ.interior_eq, Complex.interior_setOfPred_le_im]
 
-/-- For `U` open, every point of `{0 ≤ im z} ∩ U`, including the points on the real axis, lies in
+/-- For `Ω` open, every point of `Ω ∩ {0 ≤ im}`, including the points on the real axis, lies in
 the closure of its interior. -/
-theorem subset_closure_interior_setOfPred_le_im_inter {U : Set ℂ} (hU : IsOpen U) :
-    {z : ℂ | 0 ≤ z.im} ∩ U ⊆ closure (interior ({z : ℂ | 0 ≤ z.im} ∩ U)) := by
+theorem subset_closure_interior_inter_setOf_im_nonneg {Ω : Set ℂ} (hΩ : IsOpen Ω) :
+    Ω ∩ {z : ℂ | 0 ≤ z.im} ⊆ closure (interior (Ω ∩ {z : ℂ | 0 ≤ z.im})) := by
   intro x hx
-  rw [interior_inter, hU.interior_eq, Complex.interior_setOfPred_le_im, Set.inter_comm]
-  exact hU.inter_closure ⟨hx.2, by rw [Complex.closure_setOfPred_lt_im]; exact hx.1⟩
+  rw [interior_inter_setOf_im_nonneg hΩ]
+  exact hΩ.inter_closure ⟨hx.1, by rw [Complex.closure_setOfPred_lt_im]; exact hx.2⟩
 
 /-- **Induction on half-discs.** A property `P` of subsets of `ℂ` holds on `Ω ∩ {0 ≤ im}` if it
 can be checked on relative neighbourhoods of each point, and holds on the upper half

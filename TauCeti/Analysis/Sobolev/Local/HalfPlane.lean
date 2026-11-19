@@ -7,10 +7,8 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Sobolev.Local.Locality
 import TauCeti.Analysis.Sobolev.Trace.Reflection.HalfSpace
-import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Smooth functions on relatively open subsets of the closed upper half-plane
@@ -29,17 +27,11 @@ real axis the map extends to a `Cᵏ` map across the axis, by
 * `IsOpen.measurableSet_inter_setOf_im_nonneg`: such relatively open sets are measurable.
 * `ContDiffOn.memWkpLoc_inter_setOf_im_nonneg`: `Cᵏ` maps on `Ω ∩ {z | 0 ≤ z.im}` are in the
   local Sobolev class of order `k` there.
-* `TauCeti.MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn_inter_setOf_im_nonneg` and
-  `TauCeti.MemWkpLoc.iteratedFDeriv_of_contDiffOn_inter_setOf_im_nonneg`: the classical
-  derivatives of a representative that is `Cᵏ` on `Ω ∩ {0 < im}` are weak derivatives, in the local
-  Sobolev classes of `Ω ∩ {0 ≤ im}` of the complementary orders, the half-plane forms of
-  `TauCeti.MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn` and
-  `TauCeti.MemWkpLoc.iteratedFDeriv_of_contDiffOn`.
 -/
 
 public section
 
-open Set Filter MeasureTheory TopologicalSpace
+open Set Filter MeasureTheory
 
 noncomputable section
 
@@ -107,63 +99,5 @@ theorem _root_.ContDiffOn.memWkpLoc_inter_setOf_im_nonneg [CompleteSpace F] {f :
   exact (hg.memWkpLoc (Ω := ⟨W, hWo⟩) (p := p) inter_subset_right).congr_ae
     ((ae_restrict_iff' (hΩ.measurableSet_inter_setOf_im_nonneg.inter hWo.measurableSet)).2
       (Eventually.of_forall hgf))
-
-/-! ### Classical derivatives of representatives -/
-
-variable {Ω : Opens ℂ} {u g : ℂ → F}
-
-/-- **The derivative of a `C¹` representative is a weak derivative, on half-discs.** If `g` is
-`C¹` on `Ω ∩ {0 < im}` and agrees almost everywhere on `Ω ∩ {0 ≤ im}` with
-`u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) (k + 1)`, then `fderiv ℝ g` is a weak derivative of `u` on
-`Ω ∩ {0 < im}` and lies in `MemWkpLoc p (Ω ∩ {0 ≤ im}) k`, with `Lᵖ` bounds up to the real axis.
--/
-theorem MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn_inter_setOf_im_nonneg
-    (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) u)
-    (hg : ContDiffOn ℝ 1 g Ω.upperHalf)
-    (hug : u =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] g) :
-    HasWeakFDerivOn volume Ω.upperHalf u (fderiv ℝ g) ∧
-      MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k (fderiv ℝ g) := by
-  have := hu.completeSpace
-  obtain ⟨D, hD, hDk⟩ := hu.exists_weakFDeriv
-  rw [Opens.interior_inter_setOf_im_nonneg_eq_upperHalf] at hD
-  have hsub : (Ω.upperHalf : Set ℂ) ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} := fun z hz =>
-    ⟨(Opens.mem_upperHalf.1 hz).1, (Opens.mem_upperHalf.1 hz).2.le⟩
-  have hug' : u =ᵐ[volume.restrict Ω.upperHalf] g := ae_restrict_of_ae_restrict_of_subset hsub hug
-  have hg' : HasWeakFDerivOn volume Ω.upperHalf g (fderiv ℝ g) := hg.hasWeakFDerivOn_fderiv
-  refine ⟨hg'.congr_ae hug'.symm, hDk.congr_ae ?_⟩
-  have hDg := (hD.congr_ae hug').ae_eq hg'
-  rw [Opens.coe_upperHalf] at hDg
-  refine (ae_restrict_congr_set ?_).1 hDg
-  exact Filter.EventuallyEqSet.rfl.inter (Complex.setOf_le_im_ae_eq 0).symm
-
-/-- **Iterated derivatives of a `Cᵏ` representative, on half-discs.** If `g` is `Cᵏ` on
-`Ω ∩ {0 < im}` and agrees almost everywhere on `Ω ∩ {0 ≤ im}` with
-`u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) (k + m)`, then `iteratedFDeriv ℝ k g` lies in
-`MemWkpLoc p (Ω ∩ {0 ≤ im}) m`, with `Lᵖ` bounds up to the real axis. -/
-theorem MemWkpLoc.iteratedFDeriv_of_contDiffOn_inter_setOf_im_nonneg {m : ℕ}
-    (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + m) u)
-    (hg : ContDiffOn ℝ k g Ω.upperHalf)
-    (hug : u =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] g) :
-    MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) m (iteratedFDeriv ℝ k g) := by
-  induction k generalizing F with
-  | zero =>
-    rw [iteratedFDeriv_zero_eq_comp]
-    exact (continuousMultilinearCurryFin0 ℝ ℂ F).symm.toContinuousLinearEquiv.comp_memWkpLoc_iff.2
-      ((Nat.zero_add m ▸ hu).congr_ae hug)
-  | succ k ih =>
-    rw [Nat.add_right_comm] at hu
-    obtain ⟨-, hDk⟩ := hu.hasWeakFDerivOn_fderiv_of_contDiffOn_inter_setOf_im_nonneg
-      (hg.of_le (by exact_mod_cast Nat.le_add_left 1 k)) hug
-    have hgk : ContDiffOn ℝ k (fderiv ℝ g) Ω.upperHalf :=
-      hg.fderiv_of_isOpen Ω.upperHalf.isOpen (by push_cast; rfl)
-    have h := ih hDk hgk (Filter.EventuallyEq.refl _ _)
-    have heq : iteratedFDeriv ℝ (k + 1) g =
-        fun z => (continuousMultilinearCurryRightEquiv' ℝ k ℂ F).symm
-          (iteratedFDeriv ℝ k (fderiv ℝ g) z) := by
-      ext1 z
-      exact iteratedFDeriv_succ_eq_comp_right
-    rw [heq]
-    exact (continuousMultilinearCurryRightEquiv' ℝ k ℂ F).symm.toContinuousLinearEquiv
-      |>.comp_memWkpLoc_iff.2 h
 
 end TauCeti

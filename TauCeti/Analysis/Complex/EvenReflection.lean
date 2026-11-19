@@ -11,9 +11,10 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Complex.RealDeriv
-import TauCeti.Analysis.Complex.ReImTopology
+import Mathlib.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Calculus.FDeriv.ClosedCover
 import TauCeti.Analysis.Calculus.TangentCone.Basic
+import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.Topology.ContinuousOn.ClosedCover
@@ -125,7 +126,7 @@ theorem isSymmSndFDerivWithinAt_setOfPred_le_im_inter {U : Set ℂ} (hU : IsOpen
     (hw : ContDiffOn ℝ 2 w ({z | 0 ≤ z.im} ∩ U)) {x : ℂ} (hx : x ∈ {z : ℂ | 0 ≤ z.im} ∩ U) :
     IsSymmSndFDerivWithinAt ℝ w ({z | 0 ≤ z.im} ∩ U) x :=
   (hw x hx).isSymmSndFDerivWithinAt (by simp) ((uniqueDiffOn_setOfPred_le_im 0).inter hU)
-    (subset_closure_interior_setOfPred_le_im_inter hU hx) hx
+    (by rw [inter_comm]; exact subset_closure_interior_inter_setOf_im_nonneg hU hx.symm) hx
 
 /-- Precomposition with conjugation, `L ↦ L ∘ conj`, on real-linear maps out of `ℂ`. -/
 private noncomputable abbrev conjPrecomp (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F] :
