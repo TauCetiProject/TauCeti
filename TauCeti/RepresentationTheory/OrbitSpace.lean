@@ -30,12 +30,10 @@ orbit-space topology for that action with hypotheses on `ρ` itself.
 * When every `ρ g` is continuous, the quotient map `V → V / G` is open
   (`Representation.isOpenQuotientMap_orbitRel_mk`), by `MulAction.isOpenQuotientMap_quotientMk`.
 * When `G` is a compact space and the action `(g, v) ↦ ρ g v` is jointly continuous, the quotient
-  map is also closed (`Representation.isClosedMap_orbitRel_mk`), because the saturation of a closed
-  set `A` is the projection to `V` of the closed set `{(g, v) | ρ g v ∈ A}` of `G × V`, and the
-  projection `G × V → V` is a closed map. Its fibres are orbits, continuous images of `G`, so the
-  quotient map is proper (`Representation.isProperMap_orbitRel_mk`). If moreover `V` is Hausdorff,
-  the action is proper, so the orbit space is Hausdorff
-  (`Representation.t2Space_quotient_orbitRel`).
+  map is also closed and proper (`Representation.isClosedMap_orbitRel_mk`,
+  `Representation.isProperMap_orbitRel_mk`), by `MulAction.isClosedMap_quotientMk_of_compactSpace`
+  and `MulAction.isProperMap_quotientMk_of_compactSpace`. If moreover `V` is Hausdorff, the action
+  is proper, so the orbit space is Hausdorff (`Representation.t2Space_quotient_orbitRel`).
 
 These are the facts behind the identification of the adjoint orbit space of a compact Lie group
 with the quotient of the Lie algebra of a maximal torus by the Weyl group, in
@@ -47,8 +45,6 @@ with the quotient of the Lie algebra of a maximal torus by the Weyl group, in
 -/
 
 public section
-
-open Set
 
 namespace Representation
 
@@ -105,24 +101,18 @@ variable [TopologicalSpace G] [CompactSpace G]
 /-- **The orbit map of a compact group is closed.** For a jointly continuous representation of a
 compact group, the quotient map `V → V / G` is closed. -/
 theorem isClosedMap_orbitRel_mk (hρ : Continuous fun p : G × V ↦ ρ p.1 p.2) :
-    IsClosedMap (Quotient.mk ρ.orbitRel) := fun A hA ↦ by
-  rw [← (ρ.isOpenQuotientMap_orbitRel_mk fun g ↦ hρ.comp (Continuous.prodMk_right g))
-    |>.isQuotientMap.isClosed_preimage]
-  convert isClosedMap_snd_of_compactSpace _ (hA.preimage hρ)
-  ext v
-  simp only [mem_preimage, mem_image, orbitRel_mk_eq_mk_iff, Prod.exists]
-  exact ⟨fun ⟨_, ha, g, hg⟩ ↦ ⟨g, v, hg ▸ ha, rfl⟩, fun ⟨g, _, ha, rfl⟩ ↦ ⟨_, ha, g, rfl⟩⟩
+    IsClosedMap (Quotient.mk ρ.orbitRel) :=
+  letI := MulAction.compHom V ρ
+  haveI : ContinuousSMul G V := ⟨hρ⟩
+  MulAction.isClosedMap_quotientMk_of_compactSpace
 
 /-- **The orbit map of a compact group is proper.** For a jointly continuous representation of a
 compact group, the quotient map `V → V / G` is proper. -/
 theorem isProperMap_orbitRel_mk (hρ : Continuous fun p : G × V ↦ ρ p.1 p.2) :
-    IsProperMap (Quotient.mk ρ.orbitRel) := by
-  refine isProperMap_iff_isClosedMap_and_compact_fibers.mpr
-    ⟨continuous_quotient_mk', ρ.isClosedMap_orbitRel_mk hρ, fun y ↦ ?_⟩
-  induction y using Quotient.inductionOn with | h v => ?_
-  convert isCompact_range (hρ.comp (Continuous.prodMk_left v))
-  ext w
-  exact ρ.orbitRel_mk_eq_mk_iff
+    IsProperMap (Quotient.mk ρ.orbitRel) :=
+  letI := MulAction.compHom V ρ
+  haveI : ContinuousSMul G V := ⟨hρ⟩
+  MulAction.isProperMap_quotientMk_of_compactSpace
 
 /-- **The orbit space of a compact group acting on a Hausdorff space is Hausdorff.** For a jointly
 continuous representation of a compact group on a Hausdorff space, the orbit space `V / G` is
