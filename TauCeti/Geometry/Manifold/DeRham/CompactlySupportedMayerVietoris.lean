@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.ExtendByZero
 public import TauCeti.Algebra.Homology.ModuleCat.Biprod
+import TauCeti.Geometry.Manifold.Metrizable
 
 /-!
 # The Mayer–Vietoris sequence of compactly supported de Rham complexes
@@ -118,11 +119,7 @@ theorem surjective_coprod_extendByZero [FiniteDimensional ℝ E] [IsManifold I �
         (extendByZero (I := I) (le_sup_right : V ≤ U ⊔ V) k)) := by
   classical
   intro φ
-  have : LocallyCompactSpace H := I.locallyCompactSpace
-  have : SecondCountableTopology H := I.secondCountableTopology
-  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
-  have : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact H M
-  have : LocallyCompactSpace (U ⊔ V : Opens M) := ChartedSpace.locallyCompactSpace H _
+  have := Manifold.sigmaCompactSpace_opens I (U ⊔ V)
   let W : Bool → Opens M := fun b ↦ cond b V U
   have hW (b : Bool) : W b ≤ U ⊔ V := by
     cases b
