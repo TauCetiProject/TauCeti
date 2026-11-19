@@ -11,6 +11,8 @@ public import TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.Relative.Basic
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Counit
 public import TauCeti.AlgebraicGeometry.RelativeSpec.MorphismProperties
 public import TauCeti.RingTheory.Etale.Equalizer
+import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 
 /-!
 # Quotients of finite étale schemes by finite groups

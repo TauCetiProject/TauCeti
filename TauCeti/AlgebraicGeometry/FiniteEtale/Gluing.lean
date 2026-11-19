@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber
 public import TauCeti.AlgebraicGeometry.Gluing.Pushout
+import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 
 /-!
 # Gluing finite étale covers along two opens

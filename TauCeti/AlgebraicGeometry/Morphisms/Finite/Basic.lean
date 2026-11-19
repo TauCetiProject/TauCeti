@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Spectrum.Maximal.Defs
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 import Mathlib.RingTheory.Flat.EquationalCriterion
 import Mathlib.RingTheory.LocalRing.Module
+import Mathlib.Tactic.Observe
 import TauCeti.RingTheory.QuasiFinite.Basic
 
 /-!
@@ -40,6 +41,10 @@ and hence transfer from a closed immersion composite `i ≫ f` to `i.ker.subsche
 (`AlgebraicGeometry.Scheme.Hom.isFinite_ker_subschemeι_comp`,
 `AlgebraicGeometry.Scheme.Hom.flat_ker_subschemeι_comp`,
 `AlgebraicGeometry.Scheme.Hom.locallyOfFinitePresentation_ker_subschemeι_comp`).
+
+Finiteness of a morphism is local on the target (`TauCeti.isZariskiLocalAtTarget_isFinite`); this
+is recorded as an instance because instance search does not derive it from Mathlib's affine
+description of `IsFinite`.
 -/
 
 public section
@@ -123,6 +128,13 @@ instance locallyOfFinitePresentation_respectsIso :
       (@LocallyOfFinitePresentation : MorphismProperty Scheme.{u}) :=
   MorphismProperty.respectsIso_of_isStableUnderComposition
     (fun _ _ f (_ : IsIso f) ↦ inferInstance)
+
+/-- Finiteness of a morphism of schemes is local on the target. Instance search does not find
+this from Mathlib's affine description of `IsFinite`, so it is recorded here. -/
+instance isZariskiLocalAtTarget_isFinite : IsZariskiLocalAtTarget @IsFinite.{u} := by
+  observe h : HasAffineProperty @IsFinite.{u}
+    (fun X _ f _ ↦ IsAffine X ∧ RingHom.Finite (f.appTop).hom)
+  exact @HasAffineProperty.instIsZariskiLocalAtTarget _ _ h
 
 end TauCeti
 
