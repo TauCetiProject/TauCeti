@@ -38,6 +38,9 @@ only the cofactor `1` would give zero. -/
 example : hasseDeriv 2 (expand (ZMod 4) 4 X) = C 2 * X ^ 2 ∧
     hasseDeriv 2 (expand (ZMod 4) 4 X) ≠ 0 ∧
     expand (ZMod 4) 4 X * hasseDeriv 2 1 = 0 := by
-  norm_num [expand_X, ← monomial_one_one_eq_X, monomial_pow, hasseDeriv_monomial,
-    C_mul_monomial, Nat.choose, hasseDeriv_apply_one, ZMod.natCast_eq_natCast_iff']
-  exact ⟨congrArg (monomial 2) (by decide), by decide⟩
+  have hchoose : (Nat.choose 4 2 : ZMod 4) = 2 := by decide
+  have hjet : hasseDeriv 2 (expand (ZMod 4) 4 X) = monomial 2 (2 : ZMod 4) := by
+    simp [expand_X, X_pow_eq_monomial, hasseDeriv_monomial, hchoose]
+  simp only [hjet]
+  simpa [C_mul_X_pow_eq_monomial, hasseDeriv_apply_one] using
+    (by decide : (2 : ZMod 4) ≠ 0)
