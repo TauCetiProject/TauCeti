@@ -49,6 +49,9 @@ All in the namespace `TauCeti.Vortex`:
 
 * `isBigO_iteratedFDeriv_sub_referenceField`: for a smooth vortex normalized at its end, every
   derivative of `x - x_ref` is `O(exp (-c |z|))` for every `c < 1 / 2`.
+* `gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq`: a smooth framed vortex
+  whose section is `|α|` times the winding phase near infinity lies in `A_m^s` for every `s`, with
+  this decay.
 * `exists_framedGaugeGroup_smul_mem_framedFieldSpace`: every smooth framed vortex has a smooth
   framed gauge representative lying in `A_m^s` for every `s`, with this decay.
 * `exists_contDiff_sobolevVortexDivisor_eq`: every point of `Sym ℂ m` is the divisor of a smooth
@@ -144,6 +147,33 @@ theorem isBigO_iteratedFDeriv_sub_referenceField (f : ContDiffBump (0 : ℝ))
 
 /-! ### Smooth framed vortices have representatives in `A_m^s` -/
 
+/-- **A smooth framed vortex normalized at its end lies in every `A_m^s`.** Let `x` be a smooth
+framed degree-`m` vortex and `u` a smooth framed gauge such that the section of `u · x` is `|α|`
+times the winding phase `(z / |z|)^m` outside a compact set. Then `u · x` lies in the affine
+Sobolev space `A_m^s` for every real `s`, and every derivative of `u · x - x_ref` is
+`O(exp (-c |z|))` at infinity for every rate `c < 1 / 2`. -/
+theorem gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq
+    (f : ContDiffBump (0 : ℝ)) {u : ℂ → Circle} (hu : u ∈ framedGaugeGroup)
+    (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0)
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
+    (hphase : ∀ᶠ z in cocompact ℂ, sectionValue (gaugeTransform u x) z =
+      ‖sectionValue (gaugeTransform u x) z‖ * windingPhase m z) :
+    (∀ s : ℝ, gaugeTransform u x ∈ framedFieldSpace f m s) ∧
+      ∀ c < 1 / 2, ∀ n : ℕ, iteratedFDeriv ℝ n (gaugeTransform u x - referenceField f m)
+        =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)) := by
+  obtain ⟨huc, hu1⟩ := (mem_framedGaugeGroup _).1 hu
+  have hy : ContDiff ℝ ∞ (gaugeTransform u x) := contDiff_gaugeTransform (by simpa using huc) hx
+  have hsol' (z : ℂ) : equation (gaugeTransform u x) z = 0 :=
+    (equation_gaugeTransform_eq_zero_iff ((huc.of_le (by norm_cast)).contDiffAt)
+      fun i ↦ ((contDiff_euclidean.1 hx i).differentiable (by simp)).differentiableAt).2 (hsol z)
+  have hlim := tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow
+    (tendsto_sectionValue_gaugeTransform hu1 hframe)
+  have hdec := fun c (hc : c < 1 / 2) n ↦
+    isBigO_iteratedFDeriv_sub_referenceField f (contDiff_euclidean.1 hy 2)
+      (contDiff_euclidean.1 hy 3) hsol' hlim hphase hc n
+  exact ⟨mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField hy (c := 1 / 4)
+    (by norm_num) (hdec (1 / 4) (by norm_num)), hdec⟩
+
 /-- **Every smooth framed vortex orbit meets every `A_m^s`.** A smooth framed degree-`m` vortex
 `x` is carried by a smooth framed gauge `u` to a field `u · x` lying in the affine Sobolev space
 `A_m^s` for every real `s`, such that every derivative of `u · x - x_ref` is `O(exp (-c |z|))`
@@ -155,18 +185,8 @@ theorem exists_framedGaugeGroup_smul_mem_framedFieldSpace (f : ContDiffBump (0 :
       ∀ c < 1 / 2, ∀ n : ℕ, iteratedFDeriv ℝ n (u • x - referenceField f m) =O[cocompact ℂ]
         fun z ↦ Real.exp (-(c * ‖z‖)) := by
   obtain ⟨u, hu⟩ := exists_framedGaugeGroup_sectionValue_smul_eq hx hframe
-  obtain ⟨huc, hu1⟩ := (mem_framedGaugeGroup _).1 u.property
-  have hy : ContDiff ℝ ∞ (u • x) := contDiff_gaugeTransform (by simpa using huc) hx
-  have hsol' (z : ℂ) : equation (u • x) z = 0 :=
-    (equation_gaugeTransform_eq_zero_iff ((huc.of_le (by norm_cast)).contDiffAt)
-      fun i ↦ ((contDiff_euclidean.1 hx i).differentiable (by simp)).differentiableAt).2 (hsol z)
-  have hlim := tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow
-    (tendsto_sectionValue_gaugeTransform hu1 hframe)
-  have hdec := fun c (hc : c < 1 / 2) n ↦
-    isBigO_iteratedFDeriv_sub_referenceField f (contDiff_euclidean.1 hy 2)
-      (contDiff_euclidean.1 hy 3) hsol' hlim hu hc n
-  exact ⟨u, mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField hy (c := 1 / 4)
-    (by norm_num) (hdec (1 / 4) (by norm_num)), hdec⟩
+  exact ⟨u, gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq f u.property hx hsol
+    hframe hu⟩
 
 /-! ### The Sobolev moduli of framed vortices -/
 
