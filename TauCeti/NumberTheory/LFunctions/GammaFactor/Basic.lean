@@ -165,26 +165,15 @@ theorem log_norm_gammaFactor {s : ℂ} (hs : d.gammaFactor s ≠ 0) :
     Real.log ‖d.gammaFactor s‖ =
       (d.gammaR.map fun μ ↦ Real.log ‖Gammaℝ (s + μ)‖).sum +
         (d.gammaC.map fun ν ↦ Real.log ‖Gammaℂ (s + ν)‖).sum := by
-  rw [gammaFactor_def] at hs ⊢
-  have hR_ne : (d.gammaR.map fun μ ↦ Gammaℝ (s + μ)).prod ≠ 0 := left_ne_zero_of_mul hs
-  have hC_ne : (d.gammaC.map fun ν ↦ Gammaℂ (s + ν)).prod ≠ 0 := right_ne_zero_of_mul hs
-  have hR_mem : ∀ x ∈ (d.gammaR.map fun μ ↦ ‖Gammaℝ (s + μ)‖), x ≠ 0 := by
-    intro x hx
-    obtain ⟨μ, hμ, rfl⟩ := Multiset.mem_map.mp hx
-    exact norm_ne_zero_iff.2 fun h0 ↦ hR_ne
-      (Multiset.prod_eq_zero (by
-        simpa [h0] using Multiset.mem_map_of_mem (fun μ ↦ Gammaℝ (s + μ)) hμ))
-  have hC_mem : ∀ x ∈ (d.gammaC.map fun ν ↦ ‖Gammaℂ (s + ν)‖), x ≠ 0 := by
-    intro x hx
-    obtain ⟨ν, hν, rfl⟩ := Multiset.mem_map.mp hx
-    exact norm_ne_zero_iff.2 fun h0 ↦ hC_ne
-      (Multiset.prod_eq_zero (by
-        simpa [h0] using Multiset.mem_map_of_mem (fun ν ↦ Gammaℂ (s + ν)) hν))
-  rw [norm_mul, Real.log_mul (norm_ne_zero_iff.2 hR_ne) (norm_ne_zero_iff.2 hC_ne),
-    Multiset.norm_prod, Multiset.norm_prod]
-  simp only [Multiset.map_map, Function.comp_def]
-  rw [Real.log_multiset_prod hR_mem, Real.log_multiset_prod hC_mem]
-  simp only [Multiset.map_map, Function.comp_def]
+  let factors := (d.gammaR.map fun μ ↦ Gammaℝ (s + μ)) +
+    (d.gammaC.map fun ν ↦ Gammaℂ (s + ν))
+  have hprod : factors.prod = d.gammaFactor s := by
+    simp only [factors, Multiset.prod_add, gammaFactor_def]
+  have hmem : ∀ x ∈ factors.map norm, x ≠ 0 := by
+    simp only [Multiset.forall_mem_map_iff, norm_ne_zero_iff]
+    exact fun x hx hx0 ↦ hs (hprod.symm.trans (Multiset.prod_eq_zero (hx0 ▸ hx)))
+  rw [← hprod, Multiset.norm_prod, Real.log_multiset_prod hmem]
+  simp only [factors, Multiset.map_add, Multiset.sum_add, Multiset.map_map, Function.comp_def]
 
 /-- The analytic reciprocal vanishes precisely on the shifted gamma pole lattices. -/
 theorem invGammaFactor_eq_zero_iff_exists (s : ℂ) :

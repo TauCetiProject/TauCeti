@@ -113,6 +113,11 @@ theorem abs_log_norm_Gammaℝ_vertical_sub_le {s : ℂ} (hs : s.im ≠ 0) (hre :
   rw [hdiff, ← hrhs]
   exact hS
 
+private theorem abs_im_sub_abs_im_le_abs_im_add (s μ : ℂ) :
+    |s.im| - |μ.im| ≤ |(s + μ).im| := by
+  simpa only [Complex.add_im, abs_neg, sub_neg_eq_add] using
+    abs_sub_abs_le_abs_sub s.im (-μ.im)
+
 private theorem abs_log_norm_Gammaℝ_vertical_sub_le_of_re_le {w : ℂ} {R : ℝ}
     (hwre : |w.re| ≤ R) (hwim : R + 1 ≤ |w.im|) :
     |Real.log ‖Complex.Gammaℝ w‖ -
@@ -121,8 +126,8 @@ private theorem abs_log_norm_Gammaℝ_vertical_sub_le_of_re_le {w : ℂ} {R : �
       (4 / (1 - Real.cos (π / 4)) ^ 3 + (R + 1) * R / 2 + R ^ 2 / 2) / |w.im| := by
   have hR0 : 0 ≤ R := (abs_nonneg _).trans hwre
   have hwim_pos : 0 < |w.im| := by linarith
-  have hwre1 : |w.re - 1| ≤ R + 1 := abs_le.2
-    ⟨by linarith [(abs_le.1 hwre).1], by linarith [(abs_le.1 hwre).2]⟩
+  have hwre1 : |w.re - 1| ≤ R + 1 :=
+    (abs_sub w.re 1).trans (by simpa only [abs_one] using add_le_add hwre (le_refl (1 : ℝ)))
   refine (abs_log_norm_Gammaℝ_vertical_sub_le (abs_pos.1 hwim_pos) (by linarith)).trans
     (div_le_div_of_nonneg_right ?_ hwim_pos.le)
   have h2 : |w.re - 1| * |w.re| ≤ (R + 1) * R :=
@@ -303,11 +308,10 @@ theorem exists_abs_log_norm_Gammaℝ_add_vertical_sub_le (a b M : ℝ) :
   have hwre : |w.re| ≤ R := by
     simpa [w, R] using (abs_add_le s.re μ.re).trans (add_le_add hsB hμre)
   have hwim_ge : R + 2 ≤ |w.im| := by
-    have h := abs_sub_abs_le_abs_sub s.im (-μ.im)
-    simp only [abs_neg, sub_neg_eq_add] at h
+    have h := abs_im_sub_abs_im_le_abs_im_add s μ
     simpa [w] using (by linarith : R + 2 ≤ |s.im| - |μ.im|).trans h
-  have hwre1 : |w.re - 1| ≤ R + 1 := abs_le.2
-    ⟨by linarith [(abs_le.1 hwre).1], by linarith [(abs_le.1 hwre).2]⟩
+  have hwre1 : |w.re - 1| ≤ R + 1 :=
+    (abs_sub w.re 1).trans (by simpa only [abs_one] using add_le_add hwre (le_refl (1 : ℝ)))
   have hmain : |Real.log ‖Complex.Gammaℝ w‖ -
       (-π * |w.im| / 4 + (w.re - 1) / 2 * Real.log |w.im| +
         (Real.log 2 - (w.re - 1) * Real.log (2 * π)) / 2)| ≤ K :=
@@ -347,8 +351,7 @@ theorem exists_abs_log_norm_Gammaℂ_add_vertical_sub_le (a b M : ℝ) :
   have htM : M + 2 ≤ |s.im| := (le_max_right _ _).trans ht
   have hνim : |ν.im| ≤ M := (abs_im_le_norm ν).trans hν
   have him_ne : (s + ν).im ≠ 0 := by
-    have h := abs_sub_abs_le_abs_sub s.im (-ν.im)
-    simp only [abs_neg, sub_neg_eq_add] at h
+    have h := abs_im_sub_abs_im_le_abs_im_add s ν
     exact abs_pos.1 (by simpa using (by linarith : (0 : ℝ) < |s.im| - |ν.im|).trans_le h)
   have him1_ne : (s + ν + 1).im ≠ 0 := by simpa using him_ne
   -- Reduce `Gammaℂ (s + ν)` to `Gammaℝ (s + ν) * Gammaℝ (s + (ν + 1))` by duplication.

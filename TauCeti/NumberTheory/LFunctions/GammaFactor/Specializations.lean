@@ -33,9 +33,12 @@ theorem NormalizationTranslation.analytic_gammaLogExponent (T : NormalizationTra
     (σ : ℝ) :
     T.analytic.gammaLogExponent σ =
       T.arithmetic.toAnalyticLFunctionData.gammaLogExponent (σ + (T.weight : ℝ) / 2) := by
+  have hshift (z : ℂ) : σ + (z + (T.weight : ℂ) / 2).re =
+      σ + (T.weight : ℝ) / 2 + z.re := by
+    simp only [Complex.add_re, Complex.div_ofNat_re, Complex.intCast_re]
+    ring
   simp only [AnalyticLFunctionData.gammaLogExponent_def, T.gammaR_eq, T.gammaC_eq,
-    Multiset.map_map, Function.comp_def]
-  congr 1 <;> congr 1 <;> refine Multiset.map_congr rfl fun z _ ↦ ?_ <;> simp <;> ring
+    Multiset.map_map, Function.comp_def, hshift]
 
 /-- For the Riemann zeta record (`gammaR = {0}`, `gammaC = 0`), the logarithmic height exponent is
 `(σ - 1) / 2`. -/

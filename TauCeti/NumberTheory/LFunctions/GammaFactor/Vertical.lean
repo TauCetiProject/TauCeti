@@ -317,15 +317,9 @@ theorem exists_abs_log_norm_dual_gammaFactor_div_vertical_sub_le_of_norm_le (a b
   refine ⟨C₁ + C₂, by positivity, max T₁ T₂, by positivity,
     fun d hd hR hC s hs ht ↦ ?_⟩
   have hR_dual : ∀ μ' ∈ d.dual.gammaR, ‖μ'‖ ≤ M := by
-    intro μ' hμ'
-    rw [dual_gammaR] at hμ'
-    obtain ⟨μ, hμ, rfl⟩ := Multiset.mem_map.mp hμ'
-    simpa using hR μ hμ
+    simpa only [dual_gammaR, Multiset.forall_mem_map_iff, norm_conj] using hR
   have hC_dual : ∀ ν' ∈ d.dual.gammaC, ‖ν'‖ ≤ M := by
-    intro ν' hν'
-    rw [dual_gammaC] at hν'
-    obtain ⟨ν, hν, rfl⟩ := Multiset.mem_map.mp hν'
-    simpa using hC ν hν
+    simpa only [dual_gammaC, Multiset.forall_mem_map_iff, norm_conj] using hC
   have hs1 : (1 - s).re ∈ Icc (1 - b) (1 - a) :=
     ⟨by simp; linarith [hs.2], by simp; linarith [hs.1]⟩
   have him1 : |(1 - s).im| = |s.im| := by simp
@@ -600,14 +594,10 @@ private theorem exists_compact_dual_gammaFactor_div_strip_bound (a b : ℝ) {ε 
     ⟨(norm_add_le (1 - s) (conj μ)).trans (add_le_add h1s_norm (by simpa using h.1)),
       by simp only [add_re, sub_re, one_re, conj_re]; linarith [hs.2, h.2]⟩
   have hgam_s := hgam d.dual (by simpa using hd) (1 - s)
-    (fun μ' hμ' ↦ by
-      rw [dual_gammaR] at hμ'
-      obtain ⟨μ, hμ, rfl⟩ := Multiset.mem_map.mp hμ'
-      exact hdual_mem (hR μ hμ))
-    (fun ν' hν' ↦ by
-      rw [dual_gammaC] at hν'
-      obtain ⟨ν, hν, rfl⟩ := Multiset.mem_map.mp hν'
-      exact hdual_mem (hC ν hν))
+    (by simpa only [dual_gammaR, Multiset.forall_mem_map_iff] using
+      (fun μ hμ ↦ hdual_mem (hR μ hμ)))
+    (by simpa only [dual_gammaC, Multiset.forall_mem_map_iff] using
+      (fun ν hν ↦ hdual_mem (hC ν hν)))
   rw [div_eq_mul_inv, ← d.invGammaFactor_def, norm_mul]
   exact mul_le_mul hgam_s hinv_s (norm_nonneg _) hB₂.le
 
