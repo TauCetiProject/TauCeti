@@ -78,7 +78,8 @@ private theorem re_logDeriv_LFunctionTrivChar_sub (N : ℕ) [NeZero N]
 
 /-- For a nonzero level, the principal character deletes exactly the weights at its prime
 factors from any summable real prime series. No sign condition on the weights is needed. -/
-theorem tsum_prime_principal_sub (N : ℕ) [NeZero N] (w : ℕ → ℝ)
+theorem tsum_prime_re_one_mul_sub_tsum_prime_eq_neg_sum_primeFactors (N : ℕ) [NeZero N]
+    (w : ℕ → ℝ)
     (hw : Summable fun p : Nat.Primes ↦ w p) :
     (∑' p : Nat.Primes, ((1 : DirichletCharacter ℂ N) p).re * w p) -
       (∑' p : Nat.Primes, w p) = -∑ p ∈ N.primeFactors, w p := by
@@ -139,7 +140,8 @@ theorem neg_re_logDeriv_LFunctionTrivChar_remainder_sub_eq (N : ℕ) [NeZero N]
   have hw : Summable fun p : Nat.Primes ↦ Real.log p / (p : ℝ) ^ σ := by
     simpa only [MulChar.one_apply (isUnit_of_subsingleton _), Complex.one_re, one_mul] using
       (1 : DirichletCharacter ℂ 1).summable_prime_re_mul_log_div_rpow hσ
-  have hp := N.tsum_prime_principal_sub (fun p ↦ Real.log p / (p : ℝ) ^ σ) hw
+  have hp := N.tsum_prime_re_one_mul_sub_tsum_prime_eq_neg_sum_primeFactors
+    (fun p ↦ Real.log p / (p : ℝ) ^ σ) hw
   simp only [← mul_div_assoc] at hp
   have hf : (∑ p ∈ N.primeFactors, Real.log p / ((p : ℝ) ^ σ - 1)) -
       (∑ p ∈ N.primeFactors, Real.log p / (p : ℝ) ^ σ) =

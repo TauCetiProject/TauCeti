@@ -88,7 +88,7 @@ example :
   have hw : Summable fun n : ℕ ↦ if n = 2 then (-1 : ℝ) else 0 := by
     apply summable_of_ne_finset_zero (s := {2})
     exact fun n hn ↦ ite_eq_right (by simpa only [Finset.mem_singleton] using hn)
-  have h := Nat.tsum_prime_principal_sub 2
+  have h := Nat.tsum_prime_re_one_mul_sub_tsum_prime_eq_neg_sum_primeFactors 2
     (fun n ↦ if n = 2 then (-1 : ℝ) else 0) (hw.subtype Nat.Prime)
   simpa [Nat.prime_two.primeFactors] using h
 

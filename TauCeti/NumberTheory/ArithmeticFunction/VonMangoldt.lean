@@ -20,9 +20,11 @@ most `2 log 4`. This explicit absolute constant bounds the higher-prime-power pa
 twisted von Mangoldt series on `1 ≤ re s` and separates the prime and von Mangoldt forms of
 Mertens' first theorem.
 
-The summability at exponent one is a specialization of the real-exponent result below;
-the explicit bound regroups
-by the prime base (`Nat.sum_Icc_eq_sum_primesLE_sum_Icc_log`), sums each geometric tail to
+The real-exponent regrouping argument adapts Mathlib's
+`ArithmeticFunction.vonMangoldt.summable_residueClass_non_primes_div` and its private
+`summable_F''` argument in `Mathlib/NumberTheory/LSeries/PrimesInAP.lean` to `σ > 1/2`.
+Summability at exponent one specializes that result. The explicit bound regroups by the prime base
+(`Nat.sum_Icc_eq_sum_primesLE_sum_Icc_log`), sums each geometric tail to
 `1 / (p (p - 1)) ≤ 2 / p ^ 2`, and applies Chebyshev's reciprocal-square prime tail bound
 (`TauCeti.sum_log_div_sq_le_of_prime`).
 
@@ -108,7 +110,10 @@ private theorem hasSum_nonprime_prime_pow_div_rpow (p : Nat.Primes) {σ : ℝ} (
     Nat.cast_pow, ← Real.rpow_pow_comm p.val.cast_nonneg σ (k + 2)]
   simp only [div_eq_mul_inv, pow_add, mul_inv, inv_pow]
 
-/-- The nonprime von Mangoldt series is summable for every real exponent greater than one half. -/
+/-- The nonprime von Mangoldt series is summable for every real exponent greater than one half.
+The prime-power regrouping adapts Mathlib's
+`ArithmeticFunction.vonMangoldt.summable_residueClass_non_primes_div` and the private
+`summable_F''` argument in `Mathlib/NumberTheory/LSeries/PrimesInAP.lean`. -/
 theorem summable_nonprime_div_rpow {σ : ℝ} (hσ : 1 / 2 < σ) :
     Summable fun n : ℕ ↦ (if n.Prime then 0 else vonMangoldt n) / (n : ℝ) ^ σ := by
   let f (n : ℕ) : ℝ := (if n.Prime then 0 else vonMangoldt n) / (n : ℝ) ^ σ
