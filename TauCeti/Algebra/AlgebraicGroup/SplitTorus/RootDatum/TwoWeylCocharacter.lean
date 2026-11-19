@@ -86,7 +86,6 @@ coroots.** -/
 theorem pairing_ofAdd_twoWeylCocharacter_eq_posCorootSum (m : M) :
     DiagonalizableGroup.pairing (Multiplicative.ofAdd m) (P.twoWeylCocharacter b) =
       posCorootSum P b m := by
-  have := P.flip_isReduced
   simp only [pairing_ofAdd_twoWeylCocharacter, twoWeylVector_flip, map_sum, posCorootSum_def,
     coroot', LinearMap.flip_apply]
 
@@ -168,7 +167,6 @@ split-torus lattices whose pairing is the split-torus pairing. -/
 theorem cocharEquiv_twoWeylCocharacter_eq_sum [P.IsReduced]
     (hP : P.toLinearMap = SplitTorus.dotPairing) :
     SplitTorus.cocharEquiv (P.twoWeylCocharacter b) = ∑ i ∈ posRootsFinset P b, P.coroot i := by
-  have := P.flip_isReduced
   rw [cocharEquiv_twoWeylCocharacter b hP, twoWeylVector_flip]
 
 end SplitTorus

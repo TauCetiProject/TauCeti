@@ -85,17 +85,6 @@ theorem lieSubalgebra_unipotentDefiningHopfIdeal_twoWeylCocharacter (n : ℕ) :
     rw [diagonalRootDatum_root, ofAdd_diagonalRoot,
       adjointWeightSpace_matrixUnitWeight_eq_span_singleton hne]
 
-omit [Nontrivial k] in
-/-- A tangent vector of `GL_n` fixed by the diagonal torus is a diagonal matrix: a nonzero
-`(i, j)` entry of a weight vector forces its weight to be `e_i - e_j`. -/
-private theorem cotangentDualMatrixEquiv_apply_eq_zero_of_mem_adjointWeightSpace_one {n : ℕ}
-    {x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n))}
-    (hx : x ∈ Derivation.adjointWeightSpace (diagonalTorusCoordinateMap (R := k) (N := n)).hom 1)
-    {i j : Fin n} (hij : i ≠ j) : cotangentDualMatrixEquiv x i j = 0 := by
-  by_contra h
-  exact hij ((matrixUnitWeight_eq_one_iff i j).mp
-    (matrixUnitWeight_eq_of_mem_adjointWeightSpace_of_apply_ne_zero hx h))
-
 /-- **The Lie algebra of the dynamic parabolic subgroup of `2ρ^∨` in `GL_(n+1)` is the Lie algebra
 of the upper-triangular Borel subgroup**: both are the upper-triangular matrices. -/
 theorem lieSubalgebra_parabolicDefiningHopfIdeal_twoWeylCocharacter (n : ℕ) :

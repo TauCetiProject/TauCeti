@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Basic
 public import TauCeti.LinearAlgebra.RootSystem.FundamentalDomain
+import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # The Weyl vector of a base
@@ -209,13 +210,14 @@ end Reduced
 
 section Coroots
 
-variable [IsDomain R] [P.IsCrystallographic] [P.IsReduced] [P.flip.IsReduced]
+variable [IsDomain R] [P.IsCrystallographic] [P.IsReduced]
 
 /-- **The sum of the positive roots of the dual pairing is the sum of the positive coroots**,
 `2ρ^∨ = ∑_{α > 0} α^∨`. The roots of `P.flip` are the coroots of `P`, and `b.flip` has the same
 positive roots as `b`. -/
 theorem twoWeylVector_flip :
     twoWeylVector P.flip b.flip = ∑ i ∈ posRootsFinset P b, P.coroot i := by
+  have := P.flip_isReduced
   have h : posRootsFinset P.flip b.flip = posRootsFinset P b := by
     ext i
     rw [mem_posRootsFinset, mem_posRootsFinset, posRoots_flip]

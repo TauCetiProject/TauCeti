@@ -62,31 +62,6 @@ namespace BialgHom
 
 universe u v w x
 
-/-- When every nontrivial adjoint weight is in the range of `f`, the sum of the weight spaces over
-the characters satisfying `p` is the trivial weight space, if `p` holds there, together with the
-weight spaces of the `f i` satisfying `p`. -/
-private theorem iSup_adjointWeightSpace_eq_sup_iSup {R H : Type u} {ι : Type v} {M : Type w}
-    [CommRing R] [CommRing H] [HopfAlgebra R H] [Module.Finite R (Bialgebra.CotangentSpace R H)]
-    [Module.Projective R (Bialgebra.CotangentSpace R H)] [CommGroup M]
-    (ρ : H →ₐc[R] MonoidAlgebra R M) {f : ι → M}
-    (hf : Derivation.nontrivialAdjointWeights ρ ⊆ Set.range f) (p : M → Prop) :
-    ⨆ (χ) (_ : p χ), Derivation.adjointWeightSpace ρ χ =
-      (⨆ _ : p 1, Derivation.adjointWeightSpace ρ 1) ⊔
-        ⨆ (i) (_ : p (f i)), Derivation.adjointWeightSpace ρ (f i) := by
-  refine le_antisymm (iSup₂_le fun χ hχ ↦ ?_)
-    (sup_le (iSup_le fun h ↦ le_iSup₂_of_le 1 h le_rfl)
-      (iSup₂_le fun i hi ↦ le_iSup₂_of_le (f i) hi le_rfl))
-  by_cases h1 : χ = 1
-  · subst h1
-    exact le_sup_of_le_left (le_iSup_of_le hχ le_rfl)
-  by_cases hχ' : χ ∈ Derivation.nontrivialAdjointWeights ρ
-  · obtain ⟨i, rfl⟩ := hf hχ'
-    exact le_sup_of_le_right
-      (le_iSup₂_of_le (f := fun i (_ : p (f i)) ↦ Derivation.adjointWeightSpace ρ (f i)) i hχ
-        le_rfl)
-  · rw [Derivation.adjointWeightSpace_eq_bot_of_notMem_nontrivialAdjointWeights h1 hχ']
-    exact bot_le
-
 section Tangent
 
 variable {R : Type u} {H : Type u} {ι : Type v} {M : Type w} {N : Type x} [CommRing R]
@@ -141,7 +116,7 @@ theorem adjointWeightSpace_cocharacter_twoWeylCocharacter (n : ℤ) :
       (⨆ _ : n = 0, Derivation.adjointWeightSpace π 1) ⊔
         ⨆ (i) (_ : 2 * b.height i = n),
           Derivation.adjointWeightSpace π (Multiplicative.ofAdd (P.root i)) := by
-  rw [adjointWeightSpace_cocharacter, iSup_adjointWeightSpace_eq_sup_iSup π hroots,
+  rw [adjointWeightSpace_cocharacter, Derivation.iSup_adjointWeightSpace_eq_sup_iSup π hroots,
     DiagonalizableGroup.pairing_one_left]
   simp_rw [P.pairing_ofAdd_root_twoWeylCocharacter b, eq_comm (a := (0 : ℤ))]
 
@@ -153,7 +128,7 @@ theorem lieSubalgebra_unipotentDefiningHopfIdeal_cocharacter_twoWeylCocharacter_
       (⨆ i ∈ posRoots P b, Derivation.adjointWeightSpace π (Multiplicative.ofAdd (P.root i))).map
         (Derivation.cotangentLinearEquiv (R := R) (A := H) (B := R)).toLinearMap := by
   rw [lieSubalgebra_unipotentDefiningHopfIdeal_cocharacter_toSubmodule,
-    iSup_adjointWeightSpace_eq_sup_iSup π hroots, DiagonalizableGroup.pairing_one_left]
+    Derivation.iSup_adjointWeightSpace_eq_sup_iSup π hroots, DiagonalizableGroup.pairing_one_left]
   simp_rw [P.pairing_ofAdd_root_twoWeylCocharacter_pos_iff b, lt_irrefl, iSup_false,
     bot_sup_eq]
 
@@ -166,7 +141,7 @@ theorem lieSubalgebra_parabolicDefiningHopfIdeal_cocharacter_twoWeylCocharacter_
         ⨆ i ∈ posRoots P b, Derivation.adjointWeightSpace π (Multiplicative.ofAdd (P.root i))).map
         (Derivation.cotangentLinearEquiv (R := R) (A := H) (B := R)).toLinearMap := by
   rw [lieSubalgebra_parabolicDefiningHopfIdeal_cocharacter_toSubmodule,
-    iSup_adjointWeightSpace_eq_sup_iSup π hroots, DiagonalizableGroup.pairing_one_left]
+    Derivation.iSup_adjointWeightSpace_eq_sup_iSup π hroots, DiagonalizableGroup.pairing_one_left]
   simp_rw [P.pairing_ofAdd_root_twoWeylCocharacter_nonneg_iff b, le_refl, iSup_true]
 
 end Tangent
@@ -189,7 +164,7 @@ theorem lieSubalgebra_leviDefiningHopfIdeal_cocharacter_twoWeylCocharacter_toSub
       (Derivation.adjointWeightSpace π 1).map
         (Derivation.cotangentLinearEquiv (R := R) (A := H) (B := R)).toLinearMap := by
   rw [lieSubalgebra_leviDefiningHopfIdeal_cocharacter_toSubmodule,
-    iSup_adjointWeightSpace_eq_sup_iSup π hroots, DiagonalizableGroup.pairing_one_left]
+    Derivation.iSup_adjointWeightSpace_eq_sup_iSup π hroots, DiagonalizableGroup.pairing_one_left]
   simp only [P.pairing_ofAdd_root_twoWeylCocharacter_ne_zero b, iSup_true, iSup_false,
     iSup_bot, sup_bot_eq]
 
