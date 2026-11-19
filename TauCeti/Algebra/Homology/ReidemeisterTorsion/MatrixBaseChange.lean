@@ -105,15 +105,17 @@ private theorem toMatrix_basisChangeBasis_d (i j : ι) :
     LinearMap.toMatrix_comp _ (C.matrixBaseChangeBasis c φ i), toMatrix_matrixBaseChange_d,
     ← basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix (c' i) (c i) (c' j) (c j),
     Matrix.map_mul, Matrix.map_mul]
-  have h : (basisChangeEquiv φ c c' i).toLinearMap =
-      Matrix.toLin _ _ (((c i).toMatrix (c' i)).map φ) := rfl
+  have h (k : ι) : (basisChangeEquiv φ c c' k).toLinearMap =
+      Matrix.toLin (C.matrixBaseChangeBasis c φ k) (C.matrixBaseChangeBasis c φ k)
+        (((c k).toMatrix (c' k)).map φ) :=
+    LinearMap.ext fun x ↦ by simp [basisChangeEquiv]
   have h' : (basisChangeEquiv φ c c' j).symm.toLinearMap =
       Matrix.toLin (C.matrixBaseChangeBasis c φ j) (C.matrixBaseChangeBasis c φ j)
         (((c' j).toMatrix (c j)).map φ) := by
-    have hmul : ((c' j).toMatrix (c j)).map φ * ((c j).toMatrix (c' j)).map φ = 1 := by
-      rw [← Matrix.map_mul, Basis.toMatrix_mul_toMatrix_flip, Matrix.map_one _ φ.map_zero φ.map_one]
-    rw [← Matrix.inv_eq_left_inv hmul]
-    rfl
+    refine LinearMap.ext fun x ↦ (LinearEquiv.symm_apply_eq _).2 ?_
+    rw [← LinearEquiv.coe_toLinearMap, h, ← LinearMap.comp_apply, ← Matrix.toLin_mul,
+      ← Matrix.map_mul, Basis.toMatrix_mul_toMatrix_flip, Matrix.map_one _ φ.map_zero φ.map_one,
+      Matrix.toLin_one, LinearMap.id_apply]
   rw [h, h', LinearMap.toMatrix_toLin, LinearMap.toMatrix_toLin, Matrix.mul_assoc]
 
 /-- The determinant of `basisChangeBasis` with respect to the standard basis is the image under
