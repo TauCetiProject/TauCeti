@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.StrictPositivity
 public import Mathlib.Analysis.InnerProductSpace.Positive
+public import TauCeti.Analysis.Pseudodifferential.PositivePower
 public import TauCeti.Analysis.Pseudodifferential.Recovery
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 import TauCeti.Analysis.Distribution.AELeOfIntegral
@@ -37,9 +38,12 @@ position of `U` and every frequency
 moreover invertible, it is strictly positive
 (`TauCeti.ClassicalSymbol.isStrictlyPositive_coefficient_principal`); for an elliptic `a` this
 holds at every nonzero frequency
-(`TauCeti.ClassicalSymbol.IsElliptic.isStrictlyPositive_coefficient_principal`). This is the
-positivity under which the powers `σ(a)(x, ξ) ^ z` of the principal symbol of a positive
-elliptic operator are defined by the continuous functional calculus.
+(`TauCeti.ClassicalSymbol.IsElliptic.isStrictlyPositive_coefficient_principal`). If `Op(a)` is
+positive on all compactly supported Schwartz functions, the principal symbol is therefore a
+strictly positive homogeneous symbol
+(`TauCeti.ClassicalSymbol.IsElliptic.isStrictlyPositive_principal`). This is the positivity
+under which the powers `σ(a) ^ s` of the principal symbol of a positive elliptic operator are
+defined by the continuous functional calculus (`TauCeti.HomogeneousSymbol.rpow`).
 
 ## References
 
@@ -135,6 +139,19 @@ theorem IsElliptic.isStrictlyPositive_coefficient_principal {a : ClassicalSymbol
     {x : CoordinateSpace n} (hx : x ∈ U) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
     IsStrictlyPositive (a.principal.coefficient (x, ξ)) :=
   a.isStrictlyPositive_coefficient_principal hU ha hx (isElliptic_iff.1 he x ξ hξ)
+
+/-- **The principal symbol of a positive elliptic operator is strictly positive.** Let `a` be an
+elliptic classical symbol with values in the endomorphisms of a complex Hilbert space `H`. If
+`0 ≤ ∫ ⟪Op(a) u (x), u (x)⟫ dx` for every compactly supported Schwartz function `u`, then the
+principal symbol `σ(a)` is a strictly positive homogeneous symbol, so its real powers `σ(a) ^ s`
+(`TauCeti.HomogeneousSymbol.rpow`) are defined. -/
+theorem IsElliptic.isStrictlyPositive_principal {a : ClassicalSymbol n H H m} (he : a.IsElliptic)
+    (ha : ∀ u : 𝓢(CoordinateSpace n, H), HasCompactSupport u →
+      0 ≤ ∫ x, ⟪quantizeSchwartzValue a.toSymbol.coefficient u x, u x⟫_ℂ) :
+    a.principal.IsStrictlyPositive :=
+  HomogeneousSymbol.isStrictlyPositive_iff.mpr fun _ _ hξ ↦
+    he.isStrictlyPositive_coefficient_principal isOpen_univ (fun u hu _ ↦ ha u hu)
+      (Set.mem_univ _) hξ
 
 end Inner
 
