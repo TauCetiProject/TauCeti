@@ -181,6 +181,28 @@ theorem chartCkSeminorm_eq_zero_of_eventuallyEq_zero (x : M)
   rw [chartIteratedFDeriv_self_target_apply, hz.iteratedFDerivWithin_eq (hz.eq_of_nhdsWithin z.2),
     iteratedFDerivWithin_fun_zero, Pi.zero_apply, norm_zero]
 
+/-- Two maps whose chart derivatives at `x` and `y` agree along an inclusion of chart targets
+have the same compact chart `C^k` seminorms on `K` and on its image under the inclusion. -/
+theorem chartCkSeminorm_eq_map_of_chartIteratedFDeriv_eq {M' : Type*}
+    [TopologicalSpace M'] [ChartedSpace H M'] [IsManifold I n M'] (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯)
+    (g : C^n⟮I, M'; 𝓘(𝕜, F), F⟯) (x : M) {y : M'}
+    (hxy : (extChartAt I x).target ⊆ (extChartAt I y).target)
+    (K : TopologicalSpace.Compacts (extChartAt I x).target) (k : ℕ) (hk : k ≤ n)
+    (h : ∀ (m : ℕ) (hm : m ≤ n) (z : (extChartAt I x).target),
+      chartIteratedFDeriv f x m hm z = chartIteratedFDeriv g y m hm ⟨z, hxy z.2⟩) :
+    chartCkSeminorm x K k hk f =
+      chartCkSeminorm y (K.map (inclusion hxy) (continuous_inclusion _)) k hk g := by
+  apply le_antisymm
+  · refine (chartCkSeminorm_le_iff _ _ _ _ _ (apply_nonneg _ _)).mpr fun m hm z hz ↦ ?_
+    rw [h]
+    refine (chartCkSeminorm_le_iff _ _ _ _ _ (apply_nonneg _ _)).mp le_rfl m hm _ ?_
+    rw [← SetLike.mem_coe, TopologicalSpace.Compacts.coe_map]
+    exact ⟨z, hz, rfl⟩
+  · refine (chartCkSeminorm_le_iff _ _ _ _ _ (apply_nonneg _ _)).mpr ?_
+    rintro m hm _ ⟨z, hz, rfl⟩
+    have h' := (chartCkSeminorm_le_iff x K k hk f (apply_nonneg _ _)).mp le_rfl m hm z hz
+    rwa [h] at h'
+
 /-- Positive strict `C^k` control is equivalent to pointwise strict control of every coordinate
 derivative through order `k`. -/
 theorem chartCkSeminorm_lt_iff (x : M)
