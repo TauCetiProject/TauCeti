@@ -63,6 +63,9 @@ be injective. This is the local reason why an affine blowup changes nothing away
 * `AlgebraicGeometry.Scheme.Hom.ΓSpecIso_inv_comp_resLE_isoSpec_appLE`: the map `Γ(B, V) ⟶ Γ(U, T)`
   induced by the structure morphism of an open subscheme `U` of `Z` over an affine open `V` of `B`
   is `k.appLE` followed by restriction to `T`.
+* `AlgebraicGeometry.Scheme.ΓSpecIso_appIso_hom_map_eq_restrict`: for open immersions
+  `ι : Spec A ⟶ X` and `Spec.map φ`, reading a function on the image of `ι` in `A` and mapping it
+  along `φ` is restricting it to the image of `Spec A'` and reading it in `A'`.
 * `AlgebraicGeometry.Scheme.Hom.isBasis_range_affineOpens_le_preimage`: for `g : S' ⟶ S`, the
   affine opens of `S'` lying over affine opens of `S` form a basis.
 * `AlgebraicGeometry.Scheme.toSpecΓ_apply_asIdeal_eq_smul`: for this action, the prime ideal of
@@ -250,6 +253,34 @@ lemma Scheme.Hom.ΓSpecIso_inv_comp_resLE_isoSpec_appLE {Z B : Scheme.{u}} (k : 
       _ = k.appLE V U e ≫ U.ι.appLE U T (by simp) := by
         rw [← Category.assoc, ← Scheme.ΓSpecIso_inv_naturality, Category.assoc,
           Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE]
+
+/-- Reading a function on an affine open chart `ι : Spec A ⟶ X` as an element of `A` and
+mapping it along `φ : A ⟶ A'` is the same as restricting it to the image `V` of `Spec A'` and
+reading it as an element of `A'`. -/
+theorem Scheme.ΓSpecIso_appIso_hom_map_eq_restrict {X : Scheme.{u}} {A A' : CommRingCat.{u}}
+    (φ : A ⟶ A') (ι : Spec A ⟶ X) (j : Spec A' ⟶ X) [IsOpenImmersion ι]
+    [IsOpenImmersion (Spec.map φ)] [IsOpenImmersion j] (h : Spec.map φ ≫ ι = j) {V : X.Opens}
+    (hle : V ≤ ι ''ᵁ ⊤) (hV : j ''ᵁ ⊤ = V) (a : Γ(X, ι ''ᵁ ⊤)) :
+    φ ((Scheme.ΓSpecIso A).hom ((ι.appIso ⊤).hom a)) =
+      (Scheme.ΓSpecIso A').hom ((j.appIso ⊤).hom
+        (X.presheaf.map (eqToHom hV).op (X.presheaf.map (homOfLE hle).op a))) := by
+  subst h hV
+  rw [← CommRingCat.comp_apply, ← CommRingCat.comp_apply, ← CommRingCat.comp_apply,
+    ← CommRingCat.comp_apply, ← CommRingCat.comp_apply]
+  congr 2
+  rw [← Scheme.ΓSpecIso_naturality, Scheme.Hom.comp_appIso]
+  simp only [Iso.trans_hom, Functor.mapIso_hom, Iso.op_hom, eqToIso.hom, Category.assoc,
+    ← Functor.map_comp_assoc]
+  rw [show (homOfLE hle).op ≫ (eqToHom rfl).op ≫ (eqToHom _).op =
+    (ι.opensFunctor.map (homOfLE le_top)).op from rfl]
+  -- Restricting along `ι` commutes with the inclusion of the image of `Spec A'` into `⊤`.
+  have := Scheme.Hom.appIso_hom_naturality ι (homOfLE (le_top : Spec.map φ ''ᵁ ⊤ ≤ ⊤)).op
+  rw [Quiver.Hom.unop_op] at this
+  rw [reassoc_of% this]
+  congr 1
+  rw [Scheme.Hom.appIso_hom', ← Category.assoc, Scheme.Hom.map_appLE, Scheme.Hom.appTop,
+    Scheme.Hom.app_eq_appLE]
+  rfl
 
 /-- For a morphism `g : S' ⟶ S`, the affine opens of `S'` contained in the preimage of an affine
 open of `S` form a basis of the topology of `S'`. -/

@@ -47,15 +47,9 @@ section Integral
 /-- Gluing two reduced schemes along open immersions gives a reduced scheme: the two charts form
 an open cover of the pushout by reduced schemes. -/
 instance isReduced_pushout [IsReduced X] [IsReduced Y] : IsReduced (pushout f g) := by
-  let 𝒰 : (pushout f g).OpenCover := Cover.mkOfCovers Bool (fun b ↦ b.rec Y X)
-    (fun b ↦ b.rec (pushout.inr f g) (pushout.inl f g)) (fun p ↦ by
-      rcases (Set.ext_iff.mp (range_pushout_inl_union_range_pushout_inr f g) p).mpr trivial with
-        ⟨q, rfl⟩ | ⟨q, rfl⟩
-      exacts [⟨true, q, rfl⟩, ⟨false, q, rfl⟩])
-    (fun b ↦ by cases b <;> dsimp <;> infer_instance)
-  have : ∀ b : 𝒰.I₀, IsReduced (𝒰.X b) := fun b ↦ by
-    cases b; exacts [‹IsReduced Y›, ‹IsReduced X›]
-  exact IsReduced.of_openCover _ 𝒰
+  have : ∀ b, IsReduced ((pushoutOpenCover f g).X b) := fun b ↦ by
+    cases b; exacts [inferInstanceAs (IsReduced X), inferInstanceAs (IsReduced Y)]
+  exact IsReduced.of_openCover _ (pushoutOpenCover f g)
 
 /-- Gluing two irreducible schemes along a nonempty common open gives an irreducible scheme. -/
 instance irreducibleSpace_pushout [IrreducibleSpace X] [IrreducibleSpace Y] [Nonempty U] :
