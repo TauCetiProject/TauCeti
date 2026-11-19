@@ -98,6 +98,20 @@ variable {EX HX X EY HY Y EN HN N : Type*}
       (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
         (mfderiv IY IN g p.2)).range = ⊤)
 
+omit [IX.Boundaryless] [IY.Boundaryless] [IN.Boundaryless]
+  [FiniteDimensional ℝ EX] [FiniteDimensional ℝ EY] [FiniteDimensional ℝ EN] in
+/-- Every map is transverse to a map whose differential is surjective at the relevant point,
+for instance a submersion. -/
+theorem transverse_of_surjective_mfderiv_right (f : X → N) {g : Y → N} (p : X × Y)
+    (hg : Surjective (mfderiv IY IN g p.2)) :
+    (mfderiv IX IN f p.1).range ⊔
+      (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
+        (mfderiv IY IN g p.2)).range = ⊤ := by
+  have hr : (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
+      (mfderiv IY IN g p.2)).range = ⊤ :=
+    LinearMap.range_eq_top.2 ((tangentSpaceCast IN (g p.2) (f p.1)).surjective.comp hg)
+  rw [hr, sup_top_eq]
+
 /-- The image of the first projection's differential consists exactly of vectors whose
 image under `df` lies in the image of `dg`, after identifying the target tangent spaces. -/
 theorem range_mfderiv_fst_transverseFiberProduct :
