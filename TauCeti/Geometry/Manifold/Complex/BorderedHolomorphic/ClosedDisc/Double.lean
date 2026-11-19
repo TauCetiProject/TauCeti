@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.ClosedDisc
+public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.ClosedDisc.Basic
 public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.SchottkyDouble
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Moebius
 public import TauCeti.Topology.Constructions.DoubleAlong.EulerCharacteristic
@@ -53,7 +53,7 @@ characteristic of the double is `2 = 2 · 1`, twice that of the disc.
   becomes the unit circle.
 * `Complex.UnitClosedDisc.eulerChar_schottkyDouble` and
   `Complex.UnitClosedDisc.eulerChar_schottkyDouble_eq_two_mul`: `χ = 2 = 2 · χ(𝕔𝔻)`, where
-  `χ(𝕔𝔻) = 1` (`Complex.UnitClosedDisc.eulerChar_eq_one`) since the disc is contractible.
+  `χ(𝕔𝔻) = 1` (`TauCeti.eulerChar_of_contractibleSpace`) since the disc is contractible.
 
 ## References
 
@@ -367,6 +367,6 @@ theorem eulerChar_schottkyDouble : eulerChar (SchottkyDouble 𝕔𝔻) = 2 := by
 `2 = 2 · 1`. -/
 theorem eulerChar_schottkyDouble_eq_two_mul :
     eulerChar (SchottkyDouble 𝕔𝔻) = 2 * eulerChar 𝕔𝔻 := by
-  rw [eulerChar_schottkyDouble, eulerChar_eq_one, mul_one]
+  rw [eulerChar_schottkyDouble, eulerChar_of_contractibleSpace (X := 𝕔𝔻), mul_one]
 
 end Complex.UnitClosedDisc
