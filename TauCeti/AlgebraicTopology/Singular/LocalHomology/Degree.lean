@@ -47,6 +47,8 @@ that are not surjective and is invariant under proper homotopies, that is homoto
 ## Main results
 
 * `TauCeti.HomologicalOrientation.localDegree_eq_iff`: the defining property of the local degree.
+* `TauCeti.HomologicalOrientation.localDegree_comap_comp`: excision, the local degree at `y` is
+  unchanged on restricting to an open subset containing the fibre over `y`.
 * `TauCeti.HomologicalOrientation.isLocallyConstant_localDegree`: the local degree of a proper
   map is locally constant, so it equals the degree on a preconnected target
   (`TauCeti.HomologicalOrientation.localDegree_eq_degree`).
@@ -145,6 +147,27 @@ theorem localDegree_eq_zero_of_notMem_range (hF : finrank ℝ F = n) (f : C(M, N
   rw [localDegree_eq_iff o o' hE hF f hc, zero_smul,
     eq_zero_of_forall_localHomologyRestriction_eq_zero _ hE hc (o.fundamentalClassOn hE hc)
       fun x hx ↦ (h.subset hx).elim, map_zero]
+
+/-- **Excision for the local degree**: if `j : M' → M` is an open embedding whose image contains
+the fibre of `f : M → N` over `y`, then `f ∘ j` has the same local degree at `y` as `f`, for the
+orientation `o` pulled back along `j`. -/
+theorem localDegree_comap_comp (hF : finrank ℝ F = n) {M' : Type} [TopologicalSpace M']
+    [T2Space M'] [ChartedSpace E M'] {j : C(M', M)} (hj : IsOpenEmbedding j) (f : C(M, N))
+    {y : N} (hy : f ⁻¹' {y} ⊆ range j) :
+    (o.comap hj).localDegree o' hE (f.comp j) y = o.localDegree o' hE f y := by
+  have hc : IsCompact ((f.comp j) ⁻¹' {y}) ↔ IsCompact (f ⁻¹' {y}) :=
+    hj.isInducing.isCompact_preimage_iff hy
+  by_cases h : IsCompact (f ⁻¹' {y})
+  · -- `j` carries the fundamental class along the fibre of `f ∘ j` to that along the fibre of `f`.
+    have h' := hc.2 h
+    have himage : j '' ((f.comp j) ⁻¹' {y}) = f ⁻¹' {y} := image_preimage_eq_of_subset hy
+    rw [localDegree_eq_iff (o.comap hj) o' hE hF _ h',
+      ← localHomologyMap_comp _ j f (hj.injective.preimage_image _).subset himage.symm.subset,
+      ModuleCat.comp_apply, o.localHomologyMap_fundamentalClassOn_comap hE hj h',
+      ← localHomologyMap_fundamentalClassOn_preimage_singleton o o' hE f h,
+      ← o.localHomologyRestriction_fundamentalClassOn_of_subset hE _ h himage.symm.subset,
+      ← ModuleCat.comp_apply, localHomologyRestriction_comp_localHomologyMap]
+  · rw [localDegree_of_not_isCompact _ _ _ _ (mt hc.1 h), localDegree_of_not_isCompact _ _ _ _ h]
 
 /-- Let `K ⊆ N` have compact preimage. Then the restriction of `f_*[M]_{f⁻¹(K)}` to a point
 `y ∈ K` is the local degree at `y` times the local orientation. -/
