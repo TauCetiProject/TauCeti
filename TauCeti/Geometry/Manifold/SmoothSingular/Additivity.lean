@@ -34,7 +34,7 @@ countable disjoint unions to a Mayer–Vietoris induction over open sets
 (`TauCeti.mayerVietoris_induction`) comparing smooth and singular homology.
 
 The index type lives in the universe of `M`, as for the additivity of singular chains; for the
-induction it is `ℕ`, and `M` is a type in `Type`.
+induction it is `ULift ℕ`.
 
 ## Main results
 
