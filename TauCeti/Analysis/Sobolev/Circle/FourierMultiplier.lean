@@ -369,9 +369,7 @@ theorem exists_norm_sub_indicator_le (hp : p =Θ[cofinite] weight m) (h : s + m 
   refine ⟨c⁻¹, fun a ↦ norm_le_of_forall_le fun n ↦ ?_⟩
   by_cases hn : p n = 0
   · simp [hn]
-  · simp only [coeff_sub, Pi.sub_apply, coeff_indicator, Set.mem_ofPred_eq, hn, not_false_eq_true,
-      Set.indicator_of_notMem, sub_zero, coeff_fourierMultiplier, norm_smul, hw]
-    calc weight s n * weight m n * ‖a.coeff n‖
+  · simpa [hn, norm_smul, hw] using calc weight s n * weight m n * ‖a.coeff n‖
         = c⁻¹ * (weight s n * (c * weight m n) * ‖a.coeff n‖) := by field_simp
       _ ≤ c⁻¹ * (weight s n * ‖p n‖ * ‖a.coeff n‖) :=
           mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right

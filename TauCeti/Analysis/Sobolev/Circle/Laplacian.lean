@@ -100,8 +100,7 @@ theorem setOf_laplacianSymbol_eq_zero : {n | laplacianSymbol T n = 0} = {0} :=
 omit hT in
 private theorem norm_laplacianSymbol (n : ℤ) :
     ‖laplacianSymbol T n‖ = (2 * π / T) ^ 2 * |(n : ℝ)| ^ 2 := by
-  rw [laplacianSymbol_def, Complex.norm_real, norm_neg, Real.norm_eq_abs,
-    abs_of_nonneg (sq_nonneg _), sq_abs]
+  simp [laplacianSymbol_def, div_pow, mul_pow]
   ring
 
 omit hT in
@@ -109,9 +108,11 @@ omit hT in
 nonpositive real number. -/
 private theorem norm_one_sub_laplacianSymbol (n : ℤ) :
     ‖1 - laplacianSymbol T n‖ = 1 + ‖laplacianSymbol T n‖ := by
-  rw [laplacianSymbol_def, ← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
-    Complex.norm_real, sub_neg_eq_add, norm_neg, Real.norm_of_nonneg (by positivity),
-    Real.norm_of_nonneg (by positivity)]
+  have h : 0 ≤ (2 * π * n / T) ^ 2 := sq_nonneg _
+  rw [laplacianSymbol_def]
+  norm_cast
+  simp only [Real.norm_eq_abs, abs_neg, sub_neg_eq_add, abs_of_nonneg h,
+    abs_of_nonneg (add_nonneg zero_le_one h)]
 
 /-- The Laplacian symbol is elliptic of order `2`: `-(2πn/T)²` is comparable to `(1 + |n|)²` at
 every frequency `n ≠ 0`. -/
@@ -137,6 +138,13 @@ theorem isTheta_laplacianSymbol : laplacianSymbol T =Θ[cofinite] weight 2 := by
 `s + 2 ≤ t`: it multiplies the `n`-th Fourier coefficient by `-(2πn/T)²`. -/
 def laplacian (h : s + 2 ≤ t) : CircleSobolev t E →L[ℂ] CircleSobolev s E :=
   fourierMultiplier (laplacianSymbol T) (isTheta_laplacianSymbol T).1 h
+
+/-- The Laplacian is the Fourier multiplier with symbol `laplacianSymbol T`, so the general
+results on elliptic Fourier multipliers apply to it. -/
+theorem laplacian_eq_fourierMultiplier (h : s + 2 ≤ t) :
+    (laplacian T h : CircleSobolev t E →L[ℂ] CircleSobolev s E) =
+      fourierMultiplier (laplacianSymbol T) (isTheta_laplacianSymbol T).1 h :=
+  (rfl)
 
 @[simp]
 theorem coeff_laplacian (h : s + 2 ≤ t) (a : CircleSobolev t E) (n : ℤ) :
@@ -179,13 +187,13 @@ theorem laplacian_eq_zero_iff (h : s + 2 ≤ t) (a : CircleSobolev t E) :
     laplacian T h a = 0 ↔ a = single 0 (a.coeff 0) := by
   rw [← indicator_setOf_laplacianSymbol_eq_zero T, eq_comm (a := a), indicator_eq_self_iff,
     ← ker_fourierMultiplier (isTheta_laplacianSymbol T).1 h, LinearMap.mem_ker,
-    ContinuousLinearMap.coe_coe, laplacian]
+    ContinuousLinearMap.coe_coe, laplacian_eq_fourierMultiplier]
 
 /-- **Solvability of `Δ a = b`**: for `s + 2 = t`, an element `b ∈ H^s` is `Δ a` for some
 `a ∈ H^t` exactly when it has mean zero, `b.coeff 0 = 0`. -/
 theorem mem_range_laplacian_iff (h : s + 2 = t) (b : CircleSobolev s E) :
     b ∈ (laplacian T h.le : CircleSobolev t E →L[ℂ] CircleSobolev s E).range ↔ b.coeff 0 = 0 := by
-  rw [laplacian, range_fourierMultiplier (isTheta_laplacianSymbol T) h,
+  rw [laplacian_eq_fourierMultiplier, range_fourierMultiplier (isTheta_laplacianSymbol T) h,
     mem_supported_compl_setOf_laplacianSymbol_eq_zero_iff]
 
 /-- **`Δ u = 1` has no solution**: a nonzero constant is not in the range of the Laplacian,
@@ -215,6 +223,13 @@ def greenOperator (h : t ≤ s + 2) : CircleSobolev s E →L[ℂ] CircleSobolev 
   fourierMultiplier (fun n ↦ (laplacianSymbol T n)⁻¹) (isBigO_inv (isTheta_laplacianSymbol T).2)
     (by linarith)
 
+/-- The Green operator is the Fourier multiplier with symbol `(laplacianSymbol T)⁻¹`. -/
+theorem greenOperator_eq_fourierMultiplier (h : t ≤ s + 2) :
+    (greenOperator T h : CircleSobolev s E →L[ℂ] CircleSobolev t E) =
+      fourierMultiplier (fun n ↦ (laplacianSymbol T n)⁻¹)
+        (isBigO_inv (isTheta_laplacianSymbol T).2) (by linarith) :=
+  (rfl)
+
 @[simp]
 theorem coeff_greenOperator (h : t ≤ s + 2) (b : CircleSobolev s E) (n : ℤ) :
     (greenOperator T h b).coeff n = (laplacianSymbol T n)⁻¹ • b.coeff n :=
@@ -224,7 +239,7 @@ theorem coeff_greenOperator (h : t ≤ s + 2) (b : CircleSobolev s E) (n : ℤ) 
 `Δ G b = b - single 0 (b.coeff 0)`. -/
 theorem laplacian_greenOperator (h : s + 2 = t) (b : CircleSobolev s E) :
     laplacian T h.le (greenOperator T h.ge b) = b - single 0 (b.coeff 0) := by
-  rw [laplacian, greenOperator,
+  rw [laplacian_eq_fourierMultiplier, greenOperator_eq_fourierMultiplier,
     fourierMultiplier_fourierMultiplier_inv (isTheta_laplacianSymbol T) h,
     indicator_setOf_laplacianSymbol_eq_zero]
 
@@ -232,7 +247,7 @@ theorem laplacian_greenOperator (h : s + 2 = t) (b : CircleSobolev s E) :
 `G Δ a = a - single 0 (a.coeff 0)`. -/
 theorem greenOperator_laplacian (h : s + 2 = t) (a : CircleSobolev t E) :
     greenOperator T h.ge (laplacian T h.le a) = a - single 0 (a.coeff 0) := by
-  rw [laplacian, greenOperator,
+  rw [laplacian_eq_fourierMultiplier, greenOperator_eq_fourierMultiplier,
     fourierMultiplier_inv_fourierMultiplier (isTheta_laplacianSymbol T) h,
     indicator_setOf_laplacianSymbol_eq_zero]
 
@@ -268,8 +283,9 @@ theorem isTheta_one_sub_laplacianSymbol :
 omit hT in
 /-- The symbol `1 + (2πn/T)²` of `1 - Δ` vanishes nowhere, not even at `n = 0`. -/
 theorem one_sub_laplacianSymbol_ne_zero (n : ℤ) : 1 - laplacianSymbol T n ≠ 0 := by
-  rw [laplacianSymbol_def, ← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.ofReal_ne_zero,
-    sub_neg_eq_add]
+  rw [laplacianSymbol_def]
+  norm_cast
+  rw [sub_neg_eq_add]
   positivity
 
 /-- **`1 - Δ` is an isomorphism** `H^t ≃ H^s` for `s + 2 = t`: it multiplies the `n`-th Fourier
