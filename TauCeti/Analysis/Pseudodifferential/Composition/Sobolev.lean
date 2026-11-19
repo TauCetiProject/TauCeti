@@ -25,7 +25,9 @@ spatial support and vanishes outside `K`, and `χ` is a compactly supported Schw
 to `1` on a neighbourhood of `K`, then
 `‖Op(c) v‖_{H^{t - m}} ≤ C (‖χ v‖_{H^t} + ‖v‖_{H^r})` for every `r ≤ t`
 (`TauCeti.Symbol.exists_norm_quantizeSobolev_le_smulLeftCLM`). Estimates of this form localize the
-lower order terms in elliptic estimates.
+lower order terms in elliptic estimates. In the same situation `Op(c) v - Op(c) (χ v)` lies in every
+`H^r` (`TauCeti.Symbol.memSobolev_toDistr_quantizeSobolev_sub_quantizeSobolev_smulLeftCLM`), so
+`Op(c) v` is as regular as `χ v` allows.
 
 ## References
 
@@ -125,6 +127,45 @@ theorem exists_norm_quantizeSobolev_le_smulLeftCLM {c : Symbol n V W m}
         nlinarith [norm_nonneg (c.quantizeSobolev hc t), norm_nonneg T,
           norm_nonneg (BesselPotentialSpace.smulLeftCLM t χ v),
           norm_nonneg (BesselPotentialSpace.inclusion hrt v)]
+
+/-- **Pseudolocality on Sobolev spaces.** `Op(c) v` only depends on `v` near the positions where
+the symbol `c` does not vanish, up to a smoothing operator: if `c` has compact spatial support and
+vanishes at positions outside `K`, and the Schwartz function `χ` has compact support and equals `1`
+on a neighbourhood of `K`, then `Op(c) v - Op(c) (χ v)` lies in every `H^r`, for every `v ∈ H^t`.
+-/
+theorem memSobolev_toDistr_quantizeSobolev_sub_quantizeSobolev_smulLeftCLM
+    {c : Symbol n V W m} (hc : c.HasCompactSpatialSupport) {K : Set (CoordinateSpace n)}
+    (hcK : ∀ x ∉ K, ∀ ξ, c.coefficient (x, ξ) = 0) {χ : 𝓢(CoordinateSpace n, ℂ)}
+    (hχ : HasCompactSupport χ) (hχK : ∀ᶠ x in 𝓝ˢ K, χ x = 1) (t r : ℝ)
+    (v : H^{t}(CoordinateSpace n, V)) :
+    TemperedDistribution.MemSobolev r 2 ((c.quantizeSobolev hc t v).toDistr -
+      (c.quantizeSobolev hc t (BesselPotentialSpace.smulLeftCLM t χ v)).toDistr) := by
+  have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := V) hχ
+  set F := ofSpatial (fun x ↦ χ x • ContinuousLinearMap.id ℂ V) ((χ.smooth ⊤).smul contDiff_const)
+  have hχ1 : ∀ x ∈ K, χ x = 1 := fun x hx ↦ hχK.self_of_nhdsSet x hx
+  -- `c ∘ χ = c`, and `c ∘ χ - c # χ` is smoothing.
+  have hcomp : (c.comp F).coefficient =
+      (Symbol.inclusion (le_of_eq (add_zero m).symm) c).coefficient := by
+    funext ⟨x, ξ⟩
+    by_cases hx : x ∈ K
+    · simp [F, hχ1 x hx]
+    · simp [F, hcK x hx]
+  have hsm : (c.comp F - c.sharp F hF).IsSmoothing := by
+    rw [← neg_sub]
+    exact (isSmoothing_sharp_sub_comp hF hcK fun x hx ↦
+      (hχK.filter_mono (nhds_le_nhdsSet hx)).mono fun y hy ξ ↦ by simp [F, hy, hχ1 x hx]).neg
+  have hsmK : (c.comp F - c.sharp F hF).HasCompactSpatialSupport :=
+    (hF.comp_left c).sub (hc.sharp hF)
+  -- `Op(c) v - Op(c) (χ v) = Op(c ∘ χ - c # χ) v`, since `Op(c # χ) v = Op(c) (χ v)`.
+  have h : (c.quantizeSobolev hc t v).toDistr -
+      (c.quantizeSobolev hc t (BesselPotentialSpace.smulLeftCLM t χ v)).toDistr =
+        ((c.comp F - c.sharp F hF).quantizeSobolev hsmK t v).toDistr := by
+    rw [toDistr_quantizeSobolev_sub_apply (hF.comp_left c) (hc.sharp hF) hsmK,
+      toDistr_quantizeSobolev_congr (hcomp.trans (coefficient_inclusion _ c)) (hF.comp_left c) hc
+        rfl, toDistr_quantizeSobolev_sharp hc hF,
+      toDistr_quantizeSobolev_congr rfl hc hc (toDistr_quantizeSobolev_ofSpatial_smul_id χ hF t v)]
+  rw [h]
+  exact hsm.memSobolev_toDistr_quantizeSobolev hsmK t r v
 
 end Symbol
 
