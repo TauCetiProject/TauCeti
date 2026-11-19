@@ -96,6 +96,9 @@ def complexOfMapISmul (e : V ≃L[ℝ] W)
     let u := e.toContinuousLinearMap.complexOfMapISmul h
     have hu (v : V) : u v = e v :=
       congrFun (ContinuousLinearMap.coe_complexOfMapISmul e.toContinuousLinearMap h) v
+    -- `toEquiv := e.toEquiv` fixes the forward map to `e`. The promoted CLM has an
+    -- opaque linear-map constructor, so its explicit coercion law `hu` is needed to
+    -- transfer the scalar identity to this equivalence field.
     change e (c • v) = c • e v
     exact (hu _).symm.trans ((u.map_smul c v).trans (congrArg (c • ·) (hu v)))
   continuous_toFun := e.continuous

@@ -51,6 +51,9 @@ and coordinate changes (`Bundle.Trivialization.isLinear_restrictScalars`,
 `Bundle.Trivialization.restrictScalars_coordChangeL`). A trivialization that is linear over two
 fields has the same continuous linear map at every point over either field
 (`Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt`).
+
+Reconstruction at equal base points agrees with the equality cast between fibres
+(`Bundle.Trivialization.symmL_continuousLinearMapAt_eq_cast`).
 -/
 
 public section
@@ -134,6 +137,13 @@ variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] {F : Type*} [NormedAddCom
   [NormedSpace 𝕜 F] {E : B → Type*} [TopologicalSpace (TotalSpace F E)]
   [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)]
   [∀ b, TopologicalSpace (E b)] [FiberBundle F E] (e : Trivialization F (π F E)) [e.IsLinear 𝕜]
+
+/-- Reconstruction in a common chart agrees with the equality cast between equal fibres. -/
+theorem symmL_continuousLinearMapAt_eq_cast {x₀ x₁ : B} (h : x₀ = x₁)
+    (he : x₀ ∈ e.baseSet) (v : E x₀) :
+    e.symmL 𝕜 x₁ (e.continuousLinearMapAt 𝕜 x₀ v) = cast (congrArg E h) v := by
+  subst x₁
+  exact e.symmL_continuousLinearMapAt he v
 
 theorem homeomorphTrivial_apply_eq_continuousLinearEquivAt (he : e.baseSet = Set.univ)
     (v : TotalSpace F E) :

@@ -10,9 +10,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.TotallyReal.Trivialization
 public import TauCeti.Topology.VectorBundle.RealForm
-import TauCeti.LinearAlgebra.Complex.Module
 public import TauCeti.Topology.Algebra.Module.ComplexSmulI
-import Mathlib.Geometry.Manifold.PartitionOfUnity
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Smooth vector-bundle comparison along a given collar
@@ -29,13 +28,13 @@ neither the collar nor a doubled bundle, and asserts no choice independence.
 * `TauCeti.SmoothCollar.exists_bundleComparison`: a common complex-linear comparison with
   smooth native pullback maps in both directions and exact identity on the zero slice.
 * `TauCeti.SmoothCollar.BundleComparison.isSubbundleFrameOn_transport`: transport of given
-  smooth real boundary frames to the full smaller collar cylinder.
+  smooth real boundary frames to the smaller collar cylinder over their domain.
 * `TauCeti.SmoothCollar.BundleComparison.hasLocalContMDiffSubbundleFrames_transport`: the
   corresponding native local-frame criterion for the transported subbundle.
 * `TauCeti.SmoothCollar.BundleComparison.exists_adaptedTrivialization`: a smooth complex-linear
   trivialization with exactly the original boundary-frame coordinates.
-* `TauCeti.SmoothCollar.BundleComparison.transported_transition_eq`: real overlap coefficients
-  equal to the original boundary coefficients at every depth.
+* `TauCeti.SmoothCollar.BundleComparison.repr_map_equiv_apply_eq_ofReal_re`: coordinates
+  equal to the original real boundary coefficients at every depth.
 
 Only the boundary is assumed compact and Hausdorff. Boundary dimension zero, rank zero and
 empty or disconnected boundary are included.
@@ -49,205 +48,7 @@ noncomputable section
 
 namespace TauCeti.SmoothCollar
 
-section LocalTransport
-variable {EM HM M EP HP P F : Type*}
-  [NormedAddCommGroup EM] [NormedSpace ℝ EM] [TopologicalSpace HM]
-  {IM : ModelWithCorners ℝ EM HM} [TopologicalSpace M] [ChartedSpace HM M]
-  [IsManifold IM ∞ M]
-  [NormedAddCommGroup EP] [NormedSpace ℝ EP] [TopologicalSpace HP]
-  {IP : ModelWithCorners ℝ EP HP} [TopologicalSpace P] [ChartedSpace HP P]
-  [IsManifold IP ∞ P]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F]
-  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
-  [∀ x, Module ℂ (V x)] [∀ x, IsScalarTower ℝ ℂ (V x)]
-  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-  [FiberBundle F V] [VectorBundle ℝ F V] [VectorBundle ℂ F V]
-  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [∀ x, ContinuousSMul ℂ (V x)] [ContMDiffVectorBundle ∞ F V IM]
-  (b₀ b₁ : C^∞⟮IP, P; IM, M⟯)
-  (e : Trivialization F (π F V)) [e.IsLinear ℂ] [e.IsLinear ℝ] [MemTrivializationAtlas e]
 
-local instance sourceSmoothBundle : ContMDiffVectorBundle ∞ F ((b₀ : P → M) *ᵖ V) IP :=
-  ContMDiffVectorBundle.pullback F V IP b₀
-local instance targetSmoothBundle : ContMDiffVectorBundle ∞ F ((b₁ : P → M) *ᵖ V) IP :=
-  ContMDiffVectorBundle.pullback F V IP b₁
-
-private def localTransport (p : P) : V (b₀ p) →L[ℝ] V (b₁ p) :=
-  ((e.symmL ℂ (b₁ p)).comp (e.continuousLinearMapAt ℂ (b₀ p))).restrictScalars ℝ
-
-omit [IsManifold IM ∞ M] [IsManifold IP ∞ P]
-  [NormedSpace ℝ F] [IsScalarTower ℝ ℂ F] [VectorBundle ℝ F V] [VectorBundle ℂ F V]
-  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [∀ x, ContinuousSMul ℂ (V x)] [ContMDiffVectorBundle ∞ F V IM]
-  [e.IsLinear ℝ] [MemTrivializationAtlas e] in
-private theorem localTransport_map_I (p : P) (v : V (b₀ p)) :
-    localTransport b₀ b₁ e p (Complex.I • v) = Complex.I • localTransport b₀ b₁ e p v := by
-  exact (((e.symmL ℂ (b₁ p)).comp
-    (e.continuousLinearMapAt ℂ (b₀ p))).map_smul Complex.I v)
-
-omit [IsManifold IM ∞ M] [IsManifold IP ∞ P]
-  [NormedSpace ℝ F] [IsScalarTower ℝ ℂ F] [VectorBundle ℝ F V] [VectorBundle ℂ F V]
-  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [∀ x, ContinuousSMul ℂ (V x)] [ContMDiffVectorBundle ∞ F V IM]
-  [e.IsLinear ℝ] [MemTrivializationAtlas e] in
-private theorem lift_localTransport (v : TotalSpace F ((b₀ : P → M) *ᵖ V))
-    (hv : b₀ v.proj ∈ e.baseSet ∧ b₁ v.proj ∈ e.baseSet) :
-    Pullback.lift b₁ (TotalSpace.mk' F (E := (b₁ : P → M) *ᵖ V)
-      v.proj (localTransport b₀ b₁ e v.proj v.2)) =
-    e.toOpenPartialHomeomorph.symm (b₁ v.proj, (e (Pullback.lift b₀ v)).2) := by
-  let u : V (b₀ v.proj) := v.2
-  change (TotalSpace.mk' F (E := V) (b₁ v.proj)
-    (e.symmL ℂ (b₁ v.proj) (e.continuousLinearMapAt ℂ (b₀ v.proj) u))) =
-      e.toOpenPartialHomeomorph.symm (b₁ v.proj, (e ⟨b₀ v.proj, u⟩).2)
-  rw [e.continuousLinearMapAt_apply_of_mem ℂ hv.1, e.symmL_apply hv.2]
-  exact e.mk_symm hv.2 _
-
-omit [IsManifold IM ∞ M] [IsManifold IP ∞ P]
-  [IsScalarTower ℝ ℂ F] [VectorBundle ℂ F V]
-  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [∀ x, ContinuousSMul ℂ (V x)] [e.IsLinear ℝ] in
-private theorem contMDiffOn_localTransport :
-    ContMDiffOn (IP.prod 𝓘(ℝ, F)) (IP.prod 𝓘(ℝ, F)) ∞
-      (fun v : TotalSpace F ((b₀ : P → M) *ᵖ V) ↦
-        TotalSpace.mk' F (E := (b₁ : P → M) *ᵖ V)
-          v.proj (localTransport b₀ b₁ e v.proj v.2))
-      {v | b₀ v.proj ∈ e.baseSet ∧ b₁ v.proj ∈ e.baseSet} := by
-  intro v hv
-  have hp : ContMDiffAt (IP.prod 𝓘(ℝ, F)) IP ∞
-      (fun v : TotalSpace F ((b₀ : P → M) *ᵖ V) ↦ v.proj) v := contMDiffAt_proj _
-  have hl := (Pullback.contMDiff_lift b₀ b₀.contMDiff).contMDiffAt (x := v)
-  have hcoord := (e.contMDiffAt (e.mem_source.mpr hv.1)).comp v hl
-  have hpair := ((b₁.contMDiff.contMDiffAt).comp v hp).prodMk hcoord.snd
-  have hs := (e.contMDiffAt_symm (e.mem_target.mpr hv.2)).comp v hpair
-  have hU : IsOpen {v : TotalSpace F ((b₀ : P → M) *ᵖ V) |
-      b₀ v.proj ∈ e.baseSet ∧ b₁ v.proj ∈ e.baseSet} :=
-    (e.open_baseSet.preimage (b₀.contMDiff.continuous.comp (continuous_proj _ _))).inter
-      (e.open_baseSet.preimage (b₁.contMDiff.continuous.comp (continuous_proj _ _)))
-  have heq : (fun v : TotalSpace F ((b₀ : P → M) *ᵖ V) ↦
-      Pullback.lift b₁ (TotalSpace.mk' F (E := (b₁ : P → M) *ᵖ V)
-        v.proj (localTransport b₀ b₁ e v.proj v.2))) =ᶠ[𝓝 v]
-      (fun v ↦ e.toOpenPartialHomeomorph.symm (b₁ v.proj, (e (Pullback.lift b₀ v)).2)) := by
-    filter_upwards [hU.mem_nhds hv] with w hw
-    exact lift_localTransport b₀ b₁ e w hw
-  apply ContMDiffAt.contMDiffWithinAt
-  exact (Pullback.contMDiffAt_iff b₁ (b₁.contMDiff.contMDiffAt)).2
-    ⟨hp, hs.congr_of_eventuallyEq heq⟩
-
-
-omit [IsManifold IM ∞ M] [IsManifold IP ∞ P]
-  [NormedSpace ℝ F] [IsScalarTower ℝ ℂ F] [VectorBundle ℝ F V] [VectorBundle ℂ F V]
-  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [∀ x, ContinuousSMul ℂ (V x)] [ContMDiffVectorBundle ∞ F V IM]
-  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, Module ℝ (V x)]
-  [e.IsLinear ℝ] [MemTrivializationAtlas e] in
-private theorem localTransport_eq_cast {x₀ x₁ : M} (h : x₀ = x₁)
-    (he : x₀ ∈ e.baseSet) (v : V x₀) :
-    (e.symmL ℂ x₁) ((e.continuousLinearMapAt ℂ x₀) v) = cast (congrArg V h) v := by
-  subst x₁
-  exact e.symmL_continuousLinearMapAt he v
-
-omit [IsManifold IM ∞ M] [IsManifold IP ∞ P]
-  [IsScalarTower ℝ ℂ F] [VectorBundle ℂ F V]
-  [∀ x, ContinuousSMul ℂ (V x)] [e.IsLinear ℝ] in
-private theorem contMDiffOn_localTransport_hom [FiniteDimensional ℝ F] :
-    ContMDiffOn IP (IP.prod 𝓘(ℝ, F →L[ℝ] F)) ∞
-      (fun p ↦ TotalSpace.mk' (F →L[ℝ] F)
-        (E := fun p ↦ ((b₀ : P → M) *ᵖ V) p →L[ℝ] ((b₁ : P → M) *ᵖ V) p)
-        p (localTransport b₀ b₁ e p))
-      {p | b₀ p ∈ e.baseSet ∧ b₁ p ∈ e.baseSet} := by
-  intro p hp
-  apply ContMDiffAt.contMDiffWithinAt
-  apply (TauCeti.contMDiffAt_hom_bundle_iff
-    (F₁ := F) (F₂ := F) (IB := IP)
-    (E₁ := (b₀ : P → M) *ᵖ V) (E₂ := (b₁ : P → M) *ᵖ V)
-    (localTransport b₀ b₁ e) p).2
-  intro v
-  have hU : IsOpen {v : TotalSpace F ((b₀ : P → M) *ᵖ V) |
-      b₀ v.proj ∈ e.baseSet ∧ b₁ v.proj ∈ e.baseSet} :=
-    (e.open_baseSet.preimage (b₀.contMDiff.continuous.comp (continuous_proj _ _))).inter
-      (e.open_baseSet.preimage (b₁.contMDiff.continuous.comp (continuous_proj _ _)))
-  exact (contMDiffOn_localTransport b₀ b₁ e ⟨p, v⟩ hp).contMDiffAt (hU.mem_nhds hp)
-
-
-omit [IsManifold IM ∞ M] [IsScalarTower ℝ ℂ F]
-  [∀ x, ContinuousSMul ℂ (V x)] in
-private theorem exists_smoothTransportMap [FiniteDimensional ℝ EP]
-    [FiniteDimensional ℝ F] [T2Space P] [SigmaCompactSpace P]
-    (D : Set P) (hD : IsClosed D) (hbase : ∀ p ∈ D, b₀ p = b₁ p) :
-    ∃ A : ∀ p, ((b₀ : P → M) *ᵖ V) p →L[ℝ] ((b₁ : P → M) *ᵖ V) p,
-      ContMDiff IP (IP.prod 𝓘(ℝ, F →L[ℝ] F)) ∞
-        (fun p ↦ TotalSpace.mk' (F →L[ℝ] F) p (A p)) ∧
-      (∀ p v, A p (Complex.I • v) = Complex.I • A p v) ∧
-      ∀ p ∈ D, ∀ h : b₀ p = b₁ p, ∀ v, A p v = cast (congrArg V h) v := by
-  let Z (p : P) := ((b₀ : P → M) *ᵖ V) p →L[ℝ] ((b₁ : P → M) *ᵖ V) p
-  let t (p : P) : Set (Z p) := {A | (∀ v, A (Complex.I • v) = Complex.I • A v) ∧
-    (p ∈ D → ∀ h : b₀ p = b₁ p, ∀ v, A v = cast (congrArg V h) v)}
-  have hconv (p : P) : Convex ℝ (t p) := by
-    rintro A ⟨hAI, hAD⟩ B ⟨hBI, hBD⟩ a b _ _ hab
-    refine ⟨fun v ↦ ?_, fun hp h v ↦ ?_⟩
-    · simp only [add_apply, smul_apply, hAI, hBI,
-        smul_add]
-      exact congrArg₂ (· + ·) (smul_comm _ _ _) (smul_comm _ _ _)
-    · simp only [add_apply, smul_apply,
-        hAD hp h, hBD hp h]
-      have hs (w : V (b₁ p)) : a • w + b • w = w := by
-        rw [← add_smul, hab, one_smul]
-      exact hs _
-  have hloc (p : P) : ∃ U ∈ 𝓝 p, ∃ a : ∀ p, Z p,
-      ContMDiffOn IP (IP.prod 𝓘(ℝ, F →L[ℝ] F)) ∞
-        (fun p ↦ TotalSpace.mk' (F →L[ℝ] F) p (a p)) U ∧ ∀ q ∈ U, a q ∈ t q := by
-    by_cases hp : p ∈ D
-    · let e := trivializationAt F V (b₀ p)
-      let U := {q | b₀ q ∈ e.baseSet ∧ b₁ q ∈ e.baseSet}
-      have hU : IsOpen U :=
-        (e.open_baseSet.preimage b₀.contMDiff.continuous).inter
-          (e.open_baseSet.preimage b₁.contMDiff.continuous)
-      have hpU : p ∈ U := by
-        refine ⟨mem_baseSet_trivializationAt F V (b₀ p), ?_⟩
-        rw [← hbase p hp]
-        exact mem_baseSet_trivializationAt F V (b₀ p)
-      refine ⟨U, hU.mem_nhds hpU, localTransport b₀ b₁ e,
-        contMDiffOn_localTransport_hom b₀ b₁ e, ?_⟩
-      intro q hq
-      refine ⟨localTransport_map_I b₀ b₁ e q, fun _ h v ↦ ?_⟩
-      exact localTransport_eq_cast e h hq.1 v
-    · refine ⟨Dᶜ, hD.isOpen_compl.mem_nhds hp, fun _ ↦ 0, ?_, ?_⟩
-      · exact (contMDiff_zeroSection (F := F →L[ℝ] F) (E := Z) (IB := IP) (n := ∞) ℝ).contMDiffOn
-      · intro q hq
-        exact ⟨fun v ↦ by simp, fun hqD ↦ (hq hqD).elim⟩
-  obtain ⟨A, hA⟩ := exists_contMDiffSection_forall_mem_convex_of_local IP Z t hconv hloc
-  exact ⟨A, A.contMDiff, fun p ↦ (hA p).1, fun p hp ↦ (hA p).2 hp⟩
-
-omit [IsManifold IM ∞ M] [IsManifold IP ∞ P] [NormedSpace ℂ F]
-  [IsScalarTower ℝ ℂ F] [∀ x, IsScalarTower ℝ ℂ (V x)] [VectorBundle ℂ F V]
-  [∀ x, ContinuousSMul ℂ (V x)] [ContMDiffVectorBundle ∞ F V IM]
-  [∀ x, Module ℂ (V x)] in
-private theorem contMDiff_compositeTransport [FiniteDimensional ℝ F]
-    {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ]
-    [TopologicalSpace HQ] {IQ : ModelWithCorners ℝ EQ HQ}
-    [TopologicalSpace Q] [ChartedSpace HQ Q]
-    (A : ∀ p, ((b₀ : P → M) *ᵖ V) p →L[ℝ] ((b₁ : P → M) *ᵖ V) p)
-    (hA : ContMDiff IP (IP.prod 𝓘(ℝ, F →L[ℝ] F)) ∞
-      (fun p ↦ TotalSpace.mk' (F →L[ℝ] F) p (A p))) (j : C^∞⟮IQ, Q; IP, P⟯) :
-    ContMDiff (IQ.prod 𝓘(ℝ, F)) (IQ.prod 𝓘(ℝ, F)) ∞
-      (fun v : TotalSpace F ((b₀.comp j : Q → M) *ᵖ V) ↦
-        TotalSpace.mk' F (E := (b₁.comp j : Q → M) *ᵖ V) v.proj (A (j v.proj) v.2)) := by
-  have hAt := (TauCeti.contMDiff_hom_bundle_iff
-    (IB := IP) (F₁ := F) (F₂ := F)
-    (E₁ := (b₀ : P → M) *ᵖ V) (E₂ := (b₁ : P → M) *ᵖ V) A).1 hA
-  have hit := Pullback.contMDiff_fiberwise
-    (F := F) (F' := F) (E := (b₀ : P → M) *ᵖ V) (E' := (b₁ : P → M) *ᵖ V)
-    (fun p v ↦ A p v) hAt j j.contMDiff
-  have hr := (Pullback.compDiffeomorph (n := ∞) V b₁ j).symm.contMDiff.comp
-    (hit.comp (Pullback.compDiffeomorph (n := ∞) V b₀ j).contMDiff)
-  apply hr.congr
-  intro v
-  simp only [Function.comp_apply]
-  rw [Pullback.compDiffeomorph_apply (n := ∞) (E := V) b₀ j v,
-    Pullback.compDiffeomorph_symm_apply]
-
-
-end LocalTransport
 
 
 open TauCeti.EuclideanHalfSpace
@@ -278,14 +79,6 @@ private theorem exists_uniformDepth {N : Type*} [TopologicalSpace N] [CompactSpa
   exact hWV ⟨subset_of_mem_nhdsSet hW (mem_univ y), hOV (hteq ▸ ht'O)⟩
 
 
-
-private theorem invertible_of_cast {M : Type*} {V : M → Type*}
-    [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
-    {x₀ x₁ : M} (h : x₀ = x₁) (A : V x₀ →L[ℝ] V x₁)
-    (hA : ∀ v, A v = cast (congrArg V h) v) : A.IsInvertible := by
-  subst x₁
-  obtain rfl : A = ContinuousLinearMap.id ℝ (V x₀) := ContinuousLinearMap.ext hA
-  exact ContinuousLinearMap.isInvertible_equiv (f := ContinuousLinearEquiv.refl ℝ (V x₀))
 
 section ComparisonData
 
@@ -422,12 +215,14 @@ private theorem exists_admissibleMap (c : SmoothCollar n ∞ M) :
     p.2 = normalIioOpensZero one_pos}
   have hD : IsClosed D := isClosed_eq continuous_snd continuous_const
   have hbase (p) (hp : p ∈ D) : b₀ p = b₁ p := by
+    -- Unfold the two private base maps to read coincidence in the original manifold.
     change (p.1 : M) = c p
     rcases p with ⟨y, t⟩
+    -- `D` is the zero-slice predicate; this exposes its normal coordinate after destructuring `p`.
     change t = normalIioOpensZero one_pos at hp
     subst t
     exact (c.apply_zero y).symm
-  exact exists_smoothTransportMap b₀ b₁ D hD hbase
+  exact Pullback.exists_contMDiff_hom_map_I_eq_cast b₀ b₁ D hD hbase
 
 private theorem exists_invertibleMap (c : SmoothCollar n ∞ M) :
     let b₀ := sourceBase c 1
@@ -447,6 +242,8 @@ private theorem exists_invertibleMap (c : SmoothCollar n ∞ M) :
   let b₁ : C^∞⟮IP, P; 𝓡∂ (n + 1), M⟯ := ⟨c, c.contMDiff⟩
   obtain ⟨A, hA, hI, hZ⟩ := exists_admissibleMap F V c
   -- Keep the two native pullback families explicit when using the returned Hom section.
+  -- Name the native pullback families explicitly: the private bundled base maps and the
+  -- inline continuous maps have the same evaluations but different inferred bundle presentations.
   change ContMDiff IP (IP.prod 𝓘(ℝ, F →L[ℝ] F)) ∞
     (fun p : P ↦ TotalSpace.mk' (F →L[ℝ] F)
       (E := fun p ↦ ((b₀ : P → M) *ᵖ V) p →L[ℝ] ((b₁ : P → M) *ᵖ V) p) p (A p)) at hA
@@ -459,7 +256,8 @@ private theorem exists_invertibleMap (c : SmoothCollar n ∞ M) :
       (b := id) (ϕ := A) hAc
   have hUZ (y : ↥((𝓡∂ (n + 1)).boundary M)) :
       (y, normalIioOpensZero one_pos) ∈ {p : P | (A p).IsInvertible} := by
-    exact invertible_of_cast (c.apply_zero y).symm (A (y, normalIioOpensZero one_pos))
+    exact ContinuousLinearMap.isInvertible_of_eq_cast (c.apply_zero y).symm
+      (A (y, normalIioOpensZero one_pos))
       (fun v ↦ hZ (y, normalIioOpensZero one_pos) rfl (c.apply_zero y).symm v)
   exact ⟨A, hA, hI, hZ, exists_uniformDepth hU hUZ⟩
 
@@ -483,18 +281,24 @@ private def comparisonOfEquiv (c : SmoothCollar n ∞ M) (ε : ℝ) (h0 : 0 < ε
     symm_apply_eq := ?_
     zero_eq := ?_ }
   · intro p v
+    -- Expand the comparison field to the native bundle diffeomorphism so its public
+    -- evaluation law applies to these explicitly typed pullback total spaces.
     change (TauCeti.bundleDiffeomorph e hE) ⟨p, v⟩ =
       TotalSpace.mk' F (E := (targetBase c h1 : _ → M) *ᵖ V) p (T p v)
     rw [TauCeti.bundleDiffeomorph_apply]
     exact (congrArg (TotalSpace.mk' F p)
       ((e p).complexOfMapISmul_apply (hComm p) v)).symm
   · intro p v
+    -- Expand the comparison field to the native bundle diffeomorphism so its public
+    -- evaluation law applies to these explicitly typed pullback total spaces.
     change (TauCeti.bundleDiffeomorph e hE).symm ⟨p, v⟩ =
       TotalSpace.mk' F (E := (sourceBase c ε : _ → M) *ᵖ V) p ((T p).symm v)
     rw [TauCeti.bundleDiffeomorph_symm_apply]
     exact (congrArg (TotalSpace.mk' F p)
       ((e p).complexOfMapISmul_symm_apply (hComm p) v)).symm
   · intro y v
+    -- Expose the original total-space constructor; complex promotion preserves evaluation
+    -- and `complexOfMapISmul_apply` below supplies that equality explicitly.
     change TotalSpace.mk' F (E := V) (targetBase c h1 (y, normalIioOpensZero h0))
       ((e (y, normalIioOpensZero h0)).complexOfMapISmul _ v) = _
     exact (congrArg (TotalSpace.mk' F (E := V)
@@ -532,6 +336,7 @@ private theorem restrictedMap_zero (c : SmoothCollar n ∞ M)
     exact (Set.coe_inclusion hsub _).trans
       ((coe_normalIioOpensZero h0).trans (coe_normalIioOpensZero one_pos).symm)
   have hb : sourceBase c 1 p = c p := by
+    -- The private base-map equality is now read in the original manifold after destructuring.
     change (y : M) = c (y, p.2)
     rw [hz]
     exact (c.apply_zero y).symm
@@ -556,6 +361,8 @@ theorem exists_bundleComparison (c : SmoothCollar n ∞ M) :
   let b₀ := sourceBase c 1
   let b₁ : C^∞⟮IP, P; 𝓡∂ (n + 1), M⟯ := ⟨c, c.contMDiff⟩
   obtain ⟨A, hA, hI, hZ, ε, hε0, hε1, hεU⟩ := exists_invertibleMap F V c
+  -- Name the native pullback families explicitly: the private bundled base maps and the
+  -- inline continuous maps have the same evaluations but different inferred bundle presentations.
   change ContMDiff IP (IP.prod 𝓘(ℝ, F →L[ℝ] F)) ∞
     (fun p : P ↦ TotalSpace.mk' (F →L[ℝ] F)
       (E := fun p ↦ ((b₀ : P → M) *ᵖ V) p →L[ℝ] ((b₁ : P → M) *ᵖ V) p) p (A p)) at hA
@@ -566,6 +373,8 @@ theorem exists_bundleComparison (c : SmoothCollar n ∞ M) :
     contMDiff_fst.prodMk ((contMDiff_inclusion hsub).comp contMDiff_snd)⟩
   have hInv (q : Q) : (A (j q)).IsInvertible := by
     apply hεU q.1 (j q).2
+    -- Membership in the open invertibility cylinder uses the original normal coordinate;
+    -- `Set.inclusion` retains that coordinate when restricting the collar depth.
     change (Set.inclusion hsub q.2).val.val 0 < ε
     rw [Set.coe_inclusion hsub q.2]
     exact mem_normalIioOpens.mp q.2.property
@@ -583,7 +392,7 @@ theorem exists_bundleComparison (c : SmoothCollar n ∞ M) :
   have hE : ContMDiff (IP.prod 𝓘(ℝ, F)) (IP.prod 𝓘(ℝ, F)) ∞
       (fun v : TotalSpace F ((f₀ : Q → M) *ᵖ V) ↦
         TotalSpace.mk' F (E := (f₁ : Q → M) *ᵖ V) v.proj (e v.proj v.2)) :=
-    (contMDiff_compositeTransport b₀ b₁ A hA j).congr fun v ↦
+    (Pullback.contMDiff_fiberwise_comp_of_hom b₀ b₁ A hA j).congr fun v ↦
       congrArg (TotalSpace.mk' F (E := (f₁ : Q → M) *ᵖ V) v.proj) (hev v.proj v.2)
   exact ⟨ε, hε0, hε1, ⟨comparisonOfEquiv F V c ε hε0 hε1 e hComm hE
     (restrictedMap_zero F V c ε hε0 hε1 A hZ e hev)⟩⟩
@@ -605,6 +414,43 @@ omit [IsManifold (𝓡∂ (n + 1)) ∞ M] [T2Space ↥((𝓡∂ (n + 1)).boundar
   [CompactSpace ↥((𝓡∂ (n + 1)).boundary M)] [NormedSpace ℂ F]
   [IsScalarTower ℝ ℂ F] [FiniteDimensional ℂ F] [VectorBundle ℂ F V]
   [ContMDiffVectorBundle ∞ F V (𝓡∂ (n + 1))] in
+/-- The defining image formula for the transported real subspace. -/
+theorem BundleComparison.transportSubspace_def
+    (L : ∀ y : ↥((𝓡∂ (n + 1)).boundary M), Submodule ℝ (V (y : M)))
+    (p : ↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens ε) :
+    B.transportSubspace L p =
+      (L p.1).map ((B.equiv p).toLinearEquiv.restrictScalars ℝ).toLinearMap := by rfl
+
+omit [IsManifold (𝓡∂ (n + 1)) ∞ M] [T2Space ↥((𝓡∂ (n + 1)).boundary M)]
+  [CompactSpace ↥((𝓡∂ (n + 1)).boundary M)] [NormedSpace ℂ F]
+  [IsScalarTower ℝ ℂ F] [FiniteDimensional ℂ F] [VectorBundle ℂ F V]
+  [ContMDiffVectorBundle ∞ F V (𝓡∂ (n + 1))] in
+/-- Membership in the transported subspace is membership of the inverse image. -/
+theorem BundleComparison.mem_transportSubspace_iff
+    (L : ∀ y : ↥((𝓡∂ (n + 1)).boundary M), Submodule ℝ (V (y : M)))
+    (p : ↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens ε)
+    (w : V (c (p.1, Set.inclusion (fun _ ht ↦
+      mem_normalIioOpens.mpr (lt_trans (mem_normalIioOpens.mp ht) hε1)) p.2))) :
+    w ∈ B.transportSubspace L p ↔ (B.equiv p).symm w ∈ L p.1 := by
+  rw [B.transportSubspace_def]
+  exact Submodule.mem_map_equiv (e := (B.equiv p).toLinearEquiv.restrictScalars ℝ) (L p.1)
+
+omit [IsManifold (𝓡∂ (n + 1)) ∞ M] [T2Space ↥((𝓡∂ (n + 1)).boundary M)]
+  [CompactSpace ↥((𝓡∂ (n + 1)).boundary M)] [NormedSpace ℂ F]
+  [IsScalarTower ℝ ℂ F] [FiniteDimensional ℂ F] [VectorBundle ℂ F V]
+  [ContMDiffVectorBundle ∞ F V (𝓡∂ (n + 1))] in
+/-- A transported vector lies in the transported subspace exactly when the original does. -/
+@[simp]
+theorem BundleComparison.equiv_apply_mem_transportSubspace_iff
+    (L : ∀ y : ↥((𝓡∂ (n + 1)).boundary M), Submodule ℝ (V (y : M)))
+    (p : ↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens ε) (v : V (p.1 : M)) :
+    B.equiv p v ∈ B.transportSubspace L p ↔ v ∈ L p.1 := by
+  rw [B.mem_transportSubspace_iff, (B.equiv p).symm_apply_apply]
+
+omit [IsManifold (𝓡∂ (n + 1)) ∞ M] [T2Space ↥((𝓡∂ (n + 1)).boundary M)]
+  [CompactSpace ↥((𝓡∂ (n + 1)).boundary M)] [NormedSpace ℂ F]
+  [IsScalarTower ℝ ℂ F] [FiniteDimensional ℂ F] [VectorBundle ℂ F V]
+  [ContMDiffVectorBundle ∞ F V (𝓡∂ (n + 1))] in
 /-- On the zero slice the transported real subspace has exactly the original vectors in the
 original total space. This states the identity without identifying different fibre types. -/
 theorem BundleComparison.transportSubspace_zero_range
@@ -619,13 +465,13 @@ theorem BundleComparison.transportSubspace_zero_range
   ext z
   constructor
   · rintro ⟨⟨w, hw⟩, rfl⟩
-    change w ∈ (L y).map
-      ((B.equiv (y, normalIioOpensZero hε0)).toLinearEquiv.restrictScalars ℝ).toLinearMap at hw
+    rw [B.transportSubspace_def] at hw
     obtain ⟨v, hv, rfl⟩ := hw
     exact ⟨⟨v, hv⟩, (B.zero_eq y v).symm⟩
   · rintro ⟨v, rfl⟩
     refine ⟨⟨B.equiv (y, normalIioOpensZero hε0) v, ?_⟩, B.zero_eq y v⟩
-    exact ⟨v, v.property, rfl⟩
+    exact (B.equiv_apply_mem_transportSubspace_iff L (y, normalIioOpensZero hε0)
+      (v : V (y : M))).2 v.property
 
 omit [IsManifold (𝓡∂ (n + 1)) ∞ M] [T2Space ↥((𝓡∂ (n + 1)).boundary M)]
   [CompactSpace ↥((𝓡∂ (n + 1)).boundary M)] [NormedSpace ℂ F]
@@ -682,8 +528,8 @@ omit [IsManifold (𝓡∂ (n + 1)) ∞ M] [T2Space ↥((𝓡∂ (n + 1)).boundar
   [CompactSpace ↥((𝓡∂ (n + 1)).boundary M)] [NormedSpace ℂ F]
   [IsScalarTower ℝ ℂ F] [FiniteDimensional ℂ F] [VectorBundle ℂ F V]
   [ContMDiffVectorBundle ∞ F V (𝓡∂ (n + 1))] in
-/-- Transport by the common comparison extends every given smooth real boundary frame to a
-smooth real frame of the transported subspaces on the entire smaller collar cylinder. -/
+/-- Transport extends every given smooth real boundary frame on `U` to a smooth real frame
+on the collar cylinder `Prod.fst ⁻¹' U` over `U`, at every depth below `ε`. -/
 theorem BundleComparison.isSubbundleFrameOn_transport
     (hX : IsSubbundleFrameOn F (E := (ContinuousMap.subtypeVal
       ((𝓡∂ (n + 1)).boundary M) : _ → M) *ᵖ V) L σ U)
@@ -717,7 +563,8 @@ theorem BundleComparison.isSubbundleFrameOn_transport
 omit [IsManifold (𝓡∂ (n + 1)) ∞ M] [T2Space ↥((𝓡∂ (n + 1)).boundary M)]
   [CompactSpace ↥((𝓡∂ (n + 1)).boundary M)] [FiniteDimensional ℂ F] in
 /-- The transported boundary frame defines a native smooth complex-linear trivialization on
-its full collar cylinder. Its coordinates are exactly the original boundary-frame coordinates,
+the full collar cylinder over its domain `U`. Its coordinates are exactly the original
+boundary-frame coordinates,
 so the same comparison normalizes all frames simultaneously. -/
 theorem BundleComparison.exists_adaptedTrivialization [Finite ι]
     (hX : IsSubbundleFrameOn F (E := (ContinuousMap.subtypeVal
@@ -773,7 +620,7 @@ theorem BundleComparison.exists_adaptedTrivialization [Finite ι]
       (β.equiv b (Equiv.refl ι)).toLinearMap := by
     apply β.ext
     intro i
-    change (e ⟨p, B.equiv p (β i)⟩).2 = β.equiv b (Equiv.refl ι) (β i)
+    simp only [LinearEquiv.coe_coe]
     rw [Basis.equiv_apply, Equiv.refl_apply]
     have hβ : β i = σ i p.1 := congrFun (hX.coe_complexBasis (x := p.1) hp (hL p.1 hp)) i
     rw [hβ]
@@ -787,40 +634,33 @@ omit [IsManifold (𝓡∂ (n + 1)) ∞ M] [T2Space ↥((𝓡∂ (n + 1)).boundar
   [CompactSpace ↥((𝓡∂ (n + 1)).boundary M)] [NormedSpace ℂ F]
   [IsScalarTower ℝ ℂ F] [FiniteDimensional ℂ F] [VectorBundle ℂ F V]
   [ContMDiffVectorBundle ∞ F V (𝓡∂ (n + 1))] in
-/-- The overlap coefficients of transported real boundary frames are their original real
-coefficients. The right side contains no depth parameter; its inclusion into `ℂ` fixes both
-reality and exact depth independence, including empty frames. -/
-theorem BundleComparison.transported_transition_eq
-    {κ : Type*} {W : Set ↥((𝓡∂ (n + 1)).boundary M)}
-    {τ : κ → ∀ y : ↥((𝓡∂ (n + 1)).boundary M), V (y : M)}
+/-- Every vector in the real boundary subspace has the same real coordinates after transport.
+In particular, this gives the overlap coefficients of any second boundary frame. The right
+side contains no depth parameter; its inclusion into `ℂ` fixes both reality and exact depth
+independence, including empty frames. -/
+theorem BundleComparison.repr_map_equiv_apply_eq_ofReal_re
     (hX : IsSubbundleFrameOn F (E := (ContinuousMap.subtypeVal
       ((𝓡∂ (n + 1)).boundary M) : _ → M) *ᵖ V) L σ U)
-    (hY : IsSubbundleFrameOn F (E := (ContinuousMap.subtypeVal
-      ((𝓡∂ (n + 1)).boundary M) : _ → M) *ᵖ V) L τ W)
-    {y : ↥((𝓡∂ (n + 1)).boundary M)} (hyU : y ∈ U) (hyW : y ∈ W)
+    {y : ↥((𝓡∂ (n + 1)).boundary M)} (hyU : y ∈ U)
     (hL : IsMaximalTotallyReal
       ((LinearMap.lsmul ℂ (V (y : M)) Complex.I).restrictScalars ℝ) (L y))
-    (t : normalIioOpens ε) (i : ι) (j : κ) :
+    (t : normalIioOpens ε) (i : ι) (v : V (y : M)) (hv : v ∈ L y) :
     (((hX.complexBasis (x := y) hyU hL).map (B.equiv (y, t)).toLinearEquiv).repr
-      (B.equiv (y, t) (τ j y))) i =
-        (((hX.complexBasis (x := y) hyU hL).repr (τ j y) i).re : ℂ) := by
-  let β : Basis ι ℂ (V (y : M)) := hX.complexBasis (x := y) hyU hL
-  let v : V (y : M) := τ j y
-  -- Read the native boundary pullback laws in the original fibre before taking real spans.
-  have hβ : (β : ι → V (y : M)) = (σ · y) := hX.coe_complexBasis hyU hL
-  have hσspan : Submodule.span ℝ (range (fun i : ι ↦ (σ i y : V (y : M)))) = L y :=
-    hX.span_eq hyU
-  have hτmem : (τ j y : V (y : M)) ∈ L y := hY.apply_mem j hyW
-  have hspan : Submodule.span ℝ (range β) = L y :=
-    (congrArg (Submodule.span ℝ) (congrArg range hβ)).trans hσspan
-  have hmem : v ∈ Submodule.span ℝ (range β) := hspan.symm ▸ hτmem
-  have hz := (β.mem_span_real_range_iff v).1 hmem i
+      (B.equiv (y, t) v)) i =
+        (((hX.complexBasis (x := y) hyU hL).repr v i).re : ℂ) := by
+  let β : Basis ι ℂ (V (y : M)) := hX.complexBasis hyU hL
+  have h := hX.complexBasis_repr_coe hyU hL ⟨v, hv⟩ i
+  have hz : (β.repr v i).im = 0 :=
+    (congrArg Complex.im h).trans (Complex.ofReal_im _)
   have hc : β.repr v i = ((β.repr v i).re : ℂ) :=
     Complex.ext (by simp) (by simpa using hz)
+  -- Read the native boundary pullback basis in its original fibre and expose the linear
+  -- equivalence evaluation: `Basis.map_repr` cannot infer these pullback-family reductions.
   change ((β.map (B.equiv (y, t)).toLinearEquiv).repr
     ((B.equiv (y, t)).toLinearEquiv v)) i = ((β.repr v i).re : ℂ)
   rw [Basis.map_repr, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply]
   exact hc
+
 
 
 omit [IsManifold (𝓡∂ (n + 1)) ∞ M] [T2Space ↥((𝓡∂ (n + 1)).boundary M)]

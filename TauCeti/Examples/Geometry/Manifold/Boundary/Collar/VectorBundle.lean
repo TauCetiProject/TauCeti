@@ -100,9 +100,12 @@ private theorem lineFrame (g : ↥((𝓡∂ (n + 1)).boundary M) → ℝ)
       (isImmersion_subtypeVal_boundary (k := ∞) M).contMDiff).2
         ⟨contMDiff_id, lineSection_smooth g hg⟩
   refine ⟨fun _ ↦ hs.continuous.continuousOn, fun {y} _ ↦ ?_, fun {y} _ ↦ ?_⟩
+  -- The native boundary pullback of the trivial line has the original complex fibre.
+  -- Expose that fibre and its displayed frame before applying the scalar independence law.
   · change LinearIndependent ℝ (fun _ : Unit ↦ g y • (1 : ℂ))
     rw [linearIndependent_unique_iff]
     exact smul_ne_zero (hgn y) one_ne_zero
+  -- Likewise, the native frame span is read in the original fibre before the scalar-span law.
   · change Submodule.span ℝ (range (fun _ : Unit ↦ g y • (1 : ℂ))) = _
     rw [range_unique]
     exact Submodule.span_singleton_smul_eq (isUnit_iff_ne_zero.mpr (hgn y)) 1
@@ -145,7 +148,7 @@ theorem exists_real_frame_coordinates (c : SmoothCollar n ∞ M)
     have hβ : β () = (1 : ℂ) := by
       have h := congrFun (hX.coe_complexBasis (x := y) (mem_univ y)
         (hL y (mem_univ y))) ()
-      change β () = (1 : ℝ) • (1 : ℂ) at h
+      -- `coe_complexBasis` returns the original boundary frame, whose coefficient here is one.
       exact h.trans (one_smul ℝ (1 : ℂ))
     have hv : g y • (1 : ℂ) = (g y : ℂ) • β () := by rw [hβ]; simp
     have hc : β.equiv (Basis.singleton Unit ℂ) (Equiv.refl Unit) (g y • (1 : ℂ)) =
@@ -206,8 +209,7 @@ example (c : SmoothCollar n ∞ M) :
       ((𝓡∂ (n + 1)).boundary M) : _ → M) *ᵖ (Trivial M (Fin 0 → ℂ)))
       (fun y ↦ (⊥ : Submodule ℝ (Trivial M (Fin 0 → ℂ) (y : M)))) σ univ := by
     refine ⟨fun i ↦ Fin.elim0 i, fun _ ↦ linearIndependent_empty_type, fun {y} _ ↦ ?_⟩
-    change Submodule.span ℝ (range (fun i : Fin 0 ↦ (σ i y : Fin 0 → ℂ))) =
-      (⊥ : Submodule ℝ (Fin 0 → ℂ))
+    -- The rank-zero boundary pullback is the original `Fin 0 → ℂ` fibre; the frame range is empty.
     exact (congrArg (Submodule.span ℝ) (range_eq_empty _)).trans Submodule.span_empty
   have hL (y : ↥((𝓡∂ (n + 1)).boundary M)) (_ : y ∈ (univ : Set _)) :
       IsMaximalTotallyReal ((LinearMap.lsmul ℂ (Trivial M (Fin 0 → ℂ) (y : M))
@@ -253,6 +255,32 @@ example (c : SmoothCollar n ∞ M)
   exact ⟨ε, h0, h1, B, fun p v ↦ ⟨(B.equiv p).symm_apply_apply v,
     congrArg TotalSpace.proj (B.apply_eq p v),
     (B.isMaximalTotallyReal_transportSubspace_iff L p).2 (hL p.1)⟩⟩
+
+/-- Two actual boundary frames retain real, depth-independent coordinates under the constructed
+comparison; transported frame vectors also satisfy the public subspace membership API. -/
+example (c : SmoothCollar n ∞ M) {ι κ : Type*}
+    {L : ∀ y : ↥((𝓡∂ (n + 1)).boundary M), Submodule ℝ (V (y : M))}
+    {σ : ι → ∀ y : ↥((𝓡∂ (n + 1)).boundary M), V (y : M)}
+    {τ : κ → ∀ y : ↥((𝓡∂ (n + 1)).boundary M), V (y : M)}
+    (hX : IsSubbundleFrameOn F (E := (ContinuousMap.subtypeVal
+      ((𝓡∂ (n + 1)).boundary M) : _ → M) *ᵖ V) L σ univ)
+    (hY : IsSubbundleFrameOn F (E := (ContinuousMap.subtypeVal
+      ((𝓡∂ (n + 1)).boundary M) : _ → M) *ᵖ V) L τ univ)
+    (hL : ∀ y : ↥((𝓡∂ (n + 1)).boundary M), IsMaximalTotallyReal
+      ((LinearMap.lsmul ℂ (V (y : M)) Complex.I).restrictScalars ℝ) (L y)) :
+    ∃ (ε : ℝ) (h0 : 0 < ε) (h1 : ε < 1)
+      (B : BundleComparison c F V ε h0 h1),
+      ∀ (y : ↥((𝓡∂ (n + 1)).boundary M)) (t : normalIioOpens ε) (i : ι) (j : κ),
+        let β := hX.complexBasis (x := y) (mem_univ y) (hL y)
+        ((β.map (B.equiv (y, t)).toLinearEquiv).repr (B.equiv (y, t) (τ j y))) i =
+          ((β.repr (τ j y) i).re : ℂ) ∧
+        B.equiv (y, t) (τ j y) ∈ B.transportSubspace L (y, t) := by
+  obtain ⟨ε, h0, h1, ⟨B⟩⟩ := exists_bundleComparison F V c
+  refine ⟨ε, h0, h1, B, fun y t i j ↦ ?_⟩
+  exact ⟨B.repr_map_equiv_apply_eq_ofReal_re hX (mem_univ y) (hL y) t i
+    (τ j y) (hY.apply_mem j (mem_univ y)),
+    (B.equiv_apply_mem_transportSubspace_iff L (y, t) (τ j y)).2
+      (hY.apply_mem j (mem_univ y))⟩
 
 end ArbitraryBundle
 
