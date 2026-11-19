@@ -108,13 +108,23 @@ theorem addCorrection_comm (x y : A) : addCorrection p x y = addCorrection p y x
   ring
 
 /-- For `p = 2` the addition correction is `-x * y`. -/
+@[simp]
 theorem addCorrection_two (x y : A) : addCorrection 2 x y = -(x * y) := by
-  rw [addCorrection_def, show Finset.Ioo 0 2 = {1} from rfl]
+  have h : Finset.Ioo 0 2 = ({1} : Finset ℕ) := by
+    ext i
+    simp only [Finset.mem_Ioo, Finset.mem_singleton]
+    omega
+  rw [addCorrection_def, h]
   simp
 
 /-- For `p = 3` the addition correction is `-x * y * (x + y)`. -/
+@[simp]
 theorem addCorrection_three (x y : A) : addCorrection 3 x y = -(x * y * (x + y)) := by
-  rw [addCorrection_def, show Finset.Ioo 0 3 = {1, 2} from rfl]
+  have h : Finset.Ioo 0 3 = ({1, 2} : Finset ℕ) := by
+    ext i
+    simp only [Finset.mem_Ioo, Finset.mem_insert, Finset.mem_singleton]
+    omega
+  rw [addCorrection_def, h]
   norm_num [Nat.choose]
   ring
 
@@ -224,6 +234,7 @@ theorem isDeltaMap_iff (f : A →+* B) :
 
 variable (p A) in
 /-- The identity is a `δ`-map. -/
+@[simp]
 theorem isDeltaMap_id : IsDeltaMap p (RingHom.id A) :=
   ⟨fun _ => rfl⟩
 
@@ -264,6 +275,7 @@ theorem natCast_dvd_frobenius_sub_pow (x : A) : (p : A) ∣ frobenius p A x - x 
 
 variable (p A) in
 /-- The Frobenius of a `δ`-ring is a Frobenius lift. -/
+@[simp]
 theorem isFrobeniusLift_frobenius : IsFrobeniusLift p (frobenius p A) :=
   ⟨natCast_dvd_frobenius_sub_pow⟩
 
@@ -418,6 +430,7 @@ theorem delta_int (n : ℤ) : delta p n = (n - n ^ p) / p := by
   rw [h, Int.mul_ediv_cancel_left _ (Nat.cast_ne_zero.mpr hp.out.ne_zero)]
 
 /-- For `p = 2`, the `δ`-operation on `ℤ` sends `2` to `-1`. -/
+@[simp]
 theorem delta_int_two : delta 2 (2 : ℤ) = -1 := by
   rw [delta_int]
   norm_num
