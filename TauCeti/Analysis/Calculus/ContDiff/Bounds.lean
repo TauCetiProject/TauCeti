@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Asymptotics.Lemmas
-import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -75,10 +74,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
 * `ContDiff.isBigO_iteratedFDeriv_smulRight`: the same for `y ↦ (f y).smulRight (g y)`.
 * `ContinuousLinearMap.isBigO_iteratedFDeriv_comp_left`: along any filter, if the order-`n`
   derivative of `f` is `O(ρ)`, then so is that of `y ↦ L (f y)`.
-* `ContinuousLinearMap.norm_iteratedFDeriv_comp_left_le_of_forall_le`,
-  `ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_of_forall_exists`: bounded
-  derivatives of `f` up to order `N` give bounded derivatives of `L ∘ f`, with the bound multiplied
-  by `‖L‖`.
+* `ContinuousLinearMap.norm_iteratedFDeriv_comp_left_le_of_forall_le`: bounded derivatives of `f`
+  up to order `N` give bounded derivatives of `L ∘ f`, with the bound multiplied by `‖L‖`.
 * `TauCeti.norm_iteratedFDeriv_smul_le_of_isOpen`: the Leibniz bound for `z ↦ c z • f z` at a
   point of an open set on which both factors are smooth.
 -/
@@ -389,18 +386,6 @@ theorem ContinuousLinearMap.norm_iteratedFDeriv_comp_left_le_of_forall_le
     ∀ n ≤ N, ∀ x, ‖iteratedFDeriv 𝕜 n (L ∘ f) x‖ ≤ ‖L‖ * M := fun n hn x ↦
   ((L.restrictScalars 𝕜).norm_iteratedFDeriv_comp_left hf.contDiffAt (mod_cast hn)).trans
     (mul_le_mul_of_nonneg_left (hbd n hn x) (norm_nonneg _))
-
-/-- Bounded derivatives of `f` up to order `N` give bounded derivatives of `L ∘ f` up to order
-`N`, for a continuous linear map `L`. The map `L` may be linear over a normed `𝕜`-algebra `𝕜'`,
-such as `ℂ` over `ℝ`. -/
-theorem ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_of_forall_exists
-    {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] [NormedSpace 𝕜' F]
-    [IsScalarTower 𝕜 𝕜' F] [NormedSpace 𝕜' G] [IsScalarTower 𝕜 𝕜' G] (L : F →L[𝕜'] G)
-    {f : E → F} {N : ℕ} (hf : ContDiff 𝕜 N f)
-    (hbd : ∀ n ≤ N, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ C) :
-    ∀ n ≤ N, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n (L ∘ f) x‖ ≤ C := by
-  obtain ⟨M, hM⟩ := TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_exists hbd
-  exact fun n hn ↦ ⟨_, L.norm_iteratedFDeriv_comp_left_le_of_forall_le hf hM n hn⟩
 
 namespace TauCeti
 

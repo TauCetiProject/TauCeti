@@ -92,8 +92,10 @@ def mulLeftCLM (A : E → F →L[ℂ] G) (hA : A.HasTemperateGrowth)
     smulLeftCLM F φ s p q
       (LinearMap.toContinuousLinearMap ((Module.finBasis ℂ (F →L[ℂ] G)).coord k) ∘ A)
       (hA.continuousLinearMap_comp _)
-      (ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_of_forall_exists _
-        (hA.1.of_le (mod_cast le_top)) hbd)
+      (by
+        obtain ⟨M, hM⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists hbd
+        exact fun n hn ↦ ⟨_, ContinuousLinearMap.norm_iteratedFDeriv_comp_left_le_of_forall_le _
+          (hA.1.of_le (mod_cast le_top)) hM n hn⟩)
 
 /-- The tempered distribution of the Besov multiplication `mulLeftCLM φ s p q A hA hbd u` is the
 product `TemperedDistribution.mulLeftCLM A u.toDistr` of the tempered distribution of `u`. -/
