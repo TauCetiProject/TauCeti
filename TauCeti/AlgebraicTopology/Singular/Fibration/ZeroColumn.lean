@@ -566,22 +566,6 @@ private lemma π_comp_cokernelTripleδIsoOfEq_hom {s t w : Set E} (h₁ : s ⊆ 
   simp only [cokernelTripleδIsoOfEq, cokernelSkeletonTripleδIso, eqToHom_refl, Category.id_comp]
   exact cokernel.π_desc _ _ _
 
-/-- The objects of the first page of the Serre spectral sequence in the row `b = -2` vanish: the
-two stages `p⁻¹(X⁻¹)` of the filtration involved agree. -/
-private lemma isZero_serreSpectralSequence_page_two_X_neg_two (pq : ℤ × ℤ) (hb : pq.2 = -2) :
-    IsZero (((serreSpectralSequence C p R).page 2).X pq) := by
-  rcases lt_or_ge 0 (pq.1 + pq.2) with h | h
-  · exact isZero_filteredSpaceSpectralSequence_page_two_X _ _ _ h
-  obtain ⟨n, hn⟩ : ∃ n : ℕ, pq.1 + pq.2 = -n := ⟨(-(pq.1 + pq.2)).toNat, by lia⟩
-  refine IsZero.of_iso ?_ (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R)
-    (monotone_preimageSkeleton p) pq pq.2 (pq.2 + 1) rfl rfl _ rfl n hn)
-  refine TopPair.isZero_singularHomology_of_surjective_map _ _
-    (fun x ↦ ⟨(⟨(x : preimageSkeleton C p (pq.2 + 1)).1, ?_⟩ : preimageSkeleton C p pq.2), rfl⟩) n
-  have := (mem_preimageSkeleton_iff _ _ _).1 (x : preimageSkeleton C p (pq.2 + 1)).2
-  have h₁ : (pq.2 + 1 + 1).toNat = (pq.2 + 1).toNat := by lia
-  rw [h₁] at this
-  exact (mem_preimageSkeleton_iff _ _ _).2 this
-
 variable (C) in
 /-- The homology of the first page at a point of the column `p = 0` is the cokernel of the
 transport differences along the `1`-cells. -/
@@ -593,7 +577,8 @@ private def homologyIsoCokernel (q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = -1) (ha
     ((serreSpectralSequence C p R).page 2 le_rfl).isoHomologyι _ (-1 - (q : ℤ) + 2 + 2, 0 - 1 - 1)
       (ComplexShape.next_eq' _ (Prod.ext (by simp only [Prod.fst_add])
         (by simp only [Prod.snd_add]; lia)))
-      ((isZero_serreSpectralSequence_page_two_X_neg_two R _ (by dsimp only; lia)).eq_of_tgt _ _) ≪≫
+      ((isZero_serreSpectralSequence_page_two_X_of_snd_le_neg_two R C _
+        (by dsimp only; lia)).eq_of_tgt _ _) ≪≫
     (((serreSpectralSequence C p R).page 2 le_rfl).opcyclesIsCokernel (-1 - (q : ℤ), 0) _
       (ComplexShape.prev_eq' _ (Prod.ext (by simp only [Prod.fst_add])
         (by simp only [Prod.snd_add]; lia)))).coconePointUniqueUpToIso (cokernelIsCokernel _) ≪≫
