@@ -156,7 +156,7 @@ lemma comp_naturality_hom_app {B : Type u₁} [Bicategory.{w₁, v₁} B]
 /-- The component at an object `X` of the naturality isomorphism of a strong transformation
 `η : F ⟶ G` into `Cat` along `f : a ⟶ b`: the image under `η` of the transport of `X` along `f`
 is isomorphic to the transport along `f` of the image of `X` under `η`. -/
-@[expose] noncomputable def naturalityObjIso {B : Type u₁} [Bicategory.{w₁, v₁} B]
+noncomputable def naturalityObjIso {B : Type u₁} [Bicategory.{w₁, v₁} B]
     {F G : B ⥤ᵖ Cat.{v, w}} (η : StrongTrans F G) {a b : B} (f : a ⟶ b) (X : F.obj a) :
     (η.app b).toFunctor.obj ((F.map f).toFunctor.obj X) ≅
       (G.map f).toFunctor.obj ((η.app a).toFunctor.obj X) :=
@@ -166,13 +166,13 @@ is isomorphic to the transport along `f` of the image of `X` under `η`. -/
 lemma naturalityObjIso_hom {B : Type u₁} [Bicategory.{w₁, v₁} B]
     {F G : B ⥤ᵖ Cat.{v, w}} (η : StrongTrans F G) {a b : B} (f : a ⟶ b) (X : F.obj a) :
     (η.naturalityObjIso f X).hom = (η.naturality f).hom.toNatTrans.app X :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma naturalityObjIso_inv {B : Type u₁} [Bicategory.{w₁, v₁} B]
     {F G : B ⥤ᵖ Cat.{v, w}} (η : StrongTrans F G) {a b : B} (f : a ⟶ b) (X : F.obj a) :
     (η.naturalityObjIso f X).inv = (η.naturality f).inv.toNatTrans.app X :=
-  rfl
+  (rfl)
 
 end Pseudofunctor.StrongTrans
 
