@@ -161,6 +161,19 @@ theorem iteratedTotalDeriv_zero :
     iteratedTotalDeriv (R := R) (α := α) (0 : ι →₀ ℕ) = 1 := by
   simp [iteratedTotalDeriv]
 
+/-- Iterated total derivatives compose by adding their multi-indices: `D_{I+J} = D_I ∘ D_J`. -/
+theorem iteratedTotalDeriv_add (I J : ι →₀ ℕ) :
+    iteratedTotalDeriv (R := R) (α := α) (I + J) =
+      iteratedTotalDeriv I * iteratedTotalDeriv J := by
+  simp [iteratedTotalDeriv, multiIndexDeriv_add]
+
+@[simp]
+theorem iteratedTotalDeriv_single (i : ι) (k : ℕ) :
+    iteratedTotalDeriv (R := R) (α := α) (Finsupp.single i k) =
+      (totalDeriv (R := R) (α := α) i : Module.End R (PolynomialJet R ι α)) ^ k := by
+  classical
+  simp [iteratedTotalDeriv, Finsupp.single_eq_pi_single]
+
 theorem iteratedTotalDeriv_add_single_one (I : ι →₀ ℕ) (i : ι) (p : PolynomialJet R ι α) :
     iteratedTotalDeriv (I + Finsupp.single i 1) p = totalDeriv i (iteratedTotalDeriv I p) := by
   classical
