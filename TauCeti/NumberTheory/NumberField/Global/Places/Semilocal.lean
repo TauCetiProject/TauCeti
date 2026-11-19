@@ -34,7 +34,8 @@ In particular, a complex place above a real place contributes dimension two, rat
 
 The completion algebra structures and local degrees are Mathlib's
 `AbsoluteValue.Completion.map` and `NumberField.InfinitePlace.inertiaDeg`.
-The argument parallels `TauCeti.semilocalEquiv`, the finite-place decomposition.
+The argument parallels `IsDedekindDomain.HeightOneSpectrum.adicCompletionSemilocalEquiv`, the
+finite-place decomposition.
 -/
 
 public section
@@ -160,7 +161,8 @@ omit [NumberField K] in
 open scoped Classical in
 /-- **The norm is the product of the archimedean local norms.** For `x ∈ L` and an infinite place
 `v` of `K`, the image of `N_{L/K}(x)` in `K_v` is the product over the places `w ∣ v` of the norms
-`N_{L_w/K_v}(x)`. This is the archimedean counterpart of `TauCeti.algebraMap_norm_eq_prod_norm`. -/
+`N_{L_w/K_v}(x)`. This is the archimedean counterpart of
+`IsDedekindDomain.HeightOneSpectrum.algebraMap_norm_eq_prod_norm_adicCompletion`. -/
 theorem algebraMap_norm_eq_prod_norm_infiniteCompletion (x : L) :
     algebraMap K v.Completion (Algebra.norm K x) =
       ∏ w : {w : InfinitePlace L // w.LiesOver v},

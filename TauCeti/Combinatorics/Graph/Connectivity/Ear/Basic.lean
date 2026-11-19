@@ -132,17 +132,28 @@ theorem endpoints_ne (e : G.Ear H) (he : e.kind = .open) : e.toWalk.1 ≠ e.toWa
 theorem base_vertexSet_nonempty (e : G.Ear H) : V(H).Nonempty :=
   ⟨e.toWalk.1, e.toWalk_fst_mem⟩
 
-/-- Ears are equal when they have the same kind and the same endpoint-indexed walk. -/
+/-- Ears are equal when they have the same endpoint-indexed walk. -/
 @[ext]
-theorem ext (e f : G.Ear H) (hkind : e.kind = f.kind) (hwalk : e.toWalk = f.toWalk) :
-    e = f := by
-  cases e <;> cases f <;> simp only [kind, toWalk] at hkind hwalk
+theorem ext (e f : G.Ear H) (hwalk : e.toWalk = f.toWalk) : e = f := by
+  cases e <;> cases f <;> simp only [toWalk] at hwalk
   · cases hwalk
     rfl
-  · contradiction
-  · contradiction
+  · cases hwalk
+    exact absurd rfl ‹_ ≠ _›
+  · cases hwalk
+    exact absurd rfl ‹_ ≠ _›
   · cases hwalk
     rfl
+
+/-- Two bundled `(base, ear)` pairs are equal when their base graphs and underlying walks
+agree. -/
+theorem sigma_ext {p q : Σ K : Graph α β, G.Ear K}
+    (h1 : p.1 = q.1) (hw : p.2.toWalk = q.2.toWalk) : p = q := by
+  rcases p with ⟨K, e₁⟩
+  rcases q with ⟨_, e₂⟩
+  dsimp only at h1 hw
+  subst h1
+  exact congrArg (Sigma.mk K) (Ear.ext e₁ e₂ hw)
 
 /-- The graph traced by an ear. -/
 def toGraph (e : G.Ear H) : Graph α β :=
@@ -264,8 +275,7 @@ theorem edges_toWalk_subset_edgeSet_add (e : G.Ear H) {f : β}
 
 /-- The interiors of an open ear and an oppositely directed path in its base are disjoint. -/
 theorem open_support_tail_disjoint {s t : α} (hHG : H ≤ G) {p : G.Walk s t}
-    (hp : p.IsPath) (ht : t ∈ V(H))
-    (hinter : ∀ z ∈ p.support, z ≠ s → z ≠ t → z ∉ V(H))
+    (hp : p.IsPath) (hinter : ∀ z ∈ p.support, z ≠ s → z ≠ t → z ∉ V(H))
     {q : H.Walk t s} (hq : q.IsPath) :
     p.support.tail.Disjoint (q.mapLe hHG).support.tail := by
   rw [List.disjoint_left]
@@ -278,8 +288,12 @@ theorem open_support_tail_disjoint {s t : α} (hHG : H ≤ G) {p : G.Walk s t}
   rw [← q.cons_tail_support] at hqNodup
   have hzs : z ≠ s := fun hzs ↦ (List.nodup_cons.mp hpNodup).1 (hzs ▸ hzp)
   have hzt : z ≠ t := fun hzt ↦ (List.nodup_cons.mp hqNodup).1 (hzt ▸ hzq')
+  have hpos : 0 < q.length := by
+    cases q with
+    | nil => simp at hzq'
+    | cons _ _ _ => simp
   exact hinter z (List.mem_of_mem_tail hzp) hzs hzt
-    (q.support_subset_vertexSet ht z (List.mem_of_mem_tail hzq'))
+    (q.support_subset_vertexSet_of_pos hpos z (List.mem_of_mem_tail hzq'))
 
 /-- Adjoining an ear still gives a subgraph of the ambient graph. -/
 theorem add_le (e : G.Ear H) : e.add ≤ G :=
@@ -366,7 +380,7 @@ theorem exists_isCycle_add_of_mem_edgeSet_toGraph (ear : G.Ear H) (hH : H.Connec
       let qG := q.mapLe hHG
       have hqG : qG.IsPath := (Walk.isPath_mapLe hHG q).mpr hq
       have hv : p.support.tail.Disjoint qG.support.tail :=
-        open_support_tail_disjoint hHG hp ht hinter hq
+        open_support_tail_disjoint hHG hp hinter hq
       have hedisj : p.edges.Disjoint qG.edges := by
         have h := edges_disjoint_of_le_base
           (Ear.open hHG p hp hs ht hst hinter hedges) q
@@ -514,6 +528,12 @@ theorem isCycle_iff_of_heq {K L : Graph α β} {s₁ : G.EarStart K} {s₂ : G.E
   cases eq_of_heq hs
   rfl
 
+/-- Equal cycle walks yield heterogeneously equal cycle initial witnesses. -/
+theorem heq_cycle_of_eq {s : α} {c₁ c₂ : G.Walk s s} (hc₁ : c₁.IsCycle) (hc₂ : c₂.IsCycle)
+    (h : c₁ = c₂) : HEq (EarStart.cycle c₁ hc₁) (EarStart.cycle c₂ hc₂) := by
+  subst h
+  rfl
+
 /-- Every allowed initial graph is a subgraph of its ambient graph. -/
 theorem le : ∀ _start : G.EarStart H, H ≤ G
   | .vertex v => Graph.noEdge_le_iff.mpr (singleton_subset_iff.mpr v.property)
@@ -577,17 +597,51 @@ namespace EarDecomposition
 
 variable {G H : Graph α β}
 
-/-- Ear decompositions are extensional in their stage graphs, initial data, and ears. -/
+/-- Ear decompositions are extensional in their length, initial data, and ears: the stage graphs
+are the bases of the ears together with the final graph. -/
 @[ext]
 theorem ext (d e : G.EarDecomposition H) (hlength : d.length = e.length)
-    (hgraphAfter : HEq d.graphAfter e.graphAfter) (hstart : HEq d.start e.start)
-    (hearAt : HEq d.earAt e.earAt) : d = e := by
-  cases d
-  cases e
+    (hstart : HEq d.start e.start) (hearAt : HEq d.earAt e.earAt) : d = e := by
+  obtain ⟨dl, dg, ds, dea, dfst, dsucc, dlast⟩ := d
+  obtain ⟨el, eg, es, eea, efst, esucc, elast⟩ := e
   cases hlength
-  cases hgraphAfter
+  simp only at hstart hearAt
+  have hearAt' := eq_of_heq hearAt
+  have hg : dg = eg := by
+    funext i
+    refine Fin.lastCases ?_ (fun j ↦ ?_) i
+    · exact dlast.trans elast.symm
+    · rw [← dfst j, ← efst j, hearAt']
+  cases hg
   cases hstart
-  cases hearAt
+  cases hearAt'
+  rfl
+
+/-- Two length-zero ear decompositions of the same graph are equal if their initial stages are
+heterogeneously equal. -/
+theorem ext_of_length_eq_zero {d₁ d₂ : G.EarDecomposition H}
+    (h₁ : d₁.length = 0) (h₂ : d₂.length = 0) (hs : HEq d₁.start d₂.start) : d₁ = d₂ :=
+  ext _ _ (h₁.trans h₂.symm) hs
+    ((Fin.heq_fun_iff (h₁.trans h₂.symm)).mpr fun i ↦ (Fin.cast h₁ i).elim0)
+
+/-- Equal ear decompositions have equal stage graphs at matching natural indices. -/
+theorem graphAfter_eq_of_eq {d₁ d₂ : G.EarDecomposition H} (h : d₁ = d₂) (m : ℕ)
+    (hm₁ : m < d₁.length + 1) (hm₂ : m < d₂.length + 1) :
+    d₁.graphAfter ⟨m, hm₁⟩ = d₂.graphAfter ⟨m, hm₂⟩ := by
+  subst h
+  rfl
+
+/-- Equal ear decompositions have equal ears at matching natural indices. -/
+theorem earAt_eq_of_eq {d₁ d₂ : G.EarDecomposition H} (h : d₁ = d₂) (m : ℕ)
+    (hm₁ : m < d₁.length) (hm₂ : m < d₂.length) :
+    d₁.earAt ⟨m, hm₁⟩ = d₂.earAt ⟨m, hm₂⟩ := by
+  subst h
+  rfl
+
+/-- Equal ear decompositions have heterogeneously equal initial stages. -/
+theorem heq_start_of_eq {d₁ d₂ : G.EarDecomposition H} (h : d₁ = d₂) :
+    HEq d₁.start d₂.start := by
+  subst h
   rfl
 
 /-- The initial graph of a decomposition. -/
@@ -749,8 +803,24 @@ protected def copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') :
   graphAfter_last := d.graphAfter_last.trans h
 
 @[simp]
+theorem copy_copy {H' H'' : Graph α β} (d : G.EarDecomposition H) (h : H = H')
+    (h' : H' = H'') : (d.copy h).copy h' = d.copy (h.trans h') := by
+  cases h
+  cases h'
+  rfl
+
+@[simp]
+theorem copy_inj {H' : Graph α β} {d₁ d₂ : G.EarDecomposition H} {h : H = H'} :
+    d₁.copy h = d₂.copy h ↔ d₁ = d₂ := by
+  cases h
+  rfl
+
+@[simp]
 theorem length_copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') :
     (d.copy h).length = d.length := (rfl)
+
+@[simp]
+theorem copy_rfl (d : G.EarDecomposition H) : d.copy rfl = d := (rfl)
 
 @[simp]
 theorem graphAfter_copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H')
@@ -792,6 +862,23 @@ theorem walkAt_copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H')
 @[simp]
 theorem isOpen_copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') :
     (d.copy h).IsOpen ↔ d.IsOpen := Iff.rfl
+
+/-- Reindexing the final graph along an equality `H₁ = H₂` is an equivalence of multigraph ear
+decompositions. -/
+def copyEquiv {H₁ H₂ : Graph α β} (h : H₁ = H₂) :
+    G.EarDecomposition H₁ ≃ G.EarDecomposition H₂ where
+  toFun d := d.copy h
+  invFun d := d.copy h.symm
+  left_inv d := by simp
+  right_inv d := by simp
+
+@[simp]
+theorem copyEquiv_apply {H₁ H₂ : Graph α β} (h : H₁ = H₂) (d : G.EarDecomposition H₁) :
+    copyEquiv h d = d.copy h := (rfl)
+
+@[simp]
+theorem copyEquiv_symm_apply {H₁ H₂ : Graph α β} (h : H₁ = H₂) (d : G.EarDecomposition H₂) :
+    (copyEquiv h).symm d = d.copy h.symm := (rfl)
 
 private theorem snoc_graphAfter_zero (d : G.EarDecomposition H) (ear : G.Ear H) :
     Fin.lastCases ear.add d.graphAfter (0 : Fin (d.length + 2)) = d.graphAfter 0 := by
@@ -1129,6 +1216,12 @@ theorem earAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1))
   -- Projection reduction exposes the `Fin.castLE` index hidden by the opaque `prefix` body.
   change d.earAt _ = d.earAt _
   congr 1
+
+/-- Prefixing retains the walks of the original ears before the chosen index. -/
+theorem walkAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1)) (j : Fin i.val) :
+    (d.prefix i).walkAt (Fin.cast (length_prefix d i).symm j) =
+      d.walkAt (Fin.castLE (Nat.le_of_lt_succ i.isLt) j) := by
+  rw [walkAt_eq, walkAt_eq, earAt_prefix]
 
 /-- Prefixing retains the kind of every ear before the chosen index. -/
 theorem kindAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1))
