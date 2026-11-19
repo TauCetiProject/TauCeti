@@ -71,6 +71,8 @@ conjugation with the pullback of functions, pulls its principal symbol back by t
   `df_x ↦ (δ f)(x)`.
 * `TauCeti.smoothPrincipalSymbol_vectorFieldDerivation`, `TauCeti.smoothPrincipalSymbol_derivation`:
   differentiation along a vector field `X` has principal symbol `ξ ↦ ξ(X_x)`.
+* `TauCeti.smoothPrincipalSymbol_lineDerivation`: on a finite-dimensional space `E`, the
+  directional derivative `∂_w` has principal symbol `ξ ↦ ξ(w)`.
 * `TauCeti.smoothCommutatorSymbol_eq_zero_of_mem_differentialOperators`,
   `TauCeti.smoothPrincipalSymbol_eq_zero_of_mem_differentialOperators`: an operator of order at
   most `m`, viewed as one of order at most `m + 1`, has vanishing commutator and principal symbols.
@@ -445,5 +447,13 @@ theorem smoothPrincipalSymbol_derivation [BoundarylessManifold I M]
   obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x = ξ :=
     ⟨_, mvfderiv_covectorLift BoundarylessManifold.isInteriorPoint ξ⟩
   rw [smoothPrincipalSymbol_derivation_mvfderiv, Derivation.mvfderiv_vectorField]
+
+/-- The directional derivative `∂_w` along a vector `w` has principal symbol `ξ ↦ ξ(w)`. -/
+theorem smoothPrincipalSymbol_lineDerivation (w x : E) (ξ : TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ) :
+    smoothPrincipalSymbol 𝓘(ℝ, E) BoundarylessManifold.isInteriorPoint
+      ⟨lineDerivation ℝ w, (lineDerivation ℝ w).mem_differentialOperators_one⟩ ξ = ξ w := by
+  obtain ⟨f, -, rfl⟩ := exists_contMDiffMap_mvfderiv_eq (I := 𝓘(ℝ, E)) x (0 : ℝ) ξ
+  rw [smoothPrincipalSymbol_derivation_mvfderiv, lineDerivation_apply_apply]
+  exact (mvfderiv_eq_fderiv_apply f x w).symm
 
 end TauCeti
