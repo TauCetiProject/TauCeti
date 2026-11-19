@@ -77,6 +77,8 @@ linearized return maps `f` is in `TauCeti.RingTheory.NovikovSeries.OrbitZeta.Ret
   function.
 * `TauCeti.NovikovSeries.orbitLog_sigma`, `TauCeti.NovikovSeries.orbitZeta_sigma`: listing the
   `i`-th orbit `c i` times multiplies its signs by `c i`.
+* `TauCeti.NovikovSeries.hasSum_orbitLog_sigma_fin`: listing the `i`-th orbit `c i` times and
+  dividing the weight of each copy by `c i` sums to the orbit logarithm.
 
 ## References
 
@@ -359,6 +361,38 @@ theorem orbitZeta_sigma (ε : ι → ℕ → ℤ) (c : ι → ℕ) :
     orbitZeta K N (fun p : (i : ι) × Fin (c i) => γ p.1) (fun p => ε p.1) =
       orbitZeta K N γ (fun i n => c i * ε i n) := by
   rw [orbitZeta_def, orbitZeta_def, orbitLog_sigma]
+
+/-- **The orbit logarithm as a sum over the points of the orbits.** List the `i`-th orbit
+`c i ≠ 0` times, think of `c i` as its number of points, and weight the `(k + 1)`-fold iterate of
+each copy by `ε i (k + 1) / (c i * (k + 1))`, one over the total period of that iterate when `c i`
+is the least period. These terms sum to the orbit logarithm: the `c i` copies of each iterate
+together contribute `ε i (k + 1) / (k + 1)`. For the periodic orbits of a map, the copies are the
+points of the orbit, and the terms are those of the fixed points of the iterates of the map,
+weighted by one over the period. -/
+theorem hasSum_orbitLog_sigma_fin (hpos : ∀ i, 0 < N (γ i))
+    (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) (ε : ι → ℕ → ℤ) {c : ι → ℕ}
+    (hc : ∀ i, c i ≠ 0) :
+    HasSum (fun q : (p : ι × ℕ) × Fin (c p.1) => (single ((q.1.2 + 1) • γ q.1.1)
+      (algebraMap ℚ K ((ε q.1.1 (q.1.2 + 1) : ℚ) / (c q.1.1 * (q.1.2 + 1) : ℕ))) :
+        NovikovSeries K H N))
+      (orbitLog K N γ ε) := by
+  have : HasUniqueDiv K := .of_module_rat K
+  let f : ι × ℕ → NovikovSeries K H N := fun p => single ((p.2 + 1) • γ p.1)
+    (algebraMap ℚ K ((ε p.1 (p.2 + 1) : ℚ) / (c p.1 * (p.2 + 1) : ℕ)))
+  -- The `c i` copies of each term add up to the term of the orbit logarithm.
+  have hcf : (fun p : ι × ℕ => c p.1 • f p) = fun p => (single ((p.2 + 1) • γ p.1)
+      (algebraMap ℚ K ((ε p.1 (p.2 + 1) : ℚ) / (p.2 + 1 : ℕ))) : NovikovSeries K H N) := by
+    funext p
+    rw [nsmul_single_algebraMap]
+    have hcp : (c p.1 : ℚ) ≠ 0 := Nat.cast_ne_zero.2 (hc p.1)
+    congr 2
+    push_cast
+    field_simp
+  have h := hasSum_orbitLog (K := K) hpos hfin ε
+  rw [← hcf] at h
+  have hs := (summable_sigma_fin_iff (fun p : ι × ℕ => c p.1) f).2 h.summable
+  convert hs.hasSum using 1
+  rw [tsum_sigma_fin, h.tsum_eq]
 
 end OrbitZeta
 
