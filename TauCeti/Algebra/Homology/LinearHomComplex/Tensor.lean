@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.LinearHomComplex.Basic
-public import TauCeti.Algebra.Homology.Monoidal.Braiding
+public import TauCeti.Algebra.Homology.LinearHomComplex.Composition
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
 
@@ -40,8 +39,9 @@ product, the Koszul braiding and the unitor `R[0] ⊗ R[0] ≅ R[0]` give the co
 (`TauCeti.linearHomComplexDualDistrib`), a complex-level form of `TensorProduct.dualDistrib` with
 the factors in the reverse order. In this order, in which the inner factors `f` and `a` are paired
 first, it carries no sign (`CochainComplex.HomComplex.Cochain.ιTensorObj_dualDistrib_v`). Applied to
-`A` and `B∨` it is the comparison `B∨∨ ⊗ A∨ ⟶ (A ⊗ B∨)∨` that converts functionals on an external
-kernel `A ⊗ B∨` into tensors.
+`A` and `B∨` it is the comparison `B∨∨ ⊗ A∨ ⟶ (A ⊗ B∨)∨`, which sends tensors to functionals on an
+external kernel `A ⊗ B∨`; its inverse, which exists under finiteness hypotheses and is not
+constructed here, converts such functionals back into tensors.
 
 ## Main definitions
 
@@ -119,19 +119,27 @@ lemma δ_tensor {p q n m : ℤ} (z₁ : Cochain X₁ Y₁ p) (z₂ : Cochain X�
         p.negOnePow • z₁.tensor (δ q (q + 1) z₂) m (by omega) := by
   subst h hnm
   refine ext_tensorObj fun a b i j hab hij ↦ ?_
+  -- Expand `δ` of the tensor product on the summand `X₁.X a ⊗ X₂.X b`, and the right-hand side
+  -- into its two summands.
   rw [δ_v (p + q) (p + q + 1) rfl _ i j hij (j - 1) (i + 1) rfl rfl, Preadditive.comp_add, add_v,
-    units_smul_v, Preadditive.comp_add, Linear.comp_units_smul, Linear.comp_units_smul,
-    ιTensorObj_tensor_v_assoc z₁ z₂ rfl a b i (j - 1) (a + p) (b + q) hab (by omega) rfl rfl,
+    units_smul_v, Preadditive.comp_add, Linear.comp_units_smul, Linear.comp_units_smul]
+  -- Push the summand inclusion through `z₁.tensor z₂` and through the differentials of
+  -- `Y₁ ⊗ Y₂` and `X₁ ⊗ X₂`; each of the latter splits into two summand terms.
+  rw [ιTensorObj_tensor_v_assoc z₁ z₂ rfl a b i (j - 1) (a + p) (b + q) hab (by omega) rfl rfl,
     Linear.units_smul_comp, Category.assoc,
     ι_tensorObj_d' Y₁ Y₂ (by omega : a + p + (b + q) = j - 1) rfl rfl (by omega : j - 1 + 1 = j),
     ι_tensorObj_d'_assoc X₁ X₂ hab rfl rfl rfl, Preadditive.add_comp, Linear.units_smul_comp,
-    Category.assoc, Category.assoc,
-    ιTensorObj_tensor_v z₁ z₂ rfl (a + 1) b (i + 1) j (a + p + 1) (b + q) _ _ (by omega) rfl,
+    Category.assoc, Category.assoc]
+  -- Evaluate every remaining tensor product of cochains on its summand.
+  rw [ιTensorObj_tensor_v z₁ z₂ rfl (a + 1) b (i + 1) j (a + p + 1) (b + q) _ _ (by omega) rfl,
     ιTensorObj_tensor_v z₁ z₂ rfl a (b + 1) (i + 1) j (a + p) (b + q + 1) _ _ rfl (by omega),
     ιTensorObj_tensor_v (δ p (p + 1) z₁) z₂ _ a b i j (a + p + 1) (b + q) hab _ (by omega) rfl,
-    ιTensorObj_tensor_v z₁ (δ q (q + 1) z₂) _ a b i j (a + p) (b + q + 1) hab _ rfl (by omega),
-    δ_v p (p + 1) rfl z₁ a (a + p + 1) _ (a + p) (a + 1) (by omega) rfl,
+    ιTensorObj_tensor_v z₁ (δ q (q + 1) z₂) _ a b i j (a + p) (b + q + 1) hab _ rfl (by omega)]
+  -- Expand `δ z₁` and `δ z₂` on their components.
+  rw [δ_v p (p + 1) rfl z₁ a (a + p + 1) _ (a + p) (a + 1) (by omega) rfl,
     δ_v q (q + 1) rfl z₂ b (b + q + 1) _ (b + q) (b + 1) (by omega) rfl]
+  -- Distribute, collect the four terms on each side as signed tensor products of components,
+  -- and match their Koszul signs.
   simp only [MonoidalPreadditive.add_tensor, MonoidalPreadditive.tensor_add, Units.smul_def,
     zsmul_tensorHom, tensorHom_zsmul, Preadditive.add_comp, Preadditive.comp_add,
     Preadditive.zsmul_comp, Preadditive.comp_zsmul, smul_add, smul_smul, ← Units.val_mul,
@@ -225,15 +233,20 @@ lemma tensor_comp_tensor {Z₁ Z₂ : CochainComplex (ModuleCat.{v} R) ℤ} {p' 
       (q' * p).negOnePow • (z₁.comp w₁ h₁).tensor (z₂.comp w₂ h₂) m (by omega) :=
   ext_tensorObj fun a b i j hab hij ↦ by
     subst h₁ h₂
+    -- Split the composite at degree `i + n`, and evaluate both tensor products on the summands
+    -- `X₁.X a ⊗ X₂.X b` and `Y₁.X (a + p) ⊗ Y₂.X (b + q)` they pass through.
     rw [comp_v _ _ hm i (i + n) j rfl (by omega), units_smul_v, Linear.comp_units_smul,
       ιTensorObj_tensor_v_assoc _ _ h a b i (i + n) (a + p) (b + q) hab rfl rfl rfl,
       Linear.units_smul_comp, Category.assoc,
       ιTensorObj_tensor_v _ _ h' (a + p) (b + q) (i + n) j (a + p + p') (b + q + q') (by omega)
-        (by omega) rfl rfl,
-      ιTensorObj_tensor_v _ _ _ a b i j (a + p + p') (b + q + q') hab hij (by omega) (by omega),
+        (by omega) rfl rfl]
+    -- Evaluate the right-hand side on the same summand, then gather the signs into one
+    -- `negOnePow` and the components into one tensor product of composites.
+    rw [ιTensorObj_tensor_v _ _ _ a b i j (a + p + p') (b + q + q') hab hij (by omega) (by omega),
       comp_v _ _ rfl a (a + p) (a + p + p') rfl rfl, comp_v _ _ rfl b (b + q) (b + q + q') rfl rfl,
       Linear.comp_units_smul, smul_smul, smul_smul, ← Int.negOnePow_add, ← Int.negOnePow_add,
       ← tensorHom_comp_tensorHom_assoc]
+    -- The two Koszul exponents agree.
     congr 2
     ring
 
@@ -268,6 +281,14 @@ noncomputable def dualDistrib (g : Cochain B (𝟙_ _) i) (f : Cochain A (𝟙_ 
     (h : i + j = n) : Cochain (A ⊗ B) (𝟙_ _) n :=
   (i * j).negOnePow • (f.tensor g n (by omega)).comp (ofHom (λ_ _).hom) (add_zero n)
 
+/-- `Cochain.dualDistrib` is the tensor product `f.tensor g` followed by the unitor
+`R[0] ⊗ R[0] ≅ R[0]`, corrected by the Koszul sign `(-1)^(i j)`. -/
+lemma dualDistrib_def (g : Cochain B (𝟙_ _) i) (f : Cochain A (𝟙_ _) j) (n : ℤ)
+    (h : i + j = n) :
+    g.dualDistrib f n h =
+      (i * j).negOnePow • (f.tensor g n (by omega)).comp (ofHom (λ_ _).hom) (add_zero n) :=
+  (rfl)
+
 /-- **`Cochain.dualDistrib` has no sign.** On the summand `A.X a ⊗ B.X b`, the pairing of `g` and
 `f` is `f ⊗ g` followed by the unitor of the tensor unit. -/
 lemma ιTensorObj_dualDistrib_v (g : Cochain B (𝟙_ _) i) (f : Cochain A (𝟙_ _) j) {n : ℤ}
@@ -276,7 +297,7 @@ lemma ιTensorObj_dualDistrib_v (g : Cochain B (𝟙_ _) i) (f : Cochain A (𝟙
     ιTensorObj A B a b k hab ≫ (g.dualDistrib f n h).v k l hkl =
       (f.v a a' ha ⊗ₘ g.v b b' hb) ≫ ιTensorObj (𝟙_ _) (𝟙_ _) a' b' l (by omega) ≫
         ((λ_ (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ))).hom.f l) := by
-  rw [dualDistrib, units_smul_v, comp_zero_cochain_v, ofHom_v, Linear.comp_units_smul,
+  rw [dualDistrib_def, units_smul_v, comp_zero_cochain_v, ofHom_v, Linear.comp_units_smul,
     ιTensorObj_tensor_v_assoc _ _ _ a b k l a' b' hab hkl ha hb, Linear.units_smul_comp,
     smul_smul, ← Int.negOnePow_add]
   by_cases ha' : a' = 0
@@ -332,6 +353,8 @@ private lemma cochainTensorTensor_d (p q j : ℤ)
         HomologicalComplex.mapBifunctorDesc (cochainTensorTensor R X₁ Y₁ X₂ Y₂ · · (j + 1) ·) =
       cochainTensorTensor R X₁ Y₁ X₂ Y₂ p q j h ≫
         (linearHomComplex R (X₁ ⊗ X₂) (Y₁ ⊗ Y₂)).d j (j + 1) := by
+  -- `ComplexShape.π` is an abbreviation; Mathlib has no named specialization at
+  -- `ComplexShape.up ℤ`.
   replace h : p + q = j := h
   rw [HomologicalComplex.ι_tensorObj_d_assoc _ _ p q j h, Preadditive.add_comp,
     Linear.units_smul_comp, Category.assoc, Category.assoc,
@@ -367,6 +390,7 @@ noncomputable def linearHomComplexTensor :
       linearHomComplex R (X₁ ⊗ X₂) (Y₁ ⊗ Y₂) where
   f j := HomologicalComplex.mapBifunctorDesc (cochainTensorTensor R X₁ Y₁ X₂ Y₂ · · j ·)
   comm' j j' hjj' := by
+    -- `ComplexShape.Rel` for `ComplexShape.up ℤ` unfolds to `j + 1 = j'` by definition.
     replace hjj' : j + 1 = j' := hjj'
     subst hjj'
     apply HomologicalComplex.mapBifunctor.hom_ext
@@ -394,6 +418,20 @@ lemma ι_linearHomComplexTensor (p q j : ℤ)
   rw [linearHomComplexTensor_f]
   apply HomologicalComplex.ι_mapBifunctorDesc
 
+/-- On a pure tensor `z₁ ⊗ₜ z₂` of the bidegree-`(p, q)` summand, the degree-`j` component of
+`linearHomComplexTensor` is the tensor product of cochains `z₁.tensor z₂`. -/
+lemma ι_linearHomComplexTensor_tmul (p q j : ℤ)
+    (h : ComplexShape.π (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ) (p, q) = j)
+    (z₁ : ModuleCat.of R (Cochain X₁ Y₁ p)) (z₂ : ModuleCat.of R (Cochain X₂ Y₂ q)) :
+    (dsimp% only [linearHomComplex_X]
+      ModuleCat.Hom.hom ((linearHomComplexTensor R X₁ Y₁ X₂ Y₂).f j)
+        (ModuleCat.Hom.hom (HomologicalComplex.ιMapBifunctor (linearHomComplex R X₁ Y₁)
+          (linearHomComplex R X₂ Y₂) (curriedTensor (ModuleCat.{v} R)) (ComplexShape.up ℤ)
+            p q j h) (z₁ ⊗ₜ z₂))) =
+      (z₁.tensor z₂ j h : ModuleCat.of R (Cochain (X₁ ⊗ X₂) (Y₁ ⊗ Y₂) j)) := by
+  rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ι_linearHomComplexTensor,
+    cochainTensorTensor_tmul]
+
 variable {X₁ Y₁ X₂ Y₂}
 
 /-- `TauCeti.linearHomComplexTensor` is natural in the targets. -/
@@ -403,27 +441,17 @@ lemma linearHomComplexTensor_naturality_target {Z₁ Z₂ : CochainComplex (Modu
     (linearHomComplexPostcomp R X₁ g₁ ⊗ₘ linearHomComplexPostcomp R X₂ g₂) ≫
         linearHomComplexTensor R X₁ Z₁ X₂ Z₂ =
       linearHomComplexTensor R X₁ Y₁ X₂ Y₂ ≫ linearHomComplexPostcomp R (X₁ ⊗ X₂) (g₁ ⊗ₘ g₂) := by
-  ext j : 1
-  apply HomologicalComplex.mapBifunctor.hom_ext
-  intro p q h
+  apply linearHomComplex_tensor_hom_ext
+  intro p q j h z₁ z₂
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f,
     HomologicalComplex.tensorHom_eq_mapBifunctorMap, HomologicalComplex.ι_mapBifunctorMap_assoc,
-    ι_linearHomComplexTensor, ι_linearHomComplexTensor_assoc]
-  apply ModuleCat.MonoidalCategory.tensor_ext
-  intro z₁ z₂
+    ← Category.assoc]
   simp only [curriedTensor_obj_obj, curriedTensor_map_app, curriedTensor_obj_map,
     ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply,
     ModuleCat.MonoidalCategory.whiskerRight_apply, ModuleCat.MonoidalCategory.whiskerLeft_apply]
-  -- As in `TauCeti.linearHomComplexComp_naturality_target`, the totalization APIs give no
-  -- pure-tensor application lemma, so align the `ModuleCat` wrappers with the element-level
-  -- lemmas before rewriting.
-  change ModuleCat.Hom.hom (cochainTensorTensor R X₁ Z₁ X₂ Z₂ p q j h)
-      (ModuleCat.Hom.hom ((linearHomComplexPostcomp R X₁ g₁).f p) z₁ ⊗ₜ
-        ModuleCat.Hom.hom ((linearHomComplexPostcomp R X₂ g₂).f q) z₂) =
-    ModuleCat.Hom.hom ((linearHomComplexPostcomp R (X₁ ⊗ X₂) (g₁ ⊗ₘ g₂)).f j)
-      (ModuleCat.Hom.hom (cochainTensorTensor R X₁ Y₁ X₂ Y₂ p q j h) (z₁ ⊗ₜ z₂))
-  rw [linearHomComplexPostcomp_f_apply, linearHomComplexPostcomp_f_apply, cochainTensorTensor_tmul,
-    cochainTensorTensor_tmul, linearHomComplexPostcomp_f_apply]
+  rw [ι_linearHomComplexTensor_tmul, ι_linearHomComplexTensor_tmul,
+    linearHomComplexPostcomp_f_apply, linearHomComplexPostcomp_f_apply,
+    linearHomComplexPostcomp_f_apply]
   exact Cochain.comp_ofHom_tensor_comp_ofHom z₁ z₂ g₁ g₂ h
 
 /-- `TauCeti.linearHomComplexTensor` is natural in the sources. -/
@@ -433,27 +461,17 @@ lemma linearHomComplexTensor_naturality_source {W₁ W₂ : CochainComplex (Modu
     (linearHomComplexPrecomp R f₁ Y₁ ⊗ₘ linearHomComplexPrecomp R f₂ Y₂) ≫
         linearHomComplexTensor R W₁ Y₁ W₂ Y₂ =
       linearHomComplexTensor R X₁ Y₁ X₂ Y₂ ≫ linearHomComplexPrecomp R (f₁ ⊗ₘ f₂) (Y₁ ⊗ Y₂) := by
-  ext j : 1
-  apply HomologicalComplex.mapBifunctor.hom_ext
-  intro p q h
+  apply linearHomComplex_tensor_hom_ext
+  intro p q j h z₁ z₂
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f,
     HomologicalComplex.tensorHom_eq_mapBifunctorMap, HomologicalComplex.ι_mapBifunctorMap_assoc,
-    ι_linearHomComplexTensor, ι_linearHomComplexTensor_assoc]
-  apply ModuleCat.MonoidalCategory.tensor_ext
-  intro z₁ z₂
+    ← Category.assoc]
   simp only [curriedTensor_obj_obj, curriedTensor_map_app, curriedTensor_obj_map,
     ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply,
     ModuleCat.MonoidalCategory.whiskerRight_apply, ModuleCat.MonoidalCategory.whiskerLeft_apply]
-  -- As in `TauCeti.linearHomComplexComp_naturality_target`, the totalization APIs give no
-  -- pure-tensor application lemma, so align the `ModuleCat` wrappers with the element-level
-  -- lemmas before rewriting.
-  change ModuleCat.Hom.hom (cochainTensorTensor R W₁ Y₁ W₂ Y₂ p q j h)
-      (ModuleCat.Hom.hom ((linearHomComplexPrecomp R f₁ Y₁).f p) z₁ ⊗ₜ
-        ModuleCat.Hom.hom ((linearHomComplexPrecomp R f₂ Y₂).f q) z₂) =
-    ModuleCat.Hom.hom ((linearHomComplexPrecomp R (f₁ ⊗ₘ f₂) (Y₁ ⊗ Y₂)).f j)
-      (ModuleCat.Hom.hom (cochainTensorTensor R X₁ Y₁ X₂ Y₂ p q j h) (z₁ ⊗ₜ z₂))
-  rw [linearHomComplexPrecomp_f_apply, linearHomComplexPrecomp_f_apply, cochainTensorTensor_tmul,
-    cochainTensorTensor_tmul, linearHomComplexPrecomp_f_apply]
+  rw [ι_linearHomComplexTensor_tmul, ι_linearHomComplexTensor_tmul,
+    linearHomComplexPrecomp_f_apply, linearHomComplexPrecomp_f_apply,
+    linearHomComplexPrecomp_f_apply]
   exact Cochain.ofHom_comp_tensor_ofHom_comp f₁ f₂ z₁ z₂ h
 
 variable (X₁ Y₁ X₂ Y₂)
@@ -471,6 +489,14 @@ noncomputable def linearHomComplexDualDistrib (A B : CochainComplex (ModuleCat.{
   koszulBraidingHom (ModuleCat.{v} R) _ _ ≫ linearHomComplexTensor R A (𝟙_ _) B (𝟙_ _) ≫
     linearHomComplexPostcomp R (A ⊗ B) (λ_ (𝟙_ _)).hom
 
+/-- `TauCeti.linearHomComplexDualDistrib` is the Koszul braiding followed by
+`TauCeti.linearHomComplexTensor` and postcomposition with the unitor `R[0] ⊗ R[0] ≅ R[0]`. -/
+lemma linearHomComplexDualDistrib_def (A B : CochainComplex (ModuleCat.{v} R) ℤ) :
+    linearHomComplexDualDistrib R A B =
+      koszulBraidingHom (ModuleCat.{v} R) _ _ ≫ linearHomComplexTensor R A (𝟙_ _) B (𝟙_ _) ≫
+        linearHomComplexPostcomp R (A ⊗ B) (λ_ (𝟙_ _)).hom :=
+  (rfl)
+
 /-- On the bidegree-`(i, j)` summand, `TauCeti.linearHomComplexDualDistrib` sends `g ⊗ₜ f` to the
 pairing `g.dualDistrib f`. -/
 lemma linearHomComplexDualDistrib_tmul (A B : CochainComplex (ModuleCat.{v} R) ℤ) (i j n : ℤ)
@@ -481,19 +507,11 @@ lemma linearHomComplexDualDistrib_tmul (A B : CochainComplex (ModuleCat.{v} R) �
         (linearHomComplex R A (𝟙_ _)) (curriedTensor (ModuleCat.{v} R)) (ComplexShape.up ℤ)
           i j n h ≫ (linearHomComplexDualDistrib R A B).f n) (g ⊗ₜ f)) =
       (g.dualDistrib f n h : ModuleCat.of R (Cochain (A ⊗ B) (𝟙_ _) n)) := by
-  have h' : i + j = n := h
-  rw [linearHomComplexDualDistrib, HomologicalComplex.comp_f, HomologicalComplex.comp_f,
+  rw [linearHomComplexDualDistrib_def, HomologicalComplex.comp_f, HomologicalComplex.comp_f,
     ι_koszulBraidingHom_assoc, koszulBraidingSummand_def, Linear.units_smul_comp, Category.assoc,
-    ι_linearHomComplexTensor_assoc, Units.smul_def, ModuleCat.hom_zsmul, LinearMap.smul_apply]
+    Units.smul_def, ModuleCat.hom_zsmul, LinearMap.smul_apply]
   simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply]
-  -- As in `linearHomComplexTensor_naturality_target`, align the `ModuleCat` wrappers with the
-  -- element-level lemmas before rewriting; the braiding of `ModuleCat` sends `g ⊗ₜ f` to
-  -- `f ⊗ₜ g` by definition (`ModuleCat.MonoidalCategory.braiding_hom_apply`).
-  change ((i * j).negOnePow : ℤ) • ModuleCat.Hom.hom
-      ((linearHomComplexPostcomp R (A ⊗ B) (λ_ (𝟙_ _)).hom).f n)
-      (ModuleCat.Hom.hom (cochainTensorTensor R A (𝟙_ _) B (𝟙_ _) j i n
-        (show j + i = n by omega)) (f ⊗ₜ g)) = _
-  rw [cochainTensorTensor_tmul, linearHomComplexPostcomp_f_apply, Cochain.dualDistrib,
-    Units.smul_def]
+  rw [ModuleCat.MonoidalCategory.braiding_hom_apply, ι_linearHomComplexTensor_tmul,
+    linearHomComplexPostcomp_f_apply, Cochain.dualDistrib_def, Units.smul_def]
 
 end TauCeti
