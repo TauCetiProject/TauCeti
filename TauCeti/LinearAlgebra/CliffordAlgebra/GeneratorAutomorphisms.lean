@@ -45,8 +45,6 @@ reduced, preserving the vectors is equivalent to preserving its first step `R �
 
 * `CliffordAlgebra.ι_range_map_eq_iff_existsUnique`: an algebra equivalence maps the vectors onto
   the vectors if and only if it is `equivOfIsometry f` for a unique isometry `f`.
-* `CliffordAlgebra.equivOfIsometry_injective`: different isometries induce different algebra
-  equivalences.
 
 ## References
 
@@ -162,19 +160,6 @@ theorem isometryEquivOfιRangeMap_equivOfIsometry (e : Q₁.IsometryEquiv Q₂) 
   DFunLike.ext _ _ fun v ↦ ι_injective Q₂ <| by
     rw [ι_isometryEquivOfιRangeMap, equivOfIsometry_apply, map_apply_ι,
       IsometryEquiv.toIsometry_apply]
-
-/-- **Different isometries induce different Clifford algebra equivalences**: an isometry is
-recovered from the algebra equivalence it induces by restricting it to the vectors. -/
-theorem equivOfIsometry_injective :
-    Function.Injective (equivOfIsometry : Q₁.IsometryEquiv Q₂ → _) := fun e e' h ↦ by
-  rw [← isometryEquivOfιRangeMap_equivOfIsometry e, ← isometryEquivOfιRangeMap_equivOfIsometry e']
-  simp only [h]
-
-/-- Two isometries induce the same Clifford algebra equivalence only if they are equal. -/
-@[simp]
-theorem equivOfIsometry_inj {e e' : Q₁.IsometryEquiv Q₂} :
-    equivOfIsometry e = equivOfIsometry e' ↔ e = e' :=
-  equivOfIsometry_injective.eq_iff
 
 /-- **The isometry criterion for Clifford algebra equivalences.** An algebra equivalence
 `CliffordAlgebra Q₁ ≃ₐ[R] CliffordAlgebra Q₂` maps the vectors of `Q₁` onto the vectors of `Q₂`

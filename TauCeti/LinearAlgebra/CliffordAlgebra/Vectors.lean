@@ -294,17 +294,18 @@ variable {R : Type u} [CommRing R] [Invertible (2 : R)]
 /-! ### Maps preserving the first step of the degree filtration -/
 
 /-- **An injective algebra map sending a generator into the first filtration step sends it to a
-vector**, when the base ring is reduced. Writing `g (ι Q₁ v) = r + ι Q₂ t`, the vector part of the
-generator square `g (ι Q₁ v) ^ 2 = Q₁ v` is `ι Q₂ ((2 * r) • t)`, which must vanish. Then
-`g (ι Q₁ (r • v)) = r * r` is a scalar, so `ι Q₁ (r • v)` is one too, and `r * r = 0`.
+vector**, when the base ring is reduced.
 
 Both hypotheses on `R` are needed. In characteristic `2`, over `𝔽₄ = 𝔽₂(ω)`, the Clifford algebra
 of `x ↦ x²` on a line has the automorphism `e ↦ ω + ω² e`. Over the dual numbers
-`R = K[δ] ⧸ (δ²)`, the exterior algebra `R ⊕ K` of `K = R ⧸ (δ)` has the automorphism
-`r + ι m ↦ r + δ m + ι m`. -/
+`R = K[δ] ⧸ (δ²)` of a field `K` of characteristic different from `2`, the exterior algebra
+`R ⊕ K` of `K = R ⧸ (δ)` has the automorphism `r + ι m ↦ r + δ m + ι m`. -/
 theorem apply_ι_mem_range_ι_of_mem_filtration_one [IsReduced R]
     {g : CliffordAlgebra Q₁ →ₐ[R] CliffordAlgebra Q₂} (hg : Function.Injective g) {v : M₁}
     (hv : g (ι Q₁ v) ∈ filtration Q₂ 1) : g (ι Q₁ v) ∈ LinearMap.range (ι Q₂) := by
+  -- Write `g (ι Q₁ v) = r + ι Q₂ t`. The vector part of the generator square
+  -- `g (ι Q₁ v) ^ 2 = Q₁ v` is `ι Q₂ ((2 * r) • t)`, which must vanish. Then
+  -- `g (ι Q₁ (r • v)) = r * r` is a scalar, so `ι Q₁ (r • v)` is one too, and `r * r = 0`.
   rw [← range_scalarAddVector] at hv
   obtain ⟨⟨r, t⟩, hrt⟩ := hv
   simp only [scalarAddVector_apply] at hrt
