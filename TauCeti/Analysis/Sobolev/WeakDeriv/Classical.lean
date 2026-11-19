@@ -140,8 +140,8 @@ section LineDeriv
 
 /-! ### Weak derivatives along an orthonormal basis
 
-These lemmas factor out, and their proofs are adapted from, the inductive step of
-`TauCeti.Wkp.exists_contDiffOn_holderOnWith_iteratedFDeriv_of_forall_holderSpaceL`. -/
+Weak derivatives along an orthonormal basis assemble into a weak Fréchet derivative, so `Cⁿ`
+directional weak derivatives give `Cⁿ⁺¹` regularity and control the iterated derivatives. -/
 
 variable {H ι : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H] [FiniteDimensional ℝ H]
   [MeasurableSpace H] [BorelSpace H] {μ : Measure H} [μ.IsAddHaarMeasure] {Ω : Opens H}
