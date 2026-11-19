@@ -5,24 +5,29 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 public import TauCeti.Topology.VectorBundle.RestrictScalars
 
 /-!
 # Restricting scalars of smooth vector bundles
 
-A `C^n` vector bundle over a manifold modelled on a normed space over a field extension
-is a `C^n` vector bundle over the smaller field, with the same fibres and trivialization
+Let `𝕜'` be a normed algebra over `𝕜`. A `C^n` vector bundle over `𝕜'` on a manifold
+modelled on a boundaryless model `IB` over `𝕜'` is a `C^n` vector bundle over `𝕜` on the
+same manifold modelled on `IB.restrictScalars 𝕜`, with the same fibres and trivialization
 atlas. In particular, a holomorphic vector bundle is a smooth real vector bundle on the
 underlying real manifold. The result does not require finite rank.
 
 `ContMDiffVectorBundle.restrictScalars` supplies this forgetful operation on Mathlib's
-existing mixin, using `VectorBundle.restrictScalars` for its topological vector bundle.
+existing mixin, using `VectorBundle.restrictScalars` for its topological vector bundle,
+and `ContMDiffVectorBundle.restrictScalars_modelWithCornersSelf` specialises it to the
+self-modelled base `𝓘(𝕜', EB)`, whose restriction is `𝓘(𝕜, EB)`.
 The coordinate changes are identified by
 `Bundle.Trivialization.restrictScalars_coordChangeL`. Smoothness follows by composing
 the scalar-restricted operator-valued transition function with the continuous linear
-map `ContinuousLinearMap.restrictScalarsL`.
+map `ContinuousLinearMap.restrictScalarsL`. Correspondingly, `ContMDiffSection.restrictScalars`
+regards a `C^n` section over `𝕜'` as a `C^n` section over `𝕜`; for instance, a holomorphic
+section is smooth.
 
 The groupoid inclusion `TauCeti.contMDiffFiberwiseLinear_le_restrictScalars` also shows
 that every compatible complex-linear bundle chart remains compatible over the smaller
@@ -69,23 +74,65 @@ theorem contMDiffFiberwiseLinear_le_restrictScalars :
 
 end TauCeti
 
+namespace ContMDiffVectorBundle
+
+variable (𝕜) in
+/-- A `C^n` vector bundle over `𝕜'` on a manifold modelled on a boundaryless model `IB` over
+`𝕜'` is a `C^n` vector bundle over `𝕜`, for the scalar-restricted bundle structure
+`VectorBundle.restrictScalars 𝕜 𝕜' F E`, on the same manifold modelled on
+`IB.restrictScalars 𝕜`. -/
+theorem restrictScalars {HB B' : Type*} [TopologicalSpace HB] [TopologicalSpace B']
+    [ChartedSpace HB B'] {IB : ModelWithCorners 𝕜' EB HB} [IB.Boundaryless] {E : B' → Type*}
+    [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)] [∀ b, Module 𝕜' (E b)]
+    [∀ b, IsScalarTower 𝕜 𝕜' (E b)] [TopologicalSpace (TotalSpace F E)]
+    [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle 𝕜' F E]
+    (h : ContMDiffVectorBundle n F E IB) :
+    letI := VectorBundle.restrictScalars 𝕜 𝕜' F E
+    ContMDiffVectorBundle n F E (IB.restrictScalars 𝕜) := by
+  let := VectorBundle.restrictScalars 𝕜 𝕜' F E
+  constructor
+  intro e e' _ _
+  have hc := (h.contMDiffOn_coordChangeL e e').restrictScalars 𝕜
+  rw [modelWithCornersSelf_restrictScalars] at hc
+  have hf := (ContinuousLinearMap.restrictScalarsL 𝕜' F F 𝕜 𝕜).contMDiff.comp_contMDiffOn hc
+  exact hf.congr fun b _ ↦ (Trivialization.restrictScalars_coordChangeL 𝕜 𝕜' e e').symm
+
 variable {E : B → Type*} [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)]
   [∀ b, Module 𝕜' (E b)] [∀ b, IsScalarTower 𝕜 𝕜' (E b)]
   [TopologicalSpace (TotalSpace F E)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
   [VectorBundle 𝕜' F E]
 
 variable (𝕜) in
-/-- A `C^n` vector bundle over a field extension is a `C^n` vector bundle over the
-smaller field, on the same fibre bundle. In particular, a holomorphic vector bundle
-has an underlying smooth real vector bundle. -/
-theorem ContMDiffVectorBundle.restrictScalars
+/-- A `C^n` vector bundle over a field extension, on a manifold modelled on `𝓘(𝕜', EB)`, is a
+`C^n` vector bundle over the smaller field on the same manifold modelled on `𝓘(𝕜, EB)`, with
+the same fibre bundle. In particular, a holomorphic vector bundle has an underlying smooth real
+vector bundle. -/
+theorem restrictScalars_modelWithCornersSelf
     (h : ContMDiffVectorBundle n F E 𝓘(𝕜', EB)) :
     letI := VectorBundle.restrictScalars 𝕜 𝕜' F E
     ContMDiffVectorBundle n F E 𝓘(𝕜, EB) := by
-  let := VectorBundle.restrictScalars 𝕜 𝕜' F E
-  constructor
-  intro e e' _ _
-  have hc := (h.contMDiffOn_coordChangeL e e').restrictScalars 𝕜
-  simp only [modelWithCornersSelf_restrictScalars] at hc
-  have hf := (ContinuousLinearMap.restrictScalarsL 𝕜' F F 𝕜 𝕜).contMDiff.comp_contMDiffOn hc
-  exact hf.congr fun b _ ↦ (Trivialization.restrictScalars_coordChangeL 𝕜 𝕜' e e').symm
+  simpa only [modelWithCornersSelf_restrictScalars] using h.restrictScalars 𝕜
+
+end ContMDiffVectorBundle
+
+namespace ContMDiffSection
+
+variable {HB B' : Type*} [TopologicalSpace HB] [TopologicalSpace B'] [ChartedSpace HB B']
+  {IB : ModelWithCorners 𝕜' EB HB} [IB.Boundaryless] {E' : B' → Type*}
+  [TopologicalSpace (TotalSpace F E')] [∀ b, TopologicalSpace (E' b)] [FiberBundle F E']
+
+variable (𝕜) in
+/-- A `C^n` section over `𝕜'`, for a boundaryless base model `IB`, is a `C^n` section for the
+scalar restriction `IB.restrictScalars 𝕜`. For instance, a holomorphic section is smooth. -/
+@[expose] def restrictScalars (s : ContMDiffSection IB F n E') :
+    ContMDiffSection (IB.restrictScalars 𝕜) F n E' where
+  toFun := s
+  contMDiff_toFun := by
+    simpa only [ModelWithCorners.restrictScalars_prod, modelWithCornersSelf_restrictScalars] using
+      s.contMDiff.restrictScalars 𝕜
+
+@[simp]
+theorem coe_restrictScalars (s : ContMDiffSection IB F n E') : ⇑(s.restrictScalars 𝕜) = s :=
+  rfl
+
+end ContMDiffSection
