@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.FiniteAbelian.Duality
+public import TauCeti.GroupTheory.Abelianization.Character
 public import Mathlib.Topology.Algebra.Group.Quotient
 
 /-!
@@ -17,13 +17,13 @@ exactly when `χ` is trivial on `H ⊓ N`, provided the coefficient monoid `M` h
 unity for the exponent of `G ⧸ N`. Such an extension factors through the finite group `G ⧸ N`,
 so it has finite image, of exponent dividing that of `G ⧸ N`.
 
-The extension is built in the finite group `G ⧸ N`: the condition on `χ` lets it descend to the
-image of `H` there, Mathlib's `MonoidHom.domRestrict_surjective` extends it from that subgroup to
-all of `G ⧸ N`, and composing with the quotient map gives a character of `G` which is continuous
-because `G ⧸ N` is discrete. Nothing about `N` beyond openness and finite index is used; in
-particular `N` is supplied, not constructed. For complex coefficients the roots-of-unity
-hypothesis holds by `IsSepClosed.hasEnoughRootsOfUnity`, the exponent of the finite group
-`G ⧸ N` being nonzero.
+The extension is built in the finite group `G ⧸ N`: the condition on `χ` says it kills the
+kernel of the map `H → G ⧸ N`, so `MonoidHom.exists_comp_eq_iff_ker_le_ker` extends it along
+that map to a character of `G ⧸ N`, and composing with the quotient map gives a character of `G`
+which is continuous because `G ⧸ N` is discrete. Nothing about `N` beyond openness and finite
+index is used; in particular `N` is supplied, not constructed. For complex coefficients the
+roots-of-unity hypothesis holds by `IsSepClosed.hasEnoughRootsOfUnity`, the exponent of the
+finite group `G ⧸ N` being nonzero.
 
 This is the abstract step in the construction of idele class characters with prescribed local
 components, where `G` is the idele class group and `N` the image of an open subgroup of the ideles.
@@ -59,21 +59,19 @@ theorem exists_continuous_domRestrict_eq_of_subgroupOf_le_ker (hN : IsOpen (N : 
     (hχ : N.subgroupOf H ≤ χ.ker) :
     ∃ Ψ : G →* Mˣ, Continuous Ψ ∧ Ψ.domRestrict H = χ ∧ N ≤ Ψ.ker ∧ Finite Ψ.range ∧
       Monoid.exponent Ψ.range ∣ Monoid.exponent (G ⧸ N) := by
-  -- Descend `χ` to the image `f.range` of `H` in `G ⧸ N`, then extend it to all of `G ⧸ N`.
+  -- Extend `χ` along the map `H → G ⧸ N`, whose kernel is `N.subgroupOf H`.
   let f : H →* G ⧸ N := (QuotientGroup.mk' N).comp H.subtype
-  have hf : f.rangeRestrict.ker ≤ χ.ker := fun h hh ↦
+  obtain ⟨φ, hφ⟩ := (exists_comp_eq_iff_ker_le_ker (R := M) f χ).mpr fun h hh ↦
     hχ (by simpa [f, Subgroup.mem_subgroupOf] using hh)
-  obtain ⟨φ, hφ⟩ := domRestrict_surjective (M := M) f.range
-    (f.rangeRestrict.liftOfSurjective f.rangeRestrict_surjective ⟨χ, hf⟩)
   have : DiscreteTopology (G ⧸ N) := QuotientGroup.discreteTopology hN
+  have hr : (φ.comp (QuotientGroup.mk' N)).range = φ.range := by
+    rw [range_comp, range_eq_top_of_surjective _ (QuotientGroup.mk'_surjective N), ← range_eq_map]
   refine ⟨φ.comp (QuotientGroup.mk' N),
-    (continuous_of_discreteTopology (f := φ)).comp QuotientGroup.continuous_mk, ext fun h ↦ ?_,
-    fun n hn ↦ by simp [(QuotientGroup.eq_one_iff n).mpr hn], ?_, ?_⟩
-  · simpa [f] using congr($hφ (f.rangeRestrict h))
-  · rw [← SetLike.coe_sort_coe, coe_range, coe_comp]
-    exact ((Set.finite_range φ).subset (Set.range_comp_subset_range _ _)).to_subtype
-  · refine Monoid.exponent_dvd_of_forall_pow_eq_one fun ⟨_, g, hg⟩ ↦ Subtype.ext ?_
-    simp [← hg, ← map_pow, Monoid.pow_exponent_eq_one]
+    (continuous_of_discreteTopology (f := φ)).comp QuotientGroup.continuous_mk, ?_,
+    fun n hn ↦ by simp [(QuotientGroup.eq_one_iff n).mpr hn],
+    hr ▸ Finite.of_surjective _ φ.rangeRestrict_surjective,
+    hr ▸ MonoidHom.exponent_dvd φ.rangeRestrict_surjective⟩
+  exact ext fun h ↦ by simpa [f] using congr($hφ h)
 
 /-- **The finite-quotient extension criterion.** Let `N` be an open subgroup of finite index of a
 commutative topological group `G`, and let `M` have enough roots of unity for the exponent of
