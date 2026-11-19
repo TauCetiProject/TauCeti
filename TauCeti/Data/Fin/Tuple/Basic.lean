@@ -71,6 +71,8 @@ once.
   change the set of entries.
 * `Fin.existsUnique_isLeft_castSucc_and_isRight_succ`: a tuple in `α ⊕ β` from the left summand to
   the right one that never steps back steps from left to right exactly once.
+* `TauCeti.contractNth_comp_val`: contracting two adjacent entries of a tuple read off a sequence
+  indexed by `ℕ` is reading off the contracted sequence `TauCeti.natContract`.
 -/
 
 public section
@@ -452,3 +454,22 @@ theorem existsUnique_isLeft_castSucc_and_isRight_succ {α β : Type*} {n : ℕ}
     omega
 
 end Fin
+
+namespace TauCeti
+
+variable {α : Type*} [Mul α]
+
+/-- Contraction `(b₀, …, bᵢ bᵢ₊₁, bᵢ₊₂, …)` of the entries `i` and `i + 1` of a sequence indexed
+by `ℕ`. On the first `n + 2` entries it is `Fin.contractNth` (`TauCeti.contractNth_comp_val`). -/
+@[expose] def natContract (i : ℕ) (b : ℕ → α) (k : ℕ) : α :=
+  if k < i then b k else if k = i then b k * b (k + 1) else b (k + 1)
+
+/-- Contracting two adjacent entries of a tuple read off a sequence indexed by `ℕ` is reading off
+the contracted sequence. -/
+theorem contractNth_comp_val {n : ℕ} (j : Fin (n + 2)) (b : ℕ → α) :
+    Fin.contractNth j (· * ·) (fun k : Fin (n + 2) ↦ b k) =
+      fun k : Fin (n + 1) ↦ natContract j b k := by
+  funext k
+  simp only [Fin.contractNth, Fin.val_castSucc, Fin.val_succ, natContract]
+
+end TauCeti

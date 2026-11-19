@@ -8,11 +8,11 @@ module
 public import Mathlib.Algebra.Algebra.NonUnitalHom
 public import Mathlib.LinearAlgebra.Multilinear.Basic
 public import Mathlib.Logic.Equiv.Fin.Rotate
+public import TauCeti.Data.Fin.Tuple.Basic
 import Mathlib.Algebra.Module.BigOperators
 import Mathlib.Algebra.Ring.GeomSum
 import TauCeti.Algebra.BigOperators.AlternatingSum
 import TauCeti.Data.Fin.Basic
-import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # The Hochschild coboundary and cyclic cochains
@@ -91,22 +91,6 @@ private theorem comp_finRotate_symm_comp_val {n : ℕ} (b : ℕ → A) :
   rcases k with ⟨_ | k, hk⟩
   · simp [natRotate, Fin.coe_neg_one]
   · simp [natRotate, finRotate_symm_apply, Fin.val_sub_one_of_ne_zero]
-
-section Mul
-
-variable [Mul A]
-
-/-- Contraction of the entries `i` and `i + 1` of a sequence. -/
-private def natContract (i : ℕ) (b : ℕ → A) (k : ℕ) : A :=
-  if k < i then b k else if k = i then b k * b (k + 1) else b (k + 1)
-
-private theorem contractNth_comp_val {n : ℕ} (j : Fin (n + 2)) (b : ℕ → A) :
-    Fin.contractNth j (· * ·) (fun k : Fin (n + 2) ↦ b k) =
-      fun k : Fin (n + 1) ↦ natContract j b k := by
-  funext k
-  simp only [Fin.contractNth, Fin.val_castSucc, Fin.val_succ, natContract]
-
-end Mul
 
 section Semigroup
 
@@ -239,7 +223,9 @@ theorem hochschildFace_last (a : Fin (n + 2) → A) :
   funext k
   cases k using Fin.cases <;> simp [natContract, natRotate]
 
-private theorem hochschildFace_castSucc_comp_val (j : Fin (n + 1)) (b : ℕ → A) :
+/-- A Hochschild face other than the last one, on a tuple read off a sequence indexed by `ℕ`, is
+read off the contracted sequence. -/
+theorem hochschildFace_castSucc_comp_val (j : Fin (n + 1)) (b : ℕ → A) :
     hochschildFace j.castSucc (fun k : Fin (n + 2) ↦ b k) =
       fun k : Fin (n + 1) ↦ natContract j b k := by
   rw [hochschildFace_castSucc, contractNth_comp_val, Fin.val_castSucc]

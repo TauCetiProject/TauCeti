@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.NonUnitalHom
 public import Mathlib.Data.Matrix.Basis
 
 /-!
@@ -16,7 +17,9 @@ Only the shared index type needs to be finite. `Matrix.smul_vecMulVec_single_sin
 scaled outer product of two coordinate vectors as a matrix unit, and
 `Matrix.one_add_single_mul_one_add_single_of_ne` multiplies two elementary matrices `1 + c Eᵢⱼ`
 and `1 + d Eₖₗ` with `j ≠ k`, whose cross term vanishes. `LinearMap.apply_eq_sum_sum_smul_single`
-expands a linear map on matrices along the matrix units.
+expands a linear map on matrices along the matrix units. `Matrix.singleNonUnitalAlgHom` is the
+inclusion `a ↦ a Eᵢᵢ` of the coefficients into a diagonal corner, as a homomorphism of nonunital
+algebras.
 -/
 
 /-- The product of two matrix units vanishes unless their inner indices agree. -/
@@ -55,3 +58,29 @@ public theorem LinearMap.apply_eq_sum_sum_smul_single {ι κ R M : Type*} [Finty
   simp only [map_sum]
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   rw [← map_smul, Matrix.smul_single, smul_eq_mul, mul_one]
+
+/-- The inclusion `a ↦ a Eᵢᵢ` of the coefficients into the `(i, i)` corner of the matrix algebra,
+as a homomorphism of nonunital algebras. -/
+@[expose]
+public def Matrix.singleNonUnitalAlgHom (R : Type*) {n α : Type*} [Monoid R]
+    [NonUnitalNonAssocSemiring α] [DistribMulAction R α] [DecidableEq n] [Fintype n] (i : n) :
+    α →ₙₐ[R] Matrix n n α where
+  toFun := Matrix.single i i
+  map_smul' c a := (Matrix.smul_single c i i a).symm
+  map_zero' := Matrix.single_zero i i
+  map_add' := Matrix.single_add i i
+  map_mul' a b := (Matrix.single_mul_single_same a i i i b).symm
+
+/-- `Matrix.singleNonUnitalAlgHom R i` sends `a` to the matrix unit `Matrix.single i i a`. -/
+@[simp]
+public theorem Matrix.singleNonUnitalAlgHom_apply (R : Type*) {n α : Type*} [Monoid R]
+    [NonUnitalNonAssocSemiring α] [DistribMulAction R α] [DecidableEq n] [Fintype n] (i : n)
+    (a : α) : Matrix.singleNonUnitalAlgHom R i a = Matrix.single i i a :=
+  rfl
+
+/-- The linear map underlying `Matrix.singleNonUnitalAlgHom R i` is `Matrix.singleLinearMap`. -/
+public theorem Matrix.toLinearMap_singleNonUnitalAlgHom (R : Type*) {n α : Type*} [Semiring R]
+    [NonUnitalNonAssocSemiring α] [Module R α] [DecidableEq n] [Fintype n] (i : n) :
+    ((Matrix.singleNonUnitalAlgHom R i : α →ₙₐ[R] Matrix n n α) : α →ₗ[R] Matrix n n α) =
+      Matrix.singleLinearMap R i i :=
+  LinearMap.ext fun _ ↦ rfl
