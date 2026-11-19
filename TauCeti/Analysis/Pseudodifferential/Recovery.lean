@@ -70,6 +70,12 @@ compactly supported amplitude and a Hilbert space `V`
 `t ^ (-m) ∫ ⟪Op(a) u_t (x), u_t (x)⟫ dx → ∫ |φ(x)|² ⟪σ(a)(x, ξ) v, v⟫ dx`
 
 (`TauCeti.ClassicalSymbol.tendsto_integral_inner_quantizeSchwartzValue_cutoffExponential`).
+Pairing instead with the test functions `x ↦ exp(-i ⟪x, t ξ⟫) ψ(x)` of a compactly supported `ψ`,
+which needs no inner product,
+
+`t ^ (-m) ∫ exp(-i ⟪x, t ξ⟫) ψ(x) Op(a) u_t (x) dx → ∫ ψ(x) σ(a)(x, ξ) (φ(x) v) dx`
+
+(`TauCeti.ClassicalSymbol.tendsto_integral_smul_quantizeSchwartzValue_cutoffExponential`).
 
 ## References
 
@@ -386,6 +392,53 @@ theorem tendsto_quantizeSchwartzValue_cutoffExponential_atTop [CompleteSpace V] 
     simp [smul_add, smul_smul, ht.ne']
   exact ((((ContinuousLinearMap.apply ℂ W (𝓕 φ η • v)).continuous.tendsto _).comp ha).const_smul
     (𝐞 ⟪η, x⟫))
+
+/-- **Testing high-frequency wave packets against the conjugate frequency.** For a classical
+symbol `a` of order `m`, a nonzero frequency `ξ`, a Schwartz amplitude `φ`, a compactly supported
+Schwartz function `ψ` and `v ∈ V`, the wave packets `u_t(y) = exp(i ⟪y, t ξ⟫) φ(y) v` satisfy
+
+`t ^ (-m) ∫ exp(-i ⟪x, t ξ⟫) ψ(x) Op(a) u_t (x) dx → ∫ ψ(x) σ(a)(x, ξ) (φ(x) v) dx`
+
+as `t → ∞`. The test function `x ↦ exp(-i ⟪x, t ξ⟫) ψ(x)` is the cut-off exponential of `ψ` at
+the frequency `-t ξ`; this is the pairing of the tempered distribution `Op(a) u_t` with it. -/
+theorem tendsto_integral_smul_quantizeSchwartzValue_cutoffExponential [CompleteSpace V]
+    [CompleteSpace W] (a : ClassicalSymbol n V W m) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0)
+    (φ : 𝓢(CoordinateSpace n, ℂ)) {ψ : 𝓢(CoordinateSpace n, ℂ)} (hψ : HasCompactSupport ψ)
+    (v : V) :
+    Tendsto (fun t : ℝ ↦ t ^ (-m) • ∫ x, ψ.cutoffExponential 1 (-(t • ξ)) (1 : ℂ) x •
+        quantizeSchwartzValue a.toSymbol.coefficient (φ.cutoffExponential 1 (t • ξ) v) x) atTop
+      (𝓝 (∫ x, ψ x • a.principal.coefficient (x, ξ) (φ x • v))) := by
+  set G : ℝ → CoordinateSpace n → W := fun t x ↦
+    t ^ (-m) • Complex.exp (-(⟪x, t • ξ⟫ * Complex.I)) •
+      quantizeSchwartzValue a.toSymbol.coefficient (φ.cutoffExponential 1 (t • ξ) v) x
+  -- The test function carries the phase `exp(-i ⟪x, t ξ⟫)` of the rescaled quantization `G`.
+  have hpair : ∀ t x, t ^ (-m) • (ψ.cutoffExponential 1 (-(t • ξ)) (1 : ℂ) x •
+      quantizeSchwartzValue a.toSymbol.coefficient (φ.cutoffExponential 1 (t • ξ) v) x) =
+        ψ x • G t x := by
+    intro t x
+    simp only [G, SchwartzMap.cutoffExponential_apply ψ one_ne_zero, one_smul, inner_neg_right,
+      Complex.ofReal_neg, neg_mul, smul_eq_mul, mul_one]
+    rw [mul_smul, smul_comm (ψ x), smul_comm (ψ x)]
+  simp_rw [← integral_smul, hpair]
+  obtain ⟨B, hB⟩ :=
+    a.toSymbol.exists_norm_rpow_neg_smul_quantizeSchwartzValue_cutoffExponential_le hψ hξ φ v
+  refine tendsto_integral_filter_of_dominated_convergence (fun x ↦ ‖ψ x‖ * B)
+    (.of_forall fun t ↦ ?_) ((eventually_ge_atTop 1).mono fun t ht ↦ .of_forall fun x ↦ ?_)
+    (ψ.integrable.norm.mul_const _) (.of_forall fun x ↦ ?_)
+  · have hG : Continuous (G t) :=
+      ((Complex.continuous_exp.comp (by fun_prop)).smul
+        (a.toSymbol.continuous_quantizeSchwartzValue_coefficient _)).const_smul _
+    exact (ψ.continuous.smul hG).aestronglyMeasurable
+  · by_cases hx : x ∈ tsupport ψ
+    · rw [norm_smul]
+      gcongr
+      -- The phase `exp(-i ⟪x, t ξ⟫)` in `G t x` has norm one.
+      simp only [G]
+      rw [smul_comm (t ^ (-m)), norm_smul, ← neg_mul, ← Complex.ofReal_neg,
+        Complex.norm_exp_ofReal_mul_I, one_mul]
+      exact hB x hx t ht
+    · simp [image_eq_zero_of_notMem_tsupport hx]
+  · exact (a.tendsto_quantizeSchwartzValue_cutoffExponential_atTop x hξ φ v).const_smul (ψ x)
 
 section Inner
 
