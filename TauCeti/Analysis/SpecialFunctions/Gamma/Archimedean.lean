@@ -14,18 +14,24 @@ Mathlib uses total division for the gamma function, so the archimedean factor `G
 has value zero at the nonpositive integers. These are poles of its meromorphic germ.
 This characterization complements `Complex.Gammaℝ_eq_zero_iff` for the real factor and
 identifies the exceptional values in finite products of shifted gamma factors.
-The real-place factor is differentiable wherever it is nonzero.
+Both factors are analytic wherever they are nonzero.
 -/
 
 public section
 
 namespace Complex
 
-/-- The real-place gamma factor is differentiable wherever it is nonzero. -/
-theorem differentiableAt_Gammaℝ_of_ne_zero {s : ℂ} (hs : Gammaℝ s ≠ 0) :
-    DifferentiableAt ℂ Gammaℝ s := by
+/-- The real-place gamma factor is analytic wherever it is nonzero. -/
+theorem analyticAt_Gammaℝ_of_ne_zero {s : ℂ} (hs : Gammaℝ s ≠ 0) :
+    AnalyticAt ℂ Gammaℝ s := by
   simpa only [Pi.inv_def, inv_inv] using
-    (differentiable_Gammaℝ_inv s).inv (inv_ne_zero hs)
+    (differentiable_Gammaℝ_inv.analyticAt s).inv (inv_ne_zero hs)
+
+/-- The complex-place gamma factor is analytic wherever it is nonzero. -/
+theorem analyticAt_Gammaℂ_of_ne_zero {s : ℂ} (hs : Gammaℂ s ≠ 0) :
+    AnalyticAt ℂ Gammaℂ s := by
+  simpa only [Pi.inv_def, inv_inv] using
+    (differentiable_Gammaℂ_inv.analyticAt s).inv (inv_ne_zero hs)
 
 /-- The total zero values of the complex archimedean factor occur at the nonpositive integers. -/
 theorem Gammaℂ_eq_zero_iff (z : ℂ) : Gammaℂ z = 0 ↔ ∃ n : ℕ, z = -(n : ℂ) := by

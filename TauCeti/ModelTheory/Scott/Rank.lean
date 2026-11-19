@@ -14,7 +14,9 @@ public import TauCeti.ModelTheory.Scott.Stabilization
 The orbit rank of a finite tuple is the least back-and-forth level at which its class
 inside its own structure agrees with its class at every ordinal level. The internal
 Scott rank is the supremum of the successors of these tuple ranks, over all tuple
-lengths. Both ranks live in the universe of the structure.
+lengths. Both ranks live in the universe of the structure and are invariant under
+isomorphism between structures in the same universe (`FirstOrder.Language.Equiv.orbitRank_comp`,
+`FirstOrder.Language.Equiv.internalScottRank_eq`).
 
 The least simultaneous stabilization level is the supremum of the tuple ranks.
 Consequently the internal Scott rank lies between that level and its successor,
@@ -220,3 +222,52 @@ theorem internalScottRank_lt_omega_one [Countable M] :
       (selfStabilizationOrdinal_lt_omega_one (L := L) M))
 
 end TauCeti
+
+namespace FirstOrder.Language.Equiv
+
+open TauCeti
+
+variable {L : Language.{u, v}} [L.IsRelational]
+variable {M N : Type w} [L.Structure M] [L.Structure N]
+
+/-- Pushing a tuple forward along an isomorphism preserves its orbit-stable levels. -/
+private theorem mem_orbitStable_comp_of_equiv (e : M ≃[L] N) {n : ℕ} {a : Fin n → M}
+    {α : Ordinal.{w}} (h : α ∈ orbitStable (L := L) a) :
+    α ∈ orbitStable (L := L) (e ∘ a) := by
+  rw [mem_orbitStable_iff] at h ⊢
+  intro b hab β
+  have hab' : BFEquiv (L := L) α n a (e.symm ∘ b) :=
+    (e.bfEquiv α a).trans (hab.trans (e.symm.bfEquiv α b))
+  have hβ : BFEquiv (L := L) β n a (e.symm ∘ b) := h (e.symm ∘ b) hab' β
+  have he : e ∘ (e.symm ∘ b) = b := funext fun i => e.apply_symm_apply (b i)
+  exact (e.bfEquiv β a).symm.trans (he ▸ (hβ.trans (e.bfEquiv β (e.symm ∘ b))))
+
+/-- Isomorphisms preserve the set of orbit-stable levels of a tuple. -/
+@[simp]
+theorem orbitStable_comp (e : M ≃[L] N) {n : ℕ} (a : Fin n → M) :
+    orbitStable (L := L) (e ∘ a) = orbitStable (L := L) a := by
+  ext α
+  refine ⟨fun h => ?_, e.mem_orbitStable_comp_of_equiv⟩
+  have he : e.symm ∘ (e ∘ a) = a := funext fun i => e.symm_apply_apply (a i)
+  exact he ▸ e.symm.mem_orbitStable_comp_of_equiv h
+
+/-- Isomorphisms preserve the orbit rank of every finite tuple. -/
+@[simp]
+theorem orbitRank_comp (e : M ≃[L] N) {n : ℕ} (a : Fin n → M) :
+    orbitRank (L := L) (e ∘ a) = orbitRank (L := L) a := by
+  simp only [orbitRank_def, e.orbitStable_comp]
+
+/-- The internal Scott rank is an isomorphism invariant. -/
+theorem internalScottRank_eq (e : M ≃[L] N) :
+    internalScottRank (L := L) M = internalScottRank (L := L) N := by
+  apply le_antisymm
+  · rw [internalScottRank_le_iff]
+    intro n a
+    rw [← e.orbitRank_comp a]
+    exact orbitRank_lt_internalScottRank (e ∘ a)
+  · rw [internalScottRank_le_iff]
+    intro n b
+    rw [← e.symm.orbitRank_comp b]
+    exact orbitRank_lt_internalScottRank (e.symm ∘ b)
+
+end FirstOrder.Language.Equiv

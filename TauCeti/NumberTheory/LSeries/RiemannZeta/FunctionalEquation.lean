@@ -6,8 +6,9 @@ Authors: OpenAI Codex
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv
-public import TauCeti.Analysis.Calculus.LogDeriv
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
+
+import TauCeti.Analysis.Calculus.LogDeriv.Symmetry
 
 /-!
 # The symmetric functional equation for the logarithmic derivative of zeta
@@ -66,7 +67,7 @@ theorem logDeriv_riemannZeta_eq_completedRiemannZeta_sub_Gammaℝ {s : ℂ} (hs�
     exact riemannZeta_def_of_ne_zero hz
   rw [(logDeriv_congr_nhds heq).eq_of_nhds,
     logDeriv_fun_div s hΛ hΓ (differentiableAt_completedZeta hs₀ hs₁)
-      (differentiableAt_Gammaℝ_of_ne_zero hΓ)]
+      (analyticAt_Gammaℝ_of_ne_zero hΓ).differentiableAt]
 
 /-- **The symmetric logarithmic functional equation.** At every point off the zeros and poles
 of the two zeta factors, including admissible integers, their logarithmic derivatives sum to

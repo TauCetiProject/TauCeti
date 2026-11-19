@@ -6,7 +6,8 @@ Authors: OpenAI Codex
 module
 
 public import TauCeti.NumberTheory.LFunctions.Data.Basic
-public import TauCeti.Analysis.Calculus.LogDeriv
+
+import TauCeti.Analysis.Calculus.LogDeriv.Symmetry
 
 /-!
 # Logarithmic derivatives of the completed functional equation

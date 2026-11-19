@@ -8,30 +8,19 @@ module
 public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import Mathlib.Analysis.Calculus.LogDeriv
-public import Mathlib.Analysis.Calculus.Deriv.Shift
 
 /-!
-# Logarithmic derivatives
+# Analytic logarithmic derivatives
 
 The logarithmic derivative of an analytic function is analytic where the function is nonzero.
 The variable and value fields may differ; the value field is complete.
-Reflection of the argument negates the logarithmic derivative, even at points of
-nondifferentiability or zeros of the function.
+
+The logarithmic derivative of the derivative, `logDeriv (deriv f) = f'' / f'` (the pre-Schwarzian
+derivative of `f`), is unchanged by an affine normalisation `w ↦ (w - c) / b` of the target:
+`TauCeti.logDeriv_deriv_sub_div_const`.
 -/
 
 public section
-
-namespace TauCeti
-
-/-- Reflection of the argument negates the logarithmic derivative, with no regularity or
-nonvanishing assumption. -/
-@[simp]
-theorem logDeriv_comp_const_sub {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜]
-    [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] (f : 𝕜 → 𝕜') (a x : 𝕜) :
-    logDeriv (fun z ↦ f (a - z)) x = -logDeriv f (a - x) := by
-  rw [logDeriv_apply, logDeriv_apply, deriv_comp_const_sub, neg_div]
-
-end TauCeti
 
 /-- The logarithmic derivative is analytic wherever the function is analytic and nonzero. -/
 @[fun_prop]
@@ -40,3 +29,19 @@ protected theorem AnalyticAt.logDeriv {𝕜 𝕝 : Type*} [NontriviallyNormedFie
     {f : 𝕜 → 𝕝} {x : 𝕜} (hf : AnalyticAt 𝕜 f x) (hx : f x ≠ 0) :
     AnalyticAt 𝕜 (logDeriv f) x :=
   hf.deriv.div hf hx
+
+namespace TauCeti
+
+/-- The logarithmic derivative of the derivative (the pre-Schwarzian derivative) is unchanged by
+the affine normalisation `w ↦ (w - c) / b` of the target, for `b ≠ 0`. -/
+theorem logDeriv_deriv_sub_div_const {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜]
+    [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] (f : 𝕜 → 𝕜') (c : 𝕜') {b : 𝕜'} (hb : b ≠ 0)
+    (z : 𝕜) :
+    logDeriv (deriv fun z => (f z - c) / b) z = logDeriv (deriv f) z := by
+  have hderiv : deriv (fun z => (f z - c) / b) = fun z => deriv f z / b := by
+    ext z
+    simp only [deriv_div_const, deriv_sub_const]
+  rw [hderiv]
+  simp only [div_eq_mul_inv, logDeriv_mul_const z b⁻¹ (inv_ne_zero hb)]
+
+end TauCeti
