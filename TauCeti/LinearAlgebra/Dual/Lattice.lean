@@ -77,6 +77,7 @@ theorem dualMap_mem_dualLattice (M : Submodule R V) (N : Submodule R W)
 
 /-- The integral dual of a homothetic submodule `c • N` is `c⁻¹` times the integral dual
 of `N`. -/
+@[simp]
 theorem dualLattice_smul [IsScalarTower R K V] (c : Kˣ) (N : Submodule R V) :
     (c • N).dualLattice K = c⁻¹ • N.dualLattice K := by
   ext φ

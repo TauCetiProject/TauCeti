@@ -72,6 +72,7 @@ theorem dual_smul (c : Eˣ) (Λ : IntegralModel O ρ) : (c • Λ).dual = c⁻¹
   IntegralModel.ext (Submodule.dualLattice_smul c Λ.lattice)
 
 /-- Duality reverses inclusion of integral models, and detects it. -/
+@[simp]
 theorem dual_le_dual_iff {Λ Λ' : IntegralModel O ρ} : Λ.dual ≤ Λ'.dual ↔ Λ' ≤ Λ := by
   refine ⟨fun h ↦ ?_, fun h ↦ dual_antitone h⟩
   have h' := Submodule.dualLattice_antitone E (lattice_le_lattice.mpr h)
