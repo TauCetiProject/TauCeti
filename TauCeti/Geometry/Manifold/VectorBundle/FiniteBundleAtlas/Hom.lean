@@ -9,8 +9,6 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import Mathlib.Topology.FiberBundle.Constructions
 public import Mathlib.Topology.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
-import TauCeti.Geometry.Manifold.ContMDiff.Atlas
-import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
@@ -57,10 +55,6 @@ compact space (`TauCeti.FiniteBundleAtlas.exists_closure_dom_subset_baseSet`).
   section of the hom bundle in two charts differ by the coordinate changes of both bundles, which
   for a `V`-valued one-form are the derivative of the chart transition and the coordinate change
   of `V` (`TauCeti.FiniteBundleAtlas.fderiv_transition`).
-* `TauCeti.FiniteBundleAtlas.contDiffOn_transition`,
-  `TauCeti.FiniteBundleAtlas.contDiffOn_coordChangeL`: over a real `C¹` manifold, the chart
-  transitions and, for a `C¹` vector bundle, the coordinate changes read in a chart are `C¹` on
-  the overlaps.
 * `TauCeti.FiniteBundleAtlas.image_tangentHom`, `TauCeti.FiniteBundleAtlas.overlap_tangentHom`,
   `TauCeti.FiniteBundleAtlas.transition_tangentHom`: the atlas of `V`-valued one-forms has the
   chart images, overlaps and transitions of `A`.
@@ -264,50 +258,7 @@ theorem fderiv_transition {i i' : Fin A.n} {y : E} (hy : y ∈ A.overlap i i') :
   simp only [modelWithCornersSelf_coe, range_id, fderivWithin_univ, extChartAt_coe,
     Function.id_comp]
 
-/-- The chart transition from chart `i'` to chart `i` is `C¹` on the overlap. -/
-theorem contDiffOn_transition (i i' : Fin A.n) :
-    ContDiffOn ℝ 1 (A.transition i i') (A.overlap i i') := by
-  refine ((contDiffOn_symm_trans_of_mem_maximalAtlas
-    (IsManifold.chart_mem_maximalAtlas (A.center i'))
-    (IsManifold.chart_mem_maximalAtlas (A.center i))).mono fun y hy ↦ ?_).congr fun y hy ↦ ?_
-  · obtain ⟨x, hx, rfl⟩ := A.mem_overlap.1 hy
-    have hs' := A.dom_subset_chart_source i' hx.2
-    simp only [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source,
-      mem_inter_iff, mem_preimage]
-    exact ⟨(A.chart i').map_source hs', by
-      rw [(A.chart i').left_inv hs']; exact A.dom_subset_chart_source i hx.1⟩
-  · obtain ⟨x, hx, rfl⟩ := A.mem_overlap.1 hy
-    rw [A.transition_chart hx.2, OpenPartialHomeomorph.coe_trans, Function.comp_apply,
-      (A.chart i').left_inv (A.dom_subset_chart_source i' hx.2)]
-
 end Tangent
-
-section CoordChange
-
-variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] {M : Type*} [TopologicalSpace M]
-  [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 1 M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {V : M → Type*}
-  [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
-  [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
-  [ContMDiffVectorBundle 1 F V 𝓘(ℝ, E)]
-
-variable (A : FiniteBundleAtlas E M F V)
-
-/-- For a `C¹` vector bundle, the coordinate change of `V` from chart `i` to chart `i'`, read in
-chart `i'`, is `C¹` on the overlap. -/
-theorem contDiffOn_coordChangeL (i i' : Fin A.n) :
-    ContDiffOn ℝ 1 (fun y ↦ ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) :
-      F →L[ℝ] F)) (A.overlap i i') := by
-  refine ((contMDiffOn_coordChangeL (IB := 𝓘(ℝ, E)) (n := 1) (𝕜 := ℝ) (A.triv i)
-    (A.triv i')).contDiffOn_comp_symm_of_mem_maximalAtlas
-      (IsManifold.chart_mem_maximalAtlas (A.center i'))).mono fun y hy ↦ ?_
-  obtain ⟨x, hx, rfl⟩ := A.mem_overlap.1 hy
-  have hs' := A.dom_subset_chart_source i' hx.2
-  refine ⟨(A.chart i').map_source hs', ?_⟩
-  rw [mem_preimage, (A.chart i').left_inv hs']
-  exact ⟨A.dom_subset_baseSet i hx.1, A.dom_subset_baseSet i' hx.2⟩
-
-end CoordChange
 
 section TangentHom
 

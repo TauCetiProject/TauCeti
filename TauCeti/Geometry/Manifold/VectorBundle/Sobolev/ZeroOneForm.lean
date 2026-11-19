@@ -166,15 +166,6 @@ theorem sectionChartData_transition_tangentHom {i i' : Fin A.n} {y : ℂ}
   (A.tangentHom.sectionChartData_transition_of_mem (by rwa [overlap_tangentHom])).trans
     (congrFun (transition_tangentHom A i i') y)
 
-/-- A property holding almost everywhere on a chart image of the section chart data of one-forms
-holds almost everywhere on the corresponding chart image of `A`. -/
-theorem ae_image_tangentHom (μ : Measure ℂ) (i : Fin A.n) {P : ℂ → Prop}
-    (h : ∀ᵐ y ∂μ.restrict (A.tangentHom.sectionChartData.image i : Set ℂ), P y) :
-    ∀ᵐ y ∂μ.restrict (A.image i), P y := by
-  rw [ae_restrict_iff' (A.image i).isOpen.measurableSet]
-  rw [ae_restrict_iff' (A.tangentHom.sectionChartData.image i).isOpen.measurableSet] at h
-  exact h.mono fun y h hy ↦ h (by rwa [sectionChartData_image_tangentHom])
-
 /-- Almost everywhere on a chart image of the section chart data of one-forms is almost everywhere
 on the corresponding chart image of `A`. -/
 theorem ae_image_tangentHom_iff (μ : Measure ℂ) (i : Fin A.n) {P : ℂ → Prop} :
@@ -184,14 +175,12 @@ theorem ae_image_tangentHom_iff (μ : Measure ℂ) (i : Fin A.n) {P : ℂ → Pr
     ae_restrict_iff' (A.tangentHom.sectionChartData.image i).isOpen.measurableSet,
     sectionChartData_image_tangentHom]
 
-/-- A property holding almost everywhere on an overlap of `A` holds almost everywhere on the
-corresponding overlap of the section chart data of one-forms. -/
-theorem ae_overlap_tangentHom (μ : Measure ℂ) (i i' : Fin A.n) {P : ℂ → Prop}
-    (h : ∀ᵐ y ∂μ.restrict (A.overlap i i'), P y) :
-    ∀ᵐ y ∂μ.restrict (A.tangentHom.sectionChartData.overlap i i'), P y := by
-  rw [ae_restrict_iff' (A.tangentHom.sectionChartData.isOpen_overlap i i').measurableSet]
-  rw [ae_restrict_iff' (A.isOpen_overlap i i').measurableSet] at h
-  exact h.mono fun y h hy ↦ h (by rwa [sectionChartData_overlap_tangentHom] at hy)
+/-- Almost everywhere on an overlap of the section chart data of one-forms is almost everywhere
+on the corresponding overlap of `A`. -/
+theorem ae_overlap_tangentHom_iff (μ : Measure ℂ) (i i' : Fin A.n) {P : ℂ → Prop} :
+    (∀ᵐ y ∂μ.restrict (A.tangentHom.sectionChartData.overlap i i'), P y) ↔
+      ∀ᵐ y ∂μ.restrict (A.overlap i i'), P y := by
+  rw [sectionChartData_overlap_tangentHom]
 
 /-- On the overlap of charts `i` and `i'`, the coordinate change of the chart data of `V`-valued
 one-forms is `η ↦ g ∘ η ∘ dτ`, for the coordinate change `g` of `V` and the chart transition `τ`. -/

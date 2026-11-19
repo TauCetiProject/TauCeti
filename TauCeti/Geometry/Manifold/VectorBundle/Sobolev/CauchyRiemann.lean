@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.SmoothMultiplication
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Chart
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm
+import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Transfer
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
@@ -185,7 +186,7 @@ private theorem chartL_ae (i : Fin A.n) (c : Fin (finrank ℝ (ℂ →L[ℝ] F))
   rw [chartL, add_apply, h₁, Pi.add_apply, ContinuousLinearMap.comp_apply, h₂, sum_apply, h₃,
     Finset.sum_apply]
   refine congrArg₂ (· + ·) rfl (Finset.sum_congr rfl fun j _ ↦ ?_)
-  rw [Wkp.value_one_eq_lowerOrderL]
+  rw [Wkp.value_succ, Wkp.value_zero, ← Wkp.lowerOrderL_apply]
   exact h₄ j
 
 /-- **The chart formula of the realization.** In chart `i`, the chart data of the realization of
@@ -196,9 +197,9 @@ private theorem chartValueL_dataL_ae (w : A.sectionChartData.SobolevData μ p 1)
       =ᵐ[μ.restrict (A.image i)] fun y ↦
         complexAntilinearPartL (A.sectionChartData.chartDerivL μ p i w y) +
           A.chartZeroOrder D i y (A.sectionChartData.chartValueL μ p 1 i w y) := by
-  have h₀ := ae_image_tangentHom A μ i
+  have h₀ := (ae_image_tangentHom_iff A μ i).1
     (A.tangentHom.sectionChartData.chartValueL_apply_ae μ p 0 i (dataL A hD hDs μ p w))
-  have hres := ae_image_tangentHom A μ i <| ae_all_iff.2 fun c ↦
+  have hres := (ae_image_tangentHom_iff A μ i).1 <| ae_all_iff.2 fun c ↦
     Wkp.value_restrictL_ae (sectionChartData_image_tangentHom A i).le 0 (chartL A hD hDs μ p i c w)
   filter_upwards [h₀, hres, ae_all_iff.2 fun c ↦ chartL_ae A hD hDs μ p i c w,
     A.sectionChartData.chartValueL_apply_ae μ p 1 i w] with y h₁ h₂ h₃ h₄
@@ -233,7 +234,9 @@ private theorem chartDerivL_ae_overlap (w : A.sectionChartData.sobolevSections �
       rw [A.fderiv_transition hy]
       exact ContinuousLinearEquiv.toLinearEquiv _ |>.isUnit_det'.ne_zero)
     fun y hy ↦ A.overlap_subset_image i' i (A.transition_mem_overlap hy)
-  have hprod := hτ.contDiffOn_clm_apply_of_ne_zero (A.contDiffOn_coordChangeL i i') one_ne_zero
+  have hcoord := (A.contDiffOn_coordChangeL_transferDomain (n := 1) i i').mono
+    (A.overlap_subset_transferDomain i i')
+  have hprod := hτ.contDiffOn_clm_apply_of_ne_zero hcoord one_ne_zero
   have hcompat : ∀ᵐ y ∂μ.restrict O, ((A.triv i).coordChangeL ℝ (A.triv i')
       ((A.chart i').symm y) : F →L[ℝ] F)
         (A.sectionChartData.chartValueL μ p 1 i w (A.transition i i' y)) =
@@ -266,9 +269,11 @@ private theorem chartData_overlap_eq {i i' : Fin A.n} {y : ℂ} (hy : y ∈ A.ov
         ((complexAntilinearPartL X + A.chartZeroOrder D i (A.transition i i' y) v).comp
           (fderiv ℝ (A.transition i i') y)) := by
   have : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
+  have hcoord := (A.contDiffOn_coordChangeL_transferDomain (n := 1) i i').mono
+    (A.overlap_subset_transferDomain i i')
   have hd : DifferentiableAt ℝ (fun z ↦ ((A.triv i).coordChangeL ℝ (A.triv i')
       ((A.chart i').symm z) : F →L[ℝ] F)) y :=
-    ((A.contDiffOn_coordChangeL i i').differentiableOn one_ne_zero y hy).differentiableAt
+    (hcoord.differentiableOn one_ne_zero y hy).differentiableAt
       ((A.isOpen_overlap i i').mem_nhds hy)
   have hfd : fderiv ℝ (fun z ↦ (A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm z) v) y =
       (fderiv ℝ (fun z ↦ ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm z) :
@@ -300,7 +305,7 @@ private theorem compatible_dataL (w : A.sectionChartData.sobolevSections μ p 1)
   have h₃ := (A.sectionChartData.compatible_iff μ p 1).1
     (SectionChartData.compatible_of_mem hC w.2 i i')
   refine (A.tangentHom.sectionChartData.compatible_iff μ p 0).2 ?_
-  refine ae_overlap_tangentHom A μ i i' ?_
+  refine (ae_overlap_tangentHom_iff A μ i i').2 ?_
   filter_upwards [h₁, h₂, h₃, chartDerivL_ae_overlap A μ p w i i',
     ae_restrict_mem (A.isOpen_overlap i i').measurableSet] with y h₁ h₂ h₃ h₄ hy
   rw [A.sectionChartData_transition_of_mem hy] at h₂
@@ -400,7 +405,7 @@ theorem chartValueL_sobolevL_sub_ae
         (A.chartZeroOrder D' i y - A.chartZeroOrder D i y)
           (A.sectionChartData.chartValueL μ p 1 i w y) := by
   have hDu := A.sectionChartData.hasWeakFDerivOn_chartValueL μ p i w
-  have h₃ := ae_image_tangentHom A μ i (Lp.coeFn_sub
+  have h₃ := (ae_image_tangentHom_iff A μ i).1 (Lp.coeFn_sub
     (A.tangentHom.sectionChartData.chartValueL μ p 0 i
       ((hD'.sobolevL A hD's μ p w : SobolevSection A.tangentHom μ p 0) :
         A.tangentHom.sectionChartData.SobolevData μ p 0))

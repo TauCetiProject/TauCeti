@@ -354,10 +354,6 @@ theorem lowerOrder_zero (u : Wkp mu Omega p 1) : lowerOrder 0 u = W1p.value u :=
 theorem value_one (u : Wkp mu Omega p 1) : value 1 u = W1p.value u := by
   simp only [value_succ, value_zero, lowerOrder_zero]
 
-/-- At first order, the value component is the continuous projection forgetting the derivative. -/
-theorem value_one_eq_lowerOrderL (u : Wkp mu Omega p 1) : value 1 u = lowerOrderL 0 u := by
-  rw [value_succ, value_zero, lowerOrderL_apply]
-
 /-- At first order, the generic highest derivative is the `W1p` weak gradient. -/
 @[simp]
 theorem iteratedGradient_zero (u : Wkp mu Omega p 1) :
