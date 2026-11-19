@@ -36,7 +36,13 @@ as soon as `ζ ↦ a(x, ζ)` is a.e. strongly measurable, continuous at `ξ` and
 (`TauCeti.tendsto_quantizeSchwartzValue_cutoffExponential`). For a symbol `a` and `φ(0) = 1`
 this recovers every value of the full symbol from the operator
 (`TauCeti.Symbol.tendsto_quantizeSchwartzValue_cutoffExponential`). The recovery is exact for
-the full quantization: no quotient by smoothing operators is involved.
+the full quantization: no quotient by smoothing operators is involved. For `0 < |ε| ≤ 1` these
+quantizations are bounded, with a bound depending on the position only through the symbol
+estimate (`TauCeti.norm_quantizeSchwartzValue_cutoffExponential_le`). For symbols with estimates
+uniform in the position this lets the limit pass under integrals in the position
+(`TauCeti.Symbol.IsUniform.tendsto_integral_smul_quantizeSchwartzValue_cutoffExponential`), which
+gives the identity itself for the action of `Op(a)` on tempered distributions
+(`TauCeti.Symbol.quantizeTempered_toTemperedDistribution_exp_inner_mul_I`).
 
 The proof changes variables `ζ = ξ / 2π + ε η` in the quantization integral, which gives the
 exact formula
@@ -252,6 +258,22 @@ theorem tendsto_quantizeSchwartzValue_cutoffExponential
   filter_upwards [self_mem_nhdsWithin] with ε hε
   rw [quantizeSchwartzValue_cutoffExponential a φ hε]
 
+omit [CompleteSpace W] in
+/-- **The quantizations of cut-off exponentials are bounded.** If `‖a(x, ζ)‖ ≤ C ⟨ζ⟩ ^ m`, then for
+`0 < |ε| ≤ 1`, the value at `x` of the quantization of `y ↦ exp(i ⟪y, ξ⟫) φ(ε y) v` is at most
+`C 2 ^ (|m| / 2) ⟨ξ⟩ ^ m ‖v‖ ∫ ⟨2πη⟩ ^ |m| ‖𝓕 φ η‖ dη`. The bound depends on `x` only through `C`,
+so it is uniform in the position for a symbol with estimates uniform in the position. -/
+theorem norm_quantizeSchwartzValue_cutoffExponential_le
+    (hC : ∀ ζ, ‖a (x, ζ)‖ ≤ C * (1 + ‖ζ‖ ^ 2) ^ (m / 2)) (φ : 𝓢(E, ℂ)) (v : V) {ε : ℝ}
+    (hε₀ : ε ≠ 0) (hε : |ε| ≤ 1) :
+    ‖quantizeSchwartzValue a (φ.cutoffExponential ε ξ v) x‖ ≤
+      C * 2 ^ (|m| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * ‖v‖ *
+        ∫ η, (1 + ‖(2 * π) • η‖ ^ 2) ^ (|m| / 2) * ‖𝓕 φ η‖ := by
+  rw [quantizeSchwartzValue_cutoffExponential a φ hε₀, ← integral_const_mul]
+  exact norm_integral_le_of_norm_le
+    (((𝓕 φ).integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) |m|).const_mul _)
+    (.of_forall (norm_integrand_cutoffExponential_le hC φ v hε))
+
 end Recovery
 
 namespace Symbol
@@ -271,6 +293,38 @@ theorem tendsto_quantizeSchwartzValue_cutoffExponential (a : Symbol n V W m)
   simpa [hφ] using TauCeti.tendsto_quantizeSchwartzValue_cutoffExponential
     (a.continuous_coefficient_slice x).aestronglyMeasurable
     (a.continuous_coefficient_slice x).continuousAt (hC x rfl) φ v
+
+/-- **Recovery of the full symbol, paired with an integrable function.** For a symbol with
+estimates uniform in the position, a Schwartz `φ` with `φ(0) = 1` and an integrable `g`, as
+`ε → 0`,
+
+`∫ g(x) Op(a) (y ↦ exp(i ⟪y, ξ⟫) φ(ε y) v) (x) dx → ∫ g(x) exp(i ⟪x, ξ⟫) a(x, ξ) v dx`.
+
+The uniform estimates bound the quantizations of the cut-off exponentials uniformly in the
+position, so the pointwise recovery passes under the integral. -/
+theorem IsUniform.tendsto_integral_smul_quantizeSchwartzValue_cutoffExponential
+    {a : Symbol n V W m} (ha : a.IsUniform) (ξ : CoordinateSpace n)
+    {φ : 𝓢(CoordinateSpace n, ℂ)} (hφ : φ 0 = 1) (v : V) {g : CoordinateSpace n → ℂ}
+    (hg : Integrable g) :
+    Tendsto (fun ε ↦ ∫ x, g x • quantizeSchwartzValue a.coefficient (φ.cutoffExponential ε ξ v) x)
+      (𝓝[≠] 0)
+      (𝓝 (∫ x, g x • Complex.exp (⟪x, ξ⟫ * Complex.I) • a.coefficient (x, ξ) v)) := by
+  obtain ⟨C, -, hC⟩ := ha.exists_bound_coefficient
+  refine tendsto_integral_filter_of_dominated_convergence (fun x ↦ ‖g x‖ *
+      (C * 2 ^ (|m| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * ‖v‖ *
+        ∫ η, (1 + ‖(2 * π) • η‖ ^ 2) ^ (|m| / 2) * ‖𝓕 φ η‖))
+    (.of_forall fun ε ↦ hg.aestronglyMeasurable.smul
+      (a.contDiff_quantizeSchwartzValue _).continuous.aestronglyMeasurable) ?_
+    (hg.norm.mul_const _) (.of_forall fun x ↦ ?_)
+  · filter_upwards [self_mem_nhdsWithin,
+      nhdsWithin_le_nhds (Metric.closedBall_mem_nhds (0 : ℝ) one_pos)] with ε hε₀ hε
+    refine .of_forall fun x ↦ ?_
+    rw [norm_smul]
+    exact mul_le_mul_of_nonneg_left (norm_quantizeSchwartzValue_cutoffExponential_le (hC x) φ v
+      hε₀ (by simpa using hε)) (norm_nonneg _)
+  · refine (((a.tendsto_quantizeSchwartzValue_cutoffExponential x ξ hφ v).const_smul
+      (Complex.exp (⟪x, ξ⟫ * Complex.I))).const_smul (g x)).congr fun ε ↦ ?_
+    rw [smul_smul (Complex.exp _), ← Complex.exp_add, add_neg_cancel, Complex.exp_zero, one_smul]
 
 end Symbol
 
