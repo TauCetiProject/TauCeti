@@ -50,6 +50,7 @@ faces of the increasing enumeration of a set `J` enumerate the sets `J` with one
 * `SSet.stdSimplex.contraction`: the homotopy from the constant map at the initial vertex of
   `Δ[n]` to its identity.
 * `SSet.horn_one_ι_eq_const`: each horn `Λ[1, i]` of `Δ[1]` is the vertex `i`.
+* `SSet.exists_fill_horn_one`: every map from a horn `Λ[1, i]` extends to `Δ[1]`.
 * `SSet.fstStdSimplexZeroIso`: the projection `K ⊗ Δ[0] ⟶ K` is an isomorphism.
 
 * `SSet.boundary.isConnected`: the boundary `∂Δ[n + 2]` is connected.
@@ -280,6 +281,23 @@ lemma horn_one_ι_eq_const (i : Fin 2) : Λ[1, i].ι = const (stdSimplex.obj₀E
   rw [stdSimplex.obj₀Equiv_symm_apply]
   -- The inclusion `Λ[1, i].ι` sends `⟨σ, hσ⟩` to `σ`.
   exact (by omega : σ k = i).trans (stdSimplex.const_app_apply i _ k).symm
+
+/-- The horn `Λ[1, i]` is the single vertex `i` of `Δ[1]`, so every map from it to a simplicial
+set extends to `Δ[1]`, by a constant map. -/
+lemma exists_fill_horn_one {X : SSet.{u}} (i : Fin 2) (σ₀ : (Λ[1, i] : SSet.{u}) ⟶ X) :
+    ∃ σ : Δ[1] ⟶ X, σ₀ = Λ[1, i].ι ≫ σ := by
+  let v : (Λ[1, i] : SSet.{u}) _⦋0⦌ := ⟨stdSimplex.obj₀Equiv.symm i, by
+    rw [mem_horn_iff_notMem_range]
+    refine ⟨i.rev, by fin_cases i <;> decide, ?_⟩
+    rintro ⟨k, hk⟩
+    fin_cases i <;> simp [stdSimplex.obj₀Equiv_symm_apply] at hk⟩
+  -- `Λ[1, i]` is the single vertex `v`: `Λ[1, i].ι` is mono and constant.
+  have : 𝟙 (Λ[1, i] : SSet.{u}) = const v := by
+    rw [← cancel_mono Λ[1, i].ι, Category.id_comp, const_comp, horn_one_ι_eq_const]
+    rfl
+  refine ⟨const (σ₀.app _ v), ?_⟩
+  conv_lhs => rw [← Category.id_comp σ₀, this, const_comp]
+  rw [comp_const]
 
 /-- The projection `K ⊗ Δ[0] ⟶ K` is an isomorphism, `Δ[0]` being terminal. -/
 def fstStdSimplexZeroIso (K : SSet.{u}) : K ⊗ Δ[0] ≅ K where
