@@ -462,14 +462,15 @@ lattice glued along `e'`. -/
 noncomputable def glueAlongDiscriminant (g : Isometry L L') (h : Isometry M M')
     (hc : ∀ a, e' (g.discriminantGroupEquiv a) = h.discriminantGroupEquiv (e a)) :
     Isometry (L.glueAlongDiscriminant M hL hM e) (L'.glueAlongDiscriminant M' hL' hM' e') where
-  toLinearEquiv := (g : V ≃ₗ[ℚ] V').prodCongr (h : W ≃ₗ[ℚ] W')
+  toLinearEquiv := (g.orthogonalSum h).toLinearEquiv
   map_app' p q := by
-    simp only [glueAlongDiscriminant_form, orthogonalSum_form, LinearMap.BilinForm.prod_apply]
-    exact congrArg₂ (· + ·) (g.map_app p.1 q.1) (h.map_app p.2 q.2)
+    rw [glueAlongDiscriminant_form, glueAlongDiscriminant_form]
+    exact (g.orthogonalSum h).map_app p q
   map_carrier := by
     apply le_antisymm
     · rintro _ ⟨p, hp, rfl⟩
-      exact (g.mapsTo_prodMap_glueAlongDiscriminant_iff h).mpr hc hp
+      exact (orthogonalSum_apply g h p).symm ▸
+        (g.mapsTo_prodMap_glueAlongDiscriminant_iff h).mpr hc hp
     · intro p hp
       refine Submodule.mem_map.mpr ⟨Prod.map g.symm h.symm p,
         (g.symm.mapsTo_prodMap_glueAlongDiscriminant_iff h.symm).mpr
@@ -481,7 +482,7 @@ noncomputable def glueAlongDiscriminant (g : Isometry L L') (h : Isometry M M')
 theorem glueAlongDiscriminant_apply (g : Isometry L L') (h : Isometry M M')
     (hc : ∀ a, e' (g.discriminantGroupEquiv a) = h.discriminantGroupEquiv (e a)) (p : V × W) :
     g.glueAlongDiscriminant h hc p = (g p.1, h p.2) :=
-  (rfl)
+  g.orthogonalSum_apply h p
 
 /-- The extension of the inverse pair is the inverse of the extension. -/
 @[simp]
@@ -617,13 +618,21 @@ private theorem bijective_snd_comp_inr :
     exact h.symm
 
 include hF in
+private theorem apply_inl_eq (v : V) : F (v, 0) = ((F (v, 0)).1, 0) :=
+  Prod.ext rfl (hF v)
+
+include hF' in
+private theorem apply_inr_eq (w : W) : F (0, w) = (0, (F (0, w)).2) :=
+  Prod.ext (hF' w) rfl
+
+include hF in
 private theorem fst_apply_mem_carrier_iff (x : V) : (F (x, 0)).1 ∈ L'.carrier ↔ x ∈ L.carrier := by
-  rw [← L'.mem_glueAlongDiscriminant_left_iff M' hL' hM' e', ← hF x, Prod.mk.eta,
+  rw [← L'.mem_glueAlongDiscriminant_left_iff M' hL' hM' e', ← F.apply_inl_eq hF x,
     apply_mem_carrier_iff, mem_glueAlongDiscriminant_left_iff]
 
 include hF' in
 private theorem snd_apply_mem_carrier_iff (y : W) : (F (0, y)).2 ∈ M'.carrier ↔ y ∈ M.carrier := by
-  rw [← L'.mem_glueAlongDiscriminant_right_iff M' hL' hM' e', ← hF' y, Prod.mk.eta,
+  rw [← L'.mem_glueAlongDiscriminant_right_iff M' hL' hM' e', ← F.apply_inr_eq hF' y,
     apply_mem_carrier_iff, mem_glueAlongDiscriminant_right_iff]
 
 /-- **Restriction to the first summand.** An isometry of glued lattices preserving both
@@ -634,7 +643,7 @@ noncomputable def restrictGlueLeft : Isometry L L' where
       (LinearMap.inl ℚ V W))) (F.bijective_fst_comp_inl hF hF')
   map_app' v u := by
     have h := F.map_app (v, 0) (u, 0)
-    rw [← Prod.mk.eta (p := F (v, 0)), ← Prod.mk.eta (p := F (u, 0)), hF, hF] at h
+    rw [F.apply_inl_eq hF v, F.apply_inl_eq hF u] at h
     simp only [glueAlongDiscriminant_form, orthogonalSum_form, LinearMap.BilinForm.prod_apply,
       map_zero, add_zero] at h
     exact h
@@ -656,7 +665,7 @@ noncomputable def restrictGlueRight : Isometry M M' where
       (LinearMap.inr ℚ V W))) (F.bijective_snd_comp_inr hF hF')
   map_app' w u := by
     have h := F.map_app (0, w) (0, u)
-    rw [← Prod.mk.eta (p := F (0, w)), ← Prod.mk.eta (p := F (0, u)), hF', hF'] at h
+    rw [F.apply_inr_eq hF' w, F.apply_inr_eq hF' u] at h
     simp only [glueAlongDiscriminant_form, orthogonalSum_form, LinearMap.BilinForm.prod_apply,
       map_zero, zero_add] at h
     exact h
@@ -685,11 +694,15 @@ theorem restrictGlueRight_apply (w : W) : F.restrictGlueRight hF hF' w = (F (0, 
 isometries. -/
 theorem restrictGlue_discriminantGroupEquiv_intertwine (a : L.DiscriminantGroup) :
     e' ((F.restrictGlueLeft hF hF').discriminantGroupEquiv a) =
-      (F.restrictGlueRight hF hF').discriminantGroupEquiv (e a) :=
-  ((F.restrictGlueLeft hF hF').existsUnique_glueAlongDiscriminant_iff
-    (F.restrictGlueRight hF hF')).mp ⟨F, fun v w ↦ F.apply_eq_of_preserves hF hF' (v, w),
-      fun _ hG ↦ Isometry.ext fun p ↦
-        (hG p.1 p.2).trans (F.apply_eq_of_preserves hF hF' p).symm⟩ a
+      (F.restrictGlueRight hF hF').discriminantGroupEquiv (e a) := by
+  refine ((F.restrictGlueLeft hF hF').mapsTo_prodMap_glueAlongDiscriminant_iff
+    (F.restrictGlueRight hF hF')).mp ?_ a
+  intro p hp
+  -- On the ambient product, the pair of restrictions acts as `F` itself.
+  have hmap : Prod.map (F.restrictGlueLeft hF hF') (F.restrictGlueRight hF hF') p = F p :=
+    (F.apply_eq_of_preserves hF hF' p).symm
+  rw [hmap]
+  exact (F.apply_mem_carrier_iff _).mpr hp
 
 /-- **Gluing inverts restriction.** An isometry of glued lattices preserving both coordinate
 spaces is the extension of its two restrictions. -/
