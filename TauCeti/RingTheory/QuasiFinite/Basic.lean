@@ -92,14 +92,15 @@ theorem under_ne_bot [IsDomain S] [QuasiFinite R S] {I : Ideal S} (hI : I ≠ �
     I.exists_le_prime_disjoint (algebraMapSubmonoid S (nonZeroDivisors R)) <| by
       rw [Set.disjoint_left]
       rintro _ hx ⟨r, hr, rfl⟩
-      have : r ∈ I.under R := hx
+      have : r ∈ I.under R := (Ideal.mem_under R I).mpr hx
       rw [hIR, Ideal.mem_bot] at this
       exact zero_notMem_nonZeroDivisors (this ▸ hr)
   have hPR : (⊥ : Ideal S).under R = P.under R := by
     rw [Ideal.under_def, Ideal.comap_bot_of_injective _ hinj, eq_comm, eq_bot_iff]
     intro r hr
     by_contra h0
-    exact Set.disjoint_left.mp hPM hr ⟨r, mem_nonZeroDivisors_of_ne_zero h0, rfl⟩
+    exact Set.disjoint_left.mp hPM ((Ideal.mem_under R P).mp hr)
+      ⟨r, mem_nonZeroDivisors_of_ne_zero h0, rfl⟩
   exact hI (eq_bot_iff.mpr (hIP.trans (eq_of_le_of_under_eq ⊥ P bot_le hPR).symm.le))
 
 end Algebra.QuasiFinite

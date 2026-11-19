@@ -199,10 +199,11 @@ theorem Scheme.Hom.ringKrullDim_stalk_eq_of_locallyQuasiFinite {X Y : Scheme.{u}
   have : IsIntegral Y := isIntegral_of_irreducibleSpace_of_isReduced Y
   exact f.ringKrullDim_stalk_eq_of_quasiFiniteAt (f.quasiFiniteAt x)
 
-/-- **Proper closed subsets map into hypersurfaces.** Let `π : V ⟶ Spec R` be a locally
-quasi-finite morphism from an integral affine scheme, for instance an étale morphism to an affine
-space. Then every closed subset `Z ≠ V` is mapped into the zero locus `V(h)` of some nonzero
-`h : R`. The element `h` need not generate the ideal of the closure of `π '' Z`. -/
+/-- **Proper closed subsets map into the zero locus of a nonzero element.** Let `π : V ⟶ Spec R`
+be a locally quasi-finite morphism from an integral affine scheme, for instance an étale morphism
+to an affine space. Then every closed subset `Z ≠ V` is mapped into the zero locus `V(h)` of some
+nonzero `h : R`. When `R` is a domain, such as `MvPolynomial (Fin m) k`, `V(h)` is a hypersurface.
+The element `h` need not generate the ideal of the closure of `π '' Z`. -/
 theorem Scheme.Hom.exists_ne_zero_image_subset_zeroLocus {R : Type u} [CommRing R]
     {V : Scheme.{u}} [IsIntegral V] [IsAffine V] (π : V ⟶ Spec (.of R)) [LocallyQuasiFinite π]
     {Z : Set V} (hZ : IsClosed Z) (hZV : Z ≠ Set.univ) :
