@@ -38,21 +38,32 @@ open scoped Nat
 
 namespace Complex
 
+/-- The three coefficients in the contiguous relations, written over the common factor
+`g = 1 / Γ(β + n + 2)`. -/
+private theorem regularizedHGFunCoeff_succ_eq_mul_inv_Gamma (α₁ α₂ α₃ β : ℂ) (n : ℕ) :
+    regularizedHGFunCoeff {α₁} {β} (n + 1) = (β + (n + 1)) *
+        ((ascPochhammer ℂ (n + 1)).eval α₁ / (n + 1)!) * (Gamma (β + (n + 1) + 1))⁻¹ ∧
+      regularizedHGFunCoeff {α₂} {β + 1} (n + 1) =
+        (ascPochhammer ℂ (n + 1)).eval α₂ / (n + 1)! * (Gamma (β + (n + 1) + 1))⁻¹ ∧
+      regularizedHGFunCoeff {α₃} {β + 2} n =
+        (ascPochhammer ℂ n).eval α₃ / n ! * (Gamma (β + (n + 1) + 1))⁻¹ := by
+  simp only [regularizedHGFunCoeff_singleton_singleton, div_eq_mul_inv, mul_inv]
+  refine ⟨?_, ?_, ?_⟩
+  · rw [Nat.cast_succ, one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (β + (n + 1))]
+    ring
+  · rw [Nat.cast_succ, show β + 1 + (n + 1) = β + (n + 1) + 1 by ring]
+    ring
+  · rw [show β + 2 + n = β + (n + 1) + 1 by ring]
+    ring
+
 /-- The coefficient identity behind `regularizedHGFun_singleton_singleton_eq_mul_add_mul`. -/
 private theorem regularizedHGFunCoeff_singleton_singleton_succ_eq_mul_add_mul (α β : ℂ) (n : ℕ) :
     regularizedHGFunCoeff {α} {β} (n + 1) =
       β * regularizedHGFunCoeff {α} {β + 1} (n + 1) +
         α * regularizedHGFunCoeff {α + 1} {β + 2} n := by
-  simp only [regularizedHGFunCoeff_singleton_singleton, ascPochhammer_succ_left, eval_mul, eval_X,
-    eval_comp, eval_add, eval_one, Nat.factorial_succ]
-  have hG := one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (β + (n + 1))
-  have e₁ : β + 1 + ((n + 1 : ℕ) : ℂ) = β + (n + 1) + 1 := by push_cast; ring
-  have e₂ : β + 2 + (n : ℂ) = β + (n + 1) + 1 := by ring
-  have e₃ : β + ((n + 1 : ℕ) : ℂ) = β + (n + 1) := by push_cast; ring
-  rw [e₁, e₂, e₃]
-  simp only [div_eq_mul_inv, mul_inv, hG]
-  generalize (Gamma (β + (n + 1) + 1))⁻¹ = g
-  have hn : (n + 1 : ℂ) ≠ 0 := by exact_mod_cast n.succ_ne_zero
+  obtain ⟨h₁, h₂, h₃⟩ := regularizedHGFunCoeff_succ_eq_mul_inv_Gamma α α (α + 1) β n
+  rw [h₁, h₂, h₃, ascPochhammer_succ_left, Nat.factorial_succ]
+  simp only [eval_mul, eval_X, eval_comp, eval_add, eval_one]
   push_cast
   field_simp
 
@@ -61,17 +72,9 @@ private theorem regularizedHGFunCoeff_singleton_singleton_succ_eq_mul_sub_mul (�
     regularizedHGFunCoeff {α} {β} (n + 1) =
       β * regularizedHGFunCoeff {α + 1} {β + 1} (n + 1) -
         (β - α) * regularizedHGFunCoeff {α + 1} {β + 2} n := by
-  simp only [regularizedHGFunCoeff_singleton_singleton]
-  rw [ascPochhammer_succ_eval n (α + 1), ascPochhammer_succ_left]
-  simp only [eval_mul, eval_X, eval_comp, eval_add, eval_one, Nat.factorial_succ]
-  have hG := one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (β + (n + 1))
-  have e₁ : β + 1 + ((n + 1 : ℕ) : ℂ) = β + (n + 1) + 1 := by push_cast; ring
-  have e₂ : β + 2 + (n : ℂ) = β + (n + 1) + 1 := by ring
-  have e₃ : β + ((n + 1 : ℕ) : ℂ) = β + (n + 1) := by push_cast; ring
-  rw [e₁, e₂, e₃]
-  simp only [div_eq_mul_inv, mul_inv, hG]
-  generalize (Gamma (β + (n + 1) + 1))⁻¹ = g
-  have hn : (n + 1 : ℂ) ≠ 0 := by exact_mod_cast n.succ_ne_zero
+  obtain ⟨h₁, h₂, h₃⟩ := regularizedHGFunCoeff_succ_eq_mul_inv_Gamma α (α + 1) (α + 1) β n
+  rw [h₁, h₂, h₃, ascPochhammer_succ_eval n (α + 1), ascPochhammer_succ_left, Nat.factorial_succ]
+  simp only [eval_mul, eval_X, eval_comp, eval_add, eval_one]
   push_cast
   field_simp
   ring
