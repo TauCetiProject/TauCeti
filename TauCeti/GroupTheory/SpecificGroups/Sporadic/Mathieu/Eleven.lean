@@ -53,10 +53,6 @@ sifts are run by `decide` in the kernel, on copies of the generators given by ta
 same argument shows that `0, 1, 2, 3` is a base: only the identity of the model fixes these four
 points.
 
-The surjection and the model order give a lower bound of `7920` on the order of the presented
-group whenever its `Nat.card` is positive. This condition excludes the junk value `0` for an
-infinite presented group; no finiteness of that group follows from the surjection alone.
-
 Lastly it proves that the model is simple. The powers of the element `a * b` of order `11` move
 `0` to every point, so the model is transitive of prime degree `11`. As `11 ^ 2` does not divide
 `7920`, a normal generator of order `11` certifies simplicity
@@ -74,8 +70,6 @@ generates the model as a normal subgroup: `a` is the product of two explicit con
 * `TauCeti.Sporadic.M11.presentationHom`: the homomorphism from the presented group.
 * `TauCeti.Sporadic.exists_surjective_M11`: the presented group maps onto the model.
 * `TauCeti.Sporadic.card_M11`: the model has `7920` elements.
-* `TauCeti.Sporadic.le_natCard_group_M11`: the presented group, when finite, has at least `7920`
-  elements.
 * `TauCeti.Sporadic.M11.stabilizerChain_four_eq_bot`: the points `0, 1, 2, 3` form a base.
 * `TauCeti.Sporadic.M11.isPretransitive`: the model acts transitively on the `11` points.
 * `TauCeti.Sporadic.M11.normalClosure_a_mul_b_eq_top`: `a * b` generates the model as a normal
@@ -390,15 +384,6 @@ theorem card_M11 : Nat.card M11 = 7920 := by
   rw [Subgroup.natCard_eq_prod_length_of_siftCheck M11.mem_transversal M11.le_closure_tables
     M11.transversalCheck_eq_true M11.sift_tables M11.siftCheck_eq_true]
   decide
-
-/-- The group presented by the transcribed `M₁₁` presentation, when finite, has at least `7920`
-elements, since it maps onto the model `M11`. The positivity hypothesis excludes the value
-`Nat.card = 0` for an infinite presented group. -/
-theorem le_natCard_group_M11 (h : 0 < Nat.card SporadicName.M11.Group) :
-    7920 ≤ Nat.card SporadicName.M11.Group := by
-  have : Finite SporadicName.M11.Group := Nat.finite_of_card_ne_zero h.ne'
-  obtain ⟨f, hf⟩ := exists_surjective_M11
-  exact card_M11 ▸ Nat.card_le_card_of_surjective f hf
 
 /-! ### Simplicity of the model -/
 
