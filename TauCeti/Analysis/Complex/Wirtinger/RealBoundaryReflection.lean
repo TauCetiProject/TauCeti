@@ -60,8 +60,15 @@ provides the nontrivial examples `z²` and `z e^{-conj z}`.
   Schwarz reflection**. With finite-dimensional coefficients and `η = 0`, `ξ` agrees almost
   everywhere on `Ω ∩ {0 ≤ im}` with a map holomorphic on all of `Ω`, real on `Ω ∩ ℝ` and
   satisfying `v (conj z) = star (v z)`. It is a weak analogue of
-  `TauCeti.differentiableOn_schwarzReflection_of_symmetric`; recovering that lemma from it
-  uses the half-plane boundary-term computation for smooth data proved below.
+  `TauCeti.differentiableOn_schwarzReflection_of_symmetric`. The boundary-term computation
+  below supplies the classical-to-weak step for maps `C¹` up to the axis. Recovering the full
+  continuity-only statement would still require the boundary-term computation for data merely
+  continuous up to the axis.
+* `TauCeti.setIntegral_im_nonneg_lineDeriv_add_I_mul_smul_eq`: integration by parts for data
+  `C¹` on `Ω ∩ {0 ≤ im}` solving the equation on `Ω ∩ {0 < im}`, retaining the boundary integral.
+* `TauCeti.hasWeakConjWirtingerDerivRealBoundaryOn_of_contDiffOn`: a solution `C¹` up to the
+  axis with complete coefficient space and pointwise real boundary values satisfies the weak
+  real-boundary equation.
 * Check: the even reflection `s + i|t|`, which omits the conjugation, is not a weak solution
   below the axis. The companion check that the reflection of `z` is `z` is
   `TauCeti.starSchwarzReflection_id`.
