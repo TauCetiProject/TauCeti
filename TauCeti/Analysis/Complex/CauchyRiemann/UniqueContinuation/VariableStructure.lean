@@ -33,6 +33,14 @@ zero structure of holomorphic maps:
   them has a finite positive order
   (`TauCeti.exists_isTheta_pow_of_contDiffOn_of_complexStructure`).
 
+To apply these statements to an equation posed on `ℝ × ℝ`, read it in the complex coordinate
+`Complex.equivRealProdCLM`. Vanishing on a set, vanishing to finite order at a point and
+codiscreteness of the nonzero set then pass between the two coordinates
+(`TauCeti.eqOn_zero_of_eqOn_zero_comp_equivRealProdCLM`,
+`TauCeti.isBigO_comp_equivRealProdCLM_pow`,
+`TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_comp_equivRealProdCLM`, in
+`TauCeti.Analysis.Complex.RealChart`).
+
 For a constant structure `J = i` on a complex space these are the classical statements of
 `TauCeti.Analysis.Complex.CauchyRiemann.Similarity`, which proves Carleman's similarity principle.
 The variable structure is reduced to the constant one in two steps.
