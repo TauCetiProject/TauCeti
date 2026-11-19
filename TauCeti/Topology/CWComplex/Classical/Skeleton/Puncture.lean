@@ -159,17 +159,11 @@ private lemma pushFun_of_notMem_image (t : I) {x : X} (hx : x ∉ map n j '' bal
       map_map_symm n hxo]
   · exact pushFun_of_notMem j hxo
 
-omit [T2Space X] in
-/-- The coordinates of a point of the punctured open cell are nonzero. -/
-private lemma map_symm_ne_zero {x : X} (hx : x ∈ openCell (C := C) n j) (hb : x ≠ map n j 0) :
-    (map n j).symm x ≠ 0 :=
-  fun h ↦ hb (by rw [← map_map_symm n hx, h])
-
 private lemma pushFun_mem_skeletonDiffCenter (t : I) {x : X} (hx : x ∈ skeletonDiffCenter j) :
     pushFun j (t, x) ∈ skeletonDiffCenter j := by
   by_cases hxo : x ∈ openCell (C := C) n j
   · have hy := map_symm_mem_ball n hxo
-    have hy0 := map_symm_ne_zero j hxo hx.2
+    have hy0 := map_symm_ne_zero n hxo hx.2
     have hz := norm_puncturedBallPush_lt_one t (mem_ball_zero_iff.1 hy)
     rw [pushFun_of_mem j hxo]
     refine ⟨map_mem_skeletonLT_succ j hz.le, fun h ↦ puncturedBallPush_ne_zero 2⁻¹ t hy0 ?_⟩
@@ -194,7 +188,7 @@ private lemma continuous_pushFun :
     have hpush : ContinuousAt (fun q : I × skeletonDiffCenter j ↦
         puncturedBallPush 2⁻¹ q.1 ((map n j).symm q.2)) (t, x) :=
       ContinuousAt.comp (f := fun q : I × skeletonDiffCenter j ↦ (q.1, (map n j).symm q.2))
-        (continuousAt_puncturedBallPush 2⁻¹ (map_symm_ne_zero j (x := (x : X)) hxo x.2.2))
+        (continuousAt_puncturedBallPush 2⁻¹ (map_symm_ne_zero n (x := (x : X)) hxo x.2.2))
         (continuous_fst.continuousAt.prodMk hsymm)
     have hmap : ContinuousAt (map n j) (puncturedBallPush 2⁻¹ t ((map n j).symm x)) :=
       (continuousOn n j).continuousAt <| Filter.mem_of_superset (isOpen_ball.mem_nhds
@@ -259,7 +253,7 @@ lemma skeletonDiffCenterEndpoint_mem (x : skeletonDiffCenter j) :
   refine ⟨(skeletonDiffCenterEndpoint j x).2.1, ?_⟩
   rw [skeletonDiffCenterEndpoint, ContinuousMap.curry_apply, pushMap_apply]
   by_cases hxo : (x : X) ∈ openCell (C := C) n j
-  · have hy0 := map_symm_ne_zero j (x := (x : X)) hxo x.2.2
+  · have hy0 := map_symm_ne_zero n (x := (x : X)) hxo x.2.2
     have hz := norm_puncturedBallPush_lt_one 1 (mem_ball_zero_iff.1 (map_symm_mem_ball n hxo))
     rw [pushFun_of_mem j hxo]
     rintro ⟨y, hy, h⟩

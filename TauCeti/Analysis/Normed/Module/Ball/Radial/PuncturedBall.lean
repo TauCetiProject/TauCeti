@@ -22,8 +22,10 @@ every vector of the closed unit ball, this deformation is the identity outside t
 
 * `TauCeti.puncturedBallPush`: the push of the punctured ball of radius `r` onto its boundary
   sphere.
+* `TauCeti.puncturedBallPush_apply`: its value, as a multiple of the vector.
 * `TauCeti.puncturedBallPush_zero` and `TauCeti.puncturedBallPush_of_le_norm`: it starts at the
   identity and fixes the complement of the ball of radius `r`.
+* `TauCeti.puncturedBallPush_zero_right`: it fixes the origin.
 * `TauCeti.norm_puncturedBallPush_le`: it does not leave the ball of radius `max ‖y‖ r`.
 * `TauCeti.le_norm_puncturedBallPush_one`: at the end it sends nonzero vectors outside the ball
   of radius `r`.
@@ -43,6 +45,16 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {r : ℝ} {y : E
 vector `y` is scaled by `max 1 (1 - t + t r / ‖y‖)`. Vectors of norm at least `r` are fixed. -/
 noncomputable def puncturedBallPush (r : ℝ) (t : I) (y : E) : E :=
   max 1 (1 - (t : ℝ) + t * (r / ‖y‖)) • y
+
+/-- The value of the push: at time `t` it scales `y` by `max 1 (1 - t + t r / ‖y‖)`. -/
+theorem puncturedBallPush_apply (r : ℝ) (t : I) (y : E) :
+    puncturedBallPush r t y = max 1 (1 - (t : ℝ) + t * (r / ‖y‖)) • y := by
+  rw [puncturedBallPush]
+
+/-- The push fixes the origin at all times. -/
+@[simp]
+theorem puncturedBallPush_zero_right (r : ℝ) (t : I) : puncturedBallPush r t (0 : E) = 0 := by
+  rw [puncturedBallPush_apply, smul_zero]
 
 /-- At time zero the push is the identity. -/
 @[simp]
