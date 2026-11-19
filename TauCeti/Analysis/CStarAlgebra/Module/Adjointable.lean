@@ -239,6 +239,10 @@ theorem coe_id : ⇑(id A E) = _root_.id := (rfl)
 theorem adjoint_id : (id A E).adjoint = id A E := (rfl)
 
 @[simp]
+theorem toContinuousLinearMap_id : (id A E).toContinuousLinearMap = ContinuousLinearMap.id ℂ E :=
+  (rfl)
+
+@[simp]
 theorem id_comp (T : AdjointableMap A E F) : (id A F).comp T = T := (rfl)
 
 @[simp]
