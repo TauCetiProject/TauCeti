@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Principal
+import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.Basic
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.NearOne
 import Mathlib.Tactic.NormNum
 
