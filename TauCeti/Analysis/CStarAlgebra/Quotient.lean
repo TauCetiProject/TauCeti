@@ -258,6 +258,27 @@ theorem factorStarAlgHom_surjective {I J : TwoSidedIdeal A} [IsClosed (I : Set A
     [IsClosed (J : Set A)] (h : I ≤ J) : Function.Surjective (factorStarAlgHom h) :=
   liftStarAlgHom_surjective_of_surjective _ (mkStarAlgHom_surjective J)
 
+@[simp]
+theorem factorStarAlgHom_refl {I : TwoSidedIdeal A} [IsClosed (I : Set A)] :
+    factorStarAlgHom (le_refl I) = NonUnitalStarAlgHom.id ℂ (A ⧸ I) :=
+  NonUnitalStarAlgHom.ext fun x => by
+    obtain ⟨a, rfl⟩ := mk_surjective I x
+    simp
+
+@[simp]
+theorem factorStarAlgHom_comp {I J K : TwoSidedIdeal A} [IsClosed (I : Set A)]
+    [IsClosed (J : Set A)] [IsClosed (K : Set A)] (h₁ : I ≤ J) (h₂ : J ≤ K) :
+    (factorStarAlgHom h₂).comp (factorStarAlgHom h₁) = factorStarAlgHom (h₁.trans h₂) :=
+  NonUnitalStarAlgHom.ext fun x => by
+    obtain ⟨a, rfl⟩ := mk_surjective I x
+    simp
+
+@[simp]
+theorem factorStarAlgHom_comp_apply {I J K : TwoSidedIdeal A} [IsClosed (I : Set A)]
+    [IsClosed (J : Set A)] [IsClosed (K : Set A)] (h₁ : I ≤ J) (h₂ : J ≤ K) (x : A ⧸ I) :
+    factorStarAlgHom h₂ (factorStarAlgHom h₁ x) = factorStarAlgHom (h₁.trans h₂) x :=
+  DFunLike.congr_fun (factorStarAlgHom_comp h₁ h₂) x
+
 /-- Isometric `⋆`-algebra equivalence between C⋆-quotients by equal closed two-sided ideals. -/
 noncomputable def quotStarAlgEquivOfEq {I J : TwoSidedIdeal A} [IsClosed (I : Set A)]
     [IsClosed (J : Set A)] (h : I = J) : A ⧸ I ≃⋆ₐ[ℂ] A ⧸ J where
@@ -328,6 +349,11 @@ theorem toNonUnitalStarAlgHom_mkUnitalStarAlgHom :
 
 theorem mkUnitalStarAlgHom_surjective : Function.Surjective (mkUnitalStarAlgHom I) :=
   mk_surjective I
+
+@[simp]
+theorem ker_mkUnitalStarAlgHom : TwoSidedIdeal.ker (mkUnitalStarAlgHom I) = I := by
+  ext a
+  simp [TwoSidedIdeal.mem_ker, eq_zero_iff_mem]
 
 /-- Descend a unital `⋆`-algebra homomorphism `f : A →⋆ₐ[ℂ] B` vanishing on `I` to
 `A ⧸ I →⋆ₐ[ℂ] B`. -/
