@@ -26,6 +26,7 @@ the infinite case, so residue degree can be used as a weight on isomorphism clas
 ## Main results
 
 * `IntermediateField.inertiaDegree_eq_of_algEquiv`: residue degree is an isomorphism invariant.
+* `IntermediateField.inertiaDegree_dvd_finrank`: residue degree divides the degree.
 * `IntermediateField.isTotallyRamified_iff_inertiaDegree_eq_one`: a subextension is totally
   ramified exactly when its residue degree is one.
 * `IntermediateField.unramifiedExtension_inertiaDegree_le`: `K_{f(L/K)} ≤ L` for finite `L`.
@@ -112,6 +113,19 @@ theorem inertiaDegree_eq_of_algEquiv {L M : IntermediateField K (SeparableClosur
     exact TauCeti.inertiaDegree_eq_of_algEquiv K L M e
   · rw [inertiaDegree_of_not_finite hL, inertiaDegree_of_not_finite
       fun h ↦ hL (Module.Finite.equiv e.symm.toLinearEquiv)]
+
+/-- The residue degree divides the degree, including the infinite case, where both are zero. -/
+theorem inertiaDegree_dvd_finrank (L : IntermediateField K (SeparableClosure K)) :
+    L.inertiaDegree ∣ Module.finrank K L := by
+  by_cases h : Module.Finite K L
+  · rw [inertiaDegree_eq]
+    let _ := finiteIntermediateFieldValuativeRel K (SeparableClosure K) L
+    let _ := finiteIntermediateFieldTopology K (SeparableClosure K) L
+    have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) L
+    have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) L
+    exact Dvd.intro_left _ (ramificationIndex_mul_inertiaDegree K L)
+  · rw [inertiaDegree_of_not_finite h]
+    exact Module.finrank_of_not_finite h ▸ dvd_rfl
 
 /-- A subextension is totally ramified exactly when its totalized residue degree is one; no
 finiteness hypothesis is needed, since an infinite subextension has residue degree zero. -/
