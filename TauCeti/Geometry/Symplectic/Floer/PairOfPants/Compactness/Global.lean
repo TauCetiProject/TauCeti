@@ -323,12 +323,10 @@ private theorem exists_pos_forall_window (ω : SymplecticForm V) (hH : ∀ q, Pe
   · obtain ⟨φ, Z, v, hφ, -, -, hc, -, -, -, hv⟩ := hconvc (u := u ∘ ψ) (a := a ∘ ψ)
       (isOpen_window _ none) (window_none_subset _) (fun k ↦ hu _) (fun k ↦ hfl _)
       (fun k ↦ ha _) (fun k ↦ hA _) (fun k ↦ (huK _).mono_left fun z hz ↦ hz.1)
-    refine ⟨φ, hφ, ↑Z, fun z hz N hN ↦ ?_, v, hv⟩
-    obtain ⟨ε, hε, hεN⟩ := Metric.mem_nhds_iff.1 hN
-    filter_upwards [hc z hz ε hε] with n hn
-    exact TauCeti.MeasureTheory.ofReal_le_withDensity_of_le_setIntegral
-      (measurableSet_ball.inter (isOpen_window _ none).measurableSet) (fun y hy ↦ hy.2.1)
-      (inter_subset_left.trans hεN) ((min_le_left _ _).trans hn)
+    exact ⟨φ, hφ, ↑Z, fun z hz ↦
+      eventually_ofReal_le_withDensity_of_forall_eventually_le_setIntegral_ball
+        (isOpen_window _ none).measurableSet (fun y hy ↦ hy.1)
+        fun ε hε ↦ (hc z hz ε hε).mono fun n hn ↦ (min_le_left _ _).trans hn, v, hv⟩
   · obtain ⟨φ, Z, v, hφ, hZΩ, -, hc, -, -, -, hv⟩ := hconve q b (Ω := endWindow (max T₀ 2) b)
       (u := u ∘ ψ) (R := fun _ ↦ (m : ℝ)) (isOpen_Ioo.prod isOpen_Ioo)
       (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self) (fun _ ↦ Nat.cast_nonneg m)

@@ -26,9 +26,11 @@ sequence when every ball about `z` eventually carries energy at least `δ`:
 for every `ε > 0`, eventually `δ ≤ ∫_{B_ε(z) ∩ Ω} e k`. Distinct points of a Hausdorff space have
 disjoint neighbourhoods, so for measures `μ k` of mass at most `E` on an open set `W`, a finite
 set `T ⊆ W` of points every neighbourhood of which eventually has `μ k`-measure at least `δ`
-satisfies `#T * δ ≤ E` (`TauCeti.card_mul_le_of_forall_eventually_le_measure`). Applied to the
-measures with densities `e k` on `Ω`, a finite set `Z` of energy concentration points satisfies
-`#Z * δ ≤ E` (`TauCeti.card_mul_le_of_forall_eventually_le_setIntegral_ball`). If instead the
+satisfies `#T * δ ≤ E` (`TauCeti.card_mul_le_of_forall_eventually_le_measure`). The measures with
+densities `e k` on `Ω` concentrate mass `δ` at every energy concentration point
+(`TauCeti.eventually_ofReal_le_withDensity_of_forall_eventually_le_setIntegral_ball`), so a finite
+set `Z` of energy concentration points satisfies `#Z * δ ≤ E`
+(`TauCeti.card_mul_le_of_forall_eventually_le_setIntegral_ball`). If instead the
 densities `1 + e k` concentrate energy `δ` at a null point `z`, then the `e k` concentrate energy
 `δ'` there for every `δ' < δ`, since small balls about `z` have small measure
 (`TauCeti.eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball`). A pointwise
@@ -70,6 +72,9 @@ which the `g k` are unbounded (`TauCeti.coe_eq_setOf_forall_exists_lt_of_concent
 
 * `TauCeti.card_mul_le_of_forall_eventually_le_measure`: a finite set of points at which measures
   of mass at most `E` concentrate mass `δ` has at most `E / δ` elements.
+* `TauCeti.eventually_ofReal_le_withDensity_of_forall_eventually_le_setIntegral_ball`: at an
+  energy concentration point, every neighbourhood eventually carries mass `δ` of the energy
+  measures.
 * `TauCeti.card_mul_le_of_forall_eventually_le_setIntegral_ball`: a finite set of energy
   concentration points of threshold `δ` has at most `E / δ` elements.
 * `TauCeti.eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball`: removing the
@@ -155,6 +160,22 @@ end Comparison
 variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   {μ : Measure X} {Ω : Set X} {δ E : ℝ}
 
+/-- **Energy concentration points are concentration points of the energy measures.** If energy at
+least `δ` of the densities `e i` on a measurable set `Ω ⊆ S` concentrates at `z`, that is, for every
+`ε > 0` eventually `δ ≤ ∫_{B_ε(z) ∩ Ω} e i`, then every neighbourhood of `z` eventually has measure
+at least `δ` for the measures of densities `e i` on `S`. No integrability or sign assumption on
+the `e i` is needed. -/
+theorem eventually_ofReal_le_withDensity_of_forall_eventually_le_setIntegral_ball {ι : Type*}
+    {l : Filter ι} {e : ι → X → ℝ} {S : Set X} {z : X} (hΩ : MeasurableSet Ω) (hΩS : Ω ⊆ S)
+    (hconc : ∀ ε > 0, ∀ᶠ i in l, δ ≤ ∫ y in ball z ε ∩ Ω, e i y ∂μ) :
+    ∀ N ∈ 𝓝 z, ∀ᶠ i in l,
+      ENNReal.ofReal δ ≤ (μ.restrict S).withDensity (fun y ↦ ENNReal.ofReal (e i y)) N := by
+  intro N hN
+  obtain ⟨ε, hε, hεN⟩ := Metric.mem_nhds_iff.1 hN
+  filter_upwards [hconc ε hε] with i hi
+  exact TauCeti.MeasureTheory.ofReal_le_withDensity_of_le_setIntegral
+    (measurableSet_ball.inter hΩ) (inter_subset_right.trans hΩS) (inter_subset_left.trans hεN) hi
+
 /-- **Counting energy concentration points.** Let `e i ≥ 0` be densities on a measurable set `Ω`
 with `∫_Ω e i ≤ E`, and let `Z` be a finite set of points at which energy at least `δ`
 concentrates: for every `z ∈ Z` and `ε > 0`, eventually `δ ≤ ∫_{B_ε(z) ∩ Ω} e i`. Then
@@ -171,11 +192,9 @@ theorem card_mul_le_of_forall_eventually_le_setIntegral_ball {ι : Type*} {l : F
       ← ofReal_integral_eq_lintegral_ofReal (hint i) (ae_restrict_of_forall_mem hΩ (he i))]
     exact ENNReal.ofReal_le_ofReal (hE i)
   have hcard := card_mul_le_of_forall_eventually_le_measure (l := l) isOpen_univ hμ
-    (subset_univ _) fun z hz N hN ↦ by
-      obtain ⟨ε, hε, hεN⟩ := Metric.mem_nhds_iff.1 hN
-      filter_upwards [hZ z hz ε hε] with i hi
-      exact TauCeti.MeasureTheory.ofReal_le_withDensity_of_le_setIntegral
-        (measurableSet_ball.inter hΩ) inter_subset_right (inter_subset_left.trans hεN) hi
+    (subset_univ _) fun z hz ↦
+      eventually_ofReal_le_withDensity_of_forall_eventually_le_setIntegral_ball hΩ subset_rfl
+        (hZ z hz)
   obtain ⟨i⟩ := l.nonempty_of_neBot
   exact (ENNReal.natCast_mul_ofReal_le_ofReal_iff
     ((setIntegral_nonneg hΩ (he i)).trans (hE i))).1 hcard
