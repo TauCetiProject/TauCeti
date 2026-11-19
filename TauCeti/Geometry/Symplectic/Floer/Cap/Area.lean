@@ -770,7 +770,7 @@ theorem IsSmoothBasedCap.cappedLoopAction_comp_prodMap_one_sub {σ : RoughForm I
 
 /-- **Gluing a pair of pants to caps adds its area.** Let `w` be a smooth based homotopy from `γ₀`
 to the collared concatenation of `γ₁` and `γ₂`: a smooth pair of pants with output `γ₀` and
-inputs `γ₁`, `γ₂`, whose two seams stay at the base point. Its class as a pair of pants
+inputs `γ₁`, `γ₂`, whose seam `t = 0` stays at the base point. Its class as a pair of pants
 `γ₀ ⟶ γ₁ ⬝ γ₂` is `w.homotopyClass ≫ inv (Path.collaredTransHom γ₁ γ₂)`. If `γ₀`, `γ₁` and `γ₂`
 have smooth based caps, then gluing raw caps `D₁` of `γ₁` and `D₂` of `γ₂` to this pair of pants
 gives a raw cap of `γ₀` whose area, for a closed `C¹` two-form, is the integral of the form over
