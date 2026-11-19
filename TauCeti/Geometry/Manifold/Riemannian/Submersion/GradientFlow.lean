@@ -104,6 +104,14 @@ theorem isMIntegralCurveOn_comp (hg : MDifferentiable J 𝓘(ℝ) g) {γ : ℝ �
     (fun _ _ ↦ h.isSubmersion.contMDiff.mdifferentiableAt (by simp))
     fun _ _ ↦ h.mfderiv_neg_mgradient_comp (hg _)
 
+/-- A Riemannian submersion `f` maps every global integral curve of `-grad (g ∘ f)` to a global
+integral curve of `-grad g`. -/
+theorem isMIntegralCurve_comp (hg : MDifferentiable J 𝓘(ℝ) g) {γ : ℝ → M}
+    (hγ : IsMIntegralCurve γ (-mgradient I (g ∘ f))) :
+    IsMIntegralCurve (f ∘ γ) (-mgradient J g) :=
+  isMIntegralCurve_iff_isMIntegralCurveOn.2
+    (h.isMIntegralCurveOn_comp hg (isMIntegralCurve_iff_isMIntegralCurveOn.1 hγ))
+
 /-- The maximal trajectory of `-grad (g ∘ f)` through `z` exists at most as long as the maximal
 trajectory of `-grad g` through `f z`. -/
 theorem maximalIntegralCurveInterval_subset (hg : MDifferentiable J 𝓘(ℝ) g) (z : M) :
@@ -164,6 +172,16 @@ theorem comp_maximalIntegralCurve_of_isMIntegralCurve (hg : ContMDiff J 𝓘(ℝ
   rw [h.comp_maximalIntegralCurve hg hV, hz]
   exact funext (hc.maximalIntegralCurve_eq (contMDiff_neg_mgradient_one hg))
 
+/-- **Limits of lifted trajectories project to limits on the base.** If `-grad (g ∘ f)` is
+complete and its maximal trajectory through `z` tends to `z'` along a filter `l`, then the maximal
+trajectory of `-grad g` through `f z` tends to `f z'` along `l`. -/
+theorem tendsto_maximalIntegralCurve_of_tendsto (hg : ContMDiff J 𝓘(ℝ) 2 g)
+    (hV : IsCompleteVectorField (-mgradient I (g ∘ f))) {l : Filter ℝ} {z z' : M}
+    (hγ : Tendsto (maximalIntegralCurve (-mgradient I (g ∘ f)) z) l (𝓝 z')) :
+    Tendsto (maximalIntegralCurve (-mgradient J g) (f z)) l (𝓝 (f z')) := by
+  rw [← h.comp_maximalIntegralCurve hg hV]
+  exact (h.isSubmersion.contMDiff.continuous.tendsto z').comp hγ
+
 variable [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   [T2Space M] [BoundarylessManifold I M]
 
@@ -202,8 +220,7 @@ def liftIntegralCurveEquiv (hg : ContMDiff J 𝓘(ℝ) 2 g)
   toFun γ := ⟨⟨f ∘ γ.1, by
     have : IsManifold J 1 N := IsManifold.of_le one_le_two
     have : IsManifold I 1 M := IsManifold.of_le one_le_two
-    exact isMIntegralCurve_iff_isMIntegralCurveOn.2 (h.isMIntegralCurveOn_comp
-      (hg.mdifferentiable (by norm_num)) (isMIntegralCurve_iff_isMIntegralCurveOn.1 γ.2))⟩,
+    exact h.isMIntegralCurve_comp (hg.mdifferentiable (by norm_num)) γ.2⟩,
     ⟨γ.1 0, rfl⟩⟩
   invFun p := ⟨maximalIntegralCurve (-mgradient I (g ∘ f)) p.2,
     have : IsManifold I 1 M := IsManifold.of_le one_le_two
@@ -362,8 +379,7 @@ theorem exists_tendsto_atBot_and_riemannianEDist_le_mul_exp_maximalIntegralCurve
     have hfc : f ∘ γ = c :=
       h.comp_maximalIntegralCurve hg (isCompleteVectorField_of_compactSpace hV1) z
     rw [← hfc]
-    exact isMIntegralCurve_iff_isMIntegralCurveOn.2 (h.isMIntegralCurveOn_comp
-      (hg.mdifferentiable (by norm_num)) (isMIntegralCurve_iff_isMIntegralCurveOn.1 hγ))
+    exact h.isMIntegralCurve_comp (hg.mdifferentiable (by norm_num)) hγ
   -- Reversing time turns trajectories of `-grad φ` into trajectories of `-grad (-φ)`.
   have hg' : ContMDiff J 𝓘(ℝ) 2 (-g) := hg.neg
   have hγrev : maximalIntegralCurve (-mgradient I ((-g) ∘ f)) z = γ ∘ (· * -1) :=
@@ -397,9 +413,7 @@ theorem setOf_exists_tendsto_maximalIntegralCurve_neg_mgradient_comp [CompactSpa
     isCompleteVectorField_of_compactSpace (contMDiff_neg_mgradient_one (h.contMDiff_comp hg))
   ext z
   refine ⟨fun ⟨z', hz', hγ⟩ ↦ ?_, fun hconv ↦ ?_⟩
-  · rw [mem_preimage, mem_ofPred_eq, ← h.comp_maximalIntegralCurve hg hV,
-      ← mem_singleton_iff.1 hz']
-    exact (h.isSubmersion.contMDiff.continuous.tendsto z').comp hγ
+  · exact mem_singleton_iff.1 hz' ▸ h.tendsto_maximalIntegralCurve_of_tendsto hg hV hγ
   · obtain ⟨z', -, hz', hγ, -⟩ :=
       h.exists_tendsto_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient_comp hg
         hx hconv isCompact_univ (mapsTo_univ _ _)
@@ -419,9 +433,7 @@ theorem setOf_exists_tendsto_atBot_maximalIntegralCurve_neg_mgradient_comp [Comp
     isCompleteVectorField_of_compactSpace (contMDiff_neg_mgradient_one (h.contMDiff_comp hg))
   ext z
   refine ⟨fun ⟨z', hz', hγ⟩ ↦ ?_, fun hconv ↦ ?_⟩
-  · rw [mem_preimage, mem_ofPred_eq, ← h.comp_maximalIntegralCurve hg hV,
-      ← mem_singleton_iff.1 hz']
-    exact (h.isSubmersion.contMDiff.continuous.tendsto z').comp hγ
+  · exact mem_singleton_iff.1 hz' ▸ h.tendsto_maximalIntegralCurve_of_tendsto hg hV hγ
   · obtain ⟨z', hz', hγ, -⟩ :=
       h.exists_tendsto_atBot_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient_comp
         hg hx hconv
