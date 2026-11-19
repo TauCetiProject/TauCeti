@@ -103,7 +103,7 @@ theorem _root_.Matrix.SpecialLinearGroup.map_diag2nUnit
     Matrix.SpecialLinearGroup.map f (Matrix.SpecialLinearGroup.diag2nUnit hij a) =
       Matrix.SpecialLinearGroup.diag2nUnit hij (Units.map f a) := by
   ext r s
-  simp [Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
+  simp [Matrix.SpecialLinearGroup.map_apply_coe,
     Matrix.diagonal_apply, apply_ite f]
 
 /-- The unit diagonal family takes the identity unit to the identity matrix. -/

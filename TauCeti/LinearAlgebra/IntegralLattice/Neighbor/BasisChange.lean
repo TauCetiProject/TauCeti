@@ -207,7 +207,7 @@ theorem isNeighbor_iff_isNeighborBasisChange [NeZero p] (b c : Basis ι ℚ V)
     L.IsNeighbor M p ↔ (b.toMatrix c).IsNeighborBasisChange p := by
   have hp₀ : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne p)
   -- `[L : L ∩ M] = |det (b.toMatrix c)| · [M : L ∩ M]`.
-  have hdet := Submodule.IsLattice.relIndex_span_eq_abs_det_mul (N := L.carrier ⊓ M.carrier) b c
+  have hdet := Submodule.IsFullLattice.relIndex_span_eq_abs_det_mul (N := L.carrier ⊓ M.carrier) b c
     (hL ▸ inf_le_left) (hM ▸ inf_le_right)
   rw [← hL, ← hM, Basis.det_apply] at hdet
   have hcard (hp : ∀ i j, ((p : ℚ) * b.toMatrix c i j).den = 1) :
