@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Smooth families of diffeomorphisms
@@ -30,7 +31,7 @@ differential of `F (p, x) = (p, φ (p, x))` at `z` is block triangular,
 `(u, v) ↦ (u, A u + B v)`,
 
 where `A` and `B` are the differentials of `φ` in the parameter and in the fibre. When `B` is
-invertible, so is this map (`ContinuousLinearEquiv.skewProd`), with inverse
+invertible, so is this map (`ContinuousLinearMap.isInvertible_iff_of_fst_comp_eq`), with inverse
 `(u, w) ↦ (u, B⁻¹ (w - A u))`; this needs no finite-dimensionality. So `F` is a local
 diffeomorphism as soon as the differential of every slice `x ↦ φ (p, x)` is invertible
 (`TauCeti.isLocalDiffeomorph_fst_prodMk`), and a bijective local diffeomorphism is a
@@ -85,20 +86,29 @@ theorem isLocalDiffeomorph_fst_prodMk {φ : P × M → N} (hφ : ContMDiff (I'.p
   have hdiff : MDifferentiableAt (I'.prod I) J φ z := hφ.mdifferentiableAt (by
     rintro rfl
     exact absurd hn (by simp))
-  -- The differential is the block triangular map `(u, v) ↦ (u, B v + A u)`, a `skewProd`.
-  -- `TangentSpace` is definitionally the model space, so `B` retypes as `E ≃L[𝕂] F`.
-  obtain ⟨B, hB⟩ := hφ' z
-  let A : E' →L[𝕂] F := mfderiv I' J (fun p ↦ φ (p, z.2)) z.1
-  let B' : E ≃L[𝕂] F := B
-  refine ⟨(ContinuousLinearEquiv.refl 𝕂 E').skewProd B' A, ?_⟩
-  ext1 v
-  rw [mfderiv_prodMk mdifferentiableAt_fst hdiff, mfderiv_fst]
-  refine Prod.ext rfl ?_
-  -- By `skewProd_apply` and `prod_apply`, the second components are definitionally these.
-  change B' v.2 + A v.1 = mfderiv (I'.prod I) J φ z v
-  rw [mfderiv_prod_eq_add_apply hdiff, ← hB, add_comm]
-  -- The two sides now agree by unfolding the `let`s `A` and `B'`.
-  rfl
+  -- Read the differential as a map between the model spaces of the charts.
+  obtain ⟨T, hT⟩ : ∃ T : E' × E →L[𝕂] E' × F,
+      mfderiv (I'.prod I) (I'.prod J) (fun z : P × M ↦ (z.1, φ z)) z = T := ⟨_, rfl⟩
+  have hd (v : E' × E) : T v = (v.1, mfderiv (I'.prod I) J φ z v) := by
+    rw [← hT, mfderiv_prodMk mdifferentiableAt_fst hdiff, mfderiv_fst]
+    -- This is `prod_apply`, read through `TangentSpace` being the model space.
+    exact ContinuousLinearMap.prod_apply _ _ v
+  -- The differential keeps the parameter coordinate and acts on the fibre by the slice
+  -- differential, so it is invertible exactly when the slice differential is.
+  have hfst : ContinuousLinearMap.fst 𝕂 E' F ∘L T = ContinuousLinearMap.fst 𝕂 E' E :=
+    ContinuousLinearMap.ext fun v ↦ by simp [hd]
+  have hblock : ContinuousLinearMap.snd 𝕂 E' F ∘L T ∘L ContinuousLinearMap.inr 𝕂 E' E =
+      mfderiv I J (fun x ↦ φ (z.1, x)) z.2 :=
+    ContinuousLinearMap.ext fun v ↦ by
+      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inr_apply, hd,
+        ContinuousLinearMap.coe_snd']
+      -- Only the fibre term of `mfderiv_prod_eq_add_apply` survives on `inr v = (0, v)`.
+      calc mfderiv (I'.prod I) J φ z (0, v)
+          = mfderiv I' J (fun p ↦ φ (p, z.2)) z.1 0 + mfderiv I J (fun x ↦ φ (z.1, x)) z.2 v :=
+            mfderiv_prod_eq_add_apply hdiff
+        _ = mfderiv I J (fun x ↦ φ (z.1, x)) z.2 v := by rw [map_zero, zero_add]
+  rw [hT]
+  exact (ContinuousLinearMap.isInvertible_iff_of_fst_comp_eq hfst).2 (hblock ▸ hφ' z)
 
 end TauCeti
 
