@@ -127,7 +127,8 @@ theorem HasZeroRealAxisTrace.congr_ae (h : HasZeroRealAxisTrace hp U f)
   intro x hx r hr hxr
   obtain ⟨v, hv, hvf⟩ := h x hx r hr hxr
   exact ⟨v, hv,
-    hvf.trans (ae_eq_comp_halfDiscChart_symm hx ((coe_upperHalfDisc_subset_closedBall_inter x r).trans hxr) hfg)⟩
+    hvf.trans (ae_eq_comp_halfDiscChart_symm hx
+      ((coe_upperHalfDisc_subset_closedBall_inter x r).trans hxr) hfg)⟩
 
 /-- The zero function has zero trace. -/
 @[simp]
@@ -195,7 +196,8 @@ theorem MemWkpLoc.hasZeroRealAxisTrace_iff_of_continuousOn {Ω : Opens ℂ}
     refine W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_of_continuousOn hp hr
       (hg.comp (halfDiscChart x).symm.continuous.continuousOn
         ((halfDiscChart_symm_mapsTo_closure hx hr).mono_right hxr))
-      (hv.trans (ae_eq_comp_halfDiscChart_symm hx ((coe_upperHalfDisc_subset_closedBall_inter x r).trans hxr) hfg))
+      (hv.trans (ae_eq_comp_halfDiscChart_symm hx
+        ((coe_upperHalfDisc_subset_closedBall_inter x r).trans hxr) hfg))
   constructor
   · intro h x hxΩ hx
     obtain ⟨r, hr, hrΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen x hxΩ
