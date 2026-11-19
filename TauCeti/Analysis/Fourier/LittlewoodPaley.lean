@@ -104,7 +104,8 @@ the first inequality at the exponent `q` give `|⟪f, g⟫| ≤ 2 L C_q ‖S f�
 The last section bounds a single homogeneous block `Pⱼ` on every `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in
 the scale: `‖Pⱼ f‖_p ≤ ‖𝓕⁻ ψ₀‖₁ ‖f‖_p` for `f ∈ L²`
 (`ContDiffBump.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le`), and `‖Pⱼ‖ ≤ 1` on `L²`
-(`ContDiffBump.norm_fourierMultiplierCLM_littlewoodPaley_le`).
+(`ContDiffBump.norm_fourierMultiplierCLM_littlewoodPaley_le`). In dimension `0` every block
+vanishes (`ContDiffBump.fourierMultiplierCLM_littlewoodPaley_eq_zero`).
 
 ## References
 
@@ -805,6 +806,26 @@ theorem tendsto_sum_fourierMultiplierCLM_littlewoodPaley [Nontrivial V]
 
 end MeasureTheory.Lp
 
+namespace ContDiffBump
+
+variable {V F : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  [MeasurableSpace V] [BorelSpace V] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+  [CompleteSpace F]
+
+/-- On the zero space every homogeneous Littlewood–Paley cutoff `ψⱼ` vanishes, and so does the
+block `Pⱼ`: the `L²` Fourier multiplier with any symbol in `L^∞` almost everywhere equal to
+`ψⱼ` is `0`. -/
+theorem fourierMultiplierCLM_littlewoodPaley_eq_zero [Subsingleton V] {φ : ContDiffBump (0 : V)}
+    {j : ℤ} {m : Lp ℂ ∞ (volume : Measure V)}
+    (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) :
+    Lp.fourierMultiplierCLM F m = 0 := by
+  rw [Lp.fourierMultiplierCLM_of_ae_eq_const (F := F) (c := 0)]
+  · exact zero_smul ℂ (ContinuousLinearMap.id ℂ (Lp F 2 (volume : Measure V)))
+  filter_upwards [hm] with ξ h
+  rw [h, Subsingleton.elim ξ 0, φ.littlewoodPaley_apply_zero, Complex.ofReal_zero]
+
+end ContDiffBump
+
 namespace TauCeti
 
 variable {V F : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -881,13 +902,7 @@ theorem exists_eLpNorm_tsum_enorm_fourierMultiplierCLM_littlewoodPaley_sq_rpow_l
     refine ⟨0, fun m hm f ↦ ?_⟩
     rw [ENNReal.coe_zero, zero_mul, nonpos_iff_eq_zero]
     have h0 : ∀ j, Lp.fourierMultiplierCLM F (m j) f = 0 := fun j ↦ by
-      have hm0 : m j = 0 := Lp.ext (by
-        filter_upwards [hm j, Lp.coeFn_zero (E := ℂ) (p := ∞) (μ := (volume : Measure V))]
-          with ξ h₁ h₂
-        rw [h₁, h₂, Subsingleton.elim ξ 0, φ.littlewoodPaley_eq_zero_of_norm_le (by
-          rw [norm_zero]; exact (mul_pos (zpow_pos two_pos _) φ.rIn_pos).le)]
-        simp)
-      rw [hm0, Lp.fourierMultiplierCLM_zero, zero_apply]
+      rw [ContDiffBump.fourierMultiplierCLM_littlewoodPaley_eq_zero (hm j), zero_apply]
     have hS : (fun x ↦ (∑' j : ℤ, ‖Lp.fourierMultiplierCLM F (m j) f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ)) = 0 :=
       funext fun x ↦ by simp [h0]
     rw [hS, eLpNorm_zero]

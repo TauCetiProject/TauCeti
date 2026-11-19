@@ -157,17 +157,6 @@ private theorem halfWavePropagator_comp_apply_adjoint_apply
     ← halfWavePropagator_comp_fourierMultiplierCLM, ContinuousLinearMap.comp_apply,
     sub_eq_add_neg, halfWavePropagator_add_apply]
 
-/-- In dimension `0` the cutoffs vanish, and so do the blocks. -/
-private theorem fourierMultiplierCLM_littlewoodPaley_eq_zero
-    (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) (hE : Module.finrank ℝ E = 0) :
-    Lp.fourierMultiplierCLM ℂ m = 0 := by
-  have : Subsingleton E := Module.finrank_zero_iff.1 hE
-  rw [Lp.fourierMultiplierCLM_of_ae_eq_const (F := ℂ) (c := 0)]
-  · exact zero_smul ℂ (ContinuousLinearMap.id ℂ (Lp ℂ 2 (volume : Measure E)))
-  filter_upwards [hm] with ξ h
-  rw [h, Subsingleton.elim ξ 0, φ.littlewoodPaley_eq_zero_of_norm_le (by
-    rw [norm_zero]; exact (mul_pos (zpow_pos two_pos _) φ.rIn_pos).le), Complex.ofReal_zero]
-
 /-- Dropping the `1` in `1 + 2^j |τ|`: for `τ ≠ 0`, `n ≥ 1` and `θ ≥ 0`,
 `(C 2^{jn} (1 + 2^j |τ|)^(-(n - 1)/2))^θ ≤ C^θ 2^{j (n + 1) θ / 2} |τ|^(-(n - 1) θ / 2)`. -/
 private theorem rpow_mul_one_add_rpow_le {C θ : ℝ} (hC : 0 ≤ C) (hθ : 0 ≤ θ) (j : ℤ) {τ : ℝ}
@@ -257,7 +246,8 @@ private theorem exists_eLpNorm_halfWavePropagator_comp_adjoint_le (hq : 2 < q)
   rw [halfWavePropagator_comp_apply_adjoint_apply hm]
   rcases Nat.eq_zero_or_pos (Module.finrank ℝ E) with hE | hE
   · -- In dimension `0` the blocks vanish.
-    rw [fourierMultiplierCLM_littlewoodPaley_eq_zero hm hE, zero_apply, map_zero,
+    have : Subsingleton E := Module.finrank_zero_iff.1 hE
+    rw [fourierMultiplierCLM_littlewoodPaley_eq_zero hm, zero_apply, map_zero,
       eLpNorm_congr_ae (Lp.coeFn_zero _ _ _), eLpNorm_zero]
     exact zero_le
   -- In positive dimension, admissibility with `2 < q` forces `n ≥ 2` and `r > 2`.

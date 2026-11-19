@@ -45,6 +45,7 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 * `ContDiffBump.littlewoodPaley`: the dyadic cutoff `ψⱼ`.
 * `ContDiffBump.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply`: `ψⱼ` is the rescaling
   `ψ₀ (2^{-j} ·)`.
+* `ContDiffBump.littlewoodPaley_apply_zero`: `ψⱼ 0 = 0`.
 * `ContDiffBump.sum_littlewoodPaley_Ioc`: the telescoping partial sums.
 * `ContDiffBump.hasSum_littlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for `ξ ≠ 0`.
 * `ContDiffBump.exists_littlewoodPaley_mul_eq_zero`: finite overlap of the cutoffs, also between
@@ -152,6 +153,11 @@ theorem littlewoodPaley_eq_zero_of_norm_le {j : ℤ} {ξ : E}
   have h2 := (norm_two_zpow_inv_smul_le_sub_one j ξ).trans h1
   rw [littlewoodPaley_apply, φ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 h1),
     φ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 h2), sub_self]
+
+/-- Every cutoff `ψⱼ` vanishes at the origin. -/
+theorem littlewoodPaley_apply_zero (j : ℤ) : φ.littlewoodPaley j 0 = 0 :=
+  φ.littlewoodPaley_eq_zero_of_norm_le
+    (by rw [norm_zero]; exact (mul_pos (zpow_pos two_pos _) φ.rIn_pos).le)
 
 /-- The cutoff `ψⱼ` vanishes outside the open ball of radius `2^j φ.rOut`, where both terms
 are `0`. -/
@@ -303,8 +309,7 @@ theorem sum_Ico_littlewoodPaley_mul_littlewoodPaley {L : ℕ}
   refine sum_mul_eq_right_of_mul_eq_zero (e := id) hL (fun h ↦ φ.hasSum_littlewoodPaley ?_)
     fun k hk ↦ ?_
   · rintro rfl
-    exact h (φ.littlewoodPaley_eq_zero_of_norm_le
-      (by rw [norm_zero]; exact (mul_pos (zpow_pos two_pos _) φ.rIn_pos).le))
+    exact h (φ.littlewoodPaley_apply_zero j)
   · rw [id, id, abs_sub_lt_iff] at hk
     rw [Finset.mem_Ico]
     omega

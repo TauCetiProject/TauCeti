@@ -403,7 +403,7 @@ theorem tendsto_fourierMultiplierCLM_apply {ι : Type*} {l : Filter ι} [l.IsCou
 /-- If the partial sums `∑_{i ∈ t N} ψᵢ` of real symbols take values in `[-1, 1]` and converge to
 `1` almost everywhere, then the partial sums `∑_{i ∈ t N} T_{m i} f` of the Fourier multipliers
 with these symbols converge to `f` in `L²` for every `f ∈ L²`. -/
-theorem tendsto_sum_fourierMultiplierCLM_of_tendsto {ι : Type*} [Countable ι]
+theorem tendsto_sum_fourierMultiplierCLM_of_tendsto {ι : Type*}
     {ψ : ι → E → ℝ} {m : ι → Lp ℂ ∞ (volume : Measure E)}
     (hm : ∀ i, m i =ᵐ[volume] fun ξ ↦ (ψ i ξ : ℂ))
     (t : ℕ → Finset ι) (hle : ∀ N ξ, |∑ i ∈ t N, ψ i ξ| ≤ 1)
@@ -414,9 +414,10 @@ theorem tendsto_sum_fourierMultiplierCLM_of_tendsto {ι : Type*} [Countable ι]
   have hae : ∀ᵐ ξ ∂(volume : Measure E), ∀ N,
       (∑ i ∈ t N, m i) ξ = ∑ i ∈ t N, (ψ i ξ : ℂ) := by
     refine ae_all_iff.2 fun N ↦ ?_
-    filter_upwards [coeFn_fun_finsetSum (t N) m, ae_all_iff.2 hm] with ξ h₁ h₂
+    filter_upwards [coeFn_fun_finsetSum (t N) m, (eventually_all_finset (t N)).2 fun i _ ↦ hm i]
+      with ξ h₁ h₂
     rw [h₁]
-    exact Finset.sum_congr rfl fun i _ ↦ h₂ i
+    exact Finset.sum_congr rfl fun i hi ↦ h₂ i hi
   have h1 : MemLp (fun _ : E ↦ (1 : ℂ)) ∞ volume := memLp_top_const 1
   have h := tendsto_fourierMultiplierCLM_apply (F := F) (l := atTop)
     (m := fun N ↦ ∑ i ∈ t N, m i) (m₀ := h1.toLp _) (C := 1) ?_ ?_ f
