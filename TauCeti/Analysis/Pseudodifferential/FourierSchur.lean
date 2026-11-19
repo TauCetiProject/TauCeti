@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Pseudodifferential.Quantization
 import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
+import TauCeti.MeasureTheory.Group.Integral
 import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!
@@ -55,6 +56,8 @@ the Sobolev mapping theorem `TauCeti.Symbol.quantizeSobolev`.
   `x ↦ ∫ exp(2πi ⟪ζ, x⟫) p(x, g ζ) (𝓕 u ζ) dζ` is `ξ ↦ ∫ p̂(ξ - ζ, g ζ) (𝓕 u ζ) dζ`, for a
   continuous frequency map `g`.
 * `TauCeti.fourier_quantizeSchwartzValue`: `𝓕 (Op(p) u) ξ = ∫ p̂(ξ - ζ, 2πζ) (𝓕 u ζ) dζ`.
+* `TauCeti.rpow_mul_norm_fourier_apply_le`: the pointwise kernel bound
+  `⟨ξ⟩ ^ (s - m) ‖p̂(ξ - ζ, 2πζ) v‖ ≤ B k(ξ - ζ) ⟨ζ⟩ ^ s ‖v‖` from a decay bound on `p̂`.
 * `TauCeti.exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le_of_decay`: the Sobolev estimate
   with a constant linear in a decay constant of `p̂`.
 * `TauCeti.exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le_of_norm_iteratedFDeriv_le`: the
@@ -183,10 +186,11 @@ private theorem nonneg_of_decay {C₀ : ℝ} {N : ℕ}
   (mul_nonneg_iff_of_pos_right (by positivity)).1
     ((mul_nonneg (by positivity) (norm_nonneg _)).trans (hdecay 0 0))
 
-/-- The pointwise kernel bound behind the Sobolev estimate: Peetre's inequality and the decay of
-`p̂` give `⟨ξ⟩ ^ (s - m) ‖p̂(ξ - ζ, 2πζ) v‖ ≤ B k(ξ - ζ) ⟨ζ⟩ ^ s ‖v‖` with
-`k(η) = (1 + ‖η‖) ^ (|s - m| - N)`. -/
-private theorem rpow_mul_norm_fourier_apply_le {s C₀ : ℝ} {N : ℕ}
+/-- **The pointwise kernel bound** behind the Sobolev estimate: Peetre's inequality and a decay
+bound `(1 + ‖η‖) ^ N ‖p̂(η, ξ)‖ ≤ C₀ ⟨ξ⟩ ^ m` give
+`⟨ξ⟩ ^ (s - m) ‖p̂(ξ - ζ, 2πζ) v‖ ≤ B k(ξ - ζ) ⟨ζ⟩ ^ s ‖v‖` with
+`k(η) = (1 + ‖η‖) ^ (|s - m| - N)` and `B = 2 ^ (|s - m| / 2) C₀ (2π) ^ |m|`. -/
+theorem rpow_mul_norm_fourier_apply_le {s C₀ : ℝ} {N : ℕ}
     (hdecay : ∀ η ξ : CoordinateSpace n,
       (1 + ‖η‖) ^ N * ‖𝓕 (fun x ↦ p (x, ξ)) η‖ ≤ C₀ * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
     (ξ ζ : CoordinateSpace n) (v : V) :
@@ -209,8 +213,7 @@ private theorem rpow_mul_norm_fourier_apply_le {s C₀ : ℝ} {N : ℕ}
     rw [← Real.rpow_natCast, ← Real.rpow_neg ht.le, ← Real.rpow_add ht]
     ring_nf
   have hw : (1 + ‖ζ‖ ^ 2) ^ ((s - m) / 2) * (1 + ‖ζ‖ ^ 2) ^ (m / 2) = (1 + ‖ζ‖ ^ 2) ^ (s / 2) := by
-    rw [← Real.rpow_add (by positivity)]
-    ring_nf
+    rw [← one_add_norm_sq_rpow_add, sub_add_cancel]
   calc (1 + ‖ξ‖ ^ 2) ^ ((s - m) / 2) * ‖A v‖
       ≤ (2 ^ (|s - m| / 2) * (1 + ‖ξ - ζ‖ ^ 2) ^ (|s - m| / 2) * (1 + ‖ζ‖ ^ 2) ^ ((s - m) / 2)) *
           ((C₀ * ((2 * π) ^ |m| * (1 + ‖ζ‖ ^ 2) ^ (m / 2)) * (t ^ N)⁻¹) * ‖v‖) := by
@@ -280,9 +283,8 @@ theorem exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le_of_decay (n : ℕ) 
   set N : ℕ := ⌈|s - m|⌉₊ + n + 1
   set k : CoordinateSpace n → ℝ := fun η ↦ (1 + ‖η‖) ^ (-((N : ℝ) - |s - m|))
   have hk_int : Integrable k := integrable_one_add_norm (by
-    rw [finrank_euclideanSpace, Fintype.card_fin]
     have := Nat.le_ceil |s - m|
-    push_cast [N]
+    push_cast [N, finrank_euclideanSpace_fin]
     linarith)
   have hkcont : Continuous k :=
     (continuous_const.add continuous_norm).rpow_const fun x ↦
@@ -292,18 +294,17 @@ theorem exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le_of_decay (n : ℕ) 
     fun p K C' C₀ hp hK hC hKp hdecay u ↦ ?_⟩
   have hC₀ := nonneg_of_decay hdecay
   set B := 2 ^ (|s - m| / 2) * C₀ * (2 * π) ^ |m|
-  have hB : 0 ≤ B := by positivity
-  set A := ENNReal.ofReal (B * ∫ η, k η)
-  have hA : 2 ^ (|s - m| / 2) * (2 * π) ^ |m| * (∫ η, k η) * C₀ = B * ∫ η, k η := by
+  set A := ENNReal.ofReal (∫ η, B * k η)
+  have hA : 2 ^ (|s - m| / 2) * (2 * π) ^ |m| * (∫ η, k η) * C₀ = ∫ η, B * k η := by
+    rw [integral_const_mul]
     simp only [B]
     ring
   rw [hA]
   -- The pointwise bound by the kernel `B k(ξ - ζ)` acting on `⟨ζ⟩ ^ s ‖𝓕 u ζ‖`.
   have hpt := enorm_smul_fourier_quantizeSchwartzValue_le (s := s) hp hK hC hKp hdecay u
   -- Schur's test for the kernel `B k(ξ - ζ)`, whose row and column integrals are `A`.
-  have hint : ∫⁻ η, ENNReal.ofReal (B * k η) = A := by
-    rw [← ofReal_integral_eq_lintegral_ofReal (hk_int.const_mul B)
-      (.of_forall fun η ↦ mul_nonneg hB (Real.rpow_nonneg (by positivity) _)), integral_const_mul]
+  have hk : Integrable fun η ↦ B * k η := hk_int.const_mul B
+  have hk0 : 0 ≤ᵐ[volume] fun η ↦ B * k η := .of_forall fun _ ↦ by positivity
   have hkmeas : AEMeasurable (Function.uncurry fun x y : CoordinateSpace n ↦
       ENNReal.ofReal (B * k (x - y))) (volume.prod volume) :=
     (ENNReal.continuous_ofReal.comp (continuous_const.mul
@@ -316,10 +317,8 @@ theorem exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le_of_decay (n : ℕ) 
     ((hw s).smul (𝓕 u).continuous).aestronglyMeasurable
   have hschur := TauCeti.eLpNorm_lintegral_mul_le hkmeas hgmeas.eNorm
     (p := 2) one_le_two (A := A) (B := A)
-    (.of_forall fun x ↦ (lintegral_sub_left_eq_self (fun η ↦ ENNReal.ofReal (B * k η)) x).trans
-      hint |>.le)
-    (.of_forall fun y ↦ (lintegral_sub_right_eq_self (fun η ↦ ENNReal.ofReal (B * k η)) y).trans
-      hint |>.le)
+    (.of_forall fun ξ ↦ (lintegral_ofReal_sub_left_eq_ofReal_integral hk hk0 ξ).le)
+    (.of_forall fun ζ ↦ (lintegral_ofReal_sub_right_eq_ofReal_integral hk hk0 ζ).le)
   calc _ ≤ eLpNorm (fun ξ ↦ ∫⁻ ζ, ENNReal.ofReal (B * k (ξ - ζ)) *
           ‖(((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ζ‖ₑ) 2 volume :=
         eLpNorm_mono_eNorm ((hw (s - m)).smul

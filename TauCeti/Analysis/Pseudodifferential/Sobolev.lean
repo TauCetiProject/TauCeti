@@ -95,8 +95,9 @@ families of operators.
 * `TauCeti.Symbol.HasCompactSpatialSupport.exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le`:
   the Sobolev estimate on Schwartz functions, on the Fourier side.
 * `TauCeti.Symbol.quantizeSobolev`: the bounded operator `H^s → H^{s - m}`, with
-  `TauCeti.Symbol.toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply` identifying its values
-  on Schwartz functions.
+  `TauCeti.Symbol.toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply` and
+  `TauCeti.Symbol.HasCompactSpatialSupport.quantizeSobolev_toBesselPotentialSpaceCLM` identifying
+  its values on Schwartz functions.
 * `TauCeti.Symbol.toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply`: Sobolev
   extensions of quantizations are compatible with isomorphisms of the fibres.
 * `TauCeti.Symbol.exists_quantizeSobolev`: the mapping property for finite-dimensional normed
@@ -674,6 +675,18 @@ theorem toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply
     Lp.toTemperedDistribution_apply]
   exact integral_congr_ae ((ha.memLp_quantizeSchwartzValue u 2).coeFn_toLp.mono fun x hx ↦ by
     simp only [hx])
+
+/-- On a Schwartz function `u`, the operator `Op(a) : H^s → H^{s - m}` gives the element of
+`H^{s - m}` defined by the Schwartz function `Op(a) u`, which has compact support. -/
+theorem HasCompactSpatialSupport.quantizeSobolev_toBesselPotentialSpaceCLM
+    (ha : a.HasCompactSpatialSupport) (s : ℝ) (u : 𝓢(CoordinateSpace n, V)) :
+    a.quantizeSobolev ha s (SchwartzMap.toBesselPotentialSpaceCLM s 2 u) =
+      SchwartzMap.toBesselPotentialSpaceCLM (s - m) 2
+        ((ha.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
+          (a.contDiff_quantizeSchwartzValue u)) := by
+  refine BesselPotentialSpace.ext ?_
+  ext φ
+  simp
 
 /-- The operator norm of `Op(a) : H^s → H^{s - m}` is at most any constant of the Sobolev
 estimate on the Fourier side. -/

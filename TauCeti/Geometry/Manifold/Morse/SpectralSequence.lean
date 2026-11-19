@@ -336,12 +336,13 @@ the sublevels `{f ≤ a q}`. If no two critical points have indices differing by
 piece `F_{q+1} Hₙ / F_q Hₙ` is the coproduct of one copy of `R` for each critical point of index
 `n` with value in `(a q, a (q + 1)]`. The graded piece is written as the cokernel of the inclusion
 `F_q Hₙ ⟶ F_{q+1} Hₙ` of the filtration of the abutment of the spectral sequence, which is `Hₙ(M)`
-in total degree `p + q = -n` (`TauCeti.filteredSpaceAbutmentIso`). -/
+in total degree `p + q = -n` (`TauCeti.chainFiltrationAbutmentIso`). -/
 theorem IsMorse.nonempty_cokernel_abutmentFiltrationMap_iso_sigma_of_forall_ne_add_one
     {q₀ q₁ : ℤ} (hq₀ : ∀ x, a q₀ < f x) (hq₁ : ∀ x, f x ≤ a q₁) (pq : ℤ × ℤ) (n : ℕ)
     (hn : pq.1 + pq.2 = -n) :
     Nonempty (cokernel ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-        (monotone_singularChainFiltration (Y := TopCat.of M) R
+        (monotone_chainFiltration (Y := TopCat.of M)
+          ((AlgebraicTopology.singularChainComplexFunctor _).obj R)
           ((sublevel_mono f).comp ha.monotone)))).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) ≅
       ∐ fun _ : {x : ↥(criticalPoints I f ∩ f ⁻¹' Ioc (a pq.2) (a (pq.2 + 1))) //
         manifoldMorseIndex I f x = n} ↦ R) := by
