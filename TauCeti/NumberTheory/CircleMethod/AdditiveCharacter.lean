@@ -132,6 +132,10 @@ theorem expTwoPiI_one : expTwoPiI 1 = 1 := by
   exact_mod_cast expTwoPiI_natCast 1
 
 @[simp]
+theorem expTwoPiI_ofNat (n : ℕ) [n.AtLeastTwo] : expTwoPiI (ofNat(n) : ℝ) = 1 :=
+  expTwoPiI_natCast n
+
+@[simp]
 theorem expTwoPiI_add_intCast (α : ℝ) (m : ℤ) : expTwoPiI (α + m) = expTwoPiI α := by
   rw [expTwoPiI_add, expTwoPiI_intCast, mul_one]
 
@@ -197,6 +201,18 @@ theorem distInt_intCast (m : ℤ) : distInt m = 0 :=
 theorem distInt_natCast (n : ℕ) : distInt n = 0 := by
   exact_mod_cast distInt_intCast n
 
+@[simp]
+theorem distInt_zero : distInt 0 = 0 := by
+  exact_mod_cast distInt_natCast 0
+
+@[simp]
+theorem distInt_one : distInt 1 = 0 := by
+  exact_mod_cast distInt_natCast 1
+
+@[simp]
+theorem distInt_ofNat (n : ℕ) [n.AtLeastTwo] : distInt (ofNat(n) : ℝ) = 0 :=
+  distInt_natCast n
+
 /-- `e(α) = 1` exactly when `‖α‖ = 0`. -/
 theorem expTwoPiI_eq_one_iff_distInt_eq_zero {α : ℝ} : expTwoPiI α = 1 ↔ distInt α = 0 := by
   rw [expTwoPiI_eq_one_iff, distInt_eq_zero_iff]
@@ -213,25 +229,18 @@ theorem distInt_periodic : Function.Periodic distInt 1 := fun α ↦ by
 theorem distInt_neg (α : ℝ) : distInt (-α) = distInt α := by
   rw [distInt_eq_norm, distInt_eq_norm, AddCircle.coe_neg, norm_neg]
 
-/-- `2‖α‖ ≤ |sin (πα)|`, from Jordan's inequality `2x / π ≤ sin x` on `[0, π / 2]`. -/
+/-- `2‖α‖ ≤ |sin (πα)|`, from Jordan's inequality `2|x| / π ≤ |sin x|` for `|x| ≤ π / 2`. -/
 theorem two_mul_distInt_le_abs_sin (α : ℝ) : 2 * distInt α ≤ |Real.sin (π * α)| := by
   -- `|sin (π ·)|` is `1`-periodic, so it is unchanged when `α` is replaced by `r = α - round α`.
   set r := α - round α with hr
   have hsin : |Real.sin (π * α)| = |Real.sin (π * r)| := by
-    rw [show π * α = π * r + (round α : ℤ) * π by rw [hr]; ring, Real.sin_add_int_mul_pi,
-      abs_mul, abs_zpow, abs_neg, abs_one, one_zpow, one_mul]
-  have hjordan : ∀ x : ℝ, 0 ≤ x → x ≤ 1 / 2 → 2 * x ≤ Real.sin (π * x) := fun x hx hx' ↦ by
-    have := Real.mul_le_sin (x := π * x) (by positivity) (by nlinarith [Real.pi_pos])
-    rwa [← mul_assoc, div_mul_cancel₀ _ Real.pi_ne_zero] at this
+    rw [show π * α = π * r + (round α : ℤ) * π by rw [hr]; ring]
+    simp [Real.sin_add_int_mul_pi, abs_mul]
   have hr' : |r| ≤ 1 / 2 := abs_sub_round α
   rw [hsin, distInt_def, ← hr]
-  rcases le_total 0 r with h | h
-  · rw [abs_of_nonneg h] at hr' ⊢
-    exact (hjordan r h hr').trans (le_abs_self _)
-  · rw [abs_of_nonpos h] at hr' ⊢
-    have := hjordan (-r) (neg_nonneg.2 h) hr'
-    rw [mul_neg, mul_neg, Real.sin_neg] at this
-    linarith [neg_le_abs (Real.sin (π * r))]
+  have := Real.mul_abs_le_abs_sin (x := π * r)
+    (by rw [abs_mul, abs_of_pos Real.pi_pos]; nlinarith [Real.pi_pos])
+  rwa [abs_mul, abs_of_pos Real.pi_pos, ← mul_assoc, div_mul_cancel₀ _ Real.pi_ne_zero] at this
 
 /-! ### Geometric sums -/
 
@@ -267,8 +276,9 @@ theorem norm_sum_expTwoPiI_le_one_div (N : ℕ) {β : ℝ} (hβ : distInt β ≠
     linarith
   have hnum : ‖expTwoPiI (N * β) - 1‖ ≤ 2 :=
     (norm_sub_le _ _).trans (by rw [norm_expTwoPiI, norm_one]; norm_num)
-  rw [sum_expTwoPiI_eq N hβ, norm_div, norm_mul, norm_expTwoPiI, one_mul,
-    div_le_div_iff₀ hden hpos, one_mul, norm_expTwoPiI_sub_one β]
+  rw [sum_expTwoPiI_eq N hβ]
+  simp only [norm_div, norm_mul, norm_expTwoPiI, one_mul]
+  rw [div_le_div_iff₀ hden hpos, one_mul, norm_expTwoPiI_sub_one β]
   calc ‖expTwoPiI (N * β) - 1‖ * (2 * distInt β) ≤ 2 * (2 * distInt β) := by gcongr
     _ ≤ 2 * |Real.sin (π * β)| := by gcongr
 
@@ -305,7 +315,7 @@ example : distInt (-0.3) = 0.3 := by
   norm_num [distInt_def, round_eq]
 
 example : distInt 7 = 0 := by
-  exact_mod_cast distInt_natCast 7
+  simp
 
 /-- The `if` in `norm_sum_expTwoPiI_le` is needed: at `β = 0` the sum has norm `N`. -/
 example (N : ℕ) : ‖∑ n ∈ Finset.Icc 1 N, expTwoPiI (n * 0)‖ = N := by
