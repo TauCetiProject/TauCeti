@@ -300,12 +300,10 @@ theorem isElliptic_legendre_iff_ne_zero (h2 : (2 : K) ≠ 0) :
 @[simp]
 theorem legendre_j [(legendre l).IsElliptic] :
     (legendre l).j = 256 * (l ^ 2 - l + 1) ^ 3 / (l ^ 2 * (1 - l) ^ 2) := by
-  have h := (isElliptic_legendre_iff l).mp ‹_›
-  have hl : l ≠ 0 := fun h0 ↦ by simp [h0] at h
-  have hl₁ : 1 - l ≠ 0 := fun h1 ↦ by simp [show l = 1 by linear_combination -h1] at h
-  rw [j_eq, legendre_Δ, legendre_c₄]
-  field_simp
-  ring
+  have : (freyCurve 1 (-l)).IsElliptic := legendre_eq_freyCurve l ▸ ‹_›
+  convert freyCurve_j (1 : K) (-l) using 1
+  · simp only [legendre_eq_freyCurve]
+  · ring
 
 /-- The `j`-invariant of an elliptic scaled Legendre equation is
 `256 (l² - l + 1)³ / (l² (1 - l)²)`, whatever the scalar. -/
