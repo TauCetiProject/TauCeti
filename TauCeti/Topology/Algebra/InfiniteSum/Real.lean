@@ -51,6 +51,8 @@ analogue of the power-rule integral identity for tails.
   `TauCeti.tsum_ite_eq_zero_pow_natAbs`, `TauCeti.tendsto_tsum_ite_eq_zero_pow_natAbs`: summability,
   sum `(1 + r) * (1 - r)⁻¹`, nonzero-mode sum `2 * (r * (1 - r)⁻¹)`, and limit along `𝓝[≥] 0` of
   the bilateral geometric series `r ^ k.natAbs` on `ℤ` for `0 ≤ r < 1`.
+* `TauCeti.cauchySeq_of_eventually_dist_le_of_summable`: a sequence whose steps are eventually
+  bounded by a summable sequence is Cauchy.
 -/
 
 public section
@@ -251,5 +253,14 @@ theorem tendsto_tsum_ite_eq_zero_pow_natAbs :
       Tendsto (fun r : ℝ ↦ 2 * (r * (1 - r)⁻¹)) (𝓝 0) (𝓝 0)).mono_left nhdsWithin_le_nhds).congr'
     (eventually_of_mem (Ico_mem_nhdsGE zero_lt_one) fun _ hr ↦
       (tsum_ite_eq_zero_pow_natAbs hr.1 hr.2).symm)
+
+/-- A sequence whose steps are eventually bounded by a summable sequence is Cauchy. -/
+theorem cauchySeq_of_eventually_dist_le_of_summable {α : Type*} [PseudoMetricSpace α]
+    {x : ℕ → α} {d : ℕ → ℝ} (hd : Summable d)
+    (h : ∀ᶠ m in atTop, dist (x m) (x (m + 1)) ≤ d m) : CauchySeq x := by
+  obtain ⟨n, hn⟩ := eventually_atTop.mp h
+  exact (cauchySeq_shift n).mp <| cauchySeq_of_dist_le_of_summable (fun k ↦ d (k + n))
+    (fun k ↦ by simpa only [Nat.succ_add] using hn (k + n) (Nat.le_add_left n k))
+    ((summable_nat_add_iff n).mpr hd)
 
 end TauCeti
