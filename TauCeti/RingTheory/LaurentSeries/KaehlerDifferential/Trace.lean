@@ -277,7 +277,8 @@ theorem residue_tensorEquiv (η : L ⊗[K⸨X⸩] TauCeti.ContinuousKaehlerDiffe
     residue K L (tensorEquiv K L η) =
       TauCeti.ContinuousKaehlerDifferential.residueBaseChange L η := by
   rw [residue_apply, trace_tensorEquiv,
-    TauCeti.ContinuousKaehlerDifferential.residueBaseChange_apply]
+    TauCeti.ContinuousKaehlerDifferential.residueBaseChange_apply,
+    TauCeti.ContinuousKaehlerDifferential.residue_apply]
 
 @[simp]
 theorem residue_smul_map (x : L) (ω : TauCeti.ContinuousKaehlerDifferential K) :
