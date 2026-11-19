@@ -171,7 +171,7 @@ theorem singularCohomologyπ_thomMap {n p m : ℕ} (h : p + n = m)
       TopCat.singularCohomologyMap (thomPairProj F E) m (eulerCup F E M u p m h a) := by
   rw [thomMap_apply, TopPair.singularCohomologyπ_singularCup, eulerCup_apply,
     ← TopCat.singularCup_naturality, eulerClass_def, ConcreteCategory.comp_apply]
-  exact (congrArg _ (singularCohomologyMap_zeroSectionHom_comp_thomPairProj_apply F E _)).symm
+  exact (congrArg _ (singularCohomologyMap_zeroSectionHom_comp_thomPairProj_apply F E _ _)).symm
 
 /-! ### The Gysin sequence -/
 

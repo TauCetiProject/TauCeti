@@ -588,7 +588,7 @@ theorem thomPairProjZeroSectionHomotopy_apply (p : unitInterval × (thomPair F E
 
 /-- Pulling back along the projection and then along the zero section is the identity of the
 cohomology of the base. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 theorem singularCohomologyMap_thomPairProj_comp_zeroSectionHom (n : ℕ) :
     TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (thomPairProj F E) n ≫
       TopCat.singularCohomologyMap (zeroSectionHom F E) n = 𝟙 _ := by
@@ -598,7 +598,7 @@ theorem singularCohomologyMap_thomPairProj_comp_zeroSectionHom (n : ℕ) :
 /-- **The total space has the cohomology of the base**: pulling back along the zero section and
 then along the projection is the identity of the cohomology of the total space, since the zero
 section followed by the projection is homotopic to the identity through `t • v`. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 theorem singularCohomologyMap_zeroSectionHom_comp_thomPairProj (n : ℕ) :
     TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (zeroSectionHom F E) n ≫
       TopCat.singularCohomologyMap (thomPairProj F E) n = 𝟙 _ := by
@@ -632,31 +632,12 @@ theorem inv_singularCohomologyMap_zeroSectionHom (n : ℕ) :
       TopCat.singularCohomologyMap (thomPairProj F E) n :=
   IsIso.inv_eq_of_hom_inv_id (singularCohomologyMap_zeroSectionHom_comp_thomPairProj F E n)
 
-/-- Elementwise form of `TauCeti.singularCohomologyMap_thomPairProj_comp_zeroSectionHom`:
-`s^*(π^*x) = x`. -/
-@[simp]
-theorem singularCohomologyMap_thomPairProj_comp_zeroSectionHom_apply {n : ℕ}
-    (x : (TopCat.of B).singularCohomology R k M n) :
-    TopCat.singularCohomologyMap (zeroSectionHom F E) n
-      (TopCat.singularCohomologyMap (thomPairProj F E) n x) = x := by
-  rw [← ConcreteCategory.comp_apply, singularCohomologyMap_thomPairProj_comp_zeroSectionHom,
-    ConcreteCategory.id_apply]
-
-/-- Elementwise form of `TauCeti.singularCohomologyMap_zeroSectionHom_comp_thomPairProj`:
-`π^*(s^*x) = x`. -/
-@[simp]
-theorem singularCohomologyMap_zeroSectionHom_comp_thomPairProj_apply {n : ℕ}
-    (x : (thomPair F E).fst.singularCohomology R k M n) :
-    TopCat.singularCohomologyMap (thomPairProj F E) n
-      (TopCat.singularCohomologyMap (zeroSectionHom F E) n x) = x := by
-  rw [← ConcreteCategory.comp_apply, singularCohomologyMap_zeroSectionHom_comp_thomPairProj,
-    ConcreteCategory.id_apply]
-
 /-- Pulling back along the projection is injective on cohomology: the zero section pulls it back. -/
 theorem singularCohomologyMap_thomPairProj_injective (n : ℕ) :
     Function.Injective
       (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (thomPairProj F E) n) :=
-  Function.LeftInverse.injective (singularCohomologyMap_thomPairProj_comp_zeroSectionHom_apply F E)
+  Function.LeftInverse.injective
+    (singularCohomologyMap_thomPairProj_comp_zeroSectionHom_apply F E n)
 
 variable (R k M) in
 /-- The Euler class `e(u) ∈ Hⁿ(B)` of a relative class `u ∈ Hⁿ(E, E₀)` of a real vector bundle, as
