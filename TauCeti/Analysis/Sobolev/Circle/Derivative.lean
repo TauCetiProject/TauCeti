@@ -75,7 +75,7 @@ private theorem weight_mul_norm_derivFactor_le (h : s + 1 ≤ t) (n : ℤ) :
   have hw : weight s n * |(n : ℝ)| ≤ weight t n := by
     calc weight s n * |(n : ℝ)| ≤ weight s n * (1 + |(n : ℝ)|) :=
           mul_le_mul_of_nonneg_left (le_add_of_nonneg_left zero_le_one) (weight_nonneg s n)
-      _ = weight (s + 1) n := by rw [weight_add, weight_def 1, Real.rpow_one]
+      _ = weight (s + 1) n := (weight_add_one s n).symm
       _ ≤ weight t n := weight_le_weight h n
   have hc : 0 ≤ 2 * π / T := div_nonneg (by positivity) hT.out.le
   rw [norm_two_pi_I_mul_intCast_div hT.out]
@@ -116,7 +116,7 @@ theorem norm_sq_le_of_derivative (h : s + 1 = t) (a : CircleSobolev t E) :
   have hk : T / (2 * π) * (2 * π / T) = 1 := by
     field_simp [hT.out.ne']
   rw [coeff_inclusion, coeff_derivative, norm_smul, norm_two_pi_I_mul_intCast_div hT.out,
-    weight_add, weight_def 1, Real.rpow_one]
+    weight_add_one]
   calc (weight s n * (1 + |(n : ℝ)|) * ‖a.coeff n‖) ^ 2
       = (weight s n * ‖a.coeff n‖) ^ 2 * (1 + |(n : ℝ)|) ^ 2 := by ring
     _ ≤ (weight s n * ‖a.coeff n‖) ^ 2 * (2 * (1 + |(n : ℝ)| ^ 2)) := by
@@ -168,8 +168,7 @@ theorem exists_inclusion_eq_and_derivative_eq (a b : CircleSobolev s E)
   -- term is `T / 2π` times `(1 + |n|) ^ s ‖b_n‖`.
   have hle (n : ℤ) : weight (s + 1) n * ‖a.coeff n‖ ≤
       weight s n * ‖a.coeff n‖ + (2 * π / T)⁻¹ * (weight s n * ‖b.coeff n‖) := by
-    rw [hb, norm_smul, norm_two_pi_I_mul_intCast_div hT.out, weight_add, weight_def 1,
-      Real.rpow_one]
+    rw [hb, norm_smul, norm_two_pi_I_mul_intCast_div hT.out, weight_add_one]
     refine le_of_eq ?_
     field_simp [hT.out.ne']
   have hsum : Summable fun n ↦ (weight (s + 1) n * ‖a.coeff n‖) ^ 2 := by

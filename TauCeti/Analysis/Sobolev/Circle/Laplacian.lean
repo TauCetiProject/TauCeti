@@ -60,9 +60,9 @@ lower-order term in the elliptic estimate.
 
 ## References
 
-* M. E. Taylor, *Partial Differential Equations I*, 2nd ed., Springer, 2011, Chapter 3, §§1–2
-  (Fourier series, Sobolev spaces on the torus, and the Laplacian on the torus) and Chapter 5,
-  §§1–2 (elliptic regularity and the Fredholm theory of elliptic operators on closed manifolds).
+* M. E. Taylor, *Partial Differential Equations I*, 2nd ed., Springer, 2011, Chapter 3, §1
+  (Fourier series), Chapter 4, §1 (Sobolev spaces on the torus) and Chapter 5 (linear elliptic
+  equations).
 -/
 
 public section
@@ -93,7 +93,7 @@ private theorem weight_mul_norm_laplacianSymbol_le (h : s + 2 ≤ t) (n : ℤ) :
         refine mul_le_mul_of_nonneg_left ?_ (sq_nonneg _)
         calc weight s n * (n : ℝ) ^ 2 ≤ weight s n * (1 + |(n : ℝ)|) ^ 2 :=
               mul_le_mul_of_nonneg_left hn (weight_nonneg s n)
-          _ = weight (s + 2) n := by rw [weight_add, weight_def 2, Real.rpow_two]
+          _ = weight (s + 2) n := (weight_add_two s n).symm
           _ ≤ weight t n := weight_le_weight h n
 
 /-- The **Laplacian** `Δ = -∂²` on the circle `AddCircle T`, as a bounded operator `H^t → H^s`
@@ -167,8 +167,7 @@ private theorem weight_mul_norm_greenSymbol_le (n : ℤ) :
   · simpa using sq_nonneg (T / π)
   have hn1 : 1 ≤ |(n : ℝ)| := by exact_mod_cast Int.one_le_abs hn
   have hsq : (1 + |(n : ℝ)|) ^ 2 ≤ 4 * (n : ℝ) ^ 2 := by nlinarith [sq_abs (n : ℝ)]
-  rw [norm_real, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _), weight_add, weight_def 2,
-    Real.rpow_two]
+  rw [norm_real, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _), weight_add_two]
   calc weight s n * (1 + |(n : ℝ)|) ^ 2 * (T / (2 * π * n)) ^ 2
       = (T / π) ^ 2 * ((1 + |(n : ℝ)|) ^ 2 / (4 * (n : ℝ) ^ 2)) * weight s n := by
         field_simp
@@ -210,8 +209,9 @@ omit hT in
 /-- The product of the Laplacian eigenvalue and the Green symbol is `1` off the constant mode. -/
 private theorem green_mul_eigenvalue (hT0 : T ≠ 0) {n : ℤ} (hn : n ≠ 0) :
     ((((T / (2 * π * n)) ^ 2 : ℝ)) : ℂ) * (((2 * π * n / T) ^ 2 : ℝ) : ℂ) = 1 := by
-  rw [← ofReal_mul, ← mul_pow, div_mul_div_comm, mul_comm T, div_self (by positivity), one_pow,
-    ofReal_one]
+  have hn' : (n : ℝ) ≠ 0 := by exact_mod_cast hn
+  rw [← ofReal_mul, ← mul_pow, ofReal_eq_one]
+  field_simp
 
 /-- **The Green operator is a right inverse of the Laplacian up to the constants**:
 `Δ G b = b - Π b`, where `Π b` is the constant term of `b`. -/
@@ -234,6 +234,12 @@ theorem greenOperator_laplacian (h : s + 2 ≤ t) (a : CircleSobolev t E) :
   · rw [coeff_greenOperator, coeff_laplacian, smul_smul, green_mul_eigenvalue T hT.out.ne' hn]
     simp [hn]
 
+omit hT in
+@[simp]
+theorem greenOperator_inclusion (hrs : r ≤ s) (b : CircleSobolev s E) :
+    greenOperator T (inclusion hrs b) = inclusion (by linarith) (greenOperator T b) :=
+  CircleSobolev.ext (funext fun n ↦ by simp)
+
 /-! ### Solvability -/
 
 /-- **Solvability of `Δ a = b`.** An element `b ∈ H^s` is the Laplacian of some `a ∈ H^(s + 2)`
@@ -249,8 +255,9 @@ solution in any `H^t`, since its right-hand side does not have mean zero. -/
 theorem laplacian_ne_single_zero (h : s + 2 ≤ t) (a : CircleSobolev t E) {x : E} (hx : x ≠ 0) :
     laplacian T h a ≠ single 0 x := by
   intro ha
-  have := congr_arg (fun b : CircleSobolev s E ↦ b.coeff 0) ha
-  simp [eq_comm, hx] at this
+  have := coeff_zero_laplacian T h a
+  rw [ha] at this
+  exact hx (by simpa using this)
 
 /-! ### The isomorphism `1 + Δ` -/
 
@@ -267,8 +274,7 @@ private theorem weight_mul_norm_resolventSymbol_le (hT0 : T ≠ 0) (n : ℤ) :
       2 * (1 + (T / (2 * π)) ^ 2) * (1 + (2 * π * n / T) ^ 2) := by
     nlinarith [sq_abs (n : ℝ), sq_nonneg (1 - |(n : ℝ)|), sq_nonneg (T / (2 * π)),
       sq_nonneg (2 * π * n / T)]
-  rw [norm_real, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hpos), weight_add, weight_def 2,
-    Real.rpow_two]
+  rw [norm_real, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hpos), weight_add_two]
   calc weight s n * (1 + |(n : ℝ)|) ^ 2 * (1 + (2 * π * n / T) ^ 2)⁻¹
       = weight s n * ((1 + |(n : ℝ)|) ^ 2 * (1 + (2 * π * n / T) ^ 2)⁻¹) := by ring
     _ ≤ weight s n * (2 * (1 + (T / (2 * π)) ^ 2)) :=
@@ -281,7 +287,9 @@ omit hT in
 private theorem coeff_laplacian_add_inclusion (a : CircleSobolev (s + 2) E) (n : ℤ) :
     ((laplacian T le_rfl + inclusion (by linarith) : CircleSobolev (s + 2) E →L[ℂ]
       CircleSobolev s E) a).coeff n = (((1 + (2 * π * n / T) ^ 2 : ℝ)) : ℂ) • a.coeff n := by
-  simp [add_smul, add_comm]
+  simp only [add_apply, coeff_add, Pi.add_apply, coeff_laplacian, coeff_inclusion, ofReal_add,
+    ofReal_one, add_smul, one_smul]
+  abel
 
 omit hT in
 /-- The symbol `1 + (2πn/T)²` of `1 + Δ` times its inverse is `1`. -/
@@ -413,14 +421,15 @@ theorem exists_inclusion_eq_of_laplacian_eq_inclusion (h : r + 2 ≤ t) (hts : t
     (a : CircleSobolev t E) (b : CircleSobolev s E)
     (hab : laplacian T h a = inclusion (by linarith) b) :
     ∃ c : CircleSobolev (s + 2) E, inclusion hts c = a := by
-  refine ⟨greenOperator T b + single 0 (a.coeff 0), CircleSobolev.ext (funext fun n ↦ ?_)⟩
-  have hn := congr_arg (fun c : CircleSobolev r E ↦ c.coeff n) hab
-  simp only [coeff_laplacian, coeff_inclusion] at hn
-  rcases eq_or_ne n 0 with rfl | hn0
-  · simp
-  · rw [coeff_inclusion, coeff_add, Pi.add_apply, coeff_greenOperator, ← hn, smul_smul,
-      green_mul_eigenvalue T hT.out.ne' hn0]
-    simp [hn0]
+  -- Applying `G` to `Δ a = b` gives `a - Π a = G b`.
+  have hG : inclusion h (a - single 0 (a.coeff 0)) =
+      inclusion (by linarith) (greenOperator T b) := by
+    rw [← greenOperator_laplacian T, hab, greenOperator_inclusion]
+  have hcoeff := congr_arg coeff hG
+  rw [coeff_inclusion, coeff_inclusion] at hcoeff
+  refine ⟨greenOperator T b + single 0 (a.coeff 0), CircleSobolev.ext ?_⟩
+  rw [coeff_inclusion, coeff_add, ← hcoeff, coeff_sub]
+  simp
 
 end CircleSobolev
 

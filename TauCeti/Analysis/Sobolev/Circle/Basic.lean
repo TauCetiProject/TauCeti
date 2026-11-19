@@ -119,6 +119,13 @@ theorem weight_zero_right (s : ℝ) : weight s 0 = 1 := by
 theorem weight_add (s t : ℝ) (n : ℤ) : weight (s + t) n = weight s n * weight t n :=
   Real.rpow_add (zero_lt_one.trans_le (one_le_one_add_abs n)) s t
 
+theorem weight_add_one (s : ℝ) (n : ℤ) : weight (s + 1) n = weight s n * (1 + |(n : ℝ)|) := by
+  rw [weight_add, weight_def 1, Real.rpow_one]
+
+theorem weight_add_two (s : ℝ) (n : ℤ) :
+    weight (s + 2) n = weight s n * (1 + |(n : ℝ)|) ^ 2 := by
+  rw [weight_add, weight_def 2, Real.rpow_two]
+
 theorem weight_neg (s : ℝ) (n : ℤ) : weight (-s) n = (weight s n)⁻¹ :=
   Real.rpow_neg (zero_le_one.trans (one_le_one_add_abs n)) s
 
