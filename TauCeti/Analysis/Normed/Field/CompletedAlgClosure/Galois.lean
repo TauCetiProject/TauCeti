@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.AbsoluteGaloisGroup
 public import Mathlib.Topology.Algebra.Algebra.Equiv
 public import TauCeti.Analysis.Normed.Field.CompletedAlgClosure.Basic
+public import TauCeti.Topology.Algebra.UniformRing
 
 import Mathlib.FieldTheory.KrullTopology
 import Mathlib.Topology.MetricSpace.Completion
@@ -77,30 +78,24 @@ open UniformSpace SpectralAlgClosure
 completed algebraic closure: the completion of `σ`, an isometry of `K^alg`. -/
 def galoisExtension (σ : Field.absoluteGaloisGroup K) :
     CompletedAlgClosure K ≃A[K] CompletedAlgClosure K where
-  toRingEquiv := Completion.mapRingEquiv
-    (absoluteGaloisGroupEquiv K σ).toRingEquiv
+  toAlgEquiv := Completion.mapAlgEquiv (absoluteGaloisGroupEquiv K σ)
     (isometry_algEquiv (absoluteGaloisGroupEquiv K σ)).continuous
     (isometry_algEquiv (absoluteGaloisGroupEquiv K σ).symm).continuous
-  commutes' r := by
-    change Completion.map (absoluteGaloisGroupEquiv K σ)
-      ((algebraMap K (SpectralAlgClosure K) r : SpectralAlgClosure K) : CompletedAlgClosure K) = _
-    rw [Completion.map_coe (isometry_algEquiv (absoluteGaloisGroupEquiv K σ)).uniformContinuous]
-    exact congr(($((absoluteGaloisGroupEquiv K σ).commutes r) : CompletedAlgClosure K))
-  continuous_toFun := Completion.continuous_map
-  continuous_invFun := Completion.continuous_map
+  continuous_toFun := Completion.continuous_mapAlgEquiv _ _ _
+  continuous_invFun := Completion.continuous_mapAlgEquiv_symm _ _ _
 
 /-- `σ_C` is the completion of `σ`. -/
 theorem galoisExtension_apply (σ : Field.absoluteGaloisGroup K) (x : CompletedAlgClosure K) :
     galoisExtension σ x =
       Completion.map (absoluteGaloisGroupEquiv K σ) x :=
-  rfl
+  Completion.mapAlgEquiv_apply (absoluteGaloisGroupEquiv K σ) _ _ x
 
 /-- `σ_C` extends `σ`. -/
 @[simp]
 theorem galoisExtension_coe (σ : Field.absoluteGaloisGroup K) (x : SpectralAlgClosure K) :
     galoisExtension σ x =
       ((absoluteGaloisGroupEquiv K σ) x : CompletedAlgClosure K) :=
-  Completion.map_coe (isometry_algEquiv (absoluteGaloisGroupEquiv K σ)).uniformContinuous x
+  Completion.mapAlgEquiv_coe (absoluteGaloisGroupEquiv K σ) _ _ x
 
 /-- **Uniqueness of the extension**: a continuous map `C → C` extending `σ` is `σ_C`. -/
 theorem eq_galoisExtension_of_continuous (σ : Field.absoluteGaloisGroup K)
@@ -113,9 +108,10 @@ theorem eq_galoisExtension_of_continuous (σ : Field.absoluteGaloisGroup K)
 /-- `σ ↦ σ_C` is compatible with composition: `(στ)_C = σ_C ∘ τ_C`. -/
 theorem galoisExtension_mul (σ τ : Field.absoluteGaloisGroup K) :
     galoisExtension (σ * τ) = (galoisExtension τ).trans (galoisExtension σ) :=
-  ContinuousAlgEquiv.ext (eq_galoisExtension_of_continuous _
-    ((galoisExtension τ).trans (galoisExtension σ)).continuous fun x ↦ by
-      simp [ContinuousAlgEquiv.trans_apply]).symm
+  ContinuousAlgEquiv.ext <| funext fun x ↦ congr($(Completion.mapAlgEquiv_trans
+    (absoluteGaloisGroupEquiv K τ) (absoluteGaloisGroupEquiv K σ)
+    (isometry_algEquiv _).continuous (isometry_algEquiv _).continuous
+    (isometry_algEquiv _).continuous (isometry_algEquiv _).continuous) x)
 
 /-- `(στ)_C x = σ_C (τ_C x)`. -/
 theorem galoisExtension_mul_apply (σ τ : Field.absoluteGaloisGroup K)
@@ -129,12 +125,14 @@ theorem galoisExtension_mul_apply (σ τ : Field.absoluteGaloisGroup K)
 theorem galoisExtension_one :
     galoisExtension (1 : Field.absoluteGaloisGroup K) =
       ContinuousAlgEquiv.refl K (CompletedAlgClosure K) :=
-  ContinuousAlgEquiv.ext (eq_galoisExtension_of_continuous 1 continuous_id fun _ ↦ rfl).symm
+  ContinuousAlgEquiv.ext <| funext fun x ↦ congr($(Completion.mapAlgEquiv_refl
+    (α := SpectralAlgClosure K) (R := K)) x)
 
 /-- `σ_C` is an isometry. -/
 theorem isometry_galoisExtension (σ : Field.absoluteGaloisGroup K) :
-    Isometry (galoisExtension σ) :=
-  (isometry_algEquiv (absoluteGaloisGroupEquiv K σ)).completion_map
+    Isometry (galoisExtension σ) := by
+  rw [show ⇑(galoisExtension σ) = _ from funext (galoisExtension_apply σ)]
+  exact (isometry_algEquiv (absoluteGaloisGroupEquiv K σ)).completion_map
 
 /-- `σ_C` preserves the norm. -/
 @[simp]
