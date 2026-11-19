@@ -137,6 +137,7 @@ theorem refl_prodCongr_refl : (refl J n M).prodCongr (refl J' n N) = refl (J.pro
   ext fun _ ↦ by simp only [prodCongr_apply, refl_apply]
 
 /-- Products of diffeotopies commute with pointwise composition. -/
+@[simp]
 theorem prodCongr_trans_prodCongr (Φ' : Diffeotopy J n M) (Ψ' : Diffeotopy J' n N) :
     (Φ.prodCongr Ψ).trans (Φ'.prodCongr Ψ') = (Φ.trans Φ').prodCongr (Ψ.trans Ψ') :=
   ext fun _ ↦ by simp only [trans_apply, prodCongr_apply]
