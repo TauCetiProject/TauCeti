@@ -22,6 +22,8 @@ reflections are indexed by an empty type has a trivial group.
   yet known to satisfy it, so it cannot be routed through
   `CoxeterSystem.prod_alternatingWord_eq_mul_pow`, which evaluates only the simple reflections
   themselves. The evaluations at lengths `2` and `3` are special cases.
+* `TauCeti.prod_map_alternatingWord_eq_mul_pow`: for a family taking involutions at `i` and `i'`,
+  the two alternating words of length `m` differ by the `m`-th power of `f i * f i'`.
 * `TauCeti.pow_eq_one_of_prod_map_alternatingWord_eq`: two involutions satisfying a braid relation
   of length `m` have product of order dividing `m`.
 * `TauCeti.reverse_alternatingWord`: reversing an alternating word swaps its two letters when
@@ -63,6 +65,24 @@ theorem prod_map_alternatingWord_three (f : B → N) (i i' : B) :
     ((CoxeterSystem.alternatingWord i i' 3).map f).prod = f i' * f i * f i' := by
   simp [prod_map_alternatingWord, Nat.even_iff, mul_assoc]
 
+/-- **The two alternating words of length `m` differ by the `m`-th power of the rotation**, for
+any family `f` taking involutions at `i` and `i'`: the word alternating between `i` and `i'` and
+ending with `i'` evaluates to the word ending with `i` followed by `(f i * f i') ^ m`. -/
+theorem prod_map_alternatingWord_eq_mul_pow {G : Type*} [Group G] (f : B → G) {i i' : B}
+    (hi : f i * f i = 1) (hi' : f i' * f i' = 1) (m : ℕ) :
+    ((CoxeterSystem.alternatingWord i i' m).map f).prod =
+      ((CoxeterSystem.alternatingWord i' i m).map f).prod * (f i * f i') ^ m := by
+  induction m generalizing i i' with
+  | zero => simp [CoxeterSystem.alternatingWord]
+  | succ m ih =>
+    -- Conjugating by `f i'` carries the rotation `f i * f i'` to its inverse `f i' * f i`.
+    have hsemi : SemiconjBy (f i') ((f i * f i') ^ m) ((f i' * f i) ^ m) :=
+      SemiconjBy.pow_right (by simp only [SemiconjBy, mul_assoc]) m
+    have hcancel (y : G) : f i * (f i * y) = y := by rw [← mul_assoc, hi, one_mul]
+    simp only [CoxeterSystem.alternatingWord_succ, List.concat_eq_append, List.map_append,
+      List.prod_append, List.map_singleton, List.prod_singleton, ih hi' hi, pow_succ', mul_assoc,
+      hcancel, hsemi.eq]
+
 /-- If `f i` and `f j` are involutions satisfying the braid relation of length `m`, then
 `(f i * f j) ^ m = 1`. Thus a family of involutions satisfying the braid relations of a Coxeter
 matrix satisfies its Coxeter relations. -/
@@ -71,26 +91,7 @@ theorem pow_eq_one_of_prod_map_alternatingWord_eq {G : Type*} [Group G] (f : B �
     (h : ((CoxeterSystem.alternatingWord i j m).map f).prod =
       ((CoxeterSystem.alternatingWord j i m).map f).prod) :
     (f i * f j) ^ m = 1 := by
-  have hji : f j * f i = (f i * f j)⁻¹ := by
-    rw [mul_inv_rev, inv_eq_of_mul_eq_one_right hi, inv_eq_of_mul_eq_one_right hj]
-  rw [prod_map_alternatingWord, prod_map_alternatingWord, hji, inv_pow] at h
-  obtain ⟨n, rfl | rfl⟩ := Nat.even_or_odd' m
-  · have hn : 2 * n / 2 = n := by omega
-    simp only [even_two_mul, ite_true, one_mul, hn] at h
-    rw [two_mul, pow_add]
-    nth_rw 2 [h]
-    exact mul_inv_cancel _
-  · have hn : (2 * n + 1) / 2 = n := by omega
-    have hodd : ¬ Even (2 * n + 1) := by simp [parity_simps]
-    simp only [hodd, ite_false, hn] at h
-    calc (f i * f j) ^ (2 * n + 1)
-        = (f i * f j) ^ n * f i * (f j * (f i * f j) ^ n) := by
-          rw [show 2 * n + 1 = n + 1 + n by omega, pow_add, pow_succ]
-          simp only [mul_assoc]
-      _ = (f i * f j) ^ n * (f i * f i) * ((f i * f j) ^ n)⁻¹ := by
-          rw [h]
-          simp only [mul_assoc]
-      _ = 1 := by rw [hi, mul_one, mul_inv_cancel]
+  rwa [prod_map_alternatingWord_eq_mul_pow f hi hj, mul_eq_left] at h
 
 /-! ### Reversing alternating words -/
 

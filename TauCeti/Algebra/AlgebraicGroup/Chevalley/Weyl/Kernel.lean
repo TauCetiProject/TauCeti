@@ -14,7 +14,7 @@ import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
 import TauCeti.GroupTheory.Coxeter.Basic
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Coefficient
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Coxeter
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 
@@ -71,10 +71,16 @@ variable (k : Type v) [Field k]
 private noncomputable def weylRep (i : Fin t.rank) : D.weylSubgroup k :=
   ⟨D.weylElement (t.simpleIndex ht i) k 1, D.weylElement_mem_weylSubgroup k i⟩
 
+/-- The simple Weyl representative, as a point. -/
+@[simp]
+private theorem coe_weylRep (i : Fin t.rank) :
+    (D.weylRep k i : D.points k) = D.weylElement (t.simpleIndex ht i) k 1 :=
+  rfl
+
 /-- The square of a simple Weyl representative is a torus point. -/
 private theorem weylRep_mul_self_mem (i : Fin t.rank) :
     D.weylRep k i * D.weylRep k i ∈ (D.torusPoints k).range.subgroupOf (D.weylSubgroup k) := by
-  rw [Subgroup.mem_subgroupOf, Subgroup.coe_mul, weylRep, D.weylElement_mul_self,
+  rw [Subgroup.mem_subgroupOf, Subgroup.coe_mul, coe_weylRep, D.weylElement_mul_self,
     D.simpleCorootPoints_eq_torusPoints]
   exact ⟨_, rfl⟩
 
@@ -84,26 +90,12 @@ private noncomputable def coxeterGen (i : (t.simplyConnectedBase ht).support) :
     D.weylSubgroup k ⧸ (D.torusPoints k).range.subgroupOf (D.weylSubgroup k) :=
   QuotientGroup.mk (D.weylRep k ((t.simpleSupportEquivSimplyConnectedBase ht).symm i))
 
-/-- The Coxeter matrix of the pinned base, read through the Bourbaki numbering. -/
-private theorem coxeterMatrixOfBase_simplyConnectedBase_apply
-    (i j : (t.simplyConnectedBase ht).support) :
-    coxeterMatrixOfBase (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) i j =
-      t.coxeterMatrix ((t.simpleSupportEquivSimplyConnectedBase ht).symm i)
-        ((t.simpleSupportEquivSimplyConnectedBase ht).symm j) := by
-  rw [coxeterMatrixOfBase_eq_coxeterMatrix_reindex
-    (t.simpleSupportEquivSimplyConnectedBase ht).symm, CoxeterMatrix.reindex_apply,
-    Equiv.symm_symm]
-  intro i j
-  simpa using t.cartanMatrix_simplyConnectedBase_apply ht
-    ((t.simpleSupportEquivSimplyConnectedBase ht).symm i)
-    ((t.simpleSupportEquivSimplyConnectedBase ht).symm j)
-
 /-- In `N / T` the simple Weyl representatives satisfy the Coxeter relations of the pinned base. -/
 private theorem isLiftable_coxeterGen :
     (coxeterMatrixOfBase (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)).IsLiftable
       (D.coxeterGen k) := by
   intro i j
-  rw [coxeterMatrixOfBase_simplyConnectedBase_apply]
+  rw [coxeterMatrixOfBase_simplyConnectedBase, CoxeterMatrix.reindex_apply]
   let q : Fin t.rank → D.weylSubgroup k ⧸ (D.torusPoints k).range.subgroupOf (D.weylSubgroup k) :=
     fun a => QuotientGroup.mk (D.weylRep k a)
   have hq (a : Fin t.rank) : q a * q a = 1 := by
@@ -122,7 +114,7 @@ private theorem isLiftable_coxeterGen :
     simp only [Subgroup.val_list_prod, List.map_map]
     have h := D.weylWord_braidWord_eq a b k
     rw [CoxeterSystem.braidWord, CoxeterSystem.braidWord, t.coxeterMatrix.symmetric b a] at h
-    exact h
+    simpa [Function.comp_def, coe_weylRep] using h
   exact TauCeti.pow_eq_one_of_prod_map_alternatingWord_eq q (hq _) (hq _) _ (hbraid _ _)
 
 /-- The Coxeter group of the pinned base maps to `N / T`, sending each generator to the class of
