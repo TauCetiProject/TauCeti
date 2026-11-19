@@ -270,15 +270,12 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_le
       ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) := by
-  have hR : MeasurePreserving (· + ((R, 0) : ℝ × ℝ)) volume volume :=
-    (measurePreserving_add_right volume R).prod (measurePreserving_add_right volume 0)
   -- The energy of the translated end over `s` is that of `u ∘ φ'_q` over `s + (R, 0)`.
-  have h := hR.setLIntegral_comp_preimage_emb (measurableEmbedding_addRight _)
-    (fun z ↦ ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
-      (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) z))
+  have h := ω.lintegral_floerEnergyDensity_comp_add_right (fun _ _ ↦ 0)
+    (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) (R, 0)
     ((· + ((R, 0) : ℝ × ℝ)) '' s)
   rw [preimage_image_eq _ (add_left_injective _)] at h
-  simp only [← ω.floerEnergyDensity_cylindrical_comp_add_right, comp_apply] at h
+  simp only [Prod.snd_add, add_zero, comp_apply] at h
   rw [h]
   exact setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset hKH hH hHd hu q
     ((measurableEmbedding_addRight _).measurableSet_image' hs)

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Pullback
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 
 /-!
 # Compactness of pairs of pants in a symplectic chart of a manifold
@@ -104,17 +105,9 @@ theorem contDiffOn_pairOfPantsPerturbation_comp_symm {n : ℕ∞} {m : WithTop �
         pairOfPantsPerturbation H (equivRealProdCLM.symm p.1) (φ.symm p.2) v)
       (thricePuncturedSphereReal ×ˢ φ.target) := by
   rintro ⟨z, y⟩ ⟨hz, hy⟩
-  refine ContDiffAt.contDiffWithinAt ?_
-  -- The point `z` of `S` and the chart inverse `φ⁻¹` are `C^n` into the product `ℂ × M`.
-  have hsymm : ContMDiffAt 𝓘(ℝ, V) I n φ.symm y :=
-    (φ.symm.contMDiffOn.of_le hnm).contMDiffAt (φ.open_target.mem_nhds hy)
-  have hpair : ContMDiffAt 𝓘(ℝ, (ℝ × ℝ) × V) (𝓘(ℝ, ℂ).prod I) n
-      (fun p : (ℝ × ℝ) × V ↦ (equivRealProdCLM.symm p.1, φ.symm p.2)) (z, y) :=
-    ((equivRealProdCLM.symm.contDiff.comp contDiff_fst).contMDiff.contMDiffAt).prodMk
-      (hsymm.comp (z, y) contDiff_snd.contMDiff.contMDiffAt)
-  have hK := (contMDiffAt_pairOfPantsPerturbation hH hHs ⟨equivRealProdCLM.symm z, hz⟩
-    (φ.symm y)).comp (z, y) hpair
-  exact (contMDiffAt_iff_contDiffAt.1 hK).clm_apply contDiffAt_const
+  exact ((φ.contDiffAt_comp_prodMap_symm hnm equivRealProdCLM.symm.contDiff hy
+    (contMDiffAt_pairOfPantsPerturbation hH hHs ⟨equivRealProdCLM.symm z, hz⟩
+      (φ.symm y))).clm_apply contDiffAt_const).contDiffWithinAt
 
 /-- **The end Hamiltonian read in a chart is smooth.** For a period-one Hamiltonian `H_q` which is
 `C^n` on `ℝ × M` and a `C^n` partial diffeomorphism `φ` from `M` to a normed space `V`, the
@@ -126,15 +119,8 @@ theorem contDiffOn_positiveEndHamiltonian_comp_symm {n : ℕ∞} {m : WithTop �
     ContDiffOn ℝ n (fun p : ℝ × V ↦ positiveEndHamiltonian H q p.1 (φ.symm p.2))
       (univ ×ˢ φ.target) := by
   rintro ⟨t, y⟩ ⟨-, hy⟩
-  refine ContDiffAt.contDiffWithinAt ?_
-  -- The time `t` and the chart inverse `φ⁻¹` are `C^n` into the product `ℝ × M`.
-  have hsymm : ContMDiffAt 𝓘(ℝ, V) I n φ.symm y :=
-    (φ.symm.contMDiffOn.of_le hnm).contMDiffAt (φ.open_target.mem_nhds hy)
-  have hpair : ContMDiffAt 𝓘(ℝ, ℝ × V) (𝓘(ℝ, ℝ).prod I) n
-      (fun p : ℝ × V ↦ (p.1, φ.symm p.2)) (t, y) :=
-    contDiff_fst.contMDiff.contMDiffAt.prodMk (hsymm.comp (t, y) contDiff_snd.contMDiff.contMDiffAt)
-  exact contMDiffAt_iff_contDiffAt.1
-    ((contMDiff_uncurry_positiveEndHamiltonian hHs).contMDiffAt.comp (t, y) hpair)
+  exact (φ.contDiffAt_comp_prodMap_symm hnm contDiff_id hy
+    (contMDiff_uncurry_positiveEndHamiltonian hHs).contMDiffAt).contDiffWithinAt
 
 end Floer
 

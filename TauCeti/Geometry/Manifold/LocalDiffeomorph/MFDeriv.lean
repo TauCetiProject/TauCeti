@@ -8,6 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+import Mathlib.Geometry.Manifold.ContMDiff.Constructions
+import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
@@ -50,6 +52,9 @@ For partial diffeomorphisms `ψ`, `χ`, `φ` into normed spaces, such as charts,
   the transition `ψ ∘ φ⁻¹` is differentiable.
 * `PartialDiffeomorph.fderiv_comp_symm_eq_comp`: the derivatives of transitions compose, the
   chain rule `D(ψ ∘ φ⁻¹) = D(ψ ∘ χ⁻¹) ∘ D(χ ∘ φ⁻¹)`.
+* `PartialDiffeomorph.contDiffAt_comp_prodMap_symm`: a map `F` on a product `X × M` read through
+  a `C^n` map `g` into `X` and the inverse of a partial diffeomorphism `φ` from `M` to a normed
+  space, `(p, y) ↦ F (g p, φ⁻¹ y)`, is `C^n` wherever `F` is.
 -/
 
 public section
@@ -172,5 +177,28 @@ theorem fderiv_comp_symm_eq_comp (ψ : PartialDiffeomorph I 𝓘(𝕜, G'') M G'
   rw [← heq.fderiv_eq, fderiv_comp (φ x) h₁ (χ.differentiableAt_comp_symm φ hn hχ hφ), hχx]
 
 end Transition
+
+section Product
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+  {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+  {W : Type*} [NormedAddCommGroup W] [NormedSpace 𝕜 W]
+
+/-- **A map on a product read through a partial diffeomorphism.** Let `φ` be a `C^n` partial
+diffeomorphism from `M` to a normed space `G`, let `g : P → X` be a `C^k` map of normed spaces,
+with `k ≤ n`, and let `y` be a point of the target of `φ`. If `F : X × M → W` is `C^k` at
+`(g p, φ⁻¹ y)`, then `(p', y') ↦ F (g p', φ⁻¹ y')` is `C^k` at `(p, y)`. -/
+theorem contDiffAt_comp_prodMap_symm (φ : PartialDiffeomorph I 𝓘(𝕜, G) M G n)
+    {k : WithTop ℕ∞} (hkn : k ≤ n) {g : P → X} (hg : ContDiff 𝕜 k g) {F : X × M → W} {p : P}
+    {y : G} (hy : y ∈ φ.target) (hF : ContMDiffAt (𝓘(𝕜, X).prod I) 𝓘(𝕜, W) k F (g p, φ.symm y)) :
+    ContDiffAt 𝕜 k (fun q : P × G ↦ F (g q.1, φ.symm q.2)) (p, y) := by
+  have hsymm : ContMDiffAt 𝓘(𝕜, G) I k φ.symm y :=
+    (φ.symm.contMDiffOn.of_le hkn).contMDiffAt (φ.open_target.mem_nhds hy)
+  exact contMDiffAt_iff_contDiffAt.1 (hF.comp (p, y)
+    ((hg.comp contDiff_fst).contMDiff.contMDiffAt.prodMk
+      (hsymm.comp (p, y) contDiff_snd.contMDiff.contMDiffAt)))
+
+end Product
 
 end PartialDiffeomorph
