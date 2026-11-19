@@ -33,7 +33,8 @@ Lefschetz sign `sgn det (1 - A)`. Since there are `|det (1 - A)|` of them, their
 
 `∑_{A • x = x} sgn det (1 - df_x) = det (1 - A)`
 
-(`AddCircle.finsum_sign_det_id_sub_fixedPointDerivative_generalLinearGroup_smul`). This is the
+(`AddCircle.finsum_sign_det_id_sub_fixedPointDerivative_generalLinearGroup_smul`); when
+`det (1 - A) = 0` every sign is `0` and both sides vanish. This is the
 fixed-point side of the Lefschetz formula for linear automorphisms of a torus: `A` acts on
 `H_k(Tⁿ; ℚ) = Λᵏ ℚⁿ` by `Λᵏ A`, and `∑ₖ (-1)ᵏ tr Λᵏ A = det (1 - A)` is its Lefschetz number. The
 homological side is not formalized here.
@@ -56,8 +57,8 @@ every period.
   det (1 - A)` at every fixed point.
 * `AddCircle.isNondegenerateFixedPt_generalLinearGroup_smul_iff`: a fixed point is nondegenerate
   exactly when `det (1 - A) ≠ 0`.
-* `AddCircle.finsum_sign_det_id_sub_fixedPointDerivative_generalLinearGroup_smul`: for
-  `det (1 - A) ≠ 0`, the signed count of the fixed points is `det (1 - A)`.
+* `AddCircle.finsum_sign_det_id_sub_fixedPointDerivative_generalLinearGroup_smul`: the signed
+  count of the fixed points is `det (1 - A)`.
 * `AddCircle.isNondegenerateUpToPeriod_generalLinearGroup_smul_iff`: nondegeneracy up to period
   `N` exactly when `det (1 - Aᵏ) ≠ 0` for `0 < k ≤ N`.
 
@@ -93,6 +94,12 @@ private theorem map_one_sub (A : Matrix ι ι ℤ) :
     (1 - A).map ((↑) : ℤ → ℝ) = 1 - A.map ((↑) : ℤ → ℝ) := by
   ext i j
   by_cases h : i = j <;> simp [h]
+
+/-- Casting `(1 - A) *ᵥ k` to `ℝ` computes `(1 - A) *ᵥ k` over `ℝ`. -/
+private theorem one_sub_map_mulVec_intCast (A : Matrix ι ι ℤ) (k : ι → ℤ) :
+    (1 - A.map ((↑) : ℤ → ℝ)) *ᵥ (fun j ↦ (k j : ℝ)) = fun i ↦ (((1 - A) *ᵥ k) i : ℝ) := by
+  rw [← map_one_sub]
+  exact funext fun i ↦ ((Int.castRingHom ℝ).map_mulVec (1 - A) k i).symm
 
 /-- The determinant of an integer matrix is that of the real matrix with the same entries. -/
 private theorem det_map_intCast (A : Matrix ι ι ℤ) : (A.map ((↑) : ℤ → ℝ)).det = A.det := by
@@ -170,8 +177,7 @@ private theorem range_fixedParam {A : GL ι ℤ} (hA : (1 - (A : Matrix ι ι �
   ext x
   rw [AddMonoidHom.mem_range, mem_fixedSubgroup]
   obtain ⟨t, rfl⟩ : ∃ t : ι → ℝ, (fun i ↦ (t i : AddCircle p)) = x :=
-    ⟨fun i ↦ (QuotientAddGroup.mk_surjective (x i)).choose,
-      funext fun i ↦ (QuotientAddGroup.mk_surjective (x i)).choose_spec⟩
+    QuotientAddGroup.mk_surjective.comp_left x
   constructor
   · rintro ⟨v, hv⟩
     rw [← hv, fixedParam_apply]
@@ -184,11 +190,6 @@ private theorem ker_fixedParam {A : GL ι ℤ} (hA : (1 - (A : Matrix ι ι ℤ)
     (fixedParam p A).ker = (LinearMap.range (1 - (A : Matrix ι ι ℤ)).mulVecLin).toAddSubgroup := by
   have hu := isUnit_det_one_sub_map hA
   have hp : p ≠ 0 := (Fact.out : 0 < p).ne'
-  have hcast (k : ι → ℤ) : (1 - (A : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ)) *ᵥ (fun j ↦ (k j : ℝ)) =
-      fun i ↦ (((1 - (A : Matrix ι ι ℤ)) *ᵥ k) i : ℝ) := by
-    rw [← map_one_sub]
-    ext i
-    simp [mulVec, dotProduct]
   set M := 1 - (A : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ)
   ext v
   simp only [AddMonoidHom.mem_ker, fixedParam_apply, Submodule.mem_toAddSubgroup,
@@ -200,14 +201,14 @@ private theorem ker_fixedParam {A : GL ι ℤ} (hA : (1 - (A : Matrix ι ι ℤ)
     refine ⟨k, fun i ↦ ?_⟩
     have hk' : M⁻¹ *ᵥ (fun j ↦ (v j : ℝ)) = fun j ↦ (k j : ℝ) :=
       funext fun j ↦ mul_left_cancel₀ hp (by rw [← hk j, mul_comm])
-    have := congrFun (hcast k) i
+    have := congrFun (one_sub_map_mulVec_intCast (A : Matrix ι ι ℤ) k) i
     rw [← hk', mulVec_mulVec, mul_nonsing_inv _ hu, one_mulVec] at this
     exact_mod_cast this.symm
   · rintro ⟨k, hk⟩ i
     obtain rfl : (1 - (A : Matrix ι ι ℤ)) *ᵥ k = v := funext hk
     refine ⟨k i, ?_⟩
     have : M⁻¹ *ᵥ (fun j ↦ (((1 - (A : Matrix ι ι ℤ)) *ᵥ k) j : ℝ)) = fun j ↦ (k j : ℝ) := by
-      rw [← hcast, mulVec_mulVec, nonsing_inv_mul _ hu, one_mulVec]
+      rw [← one_sub_map_mulVec_intCast, mulVec_mulVec, nonsing_inv_mul _ hu, one_mulVec]
     rw [this, mul_comm]
 
 variable (p) in
@@ -227,8 +228,9 @@ private theorem nat_card_fixedPoints_of_det_ne_zero {A : GL ι ℤ}
     LinearMap.toMatrix_eq_toMatrix', ← Matrix.toLin'_apply', LinearMap.toMatrix'_toLin']
 
 /-- If `det (1 - A) = 0`, the toral automorphism `x ↦ A • x` has infinitely many fixed points:
-an integer vector `k ≠ 0` with `(1 - A) k = 0` gives the fixed points `[s k]` for `s ∈ ℝ`, which
-are pairwise distinct for `0 ≤ s < p / |k i|` when `k i ≠ 0`. -/
+an integer vector `k ≠ 0` with `(1 - A) k = 0` and `k i ≠ 0` gives the fixed points
+`[s k / k i]` for `s ∈ ℝ`, whose `i`-th coordinates `[s]` are pairwise distinct for
+`0 ≤ s < p`. -/
 private theorem infinite_fixedPoints_of_det_eq_zero {A : GL ι ℤ}
     (hA : (1 - (A : Matrix ι ι ℤ)).det = 0) :
     (fixedPoints fun x : ι → AddCircle p ↦ A • x).Infinite := by
@@ -237,44 +239,22 @@ private theorem infinite_fixedPoints_of_det_eq_zero {A : GL ι ℤ}
   obtain ⟨i, hi⟩ : ∃ i, k i ≠ 0 := by
     by_contra! h
     exact hk0 (funext h)
-  have hki : (0 : ℝ) < |(k i : ℝ)| := abs_pos.2 (Int.cast_ne_zero.2 hi)
-  set f : ℝ → ι → AddCircle p := fun s j ↦ ((s * k j : ℝ) : AddCircle p)
-  -- Every `f s` is fixed, since `(1 - A) (s k) = s (1 - A) k = 0`.
+  have hki : (k i : ℝ) ≠ 0 := Int.cast_ne_zero.2 hi
+  set f : ℝ → ι → AddCircle p := fun s j ↦ ((s / k i * k j : ℝ) : AddCircle p)
+  -- Every `f s` is fixed, since `(1 - A) ((s / k i) k) = (s / k i) (1 - A) k = 0`.
   have hfix (s : ℝ) : f s ∈ fixedPoints fun x : ι → AddCircle p ↦ A • x := by
     refine (generalLinearGroup_smul_coe_pi_eq_iff p A _).2 ⟨0, ?_⟩
-    have : (1 - (A : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ)) *ᵥ (fun j ↦ (k j : ℝ)) = 0 := by
-      rw [← map_one_sub]
-      ext j
-      have := congrFun hk j
-      simp only [mulVec, dotProduct, Pi.zero_apply, Matrix.map_apply] at this ⊢
-      exact_mod_cast this
-    have hsk : (fun j ↦ s * (k j : ℝ)) = s • fun j ↦ (k j : ℝ) := rfl
-    rw [hsk, mulVec_smul, this, smul_zero]
+    have hsk : (fun j ↦ s / k i * (k j : ℝ)) = (s / k i) • fun j ↦ (k j : ℝ) := rfl
+    rw [hsk, mulVec_smul, one_sub_map_mulVec_intCast, hk]
     ext j
     simp
-  -- `f` is injective on `[0, p / |k i|)`, an infinite set.
-  have hinj : Set.InjOn f (Set.Ico 0 (p / |(k i : ℝ)|)) := by
+  -- The `i`-th coordinate of `f s` is `[s]`, so `f` is injective on `[0, p)`, an infinite set.
+  have hinj : Set.InjOn f (Set.Ico 0 p) := by
     intro s hs s' hs' hss'
     have h := congrFun hss' i
-    simp only [f] at h
-    rw [← sub_eq_zero, ← coe_sub, coe_eq_zero_iff] at h
-    obtain ⟨n, hn⟩ := h
-    rw [zsmul_eq_mul, ← sub_mul] at hn
-    have hlt : |(s - s') * (k i : ℝ)| < p := by
-      rw [Set.mem_Ico, lt_div_iff₀ hki] at hs hs'
-      have h1 := mul_nonneg hs.1 hki.le
-      have h2 := mul_nonneg hs'.1 hki.le
-      rw [abs_mul]
-      rcases abs_cases (s - s') with ⟨h, -⟩ | ⟨h, -⟩ <;> rw [h] <;> nlinarith
-    have hn0 : n = 0 := by
-      rw [← hn, abs_mul, abs_of_pos hp] at hlt
-      have h1 : |(n : ℝ)| < 1 := (mul_lt_iff_lt_one_left hp).1 hlt
-      rw [← Int.cast_abs, ← Int.cast_one, Int.cast_lt] at h1
-      exact Int.abs_lt_one_iff.1 h1
-    rw [hn0, Int.cast_zero, zero_mul, eq_comm, mul_eq_zero] at hn
-    exact sub_eq_zero.1 (hn.resolve_right (Int.cast_ne_zero.2 hi))
-  exact ((Set.Ico_infinite (div_pos hp hki)).image hinj).mono (Set.image_subset_iff.2 fun s _ ↦
-    hfix s)
+    simp only [f, div_mul_cancel₀ _ hki] at h
+    exact (zero_add p ▸ injOn_coe_Ico p 0) hs hs' h
+  exact ((Set.Ico_infinite hp).image hinj).mono (Set.image_subset_iff.2 fun s _ ↦ hfix s)
 
 variable (p)
 
@@ -328,18 +308,20 @@ theorem isNondegenerateFixedPt_generalLinearGroup_smul_iff (A : GL ι ℤ) {x : 
     ((hasMFDerivAt_generalLinearGroup_smul p A x).mdifferentiableAt),
     det_id_sub_fixedPointDerivative_generalLinearGroup_smul p A ⟨x, hx⟩, Int.cast_ne_zero]
 
-/-- **The signed count of the fixed points of a toral automorphism.** If `det (1 - A) ≠ 0`, the
-fixed points of `x ↦ A • x`, each counted with its Lefschetz sign `sgn det (1 - df_x)`, add up to
-`det (1 - A)`. This is the fixed-point side of the Lefschetz formula for `x ↦ A • x`. -/
-theorem finsum_sign_det_id_sub_fixedPointDerivative_generalLinearGroup_smul (A : GL ι ℤ)
-    (hA : (1 - (A : Matrix ι ι ℤ)).det ≠ 0) :
+/-- **The signed count of the fixed points of a toral automorphism.** The fixed points of
+`x ↦ A • x`, each counted with its Lefschetz sign `sgn det (1 - df_x)`, add up to `det (1 - A)`.
+This is the fixed-point side of the Lefschetz formula for `x ↦ A • x`. When `det (1 - A) = 0`,
+every sign is `0` and both sides are `0`. -/
+theorem finsum_sign_det_id_sub_fixedPointDerivative_generalLinearGroup_smul (A : GL ι ℤ) :
     ∑ᶠ x : {x : ι → AddCircle p // A • x = x}, (SignType.sign (LinearMap.det (LinearMap.id -
         fixedPointDerivative (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (fun y ↦ A • y) x)) : ℤ) =
       (1 - (A : Matrix ι ι ℤ)).det := by
+  simp_rw [det_id_sub_fixedPointDerivative_generalLinearGroup_smul, sign_intCast]
+  by_cases hA : (1 - (A : Matrix ι ι ℤ)).det = 0
+  · simp [hA]
   have : Finite {x : ι → AddCircle p // A • x = x} :=
     Set.finite_coe_iff.2 ((finite_fixedPoints_generalLinearGroup_smul_iff p A).2 hA)
   have : Fintype {x : ι → AddCircle p // A • x = x} := Fintype.ofFinite _
-  simp_rw [det_id_sub_fixedPointDerivative_generalLinearGroup_smul, sign_intCast]
   -- The fixed-point subtype is the set of fixed points, of cardinality `|det (1 - A)|`.
   have hcard : Nat.card {x : ι → AddCircle p // A • x = x} =
       (1 - (A : Matrix ι ι ℤ)).det.natAbs :=

@@ -35,7 +35,7 @@ every point, so:
 
 * `φ` is nondegenerate up to every period: every periodic point of period `n` is a nondegenerate
   fixed point of `φⁿ`;
-* `φⁿ` has `|det (1 - Pⁿ)| = tr (Pⁿ) - 2` fixed points, each of Lefschetz sign
+* for `n ≥ 1`, `φⁿ` has `|det (1 - Pⁿ)| = tr (Pⁿ) - 2` fixed points, each of Lefschetz sign
   `sgn det (1 - Pⁿ) = -1`, so their signed count is `det (1 - Pⁿ) = 2 - tr (Pⁿ)`, the Lefschetz
   number `L (φⁿ)` above. This checks the Lefschetz fixed-point formula on every iterate of the cat
   map, with the homological side taken from the description above rather than formalized;
@@ -57,7 +57,7 @@ every point, so:
   to every period.
 * `TauCeti.nat_card_fixedPoints_iterate_catMapUnit_smul`: `φⁿ` has `|2 - tr (Pⁿ)|` fixed points.
 * `TauCeti.finsum_sign_det_id_sub_fixedPointDerivative_iterate_catMapUnit_smul`: their signed count
-  is `2 - tr (Pⁿ)` for `n ≠ 0`.
+  is `2 - tr (Pⁿ)`.
 * `TauCeti.subst_exp_finsum_sign_det_id_sub_fixedPointDerivative_iterate_catMapUnit_smul`: the
   dynamical zeta function of the cat map is `1 - t - 2 t ^ 2 - 3 t ^ 3 - ⋯`.
 -/
@@ -217,13 +217,12 @@ theorem nat_card_fixedPoints_iterate_catMapUnit_smul (n : ℕ) :
   rw [smul_iterate, AddCircle.nat_card_fixedPoints_generalLinearGroup_smul,
     Units.val_pow_eq_pow_val, coe_catMapUnit, det_one_sub_catMap_pow]
 
-/-- **The signed fixed-point counts of the cat map.** For `n ≠ 0`, the fixed points of the `n`-th
-iterate `φⁿ` of the cat map of the torus, each counted with its Lefschetz sign
-`sgn det (1 - dφⁿ_x)`, add up to `2 - tr (Pⁿ)`, which is the Lefschetz number `L (φⁿ)` computed
-from the action of `φ` on the homology of the torus. Every sign is `-1`, and there are
-`tr (Pⁿ) - 2` fixed points. -/
-theorem finsum_sign_det_id_sub_fixedPointDerivative_iterate_catMapUnit_smul {n : ℕ}
-    (hn : n ≠ 0) :
+/-- **The signed fixed-point counts of the cat map.** The fixed points of the `n`-th iterate `φⁿ`
+of the cat map of the torus, each counted with its Lefschetz sign `sgn det (1 - dφⁿ_x)`, add up to
+`2 - tr (Pⁿ)`, which is the Lefschetz number `L (φⁿ)` computed from the action of `φ` on the
+homology of the torus. For `n ≥ 1`, every sign is `-1`, and there are `tr (Pⁿ) - 2` fixed points;
+for `n = 0`, every sign is `0` and both sides are `0`. -/
+theorem finsum_sign_det_id_sub_fixedPointDerivative_iterate_catMapUnit_smul (n : ℕ) :
     ∑ᶠ x : {x : Fin 2 → AddCircle p // (fun y ↦ catMapUnit • y)^[n] x = x},
         (SignType.sign (LinearMap.det (LinearMap.id - fixedPointDerivative
           (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) (fun y ↦ catMapUnit • y)^[n] x)) : ℤ) =
@@ -238,8 +237,7 @@ theorem finsum_sign_det_id_sub_fixedPointDerivative_iterate_catMapUnit_smul {n :
     have hdet : (1 - ((catMapUnit ^ n : GL (Fin 2) ℤ) : Matrix (Fin 2) (Fin 2) ℤ)).det =
         2 - (catMap ^ n).trace := by
       rw [Units.val_pow_eq_pow_val, coe_catMapUnit, det_one_sub_catMap_pow]
-    rw [AddCircle.finsum_sign_det_id_sub_fixedPointDerivative_generalLinearGroup_smul p _
-      (by rw [hdet, ← det_one_sub_catMap_pow]; exact (det_one_sub_catMap_pow_neg hn).ne), hdet]
+    rw [AddCircle.finsum_sign_det_id_sub_fixedPointDerivative_generalLinearGroup_smul, hdet]
   exact key _ (smul_iterate catMapUnit n)
 
 /-- **The dynamical zeta function of the cat map.** The zeta function
@@ -257,10 +255,7 @@ theorem subst_exp_finsum_sign_det_id_sub_fixedPointDerivative_iterate_catMapUnit
   rw [← subst_exp_two_sub_trace_catMap_pow]
   congr 2
   ext n
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  · rw [finsum_sign_det_id_sub_fixedPointDerivative_iterate_catMapUnit_smul p hn]
-    push_cast
-    rfl
+  rw [finsum_sign_det_id_sub_fixedPointDerivative_iterate_catMapUnit_smul, Int.cast_sub,
+    Int.cast_ofNat]
 
 end TauCeti
