@@ -25,7 +25,7 @@ generating function of `N(a, v)` at `t`. Its mean under `N(a, v)` is
 
 ## Main statements
 
-* `TauCeti.Real.klDiv_gaussianReal`: the relative entropy between real Gaussian laws with a common
+* `Real.klDiv_gaussianReal`: the relative entropy between real Gaussian laws with a common
   variance.
 
 ## References
@@ -46,7 +46,7 @@ namespace TauCeti
 
 /-- The relative entropy between real Gaussian laws with a common nonzero variance `v` is
 `(a - b) ^ 2 / (2 v)`. -/
-theorem Real.klDiv_gaussianReal (a b : ℝ) {v : ℝ≥0} (hv : v ≠ 0) :
+theorem _root_.Real.klDiv_gaussianReal (a b : ℝ) {v : ℝ≥0} (hv : v ≠ 0) :
     klDiv (gaussianReal a v) (gaussianReal b v) = ENNReal.ofReal ((a - b) ^ 2 / (2 * v)) := by
   set t : ℝ := (b - a) / v with ht
   have hvR : (v : ℝ) ≠ 0 := by exact_mod_cast hv
