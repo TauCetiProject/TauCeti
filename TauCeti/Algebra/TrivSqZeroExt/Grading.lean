@@ -24,7 +24,7 @@ graded-commutative.
 ## Main results
 
 * `TrivSqZeroExt.instGradedAlgebraGrading`: `R ⊕ M` is a graded algebra.
-* `TrivSqZeroExt.mul_comm_of_mem_grading`: `R ⊕ M` is graded-commutative.
+* `TrivSqZeroExt.mul_eq_negOnePow_smul_mul_of_mem_grading`: `R ⊕ M` is graded-commutative.
 -/
 
 public section
@@ -118,18 +118,18 @@ private theorem coe_projOne (x : tsze R M) : (projOne S R M x : tsze R M) = inr 
 variable (S R M) in
 /-- The homogeneous decomposition of `R ⊕ M`: an element is its `R`-component in degree `0` plus
 its `M`-component in degree `1`. -/
-def decomposeGrading : tsze R M →ₗ[S] ⨁ n, grading S R M n :=
+private def decomposeGrading : tsze R M →ₗ[S] ⨁ n, grading S R M n :=
   lof S ℤ (fun n ↦ grading S R M n) 0 ∘ₗ projZero S R M +
     lof S ℤ (fun n ↦ grading S R M n) 1 ∘ₗ projOne S R M
 
 /-- Reassembling the homogeneous decomposition of `R ⊕ M` gives back the element. -/
-theorem coeLinearMap_comp_decomposeGrading :
+private theorem coeLinearMap_comp_decomposeGrading :
     coeLinearMap (grading S R M) ∘ₗ decomposeGrading S R M = LinearMap.id :=
   LinearMap.ext fun x ↦ by
     simp [decomposeGrading, coe_projZero, coe_projOne, inl_fst_add_inr_snd_eq]
 
 /-- Decomposing a sum of homogeneous elements of `R ⊕ M` recovers the summands. -/
-theorem decomposeGrading_comp_coeLinearMap :
+private theorem decomposeGrading_comp_coeLinearMap :
     decomposeGrading S R M ∘ₗ coeLinearMap (grading S R M) = LinearMap.id := by
   refine DirectSum.linearMap_ext _ fun n ↦ LinearMap.ext fun ⟨x, hx⟩ ↦ ?_
   simp only [LinearMap.comp_apply, coeLinearMap_lof, LinearMap.id_comp, decomposeGrading,
@@ -149,9 +149,9 @@ theorem decomposeGrading_comp_coeLinearMap :
       Subtype.ext (ext (mem_grading_one_iff.mp hx).symm rfl)
     rw [h₂, h₃, map_zero, zero_add]
   · obtain rfl : x = 0 := by simpa [grading_eq_bot h₀ h₁] using hx
-    rw [show (⟨0, hx⟩ : grading S R M n) = 0 from rfl]
-    simp only [map_zero, add_zero]
+    simp [(Submodule.mk_eq_zero _ hx).mpr rfl]
 
+@[no_expose]
 instance : Decomposition (grading S R M) :=
   Decomposition.ofLinearMap _ (decomposeGrading S R M) coeLinearMap_comp_decomposeGrading
     decomposeGrading_comp_coeLinearMap
@@ -161,18 +161,16 @@ instance : Decomposition (grading S R M) :=
 theorem coe_decompose_zero (x : tsze R M) :
     (decompose (grading S R M) x 0 : tsze R M) = inl x.fst := by
   conv_lhs => rw [← inl_fst_add_inr_snd_eq x]
-  rw [decompose_add, DirectSum.add_apply, Submodule.coe_add,
-    decompose_of_mem_same _ (inl_mem_grading_zero _),
-    decompose_of_mem_ne _ (inr_mem_grading_one _) one_ne_zero, add_zero]
+  simp [decompose_of_mem_same _ (inl_mem_grading_zero _),
+    decompose_of_mem_ne _ (inr_mem_grading_one _) one_ne_zero]
 
 /-- The degree-`1` component of an element of `R ⊕ M` is its `M`-component. -/
 @[simp]
 theorem coe_decompose_one (x : tsze R M) :
     (decompose (grading S R M) x 1 : tsze R M) = inr x.snd := by
   conv_lhs => rw [← inl_fst_add_inr_snd_eq x]
-  rw [decompose_add, DirectSum.add_apply, Submodule.coe_add,
-    decompose_of_mem_ne _ (inl_mem_grading_zero _) zero_ne_one,
-    decompose_of_mem_same _ (inr_mem_grading_one _), zero_add]
+  simp [decompose_of_mem_ne _ (inl_mem_grading_zero _) zero_ne_one,
+    decompose_of_mem_same _ (inr_mem_grading_one _)]
 
 end Grading
 
@@ -213,8 +211,9 @@ variable {S R M : Type*} [CommSemiring S] [CommRing R] [AddCommGroup M] [Module 
 /-- The trivial square-zero extension `R ⊕ M` of a commutative ring by a symmetric module, graded
 with `R` in degree `0` and `M` in degree `1`, is graded-commutative: two homogeneous elements
 commute up to the Koszul sign. -/
-theorem mul_comm_of_mem_grading {p q : ℤ} {x y : tsze R M} (hx : x ∈ grading S R M p)
-    (hy : y ∈ grading S R M q) : x * y = (p * q).negOnePow • (y * x) := by
+theorem mul_eq_negOnePow_smul_mul_of_mem_grading {p q : ℤ} {x y : tsze R M}
+    (hx : x ∈ grading S R M p) (hy : y ∈ grading S R M q) :
+    x * y = (p * q).negOnePow • (y * x) := by
   by_cases hpq : Even (p * q)
   · rw [Int.negOnePow_even _ hpq, one_smul, mul_comm]
   · have hp : p ≠ 0 := by rintro rfl; simp at hpq

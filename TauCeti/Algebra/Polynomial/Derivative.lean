@@ -285,9 +285,8 @@ theorem derivative_surjective {R : Type*} [Semiring R] [Algebra ℚ≥0 R] :
     exact ⟨p' + q', derivative_add⟩
   | monomial n a =>
     refine ⟨monomial (n + 1) (((n + 1 : ℚ≥0)⁻¹ • a)), ?_⟩
-    rw [derivative_monomial, Nat.add_sub_cancel, smul_mul_assoc, ← nsmul_eq_mul',
-      ← Nat.cast_smul_eq_nsmul ℚ≥0, smul_smul, Nat.cast_add_one,
-      inv_mul_cancel₀ (Nat.cast_add_one_ne_zero n), one_smul]
+    rw [derivative_monomial, smul_mul_assoc, ← nsmul_eq_mul']
+    simp [← Nat.cast_smul_eq_nsmul ℚ≥0, smul_smul]
 
 /-- In characteristic `p`, the monomial `X ^ (p - 1)` is not a derivative: the coefficient of
 `X ^ (p - 1)` in the derivative of `q` is `p` times a coefficient of `q`. -/
