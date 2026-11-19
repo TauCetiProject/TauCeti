@@ -56,6 +56,9 @@ made here.
 
 ## Main results
 
+* `TauCeti.localHomologySMulIso_hom_comp_localHomologyTransport_of_continuous`: the isomorphisms
+  induced by a continuous family of elements of `G` are compatible with transport along the path
+  of `x` under the family.
 * `TauCeti.localHomologySMulIso_hom_comp_localHomologyTransport`: the isomorphisms induced by the
   elements of `G` are compatible with transport along the orbit.
 * `TauCeti.localHomologySMulIso_hom_apply_eq_zsmul`: an element `h` of the stabilizer acts on
@@ -171,6 +174,30 @@ variable [TopologicalSpace G] [ContinuousInv G] [ContinuousSMul G M] [T2Space M]
   {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [ChartedSpace E M]
 
+/-- **The local homology isomorphisms of a group action are flat along continuous families.** Let
+`ι : P → G` be a continuous family of elements of `G` and `π : P → M`, `π p = ι p • x`, the path
+of `x` under it. For a path class `f : p ⟶ q` of `P`, the transport of local homology along
+`π ∘ f` carries the isomorphism `Hₖ(M, M ∖ {x}) ≅ Hₖ(M, M ∖ {π p})` induced by `ι p` to the one
+induced by `ι q`. -/
+@[reassoc]
+theorem localHomologySMulIso_hom_comp_localHomologyTransport_of_continuous {P : Type*}
+    [TopologicalSpace P] (ι : C(P, G)) (x : M) {π : C(P, M)} (hπ : ∀ p, ι p • x = π p) (k : ℕ)
+    {p q : FundamentalGroupoid P} (f : p ⟶ q) :
+    (localHomologySMulIso R (ι p.as) (hπ p.as) k).hom ≫
+        localHomologyTransport R M E k ((FundamentalGroupoid.map π).map f) =
+      (localHomologySMulIso R (ι q.as) (hπ q.as) k).hom := by
+  -- The isomorphisms are the maps induced by the family `F (p, y) = ι p • y`, which has the left
+  -- inverses `(p, y) ↦ (ι p)⁻¹ • y`. Here `F (p, y)` is by definition `ι p • y`.
+  let F : C(P × M, M) := ⟨fun r ↦ ι r.1 • r.2, by fun_prop⟩
+  have hF (p : P) (y : M) :
+      (⟨fun r ↦ (ι r.1)⁻¹ • r.2, by fun_prop⟩ : C(P × M, M)) (p, F (p, y)) = y :=
+    inv_smul_smul (ι p) y
+  rw [localHomologySMulIso_hom_eq_localHomologyMap R (F := F) (p := p.as) (fun _ ↦ rfl) _
+      (preimage_curry_singleton_subset_of_leftInverse hF p.as (hπ p.as)),
+    localHomologySMulIso_hom_eq_localHomologyMap R (F := F) (p := q.as) (fun _ ↦ rfl) _
+      (preimage_curry_singleton_subset_of_leftInverse hF q.as (hπ q.as))]
+  exact localHomologyMap_comp_localHomologyTransport_of_leftInverse R hF x hπ k f
+
 /-- **The local homology isomorphisms of a group action are flat along orbits.** For an orbit map
 `π : G → M`, `g ↦ g • x`, and a path class `f : g₀ ⟶ g₁` of `G`, the transport of local
 homology along `π ∘ f` carries the isomorphism `Hₖ(M, M ∖ {x}) ≅ Hₖ(M, M ∖ {g₀ • x})` induced by
@@ -180,18 +207,8 @@ theorem localHomologySMulIso_hom_comp_localHomologyTransport (x : M) {π : C(G, 
     (hπ : ∀ g, g • x = π g) (k : ℕ) {g₀ g₁ : FundamentalGroupoid G} (f : g₀ ⟶ g₁) :
     (localHomologySMulIso R g₀.as (hπ g₀.as) k).hom ≫
         localHomologyTransport R M E k ((FundamentalGroupoid.map π).map f) =
-      (localHomologySMulIso R g₁.as (hπ g₁.as) k).hom := by
-  -- The isomorphisms are the maps induced by the family `F (g, y) = g • y`, which has the left
-  -- inverses `(g, y) ↦ g⁻¹ • y`. Here `F (g, y)` is by definition `g • y`.
-  let F : C(G × M, M) := ⟨fun q ↦ q.1 • q.2, continuous_smul⟩
-  have hF (g : G) (y : M) :
-      (⟨fun q ↦ q.1⁻¹ • q.2, by fun_prop⟩ : C(G × M, M)) (g, F (g, y)) = y :=
-    inv_smul_smul g y
-  rw [localHomologySMulIso_hom_eq_localHomologyMap R (F := F) (p := g₀.as) (fun _ ↦ rfl) _
-      (preimage_curry_singleton_subset_of_leftInverse hF g₀.as (hπ g₀.as)),
-    localHomologySMulIso_hom_eq_localHomologyMap R (F := F) (p := g₁.as) (fun _ ↦ rfl) _
-      (preimage_curry_singleton_subset_of_leftInverse hF g₁.as (hπ g₁.as))]
-  exact localHomologyMap_comp_localHomologyTransport_of_leftInverse R hF x hπ k f
+      (localHomologySMulIso R g₁.as (hπ g₁.as) k).hom :=
+  localHomologySMulIso_hom_comp_localHomologyTransport_of_continuous R (.id G) x hπ k f
 
 /-- **The flat trivialization of local homology along an orbit.** For an orbit map
 `π : G → M`, `g ↦ g • x`, the isomorphisms `Hₖ(M, M ∖ {x}) ≅ Hₖ(M, M ∖ {g • x})` induced by the
@@ -330,32 +347,22 @@ theorem isotropyOrientationCharacter_eq_of_joined [TopologicalSpace G] [Continuo
   -- The class of a path from `h` to `h'` in the stabilizer.
   set γ : FundamentalGroupoid.mk h ⟶ FundamentalGroupoid.mk h' :=
     Path.Homotopic.Quotient.mk hJ.somePath
-  -- The family `F (h, y) = h • y` over the stabilizer, with the left inverses
-  -- `(h, y) ↦ h⁻¹ • y`, fixes `x`. Here `F (h, y)` is by definition `h • y`.
-  let F : C(stabilizer G x × M, M) := ⟨fun q ↦ (q.1 : G) • q.2, by fun_prop⟩
-  let F' : C(stabilizer G x × M, M) := ⟨fun q ↦ (q.1 : G)⁻¹ • q.2, by fun_prop⟩
-  have hF (g : stabilizer G x) (y : M) : F' (g, F (g, y)) = y := inv_smul_smul (g : G) y
-  have key := localHomologyMap_comp_localHomologyTransport_of_leftInverse
-    (ModuleCat.of ℤ (ULift.{w} ℤ)) (E := E) hF x (o := ContinuousMap.const _ x)
-    (fun g ↦ mem_stabilizer_iff.1 g.2) d γ
   -- The point `x` stays put along `γ`, so the transport along its image is trivial.
   have hT : localHomologyTransport (ModuleCat.of ℤ (ULift.{w} ℤ)) M E d
       ((FundamentalGroupoid.map (ContinuousMap.const (stabilizer G x) x)).map γ) = 𝟙 _ := by
     rw [show (FundamentalGroupoid.map (ContinuousMap.const (stabilizer G x) x)).map γ = 𝟙 _ from
       congrArg Path.Homotopic.Quotient.mk (Path.ext rfl)]
     exact localHomologyTransport_id _ M E d _
-  -- So `h` and `h'` induce the same map.
+  -- So `h` and `h'` induce the same map, by flatness along the inclusion of the stabilizer.
   have hhh' : (localHomologySMulIso (ModuleCat.of ℤ (ULift.{w} ℤ)) (h : G)
       (mem_stabilizer_iff.1 h.2) d).hom =
         (localHomologySMulIso (ModuleCat.of ℤ (ULift.{w} ℤ)) (h' : G)
           (mem_stabilizer_iff.1 h'.2) d).hom := by
-    rw [localHomologySMulIso_hom_eq_localHomologyMap _ (F := F) (p := h) (g := (h : G))
-        (fun _ ↦ rfl) _ (preimage_curry_singleton_subset_of_leftInverse hF h
-          (mem_stabilizer_iff.1 h.2)),
-      localHomologySMulIso_hom_eq_localHomologyMap _ (F := F) (p := h') (g := (h' : G))
-        (fun _ ↦ rfl) _ (preimage_curry_singleton_subset_of_leftInverse hF h'
-          (mem_stabilizer_iff.1 h'.2))]
-    -- `key` is stated at the points `o h = x` and `o h' = x` of the constant path `o`, and `hT`
+    have key := localHomologySMulIso_hom_comp_localHomologyTransport_of_continuous
+      (ModuleCat.of ℤ (ULift.{w} ℤ)) (E := E)
+      (⟨Subtype.val, continuous_subtype_val⟩ : C(stabilizer G x, G)) x
+      (π := ContinuousMap.const (stabilizer G x) x) (fun g ↦ mem_stabilizer_iff.1 g.2) d γ
+    -- `key` is stated at the points `π h = x` and `π h' = x` of the constant path `π`, and `hT`
     -- at the first of them; these are all `x` by definition, so they combine by `Eq.trans`.
     exact (Category.comp_id _).symm.trans ((congrArg _ hT.symm).trans key)
   refine Units.ext (stabilizerScalar_eq hd x h (mem_stabilizer_iff.1 h.2) fun z ↦ ?_)
