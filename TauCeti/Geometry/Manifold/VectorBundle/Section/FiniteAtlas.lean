@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.WithSeminorms
-public import TauCeti.Geometry.Manifold.ExtChartAt.Opens
+public import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.CountableSeminorms
 
 /-!
 # Finite frame-atlas `C^k` norms on bundle sections
@@ -340,7 +341,7 @@ theorem exists_chartCkSeminorm_le_finiteFrameSeminorm (i : ι) (x : U i)
     refine (e i).exists_chartCkSeminorm_le_chartCkSeminorm (e (r j)) (hU i) (hU (r j)) x (c j)
       ⟨P j, hP j⟩ (K j) (fun z hz ↦ ?_) k hk
     obtain ⟨w, ⟨hw, hwK⟩, hwz⟩ := hPW j hz
-    replace hwz : (w : M) = ((extChartAt I x).symm z : M) := hwz
+    beta_reduce at hwz
     refine ⟨hwz ▸ w.2, ?_, ?_⟩
     · rw [← hwz]
       exact (Set.ext_iff.mp ((U (r j)).extChartAt_source_eq (I := I) (c j)) w).mp hw
@@ -349,20 +350,13 @@ theorem exists_chartCkSeminorm_le_finiteFrameSeminorm (i : ι) (x : U i)
   choose C hC hbound using hb
   have hsum : 0 ≤ ∑ j, C j := Finset.sum_nonneg fun j _ ↦ (hC j).le
   refine ⟨1 + ∑ j, C j, by positivity, fun s ↦ ?_⟩
-  refine ((e i).chartCkSeminorm_le_iff (hU i) x L k hk s (by positivity)).mpr fun m hm z hz ↦ ?_
-  obtain ⟨j, -, hzj⟩ := mem_iUnion₂.mp (hLP.le hz)
-  calc _ ≤ (e i).chartCkSeminorm (hU i) x ⟨P j, hP j⟩ k hk s :=
-        ((e i).chartCkSeminorm_le_iff (hU i) x ⟨P j, hP j⟩ k hk s (apply_nonneg _ _)).mp le_rfl
-          m hm z hzj
-    _ ≤ C j * (e (r j)).chartCkSeminorm (hU (r j)) (c j) (K j) k hk s := hbound j s
-    _ ≤ C j * finiteFrameSeminorm e U hU r c K k hk s := by
-        gcongr
-        · exact (hC j).le
-        · exact chartCkSeminorm_le_finiteFrameSeminorm e U hU r c K k hk j s
-    _ ≤ (1 + ∑ j, C j) * finiteFrameSeminorm e U hU r c K k hk s := by
-        gcongr
-        exact (Finset.single_le_sum (fun j _ ↦ (hC j).le) (Finset.mem_univ j)).trans
-          (le_add_of_nonneg_left zero_le_one)
+  rw [Trivialization.chartCkSeminorm_apply]
+  refine ContMDiffMap.chartCkSeminorm_le_of_subset_biUnion (x : U i) L Finset.univ
+    (fun j ↦ ⟨P j, hP j⟩) hLP.subset k hk (fun j _ ↦ (hC j).le) _
+    (apply_nonneg (finiteFrameSeminorm e U hU r c K k hk) s) fun j _ ↦ ?_
+  rw [← Trivialization.chartCkSeminorm_apply]
+  exact (hbound j s).trans (mul_le_mul_of_nonneg_left
+    (chartCkSeminorm_le_finiteFrameSeminorm e U hU r c K k hk j s) (hC j).le)
 
 include hK in
 /-- **Equivalence of finite frame-atlas norms.** The `C^k` seminorm of any finite frame atlas is
@@ -376,10 +370,17 @@ theorem exists_finiteFrameSeminorm_le {J' : Type*} [Fintype J'] (r' : J' → ι)
     exists_chartCkSeminorm_le_finiteFrameSeminorm e U hU hK (r' j) (c' j) (K' j) k hk
   have hsum : 0 ≤ ∑ j, C j := Finset.sum_nonneg fun j _ ↦ (hC j).le
   refine ⟨1 + ∑ j, C j, by positivity, fun s ↦ ?_⟩
-  refine Seminorm.finset_sup_apply_le (by positivity) fun j _ ↦ (hbound j s).trans ?_
-  gcongr
-  exact (Finset.single_le_sum (fun j _ ↦ (hC j).le) (Finset.mem_univ j)).trans
-    (le_add_of_nonneg_left zero_le_one)
+  calc finiteFrameSeminorm e U hU r' c' K' k hk s
+      ≤ ∑ j, (e (r' j)).chartCkSeminorm (hU (r' j)) (c' j) (K' j) k hk s := by
+        refine (Seminorm.finset_sup_le_sum
+          (fun j ↦ (e (r' j)).chartCkSeminorm (hU (r' j)) (c' j) (K' j) k hk) Finset.univ
+          s).trans_eq ?_
+        simp only [sum_apply]
+    _ ≤ ∑ j, C j * finiteFrameSeminorm e U hU r c K k hk s :=
+        Finset.sum_le_sum fun j _ ↦ hbound j s
+    _ = (∑ j, C j) * finiteFrameSeminorm e U hU r c K k hk s := (Finset.sum_mul _ _ _).symm
+    _ ≤ (1 + ∑ j, C j) * finiteFrameSeminorm e U hU r c K k hk s :=
+        mul_le_mul_of_nonneg_right (le_add_of_nonneg_left zero_le_one) (apply_nonneg _ _)
 
 end Cover
 
@@ -430,13 +431,9 @@ theorem withSeminorms_finiteFrameSeminorm
     obtain ⟨C, -, hbound⟩ :=
       exists_chartCkSeminorm_le_finiteFrameSeminorm (n := k) e U hU hK i x L k le_rfl
     refine ⟨{()}, C, fun s ↦ ?_⟩
-    have hderiv : (e i).chartDerivativeSeminorm (hU i) x L m hm s ≤
-        (e i).chartCkSeminorm (hU i) x L k le_rfl s :=
-      ((e i).chartDerivativeSeminorm_le_iff (hU i) x L m hm s (apply_nonneg _ _)).mpr
-        fun z hz ↦ ((e i).chartCkSeminorm_le_iff (hU i) x L k le_rfl s (apply_nonneg _ _)).mp
-          le_rfl m hmk z hz
     simpa only [LinearMap.id_apply, frameSeminormFamily_apply, Finset.sup_singleton] using
-      hderiv.trans (hbound s)
+      ((e i).chartDerivativeSeminorm_le_chartCkSeminorm (hU i) x L hm le_rfl hmk s).trans
+        (hbound s)
 
 /-- **Normability of `C^k` sections on a compact manifold.** For a covering system of smooth frames
 of a vector bundle over a compact manifold modelled on a locally compact space, the frame topology
