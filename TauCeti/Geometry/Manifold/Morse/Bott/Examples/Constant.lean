@@ -22,13 +22,14 @@ so its critical points are degenerate.
 In the Morse–Bott inequalities a critical submanifold `C` of index `λ` contributes its Betti numbers
 shifted by `λ`, that is `bⱼ₋λ(C)` in degree `j`, to the relative homology of the band around its
 critical level. For the constant function there is a single critical level `c`, crossing it passes
-from the empty sublevel to all of `M`, and every index is `0`. On a compact manifold the relative
-homology `Hⱼ({f ≤ b}, {f ≤ a}; k)` of the band, for `a < c ≤ b`, is the homology of `M`, so its
-dimension is `bⱼ(M; k)` (`TauCeti.finrank_singularHomology_sublevelPair_const_eq_bettiNumber`, on
-any topological space and over any ring): the contribution of the critical set is the Betti
-polynomial of `M` itself. On a compact manifold this is the sum of the `bⱼ(C; k)` over the
-components (`TauCeti.finrank_singularHomology_sublevelPair_const`), as the Morse–Bott contribution
-of the critical submanifolds `C` is computed.
+from the empty sublevel to all of `M`, and every index is `0`. For the constant function `f = c` on
+any topological space `X` and over any ring `k`, the relative homology `Hⱼ({f ≤ b}, {f ≤ a}; k)` of
+the band, for `a < c ≤ b`, is the homology of `X`, so its dimension is `bⱼ(X; k)`
+(`TauCeti.finrank_singularHomology_sublevelPair_const_eq_bettiNumber`): the contribution of the
+critical set is the Betti polynomial of the space itself. On a compact boundaryless manifold `M`
+and over a division ring `k` this is the sum of the `bⱼ(C; k)` over the components
+(`TauCeti.finrank_singularHomology_sublevelPair_const`), as the Morse–Bott contribution of the
+critical submanifolds `C` is computed.
 
 ## Main results
 
