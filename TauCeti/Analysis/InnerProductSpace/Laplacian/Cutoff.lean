@@ -92,6 +92,20 @@ open InnerProductSpace
 variable [MeasurableSpace E] [BorelSpace E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {ι : Type*} {l : Filter ι} {χ : ι → E → ℝ} {R : ι → ℝ}
 
+/-- In a two-dimensional space, a function bounded by `a / r²` and supported in
+`closedBall 0 (2 * r)` has integral of norm at most `4 a μ(closedBall 0 1)`. -/
+private theorem norm_integral_le_of_norm_le_indicator_closedBall (μ : Measure E)
+    [μ.IsAddHaarMeasure] (hE : Module.finrank ℝ E = 2) {f : E → F} {r a : ℝ} (hr : 0 < r)
+    (hf : ∀ x, ‖f x‖ ≤ (closedBall (0 : E) (2 * r)).indicator (fun _ ↦ a / r ^ 2) x) :
+    ‖∫ x, f x ∂μ‖ ≤ 4 * a * μ.real (closedBall (0 : E) 1) := by
+  have hg : Integrable ((closedBall (0 : E) (2 * r)).indicator fun _ ↦ a / r ^ 2) μ :=
+    (integrableOn_const measure_closedBall_lt_top.ne).integrable_indicator measurableSet_closedBall
+  refine (norm_integral_le_of_norm_le hg (.of_forall hf)).trans_eq ?_
+  rw [integral_indicator_const _ measurableSet_closedBall,
+    Measure.addHaar_real_closedBall' μ _ (by positivity), hE, smul_eq_mul]
+  field_simp
+  ring
+
 /-- **Laplacians of planar cutoffs against decaying functions.** In a two-dimensional space, let
 the cutoffs `χ i` equal `1` near `ball 0 (R i)` and `0` near the complement of
 `closedBall 0 (2 * R i)`, with `|Δ χ i| ≤ C / (R i)²` and `R i → ∞`. Then `∫ Δ χ i • f → 0` for
@@ -114,10 +128,8 @@ theorem tendsto_integral_laplacian_smul_of_tendsto_cocompact (μ : Measure E)
     (cobounded_eq_cocompact (α := E) ▸ Metric.tendsto_nhds.mp hf ε' hε'pos)
   filter_upwards [hR.eventually_gt_atTop (max R' 0)] with i hi
   have hRi : 0 < R i := (le_max_right _ _).trans_lt hi
-  -- `Δ χ i • f` is supported in `closedBall 0 (2 * R i)`, where it is at most `C' / R i ^ 2 * ε'`.
-  set g : E → ℝ := (closedBall (0 : E) (2 * R i)).indicator fun _ ↦ C' / R i ^ 2 * ε'
-  have hg : Integrable g μ :=
-    (integrableOn_const measure_closedBall_lt_top.ne).integrable_indicator measurableSet_closedBall
+  -- `Δ χ i • f` is supported in `closedBall 0 (2 * R i)`, where it is at most `C' ε' / R i ^ 2`.
+  set g : E → ℝ := (closedBall (0 : E) (2 * R i)).indicator fun _ ↦ C' * ε' / R i ^ 2
   have hbound : ∀ x, ‖Δ (χ i) x • f x‖ ≤ g x := by
     intro x
     have hg₀ : 0 ≤ g x := Set.indicator_nonneg (fun _ _ ↦ by positivity) x
@@ -130,19 +142,14 @@ theorem tendsto_integral_laplacian_smul_of_tendsto_cocompact (μ : Measure E)
     have hx : x ∈ closedBall (0 : E) (2 * R i) := mem_closedBall_zero_iff.mpr (not_lt.mp h₂)
     have hfx : ‖f x‖ ≤ ε' := by
       simpa using (hR' (((le_max_left _ _).trans_lt hi).le.trans (not_lt.mp h₁))).le
-    have hgx : g x = C' / R i ^ 2 * ε' := Set.indicator_of_mem hx _
-    rw [hgx, norm_smul]
+    have hgx : g x = C' * ε' / R i ^ 2 := Set.indicator_of_mem hx _
+    rw [hgx, norm_smul, mul_div_right_comm]
     exact mul_le_mul ((hχΔ i x).trans (div_le_div_of_nonneg_right (le_max_left _ _)
       (by positivity))) hfx (norm_nonneg _) (by positivity)
-  have hgint : ∫ x, g x ∂μ = 4 * V * C' * ε' := by
-    rw [integral_indicator_const _ measurableSet_closedBall,
-      Measure.addHaar_real_closedBall' μ _ (by positivity), hE, smul_eq_mul]
-    field_simp
-    ring
   rw [dist_zero_right]
-  calc ‖∫ x, Δ (χ i) x • f x ∂μ‖ ≤ ∫ x, g x ∂μ :=
-        norm_integral_le_of_norm_le hg (.of_forall hbound)
-    _ = 4 * V * C' * ε' := hgint
+  calc ‖∫ x, Δ (χ i) x • f x ∂μ‖ ≤ 4 * (C' * ε') * V :=
+        norm_integral_le_of_norm_le_indicator_closedBall μ hE hRi hbound
+    _ = 4 * V * C' * ε' := by ring
     _ < ε := by
       rw [hε', mul_div_assoc', div_lt_iff₀ (by positivity)]
       nlinarith [mul_nonneg (mul_nonneg (by norm_num : (0 : ℝ) ≤ 4) hV) (le_max_right C 0)]
@@ -197,20 +204,6 @@ private theorem norm_laplacian_mul_smul_le {χ h : E → ℝ} {f : E → F} {x :
         gcongr
         linarith [show 2 / r + 1 / r = 3 / r by ring]
     _ = 3 * c * C * ε / r ^ 2 := by ring
-
-/-- In a two-dimensional space, a function bounded by `a / r²` and supported in
-`closedBall 0 (2 * r)` has integral of norm at most `4 a μ(closedBall 0 1)`. -/
-private theorem norm_integral_le_of_norm_le_indicator_closedBall (μ : Measure E)
-    [μ.IsAddHaarMeasure] (hE : Module.finrank ℝ E = 2) {f : E → F} {r a : ℝ} (hr : 0 < r)
-    (hf : ∀ x, ‖f x‖ ≤ (closedBall (0 : E) (2 * r)).indicator (fun _ ↦ a / r ^ 2) x) :
-    ‖∫ x, f x ∂μ‖ ≤ 4 * a * μ.real (closedBall (0 : E) 1) := by
-  have hg : Integrable ((closedBall (0 : E) (2 * r)).indicator fun _ ↦ a / r ^ 2) μ :=
-    (integrableOn_const measure_closedBall_lt_top.ne).integrable_indicator measurableSet_closedBall
-  refine (norm_integral_le_of_norm_le hg (.of_forall hf)).trans_eq ?_
-  rw [integral_indicator_const _ measurableSet_closedBall,
-    Measure.addHaar_real_closedBall' μ _ (by positivity), hE, smul_eq_mul]
-  field_simp
-  ring
 
 /-- **Laplacians of planar cutoffs of harmonic weights against decaying functions.** In a
 two-dimensional space, let the `C²` cutoffs `χ i` equal `1` near `ball 0 (R i)` and `0` near the

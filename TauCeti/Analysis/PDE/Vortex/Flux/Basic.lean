@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Complex.ZeroMultiplicity
 public import TauCeti.Analysis.PDE.Vortex.Decay
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.Zeros
-import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Algebra.Module.Cardinality
 import TauCeti.Algebra.BigOperators.Finprod
@@ -22,7 +21,6 @@ import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
 import TauCeti.Analysis.PDE.Vortex.Divisor
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
-import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # The flux of a plane vortex
@@ -305,47 +303,6 @@ private theorem eventually_abs_log_normSq_le
     rw [inv_eq_one_div, div_sub_one hs₀.ne', div_le_iff₀ hs₀]
     nlinarith
   linarith
-
-/-- The modulus defect `1 - |α|²` of a vortex beats every polynomial weight: `‖z‖ʲ (1 - |α|²)` is
-`O(exp (-‖z‖ / 8))` at infinity. -/
-private theorem isBigO_norm_pow_mul_one_sub_normSq
-    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
-    (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) (j : ℕ) :
-    (fun z ↦ ‖z‖ ^ j * (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2))) =O[cocompact ℂ]
-      fun z ↦ Real.exp (-(1 / 8 * ‖z‖)) := by
-  obtain ⟨K₀, hK₀⟩ := exists_one_sub_normSq_le_mul_exp hp hq hsol hlim
-    (by norm_num : (1 / 4 : ℝ) < 1 / 2)
-  have hdef : (fun z ↦ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) =O[cocompact ℂ]
-      fun z ↦ Real.exp (-(1 / 4 * ‖z‖)) := by
-    refine .of_bound K₀ (.of_forall fun z ↦ ?_)
-    rw [Real.norm_of_nonneg (sub_nonneg.2 (normSq_le_one_of_tendsto hp hq hsol hlim z)),
-      Real.norm_of_nonneg (Real.exp_pos _).le]
-    exact hK₀ z
-  have hpow : (fun z : ℂ ↦ ‖z‖ ^ j) =O[cocompact ℂ] fun z ↦ Real.exp (1 / 8 * ‖z‖) :=
-    ((isLittleO_pow_exp_pos_mul_atTop j (by norm_num : (0 : ℝ) < 1 / 8)).comp_tendsto
-      tendsto_norm_cocompact_atTop).isBigO
-  refine (hpow.mul hdef).congr_right fun z ↦ ?_
-  rw [← Real.exp_add]
-  ring_nf
-
-/-- **Integrability of polynomial moments of the modulus defect.** For a `C²` vortex on the whole
-plane whose section satisfies `|α| → 1` at infinity, the modulus defect `1 - |α|²` against a
-continuous weight `g` with `g = O(‖z‖ᵏ)` at infinity is integrable. -/
-theorem integrable_one_sub_normSq_smul_of_isBigO (μ : Measure ℂ) [μ.IsAddHaarMeasure]
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (hp : ContDiff ℝ 2 (fun w ↦ x w 2))
-    (hq : ContDiff ℝ 2 (fun w ↦ x w 3)) (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {g : ℂ → E}
-    (hg : Continuous g) {k : ℕ} (hgk : g =O[cocompact ℂ] fun z ↦ ‖z‖ ^ k) :
-    Integrable (fun z ↦ (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) • g z) μ := by
-  have hdec : (fun z ↦ (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) • g z) =O[cocompact ℂ]
-      fun z ↦ Real.exp (-(1 / 8 * ‖z‖)) := by
-    refine ((isBigO_refl (fun z ↦ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) _).smul hgk).trans ?_
-    simpa only [smul_eq_mul, mul_comm] using
-      isBigO_norm_pow_mul_one_sub_normSq hp hq hsol hlim k
-  have hc : Continuous fun z ↦ (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) • g z :=
-    (continuous_const.sub (contDiff_normSq hp hq).continuous).smul hg
-  exact memLp_one_iff_integrable.1 (hc.memLp_of_isBigO_exp_neg_mul_norm (by norm_num) hdec 1)
 
 /-- `‖z‖ʲ log |α|² → 0` at infinity for a vortex with `|α| → 1` at infinity. -/
 private theorem tendsto_norm_pow_smul_log_normSq

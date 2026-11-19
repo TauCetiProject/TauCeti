@@ -104,11 +104,8 @@ private theorem integral_clm_eval_mul_one_sub_normSq_eq
         ((ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) (P.derivative.eval z)).restrictScalars
           ℝ) := (L.hasFDerivAt.comp z hd).fderiv
     rw [hfd]
-    refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
-      ContinuousLinearMap.smulRight_apply, one_apply_eq_self, smul_eq_mul]
-    refine (L.le_opNorm _).trans_eq ?_
-    rw [norm_mul, mul_comm ‖v‖, mul_assoc]
+    exact (L.opNorm_comp_le _).trans_eq (by rw [ContinuousLinearMap.norm_restrictScalars,
+      ContinuousLinearMap.norm_smulRight_apply, norm_one, one_mul])
   have h := integral_mul_one_sub_normSq_eq_mul_finsum hb₁ hb₂ hp hq hsol hlim
     (isZeroMultiplicity_iff.1 hD) (h := fun z ↦ L (P.eval z))
     (L.contDiff.comp (hP.restrict_scalars ℝ)) hΔ
