@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.Equivalence
 import Mathlib.RingTheory.Nilpotent.Basic
-import TauCeti.Algebra.Ring.NegOnePow
 import TauCeti.LinearAlgebra.Matrix.Triangular
 
 /-!
@@ -75,76 +74,6 @@ namespace TauCeti
 
 universe uR uA uM uP
 
-/-! ### Sign twists and the graded Leibniz rule for matrices -/
-
-section Matrix
-
-variable {A : Type uA} [Ring A] {P Q S : Type*}
-
-/-- The sign twist `(-1) ^ (g y - f x) • F x y` of a matrix whose entry `F x y` has degree
-`g y - f x`: entrywise, it is the grading involution `a ↦ (-1) ^ |a| a`. -/
-private def signTwist (f : P → ℤ) (g : Q → ℤ) (F : Matrix P Q A) : Matrix P Q A :=
-  Matrix.of fun x y ↦ (g y - f x).negOnePow • F x y
-
-private theorem signTwist_apply (f : P → ℤ) (g : Q → ℤ) (F : Matrix P Q A) (x : P) (y : Q) :
-    signTwist f g F x y = (g y - f x).negOnePow • F x y :=
-  (rfl)
-
-/-- The sign twist is multiplicative. -/
-private theorem signTwist_mul [Fintype Q] (f : P → ℤ) (g : Q → ℤ) (k : S → ℤ)
-    (F : Matrix P Q A) (G : Matrix Q S A) :
-    signTwist f k (F * G) = signTwist f g F * signTwist g k G := by
-  ext x z
-  simp only [signTwist_apply, Matrix.mul_apply, Finset.smul_sum, smul_mul_smul_comm,
-    ← Int.negOnePow_add]
-  refine Finset.sum_congr rfl fun y _ ↦ ?_
-  rw [show g y - f x + (k z - g y) = k z - f x by ring]
-
-/-- The sign twist fixes the identity matrix. -/
-private theorem signTwist_one [DecidableEq P] (f : P → ℤ) :
-    signTwist f f (1 : Matrix P P A) = 1 := by
-  ext x y
-  rw [signTwist_apply, Matrix.one_apply]
-  split_ifs with hxy
-  · rw [hxy, sub_self, Int.negOnePow_zero, one_smul]
-  · exact smul_zero _
-
-variable {R : Type uR} [CommRing R] [Algebra R A] {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜]
-  {d : A →ₗ[R] A}
-
-/-- **The graded Leibniz rule for matrices**: for a matrix `F` whose entry `F x y` has degree
-`g y - f x`, `d (F G) = (d F) G + τ(F) (d G)`, where `τ` is the sign twist. -/
-private theorem map_mul_of_mem (h : IsDGAlgebra 𝒜 d) [Fintype Q] {f : P → ℤ} {g : Q → ℤ}
-    {F : Matrix P Q A} (hF : ∀ x y, F x y ∈ 𝒜 (g y - f x)) (G : Matrix Q S A) :
-    (F * G).map d = F.map d * G + signTwist f g F * G.map d := by
-  ext x z
-  simp only [Matrix.map_apply, Matrix.add_apply, Matrix.mul_apply, map_sum, h.leibniz (hF x _),
-    Finset.sum_add_distrib, signTwist_apply, smul_mul_assoc]
-
-/-- The differential of the identity matrix vanishes. -/
-private theorem map_one_eq_zero (h : IsDGAlgebra 𝒜 d) [DecidableEq P] :
-    (1 : Matrix P P A).map d = 0 := by
-  ext x y
-  rw [Matrix.map_apply, Matrix.one_apply, Matrix.zero_apply]
-  split_ifs
-  · exact h.map_one_eq_zero
-  · exact map_zero d
-
-variable [Fintype P] [Fintype Q] {ind : P → ℤ} {indQ : Q → ℤ}
-
-/-- The continuation equation, in matrix form: `d ν = mP ν - τ(ν) mQ`. -/
-private theorem continuation_iff_map (ν : Matrix P Q A) (mP : Matrix P P A) (mQ : Matrix Q Q A) :
-    (∀ x y, d (ν x y) =
-      ∑ z, mP x z * ν z y + ∑ z, (ind x - indQ z - 1).negOnePow • (ν x z * mQ z y)) ↔
-      ν.map d = mP * ν - signTwist ind indQ ν * mQ := by
-  rw [← Matrix.ext_iff]
-  refine forall_congr' fun x ↦ forall_congr' fun y ↦ ?_
-  simp only [Matrix.map_apply, Matrix.sub_apply, Matrix.mul_apply, signTwist_apply,
-    smul_mul_assoc, Int.negOnePow_sub_sub_one, Units.neg_smul, Finset.sum_neg_distrib,
-    ← sub_eq_add_neg]
-
-end Matrix
-
 /-! ### The inverse of a continuation cocycle -/
 
 variable {R : Type uR} {A : Type uA} {M : Type uM}
@@ -198,23 +127,23 @@ theorem mem_graded_of_mul_eq_one (ν : ContinuationCocycle mP mQ) {μ : Matrix Q
 `τ(ν) (d μ) = -(d ν) μ`, and from `τ(μ) τ(ν) = 1`. -/
 private theorem map_eq_of_mul_eq_one (h : IsDGAlgebra 𝒜 d) (ν : ContinuationCocycle mP mQ)
     {μ : Matrix Q P A} (hνμ : Matrix.of ν.ν * μ = 1) (hμν : μ * Matrix.of ν.ν = 1) :
-    μ.map d = Matrix.of mQ.m * μ - signTwist indQ ind μ * Matrix.of mP.m := by
+    μ.map d = Matrix.of mQ.m * μ - μ.signTwist indQ ind * Matrix.of mP.m := by
   set N : Matrix P Q A := Matrix.of ν.ν
-  have hN : N.map d = Matrix.of mP.m * N - signTwist ind indQ N * Matrix.of mQ.m :=
+  have hN : N.map d = Matrix.of mP.m * N - N.signTwist ind indQ * Matrix.of mQ.m :=
     (continuation_iff_map N (Matrix.of mP.m) (Matrix.of mQ.m)).1 ν.continuation
-  have hσ : signTwist indQ ind μ * signTwist ind indQ N = 1 := by
-    rw [← signTwist_mul, hμν, signTwist_one]
-  have hdμ : signTwist ind indQ N * μ.map d = -(N.map d * μ) := by
+  have hσ : μ.signTwist indQ ind * N.signTwist ind indQ = 1 := by
+    rw [← Matrix.signTwist_mul, hμν, Matrix.signTwist_one]
+  have hdμ : N.signTwist ind indQ * μ.map d = -(N.map d * μ) := by
     refine eq_neg_of_add_eq_zero_right ?_
-    rw [← map_mul_of_mem (F := N) h ν.mem_graded, hνμ, map_one_eq_zero h]
-  calc μ.map d = signTwist indQ ind μ * signTwist ind indQ N * μ.map d := by
+    rw [← h.map_mul_matrix_of_mem (F := N) ν.mem_graded, hνμ, h.map_one_matrix_eq_zero]
+  calc μ.map d = μ.signTwist indQ ind * N.signTwist ind indQ * μ.map d := by
         rw [hσ, Matrix.one_mul]
-    _ = signTwist indQ ind μ * -(N.map d * μ) := by rw [Matrix.mul_assoc, hdμ]
-    _ = signTwist indQ ind μ * signTwist ind indQ N * (Matrix.of mQ.m * μ) -
-          signTwist indQ ind μ * Matrix.of mP.m * (N * μ) := by
+    _ = μ.signTwist indQ ind * -(N.map d * μ) := by rw [Matrix.mul_assoc, hdμ]
+    _ = μ.signTwist indQ ind * N.signTwist ind indQ * (Matrix.of mQ.m * μ) -
+          μ.signTwist indQ ind * Matrix.of mP.m * (N * μ) := by
         rw [hN, Matrix.sub_mul, neg_sub, Matrix.mul_sub]
         simp only [Matrix.mul_assoc]
-    _ = Matrix.of mQ.m * μ - signTwist indQ ind μ * Matrix.of mP.m := by
+    _ = Matrix.of mQ.m * μ - μ.signTwist indQ ind * Matrix.of mP.m := by
         rw [hσ, hνμ, Matrix.one_mul, Matrix.mul_one]
 
 /-- **The inverse of a continuation cocycle**: a two-sided inverse `μ` of the matrix of a
@@ -335,6 +264,13 @@ noncomputable def continuationIsoOfIsUnit {m₁ m₂ : TwistingCocycle 𝒜 d P 
 theorem continuationIsoOfIsUnit_hom {m₁ m₂ : TwistingCocycle 𝒜 d P ind}
     (ν : ContinuationCocycle m₁ m₂) (hν : IsUnit (Matrix.of ν.ν)) (hM : IsDGRightModule h ℳ dM) :
     (ν.continuationIsoOfIsUnit hν hM).hom = ν.continuationHom hM :=
+  (rfl)
+
+@[simp]
+theorem continuationIsoOfIsUnit_inv {m₁ m₂ : TwistingCocycle 𝒜 d P ind}
+    (ν : ContinuationCocycle m₁ m₂) (hν : IsUnit (Matrix.of ν.ν)) (hM : IsDGRightModule h ℳ dM) :
+    (ν.continuationIsoOfIsUnit hν hM).inv =
+      (ν.inverse h ↑hν.unit⁻¹ hν.mul_val_inv hν.val_inv_mul).continuationHom hM :=
   (rfl)
 
 end ContinuationCocycle
