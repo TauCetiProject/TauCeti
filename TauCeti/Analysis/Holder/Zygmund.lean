@@ -115,11 +115,12 @@ bounded but do not tend to zero, so `c^α` is a proper closed subspace of `𝒞^
   particular representatives of elements of `c^α` are little Hölder
   (`TauCeti.BesovSpace.memLittleHolder_of_mem_littleBesov`).
 * `TauCeti.BesovSpace.not_tendsto_rpow_mul_norm_block_of_eqOn_norm_rpow` and
-  `TauCeti.BesovSpace.notMem_littleBesov_of_eqOn_norm_rpow`: an element of `𝒞^α` represented by a
-  function of norm `‖x‖ ^ α` near `0` has non-vanishing weighted blocks and lies outside `c^α`.
-* `TauCeti.BesovSpace.littleBesov_ne_top` and `SchwartzMap.not_denseRange_toBesovSpaceCLM`: in
-  positive dimension `c^α` is a proper subspace of `𝒞^α`, so the Schwartz functions are not dense
-  in `𝒞^α`.
+  `TauCeti.BesovSpace.notMem_littleBesov_of_eqOn_norm_rpow`: for `0 < α < 1`, an element of `𝒞^α`
+  represented by a function of norm `‖x‖ ^ α` near `0` has weighted blocks `2^{jα} ‖Δⱼ u‖_∞`
+  that do not tend to zero, and lies outside `c^α`.
+* `TauCeti.BesovSpace.littleBesov_ne_top` and `SchwartzMap.not_denseRange_toBesovSpaceCLM`: for
+  `0 < α < 1`, in positive dimension and with a nontrivial target, `c^α` is a proper subspace of
+  `𝒞^α`, so the Schwartz functions are not dense in `𝒞^α`.
 
 ## References
 
