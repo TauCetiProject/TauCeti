@@ -272,16 +272,8 @@ theorem a5FourthD4BlockRotation_notMem_glueSymmetries :
     (piGlueAlphabetCongr_mem_glueSubgroup_iff _ hg w₀).mpr (hH hw₀)
   have hue : encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType u =
       [3, 0, 0, 3, 1] := by
-    rw [encodeGlueWord_piGlueAlphabetCongr_eq_ofFn]
-    set F : Fin a5FourthD4.components.length → ℕ := fun i ↦
-      (((a5FourthD4.componentType i).glueLabelEquiv _).symm (w₀ i)).val
-    have hF : [F ⟨0, by decide⟩, F ⟨1, by decide⟩, F ⟨2, by decide⟩, F ⟨3, by decide⟩,
-        F ⟨4, by decide⟩] = [3, 3, 0, 0, 1] := by
-      rw [he₀, encodeGlueWord_def, ofFn_a5FourthD4]
-    simp only [List.cons.injEq] at hF
-    -- The rotation reads position `k` from position `ρ k`, that is, positions `0, 2, 3, 1, 4`.
-    refine (ofFn_comp_a5FourthD4BlockRotation F).trans ?_
-    rw [hF.1, hF.2.1, hF.2.2.1, hF.2.2.2.1, hF.2.2.2.2.1]
+    rw [encodeGlueWord_piGlueAlphabetCongr_eq_ofFn_getD, ← he₀]
+    decide
   have hsum : encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType
       (u + w₁) = [0, 0, 0, 0, 2] := by
     rw [encodeGlueWord_add, hue, ← he₁]
