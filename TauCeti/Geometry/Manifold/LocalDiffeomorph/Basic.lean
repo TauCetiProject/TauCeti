@@ -689,13 +689,14 @@ section CompSymm
 variable {I : ModelWithCorners 𝕂 E H} {P V W : Type*} [NormedAddCommGroup P] [NormedSpace 𝕂 P]
   [NormedAddCommGroup V] [NormedSpace 𝕂 V] [NormedAddCommGroup W] [NormedSpace 𝕂 W]
 
-/-- **A map read through a partial diffeomorphism is smooth.** Let `K : P × M → W` be `C^n` on
-`U × M` for an open subset `U` of a normed space `P`, and let `φ` be a `C^m` partial diffeomorphism
-from `M` to a normed space `V`, with `n ≤ m`. Then `(p, y) ↦ K(p, φ⁻¹ y)`, the map `K` read in the
-chart `φ`, is `C^n` on `U × φ.target`. -/
+/-- **A map read through a partial diffeomorphism is smooth.** Let `φ` be a `C^m` partial
+diffeomorphism from `M` to a normed space `V`, with `n ≤ m`, and let `K : P × M → W` be `C^n` on
+`U × φ.source` for an open subset `U` of a normed space `P`. Then `(p, y) ↦ K(p, φ⁻¹ y)`, the map
+`K` read in the chart `φ`, is `C^n` on `U × φ.target`. -/
 theorem _root_.PartialDiffeomorph.contDiffOn_comp_symm_of_contMDiffOn {m : WithTop ℕ∞}
     (φ : PartialDiffeomorph I 𝓘(𝕂, V) M V m) {K : P → M → W} {U : Set P} {n : ℕ∞}
-    (hU : IsOpen U) (hK : ContMDiffOn (𝓘(𝕂, P).prod I) 𝓘(𝕂, W) n (Function.uncurry K) (U ×ˢ univ))
+    (hU : IsOpen U) (hK : ContMDiffOn (𝓘(𝕂, P).prod I) 𝓘(𝕂, W) n (Function.uncurry K)
+      (U ×ˢ φ.source))
     (hnm : (n : WithTop ℕ∞) ≤ m) :
     ContDiffOn 𝕂 n (fun q : P × V ↦ K q.1 (φ.symm q.2)) (U ×ˢ φ.target) := by
   rintro ⟨z, y⟩ ⟨hz, hy⟩
@@ -707,7 +708,7 @@ theorem _root_.PartialDiffeomorph.contDiffOn_comp_symm_of_contMDiffOn {m : WithT
       (fun q : P × V ↦ (q.1, φ.symm q.2)) (z, y) :=
     (contDiff_fst.contMDiff.contMDiffAt).prodMk
       (hsymm.comp (z, y) contDiff_snd.contMDiff.contMDiffAt)
-  have hK' := hK.contMDiffAt ((hU.prod isOpen_univ).mem_nhds (mk_mem_prod hz (mem_univ (φ.symm y))))
+  have hK' := hK.contMDiffAt ((hU.prod φ.open_source).mem_nhds (mk_mem_prod hz (φ.map_target hy)))
   exact contMDiffAt_iff_contDiffAt.1 (hK'.comp (z, y) hpair)
 
 end CompSymm
