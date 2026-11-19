@@ -127,6 +127,23 @@ theorem gradedModuleResolutionEquiv_of
     gradedFiniteProjectiveModules_le_isProjective_gradedAbelian
     gradedFiniteProjectiveModules_gradedAbelian_shift M
 
+/-- The inverse of the graded resolution equivalence sends the class of a module admitting a
+finite graded-projective resolution to the alternating class of any such resolution. -/
+theorem gradedModuleResolutionEquiv_symm_of
+    (M : GradedModuleCat.{uA} 𝒜)
+    (hM : (gradedModuleCanonicalExactStructure 𝒜).admitsFiniteResolution
+      (gradedFiniteProjectiveModules 𝒜) M)
+    (r : (gradedModuleCanonicalExactStructure 𝒜).toExactStructure.FiniteResolution
+      (gradedFiniteProjectiveModules 𝒜) M) :
+    (gradedModuleResolutionEquiv 𝒜).symm
+        (LaurentK0.of.{uA} (gradedFiniteProjectiveResolutionExactStructure 𝒜) ⟨M, hM⟩) =
+      r.foldAlternating fun Z hZ =>
+        LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) ⟨Z, hZ⟩ :=
+  GradedExactStructure.laurentResolutionEquiv_symm_of.{uA}
+    (gradedModuleCanonicalExactStructure 𝒜)
+    gradedFiniteProjectiveModules_le_isProjective_gradedAbelian
+    gradedFiniteProjectiveModules_gradedAbelian_shift hM r
+
 private def finiteResolutionToFiniteFunctor :
     GradedConflationExact
       (gradedFiniteProjectiveResolutionExactStructure 𝒜)
@@ -265,10 +282,7 @@ theorem gradedCartanInverse_of_eq_foldAlternating
         LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) ⟨Z, hZ⟩ := by
   rw [gradedCartanInverse, LinearMap.comp_apply, toGradedFiniteProjectiveResolution_of,
     LinearEquiv.coe_coe]
-  exact GradedExactStructure.laurentResolutionEquiv_symm_of.{uA}
-    (gradedModuleCanonicalExactStructure 𝒜)
-    gradedFiniteProjectiveModules_le_isProjective_gradedAbelian
-    gradedFiniteProjectiveModules_gradedAbelian_shift (h M hM) r
+  exact gradedModuleResolutionEquiv_symm_of 𝒜 M (h M hM) r
 
 /-- If every finite graded module admits a finite graded-projective resolution, the graded Cartan
 map is an isomorphism of `ℤ[q,q⁻¹]`-modules. -/
@@ -291,6 +305,20 @@ theorem gradedCartanEquiv_apply
 theorem gradedCartanEquiv_symm_apply
     (x : LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)) :
     (gradedCartanEquiv 𝒜 h).symm x = gradedCartanInverse 𝒜 h x := (rfl)
+
+/-- The graded Cartan map is a left inverse of the graded Cartan inverse. -/
+@[simp]
+theorem gradedCartanMap_gradedCartanInverse
+    (x : LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)) :
+    gradedCartanMap 𝒜 (gradedCartanInverse 𝒜 h x) = x :=
+  (gradedCartanEquiv 𝒜 h).apply_symm_apply x
+
+/-- The graded Cartan inverse is a left inverse of the graded Cartan map. -/
+@[simp]
+theorem gradedCartanInverse_gradedCartanMap
+    (x : LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)) :
+    gradedCartanInverse 𝒜 h (gradedCartanMap 𝒜 x) = x :=
+  (gradedCartanEquiv 𝒜 h).symm_apply_apply x
 
 include h in
 /-- The graded Cartan map is bijective whenever every finite graded module has a finite

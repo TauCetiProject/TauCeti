@@ -36,6 +36,9 @@ presheaves on the category of all schemes.
   with respect to the corresponding sieve on `Y.left`.
 * `CategoryTheory.Over.isSheaf_over_iff_isSheaf_sigmaPresheaf`: `P` is a sheaf for `J.over S`
   if and only if `sigmaPresheaf P` is a sheaf for `J`, when `S` is a sheaf for `J`.
+* `CategoryTheory.GrothendieckTopology.isLeftAdjoint_overPullback`: pullback of sheaves to the
+  over site `J.over U` is a left adjoint whenever pointwise right Kan extensions along
+  `(Over.forget U).op` exist.
 
 ## References
 
@@ -200,3 +203,15 @@ theorem isSheaf_over_iff_isSheaf_sigmaPresheaf (J : GrothendieckTopology C)
     fun hP _ R hR ↦ isSheafFor_of_isSheafFor_sigmaPresheaf R (hS _ hR).isSeparatedFor (hP _ hR)⟩
 
 end CategoryTheory.Over
+
+namespace CategoryTheory.GrothendieckTopology
+
+/-- Pullback of sheaves to the over site `J.over U` is a left adjoint whenever pointwise right Kan
+extensions along `(Over.forget U).op` exist. -/
+instance isLeftAdjoint_overPullback {C : Type*} [Category* C] (J : GrothendieckTopology C)
+    (A : Type*) [Category* A] (U : C)
+    [∀ F : (Over U)ᵒᵖ ⥤ A, (Over.forget U).op.HasPointwiseRightKanExtension F] :
+    (J.overPullback A U).IsLeftAdjoint :=
+  ((Over.forget U).sheafAdjunctionCocontinuous A (J.over U) J).isLeftAdjoint
+
+end CategoryTheory.GrothendieckTopology
