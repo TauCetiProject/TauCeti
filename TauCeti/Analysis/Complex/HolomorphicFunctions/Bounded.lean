@@ -298,35 +298,40 @@ theorem isCompactOperator_restrict_of_isCompact_closure [ProperSpace E]
     IsCompactOperator (restrict (E := E) (subset_closure.trans hU'U)) :=
   isCompactOperator_restrict hU' subset_closure hU'U
 
+/-- The zero extension is `Function.extend` along the inclusion with the zero map as default. -/
+theorem extend_eq (f : boundedHolomorphicFunctions E U) :
+    extend f = Function.extend Subtype.val (f : U →ᵇ E) 0 :=
+  (rfl)
+
 /-- The zero extension of zero is zero. -/
 @[simp]
 theorem extend_zero : extend (0 : boundedHolomorphicFunctions E U) = 0 := by
-  simp [extend, ← Pi.zero_def]
+  rw [extend_eq, Submodule.coe_zero, FunLike.coe_zero, Function.extend_zero]
 
 /-- The zero extension of a sum is the sum of the zero extensions. -/
 @[simp]
 theorem extend_add (f g : boundedHolomorphicFunctions E U) :
     extend (f + g) = extend f + extend g := by
-  simpa [extend, ← Pi.zero_def] using Function.extend_add Subtype.val (f : U →ᵇ E) (g : U →ᵇ E)
-    (0 : V → E) 0
+  rw [extend_eq, extend_eq, extend_eq, Submodule.coe_add, FunLike.coe_add, ← Function.extend_add,
+    add_zero]
 
 /-- The zero extension of a scalar multiple is the scalar multiple of the zero extension. -/
 @[simp]
 theorem extend_smul (c : ℂ) (f : boundedHolomorphicFunctions E U) :
     extend (c • f) = c • extend f := by
-  simpa [extend, ← Pi.zero_def] using Function.extend_smul c Subtype.val (f : U →ᵇ E) (0 : V → E)
+  rw [extend_eq, extend_eq, Submodule.coe_smul, FunLike.coe_smul, ← Function.extend_smul, smul_zero]
 
 /-- The zero extension of a negative is the negative of the zero extension. -/
 @[simp]
 theorem extend_neg (f : boundedHolomorphicFunctions E U) : extend (-f) = -extend f := by
-  simpa [extend, ← Pi.zero_def] using Function.extend_neg Subtype.val (f : U →ᵇ E) (0 : V → E)
+  rw [extend_eq, extend_eq, Submodule.coe_neg, FunLike.coe_neg, ← Function.extend_neg, neg_zero]
 
 /-- The zero extension of a difference is the difference of the zero extensions. -/
 @[simp]
 theorem extend_sub (f g : boundedHolomorphicFunctions E U) :
     extend (f - g) = extend f - extend g := by
-  simpa [extend, ← Pi.zero_def] using Function.extend_sub Subtype.val (f : U →ᵇ E) (g : U →ᵇ E)
-    (0 : V → E) 0
+  rw [extend_eq, extend_eq, extend_eq, Submodule.coe_sub, FunLike.coe_sub, ← Function.extend_sub,
+    sub_zero]
 
 section IteratedLineDeriv
 
@@ -479,7 +484,9 @@ theorem extend_eventuallyEq_zero_of_forall_iteratedLineDeriv_eq_zero (x : U)
   exact eventually_of_mem (ball_mem_nhds (x : V) hρ)
     fun _ hz => extend_eq_zero_on_ball_of_forall_iteratedLineDeriv_eq_zero x hρU hf hz
 
-private theorem iteratedLineDeriv_eq_zero_of_eventuallyEq (x : U)
+/-- **Local vanishing forces vanishing jets.** If `f` vanishes near `x`, then all derivatives of
+all orders of `f` at `x` in all directions vanish. -/
+theorem iteratedLineDeriv_eq_zero_of_eventuallyEq (x : U)
     {f : boundedHolomorphicFunctions E U} (hf : extend f =ᶠ[𝓝 (x : V)] 0) (v : V) (k : ℕ) :
     iteratedLineDeriv x v k f = 0 := by
   have hcontinuous : Continuous (fun t : ℂ => (x : V) + t • v) := by fun_prop
@@ -487,6 +494,12 @@ private theorem iteratedLineDeriv_eq_zero_of_eventuallyEq (x : U)
     simpa using hcontinuous.tendsto 0
   simpa [iteratedLineDeriv_apply, Function.comp_def] using
     (hf.comp_tendsto hline).iteratedDeriv_eq k
+
+/-- The point jets of `f` at `x` all vanish exactly when `f` vanishes near `x`. -/
+theorem forall_iteratedLineDeriv_eq_zero_iff (x : U) {f : boundedHolomorphicFunctions E U} :
+    (∀ v k, iteratedLineDeriv x v k f = 0) ↔ extend f =ᶠ[𝓝 (x : V)] 0 :=
+  ⟨extend_eventuallyEq_zero_of_forall_iteratedLineDeriv_eq_zero x,
+    iteratedLineDeriv_eq_zero_of_eventuallyEq x⟩
 
 /-- **Point jets along `K` separate bounded holomorphic maps.** If every connected component of
 `U` meets `K`, then a bounded holomorphic map on `U` all of whose derivatives of all orders, in
@@ -501,13 +514,8 @@ theorem eq_zero_of_forall_iteratedLineDeriv_eq_zero {K : Set V}
     rintro x ⟨hx, hxU⟩
     obtain ⟨ρ, hρ, hρU⟩ := Metric.isOpen_iff.mp U.isOpen x hxU
     obtain ⟨y, hyS, hxy⟩ := Metric.mem_closure_iff.1 hx (ρ / 2) (by positivity)
-    have hyU : ball y (ρ / 2) ⊆ U := by
-      intro z hz
-      apply hρU
-      have := dist_triangle z y x
-      rw [dist_comm x y] at hxy
-      rw [mem_ball] at hz ⊢
-      linarith
+    have hyU : ball y (ρ / 2) ⊆ U :=
+      (ball_subset_ball' (by rw [dist_comm]; linarith)).trans hρU
     have hyzero : extend f =ᶠ[𝓝 y] 0 := mem_interior_iff_mem_nhds.1 hyS.2
     refine ⟨hxU, mem_interior_iff_mem_nhds.2 ?_⟩
     exact eventually_of_mem (isOpen_ball.mem_nhds hxy) fun z hz =>

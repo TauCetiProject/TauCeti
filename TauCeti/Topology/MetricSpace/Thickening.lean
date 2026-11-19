@@ -195,20 +195,21 @@ theorem IsCompact.exists_hasAntitoneBasis_nhdsSet {X : Type*} [TopologicalSpace 
     | succ n ih =>
       exact ⟨(hUO n ▸ huo _ ih.1 ih.2).inter isOpen_thickening,
         subset_inter (hUO n ▸ hKu _ ih.1 ih.2) (self_subset_thickening (by positivity) K)⟩
-  have hU (n : ℕ) : IsOpen (U n) ∧ K ⊆ U n ∧ closure (U n) ⊆ O n ∧
-      IsCompact (closure (U n)) ∧
-        ∀ x ∈ U n, (connectedComponentIn (U n) x ∩ K).Nonempty :=
-    hUO n ▸ ⟨huo _ (hO n).1 (hO n).2, hKu _ (hO n).1 (hO n).2,
-      hu _ (hO n).1 (hO n).2, hUc _ (hO n).1 (hO n).2, hcomp _ (hO n).1 (hO n).2⟩
-  have hclO (n : ℕ) := (hU n).2.2.1
+  have hUo (n : ℕ) : IsOpen (U n) := by rw [hUO n]; exact huo _ (hO n).1 (hO n).2
+  have hKU (n : ℕ) : K ⊆ U n := by rw [hUO n]; exact hKu _ (hO n).1 (hO n).2
+  have hclO (n : ℕ) : closure (U n) ⊆ O n := by rw [hUO n]; exact hu _ (hO n).1 (hO n).2
+  have hUcpt (n : ℕ) : IsCompact (closure (U n)) := by
+    rw [hUO n]; exact hUc _ (hO n).1 (hO n).2
+  have hUcomp (n : ℕ) : ∀ x ∈ U n, (connectedComponentIn (U n) x ∩ K).Nonempty := by
+    rw [hUO n]; exact hcomp _ (hO n).1 (hO n).2
   refine ⟨U, ⟨(hasBasis_nhdsSet_thickening hK).to_hasBasis (fun δ hδ => ?_) fun n _ => ?_,
     antitone_nat_of_succ_le fun n => subset_closure.trans ((hclO (n + 1)).trans
-      inter_subset_left)⟩, (hclO 0).trans inter_subset_left, fun n => ⟨(hU n).1,
-    (hU n).2.2.2.1, (hclO (n + 1)).trans inter_subset_left, (hU n).2.2.2.2⟩⟩
+      inter_subset_left)⟩, (hclO 0).trans inter_subset_left, fun n => ⟨hUo n,
+    hUcpt n, (hclO (n + 1)).trans inter_subset_left, hUcomp n⟩⟩
   · obtain ⟨n, hn⟩ := exists_nat_one_div_lt hδ
     exact ⟨n, trivial, subset_closure.trans ((hclO n).trans ((hOB n).trans
       (thickening_mono hn.le K)))⟩
-  · exact hK.exists_thickening_subset_open (hU n).1 (hU n).2.1
+  · exact hK.exists_thickening_subset_open (hUo n) (hKU n)
 
 namespace LocallyFinite
 
