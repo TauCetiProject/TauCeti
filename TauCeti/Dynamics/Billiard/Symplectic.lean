@@ -139,18 +139,13 @@ theorem hasFDerivAt_chordLength (hχ : ContDiff ℝ 2 χ) (hx : x.2 ∈ Ioo (-1)
     simp [chordLength_def]
   -- The chord is `ℓ u` for the unit outgoing velocity `u`, which has tangential components `v` at
   -- the initial point and `w` at the final point.
-  have hin (z : E) : ⟪χ (χ.nextParam x.1 x.2) - χ x.1, z⟫ =
-      ‖χ (χ.nextParam x.1 x.2) - χ x.1‖ * ⟪χ.outgoingDir x.1 x.2, z⟫ := by
-    conv_lhs => rw [χ.sub_eq_norm_smul_outgoingDir hx]
-    exact real_inner_smul_left _ _ _
-  have hpos : ‖χ (χ.nextParam x.1 x.2) - χ x.1‖ ≠ 0 := (χ.chordLength_pos hx).ne'
+  have hu : ‖χ (χ.nextParam x.1 x.2) - χ x.1‖⁻¹ • innerSL ℝ (χ (χ.nextParam x.1 x.2) - χ x.1) =
+      innerSL ℝ (χ.outgoingDir x.1 x.2) := by
+    nth_rw 2 [χ.sub_eq_norm_smul_outgoingDir hx]
+    rw [map_smul, inv_smul_smul₀ (norm_ne_zero_iff.2 (sub_ne_zero.2 (χ.apply_nextParam_ne hx)))]
+  rw [hu]
   refine ContinuousLinearMap.ext fun δ ↦ ?_
-  simp only [ContinuousLinearMap.comp_apply, FunLike.coe_smul, Pi.smul_apply, sub_apply,
-    ContinuousLinearMap.toSpanSingleton_apply, ContinuousLinearMap.coe_fst', innerSL_apply_apply,
-    smul_eq_mul, nextCollision_apply]
-  rw [hin, inner_sub_right, real_inner_smul_right, real_inner_smul_right, ← nextTangential_def,
-    real_inner_comm (deriv χ x.1), χ.inner_deriv_outgoingDir]
-  field_simp
+  simp [t, nextTangential_def, real_inner_comm (deriv χ x.1), mul_comm]
 
 /-- **The billiard map is exact symplectic**: `B^*λ - λ = dℓ` at every state of the strip, for the
 Liouville form `λ = v ds` and the chord length `ℓ`, for a `C²` parametrization `χ`. -/
@@ -180,9 +175,8 @@ theorem wedge_compContinuousLinearMap_fderiv_nextCollision (hχ : ContDiff ℝ 3
   have hEq : (fun y ↦ (realPlaneYDx (χ.nextCollision y)).compContinuousLinearMap
       (fderiv ℝ χ.nextCollision y)) =ᶠ[𝓝 x]
         fun y ↦ realPlaneYDx y + differentialOneForm ℝ χ.chordLength y := by
-    filter_upwards [(isOpen_univ.prod isOpen_Ioo).mem_nhds (show x ∈ univ ×ˢ Ioo (-1 : ℝ) 1 from
-      ⟨mem_univ _, hx⟩)] with y hy
-    rw [← χ.realPlaneYDx_compContinuousLinearMap_fderiv_nextCollision_sub hχ2 hy.2,
+    filter_upwards [(isOpen_Ioo.preimage continuous_snd).mem_nhds hx] with y hy
+    rw [← χ.realPlaneYDx_compContinuousLinearMap_fderiv_nextCollision_sub hχ2 hy,
       add_sub_cancel]
   -- Apply `d` to both sides: `d(B^*λ) = B^*(dλ)` and `d(dℓ) = 0`.
   have hYDx : ∀ p, DifferentiableAt ℝ realPlaneYDx p := fun _ ↦
