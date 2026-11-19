@@ -297,15 +297,15 @@ theorem extDerivWedgeₗ_apply (f : C^∞⟮I, M; ℝ⟯) (φ : SmoothForm I M �
   rw [extDerivWedgeₗ_def, cast_apply]
   simp [mextDerivₗ_apply]
 
-/-- **The Leibniz rule** `d (f φ) = f dφ + df ∧ φ` for a smooth function `f` and a smooth form
-`φ`: the commutator `[d, f]` is exterior multiplication by `df`. -/
+/-- **The Leibniz rule** `d (f φ) = df ∧ φ + f dφ` for a smooth function `f` times a smooth form
+`φ`, as an identity of smooth forms: the commutator `[d, f]` is exterior multiplication by `df`. -/
 theorem mextDerivₗ_funSMulₗ (f : C^∞⟮I, M; ℝ⟯) (φ : SmoothForm I M ℝ k) :
-    mextDerivₗ I k (funSMulₗ f φ) = funSMulₗ f (mextDerivₗ I k φ) + extDerivWedgeₗ f k φ := by
+    mextDerivₗ I k (funSMulₗ f φ) = extDerivWedgeₗ f k φ + funSMulₗ f (mextDerivₗ I k φ) := by
   apply Subtype.ext
   ext x v
   simp only [Submodule.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
     mextDerivₗ_funSMulₗ_apply, extDerivWedgeₗ_apply, coe_funSMulₗ,
-    ContinuousAlternatingMap.smul_apply, smul_eq_mul, add_comm]
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul]
 
 /-- Exterior multiplication by `df` is linear over smooth functions:
 `df ∧ (g φ) = g (df ∧ φ)`. -/

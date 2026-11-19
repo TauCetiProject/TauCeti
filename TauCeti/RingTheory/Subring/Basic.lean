@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.Subring.Basic
+public import TauCeti.Algebra.Group.Submonoid.Defs
 
 /-!
 # Basic facts about subrings
@@ -13,7 +14,8 @@ public import Mathlib.Algebra.Ring.Subring.Basic
 The inclusion of a subring into itself is the identity homomorphism. In a field, a common
 denominator `a` of an element and its inverse clears the denominators of all integer powers of the
 element: `a ^ N xⁿ` lies in the subring whenever `|n| ≤ N`, and the same holds for finite
-products of integer powers.
+products of integer powers. Moving elements past an element `z` to the right extends from
+generators to the subring they generate, and then to powers of `z * w`.
 
 ## Main results
 
@@ -22,6 +24,10 @@ products of integer powers.
   `a ^ N xⁿ ∈ A` for every integer `n` with `|n| ≤ N`.
 * `Subring.prod_pow_mul_prod_zpow_mem`: the same for a finite product `∏ⱼ xⱼ ^ nⱼ`, with the
   denominator `∏ⱼ aⱼ ^ Nⱼ`.
+* `TauCeti.Subring.exists_mul_eq_mul_of_mem_closure`: if `s * z ⊆ z * closure s`, then
+  `closure s * z ⊆ z * closure s`.
+* `TauCeti.Subring.exists_mul_pow_eq_pow_mul_of_mem_closure_insert`: if `s * z ⊆ z * s` and
+  `w ∈ closure (insert z s)`, then `(z * w) ^ n ∈ z ^ n * closure (insert z s)`.
 -/
 
 public section
@@ -55,3 +61,59 @@ theorem prod_pow_mul_prod_zpow_mem {K ι : Type*} [Field K] (A : Subring K) {s :
   exact prod_mem fun j hj ↦ A.pow_mul_zpow_mem (ha j hj) (hx j hj) (hx' j hj) (hn j hj)
 
 end Subring
+
+namespace TauCeti.Subring
+
+open _root_.Subring
+
+variable {R : Type*} [Ring R]
+
+/-- If every generator `a ∈ s` satisfies `a * z = z * b` for some `b ∈ closure s`, then every
+element of `closure s` does. Only this direction of normalization is needed. -/
+theorem exists_mul_eq_mul_of_mem_closure {s : Set R} {z a : R}
+    (hz : ∀ a ∈ s, ∃ b ∈ closure s, a * z = z * b) (ha : a ∈ closure s) :
+    ∃ b ∈ closure s, a * z = z * b := by
+  induction ha using closure_induction with
+  | mem a ha => exact hz a ha
+  | zero => exact ⟨0, zero_mem _, by simp⟩
+  | one => exact ⟨1, one_mem _, by simp⟩
+  | add a b _ _ ha hb =>
+    obtain ⟨c, hc, he⟩ := ha
+    obtain ⟨d, hd, hf⟩ := hb
+    exact ⟨c + d, (closure _).add_mem hc hd, by simp [add_mul, mul_add, he, hf]⟩
+  | neg a _ ha =>
+    obtain ⟨b, hb, he⟩ := ha
+    exact ⟨-b, (closure _).neg_mem hb, by simp [he]⟩
+  | mul a b _ _ ha hb =>
+    obtain ⟨c, hc, he⟩ := ha
+    obtain ⟨d, hd, hf⟩ := hb
+    refine ⟨c * d, (closure _).mul_mem hc hd, ?_⟩
+    calc
+      a * b * z = a * (b * z) := mul_assoc _ _ _
+      _ = a * (z * d) := by rw [hf]
+      _ = (a * z) * d := (mul_assoc _ _ _).symm
+      _ = z * (c * d) := by rw [he, mul_assoc]
+
+/-- If every `a ∈ s` satisfies `a * z = z * b` for some `b ∈ s`, then every element of
+`closure (insert z s)` satisfies the same relation with `b ∈ closure (insert z s)`. -/
+theorem exists_mul_eq_mul_of_mem_closure_insert {s : Set R} {z a : R}
+    (hz : ∀ a ∈ s, ∃ b ∈ s, a * z = z * b)
+    (ha : a ∈ closure (insert z s)) :
+    ∃ b ∈ closure (insert z s), a * z = z * b := by
+  refine exists_mul_eq_mul_of_mem_closure ?_ ha
+  rintro a (rfl | ha)
+  · exact ⟨a, subset_closure (Set.mem_insert _ _), rfl⟩
+  · obtain ⟨b, hb, h⟩ := hz a ha
+    exact ⟨b, subset_closure (Set.mem_insert_of_mem _ hb), h⟩
+
+/-- If every `a ∈ s` satisfies `a * z = z * b` for some `b ∈ s`, then for every
+`w ∈ closure (insert z s)` and `n : ℕ`, the power `(z * w) ^ n` equals `z ^ n * v` for some
+`v ∈ closure (insert z s)`. The element `z` need not commute with `s`. -/
+theorem exists_mul_pow_eq_pow_mul_of_mem_closure_insert {s : Set R} {z w : R}
+    (hz : ∀ a ∈ s, ∃ b ∈ s, a * z = z * b)
+    (hw : w ∈ closure (insert z s)) (n : ℕ) :
+    ∃ v ∈ closure (insert z s), (z * w) ^ n = z ^ n * v :=
+  exists_mul_pow_eq_pow_mul_of_mem
+    (fun _ ha ↦ exists_mul_eq_mul_of_mem_closure_insert hz ha) hw n
+
+end TauCeti.Subring

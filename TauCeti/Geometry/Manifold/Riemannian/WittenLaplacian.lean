@@ -515,7 +515,7 @@ theorem wittenHessianTerm_ofFunction (o : Manifold.Orientation I M (Fin m)) (f :
   · simp [wittenHessianTerm_def]
   · have hε : SmoothForm.extDerivWedgeₗ f 0 one = mextDerivₗ I 0 (SmoothForm.ofFunction f) := by
       rw [SmoothForm.ofFunction_eq_funSMulₗ_one f, SmoothForm.mextDerivₗ_funSMulₗ, hd1, map_zero]
-      exact (zero_add _).symm
+      exact (add_zero _).symm
     rw [wittenHessianTerm_def, LinearMap.add_apply, SmoothForm.laplacian_zero_add_one _ _ hl
       (by omega), SmoothForm.laplacian_zero_add_one _ _ hl (by omega), hd1, map_zero, zero_add, hε,
       SmoothForm.hodgeLaplacian_zero_add_one_eq_comp o hl (by omega), LinearMap.comp_apply]
