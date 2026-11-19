@@ -27,7 +27,10 @@ for the trivial line bundle.
   underlying sheaves;
 * `InvertibleSheaf.tensorProductCongrLeft` and `InvertibleSheaf.tensorProductCongrRight` transport
   isomorphisms through either tensor factor, so `InvertibleSheaf.isIsomorphic_tensorProduct`
-  shows that tensor product respects isomorphism;
+  shows that tensor product respects isomorphism; through `tensorProductObjIso` these transports
+  are whiskerings of the monoidal tensor product
+  (`InvertibleSheaf.tensorProductCongrLeft_hom_hom_comp_tensorProductObjIso_hom` and
+  `InvertibleSheaf.tensorProductCongrRight_hom_hom_comp_tensorProductObjIso_hom`);
 * `InvertibleSheaf.tensorProductComm` exchanges the two tensor factors;
 * `InvertibleSheaf.tensorProductAssoc` is the associativity isomorphism;
 * `InvertibleSheaf.tensorTrivialLeftIso` and `InvertibleSheaf.tensorTrivialRightIso` are the
@@ -136,6 +139,41 @@ lemma tensorProductCongrRight_inv_val {L K K' : InvertibleSheaf X} (e : K ≅ K'
       (tensorProductCongrRightIso e).inv.val := by
   simp only [tensorProductCongrRight, ObjectProperty.isoMk, ObjectProperty.homMk,
     _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val]
+
+/-- Read through `tensorProductObjIso`, transport through the first tensor factor is whiskering
+of the monoidal tensor product of underlying sheaves. -/
+@[reassoc]
+lemma tensorProductCongrLeft_hom_hom_comp_tensorProductObjIso_hom {L L' : InvertibleSheaf X}
+    (e : L ≅ L') (K : InvertibleSheaf X) :
+    (tensorProductCongrLeft (K := K) e).hom.hom ≫ (tensorProductObjIso L' K).hom =
+      (tensorProductObjIso L K).hom ≫ e.hom.hom ▷ K.obj := by
+  have hc : (tensorProductCongrLeft (K := K) e).hom.hom =
+      (TauCeti.SheafOfModules.tensorProductCongrLeft X.sheaf (N := K.obj)
+        ((SheafOfModules.isInvertible X).ι.mapIso e)).hom :=
+    _root_.SheafOfModules.Hom.ext (tensorProductCongrLeft_hom_val e)
+  rw [hc]
+  have h := TauCeti.SheafOfModules.tensorProductCongrLeft_hom_comp_tensorUnderlyingIso_inv
+    (R := X.sheaf) (N := K.obj) ((SheafOfModules.isInvertible X).ι.mapIso e)
+  -- On underlying sheaves this is the sheaf-level statement: the transports
+  -- `eqToIso (tensorProduct_obj L K)` inside `tensorProductObjIso` are identities.
+  exact h
+
+/-- Read through `tensorProductObjIso`, transport through the second tensor factor is whiskering
+of the monoidal tensor product of underlying sheaves. -/
+@[reassoc]
+lemma tensorProductCongrRight_hom_hom_comp_tensorProductObjIso_hom (L : InvertibleSheaf X)
+    {K K' : InvertibleSheaf X} (e : K ≅ K') :
+    (tensorProductCongrRight (L := L) e).hom.hom ≫ (tensorProductObjIso L K').hom =
+      (tensorProductObjIso L K).hom ≫ L.obj ◁ e.hom.hom := by
+  have hc : (tensorProductCongrRight (L := L) e).hom.hom =
+      (TauCeti.SheafOfModules.tensorProductCongrRight X.sheaf (M := L.obj)
+        ((SheafOfModules.isInvertible X).ι.mapIso e)).hom :=
+    _root_.SheafOfModules.Hom.ext (tensorProductCongrRight_hom_val e)
+  rw [hc]
+  have h := TauCeti.SheafOfModules.tensorProductCongrRight_hom_comp_tensorUnderlyingIso_inv
+    (R := X.sheaf) (M := L.obj) ((SheafOfModules.isInvertible X).ι.mapIso e)
+  -- As for the first factor, this is the sheaf-level statement up to identity transports.
+  exact h
 
 /-- Tensor product preserves isomorphism of line bundles in both variables. -/
 lemma isIsomorphic_tensorProduct {L L' K K' : InvertibleSheaf X}

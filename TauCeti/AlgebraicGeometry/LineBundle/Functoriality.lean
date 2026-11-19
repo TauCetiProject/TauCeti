@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Pullback
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Identity
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
 
 /-!
@@ -18,17 +19,24 @@ on isomorphism classes of line bundles contravariantly functorial. Pullback also
 class of the trivial line bundle (`LineBundleClass.pullback_one`), through
 the comparison `Scheme.Modules.pullbackObjUnitIso : f^* 𝒪_Y ≅ 𝒪_X`, and tensor products of line
 bundles (`LineBundleClass.pullback_mul`), through the tensor comparison
-`f^*(L ⊗ K) ≅ f^*L ⊗ f^*K`, which is invertible because line bundles are quasicoherent
-(`Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent`). So pullback is a homomorphism of Picard
-groups (`LineBundleClass.pullbackHom`), as needed for the Picard functor `T ↦ Pic(X_T)`.
+`InvertibleSheaf.pullbackTensorProductIso : f^*(L ⊗ K) ≅ f^*L ⊗ f^*K`. On underlying sheaves this
+is the oplax tensor comparison `δ` of module pullback, which is invertible because line
+bundles are quasicoherent (`Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent`). So pullback is a
+homomorphism of Picard groups (`LineBundleClass.pullbackHom`), as needed for the Picard functor
+`T ↦ Pic(X_T)`.
 
-The comparisons are restrictions of Mathlib's `Scheme.Modules.pullbackId` and
-`Scheme.Modules.pullbackComp`.
+The identity and composition comparisons are restrictions of Mathlib's
+`Scheme.Modules.pullbackId` and `Scheme.Modules.pullbackComp`. The tensor comparison is natural
+in both factors (`InvertibleSheaf.pullbackTensorProductIso_hom_naturality_left` and
+`InvertibleSheaf.pullbackTensorProductIso_hom_naturality_right`) and compatible with them
+(`InvertibleSheaf.pullbackTensorProductIso_id` and
+`InvertibleSheaf.pullbackTensorProductIso_comp`), through the
+identities `Scheme.Modules.pullback_id_δ` and `Scheme.Modules.pullback_comp_δ` of module pullback.
 -/
 
 public section
 
-open CategoryTheory
+open CategoryTheory MonoidalCategory
 
 namespace TauCeti
 
@@ -125,6 +133,156 @@ theorem pullbackComp_inv_app_hom (f : X ⟶ Y) (g : Y ⟶ Z) (L : InvertibleShea
   simp only [pullbackComp, NatIso.ofComponents_inv_app, ObjectProperty.isoMk_inv,
     Iso.trans_inv, eqToIso.inv, ObjectProperty.homMk_hom, Iso.app_inv, Category.assoc]
 
+/-- **Pullback commutes with tensor products of line bundles**: `f^*(L ⊗ K) ≅ f^*L ⊗ f^*K`. On
+underlying sheaves it is the oplax tensor comparison `δ` of module pullback, which is invertible
+because line bundles are quasicoherent. -/
+def pullbackTensorProductIso (f : X ⟶ Y) (L K : InvertibleSheaf Y) :
+    (pullback f).obj (tensorProduct L K) ≅
+      tensorProduct ((pullback f).obj L) ((pullback f).obj K) :=
+  ObjectProperty.isoMk _
+    (eqToIso (pullback_obj_obj f (tensorProduct L K)) ≪≫
+      (Scheme.Modules.pullback f).mapIso (tensorProductObjIso L K) ≪≫
+      asIso (Functor.OplaxMonoidal.δ (Scheme.Modules.pullback f) L.obj K.obj) ≪≫
+      (eqToIso (pullback_obj_obj f L).symm ⊗ᵢ eqToIso (pullback_obj_obj f K).symm) ≪≫
+      (tensorProductObjIso ((pullback f).obj L) ((pullback f).obj K)).symm)
+
+/-- On underlying sheaves, `pullbackTensorProductIso` is the tensor comparison of module
+pullback, read through `tensorProductObjIso` on both sides. -/
+@[simp]
+lemma pullbackTensorProductIso_hom_hom (f : X ⟶ Y) (L K : InvertibleSheaf Y) :
+    (pullbackTensorProductIso f L K).hom.hom =
+      eqToHom (pullback_obj_obj f (tensorProduct L K)) ≫
+        (Scheme.Modules.pullback f).map (tensorProductObjIso L K).hom ≫
+        Functor.OplaxMonoidal.δ (Scheme.Modules.pullback f) L.obj K.obj ≫
+        (eqToHom (pullback_obj_obj f L).symm ⊗ₘ eqToHom (pullback_obj_obj f K).symm) ≫
+        (tensorProductObjIso ((pullback f).obj L) ((pullback f).obj K)).inv := by
+  simp [pullbackTensorProductIso]
+
+/-- On underlying sheaves, the inverse of `pullbackTensorProductIso` is the inverse of the tensor
+comparison of module pullback, read through `tensorProductObjIso` on both sides. -/
+@[simp]
+lemma pullbackTensorProductIso_inv_hom (f : X ⟶ Y) (L K : InvertibleSheaf Y) :
+    (pullbackTensorProductIso f L K).inv.hom =
+      (tensorProductObjIso ((pullback f).obj L) ((pullback f).obj K)).hom ≫
+        (eqToHom (pullback_obj_obj f L) ⊗ₘ eqToHom (pullback_obj_obj f K)) ≫
+        inv (Functor.OplaxMonoidal.δ (Scheme.Modules.pullback f) L.obj K.obj) ≫
+        (Scheme.Modules.pullback f).map (tensorProductObjIso L K).inv ≫
+        eqToHom (pullback_obj_obj f (tensorProduct L K)).symm := by
+  simp [pullbackTensorProductIso]
+
+/-- Followed by `tensorProductObjIso`, the comparison `pullbackTensorProductIso` is the tensor
+comparison of module pullback. -/
+@[reassoc]
+lemma pullbackTensorProductIso_hom_hom_comp_tensorProductObjIso_hom (f : X ⟶ Y)
+    (L K : InvertibleSheaf Y) :
+    (pullbackTensorProductIso f L K).hom.hom ≫
+        (tensorProductObjIso ((pullback f).obj L) ((pullback f).obj K)).hom =
+      eqToHom (pullback_obj_obj f (tensorProduct L K)) ≫
+        (Scheme.Modules.pullback f).map (tensorProductObjIso L K).hom ≫
+        Functor.OplaxMonoidal.δ (Scheme.Modules.pullback f) L.obj K.obj ≫
+        (eqToHom (pullback_obj_obj f L).symm ⊗ₘ eqToHom (pullback_obj_obj f K).symm) := by
+  simp [pullbackTensorProductIso_hom_hom]
+
+/-- `pullbackTensorProductIso` is natural in the first factor. -/
+@[reassoc]
+lemma pullbackTensorProductIso_hom_naturality_left (f : X ⟶ Y)
+    {L L' : InvertibleSheaf Y} (e : L ≅ L') (K : InvertibleSheaf Y) :
+    (pullback f).map (tensorProductCongrLeft (K := K) e).hom ≫
+        (pullbackTensorProductIso f L' K).hom =
+      (pullbackTensorProductIso f L K).hom ≫
+        (tensorProductCongrLeft (K := (pullback f).obj K) ((pullback f).mapIso e)).hom := by
+  apply ObjectProperty.hom_ext
+  rw [← cancel_mono (tensorProductObjIso ((pullback f).obj L') ((pullback f).obj K)).hom]
+  simp only [ObjectProperty.FullSubcategory.comp_hom, Category.assoc,
+    pullbackTensorProductIso_hom_hom_comp_tensorProductObjIso_hom,
+    tensorProductCongrLeft_hom_hom_comp_tensorProductObjIso_hom,
+    pullbackTensorProductIso_hom_hom_comp_tensorProductObjIso_hom_assoc, pullback_map,
+    Functor.mapIso_hom]
+  simp only [eqToHom_refl, Category.id_comp, eqToHom_trans_assoc, ← Functor.map_comp_assoc,
+    tensorProductCongrLeft_hom_hom_comp_tensorProductObjIso_hom]
+  rw [Functor.map_comp_assoc, ← Functor.OplaxMonoidal.δ_natural_left_assoc]
+  congr 3
+  simp only [tensorHom_def, eqToHom_whiskerRight, whiskerLeft_eqToHom, eqToHom_trans,
+    comp_whiskerRight, eqToHom_trans_assoc]
+  -- The remaining transports are along the definitional equalities `pullback_obj_obj`.
+  rfl
+
+/-- `pullbackTensorProductIso` is natural in the second factor. -/
+@[reassoc]
+lemma pullbackTensorProductIso_hom_naturality_right (f : X ⟶ Y)
+    (L : InvertibleSheaf Y) {K K' : InvertibleSheaf Y} (e : K ≅ K') :
+    (pullback f).map (tensorProductCongrRight (L := L) e).hom ≫
+        (pullbackTensorProductIso f L K').hom =
+      (pullbackTensorProductIso f L K).hom ≫
+        (tensorProductCongrRight (L := (pullback f).obj L) ((pullback f).mapIso e)).hom := by
+  apply ObjectProperty.hom_ext
+  rw [← cancel_mono (tensorProductObjIso ((pullback f).obj L) ((pullback f).obj K')).hom]
+  simp only [ObjectProperty.FullSubcategory.comp_hom, Category.assoc,
+    pullbackTensorProductIso_hom_hom_comp_tensorProductObjIso_hom,
+    tensorProductCongrRight_hom_hom_comp_tensorProductObjIso_hom,
+    pullbackTensorProductIso_hom_hom_comp_tensorProductObjIso_hom_assoc, pullback_map,
+    Functor.mapIso_hom]
+  simp only [eqToHom_refl, Category.id_comp, eqToHom_trans_assoc, ← Functor.map_comp_assoc,
+    tensorProductCongrRight_hom_hom_comp_tensorProductObjIso_hom]
+  rw [Functor.map_comp_assoc, ← Functor.OplaxMonoidal.δ_natural_right_assoc]
+  congr 3
+  simp only [tensorHom_def, eqToHom_whiskerRight, whiskerLeft_eqToHom, eqToHom_trans,
+    whiskerLeft_comp, eqToHom_trans_assoc]
+  -- The remaining transports are along the definitional equalities `pullback_obj_obj`.
+  rfl
+
+/-- Along the identity, `pullbackTensorProductIso` followed by the identity comparisons
+`pullbackId` on both factors is the identity comparison of the tensor product. -/
+lemma pullbackTensorProductIso_id (L K : InvertibleSheaf X) :
+    (pullbackTensorProductIso (𝟙 X) L K).hom ≫
+        (tensorProductCongrLeft (L' := L) ((pullbackId X).app L)).hom ≫
+        (tensorProductCongrRight (K' := K) ((pullbackId X).app K)).hom =
+      (pullbackId X).hom.app (tensorProduct L K) := by
+  apply ObjectProperty.hom_ext
+  rw [← cancel_mono (tensorProductObjIso L K).hom]
+  simp only [ObjectProperty.FullSubcategory.comp_hom, Category.assoc,
+    tensorProductCongrRight_hom_hom_comp_tensorProductObjIso_hom,
+    tensorProductCongrLeft_hom_hom_comp_tensorProductObjIso_hom_assoc,
+    pullbackTensorProductIso_hom_hom_comp_tensorProductObjIso_hom_assoc]
+  simp only [Iso.app_hom, pullbackId_hom_app_hom, ← tensorHom_def, tensorHom_comp_tensorHom,
+    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, Scheme.Modules.pullback_id_δ]
+  have h := (Scheme.Modules.pullbackId X).hom.naturality (tensorProductObjIso L K).hom
+  rw [Functor.id_map] at h
+  rw [h, Category.assoc]
+
+/-- `pullbackTensorProductIso` is compatible with composition: the comparison for `g` pulled
+back along `f`, followed by the comparison for `f` and the composition comparisons `pullbackComp`
+on both factors, is the composition comparison of the tensor product followed by the comparison
+for `f ≫ g`. -/
+lemma pullbackTensorProductIso_comp (f : X ⟶ Y) (g : Y ⟶ Z)
+    (L K : InvertibleSheaf Z) :
+    (pullback f).map (pullbackTensorProductIso g L K).hom ≫
+        (pullbackTensorProductIso f ((pullback g).obj L) ((pullback g).obj K)).hom ≫
+        (tensorProductCongrLeft (L := (pullback f).obj ((pullback g).obj L))
+          (L' := (pullback (f ≫ g)).obj L) ((pullbackComp f g).app L)).hom ≫
+        (tensorProductCongrRight (K := (pullback f).obj ((pullback g).obj K))
+          (K' := (pullback (f ≫ g)).obj K) ((pullbackComp f g).app K)).hom =
+      (pullbackComp f g).hom.app (tensorProduct L K) ≫
+        (pullbackTensorProductIso (f ≫ g) L K).hom := by
+  apply ObjectProperty.hom_ext
+  rw [← cancel_mono
+    (tensorProductObjIso ((pullback (f ≫ g)).obj L) ((pullback (f ≫ g)).obj K)).hom]
+  simp only [ObjectProperty.FullSubcategory.comp_hom, Category.assoc,
+    tensorProductCongrRight_hom_hom_comp_tensorProductObjIso_hom,
+    tensorProductCongrLeft_hom_hom_comp_tensorProductObjIso_hom_assoc,
+    pullbackTensorProductIso_hom_hom_comp_tensorProductObjIso_hom_assoc,
+    pullbackTensorProductIso_hom_hom_comp_tensorProductObjIso_hom]
+  simp only [pullback_map, pullbackTensorProductIso_hom_hom, Functor.map_comp, Category.assoc,
+    eqToHom_map, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, Iso.inv_hom_id_map_assoc,
+    Iso.app_hom, pullbackComp_hom_app_hom, ← tensorHom_def, tensorHom_comp_tensorHom]
+  -- Move the composition comparison past the tensor comparisons of `f^*`, `g^*` and `(f ≫ g)^*`.
+  have h := (Scheme.Modules.pullbackComp f g).hom.naturality (tensorProductObjIso L K).hom
+  simp only [Functor.comp_map] at h
+  rw [← reassoc_of% h, pullbackComp_hom_app_comp_δ_assoc,
+    ← Functor.OplaxMonoidal.δ_natural_assoc]
+  simp only [eqToHom_map, tensorHom_comp_tensorHom, eqToHom_trans_assoc, eqToHom_refl,
+    Category.id_comp]
+
 end InvertibleSheaf
 
 namespace LineBundleClass
@@ -178,11 +336,7 @@ lemma pullback_mul (f : X ⟶ Y) (a b : LineBundleClass Y) :
   obtain ⟨L, rfl⟩ := mk_surjective a
   obtain ⟨K, rfl⟩ := mk_surjective b
   simp only [← mk_tensorProduct, pullback_mk, mk_eq_mk_iff]
-  -- A line bundle is quasicoherent, so the tensor comparison of pullback is invertible.
-  exact ⟨(Scheme.Modules.pullback f).mapIso (InvertibleSheaf.tensorProductObjIso L K) ≪≫
-    asIso (Functor.OplaxMonoidal.δ (Scheme.Modules.pullback f) L.obj K.obj) ≪≫
-    (InvertibleSheaf.tensorProductObjIso ((InvertibleSheaf.pullback f).obj L)
-      ((InvertibleSheaf.pullback f).obj K)).symm⟩
+  exact ⟨(SheafOfModules.isInvertible X).ι.mapIso (InvertibleSheaf.pullbackTensorProductIso f L K)⟩
 
 /-- Pullback of line-bundle classes along a scheme morphism, as a homomorphism of Picard
 groups. -/
