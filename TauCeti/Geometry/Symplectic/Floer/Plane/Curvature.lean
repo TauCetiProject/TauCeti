@@ -95,6 +95,8 @@ discs into the energy of a whole PSS plane.
   curvature vanishes beyond the collar.
 * `TauCeti.SmoothTwoForm.setIntegral_hamiltonianCurvature_pssPlanePerturbation_closedBall`: for
   `R ≥ 2` the integral of the curvature over the disc `D_R` is its integral over the plane.
+* `TauCeti.SmoothTwoForm.integrable_hamiltonianCurvature_pssPlanePerturbation`: along a continuous
+  map the curvature is integrable over the plane.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pssPlanePerturbation_closedBall`: the
   energy identity on the discs of the plane, for a manifold target.
 * `SmoothTwoForm.IsNondegenerate.integral_hamiltonianCurvature_pssPlanePerturbation_closedBall_le`:
@@ -607,6 +609,17 @@ theorem hamiltonianCurvature_pssPlanePerturbation_eq_zero_of_two_lt (ω : Smooth
     ω.hamiltonianCurvature_pssPlaneEndComponent_eq_zero hH (Or.inr hw)] at key
   exact (mul_eq_zero.1 key.symm).resolve_left (det_fderiv_realChart_cylindricalEndLift_pos p w).ne'
 
+/-- Outside the disc `‖w‖ ≤ exp (2πR)` with `R ≥ 2`, a point lies on the part `ε s > 2` of the
+end. -/
+private theorem two_lt_endSign_mul_re_endCoord_of_notMem {R : ℝ} (hR : 2 ≤ R) {z : ℝ × ℝ}
+    (hz : z ∉ Complex.equivRealProdCLM.symm ⁻¹' Metric.closedBall 0 (Real.exp (2 * π * R))) :
+    2 < p.endSign * (p.endCoord (Complex.equivRealProdCLM.symm z)).re := by
+  simp only [mem_preimage, Metric.mem_closedBall, dist_zero_right, not_le] at hz
+  have hlog := Real.log_lt_log (Real.exp_pos _) hz
+  rw [Real.log_exp] at hlog
+  rw [endSign_mul_re_endCoord, lt_div_iff₀ (by positivity)]
+  nlinarith [Real.pi_pos]
+
 /-- **The curvature is supported in the disc `‖w‖ ≤ exp (4π)`.** For `R ≥ 2`, the integral of the
 curvature `R_K(u)` of the perturbation of a PSS plane over the disc `‖w‖ ≤ exp (2πR)` is its
 integral over the whole plane, for any map `u` into a manifold. -/
@@ -619,14 +632,10 @@ theorem setIntegral_hamiltonianCurvature_pssPlanePerturbation_closedBall (ω : S
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) =
       ∫ z, ω.hamiltonianCurvature
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) := by
-  refine setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ ?_
-  refine ω.hamiltonianCurvature_pssPlanePerturbation_eq_zero_of_two_lt hH hHs ?_ _
-  simp only [mem_preimage, Metric.mem_closedBall, dist_zero_right, not_le] at hz
-  have hlog := Real.log_lt_log (Real.exp_pos _) hz
-  rw [Real.log_exp] at hlog
-  rw [endSign_mul_re_endCoord, lt_div_iff₀ (by positivity)]
-  nlinarith [Real.pi_pos]
+        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) :=
+  setIntegral_eq_integral_of_forall_compl_eq_zero fun _ hz ↦
+    ω.hamiltonianCurvature_pssPlanePerturbation_eq_zero_of_two_lt hH hHs
+      (two_lt_endSign_mul_re_endCoord_of_notMem hR hz) _
 
 variable [FiniteDimensional ℝ E]
 
@@ -841,6 +850,21 @@ theorem integrableOn_hamiltonianCurvature_pssPlanePerturbation_closedBall
     (Metric.isClosed_closedBall.preimage Complex.equivRealProdCLM.symm.continuous).measurableSet
     fun _ hz ↦ (floerEnergyDensity_eq_and_hamiltonianCurvature_eq_zero_of_norm_lt ω u
       (norm_lt_of_mem_sdiff_image_endPiece hz)).2
+
+omit [FiniteDimensional ℝ E] in
+/-- **The curvature is integrable over a PSS plane.** For a continuous map `u` into `M`, the
+curvature `R_K(u)` of the perturbation of a PSS plane is integrable over the whole plane: it is
+integrable over the disc `‖w‖ ≤ exp (4π)` and vanishes outside it. -/
+theorem integrable_hamiltonianCurvature_pssPlanePerturbation (ω : SmoothTwoForm I M)
+    (hH : Periodic H 1) (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H))
+    {u : ℝ × ℝ → M} (hu : Continuous u) :
+    Integrable fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) :=
+  (ω.integrableOn_hamiltonianCurvature_pssPlanePerturbation_closedBall hH hHs hu 2
+    ).integrable_of_forall_notMem_eq_zero fun _ hz ↦
+      ω.hamiltonianCurvature_pssPlanePerturbation_eq_zero_of_two_lt hH hHs
+        (two_lt_endSign_mul_re_endCoord_of_notMem le_rfl hz) _
 
 /-- **The energy identity on discs of a PSS plane, for a manifold target.** Let `K` be the
 perturbation of a PSS plane given by a period-one `C¹` Hamiltonian `H` on a finite-dimensional
