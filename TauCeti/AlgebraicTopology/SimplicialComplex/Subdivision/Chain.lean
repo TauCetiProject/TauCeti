@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Order.Extension.Linear
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Acyclic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.InducedChainMap
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Basic
@@ -36,10 +35,10 @@ proof needs no sign bookkeeping. The chain `λ_# (Sd σ)` is supported on cells 
 of `σ`, so it is a multiple `k σ`; since `λ_# ∘ Sd` is a chain map, `k ∂σ = ∂σ` by induction, and
 the coefficient of the face opposite the first vertex gives `k = 1`.
 
-For the barycentric subdivision (`AbstractSimplicialComplex.orderedBarycentricSubdivision`), whose
-vertices are the faces of `K`, the barycenter of a face is the face itself
-(`AbstractSimplicialComplex.subdivisionBarycenter`), and the *last-vertex map* sending a face to its
-largest vertex (`AbstractSimplicialComplex.lastVertexMap`) is simplicial and satisfies the
+For the barycentric subdivision (`AbstractSimplicialComplex.orderedBarycentricSubdivision`, in
+`Subdivision.Basic`), whose vertices are the faces of `K`, the barycenter of a face is the face
+itself (`AbstractSimplicialComplex.subdivisionBarycenter`), and the *last-vertex map* sending a face
+to its largest vertex (`AbstractSimplicialComplex.lastVertexMap`) is simplicial and satisfies the
 hypothesis, so `λ_# ∘ Sd = 1` on ordered chains
 (`TauCeti.OrderedSimplicialChain.map_lastVertexMap_comp_subdivision`). For the edge `[v₀, v₁]` the
 subdivision is `[{v₀}, {v₀, v₁}] - [{v₁}, {v₀, v₁}]`, and the last-vertex map sends the first
@@ -49,11 +48,6 @@ simplex to the edge and collapses the second.
 
 * `TauCeti.OrderedSimplicialChain.subdivision`: the subdivision operator on ordered chains.
 * `TauCeti.subdivisionChainMap`: the subdivision chain map of ordered chain complexes.
-* `AbstractSimplicialComplex.orderedBarycentricSubdivision`: the barycentric subdivision, with its
-  vertices ordered by a linear extension of inclusion.
-* `AbstractSimplicialComplex.subdivisionBarycenter`, `AbstractSimplicialComplex.lastVertexMap`: the
-  barycenters of the faces of `K` in the barycentric subdivision, and the simplicial map sending
-  each face to its largest vertex.
 
 ## Main results
 
@@ -88,49 +82,6 @@ namespace OrderedSimplicialChain
 variable {α ι : Type*} [LinearOrder α] [LinearOrder ι]
   {K : _root_.AbstractSimplicialComplex α} {L : _root_.AbstractSimplicialComplex ι}
 
-section Support
-
-variable {R : Type*} [Semiring R] {n : ℕ}
-
-/-- A cell in the support of a finite sum of chains lies in the support of one of the summands. -/
-private theorem exists_mem_support_of_mem_support_sum {κ : Type*} {s : Finset κ}
-    {f : κ → OrderedSimplicialChain L R n} {d : RealizationCell L n}
-    (hd : d ∈ (∑ j ∈ s, f j).support) : ∃ j ∈ s, d ∈ (f j).support := by
-  by_contra! h
-  exact (Finsupp.mem_support_iff.mp hd) (by
-    rw [show (∑ j ∈ s, f j) d = ∑ j ∈ s, f j d from map_sum (Finsupp.applyAddHom d) f s]
-    exact Finset.sum_eq_zero fun j hj ↦ Finsupp.notMem_support_iff.mp (h j hj))
-
-/-- Every cell in the support of a cone is the cone on a cell of the original chain that can be
-coned off. -/
-theorem exists_eq_cone_of_mem_support_cone {w : ι} {z : OrderedSimplicialChain L R n}
-    {d : RealizationCell L (n + 1)} (hd : d ∈ (cone R w n z).support) :
-    ∃ e ∈ z.support, ∃ (hlt : ∀ x ∈ e.1.1, x < w) (hL : insert w e.1.1 ∈ L),
-      d = e.cone w hlt hL := by
-  classical
-  rw [← z.sum_single, Finsupp.sum, map_sum] at hd
-  obtain ⟨e, he, hd⟩ := exists_mem_support_of_mem_support_sum hd
-  by_cases h : (∀ x ∈ e.1.1, x < w) ∧ insert w e.1.1 ∈ L
-  · rw [cone_single e h.1 h.2] at hd
-    exact ⟨e, he, h.1, h.2, Finset.mem_singleton.mp (Finsupp.support_single_subset hd)⟩
-  · simp [cone_single_of_not e h] at hd
-
-/-- A chain of `K` all of whose cells are spanned by vertices of one cell `c` of the same dimension
-is a multiple of `c`. -/
-theorem eq_single_of_forall_mem_support_subset {x : OrderedSimplicialChain K R n}
-    {c : RealizationCell K n} (hx : ∀ d ∈ x.support, d.1.1 ⊆ c.1.1) : x = single c (x c) := by
-  classical
-  ext d
-  by_cases hdc : d = c
-  · subst hdc
-    simp
-  · rw [single_eq_of_ne hdc]
-    by_contra hne
-    refine hdc (RealizationCell.ext (Finset.eq_of_subset_of_card_le
-      (hx d (Finsupp.mem_support_iff.mpr hne)) ?_))
-    rw [c.2, d.2]
-
-end Support
 
 section Subdivision
 
@@ -188,7 +139,7 @@ theorem exists_le_eq_of_mem_support_subdivision {n : ℕ} (c : RealizationCell K
     rcases Finset.mem_insert.mp hw with rfl | hw
     · exact ⟨c.1, le_rfl, rfl⟩
     · rw [boundary_single, map_sum] at he
-      obtain ⟨j, -, he⟩ := exists_mem_support_of_mem_support_sum he
+      obtain ⟨j, -, he⟩ := Finsupp.mem_support_finsetSum _ he
       rw [map_smul] at he
       obtain ⟨τ, hτ, rfl⟩ := ih (c.face j) (Finsupp.support_smul he) hw
       exact ⟨τ, hτ.trans (c.face_val_subset j), rfl⟩
@@ -203,7 +154,7 @@ theorem subset_of_mem_support_map_subdivision
     d.1.1 ⊆ c.1.1 := by
   classical
   rw [← (subdivision R b n (single c 1)).sum_single, Finsupp.sum, map_sum] at hd
-  obtain ⟨e, he, hd⟩ := exists_mem_support_of_mem_support_sum hd
+  obtain ⟨e, he, hd⟩ := Finsupp.mem_support_finsetSum _ hd
   rw [map_single] at hd
   have hd := Finsupp.support_smul hd
   by_cases hinj : Function.Injective (f ∘ e.vertexEmbedding)
@@ -236,7 +187,7 @@ theorem forall_lt_and_insert_mem_of_mem_support_subdivision_boundary {n : ℕ}
     (∀ w ∈ e.1.1, w < b c.1) ∧ insert (b c.1) e.1.1 ∈ L := by
   classical
   rw [boundary_single, map_sum] at he
-  obtain ⟨j, -, he⟩ := exists_mem_support_of_mem_support_sum he
+  obtain ⟨j, -, he⟩ := Finsupp.mem_support_finsetSum _ he
   rw [map_smul] at he
   have hlt : ∀ w ∈ e.1.1, ∃ τ < c.1, b τ = w := fun w hw ↦ by
     obtain ⟨τ, hτ, rfl⟩ :=
@@ -279,9 +230,11 @@ theorem boundary_comp_subdivision (n : ℕ) :
         forall_lt_and_insert_mem_of_mem_support_subdivision_boundary hb hL c he,
       hz, map_zero, zero_add, smul_smul, ← pow_add, Even.neg_one_pow ⟨n + 2, rfl⟩, one_smul]
 
-/-- **The last-vertex map is a left inverse of the subdivision operator.** If a simplicial map
+/-- **A simplicial map sending barycenters to vertices of their faces inverts `Sd` on the left.**
+Suppose barycenters of larger faces are larger and a barycenter can be adjoined to every face of
+`L` spanned by barycenters of proper subfaces, so that `Sd` is a chain map. If a simplicial map
 `f : L → K` sends the barycenter of every face `τ` to a vertex of `τ`, then `f_# ∘ Sd = 1` on
-ordered chains. -/
+ordered chains. The last-vertex map is the case `map_lastVertexMap_comp_subdivision`. -/
 theorem map_comp_subdivision
     (f : PreAbstractSimplicialComplex.SimplicialMap
       L.toPreAbstractSimplicialComplex K.toPreAbstractSimplicialComplex)
@@ -378,112 +331,6 @@ end ChainMap
 
 end TauCeti
 
-namespace AbstractSimplicialComplex
-
-open TauCeti
-
-variable {α : Type u} [LinearOrder α] (K : AbstractSimplicialComplex α)
-
-/-- The **barycentric subdivision** of `K`, with its vertices, the faces of `K`, ordered by a linear
-extension of inclusion, so that its ordered chain complex is defined. -/
-def orderedBarycentricSubdivision :
-    _root_.AbstractSimplicialComplex
-      (LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)) :=
-  PreAbstractSimplicialComplex.barycentricSubdivision K.toPreAbstractSimplicialComplex
-
-/-- The face of `K` that a vertex of `orderedBarycentricSubdivision K` is. -/
-def subdivisionFace (p : LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)) :
-    Finset α :=
-  Subtype.val (p : TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)
-
-omit [LinearOrder α] in
-/-- The face underlying a vertex of the subdivision is a face of `K`. -/
-theorem subdivisionFace_mem
-    (p : LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)) :
-    subdivisionFace K p ∈ K :=
-  Subtype.prop (p : TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)
-
-omit [LinearOrder α] in
-/-- A finite set of faces of `K` spans a face of the barycentric subdivision exactly when it is
-nonempty and every two of its faces are nested. -/
-theorem mem_orderedBarycentricSubdivision_iff
-    {s : Finset (LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex))} :
-    s ∈ orderedBarycentricSubdivision K ↔ s.Nonempty ∧ ∀ p ∈ s, ∀ q ∈ s,
-      subdivisionFace K p ⊆ subdivisionFace K q ∨ subdivisionFace K q ⊆ subdivisionFace K p :=
-  PreAbstractSimplicialComplex.mem_barycentricSubdivision_iff'
-
-omit [LinearOrder α] in
-/-- Inclusion of the underlying faces implies the order of the linear extension. -/
-theorem le_of_subdivisionFace_subset
-    {p q : LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)}
-    (h : subdivisionFace K p ⊆ subdivisionFace K q) : p ≤ q :=
-  (toLinearExtension (α := TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)).monotone
-    (a := p) (b := q) h
-
-/-- The barycenter of a face of `K` in the barycentric subdivision: the face itself, regarded as a
-vertex. -/
-def subdivisionBarycenter (τ : TauCeti.SetLike.Face K) :
-    LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex) :=
-  toLinearExtension (⟨τ.1, τ.2⟩ : TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)
-
-omit [LinearOrder α] in
-/-- The face underlying the barycenter of a face is that face. -/
-@[simp]
-theorem subdivisionFace_subdivisionBarycenter (τ : TauCeti.SetLike.Face K) :
-    subdivisionFace K (subdivisionBarycenter K τ) = τ.1 :=
-  (rfl)
-
-omit [LinearOrder α] in
-/-- Barycenters of larger faces are larger in the linear extension of inclusion. -/
-theorem strictMono_subdivisionBarycenter : StrictMono (subdivisionBarycenter K) := fun σ τ h ↦
-  lt_of_le_of_ne (le_of_subdivisionFace_subset K (by simpa using h.le)) fun h' ↦ h.ne
-    (Subtype.ext (by simpa using congrArg (subdivisionFace K) h'))
-
-omit [LinearOrder α] in
-/-- A barycenter can be adjoined to every face of the barycentric subdivision spanned by
-barycenters of proper subfaces. -/
-theorem insert_subdivisionBarycenter_mem_orderedBarycentricSubdivision
-    ⦃s : Finset (LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex))⦄
-    (hs : s ∈ orderedBarycentricSubdivision K) (ρ : TauCeti.SetLike.Face K)
-    (hρ : ∀ w ∈ s, ∃ τ < ρ, subdivisionBarycenter K τ = w) :
-    insert (subdivisionBarycenter K ρ) s ∈ orderedBarycentricSubdivision K := by
-  rw [mem_orderedBarycentricSubdivision_iff] at hs ⊢
-  have hle : ∀ w ∈ s, subdivisionFace K w ⊆ ρ.1 := fun w hw ↦ by
-    obtain ⟨τ, hτ, rfl⟩ := hρ w hw
-    exact hτ.le
-  refine ⟨Finset.insert_nonempty _ _, fun p hp q hq ↦ ?_⟩
-  rcases Finset.mem_insert.mp hp with rfl | hp <;> rcases Finset.mem_insert.mp hq with rfl | hq
-  · exact Or.inl subset_rfl
-  · exact Or.inr (hle q hq)
-  · exact Or.inl (hle p hp)
-  · exact hs.2 p hp q hq
-
-/-- The **last-vertex map** of the barycentric subdivision: the simplicial map sending a face of
-`K`, a vertex of the subdivision, to its largest vertex. -/
-def lastVertexMap :
-    PreAbstractSimplicialComplex.SimplicialMap
-      (orderedBarycentricSubdivision K).toPreAbstractSimplicialComplex
-      K.toPreAbstractSimplicialComplex where
-  toFun p := (subdivisionFace K p).max' (K.isRelLowerSet_faces (subdivisionFace_mem K p)).1
-  map_face' := by
-    intro s hs
-    have hs' := (mem_orderedBarycentricSubdivision_iff K).mp hs
-    -- The largest vertex `M` of `s` in the linear extension is its largest face under inclusion.
-    set M := s.max' hs'.1
-    have hle : ∀ p ∈ s, subdivisionFace K p ⊆ subdivisionFace K M := fun p hp ↦ by
-      rcases hs'.2 p hp M (s.max'_mem hs'.1) with h | h
-      · exact h
-      · rw [le_antisymm (s.le_max' p hp) (le_of_subdivisionFace_subset K h)]
-    refine (K.isRelLowerSet_faces (subdivisionFace_mem K M)).2 (fun v hv ↦ ?_) (hs'.1.image _)
-    obtain ⟨p, hp, rfl⟩ := Finset.mem_image.mp hv
-    exact hle p hp (Finset.max'_mem _ _)
-
-/-- The last-vertex map sends the barycenter of a face to its largest vertex. -/
-theorem lastVertexMap_subdivisionBarycenter (τ : TauCeti.SetLike.Face K) :
-    lastVertexMap K (subdivisionBarycenter K τ) = τ.1.max' (K.isRelLowerSet_faces τ.2).1 :=
-  (rfl)
-
-end AbstractSimplicialComplex
 
 namespace TauCeti.OrderedSimplicialChain
 

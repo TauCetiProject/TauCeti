@@ -64,6 +64,17 @@ abbrev OrderedSimplicialChain (R : Type v) [Semiring R] (n : ℕ) :=
 namespace OrderedSimplicialChain
 
 variable {K}
+
+omit [LinearOrder ι] in
+/-- A chain all of whose cells are spanned by vertices of one cell `c` of the same dimension is a
+multiple of `c`. -/
+theorem eq_single_of_forall_mem_support_subset {R : Type v} [Semiring R] {n : ℕ}
+    {x : OrderedSimplicialChain K R n} {c : _root_.AbstractSimplicialComplex.RealizationCell K n}
+    (hx : ∀ d ∈ x.support, d.1.1 ⊆ c.1.1) : x = single c (x c) :=
+  Finsupp.support_subset_singleton.mp fun d hd ↦ Finset.mem_singleton.mpr
+    (_root_.AbstractSimplicialComplex.RealizationCell.ext
+      (Finset.eq_of_subset_of_card_le (hx d hd) (by rw [c.2, d.2])))
+
 variable (R : Type v) [Ring R]
 
 /-- The boundary of a single `(n + 1)`-dimensional simplicial cell is the alternating sum of its
