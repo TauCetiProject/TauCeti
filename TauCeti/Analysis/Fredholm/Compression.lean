@@ -154,7 +154,7 @@ variable {R M N : Type*} [Ring R] [TopologicalSpace M] [AddCommGroup M] [Module 
   [TopologicalSpace N] [AddCommGroup N] [Module R N] (U : M ≃L[R] N)
 
 /-- An isomorphism `U` carries the range of `p` onto the range of `U p U⁻¹`. -/
-theorem map_range_eq_range_conj (p : M →L[R] M) :
+theorem _root_.ContinuousLinearEquiv.map_range_eq_range_conj (p : M →L[R] M) :
     p.range.map (U : M →ₗ[R] N) = ((U : M →L[R] N) ∘L p ∘L (U.symm : N →L[R] M)).range := by
   rw [toLinearMap_comp, toLinearMap_comp, LinearMap.range_comp,
     LinearMap.range_comp_of_range_eq_top]
@@ -168,11 +168,11 @@ theorem compress_conj (p q T : M →L[R] M) :
         ((U : M →L[R] N) ∘L q ∘L (U.symm : N →L[R] M))
         ((U : M →L[R] N) ∘L T ∘L (U.symm : N →L[R] M)) =
       (ContinuousLinearEquiv.ofSubmodules U q.range
-          ((U : M →L[R] N) ∘L q ∘L (U.symm : N →L[R] M)).range (map_range_eq_range_conj U q) :
+          ((U : M →L[R] N) ∘L q ∘L (U.symm : N →L[R] M)).range (U.map_range_eq_range_conj q) :
           q.range →L[R] _) ∘L compress p q T ∘L
         ((ContinuousLinearEquiv.ofSubmodules U p.range
           ((U : M →L[R] N) ∘L p ∘L (U.symm : N →L[R] M)).range
-            (map_range_eq_range_conj U p)).symm : _ →L[R] p.range) := by
+            (U.map_range_eq_range_conj p)).symm : _ →L[R] p.range) := by
   ext x
   simp only [coe_compress_apply, coe_comp, Function.comp_apply, ContinuousLinearEquiv.coe_coe,
     ContinuousLinearEquiv.ofSubmodules_apply, ContinuousLinearEquiv.ofSubmodules_symm_apply,
@@ -234,13 +234,13 @@ with parametrix the compression of `T⁻¹`. -/
 theorem isFredholm_compress_self (hp : IsIdempotentElem p) {S T : E →L[𝕜] E} (hST : S * T = 1)
     (hTS : T * S = 1) (hT : IsCompactOperator (p * T - T * p)) :
     (compress p p T).IsFredholm := by
-  -- `[p, S] = -S [p, T] S` is compact as well.
+  -- `[S, p] = S [p, T] S` is compact as well.
   have hS : IsCompactOperator (p * S - S * p) := by
-    have heq : p * S - S * p = -(S * (p * T - T * p) * S) :=
-      calc p * S - S * p = S * T * p * S - S * p * (T * S) := by rw [hST, hTS, one_mul, mul_one]
-        _ = -(S * (p * T - T * p) * S) := by noncomm_ring
-    rw [heq]
-    simpa only [FunLike.coe_neg] using ((hT.mul_left S).mul_right S).neg
+    have heq : S * p - p * S = S * (p * T - T * p) * S :=
+      calc S * p - p * S = S * p * (T * S) - S * T * p * S := by rw [hST, hTS, one_mul, mul_one]
+        _ = S * (p * T - T * p) * S := by noncomm_ring
+    rw [isCompactOperator_sub_comm, heq]
+    exact (hT.mul_left S).mul_right S
   refine isFredholm_compress hp hp (S := S) ?_ ?_
   · rw [mul_mul_mul_mul_sub_eq hp hST]
     exact (hT.mul_left (p * S)).mul_right p
