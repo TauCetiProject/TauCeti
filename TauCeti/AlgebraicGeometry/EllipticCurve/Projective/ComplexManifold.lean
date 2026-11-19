@@ -30,9 +30,9 @@ containing the point. Its tangential coordinate is an abstract linear coordinate
 the derivative of the affine equation; it is not identified here with the classical local
 coordinates `x`, `y` or `X / Y`. These slice charts make the zero locus a complex submanifold of
 `ℂℙ²` modelled on `Fin 1 → ℂ` (`TauCeti.complexProjectiveZeroLocusChartedSpace`). Pulling that
-atlas back to `W.Point` and reading its model `Fin 1 → ℂ` in `ℂ` (`ChartedSpace.comp`) gives an
-atlas of `W.Point` modelled on `ℂ`, whose transition maps are analytic. The embedding into `ℂℙ²`
-is transported along the same linear change of model
+atlas back to `W.Point` and reading its model `Fin 1 → ℂ` in `ℂ`
+(`Diffeomorph.chartedSpaceComp`) gives an atlas of `W.Point` modelled on `ℂ`, whose transition
+maps are analytic. The embedding into `ℂℙ²` is transported along the same linear change of model
 (`TauCeti.isImmersionAt_comp_diffeomorph_of_image_range_eq`).
 
 This makes the points of a complex elliptic curve, already compact and connected in their analytic
@@ -114,20 +114,13 @@ private noncomputable def slicePointChartedSpace :
   letI := zeroLocusChartedSpace W
   (homeomorphZeroLocus W).pullbackChartedSpace
 
-/-- The tangential model `Fin (2 - 1) → ℂ`, charted by `ℂ` through `modelEquiv`. -/
-@[instance_reducible]
-private noncomputable def modelChartedSpace : ChartedSpace ℂ (Fin (2 - Fintype.card Unit) → ℂ) :=
-  (modelEquiv.toContDiffDiffeomorph ω).toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace
-    (Homeomorph.toOpenPartialHomeomorph_source _)
-
 /-- **The complex charts of an elliptic curve.** The points of a complex elliptic curve are
 charted by `ℂ`: the chart at a point reads the tangential coordinate of the analytic slice chart of
-`ℂℙ²` that flattens the curve near that point. -/
+`ℂℙ²` that flattens the curve near that point, in `ℂ` through `modelEquiv`. -/
 @[no_expose]
 noncomputable instance instChartedSpace : ChartedSpace ℂ W.Point :=
   letI := slicePointChartedSpace W
-  letI := modelChartedSpace
-  ChartedSpace.comp ℂ (Fin (2 - Fintype.card Unit) → ℂ) W.Point
+  (modelEquiv.toContDiffDiffeomorph ω).chartedSpaceComp W.Point
 
 /-- The points of `W` form a `C^r` manifold for the atlas pulled back from the zero locus. -/
 private theorem isManifold_slicePointChartedSpace (r : ℕ∞ω) :
@@ -154,12 +147,9 @@ private theorem extChartAt_eq (P : W.Point) :
     (extChartAt 𝓘(ℂ) P : W.Point → ℂ) =
       modelEquiv ∘ extChartAt 𝓘(ℂ, Fin (2 - Fintype.card Unit) → ℂ) P := by
   let := slicePointChartedSpace W
-  let := modelChartedSpace
   funext Q
-  -- A chart of `instChartedSpace` is a zero locus chart followed by the single chart
-  -- `modelEquiv` of `modelChartedSpace`.
-  rw [extChartAt_coe, extChartAt_coe, instChartedSpace, chartAt_comp, modelChartedSpace,
-    OpenPartialHomeomorph.singletonChartedSpace_chartAt_eq]
+  -- A chart of `instChartedSpace` is a zero locus chart followed by `modelEquiv`.
+  rw [extChartAt_coe, extChartAt_coe, instChartedSpace, Diffeomorph.chartAt_chartedSpaceComp]
   simp only [OpenPartialHomeomorph.coe_trans, Homeomorph.toOpenPartialHomeomorph_apply,
     Diffeomorph.coe_toHomeomorph, ContinuousLinearEquiv.coe_toContDiffDiffeomorph,
     modelWithCornersSelf_coe, Function.comp_apply, id_eq]

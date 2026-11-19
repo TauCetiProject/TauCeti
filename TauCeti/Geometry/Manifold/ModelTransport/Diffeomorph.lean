@@ -15,7 +15,9 @@ Let `Φ : H ≃ₘ^n⟮I, I'⟯ H'` be a `C^n` diffeomorphism between two model 
 `C^n` chart change of `H` by `Φ` gives a `C^n` chart change of `H'`
 (`Diffeomorph.symm_trans_trans_mem_contDiffGroupoid`). Consequently, a `C^n` manifold modelled on
 `I` is a `C^n` manifold modelled on `I'` for the composite charts `ChartedSpace.comp H' H M`, where
-`H` carries the single chart `Φ` (`Diffeomorph.isManifold_chartedSpaceComp`).
+`H` carries the single chart `Φ` (`Diffeomorph.isManifold_chartedSpaceComp`). These composite
+charts are packaged as `Diffeomorph.chartedSpaceComp`, whose chart at a point is the chart of `M`
+followed by `Φ` (`Diffeomorph.chartAt_chartedSpaceComp`).
 
 For instance, a model with corners described as a subset of `ℂ` can be compared with Mathlib's
 native half-spaces in this way.
@@ -33,6 +35,22 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {I' : ModelWithCorners 𝕜 E' H'} {n : ℕ∞ω}
 
 namespace Diffeomorph
+
+/-- The charts of `M` modelled on `H'` obtained by following each chart of `M` with a
+diffeomorphism of models `Φ`: the composite charts `ChartedSpace.comp H' H M`, where `H` carries
+the single chart `Φ`. -/
+@[expose, instance_reducible]
+def chartedSpaceComp (Φ : H ≃ₘ^n⟮I, I'⟯ H') (M : Type*) [TopologicalSpace M]
+    [ChartedSpace H M] : ChartedSpace H' M :=
+  letI := Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
+  ChartedSpace.comp H' H M
+
+/-- The chart of `Φ.chartedSpaceComp M` at `x` is the chart of `M` at `x` followed by `Φ`. -/
+theorem chartAt_chartedSpaceComp (Φ : H ≃ₘ^n⟮I, I'⟯ H') {M : Type*} [TopologicalSpace M]
+    [ChartedSpace H M] (x : M) :
+    @chartAt H' _ M _ (Φ.chartedSpaceComp M) x =
+      chartAt H x ≫ₕ Φ.toHomeomorph.toOpenPartialHomeomorph := by
+  rw [chartedSpaceComp, chartAt_comp, OpenPartialHomeomorph.singletonChartedSpace_chartAt_eq]
 
 /-- Conjugating a member of the `C^n` groupoid of `I` by a `C^n` diffeomorphism of models gives a
 member of the `C^n` groupoid of `I'`. -/

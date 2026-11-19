@@ -36,8 +36,8 @@ are nonzero, they all vanish (`TauCeti.exists_lt_card_sum_mul_pow_ne_zero`).
 The zero locus is the native projective zero locus `TauCeti.complexProjectiveZeroLocus` of the
 quadrics, so the Jacobian criterion makes it a complex submanifold of `ℂℙ⁵` of dimension
 `5 - 3 = 2`, through the slice-chart atlas `TauCeti.complexProjectiveZeroLocusChartedSpace`. Its
-model `Fin (5 - 3) → ℂ` is read in `Fin 2 → ℂ`, as for the analytic structure of a complex
-elliptic curve.
+model `Fin (5 - 3) → ℂ` is read in `Fin 2 → ℂ` (`Diffeomorph.chartedSpaceComp`), as for the
+analytic structure of a complex elliptic curve.
 
 ## Main definitions
 
@@ -46,6 +46,8 @@ elliptic curve.
 * `TauCeti.enriquesInvolutionLinear`: the linear sign change negating the first three
   coordinates.
 * `TauCeti.enriquesProjectiveInvolution`: the induced involution of `ℂℙ⁵`.
+* `TauCeti.enriquesZeroSetInvolution`: its restriction to the zero locus, the Enriques
+  involution of the K3 cover.
 
 ## Main results
 
@@ -55,7 +57,8 @@ elliptic curve.
 * `TauCeti.enriquesProjectiveInvolution_involutive` and
   `TauCeti.enriquesProjectiveInvolution_mem_enriquesZeroSet_iff`: the projective sign change is
   an involution preserving the zero locus.
-* `TauCeti.enriquesProjectiveInvolution_no_fixed_point`: it has no fixed point on the zero locus.
+* `TauCeti.enriquesProjectiveInvolution_no_fixed_point` and
+  `TauCeti.enriquesZeroSetInvolution_ne_self`: it has no fixed point on the zero locus.
 * `TauCeti.enriquesZeroSet_nonempty`: the zero locus is nonempty.
 * `TauCeti.instChartedSpaceEnriquesZeroSet` and `TauCeti.instIsManifoldEnriquesZeroSet`: the zero
   locus is a complex surface, with the analytic atlas induced by the slice charts of `ℂℙ⁵`.
@@ -170,6 +173,7 @@ noncomputable def enriquesZeroSet : Set (ℙ ℂ (Fin 6 → ℂ)) :=
 
 /-- The class of a nonzero vector lies on the Enriques K3 cover exactly when the vector is a
 common zero of the three quadrics. -/
+@[simp]
 theorem mk_mem_enriquesZeroSet_iff (v : Fin 6 → ℂ) (hv : v ≠ 0) :
     Projectivization.mk ℂ v hv ∈ enriquesZeroSet ↔ ∀ j, eval v (enriquesQuadric j) = 0 :=
   complexProjectiveZeroLocus_mk_iff isHomogeneous_enriquesQuadric v hv
@@ -253,18 +257,23 @@ theorem enriquesProjectiveInvolution_mk (v : Fin 6 → ℂ) (hv : v ≠ 0) :
   Projectivization.map_mk _ _ v hv
 
 /-- The projective sign change is an involution. -/
-theorem enriquesProjectiveInvolution_involutive :
-    Function.Involutive enriquesProjectiveInvolution := by
-  intro p
+@[simp]
+theorem enriquesProjectiveInvolution_enriquesProjectiveInvolution (p : ℙ ℂ (Fin 6 → ℂ)) :
+    enriquesProjectiveInvolution (enriquesProjectiveInvolution p) = p := by
   induction p using Projectivization.ind with
   | h v hv => simp
+
+/-- The projective sign change is an involution. -/
+theorem enriquesProjectiveInvolution_involutive :
+    Function.Involutive enriquesProjectiveInvolution :=
+  enriquesProjectiveInvolution_enriquesProjectiveInvolution
 
 /-- The projective sign change preserves the Enriques K3 cover. -/
 @[simp]
 theorem enriquesProjectiveInvolution_mem_enriquesZeroSet_iff (p : ℙ ℂ (Fin 6 → ℂ)) :
     enriquesProjectiveInvolution p ∈ enriquesZeroSet ↔ p ∈ enriquesZeroSet := by
   induction p using Projectivization.ind with
-  | h v hv => simp [mk_mem_enriquesZeroSet_iff]
+  | h v hv => simp
 
 /-- The projective sign change maps the Enriques K3 cover to itself. -/
 theorem mapsTo_enriquesProjectiveInvolution :
@@ -301,6 +310,30 @@ theorem enriquesProjectiveInvolution_no_fixed_point (p : ℙ ℂ (Fin 6 → ℂ)
     exact (mul_eq_zero.mp (by linear_combination this : (a - 1) * v i = 0)).resolve_left
       (sub_ne_zero.mpr h1)
 
+/-- The Enriques involution: the projective sign change, restricted to the Enriques K3 cover. -/
+noncomputable def enriquesZeroSetInvolution : enriquesZeroSet → enriquesZeroSet :=
+  mapsTo_enriquesProjectiveInvolution.restrict
+
+/-- The Enriques involution acts on the K3 cover as the projective sign change of `ℂℙ⁵`. -/
+@[simp]
+theorem coe_enriquesZeroSetInvolution (p : enriquesZeroSet) :
+    (enriquesZeroSetInvolution p : ℙ ℂ (Fin 6 → ℂ)) = enriquesProjectiveInvolution p :=
+  (rfl)
+
+/-- The Enriques involution of the K3 cover is an involution. -/
+@[simp]
+theorem enriquesZeroSetInvolution_enriquesZeroSetInvolution (p : enriquesZeroSet) :
+    enriquesZeroSetInvolution (enriquesZeroSetInvolution p) = p :=
+  Subtype.ext (by simp)
+
+/-- The Enriques involution of the K3 cover is an involution. -/
+theorem enriquesZeroSetInvolution_involutive : Function.Involutive enriquesZeroSetInvolution :=
+  enriquesZeroSetInvolution_enriquesZeroSetInvolution
+
+/-- **The Enriques involution of the K3 cover is free**: it has no fixed point. -/
+theorem enriquesZeroSetInvolution_ne_self (p : enriquesZeroSet) : enriquesZeroSetInvolution p ≠ p :=
+  fun h ↦ enriquesProjectiveInvolution_no_fixed_point p p.2 (congrArg Subtype.val h)
+
 /-! ### The complex surface structure -/
 
 /-- The atlas of the Enriques K3 cover induced by the analytic slice charts of `ℂℙ⁵`, modelled
@@ -317,21 +350,13 @@ private noncomputable def enriquesModelEquiv :
     (Fin (5 - Fintype.card (Fin 3)) → ℂ) ≃L[ℂ] (Fin 2 → ℂ) :=
   ContinuousLinearEquiv.ofFinrankEq (by simp)
 
-/-- The slice-chart model `Fin (5 - 3) → ℂ`, charted by `Fin 2 → ℂ` through
-`enriquesModelEquiv`. -/
-@[instance_reducible]
-private noncomputable def enriquesModelChartedSpace :
-    ChartedSpace (Fin 2 → ℂ) (Fin (5 - Fintype.card (Fin 3)) → ℂ) :=
-  (enriquesModelEquiv.toContDiffDiffeomorph ω).toHomeomorph.toOpenPartialHomeomorph
-    |>.singletonChartedSpace (Homeomorph.toOpenPartialHomeomorph_source _)
-
 /-- **The complex charts of the Enriques K3 cover.** The chart at a point reads the tangential
-coordinates of the analytic slice chart of `ℂℙ⁵` flattening the zero locus near that point. -/
+coordinates of the analytic slice chart of `ℂℙ⁵` flattening the zero locus near that point, in
+`Fin 2 → ℂ` through `enriquesModelEquiv`. -/
 @[no_expose]
 noncomputable instance instChartedSpaceEnriquesZeroSet : ChartedSpace (Fin 2 → ℂ) enriquesZeroSet :=
   letI := enriquesZeroSetSliceChartedSpace
-  letI := enriquesModelChartedSpace
-  ChartedSpace.comp (Fin 2 → ℂ) (Fin (5 - Fintype.card (Fin 3)) → ℂ) enriquesZeroSet
+  (enriquesModelEquiv.toContDiffDiffeomorph ω).chartedSpaceComp enriquesZeroSet
 
 /-- **The Enriques K3 cover is a complex surface.** Its atlas is analytic, and `C^r` for every
 `r`. -/
