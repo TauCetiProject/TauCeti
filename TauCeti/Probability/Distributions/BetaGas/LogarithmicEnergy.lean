@@ -26,8 +26,9 @@ shift. This also handles measures of infinite energy, including every measure wi
 
 The confinement estimate comes from bounding the distance between two points by
 `(1 + |x|) (1 + |y|)`. When `V x / 2 - log (1 + |x|)` tends to infinity outside compact sets,
-the energy controls tightness and attains a finite minimum. Upper truncations of the kernel
-give continuous approximations of the energy for weak convergence. On an empirical
+the energy controls tightness and, for continuous `V`, attains a finite minimum. Upper truncations
+of the kernel give lower semicontinuous approximations for lower semicontinuous potentials and
+continuous approximations for continuous potentials. On an empirical
 measure their diagonal contribution is explicit, which gives a lower limit bound for the
 off-diagonal energies of finite particle configurations.
 
@@ -97,6 +98,20 @@ theorem continuous_logarithmicEnergyKernel {V : ℝ → ℝ} (hV : Continuous V)
   exact continuous_iff_continuousAt.mpr fun z ↦
     (EReal.continuousAt_add (.inl (EReal.coe_ne_top _)) (.inl (EReal.coe_ne_bot _))).comp
       ((h₁.prodMk h₂.neg).continuousAt (x := z))
+
+/-- A lower semicontinuous potential gives a lower semicontinuous weighted kernel. -/
+theorem lowerSemicontinuous_logarithmicEnergyKernel {V : ℝ → ℝ} (hV : LowerSemicontinuous V) :
+    LowerSemicontinuous (logarithmicEnergyKernel V) := by
+  have hsum := (hV.comp continuous_fst).add (hV.comp continuous_snd)
+  have hhalf : LowerSemicontinuous (fun z : ℝ × ℝ ↦ (V z.1 + V z.2) / 2) :=
+    (continuous_id.div_const 2).comp_lowerSemicontinuous hsum
+      (fun _ _ h ↦ div_le_div_of_nonneg_right h (by norm_num))
+  have hlog : Continuous (fun z : ℝ × ℝ ↦ ENNReal.log (ENNReal.ofReal |z.1 - z.2|)) :=
+    ENNReal.continuous_log.comp (ENNReal.continuous_ofReal.comp
+      (continuous_fst.sub continuous_snd).abs)
+  exact (continuous_coe_real_ereal.comp_lowerSemicontinuous hhalf
+    EReal.coe_strictMono.monotone).add' hlog.neg.lowerSemicontinuous
+      (fun _ ↦ EReal.continuousAt_add (.inl (EReal.coe_ne_top _)) (.inl (EReal.coe_ne_bot _)))
 
 /-- A measurable potential gives a measurable weighted logarithmic kernel. -/
 theorem measurable_logarithmicEnergyKernel {V : ℝ → ℝ} (hV : Measurable V) :
@@ -176,12 +191,27 @@ theorem tendsto_logarithmicConfinement_sq_div_two :
   rw [logarithmicConfinement_def, ← sq_abs]
   nlinarith [mul_nonneg (abs_nonneg x) (sub_nonneg.mpr hx)]
 
-/-- Continuous confinement tending to infinity at infinity has a global lower bound. -/
-theorem bddBelow_range_logarithmicConfinement {V : ℝ → ℝ} (hV : Continuous V)
+/-- A lower semicontinuous confinement term tending to infinity at infinity is bounded below. -/
+theorem bddBelow_range_logarithmicConfinement {V : ℝ → ℝ} (hV : LowerSemicontinuous V)
     (hconf : Tendsto (logarithmicConfinement V) (cocompact ℝ) atTop) :
     BddBelow (range (logarithmicConfinement V)) := by
-  obtain ⟨x, hx⟩ := (continuous_logarithmicConfinement hV).exists_forall_le hconf
-  exact ⟨logarithmicConfinement V x, by rintro _ ⟨y, rfl⟩; exact hx y⟩
+  have hhalf : LowerSemicontinuous (fun x ↦ V x / 2) :=
+    (continuous_id.div_const 2).comp_lowerSemicontinuous hV
+      (fun _ _ h ↦ div_le_div_of_nonneg_right h (by norm_num))
+  have hpos (x : ℝ) : 0 < 1 + |x| := by positivity
+  have hlog : Continuous (fun x : ℝ ↦ Real.log (1 + |x|)) :=
+    (continuous_const.add continuous_abs).log fun x ↦ (hpos x).ne'
+  have h : LowerSemicontinuous (logarithmicConfinement V) :=
+    hhalf.add hlog.neg.lowerSemicontinuous
+  obtain ⟨K, hK, hle⟩ := mem_cocompact.mp
+    (hconf.eventually_ge_atTop (logarithmicConfinement V 0))
+  obtain ⟨x, _, hx⟩ := LowerSemicontinuousOn.exists_isMinOn (insert_nonempty 0 K)
+    (hK.insert 0) (h.lowerSemicontinuousOn _)
+  refine ⟨logarithmicConfinement V x, ?_⟩
+  rintro _ ⟨y, rfl⟩
+  by_cases hy : y ∈ K
+  · exact hx (mem_insert_of_mem 0 hy)
+  · exact (hx (mem_insert 0 K)).trans (hle hy)
 
 /-- Weighted logarithmic energy. For a kernel bounded below by a real constant, the energy
 is its extended integral against the square of `μ`. The kernel is shifted by its infimum
@@ -191,14 +221,14 @@ def logarithmicEnergy (V : ℝ → ℝ) (μ : ProbabilityMeasure ℝ) : EReal :=
   ((∫⁻ z, (logarithmicEnergyKernel V z - (b : EReal)).toENNReal ∂(μ.prod μ).toMeasure :
     ℝ≥0∞) : EReal) + (b : EReal)
 
-private theorem continuous_logarithmicEnergyKernel_sub_toENNReal {V : ℝ → ℝ}
-    (hV : Continuous V) (a : ℝ) :
-    Continuous (fun z ↦ (logarithmicEnergyKernel V z - (a : EReal)).toENNReal) := by
-  apply Continuous.ereal_toENNReal
+private theorem lowerSemicontinuous_logarithmicEnergyKernel_sub_toENNReal {V : ℝ → ℝ}
+    (hV : LowerSemicontinuous V) (a : ℝ) :
+    LowerSemicontinuous (fun z ↦ (logarithmicEnergyKernel V z - (a : EReal)).toENNReal) := by
   simp only [sub_eq_add_neg, ← EReal.coe_neg]
-  exact continuous_iff_continuousAt.mpr fun x ↦
-    (EReal.continuousAt_add (.inr (EReal.coe_ne_bot _)) (.inr (EReal.coe_ne_top _))).comp
-      (((continuous_logarithmicEnergyKernel hV).prodMk continuous_const).continuousAt (x := x))
+  exact EReal.continuous_toENNReal.comp_lowerSemicontinuous
+    ((lowerSemicontinuous_logarithmicEnergyKernel hV).add' lowerSemicontinuous_const
+      (fun _ ↦ EReal.continuousAt_add (.inr (EReal.coe_ne_bot _)) (.inr (EReal.coe_ne_top _))))
+    (fun _ _ h ↦ EReal.toENNReal_le_toENNReal h)
 
 /-- A shift by any real lower bound for the kernel gives the same energy. -/
 theorem logarithmicEnergy_eq_lintegral_sub_add {V : ℝ → ℝ} (μ : ProbabilityMeasure ℝ)
@@ -239,13 +269,13 @@ theorem logarithmicEnergy_eq_lintegral_sub_add {V : ℝ → ℝ} (μ : Probabili
     (heq (min a b) a (min_le_left ..) ha)
 
 /-- The weighted logarithmic energy is lower semicontinuous for weak convergence. -/
-theorem lowerSemicontinuous_logarithmicEnergy {V : ℝ → ℝ} (hV : Continuous V) :
+theorem lowerSemicontinuous_logarithmicEnergy {V : ℝ → ℝ} (hV : LowerSemicontinuous V) :
     LowerSemicontinuous (logarithmicEnergy V) := by
   let b := (sInf (range (logarithmicEnergyKernel V))).toReal
   have hprod : Continuous (fun μ : ProbabilityMeasure ℝ ↦ μ.prod μ) :=
     ProbabilityMeasure.continuous_prod.comp (continuous_id.prodMk continuous_id)
   have hlin := (lowerSemicontinuous_lintegral_probabilityMeasure
-    (continuous_logarithmicEnergyKernel_sub_toENNReal hV b).lowerSemicontinuous).comp
+    (lowerSemicontinuous_logarithmicEnergyKernel_sub_toENNReal hV b)).comp
     hprod
   apply LowerSemicontinuous.add'
     (continuous_coe_ennreal_ereal.comp_lowerSemicontinuous hlin
@@ -282,7 +312,7 @@ theorem lintegral_logarithmicConfinement_le_logarithmicEnergy {V : ℝ → ℝ}
 
 /-- Under confinement, the weak sublevel sets of the weighted energy are compact at every
 finite level. -/
-theorem isCompact_sublevel_logarithmicEnergy {V : ℝ → ℝ} (hV : Continuous V)
+theorem isCompact_sublevel_logarithmicEnergy {V : ℝ → ℝ} (hV : LowerSemicontinuous V)
     (hconf : Tendsto (logarithmicConfinement V) (cocompact ℝ) atTop) (a : ℝ) :
     IsCompact {μ | logarithmicEnergy V μ ≤ (a : EReal)} := by
   let S := {μ | logarithmicEnergy V μ ≤ (a : EReal)}
@@ -309,8 +339,8 @@ theorem isCompact_sublevel_logarithmicEnergy {V : ℝ → ℝ} (hV : Continuous 
         (.inl (EReal.coe_ne_bot _)) (.inl (EReal.coe_ne_top _))).mpr hmoment)
   have htail : T * μ.toMeasure Kᶜ ≤ B := by
     refine le_trans (mul_le_mul_right (measure_mono ?_) _) <| le_trans
-      (mul_meas_ge_le_lintegral (((continuous_logarithmicConfinement hV).sub
-        continuous_const).measurable.ennreal_ofReal) T) hbound
+      (mul_meas_ge_le_lintegral (((measurable_logarithmicConfinement hV.measurable).sub
+        measurable_const).ennreal_ofReal) T) hbound
     intro x hx
     simp only [mem_ofPred_eq, Pi.sub_apply]
     rw [← ENNReal.ofReal_toReal hTtop]
@@ -412,7 +442,7 @@ theorem exists_isMinOn_logarithmicEnergy {V : ℝ → ℝ} (hV : Continuous V)
   let ν : Measure ℝ := volume.restrict (Icc 0 1)
   have : IsProbabilityMeasure ν := ⟨by simp [ν, Real.volume_Icc]⟩
   let μ₀ : ProbabilityMeasure ℝ := ⟨ν, inferInstance⟩
-  obtain ⟨b, hb⟩ := bddBelow_range_logarithmicConfinement hV hconf
+  obtain ⟨b, hb⟩ := bddBelow_range_logarithmicConfinement hV.lowerSemicontinuous hconf
   have hfloor (z : ℝ × ℝ) : ((2 * b : ℝ) : EReal) ≤ logarithmicEnergyKernel V z :=
     calc
       ((2 * b : ℝ) : EReal) ≤
@@ -437,10 +467,10 @@ theorem exists_isMinOn_logarithmicEnergy {V : ℝ → ℝ} (hV : Continuous V)
   have hS : IsCompact S := by
     dsimp only [S]
     rw [hval]
-    exact isCompact_sublevel_logarithmicEnergy hV hconf _
+    exact isCompact_sublevel_logarithmicEnergy hV.lowerSemicontinuous hconf _
   have hμ₀ : μ₀ ∈ S := by simp [S]
   obtain ⟨μ, hμ, hmin⟩ := LowerSemicontinuousOn.exists_isMinOn ⟨μ₀, hμ₀⟩ hS
-    ((lowerSemicontinuous_logarithmicEnergy hV).lowerSemicontinuousOn S)
+    ((lowerSemicontinuous_logarithmicEnergy hV.lowerSemicontinuous).lowerSemicontinuousOn S)
   refine ⟨μ, ?_, lt_of_le_of_lt hμ hfin⟩
   intro η _
   by_cases hη : η ∈ S
@@ -453,48 +483,60 @@ is the nonnegative part of the beta gas rate before multiplication by `β / 2`. 
 def logarithmicEnergyRate (V : ℝ → ℝ) (μ : ProbabilityMeasure ℝ) : ℝ≥0∞ :=
   (logarithmicEnergy V μ - ⨅ ν, logarithmicEnergy V ν).toENNReal
 
+theorem logarithmicEnergyRate_def (V : ℝ → ℝ) (μ : ProbabilityMeasure ℝ) :
+    logarithmicEnergyRate V μ = (logarithmicEnergy V μ - ⨅ ν, logarithmicEnergy V ν).toENNReal :=
+  (rfl)
+
+private theorem iInf_logarithmicEnergy_ne_bot (V : ℝ → ℝ) :
+    (⨅ ν, logarithmicEnergy V ν) ≠ ⊥ := by
+  let b := (sInf (range (logarithmicEnergyKernel V))).toReal
+  have hb (μ : ProbabilityMeasure ℝ) : (b : EReal) ≤ logarithmicEnergy V μ :=
+    le_add_of_nonneg_left (EReal.coe_ennreal_nonneg _)
+  exact ne_bot_of_le_ne_bot (EReal.coe_ne_bot b) (le_iInf hb)
+
+/-- A rate sublevel is the energy sublevel with threshold shifted by the energy infimum. -/
+theorem logarithmicEnergyRate_le_iff {V : ℝ → ℝ} {μ : ProbabilityMeasure ℝ} {α : ℝ≥0∞} :
+    logarithmicEnergyRate V μ ≤ α ↔
+      logarithmicEnergy V μ ≤ (α : EReal) + ⨅ ν, logarithmicEnergy V ν := by
+  rw [logarithmicEnergyRate_def, ← EReal.coe_ennreal_le_coe_ennreal_iff,
+    EReal.coe_toENNReal_eq_max, max_le_iff, and_iff_right (EReal.coe_ennreal_nonneg α)]
+  exact EReal.sub_le_iff_le_add (.inl (iInf_logarithmicEnergy_ne_bot V))
+    (.inr (EReal.coe_ennreal_ne_bot α))
+
+/-- The centered rate vanishes exactly at the global minimizers of the weighted energy. -/
+@[simp]
+theorem logarithmicEnergyRate_eq_zero_iff {V : ℝ → ℝ} {μ : ProbabilityMeasure ℝ} :
+    logarithmicEnergyRate V μ = 0 ↔ IsMinOn (logarithmicEnergy V) univ μ := by
+  rw [← nonpos_iff_eq_zero, logarithmicEnergyRate_le_iff, EReal.coe_ennreal_zero, zero_add,
+    le_iInf_iff, isMinOn_iff]
+  simp
+
 /-- Centering the weighted energy at its minimum gives a good rate function. -/
 theorem isGoodRateFunction_logarithmicEnergyRate {V : ℝ → ℝ} (hV : Continuous V)
     (hconf : Tendsto (logarithmicConfinement V) (cocompact ℝ) atTop) :
     IsGoodRateFunction (logarithmicEnergyRate V) := by
   obtain ⟨μ, hμ, hfin⟩ := exists_isMinOn_logarithmicEnergy hV hconf
-  obtain ⟨b, hb⟩ := bddBelow_range_logarithmicConfinement hV hconf
-  have hfloor := lintegral_logarithmicConfinement_le_logarithmicEnergy hV.measurable
-    (fun x ↦ hb (mem_range_self x)) μ
-  have hbot : logarithmicEnergy V μ ≠ ⊥ := by
-    have hbase : ((2 * b : ℝ) : EReal) ≤ logarithmicEnergy V μ :=
-      (le_add_of_nonneg_left (EReal.coe_ennreal_nonneg _)).trans hfloor
-    exact ne_bot_of_le_ne_bot (EReal.coe_ne_bot _) hbase
-  let m := (logarithmicEnergy V μ).toReal
+  have hmin : logarithmicEnergy V μ = ⨅ ν, logarithmicEnergy V ν :=
+    le_antisymm (le_iInf fun ν ↦ hμ (mem_univ ν)) (iInf_le _ μ)
+  let m := (⨅ ν, logarithmicEnergy V ν).toReal
   have hm : (m : EReal) = ⨅ ν, logarithmicEnergy V ν :=
-    (EReal.coe_toReal hfin.ne hbot).trans
-      (le_antisymm (le_iInf fun ν ↦ hμ (mem_univ ν)) (iInf_le _ μ))
+    EReal.coe_toReal (hmin ▸ hfin.ne) (iInf_logarithmicEnergy_ne_bot V)
   have hr (ν : ProbabilityMeasure ℝ) :
       logarithmicEnergyRate V ν = (logarithmicEnergy V ν - (m : EReal)).toENNReal := by
-    rw [logarithmicEnergyRate, ← hm]
+    rw [logarithmicEnergyRate_def, ← hm]
   constructor
   · rw [funext hr]
     simp only [sub_eq_add_neg, ← EReal.coe_neg]
     apply EReal.continuous_toENNReal.comp_lowerSemicontinuous _
       (fun _ _ h ↦ EReal.toENNReal_le_toENNReal h)
-    apply LowerSemicontinuous.add' (lowerSemicontinuous_logarithmicEnergy hV)
+    apply LowerSemicontinuous.add' (lowerSemicontinuous_logarithmicEnergy hV.lowerSemicontinuous)
       lowerSemicontinuous_const
     intro ν
     exact EReal.continuousAt_add (.inr (EReal.coe_ne_bot _)) (.inr (EReal.coe_ne_top _))
   · intro α hα
-    have hset : {ν | logarithmicEnergyRate V ν ≤ α} =
-        {ν | logarithmicEnergy V ν ≤ ((α.toReal + m : ℝ) : EReal)} := by
-      ext ν
-      rw [mem_ofPred_eq, mem_ofPred_eq, hr]
-      have hnonneg : 0 ≤ logarithmicEnergy V ν - (m : EReal) :=
-        (EReal.sub_nonneg (.inr (EReal.coe_ne_top _)) (.inr (EReal.coe_ne_bot _))).mpr
-          (hm ▸ iInf_le (logarithmicEnergy V) ν)
-      rw [← EReal.coe_ennreal_le_coe_ennreal_iff, EReal.coe_toENNReal hnonneg,
-        ← EReal.coe_ennreal_toReal hα, EReal.sub_le_iff_le_add
-          (.inl (EReal.coe_ne_bot _)) (.inl (EReal.coe_ne_top _)),
-        ← EReal.coe_add]
-    rw [hset]
-    exact isCompact_sublevel_logarithmicEnergy hV hconf _
+    simpa only [logarithmicEnergyRate_le_iff, ← hm, ← EReal.coe_ennreal_toReal hα,
+      ← EReal.coe_add] using
+      isCompact_sublevel_logarithmicEnergy hV.lowerSemicontinuous hconf (α.toReal + m)
 
 /-- The real-valued kernel capped at height `M`, including on the diagonal. -/
 def truncatedLogarithmicEnergyKernel (V : ℝ → ℝ) (M : ℝ) (z : ℝ × ℝ) : ℝ :=
@@ -624,6 +666,24 @@ private theorem truncatedLogarithmicEnergy_sub_eq_lintegral {V : ℝ → ℝ} (h
   have hmono : Monotone EReal.toENNReal := fun _ _ h ↦ EReal.toENNReal_le_toENNReal h
   rw [← EReal.real_coe_toENNReal, EReal.coe_sub, hpoint, hmono.map_min]
   rw [← EReal.coe_natCast, EReal.real_coe_toENNReal, ENNReal.ofReal_natCast]
+
+private theorem lowerSemicontinuous_coe_truncatedLogarithmicEnergy {V : ℝ → ℝ}
+    (hV : LowerSemicontinuous V) {a : ℝ} (ha : ∀ z, (a : EReal) ≤ logarithmicEnergyKernel V z)
+    (n : ℕ) : LowerSemicontinuous (fun μ ↦ (truncatedLogarithmicEnergy V (a + n) μ : EReal)) := by
+  have heq (μ : ProbabilityMeasure ℝ) :
+      (truncatedLogarithmicEnergy V (a + n) μ : EReal) =
+        ((∫⁻ z, min ((logarithmicEnergyKernel V z - (a : EReal)).toENNReal) (n : ℝ≥0∞)
+          ∂(μ.prod μ).toMeasure : ℝ≥0∞) : EReal) + (a : EReal) := by
+    rw [← truncatedLogarithmicEnergy_sub_eq_lintegral hV.measurable ha μ n,
+      EReal.sub_add_cancel]
+  rw [funext heq]
+  have hlin := (lowerSemicontinuous_lintegral_probabilityMeasure
+    ((lowerSemicontinuous_logarithmicEnergyKernel_sub_toENNReal hV a).inf
+      (lowerSemicontinuous_const (z := (n : ℝ≥0∞))))).comp
+        (ProbabilityMeasure.continuous_prod.comp (continuous_id.prodMk continuous_id))
+  exact (continuous_coe_ennreal_ereal.comp_lowerSemicontinuous hlin
+    EReal.coe_ennreal_strictMono.monotone).add' lowerSemicontinuous_const
+      (fun _ ↦ EReal.continuousAt_add (.inr (EReal.coe_ne_bot _)) (.inr (EReal.coe_ne_top _)))
 
 /-- The energy is the increasing supremum of the upper truncations,
 with cutoffs tending to infinity in unit steps from any real lower bound for the kernel. -/
@@ -772,9 +832,9 @@ theorem coe_truncatedLogarithmicEnergy_sub_le_offDiag (V : ℝ → ℝ) (M : ℝ
 
 /-- Along empirical configurations with growing cardinality, the limiting measure's energy
 bounds the limit inferior of the off-diagonal energies. -/
-theorem logarithmicEnergy_le_liminf_offDiag {V : ℝ → ℝ} (hV : Continuous V)
+theorem logarithmicEnergy_le_liminf_offDiag {V : ℝ → ℝ} (hV : LowerSemicontinuous V)
     {a : ℝ} (ha : ∀ z, (a : EReal) ≤ logarithmicEnergyKernel V z)
-    {ι : Type*} {l : Filter ι} [l.NeBot] {κ : ι → Type*} [∀ i, Fintype (κ i)]
+    {ι : Type*} {l : Filter ι} {κ : ι → Type*} [∀ i, Fintype (κ i)]
     [∀ i, Nonempty (κ i)] (x : ∀ i, κ i → ℝ)
     (hcard : Tendsto (fun i ↦ (Fintype.card (κ i) : ℝ)) l atTop)
     {μ : ProbabilityMeasure ℝ}
@@ -783,14 +843,16 @@ theorem logarithmicEnergy_le_liminf_offDiag {V : ℝ → ℝ} (hV : Continuous V
   rw [logarithmicEnergy_eq_iSup_truncated hV.measurable ha]
   refine iSup_le fun n ↦ ?_
   let M := a + (n : ℝ)
-  have hT := ((continuous_truncatedLogarithmicEnergy hV ha M).tendsto μ).comp hμ
-  have hlim : Tendsto (fun i ↦ ((truncatedLogarithmicEnergy V M
-      (empiricalMeasureOfFintype (x i)) - M / (Fintype.card (κ i) : ℝ) : ℝ) : EReal)) l
-      (𝓝 ((truncatedLogarithmicEnergy V M μ : ℝ) : EReal)) := by
-    simpa only [sub_zero, Function.comp_def] using
-      (continuous_coe_real_ereal.tendsto _).comp (hT.sub (hcard.const_div_atTop M))
-  rw [← hlim.liminf_eq]
-  exact liminf_le_liminf (Eventually.of_forall fun i ↦
-    coe_truncatedLogarithmicEnergy_sub_le_offDiag V M (x i))
+  let f (p : ProbabilityMeasure ℝ × ℝ) : EReal :=
+    (truncatedLogarithmicEnergy V M p.1 : EReal) + ((-p.2 : ℝ) : EReal)
+  have hf : LowerSemicontinuous f :=
+    ((lowerSemicontinuous_coe_truncatedLogarithmicEnergy hV ha n).comp continuous_fst).add'
+      (continuous_coe_real_ereal.comp continuous_snd.neg).lowerSemicontinuous
+      (fun _ ↦ EReal.continuousAt_add (.inr (EReal.coe_ne_bot _)) (.inr (EReal.coe_ne_top _)))
+  have hlim := (hf.le_liminf (μ, 0)).trans
+    ((hμ.prodMk_nhds (hcard.const_div_atTop M)).liminf_le_liminf_comp (u := f))
+  simp only [f, ← EReal.coe_add, ← sub_eq_add_neg, sub_zero] at hlim
+  exact hlim.trans (liminf_le_liminf (Eventually.of_forall fun i ↦
+    coe_truncatedLogarithmicEnergy_sub_le_offDiag V M (x i)))
 
 end TauCeti.Probability
