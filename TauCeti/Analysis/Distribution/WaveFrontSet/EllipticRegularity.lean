@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.WaveFrontSet.LineDeriv
 public import TauCeti.Analysis.Distribution.WaveFrontSet.SingularSupport
+import TauCeti.Analysis.Distribution.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.ProdInner
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
@@ -83,6 +84,9 @@ gives rapid decay on `Γ`.
 * `TauCeti.exists_nhds_cone_le_norm_principalSymbol`: a principal symbol with
   continuous coefficients that does not vanish at `(x, ξ)` is bounded below by `c₀ ‖η‖ ^ M` for
   `y` near `x` and `η` in an open cone around `ξ`.
+* `TauCeti.exists_mul_one_add_norm_pow_le_norm_sum_mul_prod`: on such a cone the full symbol
+  `∑ i ∈ s, b i y ∏ₗ 2πi ⟪m i l, η⟫`, lower-order terms included, is bounded below by a multiple
+  of `(1 + ‖η‖) ^ M` outside a ball.
 * `Distribution.IsMicrolocallySmoothAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp`: if `P T` is
   microlocally smooth at `(x, ξ)` and `σ_M(P)(x, ξ) ≠ 0`, then `T` is microlocally smooth there.
 * `Distribution.waveFrontSet_subset_waveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_union`:
@@ -406,9 +410,10 @@ coefficients `b i y` be bounded by `A` for `y ∈ U`, and let the principal symb
 coefficients frozen at every `y ∈ U` be bounded below by `c₀ ‖η‖ ^ M` on `Γ`. Then the full symbol
 `p (y, η) = ∑ i ∈ s, b i y ∏ₗ 2πi ⟪m i l, η⟫` is bounded below by a multiple of `(1 + ‖η‖) ^ M`
 for `y ∈ U` and `η ∈ Γ` outside a ball: the terms of lower order are smaller by a factor `‖η‖`. -/
-private theorem exists_le_norm_symbol {ι : Type*} {s : Finset ι} {b : ι → E → ℂ} {k : ι → ℕ}
-    {m : ∀ i, Fin (k i) → E} {M : ℕ} (hk : ∀ i ∈ s, k i ≤ M) {U Γ : Set E} {A c₀ : ℝ}
-    (hc₀ : 0 < c₀) (hA : ∀ y ∈ U, ∀ i ∈ s, ‖b i y‖ ≤ A)
+theorem _root_.TauCeti.exists_mul_one_add_norm_pow_le_norm_sum_mul_prod {ι : Type*}
+    {s : Finset ι} {b : ι → E → ℂ} {k : ι → ℕ} {m : ∀ i, Fin (k i) → E} {M : ℕ}
+    (hk : ∀ i ∈ s, k i ≤ M) {U Γ : Set E} {A c₀ : ℝ} (hc₀ : 0 < c₀)
+    (hA : ∀ y ∈ U, ∀ i ∈ s, ‖b i y‖ ≤ A)
     (hΓ : ∀ y ∈ U, ∀ η ∈ Γ,
       c₀ * ‖η‖ ^ M ≤ ‖constCoeffPrincipalSymbol s (fun i ↦ b i y) m M η‖) :
     ∃ R c' : ℝ, 0 < c' ∧ ∀ y ∈ U, ∀ η ∈ Γ, R ≤ ‖η‖ →
@@ -742,10 +747,11 @@ theorem IsMicrolocallySmoothAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp {ι :
   -- On `W` the full symbol is elliptic at large frequencies in `Γ₁ ∩ Γ₂`.
   obtain ⟨A, -, hA⟩ := exists_forall_norm_iteratedFDeriv_le_of_isCompact s (n := 0)
     (fun i _ ↦ (hb i).of_le (by exact_mod_cast le_top)) hK'c
-  obtain ⟨R, c', hc', hp⟩ := exists_le_norm_symbol (b := fun i y ↦ c i * (a i y : ℂ)) hk hc₀
-    (U := interior K') (Γ := Γ₁ ∩ Γ₂) (A := A)
-    (fun y hy i hi ↦ by simpa using hA i hi 0 le_rfl y (interior_subset hy))
-    (fun y hy η hη ↦ hell y (hK'sub (interior_subset hy)).1.1 η hη.1)
+  obtain ⟨R, c', hc', hp⟩ :=
+    exists_mul_one_add_norm_pow_le_norm_sum_mul_prod (b := fun i y ↦ c i * (a i y : ℂ)) hk hc₀
+      (U := interior K') (Γ := Γ₁ ∩ Γ₂) (A := A)
+      (fun y hy i hi ↦ by simpa using hA i hi 0 le_rfl y (interior_subset hy))
+      (fun y hy η hη ↦ hell y (hK'sub (interior_subset hy)).1.1 η hη.1)
   -- By induction on `j`, the localized Fourier transforms of `T` with cutoffs supported in `K`
   -- are `O((1 + ‖η‖) ^ k₀ / (1 + ‖η‖) ^ j)` on `Γ₁ ∩ Γ₂`, uniformly over bounded cutoffs.
   obtain ⟨k₀, C₀, hC₀, h₀⟩ := exists_forall_norm_localFourier_le T (K := ⟨K, hKc⟩) hKΩ
@@ -877,8 +883,7 @@ theorem waveFrontSet_laplacianCLM (T : 𝓓'(Ω, ℂ)) :
   set b := stdOrthonormalBasis ℝ E
   have h := waveFrontSet_sum_smul_iteratedLineDerivOp_of_forall_ne_zero Finset.univ (fun _ ↦ 1)
     (k := fun _ ↦ 2) (fun i ↦ ![b i, b i]) (M := 2) (fun _ _ ↦ le_rfl) (fun ξ hξ ↦ ?_) T
-  · simpa [laplacianCLM_eq_sum b, iteratedLineDerivOp_succ_left, iteratedLineDerivOp_one, Fin.tail]
-      using h
+  · simpa [laplacianCLM_eq_sum_iteratedLineDerivOp b] using h
   rw [constCoeffPrincipalSymbol_laplacian]
   exact_mod_cast (pow_pos (norm_pos_iff.2 hξ) 2).ne'
 
