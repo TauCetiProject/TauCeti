@@ -32,6 +32,7 @@ price of restricting Lebesgue measure to that part and inserting the absolute de
 weight. The substitution `x = t ^ 2` on the positive half-line is the case a square-root law needs.
 
 A weight `exp ∘ g` whose exponent is bounded above almost everywhere keeps a finite measure finite.
+A weight equal to one on a measurable set leaves the mass of that set unchanged.
 
 The topological support of a weighted measure is also computed: an almost-everywhere nonzero
 density preserves it, and, when the reference measure is positive on nonempty open sets, a density
@@ -69,6 +70,8 @@ measure that is positive on nonempty open sets are equal.
 * `MeasureTheory.Measure.support_withDensity_ofReal`: for a measure positive on nonempty open
   sets, a continuous nonnegative real density has the same topological support as the measure it
   defines.
+* `MeasureTheory.withDensity_apply_eq_self_of_eqOn_one`: a weight equal to one on a measurable set
+  does not change the mass of that set.
 * `MeasureTheory.absolutelyContinuous_withDensity_ofReal`: a measure is absolutely continuous with
   respect to itself weighted by an almost-everywhere positive real density.
 * `MeasureTheory.continuous_eq_of_withDensity_ofReal_eq`: continuous nonnegative real densities
@@ -302,6 +305,12 @@ theorem rnDeriv_map_affine (μ : Measure E) [μ.IsAddHaarMeasure] (A : E ≃L[�
 end MeasureTheory.Measure
 
 namespace MeasureTheory
+
+/-- A weight equal to one on a measurable set `s` does not change the mass of `s`. -/
+theorem withDensity_apply_eq_self_of_eqOn_one {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    {f : α → ℝ≥0∞} {s : Set α} (hs : MeasurableSet s) (hf : Set.EqOn f 1 s) :
+    μ.withDensity f s = μ s := by
+  rw [withDensity_apply _ hs, setLIntegral_congr_fun hs hf, Pi.one_def, setLIntegral_one]
 
 /-- A measure is absolutely continuous with respect to itself weighted by an almost-everywhere
 positive real density: the weight `ENNReal.ofReal ∘ w` vanishes only on a null set, so weighting
