@@ -23,8 +23,9 @@ integral closure of the ring of `S`-integers of `K`:
 `𝒪_{L,T} = integral closure of 𝒪_{K,S} in L`.
 
 So the `S`-integers of an extension are obtained by inverting exactly the primes above `S`, and no
-others. When `L / K` is finite and separable, `𝒪_{L,T}` is therefore a finite projective
-`𝒪_{K,S}`-module, of rank `[L : K]`. This is the finite projective algebra along which
+others. In fact `𝒪_{L,T}` is spanned over `𝒪_{K,S}` by `B`, so when `B` is a finite `R`-module (for
+instance when `L / K` is finite and separable), `𝒪_{L,T}` is a finite projective `𝒪_{K,S}`-module,
+of rank `[L : K]`. This is the finite projective algebra along which
 `S`-integer rings are compared under a field extension, for instance by transfer maps.
 
 Every element of `𝒪_{K,S}` is `w`-integral at each prime `w` of `B` outside `T`, since the
@@ -34,7 +35,7 @@ is integrally closed. Conversely, the contraction to `R` of the denominator idea
 element of `𝒪_{L,T}` extends to the unit ideal of `𝒪_{K,S}`: a prime of `R` outside `S`
 containing it would, by going up, lie under a prime of `B` outside `T` containing the denominator
 ideal. Writing `1` through that ideal exhibits the element as an `𝒪_{K,S}`-combination of
-elements of `B`.
+elements of `B`, so `𝒪_{L,T}` is spanned over `𝒪_{K,S}` by `B`.
 
 ## Main definitions
 
@@ -49,8 +50,8 @@ elements of `B`.
   `𝒪_{K,S}` in `L`.
 * `IsDedekindDomain.finrank_integer_primesAbove`: the rank of `𝒪_{L,T}` over `𝒪_{K,S}` is
   `[L : K]`.
-* The instances `Module.Finite` and `Module.Projective` of `𝒪_{L,T}` over `𝒪_{K,S}`, for `L / K`
-  finite and separable.
+* The instances `Module.Finite` of `𝒪_{L,T}` over `𝒪_{K,S}`, for `B` finite over `R` and for
+  `L / K` finite and separable, and `Module.Projective`, whenever `𝒪_{L,T}` is finite.
 
 ## References
 
@@ -96,14 +97,20 @@ noncomputable instance integerAlgebraIntegerPrimesAbove :
 instance : IsScalarTower (S.integer K) ((primesAbove R B S).integer L) L :=
   .of_algebraMap_eq fun _ ↦ (rfl)
 
-/-- A `T`-integer of `L` is integral over `𝒪_{K,S}`. The contraction to `R` of its denominator
-ideal in `B` extends to the unit ideal of `𝒪_{K,S}`, so `1` is a combination of elements `c` of
-`𝒪_{K,S}` with `c • x` in the image of `B`. -/
-private theorem isIntegral_of_mem_integer_primesAbove {x : L}
-    (hx : x ∈ (primesAbove R B S).integer L) : IsIntegral (S.integer K) x := by
+/-- The inclusions `R → 𝒪_{K,S} → 𝒪_{L,T}` compose to the inclusion `R → 𝒪_{L,T}`. -/
+instance : IsScalarTower R (S.integer K) ((primesAbove R B S).integer L) :=
+  .of_algebraMap_eq fun r ↦ Subtype.ext (IsScalarTower.algebraMap_apply R K L r)
+
+/-- A `T`-integer of `L` is an `𝒪_{K,S}`-combination of elements of `B`. The contraction to `R` of
+its denominator ideal in `B` extends to the unit ideal of `𝒪_{K,S}`, so `1` is a combination of
+elements `c` of `𝒪_{K,S}` with `c • x` in the image of `B`. -/
+private theorem mem_span_of_mem_integer_primesAbove {x : L}
+    (hx : x ∈ (primesAbove R B S).integer L) :
+    x ∈ Submodule.span (S.integer K) (Set.range (algebraMap B L)) := by
   set I := (Algebra.denIdeal (R := B) L x).under R
-  -- the elements `c` of `𝒪_{K,S}` with `c • x` integral form an ideal containing the image of `I`
-  let N : Ideal (S.integer K) := (integralClosure (S.integer K) L).toSubmodule.comap
+  -- the elements `c` of `𝒪_{K,S}` with `c • x` in the span form an ideal containing the image of
+  -- `I`
+  let N : Ideal (S.integer K) := (Submodule.span (S.integer K) (Set.range (algebraMap B L))).comap
     (LinearMap.toSpanSingleton (S.integer K) L x)
   have hIN : I.map (algebraMap R (S.integer K)) ≤ N := by
     refine Ideal.map_le_iff_le_comap.mpr fun r hr ↦ ?_
@@ -111,12 +118,10 @@ private theorem isIntegral_of_mem_integer_primesAbove {x : L}
     have hrx : algebraMap R (S.integer K) r • x = algebraMap B L b := by
       rw [Algebra.smul_def, ← IsScalarTower.algebraMap_apply,
         IsScalarTower.algebraMap_apply R B L, hb]
-    simp only [N, Ideal.mem_comap, Submodule.mem_comap, LinearMap.toSpanSingleton_apply, hrx,
-      Subalgebra.mem_toSubmodule, mem_integralClosure_iff]
-    exact ((Algebra.IsIntegral.isIntegral (R := R) b).map
-      (IsScalarTower.toAlgHom R B L)).tower_top
+    simp only [N, Ideal.mem_comap, Submodule.mem_comap, LinearMap.toSpanSingleton_apply, hrx]
+    exact Submodule.subset_span ⟨b, rfl⟩
   suffices h : I.map (algebraMap R (S.integer K)) = ⊤ by
-    simpa [N, mem_integralClosure_iff] using hIN (h ▸ Submodule.mem_top : (1 : S.integer K) ∈ _)
+    simpa [N] using hIN (h ▸ Submodule.mem_top : (1 : S.integer K) ∈ _)
   -- otherwise a maximal ideal of `𝒪_{K,S}` contains it; it lies over a prime `v ∉ S` of `R`
   by_contra h
   obtain ⟨M, hM, hle⟩ := Ideal.exists_le_maximal _ h
@@ -141,7 +146,12 @@ primes of `B` above `S`: an element of `L` is a `T`-integer exactly when it is i
 `𝒪_{K,S}`. -/
 theorem mem_integer_primesAbove_iff {x : L} :
     x ∈ (primesAbove R B S).integer L ↔ IsIntegral (S.integer K) x := by
-  refine ⟨isIntegral_of_mem_integer_primesAbove L S, fun hx ↦ ?_⟩
+  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
+  · -- the elements of `B` are integral over `R`, hence over `𝒪_{K,S}`
+    refine (Submodule.span_le (p := (integralClosure (S.integer K) L).toSubmodule).mpr ?_
+      (mem_span_of_mem_integer_primesAbove L S hx) :)
+    rintro _ ⟨b, rfl⟩
+    exact ((Algebra.IsIntegral.isIntegral (R := R) b).map (IsScalarTower.toAlgHom R B L)).tower_top
   -- `x` is integral over the integrally closed ring `𝒪_{L,T}`, whose fraction field is `L`
   obtain ⟨y, rfl⟩ := (IsIntegrallyClosed.isIntegral_iff (R := (primesAbove R B S).integer L)).mp
     (hx.tower_top (A := (primesAbove R B S).integer L))
@@ -159,16 +169,35 @@ theorem finrank_integer_primesAbove :
     Module.finrank (S.integer K) ((primesAbove R B S).integer L) = Module.finrank K L :=
   (IsFractionRing.finrank_eq (S.integer K) K ((primesAbove R B S).integer L) L).symm
 
-variable [FiniteDimensional K L] [Algebra.IsSeparable K L]
+/-- When `B` is a finite `R`-module, the `T`-integers of `L` are a finite module over the
+`S`-integers of `K`: they are spanned by the images of generators of `B` over `R`. -/
+instance [Module.Finite R B] : Module.Finite (S.integer K) ((primesAbove R B S).integer L) := by
+  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := R) (M := B)
+  let f := (IsScalarTower.toAlgHom R B L).toLinearMap
+  -- the span of `B` over `𝒪_{K,S}` is spanned by the images of the generators `s`
+  let P := Submodule.span (S.integer K) (Set.range (algebraMap B L))
+  have hspan : P = Submodule.span (S.integer K) (f '' s) := by
+    rw [← Submodule.span_span_of_tower R, ← Submodule.map_span, hs, Submodule.map_top,
+      LinearMap.coe_range]
+    rfl
+  have : IsNoetherian (S.integer K) P :=
+    isNoetherian_of_fg_of_noetherian P (hspan ▸ Submodule.fg_span (s.finite_toSet.image f))
+  -- the inclusion `𝒪_{L,T} → L` lands in that span
+  let ι := (IsScalarTower.toAlgHom (S.integer K) ((primesAbove R B S).integer L) L).toLinearMap
+  exact Module.Finite.of_injective
+    (ι.codRestrict P fun y ↦ mem_span_of_mem_integer_primesAbove L S y.2)
+    fun _ _ h ↦ Subtype.ext (congrArg Subtype.val h :)
 
 /-- For a finite separable extension `L / K`, the `T`-integers of `L` are a finite module over the
 `S`-integers of `K`. -/
-instance : Module.Finite (S.integer K) ((primesAbove R B S).integer L) :=
+instance [FiniteDimensional K L] [Algebra.IsSeparable K L] :
+    Module.Finite (S.integer K) ((primesAbove R B S).integer L) :=
   IsIntegralClosure.finite (S.integer K) K L _
 
-/-- For a finite separable extension `L / K`, the `T`-integers of `L` are a projective module over
-the `S`-integers of `K`. -/
-instance : Module.Projective (S.integer K) ((primesAbove R B S).integer L) :=
+/-- The `T`-integers of `L` are a projective module over the `S`-integers of `K` whenever they are
+a finite module. -/
+instance [Module.Finite (S.integer K) ((primesAbove R B S).integer L)] :
+    Module.Projective (S.integer K) ((primesAbove R B S).integer L) :=
   have := TauCeti.IsIntegralClosure.flat (S.integer K) L ((primesAbove R B S).integer L)
   have := Module.finitePresentation_of_finite (S.integer K) ((primesAbove R B S).integer L)
   Module.Flat.projective_of_finitePresentation
