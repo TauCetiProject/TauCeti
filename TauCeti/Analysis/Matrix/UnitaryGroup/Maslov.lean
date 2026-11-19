@@ -162,6 +162,14 @@ theorem spectralAngleSum_conj {P Q : Matrix n n ℂ} (hPQ : P * Q = 1) (hQP : Q 
   rw [Units.val_mk, inv_eq_left_inv hQP] at h
   rw [spectralAngleSum, spectralAngleSum, h]
 
+/-- A point `z ≠ 1` of the unit circle has `-z` in the slit plane: `-z` is a nonpositive real
+number only if `z` is a nonnegative real number of modulus one, that is, `z = 1`. -/
+private theorem neg_mem_slitPlane_of_norm_eq_one {z : ℂ} (hz : ‖z‖ = 1) (hz1 : z ≠ 1) :
+    -z ∈ slitPlane := by
+  rw [mem_slitPlane_iff_not_le_zero, neg_nonpos]
+  intro h
+  exact hz1 (by rw [eq_coe_norm_of_nonneg h, hz, ofReal_one])
+
 /-- On the unit circle, complex conjugation negates the angle offset: away from `1`, the number
 `-z` lies in the slit plane, where conjugation negates the argument. -/
 private theorem angleOffset_conj {z : ℂ} (hz : ‖z‖ = 1) :
@@ -169,13 +177,7 @@ private theorem angleOffset_conj {z : ℂ} (hz : ‖z‖ = 1) :
   by_cases h1 : z = 1
   · simp [angleOffset, h1]
   have h1' : starRingEnd ℂ z ≠ 1 := fun h ↦ h1 (by simpa using congrArg (starRingEnd ℂ) h)
-  -- `arg (-z) = π` would make `z` a positive real number of modulus one.
-  have hpi : arg (-z) ≠ Real.pi := by
-    rw [Ne, arg_eq_pi_iff, neg_re, neg_im, neg_lt_zero, neg_eq_zero]
-    rintro ⟨hre, him⟩
-    have hz' : z = (z.re : ℂ) := Complex.ext rfl (by simp [him])
-    rw [hz', norm_real, Real.norm_of_nonneg hre.le] at hz
-    exact h1 (Complex.ext (by simp [hz]) (by simp [him]))
+  have hpi := slitPlane_arg_ne_pi (neg_mem_slitPlane_of_norm_eq_one hz h1)
   simp only [angleOffset, h1, h1', ↓reduceIte, ← map_neg, arg_conj, hpi, neg_div]
 
 open scoped Matrix.Norms.L2Operator in
@@ -185,8 +187,7 @@ conjugation negates the angle offset of every point of the unit circle. -/
 theorem spectralAngleSum_map_star {W : Matrix n n ℂ} (hW : W ∈ unitaryGroup n ℂ) :
     spectralAngleSum (W.map star) = -spectralAngleSum W := by
   have hroots : (W.map star).charpoly.roots = W.charpoly.roots.map (starRingEnd ℂ) := by
-    -- Complex conjugation `star` is the ring homomorphism `starRingEnd ℂ`.
-    rw [show W.map star = W.map (starRingEnd ℂ) from rfl, charpoly_map]
+    rw [map_star_eq_map_starRingEnd, charpoly_map]
     exact ((charpoly_monic W).roots_map_of_card_eq_natDegree _
       IsAlgClosed.card_roots_eq_natDegree).symm
   rw [spectralAngleSum, spectralAngleSum, hroots, Multiset.map_map, ← Multiset.sum_map_neg]
@@ -198,12 +199,8 @@ theorem spectralAngleSum_map_star {W : Matrix n n ℂ} (hW : W ∈ unitaryGroup 
 plane, where the argument is continuous. -/
 private theorem continuousAt_angleOffset {z : ℂ} (hz : ‖z‖ = 1) (hz1 : z ≠ 1) :
     ContinuousAt angleOffset z := by
-  have hslit : -z ∈ slitPlane := by
-    rw [mem_slitPlane_iff_not_le_zero, neg_nonpos]
-    intro h
-    exact hz1 (by rw [eq_coe_norm_of_nonneg h, hz, ofReal_one])
-  refine ContinuousAt.congr (((continuousAt_arg hslit).comp continuous_neg.continuousAt).div_const
-    (2 * Real.pi)) ?_
+  refine ContinuousAt.congr (((continuousAt_arg (neg_mem_slitPlane_of_norm_eq_one hz hz1)).comp
+    continuous_neg.continuousAt).div_const (2 * Real.pi)) ?_
   filter_upwards [isOpen_ne.mem_nhds hz1] with w hw
   simp [angleOffset, hw]
 
@@ -306,8 +303,7 @@ theorem coe_souriau_mul_left (O U : unitaryGroup n α) :
 theorem souriau_map_star (U : unitaryGroup n α) : souriau (map_star U) = map_star (souriau U) := by
   refine Subtype.ext ?_
   rw [coe_souriau, map_star_coe, map_star_coe, coe_souriau, ← transpose_map]
-  -- `star` on `α` is the ring homomorphism `starRingEnd α`, which commutes with products.
-  exact (Matrix.map_mul (f := starRingEnd α)).symm
+  simp only [map_star_eq_map_starRingEnd, Matrix.map_mul]
 
 /-- The Souriau map of a block-diagonal sum is the block-diagonal sum of the Souriau maps. -/
 @[simp]

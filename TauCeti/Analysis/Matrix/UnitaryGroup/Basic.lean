@@ -144,6 +144,14 @@ theorem exists_circle_smul_mem_specialUnitaryGroup (U : unitaryGroup n ℂ) :
     Circle.coe_inv, hθ]
   exact inv_mul_cancel₀ (Circle.coe_ne_zero _)
 
+/-- Conjugating the entries of a matrix is mapping it through the ring homomorphism
+`starRingEnd α`, so that lemmas about ring homomorphisms, such as `Matrix.map_mul` and
+`RingHom.map_det`, apply to it. -/
+theorem map_star_eq_map_starRingEnd {l m α : Type*} [CommSemiring α] [StarRing α]
+    (M : Matrix l m α) : M.map star = M.map (starRingEnd α) := by
+  ext
+  exact (starRingEnd_apply _).symm
+
 end Matrix
 
 namespace Matrix.UnitaryGroup
@@ -201,8 +209,7 @@ determinant. -/
 @[simp]
 theorem detCircle_map_star (U : unitaryGroup n ℂ) : detCircle (map_star U) = (detCircle U)⁻¹ := by
   refine Circle.ext ?_
-  rw [coe_detCircle, map_star_coe, Circle.coe_inv_eq_conj, coe_detCircle, RingHom.map_det]
-  -- `(starRingEnd ℂ).mapMatrix U` is `U.map star` by definition.
-  rfl
+  rw [coe_detCircle, map_star_coe, map_star_eq_map_starRingEnd, Circle.coe_inv_eq_conj,
+    coe_detCircle, RingHom.map_det, RingHom.mapMatrix_apply]
 
 end Matrix.UnitaryGroup

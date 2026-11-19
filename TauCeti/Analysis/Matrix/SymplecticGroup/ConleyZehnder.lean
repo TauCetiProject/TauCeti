@@ -340,8 +340,7 @@ theorem conleyZehnderIndex_inv {A B : GLSymplectic n ℝ} (γ : Path A B) :
   refine (realImage_map_star_eq_of_realImage_eq (realImage_graphUnitaryFrame (γ t))).trans ?_
   conv_rhs => rw [← realImage_mul_map_ofReal _ (Units.isUnit A'), Matrix.mul_assoc,
     graphFrame_mul_map_ofReal_of_mul_eq_one hinv, diagonalStraightening_mul_submatrix_swap]
-  -- Complex conjugation `star` on `ℂ` is the ring homomorphism `starRingEnd ℂ`.
-  exact congrArg Matrix.realImage (Matrix.map_mul (f := starRingEnd ℂ))
+  simp only [A', map_star_eq_map_starRingEnd, Matrix.map_mul]
 
 /-- **The reflected path.** For a path `Ψ` of symplectic matrices from `A` to `B`, the reflected
 path `t ↦ Ψ(1 - t) B⁻¹` from `1` to `A B⁻¹` has the Conley–Zehnder index of the path
