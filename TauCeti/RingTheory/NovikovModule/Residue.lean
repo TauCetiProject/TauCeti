@@ -56,6 +56,8 @@ soon as `δ ≠ 0`, and then the homogeneous integer pieces need not span the co
   is a finite sum of homogeneous combinations exactly when it meets finitely many degrees, so the
   completion is the internal direct sum of its homogeneous pieces, over any ring of scalars for
   which they are submodules, exactly when every completed combination does.
+* `TauCeti.NovikovModule.range_ofFinsupp_le_iSup_gradeBy`: every finite combination is a finite
+  sum of homogeneous combinations.
 * `TauCeti.NovikovModule.smul_mem_gradeBy_of_forall_vadd_eq`: every Novikov series preserves the
   homogeneous pieces of an orbit-invariant degree.
 * `TauCeti.NovikovModule.isInternal_novikovGradeBy`: the completion is the direct sum of its
@@ -212,6 +214,11 @@ theorem iSup_gradeBy_eq_top_iff :
     ⨆ k, gradeBy R F d k = ⊤ ↔
       ∀ a : NovikovModule R F, (d '' Function.support a.val).Finite := by
   simp only [Submodule.eq_top_iff', mem_iSup_gradeBy_iff_finite]
+
+/-- Every finite combination is a finite sum of homogeneous combinations. -/
+theorem range_ofFinsupp_le_iSup_gradeBy :
+    LinearMap.range (ofFinsupp F) ≤ ⨆ k, gradeBy R F d k := fun _ ha =>
+  mem_iSup_gradeBy_iff_finite.2 ((mem_range_ofFinsupp_iff.1 ha).image d)
 
 /-- The completed module is the internal direct sum of its homogeneous pieces exactly when every
 completed combination meets only finitely many degrees, over any ring of scalars `Λ` for which the

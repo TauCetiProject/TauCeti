@@ -33,7 +33,9 @@ pieces through the potential-cutoff topology of `TauCeti.RingTheory.NovikovModul
   homogeneous pieces is closed exactly when it is everything, and the completion is the internal
   direct sum of its homogeneous pieces exactly when every completed combination meets finitely many
   degrees (`TauCeti.NovikovModule.isClosed_iSup_gradeBy_iff`,
-  `TauCeti.NovikovModule.isInternal_gradeBy_iff`).
+  `TauCeti.NovikovModule.isInternal_gradeBy_iff`). Closedness of each piece does not give
+  closedness of their sum: for the degree `d(n) = n` on `S = ℕ` with potential `F(n) = -n`, the
+  pieces are the lines through the generators and their sum consists of the finite combinations.
 
 These are the statements needed to work with homogeneous pieces of a completed graded module
 without asserting that it is the direct sum of its homogeneous pieces. The corresponding results
