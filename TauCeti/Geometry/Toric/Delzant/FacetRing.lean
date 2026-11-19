@@ -142,7 +142,17 @@ theorem isNonface_def {s : Finset ι} :
       ∀ x ∈ facetPolyhedron i u c, ¬(s : Set ι) ⊆ activeSet (facetPairing i u) c x :=
   Iff.rfl
 
+omit [Fintype ι] in
+theorem stanleyReisnerIdeal_def :
+    stanleyReisnerIdeal i u c k =
+      Ideal.span ((fun s : Finset ι ↦ ∏ j ∈ s, X j) '' {s | IsNonface i u c s}) :=
+  (rfl)
+
 theorem linearRelation_def (φ : N →+ k) : linearRelation u k φ = ∑ j, C (φ (u j)) * X j :=
+  (rfl)
+
+theorem linearRelationIdeal_def :
+    linearRelationIdeal u k = Ideal.span (range (linearRelation u k)) :=
   (rfl)
 
 theorem facetIdeal_def :
@@ -157,6 +167,19 @@ Stanley–Reisner ideal and the linear relations. -/
 theorem facetIdeal_le_iff {J : Ideal (MvPolynomial ι k)} :
     facetIdeal i u c k ≤ J ↔ stanleyReisnerIdeal i u c k ≤ J ∧ linearRelationIdeal u k ≤ J :=
   sup_le_iff
+
+omit [Fintype ι] in
+/-- An ideal contains the Stanley–Reisner ideal exactly when it contains the monomial of every
+nonface. -/
+theorem stanleyReisnerIdeal_le_iff {J : Ideal (MvPolynomial ι k)} :
+    stanleyReisnerIdeal i u c k ≤ J ↔ ∀ s, IsNonface i u c s → ∏ j ∈ s, X j ∈ J := by
+  simp [stanleyReisnerIdeal_def, Ideal.span_le, Set.subset_def]
+
+/-- An ideal contains the linear relations exactly when it contains the linear relation of every
+weight. -/
+theorem linearRelationIdeal_le_iff {J : Ideal (MvPolynomial ι k)} :
+    linearRelationIdeal u k ≤ J ↔ ∀ φ, linearRelation u k φ ∈ J := by
+  simp [linearRelationIdeal_def, Ideal.span_le, Set.range_subset_iff]
 
 @[simp]
 theorem linearRelation_mem_linearRelationIdeal (φ : N →+ k) :
@@ -231,7 +254,7 @@ omit [Fintype ι] in
 @[simp]
 theorem stanleyReisnerIdeal_add :
     stanleyReisnerIdeal i u (fun j ↦ c j + y (i (u j))) k = stanleyReisnerIdeal i u c k := by
-  simp only [stanleyReisnerIdeal, isNonface_add_iff]
+  simp only [stanleyReisnerIdeal_def, isNonface_add_iff]
 
 /-- Translating the polyhedron does not change the ideal of the facet presentation. -/
 @[simp]
@@ -307,7 +330,7 @@ theorem isNonface_simplex_iff (ha : 0 < a) {s : Finset (Option κ)} :
 theorem stanleyReisnerIdeal_simplex (ha : 0 < a) :
     stanleyReisnerIdeal ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a) k =
       Ideal.span {∏ o, X o} := by
-  rw [stanleyReisnerIdeal]
+  rw [stanleyReisnerIdeal_def]
   congr 1
   ext p
   simp [isNonface_simplex_iff ha]
@@ -322,8 +345,8 @@ theorem linearRelationIdeal_simplex :
       Ideal.span (range fun m : κ ↦ X (some m) - X none) := by
   apply le_antisymm
   · -- The linear relation of `φ` is `∑ m, φ (e m) (D (some m) - D none)`.
-    rw [linearRelationIdeal, Ideal.span_le]
-    rintro _ ⟨φ, rfl⟩
+    rw [linearRelationIdeal_le_iff]
+    intro φ
     have h : linearRelation (simplexNormal κ) k φ =
         ∑ m, C (φ (Pi.single m 1)) * (X (some m) - X none) := by
       have h1 : (1 : κ → ℤ) = ∑ m, Pi.single m 1 := (Finset.univ_sum_single 1).symm
