@@ -212,21 +212,16 @@ theorem bilinFormAt_leftInvariantKirillovForm_apply (g : G) (v w : TangentSpace 
         (CotangentBundle.symplecticForm I G)) := by
     rw [SmoothForm.mpullback_mpullback]
     exact ν.leftInvariantKirillovForm_eq_mpullback_symplecticForm
-  -- The slice has derivative `v ↦ (v, 0)`. The product tangent fibre is only definitionally the
-  -- pair of factor fibres, so `ContinuousLinearMap.prod_apply` does not rewrite and the components
-  -- are read off by `rfl`.
-  have hd : mfderiv I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (fun x : G ↦ (x, a)) g =
-      (ContinuousLinearMap.id ℝ (TangentSpace I g)).prod 0 := by
-    have h := mfderiv_prodMk (I := I) (x := g) mdifferentiableAt_id
-      (mdifferentiableAt_const (c := a) (I' := 𝓘(ℝ, E →L[ℝ] ℝ)))
-    rwa [mfderiv_id, mfderiv_const] at h
+  -- The slice has derivative `ContinuousLinearMap.inl`, i.e. `v ↦ (v, 0)`. The product tangent
+  -- fibre is only definitionally the pair of factor fibres, so `ContinuousLinearMap.inl_apply`
+  -- does not rewrite and the components are read off by `rfl`.
   have hd₁ (u : TangentSpace I g) :
       (mfderiv I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (fun x : G ↦ (x, a)) g u).1 = u := by
-    rw [hd]
+    rw [mfderiv_prod_left]
     rfl
   have hd₂ (u : TangentSpace I g) :
       (mfderiv I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (fun x : G ↦ (x, a)) g u).2 = 0 := by
-    rw [hd]
+    rw [mfderiv_prod_left]
     rfl
   rw [SmoothForm.bilinFormAt_apply, hσ, SmoothForm.eval₂_mpullback]
   refine (CotangentBundle.eval₂_mpullback_leftTrivialization_symplecticForm (g, a) _ _).trans ?_

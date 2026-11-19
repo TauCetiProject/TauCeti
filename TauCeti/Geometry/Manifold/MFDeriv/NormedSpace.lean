@@ -107,6 +107,8 @@ at `u`. -/
 theorem mvfderiv_apply_eval (u : F) (a γ : F →L[𝕜] F') :
     mvfderiv 𝓘(𝕜, F →L[𝕜] F') (fun b : F →L[𝕜] F' ↦ b u) a γ = γ u := by
   refine (mvfderiv_eq_fderiv_apply _ a γ).trans ?_
+  -- The coercion of `ContinuousLinearMap.apply 𝕜 F' u` is the evaluation map `b ↦ b u` by
+  -- definition, which lets `ContinuousLinearMap.fderiv` compute its derivative.
   rw [show (fun b : F →L[𝕜] F' ↦ b u) = ContinuousLinearMap.apply 𝕜 F' u from rfl,
     ContinuousLinearMap.fderiv, ContinuousLinearMap.apply_apply]
 
