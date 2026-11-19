@@ -15,7 +15,7 @@ public import TauCeti.Topology.VectorBundle.Thom.Isomorphism
 /-!
 # The Thom isomorphism over a finitely trivialized base
 
-Let `E → B` be a real vector bundle with finite-dimensional model fibre `F` of rank `r ≥ 2`, and let
+Let `E → B` be a real vector bundle with finite-dimensional model fibre `F` of rank `r`, and let
 `u ∈ Hʳ(E, E₀; K)` be a Thom class (`TauCeti.IsThomClass`) with coefficients in a commutative ring
 `K`, for instance the class of an orientation with `K = ℤ`, or the unique class with `K = ZMod 2`.
 This file proves the **Thom isomorphism**: if `B` is covered by finitely many open sets, each in
@@ -43,7 +43,7 @@ applies (`TauCeti.IsThomClass.bijective_pullbackCupRestrict_of_subset_baseSet`).
 `r - 1`. Induction on the number of open sets gives the Thom isomorphism over any finite union of
 trivializing open sets (`TauCeti.IsThomClass.bijective_pullbackCupRestrict_biUnion`).
 
-The ranks `0` and `1` are not treated here, nor are bases without a finite trivializing cover.
+Bases without a finite trivializing cover are not treated here.
 
 ## Main results
 
@@ -103,7 +103,7 @@ private theorem bijective_pullbackCupRestrict_empty {n p m : ℕ} (h : p + n = m
 /-- The Thom isomorphism over a finite union of trivializing open sets, in the degrees `p + r`, by
 induction on the number of sets, using the Mayer–Vietoris step
 `TopCat.bijective_pullbackCupRestrict_union`. -/
-private theorem bijective_pullbackCupRestrict_biUnion_aux (hF : 2 ≤ finrank ℝ F)
+private theorem bijective_pullbackCupRestrict_biUnion_aux
     {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
     (hu : IsThomClass F E u) {ι : Type*} (s : Finset ι) {W : ι → Set B}
     (hWo : ∀ i ∈ s, IsOpen (W i))
@@ -123,12 +123,12 @@ private theorem bijective_pullbackCupRestrict_biUnion_aux (hF : 2 ≤ finrank �
     refine TopCat.bijective_pullbackCupRestrict_union _ _ M (hWo a (Finset.mem_insert_self a s))
       (isOpen_iUnion fun i ↦ isOpen_iUnion fun hi ↦ hWo i (Finset.mem_insert_of_mem hi)) u
       (fun q _ ↦ by
-        have := hu.bijective_pullbackCupRestrict_of_subset_baseSet M hF e he (p := q) rfl
+        have := hu.bijective_pullbackCupRestrict_of_subset_baseSet M e he (p := q) rfl
         rwa [thomPairProj_def] at this)
       (fun q _ ↦ ih (fun i hi ↦ hWo i (Finset.mem_insert_of_mem hi))
         (fun i hi ↦ hWe i (Finset.mem_insert_of_mem hi)) q)
       (fun q _ ↦ by
-        have := hu.bijective_pullbackCupRestrict_of_subset_baseSet M hF e hUV (p := q) rfl
+        have := hu.bijective_pullbackCupRestrict_of_subset_baseSet M e hUV (p := q) rfl
         rwa [thomPairProj_def] at this)
       (fun j hj ↦ ?_) rfl
     -- The pair over `W a ∩ ⋃ i ∈ s, W i` is `thomPairOver`, whose cohomology vanishes below the
@@ -138,11 +138,11 @@ private theorem bijective_pullbackCupRestrict_biUnion_aux (hF : 2 ≤ finrank �
         (e.thomPairOverIso ℝ hUV).op).symm
 
 /-- **The Thom isomorphism over a finite union of trivializing open sets.** Let `E → B` be a real
-vector bundle of rank `r ≥ 2`, `u ∈ Hʳ(E, E₀; K)` a Thom class and `W` the union of finitely many
+vector bundle of rank `r`, `u ∈ Hʳ(E, E₀; K)` a Thom class and `W` the union of finitely many
 open sets, each contained in the base set of a linear trivialization. Then the Thom map of the
 restriction of `u` to the Thom pair `(E|_W, E₀|_W)` is bijective from `Hᵖ(W; M)` onto
 `Hᵖ⁺ʳ(E|_W, E₀|_W; M)`, for every degree `p` and every `K`-module `M`. -/
-theorem IsThomClass.bijective_pullbackCupRestrict_biUnion (hF : 2 ≤ finrank ℝ F)
+theorem IsThomClass.bijective_pullbackCupRestrict_biUnion
     {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
     (hu : IsThomClass F E u) {ι : Type*} (s : Finset ι) {W : ι → Set B}
     (hWo : ∀ i ∈ s, IsOpen (W i))
@@ -152,47 +152,45 @@ theorem IsThomClass.bijective_pullbackCupRestrict_biUnion (hF : 2 ≤ finrank �
       (TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩) (zeroSectionCompl F E) M
       (⋃ i ∈ s, W i) (finrank ℝ F) p m h u) := by
   subst h
-  exact bijective_pullbackCupRestrict_biUnion_aux M hF hu s hWo hWe p
+  exact bijective_pullbackCupRestrict_biUnion_aux M hu s hWo hWe p
 
 /-- **The Thom isomorphism over a finitely trivialized base.** Let `E → B` be a real vector bundle
-of rank `r ≥ 2` whose base is covered by finitely many open sets, each contained in the base set of
+of rank `r` whose base is covered by finitely many open sets, each contained in the base set of
 a linear trivialization, and let `u ∈ Hʳ(E, E₀; K)` be a Thom class. Then the Thom map
 `a ↦ π^*a ⌣ u` is bijective from `Hᵖ(B; M)` onto `Hᵖ⁺ʳ(E, E₀; M)`, for every degree `p` and every
 `K`-module `M`. -/
-theorem IsThomClass.bijective_thomMap_of_biUnion_eq_univ (hF : 2 ≤ finrank ℝ F)
+theorem IsThomClass.bijective_thomMap_of_biUnion_eq_univ
     {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
     (hu : IsThomClass F E u) {ι : Type*} (s : Finset ι) {W : ι → Set B}
     (hWo : ∀ i ∈ s, IsOpen (W i))
     (hWe : ∀ i ∈ s, ∃ (e : Trivialization F (π F E)) (_ : e.IsLinear ℝ), W i ⊆ e.baseSet)
     (hW : ⋃ i ∈ s, W i = univ) {p m : ℕ} (h : p + finrank ℝ F = m) :
     Function.Bijective (thomMap F E M (finrank ℝ F) p m h u) := by
-  have key := hu.bijective_pullbackCupRestrict_biUnion M hF s hWo hWe h
+  have key := hu.bijective_pullbackCupRestrict_biUnion M s hWo hWe h
   rw [hW] at key
   rw [thomMap_def, thomPairProj_def]
   exact (TopCat.bijective_pullbackCupRestrict_univ_iff (proj F E) _ M h u).1 key
 
-/-- **The Thom isomorphism over a compact base.** For a real vector bundle `E → B` of rank `r ≥ 2`
+/-- **The Thom isomorphism over a compact base.** For a real vector bundle `E → B` of rank `r`
 over a compact base and a Thom class `u ∈ Hʳ(E, E₀; K)`, the Thom map `a ↦ π^*a ⌣ u` is bijective
 from `Hᵖ(B; M)` onto `Hᵖ⁺ʳ(E, E₀; M)`, for every degree `p` and every `K`-module `M`. -/
 theorem IsThomClass.bijective_thomMap [CompactSpace B] [VectorBundle ℝ F E]
-    (hF : 2 ≤ finrank ℝ F)
     {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
     (hu : IsThomClass F E u) {p m : ℕ} (h : p + finrank ℝ F = m) :
     Function.Bijective (thomMap F E M (finrank ℝ F) p m h u) := by
   obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover
     (fun b : B ↦ (trivializationAt F E b).baseSet) (fun b ↦ (trivializationAt F E b).open_baseSet)
     fun b _ ↦ mem_iUnion.2 ⟨b, FiberBundle.mem_baseSet_trivializationAt' b⟩
-  exact hu.bijective_thomMap_of_biUnion_eq_univ M hF t
+  exact hu.bijective_thomMap_of_biUnion_eq_univ M t
     (fun b _ ↦ (trivializationAt F E b).open_baseSet)
     (fun b _ ↦ ⟨trivializationAt F E b, inferInstance, subset_rfl⟩) (univ_subset_iff.1 ht) h
 
 /-- **The Thom isomorphism in homology over a finitely trivialized base.** Let `E → B` be a real
-vector bundle of rank `r ≥ 2` whose base is covered by finitely many open sets, each contained in
+vector bundle of rank `r` whose base is covered by finitely many open sets, each contained in
 the base set of a linear trivialization, and let `u ∈ Hʳ(E, E₀; K)` be a Thom class with
 coefficients in a field `K`. Then the homology Thom map `x ↦ π_*(x ⌢ u)` is bijective from
 `Hₚ₊ᵣ(E, E₀; K)` onto `Hₚ(B; K)`, for every degree `p`. -/
 theorem IsThomClass.bijective_homologyThomMap_of_biUnion_eq_univ {K : Type w} [Field K]
-    (hF : 2 ≤ finrank ℝ F)
     {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
     (hu : IsThomClass F E u) {ι : Type*} (s : Finset ι) {W : ι → Set B}
     (hWo : ∀ i ∈ s, IsOpen (W i))
@@ -200,18 +198,18 @@ theorem IsThomClass.bijective_homologyThomMap_of_biUnion_eq_univ {K : Type w} [F
     (hW : ⋃ i ∈ s, W i = univ) {p m : ℕ} (h : finrank ℝ F + p = m) :
     Function.Bijective (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u).hom :=
   (bijective_homologyThomMap_iff F E h u).2
-    (hu.bijective_thomMap_of_biUnion_eq_univ _ hF s hWo hWe hW (by omega))
+    (hu.bijective_thomMap_of_biUnion_eq_univ _ s hWo hWe hW (by omega))
 
 /-- **The Thom isomorphism in homology over a compact base.** For a real vector bundle `E → B` of
-rank `r ≥ 2` over a compact base and a Thom class `u ∈ Hʳ(E, E₀; K)` with coefficients in a field
+rank `r` over a compact base and a Thom class `u ∈ Hʳ(E, E₀; K)` with coefficients in a field
 `K`, the homology Thom map `x ↦ π_*(x ⌢ u)` is bijective from `Hₚ₊ᵣ(E, E₀; K)` onto `Hₚ(B; K)`, for
 every degree `p`. With `K = ZMod 2` every real vector bundle has a unique Thom class
 (`TauCeti.existsUnique_isThomClass_of_subsingleton_units`), so no orientation is needed. -/
 theorem IsThomClass.bijective_homologyThomMap {K : Type w} [Field K] [CompactSpace B]
-    [VectorBundle ℝ F E] (hF : 2 ≤ finrank ℝ F)
+    [VectorBundle ℝ F E]
     {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
     (hu : IsThomClass F E u) {p m : ℕ} (h : finrank ℝ F + p = m) :
     Function.Bijective (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u).hom :=
-  (bijective_homologyThomMap_iff F E h u).2 (hu.bijective_thomMap _ hF (by omega))
+  (bijective_homologyThomMap_iff F E h u).2 (hu.bijective_thomMap _ (by omega))
 
 end TauCeti

@@ -153,27 +153,11 @@ theorem IsThomClass.bijective_thomMap_of_finrank_eq_zero (hF : finrank ℝ F = 0
   -- The degree is `finrank ℝ F`, which is `0` only propositionally.
   generalize hr : finrank ℝ F = r at u hgen h
   obtain rfl : r = 0 := hr ▸ hF
-  obtain rfl : p = m := by omega
-  -- After `Hᵖ(E, ∅) ≅ Hᵖ(E)`, the Thom map is the pull-back along the homeomorphism `π` followed
-  -- by the cup product with the image `ū` of `u`, whose values are units.
-  have hcup := bijective_singularCup_left_of_forall_isUnit M
-    ((thomPair F E).singularCohomologyπ _ K _ 0 u)
-    (isUnit_singularCohomologyZeroEval_of_subsingleton (u := u) hgen) p
-  have hπ := ConcreteCategory.bijective_of_isIso
-    ((thomPair F E).singularCohomologyπ (ModuleCat.of K K) K M p)
-  have hpull := ConcreteCategory.bijective_of_isIso
-    ((singularCohomologyFunctor (ModuleCat.of K K) K M p).map (thomPairProj F E).op)
-  have e : ⇑((thomPair F E).singularCohomologyπ (ModuleCat.of K K) K M p) ∘
-      ⇑(thomMap F E M 0 p p h u) = (fun a ↦ (thomPair F E).fst.singularCup K
-        (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p 0 p rfl a
-          ((thomPair F E).singularCohomologyπ _ K _ 0 u)) ∘
-      ⇑(TopCat.singularCohomologyMap (thomPairProj F E) p) := by
-    funext a
-    rw [Function.comp_apply, thomMap_apply, TopPair.singularCohomologyπ_singularCup]
-    -- The two sides differ only in the proof of `p + 0 = p`.
-    rfl
-  rw [← Function.Bijective.of_comp_iff' hπ, e]
-  exact hcup.comp hpull
+  -- The pair `(E, ∅)` has empty subspace, `π` is a homeomorphism and the values of the image of `u`
+  -- in `H⁰(E; K)` are units.
+  rw [thomMap_def]
+  exact TopPair.bijective_pullbackCup_of_isEmpty _ _ u
+    (isUnit_singularCohomologyZeroEval_of_subsingleton (u := u) hgen) M h
 
 /-- **The homology Thom isomorphism in rank zero.** For a bundle of rank zero and a Thom class `u`
 with coefficients in a field `K`, the homology Thom map `x ↦ π_*(x ⌢ u)` is a bijection
