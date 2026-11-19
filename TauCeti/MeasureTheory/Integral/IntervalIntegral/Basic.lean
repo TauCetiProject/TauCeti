@@ -30,6 +30,8 @@ not belong to any particular application.
 * `TauCeti.tendsto_intervalIntegral_atTop_atBot`: the accumulated integral of a locally
   integrable function bounded below almost everywhere by a positive constant tends to `+∞` at
   `+∞` and to `-∞` at `-∞`.
+* `TauCeti.intervalIntegral.integral_mul_comp_mul_neg`: for an even `f : ℂ → ℂ`, the integral
+  `∫ t in a..b, z f(tz)` is odd in `z`.
 * `MeasureTheory.IntegrableOn.intervalIntegrable_of_mem_Icc`: a function integrable on `(a, b)`
   for a measure without mass at points is interval integrable between any two points of `[a, b]`.
 * `TauCeti.intervalIntegral.norm_integral_le_setIntegral_norm` and
@@ -159,6 +161,12 @@ theorem norm_sub_sub_integral_le {E : Type*} [NormedAddCommGroup E] [NormedSpace
       (∫ t in t₁..t₂, (g t - g' t)),
     norm_sub_le ((b₂ - b₁ - ∫ t in t₁..t₂, g' t) + (a₂ - b₂)) (a₁ - b₁),
     norm_add_le (b₂ - b₁ - ∫ t in t₁..t₂, g' t) (a₂ - b₂)]
+
+/-- For an even function `f : ℂ → ℂ`, the integral `∫ t in a..b, z f(tz)` is odd in `z`:
+`∫ t in a..b, (−z) f(t(−z)) = −∫ t in a..b, z f(tz)`. -/
+theorem integral_mul_comp_mul_neg {f : ℂ → ℂ} (hf : ∀ u, f (-u) = f u) (a b : ℝ) (z : ℂ) :
+    ∫ t : ℝ in a..b, -z * f (t * -z) = -∫ t : ℝ in a..b, z * f (t * z) := by
+  simp only [mul_neg, hf, neg_mul, _root_.intervalIntegral.integral_neg]
 
 end intervalIntegral
 

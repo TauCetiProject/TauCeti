@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
 public import TauCeti.Analysis.Complex.HasPrimitives
+public import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # The complex error functions and Fresnel integrals
@@ -31,13 +32,14 @@ with the integrals from `0` to `z` taken along the straight segment (DLMF §7.2)
 * `TauCeti.Complex.erf_conj`, `TauCeti.faddeeva_neg_conj`, `TauCeti.fresnelC_conj`,
   `TauCeti.fresnelS_conj`: the conjugation symmetries.
 * `TauCeti.Complex.erf_sqrt_pi_mul`: `2 ∫₀ʷ e^{−πt²} dt = erf(√π w)` along the segment.
-* The Checks of the roadmap: `erf` is odd, `w(0) = 1`, `w(iy) = e^{y²} erfc y` for real `y`,
-  `ℱ(0) = (1 + i)/2`, `ℱ(z) + ℱ(−z) = 1 + i`, and `f(0) = g(0) = ½`.
+* Special values and symmetry identities: `erf`, `C` and `S` are odd, `w(0) = 1`,
+  `w(iy) = e^{y²} erfc y` for real `y`, `ℱ(0) = (1 + i)/2`, `ℱ(z) + ℱ(−z) = 1 + i`, and
+  `f(0) = g(0) = ½`.
 
 ## Implementation notes
 
 A segment integral `z ∫₀¹ f(sz) ds` of an entire function `f` is a primitive of `f`
-(`Differentiable.hasDerivAt_smul_integral_comp_mul`). This gives the derivatives without
+(`Differentiable.hasDerivAt_integral_mul_comp_mul`). This gives the derivatives without
 differentiating under the integral sign.
 
 The definitions and proofs are adapted from the lean-DLMF project
@@ -49,7 +51,7 @@ The definitions and proofs are adapted from the lean-DLMF project
 * [DLMF] *NIST Digital Library of Mathematical Functions*, §7.2, <https://dlmf.nist.gov/7.2>.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -58,20 +60,6 @@ open Complex Set MeasureTheory
 open scoped Real ComplexConjugate
 
 namespace TauCeti
-
-/-- The straight-segment integral `w ↦ ∫₀¹ w f(tw) dt` of an entire function `f` is a primitive
-of `f`: `Differentiable.hasDerivAt_smul_integral_comp_mul` with `w` moved inside the integral,
-which is the form in which `erf`, `fresnelC` and `fresnelS` are defined. -/
-private theorem hasDerivAt_integral_mul_comp_mul {f : ℂ → ℂ} (hf : Differentiable ℂ f)
-    (z : ℂ) : HasDerivAt (fun w : ℂ => ∫ t : ℝ in 0..1, w * f (t * w)) (f z) z := by
-  simpa only [intervalIntegral.integral_const_mul, smul_eq_mul] using
-    hf.hasDerivAt_smul_integral_comp_mul z
-
-/-- The segment integral of an odd-in-`z` integrand: `∫₀¹ (−z) f(t(−z)) dt = −∫₀¹ z f(tz) dt` for
-even `f`. -/
-private theorem integral_mul_comp_mul_neg {f : ℂ → ℂ} (hf : ∀ u, f (-u) = f u) (z : ℂ) :
-    ∫ t : ℝ in 0..1, -z * f (t * -z) = -∫ t : ℝ in 0..1, z * f (t * z) := by
-  simp only [mul_neg, hf, neg_mul, intervalIntegral.integral_neg]
 
 namespace Complex
 
@@ -92,9 +80,11 @@ theorem erfc_def (z : ℂ) : erfc z = 1 - erf z := (rfl)
 /-- `erf′(z) = (2/√π) e^{−z²}`. -/
 theorem hasDerivAt_erf (z : ℂ) :
     HasDerivAt erf (2 / (Real.sqrt π : ℂ) * cexp (-z ^ 2)) z :=
-  (hasDerivAt_integral_mul_comp_mul (f := fun u : ℂ => cexp (-u ^ 2)) (by fun_prop) z).const_mul _
+  (Differentiable.hasDerivAt_integral_mul_comp_mul (f := fun u : ℂ => cexp (-u ^ 2))
+    (by fun_prop) z).const_mul _
 
 /-- `erf` is entire. -/
+@[fun_prop]
 theorem differentiable_erf : Differentiable ℂ erf := fun z => (hasDerivAt_erf z).differentiableAt
 
 /-- `erfc′(z) = −(2/√π) e^{−z²}`. -/
@@ -103,6 +93,7 @@ theorem hasDerivAt_erfc (z : ℂ) :
   exact (hasDerivAt_erf z).const_sub 1
 
 /-- `erfc` is entire. -/
+@[fun_prop]
 theorem differentiable_erfc : Differentiable ℂ erfc :=
   fun z => (hasDerivAt_erfc z).differentiableAt
 
@@ -113,11 +104,14 @@ theorem erf_zero : erf 0 = 0 := by simp [erf_def]
 theorem erfc_zero : erfc 0 = 1 := by simp [erfc_def]
 
 /-- `erf` is odd. -/
+@[simp]
 theorem erf_neg (z : ℂ) : erf (-z) = -erf z := by
-  rw [erf_def, erf_def, integral_mul_comp_mul_neg (f := fun u : ℂ => cexp (-u ^ 2)) (by simp)]
+  rw [erf_def, erf_def,
+    TauCeti.intervalIntegral.integral_mul_comp_mul_neg (f := fun u : ℂ => cexp (-u ^ 2)) (by simp)]
   ring
 
 /-- `erfc(−z) = 2 − erfc z`. -/
+@[simp]
 theorem erfc_neg (z : ℂ) : erfc (-z) = 2 - erfc z := by
   rw [erfc_def, erfc_def, erf_neg]
   ring
@@ -127,7 +121,7 @@ theorem erf_ofReal (x : ℝ) : erf x = (TauCeti.Real.erf x : ℂ) := by
   have hpt (s : ℝ) :
       (x : ℂ) * cexp (-((s : ℂ) * x) ^ 2) = ((x * Real.exp (-(s * x) ^ 2) : ℝ) : ℂ) := by
     push_cast
-    rfl
+    ring
   simp_rw [erf_def, hpt]
   rw [intervalIntegral.integral_ofReal, intervalIntegral.integral_const_mul, Real.erf_def]
   have h := intervalIntegral.smul_integral_comp_mul_right (fun t => Real.exp (-t ^ 2)) x
@@ -135,13 +129,11 @@ theorem erf_ofReal (x : ℝ) : erf x = (TauCeti.Real.erf x : ℂ) := by
   simp only [smul_eq_mul, zero_mul, one_mul] at h
   rw [← h]
   push_cast
-  rfl
+  ring
 
 /-- The complementary error function restricts to Tau Ceti's real one. -/
 theorem erfc_ofReal (x : ℝ) : erfc x = (TauCeti.Real.erfc x : ℂ) := by
-  rw [erfc_def, erf_ofReal, Real.erfc_def]
-  push_cast
-  rfl
+  rw [erfc_def, erf_ofReal, Real.erfc_def, ofReal_sub, ofReal_one]
 
 /-- `erf(conj z) = conj (erf z)`. -/
 theorem erf_conj (z : ℂ) : erf (conj z) = conj (erf z) := by
@@ -209,11 +201,28 @@ def fresnelAuxG (z : ℂ) : ℂ :=
 /-- `w(z) = e^{−z²} erfc(−iz)`. -/
 theorem faddeeva_def (z : ℂ) : faddeeva z = cexp (-z ^ 2) * Complex.erfc (-I * z) := (rfl)
 
+theorem fresnelC_def (z : ℂ) :
+    fresnelC z = ∫ s in (0 : ℝ)..1, z * Complex.cos (π * ((s : ℂ) * z) ^ 2 / 2) := (rfl)
+
+theorem fresnelS_def (z : ℂ) :
+    fresnelS z = ∫ s in (0 : ℝ)..1, z * Complex.sin (π * ((s : ℂ) * z) ^ 2 / 2) := (rfl)
+
+theorem fresnelTail_def (z : ℂ) : fresnelTail z = (1 + I) / 2 - (fresnelC z + I * fresnelS z) :=
+  (rfl)
+
+theorem fresnelAuxF_def (z : ℂ) :
+    fresnelAuxF z = (1 / 2 - fresnelS z) * Complex.cos (π * z ^ 2 / 2) -
+      (1 / 2 - fresnelC z) * Complex.sin (π * z ^ 2 / 2) := (rfl)
+
+theorem fresnelAuxG_def (z : ℂ) :
+    fresnelAuxG z = (1 / 2 - fresnelC z) * Complex.cos (π * z ^ 2 / 2) +
+      (1 / 2 - fresnelS z) * Complex.sin (π * z ^ 2 / 2) := (rfl)
+
 /-- The Faddeeva function is entire. -/
+@[fun_prop]
 theorem differentiable_faddeeva : Differentiable ℂ faddeeva := by
-  unfold faddeeva
-  exact (by fun_prop : Differentiable ℂ fun z : ℂ => cexp (-z ^ 2)).mul
-    (Complex.differentiable_erfc.comp (by fun_prop))
+  rw [funext faddeeva_def]
+  fun_prop
 
 /-- `w(0) = 1`. -/
 @[simp]
@@ -222,15 +231,10 @@ theorem faddeeva_zero : faddeeva 0 = 1 := by simp [faddeeva_def]
 /-- `w(iy) = e^{y²} erfc y` for real `y`, with `TauCeti.Real.erfc`. -/
 theorem faddeeva_I_mul (y : ℝ) :
     faddeeva (I * y) = (Real.exp (y ^ 2) : ℂ) * (TauCeti.Real.erfc y : ℂ) := by
-  have h1 : -I * (I * y) = (y : ℂ) := by
-    ring_nf
-    rw [I_sq]
-    ring
+  have h1 : -I * (I * y) = (y : ℂ) := by linear_combination (-(y : ℂ)) * I_sq
   have h2 : -(I * (y : ℂ)) ^ 2 = ((y ^ 2 : ℝ) : ℂ) := by
     push_cast
-    ring_nf
-    rw [I_sq]
-    ring
+    linear_combination (-(y : ℂ) ^ 2) * I_sq
   rw [faddeeva_def, h1, h2, Complex.erfc_ofReal, ofReal_exp]
 
 /-- `w(−conj z) = conj (w z)`. -/
@@ -242,56 +246,60 @@ theorem faddeeva_neg_conj (z : ℂ) : faddeeva (-conj z) = conj (faddeeva z) := 
 /-- `C′(z) = cos(πz²/2)`. -/
 theorem hasDerivAt_fresnelC (z : ℂ) :
     HasDerivAt fresnelC (Complex.cos (π * z ^ 2 / 2)) z :=
-  hasDerivAt_integral_mul_comp_mul (f := fun u : ℂ => Complex.cos (π * u ^ 2 / 2))
+  Differentiable.hasDerivAt_integral_mul_comp_mul (f := fun u : ℂ => Complex.cos (π * u ^ 2 / 2))
     (by fun_prop) z
 
 /-- `S′(z) = sin(πz²/2)`. -/
 theorem hasDerivAt_fresnelS (z : ℂ) :
     HasDerivAt fresnelS (Complex.sin (π * z ^ 2 / 2)) z :=
-  hasDerivAt_integral_mul_comp_mul (f := fun u : ℂ => Complex.sin (π * u ^ 2 / 2))
+  Differentiable.hasDerivAt_integral_mul_comp_mul (f := fun u : ℂ => Complex.sin (π * u ^ 2 / 2))
     (by fun_prop) z
 
 /-- `C` is entire. -/
+@[fun_prop]
 theorem differentiable_fresnelC : Differentiable ℂ fresnelC :=
   fun z => (hasDerivAt_fresnelC z).differentiableAt
 
 /-- `S` is entire. -/
+@[fun_prop]
 theorem differentiable_fresnelS : Differentiable ℂ fresnelS :=
   fun z => (hasDerivAt_fresnelS z).differentiableAt
 
 /-- `ℱ` is entire. -/
+@[fun_prop]
 theorem differentiable_fresnelTail : Differentiable ℂ fresnelTail := by
-  unfold fresnelTail
-  exact (differentiable_const _).sub
-    (differentiable_fresnelC.add ((differentiable_const _).mul differentiable_fresnelS))
+  rw [funext fresnelTail_def]
+  fun_prop
 
 /-- The auxiliary function `f` is entire. -/
+@[fun_prop]
 theorem differentiable_fresnelAuxF : Differentiable ℂ fresnelAuxF := by
-  unfold fresnelAuxF
-  have := differentiable_fresnelC
-  have := differentiable_fresnelS
+  rw [funext fresnelAuxF_def]
   fun_prop
 
 /-- The auxiliary function `g` is entire. -/
+@[fun_prop]
 theorem differentiable_fresnelAuxG : Differentiable ℂ fresnelAuxG := by
-  unfold fresnelAuxG
-  have := differentiable_fresnelC
-  have := differentiable_fresnelS
+  rw [funext fresnelAuxG_def]
   fun_prop
 
 @[simp]
-theorem fresnelC_zero : fresnelC 0 = 0 := by simp [fresnelC]
+theorem fresnelC_zero : fresnelC 0 = 0 := by simp [fresnelC_def]
 
 @[simp]
-theorem fresnelS_zero : fresnelS 0 = 0 := by simp [fresnelS]
+theorem fresnelS_zero : fresnelS 0 = 0 := by simp [fresnelS_def]
 
 /-- `C` is odd. -/
-theorem fresnelC_neg (z : ℂ) : fresnelC (-z) = -fresnelC z :=
-  integral_mul_comp_mul_neg (f := fun u : ℂ => Complex.cos (π * u ^ 2 / 2)) (by simp) z
+@[simp]
+theorem fresnelC_neg (z : ℂ) : fresnelC (-z) = -fresnelC z := by
+  rw [fresnelC_def, fresnelC_def, TauCeti.intervalIntegral.integral_mul_comp_mul_neg
+    (f := fun u : ℂ => Complex.cos (π * u ^ 2 / 2)) (by simp)]
 
 /-- `S` is odd. -/
-theorem fresnelS_neg (z : ℂ) : fresnelS (-z) = -fresnelS z :=
-  integral_mul_comp_mul_neg (f := fun u : ℂ => Complex.sin (π * u ^ 2 / 2)) (by simp) z
+@[simp]
+theorem fresnelS_neg (z : ℂ) : fresnelS (-z) = -fresnelS z := by
+  rw [fresnelS_def, fresnelS_def, TauCeti.intervalIntegral.integral_mul_comp_mul_neg
+    (f := fun u : ℂ => Complex.sin (π * u ^ 2 / 2)) (by simp)]
 
 /-- `C(conj z) = conj (C z)`. -/
 theorem fresnelC_conj (z : ℂ) : fresnelC (conj z) = conj (fresnelC z) := by
@@ -299,7 +307,7 @@ theorem fresnelC_conj (z : ℂ) : fresnelC (conj z) = conj (fresnelC z) := by
       conj (z * Complex.cos (π * ((s : ℂ) * z) ^ 2 / 2)) := by
     rw [map_mul, ← cos_conj]
     simp [map_pow, map_mul, map_div₀, conj_ofReal, map_ofNat]
-  rw [fresnelC, fresnelC, funext hpt, intervalIntegral.intervalIntegral_conj]
+  rw [fresnelC_def, fresnelC_def, funext hpt, intervalIntegral.intervalIntegral_conj]
 
 /-- `S(conj z) = conj (S z)`. -/
 theorem fresnelS_conj (z : ℂ) : fresnelS (conj z) = conj (fresnelS z) := by
@@ -307,23 +315,23 @@ theorem fresnelS_conj (z : ℂ) : fresnelS (conj z) = conj (fresnelS z) := by
       conj (z * Complex.sin (π * ((s : ℂ) * z) ^ 2 / 2)) := by
     rw [map_mul, ← sin_conj]
     simp [map_pow, map_mul, map_div₀, conj_ofReal, map_ofNat]
-  rw [fresnelS, fresnelS, funext hpt, intervalIntegral.intervalIntegral_conj]
+  rw [fresnelS_def, fresnelS_def, funext hpt, intervalIntegral.intervalIntegral_conj]
 
 /-- `ℱ(0) = (1 + i)/2`. -/
 @[simp]
-theorem fresnelTail_zero : fresnelTail 0 = (1 + I) / 2 := by simp [fresnelTail]
+theorem fresnelTail_zero : fresnelTail 0 = (1 + I) / 2 := by simp [fresnelTail_def]
 
 /-- `ℱ(z) + ℱ(−z) = 1 + i`. -/
 theorem fresnelTail_add_fresnelTail_neg (z : ℂ) : fresnelTail z + fresnelTail (-z) = 1 + I := by
-  rw [fresnelTail, fresnelTail, fresnelC_neg, fresnelS_neg]
+  rw [fresnelTail_def, fresnelTail_def, fresnelC_neg, fresnelS_neg]
   ring
 
 /-- `f(0) = ½`. -/
 @[simp]
-theorem fresnelAuxF_zero : fresnelAuxF 0 = 1 / 2 := by simp [fresnelAuxF]
+theorem fresnelAuxF_zero : fresnelAuxF 0 = 1 / 2 := by simp [fresnelAuxF_def]
 
 /-- `g(0) = ½`. -/
 @[simp]
-theorem fresnelAuxG_zero : fresnelAuxG 0 = 1 / 2 := by simp [fresnelAuxG]
+theorem fresnelAuxG_zero : fresnelAuxG 0 = 1 / 2 := by simp [fresnelAuxG_def]
 
 end TauCeti
