@@ -157,6 +157,16 @@ theorem pullbackDensity_apply {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     (f : E → ℝ) (x : E) : pullbackDensity Φ f x = |(fderiv ℝ Φ x).det| * f (Φ x) :=
   (rfl)
 
+@[simp]
+theorem pullbackDrift_zero (Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) :
+    pullbackDrift Φ (0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) = 0 := by
+  funext x; simp [pullbackDrift_apply]
+
+@[simp]
+theorem pullbackDensity_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (Φ : E → E) :
+    pullbackDensity Φ (0 : E → ℝ) = 0 := by
+  funext x; simp
+
 /-- Where `DΦ(x)` is invertible, the map of the inverse Jacobian matrix is a right inverse of
 `DΦ(x)`. -/
 private theorem fderiv_apply_toEuclideanCLM_inv_apply {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
