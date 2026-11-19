@@ -16,9 +16,10 @@ A subset `s` of the real coordinate space `σ → ℝ` is *semialgebraic at* a p
 (`TauCeti.SemialgebraicAt`) if `x` has an open semialgebraic neighbourhood `U` such that `s ∩ U` is
 semialgebraic. The set `s` is *locally semialgebraic* (`TauCeti.IsLocallySemialgebraic`) if it is
 semialgebraic at every point of the ambient space, including the points of its frontier that lie
-outside `s`. The results that use the metric or the closure assume that `σ` is finite. For
-instance, the set of integer points of the real line is locally semialgebraic but, having infinitely
-many connected components, it is not semialgebraic.
+outside `s`. The metric characterization of semialgebraicity at a point and the operations
+taking closures, interiors and frontiers assume that `σ` is finite. For instance, the set of
+integer points of the real line is locally semialgebraic but, having infinitely many connected
+components, it is not semialgebraic.
 
 Locally semialgebraic sets are the sets which, near every point, are cut out by finitely many
 polynomial sign conditions; they sit between semialgebraic and semianalytic sets. In Łojasiewicz's
@@ -80,26 +81,6 @@ theorem semialgebraicAt_def {s : Set (σ → ℝ)} {x : σ → ℝ} :
 section SemialgebraicAt
 
 variable {s s' V : Set (σ → ℝ)} {x : σ → ℝ}
-
-/-- Every neighbourhood of `x` contains an open semialgebraic neighbourhood of `x`: a box
-constraining finitely many coordinates. -/
-theorem exists_isOpen_isSemialgebraic_subset (hV : V ∈ 𝓝 x) :
-    ∃ B, IsOpen B ∧ x ∈ B ∧ B ⊆ V ∧ IsSemialgebraic B := by
-  rw [nhds_pi, Filter.mem_pi] at hV
-  obtain ⟨I, hI, t, ht, hIt⟩ := hV
-  choose ε hε hεt using fun i => Metric.mem_nhds_iff.1 (ht i)
-  have hmem (i : σ) : {y : σ → ℝ | y i ∈ ball (x i) (ε i)} =
-      {y | eval y (C (x i - ε i)) < eval y (X i)} ∩
-        {y | eval y (X i) < eval y (C (x i + ε i))} := by
-    ext y
-    simp [Real.ball_eq_Ioo, sub_eq_add_neg]
-  have hxB (i : σ) : x i ∈ ball (x i) (ε i) := mem_ball_self (hε i)
-  refine ⟨⋂ i ∈ I, {y | y i ∈ ball (x i) (ε i)}, hI.isOpen_biInter fun i _ =>
-    isOpen_ball.preimage (continuous_apply i), by simpa using fun i _ => hxB i,
-    fun y hy => hIt fun i hi => hεt i (mem_iInter₂.1 hy i hi), ?_⟩
-  exact .biInter hI fun i _ => by
-    rw [hmem]
-    exact (isSemialgebraic_eval_lt _ _).inter (isSemialgebraic_eval_lt _ _)
 
 /-- **Shrinking.** If `s` is semialgebraic at `x`, then the open semialgebraic neighbourhood of
 `x` meeting `s` in a semialgebraic set can be chosen inside any prescribed neighbourhood `V`
@@ -409,12 +390,9 @@ theorem _root_.IsCompact.exists_isSemialgebraic_inter {s K : Set (σ → ℝ)} (
 /-- A bounded set which is semialgebraic at every point of its closure is semialgebraic. -/
 theorem isSemialgebraic_of_isBounded {s : Set (σ → ℝ)} (hb : Bornology.IsBounded s)
     (hs : ∀ x ∈ closure s, SemialgebraicAt s x) : IsSemialgebraic s := by
-  have hK : IsCompact (closure s) := by
-    refine (isCompact_univ_pi fun i =>
-      (Bornology.forall_isBounded_image_eval_iff.2 hb i).isCompact_closure).of_isClosed_subset
-      isClosed_closure ?_
-    exact closure_minimal (fun y hy i _ => subset_closure ⟨y, hy, rfl⟩)
-      (isClosed_set_pi fun i _ => isClosed_closure)
+  have hK : IsCompact (closure s) :=
+    Pi.isCompact_closure_iff.mpr fun i =>
+      (Bornology.forall_isBounded_image_eval_iff.2 hb i).isCompact_closure
   obtain ⟨U, -, hsU, -, h⟩ := hK.exists_isSemialgebraic_inter hs
   rwa [inter_eq_left.2 (subset_closure.trans hsU)] at h
 
