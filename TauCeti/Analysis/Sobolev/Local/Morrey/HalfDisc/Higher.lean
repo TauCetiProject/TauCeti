@@ -212,7 +212,7 @@ theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_inter_setOf
     hu.exists_opens_contDiffOn_ae_eq_inter_setOf_im_nonneg (by exact_mod_cast hq)
   have hTS : B ∩ {z | 0 ≤ z.im} ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} :=
     inter_subset_inter_left _ (subset_closure.trans hsub)
-  have hOT : O ⊆ B ∩ {z | 0 ≤ z.im} := fun z hz => ⟨hz.1, (show 0 < z.im from hz.2).le⟩
+  have hOT : O ⊆ B ∩ {z | 0 ≤ z.im} := fun z hz => ⟨hz.1, (mem_ofPred.1 hz.2).le⟩
   have hO : IsOpen O := isOpen_ball.inter (isOpen_lt continuous_const Complex.continuous_im)
   have hOV : O ⊆ V := (hOT.trans hTS).trans hSV
   have hug₁ : u =ᵐ[volume.restrict O] g₁ := hv.symm.trans hvg₁
