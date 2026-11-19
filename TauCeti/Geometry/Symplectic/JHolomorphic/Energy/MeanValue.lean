@@ -68,8 +68,6 @@ trajectory: there `e₀ = (1, 0)`, `ζ = (0, ∂ₛu)`, and the inequality bound
 
 ## Main declarations
 
-* `TauCeti.IsJHolomorphicAt.fderiv_I_eq`: a `J`-holomorphic curve from `ℂ` satisfies
-  `∂ₜu = J(u) ∂ₛu`.
 * `TauCeti.neg_mul_norm_fderiv_one_pow_four_le_laplacian`: the differential inequality
   `Δ ‖∂ₛu‖² ≥ -A ‖∂ₛu‖⁴` for a `J`-holomorphic curve.
 * `TauCeti.pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball`: the mean-value
@@ -98,17 +96,6 @@ open InnerProductSpace Laplacian Filter Topology Complex Metric MeasureTheory Re
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 variable {u : ℂ → V} {J : V → V →L[ℝ] V} {z : ℂ} {e₀ : V}
-
-/-- A curve that is `J'`-holomorphic at `z` for the standard complex structure of `ℂ` satisfies
-the Cauchy--Riemann equation in the form `∂ₜu = J'(u) ∂ₛu` used in this file. -/
-theorem IsJHolomorphicAt.fderiv_I_eq {J' : V → AlmostComplexStructure V}
-    (h : IsJHolomorphicAt (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ) J' u z) :
-    fderiv ℝ u z I = J' (u z) (fderiv ℝ u z 1) := by
-  obtain ⟨f', hf', hc⟩ := (isJHolomorphicAt_iff _ _ u z).mp h
-  have h1 := LinearMap.congr_fun hc 1
-  simp only [LinearMap.coe_comp, Function.comp_apply, ContinuousLinearMap.coe_coe] at h1
-  rw [hf'.fderiv]
-  simpa [AlmostComplexStructure.ofComplexModule_apply] using h1
 
 /-- The Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu` differentiated twice at `z`, in the directions
 `w` and then `a`. -/
