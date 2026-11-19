@@ -40,6 +40,8 @@ act strictly on `F` by `f · ω = Φ (f, ω)(end)`, and transport is strictly eq
 * `TauCeti.MooreReplacement.endpointLiftingFunction p`: the transitive lifting function of `p'`.
 * `TauCeti.MooreReplacement.Fiber p b`: the fibre `F'` of `p'` over `b`, with its right action of
   `MooreLoopSpace B b`.
+* `TauCeti.MooreReplacement.Fiber.homeomorphEndpointFiber p b`: `F'` is the fibre of `p'` over
+  `b`.
 * `TauCeti.MooreReplacement.Fiber.map h hh`: the equivariant map of fibres induced by a map `h`
   over `B`.
 * `TauCeti.MooreLiftingFunction.transport`: transport `F' → F` along a lifting function.
@@ -301,6 +303,22 @@ def mk' (x : MooreReplacement p) (h : x.path.target = b) : Fiber p b :=
 
 @[simp]
 theorem val_mk' (x : MooreReplacement p) (h : x.path.target = b) : (mk' x h).val = x :=
+  (rfl)
+
+/-- The fibre `F'` is the fibre of the endpoint map `p'` over `b`: a point of `F'` is sent to its
+underlying pair. -/
+def homeomorphEndpointFiber (p : C(E, B)) (b : B) : Fiber p b ≃ₜ {x // endpoint p x = b} :=
+  (Homeomorph.refl (MooreReplacement p)).subtype fun x ↦ by
+    rw [endpoint_apply, Homeomorph.refl_apply, id_eq]
+
+@[simp]
+theorem coe_homeomorphEndpointFiber_apply (p : C(E, B)) (b : B) (x : Fiber p b) :
+    (homeomorphEndpointFiber p b x : MooreReplacement p) = x.val :=
+  (rfl)
+
+@[simp]
+theorem val_homeomorphEndpointFiber_symm_apply (p : C(E, B)) (b : B)
+    (x : {x // endpoint p x = b}) : ((homeomorphEndpointFiber p b).symm x).val = x :=
   (rfl)
 
 /-- The right action of a Moore loop `ω` at `b` on the fibre: `(e, γ) · ω = (e, γ · ω)`. -/

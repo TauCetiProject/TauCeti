@@ -17,8 +17,8 @@ shows that this construction respects homotopies through maps over `B`: such a h
 induces the homotopy `(s, (e, γ)) ↦ (H (s, e), γ)` of the maps of fibres
 (`TauCeti.MooreReplacement.Fiber.mapHomotopy`). Consequently a fibre homotopy equivalence from
 `p` to `q` induces a homotopy equivalence `F'_p ≃ₕ F'_q` of the fibres of the replacements over
-every point (`TauCeti.FiberHomotopyEquiv.mooreReplacementFiber`), whose forward map commutes
-strictly with the right actions of the Moore loops at `b`.
+every point (`TauCeti.FiberHomotopyEquiv.mooreReplacementFiberHomotopyEquiv`), whose forward map
+commutes strictly with the right actions of the Moore loops at `b`.
 
 So the fibre `F'`, with its strict action, is an invariant of `p` up to fibre homotopy
 equivalence. For instance, a Hurewicz fibration is fibre homotopy equivalent to its own Moore-path
@@ -28,8 +28,8 @@ replacement (`TauCeti.MooreReplacement.fiberHomotopyEquiv`).
 
 * `TauCeti.MooreReplacement.Fiber.mapHomotopy`: the homotopy of maps of fibres induced by a
   homotopy through maps over `B`.
-* `TauCeti.FiberHomotopyEquiv.mooreReplacementFiber`: the homotopy equivalence of the fibres of
-  the Moore-path replacements induced by a fibre homotopy equivalence.
+* `TauCeti.FiberHomotopyEquiv.mooreReplacementFiberHomotopyEquiv`: the homotopy equivalence of the
+  fibres of the Moore-path replacements induced by a fibre homotopy equivalence.
 
 ## References
 
@@ -97,7 +97,7 @@ variable {E E' B : Type*} [TopologicalSpace E] [TopologicalSpace E'] [Topologica
 /-- A fibre homotopy equivalence from `p` to `q` induces a **homotopy equivalence of the fibres of
 the Moore-path replacements** over each point `b`, `(e, γ) ↦ (Φ e, γ)`, with homotopy inverse
 `(e', γ) ↦ (Φ⁻¹ e', γ)`. -/
-def mooreReplacementFiber (Φ : FiberHomotopyEquiv p q) (b : B) :
+def mooreReplacementFiberHomotopyEquiv (Φ : FiberHomotopyEquiv p q) (b : B) :
     HomotopyEquiv (Fiber p b) (Fiber q b) where
   toFun := Fiber.map Φ.toFun Φ.comp_toFun
   invFun := Fiber.map Φ.invFun Φ.comp_invFun
@@ -108,18 +108,18 @@ def mooreReplacementFiber (Φ : FiberHomotopyEquiv p q) (b : B) :
     rw [← Fiber.map_comp, ← Fiber.map_id]
     exact Φ.right_inv.map fun H ↦ Fiber.mapHomotopy H _ _
 
-theorem mooreReplacementFiber_toFun (Φ : FiberHomotopyEquiv p q) (b : B) :
-    (Φ.mooreReplacementFiber b).toFun = Fiber.map Φ.toFun Φ.comp_toFun :=
+theorem mooreReplacementFiberHomotopyEquiv_toFun (Φ : FiberHomotopyEquiv p q) (b : B) :
+    (Φ.mooreReplacementFiberHomotopyEquiv b).toFun = Fiber.map Φ.toFun Φ.comp_toFun :=
   (rfl)
 
 @[simp]
-theorem coe_mooreReplacementFiber (Φ : FiberHomotopyEquiv p q) (b : B) :
-    ⇑(Φ.mooreReplacementFiber b) = Fiber.map Φ.toFun Φ.comp_toFun :=
+theorem coe_mooreReplacementFiberHomotopyEquiv (Φ : FiberHomotopyEquiv p q) (b : B) :
+    ⇑(Φ.mooreReplacementFiberHomotopyEquiv b) = Fiber.map Φ.toFun Φ.comp_toFun :=
   (rfl)
 
 @[simp]
-theorem coe_mooreReplacementFiber_symm (Φ : FiberHomotopyEquiv p q) (b : B) :
-    ⇑(Φ.mooreReplacementFiber b).symm = Fiber.map Φ.invFun Φ.comp_invFun :=
+theorem coe_mooreReplacementFiberHomotopyEquiv_symm (Φ : FiberHomotopyEquiv p q) (b : B) :
+    ⇑(Φ.mooreReplacementFiberHomotopyEquiv b).symm = Fiber.map Φ.invFun Φ.comp_invFun :=
   (rfl)
 
 end FiberHomotopyEquiv

@@ -27,8 +27,9 @@ change when `p` is replaced by its own Moore-path replacement.
   quasi-isomorphism follows from the one for transport
   (`TauCeti.isQuasiIso_transportLocalSystemHom`). No fibration hypothesis on `p` is needed.
 
-This is the step of Barraud–Damian–Humilière–Oancea that passes from fibrations with a transitive
-lifting function to arbitrary fibrations, by transport along the Moore-path replacement.
+This is the coefficient-side comparison used in the step of Barraud–Damian–Humilière–Oancea that
+passes from fibrations with a transitive lifting function to arbitrary fibrations, by transport
+along the Moore-path replacement.
 
 ## Main results
 
@@ -62,8 +63,8 @@ its forward map is a quasi-isomorphism. -/
 theorem FiberHomotopyEquiv.isQuasiIso_fibrationLocalSystemMap {p : C(E, B)} {q : C(E', B)}
     (Φ : FiberHomotopyEquiv p q) (b : B) :
     DGRightModuleCat.IsQuasiIso (fibrationLocalSystemMap R (b := b) Φ.toFun Φ.comp_toFun) :=
-  isQuasiIso_of_apply_eq (G' := MooreLoopSpace B b) R _ (Φ.mooreReplacementFiber b) fun x ↦ by
-    rw [fibrationLocalSystemMap_apply, Φ.mooreReplacementFiber_toFun]
+  isQuasiIso_of_apply_eq (G' := MooreLoopSpace B b) R _ (Φ.mooreReplacementFiberHomotopyEquiv b)
+    fun x ↦ by rw [fibrationLocalSystemMap_apply, Φ.mooreReplacementFiberHomotopyEquiv_toFun]
 
 /-- **The DG local system of a map is that of its Moore-path replacement**: for every map `p`, the
 inclusion `E → E'`, `e ↦ (e, const)`, into the Moore-path replacement induces a quasi-isomorphism
@@ -79,18 +80,14 @@ theorem isQuasiIso_fibrationLocalSystemMap_incl (p : C(E, B)) (b : B) :
       (MooreReplacement.incl p) (MooreReplacement.endpoint_comp_incl p) ≫
         transportLocalSystemHom hΦ b) := by
     -- The composite is induced by the identification of `F'` with the fibre of `p'` over `b`.
-    let e : MooreReplacement.Fiber p b ≃ₜ {x // MooreReplacement.endpoint p x = b} :=
-      (Homeomorph.refl (MooreReplacement p)).subtype fun x ↦ by
-        rw [MooreReplacement.endpoint_apply, Homeomorph.refl_apply, id_eq]
-    refine isQuasiIso_of_apply_eq (G' := MooreLoopSpace B b) R _ e.toHomotopyEquiv fun x ↦ ?_
+    refine isQuasiIso_of_apply_eq (G' := MooreLoopSpace B b) R _
+      (MooreReplacement.Fiber.homeomorphEndpointFiber p b).toHomotopyEquiv fun x ↦ ?_
     rw [DGRightModuleCat.comp_apply, transportLocalSystemHom_apply, fibrationLocalSystemMap_apply,
       ← LinearMap.comp_apply, ← cubicalChainModuleLinearMap_comp]
     congr 2
     refine ContinuousMap.ext fun y ↦
       Subtype.ext ((MooreReplacement.Fiber.coe_transport_map_incl y).trans ?_)
-    -- `e` is the identity on the underlying pairs, by construction of `Homeomorph.subtype`.
-    rw [MooreReplacement.Fiber.val_eq_subtypeVal]
-    rfl
+    simp
   rw [DGRightModuleCat.comp_eq_comp] at hcomp
   exact (isQuasiIso_transportLocalSystemHom hΦ b).of_comp_left hcomp
 
