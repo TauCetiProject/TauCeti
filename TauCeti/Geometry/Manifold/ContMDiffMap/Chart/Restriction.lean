@@ -287,6 +287,67 @@ theorem chartCkSeminorm_restrict [IsManifold I n M] (f : C^n⟮I, M; 𝓘(𝕜, 
       m hm z hz
     rwa [chartIteratedFDeriv_restrict_apply] at h
 
+/-! ### Nested open subsets -/
+
+/-- For nested open subsets `W ≤ U`, the extended chart of `W` at a point has its target inside
+the target of the extended chart of `U` at the same point. -/
+theorem _root_.TopologicalSpace.Opens.extChartAt_target_subset_of_le {U W : Opens M}
+    (hWU : W ≤ U) (x : W) :
+    (extChartAt I x).target ⊆ (extChartAt I (Opens.inclusion hWU x)).target := by
+  intro z hz
+  rw [W.extChartAt_target_eq x] at hz
+  rw [U.extChartAt_target_eq]
+  exact ⟨hz.1, hWU hz.2⟩
+
+/-- For nested open subsets `W ≤ U`, precomposition with the inclusion of `W` into `U` preserves
+the coordinate derivatives in inherited charts. -/
+theorem chartIteratedFDeriv_comp_inclusion_apply [IsManifold I n M] {U W : Opens M}
+    (hWU : W ≤ U) (g : C^n⟮I, U; 𝓘(𝕜, F), F⟯) (x : W) (m : ℕ) (hm : m ≤ n)
+    (z : (extChartAt I x).target) :
+    chartIteratedFDeriv (g.comp ⟨Opens.inclusion hWU, contMDiff_inclusion hWU⟩) x m hm z =
+      chartIteratedFDeriv g (Opens.inclusion hWU x) m hm
+        ⟨z, U.extChartAt_target_subset_of_le hWU x z.2⟩ := by
+  classical
+  -- Both sides are derivatives of the same ambient germ, read through the two inherited charts.
+  let g' : M → F := fun y ↦ if h : y ∈ U then g ⟨y, h⟩ else 0
+  have hW : g' ∘ Subtype.val = g.comp ⟨Opens.inclusion hWU, contMDiff_inclusion hWU⟩ := by
+    funext y
+    simp only [Function.comp_apply, g', hWU y.2, ↓reduceDIte]
+    rfl
+  have hU : g' ∘ Subtype.val = g := by
+    funext y
+    simp [g', y.2]
+  have h₁ := congrFun (ftaylorSeriesWithin_restrict_extChartAt g' W x z.2) m
+  have h₂ := congrFun (ftaylorSeriesWithin_restrict_extChartAt g' U (Opens.inclusion hWU x)
+    (U.extChartAt_target_subset_of_le hWU x z.2)) m
+  rw [hW] at h₁
+  rw [hU] at h₂
+  rw [chartIteratedFDeriv_self_target_apply, chartIteratedFDeriv_self_target_apply]
+  simpa only [ftaylorSeriesWithin] using h₁.trans h₂.symm
+
+/-- For nested open subsets `W ≤ U`, a compact chart `C^k` seminorm of the precomposition with the
+inclusion of `W` into `U` is the seminorm on the same coordinate set, read in the chart of `U` at
+the same point. -/
+theorem chartCkSeminorm_comp_inclusion [IsManifold I n M] {U W : Opens M} (hWU : W ≤ U)
+    (g : C^n⟮I, U; 𝓘(𝕜, F), F⟯) (x : W) (K : Compacts (extChartAt I x).target) (k : ℕ)
+    (hk : k ≤ n) :
+    chartCkSeminorm x K k hk (g.comp ⟨Opens.inclusion hWU, contMDiff_inclusion hWU⟩) =
+      chartCkSeminorm (Opens.inclusion hWU x)
+        (K.map (inclusion (U.extChartAt_target_subset_of_le hWU x)) (continuous_inclusion _))
+        k hk g := by
+  apply le_antisymm
+  · refine (chartCkSeminorm_le_iff _ _ _ _ _ (apply_nonneg _ _)).mpr fun m hm z hz ↦ ?_
+    rw [chartIteratedFDeriv_comp_inclusion_apply]
+    refine (chartCkSeminorm_le_iff _ _ _ _ _ (apply_nonneg _ _)).mp le_rfl m hm _ ?_
+    rw [← SetLike.mem_coe, Compacts.coe_map]
+    exact ⟨z, hz, rfl⟩
+  · refine (chartCkSeminorm_le_iff _ _ _ _ _ (apply_nonneg _ _)).mpr ?_
+    rintro m hm _ ⟨z, hz, rfl⟩
+    have h := (chartCkSeminorm_le_iff x K k hk
+      (g.comp ⟨Opens.inclusion hWU, contMDiff_inclusion hWU⟩) (apply_nonneg _ _)).mp le_rfl
+      m hm z hz
+    rwa [chartIteratedFDeriv_comp_inclusion_apply] at h
+
 namespace StrongCkControl
 
 /-- A strong control on an open subset `U` which is also closed, read as a strong control on the
