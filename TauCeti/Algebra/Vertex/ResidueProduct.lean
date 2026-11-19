@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Vertex.Derivative
 public import TauCeti.Algebra.Vertex.FormalDistribution
-public import Mathlib.Algebra.Lie.OfAssociative
 import Mathlib.Order.Filter.Finite
 import Mathlib.Order.Filter.AtTopBot.Group
 
@@ -25,26 +23,10 @@ with index at least `N` vanish. These are the singular products used in the
 operator product expansion; negative residue products involve normal ordering
 and are not constructed here.
 
-For local fields the residue products are the coefficients of the delta expansion of
-the commutator, which gives the commutator formula
-`[A₍ₘ₎, B₍ₙ₎] = ∑_{j < N} (m choose j) (A₍ⱼ₎B)₍ₘ₊ₙ₋ⱼ₎`. Residue products of translation
-covariant fields are translation covariant, and by Dong's lemma a residue product of two
-mutually local fields is local with every field local with both. These are the closure
-properties used to identify the fields of a vertex algebra with residue products.
-
-## Main results
-
-* `VertexOperator.IsLocalOfOrder.lie_ncoeff_eq_sum`: the commutator formula for local fields.
-* `VertexOperator.lie_ncoeff_nonnegResidueProduct`: residue products preserve translation
-  covariance.
-* `VertexOperator.isLocalOfOrder_nonnegResidueProduct`: Dong's lemma for nonnegative residue
-  products.
-
 ## References
 
-* V. Kac, *Vertex Algebras for Beginners*, 2nd ed., §2.3 (the delta expansion of a local
-  commutator) and Chapter 3 (Dong's lemma, whose proof is followed here).
-* E. Frenkel, D. Ben-Zvi, *Vertex Algebras and Algebraic Curves*, 2nd ed., §1.2 and Chapter 3.
+* V. Kac, *Vertex Algebras for Beginners*, 2nd ed., §2.3.
+* E. Frenkel, D. Ben-Zvi, *Vertex Algebras and Algebraic Curves*, 2nd ed., §1.2.
 -/
 
 public section
@@ -136,6 +118,16 @@ theorem ncoeff_nonnegResidueProduct (n : ℕ) (A B : VertexOperator R V) (m : �
         (A[[(ij.1 : ℤ)]] * B[[m + ij.2]] - B[[m + ij.2]] * A[[(ij.1 : ℤ)]]) := by
   simp [nonnegResidueProduct]
 
+/-- The normalized modes of `nonnegResidueProduct n A B` are the residue in the first variable of
+`(z - w)ⁿ [A(z), B(w)]`. -/
+theorem ncoeff_nonnegResidueProduct_eq_residue (n : ℕ) (A B : VertexOperator R V) (m : ℤ) :
+    (nonnegResidueProduct n A B)[[m]] =
+      TauCeti.FormalDistribution.residue
+        ((TauCeti.FormalDistribution.mulSub ^ n) (A.commutatorDistribution B)) m := by
+  rw [ncoeff_nonnegResidueProduct, TauCeti.FormalDistribution.residue_apply,
+    TauCeti.FormalDistribution.mulSub_pow_apply]
+  exact sum_congr rfl fun ij _ ↦ by rw [zero_add, commutatorDistribution_apply]
+
 /-- Locality kills every nonnegative residue product at or above its order bound. -/
 theorem IsLocalOfOrder.nonnegResidueProduct_eq_zero {A B : VertexOperator R V} {N : ℕ}
     (h : A.IsLocalOfOrder B N) {n : ℕ} (hn : N ≤ n) :
@@ -143,108 +135,5 @@ theorem IsLocalOfOrder.nonnegResidueProduct_eq_zero {A B : VertexOperator R V} {
   apply ext_ncoeff
   intro m
   simpa using isLocalOfOrder_iff.mp (h.mono hn) 0 m
-
-/-! ### Residue products as residues of distributions -/
-
-open TauCeti TauCeti.FormalDistribution
-
-/-- The coefficients of `Res_z (z - w)ⁿ [A(z), B(w)]` are those of the residue product. -/
-theorem residue_mulSub_pow_commutatorDistribution (n : ℕ) (A B : VertexOperator R V) (m : ℤ) :
-    residue ((mulSub ^ n) (A.commutatorDistribution B)) m = (nonnegResidueProduct n A B)[[m]] := by
-  rw [residue_apply, mulSub_pow_apply, ncoeff_nonnegResidueProduct]
-  simp only [commutatorDistribution_apply, zero_add]
-
-/-- **The commutator formula** for local fields:
-`[A₍ₘ₎, B₍ₙ₎] = ∑_{j < N} (m choose j) (A₍ⱼ₎B)₍ₘ₊ₙ₋ⱼ₎`, the coefficient form of the operator
-product expansion `[A(z), B(w)] = ∑_{j < N} (A₍ⱼ₎B)(w) ∂_w^(j) δ(z,w)`. -/
-theorem IsLocalOfOrder.lie_ncoeff_eq_sum {A B : VertexOperator R V} {N : ℕ}
-    (h : A.IsLocalOfOrder B N) (m n : ℤ) :
-    ⁅A[[m]], B[[n]]⁆ =
-      ∑ j ∈ range N, Ring.choose m j • (nonnegResidueProduct j A B)[[m + n - j]] := by
-  rw [Ring.lie_def, ← commutatorDistribution_apply, h.commutatorDistribution_eq_sum_deltaTerm,
-    Finset.sum_apply, Finset.sum_apply]
-  simp only [deltaTerm_apply, residue_mulSub_pow_commutatorDistribution]
-
--- The commutator Lie ring on `Module.End R V`, for Mathlib's adjoint map `LieAlgebra.ad`.
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-/-- **Translation covariance of residue products.** If `[T, A₍ₖ₎] = (∂A)₍ₖ₎` and
-`[T, B₍ₖ₎] = (∂B)₍ₖ₎` for all `k`, the same holds for every residue product `A₍ₙ₎B`. -/
-theorem lie_ncoeff_nonnegResidueProduct {T : Module.End R V} {A B : VertexOperator R V}
-    (hA : ∀ k : ℤ, ⁅T, A[[k]]⁆ = (derivative A)[[k]])
-    (hB : ∀ k : ℤ, ⁅T, B[[k]]⁆ = (derivative B)[[k]]) (n : ℕ) (k : ℤ) :
-    ⁅T, (nonnegResidueProduct n A B)[[k]]⁆ = (derivative (nonnegResidueProduct n A B))[[k]] := by
-  -- Commuting with `T` is the total derivative `∂_z + ∂_w` of the commutator distribution,
-  -- which commutes with `(z - w)ⁿ` and whose residue in `z` is `∂_w` of the residue.
-  set c := A.commutatorDistribution B
-  let g := (LieAlgebra.ad R (Module.End R V) T).toAddMonoidHom
-  have hT : (fun i j ↦ g (c i j)) = totalDerivative c := by
-    funext i j
-    simp only [g, c, LinearMap.toAddMonoidHom_coe, LieAlgebra.ad_apply, totalDerivative_apply,
-      commutatorDistribution_apply, ← Ring.lie_def, leibniz_lie, hA, hB, ncoeff_derivative,
-      smul_lie, lie_smul]
-  rw [ncoeff_derivative, ← residue_mulSub_pow_commutatorDistribution,
-    ← residue_mulSub_pow_commutatorDistribution, ← residue_totalDerivative]
-  calc ⁅T, residue ((mulSub ^ n) c) k⁆ = residue ((mulSub ^ n) (fun i j ↦ g (c i j))) k := by
-        rw [mulSub_pow_map]
-        simp only [residue_apply, g, LinearMap.toAddMonoidHom_coe, LieAlgebra.ad_apply]
-    _ = residue (totalDerivative ((mulSub ^ n) c)) k := by
-        rw [hT, (commute_mulSub_totalDerivative.pow_left n).apply_apply c]
-
-/-! ### Dong's lemma -/
-
-/-- **Dong's lemma** for nonnegative residue products: if `A`, `B` and `C` are pairwise local,
-then `A₍ₙ₎B` is local with `C`, with order at most `N_AB - n + N_AC + N_BC - 1`. -/
-theorem isLocalOfOrder_nonnegResidueProduct {A B C : VertexOperator R V} {Nab Nac Nbc : ℕ}
-    (hab : A.IsLocalOfOrder B Nab) (hac : A.IsLocalOfOrder C Nac)
-    (hbc : B.IsLocalOfOrder C Nbc) (n : ℕ) :
-    (nonnegResidueProduct n A B).IsLocalOfOrder C (Nab - n + Nac + Nbc - 1) := by
-  -- The commutator `⁅Y, -⁆` with a fixed endomorphism, as an additive map.
-  let ad : Module.End R V → Module.End R V →+ Module.End R V :=
-    fun Y ↦ (LieAlgebra.ad R (Module.End R V) Y).toAddMonoidHom
-  -- The three-variable distribution `[[A(z), B(w)], C(x)]`, split by the Jacobi identity
-  -- as `[A(z), [B(w), C(x)]] + [[A(z), C(x)], B(w)]`.
-  let t : ℤ → ℤ → ℤ → Module.End R V :=
-    fun i j k ↦ (-ad (C[[k]])) (A.commutatorDistribution B i j)
-  let u : ℤ → ℤ → ℤ → Module.End R V :=
-    fun i j k ↦ ad (A[[i]]) (B.commutatorDistribution C j k)
-  let w : ℤ → ℤ → ℤ → Module.End R V :=
-    fun i j k ↦ (-ad (B[[j]])) (A.commutatorDistribution C i k)
-  have htuw : t = u + w := by
-    ext i j k : 3
-    simp only [t, u, w, ad, commutatorDistribution_apply, Pi.add_apply, AddMonoidHom.neg_apply,
-      LinearMap.toAddMonoidHom_coe, LieAlgebra.ad_apply, ← Ring.lie_def]
-    rw [lie_skew, lie_lie, sub_eq_add_neg]
-  -- Powers of `z - w` act on `t` through the distribution `[A(z), B(w)]` inside it.
-  have ht_map (N : ℕ) : (mulSub₁₂ ^ N) t =
-      fun i j k ↦ (-ad (C[[k]])) ((mulSub ^ N) (A.commutatorDistribution B) i j) :=
-    mulSub₁₂_pow_map (fun k ↦ -ad (C[[k]])) N _
-  -- The commutator of `A₍ₙ₎B` with `C` is the slice of `(z - w)ⁿ t` at `z`-index `0`.
-  have hP : (nonnegResidueProduct n A B).commutatorDistribution C = (mulSub₁₂ ^ n) t 0 := by
-    ext p q : 2
-    rw [ht_map, commutatorDistribution_apply, ← residue_mulSub_pow_commutatorDistribution]
-    simp [ad, Ring.lie_def]
-  -- `(z - w)^Nab` kills `t`, while `(z - x)^Nac (w - x)^Nbc` kills each of `u` and `w`.
-  have ha : (mulSub₁₂ ^ (Nab - n)) ((mulSub₁₂ ^ n) t) = 0 := by
-    rw [← mul_apply_eq_comp, ← pow_add, ht_map,
-      (isLocalOfOrder_iff_mulSub_pow_eq_zero A B _).mp (hab.mono (by omega))]
-    funext i j k
-    simp
-  have hu : (mulSub₂₃ ^ Nbc) u = 0 := by
-    refine (mulSub₂₃_pow_map (fun i ↦ ad (A[[i]])) Nbc _).trans ?_
-    rw [(isLocalOfOrder_iff_mulSub_pow_eq_zero B C _).mp hbc]
-    funext i j k
-    simp
-  have hw : (mulSub₁₃ ^ Nac) w = 0 := by
-    refine (mulSub₁₃_pow_map (fun j ↦ -ad (B[[j]])) Nac _).trans ?_
-    rw [(isLocalOfOrder_iff_mulSub_pow_eq_zero A C _).mp hac]
-    funext i j k
-    simp
-  have hbd : (mulSub₁₃ ^ Nac) ((mulSub₂₃ ^ Nbc) ((mulSub₁₂ ^ n) t)) = 0 := by
-    rw [← mulSub₁₂_pow_apply_mulSub₂₃_pow, ← mulSub₁₂_pow_apply_mulSub₁₃_pow, htuw, map_add,
-      map_add, hu, mulSub₁₃_pow_apply_mulSub₂₃_pow, hw]
-    simp
-  rw [isLocalOfOrder_iff_mulSub_pow_eq_zero, hP, ← mulSub₂₃_pow_apply,
-    mulSub₂₃_pow_eq_zero ha hbd, Pi.zero_apply]
 
 end VertexOperator

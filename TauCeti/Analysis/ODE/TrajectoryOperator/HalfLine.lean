@@ -343,8 +343,8 @@ private theorem finrank_squareIntegrableSolutions_add_finrank (hA : Continuous A
   -- The spectral subspaces of the invertible symmetric `A⁺` are complementary.
   have hker : LinearMap.ker (Aplus : E →ₗ[ℝ] E) = ⊥ := LinearMap.ker_eq_bot.2
     (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hplus v))
-  have hcompl := Submodule.finrank_add_eq_of_isCompl
-    (hsymplus.isCompl_pointSpectralSubspace_Iio_zero_Ioi_zero hker)
+  have hcompl :=
+    hsymplus.finrank_pointSpectralSubspace_Iio_zero_add_finrank_pointSpectralSubspace_Ioi_zero hker
   omega
 
 /-- **The dimension of the stable solutions.** Let `A` be a continuous family of symmetric

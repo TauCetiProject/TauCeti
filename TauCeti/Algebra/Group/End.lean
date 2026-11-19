@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Group.End
 import Mathlib.Algebra.Group.AddChar
 
 /-!
-# Automorphisms as permutations, powers of indexed endomorphisms, and commuting self-maps
+# Automorphisms as permutations, and powers of an additively indexed family of endomorphisms
 
 The permutation underlying an automorphism, `MulAut.toPerm`, acts as the automorphism does, and
 it determines the automorphism by `MulEquiv.toEquiv_injective`. This moves `orderOf` and cycle
@@ -28,10 +28,6 @@ This is the shape of the iteration laws of an iterated Frobenius, `Frob_0 = id` 
 `Frob_(a + b) = Frob_a ∘ Frob_b`, and the lemma packages Mathlib's `AddChar.map_nsmul_eq_pow`
 for that shape once, so that each Chevalley carrier only supplies its two iteration laws.
 
-Multiplication in `Monoid.End M` and `AddMonoid.End M` is composition, recorded as
-`IsMulApplyEqComp` instances so that Mathlib's `mul_apply_eq_comp` applies to them. Commuting
-elements of any such type of self-maps commute on each point (`Commute.apply_apply`).
-
 ## Main definitions
 
 * `MonoidHom.subtypePerm`: the restriction of a permutation representation to an invariant
@@ -41,8 +37,6 @@ elements of any such type of self-maps commute on each point (`Commute.apply_app
 
 * `MulAut.toPerm_apply`: the permutation underlying an automorphism applies as the automorphism.
 * `TauCeti.Monoid.End.pow_eq_of_add_eq_comp`: `f k ^ m = f (k * m)` in `Monoid.End M`.
-* `Commute.apply_apply`: if `f * g = g * f` and multiplication is composition, then
-  `f (g x) = g (f x)`.
 -/
 
 public section
@@ -78,17 +72,6 @@ theorem subtypePerm_apply_coe (ρ : Γ →* Perm α) (p : α → Prop) (h : ∀ 
   (rfl)
 
 end MonoidHom
-
-instance Monoid.End.instIsMulApplyEqComp {M : Type*} [MulOne M] :
-    IsMulApplyEqComp (Monoid.End M) where
-
-instance AddMonoid.End.instIsMulApplyEqComp {M : Type*} [AddZero M] :
-    IsMulApplyEqComp (AddMonoid.End M) where
-
-/-- Commuting self-maps, multiplied by composition, commute on each point. -/
-theorem Commute.apply_apply {F α : Type*} [FunLike F α α] [Mul F] [IsMulApplyEqComp F]
-    {f g : F} (h : Commute f g) (x : α) : f (g x) = g (f x) := by
-  rw [← mul_apply_eq_comp, h.eq, mul_apply_eq_comp]
 
 namespace TauCeti
 

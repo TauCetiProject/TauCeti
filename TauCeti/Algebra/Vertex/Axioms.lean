@@ -46,10 +46,10 @@ uses divided powers of `T` instead, so the definition is meant for `ℚ`-algebra
   local to every `Y(a,z)` is determined by its values on the vacuum.
 * `TauCeti.FormalVertexAxioms.eq_field_of_ncoeff_apply_vacuum_eq`: such a field `B` with
   `B(z)|0⟩ = Y(b,z)|0⟩` is `Y(b,z)`.
-* `TauCeti.FormalVertexAxioms.eq_field_of_lie_translation`: if `V` is torsion-free, a translation
-  covariant field local with every `Y(a,z)` and with no negative powers of `z` on the vacuum is
-  `Y(B₍₋₁₎|0⟩, z)`; torsion-freeness recovers its creation series from the recursion
-  `T (B₍ₖ₎|0⟩) = -k B₍ₖ₋₁₎|0⟩`.
+* `TauCeti.FormalVertexAxioms.eq_field_of_lie_translation`: if `V` has unique divisibility, a
+  translation covariant field local with every `Y(a,z)` and with no negative powers of `z` on the
+  vacuum is `Y(B₍₋₁₎|0⟩, z)`; cancelling `k!` recovers its creation series from
+  `k! • B₍₋ₖ₋₁₎|0⟩ = Tᵏ B₍₋₁₎|0⟩`.
 
 ## References
 
@@ -153,15 +153,7 @@ theorem translation_apply (a : V) : A.translation a = ((A.field a)[[-2]]) A.vacu
 /-- The creation identity without division: `k! • a₍₋ₖ₋₁₎|0⟩ = Tᵏ a`. -/
 theorem factorial_smul_ncoeff_field_apply_vacuum (a : V) (k : ℕ) :
     k.factorial • ((A.field a)[[-k - 1]]) A.vacuum = (A.translation ^ k) a := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    have h := A.translation_ncoeff_apply_vacuum a (-k - 1)
-    have h₁ : -(-(k : ℤ) - 1) = ((k + 1 : ℕ) : ℤ) := by push_cast; ring
-    have h₂ : -(k : ℤ) - 1 - 1 = -((k + 1 : ℕ) : ℤ) - 1 := by push_cast; ring
-    rw [h₁, h₂, natCast_zsmul] at h
-    rw [pow_succ', mul_apply_eq_comp, ← ih, map_nsmul, h, Nat.factorial_succ, mul_nsmul,
-      smul_comm]
+  simpa using factorial_smul_ncoeff_apply A.translation_vacuum (A.lie_translation_ncoeff a) k
 
 /-- The creation identity `Y(a,z)|0⟩ = e^{zT} a`, in modes: `a₍₋ₖ₋₁₎|0⟩ = Tᵏ a / k!`. -/
 theorem ncoeff_field_apply_vacuum_neg [Module ℚ V] (a : V) (k : ℕ) :
@@ -226,32 +218,19 @@ theorem eq_field_of_ncoeff_apply_vacuum_eq {B : VertexOperator R V} {b : V}
 
 /-- A translation covariant field `B` that is local with every field `Y(a,z)` and has no
 negative powers of `z` on the vacuum is the field of the state `B₍₋₁₎|0⟩`. -/
-theorem eq_field_of_lie_translation [IsAddTorsionFree V] {B : VertexOperator R V}
+theorem eq_field_of_lie_translation [HasUniqueDiv V] {B : VertexOperator R V}
     (hB : ∀ a, ∃ N, B.IsLocalOfOrder (A.field a) N)
     (hT : ∀ n : ℤ, ⁅A.translation, B[[n]]⁆ = (derivative B)[[n]])
     (hvac : ∀ n : ℤ, 0 ≤ n → (B[[n]]) A.vacuum = 0) :
     B = A.field ((B[[-1]]) A.vacuum) := by
-  set b := (B[[-1]]) A.vacuum
-  refine A.eq_field_of_ncoeff_apply_vacuum_eq hB ?_
-  -- Both creation series satisfy `T x₍ₖ₎ = -k x₍ₖ₋₁₎` and agree in degrees `k ≥ -1`.
-  have hrec (n : ℤ) : A.translation ((B[[n]]) A.vacuum) = (-n) • (B[[n - 1]]) A.vacuum := by
-    simpa [Ring.lie_def, ncoeff_derivative] using LinearMap.congr_fun (hT n) A.vacuum
-  have hneg (l : ℕ) : (B[[-l - 1]]) A.vacuum = ((A.field b)[[-l - 1]]) A.vacuum := by
-    induction l with
-    | zero => simp [b]
-    | succ l ih =>
-      have hidx : -((l + 1 : ℕ) : ℤ) - 1 = -l - 1 - 1 := by omega
-      have h₁ := hrec (-l - 1)
-      rw [ih, A.translation_ncoeff_apply_vacuum b] at h₁
-      rw [hidx]
-      exact ((AddCommute.all _ _).eq_of_zsmul_eq_zsmul (by omega) h₁).symm
-  intro n
-  obtain ⟨k, rfl⟩ | ⟨l, rfl⟩ : (∃ k : ℕ, n = k) ∨ ∃ l : ℕ, n = -l - 1 := by
-    rcases le_or_gt 0 n with h | h
-    · exact .inl ⟨n.toNat, by omega⟩
-    · exact .inr ⟨(-n - 1).toNat, by omega⟩
-  · rw [hvac _ (by positivity), A.ncoeff_field_apply_vacuum_of_nonneg _ _ (by positivity)]
-  · exact hneg l
+  refine A.eq_field_of_ncoeff_apply_vacuum_eq hB fun n ↦ ?_
+  by_cases hn : 0 ≤ n
+  · rw [hvac n hn, A.ncoeff_field_apply_vacuum_of_nonneg _ n hn]
+  · -- Both creation series satisfy `k! • x₍₋ₖ₋₁₎|0⟩ = Tᵏ x₍₋₁₎|0⟩`.
+    obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = -(k : ℤ) - 1 := ⟨(-n - 1).toNat, by omega⟩
+    rw [← nsmul_right_inj k.factorial_ne_zero,
+      factorial_smul_ncoeff_apply A.translation_vacuum hT k,
+      A.factorial_smul_ncoeff_field_apply_vacuum]
 
 end FormalVertexAxioms
 

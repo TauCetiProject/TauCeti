@@ -8,8 +8,10 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.TwoDivisible
 public import TauCeti.AlgebraicTopology.Homotopy.NConnectedCover
 import TauCeti.AlgebraicTopology.EilenbergMacLane.UniquelyDivisible
+import TauCeti.AlgebraicTopology.PathComponent
 import TauCeti.AlgebraicTopology.Homotopy.CWApproximation.Basic
 import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
+import TauCeti.Topology.Homotopy.HomotopyGroup.PathComponent
 
 /-!
 # Mod-two vanishing of homotopy groups
@@ -19,6 +21,14 @@ import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 multiplication by two is a bijection, so `πᵢ(Y)` is a module over `ℤ[1/2]` and `πᵢ(Y) ⊗ ℤ/2 = 0`
 (`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology`). No finite
 generation and no CW structure is assumed.
+
+Since a path component has the homotopy groups of the ambient space in positive degrees, and is
+simply connected as soon as the ambient fundamental group is trivial
+(`TauCeti.simplyConnectedSpace_pathComponent_iff`), the theorem also applies to a single path
+component: if the fundamental group of `Y` at `y` is trivial and the path component of `y` has
+the mod-two homology of a point, every `πₙ₊₂(Y, y)` is uniquely two-divisible
+(`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pathComponent`).
+No hypothesis is made on the other path components of `Y`.
 
 The class of groups `G` with `G ⊗ ℤ/2 = 0` is not a Serre class (it contains `ℚ` but not `ℤ`), so
 this is not a case of the Hurewicz theorem modulo a Serre class; it is proved directly, one
@@ -50,6 +60,9 @@ space: only the fibration `K(πₙ Z, n - 1) → Z⟨n⟩ → Z` between success
 * `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology`: the homotopy
   groups of a simply connected space with the mod-two homology of a point are uniquely
   two-divisible.
+* `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pathComponent`:
+  if the fundamental group of `Y` at `y` is trivial and the path component of `y` has the mod-two
+  homology of a point, the higher homotopy groups of `Y` at `y` are uniquely two-divisible.
 
 ## References
 
@@ -164,5 +177,18 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology {Y
     obtain rfl : k = 1 := by omega
     exact HomotopyGroup.pi1MulEquivFundamentalGroup.toEquiv.subsingleton
   exact isUniquelyTwoDivisible_homotopyGroup_of_add n 0 y h₁ hY n (Nat.zero_add n).symm
+
+/-- **Mod-two vanishing for a path component.** If the fundamental group of `Y` at `y` is trivial
+and the path component of `y` has the mod-two homology of a point, then every homotopy group
+`πₙ₊₂(Y, y)` is uniquely two-divisible. -/
+theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pathComponent
+    {Y : Type} [TopologicalSpace Y] (y : Y) [Subsingleton (FundamentalGroup Y y)]
+    (hY : ∀ i, Subsingleton
+      (((singularChains (ZMod 2)).obj (TopCat.of (pathComponent y))).homology (i + 1)))
+    (n : ℕ) : IsUniquelyTwoDivisible (Additive (π_ (n + 2) Y y)) :=
+  have := (simplyConnectedSpace_pathComponent_iff y).2 ‹_›
+  (isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology hY
+    (pathComponentSelf y) n).of_addEquiv
+      (HomotopyGroup.subtypeValMulEquivOfPathComponentSubset subset_rfl rfl).toAdditive
 
 end TauCeti

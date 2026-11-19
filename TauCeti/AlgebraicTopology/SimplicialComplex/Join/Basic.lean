@@ -34,6 +34,7 @@ The construction follows Rourke--Sanderson, *Introduction to Piecewise-Linear To
 * `mem_join_iff`: membership is characterized by the two projected faces.
 * `disjSum_mem_join_iff`: a disjoint union is a face exactly when each nonempty component is.
 * `join_mono`: join is monotone in both arguments.
+* `bot_join` and `join_bot`: joining with the void precomplex embeds the remaining factor.
 -/
 
 public section
@@ -158,6 +159,34 @@ theorem map_join_swap [DecidableEq α] [DecidableEq β] :
     · simpa only [mem_join_iff, Finset.image_nonempty, Finset.toLeft_image_swap,
         Finset.toRight_image_swap, and_comm, and_left_comm] using hτ
     · simp [Finset.image_image]
+
+/-- Joining the void precomplex on the left embeds the right factor via `Sum.inr`. -/
+@[simp]
+theorem bot_join [DecidableEq α] [DecidableEq β] :
+    join (⊥ : PreAbstractSimplicialComplex α) L = L.map Sum.inr := by
+  have hinr (t : Finset β) : t.image Sum.inr = t.map (Embedding.inr : β ↪ α ⊕ β) := by
+    rw [Finset.map_eq_image, funext Embedding.inr_apply]
+  refine SetLike.ext fun τ => ?_
+  constructor
+  · intro hτ
+    obtain ⟨hne, hL, hR⟩ := mem_join_iff.mp hτ
+    have hleft : τ.toLeft = ∅ := hL.resolve_right False.elim
+    have hdisj : τ.toRight.image Sum.inr = τ := by
+      rw [hinr, ← Finset.empty_disjSum, ← hleft, Finset.toLeft_disjSum_toRight]
+    have hRne : τ.toRight ≠ ∅ := fun h =>
+      hne.ne_empty (by rw [← hdisj, h, Finset.image_empty])
+    exact mem_map_iff.mpr ⟨τ.toRight, hR.resolve_left hRne, hdisj⟩
+  · intro hτ
+    obtain ⟨t, ht, rfl⟩ := mem_map_iff.mp hτ
+    rw [hinr]
+    exact map_inr_mem_join ht
+
+/-- Joining the void precomplex on the right embeds the left factor via `Sum.inl`. -/
+@[simp]
+theorem join_bot [DecidableEq α] [DecidableEq β] :
+    join K (⊥ : PreAbstractSimplicialComplex β) = K.map Sum.inl := by
+  rw [← map_join_swap, bot_join, map_map]
+  rfl
 
 end PreAbstractSimplicialComplex
 

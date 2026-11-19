@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Vertex.VertexOperator
 public import Mathlib.RingTheory.Binomial
-public import TauCeti.Algebra.Group.End
 
 /-!
 # Delta expansions of local formal distributions
@@ -26,13 +25,6 @@ Every distribution killed by `(z-w)^N` has a unique expansion in these terms for
 The coefficient of the `j`th term is exactly `Res_z (z-w)^j c`. Applied to the commutator of
 native vertex operators, this gives the formal delta expansion of mutual locality.
 No multiplication of arbitrary distributions or convergence of infinite sums is asserted.
-
-The total derivative `∂_z + ∂_w` (`FormalDistribution.totalDerivative`) commutes with
-multiplication by `z - w`; it describes the commutator of translation covariant fields with the
-translation operator. Three-variable distributions carry the commuting multiplications by
-`z - w`, `z - x` and `w - x` (`FormalDistribution.mulSub₁₂`, `mulSub₁₃`, `mulSub₂₃`). If
-`(z-w)^a` and `(z-x)^b (w-x)^d` both kill a distribution, so does `(w-x)^(a+b+d-1)`
-(`FormalDistribution.mulSub₂₃_pow_eq_zero`); this is the estimate behind Dong's lemma.
 
 ## References
 
@@ -227,185 +219,82 @@ theorem mulSub_pow_apply (N : ℕ) (c : FormalDistribution M) (m n : ℤ) :
     rw [Finset.sum_congr rfl h₁, Finset.sum_congr rfl h₂, Finset.sum_neg_distrib]
     abel
 
-/-- Multiplication by `(z-w)^N` commutes with applying an additive map to the coefficients. -/
-theorem mulSub_pow_map {M' : Type*} [AddCommGroup M'] (g : M →+ M') (N : ℕ)
-    (c : FormalDistribution M) :
-    (mulSub ^ N) (fun m n ↦ g (c m n)) = fun m n ↦ g ((mulSub ^ N) c m n) := by
-  ext m n
-  simp [mulSub_pow_apply, map_sum, map_zsmul]
+/-- Applying an additive group homomorphism coefficientwise commutes with `(z - w)^N`. -/
+theorem mulSub_pow_comp {M' : Type*} [AddCommGroup M'] (φ : M →+ M')
+    (c : FormalDistribution M) (N : ℕ) (m n : ℤ) :
+    (mulSub ^ N) (fun x y ↦ φ (c x y)) m n = φ ((mulSub ^ N) c m n) := by
+  induction N generalizing m n with
+  | zero => rfl
+  | succ N ih =>
+    rw [pow_succ', pow_succ', AddMonoid.End.coe_mul, AddMonoid.End.coe_mul,
+      Function.comp_apply, Function.comp_apply, mulSub_apply, mulSub_apply, ih, ih, map_sub]
 
-/-! ### The total derivative -/
+/-- Reindex a binomial `(z - w)^N` sum over `antidiagonal N` to `Finset.range (N + 1)` by the
+second index `j`, rewriting `N.choose (N - j)` as `Ring.choose (N : ℤ) j`. -/
+theorem sum_antidiagonal_choose_eq_sum_range_succ_left (N : ℕ) (c : FormalDistribution M)
+    (m n : ℤ) :
+    ∑ ij ∈ Finset.HasAntidiagonal.antidiagonal N,
+        N.choose ij.1 • (-1 : ℤ) ^ ij.2 • c (m + ij.1) (n + ij.2) =
+      ∑ j ∈ Finset.range (N + 1), (-1 : ℤ) ^ j • Ring.choose (N : ℤ) j •
+        c (m + N - j) (n + j) := by
+  rw [← Finset.Nat.sum_antidiagonal_swap]
+  simp only [Prod.fst_swap, Prod.snd_swap]
+  rw [Finset.Nat.sum_antidiagonal_eq_sum_range_succ
+    (fun j i ↦ N.choose i • (-1 : ℤ) ^ j • c (m + i) (n + j))]
+  refine Finset.sum_congr rfl fun j hj ↦ ?_
+  have hjN : j ≤ N := Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
+  have hidx : m + ((N - j : ℕ) : ℤ) = m + (N : ℤ) - j := by omega
+  rw [Nat.choose_symm hjN, hidx, Ring.choose_natCast, ← natCast_zsmul, smul_comm]
 
-/-- The total derivative `∂_z + ∂_w` of a formal distribution. In normalized indexing,
-`∂_z` sends the coefficient `c m n` of `z^(-m-1) w^(-n-1)` to `-m • c (m - 1) n`. -/
-def totalDerivative : AddMonoid.End (FormalDistribution M) where
-  toFun c m n := (-m) • c (m - 1) n + (-n) • c m (n - 1)
-  map_zero' := by ext m n; simp
-  map_add' c d := by ext m n; simp only [Pi.add_apply, smul_add]; abel
-
-@[simp]
-theorem totalDerivative_apply (c : FormalDistribution M) (m n : ℤ) :
-    totalDerivative c m n = (-m) • c (m - 1) n + (-n) • c m (n - 1) := (rfl)
-
-/-- The total derivative commutes with multiplication by `z - w`, because
-`(∂_z + ∂_w)(z - w) = 0`. -/
-theorem commute_mulSub_totalDerivative :
-    Commute (mulSub : AddMonoid.End (FormalDistribution M)) totalDerivative := by
-  ext c m n
-  simp only [mul_apply_eq_comp, mulSub_apply, totalDerivative_apply,
-    add_sub_cancel_right, sub_add_cancel]
+/-- Reindex a binomial `(z - w)^N` sum over `antidiagonal N` to `Finset.range (N + 1)` by the
+first index `i`, pulling out `Int.negOnePow N` via `(-1) ^ (N - i) = (-1) ^ N * (-1) ^ i`. -/
+theorem sum_antidiagonal_choose_eq_sum_range_succ_right (N : ℕ) (c : FormalDistribution M)
+    (m n : ℤ) :
+    ∑ ij ∈ Finset.HasAntidiagonal.antidiagonal N,
+        N.choose ij.1 • (-1 : ℤ) ^ ij.2 • c (m + ij.1) (n + ij.2) =
+      ∑ i ∈ Finset.range (N + 1), (-1 : ℤ) ^ i • Ring.choose (N : ℤ) i •
+        Int.negOnePow (N : ℤ) • c (m + i) (N + n - i) := by
+  rw [Finset.Nat.sum_antidiagonal_eq_sum_range_succ
+    (fun i j ↦ N.choose i • (-1 : ℤ) ^ j • c (m + i) (n + j))]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  have hiN : i ≤ N := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
+  have hidx : n + ((N - i : ℕ) : ℤ) = (N : ℤ) + n - i := by omega
+  rw [hidx, Ring.choose_natCast, ← natCast_zsmul, Units.smul_def,
+    ← Int.coe_negOnePow_natCast (N - i), Nat.cast_sub hiN, Int.negOnePow_sub, Units.val_mul,
+    Int.coe_negOnePow_natCast, Int.coe_negOnePow_natCast]
   module
 
-/-- The residue of a total derivative is the derivative of the residue: `Res_z ∂_z c = 0`. -/
-theorem residue_totalDerivative (c : FormalDistribution M) (n : ℤ) :
-    residue (totalDerivative c) n = (-n) • residue c (n - 1) := by
-  simp
+/-- Reindex a binomial `(z - w)^N` sum over `antidiagonal N` to `Finset.range K` by the second
+index when `c (m + N - j) (n + j) = 0` for `K ≤ j`. -/
+theorem sum_antidiagonal_choose_eq_sum_range_left (N : ℕ) (c : FormalDistribution M)
+    (m n : ℤ) {K : ℕ} (hc : ∀ j : ℕ, K ≤ j → c (m + N - j) (n + j) = 0) :
+    ∑ ij ∈ Finset.HasAntidiagonal.antidiagonal N,
+        N.choose ij.1 • (-1 : ℤ) ^ ij.2 • c (m + ij.1) (n + ij.2) =
+      ∑ j ∈ Finset.range K, (-1 : ℤ) ^ j • Ring.choose (N : ℤ) j •
+        c (m + N - j) (n + j) := by
+  rw [sum_antidiagonal_choose_eq_sum_range_succ_left]
+  rcases le_or_gt (N + 1) K with hNK | hKN
+  · exact Finset.sum_subset (Finset.range_mono hNK) fun j _ hj ↦ by
+      simp [Ring.choose_natCast,
+        Nat.choose_eq_zero_of_lt (show N < j by simp only [Finset.mem_range] at hj; omega)]
+  · exact (Finset.sum_subset (Finset.range_mono hKN.le) fun j _ hj ↦ by
+      simp [hc j (by simp only [Finset.mem_range] at hj; omega)]).symm
 
-/-! ### Three variables
-
-A three-variable formal distribution `c : ℤ → ℤ → ℤ → M` has coefficient `c i j k` at
-`z^(-i-1) w^(-j-1) x^(-k-1)`. Multiplication by `z - w`, `z - x` and `w - x` are commuting
-operators, with `w - x = (z - x) - (z - w)`. -/
-
-/-- Multiplication of a three-variable formal distribution by `z - w`. -/
-def mulSub₁₂ : AddMonoid.End (ℤ → ℤ → ℤ → M) where
-  toFun c i j k := c (i + 1) j k - c i (j + 1) k
-  map_zero' := by ext i j k; simp
-  map_add' c d := by ext i j k; simp; abel
-
-/-- Multiplication of a three-variable formal distribution by `z - x`. -/
-def mulSub₁₃ : AddMonoid.End (ℤ → ℤ → ℤ → M) where
-  toFun c i j k := c (i + 1) j k - c i j (k + 1)
-  map_zero' := by ext i j k; simp
-  map_add' c d := by ext i j k; simp; abel
-
-/-- Multiplication of a three-variable formal distribution by `w - x`. -/
-def mulSub₂₃ : AddMonoid.End (ℤ → ℤ → ℤ → M) where
-  toFun c i j k := c i (j + 1) k - c i j (k + 1)
-  map_zero' := by ext i j k; simp
-  map_add' c d := by ext i j k; simp; abel
-
-@[simp]
-theorem mulSub₁₂_apply (c : ℤ → ℤ → ℤ → M) (i j k : ℤ) :
-    mulSub₁₂ c i j k = c (i + 1) j k - c i (j + 1) k := (rfl)
-
-@[simp]
-theorem mulSub₁₃_apply (c : ℤ → ℤ → ℤ → M) (i j k : ℤ) :
-    mulSub₁₃ c i j k = c (i + 1) j k - c i j (k + 1) := (rfl)
-
-@[simp]
-theorem mulSub₂₃_apply (c : ℤ → ℤ → ℤ → M) (i j k : ℤ) :
-    mulSub₂₃ c i j k = c i (j + 1) k - c i j (k + 1) := (rfl)
-
-/-- `w - x = (z - x) - (z - w)`. -/
-theorem mulSub₂₃_apply_eq_sub (c : ℤ → ℤ → ℤ → M) : mulSub₂₃ c = mulSub₁₃ c - mulSub₁₂ c := by
-  ext i j k
-  simp
-
-theorem commute_mulSub₁₂_mulSub₁₃ :
-    Commute (mulSub₁₂ : AddMonoid.End (ℤ → ℤ → ℤ → M)) mulSub₁₃ := by
-  ext c i j k
-  simp only [mul_apply_eq_comp, mulSub₁₂_apply, mulSub₁₃_apply]
-  abel
-
-theorem commute_mulSub₁₂_mulSub₂₃ :
-    Commute (mulSub₁₂ : AddMonoid.End (ℤ → ℤ → ℤ → M)) mulSub₂₃ := by
-  ext c i j k
-  simp only [mul_apply_eq_comp, mulSub₁₂_apply, mulSub₂₃_apply]
-  abel
-
-theorem commute_mulSub₁₃_mulSub₂₃ :
-    Commute (mulSub₁₃ : AddMonoid.End (ℤ → ℤ → ℤ → M)) mulSub₂₃ := by
-  ext c i j k
-  simp only [mul_apply_eq_comp, mulSub₁₃_apply, mulSub₂₃_apply]
-  abel
-
-/-- Fixing the third variable, `(z-w)^N` acts as on two-variable distributions. -/
-theorem mulSub₁₂_pow_apply (N : ℕ) (c : ℤ → ℤ → ℤ → M) (i j k : ℤ) :
-    (mulSub₁₂ ^ N) c i j k = (mulSub ^ N) (fun i j ↦ c i j k) i j := by
-  induction N generalizing i j with
-  | zero => simp
-  | succ N ih => simp only [pow_succ', mul_apply_eq_comp, mulSub₁₂_apply, mulSub_apply, ih]
-
-/-- Fixing the second variable, `(z-x)^N` acts as on two-variable distributions. -/
-theorem mulSub₁₃_pow_apply (N : ℕ) (c : ℤ → ℤ → ℤ → M) (i j k : ℤ) :
-    (mulSub₁₃ ^ N) c i j k = (mulSub ^ N) (fun i k ↦ c i j k) i k := by
-  induction N generalizing i k with
-  | zero => simp
-  | succ N ih => simp only [pow_succ', mul_apply_eq_comp, mulSub₁₃_apply, mulSub_apply, ih]
-
-/-- Fixing the first variable, `(w-x)^N` acts as on two-variable distributions. -/
-theorem mulSub₂₃_pow_apply (N : ℕ) (c : ℤ → ℤ → ℤ → M) (i : ℤ) :
-    (mulSub₂₃ ^ N) c i = (mulSub ^ N) (c i) := by
-  induction N with
-  | zero => simp
-  | succ N ih =>
-    ext j k
-    simp only [pow_succ', mul_apply_eq_comp, mulSub₂₃_apply, mulSub_apply, ih]
-
-/-- `(z-w)^N` commutes with applying, at each `x`-index `k`, an additive map `g k`. -/
-theorem mulSub₁₂_pow_map {M' : Type*} [AddCommGroup M'] (g : ℤ → M →+ M') (N : ℕ)
-    (c : FormalDistribution M) :
-    (mulSub₁₂ ^ N) (fun i j k ↦ g k (c i j)) = fun i j k ↦ g k ((mulSub ^ N) c i j) := by
-  ext i j k
-  rw [mulSub₁₂_pow_apply, mulSub_pow_map]
-
-/-- `(z-x)^N` commutes with applying, at each `w`-index `j`, an additive map `g j`. -/
-theorem mulSub₁₃_pow_map {M' : Type*} [AddCommGroup M'] (g : ℤ → M →+ M') (N : ℕ)
-    (c : FormalDistribution M) :
-    (mulSub₁₃ ^ N) (fun i j k ↦ g j (c i k)) = fun i j k ↦ g j ((mulSub ^ N) c i k) := by
-  ext i j k
-  rw [mulSub₁₃_pow_apply, mulSub_pow_map]
-
-/-- `(w-x)^N` commutes with applying, at each `z`-index `i`, an additive map `g i`. -/
-theorem mulSub₂₃_pow_map {M' : Type*} [AddCommGroup M'] (g : ℤ → M →+ M') (N : ℕ)
-    (c : FormalDistribution M) :
-    (mulSub₂₃ ^ N) (fun i j k ↦ g i (c j k)) = fun i j k ↦ g i ((mulSub ^ N) c j k) := by
-  ext i j k
-  rw [mulSub₂₃_pow_apply, mulSub_pow_map]
-
-theorem mulSub₁₂_pow_apply_mulSub₁₃_pow (a b : ℕ) (c : ℤ → ℤ → ℤ → M) :
-    (mulSub₁₂ ^ a) ((mulSub₁₃ ^ b) c) = (mulSub₁₃ ^ b) ((mulSub₁₂ ^ a) c) :=
-  (commute_mulSub₁₂_mulSub₁₃.pow_pow a b).apply_apply c
-
-theorem mulSub₁₂_pow_apply_mulSub₂₃_pow (a b : ℕ) (c : ℤ → ℤ → ℤ → M) :
-    (mulSub₁₂ ^ a) ((mulSub₂₃ ^ b) c) = (mulSub₂₃ ^ b) ((mulSub₁₂ ^ a) c) :=
-  (commute_mulSub₁₂_mulSub₂₃.pow_pow a b).apply_apply c
-
-theorem mulSub₁₃_pow_apply_mulSub₂₃_pow (a b : ℕ) (c : ℤ → ℤ → ℤ → M) :
-    (mulSub₁₃ ^ a) ((mulSub₂₃ ^ b) c) = (mulSub₂₃ ^ b) ((mulSub₁₃ ^ a) c) :=
-  (commute_mulSub₁₃_mulSub₂₃.pow_pow a b).apply_apply c
-
-/-- The key estimate of Dong's lemma: if `(z-w)^a c = 0` and `(z-x)^b (w-x)^d c = 0`, then
-`(w-x)^(a+b+d-1) c = 0`. -/
-theorem mulSub₂₃_pow_eq_zero {c : ℤ → ℤ → ℤ → M} {a b d : ℕ}
-    (ha : (mulSub₁₂ ^ a) c = 0) (hbd : (mulSub₁₃ ^ b) ((mulSub₂₃ ^ d) c) = 0) :
-    (mulSub₂₃ ^ (a + b + d - 1)) c = 0 := by
-  -- Expand `(w-x)^(a+b-1) = ((z-x) - (z-w))^(a+b-1)`: each term contains `(z-x)^b` or `(z-w)^a`.
-  induction a generalizing b c with
-  | zero => simp_all
-  | succ a iha =>
-    induction b generalizing c with
-    | zero =>
-      rw [pow_zero, AddMonoid.End.one_apply] at hbd
-      rw [show a + 1 + 0 + d - 1 = a + d by omega, pow_add, mul_apply_eq_comp, hbd,
-        map_zero]
-    | succ b ihb =>
-      rw [show a + 1 + (b + 1) + d - 1 = a + 1 + b + d - 1 + 1 by omega, pow_succ,
-        mul_apply_eq_comp, mulSub₂₃_apply_eq_sub, map_sub]
-      -- Split `(w-x) c = (z-x) c - (z-w) c` and lower the exponent `b` or `a` respectively.
-      have h₁ : (mulSub₂₃ ^ (a + 1 + b + d - 1)) (mulSub₁₃ c) = 0 := by
-        refine ihb ?_ ?_
-        · rw [(commute_mulSub₁₂_mulSub₁₃.pow_left _).apply_apply, ha, map_zero]
-        · rw [(commute_mulSub₁₃_mulSub₂₃.pow_right d).symm.apply_apply c, ← hbd,
-            pow_succ, mul_apply_eq_comp]
-      have h₂ : (mulSub₂₃ ^ (a + (b + 1) + d - 1)) (mulSub₁₂ c) = 0 := by
-        refine iha ?_ ?_
-        · rw [← ha, pow_succ, mul_apply_eq_comp]
-        · rw [(commute_mulSub₁₂_mulSub₂₃.pow_right d).symm.apply_apply c,
-            (commute_mulSub₁₂_mulSub₁₃.pow_right (b + 1)).symm.apply_apply, hbd,
-            map_zero]
-      rw [h₁, show a + 1 + b + d - 1 = a + (b + 1) + d - 1 by omega, h₂, sub_zero]
+/-- Reindex a binomial `(z - w)^N` sum over `antidiagonal N` to `Finset.range K` by the first
+index when `c (m + i) (N + n - i) = 0` for `K ≤ i`. -/
+theorem sum_antidiagonal_choose_eq_sum_range_right (N : ℕ) (c : FormalDistribution M)
+    (m n : ℤ) {K : ℕ} (hc : ∀ i : ℕ, K ≤ i → c (m + i) (N + n - i) = 0) :
+    ∑ ij ∈ Finset.HasAntidiagonal.antidiagonal N,
+        N.choose ij.1 • (-1 : ℤ) ^ ij.2 • c (m + ij.1) (n + ij.2) =
+      ∑ i ∈ Finset.range K, (-1 : ℤ) ^ i • Ring.choose (N : ℤ) i •
+        Int.negOnePow (N : ℤ) • c (m + i) (N + n - i) := by
+  rw [sum_antidiagonal_choose_eq_sum_range_succ_right]
+  rcases le_or_gt (N + 1) K with hNK | hKN
+  · exact Finset.sum_subset (Finset.range_mono hNK) fun i _ hi ↦ by
+      simp [Ring.choose_natCast,
+        Nat.choose_eq_zero_of_lt (show N < i by simp only [Finset.mem_range] at hi; omega)]
+  · exact (Finset.sum_subset (Finset.range_mono hKN.le) fun i _ hi ↦ by
+      simp [hc i (by simp only [Finset.mem_range] at hi; omega)]).symm
 
 end FormalDistribution
 

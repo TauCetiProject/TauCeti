@@ -79,8 +79,6 @@ lemma trajectoryOperator_apply (A : Lp (F →L[ℝ] F) ∞ (mu.restrict Omega))
       (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p A
         (prev (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u) := by
   simp [trajectoryOperator]
-  -- Mathlib's `compLpL` has no application equality lemma, only an a.e. formula.
-  rfl
 
 /-- On representatives, the bounded trajectory operator has the expected pointwise formula
 almost everywhere. -/

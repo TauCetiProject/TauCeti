@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.Curves.HomOfAlgHom
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FunctionField
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Place
 import TauCeti.AlgebraicGeometry.Curves.Restrict
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace.Basic
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 
 /-!
