@@ -11,7 +11,6 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Basic.Sign.Basic
 import Mathlib.Topology.Instances.Sign
 import Mathlib.Analysis.Calculus.ContDiff.Comp
-import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import TauCeti.LinearAlgebra.Prod
 
 /-!
@@ -21,12 +20,13 @@ Let `f : E → E` be a `C¹` map of a finite-dimensional real normed space whose
 is `T`, and fix a Fredholm package for `T`: splittings `E = X₁ ⊕ X₀` of the domain, with `X₀` the
 kernel, and `E = Y₁ ⊕ Y₀` of the codomain, with `Y₁` the range. In the normal-form chart `Φ` of
 `TauCeti.Analysis.Fredholm.NormalForm.Basic`, `f` reads `y ↦ y.1 + q y` with the obstruction
-`q` valued in `Y₀`, and the solutions of `f x = v` near `a` are the zeros of the
-finite-dimensional *obstruction slice* `z ↦ q (v₁, z) - v₀ : X₀ → Y₀`, where `v = v₁ + v₀`
+`q` valued in `Y₀`. Writing `v = v₁ + v₀`, the solutions of `f x = v` near `a` are the
+solutions of `q (v₁, z) = v₀` for the finite-dimensional *obstruction slice*
+`z ↦ q (v₁, z) : X₀ → Y₀`
 (`ContinuousLinearMap.FredholmPackage.apply_normalFormOpenPartialHomeomorph_symm_eq_iff`). This is
 the Lyapunov–Schmidt reduction. This file shows that it is an *oriented* correspondence: up to
-one sign fixed at the base point, a solution of `f x = v` and the corresponding zero of the slice
-have the same Jacobian sign.
+one sign fixed at the base point, a solution of `f x = v` and the corresponding solution of
+`q (v₁, z) = v₀` have the same Jacobian sign.
 
 Since `X₀` and `Y₀` have the same dimension, Jacobians of the slice become determinants once an
 identification `ι : Y₀ ≃ X₀` is chosen, as an orientation of a determinant line would be chosen.
@@ -47,7 +47,7 @@ which depends only on the Fredholm package and `ι`, and
 
 (`ContinuousLinearMap.FredholmPackage.eventually_sign_det_fderiv_eq`). Summing over solutions,
 the signed count of the solutions of `f x = v` in a fixed neighbourhood of `a` is the reduction
-sign times the signed count of the zeros of the slice, for every `v`
+sign times the signed count of the solutions of `q (v₁, z) = v₀`, for every `v`
 (`ContinuousLinearMap.FredholmPackage.exists_mem_nhds_finsum_sign_det_eq`).
 
 In Taubes's construction of the weighted count of pseudoholomorphic curves, the deformation
@@ -290,7 +290,7 @@ theorem eventually_sign_det_fderiv_eq (hT : HasStrictFDerivAt f T a) (hf : ContD
 derivative `T`, a Fredholm package for `T` and an identification `ι : Y₀ ≃ X₀`. There is a
 neighbourhood `V` of the normal-form coordinate of `a`, whose image `Φ⁻¹ V` is a neighbourhood
 of `a`, such that for every value `v` the signed count of the solutions of `f x = v` in `Φ⁻¹ V`
-is `pkg.reductionSign ι` times the signed count of the zeros of the finite-dimensional equation
+is `pkg.reductionSign ι` times the signed count of the solutions of the finite-dimensional equation
 `q (v₁, z) = v₀` in the slice of `V` over the essential part `v₁` of `v`, where `v₀` is the
 complementary part. Solutions are counted by the signs of the Jacobians of `f` and of
 `ι ∘ q (v₁, ·)`; a degenerate solution contributes `0` on both sides, and if infinitely many

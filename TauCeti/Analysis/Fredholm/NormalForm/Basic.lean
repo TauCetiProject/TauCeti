@@ -47,8 +47,8 @@ Topology*, Appendix A. The local chart is Mathlib's
 * `ContinuousLinearMap.FredholmPackage.apply_normalFormOpenPartialHomeomorph_symm`:
   reconstruction of the original map from its essential coordinate and obstruction map.
 * `ContinuousLinearMap.FredholmPackage.apply_normalFormOpenPartialHomeomorph_symm_eq_iff`: the
-  solutions of `f x = v` in the chart are the zeros of the obstruction over the essential part of
-  `v`; this is the Lyapunov--Schmidt reduction.
+  solutions of `f x = v` in the chart are the points over the essential part of `v` where the
+  obstruction equals the complementary part of `v`; this is the Lyapunov--Schmidt reduction.
 * `ContinuousLinearMap.FredholmPackage.hasStrictFDerivAt_obstructionMap_self`: the obstruction has
   zero derivative at the base point.
 * `ContinuousLinearMap.FredholmPackage.hasStrictFDerivAt_obstructionSlice_self`: the same for the
