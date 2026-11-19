@@ -96,6 +96,7 @@ variable [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The symbol of the Laplacian has temperate growth, so it is a Fourier multiplier on Schwartz
 functions. -/
+@[fun_prop]
 theorem hasTemperateGrowth_laplacianSymbol : (laplacianSymbol : E → ℝ).HasTemperateGrowth := by
   have h : (laplacianSymbol : E → ℝ) = fun ξ ↦ -(4 * π ^ 2) * ‖ξ‖ ^ 2 := by
     ext ξ

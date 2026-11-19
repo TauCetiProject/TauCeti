@@ -433,9 +433,7 @@ domain of its real generator. -/
 theorem mem_complexGenerator_domain_phaseGroup_iff {f : Lp F 2 (volume : Measure E)} :
     f ∈ ((phaseGroup E F ω).complexGenerator (isUnitary_phaseGroup ω)).domain ↔
       f ∈ (phaseGroup E F ω).domain :=
-  (Iff.of_eq (congrArg (f ∈ ·)
-    ((phaseGroup E F ω).complexGenerator_domain (isUnitary_phaseGroup ω)))).trans
-    ((phaseGroup E F ω).mem_complexDomain_iff (isUnitary_phaseGroup ω) f)
+  (phaseGroup E F ω).mem_complexGenerator_domain_iff (isUnitary_phaseGroup ω) f
 
 /-- **The generator of `exp(itω(D))` on the Fourier side**: every `f` in the domain of the
 generator `A` has `𝓕 (A f) = i ω 𝓕 f`. -/
