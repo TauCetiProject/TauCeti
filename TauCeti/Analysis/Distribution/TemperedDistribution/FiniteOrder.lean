@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Duality
 public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
-import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 
@@ -19,8 +18,8 @@ the seminorms `sup ‖x‖ ^ k ‖D^l φ(x)‖`. Multiplying by a negative power
 `⟨x⟩ ^ (-2K) = (1 + ‖x‖ ^ 2) ^ (-K)` of the Japanese bracket absorbs the polynomial factors, and the
 Sobolev embedding `H^t ⊆ C^l`, `t > l + n / 2`, bounds the remaining derivatives by `‖φ‖_{H^t}`.
 So `⟨x⟩ ^ (-2K) u` is bounded on Schwartz functions in the `H^t` norm, and a functional bounded in
-this way lies in `H^{-t}`: it extends to `H^t`, and the Riesz representation theorem on the Hilbert
-space `H^t` writes it as the density pairing with an element of `H^{-t}`. Hence every scalar
+this way lies in `H^{-t}` (`TemperedDistribution.memSobolev_neg_of_norm_le`, from the duality of
+`H^t` and `H^{-t}`). Hence every scalar
 tempered distribution is `(1 + ‖x‖ ^ 2) ^ K` times an element of a Sobolev space, and its product
 with a Schwartz function has finite Sobolev order.
 
@@ -31,8 +30,6 @@ operators (`TauCeti.Symbol.IsSmoothing.memSobolev_quantizeTempered`).
 
 ## Main declarations
 
-* `TemperedDistribution.memSobolev_neg_of_norm_le`: a scalar tempered distribution `u` with
-  `‖u φ‖ ≤ C ‖φ‖_{H^t}` for all Schwartz functions `φ` lies in `H^{-t}`.
 * `TemperedDistribution.exists_seminorm_smulLeftCLM_one_add_norm_sq_rpow_neg_le`: for `k ≤ 2K` and
   `t > l + n / 2`, the Schwartz seminorm `sup ‖x‖ ^ k ‖D^l (⟨x⟩ ^ (-2K) φ)‖` is at most
   `C ‖φ‖_{H^t}`.
@@ -63,47 +60,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 namespace TemperedDistribution
 
-/-- **Bounded functionals on `H^t` are in `H^{-t}`.** A scalar tempered distribution `u` with
-`‖u φ‖ ≤ C ‖φ‖_{H^t}` for every Schwartz function `φ` lies in `H^{-t}`. -/
-theorem memSobolev_neg_of_norm_le {u : 𝓢'(E, ℂ)} {t C : ℝ}
-    (hu : ∀ φ : 𝓢(E, ℂ), ‖u φ‖ ≤ C * ‖SchwartzMap.toBesselPotentialSpaceCLM t 2 φ‖) :
-    u.MemSobolev (-t) 2 := by
-  set A := (SchwartzMap.toBesselPotentialSpaceCLM t 2 : 𝓢(E, ℂ) →L[ℂ] H^{t}(E, ℂ)).toLinearMap
-  have hker : LinearMap.ker A ≤ LinearMap.ker (u : 𝓢(E, ℂ) →L[ℂ] ℂ).toLinearMap := fun φ hφ ↦ by
-    have h := hu φ
-    rw [LinearMap.mem_ker] at hφ
-    simp only [A, ContinuousLinearMap.coe_coe] at hφ
-    rw [hφ, norm_zero, mul_zero] at h
-    exact LinearMap.mem_ker.2 (norm_le_zero_iff.1 h)
-  -- The functional `A φ ↦ u φ` on the range of `A`, bounded in the `H^t` norm.
-  set f₀ : LinearMap.range A →ₗ[ℂ] ℂ :=
-    (LinearMap.ker A).liftQ (u : 𝓢(E, ℂ) →L[ℂ] ℂ).toLinearMap hker ∘ₗ
-      (LinearMap.quotKerEquivRange A).symm.toLinearMap
-  have hf₀ (φ : 𝓢(E, ℂ)) : f₀ ⟨A φ, LinearMap.mem_range_self A φ⟩ = u φ := by
-    simp [f₀, LinearMap.quotKerEquivRange_symm_apply_image]
-    rfl
-  have hbound (v : LinearMap.range A) : ‖f₀ v‖ ≤ C * ‖v‖ := by
-    obtain ⟨_, φ, rfl⟩ := v
-    rw [hf₀]
-    exact hu φ
-  obtain ⟨ℓ, hℓ, -⟩ := exists_extension_norm_eq (LinearMap.range A) (f₀.mkContinuous C hbound)
-  -- By the Riesz representation theorem, `ℓ = ⟪h, ·⟫` on the Hilbert space `H^t`.
-  set h := (InnerProductSpace.toDual ℂ H^{t}(E, ℂ)).symm ℓ
-  have hmem : MemLp (fun x ↦ star (h.toLp x)) 2 volume := (Lp.memLp h.toLp).star
-  set w : H^{-t}(E, ℂ) := BesselPotentialSpace.ofLp (-t) (hmem.toLp _)
-  convert BesselPotentialSpace.memSobolev_toDistr w using 1
-  ext φ
-  rw [BesselPotentialSpace.toDistr_apply_eq_besselPotentialPairing (q := 2),
-    ContinuousLinearMap.besselPotentialPairing_apply, neg_neg, ← hf₀,
-    ← LinearMap.mkContinuous_apply f₀ C hbound, ← hℓ,
-    ← InnerProductSpace.toDual_symm_apply, ← BesselPotentialSpace.inner_toLp_toLp,
-    MeasureTheory.L2.inner_def]
-  refine integral_congr_ae ?_
-  filter_upwards [hmem.coeFn_toLp] with x hx
-  simp only [w, A, ContinuousLinearMap.coe_coe, SchwartzMap.toLp_toBesselPotentialSpaceCLM,
-    BesselPotentialSpace.toLp_ofLp, hx]
-  simp [h]
-
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The weight `⟨x⟩ ^ (-2K) = (1 + ‖x‖ ^ 2) ^ (-K)` as a complex function. -/
 private theorem weight_eq (K : ℕ) :
@@ -112,6 +68,13 @@ private theorem weight_eq (K : ℕ) :
   ext x
   congr 3
   ring
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The weight `⟨x⟩ ^ (-2K) = (1 + ‖x‖ ^ 2) ^ (-K)` has temperate growth. -/
+private theorem hasTemperateGrowth_weight (K : ℕ) :
+    (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (-(K : ℝ)) : ℝ) : ℂ)).HasTemperateGrowth := by
+  rw [weight_eq K]
+  fun_prop
 
 /-- **Weighted Schwartz seminorms are controlled by Sobolev norms.** For `k ≤ 2K`, the seminorm
 `sup ‖x‖ ^ k ‖D^l (⟨x⟩ ^ (-2K) φ)‖` is at most a constant times `‖φ‖_{H^t}` once
@@ -123,9 +86,7 @@ theorem exists_seminorm_smulLeftCLM_one_add_norm_sq_rpow_neg_le (K : ℕ) {k l :
       (SchwartzMap.smulLeftCLM ℂ (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (-(K : ℝ)) : ℝ) : ℂ)) φ) ≤
         C * ‖SchwartzMap.toBesselPotentialSpaceCLM t 2 φ‖ := by
   set w : E → ℂ := fun x ↦ (((1 + ‖x‖ ^ 2) ^ (-(K : ℝ)) : ℝ) : ℂ)
-  have hw : w.HasTemperateGrowth := by
-    simp only [w, weight_eq K]
-    fun_prop
+  have hw : w.HasTemperateGrowth := hasTemperateGrowth_weight K
   -- The weight absorbs `‖x‖ ^ k` together with each of its derivatives.
   have hks : (k : ℝ) + -(2 * K : ℝ) ≤ 0 := by
     have : (k : ℝ) ≤ 2 * K := by exact_mod_cast hk
@@ -209,16 +170,14 @@ theorem exists_memSobolev_eq_smulLeftCLM_one_add_norm_sq_pow (u : 𝓢'(E, ℂ))
       u = smulLeftCLM ℂ (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ K : ℝ) : ℂ)) v := by
   obtain ⟨K, s, hS⟩ := exists_memSobolev_smulLeftCLM_one_add_norm_sq_rpow_neg u
   refine ⟨K, s, _, hS, ?_⟩
-  have hw : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (-(K : ℝ)) : ℝ) : ℂ)).HasTemperateGrowth := by
-    rw [weight_eq K]
-    fun_prop
   have hwp : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (-(K : ℝ)) : ℝ) : ℂ)) *
       (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ K : ℝ) : ℂ)) = fun _ ↦ 1 := by
     ext x
     have h1 : 0 < 1 + ‖x‖ ^ 2 := by positivity
     rw [Pi.mul_apply, ← Complex.ofReal_mul, Real.rpow_neg h1.le, Real.rpow_natCast,
       inv_mul_cancel₀ (pow_ne_zero _ h1.ne'), Complex.ofReal_one]
-  rw [smulLeftCLM_smulLeftCLM_apply hw (by fun_prop), hwp, smulLeftCLM_const, one_smul]
+  rw [smulLeftCLM_smulLeftCLM_apply (hasTemperateGrowth_weight K) (by fun_prop), hwp,
+    smulLeftCLM_const, one_smul]
 
 /-- **Local finite Sobolev order.** For every scalar tempered distribution `u` and Schwartz function
 `ψ`, the product `ψ u` lies in some Sobolev space `H^s`. -/
@@ -228,11 +187,6 @@ theorem exists_memSobolev_smulLeftCLM (u : 𝓢'(E, ℂ)) (ψ : 𝓢(E, ℂ)) :
   have hp : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ K : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
   refine ⟨s, ?_⟩
   rw [smulLeftCLM_smulLeftCLM_apply hp ψ.hasTemperateGrowth]
-  have hχ : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ K : ℝ) : ℂ)) * ⇑ψ =
-      ⇑(SchwartzMap.smulLeftCLM ℂ (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ K : ℝ) : ℂ)) ψ) := by
-    ext x
-    rw [SchwartzMap.smulLeftCLM_apply_apply hp, Pi.mul_apply, smul_eq_mul]
-  rw [hχ]
-  exact hv.smulLeftCLM _
+  exact hv.smulLeftCLM_mul hp ψ
 
 end TemperedDistribution
