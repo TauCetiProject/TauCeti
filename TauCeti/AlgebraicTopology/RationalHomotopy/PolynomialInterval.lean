@@ -70,7 +70,8 @@ namespace PolynomialInterval
 /-- The polynomial interval `Λ(t, dt)`, with `K[t]` in degree `0`, `K[t] dt` in degree `1` and
 differential `d p = p' dt`, is a differential graded algebra. -/
 theorem isDGAlgebra :
-    IsDGAlgebra (grading K K[X] K[X]) (derivative' (R := K)).trivSqZeroExtDifferential :=
+    IsDGAlgebra (trivSqZeroExtGrading K K[X] K[X])
+      (derivative' (R := K)).trivSqZeroExtDifferential :=
   derivative'.isDGAlgebra_trivSqZeroExtDifferential
 
 variable {K}
@@ -99,11 +100,11 @@ theorem fst_dt : (dt : PolynomialInterval K).fst = 0 :=
 theorem snd_dt : (dt : PolynomialInterval K).snd = 1 :=
   (rfl)
 
-theorem t_mem_grading_zero : (t : PolynomialInterval K) ∈ grading K K[X] K[X] 0 :=
-  inl_mem_grading_zero _
+theorem t_mem_grading_zero : (t : PolynomialInterval K) ∈ trivSqZeroExtGrading K K[X] K[X] 0 :=
+  inl_mem_trivSqZeroExtGrading_zero _
 
-theorem dt_mem_grading_one : (dt : PolynomialInterval K) ∈ grading K K[X] K[X] 1 :=
-  inr_mem_grading_one _
+theorem dt_mem_grading_one : (dt : PolynomialInterval K) ∈ trivSqZeroExtGrading K K[X] K[X] 1 :=
+  inr_mem_trivSqZeroExtGrading_one _
 
 /-- The form `q dt` is the product of the function `q` with `dt`. -/
 @[simp]
@@ -178,7 +179,7 @@ noncomputable def pullback (s : K[X]) : DGAlgHom (isDGAlgebra K) (isDGAlgebra K)
   toGradedAlgHom :=
     { toAlgHom := pullbackAlgHom s
       map_mem := fun {n} {x} hx ↦ by
-        rw [mem_grading_iff] at hx ⊢
+        rw [mem_trivSqZeroExtGrading_iff] at hx ⊢
         exact ⟨fun hn ↦ by simp [pullbackAlgHom_apply, hx.1 hn],
           fun hn ↦ by simp [pullbackAlgHom_apply, hx.2 hn]⟩ }
   map_d' x := by

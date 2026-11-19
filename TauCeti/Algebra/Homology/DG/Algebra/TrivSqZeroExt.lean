@@ -15,7 +15,7 @@ public import TauCeti.Algebra.TrivSqZeroExt.Grading
 For a commutative `S`-algebra `R`, a symmetric `R`-module `M` and an `S`-linear derivation
 `D : R → M`, the trivial square-zero extension `R ⊕ M` (Mathlib's `TrivSqZeroExt R M`), with `R` in
 degree `0` and `M` in degree `1`, is a differential graded algebra for the differential
-`(r, m) ↦ (0, D r)`; the grading is `TrivSqZeroExt.grading`
+`(r, m) ↦ (0, D r)`; the grading is `TauCeti.trivSqZeroExtGrading`
 (`TauCeti.Algebra.TrivSqZeroExt.Grading`).  It is the two-term complex `R → M` made
 multiplicative: the Leibniz rule for `d` is exactly the Leibniz rule for `D`, and `M · M = 0`
 makes it graded-commutative.
@@ -73,19 +73,19 @@ theorem trivSqZeroExtDifferential_apply (x : tsze R M) :
 differential graded algebra for the differential `(r, m) ↦ (0, D r)` of a derivation
 `D : R → M`. -/
 theorem isDGAlgebra_trivSqZeroExtDifferential :
-    IsDGAlgebra (grading S R M) D.trivSqZeroExtDifferential where
+    IsDGAlgebra (trivSqZeroExtGrading S R M) D.trivSqZeroExtDifferential where
   map_mem {p} x hx := by
     by_cases hp : p = 0
     · subst hp
       simp
-    · simp [fst_eq_zero_of_mem_grading hx hp]
+    · simp [fst_eq_zero_of_mem_trivSqZeroExtGrading hx hp]
   sq_zero x := by simp
   leibniz {p} x hx y := by
     by_cases hp : p = 0
     · subst hp
-      have hx₂ : x.snd = 0 := mem_grading_zero_iff.mp hx
+      have hx₂ : x.snd = 0 := mem_trivSqZeroExtGrading_zero_iff.mp hx
       ext <;> simp [hx₂, mul_comm, add_comm]
-    · ext <;> simp [fst_eq_zero_of_mem_grading hx hp, Units.smul_def]
+    · ext <;> simp [fst_eq_zero_of_mem_trivSqZeroExtGrading hx hp, Units.smul_def]
 
 /-- The augmentation `(r, m) ↦ φ r` of the differential graded algebra `R ⊕ M` of a derivation,
 defined by an `S`-algebra map `φ : R → S`. -/
@@ -97,7 +97,7 @@ def trivSqZeroExtAugmentation (φ : R →ₐ[S] S) :
         rw [mem_trivialGrading_iff]
         by_cases hp : p = 0
         · exact Or.inl hp
-        · exact Or.inr (by simp [fst_eq_zero_of_mem_grading hx hp]) }
+        · exact Or.inr (by simp [fst_eq_zero_of_mem_trivSqZeroExtGrading hx hp]) }
   map_d' x := by simp
 
 @[simp]
