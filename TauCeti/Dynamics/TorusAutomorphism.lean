@@ -59,6 +59,8 @@ every period.
   exactly when `det (1 - A) ≠ 0`.
 * `AddCircle.finsum_sign_det_id_sub_fixedPointDerivative_generalLinearGroup_smul`: the signed
   count of the fixed points is `det (1 - A)`.
+* `AddCircle.finsum_sign_det_id_sub_fixedPointDerivative_iterate_generalLinearGroup_smul`: the
+  signed count of the fixed points of the `n`-th iterate is `det (1 - Aⁿ)`.
 * `AddCircle.isNondegenerateUpToPeriod_generalLinearGroup_smul_iff`: nondegeneracy up to period
   `N` exactly when `det (1 - Aᵏ) ≠ 0` for `0 < k ≤ N`.
 
@@ -329,6 +331,18 @@ theorem finsum_sign_det_id_sub_fixedPointDerivative_generalLinearGroup_smul (A :
     (Nat.card_congr e).trans (nat_card_fixedPoints_generalLinearGroup_smul p A)
   -- A constant sum of `sgn d` over `|d|` points is `|d| sgn d = d`.
   simp [finsum_eq_sum_of_fintype, ← Nat.card_eq_fintype_card, hcard]
+
+/-- **The signed fixed-point counts of the iterates of a toral automorphism.** The fixed points of
+the `n`-th iterate of `x ↦ A • x`, each counted with its Lefschetz sign, add up to
+`det (1 - Aⁿ)`. -/
+theorem finsum_sign_det_id_sub_fixedPointDerivative_iterate_generalLinearGroup_smul (A : GL ι ℤ)
+    (n : ℕ) :
+    ∑ᶠ x : {x : ι → AddCircle p // (fun y ↦ A • y)^[n] x = x},
+        (SignType.sign (LinearMap.det (LinearMap.id - fixedPointDerivative
+          (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (fun y ↦ A • y)^[n] x)) : ℤ) =
+      (1 - (A : Matrix ι ι ℤ) ^ n).det := by
+  rw [smul_iterate, finsum_sign_det_id_sub_fixedPointDerivative_generalLinearGroup_smul,
+    Units.val_pow_eq_pow_val]
 
 /-- **Nondegeneracy up to a period.** The toral automorphism `x ↦ A • x` is nondegenerate up to
 period `N` exactly when `det (1 - Aᵏ) ≠ 0` for every `0 < k ≤ N`. -/

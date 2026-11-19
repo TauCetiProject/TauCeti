@@ -233,16 +233,8 @@ theorem finsum_sign_det_id_sub_fixedPointDerivative_iterate_catMapUnit_smul (n :
         (SignType.sign (LinearMap.det (LinearMap.id - fixedPointDerivative
           (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) (fun y ↦ catMapUnit • y)^[n] x)) : ℤ) =
       2 - (catMap ^ n).trace := by
-  -- The iterate is the action of `Pⁿ`; transport the general count along this equation.
-  have key : ∀ f : (Fin 2 → AddCircle p) → Fin 2 → AddCircle p,
-      f = (fun y ↦ (catMapUnit ^ n) • y) →
-      ∑ᶠ x : {x // f x = x}, (SignType.sign (LinearMap.det (LinearMap.id -
-          fixedPointDerivative (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) f x)) : ℤ) =
-        2 - (catMap ^ n).trace := by
-    rintro f rfl
-    rw [AddCircle.finsum_sign_det_id_sub_fixedPointDerivative_generalLinearGroup_smul,
-      det_one_sub_coe_catMapUnit_pow]
-  exact key _ (smul_iterate catMapUnit n)
+  rw [AddCircle.finsum_sign_det_id_sub_fixedPointDerivative_iterate_generalLinearGroup_smul,
+    coe_catMapUnit, det_one_sub_catMap_pow]
 
 /-- **The dynamical zeta function of the cat map.** The zeta function
 `exp (∑ₙ (∑_{φⁿ x = x} sgn det (1 - dφⁿ_x)) tⁿ / n)` of the actual cat map `φ` of the torus,
