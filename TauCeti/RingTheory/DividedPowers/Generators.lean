@@ -77,6 +77,7 @@ namespace AdditivePowers
 variable {I}
 
 /-- Candidates with the same operations on `I` are equal. -/
+@[ext]
 theorem ext {δ δ' : AdditivePowers I} (h : ∀ n, ∀ x ∈ I, δ.dpow n x = δ'.dpow n x) :
     δ = δ' := by
   obtain ⟨f, hf, _, _, _, _, _⟩ := δ
@@ -167,8 +168,7 @@ private theorem sum_choose_mul_choose_filter {m n : ℕ} {r : ℕ × ℕ} (hr : 
       rwa [Nat.add_sub_cancel' h1, Nat.add_sub_cancel' h2]
   · intro pq hpq _
     simp only [mem_filter] at hpq
-    rw [← hpq.2]
-    rfl
+    rw [← hpq.2, Prod.fst_add, Prod.snd_add]
 
 /-- The multiplication identity `δₘ(z) δₙ(z) = (m + n).choose m * δₘ₊ₙ(z)` for all `m, n`, if it
 holds at `x` and at `y`, also holds at `x + y`. -/

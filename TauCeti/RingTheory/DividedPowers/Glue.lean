@@ -104,8 +104,7 @@ theorem convolution_add (n : ℕ) {x x' y y' : A} (hx : x ∈ I) (hx' : x' ∈ I
     convolution γ ε n (x + x') (y + y') =
       ∑ k ∈ antidiagonal n, convolution γ ε k.1 x y * convolution γ ε k.2 x' y' := by
   simp only [convolution_eq_coeff_exp_mul, γ.exp_add hx hx', ε.exp_add hy hy']
-  rw [← PowerSeries.coeff_mul]
-  ring_nf
+  rw [← PowerSeries.coeff_mul, mul_mul_mul_comm]
 
 end Convolution
 
