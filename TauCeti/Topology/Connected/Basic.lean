@@ -29,6 +29,10 @@ chooses one of its points.
 An open set is not preconnected exactly when it is the union of two disjoint nonempty open sets
 (`IsOpen.not_isPreconnected_iff`), as for clopen sets in Mathlib.
 
+For `f` continuously mapping a preconnected set `s` into `u`, with `x ∈ s` and
+`t ∈ closure s` at which `f` is continuous within `s`, `f t` lies in the closure of
+`connectedComponentIn u (f x)` (`IsPreconnected.mem_closure_connectedComponentIn`).
+
 A continuous injection on a compact set into a Hausdorff space is a closed embedding of that set,
 so preconnectedness of the image is equivalent to preconnectedness of the set
 (`IsCompact.isPreconnected_image_iff_of_injOn`).
@@ -41,6 +45,13 @@ from a neighbourhood of a maximum point to the whole domain.
 In a `T₁` space, the connected component `connectedComponentIn s x` of a point isolated in `s` is
 the point itself (`TauCeti.connectedComponentIn_eq_singleton`): the component is covered by the
 open sets `{x}ᶜ` and a neighbourhood of `x` meeting `s` only at `x`, whose intersection misses `s`.
+
+## Attribution
+
+The closure lemma is adapted from `Mei/Topology/Connected/Basic.lean` in
+[yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), at
+`9cf969cdee9748087aae45dbf4888a130890655c` (Apache 2.0).
+Original copyright (c) 2026 Mei contributors; original author: Codex.
 -/
 
 public section
@@ -48,6 +59,16 @@ public section
 open Filter Function Set Topology
 
 variable {α ι : Type*} [TopologicalSpace α]
+
+/-- If `f` continuously maps a preconnected set `s` into `u` and is continuous within `s`
+at `t ∈ closure s`, then `f t` lies in the closure of `connectedComponentIn u (f x)` for any
+`x ∈ s`. -/
+theorem IsPreconnected.mem_closure_connectedComponentIn {β : Type*} [TopologicalSpace β]
+    {s : Set α} {u : Set β} {f : α → β} (hs : IsPreconnected s) (hf : ContinuousOn f s)
+    {x t : α} (hx : x ∈ s) (ht : t ∈ closure s) (hft : ContinuousWithinAt f s t)
+    (hu : MapsTo f s u) : f t ∈ closure (_root_.connectedComponentIn u (f x)) := by
+  exact hft.mem_closure ht (image_subset_iff.mp ((hs.image f hf).subset_connectedComponentIn
+    (mem_image_of_mem f hx) (image_subset_iff.mpr hu)))
 
 /-- A preconnected set covered by pairwise disjoint open sets `u i` lies in each `u i` that it
 meets. -/
