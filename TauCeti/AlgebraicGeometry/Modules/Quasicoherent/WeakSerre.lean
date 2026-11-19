@@ -109,7 +109,7 @@ namespace AlgebraicGeometry.Scheme.Modules
 
 open CategoryTheory
 
-universe u
+universe w w' u
 
 variable (X : Scheme.{u})
 
@@ -139,9 +139,10 @@ instance : (isQuasicoherent X).IsClosedUnderCokernels :=
 instance : (isQuasicoherent X).IsClosedUnderExtensions :=
   inferInstanceAs (SheafOfModules.isQuasicoherent X.ringCatSheaf).IsClosedUnderExtensions
 
-/-- Coproducts of `u`-small families of quasi-coherent `𝒪_X`-modules are quasi-coherent. -/
-instance (J : Type u) : (isQuasicoherent X).IsClosedUnderColimitsOfShape (Discrete J) :=
-  inferInstanceAs
-    ((SheafOfModules.isQuasicoherent X.ringCatSheaf).IsClosedUnderColimitsOfShape (Discrete J))
+/-- Colimits of essentially `u`-small diagrams of quasi-coherent `𝒪_X`-modules are
+quasi-coherent; in particular so are coproducts of `u`-small families. -/
+instance (J : Type w) [Category.{w'} J] [EssentiallySmall.{u} J] :
+    (isQuasicoherent X).IsClosedUnderColimitsOfShape J :=
+  inferInstanceAs ((SheafOfModules.isQuasicoherent X.ringCatSheaf).IsClosedUnderColimitsOfShape J)
 
 end AlgebraicGeometry.Scheme.Modules
