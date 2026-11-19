@@ -53,6 +53,10 @@ so for the negative bundle of a Morse–Bott critical submanifold of index `r` t
 relative homology across its critical level in degree `r`, the lowest degree in which it can be
 nonzero.
 
+Without an orientation and over an arbitrary commutative ring, the group in the rank degree is
+the zeroth homology of `B` twisted by the orientation local system of `E`; this is
+`TauCeti.Topology.VectorBundle.Thom.TwistedRankDegreeHomology`.
+
 ## The proof
 
 Both cases are instances of one argument, for a family of fibre classes which every chosen
@@ -107,8 +111,9 @@ section Fiber
 variable (K : Type w) [CommRing K] (F : Type w) [NormedAddCommGroup F] [NormedSpace ℝ F]
   [FiniteDimensional ℝ F]
 
-/-- The generator of `Hᵣ(F, F ∖ {0}; K)` corresponding to the class of the point in `H₀(pt; K)`. -/
-private def complZeroPairGenerator :
+/-- The generator of `Hᵣ(F, F ∖ {0}; K)`, `r = dim F`, corresponding to the class of the point in
+`H₀(pt; K)` under `Hᵣ(pt × F, pt × (F ∖ {0}); K) ≅ H₀(pt; K)`. -/
+def complZeroPairGenerator :
     ((TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology (ModuleCat.of K K)
       (finrank ℝ F) : ModuleCat.{w} K) :=
   TopPair.singularHomologyMap (complZeroPairIsoProdThomPair F).inv (ModuleCat.of K K) (finrank ℝ F)
@@ -128,7 +133,7 @@ private theorem singularHomologyMap_prodThomPairFiberMap_complZeroPairGenerator_
 
 /-- The fibre inclusion over a point `x` of `W` carries the generator to the class of `x` under
 `Hᵣ(W × F, W × (F ∖ {0}); K) ≅ H₀(W; K)`. -/
-private theorem singularHomologyMap_prodThomPairFiberMap_complZeroPairGenerator
+theorem singularHomologyMap_prodThomPairFiberMap_complZeroPairGenerator
     {W : Type w} [TopologicalSpace W] (x : W) :
     TopPair.singularHomologyMap (prodThomPairFiberMap F x) (ModuleCat.of K K) (finrank ℝ F)
         (complZeroPairGenerator K F) =
@@ -146,7 +151,8 @@ private theorem singularHomologyMap_prodThomPairFiberMap_complZeroPairGenerator
     singularHomology₀Section_naturality]
   simp
 
-private theorem span_complZeroPairGenerator :
+/-- The class `complZeroPairGenerator K F` generates `Hᵣ(F, F ∖ {0}; K)`. -/
+theorem span_complZeroPairGenerator :
     Submodule.span K {complZeroPairGenerator K F} = ⊤ := by
   -- The class of the point generates `H₀(pt; K)`, being the inverse of the augmentation `≅ K`
   -- applied to `1`.
@@ -590,7 +596,7 @@ omit [FiniteDimensional ℝ F] [∀ b, Module ℝ (E b)] [VectorBundle ℝ F E] 
 variable (K) in
 /-- The objects of the diagram of Thom pairs are the Thom pairs over the finite unions only up to
 the equations `thomPairFiniteTrivializingUnionDiagram_obj`. -/
-private theorem singularHomology_thomPairOver_finiteTrivializingUnion_eq (s : Finset B) :
+theorem singularHomology_thomPairOver_finiteTrivializingUnion_eq (s : Finset B) :
     (thomPairOver F E (⋃ b ∈ s, (trivializationAt F E b).baseSet)).singularHomology
         (ModuleCat.of K K) (finrank ℝ F) =
       (TopPair.singularHomologyFunctor (ModuleCat.of K K) (finrank ℝ F)).obj
@@ -601,7 +607,7 @@ omit [FiniteDimensional ℝ F] [∀ b, Module ℝ (E b)] [VectorBundle ℝ F E] 
 variable (K) in
 /-- The Thom pair is the cocone point of the diagram of Thom pairs only up to the equation
 `thomPairFiniteTrivializingUnionCocone_pt`. -/
-private theorem singularHomology_thomPair_eq :
+theorem singularHomology_thomPair_eq :
     (thomPair F E).singularHomology (ModuleCat.of K K) (finrank ℝ F) =
       (TopPair.singularHomologyFunctor (ModuleCat.of K K) (finrank ℝ F)).obj
         (thomPairFiniteTrivializingUnionCocone (F := F) (E := E)).pt := by
