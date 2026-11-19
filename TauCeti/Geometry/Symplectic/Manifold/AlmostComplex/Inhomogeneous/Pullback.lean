@@ -163,20 +163,6 @@ theorem val_pullback (ν : InhomogeneousTerm j J) (g : M ≃ₘ^r⟮I, I'⟯ N) 
     (ν.pullback g hnr).val = ν.val.pullback g hnr :=
   (rfl)
 
-omit [FiniteDimensional ℝ EP] [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] in
-/-- Two terms are equal when their readings in the tangent spaces agree. -/
-private theorem ext_tangentHom {J' : ContMDiffAlmostComplexStructureFamily I M IP P n}
-    {ν₁ ν₂ : InhomogeneousTerm j J'}
-    (h : ∀ q v, ν₁.val.tangentHom q v = ν₂.val.tangentHom q v) : ν₁ = ν₂ :=
-  InhomogeneousTerm.ext fun q v ↦ (DomainDependentHomSection.tangentHom_apply _ q v).symm.trans
-    ((h q v).trans (DomainDependentHomSection.tangentHom_apply _ q v))
-
-/-- The pullback of the zero term is zero. -/
-@[simp]
-theorem pullback_zero (g : M ≃ₘ^r⟮I, I'⟯ N) (hnr : n + 1 ≤ r) :
-    (0 : InhomogeneousTerm j J).pullback g hnr = 0 :=
-  ext_tangentHom fun q v ↦ by simp [DomainDependentHomSection.tangentHom_pullback]
-
 variable (ν : InhomogeneousTerm j J) (g : M ≃ₘ^r⟮I, I'⟯ N) (hnr : n + 1 ≤ r)
 
 /-- The differential of `g` carries the pulled-back term to the original one (`simp` proves it
@@ -191,6 +177,11 @@ theorem eq_pullback_iff {μ : InhomogeneousTerm j (J.pullback g hnr)} :
     μ = ν.pullback g hnr ↔ ∀ (q : P × M) (v : TangentSpace IP q.1),
       mfderiv I I' g q.2 (μ.val.tangentHom q v) = ν.val.tangentHom (q.1, g q.2) v := by
   rw [← Subtype.coe_inj, val_pullback, DomainDependentHomSection.eq_pullback_iff]
+
+/-- The pullback of the zero term is zero. -/
+@[simp]
+theorem pullback_zero : (0 : InhomogeneousTerm j J).pullback g hnr = 0 :=
+  ((eq_pullback_iff 0 g hnr).2 fun q v ↦ by simp).symm
 
 /-- **Transport in charts.** Let `χ` be a chart of `M` and `ψ` a chart of `N` with
 `χ = ψ ∘ g` and `χ⁻¹ = g⁻¹ ∘ ψ⁻¹`, such as `g ≫ ψ`. Read in a chart `φ` of the domain and in
