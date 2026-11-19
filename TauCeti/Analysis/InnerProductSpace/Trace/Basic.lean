@@ -28,6 +28,10 @@ independent of any choice of basis.
 * `TauCeti.bilinFormTrace_eq_sum_inv_gram`: in an arbitrary basis, the metric trace contracts the
   form against the inverse Gram matrix of the basis.
 * `TauCeti.bilinFormTrace_inner`: the metric trace of the inner product is the real dimension.
+* `OrthonormalBasis.sum_apply_mul_apply_eq` and `OrthonormalBasis.sum_sum_apply_mul_apply_eq`:
+  the sum `∑ᵢ φ(eᵢ) ψ(eᵢ)` of two linear functionals and the full contraction
+  `∑ₚ,q f(eₚ, e_q) g(eₚ, e_q)` of two bilinear forms over an orthonormal basis do not depend on
+  the basis.
 -/
 
 public section
@@ -88,3 +92,33 @@ theorem bilinFormTrace_inner : bilinFormTrace (innerₗ W) = Module.finrank ℝ 
   simp
 
 end TauCeti
+
+namespace OrthonormalBasis
+
+variable {W ι κ : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
+  [Fintype ι] [Fintype κ]
+
+/-- The sum `∑ᵢ φ(eᵢ) ψ(eᵢ)` of two linear functionals over an orthonormal basis does not depend
+on the basis: it is the metric trace of `(x, y) ↦ φ x * ψ y`. -/
+theorem sum_apply_mul_apply_eq (b : OrthonormalBasis ι ℝ W) (b' : OrthonormalBasis κ ℝ W)
+    (φ ψ : W →ₗ[ℝ] ℝ) : ∑ i, φ (b i) * ψ (b i) = ∑ i, φ (b' i) * ψ (b' i) := by
+  have h₁ := TauCeti.bilinFormTrace_eq_sum ((LinearMap.mul ℝ ℝ).compl₁₂ φ ψ) b
+  have h₂ := TauCeti.bilinFormTrace_eq_sum ((LinearMap.mul ℝ ℝ).compl₁₂ φ ψ) b'
+  simp only [LinearMap.compl₁₂_apply, LinearMap.mul_apply'] at h₁ h₂
+  rw [← h₁, h₂]
+
+/-- The full contraction `∑ₚ,q f(eₚ, e_q) g(eₚ, e_q)` of two bilinear forms over an orthonormal
+basis does not depend on the basis. -/
+theorem sum_sum_apply_mul_apply_eq (b : OrthonormalBasis ι ℝ W) (b' : OrthonormalBasis κ ℝ W)
+    (f g : BilinForm ℝ W) :
+    ∑ p, ∑ q, f (b p) (b q) * g (b p) (b q) = ∑ p, ∑ q, f (b' p) (b' q) * g (b' p) (b' q) := by
+  calc ∑ p, ∑ q, f (b p) (b q) * g (b p) (b q)
+      = ∑ p, ∑ q, f (b p) (b' q) * g (b p) (b' q) :=
+        Finset.sum_congr rfl fun p _ ↦ sum_apply_mul_apply_eq b b' (f (b p)) (g (b p))
+    _ = ∑ q, ∑ p, f (b p) (b' q) * g (b p) (b' q) := Finset.sum_comm
+    _ = ∑ q, ∑ p, f (b' p) (b' q) * g (b' p) (b' q) :=
+        Finset.sum_congr rfl fun q _ ↦
+          sum_apply_mul_apply_eq b b' (f.flip (b' q)) (g.flip (b' q))
+    _ = ∑ p, ∑ q, f (b' p) (b' q) * g (b' p) (b' q) := Finset.sum_comm
+
+end OrthonormalBasis
