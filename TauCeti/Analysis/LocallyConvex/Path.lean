@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Topology.Algebra.Module.LocallyConvex
 public import Mathlib.Topology.Order.ProjIcc
+public import TauCeti.Geometry.Manifold.Instances.Icc
 
 /-!
 # Smoothing paths by finite convex combinations
@@ -118,9 +119,7 @@ theorem exists_smooth_convexCombination_sub_mem (f : C(unitInterval, E))
       (∀ i t, 0 ≤ w i t) ∧ (∀ t, ∑ i, w i t = 1) ∧
       (∀ t, t ≤ 1 / 3 → (∑ i, w i t • f i.1) = f 0) ∧
       (∀ t, 2 / 3 ≤ t → (∑ i, w i t • f i.1) = f 1) ∧
-      ∀ t, (∑ i, w i t • f i.1) -
-        f ⟨Real.smoothTransition (3 * t - 1),
-          Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩ ∈ W := by
+      ∀ t, (∑ i, w i t • f i.1) - f (unitInterval.smoothTransition (3 * t - 1)) ∈ W := by
   classical
   obtain ⟨s, ρ, hact⟩ := exists_smoothPartitionOfUnity_isActive f hW
   have hactive (i : s) (t : ℝ) (hi : ρ i t ≠ 0) :
@@ -144,8 +143,11 @@ theorem exists_smooth_convexCombination_sub_mem (f : C(unitInterval, E))
   · have hmem : (∑ᶠ i : s, ρ i (θ t) • (f i.1 - f (p (θ t)))) ∈ W :=
       hconv.finsum_mem (fun i ↦ ρ.nonneg i _) (ρ.sum_eq_one (hθmem t))
         (fun i hi ↦ interior_subset (hact i _ hi).1)
+    have hp : p (θ t) = unitInterval.smoothTransition (3 * t - 1) :=
+      Subtype.ext <| by
+        simp only [p, projIcc_of_mem _ (hθmem t), unitInterval.coe_smoothTransition, θ]
     simpa only [finsum_eq_sum_of_fintype, smul_sub, Finset.sum_sub_distrib,
-      ← Finset.sum_smul, hsum, one_smul, p, projIcc_of_mem _ (hθmem t)] using hmem
+      ← Finset.sum_smul, hsum, one_smul, hp] using hmem
 
 /-- In a locally convex space, a continuous path in an open set can be replaced by finite
 convex combinations of its values with smooth scalar weights. The combinations stay in the
@@ -172,8 +174,6 @@ theorem exists_smooth_convexCombination_mem [LocallyConvexSpace ℝ E]
   obtain ⟨s, w, hw, hnonneg, hsum, hleft, hright, herr⟩ :=
     f.exists_smooth_convexCombination_sub_mem hW.1 hW.2
   refine ⟨s, w, hw, hnonneg, hsum, hleft, hright, fun t ↦ ?_⟩
-  simpa only [add_sub_cancel] using hWN (herr t)
-    ⟨Real.smoothTransition (3 * t - 1),
-      Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
+  simpa only [add_sub_cancel] using hWN (herr t) (unitInterval.smoothTransition (3 * t - 1))
 
 end ContinuousMap

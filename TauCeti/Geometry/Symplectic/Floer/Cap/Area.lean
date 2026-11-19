@@ -489,7 +489,7 @@ private theorem loopwiseTrans_apply (hw₁ : IsSmoothBasedHomotopy I γ₁ γ₁
       toPath_apply, Function.comp_apply, Prod.map_apply, id_eq, unitInterval.coe_smoothTransition]
   · -- At `t = 1` both rest at the base point.
     have h := loopwiseTrans_apply_add_one (w₁ ∘ Prod.map Real.smoothTransition id)
-      (w₂ ∘ Prod.map Real.smoothTransition id) (s, 0)
+      (w₂ ∘ Prod.map Real.smoothTransition id) s 0
     simp only [zero_add] at h
     rw [ht₁, h, loopwiseTrans_of_le _ _ le_rfl (by norm_num), mul_zero, zero_sub,
       Real.smoothTransition.zero_of_nonpos (by norm_num), apply_smoothTransition_seam hw₁,
@@ -506,7 +506,7 @@ theorem loopwiseTrans (hw₁ : IsSmoothBasedHomotopy I γ₁ γ₁' w₁)
         (w₂ ∘ Prod.map Real.smoothTransition id)) where
   contMDiff := contMDiff_loopwiseTrans (contMDiff_comp_smoothTransition hw₁)
     (contMDiff_comp_smoothTransition hw₂) (loopwiseTrans_seam hw₁ hw₂) (loopwiseTrans_seam hw₂ hw₁)
-  apply_add_one z := loopwiseTrans_apply_add_one _ _ z
+  apply_add_one z := loopwiseTrans_apply_add_one _ _ z.1 z.2
   apply_zero t := by
     rw [loopwiseTrans_apply hw₁ hw₂, unitInterval.smoothTransition_zero, Path.source, Path.source]
   apply_one t := by

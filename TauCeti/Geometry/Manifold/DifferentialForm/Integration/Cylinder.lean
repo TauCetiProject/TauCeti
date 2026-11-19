@@ -396,8 +396,8 @@ def loopwiseTrans (u₁ u₂ : ℝ × ℝ → M) (z : ℝ × ℝ) : M :=
 omit [TopologicalSpace M] in
 /-- The loopwise concatenation is `1`-periodic in the second coordinate. -/
 @[simp]
-theorem loopwiseTrans_apply_add_one (u₁ u₂ : ℝ × ℝ → M) (z : ℝ × ℝ) :
-    loopwiseTrans u₁ u₂ (z.1, z.2 + 1) = loopwiseTrans u₁ u₂ z := by
+theorem loopwiseTrans_apply_add_one (u₁ u₂ : ℝ × ℝ → M) (s t : ℝ) :
+    loopwiseTrans u₁ u₂ (s, t + 1) = loopwiseTrans u₁ u₂ (s, t) := by
   simp only [loopwiseTrans, Int.fract_add_one]
 
 omit [TopologicalSpace M] in
