@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Strip.Jet
+public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.Analysis.Normed.Operator.Extend
 public import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.Analysis.Calculus.Deriv.Prod
@@ -13,7 +14,6 @@ import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Sobolev.Trace.Estimate
-import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.MeasureTheory.Function.Lp.AeMem
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Rectangle
@@ -41,7 +41,8 @@ of `Lᵖ` of the strip from `TauCeti.Analysis.Sobolev.Strip.Jet`.
   `TauCeti.StripSobolev.derivTL`). An element is determined by its value
   (`TauCeti.StripSobolev.valueL_injective`): integrating by parts against test functions
   supported in the open strip `ℝ × (0, 1)` shows that the derivatives are the weak derivatives of
-  the value (`TauCeti.HasWeakLineDerivOn`), which vanish where the value does
+  the value (`TauCeti.StripSobolev.hasWeakLineDerivOn_derivSL`,
+  `TauCeti.StripSobolev.hasWeakLineDerivOn_derivTL`), which vanish where the value does
   (`TauCeti.HasWeakLineDerivOn.ae_eq_zero_of_isOpen`).
 * **Translation invariance.** Translating sections in the `s` direction is a linear isometric
   equivalence of `H1 F₀ F₁` (`TauCeti.StripSobolev.translate`): the norm is translation
@@ -428,34 +429,48 @@ private theorem hasWeakLineDerivOn_of_mem_H1 {x : Lp (V × V × V) 2 stripMeasur
   exact integral_smul_add_eq_zero_of_mem_H1 hx (φ.contDiff.of_le (by simp)) φ.hasCompactSupport
     φ.tsupport_subset he hP
 
+/-- On the open strip `ℝ × (0, 1)`, the `s`-derivative of an element of `H1` is the weak
+derivative of its value in the direction `(1, 0)`. -/
+theorem hasWeakLineDerivOn_derivSL (x : H1 F₀ F₁) :
+    HasWeakLineDerivOn stripMeasure ⟨univ ×ˢ Ioo 0 1, isOpen_univ.prod isOpen_Ioo⟩
+      (valueL F₀ F₁ x) (derivSL F₀ F₁ x) (1, 0) :=
+  ((hasWeakLineDerivOn_of_mem_H1 x.2 (Or.inl rfl) (P := (ContinuousLinearMap.fst ℝ V V).comp
+    (ContinuousLinearMap.snd ℝ V (V × V))) fun ξ z ↦ by rw [jet_apply]; rfl).congr_ae
+      (ae_restrict_of_ae (coeFn_valueL x).symm)).congr_ae_deriv
+    (ae_restrict_of_ae (coeFn_derivSL x).symm)
+
+/-- On the open strip `ℝ × (0, 1)`, the `t`-derivative of an element of `H1` is the weak
+derivative of its value in the direction `(0, 1)`. -/
+theorem hasWeakLineDerivOn_derivTL (x : H1 F₀ F₁) :
+    HasWeakLineDerivOn stripMeasure ⟨univ ×ˢ Ioo 0 1, isOpen_univ.prod isOpen_Ioo⟩
+      (valueL F₀ F₁ x) (derivTL F₀ F₁ x) (0, 1) :=
+  ((hasWeakLineDerivOn_of_mem_H1 x.2 (Or.inr rfl) (P := (ContinuousLinearMap.snd ℝ V V).comp
+    (ContinuousLinearMap.snd ℝ V (V × V))) fun ξ z ↦ by rw [jet_apply]; rfl).congr_ae
+      (ae_restrict_of_ae (coeFn_valueL x).symm)).congr_ae_deriv
+    (ae_restrict_of_ae (coeFn_derivTL x).symm)
+
 /-- **An element of `H1` is determined by its value.** The value map `(ξ, ξ_s, ξ_t) ↦ ξ` is
-injective on `H1`: if the value of an `L²` jet in `H1` vanishes, so do its derivative components,
-as they are its weak derivatives. Thus `H1` is a space of sections of the strip. -/
+injective on `H1`: if the value of an element of `H1` vanishes, so do its derivatives, as they are
+its weak derivatives. Thus `H1` is a space of sections of the strip. -/
 theorem valueL_injective : Function.Injective (valueL F₀ F₁) := by
   refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
-  have hx₁ : ∀ᵐ z ∂stripMeasure, ((x : Lp (V × V × V) 2 stripMeasure) z).1 = 0 := by
-    have h := coeFn_valueL x
-    rw [hx] at h
-    filter_upwards [h, Lp.coeFn_zero V 2 stripMeasure] with z h₁ h₂
-    simpa using h₁.symm.trans h₂
+  have hv : ∀ᵐ z ∂stripMeasure, valueL F₀ F₁ x z = 0 := by
+    rw [hx]
+    exact Lp.coeFn_zero V 2 stripMeasure
   have hΩ : stripMeasure.restrict ((univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1) = stripMeasure :=
     Measure.restrict_eq_self_of_ae_mem ae_mem_openStrip
-  -- Each derivative component vanishes almost everywhere, as the weak derivative of `0`.
-  have hcomp : ∀ {e : ℝ × ℝ} {P : V × V × V →L[ℝ] V}, (e = (1, 0) ∨ e = (0, 1)) →
-      (∀ (ξ : ℝ × ℝ → V) z, P (jet ξ z) = fderiv ℝ ξ z e) →
-      ∀ᵐ z ∂stripMeasure, P ((x : Lp (V × V × V) 2 stripMeasure) z) = 0 := by
-    intro e P he hP
-    have h := (hasWeakLineDerivOn_of_mem_H1 x.2 he hP).ae_eq_zero_of_isOpen isOpen_univ
-      (ae_restrict_of_ae (hx₁.mono fun z hz _ ↦ hz))
-    simp only [TopologicalSpace.Opens.coe_mk, hΩ] at h
-    exact h.mono fun z hz ↦ hz (mem_univ z)
-  have h₂ := hcomp (Or.inl rfl) (P := (ContinuousLinearMap.fst ℝ V V).comp
-    (ContinuousLinearMap.snd ℝ V (V × V))) fun ξ z ↦ by rw [jet_apply]; rfl
-  have h₃ := hcomp (Or.inr rfl) (P := (ContinuousLinearMap.snd ℝ V V).comp
-    (ContinuousLinearMap.snd ℝ V (V × V))) fun ξ z ↦ by rw [jet_apply]; rfl
+  -- Each derivative vanishes almost everywhere, as the weak derivative of `0`.
+  have hderiv : ∀ {D : Lp V 2 stripMeasure} {e : ℝ × ℝ},
+      HasWeakLineDerivOn stripMeasure ⟨univ ×ˢ Ioo 0 1, isOpen_univ.prod isOpen_Ioo⟩
+        (valueL F₀ F₁ x) D e → ∀ᵐ z ∂stripMeasure, D z = 0 := fun h ↦ by
+    have h' := h.ae_eq_zero_of_isOpen isOpen_univ (ae_restrict_of_ae (hv.mono fun z hz _ ↦ hz))
+    simp only [TopologicalSpace.Opens.coe_mk, hΩ] at h'
+    exact h'.mono fun z hz ↦ hz (mem_univ z)
   refine Subtype.ext ((Lp.eq_zero_iff_ae_eq_zero).2 ?_)
-  filter_upwards [hx₁, h₂, h₃] with z h₁ h₂ h₃
-  exact Prod.ext h₁ (Prod.ext h₂ h₃)
+  filter_upwards [coeFn_valueL x, coeFn_derivSL x, coeFn_derivTL x, hv,
+    hderiv (hasWeakLineDerivOn_derivSL x), hderiv (hasWeakLineDerivOn_derivTL x)]
+    with z h₁ h₂ h₃ h₄ h₅ h₆
+  exact Prod.ext (h₁.symm.trans h₄) (Prod.ext (h₂.symm.trans h₅) (h₃.symm.trans h₆))
 
 end Value
 
