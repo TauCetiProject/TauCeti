@@ -143,18 +143,25 @@ theorem smoothTopJet_one_apply (hx : I.IsInteriorPoint x)
 
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
 
+/-- A function in `I_x ^ m` has a chart expression whose derivatives of order `< m` vanish at the
+image of `x`. -/
+private theorem iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_lt (hx : I.IsInteriorPoint x)
+    {m : ℕ} (f : (smoothVanishingIdeal I x ^ m).restrictScalars ℝ) {k : ℕ} (hk : k < m) :
+    iteratedFDeriv ℝ k (((f : C^∞⟮I, M; ℝ⟯) : M → ℝ) ∘ (extChartAt I x).symm)
+      (extChartAt I x x) = 0 :=
+  (mem_smoothVanishingIdeal_pow_iff_of_isInteriorPoint hx m _).mp
+    ((Submodule.restrictScalars_mem ℝ _ _).mp f.2) k hk
+
 /-- **The kernel of the top jet.** The top jet of `f ∈ I_x ^ m` vanishes if and only if
 `f ∈ I_x ^ (m + 1)`. -/
 theorem smoothTopJet_eq_zero_iff (hx : I.IsInteriorPoint x) {m : ℕ}
     (f : (smoothVanishingIdeal I x ^ m).restrictScalars ℝ) :
     smoothTopJet hx m f = 0 ↔ (f : C^∞⟮I, M; ℝ⟯) ∈ smoothVanishingIdeal I x ^ (m + 1) := by
-  have hf := (mem_smoothVanishingIdeal_pow_iff_of_isInteriorPoint hx m _).mp
-    (Submodule.restrictScalars_mem ℝ _ _ |>.mp f.2)
   rw [mem_smoothVanishingIdeal_pow_succ_iff_of_isInteriorPoint hx, ← Subtype.coe_inj,
     coe_smoothTopJet, ZeroMemClass.coe_zero]
   refine ⟨fun h k hk ↦ ?_, fun h ↦ h m le_rfl⟩
   rcases hk.lt_or_eq with hk | rfl
-  · exact hf k hk
+  · exact iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_lt hx f hk
   · exact h
 
 /-- The kernel of the top jet on `I_x ^ m` is `I_x ^ (m + 1)`. -/
@@ -164,8 +171,7 @@ theorem ker_smoothTopJet (hx : I.IsInteriorPoint x) (m : ℕ) :
         ((smoothVanishingIdeal I x ^ m).restrictScalars ℝ).subtype := by
   ext f
   rw [LinearMap.mem_ker, smoothTopJet_eq_zero_iff, Submodule.mem_comap,
-    Submodule.restrictScalars_mem]
-  rfl
+    Submodule.restrictScalars_mem, Submodule.subtype_apply]
 
 /-- **Every symmetric form is a top jet.** Every symmetric `m`-linear form on `T_xM` is the top
 jet of a function in `I_x ^ m`: a homogeneous polynomial of degree `m` in the chart, cut off away
@@ -189,17 +195,14 @@ theorem smoothTopJet_surjective (hx : I.IsInteriorPoint x) (m : ℕ) :
   let f : C^∞⟮I, M; ℝ⟯ := ⟨u ∘ F, hu.contMDiff.comp F.contMDiff⟩
   have hchart : ((f : M → ℝ) ∘ (extChartAt I x).symm) =ᶠ[𝓝 (extChartAt I x x)] u :=
     comp_extChartAt_symm_eventuallyEq_of_eventuallyEq_comp hx hF (Filter.EventuallyEq.refl _ _)
-  have hderiv (k : ℕ) (hk : k < m + 1) :
-      iteratedFDeriv ℝ k ((f : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) =
-        A ⟨k, hk⟩ :=
-    ((hchart.iteratedFDeriv ℝ k).eq_of_nhds).trans (huA ⟨k, hk⟩)
+  have hderiv (i : Fin (m + 1)) :
+      iteratedFDeriv ℝ i ((f : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) = A i :=
+    ((hchart.iteratedFDeriv ℝ i).eq_of_nhds).trans (huA i)
   have hfm : f ∈ smoothVanishingIdeal I x ^ m :=
     (mem_smoothVanishingIdeal_pow_iff_of_isInteriorPoint hx m f).mpr fun k hk ↦ by
-      rw [hderiv k (by omega)]
-      exact Fin.lastCases_castSucc (motive := fun i ↦ E [×i.val]→L[ℝ] ℝ) (⟨k, hk⟩ : Fin m)
+      simpa [A, -Fin.castSucc_mk] using hderiv (Fin.castSucc ⟨k, hk⟩)
   refine ⟨⟨f, (Submodule.restrictScalars_mem ℝ _ _).mpr hfm⟩, Subtype.ext ?_⟩
-  rw [coe_smoothTopJet]
-  exact (hderiv m m.lt_succ_self).trans (Fin.lastCases_last (motive := fun i ↦ E [×i.val]→L[ℝ] ℝ))
+  simpa [A] using hderiv (Fin.last m)
 
 /-- **Differential operators see only top jets.** At an interior point `x`, a differential operator
 of order at most `m` on `C^∞(M)` takes the same value at `x` on two functions of `I_x ^ m` with
@@ -210,14 +213,16 @@ theorem differentialOperators_apply_eq_of_smoothTopJet_eq {m : ℕ}
     (hx : I.IsInteriorPoint x) {f g : (smoothVanishingIdeal I x ^ m).restrictScalars ℝ}
     (hfg : smoothTopJet hx m f = smoothTopJet hx m g) :
     D f x = D g x := by
-  have hlow (h : (smoothVanishingIdeal I x ^ m).restrictScalars ℝ) :=
-    (mem_smoothVanishingIdeal_pow_iff_of_isInteriorPoint hx m _).mp
-      ((Submodule.restrictScalars_mem ℝ _ _).mp h.2)
   refine differentialOperators_apply_eq_of_iteratedFDeriv_eq hD hx fun k hk ↦ ?_
   rcases hk.lt_or_eq with hk | rfl
-  · rw [hlow f k hk, hlow g k hk]
+  · rw [iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_lt hx f hk,
+      iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_lt hx g hk]
   · simpa using congrArg Subtype.val hfg
 
+-- Implementation note: `smoothTopJetEquiv` is assembled from this `liftQ` into all `m`-linear
+-- forms, `codRestrict` and `LinearEquiv.ofBijective` rather than from
+-- `LinearMap.quotKerEquivOfSurjective`: with the submodule of symmetric forms as codomain, the
+-- latter times out on an instance defeq check in the module system.
 /-- The top jet on the quotient `I_x ^ m / I_x ^ (m + 1)`, with values in all `m`-linear forms. -/
 private def smoothTopJetQuot (hx : I.IsInteriorPoint x) (m : ℕ) :
     ((smoothVanishingIdeal I x ^ m).restrictScalars ℝ ⧸
