@@ -244,7 +244,7 @@ theorem IsNondegenerate.gaussSum_mul_conj (hA : A.IsNondegenerate) :
   · simp [Nat.card_eq_fintype_card]
   · intro c _ hc
     have hpc : A.toFiniteBilinearModule.pairing c ≠ 0 := fun h ↦
-      hc (FiniteBilinearModule.IsNondegenerate.injective _ hA (h.trans (map_zero _).symm))
+      hc (FiniteBilinearModule.IsNondegenerate.injective hA (h.trans (map_zero _).symm))
     simp [hpc]
   · simp
 

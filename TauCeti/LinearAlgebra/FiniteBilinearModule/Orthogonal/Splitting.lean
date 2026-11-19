@@ -88,7 +88,7 @@ theorem isCompl_orthogonalComplement {H : AddSubgroup A} (hH : (A.restrict H).Is
   · rw [codisjoint_iff, eq_top_iff]
     intro x _
     -- The character `b(x, ·)` restricted to `H` is the pairing with some `h ∈ H`.
-    obtain ⟨h, hh⟩ := IsNondegenerate.surjective _ hH ((A.pairing x).comp H.subtype)
+    obtain ⟨h, hh⟩ := IsNondegenerate.surjective hH ((A.pairing x).comp H.subtype)
     have hxh : x - h ∈ A.orthogonalComplement H := by
       rw [mem_orthogonalComplement_iff]
       intro y hy
@@ -108,7 +108,7 @@ theorem IsNondegenerate.isNondegenerate_restrict_orthogonalComplement
   rw [mem_radical_iff] at hx
   rw [AddSubgroup.mem_bot, Subtype.ext_iff, AddSubgroup.coe_zero]
   -- `x` pairs trivially with `H` and with `H⊥`, hence with `H ⊔ H⊥ = A`.
-  refine IsNondegenerate.eq_zero_of_forall_pairing_eq_zero _ hA fun y ↦ ?_
+  refine IsNondegenerate.eq_zero_of_forall_pairing_eq_zero hA fun y ↦ ?_
   have hy : y ∈ H ⊔ A.orthogonalComplement H := by
     rw [(A.isCompl_orthogonalComplement hH).sup_eq_top]
     exact AddSubgroup.mem_top y
@@ -212,7 +212,7 @@ theorem exists_nsmul_pairing_ne_zero_of_dvd_card {p : ℕ} [hp : Fact p.Prime]
     by_contra! h
     refine nsmul_ne_zero_of_lt_addOrderOf (pow_ne_zero _ hp.out.ne_zero)
       (hk ▸ Nat.pow_lt_pow_right hp.out.one_lt k.lt_succ_self) ?_
-    exact IsNondegenerate.eq_zero_of_forall_pairing_eq_zero _ hA fun y ↦ by
+    exact IsNondegenerate.eq_zero_of_forall_pairing_eq_zero hA fun y ↦ by
       rw [pairing_nsmul_left, h y]
   obtain ⟨y', hy'p, hxy'⟩ := A.exists_pairing_eq_of_addOrderOf_eq_prime_pow hxk y
   exact ⟨x, y', k, hxk, hkill y' hy'p, hxy' ▸ hy⟩

@@ -95,7 +95,7 @@ finite pairing. -/
     exact sub_eq_zero.mp hzero
   · intro h
     have hl : (A.zmodForm n).SeparatingLeft := fun x hx ↦
-      IsNondegenerate.eq_zero_of_forall_pairing_eq_zero A h fun y ↦ by
+      IsNondegenerate.eq_zero_of_forall_pairing_eq_zero h fun y ↦ by
         rw [← toRatAddCircle_zmodForm A n, hx y, map_zero]
     exact ⟨hl, fun x hx ↦ hl x fun y ↦ (A.isSymm_zmodForm n).eq x y |>.trans (hx y)⟩
 

@@ -135,7 +135,7 @@ noncomputable def isometryOfBilinearIsometry (hA : A.IsNondegenerate)
   have hax (x : A) : A.toFiniteBilinearModule.pairing a x = discrepancy f x :=
     DFunLike.congr_fun ha x
   have htwo : 2 • a = 0 := by
-    apply FiniteBilinearModule.IsNondegenerate.injective A.toFiniteBilinearModule hA
+    apply FiniteBilinearModule.IsNondegenerate.injective hA
     ext x
     rw [FiniteBilinearModule.pairing_nsmul_left, hax,
       A.toFiniteBilinearModule.pairing_zero_left]
