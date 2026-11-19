@@ -13,16 +13,16 @@ public import TauCeti.Topology.MetricSpace.Isometry.Group
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential.VariableBase
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Segment
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Uniform
-import TauCeti.Geometry.Manifold.VectorBundle.Scalar
+import TauCeti.Topology.VectorBundle.Smul
 
 /-!
 # Continuity of the differentials of isometries
 
-A family of Riemannian isometries `Φ x : M → N` whose values `Φ x y` depend jointly continuously
-on the parameter `x` and the point `y` has differentials depending jointly continuously on `x`
-and the tangent vector: `(x, v) ↦ dΦ_x v` is continuous on `X × TM`
-(`TauCeti.RiemannianIsometry.continuous_tangentMap`). No continuity of the differentials is
-assumed; it is forced by the exponential maps. Indeed an isometry intertwines them, so for a
+A family of local Riemannian isometries `Φ x : M → N` whose values `Φ x y` depend jointly
+continuously on the parameter `x` and the point `y` has differentials depending jointly
+continuously on `x` and the tangent vector: `(x, v) ↦ dΦ_x v` is continuous on `X × TM`
+(`TauCeti.IsLocalRiemannianIsometry.continuous_tangentMap`). No continuity of the differentials is
+assumed; it is forced by the exponential maps. Indeed a local isometry intertwines them, so for a
 small `t > 0` and a vector `v` at `p`,
 `t • dΦ_p v = log_{Φ p} (Φ (exp_p (t • v)))`, and the logarithm is jointly continuous in both
 points on a uniformly normal neighbourhood. One `t` serves for all `(x, v)` near a given one.
@@ -42,8 +42,9 @@ evaluation through which the isometry group is studied in the theorem of Myers a
 
 ## Main results
 
-* `TauCeti.RiemannianIsometry.continuous_tangentMap`: the differentials of a continuous family of
-  Riemannian isometries are jointly continuous in the parameter and the tangent vector.
+* `TauCeti.IsLocalRiemannianIsometry.continuous_tangentMap`: the differentials of a continuous
+  family of local Riemannian isometries are jointly continuous in the parameter and the tangent
+  vector.
 * `IsometryEquiv.continuous_tangentMap`: the tangent map is jointly continuous on the isometries
   of the Riemannian distance and the tangent bundle.
 * `IsometryEquiv.exists_orthonormalBasis_isClosedEmbedding_tangentMap`: on a compact Riemannian
@@ -64,7 +65,7 @@ noncomputable section
 open Bundle Manifold Set Filter TauCeti.Manifold
 open scoped ContDiff Manifold Topology
 
-namespace TauCeti.RiemannianIsometry
+namespace TauCeti.IsLocalRiemannianIsometry
 
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -79,11 +80,11 @@ variable
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
 
 /-- Let `W` be an open set of points of `N` at which the tangent ball of radius `r` is a normal
-domain. For a continuous family of isometries `Φ x`, the logarithm at `Φ x p` of
+domain. For a continuous family of local isometries `Φ x`, the logarithm at `Φ x p` of
 `Φ x (exp_p (t • v))`, as a vector of the tangent bundle, is continuous in `(x, v)` wherever
 `Φ x p ∈ W`, `‖t • v‖ < r` and `t • v` lies in the domain of `exp_p`. -/
 private theorem continuousAt_totalSpaceMk_riemannianLog_apply_riemannianExp {X : Type*}
-    [TopologicalSpace X] {Φ : X → RiemannianIsometry I J M N}
+    [TopologicalSpace X] {Φ : X → M → N} (hΦi : ∀ x, IsLocalRiemannianIsometry I J (Φ x))
     (hΦ : Continuous fun q : X × M ↦ Φ q.1 q.2) {W : Set N} (hWo : IsOpen W) {r : ℝ}
     (hW : ∀ y ∈ W, IsNormalDomain J N y (Metric.ball 0 r)) (t : ℝ)
     {q₀ : X × TangentBundle I M} (hq₀ : Φ q₀.1 q₀.2.proj ∈ W) (hr : ‖t • q₀.2.2‖ < r)
@@ -93,8 +94,7 @@ private theorem continuousAt_totalSpaceMk_riemannianLog_apply_riemannianExp {X :
         (Φ q.1 (riemannianExp I M q.2.proj (t • q.2.2)))⟩ : TangentBundle J N)) q₀ := by
   -- The pair `(Φ x p, Φ x (exp_p (t • v)))` is continuous in `(x, v)`.
   have hscale : Continuous fun z : TangentBundle I M ↦ (⟨z.proj, t • z.2⟩ : TangentBundle I M) :=
-    (contMDiff_const.smul_totalSpace (J := I.tangent) (I := I) (n := ∞) (g := id)
-      contMDiff_id).continuous
+    continuous_const.smul_totalSpace continuous_id
   have hexp' : ContinuousAt
       (fun q : X × TangentBundle I M ↦ riemannianExp I M q.2.proj (t • q.2.2)) q₀ :=
     ContinuousAt.comp (g := fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2)
@@ -112,8 +112,8 @@ private theorem continuousAt_totalSpaceMk_riemannianLog_apply_riemannianExp {X :
   have hmem : (Φ q₀.1 q₀.2.proj, Φ q₀.1 (riemannianExp I M q₀.2.proj (t • q₀.2.2))) ∈
       {y : N × N | y.1 ∈ W ∧ y.2 ∈ riemannianExp J N y.1 '' Metric.ball 0 r} := by
     refine ⟨hq₀, mfderiv I J (Φ q₀.1) q₀.2.proj (t • q₀.2.2), ?_,
-      (Φ q₀.1).riemannianExp_mfderiv _ _⟩
-    rwa [mem_ball_zero_iff, norm_mfderiv]
+      (hΦi q₀.1).riemannianExp_mfderiv_of_mem hexp⟩
+    rwa [mem_ball_zero_iff, (hΦi q₀.1).norm_mfderiv]
   exact ContinuousAt.comp (x := q₀) (g := fun y : N × N ↦
       (⟨y.1, riemannianLog J N y.1 (Metric.ball 0 r) y.2⟩ : TangentBundle J N))
     (f := fun q : X × TangentBundle I M ↦
@@ -121,12 +121,13 @@ private theorem continuousAt_totalSpaceMk_riemannianLog_apply_riemannianExp {X :
     ((contMDiffOn_totalSpaceMk_riemannianLog hWo hW).continuousOn.continuousAt
       (hP.mem_nhds hmem)) hB
 
-/-- **The differentials of a continuous family of isometries vary continuously.** Let `Φ x` be
-Riemannian isometries depending on a parameter `x` such that `Φ x y` is jointly continuous in `x`
-and `y`. Then the tangent vector `dΦ_x v` is jointly continuous in `x` and the tangent vector
-`v`. -/
-theorem continuous_tangentMap {X : Type*} [TopologicalSpace X]
-    {Φ : X → RiemannianIsometry I J M N} (hΦ : Continuous fun q : X × M ↦ Φ q.1 q.2) :
+/-- **The differentials of a continuous family of local isometries vary continuously.** Let `Φ x`
+be local Riemannian isometries depending on a parameter `x` such that `Φ x y` is jointly
+continuous in `x` and `y`. Then the tangent vector `dΦ_x v` is jointly continuous in `x` and the
+tangent vector `v`. -/
+theorem continuous_tangentMap {X : Type*} [TopologicalSpace X] {Φ : X → M → N}
+    (hΦi : ∀ x, IsLocalRiemannianIsometry I J (Φ x))
+    (hΦ : Continuous fun q : X × M ↦ Φ q.1 q.2) :
     Continuous fun q : X × TangentBundle I M ↦ tangentMap I J (Φ q.1) q.2 := by
   have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
@@ -148,34 +149,37 @@ theorem continuous_tangentMap {X : Type*} [TopologicalSpace X]
       _ = min r ε / 2 := by rw [ht]; field_simp
       _ < min r ε := half_lt_self (lt_min hr hε)
   have h₀ := hnorm (lt_add_one ‖v₀‖)
-  have hlog := continuousAt_totalSpaceMk_riemannianLog_apply_riemannianExp hΦ isOpen_interior hWo t
-    (q₀ := (x₀, ⟨p₀, v₀⟩)) (mem_interior_iff_mem_nhds.2 hW) (h₀.trans_le (min_le_left r ε))
-    (hεn.subset_expDomain (mem_ball_zero_iff.2 (h₀.trans_le (min_le_right r ε))))
+  have hexp₀ : t • v₀ ∈ expDomain I M p₀ :=
+    hεn.subset_expDomain (mem_ball_zero_iff.2 (h₀.trans_le (min_le_right r ε)))
+  have hlog := continuousAt_totalSpaceMk_riemannianLog_apply_riemannianExp hΦi hΦ isOpen_interior
+    hWo t (q₀ := (x₀, ⟨p₀, v₀⟩)) (mem_interior_iff_mem_nhds.2 hW) (h₀.trans_le (min_le_left r ε))
+    hexp₀
   -- Near `(x₀, v₀)`, the tangent map is `t⁻¹` times that logarithm.
-  have hev : ∀ᶠ q in 𝓝 (x₀, (⟨p₀, v₀⟩ : TangentBundle I M)),
-      Φ q.1 q.2.proj ∈ interior W ∧ ‖q.2.2‖ < ‖v₀‖ + 1 := by
+  have hev : ∀ᶠ q in 𝓝 (x₀, (⟨p₀, v₀⟩ : TangentBundle I M)), Φ q.1 q.2.proj ∈ interior W ∧
+      ‖q.2.2‖ < ‖v₀‖ + 1 ∧ t • q.2.2 ∈ expDomain I M q.2.proj := by
     have hbase : Continuous fun q : X × TangentBundle I M ↦ Φ q.1 q.2.proj :=
       hΦ.comp (continuous_fst.prodMk ((FiberBundle.continuous_proj E _).comp continuous_snd))
     have hn : Continuous fun q : X × TangentBundle I M ↦ ‖q.2.2‖ :=
       (TauCeti.continuous_norm_bundle E (TangentSpace I)).comp continuous_snd
-    exact ((hbase.continuousAt (x := (x₀, (⟨p₀, v₀⟩ : TangentBundle I M)))).eventually_mem
-      (isOpen_interior.mem_nhds (mem_interior_iff_mem_nhds.2 hW))).and
-      ((hn.continuousAt (x := (x₀, (⟨p₀, v₀⟩ : TangentBundle I M)))).eventually_mem
-        (isOpen_Iio.mem_nhds (lt_add_one ‖v₀‖)))
+    have hs : Continuous fun q : X × TangentBundle I M ↦
+        (⟨q.2.proj, t • q.2.2⟩ : TangentBundle I M) :=
+      continuous_const.smul_totalSpace continuous_snd
+    exact ((isOpen_interior.preimage hbase).inter ((isOpen_Iio.preimage hn).inter
+      (isOpen_setOfPred_mem_expDomain.preimage hs))).mem_nhds
+      ⟨mem_interior_iff_mem_nhds.2 hW, lt_add_one ‖v₀‖, hexp₀⟩
   have hscale : Continuous fun z : TangentBundle J N ↦
       (⟨z.proj, t⁻¹ • z.2⟩ : TangentBundle J N) :=
-    (contMDiff_const.smul_totalSpace (J := J.tangent) (I := J) (n := ∞) (g := id)
-      contMDiff_id).continuous
+    continuous_const.smul_totalSpace continuous_id
   refine (hscale.continuousAt.comp hlog).congr ?_
-  filter_upwards [hev] with ⟨x, ⟨p, v⟩⟩ ⟨hx, hv⟩
+  filter_upwards [hev] with ⟨x, ⟨p, v⟩⟩ ⟨hx, hv, hve⟩
   have hball : mfderiv I J (Φ x) p (t • v) ∈ Metric.ball 0 r := by
-    rw [mem_ball_zero_iff, norm_mfderiv]
+    rw [mem_ball_zero_iff, (hΦi x).norm_mfderiv]
     exact (hnorm hv).trans_le (min_le_left r ε)
   simp only [Function.comp_apply, tangentMap]
-  rw [(Φ x).riemannianLog_apply_riemannianExp (hWo _ hx) hball, map_smul, smul_smul,
+  rw [(hΦi x).riemannianLog_apply_riemannianExp hve (hWo _ hx) hball, map_smul, smul_smul,
     inv_mul_cancel₀ ht0.ne', one_smul]
 
-end TauCeti.RiemannianIsometry
+end TauCeti.IsLocalRiemannianIsometry
 
 namespace IsometryEquiv
 
@@ -196,9 +200,11 @@ Riemannian distances onto a complete Riemannian manifold, with the compact-open 
 tangent vector `de v` is jointly continuous in the isometry `e` and the tangent vector `v`. -/
 theorem continuous_tangentMap [CompleteSpace N] :
     Continuous fun q : (M ≃ᵢ N) × TangentBundle I M ↦ tangentMap I J q.1 q.2 := by
-  simpa only [coe_toRiemannianIsometry] using TauCeti.RiemannianIsometry.continuous_tangentMap
-    (Φ := fun e : M ≃ᵢ N ↦ e.toRiemannianIsometry I J)
-    (by simpa only [coe_toRiemannianIsometry] using continuous_eval)
+  simpa only [coe_toRiemannianIsometry] using
+    TauCeti.IsLocalRiemannianIsometry.continuous_tangentMap
+      (Φ := fun e : M ≃ᵢ N ↦ e.toRiemannianIsometry I J)
+      (fun e ↦ (e.toRiemannianIsometry I J).isLocalRiemannianIsometry)
+      (by simpa only [coe_toRiemannianIsometry] using continuous_eval)
 
 /-- **Frame evaluation embeds the isometry group of a compact Riemannian manifold.** There are
 finitely many points, one in each connected component, and an orthonormal tangent frame at each,
