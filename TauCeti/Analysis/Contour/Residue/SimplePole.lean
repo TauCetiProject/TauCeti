@@ -49,8 +49,9 @@ direction one uses in practice to read off a residue.
   elementary simple-pole residues, read off from the converse rule.
 * `TauCeti.Contour.analyticAt_const_mul_sub_inv` — the principal part `A · (z − s)⁻¹` is analytic
   at every point where it is not a genuine pole: whenever `A = 0` or `z ≠ s`.
-* `TauCeti.Contour.isBigO_sub_residue_div` — subtracting the residue term leaves a bounded
-  remainder whenever the meromorphic pole order is at most one, including removable points.
+* `MeromorphicAt.isBigO_sub_inv_smul_residue` — for a function into a complex Banach space,
+  subtracting the residue term leaves a bounded remainder whenever the meromorphic pole order is
+  at most one, including removable points.
 
 ## Provenance
 
@@ -221,22 +222,25 @@ theorem analyticAt_const_mul_sub_inv {A s z : ℂ} (h : A = 0 ∨ z ≠ s) :
   · simpa using analyticAt_const
   · fun_prop (disch := exact sub_ne_zero.2 h)
 
-/-- Subtracting the simple residue term from a meromorphic function with pole order at most one
-leaves a bounded remainder on a punctured neighbourhood. This includes zero residue and removable
-points, and imposes no condition on the function's value at the centre. -/
-theorem isBigO_sub_residue_div (hf : MeromorphicAt f z₀)
+end TauCeti.Contour
+
+open TauCeti.Contour in
+/-- Subtracting the simple residue term from a meromorphic function into a complex Banach space
+with pole order at most one leaves a bounded remainder on a punctured neighbourhood. This includes
+zero residue and removable points, and imposes no condition on the function's value at the centre.
+Completeness is needed because `TauCeti.Contour.residue` is defined to be zero for incomplete
+codomains, even at a nonzero simple pole. -/
+theorem MeromorphicAt.isBigO_sub_inv_smul_residue {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [CompleteSpace E] {f : ℂ → E} {z₀ : ℂ} (hf : MeromorphicAt f z₀)
     (horder : ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f z₀) :
-    (f - fun z ↦ residue f z₀ / (z - z₀)) =O[𝓝[≠] z₀] (1 : ℂ → ℂ) := by
+    (f - fun z ↦ (z - z₀)⁻¹ • residue f z₀) =O[𝓝[≠] z₀] (1 : ℂ → ℂ) := by
   obtain ⟨g, hg, hfg⟩ := exists_analyticAt_eventuallyEq_zpow_smul hf horder
   have hres : residue f z₀ = g z₀ := by
     simpa using residue_eq_of_eventuallyEq_zpow_smul (n := -1) (by decide) hg hfg
   have hbound := hg.differentiableAt.hasDerivAt.tendsto_slope.isBigO_one ℂ
   refine hbound.congr' ?_ .rfl
   filter_upwards [hfg] with z hz
-  simp only [Pi.sub_apply, slope_def_field, zpow_neg_one, smul_eq_mul, div_eq_mul_inv] at hz ⊢
-  rw [hz, hres]
-  ring
-
-end TauCeti.Contour
+  simp only [Pi.sub_apply, slope_def_module, zpow_neg_one] at hz ⊢
+  rw [hz, hres, smul_sub]
 
 end
