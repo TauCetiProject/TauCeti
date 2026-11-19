@@ -128,8 +128,7 @@ theorem IsPrimitiveOn.mapCoeff {G : Type*} [NormedAddCommGroup G] [NormedSpace ‚
   rw [RoughForm.mapCoeff_apply, ‚Üê hg.mextDeriv_eq y hy]
   simp only [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
     mvfderiv_apply_eq_mfderiv_apply, mfderiv_comp y L.mdifferentiableAt hgy, L.mfderiv_eq]
-  -- `NormedSpace.fromTangentSpace` is the identity
-  rfl
+  exact L.comp_apply _ _
 
 section Chart
 

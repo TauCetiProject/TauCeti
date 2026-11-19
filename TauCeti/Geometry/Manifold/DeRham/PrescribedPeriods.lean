@@ -30,7 +30,7 @@ bundle, every homomorphism `H₁(M; ℤ) → ℤ` is the period homomorphism of 
 `C^∞(M, U(1))` modulo the maps `exp (i f)` with a smooth logarithm, with `Hom(H₁(M; ℤ), ℤ)`. The
 gauge transformation is obtained from a closed real form `ψ` with periods `n` by applying
 `exists_mlogDeriv_coe_eq` to `2πi ψ`, whose periods are `2πi n` because integration commutes with
-coefficient maps (`TauCeti.pathClassIntegral_mapCoeff`).
+coefficient maps (`TauCeti.homologyPeriodHom_mapCoeff`).
 
 The form with periods `P` is built on the universal cover `UniversalCover x`, on which
 `π₁(M, x)` acts by deck transformations. There is a smooth function `F` on the cover with
@@ -205,13 +205,7 @@ theorem circlePeriodHom_surjective : Function.Surjective (circlePeriodHom I M) :
   have hψc : mextDeriv (ψ.1 : RoughForm I M ℝ 1) = 0 := (mem_closedForms I _).mp ψ.2
   -- Its multiple by `2πi` is a closed imaginary form with periods `2πi n c`.
   set L : ℝ →L[ℝ] ℂ := (2 * Real.pi * Complex.I) • Complex.ofRealCLM
-  obtain ⟨x⟩ : Nonempty M := inferInstance
-  have hL : homologyPeriodHom (RoughForm.mapCoeff L (ψ.1 : RoughForm I M ℝ 1)) =
-      (L : ℝ →+ ℂ).comp (homologyPeriodHom (ψ.1 : RoughForm I M ℝ 1)) :=
-    homology_one_addMonoidHom_ext_of_fundamentalGroup (X := .of M) x fun g ↦ by
-      rw [AddMonoidHom.comp_apply, homologyPeriodHom_hurewiczHomologyAddEquiv (I := I),
-        homologyPeriodHom_hurewiczHomologyAddEquiv (I := I), periodHom_apply, periodHom_apply,
-        pathClassIntegral_mapCoeff L (hψ.of_le (by simp)) hψc, AddMonoidHom.coe_ofClass]
+  have hL := homologyPeriodHom_mapCoeff L (hψ.of_le (by simp)) hψc
   refine mem_range_circlePeriodHom_iff.mpr ⟨RoughForm.mapCoeff L ψ.1, hψ.mapCoeff L,
     by rw [mextDeriv_mapCoeff L (hψ.of_le (by simp)), hψc, RoughForm.mapCoeff_zero],
     fun y v ↦ by simp [L], fun y ↦ ?_⟩

@@ -399,6 +399,13 @@ theorem periodHom_smul (a : ℝ) (x : M) : periodHom (a • φ) x = a • period
 theorem periodHom_zero (x : M) : periodHom (0 : RoughForm I M F 1) x = 0 :=
   AddMonoidHom.ext fun _ ↦ pathClassIntegral_zero _
 
+/-- **Periods are natural in the coefficients.** A continuous linear map `L` of coefficient spaces
+carries the periods of a closed `C¹` form `φ` to the periods of the form `L ∘ φ`. -/
+theorem periodHom_mapCoeff {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+    (L : F →L[ℝ] G) (hφ : IsSmoothForm I 1 φ) (hclosed : mextDeriv φ = 0) (x : M) :
+    periodHom (RoughForm.mapCoeff L φ) x = (L : F →+ G).comp (periodHom φ x) :=
+  AddMonoidHom.ext fun _ ↦ pathClassIntegral_mapCoeff L hφ hclosed _
+
 /-- The period of a closed `C¹` form along the class of a `C¹` loop is its line integral. -/
 theorem periodHom_ofMul_eq_pathIntegral (hφ : IsSmoothForm I 1 φ) (hclosed : mextDeriv φ = 0)
     {c : ℝ → M} (hc : ContMDiff 𝓘(ℝ, ℝ) I 1 c) {γ : Path x x} (hγ : ∀ t : unitInterval, γ t = c t) :
