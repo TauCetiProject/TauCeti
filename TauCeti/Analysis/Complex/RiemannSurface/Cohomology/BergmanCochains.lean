@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Complex.HolomorphicFunctions.Bergman.Restriction
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Basic
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LineBundle.Basic
 public import TauCeti.Topology.VectorBundle.Trivialization
-import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 public import TauCeti.Topology.OpenPartialHomeomorph.ChartOpens
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Coordinate
@@ -769,6 +768,21 @@ def toBundleSections₁ :
     (τ i).bergmanSection (q i) (hτa i) (he i) (inf_subset_source hW i j)
       (fun _ hx ↦ hτ i hx.1)
 
+/-- The component of a realized zero-cochain is the native section in its chosen frame. -/
+@[simp]
+theorem toBundleSections₀_apply
+    (η : (i : ι) → bergmanSpace ℂ ((e i).imageOpens (W i))) (i : ι) :
+    toBundleSections₀ τ q hτa he hW hτ η i =
+      (τ i).bergmanSection (q i) (hτa i) (he i) (hW i) (hτ i) (η i) := by rfl
+
+/-- Each overlap component is realized in the actual frame of its first index. -/
+@[simp]
+theorem toBundleSections₁_apply
+    (ξ : (i j : ι) → bergmanSpace ℂ ((e i).imageOpens (W i ⊓ W j))) (i j : ι) :
+    toBundleSections₁ τ q hτa he hW hτ ξ i j =
+      (τ i).bergmanSection (q i) (hτa i) (he i) (inf_subset_source hW i j)
+        (fun _ hx ↦ hτ i hx.1) (ξ i j) := by rfl
+
 /-- Each native zero-component retains its original Bergman class. -/
 theorem toBundleSections₀_injective : Function.Injective (toBundleSections₀ τ q hτa he hW hτ) :=
   fun _ _ h ↦ funext fun i ↦ (τ i).bergmanSection_injective (q i) (hτa i)
@@ -816,8 +830,7 @@ theorem mem_cocycles₁_iff_toBundleSections₁_apply
   let L := ((τ i).continuousLinearEquivAt ℂ x (hτ i hx.1.1)).trans (q i)
   rw [← L.map_eq_zero_iff]
   simp only [map_add, map_sub, L, ContinuousLinearEquiv.trans_apply,
-    Trivialization.coe_continuousLinearEquivAt_eq, toBundleSections₁,
-    LinearMap.coe_piMap, Pi.map_apply]
+    Trivialization.coe_continuousLinearEquivAt_eq, toBundleSections₁_apply]
   rw [(τ j).bergmanSection_coordinate (q j) (hτa j) (he j)
       (inf_subset_source hW j k) (fun _ hy ↦ hτ j hy.1) (τ i) (q i)
       (ξ j k) ⟨x, hx.1.2, hx.2⟩ (hτ i hx.1.1),
@@ -842,6 +855,38 @@ def bundleSections₁ToBergman (hK : ∀ i, IsCompact (closure (W' i : Set X)))
       (fun _ hx ↦ ⟨hKW i (closure_mono inter_subset_left hx),
         hKW j (closure_mono inter_subset_right hx)⟩)
 
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- The reverse realization reads each native overlap section after compact shrinking in
+both indices. -/
+@[simp]
+theorem bundleSections₁ToBergman_apply
+    (hK : ∀ i, IsCompact (closure (W' i : Set X)))
+    (hKW : ∀ i, closure (W' i : Set X) ⊆ W i)
+    (s : (i j : ι) → (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.obj (op (W i ⊓ W j)))
+    (i j : ι) :
+    bundleSections₁ToBergman τ q hτa he hW hτ hK hKW s i j =
+      (τ i).bergmanRestriction (q i) (hτa i) (he i) (inf_subset_source hW i j)
+        (fun _ hx ↦ hτ i hx.1)
+        ((hK i).of_isClosed_subset isClosed_closure (closure_mono inter_subset_left))
+        (fun _ hx ↦ ⟨hKW i (closure_mono inter_subset_left hx),
+          hKW j (closure_mono inter_subset_right hx)⟩) (s i j) := by rfl
+
+/-- A Bergman one-cochain, realized as native sections and read back after shrinking, is exactly
+its canonical Bergman restriction. -/
+theorem bundleSections₁ToBergman_toBundleSections₁
+    (hK : ∀ i, IsCompact (closure (W' i : Set X)))
+    (hKW : ∀ i, closure (W' i : Set X) ⊆ W i)
+    (ξ : (i j : ι) → bergmanSpace ℂ ((e i).imageOpens (W i ⊓ W j))) :
+    bundleSections₁ToBergman τ q hτa he hW hτ hK hKW
+        (toBundleSections₁ τ q hτa he hW hτ ξ) =
+      restrictCochains₁ (fun i ↦ subset_closure.trans (hKW i)) ξ := by
+  funext i j
+  rw [bundleSections₁ToBergman_apply τ q hτa he hW hτ hK hKW _ i j,
+    toBundleSections₁_apply τ q hτa he hW hτ ξ i j,
+    restrictCochains₁_apply (fun i ↦ subset_closure.trans (hKW i)) ξ i j]
+  exact (τ i).bergmanRestriction_bergmanSection (q i) (hτa i) (he i)
+    (inf_subset_source hW i j) _ _ _ (ξ i j)
+
 /-- The compact-shrink realization of native overlaps returns exactly their native
 restrictions, simultaneously in both indices. -/
 theorem toBundleSections₁_bundleSections₁ToBergman
@@ -855,8 +900,9 @@ theorem toBundleSections₁_bundleSections₁ToBergman
         (bundleSections₁ToBergman τ q hτa he hW hτ hK hKW s) i j =
       (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.map
         (homOfLE (inf_le_inf (subset_closure.trans (hKW i))
-          (subset_closure.trans (hKW j)))).op (s i j) :=
-  (τ i).bergmanSection_bergmanRestriction (q i) (hτa i) (he i)
+          (subset_closure.trans (hKW j)))).op (s i j) := by
+  rw [toBundleSections₁_apply, bundleSections₁ToBergman_apply]
+  exact (τ i).bergmanSection_bergmanRestriction (q i) (hτa i) (he i)
     (inf_subset_source hW i j) _ _ _ (s i j)
 
 /-- Twisted scalar cocycles are precisely native section cocycles, with the three actual
@@ -910,8 +956,17 @@ private theorem bundleSections_coboundary_iff
   let L := ((τ i).continuousLinearEquivAt ℂ x (hτ i (h' i (h'' i hx.1)))).trans (q i)
   rw [← L.injective.eq_iff]
   simp only [map_add, map_sub, L, ContinuousLinearEquiv.trans_apply,
-    Trivialization.coe_continuousLinearEquivAt_eq, toBundleSections₀, toBundleSections₁,
-    LinearMap.coe_piMap, Pi.map_apply]
+    Trivialization.coe_continuousLinearEquivAt_eq]
+  -- Fix the nested-cover witnesses before rewriting their dependent section components.
+  rw [toBundleSections₁_apply τ q hτa he (subset_source_of_le hW h')
+      (fun i _ hx ↦ hτ i (h' i hx)) t.2.1 i j,
+    toBundleSections₁_apply τ q hτa he hW hτ t.1 i j,
+    toBundleSections₀_apply τ q hτa he
+      (subset_source_of_le (subset_source_of_le hW h') h'')
+      (fun i _ hx ↦ hτ i (h' i (h'' i hx))) t.2.2 j,
+    toBundleSections₀_apply τ q hτa he
+      (subset_source_of_le (subset_source_of_le hW h') h'')
+      (fun i _ hx ↦ hτ i (h' i (h'' i hx))) t.2.2 i]
   rw [(τ i).bergmanSection_coordinate (q i) (hτa i) (he i)
       (inf_subset_source (subset_source_of_le hW h') i j)
       (fun _ hy ↦ hτ i (h' i hy.1)) (τ i) (q i) (t.2.1 i j)

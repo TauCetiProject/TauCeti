@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.RiemannSurface.Cohomology.BergmanCochains
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.LineBundle
 import TauCeti.Geometry.Manifold.VectorBundle.MaximalAtlas
+import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 
@@ -53,20 +54,6 @@ example {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(�
     (hF.trans (Module.finrank_self ℂ).symm)
   exact ⟨q, τ.bergmanSection_injective q hτa he hU hτ⟩
 
-/-- The native `𝒪(1)` transition, read in scalar coordinates, is the actual gluing function. -/
-theorem oOne_scalarCoordChange (i j p : OnePoint ℂ)
-    (hi : p ∈ (chartAt ℂ i).source) (hj : p ∈ (chartAt ℂ j).source) :
-    ((OnePoint.twistCore (𝕜 := ℂ) 1).localTriv i).scalarCoordChange
-        ((OnePoint.twistCore 1).localTriv j) (ContinuousLinearEquiv.refl ℂ ℂ)
-        (ContinuousLinearEquiv.refl ℂ ℂ) p = OnePoint.twistTransition 1 i j p := by
-  rw [Trivialization.scalarCoordChange_def]
-  have hi' : p ∈ ((OnePoint.twistCore (𝕜 := ℂ) 1).localTriv i).baseSet := by
-    simpa only [OnePoint.twistCore_localTriv_baseSet] using hi
-  have hj' : p ∈ ((OnePoint.twistCore (𝕜 := ℂ) 1).localTriv j).baseSet := by
-    simpa only [OnePoint.twistCore_localTriv_baseSet] using hj
-  simpa using
-    (OnePoint.twistCore (𝕜 := ℂ) 1).localTriv_coordChange_eq i j ⟨hi', hj'⟩ 1
-
 /-- The affine-to-inverted `𝒪(1)` factor is the nonconstant function `z⁻¹`. -/
 example (z : ℂ) (hz : z ≠ 0) :
     ((OnePoint.twistCore (𝕜 := ℂ) 1).localTriv
@@ -74,10 +61,24 @@ example (z : ℂ) (hz : z ≠ 0) :
         ((OnePoint.twistCore 1).localTriv (OnePoint.infty : OnePoint ℂ))
         (ContinuousLinearEquiv.refl ℂ ℂ)
         (ContinuousLinearEquiv.refl ℂ ℂ) (z : OnePoint ℂ) = z⁻¹ := by
-  rw [oOne_scalarCoordChange]
+  rw [OnePoint.twistCore_localTriv_scalarCoordChange]
   · simp
   · simp
   · simpa using hz
+
+/-- The actual scalar frame changes of `𝒪(1)` are holomorphic on the chart overlaps. -/
+example (i j : OnePoint ℂ) :
+    ContMDiffOn 𝓘(ℂ) 𝓘(ℂ) ω
+      (((OnePoint.twistCore (𝕜 := ℂ) 1).localTriv i).scalarCoordChange
+        ((OnePoint.twistCore 1).localTriv j)
+        (ContinuousLinearEquiv.refl ℂ ℂ) (ContinuousLinearEquiv.refl ℂ ℂ))
+      (((OnePoint.twistCore 1).localTriv i).baseSet ∩
+        ((OnePoint.twistCore 1).localTriv j).baseSet) := by
+  let : MemTrivializationAtlas ((OnePoint.twistCore (𝕜 := ℂ) 1).localTriv i) := ⟨⟨i, rfl⟩⟩
+  let : MemTrivializationAtlas ((OnePoint.twistCore (𝕜 := ℂ) 1).localTriv j) := ⟨⟨j, rfl⟩⟩
+  exact Trivialization.contMDiffOn_scalarCoordChange _ _ _ _
+    (Trivialization.mem_maximalAtlas_of_memTrivializationAtlas 𝓘(ℂ) ω _)
+    (Trivialization.mem_maximalAtlas_of_memTrivializationAtlas 𝓘(ℂ) ω _)
 
 /-- Constant coordinate rescaling changes the scalar transition even when the frame is fixed. -/
 example {X : Type*} [TopologicalSpace X] {V : X → Type*}
