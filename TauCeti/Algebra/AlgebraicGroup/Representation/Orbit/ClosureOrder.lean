@@ -10,6 +10,7 @@ import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosureOrde
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Points
 import TauCeti.AlgebraicGeometry.AugmentationPoint.Dense
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Translation
 import TauCeti.RingTheory.GradedAlgebra.Homogenization
 
 /-!
@@ -212,20 +213,20 @@ theorem mk_le_mk_iff_forall_lift_eval_eq_zero {v w : M} :
     lift_eval_eq_zero_of_mk_le_mk_of_forall_lift_eval_basePointsRepresentation_eq_zero h hp,
     fun h ↦ ?_⟩
   let 𝒜 := TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k))
-  -- Restriction of polynomial functions on `M × k` to the affine chart `M × {1}`.
+  -- Restriction of polynomial functions on `M × k` to the affine chart `M × {1}`: translate by
+  -- the point `(0, 1)`, then restrict along `M → M × k`.
   let D : SymmetricAlgebra k (Module.Dual k (M × k)) →ₐ[k]
       SymmetricAlgebra k (Module.Dual k M) :=
-    SymmetricAlgebra.lift ((SymmetricAlgebra.ι k (Module.Dual k M)).comp
-      (LinearMap.inl k M k).dualMap +
-        (Algebra.linearMap k _).comp (Module.Dual.eval k (M × k) (0, 1)))
+    (SymmetricAlgebra.map k (LinearMap.inl k M k).dualMap).comp
+      (SymmetricAlgebra.translation (Module.Dual.eval k (M × k) (0, 1))).toAlgHom
   have hD (u : M) (P : SymmetricAlgebra k (Module.Dual k (M × k))) :
       SymmetricAlgebra.lift (Module.Dual.eval k M u) (D P) =
         SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (u, 1)) P := by
-    have hcomp : (SymmetricAlgebra.lift (Module.Dual.eval k M u)).comp D =
-        SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (u, 1)) := by
-      ext φ
-      simpa [D] using (map_add φ (u, 0) (0, 1)).symm
-    exact DFunLike.congr_fun hcomp P
+    rw [AlgHom.comp_apply, SymmetricAlgebra.lift_map_apply, AlgEquiv.toAlgHom_apply,
+      SymmetricAlgebra.lift_translation]
+    congr 1
+    ext φ
+    simpa using (map_add φ (u, 0) (0, 1)).symm
   -- Otherwise a homogeneous basic open set around the line through `(w, 1)` avoids the orbit.
   rw [mk_le_mk_iff]
   by_contra hw
