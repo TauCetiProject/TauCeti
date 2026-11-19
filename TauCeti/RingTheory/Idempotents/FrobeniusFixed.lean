@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.Algebra.CharP.Frobenius.Fixed
+public import TauCeti.Algebra.CharP.ProdSubZModCast
 public import TauCeti.RingTheory.Idempotents.Combination
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.Tactic.LinearCombination
@@ -39,13 +40,12 @@ diagonal copy of `𝔽_p`. On `𝔽_p × 𝔽_p`, for instance, `x = (0, 1)` has
 
 ## Main results
 
-* `TauCeti.prod_sub_zmodCast`: `∏ i : ZMod p, (x - i) = x ^ p - x` in characteristic `p`.
 * `TauCeti.completeOrthogonalIdempotents_frobeniusFixedIdempotent`: for `x ^ p = x`, the
   `frobeniusFixedIdempotent p x i` form a complete family of orthogonal idempotents, and
   `TauCeti.sum_zmodCast_mul_frobeniusFixedIdempotent` says that `x = ∑ i, i * e_i`.
 * `TauCeti.frobeniusFixedIdempotent_sum_zmodCast_mul`: uniqueness, every complete family of
   orthogonal idempotents `f` is the family attached to `∑ i, i * f i`.
-* `TauCeti.pow_char_sum_zmodCast_mul`: conversely, `∑ i, i * f i` is fixed by the `p`-power map.
+* `TauCeti.sum_zmodCast_mul_pow_char`: conversely, `∑ i, i * f i` is fixed by the `p`-power map.
 * `TauCeti.map_frobeniusFixedIdempotent`: ring homomorphisms, such as restriction to a clopen
   piece of `Spec R`, carry the decomposition of `x` to that of its image.
 * `TauCeti.pow_char_eq_self_iff_mem_range_zmodCast` and
@@ -59,8 +59,6 @@ diagonal copy of `𝔽_p`. On `𝔽_p × 𝔽_p`, for instance, `x = (0, 1)` has
 -/
 
 public section
-
-open Polynomial
 
 namespace TauCeti
 
@@ -82,30 +80,19 @@ theorem frobeniusFixedIdempotent_def :
 /-- A ring homomorphism carries the idempotents attached to `x` to those attached to its image.
 Restriction to a clopen piece of `Spec R` is the case of the projection `R → R ⧸ (1 - e)`. -/
 @[simp]
-theorem map_frobeniusFixedIdempotent {S : Type*} [CommRing S] (f : R →+* S) :
+theorem map_frobeniusFixedIdempotent {S F : Type*} [CommRing S] [FunLike F R S]
+    [RingHomClass F R S] (f : F) :
     f (frobeniusFixedIdempotent p x i) = frobeniusFixedIdempotent p (f x) i := by
   have hcast : f (i.cast : R) = (i.cast : S) := by
     cases p with
-    | zero => exact map_intCast f i
+    -- By definition `ZMod 0` is `ℤ` and `ZMod.cast` on it is `Int.cast`.
+    | zero => exact map_intCast f (i : ℤ)
     | succ n => simp only [ZMod.cast_eq_val, map_natCast]
   simp only [frobeniusFixedIdempotent_def, map_sub, map_one, map_pow, hcast]
 
 end Def
 
 variable {R : Type*} [CommRing R] (p : ℕ) [hp : Fact p.Prime] [CharP R p]
-
-/-- In characteristic `p`, `x ^ p - x` is the product of the translates `x - i` over all
-residues `i ∈ ZMod p`. -/
-theorem prod_sub_zmodCast (x : R) : ∏ i : ZMod p, (x - (i.cast : R)) = x ^ p - x := by
-  have hpoly : ∏ i : ZMod p, (X - C i) = (X ^ p - X : (ZMod p)[X]) := by
-    have hroots : (X ^ p - X : (ZMod p)[X]).roots = Finset.univ.val := by
-      simpa using FiniteField.roots_X_pow_card_sub_X (ZMod p)
-    have h := prod_multiset_X_sub_C_of_monic_of_roots_card_eq
-      (monic_X_pow_sub (p := (X : (ZMod p)[X])) (by
-        rw [degree_X]; exact_mod_cast hp.out.one_lt))
-      (by rw [natDegree_X_pow_sub_X hp.out.one_lt, hroots]; simp)
-    rwa [hroots] at h
-  simpa [map_prod] using congrArg (eval₂RingHom (ZMod.castHom dvd_rfl R) x) hpoly
 
 variable {p} {x : R}
 
@@ -172,7 +159,7 @@ theorem frobeniusFixedIdempotent_sum_zmodCast_mul {f : ZMod p → R}
 
 /-- Every combination `∑ i, i * f i` of a complete family of orthogonal idempotents indexed by
 `ZMod p` is fixed by the `p`-power map. -/
-theorem pow_char_sum_zmodCast_mul {f : ZMod p → R} (hf : CompleteOrthogonalIdempotents f) :
+theorem sum_zmodCast_mul_pow_char {f : ZMod p → R} (hf : CompleteOrthogonalIdempotents f) :
     (∑ i : ZMod p, (i.cast : R) * f i) ^ p = ∑ i : ZMod p, (i.cast : R) * f i := by
   simp_rw [hf.sum_mul_pow, ← ZMod.cast_pow', ZMod.pow_card]
 
@@ -186,7 +173,7 @@ def frobeniusFixedIdempotentEquiv :
     completeOrthogonalIdempotents_frobeniusFixedIdempotent
       (by simpa using (mem_frobeniusFixedSubring.mp x.2))⟩
   invFun f := ⟨∑ i : ZMod p, (i.cast : R) * f.1 i, mem_frobeniusFixedSubring.mpr
-    (by simpa using pow_char_sum_zmodCast_mul f.2)⟩
+    (by simpa using sum_zmodCast_mul_pow_char f.2)⟩
   left_inv x := Subtype.ext <| sum_zmodCast_mul_frobeniusFixedIdempotent
     (by simpa using (mem_frobeniusFixedSubring.mp x.2))
   right_inv f := Subtype.ext <| frobeniusFixedIdempotent_sum_zmodCast_mul f.2
