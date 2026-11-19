@@ -129,7 +129,8 @@ example :
   exact ⟨by simp [gram_eq_one_iff_orthonormal.mpr b.orthonormal],
     re_det_gram_le_prod_norm_sq (𝕜 := ℂ) b, hlog.trans_eq (by simp [b.norm_eq_one])⟩
 
-/-- The shear rows give a nonorthogonal Gram example and the corresponding sharp row bound. -/
+/-- The shear rows give a nonorthogonal Gram example. The Euclidean-row Hadamard bound `√2`
+and Gram bound `2` hold but are not attained. -/
 example :
     let A : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 1, 1]
     let v : Fin 2 → EuclideanSpace ℝ (Fin 2) := fun i ↦ WithLp.toLp 2 (A i)
