@@ -309,8 +309,8 @@ theorem memLp_energyIntegrand_of_continuous (hLam : ∀ x, ‖matrixBilinearForm
       (mu.restrict U) :=
   memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0)
     ((norm_nonneg (matrixBilinearForm (a 0))).trans (hLam 0))
-    (Continuous.aestronglyMeasurable (β := ι → ι → ℝ) <|
-      continuous_of_continuous_matrixBilinearForm ha)
+    (aestronglyMeasurable_of_continuousOn_matrixBilinearForm ha.continuousOn
+      U.isOpen.measurableSet)
     aestronglyMeasurable_const aestronglyMeasurable_const
     (fun x _ eta xi => by
       simpa [Real.norm_eq_abs] using
