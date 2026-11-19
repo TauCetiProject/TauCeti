@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Polynomial.Subring
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 
 /-!
@@ -26,7 +25,7 @@ coefficients lie in `Rₜ`.
 The degree in `Y` is preserved as soon as the leading coefficient has a nonzero value at `t`. The
 *guard* `D(p) · num(lc(p))`, the product of the reduced denominators of the coefficients times the
 numerator of the leading coefficient, is a nonzero polynomial in `T` for `p ≠ 0`, and away from its
-roots every coefficient is regular and the degree is preserved. So the bad parameters of a nonzero
+roots every coefficient is regular and the degree is preserved. So the bad parameters of any
 polynomial form a finite set, and over an infinite field a finite family of polynomials has a
 common good parameter outside any given finite set. None of this says anything about
 irreducibility of the specializations: `Y² − T` is regular of degree two at every `t`, while
@@ -41,7 +40,7 @@ irreducibility of the specializations: `Y² − T` is regular of degree two at e
   `p(T, Y) ↦ p(t, Y)` of `p ∈ K(T)[Y]`, a total function `K(T)[Y] → K[Y]`.
 * `TauCeti.RationalSpecialization.denomProduct p`: the product `D(p)` of the reduced denominators
   of the nonzero coefficients of `p`.
-* `TauCeti.RationalSpecialization.guard p`: the polynomial `D(p) · num(lc(p))`.
+* `TauCeti.RationalSpecialization.specializationGuard p`: the polynomial `D(p) · num(lc(p))`.
 
 ## Main results
 
@@ -56,12 +55,12 @@ irreducibility of the specializations: `Y² − T` is regular of degree two at e
   and it is additive and multiplicative on polynomials with coefficients regular at `t`.
 * `TauCeti.RationalSpecialization.eval_denomProduct_ne_zero_iff`: `D(p)(t) ≠ 0` exactly when
   every coefficient of `p` is regular at `t`.
-* `TauCeti.RationalSpecialization.natDegree_specialize_of_eval_guard_ne_zero` and
+* `TauCeti.RationalSpecialization.natDegree_specialize_of_eval_specializationGuard_ne_zero` and
   `TauCeti.RationalSpecialization.finite_setOf_exists_eval_denom_coeff_eq_zero_or_natDegree_ne`:
   away from the finitely many roots of the guard, specialization has regular coefficients and
   preserves the degree.
 * `TauCeti.RationalSpecialization.exists_notMem_forall_eval_denom_coeff_ne_zero_and_natDegree_eq`:
-  over an infinite field, a finite family of nonzero polynomials has a common such parameter
+  over an infinite field, a finite family of polynomials has a common such parameter
   outside a prescribed finite set.
 
 ## References
@@ -74,6 +73,18 @@ public section
 noncomputable section
 
 open Polynomial
+
+namespace RatFunc
+
+variable {K : Type*} [Field K]
+
+/-- Evaluating a rational function over `K` at `t ∈ K` divides the values at `t` of its reduced
+numerator and denominator. -/
+theorem eval_id_eq_div (t : K) (f : RatFunc K) :
+    eval (RingHom.id K) t f = f.num.eval t / f.denom.eval t := by
+  rw [eval, eval₂_id, eval₂_id]
+
+end RatFunc
 
 namespace TauCeti.RationalSpecialization
 
@@ -154,27 +165,20 @@ theorem algebraMap_regularEval (t : K) (f : regularSubring t) :
     algebraMap K (Place.adicOfIrreducible (irreducible_X_sub_C t)).ResidueField (regularEval t f) =
       IsLocalRing.residue (Place.adicOfIrreducible (irreducible_X_sub_C t)).integers
         ⟨f, mem_regularSubring_iff_mem_integers.mp f.2⟩ := by
-  set P := Place.adicOfIrreducible (irreducible_X_sub_C t)
-  -- The residue of a polynomial `q` is `q(t)`, since `T - t` divides `q - q(t)`.
-  have hpoly (q : K[X]) : IsLocalRing.residue P.integers
-      ⟨algebraMap K[X] (RatFunc K) q, algebraMap_mem_regularSubring t q⟩ =
-      algebraMap K P.ResidueField (q.eval t) := by
-    rw [IsScalarTower.algebraMap_apply K P.integers, IsLocalRing.ResidueField.algebraMap_eq,
-      ← sub_eq_zero, ← map_sub, Place.residue_adicOfIrreducible_eq_zero_iff]
-    have h : ((⟨algebraMap K[X] (RatFunc K) q, algebraMap_mem_regularSubring t q⟩ -
-        algebraMap K P.integers (q.eval t) : P.integers) : RatFunc K) =
-        algebraMap K[X] (RatFunc K) (q - C (q.eval t)) := by
-      simp [RatFunc.algebraMap_C]
-    rw [h, RatFunc.num_algebraMap, dvd_iff_isRoot, IsRoot.def, eval_sub, eval_C, sub_self]
   -- In the valuation ring, `f · denom(f) = num(f)`; take residues of both sides.
-  have hmul : (⟨f, mem_regularSubring_iff_mem_integers.mp f.2⟩ : P.integers) *
-      ⟨algebraMap K[X] (RatFunc K) (f : RatFunc K).denom, algebraMap_mem_regularSubring t _⟩ =
-      ⟨algebraMap K[X] (RatFunc K) (f : RatFunc K).num, algebraMap_mem_regularSubring t _⟩ :=
+  have hmul : (⟨f, mem_regularSubring_iff_mem_integers.mp f.2⟩ :
+        (Place.adicOfIrreducible (irreducible_X_sub_C t)).integers) *
+      ⟨algebraMap K[X] (RatFunc K) (f : RatFunc K).denom,
+        mem_regularSubring_iff_mem_integers.mp (algebraMap_mem_regularSubring t _)⟩ =
+      ⟨algebraMap K[X] (RatFunc K) (f : RatFunc K).num,
+        mem_regularSubring_iff_mem_integers.mp (algebraMap_mem_regularSubring t _)⟩ :=
     Subtype.ext <| (eq_div_iff (by simpa using RatFunc.denom_ne_zero (f : RatFunc K))).mp
       (RatFunc.num_div_denom (f : RatFunc K)).symm
-  have hres := congrArg (IsLocalRing.residue P.integers) hmul
-  rw [map_mul, hpoly, hpoly] at hres
-  rw [regularEval_apply, RatFunc.eval, eval₂_id, eval₂_id, map_div₀, ← hres,
+  have hres :=
+    congrArg (IsLocalRing.residue (Place.adicOfIrreducible (irreducible_X_sub_C t)).integers) hmul
+  rw [map_mul, Place.residue_algebraMap_adicOfIrreducible_X_sub_C,
+    Place.residue_algebraMap_adicOfIrreducible_X_sub_C] at hres
+  rw [regularEval_apply, RatFunc.eval_id_eq_div, map_div₀, ← hres,
     mul_div_cancel_right₀ _ ((_root_.map_ne_zero _).mpr (mem_regularSubring_iff.mp f.2))]
 
 /-! ### Specialization of polynomials -/
@@ -314,58 +318,63 @@ theorem natDegree_specialize_of_eval_leadingCoeff_ne_zero {t : K} {p : (RatFunc 
 
 /-- The **specialization guard** `D(p) · num(lc(p))` of `p ∈ K(T)[Y]`. Away from its roots every
 coefficient of `p` is regular and specialization preserves the degree
-(`eval_denom_coeff_ne_zero_of_eval_guard_ne_zero`,
-`natDegree_specialize_of_eval_guard_ne_zero`). -/
-def guard (p : (RatFunc K)[X]) : K[X] :=
+(`eval_denom_coeff_ne_zero_of_eval_specializationGuard_ne_zero`,
+`natDegree_specialize_of_eval_specializationGuard_ne_zero`). -/
+def specializationGuard (p : (RatFunc K)[X]) : K[X] :=
   denomProduct p * p.leadingCoeff.num
 
 @[simp]
-theorem guard_eq_zero_iff {p : (RatFunc K)[X]} : guard p = 0 ↔ p = 0 := by
-  simp [guard, denomProduct_ne_zero, RatFunc.num_eq_zero_iff]
+theorem specializationGuard_eq_zero_iff {p : (RatFunc K)[X]} :
+    specializationGuard p = 0 ↔ p = 0 := by
+  simp [specializationGuard, denomProduct_ne_zero, RatFunc.num_eq_zero_iff]
 
-theorem guard_ne_zero {p : (RatFunc K)[X]} (hp : p ≠ 0) : guard p ≠ 0 :=
-  guard_eq_zero_iff.not.mpr hp
+theorem specializationGuard_ne_zero {p : (RatFunc K)[X]} (hp : p ≠ 0) :
+    specializationGuard p ≠ 0 :=
+  specializationGuard_eq_zero_iff.not.mpr hp
 
 /-- Away from the roots of the guard, every coefficient is regular. -/
-theorem eval_denom_coeff_ne_zero_of_eval_guard_ne_zero {t : K} {p : (RatFunc K)[X]}
-    (h : (guard p).eval t ≠ 0) (n : ℕ) : (p.coeff n).denom.eval t ≠ 0 := by
-  rw [guard, eval_mul] at h
+theorem eval_denom_coeff_ne_zero_of_eval_specializationGuard_ne_zero {t : K}
+    {p : (RatFunc K)[X]} (h : (specializationGuard p).eval t ≠ 0) (n : ℕ) :
+    (p.coeff n).denom.eval t ≠ 0 := by
+  rw [specializationGuard, eval_mul] at h
   exact eval_denomProduct_ne_zero_iff.mp (left_ne_zero_of_mul h) n
 
 /-- **The specialization guard.** Away from the roots of the guard, specialization preserves the
 degree. -/
-theorem natDegree_specialize_of_eval_guard_ne_zero {t : K} {p : (RatFunc K)[X]}
-    (h : (guard p).eval t ≠ 0) : (specialize t p).natDegree = p.natDegree := by
+theorem natDegree_specialize_of_eval_specializationGuard_ne_zero {t : K}
+    {p : (RatFunc K)[X]} (h : (specializationGuard p).eval t ≠ 0) :
+    (specialize t p).natDegree = p.natDegree := by
   apply natDegree_specialize_of_eval_leadingCoeff_ne_zero
-  have hden := eval_denom_coeff_ne_zero_of_eval_guard_ne_zero h p.natDegree
-  rw [guard, eval_mul] at h
-  rw [RatFunc.eval, eval₂_id, eval₂_id]
+  have hden := eval_denom_coeff_ne_zero_of_eval_specializationGuard_ne_zero h p.natDegree
+  rw [specializationGuard, eval_mul] at h
+  rw [RatFunc.eval_id_eq_div]
   exact div_ne_zero (right_ne_zero_of_mul h) hden
 
-/-- **Finiteness of bad specialization parameters.** For a nonzero `p ∈ K(T)[Y]`, the parameters
+/-- **Finiteness of bad specialization parameters.** For every `p ∈ K(T)[Y]`, the parameters
 `t` at which some coefficient of `p` has a pole, or specialization changes the degree, form a
-finite set: they are roots of the guard. This holds over every field and does not assert that a
-good parameter exists. -/
-theorem finite_setOf_exists_eval_denom_coeff_eq_zero_or_natDegree_ne {p : (RatFunc K)[X]}
-    (hp : p ≠ 0) :
+finite set: for `p ≠ 0` they are roots of the guard, and for `p = 0` there are none. This holds over
+every field and does not assert that a good parameter exists. -/
+theorem finite_setOf_exists_eval_denom_coeff_eq_zero_or_natDegree_ne (p : (RatFunc K)[X]) :
     {t : K | (∃ n, (p.coeff n).denom.eval t = 0) ∨
       (specialize t p).natDegree ≠ p.natDegree}.Finite := by
-  refine (finite_setOfPred_isRoot (guard_ne_zero hp)).subset fun t ht ↦ ?_
+  rcases eq_or_ne p 0 with rfl | hp
+  · simp [RatFunc.denom_zero]
+  refine (finite_setOfPred_isRoot (specializationGuard_ne_zero hp)).subset fun t ht ↦ ?_
   by_contra h
   rcases ht with ⟨n, hn⟩ | ht
-  · exact eval_denom_coeff_ne_zero_of_eval_guard_ne_zero h n hn
-  · exact ht (natDegree_specialize_of_eval_guard_ne_zero h)
+  · exact eval_denom_coeff_ne_zero_of_eval_specializationGuard_ne_zero h n hn
+  · exact ht (natDegree_specialize_of_eval_specializationGuard_ne_zero h)
 
 /-- **Simultaneous avoidance for a finite family.** Over an infinite field, for a finite family of
-nonzero polynomials in `K(T)[Y]` and a finite set `A ⊆ K`, some parameter `t ∉ A` makes every
+polynomials in `K(T)[Y]` and a finite set `A ⊆ K`, some parameter `t ∉ A` makes every
 coefficient of every member regular at `t` and preserves every degree. Nothing is claimed about
 irreducibility of the specializations. -/
 theorem exists_notMem_forall_eval_denom_coeff_ne_zero_and_natDegree_eq [Infinite K]
-    (s : Finset (RatFunc K)[X]) (hs : ∀ p ∈ s, p ≠ 0) {A : Set K} (hA : A.Finite) :
+    (s : Finset (RatFunc K)[X]) {A : Set K} (hA : A.Finite) :
     ∃ t ∉ A, ∀ p ∈ s, (∀ n, (p.coeff n).denom.eval t ≠ 0) ∧
       (specialize t p).natDegree = p.natDegree := by
-  obtain ⟨t, ht⟩ := (hA.union (s.finite_toSet.biUnion fun p hp ↦
-    finite_setOf_exists_eval_denom_coeff_eq_zero_or_natDegree_ne (hs p hp))).exists_notMem
+  obtain ⟨t, ht⟩ := (hA.union (s.finite_toSet.biUnion fun p _ ↦
+    finite_setOf_exists_eval_denom_coeff_eq_zero_or_natDegree_ne p)).exists_notMem
   simp only [Set.mem_union, Set.mem_iUnion, Set.mem_ofPred_eq, Finset.mem_coe, not_or,
     not_exists] at ht
   refine ⟨t, ht.1, fun p hp ↦ ⟨fun n ↦ (ht.2 p hp).1 n, ?_⟩⟩
