@@ -78,7 +78,8 @@ eigenvalue `ζ`. -/
 private lemma hasEigenvector_of_isRegularWeight [Nonempty ι] {w : P.weylGroup} {x : M} {ζ : K}
     (hx : P.IsRegularWeight x) (hw : w • x = ζ • x) :
     Module.End.HasEigenvector (P.weylGroupRootRep w) ζ x :=
-  Module.End.hasEigenvector_iff.mpr ⟨Module.End.mem_eigenspace_iff.mpr hw, hx.ne_zero⟩
+  Module.End.hasEigenvector_iff.mpr
+    ⟨Module.End.mem_eigenspace_iff.mpr ((P.weylGroupRootRep_apply w x).trans hw), hx.ne_zero⟩
 
 omit [FiniteDimensional K M] in
 /-- If a regular weight is an eigenvector of a Weyl-group element for a primitive `h`-th root of
