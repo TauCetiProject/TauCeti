@@ -29,6 +29,7 @@ transition matrix between two such bases is block upper triangular
 ## Main declarations
 
 * `Module.Basis.ofExactLift`: the basis of `B` assembled from `a`, `c` and the lifts `s`.
+* `Module.Basis.coe_ofExactLift`: the basis `ofExactLift` is `Sum.elim (f ∘ a) s`.
 * `Module.Basis.eq_ofExactLift`: every basis of `B` made of the image of `a` followed by lifts
   of `c` is of this form.
 * `Module.Basis.eq_reindex_ofExactLift`: the same for a basis indexed by `Fin (m + n)`.
@@ -112,6 +113,11 @@ theorem ofExactLift_inr (j : σ) : ofExactLift hf hfg a c s hs (Sum.inr j) = s j
   rw [ofExactLift, map_apply, ← exactLiftEquiv_symm_inr (hf := hf) (hfg := hfg) c s hs j]
   congr 1
   ext <;> simp
+
+/-- The basis `ofExactLift` is the image of the basis `a` of `A` followed by the lifts `s`. Not
+`@[simp]`: `ofExactLift_inl` and `ofExactLift_inr` are the simp normal form. -/
+theorem coe_ofExactLift : ⇑(ofExactLift hf hfg a c s hs) = Sum.elim (f ∘ a) s := by
+  ext (i | j) <;> simp
 
 /-- The coordinates of a vector of `B` on the right summand of `ofExactLift` are the coordinates
 of its image in `C`. -/

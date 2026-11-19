@@ -26,6 +26,10 @@ In a homological complex of vector spaces, a homology group has dimension at mos
 finite-dimensional term it is computed from (`HomologicalComplex.finrank_homology_le_finrank_X`),
 with equality, even for complexes of modules over any ring, when the differentials into and out of
 that degree vanish (`HomologicalComplex.finrank_homology_eq_finrank_X_of_d_eq_zero`).
+Over any nontrivial ring, a basis of a homology group is empty when a basis of the term it is
+computed from is (`HomologicalComplex.card_basis_homology_eq_zero_of_card_eq_zero`), so homology
+bases are nonempty in finitely many degrees when the term bases are
+(`HomologicalComplex.finite_setOf_card_basis_homology_ne_zero`).
 Bases of two terms of a complex joined by a bijective differential have the same size
 (`HomologicalComplex.card_eq_card_of_bijective_d`).
 
@@ -77,6 +81,31 @@ theorem finrank_homology_eq_finrank_X_of_d_eq_zero {R : Type*} [Ring R] {ι : Ty
     (h₁ : K.d (c.prev i) i = 0) (h₂ : K.d i (c.next i) = 0) :
     finrank R (K.homology i) = finrank R (K.X i) :=
   (K.XIsoHomologyOfDEqZero i h₁ h₂).toLinearEquiv.finrank_eq.symm
+
+section CardBasis
+
+variable {R : Type*} [Ring R] [Nontrivial R] {ι : Type*} {s : ComplexShape ι}
+  {C : HomologicalComplex (ModuleCat R) s}
+
+/-- In a complex of modules over a nontrivial ring, a basis of a homology group is empty when a
+basis of the term it is computed from is. -/
+theorem card_basis_homology_eq_zero_of_card_eq_zero {i : ι} {n m : ℕ}
+    (c : Basis (Fin n) R (C.X i)) (h : Basis (Fin m) R (C.homology i)) (hn : n = 0) : m = 0 := by
+  subst hn
+  have := c.repr.toEquiv.subsingleton
+  have hC : C.ExactAt i := .of_isZero (ModuleCat.isZero_of_subsingleton _)
+  have := ModuleCat.subsingleton_of_isZero hC.isZero_homology
+  by_contra hm
+  exact h.ne_zero ⟨0, Nat.pos_of_ne_zero hm⟩ (Subsingleton.elim _ _)
+
+/-- In a complex of modules over a nontrivial ring with bases of the terms and of the homology
+groups, the homology bases are nonempty in finitely many degrees when the term bases are. -/
+theorem finite_setOf_card_basis_homology_ne_zero {n m : ι → ℕ}
+    (c : ∀ i, Basis (Fin (n i)) R (C.X i)) (h : ∀ i, Basis (Fin (m i)) R (C.homology i))
+    (hn : {i | n i ≠ 0}.Finite) : {i | m i ≠ 0}.Finite :=
+  hn.subset fun i hi h0 ↦ hi (card_basis_homology_eq_zero_of_card_eq_zero (c i) (h i) h0)
+
+end CardBasis
 
 variable {F : Type*} [Field F] {ι : Type*} {s : ComplexShape ι}
 

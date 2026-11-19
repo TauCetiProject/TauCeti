@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.ModuleCat.Basis
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Basic
 import Mathlib.Algebra.FiniteSupport.Basic
 import TauCeti.Algebra.BigOperators.Finprod
+import TauCeti.Algebra.Homology.ModuleCat.Finrank
 
 /-!
 # The torsion of a based chain complex with based homology
@@ -53,6 +54,11 @@ denotes the determinant of the basis `x` with respect to the basis `y`.
 * `HomologicalComplex.torsionBracketWithHomology`: the bracket `[bⱼ₊₁ zⱼ₊₁ sⱼ / cⱼ₊₁]` of a degree.
 * `HomologicalComplex.torsionBracketWithHomology_eq_det_append`: the bracket is the determinant of
   the boundary basis followed by the homology representatives and the lifts.
+* `HomologicalComplex.exists_torsionBracketWithHomology_eq_det_comp`: the same with the boundary
+  basis, the representatives and the lifts read through reindexings by arbitrary types, up to the
+  order of the family.
+* `HomologicalComplex.exists_det_comp_eq_torsionBracketWithHomology_mul`: the same with another
+  homology basis, up to its determinant with respect to the given one.
 * `HomologicalComplex.torsionBracketWithHomology_eq_mul`: the change of a bracket under a change
   of the boundary bases, the homology basis, the representatives and the lifts.
 * `HomologicalComplex.reidemeisterTorsionWithHomology`: the torsion `τ(C, c, h)`.
@@ -197,6 +203,49 @@ theorem torsionBracketWithHomology_eq_torsionBracket (hC : C.ExactAt (j + 1)) :
   | left k => simp [Fin.append_right_nil _ _ rfl, Fin.append_left]
   | right k => simp [Fin.append_right]
 
+/-- A bracket is the determinant with respect to `c (j + 1)` of the boundary basis `b₁`, the
+representatives `y` and the lifts `s`, read through any reindexings `eB`, `eH`, `eL` by other types
+as families `u`, `z`, `t`, and taken in some order. -/
+theorem exists_torsionBracketWithHomology_eq_det_comp {ιB ιH ιL : Type*} (eB : ιB ≃ Fin p)
+    (eH : ιH ≃ Fin m) (eL : ιL ≃ Fin q) (u : ιB → C.X (j + 1))
+    (hu : ∀ k, (b₁ (eB k) : C.X (j + 1)) = u k) (z : ιH → C.cycles (j + 1))
+    (hz : ∀ k, y (eH k) = z k) (t : ιL → C.X (j + 1)) (ht : ∀ k, s (eL k) = t k) :
+    ∃ e : Fin (n (j + 1)) ≃ (ιB ⊕ ιH) ⊕ ιL,
+      torsionBracketWithHomology c b₁ h y hy b₀ s hs =
+        (c (j + 1)).det (Sum.elim (Sum.elim u fun k ↦ C.iCycles (j + 1) (z k)) t ∘ e) := by
+  have hn := eq_add_add c b₁ h y hy b₀ s hs
+  refine ⟨(finCongr hn).trans (finSumFinEquiv.symm.trans (Equiv.sumCongr
+    (finSumFinEquiv.symm.trans (Equiv.sumCongr eB.symm eH.symm)) eL.symm)), ?_⟩
+  rw [torsionBracketWithHomology_eq_det_append c _ _ _ _ _ _ _ hn]
+  congr 1
+  funext i
+  simp only [Function.comp_apply, Equiv.trans_apply, finCongr_apply]
+  generalize Fin.cast hn i = k
+  induction k using Fin.addCases with
+  | left k =>
+    induction k using Fin.addCases with
+    | left k => simp [← hu]
+    | right k => simp [← hz]
+  | right k => simp [← ht]
+
+/-- A bracket computed with another homology basis `H`, represented by cycles `z`, and with the
+boundary basis and the lifts read through reindexings: up to the order of the family, the
+determinant of the boundary basis, the cycles `z` and the lifts is the bracket times the
+determinant of `H` with respect to the homology basis `h` of the bracket. -/
+theorem exists_det_comp_eq_torsionBracketWithHomology_mul {ιB ιH ιL : Type*} (eB : ιB ≃ Fin p)
+    (eL : ιL ≃ Fin q) (u : ιB → C.X (j + 1)) (hu : ∀ k, (b₁ (eB k) : C.X (j + 1)) = u k)
+    (t : ιL → C.X (j + 1)) (ht : ∀ k, s (eL k) = t k) (H : Basis ιH F (C.homology (j + 1)))
+    (z : ιH → C.cycles (j + 1)) (hz : ∀ k, C.homologyπ (j + 1) (z k) = H k) :
+    ∃ e : Fin (n (j + 1)) ≃ (ιB ⊕ ιH) ⊕ ιL,
+      (c (j + 1)).det (Sum.elim (Sum.elim u fun k ↦ C.iCycles (j + 1) (z k)) t ∘ e) =
+        torsionBracketWithHomology c b₁ h y hy b₀ s hs * h.det (H.reindex (H.indexEquiv h)) := by
+  obtain ⟨e, he⟩ := exists_torsionBracketWithHomology_eq_det_comp c b₁
+    (H.reindex (H.indexEquiv h)) (z ∘ (H.indexEquiv h).symm) (fun k ↦ by simp [hz]) b₀ s hs eB
+    (H.indexEquiv h) eL u hu z (fun k ↦ by simp) t ht
+  refine ⟨e, ?_⟩
+  rw [← he, torsionBracketWithHomology_eq_mul c b₁ h y hy b₀ s hs]
+  simp [Basis.det_self]
+
 end Bracket
 
 section Torsion
@@ -204,14 +253,6 @@ section Torsion
 variable (C)
 
 variable {m : ℤ → ℕ} (h : ∀ i, Basis (Fin (m i)) F (C.homology i))
-
-/-- Cycles representing the homology basis `h i`. -/
-private def chosenCycle (i : ℤ) (k : Fin (m i)) : C.cycles i :=
-  Function.surjInv (C.moduleCat_homologyπ_surjective i) (h i k)
-
-private theorem chosenCycle_spec (i : ℤ) (k : Fin (m i)) :
-    C.homologyπ i (chosenCycle C h i k) = h i k :=
-  Function.surjInv_eq (C.moduleCat_homologyπ_surjective i) _
 
 /-- The torsion `τ(C, c, h)` of a chain complex of vector spaces with ordered bases `c i` of each
 `C.X i` and ordered bases `h i` of each homology group `Hᵢ(C)`: the alternating product
@@ -223,7 +264,8 @@ def reidemeisterTorsionWithHomology : F := by
   classical
   exact if {i | n i ≠ 0}.Finite then
     ∏ᶠ j : ℤ, torsionBracketWithHomology c (chosenBoundaryBasis C c (j + 1 + 1) (j + 1))
-      (h (j + 1)) (chosenCycle C h (j + 1)) (chosenCycle_spec C h (j + 1))
+      (h (j + 1)) (fun k ↦ chosenCycle (h (j + 1) k))
+      (fun k ↦ chosenCycle_spec (h (j + 1) k))
       (chosenBoundaryBasis C c (j + 1) j) (chosenBoundaryLift C c (j + 1) j)
       (chosenBoundaryLift_spec C c (j + 1) j) ^ (j.negOnePow : ℤ)
   else 0
@@ -242,7 +284,7 @@ variable (hn : {i | n i ≠ 0}.Finite)
 
 include hn in
 /-- For a bounded complex, the alternating brackets have finite multiplicative support. -/
-private theorem hasFiniteMulSupport_torsionBracketWithHomology {r : ℤ → ℕ}
+theorem hasFiniteMulSupport_torsionBracketWithHomology {r : ℤ → ℕ}
     (b : ∀ j, Basis (Fin (r j)) F (LinearMap.range (C.d (j + 1) j).hom))
     (y : ∀ i, Fin (m i) → C.cycles i) (hy : ∀ i k, C.homologyπ i (y i k) = h i k)
     (s : ∀ j, Fin (r j) → C.X (j + 1)) (hs : ∀ j k, (C.d (j + 1) j).hom (s j k) = b j k) :
@@ -290,7 +332,8 @@ theorem reidemeisterTorsionWithHomology_eq_finprod {r : ℤ → ℕ}
     rw [finrank_eq_card_basis (b j), Fintype.card_fin]
   rw [reidemeisterTorsionWithHomology, ite_eq_left hn,
     finprod_torsionBracketWithHomology_eq hn (fun j ↦ (b j).reindex (finCongr (hr j)))
-      (fun j ↦ chosenBoundaryBasis C c (j + 1) j) y (chosenCycle C h) hy (chosenCycle_spec C h)
+      (fun j ↦ chosenBoundaryBasis C c (j + 1) j) y (fun i k ↦ chosenCycle (h i k)) hy
+      (fun i k ↦ chosenCycle_spec (h i k))
       (fun j ↦ s j ∘ Fin.cast (hr j).symm) (fun j ↦ chosenBoundaryLift C c (j + 1) j)
       (fun j k ↦ by simp [hs]) (fun j ↦ chosenBoundaryLift_spec C c (j + 1) j)]
   exact finprod_congr fun j ↦ by rw [torsionBracketWithHomology_reindex]
@@ -313,8 +356,8 @@ theorem reidemeisterTorsionWithHomology_eq_reidemeisterTorsion (hC : C.Acyclic) 
   let b (j : ℤ) := chosenBoundaryBasis C c (j + 1) j
   let s (j : ℤ) := chosenBoundaryLift C c (j + 1) j
   have hs (j : ℤ) := chosenBoundaryLift_spec C c (j + 1) j
-  rw [reidemeisterTorsionWithHomology_eq_finprod hn b (chosenCycle C h) (chosenCycle_spec C h)
-      s hs,
+  rw [reidemeisterTorsionWithHomology_eq_finprod hn b (fun i k ↦ chosenCycle (h i k))
+      (fun i k ↦ chosenCycle_spec (h i k)) s hs,
     reidemeisterTorsion_eq_finprod hn hC b s hs]
   refine finprod_congr fun j ↦ ?_
   rw [torsionBracketWithHomology_eq_torsionBracket c _ _ _ _ _ _ _ (hC (j + 1))]
@@ -348,14 +391,14 @@ theorem reidemeisterTorsionWithHomology_eq_mul_finprod_det
   let b (j : ℤ) := chosenBoundaryBasis C c (j + 1) j
   let s (j : ℤ) := chosenBoundaryLift C c (j + 1) j
   have hs (j : ℤ) := chosenBoundaryLift_spec C c (j + 1) j
-  rw [reidemeisterTorsionWithHomology_eq_finprod (c := c) hn b (chosenCycle C h)
-      (chosenCycle_spec C h) s hs,
-    reidemeisterTorsionWithHomology_eq_finprod (c := c') hn b (chosenCycle C h)
-      (chosenCycle_spec C h) s hs,
+  rw [reidemeisterTorsionWithHomology_eq_finprod (c := c) hn b (fun i k ↦ chosenCycle (h i k))
+      (fun i k ↦ chosenCycle_spec (h i k)) s hs,
+    reidemeisterTorsionWithHomology_eq_finprod (c := c') hn b (fun i k ↦ chosenCycle (h i k))
+      (fun i k ↦ chosenCycle_spec (h i k)) s hs,
     hshift]
   refine (finprod_congr fun j ↦ ?_).trans
     (finprod_mul_distrib (hasFiniteMulSupport_torsionBracketWithHomology hn b _
-      (chosenCycle_spec C h) s hs) hD)
+      (fun i k ↦ chosenCycle_spec (h i k)) s hs) hD)
   have hinv : (c (j + 1)).det (c' (j + 1)) = ((c' (j + 1)).det (c (j + 1)))⁻¹ :=
     eq_inv_of_mul_eq_one_left <| by rw [Basis.det_mul_det, Basis.det_self]
   rw [torsionBracketWithHomology_eq_det_mul c (c' := c'), hinv]
@@ -380,13 +423,10 @@ theorem reidemeisterTorsionWithHomology_eq_mul_finprod_det_homology
     (hn.preimage (add_left_injective (1 : ℤ)).injOn).subset <|
       Function.mulSupport_subset_iff'.2 fun j hj ↦ by
         -- The homology vanishes where the complex vanishes.
-        have hn0 : n (j + 1) = 0 := by simpa using hj
-        have : IsEmpty (Fin (n (j + 1))) := by
-          rw [hn0]; infer_instance
-        have := (c (j + 1)).repr.toEquiv.subsingleton
-        have hC : C.ExactAt (j + 1) := .of_isZero (ModuleCat.isZero_of_subsingleton _)
-        have := ModuleCat.subsingleton_of_isZero hC.isZero_homology
-        have : IsEmpty (Fin (m (j + 1))) := ⟨fun k ↦ (h (j + 1)).ne_zero k (Subsingleton.elim _ _)⟩
+        have hm0 : m (j + 1) = 0 :=
+          card_basis_homology_eq_zero_of_card_eq_zero (c (j + 1)) (h (j + 1)) (by simpa using hj)
+        have : IsEmpty (Fin (m (j + 1))) := by
+          rw [hm0]; infer_instance
         simp
   have hshift : ∏ᶠ i : ℤ, (h i).det (h' i) ^ ((i + 1).negOnePow : ℤ) =
       ∏ᶠ j : ℤ, (h (j + 1)).det (h' (j + 1)) ^ ((j + 1 + 1).negOnePow : ℤ) :=
@@ -394,16 +434,16 @@ theorem reidemeisterTorsionWithHomology_eq_mul_finprod_det_homology
   let b (j : ℤ) := chosenBoundaryBasis C c (j + 1) j
   let s (j : ℤ) := chosenBoundaryLift C c (j + 1) j
   have hs (j : ℤ) := chosenBoundaryLift_spec C c (j + 1) j
-  rw [reidemeisterTorsionWithHomology_eq_finprod (h := h) hn b (chosenCycle C h)
-      (chosenCycle_spec C h) s hs,
-    reidemeisterTorsionWithHomology_eq_finprod (h := h') hn b (chosenCycle C h')
-      (chosenCycle_spec C h') s hs,
+  rw [reidemeisterTorsionWithHomology_eq_finprod (h := h) hn b (fun i k ↦ chosenCycle (h i k))
+      (fun i k ↦ chosenCycle_spec (h i k)) s hs,
+    reidemeisterTorsionWithHomology_eq_finprod (h := h') hn b (fun i k ↦ chosenCycle (h' i k))
+      (fun i k ↦ chosenCycle_spec (h' i k)) s hs,
     hshift]
   refine (finprod_congr fun j ↦ ?_).trans
     (finprod_mul_distrib (hasFiniteMulSupport_torsionBracketWithHomology hn b _
-      (chosenCycle_spec C h) s hs) hD)
-  rw [torsionBracketWithHomology_eq_mul c (b (j + 1)) (h (j + 1)) (chosenCycle C h (j + 1))
-    (chosenCycle_spec C h (j + 1)) (b j) (s j) (hs j)]
+      (fun i k ↦ chosenCycle_spec (h i k)) s hs) hD)
+  rw [torsionBracketWithHomology_eq_mul c (b (j + 1)) (h (j + 1))
+    (fun k ↦ chosenCycle (h (j + 1) k)) (fun k ↦ chosenCycle_spec (h (j + 1) k)) (b j) (s j) (hs j)]
   simp [Basis.det_self, mul_zpow, Int.negOnePow_succ]
 
 end BasisChange
