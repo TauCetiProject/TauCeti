@@ -132,15 +132,12 @@ private theorem dist_iteratedFDeriv_apply_le_of_fderiv_eq (hα : α ≤ 1) (hφ 
           Real.rpow_le_rpow ha (le_max_right _ _) α.coe_nonneg
       _ ≤ max 1 ‖ψ‖ ^ (1 : ℝ) := Real.rpow_le_rpow_of_exponent_le hA (by exact_mod_cast hα)
       _ = max 1 ‖ψ‖ := Real.rpow_one _
-  have hφxy : dist (φ x) (φ y) ≤ ‖ψ‖ * dist x y :=
-    (lipschitzWith_of_fderiv_eq hφ hψ).dist_le_mul x y
+  have h := ((g.holderWith_iteratedFDeriv_of_le hα hℓ).comp
+    (lipschitzWith_of_fderiv_eq hφ hψ).holderWith).dist_le x y
+  rw [mul_one] at h
+  push_cast at h
   calc dist (_root_.iteratedFDeriv ℝ ℓ g (φ x)) (_root_.iteratedFDeriv ℝ ℓ g (φ y))
-      ≤ 3 * ‖g‖ * dist (φ x) (φ y) ^ (α : ℝ) := by
-        simpa using (g.holderWith_iteratedFDeriv_of_le hα hℓ).dist_le (φ x) (φ y)
-    _ ≤ 3 * ‖g‖ * (‖ψ‖ * dist x y) ^ (α : ℝ) := by gcongr
-    _ = 3 * ‖g‖ * ‖ψ‖ ^ (α : ℝ) * dist x y ^ (α : ℝ) := by
-        rw [Real.mul_rpow ha dist_nonneg]
-        ring
+      ≤ 3 * ‖g‖ * ‖ψ‖ ^ (α : ℝ) * dist x y ^ (α : ℝ) := h
     _ ≤ 3 * ‖g‖ * max 1 ‖ψ‖ * dist x y ^ (α : ℝ) := by gcongr
 
 /-- The power bookkeeping of one Faà di Bruno term: for `0 ≤ a ≤ A`, `1 ≤ A` and `ℓ ≤ n`,
