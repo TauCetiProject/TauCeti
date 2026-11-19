@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.RegularValue
 
 /-!
 # The symplectic form on the levels of a moment map
@@ -284,13 +285,10 @@ the level `μ⁻¹(c)`, then `dμ` vanishes on its tangent images. -/
 theorem differential_mfderiv_eq_zero {g : N → M} {c : Module.Dual ℝ 𝔤}
     (hgc : ∀ p, μ (g p) = c) (p : N) (v : TangentSpace J p) :
     h.differential (g p) (mfderiv J I g p v) = 0 := by
-  by_cases hgp : MDifferentiableAt J I g p
-  swap
-  · rw [mfderiv_zero_of_not_mdifferentiableAt hgp, zero_apply, map_zero]
   ext Z
-  rw [differential_apply, ← mvfderiv_comp_apply p (h.mdifferentiableAt Z (g p)) hgp v]
-  have hconst : (fun y : M ↦ μ y Z) ∘ g = fun _ ↦ c Z := funext fun q ↦ by simp [hgc q]
-  rw [hconst, mvfderiv_const, zero_apply, LinearMap.zero_apply]
+  rw [differential_apply, LinearMap.zero_apply]
+  exact range_mfderiv_le_ker_mfderiv_of_eventually_eq (f := fun y ↦ μ y Z) (g := g) (y := c Z)
+    (.of_forall fun q ↦ by simp [hgc q]) ⟨v, rfl⟩
 
 /-- **The kernel of the form pulled back to a level.** Let `g : N → M` be a smooth map whose
 tangent image at `p` is the kernel of `dμ` at `g p`, such as the inclusion of a regular level of
