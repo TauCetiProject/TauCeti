@@ -222,13 +222,15 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {J : V → V →
 `u ζ` lies in the target of a chart `e` differentiable there, then `e⁻¹ ∘ u` solves the equation
 for the structure read in the chart, `e.pullbackEnd J`. -/
 private theorem cauchyRiemann_symm_comp {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {e : OpenPartialHomeomorph E V} {u : ℂ → V} {ζ : ℂ} (hu : DifferentiableAt ℝ u ζ)
-    (ht : u ζ ∈ e.target) (he : DifferentiableAt ℝ e (e.symm (u ζ)))
-    (hes : DifferentiableAt ℝ e.symm (u ζ))
+    {e : OpenPartialHomeomorph E V} (hed : DifferentiableOn ℝ e e.source)
+    (hesd : DifferentiableOn ℝ e.symm e.target) {u : ℂ → V} {ζ : ℂ}
+    (hu : DifferentiableAt ℝ u ζ) (ht : u ζ ∈ e.target)
     (hCR : fderiv ℝ u ζ 1 + J (u ζ) (fderiv ℝ u ζ I) = 0) :
     fderiv ℝ (fun w ↦ e.symm (u w)) ζ 1 +
       e.pullbackEnd J (e.symm (u ζ)) (fderiv ℝ (fun w ↦ e.symm (u w)) ζ I) = 0 := by
   have hp := e.map_target ht
+  have he := hed.differentiableAt (e.open_source.mem_nhds hp)
+  have hes := hesd.differentiableAt (e.open_target.mem_nhds ht)
   have hep : e (e.symm (u ζ)) = u ζ := e.right_inv ht
   have hD : fderiv ℝ (fun w ↦ e.symm (u w)) ζ = (fderiv ℝ e.symm (u ζ)).comp (fderiv ℝ u ζ) :=
     (hes.hasFDerivAt.comp ζ hu.hasFDerivAt).fderiv
@@ -294,12 +296,9 @@ theorem exists_eqOn_comp_of_cauchyRiemann {Ω : Set V} {U₀ U₁ : Set ℂ} {u�
     (hcs.of_le (by norm_num)).comp (hu₁.mono fun w hw ↦ (hrB hw).1.1) fun w hw ↦ (hrB hw).1.2
   have hCRv (w) (hw : w ∈ ball (0 : ℂ) r) :
       fderiv ℝ v w 1 + e.pullbackEnd J (v w) (fderiv ℝ v w I) = 0 :=
-    cauchyRiemann_symm_comp ((hu₁.differentiableOn one_ne_zero w (hrB hw).1.1).differentiableAt
-        (hU₁.mem_nhds (hrB hw).1.1)) (hrB hw).1.2
-      ((hc.differentiableOn (by norm_num)).differentiableAt
-        (e.open_source.mem_nhds (e.map_target (hrB hw).1.2)))
-      ((hcs.differentiableOn (by norm_num)).differentiableAt
-        (e.open_target.mem_nhds (hrB hw).1.2)) (hCR₁ w (hrB hw).1.1)
+    cauchyRiemann_symm_comp (hc.differentiableOn (by norm_num)) (hcs.differentiableOn (by norm_num))
+      ((hu₁.differentiableOn one_ne_zero w (hrB hw).1.1).differentiableAt
+        (hU₁.mem_nhds (hrB hw).1.1)) (hrB hw).1.2 (hCR₁ w (hrB hw).1.1)
   -- the coincidences are zeros of the normal component accumulating at `0`, so it vanishes
   have hev : ∀ᶠ ν in atTop, (v (ζ ν)).2 = 0 := by
     filter_upwards [(hz.prodMk_nhds (tendsto_const_nhds (x := (0 : EuclideanSpace ℂ (Fin n))))
