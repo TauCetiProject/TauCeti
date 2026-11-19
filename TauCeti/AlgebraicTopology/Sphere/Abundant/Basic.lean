@@ -10,7 +10,6 @@ public import TauCeti.Topology.MappingSpace.Evaluation
 public import TauCeti.Topology.MappingSpace.Sphere.Basic
 public import TauCeti.Topology.Sphere.Suspension
 public import Mathlib.Topology.Homotopy.HomotopyGroup
-import TauCeti.AlgebraicTopology.Singular.Reduced
 
 /-!
 # Manifolds abundant with two-spheres
