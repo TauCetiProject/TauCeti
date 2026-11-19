@@ -90,7 +90,7 @@ variable {X} {Y : TopCat.{u}} (f : X ⟶ Y)
 of locally constant functions on `Y` to the pushforward along `f` of the presheaf of `R`-algebras of
 locally constant functions on `X`: a locally constant function `g` on an open `U ⊆ Y` goes to
 `g ∘ f` on `f⁻¹(U)`. -/
-@[expose] def Hom.locallyConstantAlgCatComap :
+def Hom.locallyConstantAlgCatComap :
     locallyConstantAlgCatPresheaf Y R ⟶
       (Presheaf.pushforward (AlgCat.{u} R) f).obj (locallyConstantAlgCatPresheaf X R) where
   app U := AlgCat.ofHom (LocallyConstant.comapₐ R (f.hom.restrictPreimage U.unop))

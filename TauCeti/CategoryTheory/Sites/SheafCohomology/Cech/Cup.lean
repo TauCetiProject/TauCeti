@@ -517,12 +517,10 @@ theorem cechComplexCompIso_inv_cechCup (a : (cechAlgebraComplex U (G.op ⋙ Q)).
         (((cechComplexCompIso G U (Q ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) hG).inv.f q).hom
           b) := by
   let e := cechComplexCompIso G U (Q ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) hG
-  have he (m : ℕ) (x) : (e.hom.f m).hom ((e.inv.f m).hom x) = x := by
-    rw [← ModuleCat.comp_apply, ← HomologicalComplex.comp_f, e.inv_hom_id,
-      HomologicalComplex.id_f, ModuleCat.id_apply]
-  have he' (x) : (e.inv.f n).hom ((e.hom.f n).hom x) = x := by
-    rw [← ModuleCat.comp_apply, ← HomologicalComplex.comp_f, e.hom_inv_id,
-      HomologicalComplex.id_f, ModuleCat.id_apply]
+  have he (m : ℕ) (x) : (e.hom.f m).hom ((e.inv.f m).hom x) = x :=
+    (HomologicalComplex.Hom.isoApp e m).inv_hom_id_apply x
+  have he' (x) : (e.inv.f n).hom ((e.hom.f n).hom x) = x :=
+    (HomologicalComplex.Hom.isoApp e n).hom_inv_id_apply x
   refine (Function.LeftInverse.injective he') ?_
   rw [he, cechComplexCompIso_hom_cechCup, he, he]
 
@@ -542,8 +540,8 @@ theorem cechComplexCompIso_inv_cechOne :
     ((cechComplexCompIso G U (Q ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) hG).inv.f 0).hom
         (cechOne U (G.op ⋙ Q)) =
       cechOne (fun i ↦ G.obj (U i)) Q := by
-  rw [← cechComplexCompIso_hom_cechOne G hG, ← ModuleCat.comp_apply, ← HomologicalComplex.comp_f,
-    Iso.hom_inv_id, HomologicalComplex.id_f, ModuleCat.id_apply]
+  rw [← cechComplexCompIso_hom_cechOne G hG]
+  exact (HomologicalComplex.Hom.isoApp _ 0).hom_inv_id_apply _
 
 end Comparison
 
