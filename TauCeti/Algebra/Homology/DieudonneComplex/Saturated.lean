@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.AddCommGrpCat.Basic
 public import TauCeti.Algebra.Homology.DieudonneComplex.Basic
 
 /-!

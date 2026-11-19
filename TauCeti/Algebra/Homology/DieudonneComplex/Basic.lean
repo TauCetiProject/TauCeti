@@ -74,11 +74,6 @@ section Basic
 
 variable (M : DieudonneComplex.{u} p)
 
-/-- `d (d x) = 0`, on elements. -/
-@[simp]
-lemma d_comp_d_apply (i j k : ℤ) (x : M.X i) : (M.d j k).hom ((M.d i j).hom x) = 0 := by
-  rw [← AddCommGrpCat.comp_apply, M.d_comp_d, AddCommGrpCat.zero_apply]
-
 /-- The Frobenius relation `d F = p F d` for the differential between any two degrees. -/
 lemma d_F_apply (i j : ℤ) (x : M.X i) :
     (M.d i j).hom ((M.F i).hom x) = p • (M.F j).hom ((M.d i j).hom x) := by

@@ -113,7 +113,7 @@ lemma d_mem_verschiebungFiltration {r : ℕ} {i j : ℤ} {x : M.X i}
     (hx : x ∈ hM.verschiebungFiltration r i) :
     (M.d i j).hom x ∈ hM.verschiebungFiltration r j := by
   obtain ⟨a, b, rfl⟩ := (hM.mem_verschiebungFiltration_iff (sub_add_cancel _ 1)).1 hx
-  rw [map_add, M.d_comp_d_apply, add_zero]
+  rw [map_add, HomologicalComplex.addCommGrpCat_d_comp_d_apply, add_zero]
   exact hM.d_V_iterate_mem_verschiebungFiltration r a
 
 /-- `Nʳ Mⁱ ≤ d⁻¹ (Nʳ Mʲ)`. -/
