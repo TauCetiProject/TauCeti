@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.Grp.Preadditive
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
 public import Mathlib.CategoryTheory.Abelian.SerreClass.Basic
 public import Mathlib.CategoryTheory.Sites.Sheaf
 public import Mathlib.GroupTheory.Exponent
+public import TauCeti.Algebra.Category.Grp.Preadditive
 public import TauCeti.CategoryTheory.ObjectProperty.KilledBy
 
 /-!
@@ -129,7 +129,9 @@ section Functor
 variable {C D : Type*} [Category* C] [Category* D] [Preadditive C] [Preadditive D]
 
 /-- An additive functor sends objects of bounded torsion to objects of bounded torsion. In
-particular, every right derived functor of an additive functor does. -/
+particular, every right derived functor of an additive functor does, since it is additive
+(`CategoryTheory.Functor.additive_rightDerived` in
+`TauCeti.CategoryTheory.Abelian.RightDerived`). -/
 theorem isBoundedTorsion_le_inverseImage (F : C ⥤ D) [F.Additive] :
     isBoundedTorsion C ≤ (isBoundedTorsion D).inverseImage F :=
   fun _ ⟨e, he, hX⟩ ↦ ⟨e, he, isKilledBy_le_inverseImage F e _ hX⟩
@@ -141,11 +143,6 @@ end CategoryTheory.ObjectProperty
 namespace AddCommGrpCat
 
 open CategoryTheory.ObjectProperty
-
-/-- A natural number `e` kills an abelian group `M`, in the sense that `e • 𝟙 M = 0`, exactly
-when `e • x = 0` for every element `x` of `M`. -/
-theorem nsmul_id_eq_zero_iff {M : AddCommGrpCat} {e : ℕ} : e • 𝟙 M = 0 ↔ ∀ x : M, e • x = 0 :=
-  ⟨fun h x ↦ by simpa using ConcreteCategory.congr_hom h x, fun h ↦ by ext x; simpa using h x⟩
 
 /-- An abelian group has bounded torsion exactly when it has an exponent. -/
 theorem prop_isBoundedTorsion_iff_exponentExists (M : AddCommGrpCat) :
