@@ -1,0 +1,338 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing.Basic
+public import TauCeti.Geometry.Manifold.DeRham.MayerVietoris
+public import TauCeti.Geometry.Manifold.DeRham.CompactlySupportedMayerVietoris
+import TauCeti.Geometry.Manifold.DifferentialForm.Integration.OpenSubset
+import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
+import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
+
+/-!
+# The Poincaré pairing and the Mayer–Vietoris sequences
+
+Let `M` be an oriented boundaryless manifold of dimension `n`, and let `U` and `V` be open
+subsets. The Poincaré pairing `⟨[φ], [ψ]⟩ = ∫ φ ∧ ψ` between de Rham cohomology and compactly
+supported de Rham cohomology (`TauCeti.poincarePairing`) intertwines the Mayer–Vietoris sequence of
+de Rham cohomology,
+
+`⋯ → H^k(U ⊔ V) → H^k(U) ⊕ H^k(V) → H^k(U ⊓ V) → H^{k+1}(U ⊔ V) → ⋯`,
+
+with the dual of the Mayer–Vietoris sequence of compactly supported cohomology,
+
+`⋯ → H^l_c(U ⊓ V) → H^l_c(U) ⊕ H^l_c(V) → H^l_c(U ⊔ V) → H^{l+1}_c(U ⊓ V) → ⋯`,
+
+for `k + l = n`. These compatibilities are what the Mayer–Vietoris step of the proof of Poincaré
+duality uses: with them, the five lemma for this ladder of exact sequences passes duality from
+`U`, `V` and `U ⊓ V` to `U ⊔ V`. That argument and the induction over open covers are not carried
+out in this file.
+
+* **Restriction and extension by zero.** For open subsets `U ≤ W`, the restriction
+  `H^k(W) → H^k(U)` is adjoint to the extension by zero `H^l_c(U) → H^l_c(W)`:
+  `⟨x, ext y⟩_W = ⟨x|_U, y⟩_U` (`TauCeti.poincarePairing_extendByZero`). At the level of forms,
+  `φ ∧ ext ψ = ext (φ|_U ∧ ψ)` (`TauCeti.RoughForm.extendByZero_wedge_mpullback_inclusion`), and
+  integration commutes with extension by zero. The maps of the two Mayer–Vietoris sequences other
+  than the connecting maps are built from these, so the corresponding squares of the ladder
+  commute.
+* **The connecting maps.** The connecting maps `δ : H^k(U ⊓ V) → H^{k+1}(U ⊔ V)`
+  (`TauCeti.deRhamCohomology.mayerVietorisδ`) and `δ_c : H^l_c(U ⊔ V) → H^{l+1}_c(U ⊓ V)`
+  (`TauCeti.compactlySupportedDeRhamCohomology.mayerVietorisδ`) are adjoint up to a sign:
+  `⟨δ x, y⟩_{U ⊔ V} = (-1)^(k+1) ⟨x, δ_c y⟩_{U ⊓ V}`
+  (`TauCeti.poincarePairing_mayerVietorisδ`). Write `x = [φ]` with `φ = α|_{U ⊓ V} - β|_{U ⊓ V}`, so
+  that `δ x` is represented by the form equal to `dα` on `U` and `dβ` on `V`, and write `y = [τ]`
+  with `τ = ext a + ext b`, so that `δ_c y` is represented by the form `θ` on `U ⊓ V` with
+  `ext θ = da` and `ext θ = -db`. Integration by parts,
+  `∫ dα ∧ a = -(-1)^k ∫ α ∧ da` for compactly supported `a`
+  (`TauCeti.integralTopForm_cast_wedge_mextDerivₗ`), which is Stokes' theorem for `α ∧ a`, then
+  turns `∫ dα ∧ a + ∫ dβ ∧ b` into `-(-1)^k ∫ (α - β) ∧ θ = (-1)^(k+1) ∫ φ ∧ θ`.
+
+The pairing on `U ⊔ V` in degrees `(k + 1, l)` and the pairing on `U ⊓ V` in degrees `(k, l + 1)`
+are taken for one orientation of `M`, indexed by `Fin (k + 1 + l)` for the first and reindexed
+along `k + 1 + l = k + l + 1` for the second.
+
+## References
+
+* R. Bott and L. W. Tu, *Differential Forms in Algebraic Topology*, GTM 82, §5, Lemma 5.6.
+* John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Problems 18-6 to 18-8.
+-/
+
+public section
+
+noncomputable section
+
+open TopologicalSpace
+open scoped ContDiff Manifold
+
+namespace TauCeti
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {k l : ℕ}
+
+/-- Wedging a form on `W` with the extension by zero of a form on an open subset `U ≤ W` is the
+extension by zero of the wedge of its restriction to `U` with that form:
+`φ ∧ ext ψ = ext (φ|_U ∧ ψ)`. -/
+theorem RoughForm.extendByZero_wedge_mpullback_inclusion {U W : Opens M} (h : U ≤ W)
+    (φ : RoughForm I W ℝ k) (ψ : RoughForm I U ℝ l) :
+    RoughForm.extendByZero W ((mpullback I I (Opens.inclusion h) φ).wedge ψ) =
+      φ.wedge (RoughForm.extendByZero W ψ) := by
+  funext x
+  rw [RoughForm.wedge_def φ, RoughForm.wedgeWith_apply']
+  by_cases hx : (x : M) ∈ U
+  · rw [RoughForm.extendByZero_apply_of_mem _ hx, RoughForm.extendByZero_apply_of_mem _ hx,
+      RoughForm.wedge_def, RoughForm.wedgeWith_apply', mpullback_inclusion_apply]
+    rfl
+  · rw [RoughForm.extendByZero_apply_of_notMem _ hx, RoughForm.extendByZero_apply_of_notMem _ hx]
+    simp
+
+section Integral
+
+variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
+
+/-- **Integration against an extension by zero.** For open subsets `U ≤ W`, a smooth form `φ` on
+`W` and a compactly supported smooth form `ψ` on `U`, `∫_W φ ∧ ext ψ = ∫_U φ|_U ∧ ψ`, for the
+orientations restricted from `M`. -/
+theorem integralTopForm_wedge_extendByZero (o : Manifold.Orientation I M (Fin (k + l)))
+    {U W : Opens M} (h : U ≤ W) (φ : SmoothForm I W ℝ k) {ψ : SmoothForm I U ℝ l}
+    (hψ : ψ ∈ compactlySupportedForms I U l) :
+    integralTopForm (o.restrict W) (RoughForm.wedge φ.1 (RoughForm.extendByZero W ψ.1)) =
+      integralTopForm (o.restrict U) (RoughForm.wedge
+        (SmoothForm.mpullback (Opens.inclusion h) (contMDiff_inclusion h) φ).1 ψ.1) := by
+  have hc := (mem_compactlySupportedForms I).mp (SmoothForm.wedge_mem_compactlySupportedForms
+    (SmoothForm.mpullback (Opens.inclusion h) (contMDiff_inclusion h) φ) hψ)
+  rw [SmoothForm.coe_wedge] at hc
+  rw [← RoughForm.extendByZero_wedge_mpullback_inclusion h, integralTopForm_extendByZero o h
+    (by rwa [SmoothForm.coe_mpullback] at hc), SmoothForm.coe_mpullback]
+
+omit [T2Space M] in
+/-- Reindexing an orientation along an equality `n = m` of dimensions and transporting a top form
+along the same equality do not change the integral over an open subset. -/
+theorem integralTopForm_restrict_reindex_finCongr {n m : ℕ} (o : Manifold.Orientation I M (Fin n))
+    (h : n = m) (U : Opens M) (φ : SmoothForm I U ℝ n) :
+    integralTopForm ((o.reindex (finCongr h)).restrict U)
+        (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I U ℝ q) h φ).1 =
+      integralTopForm (o.restrict U) φ.1 := by
+  subst h
+  simp
+
+variable [BoundarylessManifold I M] [SigmaCompactSpace M]
+
+/-- **Integration by parts against a compactly supported form.** On an oriented boundaryless
+manifold of dimension `k + l + 1`, a smooth `k`-form `α` and a compactly supported smooth `l`-form
+`a` satisfy `∫ dα ∧ a = -(-1)^k ∫ α ∧ da`, the first integrand being transported to degree
+`k + l + 1`. This is Stokes' theorem for the compactly supported form `α ∧ a`. -/
+theorem integralTopForm_cast_wedge_mextDerivₗ (o : Manifold.Orientation I M (Fin (k + l + 1)))
+    (α : SmoothForm I M ℝ k) {a : SmoothForm I M ℝ l} (ha : a ∈ compactlySupportedForms I M l) :
+    integralTopForm o (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q)
+        (add_right_comm k 1 l) (SmoothForm.wedge (mextDerivₗ I k α) a)).1 =
+      -((-1 : ℝ) ^ k * integralTopForm o (SmoothForm.wedge α (mextDerivₗ I l a)).1) := by
+  have hγ := SmoothForm.wedge_mem_compactlySupportedForms α ha
+  set A := LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q)
+    (add_right_comm k 1 l) (SmoothForm.wedge (mextDerivₗ I k α) a)
+  set B := SmoothForm.wedge α (mextDerivₗ I l a)
+  have hA : A ∈ compactlySupportedForms I M (k + l + 1) :=
+    (cast_mem_compactlySupportedForms_iff I (add_right_comm k 1 l)).mpr
+      (SmoothForm.wedge_mem_compactlySupportedForms (mextDerivₗ I k α) ha)
+  have hB : (-1 : ℝ) ^ k • B ∈ compactlySupportedForms I M (k + l + 1) :=
+    Submodule.smul_mem _ _ (SmoothForm.wedge_mem_compactlySupportedForms α
+      (mextDerivₗ_mem_compactlySupportedForms I ha))
+  -- The transport along `k + (l + 1) = k + l + 1` in the Leibniz rule is the identity.
+  have hcast : LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q)
+      (add_assoc k l 1).symm B = B := by
+    refine Subtype.ext (funext fun x ↦ ?_)
+    ext v
+    rw [SmoothForm.cast_apply]
+    rfl
+  -- Stokes' theorem for `α ∧ a`, expanded by the Leibniz rule.
+  have hstokes := integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms o
+    (φ := mextDerivₗ I (k + l) (SmoothForm.wedge α a)) (by
+      rw [exactCompactlySupportedForms_succ]
+      exact ⟨_, hγ, rfl⟩)
+  rw [SmoothForm.mextDerivₗ_wedge, hcast, Submodule.coe_add, integralTopForm_add o
+    (A.isSmoothForm.of_le bot_le) (((-1 : ℝ) ^ k • B).isSmoothForm.of_le bot_le)
+    ((mem_compactlySupportedForms I).mp hA) ((mem_compactlySupportedForms I).mp hB),
+    Submodule.coe_smul, integralTopForm_smul] at hstokes
+  linarith
+
+end Integral
+
+section Pairing
+
+variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [BoundarylessManifold I M] [T2Space M]
+  [SigmaCompactSpace M]
+
+omit [SigmaCompactSpace M] in
+/-- **The Poincaré pairing intertwines restriction and extension by zero.** For open subsets
+`U ≤ W` of an oriented boundaryless manifold of dimension `k + l`, a de Rham class `x` on `W` and
+a compactly supported class `y` on `U`, `⟨x, ext y⟩_W = ⟨x|_U, y⟩_U` for the orientations
+restricted from `M`. -/
+theorem poincarePairing_extendByZero (o : Manifold.Orientation I M (Fin (k + l))) {U W : Opens M}
+    [SigmaCompactSpace U] [SigmaCompactSpace W] (h : U ≤ W) (x : deRhamCohomology I W k)
+    (y : compactlySupportedDeRhamCohomology I U l) :
+    poincarePairing I W (o.restrict W) x (compactlySupportedDeRhamCohomology.extendByZero h l y) =
+      poincarePairing I U (o.restrict U)
+        (deRhamCohomology.map (Opens.inclusion h) (contMDiff_inclusion h) k x) y := by
+  obtain ⟨φ, rfl⟩ := deRhamCohomology.mk_surjective I k x
+  obtain ⟨ψ, rfl⟩ := compactlySupportedDeRhamCohomology.mk_surjective I l y
+  rw [compactlySupportedDeRhamCohomology.extendByZero_mk, deRhamCohomology.map_mk,
+    poincarePairing_mk, poincarePairing_mk, compactlySupportedClosedForms.coe_extendByZero,
+    closedForms.coe_mpullback]
+  exact integralTopForm_wedge_extendByZero o h φ.1
+    (compactlySupportedClosedForms_le_compactlySupportedForms I l ψ.2)
+
+omit [BoundarylessManifold I M] [T2Space M] [SigmaCompactSpace M] in
+/-- The integral is additive on compactly supported smooth top forms. -/
+private theorem integralTopForm_add_of_mem {n : ℕ} (o : Manifold.Orientation I M (Fin n))
+    {A B : SmoothForm I M ℝ n} (hA : A ∈ compactlySupportedForms I M n)
+    (hB : B ∈ compactlySupportedForms I M n) :
+    integralTopForm o (A + B).1 = integralTopForm o A.1 + integralTopForm o B.1 := by
+  rw [Submodule.coe_add]
+  exact integralTopForm_add o (A.isSmoothForm.of_le bot_le) (B.isSmoothForm.of_le bot_le)
+    ((mem_compactlySupportedForms I).mp hA) ((mem_compactlySupportedForms I).mp hB)
+
+omit [BoundarylessManifold I M] [T2Space M] [SigmaCompactSpace M] in
+/-- The integral is additive on compactly supported smooth top forms: the form of subtraction. -/
+private theorem integralTopForm_sub_of_mem {n : ℕ} (o : Manifold.Orientation I M (Fin n))
+    {A B : SmoothForm I M ℝ n} (hA : A ∈ compactlySupportedForms I M n)
+    (hB : B ∈ compactlySupportedForms I M n) :
+    integralTopForm o (A - B).1 = integralTopForm o A.1 - integralTopForm o B.1 := by
+  rw [eq_sub_iff_add_eq, ← integralTopForm_add_of_mem o (sub_mem hA hB) hB, sub_add_cancel]
+
+/-- One half of the computation of `⟨δ x, y⟩`. Let `S ≤ W` and `T ≤ S` be open subsets, `σ` a
+smooth `(k + 1)`-form on `W` restricting to `dα` on `S`, `a` a compactly supported `l`-form on `S`,
+and `θ` a compactly supported `(l + 1)`-form on `T` extending by zero to `da`. Then
+`∫_W σ ∧ ext a = -(-1)^k ∫_T α|_T ∧ θ`, by integration by parts on `S`. -/
+private theorem integralTopForm_wedge_extendByZero_eq_neg
+    (o : Manifold.Orientation I M (Fin (k + 1 + l)))
+    {S W T : Opens M} (hSW : S ≤ W) (hTS : T ≤ S) (σ : SmoothForm I W ℝ (k + 1))
+    (α : SmoothForm I S ℝ k)
+    (hσ : SmoothForm.mpullback (Opens.inclusion hSW) (contMDiff_inclusion hSW) σ = mextDerivₗ I k α)
+    (a : compactlySupportedForms I S l) (θ : compactlySupportedForms I T (l + 1))
+    (hθ : compactlySupportedForms.extendByZero hTS (l + 1) θ =
+      compactlySupportedForms.mextDerivₗ I S l a) :
+    integralTopForm (o.restrict W) (RoughForm.wedge σ.1 (RoughForm.extendByZero W a.1.1)) =
+      -((-1 : ℝ) ^ k * integralTopForm ((o.reindex (finCongr (add_right_comm k 1 l))).restrict T)
+        (RoughForm.wedge (k := k) (l := l + 1)
+          (SmoothForm.mpullback (Opens.inclusion hTS) (contMDiff_inclusion hTS) α).1 θ.1.1)) := by
+  -- Integration by parts on `S` needs `S` to be σ-compact, like every open subset of `M`.
+  have : LocallyCompactSpace H := I.locallyCompactSpace
+  have : SecondCountableTopology H := I.secondCountableTopology
+  have : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact H M
+  have : LocallyCompactSpace S := ChartedSpace.locallyCompactSpace H S
+  rw [integralTopForm_wedge_extendByZero o hSW σ a.2, hσ, ← SmoothForm.coe_wedge,
+    ← integralTopForm_restrict_reindex_finCongr o (add_right_comm k 1 l) S,
+    integralTopForm_cast_wedge_mextDerivₗ _ α a.2]
+  have hda : mextDerivₗ I l a.1 = (compactlySupportedForms.extendByZero hTS (l + 1) θ).1 := by
+    rw [hθ, compactlySupportedForms.coe_mextDerivₗ]
+  rw [hda, SmoothForm.coe_wedge, compactlySupportedForms.coe_extendByZero]
+  congr 2
+  exact integralTopForm_wedge_extendByZero (k := k) (l := l + 1) _ hTS α θ.2
+
+omit [BoundarylessManifold I M] [T2Space M] [SigmaCompactSpace M] in
+/-- Wedging with a fixed compactly supported form and integrating is additive in the other form:
+the form of subtraction. -/
+private theorem integralTopForm_wedge_sub_left (o : Manifold.Orientation I M (Fin (k + l)))
+    (A B : SmoothForm I M ℝ k) {θ : SmoothForm I M ℝ l} (hθ : θ ∈ compactlySupportedForms I M l) :
+    integralTopForm o (RoughForm.wedge (A - B).1 θ.1) =
+      integralTopForm o (RoughForm.wedge A.1 θ.1) -
+        integralTopForm o (RoughForm.wedge B.1 θ.1) := by
+  simp only [← SmoothForm.coe_wedge, map_sub, LinearMap.sub_apply]
+  exact integralTopForm_sub_of_mem o (SmoothForm.wedge_mem_compactlySupportedForms _ hθ)
+    (SmoothForm.wedge_mem_compactlySupportedForms _ hθ)
+
+/-- The computation of `⟨δ x, y⟩` on representatives: with `σ` restricting to `dα` on `U` and to
+`dβ` on `V`, and `θ` extending by zero to `da` on `U` and to `-db` on `V`,
+`∫ σ ∧ (ext a + ext b) = -(-1)^k (∫ α ∧ θ - ∫ β ∧ θ)`, the last two integrals over `U ⊓ V`. -/
+private theorem integralTopForm_wedge_add_extendByZero
+    (o : Manifold.Orientation I M (Fin (k + 1 + l))) {U V : Opens M}
+    (σ : SmoothForm I (U ⊔ V : Opens M) ℝ (k + 1)) (α : SmoothForm I U ℝ k)
+    (β : SmoothForm I V ℝ k)
+    (hσU : SmoothForm.mpullback (Opens.inclusion le_sup_left) (contMDiff_inclusion _) σ =
+      mextDerivₗ I k α)
+    (hσV : SmoothForm.mpullback (Opens.inclusion le_sup_right) (contMDiff_inclusion _) σ =
+      mextDerivₗ I k β)
+    (a : compactlySupportedForms I U l) (b : compactlySupportedForms I V l)
+    (θ : compactlySupportedForms I (U ⊓ V : Opens M) (l + 1))
+    (hθU : compactlySupportedForms.extendByZero (inf_le_left : U ⊓ V ≤ U) (l + 1) θ =
+      compactlySupportedForms.mextDerivₗ I U l a)
+    (hθV : compactlySupportedForms.extendByZero (inf_le_right : U ⊓ V ≤ V) (l + 1) θ =
+      -compactlySupportedForms.mextDerivₗ I V l b) :
+    integralTopForm (o.restrict (U ⊔ V)) (RoughForm.wedge σ.1
+        (compactlySupportedForms.extendByZero (le_sup_left : U ≤ U ⊔ V) l a +
+          compactlySupportedForms.extendByZero (le_sup_right : V ≤ U ⊔ V) l b).1.1) =
+      -((-1 : ℝ) ^ k *
+        (integralTopForm ((o.reindex (finCongr (add_right_comm k 1 l))).restrict (U ⊓ V))
+            (RoughForm.wedge (k := k) (l := l + 1)
+              (SmoothForm.mpullback (Opens.inclusion inf_le_left) (contMDiff_inclusion _) α).1
+              θ.1.1) -
+          integralTopForm ((o.reindex (finCongr (add_right_comm k 1 l))).restrict (U ⊓ V))
+            (RoughForm.wedge (k := k) (l := l + 1)
+              (SmoothForm.mpullback (Opens.inclusion inf_le_right) (contMDiff_inclusion _) β).1
+              θ.1.1))) := by
+  -- `θ` is also the form extending by zero to `d(-b)` on `V`.
+  have hθV' : compactlySupportedForms.extendByZero (inf_le_right : U ⊓ V ≤ V) (l + 1) θ =
+      compactlySupportedForms.mextDerivₗ I V l ((-1 : ℝ) • b) := by
+    rw [hθV]
+    ext1
+    simp only [Submodule.coe_neg, map_smul, Submodule.coe_smul]
+    exact (neg_one_smul ℝ _).symm
+  have hV := integralTopForm_wedge_extendByZero_eq_neg o le_sup_right inf_le_right σ β hσV
+    ((-1 : ℝ) • b) θ hθV'
+  rw [Submodule.coe_smul, Submodule.coe_smul, RoughForm.extendByZero_smul,
+    RoughForm.wedge_smul_right, integralTopForm_smul] at hV
+  -- Split `∫ σ ∧ (ext a + ext b) = ∫ σ ∧ ext a + ∫ σ ∧ ext b` and integrate each term by parts.
+  rw [← SmoothForm.coe_wedge, Submodule.coe_add, map_add, integralTopForm_add_of_mem _
+    (SmoothForm.wedge_mem_compactlySupportedForms _ (Submodule.coe_mem _))
+    (SmoothForm.wedge_mem_compactlySupportedForms _ (Submodule.coe_mem _)),
+    SmoothForm.coe_wedge, SmoothForm.coe_wedge, compactlySupportedForms.coe_extendByZero,
+    compactlySupportedForms.coe_extendByZero,
+    integralTopForm_wedge_extendByZero_eq_neg o le_sup_left inf_le_left σ α hσU a θ hθU]
+  linarith
+
+/-- **The Poincaré pairing intertwines the Mayer–Vietoris connecting maps.** For open subsets `U`
+and `V` of an oriented boundaryless manifold of dimension `k + 1 + l`, a de Rham class `x` on
+`U ⊓ V` and a compactly supported class `y` on `U ⊔ V`,
+`⟨δ x, y⟩_{U ⊔ V} = (-1)^(k+1) ⟨x, δ_c y⟩_{U ⊓ V}`, where `δ` and `δ_c` are the connecting maps of
+the Mayer–Vietoris sequences of de Rham cohomology and of compactly supported cohomology, and the
+orientation of `M` is reindexed along `k + 1 + l = k + l + 1` for the second pairing. -/
+theorem poincarePairing_mayerVietorisδ (o : Manifold.Orientation I M (Fin (k + 1 + l)))
+    {U V : Opens M} [SigmaCompactSpace (U ⊓ V : Opens M)] [SigmaCompactSpace (U ⊔ V : Opens M)]
+    (x : deRhamCohomology I (U ⊓ V : Opens M) k)
+    (y : compactlySupportedDeRhamCohomology I (U ⊔ V : Opens M) l) :
+    poincarePairing I (U ⊔ V : Opens M) (o.restrict (U ⊔ V))
+        (deRhamCohomology.mayerVietorisδ I U V k x) y =
+      (-1 : ℝ) ^ (k + 1) * poincarePairing (k := k) (l := l + 1) I (U ⊓ V : Opens M)
+        ((o.reindex (finCongr (add_right_comm k 1 l))).restrict (U ⊓ V)) x
+        (compactlySupportedDeRhamCohomology.mayerVietorisδ I U V l y) := by
+  obtain ⟨φ, rfl⟩ := deRhamCohomology.mk_surjective I k x
+  obtain ⟨τ, rfl⟩ := compactlySupportedDeRhamCohomology.mk_surjective I l y
+  -- Represent `δ [φ]` by the form `σ` equal to `dα` on `U` and to `dβ` on `V`, where
+  -- `φ = α|_{U ⊓ V} - β|_{U ⊓ V}`.
+  obtain ⟨⟨α, β⟩, hαβ⟩ := SmoothForm.surjective_mayerVietoris (I := I) (F := ℝ) (k := k) U V φ.1
+  have hφ : SmoothForm.mpullback (Opens.inclusion inf_le_left) (contMDiff_inclusion _) α -
+      SmoothForm.mpullback (Opens.inclusion inf_le_right) (contMDiff_inclusion _) β = φ.1 := by
+    simpa [sub_eq_add_neg] using hαβ
+  obtain ⟨σ, hσU, hσV⟩ := exists_closedForms_mpullback_eq_mextDerivₗ α β (hφ ▸ φ.2)
+  -- Represent `δ_c [τ]` by the form `θ` on `U ⊓ V` extending by zero to `da` on `U` and to `-db`
+  -- on `V`, where `τ = ext a + ext b`.
+  obtain ⟨⟨a, b⟩, hab⟩ := compactlySupportedForms.surjective_coprod_extendByZero (I := I) (k := l)
+    U V ⟨τ.1, compactlySupportedClosedForms_le_compactlySupportedForms I l τ.2⟩
+  rw [LinearMap.coprod_apply] at hab
+  obtain ⟨θ, hθU, hθV⟩ := compactlySupportedForms.exists_extendByZero_eq_mextDerivₗ a b
+    (by rw [hab]; exact compactlySupportedClosedForms_le_closedForms I l τ.2)
+  set θ' : compactlySupportedForms I (U ⊓ V : Opens M) (l + 1) :=
+    ⟨θ.1, compactlySupportedClosedForms_le_compactlySupportedForms I (l + 1) θ.2⟩
+  rw [deRhamCohomology.mayerVietorisδ_mk U V φ α β hφ σ hσU hσV,
+    compactlySupportedDeRhamCohomology.mayerVietorisδ_mk U V τ a b hab θ hθU hθV,
+    poincarePairing_mk, poincarePairing_mk]
+  rw [← congrArg (fun z : compactlySupportedForms I (U ⊔ V : Opens M) l ↦ z.1.1) hab,
+    integralTopForm_wedge_add_extendByZero o σ.1 α β hσU hσV a b θ' hθU hθV, ← hφ,
+    integralTopForm_wedge_sub_left (k := k) (l := l + 1) _ _ _ θ'.2, pow_succ]
+  ring
+
+end Pairing
+
+end TauCeti
