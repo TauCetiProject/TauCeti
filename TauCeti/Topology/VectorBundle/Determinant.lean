@@ -126,7 +126,7 @@ variable (F) in
 /-- The fixed identification of the determinant line of the model fibre with `𝕜`, given by the
 basis `Module.finBasis 𝕜 F`. -/
 abbrev modelCoord : detLine 𝕜 F ≃ₗ[𝕜] 𝕜 :=
-  (Module.finBasis 𝕜 F).detLineEquiv
+  (Module.finBasis 𝕜 F).exteriorPowerTopEquiv
 
 /-- The coordinate on the fibre of `det E` over `x` induced by a linear trivialization `e` of
 `E`: the isomorphism `⋀ʳ (E x) ≃ ⋀ʳ F` induced by `e` on the fibre, followed by the fixed
@@ -147,7 +147,7 @@ theorem chartCoord_ιMulti (e : Trivialization F (π F E)) [e.IsLinear 𝕜] (hx
     chartCoord e hx ((linearEquiv 𝕜 F E x).symm (exteriorPower.ιMulti 𝕜 _ v)) =
       (Module.finBasis 𝕜 F).det (fun i ↦ (e ⟨x, v i⟩).2) := by
   simp only [chartCoord_def, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply,
-    LinearEquiv.exteriorPower_apply_ιMulti, Module.Basis.detLineEquiv_ιMulti]
+    LinearEquiv.exteriorPower_apply_ιMulti, Module.Basis.exteriorPowerTopEquiv_apply_ιMulti]
   rfl
 
 /-- **The transitions of the determinant line.** Passing from the chart coordinate of `e` to that
@@ -163,7 +163,7 @@ theorem chartCoord_chartCoord_symm (e e' : Trivialization F (π F E)) [e.IsLinea
     rfl
   simp only [chartCoord_def, LinearEquiv.trans_apply, LinearEquiv.symm_trans_apply,
     LinearEquiv.apply_symm_apply, LinearEquiv.exteriorPower_symm]
-  rw [h, Module.Basis.detLineEquiv_exteriorPower, LinearEquiv.apply_symm_apply]
+  rw [h, Module.Basis.exteriorPowerTopEquiv_exteriorPower, LinearEquiv.apply_symm_apply]
   rfl
 
 /-- A chart coordinate is a homeomorphism onto `𝕜`. -/
@@ -488,7 +488,7 @@ private theorem continuousAt_chartCoord_congrEquiv (e : ∀ x, E x ≃L[𝕜] E'
     simp only [LinearEquiv.trans_apply, LinearEquiv.exteriorPower_trans,
       LinearEquiv.exteriorPower_symm, linearEquiv_symm_apply]
     rfl
-  rw [key, Module.Basis.detLineEquiv_exteriorPower, hdet, LinearEquiv.apply_symm_apply]
+  rw [key, Module.Basis.exteriorPowerTopEquiv_exteriorPower, hdet, LinearEquiv.apply_symm_apply]
 
 /-- **Functoriality of the determinant line in bundle isomorphisms.** A continuous fibrewise
 linear isomorphism `e` between vector bundles with finite-dimensional model fibres induces a

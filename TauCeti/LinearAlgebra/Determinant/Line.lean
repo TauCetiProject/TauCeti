@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.Ray
-public import TauCeti.LinearAlgebra.ExteriorPower.Basic
+public import TauCeti.LinearAlgebra.ExteriorPower.Basis
 public import TauCeti.LinearAlgebra.ExteriorPower.Invertible
 public import TauCeti.LinearAlgebra.LinearMap.Ker
 public import TauCeti.LinearAlgebra.LinearMap.Range
@@ -56,8 +56,6 @@ the linear algebra itself is standard.
 * `TauCeti.detLine R V`: the top exterior power `⋀[R]^(finrank R V) V`.
 * `LinearEquiv.detLineCongr`: the isomorphism of determinant lines induced by `V ≃ₗ[R] W`.
 * `TauCeti.detLineEquivOfFinrankEqZero`: the determinant line of a rank-zero module is `R`.
-* `Module.Basis.detLineEquiv`: the identification of the determinant line of a module with the
-  scalars given by a basis, `v₁ ∧ ⋯ ∧ vₙ ↦ b.det v`.
 * `LinearMap.detLine f`: the determinant line `det (ker f) ⊗ (det (N ⧸ range f))^*` of `f`.
 * `LinearMap.detLineEquivOfBijective`: the determinant line of a bijective map is `R`.
 * `LinearMap.detLineCongrKerCoker`: the isomorphism of determinant lines induced by isomorphisms
@@ -92,6 +90,8 @@ the linear algebra itself is standard.
 * `LinearMap.detLineCongrKerCoker_refl`, `LinearMap.detLineCongrKerCoker_trans` and
   `LinearMap.detLineCongrKerCoker_symm`: the isomorphisms induced on kernels and cokernels are
   functorial.
+* `Module.Basis.exteriorPowerTopEquiv_exteriorPower`: an automorphism acts on the top exterior
+  power by its determinant in the coordinate given by any finite basis.
 * `LinearMap.detLineEquivOfBijective_detLineCongrKerCoker`: for bijective maps, the isomorphism
   induced by isomorphisms of kernels and cokernels respects the trivializations.
 
@@ -238,44 +238,15 @@ open TauCeti
 
 variable {R : Type*} [CommRing R] {V : Type*} [AddCommGroup V] [Module R V]
 
-/-- A basis `b` of `V` indexed by `Fin (finrank R V)` identifies the determinant line of `V`
-with `R`, sending `v₁ ∧ ⋯ ∧ vₙ` to the determinant `b.det v` of the family `v` in the basis `b`
-(`Module.Basis.detLineEquiv_ιMulti`). It sends `b₁ ∧ ⋯ ∧ bₙ` to `1`. -/
-def detLineEquiv (b : Basis (Fin (finrank R V)) R V) : detLine R V ≃ₗ[R] R :=
-  LinearEquiv.ofLinearMap (exteriorPower.alternatingMapLinearEquiv b.det)
-    (LinearMap.toSpanSingleton R _ (exteriorPower.ιMulti R _ b))
-    (LinearMap.ext_ring <| by
-      simp [exteriorPower.alternatingMapLinearEquiv_apply_ιMulti, b.det_self])
-    (exteriorPower.linearMap_ext <| AlternatingMap.ext fun v ↦ by
-      rw [LinearMap.compAlternatingMap_apply, LinearMap.comp_apply,
-        exteriorPower.alternatingMapLinearEquiv_apply_ιMulti, LinearMap.toSpanSingleton_apply,
-        LinearMap.compAlternatingMap_apply, LinearMap.id_apply]
-      -- Every top-degree alternating map, here `ιMulti`, is `b.det` times its value on `b`.
-      exact (DFunLike.congr_fun (AlternatingMap.eq_basis_det_smulRight b
-        (exteriorPower.ιMulti R (finrank R V))) v).symm)
-
-@[simp]
-theorem detLineEquiv_ιMulti (b : Basis (Fin (finrank R V)) R V) (v : Fin (finrank R V) → V) :
-    b.detLineEquiv (exteriorPower.ιMulti R _ v) = b.det v :=
-  exteriorPower.alternatingMapLinearEquiv_apply_ιMulti _ _
-
-/-- The inverse of `Module.Basis.detLineEquiv` sends `1` to `b₁ ∧ ⋯ ∧ bₙ`. -/
-@[simp]
-theorem detLineEquiv_symm_one (b : Basis (Fin (finrank R V)) R V) :
-    b.detLineEquiv.symm 1 = exteriorPower.ιMulti R _ b := by
-  rw [LinearEquiv.symm_apply_eq, detLineEquiv_ιMulti, b.det_self]
-
-/-- In the coordinate `Module.Basis.detLineEquiv`, an automorphism `e` of `V` acts on the
+/-- In the coordinate `Module.Basis.exteriorPowerTopEquiv`, an automorphism `e` of `V` acts on the
 determinant line by multiplication by its determinant. -/
-theorem detLineEquiv_exteriorPower (b : Basis (Fin (finrank R V)) R V) (e : V ≃ₗ[R] V)
-    (x : detLine R V) :
-    b.detLineEquiv (e.exteriorPower (finrank R V) x) =
-      LinearMap.det (e : V →ₗ[R] V) * b.detLineEquiv x := by
-  have := Module.Free.of_basis b
-  have h : e.exteriorPower (finrank R V) x = LinearMap.det (e : V →ₗ[R] V) • x := by
-    rw [← LinearEquiv.coe_toLinearMap (e.exteriorPower _), LinearEquiv.exteriorPower_toLinearMap,
-      LinearMap.map_exteriorPower_finrank_eq_det_smul, LinearMap.smul_apply, LinearMap.id_apply]
-  rw [h, map_smul, smul_eq_mul]
+theorem exteriorPowerTopEquiv_exteriorPower {n : ℕ} (b : Basis (Fin n) R V) (e : V ≃ₗ[R] V)
+    (x : ⋀[R]^n V) :
+    b.exteriorPowerTopEquiv (e.exteriorPower n x) =
+      LinearMap.det (e : V →ₗ[R] V) * b.exteriorPowerTopEquiv x := by
+  rw [← LinearEquiv.coe_toLinearMap (e.exteriorPower n), LinearEquiv.exteriorPower_toLinearMap,
+    b.map_exteriorPower_top_eq_det_smul, LinearMap.smul_apply, LinearMap.id_apply, map_smul,
+    smul_eq_mul]
 
 end Module.Basis
 
