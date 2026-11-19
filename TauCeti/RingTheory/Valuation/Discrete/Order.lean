@@ -145,9 +145,8 @@ theorem ord_mul (v : _root_.Valuation F ℤᵐ⁰) {f g : F} (hf : v f ≠ 0) (h
 /-- The order is additive on products of units, which lie outside the valuation support. -/
 @[simp]
 theorem ord_units_mul (v : _root_.Valuation F ℤᵐ⁰) (f g : Fˣ) :
-    ord v ((f : F) * (g : F)) = ord v (f : F) + ord v (g : F) := by
-  exact ord_mul v (Units.isUnit (Units.map v.toMonoidHom f)).ne_zero
-    (Units.isUnit (Units.map v.toMonoidHom g)).ne_zero
+    ord v ((f : F) * (g : F)) = ord v (f : F) + ord v (g : F) :=
+  ord_mul v (f.isUnit.map v.toMonoidHom).ne_zero (g.isUnit.map v.toMonoidHom).ne_zero
 
 private theorem exp_max (a b : ℤ) :
     max (WithZero.exp a) (WithZero.exp b) = WithZero.exp (max a b) := by

@@ -433,11 +433,14 @@ theorem isUnit_iff_ord_eq_zero {x : P.integers} (hx : (x : F) ≠ 0) :
 `P`, every nonzero `f : F` is `t ^ (ord_P f)` times a unit of `𝒪_P`. -/
 theorem exists_eq_zpow_mul_unit {t : F} (ht : P.valuation.IsUniformizer t) {f : F} (hf : f ≠ 0) :
     ∃ u : P.integersˣ, f = t ^ P.ord f * (u : F) := by
-  have ht1 := (Valuation.isUniformizer_iff_ord_eq_one_of_surjective
-    P.valuation P.valuation_surjective).mp ht
+  have ht1 : P.ord t = 1 := P.isUniformizer_iff_ord_eq_one.mp ht
   have ht0 : t ≠ 0 := fun h ↦ by simp [h] at ht1
-  exact ⟨P.valuation.unitPartUnits (Units.mk0 t ht0) ht1 (Units.mk0 f hf),
-    (P.valuation.unitPartUnits_eq_iff (Units.mk0 t ht0) ht1 (Units.mk0 f hf) _).mp rfl⟩
+  have htv : P.valuation.ord ((Units.mk0 t ht0 : Fˣ) : F) = 1 := by
+    simpa only [Units.val_mk0, ord_valuation] using ht1
+  rw [P.integers_def]
+  refine ⟨P.valuation.unitPartUnits (Units.mk0 t ht0) htv (Units.mk0 f hf), ?_⟩
+  simpa only [ord_valuation, Units.val_mk0] using
+    (P.valuation.unitPartUnits_eq_iff (Units.mk0 t ht0) htv (Units.mk0 f hf) _).mp rfl
 
 end Discrete
 
