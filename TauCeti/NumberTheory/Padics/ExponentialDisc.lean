@@ -137,14 +137,6 @@ private theorem mem_eball_radius_expSeries {x : L} (hx : ‖x‖ < amiceRadius p
   rw [edist_zero_right, ← ofReal_norm]
   exact (ENNReal.ofReal_lt_ofReal_iff (amiceRadius_pos 0)).mpr hx
 
-/-- The open disc `‖x‖ < r₀` is closed under integer multiples. -/
-private theorem norm_zsmul_lt_amiceRadius (n : ℤ) {x : L} (hx : ‖x‖ < amiceRadius p 0) :
-    ‖n • x‖ < amiceRadius p 0 := by
-  have := IsUltrametricDist.of_normedAlgebra ℚ_[p] (L := L)
-  rw [zsmul_eq_mul, norm_mul]
-  exact (mul_le_of_le_one_left (norm_nonneg x) (IsUltrametricDist.norm_intCast_le_one L n)).trans_lt
-    hx
-
 variable [CompleteSpace L]
 
 /-- **The exponential as a series on its disc.** For `‖x‖ < r₀`, `exp x = ∑ xⁿ / n!`. -/
@@ -184,10 +176,11 @@ theorem exp_nsmul_of_norm_lt (n : ℕ) {x : L} (hx : ‖x‖ < amiceRadius p 0) 
 /-- For `‖x‖ < r₀` and every integer `n`, `exp (n • x) = exp x ^ n`. -/
 theorem exp_zsmul_of_norm_lt (n : ℤ) {x : L} (hx : ‖x‖ < amiceRadius p 0) :
     exp (n • x) = exp x ^ n := by
+  have := IsUltrametricDist.of_normedAlgebra ℚ_[p] (L := L)
   obtain ⟨n, rfl | rfl⟩ := n.eq_nat_or_neg
   · simpa using exp_nsmul_of_norm_lt n hx
   · rw [neg_smul, natCast_zsmul, exp_neg_of_mem_ball ℚ_[p]
-      (mem_eball_radius_expSeries (by simpa using norm_zsmul_lt_amiceRadius n hx)),
+      (mem_eball_radius_expSeries ((IsUltrametricDist.norm_nsmul_le x n).trans_lt hx)),
       exp_nsmul_of_norm_lt n hx, zpow_neg, zpow_natCast]
 
 omit [CompleteSpace L] in
