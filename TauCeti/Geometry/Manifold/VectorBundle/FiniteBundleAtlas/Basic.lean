@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.Topology.ShrinkingLemma
 public import Mathlib.Topology.VectorBundle.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Finite atlases of bundle charts
@@ -61,7 +62,8 @@ closed upper half-plane are read in `ℂ` in
 * `TauCeti.FiniteBundleAtlas.exists_isOpen_closure_subset_dom`: the chart domains of a finite
   bundle atlas of a Hausdorff manifold have a shrinking.
 * `TauCeti.FiniteBundleAtlas.coord_eq_coordChange`: coordinates in two charts differ by the
-  coordinate change of the bundle.
+  coordinate change of the bundle; `TauCeti.FiniteBundleAtlas.coord_eq_coordChangeL_coord` is the
+  same for charts of two different atlases.
 * `TauCeti.FiniteBundleAtlas.exists_continuous_coord_eqOn`: functions continuous on the chart
   images and related by these coordinate changes are the chart expressions of a continuous section.
 * `TauCeti.FiniteBundleAtlas.differentiableOn_transition`: chart transitions are differentiable.
@@ -276,6 +278,15 @@ theorem symm_mem_dom {i : Fin A.n} {y : E} (hy : y ∈ A.image i) : (A.chart i).
   obtain ⟨x, hx, rfl⟩ := hy
   rwa [(A.chart i).left_inv (A.dom_subset_chart_source i hx)]
 
+/-- On the chart image `A.image i`, two sections have the same reading in chart `i` exactly when
+they agree at the corresponding point of `M`: the trivialization is injective on its source. -/
+theorem coord_eq_coord_iff {i : Fin A.n} {s t : ∀ x, V x} {y : E} (hy : y ∈ A.image i) :
+    A.coord i s y = A.coord i t y ↔ s ((A.chart i).symm y) = t ((A.chart i).symm y) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [coord_def, coord_def, h]⟩
+  obtain ⟨x, hx, rfl⟩ := hy
+  rw [(A.chart i).left_inv (A.dom_subset_chart_source i hx)]
+  exact A.eq_of_coord_chart_eq hx h
+
 /-- The section reading as the constant `v` in the trivialization of chart `i` reads as `v` on the
 image of chart `i`. -/
 theorem coord_triv_symm [∀ x, Zero (V x)] {i : Fin A.n} (v : F) {z : E} (hz : z ∈ A.image i) :
@@ -454,17 +465,27 @@ theorem coord_smul (i : Fin A.n) (c : ℝ) (s : ∀ x, V x) {y : E} (hy : y ∈ 
 theorem coord_zero (i : Fin A.n) {y : E} (hy : y ∈ A.image i) : A.coord i (0 : ∀ x, V x) y = 0 := by
   simpa using A.coord_smul i 0 0 hy
 
+/-- On the overlap of the domains of chart `i` of `A` and chart `i'` of another atlas `A'`, the
+reading of a section in chart `i'` of `A'` is the coordinate change of the bundle applied to its
+reading in chart `i` of `A`. -/
+theorem coord_eq_coordChangeL_coord (A' : FiniteBundleAtlas E M F V) {i : Fin A.n}
+    {i' : Fin A'.n} (s : ∀ x, V x) {y : E} (hy : y ∈ A'.image i')
+    (hi : (A'.chart i').symm y ∈ A.dom i) :
+    A'.coord i' s y = (A.triv i).coordChangeL ℝ (A'.triv i') ((A'.chart i').symm y)
+      (A.coord i s (A.chart i ((A'.chart i').symm y))) := by
+  rw [A.coord_chart s hi, A'.coord_def]
+  exact (Trivialization.coordChangeL_apply_snd ℝ (A.triv i) (A'.triv i') (p := ⟨_, s _⟩)
+    (A.dom_subset_baseSet i hi) (A'.dom_subset_baseSet i' (A'.symm_mem_dom hy))).symm
+
 /-- On the overlap of two charts, the coordinates of a section in chart `i'` are the coordinate
 change applied to its coordinates in chart `i` at the transition point. -/
 theorem coord_eq_coordChange {i i' : Fin A.n} (s : ∀ x, V x) {y : E} (hy : y ∈ A.overlap i i') :
     A.coord i' s y = (A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y)
       (A.coord i s (A.transition i i' y)) := by
+  refine A.coord_eq_coordChangeL_coord A s (A.overlap_subset_image i i' hy) ?_
   obtain ⟨x, hx, rfl⟩ := hy
-  rw [transition_chart A hx.2, coord_chart A s hx.1, coord_chart A s hx.2,
-    (A.chart i').left_inv (A.dom_subset_chart_source i' hx.2),
-    Trivialization.coordChangeL_apply _ _
-      ⟨A.dom_subset_baseSet i hx.1, A.dom_subset_baseSet i' hx.2⟩,
-    (A.triv i).symm_apply_apply_mk (A.dom_subset_baseSet i hx.1)]
+  rw [(A.chart i').left_inv (A.dom_subset_chart_source i' hx.2)]
+  exact hx.1
 
 /-- A function continuous on the image of chart `i`, transported to chart `i'` by the chart
 transition and the coordinate change of the bundle, is continuous on the overlap. -/
