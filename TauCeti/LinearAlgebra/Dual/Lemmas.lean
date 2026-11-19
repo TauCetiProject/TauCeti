@@ -21,7 +21,8 @@ algebra is finite-dimensional is itself finite-dimensional.
 Over a field, a linearly independent family of vectors has a biorthogonal family of functionals,
 and on a finite-dimensional space a linearly independent family of functionals has a biorthogonal
 family of vectors. Linearly independent functionals, as many as the dimension, span the dual space
-and so separate points.
+and so separate points. Conversely, a separating family of functionals on a finite-dimensional
+space contains such a family, which gives coordinates on the space.
 
 ## Main results
 
@@ -65,6 +66,8 @@ and so separate points.
 * `LinearIndependent.exists_sum_smul_eq_proj`, `LinearIndependent.pi_bijective`,
   `LinearIndependent.det_pi_ne_zero`: `#ι` linearly independent forms on `Kⁱ` express every
   coordinate projection and assemble into a bijective endomorphism of nonzero determinant.
+* `Module.Dual.exists_bijective_pi_of_iInf_ker_eq_bot`: on a finite-dimensional space, a family
+  of functionals with no common zero but `0` contains `finrank K V` members that form coordinates.
 * `Matrix.of_apply_eq_mul_transpose_toMatrix'_pi` and `Matrix.det_of_apply_eq_det_mul_det_pi`:
   evaluating linear forms `l` on `ι → R` against vectors `x` multiplies `Matrix.of x` on the right
   by `(LinearMap.toMatrix' (LinearMap.pi l))ᵀ`, so for `#ι` forms and `#ι` vectors its determinant
@@ -422,6 +425,30 @@ theorem det_pi_ne_zero {K ι : Type*} [Field K] [Finite ι]
     (Module.End.isUnit_iff (LinearMap.pi l) |>.mpr hl.pi_bijective)).ne_zero
 
 end LinearIndependent
+
+namespace Module.Dual
+
+variable {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V]
+
+/-- **Coordinates from separating functionals.** On a finite-dimensional space, a family of
+functionals with no common zero but `0` contains `finrank K V` members that assemble into a
+linear isomorphism `V ≃ K^(finrank K V)`. -/
+theorem exists_bijective_pi_of_iInf_ker_eq_bot [FiniteDimensional K V] (L : ι → Dual K V)
+    (h : ⨅ i, LinearMap.ker (L i) = ⊥) :
+    ∃ c : Fin (finrank K V) → ι, Function.Bijective (LinearMap.pi (L ∘ c)) := by
+  have hspan : Submodule.span K (Set.range L) = ⊤ := Submodule.eq_top_iff'.mpr fun f ↦
+    FiniteDimensional.mem_span_of_iInf_ker_le_ker (by simp [h])
+  obtain ⟨κ, a, -, hspan', hli⟩ := exists_linearIndependent' K L
+  rw [hspan] at hspan'
+  let e : κ ≃ Fin (finrank K V) := (Basis.mk hli hspan'.ge).indexEquiv (finBasis K V).dualBasis
+  refine ⟨a ∘ e.symm, ?_⟩
+  have hinj : Function.Injective (LinearMap.pi (L ∘ a ∘ e.symm)) :=
+    (injective_iff_map_eq_zero _).mpr fun x hx ↦
+      (hli.comp _ e.symm.injective).eq_zero_of_forall_apply_eq_zero (by simp) fun i ↦
+        congrFun hx i
+  exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (by simp)).mp hinj⟩
+
+end Module.Dual
 
 namespace Matrix
 
