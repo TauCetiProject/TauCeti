@@ -15,10 +15,11 @@ For solutions `f`, `g` of the hypergeometric equation (DLMF 15.10.1)
 
 `z (1 − z) w′′ + (c − (a + b + 1) z) w′ − a b w = 0`
 
-on an open set avoiding `0` and `1`, the Wronskian `𝒲{f, g} = f g′ − f′ g` satisfies Abel's
-identity `𝒲′ = −((c − (a + b + 1) z)/(z (1 − z))) 𝒲`. Consequently, on a connected open subset of
-`slitPlane ∩ {1 − z ∈ slitPlane}` the Wronskian is a constant multiple of
-`z^{−c} (1 − z)^{c−a−b−1}`, and two solutions with nowhere vanishing Wronskian span all solutions.
+on an open set, the Wronskian `𝒲{f, g} = f g′ − f′ g` satisfies Abel's identity
+`𝒲′ = −((c − (a + b + 1) z)/(z (1 − z))) 𝒲` at every point other than `0` and `1`. Consequently,
+on a connected open subset of `slitPlane ∩ {1 − z ∈ slitPlane}` the Wronskian is a constant
+multiple of `z^{−c} (1 − z)^{c−a−b−1}`, and on any connected open set two solutions with nowhere
+vanishing Wronskian span all solutions.
 
 The statements are about arbitrary solutions, so they do not need a definition of the Gauss
 function. The Wronskian is written out as `f z * deriv g z - deriv f z * g z`.
@@ -119,10 +120,10 @@ theorem exists_wronskian_eq_mul_cpow_of_hypergeometricEquation {f g : ℂ → �
   field_simp
 
 /-- **The span criterion** for the hypergeometric equation: if `f₁` and `f₂` solve 15.10.1 on a
-connected open set `U` avoiding `0` and `1`, and `𝒲{f₁, f₂}` has no zero on `U`, then every
-solution `w` on `U` is `A f₁ + B f₂` with constants `A`, `B`. -/
+connected open set `U`, and `𝒲{f₁, f₂}` has no zero on `U`, then every solution `w` on `U` is
+`A f₁ + B f₂` with constants `A`, `B`. The set `U` may contain the singular points `0` and `1`. -/
 theorem exists_eq_add_of_hypergeometricEquation {f₁ f₂ w : ℂ → ℂ} (hU : IsOpen U)
-    (hUc : IsPreconnected U) (hU₀₁ : ∀ z ∈ U, z ≠ 0 ∧ z ≠ 1)
+    (hUc : IsPreconnected U)
     (hf₁ : DifferentiableOn ℂ f₁ U) (hf₂ : DifferentiableOn ℂ f₂ U)
     (hw : DifferentiableOn ℂ w U)
     (hf₁' : ∀ z ∈ U, z * (1 - z) * deriv (deriv f₁) z + (c - (a + b + 1) * z) * deriv f₁ z -
@@ -141,16 +142,32 @@ theorem exists_eq_add_of_hypergeometricEquation {f₁ f₂ w : ℂ → ℂ} (hU 
         a * b * g₂ z = 0) :
       ∃ K : ℂ, ∀ z ∈ U, (g₁ z * deriv g₂ z - deriv g₁ z * g₂ z) /
         (f₁ z * deriv f₂ z - deriv f₁ z * f₂ z) = K := by
-    have hd (z : ℂ) (hz : z ∈ U) : HasDerivAt (fun ζ => (g₁ ζ * deriv g₂ ζ - deriv g₁ ζ * g₂ ζ) /
-        (f₁ ζ * deriv f₂ ζ - deriv f₁ ζ * f₂ ζ)) 0 z := by
-      have h₁ := hasDerivAt_wronskian_of_hypergeometricEquation hU hg₁ hg₂ hg₁' hg₂' hz
-        (hU₀₁ z hz).1 (hU₀₁ z hz).2
-      have h₂ := hasDerivAt_wronskian_of_hypergeometricEquation hU hf₁ hf₂ hf₁' hf₂' hz
-        (hU₀₁ z hz).1 (hU₀₁ z hz).2
-      refine (h₁.div h₂ (hW z hz)).congr_deriv ?_
+    set R : ℂ → ℂ := fun ζ => (g₁ ζ * deriv g₂ ζ - deriv g₁ ζ * g₂ ζ) /
+      (f₁ ζ * deriv f₂ ζ - deriv f₁ ζ * f₂ ζ)
+    have hRd : DifferentiableOn ℂ R U :=
+      ((hg₁.mul (hg₂.deriv hU)).sub ((hg₁.deriv hU).mul hg₂)).div
+        ((hf₁.mul (hf₂.deriv hU)).sub ((hf₁.deriv hU).mul hf₂)) hW
+    -- Off `0` and `1`, Abel's identity for both Wronskians makes the derivative of `R` vanish.
+    have hd (z : ℂ) (hz : z ∈ U) (hz₀ : z ≠ 0) (hz₁ : z ≠ 1) : deriv R z = 0 := by
+      have h₁ := hasDerivAt_wronskian_of_hypergeometricEquation hU hg₁ hg₂ hg₁' hg₂' hz hz₀ hz₁
+      have h₂ := hasDerivAt_wronskian_of_hypergeometricEquation hU hf₁ hf₂ hf₁' hf₂' hz hz₀ hz₁
+      refine ((h₁.div h₂ (hW z hz)).congr_deriv ?_).deriv
       ring
-    exact hU.exists_is_const_of_deriv_eq_zero hUc
-      (fun z hz => (hd z hz).differentiableAt.differentiableWithinAt) fun z hz => (hd z hz).deriv
+    -- At `0` and `1` it vanishes too, since `deriv R` is continuous on `U` and vanishes on a
+    -- punctured neighbourhood of each point of `U`.
+    have hd' (z : ℂ) (hz : z ∈ U) : deriv R z = 0 := by
+      have hne (w : ℂ) : ∀ᶠ ζ in 𝓝[≠] z, ζ ≠ w := by
+        rcases eq_or_ne z w with rfl | h
+        · exact self_mem_nhdsWithin
+        · exact eventually_ne_nhdsWithin h
+      have hev : ∀ᶠ ζ in 𝓝[≠] z, deriv R ζ = 0 := by
+        filter_upwards [nhdsWithin_le_nhds (hU.mem_nhds hz), hne 0, hne 1] with ζ hζ hζ₀ hζ₁
+        exact hd ζ hζ hζ₀ hζ₁
+      have hc : ContinuousAt (deriv R) z :=
+        ((hRd.deriv hU).continuousOn).continuousAt (hU.mem_nhds hz)
+      exact tendsto_nhds_unique (hc.tendsto.mono_left nhdsWithin_le_nhds)
+        (tendsto_const_nhds.congr' (hev.mono fun ζ h => h.symm))
+    exact hU.exists_is_const_of_deriv_eq_zero hUc hRd hd'
   obtain ⟨A, hA⟩ := hratio hw hf₂ hw' hf₂'
   obtain ⟨B, hB⟩ := hratio hf₁ hw hf₁' hw'
   refine ⟨A, B, fun z hz => ?_⟩
