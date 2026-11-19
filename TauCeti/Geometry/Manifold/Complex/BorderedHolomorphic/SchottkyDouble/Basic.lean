@@ -540,6 +540,20 @@ section ChartSides
 local notation "A" => (borderedInterior M : Set M)ᶜ
 local notation "D" => SchottkyDouble M
 
+/-- Folding a doubled-chart coordinate gives an interior point exactly off the real axis. -/
+private theorem chartAt_symm_fold_mem_borderedInterior_iff {p z : D}
+    (hz : z ∈ (chartAt ℂ p).source) :
+    (chartAt ClosedUpperHalfPlane (DoubleAlong.fold A p)).symm
+      (ClosedUpperHalfPlane.fold (chartAt ℂ p z)) ∈ borderedInterior M ↔
+        (chartAt ℂ p z).im ≠ 0 := by
+  let e := chartAt ClosedUpperHalfPlane (DoubleAlong.fold A p)
+  have ht : ClosedUpperHalfPlane.fold (chartAt ℂ p z) ∈ e.target := by
+    simpa only [chartAt_eq, doubleChart_target, mem_preimage] using
+      (chartAt ℂ p).map_source hz
+  rw [mem_borderedInterior_iff_im_pos
+    (IsManifold.chart_mem_maximalAtlas (DoubleAlong.fold A p)) (e.map_target ht),
+    e.right_inv ht, ClosedUpperHalfPlane.im_fold, abs_pos]
+
 /-- In a doubled chart, the first interior sheet consists exactly of positive imaginary
 coordinates. -/
 theorem mem_range_interiorInl_iff_im_chartAt_pos {p z : D}
@@ -553,17 +567,12 @@ theorem mem_range_interiorInl_iff_im_chartAt_pos {p z : D}
     simpa only [interiorInl_apply, chartAt_eq, doubleChart_source, mem_preimage,
       DoubleAlong.fold_inl] using hz
   intro hpos
+  have hi := (chartAt_symm_fold_mem_borderedInterior_iff hz).2 (ne_of_gt hpos)
+  rw [chartAt_eq] at hz hpos hi
   let e := chartAt ClosedUpperHalfPlane (DoubleAlong.fold A p)
   have he : e ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M :=
     IsManifold.chart_mem_maximalAtlas (DoubleAlong.fold A p)
-  rw [SchottkyDouble.chartAt_eq] at hz hpos
-  let c := SchottkyDouble.doubleChart e he
-  have ht : ClosedUpperHalfPlane.fold (c z) ∈ e.target := by
-    simpa only [c, SchottkyDouble.doubleChart_target, mem_preimage] using c.map_source hz
-  have hi : e.symm (ClosedUpperHalfPlane.fold (c z)) ∈ borderedInterior M := by
-    apply (mem_borderedInterior_iff_im_pos he (e.map_target ht)).2
-    rw [e.right_inv ht, ClosedUpperHalfPlane.coe_fold_of_im_nonneg hpos.le]
-    exact hpos
+  let c := doubleChart e he
   refine ⟨⟨e.symm (ClosedUpperHalfPlane.fold (c z)), hi⟩, ?_⟩
   rw [SchottkyDouble.interiorInl_apply]
   exact (SchottkyDouble.doubleChart_symm_apply_of_im_nonneg he hpos.le).symm.trans
@@ -585,29 +594,35 @@ theorem mem_range_interiorInr_iff_im_chartAt_neg {p z : D}
     exact (mem_borderedInterior_iff_im_pos
       (IsManifold.chart_mem_maximalAtlas (DoubleAlong.fold A p)) hu).1 u.property
   intro hneg
+  have hi := (chartAt_symm_fold_mem_borderedInterior_iff hz).2 (ne_of_lt hneg)
+  rw [chartAt_eq] at hz hneg hi
   let e := chartAt ClosedUpperHalfPlane (DoubleAlong.fold A p)
   have he : e ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M :=
     IsManifold.chart_mem_maximalAtlas (DoubleAlong.fold A p)
-  rw [SchottkyDouble.chartAt_eq] at hz hneg
-  let c := SchottkyDouble.doubleChart e he
-  have ht : ClosedUpperHalfPlane.fold (c z) ∈ e.target := by
-    simpa only [c, SchottkyDouble.doubleChart_target, mem_preimage] using c.map_source hz
-  have hi : e.symm (ClosedUpperHalfPlane.fold (c z)) ∈ borderedInterior M := by
-    apply (mem_borderedInterior_iff_im_pos he (e.map_target ht)).2
-    rw [e.right_inv ht, ClosedUpperHalfPlane.im_fold, abs_of_neg hneg]
-    exact neg_pos.mpr hneg
+  let c := doubleChart e he
   refine ⟨⟨e.symm (ClosedUpperHalfPlane.fold (c z)), hi⟩, ?_⟩
   rw [SchottkyDouble.interiorInr_apply]
   exact (SchottkyDouble.doubleChart_symm_apply_of_im_neg he hneg).symm.trans (c.left_inv hz)
 
-/-- A native seam start in a fixed doubled-chart domain has zero imaginary coordinate. -/
-theorem im_chartAt_inl_eq_zero {p : D} {y : M} (hy : y ∈ A)
-    (hsource : DoubleAlong.inl A y ∈ (chartAt ℂ p).source) :
-    (chartAt ℂ p (DoubleAlong.inl A y)).im = 0 := by
-  rw [chartAt_eq, doubleChart_inl]
-  apply (im_eq_zero_iff_notMem_borderedInterior
-    (IsManifold.chart_mem_maximalAtlas (DoubleAlong.fold A p)) ?_).2 hy
-  simpa only [chartAt_eq, doubleChart_source, mem_preimage, DoubleAlong.fold_inl] using hsource
+/-- In a doubled-chart domain, the native seam consists exactly of real coordinates. -/
+theorem mem_image_inl_compl_iff_im_chartAt_eq_zero {p z : D}
+    (hz : z ∈ (chartAt ℂ p).source) :
+    z ∈ DoubleAlong.inl A '' A ↔ (chartAt ℂ p z).im = 0 := by
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    rw [chartAt_eq, doubleChart_inl]
+    apply (im_eq_zero_iff_notMem_borderedInterior
+      (IsManifold.chart_mem_maximalAtlas (DoubleAlong.fold A p)) ?_).2 hy
+    simpa only [chartAt_eq, doubleChart_source, mem_preimage, DoubleAlong.fold_inl] using hz
+  intro him
+  have hboundary : (chartAt ClosedUpperHalfPlane (DoubleAlong.fold A p)).symm
+      (ClosedUpperHalfPlane.fold (chartAt ℂ p z)) ∈ A :=
+    fun h ↦ (chartAt_symm_fold_mem_borderedInterior_iff hz).1 h him
+  refine ⟨_, hboundary, ?_⟩
+  rw [chartAt_eq] at hz him ⊢
+  exact (doubleChart_symm_apply_of_im_nonneg
+    (IsManifold.chart_mem_maximalAtlas (DoubleAlong.fold A p)) him.ge).symm.trans
+      ((doubleChart _ _).left_inv hz)
 
 /-- The first interior sheet is disjoint from the gluing set. -/
 theorem disjoint_range_interiorInl_image_inl_compl :

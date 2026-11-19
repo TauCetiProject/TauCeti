@@ -123,6 +123,13 @@ manifold. -/
 noncomputable def chartConstField (p : M) (v : E) : (y : M) → TangentSpace 𝓘(ℝ, E) y :=
   VectorField.mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) (chartAt E p) (constVectorField v)
 
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The preferred chart sends its constant chart field to the defining model vector. -/
+theorem mfderiv_chartConstField_apply [IsManifold 𝓘(ℝ, E) 1 M] {p y : M} (v : E)
+    (hy : y ∈ (chartAt E p).source) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (chartAt E p) y (chartConstField E p v y) = v :=
+  mfderiv_mpullback_apply (IsManifold.chart_mem_maximalAtlas p) (constVectorField v) hy
+
 omit [FiniteDimensional ℝ E] in
 /-- A constant field in a chart is smooth on the source of the chart. -/
 theorem contMDiffOn_chartConstField [FiniteDimensional ℝ E] (p : M) (v : E) :
