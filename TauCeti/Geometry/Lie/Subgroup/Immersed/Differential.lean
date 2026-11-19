@@ -139,15 +139,20 @@ theorem range_mfderiv_toHom_one (d : ImmersedLieSubgroupData I K) :
         (ContMDiffMul.isInteriorPoint (n := ∞) (by simp) (1 : G))).toLieHom).toSubmodule := by
   let eX := leftInvariantDerivationLieEquivGroupLieAlgebra
     (ContMDiffMul.isInteriorPoint (I := d.I') (G := d.X) (n := ∞) (by simp) 1)
+  have hφ : ⇑d.toContMDiffMonoidMorphism = d.toHom := funext d.toContMDiffMonoidMorphism_apply
+  have h (D : LeftInvariantDerivation d.I' d.X) :
+      leftInvariantDerivationLieEquivGroupLieAlgebra
+          (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)) (d.lieMapToHom D) =
+        mfderiv d.I' I d.toHom 1 (eX D) := by
+    rw [lieMapToHom_apply, ← hφ]
+    exact leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap d.toContMDiffMonoidMorphism D
   ext v
   constructor
   · rintro ⟨w, rfl⟩
     obtain ⟨D, rfl⟩ := eX.surjective w
-    exact ⟨d.lieMapToHom D, ⟨D, rfl⟩,
-      leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap d.toContMDiffMonoidMorphism D⟩
+    exact ⟨d.lieMapToHom D, ⟨D, rfl⟩, h D⟩
   · rintro ⟨_, ⟨D, rfl⟩, rfl⟩
-    exact ⟨eX D,
-      (leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap d.toContMDiffMonoidMorphism D).symm⟩
+    exact ⟨eX D, (h D).symm⟩
 
 
 section Factorization
