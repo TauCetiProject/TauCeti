@@ -64,6 +64,8 @@ conjugation with the pullback of functions, pulls its principal symbol back by t
 * `TauCeti.mk_algebraMap_smoothCommutatorSymbol`: comparison with the cotangent symbol of the
   vanishing ideal.
 * `TauCeti.smoothPrincipalSymbol_smul_covector`: the principal symbol is homogeneous of degree `m`.
+* `TauCeti.smoothPrincipalSymbol_eq_apply_one`: an operator `D` of order zero has principal symbol
+  `(D 1)(x)`.
 * `TauCeti.smoothPrincipalSymbol_comp`: principal symbols multiply under composition.
 * `TauCeti.smoothPrincipalSymbol_derivation_mvfderiv`: a derivation `δ` has principal symbol
   `df_x ↦ (δ f)(x)`.
@@ -292,6 +294,34 @@ theorem smoothPrincipalSymbol_smul (hx : I.IsInteriorPoint x) {m : ℕ} (c : ℝ
     smoothPrincipalSymbol I hx (c • D) ξ = c * smoothPrincipalSymbol I hx D ξ := by
   simp only [smoothPrincipalSymbol_def, map_smul, smul_apply, smul_eq_mul]
   ring
+
+/-- The principal symbol is additive over finite sums of operators. -/
+@[simp]
+theorem smoothPrincipalSymbol_sum (hx : I.IsInteriorPoint x) {m : ℕ} {κ : Type*}
+    (s : Finset κ) (D : κ → differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    smoothPrincipalSymbol I hx (∑ j ∈ s, D j) ξ = ∑ j ∈ s, smoothPrincipalSymbol I hx (D j) ξ := by
+  simp [smoothPrincipalSymbol_def, Finset.mul_sum]
+
+/-- The principal symbol only depends on the underlying operator and on the order `m` through
+its value: the same operator, as an element of `differentialOperators` at equal orders, has the
+same principal symbol. -/
+theorem smoothPrincipalSymbol_congr (hx : I.IsInteriorPoint x) {m m' : ℕ} (h : m = m')
+    {D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m}
+    {D' : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m'}
+    (hD : (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) = D') (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    smoothPrincipalSymbol I hx D ξ = smoothPrincipalSymbol I hx D' ξ := by
+  subst h
+  rw [Subtype.ext hD]
+
+/-- An operator `D` of order zero is multiplication by `D 1`, and its principal symbol at `x` is
+the constant `(D 1)(x)`. -/
+theorem smoothPrincipalSymbol_eq_apply_one (hx : I.IsInteriorPoint x)
+    (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ 0)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    smoothPrincipalSymbol I hx D ξ = (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) 1 x := by
+  obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x = ξ := ⟨_, mvfderiv_covectorLift hx ξ⟩
+  simp [smoothPrincipalSymbol_mvfderiv]
 
 /-- The principal symbol of an operator of order at most `m` is homogeneous of degree `m`. -/
 theorem smoothPrincipalSymbol_smul_covector (hx : I.IsInteriorPoint x) {m : ℕ}
