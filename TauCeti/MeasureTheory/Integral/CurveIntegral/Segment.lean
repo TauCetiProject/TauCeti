@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Convex.Star
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
@@ -24,7 +25,10 @@ segment from `a` to `b` is therefore a continuous linear functional on bounded c
 
 For a complex function `F` with continuous derivative `f` on the segment, the curve integral of
 the exact form `f(z) dz` along the segment from `a` to `b` is `F b - F a`
-(`TauCeti.curveIntegral_segment_toSpanSingleton_eq_sub`).
+(`TauCeti.curveIntegral_segment_toSpanSingleton_eq_sub`). Consequently, if `F` is a primitive of
+`f` on a set `S` star-convex at `c`, the curve integral of `f(z) dz` along the polygonal path from
+`a ∈ S` through `c` to `b ∈ S` is `F b - F a`
+(`TauCeti.curveIntegral_segment_add_segment_toSpanSingleton_eq_sub`).
 
 ## Main declarations
 
@@ -34,6 +38,8 @@ the exact form `f(z) dz` along the segment from `a` to `b` is `F b - F a`
 * `BoundedContinuousFunction.norm_curveIntegralSegmentCLM_le`: its norm is at most `‖b - a‖`.
 * `TauCeti.curveIntegral_segment_toSpanSingleton_eq_sub`: the fundamental theorem of calculus
   along a segment in `ℂ`.
+* `TauCeti.curveIntegral_segment_add_segment_toSpanSingleton_eq_sub`: the same along a two-segment
+  path through the center of a star-convex domain of a primitive.
 -/
 
 public section
@@ -113,5 +119,24 @@ theorem curveIntegral_segment_toSpanSingleton_eq_sub {E : Type*} [NormedAddCommG
   refine ContinuousOn.intervalIntegrable ?_
   refine continuousOn_const.smul (hf.comp ?_ hmem)
   exact (AffineMap.lineMap_continuous (R := ℝ)).continuousOn
+
+/-- **Fundamental theorem of calculus along a path through a star center.** If `F` has complex
+derivative `f` on a set `S` that is star-convex at `c`, and `f` is continuous on `S`, then for
+`a b ∈ S` the curve integrals of `f(z) dz` along `Path.segment a c` and `Path.segment c b` add up
+to `F b - F a`. -/
+theorem curveIntegral_segment_add_segment_toSpanSingleton_eq_sub {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] {F f : ℂ → E} {S : Set ℂ}
+    {a b c : ℂ} (hS : StarConvex ℝ c S) (ha : a ∈ S) (hb : b ∈ S)
+    (hF : ∀ z ∈ S, HasDerivAt F (f z) z) (hf : ContinuousOn f S) :
+    (∫ᶜ z in Path.segment a c, ContinuousLinearMap.toSpanSingleton ℂ (f z)) +
+        ∫ᶜ z in Path.segment c b, ContinuousLinearMap.toSpanSingleton ℂ (f z) =
+      F b - F a := by
+  have h₁ : segment ℝ a c ⊆ S := by
+    rw [segment_symm]
+    exact hS.segment_subset ha
+  have h₂ : segment ℝ c b ⊆ S := hS.segment_subset hb
+  rw [curveIntegral_segment_toSpanSingleton_eq_sub (fun z hz => hF z (h₁ hz)) (hf.mono h₁),
+    curveIntegral_segment_toSpanSingleton_eq_sub (fun z hz => hF z (h₂ hz)) (hf.mono h₂)]
+  abel
 
 end TauCeti

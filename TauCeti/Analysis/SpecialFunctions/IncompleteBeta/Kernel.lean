@@ -237,7 +237,9 @@ theorem incompleteBetaKernel_add_right (ξ : ℂ) (v₁ v₂ w : ℤ × ℤ) :
   rw [hc]
 
 /-- The kernel through `c = 1/2` of an integrand with a primitive `F` on the slit plane, for `ξ` in
-the slit plane, is `(2πi)⁻¹ (F ξ - F (conj ξ))`. -/
+the slit plane, is `(2πi)⁻¹ (F ξ - F (conj ξ))`: the case of
+`curveIntegral_segment_add_segment_toSpanSingleton_eq_sub` for the slit plane, star-convex at
+`1/2`. -/
 private theorem curveIntegral_conj_half_add_eq_sub {F f : ℂ → ℂ} {ξ : ℂ} (hξ : ξ ∈ slitPlane)
     (hF : ∀ z ∈ slitPlane, HasDerivAt F (f z) z) (hf : ContinuousOn f slitPlane) :
     (∫ᶜ z in Path.segment (conj ξ) (1 / 2 : ℂ), ContinuousLinearMap.toSpanSingleton ℂ (f z)) +
@@ -248,13 +250,7 @@ private theorem curveIntegral_conj_half_add_eq_sub {F f : ℂ → ℂ} {ξ : ℂ
   have hξ' : conj ξ ∈ slitPlane := by
     rw [mem_slitPlane_iff] at hξ ⊢
     simpa using hξ
-  have h₁ : segment ℝ (conj ξ) (1 / 2 : ℂ) ⊆ slitPlane := by
-    rw [segment_symm]
-    exact hstar.segment_subset hξ'
-  have h₂ : segment ℝ (1 / 2 : ℂ) ξ ⊆ slitPlane := hstar.segment_subset hξ
-  rw [curveIntegral_segment_toSpanSingleton_eq_sub (fun z hz => hF z (h₁ hz)) (hf.mono h₁),
-    curveIntegral_segment_toSpanSingleton_eq_sub (fun z hz => hF z (h₂ hz)) (hf.mono h₂)]
-  ring
+  exact curveIntegral_segment_add_segment_toSpanSingleton_eq_sub hstar hξ' hξ hF hf
 
 /-- **The diagonal of the incomplete beta kernel**: for `ξ` in the slit plane `ℂ \ (-∞, 0]`,
 `K_ξ(v; v) = arg ξ / π`, which is `s` for `ξ = ξ(s, t)`. Here the integrand is `z⁻¹`, with
