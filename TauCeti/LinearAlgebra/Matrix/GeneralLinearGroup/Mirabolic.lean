@@ -95,13 +95,13 @@ theorem mem_iff {g : GL (Fin 2) R} :
 @[simp]
 theorem apply_one_zero (g : GL2Mirabolic R) :
     ((g : GL (Fin 2) R) : Matrix (Fin 2) (Fin 2) R) 1 0 = 0 :=
-  (mem_iff.mp g.2).1
+  (mem_iff.mp g.property).1
 
 /-- The lower-right entry of an element of the mirabolic subgroup is `1`. -/
 @[simp]
 theorem apply_one_one (g : GL2Mirabolic R) :
     ((g : GL (Fin 2) R) : Matrix (Fin 2) (Fin 2) R) 1 1 = 1 :=
-  (mem_iff.mp g.2).2
+  (mem_iff.mp g.property).2
 
 /-- The upper-triangular matrix `!![a, b; 0, d]` is mirabolic exactly when `d = 1`. -/
 @[simp]
@@ -120,7 +120,7 @@ def affineGroupMulEquiv : AffineGroup R ≃* GL2Mirabolic R where
     ⟨((g : GL (Fin 2) R) : Matrix (Fin 2) (Fin 2) R) 0 0,
       (((g : GL (Fin 2) R)⁻¹ : GL (Fin 2) R) : Matrix (Fin 2) (Fin 2) R) 0 0, by
         have h := congrFun (congrFun (g : GL (Fin 2) R).mul_inv 0) 0
-        simpa [Matrix.mul_apply, Fin.sum_univ_two, (mem_iff.mp (inv_mem g.2)).1] using h, by
+        simpa [Matrix.mul_apply, Fin.sum_univ_two, (mem_iff.mp (inv_mem g.property)).1] using h, by
         have h := congrFun (congrFun (g : GL (Fin 2) R).inv_mul 0) 0
         simpa [Matrix.mul_apply, Fin.sum_univ_two] using h⟩⟩
   left_inv g := by
@@ -131,7 +131,7 @@ def affineGroupMulEquiv : AffineGroup R ≃* GL2Mirabolic R where
   map_mul' g h := by
     refine Subtype.ext (Units.ext (Matrix.ext fun i j ↦ ?_))
     fin_cases i <;> fin_cases j <;>
-      simp [Matrix.mul_apply, Fin.sum_univ_two, add_comm]
+      simp [add_comm]
 
 @[simp]
 theorem coe_affineGroupMulEquiv_apply (g : AffineGroup R) :

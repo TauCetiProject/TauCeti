@@ -26,7 +26,8 @@ obtained by inverting `φ`, since `P(ℚ_p)` is generated as a monoid by `P⁺` 
 
 This file defines `P⁺`, characterizes its elements by the norms of their two upper entries,
 identifies its group of invertible elements with `P(ℤ_p) = P ∩ GL₂(ℤ_p)`, and proves the
-generation statement. It also records which upper-triangular matrices lie in `K = GL₂(ℤ_p)`.
+generation statement. It also records which upper-triangular matrices lie in `K = GL₂(ℤ_p)`;
+in particular `φ = !![p, 0; 0, 1]` does not, although its entries are integral.
 
 ## Main definitions
 
@@ -37,6 +38,8 @@ generation statement. It also records which upper-triangular matrices lie in `K 
 
 * `TauCeti.GL2Borel.mk_mem_glPadicInt_iff`: `!![a, b; 0, d]` lies in `GL₂(ℤ_p)` exactly when `a`
   and `d` are units of `ℤ_p` and `b ∈ ℤ_p`.
+* `TauCeti.GL2Mirabolic.mem_inf_glPadicInt_iff`: a mirabolic matrix `!![a, b; 0, 1]` lies in
+  `P(ℤ_p) = P ∩ GL₂(ℤ_p)` exactly when `a` is a unit of `ℤ_p` and `b ∈ ℤ_p`.
 * `TauCeti.GL2MirabolicPlus.mk_mem_iff`: `!![a, b; 0, 1] ∈ P⁺` exactly when `a, b ∈ ℤ_p`.
 * `TauCeti.GL2MirabolicPlus.mem_and_inv_mem_iff`: the elements of `P⁺` whose inverse lies in `P⁺`
   are exactly the elements of `P(ℤ_p) = P ∩ GL₂(ℤ_p)`.
@@ -80,6 +83,17 @@ theorem gl2WeylElement_mem_glPadicInt : GL2WeylElement ℚ_[p] ∈ GLPadicInt (F
   rw [GLPadicInt.mem_iff, coe_gl2WeylElement, Matrix.det_fin_two_of]
   refine ⟨fun i j ↦ ?_, by simp⟩
   fin_cases i <;> fin_cases j <;> simp
+
+/-- **Membership in `P(ℤ_p) = P ∩ GL₂(ℤ_p)`**: a mirabolic matrix `!![a, b; 0, 1]` lies in
+`GL₂(ℤ_p)` exactly when `a` is a unit of `ℤ_p` and `b ∈ ℤ_p`. -/
+theorem GL2Mirabolic.mem_inf_glPadicInt_iff {g : GL (Fin 2) ℚ_[p]} :
+    g ∈ GL2Mirabolic ℚ_[p] ⊓ GLPadicInt (Fin 2) p ↔ g ∈ GL2Mirabolic ℚ_[p] ∧
+      ‖(g : Matrix (Fin 2) (Fin 2) ℚ_[p]) 0 0‖ = 1 ∧
+      ‖(g : Matrix (Fin 2) (Fin 2) ℚ_[p]) 0 1‖ ≤ 1 := by
+  rw [Subgroup.mem_inf, and_congr_right_iff]
+  intro hg
+  obtain ⟨a, b, rfl⟩ := GL2Mirabolic.mem_iff_exists_mk.mp hg
+  simp
 
 /-- Colmez's **mirabolic monoid** `P⁺`: the matrices `!![a, b; 0, 1]` of `GL₂(ℚ_p)` with
 `a, b ∈ ℤ_p`. Since such a matrix is invertible, `a` is automatically nonzero. -/
@@ -210,6 +224,12 @@ theorem frobenius_inv_notMem : (frobenius p)⁻¹ ∉ GL2MirabolicPlus p := fun 
   rw [coe_frobenius, Matrix.det_fin_two_of] at hdet
   simp only [mul_one, mul_zero, sub_zero] at hdet
   exact (Padic.norm_p_lt_one (p := p)).ne hdet
+
+variable (p) in
+/-- `φ = !![p, 0; 0, 1]` does not lie in `GL₂(ℤ_p)`, although its entries are integral: its
+determinant `p` is not a unit of `ℤ_p`. -/
+theorem frobenius_notMem_glPadicInt : frobenius p ∉ GLPadicInt (Fin 2) p := by
+  simpa [frobenius] using (Padic.norm_p_lt_one (p := p)).ne
 
 /-- **Every element of `P(ℚ_p)` is moved into `P⁺` by a power of `φ`**: multiplying
 `!![a, b; 0, 1]` on the left by `φ ^ k` multiplies `a` and `b` by `p ^ k`, which makes them
