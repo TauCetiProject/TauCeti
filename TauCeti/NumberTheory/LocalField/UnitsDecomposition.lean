@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Group.Units
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.NumberTheory.LocalField.Teichmuller
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
+public import TauCeti.RingTheory.Valuation.Discrete.UnitPart
 public import TauCeti.Topology.Algebra.Group.Shear
 
 /-!
@@ -49,6 +50,8 @@ such as the count of its power classes, to the group of principal units `U(K,1)`
   `U(K,i)`, and its index in `Kˣ` is `[U(K,0) : U(K,i)]`.
 * `TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField_unitFiltrationZeroEquivProd_apply_fst`:
   the root-of-unity component of `u ∈ U(K,0)` has the same residue class as `u`.
+* `Valuation.coe_unitPart_eq_unitsEquivIntProd_snd`: the uniformizer splitting's unit component
+  agrees with the unit part of any integer-valued valuation with the same normalized order.
 
 ## Implementation notes
 
@@ -431,3 +434,20 @@ theorem coe_unitFiltrationZeroEquivProd_symm_apply
 end Teichmuller
 
 end TauCeti
+
+namespace Valuation
+
+open scoped WithZero
+
+/-- When a discrete valuation's order agrees with the normalized local-field valuation,
+its unit part agrees with the second component of the topological uniformizer splitting.
+The equality compares underlying field units, without identifying the two unit subgroups. -/
+theorem coe_unitPart_eq_unitsEquivIntProd_snd {K : Type*} [Field K] [ValuativeRel K]
+    [TopologicalSpace K] [IsNonarchimedeanLocalField K] (v : Valuation K ℤᵐ⁰)
+    (hord : ∀ x : Kˣ, v.ord (x : K) = (TauCeti.normalizedValuation K x).toAdd)
+    (t : Kˣ) (ht : TauCeti.normalizedValuation K t = .ofAdd 1) (x : Kˣ) :
+    (v.unitPart t (by simp [hord, ht]) x : Kˣ) =
+      ((TauCeti.unitsEquivIntProd K t ht x).2 : Kˣ) := by
+  simp only [coe_unitPart, TauCeti.coe_unitsEquivIntProd_apply_snd, hord]
+
+end Valuation
