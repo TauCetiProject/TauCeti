@@ -383,7 +383,7 @@ example :
     rcases Nat.prime_five.eq_one_or_self_of_dvd _ (DirichletCharacter.conductor_dvd_level χ) with
       h | h
     · exact absurd (DirichletCharacter.eq_one_iff_conductor_eq_one.mpr h) hne
-    · exact h
+    · exact (DirichletCharacter.isPrimitive_def χ).mpr h
   refine ⟨χ, hχ, fun hinv ↦ ?_, hprim, ?_⟩
   · have h2 : χ ^ 2 = 1 := by
       rw [sq]
