@@ -15,7 +15,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Data.Nat.Choose.Cast
 import Mathlib.RingTheory.Polynomial.Vieta
 import TauCeti.Algebra.Order.BigOperators.Ring.Multiset
-import TauCeti.Analysis.Convex.DiscreteConcave
+import TauCeti.Analysis.Convex.Sequence.DiscreteConcave
 import TauCeti.Analysis.MvPolynomial.Deriv
 import TauCeti.Analysis.MvPolynomial.Jacobian
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
@@ -105,54 +105,21 @@ section Newton
 private noncomputable def mNorm (s : Multiset ℝ) (k : ℕ) : ℝ :=
   s.esymm k / (Multiset.card s).choose k
 
-private theorem esymm_card_eq_prod (s : Multiset ℝ) : s.esymm (Multiset.card s) = s.prod := by
-  simp [Multiset.esymm, Multiset.powersetCard_self]
-
 private theorem mNorm_zero (s : Multiset ℝ) : mNorm s 0 = 1 := by
   simp [mNorm]
 
 private theorem mNorm_card (s : Multiset ℝ) : mNorm s (Multiset.card s) = s.prod := by
-  rw [mNorm, esymm_card_eq_prod, Nat.choose_self, Nat.cast_one, div_one]
+  rw [mNorm, Multiset.esymm_card_eq_prod, Nat.choose_self, Nat.cast_one, div_one]
 
 private theorem mNorm_of_card_lt {s : Multiset ℝ} {k : ℕ} (h : Multiset.card s < k) :
     mNorm s k = 0 := by
   rw [mNorm, Multiset.esymm_of_card_lt h, zero_div]
 
-/-- Reversal: the elementary symmetric functions of the inverses of a multiset `s` of nonzero
-reals are those of `s`, read backwards and divided by `e_{card s}(s) = ∏ s`. -/
-private theorem esymm_map_inv_mul_prod (s : Multiset ℝ) (hs : (0 : ℝ) ∉ s) {j : ℕ}
-    (hj : j ≤ Multiset.card s) :
-    (s.map (·⁻¹)).esymm j * s.prod = s.esymm (Multiset.card s - j) := by
-  induction s using Multiset.induction_on generalizing j with
-  | empty =>
-    obtain rfl : j = 0 := by simpa using hj
-    simp
-  | cons a t ih =>
-    have ha : a ≠ 0 := fun h ↦ hs (h ▸ Multiset.mem_cons_self _ _)
-    have ht : (0 : ℝ) ∉ t := fun h ↦ hs (Multiset.mem_cons_of_mem h)
-    have hinv : a⁻¹ * a = 1 := inv_mul_cancel₀ ha
-    rw [Multiset.card_cons] at hj ⊢
-    rcases j with _ | i
-    · rw [Multiset.esymm_zero, one_mul, Nat.sub_zero, ← Multiset.card_cons a t,
-        esymm_card_eq_prod]
-    rw [Multiset.map_cons, Multiset.esymm_cons, Multiset.prod_cons]
-    have e1 := ih ht (j := i) (by omega)
-    rcases Nat.lt_or_ge i (Multiset.card t) with hlt | hge
-    · have e2 := ih ht (j := i + 1) hlt
-      rw [show Multiset.card t + 1 - (i + 1) = (Multiset.card t - (i + 1)) + 1 by omega,
-        Multiset.esymm_cons]
-      rw [show Multiset.card t - i = Multiset.card t - (i + 1) + 1 by omega] at e1
-      linear_combination a * e2 + e1 + ((t.map (·⁻¹)).esymm i * t.prod) * hinv
-    · obtain rfl : i = Multiset.card t := by omega
-      rw [Multiset.esymm_of_card_lt (by simp), Nat.sub_self, Multiset.esymm_zero]
-      rw [Nat.sub_self, Multiset.esymm_zero] at e1
-      linear_combination e1 + ((t.map (·⁻¹)).esymm (Multiset.card t) * t.prod) * hinv
-
 private theorem mNorm_map_inv_mul_prod (s : Multiset ℝ) (hs : (0 : ℝ) ∉ s) {j : ℕ}
     (hj : j ≤ Multiset.card s) :
     mNorm (s.map (·⁻¹)) j * s.prod = mNorm s (Multiset.card s - j) := by
   rw [mNorm, mNorm, Multiset.card_map, ← Nat.choose_symm hj, div_mul_eq_mul_div,
-    esymm_map_inv_mul_prod s hs hj]
+    Multiset.esymm_map_inv_mul_prod s hs hj]
 
 open Polynomial in
 /-- Rolle's theorem: the roots `r` of the derivative of `∏_{a ∈ s} (X - a)` are real, and they
