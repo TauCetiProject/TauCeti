@@ -39,8 +39,8 @@ cell attachment theorem makes its comparison map to `M_{c+ε}` a homotopy equiva
 inclusion on `M_{c-ε}` (`TauCeti.IsMorse.exists_morseCellAttachment_deformation`). Second, the
 inclusion `M_{c+ε} → M_b` is a homotopy equivalence across the band `f⁻¹[c + ε, b]`
 (`TauCeti.exists_sublevelHomotopyEquiv`). Third, the retraction `r` is a homotopy equivalence with
-homotopy inverse the inclusion (`ContinuousMap.HomotopyEquiv.ofRetraction`), and attaching cells
-is homotopy invariant under a change of base
+homotopy inverse the inclusion (`ContinuousMap.HomotopyEquiv.ofDeformationRetraction`), and
+attaching cells is homotopy invariant under a change of base
 (`ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_relCWAdjunctionSpace`): attaching the cells to
 `M_a` along `r ∘ α` is homotopy equivalent to attaching them to `M_{c-ε}` along `α`, by a map which
 is the inclusion on `M_a`.
@@ -186,15 +186,16 @@ theorem IsMorse.exists_homotopyEquiv_sigmaDiskAdjunctionSpace (hf : IsMorse I f)
   -- Change the base of the attachment from `M_{c-ε}` to `M_a` along `r`, a homotopy equivalence
   -- with homotopy inverse the inclusion.
   rw [sublevelInclusion_eq_inclusion] at hr R
-  let er := (ContinuousMap.HomotopyEquiv.ofRetraction _ r hr R.toHomotopy).symm
+  let er := (ContinuousMap.HomotopyEquiv.ofDeformationRetraction (.inclusion _) r hr
+    (ContinuousMap.HomotopicRel.homotopic ⟨R⟩)).symm
   obtain ⟨E, -, hE⟩ := er.exists_homotopyEquiv_relCWAdjunctionSpace
     (univ.sigma fun p ↦ (univ : Set (TopCat.disk.{u} (k p)))) (sigmaDiskAttachingMap α)
   have her : er.toFun = r :=
-    ContinuousMap.ext (ContinuousMap.HomotopyEquiv.coe_ofRetraction_symm_apply _ r hr _)
+    ContinuousMap.ext (ContinuousMap.HomotopyEquiv.ofDeformationRetraction_symm_apply _ r hr _)
   rw [ContinuousMap.sigmaDiskAttachingMap_comp, ← her]
   refine ⟨E.symm.trans (e₁.trans e₂), fun z ↦ ?_⟩
   rw [ContinuousMap.HomotopyEquiv.trans_apply, ContinuousMap.HomotopyEquiv.trans_apply, hE, he₂,
     he₁]
-  exact ContinuousMap.HomotopyEquiv.coe_ofRetraction_apply _ r hr _ z
+  simp [er]
 
 end TauCeti
