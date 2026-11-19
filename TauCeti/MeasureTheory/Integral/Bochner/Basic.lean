@@ -144,8 +144,8 @@ The conversion is `MeasureTheory.ofReal_integral_norm_eq_lintegral_eNorm`, whose
 * `tendsto_integral_smul_of_tendstoUniformlyOn`: integrals against a continuous weight with
   compact support pass to limits of maps, eventually continuous on the support of the weight, that
   converge uniformly on that support.
-* `norm_integral_smul_sub_integral_smul_le` bounds the change of such an integral when the weight
-  is perturbed uniformly on a set of finite measure.
+* `norm_integral_smul_sub_integral_smul_le` and `norm_integral_smul_sub_le` bound the change of
+  such an integral when the weight is perturbed uniformly on a finite-measure or compact set.
 
 ## Integrals against measures of small mass
 
@@ -816,6 +816,37 @@ theorem norm_integral_smul_sub_integral_smul_le {X F : Type*} [MeasurableSpace X
   filter_upwards [hab, hB] with x hx hxB hxK
   rw [← sub_smul, norm_smul, Real.norm_eq_abs, abs_sub_comm]
   exact mul_le_mul (hx hxK) (hxB hxK) (norm_nonneg _) ((abs_nonneg _).trans (hx hxK))
+
+/-- Uniformly close continuous multipliers with topological support inside a compact set `K` have
+close Bochner integrals against a map integrable on `K`. -/
+theorem norm_integral_smul_sub_le {X 𝕜 F : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] [NormedRing 𝕜] [NormedAddCommGroup F] [Module 𝕜 F]
+    [IsBoundedSMul 𝕜 F] [NormedSpace ℝ F] {μ : Measure X} {w : X → F} {K : Set X}
+    (hK : IsCompact K) (hw : IntegrableOn w K μ) {f g : X → 𝕜} (hf : Continuous f)
+    (hg : Continuous g) (hfK : tsupport f ⊆ K) (hgK : tsupport g ⊆ K) {ε : ℝ}
+    (hfg : ∀ x ∈ K, dist (f x) (g x) ≤ ε) :
+    ‖(∫ x, f x • w x ∂μ) - ∫ x, g x • w x ∂μ‖ ≤ ε * ∫ x in K, ‖w x‖ ∂μ := by
+  rcases K.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
+  · have hf0 : ∀ x, f x = 0 := fun x => image_eq_zero_of_notMem_tsupport fun h => hfK h
+    have hg0 : ∀ x, g x = 0 := fun x => image_eq_zero_of_notMem_tsupport fun h => hgK h
+    simp [hf0, hg0]
+  have hε : 0 ≤ ε := dist_nonneg.trans (hfg x₀ hx₀)
+  have hint : ∀ {a : X → 𝕜}, Continuous a → tsupport a ⊆ K → Integrable (fun x => a x • w x) μ :=
+    fun {a} ha haK => hw.locallyIntegrableOn.integrable_smul_left_of_hasCompactSupport ha
+      (hK.of_isClosed_subset (isClosed_tsupport a) haK) haK
+  have hvan : ∀ x ∉ K, (f x - g x) • w x = 0 := fun x hx => by
+    rw [image_eq_zero_of_notMem_tsupport fun h => hx (hfK h),
+      image_eq_zero_of_notMem_tsupport fun h => hx (hgK h), sub_self, zero_smul]
+  rw [← integral_sub (hint hf hfK) (hint hg hgK)]
+  have hsub : (fun x => f x • w x - g x • w x) = fun x => (f x - g x) • w x :=
+    funext fun x => (sub_smul (f x) (g x) (w x)).symm
+  rw [hsub, ← setIntegral_eq_integral_of_forall_compl_eq_zero hvan, ← integral_const_mul]
+  refine norm_integral_le_of_norm_le (hw.norm.const_mul ε) (ae_of_all _ fun x => ?_)
+  by_cases hxK : x ∈ K
+  · exact (norm_smul_le (f x - g x) (w x)).trans
+      (mul_le_mul_of_nonneg_right (by simpa only [dist_eq_norm] using hfg x hxK) (norm_nonneg _))
+  · rw [hvan x hxK, norm_zero]
+    positivity
 
 /-- **Averaging against a kernel supported in `[-ε, 0]` samples only `[t, t + ε]`.** If `ψ` is a
 nonnegative probability density with respect to `μ` vanishing outside `[-ε, 0]`, and `F` is antitone

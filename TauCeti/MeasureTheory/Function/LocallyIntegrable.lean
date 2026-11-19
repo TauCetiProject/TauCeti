@@ -110,6 +110,12 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
 * `MeasureTheory.LocallyIntegrableOn.integrable_smul_right_of_hasCompactSupport`: a function
   locally integrable on `s`, scaling a continuous function with compact support in `s`, is
   integrable.
+* `MeasureTheory.LocallyIntegrableOn.integrable_clm_apply_of_hasCompactSupport`: applying an
+  operator family with compact support in `s`, continuous on its `tsupport`, to a function locally
+  integrable on `s` yields an integrable function.
+* `MeasureTheory.LocallyIntegrableOn.integrable_smul_clm_apply_of_hasCompactSupport`: scalar cutoff
+  version `x ↦ φ x • A x (f x)` for `φ` compactly supported in `s` and `A` continuous on
+  `tsupport φ`.
 * `MeasureTheory.LocallyIntegrableOn.continuousOn_smul_of_isOpen`: a function locally integrable
   on an open set, times a function continuous on it, is locally integrable on it.
 * `MeasureTheory.locallyIntegrableOn_finsetSum`: finite sums preserve local integrability on a
@@ -681,6 +687,47 @@ theorem integrable_smul_left_of_hasCompactSupport {f : X → E} {g : X → 𝕜}
   refine Integrable.smul_of_top_right ?_ (hg.memLp_top_of_hasCompactSupport h'g μ)
   rw [integrable_indicator_iff (isClosed_tsupport g).measurableSet]
   exact hf.integrableOn_compact_subset hgs h'g
+
+end MeasureTheory.LocallyIntegrableOn
+
+namespace MeasureTheory.LocallyIntegrableOn
+
+variable {X 𝕜 F G : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
+  [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G] {μ : Measure X} {s : Set X}
+
+/-- If `f` is locally integrable on `s` and `A` is a field of continuous linear maps with compact
+support contained in `s`, continuous on `tsupport A`, then `x ↦ A x (f x)` is integrable. This is
+the operator-valued counterpart of
+`MeasureTheory.LocallyIntegrableOn.integrable_smul_left_of_hasCompactSupport`. -/
+theorem integrable_clm_apply_of_hasCompactSupport {f : X → F} {A : X → F →L[𝕜] G}
+    (hf : LocallyIntegrableOn f s μ) (hA : ContinuousOn A (tsupport A))
+    (hAc : HasCompactSupport A) (hAs : tsupport A ⊆ s) :
+    Integrable (fun x ↦ A x (f x)) μ := by
+  have hsupp : Function.support (fun x ↦ A x (f x)) ⊆ tsupport A := fun x hx ↦ by_contra fun hx' ↦
+    hx (by simp [image_eq_zero_of_notMem_tsupport hx'])
+  rw [← integrableOn_iff_integrable_of_support_subset hsupp]
+  obtain ⟨C, hC⟩ := hAc.isCompact.exists_bound_of_continuousOn hA
+  have hmeas : MeasurableSet (tsupport A) := (isClosed_tsupport A).measurableSet
+  have hfK : IntegrableOn f (tsupport A) μ := hf.integrableOn_compact_subset hAs hAc.isCompact
+  refine Integrable.mono' (hfK.norm.const_mul C) ?_
+    ((ae_restrict_iff' hmeas).2 <| ae_of_all _ fun x hx ↦ (A x).le_of_opNorm_le (hC x hx) _)
+  exact isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable₂
+    (hA.aestronglyMeasurable_of_isCompact hAc.isCompact hmeas) hfK.aestronglyMeasurable
+
+/-- If `f` is locally integrable on `s`, `φ` has compact support in `s` and is continuous on
+`tsupport φ`, and `A` is a field of continuous linear maps continuous on `tsupport φ`, then
+`x ↦ φ x • A x (f x)` is integrable. -/
+theorem integrable_smul_clm_apply_of_hasCompactSupport {f : X → F} {φ : X → 𝕜} {A : X → F →L[𝕜] G}
+    (hf : LocallyIntegrableOn f s μ) (hφ : ContinuousOn φ (tsupport φ))
+    (hφc : HasCompactSupport φ) (hφs : tsupport φ ⊆ s) (hA : ContinuousOn A (tsupport φ)) :
+    Integrable (fun x ↦ φ x • A x (f x)) μ := by
+  have hsub : Function.support (fun x ↦ φ x • A x) ⊆ Function.support φ :=
+    Function.support_subset_iff'.2 fun x hx ↦ by simp [Function.notMem_support.1 hx]
+  have htsub : tsupport (fun x ↦ φ x • A x) ⊆ tsupport φ := closure_mono hsub
+  simpa only [Pi.smul_apply, smul_apply] using hf.integrable_clm_apply_of_hasCompactSupport
+    (A := fun x ↦ φ x • A x) ((hφ.mono htsub).smul (hA.mono htsub)) (hφc.mono hsub)
+    (htsub.trans hφs)
 
 end MeasureTheory.LocallyIntegrableOn
 
