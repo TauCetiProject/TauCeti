@@ -247,7 +247,8 @@ private theorem infinite_fixedPoints_of_det_eq_zero {A : GL ι ℤ}
   -- Every `f s` is fixed, since `(1 - A) ((s / k i) k) = (s / k i) (1 - A) k = 0`.
   have hfix (s : ℝ) : f s ∈ fixedPoints fun x : ι → AddCircle p ↦ A • x := by
     refine (generalLinearGroup_smul_coe_pi_eq_iff p A _).2 ⟨0, ?_⟩
-    have hsk : (fun j ↦ s / k i * (k j : ℝ)) = (s / k i) • fun j ↦ (k j : ℝ) := rfl
+    have hsk : (fun j ↦ s / k i * (k j : ℝ)) = (s / k i) • fun j ↦ (k j : ℝ) :=
+      funext fun j ↦ by rw [Pi.smul_apply, smul_eq_mul]
     rw [hsk, mulVec_smul, one_sub_map_mulVec_intCast, hk]
     ext j
     simp
@@ -291,9 +292,10 @@ theorem det_id_sub_fixedPointDerivative_generalLinearGroup_smul (A : GL ι ℤ)
       ((1 - (A : Matrix ι ι ℤ)).det : ℝ) := by
   have h := (hasMFDerivAt_generalLinearGroup_smul p A x.1).fixedPointDerivative_eq (x := x)
   have hdet : LinearMap.det (LinearMap.id -
-      Matrix.toLin' ((A : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ)) : (ι → ℝ) →ₗ[ℝ] ι → ℝ) =
-      ((1 - (A : Matrix ι ι ℤ)).det : ℝ) := by
-    rw [← Matrix.toLin'_one, ← map_sub, LinearMap.det_toLin', ← map_one_sub, ← Int.cast_det]
+      (LinearMap.toContinuousLinearMap (Matrix.toLin' ((A : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ))) :
+        (ι → ℝ) →ₗ[ℝ] ι → ℝ)) = ((1 - (A : Matrix ι ι ℤ)).det : ℝ) := by
+    rw [LinearMap.coe_toContinuousLinearMap, ← Matrix.toLin'_one, ← map_sub,
+      LinearMap.det_toLin', ← map_one_sub, ← Int.cast_det]
   rw [h]
   -- The tangent spaces of the torus are `ι → ℝ`.
   exact hdet
