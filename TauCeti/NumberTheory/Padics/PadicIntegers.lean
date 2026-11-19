@@ -72,6 +72,7 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
   exactly when they are associated in every `ℤ_[p]`.
 * `Int.ideal_eq_iff_forall_map_padicInt_eq`: two ideals of `ℤ` are equal exactly when their
   extensions to every `ℤ_[p]` agree.
+* `Padic.norm_mul_zpow_neg_valuation`: `‖x p ^ (-v(x))‖ = 1` for nonzero `x : ℚ_[p]`.
 * `Padic.exists_eq_zpow_valuation_mul`: every nonzero `x : ℚ_[p]` is `p ^ v(x)` times a unit of
   `ℤ_[p]`.
 * `Padic.valuation_p_zpow_mul`: multiplying a nonzero `x : ℚ_[p]` by `p ^ α` adds `α` to its
@@ -332,15 +333,18 @@ namespace Padic
 
 variable {p : ℕ} [Fact p.Prime]
 
+/-- Dividing a nonzero `p`-adic number by `p ^ v(x)` gives an element of norm one. -/
+theorem norm_mul_zpow_neg_valuation {x : ℚ_[p]} (hx : x ≠ 0) :
+    ‖x * (p : ℚ_[p]) ^ (-x.valuation)‖ = 1 := by
+  have hp : (p : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  rw [norm_mul, norm_zpow, Padic.norm_p, Padic.norm_eq_zpow_neg_valuation hx, inv_zpow',
+    neg_neg, ← zpow_add₀ hp, neg_add_cancel, _root_.zpow_zero]
+
 /-- Every nonzero `p`-adic number is `p ^ v(x)` times a unit of `ℤ_[p]`. -/
 theorem exists_eq_zpow_valuation_mul {x : ℚ_[p]} (hx : x ≠ 0) :
     ∃ u : ℤ_[p]ˣ, x = (p : ℚ_[p]) ^ x.valuation * u := by
   have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-  have hy : ‖x * (p : ℚ_[p]) ^ (-x.valuation)‖ = 1 := by
-    have hp' : (p : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-    rw [norm_mul, norm_zpow, Padic.norm_p, Padic.norm_eq_zpow_neg_valuation hx, inv_zpow',
-      neg_neg, ← zpow_add₀ hp', neg_add_cancel, _root_.zpow_zero]
-  refine ⟨PadicInt.mkUnits hy, ?_⟩
+  refine ⟨PadicInt.mkUnits (norm_mul_zpow_neg_valuation hx), ?_⟩
   rw [PadicInt.mkUnits_eq, mul_left_comm, ← zpow_add₀ hp, add_neg_cancel, _root_.zpow_zero, mul_one]
 
 /-- Multiplying a nonzero `x : ℚ_[p]` by `p ^ α` adds `α` to its valuation. -/
