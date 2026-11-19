@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fourier.L2Multiplier
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Algebra.BigOperators.Finset.BoundedOverlap
 import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
@@ -558,21 +559,6 @@ private theorem inner_fourierMultiplierCLM_eq_sum [Countable ι] (hP : IsDyadic 
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   exact (isSelfAdjoint_fourierMultiplierCLM_toLp_symbol hP k).isSymmetric _ _
 
-/-- Windows `W i` of indices whose labels under an injective `c : ι → ℤ` lie within `L` of the
-label of `i` have at most `2 L` elements, and every index lies in at most `2 L` of them. -/
-private theorem card_window_le [DecidableEq ι] {c : ι → ℤ} (hc : Function.Injective c) {L : ℕ}
-    {W : ι → Finset ι} (hWL : ∀ i k, k ∈ W i → |c k - c i| < L) :
-    (∀ i, (W i).card ≤ 2 * L) ∧ ∀ (s : Finset ι) k, (s.filter (k ∈ W ·)).card ≤ 2 * L := by
-  -- A set of indices whose labels lie within `L` of `a` injects into `(a - L, a + L)`.
-  have h : ∀ (u : Finset ι) (a : ℤ), (∀ k ∈ u, |c k - a| < L) → u.card ≤ 2 * L :=
-    fun u a hu ↦ (Finset.card_le_card_of_injOn c (t := Finset.Ioo (a - L) (a + L))
-      (fun k hk ↦ by
-        have := abs_sub_lt_iff.1 (hu k hk); rw [Finset.mem_coe, Finset.mem_Ioo]; omega)
-      hc.injOn).trans (by simp only [Int.card_Ioo]; omega)
-  refine ⟨fun i ↦ h _ (c i) (hWL i), fun s k ↦ h _ (c k) fun j hj ↦ ?_⟩
-  rw [abs_sub_comm]
-  exact hWL j k (Finset.mem_filter.1 hj).2
-
 /-- The pairing bound `|⟪∑_{i ∈ t} Δᵢ f, g⟫| ≤ 2 L ∫ S f · S g` for the partial sums of `f`. -/
 private theorem enorm_inner_sum_fourierMultiplierCLM_le [Countable ι]
     (hP : IsDyadic ψ σ e) (W : ι → Finset ι) {c : ι → ℤ} (hc : Function.Injective c) {L : ℕ}
@@ -584,7 +570,6 @@ private theorem enorm_inner_sum_fourierMultiplierCLM_le [Countable ι]
         (∑' i, ‖Lp.fourierMultiplierCLM F ((σ i).toLp ∞ volume) f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ) *
           (∑' k, ‖Lp.fourierMultiplierCLM F ((σ k).toLp ∞ volume) g x‖ₑ ^ 2) ^ (2⁻¹ : ℝ) := by
   classical
-  obtain ⟨hWc, hWc'⟩ := card_window_le hc hWL
   set M : ι → Lp F 2 (volume : Measure V) →L[ℂ] Lp F 2 (volume : Measure V) :=
     fun i ↦ Lp.fourierMultiplierCLM F ((σ i).toLp ∞ volume)
   have hmeas : ∀ i k, AEMeasurable (fun x ↦ ‖M i f x‖ₑ * ‖M k g x‖ₑ) :=
@@ -606,7 +591,9 @@ private theorem enorm_inner_sum_fourierMultiplierCLM_le [Countable ι]
     _ ≤ ∫⁻ x, ↑(2 * L) * ((∑' i, ‖M i f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ) *
           (∑' k, ‖M k g x‖ₑ ^ 2) ^ (2⁻¹ : ℝ)) :=
         lintegral_mono fun x ↦ (_root_.sum_le_tsum _).trans
-          (ENNReal.tsum_sum_mul_le_of_card_le W hWc hWc' _ _)
+          (ENNReal.tsum_sum_mul_le_of_card_le W
+            (fun i ↦ card_le_two_mul_of_abs_sub_lt hc (hWL i))
+            (card_filter_mem_le_two_mul_of_abs_sub_lt hc hWL) _ _)
     _ = _ := lintegral_const_mul' _ _ (by finiteness)
 
 /-- **The reverse square function inequality for a dyadic family**:

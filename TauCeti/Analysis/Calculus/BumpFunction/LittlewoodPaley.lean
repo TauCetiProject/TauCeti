@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Algebra.Order.Chebyshev
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
+import TauCeti.Algebra.BigOperators.Finset.BoundedOverlap
 import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
@@ -41,10 +42,6 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 
 ## Main declarations
 
-* `TauCeti.card_filter_ne_zero_le_of_mul_eq_zero`: a family of functions, labelled injectively by
-  integers, whose members with labels at least `L` apart have disjoint supports has at most `L`
-  nonzero members at each point, so that `TauCeti.sum_sq_le_of_mul_eq_zero`: if its values lie
-  in `[-1, 1]`, its sum of squares is at most `L`. Both families of cutoffs below are instances.
 * `ContDiffBump.littlewoodPaley`: the dyadic cutoff `ψⱼ`.
 * `ContDiffBump.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply`: `ψⱼ` is the rescaling
   `ψ₀ (2^{-j} ·)`.
@@ -101,43 +98,6 @@ public section
 
 open Metric Set TauCeti
 open scoped ContDiff
-
-namespace TauCeti
-
-variable {ι α : Type*}
-
-/-- **Bounded overlap of a family labelled by integers.** Let the indices of `ψ : ι → α → ℝ` be
-labelled by an injective `e : ι → ℤ`, and let `ψ i` and `ψ k` have disjoint supports whenever
-`e i + L ≤ e k`. Then at every `ξ` at most `L` of the `ψ i` are nonzero, over any finite set of
-indices. -/
-theorem card_filter_ne_zero_le_of_mul_eq_zero {ψ : ι → α → ℝ} {e : ι → ℤ}
-    (he : Function.Injective e) {L : ℕ} (hL : ∀ i k, e i + L ≤ e k → ∀ ξ, ψ i ξ * ψ k ξ = 0)
-    (s : Finset ι) (ξ : α) : (s.filter fun i ↦ ψ i ξ ≠ 0).card ≤ L := by
-  set t := s.filter fun i ↦ ψ i ξ ≠ 0
-  rcases (t.image e).eq_empty_or_nonempty with ht | ht
-  · simp [Finset.image_eq_empty.1 ht]
-  -- The labels of the nonzero members lie in `[a, a + L)`, where `a` is the least of them.
-  obtain ⟨i₀, hi₀, hi₀a⟩ := Finset.mem_image.1 ((t.image e).min'_mem ht)
-  refine (Finset.card_le_card_of_injOn e (t := Finset.Ico ((t.image e).min' ht)
-    ((t.image e).min' ht + L)) (fun i hi ↦ ?_) he.injOn).trans (by simp)
-  refine Finset.mem_Ico.2 ⟨(t.image e).min'_le _ (Finset.mem_image_of_mem e hi),
-    lt_of_not_ge fun h ↦ ?_⟩
-  exact mul_ne_zero (Finset.mem_filter.1 hi₀).2 (Finset.mem_filter.1 hi).2
-    (hL i₀ i (hi₀a ▸ h) ξ)
-
-/-- **Bounded sum of squares of a family labelled by integers.** If, in addition to the hypotheses
-of `TauCeti.card_filter_ne_zero_le_of_mul_eq_zero`, every `ψ i` takes values in `[-1, 1]`, then
-`∑ᵢ ψ i ξ ² ≤ L` for every `ξ`, over any finite set of indices. -/
-theorem sum_sq_le_of_mul_eq_zero {ψ : ι → α → ℝ} {e : ι → ℤ} (he : Function.Injective e)
-    {L : ℕ} (hL : ∀ i k, e i + L ≤ e k → ∀ ξ, ψ i ξ * ψ k ξ = 0)
-    (habs : ∀ i ξ, |ψ i ξ| ≤ 1) (s : Finset ι) (ξ : α) : ∑ i ∈ s, ψ i ξ ^ 2 ≤ L := by
-  rw [← Finset.sum_filter_of_ne fun i _ h ↦ by simpa using h]
-  calc ∑ i ∈ s.filter (fun i ↦ ψ i ξ ≠ 0), ψ i ξ ^ 2
-      ≤ ∑ _i ∈ s.filter (fun i ↦ ψ i ξ ≠ 0), (1 : ℝ) :=
-        Finset.sum_le_sum fun i _ ↦ (sq_le_one_iff_abs_le_one _).2 (habs i ξ)
-    _ ≤ L := by simpa using card_filter_ne_zero_le_of_mul_eq_zero he hL s ξ
-
-end TauCeti
 
 namespace ContDiffBump
 
