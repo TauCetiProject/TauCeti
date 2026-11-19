@@ -8,8 +8,6 @@ module
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Potential
 public import Mathlib.Topology.MetricSpace.Holder
 import TauCeti.Analysis.Calculus.BumpFunction.HolderApproximation
-import TauCeti.Analysis.Calculus.ContDiff.Convolution
-import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution
 import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Laplacian
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Topology.MetricSpace.Holder
@@ -31,8 +29,8 @@ the setting of the classical Schauder theory:
 
 Continuity of `f` alone does not suffice: there is continuous data for which Poisson's equation
 has no `C²` solution near the origin
-(`TauCeti.PDE.not_exists_contDiffOn_laplacian_eq_laplacianQuadraticSqrtNegLog`). On the way, the
-potential of bounded data vanishing outside a ball is shown to be bounded
+(`TauCeti.PDE.not_exists_contDiffOn_laplacian_eq_laplacianQuadraticSqrtNegLog`). The argument uses
+that the potential of bounded data vanishing outside a ball is bounded
 (`TauCeti.exists_norm_newtonianKernel_convolution_le`); this is where `n ≥ 3` enters. The plane,
 with the logarithmic kernel `TauCeti.planarNewtonianKernel`, is not treated here.
 
@@ -69,80 +67,6 @@ namespace TauCeti
 
 variable {n : ℕ}
 
-/-- For `n ≥ 3` the Newtonian kernel is at most a constant plus an integrable function: it is
-integrable near its pole and bounded away from it. -/
-private theorem exists_abs_newtonianKernel_le_add (hn : 3 ≤ n) :
-    ∃ c : ℝ, 0 ≤ c ∧ ∃ ψ : EuclideanSpace ℝ (Fin n) → ℝ, Integrable ψ ∧ (∀ t, 0 ≤ ψ t) ∧
-      ∀ t, |newtonianKernel n t| ≤ c + ψ t := by
-  have hnℝ : (3 : ℝ) ≤ n := by exact_mod_cast hn
-  set c : ℝ := ((n : ℝ) * ((n : ℝ) - 2) *
-    volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ with hc_def
-  have hc : 0 ≤ c := by
-    have := volume_real_unitBall_pos n
-    rw [hc_def]
-    exact inv_nonneg.2 (mul_nonneg (mul_nonneg (by positivity) (by linarith)) this.le)
-  set ψ : EuclideanSpace ℝ (Fin n) → ℝ := (ball 0 1).indicator fun t ↦ |newtonianKernel n t|
-  refine ⟨c, hc, ψ, ?_, fun t ↦ indicator_nonneg (fun _ _ ↦ abs_nonneg _) t, fun t ↦ ?_⟩
-  · rw [integrable_indicator_iff measurableSet_ball]
-    have h1 : IntegrableOn (fun t ↦ |newtonianKernel n t|) (closedBall 0 1) :=
-      ((locallyIntegrable_newtonianKernel n).integrableOn_isCompact (isCompact_closedBall 0 1)).abs
-    exact h1.mono_set ball_subset_closedBall
-  by_cases ht : t ∈ ball (0 : EuclideanSpace ℝ (Fin n)) 1
-  · rw [show ψ t = |newtonianKernel n t| from indicator_of_mem ht _]
-    exact le_add_of_nonneg_left hc
-  · rw [show ψ t = 0 from indicator_of_notMem ht _, add_zero]
-    have h1 : 1 ≤ ‖t‖ := by simpa using ht
-    rw [newtonianKernel_def, ← hc_def, abs_of_nonneg (by positivity)]
-    calc c * ‖t‖ ^ (2 - (n : ℝ)) ≤ c * 1 :=
-          mul_le_mul_of_nonneg_left (Real.rpow_le_one_of_one_le_of_nonpos h1 (by linarith)) hc
-      _ = c := mul_one c
-
-/-- **The Newtonian potential of bounded data with bounded support is bounded.** For `n ≥ 3` and
-`R` there is a constant `C` such that for every bilinear map `L` and every `g` bounded by `M`
-and vanishing outside `closedBall 0 R`, the potential `Gₙ ⋆[L] g` is bounded by `‖L‖ M C`. -/
-theorem exists_norm_newtonianKernel_convolution_le {G H : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] [NormedAddCommGroup H] [NormedSpace ℝ H] (hn : 3 ≤ n) (R : ℝ) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ (L : ℝ →L[ℝ] G →L[ℝ] H) {g : EuclideanSpace ℝ (Fin n) → G} {M : ℝ},
-      (∀ y, ‖g y‖ ≤ M) → Function.support g ⊆ closedBall 0 R →
-      ∀ x, ‖(newtonianKernel n ⋆[L, volume] g) x‖ ≤ ‖L‖ * M * C := by
-  obtain ⟨c, hc, ψ, hψ, hψ0, hbound⟩ := exists_abs_newtonianKernel_le_add hn
-  refine ⟨c * volume.real (closedBall (0 : EuclideanSpace ℝ (Fin n)) R) + ∫ t, ψ t,
-    add_nonneg (mul_nonneg hc measureReal_nonneg) (integral_nonneg hψ0),
-    fun L g M hgM hgR x ↦ ?_⟩
-  have hM : 0 ≤ M := (norm_nonneg _).trans (hgM 0)
-  -- The integrand is supported in `closedBall x R`, where the kernel is at most `c + ψ`.
-  set b : EuclideanSpace ℝ (Fin n) → ℝ := fun t ↦
-    ‖L‖ * M * ((closedBall x R).indicator (fun _ ↦ c) t + ψ t)
-  have hind : Integrable ((closedBall x R).indicator fun _ ↦ c) :=
-    (integrable_indicator_iff measurableSet_closedBall).2
-      (integrableOn_const (measure_closedBall_lt_top).ne)
-  have hpt : ∀ t, ‖L (newtonianKernel n t) (g (x - t))‖ ≤ b t := by
-    intro t
-    have hL := L.le_opNorm₂ (newtonianKernel n t) (g (x - t))
-    rw [Real.norm_eq_abs] at hL
-    by_cases ht : t ∈ closedBall x R
-    · simp only [b, indicator_of_mem ht]
-      calc ‖L (newtonianKernel n t) (g (x - t))‖
-          ≤ ‖L‖ * |newtonianKernel n t| * ‖g (x - t)‖ := hL
-        _ ≤ ‖L‖ * (c + ψ t) * M :=
-          mul_le_mul (mul_le_mul_of_nonneg_left (hbound t) L.opNorm_nonneg) (hgM _)
-            (norm_nonneg _) (mul_nonneg L.opNorm_nonneg (add_nonneg hc (hψ0 t)))
-        _ = ‖L‖ * M * (c + ψ t) := by ring
-    · have hxt : x - t ∉ closedBall 0 R := by
-        rwa [mem_closedBall_zero_iff, ← dist_eq_norm, dist_comm, ← mem_closedBall]
-      rw [Function.notMem_support.1 fun h ↦ hxt (hgR h), map_zero, norm_zero]
-      exact mul_nonneg (mul_nonneg L.opNorm_nonneg hM)
-        (add_nonneg (indicator_nonneg (fun _ _ ↦ hc) t) (hψ0 t))
-  rw [convolution_def]
-  calc ‖∫ t, L (newtonianKernel n t) (g (x - t))‖ ≤ ∫ t, b t :=
-        norm_integral_le_of_norm_le ((hind.add hψ).const_mul _) (ae_of_all _ hpt)
-    _ = ‖L‖ * M * (c * volume.real (closedBall (0 : EuclideanSpace ℝ (Fin n)) R) +
-          ∫ t, ψ t) := by
-      simp only [b]
-      rw [integral_const_mul, integral_add hind hψ,
-        integral_indicator_const _ measurableSet_closedBall, smul_eq_mul,
-        Measure.real, Measure.real, Measure.addHaar_closedBall_center, mul_comm c]
-
 /-- The scalar case of `TauCeti.exists_norm_newtonianKernel_convolution_le`: the potential of a
 function bounded by `D` and vanishing outside `closedBall 0 R` is bounded by `D C`. -/
 private theorem exists_norm_newtonianKernel_convolution_le_mul (hn : 3 ≤ n) (R : ℝ) :
@@ -156,35 +80,16 @@ private theorem exists_norm_newtonianKernel_convolution_le_mul (hn : 3 ≤ n) (R
         gcongr; exact opNorm_lsmul_le
     _ = D * C := by ring
 
-/-- The Newtonian potential of a difference of continuous functions with compact support is the
-difference of their potentials. -/
-private theorem newtonianKernel_convolution_sub {a b : EuclideanSpace ℝ (Fin n) → ℝ}
-    (ha : Continuous a) (hac : HasCompactSupport a) (hb : Continuous b)
-    (hbc : HasCompactSupport b) :
-    newtonianKernel n ⋆ (a - b) = newtonianKernel n ⋆ a - newtonianKernel n ⋆ b := by
-  have hloc := locallyIntegrable_newtonianKernel n
-  rw [sub_eq_add_neg, (hac.convolutionExists_right (L := lsmul ℝ ℝ) hloc ha).distrib_add
-    (hbc.neg.convolutionExists_right (L := lsmul ℝ ℝ) hloc hb.neg), ← neg_one_smul ℝ b,
-    convolution_smul, neg_one_smul, ← sub_eq_add_neg]
+/-- A function vanishing outside a closed ball has compact support. -/
+private theorem hasCompactSupport_of_support_subset_closedBall
+    {a : EuclideanSpace ℝ (Fin n) → ℝ} {R : ℝ} (ha : Function.support a ⊆ closedBall 0 R) :
+    HasCompactSupport a :=
+  HasCompactSupport.intro (isCompact_closedBall 0 R) fun _ hx ↦
+    Function.notMem_support.1 fun h ↦ hx (ha h)
 
 section Smooth
 
 variable {g : EuclideanSpace ℝ (Fin n) → ℝ}
-
-/-- For `n ≥ 3`, the derivatives of every order of the Newtonian potential of a smooth function
-with compact support are bounded. -/
-private theorem exists_norm_iteratedFDeriv_newtonianKernel_convolution_le (hn : 3 ≤ n)
-    (hg : ContDiff ℝ ∞ g) (hc : HasCompactSupport g) (i : ℕ) :
-    ∃ C, ∀ x, ‖iteratedFDeriv ℝ i (newtonianKernel n ⋆ g) x‖ ≤ C := by
-  obtain ⟨R, hR⟩ := hc.isCompact.isBounded.subset_closedBall 0
-  obtain ⟨C₀, -, hC₀⟩ := exists_norm_newtonianKernel_convolution_le
-    (G := EuclideanSpace ℝ (Fin n) [×i]→L[ℝ] ℝ) (H := EuclideanSpace ℝ (Fin n) [×i]→L[ℝ] ℝ) hn R
-  obtain ⟨M, hM⟩ := (hg.continuous_iteratedFDeriv (mod_cast le_top)
-    ).bounded_above_of_compact_support (hc.iteratedFDeriv i)
-  rw [HasCompactSupport.iteratedFDeriv_convolution_right (L := lsmul ℝ ℝ) hc
-    (locallyIntegrable_newtonianKernel n) hg (n := i) (mod_cast le_top)]
-  exact ⟨_, hC₀ _ hM ((subset_tsupport _).trans
-    ((tsupport_iteratedFDeriv_subset i).trans hR))⟩
 
 /-- For `n ≥ 3`, the Hessian of the Newtonian potential of a smooth function with compact support
 is bounded and Lipschitz, so it is `β`-Hölder for every `β ≤ 1`. -/
@@ -225,8 +130,7 @@ private theorem exists_norm_le_of_newtonianKernel_convolution (hn : 3 ≤ m + 1)
   obtain ⟨C₁, hC₁⟩ := PDE.exists_norm_le_of_sum_smul_fderiv_fderiv (n := m) hβ hβ1 1 1 0
   refine ⟨C₁ * (2 + C₀), by positivity, fun {g K D δ} hg hs hgK hD hδ ↦ ?_⟩
   have hD0 : 0 ≤ D := (norm_nonneg _).trans (hD 0)
-  have hc : HasCompactSupport g := HasCompactSupport.intro (isCompact_closedBall 0 R)
-    fun x hx ↦ Function.notMem_support.1 fun h ↦ hx (hs h)
+  have hc : HasCompactSupport g := hasCompactSupport_of_support_subset_closedBall hs
   let W : CkHolderSpace 2 β E ℝ :=
     CkHolderSpace.ofContDiff _ ((contDiff_newtonianKernel_convolution hg hc).of_le (by norm_cast))
       (fun i _ ↦ exists_norm_iteratedFDeriv_newtonianKernel_convolution_le hn hg hc i)
@@ -255,12 +159,19 @@ private theorem exists_norm_le_of_newtonianKernel_convolution (hn : 3 ≤ m + 1)
     W hN hK
   simp only [NNReal.coe_add, NNReal.coe_mul, NNReal.coe_rpow, Real.coe_toNNReal _ hδ.le,
     Real.coe_toNNReal _ hD0, Real.coe_toNNReal _ (mul_nonneg hD0 hC₀0), NNReal.coe_ofNat] at hle
-  refine hle.trans ?_
   have hx : 0 ≤ (K : ℝ) * δ ^ ((α : ℝ) - β) := by positivity
   have hy : 0 ≤ D * δ ^ (-(β : ℝ)) := by positivity
-  have hC₁0 : (0 : ℝ) ≤ C₁ := C₁.coe_nonneg
-  nlinarith [mul_nonneg hC₁0 hx, mul_nonneg hC₁0 hy, mul_nonneg (mul_nonneg hC₁0 hC₀0) hx,
-    mul_nonneg (mul_nonneg hC₁0 hC₀0) hy, mul_nonneg hC₁0 hD0]
+  -- Compare the three terms one at a time against `2 + C₀` times the corresponding term.
+  calc ‖W‖ ≤ C₁ * (K * δ ^ ((α : ℝ) - β) + 2 * D * δ ^ (-(β : ℝ)) + D * C₀) := hle
+    _ ≤ C₁ * ((2 + C₀) * (K * δ ^ ((α : ℝ) - β)) + (2 + C₀) * (D * δ ^ (-(β : ℝ))) +
+          (2 + C₀) * D) := by
+        gcongr C₁ * (?_ + ?_ + ?_)
+        · exact le_mul_of_one_le_left hx (by linarith)
+        · rw [mul_assoc]
+          exact mul_le_mul_of_nonneg_right (by linarith) hy
+        · rw [mul_comm D]
+          exact mul_le_mul_of_nonneg_right (by linarith) hD0
+    _ = C₁ * (2 + C₀) * (K * δ ^ ((α : ℝ) - β) + D * δ ^ (-(β : ℝ)) + D) := by ring
 
 /-- **The potentials of convergent smooth data form a Cauchy sequence in `C_b^{2,β}`.** Let `g k`
 be smooth, vanish outside one ball, be `α`-Hölder with one constant `H`, and converge uniformly.
@@ -275,8 +186,7 @@ private theorem exists_cauchySeq_newtonianKernel_convolution (hn : 3 ≤ m + 1) 
       CauchySeq W := by
   obtain ⟨C, hC0, hC⟩ := exists_norm_le_of_newtonianKernel_convolution hn R hβ hβα hβ1
   have hgc : ∀ k, HasCompactSupport (g k) := fun k ↦
-    HasCompactSupport.intro (isCompact_closedBall 0 R) fun x hx ↦
-      Function.notMem_support.1 fun h ↦ hx (hgsupp k h)
+    hasCompactSupport_of_support_subset_closedBall (hgsupp k)
   choose W hW using fun k ↦ hC (hgs k) (hgsupp k) (hgH k) (hgM k) one_pos
   refine ⟨W, fun k ↦ (hW k).1, Metric.cauchySeq_iff.2 fun ε hε ↦ ?_⟩
   -- The difference of two potentials is the potential of the difference of the data.
@@ -334,9 +244,6 @@ private theorem coe_eq_and_tendsto_iteratedFDeriv_two_of_tendsto (hn : 3 ≤ m +
       (𝓝 (iteratedFDeriv ℝ 2 (newtonianKernel (m + 1) ⋆ f) x))) ∧
       Δ (newtonianKernel (m + 1) ⋆ f) = -f := by
   obtain ⟨C₀, hC₀0, hC₀⟩ := exists_norm_newtonianKernel_convolution_le_mul hn R
-  have hcpt : ∀ {a : E → ℝ}, Function.support a ⊆ closedBall 0 R → HasCompactSupport a :=
-    fun ha ↦ HasCompactSupport.intro (isCompact_closedBall 0 R) fun x hx ↦
-      Function.notMem_support.1 fun h ↦ hx (ha h)
   have hV0 : Tendsto (fun k ↦ ‖W k - V‖) atTop (𝓝 0) := tendsto_iff_norm_sub_tendsto_zero.1 hV
   -- The values converge both to those of `V` and to those of `Gₙ ⋆ f`.
   have hlimV : ∀ x, Tendsto (fun k ↦ W k x) atTop (𝓝 (V x)) := fun x ↦
@@ -353,7 +260,9 @@ private theorem coe_eq_and_tendsto_iteratedFDeriv_two_of_tendsto (hn : 3 ≤ m +
       rw [Pi.sub_apply, norm_sub_rev, ← dist_eq_norm]
       exact (hN k hk y).le
     rw [dist_eq_norm, hW, ← Pi.sub_apply (newtonianKernel (m + 1) ⋆ g k),
-      ← newtonianKernel_convolution_sub (hgcont k) (hcpt (hgsupp k)) hfcont (hcpt hfsupp)]
+      ← newtonianKernel_convolution_sub (hgcont k)
+        (hasCompactSupport_of_support_subset_closedBall (hgsupp k)) hfcont
+        (hasCompactSupport_of_support_subset_closedBall hfsupp)]
     calc ‖(newtonianKernel (m + 1) ⋆ (g k - f)) x‖ ≤ ε / (C₀ + 1) * C₀ :=
           hC₀ hD ((Function.support_sub _ _).trans (union_subset (hgsupp k) hfsupp)) x
       _ < ε := by
@@ -396,8 +305,7 @@ private theorem newtonianKernel_convolution_of_holderWith_aux (hn : 3 ≤ n)
   obtain ⟨g, hgs, hgsupp, hgH, hgM, hglim⟩ :=
     exists_contDiff_support_subset_holderWith_tendstoUniformly hα hf hM hsupp
   have hgc : ∀ k, HasCompactSupport (g k) := fun k ↦
-    HasCompactSupport.intro (isCompact_closedBall 0 (R + 1)) fun x hx ↦
-      Function.notMem_support.1 fun h ↦ hx (hgsupp k h)
+    hasCompactSupport_of_support_subset_closedBall (hgsupp k)
   have hfsupp : Function.support f ⊆ closedBall 0 (R + 1) :=
     hsupp.trans (closedBall_subset_closedBall (by linarith))
   -- Their potentials converge in `C_b^{2,α/2}` to the potential of `f`.

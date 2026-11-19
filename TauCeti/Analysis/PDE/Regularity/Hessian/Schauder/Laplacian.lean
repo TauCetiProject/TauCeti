@@ -78,27 +78,24 @@ private theorem exists_dist_iteratedFDeriv_two_le_of_laplacian {α : ℝ≥0} (h
   obtain ⟨C, hC⟩ :=
     exists_holderWith_iteratedFDeriv_two_and_norm_le_of_sum_smul_fderiv_fderiv (n := n) hα hα1 1 1 0
   refine ⟨C, fun {u N H Cu} hu hN hCu hH t ht x y ↦ ?_⟩
-  have hdist : ∀ z z' : E, dist (t • z) (t • z') = t * dist z z' :=
-    fun z z' ↦ by rw [dist_smul₀, Real.norm_of_nonneg ht.le]
-  set v : E → ℝ := fun z ↦ u (t • z)
+  set v : E → ℝ := fun z ↦ u (t • z) with hv
   have hD2v : ∀ z, iteratedFDeriv ℝ 2 v z = t ^ 2 • iteratedFDeriv ℝ 2 u (t • z) :=
     fun z ↦ iteratedFDeriv_comp_const_smul_apply u t z 2
   -- A Hölder bound `K` for `g` gives the bound `t ^ 2 K t ^ α` for `z ↦ t ^ 2 • g (t • z)`.
   have hdil : ∀ {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F] {g : E → F} {K : ℝ≥0},
       HolderWith K α g → HolderWith (t ^ 2 * K * t ^ (α : ℝ)).toNNReal α
-        (fun z ↦ t ^ 2 • g (t • z)) := fun {F _ _ g K} hg ↦
-    holderOnWith_univ.1 <| HolderOnWith.of_dist_le fun z _ z' _ ↦ by
-      rw [Real.coe_toNNReal _ (by positivity), dist_smul₀, norm_pow, Real.norm_of_nonneg ht.le]
-      calc t ^ 2 * dist (g (t • z)) (g (t • z')) ≤ t ^ 2 * (K * dist (t • z) (t • z') ^ (α : ℝ)) :=
-            by gcongr; exact hg.dist_le _ _
-        _ = t ^ 2 * K * t ^ (α : ℝ) * dist z z' ^ (α : ℝ) := by
-            rw [hdist, Real.mul_rpow ht.le dist_nonneg]; ring
+        (fun z ↦ t ^ 2 • g (t • z)) := fun {F _ _ g K} hg ↦ by
+    convert (holderOnWith_univ.1 ((hg.holderOnWith univ).comp_const_smul t
+      (mapsTo_univ _ _))).smul (t ^ 2) using 1
+    rw [← NNReal.coe_inj, Real.coe_toNNReal _ (by positivity), NNReal.coe_mul, NNReal.coe_mul,
+      NNReal.coe_rpow, coe_nnNorm, coe_nnNorm, norm_pow, Real.norm_of_nonneg ht.le]
+    ring
   have hvH : MemHolder α (iteratedFDeriv ℝ 2 v) := ⟨_, by rw [funext hD2v]; exact hdil hCu⟩
   have hLv : HolderWith (t ^ 2 * H * t ^ (α : ℝ)).toNNReal α (fun z ↦ ∑ i, ∑ j,
       (fun _ ↦ (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)) z i j •
         fderiv ℝ (fderiv ℝ v) z (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) := by
     simp only [sum_one_smul_fderiv_fderiv_eq_laplacian]
-    rw [show v = fun z ↦ u (t • z) from rfl, laplacian_comp_smul_right]
+    rw [hv, laplacian_comp_smul_right]
     exact hdil hH
   -- Rescale the estimate for `v` at the points `t⁻¹ • x`, `t⁻¹ • y` back to `u`.
   have hres := (hC (uniformlyEllipticOn_const_one_one univ) (fun _ _ ↦ HolderWith.const)
