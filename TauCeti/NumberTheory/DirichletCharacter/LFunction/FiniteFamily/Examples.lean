@@ -8,8 +8,8 @@ module
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.FiniteFamily
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Cotangent
 import TauCeti.NumberTheory.DirichletCharacter.Basic
+import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 import Mathlib.NumberTheory.LegendreSymbol.ZModChar
-import TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.LinearCombination
@@ -82,10 +82,6 @@ example {N : ℕ} [NeZero N] (hN : N ≤ 4) (χ : DirichletCharacter ℂ N) (hχ
   have := three_le_level_of_ne_one hχ
   omega
 
-/-- The native quadratic character modulo three supplies a nonprincipal member of the family. -/
-example : Odd ((quadraticChar (ZMod 3)).ringHomComp (Int.castRingHom ℂ)) := by
-  simp only [Odd, MulChar.ringHomComp_apply, quadraticChar_zmod_three_neg_one, map_neg, map_one]
-
 /-- Casting the native integer-valued character modulo four gives the other nonprincipal member. -/
 example : Odd (ZMod.χ₄.ringHomComp (Int.castRingHom ℂ)) := by
   have hneg : ZMod.χ₄ (-1) = -1 := by decide
@@ -112,15 +108,22 @@ example (χ : DirichletCharacter ℂ 4) (hχ : χ ≠ 1) :
     have hneg : ZMod.χ₄ (-1) = -1 := by decide
     simpa only [Odd, hres, MulChar.ringHomComp_apply, hneg, map_neg, map_one] using ho
 
-/-- Every nonprincipal complex character modulo three is the cast of its quadratic character. -/
-example (χ : DirichletCharacter ℂ 3) (hχ : χ ≠ 1) :
-    χ = (quadraticChar (ZMod 3)).ringHomComp (Int.castRingHom ℂ) := by
-  rcases χ.even_or_odd with he | ho
-  · apply (hχ ?_).elim
-    apply ext_of_level_three
-    simpa only [Even, MulChar.one_apply (by decide : IsUnit (-1 : ZMod 3))] using he
-  · apply ext_of_level_three
-    simpa only [MulChar.ringHomComp_apply, quadraticChar_zmod_three_neg_one,
-      map_neg, map_one, Odd] using ho
+/-- The native quadratic character modulo three is odd, and every nonprincipal complex character
+modulo three is its cast. Both assertions use the same value at minus one. -/
+example : Odd ((quadraticChar (ZMod 3)).ringHomComp (Int.castRingHom ℂ)) ∧
+    ∀ χ : DirichletCharacter ℂ 3, χ ≠ 1 →
+      χ = (quadraticChar (ZMod 3)).ringHomComp (Int.castRingHom ℂ) := by
+  have hneg : (quadraticChar (ZMod 3)) (-1) = -1 := by
+    rw [quadraticChar_neg_one (F := ZMod 3) (by norm_num [ZMod.ringChar_zmod_n]), ZMod.card]
+    exact ZMod.χ₄_nat_three_mod_four (by decide)
+  constructor
+  · simp only [Odd, MulChar.ringHomComp_apply, hneg, map_neg, map_one]
+  · intro χ hχ
+    rcases χ.even_or_odd with he | ho
+    · apply (hχ ?_).elim
+      apply ext_of_level_three
+      simpa only [Even, MulChar.one_apply (by decide : IsUnit (-1 : ZMod 3))] using he
+    · apply ext_of_level_three
+      simpa only [MulChar.ringHomComp_apply, hneg, map_neg, map_one, Odd] using ho
 
 end DirichletCharacter
