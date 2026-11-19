@@ -260,7 +260,7 @@ theorem tsum_divisor_mul_re_one_div_sub_eq_re_logDeriv_LFunction_add
   have hΛ : (dirichletData χ hχ).entireCompletion s ≠ 0 :=
     (dirichletData_entireCompletion_eq_zero_iff χ hχ hne hs).not.mpr hL
   rw [← re_logDeriv_dirichletData_entireCompletion_eq_tsum χ hχ hΛ,
-    re_logDeriv_dirichletData_entireCompletion χ hχ hne hs hL]
+    χ.re_logDeriv_dirichletData_entireCompletion hχ hne hs hL]
   ring
 
 /-- **Finite retained-zero inequality.** For any primitive nonprincipal Dirichlet character `χ` of
@@ -289,7 +289,7 @@ theorem sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_re_logDeriv_LFunc
     rw [toNat_divisor_dirichletData_entireCompletion_eq_analyticOrderNatAt χ hχ hne (hS ρ hρ)]
   have hdecomp : (logDeriv (dirichletData χ hχ).entireCompletion σ).re =
       Real.log N / 2 + (logDeriv χ.gammaFactor σ).re + (logDeriv χ.LFunction σ).re := by
-    exact re_logDeriv_dirichletData_entireCompletion χ hχ hne hσ0 hLσ
+    exact χ.re_logDeriv_dirichletData_entireCompletion hχ hne hσ0 hLσ
   have hgamma : (logDeriv χ.gammaFactor σ).re ≤ TauCeti.gammaLogDerivBound :=
     (le_abs_self _).trans ((abs_re_le_norm _).trans (χ.norm_logDeriv_gammaFactor_ofReal_le hσ))
   linarith
@@ -385,12 +385,9 @@ example :
     · exact absurd (DirichletCharacter.eq_one_iff_conductor_eq_one.mpr h) hne
     · exact (DirichletCharacter.isPrimitive_def χ).mpr h
   refine ⟨χ, hχ, fun hinv ↦ ?_, hprim, ?_⟩
-  · have h2 : χ ^ 2 = 1 := by
-      rw [sq]
-      exact inv_eq_iff_mul_eq_one.mp hinv
-    have := orderOf_dvd_of_pow_eq_one h2
-    rw [hχ] at this
-    exact absurd this (by norm_num)
+  · have horder : orderOf χ ≤ 2 :=
+      (isSelfInv_iff_isOfFinOrder_and_orderOf_le_two.mp (show IsSelfInv χ from hinv)).2
+    norm_num [hχ] at horder
   · simpa using
       sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_re_logDeriv_LFunction_add
         χ hprim hne ∅ (by simp) (σ := 2) ⟨by norm_num, le_rfl⟩

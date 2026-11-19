@@ -79,7 +79,8 @@ theorem logDeriv_dirichletData_entireCompletion (hne : χ ≠ 1) {s : ℂ} (hs :
 /-- On the positive half-plane, away from the zeros of `L(χ, ·)`, the real part of the
 entire completion's logarithmic derivative is the sum of the conductor, gamma and `L'/L`
 real parts. -/
-theorem re_logDeriv_dirichletData_entireCompletion (hne : χ ≠ 1) {s : ℂ} (hs : 0 < s.re)
+theorem _root_.DirichletCharacter.re_logDeriv_dirichletData_entireCompletion
+    (hne : χ ≠ 1) {s : ℂ} (hs : 0 < s.re)
     (hL : χ.LFunction s ≠ 0) :
     (logDeriv (dirichletData χ hχ).entireCompletion s).re =
       Real.log N / 2 + (logDeriv χ.gammaFactor s).re + (logDeriv χ.LFunction s).re := by
