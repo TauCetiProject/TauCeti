@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.MFDeriv.Translation
+import TauCeti.Geometry.Symplectic.Manifold.Energy
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -520,18 +521,12 @@ theorem IsNondegenerate.continuous_floerEnergyDensity_zero_left [FiniteDimension
     (hω : ω.IsNondegenerate) (hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt))
     (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) :
     Continuous (ω.floerEnergyDensity (fun _ _ ↦ 0) Kt u) := by
-  have hω₀ : IsSmoothForm I 0 ω.val := ω.isSmoothForm.of_le (by simp)
   -- The three terms of the pointwise energy identity are continuous.
-  have harea : Continuous fun z ↦ SmoothBundleForm.eval₂ ω (u z)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) :=
-    (hω₀.continuous_apply_mfderiv hu (1, 0) (0, 1)).congr fun z ↦ by
-      simp [SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
   have hK : ContDiff ℝ 1 fun w ↦ Kt w (u w) :=
     contMDiff_iff_contDiff.mp (hKt.comp (contMDiff_id.prodMk hu))
   have hdK : Continuous fun z ↦ fderiv ℝ (fun w ↦ Kt w (u w)) z stdComplexLineReal :=
     (hK.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  refine ((harea.add hdK).sub
+  refine (((continuous_eval₂_mfderiv ω hu).add hdK).sub
     (continuous_hamiltonianCurvature_zero_left_comp (ω := ω) hKt hu)).congr fun z ↦ ?_
   rw [hω.floerEnergyDensity_eq ((hu z).mdifferentiableAt one_ne_zero)
     (contMDiffAt_const.mdifferentiableAt one_ne_zero) ((hKt _).mdifferentiableAt one_ne_zero)]
