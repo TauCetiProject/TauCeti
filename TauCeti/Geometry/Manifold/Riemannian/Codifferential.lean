@@ -86,7 +86,7 @@ operator, this says that the principal symbol of `Δ` at `df_x` is `-|df_x|² Id
   `Δf = -div grad f`.
 * `TauCeti.SmoothForm.coe_codifferential_funSMulₗ`: the Leibniz rule
   `d*(f β) = f d*β - ι_(grad f) β`.
-* `TauCeti.SmoothForm.codifferential_lie_lie_eq_zero`: `d*` has order one,
+* `TauCeti.SmoothForm.codifferential_lie_lie_funSMulₗ_eq_zero`: `d*` has order one,
   `[[d*, f], g] = 0`.
 * `TauCeti.SmoothForm.coe_lie_lie_hodgeLaplacian_funSMulₗ`,
   `TauCeti.SmoothForm.coe_lie_lie_hodgeLaplacian_funSMulₗ_self`: the principal symbol of the Hodge
@@ -607,7 +607,7 @@ theorem coe_codifferential_funSMulₗ (o : Manifold.Orientation I M (Fin m))
 functions `f` and `g` vanishes, `[[d*, f], g] = 0`, since `[d*, f] = -ι_(grad f)` is fibrewise
 (`TauCeti.SmoothForm.coe_codifferential_funSMulₗ`). Since `d*` changes the degree, the commutators
 are written out as differences of composites. -/
-theorem codifferential_lie_lie_eq_zero (o : Manifold.Orientation I M (Fin m))
+theorem codifferential_lie_lie_funSMulₗ_eq_zero (o : Manifold.Orientation I M (Fin m))
     (hkl : k + 1 + l = m) (f g : C^∞⟮I, M; ℝ⟯) :
     (codifferential o hkl ∘ₗ funSMulₗ f - funSMulₗ f ∘ₗ codifferential o hkl) ∘ₗ funSMulₗ g -
       funSMulₗ g ∘ₗ (codifferential o hkl ∘ₗ funSMulₗ f - funSMulₗ f ∘ₗ codifferential o hkl) =

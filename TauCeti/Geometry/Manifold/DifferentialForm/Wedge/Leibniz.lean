@@ -31,7 +31,7 @@ cohomology a ring.
 For a smooth function `f`, the rule reads `d (f φ) = df ∧ φ + f dφ`
 (`TauCeti.SmoothForm.mextDerivₗ_funSMulₗ_apply`), so the commutator `[d, f] = df ∧ ·` is
 fibrewise and `d` has order one: `[[d, f], g] = 0`
-(`TauCeti.SmoothForm.mextDerivₗ_lie_lie_eq_zero`).
+(`TauCeti.SmoothForm.mextDerivₗ_lie_lie_funSMulₗ_eq_zero`).
 
 ## References
 
@@ -271,7 +271,7 @@ theorem mextDerivₗ_funSMulₗ_apply [IsManifold I 2 M] (f : C^∞⟮I, M; ℝ�
 /-- **The exterior derivative has order one**: its double commutator with multiplication by
 smooth functions `f` and `g` vanishes, `[[d, f], g] = 0`. Since `d` changes the degree, the
 commutators are written out as differences of composites. -/
-theorem mextDerivₗ_lie_lie_eq_zero [IsManifold I 2 M] (f g : C^∞⟮I, M; ℝ⟯) (k : ℕ) :
+theorem mextDerivₗ_lie_lie_funSMulₗ_eq_zero [IsManifold I 2 M] (f g : C^∞⟮I, M; ℝ⟯) (k : ℕ) :
     (mextDerivₗ I k ∘ₗ funSMulₗ (F := ℝ) f - funSMulₗ f ∘ₗ mextDerivₗ I k) ∘ₗ funSMulₗ g -
       funSMulₗ g ∘ₗ (mextDerivₗ I k ∘ₗ funSMulₗ f - funSMulₗ f ∘ₗ mextDerivₗ I k) = 0 := by
   refine LinearMap.ext fun α ↦ Subtype.ext (funext fun x ↦ ?_)

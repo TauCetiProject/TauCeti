@@ -64,7 +64,7 @@ codifferentials `δ` with these properties, in parallel with the Laplacian
   the commutator of `D + δ` with a degreewise operator, and the symbol of `d + d*`.
 * `TauCeti.SmoothForm.coe_lie_deRhamOperator_piMap_funSMulₗ_apply_add_one_add_one` and its
   boundary-degree cases: the symbol `[d + d*, f] = df ∧ · - ι_(grad f)` degree by degree.
-* `TauCeti.SmoothForm.lie_lie_deRhamOperator_piMap_funSMulₗ`: `d + d*` has order one.
+* `TauCeti.SmoothForm.lie_lie_deRhamOperator_piMap_funSMulₗ_eq_zero`: `d + d*` has order one.
 * `TauCeti.SmoothForm.coe_lie_mul_lie_add_lie_mul_lie_deRhamOperator_apply`,
   `TauCeti.SmoothForm.coe_lie_deRhamOperator_mul_self_apply`: the Clifford relation of the symbol,
   so `d + d*` is of Dirac type.
@@ -581,12 +581,12 @@ theorem coe_lie_deRhamOperator_piMap_funSMulₗ_apply_add_one_add_one (hkl : k +
 
 /-- **The de Rham operator has order one**: its double commutator with multiplication by smooth
 functions `f` and `g` vanishes, `[[d + d*, f], g] = 0`. -/
-theorem lie_lie_deRhamOperator_piMap_funSMulₗ (f g : C^∞⟮I, M; ℝ⟯) :
+theorem lie_lie_deRhamOperator_piMap_funSMulₗ_eq_zero (f g : C^∞⟮I, M; ℝ⟯) :
     ⁅⁅deRhamOperator o, LinearMap.piMap fun j : Fin (m + 1) ↦ funSMulₗ (F := ℝ) (k := j) f⁆,
       LinearMap.piMap fun j : Fin (m + 1) ↦ funSMulₗ (F := ℝ) (k := j) g⁆ = 0 := by
   rw [lie_deRhamOperator_piMap_funSMulₗ]
   refine (lie_diffAddCodiff_piMap (fun _ ↦ funSMulₗ g)).trans ?_
-  simp only [mextDerivₗ_lie_lie_eq_zero, codifferential_lie_lie_eq_zero]
+  simp only [mextDerivₗ_lie_lie_funSMulₗ_eq_zero, codifferential_lie_lie_funSMulₗ_eq_zero]
   exact diffAddCodiff_zero
 
 /-- **The de Rham operator is of Dirac type**: its symbol `c(f) = [d + d*, f]` satisfies the
@@ -606,7 +606,7 @@ theorem coe_lie_mul_lie_add_lie_mul_lie_deRhamOperator_apply (f g : C^∞⟮I, M
   set c := LinearMap.piMap fun j : Fin (m + 1) ↦ funSMulₗ (F := ℝ) (k := j) g
   -- Since `[[a, b], c] = 0`, `[[a², b], c] = [a, c] [a, b] + [a, b] [a, c]`.
   have key := lie_lie_mul_self a b c
-  rw [lie_lie_deRhamOperator_piMap_funSMulₗ, mul_zero, zero_mul, add_zero, zero_add] at key
+  rw [lie_lie_deRhamOperator_piMap_funSMulₗ_eq_zero, mul_zero, zero_mul, add_zero, zero_add] at key
   rw [add_comm (⁅a, b⁆ * ⁅a, c⁆), ← key, Module.End.mul_eq_comp, deRhamOperator_comp_deRhamOperator]
   have h := coe_lie_lie_hodgeLaplacian_funSMulₗ o (k := j) (l := m - j) (by omega) f g (α j)
   simp only [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp] at h
