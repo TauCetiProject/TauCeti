@@ -117,17 +117,13 @@ oriented like `(v, J v)`. -/
 theorem alternatingFormEquiv_kahlerForm_apply_eq_norm_ιMulti_iff {v w : V} (hv : v ≠ 0) :
     alternatingFormEquiv V 2 J.kahlerForm ![v, w] = ‖ιMulti ℝ 2 ![v, w]‖ ↔
       ∃ a b : ℝ, 0 ≤ b ∧ w = a • v + b • J v := by
-  let ω := J.symplecticForm hJ
-  have hg (u x : V) : ω u (J x) = ⟪u, x⟫ := by simp [ω, hJ]
-  have hω : ω.Compatible J :=
-    .of_tames (SymplecticForm.invariant_of_apply_apply_eq_inner hg) fun u hu ↦ by
-      rw [hg]; exact real_inner_self_pos.2 hu
-  have hnorm : ‖ιMulti ℝ 2 ![v, w]‖ = ω.wedgeNorm J v w := by
+  have hnorm : ‖ιMulti ℝ 2 ![v, w]‖ = (J.symplecticForm hJ).wedgeNorm J v w := by
     rw [SymplecticForm.wedgeNorm_def, norm_eq_sqrt_real_inner, inner_ιMulti_two]
-    simp only [SymplecticForm.associatedBilinForm_apply, hg, real_inner_comm v w, sq]
+    simp only [SymplecticForm.associatedBilinForm_apply, symplecticForm_apply, hJ,
+      real_inner_comm v w, sq]
   rw [alternatingFormEquiv_kahlerForm_apply hJ, hnorm, Matrix.cons_val_zero, Matrix.cons_val_one,
     ← symplecticForm_apply hJ]
-  exact hω.apply_eq_wedgeNorm_iff hv w
+  exact (symplecticForm_compatible hJ).apply_eq_wedgeNorm_iff hv w
 
 end TauCeti.AlmostComplexStructure
 
@@ -190,10 +186,7 @@ theorem standardKahlerForm_apply_eq_norm_ιMulti_iff {n : ℕ} {v w : EuclideanS
     AlmostComplexStructure.alternatingFormEquiv_kahlerForm_apply_eq_norm_ιMulti_iff
       AlmostComplexStructure.inner_ofComplexModule_apply_ofComplexModule_apply hv]
   simp only [AlmostComplexStructure.ofComplexModule_apply]
-  have hc (c : ℂ) : c • v = c.re • v + c.im • Complex.I • v := by
-    nth_rw 1 [← Complex.re_add_im c]
-    simp
-  exact ⟨fun ⟨a, b, hb, hw⟩ ↦ ⟨⟨a, b⟩, hb, hw.trans (hc ⟨a, b⟩).symm⟩,
-    fun ⟨c, hc', hw⟩ ↦ ⟨c.re, c.im, hc', hw.trans (hc c)⟩⟩
+  exact ⟨fun ⟨a, b, hb, hw⟩ ↦ ⟨⟨a, b⟩, hb, hw.trans (Complex.re_smul_add_im_smul ⟨a, b⟩ v)⟩,
+    fun ⟨c, hc, hw⟩ ↦ ⟨c.re, c.im, hc, hw.trans (Complex.re_smul_add_im_smul c v).symm⟩⟩
 
 end TauCeti

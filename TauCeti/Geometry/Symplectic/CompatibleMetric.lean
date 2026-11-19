@@ -49,6 +49,7 @@ against exactly this metric.
   product, `⟪J v, w⟫ = ω(v, w)` and `J` is skew-adjoint.
 * `TauCeti.AlmostComplexStructure.symplecticForm`: the symplectic form `ω(v, w) = ⟪J v, w⟫` of an
   orthogonal almost complex structure `J` on a real inner product space.
+* `TauCeti.AlmostComplexStructure.symplecticForm_compatible`: that form is compatible with `J`.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: a compatible pair `(ω, J)` determines a metric `g(v, w) = ω(v, J w)`.
@@ -315,6 +316,14 @@ theorem symplecticForm_apply {J : AlmostComplexStructure V}
     (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (v w : V) :
     J.symplecticForm hJ v w = ⟪J v, w⟫ :=
   (rfl)
+
+/-- The symplectic form `ω(v, w) = ⟪J v, w⟫` of an orthogonal almost complex structure is
+compatible with `J`; its associated metric `ω(v, J w)` is the inner product. -/
+theorem symplecticForm_compatible {J : AlmostComplexStructure V}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) : (J.symplecticForm hJ).Compatible J := by
+  have hg (v w : V) : J.symplecticForm hJ v (J w) = ⟪v, w⟫ := by simp [hJ]
+  exact .of_tames (SymplecticForm.invariant_of_apply_apply_eq_inner hg) fun v hv ↦ by
+    rw [hg]; exact real_inner_self_pos.2 hv
 
 end AlmostComplexStructure
 
