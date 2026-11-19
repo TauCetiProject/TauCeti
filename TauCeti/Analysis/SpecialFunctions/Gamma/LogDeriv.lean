@@ -6,7 +6,7 @@ Authors: OpenAI Codex
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
-public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 
 /-!
 # Logarithmic derivatives of the archimedean gamma factors
@@ -31,12 +31,6 @@ at real arguments in `[1,2]`, as needed in real-zero estimates for Dirichlet L-f
 public section
 
 namespace Complex
-
-/-- The real-place gamma factor is differentiable wherever it is nonzero. -/
-theorem differentiableAt_Gammaℝ_of_ne_zero {s : ℂ} (hs : Gammaℝ s ≠ 0) :
-    DifferentiableAt ℂ Gammaℝ s := by
-  simpa only [Pi.inv_def, inv_inv] using
-    (differentiable_Gammaℝ_inv s).inv (inv_ne_zero hs)
 
 /-- The logarithmic derivative of the real-place gamma factor, away from its poles. -/
 theorem logDeriv_Gammaℝ {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(2 * n)) :

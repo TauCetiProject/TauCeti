@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.LogDeriv
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.LogDeriv
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Basic
 
@@ -91,9 +92,7 @@ that of the inverse character. -/
 theorem logDeriv_dirichletData_entireCompletion_one_sub (hne : χ ≠ 1) (s : ℂ) :
     logDeriv (dirichletData χ hχ).entireCompletion (1 - s) =
       -logDeriv (dirichletData χ⁻¹ hχ.inv).entireCompletion s := by
-  have h : logDeriv (fun z ↦ (dirichletData χ hχ).entireCompletion (1 - z)) s =
-      -logDeriv (dirichletData χ hχ).entireCompletion (1 - s) := by
-    rw [logDeriv_apply, logDeriv_apply, deriv_comp_const_sub, neg_div]
+  have h := logDeriv_comp_const_sub (dirichletData χ hχ).entireCompletion 1 s
   rw [← neg_neg (logDeriv _ (1 - s)), ← h,
     funext (dirichletData_entireCompletion_one_sub χ hχ hne),
     logDeriv_const_mul s _ (DirichletCharacter.rootNumber_ne_zero hχ)]
