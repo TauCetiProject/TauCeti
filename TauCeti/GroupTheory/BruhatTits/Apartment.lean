@@ -196,10 +196,7 @@ theorem transport_self (b : Apartment φ) : transport b b = base b.val := by
 @[simp]
 theorem linear_transport (b : Apartment φ) : (transport b).linear = LinearEquiv.refl ℝ N := by
   ext v
-  have h := congrArg displacement ((transport b).map_vadd b v)
-  simp only [transport_self, displacement_vadd, displacement_transport, displacement_base,
-    add_zero, add_sub_cancel_right] at h
-  exact h.symm
+  rfl
 
 /-- The change of base point keeps the valuation of every point. -/
 @[simp]
