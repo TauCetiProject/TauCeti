@@ -370,6 +370,9 @@ in the original one. -/
 @[simp]
 theorem mem_compactOpenSubgroupOrderIso_symm (e : G ≃ₜ* H) (V : TauCeti.CompactOpenSubgroup H)
     {g : G} : g ∈ e.compactOpenSubgroupOrderIso.symm V ↔ e g ∈ V := by
+  -- `OrderIso.symm` of the structure literal above applies its `invFun` field, so the inverse
+  -- transport is `mapCompactOpenSubgroup e.symm` by `rfl`; this exposes the private membership
+  -- lemma, which is the one place the unfolding of `symm` is documented.
   rw [show e.compactOpenSubgroupOrderIso.symm V = mapCompactOpenSubgroup e.symm V from rfl,
     mem_mapCompactOpenSubgroup, symm_symm]
 
