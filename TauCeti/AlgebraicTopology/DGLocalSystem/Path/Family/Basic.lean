@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Basic
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.BasepointChange
-public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
+public import TauCeti.Topology.PathSpace.Moore.Comparison.Between
 
 /-!
 # Basepoint change and the pullback of DG local systems along arbitrary maps
@@ -123,10 +123,8 @@ theorem isQuasiIso_pullbackBasepointChange_map_app_iff (f : C(B', B))
       DGRightModuleCat.IsQuasiIso (φ (ZerothHomotopy.mk (f (β'.point c')))) :=
   (DGRightModuleCat.isQuasiIso_restrictScalars_map_iff _ _).trans
     (DGLocalSystem.isQuasiIso_basepointChange_map_iff
-      -- The chosen basepoint lies in the path component of `f (b'_{c'})`; read a path joining
-      -- them as a Moore path.
-      (let γ := (Quotient.exact (β.mk_point (ZerothHomotopy.mk (f (β'.point c'))))).somePath
-       ⟨⟨γ.toMoorePath, γ.source_toMoorePath, γ.target_toMoorePath⟩⟩) _)
+      -- The chosen basepoint lies in the path component of `f (b'_{c'})`.
+      (nonempty_moorePathBetween_iff.2 (β.joined_point_mk (f (β'.point c')))) _)
 
 /-- **The pullback of a morphism of families is a componentwise quasi-isomorphism** exactly when
 the morphism is a quasi-isomorphism at every path component of `B` met by `f`. -/
@@ -136,9 +134,7 @@ theorem isQuasiIso_pullbackBasepointChange_map_iff (f : C(B', B))
       ∀ x', DGRightModuleCat.IsQuasiIso (φ (ZerothHomotopy.mk (f x'))) := by
   simp_rw [isQuasiIso_pullbackBasepointChange_map_app_iff]
   refine ⟨fun h x ↦ ?_, fun h c' ↦ h _⟩
-  have hx : ZerothHomotopy.mk (f (β'.point (ZerothHomotopy.mk x))) = ZerothHomotopy.mk (f x) :=
-    Quotient.sound ((Quotient.exact (β'.mk_point (ZerothHomotopy.mk x))).map f.continuous)
-  exact hx ▸ h (ZerothHomotopy.mk x)
+  exact β'.mk_apply_point_mk f.continuous x ▸ h (ZerothHomotopy.mk x)
 
 variable (R) in
 /-- The **change of chosen basepoints** from `β` to `β'` on the same space: the pullback along the
