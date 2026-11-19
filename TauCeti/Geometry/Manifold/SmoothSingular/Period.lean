@@ -307,10 +307,8 @@ theorem smoothHomologyPeriod_map {f : M → N} (hf : ContMDiff I J ∞ f)
       smoothHomologyPeriod c
         ((SSet.homologyMap (smoothSingularSubcomplexMap f hf) (ModuleCat.of ℤ ℤ) p).hom z) := by
   obtain ⟨ψ, rfl⟩ := mk_surjective J p c
-  rw [map_mk, smoothHomologyPeriod_mk, smoothHomologyPeriod_mk, LinearMap.toAddMonoidHom_coe,
-    LinearMap.toAddMonoidHom_coe, closedForms.coe_mpullback, SmoothForm.coe_mpullback,
-    smoothHomologyPeriodHom_homologyMap hf (ψ.1.isSmoothForm.of_le (by simp))
-      ((mem_closedForms J _).mp ψ.2)]
+  simp [smoothHomologyPeriodHom_homologyMap hf (ψ.1.isSmoothForm.of_le (by simp))
+    ((mem_closedForms J _).mp ψ.2)]
 
 end deRhamCohomology
 
