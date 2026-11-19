@@ -353,6 +353,12 @@ theorem sphereBundleProj_comp_sphereBundleNeg :
 theorem sphereBundleNeg_involutive : Function.Involutive (sphereBundleNeg F E) :=
   fun ⟨⟨b, x⟩, _⟩ ↦ Subtype.ext (congrArg (TotalSpace.mk b) (neg_neg x))
 
+/-- Negating a unit vector twice gives it back. -/
+@[simp]
+theorem sphereBundleNeg_sphereBundleNeg (v : sphereBundle F E) :
+    sphereBundleNeg F E (sphereBundleNeg F E v) = v :=
+  sphereBundleNeg_involutive F E v
+
 /-- Negation of the sphere bundle has no fixed points: a unit vector is not its own negative. -/
 theorem sphereBundleNeg_ne_self (v : sphereBundle F E) : sphereBundleNeg F E v ≠ v := fun h ↦ by
   obtain ⟨⟨b, x⟩, hx⟩ := v

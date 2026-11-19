@@ -96,9 +96,8 @@ theorem re_sq_add_im_sq (z : Circle) : (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 :
 /-- The only points of the circle on the real axis are `1` and `-1`. -/
 theorem coe_eq_one_or_eq_neg_one_of_im_eq_zero {z : Circle} (hz : (z : ℂ).im = 0) :
     (z : ℂ) = 1 ∨ (z : ℂ) = -1 := by
-  have h := re_sq_add_im_sq z
-  rw [hz, sq, sq, mul_zero, add_zero, mul_self_eq_one_iff] at h
-  rcases h with h | h
+  have h : (z : ℂ).re ^ 2 = 1 := by simpa [hz] using re_sq_add_im_sq z
+  rcases sq_eq_one_iff.1 h with h | h
   · exact .inl (Complex.ext h hz)
   · exact .inr (Complex.ext (by simpa using h) (by simpa using hz))
 

@@ -89,7 +89,7 @@ system of its orientation double cover with respect to the deck involution. Its 
 the module `TauCeti.signFiber` of functions on the orientations of `E_b` that change sign under
 reversal (`TauCeti.VectorBundleOrientationCover.signLocalSystemObjEquiv`), and transport along a
 path precomposes with path lifting in the cover. -/
-@[expose] def signLocalSystem (hι : Fintype.card ι = finrank ℝ F) :
+def signLocalSystem (hι : Fintype.card ι = finrank ℝ F) :
     LocalCoefficientSystem.{u, uB, max uB uE uι u} R (TopCat.of B) :=
   (isCoveringMap_proj (F := F) (E := E) hι).signLocalSystem R _ proj_comp_deck
 
@@ -104,10 +104,30 @@ theorem signLocalSystem_def :
 
 /-- The fibre of the orientation local system over `x` is the module of functions on the
 orientations over `x` that change sign under reversal. -/
-@[expose] def signLocalSystemObjEquiv (x : FundamentalGroupoid (TopCat.of B)) :
+def signLocalSystemObjEquiv (x : FundamentalGroupoid (TopCat.of B)) :
     (signLocalSystem F E R hι).obj x ≃ₗ[R]
       signFiber R (p := proj) (deck (F := F) (E := E) (ι := ι)) (funext proj_deck) x.as :=
   (isCoveringMap_proj (F := F) (E := E) hι).signLocalSystemObjEquiv _ proj_comp_deck x
+
+/-- Read through `TauCeti.VectorBundleOrientationCover.signLocalSystem_def`, the fibre of the
+orientation local system is identified with the module of sign functions as by
+`TauCeti.VectorBundleOrientationCover.signLocalSystemObjEquiv`. -/
+theorem signLocalSystemObjEquiv_eqToIso_signLocalSystem_def_hom_app
+    (x : FundamentalGroupoid (TopCat.of B)) (g : (signLocalSystem F E R hι).obj x) :
+    (isCoveringMap_proj (F := F) (E := E) hι).signLocalSystemObjEquiv _ proj_comp_deck x
+        ((eqToIso (signLocalSystem_def hι)).hom.app x g) =
+      signLocalSystemObjEquiv hι x g :=
+  (rfl)
+
+/-- The inverse form of
+`TauCeti.VectorBundleOrientationCover.signLocalSystemObjEquiv_eqToIso_signLocalSystem_def_hom_app`.
+-/
+theorem signLocalSystemObjEquiv_eqToIso_signLocalSystem_def_inv_app
+    (x : FundamentalGroupoid (TopCat.of B))
+    (g : ((isCoveringMap_proj (F := F) (E := E) hι).signLocalSystem R _ proj_comp_deck).obj x) :
+    signLocalSystemObjEquiv hι x ((eqToIso (signLocalSystem_def hι)).inv.app x g) =
+      (isCoveringMap_proj (F := F) (E := E) hι).signLocalSystemObjEquiv _ proj_comp_deck x g :=
+  (rfl)
 
 /-- Transport in the orientation local system precomposes with path lifting along the inverse
 path in the orientation double cover. -/
