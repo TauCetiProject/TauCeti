@@ -126,9 +126,7 @@ theorem norm_natCast_eq_norm_padic [NormOneClass K] (m : ℕ) : ‖(m : K)‖ = 
 the `p`-part of `n` divides `n`. For `n = 0` both sides are `0` by the convention `0⁻¹ = 0`. -/
 theorem inv_abs_le_norm_intCast (p : ℕ) [Fact (Nat.Prime p)] {K : Type*} [SeminormedRing K]
     [NormedAlgebra ℚ_[p] K] [NormOneClass K] (n : ℤ) : (|n| : ℝ)⁻¹ ≤ ‖(n : K)‖ := by
-  have hn : ‖(n : K)‖ = ‖(n.natAbs : K)‖ := by
-    rcases Int.natAbs_eq n with h | h <;> (conv_lhs => rw [h]) <;> simp
-  rw [hn, norm_natCast_eq_norm_padic (p := p), ← Int.cast_abs, ← Nat.cast_natAbs]
+  rw [← norm_natAbs n, norm_natCast_eq_norm_padic (p := p), ← Int.cast_abs, ← Nat.cast_natAbs]
   exact Padic.inv_natCast_le_norm_natCast n.natAbs
 
 theorem padicIntAlgebraMap_injective [Nontrivial K] : Function.Injective (padicIntAlgebraMap p K) :=
