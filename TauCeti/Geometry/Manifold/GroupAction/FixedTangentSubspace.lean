@@ -30,17 +30,18 @@ fixed set. No metric, topology on `K` or smoothness of the action is needed for 
 definitions; for a group of isometries the sets `M^K_d` are embedded submanifolds
 (`TauCeti.exists_isSmoothEmbedding_fixedPointsOfFinrank`).
 
-These objects are natural under equivariant maps. If `f : M → N` satisfies `f (k • x) = k • f x`,
-then differentiating `f ∘ (k • ·) = (k • ·) ∘ f` at a point `p` fixed by `k` shows that `df_p`
-intertwines the differentials of `k` at `p` and at `f p`
-(`TauCeti.mfderiv_comp_mfderiv_smul_of_smul_eq`). So `df_p` sends `V_p` into `V_(f p)` as soon as
-every element fixing `f p` also fixes `p` (`TauCeti.map_mfderiv_fixedTangentSubspace_le`), and when
-moreover `df_p` is injective, `V_p` is exactly the preimage of `V_(f p)`
-(`TauCeti.comap_mfderiv_fixedTangentSubspace`). For an equivariant diffeomorphism `F : M → N`
-this gives `dF_p (V_p) = V_(F p)` (`Diffeomorph.map_mfderiv_fixedTangentSubspace`), hence
-`F (M^K_d) = N^K_d` (`Diffeomorph.image_fixedPointsOfFinrank`). Already an equivariant bijection
-carries `M^K` onto `N^K` (`Equiv.image_fixedPoints`), and an equivariant homeomorphism carries each
-connected component of `M^K` onto the component of `N^K` through the image point
+These objects are natural under equivariant maps. If `f ∘ g = h ∘ f` and `g` fixes `p`, then
+differentiating at `p` shows that `df_p` intertwines `dg_p` and `dh_(f p)`
+(`TauCeti.mfderiv_comp_mfderiv_of_comp_eq`). For an equivariant `f : M → N`, that is
+`f (k • x) = k • f x`, this applies with `g` and `h` the actions of an element `k` fixing `p`.
+So `df_p` sends `V_p` into `V_(f p)` as soon as every element fixing `f p` also fixes `p`
+(`TauCeti.map_mfderiv_fixedTangentSubspace_le`), and when moreover `df_p` is injective, `V_p` is
+exactly the preimage of `V_(f p)` (`TauCeti.comap_mfderiv_fixedTangentSubspace`). For an
+equivariant diffeomorphism `F : M → N` this gives `dF_p (V_p) = V_(F p)`
+(`Diffeomorph.map_mfderiv_fixedTangentSubspace`), hence `F (M^K_d) = N^K_d`
+(`Diffeomorph.image_fixedPointsOfFinrank`). Already an equivariant bijection carries `M^K` onto
+`N^K` (`Equiv.image_fixedPoints`), and an equivariant homeomorphism carries each connected
+component of `M^K` onto the component of `N^K` through the image point
 (`Homeomorph.image_connectedComponentIn_fixedPoints`); these two hold for any monoid action.
 
 ## Main definitions
@@ -167,25 +168,23 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [MulAction K N]
   {f : M → N} {p : M}
 
-/-- **Equivariant maps intertwine the differentials of the actions.** If `f (k • x) = k • f x`
-for all `x`, and `k` fixes `p`, then `df_p ∘ d(k •)_p = d(k •)_(f p) ∘ df_p`. Where `f` is not
-differentiable both sides vanish. -/
-theorem mfderiv_comp_mfderiv_smul_of_smul_eq {k : K} (hf : ∀ x : M, f (k • x) = k • f x)
-    (hk : k • p = p) (hkM : MDifferentiableAt I I (k • ·) p)
-    (hkN : MDifferentiableAt I' I' (k • ·) (f p)) :
-    (mfderiv I I' f p).comp (mfderiv I I (k • ·) p) =
-      (mfderiv I' I' (k • ·) (f p)).comp (mfderiv I I' f p) := by
+/-- **Semiconjugate maps intertwine the differentials.** If `f ∘ g = h ∘ f` and `g` fixes `p`,
+then `df_p ∘ dg_p = dh_(f p) ∘ df_p`. Where `f` is not differentiable both sides vanish. For an
+equivariant map, `g` and `h` are the actions of an element fixing `p`. -/
+theorem mfderiv_comp_mfderiv_of_comp_eq {g : M → M} {h : N → N} (hfg : f ∘ g = h ∘ f)
+    (hp : g p = p) (hg : MDifferentiableAt I I g p) (hh : MDifferentiableAt I' I' h (f p)) :
+    (mfderiv I I' f p).comp (mfderiv I I g p) =
+      (mfderiv I' I' h (f p)).comp (mfderiv I I' f p) := by
   by_cases hfp : MDifferentiableAt I I' f p
   swap
   · rw [mfderiv_zero_of_not_mdifferentiableAt hfp]
     exact (ContinuousLinearMap.zero_comp _).trans (ContinuousLinearMap.comp_zero _).symm
-  have hcomm : f ∘ (fun x : M ↦ k • x) = (fun y : N ↦ k • y) ∘ f := funext hf
-  have h := mfderiv_comp_of_eq hfp hkM hk
-  rw [hcomm, mfderiv_comp p hkN hfp] at h
-  -- `mfderiv_comp_of_eq` takes the derivative of `f` at `k • p`; replace that point by `p`.
-  generalize hz : k • p = z at h
-  obtain rfl : z = p := hz.symm.trans hk
-  exact h.symm
+  have hc := mfderiv_comp_of_eq hfp hg hp
+  rw [hfg, mfderiv_comp p hh hfp] at hc
+  -- `mfderiv_comp_of_eq` takes the derivative of `f` at `g p`; replace that point by `p`.
+  generalize hz : g p = z at hc
+  obtain rfl : z = p := hz.symm.trans hp
+  exact hc.symm
 
 /-- **Equivariant maps preserve fixed tangent vectors.** If `f` is equivariant, and every element
 fixing `f p` also fixes `p` (for instance when `p` lies in the fixed set, or when `f` is
@@ -199,7 +198,7 @@ theorem map_mfderiv_fixedTangentSubspace_le (hf : ∀ (k : K) (x : M), f (k • 
       fixedTangentSubspace I' K (f p) := by
   rintro _ ⟨v, hv, rfl⟩ k hk
   have h := congrArg (· v)
-    (mfderiv_comp_mfderiv_smul_of_smul_eq (hf k) (hstab hk) (hdM k hk) (hdN k hk))
+    (mfderiv_comp_mfderiv_of_comp_eq (funext (hf k)) (hstab hk) (hdM k hk) (hdN k hk))
   exact h.symm.trans (congrArg (mfderiv I I' f p) (hv k (hstab hk)))
 
 /-- **Fixed tangent vectors are detected by an equivariant map with injective differential.** If
@@ -218,7 +217,7 @@ theorem comap_mfderiv_fixedTangentSubspace (hf : ∀ (k : K) (x : M), f (k • x
   refine le_antisymm (fun v hv k hk ↦ ?_) (Submodule.map_le_iff_le_comap.1 <|
     map_mfderiv_fixedTangentSubspace_le hf hstab.le (hstab ▸ hdM) (hstab ▸ hdN))
   have h := congrArg (· v)
-    (mfderiv_comp_mfderiv_smul_of_smul_eq (hf k) hk (hdM k hk) (hdN k hk))
+    (mfderiv_comp_mfderiv_of_comp_eq (funext (hf k)) hk (hdM k hk) (hdN k hk))
   exact hdf (h.trans (hv k (hstab ▸ hk)))
 
 end Map
