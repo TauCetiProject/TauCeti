@@ -142,16 +142,13 @@ theorem exists_pow_smul_eq_zero_singularHomology_pathComponent_refl {X : Type} [
       (ModuleCat.of ℤ ℤ)).obj (TopCat.of (Ω (Ω X x) (Path.refl x))), (d : ℤ) • z = 0) :
     ∃ n : ℕ, ∀ z : ((singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj
       (ModuleCat.of ℤ ℤ)).obj (TopCat.of (pathComponent (Path.refl x))), ((d : ℤ) ^ n) • z = 0 := by
-  -- The Serre class of `ℤ`-modules killed by some power of `d`, and the modules killed by `d`.
-  let P := (AddCommGrpCat.isKilledBySomePower.{0} d).inverseImage
-    (forget₂ (ModuleCat.{0} ℤ) AddCommGrpCat)
-  have hQP : ObjectProperty.isKilledBy (ModuleCat.{0} ℤ) d ≤ P := fun M hM ↦ by
-    rw [ObjectProperty.prop_isKilledBy_iff] at hM
-    refine (AddCommGrpCat.prop_isKilledBySomePower_iff d _).2 ⟨1, fun z ↦ ?_⟩
-    simpa using congrArg (fun f ↦ f.hom z) hM
-  refine (AddCommGrpCat.prop_isKilledBySomePower_iff d _).1 <|
-    prop_singularHomology_pathComponent_refl_of_prop_doubleLoopSpace P _ hQP x hX hk
-    fun q hq hqk ↦ (ObjectProperty.prop_isKilledBy_iff _ _).2 <| ModuleCat.hom_ext <|
-      LinearMap.ext fun z ↦ by simpa using hΩ q hq hqk z
+  -- Apply the general theorem to the Serre class of `ℤ`-modules killed by some power of `d`, and
+  -- the modules killed by `d ^ 1`.
+  refine (AddCommGrpCat.prop_inverseImage_isKilledBySomePower_iff d _).1 <|
+    prop_singularHomology_pathComponent_refl_of_prop_doubleLoopSpace _ _
+      (AddCommGrpCat.isKilledBy_pow_le_inverseImage_isKilledBySomePower d 1) x hX hk
+      fun q hq hqk ↦ (ModuleCat.prop_isKilledBy_iff _ _).2 fun z ↦ ?_
+  rw [pow_one, ← natCast_zsmul]
+  exact hΩ q hq hqk z
 
 end TauCeti

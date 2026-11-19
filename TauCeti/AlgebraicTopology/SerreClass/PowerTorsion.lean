@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.Grp.Zero
 public import Mathlib.Algebra.Homology.ShortComplex.Ab
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.CategoryTheory.Abelian.SerreClass.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Annihilated
 
 /-!
 # Serre classes of abelian groups
@@ -21,6 +22,13 @@ Such classes are used in Hurewicz theorems modulo a Serre class.
 
 * `AddCommGrpCat.isKilledBySomePower d`: the abelian groups annihilated by some power of `d`, as
   an object property of `AddCommGrpCat`, with its `IsSerreClass` instance.
+
+## Main results
+
+* `AddCommGrpCat.prop_inverseImage_isKilledBySomePower_iff`: a `ℤ`-module lies in the class, read
+  through the forgetful functor, exactly when some power of `d` annihilates every element.
+* `AddCommGrpCat.isKilledBy_pow_le_inverseImage_isKilledBySomePower`: a `ℤ`-module killed by
+  `d ^ n` lies in the class, read through the forgetful functor.
 
 ## References
 
@@ -68,5 +76,24 @@ instance (d : ℕ) : (isKilledBySomePower d).IsSerreClass where
     obtain ⟨x₁, hx₁⟩ :=
       (ShortComplex.ab_exact_iff S).1 hS.exact ((d : ℤ) ^ n • x₂) (by simp [hn])
     rw [pow_add, mul_smul, ← hx₁, ← map_zsmul, hm, map_zero]
+
+/-- A `ℤ`-module lies in the inverse image of `isKilledBySomePower d` along the forgetful functor to
+abelian groups exactly when some power of `d` annihilates every element. -/
+theorem prop_inverseImage_isKilledBySomePower_iff (d : ℕ) (M : ModuleCat.{u} ℤ) :
+    (isKilledBySomePower d).inverseImage (forget₂ (ModuleCat.{u} ℤ) AddCommGrpCat) M ↔
+      ∃ n : ℕ, ∀ x : M, ((d : ℤ) ^ n) • x = 0 := by
+  rw [ObjectProperty.prop_inverseImage_iff, prop_isKilledBySomePower_iff]
+  -- The forgetful functor keeps the carrier and its additive group, and an integer acts on both
+  -- sides through that additive group's `zsmul`.
+  rfl
+
+/-- A `ℤ`-module killed by `d ^ n`, in the sense of `CategoryTheory.ObjectProperty.isKilledBy`, is
+annihilated by some power of `d` as an abelian group. -/
+theorem isKilledBy_pow_le_inverseImage_isKilledBySomePower (d n : ℕ) :
+    ObjectProperty.isKilledBy (ModuleCat.{u} ℤ) (d ^ n) ≤
+      (isKilledBySomePower d).inverseImage (forget₂ (ModuleCat.{u} ℤ) AddCommGrpCat) :=
+  fun M hM ↦ (prop_inverseImage_isKilledBySomePower_iff d M).2 ⟨n, fun x ↦ by
+    rw [← Nat.cast_pow, natCast_zsmul]
+    exact (ModuleCat.prop_isKilledBy_iff _ M).1 hM x⟩
 
 end AddCommGrpCat
