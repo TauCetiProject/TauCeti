@@ -87,9 +87,9 @@ private theorem one_sub_re_ne_zero_of_ne_one {z : Circle} (hz : z ≠ 1) :
   apply Complex.ext <;> simp [hre, him]
 
 /-- A non-`1` point of the circle is recovered from its real boundary coordinate
-`Complex.invCayley`, which inverts the boundary Cayley map (`Complex.invCayley_cayley`). At the
-omitted point `1` that coordinate takes the harmless value `0`; the measure transport below first
-restricts away from that point. -/
+`Complex.invCayley`, which inverts the boundary Cayley map
+(`Complex.invCayley_sub_I_div_add_I`). At the omitted point `1` that coordinate takes the harmless
+value `0`; the measure transport below first restricts away from that point. -/
 theorem boundaryCayley_invCayley {z : Circle} (hz : z ≠ 1) :
     boundaryCayley (invCayley z) = z := by
   rw [invCayley_eq_neg_im_div (Circle.norm_coe z)]
