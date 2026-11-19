@@ -112,6 +112,10 @@ spectrum from that of its orthogonal complement.
   spectral subspace.
 * `ContinuousLinearMap.abs_le_norm_of_mem_restrictedPointSpectrum`: every real eigenvalue of a
   bounded operator `T` has absolute value at most `‖T‖`.
+* `ContinuousLinearMap.ker_sub_smul_id_eq_bot_of_not_hasEigenvalue`: if `μ` is not an eigenvalue
+  of a bounded operator `T`, then `T - μ • id` is injective.
+* `ContinuousLinearMap.isSymmetric_sub_smul_id`: shifting a symmetric bounded operator by a real
+  multiple of the identity keeps it symmetric.
 * `LinearMap.IsSymmetric.pointSpectrumIn_Iic_iff`, `LinearMap.IsSymmetric.pointSpectrumIn_Ici_iff`:
   on a finite-dimensional invariant subspace, point-spectral containment in a half-line is a
   quadratic-form bound.
@@ -877,6 +881,29 @@ theorem abs_le_norm_of_mem_restrictedPointSpectrum {T : E →L[𝕜] E} {U : Sub
   have h := T.le_opNorm x
   rw [← coe_coe, hx, norm_smul, RCLike.norm_ofReal] at h
   exact le_of_mul_le_mul_right h (norm_pos_iff.mpr hx0)
+
+/-- If `μ` is not an eigenvalue of `T`, then `T - μ • id` has trivial kernel. -/
+theorem ker_sub_smul_id_eq_bot_of_not_hasEigenvalue {T : E →L[𝕜] E} {μ : 𝕜}
+    (hT : ¬HasEigenvalue (T : E →ₗ[𝕜] E) μ) :
+    LinearMap.ker ((T - μ • ContinuousLinearMap.id 𝕜 E : E →L[𝕜] E) : E →ₗ[𝕜] E) = ⊥ := by
+  rw [hasEigenvalue_iff, not_not] at hT
+  rw [← hT]
+  ext x
+  simp [sub_eq_zero]
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+open scoped ComplexConjugate in
+/-- Shifting a symmetric operator by a real multiple `c` of the identity, given as a scalar fixed
+by conjugation, keeps it symmetric. -/
+theorem isSymmetric_sub_smul_id {T : E →L[𝕜] E} (hT : (T : E →ₗ[𝕜] E).IsSymmetric) {c : 𝕜}
+    (hc : conj c = c) :
+    ((T - c • ContinuousLinearMap.id 𝕜 E : E →L[𝕜] E) : E →ₗ[𝕜] E).IsSymmetric := by
+  simpa using hT.sub (LinearMap.IsSymmetric.id.smul hc)
 
 end ContinuousLinearMap
 
