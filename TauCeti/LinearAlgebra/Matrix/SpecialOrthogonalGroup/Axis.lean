@@ -22,8 +22,8 @@ import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Frame
 
 **Euler's rotation theorem.** A special orthogonal matrix `A` in odd dimension satisfies
 `det (A - 1) = 0`, provided two is a non-zero-divisor: from `A Aᵀ = 1` and `det A = 1` one gets
-`det (A - 1) = det (A (1 - Aᵀ)) = det (1 - A) = -det (A - 1)`. Over a field of characteristic
-different from two, `A` therefore fixes a nonzero vector.
+`det (A - 1) = det (A (1 - Aᵀ)) = det (1 - A) = -det (A - 1)`. Over an integral domain of
+characteristic different from two, `A` therefore fixes a nonzero vector.
 
 In dimension three over an ordered field, a rotation fixing two linearly independent vectors `u`
 and `v` is the identity: it also fixes their cross product `u ⨯₃ v`, and `u`, `v`, `u ⨯₃ v` are
@@ -37,8 +37,8 @@ classification of the finite rotation groups.
 
 * `Matrix.det_sub_one_eq_zero_of_mem_specialOrthogonalGroup`: `det (A - 1) = 0` for a special
   orthogonal matrix in odd dimension.
-* `Matrix.exists_mulVec_eq_self_of_mem_specialOrthogonalGroup`: over a field of characteristic
-  different from two, such a matrix fixes a nonzero vector.
+* `Matrix.exists_mulVec_eq_self_of_mem_specialOrthogonalGroup`: over an integral domain of
+  characteristic different from two, such a matrix fixes a nonzero vector.
 * `Matrix.eq_one_of_mulVec_eq_self_of_linearIndependent`: a rotation of three-space over an
   ordered field fixing two linearly independent vectors is the identity.
 * `Matrix.mulVec_eq_self_iff_exists_smul_eq`: the vectors fixed by a nonidentity rotation are the
@@ -71,11 +71,11 @@ theorem det_sub_one_eq_zero_of_mem_specialOrthogonalGroup {n R : Type*} [Fintype
   have hzero : (2 : R) * (A - 1).det = 0 := by linear_combination h
   exact h2.left.mul_left_eq_zero_iff.mp hzero
 
-/-- **Euler's rotation theorem**: over a field of characteristic different from two, a special
-orthogonal matrix in odd dimension fixes a nonzero vector. -/
-theorem exists_mulVec_eq_self_of_mem_specialOrthogonalGroup {n K : Type*} [Fintype n]
-    [DecidableEq n] [Field K] (h2 : (2 : K) ≠ 0) (hn : Odd (Fintype.card n)) {A : Matrix n n K}
-    (hA : A ∈ specialOrthogonalGroup n K) : ∃ v ≠ 0, A *ᵥ v = v := by
+/-- **Euler's rotation theorem**: over an integral domain of characteristic different from two, a
+special orthogonal matrix in odd dimension fixes a nonzero vector. -/
+theorem exists_mulVec_eq_self_of_mem_specialOrthogonalGroup {n R : Type*} [Fintype n]
+    [DecidableEq n] [CommRing R] [IsDomain R] (h2 : (2 : R) ≠ 0) (hn : Odd (Fintype.card n))
+    {A : Matrix n n R} (hA : A ∈ specialOrthogonalGroup n R) : ∃ v ≠ 0, A *ᵥ v = v := by
   obtain ⟨v, hv, h⟩ := exists_mulVec_eq_zero_iff.mpr
     (det_sub_one_eq_zero_of_mem_specialOrthogonalGroup (.of_ne_zero h2) hn hA)
   exact ⟨v, hv, by rwa [sub_mulVec, one_mulVec, sub_eq_zero] at h⟩

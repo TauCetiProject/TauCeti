@@ -67,6 +67,7 @@ def poles : Set (Fin 3 → ℝ) :=
 variable {K}
 
 /-- A pole of `K` is a unit vector fixed by a nonidentity element of `K`. -/
+@[simp]
 theorem mem_poles {x : Fin 3 → ℝ} :
     x ∈ K.poles ↔ x ⬝ᵥ x = 1 ∧ ∃ g ∈ K, g ≠ 1 ∧ (g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ x = x :=
   Iff.rfl
