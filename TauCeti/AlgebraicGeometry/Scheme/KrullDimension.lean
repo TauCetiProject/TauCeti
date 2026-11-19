@@ -53,6 +53,8 @@ an irreducibility assumption on the group.
 
 ## Main declarations
 
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_Spec`: the Krull dimension of an affine scheme
+  `Spec R` equals `ringKrullDim R`.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_eq_iSup_openCover`: the Krull dimension of a
   scheme is the supremum of the Krull dimensions of the members of an open cover.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_range_of_isPreimmersion`: the image of a
@@ -94,6 +96,14 @@ namespace TauCeti
 namespace AlgebraicGeometry
 
 universe u
+
+/-- The Krull dimension of an affine scheme `Spec R` equals `ringKrullDim R`. -/
+@[simp]
+theorem topologicalKrullDim_Spec (R : CommRingCat.{u}) :
+    topologicalKrullDim (Spec R) = ringKrullDim R := by
+  rw [topologicalKrullDim_eq_iSup_coheight, ← Order.krullDim_eq_iSup_coheight,
+    Order.krullDim_eq_of_orderIso (specOrderIsoPrimeSpectrum R), Order.krullDim_orderDual,
+    ringKrullDim]
 
 /-- The Krull dimension of a scheme is the supremum of the Krull dimensions of the members of an
 open cover. -/
