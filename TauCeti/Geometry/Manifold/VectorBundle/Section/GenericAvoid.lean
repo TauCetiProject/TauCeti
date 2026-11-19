@@ -115,15 +115,15 @@ theorem dense_setOf_affineFamily_apply_ne_zero [Nontrivial F] (s₀ : ContMDiffS
       exact smul_ne_zero ht hw
   · exact subset_closure ha
 
-/-- If the family spans every fiber and the model fiber is nontrivial, the parameters whose
-perturbed section does not vanish on a given finite set form a residual set. -/
+/-- If the family spans the fibers over a finite set and the model fiber is nontrivial, the
+parameters whose perturbed section does not vanish on that set form a residual set. -/
 theorem mem_residual_setOf_forall_mem_affineFamily_ne_zero [Nontrivial F]
-    (s₀ : ContMDiffSection I F ∞ V) (s : ι → ContMDiffSection I F ∞ V)
-    (hspan : ∀ x, Submodule.span ℝ (range fun i ↦ s i x) = ⊤) {S : Set M} (hS : S.Finite) :
+    (s₀ : ContMDiffSection I F ∞ V) (s : ι → ContMDiffSection I F ∞ V) {S : Set M}
+    (hS : S.Finite) (hspan : ∀ x ∈ S, Submodule.span ℝ (range fun i ↦ s i x) = ⊤) :
     {a | ∀ x ∈ S, affineFamily s₀ s a x ≠ 0} ∈ residual (ι → ℝ) := by
-  refine mem_of_superset ((biInter_mem hS).2 fun x _ ↦ residual_of_dense_open
+  refine mem_of_superset ((biInter_mem hS).2 fun x hx ↦ residual_of_dense_open
     (isOpen_setOf_affineFamily_apply_ne_zero s₀ s x)
-    (dense_setOf_affineFamily_apply_ne_zero s₀ s (hspan x))) fun a ha ↦ ?_
+    (dense_setOf_affineFamily_apply_ne_zero s₀ s (hspan x hx))) fun a ha ↦ ?_
   simpa using ha
 
 end ContMDiffSection
@@ -151,7 +151,7 @@ theorem mem_residual_setOf_regular_finite_zero_forall_mem_ne_zero_affineFamily
       (fun z ↦ affineFamily s₀ s z.2 z.1) a ∧ {x | affineFamily s₀ s a x = 0}.Finite ∧
         ∀ x ∈ S, affineFamily s₀ s a x ≠ 0} ∈ residual (ι → ℝ) := by
   filter_upwards [mem_residual_setOf_regular_and_finite_zero_affineFamily s₀ s hspan hdim,
-    mem_residual_setOf_forall_mem_affineFamily_ne_zero s₀ s hspan hS] with a ha hS
+    mem_residual_setOf_forall_mem_affineFamily_ne_zero s₀ s hS fun x _ ↦ hspan x] with a ha hS
   exact ⟨ha.1, ha.2, hS⟩
 
 end ContMDiffSection
