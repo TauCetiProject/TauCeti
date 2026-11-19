@@ -84,6 +84,9 @@ instance Submodule.injective_quotient_of_divisionRing {R K : Type*} [CommRing R]
   rw [← map_smul]
   simp [Algebra.smul_def, hR]
 
+/- Adapted from Jujian Zhang's Module.Baer.of_divisible in
+Mathlib/Algebra/Category/Grp/Injective.lean, with divisibility from the factorization `a = c * e`
+in a principal ideal domain in place of integer division. -/
 /-- **A principal ideal domain modulo a nonzero ideal is self-injective**, in the form of Baer's
 criterion. For a discrete valuation ring `O` with uniformizer `π` this applies to `O/πⁿ` with
 `n ≥ 1`. The hypothesis `I ≠ ⊥` cannot be dropped in general: `ℤ` is not injective over
