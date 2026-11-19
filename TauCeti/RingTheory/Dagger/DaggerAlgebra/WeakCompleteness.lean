@@ -386,9 +386,7 @@ private theorem exists_algHom_apply_X [IsDaggerAlgebra K C] {σ : Type*} [Finite
   let s : W (Fin (Fintype.card σ)) →ₐ[K] W τ :=
     analyticSubst (fun l ↦ X τ K (j (e.symm l))) fun l ↦ by rw [norm_toTate, norm_X]
   refine ⟨(φ.comp s).comp (renameAlgEquiv e).toAlgHom, fun i ↦ ?_⟩
-  simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
-  rw [← ofMvPolynomial_X, renameAlgEquiv_ofMvPolynomial, MvPolynomial.rename_X, ofMvPolynomial_X,
-    analyticSubst_X, e.symm_apply_apply, hj]
+  simp [s, analyticSubst_X, hj]
 
 /-- **Weak completeness of dagger algebras.** For elements `xᵢ` of a dagger algebra `C` with
 `|xᵢ|sup ≤ 1`, the `K`-algebra homomorphism `K⟨X⟩† → C` sending each variable `Xᵢ` to `xᵢ`. It is
