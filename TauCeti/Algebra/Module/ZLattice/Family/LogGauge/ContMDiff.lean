@@ -21,6 +21,9 @@ regularity of the upstairs map `TauCeti.torusFamilyLogGauge` from
 (`z ≠ 0`), hence holomorphy there when `n ≠ 0`. Although its formula uses the principal
 logarithm, near any nonzero point it agrees modulo periods with a formula using a holomorphic
 branch. No constancy of the period family is needed.
+`contMDiff_logTranslationSection` proves that the translation sections of the normalized pure
+translation action `TauCeti.logTranslationMulAction` are `C^n`, as the quotient atlas of its orbit
+space requires.
 
 Both discs carry their inherited open-subset complex atlases. This is the upstairs regularity
 step for descent to the punctured cyclic quotient, not a downstairs biholomorphism theorem for
@@ -107,5 +110,26 @@ theorem contMDiffAt_torusFamilyLogGauge (l : Λ)
   filter_upwards [hopen.mem_nhds hz₀] with p hp
   simpa [Function.comp_def, powPullbackPeriod_apply] using
     (torusFamilyLogGauge_mk_of_exp_eq P l (hL hp) p.2)
+
+/-- **The translation sections are `C^n`.** For `C^n` periods, the translation section
+`z ↦ [ζ z, (log ζ / 2πi) • P (z ^ m) l]` of the normalized pure translation action is `C^n`; for
+holomorphic periods it is holomorphic. -/
+theorem contMDiff_logTranslationSection (l : Λ) (ζ : rootsOfUnity m ℂ) :
+    letI := periodAddAction (powPullbackPeriod m r P)
+    letI := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
+      (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous)
+      (fun z ↦ powPullbackPeriod_injective P z (hinj _))
+    ContMDiff 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, E)) n (logTranslationSection P l ζ) := by
+  let _ := periodAddAction (powPullbackPeriod m r P)
+  let _ := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
+    (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous)
+    (fun z ↦ powPullbackPeriod_injective P z (hinj _))
+  rw [show logTranslationSection P l ζ = fun z ↦ Quotient.mk _ (ζ • z,
+      (log ((ζ : ℂˣ) : ℂ) / (2 * π * I)) • powPullbackPeriod m r P z l) from
+    funext (logTranslationSection_eq_mk_of_exp_eq P l (exp_log (ζ : ℂˣ).ne_zero))]
+  exact (isLocalDiffeomorph_torusFamily_mk _ (fun z ↦ powPullbackPeriod_injective P z (hinj _))
+    (fun l ↦ contMDiff_powPullbackPeriod P (hP l))).contMDiff.comp
+    ((contMDiff_const_smul ζ).prodMk
+      (ContMDiff.smul (I := 𝓘(ℂ)) contMDiff_const (contMDiff_powPullbackPeriod P (hP l))))
 
 end TauCeti
