@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Periodic
+public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Periodic.Basic
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
 import TauCeti.LinearAlgebra.Basis.Basic
 import TauCeti.LinearAlgebra.Determinant.Cons

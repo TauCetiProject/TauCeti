@@ -364,7 +364,8 @@ private theorem torsionBracket_coneBoundaryBasis {n : ℤ → ℕ}
     torsionBracket (basis ζ g c) (by simp) (by simp) hj
         (coneBoundaryBasis ζ hG g h y hy hζ c (j + 1)) (coneBoundaryBasis ζ hG g h y hy hζ c j)
         (coneLift ζ g c j) (coneLift_spec ζ hG g h y hy hζ c j) =
-      torsionBracketWithHomology c (chosenBoundaryBasis C c (j + 1 + 1) (j + 1)) (h (j + 1))
+      torsionBracketWithHomology c (by simp) (by simp)
+        (chosenBoundaryBasis C c (j + 1 + 1) (j + 1)) (h (j + 1))
         (y (j + 1)) (hy (j + 1)) (chosenBoundaryBasis C c (j + 1) j)
         (chosenBoundaryLift C c (j + 1) j) (chosenBoundaryLift_spec C c (j + 1) j) := by
   have hn₁ := eq_add_of_exactAt (basis ζ g c) (by simp) (by simp) hj
@@ -376,7 +377,7 @@ private theorem torsionBracket_coneBoundaryBasis {n : ℤ → ℕ}
     C.X (j + 1))) fun k ↦ C.iCycles (j + 1) (y (j + 1) k)) (chosenBoundaryLift C c (j + 1) j) ∘
       Fin.cast hn₂ with hu
   rw [torsionBracket_eq_det_append (basis ζ g c) _ _ hj _ _ _ _ hn₁,
-    torsionBracketWithHomology_eq_det_append c _ _ _ _ _ _ _ hn₂, ← hu,
+    torsionBracketWithHomology_eq_det_append c _ _ _ _ _ _ _ _ _ hn₂, ← hu,
     basis_det_eq_mul ζ g c (j + 1) _ u (g (j + 1 - 1)), Basis.det_self, mul_one]
   · intro k
     obtain ⟨k, rfl⟩ := (finCongr hn₂).symm.surjective k
