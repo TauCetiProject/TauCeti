@@ -184,18 +184,14 @@ theorem teichmuller_sub_teichmuller_mem_span_p_teichmuller_pow {ϖ a b : R} {k :
   -- The `p ^ k`-th roots of `a` and `b` differ by `ϖ` times the `p ^ k`-th root of `c`.
   have hroot : e.symm a - e.symm b = ϖ * e.symm c :=
     e.injective <| by
-      rw [map_sub, map_mul, RingEquiv.apply_symm_apply, RingEquiv.apply_symm_apply,
-        RingEquiv.apply_symm_apply, iterateFrobeniusEquiv_def, hc]
+      simp only [map_sub, map_mul, e.apply_symm_apply, hc, e, iterateFrobeniusEquiv_def]
   have hmem : teichmuller p (e.symm a) - teichmuller p (e.symm b) ∈
       span {(p : 𝕎 R), teichmuller p ϖ} :=
     mem_span_p_teichmuller_iff.mpr ⟨e.symm c, by
       rw [← hroot, ← constantCoeff_apply, map_sub, constantCoeff_apply, constantCoeff_apply,
         teichmuller_coeff_zero, teichmuller_coeff_zero]⟩
   have hpow := Ideal.pow_pow_sub_pow_pow_mem_pow_succ (n := p) (subset_span (by simp)) hmem k
-  rwa [← map_pow (teichmuller p) (e.symm a), ← map_pow (teichmuller p) (e.symm b),
-    ← iterateFrobeniusEquiv_def R p k (e.symm a),
-    ← iterateFrobeniusEquiv_def R p k (e.symm b), RingEquiv.apply_symm_apply,
-    RingEquiv.apply_symm_apply] at hpow
+  simpa [e, ← map_pow, ← iterateFrobeniusEquiv_def] using hpow
 
 /-- If `R` is perfect of characteristic `p`, the zeroth Witt coordinate followed by reduction
 modulo `ϖ` has kernel `(p, [ϖ])`. -/

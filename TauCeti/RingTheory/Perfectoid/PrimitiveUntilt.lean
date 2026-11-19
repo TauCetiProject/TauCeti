@@ -291,13 +291,6 @@ theorem isPseudoUniformizer_algebraMap {ϖ : P.plus} (hϖ : IsPseudoUniformizer 
 
 /-! ### The sharp map -/
 
-/-- `R` is the localisation of `R⁺` at the elements of `R⁺` which are units of `R`. -/
-private theorem isLocalization_plus :
-    IsLocalization ((IsUnit.submonoid R).comap P.plus.subtype) R :=
-  have hϖ := P.isRingOfIntegralElements.exists_isPseudoUniformizer.choose_spec
-  P.plus.isLocalization_of_isOpen P.isRingOfIntegralElements.isOpen _
-    hϖ.isTopologicallyNilpotent hϖ.isUnit
-
 variable (J) in
 /-- The sharp map on `R⁺`: `x ↦ [x]`, followed by the map `𝕎 R⁺ → 𝕎 R⁺ ⧸ J → untilt`. -/
 private noncomputable def sharpPlus : P.plus →*₀ untilt p P J where
@@ -325,7 +318,7 @@ Teichmüller representative `[x]` (`TauCeti.Perfectoid.untilt.sharp_apply`); it 
 multiplicatively, every element of `R` being a quotient of an element of `R⁺` by a unit of `R`
 lying in `R⁺`. It is multiplicative and sends zero to zero, but is not additive in general. -/
 noncomputable def sharp : R →*₀ untilt p P J :=
-  haveI := isLocalization_plus (P := P)
+  haveI := P.isRingOfIntegralElements.isLocalization
   (IsLocalization.toLocalizationMap ((IsUnit.submonoid R).comap P.plus.subtype) R).lift₀
     (sharpPlus J) isUnit_sharpPlus
 
@@ -334,7 +327,7 @@ noncomputable def sharp : R →*₀ untilt p P J :=
 theorem sharp_apply (x : P.plus) :
     sharp p P J x =
       algebraMap (𝕎 P.plus ⧸ J) (untilt p P J) (Ideal.Quotient.mk J (teichmuller p x)) :=
-  haveI := isLocalization_plus (P := P)
+  haveI := P.isRingOfIntegralElements.isLocalization
   (IsLocalization.toLocalizationMap ((IsUnit.submonoid R).comap P.plus.subtype) R).lift_eq
     (g := (sharpPlus J : P.plus →* untilt p P J)) isUnit_sharpPlus x
 
@@ -344,7 +337,7 @@ theorem sharp_unique {f : R →* untilt p P J}
     (hf : ∀ x : P.plus, f x = algebraMap (𝕎 P.plus ⧸ J) (untilt p P J)
       (Ideal.Quotient.mk J (teichmuller p x))) :
     f = (sharp p P J : R →* untilt p P J) :=
-  haveI := isLocalization_plus (P := P)
+  haveI := P.isRingOfIntegralElements.isLocalization
   ((IsLocalization.toLocalizationMap ((IsUnit.submonoid R).comap P.plus.subtype) R).lift_unique
     (g := (sharpPlus J : P.plus →* untilt p P J)) isUnit_sharpPlus hf).symm
 
@@ -505,14 +498,14 @@ theorem continuous_sharp (hξ : ξ.IsPrimitive) : Continuous (sharp p P (Ideal.s
       linear_combination (ϖ : R) ^ k * hyx)⟩))
   refine mem_awayNhd.mpr ⟨d, ((isPseudoUniformizer_sharp (J := Ideal.span {ξ}) hϖ).isUnit.pow
     k).mul_right_cancel ?_⟩
-  have hy' : sharp p P (Ideal.span {ξ}) y * sharp p P (Ideal.span {ξ}) (ϖ : R) ^ k =
-      sharp p P (Ideal.span {ξ}) ((⟨_, hb⟩ : P.plus) : R) := by
+  have key (z : R) (hz : z * ϖ ^ k ∈ P.plus) :
+      sharp p P (Ideal.span {ξ}) z * sharp p P (Ideal.span {ξ}) (ϖ : R) ^ k =
+        algebraMap _ (untilt p P (Ideal.span {ξ}))
+          (Ideal.Quotient.mk (Ideal.span {ξ}) (teichmuller p ⟨_, hz⟩)) := by
     rw [← map_pow, ← map_mul]
-  have hx' : sharp p P (Ideal.span {ξ}) x * sharp p P (Ideal.span {ξ}) (ϖ : R) ^ k =
-      sharp p P (Ideal.span {ξ}) ((⟨_, hk⟩ : P.plus) : R) := by
-    rw [← map_pow, ← map_mul]
-  rw [sub_mul, hy', hx', sharp_apply, sharp_apply, sharp_apply, ← map_sub, ← map_sub, ← hd]
-  simp only [map_pow, map_mul]
+    exact sharp_apply ⟨_, hz⟩
+  rw [sub_mul, key y hb, key x hk, ← map_sub, ← map_sub, ← hd]
+  simp only [sharp_apply, map_pow, map_mul]
   ring
 
 end Primitive
