@@ -12,7 +12,6 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Topology.Compactness.SigmaCompact
 import Mathlib.Topology.Sets.Opens
-import Mathlib.Analysis.Calculus.Deriv.Support
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Algebra.Order.Field.SquareGap
@@ -729,7 +728,7 @@ theorem exists_cutoff_fderiv_bound :
     exact (inv_mul_le_one₀ hr).2 (mem_closedBall.1 hx)
   · refine β.zero_of_le_dist ?_
     rw [dist_zero_right, hnorm]
-    exact (le_inv_mul_iff₀ hr).2 (by change r * 2 ≤ _; linarith)
+    exact (le_inv_mul_iff₀ hr).2 (by simp only [β]; linarith)
   · exact ((β.contDiff (n := 1)).differentiable one_ne_zero _).hasFDerivAt.comp x
       (((hasFDerivAt_id x).sub_const c).const_smul r⁻¹)
   · refine (ContinuousLinearMap.opNorm_comp_le _ _).trans (mul_le_mul (hC _) ?_ (norm_nonneg _) hC0)
