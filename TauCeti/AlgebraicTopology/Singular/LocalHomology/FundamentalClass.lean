@@ -93,6 +93,11 @@ homology isomorphism directly, without requiring Poincaré duality.
 * `TauCeti.HomologicalOrientation.singularHomologyMap_eq_of_mapFundamentalClass_eq`: maps of a
   compact connected oriented manifold with the same image of the fundamental class induce the same
   map on top-dimensional homology.
+* `TauCeti.uliftIntHomologyIso`, `TopPair.uliftIntSingularHomologyIso`: the coefficients `ULift ℤ`
+  of fundamental classes and the coefficient ring `ℤ` give naturally isomorphic absolute and
+  relative singular homology.
+* `TauCeti.isLocalOrientation_iff_span_uliftIntSingularHomologyIso_hom_eq_top`: read with
+  coefficients `ℤ`, the local orientations are the generators of the local homology.
 
 ## Implementation notes
 
@@ -707,5 +712,55 @@ theorem homologyMap_comp_uliftIntHomologyIso_hom {X Y : TopCat.{0}} (f : X ⟶ Y
         (uliftIntHomologyIso Y k).hom =
       (uliftIntHomologyIso X k).hom ≫ SSet.homologyMap (TopCat.toSSet.map f) (ModuleCat.of ℤ ℤ) k :=
   ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) k).map uliftIntIso.hom).naturality f
+
+end TauCeti
+
+namespace TopPair
+
+/-- Relative singular homology with coefficients in `ULift ℤ` is relative singular homology with
+coefficients in `ℤ`. It is induced by `TauCeti.uliftIntIso` on relative singular chains, and is
+natural in the pair (`TopPair.singularHomologyMap_comp_uliftIntSingularHomologyIso_hom`). -/
+def uliftIntSingularHomologyIso (P : TopPair.{0}) (k : ℕ) :
+    P.singularHomology (ModuleCat.of ℤ (ULift.{0} ℤ)) k ≅ P.singularHomology (ModuleCat.of ℤ ℤ) k :=
+  (HomologicalComplex.homologyFunctor _ _ k).mapIso
+    (((SSetPair.chainComplexFunctor (ModuleCat.{0} ℤ)).mapIso TauCeti.uliftIntIso).app
+      (toSSetPair.obj P))
+
+/-- Changing coefficients from `ULift ℤ` to `ℤ` commutes with the maps induced by maps of pairs. -/
+@[reassoc]
+theorem singularHomologyMap_comp_uliftIntSingularHomologyIso_hom {P P' : TopPair.{0}} (f : P ⟶ P')
+    (k : ℕ) :
+    P.singularHomologyMap f (ModuleCat.of ℤ (ULift.{0} ℤ)) k ≫
+        (uliftIntSingularHomologyIso P' k).hom =
+      (uliftIntSingularHomologyIso P k).hom ≫ P.singularHomologyMap f (ModuleCat.of ℤ ℤ) k := by
+  simp only [uliftIntSingularHomologyIso, Functor.mapIso_hom,
+    HomologicalComplex.homologyFunctor_map, Iso.app_hom, ← HomologicalComplex.homologyMap_comp]
+  -- The chain map induced by `f` with coefficients `R` is the value at `f` of the relative chain
+  -- functor `(SSetPair.chainComplexFunctor _).obj R`, so this is the naturality of the change of
+  -- coefficients.
+  exact congrArg (HomologicalComplex.homologyMap · k)
+    (((SSetPair.chainComplexFunctor (ModuleCat.{0} ℤ)).map TauCeti.uliftIntIso.hom).naturality
+      (toSSetPair.map f))
+
+end TopPair
+
+namespace TauCeti
+
+/-- A class of the integral local homology `Hₙ(M, M ∖ {x}; ULift ℤ)` is a local orientation exactly
+when, read with coefficients `ℤ`, it generates `Hₙ(M, M ∖ {x}; ℤ)`. -/
+theorem isLocalOrientation_iff_span_uliftIntSingularHomologyIso_hom_eq_top {M : Type}
+    [TopologicalSpace M] {x : M} {d : ℕ}
+    {z : localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) ({x} : Set M) d} :
+    IsLocalOrientation x d z ↔ ℤ ∙ (TopPair.uliftIntSingularHomologyIso _ d).hom z = ⊤ := by
+  let e := TopPair.uliftIntSingularHomologyIso (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))) d
+  rw [isLocalOrientation_iff, eq_top_iff]
+  refine ⟨fun h w _ ↦ ?_, fun h y ↦ ?_⟩
+  · obtain ⟨c, hc⟩ := h (e.inv w)
+    rw [← Iso.inv_hom_id_apply e w, ← hc, map_zsmul]
+    exact zsmul_mem (Submodule.mem_span_singleton_self _) c
+  · obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 (h (Submodule.mem_top (x := e.hom y)))
+    refine ⟨c, (ConcreteCategory.bijective_of_isIso e.hom).1 ?_⟩
+    rw [map_zsmul, ← hc]
+    exact (int_smul_eq_zsmul _ c _).symm
 
 end TauCeti
