@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Principal
+import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDerivNearOne
 import Mathlib.Tactic.NormNum
 
 /-!
@@ -13,9 +14,10 @@ import Mathlib.Tactic.NormNum
 
 At level one and argument two the higher-prime-power remainder is strictly positive.
 At level six the removed primes give a strictly negative, exactly evaluated correction.
+The pole regularization also rejects adding the pole with the wrong sign.
 -/
 
-open Complex DirichletCharacter ArithmeticFunction
+open Complex DirichletCharacter ArithmeticFunction Filter Topology
 
 namespace TauCeti
 
@@ -75,5 +77,22 @@ example : ∃ C : ℝ, C ≤ 2 * Real.log 4 ∧ ∀ (N : ℕ) [NeZero N] (σ : �
   simp only [Real.rpow_one] at hg
   rw [hg.tsum_eq]
   exact vonMangoldt.tsum_nonprime_div_le
+
+/-- Adding the pole with the wrong sign diverges to positive infinity at one. -/
+example : Tendsto (fun η : ℝ ↦ -(logDeriv riemannZeta (1 + (η : ℂ))).re + η⁻¹)
+    (𝓝[>] 0) atTop := by
+  obtain ⟨C, hC⟩ := exists_norm_neg_logDeriv_riemannZeta_one_add_sub_inv_le
+  have hi : Tendsto (fun η : ℝ ↦ 2 * η⁻¹ - C) (𝓝[>] 0) atTop := by
+    simpa only [sub_eq_add_neg] using tendsto_atTop_add_const_right _ (-C)
+      (tendsto_inv_nhdsGT_zero.const_mul_atTop (by norm_num : (0 : ℝ) < 2))
+  refine tendsto_atTop_mono' _ ?_ hi
+  filter_upwards [self_mem_nhdsWithin,
+    (eventually_lt_nhds (by norm_num : (0 : ℝ) < 1)).filter_mono nhdsWithin_le_nhds]
+    with η hη hη1
+  have hb := hC η hη hη1.le
+  have hr : |-(logDeriv riemannZeta (1 + (η : ℂ))).re - η⁻¹| ≤ C := by
+    simpa only [Complex.sub_re, Complex.neg_re, ← Complex.ofReal_inv, Complex.ofReal_re] using
+      (abs_re_le_norm _).trans hb
+  linarith [(abs_le.mp hr).1]
 
 end TauCeti
