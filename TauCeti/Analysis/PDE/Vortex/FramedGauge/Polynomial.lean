@@ -173,7 +173,8 @@ private def polynomialPhase (c : Fin m → ℂ) (z : ℂ) : ℝ :=
 `c`: the circle-valued gauge `exp (-i χ arg (P_c(z) / zᵐ))`, where the cutoff `χ` vanishes where
 `‖z‖² ≤ m ∑ᵢ ‖cᵢ‖² + 1` and equals one where `‖z‖² ≥ m ∑ᵢ ‖cᵢ‖² + 2`. It is a smooth framed gauge
 (`polynomialGauge_mem_framedGaugeGroup`), smooth in `c` as well (`contDiff_polynomialGauge`), and
-outside a disc it makes the phase of `P_c` the winding phase (`polynomialGauge_mul_eval`). -/
+outside a disc it makes the phase of `P_c` the winding phase (`polynomialGauge_mul_eval`). Its
+value at every point is stated in public terms by `polynomialGauge_apply`. -/
 def polynomialGauge (c : Fin m → ℂ) (z : ℂ) : Circle :=
   Circle.exp (polynomialPhase c z)
 
@@ -267,6 +268,18 @@ theorem polynomialGauge_eq_one {c : Fin m → ℂ} {z : ℂ}
 theorem polynomialGauge_zero : polynomialGauge (0 : Fin m → ℂ) = 1 := by
   funext z
   simp [polynomialGauge, polynomialPhase, tail]
+
+/-- **The polynomial gauge at every point**:
+`g_c(z) = exp (-i χ(‖z‖² - m ∑ᵢ ‖cᵢ‖² - 1) arg (P_c(z) / zᵐ))`, with the smooth transition `χ`. -/
+theorem polynomialGauge_apply (c : Fin m → ℂ) (z : ℂ) :
+    polynomialGauge c z =
+      Circle.exp (-(Real.smoothTransition (‖z‖ ^ 2 - m * ∑ i, ‖c i‖ ^ 2 - 1) *
+        arg ((monicOfCoeff c).eval z / z ^ m))) := by
+  rw [polynomialGauge, polynomialPhase, cutoffArg]
+  rcases eq_or_ne z 0 with rfl | hz
+  · have hS : 0 ≤ (m : ℝ) * ∑ i, ‖c i‖ ^ 2 := by positivity
+    rw [Real.smoothTransition.zero_of_nonpos (by rw [norm_zero]; nlinarith), zero_mul, zero_mul]
+  · rw [eval_monicOfCoeff_eq_mul_tail c hz, mul_div_cancel_left₀ _ (pow_ne_zero m hz)]
 
 /-- Where `‖z‖² ≥ m ∑ᵢ ‖cᵢ‖² + 2`, the cutoff of the polynomial phase is inactive. -/
 private theorem polynomialPhase_eq {c : Fin m → ℂ} {z : ℂ}
@@ -407,17 +420,14 @@ theorem exists_forall_polynomialGauge_coeffEquiv_mul_eval {K : Set (Sym ℂ m)}
 
 /-! ### Rotations -/
 
-/-- The coefficients of `u⁻ᵐ P_c(u z)`: the `i`-th coefficient is multiplied by `u^(i - m)`. -/
+/-- The coefficients of `u⁻ᵐ P_c(u z)`: the `i`-th coefficient is divided by `u^(m - i)`. -/
 def rotateCoeff (u : Circle) (c : Fin m → ℂ) (i : Fin m) : ℂ :=
-  c i * ((u⁻¹ : Circle) : ℂ) ^ (m - i)
+  c i / (u : ℂ) ^ (m - i)
 
-/-- The `i`-th rotated coefficient is `cᵢ u^(i - m)`. -/
+/-- The `i`-th rotated coefficient is `cᵢ / u^(m - i)`. -/
 @[simp]
 theorem rotateCoeff_apply (u : Circle) (c : Fin m → ℂ) (i : Fin m) :
-    rotateCoeff u c i = c i * ((u⁻¹ : Circle) : ℂ) ^ (m - i) := (rfl)
-
-private theorem coe_inv_mul_coe (u : Circle) : ((u⁻¹ : Circle) : ℂ) * u = 1 := by
-  rw [← Circle.coe_mul, inv_mul_cancel, Circle.coe_one]
+    rotateCoeff u c i = c i / (u : ℂ) ^ (m - i) := (rfl)
 
 /-- The identity rotation fixes the coefficients. -/
 @[simp]
@@ -435,28 +445,31 @@ theorem rotateCoeff_zero (u : Circle) : rotateCoeff u (0 : Fin m → ℂ) = 0 :=
 theorem rotateCoeff_mul (u v : Circle) (c : Fin m → ℂ) :
     rotateCoeff (u * v) c = rotateCoeff v (rotateCoeff u c) := by
   funext i
-  simp only [rotateCoeff_apply, mul_inv, Circle.coe_mul, mul_pow]
-  ring
+  have hu := Circle.coe_ne_zero u
+  have hv := Circle.coe_ne_zero v
+  simp only [rotateCoeff_apply, Circle.coe_mul, mul_pow]
+  field_simp
 
 /-- The polynomial with rotated coefficients is `P_c` with its roots scaled by `u⁻¹`. -/
 theorem monicOfCoeff_rotateCoeff (u : Circle) (c : Fin m → ℂ) :
-    monicOfCoeff (rotateCoeff u c) = (monicOfCoeff c).scaleRoots ((u⁻¹ : Circle) : ℂ) := by
+    monicOfCoeff (rotateCoeff u c) = (monicOfCoeff c).scaleRoots (u : ℂ)⁻¹ := by
   refine Eq.trans ?_ (monicOfCoeff_coeff
     ((Polynomial.monic_scaleRoots_iff _).2 (monic_monicOfCoeff c))
     (by rw [Polynomial.natDegree_scaleRoots, natDegree_monicOfCoeff]))
   congr 1
   funext i
-  rw [Polynomial.coeff_scaleRoots, coeff_monicOfCoeff, natDegree_monicOfCoeff, rotateCoeff_apply]
+  rw [Polynomial.coeff_scaleRoots, coeff_monicOfCoeff, natDegree_monicOfCoeff, rotateCoeff_apply,
+    inv_pow, div_eq_mul_inv]
 
 /-- The polynomial with rotated coefficients is the rotated polynomial: `P_(c^u)(z) =
 u⁻ᵐ P_c(u z)`. -/
 theorem eval_monicOfCoeff_rotateCoeff (u : Circle) (c : Fin m → ℂ) (z : ℂ) :
     (monicOfCoeff (rotateCoeff u c)).eval z =
-      ((u⁻¹ : Circle) : ℂ) ^ m * (monicOfCoeff c).eval ((u : ℂ) * z) := by
-  have hz : ((u⁻¹ : Circle) : ℂ) * ((u : ℂ) * z) = z := by
-    rw [← mul_assoc, coe_inv_mul_coe, one_mul]
-  have h := Polynomial.scaleRoots_eval_mul (monicOfCoeff c) ((u : ℂ) * z) ((u⁻¹ : Circle) : ℂ)
-  rwa [hz, natDegree_monicOfCoeff, ← monicOfCoeff_rotateCoeff] at h
+      (monicOfCoeff c).eval ((u : ℂ) * z) / (u : ℂ) ^ m := by
+  have hz : (u : ℂ)⁻¹ * ((u : ℂ) * z) = z := by
+    rw [← mul_assoc, inv_mul_cancel₀ (Circle.coe_ne_zero u), one_mul]
+  have h := Polynomial.scaleRoots_eval_mul (monicOfCoeff c) ((u : ℂ) * z) (u : ℂ)⁻¹
+  rwa [hz, natDegree_monicOfCoeff, ← monicOfCoeff_rotateCoeff, inv_pow, ← div_eq_inv_mul] at h
 
 /-- **Rotation law of the polynomial gauge.** The gauge of the rotated polynomial
 `u⁻ᵐ P_c(u z)` is the rotated gauge: `g_(c^u)(z) = g_c(u z)`. -/
@@ -471,9 +484,10 @@ theorem polynomialGauge_rotateCoeff (u : Circle) (c : Fin m → ℂ) (z : ℂ) :
     have huz : (u : ℂ) * z ≠ 0 := mul_ne_zero (Circle.coe_ne_zero u) hz
     have h := eval_monicOfCoeff_rotateCoeff u c z
     rw [eval_monicOfCoeff_eq_mul_tail _ hz, eval_monicOfCoeff_eq_mul_tail c huz] at h
-    have hu' : (((u⁻¹ : Circle) : ℂ) * u) ^ m = 1 := by rw [coe_inv_mul_coe, one_pow]
-    refine mul_left_cancel₀ (pow_ne_zero m hz) ?_
-    linear_combination h + z ^ m * (1 + tail c ((u : ℂ) * z)) * hu'
+    have hum : (u : ℂ) ^ m ≠ 0 := pow_ne_zero m (Circle.coe_ne_zero u)
+    rw [eq_div_iff hum] at h
+    refine mul_left_cancel₀ (mul_ne_zero hum (pow_ne_zero m hz)) ?_
+    linear_combination h
   simp only [polynomialGauge, polynomialPhase, harg, htail]
 
 /-- **Rotation law of the gauged fields.** Rotating the plane intertwines the polynomial gauge
