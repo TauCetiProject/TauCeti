@@ -8,17 +8,16 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.FixedPoints
 import TauCeti.Geometry.Manifold.GroupAction.FixedTangentSubspace
 import TauCeti.Geometry.Manifold.Riemannian.Invariant
-import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
 # Connected components of the fixed set of a group of isometries
 
-Let a group `K` act on a Riemannian manifold `M` by smooth isometries. No topology or Lie group
-structure on `K` is required. Around each point `p` of the common fixed set `M^K`, the Riemannian
-logarithm at `p` flattens `M^K` onto the linear subspace `V_p ⊆ T_p M` of vectors fixed by the
-differentials at `p` (`TauCeti.exists_isSliceChart_fixedPoints`). So every neighbourhood of `p`
-contains an open neighbourhood `W` with
+Let a group `K` act on a Riemannian manifold `M` by smooth isometries. The results for such `K`
+need no topology or Lie group structure on `K`. Around each point `p` of the common fixed set
+`M^K`, the Riemannian logarithm at `p` flattens `M^K` onto the linear subspace `V_p ⊆ T_p M` of
+vectors fixed by the differentials at `p` (`TauCeti.exists_isSliceChart_fixedPoints`). So every
+neighbourhood of `p` contains an open neighbourhood `W` with
 
 `W ∩ M^K = exp_p (B ∩ V_p)`
 
@@ -37,7 +36,16 @@ topological consequences for `M^K`:
 
 The last statement applies to the components of a moment map, whose differentials vanish at the
 fixed points of the group. Different components of `M^K` may have different dimensions, and
-neither completeness of the metric nor compactness of `K` is used.
+neither completeness of the metric nor compactness of `K` is used for these results.
+
+A compact Hausdorff topological group `G` that is a smooth manifold and acts smoothly on a
+σ-compact `M` preserves a smooth Riemannian metric, the Haar average of any smooth metric
+(`TauCeti.of_forall_riemannianBundle_inner_mfderiv`). So the same conclusions hold for its fixed
+set `M^G`, without a metric given in advance: a function with zero differential along `M^G` is
+locally constant on `M^G`
+(`TauCeti.isLocallyConstant_domRestrict_fixedPoints_of_compactSpace`), and for compact `M` the set
+`M^G` has finitely many connected components
+(`TauCeti.finite_connectedComponents_fixedPoints_of_compactSpace`).
 
 ## Main results
 
@@ -46,6 +54,9 @@ neither completeness of the metric nor compactness of `K` is used.
 * `TauCeti.locallyConnectedSpace_fixedPoints`: `M^K` is locally connected.
 * `TauCeti.finite_connectedComponents_fixedPoints`: for compact `M`, `M^K` has finitely many
   connected components.
+* `TauCeti.isLocallyConstant_domRestrict_fixedPoints_of_compactSpace`,
+  `TauCeti.finite_connectedComponents_fixedPoints_of_compactSpace`: the same for the fixed set of a
+  compact group acting smoothly on a σ-compact manifold, with no metric given in advance.
 
 ## References
 
@@ -186,27 +197,6 @@ variable [SigmaCompactSpace M] {EG : Type*} [NormedAddCommGroup EG] [NormedSpace
   [ChartedSpace HG G] [IsManifold IG ∞ G] [MulAction G M] [ContMDiffSMul IG I ∞ G M]
 
 include IG
-
-variable (G) in
-/-- A compact group acting smoothly preserves a smooth Riemannian metric, the Haar average of the
-pullbacks of any smooth metric: to prove a statement it suffices to prove it for an arbitrary
-smooth Riemannian metric preserved by the action. -/
-private theorem of_forall_riemannianBundle_inner_mfderiv {P : Prop}
-    (h : ∀ [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-      [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)],
-      (∀ (g : G) (x : M) (u w : TangentSpace I x),
-        inner ℝ (mfderiv I I (g • ·) x u) (mfderiv I I (g • ·) x w) = inner ℝ u w) → P) : P := by
-  obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := I) (n := ⊤) (F := E)
-    (E := fun x : M ↦ TangentSpace I x)
-  -- Haar averaging needs the action to be `C^(n + 1)` for a `C^n` metric; for `n = ∞` this is
-  -- smoothness.
-  have : ContMDiffSMul IG I (∞ + 1) G M := by
-    rwa [ENat.coe_top_add_one]
-  obtain ⟨g', hg'⟩ := exists_contMDiffRiemannianMetric_inner_mfderiv (G := G) (n := ⊤) IG g
-  let : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩
-  let : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) :=
-    Bundle.instIsContMDiffRiemannianBundle g'
-  exact h hg'
 
 /-- **Functions with zero differential on the fixed set of a compact group are locally constant
 there.** For a smooth action of a compact group on a σ-compact manifold, a function whose

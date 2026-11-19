@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.FundamentalVectorField
-public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
+public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Critical
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.FixedPoints.Components
-public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap
 
 /-!
 # Moment maps on the fixed-point set
@@ -26,9 +24,12 @@ set is an embedded submanifold, possibly with components of different dimensions
 whose differential vanishes along it is locally constant on it
 (`TauCeti.isLocallyConstant_domRestrict_fixedPoints`). Hence:
 
-* `μ` is locally constant on `M^G`
-  (`TauCeti.SmoothTwoForm.IsMomentMap.isLocallyConstant_domRestrict_fixedPoints`), so it is
-  constant on each connected component of `M^G`
+* if the action preserves a smooth Riemannian metric, every component `μ^ξ` is locally constant
+  on `M^G` (`TauCeti.SmoothTwoForm.IsMomentMap.isLocallyConstant_domRestrict_fixedPoints`);
+* for a compact group acting on a σ-compact manifold, every component `μ^ξ` is locally constant
+  on `M^G`
+  (`TauCeti.SmoothTwoForm.IsMomentMap.isLocallyConstant_domRestrict_fixedPoints_of_compactSpace`),
+  so `μ` is constant on each connected component of `M^G`
   (`TauCeti.SmoothTwoForm.IsMomentMap.apply_eq_of_isPreconnected`);
 * for a compact group acting on a compact manifold, `M^G` has finitely many connected components
   (`TauCeti.finite_connectedComponents_fixedPoints_of_compactSpace`), and `μ` takes only finitely
@@ -41,14 +42,12 @@ nor nondegeneracy of `σ` is used, and `μ` need not be equivariant.
 
 ## Main results
 
-* `TauCeti.SmoothTwoForm.IsMomentMap.fixedPoints_subset_criticalPoints`: every component of a
-  moment map is critical at the fixed points of the group.
 * `TauCeti.SmoothTwoForm.IsMomentMap.isLocallyConstant_domRestrict_fixedPoints`,
   `TauCeti.SmoothTwoForm.IsMomentMap.isLocallyConstant_domRestrict_fixedPoints_of_compactSpace`:
   a moment map is locally constant on the fixed-point set, for an action preserving a smooth
   Riemannian metric and for a compact group.
-* `TauCeti.SmoothTwoForm.IsMomentMap.apply_eq_of_isPreconnected`: for a compact group, a moment
-  map is constant on each connected subset of the fixed-point set.
+* `TauCeti.SmoothTwoForm.IsMomentMap.apply_eq_of_isPreconnected`: for a compact group acting on a
+  σ-compact manifold, a moment map is constant on each connected subset of the fixed-point set.
 * `TauCeti.SmoothTwoForm.IsMomentMap.finite_image_fixedPoints`: for a compact group acting on a
   compact manifold, a moment map has finite image on the fixed-point set.
 
@@ -80,30 +79,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
   [MulAction G M] [ContMDiffSMul I I' ∞ G M]
   {σ : SmoothTwoForm I' M} {μ : M → Module.Dual ℝ (GroupLieAlgebra I G)}
 
-section Critical
-
-variable [CompleteSpace E']
-
-/-- **Fixed points are critical points of every moment map component.** At a point fixed by the
-whole group the fundamental vector field `ξ_M` vanishes, so `dμ^ξ = ι_{ξ_M} σ` vanishes there. -/
-theorem fixedPoints_subset_criticalPoints
-    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (ξ : GroupLieAlgebra I G) :
-    MulAction.fixedPoints G M ⊆ criticalPoints I' (fun y ↦ μ y ξ) := fun x hx ↦
-  mem_criticalPoints.2 <| ContinuousLinearMap.ext fun v ↦ by
-    rw [← h.eval₂_apply, InfinitesimalAction.fundamental_apply,
-      fundamentalVectorField_eq_zero_of_forall_smul_eq hx, ← SmoothForm.bilinFormAt_apply,
-      map_zero, LinearMap.zero_apply, zero_apply]
-
-/-- A moment map component has zero derivative at every fixed point of the group. -/
-private theorem hasMFDerivAt_zero_of_mem_fixedPoints
-    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (ξ : GroupLieAlgebra I G)
-    {x : M} (hx : x ∈ MulAction.fixedPoints G M) :
-    HasMFDerivAt I' 𝓘(ℝ) (fun y ↦ μ y ξ) x 0 := by
-  have hd := (h.mdifferentiableAt ξ x).hasMFDerivAt
-  rwa [mem_criticalPoints_iff_mfderiv_eq_zero.1 (h.fixedPoints_subset_criticalPoints ξ hx)] at hd
-
-end Critical
-
 section Riemannian
 
 variable [FiniteDimensional ℝ E'] [I'.Boundaryless] [T2Space M]
@@ -123,7 +98,7 @@ theorem isLocallyConstant_domRestrict_fixedPoints
   TauCeti.isLocallyConstant_domRestrict_fixedPoints hG fun _ hx ↦
     h.hasMFDerivAt_zero_of_mem_fixedPoints ξ hx
 
-variable [IsTopologicalGroup G] [CompactSpace G] [T2Space G]
+variable [CompactSpace G] [T2Space G]
 
 /-- **A moment map of a compact group is locally constant on the fixed-point set.** For a smooth
 action of a compact Lie group on a σ-compact manifold, every component `μ^ξ` of a moment map is
@@ -131,6 +106,7 @@ locally constant on the fixed-point set `M^G`. -/
 theorem isLocallyConstant_domRestrict_fixedPoints_of_compactSpace [SigmaCompactSpace M]
     (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (ξ : GroupLieAlgebra I G) :
     IsLocallyConstant ((MulAction.fixedPoints G M).domRestrict fun y ↦ μ y ξ) :=
+  have := topologicalGroup_of_lieGroup I ∞ (G := G)
   TauCeti.isLocallyConstant_domRestrict_fixedPoints_of_compactSpace I fun _ hx ↦
     h.hasMFDerivAt_zero_of_mem_fixedPoints ξ hx
 
@@ -153,6 +129,7 @@ compact manifold: it is constant on each of the finitely many connected componen
 theorem finite_image_fixedPoints [CompactSpace M]
     (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) :
     (μ '' MulAction.fixedPoints G M).Finite := by
+  have := topologicalGroup_of_lieGroup I ∞ (G := G)
   have := finite_connectedComponents_fixedPoints_of_compactSpace I' I G (M := M)
   -- `μ` factors through the connected components of `M^G`.
   have hμ : ∀ x y : MulAction.fixedPoints G M,
