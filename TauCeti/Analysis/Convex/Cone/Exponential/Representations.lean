@@ -218,16 +218,6 @@ example : SoftplusSystem (Real.log 3) (Real.log 4) 1 := by
   · rw [mem_cone_one_iff, Real.exp_sub, Real.exp_log (by norm_num), Real.exp_log (by norm_num)]
   · rw [mem_cone_one_iff, Real.exp_neg, Real.exp_log (by norm_num), one_div]
 
-example : SoftplusSystem (Real.log 3 / 2) (Real.log 4 / 2) (1 / 2) := by
-  refine ⟨3 / 8, 1 / 8, by norm_num, ?_, ?_⟩
-  · rw [mem_cone_iff_of_pos (by norm_num),
-      show (Real.log 3 / 2 - Real.log 4 / 2) / (1 / 2) = Real.log 3 - Real.log 4 by ring,
-      Real.exp_sub, Real.exp_log (by norm_num), Real.exp_log (by norm_num)]
-    norm_num
-  · rw [mem_cone_iff_of_pos (by norm_num), show -(Real.log 4 / 2) / (1 / 2) = -Real.log 4 by ring,
-      Real.exp_neg, Real.exp_log (by norm_num)]
-    norm_num
-
 example : ¬ SoftplusSystem 0 0 1 := by
   rw [← log_one_add_exp_le_iff_softplusSystem, Real.exp_zero]
   exact not_le.mpr (Real.log_pos (by norm_num))
@@ -269,17 +259,21 @@ example (a x : Fin 0 → ℝ) : SoftplusSystem ((∑ j, a j * x j) + 0) (Real.lo
   rw [← log_one_add_exp_le_iff_softplusSystem]
   norm_num
 
-example :
+example : SoftplusSystem (Real.log 3 / 2) (Real.log 4 / 2) (1 / 2) ∧
     -(1 / 2) * Real.log (1 / (1 + Real.exp (-(-Real.log 3 / 2) / (1 / 2)))) ≤ Real.log 4 / 2 := by
+  have h : SoftplusSystem (Real.log 3 / 2) (Real.log 4 / 2) (1 / 2) := by
+    refine ⟨3 / 8, 1 / 8, by norm_num, ?_, ?_⟩
+    · rw [mem_cone_iff_of_pos (by norm_num),
+        show (Real.log 3 / 2 - Real.log 4 / 2) / (1 / 2) = Real.log 3 - Real.log 4 by ring,
+        Real.exp_sub, Real.exp_log (by norm_num), Real.exp_log (by norm_num)]
+      norm_num
+    · rw [mem_cone_iff_of_pos (by norm_num),
+        show -(Real.log 4 / 2) / (1 / 2) = -Real.log 4 by ring,
+        Real.exp_neg, Real.exp_log (by norm_num)]
+      norm_num
+  refine ⟨h, ?_⟩
   rw [neg_mul_log_one_div_one_add_exp_neg_div_le_iff_softplusSystem (by norm_num), neg_div, neg_neg]
-  refine ⟨3 / 8, 1 / 8, by norm_num, ?_, ?_⟩
-  · rw [mem_cone_iff_of_pos (by norm_num),
-      show (Real.log 3 / 2 - Real.log 4 / 2) / (1 / 2) = Real.log 3 - Real.log 4 by ring,
-      Real.exp_sub, Real.exp_log (by norm_num), Real.exp_log (by norm_num)]
-    norm_num
-  · rw [mem_cone_iff_of_pos (by norm_num), show -(Real.log 4 / 2) / (1 / 2) = -Real.log 4 by ring,
-      Real.exp_neg, Real.exp_log (by norm_num)]
-    norm_num
+  exact h
 
 example (d s : Fin 0 → ℝ) :
     ∃ u : Fin 0 → ℝ, (∑ i ∈ (∅ : Finset (Fin 0)), d i * u i) ≤ 0 ∧
