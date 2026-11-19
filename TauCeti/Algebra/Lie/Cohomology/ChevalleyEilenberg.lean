@@ -50,7 +50,7 @@ the differential with `d₀₁`, Mathlib's `d₁₂` and, after forgetting alter
 * `TauCeti.LieModule.Cohomology.curryLeft_d_succ`: Cartan's formula.
 * `TauCeti.LieModule.Cohomology.lie_d`: the differential is a map of `L`-modules.
 * `TauCeti.LieModule.Cohomology.d_d`: the differential squares to zero.
-* `TauCeti.LieModule.Cohomology.compLinearMap_d_eq_compAlternatingMap`: naturality of the
+* `TauCeti.LieModule.Cohomology.compLinearMap_d_eq_compAlternatingMap_d`: naturality of the
   differential along a Lie algebra morphism and a compatible map of coefficients.
 * `TauCeti.LieModule.Cohomology.twoCochainEquiv_d_one`,
   `TauCeti.LieModule.Cohomology.d₂₃_twoCochainEquiv`: the comparison with `d₁₂` and `d₂₃`.
@@ -203,7 +203,7 @@ theorem d_comp_d (n : ℕ) : d R L M (n + 1) ∘ₗ d R L M n = 0 :=
 /-- Naturality of the differential: if `φ : L' → L` is a morphism of Lie algebras and
 `f : M' → M` intertwines the action of each `y` on `M'` with that of `φ y` on `M`, then a relation
 `ω ∘ φ = f ∘ ω'` between cochains of `L` and of `L'` passes to their differentials. -/
-theorem compLinearMap_d_eq_compAlternatingMap {L' M' : Type*} [LieRing L'] [LieAlgebra R L']
+theorem compLinearMap_d_eq_compAlternatingMap_d {L' M' : Type*} [LieRing L'] [LieAlgebra R L']
     [AddCommGroup M'] [Module R M'] [LieRingModule L' M'] [LieModule R L' M']
     (φ : L' →ₗ⁅R⁆ L) {f : M' →ₗ[R] M} (hf : ∀ y m, f ⁅y, m⁆ = ⁅φ y, f m⁆) {n : ℕ}
     {ω : L [⋀^Fin n]→ₗ[R] M} {ω' : L' [⋀^Fin n]→ₗ[R] M'}

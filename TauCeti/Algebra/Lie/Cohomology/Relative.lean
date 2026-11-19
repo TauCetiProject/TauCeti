@@ -27,7 +27,7 @@ For a `(𝔤, K)`-module `M`, a group `K` acts on `𝔤` through Lie algebra aut
 `K` is an arbitrary index type, with Lie algebra morphisms `ρ k : L → L` and linear maps
 `σ k : M → M` such that `σ k ⁅x, m⁆ = ⁅ρ k x, σ k m⁆`. The equivariant relative cochains, those
 with `ω (ρ k v₁, …, ρ k vₙ) = σ k (ω (v₁, …, vₙ))` for all `k`, again form a subcomplex, by the
-naturality of the Chevalley–Eilenberg differential (`compLinearMap_d_eq_compAlternatingMap`).
+naturality of the Chevalley–Eilenberg differential (`compLinearMap_d_eq_compAlternatingMap_d`).
 For a `(𝔤, K)`-module the differentiated action of `K` is the action of `𝔨`, so `𝔨`-invariance
 follows from `K`-equivariance, and this is the complex `C^•(𝔤, K; M) = Hom_K(⋀^• (𝔤 ⧸ 𝔨), M)` of
 relative `(𝔤, K)`-cohomology, used to compute the cohomology of locally symmetric spaces. No Lie
@@ -362,7 +362,7 @@ theorem d_mem_equivariantRelativeCochains {𝔨 : LieSubalgebra R L} {ρ : K →
   have h : ω.compLinearMap (ρ k : L →ₗ[R] L) = (σ k).compAlternatingMap ω := by
     ext w
     exact hω.2 k w
-  simpa using congr($(compLinearMap_d_eq_compAlternatingMap (ρ k) (hσ k) h) v)
+  simpa using congr($(compLinearMap_d_eq_compAlternatingMap_d (ρ k) (hσ k) h) v)
 
 variable (M)
 
