@@ -38,7 +38,8 @@ of `Lᵖ` of the strip from `TauCeti.Analysis.Sobolev.Strip.Jet`.
   `(ξ, ∂s ξ, ∂t ξ)` of test sections, the completion of the test sections in the `W^{1,2}` norm.
   It is a closed subspace, hence complete, and its elements have a value, an `s`-derivative and a
   `t`-derivative in `L²` (`TauCeti.StripSobolev.valueL`, `TauCeti.StripSobolev.derivSL`,
-  `TauCeti.StripSobolev.derivTL`). An element is determined by its value
+  `TauCeti.StripSobolev.derivTL`), none of which depend on the boundary conditions it is
+  considered with (`TauCeti.StripSobolev.valueL_inclusion`). An element is determined by its value
   (`TauCeti.StripSobolev.valueL_injective`): integrating by parts against test functions
   supported in the open strip `ℝ × (0, 1)` shows that the derivatives are the weak derivatives of
   the value (`TauCeti.StripSobolev.hasWeakLineDerivOn_derivSL`,
@@ -276,6 +277,27 @@ jet. -/
 theorem coeFn_derivTL (x : H1 F₀ F₁) :
     derivTL F₀ F₁ x =ᵐ[stripMeasure] fun z ↦ ((x : Lp (V × V × V) 2 stripMeasure) z).2.2 :=
   ContinuousLinearMap.coeFn_compLpL _ _
+
+/-- The value of an element of `H1` does not depend on the boundary conditions it is considered
+with. -/
+@[simp]
+theorem valueL_inclusion (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') (x : H1 F₀ F₁) :
+    valueL F₀' F₁' (Submodule.inclusion (H1_mono h₀ h₁) x) = valueL F₀ F₁ x :=
+  (rfl)
+
+/-- The `s`-derivative of an element of `H1` does not depend on the boundary conditions it is
+considered with. -/
+@[simp]
+theorem derivSL_inclusion (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') (x : H1 F₀ F₁) :
+    derivSL F₀' F₁' (Submodule.inclusion (H1_mono h₀ h₁) x) = derivSL F₀ F₁ x :=
+  (rfl)
+
+/-- The `t`-derivative of an element of `H1` does not depend on the boundary conditions it is
+considered with. -/
+@[simp]
+theorem derivTL_inclusion (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') (x : H1 F₀ F₁) :
+    derivTL F₀' F₁' (Submodule.inclusion (H1_mono h₀ h₁) x) = derivTL F₀ F₁ x :=
+  (rfl)
 
 /-- The value of the jet of a test section is the section. -/
 theorem valueL_jetH1 (ξ : testSection F₀ F₁) :
