@@ -237,8 +237,9 @@ theorem postcompCLM_pushforwardCLM {G : Type*} [NormedAddCommGroup G] [NormedSpa
   by_cases hy : y ∈ e.target <;> simp [hy]
 
 /-- **Change of variables against a pushed forward density**: for every additive Haar measure,
-`∫ (e_* φ) f = ∫ φ (f ∘ e)`, for a test function `φ` with values in a normed `ℝ`-algebra `𝕜`, such
-as `ℝ` or `ℂ`, acting on the values of `f`. No integrability of `f` is needed. -/
+`∫ (e_* φ) f = ∫ φ (f ∘ e)`, for a test function `φ` with values in a normed field `𝕜` that is a
+normed `ℝ`-algebra, such as `ℝ` or `ℂ`, acting on the values of `f`. No integrability of `f` is
+needed. -/
 theorem integral_pushforwardCLM_smul [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
     [μ.IsAddHaarMeasure] {𝕜 G : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedAddCommGroup G]
     [NormedSpace ℝ G] [NormedSpace 𝕜 G] [IsScalarTower ℝ 𝕜 G] (φ : 𝓓(U, 𝕜)) (f : E → G) :

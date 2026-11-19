@@ -35,17 +35,17 @@ In a proper space, if every unit vector lies in an open cone, finitely many of t
 the nonzero vectors, by compactness of the unit sphere. This is how conditions imposed direction by
 direction combine into one condition on the whole frequency space.
 
-Applying a linear automorphism `B`, the smaller cone also separates: there are an open cone `Γ'`
-around `B η₀` and `c > 0` such that `B ζ` is at distance at least `c (‖ξ‖ + ‖ζ‖)` from every
-`ξ ∈ Γ'` whenever `ζ ∉ Γ` or `‖ζ‖ < c ‖ξ‖`. This is how a cone in which a localized Fourier
+Applying a linear automorphism `B`, the image of a smaller cone also separates: there are an open
+cone `Γ'` around `B η₀` and `c > 0` such that `B ζ` is at distance at least `c (‖ξ‖ + ‖ζ‖)` from
+every `ξ ∈ Γ'` whenever `ζ ∉ Γ` or `‖ζ‖ < c ‖ξ‖`. This is how a cone in which a localized Fourier
 transform decays is transported along the transposed derivative of a change of variables.
 
 ## Main results
 
 * `IsOpen.exists_cone_closedBall_subset`: an open cone `Γ` containing `ξ` contains a smaller open
   cone `Γ'` containing `ξ` such that `closedBall η (c * ‖η‖) ⊆ Γ` for every `η ∈ Γ'`.
-* `IsOpen.exists_cone_mul_add_le_norm_sub`: for a linear automorphism `B`, a smaller open cone
-  `Γ'` around `B η₀` with `c (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖` for `ξ ∈ Γ'` and `ζ ∉ Γ` or `‖ζ‖ < c ‖ξ‖`.
+* `IsOpen.exists_cone_mul_add_le_norm_sub`: for a linear automorphism `B`, an open cone `Γ'`
+  around `B η₀` with `c (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖` for `ξ ∈ Γ'` and `ζ ∉ Γ` or `‖ζ‖ < c ‖ξ‖`.
 * `TauCeti.exists_one_add_norm_pow_mul_norm_le_of_hasSum`: decay of order `N` on `Γ'` of a
   superposition of translates of a function decaying at order `N` on `Γ`, with rapidly decreasing
   coefficients, bounded by a weighted `ℓ¹` norm of the coefficients.

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.UniformSpace.HeineCantor
@@ -42,6 +43,9 @@ of a smooth family of compactly supported functions with respect to a parameter.
   up to order `k + 1` bounds those of `y ↦ Df(y) v` up to order `k`.
 * `ContDiff.exists_bound_iteratedFDeriv_fderiv_apply`: the same with a separate bound for each
   order.
+* `ContDiff.ofReal_fderiv_apply`, `ContDiff.norm_iteratedFDeriv_ofReal_fderiv_apply_le`: the
+  directional derivative `y ↦ DΦ(y) v` of a real function `Φ`, viewed as a complex function, is
+  smooth, with derivatives bounded by those of `Φ`.
 * `ContDiffAt.iteratedFDeriv_fderiv_apply_eq_iteratedFDeriv_snoc`: the pointwise form
   `Dⁱ (y ↦ Df(y) v) (x) m = D^{i+1} f (x) (m, v)`, with `v` in the last slot.
 * `ContDiff.holderWith_iteratedFDeriv_fderiv_apply`: if `D^{k+1} f` is `r`-Hölder with constant
@@ -124,6 +128,31 @@ theorem ContDiff.exists_bound_iteratedFDeriv_fderiv_apply {n : WithTop ℕ∞} {
   obtain ⟨C, hC⟩ := hbd (i + 1) (by omega)
   exact ⟨C * ‖v‖, fun x ↦ (hf.norm_iteratedFDeriv_fderiv_apply_le
     ((minSmoothness_monotone (by gcongr)).trans hk) v x).trans (by gcongr; exact hC x)⟩
+
+section OfReal
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {n m : WithTop ℕ∞} {Φ : E → ℝ}
+
+/-- The directional derivative `y ↦ DΦ(y) v` of a `C^n` real function `Φ`, viewed as a complex
+function, is `C^m` for `m + 1 ≤ n`. -/
+theorem ContDiff.ofReal_fderiv_apply (hΦ : ContDiff ℝ n Φ) (hmn : m + 1 ≤ n) (v : E) :
+    ContDiff ℝ m fun y ↦ ((fderiv ℝ Φ y v : ℝ) : ℂ) :=
+  Complex.ofRealCLM.contDiff.comp ((hΦ.fderiv_right hmn).clm_apply contDiff_const)
+
+/-- The derivatives of the directional derivative `y ↦ DΦ(y) v` of a real function `Φ`, viewed as
+a complex function, are bounded by those of `Φ`: `‖Dⁱ (y ↦ DΦ(y) v) (x)‖ ≤ ‖D^{i+1} Φ (x)‖ ‖v‖`. -/
+theorem ContDiff.norm_iteratedFDeriv_ofReal_fderiv_apply_le (hΦ : ContDiff ℝ n Φ) {i : ℕ}
+    (hi : i + 1 ≤ n) (v x : E) :
+    ‖iteratedFDeriv ℝ i (fun y ↦ ((fderiv ℝ Φ y v : ℝ) : ℂ)) x‖ ≤
+      ‖iteratedFDeriv ℝ (i + 1) Φ x‖ * ‖v‖ := by
+  have h := Complex.ofRealLI.norm_iteratedFDeriv_comp_left (i := i)
+    ((hΦ.fderiv_right hi).clm_apply (contDiff_const (c := v))).contDiffAt (x := x) le_rfl
+  rw [show (Complex.ofRealLI : ℝ →ₗᵢ[ℝ] ℂ) ∘ (fun y ↦ fderiv ℝ Φ y v) =
+      fun y ↦ ((fderiv ℝ Φ y v : ℝ) : ℂ) from funext fun _ ↦ Complex.ofRealLI_apply _] at h
+  rw [h]
+  exact hΦ.norm_iteratedFDeriv_fderiv_apply_le (by rwa [minSmoothness_of_isRCLikeNormedField]) v x
+
+end OfReal
 
 /-- **The innermost derivative of an iterated derivative.** If `f` is `C^{k+1}` at `x`, the `k`-th
 iterated derivative of the directional derivative `y ↦ Df(y) v` at `x` is the `(k + 1)`-th

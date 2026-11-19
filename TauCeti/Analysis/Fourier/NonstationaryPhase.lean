@@ -15,7 +15,6 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.Deriv.Support
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Complex.RealDeriv
-import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
@@ -23,6 +22,8 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Reciprocal
+import TauCeti.Analysis.Fourier.FourierCharDeriv
+import TauCeti.Analysis.InnerProductSpace.Calculus
 
 /-!
 # Non-stationary phase
@@ -353,46 +354,15 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 namespace NonstationaryPhase
 
-/-- The derivative of the phase `x ↦ 𝐞 (Φ x)` in the direction `w` is `2πi DΦ(x) w 𝐞 (Φ x)`. -/
-private theorem hasFDerivAt_fourierChar_comp {Φ : E → ℝ} {x : E} (hΦ : DifferentiableAt ℝ Φ x) :
-    HasFDerivAt (fun y ↦ (𝐞 (Φ y) : ℂ))
-      ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (2 * π * I * 𝐞 (Φ x))).comp
-        (fderiv ℝ Φ x)) x :=
-  (hasDerivAt_fourierChar (Φ x)).hasFDerivAt.comp x hΦ.hasFDerivAt
-
-private theorem fderiv_fourierChar_comp_apply {Φ : E → ℝ} {x : E} (hΦ : DifferentiableAt ℝ Φ x)
-    (w : E) :
-    fderiv ℝ (fun y ↦ (𝐞 (Φ y) : ℂ)) x w = 2 * π * I * fderiv ℝ Φ x w * 𝐞 (Φ x) := by
-  rw [(hasFDerivAt_fourierChar_comp hΦ).fderiv]
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.smulRight_apply,
-    one_apply_eq_self, real_smul]
-  ring
-
 /-- The reciprocal of the derivative of the phase in the direction `w`, times an amplitude `u`
 supported where that derivative does not vanish, is smooth. -/
 private theorem contDiff_inv_fderiv_apply_mul {u : E → ℂ} (hu : ContDiff ℝ ∞ u) {Φ : E → ℝ}
     (hΦ : ContDiff ℝ ∞ Φ) {w : E} (ha : ∀ x ∈ tsupport u, fderiv ℝ Φ x w ≠ 0) :
     ContDiff ℝ ∞ fun z ↦ ((fderiv ℝ Φ z w : ℝ) : ℂ)⁻¹ * u z := by
-  have hac : ContDiff ℝ ∞ fun z ↦ ((fderiv ℝ Φ z w : ℝ) : ℂ) :=
-    ofRealCLM.contDiff.comp ((hΦ.fderiv_right (m := ∞) (by simp)).clm_apply contDiff_const)
+  have hac := hΦ.ofReal_fderiv_apply (m := ∞) (by simp) w
   exact (ContinuousLinearMap.mul ℝ ℂ).contDiff_of_tsupport_subset_right
     (hac.contDiffOn.inv fun z hz ↦ hz) hu.contDiffOn
     (isOpen_ne_fun hac.continuous continuous_const) fun x hx ↦ by simpa using ha x hx
-
-/-- The derivatives of `x ↦ DΦ(x) w`, as a complex function, are bounded by those of `Φ`. -/
-private theorem norm_iteratedFDeriv_ofReal_fderiv_apply_le {Φ : E → ℝ} (hΦ : ContDiff ℝ ∞ Φ)
-    (w x : E) (j : ℕ) : ‖iteratedFDeriv ℝ j (fun z ↦ ((fderiv ℝ Φ z w : ℝ) : ℂ)) x‖ ≤
-      ‖iteratedFDeriv ℝ (j + 1) Φ x‖ * ‖w‖ := by
-  have h := ofRealLI.norm_iteratedFDeriv_comp_left (x := x) (i := j)
-    (((hΦ.fderiv_right (m := ∞) (by simp)).clm_apply contDiff_const).contDiffAt (x := x)
-      (f := fun z ↦ fderiv ℝ Φ z w)) (by exact_mod_cast le_top)
-  rw [show (ofRealLI : ℝ →ₗᵢ[ℝ] ℂ) ∘ (fun z ↦ fderiv ℝ Φ z w) =
-    fun z ↦ ((fderiv ℝ Φ z w : ℝ) : ℂ) from rfl] at h
-  have hm : minSmoothness ℝ (j + 1) ≤ (∞ : WithTop ℕ∞) := by
-    rw [minSmoothness_of_isRCLikeNormedField]
-    exact_mod_cast le_top
-  rw [h]
-  exact hΦ.norm_iteratedFDeriv_fderiv_apply_le hm w x
 
 /-- The amplitudes produced by integrating `k` times by parts in the direction `w` against the
 phase `𝐞 (Φ x)`, starting from `φ`. -/
@@ -426,11 +396,10 @@ private theorem exists_norm_iteratedFDeriv_inv_fderiv_apply_le {K : Set E}
   set A := ∑ j ∈ Finset.range (n + 1), |C j|
   obtain ⟨Q, hQ0, hQ⟩ := exists_norm_iteratedFDeriv_inv_le_div (E := E) (𝕜 := ℂ) n A one_pos
   refine ⟨Q, hQ0, fun i j hj x hx ↦ hQ _ (τ i) x (hτ i) ?_ (fun j' hj' ↦ ?_) ?_ j hj⟩
-  · exact (ofRealCLM.contDiff.comp (((hΦ i).fderiv_right (m := ∞) (by simp)).clm_apply
-      contDiff_const)).of_le (by exact_mod_cast le_top)
+  · exact ((hΦ i).ofReal_fderiv_apply (m := ∞) (by simp) (w i)).of_le (by exact_mod_cast le_top)
   · have hCτ : 0 ≤ C j' * τ i := (norm_nonneg _).trans (hC j' i x hx)
     calc _ ≤ ‖iteratedFDeriv ℝ (j' + 1) (Φ i) x‖ * ‖w i‖ :=
-          norm_iteratedFDeriv_ofReal_fderiv_apply_le (hΦ i) _ x j'
+          (hΦ i).norm_iteratedFDeriv_ofReal_fderiv_apply_le (by exact_mod_cast le_top) _ x
       _ ≤ C j' * τ i * 1 := mul_le_mul (hC j' i x hx) (hw i) (norm_nonneg _) hCτ
       _ ≤ |C j'| * τ i := by
           rw [mul_one]
@@ -472,13 +441,10 @@ private theorem exists_norm_iteratedFDeriv_amplitude_le (hφ : ContDiff ℝ ∞ 
     refine ⟨2 ^ (n + 1) * Q * C, by positivity, fun i j hj y ↦ ?_⟩
     have ha := fderiv_apply_ne_zero_of_le_abs hτ hlow i
     obtain ⟨hk, hks⟩ := contDiff_amplitude hφ (hΦ i) ha k
-    have hac : ContDiff ℝ ∞ fun z ↦ ((fderiv ℝ (Φ i) z (w i) : ℝ) : ℂ) :=
-      ofRealCLM.contDiff.comp (((hΦ i).fderiv_right (m := ∞) (by simp)).clm_apply contDiff_const)
+    have hac := (hΦ i).ofReal_fderiv_apply (m := ∞) (by simp) (w i)
     have hs : IsOpen {z | ((fderiv ℝ (Φ i) z (w i) : ℝ) : ℂ) ≠ 0} :=
       isOpen_ne_fun hac.continuous continuous_const
-    have hm : minSmoothness ℝ (j + 1) ≤ (∞ : WithTop ℕ∞) := by
-      rw [minSmoothness_of_isRCLikeNormedField]
-      exact_mod_cast le_top
+    have hm : minSmoothness ℝ (j + 1) ≤ (∞ : WithTop ℕ∞) := by simp
     have hτi := hτ i
     calc ‖iteratedFDeriv ℝ j (amplitude (Φ i) (w i) φ (k + 1)) y‖
         ≤ ‖iteratedFDeriv ℝ (j + 1) (fun z ↦ ((fderiv ℝ (Φ i) z (w i) : ℝ) : ℂ)⁻¹ *
@@ -514,14 +480,7 @@ private theorem integral_mul_fourierChar_eq {u : E → ℂ} (hu : ContDiff ℝ �
   set a : E → ℂ := fun z ↦ ((fderiv ℝ Φ z w : ℝ) : ℂ)
   set f : E → ℂ := fun z ↦ (a z)⁻¹ * u z
   have hΦd : Differentiable ℝ Φ := hΦ.differentiable (by simp)
-  have hac : ContDiff ℝ ∞ a :=
-    ofRealCLM.contDiff.comp ((hΦ.fderiv_right (m := ∞) (by simp)).clm_apply contDiff_const)
-  set s : Set E := {z | a z ≠ 0}
-  have hs : IsOpen s := isOpen_ne_fun hac.continuous continuous_const
-  have hus : tsupport u ⊆ s := fun x hx ↦ by simpa [s, a] using ha x hx
-  have hf : ContDiff ℝ ∞ f :=
-    (ContinuousLinearMap.mul ℝ ℂ).contDiff_of_tsupport_subset_right
-      (hac.contDiffOn.inv fun z hz ↦ hz) hu.contDiffOn hs hus
+  have hf : ContDiff ℝ ∞ f := contDiff_inv_fderiv_apply_mul hu hΦ ha
   have hfs : tsupport f ⊆ tsupport u :=
     tsupport_mul_subset_right (f := fun z ↦ (a z)⁻¹) (g := u)
   have hfc : HasCompactSupport f := IsCompact.of_isClosed_subset huc (isClosed_tsupport f) hfs
@@ -531,7 +490,7 @@ private theorem integral_mul_fourierChar_eq {u : E → ℂ} (hu : ContDiff ℝ �
       2 * π * I * (u x * 𝐞 (Φ x)) := by
     rw [fderiv_fourierChar_comp_apply (hΦd x)]
     by_cases hx : x ∈ tsupport u
-    · have hax : a x ≠ 0 := hus hx
+    · have hax : a x ≠ 0 := by simpa [a] using ha x hx
       simp only [f]
       field_simp
       simp [a, mul_comm]
@@ -568,7 +527,7 @@ private theorem integral_mul_fourierChar_eq_pow_mul {φ : E → ℂ} (hφ : Cont
     rw [ih, integral_mul_fourierChar_eq hk
       (IsCompact.of_isClosed_subset hφc (isClosed_tsupport _) hks) hΦ fun x hx ↦ ha x (hks hx),
       pow_succ, mul_assoc ((-(2 * π * I)⁻¹) ^ k)]
-    rfl
+    simp only [amplitude]
 
 end NonstationaryPhase
 
@@ -613,57 +572,9 @@ end Directional
 
 section ChangeOfVariables
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
 namespace NonstationaryPhase
-
-/-- The derivatives of order at least one of a linear form `x ↦ ⟪x, ξ⟫` are bounded by `‖ξ‖`. -/
-private theorem norm_iteratedFDeriv_succ_inner_left_le (ξ x : E) (k : ℕ) :
-    ‖iteratedFDeriv ℝ (k + 1) (fun y ↦ ⟪y, ξ⟫) x‖ ≤ ‖ξ‖ := by
-  have hL : (fun y ↦ ⟪y, ξ⟫) = innerSL ℝ ξ := by
-    ext y
-    simp [real_inner_comm]
-  have hd : fderiv ℝ (fun y ↦ ⟪y, ξ⟫) = fun _ ↦ innerSL ℝ ξ := by
-    rw [hL]
-    exact funext fun _ ↦ (innerSL ℝ ξ).fderiv
-  rw [← norm_iteratedFDeriv_fderiv, hd]
-  rcases k with _ | k
-  · simp [innerSL_apply_norm]
-  · rw [iteratedFDeriv_const_of_ne (by omega), Pi.zero_apply, norm_zero]
-    exact norm_nonneg ξ
-
-/-- The derivatives of order at least one of the phase `x ↦ ⟪f x, ζ⟫ - ⟪x, ξ⟫` are bounded by
-`‖ζ‖` times those of `f`, plus `‖ξ‖`. -/
-private theorem norm_iteratedFDeriv_succ_phase_le {f : E → E} (hf : ContDiff ℝ ∞ f) (ξ ζ x : E)
-    (k : ℕ) : ‖iteratedFDeriv ℝ (k + 1) (fun y ↦ ⟪f y, ζ⟫ - ⟪y, ξ⟫) x‖ ≤
-      ‖ζ‖ * ‖iteratedFDeriv ℝ (k + 1) f x‖ + ‖ξ‖ := by
-  have hζ : (fun y ↦ ⟪f y, ζ⟫) = innerSL ℝ ζ ∘ f := by
-    ext y
-    simp [real_inner_comm]
-  have h1 : ContDiff ℝ ∞ fun y ↦ ⟪f y, ζ⟫ := hf.inner ℝ contDiff_const
-  have h2 : ContDiff ℝ ∞ fun y : E ↦ ⟪y, ξ⟫ := contDiff_id.inner ℝ contDiff_const
-  have hk : ((k + 1 : ℕ) : WithTop ℕ∞) ≤ ∞ := by exact_mod_cast le_top
-  rw [show (fun y ↦ ⟪f y, ζ⟫ - ⟪y, ξ⟫) = (fun y ↦ ⟪f y, ζ⟫) - fun y ↦ ⟪y, ξ⟫ from rfl,
-    iteratedFDeriv_sub_apply (h1.contDiffAt.of_le hk) (h2.contDiffAt.of_le hk)]
-  refine (norm_sub_le _ _).trans (add_le_add ?_ (norm_iteratedFDeriv_succ_inner_left_le ξ x k))
-  rw [hζ, ← innerSL_apply_norm ℝ ζ]
-  exact (innerSL ℝ ζ).norm_iteratedFDeriv_comp_left hf.contDiffAt hk
-
-end NonstationaryPhase
-
-variable [FiniteDimensional ℝ E]
-
-namespace NonstationaryPhase
-
-/-- The derivative of the phase `y ↦ ⟪f y, ζ⟫ - ⟪y, ξ⟫` in the direction `v` is
-`⟪v, (Df(x))† ζ - ξ⟫`. -/
-private theorem fderiv_phase_apply {f : E → E} (hf : Differentiable ℝ f) (ξ ζ x v : E) :
-    fderiv ℝ (fun y ↦ ⟪f y, ζ⟫ - ⟪y, ξ⟫) x v = ⟪v, ((fderiv ℝ f x)†) ζ - ξ⟫ := by
-  rw [fderiv_fun_sub ((hf x).inner ℝ (differentiableAt_const ζ))
-      (differentiableAt_fun_id.inner ℝ (differentiableAt_const ξ)), sub_apply,
-    fderiv_inner_apply ℝ (hf x) (differentiableAt_const ζ),
-    fderiv_inner_apply ℝ differentiableAt_fun_id (differentiableAt_const ξ)]
-  simp [inner_sub_right, ContinuousLinearMap.adjoint_inner_right]
 
 /-- Where `(Df(x))†` is within `c / 2` of `B` and `c (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖`, the derivative of
 the phase in the direction of `B ζ - ξ` is at least `c / 2 (‖ξ‖ + ‖ζ‖)`. -/
@@ -721,10 +632,11 @@ private theorem exists_norm_integral_mul_fourierChar_inner_sub_le_div {f : E →
     (fun p ↦ by rw [norm_smul, norm_inv, norm_norm]; exact inv_mul_le_one)
     (τ := fun p ↦ c / 2 * (‖p.1.1‖ + ‖p.1.2‖)) (fun p ↦ by have := hsum p; positivity)
     (fun p x hx ↦ by
-      rw [fderiv_phase_apply hf']
+      rw [fderiv_inner_sub_inner_apply (hf' x)]
       exact (le_inner_adjoint_sub (hfB x hx) p.2.1).trans (le_abs_self _))
     (fun k ↦ ⟨2 / c * (M k + 1), fun p x hx ↦ by
-      refine (norm_iteratedFDeriv_succ_phase_le hf _ _ x k).trans ?_
+      refine (norm_iteratedFDeriv_succ_inner_sub_inner_le
+        (hf.contDiffAt.of_le (by exact_mod_cast le_top)) _ _).trans ?_
       have h := hM k x hx
       have := hM0 k
       field_simp

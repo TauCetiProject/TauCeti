@@ -27,8 +27,8 @@ derivative (Hörmander I, Theorem 8.2.4, for diffeomorphisms):
 
 `(x, (De(x))† η) ∈ WF(e^* T) ↔ (e x, η) ∈ WF(T)` for `x ∈ U`.
 
-So the wave front set of a distribution on a manifold is a well-defined subset of its cotangent
-bundle, and microlocal regularity can be read off in any chart.
+This chart invariance is what allows the wave front set of a distribution on a manifold to be
+defined as a subset of the cotangent bundle, with microlocal regularity read off in any chart.
 
 ## The argument
 
@@ -41,7 +41,7 @@ Fourier series along `L` turns the localized Fourier transform of `e^* T` into t
 `(e^* T)(φ e_ξ) = ∑ m, ((covolume L)⁻¹ ∫ φ(y) 𝐞(⟪e y, -m⟫ - ⟪y, ξ⟫) dy) T (χ e_(-m))`.
 
 Suppose `T` is microlocally smooth at `(e x, η)`, so that `ζ ↦ T (χ e_ζ)` decays rapidly on an open
-cone `Γ` around `η` and grows at most polynomially elsewhere. On a smaller open cone `Γ'` around
+cone `Γ` around `η` and grows at most polynomially elsewhere. On an open cone `Γ'` around
 `(De(x))† η` (`IsOpen.exists_cone_mul_add_le_norm_sub`), every term of the series is small:
 
 * if `ζ = -m` lies in `Γ` and `‖ζ‖ ≥ c ‖ξ‖`, then `T (χ e_ζ)` is rapidly decreasing in `‖ζ‖`, hence
@@ -268,6 +268,15 @@ theorem hasSum_localFourier_compCLMOfOpenPartialHomeomorph [MeasurableSpace E] [
   rw [← h0]
   simpa only [hF, zero_sub] using h
 
+omit [FiniteDimensional ℝ E] in
+/-- A smooth change of variables is differentiable at each point `x` of its source, and its inverse
+at `e x`. -/
+private theorem differentiableAt_and_differentiableAt_symm
+    (hes : ContDiffOn ℝ (⊤ : ℕ∞) e e.source) (hes' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target)
+    {x : E} (hx : x ∈ e.source) : DifferentiableAt ℝ e x ∧ DifferentiableAt ℝ e.symm (e x) :=
+  ⟨(hes.differentiableOn (by simp)).differentiableAt (e.open_source.mem_nhds hx),
+    (hes'.differentiableOn (by simp)).differentiableAt (e.open_target.mem_nhds (e.map_source hx))⟩
+
 /-- Near a point `x` of `U` there is a cutoff `φ` with `φ x = 1` such that `e` maps its support into
 a given neighbourhood of `e x` and `(De(y))†` stays within `δ` of `(De(x))†` on its support. -/
 private theorem exists_cutoff_adjoint_fderiv (hes : ContDiffOn ℝ (⊤ : ℕ∞) e e.source)
@@ -303,10 +312,8 @@ theorem IsMicrolocallySmoothAt.compCLMOfOpenPartialHomeomorph {T : 𝓓'(Ω, ℂ
   have hKΩ : (K : Set E) ⊆ Ω := hKU.trans inter_subset_right
   obtain ⟨C₀, k₀, hG⟩ := exists_norm_localFourier_le T (ofSupportedIn hKΩ χ)
   -- The cone `Γ'` around `(De x)† η` separated from the complement of `Γ`.
-  obtain ⟨A, hA⟩ := e.isInvertible_fderiv hxs
-    ((he.differentiableOn (by simp)).differentiableAt (e.open_source.mem_nhds hxs))
-    ((he'.differentiableOn (by simp)).differentiableAt
-      (e.open_target.mem_nhds (e.map_source hxs)))
+  obtain ⟨hd, hds⟩ := differentiableAt_and_differentiableAt_symm he he' hxs
+  obtain ⟨A, hA⟩ := e.isInvertible_fderiv hxs hd hds
   obtain ⟨Γ', hΓ', hξΓ', hcone', c, hc, hsep⟩ :=
     hΓ.exists_cone_mul_add_le_norm_sub hcone hηΓ A.adjointEquiv
   have hB : (A.adjointEquiv : E →L[ℝ] E) = (fderiv ℝ e x)† := by
@@ -336,28 +343,6 @@ theorem IsMicrolocallySmoothAt.compCLMOfOpenPartialHomeomorph {T : 𝓓'(Ω, ℂ
       rw [(hfe y hy).fderiv_eq, hB]
       exact (hφ y hy).2.le) K
   exact ⟨C, fun ξ ζ hξζ ↦ by simpa only [hI] using hC ξ ζ hξζ⟩
-
-/-- `(De(x))† ((De⁻¹(e x))† ξ) = ξ` for `x` in the source of a smooth change of variables. -/
-private theorem adjoint_fderiv_apply_adjoint_fderiv_symm_apply {x : E} (hx : x ∈ e.source)
-    (hes : ContDiffOn ℝ (⊤ : ℕ∞) e e.source) (hes' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target)
-    (ξ : E) : ((fderiv ℝ e x)†) (((fderiv ℝ e.symm (e x))†) ξ) = ξ := by
-  rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
-    e.fderiv_symm_comp_fderiv_of_mem_source hx
-      ((hes.differentiableOn (by simp)).differentiableAt (e.open_source.mem_nhds hx))
-      ((hes'.differentiableOn (by simp)).differentiableAt
-        (e.open_target.mem_nhds (e.map_source hx))),
-    ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
-
-/-- `(De⁻¹(e x))† ((De(x))† η) = η` for `x` in the source of a smooth change of variables. -/
-private theorem adjoint_fderiv_symm_apply_adjoint_fderiv_apply {x : E} (hx : x ∈ e.source)
-    (hes : ContDiffOn ℝ (⊤ : ℕ∞) e e.source) (hes' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target)
-    (η : E) : ((fderiv ℝ e.symm (e x))†) (((fderiv ℝ e x)†) η) = η := by
-  rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
-    e.fderiv_comp_fderiv_symm_of_mem_source hx
-      ((hes.differentiableOn (by simp)).differentiableAt (e.open_source.mem_nhds hx))
-      ((hes'.differentiableOn (by simp)).differentiableAt
-        (e.open_target.mem_nhds (e.map_source hx))),
-    ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
 
 /-- **Microlocal smoothness is invariant under changes of variables.** For `x ∈ U`, the pullback
 `e^* T` is microlocally smooth at `(x, (De(x))† η)` exactly when `T` is microlocally smooth at
@@ -391,7 +376,8 @@ theorem isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff {T : 𝓓'(Ω,
     (hU := hU) (hUV := hUV) (he₁ := he') (he₁' := by simpa using he) (hV := hVt) (hVU := hVU)
     (restrictCLM T : 𝓓'(V, ℂ))
   rw [hback] at h'
-  rw [adjoint_fderiv_symm_apply_adjoint_fderiv_apply hxs he he'] at h'
+  obtain ⟨hd, hds⟩ := differentiableAt_and_differentiableAt_symm he he' hxs
+  rw [e.adjoint_fderiv_symm_apply_adjoint_fderiv_apply hxs hd hds] at h'
   exact (isMicrolocallySmoothAt_restrictCLM_iff hVΩ ⟨x, hx, rfl⟩).1 h'
 
 /-- **The wave front set under a change of variables.** The wave front set of the pullback `e^* T`
@@ -402,15 +388,17 @@ theorem waveFrontSet_compCLMOfOpenPartialHomeomorph (T : 𝓓'(Ω, ℂ)) :
     (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).waveFrontSet =
       (U : Set E) ×ˢ univ ∩
         (fun p : E × E ↦ (e p.1, ((fderiv ℝ e.symm (e p.1))†) p.2)) ⁻¹' T.waveFrontSet := by
+  have hinv {x : E} (hx : x ∈ U) (ξ : E) :
+      ((fderiv ℝ e x)†) (((fderiv ℝ e.symm (e x))†) ξ) = ξ :=
+    have hd := differentiableAt_and_differentiableAt_symm he he' (hU hx)
+    e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply (hU hx) hd.1 hd.2 ξ
   ext ⟨x, ξ⟩
   simp only [mem_waveFrontSet_iff, mem_inter_iff, mem_prod, mem_univ, and_true, mem_preimage]
   refine ⟨fun ⟨hx, hξ, hT⟩ ↦ ⟨hx, hUΩ hx, fun h0 ↦ hξ ?_, fun h ↦ hT ?_⟩,
     fun ⟨hx, _, hη, hT⟩ ↦ ⟨hx, fun h0 ↦ hη (by simp [h0]), fun h ↦ hT ?_⟩⟩
-  · rw [← adjoint_fderiv_apply_adjoint_fderiv_symm_apply (hU hx) he he' ξ, h0, map_zero]
-  · rwa [← isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff hx,
-      adjoint_fderiv_apply_adjoint_fderiv_symm_apply (hU hx) he he'] at h
-  · rwa [← isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff hx,
-      adjoint_fderiv_apply_adjoint_fderiv_symm_apply (hU hx) he he']
+  · rw [← hinv hx ξ, h0, map_zero]
+  · rwa [← isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff hx, hinv hx] at h
+  · rwa [← isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff hx, hinv hx]
 
 end ChangeOfVariables
 
