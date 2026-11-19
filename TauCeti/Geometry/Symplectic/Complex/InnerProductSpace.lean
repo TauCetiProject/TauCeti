@@ -20,6 +20,9 @@ structure rather than a global instance, since it depends on `J`.
 real inner product, and `TauCeti.AlmostComplexStructure.inner_apply_self` the orthogonality
 `⟪J v, v⟫ = 0`.
 
+Conversely, multiplication by `i` on a complex inner product space preserves the real inner product
+`Re ⟪·, ·⟫_ℂ` (`TauCeti.AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule`).
+
 This is the usual Hermitian metric associated with an orthogonal complex structure; see
 H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
 -/
@@ -128,5 +131,14 @@ lemma complexInnerProductSpace_inner (J : AlmostComplexStructure V)
     inner ℂ v w = (inner ℝ v w : ℂ) + Complex.I * (inner ℝ (J v) w : ℂ) := by
   let := J.complexInnerProductSpace hJ
   apply Complex.ext <;> simp <;> rfl
+
+/-- Multiplication by `i` preserves the real inner product `Re ⟪·, ·⟫_ℂ` of a complex inner
+product space, so `ofComplexModule E` is an orthogonal complex structure. -/
+theorem real_inner_ofComplexModule_ofComplexModule {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℂ E] (v w : E) :
+    letI := InnerProductSpace.complexToReal (G := E)
+    ⟪ofComplexModule E v, ofComplexModule E w⟫ = ⟪v, w⟫ := by
+  let := InnerProductSpace.complexToReal (G := E)
+  simp [real_inner_eq_re_inner, inner_smul_left, inner_smul_right, ← mul_assoc]
 
 end TauCeti.AlmostComplexStructure
