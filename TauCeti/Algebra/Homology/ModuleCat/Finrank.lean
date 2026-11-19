@@ -81,9 +81,9 @@ theorem finrank_homology_eq_finrank_X_of_d_eq_zero {R : Type*} [Ring R] {ι : Ty
     finrank R (K.homology i) = finrank R (K.X i) :=
   (K.XIsoHomologyOfDEqZero i h₁ h₂).toLinearEquiv.finrank_eq.symm
 
-/-- In a degree `j` between `i` and `k`, the dimension of a finite-dimensional term `Cⱼ` of a
-complex of vector spaces is the sum of the dimensions of the boundaries `Bⱼ`, of the homology `Hⱼ`
-and of the image of `Cⱼ` in `Cₖ`. -/
+/-- In a degree `j` with `i = c.prev j` and `l = c.next j`, the dimension of a finite-dimensional
+term `Cⱼ` of a complex of vector spaces is the sum of the dimensions of the boundaries `Bⱼ` (the
+image of `Cᵢ` in `Cⱼ`), of the homology `Hⱼ` and of the image of `Cⱼ` in `Cₗ`. -/
 theorem finrank_X_eq_finrank_range_add_finrank_homology_add {k : Type*} [DivisionRing k]
     {ι : Type*} {c : ComplexShape ι} (C : HomologicalComplex (ModuleCat k) c) {i j l : ι}
     (hi : c.prev j = i) (hl : c.next j = l) [Module.Finite k (C.X j)] :
