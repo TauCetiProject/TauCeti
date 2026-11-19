@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.JHolomorphic.ConfigurationCount
+public import TauCeti.Geometry.Symplectic.JHolomorphic.PointConfigurationCount
 
 /-!
-# Invariance of the weighted configuration count under local bifurcations
+# Invariance of the weighted configuration counts under local bifurcations
 
 Along a generic path of almost complex structures the set of embedded pseudoholomorphic curves
 changes only through local bifurcations. Two ordinary curves of opposite determinant signs are
@@ -62,9 +62,33 @@ The ray-series identities behind the torus statements are
 over a set of candidates whose members need not be pairwise compatible and need not lie on one
 ray.
 
-The candidates, their classes, weights and compatibility, and the description of a bifurcation
-as the replacement of one cluster by another, are inputs here; constructing the one-dimensional
-bifurcation models of a generic path of almost complex structures is separate.
+**The count through the points.** Taubes's invariant of a class of positive virtual dimension
+`2k` counts the configurations through `k` generic points,
+`TauCeti.pointConfigurationCount r cls pts w s A`, where `pts c` is the set of points on the image
+of `c`. Compatible images are disjoint, so the candidates `U` compatible with a cluster `K` avoid
+the set `Q` of points on the members of `K`. A point configuration of `K ∪ s` meeting `K` then
+splits into a configuration of `K` through the points of `Q` and a configuration of `U` through
+the points outside `Q` (`TauCeti.pointConfigurationCount_union`), so the count through the
+points depends on the cluster only through its local counts through `Q`
+(`TauCeti.pointConfigurationCount_union_eq_union`). The statements for the count without points
+are the special case of an empty type of points. Hence:
+
+* two incompatible curves of the same class through the same points with opposite weights,
+  born or dying together, leave the count through the points unchanged
+  (`TauCeti.pointConfigurationCount_insert_insert_of_weight_eq_neg`);
+* a cluster carrying none of the points enters only through its local counts without points
+  (`TauCeti.pointConfigurationCount_union_eq_union_of_configurationCount_eq`). Generic points
+  avoid the tori of index zero, so every torus bifurcation above leaves the count through the
+  points unchanged as well
+  (`TauCeti.pointConfigurationCount_union_eq_union_of_coeff_rayTorusWeightSeries_eq`,
+  `TauCeti.pointConfigurationCount_insert_insert_of_eq_torusWeight_not`,
+  `TauCeti.pointConfigurationCount_insert_eq_insert_insert_of_eq_torusWeight_castSucc`,
+  `TauCeti.pointConfigurationCount_insert_eq_insert_insert_of_eq_torusWeight_succ`,
+  `TauCeti.pointConfigurationCount_insert_eq_insert_of_area_lt_two_mul`).
+
+The candidates, their classes, weights, point incidences and compatibility, and the description
+of a bifurcation as the replacement of one cluster by another, are inputs here; constructing the
+one-dimensional bifurcation models of a generic path of almost complex structures is separate.
 
 ## Main results
 
@@ -79,6 +103,17 @@ bifurcation models of a generic path of almost complex structures is separate.
   `TauCeti.configurationCount_insert_eq_insert_insert_of_eq_torusWeight_succ`: period doubling.
 * `TauCeti.configurationCount_insert_eq_insert_of_area_lt_two_mul`: changing the index of a torus
   whose double cover lies beyond the area cutoff.
+* `TauCeti.pointConfigurationCount_union`, `TauCeti.pointConfigurationCount_union_eq_union`: the
+  cluster expansion and cluster replacement for the count through the points.
+* `TauCeti.pointConfigurationCount_insert_insert_of_weight_eq_neg`: ordinary birth and death
+  through the points.
+* `TauCeti.pointConfigurationCount_union_eq_union_of_configurationCount_eq`: replacing a cluster
+  carrying none of the points, and its torus instances
+  `TauCeti.pointConfigurationCount_union_eq_union_of_coeff_rayTorusWeightSeries_eq` and
+  `TauCeti.pointConfigurationCount_insert_insert_of_eq_torusWeight_not`,
+  `TauCeti.pointConfigurationCount_insert_eq_insert_insert_of_eq_torusWeight_castSucc`,
+  `TauCeti.pointConfigurationCount_insert_eq_insert_insert_of_eq_torusWeight_succ`,
+  `TauCeti.pointConfigurationCount_insert_eq_insert_of_area_lt_two_mul`.
 
 ## References
 
@@ -93,7 +128,7 @@ open PowerSeries
 
 namespace TauCeti
 
-variable {ι H R : Type*}
+variable {ι H P R : Type*}
 
 section Cluster
 
@@ -214,6 +249,207 @@ private theorem compatible_iff_mem_sep {p : ι → Prop} {c : ι}
     ∀ k, p k → ∀ e ∈ s, r k e ∧ r e k ↔ e ∈ {e ∈ s | r c e ∧ r e c} :=
   fun k hk e he ↦ (hcomp k hk e he).trans ⟨fun h ↦ ⟨he, h⟩, fun h ↦ h.2⟩
 
+/-! ### Clusters and the count through the points
+
+For the count through a set of points, a cluster `K` comes with the set `Q` of points lying on its
+members, and the candidates `U` compatible with `K` avoid `Q`: geometrically, compatible images are
+disjoint. A point configuration of `K ∪ s` meeting `K` then splits into a configuration of `K`
+through the points of `Q` and a configuration of `U` through the remaining points. -/
+
+section Points
+
+variable {pts : ι → Finset P} {Q : Set P} [DecidablePred (· ∈ Q)]
+
+/-- A configuration `m` of the cluster `K` through the points of `Q`, together with a
+configuration `n` of the candidates `U` compatible with `K` through the points outside `Q`, is a
+point configuration of `K ∪ s`, and splitting it along `K` recovers `m` and `n`. -/
+private theorem add_mem_pointConfigurations_union [DecidablePred (· ∈ K)]
+    (hKs : Disjoint K s) (hUs : U ⊆ s) (hU : ∀ k ∈ K, ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U)
+    {m n : ι →₀ ℕ} (hm : m ∈ pointConfigurations r cls (fun c ↦ (pts c).subtype (· ∈ Q)) K B)
+    (hn : n ∈ pointConfigurations r cls (fun c ↦ (pts c).subtype (· ∉ Q)) U (A - B)) :
+    m + n ∈ pointConfigurations r cls pts (K ∪ s) A ∧ (m + n).filter (· ∈ K) = m ∧
+      (m + n).filter (· ∉ K) = n := by
+  rw [mem_pointConfigurations] at hm hn
+  obtain ⟨hmn, hK, hnK⟩ := add_mem_compatibleConfigurations_union hKs hUs hU hm.1 hn.1
+  refine ⟨mem_pointConfigurations.2 ⟨hmn, fun p ↦ ?_⟩, hK, hnK⟩
+  by_cases hp : p ∈ Q
+  · obtain ⟨c, hc, hpc⟩ := hm.2 ⟨p, hp⟩
+    exact ⟨c, Finsupp.support_mono le_self_add hc, Finset.mem_subtype.1 hpc⟩
+  · obtain ⟨c, hc, hpc⟩ := hn.2 ⟨p, hp⟩
+    exact ⟨c, Finsupp.support_mono le_add_self hc, Finset.mem_subtype.1 hpc⟩
+
+/-- A point configuration of `K ∪ s` meeting the cluster `K` splits into a configuration of `K`
+through the points of `Q` and a configuration of the candidates `U` compatible with `K` through
+the points outside `Q`, provided the members of `K` carry only points of `Q` and the candidates of
+`U` none. -/
+private theorem filter_mem_pointConfigurations [DecidablePred (· ∈ K)]
+    (hU : ∀ k ∈ K, ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U) (hQK : ∀ k ∈ K, ∀ p ∈ pts k, p ∈ Q)
+    (hQU : ∀ d ∈ U, ∀ p ∈ pts d, p ∉ Q) {l : ι →₀ ℕ}
+    (hl : l ∈ pointConfigurations r cls pts (K ∪ s) A) (hlK : l.filter (· ∈ K) ≠ 0) :
+    l.filter (· ∈ K) ∈ pointConfigurations r cls (fun c ↦ (pts c).subtype (· ∈ Q)) K
+        (Finsupp.linearCombination ℕ cls (l.filter (· ∈ K))) ∧
+      l.filter (· ∉ K) ∈ pointConfigurations r cls (fun c ↦ (pts c).subtype (· ∉ Q)) U
+        (A - Finsupp.linearCombination ℕ cls (l.filter (· ∈ K))) := by
+  rw [mem_pointConfigurations] at hl
+  obtain ⟨hm, hn⟩ := filter_mem_compatibleConfigurations hU hl.1 hlK
+  refine ⟨mem_pointConfigurations.2 ⟨hm, fun p ↦ ?_⟩, mem_pointConfigurations.2 ⟨hn, fun p ↦ ?_⟩⟩
+  · -- A component through a point of `Q` lies in `K`, since the candidates of `U` avoid `Q`.
+    obtain ⟨c, hc, hpc⟩ := hl.2 p
+    refine ⟨c, ?_, Finset.mem_subtype.2 hpc⟩
+    rw [Finsupp.support_filter, Finset.mem_filter]
+    refine ⟨hc, by_contra fun hcK ↦ hQU c ((mem_compatibleConfigurations.1 hn).1 ?_) p hpc p.2⟩
+    rw [Finset.mem_coe, Finsupp.support_filter, Finset.mem_filter]
+    exact ⟨hc, hcK⟩
+  · -- A component through a point outside `Q` lies outside `K`.
+    obtain ⟨c, hc, hpc⟩ := hl.2 p
+    refine ⟨c, ?_, Finset.mem_subtype.2 hpc⟩
+    rw [Finsupp.support_filter, Finset.mem_filter]
+    exact ⟨hc, fun hcK ↦ p.2 (hQK c hcK p hpc)⟩
+
+/-- The point configurations of `K ∪ s` avoiding the cluster `K` are the point configurations of
+`s`. -/
+private theorem mem_pointConfigurations_union_and_filter_eq_zero_iff [DecidablePred (· ∈ K)]
+    (hKs : Disjoint K s) {l : ι →₀ ℕ} :
+    l ∈ pointConfigurations r cls pts (K ∪ s) A ∧ l.filter (· ∈ K) = 0 ↔
+      l ∈ pointConfigurations r cls pts s A := by
+  have := mem_compatibleConfigurations_union_and_filter_eq_zero_iff (r := r) (cls := cls)
+    (A := A) (l := l) hKs
+  simp only [mem_pointConfigurations]
+  tauto
+
+variable [CommSemiring R] {w : ι → ℕ → R}
+
+open Classical in
+/-- The point configurations of `K ∪ s` whose part in `K` has a given class `B ≠ 0` contribute the
+local count of `K` through the points of `Q` in class `B`, times the count of `U` through the
+points outside `Q` in class `A - B`. -/
+private theorem sum_filter_eq_pointConfigurationCount_mul [DecidablePred (· ∈ K)]
+    (hKs : Disjoint K s) (hUs : U ⊆ s) (hU : ∀ k ∈ K, ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U)
+    (hQK : ∀ k ∈ K, ∀ p ∈ pts k, p ∈ Q) (hQU : ∀ d ∈ U, ∀ p ∈ pts d, p ∉ Q)
+    (hfin : (compatibleConfigurations r cls (K ∪ s) A).Finite) {F : Finset (ι →₀ ℕ)}
+    (hF : ∀ l, l ∈ F ↔ l ∈ pointConfigurations r cls pts (K ∪ s) A) (hB : B ≠ 0) {l₀ : ι →₀ ℕ}
+    (hl₀ : l₀ ∈ F) (hl₀K : l₀.filter (· ∈ K) ≠ 0)
+    (hl₀B : Finsupp.linearCombination ℕ cls (l₀.filter (· ∈ K)) = B) :
+    ∑ l ∈ F.filter (fun l ↦ ¬l.filter (· ∈ K) = 0) with
+        Finsupp.linearCombination ℕ cls (l.filter (· ∈ K)) = B, l.prod w =
+      pointConfigurationCount r cls (fun c ↦ (pts c).subtype (· ∈ Q)) w K B *
+        pointConfigurationCount r cls (fun c ↦ (pts c).subtype (· ∉ Q)) w U (A - B) := by
+  obtain ⟨hm₀, hn₀⟩ := hl₀B ▸ filter_mem_pointConfigurations hU hQK hQU ((hF l₀).1 hl₀) hl₀K
+  have hKfin := (finite_compatibleConfigurations_of_union hKs hUs hU hfin
+    ⟨_, (mem_pointConfigurations.1 hn₀).1⟩).subset
+    (pointConfigurations_subset (pts := fun c ↦ (pts c).subtype (· ∈ Q)))
+  have hUfin := ((hfin.preimage (add_right_injective _).injOn).subset fun n hn ↦
+    (add_mem_compatibleConfigurations_union hKs hUs hU (mem_pointConfigurations.1 hm₀).1
+      hn).1).subset
+    (pointConfigurations_subset (pts := fun c ↦ (pts c).subtype (· ∉ Q)))
+  rw [pointConfigurationCount_eq_sum hKfin, pointConfigurationCount_eq_sum hUfin,
+    Finset.sum_mul_sum, ← Finset.sum_product']
+  refine Finset.sum_nbij' (fun l ↦ (l.filter (· ∈ K), l.filter (· ∉ K)))
+    (fun p ↦ p.1 + p.2) (fun l hl ↦ ?_) (fun p hp ↦ ?_) (fun l _ ↦ ?_) (fun p hp ↦ ?_)
+    fun l _ ↦ ?_
+  · simp only [Finset.mem_filter] at hl
+    obtain ⟨hm, hn⟩ := filter_mem_pointConfigurations hU hQK hQU ((hF l).1 hl.1.1) hl.1.2
+    rw [Finset.mem_product, Set.Finite.mem_toFinset, Set.Finite.mem_toFinset]
+    exact ⟨hl.2 ▸ hm, hl.2 ▸ hn⟩
+  · rw [Finset.mem_product, Set.Finite.mem_toFinset, Set.Finite.mem_toFinset] at hp
+    obtain ⟨hmn, hK, -⟩ := add_mem_pointConfigurations_union hKs hUs hU hp.1 hp.2
+    have hm := (mem_compatibleConfigurations.1 (mem_pointConfigurations.1 hp.1).1).2.2
+    simp only [Finset.mem_filter, hF, hK, hm, and_true]
+    exact ⟨hmn, fun h0 ↦ hB (by rw [← hm, h0, map_zero])⟩
+  · exact Finsupp.filter_add_filter_not l _
+  · rw [Finset.mem_product, Set.Finite.mem_toFinset, Set.Finite.mem_toFinset] at hp
+    obtain ⟨-, hK, hnK⟩ := add_mem_pointConfigurations_union hKs hUs hU hp.1 hp.2
+    exact Prod.ext hK hnK
+  · exact (Finsupp.prod_filter_mul_prod_filter_not (f := l) (p := (· ∈ K)) w).symm
+
+/-- **Cluster expansion of the count through the points.** Let `K` be a cluster of candidates,
+disjoint from `s`, such that a candidate `d ∈ s` is compatible with a member of `K` exactly when
+`d ∈ U`. Let `Q` be a set of points containing the points on the members of `K` and none on the
+candidates of `U`. If the configurations of `K ∪ s` in class `A` are finite in number, then the
+count through the points in class `A` over `K ∪ s` is the count over `s` plus the contributions of
+the nonempty configurations of `K`: the local count of `K` through the points of `Q` in each class
+`B ≠ 0`, times the count of `U` through the points outside `Q` in the complementary class
+`A - B`. -/
+theorem pointConfigurationCount_union (hKs : Disjoint K s) (hUs : U ⊆ s)
+    (hU : ∀ k ∈ K, ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U) (hQK : ∀ k ∈ K, ∀ p ∈ pts k, p ∈ Q)
+    (hQU : ∀ d ∈ U, ∀ p ∈ pts d, p ∉ Q)
+    (hfin : (compatibleConfigurations r cls (K ∪ s) A).Finite) :
+    pointConfigurationCount r cls pts w (K ∪ s) A =
+      pointConfigurationCount r cls pts w s A +
+        ∑ᶠ B ∈ {B : H | B ≠ 0},
+          pointConfigurationCount r cls (fun c ↦ (pts c).subtype (· ∈ Q)) w K B *
+            pointConfigurationCount r cls (fun c ↦ (pts c).subtype (· ∉ Q)) w U (A - B) := by
+  classical
+  have hfinP := hfin.subset (pointConfigurations_subset (pts := pts))
+  set F := hfinP.toFinset
+  have hF (l : ι →₀ ℕ) : l ∈ F ↔ l ∈ pointConfigurations r cls pts (K ∪ s) A :=
+    Set.Finite.mem_toFinset _
+  -- The class of the part of a configuration lying in `K`; it is nonzero if that part is nonempty.
+  set κ : (ι →₀ ℕ) → H := fun l ↦ Finsupp.linearCombination ℕ cls (l.filter (· ∈ K))
+  have hκ {l : ι →₀ ℕ} (hl : l ∈ F) (hlK : l.filter (· ∈ K) ≠ 0) : κ l ≠ 0 :=
+    linearCombination_filter_ne_zero_of_finite hfin (mem_pointConfigurations.1 ((hF l).1 hl)).1 hlK
+  rw [pointConfigurationCount_eq_sum hfinP,
+    ← Finset.sum_filter_add_sum_filter_not F fun l ↦ l.filter (· ∈ K) = 0]
+  congr 1
+  · -- The configurations avoiding `K` are the configurations of `s`.
+    have hfins := hfinP.subset (pointConfigurations_mono (pts := pts) Set.subset_union_right)
+    rw [pointConfigurationCount_eq_sum hfins]
+    refine Finset.sum_congr (Finset.ext fun l ↦ ?_) fun _ _ ↦ rfl
+    rw [Finset.mem_filter, hF, Set.Finite.mem_toFinset]
+    exact mem_pointConfigurations_union_and_filter_eq_zero_iff hKs
+  -- The configurations meeting `K` are grouped by the class of their part in `K`.
+  rw [finsum_mem_eq_sum_of_inter_support_eq _
+    (t := (F.filter fun l ↦ ¬l.filter (· ∈ K) = 0).image κ) ?_,
+    ← Finset.sum_fiberwise_of_maps_to fun l hl ↦ Finset.mem_image_of_mem κ hl]
+  · refine Finset.sum_congr rfl fun B hB ↦ ?_
+    obtain ⟨l₀, hl₀, rfl⟩ := Finset.mem_image.1 hB
+    rw [Finset.mem_filter] at hl₀
+    exact sum_filter_eq_pointConfigurationCount_mul hKs hUs hU hQK hQU hfin hF
+      (hκ hl₀.1 hl₀.2) hl₀.1 hl₀.2 rfl
+  · -- Only the classes of the parts in `K` of configurations meeting `K` contribute.
+    ext B
+    simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, Function.mem_support, Finset.coe_image,
+      Set.mem_image, Finset.mem_coe, Finset.mem_filter]
+    refine ⟨fun ⟨hB, hNB⟩ ↦ ⟨?_, hNB⟩, fun ⟨⟨l, hl, hlB⟩, hNB⟩ ↦ ⟨hlB ▸ hκ hl.1 hl.2, hNB⟩⟩
+    rw [pointConfigurationCount_def, pointConfigurationCount_def] at hNB
+    obtain ⟨m, hm, -⟩ := exists_ne_zero_of_finsum_mem_ne_zero (left_ne_zero_of_mul hNB)
+    obtain ⟨n, hn, -⟩ := exists_ne_zero_of_finsum_mem_ne_zero (right_ne_zero_of_mul hNB)
+    obtain ⟨hmn, hK, -⟩ := add_mem_pointConfigurations_union hKs hUs hU hm hn
+    have hmB := (mem_compatibleConfigurations.1 (mem_pointConfigurations.1 hm).1).2.2
+    refine ⟨m + n, ⟨(hF _).2 hmn, ?_⟩, by simp only [κ, hK, hmB]⟩
+    rw [hK]
+    exact fun h0 ↦ hB (by rw [← hmB, h0, map_zero])
+
+/-- **Replacing a cluster in the count through the points.** Let `K` and `K'` be two clusters of
+candidates, disjoint from `s`, with the same compatibility with `s`: a candidate `d ∈ s` is
+compatible with a member of `K`, or of `K'`, exactly when `d ∈ U`. Let `Q` be a set of points
+containing the points on the members of `K` and of `K'` and none on the candidates of `U`.
+Suppose that the configurations of `K ∪ s` and of `K' ∪ s` in class `A` are finite in number. If
+`K` and `K'` have the same local counts through the points of `Q` in every class `B ≠ 0` for which
+`U` has a configuration through the points outside `Q` in class `A - B`, then replacing `K` by
+`K'` does not change the count through the points in class `A`. -/
+theorem pointConfigurationCount_union_eq_union (hKs : Disjoint K s) (hK's : Disjoint K' s)
+    (hUs : U ⊆ s) (hU : ∀ k ∈ K, ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U)
+    (hU' : ∀ k ∈ K', ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U) (hQK : ∀ k ∈ K, ∀ p ∈ pts k, p ∈ Q)
+    (hQK' : ∀ k ∈ K', ∀ p ∈ pts k, p ∈ Q) (hQU : ∀ d ∈ U, ∀ p ∈ pts d, p ∉ Q)
+    (hfin : (compatibleConfigurations r cls (K ∪ s) A).Finite)
+    (hfin' : (compatibleConfigurations r cls (K' ∪ s) A).Finite)
+    (hK : ∀ B ≠ 0,
+      (pointConfigurations r cls (fun c ↦ (pts c).subtype (· ∉ Q)) U (A - B)).Nonempty →
+        pointConfigurationCount r cls (fun c ↦ (pts c).subtype (· ∈ Q)) w K B =
+          pointConfigurationCount r cls (fun c ↦ (pts c).subtype (· ∈ Q)) w K' B) :
+    pointConfigurationCount r cls pts w (K ∪ s) A =
+      pointConfigurationCount r cls pts w (K' ∪ s) A := by
+  rw [pointConfigurationCount_union hKs hUs hU hQK hQU hfin,
+    pointConfigurationCount_union hK's hUs hU' hQK' hQU hfin']
+  refine congrArg _ (finsum_mem_congr rfl fun B hB ↦ ?_)
+  by_cases hn : (pointConfigurations r cls (fun c ↦ (pts c).subtype (· ∉ Q)) U (A - B)).Nonempty
+  · rw [hK B hB hn]
+  · rw [pointConfigurationCount_def (s := U), Set.not_nonempty_iff_eq_empty.1 hn,
+      finsum_mem_empty, mul_zero, mul_zero]
+
+end Points
+
 variable [CommSemiring R] {w : ι → ℕ → R}
 
 /-- **Cluster expansion of the count.** Let `K` be a cluster of candidates, disjoint from `s`,
@@ -221,7 +457,7 @@ such that a candidate `d ∈ s` is compatible with a member of `K` exactly when 
 configurations of `K ∪ s` in class `A` are finite in number, then the count in class `A` over
 `K ∪ s` is the count over `s` plus the contributions of the nonempty configurations of `K`: the
 local count `N_K(B)` in each class `B ≠ 0`, times the count over `U` in the complementary class
-`A - B`. -/
+`A - B`. This is `TauCeti.pointConfigurationCount_union` without points. -/
 theorem configurationCount_union (hKs : Disjoint K s) (hUs : U ⊆ s)
     (hU : ∀ k ∈ K, ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U)
     (hfin : (compatibleConfigurations r cls (K ∪ s) A).Finite) :
@@ -229,79 +465,8 @@ theorem configurationCount_union (hKs : Disjoint K s) (hUs : U ⊆ s)
       configurationCount r cls w s A +
         ∑ᶠ B ∈ {B : H | B ≠ 0},
           configurationCount r cls w K B * configurationCount r cls w U (A - B) := by
-  classical
-  set F := hfin.toFinset
-  -- The class of the part of a configuration lying in `K`.
-  set κ : (ι →₀ ℕ) → H := fun l ↦ Finsupp.linearCombination ℕ cls (l.filter (· ∈ K))
-  -- The configurations of `K` and of `U` occurring in a splitting are finite in number.
-  have hsplit {l : ι →₀ ℕ} (hl : l ∈ F) (hlK : l.filter (· ∈ K) ≠ 0) :
-      κ l ≠ 0 ∧ (compatibleConfigurations r cls K (κ l)).Finite ∧
-        (compatibleConfigurations r cls U (A - κ l)).Finite := by
-    rw [Set.Finite.mem_toFinset] at hl
-    obtain ⟨hm, hn⟩ := filter_mem_compatibleConfigurations hU hl hlK
-    exact ⟨linearCombination_filter_ne_zero_of_finite hfin hl hlK,
-      finite_compatibleConfigurations_of_union hKs hUs hU hfin ⟨_, hn⟩,
-      (hfin.preimage (add_right_injective _).injOn).subset fun n hn' ↦
-        (add_mem_compatibleConfigurations_union hKs hUs hU hm hn').1⟩
-  rw [configurationCount_eq_sum hfin,
-    ← Finset.sum_filter_add_sum_filter_not F fun l ↦ l.filter (· ∈ K) = 0]
-  congr 1
-  · -- The configurations avoiding `K` are the configurations of `s`.
-    have hfins : (compatibleConfigurations r cls s A).Finite :=
-      hfin.subset (compatibleConfigurations_mono Set.subset_union_right)
-    rw [configurationCount_eq_sum hfins]
-    refine Finset.sum_congr (Finset.ext fun l ↦ ?_) fun _ _ ↦ rfl
-    rw [Finset.mem_filter, Set.Finite.mem_toFinset, Set.Finite.mem_toFinset]
-    exact mem_compatibleConfigurations_union_and_filter_eq_zero_iff hKs
-  · -- The configurations meeting `K` are grouped by the class of their part in `K`.
-    set F₁ := F.filter fun l ↦ ¬l.filter (· ∈ K) = 0
-    rw [finsum_mem_eq_sum_of_inter_support_eq _ (t := F₁.image κ) ?_,
-      ← Finset.sum_fiberwise_of_maps_to fun l hl ↦ Finset.mem_image_of_mem κ hl]
-    · refine Finset.sum_congr rfl fun B hB ↦ ?_
-      obtain ⟨l₀, hl₀, rfl⟩ := Finset.mem_image.1 hB
-      rw [Finset.mem_filter] at hl₀
-      obtain ⟨-, hKfin, hUfin⟩ := hsplit hl₀.1 hl₀.2
-      rw [configurationCount_eq_sum hKfin, configurationCount_eq_sum hUfin, Finset.sum_mul_sum,
-        ← Finset.sum_product']
-      refine Finset.sum_nbij' (fun l ↦ (l.filter (· ∈ K), l.filter (· ∉ K)))
-        (fun p ↦ p.1 + p.2) (fun l hl ↦ ?_) (fun p hp ↦ ?_) (fun l _ ↦ ?_) (fun p hp ↦ ?_)
-        fun l _ ↦ ?_
-      · rw [Finset.mem_filter, Finset.mem_filter] at hl
-        obtain ⟨hm, hn⟩ := filter_mem_compatibleConfigurations hU
-          ((Set.Finite.mem_toFinset _).1 hl.1.1) hl.1.2
-        rw [Finset.mem_product, Set.Finite.mem_toFinset, Set.Finite.mem_toFinset]
-        exact ⟨hl.2 ▸ hm, hl.2 ▸ hn⟩
-      · rw [Finset.mem_product, Set.Finite.mem_toFinset, Set.Finite.mem_toFinset] at hp
-        obtain ⟨hmn, hK, -⟩ := add_mem_compatibleConfigurations_union hKs hUs hU hp.1 hp.2
-        have hκ : κ (p.1 + p.2) = κ l₀ := by
-          simp only [κ, hK, (mem_compatibleConfigurations.1 hp.1).2.2]
-        refine Finset.mem_filter.2 ⟨Finset.mem_filter.2 ⟨(Set.Finite.mem_toFinset _).2 hmn, ?_⟩,
-          hκ⟩
-        rw [hK]
-        intro h0
-        exact (hsplit hl₀.1 hl₀.2).1
-          (by rw [← (mem_compatibleConfigurations.1 hp.1).2.2, h0, map_zero])
-      · exact Finsupp.filter_add_filter_not l _
-      · rw [Finset.mem_product, Set.Finite.mem_toFinset, Set.Finite.mem_toFinset] at hp
-        obtain ⟨-, hK, hnK⟩ := add_mem_compatibleConfigurations_union hKs hUs hU hp.1 hp.2
-        exact Prod.ext hK hnK
-      · exact (Finsupp.prod_filter_mul_prod_filter_not (f := l) (p := (· ∈ K)) w).symm
-    · -- Only the classes of the parts in `K` of configurations meeting `K` contribute.
-      ext B
-      simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, Function.mem_support, Finset.coe_image,
-        Set.mem_image, Finset.mem_coe]
-      refine ⟨fun ⟨hB, hNB⟩ ↦ ⟨?_, hNB⟩, fun ⟨⟨l, hl, hlB⟩, hNB⟩ ↦ ⟨?_, hNB⟩⟩
-      · rw [configurationCount_def, configurationCount_def] at hNB
-        obtain ⟨m, hm, -⟩ := exists_ne_zero_of_finsum_mem_ne_zero (left_ne_zero_of_mul hNB)
-        obtain ⟨n, hn, -⟩ := exists_ne_zero_of_finsum_mem_ne_zero (right_ne_zero_of_mul hNB)
-        obtain ⟨hmn, hK, -⟩ := add_mem_compatibleConfigurations_union hKs hUs hU hm hn
-        refine ⟨m + n, Finset.mem_filter.2 ⟨(Set.Finite.mem_toFinset _).2 hmn, ?_⟩, ?_⟩
-        · rw [hK]
-          intro h0
-          exact hB (by rw [← (mem_compatibleConfigurations.1 hm).2.2, h0, map_zero])
-        · simp only [κ, hK, (mem_compatibleConfigurations.1 hm).2.2]
-      · rw [Finset.mem_filter] at hl
-        exact hlB ▸ (hsplit hl.1 hl.2).1
+  simpa using pointConfigurationCount_union (w := w) (pts := fun _ ↦ (∅ : Finset Empty))
+    (Q := ∅) hKs hUs hU (by simp) (by simp) hfin
 
 /-- **Replacing a cluster.** Let `K` and `K'` be two clusters of candidates, disjoint from `s`,
 with the same compatibility with `s`: a candidate `d ∈ s` is compatible with a member of `K`, or
@@ -309,7 +474,8 @@ of `K'`, exactly when `d ∈ U`. Suppose that the configurations of `K ∪ s` an
 class `A` are finite in number. If `K` and `K'` have the same local counts `N_K(B) = N_K'(B)` in
 every class `B ≠ 0` for which `U` has a configuration in class `A - B`, then replacing `K` by `K'`
 does not change the count in class `A`. When the candidates of `U` have nonnegative area `ω`, only
-the classes `B` with `ω B ≤ ω A` matter. -/
+the classes `B` with `ω B ≤ ω A` matter. This is `TauCeti.pointConfigurationCount_union_eq_union`
+without points. -/
 theorem configurationCount_union_eq_union (hKs : Disjoint K s) (hK's : Disjoint K' s)
     (hUs : U ⊆ s) (hU : ∀ k ∈ K, ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U)
     (hU' : ∀ k ∈ K', ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U)
@@ -318,12 +484,32 @@ theorem configurationCount_union_eq_union (hKs : Disjoint K s) (hK's : Disjoint 
     (hK : ∀ B ≠ 0, (compatibleConfigurations r cls U (A - B)).Nonempty →
       configurationCount r cls w K B = configurationCount r cls w K' B) :
     configurationCount r cls w (K ∪ s) A = configurationCount r cls w (K' ∪ s) A := by
-  rw [configurationCount_union hKs hUs hU hfin, configurationCount_union hK's hUs hU' hfin']
-  refine congrArg _ (finsum_mem_congr rfl fun B hB ↦ ?_)
-  by_cases hn : (compatibleConfigurations r cls U (A - B)).Nonempty
-  · rw [hK B hB hn]
-  · rw [configurationCount_def (s := U), Set.not_nonempty_iff_eq_empty.1 hn, finsum_mem_empty,
-      mul_zero, mul_zero]
+  simpa using pointConfigurationCount_union_eq_union (w := w)
+    (pts := fun _ ↦ (∅ : Finset Empty)) (Q := ∅) hKs hK's hUs hU hU' (by simp) (by simp)
+    (by simp) hfin hfin' fun B hB hn ↦ by simpa using hK B hB (by simpa using hn)
+
+/-- **Replacing a cluster carrying no points.** Let `K` and `K'` be two clusters of candidates,
+disjoint from `s` and carrying none of the points, with the same compatibility with `s`: a
+candidate `d ∈ s` is compatible with a member of `K`, or of `K'`, exactly when `d ∈ U`. Suppose
+that the configurations of `K ∪ s` and of `K' ∪ s` in class `A` are finite in number. If `K` and
+`K'` have the same local counts `N_K(B) = N_K'(B)` in every class `B ≠ 0` for which `U` has a
+configuration in class `A - B`, then replacing `K` by `K'` does not change the count through the
+points in class `A`. Tori of index zero avoid generic points, so the bifurcations of tori leave
+the count through the points unchanged. -/
+theorem pointConfigurationCount_union_eq_union_of_configurationCount_eq {pts : ι → Finset P}
+    (hKs : Disjoint K s) (hK's : Disjoint K' s) (hUs : U ⊆ s)
+    (hU : ∀ k ∈ K, ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U)
+    (hU' : ∀ k ∈ K', ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U) (hpts : ∀ k ∈ K ∪ K', pts k = ∅)
+    (hfin : (compatibleConfigurations r cls (K ∪ s) A).Finite)
+    (hfin' : (compatibleConfigurations r cls (K' ∪ s) A).Finite)
+    (hK : ∀ B ≠ 0, (compatibleConfigurations r cls U (A - B)).Nonempty →
+      configurationCount r cls w K B = configurationCount r cls w K' B) :
+    pointConfigurationCount r cls pts w (K ∪ s) A =
+      pointConfigurationCount r cls pts w (K' ∪ s) A :=
+  pointConfigurationCount_union_eq_union (Q := ∅) hKs hK's hUs hU hU'
+    (fun k hk p hp ↦ by simp [hpts k (Or.inl hk)] at hp)
+    (fun k hk p hp ↦ by simp [hpts k (Or.inr hk)] at hp) (fun _ _ _ _ ↦ id) hfin hfin'
+    fun B hB hn ↦ by simpa using hK B hB (hn.mono pointConfigurations_subset)
 
 end Cluster
 
@@ -419,6 +605,61 @@ theorem configurationCount_insert_insert_of_weight_eq_neg (hcd : c ≠ d) (hc : 
   rw [configurationCount_pair_eq_zero hcd hr hcls hw
       (finite_compatibleConfigurations_of_union hKs (Set.sep_subset _ _) hU hfin hn) hB,
     configurationCount_empty, ite_eq_right_iff.2 fun h ↦ (hB h).elim]
+
+/-- **Ordinary birth and death through the points.** Let `c` and `d` be two incompatible
+candidates outside `s` of the same class, through the same points, with the same compatibility
+with the candidates of `s` and opposite weights `w d k = -w c k` for `k ≠ 0`. Suppose that the
+candidates of `s` compatible with `c` avoid its points, as disjoint images do. If the
+configurations of `s ∪ {c, d}` in class `A` are finite in number, then adding `c` and `d` to `s`
+does not change the count through the points in class `A`. -/
+theorem pointConfigurationCount_insert_insert_of_weight_eq_neg {pts : ι → Finset P} (hcd : c ≠ d)
+    (hc : c ∉ s) (hd : d ∉ s) (hr : ¬(r c d ∧ r d c)) (hcls : cls d = cls c) (hpts : pts d = pts c)
+    (hcomp : ∀ e ∈ s, r d e ∧ r e d ↔ r c e ∧ r e c)
+    (hdisj : ∀ e ∈ s, r c e ∧ r e c → Disjoint (pts c) (pts e)) (hw : ∀ k ≠ 0, w d k = -w c k)
+    (hfin : (compatibleConfigurations r cls (insert c (insert d s)) A).Finite) :
+    pointConfigurationCount r cls pts w (insert c (insert d s)) A =
+      pointConfigurationCount r cls pts w s A := by
+  classical
+  have hunion : insert c (insert d s) = ({c, d} : Set ι) ∪ s := by
+    rw [Set.insert_union, Set.singleton_union]
+  have hKs : Disjoint ({c, d} : Set ι) s := by simp [hc, hd]
+  have hU := compatible_iff_mem_sep (r := r) (s := s) (p := (· ∈ ({c, d} : Set ι))) (c := c) <| by
+    rintro k (rfl | rfl) e he
+    exacts [Iff.rfl, hcomp e he]
+  have hsub : ∅ ∪ s ⊆ insert c (insert d s) := by
+    rw [Set.empty_union]
+    exact (Set.subset_insert d s).trans (Set.subset_insert c _)
+  rw [hunion] at hfin
+  rw [hunion, pointConfigurationCount_union_eq_union (K' := ∅) (Q := ↑(pts c)) hKs
+    (Set.empty_disjoint s) (Set.sep_subset _ _) hU (fun k hk ↦ hk.elim) ?_ (fun k hk ↦ hk.elim)
+    (fun e he p hp hpc ↦ Finset.disjoint_left.1 (hdisj e he.1 he.2) (Finset.mem_coe.1 hpc) hp) hfin
+    (hfin.subset (compatibleConfigurations_mono (hunion ▸ hsub))) fun B hB hn ↦ ?_,
+    Set.empty_union]
+  · rintro k (rfl | rfl) p hp
+    exacts [Finset.mem_coe.2 hp, Finset.mem_coe.2 (hpts ▸ hp)]
+  -- Every nonempty configuration of `{c, d}` passes through the points of `c`, so the local count
+  -- through them is the local count, which vanishes; so does the local count of `∅`.
+  have hpc : pointConfigurations r cls (fun e ↦ (pts e).subtype (· ∈ (↑(pts c) : Set P)))
+      {c, d} B = compatibleConfigurations r cls {c, d} B := by
+    rw [pointConfigurations_eq_inter]
+    refine Set.inter_eq_left.2 fun l hl p ↦ ?_
+    rw [mem_compatibleConfigurations] at hl
+    obtain ⟨e, he⟩ : l.support.Nonempty := Finsupp.support_nonempty_iff.2 fun h0 ↦
+      hB (by rw [← hl.2.2, h0, map_zero])
+    refine ⟨e, he, Finset.mem_subtype.2 ?_⟩
+    rcases hl.1 he with rfl | rfl
+    · exact Finset.mem_coe.1 p.2
+    · rw [hpts]
+      exact Finset.mem_coe.1 p.2
+  rw [pointConfigurationCount_def, hpc, ← configurationCount_def,
+    configurationCount_pair_eq_zero hcd hr hcls hw (finite_compatibleConfigurations_of_union hKs
+      (Set.sep_subset _ _) hU hfin (hn.mono pointConfigurations_subset)) hB,
+    pointConfigurationCount_def, finsum_mem_eq_zero_of_forall_eq_zero]
+  intro l hl
+  obtain ⟨hl, -, hlB⟩ := mem_compatibleConfigurations.1 (mem_pointConfigurations.1 hl).1
+  rw [Finsupp.support_eq_empty.1 (Finset.coe_eq_empty.1 (Set.subset_empty_iff.1 hl)),
+    map_zero] at hlB
+  exact absurd hlB.symm hB
 
 end BirthDeath
 
@@ -698,6 +939,206 @@ theorem configurationCount_insert_eq_insert_of_area_lt_two_mul {c c' : ι} (hc :
     · rw [coeff_zero_eq_constantCoeff_apply, coeff_zero_eq_constantCoeff_apply,
         constantCoeff_torusWeightSeries, constantCoeff_torusWeightSeries]
     · simp
+
+/-! ### Tori and the count through the points
+
+Tori of index zero avoid generic points, so a cluster of tori carries none of the points. Its
+bifurcations leave the count through the points unchanged as soon as they leave the local counts
+below the area cutoff unchanged, which the statements above provide. -/
+
+section Points
+
+variable {pts : ι → Finset P}
+
+/-- Two clusters `T` and `T'` carrying none of the points, disjoint from `s` and with the same
+compatibility with the candidates of `s`, give the same count through the points in class `A` if
+the candidates have positive area `ω`, finitely many of them have area at most `ω A`, and the local
+counts of `T` and `T'` agree in every class of area at most `ω A`. -/
+private theorem pointConfigurationCount_union_eq_union_of_forall_area_le {T T' : Set ι}
+    (hTs : Disjoint T s) (hT's : Disjoint T' s) (hUs : U ⊆ s)
+    (hU : ∀ k ∈ T, ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U) (hU' : ∀ k ∈ T', ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U)
+    (hpts : ∀ k ∈ T ∪ T', pts k = ∅) (hpos : ∀ e ∈ (T ∪ T') ∪ s, 0 < ω (cls e))
+    (hfin : {e ∈ (T ∪ T') ∪ s | ω (cls e) ≤ ω A}.Finite)
+    (hloc : ∀ B, ω B ≤ ω A → configurationCount r cls w T B = configurationCount r cls w T' B) :
+    pointConfigurationCount r cls pts w (T ∪ s) A =
+      pointConfigurationCount r cls pts w (T' ∪ s) A := by
+  have hsub : T ∪ s ⊆ (T ∪ T') ∪ s := Set.union_subset_union_left _ Set.subset_union_left
+  have hsub' : T' ∪ s ⊆ (T ∪ T') ∪ s := Set.union_subset_union_left _ Set.subset_union_right
+  refine pointConfigurationCount_union_eq_union_of_configurationCount_eq hTs hT's hUs hU hU' hpts
+    (finite_compatibleConfigurations (fun e he ↦ hpos e (hsub he))
+      (hfin.subset fun e he ↦ ⟨hsub he.1, he.2⟩))
+    (finite_compatibleConfigurations (fun e he ↦ hpos e (hsub' he))
+      (hfin.subset fun e he ↦ ⟨hsub' he.1, he.2⟩)) fun B _ ⟨n, hn⟩ ↦ hloc B ?_
+  -- The class `B` is at most `A` in area, as `U` has a configuration in class `A - B`.
+  have := area_nonneg_of_mem_compatibleConfigurations
+    (fun e he ↦ (hpos e (Or.inr (hUs he))).le) hn
+  rw [map_sub] at this
+  linarith
+
+/-- **Replacing a cluster of tori in the count through the points.** Under the hypotheses of
+`TauCeti.configurationCount_union_eq_union_of_coeff_rayTorusWeightSeries_eq`, if moreover the tori
+of `K` and `K'` carry none of the points, then replacing `K` by `K'` does not change the count
+through the points in class `A`. -/
+theorem pointConfigurationCount_union_eq_union_of_coeff_rayTorusWeightSeries_eq {K K' : Finset ι}
+    (hKs : Disjoint (K : Set ι) s) (hK's : Disjoint (K' : Set ι) s) (hUs : U ⊆ s)
+    (hU : ∀ k ∈ K, ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U) (hU' : ∀ k ∈ K', ∀ d ∈ s, r k d ∧ r d k ↔ d ∈ U)
+    (hK : (K : Set ι).Pairwise r) (hK' : (K' : Set ι).Pairwise r)
+    (hcls : ∀ c ∈ (↑K ∪ ↑K' : Set ι), cls c = (m c : ℕ) • A₀)
+    (hw : ∀ c ∈ (↑K ∪ ↑K' : Set ι), w c = torusWeight (σ c) (i c))
+    (hpts : ∀ c ∈ (↑K ∪ ↑K' : Set ι), pts c = ∅)
+    (hpos : ∀ c ∈ (↑K ∪ ↑K' : Set ι) ∪ s, 0 < ω (cls c))
+    (hfin : {c ∈ (↑K ∪ ↑K' : Set ι) ∪ s | ω (cls c) ≤ ω A}.Finite)
+    (hseries : ∀ j : ℕ, ω (j • A₀) ≤ ω A →
+      coeff j (rayTorusWeightSeries K m σ i) = coeff j (rayTorusWeightSeries K' m σ i)) :
+    pointConfigurationCount r cls pts w (↑K ∪ s) A =
+      pointConfigurationCount r cls pts w (↑K' ∪ s) A :=
+  pointConfigurationCount_union_eq_union_of_forall_area_le hKs hK's hUs hU hU' hpts hpos hfin
+    fun B hB ↦ by
+      simpa using configurationCount_union_eq_union_of_coeff_rayTorusWeightSeries_eq (s := ∅)
+        (U := ∅) (A := B) (Set.disjoint_empty _) (Set.disjoint_empty _) subset_rfl
+        (fun _ _ _ h ↦ h.elim) (fun _ _ _ h ↦ h.elim) hK hK' hcls hw
+        (fun c hc ↦ hpos c (Or.inl (hc.resolve_right (Set.notMem_empty c))))
+        (hfin.subset fun c hc ↦ ⟨Or.inl (hc.1.resolve_right (Set.notMem_empty c)), hc.2.trans hB⟩)
+        fun j hj ↦ hseries j (hj.trans hB)
+
+/-- **Birth and death of tori through the points.** Under the hypotheses of
+`TauCeti.configurationCount_insert_insert_of_eq_torusWeight_not`, if moreover `c` and `d` carry
+none of the points, then adding `c` and `d` to `s` does not change the count through the points in
+class `A`. -/
+theorem pointConfigurationCount_insert_insert_of_eq_torusWeight_not {c d : ι} (hc : c ∉ s)
+    (hd : d ∉ s) (hr : r c d ∧ r d c) (hcls : cls d = cls c)
+    (hcomp : ∀ e ∈ s, r d e ∧ r e d ↔ r c e ∧ r e c) {σ₀ : Bool} {j : Fin 4}
+    (hwc : w c = torusWeight σ₀ j) (hwd : w d = torusWeight (!σ₀) j) (hptsc : pts c = ∅)
+    (hptsd : pts d = ∅) (hpos : ∀ e ∈ insert c (insert d s), 0 < ω (cls e))
+    (hfin : {e ∈ insert c (insert d s) | ω (cls e) ≤ ω A}.Finite) :
+    pointConfigurationCount r cls pts w (insert c (insert d s)) A =
+      pointConfigurationCount r cls pts w s A := by
+  have hT : insert c (insert d s) = ({c, d} : Set ι) ∪ s := by
+    rw [Set.insert_union, Set.singleton_union]
+  have hTT : ({c, d} ∪ ∅ : Set ι) ∪ s = insert c (insert d s) := by rw [Set.union_empty, hT]
+  have hsub : insert c (insert d ∅) ⊆ insert c (insert d s) :=
+    Set.insert_subset_insert (Set.insert_subset_insert (Set.empty_subset s))
+  rw [hT]
+  conv_rhs => rw [← Set.empty_union s]
+  refine pointConfigurationCount_union_eq_union_of_forall_area_le (U := {e ∈ s | r c e ∧ r e c})
+    (by simp [hc, hd]) (Set.empty_disjoint s) (Set.sep_subset _ _) (compatible_iff_mem_sep ?_)
+    (fun k hk ↦ hk.elim) ?_ (hTT ▸ hpos) (hTT ▸ hfin) fun B hB ↦ ?_
+  · rintro k (rfl | rfl) e he
+    exacts [Iff.rfl, hcomp e he]
+  · rintro k ((rfl | rfl) | hk)
+    exacts [hptsc, hptsd, hk.elim]
+  · simpa using configurationCount_insert_insert_of_eq_torusWeight_not (s := ∅) (A := B)
+      (Set.notMem_empty c) (Set.notMem_empty d) hr hcls (fun _ h ↦ h.elim) hwc hwd
+      (fun e he ↦ hpos e (hsub he)) (hfin.subset fun e he ↦ ⟨hsub he.1, he.2.trans hB⟩)
+
+/-- Replacing a torus `c` outside `s` by two tori `c'` and `d` outside `s`, all three with the
+compatibility of `c` with the candidates of `s` and carrying none of the points, does not change
+the count through the points in class `A` if it does not change the counts in the classes of area
+at most `ω A` over no other candidates. -/
+private theorem pointConfigurationCount_insert_eq_insert_insert_of_forall_area_le {c c' d : ι}
+    (hc : c ∉ s) (hc' : c' ∉ s) (hd : d ∉ s) (hcomp' : ∀ e ∈ s, r c' e ∧ r e c' ↔ r c e ∧ r e c)
+    (hcompd : ∀ e ∈ s, r d e ∧ r e d ↔ r c e ∧ r e c) (hptsc : pts c = ∅) (hptsc' : pts c' = ∅)
+    (hptsd : pts d = ∅) (hpos : ∀ e ∈ insert c (insert c' (insert d s)), 0 < ω (cls e))
+    (hfin : {e ∈ insert c (insert c' (insert d s)) | ω (cls e) ≤ ω A}.Finite)
+    (hloc : ∀ B, ω B ≤ ω A → configurationCount r cls w (insert c ∅) B =
+      configurationCount r cls w (insert c' (insert d ∅)) B) :
+    pointConfigurationCount r cls pts w (insert c s) A =
+      pointConfigurationCount r cls pts w (insert c' (insert d s)) A := by
+  have hT : insert c s = ({c} : Set ι) ∪ s := (Set.singleton_union).symm
+  have hT' : insert c' (insert d s) = ({c', d} : Set ι) ∪ s := by
+    rw [Set.insert_union, Set.singleton_union]
+  have hTT : ({c} ∪ {c', d} : Set ι) ∪ s = insert c (insert c' (insert d s)) := by
+    ext e
+    simp only [Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff]
+    tauto
+  rw [hT, hT']
+  refine pointConfigurationCount_union_eq_union_of_forall_area_le (U := {e ∈ s | r c e ∧ r e c})
+    (by simpa using hc) (by simp [hc', hd]) (Set.sep_subset _ _)
+    (compatible_iff_mem_sep fun k hk e _ ↦ by rw [Set.mem_singleton_iff.1 hk])
+    (compatible_iff_mem_sep ?_) ?_ (hTT ▸ hpos) (hTT ▸ hfin) fun B hB ↦ by
+      simpa using hloc B hB
+  · rintro k (rfl | rfl) e he
+    exacts [hcomp' e he, hcompd e he]
+  · rintro k (rfl | (rfl | rfl))
+    exacts [hptsc, hptsc', hptsd]
+
+/-- **Period doubling through the points.** Under the hypotheses of
+`TauCeti.configurationCount_insert_eq_insert_insert_of_eq_torusWeight_castSucc`, if moreover `c`,
+`c'` and `d` carry none of the points, then replacing `c` by `c'` and `d` does not change the count
+through the points in class `A`. -/
+theorem pointConfigurationCount_insert_eq_insert_insert_of_eq_torusWeight_castSucc {c c' d : ι}
+    (hc : c ∉ s) (hc' : c' ∉ s) (hd : d ∉ s) (hr : r c' d ∧ r d c') (hcls' : cls c' = cls c)
+    (hclsd : cls d = 2 • cls c) (hcomp' : ∀ e ∈ s, r c' e ∧ r e c' ↔ r c e ∧ r e c)
+    (hcompd : ∀ e ∈ s, r d e ∧ r e d ↔ r c e ∧ r e c) {σ₀ : Bool} {j : Fin 3}
+    (hwc : w c = torusWeight σ₀ j.castSucc) (hwc' : w c' = torusWeight σ₀ j.succ)
+    (hwd : w d = torusWeight σ₀ (j % 2).castSucc) (hptsc : pts c = ∅) (hptsc' : pts c' = ∅)
+    (hptsd : pts d = ∅) (hpos : ∀ e ∈ insert c (insert c' (insert d s)), 0 < ω (cls e))
+    (hfin : {e ∈ insert c (insert c' (insert d s)) | ω (cls e) ≤ ω A}.Finite) :
+    pointConfigurationCount r cls pts w (insert c s) A =
+      pointConfigurationCount r cls pts w (insert c' (insert d s)) A := by
+  have hsub : insert c (insert c' (insert d ∅)) ⊆ insert c (insert c' (insert d s)) :=
+    Set.insert_subset_insert (Set.insert_subset_insert
+      (Set.insert_subset_insert (Set.empty_subset s)))
+  refine pointConfigurationCount_insert_eq_insert_insert_of_forall_area_le hc hc' hd hcomp'
+    hcompd hptsc hptsc' hptsd hpos hfin fun B hB ↦
+      configurationCount_insert_eq_insert_insert_of_eq_torusWeight_castSucc (s := ∅) (A := B)
+        (Set.notMem_empty c) (Set.notMem_empty c') (Set.notMem_empty d) hr hcls' hclsd
+        (fun _ h ↦ h.elim) (fun _ h ↦ h.elim) hwc hwc' hwd (fun e he ↦ hpos e (hsub he))
+        (hfin.subset fun e he ↦ ⟨hsub he.1, he.2.trans hB⟩)
+
+/-- **Period doubling through the points**, in the other direction. Under the hypotheses of
+`TauCeti.configurationCount_insert_eq_insert_insert_of_eq_torusWeight_succ`, if moreover `c`, `c'`
+and `d` carry none of the points, then replacing `c` by `c'` and `d` does not change the count
+through the points in class `A`. -/
+theorem pointConfigurationCount_insert_eq_insert_insert_of_eq_torusWeight_succ {c c' d : ι}
+    (hc : c ∉ s) (hc' : c' ∉ s) (hd : d ∉ s) (hr : r c' d ∧ r d c') (hcls' : cls c' = cls c)
+    (hclsd : cls d = 2 • cls c) (hcomp' : ∀ e ∈ s, r c' e ∧ r e c' ↔ r c e ∧ r e c)
+    (hcompd : ∀ e ∈ s, r d e ∧ r e d ↔ r c e ∧ r e c) {σ₀ : Bool} {j : Fin 3}
+    (hwc : w c = torusWeight σ₀ j.succ) (hwc' : w c' = torusWeight σ₀ j.castSucc)
+    (hwd : w d = torusWeight (!σ₀) (j % 2).castSucc) (hptsc : pts c = ∅) (hptsc' : pts c' = ∅)
+    (hptsd : pts d = ∅) (hpos : ∀ e ∈ insert c (insert c' (insert d s)), 0 < ω (cls e))
+    (hfin : {e ∈ insert c (insert c' (insert d s)) | ω (cls e) ≤ ω A}.Finite) :
+    pointConfigurationCount r cls pts w (insert c s) A =
+      pointConfigurationCount r cls pts w (insert c' (insert d s)) A := by
+  have hsub : insert c (insert c' (insert d ∅)) ⊆ insert c (insert c' (insert d s)) :=
+    Set.insert_subset_insert (Set.insert_subset_insert
+      (Set.insert_subset_insert (Set.empty_subset s)))
+  refine pointConfigurationCount_insert_eq_insert_insert_of_forall_area_le hc hc' hd hcomp'
+    hcompd hptsc hptsc' hptsd hpos hfin fun B hB ↦
+      configurationCount_insert_eq_insert_insert_of_eq_torusWeight_succ (s := ∅) (A := B)
+        (Set.notMem_empty c) (Set.notMem_empty c') (Set.notMem_empty d) hr hcls' hclsd
+        (fun _ h ↦ h.elim) (fun _ h ↦ h.elim) hwc hwc' hwd (fun e he ↦ hpos e (hsub he))
+        (hfin.subset fun e he ↦ ⟨hsub he.1, he.2.trans hB⟩)
+
+/-- **Changing the index of a torus below its double cover, through the points.** Under the
+hypotheses of `TauCeti.configurationCount_insert_eq_insert_of_area_lt_two_mul`, if moreover `c`
+and `c'` carry none of the points, then replacing `c` by `c'` does not change the count through
+the points in class `A`. -/
+theorem pointConfigurationCount_insert_eq_insert_of_area_lt_two_mul {c c' : ι} (hc : c ∉ s)
+    (hc' : c' ∉ s) (hcls' : cls c' = cls c) (hcomp' : ∀ e ∈ s, r c' e ∧ r e c' ↔ r c e ∧ r e c)
+    {σ₀ : Bool} {j j' : Fin 4} (hwc : w c = torusWeight σ₀ j) (hwc' : w c' = torusWeight σ₀ j')
+    (hptsc : pts c = ∅) (hptsc' : pts c' = ∅) (hpos : ∀ e ∈ insert c (insert c' s), 0 < ω (cls e))
+    (hfin : {e ∈ insert c (insert c' s) | ω (cls e) ≤ ω A}.Finite) (hA : ω A < 2 * ω (cls c)) :
+    pointConfigurationCount r cls pts w (insert c s) A =
+      pointConfigurationCount r cls pts w (insert c' s) A := by
+  have hTT : ({c} ∪ {c'} : Set ι) ∪ s = insert c (insert c' s) := by
+    rw [Set.singleton_union, Set.insert_union, Set.singleton_union]
+  have hsub : insert c (insert c' ∅) ⊆ insert c (insert c' s) :=
+    Set.insert_subset_insert (Set.insert_subset_insert (Set.empty_subset s))
+  rw [← Set.singleton_union, ← Set.singleton_union (a := c')]
+  refine pointConfigurationCount_union_eq_union_of_forall_area_le (U := {e ∈ s | r c e ∧ r e c})
+    (by simpa using hc) (by simpa using hc') (Set.sep_subset _ _)
+    (compatible_iff_mem_sep fun k hk e _ ↦ by rw [Set.mem_singleton_iff.1 hk])
+    (compatible_iff_mem_sep fun k hk e he ↦ Set.mem_singleton_iff.1 hk ▸ hcomp' e he) ?_
+    (hTT ▸ hpos) (hTT ▸ hfin) fun B hB ↦ by
+      simpa using configurationCount_insert_eq_insert_of_area_lt_two_mul (s := ∅) (A := B)
+        (Set.notMem_empty c) (Set.notMem_empty c') hcls' (fun _ h ↦ h.elim) hwc hwc'
+        (fun e he ↦ hpos e (hsub he)) (hfin.subset fun e he ↦ ⟨hsub he.1, he.2.trans hB⟩)
+        (hB.trans_lt hA)
+  · rintro k (rfl | rfl)
+    exacts [hptsc, hptsc']
+
+end Points
 
 end Ray
 
