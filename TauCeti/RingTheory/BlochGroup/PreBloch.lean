@@ -175,6 +175,31 @@ theorem one_sub_mul_ringInverse_mem (h : IsFiveTermAdmissible x y) :
     (1 - x) * (1 - y)⁻¹ʳ ∈ exceptionalUnits A :=
   h.one_sub.mul_ringInverse_mem
 
+section map
+
+variable {F : Type*} [FunLike F A B] [RingHomClass F A B]
+
+/-- A ring homomorphism maps the third argument `y/x` of the five-term relation at an admissible
+pair `(x, y)` to the third argument at `(f x, f y)`. -/
+theorem map_mul_ringInverse (h : IsFiveTermAdmissible x y) (f : F) :
+    f (y * x⁻¹ʳ) = f y * (f x)⁻¹ʳ := by
+  rw [map_mul, h.left_mem.1.map_ringInverse f]
+
+/-- A ring homomorphism maps the fourth argument `(1 - x⁻¹)/(1 - y⁻¹)` of the five-term relation
+at an admissible pair `(x, y)` to the fourth argument at `(f x, f y)`. -/
+theorem map_one_sub_ringInverse_mul (h : IsFiveTermAdmissible x y) (f : F) :
+    f ((1 - x⁻¹ʳ) * (1 - y⁻¹ʳ)⁻¹ʳ) = (1 - (f x)⁻¹ʳ) * (1 - (f y)⁻¹ʳ)⁻¹ʳ := by
+  simp only [map_mul, map_sub, map_one, h.left_mem.1.map_ringInverse f,
+    h.right_mem.1.map_ringInverse f, h.ringInverse.right_mem.2.map_ringInverse f]
+
+/-- A ring homomorphism maps the fifth argument `(1 - x)/(1 - y)` of the five-term relation at an
+admissible pair `(x, y)` to the fifth argument at `(f x, f y)`. -/
+theorem map_one_sub_mul_ringInverse (h : IsFiveTermAdmissible x y) (f : F) :
+    f ((1 - x) * (1 - y)⁻¹ʳ) = (1 - f x) * (1 - f y)⁻¹ʳ := by
+  simp only [map_mul, map_sub, map_one, h.right_mem.2.map_ringInverse f]
+
+end map
+
 end IsFiveTermAdmissible
 
 end Ring
@@ -256,14 +281,11 @@ element of `(f x, f y)`. -/
 theorem map_preBlochFiveTerm (f : A →+* B) {x y : A} (h : IsFiveTermAdmissible x y) :
     FreeAbelianGroup.map (Units.map (f : A →* B)) (preBlochFiveTerm x y) =
       preBlochFiveTerm (f x) (f y) := by
-  have hx := h.left_mem.1
-  have hy := h.right_mem.1
   simp only [preBlochFiveTerm, map_add, map_sub, map_preBlochRawSymbol _ h.left_mem.1,
     map_preBlochRawSymbol _ h.right_mem.1, map_preBlochRawSymbol _ h.mul_ringInverse_mem.1,
     map_preBlochRawSymbol _ h.one_sub_ringInverse_mul_mem.1,
-    map_preBlochRawSymbol _ h.one_sub_mul_ringInverse_mem.1, MonoidHom.coe_ofClass, map_mul,
-    map_one, hx.map_ringInverse f, hy.map_ringInverse f, h.right_mem.2.map_ringInverse f,
-    h.ringInverse.right_mem.2.map_ringInverse f]
+    map_preBlochRawSymbol _ h.one_sub_mul_ringInverse_mem.1, MonoidHom.coe_ofClass]
+  rw [h.map_mul_ringInverse f, h.map_one_sub_ringInverse_mul f, h.map_one_sub_mul_ringInverse f]
 
 /-- The *reflection identity*: the five-term elements of an admissible pair `(x, y)` and of its
 reflection `(1 - y, 1 - x)` differ by `([x] + [1 - x]) - ([y] + [1 - y])`. -/
@@ -382,8 +404,9 @@ distinct elements of `F ∖ {0, 1}` form an admissible pair. -/
 theorem preBlochSymbol_add_preBlochSymbol_one_sub {x y : A} (h : IsFiveTermAdmissible x y) :
     preBlochSymbol x + preBlochSymbol (1 - x) = preBlochSymbol y + preBlochSymbol (1 - y) := by
   have := congrArg (preBloch.mk A) (preBlochFiveTerm_sub_preBlochFiveTerm_one_sub h)
-  rwa [map_sub, map_sub, preBloch.mk_preBlochFiveTerm h, preBloch.mk_preBlochFiveTerm h.one_sub,
-    sub_zero, eq_comm, map_add, map_add, sub_eq_zero] at this
+  simp only [map_add, map_sub, preBloch.mk_preBlochRawSymbol, preBloch.mk_preBlochFiveTerm h,
+    preBloch.mk_preBlochFiveTerm h.one_sub, sub_self] at this
+  exact sub_eq_zero.1 this.symm
 
 /-- The symbol of `1` vanishes. Over a nontrivial ring `1 - 1 = 0` is not a unit; over the zero
 ring the five-term element of the admissible pair `(1, 1)` is `[1]`. -/
@@ -462,14 +485,12 @@ noncomputable def map (f : A →+* B) : preBloch A →+ preBloch B := by
   classical
   refine lift (fun x => if x ∈ exceptionalUnits A then preBlochSymbol (f x) else 0)
     (fun x hx => by simp [hx]) fun x y h => ?_
-  have hx := h.left_mem.1
-  have hy := h.right_mem.1
   simp only [h.left_mem, h.right_mem, h.mul_ringInverse_mem, h.one_sub_ringInverse_mul_mem,
     h.one_sub_mul_ringInverse_mem, ↓reduceIte]
-  simpa only [map_mul, map_sub, map_one, hx.map_ringInverse f, hy.map_ringInverse f,
-    h.right_mem.2.map_ringInverse f, h.ringInverse.right_mem.2.map_ringInverse f] using
-    preBlochSymbol_fiveTerm (h.map f)
+  rw [h.map_mul_ringInverse f, h.map_one_sub_ringInverse_mul f, h.map_one_sub_mul_ringInverse f]
+  exact preBlochSymbol_fiveTerm (h.map f)
 
+@[simp]
 theorem map_preBlochSymbol (f : A →+* B) {x : A} (hx : x ∈ exceptionalUnits A) :
     map f (preBlochSymbol x) = preBlochSymbol (f x) := by
   classical
@@ -478,6 +499,7 @@ theorem map_preBlochSymbol (f : A →+* B) {x : A} (hx : x ∈ exceptionalUnits 
 
 /-- A local homomorphism, for instance a homomorphism of fields, maps every symbol `[x]` to
 `[f x]`. -/
+@[simp]
 theorem map_preBlochSymbol_of_isLocalHom (f : A →+* B) [IsLocalHom f] (x : A) :
     map f (preBlochSymbol x) = preBlochSymbol (f x) := by
   by_cases hx : x ∈ exceptionalUnits A
@@ -500,7 +522,8 @@ end preBloch
 
 /-- The *reduced raw symbol* of an element `x` of a commutative ring: the basis vector `[x]` of the
 free abelian group on the exceptional units when `x` is an exceptional unit, and zero otherwise.
-Unlike `preBlochRawSymbol`, it vanishes at `1`. -/
+Unlike `preBlochRawSymbol`, it vanishes at `1` over a nontrivial ring, where `1` is not an
+exceptional unit. -/
 noncomputable def preBlochReducedRawSymbol (x : A) : FreeAbelianGroup (exceptionalUnits A) := by
   classical
   exact if h : x ∈ exceptionalUnits A then FreeAbelianGroup.of ⟨x, h⟩ else 0
@@ -508,6 +531,11 @@ noncomputable def preBlochReducedRawSymbol (x : A) : FreeAbelianGroup (exception
 theorem preBlochReducedRawSymbol_of_mem {x : A} (hx : x ∈ exceptionalUnits A) :
     preBlochReducedRawSymbol x = FreeAbelianGroup.of ⟨x, hx⟩ := by
   simp [preBlochReducedRawSymbol, hx]
+
+@[simp]
+theorem preBlochReducedRawSymbol_coe (w : exceptionalUnits A) :
+    preBlochReducedRawSymbol (w : A) = FreeAbelianGroup.of w :=
+  preBlochReducedRawSymbol_of_mem w.2
 
 theorem preBlochReducedRawSymbol_of_notMem {x : A} (hx : x ∉ exceptionalUnits A) :
     preBlochReducedRawSymbol x = 0 := by
@@ -527,6 +555,18 @@ pairs. -/
 def preBlochReducedRelations : AddSubgroup (FreeAbelianGroup (exceptionalUnits A)) :=
   AddSubgroup.closure {r | ∃ x y : A, IsFiveTermAdmissible x y ∧ r = preBlochReducedFiveTerm x y}
 
+theorem preBlochReducedFiveTerm_mem_preBlochReducedRelations {x y : A}
+    (h : IsFiveTermAdmissible x y) : preBlochReducedFiveTerm x y ∈ preBlochReducedRelations A :=
+  AddSubgroup.subset_closure ⟨x, y, h, rfl⟩
+
+/-- `preBlochReducedRelations A` is the smallest subgroup containing the five-term elements of the
+admissible pairs. -/
+theorem preBlochReducedRelations_le_iff {H : AddSubgroup (FreeAbelianGroup (exceptionalUnits A))} :
+    preBlochReducedRelations A ≤ H ↔
+      ∀ x y : A, IsFiveTermAdmissible x y → preBlochReducedFiveTerm x y ∈ H := by
+  rw [preBlochReducedRelations, AddSubgroup.closure_le]
+  exact ⟨fun h x y hxy => h ⟨x, y, hxy, rfl⟩, fun h _ ⟨x, y, hxy, hr⟩ => hr ▸ h x y hxy⟩
+
 /-- The value of `FreeAbelianGroup.lift (g ∘ Subtype.val)` on a reduced raw symbol, for a function
 `g` vanishing off the exceptional units. -/
 theorem lift_preBlochReducedRawSymbol {G : Type*} [AddCommGroup G] {g : A → G}
@@ -545,7 +585,8 @@ private noncomputable def toReduced :
     (fun x hx => by rw [preBlochReducedRawSymbol_of_notMem hx, QuotientAddGroup.mk_zero])
     fun x y h => by
       simp only [← QuotientAddGroup.mk_sub, ← QuotientAddGroup.mk_add]
-      exact (QuotientAddGroup.eq_zero_iff _).2 (AddSubgroup.subset_closure ⟨x, y, h, rfl⟩)
+      exact (QuotientAddGroup.eq_zero_iff _).2
+        (preBlochReducedFiveTerm_mem_preBlochReducedRelations h)
 
 private theorem toReduced_preBlochSymbol (x : A) :
     toReduced (preBlochSymbol x) = QuotientAddGroup.mk (preBlochReducedRawSymbol x) :=
@@ -555,9 +596,8 @@ private theorem toReduced_preBlochSymbol (x : A) :
 private noncomputable def ofReduced :
     FreeAbelianGroup (exceptionalUnits A) ⧸ preBlochReducedRelations A →+ preBloch A :=
   QuotientAddGroup.lift _ (FreeAbelianGroup.lift fun w : exceptionalUnits A => preBlochSymbol w)
-    ((AddSubgroup.closure_le _).2 <| by
-      rintro _ ⟨x, y, h, rfl⟩
-      rw [SetLike.mem_coe, AddMonoidHom.mem_ker, preBlochReducedFiveTerm]
+    (preBlochReducedRelations_le_iff.2 fun x y h => by
+      rw [AddMonoidHom.mem_ker, preBlochReducedFiveTerm]
       simp only [map_add, map_sub, lift_preBlochReducedRawSymbol
         (fun _ => preBlochSymbol_eq_zero_of_notMem_exceptionalUnits)]
       exact preBlochSymbol_fiveTerm h)
@@ -576,22 +616,21 @@ noncomputable def preBlochEquivReduced :
       rw [AddMonoidHom.comp_apply, toReduced_preBlochSymbol, preBlochReducedRawSymbol_of_mem hx,
         ofReduced_mk_of, AddMonoidHom.id_apply])
     (QuotientAddGroup.addMonoidHom_ext _ (FreeAbelianGroup.lift_ext _ _ fun w => by
-      rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, QuotientAddGroup.mk'_apply,
-        ofReduced_mk_of, toReduced_preBlochSymbol, preBlochReducedRawSymbol_of_mem w.2,
-        AddMonoidHom.comp_apply, AddMonoidHom.id_apply, QuotientAddGroup.mk'_apply]))
+      simp [ofReduced_mk_of, toReduced_preBlochSymbol]))
 
+/-- The reduced presentation sends every symbol `[x]` to the class of the reduced raw symbol of
+`x`, which is zero off the exceptional units. -/
 @[simp]
-theorem preBlochEquivReduced_preBlochSymbol {x : A} (hx : x ∈ exceptionalUnits A) :
+theorem preBlochEquivReduced_preBlochSymbol (x : A) :
     preBlochEquivReduced (preBlochSymbol x) =
-      (FreeAbelianGroup.of ⟨x, hx⟩ : FreeAbelianGroup (exceptionalUnits A)) := by
-  rw [← preBlochReducedRawSymbol_of_mem hx]
-  exact toReduced_preBlochSymbol x
+      (preBlochReducedRawSymbol x : FreeAbelianGroup (exceptionalUnits A)) :=
+  toReduced_preBlochSymbol x
 
 @[simp]
 theorem preBlochEquivReduced_symm_of (w : exceptionalUnits A) :
     preBlochEquivReduced.symm (FreeAbelianGroup.of w : FreeAbelianGroup (exceptionalUnits A)) =
       preBlochSymbol (w : A) := by
-  rw [AddEquiv.symm_apply_eq, preBlochEquivReduced_preBlochSymbol w.2]
+  rw [AddEquiv.symm_apply_eq, preBlochEquivReduced_preBlochSymbol, preBlochReducedRawSymbol_coe]
 
 /-- A commutative ring without admissible pairs has pre-Bloch group free abelian on its
 exceptional units: there are no five-term relations, and `[x] ↦ [x]` is an isomorphism. -/
@@ -602,7 +641,7 @@ noncomputable def preBlochEquivFreeAbelianGroup (h : ∀ x y : A, ¬IsFiveTermAd
       fun x y hxy => absurd hxy (h x y))
     (FreeAbelianGroup.lift fun w : exceptionalUnits A => preBlochSymbol (w : A))
     (preBloch.hom_ext fun x hx => by simp [preBlochReducedRawSymbol_of_mem hx])
-    (FreeAbelianGroup.lift_ext _ _ fun w => by simp [preBlochReducedRawSymbol_of_mem w.2])
+    (FreeAbelianGroup.lift_ext _ _ fun w => by simp)
 
 @[simp]
 theorem preBlochEquivFreeAbelianGroup_preBlochSymbol
