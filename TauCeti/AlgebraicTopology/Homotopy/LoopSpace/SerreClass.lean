@@ -11,7 +11,7 @@ public import TauCeti.CategoryTheory.ObjectProperty.KilledBy
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 public import TauCeti.Topology.Homotopy.HomotopyGroup.PathComponent
 public import TauCeti.Topology.Homotopy.MappingPath.PathFibration
-public import TauCeti.Topology.Path.PathComponent
+public import TauCeti.Topology.PathComponent
 import TauCeti.Topology.Homotopy.HomotopyEquiv
 
 /-!
