@@ -405,6 +405,12 @@ theorem apply_symm_apply (p : I × M) :
 theorem final_symm : Φ.symm.final = Φ.final.symm := by
   simpa only [final_def] using Φ.timeSlice_symm 1
 
+/-- If `ψ ∘ Φ₁ = φ`, then the inverse diffeotopy satisfies `φ ∘ (Φ⁻¹)₁ = ψ`. -/
+theorem mul_final_symm_eq_of_mul_final_eq {φ ψ : M ≃ₘ^n⟮J, J⟯ M} (h : ψ * Φ.final = φ) :
+    φ * Φ.symm.final = ψ := by
+  rw [final_symm]
+  exact mul_inv_eq_of_eq_mul h.symm
+
 /-- Following the inverse of `ψ_t` by `φ_t` ends at `φ₁ * ψ₁⁻¹` in the self-diffeomorphism
 group. -/
 theorem final_symm_trans (Ψ : Diffeotopy J n M) :

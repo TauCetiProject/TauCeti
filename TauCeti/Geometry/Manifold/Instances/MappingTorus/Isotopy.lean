@@ -103,6 +103,10 @@ theorem diffeotopyFamily_symm (t : ℝ) :
     ← Diffeomorph.inv_def]
   group
 
+/-- If `ψ ∘ Φ₁ = φ`, then the final time slice `Φ₁` is `ψ⁻¹ ∘ φ`. -/
+private theorem timeSlice_one_eq_inv_mul (hΦ : ψ * Φ.final = φ) : Φ.timeSlice 1 = ψ⁻¹ * φ := by
+  rw [← Diffeotopy.final_def, ← hΦ, inv_mul_cancel_left]
+
 /-- Near the integer time `k`, on the open interval `(k - 1/4, k + 1)`, the family built from a
 diffeotopy `Φ` with `ψ ∘ Φ₁ = φ` is `ψ ^ (-k) ∘ Φ_(c (t - k)) ∘ φ ^ k`: on `(k - 1/4, k]` both
 expressions equal `ψ ^ (-k) ∘ φ ^ k`. -/
@@ -118,8 +122,7 @@ private theorem diffeotopyFamily_eq_of_mem_Ioo (hΦ : ψ * Φ.final = φ) (k : �
       collaredSmoothTransitionUnit_eq_one_of_ge (by
         rw [← Int.self_sub_floor, hfl]; push_cast; linarith [ht.1])
     rw [diffeotopyFamily, hfr, hfl, collaredSmoothTransitionUnit_eq_zero_of_le (by linarith),
-      Diffeotopy.timeSlice_zero, ← Diffeomorph.one_def, ← Diffeotopy.final_def,
-      ← inv_mul_eq_of_eq_mul hΦ.symm]
+      Diffeotopy.timeSlice_zero, ← Diffeomorph.one_def, timeSlice_one_eq_inv_mul hΦ]
     group
   · have hfl : ⌊t⌋ = k := Int.floor_eq_iff.2 ⟨htk, ht.2⟩
     rw [diffeotopyFamily, ← Int.self_sub_floor, hfl]
@@ -133,7 +136,7 @@ theorem diffeotopyFamily_of_mem_Icc (hΦ : ψ * Φ.final = φ) {t : ℝ} (ht : t
     rw [diffeotopyFamily_eq_of_mem_Ioo hΦ 1 ⟨by norm_num, by norm_num⟩, Int.cast_one, sub_self,
       collaredSmoothTransitionUnit_eq_zero_of_le (by norm_num),
       collaredSmoothTransitionUnit_eq_one_of_ge (by norm_num), Diffeotopy.timeSlice_zero,
-      ← Diffeomorph.one_def, ← Diffeotopy.final_def, ← inv_mul_eq_of_eq_mul hΦ.symm]
+      ← Diffeomorph.one_def, timeSlice_one_eq_inv_mul hΦ]
     group
   · simpa using diffeotopyFamily_eq_of_mem_Ioo hΦ 0 ⟨by linarith [ht.1], by simpa using ht1⟩
 
@@ -168,11 +171,8 @@ mapping tori, by a diffeomorphism over the circle which is the identity on the f
 def congrDiffeotopy (Φ : Diffeotopy I n M) (hΦ : ψ * Φ.final = φ) (hn : n ≤ ∞) :
     SmoothMappingTorus φ ≃ₘ^n⟮𝓘(ℝ).prod I, 𝓘(ℝ).prod I⟯ SmoothMappingTorus ψ :=
   congrFamily (diffeotopyFamily φ ψ Φ) (contMDiff_diffeotopyFamily hΦ hn)
-    (by
-      have hΦ' : φ * Φ.symm.final = ψ := by
-        rw [Diffeotopy.final_symm]
-        exact mul_inv_eq_of_eq_mul hΦ.symm
-      simpa only [diffeotopyFamily_symm] using contMDiff_diffeotopyFamily hΦ' hn)
+    (by simpa only [diffeotopyFamily_symm] using
+      contMDiff_diffeotopyFamily (Φ.mul_final_symm_eq_of_mul_final_eq hΦ) hn)
     apply_diffeotopyFamily_add_one
 
 /-- The diffeomorphism induced by a diffeotopy sends `[t, x]` to `[t, g t x]`, where `g` is the
@@ -205,8 +205,8 @@ theorem proj_congrDiffeotopy (hΦ : ψ * Φ.final = φ) (hn : n ≤ ∞) (z : Sm
 diffeotopy. -/
 @[simp]
 theorem congrDiffeotopy_symm (hΦ : ψ * Φ.final = φ) (hn : n ≤ ∞) :
-    (congrDiffeotopy Φ hΦ hn).symm = congrDiffeotopy Φ.symm
-      (by rw [Diffeotopy.final_symm]; exact mul_inv_eq_of_eq_mul hΦ.symm) hn := by
+    (congrDiffeotopy Φ hΦ hn).symm =
+      congrDiffeotopy Φ.symm (Φ.mul_final_symm_eq_of_mul_final_eq hΦ) hn := by
   ext z
   obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective ψ z
   simp [congrDiffeotopy, diffeotopyFamily_symm]
