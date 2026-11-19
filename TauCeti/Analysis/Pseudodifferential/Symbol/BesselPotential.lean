@@ -209,11 +209,9 @@ order `s + t`. -/
 theorem besselPotential_comp_besselPotential (s t : ℝ) :
     (besselPotential s : ClassicalSymbol n V V s).comp (besselPotential t) =
       besselPotential (s + t) :=
-  ext <| Symbol.ext <| funext fun p ↦ by
-    simp only [toSymbol_comp, toSymbol_besselPotential, Symbol.coefficient_comp,
-      Symbol.coefficient_besselPotential, ContinuousLinearMap.comp_smul,
-      ContinuousLinearMap.comp_id, smul_smul, ← Complex.ofReal_mul]
-    rw [← Real.rpow_add (by positivity), add_div, add_comm (t / 2)]
+  ext <| by
+    rw [toSymbol_comp, toSymbol_besselPotential, toSymbol_besselPotential,
+      toSymbol_besselPotential, Symbol.besselPotential_comp_besselPotential]
 
 /-- **The Bessel weight is elliptic**, of every real order `s`. -/
 theorem isElliptic_besselPotential (s : ℝ) :
