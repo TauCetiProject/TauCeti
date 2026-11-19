@@ -353,18 +353,11 @@ theorem conleyZehnderIndex_eq_of_apply_eq_symm_mul_inv {A B C : GLSymplectic n �
   subst hC
   -- The path `t ↦ A Ψ(t)⁻¹`, written from `1`.
   let ι : Path 1 (A * B⁻¹) := ((Path.refl A).mul γ.inv).cast (mul_inv_cancel A).symm rfl
-  have hmul : Continuous fun p : I × I ↦ p.1 * p.2 :=
-    continuous_induced_rng.2 ((continuous_subtype_val.comp continuous_fst).mul
-      (continuous_subtype_val.comp continuous_snd))
   -- The homotopy `(s, t) ↦ Ψ(s (1 - t)) Ψ(s + (1 - s) t)⁻¹`, with `s + (1 - s) t` written as
   -- `σ (σ s σ t)`.
   have H : Path.Homotopy ι δ :=
     { toFun := fun p ↦ γ (p.1 * σ p.2) * (γ (σ (σ p.1 * σ p.2)))⁻¹
-      continuous_toFun :=
-        (γ.continuous.comp (hmul.comp (continuous_fst.prodMk (unitInterval.continuous_symm.comp
-          continuous_snd)))).mul (γ.continuous.comp (unitInterval.continuous_symm.comp (hmul.comp
-            ((unitInterval.continuous_symm.comp continuous_fst).prodMk
-              (unitInterval.continuous_symm.comp continuous_snd))))).inv
+      continuous_toFun := by fun_prop
       map_zero_left := fun t ↦ by simp [ι, Path.mul_apply]
       map_one_left := fun t ↦ by simp [hδ]
       prop' := fun s t ht ↦ by
