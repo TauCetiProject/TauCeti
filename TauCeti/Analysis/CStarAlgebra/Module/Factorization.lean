@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Module.Action
+import TauCeti.Algebra.Order.Field.Basic
 
 /-!
 # The special factorization of vectors in Hilbert C⋆-modules
@@ -115,15 +116,6 @@ private lemma continuous_invApprox {ε : ℝ} (hε : 0 < ε) : Continuous (invAp
 private lemma invApprox_zero (ε : ℝ) : invApprox ε 0 = 0 := by
   simp [invApprox]
 
-/-- The scalar bound `u (c ^ 2 / (u ^ 2 + c ^ 2)) ^ 2 ≤ c / 2` behind the approximation
-estimates. -/
-private lemma mul_sq_div_sq_add_sq_le (u : ℝ) {c : ℝ} (hc : 0 < c) :
-    u * (c ^ 2 / (u ^ 2 + c ^ 2)) ^ 2 ≤ c / 2 := by
-  rw [div_pow, mul_div_assoc', div_le_div_iff₀ (by positivity) two_pos]
-  have h1 : 2 * u * c ≤ u ^ 2 + c ^ 2 := two_mul_le_add_sq u c
-  have h2 : c ^ 2 ≤ u ^ 2 + c ^ 2 := by nlinarith [sq_nonneg u]
-  nlinarith [mul_le_mul_of_nonneg_left (mul_le_mul h1 h2 (by positivity) (by positivity)) hc.le]
-
 section Approximants
 
 variable {x : E} {s : A} (hs : 0 ≤ s)
@@ -151,7 +143,7 @@ private lemma norm_cfcₙ_smul_sub_sq_le_of_inner_self_eq {y : E} (hyy : inner A
     field_simp
     ring
   rw [Real.norm_eq_abs, heq, abs_of_nonneg (by positivity)]
-  exact mul_sq_div_sq_add_sq_le u hε
+  exact TauCeti.mul_sq_div_sq_add_sq_le u hε
 
 variable (hss : s * s * s = inner A x x)
 include hss
@@ -182,7 +174,7 @@ private lemma norm_cfcₙ_smul_sub_cfcₙ_smul_sq_le {ε δ : ℝ} (hε : 0 < ε
   rw [Real.norm_eq_abs, heq, abs_of_nonneg (by positivity)]
   have hPQ : 0 ≤ u * (2 * (δ ^ 2 / (u ^ 2 + δ ^ 2)) * (ε ^ 2 / (u ^ 2 + ε ^ 2))) := by
     positivity
-  nlinarith [mul_sq_div_sq_add_sq_le u hε, mul_sq_div_sq_add_sq_le u hδ]
+  nlinarith [TauCeti.mul_sq_div_sq_add_sq_le u hε, TauCeti.mul_sq_div_sq_add_sq_le u hδ]
 
 /-- `‖⟪f_ε(s) • x, f_ε(s) • x⟫_A - s‖ ≤ ε`. -/
 private lemma norm_inner_cfcₙ_smul_sub_le {ε : ℝ} (hε : 0 < ε) :

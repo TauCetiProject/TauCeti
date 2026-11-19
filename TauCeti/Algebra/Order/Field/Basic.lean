@@ -66,6 +66,9 @@ It also records that the normalized position `(c - a) / (b - a)` of a point `c �
 elements the sum `1 + ∑ i ∈ s, (x i)⁻¹` is positive and bounds each reciprocal `(x j)⁻¹`.
 Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 ≤ A`.
 
+It also records the bound `u (c² / (u² + c²))² ≤ c / 2` for `0 < c`, which controls the
+approximants `u / (u² + ε²)` of `u ↦ u⁻¹` in functional-calculus arguments.
+
 ## Main results
 
 * `TauCeti.mul_le_iff_bounds`: characterize `a * t ≤ b` by the lower or upper bound on `t`
@@ -104,6 +107,7 @@ Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 �
 * `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
   `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
 * `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
+* `TauCeti.mul_sq_div_sq_add_sq_le`: `u * (c ^ 2 / (u ^ 2 + c ^ 2)) ^ 2 ≤ c / 2` for `0 < c`.
 -/
 
 public section
@@ -386,6 +390,15 @@ theorem mul_add_le_two_mul_one_add_mul_add {R : Type*} [Field R] [LinearOrder R]
 theorem nonneg_of_le_div_pow {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
     {a A t : α} {k : ℕ} (ht : 0 < t) (h : a ≤ A / t ^ k) (ha : 0 ≤ a) : 0 ≤ A := by
   simpa using (le_div_iff₀ (pow_pos ht k)).1 (ha.trans h)
+
+/-- The bound `u (c ^ 2 / (u ^ 2 + c ^ 2)) ^ 2 ≤ c / 2` for `0 < c`, with no sign condition on
+`u`. -/
+theorem mul_sq_div_sq_add_sq_le {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    (u : α) {c : α} (hc : 0 < c) : u * (c ^ 2 / (u ^ 2 + c ^ 2)) ^ 2 ≤ c / 2 := by
+  rw [div_pow, mul_div_assoc', div_le_div_iff₀ (by positivity) two_pos]
+  have h1 : 2 * u * c ≤ u ^ 2 + c ^ 2 := two_mul_le_add_sq u c
+  have h2 : c ^ 2 ≤ u ^ 2 + c ^ 2 := by nlinarith [sq_nonneg u]
+  nlinarith [mul_le_mul_of_nonneg_left (mul_le_mul h1 h2 (by positivity) (by positivity)) hc.le]
 
 /-- The interval `(-1 / s, 1 / s)` is nonempty only for a positive scale `s`: it is empty for
 `s = 0` by the convention `1 / 0 = 0`, and for `s < 0` its endpoints are reversed. -/
