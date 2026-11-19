@@ -58,7 +58,7 @@ theorem zetaMulPairCoeffs_def (χ : DirichletCharacter ℂ M) (ψ : DirichletCha
 theorem zetaMulPairCoeffs_eq_zetaMul_mul_pmul (χ : DirichletCharacter ℂ M)
     (ψ : DirichletCharacter ℂ N) :
     χ.zetaMulPairCoeffs ψ = χ.zetaMul * (toArithmeticFunction (ψ ·)).pmul χ.zetaMul := by
-  rw [zetaMulPairCoeffs, zetaMul, toArithmeticFunction_pmul_mul,
+  rw [zetaMulPairCoeffs, zetaMul, ψ.isCompletelyMultiplicative_toArithmeticFunction.pmul_mul,
     ArithmeticFunction.pmul_zeta, toArithmeticFunction_mul,
     ArithmeticFunction.pmul_comm (toArithmeticFunction (ψ ·)), mul_assoc]
 
