@@ -701,15 +701,27 @@ theorem _root_.TopologicalSpace.Opens.chartPieceInterior_le (U : TopologicalSpac
 /-- Compact pieces `K i` of the extended chart targets of open subsets `U i` of `M`, at points
 `c i`, form a *compact chart cover* when their relative interiors cover `M`: every point of `M`
 lies in some `U i` with coordinates in the relative interior of `K i`. -/
-abbrev IsCompactChartCover {ι : Type*} (U : ι → TopologicalSpace.Opens M) (c : ∀ i, U i)
+def IsCompactChartCover {ι : Type*} (U : ι → TopologicalSpace.Opens M) (c : ∀ i, U i)
     (K : ∀ i, TopologicalSpace.Compacts (extChartAt I (c i)).target) : Prop :=
   ∀ y : M, ∃ i, y ∈ (U i).chartPieceInterior (c i) (K i)
+
+/-- Unfolds `IsCompactChartCover`: every point of `M` lies in the relative interior of a piece. -/
+theorem isCompactChartCover_iff {ι : Type*} {U : ι → TopologicalSpace.Opens M}
+    {c : ∀ i, U i} {K : ∀ i, TopologicalSpace.Compacts (extChartAt I (c i)).target} :
+    IsCompactChartCover U c K ↔ ∀ y : M, ∃ i, y ∈ (U i).chartPieceInterior (c i) (K i) :=
+  Iff.rfl
+
+/-- The relative interiors of the pieces of a compact chart cover cover the manifold. -/
+theorem IsCompactChartCover.covers {ι : Type*} {U : ι → TopologicalSpace.Opens M}
+    {c : ∀ i, U i} {K : ∀ i, TopologicalSpace.Compacts (extChartAt I (c i)).target}
+    (hK : IsCompactChartCover U c K) (y : M) : ∃ i, y ∈ (U i).chartPieceInterior (c i) (K i) :=
+  hK y
 
 /-- The open subsets of a compact chart cover cover the manifold. -/
 theorem IsCompactChartCover.exists_mem {ι : Type*} {U : ι → TopologicalSpace.Opens M}
     {c : ∀ i, U i} {K : ∀ i, TopologicalSpace.Compacts (extChartAt I (c i)).target}
     (hK : IsCompactChartCover U c K) (y : M) : ∃ i, y ∈ U i :=
-  let ⟨i, hi⟩ := hK y
+  let ⟨i, hi⟩ := hK.covers y
   ⟨i, (U i).chartPieceInterior_le (c i) (K i) hi⟩
 
 /-- On a compact manifold modelled on a locally compact space, every open cover has a finite
@@ -736,7 +748,8 @@ theorem exists_finite_compact_chart_cover_subordinate [CompactSpace M] [LocallyC
   obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover
     (fun y ↦ ((U (i y)).chartPieceInterior (c₀ y) (K₀ y) : Set M))
     (fun y ↦ TopologicalSpace.Opens.isOpen _) fun y _ ↦ Set.mem_iUnion.mpr ⟨y, hyO y⟩
-  refine ⟨t, fun j ↦ i j, fun j ↦ c₀ j, fun j ↦ K₀ j, fun y ↦ ?_⟩
+  refine ⟨t, fun j ↦ i j, fun j ↦ c₀ j, fun j ↦ K₀ j,
+    isCompactChartCover_iff.mpr fun y ↦ ?_⟩
   obtain ⟨z, hzt, hyz⟩ := Set.mem_iUnion₂.mp (ht (Set.mem_univ y))
   exact ⟨⟨z, hzt⟩, hyz⟩
 

@@ -197,7 +197,7 @@ theorem withSeminorms_frameAtlasSeminorm [LocallyCompactSpace E]
   let W (i : ι) : Opens M := (U i).chartPieceInterior (c i) (K i)
   have hWU (i : ι) : W i ≤ U i := (U i).chartPieceInterior_le (c i) (K i)
   have hW (i : ι) : (W i : Set M) ⊆ (e i).baseSet := fun _ hy ↦ hU i (hWU i hy)
-  have htop := frameTopology_eq_of_covers (I := I) (n := k) e U hU hK.exists_mem e W hW hK
+  have htop := frameTopology_eq_of_covers (I := I) (n := k) e U hU hK.exists_mem e W hW hK.covers
   rw [htop]
   let _ := frameTopology (I := I) (n := k) e W hW
   have hp := withSeminorms_frameSeminormFamily (I := I) (n := k) e W hW
