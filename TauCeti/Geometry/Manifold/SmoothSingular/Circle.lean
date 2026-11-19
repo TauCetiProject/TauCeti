@@ -91,7 +91,9 @@ theorem deRhamCohomology.smoothHomologyPeriod_mk_circleAngularClosedForm_circleL
     deRhamCohomology.smoothHomologyPeriod (deRhamCohomology.mk (𝓡 1) 1 circleAngularClosedForm)
       circleLoopClass = 2 * Real.pi := by
   rw [circleLoopClass_eq_homologyπ, deRhamCohomology.smoothHomologyPeriod_mk,
-    LinearMap.toAddMonoidHom_coe, smoothHomologyPeriodHom_homologyπ,
+    LinearMap.toAddMonoidHom_coe, smoothHomologyPeriodHom_homologyπ
+      (circleAngularClosedForm.1.isSmoothForm.of_le (by simp))
+      ((mem_closedForms _ _).mp circleAngularClosedForm.2),
     HomologicalComplex.iCycles_moduleCatCyclesMk,
     integrationCochain_ιChainComplex, one_smul, coe_circleAngularClosedForm,
     circleLoopSimplex_eq_ofCurve, SmoothSimplex.integral_ofCurve]

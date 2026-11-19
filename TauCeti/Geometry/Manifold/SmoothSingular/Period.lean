@@ -45,8 +45,8 @@ is not used here.
 
 ## Main definitions
 
-* `TauCeti.smoothHomologyPeriodHom φ hφ hdφ`: the periods of a closed `C¹` form on
-  `H_p^sm(M; R)`.
+* `TauCeti.smoothHomologyPeriodHom φ`: the periods of a closed `C¹` form on `H_p^sm(M; R)`,
+  and `0` for other forms.
 * `TauCeti.deRhamCohomology.smoothHomologyPeriod`: the periods of de Rham classes, a linear map
   `H^p_dR(M) →ₗ[ℝ] (H_p^sm(M; ℤ) →+ ℝ)`.
 
@@ -95,76 +95,84 @@ private theorem d_next_comp_integrationCochain_eq_zero {φ : RoughForm I M F p}
   rw [CochainComplex.next ℕ p]
   exact d_comp_integrationCochain_eq_zero hφ hdφ
 
+open Classical in
 /-- The **periods** of a closed `C¹` `p`-form `φ` on the smooth singular homology of `M` with
 coefficients in `R`: the integral of `φ` over smooth singular `p`-cycles, which only depends on
 their homology classes by Stokes' theorem. It is the Kronecker evaluation of the class of the
-cocycle `TauCeti.integrationCochain φ`. -/
-def smoothHomologyPeriodHom (φ : RoughForm I M F p) (hφ : IsSmoothForm I 1 φ)
-    (hdφ : mextDeriv φ = 0) :
+cocycle `TauCeti.integrationCochain φ`, and `0` when `φ` is not a closed `C¹` form. -/
+def smoothHomologyPeriodHom (φ : RoughForm I M F p) :
     ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of R R)).homology p →ₗ[R] F :=
-  (ChainComplex.kronecker ℤ ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of R R))
-    (ModuleCat.of R F) p (ChainComplex.homologyClassOfComp ℤ (ModuleCat.of R F)
-      (integrationCochain φ) (d_next_comp_integrationCochain_eq_zero hφ hdφ) (𝟙 _))).hom
+  if h : IsSmoothForm I 1 φ ∧ mextDeriv φ = 0 then
+    (ChainComplex.kronecker ℤ
+      ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of R R))
+      (ModuleCat.of R F) p (ChainComplex.homologyClassOfComp ℤ (ModuleCat.of R F)
+        (integrationCochain φ) (d_next_comp_integrationCochain_eq_zero h.1 h.2) (𝟙 _))).hom
+  else 0
 
 /-- The period on the homology class of a cycle `∑ nᵢ σᵢ` is `∑ nᵢ ∫_{σᵢ} φ`. -/
 @[simp]
 theorem smoothHomologyPeriodHom_homologyπ {φ : RoughForm I M F p} (hφ : IsSmoothForm I 1 φ)
     (hdφ : mextDeriv φ = 0)
     (z : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of R R)).cycles p) :
-    smoothHomologyPeriodHom φ hφ hdφ
+    smoothHomologyPeriodHom φ
         ((((smoothSingularSubcomplex I M : SSet).chainComplex
           (ModuleCat.of R R)).homologyπ p).hom z) =
       (integrationCochain φ).hom
         ((((smoothSingularSubcomplex I M : SSet).chainComplex
-          (ModuleCat.of R R)).iCycles p).hom z) :=
-  ConcreteCategory.congr_hom (ChainComplex.homologyπ_kronecker_homologyClassOfComp _ _ (𝟙 _)) z
+          (ModuleCat.of R R)).iCycles p).hom z) := by
+  rw [smoothHomologyPeriodHom, dite_eq_left ⟨hφ, hdφ⟩]
+  exact ConcreteCategory.congr_hom
+    (ChainComplex.homologyπ_kronecker_homologyClassOfComp _ _ (𝟙 _)) z
+
+/-- The periods of a `p`-form which is not a closed `C¹` form are `0` by convention. -/
+theorem smoothHomologyPeriodHom_undef {φ : RoughForm I M F p}
+    (h : ¬(IsSmoothForm I 1 φ ∧ mextDeriv φ = 0)) :
+    smoothHomologyPeriodHom (R := R) φ = 0 :=
+  dite_eq_right h
 
 /-- **Exact forms have vanishing periods.** For a `C¹` form `θ`, the periods of `dθ` on smooth
 singular homology vanish. -/
-theorem smoothHomologyPeriodHom_mextDeriv {θ : RoughForm I M F p} (hθ : IsSmoothForm I 1 θ)
-    (h₁ : IsSmoothForm I 1 (mextDeriv θ)) (h₂ : mextDeriv (mextDeriv θ) = 0) :
-    smoothHomologyPeriodHom (R := R) (mextDeriv θ) h₁ h₂ = 0 := by
+theorem smoothHomologyPeriodHom_mextDeriv {θ : RoughForm I M F p} (hθ : IsSmoothForm I 1 θ) :
+    smoothHomologyPeriodHom (R := R) (mextDeriv θ) = 0 := by
+  by_cases h : IsSmoothForm I 1 (mextDeriv θ) ∧ mextDeriv (mextDeriv θ) = 0
+  swap
+  · exact smoothHomologyPeriodHom_undef h
   refine LinearMap.toAddMonoidHom_injective <|
     HomologicalComplex.moduleCat_addMonoidHom_ext_homologyπ fun z ↦ ?_
   simp only [LinearMap.toAddMonoidHom_coe]
   -- the integral of `dθ` over a cycle is the integral of `θ` over its boundary, which is zero
-  rw [smoothHomologyPeriodHom_homologyπ, LinearMap.zero_apply,
+  rw [smoothHomologyPeriodHom_homologyπ h.1 h.2, LinearMap.zero_apply,
     ← d_comp_integrationCochain hθ]
   simp
 
-/-- The periods only depend on the closed form, not on the proofs of its regularity and
-closedness. -/
-theorem smoothHomologyPeriodHom_congr {φ ψ : RoughForm I M F p} (h : φ = ψ)
-    (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) (hψ : IsSmoothForm I 1 ψ)
-    (hdψ : mextDeriv ψ = 0) :
-    smoothHomologyPeriodHom (R := R) φ hφ hdφ = smoothHomologyPeriodHom ψ hψ hdψ := by
-  subst h
-  rfl
-
 /-- The periods are additive in the closed form. -/
 theorem smoothHomologyPeriodHom_add {φ ψ : RoughForm I M F p} (hφ : IsSmoothForm I 1 φ)
-    (hdφ : mextDeriv φ = 0) (hψ : IsSmoothForm I 1 ψ) (hdψ : mextDeriv ψ = 0)
-    (hφψ : IsSmoothForm I 1 (φ + ψ)) (hdφψ : mextDeriv (φ + ψ) = 0) :
-    smoothHomologyPeriodHom (R := R) (φ + ψ) hφψ hdφψ =
-      smoothHomologyPeriodHom φ hφ hdφ + smoothHomologyPeriodHom ψ hψ hdψ := by
+    (hdφ : mextDeriv φ = 0) (hψ : IsSmoothForm I 1 ψ) (hdψ : mextDeriv ψ = 0) :
+    smoothHomologyPeriodHom (R := R) (φ + ψ) =
+      smoothHomologyPeriodHom φ + smoothHomologyPeriodHom ψ := by
+  have hdφψ : mextDeriv (φ + ψ) = 0 := by
+    funext x
+    rw [mextDeriv_add
+      ((hφ.contDiffWithinAt_inChartAt_self x).differentiableWithinAt one_ne_zero)
+      ((hψ.contDiffWithinAt_inChartAt_self x).differentiableWithinAt one_ne_zero), hdφ, hdψ]
+    simp
   refine LinearMap.toAddMonoidHom_injective <|
     HomologicalComplex.moduleCat_addMonoidHom_ext_homologyπ fun z ↦ ?_
   simp only [LinearMap.toAddMonoidHom_coe]
-  rw [LinearMap.add_apply, smoothHomologyPeriodHom_homologyπ, smoothHomologyPeriodHom_homologyπ,
-    smoothHomologyPeriodHom_homologyπ,
+  rw [LinearMap.add_apply, smoothHomologyPeriodHom_homologyπ (hφ.add hψ) hdφψ,
+    smoothHomologyPeriodHom_homologyπ hφ hdφ, smoothHomologyPeriodHom_homologyπ hψ hdψ,
     integrationCochain_add (hφ.of_le (by simp)) (hψ.of_le (by simp)), ModuleCat.hom_add,
     LinearMap.add_apply]
 
 /-- The periods are homogeneous in the closed form. -/
 theorem smoothHomologyPeriodHom_smul [SMulCommClass R ℝ F] (a : ℝ) {φ : RoughForm I M F p}
-    (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) (haφ : IsSmoothForm I 1 (a • φ))
-    (hdaφ : mextDeriv (a • φ) = 0) :
-    smoothHomologyPeriodHom (R := R) (a • φ) haφ hdaφ = a • smoothHomologyPeriodHom φ hφ hdφ := by
+    (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) :
+    smoothHomologyPeriodHom (R := R) (a • φ) = a • smoothHomologyPeriodHom φ := by
   refine LinearMap.toAddMonoidHom_injective <|
     HomologicalComplex.moduleCat_addMonoidHom_ext_homologyπ fun z ↦ ?_
   simp only [LinearMap.toAddMonoidHom_coe]
-  rw [LinearMap.smul_apply, smoothHomologyPeriodHom_homologyπ,
-    smoothHomologyPeriodHom_homologyπ, integrationCochain_smul, ModuleCat.hom_smul,
+  rw [LinearMap.smul_apply, smoothHomologyPeriodHom_homologyπ (hφ.smul a) (by simp [hdφ]),
+    smoothHomologyPeriodHom_homologyπ hφ hdφ, integrationCochain_smul, ModuleCat.hom_smul,
     LinearMap.smul_apply]
 
 variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
@@ -178,9 +186,9 @@ theorem smoothHomologyPeriodHom_homologyMap {f : M → N} (hf : ContMDiff I J �
     {ψ : RoughForm J N F p} (hψ : IsSmoothForm J 1 ψ) (hdψ : mextDeriv ψ = 0)
     (hfψ : IsSmoothForm I 1 (mpullback I J f ψ)) (hdfψ : mextDeriv (mpullback I J f ψ) = 0)
     (c : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of R R)).homology p) :
-    smoothHomologyPeriodHom ψ hψ hdψ
+    smoothHomologyPeriodHom ψ
         ((SSet.homologyMap (smoothSingularSubcomplexMap f hf) (ModuleCat.of R R) p).hom c) =
-      smoothHomologyPeriodHom (mpullback I J f ψ) hfψ hdfψ c := by
+      smoothHomologyPeriodHom (mpullback I J f ψ) c := by
   -- the pullback of the class of the cocycle of `ψ` is the class of the cocycle of `f^* ψ`
   have hx : HomologicalComplex.homologyMap
       (K := ((smoothSingularSubcomplex J N : SSet).chainComplex
@@ -205,6 +213,8 @@ theorem smoothHomologyPeriodHom_homologyMap {f : M → N} (hf : ContMDiff I J �
     (ChainComplex.homologyClassOfComp ℤ (ModuleCat.of R F) (integrationCochain ψ)
       (d_next_comp_integrationCochain_eq_zero hψ hdψ) (𝟙 _))) c
   rw [hx] at h
+  rw [smoothHomologyPeriodHom, dite_eq_left ⟨hψ, hdψ⟩, smoothHomologyPeriodHom,
+    dite_eq_left ⟨hfψ, hdfψ⟩]
   exact h.symm
 
 end Period
@@ -219,10 +229,12 @@ variable [IsManifold I 2 M]
 map. -/
 private def smoothHomologyPeriodClosedForms : closedForms I M p →ₗ[ℝ]
     ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).homology p →+ ℝ where
-  toFun φ := (smoothHomologyPeriodHom (φ.1 : RoughForm I M ℝ p)
-    (φ.1.isSmoothForm.of_le (by simp)) ((mem_closedForms I _).mp φ.2)).toAddMonoidHom
-  map_add' φ ψ := congrArg LinearMap.toAddMonoidHom (smoothHomologyPeriodHom_add _ _ _ _ _ _)
-  map_smul' a φ := congrArg LinearMap.toAddMonoidHom (smoothHomologyPeriodHom_smul a _ _ _ _)
+  toFun φ := (smoothHomologyPeriodHom (φ.1 : RoughForm I M ℝ p)).toAddMonoidHom
+  map_add' φ ψ := congrArg LinearMap.toAddMonoidHom (smoothHomologyPeriodHom_add
+    (φ.1.isSmoothForm.of_le (by simp)) ((mem_closedForms I _).mp φ.2)
+    (ψ.1.isSmoothForm.of_le (by simp)) ((mem_closedForms I _).mp ψ.2))
+  map_smul' a φ := congrArg LinearMap.toAddMonoidHom (smoothHomologyPeriodHom_smul a
+    (φ.1.isSmoothForm.of_le (by simp)) ((mem_closedForms I _).mp φ.2))
 
 /-- Exact forms have vanishing periods on integral smooth singular homology. -/
 private theorem ker_mk_le_ker_smoothHomologyPeriodClosedForms :
@@ -242,12 +254,9 @@ private theorem ker_mk_le_ker_smoothHomologyPeriodClosedForms :
     obtain ⟨θ, hθ⟩ := hφ
     have h : (φ.1 : RoughForm I M ℝ (p + 1)) = mextDeriv (θ : RoughForm I M ℝ p) := by
       rw [← hθ, mextDerivₗ_apply]
-    have hθ₁ : IsSmoothForm I 1 (θ : RoughForm I M ℝ p) := θ.isSmoothForm.of_le (by simp)
-    have hφ₁ : IsSmoothForm I 1 (φ.1 : RoughForm I M ℝ (p + 1)) := φ.1.isSmoothForm.of_le (by simp)
-    have hdφ : mextDeriv (φ.1 : RoughForm I M ℝ (p + 1)) = 0 := (mem_closedForms I _).mp φ.2
-    exact congrArg LinearMap.toAddMonoidHom
-      ((smoothHomologyPeriodHom_congr h hφ₁ hdφ (h ▸ hφ₁) (h ▸ hdφ)).trans
-        (smoothHomologyPeriodHom_mextDeriv hθ₁ _ _))
+    change (smoothHomologyPeriodHom (φ.1 : RoughForm I M ℝ (p + 1))).toAddMonoidHom = 0
+    rw [h, smoothHomologyPeriodHom_mextDeriv (θ.isSmoothForm.of_le (by simp))]
+    rfl
 
 /-- The **pairing of de Rham cohomology with integral smooth singular homology**: the periods
 `smoothHomologyPeriodHom` of any closed form representing a de Rham class, as a linear map from
@@ -265,8 +274,7 @@ def smoothHomologyPeriod :
 @[simp]
 theorem smoothHomologyPeriod_mk (φ : closedForms I M p) :
     smoothHomologyPeriod (mk I p φ) =
-      (smoothHomologyPeriodHom (φ.1 : RoughForm I M ℝ p) (φ.1.isSmoothForm.of_le (by simp))
-        ((mem_closedForms I _).mp φ.2)).toAddMonoidHom :=
+      (smoothHomologyPeriodHom (φ.1 : RoughForm I M ℝ p)).toAddMonoidHom :=
   LinearMap.equivOfSurjective_apply _ _
 
 variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
@@ -288,8 +296,9 @@ theorem smoothHomologyPeriod_map {f : M → N} (hf : ContMDiff I J ∞ f)
   have hdfψ := (mem_closedForms I _).mp (closedForms.mpullback f hf p ψ).2
   simp only [closedForms.coe_mpullback, SmoothForm.coe_mpullback] at hfψ hdfψ
   rw [map_mk, smoothHomologyPeriod_mk, smoothHomologyPeriod_mk, LinearMap.toAddMonoidHom_coe,
-    LinearMap.toAddMonoidHom_coe, smoothHomologyPeriodHom_homologyMap hf _ _ hfψ hdfψ]
-  exact DFunLike.congr_fun (smoothHomologyPeriodHom_congr (by simp) _ _ _ _) z
+    LinearMap.toAddMonoidHom_coe, closedForms.coe_mpullback, SmoothForm.coe_mpullback,
+    smoothHomologyPeriodHom_homologyMap hf (ψ.1.isSmoothForm.of_le (by simp))
+      ((mem_closedForms J _).mp ψ.2) hfψ hdfψ]
 
 end deRhamCohomology
 
