@@ -110,10 +110,10 @@ private lemma exists_factor_logDeriv_eq {z : ℂ}
     eventuallyEq_of_mem (isOpen_ball.mem_nhds hzR) fun w hw ↦ hfG w (ball_subset_closedBall hw)
   have h := Function.FactorizedRational.logDeriv_sub_sum_eq hfin hDz
     (hG z (ball_subset_closedBall hzR)).differentiableAt (hG0 z (ball_subset_closedBall hzb)) hfPG
-  change logDeriv f z - ∑ᶠ ρ, (D ρ : ℂ) / (z - ρ) = logDeriv G z
-  rw [finsum_eq_sum_of_support_subset _ (s := hfin.toFinset)
-    (fun ρ hρ ↦ hfin.mem_toFinset.mpr fun hzero ↦ hρ (by simp [hzero]))]
-  exact h
+  rw [← finsum_eq_sum_of_support_subset (fun ρ ↦ (D ρ : ℂ) / (z - ρ))
+    (s := hfin.toFinset)
+    (fun ρ hρ ↦ hfin.mem_toFinset.mpr fun hzero ↦ hρ (by simp [hzero]))] at h
+  simpa only [D] using h
 
 -- Sum the logarithmic derivatives of the finite reflected product with integer multiplicities.
 private lemma norm_logDeriv_reflected_prod_le {S : Finset ℂ} {n : ℂ → ℤ} {z : ℂ}
