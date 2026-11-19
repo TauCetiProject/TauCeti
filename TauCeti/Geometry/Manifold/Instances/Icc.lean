@@ -54,10 +54,8 @@ instance : ContMDiffMul (𝓡∂ 1) ω I where
       ((contMDiff_subtypeVal_Icc (x := 0) (y := 1) (n := ω)).comp contMDiff_fst).mul
         ((contMDiff_subtypeVal_Icc (x := 0) (y := 1) (n := ω)).comp contMDiff_snd)
 
-/-- `Real.smoothTransition` as a map into the unit interval. Its body is exposed so that it agrees
-definitionally with the anonymous subtype map `⟨Real.smoothTransition s, _, _⟩` in importing
-modules, where that form still appears in statements. -/
-@[expose] noncomputable def smoothTransition (s : ℝ) : I :=
+/-- `Real.smoothTransition` as a map into the unit interval. -/
+noncomputable def smoothTransition (s : ℝ) : I :=
   ⟨Real.smoothTransition s, Real.smoothTransition.nonneg s, Real.smoothTransition.le_one s⟩
 
 @[simp]

@@ -61,7 +61,8 @@ theorem SmoothIsotopy.exists_ambientVelocityField {n m : ℕ∞} [IsManifold I n
   let σ : ℝ → unitInterval := fun s =>
     ⟨Real.smoothTransition s, Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
   have hσ : ContMDiff 𝓘(ℝ, ℝ) (𝓡∂ 1) n σ :=
-    contMDiff_id.smoothTransition (by exact_mod_cast le_top)
+    (contMDiff_id.smoothTransition (by exact_mod_cast le_top)).congr fun s =>
+      Subtype.ext (unitInterval.coe_smoothTransition s).symm
   have hσ₀ : ∀ t ≤ 0, σ t = σ 0 := fun t ht => Subtype.ext <| by
     simp only [σ, Real.smoothTransition.zero_of_nonpos ht, Real.smoothTransition.zero]
   have hσ₁ : ∀ t, 1 ≤ t → σ t = σ 1 := fun t ht => Subtype.ext <| by

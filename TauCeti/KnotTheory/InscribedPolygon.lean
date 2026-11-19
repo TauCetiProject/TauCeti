@@ -104,8 +104,7 @@ theorem exists_combinatoriallyEquivalent_inscribed_of_smoothIsotopic
         SimplePolygon.CombinatoriallyEquivalent ⟨m, _, hm⟩ ⟨m', _, hm'⟩ := by
   obtain ⟨F⟩ := smoothIsotopic_def.1 h
   -- Run through the isotopy along the smooth step `σ` from time `0` to time `1`.
-  set σ : ℝ → unitInterval := fun t ↦
-    ⟨Real.smoothTransition t, Real.smoothTransition.nonneg t, Real.smoothTransition.le_one t⟩
+  set σ : ℝ → unitInterval := unitInterval.smoothTransition
   set Γ : ℝ → ℝ → E := fun t s ↦ F (σ t, Circle.exp s) with hΓ_def
   have hΓ : ContDiff ℝ 1 (uncurry Γ) := by
     have hpair : ContMDiff 𝓘(ℝ, ℝ × ℝ) ((𝓡∂ 1).prod (𝓡 1)) 1
@@ -123,8 +122,8 @@ theorem exists_combinatoriallyEquivalent_inscribed_of_smoothIsotopic
   simp only [coe_ofIsSmoothEmbedding] at hslice
   obtain ⟨N, hN⟩ := Polygon.exists_combinatoriallyEquivalent_inscribed_of_isotopy Real.two_pi_pos hΓ
     (fun t _ ↦ (hslice t).2.1) (fun t _ ↦ (hslice t).2.2.1) (fun t _ ↦ (hslice t).2.2.2)
-  have hσ₀ : σ 0 = 0 := Subtype.ext (Real.smoothTransition.zero_of_nonpos le_rfl)
-  have hσ₁ : σ 1 = 1 := Subtype.ext (Real.smoothTransition.one_of_one_le le_rfl)
+  have hσ₀ : σ 0 = 0 := unitInterval.smoothTransition_zero
+  have hσ₁ : σ 1 = 1 := unitInterval.smoothTransition_one
   have hΓ₀ : Γ 0 = K₀ ∘ Circle.exp := by
     funext s
     simp [hΓ_def, hσ₀, F.apply_zero]

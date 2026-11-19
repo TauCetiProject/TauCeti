@@ -47,12 +47,14 @@ private def secondTime (t : unitInterval) : unitInterval :=
 private theorem contMDiff_firstTime (hn : n ≤ ∞) :
     ContMDiff (𝓡∂ 1) (𝓡∂ 1) n firstTime := by
   have h : ContDiff ℝ n (fun t : ℝ => 4 * t) := by fun_prop
-  exact (h.contMDiff.comp (contMDiff_subtypeVal_Icc (x := 0) (y := 1))).smoothTransition hn
+  exact ((h.contMDiff.comp (contMDiff_subtypeVal_Icc (x := 0) (y := 1))).smoothTransition hn).congr
+    fun _ => Subtype.ext (unitInterval.coe_smoothTransition _).symm
 
 private theorem contMDiff_secondTime (hn : n ≤ ∞) :
     ContMDiff (𝓡∂ 1) (𝓡∂ 1) n secondTime := by
   have h : ContDiff ℝ n (fun t : ℝ => 4 * t - 3) := by fun_prop
-  exact (h.contMDiff.comp (contMDiff_subtypeVal_Icc (x := 0) (y := 1))).smoothTransition hn
+  exact ((h.contMDiff.comp (contMDiff_subtypeVal_Icc (x := 0) (y := 1))).smoothTransition hn).congr
+    fun _ => Subtype.ext (unitInterval.coe_smoothTransition _).symm
 
 private theorem firstTime_eq_one {t : unitInterval} (ht : 1 / 4 ≤ (t : ℝ)) :
     firstTime t = 1 := by
