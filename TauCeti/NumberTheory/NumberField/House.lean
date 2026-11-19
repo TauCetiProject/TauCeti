@@ -132,9 +132,9 @@ theorem exists_natCast_mul_isIntegral_house_le {ι : Type*} [Finite ι] (x : ι 
   exact single_le_sum (fun j _ ↦ house_nonneg ((y.natAbs : K) * x j)) (mem_univ i)
 
 /-- **Algebraic numbers lie in a number field with a common denominator.** Finitely many algebraic
-numbers `x i` of a field `Ω` of characteristic zero lie in a number field `F ⊆ Ω`, namely the field
-they generate, and as elements `x' i` of `F` they have a common denominator `δ ≥ 1` and a bound
-`G ≥ δ` on the houses of the algebraic integers `δ * x' i`. -/
+numbers `x i` of a field `Ω` of characteristic zero lie in a number field `F ⊆ Ω` (the proof takes
+the field they generate), and as elements `x' i` of `F` they have a common denominator `δ ≥ 1`
+and a bound `G ≥ δ` on the houses of the algebraic integers `δ * x' i`. -/
 theorem exists_numberField_denominator {Ω : Type*} [Field Ω] [CharZero Ω] {ι : Type*} [Finite ι]
     (x : ι → Ω) (hx : ∀ i, IsAlgebraic ℚ (x i)) :
     ∃ (F : IntermediateField ℚ Ω) (_ : NumberField F) (x' : ι → F), (∀ i, (x' i : Ω) = x i) ∧

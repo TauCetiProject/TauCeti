@@ -289,11 +289,11 @@ theorem exists_siegelConstant :
   · -- Without equations, or when every coefficient vanishes, a unit vector is a solution.
     obtain ⟨j₀⟩ : Nonempty β := Fintype.card_pos_iff.mp ((Nat.zero_le _).trans_lt hlt)
     refine ⟨(Pi.single j₀ 1 : β → 𝓞 K), fun h ↦ by simpa using congrFun h j₀, ?_, fun j ↦ ?_⟩
-    · rw [not_and_or, not_not, not_lt, Nat.le_zero, Fintype.card_eq_zero_iff] at hdeg
-      rcases hdeg with rfl | hα
+    · rcases eq_or_ne a 0 with rfl | ha
       · exact Matrix.zero_mulVec _
-      · funext i
-        exact hα.elim i
+      · have : IsEmpty α :=
+          Fintype.card_eq_zero_iff.mp (Nat.eq_zero_of_not_pos fun h ↦ hdeg ⟨ha, h⟩)
+        exact funext isEmptyElim
     · refine le_trans ?_ (one_le_mul_of_one_le_of_one_le hC hbound)
       rcases eq_or_ne j j₀ with rfl | hj
       · simpa using (house_intCast (K := K) 1).le
