@@ -146,6 +146,17 @@ theorem ker_nodeBaseRestriction :
     Ideal.comap_map_of_surjective r (restrictHyperplane_surjective _ _),
     ← RingHom.ker_eq_comap_bot, ker_restrictHyperplane, Ideal.span_insert, nodeSndCoordinate]
 
+/-- In the ambient coordinates the node equation is `xy - s(b)`, with `s` pulled back from
+the base. -/
+theorem nodeEquation_eq_mul_sub (s : A) :
+    nodeEquation b 0 0 s = nodeFstCoordinate b * nodeSndCoordinate b - nodeBaseExtension b s := by
+  obtain ⟨f, _, hf⟩ := exists_toFilterGerm_eq b s
+  apply toFilterGerm_nhds_injective ((b, (0 : ℂ)), (0 : ℂ))
+  rw [toFilterGerm_nodeEquation b 0 0 s (hf _ le_rfl), map_sub, map_mul,
+    toFilterGerm_nodeFstCoordinate, toFilterGerm_nodeSndCoordinate,
+    toFilterGerm_nodeBaseExtension b (hf _ le_rfl), ← Germ.coe_mul, ← Germ.coe_sub]
+  rfl
+
 /-- The defining equation vanishes on the zero section precisely to the order of `s`:
 its restriction is `-s`. -/
 @[simp]
