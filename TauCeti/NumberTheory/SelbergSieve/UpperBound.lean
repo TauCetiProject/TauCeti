@@ -9,6 +9,8 @@ public import TauCeti.NumberTheory.SelbergSieve
 public import TauCeti.NumberTheory.SelbergSieve.LambdaSquared
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 
+import TauCeti.Algebra.Order.Floor.Ring
+
 /-!
 # Selberg's optimal weights and upper bound
 
@@ -23,8 +25,9 @@ at that parameter, and inherit their laws.
 * `BoundingSieve.optimalSelbergWeights_one`: for `1 < z`, `λ_z(1) = 1`.
 * `BoundingSieve.abs_optimalSelbergWeights_le_one`: `|λ_z(d)| ≤ 1`.
 * `BoundingSieve.mainSum_lambdaSquared_optimalSelbergWeights`: the quadratic main term of `λ_z`
-  is `1 / G(z)`, and `BoundingSieve.inv_diagonalMass_le_mainSum_lambdaSquared` shows that this
-  is the minimum over weights normalized at one and supported strictly below `z`.
+  is `1 / G(z)`, and `BoundingSieve.inv_diagonalMass_le_mainSum_lambdaSquared` bounds the main
+  term of every weight normalized at one and supported strictly below `z` from below by `1 / G(z)`.
+  For `1 < z` the optimal weights are such a weight, so `1 / G(z)` is the minimum.
 * `BoundingSieve.siftedSum_le_totalMass_div_diagonalMass_add_sum_three_pow`: Selberg's upper
   bound `S ≤ X / G(z) + ∑_{d ∣ P, d < z²} 3^ω(d) |r_d|` for `1 < z`.
 
@@ -41,18 +44,10 @@ at that parameter, and inherit their laws.
 
 public noncomputable section
 
-open Finset Nat ArithmeticFunction
+open Finset Nat ArithmeticFunction TauCeti
 open scoped ArithmeticFunction.Moebius ArithmeticFunction.omega
 
 namespace BoundingSieve
-
-/-- A natural number lies strictly below `z` exactly when it is at most `⌈z⌉₊ - 1`. -/
-private theorem natCast_lt_iff_le_ceil_sub_one {z : ℝ} (n : ℕ) :
-    (n : ℝ) < z ↔ (n : ℝ) ≤ ⌈z⌉₊ - 1 := by
-  rw [← Nat.lt_ceil, le_sub_iff_add_le, ← Nat.cast_add_one, Nat.cast_le, Nat.add_one_le_iff]
-
-private theorem one_le_ceil_sub_one {z : ℝ} (hz : 1 < z) : (1 : ℝ) ≤ ⌈z⌉₊ - 1 := by
-  simpa using (natCast_lt_iff_le_ceil_sub_one (z := z) 1).mp (by simpa using hz)
 
 /-- The Selberg diagonal mass: the sum of `selbergTerms` over divisors of the sieving product
 strictly below the cutoff. -/
@@ -73,7 +68,8 @@ theorem diagonalMass_eq_truncatedSelbergSum (s : BoundingSieve) (z : ℝ) :
 /-- The diagonal mass is positive once the cutoff exceeds one. -/
 theorem diagonalMass_pos (s : BoundingSieve) {z : ℝ} (hz : 1 < z) : 0 < s.diagonalMass z := by
   rw [diagonalMass_eq_truncatedSelbergSum]
-  exact s.truncatedSelbergSum_pos (one_le_ceil_sub_one hz)
+  exact s.truncatedSelbergSum_pos <| by
+    simpa using (natCast_lt_iff_le_ceil_sub_one 1).mp (by simpa using hz)
 
 /-- Selberg's optimal weights `λ_z`, the normalized upper-divisor sums of `selbergTerms` over
 divisors of the sieving product strictly below the cutoff. -/
@@ -104,7 +100,8 @@ theorem optimalSelbergWeights_eq_selbergWeights (s : BoundingSieve) (z : ℝ) :
 @[simp] theorem optimalSelbergWeights_one (s : BoundingSieve) {z : ℝ} (hz : 1 < z) :
     s.optimalSelbergWeights z 1 = 1 := by
   rw [optimalSelbergWeights_eq_selbergWeights]
-  exact s.selbergWeights_one (one_le_ceil_sub_one hz)
+  exact s.selbergWeights_one <| by
+    simpa using (natCast_lt_iff_le_ceil_sub_one 1).mp (by simpa using hz)
 
 /-- An optimal weight vanishes off the divisors of the sieving product. -/
 @[simp] theorem optimalSelbergWeights_eq_zero_of_not_dvd (s : BoundingSieve) (z : ℝ) {d : ℕ}
