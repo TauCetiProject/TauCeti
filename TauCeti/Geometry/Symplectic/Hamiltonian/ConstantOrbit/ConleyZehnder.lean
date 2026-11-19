@@ -23,11 +23,12 @@ constant orbit at `p` is a nondegenerate one-periodic orbit of the autonomous Ha
 evolution from time `0` to time `t` is `exp (t ε dX_F(p))`
 (`TauCeti.SymplecticForm.fderiv_timeDependentHamiltonianFlow_const_mul`). This file computes the
 Conley–Zehnder index (`TauCeti.GLSymplectic.conleyZehnderIndex`) of this linearized flow, read as a
-path of symplectic matrices in a basis `b` of `V` indexed by `n ⊕ n`: for small `ε > 0` it is
-`n - ind_p(F)`, where `ind_p(F)` is the Morse index (`TauCeti.morseIndex`). This is the grading of
-the generators of the Floer complex of a `C²`-small Morse Hamiltonian, through which capped
-Hamiltonian Floer theory with `μ = -CZ` grades the critical point `p`, capped by the constant
-disc, in degree `μ = ind_p(F) - n`.
+path of symplectic matrices in a basis `b` of `V` indexed by `n ⊕ n`. When `ω` has matrix `-J` in
+`b` (the coordinates of `ℂⁿ`), for small `ε > 0` it is `n - ind_p(F)`, where `ind_p(F)` is the
+Morse index (`TauCeti.morseIndex`); when `ω` has matrix `J` in `b` it is `ind_p(F) - n`. The former
+is the grading of the generators of the Floer complex of a `C²`-small Morse Hamiltonian, through
+which capped Hamiltonian Floer theory with `μ = -CZ` grades the critical point `p`, capped by the
+constant disc, in degree `μ = ind_p(F) - n`.
 
 The computation has three steps.
 
@@ -139,8 +140,8 @@ theorem toMatrix_mul_toMatrix_fderiv_hamiltonianVectorField (b : Module.Basis ι
   -- Transposing `Mᵀ G = S` gives `Gᵀ M = Sᵀ`, that is `-(G M) = S`.
   have h := congrArg transpose (ω.transpose_toMatrix_fderiv_hamiltonianVectorField_mul b
     ((hF.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero))
-  rw [transpose_mul, transpose_transpose, hω, ← conjTranspose_eq_transpose_of_trivial,
-    (isHermitian_toMatrix_toBilinForm_fderiv_fderiv b hF).eq] at h
+  rw [transpose_mul, transpose_transpose, hω,
+    (isHermitian_toMatrix_toBilinForm_fderiv_fderiv b hF).isSymm.eq] at h
   rw [← h, Matrix.neg_mul, neg_neg]
 
 /-- **The matrix of the linearized evolution at a critical point.** If `p` is a critical point of a
@@ -208,13 +209,6 @@ private theorem exists_isHermitian_toMatrix_fderiv_hamiltonianVectorField_eq
 
 /-! ### The path of linearized evolutions -/
 
-/-- `J S` lies in the symplectic Lie algebra for a symmetric `S`: `(J S)ᵀ J = S (-J) J = S` and
-`-(J (J S)) = S`. -/
-private theorem J_mul_mem_sp {S : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hS : S.IsHermitian) :
-    J n ℝ * S ∈ LieAlgebra.Symplectic.sp n ℝ := by
-  rw [LieAlgebra.Symplectic.mem_sp, transpose_mul, J_transpose, hS.isSymm.eq, Matrix.mul_assoc,
-    neg_J_mul_J, ← Matrix.neg_mul, ← Matrix.mul_assoc, neg_J_mul_J, Matrix.mul_one, Matrix.one_mul]
-
 /-- The linearized evolution of `εF` at a critical point, in a basis in which the matrix of
 `dX_F(p)` is `J T` for a symmetric `T`, is `exp (t (J (ε T)))`. -/
 private theorem toMatrix_fderiv_timeDependentHamiltonianFlow_eq_exp (b : Module.Basis (n ⊕ n) ℝ V)
@@ -250,7 +244,7 @@ theorem exists_path_toMatrix_fderiv_timeDependentHamiltonianFlow (b : Module.Bas
   have hmem (t : ℝ) : expUnit (t • K') ∈ GLSymplectic n ℝ := by
     rw [GLSymplectic.mem_iff_mem_symplecticGroup, expUnit_coe]
     exact (forall_exp_smul_mem_symplecticGroup_iff_mem_sp K').2
-      (J_mul_mem_sp (hT.smul (IsSelfAdjoint.all ε))) t
+      (LieAlgebra.Symplectic.J_mul_mem_sp (hT.smul (IsSelfAdjoint.all ε)).isSymm) t
   let γ : Path (1 : GLSymplectic n ℝ) ⟨expUnit K', by simpa using hmem 1⟩ :=
     { toFun := fun t ↦ ⟨expUnit ((t : ℝ) • K'), hmem t⟩
       continuous_toFun := (continuous_expUnit.comp
