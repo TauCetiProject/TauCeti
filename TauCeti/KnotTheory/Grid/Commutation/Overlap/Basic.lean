@@ -432,8 +432,6 @@ theorem recutLeftEqLeft_toRectangleDecomposition
         congrArg GridRectangleBetween.right hpentagon
   · simp only [recutLeftEqLeft,
       GridPentagonRectangleDecomposition.toRectangleDecomposition_second_left]
-  · simp only [recutLeftEqLeft,
-      GridPentagonRectangleDecomposition.toRectangleDecomposition_second_right]
 
 /-- The promoted pentagon--rectangle decomposition carries the generic recut relation. In
 particular, the two new underlying rectangles are empty and repartition the same covered squares
@@ -545,10 +543,7 @@ theorem isRecutOfRightEqRight_recut
           simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
             D.toRectangleDecomposition_middle,
             D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)) := by
-  have hcommon' : D.toRectangleDecomposition.first.right =
-      D.toRectangleDecomposition.second.right := by
-    simpa only [toRectangleDecomposition_first_right,
-      toRectangleDecomposition_second_right] using hcommon
+  have hcommon' := D.toRectangleDecomposition_first_right_eq_second_right_of_right_eq_right hcommon
   exact D.toRectangleDecomposition.isRecutOfRightEqRight_recut hcommon' hone
     (by
       simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
@@ -585,10 +580,7 @@ theorem recut_first_or_second_right_eq_pentagon_right
         D.toRectangleDecomposition_middle,
         D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)
   dsimp only
-  have hcommon' : D.toRectangleDecomposition.first.right =
-      D.toRectangleDecomposition.second.right := by
-    simpa only [toRectangleDecomposition_first_right,
-      toRectangleDecomposition_second_right] using hcommon
+  have hcommon' := D.toRectangleDecomposition_first_right_eq_second_right_of_right_eq_right hcommon
   have hdata := D.isRecutOfRightEqRight_recut hcommon hone hrectangle hpentagon
   have hbranches :
       (E.first.right = D.toRectangleDecomposition.second.right ∧
@@ -746,10 +738,7 @@ private theorem terminal_side_common_right
     (hcommon : D.rectangle.right = D.pentagon.right) :
     D.toRectangleDecomposition.first.right = D.toRectangleDecomposition.second.right ∧
       D.pentagon.right = D.toRectangleDecomposition.first.right := by
-  have hcommon' : D.toRectangleDecomposition.first.right =
-      D.toRectangleDecomposition.second.right := by
-    simpa only [toRectangleDecomposition_first_right,
-      toRectangleDecomposition_second_right] using hcommon
+  have hcommon' := D.toRectangleDecomposition_first_right_eq_second_right_of_right_eq_right hcommon
   refine ⟨hcommon', ?_⟩
   rw [← toRectangleDecomposition_second_right D, ← hcommon']
 

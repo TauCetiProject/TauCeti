@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
@@ -22,6 +23,8 @@ by the inverse absolute determinant.
 * `Module.Basis.addHaar_basisFun` — the additive Haar measure of `Pi.basisFun ℝ ι` is `volume`.
 * `Module.Basis.addHaar_singleton`, `Module.Basis.addHaar_finTwoProd` — the additive Haar measures
   of the standard bases of `ℝ` and `ℝ × ℝ` are `volume`.
+* `Complex.addHaar_basisOneI` — the additive Haar measure of the basis `(1, i)` of `ℂ` is
+  `volume`.
 * `Module.Basis.addHaar_eq_dirac` — the additive Haar measure of a basis indexed by an empty type
   is the Dirac mass at `0`.
 -/
@@ -38,8 +41,16 @@ theorem addHaar_basisFun (ι : Type*) [Fintype ι] :
     (Pi.basisFun ℝ ι).addHaar = (volume : Measure (ι → ℝ)) := by
   rw [addHaar_def, parallelepiped_basisFun, addHaarMeasure_eq_volume_pi]
 
-/-- The additive Haar measure attached to the standard basis of `ℝ` is Lebesgue measure. -/
-theorem addHaar_singleton : (Basis.singleton (Fin 1) ℝ).addHaar = volume := by
+/-- The additive Haar measure attached to the standard basis of `ℝ`, indexed by any type with
+exactly one element, is Lebesgue measure.
+
+The `Fintype ι` instance is a separate argument, rather than the one derived from `Unique ι`, so
+that the lemma rewrites `addHaar` whatever finiteness instance it carries (e.g. `Fin.fintype 1`). -/
+@[simp]
+theorem addHaar_singleton {ι : Type*} [Fintype ι] [Unique ι] :
+    (Basis.singleton ι ℝ).addHaar = volume := by
+  -- `addHaar` depends on the `Fintype` instance only up to `Subsingleton (Fintype ι)`.
+  obtain rfl : ‹Fintype ι› = Unique.fintype := Subsingleton.elim _ _
   rw [← OrthonormalBasis.toBasis_singleton]
   exact OrthonormalBasis.addHaar_eq_volume _
 
@@ -90,5 +101,10 @@ theorem addHaar_eq_smul_of_basis (b b' : Basis ι ℝ E) :
 end ChangeBasis
 
 end Module.Basis
+
+/-- The additive Haar measure attached to the basis `(1, i)` of `ℂ` is Lebesgue measure. -/
+theorem Complex.addHaar_basisOneI : Complex.basisOneI.addHaar = (volume : Measure ℂ) := by
+  rw [← Complex.toBasis_orthonormalBasisOneI]
+  exact Complex.orthonormalBasisOneI.addHaar_eq_volume
 
 end

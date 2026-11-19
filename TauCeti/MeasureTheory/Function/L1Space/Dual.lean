@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import TauCeti.MeasureTheory.Function.Lp.Duality
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.MeasureTheory.Function.L2Space
-import TauCeti.MeasureTheory.Function.Lp.Restriction
+import TauCeti.MeasureTheory.Function.Lp.Exponent
 
 /-!
 # The dual of `L¹`
@@ -39,7 +39,7 @@ value of the functional at the indicator function of `s`.
 ## Implementation notes
 
 The density of `φ ∈ L¹(μ)*` is found in `L²(μ)`. For a finite measure, `L²(μ)` maps continuously
-into `L¹(μ)` (`MeasureTheory.Measure.LpToL1CLM`), so `φ` restricts to a continuous linear
+into `L¹(μ)` (`MeasureTheory.Lp.ofExponentLEL`), so `φ` restricts to a continuous linear
 functional on `L²(μ)`. The Riesz representation theorem writes it as `f ↦ ∫ h f` for some
 `h ∈ L²(μ)`. Testing against simple functions bounds `‖h‖_∞` by `‖φ‖`
 (`MeasureTheory.AEStronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le`), and density
@@ -64,12 +64,12 @@ an essentially bounded function. -/
 theorem exists_toDual_eq [IsFiniteMeasure μ] (φ : StrongDual 𝕜 (Lp 𝕜 1 μ)) :
     ∃ g : Lp 𝕜 ∞ μ, toDual 𝕜 μ ∞ 1 g = φ := by
   -- The Riesz representation `h` of `φ` restricted to `L²(μ)` represents `φ` on `L²(μ)`.
-  set ι : Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 1 μ := Measure.LpToL1CLM μ 2
+  set ι : Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 1 μ := Lp.ofExponentLEL 𝕜 𝕜 one_le_two
   set u : Lp 𝕜 2 μ := (InnerProductSpace.toDual 𝕜 (Lp 𝕜 2 μ)).symm (φ.comp ι)
   set h : α → 𝕜 := fun x => conj (u x)
   have hφ : ∀ (f : Lp 𝕜 1 μ) (f' : Lp 𝕜 2 μ), (f : α → 𝕜) =ᵐ[μ] f' →
       φ f = ∫ x, h x * f x ∂μ := fun f f' hf => by
-    have hfι : f = ι f' := Lp.ext (hf.trans (Measure.LpToL1CLM_coeFn μ 2 f').symm)
+    have hfι : f = ι f' := Lp.ext (by simpa only [ι, Lp.coeFn_ofExponentLEL] using hf)
     calc φ f = inner 𝕜 u f' := by
           rw [InnerProductSpace.toDual_symm_apply, ContinuousLinearMap.comp_apply, hfι]
       _ = ∫ x, h x * f x ∂μ := by

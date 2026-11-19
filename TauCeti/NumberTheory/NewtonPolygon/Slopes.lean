@@ -427,6 +427,39 @@ private theorem newtonPolygon_eq_of_forall_mem_newtonSlopes_eq (htr : v f.traili
     Nat.card_Ico, nsmul_eq_mul, Nat.cast_sub han]
   ring_nf
 
+/-- The reverse direction of the purity criterion: if the line of slope `m` through the trailing
+point passes through the leading point and lies on or below every coefficient point, every finite
+slope of `f` equals `m`. -/
+private theorem forall_mem_newtonSlopes_eq_of_forall_le (htr : v f.trailingCoeff ≠ ⊤)
+    (hld : v f.leadingCoeff ≠ ⊤) {m : ℝ}
+    (hlead : (v f.leadingCoeff).untop₀ =
+      (v f.trailingCoeff).untop₀ + m * ((f.natDegree : ℝ) - f.natTrailingDegree))
+    (hle : ∀ n : ℕ, (((v f.trailingCoeff).untop₀ + m * ((n : ℝ) - f.natTrailingDegree) : ℝ) :
+      WithTop ℝ) ≤ v (f.coeff n)) :
+    ∀ s ∈ f.newtonSlopes v, s = m := by
+  intro s hs
+  obtain ⟨k, hk, rfl⟩ := (mem_newtonSlopes f v).mp hs
+  rw [finiteEdges_newtonPolygon_of_ne_top f v htr hld, Set.mem_Ico] at hk
+  -- The line of slope `m` through the trailing point, in the form `c + m * n`.
+  have hH : (fun n : ℕ => (((v f.trailingCoeff).untop₀ - m * f.natTrailingDegree + m * n : ℝ) :
+      WithTop ℝ)) ≤ f.newtonPolygon v :=
+    le_newtonPolygon (isConvexSeq_affine _ m) fun n => by
+      convert hle n using 2
+      ring
+  have htrail : f.newtonPolygon v f.natTrailingDegree = (((v f.trailingCoeff).untop₀ -
+      m * f.natTrailingDegree + m * f.natTrailingDegree : ℝ) : WithTop ℝ) := by
+    rw [newtonPolygon_natTrailingDegree, sub_add_cancel, WithTop.coe_untop₀_of_ne_top htr]
+  have hlead' : f.newtonPolygon v f.natDegree = (((v f.trailingCoeff).untop₀ -
+      m * f.natTrailingDegree + m * f.natDegree : ℝ) : WithTop ℝ) := by
+    rw [newtonPolygon_natDegree, ← WithTop.coe_untop₀_of_ne_top hld, hlead, WithTop.coe_eq_coe]
+    ring
+  have hon {n : ℕ} (han : f.natTrailingDegree ≤ n) (hnd : n ≤ f.natDegree) :=
+    (f.isConvexSeq_newtonPolygon v).eq_affine_of_affine_le htrail hlead' han hnd (hH n)
+  rw [unitSlope_def, hon (by omega) hk.2, hon hk.1 hk.2.le, WithTop.untop₀_coe,
+    WithTop.untop₀_coe]
+  push_cast
+  ring
+
 /-- **Purity criterion.** If the trailing and leading coefficients of `f` have finite valuation,
 every finite slope of `f` equals `m` exactly when the line of slope `m` through the trailing point
 `(a, v (coeff a f))`, where `a` is the order of vanishing of `f` at zero, passes through the
@@ -451,28 +484,27 @@ theorem forall_mem_newtonSlopes_eq_iff (htr : v f.trailingCoeff ≠ ⊤)
           exact le_top
       · rw [coeff_eq_zero_of_lt_natTrailingDegree (not_le.mp han), v.map_zero]
         exact le_top
-  · rintro ⟨hlead, hle⟩ s hs
-    obtain ⟨k, hk, rfl⟩ := (mem_newtonSlopes f v).mp hs
-    rw [finiteEdges_newtonPolygon_of_ne_top f v htr hld, Set.mem_Ico] at hk
-    -- The line of slope `m` through the trailing point, in the form `c + m * n`.
-    have hH : (fun n : ℕ => (((v f.trailingCoeff).untop₀ - m * f.natTrailingDegree + m * n : ℝ) :
-        WithTop ℝ)) ≤ f.newtonPolygon v :=
-      le_newtonPolygon (isConvexSeq_affine _ m) fun n => by
-        convert hle n using 2
-        ring
-    have htrail : f.newtonPolygon v f.natTrailingDegree = (((v f.trailingCoeff).untop₀ -
-        m * f.natTrailingDegree + m * f.natTrailingDegree : ℝ) : WithTop ℝ) := by
-      rw [newtonPolygon_natTrailingDegree, sub_add_cancel, WithTop.coe_untop₀_of_ne_top htr]
-    have hlead' : f.newtonPolygon v f.natDegree = (((v f.trailingCoeff).untop₀ -
-        m * f.natTrailingDegree + m * f.natDegree : ℝ) : WithTop ℝ) := by
-      rw [newtonPolygon_natDegree, ← WithTop.coe_untop₀_of_ne_top hld, hlead, WithTop.coe_eq_coe]
-      ring
-    have hon {n : ℕ} (han : f.natTrailingDegree ≤ n) (hnd : n ≤ f.natDegree) :=
-      (f.isConvexSeq_newtonPolygon v).eq_affine_of_affine_le htrail hlead' han hnd (hH n)
-    rw [unitSlope_def, hon (by omega) hk.2, hon hk.1 hk.2.le, WithTop.untop₀_coe,
-      WithTop.untop₀_coe]
-    push_cast
-    ring
+  · rintro ⟨hlead, hle⟩
+    exact forall_mem_newtonSlopes_eq_of_forall_le htr hld hlead hle
+
+/-- The line from `(0, 1)` to `(d, 0)` lies on or below every coefficient point of an Eisenstein
+polynomial. -/
+private theorem one_add_neg_inv_natDegree_mul_le_addValuation_coeff_of_eisenstein
+    (hlead : v f.leadingCoeff = 0) (h0 : v (f.coeff 0) = 1)
+    (hmem : ∀ n, 0 < n → n < f.natDegree → 1 ≤ v (f.coeff n)) (n : ℕ) :
+    (((1 + -(f.natDegree : ℝ)⁻¹ * n : ℝ)) : WithTop ℝ) ≤ v (f.coeff n) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp [h0]
+  rcases lt_trichotomy n f.natDegree with hnd | rfl | hnd
+  · refine le_trans ?_ (hmem n hn hnd)
+    rw [← WithTop.coe_one, WithTop.coe_le_coe]
+    have : (0 : ℝ) ≤ (f.natDegree : ℝ)⁻¹ * n := by positivity
+    linarith
+  · rw [← leadingCoeff, hlead, ← WithTop.coe_zero, WithTop.coe_le_coe]
+    field_simp
+    simp
+  · rw [coeff_eq_zero_of_natDegree_lt hnd, v.map_zero]
+    exact le_top
 
 /-- **Eisenstein polygons.** If `f` has leading coefficient of valuation zero, constant
 coefficient of valuation one, and all other coefficients below the degree of valuation at least
@@ -503,18 +535,7 @@ theorem newtonSlopes_eq_replicate_of_eisenstein (hlead : v f.leadingCoeff = 0)
     field_simp
     ring
   rw [htrail, ha, Nat.cast_zero, sub_zero]
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · simp [h0]
-  rcases lt_trichotomy n f.natDegree with hnd | rfl | hnd
-  · refine le_trans ?_ (hmem n hn hnd)
-    rw [← WithTop.coe_one, WithTop.coe_le_coe]
-    have : (0 : ℝ) ≤ (f.natDegree : ℝ)⁻¹ * n := by positivity
-    linarith
-  · rw [← leadingCoeff, hlead, ← WithTop.coe_zero, WithTop.coe_le_coe]
-    field_simp
-    simp
-  · rw [coeff_eq_zero_of_natDegree_lt hnd, v.map_zero]
-    exact le_top
+  exact one_add_neg_inv_natDegree_mul_le_addValuation_coeff_of_eisenstein hlead h0 hmem n
 
 end Pure
 

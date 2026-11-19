@@ -78,6 +78,8 @@ coordinates of a Cauchy filter then form a compatible system, its limit in `B♭
   `A ⊆ B°` and `x, y` with all coordinates in `A`, `(x + y)⁽ⁱ⁾ - x⁽ⁱ⁾ - y⁽ⁱ⁾ ∈ p • A`.
 * `TauCeti.Perfectoid.uniformTilt.coeff_add_of_charP`: in characteristic `p` the addition is
   coordinatewise.
+* `TauCeti.Perfectoid.uniformTilt.coeff_zero_eq_zero_iff`: in the tilt of a reduced ring, `x♯ = 0`
+  only for `x = 0`.
 * `TauCeti.Perfectoid.uniformTilt.perfectRing` and `TauCeti.Perfectoid.uniformTilt.charP`: the tilt
   is perfect, and of characteristic `p` when `B` is nonzero.
 * `TauCeti.Perfectoid.uniformTilt.coeff_map`, `TauCeti.Perfectoid.uniformTilt.map_id` and
@@ -91,6 +93,9 @@ coordinates of a Cauchy filter then form a compatible system, its limit in `B♭
   `TauCeti.Perfectoid.uniformTilt.instT2Space`: the tilt is a complete Hausdorff topological ring.
 * `TauCeti.Perfectoid.uniformTilt.continuous_coeff` and
   `TauCeti.Perfectoid.uniformTilt.continuous_map`: the coordinates and `g♭` are continuous.
+* `Finset.span_image_uniformTilt_coeff_zero_eq_top_of_exists_isUnit` and
+  `Finset.isOpen_span_image_uniformTilt_coeff_zero_of_exists_isUnit`: sharp images of a finite
+  subset of `B♭` containing a unit generate the unit (hence open) ideal of `B`.
 
 ## References
 
@@ -677,6 +682,16 @@ theorem isUnit_iff_coeff_zero {x : uniformTilt p B} :
   simp only [map_mul, y, coeff_mk, map_one]
   exact (hu n).mul_val_inv
 
+/-- **In the tilt of a reduced ring, `x♯ = 0` only for `x = 0`**: every coordinate `x⁽ⁿ⁾` is a
+`p ^ n`-th root of `x♯`. -/
+@[simp]
+theorem coeff_zero_eq_zero_iff [IsReduced B] {x : uniformTilt p B} :
+    coeff p B 0 x = 0 ↔ x = 0 := by
+  refine ⟨fun h ↦ ext fun n ↦ ?_, fun h ↦ h ▸ coeff_zero 0⟩
+  rw [coeff_zero]
+  refine IsReduced.eq_zero _ ⟨p ^ n, ?_⟩
+  rw [← h, ← coeff_pow_p_pow x 0 n, zero_add]
+
 /-- **The limit formula for the addition**:
 `(x + y)⁽ⁱ⁾ = lim_{m → ∞} (x⁽ⁱ⁺ᵐ⁾ + y⁽ⁱ⁺ᵐ⁾) ^ p ^ m`. -/
 theorem coeff_add (x y : uniformTilt p B) (i : ℕ) :
@@ -1083,3 +1098,34 @@ end Map
 end uniformTilt
 
 end TauCeti.Perfectoid
+
+namespace Finset
+
+open TauCeti.Huber TauCeti.Perfectoid
+
+variable {p : ℕ} [Fact p.Prime] {B : Type*} [CommRing B] [UniformSpace B]
+  [IsUniformAddGroup B] [IsTopologicalRing B] [IsTateRing B] [CompleteSpace B] [T2Space B]
+  [IsUniform B] [Fact (IsTopologicallyNilpotent (p : B))]
+
+open scoped Classical in
+/-- If a finite subset `T` of `B♭` contains a unit, then the sharp images of elements of `T`
+generate the unit ideal of `B`. -/
+theorem span_image_uniformTilt_coeff_zero_eq_top_of_exists_isUnit
+    (T : Finset (uniformTilt p B)) (hT : ∃ f ∈ T, IsUnit f) :
+    Ideal.span ((T.image (uniformTilt.coeff p B 0) : Finset B) : Set B) = ⊤ := by
+  obtain ⟨f, hfT, hf⟩ := hT
+  refine Ideal.eq_top_of_isUnit_mem _ ?_ (uniformTilt.isUnit_iff_coeff_zero.mp hf)
+  exact Ideal.subset_span (Finset.mem_coe.mpr (Finset.mem_image_of_mem _ hfT))
+
+open scoped Classical in
+/-- If a finite subset `T` of `B♭` contains a unit, then the sharp images `T♯` generate an open
+ideal of `B`. -/
+theorem isOpen_span_image_uniformTilt_coeff_zero_of_exists_isUnit
+    (T : Finset (uniformTilt p B)) (hT : ∃ f ∈ T, IsUnit f) :
+    IsOpen
+      ((Ideal.span ((T.image (uniformTilt.coeff p B 0) : Finset B) : Set B) : Ideal B) :
+        Set B) := by
+  rw [T.span_image_uniformTilt_coeff_zero_eq_top_of_exists_isUnit hT]
+  exact isOpen_univ
+
+end Finset

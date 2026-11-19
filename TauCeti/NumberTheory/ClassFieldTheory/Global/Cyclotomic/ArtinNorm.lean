@@ -11,7 +11,6 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Local.Cyclotomic
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Norm.Units
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.Algebra.BigOperators.Finprod
-import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.FiniteExtension
 import TauCeti.NumberTheory.NumberField.Global.Places.Semilocal
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.DedekindDomain.SelmerGroup
@@ -41,7 +40,8 @@ sum of the local invariants of a global Brauer class is shown to vanish.
 At a finite place `v` the identity is the local norm functoriality
 `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_artinMap_norm` at each
 `w ∣ v`, combined with the factorization `N_{L/K}(x) = ∏_{w ∣ v} N_{L_w/K_v}(x)` in `K_v`
-(`TauCeti.algebraMap_norm_eq_prod_norm`); at an infinite place it is the archimedean norm
+(`IsDedekindDomain.HeightOneSpectrum.algebraMap_norm_eq_prod_norm_adicCompletion`); at an
+infinite place it is the archimedean norm
 functoriality `TauCeti.ClassFieldTheory.infiniteArtinAt_norm` with the archimedean
 factorization `TauCeti.GlobalNumberFields.algebraMap_norm_eq_prod_norm_infiniteCompletion`.
 The global finite identity regroups the places of `L` by the place below. This needs the
@@ -59,8 +59,6 @@ and at infinite places alike.
 * `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_artinMap_normUnits_eq_finprod`
   and `abelianizedLocalCyclotomicCharacter_infiniteArtinAt_normUnits_eq_finprod`: the value at a
   place `v` of `K` on the norm is the product of the values at the places `w ∣ v`.
-* `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_infiniteArtinAt_norm`: norm
-  functoriality of the character of archimedean Artin symbols for one place `w ∣ v`.
 * `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_artinMap_mem_unitsPrincipal` and
   `abelianizedLocalCyclotomicCharacter_infiniteArtinAt_mem_unitsPrincipal`: if `L` contains a
   primitive `pⁿ`-th root of unity, the character of the Artin symbol of a local norm from
@@ -84,7 +82,8 @@ namespace TauCeti.ClassFieldTheory
 
 open Function IsDedekindDomain NumberField
 open _root_.ValuativeRel
-open scoped AdicCompletionExtension NumberField.LiesOver TensorProduct
+open scoped AdicCompletionExtension TensorProduct
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 variable (p : ℕ) [Fact p.Prime]
 variable {K L : Type} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
@@ -120,28 +119,9 @@ theorem abelianizedLocalCyclotomicCharacter_artinMap_normUnits_eq_finprod
   congr 2
   refine Units.ext ?_
   simp only [Units.coe_prod, Algebra.coe_normUnits, Units.coe_map, MonoidHom.coe_ofClass]
-  exact algebraMap_norm_eq_prod_norm L v (x : L)
+  exact v.algebraMap_norm_eq_prod_norm_adicCompletion (B := 𝓞 L) (x : L)
 
-omit [NumberField L] in
-/-- **The cyclotomic character of archimedean Artin symbols along a local norm**, the
-archimedean analogue of `abelianizedLocalCyclotomicCharacter_artinMap_norm`. For a place `w` of
-`L` over the infinite place `v` of `K` and `x ∈ L_wˣ`, the `p`-adic cyclotomic character of
-`Art_w(x)` is that of `Art_v(N_{L_w/K_v} x)`. -/
-theorem abelianizedLocalCyclotomicCharacter_infiniteArtinAt_norm (v : InfinitePlace K)
-    (w : InfinitePlace L) [w.LiesOver v] (x : w.Completionˣ) :
-    abelianizedLocalCyclotomicCharacter p w.Completion (infiniteArtinAt w x) =
-      abelianizedLocalCyclotomicCharacter p v.Completion
-        (infiniteArtinAt v (Algebra.normUnits v.Completion x)) := by
-  have : CharZero v.Completion :=
-    charZero_of_injective_algebraMap (algebraMap K v.Completion).injective
-  obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective (infiniteArtinAt w x)
-  let iota : w.Completion →ₐ[v.Completion] SeparableClosure v.Completion := IsSepClosed.lift
-  have hx : Algebra.normUnits v.Completion x =
-      Units.map (Algebra.norm v.Completion : w.Completion →* v.Completion) x :=
-    Units.ext (by simp)
-  rw [← hτ, abelianizedLocalCyclotomicCharacter_mk, hx, ← infiniteArtinAt_norm w v iota x τ hτ,
-    abelianizedLocalCyclotomicCharacter_mk, localCyclotomicCharacter_absoluteGaloisGroupExtend]
-
+omit [NumberField K] in
 /-- **Norm functoriality at an infinite place.** For `x ∈ Lˣ` and an infinite place `v` of `K`,
 the `p`-adic cyclotomic character of the archimedean Artin symbol of `N_{L/K} x` at `v` is the
 product of those of the archimedean Artin symbols of `x` at the places of `L` above `v`. -/

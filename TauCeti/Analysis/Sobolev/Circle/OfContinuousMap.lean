@@ -11,6 +11,8 @@ import TauCeti.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 import TauCeti.Analysis.Fourier.Uniqueness
 import TauCeti.MeasureTheory.Integral.ContinuousMap
+import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
 # Continuous loops in the circle Sobolev space `H⁰`
@@ -49,16 +51,26 @@ from frequency zero, because differentiation multiplies Fourier coefficients by 
   the Fourier coefficients of `f`.
 * `TauCeti.CircleSobolev.ofContinuousMap_toContinuousMap`: for `s > 1/2`, the continuous
   representative of `a ∈ H^s(E)` is sent back to `a`, regarded as an element of `H⁰(E)`.
+* `TauCeti.CircleSobolev.ofContinuousMap_injective`: a continuous loop is determined by its
+  class in `H⁰(E)`.
 * `TauCeti.CircleSobolev.toContinuousMap_eq_iff`: for `s > 1/2`, the continuous representative of
   `a ∈ H^s(E)` is the continuous loop with the Fourier coefficients of `a`.
 * `TauCeti.CircleSobolev.hasDerivAt_toContinuousMap_of_derivative_eq` and
   `TauCeti.CircleSobolev.exists_toContinuousMap_eq_and_derivative_eq`: continuous weak
   derivatives in `H¹(E)` are classical derivatives, and conversely.
+* `TauCeti.CircleSobolev.inner_ofContinuousMap`, `TauCeti.CircleSobolev.real_inner_ofContinuousMap`:
+  Parseval's identity, the inner product in `H⁰` of two continuous loops is the mean of their
+  pointwise inner product.
+* `TauCeti.CircleSobolev.norm_ofContinuousMap_sq`,
+  `TauCeti.CircleSobolev.norm_ofContinuousMap_le_of_forall_norm_le`: the squared `H⁰` norm of a
+  continuous loop is the mean of its squared pointwise norm, so pointwise domination of loops
+  gives domination in `H⁰`.
 
 ## References
 
 * Y. Katznelson, *An Introduction to Harmonic Analysis*, 3rd ed., Cambridge University Press,
-  2004, Chapter I (Fourier coefficients of derivatives and of `L²` functions).
+  2004, Chapter I (Fourier coefficients of derivatives and of `L²` functions, and Parseval's
+  identity).
 -/
 
 public section
@@ -180,6 +192,14 @@ theorem ofContinuousMap_toContinuousMap (hs : 1 / 2 < s) (a : CircleSobolev s E)
   CircleSobolev.ext (funext fun n ↦ by
     rw [coeff_ofContinuousMap, fourierCoeff_toContinuousMap, coeff_inclusion])
 
+/-- A continuous loop is determined by its class in `H⁰(E)`. -/
+theorem ofContinuousMap_injective : Function.Injective (ofContinuousMap (E := E) T) := by
+  intro F G h
+  have hae := (F.integrable AddCircle.haarAddCircle).ae_eq_of_forall_fourierCoeff_eq
+    (G.integrable AddCircle.haarAddCircle) fun n ↦ by
+      rw [← coeff_ofContinuousMap, h, coeff_ofContinuousMap]
+  exact ContinuousMap.ext (congrFun ((map_continuous _).ae_eq_iff_eq _ G.continuous |>.1 hae))
+
 /-- **Continuous weak derivatives are classical derivatives.** If the derivative in `H⁰(E)` of
 `a ∈ H¹(E)` is the class of a continuous loop `g`, then the continuous representative of `a` is
 differentiable, with derivative `g`. -/
@@ -243,6 +263,80 @@ theorem exists_toContinuousMap_eq_and_derivative_eq (F g : C(AddCircle T, E))
   · rw [← hdc, coeff_derivative, coeff_derivative]
 
 end FiniteDimensional
+
+section Inner
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
+
+/-- **Parseval's identity for continuous loops.** For continuous loops `f`, `g` in a
+finite-dimensional complex inner product space, the inner product in `H⁰` of their Fourier
+coefficient sequences is the mean `∫ ⟪f x, g x⟫` over the circle, for the normalized Haar
+measure. -/
+theorem inner_ofContinuousMap (f g : C(AddCircle T, F)) :
+    inner ℂ (ofContinuousMap T f) (ofContinuousMap T g) =
+      ∫ x, inner ℂ (f x) (g x) ∂AddCircle.haarAddCircle := by
+  have := FiniteDimensional.completeSpace ℂ F
+  set e := stdOrthonormalBasis ℂ F
+  -- The coordinates of a loop in the orthonormal basis `e`, and their Fourier coefficients.
+  let φ (h : C(AddCircle T, F)) (j) : C(AddCircle T, ℂ) :=
+    ⟨fun x ↦ inner ℂ (e j) (h x), continuous_const.inner h.continuous⟩
+  have hcoeff (h : C(AddCircle T, F)) (j) (n : ℤ) :
+      fourierCoeff (φ h j) n = inner ℂ (e j) (fourierCoeff h n) :=
+    (innerSL ℂ (e j)).fourierCoeff_comp (h.integrable AddCircle.haarAddCircle) n
+  -- The scalar Parseval identity for each pair of coordinates.
+  have hj (j) : HasSum (fun n : ℤ ↦ inner ℂ (fourierCoeff f n) (e j) *
+      inner ℂ (e j) (fourierCoeff g n)) (∫ x, inner ℂ (f x) (e j) * inner ℂ (e j) (g x)
+        ∂AddCircle.haarAddCircle) := by
+    convert fourierBasis.hasSum_inner_mul_inner
+      (ContinuousMap.toLp 2 AddCircle.haarAddCircle ℂ (φ f j))
+      (ContinuousMap.toLp 2 AddCircle.haarAddCircle ℂ (φ g j)) using 1
+    · funext n
+      simp only [← inner_conj_symm _ (fourierBasis n), ← HilbertBasis.repr_apply_apply,
+        fourierBasis_repr, fourierCoeff_toLp, hcoeff, inner_conj_symm]
+    · rw [ContinuousMap.inner_toLp]
+      refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
+      simp [φ, mul_comm]
+  have hsum := hasSum_sum (s := Finset.univ) fun j _ ↦ hj j
+  simp only [e.sum_inner_mul_inner] at hsum
+  rw [inner_eq_tsum]
+  simp only [mul_zero, weight_zero_left, Complex.ofReal_one, one_mul, coeff_ofContinuousMap]
+  rw [hsum.tsum_eq, ← integral_finsetSum _ fun j _ ↦ ?_]
+  · simp [e.sum_inner_mul_inner]
+  · exact ((continuous_inner.comp (f.continuous.prodMk continuous_const)).mul
+      (continuous_const.inner g.continuous)).integrable_of_hasCompactSupport
+        (HasCompactSupport.of_compactSpace _)
+
+/-- **Parseval's identity for the real inner product.** The real inner product in `H⁰` of the
+Fourier coefficient sequences of continuous loops `f`, `g` is the mean of `Re ⟪f x, g x⟫`. -/
+theorem real_inner_ofContinuousMap (f g : C(AddCircle T, F)) :
+    inner ℝ (ofContinuousMap T f) (ofContinuousMap T g) =
+      ∫ x, (inner ℂ (f x) (g x)).re ∂AddCircle.haarAddCircle := by
+  have hi : Integrable (fun x ↦ inner ℂ (f x) (g x)) AddCircle.haarAddCircle :=
+    (continuous_inner.comp (f.continuous.prodMk g.continuous)).integrable_of_hasCompactSupport
+      (HasCompactSupport.of_compactSpace _)
+  rw [real_inner_eq_re_inner, inner_ofContinuousMap, ← RCLike.re_eq_complex_re, ← integral_re hi]
+
+/-- **Parseval's identity for the norm.** The squared norm in `H⁰` of the Fourier coefficient
+sequence of a continuous loop `f` is the mean of `‖f x‖²`. -/
+theorem norm_ofContinuousMap_sq (f : C(AddCircle T, F)) :
+    ‖ofContinuousMap T f‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂AddCircle.haarAddCircle := by
+  rw [← real_inner_self_eq_norm_sq, real_inner_ofContinuousMap]
+  simp only [← RCLike.re_eq_complex_re, inner_self_eq_norm_sq]
+
+/-- Pointwise domination `‖f x‖ ≤ C ‖g x‖` of continuous loops gives the same domination of their
+Fourier coefficient sequences in `H⁰`. -/
+theorem norm_ofContinuousMap_le_of_forall_norm_le {f g : C(AddCircle T, F)} {C : ℝ} (hC : 0 ≤ C)
+    (h : ∀ x, ‖f x‖ ≤ C * ‖g x‖) :
+    ‖ofContinuousMap T f‖ ≤ C * ‖ofContinuousMap T g‖ := by
+  have hint (u : C(AddCircle T, F)) :
+      Integrable (fun x ↦ ‖u x‖ ^ 2) AddCircle.haarAddCircle :=
+    (u.continuous.norm.pow 2).integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
+  refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 ?_
+  rw [mul_pow, norm_ofContinuousMap_sq, norm_ofContinuousMap_sq, ← integral_const_mul]
+  refine integral_mono (hint f) ((hint g).const_mul _) fun x ↦ ?_
+  simpa only [mul_pow] using pow_le_pow_left₀ (norm_nonneg _) (h x) 2
+
+end Inner
 
 end CircleSobolev
 

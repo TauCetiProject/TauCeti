@@ -38,7 +38,6 @@ characterization of Mathlib's binomial measure.  The native law remains
 
 * N. L. Johnson, A. W. Kemp, S. Kotz, *Univariate Discrete Distributions*, 3rd ed., Wiley,
   2005, Chapter 3.
-* `TauCetiRoadmap/StandardDistributions/README.md`, Layer 1, "Bernoulli and binomial".
 -/
 
 public section

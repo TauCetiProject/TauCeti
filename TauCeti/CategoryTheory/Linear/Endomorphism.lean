@@ -18,6 +18,8 @@ constructor `End.of : (X ⟶ X) → End X`: it sends `𝟙 X` to `1`, a composit
 corresponding operations in `End X`. As `simp` lemmas they push `End.of` inside expressions built
 from morphisms `X ⟶ X`, so that algebra maps out of `End X` can then be applied termwise. We also
 compute the structure map of an `R`-linear category, `(algebraMap R (End X) r).asHom = r • 𝟙 X`.
+When that structure map is surjective, every endomorphism is a scalar multiple of the identity
+(`CategoryTheory.End.exists_smul_id_eq_of_surjective`).
 
 The native precomposition action of `(End X)ᵐᵒᵖ` on `X ⟶ Y` respects the ground
 scalar tower.
@@ -26,6 +28,8 @@ When a scalar multiple `r • 𝟙` of the identity is invertible, its inverse c
 morphism (`CategoryTheory.Linear.comp_inv_smul_id`), and an `R`-linear functor keeps it
 invertible (`CategoryTheory.Functor.isIso_smul_id_obj`). For `r` a natural number or an integer
 these apply in every preadditive category, through Mathlib's `ℕ`- and `ℤ`-linear structures.
+An endomorphism with a scalar multiple equal to the identity is invertible
+(`CategoryTheory.Linear.isIso_of_smul_eq_id`).
 
 An additive linear functor induces an algebra homomorphism on endomorphisms,
 `Functor.mapEndAlgHom`, which is injective when the functor is faithful and bijective
@@ -87,6 +91,13 @@ theorem algebraMap_asHom {R : Type w} [CommSemiring R] [Linear R C] (r : R) :
     (algebraMap R (End X) r).asHom = r • 𝟙 X := by
   rw [Algebra.algebraMap_eq_smul_one, smul_asHom, one_asHom]
 
+/-- If the structure map `R → End X` is surjective, every endomorphism of `X` is a scalar
+multiple `r • 𝟙 X` of the identity. -/
+theorem exists_smul_id_eq_of_surjective {R : Type w} [CommSemiring R] [Linear R C]
+    (h : Function.Surjective (algebraMap R (End X))) (f : X ⟶ X) : ∃ r : R, r • 𝟙 X = f := by
+  obtain ⟨r, hr⟩ := h (End.of f)
+  exact ⟨r, by rw [← algebraMap_asHom, hr]⟩
+
 /-- The native precomposition action on morphisms respects ground-semiring scalars. -/
 instance hom_isScalarTower_opEnd {R : Type w} [Semiring R] [Linear R C] (Y : C) :
     IsScalarTower R (End X)ᵐᵒᵖ (X ⟶ Y) where
@@ -106,6 +117,11 @@ lemma Linear.comp_inv_smul_id {X Y : C} (f : X ⟶ Y) (r : R) [IsIso (r • 𝟙
     [IsIso (r • 𝟙 Y)] : f ≫ inv (r • 𝟙 Y) = inv (r • 𝟙 X) ≫ f := by
   rw [IsIso.eq_inv_comp, ← Category.assoc, IsIso.comp_inv_eq]
   simp
+
+/-- An endomorphism with a scalar multiple equal to the identity is invertible. -/
+lemma Linear.isIso_of_smul_eq_id {X : C} {t : X ⟶ X} {c : R} (h : c • t = 𝟙 X) : IsIso t :=
+  ⟨c • 𝟙 X, by rw [Linear.comp_smul, Category.comp_id, h],
+    by rw [Linear.smul_comp, Category.id_comp, h]⟩
 
 /-- If multiplication by a scalar `r` is invertible on `X`, then it is invertible on the image of
 `X` under any `R`-linear functor. -/

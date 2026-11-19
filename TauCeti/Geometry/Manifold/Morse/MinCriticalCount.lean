@@ -8,6 +8,12 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import TauCeti.Geometry.Manifold.Morse.LusternikSchnirelmann
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
+public import TauCeti.Geometry.Manifold.Instances.AddCircle
+public import TauCeti.Geometry.Manifold.IsManifold.Pi
+public import Mathlib.Topology.Algebra.Projectivization
+public import TauCeti.Topology.Homotopy.LusternikSchnirelmann.Torus
+import TauCeti.Geometry.Manifold.Morse.Projectivization
+import TauCeti.Topology.Homotopy.LusternikSchnirelmann.RealProjective
 import TauCeti.Geometry.Manifold.Morse.Generic.Basic
 
 /-!
@@ -29,7 +35,14 @@ when `M` is nonempty, by the cup length of `M` plus one
 (`TauCeti.lsCupLength_add_one_le_minCriticalCount`); it
 vanishes exactly on the empty manifold (`TauCeti.minCriticalCount_eq_zero_iff`), and it is at
 least `2` as soon as `M` has two points (`TauCeti.two_le_minCriticalCount`), attained on every
-sphere by the height function (`TauCeti.minCriticalCount_sphere`).
+sphere by the height function (`TauCeti.minCriticalCount_sphere`). On the torus `Tᵐ` the
+Lusternik–Schnirelmann count is `m + 1` (`TauCeti.lsCategoryCount_univ_pi_addCircle`), so every
+smooth function on `Tᵐ`, degenerate or not, has at least `m + 1` critical points
+(`TauCeti.card_add_one_le_totalCriticalCount_torus` and
+`TauCeti.card_add_one_le_minCriticalCount_torus`). On the real projective plane the
+Lusternik–Schnirelmann count is `3`
+(`TauCeti.lsCategoryCount_univ_projectivization_real_fin_three`): its cup length over `ZMod 2` is
+`2`, and the moment function with three distinct weights has three critical points.
 
 The minimum is additive over a finite cover by pairwise disjoint open sets
 (`TauCeti.minCriticalCount_eq_sum`), in particular over the connected components of a locally
@@ -57,6 +70,11 @@ components (`TauCeti.two_mul_card_connectedComponents_le_totalCriticalCount`), h
   the minimum is additive over finite disjoint open covers and over connected components.
 * `TauCeti.two_mul_card_connectedComponents_le_minCriticalCount`: each component of a compact
   boundaryless manifold of positive dimension contributes at least two to `c(M)`.
+* `TauCeti.card_add_one_le_totalCriticalCount_torus` and
+  `TauCeti.card_add_one_le_minCriticalCount_torus`: every smooth function on the torus `Tᵐ` has at
+  least `m + 1` critical points.
+* `TauCeti.lsCategoryCount_univ_projectivization_real_fin_three`: the Lusternik–Schnirelmann
+  count of the real projective plane is `3`.
 
 ## References
 
@@ -169,14 +187,14 @@ theorem two_mul_card_connectedComponents_le_minCriticalCount [Nontrivial E] :
   le_minCriticalCount_iff.2 fun _ hf ↦
     two_mul_card_connectedComponents_le_totalCriticalCount hf.continuous
 
-variable [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]
-
-omit [FiniteDimensional ℝ E] in
+variable [T2Space M] [IsManifold I ∞ M] in
 /-- On a compact boundaryless manifold the minimal number of critical points is finite: a Morse
 function exists, and it has finitely many critical points. -/
 theorem minCriticalCount_ne_top : minCriticalCount I M ≠ ⊤ := by
   obtain ⟨f, hf⟩ := exists_isMorse (I := I) (M := M)
   exact ne_top_of_le_ne_top hf.totalCriticalCount_ne_top (minCriticalCount_le hf.contMDiff)
+
+variable [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]
 
 /-- **The Lusternik–Schnirelmann lower bound for `c(M)`.** On a compact boundaryless manifold,
 every smooth function has at least as many critical points as the Lusternik–Schnirelmann count of
@@ -216,5 +234,47 @@ theorem minCriticalCount_sphere : minCriticalCount (𝓡 n) (sphere (0 : E) 1) =
     encard_pair (ne_neg_of_mem_unit_sphere ℝ v)]
 
 end Sphere
+
+section Torus
+
+variable {ι : Type*} [Fintype ι]
+
+/-- **The Lusternik–Schnirelmann bound on the torus.** Every smooth function on the torus
+`Tᵐ = ∀ i, AddCircle (p i)` has at least `m + 1` critical points, degenerate or not, since the
+Lusternik–Schnirelmann count of `Tᵐ` is `m + 1`. For Morse functions the stronger bound `2ᵐ` holds
+(`TauCeti.IsMorse.two_pow_card_le_totalCriticalCount_torus`). -/
+theorem card_add_one_le_totalCriticalCount_torus {p : ι → ℝ} [∀ i, Fact (0 < p i)]
+    {f : (∀ i, AddCircle (p i)) → ℝ}
+    (hf : ContMDiff (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) 𝓘(ℝ) ∞ f) :
+    (Fintype.card ι + 1 : ℕ∞) ≤ totalCriticalCount (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) f :=
+  lsCategoryCount_univ_pi_addCircle.symm.trans_le
+    (lsCategoryCount_univ_le_totalCriticalCount hf)
+
+/-- **The minimal number of critical points of the torus `Tᵐ` is at least `m + 1`.** -/
+theorem card_add_one_le_minCriticalCount_torus (p : ι → ℝ) [∀ i, Fact (0 < p i)] :
+    (Fintype.card ι + 1 : ℕ∞) ≤
+      minCriticalCount (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (∀ i, AddCircle (p i)) :=
+  le_minCriticalCount_iff.2 fun _ ↦ card_add_one_le_totalCriticalCount_torus
+
+end Torus
+
+section RealProjectivePlane
+
+open scoped LinearAlgebra.Projectivization
+
+/-- **The Lusternik–Schnirelmann count of the real projective plane is `3`**: three open subsets of
+`ℙ ℝ (Fin 3 → ℝ)` whose inclusions are nullhomotopic cover it, and two do not. -/
+theorem lsCategoryCount_univ_projectivization_real_fin_three :
+    lsCategoryCount (ℙ ℝ (Fin 3 → ℝ)) univ = 3 := by
+  have hw : Injective fun i : Fin 3 ↦ (i : ℝ) := Nat.cast_injective.comp Fin.val_injective
+  refine le_antisymm ((lsCategoryCount_univ_le_totalCriticalCount (I := 𝓘(ℝ, Fin 2 → ℝ))
+    (contMDiff_projectiveMomentFunction (𝕜 := ℝ) fun i : Fin 3 ↦ (i : ℝ))).trans_eq ?_)
+    (le_of_eq_of_le ?_ (lsCupLength_add_one_le_lsCategoryCount_univ (R := ZMod 2)))
+  · rw [totalCriticalCount_projectiveMomentFunction hw]
+    norm_num
+  · rw [lsCupLength_projectivization_real_fin_three_zmod_two]
+    norm_num
+
+end RealProjectivePlane
 
 end TauCeti

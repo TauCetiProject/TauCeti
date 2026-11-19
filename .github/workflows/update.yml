@@ -24,7 +24,7 @@ permissions:
 jobs:
   recover-maintenance:
     if: ${{ !inputs.dry-run }}
-    runs-on: ${{ fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -36,10 +36,9 @@ jobs:
           ref: main
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@658d1a42cd5917ae3604c27bb7ab194e7529d6b3
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 658d1a42cd5917ae3604c27bb7ab194e7529d6b3
           project-directory: .
       - name: Recover maintenance PRs abandoned without a build status
         env:
@@ -47,7 +46,7 @@ jobs:
         run: python3 scripts/maintenance_builds.py
 
   select:
-    runs-on: ${{ fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     outputs:
       target: ${{ steps.target.outputs.target }}
@@ -59,10 +58,9 @@ jobs:
           ref: main
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@658d1a42cd5917ae3604c27bb7ab194e7529d6b3
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 658d1a42cd5917ae3604c27bb7ab194e7529d6b3
           project-directory: .
       - name: Install checksum-verified elan
         env:
@@ -88,7 +86,7 @@ jobs:
   publish:
     needs: select
     if: needs.select.outputs.reconcile == 'true' && !inputs.dry-run
-    runs-on: ${{ fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
+    runs-on: ubuntu-24.04
     steps:
       # No upstream code executes in this job, and the selection job has no App secret.
       - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf
@@ -106,10 +104,9 @@ jobs:
           ref: main
           fetch-depth: 0
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@658d1a42cd5917ae3604c27bb7ab194e7529d6b3
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 658d1a42cd5917ae3604c27bb7ab194e7529d6b3
           project-directory: .
       - name: Publish the fixed-target bump
         env:

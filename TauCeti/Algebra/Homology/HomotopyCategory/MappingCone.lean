@@ -44,6 +44,8 @@ whose cones are acyclic.
   quasi-isomorphism exactly when its mapping cone is acyclic.
 * `CochainComplex.mappingCone.isIso_map_f`: the map of mapping cones induced by a commutative
   square is an isomorphism in each degree where the vertical maps are.
+* `CochainComplex.mappingCone.mapHomotopy`: homotopies of the vertical maps of a commutative
+  square, compatible with its horizontal maps, induce a homotopy of the maps of mapping cones.
 
 ## Mapping cones of natural transformations and shifts
 
@@ -102,8 +104,11 @@ universe v u
 
 namespace CochainComplex.mappingCone
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C]
-  {K L : CochainComplex C ℤ} (f : K ⟶ L)
+variable {C : Type u} [Category.{v} C] [Preadditive C] {K L : CochainComplex C ℤ} (f : K ⟶ L)
+
+section HasHomotopyCofiber
+
+variable [HasHomotopyCofiber f]
 
 /-- The components of `mappingCone.inl` are the left inclusions of the underlying homotopy
 cofiber. -/
@@ -121,6 +126,31 @@ lemma inrCompHomotopy_hom (i j : ℤ) (hij : j + 1 = i) :
     (inrCompHomotopy f).hom i j = (inl f).v i j (by omega) := by
   rw [inl_v_eq_inlX f i j hij]
   exact homotopyCofiber.inrCompHomotopy_hom f _ i j hij
+
+/-- A variant of `inl_v_fst_v` with an arbitrary target degree. -/
+@[reassoc]
+lemma inl_v_fst_v' (p q r : ℤ) (h₁ : p + -1 = q) (h₂ : q + 1 = r) :
+    (inl f).v p q h₁ ≫ (fst f).1.v q r h₂ = (K.XIsoOfEq (show p = r by lia)).hom := by
+  obtain rfl : r = p := by lia
+  simp
+
+/-- A variant of `inl_v_snd_v` with an arbitrary target degree. -/
+@[reassoc]
+lemma inl_v_snd_v' (p q r : ℤ) (h₁ : p + -1 = q) (h₂ : q + 0 = r) :
+    (inl f).v p q h₁ ≫ (snd f).v q r h₂ = 0 := by
+  obtain rfl : r = q := by lia
+  simp
+
+/-- A variant of `inr_f_snd_v` with an arbitrary target degree. -/
+@[reassoc]
+lemma inr_f_snd_v' (p q : ℤ) (h : p + 0 = q) :
+    (inr f).f p ≫ (snd f).v p q h = (L.XIsoOfEq (show p = q by lia)).hom := by
+  obtain rfl : q = p := by lia
+  simp
+
+end HasHomotopyCofiber
+
+variable [HasBinaryBiproducts C]
 
 section
 
@@ -143,6 +173,28 @@ theorem nonempty_homotopy_id_zero_of_homotopyEquiv (e : HomotopyEquiv K L) :
   nonempty_homotopy_id_zero_of_isIso_quotient_map e.hom
 
 end
+
+section DescHomotopy
+
+open HomComplex
+
+variable {M : CochainComplex C ℤ} (f₁ f₂ : mappingCone f ⟶ M) (γ₁ : Cochain K M (-2))
+  (γ₂ : Cochain L M (-1))
+
+/-- The components of `descHomotopy f f₁ f₂ γ₁ γ₂ h₁ h₂` are those of the cochain
+`descCochain f γ₁ γ₂`. -/
+lemma descHomotopy_hom
+    (h₁ : (inl f).comp (Cochain.ofHom f₁) (add_zero (-1)) =
+      δ (-2) (-1) γ₁ + (Cochain.ofHom f).comp γ₂ (zero_add (-1)) +
+      (inl f).comp (Cochain.ofHom f₂) (add_zero (-1)))
+    (h₂ : Cochain.ofHom (inr f ≫ f₁) = δ (-1) 0 γ₂ + Cochain.ofHom (inr f ≫ f₂))
+    (p q : ℤ) (hpq : p + -1 = q) :
+    (descHomotopy f f₁ f₂ γ₁ γ₂ h₁ h₂).hom p q = (descCochain f γ₁ γ₂ (by simp)).v p q hpq := by
+  -- Mathlib defines `descHomotopy` through the inverse of `Cochain.equivHomotopy`, whose
+  -- components are those of the cochain in degrees `p + -1 = q` and zero otherwise.
+  simp only [descHomotopy, Cochain.equivHomotopy, Equiv.coe_fn_symm_mk, hpq, ↓reduceDIte]
+
+end DescHomotopy
 
 section HomotopySquares
 
@@ -222,8 +274,8 @@ lemma mapOfHomotopyHomotopy_hom
     (mapOfHomotopyHomotopy H H₂ s hs).hom p q =
       (fst φ₁ : Cochain _ _ 1).v p (p + 1) rfl ≫
         s.v (p + 1) q (by omega) ≫ (inr φ₂).f q := by
-  simp only [mapOfHomotopyHomotopy, descHomotopy, Cochain.equivHomotopy,
-    Equiv.coe_fn_symm_mk, hpq, ↓reduceDIte, descCochain, Cochain.comp_zero, add_zero]
+  rw [mapOfHomotopyHomotopy, descHomotopy_hom _ _ _ _ _ _ _ p q hpq]
+  simp only [descCochain, Cochain.comp_zero, add_zero]
   rw [Cochain.comp_v _ _ _ p (p + 1) q rfl (by omega),
     Cochain.comp_zero_cochain_v, Cochain.ofHom_v]
 
@@ -263,31 +315,65 @@ noncomputable def mapIso {φ₁ : K₁ ⟶ L₁} {φ₂ : K₂ ⟶ L₂} (e₁ :
     (comm : φ₁ ≫ e₂.hom = e₁.hom ≫ φ₂) :
     mappingCone φ₁ ≅ mappingCone φ₂ where
   hom := map φ₁ φ₂ e₁.hom e₂.hom comm
-  inv := map φ₂ φ₁ e₁.inv e₂.inv (by rw [← cancel_epi e₁.hom, e₁.hom_inv_id_assoc,
-    ← reassoc_of% comm, e₂.hom_inv_id, Category.comp_id])
+  inv := map φ₂ φ₁ e₁.inv e₂.inv (by simp [Iso.comp_inv_eq, comm])
   hom_inv_id := by rw [← map_comp]; simp [map_id]
   inv_hom_id := by rw [← map_comp]; simp [map_id]
 
-/-- A variant of `inl_v_fst_v` with an arbitrary target degree. -/
-@[reassoc]
-lemma inl_v_fst_v' (p q r : ℤ) (h₁ : p + -1 = q) (h₂ : q + 1 = r) :
-    (inl f).v p q h₁ ≫ (fst f).1.v q r h₂ = (K.XIsoOfEq (show p = r by lia)).hom := by
-  obtain rfl : r = p := by lia
-  simp
+section MapHomotopy
 
-/-- A variant of `inl_v_snd_v` with an arbitrary target degree. -/
-@[reassoc]
-lemma inl_v_snd_v' (p q r : ℤ) (h₁ : p + -1 = q) (h₂ : q + 0 = r) :
-    (inl f).v p q h₁ ≫ (snd f).v q r h₂ = 0 := by
-  obtain rfl : r = q := by lia
-  simp
+/-- **Homotopic squares induce homotopic maps of mapping cones.** Homotopies `ha` from `a` to `a'`
+and `hb` from `b` to `b'` which commute with `φ₁` and `φ₂`, in the sense that
+`φ₁ ≫ hb = ha ≫ φ₂` in every pair of degrees, induce a homotopy from the map of mapping cones of
+the square `(a, b)` to that of the square `(a', b')`. On the shifted source it is `-ha` followed
+by the left inclusion, and on the target it is `hb` followed by the right inclusion
+(`inl_v_mapHomotopy_hom`, `inr_f_mapHomotopy_hom`). -/
+noncomputable def mapHomotopy {a' : K₁ ⟶ K₂} {b' : L₁ ⟶ L₂} (comm' : φ₁ ≫ b' = a' ≫ φ₂)
+    (ha : Homotopy a a') (hb : Homotopy b b')
+    (h : ∀ p q, φ₁.f p ≫ hb.hom p q = ha.hom p q ≫ φ₂.f q) :
+    Homotopy (map φ₁ φ₂ a b comm) (map φ₁ φ₂ a' b' comm') :=
+  descHomotopy φ₁ _ _ (-(Cochain.ofHomotopy ha).comp (inl φ₂) (by lia))
+    ((Cochain.ofHomotopy hb).comp (Cochain.ofHom (inr φ₂)) (add_zero _))
+    (by
+      have hc : (Cochain.ofHom φ₁).comp (Cochain.ofHomotopy hb) (zero_add _) =
+          (Cochain.ofHomotopy ha).comp (Cochain.ofHom φ₂) (add_zero _) := by
+        ext p q hpq
+        simp [Cochain.ofHomotopy, h]
+      rw [δ_neg, δ_comp _ _ _ 0 0 (-1) (by lia) (by lia) (by lia), δ_inl, δ_ofHomotopy,
+        ← Cochain.comp_assoc_of_first_is_zero_cochain, hc]
+      simp only [map, inl_desc, Int.reduceNeg, Int.negOnePow_neg, Int.negOnePow_one,
+        Units.neg_smul, one_smul, Cochain.sub_comp, neg_add_rev, neg_neg, Cochain.ofHom_comp]
+      rw [Cochain.comp_assoc _ _ _ (add_zero _) (add_zero _) (by lia)]
+      abel)
+    (by
+      rw [δ_comp_zero_cochain _ _ _ (by lia), δ_ofHom, Cochain.comp_zero, zero_add,
+        δ_ofHomotopy, Cochain.sub_comp]
+      simp [map])
 
-/-- A variant of `inr_f_snd_v` with an arbitrary target degree. -/
-@[reassoc]
-lemma inr_f_snd_v' (p q : ℤ) (h : p + 0 = q) :
-    (inr f).f p ≫ (snd f).v p q h = (L.XIsoOfEq (show p = q by lia)).hom := by
-  obtain rfl : q = p := by lia
-  simp
+variable {a' : K₁ ⟶ K₂} {b' : L₁ ⟶ L₂} (comm' : φ₁ ≫ b' = a' ≫ φ₂)
+  (ha : Homotopy a a') (hb : Homotopy b b')
+  (h : ∀ p q, φ₁.f p ≫ hb.hom p q = ha.hom p q ≫ φ₂.f q)
+
+/-- On the shifted source, the homotopy of maps of mapping cones is `-ha` followed by the left
+inclusion. -/
+@[reassoc (attr := simp)]
+lemma inl_v_mapHomotopy_hom (p q r : ℤ) (hpq : p + -1 = q) (hqr : q + -1 = r) :
+    (inl φ₁).v p q hpq ≫ (mapHomotopy φ₁ φ₂ a b comm comm' ha hb h).hom q r =
+      -(ha.hom p q ≫ (inl φ₂).v q r hqr) := by
+  rw [mapHomotopy, descHomotopy_hom _ _ _ _ _ _ _ q r hqr, inl_v_descCochain_v]
+  simp [Cochain.comp_v _ _ _ p q r hpq hqr, Cochain.ofHomotopy]
+
+/-- On the target, the homotopy of maps of mapping cones is `hb` followed by the right
+inclusion. -/
+@[reassoc (attr := simp)]
+lemma inr_f_mapHomotopy_hom (p q : ℤ) :
+    (inr φ₁).f p ≫ (mapHomotopy φ₁ φ₂ a b comm comm' ha hb h).hom p q =
+      hb.hom p q ≫ (inr φ₂).f q := by
+  by_cases hpq : p + -1 = q
+  · rw [mapHomotopy, descHomotopy_hom _ _ _ _ _ _ _ p q hpq, inr_f_descCochain_v]
+    simp [Cochain.ofHomotopy]
+  · rw [Homotopy.zero _ p q (by simp; lia), hb.zero p q (by simp; lia), comp_zero, zero_comp]
+
+end MapHomotopy
 
 /-- The first component of `mappingCone.shiftIso` carries the sign `(-1)^n`. -/
 @[reassoc (attr := simp)]

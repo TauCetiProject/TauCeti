@@ -54,7 +54,7 @@ theorem card_arrows_of_almostSplit_right_eq_left (hS : S.IsAlmostSplit)
     Nat.card (of k hX hI ⟶ of k hC hS.isRightAlmostSplit_g.indecomposable) =
       Nat.card (of k hA hS.isLeftAlmostSplit_f.indecomposable ⟶ of k hX hI) := by
   have hB : IsFinDim k Q S.X₂ :=
-    (isExtensionClosed_pointwiseFiniteDimensionalQuiverRepresentations k Q).prop_X₂
+    (IsFinDim.isExtensionClosed k Q).prop_X₂
       ((ExactStructure.abelian_conflation _).mpr hS.shortExact) hA hC
   exact IrreducibleMorphismQuiver.card_arrows_of_almostSplit_right_eq_left hS hA hC hX hI
     (QuiverRep.finrank_quotient_jacobsonRadicalSubmodule_comm hX hI hB)

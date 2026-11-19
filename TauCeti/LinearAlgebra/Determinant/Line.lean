@@ -66,15 +66,21 @@ the linear algebra itself is standard.
 
 ## Main results
 
-* `TauCeti.finrank_detLine`: the determinant line of a finite free module has rank one.
+* `TauCeti.finrank_detLine`: the determinant line of a free module has rank one (for a module that
+  is not finite, by the `finrank = 0` convention).
 * `TauCeti.instInvertibleDetLine`: the determinant line of a finite free module is an invertible
   module.
 * `LinearEquiv.detLineCongr_refl`, `LinearEquiv.detLineCongr_trans`,
   `LinearEquiv.detLineCongr_symm`: the induced isomorphisms are functorial.
 * `LinearEquiv.detLineCongr_apply_eq_det_smul`: an automorphism acts on the determinant line by
   its determinant.
-* `LinearMap.finrank_detLine`: the determinant line of a linear map between vector spaces with
-  finite-dimensional kernel and cokernel has dimension one.
+* `LinearEquiv.detLineCongr_neg_apply`: negation acts on the determinant line by
+  `(-1) ^ finrank R V`.
+* `LinearEquiv.tensorProductCongr_detLineCongr_apply_eq_det_smul`: automorphisms `e` of `V` and
+  `e'` of `W` act on `det V ⊗ (det W)^*` by `det e * (det e')⁻¹`.
+* `LinearMap.finrank_detLine`: the determinant line of a linear map between vector spaces has
+  dimension one (for an infinite-dimensional kernel or cokernel, by the `finrank = 0`
+  convention).
 * `LinearMap.detLineCongr_refl`, `LinearMap.detLineCongr_trans` and `LinearMap.detLineCongr_symm`:
   transport along commuting squares is functorial.
 * `LinearMap.detLineCongr_apply_eq_det_smul`: automorphisms of source and target act on the
@@ -115,10 +121,16 @@ variable (R : Type*) [CommRing R] (V : Type*) [AddCommGroup V] [Module R V]
 finite free module it is free of rank one (`TauCeti.finrank_detLine`). -/
 abbrev detLine : Type _ := ⋀[R]^(finrank R V) V
 
-/-- The determinant line of a finite free module has rank one. -/
-theorem finrank_detLine [Nontrivial R] [Module.Free R V] [Module.Finite R V] :
+/-- The determinant line of a free module has rank one. For a module that is not finite, `finrank`
+is `0` by convention and the determinant line is `⋀⁰ V ≃ R`. -/
+theorem finrank_detLine [Nontrivial R] [Module.Free R V] :
     finrank R (detLine R V) = 1 := by
-  simp [detLine]
+  by_cases hV : Module.Finite R V
+  · simp [detLine]
+  · have h : finrank R V = 0 := Module.finrank_of_not_finite hV
+    unfold detLine
+    rw [h]
+    exact (exteriorPower.zeroEquiv R V).finrank_eq.trans (Module.finrank_self R)
 
 /-- The determinant line of a finite free module is an invertible module, so that it cancels
 against its dual: `det V ⊗ (det V)^* ≃ R` (`Module.Invertible.linearEquiv`). -/
@@ -179,6 +191,32 @@ theorem detLineCongr_apply_eq_det_smul [Module.Free R V] (e : V ≃ₗ[R] V) (x 
   refine Subtype.ext ?_
   rw [coe_detLineCongr, ← exteriorPower.coe_map, LinearMap.map_exteriorPower_finrank_eq_det_smul]
   simp
+
+/-- Negation of a free module acts on its determinant line by `(-1) ^ finrank R V`. -/
+theorem detLineCongr_neg_apply [Module.Free R V] (x : detLine R V) :
+    detLineCongr (LinearEquiv.neg R : V ≃ₗ[R] V) x = (-1 : R) ^ finrank R V • x := by
+  rw [detLineCongr_apply_eq_det_smul, ← LinearEquiv.coe_det,
+    LinearEquiv.det_eq_pow_of_forall_eq_smul _ (-1) fun x ↦ by simp, Units.val_pow_eq_pow_val,
+    Units.val_neg, Units.val_one]
+
+/-- Automorphisms `e` of `V` and `e'` of `W` act on `det V ⊗ (det W)^*` by multiplication by
+`det e * (det e')⁻¹`. -/
+theorem tensorProductCongr_detLineCongr_apply_eq_det_smul [Module.Free R V] [Module.Free R W]
+    (e : V ≃ₗ[R] V) (e' : W ≃ₗ[R] W) (z : detLine R V ⊗[R] Dual R (detLine R W)) :
+    TensorProduct.congr e.detLineCongr e'.detLineCongr.symm.dualMap z =
+      (LinearEquiv.det e * (LinearEquiv.det e')⁻¹) • z := by
+  induction z using TensorProduct.inductionOn with
+  | tmul x φ =>
+    -- The dual factor is precomposed with the inverse of multiplication by `det e'`.
+    have hφ : e'.detLineCongr.symm.dualMap φ = ((LinearEquiv.det e')⁻¹ : Rˣ) • φ := by
+      refine LinearMap.ext fun y ↦ ?_
+      have hy : e'.detLineCongr.symm y = ((LinearEquiv.det e')⁻¹ : Rˣ) • y := by
+        rw [LinearEquiv.symm_apply_eq, detLineCongr_apply_eq_det_smul, ← LinearEquiv.coe_det,
+          ← Units.smul_def, smul_inv_smul]
+      rw [dualMap_apply, hy, LinearMap.smul_apply, Units.smul_def, Units.smul_def, _root_.map_smul]
+    rw [TensorProduct.congr_tmul, detLineCongr_apply_eq_det_smul, hφ, ← LinearEquiv.coe_det]
+    simp only [Units.smul_def, Units.val_mul, TensorProduct.smul_tmul_smul]
+  | add a b ha hb => rw [map_add, ha, hb, smul_add]
 
 end LinearEquiv
 
@@ -435,22 +473,8 @@ theorem detLineCongr_apply_eq_det_smul (f : M →ₗ[R] N) [Module.Free R (ker f
       (LinearEquiv.det
           (e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq e₁.surjective e₂.injective h)) *
         (LinearEquiv.det (Submodule.Quotient.equiv _ _ e₂
-          (f.map_range_eq_range_of_comp_eq e₁.surjective h)))⁻¹) • z := by
-  set k₂ := Submodule.Quotient.equiv _ _ e₂ (f.map_range_eq_range_of_comp_eq e₁.surjective h)
-  induction z using TensorProduct.inductionOn with
-  | tmul x φ =>
-    -- The dual factor is precomposed with the inverse of multiplication by `det k₂`.
-    have hφ : φ ∘ₗ (LinearEquiv.detLineCongr k₂).symm.toLinearMap =
-        ((LinearEquiv.det k₂)⁻¹ : Rˣ) • φ := by
-      refine LinearMap.ext fun y ↦ ?_
-      have hy : (LinearEquiv.detLineCongr k₂).symm y = ((LinearEquiv.det k₂)⁻¹ : Rˣ) • y := by
-        rw [LinearEquiv.symm_apply_eq, LinearEquiv.detLineCongr_apply_eq_det_smul,
-          ← LinearEquiv.coe_det, ← Units.smul_def, smul_inv_smul]
-      rw [LinearMap.comp_apply, LinearEquiv.coe_coe, hy, LinearMap.smul_apply, Units.smul_def,
-        Units.smul_def, map_smul]
-    rw [detLineCongr_tmul, LinearEquiv.detLineCongr_apply_eq_det_smul, hφ, ← LinearEquiv.coe_det]
-    simp only [Units.smul_def, Units.val_mul, TensorProduct.smul_tmul_smul]
-  | add a b ha hb => rw [map_add, ha, hb, smul_add]
+          (f.map_range_eq_range_of_comp_eq e₁.surjective h)))⁻¹) • z :=
+  LinearEquiv.tensorProductCongr_detLineCongr_apply_eq_det_smul _ _ z
 
 /-- Let `e₁` and `e₂` act on the source and target of `f` as multiplication by the same unit `c`.
 Transport along the commuting square they form multiplies the determinant line of `f` by
@@ -487,9 +511,11 @@ section Field
 variable {K : Type*} [Field K] {M N : Type*} [AddCommGroup M] [Module K M]
   [AddCommGroup N] [Module K N]
 
-/-- The determinant line of a linear map with finite-dimensional kernel and cokernel is a line. -/
-theorem finrank_detLine (f : M →ₗ[K] N) [FiniteDimensional K (ker f)]
-    [FiniteDimensional K (N ⧸ range f)] : finrank K f.detLine = 1 := by
+/-- The determinant line of a linear map between vector spaces is a line. When the kernel is not
+finite-dimensional, its determinant line is `⋀[K]^0 (ker f) ≃ K` by the `finrank` convention, and
+likewise for the cokernel. -/
+theorem finrank_detLine (f : M →ₗ[K] N) :
+    finrank K f.detLine = 1 := by
   rw [finrank_tensorProduct, Subspace.dual_finrank_eq, TauCeti.finrank_detLine,
     TauCeti.finrank_detLine]
 

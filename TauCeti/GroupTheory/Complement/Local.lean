@@ -17,7 +17,11 @@ When `N` is normal in `H`, this is equivalently a complement of `N.subgroupOf H`
 In particular every element of `H` has a unique decomposition as a product from `N` and `K`.
 The right component is a homomorphism with kernel `N.subgroupOf H`; the left component
 is a projection, without any assertion that it is a homomorphism. Restricting a local complement
-to an intermediate subgroup containing `N` restricts its left projection.
+to an intermediate subgroup containing `N` restricts both projections, and on `⊤` the local
+decomposition and projections agree with Mathlib's global complement decomposition. For `N` normal
+in `G`, conjugating a local complement `K` of `N` in `H` by `g` gives a local complement of `N` in
+`g H g⁻¹` whose left projection is `x ↦ g • c (g⁻¹ * x * g)`, where `c` is the left projection
+along `K` and `G` acts on `N` by conjugation.
 
 These constructions reuse Mathlib's `Subgroup.IsComplement.equiv` for global complements.
 Restriction of a complement to an intermediate subgroup uses Dedekind's modular law.
@@ -69,14 +73,18 @@ theorem map {f : G →* G'} (hf : Function.Injective f) :
   · rw [← map_inf _ _ f hf, h.inf_eq_bot, map_bot]
   · rw [← map_sup, h.sup_eq]
 
+/-- When `N` is normal in `H`, the complementary subgroup `K` normalizes `N` in the ambient
+group. -/
+theorem right_le_normalizer [(N.subgroupOf H).Normal] : K ≤ normalizer (N : Set G) :=
+  h.right_le.trans (le_normalizer_of_normal_subgroupOf h.left_le)
+
 /-- Restrict a local complement to an intermediate subgroup containing the normal subgroup. -/
 theorem restrict [(N.subgroupOf H).Normal] (hNL : N ≤ L) (hLH : L ≤ H) :
     N.IsLocalComplement (K ⊓ L) L := by
   constructor
   · exact disjoint_iff.mp (h.disjoint.mono_right inf_le_left)
   · rw [inf_comm K L, sup_comm,
-      inf_sup_assoc_of_le (coe_mul_of_left_le_normalizer_right _ _
-        (h.right_le.trans (le_normalizer_of_normal_subgroupOf h.left_le))) hNL,
+      inf_sup_assoc_of_le (coe_mul_of_left_le_normalizer_right _ _ h.right_le_normalizer) hNL,
       sup_comm K N, h.sup_eq, inf_eq_left.mpr hLH]
 
 end IsLocalComplement
@@ -92,28 +100,38 @@ theorem isLocalComplement_map_iff (e : G ≃* G') :
     exact e.symm_apply_apply x
   simpa only [map_map, he, map_id] using hm
 
-/-- A local complement in the whole group is a global complement when the first subgroup is
-normal. -/
-@[simp]
-theorem isLocalComplement_top_iff [N.Normal] :
+/-- A local complement in `⊤` is a global complement whenever the second subgroup normalizes the
+first. -/
+theorem isLocalComplement_top_iff_of_le_normalizer (hK : K ≤ normalizer (N : Set G)) :
     N.IsLocalComplement K ⊤ ↔ N.IsComplement' K := by
   constructor
   · intro h
     apply isComplement'_of_disjoint_and_mul_eq_univ h.disjoint
-    rw [← normal_mul, h.sup_eq, coe_top]
+    rw [← coe_mul_of_right_le_normalizer_left N K hK, h.sup_eq, coe_top]
   · intro h
     exact ⟨disjoint_iff.mp h.disjoint, h.sup_eq_top⟩
+
+/-- A local complement in the whole group is a global complement when the first subgroup is
+normal. -/
+@[simp]
+theorem isLocalComplement_top_iff [N.Normal] :
+    N.IsLocalComplement K ⊤ ↔ N.IsComplement' K :=
+  isLocalComplement_top_iff_of_le_normalizer (N.normalizer_eq_top ▸ le_top)
+
+/-- A conjugate `g K g⁻¹` of a local complement of the normal subgroup `N` in `H` is a local
+complement of `N` in `g H g⁻¹`. -/
+theorem IsLocalComplement.conj_smul [N.Normal] (h : N.IsLocalComplement K H) (g : G) :
+    N.IsLocalComplement (MulAut.conj g • K) (MulAut.conj g • H) := by
+  have hN := Normal.conj_smul_eq_self g N
+  constructor
+  · rw [← hN, ← smul_inf, h.inf_eq_bot, smul_bot]
+  · rw [← hN, ← smul_sup, h.sup_eq]
 
 /-- A conjugate of a complement of the normal subgroup `N` is again a complement of `N`. -/
 theorem IsComplement'.conj_smul [N.Normal] {D : Subgroup G} (h : N.IsComplement' D) (g : G) :
     N.IsComplement' (MulAut.conj g • D) := by
-  have hN : N.map (MulAut.conj g).toMonoidHom = N :=
-    (pointwise_smul_def N).symm.trans (‹N.Normal›.conj_smul_eq_self g N)
-  have h' := ((isLocalComplement_top_iff (N := N)).mpr h).map (f := (MulAut.conj g).toMonoidHom)
-    (MulEquiv.injective _)
-  rw [map_top_of_surjective _ (MulEquiv.surjective _), hN, isLocalComplement_top_iff] at h'
-  convert h' using 1
-  exact pointwise_smul_def D
+  rw [← isLocalComplement_top_iff] at h ⊢
+  simpa only [conj_smul_eq_self_of_mem (mem_top g)] using h.conj_smul g
 
 /-- A global complement restricts to a local complement in every intermediate subgroup. -/
 theorem IsComplement'.isLocalComplement_inf (h : N.IsComplement' K) (hNH : N ≤ H) :
@@ -195,6 +213,18 @@ theorem isLocalComplement_self_left : H.IsLocalComplement K H ↔ K = ⊥ := by
     simpa only [inf_eq_right.mpr h.right_le] using h.inf_eq_bot
   · rintro rfl
     exact ⟨inf_bot_eq _, sup_bot_eq _⟩
+
+/-- For a complement `D` of a normal subgroup `N`, the right component of the product decomposition
+of `g` is the image of the coset of `g` under `D`'s quotient isomorphism. -/
+theorem IsComplement'.equiv_snd_eq_quotientMulEquiv [N.Normal] {D : Subgroup G}
+    (h : N.IsComplement' D) (g : G) :
+    (h.equiv g).2 = h.symm.QuotientMulEquiv g := by
+  apply h.symm.QuotientMulEquiv.symm.injective
+  have hd : h.symm.QuotientMulEquiv.symm (h.equiv g).2 = (((h.equiv g).2 : G) : G ⧸ N) :=
+    h.symm.QuotientMulEquiv_symm_apply _
+  rw [hd, MulEquiv.symm_apply_apply]
+  conv_rhs => rw [← h.equiv_fst_mul_equiv_snd g]
+  rw [QuotientGroup.mk_mul, (QuotientGroup.eq_one_iff _).mpr (h.equiv g).1.property, one_mul]
 
 namespace IsLocalComplement
 
@@ -363,7 +393,44 @@ theorem leftProjection_restrict [(N.subgroupOf L).Normal] (hNL : N ≤ L) (hLH :
   refine ⟨(h.leftProjection_eq_iff _ _).mp rfl, ?_⟩
   exact L.mul_mem (L.inv_mem (hNL (h.leftProjection _).property)) x.property
 
+/-- Restricting a local complement to an intermediate subgroup `N ≤ L ≤ H` restricts its right
+projection. -/
+theorem rightProjection_restrict [(N.subgroupOf L).Normal] (hNL : N ≤ L) (hLH : L ≤ H) (x : L) :
+    inclusion inf_le_left ((h.restrict hNL hLH).rightProjection x) =
+      h.rightProjection (inclusion hLH x) := by
+  apply Subtype.ext
+  apply mul_left_cancel (a := ((h.restrict hNL hLH).leftProjection x : G))
+  rw [coe_inclusion, (h.restrict hNL hLH).leftProjection_mul_rightProjection,
+    h.leftProjection_restrict hNL hLH x, h.leftProjection_mul_rightProjection, coe_inclusion]
+
 end IsLocalComplement
+
+/-- For `H = ⊤`, the local product decomposition agrees with Mathlib's global complement
+decomposition. -/
+@[simp]
+theorem IsLocalComplement.equiv_top [N.Normal] (h : N.IsLocalComplement K ⊤)
+    (x : (⊤ : Subgroup G)) :
+    h.equiv x = (isLocalComplement_top_iff.mp h).equiv x := by
+  set p := (isLocalComplement_top_iff.mp h).equiv (x : G)
+  have hx : x = ⟨(p.1 : G) * p.2, mem_top _⟩ :=
+    Subtype.ext ((isLocalComplement_top_iff.mp h).equiv_fst_mul_equiv_snd x).symm
+  exact hx ▸ h.equiv_mul p.1 p.2
+
+/-- For `H = ⊤`, the local left projection agrees with the left component of Mathlib's global
+complement decomposition. -/
+@[simp]
+theorem IsLocalComplement.leftProjection_top [N.Normal] (h : N.IsLocalComplement K ⊤)
+    (x : (⊤ : Subgroup G)) :
+    h.leftProjection x = ((isLocalComplement_top_iff.mp h).equiv x).1 :=
+  congrArg Prod.fst (h.equiv_top x)
+
+/-- For `H = ⊤`, the local right projection agrees with the right component of Mathlib's global
+complement decomposition. -/
+@[simp]
+theorem IsLocalComplement.rightProjection_top [N.Normal] (h : N.IsLocalComplement K ⊤)
+    (x : (⊤ : Subgroup G)) :
+    h.rightProjection x = ((isLocalComplement_top_iff.mp h).equiv x).2 :=
+  (h.rightProjection_apply x).trans (congrArg Prod.snd (h.equiv_top x))
 
 section Conjugation
 
@@ -384,6 +451,17 @@ theorem IsLocalComplement.smul_leftProjection_of_mem (h : N.IsLocalComplement K 
     h.leftProjection_left ⟨_, ‹N.Normal›.conj_mem x hx g⟩
   rw [hx', hy']
   exact Subtype.ext (coe_conjugationAction_smul N g _)
+
+/-- Conjugating a local complement by `g` conjugates its left projection `c`: the left projection
+along `g K g⁻¹` in `g H g⁻¹` sends `g * x * g⁻¹` to `g • c x`. -/
+@[simp]
+theorem IsLocalComplement.leftProjection_conj_smul (h : N.IsLocalComplement K H) (g : G)
+    (x : H) :
+    (h.conj_smul g).leftProjection (equivSMul (MulAut.conj g) H x) = g • h.leftProjection x := by
+  rw [leftProjection_eq_iff, coe_conjugationAction_smul, equivSMul_apply_coe,
+    mem_pointwise_smul_iff_inv_smul_mem, ← MulAut.conj_apply, ← MulAut.smul_def, ← smul_inv',
+    ← smul_mul', inv_smul_smul]
+  exact (h.leftProjection_eq_iff x _).mp rfl
 
 end Conjugation
 

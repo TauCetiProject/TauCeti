@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.LinearAlgebra.AffineSpace.Slope
 public import Mathlib.Analysis.Calculus.Deriv.Slope
+import Mathlib.Analysis.Calculus.Deriv.MeanValue
+import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.LinearAlgebra.AffineSpace.Ordered
 
@@ -28,12 +30,18 @@ Trotter product formula.
 For a real function, a positive one-sided derivative at `a` fixes the sign of `f x - f a` for
 `x` near `a` on that side: if the right derivative at `a` is positive, then `f a < f x` for every
 `x > a` close to `a`, and if the left derivative at `a` is positive, then `f x < f a` for every
-`x < a` close to `a`.
+`x < a` close to `a`. More globally, if `b f'` is positive on an interval containing `a` and `t`,
+then `f a < f t` when `b (t - a) > 0` and `f t < f a` when `b (t - a) < 0`; this needs only
+continuity of `f` on the interval and the derivative condition on its interior
+(`TauCeti.lt_and_lt_of_hasDerivAt_of_mul_pos`).
 
 Comparing the slopes of two curves leaving a common point with the same right derivative shows
 that they do not separate linearly: their distance is `o(s - t)` at parameter `s`.
 
 A negative right derivative at `x` forces nearby values to the right to lie strictly below `f x`.
+
+A function vanishing at `0` has derivative `a` at `0` within `s` exactly when `f(t) / t → a` as
+`t → 0` within `s \ {0}`; in particular a right derivative `a` gives `f(t) / t → a` as `t → 0⁺`.
 
 ## Main results
 
@@ -45,6 +53,13 @@ A negative right derivative at `x` forces nearby values to the right to lie stri
 * `HasDerivWithinAt.nonpos_of_mul_le_norm_sub`: two curves with the same right derivative at a
   common point do not separate linearly.
 * `HasDerivWithinAt.eventually_lt_of_neg`: `f t < f x` eventually for `t` to the right of `x`.
+* `TauCeti.hasDerivWithinAt_zero_iff_tendsto_div`: for `f 0 = 0`, the derivative at `0` within
+  `s` is the limit of `f(t) / t` within `s \ {0}`.
+* `TauCeti.lt_and_lt_of_hasDerivAt_of_mul_pos`: if `f` is continuous on an interval and `b f'` is
+  positive on its interior, then `f a < f t` when `b (t - a) > 0` and `f t < f a` when
+  `b (t - a) < 0` there.
+* `HasDerivWithinAt.tendsto_div_nhdsGT_zero`: `f(t) / t → a` at `0⁺` when `f 0 = 0` and
+  `a` is the right derivative at `0`.
 -/
 
 public section
@@ -112,6 +127,44 @@ theorem HasDerivWithinAt.nonpos_of_mul_le_norm_sub {E : Type*} [NormedAddCommGro
   filter_upwards [hle, self_mem_nhdsWithin] with s hs (hst : t < s)
   simpa [slope_def_module, h0, norm_smul, abs_of_pos (sub_pos.2 hst),
     le_inv_mul_iff₀ (sub_pos.2 hst)] using hs
+
+namespace TauCeti
+
+/-- A function vanishing at `0` has derivative `a` at `0` within `s` if and only if `f(t) / t → a`
+as `t → 0` within `s \ {0}`. -/
+theorem hasDerivWithinAt_zero_iff_tendsto_div {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {f : 𝕜 → 𝕜} {a : 𝕜} {s : Set 𝕜} (hf0 : f 0 = 0) :
+    HasDerivWithinAt f a s 0 ↔ Tendsto (fun t ↦ f t / t) (𝓝[s \ {0}] 0) (𝓝 a) := by
+  simp [hasDerivWithinAt_iff_tendsto_slope, slope_fun_def_field, hf0]
+
+/-- If `f` is continuous on an interval `D` and `b f'` is positive on its interior, where `f'` is
+the derivative of `f`, then for `a, t ∈ D` we have `f a < f t` when `b (t - a) > 0` and
+`f t < f a` when `b (t - a) < 0`. -/
+theorem lt_and_lt_of_hasDerivAt_of_mul_pos {D : Set ℝ} {f f' : ℝ → ℝ} {a b t : ℝ}
+    (hD : D.OrdConnected) (hc : ContinuousOn f D) (hd : ∀ s ∈ interior D, HasDerivAt f (f' s) s)
+    (hpos : ∀ s ∈ interior D, 0 < b * f' s) (ha : a ∈ D) (ht : t ∈ D) :
+    (0 < b * (t - a) → f a < f t) ∧ (b * (t - a) < 0 → f t < f a) := by
+  have hmono : StrictMonoOn (fun s => b * f s) D := by
+    refine strictMonoOn_of_deriv_pos hD.convex (continuousOn_const.mul hc) fun s hs => ?_
+    rw [((hd s hs).const_mul b).deriv]
+    exact hpos s hs
+  have key : t ≠ a → 0 < b * (t - a) * (f t - f a) := by
+    intro hta
+    rw [show b * (t - a) * (f t - f a) = (t - a) * (b * f t - b * f a) by ring]
+    rcases hta.lt_or_gt with h | h
+    · exact mul_pos_of_neg_of_neg (sub_neg.2 h) (sub_neg.2 (hmono ht ha h))
+    · exact mul_pos (sub_pos.2 h) (sub_pos.2 (hmono ha ht h))
+  refine ⟨fun hbt => ?_, fun hbt => ?_⟩
+  · exact sub_pos.1 ((pos_iff_pos_of_mul_pos (key (by rintro rfl; simp at hbt))).1 hbt)
+  · exact sub_neg.1 ((neg_iff_neg_of_mul_pos (key (by rintro rfl; simp at hbt))).1 hbt)
+
+end TauCeti
+
+/-- A function vanishing at `0` with right derivative `a` there has `f(t) / t → a` as `t → 0⁺`. -/
+theorem HasDerivWithinAt.tendsto_div_nhdsGT_zero {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [PartialOrder 𝕜] {f : 𝕜 → 𝕜} {a : 𝕜} (hfa : HasDerivWithinAt f a (Ici 0) 0)
+    (hf0 : f 0 = 0) : Tendsto (fun t ↦ f t / t) (𝓝[>] 0) (𝓝 a) := by
+  simpa [Ici_sdiff_left] using (TauCeti.hasDerivWithinAt_zero_iff_tendsto_div hf0).1 hfa
 
 /-- A negative right derivative at `x` forces `f t < f x` for all `t > x` sufficiently close
 to `x`. -/

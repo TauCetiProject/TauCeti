@@ -49,7 +49,9 @@ divisors of their sections converge in `Sym ℂ m`
 (`TauCeti.Vortex.tendsto_of_tendstoLocallyUniformly`), by Hurwitz's theorem
 `TauCeti.IsZeroMultiplicity.tendsto_of_tendstoLocallyUniformly`. Since `H^s(ℂ)`, `s > 1`, embeds
 continuously in the bounded continuous functions, convergence in the affine field space `A_m^s` is
-stronger than locally uniform convergence; no topology on `A_m^s` is constructed here.
+stronger than locally uniform convergence. The topology of `A_m^s` on its continuous fields, and the
+resulting continuity of the divisor (`TauCeti.Vortex.SobolevFieldSpace.tendsto_of_tendsto`), are in
+`TauCeti.Analysis.PDE.Vortex.FramedGauge.FieldTopology`.
 
 Conversely, by Taubes's uniqueness theorem
 (`TauCeti.Vortex.existsUnique_framedGaugeGroup_smul_eq`), two smooth framed vortices with a common
@@ -102,6 +104,17 @@ theorem exists_sym_sectionValue_eq_pow_count_mul {m : ℕ}
     isZeroMultiplicity_iff.2 fun z ↦ ⟨v z, (hvc z).continuousAt, hv₀ z, hvf z⟩
   obtain ⟨D, rfl⟩ := hmult.exists_eq_count htail
   exact ⟨⟨D, hmult.card_eq_of_tendsto_mul_inv_pow hframe⟩, fun z ↦ ⟨v z, hvc z, hv₀ z, hvf z⟩⟩
+
+/-- The zero multiplicities of a framed degree-`m` field satisfying the holomorphicity rows are
+the counts of an effective divisor of degree `m`: the form of
+`exists_sym_sectionValue_eq_pow_count_mul` used by `TauCeti.IsZeroMultiplicity`. -/
+theorem exists_sym_isZeroMultiplicity_sectionValue {m : ℕ}
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
+    ∃ D : Sym ℂ m, IsZeroMultiplicity (sectionValue x) fun z ↦ (D : Multiset ℂ).count z := by
+  obtain ⟨D, hD⟩ := exists_sym_sectionValue_eq_pow_count_mul hn hb₁ hb₂ hp hq hhol hframe
+  exact ⟨D, isZeroMultiplicity_iff.2 fun z ↦
+    let ⟨v, hv, hv₀, hfac⟩ := hD z
+    ⟨v, hv.continuousAt, hv₀, hfac⟩⟩
 
 omit hn hb₁ hb₂ hp hq hhol
 
