@@ -137,6 +137,7 @@ lattice. The complement is not asserted to be stable under the Lie algebra. -/
 theorem exists_isCompl_range_fundamentalRankOneEmbedding (i : Fin t.rank) :
     ∃ N : Submodule ℤ (t.fundamentalLattice ht i),
       IsCompl (t.fundamentalRankOneEmbedding ht i).range N := by
+  have := Submodule.IsLattice.finite ℚ (t.fundamentalLattice ht i)
   exact (Submodule.exists_isCompl_iff_isTorsionFree_quotient _).mpr
     ((t.fundamentalRankOneEmbedding ht i).range.isTorsionFree_quotient_of_smul_mem
       (t.mem_range_fundamentalRankOneEmbedding_of_smul_mem ht i))

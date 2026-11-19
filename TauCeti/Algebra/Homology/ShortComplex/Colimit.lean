@@ -78,8 +78,8 @@ private noncomputable def shortComplexColimCocone (F : J ⥤ ShortComplex C) : C
       naturality := fun _ _ f ↦ by
         dsimp
         rw [Category.comp_id, ← Category.assoc,
-          ShortComplex.diagramEvaluationIso_inv_naturality, Category.assoc,
-          mapNatTrans_evaluation_comp_colim] }
+          ShortComplex.diagramEvaluationIso_inv_naturality, Category.assoc]
+        exact congrArg (_ ≫ ·) (mapNatTrans_evaluation_comp_colim F f) }
 
 /-- The cocone `shortComplexColimCocone F` is colimiting: each of its three components is the
 chosen colimit cocone of the corresponding diagram in `C`, up to the identities contributed by the
@@ -139,7 +139,8 @@ private noncomputable def shortComplexHomologyColimitCoconeIso (F : J ⥤ ShortC
   Cocone.ext (((ShortComplex.functorEquivalence J C).inverse.obj F).mapHomologyIso colim).symm
     (fun j ↦ by
       dsimp [shortComplexColimCocone, ShortComplex.homologyFunctor]
-      rw [ShortComplex.homologyDiagramIso_hom_app, shortComplexHomologyColimit_compatibility])
+      rw [ShortComplex.homologyDiagramIso_hom_app]
+      exact shortComplexHomologyColimit_compatibility F j)
 
 /-- Homology of short complexes preserves colimits of any exact shape. -/
 instance shortComplexHomologyFunctor_preservesColimitsOfShape :
