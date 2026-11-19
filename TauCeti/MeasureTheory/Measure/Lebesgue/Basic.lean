@@ -28,6 +28,12 @@ preserves Lebesgue measure (`TauCeti.volume_preserving_signedPerm`).
 
 The Lebesgue measure of a finite union of pairwise disjoint intervals `Ι (a i) (b i)` is the sum of
 their lengths (`TauCeti.volume_biUnion_uIoc_eq_ofReal_sum`).
+
+A rectangle in `ℝ × ℝ` with sides of length at least one meets the ball of radius one about each
+of its points, a square for the sup norm, in a set of area at least one
+(`TauCeti.one_le_volume_Ioo_prod_Ioo_inter_ball`), however long the rectangle is. This is the
+uniform lower bound on the local measure of a domain under which Sobolev estimates on rectangles
+of unbounded length have uniform constants.
 -/
 
 public section
@@ -96,6 +102,30 @@ theorem volume_biUnion_uIoc_eq_ofReal_sum {ι : Type*} (I : Finset ι) (a b : ι
     ENNReal.ofReal_sum_of_nonneg fun i _ ↦ sub_nonneg.2 min_le_max]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Real.volume_uIoc, ← max_sub_min_eq_abs', max_comm, min_comm]
+
+open Metric in
+/-- An open interval of length at least one meets the interval of radius one about each of its
+points in a set of length at least one. -/
+theorem one_le_volume_Ioo_inter_ball {a b x : ℝ} (hab : 1 ≤ b - a) (hx : x ∈ Ioo a b) :
+    1 ≤ volume (Ioo a b ∩ ball x 1) := by
+  rw [Real.ball_eq_Ioo, Ioo_inter_Ioo, Real.volume_Ioo, ← ENNReal.ofReal_one]
+  refine ENNReal.ofReal_le_ofReal ?_
+  have h : a ⊔ (x - 1) + 1 ≤ b ⊓ (x + 1) :=
+    le_inf (add_le_of_le_sub_right (sup_le (by linarith) (by linarith [hx.2])))
+      (by linarith [sup_le (show a ≤ x by linarith [hx.1]) (show x - 1 ≤ x by linarith)])
+  linarith
+
+open Metric in
+/-- A rectangle in `ℝ × ℝ` with sides of length at least one meets the ball of radius one about
+each of its points in a set of area at least one, whatever the lengths of its sides. For the sup
+norm of `ℝ × ℝ` this ball is the square `(x - 1, x + 1) × (y - 1, y + 1)`. -/
+theorem one_le_volume_Ioo_prod_Ioo_inter_ball {a b c d : ℝ} (hab : 1 ≤ b - a) (hcd : 1 ≤ d - c)
+    {z : ℝ × ℝ} (hz : z ∈ Ioo a b ×ˢ Ioo c d) : 1 ≤ volume (Ioo a b ×ˢ Ioo c d ∩ ball z 1) := by
+  obtain ⟨x, y⟩ := z
+  rw [← ball_prod_same, prod_inter_prod, Measure.volume_eq_prod, Measure.prod_prod]
+  calc (1 : ℝ≥0∞) = 1 * 1 := (one_mul 1).symm
+    _ ≤ _ := mul_le_mul' (one_le_volume_Ioo_inter_ball hab hz.1)
+      (one_le_volume_Ioo_inter_ball hcd hz.2)
 
 end TauCeti
 
