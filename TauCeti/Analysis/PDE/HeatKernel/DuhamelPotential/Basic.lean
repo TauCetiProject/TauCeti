@@ -69,6 +69,8 @@ the kernel at the cost of a factor `(t' - s)⁻¹`), which integrates to `O(H h^
 
 * `TauCeti.heatDuhamelPotential`: the Duhamel potential `∫₀ᵗ (K_{t-s} ⋆ f(s, ·))(x) ds`.
 * `TauCeti.norm_heatDuhamelPotential_le`: the bound `‖w(t, x)‖ ≤ M t`.
+* `TauCeti.stronglyMeasurable_heatKernel_sub_convolution`: the time integrand
+  `(K_{t-s} ⋆ f(s, ·))(x)` is jointly measurable in `(s, x)`.
 * `TauCeti.exists_stronglyMeasurable_eq_iteratedFDeriv_heatKernel_convolution`: the derivatives
   `D^m (K_τ ⋆ f(s, ·))(x)` agree with a jointly measurable function of `(s, τ)`.
 * `TauCeti.intervalIntegrable_heatKernel_convolution`,
@@ -185,6 +187,22 @@ theorem norm_heatDuhamelPotential_le (ht : 0 ≤ t)
     intervalIntegrable_const).trans_eq (by simp [mul_comm])
   filter_upwards [hae] with s hs hsI
   exact norm_heatKernel_convolution_le (sub_pos.2 (hs hsI).1.2) (hs hsI).2 x
+
+/-- **Joint measurability of the time integrand of the Duhamel potential.** For jointly measurable
+`f`, the function `(s, x) ↦ (K_{t-s} ⋆ f(s, ·))(x)` is jointly strongly measurable. No integrability
+of `f` is needed: where the convolution integral does not exist it is `0`. -/
+theorem stronglyMeasurable_heatKernel_sub_convolution
+    (hf : StronglyMeasurable (Function.uncurry f)) (t : ℝ) :
+    StronglyMeasurable fun z : ℝ × E => (heatKernel (t - z.1) ⋆ f z.1) z.2 := by
+  have hK : Measurable fun q : ℝ × E => heatKernel q.1 q.2 := by
+    simp only [heatKernel_apply]
+    fun_prop
+  simp only [convolution_def, lsmul_apply]
+  refine StronglyMeasurable.integral_prod_right
+    (f := fun (z : ℝ × E) (y : E) => heatKernel (t - z.1) y • f z.1 (z.2 - y)) ?_
+  exact (hK.comp ((measurable_const.sub measurable_fst.fst).prodMk measurable_snd))
+    |>.stronglyMeasurable.smul
+      (hf.comp_measurable (measurable_fst.fst.prodMk (measurable_fst.snd.sub measurable_snd)))
 
 /-- **Joint measurability of the derivatives of heat convolutions.** For jointly measurable `f`,
 some jointly strongly measurable function of `(s, τ)` equals `D^m (K_τ ⋆ f(s, ·))(x)` whenever
