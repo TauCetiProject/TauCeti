@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
+import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 
@@ -46,6 +46,8 @@ descriptions.
 * `TemperedDistribution.mem_realSobolevFunctions_add_one_of_fderiv_apply`: conversely, a real `C¹`
   function in `H^{s,p}` whose classical directional derivatives lie in `H^{s,p}` lies in
   `H^{s+1,p}`.
+* `TemperedDistribution.mem_realSobolevFunctions_natCast_of_memLp_iteratedFDeriv`: a real `Cᵏ`
+  function whose classical derivatives through order `k` lie in `Lᵖ` lies in `H^{k,p}`.
 
 ## References
 
@@ -207,5 +209,32 @@ theorem mem_realSobolevFunctions_add_one_of_fderiv_apply {p : ℝ≥0∞} [Fact 
   obtain ⟨u', hu'f, hu'⟩ := mem_realSobolevFunctions.1 (hd v)
   rw [lineDerivOp_toTemperedDistribution_ofReal_eq_of_contDiff hf huf hu'f]
   exact hu'
+
+/-- **Sobolev regularity of `Cᵏ` functions with `Lᵖ` derivatives.** For `1 < p < ∞`, a real `Cᵏ`
+function whose classical derivatives of orders `0` through `k` all lie in `Lᵖ` lies in `H^{k,p}`.
+This iterates `mem_realSobolevFunctions_add_one_of_fderiv_apply`. -/
+theorem mem_realSobolevFunctions_natCast_of_memLp_iteratedFDeriv {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hp : 1 < p) (hp_top : p ≠ ∞) :
+    ∀ {k : ℕ} {f : E → ℝ}, ContDiff ℝ k f → (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) p volume) →
+      f ∈ realSobolevFunctions E k p
+  | 0, f, hf, hmem => by
+    rw [Nat.cast_zero, mem_realSobolevFunctions_zero_iff]
+    exact (hmem 0 le_rfl).congr_norm hf.continuous.aestronglyMeasurable
+      (.of_forall fun _ ↦ norm_iteratedFDeriv_zero)
+  | k + 1, f, hf, hmem => by
+    have hDf : ContDiff ℝ k (fderiv ℝ f) := hf.fderiv_right (by push_cast; rfl)
+    push_cast
+    refine mem_realSobolevFunctions_add_one_of_fderiv_apply hp hp_top
+      (hf.of_le (by exact_mod_cast Nat.le_add_left 1 k))
+      (mem_realSobolevFunctions_natCast_of_memLp_iteratedFDeriv hp hp_top
+        (hf.of_le (by exact_mod_cast Nat.le_succ k)) fun i hi ↦ hmem i (by omega))
+      fun v ↦ mem_realSobolevFunctions_natCast_of_memLp_iteratedFDeriv hp hp_top
+        (hDf.clm_apply contDiff_const) fun i hi ↦ ?_
+    -- The `i`-th derivative of `x ↦ Df(x) v` is controlled by the `(i + 1)`-st derivative of `f`.
+    refine ((hmem (i + 1) (by omega)).norm.const_mul ‖v‖).of_le
+      ((hDf.clm_apply contDiff_const).continuous_iteratedFDeriv
+        (by exact_mod_cast hi)).aestronglyMeasurable (.of_forall fun x ↦ ?_)
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), ← norm_iteratedFDeriv_fderiv]
+    exact norm_iteratedFDeriv_clm_apply_const hDf.contDiffAt (by exact_mod_cast hi)
 
 end TemperedDistribution

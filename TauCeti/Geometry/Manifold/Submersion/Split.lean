@@ -172,14 +172,20 @@ private theorem contMDiffOn_implicitCoord_symm [CompleteSpace E] [CompleteSpace 
       ((Classical.choose hker).contMDiff.comp_contMDiffOn
         (contMDiffOn_extChartAt.mono hWe))
 
-/-- A map smooth on an open neighbourhood of a regular point has the submersion normal form,
-with the standard vector space of dimension `dim E - dim F` as complement. The source model is
-boundaryless; neither manifold needs to be Hausdorff or second-countable. -/
-theorem _root_.ContMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv {U : Set M}
+/-- Around a regular point `x`, a map smooth on an open neighbourhood admits a chart `φ` in the
+maximal atlas of `M` sending `φ.source` into `(chartAt G (f x)).source` in which `f` reads against
+the preferred target chart `chartAt G (f x)` as the first projection `(L ·).1` with standard
+complement `Fin (dim E - dim F) → 𝕜`. The source model is boundaryless; neither manifold needs to
+be Hausdorff or second-countable. -/
+theorem _root_.ContMDiffOn.exists_domChart_mem_maximalAtlas_of_surjective_mfderiv {U : Set M}
     (hfU : ContMDiffOn I J n f U) (hU : IsOpen U) (hxU : x ∈ U) (hn : 1 ≤ n)
     (hs : Surjective (mfderiv I J f x)) :
-    IsSubmersionAtOfComplement (Fin (Module.finrank 𝕜 E - Module.finrank 𝕜 F) → 𝕜)
-      I J n f x := by
+    ∃ (φ : OpenPartialHomeomorph M H)
+      (L : E ≃L[𝕜] F × (Fin (Module.finrank 𝕜 E - Module.finrank 𝕜 F) → 𝕜)),
+      x ∈ φ.source ∧ φ ∈ IsManifold.maximalAtlas I n M ∧
+      φ.source ⊆ f ⁻¹' (chartAt G (f x)).source ∧
+      EqOn ((chartAt G (f x)).extend J ∘ f ∘ (φ.extend I).symm) (Prod.fst ∘ L)
+        (φ.extend I).target := by
   have := FiniteDimensional.completeSpace 𝕜 E
   have := FiniteDimensional.completeSpace 𝕜 F
   have hf := hfU.contMDiffAt (hU.mem_nhds hxU)
@@ -224,19 +230,28 @@ theorem _root_.ContMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv {U :
   let K : D.ker ≃L[𝕜] (Fin (Module.finrank 𝕜 E - Module.finrank 𝕜 F) → 𝕜) :=
     ContinuousLinearEquiv.ofFinrankEq <| by
       rw [D.toLinearMap.finrank_ker_eq_sub_of_surjective hs, Module.finrank_fin_fun]
-  apply (IsSubmersionAtOfComplement.congr_F K).mp
-  refine IsSubmersionAtOfComplement.mk_of_charts L φ (chartAt G (f x))
-    ?_ (mem_chart_source _ _) hφ (IsManifold.chart_mem_maximalAtlas _) ?_ ?_
-  · exact ⟨hxΦ, hxV⟩
-  · exact fun y hy ↦ hVc hy.2
-  · intro v hv
-    have hIv : I (I.symm v) = v := I.right_inv (I.range_eq_univ.symm ▸ mem_univ v)
-    have hv₀ : v ∈ φ₀.target := by simpa [φ, hIv, I.range_eq_univ] using hv
-    have hgv : g (φ₀.symm v) = v := hlocal.localInverse_right_inv hv₀.1
-    have hvL := congrArg (fun z ↦ (L z).1) hgv
-    -- Extending `φ` cancels its final `I.symm`, recovering `φ₀`; the first coordinate of `L g`
-    -- is exactly the target-chart expression for `f`.
-    simpa [g, c, extChartAt, φ, hIv] using hvL
+  refine ⟨φ, L.trans ((ContinuousLinearEquiv.refl 𝕜 F).prodCongr K), ⟨hxΦ, hxV⟩, hφ,
+    fun y hy ↦ hVc hy.2, fun v hv ↦ ?_⟩
+  have hIv : I (I.symm v) = v := I.right_inv (I.range_eq_univ.symm ▸ mem_univ v)
+  have hv₀ : v ∈ φ₀.target := by simpa [φ, hIv, I.range_eq_univ] using hv
+  have hgv : g (φ₀.symm v) = v := hlocal.localInverse_right_inv hv₀.1
+  have hvL := congrArg (fun z ↦ (L z).1) hgv
+  -- Extending `φ` cancels its final `I.symm`, recovering `φ₀`; the first coordinate of `L g`
+  -- is exactly the target-chart expression for `f`.
+  simpa [g, c, extChartAt, φ, hIv] using hvL
+
+/-- A map smooth on an open neighbourhood of a regular point has the submersion normal form,
+with the standard vector space of dimension `dim E - dim F` as complement. The source model is
+boundaryless; neither manifold needs to be Hausdorff or second-countable. -/
+theorem _root_.ContMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv {U : Set M}
+    (hfU : ContMDiffOn I J n f U) (hU : IsOpen U) (hxU : x ∈ U) (hn : 1 ≤ n)
+    (hs : Surjective (mfderiv I J f x)) :
+    IsSubmersionAtOfComplement (Fin (Module.finrank 𝕜 E - Module.finrank 𝕜 F) → 𝕜)
+      I J n f x := by
+  obtain ⟨φ, L, hxφ, hφ, hsub, hEq⟩ :=
+    hfU.exists_domChart_mem_maximalAtlas_of_surjective_mfderiv hU hxU hn hs
+  exact IsSubmersionAtOfComplement.mk_of_charts L φ (chartAt G (f x))
+    hxφ (mem_chart_source _ _) hφ (IsManifold.chart_mem_maximalAtlas _) hsub hEq
 
 /-- The submersion normal form is equivalent to a split differential for a map smooth on a
 neighbourhood of the point. Smoothness is only needed to construct the normal form. -/
@@ -256,6 +271,25 @@ theorem _root_.ContMDiff.isSubmersionOfComplement_of_surjective_mfderiv
   rw [Manifold.isSubmersionOfComplement_iff]
   exact fun x ↦ hf.contMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv
     isOpen_univ (mem_univ x) hn (hs x)
+
+/-- Around every point `x`, a `C^n` submersion (`1 ≤ n`) between finite-dimensional real or
+complex manifolds with boundaryless source admits a chart `φ` in the maximal atlas of `M` sending
+`φ.source` into `(chartAt G (f x)).source` in which `f` reads against `extChartAt J (f x)` as the
+first projection `(L ·).1` with complement `Fin (dim E - dim F) → 𝕜`. -/
+theorem _root_.Manifold.IsSubmersion.exists_domChart_mem_maximalAtlas_chartAt
+    (hf : IsSubmersion I J n f) (hn : 1 ≤ n) (x : M) :
+    ∃ (φ : OpenPartialHomeomorph M H)
+      (L : E ≃L[𝕜] F × (Fin (Module.finrank 𝕜 E - Module.finrank 𝕜 F) → 𝕜)),
+      x ∈ φ.source ∧ φ ∈ IsManifold.maximalAtlas I n M ∧
+      φ.source ⊆ f ⁻¹' (chartAt G (f x)).source ∧
+      ∀ z ∈ φ.source, extChartAt J (f x) (f z) = (L (φ.extend I z)).1 := by
+  obtain ⟨φ, L, hxφ, hφ, hsub, hEq⟩ :=
+    hf.contMDiff.contMDiffOn.exists_domChart_mem_maximalAtlas_of_surjective_mfderiv
+      isOpen_univ (mem_univ x) hn (hf.surjective_mfderiv (ne_of_gt (zero_lt_one.trans_le hn)) x)
+  refine ⟨φ, L, hxφ, hφ, hsub, fun z hz ↦ ?_⟩
+  have hz' : z ∈ (φ.extend I).source := by rwa [φ.extend_source]
+  simpa only [comp_apply, (φ.extend I).left_inv hz', extChartAt] using
+    hEq ((φ.extend I).map_source hz')
 
 /-- A smooth map between finite-dimensional real or complex manifolds with boundaryless source is a
 submersion exactly when every differential has a continuous linear right inverse. -/

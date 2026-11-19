@@ -7,7 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Determinant
+public import TauCeti.Algebra.Group.Pi.Finset
 public import TauCeti.LinearAlgebra.Matrix.Block
+public import TauCeti.Logic.Equiv.Pi
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
@@ -36,6 +38,9 @@ weights.
 * `LinearEquiv.piCongrLeft_apply_apply` and `LinearEquiv.piCongrLeft_single`: reindexing the
   coordinates along `e` reads the coordinate at `e i` from `i`, and moves a one-point family to
   the image coordinate.
+* `LinearEquiv.piCongrLeft_symm_apply` and `LinearEquiv.piCongrLeft_trans`: the inverse of
+  reindexing reads coordinates through the reindexing, and reindexing along two equivalences in
+  turn is reindexing along their composite.
 * `LinearEquiv.piFinSnoc`: the linear splitting of a tuple of length `n + 1` into its initial `n`
   coordinates and its last one, with `Fin.snoc` as its inverse.
 * `LinearEquiv.piFinAppend`: the linear splitting of a tuple of length `m + n` into its first `m`
@@ -47,6 +52,8 @@ weights.
   one-point family `Pi.single` at the last index.
 * `LinearEquiv.piEquivPiSubtypeProd`: `Equiv.piEquivPiSubtypeProd` as a linear equivalence,
   splitting `∀ i, M i` into the factors indexed by `p` and by `¬p`.
+* `LinearEquiv.piFinsetUnion`: `Equiv.piFinsetUnion` as a linear equivalence, gluing families on
+  disjoint finite sets `s` and `t` into a family on `s ∪ t`.
 * `LinearMap.toMatrix_piMap`: in product bases, `LinearMap.piMap f` is block diagonal, including
   when its component maps have different source and target modules.
 * `LinearMap.det_piMap`: the determinant of a coordinatewise endomorphism `LinearMap.piMap f` of a
@@ -127,6 +134,21 @@ public theorem piCongrLeft_apply_apply {R ι ι' : Type*} [Semiring R] (M : ι �
     [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (e : ι' ≃ ι) (f : ∀ i, M (e i)) (i : ι') :
     piCongrLeft R M e f (e i) = f i :=
   Equiv.piCongrLeft_apply_apply (P := M) e f i
+
+/-- The inverse of reindexing along `e` reads the coordinate at `i'` from `e i'`. -/
+@[simp]
+public theorem piCongrLeft_symm_apply {R ι ι' : Type*} [Semiring R] (M : ι → Type*)
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (e : ι' ≃ ι) (f : ∀ i, M i) (i' : ι') :
+    (piCongrLeft R M e).symm f i' = f (e i') :=
+  (rfl)
+
+/-- Reindexing the coordinates along `e₁` and then along `e₂` is reindexing them along
+`e₁.trans e₂`. -/
+public theorem piCongrLeft_trans (R : Type*) {ι ι' ι'' : Type*} [Semiring R] (M : ι → Type*)
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (e₁ : ι'' ≃ ι') (e₂ : ι' ≃ ι) :
+    (piCongrLeft R (fun i' ↦ M (e₂ i')) e₁).trans (piCongrLeft R M e₂) =
+      piCongrLeft R M (e₁.trans e₂) :=
+  toEquiv_injective (Equiv.piCongrLeft_trans M e₁ e₂)
 
 /-- Reindexing the coordinates along `e` moves a one-point family at `i` to the one-point family
 at `e i`. -/
@@ -233,6 +255,31 @@ public theorem piEquivPiSubtypeProd_apply (f : (i : ι) → M i) :
 public theorem piEquivPiSubtypeProd_symm_apply
     (f : ((i : {x : ι // p x}) → M i) × ((i : {x : ι // ¬p x}) → M i)) (i : ι) :
     (piEquivPiSubtypeProd R p M).symm f i = if h : p i then f.1 ⟨i, h⟩ else f.2 ⟨i, h⟩ := (rfl)
+
+section FinsetUnion
+
+variable [DecidableEq ι] {s t : Finset ι}
+
+/-- Gluing a family on `s` and a family on `t` into a family on `s ∪ t`, for disjoint `s` and
+`t`. This is `Equiv.piFinsetUnion` as a `LinearEquiv`; its inverse takes the restrictions to `s`
+and to `t`. -/
+public def piFinsetUnion (h : Disjoint s t) :
+    ((∀ i : s, M i) × ∀ i : t, M i) ≃ₗ[R] ∀ i : (s ∪ t : Finset ι), M i where
+  toEquiv := Equiv.piFinsetUnion M h
+  map_add' x y := by simpa using map_add (AddEquiv.piFinsetUnion M h) x y
+  map_smul' _ _ := Finset.restrict₂_union_ext (by simp) (by simp)
+
+@[simp]
+public theorem coe_piFinsetUnion (h : Disjoint s t) :
+    ⇑(piFinsetUnion R M h) = Equiv.piFinsetUnion M h :=
+  (rfl)
+
+@[simp]
+public theorem coe_piFinsetUnion_symm (h : Disjoint s t) :
+    ⇑(piFinsetUnion R M h).symm = (Equiv.piFinsetUnion M h).symm :=
+  (rfl)
+
+end FinsetUnion
 
 end LinearEquiv
 

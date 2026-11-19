@@ -53,6 +53,8 @@ quadratic forms with the subgroup preserving both summands.
   `LinearMap.fiberProductAssoc_symm_apply_fst`, `LinearMap.fiberProductAssoc_symm_apply_snd`.
 * `LinearMap.injective_prodMap`: a product of injective linear maps is injective, stated for the
   coercion of `f.prodMap g`.
+* `LinearMap.prodMap_comp_append`: `f.prodMap g` sends an appended family of vectors of the two
+  factors to the appended family of their images.
 * `LinearMap.kerProdMapEquiv`: the kernel of `f.prodMap g` is `ker f × ker g`.
 * `LinearMap.finite_ker_prodMap`, `LinearMap.finrank_ker_prodMap`: the kernel of `f.prodMap g` is
   finite when those of `f` and `g` are, with the summed rank.
@@ -235,6 +237,15 @@ variable {M₄ : Type*} [AddCommMonoid M₄] [Module R M₄]
 theorem injective_prodMap {f : M₁ →ₗ[R] M₃} {g : M₂ →ₗ[R] M₄} (hf : Function.Injective f)
     (hg : Function.Injective g) : Function.Injective (f.prodMap g) :=
   hf.prodMap hg
+
+/-- The product map `f × g` sends an appended family of vectors of the two factors to the appended
+family of their images. -/
+theorem prodMap_comp_append (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₄) {m n : ℕ} (p : Fin m → M₁)
+    (q : Fin n → M₂) :
+    ⇑(f.prodMap g) ∘ Fin.append (inl R M₁ M₂ ∘ p) (inr R M₁ M₂ ∘ q) =
+      Fin.append (inl R M₃ M₄ ∘ f ∘ p) (inr R M₃ M₄ ∘ g ∘ q) := by
+  funext i
+  induction i using Fin.addCases <;> simp
 
 variable (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₄)
 

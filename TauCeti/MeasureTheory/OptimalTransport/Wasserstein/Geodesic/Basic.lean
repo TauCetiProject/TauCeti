@@ -69,6 +69,9 @@ optimal coupling need not be unique.
   of such a plan between two points of `P_p (X)` trace a geodesic segment of `P_p (X)`.
 * `TauCeti.WassersteinSpace.instIsGeodesicSpace`: on a Polish geodesic space, `P_p (X)` is a
   geodesic space for every `1 ≤ p ≤ ∞`.
+* `TauCeti.WassersteinSpace.exists_ae_mem_geodesicPaths_of_isGeodesicSegment`: for `1 < p < ∞`,
+  every geodesic segment of `P_p (X)` is the curve of laws of an optimal dynamic plan concentrated
+  on geodesic paths; no geodesic structure is assumed on `X`.
 * `TauCeti.WassersteinSpace.isGeodesicSegment_iff_isDisplacementInterpolation`: for
   `1 < p < ∞`, the geodesic segments of `P_p (X)` are exactly the curves of laws of optimal
   dynamic plans concentrated on geodesic paths.
