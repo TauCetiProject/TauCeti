@@ -26,8 +26,6 @@ evaluation on the tangent bundle) applies.
 * `TauCeti.isContinuousTangentNorm_modelSpace`: the norm of `E`, on `E` viewed as a manifold
   modelled on itself.
 * `TauCeti.isContinuousTangentNorm_norm`: the norms of a continuous Riemannian metric.
-
-This is the norm datum of `TauCetiRoadmap/SobolevMapsBetweenManifolds/README.md`, §5.1.
 -/
 
 @[expose] public section
@@ -53,11 +51,17 @@ theorem isContinuousTangentNorm_modelSpace :
     IsContinuousTangentNorm 𝓘(ℝ, E) E fun _ ↦ normSeminorm ℝ E where
   exists_bounds _ := ⟨1, one_pos, 1, fun v ↦ by
     rw [TangentBundle.symmL_model_space]
+    -- The seminorm and the identity `1` act on the tangent space `TangentSpace 𝓘(ℝ, E) x`, a type
+    -- synonym for `E` through which `coe_normSeminorm` and the simp lemmas for `1` do not apply;
+    -- by definition the goal is the following one about `E`.
     change 1 * ‖v‖ ≤ ‖v‖ ∧ ‖v‖ ≤ 1 * ‖v‖
-    simp⟩
-  eventually_abs_sub_le _ _ hε := Filter.Eventually.of_forall fun _ v ↦ by
+    rw [one_mul]
+    exact ⟨le_rfl, le_rfl⟩⟩
+  eventually_abs_sub_le b₀ ε hε := Filter.Eventually.of_forall fun b v ↦ by
     rw [TangentBundle.symmL_model_space, TangentBundle.symmL_model_space]
-    change |‖v‖ - ‖v‖| ≤ _
+    -- As above, on the tangent spaces at `b` and `b₀`, both type synonyms for `E`, the goal is by
+    -- definition the following one about `E`.
+    change |‖v‖ - ‖v‖| ≤ ε * ‖v‖
     rw [sub_self, abs_zero]
     positivity
 

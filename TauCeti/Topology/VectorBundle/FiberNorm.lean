@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 public import Mathlib.Topology.VectorBundle.Riemannian
+public import TauCeti.Analysis.Normed.Module.Seminorm.Comparison
+public import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Continuous fibre norms on a vector bundle
@@ -29,16 +31,15 @@ infinite-dimensional Banach space; no smoothness and no inner product is require
   `TauCeti.IsContinuousFiberNorm.eventually_abs_sub_le_of_mem`: both conditions hold in every
   trivialization of the atlas, not only in the trivializations `trivializationAt F E b`.
 * `TauCeti.IsContinuousFiberNorm.eventually_bounds`: local two-sided comparison with the norm of
-  the model fibre, and its uniform version `TauCeti.IsContinuousFiberNorm.exists_bounds_of_compact`
-  on a compact set of base points, through finitely many trivializations.
+  the model fibre, and its uniform version
+  `TauCeti.IsContinuousFiberNorm.exists_bounds_of_isCompact` on a compact set of base points,
+  through finitely many trivializations.
 * `TauCeti.IsContinuousFiberNorm.continuous_totalSpace`: evaluation of the norm is continuous on
   the total space; in particular each `ν b` is continuous (`continuous_fiber`) and definite
   (`eq_zero_of_apply_eq_zero`).
 * `TauCeti.isContinuousFiberNorm_trivial`: the norm of `F` on the trivial bundle.
 * `TauCeti.isContinuousFiberNorm_norm`: the norms of a continuous Riemannian bundle
   (`IsContinuousRiemannianBundle`).
-
-This is the norm datum of `TauCetiRoadmap/SobolevMapsBetweenManifolds/README.md`, §5.1.
 -/
 
 @[expose] public section
@@ -74,71 +75,6 @@ structure IsContinuousFiberNorm (ν : ∀ b, Seminorm ℝ (E b)) : Prop where
     |ν b ((trivializationAt F E b₀).symmL ℝ b v) -
       ν b₀ ((trivializationAt F E b₀).symmL ℝ b₀ v)| ≤ ε * ‖v‖
 
-omit [VectorBundle ℝ F E] in
-/-- Reading `e'.symmL` through the coordinate change into another trivialization `e`. -/
-theorem _root_.Bundle.Trivialization.symmL_coordChangeL (e e' : Trivialization F (π F E))
-    [e.IsLinear ℝ] [e'.IsLinear ℝ] {b : B} (hb : b ∈ e'.baseSet ∩ e.baseSet) (v : F) :
-    e.symmL ℝ b (e'.coordChangeL ℝ e b v) = e'.symmL ℝ b v := by
-  rw [e'.coordChangeL_apply e hb, e.symmL_apply hb.2, e.symm_apply_apply_mk hb.2,
-    e'.symmL_apply hb.1]
-
-/-- Comparison of a seminorm with the norm survives composition with a continuous linear
-equivalence. -/
-private theorem exists_bounds_comp {N : F → ℝ} {c C : ℝ} (hc : 0 < c)
-    (hN : ∀ w, c * ‖w‖ ≤ N w ∧ N w ≤ C * ‖w‖) (T : F ≃L[ℝ] F) :
-    ∃ c' > 0, ∃ C', ∀ v, c' * ‖v‖ ≤ N (T v) ∧ N (T v) ≤ C' * ‖v‖ := by
-  refine ⟨c * (‖(T.symm : F →L[ℝ] F)‖ + 1)⁻¹, by positivity, max C 0 * ‖(T : F →L[ℝ] F)‖,
-    fun v ↦ ⟨?_, ?_⟩⟩
-  · have hv : ‖v‖ ≤ ‖(T.symm : F →L[ℝ] F)‖ * ‖T v‖ := by
-      simpa using (T.symm : F →L[ℝ] F).le_opNorm (T v)
-    have h1 : ‖v‖ ≤ (‖(T.symm : F →L[ℝ] F)‖ + 1) * ‖T v‖ := by nlinarith [norm_nonneg (T v)]
-    calc c * (‖(T.symm : F →L[ℝ] F)‖ + 1)⁻¹ * ‖v‖
-        ≤ c * (‖(T.symm : F →L[ℝ] F)‖ + 1)⁻¹ * ((‖(T.symm : F →L[ℝ] F)‖ + 1) * ‖T v‖) := by
-          gcongr
-      _ = c * ‖T v‖ := by field_simp
-      _ ≤ N (T v) := (hN (T v)).1
-  · calc N (T v) ≤ C * ‖T v‖ := (hN (T v)).2
-      _ ≤ max C 0 * ‖T v‖ := by gcongr; exact le_max_left C 0
-      _ ≤ max C 0 * (‖(T : F →L[ℝ] F)‖ * ‖v‖) :=
-          mul_le_mul_of_nonneg_left ((T : F →L[ℝ] F).le_opNorm v) (le_max_right C 0)
-      _ = max C 0 * ‖(T : F →L[ℝ] F)‖ * ‖v‖ := by ring
-
-/-- Uniform closeness of seminorms on the unit ball survives composition with a family of
-continuous linear maps that is continuous at the base point. -/
-private theorem eventually_abs_sub_le_comp {N : B → Seminorm ℝ F} {b₀ : B} {C : ℝ}
-    (hC : ∀ w, N b₀ w ≤ C * ‖w‖)
-    (hN : ∀ δ > 0, ∀ᶠ b in 𝓝 b₀, ∀ w, |N b w - N b₀ w| ≤ δ * ‖w‖)
-    {T : B → F →L[ℝ] F} (hT : ContinuousAt T b₀) {ε : ℝ} (hε : 0 < ε) :
-    ∀ᶠ b in 𝓝 b₀, ∀ v, |N b (T b v) - N b₀ (T b₀ v)| ≤ ε * ‖v‖ := by
-  set K := ‖T b₀‖ + 1
-  set C' := max C 0 + 1
-  have hK : 0 < K := by positivity
-  have hC' : 0 < C' := by positivity
-  have hnear : ∀ᶠ b in 𝓝 b₀, ‖T b - T b₀‖ < min 1 (ε / (2 * C')) :=
-    ((Metric.continuousAt_iff'.1 hT) (min 1 (ε / (2 * C'))) (by positivity)).mono fun b hb ↦ by
-      rwa [← dist_eq_norm]
-  filter_upwards [hnear, hN (ε / (2 * K)) (by positivity)] with b hb hNb v
-  have hb1 : ‖T b - T b₀‖ ≤ 1 := hb.le.trans (min_le_left _ _)
-  have hb2 : ‖T b - T b₀‖ ≤ ε / (2 * C') := hb.le.trans (min_le_right _ _)
-  have hTb : ‖T b‖ ≤ K := by
-    have := norm_le_insert' (T b) (T b₀)
-    simp only [K]
-    linarith
-  have hCw : ∀ w, N b₀ w ≤ C' * ‖w‖ := fun w ↦ (hC w).trans (by
-    gcongr; exact (le_max_left _ _).trans (le_add_of_nonneg_right zero_le_one))
-  calc |N b (T b v) - N b₀ (T b₀ v)|
-      ≤ |N b (T b v) - N b₀ (T b v)| + |N b₀ (T b v) - N b₀ (T b₀ v)| := abs_sub_le _ _ _
-    _ ≤ ε / (2 * K) * ‖T b v‖ + N b₀ (T b v - T b₀ v) :=
-        add_le_add (hNb _) (abs_sub_map_le_sub _ _ _)
-    _ ≤ ε / (2 * K) * (K * ‖v‖) + C' * (ε / (2 * C') * ‖v‖) := by
-        gcongr
-        · exact ((T b).le_opNorm v).trans (by gcongr)
-        · refine (hCw _).trans ?_
-          gcongr
-          rw [← sub_apply]
-          exact ((T b - T b₀).le_opNorm v).trans (by gcongr)
-    _ = ε * ‖v‖ := by field_simp; ring
-
 namespace IsContinuousFiberNorm
 
 variable {ν : ∀ b, Seminorm ℝ (E b)} (hν : IsContinuousFiberNorm F E ν)
@@ -153,9 +89,9 @@ theorem exists_bounds_of_mem (e : Trivialization F (π F E)) [MemTrivializationA
   have hb' : b ∈ e.baseSet ∩ (trivializationAt F E b).baseSet :=
     ⟨hb, FiberBundle.mem_baseSet_trivializationAt' b⟩
   obtain ⟨c', hc', C', h⟩ :=
-    exists_bounds_comp hc hN (e.coordChangeL ℝ (trivializationAt F E b) b)
+    exists_bounds_comp_continuousLinearEquiv hc hN (e.coordChangeL ℝ (trivializationAt F E b) b)
   refine ⟨c', hc', C', fun v ↦ ?_⟩
-  rw [← (trivializationAt F E b).symmL_coordChangeL e hb']
+  rw [← (trivializationAt F E b).symmL_coordChangeL ℝ e hb']
   exact h v
 
 /-- The continuity of a continuous fibre norm holds in every trivialization of the atlas. -/
@@ -168,14 +104,14 @@ theorem eventually_abs_sub_le_of_mem (e : Trivialization F (π F E)) [MemTrivial
   have hopen : e.baseSet ∩ e₀.baseSet ∈ 𝓝 b₀ :=
     (e.open_baseSet.inter e₀.open_baseSet).mem_nhds hmem
   obtain ⟨c, -, C, hC⟩ := hν.exists_bounds b₀
-  have key := eventually_abs_sub_le_comp
+  have key := eventually_abs_sub_le_comp_continuousLinearMap
     (N := fun b ↦ (ν b).comp (e₀.symmL ℝ b).toLinearMap) (C := C)
     (fun w ↦ by simpa using (hC w).2) (fun δ hδ ↦ by simpa using hν.eventually_abs_sub_le b₀ hδ)
     ((continuousOn_coordChange ℝ e e₀).continuousAt hopen) hε
   filter_upwards [key, hopen] with b hb hbmem v
   have := hb v
   simp only [Seminorm.comp_apply, ContinuousLinearMap.coe_coe, ContinuousLinearEquiv.coe_coe,
-    e₀.symmL_coordChangeL e hbmem, e₀.symmL_coordChangeL e hmem] at this
+    e₀.symmL_coordChangeL ℝ e hbmem, e₀.symmL_coordChangeL ℝ e hmem] at this
   exact this
 
 /-- Local two-sided comparison of a continuous fibre norm with the model norm, in any
