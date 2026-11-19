@@ -92,7 +92,7 @@ theorem toLin_confluentVandermonde (a : Fin r → R) (m : Fin r → ℕ) :
 theorem hermiteJet_bijective_iff_isUnit_det (a : Fin r → R) (m : Fin r → ℕ) :
     Bijective (hermiteJet a m) ↔ IsUnit (Matrix.confluentVandermonde a m).det := by
   rw [← toMatrix_hermiteJet]
-  exact LinearMap.bijective_iff_isUnit_det_toMatrix _ _ _
+  exact (LinearMap.isUnit_det_toMatrix_iff_bijective _ _ _).symm
 
 /-- Over a field, the Hermite jet map is bijective iff the nodes of nonzero multiplicity are
 pairwise distinct. A repeated node of multiplicity `0` is allowed. -/

@@ -83,21 +83,21 @@ end GramMatrix
 section CommRing
 
 variable {ι R M N : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
-  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 
 /-- **A pairing whose Gram matrix in finite bases has unit determinant is a perfect pairing.** -/
 theorem isPerfPair_of_isUnit_det (b : Basis ι R M) (c : Basis ι R N) (B : M →ₗ[R] N →ₗ[R] R)
     (h : IsUnit (LinearMap.toMatrix₂ b c B).det) : B.IsPerfPair := by
   have : Module.Finite R N := .of_basis c
   have : Module.Free R N := .of_basis c
-  refine .of_bijective B ((LinearMap.bijective_iff_isUnit_det_toMatrix b c.dualBasis B).2 ?_)
+  refine .of_bijective B ((LinearMap.isUnit_det_toMatrix_iff_bijective b c.dualBasis B).1 ?_)
   rwa [toMatrix_dualBasis_eq_transpose_toMatrix₂, det_transpose]
 
 /-- **The Gram matrix of a perfect pairing in finite bases has unit determinant.** -/
 theorem isUnit_det_of_isPerfPair (b : Basis ι R M) (c : Basis ι R N) (B : M →ₗ[R] N →ₗ[R] R)
     (h : B.IsPerfPair) : IsUnit (LinearMap.toMatrix₂ b c B).det := by
   rw [← det_transpose, ← toMatrix_dualBasis_eq_transpose_toMatrix₂]
-  exact (LinearMap.bijective_iff_isUnit_det_toMatrix b c.dualBasis B).1 h.bijective_left
+  exact (LinearMap.isUnit_det_toMatrix_iff_bijective b c.dualBasis B).2 h.bijective_left
 
 end CommRing
 

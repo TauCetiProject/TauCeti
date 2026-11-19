@@ -157,7 +157,7 @@ model `ℝⁿ⁻¹`. -/
 def SmoothSliceSurface.toTopologicalSliceSurface (S : SmoothSliceSurface K) :
     TopologicalSliceSurface K where
   toSliceSurfaceData := S.toSliceSurfaceData
-  isLocallyFlat := .of_isSmoothEmbedding_of_preimage_boundary_of_sub_eq (by simp)
+  isLocallyFlat := .of_isSmoothEmbedding_of_preimage_boundary_of_sub_eq
     S.isSmoothEmbedding S.preimage_boundary (by omega)
 
 /-- Reading a smooth slice surface as a topological slice surface keeps its genus. -/
