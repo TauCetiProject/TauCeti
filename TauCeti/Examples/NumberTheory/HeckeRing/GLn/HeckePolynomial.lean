@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.HeckeRing.GLn.HeckePolynomial
 public import Mathlib.Data.ZMod.Defs
 public import Mathlib.Algebra.Field.Rat
+import Mathlib.Algebra.CharP.Two
+import Mathlib.Data.ZMod.Basic
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.NormNum
 
@@ -49,13 +51,7 @@ example : glnHeckePolynomial 2 (0 : ZMod 2) ![1, 1, 1] = X ^ 2 + X := by
   rw [glnHeckePolynomial_two]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons,
     Matrix.tail_cons, map_one, one_mul, zero_mul, map_zero, add_zero]
-  rw [sub_eq_add_neg]
-  congr 1
-  ext k
-  rw [coeff_neg]
-  generalize (X : (ZMod 2)[X]).coeff k = a
-  revert a
-  decide
+  exact CharTwo.sub_eq_add _ _
 
 -- In rank zero with `T₀ = 0` over `ℤ` the polynomial is `0`, which is not monic.
 example : ¬ (glnHeckePolynomial 0 (1 : ℤ) ![0]).Monic := by

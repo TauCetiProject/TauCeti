@@ -32,6 +32,7 @@ the summation index. The weighted sum is again a single binomial coefficient,
 * `Nat.choose_two_add_mul_succ_div_two`: the sum of the second binomial coefficient and
   the triangular number is the corresponding square.
 * `Nat.add_choose_two`: the second binomial coefficient of a sum, with its cross term.
+* `Nat.two_mul_choose_two_add_mul`: `2 C(a, 2) + ab = a(a + b - 1)`.
 * `Nat.pow_three_sub_self_eq_mul_choose_two`: `g³ - g = (2g + 2) · C(g, 2)`.
 * `Nat.even_choose_two_iff`, `Nat.neg_one_pow_choose_two`: `C(m, 2)` and `⌊m / 2⌋` have the same
   parity, so `(-1) ^ C(m, 2) = (-1) ^ ⌊m / 2⌋`.
@@ -87,6 +88,13 @@ theorem add_choose_two (m n : ℕ) : (m + n).choose 2 = m.choose 2 + n.choose 2 
       have h2 : (n + 1).choose 2 = n.choose 1 + n.choose 2 := choose_succ_succ n 1
       rw [h1, h2, ih, choose_one_right, choose_one_right]
       ring
+
+/-- Twice `C(a, 2)`, plus `ab`, is `a(a + b - 1)`, with truncated subtraction. -/
+theorem two_mul_choose_two_add_mul (a b : ℕ) : 2 * a.choose 2 + a * b = a * (a + b - 1) := by
+  have := Nat.le_mul_self a
+  rw [choose_two_right, Nat.mul_div_cancel' (even_mul_pred_self a).two_dvd, Nat.mul_sub_one,
+    Nat.mul_sub_one, mul_add]
+  omega
 
 /-- `g³ - g = (2g + 2) · C(g, 2)`. -/
 theorem pow_three_sub_self_eq_mul_choose_two (g : ℕ) :

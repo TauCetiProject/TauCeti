@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 import Mathlib.Data.Nat.Choose.Vandermonde
+import TauCeti.Data.Nat.Choose.Basic
 import Mathlib.RingTheory.Polynomial.Vieta
 import Mathlib.Tactic.LinearCombination
 
@@ -92,19 +93,6 @@ theorem glnHeckePolynomial_def (n : ℕ) (q : A) (T : Fin (n + 1) → A) :
       ∑ i : Fin (n + 1), C ((-1) ^ (i : ℕ) * q ^ (i : ℕ).choose 2 * T i) * X ^ (n - i) :=
   (rfl)
 
-/-- Twice `a(a-1)/2`, plus `a b`, is `a(a+b-1)`, with truncated subtraction. -/
-private theorem two_mul_choose_two_add_mul (a b : ℕ) :
-    2 * a.choose 2 + a * b = a * (a + b - 1) := by
-  have := Nat.le_mul_self a
-  rw [Nat.choose_two_right, Nat.mul_div_cancel' (Nat.even_mul_pred_self a).two_dvd,
-    Nat.mul_sub_one, Nat.mul_sub_one, mul_add]
-  omega
-
-/-- The case `k = 2` of Vandermonde's identity. -/
-private theorem choose_two_add (a b : ℕ) : (a + b).choose 2 = a.choose 2 + a * b + b.choose 2 := by
-  simp [Nat.add_choose_eq, Finset.Nat.antidiagonal_succ]
-  ring
-
 variable (q : A) (T : Fin (n + 1) → A)
 
 /-- The coefficient of `X^{n-i}` in the Hecke polynomial is `(-1)^i q^{i(i-1)/2} T_i`. -/
@@ -188,13 +176,10 @@ theorem glnHeckePolynomial_eq_prod_X_sub_C (s : A) (z : Fin n → A) :
     simp [Finset.prod_eq_multiset_prod, Function.comp_def]
   rw [hprod, Multiset.prod_X_sub_X_eq_sum_esymm, glnHeckePolynomial]
   simp only [Multiset.card_map, Finset.card_val, Finset.card_univ, Fintype.card_fin]
-  rw [Fin.sum_univ_eq_sum_range (fun i => C ((-1) ^ i * (s ^ 2) ^ i.choose 2 *
-    (s ^ (i * (n - i)) * (Finset.univ.val.map z).esymm i)) * X ^ (n - i))]
-  refine Finset.sum_congr rfl fun i hi => ?_
-  have hin : i ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
-  have hexp : 2 * i.choose 2 + i * (n - i) = (n - 1) * i := by
-    obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le hin
-    rw [Nat.add_sub_cancel_left, two_mul_choose_two_add_mul, mul_comm]
+  rw [← Fin.sum_univ_eq_sum_range]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  have hexp : 2 * (i : ℕ).choose 2 + i * (n - i) = (n - 1) * i := by
+    rw [Nat.two_mul_choose_two_add_mul, Nat.add_sub_cancel' i.is_le, mul_comm]
   rw [← Multiset.pow_smul_esymm, smul_eq_mul, ← pow_mul, ← pow_mul, ← hexp, pow_add]
   simp only [map_mul, map_pow, map_neg, map_one]
   ring
@@ -237,7 +222,7 @@ theorem coeff_glnHeckePolynomial_sub_mul_coeff_zero {T' : Fin (n + 1) → A}
   have hsign : (-1 : A) ^ (i : ℕ) * (-1) ^ (i + j : ℕ) = (-1) ^ j := by
     rw [← pow_add, ← add_assoc, pow_add, Even.neg_one_pow ⟨_, rfl⟩, one_mul]
   have hexp : (i : ℕ).choose 2 + (i + j).choose 2 = i * (i + j - 1) + j.choose 2 := by
-    rw [choose_two_add, ← two_mul_choose_two_add_mul]
+    rw [Nat.add_choose_two, ← Nat.two_mul_choose_two_add_mul]
     ring
   rw [← hj] at hsign hexp
   calc (-1) ^ (i : ℕ) * q ^ (i : ℕ).choose 2 * T' i * ((-1) ^ n * q ^ n.choose 2 * T (Fin.last n))
