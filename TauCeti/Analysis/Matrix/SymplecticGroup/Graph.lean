@@ -115,20 +115,15 @@ theorem graphFrame_mul_map_ofReal_of_mul_eq_one {A B : Matrix (n ⊕ n) (n ⊕ n
     by_cases hk : k = j <;> simp [x, hk]
   have hAx : A.map ((↑) : ℝ → ℂ) *ᵥ (fun k ↦ (x k : ℂ)) = fun k ↦ ((A *ᵥ x) k : ℂ) :=
     funext fun k ↦ (RingHom.map_mulVec Complex.ofRealHom A x k).symm
-  -- Conjugating the entries of the frame conjugates its values on real points.
-  have hconj (k : n ⊕ n) : ((graphFrame A).map star *ᵥ fun k ↦ (x k : ℂ)) k =
-      conj ((graphFrame A *ᵥ fun k ↦ (x k : ℂ)) k) := by
-    rw [RingHom.map_mulVec (starRingEnd ℂ)]
-    congr 1
-    funext l
-    simp
   rw [hx, ← mulVec_mulVec, hAx, graphFrame_mulVec, mulVec_mulVec, h, one_mulVec]
   funext i
   -- Exchanging the row blocks of a matrix evaluates its values at `Sum.swap i`; this is the
   -- definition of `submatrix`, for which `Matrix.submatrix_mulVec_equiv` needs an equivalence on
   -- the columns rather than `id`.
   change _ = ((graphFrame A).map star *ᵥ fun k ↦ (x k : ℂ)) (Sum.swap i)
-  rw [hconj, graphFrame_mulVec]
+  -- Conjugating the entries of the frame conjugates its values on real points.
+  rw [map_star_mulVec_of_star_eq _ (funext fun k ↦ Complex.conj_ofReal (x k)), Pi.star_apply,
+    graphFrame_mulVec]
   rcases i with i | i <;> simp
 
 /-- The complex `n × n` matrix `(A₁₂ - A₂₁) + i (A₁₁ + A₂₂)`, whose determinant is that of the

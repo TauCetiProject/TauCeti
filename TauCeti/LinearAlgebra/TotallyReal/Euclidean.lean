@@ -32,6 +32,8 @@ symplectic form `Im ⟪·, ·⟫` of `ℂⁿ`, hence Lagrangian.
   invertible `M` up to right multiplication by an invertible real matrix.
 * `Matrix.exists_mem_orthogonalGroup_eq_mul_map_ofReal`: for frames orthonormal for `Re ⟪·, ·⟫`,
   that real matrix is orthogonal.
+* `Matrix.map_star_mulVec_of_star_eq`: on a vector fixed by `star`, such as a real vector, the
+  matrix `M.map star` takes the conjugate of the value of `M`.
 * `Matrix.realImage_map_star_eq_of_realImage_eq`: conjugating the entries of `M` conjugates
   `M ℝⁿ`, so the image of `ℝⁿ` under `M.map star` depends only on `M ℝⁿ`.
 * `Matrix.GeneralLinearGroup.realImage_ofEuclideanCLE`: the image of `ℝⁿ` under the matrix of a
@@ -177,6 +179,13 @@ theorem realImage_mul_map_ofReal (M : Matrix n n ℂ) {N : Matrix n n ℝ} (hN :
     (M * N.map ((↑) : ℝ → ℂ)).realImage = M.realImage := by
   rw [realImage_mul, realImage_map_ofReal hN, realImage]
 
+omit [DecidableEq n] in
+/-- On a vector fixed by `star`, such as a real vector of `ℂⁿ`, the matrix `M.map star` with
+conjugated entries takes the conjugate value `star (M v)`. -/
+theorem map_star_mulVec_of_star_eq {m α : Type*} [CommSemiring α] [StarRing α]
+    (M : Matrix m n α) {v : n → α} (hv : star v = v) : M.map star *ᵥ v = star (M *ᵥ v) := by
+  rw [star_mulVec, hv, conjTranspose, transpose_map, vecMul_transpose]
+
 /-- **Conjugating the entries preserves equality of the images of `ℝⁿ`.** On a real vector `x`,
 the matrix `M.map star` takes the value `conj (M x)`, so `(M.map star) ℝⁿ` is the conjugate of
 `M ℝⁿ` and depends only on it. -/
@@ -184,9 +193,9 @@ theorem realImage_map_star_eq_of_realImage_eq {M N : Matrix n n ℂ}
     (h : M.realImage = N.realImage) : (M.map star).realImage = (N.map star).realImage := by
   have hval (P : Matrix n n ℂ) {x : EuclideanSpace ℂ n} (hx : x ∈ realSubspace n) (i : n) :
       toEuclideanCLM (𝕜 := ℂ) (P.map star) x i = star (toEuclideanCLM (𝕜 := ℂ) P x i) := by
-    simp only [toEuclideanCLM_apply_apply, map_apply, star_sum, star_mul']
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [Complex.star_def, Complex.conj_eq_iff_im.2 (mem_realSubspace.1 hx j)]
+    simp only [toEuclideanCLM_apply, ofLp_toLpLin, toLin'_apply]
+    rw [map_star_mulVec_of_star_eq P
+      (funext fun j ↦ Complex.conj_eq_iff_im.2 (mem_realSubspace.1 hx j)), Pi.star_apply]
   have key {M N : Matrix n n ℂ} (hMN : M.realImage ≤ N.realImage) :
       (M.map star).realImage ≤ (N.map star).realImage := by
     intro v hv
