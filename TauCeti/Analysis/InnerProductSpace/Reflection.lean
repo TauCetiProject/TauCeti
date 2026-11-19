@@ -27,9 +27,7 @@ space, the reflection in the axis spanned by a basis vector `eᵢ` keeps the `i`
 negates the others (`EuclideanSpace.reflection_singleton_single_apply`).
 
 Over `ℝ`, reflecting `x` across `K` changes its squared distance to `y` by `4 ⟪P x, y⟫`, where `P`
-is the orthogonal projection onto `Kᗮ` (`Submodule.norm_reflection_sub_sq`), and when `Kᗮ` is a line
-the sign of `⟪P x, y⟫` records whether `x` and `y` lie on the same side of `K`
-(`Submodule.inner_starProjection_mul_inner_starProjection_of_finrank_eq_one`). In finite dimension,
+is the orthogonal projection onto `Kᗮ` (`Submodule.norm_reflection_sub_sq`). In finite dimension,
 a linear map preserving the inner product whose fixed vectors form a hyperplane is the reflection in
 that hyperplane (`LinearMap.reflection_fixedSubmodule_apply`).
 
@@ -168,18 +166,6 @@ theorem norm_reflection_sub_sq (K : Submodule ℝ F) [K.HasOrthogonalProjection]
   norm_num
   ring
 
-/-- For the orthogonal projection `P` onto a line, `⟪P x, y⟫ ⟪P y, z⟫ = ⟪P y, y⟫ ⟪P x, z⟫`: if `n`
-spans the line, both sides are `⟪n, x⟫ ⟪n, y⟫² ⟪n, z⟫ / ‖n‖⁴`. In particular, lying strictly on the
-same side of the orthogonal hyperplane is a transitive relation. -/
-theorem inner_starProjection_mul_inner_starProjection_of_finrank_eq_one (L : Submodule ℝ F)
-    [L.HasOrthogonalProjection] (hL : Module.finrank ℝ L = 1) (x y z : F) :
-    ⟪L.starProjection x, y⟫_ℝ * ⟪L.starProjection y, z⟫_ℝ =
-      ⟪L.starProjection y, y⟫_ℝ * ⟪L.starProjection x, z⟫_ℝ := by
-  obtain ⟨n, hnL, hn⟩ := L.exists_mem_ne_zero_of_ne_bot (by rintro rfl; simp at hL)
-  obtain rfl := eq_span_singleton_of_mem_of_finrank_eq_one hL hnL hn
-  simp only [starProjection_singleton, real_inner_smul_left, RCLike.ofReal_real_eq_id, id_eq]
-  ring
-
 end Submodule
 
 namespace LinearMap
@@ -307,13 +293,9 @@ four times the product of the two signed distances to the boundary. -/
 theorem norm_sub_reflection_orthogonal_singleton_sq {v : F} (hv : ‖v‖ = 1) (x y : F) :
     ‖y - (ℝ ∙ v)ᗮ.reflection x‖ ^ 2 =
       ‖y - x‖ ^ 2 + 4 * ⟪v, x⟫_ℝ * ⟪v, y⟫_ℝ := by
-  have heq : y - (ℝ ∙ v)ᗮ.reflection x =
-      (y - x) + (2 * ⟪v, x⟫_ℝ) • v := by
-    rw [reflection_orthogonal_singleton_apply hv]
-    abel
-  rw [heq, norm_add_sq_real, inner_smul_right, inner_sub_left, norm_smul, hv]
-  simp only [mul_one, Real.norm_eq_abs, sq_abs]
-  rw [real_inner_comm y v, real_inner_comm x v]
+  rw [norm_sub_rev y, norm_sub_rev y, (ℝ ∙ v)ᗮ.norm_reflection_sub_sq]
+  simp only [Submodule.orthogonal_orthogonal, Submodule.starProjection_singleton, hv,
+    real_inner_smul_left, RCLike.ofReal_real_eq_id, id_eq, one_pow, div_one]
   ring
 
 /-- For a point `y` of the hyperplane perpendicular to a unit vector `v`, the squared distance
