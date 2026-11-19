@@ -45,10 +45,8 @@ namespace AlgebraicGeometry.Scheme.AffineZariskiSite
 /-- The affine opens of `X` cover `X`, indexed by the small affine Zariski site. -/
 theorem isOpenCover_toOpens (X : Scheme.{u}) :
     TopologicalSpace.IsOpenCover fun U : X.AffineZariskiSite ↦ U.toOpens := by
-  refine .mk (top_le_iff.1 fun x _ ↦ ?_)
-  obtain ⟨U, hxU⟩ := TopologicalSpace.Opens.mem_iSup.1
-    ((iSup_affineOpens_eq_top X).ge (Set.mem_univ x))
-  exact TopologicalSpace.Opens.mem_iSup.2 ⟨⟨U.1, U.2⟩, hxU⟩
+  simpa only [directedCover_f, Scheme.Opens.opensRange_ι] using
+    (directedCover X).isOpenCover_opensRange
 
 end AlgebraicGeometry.Scheme.AffineZariskiSite
 
@@ -65,13 +63,11 @@ theorem directedCover_pullback₁_trans_pullbackRestrictIsoRestrict_hom
         (pullbackRestrictIsoRestrict q V.toOpens).hom =
       (pullbackRestrictIsoRestrict q U.toOpens).hom ≫
         T.homOfLE (q.preimage_mono (toOpens_mono i.le)) := by
-  have hUV : U.toOpens ≤ V.toOpens := toOpens_mono i.le
   -- The transition maps of the pulled-back cover are indexed by its own index type; `change`
   -- presents the transition as the underlying map of pullbacks so that rewriting is type-correct.
-  change pullback.map q U.toOpens.ι q V.toOpens.ι (𝟙 _) (X.homOfLE hUV) (𝟙 _)
-      (by simp) (by rw [Category.comp_id]; exact (Scheme.homOfLE_ι _ _).symm) ≫ _ = _
-  rw [← cancel_mono (q ⁻¹ᵁ V.toOpens).ι, Category.assoc, Category.assoc, Scheme.homOfLE_ι T,
-    pullbackRestrictIsoRestrict_hom_ι, pullbackRestrictIsoRestrict_hom_ι]
-  exact (pullback.lift_fst _ _ _).trans (Category.comp_id _)
+  change pullback.map q U.toOpens.ι q V.toOpens.ι (𝟙 _) (X.homOfLE (toOpens_mono i.le)) (𝟙 _)
+    (by simp) (by simp) ≫ _ = _
+  rw [← cancel_mono (q ⁻¹ᵁ V.toOpens).ι]
+  simp
 
 end TauCeti.AlgebraicGeometry.Scheme.AffineZariskiSite
