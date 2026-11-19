@@ -62,6 +62,7 @@ noncomputable def residueFieldCompletionPair : Pair (residueFieldValuation v).Co
 
 /-- The plus ring in the completed residue pair is the valuation subring of the completed
 valuation. -/
+@[simp]
 theorem residueFieldCompletionPair_plus :
     (residueFieldCompletionPair v).plus =
       (Valued.v (R := (residueFieldValuation v).Completion)).valuationSubring.toSubring := (rfl)
