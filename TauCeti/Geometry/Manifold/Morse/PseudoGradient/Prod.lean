@@ -43,6 +43,8 @@ along `modelWithCornersSelf_prod`.
   in the product Morse chart.
 * `TauCeti.IsAdaptedPseudoGradient.prod`: the product field is a pseudo-gradient adapted to the
   separated sum.
+* `TauCeti.IsAdaptedPseudoGradient.prod_chartedSpaceSelf`: the same on a product `E × E'` of normed
+  spaces, with the charts of the normed space `E × E'`.
 * `TauCeti.IsAdaptedPseudoGradient.flow_prod` and `TauCeti.IsAdaptedPseudoGradient.flow_prod_apply`:
   on compact Hausdorff manifolds, its flow is the product of the flows (`Flow.prod`).
 * `TauCeti.IsAdaptedPseudoGradient.stableSet_prod` and
@@ -151,6 +153,27 @@ theorem prod (hX : IsAdaptedPseudoGradient f X) (hY : IsAdaptedPseudoGradient g 
       exact hφ q.1 hq.1
     · rw [MorseChart.prod_toChart] at hq
       exact hψ q.2 hq.2
+
+/-- **The product of adapted pseudo-gradients on a product of normed spaces**, for the charts of
+the normed space `E × E'` itself. These are its product charts (`chartedSpaceSelf_prod`), so if `X`
+is a pseudo-gradient adapted to `f` on `E` and `Y` one adapted to `g` on `E'`, then `(X, Y)` is a
+pseudo-gradient adapted to `f ∘ Prod.fst + g ∘ Prod.snd` on the normed space `E × E'`. -/
+theorem prod_chartedSpaceSelf {f : E → ℝ} {g : E' → ℝ} {X : (z : E) → TangentSpace 𝓘(ℝ, E) z}
+    {Y : (z : E') → TangentSpace 𝓘(ℝ, E') z} (hX : IsAdaptedPseudoGradient f X)
+    (hY : IsAdaptedPseudoGradient g Y) :
+    @IsAdaptedPseudoGradient (E × E') _ _ (E × E') _ (chartedSpaceSelf (E × E')) _
+      (f ∘ Prod.fst + g ∘ Prod.snd) (Manifold.prodVectorField X Y) := by
+  -- Adaptedness for the product charts transfers along their equality with the charts of `E × E'`.
+  have key : ∀ (c : ChartedSpace (E × E') (E × E'))
+      (m : @IsManifold _ _ _ _ _ _ _ 𝓘(ℝ, E × E') ∞ (E × E') _ c),
+      c = chartedSpaceSelf (E × E') →
+      @IsAdaptedPseudoGradient _ _ _ _ _ c m (f ∘ Prod.fst + g ∘ Prod.snd)
+        (Manifold.prodVectorField X Y) →
+      @IsAdaptedPseudoGradient _ _ _ _ _ (chartedSpaceSelf (E × E')) inferInstance
+        (f ∘ Prod.fst + g ∘ Prod.snd) (Manifold.prodVectorField X Y) := by
+    rintro c m rfl h
+    exact h
+  exact key _ _ chartedSpaceSelf_prod (hX.prod hY)
 
 /-! ### The flow, stable and unstable manifolds of a product -/
 
