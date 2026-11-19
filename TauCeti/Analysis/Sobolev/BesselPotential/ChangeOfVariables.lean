@@ -61,8 +61,7 @@ theorem comp_mem_realSobolevFunctions_natCast (hp : 1 < p) (hp_top : p ≠ ∞) 
   refine mem_realSobolevFunctions.2 ⟨u', ?_,
     (Lp.memSobolev_natCast_iff_exists_wkp_value_eq hp hp_top k u').2
       ⟨w', .of_forall fun x ↦ by rw [hu']⟩⟩
-  have hae : ae (volume.restrict ((⊤ : Opens E) : Set E)) = ae (volume : Measure E) := by
-    rw [← hvolume]
+  have hae := Measure.ae_restrict_coe_opens_top (volume : Measure E)
   have hcomp := Wkp.value_compL_ae (mu := volume) hΦ hp_top w
   have hpull := hΦ.ae_comp (mu := volume) (P := fun y ↦ Wkp.value k w y = f y) <| by
     rw [hae]
