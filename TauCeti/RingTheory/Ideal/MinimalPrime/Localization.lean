@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
+public import Mathlib.RingTheory.KrullDimension.Basic
 
 /-!
 # Minimal primes and localization
@@ -31,6 +32,9 @@ of the localization at every prime minimal over `f`.
   are coprime when all maximal localizations are domains.
 * `IsLocalization.AtPrime.map_eq_maximalIdeal_of_mem_minimalPrimes`: if `m` is minimal over a
   radical ideal `I`, then `I` generates the maximal ideal of `A_m`.
+* `IsLocalization.comap_mem_minimalPrimes_of_krullDimLE_zero`: in a localization at
+  non-zero-divisors of Krull dimension zero, such as an Artinian total ring of fractions, every
+  prime contracts to a minimal prime.
 -/
 
 public section
@@ -82,3 +86,18 @@ theorem map_eq_maximalIdeal_of_mem_minimalPrimes {R : Type*} [CommSemiring R] {I
     ← IsLocalization.map_radical q.primeCompl A, hI.radical]
 
 end IsLocalization.AtPrime
+
+namespace IsLocalization
+
+/-- In a localization at non-zero-divisors of Krull dimension zero, such as an Artinian total ring
+of fractions, every prime contracts to a minimal prime of the original ring. -/
+theorem comap_mem_minimalPrimes_of_krullDimLE_zero {R : Type*} [CommRing R] {M : Submonoid R}
+    (hM : M ≤ nonZeroDivisors R) (S : Type*) [CommRing S] [Algebra R S] [IsLocalization M S]
+    [Ring.KrullDimLE 0 S] (p : Ideal S) [p.IsPrime] :
+    p.comap (algebraMap R S) ∈ minimalPrimes R := by
+  have h := minimalPrimes_comap M S (⊥ : Ideal S)
+  rw [Ideal.comap_bot_of_injective _ (IsLocalization.injective S hM)] at h
+  exact (h ▸ ⟨p, Ideal.mem_minimalPrimes_of_krullDimLE_zero p, rfl⟩ :
+    p.comap (algebraMap R S) ∈ (⊥ : Ideal R).minimalPrimes)
+
+end IsLocalization
