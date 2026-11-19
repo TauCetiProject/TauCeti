@@ -65,27 +65,6 @@ private local instance instNormedSpaceBoundedContinuousFunction {X : Type*} [Top
     (n : ℕ) : NormedSpace ℝ (X →ᵇ (ℂ [×n]→L[ℝ] ℂ)) :=
   inferInstance
 
-/-- A point value of a derivative field of `b` is bounded by `‖b‖`. This reads pointwise bounds
-off the outputs of `TauCeti.cauchyTransformCkCLM` and `TauCeti.beurlingCkCLM`. -/
-private theorem norm_fst_apply_le {X Y : Type*} [TopologicalSpace X] [SeminormedAddCommGroup Y]
-    {n : ℕ} {G : Fin n → Type*} [∀ i, SeminormedAddCommGroup (G i)]
-    (b : ((i : Fin n) → X →ᵇ G i) × Y) (i : Fin n) (x : X) : ‖b.1 i x‖ ≤ ‖b‖ :=
-  (BoundedContinuousFunction.norm_coe_le_norm _ _).trans
-    ((norm_le_pi_norm b.1 i).trans (norm_fst_le b))
-
-/-- A function equal on `s` to the Hölder component of `b` is `α`-Hölder on `s` with constant
-`‖b‖`. This reads Hölder bounds off the outputs of `TauCeti.cauchyTransformCkCLM` and
-`TauCeti.beurlingCkCLM`. -/
-private theorem holderOnWith_of_snd_eq {X Y Z : Type*} [MetricSpace X] [NormedAddCommGroup Y]
-    [NormedSpace ℝ Y] [SeminormedAddCommGroup Z] {α : ℝ≥0} {s : Set X} {g : X → Y}
-    (b : Z × HolderSpace α s Y) (hb : ∀ x : s, b.2 x = g x) : HolderOnWith ‖b‖₊ α g s := by
-  rw [← HolderWith.restrict_iff]
-  have he : s.domRestrict g = ⇑b.2 := funext fun x ↦ (hb x).symm
-  rw [he]
-  exact (HolderSpace.holderWith_nnnorm _).mono (by
-    rw [← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm]
-    exact norm_snd_le _)
-
 namespace Beltrami
 
 variable {k : ℕ} {α : ℝ≥0} {c : ℂ} {r : ℝ}
@@ -125,7 +104,8 @@ private theorem norm_iteratedFDeriv_beurling_le
         (fun w ↦ wirtingerDeriv (cauchyTransform (h : CkHolderSpace k α ℂ ℂ)) w 1) x‖ ≤
       ‖beurlingCkCLM k hα hα1 hr (r3_nonneg hr) h‖ := by
   rw [← beurlingCkCLM_apply_fst k hα hα1 hr (r3_nonneg hr) h ⟨i, by omega⟩ ⟨x, hx⟩]
-  exact norm_fst_apply_le _ _ _
+  exact (BoundedContinuousFunction.norm_coe_le_norm _ _).trans
+    ((norm_le_pi_norm _ _).trans (norm_fst_le _))
 
 private theorem holderOnWith_iteratedFDeriv_beurling
     (h : supportedCkHolderSubmodule (E := ℂ) (F := ℂ) k α (closedBall c r)) :
@@ -133,7 +113,10 @@ private theorem holderOnWith_iteratedFDeriv_beurling
       (iteratedFDeriv ℝ k
         (fun w ↦ wirtingerDeriv (cauchyTransform (h : CkHolderSpace k α ℂ ℂ)) w 1))
       (closedBall c (r + 3)) :=
-  holderOnWith_of_snd_eq _ (beurlingCkCLM_apply_snd k hα hα1 hr (r3_nonneg hr) h)
+  (HolderSpace.holderOnWith_of_apply_eq _
+    (beurlingCkCLM_apply_snd k hα hα1 hr (r3_nonneg hr) h)).mono_const (by
+      rw [← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm]
+      exact norm_snd_le _)
 
 /-- The cut-off Beurling transform of a supported source, as an element of the global space. -/
 private def cutoffBeurling
@@ -338,8 +321,12 @@ private theorem cauchyTransform_regularity (hα : 0 < α) (hα1 : α < 1) (hr : 
       (fun x ↦ (h : CkHolderSpace k α ℂ ℂ).norm_apply_le x)).2.2.2 z
       (mem_ball.mpr (lt_add_one _))
   · rw [← cauchyTransformCkCLM_apply_fst k hα hα1 hr hr h ⟨i, by omega⟩ ⟨z, hz⟩]
-    exact norm_fst_apply_le _ _ _
-  · exact holderOnWith_of_snd_eq _ (cauchyTransformCkCLM_apply_snd k hα hα1 hr hr h)
+    exact (BoundedContinuousFunction.norm_coe_le_norm _ _).trans
+      ((norm_le_pi_norm _ _).trans (norm_fst_le _))
+  · refine (HolderSpace.holderOnWith_of_apply_eq _
+      (cauchyTransformCkCLM_apply_snd k hα hα1 hr hr h)).mono_const ?_
+    rw [← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm]
+    exact norm_snd_le _
 
 /-- **The Beltrami equation with small `C^{k,α}` coefficient.** Let `k : ℕ` and `0 < α < 1`.
 There are `δ > 0` and `C` such that every bounded `C^{k,α}` function `μ` vanishing off
