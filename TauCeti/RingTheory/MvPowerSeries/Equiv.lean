@@ -90,7 +90,7 @@ open Finset
 
 section Semiring
 
-variable (A σ τ : Type*) [Semiring A]
+variable (A σ τ : Type*)
 
 /-- Reindexing coefficients by the two parts of a monomial and currying the resulting family.
 Implementation detail of `sumAlgEquiv`. -/
@@ -99,7 +99,7 @@ private noncomputable def sumEquiv :
   (Equiv.arrowCongr Finsupp.sumFinsuppEquivProdFinsupp (Equiv.refl A)).trans
     (Equiv.curry (σ →₀ ℕ) (τ →₀ ℕ) A)
 
-variable {A σ τ}
+variable {A σ τ} [Semiring A]
 
 private theorem coeff_coeff_sumEquiv (f : MvPowerSeries (σ ⊕ τ) A) (a : σ →₀ ℕ)
     (b : τ →₀ ℕ) : coeff b (coeff a (sumEquiv A σ τ f)) = coeff (a.sumElim b) f := (rfl)
