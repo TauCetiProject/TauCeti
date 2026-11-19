@@ -71,9 +71,11 @@ ball with bounded gradient there has integral at most the squared bound times th
 
 On a finite-dimensional real normed space, for a constant `C` depending only on the space, every
 ball of radius `r` has a cutoff that is one on it and zero beyond radius `2 r`, with derivative of
-norm at most `C r⁻¹` (`TauCeti.exists_cutoff_fderiv_bound`). The derivative of such a cutoff against
-data `u` with `‖x‖ ‖u x‖` bounded for large `‖x‖` is at most `A (M / R)` on the closed ball of
-radius `2 R` and vanishes outside it (`TauCeti.norm_fderiv_mul_norm_le_indicator`).
+norm at most `C r⁻¹` (`TauCeti.exists_cutoff_fderiv_bound`). For `R > 0`, a cutoff `χ` equal to
+one on the closed ball of radius `R` and zero beyond radius `2 R`, with `‖Dχ‖ ≤ A` everywhere, and
+data `u` with `‖x‖ ‖u x‖ ≤ M` whenever `‖x‖ ≥ R`, the product `‖Dχ x‖ ‖u x‖` is at most `A (M / R)`
+on the closed ball of radius `2 R` and vanishes outside it
+(`TauCeti.norm_fderiv_mul_norm_le_indicator`).
 
 Finally, the space-time cut-offs `(t, x) ↦ χ (s • x) * φ (t, x)` of a function `φ` vanishing outside
 a time interval, for a bump `χ` and a small scale `s`, have compact support
