@@ -186,25 +186,32 @@ lemma toOverHom_ofAbelianVarietyFunctor_map {A B : AbelianVariety K} (g : A ⟶ 
     Hom.toOverHom (ofAbelianVarietyFunctor.map g) = AbelianVariety.Hom.toOverHom g :=
   Hom.toOverHom_mk' _ _ _
 
+/-- `ofAbelianVarietyFunctor` undoes `toAbelianVarietyFunctor` on homomorphisms: both keep the
+underlying morphism, and the source and target objects agree by definition. -/
+private lemma ofAbelianVarietyFunctor_map_toAbelianVarietyFunctor_map
+    {A B : AbelianScheme (Spec (.of K))} (f : A ⟶ B) :
+    ofAbelianVarietyFunctor.map (toAbelianVarietyFunctor.map f) = f :=
+  Hom.toOverHom_injective <| (toOverHom_ofAbelianVarietyFunctor_map _).trans
+    (toOverHom_toAbelianVarietyFunctor_map f)
+
+/-- `toAbelianVarietyFunctor` undoes `ofAbelianVarietyFunctor` on homomorphisms: both keep the
+underlying morphism, and the source and target objects agree by definition. -/
+private lemma toAbelianVarietyFunctor_map_ofAbelianVarietyFunctor_map {A B : AbelianVariety K}
+    (g : A ⟶ B) : toAbelianVarietyFunctor.map (ofAbelianVarietyFunctor.map g) = g :=
+  AbelianVariety.Hom.toOverHom_injective <| (toOverHom_toAbelianVarietyFunctor_map _).trans
+    (toOverHom_ofAbelianVarietyFunctor_map g)
+
 /-- **Field boundary of abelian schemes.** Over `Spec K` the adapters `toAbelianVariety` and
 `ofAbelianVariety` form an equivalence between the category of abelian schemes over `Spec K` and
 the category of abelian varieties over `K`, each with group-scheme homomorphisms as morphisms. -/
 def fieldEquivalence : AbelianScheme (Spec (.of K)) ≌ AbelianVariety K where
   functor := toAbelianVarietyFunctor
   inverse := ofAbelianVarietyFunctor
-  unitIso := NatIso.ofComponents (fun A ↦ Iso.refl A) fun f ↦ Hom.toOverHom_injective <| by
-    rw [Hom.toOverHom_comp, Hom.toOverHom_comp, Functor.comp_map,
-      toOverHom_ofAbelianVarietyFunctor_map, toOverHom_toAbelianVarietyFunctor_map, Iso.refl_hom,
-      Iso.refl_hom]
-    -- Both identities are the identity of the underlying group scheme of the same object.
-    exact (Category.comp_id _).trans (Category.id_comp _).symm
-  counitIso := NatIso.ofComponents (fun A ↦ Iso.refl A) fun f ↦
-    AbelianVariety.Hom.toOverHom_injective <| by
-      rw [AbelianVariety.Hom.toOverHom_comp, AbelianVariety.Hom.toOverHom_comp, Functor.comp_map,
-        toOverHom_toAbelianVarietyFunctor_map, toOverHom_ofAbelianVarietyFunctor_map,
-        Iso.refl_hom, Iso.refl_hom]
-      -- Both identities are the identity of the underlying group scheme of the same object.
-      exact (Category.comp_id _).trans (Category.id_comp _).symm
+  -- Each naturality square is `f ≫ 𝟙 = 𝟙 ≫ f'` with `f' = f` by the helper lemmas above.
+  unitIso := NatIso.ofComponents (fun A ↦ Iso.refl A) fun f ↦ (Category.comp_id f).trans <|
+    ((Category.id_comp _).trans (ofAbelianVarietyFunctor_map_toAbelianVarietyFunctor_map f)).symm
+  counitIso := NatIso.ofComponents (fun A ↦ Iso.refl A) fun f ↦ (Category.comp_id _).trans <|
+    (toAbelianVarietyFunctor_map_ofAbelianVarietyFunctor_map f).trans (Category.id_comp f).symm
   functor_unitIso_comp A := AbelianVariety.Hom.toOverHom_injective <| by
     rw [AbelianVariety.Hom.toOverHom_comp, toOverHom_toAbelianVarietyFunctor_map]
     -- Unit and counit components are identities of the same underlying group scheme.

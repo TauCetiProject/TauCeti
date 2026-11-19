@@ -39,10 +39,12 @@ The file also provides:
   the group law (`IsMonHom`), and the base-change functor `AbelianScheme.baseChangeFunctor`.
 
 A smooth morphism with geometrically connected fibres is geometrically integral
-(`TauCeti.AlgebraicGeometry.Smooth.geometricallyIntegral`), so the structure morphism of an
-abelian scheme is geometrically integral by instance search; together with properness this is
-what identifies abelian schemes over a field with Tau Ceti's `AbelianVariety`, in
-`TauCeti.AlgebraicGeometry.AbelianScheme.AbelianVariety`.
+(`TauCeti.AlgebraicGeometry.Smooth.geometricallyIntegral`). That instance lives in
+`TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyIntegral`, which this file does not
+import; once it is imported, as in `TauCeti.AlgebraicGeometry.AbelianScheme.AbelianVariety`, the
+structure morphism of an abelian scheme is geometrically integral by instance search. Together
+with properness this is what identifies abelian schemes over a field with Tau Ceti's
+`AbelianVariety`, in that file.
 
 ## References
 
@@ -147,15 +149,14 @@ lemma zeroSection_baseChange (A : AbelianScheme S) (f : T ⟶ S) :
       rw [Category.assoc, zeroSection_comp_toOver_hom, Category.comp_id, Category.id_comp]) := by
   refine pullback.hom_ext ?_ ((A.baseChange f).zeroSection_comp_toOver_hom.trans
     (pullback.lift_snd _ _ _).symm)
-  -- The unit of the transported group law is `ε (Over.pullback f) ≫ (Over.pullback f).map η`
-  -- (`Functor.obj.η_def`).
-  change ((Functor.LaxMonoidal.ε (Over.pullback f)).left ≫
-    ((Over.pullback f).map η[A.toOver]).left) ≫ pullback.fst A.toOver.hom f = _
-  rw [Over.ε_pullback_left, Category.assoc, IsIso.inv_comp_eq, pullback.lift_fst]
-  simp only [Over.pullback_map_left, pullback.lift_fst]
+  -- The unit of the transported group law is `ε (Over.pullback f) ≫ (Over.pullback f).map η`.
+  have hη : η[(A.baseChange f).toOver] =
+      Functor.LaxMonoidal.ε (Over.pullback f) ≫ (Over.pullback f).map η[A.toOver] :=
+    Functor.obj.η_def _
+  rw [zeroSection, hη, Over.comp_left, Over.ε_pullback_left, Category.assoc, IsIso.inv_comp_eq,
+    pullback.lift_fst]
+  simp only [Over.pullback_map_left, pullback.lift_fst, Over.tensorUnit_hom]
   rw [← pullback.condition_assoc, Category.id_comp]
-  -- The structure morphism of `𝟙_ (Over S)` is `𝟙 S` by definition (`Over.tensorUnit_hom`).
-  rfl
 
 /-! ### The identity abelian scheme -/
 
