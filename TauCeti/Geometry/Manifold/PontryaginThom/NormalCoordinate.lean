@@ -49,6 +49,7 @@ def tubeBall (τ : S × V → N) (ε : ℝ) : Set N :=
   τ '' (Prod.snd ⁻¹' ball 0 ε)
 
 omit [TopologicalSpace S] [TopologicalSpace N] in
+@[simp]
 lemma mem_tubeBall {ε : ℝ} {w : N} :
     w ∈ tubeBall τ ε ↔ ∃ x, ∃ v ∈ ball (0 : V) ε, τ (x, v) = w := by
   simp [tubeBall]
