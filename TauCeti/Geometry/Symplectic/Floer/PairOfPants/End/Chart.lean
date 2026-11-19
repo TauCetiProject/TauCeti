@@ -617,6 +617,15 @@ theorem exists_subset_image_endChart_Icc_prod_Ico {q : Puncture} {D : Set (ℝ �
   exact ⟨N, fun z hz ↦ ⟨_, ⟨abs_le.1 ((Real.norm_eq_abs _).symm.trans_le (hN z hz)),
     Int.fract_nonneg _, Int.fract_lt_one _⟩, endChart_re_endCoord_fract_im_endCoord (hDq z hz)⟩⟩
 
+/-- A set of points other than the center of the end `q` is the image under the end chart of the
+part of the band `ℝ × [0, 1)` lying over it. -/
+theorem image_endChart_preimage_inter_univ_prod_Ico {q : Puncture} {Ω : Set (ℝ × ℝ)}
+    (hΩ : ∀ z ∈ Ω, Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
+    endChart q '' (endChart q ⁻¹' Ω ∩ univ ×ˢ Ico 0 1) = Ω := by
+  rw [image_preimage_inter, inter_eq_left]
+  exact fun z hz ↦ ⟨_, ⟨mem_univ _, Int.fract_nonneg _, Int.fract_lt_one _⟩,
+    endChart_re_endCoord_fract_im_endCoord (hΩ z hz)⟩
+
 /-- For `0 ≤ c`, the part `±s > c` of the end `q` in the truncation `S_R` is the image under the
 end chart of `c < ±s ≤ R`, `t ∈ [0, 1)`. -/
 theorem preimage_truncation_inter_eq_image_endChart (q : Puncture) {c : ℝ} (hc : 0 ≤ c)
