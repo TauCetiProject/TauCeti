@@ -19,10 +19,12 @@ the Morse index vanishes everywhere (`TauCeti.manifoldMorseIndex_const`). Unless
 zero-dimensional, `f` is not a Morse function (`TauCeti.isMorse_const_iff`): its Hessian vanishes,
 so its critical points are degenerate.
 
-In the Morse–Bott inequalities a critical submanifold `C` of index `λ` contributes its Betti numbers
-shifted by `λ`, that is `bⱼ₋λ(C)` in degree `j`, to the relative homology of the band around its
-critical level. For the constant function there is a single critical level `c`, crossing it passes
-from the empty sublevel to all of `M`, and every index is `0`. For the constant function `f = c` on
+In the Morse–Bott inequalities a critical submanifold `C` of index `λ` contributes, in degree `j`,
+its homology in degree `j - λ` twisted by the orientation sheaf of its negative normal bundle to the
+relative homology of the band around its critical level. When that bundle is orientable, or over
+`𝔽₂`, this is the shifted Betti number `bⱼ₋λ(C)`. For the constant function there is a single
+critical level `c`, crossing it passes from the empty sublevel to all of `M`, and every index is
+`0`, so the negative normal bundle is zero and no twist arises. For the constant function `f = c` on
 any topological space `X` and over any ring `k`, the relative homology `Hⱼ({f ≤ b}, {f ≤ a}; k)` of
 the band, for `a < c ≤ b`, is the homology of `X`, so its dimension is `bⱼ(X; k)`
 (`TauCeti.finrank_singularHomology_sublevelPair_const_eq_bettiNumber`): the contribution of the
