@@ -31,6 +31,7 @@ every summand is. For the ampliation `lp.ampliation ι 2 T` of a single operator
 * `lp.isSelfAdjoint_mapCLM_iff`: `⊕ T i` is self-adjoint iff every `T i` is.
 * `lp.inner_ampliation_apply`, `lp.adjoint_ampliation`: matrix coefficients and adjoints of
   ampliations.
+* `lp.ampliationStarAlgHom`: the ampliation as a star algebra homomorphism.
 
 ## References
 
@@ -93,6 +94,22 @@ theorem adjoint_ampliation (T : X →L[𝕜] Y) : (ampliation ι 2 T)† = ampli
 @[simp]
 theorem star_ampliation (T : X →L[𝕜] X) : star (ampliation ι 2 T) = ampliation ι 2 (star T) := by
   simp only [ContinuousLinearMap.star_eq_adjoint, adjoint_ampliation]
+
+variable (ι 𝕜 X) in
+/-- The ampliation `T ↦ ⊕_{i : ι} T` of operators on a Hilbert space `X` to `ℓ²(ι, X)`, as a star
+algebra homomorphism. -/
+noncomputable def ampliationStarAlgHom : (X →L[𝕜] X) →⋆ₐ[𝕜] (ℓ²(ι, X) →L[𝕜] ℓ²(ι, X)) where
+  toFun := ampliation ι 2
+  map_one' := ampliation_one
+  map_mul' := ampliation_mul
+  map_zero' := map_zero _
+  map_add' := map_add _
+  commutes' r := by simp [Algebra.algebraMap_eq_smul_one]
+  map_star' T := (star_ampliation T).symm
+
+@[simp]
+theorem coe_ampliationStarAlgHom : ⇑(ampliationStarAlgHom ι 𝕜 X) = ampliation ι 2 :=
+  (rfl)
 
 end Ampliation
 
