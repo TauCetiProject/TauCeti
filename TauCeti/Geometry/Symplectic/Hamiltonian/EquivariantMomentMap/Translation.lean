@@ -27,12 +27,16 @@ and the equivariance defect `θ(g) = μ(g • x) - Ad*_g μ(x)` of `μ` is the c
 `θ(g)(ξ) = ω(ξ, toAdd g)`, independent of `x`
 (`TauCeti.SymplecticForm.momentDefect_translationMomentMap`). Every other moment map of the
 action, a constant shift of `μ` on the connected space `V`, has the same defect
-(`TauCeti.SymplecticForm.momentDefect_eq_translationMomentMap`). The defect is additive in `g`,
-and its derivative at the identity is the **Heisenberg cocycle** `c(ξ, η) = ω(ξ, η)` of the action
-(`TauCeti.SymplecticForm.momentCocycle_fundamental_multiplicative`), the cocycle of the central
-extension of the abelian Lie algebra `V` by `ℝ` that defines the Heisenberg Lie algebra.
+(`TauCeti.SymplecticForm.momentDefect_eq_translationMomentMap_of_isMomentMap`).
 
-Hence, as soon as `V` is nonzero, the translation action has no coadjoint-equivariant moment map
+Separately, the Lie-algebra cocycle of the action is the **Heisenberg cocycle**
+`c(ξ, η) = ω(ξ, η)` (`TauCeti.SymplecticForm.momentCocycle_fundamental_multiplicative`), the
+cocycle of the central extension of the abelian Lie algebra `V` by `ℝ` that defines the Heisenberg
+Lie algebra. By `TauCeti.SmoothTwoForm.IsMomentMap.mvfderiv_momentDefect_one`, it is the
+derivative at the identity of the defect `θ`.
+
+Since the defect `θ(g)(ξ) = ω(ξ, toAdd g)` is nonzero as soon as `V` is nonzero, the translation
+action then has no coadjoint-equivariant moment map
 (`TauCeti.SymplecticForm.not_isEquivariantMomentMap_multiplicative`). For the commutative group
 `V` this says that no moment map is invariant: the translation action of a nonzero symplectic
 vector space carries no Hamiltonian torus data
@@ -46,8 +50,8 @@ is equivariant for the affine action `ν ↦ ν + θ(g)` instead
 
 * `TauCeti.SymplecticForm.isMomentMap_fundamental_translationMomentMap`: `μ(x)(ξ) = ω(ξ, x)` is a
   moment map of the translation action.
-* `TauCeti.SymplecticForm.momentDefect_eq_translationMomentMap`: every moment map of the
-  translation action has defect `θ(g)(ξ) = ω(ξ, toAdd g)`.
+* `TauCeti.SymplecticForm.momentDefect_eq_translationMomentMap_of_isMomentMap`: every moment map
+  of the translation action has defect `θ(g)(ξ) = ω(ξ, toAdd g)`.
 * `TauCeti.SymplecticForm.momentCocycle_fundamental_multiplicative`: the Heisenberg cocycle.
 * `TauCeti.SymplecticForm.not_isEquivariantMomentMap_multiplicative`,
   `TauCeti.SymplecticForm.not_hamiltonianTorusData_multiplicative`: the translation action of a
@@ -129,7 +133,7 @@ theorem momentDefect_translationMomentMap (g : Multiplicative V) (x : V) :
 of the action of `Multiplicative V` by translations on `(V, ω)` has the equivariance defect
 `θ(g)(ξ) = ω(ξ, toAdd g)` at every point, because on the connected space `V` it differs from
 `x ↦ ω(·, x)` by a constant, which is coadjoint-invariant. -/
-theorem momentDefect_eq_translationMomentMap
+theorem momentDefect_eq_translationMomentMap_of_isMomentMap
     {μ : V → Module.Dual ℝ (GroupLieAlgebra 𝓘(ℝ, V) (Multiplicative V))}
     (h : ω.constSmooth.IsMomentMap
       (InfinitesimalAction.fundamental 𝓘(ℝ, V) (Multiplicative V) 𝓘(ℝ, V) V) μ)
@@ -144,8 +148,8 @@ theorem momentDefect_eq_translationMomentMap
 
 /-- **The translation action has no equivariant moment map.** On a nonzero finite-dimensional
 symplectic vector space `(V, ω)`, no moment map of the action of `Multiplicative V` by
-translations is coadjoint-equivariant, since the Heisenberg cocycle `ω(ξ, η)` of the action does
-not vanish. -/
+translations is coadjoint-equivariant, since every moment map has the nonzero defect
+`θ(g)(ξ) = ω(ξ, toAdd g)`. -/
 theorem not_isEquivariantMomentMap_multiplicative [Nontrivial V]
     (μ : V → Module.Dual ℝ (GroupLieAlgebra 𝓘(ℝ, V) (Multiplicative V))) :
     ¬ω.constSmooth.IsEquivariantMomentMap μ := by
@@ -155,7 +159,7 @@ theorem not_isEquivariantMomentMap_multiplicative [Nontrivial V]
   -- An equivariant moment map has zero defect, but its defect at `η` pairs with `ξ` to
   -- `ω(ξ, η) = 1`.
   have hθ := (momentDefect_eq_zero_iff.2 (h.apply_smul (.ofAdd η) 0)).symm.trans
-    (ω.momentDefect_eq_translationMomentMap h.toIsMomentMap (.ofAdd η) 0)
+    (ω.momentDefect_eq_translationMomentMap_of_isMomentMap h.toIsMomentMap (.ofAdd η) 0)
   have hξη := congr($hθ ((tangentSpaceCastModel 𝓘(ℝ, V) (1 : Multiplicative V)).symm ξ))
   rw [LinearMap.zero_apply, translationMomentMap_apply, LinearEquiv.coe_coe,
     ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.apply_symm_apply,
