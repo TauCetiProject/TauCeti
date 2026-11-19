@@ -105,7 +105,8 @@ theorem isPrimitiveRoot_root (n : ℕ) : IsPrimitiveRoot (root p Ω n) (p ^ (n +
 instance isCyclotomicExtension (n : ℕ) :
     IsCyclotomicExtension {p ^ (n + 1)} ℚ_[p] (padicCyclotomicField p Ω n) :=
   (IntermediateField.isCyclotomicExtension_singleton_iff_eq_adjoin _ _ _ _
-    (isPrimitiveRoot_compatibleCyclotomicRoot (K := Ω) n)).mpr rfl
+    (isPrimitiveRoot_compatibleCyclotomicRoot (K := Ω) n)).mpr
+    (padicCyclotomicField_def p Ω n)
 
 instance finiteDimensional (n : ℕ) : FiniteDimensional ℚ_[p] (padicCyclotomicField p Ω n) :=
   IsCyclotomicExtension.finiteDimensional {p ^ (n + 1)} ℚ_[p] _

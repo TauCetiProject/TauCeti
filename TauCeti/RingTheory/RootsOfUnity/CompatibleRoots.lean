@@ -89,7 +89,7 @@ theorem compatibleCyclotomicRoot_succ (M : Type*) [CommMonoid M] (n : ℕ) :
 /-- The chosen level-zero root is a primitive `p`-th root of unity whenever one exists. -/
 theorem isPrimitiveRoot_compatibleCyclotomicRoot_zero {M : Type*} [CommMonoid M]
     [HasEnoughRootsOfUnity M p] : IsPrimitiveRoot (compatibleCyclotomicRoot p M 0) p := by
-  rw [compatibleCyclotomicRoot]
+  rw [compatibleCyclotomicRoot_zero]
   exact Classical.epsilon_spec (HasEnoughRootsOfUnity.exists_isPrimitiveRoot M p)
 
 /-- For `p = 2` the chosen level-zero root is `-1`. -/
@@ -103,7 +103,7 @@ variable {K : Type*} [Field K] [IsAlgClosed K]
 @[simp]
 theorem compatibleCyclotomicRoot_succ_pow [NeZero p] (n : ℕ) :
     compatibleCyclotomicRoot p K (n + 1) ^ p = compatibleCyclotomicRoot p K n := by
-  rw [compatibleCyclotomicRoot]
+  rw [compatibleCyclotomicRoot_succ K n]
   exact Classical.epsilon_spec (IsAlgClosed.exists_pow_nat_eq _ (Nat.pos_of_neZero p))
 
 /-- The chosen roots are compatible across several levels: `ρ (n + k) ^ (p ^ k) = ρ n`. -/
