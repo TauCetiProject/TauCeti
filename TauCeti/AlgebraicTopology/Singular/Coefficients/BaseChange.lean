@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Descent
 public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.MapCoefficients
+import Mathlib.Algebra.Category.ModuleCat.Monoidal.Adjunction
 import Mathlib.LinearAlgebra.Charpoly.BaseChange
 
 /-!
@@ -17,7 +18,8 @@ import Mathlib.LinearAlgebra.Charpoly.BaseChange
 Let `S` be a flat `R`-algebra. Extension of scalars `M ↦ S ⊗[R] M` is then an exact functor
 `ModuleCat R ⥤ ModuleCat S` which preserves coproducts, so it commutes with singular homology
 (`CategoryTheory.Functor.singularHomologyFunctorObjCompIso`). Since it sends the coefficient
-module `R` to `S ⊗[R] R ≅ S`, this gives the universal coefficient isomorphism for flat
+module `R` to `S ⊗[R] R ≅ S` (the unit isomorphism of the monoidal functor
+`ModuleCat.extendScalars`), this gives the universal coefficient isomorphism for flat
 coefficients,
 
 `S ⊗[R] Hₙ(X; R) ≃ₗ[S] Hₙ(X; S)`
@@ -61,13 +63,6 @@ namespace TopCat
 
 variable {R S : Type w} [CommRing R] [CommRing S] [Algebra R S] [Module.Flat R S]
 
-/-- Extension of scalars of the coefficient module `R` is the coefficient module `S`. -/
-private def extendScalarsUnitIso :
-    (ModuleCat.extendScalars.{w, w, w} (algebraMap R S)).obj (ModuleCat.of R R) ≅
-      ModuleCat.of S S :=
-  ModuleCat.extendScalarsAlgebraMapIso _ ≪≫
-    (TensorProduct.AlgebraTensorModule.rid R S S).toModuleIso
-
 /-- The isomorphism `S ⊗[R] Hₙ(X; R) ≅ Hₙ(X; S)` in `ModuleCat S`, natural in `X`. -/
 private def singularHomologyBaseChangeIso (n : ℕ) :
     (singularHomologyFunctor (ModuleCat.{w} R) n).obj (ModuleCat.of R R) ⋙
@@ -77,7 +72,8 @@ private def singularHomologyBaseChangeIso (n : ℕ) :
   have : PreservesFiniteLimits (ModuleCat.extendScalars.{w, w, w} (algebraMap R S)) :=
     ModuleCat.preservesFiniteLimits_extendScalars_of_flat (RingHom.flat_algebraMap_iff.2 ‹_›)
   Functor.singularHomologyFunctorObjCompIso _ _ n ≪≫
-    (singularHomologyFunctor (ModuleCat.{w} S) n).mapIso extendScalarsUnitIso
+    (singularHomologyFunctor (ModuleCat.{w} S) n).mapIso
+      (Functor.Monoidal.εIso (ModuleCat.extendScalars.{w, w, w} (algebraMap R S))).symm
 
 variable (R S) in
 /-- **Flat base change of singular homology**: for a flat `R`-algebra `S`, the universal
