@@ -264,8 +264,8 @@ private theorem coprod_endTailL_eq_zero_iff_ae [CompleteSpace F] (hp : p ≠ ∞
   have hE := endTailL_apply_ae hmem v
   have hsum := Lp.coeFn_add (trajectoryOperator (p := p) AL ξ) (endTailL w χ A hmem v)
   have hprev := ae_restrict_of_ae (s := ((⊤ : Opens ℝ) : Set ℝ)) (prev_ae_eq_toZeroAtInfty hp ξ)
-  have hae : ae (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) = ae volume := by simp
-  rw [ContinuousLinearMap.coprod_apply, Lp.eq_zero_iff_ae_eq_zero, ← hae]
+  rw [ContinuousLinearMap.coprod_apply, Lp.eq_zero_iff_ae_eq_zero,
+    ← Measure.ae_restrict_coe_opens_top (volume : Measure ℝ)]
   constructor
   · intro h
     filter_upwards [hD, hE, hsum, hprev, hAL, h] with s hDs hEs hsums hprevs hALs h0s

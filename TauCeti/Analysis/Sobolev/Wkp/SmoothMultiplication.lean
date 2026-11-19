@@ -136,10 +136,7 @@ def contDiffOnSMulL (hU : UniqueDiffOn ℝ U) (hΩ : IsCompact (closure (Omega :
         (ae_restrict_of_forall_mem Omega.isOpen.measurableSet hC')
         (value_contDiffOnSMulAux hU hΩ hΩU k hpsi (u n - x))).trans
         (mul_le_mul_of_nonneg_left (norm_value_le k _) (le_max_right _ _))
-    have hy' : Tendsto (fun n => value k (L (u n))) atTop (𝓝 (value k y)) := by
-      simpa only [Function.comp_def, valueL_apply] using
-        ((valueL (mu := mu) (Omega := Omega) (p := p) k).continuous.tendsto y).comp hy
-    exact ext k (tendsto_nhds_unique hy' hval)
+    exact ext k (tendsto_nhds_unique (tendsto_value hy) hval)
 
 /-- The value of smooth multiplication is the pointwise product almost everywhere on `Ω`. -/
 theorem value_contDiffOnSMulL_ae (hU : UniqueDiffOn ℝ U) (hΩ : IsCompact (closure (Omega : Set E)))
