@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Otis Chodosh
 -/
 module
 
@@ -58,6 +58,7 @@ already has length `edist x y`, by `eVariationOn.edist_le`.
   infimum is attained, by `TauCeti.IsGeodesicSpace.exists_eVariationOn_eq`.
 * `TauCeti.IsLengthSpace.pathConnectedSpace` — a nonempty length space with finite distances is
   path connected.
+* `TauCeti.IsLengthSpace.isPreconnected_ball` — open balls in a length space are preconnected.
 * `TauCeti.instIsGeodesicSpace` — a real seminormed space is a geodesic space, its geodesic
   segments being the affine ones (`TauCeti.isGeodesicSegment_lineMap`).
 * `TauCeti.IsGeodesicSegment.eq_lineMap` — in a strictly convex real normed torsor the affine
@@ -195,6 +196,20 @@ theorem IsLengthSpace.exists_eVariationOn_lt_ofReal {X : Type*} [PseudoMetricSpa
   refine IsLengthSpace.exists_eVariationOn_lt ?_
   rw [edist_dist]
   exact ENNReal.ofReal_lt_ofReal_iff_of_nonneg dist_nonneg |>.2 hr
+
+/-- Every open ball in a length space is preconnected, including empty balls. -/
+theorem IsLengthSpace.isPreconnected_ball {X : Type*} [PseudoMetricSpace X] [IsLengthSpace X]
+    (p : X) (r : ℝ) : IsPreconnected (Metric.ball p r) := by
+  refine isPreconnected_of_forall p fun y hy ↦ ?_
+  obtain ⟨γ, hγ, hlen⟩ := IsLengthSpace.exists_eVariationOn_lt_ofReal
+    (x := p) (y := y) (by simpa only [Metric.mem_ball, dist_comm] using hy)
+  refine ⟨γ '' Icc 0 1, ?_, ?_, ?_, isPreconnected_Icc.image γ hγ.continuousOn⟩
+  · rintro _ ⟨t, ht, rfl⟩
+    have hdist := (eVariationOn.edist_le γ ht (left_mem_Icc.2 zero_le_one)).trans_lt hlen
+    rw [hγ.source, edist_dist] at hdist
+    exact (ENNReal.ofReal_lt_ofReal_iff_of_nonneg dist_nonneg).1 hdist
+  · exact ⟨0, left_mem_Icc.2 zero_le_one, hγ.source⟩
+  · exact ⟨1, right_mem_Icc.2 zero_le_one, hγ.target⟩
 
 end IsLengthSpace
 
