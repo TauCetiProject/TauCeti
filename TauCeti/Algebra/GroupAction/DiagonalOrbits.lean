@@ -19,6 +19,9 @@ an object with a moving marked point by an object whose mark is fixed once and f
 The forward map is canonical: it sends the stabilizer orbit of `x` to the diagonal orbit of
 `(x, y)`. Its injectivity does not require transitivity. Transitivity supplies surjectivity;
 the inverse sends the orbit of `(x, g • y)` to the stabilizer orbit of `g⁻¹ • x`.
+
+The diagonal action on `X × Y` is free when the action on the first factor is
+(`TauCeti.isCancelSMul_prod`).
 -/
 
 public section
@@ -84,3 +87,15 @@ theorem orbitRelQuotientStabilizerEquiv_symm_mk_smul [MulAction.IsPretransitive 
   exact Quotient.sound' ⟨g, by simp⟩
 
 end TauCeti.MulAction
+
+namespace TauCeti
+
+/-- **A diagonal action is free when it is free on the first factor**: an element of `G` fixing a
+pair fixes its first coordinate. -/
+@[to_additive /-- **A diagonal additive action is free when it is free on the first factor.** -/]
+instance isCancelSMul_prod {G X Y : Type*} [Group G] [MulAction G X] [MulAction G Y]
+    [IsCancelSMul G X] : IsCancelSMul G (X × Y) where
+  left_cancel' g _ _ h := smul_left_cancel g h
+  right_cancel' g g' x hx := IsCancelSMul.right_cancel g g' x.1 (congrArg Prod.fst hx)
+
+end TauCeti

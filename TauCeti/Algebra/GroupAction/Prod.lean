@@ -15,9 +15,6 @@ For actions of `G` on `X` and `K` on `Y`, the independent action of `G × K` on 
 coordinatewise. It is scoped to avoid competing with the diagonal action when both are available.
 Use `open scoped TauCeti.IndependentProd` for this action. Its orbit space is canonically
 equivalent to the product of the two orbit spaces, using Mathlib's `Setoid.prodQuotientEquiv`.
-
-For the diagonal action of a group on `X × Y`, freeness on one factor gives freeness on the
-product (`TauCeti.isCancelSMul_prod`).
 -/
 
 public section
@@ -149,13 +146,5 @@ theorem MulAction.orbitRelQuotientLift_prodMap {Z W : Type*} (f : X → Z) (g : 
   induction q using Quotient.inductionOn with | h x =>
   rcases x with ⟨x, y⟩
   simp
-
-/-- **A diagonal action is free when it is free on one factor**: an element of `G` fixing a pair
-fixes its first coordinate. -/
-@[to_additive /-- **A diagonal additive action is free when it is free on one factor.** -/]
-instance isCancelSMul_prod {Y' : Type*} [MulAction G Y'] [IsCancelSMul G X] :
-    IsCancelSMul G (X × Y') where
-  left_cancel' g _ _ h := smul_left_cancel g h
-  right_cancel' g g' x hx := IsCancelSMul.right_cancel g g' x.1 (congrArg Prod.fst hx)
 
 end TauCeti

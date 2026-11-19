@@ -104,13 +104,14 @@ theorem Topology.IsEmbedding.properSMul {G X Y : Type*} [Group G] [TopologicalSp
 namespace TauCeti
 
 open Filter Topology in
-/-- **A diagonal action is proper when it is proper on one factor.** If `G` acts properly on `X`
-and continuously on a Hausdorff space `Y`, then its diagonal action on `X × Y` is proper: when
-`(g • x, x)` converges, so does `g`, to an element `g₀`, and then `g • y` converges both to
-`g₀ • y₀` and to the limit of the first coordinates. -/
-@[to_additive /-- **A diagonal additive action is proper when it is proper on one factor.** If
-`G` acts properly on `X` and continuously on a Hausdorff space `Y`, then its diagonal additive
-action on `X × Y` is proper. -/]
+/-- **A diagonal action is proper when it is proper on the first factor and continuous on a
+Hausdorff second factor.** If `G` acts properly on `X` and continuously on a Hausdorff space `Y`,
+then its diagonal action on `X × Y` is proper: when `(g • x, x)` converges, so does `g`, to an
+element `g₀`, and then `g • y` converges both to `g₀ • y₀` and to the limit of the first
+coordinates. -/
+@[to_additive /-- **A diagonal additive action is proper when it is proper on the first factor
+and continuous on a Hausdorff second factor.** If `G` acts properly on `X` and continuously on a
+Hausdorff space `Y`, then its diagonal additive action on `X × Y` is proper. -/]
 instance properSMul_prod {G X Y : Type*} [Group G] [TopologicalSpace G] [MulAction G X]
     [TopologicalSpace X] [ProperSMul G X] [MulAction G Y] [TopologicalSpace Y] [ContinuousSMul G Y]
     [T2Space Y] : ProperSMul G (X × Y) := by

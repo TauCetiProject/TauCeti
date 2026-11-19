@@ -55,6 +55,9 @@ differential of the inclusion is not proved here.
 * `TauCeti.Lie.isEmbeddedLieSubgroup_of_isClosed`: **the closed-subgroup (Cartan) theorem**.
 * `TauCeti.Lie.discreteTopology_iff_lieSubalgebraOfSubgroup_eq_bot`: a closed subgroup is discrete
   exactly when its Lie algebra is trivial.
+* `Subgroup.contMDiff_subtypeVal_of_contMDiffSMul`: conversely to
+  `TauCeti.Lie.EmbeddedLieSubgroupData.contMDiffSMul`, a subgroup acting smoothly on the ambient
+  group by left multiplication has a smooth inclusion.
 
 ## References
 
@@ -247,3 +250,19 @@ theorem discreteTopology_iff_lieSubalgebraOfSubgroup_eq_bot [T2Space G] {K : Sub
     exact ChartedSpace.discreteTopology (lieSubalgebraOfSubgroup (I := I) K).toSubmodule K
 
 end TauCeti.Lie
+
+namespace Subgroup
+
+variable {E H E' H' G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {I' : ModelWithCorners ℝ E' H'} {n : ℕ∞ω} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+
+/-- The inclusion of a subgroup acting smoothly on the ambient group by left multiplication is
+smooth, since it is the action on `1`. -/
+theorem contMDiff_subtypeVal_of_contMDiffSMul (K : Subgroup G) [ChartedSpace H' K]
+    [ContMDiffSMul I' I n K G] : ContMDiff I' I n (fun h : K ↦ (h : G)) := by
+  have h := (contMDiff_smul (I := I') (I' := I) (n := n) (G := K) (M := G)).comp
+    (contMDiff_id.prodMk (contMDiff_const (c := (1 : G))))
+  simpa [Function.comp_def, Subgroup.smul_def] using h
+
+end Subgroup
