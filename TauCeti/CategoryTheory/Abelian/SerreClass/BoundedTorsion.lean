@@ -79,11 +79,16 @@ variable (C) in
 /-- The objects of *bounded torsion*: those killed by some nonzero natural number. -/
 def isBoundedTorsion : ObjectProperty C := fun Z ↦ ∃ e : ℕ, e ≠ 0 ∧ isKilledBy C e Z
 
+/-- An object has bounded torsion exactly when some nonzero natural number kills it. -/
+lemma prop_isBoundedTorsion_iff_exists_isKilledBy (Z : C) :
+    isBoundedTorsion C Z ↔ ∃ e : ℕ, e ≠ 0 ∧ isKilledBy C e Z :=
+  Iff.rfl
+
 /-- An object has bounded torsion exactly when `e • 𝟙 Z = 0` for some nonzero `e`. -/
 @[simp]
 lemma prop_isBoundedTorsion_iff (Z : C) :
     isBoundedTorsion C Z ↔ ∃ e : ℕ, e ≠ 0 ∧ e • 𝟙 Z = 0 := by
-  simp only [isBoundedTorsion, prop_isKilledBy_iff]
+  simp only [prop_isBoundedTorsion_iff_exists_isKilledBy, prop_isKilledBy_iff]
 
 /-- An object killed by a nonzero natural number has bounded torsion. -/
 lemma isKilledBy_le_isBoundedTorsion {e : ℕ} (he : e ≠ 0) :
@@ -115,6 +120,7 @@ torsion exactly when some power of `p` kills it. -/
 theorem isBoundedTorsion_iff_exists_isKilledBy_pow {p : ℕ} (hp : p.Prime) {Z : C}
     (h : ∀ m : ℕ, m.Coprime p → Epi (m • 𝟙 Z)) :
     isBoundedTorsion C Z ↔ ∃ n : ℕ, isKilledBy C (p ^ n) Z := by
+  rw [prop_isBoundedTorsion_iff_exists_isKilledBy]
   refine ⟨fun ⟨e, he, hZ⟩ ↦ ⟨e.factorization p, ?_⟩,
     fun ⟨n, hZ⟩ ↦ ⟨p ^ n, pow_ne_zero n hp.ne_zero, hZ⟩⟩
   -- Split `e` as its `p`-part times a factor prime to `p`, which acts epimorphically.
@@ -134,7 +140,10 @@ particular, every right derived functor of an additive functor does, since it is
 `TauCeti.CategoryTheory.Abelian.RightDerived`). -/
 theorem isBoundedTorsion_le_inverseImage (F : C ⥤ D) [F.Additive] :
     isBoundedTorsion C ≤ (isBoundedTorsion D).inverseImage F :=
-  fun _ ⟨e, he, hX⟩ ↦ ⟨e, he, isKilledBy_le_inverseImage F e _ hX⟩
+  fun X hX ↦ by
+    obtain ⟨e, he, hX⟩ := (prop_isBoundedTorsion_iff_exists_isKilledBy X).1 hX
+    exact (prop_isBoundedTorsion_iff_exists_isKilledBy (F.obj X)).2
+      ⟨e, he, isKilledBy_le_inverseImage F e _ hX⟩
 
 end Functor
 
@@ -169,7 +178,7 @@ annihilates all of its sections. -/
 theorem prop_isBoundedTorsion_iff (F : Sheaf J AddCommGrpCat) :
     isBoundedTorsion (Sheaf J AddCommGrpCat) F ↔
       ∃ e : ℕ, e ≠ 0 ∧ ∀ U (x : F.obj.obj U), e • x = 0 := by
-  simp only [isBoundedTorsion, prop_isKilledBy_iff]
+  simp only [prop_isBoundedTorsion_iff_exists_isKilledBy, prop_isKilledBy_iff]
   simp only [ObjectProperty.prop_isKilledBy_iff, AddCommGrpCat.nsmul_id_eq_zero_iff]
 
 end CategoryTheory.Sheaf
