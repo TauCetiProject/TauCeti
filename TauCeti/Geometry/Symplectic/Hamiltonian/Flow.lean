@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Transport
 public import TauCeti.Dynamics.Flow.Variational
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.MeanValue
@@ -25,7 +25,9 @@ translate a point by `t • c` when the vector field is the constant `c` along t
 translation. A bound `M` on the vector field bounds the displacement of the time-`t` map by
 `M |t|`. For a `C²`
 Hamiltonian, every time map preserves the symplectic form on tangent vectors: differentiating the
-pairing of two variations and using symmetry of the Hessian gives zero.
+pairing of two variations and using symmetry of the Hessian gives zero. A linear
+symplectomorphism `e` conjugates the flow of `G ∘ e` to the flow of `G`
+(`TauCeti.SymplecticForm.IsSymplectomorphism.map_hamiltonianFlow`).
 
 The construction and variational equation reuse `TauCeti.flowOfLipschitz`.
 See McDuff--Salamon, *Introduction to Symplectic Topology*, Hamiltonian flows.
@@ -158,5 +160,28 @@ theorem apply_fderiv_hamiltonianFlow (hX : LipschitzWith K (ω.hamiltonianVector
   have hc := is_const_of_deriv_eq_zero (fun s ↦ (hd s).differentiableAt)
     (fun s ↦ (hd s).deriv) t 0
   simpa using hc
+
+/-- **Linear symplectomorphisms conjugate Hamiltonian flows.** If `e : (V, ω₁) → (W, ω₂)` is a
+linear symplectomorphism, then `e` carries the flow of `G ∘ e` for `ω₁` to the flow of `G` for
+`ω₂`: `e (φ^{G ∘ e}_t x) = φ^G_t (e x)`. -/
+theorem IsSymplectomorphism.map_hamiltonianFlow {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℝ W] [FiniteDimensional ℝ W] {ω₁ : SymplecticForm V} {ω₂ : SymplecticForm W}
+    {e : V ≃ₗ[ℝ] W} (he : IsSymplectomorphism ω₁ ω₂ e) (G : W → ℝ) {K₁ K₂ : ℝ≥0}
+    (hX₁ : LipschitzWith K₁ (ω₁.hamiltonianVectorField (G ∘ e)))
+    (hX₂ : LipschitzWith K₂ (ω₂.hamiltonianVectorField G)) (t : ℝ) (x : V) :
+    e (ω₁.hamiltonianFlow (G ∘ e) hX₁ t x) = ω₂.hamiltonianFlow G hX₂ t (e x) := by
+  -- The image under `e` of an orbit for `G ∘ e` solves Hamilton's equation for `G`.
+  have hγ (s : ℝ) : HasDerivAt (fun s ↦ e (ω₁.hamiltonianFlow (G ∘ e) hX₁ s x))
+      (ω₂.hamiltonianVectorField G (e (ω₁.hamiltonianFlow (G ∘ e) hX₁ s x))) s := by
+    have hv := he.map_hamiltonianVectorField (G ∘ e) (ω₁.hamiltonianFlow (G ∘ e) hX₁ s x)
+    have hG : (G ∘ e) ∘ e.symm = G := by
+      funext y
+      simp
+    rw [hG] at hv
+    rw [← hv]
+    exact ((e.toContinuousLinearEquiv : V →L[ℝ] W).hasFDerivAt.comp_hasDerivAt s
+      (ω₁.hasDerivAt_hamiltonianFlow (G ∘ e) hX₁ x s))
+  have h := eq_flowOfLipschitz hX₂ hγ t
+  simpa [hamiltonianFlow_eq] using h
 
 end TauCeti.SymplecticForm
