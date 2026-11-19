@@ -74,11 +74,9 @@ variable {G V : Type*} [Group G] [Finite G] [NormedAddCommGroup V] [InnerProduct
 
 /-- The normal line of a reflecting hyperplane is one-dimensional. -/
 theorem finrank_orthogonal_of_mem_reflectingHyperplanes {H : Submodule ℝ V}
-    (hH : H ∈ ρ.reflectingHyperplanes) : Module.finrank ℝ Hᗮ = 1 := by
-  have h₁ := H.finrank_quotient_add_finrank
-  have h₂ := H.finrank_add_finrank_orthogonal
-  have h₃ := ρ.finrank_quotient_of_mem_reflectingHyperplanes hH
-  omega
+    (hH : H ∈ ρ.reflectingHyperplanes) : Module.finrank ℝ Hᗮ = 1 :=
+  H.finrank_orthogonal_eq_finrank_quotient.trans
+    (ρ.finrank_quotient_of_mem_reflectingHyperplanes hH)
 
 /-- The open chamber of `x`: the points `y` lying strictly on the same side as `x` of every
 reflecting hyperplane `H`, that is, with `0 < ⟪P x, y⟫` for the orthogonal projection `P` onto the
@@ -87,6 +85,7 @@ def chamber (x : V) : Set V :=
   {y | ∀ H ∈ ρ.reflectingHyperplanes, 0 < ⟪Hᗮ.starProjection x, y⟫_ℝ}
 
 /-- Membership in a chamber, unfolded. -/
+@[simp]
 theorem mem_chamber {x y : V} :
     y ∈ ρ.chamber x ↔ ∀ H ∈ ρ.reflectingHyperplanes, 0 < ⟪Hᗮ.starProjection x, y⟫_ℝ :=
   Iff.rfl
@@ -110,18 +109,15 @@ theorem chamber_eq_of_mem {x y : V} (hy : y ∈ ρ.chamber x) : ρ.chamber y = �
   ext z
   refine forall₂_congr fun H hH ↦ ?_
   have hxy := hy H hH
-  have hline := Hᗮ.inner_starProjection_mul_inner_starProjection_of_finrank_eq_one
-    (ρ.finrank_orthogonal_of_mem_reflectingHyperplanes hH)
-  have hsymm : ⟪Hᗮ.starProjection y, x⟫_ℝ = ⟪Hᗮ.starProjection x, y⟫_ℝ := by
-    rw [Submodule.inner_starProjection_left_eq_right, real_inner_comm]
+  have hL := ρ.finrank_orthogonal_of_mem_reflectingHyperplanes hH
   have hyy : 0 < ⟪Hᗮ.starProjection y, y⟫_ℝ := by
     have h₀ : 0 ≤ ⟪Hᗮ.starProjection y, y⟫_ℝ := by
       simpa using Hᗮ.re_inner_starProjection_nonneg y
     refine h₀.lt_of_ne fun h ↦ ?_
-    have := hline y x y
-    rw [hsymm, ← h, mul_zero] at this
-    exact (mul_pos hxy hxy).ne' this
-  have := hline x y z
+    have := Hᗮ.inner_starProjection_sq_of_finrank_eq_one hL x y
+    rw [← h, mul_zero] at this
+    exact (pow_pos hxy 2).ne' this
+  have := Hᗮ.inner_starProjection_mul_inner_starProjection_of_finrank_eq_one hL x y z
   constructor <;> intro h <;> nlinarith
 
 /-- A chamber is nonempty exactly when it contains the point defining it. -/
@@ -184,7 +180,10 @@ theorem exists_reflection_eq_of_mem_reflectingHyperplanes
   exact ⟨g, hg, LinearMap.reflection_fixedSubmodule_apply (hρ g) hg⟩
 
 omit [Finite G] in
-private theorem inner_starProjection_map (hρ : ∀ g v w, ⟪ρ g v, ρ g w⟫_ℝ = ⟪v, w⟫_ℝ)
+/-- An inner-product-preserving `ρ g` transports orthogonal projections onto normal spaces:
+projecting `ρ g x` onto the orthogonal complement of the image of `H` and pairing with `ρ g y`
+gives the inner product of the projection of `x` onto `Hᗮ` with `y`. -/
+theorem inner_starProjection_orthogonal_map_apply (hρ : ∀ g v w, ⟪ρ g v, ρ g w⟫_ℝ = ⟪v, w⟫_ℝ)
     (H : Submodule ℝ V) (g : G) (x y : V) :
     ⟪(H.map (ρ g))ᗮ.starProjection (ρ g x), ρ g y⟫_ℝ = ⟪Hᗮ.starProjection x, y⟫_ℝ := by
   let e : V ≃ₗᵢ[ℝ] V := ((ρ g).isometryOfInner (hρ g)).toLinearIsometryEquiv rfl
@@ -200,7 +199,7 @@ private theorem inner_starProjection_map (hρ : ∀ g v w, ⟪ρ g v, ρ g w⟫_
 private theorem mem_chamber_of_apply_mem_chamber_apply
     (hρ : ∀ g v w, ⟪ρ g v, ρ g w⟫_ℝ = ⟪v, w⟫_ℝ) (g : G) {x y : V}
     (h : ρ g y ∈ ρ.chamber (ρ g x)) : y ∈ ρ.chamber x := fun H hH ↦ by
-  rw [← inner_starProjection_map hρ H g]
+  rw [← inner_starProjection_orthogonal_map_apply hρ H g]
   exact h _ (ρ.map_mem_reflectingHyperplanes hH g)
 
 /-- `ρ g` maps the chamber of `x` into the chamber of `ρ g x`, and only points of the chamber of
@@ -251,11 +250,10 @@ theorem exists_mem_pseudoreflectionSubgroup_image_chamber_eq
   have hgx' := (apply_mem_chamber_apply_iff hρ g).2 hx
   rw [closure_chamber ρ hy] at hgx
   intro H hH
-  have hline := Hᗮ.inner_starProjection_mul_inner_starProjection_of_finrank_eq_one
-    (ρ.finrank_orthogonal_of_mem_reflectingHyperplanes hH) (ρ g x) y (ρ g x)
-  rw [Submodule.inner_starProjection_left_eq_right, real_inner_comm] at hline
+  have hsq := Hᗮ.inner_starProjection_sq_of_finrank_eq_one
+    (ρ.finrank_orthogonal_of_mem_reflectingHyperplanes hH) y (ρ g x)
   refine (hgx H hH).lt_of_ne fun h ↦ ?_
-  rw [← h, mul_zero] at hline
-  exact (mul_pos (hy H hH) (hgx' H hH)).ne' hline.symm
+  rw [← h, zero_pow two_ne_zero] at hsq
+  exact (mul_pos (hy H hH) (hgx' H hH)).ne' hsq.symm
 
 end Representation

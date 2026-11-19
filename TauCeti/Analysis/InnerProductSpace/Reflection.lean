@@ -14,6 +14,7 @@ public import Mathlib.LinearAlgebra.FixedSubmodule
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Topology.MetricSpace.HausdorffDimension
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Reflections in inner product spaces
@@ -180,10 +181,7 @@ theorem reflection_fixedSubmodule_apply {f : F →ₗ[ℝ] F} (hf : ∀ v w, ⟪
     (hfix : Module.finrank ℝ (F ⧸ f.fixedSubmodule) = 1) (x : F) :
     f.fixedSubmodule.reflection x = f x := by
   set H := f.fixedSubmodule
-  have hrank : Module.finrank ℝ Hᗮ = 1 := by
-    have h₁ := H.finrank_quotient_add_finrank
-    have h₂ := H.finrank_add_finrank_orthogonal
-    omega
+  have hrank : Module.finrank ℝ Hᗮ = 1 := H.finrank_orthogonal_eq_finrank_quotient.trans hfix
   -- `f` preserves the line `Hᗮ` and the length of its vectors, and fixes none of them but `0`.
   have hneg : ∀ q ∈ Hᗮ, f q = -q := by
     intro q hq
