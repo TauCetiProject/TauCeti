@@ -16,6 +16,7 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Trace
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Topology.Algebra.Support
 
 /-!
 # The weak divergence of a weakly differentiable vector field
@@ -265,8 +266,9 @@ theorem HasWeakFDerivOn.integral_inner_gradient_add_mul_laplacian_mul_eq {v : E 
     ∫ x, (⟪∇ φ x, ∇ χ x⟫_ℝ + φ x * Δ χ x) * v x ∂μ = -∫ x, φ x * ⟪∇ χ x, g x⟫_ℝ ∂μ := by
   have hgχ : ContDiff ℝ ∞ (∇ χ) := hχ.gradient_right (m := ∞) (by simp)
   have hts : tsupport (fun x ↦ φ x • ∇ χ x) ⊆ tsupport χ :=
-    (tsupport_smul_subset_right _ _).trans <| closure_minimal
-      (fun _ hx ↦ by_contra fun h ↦ hx (gradient_of_notMem_tsupport h)) (isClosed_tsupport χ)
+    (tsupport_smul_subset_right _ _).trans <|
+      tsupport_subset_of_forall_notMem_eq_zero (fun _ ↦ gradient_of_notMem_tsupport)
+        (isClosed_tsupport χ)
   let Φ : 𝓓(Ω, E) := ⟨fun x ↦ φ x • ∇ χ x, hφ.smul hgχ,
     hχc.of_isClosed_subset (isClosed_tsupport _) hts, hts.trans hχΩ⟩
   have hΦ : (Φ : E → E) = fun x ↦ φ x • ∇ χ x := TestFunction.coe_mk
@@ -291,24 +293,23 @@ theorem HasWeakFDerivOn.integral_laplacian_mul_cutoff_mul_eq {v f : E → ℝ} {
     ∫ x, Δ φ x * (χ x * v x) ∂μ =
       ∫ x, φ x * (χ x * f x + 2 * ⟪∇ χ x, g x⟫_ℝ + Δ χ x * v x) ∂μ := by
   have hχ2 : ContDiff ℝ 2 χ := hχ.of_le (by simp)
-  have hΔχ : ∀ x ∉ tsupport χ, Δ χ x = 0 := fun _ hx ↦
-    image_eq_zero_of_notMem_tsupport fun h ↦ hx (tsupport_laplacian_subset χ h)
   have hcgχ : Continuous (∇ χ) := (hχ.gradient_right (m := 0) (by simp)).continuous
   -- Integrability of the five terms, each a continuous coefficient vanishing off `tsupport χ`.
   have hint : ∀ {c q : E → ℝ}, Continuous c → (∀ x ∉ tsupport χ, c x = 0) →
       LocallyIntegrableOn q Ω μ → Integrable (fun x ↦ c x * q x) μ := fun {c _} hc hc0 hq ↦ by
     simpa only [smul_eq_mul] using hq.integrable_smul_left_of_hasCompactSupport hc (.intro hχc hc0)
-      ((closure_minimal (Function.support_subset_iff'.2 hc0) (isClosed_tsupport χ)).trans hχΩ)
+      ((tsupport_subset_of_forall_notMem_eq_zero hc0 (isClosed_tsupport χ)).trans hχΩ)
   have I₁ : Integrable (fun x ↦ Δ (fun y ↦ χ y * φ y) x * v x) μ :=
     hint ((hχ.mul hφ).of_le (m := 2) (by simp)).continuous_laplacian (fun _ hx ↦
-      image_eq_zero_of_notMem_tsupport fun h ↦ hx (tsupport_mul_subset_left
-        (tsupport_laplacian_subset _ h))) hv.locallyIntegrableOn
+      laplacian_of_notMem_tsupport fun h ↦ hx (tsupport_mul_subset_left h)) hv.locallyIntegrableOn
   have I₂ : Integrable (fun x ↦ (⟪∇ φ x, ∇ χ x⟫_ℝ + φ x * Δ χ x) * v x) μ :=
     hint (((hφ.gradient_right (m := 0) (by simp)).continuous.inner hcgχ).add
       (hφ.continuous.mul hχ2.continuous_laplacian))
-      (fun x hx ↦ by simp [gradient_of_notMem_tsupport hx, hΔχ x hx]) hv.locallyIntegrableOn
+      (fun x hx ↦ by simp [gradient_of_notMem_tsupport hx, laplacian_of_notMem_tsupport hx])
+      hv.locallyIntegrableOn
   have I₃ : Integrable (fun x ↦ φ x * Δ χ x * v x) μ := hint (hφ.continuous.mul
-    hχ2.continuous_laplacian) (fun x hx ↦ by simp [hΔχ x hx]) hv.locallyIntegrableOn
+    hχ2.continuous_laplacian) (fun x hx ↦ by simp [laplacian_of_notMem_tsupport hx])
+    hv.locallyIntegrableOn
   have I₄ : Integrable (fun x ↦ χ x * φ x * f x) μ := hint (hχ.continuous.mul hφ.continuous)
     (fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]) hf
   have I₅ : Integrable (fun x ↦ φ x * ⟪∇ χ x, g x⟫_ℝ) μ := by
@@ -317,7 +318,7 @@ theorem HasWeakFDerivOn.integral_laplacian_mul_cutoff_mul_eq {v f : E → ℝ} {
     simpa only [real_inner_smul_left] using
       hv.locallyIntegrableOn_gradient.integrable_inner_left_of_hasCompactSupport (𝕜 := ℝ)
         (g := fun x ↦ φ x • ∇ χ x) (hφ.continuous.smul hcgχ) (.intro hχc h0)
-        ((closure_minimal (Function.support_subset_iff'.2 h0) (isClosed_tsupport χ)).trans hχΩ)
+        ((tsupport_subset_of_forall_notMem_eq_zero h0 (isClosed_tsupport χ)).trans hχΩ)
   -- Poisson's equation against `χ φ`, then split both sides by linearity.
   have hB : ∫ x, Δ (fun y ↦ χ y * φ y) x * v x ∂μ = ∫ x, χ x * φ x * f x ∂μ := by
     simpa only [TestFunction.coe_mk, smul_eq_mul] using

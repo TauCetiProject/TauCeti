@@ -92,8 +92,7 @@ theorem exists_wkp_two_value_ae_eq_newtonianKernel_convolution (hn : n ≠ 2) (h
           by_cases hxΩ : x ∈ (Ω : Set (EuclideanSpace ℝ (Fin n)))
           · simp only [smul_eq_mul, hx hxΩ]
           · have hΔ : Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) x = 0 :=
-              image_eq_zero_of_notMem_tsupport fun h ↦
-                hxΩ (φ.tsupport_subset (tsupport_laplacian_subset _ h))
+              laplacian_of_notMem_tsupport fun h ↦ hxΩ (φ.tsupport_subset h)
             simp [hΔ]
       _ = -∫ x, (φ : EuclideanSpace ℝ (Fin n) → ℝ) x * f x :=
           integral_laplacian_mul_newtonianKernel_convolution hn hn0 hfi hfc

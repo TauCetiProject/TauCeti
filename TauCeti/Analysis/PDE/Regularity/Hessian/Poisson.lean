@@ -150,8 +150,6 @@ theorem W1p.exists_wkp_two_value_ae_eq_of_integral_laplacian_smul_eq (hp : 1 < p
       (fun x ↦ LinearMap.trace ℝ E (Wkp.iteratedGradient 1 w x)) =ᵐ[volume.restrict U] f := by
   obtain ⟨χ, hχ, -, hχ1, hχc, hχΩ⟩ := hU.exists_contDiff_cutoff Ω.isOpen hUΩ
   -- The cutoff `χ` and its derivatives vanish off `tsupport χ ⊆ Ω`, and `χ = 1` near `U`.
-  have hΔχ : ∀ x ∉ tsupport χ, Δ χ x = 0 := fun _ hx ↦
-    image_eq_zero_of_notMem_tsupport fun h ↦ hx (tsupport_laplacian_subset χ h)
   have hχU : ∀ x ∈ (U : Set E), χ =ᶠ[𝓝 x] fun _ ↦ 1 := fun x hx ↦
     mem_interior_iff_mem_nhds.1 (hχ1 (subset_closure hx))
   have hbd : ∀ c : E → ℝ, Continuous c → (∀ x ∉ tsupport χ, c x = 0) →
@@ -176,10 +174,12 @@ theorem W1p.exists_wkp_two_value_ae_eq_of_integral_laplacian_smul_eq (hp : 1 < p
       Δ χ x * W1p.value u x) p volume :=
     ((((hbd χ hχ.continuous fun _ ↦ image_eq_zero_of_notMem_tsupport).mul hf).add
       (hgrad.const_mul 2)).add
-        ((hbd _ (hχ.of_le (m := 2) (by simp)).continuous_laplacian hΔχ).mul
+        ((hbd _ (hχ.of_le (m := 2) (by simp)).continuous_laplacian
+          fun _ ↦ laplacian_of_notMem_tsupport).mul
           (Lp.memLp _))).of_restrict_of_support_subset
       Ω.isOpen.measurableSet.nullMeasurableSet (hsupp _ fun x hx ↦ by
-        simp [image_eq_zero_of_notMem_tsupport hx, gradient_of_notMem_tsupport hx, hΔχ x hx])
+        simp [image_eq_zero_of_notMem_tsupport hx, gradient_of_notMem_tsupport hx,
+          laplacian_of_notMem_tsupport hx])
   obtain ⟨W, hWv, hWtr⟩ := exists_wkp_two_value_ae_eq_of_integral_laplacian_mul_eq hp hp_top hw hr
     fun φ hφ _ ↦ (W1p.hasWeakFDerivOn u).integral_laplacian_mul_cutoff_mul_eq
       (locallyIntegrableOn_of_locallyIntegrable_restrict (hf.locallyIntegrable Fact.out)) h hχ hχc
