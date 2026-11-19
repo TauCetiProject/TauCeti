@@ -28,17 +28,18 @@ an unstable manifold is the union of the unstable manifolds of the critical poin
 The relation `⇝*` is a partial order, in which `f` strictly decreases
 (`TauCeti.IsAdaptedPseudoGradient.lt_of_reflTransGen`) and, under the Morse–Smale condition, so
 does the Morse index
-(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.manifoldMorseIndex_lt_of_reflTransGen`, in
-`TauCeti.Geometry.Manifold.Morse.Stable.Breaking`). Only
+(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.manifoldMorseIndex_lt_of_reflTransGen`). Only
 finitely many points lie below a given one
 (`TauCeti.IsAdaptedPseudoGradient.finite_setOf_reflTransGen`), all of them critical except
-possibly the point itself. Consequently the closure of `W^u(p)` is a finite union of unstable
-manifolds, and what it adds to `W^u(p)` lies in the unstable manifolds of critical points of
-smaller index (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.closure_unstableSet_diff_subset`).
-Since `W^u(q)` is a manifold of dimension `ind q`, this is the frontier condition for the
-decomposition of `M` into the unstable manifolds: what the closure of each piece adds lies in
-pieces of lower dimension. Dually, what
-the closure of `W^s(q)` adds lies in the stable manifolds of critical points of larger index.
+possibly the point itself. These facts about chains are proved in
+`TauCeti.Geometry.Manifold.Morse.Stable.Breaking`. Consequently the closure of `W^u(p)` is a
+finite union of unstable manifolds, and what it adds to `W^u(p)` lies in the unstable manifolds
+of critical points of smaller index
+(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.closure_unstableSet_diff_subset`). Since `W^u(q)`
+is a manifold of dimension `ind q`, this is the frontier condition for the decomposition of `M`
+into the unstable manifolds: what the closure of each piece adds lies in pieces of lower
+dimension. Dually, what the closure of `W^s(q)` adds lies in the stable manifolds of critical
+points of larger index.
 
 The two inclusions come from the two halves of the compactness and gluing theory of trajectories.
 
@@ -60,9 +61,6 @@ The two inclusions come from the two halves of the compactness and gluing theory
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
-* `lt_of_reflTransGen`, `eq_of_reflTransGen_of_reflTransGen`: `f` strictly decreases along chains
-  of trajectories, which therefore form a partial order.
-* `finite_setOf_reflTransGen`: finitely many points lie below a given one.
 * `IsMorseSmale.closure_unstableSet`, `IsMorseSmale.closure_stableSet`: the closures of unstable
   and stable manifolds.
 * `IsMorseSmale.mem_closure_unstableSet_iff`, `IsMorseSmale.mem_closure_stableSet_iff`: a critical
@@ -95,60 +93,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 namespace IsAdaptedPseudoGradient
 
 variable {hX : IsAdaptedPseudoGradient f X} {p q : M}
-
-/-! ### Chains of trajectories -/
-
-/-- **Points below `p` are critical.** A point reached from `p` by a chain of trajectories is `p`
-itself or a critical point of `f`, the forward limit of the last trajectory. -/
-theorem eq_or_mfderiv_eq_zero_of_reflTransGen
-    (hpq : Relation.ReflTransGen hX.FlowsTo p q) :
-    q = p ∨ mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0 := by
-  rcases hpq.cases_tail with rfl | ⟨b, -, hbq⟩
-  · exact Or.inl rfl
-  · obtain ⟨y, -, hy⟩ := flowsTo_iff.1 hbq
-    exact Or.inr (hX.mfderiv_eq_zero_of_mem_stableSet hy)
-
-/-- **Finitely many points lie below `p`.** For a Morse function on a compact manifold, the points
-reached from `p` by chains of trajectories form a finite set: besides `p` they are critical points
-of `f`. -/
-theorem finite_setOf_reflTransGen (hf : IsMorse 𝓘(ℝ, E) f) (p : M) :
-    {q | Relation.ReflTransGen hX.FlowsTo p q}.Finite := by
-  refine (hf.finite_criticalPoints.insert p).subset fun q hq ↦ ?_
-  rcases eq_or_mfderiv_eq_zero_of_reflTransGen hq with rfl | hq
-  · exact mem_insert _ _
-  · exact mem_insert_of_mem _ (mem_criticalPoints_iff_mfderiv_eq_zero.2 hq)
-
-/-- **The function strictly decreases along chains of trajectories.** If a chain of trajectories
-runs from `p` to a different point `q`, then `f q < f p`. -/
-theorem lt_of_reflTransGen
-    (hpq : Relation.ReflTransGen hX.FlowsTo p q) (hqp : q ≠ p) :
-    f q < f p := by
-  suffices q = p ∨ f q < f p from this.resolve_left hqp
-  clear hqp
-  induction hpq with
-  | refl => exact Or.inl rfl
-  | @tail b c _ hbc ih =>
-    -- A trajectory from `b` to `c ≠ b` lies strictly between their critical values.
-    have hcb : c = b ∨ f c < f b := by
-      rcases eq_or_ne b c with rfl | hbc'
-      · exact Or.inl rfl
-      · obtain ⟨y, hy⟩ := flowsTo_iff.1 hbc
-        have hy := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hbc' hy
-        exact Or.inr (hy.1.trans hy.2)
-    rcases ih with rfl | ih
-    · exact hcb
-    · rcases hcb with rfl | hcb
-      · exact Or.inr ih
-      · exact Or.inr (hcb.trans ih)
-
-/-- **Chains of trajectories form a partial order.** If chains of trajectories run from `p` to `q`
-and from `q` to `p`, then `p = q`. -/
-theorem eq_of_reflTransGen_of_reflTransGen
-    (hpq : Relation.ReflTransGen hX.FlowsTo p q)
-    (hqp : Relation.ReflTransGen hX.FlowsTo q p) :
-    p = q := by
-  by_contra hne
-  exact (lt_of_reflTransGen hpq (Ne.symm hne)).asymm (lt_of_reflTransGen hqp hne)
 
 /-! ### Gluing: unstable manifolds below `p` lie in the closure of `W^u(p)` -/
 
