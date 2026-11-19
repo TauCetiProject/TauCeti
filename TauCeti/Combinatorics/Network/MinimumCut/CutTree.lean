@@ -22,6 +22,8 @@ This file develops what these properties give, independently of how such a tree 
 
 * `IsFlowEquivalentTree.reachable_deleteEdges_iff`: the threshold partition. Deleting the tree
   edges of weight below `k` leaves `s` and `t` connected exactly when `s = t` or `k ≤ λ(s, t)`.
+* `IsFlowEquivalentTree.connectedComponentMk_eq_iff`: the connected components of that threshold
+  graph are exactly the classes of the relation `s = t ∨ k ≤ λ(s, t)`.
 * `IsCutTree.isMinimum_edgeSide_of_mem_edges`: the query theorem. A minimum-weight edge on the tree
   path from `s` to `t` yields a minimum `s`–`t` cut by deleting that edge.
 * `IsCutTree.apply_edgeSide_le`: deleting a tree edge of minimum weight gives a side that
@@ -98,6 +100,24 @@ theorem reachable_deleteEdges_iff (hT : IsFlowEquivalentTree f T w) (k : K) {s t
     · rfl
     obtain ⟨p, hp, -⟩ := hT.isTree.existsUnique_path s t
     exact ⟨p.toDeleteEdges _ fun e he ↦ not_lt.mpr (hk.trans (hT.le_weight hp he))⟩
+
+/-- **Threshold components.** Two vertices belong to the same connected component after deleting
+the tree edges of weight below `k` exactly when they are equal or their minimum cut value is at
+least `k`. -/
+theorem connectedComponentMk_eq_iff (hT : IsFlowEquivalentTree f T w) (k : K) (s t : V) :
+    (T.deleteEdges {e | w e < k}).connectedComponentMk s =
+        (T.deleteEdges {e | w e < k}).connectedComponentMk t ↔
+      s = t ∨ k ≤ pairMinimumValue f s t := by
+  rw [SimpleGraph.ConnectedComponent.eq, hT.reachable_deleteEdges_iff]
+
+/-- The support of the threshold component containing `s` is the class of vertices `t` equal to
+`s` or having minimum cut value at least `k` from `s`. -/
+theorem mem_supp_connectedComponentMk_iff (hT : IsFlowEquivalentTree f T w) (k : K)
+    (s t : V) :
+    t ∈ ((T.deleteEdges {e | w e < k}).connectedComponentMk s).supp ↔
+      s = t ∨ k ≤ pairMinimumValue f s t := by
+  rw [SimpleGraph.ConnectedComponent.mem_supp_iff, eq_comm,
+    hT.connectedComponentMk_eq_iff]
 
 /-- Any set separating two vertices has value at least the weight of some tree edge. -/
 theorem exists_weight_le (hT : IsFlowEquivalentTree f T w) {S : Finset V} {s t : V}
