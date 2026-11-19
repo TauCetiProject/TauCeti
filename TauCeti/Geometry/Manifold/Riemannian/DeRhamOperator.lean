@@ -65,10 +65,11 @@ codifferentials `δ` with these properties, in parallel with the Laplacian
 * `TauCeti.SmoothForm.coe_lie_deRhamOperator_piMap_funSMulₗ_apply_add_one_add_one` and its
   boundary-degree cases: the symbol `[d + d*, f] = df ∧ · - ι_(grad f)` degree by degree.
 * `TauCeti.SmoothForm.lie_lie_deRhamOperator_piMap_funSMulₗ_eq_zero`: `d + d*` has order one.
-* `TauCeti.SmoothForm.coe_lie_mul_lie_add_lie_mul_lie_deRhamOperator_apply`,
-  `TauCeti.SmoothForm.coe_lie_deRhamOperator_mul_self_apply`: the Clifford relation of the symbol,
-  so `d + d*` is of Dirac type.
-* `TauCeti.SmoothForm.apply_eq_zero_of_lie_deRhamOperator_apply_eq_zero`: `d + d*` is elliptic.
+* `TauCeti.SmoothForm.coe_lie_deRhamOperator_piMap_funSMulₗ_mul_add_mul_apply`,
+  `TauCeti.SmoothForm.coe_lie_deRhamOperator_piMap_funSMulₗ_mul_self_apply`: the Clifford
+  relation of the symbol, so `d + d*` is of Dirac type.
+* `TauCeti.SmoothForm.apply_eq_zero_of_lie_deRhamOperator_piMap_funSMulₗ_apply_eq_zero`:
+  `d + d*` is elliptic.
 
 ## References
 
@@ -593,7 +594,7 @@ theorem lie_lie_deRhamOperator_piMap_funSMulₗ_eq_zero (f g : C^∞⟮I, M; ℝ
 Clifford relation `c(f) c(g) + c(g) c(f) = -2 ⟪df, dg⟫` for smooth functions `f` and `g`. In the
 convention `σ_geom(P)(df) = [P, f]` of first-order principal symbols, the symbol
 `σ(ξ) = ξ ∧ · - ι_ξ` of `d + d*` therefore satisfies `σ(α) σ(β) + σ(β) σ(α) = -2 ⟪α, β⟫`. -/
-theorem coe_lie_mul_lie_add_lie_mul_lie_deRhamOperator_apply (f g : C^∞⟮I, M; ℝ⟯)
+theorem coe_lie_deRhamOperator_piMap_funSMulₗ_mul_add_mul_apply (f g : C^∞⟮I, M; ℝ⟯)
     (α : (j : Fin (m + 1)) → SmoothForm I M ℝ j) (j : Fin (m + 1)) :
     (((⁅deRhamOperator o, LinearMap.piMap fun j : Fin (m + 1) ↦ funSMulₗ (F := ℝ) (k := j) f⁆ *
         ⁅deRhamOperator o, LinearMap.piMap fun j : Fin (m + 1) ↦ funSMulₗ (F := ℝ) (k := j) g⁆ +
@@ -615,13 +616,13 @@ theorem coe_lie_mul_lie_add_lie_mul_lie_deRhamOperator_apply (f g : C^∞⟮I, M
 
 /-- **The symbol of the de Rham operator squares to `-|df|²`**: for a smooth function `f`, the
 commutator `c(f) = [d + d*, f]` satisfies `c(f)² = -|grad f|²`. -/
-theorem coe_lie_deRhamOperator_mul_self_apply (f : C^∞⟮I, M; ℝ⟯)
+theorem coe_lie_deRhamOperator_piMap_funSMulₗ_mul_self_apply (f : C^∞⟮I, M; ℝ⟯)
     (α : (j : Fin (m + 1)) → SmoothForm I M ℝ j) (j : Fin (m + 1)) :
     (((⁅deRhamOperator o, LinearMap.piMap fun j : Fin (m + 1) ↦ funSMulₗ (F := ℝ) (k := j) f⁆ *
         ⁅deRhamOperator o, LinearMap.piMap fun j : Fin (m + 1) ↦ funSMulₗ (F := ℝ) (k := j) f⁆)
           α j : SmoothForm I M ℝ j) : RoughForm I M ℝ j) =
       fun x ↦ (-⟪Manifold.mgradient I f x, Manifold.mgradient I f x⟫) • (α j).1 x := by
-  have h := coe_lie_mul_lie_add_lie_mul_lie_deRhamOperator_apply o f f α j
+  have h := coe_lie_deRhamOperator_piMap_funSMulₗ_mul_add_mul_apply o f f α j
   simp only [LinearMap.add_apply, Pi.add_apply, Submodule.coe_add] at h
   funext x
   have hx := congrFun h x
@@ -630,12 +631,12 @@ theorem coe_lie_deRhamOperator_mul_self_apply (f : C^∞⟮I, M; ℝ⟯)
 
 /-- **The de Rham operator is elliptic**: if the symbol `[d + d*, f]` annihilates a family `α` of
 smooth forms, then `α` vanishes wherever `df ≠ 0`. -/
-theorem apply_eq_zero_of_lie_deRhamOperator_apply_eq_zero (f : C^∞⟮I, M; ℝ⟯)
+theorem apply_eq_zero_of_lie_deRhamOperator_piMap_funSMulₗ_apply_eq_zero (f : C^∞⟮I, M; ℝ⟯)
     {α : (j : Fin (m + 1)) → SmoothForm I M ℝ j}
     (h : ⁅deRhamOperator o, LinearMap.piMap fun j : Fin (m + 1) ↦ funSMulₗ (F := ℝ) (k := j) f⁆ α =
       0)
     (j : Fin (m + 1)) {x : M} (hx : Manifold.mgradient I f x ≠ 0) : (α j).1 x = 0 := by
-  have hsq := congrFun (coe_lie_deRhamOperator_mul_self_apply o f α j) x
+  have hsq := congrFun (coe_lie_deRhamOperator_piMap_funSMulₗ_mul_self_apply o f α j) x
   rw [mul_apply_eq_comp, h, map_zero, Pi.zero_apply, Submodule.coe_zero, Pi.zero_apply,
     eq_comm, smul_eq_zero, neg_eq_zero, inner_self_eq_zero] at hsq
   exact hsq.resolve_left hx
