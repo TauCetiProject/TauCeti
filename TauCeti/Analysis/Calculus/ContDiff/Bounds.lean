@@ -56,6 +56,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
 * `ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le`: for `x` in a compact set
   and `ξ` in a ball, the derivatives of a `C^k` function of `(x, ξ)` are bounded by every power of
   the Japanese bracket `(1 + ‖ξ‖ ^ 2) ^ (1 / 2)`.
+* `ContinuousLinearMap.exists_bound_iteratedFDeriv_comp_left`: a continuous linear map preserves
+  uniform bounds on the derivatives of order at most `k`.
 * `ContDiff.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm`: a smooth map which agrees outside a
   ball with a map of bounded order-`n` derivative has a bounded order-`n` derivative.
 * `ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le`: composing on the left with a
@@ -372,6 +374,16 @@ theorem ContinuousLinearMap.isBigO_iteratedFDeriv_comp_left {D : Type*} [NormedA
     iteratedFDeriv 𝕜 n (fun y ↦ L (f y)) =O[l] ρ :=
   (IsBigO.of_bound ‖L‖ (Filter.Eventually.of_forall fun _ ↦
     L.norm_iteratedFDeriv_comp_left hf.contDiffAt hn)).trans hfn
+
+/-- **Uniform bounds on the derivatives of `L ∘ f`.** If the derivatives of order at most `k` of a
+`Cᵏ` map `f` are bounded, so are those of `y ↦ L (f y)`, for a continuous linear map `L`. -/
+theorem ContinuousLinearMap.exists_bound_iteratedFDeriv_comp_left {D : Type*}
+    [NormedAddCommGroup D] [NormedSpace 𝕜 D] (L : E →L[𝕜] F) {f : D → E} {k : ℕ}
+    (hf : ContDiff 𝕜 k f) (hbd : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ C) :
+    ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n (fun y ↦ L (f y)) x‖ ≤ C := fun n hn ↦ by
+  obtain ⟨C, hC⟩ := hbd n hn
+  exact ⟨‖L‖ * C, fun x ↦ (L.norm_iteratedFDeriv_comp_left hf.contDiffAt (mod_cast hn)).trans
+    (by gcongr; exact hC x)⟩
 
 namespace TauCeti
 
