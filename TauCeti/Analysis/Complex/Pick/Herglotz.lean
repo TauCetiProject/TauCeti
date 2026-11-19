@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Pick.Nevanlinna
+import TauCeti.Basic.Complex.Basic
+import TauCeti.Basic.Complex.OfRealSub
 
 /-!
 # The Herglotz representation on the upper half-plane in resolvent convention
@@ -31,9 +33,9 @@ not proved here.
 ## Main declarations
 
 * `TauCeti.subtractedResolventKernel`: the kernel `(t - z)⁻¹ - t / (1 + t ^ 2)`.
-* `TauCeti.integral_subtractedResolventKernel_withDensity`: under the density change
+* `MeasureTheory.Measure.integral_subtractedResolventKernel_withDensity`: under the density change
   `dν = (1 + t ^ 2) dρ` the subtracted resolvent kernel integrates to the Nevanlinna kernel.
-* `TauCeti.lintegral_inv_one_add_sq_withDensity`: the weighted-mass identity
+* `MeasureTheory.Measure.lintegral_inv_one_add_sq_withDensity`: the weighted-mass identity
   `∫ (1 + t ^ 2)⁻¹ dν = ρ(ℝ)`.
 * `TauCeti.integrable_subtractedResolventKernel_iff`: at a nonreal point the kernel is
   `ν`-integrable exactly when `ν` has finite weighted mass.
@@ -76,26 +78,17 @@ theorem measurable_subtractedResolventKernel (z : ℂ) :
   unfold subtractedResolventKernel
   fun_prop
 
-private theorem ofReal_sub_ne_zero_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) (t : ℝ) :
-    (t : ℂ) - z ≠ 0 := by
-  intro h
-  have := congrArg im h
-  simp only [sub_im, ofReal_im, zero_sub, zero_im, neg_eq_zero] at this
-  exact hz this
-
-private theorem one_add_sq_ne_zero (t : ℝ) : (1 + (t : ℂ) ^ 2) ≠ 0 := by
-  exact_mod_cast (by positivity : (1 + t ^ 2 : ℝ) ≠ 0)
-
 /-- Away from its pole, the Nevanlinna kernel is `1 + t ^ 2` times the subtracted resolvent
 kernel. -/
 theorem nevanlinnaKernel_eq_one_add_sq_mul_subtractedResolventKernel {z : ℂ} {t : ℝ}
     (h : (t : ℂ) - z ≠ 0) :
     nevanlinnaKernel z t = (1 + (t : ℂ) ^ 2) * subtractedResolventKernel z t := by
   rw [nevanlinnaKernel_def, subtractedResolventKernel_def]
-  field_simp [one_add_sq_ne_zero t]
+  field_simp [one_add_ofReal_sq_ne_zero t]
   ring
 
 /-- At `z = i` the subtracted resolvent kernel is `i / (1 + t ^ 2)`. -/
+@[simp]
 theorem subtractedResolventKernel_I (t : ℝ) :
     subtractedResolventKernel I t = I * (((1 + t ^ 2)⁻¹ : ℝ) : ℂ) := by
   have h : (t : ℂ) - I ≠ 0 := ofReal_sub_ne_zero_of_im_ne_zero (by simp) t
@@ -111,14 +104,6 @@ theorem subtractedResolventKernel_I (t : ℝ) :
   field_simp
   ring
 
-private theorem measurable_ofReal_one_add_sq :
-    Measurable fun t : ℝ ↦ ENNReal.ofReal (1 + t ^ 2) :=
-  ENNReal.measurable_ofReal.comp (by fun_prop)
-
-private theorem measurable_ofReal_inv_one_add_sq :
-    Measurable fun t : ℝ ↦ ENNReal.ofReal (1 + t ^ 2)⁻¹ :=
-  ENNReal.measurable_ofReal.comp (by fun_prop)
-
 private theorem toReal_smul_subtractedResolventKernel {z : ℂ} (hz : z.im ≠ 0) (t : ℝ) :
     (ENNReal.ofReal (1 + t ^ 2)).toReal • subtractedResolventKernel z t = nevanlinnaKernel z t := by
   rw [ENNReal.toReal_ofReal (by positivity), real_smul,
@@ -127,13 +112,19 @@ private theorem toReal_smul_subtractedResolventKernel {z : ℂ} (hz : z.im ≠ 0
   push_cast
   rfl
 
+end TauCeti
+
+namespace MeasureTheory.Measure
+
+open TauCeti
+
 /-- **Density conversion.** Under the density change `dν = (1 + t ^ 2) dρ`, the integral of the
 subtracted resolvent kernel against `ν` is the integral of the Nevanlinna kernel against `ρ`. -/
 theorem integral_subtractedResolventKernel_withDensity (rho : Measure ℝ) {z : ℂ}
     (hz : z.im ≠ 0) :
     ∫ t, subtractedResolventKernel z t ∂rho.withDensity (fun t ↦ ENNReal.ofReal (1 + t ^ 2)) =
       ∫ t, nevanlinnaKernel z t ∂rho := by
-  rw [integral_withDensity_eq_integral_toReal_smul measurable_ofReal_one_add_sq
+  rw [integral_withDensity_eq_integral_toReal_smul (by fun_prop)
     (.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
   simp_rw [toReal_smul_subtractedResolventKernel hz]
 
@@ -144,7 +135,7 @@ theorem integrable_subtractedResolventKernel_withDensity_iff (rho : Measure ℝ)
     Integrable (subtractedResolventKernel z)
         (rho.withDensity fun t ↦ ENNReal.ofReal (1 + t ^ 2)) ↔
       Integrable (nevanlinnaKernel z) rho := by
-  rw [integrable_withDensity_iff_integrable_smul' measurable_ofReal_one_add_sq
+  rw [integrable_withDensity_iff_integrable_smul' (by fun_prop)
     (.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
   simp_rw [toReal_smul_subtractedResolventKernel hz]
 
@@ -153,8 +144,8 @@ theorem integrable_subtractedResolventKernel_withDensity_iff (rho : Measure ℝ)
 theorem lintegral_inv_one_add_sq_withDensity (rho : Measure ℝ) :
     ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂rho.withDensity (fun t ↦ ENNReal.ofReal (1 + t ^ 2)) =
       rho Set.univ := by
-  rw [lintegral_withDensity_eq_lintegral_mul _ measurable_ofReal_one_add_sq
-    measurable_ofReal_inv_one_add_sq, ← lintegral_one]
+  rw [lintegral_withDensity_eq_lintegral_mul _ (by fun_prop)
+    (by fun_prop), ← lintegral_one]
   refine lintegral_congr fun t ↦ ?_
   have ht : (0 : ℝ) < 1 + t ^ 2 := by positivity
   rw [Pi.mul_apply, ← ENNReal.ofReal_mul ht.le, mul_inv_cancel₀ ht.ne', ENNReal.ofReal_one]
@@ -164,20 +155,25 @@ every measure on `ℝ` arises from the density change `dν = (1 + t ^ 2) dρ`. -
 theorem withDensity_inv_one_add_sq_withDensity (nu : Measure ℝ) :
     (nu.withDensity fun t ↦ ENNReal.ofReal (1 + t ^ 2)⁻¹).withDensity
         (fun t ↦ ENNReal.ofReal (1 + t ^ 2)) = nu := by
-  rw [← withDensity_mul _ measurable_ofReal_inv_one_add_sq measurable_ofReal_one_add_sq]
-  convert withDensity_one (μ := nu) using 2
-  ext t
-  have ht : (0 : ℝ) < 1 + t ^ 2 := by positivity
-  rw [Pi.mul_apply, ← ENNReal.ofReal_mul (inv_nonneg.2 ht.le), inv_mul_cancel₀ ht.ne',
-    ENNReal.ofReal_one, Pi.one_apply]
+  convert withDensity_inv_same (μ := nu) (f := fun t ↦ ENNReal.ofReal (1 + t ^ 2)⁻¹)
+    (by fun_prop) (.of_forall fun t ↦ (ENNReal.ofReal_pos.2 (by positivity)).ne')
+    (.of_forall fun _ ↦ ENNReal.ofReal_ne_top) using 2
+  funext t
+  rw [ENNReal.ofReal_inv_of_pos (by positivity), inv_inv]
+
+end MeasureTheory.Measure
+
+namespace TauCeti
 
 /-- Conjugating the parameter conjugates the subtracted resolvent kernel. -/
+@[simp]
 theorem subtractedResolventKernel_conj (z : ℂ) (t : ℝ) :
     subtractedResolventKernel (conj z) t = conj (subtractedResolventKernel z t) := by
   simp only [subtractedResolventKernel_def, map_sub, map_inv₀, map_div₀, map_add, map_one,
     map_pow, conj_ofReal]
 
 /-- The imaginary part of the subtracted resolvent kernel is `Im z / |t - z| ^ 2`. -/
+@[simp]
 theorem subtractedResolventKernel_im (z : ℂ) (t : ℝ) :
     (subtractedResolventKernel z t).im = z.im / normSq ((t : ℂ) - z) := by
   have : (t : ℂ) / (1 + (t : ℂ) ^ 2) = ((t / (1 + t ^ 2) : ℝ) : ℂ) := by push_cast; rfl
@@ -192,8 +188,8 @@ theorem integrable_subtractedResolventKernel {nu : Measure ℝ}
   have := isFiniteMeasure_withDensity hnu.ne
   have hH {w : ℂ} (hw : w ∈ UpperHalfPlane.upperHalfPlaneSet) :
       Integrable (subtractedResolventKernel w) nu := by
-    rw [← withDensity_inv_one_add_sq_withDensity nu,
-      integrable_subtractedResolventKernel_withDensity_iff _ (ne_of_gt hw)]
+    rw [← nu.withDensity_inv_one_add_sq_withDensity,
+      Measure.integrable_subtractedResolventKernel_withDensity_iff _ (ne_of_gt hw)]
     exact integrable_nevanlinnaKernel hw _
   rcases hz.lt_or_gt with hz | hz
   · have h := (conjCLE : ℂ →L[ℝ] ℂ).integrable_comp (hH (w := conj z) (by simpa using hz))
@@ -245,9 +241,9 @@ theorem exists_eq_subtractedResolventKernel_add {F : ℂ → ℂ}
         F z = (F I).re + b * z + ∫ t, subtractedResolventKernel z t ∂nu := by
   obtain ⟨rho, b, hrho, hb, hrep⟩ := exists_isFiniteMeasure_eq_nevanlinnaKernel_add hF him
   refine ⟨b, rho.withDensity fun t ↦ ENNReal.ofReal (1 + t ^ 2), hb, ?_, fun z hz ↦ ?_⟩
-  · rw [lintegral_inv_one_add_sq_withDensity]
+  · rw [Measure.lintegral_inv_one_add_sq_withDensity]
     exact measure_lt_top rho _
-  · rw [integral_subtractedResolventKernel_withDensity rho (ne_of_gt hz), hrep z hz]
+  · rw [rho.integral_subtractedResolventKernel_withDensity (ne_of_gt hz), hrep z hz]
     ring
 
 /-- **The constant term of a Herglotz representation.** In any representation
@@ -270,12 +266,12 @@ private theorem tendsto_im_div_of_eq_subtractedResolventKernel_add_of_lt_top {F 
   set rho := nu.withDensity fun t ↦ ENNReal.ofReal (1 + t ^ 2)⁻¹
   have := isFiniteMeasure_withDensity hnu.ne
   have hnu' : rho.withDensity (fun t ↦ ENNReal.ofReal (1 + t ^ 2)) = nu :=
-    withDensity_inv_one_add_sq_withDensity nu
+    nu.withDensity_inv_one_add_sq_withDensity
   let g : ℝ → ℝ → ℝ := fun y t ↦ (1 + t ^ 2) / (t ^ 2 + y ^ 2)
   have heq : ∀ᶠ y : ℝ in atTop, b + ∫ t, g y t ∂rho = (F (y * I)).im / y := by
     filter_upwards [eventually_gt_atTop 0] with y hy
     have hz : (y : ℂ) * I ∈ UpperHalfPlane.upperHalfPlaneSet := by simpa using hy
-    rw [hrep _ hz, ← hnu', integral_subtractedResolventKernel_withDensity rho (ne_of_gt hz)]
+    rw [hrep _ hz, ← hnu', rho.integral_subtractedResolventKernel_withDensity (ne_of_gt hz)]
     have him : (∫ t, nevanlinnaKernel (y * I) t ∂rho).im = ∫ t, y * g y t ∂rho := by
       rw [← RCLike.im_to_complex, ← integral_im (integrable_nevanlinnaKernel hz rho)]
       refine integral_congr_ae (.of_forall fun t ↦ ?_)
