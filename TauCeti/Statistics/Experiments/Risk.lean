@@ -70,11 +70,10 @@ theorem measurable_risk [MeasurableSpace Θ] (P : Kernel Θ X)
 
 /-- For an integrable nonnegative loss the real risk represents the corresponding Lebesgue
 integral. -/
-theorem ofReal_risk_eq_lintegral [MeasurableSpace Θ] (P : Kernel Θ X)
-    (hL : Integrable (L θ) ((κ ∘ₖ P) θ))
-    (h₀ : 0 ≤ᵐ[(κ ∘ₖ P) θ] L θ) :
-    ENNReal.ofReal (risk P L κ θ) = ∫⁻ a, ENNReal.ofReal (L θ a) ∂((κ ∘ₖ P) θ) := by
-  simpa only [risk_def, Kernel.comp_apply] using ofReal_integral_eq_lintegral_ofReal hL h₀
+theorem ofReal_risk_eq_lintegral (hL : Integrable (L θ) (κ ∘ₘ P θ))
+    (h₀ : 0 ≤ᵐ[κ ∘ₘ P θ] L θ) :
+    ENNReal.ofReal (risk P L κ θ) = ∫⁻ a, ENNReal.ofReal (L θ a) ∂(κ ∘ₘ P θ) := by
+  simpa only [risk_def] using ofReal_integral_eq_lintegral_ofReal hL h₀
 
 /-- The average of real risks is Mathlib's average risk after conversion to `ℝ≥0∞` for a
 nonnegative loss with integrable fibres and integrable real risk. -/
@@ -88,7 +87,9 @@ theorem ofReal_integral_risk_eq_avgRisk [MeasurableSpace Θ] (P : Kernel Θ X) (
     simpa only [Pi.zero_apply, risk_def, Kernel.comp_apply] using integral_nonneg_of_ae hθ.2
   rw [ofReal_integral_eq_lintegral_ofReal hr h₀, avgRisk]
   apply lintegral_congr_ae
-  filter_upwards [hL] with θ hθ using ofReal_risk_eq_lintegral P hθ.1 hθ.2
+  filter_upwards [hL] with θ hθ
+  simp only [Kernel.comp_apply] at hθ ⊢
+  exact ofReal_risk_eq_lintegral hθ.1 hθ.2
 
 /-- `Q` is a garbling of `P` if one Markov kernel transforms every sampling law of `P` into the
 corresponding sampling law of `Q`. -/
@@ -100,22 +101,27 @@ theorem isGarbling_iff (P : Θ → Measure X) (Q : Θ → Measure Y) :
     IsGarbling P Q ↔ ∃ K : Kernel X Y, IsMarkovKernel K ∧ ∀ θ, Q θ = K ∘ₘ P θ := (Iff.rfl)
 
 /-- Applying a Markov kernel to the sampling laws gives a garbling. -/
-theorem IsGarbling.comp (P : Θ → Measure X) (K : Kernel X Y) [IsMarkovKernel K] :
+theorem isGarbling_comp (P : Θ → Measure X) (K : Kernel X Y) [IsMarkovKernel K] :
     IsGarbling P (fun θ ↦ K ∘ₘ P θ) :=
   (isGarbling_iff ..).2 ⟨K, inferInstance, fun _ ↦ rfl⟩
 
 /-- The identity kernel leaves the experiment unchanged. -/
 @[refl]
 theorem IsGarbling.refl (P : Θ → Measure X) : IsGarbling P P := by
-  simpa using IsGarbling.comp P Kernel.id
+  simpa using isGarbling_comp P Kernel.id
 
 /-- Composing the two garbling kernels gives a garbling of the original experiment. -/
+@[trans]
 theorem IsGarbling.trans {Q : Θ → Measure Y} {R : Θ → Measure Z}
     (hPQ : IsGarbling P Q) (hQR : IsGarbling Q R) : IsGarbling P R := by
   obtain ⟨K, hK, hQ⟩ := (isGarbling_iff ..).1 hPQ
   obtain ⟨J, hJ, hR⟩ := (isGarbling_iff ..).1 hQR
   exact (isGarbling_iff ..).2 ⟨J ∘ₖ K, inferInstance, fun θ ↦ by
     rw [hR, hQ, Measure.comp_assoc]⟩
+
+instance : Trans (α := Θ → Measure X) (β := Θ → Measure Y) (γ := Θ → Measure Z)
+    IsGarbling IsGarbling IsGarbling :=
+  ⟨IsGarbling.trans⟩
 
 /-- A decision rule that first applies the garbling kernel has the same risk in the original
 experiment as the given rule in the garbled experiment. -/
