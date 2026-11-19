@@ -300,7 +300,7 @@ subgroup of `Diff(Sⁿ)`. -/
 theorem orthogonalToDiffSphere_injective (n : ℕ) (m : ℕ∞ω) :
     Function.Injective (orthogonalToDiffSphere n m) := by
   exact LinearIsometryEquiv.unitSphereDiffHom_injective.comp
-    Matrix.UnitaryGroup.toLinearIsometryEquiv_injective
+    Matrix.UnitaryGroup.toLinearIsometryEquiv.injective
 
 open scoped TauCeti.DiffeomorphWeakWhitney in
 /-- The reference inclusion `O(n + 1) → Diff(Sⁿ)` is continuous, for the subspace topology on

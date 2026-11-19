@@ -296,9 +296,8 @@ theorem toLinearIsometryEquiv_sphereRotationMatrix (p : sphere (0 : EuclideanSpa
 theorem sphereRotationMatrix_smul (p : sphere (0 : EuclideanSpace ℝ (Fin N)) 1)
     (x : sphere (0 : (ℝ ∙ (p : EuclideanSpace ℝ (Fin N)))ᗮ) 1 × sphere (0 : ℂ) 1)
     (y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :
-    sphereRotationMatrix p x • y = sphereRotationIsometry p x • y :=
-  -- `SO(N)` acts through `toLinearIsometryEquiv` of the inclusion in `O(N)`.
-  congrArg (· • y) (toLinearIsometryEquiv_sphereRotationMatrix p x)
+    sphereRotationMatrix p x • y = sphereRotationIsometry p x • y := by
+  rw [SpecialOrthogonalGroup.smul_sphere_def, toLinearIsometryEquiv_sphereRotationMatrix]
 
 /-- **The matrices act on `p` by the rotation family of the sphere.** -/
 @[simp]

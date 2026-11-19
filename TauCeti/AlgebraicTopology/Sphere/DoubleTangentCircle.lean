@@ -286,6 +286,16 @@ theorem isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop {m : ℕ}
   rw [GenLoop.hurewicz_map] at hγ
   exact IsIso.of_isIso_comp_left (GenLoop.hurewicz R c) _
 
+/-- The double loops of the unit sphere at a point `a`, read as the based maps
+`(S², north) → (Sⁿ, x)` for a point `x = a`: `Ω (Ω X) = Ω^[2] X` by definition, and
+`Ω^[2] X ≃ₜ Map_*(S², X)`. -/
+private def doubleLoopBasedMapHomeomorph {a x : sphere (0 : E) 1} (ha : a = x) :
+    Ω (Ω (sphere (0 : E) 1) a) (Path.refl a) ≃ₜ
+      BasedMap Sphere2 (sphere (0 : E) 1) Sphere2.north x :=
+  (BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2
+    ⟨sphere (0 : E) 1, a⟩ Sphere2.north).symm.trans
+      ((Homeomorph.refl _).subtype fun f ↦ by rw [ha]; rfl)
+
 /-- **`H_{n-2}(Map_*(S², Sⁿ); ℤ)` has an element of infinite order**, for the unit sphere `Sⁿ` of
 an `(n + 1)`-dimensional real inner product space with `n ≥ 3`, at every base point `x`. It is the
 image of a generator of `H_{n-2}(S^{n-2}; ℤ)` under the double loops of
@@ -320,11 +330,7 @@ theorem exists_not_isOfFinAddOrder_homology_basedMap_sphere {m : ℕ}
   -- The double loops are based at `x`, and read as based maps `(S², north) → (Sⁿ, x)`.
   set a := (orthogonalSphereToEquator u (p₀ : sphere (0 : (ℝ ∙ u)ᗮ) 1) : sphere (0 : E) 1)
   have ha : a = x := Subtype.ext (by simp [a, p₀])
-  let Φ : Ω (Ω (sphere (0 : E) 1) a) (Path.refl a) ≃ₜ
-      BasedMap Sphere2 (sphere (0 : E) 1) Sphere2.north x :=
-    (BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2
-      ⟨sphere (0 : E) 1, a⟩ Sphere2.north).symm.trans
-        ((Homeomorph.refl _).subtype fun f ↦ by rw [ha]; rfl)
+  let Φ := doubleLoopBasedMapHomeomorph ha
   -- So `ℤ ≅ H_{m+1}(Map_*(S², Sⁿ); ℤ)`, through the coefficients `ULift ℤ ≅ ℤ`.
   let e : R ≅ ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 (sphere (0 : E) 1) Sphere2.north
       x))).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) (m + 1) : ModuleCat.{0} ℤ) :=
@@ -396,9 +402,7 @@ theorem isIso_singularHomologyFunctor_map_twoFieldSphereFamilyFiber {m : ℕ}
     ⟨sphere (0 : E) 1, a⟩ Sphere2.north
   -- `Ω^[2] X` is `Ω (Ω X)` by definition (`iteratedLoopSpace` unfolds via `loopSpace^[2]`), so
   -- `B.symm` is a homeomorphism out of the nested loop space up to this unfolding.
-  let Φ : Ω (Ω (sphere (0 : E) 1) a) (Path.refl a) ≃ₜ
-      BasedMap Sphere2 (sphere (0 : E) 1) Sphere2.north x :=
-    B.symm.trans ((Homeomorph.refl _).subtype fun f ↦ by rw [ha]; rfl)
+  let Φ := doubleLoopBasedMapHomeomorph ha
   have hsq : (twoFieldSphereFamilyFiber h hu hv x).comp (e : C(_, _)) =
       (Φ : C(_, _)).comp (tangentCircleDoubleLoop hux hvx p₀) := by
     ext q z : 3

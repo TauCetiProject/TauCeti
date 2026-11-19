@@ -54,7 +54,8 @@ continuous in the operator-norm topology.
   a path of orthogonal matrices exactly when they have the same determinant.
 * `TauCeti.Matrix.continuousOn_reflectionMatrix`: the reflection in a nonzero vector depends
   continuously on the vector.
-* `Matrix.SpecialOrthogonalGroup.instMulActionSphere`: `SO(N)` acts on the unit sphere of `ℝᴺ`,
+* `Matrix.SpecialOrthogonalGroup.instMulActionSphere`: `SO(N)` acts on the unit sphere of `ℝᴺ`
+  through the linear isometries of its matrices (`Matrix.SpecialOrthogonalGroup.smul_sphere_def`),
   by matrix multiplication (`Matrix.SpecialOrthogonalGroup.coe_smul_sphere`) and jointly
   continuously.
 * `TauCeti.sphereRotation`: for unit vectors `b` and `y ≠ -b` of `ℝᴺ`, the reflection in `b`
@@ -256,6 +257,15 @@ noncomputable instance instMulActionSphere :
     (Submonoid.inclusion fun _ hA ↦ hA.1 :
       specialOrthogonalGroup (Fin N) ℝ →* unitaryGroup (Fin N) ℝ))
 
+/-- A special orthogonal matrix acts on the unit sphere as the linear isometry of the matrix, viewed
+in the unitary group through `Submonoid.inclusion`. -/
+theorem smul_sphere_def (A : specialOrthogonalGroup (Fin N) ℝ)
+    (x : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :
+    A • x = UnitaryGroup.toLinearIsometryEquiv
+      (Submonoid.inclusion (S := specialOrthogonalGroup (Fin N) ℝ)
+        (T := unitaryGroup (Fin N) ℝ) (fun _ hA ↦ hA.1) A) • x :=
+  (rfl)
+
 /-- A special orthogonal matrix acts on the unit sphere by matrix multiplication. -/
 @[simp]
 theorem coe_smul_sphere (A : specialOrthogonalGroup (Fin N) ℝ)
@@ -375,8 +385,8 @@ theorem exists_path_linearIsometryEquiv_of_det_eq
         EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι)) ∧
       γ 0 = g ∧ γ 1 = g' := by
   classical
-  obtain ⟨A, rfl⟩ := Matrix.UnitaryGroup.toLinearIsometryEquiv_surjective g
-  obtain ⟨B, rfl⟩ := Matrix.UnitaryGroup.toLinearIsometryEquiv_surjective g'
+  obtain ⟨A, rfl⟩ := Matrix.UnitaryGroup.toLinearIsometryEquiv.surjective g
+  obtain ⟨B, rfl⟩ := Matrix.UnitaryGroup.toLinearIsometryEquiv.surjective g'
   have hAB : (A : _root_.Matrix ι ι ℝ).det = (B : _root_.Matrix ι ι ℝ).det := by
     rw [← Matrix.UnitaryGroup.det_toLinearIsometryEquiv,
       ← Matrix.UnitaryGroup.det_toLinearIsometryEquiv]

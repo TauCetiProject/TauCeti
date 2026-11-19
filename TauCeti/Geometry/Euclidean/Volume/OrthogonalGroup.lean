@@ -151,7 +151,7 @@ private def sphereSection (u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) 
 
 private theorem sphereSection_mul_self (u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
     sphereSection u * sphereSection u = 1 := by
-  apply Matrix.UnitaryGroup.toLinearIsometryEquiv_injective
+  apply Matrix.UnitaryGroup.toLinearIsometryEquiv.injective
   ext x : 1
   simp [sphereSection, sphereReflection]
 
