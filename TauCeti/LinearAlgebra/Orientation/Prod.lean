@@ -27,8 +27,8 @@ Exchanging factors of dimensions `m` and `n` multiplies a product orientation by
 factor past each of the `n` basis vectors of the second.
 
 Reassociating `(E × F) × G` as `E × (F × G)` carries the product orientation `(o × o') × o''` to
-`o × (o' × o'')` (`Orientation.map_prodAssoc_prod`, and `Orientation.map_prodAssoc_symm_prod` in
-the other direction): both list the bases of the three factors in the same order.
+`o × (o' × o'')` (`Orientation.map_prodAssoc_prod`, inverse form
+`Orientation.map_prodAssoc_symm_prod`): both list the bases of the three factors in the same order.
 -/
 
 public section
@@ -327,8 +327,8 @@ theorem map_prodAssoc_prod (o : Orientation R E (Fin m)) (o' : Orientation R F (
     subst o'' <;>
     simp only [prod_neg_left, prod_neg_right, Orientation.map_neg, Orientation.reindex_neg, hbase]
 
-/-- Reassociating `E × (F × G)` as `(E × F) × G` carries the product orientation `o × (o' × o'')`
-to `(o × o') × o''`. The index types are identified through `m + (n + p) = m + n + p`. -/
+/-- Reassociating `E × (F × G)` as `(E × F) × G` carries the product orientation
+`o × (o' × o'')` to `(o × o') × o''`, the inverse form of `Orientation.map_prodAssoc_prod`. -/
 theorem map_prodAssoc_symm_prod (o : Orientation R E (Fin m)) (o' : Orientation R F (Fin n))
     (o'' : Orientation R G (Fin p)) (hm : Module.finrank R E = m)
     (hn : Module.finrank R F = n) (hp : Module.finrank R G = p) :
@@ -336,9 +336,8 @@ theorem map_prodAssoc_symm_prod (o : Orientation R E (Fin m)) (o' : Orientation 
         (prod o (prod o' o'' hn hp) hm (by rw [Module.finrank_prod, hn, hp])) =
       Orientation.reindex R ((E × F) × G) (finCongr (add_assoc m n p))
         (prod (prod o o' hm hn) o'' (by rw [Module.finrank_prod, hm, hn]) hp) := by
-  apply (Orientation.map _ (LinearEquiv.prodAssoc R E F G)).injective
-  rw [← Orientation.map_trans, LinearEquiv.symm_trans_self, Orientation.map_refl, Equiv.refl_apply,
-    Orientation.map_reindex, map_prodAssoc_prod, Orientation.reindex_finCongr_reindex_finCongr,
-    finCongr_refl, Orientation.reindex_refl, Equiv.refl_apply]
+  rw [← (Orientation.map _ (LinearEquiv.prodAssoc R E F G)).injective.eq_iff, ← map_symm,
+    Equiv.apply_symm_apply, map_reindex, map_prodAssoc_prod, reindex_finCongr_reindex_finCongr,
+    finCongr_refl, reindex_refl, Equiv.refl_apply]
 
 end Orientation
