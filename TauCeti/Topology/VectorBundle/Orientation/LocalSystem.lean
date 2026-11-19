@@ -89,7 +89,7 @@ system of its orientation double cover with respect to the deck involution. Its 
 the module `TauCeti.signFiber` of functions on the orientations of `E_b` that change sign under
 reversal (`TauCeti.VectorBundleOrientationCover.signLocalSystemObjEquiv`), and transport along a
 path precomposes with path lifting in the cover. -/
-def signLocalSystem (hι : Fintype.card ι = finrank ℝ F) :
+@[expose] def signLocalSystem (hι : Fintype.card ι = finrank ℝ F) :
     LocalCoefficientSystem.{u, uB, max uB uE uι u} R (TopCat.of B) :=
   (isCoveringMap_proj (F := F) (E := E) hι).signLocalSystem R _ proj_comp_deck
 
@@ -104,7 +104,7 @@ theorem signLocalSystem_def :
 
 /-- The fibre of the orientation local system over `x` is the module of functions on the
 orientations over `x` that change sign under reversal. -/
-def signLocalSystemObjEquiv (x : FundamentalGroupoid (TopCat.of B)) :
+@[expose] def signLocalSystemObjEquiv (x : FundamentalGroupoid (TopCat.of B)) :
     (signLocalSystem F E R hι).obj x ≃ₗ[R]
       signFiber R (p := proj) (deck (F := F) (E := E) (ι := ι)) (funext proj_deck) x.as :=
   (isCoveringMap_proj (F := F) (E := E) hι).signLocalSystemObjEquiv _ proj_comp_deck x

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.Topology.VectorBundle.EulerClass
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Basic
 import TauCeti.Topology.Homotopy.DeformationRetract
@@ -30,7 +31,7 @@ on the negative normal bundle. The unit sphere bundle projects continuously onto
 (`TauCeti.sphereBundleProj`), onto every point when the model fibre is nonzero
 (`TauCeti.surjective_sphereBundleProj`), and fibrewise negation `v ↦ -v` is a fixed-point-free
 involution of it over the base (`TauCeti.sphereBundleNeg`); for a line bundle it exchanges the two
-unit vectors of each fibre.
+unit vectors of each fibre (`TauCeti.eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq`).
 
 The unit disc and sphere bundles are closed in the total space (`TauCeti.isClosed_discBundle`,
 `TauCeti.isClosed_sphereBundle`). For a finite-rank bundle whose fibres carry inner products, the
@@ -157,6 +158,12 @@ variable {F E} in
 @[simp]
 theorem mem_sphereBundle {v : TotalSpace F E} : v ∈ sphereBundle F E ↔ ‖v.2‖ = 1 :=
   Iff.rfl
+
+variable {F E} in
+/-- A vector of the unit sphere bundle is nonzero. -/
+theorem snd_ne_zero_of_mem_sphereBundle {v : TotalSpace F E} (hv : v ∈ sphereBundle F E) :
+    v.2 ≠ 0 :=
+  norm_ne_zero_iff.1 ((mem_sphereBundle.1 hv).trans_ne one_ne_zero)
 
 variable {F E} in
 /-- The vectors of norm less than one miss the sphere bundle. -/
@@ -350,7 +357,7 @@ theorem sphereBundleNeg_involutive : Function.Involutive (sphereBundleNeg F E) :
 theorem sphereBundleNeg_ne_self (v : sphereBundle F E) : sphereBundleNeg F E v ≠ v := fun h ↦ by
   obtain ⟨⟨b, x⟩, hx⟩ := v
   have h₂ : -x = x := TotalSpace.mk_inj.1 (congrArg Subtype.val h)
-  have hx₀ : x ≠ 0 := norm_ne_zero_iff.1 ((mem_sphereBundle.1 hx).trans_ne one_ne_zero)
+  have hx₀ : x ≠ 0 := snd_ne_zero_of_mem_sphereBundle hx
   -- `-x = x` gives `2 • x = 0`, so `x = 0`.
   refine hx₀ ((smul_eq_zero.1 (?_ : (2 : ℝ) • x = 0)).resolve_left two_ne_zero)
   rw [two_smul]
@@ -364,6 +371,32 @@ theorem surjective_sphereBundleProj [Nontrivial F] : Function.Surjective (sphere
       (FiberBundle.mem_baseSet_trivializationAt' b)).toEquiv.nontrivial
     obtain ⟨x, hx⟩ := (NormedSpace.sphere_nonempty (x := (0 : E b)) (r := 1)).2 zero_le_one
     exact ⟨⟨⟨b, x⟩, mem_sphereBundle.2 (mem_sphere_zero_iff_norm.1 hx)⟩, rfl⟩
+
+variable {F E}
+
+/-- In a bundle of rank one, two unit vectors in the same fibre are equal or opposite. -/
+theorem eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq (hF : Module.finrank ℝ F = 1)
+    {v w : sphereBundle F E} (h : sphereBundleProj F E w = sphereBundleProj F E v) :
+    w = v ∨ w = sphereBundleNeg F E v := by
+  obtain ⟨⟨b, x⟩, hx⟩ := v
+  obtain ⟨⟨b', y⟩, hy⟩ := w
+  obtain rfl : b' = b := by simpa only [sphereBundleProj_apply] using h
+  -- In the line `E b`, `y = c • x` with `|c| = 1`.
+  obtain ⟨c, rfl⟩ := (finrank_eq_one_iff_of_ne_zero' x (snd_ne_zero_of_mem_sphereBundle hx)).1
+    ((VectorBundle.finrank_eq ℝ F E _).trans hF) y
+  have hc : |c| = 1 := by
+    simpa [norm_smul, mem_sphereBundle.1 hx] using mem_sphereBundle.1 hy
+  rcases (abs_eq zero_le_one).1 hc with rfl | rfl
+  · exact .inl (Subtype.ext (by simp))
+  · exact .inr (Subtype.ext (by simp))
+
+/-- In rank one, each fibre of the unit sphere bundle consists of two opposite unit vectors. -/
+theorem finite_preimage_sphereBundleProj (hF : Module.finrank ℝ F = 1) (b : B) :
+    (sphereBundleProj F E ⁻¹' {b}).Finite := by
+  have : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
+  obtain ⟨v, rfl⟩ := surjective_sphereBundleProj F E b
+  refine (Set.toFinite {v, sphereBundleNeg F E v}).subset fun w hw ↦ ?_
+  rcases eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq hF hw with h | h <;> simp [h]
 
 end Neg
 

@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-public import Mathlib.Geometry.Manifold.Instances.Sphere
-public import TauCeti.AlgebraicTopology.Singular.Reduced
 public import TauCeti.Analysis.Complex.Circle
-public import TauCeti.Topology.VectorBundle.Thom.LineBundle
+public import TauCeti.Topology.VectorBundle.Orientation.Basic
 
 /-!
 # The Möbius line bundle over the circle
@@ -24,16 +22,8 @@ the total space (`TauCeti.continuous_norm_moebiusCore`): it is a line bundle wit
 norm, to which the Thom isomorphism of a line bundle applies. Each chart domain is connected, so an
 orientation reads as one orientation of `ℝ` in each chart; the two readings agree on the upper and
 disagree on the lower half-circle, so the Möbius line bundle is not orientable
-(`TauCeti.isEmpty_vectorBundleOrientation_moebiusCore`).
-
-The Thom isomorphism of a line bundle with orientation coefficients therefore gives
-`H₁(E, E₀; R) ≅ H₀(S¹; o(E)) ≅ R ⧸ 2R` for the Möbius line `E`
-(`TauCeti.moebiusThomPairSingularHomologyOneEquiv`). With integer coefficients this is `ℤ/2`, which
-is not the zeroth homology `H₀(S¹; ℤ) ≅ ℤ` of the circle with constant coefficients
-(`TauCeti.not_nonempty_moebiusThomPair_singularHomology_one_linearEquiv`): the relative homology
-across the level of a critical circle of index one whose negative normal bundle is a Möbius line is
-the homology of the circle twisted by the orientation local system of that line, and constant
-integer coefficients give the wrong answer.
+(`TauCeti.isEmpty_vectorBundleOrientation_moebiusCore`). Its Thom pair is computed in
+`TauCeti.Topology.VectorBundle.Thom.Moebius`.
 
 ## Main definitions
 
@@ -43,24 +33,18 @@ integer coefficients give the wrong answer.
 
 * `TauCeti.continuous_norm_moebiusCore`: the fibre norm is continuous on the total space.
 * `TauCeti.isEmpty_vectorBundleOrientation_moebiusCore`: the Möbius line bundle is not orientable.
-* `TauCeti.moebiusThomPairSingularHomologyOneEquiv`: `H₁(E, E₀; R) ≅ R ⧸ 2R`.
-* `TauCeti.not_nonempty_moebiusThomPair_singularHomology_one_linearEquiv`:
-  `H₁(E, E₀; ℤ)` is not isomorphic to `H₀(S¹; ℤ)`.
 
 ## References
 
 * J. W. Milnor, J. D. Stasheff, *Characteristic Classes*, Annals of Mathematics Studies 76,
-  Princeton (1974), §2 (the Möbius line bundle) and §10 and §12 (the Thom isomorphism and the
-  orientation double cover).
-* R. Bott, *Nondegenerate critical manifolds*, Annals of Mathematics 60 (1954), 248–261, for the
-  orientation twist of the negative normal bundle of a critical submanifold.
+  Princeton (1974), §2 (the Möbius line bundle).
 -/
 
 public section
 
 noncomputable section
 
-open Bundle CategoryTheory Filter Module Set
+open Bundle Filter Module Set
 open scoped Topology Real
 
 namespace TauCeti
@@ -99,11 +83,18 @@ theorem continuousAt_moebiusSign {z : Circle} (hz : (z : ℂ).im ≠ 0) :
 def moebiusBaseSet (i : Bool) : Set Circle :=
   {z | (z : ℂ) ≠ if i then -1 else 1}
 
+/-- The chart `i` of the Möbius line bundle is the circle minus `-1` for `true` and minus `1` for
+`false`. -/
+@[simp]
+theorem mem_moebiusBaseSet {i : Bool} {z : Circle} :
+    z ∈ moebiusBaseSet i ↔ (z : ℂ) ≠ if i then -1 else 1 :=
+  Iff.rfl
+
 /-- Two different charts of the Möbius line bundle overlap off the real axis. -/
 theorem im_ne_zero_of_mem_moebiusBaseSet {i j : Bool} (hij : i ≠ j) {z : Circle}
     (hi : z ∈ moebiusBaseSet i) (hj : z ∈ moebiusBaseSet j) : (z : ℂ).im ≠ 0 := fun h ↦ by
   rcases Circle.coe_eq_one_or_eq_neg_one_of_im_eq_zero h with h | h <;>
-    cases i <;> cases j <;> simp_all [moebiusBaseSet]
+    cases i <;> cases j <;> simp_all
 
 /-- The Möbius line bundle over the circle, glued from the trivial lines over the circle minus `1`
 (chart `false`) and minus `-1` (chart `true`) by the transition `TauCeti.moebiusSign`: the
@@ -113,8 +104,11 @@ def moebiusCore : VectorBundleCore ℝ Circle ℝ Bool where
   isOpen_baseSet i := isOpen_ne_fun continuous_subtype_val continuous_const
   indexAt z := decide ((z : ℂ) = 1)
   mem_baseSet_at z := by
-    by_cases h : (z : ℂ) = 1 <;> simp [moebiusBaseSet, h]
-    norm_num
+    by_cases h : (z : ℂ) = 1
+    · -- Then `z` lies in the chart `true`, the circle minus `-1`.
+      simp only [h, decide_true, mem_moebiusBaseSet, ↓reduceIte]
+      norm_num
+    · simp [h]
   coordChange i j z := if i = j then ContinuousLinearMap.id ℝ ℝ else
     moebiusSign z • ContinuousLinearMap.id ℝ ℝ
   coordChange_self i _ _ v := by simp
@@ -128,6 +122,25 @@ def moebiusCore : VectorBundleCore ℝ Circle ℝ Bool where
   coordChange_comp i j k z _ v := by
     cases i <;> cases j <;> cases k <;> simp [← mul_assoc]
 
+/-- The chart domains of the Möbius line bundle are `TauCeti.moebiusBaseSet`. -/
+theorem moebiusCore_baseSet (i : Bool) : moebiusCore.baseSet i = moebiusBaseSet i :=
+  (rfl)
+
+/-- The base set of the local trivialization `i` of the Möbius line bundle is
+`TauCeti.moebiusBaseSet i`. -/
+@[simp]
+theorem moebiusCore_localTriv_baseSet (i : Bool) :
+    (moebiusCore.localTriv i).baseSet = moebiusBaseSet i :=
+  (rfl)
+
+/-- The transition function of the Möbius line bundle between different charts is multiplication by
+`TauCeti.moebiusSign`. -/
+@[simp]
+theorem moebiusCore_coordChange (i j : Bool) (z : Circle) :
+    moebiusCore.coordChange i j z =
+      if i = j then ContinuousLinearMap.id ℝ ℝ else moebiusSign z • ContinuousLinearMap.id ℝ ℝ :=
+  (rfl)
+
 /-- The fibres of the Möbius line bundle carry the norm of `ℝ`. -/
 instance (z : Circle) : NormedAddCommGroup (moebiusCore.Fiber z) :=
   inferInstanceAs (NormedAddCommGroup ℝ)
@@ -138,7 +151,7 @@ instance (z : Circle) : NormedSpace ℝ (moebiusCore.Fiber z) :=
 /-- The transition functions of the Möbius line bundle preserve the norm of `ℝ`. -/
 theorem norm_moebiusCore_coordChange (i j : Bool) (z : Circle) (v : ℝ) :
     ‖moebiusCore.coordChange i j z v‖ = ‖v‖ := by
-  simp only [moebiusCore]
+  rw [moebiusCore_coordChange]
   split_ifs
   · rfl
   · unfold moebiusSign
@@ -165,11 +178,11 @@ theorem isPreconnected_moebiusBaseSet (i : Bool) : IsPreconnected (moebiusBaseSe
   cases i
   · convert (Circle.isPathConnected_compl_singleton 1).isConnected.isPreconnected using 1
     ext z
-    simp [moebiusBaseSet, Circle.ext_iff]
+    simp [Circle.ext_iff]
   · convert (Circle.isPathConnected_compl_singleton (Circle.exp π)).isConnected.isPreconnected
       using 1
     ext z
-    simp [moebiusBaseSet, Circle.ext_iff, Circle.coe_exp, Complex.exp_pi_mul_I]
+    simp [Circle.ext_iff, Circle.coe_exp, Complex.exp_pi_mul_I]
 
 /-- The coordinate change of the Möbius line bundle from the chart `true` to the chart `false`, at
 a point of their overlap, has determinant the transition function. -/
@@ -180,7 +193,7 @@ private theorem det_coordChangeL_moebiusCore {z : Circle} (h₁ : z ∈ moebiusB
   rw [LinearMap.det_ring]
   simp only [ContinuousLinearEquiv.coe_toLinearEquiv, LinearEquiv.coe_coe]
   rw [VectorBundleCore.localTriv_coordChange_eq _ _ _ ⟨h₁, h₀⟩]
-  simp [moebiusCore]
+  simp
 
 /-- **The Möbius line bundle is not orientable.** -/
 theorem isEmpty_vectorBundleOrientation_moebiusCore :
@@ -214,44 +227,5 @@ theorem isEmpty_vectorBundleOrientation_moebiusCore :
       (by rw [det_coordChangeL_moebiusCore (hmem hq.ne true) (hmem hq.ne false),
         moebiusSign_of_neg hq]; norm_num), hc₁] at hc₀
   exact Module.Ray.ne_neg_self _ hc₀
-
-/-- The orientation of the fibre of the Möbius line bundle over `1` given by the vector `1`. -/
-private def moebiusOrientationOne : Orientation ℝ (moebiusCore.Fiber 1) (Fin 1) :=
-  (Module.Basis.singleton (Fin 1) ℝ).orientation
-
-/-- **The Thom pair of the Möbius line bundle.** For the Möbius line `E` over the circle and every
-commutative ring `R`, `H₁(E, E₀; R) ≅ H₀(S¹; o(E)) ≅ R ⧸ 2R`. -/
-def moebiusThomPairSingularHomologyOneEquiv (R : Type) [CommRing R] :
-    ((thomPair ℝ moebiusCore.Fiber).singularHomology (ModuleCat.of R R) 1 : ModuleCat R) ≃ₗ[R]
-      R ⧸ Ideal.span {(2 : R)} :=
-  haveI : LocallyPathConnectedSpace Circle :=
-    ChartedSpace.locallyPathConnectedSpace (EuclideanSpace ℝ (Fin 1)) Circle
-  VectorBundleOrientationCover.thomPairSingularHomologyOneEquivQuotientTwo
-    continuous_norm_moebiusCore (finrank_self ℝ) isEmpty_vectorBundleOrientation_moebiusCore
-    moebiusOrientationOne
-
-/-- **The Thom comparison for the Möbius line needs its orientation local system.** The first
-homology of the Thom pair of the Möbius line `E` over the circle, `H₁(E, E₀; ℤ) ≅ ℤ/2`, is not
-isomorphic to the zeroth homology `H₀(S¹; ℤ) ≅ ℤ` of the circle with constant integer coefficients:
-the Thom isomorphism shifts the homology of the base twisted by the orientation local system of
-`E`. -/
-theorem not_nonempty_moebiusThomPair_singularHomology_one_linearEquiv :
-    ¬ Nonempty (((thomPair ℝ moebiusCore.Fiber).singularHomology (ModuleCat.of ℤ ℤ) 1 :
-        ModuleCat.{0} ℤ) ≃ₗ[ℤ]
-      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) 0).obj
-        (ModuleCat.of ℤ ℤ)).obj (TopCat.of Circle) : ModuleCat.{0} ℤ)) := by
-  rintro ⟨e⟩
-  -- Compose to an isomorphism `ℤ ⧸ 2ℤ ≃ ℤ`, using the augmentation `H₀(S¹; ℤ) ≅ ℤ`.
-  let f : (ℤ ⧸ Ideal.span {(2 : ℤ)}) ≃ₗ[ℤ] ℤ :=
-    (moebiusThomPairSingularHomologyOneEquiv ℤ).symm ≪≫ₗ e ≪≫ₗ
-      (asIso ((TopCat.of Circle).singularHomology₀ε (ModuleCat.of ℤ ℤ))).toLinearEquiv
-  -- In `ℤ ⧸ 2ℤ` the class of `1` is killed by `2` but is not zero; in `ℤ` no such element exists.
-  have h2 : (2 : ℤ) • f (Submodule.Quotient.mk 1) = 0 := by
-    rw [← map_smul, ← Submodule.Quotient.mk_smul, smul_eq_mul, mul_one,
-      (Submodule.Quotient.mk_eq_zero _).2 (Ideal.mem_span_singleton_self 2), map_zero]
-  have h1 : (Submodule.Quotient.mk 1 : ℤ ⧸ Ideal.span {(2 : ℤ)}) = 0 :=
-    f.injective ((smul_eq_zero.1 h2).resolve_left two_ne_zero |>.trans (map_zero f).symm)
-  rw [Submodule.Quotient.mk_eq_zero, Ideal.mem_span_singleton] at h1
-  exact absurd (Int.eq_one_of_dvd_one zero_le_two h1) (by norm_num)
 
 end TauCeti

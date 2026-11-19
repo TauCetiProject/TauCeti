@@ -247,8 +247,16 @@ theorem coe_signFiberComapEquiv_apply {x : X} (g : signFiber R τ hτ x) (e : p 
       (g : q ⁻¹' {x} → R) (Function.fiberMap f hf x e) :=
   (rfl)
 
-end Map
+/-- The inverse of precomposition with a map of double covers takes, at the image of `e`, the value
+at `e`. -/
+@[simp]
+theorem coe_signFiberComapEquiv_symm_apply_fiberMap {x : X} (g : signFiber R σ hσ x)
+    (e : p ⁻¹' {x}) :
+    ((signFiberComapEquiv (hτ := hτ) R hf hfστ hfixτ hfib hfibτ hsurj x).symm g : q ⁻¹' {x} → R)
+        (Function.fiberMap f hf x e) = (g : p ⁻¹' {x} → R) e := by
+  rw [← coe_signFiberComapEquiv_apply hf hfστ hfixτ hfib hfibτ hsurj, LinearEquiv.apply_symm_apply]
 
+end Map
 
 end TauCeti
 
@@ -437,6 +445,17 @@ theorem signLocalSystemObjEquiv_signLocalSystemIsoOfMap_hom_app_apply
         p ⁻¹' {x.as} → R) e =
       (hq.signLocalSystemObjEquiv τ hτ x g : q ⁻¹' {x.as} → R) (Function.fiberMap f hf x.as e) :=
   (rfl)
+
+/-- The inverse of the isomorphism of sign local systems induced by a map of double covers takes,
+at the image of `e`, the value at `e`. -/
+@[simp]
+theorem signLocalSystemObjEquiv_signLocalSystemIsoOfMap_inv_app_apply_fiberMap
+    (x : FundamentalGroupoid X) (g : (hp.signLocalSystem R σ hσ).obj x) (e : p ⁻¹' {x.as}) :
+    (hq.signLocalSystemObjEquiv τ hτ x
+        ((hp.signLocalSystemIsoOfMap hq hf hfστ hfixτ hfib hfibτ hsurj).inv.app x g) :
+        q ⁻¹' {x.as} → R) (Function.fiberMap f hf x.as e) =
+      (hp.signLocalSystemObjEquiv σ hσ x g : p ⁻¹' {x.as} → R) e :=
+  TauCeti.coe_signFiberComapEquiv_symm_apply_fiberMap hf hfστ hfixτ hfib hfibτ hsurj _ e
 
 end Map
 

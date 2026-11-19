@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Permutation
 public import TauCeti.AlgebraicTopology.Singular.Transfer.CoveringPair
 public import TauCeti.Topology.VectorBundle.Orientation.TwistedHomology
@@ -55,9 +54,10 @@ This gives the **Thom isomorphism of a line bundle with orientation coefficients
 
 `Hₙ₊₁(E, E₀; R) ≅ Hₙ(B; o(E))`
 
-(`TauCeti.thomPairSingularHomologySuccIsoOrientationTwistedHomology`). In degree `1`, over a
-path-connected base, `H₁(E, E₀; R)` is therefore `R` when `E` is orientable
-(`TauCeti.VectorBundleOrientation.thomPairSingularHomologyOneEquiv`) and `R ⧸ 2R` when it is not
+(`TauCeti.thomPairSingularHomologySuccIsoOrientationTwistedHomology`). In degree `1`,
+`H₁(E, E₀; R)` is therefore `R` over a path-connected base when `E` is orientable
+(`TauCeti.VectorBundleOrientation.thomPairSingularHomologyOneEquiv`), and `R ⧸ 2R` over a
+connected, locally path-connected base when it is not
 (`TauCeti.VectorBundleOrientationCover.thomPairSingularHomologyOneEquivQuotientTwo`). With integer
 coefficients a non-orientable line bundle, such as the Möbius line over the circle, has
 `H₁(E, E₀; ℤ) ≅ ℤ/2`, not the `H₀(B; ℤ) ≅ ℤ` that constant coefficients would give. This is the
@@ -166,24 +166,6 @@ end LocalSystem
 
 section Orientation
 
-include hF in
-/-- In a bundle of rank one, two unit vectors in the same fibre are equal or opposite. -/
-theorem eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq {v w : sphereBundle F E}
-    (h : sphereBundleProj F E w = sphereBundleProj F E v) :
-    w = v ∨ w = sphereBundleNeg F E v := by
-  obtain ⟨⟨b, x⟩, hx⟩ := v
-  obtain ⟨⟨b', y⟩, hy⟩ := w
-  obtain rfl : b' = b := by simpa only [sphereBundleProj_apply] using h
-  have hx₀ : x ≠ 0 := norm_ne_zero_iff.1 ((mem_sphereBundle.1 hx).trans_ne one_ne_zero)
-  -- In the line `E b`, `y = c • x` with `|c| = 1`.
-  obtain ⟨c, rfl⟩ :=
-    (finrank_eq_one_iff_of_ne_zero' x hx₀).1 ((VectorBundle.finrank_eq ℝ F E _).trans hF) y
-  have hc : |c| = 1 := by
-    simpa [norm_smul, mem_sphereBundle.1 hx] using mem_sphereBundle.1 hy
-  rcases (abs_eq zero_le_one).1 hc with rfl | rfl
-  · exact .inl (Subtype.ext (by simp))
-  · exact .inr (Subtype.ext (by simp))
-
 /-- In rank one a unit vector `v` orients its fibre: the map from the unit sphere bundle to the
 orientation double cover sending `v` to the orientation of its fibre in which `v` is positive.
 It lies over the base and carries `-v` to the opposite orientation
@@ -192,7 +174,7 @@ def sphereBundleOrientation : C(sphereBundle F E, VectorBundleOrientationCover F
   toFun v := ⟨(v : TotalSpace F E).proj,
     (FiniteDimensional.basisSingleton (Fin 1) ((VectorBundle.finrank_eq ℝ F E _).trans hF)
       (v : TotalSpace F E).2
-      (norm_ne_zero_iff.1 ((mem_sphereBundle.1 v.2).trans_ne one_ne_zero))).orientation⟩
+      (snd_ne_zero_of_mem_sphereBundle v.2)).orientation⟩
   continuous_toFun :=
     VectorBundleOrientationCover.continuous_mk_basis_orientation
       ((FiberBundle.continuous_proj F E).comp continuous_subtype_val) _ fun i ↦ by
@@ -205,7 +187,7 @@ theorem sphereBundleOrientation_apply (v : sphereBundle F E) :
     sphereBundleOrientation hF v = ⟨(v : TotalSpace F E).proj,
       (FiniteDimensional.basisSingleton (Fin 1) ((VectorBundle.finrank_eq ℝ F E _).trans hF)
         (v : TotalSpace F E).2
-        (norm_ne_zero_iff.1 ((mem_sphereBundle.1 v.2).trans_ne one_ne_zero))).orientation⟩ :=
+        (snd_ne_zero_of_mem_sphereBundle v.2)).orientation⟩ :=
   (rfl)
 
 /-- The orientation given by a unit vector lies over the base point of the vector. -/
@@ -233,7 +215,7 @@ theorem sphereBundleOrientation_sphereBundleNeg (v : sphereBundle F E) :
   -- The basis `(-x)` is the basis `(x)` with its vector multiplied by the unit `-1`.
   convert Module.Basis.orientation_neg_single (FiniteDimensional.basisSingleton (Fin 1)
     ((VectorBundle.finrank_eq ℝ F E _).trans hF) x
-    (norm_ne_zero_iff.1 ((mem_sphereBundle.1 hx).trans_ne one_ne_zero))) 0 using 2
+    (snd_ne_zero_of_mem_sphereBundle hx)) 0 using 2
   refine Module.Basis.eq_of_apply_eq fun i ↦ ?_
   rw [Module.Basis.unitsSMul_apply, Fin.fin_one_eq_zero i, Function.update_self]
   simp [FiniteDimensional.basisSingleton_apply]
@@ -262,13 +244,43 @@ def signLocalSystemIsoSphereBundle :
         VectorBundleOrientationCover.eq_or_eq_deck ((Fintype.card_fin 1).trans hF.symm) h)
       (surjective_sphereBundleProj F E)
 
-include hF in
-/-- In rank one, each fibre of the unit sphere bundle consists of two opposite unit vectors. -/
-theorem finite_preimage_sphereBundleProj (b : B) : (sphereBundleProj F E ⁻¹' {b}).Finite := by
-  have : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
-  obtain ⟨v, rfl⟩ := surjective_sphereBundleProj F E b
-  refine (Set.toFinite {v, sphereBundleNeg F E v}).subset fun w hw ↦ ?_
-  rcases eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq hF hw with h | h <;> simp [h]
+/-- The identification of the orientation local system of a line bundle with the sign local system
+of its unit sphere bundle is precomposition with the orientation map. -/
+@[simp]
+theorem signLocalSystemObjEquiv_signLocalSystemIsoSphereBundle_hom_app_apply
+    (x : FundamentalGroupoid (TopCat.of B))
+    (g : (VectorBundleOrientationCover.signLocalSystem F E R
+      ((Fintype.card_fin 1).trans hF.symm)).obj x) (e : sphereBundleProj F E ⁻¹' {x.as}) :
+    ((isCoveringMap_sphereBundleProj F E hnorm hF).signLocalSystemObjEquiv (X := TopCat.of B)
+        (sphereBundleNeg F E) (sphereBundleProj_comp_sphereBundleNeg F E) x
+        ((signLocalSystemIsoSphereBundle hnorm hF R).hom.app x g) :
+        sphereBundleProj F E ⁻¹' {x.as} → R) e =
+      (VectorBundleOrientationCover.signLocalSystemObjEquiv ((Fintype.card_fin 1).trans hF.symm)
+          x g : VectorBundleOrientationCover.proj ⁻¹' {x.as} → R)
+        (Function.fiberMap (sphereBundleOrientation hF) (proj_comp_sphereBundleOrientation hF) x.as
+          e) :=
+  haveI : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
+  IsCoveringMap.signLocalSystemObjEquiv_signLocalSystemIsoOfMap_hom_app_apply _ _ _ _ _ _ _ _ x g e
+
+/-- The inverse identification of the sign local system of the unit sphere bundle with the
+orientation local system takes, at the orientation given by a unit vector `e`, the value at `e`. -/
+@[simp]
+theorem signLocalSystemObjEquiv_signLocalSystemIsoSphereBundle_inv_app_apply_fiberMap
+    (x : FundamentalGroupoid (TopCat.of B))
+    (g : ((isCoveringMap_sphereBundleProj F E hnorm hF).signLocalSystem (X := TopCat.of B) R
+      (sphereBundleNeg F E) (sphereBundleProj_comp_sphereBundleNeg F E)).obj x)
+    (e : sphereBundleProj F E ⁻¹' {x.as}) :
+    (VectorBundleOrientationCover.signLocalSystemObjEquiv ((Fintype.card_fin 1).trans hF.symm) x
+        ((signLocalSystemIsoSphereBundle hnorm hF R).inv.app x g) :
+        VectorBundleOrientationCover.proj ⁻¹' {x.as} → R)
+        (Function.fiberMap (sphereBundleOrientation hF) (proj_comp_sphereBundleOrientation hF) x.as
+          e) =
+      ((isCoveringMap_sphereBundleProj F E hnorm hF).signLocalSystemObjEquiv (X := TopCat.of B)
+        (sphereBundleNeg F E) (sphereBundleProj_comp_sphereBundleNeg F E) x g :
+        sphereBundleProj F E ⁻¹' {x.as} → R) e :=
+  haveI : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
+  IsCoveringMap.signLocalSystemObjEquiv_signLocalSystemIsoOfMap_inv_app_apply_fiberMap _ _ _ _ _ _
+    _ _ x g e
 
 /-- **The Thom isomorphism of a line bundle with orientation coefficients.** Let `E → B` be a real
 vector bundle of rank one whose fibre norm is continuous on the total space, and `o(E)` its
@@ -293,6 +305,49 @@ def thomPairSingularHomologySuccIsoOrientationTwistedHomology (n : ℕ) :
     (HomologicalComplex.homologyFunctor _ _ n).mapIso
       (LocalCoefficientSystem.twistedChainComplexCoefficientIso
         (signLocalSystemIsoSphereBundle hnorm hF R).symm)
+
+/-- The Thom isomorphism of a line bundle with orientation coefficients, read on the disc-sphere
+pair and followed by the map `Hₙ(B; o(E)) ⟶ Hₙ(B; R[S(E)]) ≅ Hₙ(S(E))` induced by
+`o(E) ≅ sign ⟶ R[S(E)]` (`TauCeti.signLocalSystemIsoSphereBundle`), is the connecting map
+`Hₙ₊₁(D(E), S(E)) ⟶ Hₙ(S(E))` of the disc-sphere pair. -/
+@[reassoc]
+theorem
+    gaugeDiscSpherePairMap_comp_thomPairSingularHomologySuccIsoOrientationTwistedHomology_hom_comp
+    (n : ℕ) :
+    TopPair.singularHomologyMap (gaugeDiscSpherePairMap (isFiberGauge_norm hnorm))
+        (ModuleCat.of R R) (n + 1) ≫
+        (thomPairSingularHomologySuccIsoOrientationTwistedHomology hnorm hF R n).hom ≫
+          LocalCoefficientSystem.twistedHomologyCoefficientMap
+            ((signLocalSystemIsoSphereBundle hnorm hF R).hom ≫
+              (isCoveringMap_sphereBundleProj F E hnorm hF).signLocalSystemToPermutation
+                (p := TopCat.ofHom (sphereBundleProj F E)) R
+                (sphereBundleProj_comp_sphereBundleNeg F E)
+                (fun b ↦ (finite_preimage_sphereBundleProj hF b).to_subtype)) n ≫
+            ((isCoveringMap_sphereBundleProj F E hnorm hF).singularHomologyPermutationIso
+              (p := TopCat.ofHom (sphereBundleProj F E)) R n).inv =
+      (gaugeDiscSpherePair fun v : TotalSpace F E ↦ ‖v.2‖).singularHomologyδ
+        (ModuleCat.of R R) (n + 1) n := by
+  have : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
+  -- By definition, the Thom isomorphism is followed by the coefficient change `sign ≅ o(E)`, which
+  -- cancels against the coefficient change `o(E) ≅ sign`.
+  have h : (thomPairSingularHomologySuccIsoOrientationTwistedHomology hnorm hF R n).hom =
+      (thomPairSingularHomologySuccIsoTwistedHomology hnorm hF
+        ((isCoveringMap_sphereBundleProj F E hnorm hF).shortExact_signPermutationShortComplex
+          (p := TopCat.ofHom (sphereBundleProj F E)) R (sphereBundleProj_comp_sphereBundleNeg F E)
+          (sphereBundleNeg_involutive F E)
+          (fun b ↦ (finite_preimage_sphereBundleProj hF b).to_subtype)
+          (sphereBundleNeg_ne_self F E)
+          (fun _ _ h ↦ eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq hF h)
+          (surjective_sphereBundleProj F E)) n).hom ≫
+        LocalCoefficientSystem.twistedHomologyCoefficientMap
+          (signLocalSystemIsoSphereBundle hnorm hF R).inv n := by
+    refine (Iso.trans_hom _ _).trans (congrArg₂ _ rfl ?_)
+    rw [Functor.mapIso_hom, HomologicalComplex.homologyFunctor_map,
+      LocalCoefficientSystem.twistedChainComplexCoefficientIso_hom, Iso.symm_hom]
+  rw [h, Category.assoc, ← LocalCoefficientSystem.twistedHomologyCoefficientMap_comp_assoc,
+    Iso.inv_hom_id_assoc]
+  exact gaugeDiscSpherePairMap_comp_thomPairSingularHomologySuccIsoTwistedHomology_hom_comp hnorm hF
+    _ n
 
 end Orientation
 
