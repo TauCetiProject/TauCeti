@@ -57,8 +57,11 @@ Interval integrals of elementary functions in closed form or as series, continui
   over an interval is a difference of arctangents.
 * `Real.integral_one_div_add_sq`: `∫ t in 0..b, 1 / (a + t)² = a⁻¹ - (a + b)⁻¹` for `a > 0` and
   `b ≥ 0`.
-* `Real.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{κ cos θ} exp (n θ i)` as the
-  sum of the termwise integrals of the exponential series of `e^{κ cos θ}`.
+* `Complex.hasSum_pow_div_factorial_mul_integral_cos_pow_mul_exp`,
+  `Complex.hasSum_integral_exp_mul_cos_mul_exp`: `∫ θ in -π..π, e^{w cos θ} exp (n θ i)` for
+  `w : ℂ` and `n : ℤ` as the termwise integral series
+  `∑ₖ (wᵏ / k!) ∫ θ in -π..π, cosᵏ θ exp (n θ i)` and its closed-form series
+  `∑ⱼ 2π (w / 2) ^ (2 j + |n|) / (j! (j + |n|)!)`.
 * `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`: the integral
   from `0` of an integrand `θ ↦ G (sin² θ)` is odd and quasi-periodic in its upper limit.
 -/
@@ -493,34 +496,81 @@ theorem integral_one_div_add_sq {a b : ℝ} (ha : 0 < a) (hb : 0 ≤ b) :
   simpa [sub_eq_add_neg, add_comm] using integral_eq_sub_of_hasDerivAt hd
     (hc.intervalIntegrable_of_Icc hb)
 
-/-- Termwise integration of the exponential series `e^{κ cos θ} = ∑ₖ κᵏ cosᵏ θ / k!` against the
-Fourier character `exp (n θ i)` over `[-π, π]`. -/
-theorem hasSum_integral_exp_mul_cos_mul_cexp (κ : ℝ) (n : ℤ) :
-    HasSum (fun k : ℕ => ((κ ^ k / k ! : ℝ) : ℂ) *
-        ∫ θ in -Real.pi..Real.pi, (Real.cos θ : ℂ) ^ k * Complex.exp (n * θ * Complex.I))
-      (∫ θ in -Real.pi..Real.pi,
-        (Real.exp (κ * Real.cos θ) : ℂ) * Complex.exp (n * θ * Complex.I)) := by
+end Real
+
+namespace Complex
+
+/-- For any `w : ℂ` and `n : ℤ`, `∫_{-π}^π e^{w cos θ} e^{i n θ} dθ` equals the series
+`∑ₖ (wᵏ / k!) ∫_{-π}^π cosᵏ θ e^{i n θ} dθ`. -/
+theorem hasSum_pow_div_factorial_mul_integral_cos_pow_mul_exp (w : ℂ) (n : ℤ) :
+    HasSum (fun k : ℕ => w ^ k / k ! *
+        ∫ θ in -Real.pi..Real.pi, (Real.cos θ : ℂ) ^ k * exp (n * θ * I))
+      (∫ θ in -Real.pi..Real.pi, exp (w * Real.cos θ) * exp (n * θ * I)) := by
   simp_rw [← intervalIntegral.integral_const_mul]
-  refine intervalIntegral.hasSum_integral_of_dominated_convergence (fun k _ => |κ| ^ k / k !)
+  refine intervalIntegral.hasSum_integral_of_dominated_convergence (fun k _ => ‖w‖ ^ k / k !)
     (fun k => by fun_prop) (fun k => MeasureTheory.ae_of_all _ fun θ _ => ?_)
-    (MeasureTheory.ae_of_all _ fun _ _ => Real.summable_pow_div_factorial |κ|)
+    (MeasureTheory.ae_of_all _ fun _ _ => Real.summable_pow_div_factorial ‖w‖)
     intervalIntegrable_const (MeasureTheory.ae_of_all _ fun θ _ => ?_)
-  · have harg : (n : ℂ) * θ * Complex.I = ((n * θ : ℝ) : ℂ) * Complex.I := by
+  · have harg : (n : ℂ) * θ * I = ((n * θ : ℝ) : ℂ) * I := by
       push_cast
       ring
-    have hexp : ‖Complex.exp (n * θ * Complex.I)‖ = 1 := by
-      rw [harg, Complex.norm_exp_ofReal_mul_I]
+    have hexp : ‖exp (n * θ * I)‖ = 1 := by
+      rw [harg, norm_exp_ofReal_mul_I]
     have hcos : ‖(Real.cos θ : ℂ)‖ ≤ 1 := by
-      rw [Complex.norm_real, Real.norm_eq_abs]
+      rw [norm_real, Real.norm_eq_abs]
       exact Real.abs_cos_le_one θ
-    simpa [hexp, abs_div] using
-      mul_le_of_le_one_right (by positivity : 0 ≤ |κ| ^ k / k !) (pow_le_one₀ (norm_nonneg _) hcos)
-  · have h := (Complex.hasSum_ofReal.mpr
-      (NormedSpace.expSeries_div_hasSum_exp (κ * Real.cos θ))).mul_right
-        (Complex.exp (n * θ * Complex.I))
-    rw [← Real.exp_eq_exp_ℝ] at h
+    simpa [hexp] using
+      mul_le_of_le_one_right (by positivity : 0 ≤ ‖w‖ ^ k / k !) (pow_le_one₀ (norm_nonneg _) hcos)
+  · have h := (NormedSpace.expSeries_div_hasSum_exp (w * Real.cos θ)).mul_right (exp (n * θ * I))
+    rw [← exp_eq_exp_ℂ] at h
     convert h using 2 with k
-    push_cast
+    rw [mul_pow]
     ring
 
-end Real
+/-- For any `w : ℂ` and `n : ℤ`, the Fourier integral `∫_{-π}^π e^{w cos θ} e^{i n θ} dθ` expands
+as the power series `∑ⱼ 2π (w / 2) ^ (2 j + |n|) / (j! (j + |n|)!)`. -/
+theorem hasSum_integral_exp_mul_cos_mul_exp (w : ℂ) (n : ℤ) :
+    HasSum (fun j : ℕ =>
+        2 * (Real.pi : ℂ) * ((w / 2) ^ (2 * j + n.natAbs) / (j ! * (j + n.natAbs)!)))
+      (∫ θ in -Real.pi..Real.pi, exp (w * Real.cos θ) * exp (n * θ * I)) := by
+  -- Integrate `e^{w cos θ} = ∑ₖ wᵏ cosᵏ θ / k!` termwise and expand `cosᵏ θ` into characters via
+  -- `TauCeti.integral_cos_pow_mul_cexp`; orthogonality leaves only `k = 2 j + |n|`,
+  -- with `m = j` when `n ≥ 0` and `m = j + |n|` when `n < 0`.
+  have h := hasSum_pow_div_factorial_mul_integral_cos_pow_mul_exp w n
+  simp_rw [TauCeti.integral_cos_pow_mul_cexp] at h
+  have hz : ∀ k ∉ Set.range (fun j : ℕ => 2 * j + n.natAbs),
+      w ^ k / k ! * (∑ m ∈ Finset.range (k + 1), (1 / 2 : ℂ) ^ k * k.choose m *
+        if 2 * (m : ℤ) - k + n = 0 then 2 * (Real.pi : ℂ) else 0) = 0 := by
+    intro k hk
+    refine mul_eq_zero_of_right _ (Finset.sum_eq_zero fun m hm => ?_)
+    have hmk : m ≤ k := Nat.lt_succ_iff.mp (Finset.mem_range.mp hm)
+    rw [ite_eq_right fun hm' => hk (if hn : 0 ≤ n then ⟨m, by dsimp only; omega⟩
+      else ⟨k - m, by dsimp only; omega⟩), mul_zero]
+  have hinj : Function.Injective fun j : ℕ => 2 * j + n.natAbs :=
+    fun a b hab => by simpa using hab
+  rw [← hinj.hasSum_iff hz] at h
+  refine h.congr_fun fun j => ?_
+  symm
+  dsimp only [Function.comp_apply]
+  set m₀ : ℕ := if 0 ≤ n then j else j + n.natAbs
+  have hm₀_eq : 2 * (m₀ : ℤ) - ((2 * j + n.natAbs : ℕ) : ℤ) + n = 0 := by
+    by_cases hn : 0 ≤ n <;> simp only [m₀, hn, ↓reduceIte] <;> omega
+  have hm₀_le : m₀ ≤ 2 * j + n.natAbs := by
+    by_cases hn : 0 ≤ n <;> simp only [m₀, hn, ↓reduceIte] <;> omega
+  rw [Finset.sum_eq_single m₀
+    (fun m _ hm => by rw [ite_eq_right (by omega), mul_zero])
+    (fun hj => absurd (Finset.mem_range.mpr (by omega)) hj), ite_eq_left hm₀_eq]
+  have hfac := Nat.choose_mul_factorial_mul_factorial hm₀_le
+  have hmul : m₀ ! * (2 * j + n.natAbs - m₀)! = j ! * (j + n.natAbs)! := by
+    by_cases hn : 0 ≤ n <;> simp only [m₀, hn, ↓reduceIte]
+    · congr 2; omega
+    · rw [mul_comm]; congr 2; omega
+  rw [mul_assoc, hmul] at hfac
+  have hc : ((2 * j + n.natAbs).choose m₀ : ℂ) ≠ 0 := by
+    exact_mod_cast (Nat.choose_pos hm₀_le).ne'
+  rw [← hfac]
+  push_cast
+  field_simp
+  ring
+
+end Complex
