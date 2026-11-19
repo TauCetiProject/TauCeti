@@ -66,6 +66,8 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
 * `Subgroup.fixedField_iInf` and `Subgroup.fixedField_iSup`
 * `Subgroup.fixedField_sup_eq_top_iff`
 * `Subgroup.fixedField_map_conj`
+* `IntermediateField.fixedField_stabilizer_smul`: fixed fields of the stabilizers along an orbit
+  are conjugate
 * `IntermediateField.fixingSubgroup_inf`
 * `IntermediateField.fixingSubgroup_iSup`
 * `IntermediateField.fixingSubgroup_isClosed_of_isAlgebraic`
@@ -508,6 +510,21 @@ theorem finrank_fixedField_eq_card (H : Subgroup (M ≃ₐ[K] M)) :
       hH (IntermediateField.finite_of_finiteDimensional_fixedField H)
 
 end Subgroup
+
+namespace IntermediateField
+
+variable {K M : Type*} [Field K] [Field M] [Algebra K M]
+
+/-- For an action of `Gal(M/K)`, the fixed field of the stabilizer of `σ • x` is the image under
+`σ` of the fixed field of the stabilizer of `x`, since the two stabilizers are conjugate. -/
+theorem fixedField_stabilizer_smul {X : Type*} [MulAction (M ≃ₐ[K] M) X] (σ : M ≃ₐ[K] M)
+    (x : X) :
+    fixedField (MulAction.stabilizer (M ≃ₐ[K] M) (σ • x)) =
+      (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)).map σ.toAlgHom := by
+  rw [MulAction.stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
+    Subgroup.fixedField_map_conj]
+
+end IntermediateField
 
 namespace FixedPoints
 

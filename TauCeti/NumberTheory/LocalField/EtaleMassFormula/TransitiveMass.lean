@@ -34,6 +34,8 @@ of an arbitrary splitting type is assembled [Bhargava 2007, Prop. 2.1].
 
 ## Main definitions and results
 
+* `IntermediateField.splittingEntry`: the pair `(f, e)` of residue degree and ramification index
+  of a subextension of `SeparableClosure K`, invariant under `K`-algebra equivalence.
 * `TauCeti.GaloisSet.splittingSymbol`: the splitting symbol of a labelled Galois set.
 * `TauCeti.GaloisSet.mem_splittingSymbol`: its entries are the pairs `(f, e)` of the fixed fields
   of point stabilizers.
@@ -60,27 +62,39 @@ noncomputable section
 open ValuativeRel IntermediateField _root_.MulAction
 open scoped ENNReal
 
+namespace IntermediateField
+
+variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K]
+
+/-- The entry of a subextension `L` of `SeparableClosure K` in a splitting symbol
+[Bhargava 2007, (2.1)]: the pair `(f, e)` of its residue degree `f` and its ramification index
+`e = [L : K] / f`. Both are zero when `L` is infinite over `K`. -/
+def splittingEntry (L : IntermediateField K (SeparableClosure K)) : ℕ × ℕ :=
+  (L.inertiaDegree, Module.finrank K L / L.inertiaDegree)
+
+/-- The splitting entry is invariant under `K`-algebra equivalence. -/
+theorem splittingEntry_eq_of_algEquiv {L M : IntermediateField K (SeparableClosure K)}
+    (e : L ≃ₐ[K] M) : L.splittingEntry = M.splittingEntry := by
+  rw [splittingEntry, splittingEntry, inertiaDegree_eq_of_algEquiv e, e.toLinearEquiv.finrank_eq]
+
+/-- The product `f e` of the splitting entry is the degree. -/
+theorem splittingEntry_fst_mul_snd (L : IntermediateField K (SeparableClosure K)) :
+    L.splittingEntry.1 * L.splittingEntry.2 = Module.finrank K L :=
+  Nat.mul_div_cancel' (inertiaDegree_dvd_finrank L)
+
+end IntermediateField
+
 namespace TauCeti
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
-section Action
-
-variable {X : Type*} [MulAction Gal(SeparableClosure K/K) X]
-
-/-- Translating a point does not change the residue degree of its stabilizer's fixed field, since
-the two fixed fields are conjugate. -/
-@[simp]
-theorem inertiaDegree_fixedField_stabilizer_smul (σ : Gal(SeparableClosure K/K)) (x : X) :
-    (fixedField (stabilizer Gal(SeparableClosure K/K) (σ • x))).inertiaDegree =
-      (fixedField (stabilizer Gal(SeparableClosure K/K) x)).inertiaDegree := by
-  rw [stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
-    Subgroup.fixedField_map_conj]
-  exact (IntermediateField.inertiaDegree_eq_of_algEquiv
-    ((fixedField (stabilizer Gal(SeparableClosure K/K) x)).equivMap σ.toAlgHom)).symm
-
-end Action
+/-- Two sums over subtypes agree when their summands, extended by zero, agree. -/
+private theorem tsum_subtype_congr {β : Type*} {p q : β → Prop} {g g' : β → ℝ≥0∞}
+    (h : ∀ b, {b | p b}.indicator g b = {b | q b}.indicator g' b) :
+    ∑' b : {b // p b}, g b = ∑' b : {b // q b}, g' b :=
+  (tsum_subtype {b | p b} g).trans <| (tsum_congr h).trans (tsum_subtype {b | q b} g').symm
 
 namespace GaloisSet
 
@@ -93,9 +107,7 @@ def splittingSymbol (ρ : GaloisSet K n) : Multiset (ℕ × ℕ) :=
   letI := ρ.mulAction
   letI := Fintype.ofFinite (orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n))
   Finset.univ.val.map fun ω : orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n) ↦
-    ((fixedField (stabilizer Gal(SeparableClosure K/K) ω.out)).inertiaDegree,
-      Module.finrank K (fixedField (stabilizer Gal(SeparableClosure K/K) ω.out)) /
-        (fixedField (stabilizer Gal(SeparableClosure K/K) ω.out)).inertiaDegree)
+    (fixedField (stabilizer Gal(SeparableClosure K/K) ω.out)).splittingEntry
 
 /-- The splitting symbol is the image of the orbits, for any enumeration of them. -/
 theorem splittingSymbol_eq_map (ρ : GaloisSet K n)
@@ -103,9 +115,7 @@ theorem splittingSymbol_eq_map (ρ : GaloisSet K n)
     ρ.splittingSymbol =
       (letI := ρ.mulAction
       Finset.univ.val.map fun ω : orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n) ↦
-        ((fixedField (stabilizer Gal(SeparableClosure K/K) ω.out)).inertiaDegree,
-          Module.finrank K (fixedField (stabilizer Gal(SeparableClosure K/K) ω.out)) /
-            (fixedField (stabilizer Gal(SeparableClosure K/K) ω.out)).inertiaDegree)) := by
+        (fixedField (stabilizer Gal(SeparableClosure K/K) ω.out)).splittingEntry) := by
   rw [splittingSymbol, Subsingleton.elim (Fintype.ofFinite _) ‹_›]
 
 /-- The splitting symbol has one entry per orbit. -/
@@ -118,32 +128,12 @@ theorem card_splittingSymbol (ρ : GaloisSet K n) :
   rw [splittingSymbol_eq_map, Multiset.card_map, Finset.card_val, Finset.card_univ,
     Fintype.card_eq_nat_card]
 
-/-- The entry of an orbit in the splitting symbol can be computed at any point of the orbit. -/
-private theorem splittingSymbol_entry_out (ρ : GaloisSet K n)
-    {ω : letI := ρ.mulAction; orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n)} {x : Fin n}
-    (hx : (letI := ρ.mulAction
-      (Quotient.mk'' x : orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n))) = ω) :
-    (letI := ρ.mulAction
-    ((fixedField (stabilizer Gal(SeparableClosure K/K) ω.out)).inertiaDegree,
-      Module.finrank K (fixedField (stabilizer Gal(SeparableClosure K/K) ω.out)) /
-        (fixedField (stabilizer Gal(SeparableClosure K/K) ω.out)).inertiaDegree)) =
-      (letI := ρ.mulAction
-      ((fixedField (stabilizer Gal(SeparableClosure K/K) x)).inertiaDegree,
-        Module.finrank K (fixedField (stabilizer Gal(SeparableClosure K/K) x)) /
-          (fixedField (stabilizer Gal(SeparableClosure K/K) x)).inertiaDegree)) := by
-  let := ρ.mulAction
-  obtain ⟨σ, rfl⟩ := MulAction.exists_smul_out_eq hx
-  rw [inertiaDegree_fixedField_stabilizer_smul, ρ.finrank_fixedField_stabilizer,
-    ρ.finrank_fixedField_stabilizer, orbit_smul]
-
-/-- The entries of the splitting symbol are the pairs `(f, [F : K] / f)` of the fixed fields `F`
-of point stabilizers, where `f` is the residue degree of `F`. -/
+/-- The entries of the splitting symbol are the splitting entries `(f, [F : K] / f)` of the fixed
+fields `F` of point stabilizers, where `f` is the residue degree of `F`. -/
 theorem mem_splittingSymbol (ρ : GaloisSet K n) {x : ℕ × ℕ} :
     x ∈ ρ.splittingSymbol ↔ ∃ i : Fin n,
       (letI := ρ.mulAction
-      ((fixedField (stabilizer Gal(SeparableClosure K/K) i)).inertiaDegree,
-        Module.finrank K (fixedField (stabilizer Gal(SeparableClosure K/K) i)) /
-          (fixedField (stabilizer Gal(SeparableClosure K/K) i)).inertiaDegree)) = x := by
+      (fixedField (stabilizer Gal(SeparableClosure K/K) i)).splittingEntry) = x := by
   let := ρ.mulAction
   let := Fintype.ofFinite (orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n))
   rw [splittingSymbol_eq_map, Multiset.mem_map]
@@ -151,7 +141,8 @@ theorem mem_splittingSymbol (ρ : GaloisSet K n) {x : ℕ × ℕ} :
   · rintro ⟨ω, -, rfl⟩
     exact ⟨ω.out, rfl⟩
   · rintro ⟨i, rfl⟩
-    exact ⟨Quotient.mk'' i, Finset.mem_univ _, ρ.splittingSymbol_entry_out rfl⟩
+    exact ⟨Quotient.mk'' i, Finset.mem_univ _,
+      weight_fixedField_stabilizer_out splittingEntry_eq_of_algEquiv rfl⟩
 
 /-- The entries of a splitting symbol are pairs of positive integers. -/
 theorem pos_of_mem_splittingSymbol (ρ : GaloisSet K n) {x : ℕ × ℕ}
@@ -172,8 +163,7 @@ theorem sum_map_mul_splittingSymbol (ρ : GaloisSet K n) :
   let := ρ.mulAction
   let := Fintype.ofFinite (orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n))
   rw [splittingSymbol_eq_map, Multiset.map_map, Finset.sum_map_val]
-  simp_rw [Function.comp_apply,
-    Nat.mul_div_cancel' (inertiaDegree_dvd_finrank _), ρ.finrank_fixedField_stabilizer]
+  simp_rw [Function.comp_apply, splittingEntry_fst_mul_snd, ρ.finrank_fixedField_stabilizer]
   rw [← Nat.card_sigma, ← Nat.card_congr (selfEquivSigmaOrbits _ _), Nat.card_fin]
 
 /-- Equivariant bijections preserve the splitting symbol of labelled Galois sets. -/
@@ -188,10 +178,10 @@ theorem splittingSymbol_eq_of_equiv {m : ℕ} (ρ : GaloisSet K n) (τ : GaloisS
   let E := MulAction.orbitRelQuotientCongr (MulEquiv.refl Gal(SeparableClosure K/K)) e he
   rw [splittingSymbol_eq_map, splittingSymbol_eq_map, ← Multiset.map_univ_val_equiv E,
     Multiset.map_map]
-  refine Multiset.map_congr rfl fun ω _ ↦ ?_
-  rw [Function.comp_apply, τ.splittingSymbol_entry_out (x := e ω.out)
-    (by rw [← MulAction.orbitRelQuotientCongr_mk (MulEquiv.refl _) e he, Quotient.out_eq']),
-    MulAction.stabilizer_eq_of_injective e e.injective he]
+  refine Multiset.map_congr rfl fun ω _ ↦
+    (weight_fixedField_stabilizer_out_of_injective splittingEntry_eq_of_algEquiv e e.injective he
+      ?_).symm
+  rw [← MulAction.orbitRelQuotientCongr_mk (MulEquiv.refl _) e he, Quotient.out_eq']
 
 /-- Relabelling a Galois set does not change its splitting symbol. -/
 @[simp]
@@ -213,8 +203,9 @@ theorem splittingSymbol_of_isTransitive (ρ : GaloisSet K n) (hρ : ρ.IsTransit
     Gal(SeparableClosure K/K) (Fin n)).mp inferInstance).some
   let := Fintype.ofFinite (orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n))
   rw [splittingSymbol_eq_map, Finset.univ_unique, Finset.singleton_val, Multiset.map_singleton,
-    ρ.splittingSymbol_entry_out (Subsingleton.elim _ _),
-    ρ.finrank_fixedField_stabilizer_of_isTransitive hρ]
+    weight_fixedField_stabilizer_out splittingEntry_eq_of_algEquiv (x := i)
+      (Subsingleton.elim _ _),
+    splittingEntry, ρ.finrank_fixedField_stabilizer_of_isTransitive hρ]
 
 /-- A Galois set of size `f e` has splitting symbol `{(f, e)}` exactly when it is transitive and
 the fixed field of a point stabilizer has residue degree `f`. The label `i` makes the size
@@ -243,7 +234,7 @@ theorem splittingSymbol_trivial : (trivial K n).splittingSymbol = Multiset.repli
   have hmem : ∀ x ∈ (trivial K n).splittingSymbol, x = (1, 1) := by
     intro x hx
     obtain ⟨i, rfl⟩ := (trivial K n).mem_splittingSymbol.1 hx
-    simp
+    simp [splittingEntry]
   rw [Multiset.eq_replicate]
   refine ⟨?_, hmem⟩
   have h := (trivial K n).sum_map_mul_splittingSymbol
@@ -265,29 +256,21 @@ theorem tsum_splittingSymbol_eq_singleton {f e : ℕ} (i : Fin (f * e))
   -- Restrict `g` to residue degree `f` and apply the transitive bridge.
   let g' : IntermediateField K (SeparableClosure K) → ℝ≥0∞ := fun L ↦
     if L.inertiaDegree = f then g L else 0
-  have hρ : ∑' ρ : {ρ : GaloisSet K (f * e) // ρ.splittingSymbol = {(f, e)}},
-      (letI := ρ.1.mulAction
-      g (fixedField (stabilizer Gal(SeparableClosure K/K) i))) =
-      ∑' ρ : {ρ : GaloisSet K (f * e) // ρ.IsTransitive},
-        (letI := ρ.1.mulAction
-        g' (fixedField (stabilizer Gal(SeparableClosure K/K) i))) := by
-    refine (tsum_subtype {ρ : GaloisSet K (f * e) | ρ.splittingSymbol = {(f, e)}}
-      fun ρ ↦ letI := ρ.mulAction; g (fixedField (stabilizer Gal(SeparableClosure K/K) i))).trans <|
-      (tsum_congr fun ρ ↦ ?_).trans (tsum_subtype {ρ : GaloisSet K (f * e) | ρ.IsTransitive}
-        fun ρ ↦ letI := ρ.mulAction; g' (fixedField (stabilizer Gal(SeparableClosure K/K) i))).symm
-    by_cases h : ρ.IsTransitive <;>
-      simp [Set.indicator, g', ρ.splittingSymbol_eq_singleton_iff i, h]
+  let G (h : IntermediateField K (SeparableClosure K) → ℝ≥0∞) (ρ : GaloisSet K (f * e)) :
+      ℝ≥0∞ := letI := ρ.mulAction; h (fixedField (stabilizer Gal(SeparableClosure K/K) i))
+  have hρ : ∑' ρ : {ρ : GaloisSet K (f * e) // ρ.splittingSymbol = {(f, e)}}, G g ρ =
+      ∑' ρ : {ρ : GaloisSet K (f * e) // ρ.IsTransitive}, G g' ρ :=
+    tsum_subtype_congr fun ρ ↦ by
+      by_cases h : ρ.IsTransitive <;>
+        simp [Set.indicator, G, g', ρ.splittingSymbol_eq_singleton_iff i, h]
   have hL : ∑' L : {L : IntermediateField K (SeparableClosure K) //
-      Module.finrank K L = f * e}, g' L.1 =
+      Module.finrank K L = f * e}, g' L =
       ∑' L : {L : IntermediateField K (SeparableClosure K) //
-        Module.finrank K L = f * e ∧ L.inertiaDegree = f}, g L.1 := by
-    refine (tsum_subtype {L : IntermediateField K (SeparableClosure K) |
-      Module.finrank K L = f * e} g').trans <| (tsum_congr fun L ↦ ?_).trans
-      (tsum_subtype {L : IntermediateField K (SeparableClosure K) |
-        Module.finrank K L = f * e ∧ L.inertiaDegree = f} g).symm
-    by_cases h₁ : Module.finrank K L = f * e <;> by_cases h₂ : L.inertiaDegree = f <;>
-      simp [Set.indicator, g', h₁, h₂]
-  rw [hρ, tsum_isTransitive i g', hL]
+        Module.finrank K L = f * e ∧ L.inertiaDegree = f}, g L :=
+    tsum_subtype_congr fun L ↦ by
+      by_cases h₁ : Module.finrank K L = f * e <;> by_cases h₂ : L.inertiaDegree = f <;>
+        simp [Set.indicator, g', h₁, h₂]
+  exact hρ.trans ((tsum_isTransitive i g').trans (congrArg _ hL))
 
 end GaloisSet
 
@@ -311,21 +294,14 @@ theorem etaleMass_isTransitive_splittingSymbol {f e : ℕ} (hf : f ≠ 0) (he : 
       rw [ρ.1.discriminantExponent_of_isTransitive
         ((ρ.1.splittingSymbol_eq_singleton_iff i).1 ρ.2).1 i],
     h, tsum_inertiaDegree_eq hf]
-  -- It remains to compute `(f e)!⁻¹ · (f e - 1)! · e / Q = 1 / (f Q)` with `Q = q ^ (f (e - 1))`.
-  have hfac : ((f * e).factorial : ℝ≥0∞) = f * e * ((f * e - 1).factorial : ℝ≥0∞) := by
-    rw [← Nat.mul_factorial_pred hn.ne']
-    push_cast
-    ring
-  have ha : ((f * e - 1).factorial : ℝ≥0∞) ≠ 0 := by simp [Nat.factorial_ne_zero]
-  have he' : (e : ℝ≥0∞) ≠ 0 := by simp [he]
-  rw [hfac, ENNReal.div_eq_inv_mul, ENNReal.div_eq_inv_mul, mul_one,
-    ENNReal.mul_inv (by simp) (.inr ha), ENNReal.mul_inv (by simp) (by simp),
-    ENNReal.mul_inv (by simp) (by simp)]
-  calc _ = (f : ℝ≥0∞)⁻¹ * ((Nat.card 𝓀[K] : ℝ≥0∞) ^ (f * (e - 1)))⁻¹ *
-          (((e : ℝ≥0∞)⁻¹ * e) *
-            (((f * e - 1).factorial : ℝ≥0∞)⁻¹ * ((f * e - 1).factorial : ℝ≥0∞))) := by ring
-    _ = _ := by
-      rw [ENNReal.inv_mul_cancel he' (by simp), ENNReal.inv_mul_cancel ha (by simp), mul_one,
-        mul_one]
+  -- It remains to cancel `(f e - 1)! · e` in `(f e)!⁻¹ · (f e - 1)! · e / Q = 1 / (f Q)`,
+  -- where `Q = q ^ (f (e - 1))` and `(f e)! = f e · (f e - 1)!`.
+  have hc : ((f * e - 1).factorial * e : ℝ≥0∞) ≠ 0 := by simp [Nat.factorial_ne_zero, he]
+  rw [mul_div_assoc', ← one_div,
+    ← ENNReal.mul_div_mul_comm (by simp [Nat.factorial_ne_zero]) (by simp), one_mul,
+    ← ENNReal.mul_div_mul_left 1 _ hc (by finiteness), mul_one, ← Nat.mul_factorial_pred hn.ne']
+  congr 1
+  push_cast
+  ring
 
 end TauCeti
