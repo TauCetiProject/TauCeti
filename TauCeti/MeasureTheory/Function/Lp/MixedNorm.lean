@@ -12,6 +12,7 @@ import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
+import TauCeti.MeasureTheory.Function.LpSeminorm.Indicator
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
@@ -129,25 +130,43 @@ private theorem inner_truncLp (N : ℝ≥0) {s : ℝ} (hs : 1 ≤ s) (u : Lp E 2
   filter_upwards [coeFn_truncLp (𝕜 := 𝕜) N hs u] with x hx
   rw [hx, TauCeti.inner_truncPow]
 
+/-- For `0 ≤ v ≤ c`, `v ≤ w` and `s ≥ 1`, `w v ^ s ≤ c ^ (s - 1) w²`. -/
+private theorem mul_rpow_le_rpow_sub_one_mul_sq {v c w s : ℝ} (hv : 0 ≤ v) (hvc : v ≤ c)
+    (hvw : v ≤ w) (hs : 1 ≤ s) : w * v ^ s ≤ c ^ (s - 1) * w ^ 2 := by
+  calc w * v ^ s = v ^ (s - 1) * (v * w) := by
+        rw [← mul_assoc, ← Real.rpow_add_one' hv (by linarith), sub_add_cancel]
+        ring
+    _ ≤ c ^ (s - 1) * w ^ 2 := by
+        rw [sq]
+        exact mul_le_mul (Real.rpow_le_rpow hv hvc (by linarith))
+          (mul_le_mul_of_nonneg_right hvw (hv.trans hvw)) (mul_nonneg hv (hv.trans hvw))
+          (Real.rpow_nonneg (hv.trans hvc) _)
+
+/-- For `0 ≤ v ≤ c`, `v ≤ w` and `s ≥ 2`, `v ^ s ≤ c ^ (s - 2) w²`. -/
+private theorem rpow_le_rpow_sub_two_mul_sq {v c w s : ℝ} (hv : 0 ≤ v) (hvc : v ≤ c)
+    (hvw : v ≤ w) (hs : 2 ≤ s) : v ^ s ≤ c ^ (s - 2) * w ^ 2 := by
+  calc v ^ s = v * v ^ (s - 1) := by
+        rw [← Real.rpow_one_add' hv (by linarith)]
+        ring_nf
+    _ ≤ w * v ^ (s - 1) := mul_le_mul_of_nonneg_right hvw (Real.rpow_nonneg hv _)
+    _ ≤ c ^ (s - 1 - 1) * w ^ 2 := mul_rpow_le_rpow_sub_one_mul_sq hv hvc hvw (by linarith)
+    _ = c ^ (s - 2) * w ^ 2 := by ring_nf
+
+/-- The square `‖u‖²` of an `L²` function is integrable. -/
+private theorem integrable_sq_norm (u : Lp E 2 μ) : Integrable (fun x ↦ ‖u x‖ ^ 2) μ :=
+  (memLp_two_iff_integrable_sq_norm (Lp.aestronglyMeasurable u)).1 (Lp.memLp u)
+
 /-- The integrand `‖u‖ min (‖u‖, N) ^ s ≤ N ^ (s - 1) ‖u‖²` of the pairing of `u` with `g_N` is
 integrable. -/
 private theorem integrable_norm_mul_min_rpow (N : ℝ≥0) {s : ℝ} (hs : 1 ≤ s) (u : Lp E 2 μ) :
     Integrable (fun x ↦ ‖u x‖ * min ‖u x‖ N ^ s) μ := by
   have hu := Lp.stronglyMeasurable u
-  refine ((memLp_two_iff_integrable_sq_norm hu.aestronglyMeasurable).1 (Lp.memLp u)
-    |>.const_mul ((N : ℝ) ^ (s - 1))).mono' (hu.norm.measurable.mul
+  refine ((integrable_sq_norm u).const_mul ((N : ℝ) ^ (s - 1))).mono' (hu.norm.measurable.mul
       ((hu.norm.measurable.min measurable_const).pow_const s)).aestronglyMeasurable
     (ae_of_all _ fun x ↦ ?_)
-  have hm : 0 ≤ min ‖u x‖ N := le_min (norm_nonneg _) N.2
   rw [Real.norm_of_nonneg (by positivity)]
-  calc ‖u x‖ * min ‖u x‖ N ^ s = min ‖u x‖ N ^ (s - 1) * (min ‖u x‖ N * ‖u x‖) := by
-        rw [← mul_assoc, ← Real.rpow_add_one' hm (by linarith), sub_add_cancel]
-        ring
-    _ ≤ (N : ℝ) ^ (s - 1) * ‖u x‖ ^ 2 := by
-        rw [sq]
-        exact mul_le_mul (Real.rpow_le_rpow hm (min_le_right _ _) (by linarith))
-          (mul_le_mul_of_nonneg_right (min_le_left _ _) (norm_nonneg _)) (by positivity)
-          (by positivity)
+  exact mul_rpow_le_rpow_sub_one_mul_sq (le_min (norm_nonneg _) N.2) (min_le_right _ _)
+    (min_le_left _ _) hs
 
 /-- The pairing of `u` with the extremal function `g_N` bounds `‖u_N‖_r ^ r`. -/
 private theorem eLpNorm_truncLp_rpow_le (N : ℝ≥0) {r : ℝ≥0∞} (hr : r ≠ ∞) (hr2 : 2 ≤ r)
@@ -169,22 +188,6 @@ private theorem eLpNorm_truncLp_rpow_le (N : ℝ≥0) {r : ℝ≥0∞} (hr : r �
         rw [← Real.rpow_one_add' hm (by linarith)]
         ring_nf
     _ ≤ ‖u x‖ * min ‖u x‖ N ^ (r.toReal - 1) := by gcongr; exact min_le_left _ _
-
-/-- **Exhaustion.** If the restrictions of `ψ` to measurable sets `A k` have `L^q` seminorm at
-most `M`, and every point where `ψ` does not vanish lies in `A k` for all large `k`, then
-`‖ψ‖_q ≤ M`. -/
-private theorem eLpNorm_le_of_forall_eLpNorm_indicator_le {q : ℝ≥0∞} {ψ : β → ℝ}
-    (hψ : Measurable ψ) {A : ℕ → Set β} (hA : ∀ k, MeasurableSet (A k)) {M : ℝ≥0∞}
-    (hM : ∀ k, eLpNorm ((A k).indicator ψ) q ρ ≤ M)
-    (hmem : ∀ b, ψ b ≠ 0 → ∀ᶠ k in atTop, b ∈ A k) : eLpNorm ψ q ρ ≤ M := by
-  refine Lp.eLpNorm_le_of_ae_tendsto (u := atTop) (f := fun k ↦ (A k).indicator ψ)
-    (Eventually.of_forall hM) (fun k ↦ (hψ.indicator (hA k)).aestronglyMeasurable)
-    hψ.aestronglyMeasurable (ae_of_all _ fun b ↦ tendsto_const_nhds.congr' ?_)
-  by_cases h0 : ψ b = 0
-  · exact Eventually.of_forall fun k ↦
-      ((Set.indicator_apply_eq_self (s := A k) (f := ψ)).2 fun _ ↦ h0).symm
-  · filter_upwards [hmem b h0] with k hk
-    rw [Set.indicator_of_mem hk]
 
 /-- **The duality step.** Let `f ≥ 0` vanish off a set `A` of finite measure and be at most `K` on
 it. If the weak bound `|∫ ⟪Φ b, G b⟫ dρ| ≤ M ‖G‖_{L^{q'} L^{r'}}` holds and a test function `G`
@@ -416,7 +419,7 @@ private theorem eLpNorm_truncNorm_le [SigmaFinite ρ] (hq : q ≠ ∞) (hr : r �
     (measurableSet_spanningSets ρ k).inter ((measurableSet_le measurable_const hψ).inter
       ((measurableSet_le hψ measurable_const).inter
         (measurableSet_le hΦ.norm.measurable measurable_const)))
-  refine eLpNorm_le_of_forall_eLpNorm_indicator_le hψ hA (fun k ↦
+  refine TauCeti.eLpNorm_le_of_forall_eLpNorm_indicator_le hψ.aestronglyMeasurable hA (fun k ↦
     eLpNorm_indicator_truncNorm_le hq hr hr2 hΦ hM N (hA k)
       ((measure_mono Set.inter_subset_left).trans_lt (measure_spanningSets_lt_top ρ k)).ne
       (by positivity) fun b hb ↦ hb.2) fun b hb ↦ ?_
@@ -497,27 +500,24 @@ private theorem truncPair_eq (N : ℝ≥0) {s : ℝ} (hs : 1 ≤ s) (u : Lp E 2 
     truncPair (𝕜 := 𝕜) N hs u = ∫ x, ‖u x‖ * min ‖u x‖ N ^ s ∂μ := by
   rw [truncPair, inner_truncLp, RCLike.ofReal_re]
 
+private theorem truncMass_nonneg {N : ℝ≥0} {s : ℝ} {hs : 1 ≤ s} {u : Lp E 2 μ} :
+    0 ≤ truncMass (𝕜 := 𝕜) N hs u :=
+  ENNReal.toReal_nonneg
+
 private theorem truncRatio_nonneg {N : ℝ≥0} {s : ℝ} {hs : 1 ≤ s} {u : Lp E 2 μ} :
     0 ≤ truncRatio (𝕜 := 𝕜) N hs u := by
   rw [truncRatio, truncPair_eq]
-  exact div_nonneg (integral_nonneg fun x ↦ by positivity) ENNReal.toReal_nonneg
+  exact div_nonneg (integral_nonneg fun x ↦ by positivity) truncMass_nonneg
 
 /-- For `s ≥ 2` the function `min (‖u‖, N) ^ s ≤ N ^ (s - 2) ‖u‖²` is integrable. -/
 private theorem integrable_min_rpow (N : ℝ≥0) {s : ℝ} (hs : 2 ≤ s) (u : Lp E 2 μ) :
     Integrable (fun x ↦ min ‖u x‖ N ^ s) μ := by
-  have h2 : Integrable (fun x ↦ ‖u x‖ ^ 2) μ :=
-    (memLp_two_iff_integrable_sq_norm (Lp.aestronglyMeasurable u)).1 (Lp.memLp u)
-  refine (h2.const_mul ((N : ℝ) ^ (s - 2))).mono'
+  refine ((integrable_sq_norm u).const_mul ((N : ℝ) ^ (s - 2))).mono'
     (((Lp.stronglyMeasurable u).norm.measurable.min measurable_const).pow_const s
       |>.aestronglyMeasurable) (ae_of_all _ fun x ↦ ?_)
-  have hm : 0 ≤ min ‖u x‖ N := le_min (norm_nonneg _) N.2
   rw [Real.norm_of_nonneg (by positivity)]
-  calc min ‖u x‖ N ^ s = min ‖u x‖ N ^ (s - 2) * min ‖u x‖ N ^ (2 : ℝ) := by
-        rw [← Real.rpow_add' hm (by linarith), sub_add_cancel]
-    _ ≤ (N : ℝ) ^ (s - 2) * ‖u x‖ ^ 2 := by
-        rw [Real.rpow_two]
-        exact mul_le_mul (Real.rpow_le_rpow hm (min_le_right _ _) (by linarith))
-          (pow_le_pow_left₀ hm (min_le_left _ _) 2) (by positivity) (by positivity)
+  exact rpow_le_rpow_sub_two_mul_sq (le_min (norm_nonneg _) N.2) (min_le_right _ _)
+    (min_le_left _ _) hs
 
 /-- For `s ≥ 2` the truncated power has finite mass `‖g_{N,s}(u)‖₁ = ∫ min (‖u‖, N) ^ s`. -/
 private theorem truncMass_eq (N : ℝ≥0) {s : ℝ} (hs : 1 ≤ s) (hs2 : 2 ≤ s) (u : Lp E 2 μ) :
@@ -557,12 +557,8 @@ private theorem mul_rpow_add_ite_sub_le {v w t t' s : ℝ} (hv : 0 ≤ v) (hvw :
   rcases le_or_gt v t with hvt | htv
   · -- Below the level `t`, `t v ^ s ≤ t t ^ (s - 2) v² ≤ t ^ (s - 1) w²`.
     have hle : t * v ^ s ≤ t ^ (s - 1) * w ^ 2 := by
-      calc t * v ^ s = t * (v ^ (s - 2) * v ^ (2 : ℝ)) := by
-            rw [← Real.rpow_add' hv (by linarith), sub_add_cancel]
-        _ ≤ t * (t ^ (s - 2) * w ^ 2) := by
-            rw [Real.rpow_two]
-            exact mul_le_mul_of_nonneg_left (mul_le_mul (Real.rpow_le_rpow hv hvt (by linarith))
-              (pow_le_pow_left₀ hv hvw 2) (by positivity) (by positivity)) ht.le
+      calc t * v ^ s ≤ t * (t ^ (s - 2) * w ^ 2) :=
+            mul_le_mul_of_nonneg_left (rpow_le_rpow_sub_two_mul_sq hv hvt hvw hs) ht.le
         _ = t ^ (s - 1) * w ^ 2 := by
             rw [← mul_assoc, ← Real.rpow_one_add' ht.le (by linarith)]
             ring_nf
@@ -577,6 +573,24 @@ private theorem mul_rpow_add_ite_sub_le {v w t t' s : ℝ} (hv : 0 ≤ v) (hvw :
         (Real.rpow_nonneg (by linarith) s) (by linarith)
     rw [ite_eq_left_of_eq_true _ _ (eq_true ht'v)]
     nlinarith
+
+private theorem measurableSet_lt_min (N : ℝ≥0) (u : Lp E 2 μ) (t' : ℝ) :
+    MeasurableSet {x | t' < min ‖u x‖ N} :=
+  measurableSet_lt measurable_const ((Lp.stronglyMeasurable u).norm.measurable.min measurable_const)
+
+/-- For `s ≥ 2` and `t' ≥ 0`, the mass `∫ min (‖u‖, N) ^ s` is at least `t' ^ s` times the measure
+of the level set `{t' < min (‖u‖, N)}`, when the latter is finite. -/
+private theorem measureReal_mul_rpow_le_integral_min_rpow (N : ℝ≥0) (u : Lp E 2 μ) {t' s : ℝ}
+    (ht'0 : 0 ≤ t') (hs : 2 ≤ s) (hPtop : μ {x | t' < min ‖u x‖ N} ≠ ∞) :
+    μ.real {x | t' < min ‖u x‖ N} * t' ^ s ≤ ∫ x, min ‖u x‖ N ^ s ∂μ := by
+  have hP := measurableSet_lt_min N u t'
+  rw [← smul_eq_mul, ← integral_indicator_const _ hP]
+  refine integral_mono ((integrable_indicator_iff hP).2 (integrableOn_const hPtop))
+    (integrable_min_rpow N hs u) fun x ↦ ?_
+  simp only [Set.indicator_apply, Set.mem_ofPred_eq]
+  split_ifs with hx
+  · exact Real.rpow_le_rpow ht'0 hx.le (by linarith)
+  · exact Real.rpow_nonneg (le_min (norm_nonneg _) N.2) _
 
 /-- The level set `{t' < min (‖u‖, N)}` below the essential supremum `‖u_N‖_∞` has positive and,
 by Chebyshev's inequality for `u ∈ L²`, finite measure. -/
@@ -595,9 +609,9 @@ private theorem measureReal_lt_min_pos (N : ℝ≥0) (u : Lp E 2 μ) {t' : ℝ} 
   have hPtop : μ {x | t' < min ‖u x‖ N} ≠ ∞ := by
     refine ne_top_of_le_ne_top ((Lp.memLp u).meas_ge_lt_top two_ne_zero ENNReal.ofNat_ne_top
       (ε := t'.toNNReal) (by simp [ht'0])).ne (measure_mono fun x hx ↦ ?_)
-    have hx' : t' < min ‖u x‖ N := hx
+    rw [Set.mem_ofPred_eq] at hx
     simp only [Set.mem_ofPred_eq, ← NNReal.coe_le_coe, coe_nnNorm, Real.coe_toNNReal _ ht'0.le]
-    exact hx'.le.trans (min_le_left _ _)
+    exact hx.le.trans (min_le_left _ _)
   exact ⟨hPtop, ENNReal.toReal_pos hP0 hPtop⟩
 
 /-- For `0 < t < t'`, `c > 0` and `C ≥ 0`, eventually `t ^ (s - 1) C ≤ (t' - t) t' ^ s c` along
@@ -633,11 +647,9 @@ private theorem mul_integral_add_sub_le (N : ℝ≥0) (u : Lp E 2 μ) {t t' s : 
     (htt' : t < t') (hs : 2 ≤ s) (hPtop : μ {x | t' < min ‖u x‖ N} ≠ ∞) :
     t * ∫ x, min ‖u x‖ N ^ s ∂μ + ((t' - t) * t' ^ s * μ.real {x | t' < min ‖u x‖ N} -
         t ^ (s - 1) * ∫ x, ‖u x‖ ^ 2 ∂μ) ≤ ∫ x, ‖u x‖ * min ‖u x‖ N ^ s ∂μ := by
-  have hP : MeasurableSet {x | t' < min ‖u x‖ N} := measurableSet_lt measurable_const
-    ((Lp.stronglyMeasurable u).norm.measurable.min measurable_const)
+  have hP := measurableSet_lt_min N u t'
   have hJ := integrable_min_rpow N hs u
-  have h2 : Integrable (fun x ↦ ‖u x‖ ^ 2) μ :=
-    (memLp_two_iff_integrable_sq_norm (Lp.aestronglyMeasurable u)).1 (Lp.memLp u)
+  have h2 := integrable_sq_norm u
   have hind : Integrable ({x | t' < min ‖u x‖ N}.indicator fun _ ↦ (t' - t) * t' ^ s) μ :=
     (integrable_indicator_iff hP).2 (integrableOn_const hPtop)
   have hg : Integrable (fun x ↦ {x | t' < min ‖u x‖ N}.indicator
@@ -671,18 +683,9 @@ private theorem eventually_le_truncRatio (N : ℝ≥0) (u : Lp E 2 μ) {t : ℝ}
   have hs2 : (2 : ℝ) ≤ m + 2 := by linarith [m.cast_nonneg (α := ℝ)]
   have hkey := mul_integral_add_sub_le N u ht0 htt' hs2 hPtop
   -- The mass `J = ∫ min (‖u‖, N) ^ s` is at least `t' ^ s μ(P) > 0`.
-  have hJpos : 0 < ∫ x, min ‖u x‖ N ^ ((m : ℝ) + 2) ∂μ := by
-    have hP : MeasurableSet {x | t' < min ‖u x‖ N} := measurableSet_lt measurable_const
-      ((Lp.stronglyMeasurable u).norm.measurable.min measurable_const)
-    refine (by positivity : 0 < μ.real {x | t' < min ‖u x‖ N} * t' ^ ((m : ℝ) + 2)).trans_le ?_
-    rw [← smul_eq_mul, ← integral_indicator_const _ hP]
-    refine integral_mono ((integrable_indicator_iff hP).2 (integrableOn_const hPtop))
-      (integrable_min_rpow N hs2 u) fun x ↦ ?_
-    by_cases hx : x ∈ {x | t' < min ‖u x‖ N}
-    · rw [Set.indicator_of_mem hx]
-      exact Real.rpow_le_rpow ht'0.le (le_of_lt hx) (by linarith)
-    · rw [Set.indicator_of_notMem hx]
-      exact Real.rpow_nonneg (le_min (norm_nonneg _) N.2) _
+  have hJpos : 0 < ∫ x, min ‖u x‖ N ^ ((m : ℝ) + 2) ∂μ :=
+    (by positivity : 0 < μ.real {x | t' < min ‖u x‖ N} * t' ^ ((m : ℝ) + 2)).trans_le
+      (measureReal_mul_rpow_le_integral_min_rpow N u ht'0.le hs2 hPtop)
   rw [truncRatio, truncPair_eq, truncMass_eq N _ hs2, le_div_iff₀ hJpos]
   linarith
 
@@ -728,11 +731,18 @@ private theorem eLpNorm_ratioWeight_smul_le (N : ℝ≥0) {s : ℝ} (hs : 1 ≤ 
     have hfin : eLpNorm (truncLp (𝕜 := 𝕜) N hs (Φ b)) 1 μ =
         ENNReal.ofReal (truncMass (𝕜 := 𝕜) N hs (Φ b)) :=
       (ENNReal.ofReal_toReal fun h ↦ by simp [truncMass, h] at hJ).symm
-    have hw0 : 0 ≤ truncRatio (𝕜 := 𝕜) N hs (Φ b) ^ e / truncMass (𝕜 := 𝕜) N hs (Φ b) :=
-      div_nonneg (Real.rpow_nonneg hψ _) hJ.le
-    rw [hfin, ratioWeight, Set.indicator_of_mem hb, Set.indicator_of_mem hb, ← ofReal_norm,
-      RCLike.norm_ofReal, abs_of_nonneg hw0, ← ENNReal.ofReal_mul hw0, div_mul_cancel₀ _ hJ.ne',
-      Real.norm_of_nonneg hψ, Real.eNorm_of_nonneg (Real.rpow_nonneg hψ _)]
+    -- The key step: the weight times the mass is `ψ ^ e`.
+    have hwJ : |ratioWeight (𝕜 := 𝕜) N hs Φ A e b| * truncMass (𝕜 := 𝕜) N hs (Φ b) =
+        truncRatio (𝕜 := 𝕜) N hs (Φ b) ^ e := by
+      simp only [ratioWeight, Set.indicator_of_mem hb]
+      rw [abs_of_nonneg (div_nonneg (Real.rpow_nonneg hψ _) hJ.le), div_mul_cancel₀ _ hJ.ne']
+    refine le_of_eq ?_
+    calc _ = ENNReal.ofReal (|ratioWeight (𝕜 := 𝕜) N hs Φ A e b| *
+          truncMass (𝕜 := 𝕜) N hs (Φ b)) := by
+          rw [hfin, ← ofReal_norm, RCLike.norm_ofReal, ENNReal.ofReal_mul (abs_nonneg _)]
+      _ = _ := by
+          rw [hwJ, Set.indicator_of_mem hb, Real.norm_of_nonneg hψ,
+            Real.eNorm_of_nonneg (Real.rpow_nonneg hψ _)]
   · rw [ratioWeight, Set.indicator_of_notMem hb]
     simp
 
@@ -806,16 +816,16 @@ private theorem eLpNorm_truncRatio_le [SigmaFinite ρ] (hq : q ≠ ∞) {Φ : β
     (measurableSet_spanningSets ρ k).inter ((measurableSet_le measurable_const hψ).inter
       ((measurableSet_le hψ measurable_const).inter ((measurableSet_le measurable_const hJ).inter
         (measurableSet_le hΦ.norm.measurable measurable_const))))
-  refine eLpNorm_le_of_forall_eLpNorm_indicator_le hψ hA (fun k ↦
+  refine TauCeti.eLpNorm_le_of_forall_eLpNorm_indicator_le hψ.aestronglyMeasurable hA (fun k ↦
     eLpNorm_indicator_truncRatio_le hq hΦ hM N hs (hA k)
       ((measure_mono Set.inter_subset_left).trans_lt (measure_spanningSets_lt_top ρ k)).ne
       (by positivity) fun b hb ↦ ⟨hb.2.1, hb.2.2.1, hb.2.2.2.1, hb.2.2.2.2⟩) fun b hb ↦ ?_
   -- Where `ψ b ≠ 0`, also `J b ≠ 0`, since `ψ = I / J`; then `b ∈ A k` for all large `k`.
   have hpos : 0 < ψ b := truncRatio_nonneg.lt_of_ne' hb
   have hJpos : 0 < J b := by
-    refine ENNReal.toReal_nonneg.lt_of_ne' fun h0 ↦ hb ?_
-    simp only [truncRatio]
-    rw [show truncMass (𝕜 := 𝕜) N hs (Φ b) = 0 from h0, div_zero]
+    simp only [J]
+    refine truncMass_nonneg.lt_of_ne' fun h0 ↦ hb ?_
+    simp only [truncRatio, h0, div_zero]
   filter_upwards [eventually_mem_spanningSets ρ b,
     tendsto_one_div_add_atTop_nhds_zero_nat.eventually (eventually_le_nhds hpos),
     tendsto_one_div_add_atTop_nhds_zero_nat.eventually (eventually_le_nhds hJpos),
