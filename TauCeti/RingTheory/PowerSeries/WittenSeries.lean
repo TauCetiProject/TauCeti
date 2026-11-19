@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.ArithmeticFunction.Misc
-public import Mathlib.RingTheory.PowerSeries.Expand
+public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Series
 public import TauCeti.RingTheory.PowerSeries.CharacteristicSeries
 public import TauCeti.RingTheory.PowerSeries.PiTopology
 public import TauCeti.RingTheory.PowerSeries.Swap
+import TauCeti.RingTheory.PowerSeries.Basic
 import TauCeti.RingTheory.PowerSeries.Derivative
-import TauCeti.RingTheory.PowerSeries.Geometric
+import TauCeti.RingTheory.PowerSeries.Expand
 
 /-!
 # The characteristic series of the Witten genus and its logarithm
@@ -60,7 +60,7 @@ over the factors `n ∣ N` gives the divisor sum `σ₂ₖ₋₁(N)`.
 
 ## Main results
 
-* `TauCeti.wittenFactor_mul`: the factors are the displayed quotients.
+* `TauCeti.wittenFactor_mul_one_sub_mul_one_sub`: the factors are the displayed quotients.
 * `TauCeti.hasProd_wittenFactor`: the product converges coefficientwise.
 * `TauCeti.map_constantCoeff_wittenSeries`: `Q(x, 0) = (x / 2) / sinh (x / 2)`.
 * `TauCeti.coeff_logOf_wittenSeries`: the `xʲ`-coefficient of `log Q` is
@@ -89,41 +89,44 @@ variable (A : Type*) [CommRing A] [Algebra ℚ A]
 
 /-! ### The factors of the product, with `q` outer -/
 
+omit [Algebra ℚ A] in
+/-- The geometric series `∑ₘ rᵐ qᵐ⁽ⁿ⁺¹⁾`, with `q` outer, which inverts `1 - r qⁿ⁺¹`. -/
+private noncomputable def geomSeries (n : ℕ) (r : A⟦X⟧) : A⟦X⟧⟦X⟧ :=
+  expand (n + 1) n.succ_ne_zero (mk fun m ↦ r ^ m)
+
+omit [Algebra ℚ A] in
+private theorem geomSeries_mul (n : ℕ) (r : A⟦X⟧) :
+    geomSeries A n r * (1 - C r * X ^ (n + 1)) = 1 :=
+  expand_mk_pow_mul_one_sub_C_mul_X_pow_eq_one _ _ r
+
 /-- The factor `(1 - qⁿ⁺¹)² / ((1 - qⁿ⁺¹ eˣ) (1 - qⁿ⁺¹ e⁻ˣ))` of the characteristic series of the
 Witten genus, as a power series in the outer variable `q` whose coefficients are power series in
 `x`. The two denominators are inverted by the geometric series `∑ₘ eᵐˣ qᵐ⁽ⁿ⁺¹⁾` and
-`∑ₘ e⁻ᵐˣ qᵐ⁽ⁿ⁺¹⁾`; `TauCeti.wittenFactor_mul` proves that the factor is the displayed quotient. -/
+`∑ₘ e⁻ᵐˣ qᵐ⁽ⁿ⁺¹⁾`; `TauCeti.wittenFactor_mul_one_sub_mul_one_sub` proves that the factor is the
+displayed quotient. -/
 noncomputable def wittenFactor (n : ℕ) : A⟦X⟧⟦X⟧ :=
-  (1 - X ^ (n + 1)) ^ 2 * expand (n + 1) n.succ_ne_zero (mk fun m ↦ exp A ^ m) *
-    expand (n + 1) n.succ_ne_zero (mk fun m ↦ rescale (-1) (exp A) ^ m)
-
-omit [Algebra ℚ A] in
-/-- The geometric series `∑ₘ rᵐ qᵐ⁽ⁿ⁺¹⁾` inverts `1 - r qⁿ⁺¹`. -/
-private theorem expand_mk_pow_mul (n : ℕ) (r : A⟦X⟧) :
-    expand (n + 1) n.succ_ne_zero (mk fun m ↦ r ^ m) * (1 - C r * X ^ (n + 1)) = 1 := by
-  simpa [expand_C] using congrArg (expand (n + 1) n.succ_ne_zero)
-    (powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one r)
+  (1 - X ^ (n + 1)) ^ 2 * geomSeries A n (exp A) * geomSeries A n (rescale (-1) (exp A))
 
 /-- **The factors are the displayed quotients**: the `n`-th factor times
 `(1 - qⁿ⁺¹ eˣ) (1 - qⁿ⁺¹ e⁻ˣ)` is `(1 - qⁿ⁺¹)²`. -/
-theorem wittenFactor_mul (n : ℕ) :
+theorem wittenFactor_mul_one_sub_mul_one_sub (n : ℕ) :
     wittenFactor A n * ((1 - C (exp A) * X ^ (n + 1)) *
       (1 - C (rescale (-1) (exp A)) * X ^ (n + 1))) = (1 - X ^ (n + 1)) ^ 2 := by
   rw [wittenFactor]
   linear_combination (1 - X ^ (n + 1)) ^ 2 *
-      (expand (n + 1) n.succ_ne_zero (mk fun m ↦ rescale (-1) (exp A) ^ m) *
-        (1 - C (rescale (-1) (exp A)) * X ^ (n + 1))) * expand_mk_pow_mul A n (exp A) +
-    (1 - X ^ (n + 1)) ^ 2 * expand_mk_pow_mul A n (rescale (-1) (exp A))
+      (geomSeries A n (rescale (-1) (exp A)) * (1 - C (rescale (-1) (exp A)) * X ^ (n + 1))) *
+        geomSeries_mul A n (exp A) +
+    (1 - X ^ (n + 1)) ^ 2 * geomSeries_mul A n (rescale (-1) (exp A))
 
 /-- The `n`-th factor agrees with `1` modulo `qⁿ⁺¹`. -/
 theorem X_pow_dvd_wittenFactor_sub_one (n : ℕ) : X ^ (n + 1) ∣ wittenFactor A n - 1 := by
   set u : A⟦X⟧⟦X⟧ := X ^ (n + 1)
-  set Γ := expand (n + 1) n.succ_ne_zero (mk fun m ↦ exp A ^ m)
-  set Γ' := expand (n + 1) n.succ_ne_zero (mk fun m ↦ rescale (-1) (exp A) ^ m)
+  set Γ := geomSeries A n (exp A)
+  set Γ' := geomSeries A n (rescale (-1) (exp A))
   set e := C (exp A)
   set e' := C (rescale (-1) (exp A))
-  have h₁ : Γ * (1 - e * u) = 1 := expand_mk_pow_mul A n (exp A)
-  have h₂ : Γ' * (1 - e' * u) = 1 := expand_mk_pow_mul A n (rescale (-1) (exp A))
+  have h₁ : Γ * (1 - e * u) = 1 := geomSeries_mul A n (exp A)
+  have h₂ : Γ' * (1 - e' * u) = 1 := geomSeries_mul A n (rescale (-1) (exp A))
   -- `Γ = 1 + u Γ e` and `Γ' = 1 + u Γ' e'`
   refine ⟨u - 2 + (1 - u) ^ 2 * (Γ * e + Γ' * e' + u * (Γ * e) * (Γ' * e')), ?_⟩
   rw [wittenFactor]
@@ -160,65 +163,58 @@ theorem hasProd_wittenFactor [TopologicalSpace A] :
 
 omit [Algebra ℚ A] in
 /-- With `x` outer, the geometric series `∑ₘ rᵐ qᵐ⁽ⁿ⁺¹⁾` inverts `1 - qⁿ⁺¹ r`. -/
-private theorem swap_expand_mk_pow_mul (n : ℕ) (r : A⟦X⟧) :
-    swap (expand (n + 1) n.succ_ne_zero (mk fun m ↦ r ^ m)) *
-      (1 - map C r * C X ^ (n + 1)) = 1 := by
-  simpa using congrArg swap (expand_mk_pow_mul A n r)
+private theorem swap_geomSeries_mul (n : ℕ) (r : A⟦X⟧) :
+    swap (geomSeries A n r) * (1 - map C r * C X ^ (n + 1)) = 1 := by
+  simpa using congrArg swap (geomSeries_mul A n r)
 
 omit [Algebra ℚ A] in
 /-- If `r' = c r` in `x`, the derivative in `x` of `G = ∑ₘ rᵐ qᵐ⁽ⁿ⁺¹⁾` is `c G (G - 1)`. -/
-private theorem derivative_swap_expand_mk_pow (n : ℕ) {r : A⟦X⟧} {c : A}
+private theorem derivative_swap_geomSeries (n : ℕ) {r : A⟦X⟧} {c : A}
     (hr : d⁄dX r = C c * r) :
-    d⁄dX (swap (expand (n + 1) n.succ_ne_zero (mk fun m ↦ r ^ m))) =
-      C (C c) * swap (expand (n + 1) n.succ_ne_zero (mk fun m ↦ r ^ m)) *
-        (swap (expand (n + 1) n.succ_ne_zero (mk fun m ↦ r ^ m)) - 1) := by
-  set G := swap (expand (n + 1) n.succ_ne_zero (mk fun m ↦ r ^ m))
-  have h : G * (1 - map C r * C X ^ (n + 1)) = 1 := swap_expand_mk_pow_mul A n r
+    d⁄dX (swap (geomSeries A n r)) =
+      C (C c) * swap (geomSeries A n r) * (swap (geomSeries A n r) - 1) := by
+  have h := swap_geomSeries_mul A n r
   have he : d⁄dX (map C r) = C (C c) * map C r := by rw [derivative_map, hr, map_mul, map_C]
-  have hd : d⁄dX G * (1 - map C r * C X ^ (n + 1)) -
-      G * (C (C c) * map C r * C X ^ (n + 1)) = 0 := by
+  have hd : d⁄dX (swap (geomSeries A n r)) * (1 - map C r * C X ^ (n + 1)) -
+      swap (geomSeries A n r) * (C (C c) * map C r * C X ^ (n + 1)) = 0 := by
     have := congrArg (d⁄dX) h
     simp only [Derivation.leibniz, map_sub, Derivation.map_one_eq_zero, he, smul_eq_mul,
       Derivation.leibniz_pow, derivative_C] at this
     linear_combination this
-  linear_combination (-d⁄dX G - C (C c) * G) * h + G * hd
+  linear_combination
+    (-d⁄dX (swap (geomSeries A n r)) - C (C c) * swap (geomSeries A n r)) * h +
+      swap (geomSeries A n r) * hd
 
 private theorem swap_wittenFactor (n : ℕ) :
-    swap (wittenFactor A n) = (1 - C X ^ (n + 1)) ^ 2 *
-      swap (expand (n + 1) n.succ_ne_zero (mk fun m ↦ exp A ^ m)) *
-        swap (expand (n + 1) n.succ_ne_zero (mk fun m ↦ rescale (-1) (exp A) ^ m)) := by
+    swap (wittenFactor A n) = (1 - C X ^ (n + 1)) ^ 2 * swap (geomSeries A n (exp A)) *
+      swap (geomSeries A n (rescale (-1) (exp A))) := by
   simp [wittenFactor]
 
 /-- With `x` outer, each factor has constant coefficient `1`: it is `1` at `x = 0`. -/
 @[simp]
 theorem constantCoeff_swap_wittenFactor (n : ℕ) :
     constantCoeff (swap (wittenFactor A n)) = 1 := by
-  have hc (r : A⟦X⟧) (hr : constantCoeff r = 1) : constantCoeff (map C r) = 1 := by
-    rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff_apply, hr,
-      map_one]
-  have h₁ := congrArg constantCoeff (swap_expand_mk_pow_mul A n (exp A))
-  have h₂ := congrArg constantCoeff (swap_expand_mk_pow_mul A n (rescale (-1) (exp A)))
-  simp only [map_mul, map_sub, map_one, map_pow, constantCoeff_C,
-    hc _ constantCoeff_exp, hc _ (by simp : constantCoeff (rescale (-1) (exp A)) = 1),
-    one_mul] at h₁ h₂
+  have h₁ := congrArg constantCoeff (swap_geomSeries_mul A n (exp A))
+  have h₂ := congrArg constantCoeff (swap_geomSeries_mul A n (rescale (-1) (exp A)))
+  simp only [map_mul, map_sub, map_one, map_pow, constantCoeff_C, constantCoeff_map,
+    constantCoeff_exp, constantCoeff_rescale, one_mul] at h₁ h₂
   rw [swap_wittenFactor, map_mul, map_mul, map_pow, map_sub, map_one, map_pow, constantCoeff_C]
-  linear_combination (1 - X ^ (n + 1)) * constantCoeff
-    (swap (expand (n + 1) n.succ_ne_zero (mk fun m ↦ rescale (-1) (exp A) ^ m))) * h₁ + h₂
+  linear_combination
+    (1 - X ^ (n + 1)) * constantCoeff (swap (geomSeries A n (rescale (-1) (exp A)))) * h₁ + h₂
 
 /-- The logarithm in `x` of the `n`-th factor is `∑ₘ (eᵐˣ + e⁻ᵐˣ - 2) qᵐ⁽ⁿ⁺¹⁾ / m`, written
 through its logarithmic derivative `∑ₘ (eᵐˣ - e⁻ᵐˣ) qᵐ⁽ⁿ⁺¹⁾`. -/
 private theorem logOf_swap_wittenFactor (n : ℕ) :
     logOf (swap (wittenFactor A n)) = mk fun j ↦ (j : ℚ)⁻¹ • coeff (j - 1)
-      (swap (expand (n + 1) n.succ_ne_zero (mk fun m ↦ exp A ^ m)) -
-        swap (expand (n + 1) n.succ_ne_zero (mk fun m ↦ rescale (-1) (exp A) ^ m))) := by
+      (swap (geomSeries A n (exp A)) - swap (geomSeries A n (rescale (-1) (exp A)))) := by
   rw [logOf_eq_mk_iff (constantCoeff_swap_wittenFactor A n), swap_wittenFactor]
-  set G := swap (expand (n + 1) n.succ_ne_zero (mk fun m ↦ exp A ^ m))
-  set G' := swap (expand (n + 1) n.succ_ne_zero (mk fun m ↦ rescale (-1) (exp A) ^ m))
+  set G := swap (geomSeries A n (exp A))
+  set G' := swap (geomSeries A n (rescale (-1) (exp A)))
   have hmk : (mk fun j ↦ coeff (j + 1 - 1) (G - G')) = G - G' := by ext; simp
   have hG : d⁄dX G = C (C 1) * G * (G - 1) :=
-    derivative_swap_expand_mk_pow A n (by rw [derivative_exp, map_one, one_mul])
+    derivative_swap_geomSeries A n (by rw [derivative_exp, map_one, one_mul])
   have hG' : d⁄dX G' = C (C (-1)) * G' * (G' - 1) :=
-    derivative_swap_expand_mk_pow A n (by rw [derivative_rescale, derivative_exp])
+    derivative_swap_geomSeries A n (by rw [derivative_rescale, derivative_exp])
   rw [hmk]
   simp only [Derivation.leibniz, Derivation.leibniz_pow, map_sub, Derivation.map_one_eq_zero,
     derivative_C, smul_eq_mul, hG, hG', map_one, map_neg]
@@ -233,7 +229,7 @@ theorem coeff_coeff_logOf_swap_wittenFactor (n : ℕ) {j : ℕ} (hj : j ≠ 0) (
       else 0 := by
   obtain ⟨i, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hj
   rw [logOf_swap_wittenFactor, coeff_mk, coeff_smul, map_sub, map_sub, coeff_coeff_swap,
-    coeff_coeff_swap, coeff_expand, coeff_expand]
+    coeff_coeff_swap, geomSeries, geomSeries, coeff_expand, coeff_expand]
   split_ifs
   · simp only [coeff_mk, ← map_pow, exp_pow_eq_rescale_exp, rescale_rescale, coeff_rescale,
       coeff_exp, add_tsub_cancel_right, Algebra.smul_def, mul_neg, mul_one,
@@ -295,13 +291,19 @@ as a formal power series. For even `k ≥ 4` it is the `q`-expansion of the leve
 series of weight `k`, normalized so that `Eₖ = -(2k / Bₖ) Gₖ`; for `k = 2` it is the
 quasimodular `G₂ = -1/24 + q + 3q² + …`. -/
 noncomputable def eisensteinGSeries (k : ℕ) : A⟦X⟧ :=
-  mk fun n ↦ if n = 0 then algebraMap ℚ A (-bernoulli k / (2 * k)) else (σ (k - 1) n : A)
+  C (algebraMap ℚ A (-bernoulli k / (2 * k))) + divisorSumSeries (k - 1)
+
+theorem eisensteinGSeries_def (k : ℕ) :
+    eisensteinGSeries A k =
+      C (algebraMap ℚ A (-bernoulli k / (2 * k))) + divisorSumSeries (k - 1) :=
+  (rfl)
 
 @[simp]
 theorem coeff_eisensteinGSeries (k n : ℕ) :
     coeff n (eisensteinGSeries A k) =
-      if n = 0 then algebraMap ℚ A (-bernoulli k / (2 * k)) else (σ (k - 1) n : A) :=
-  coeff_mk _ _
+      if n = 0 then algebraMap ℚ A (-bernoulli k / (2 * k)) else (σ (k - 1) n : A) := by
+  rw [eisensteinGSeries_def, map_add, coeff_C, coeff_divisorSumSeries]
+  split_ifs with hn <;> simp [hn]
 
 /-- The **characteristic series of the Witten genus**
 `Q(x, q) = (x / 2) / sinh (x / 2) · ∏_{n ≥ 1} (1 - qⁿ)² / ((1 - qⁿ eˣ) (1 - qⁿ e⁻ˣ))`, as a power
@@ -309,11 +311,13 @@ series in the outer variable `x` whose coefficients are power series in `q`. -/
 noncomputable def wittenSeries : A⟦X⟧⟦X⟧ :=
   map C (aHatSeries A) * swap (wittenQProduct A)
 
+theorem wittenSeries_def : wittenSeries A = map C (aHatSeries A) * swap (wittenQProduct A) :=
+  (rfl)
+
 /-- The characteristic series has constant coefficient `1` in `x`. -/
 @[simp]
 theorem constantCoeff_wittenSeries : constantCoeff (wittenSeries A) = 1 := by
-  rw [wittenSeries, map_mul, constantCoeff_swap_wittenQProduct, mul_one,
-    ← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff_apply,
+  rw [wittenSeries_def, map_mul, constantCoeff_swap_wittenQProduct, mul_one, constantCoeff_map,
     constantCoeff_aHatSeries, map_one]
 
 /-- At `q = 0` the characteristic series is the Â series: `Q(x, 0) = (x / 2) / sinh (x / 2)`. -/
@@ -326,16 +330,15 @@ theorem map_constantCoeff_wittenSeries : map constantCoeff (wittenSeries A) = aH
   have h₂ : map constantCoeff (map C (aHatSeries A)) = aHatSeries A := by
     ext
     simp
-  rw [wittenSeries, map_mul, h₁, h₂, mul_one]
+  rw [wittenSeries_def, map_mul, h₁, h₂, mul_one]
 
 /-- The logarithm in `x` of the characteristic series is the logarithm of the Â series plus that
 of the product. -/
 theorem logOf_wittenSeries :
     logOf (wittenSeries A) = map C (logOf (aHatSeries A)) + logOf (swap (wittenQProduct A)) := by
   have hÂ : constantCoeff (map C (aHatSeries A)) = 1 := by
-    rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff_apply,
-      constantCoeff_aHatSeries, map_one]
-  rw [wittenSeries, logOf_mul hÂ (constantCoeff_swap_wittenQProduct A),
+    rw [constantCoeff_map, constantCoeff_aHatSeries, map_one]
+  rw [wittenSeries_def, logOf_mul hÂ (constantCoeff_swap_wittenQProduct A),
     map_logOf _ (constantCoeff_aHatSeries A)]
 
 /-- **The logarithm of the characteristic series of the Witten genus**: for `j ≥ 1`, the
