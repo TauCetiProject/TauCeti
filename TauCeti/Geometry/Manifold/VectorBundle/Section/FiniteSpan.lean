@@ -76,21 +76,3 @@ theorem exists_fin_spanning_contMDiffSection :
   simp [f]
 
 end TauCeti
-
-namespace VectorBundle
-
-variable {𝕜 M : Type*} (F : Type*) [NontriviallyNormedField 𝕜]
-  [TopologicalSpace M] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
-  [FiberBundle F V] [VectorBundle 𝕜 F V]
-
-/-- A family spanning a fiber with nontrivial model contains a nonzero member.
-Neither the index set nor the fiber needs to be finite, and no regularity is required. -/
-theorem exists_ne_zero_of_span_range_eq_top [Nontrivial F] {x : M} {ι : Type*}
-    {v : ι → V x} (hspan : Submodule.span 𝕜 (range v) = ⊤) : ∃ i, v i ≠ 0 := by
-  have : Nontrivial (V x) := (continuousLinearEquivAt 𝕜 F V x).toEquiv.nontrivial
-  by_contra! hall
-  exact top_ne_bot (hspan.symm.trans (Submodule.span_eq_bot.mpr (forall_mem_range.mpr hall)))
-
-end VectorBundle

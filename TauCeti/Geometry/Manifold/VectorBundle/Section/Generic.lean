@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.Parametric
 public import TauCeti.Geometry.Manifold.VectorBundle.Translate
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Generic sections from finite smooth spanning families

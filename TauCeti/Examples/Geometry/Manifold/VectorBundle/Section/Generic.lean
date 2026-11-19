@@ -8,6 +8,7 @@ module
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Generic
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
+import TauCeti.Topology.VectorBundle.Trivialization
 import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 
 /-!
