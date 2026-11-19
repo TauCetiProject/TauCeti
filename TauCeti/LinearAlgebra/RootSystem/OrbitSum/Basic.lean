@@ -280,7 +280,20 @@ theorem orbitSum_reflectionPerm_self :
 
 section Base
 
-variable {P σ i} [CharZero R] {b : P.Base}
+variable {P σ i} {b : P.Base}
+
+/-- For an automorphism permuting the simple roots of `b`, the orbit of a simple root consists of
+simple roots. -/
+theorem mem_support_of_mem_orbitIndices (hσ : ∀ k ∈ b.support, σ.indexEquiv k ∈ b.support)
+    {s k : ι} (hs : s ∈ b.support) (hk : k ∈ P.orbitIndices σ s) : k ∈ b.support := by
+  obtain ⟨m, rfl⟩ := mem_orbitIndices_iff_exists_pow.mp hk
+  induction m with
+  | zero => exact hs
+  | succ m ih =>
+    rw [pow_succ', Equiv.Perm.mul_apply]
+    exact hσ _ (ih (mem_orbitIndices_iff_exists_pow.mpr ⟨m, rfl⟩))
+
+variable [CharZero R]
 
 /-- For an automorphism permuting the simple roots of `b`, the roots of one orbit are all
 positive or all negative. -/
