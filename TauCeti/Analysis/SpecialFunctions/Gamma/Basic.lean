@@ -75,6 +75,7 @@ valid including at positive integers where both sides vanish.
 * `Complex.Gamma_mul_sin_pi_mul` — Euler's reflection formula in reciprocal form:
   `Γ(s) * sin (π * s) = π / Γ(1 - s)` for `s ∉ -ℕ`, including at positive integers where both
   sides vanish.
+* `Complex.Gamma_one_third_mul_Gamma_two_thirds` — `Γ(1/3) Γ(2/3) = 2π/√3`.
 -/
 
 public section
@@ -417,5 +418,22 @@ theorem Gamma_mul_sin_pi_mul {s : ℂ} (hs : ∀ n : ℕ, s ≠ -n) :
         = (Gamma s * Gamma (1 - s)) * sin (π * s) := by ring
       _ = (π / sin (π * s)) * sin (π * s) := by rw [hrefl]
       _ = π := div_mul_cancel₀ _ hsin0
+
+/-- `Γ(1/3) Γ(2/3) = 2π/√3`, by the reflection formula. -/
+theorem Gamma_one_third_mul_Gamma_two_thirds :
+    Gamma (1 / 3) * Gamma (2 / 3) = 2 * Real.pi / (Real.sqrt 3 : ℂ) := by
+  have h := Gamma_mul_Gamma_one_sub (1 / 3)
+  -- The reflection formula is stated at `1 - s`; put `1 - 1/3` in the form `2/3` of the goal.
+  have h23 : (1 : ℂ) - 1 / 3 = 2 / 3 := by norm_num
+  rw [h23] at h
+  have hs : sin (Real.pi * (1 / 3)) = (Real.sqrt 3 : ℂ) / 2 := by
+    -- Write the argument as the cast of the real number `π/3`, to use `Real.sin_pi_div_three`.
+    have hpi : (Real.pi : ℂ) * (1 / 3) = ((Real.pi / 3 : ℝ) : ℂ) := by push_cast; ring
+    rw [hpi, ← ofReal_sin, Real.sin_pi_div_three]
+    push_cast
+    ring
+  have h3 : (Real.sqrt 3 : ℂ) ≠ 0 := by simp
+  rw [h, hs]
+  field_simp
 
 end Complex
