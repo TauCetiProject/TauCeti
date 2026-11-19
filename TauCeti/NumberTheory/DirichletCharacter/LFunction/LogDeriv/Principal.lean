@@ -15,9 +15,9 @@ import TauCeti.Analysis.SpecialFunctions.Pow.EulerFactor
 
 Principal characters retain the higher prime powers away from the level's prime divisors.
 The complex logarithmic derivative differs from zeta's by the sum of the deleted Euler-factor
-logarithmic derivatives throughout `1 < re s`. On the real axis, the higher-prime-power
-remainder has a finite correction bounded by one absolute geometric majorant, independently
-of the level.
+logarithmic derivatives throughout `1 ≤ re s`, away from `s = 1`. On the real axis, the
+higher-prime-power remainder has a finite correction bounded by one absolute geometric majorant,
+independently of the level.
 -/
 
 public section
@@ -27,21 +27,18 @@ open Complex DirichletCharacter ArithmeticFunction LSeries Filter Topology
 namespace TauCeti
 
 /-- Changing the principal character's level adds precisely the logarithmic derivatives of
-its finitely many deleted Euler factors throughout the half-plane `1 < re s`. -/
+its finitely many deleted Euler factors on `1 ≤ re s`, away from the pole `s = 1`. -/
 theorem logDeriv_LFunctionTrivChar_sub_logDeriv_riemannZeta (N : ℕ) [NeZero N]
-    {s : ℂ} (hσ : 1 < s.re) :
+    {s : ℂ} (hσ : 1 ≤ s.re) (hs1 : s ≠ 1) :
     logDeriv (LFunctionTrivChar N) s - logDeriv riemannZeta s =
       ∑ p ∈ N.primeFactors, (Real.log p : ℂ) / ((p : ℂ) ^ s - 1) := by
   let f (p : ℕ) (z : ℂ) := 1 - (p : ℂ) ^ (-z)
   let P (z : ℂ) := ∏ p ∈ N.primeFactors, f p z
-  have hs1 : s ≠ 1 := by
-    intro hs
-    simp only [hs, Complex.one_re, lt_self_iff_false] at hσ
   have heq : LFunctionTrivChar N =ᶠ[𝓝 s] P * riemannZeta := by
     filter_upwards [eventually_ne_nhds hs1] with z hz
     simpa only [P, f, Pi.mul_apply] using LFunctionTrivChar_eq_mul_riemannZeta (N := N) hz
   have hL : LFunctionTrivChar N s ≠ 0 :=
-    LFunction_ne_zero_of_one_le_re 1 (.inr hs1) hσ.le
+    LFunction_ne_zero_of_one_le_re 1 (.inr hs1) hσ
   have hPζ : P s * riemannZeta s ≠ 0 := by
     intro hz
     exact hL (heq.eq_of_nhds.trans hz)
@@ -68,12 +65,13 @@ private theorem re_logDeriv_LFunctionTrivChar_sub (N : ℕ) [NeZero N]
     (logDeriv (LFunctionTrivChar N) (σ : ℂ)).re - (logDeriv riemannZeta (σ : ℂ)).re =
       ∑ p ∈ N.primeFactors, Real.log p / ((p : ℝ) ^ σ - 1) := by
   have h := congrArg Complex.re
-    (logDeriv_LFunctionTrivChar_sub_logDeriv_riemannZeta N (s := (σ : ℂ)) (by simpa))
+    (logDeriv_LFunctionTrivChar_sub_logDeriv_riemannZeta N (s := (σ : ℂ))
+      (by simpa only [Complex.ofReal_re] using hσ.le) (by exact_mod_cast hσ.ne'))
   simp only [Complex.sub_re, Complex.re_sum] at h
   rw [h]
   refine Finset.sum_congr rfl fun p hp ↦ ?_
   have hp0 : (0 : ℝ) < p := by exact_mod_cast Nat.pos_of_mem_primeFactors hp
-  have he := Complex.re_logDeriv_one_sub_ofReal_cpow_neg hp0 σ
+  have he := Complex.re_logDeriv_one_sub_ofReal_cpow_neg hp0.le σ
   rw [Complex.logDeriv_one_sub_cpow_neg] at he
   simpa only [Complex.ofReal_natCast, Complex.ofReal_log hp0.le] using he
 
@@ -153,7 +151,7 @@ theorem abs_neg_re_logDeriv_LFunctionTrivChar_remainder_sub_le (N : ℕ) [NeZero
         ∑' p : Nat.Primes, Real.log p / (p : ℝ) ^ σ)| ≤
       ∑' p : Nat.Primes, Real.log p / ((p : ℝ) * ((p : ℝ) - 1)) := by
   rw [neg_re_logDeriv_LFunctionTrivChar_remainder_sub_eq N hσ, abs_neg, abs_of_nonneg]
-  · exact vonMangoldt.sum_primeFactors_log_div_rpow_mul_sub_one_le N hσ.le
+  · exact N.sum_primeFactors_log_div_rpow_mul_sub_one_le hσ.le
   · refine Finset.sum_nonneg fun p hp ↦ div_nonneg ?_ ?_
     · exact Real.log_nonneg (by exact_mod_cast (Nat.prime_of_mem_primeFactors hp).one_lt.le)
     · exact mul_nonneg (Real.rpow_nonneg p.cast_nonneg _) (sub_nonneg.mpr

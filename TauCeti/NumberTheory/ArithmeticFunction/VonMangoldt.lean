@@ -38,7 +38,7 @@ prime divisors of any level is bounded by the endpoint prime series, uniformly i
 * `ArithmeticFunction.vonMangoldt.summable_nonprime_div_rpow` and
   `ArithmeticFunction.vonMangoldt.hasSum_prime_log_div_rpow_mul_sub_one`: convergence and the
   exact geometric expansion for `σ > 1/2`.
-* `ArithmeticFunction.vonMangoldt.sum_primeFactors_log_div_rpow_mul_sub_one_le`: the level's
+* `Nat.sum_primeFactors_log_div_rpow_mul_sub_one_le`: the level's
   finite geometric correction is bounded by the endpoint majorant for `σ ≥ 1`.
 * `ArithmeticFunction.vonMangoldt.sum_Icc_nonprime_div_le`: for every `N`, the finite sum over
   `1 ≤ n ≤ N` is at most `∑_{p ≤ N} log p / (p (p - 1))`.
@@ -171,7 +171,7 @@ theorem hasSum_prime_log_div_rpow_mul_sub_one {σ : ℝ} (hσ : 1 / 2 < σ) :
 
 /-- The finite geometric correction from any level's prime divisors is at most the endpoint
 prime-series majorant, uniformly for real exponents at least one. -/
-theorem sum_primeFactors_log_div_rpow_mul_sub_one_le (N : ℕ) {σ : ℝ} (hσ : 1 ≤ σ) :
+theorem _root_.Nat.sum_primeFactors_log_div_rpow_mul_sub_one_le (N : ℕ) {σ : ℝ} (hσ : 1 ≤ σ) :
     (∑ p ∈ N.primeFactors, Real.log p / ((p : ℝ) ^ σ * ((p : ℝ) ^ σ - 1))) ≤
       ∑' p : Nat.Primes, Real.log p / ((p : ℝ) * ((p : ℝ) - 1)) := by
   have hterm (p : Nat.Primes) :

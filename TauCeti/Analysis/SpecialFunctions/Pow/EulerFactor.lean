@@ -17,7 +17,7 @@ For a base `q > 1` and `‖a‖ = 1`, every zero of the factor `1 - a q^(-s)` ha
 For `q ≥ 2` and `Re s ≥ 1` its logarithmic derivative has norm at most `log q`.
 These estimates control finite Euler corrections uniformly in the character. The unweighted
 factor also has the exact logarithmic derivative `log q / (q ^ s - 1)`; at a real argument
-and a positive real base, its real part is `Real.log q / (q ^ σ - 1)`.
+and a nonnegative real base, its real part is `Real.log q / (q ^ σ - 1)`.
 -/
 
 public section
@@ -47,14 +47,20 @@ theorem logDeriv_one_sub_cpow_neg (q s : ℂ) :
   · simp only [hpow, inv_one, sub_self, div_zero]
   · field_simp [cpow_ne_zero_iff.mpr (.inl hq), sub_ne_zero.mpr hpow]
 
-/-- At a real argument, an unweighted Euler factor with positive real base has the real
+/-- At a real argument, an unweighted Euler factor with nonnegative real base has the real
 logarithmic derivative `log q / (q ^ σ - 1)`, with total division. -/
-theorem re_logDeriv_one_sub_ofReal_cpow_neg {q : ℝ} (hq : 0 < q) (σ : ℝ) :
+theorem re_logDeriv_one_sub_ofReal_cpow_neg {q : ℝ} (hq : 0 ≤ q) (σ : ℝ) :
     (logDeriv (fun z : ℂ ↦ 1 - (q : ℂ) ^ (-z)) (σ : ℂ)).re =
       Real.log q / (q ^ σ - 1) := by
   rw [logDeriv_one_sub_cpow_neg,
-    ← Complex.ofReal_cpow hq.le, ← Complex.ofReal_log hq.le, ← Complex.ofReal_one,
+    ← Complex.ofReal_cpow hq, ← Complex.ofReal_log hq, ← Complex.ofReal_one,
     ← Complex.ofReal_sub, ← Complex.ofReal_div, Complex.ofReal_re]
+
+-- Base zero is included at every real exponent, with total division also at exponent zero.
+example (σ : ℝ) :
+    (logDeriv (fun z : ℂ ↦ 1 - (0 : ℂ) ^ (-z)) (σ : ℂ)).re = 0 := by
+  simpa only [Complex.ofReal_zero, Real.log_zero, zero_div] using
+    re_logDeriv_one_sub_ofReal_cpow_neg (q := 0) (le_refl 0) σ
 
 /-- A weighted Euler factor with unit-modulus coefficient can vanish only on the imaginary axis. -/
 theorem re_eq_zero_of_one_sub_mul_ofReal_cpow_neg_eq_zero {q : ℝ} (hq : 1 < q)
