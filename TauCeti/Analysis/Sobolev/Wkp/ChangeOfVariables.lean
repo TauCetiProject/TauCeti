@@ -595,16 +595,23 @@ theorem compLBound_nonneg (p : ℝ≥0∞) (k : ℕ) (L : ℝ) {c : ℝ} (hc : 0
   positivity
 
 open scoped NNReal in
+/-- For `B ≠ 0`, the power `B ^ q⁻¹` tends to `1` as the finite exponent `q` tends to `∞`. -/
+private theorem tendsto_rpow_inv_coe_atTop {B : ℝ} (hB : B ≠ 0) :
+    Tendsto (fun q : ℝ≥0 => B ^ (q : ℝ)⁻¹) atTop (𝓝 1) := by
+  have ht : Tendsto (fun q : ℝ≥0 => (q : ℝ)⁻¹) atTop (𝓝 0) :=
+    tendsto_inv_atTop_zero.comp (NNReal.tendsto_coe_atTop.2 tendsto_id)
+  simpa only [Function.comp_def, Real.rpow_zero] using
+    (Real.continuousAt_const_rpow hB).tendsto.comp ht
+
+open scoped NNReal in
 /-- As the finite exponent `q` tends to `∞`, the constant `compLBound q k L c` tends to
 `compLBound ∞ k L c`. -/
 theorem tendsto_compLBound_coe_atTop (k : ℕ) (L : ℝ) {c : ℝ} (hc : c ≠ 0) :
     Tendsto (fun q : ℝ≥0 => compLBound q k L c) atTop (𝓝 (compLBound ⊤ k L c)) := by
-  have ht : Tendsto (fun q : ℝ≥0 => (1 / (q : ℝ≥0∞)).toReal) atTop
-      (𝓝 (1 / (⊤ : ℝ≥0∞)).toReal) := by
-    simpa only [one_div, ENNReal.toReal_inv, ENNReal.coe_toReal, ENNReal.inv_top,
-      ENNReal.toReal_zero, Function.comp_def, id_eq] using
-      tendsto_inv_atTop_zero.comp (NNReal.tendsto_coe_atTop.2 tendsto_id)
-  exact ((Real.continuousAt_const_rpow (inv_ne_zero hc)).tendsto.comp ht).mul_const _
+  unfold compLBound
+  rw [ENNReal.div_top, ENNReal.toReal_zero, Real.rpow_zero]
+  refine ((tendsto_rpow_inv_coe_atTop (inv_ne_zero hc)).congr fun q => ?_).mul_const _
+  rw [one_div, ENNReal.toReal_inv, ENNReal.coe_toReal]
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -980,16 +987,10 @@ private theorem aestronglyMeasurable_and_eLpNorm_top_le_of_chain {n : ℕ}
     · exact le_max_right _ _
   refine ⟨(hq 1 le_rfl).1, ?_⟩
   -- As `q → ∞` the bounds tend to `compLBound ∞ (n + 1) L c * ‖u‖`.
-  have ht : Tendsto (fun q : ℝ≥0 => (q : ℝ)⁻¹) atTop (𝓝 0) :=
-    tendsto_inv_atTop_zero.comp (NNReal.tendsto_coe_atTop.2 tendsto_id)
-  have hpow : ∀ {B : ℝ}, 0 < B → Tendsto (fun q : ℝ≥0 => B ^ (q : ℝ)⁻¹) atTop (𝓝 1) :=
-    fun hB => by
-      simpa only [Function.comp_def, Real.rpow_zero] using
-        (Real.continuousAt_const_rpow hB.ne').tendsto.comp ht
   have hK : Tendsto (fun q : ℝ≥0 => compLBound q (n + 1) L c * max 1 M ^ (q : ℝ)⁻¹ * ‖u‖)
       atTop (𝓝 (compLBound ⊤ (n + 1) L c * ‖u‖)) := by
     simpa only [mul_one] using ((tendsto_compLBound_coe_atTop (n + 1) L h.pos.ne').mul
-      (hpow (zero_lt_one.trans_le (le_max_left 1 M)))).mul_const ‖u‖
+      (tendsto_rpow_inv_coe_atTop (zero_lt_one.trans_le (le_max_left 1 M)).ne')).mul_const ‖u‖
   refine eLpNorm_exponent_top_le_liminf.trans ?_
   rw [← (ENNReal.tendsto_ofReal hK).liminf_eq]
   exact liminf_le_liminf (eventually_atTop.2 ⟨1, fun q hq1 => (hq q hq1).2⟩)
@@ -999,6 +1000,8 @@ change of variables of order `k` is represented by an element of `W^{k,∞}(U)`.
 private theorem exists_comp_top (h : IsChangeOfVariables k U V Φ L c) (u : Wkp mu V ⊤ k) :
     ∃ w : Wkp mu U ⊤ k, (value k w : E → ℝ) =ᵐ[mu.restrict U] fun x => value k u (Φ x) := by
   cases k with
+  -- At order zero `Wkp mu U ⊤ 0` is `Lp ℝ ⊤ (mu.restrict U)` by definition (`Wkp` is reducible
+  -- and `value_zero` holds by `rfl`), so `compLp` already produces the required element.
   | zero => exact ⟨compLp h (value 0 u), by simpa only [value_zero] using compLp_ae h (value 0 u)⟩
   | succ n =>
     obtain ⟨G, hG0, hG⟩ := exists_chain_comp h u
