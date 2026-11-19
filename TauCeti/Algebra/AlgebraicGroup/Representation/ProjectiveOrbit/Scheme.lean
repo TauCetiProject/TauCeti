@@ -167,9 +167,8 @@ theorem isClosed_range_projectiveOrbitMap_of_isProper
     (m : M) (hm : Module.IsUnimodular k m)
     [IsProper (projectiveOrbitToSpec (H := H) m hm)] :
     IsClosed (Set.range (projectiveOrbitMap (H := H) m hm)) := by
-  have : IsProper (projectiveOrbitι (H := H) m hm ≫
-      SymmetricAlgebra.projToSpec k (Module.Dual k M)) :=
-    inferInstanceAs (IsProper (projectiveOrbitToSpec (H := H) m hm))
+  have h : IsProper (projectiveOrbitToSpec (H := H) m hm) := inferInstance
+  rw [projectiveOrbitToSpec_def] at h
   have : IsProper (projectiveOrbitι (H := H) m hm) :=
     IsProper.of_comp _ (SymmetricAlgebra.projToSpec k (Module.Dual k M))
   rw [← range_projectiveOrbitι]

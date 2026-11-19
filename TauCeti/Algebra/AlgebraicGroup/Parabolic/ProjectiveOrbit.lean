@@ -31,7 +31,9 @@ so the Borel fixed-point theorem gives every connected solvable subgroup a fixed
 orbit, that is, a conjugate of it lies in the stabilizer `H`.
 
 This is the direction "proper implies parabolic" of the characterization of parabolic subgroups
-by completeness of `G/H`. Connectedness and smoothness of `G` are not needed for it.
+by completeness of `G/H`. Connectedness of `G` is not needed for it. Reducedness of `G`, which
+over the algebraically closed field `k` amounts to smoothness, is assumed; in characteristic zero
+it is automatic.
 
 ## Main declarations
 
@@ -62,7 +64,7 @@ variable {k : Type u} [Field k] [IsAlgClosed k] {G : FiniteTypeCommHopfAlgCat.{u
 
 attribute [local instance] Comodule.exteriorPower
 
-/-- **A proper homogeneous quotient contains a conjugate of every Borel subgroup.** Let `I`
+/-- **If `G/N` is proper, `N` contains a conjugate of every Borel subgroup.** Let `I`
 define a closed subgroup `N` of a reduced affine group `G` of finite type over an algebraically
 closed field. If some projective orbit scheme representing `G/N` is proper over the base field,
 then every Borel candidate, in particular every Borel subgroup, lies in a conjugate of `N`. -/
