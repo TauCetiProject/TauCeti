@@ -25,6 +25,7 @@ import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.Topology.Algebra.Module.Determinant
+import TauCeti.Analysis.Sobolev.WeakDeriv.Chain
 import TauCeti.Analysis.Sobolev.Wkp.Chain
 import TauCeti.Analysis.Sobolev.Wkp.Exponent
 import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
@@ -593,6 +594,18 @@ theorem compLBound_nonneg (p : ℝ≥0∞) (k : ℕ) (L : ℝ) {c : ℝ} (hc : 0
   have : 0 ≤ max 1 L := zero_le_one.trans (le_max_left _ _)
   positivity
 
+open scoped NNReal in
+/-- As the finite exponent `q` tends to `∞`, the constant `compLBound q k L c` tends to
+`compLBound ∞ k L c`. -/
+theorem tendsto_compLBound_coe_atTop (k : ℕ) (L : ℝ) {c : ℝ} (hc : c ≠ 0) :
+    Tendsto (fun q : ℝ≥0 => compLBound q k L c) atTop (𝓝 (compLBound ⊤ k L c)) := by
+  have ht : Tendsto (fun q : ℝ≥0 => (1 / (q : ℝ≥0∞)).toReal) atTop
+      (𝓝 (1 / (⊤ : ℝ≥0∞)).toReal) := by
+    simpa only [one_div, ENNReal.toReal_inv, ENNReal.coe_toReal, ENNReal.inv_top,
+      ENNReal.toReal_zero, Function.comp_def, id_eq] using
+      tendsto_inv_atTop_zero.comp (NNReal.tendsto_coe_atTop.2 tendsto_id)
+  exact ((Real.continuousAt_const_rpow (inv_ne_zero hc)).tendsto.comp ht).mul_const _
+
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {U V W : Opens E} {p : ENNReal} [Fact (1 ≤ p)] {Φ Ψ : E → E} {k : ℕ} {L L' c c' : ℝ}
@@ -856,7 +869,7 @@ about the origin, `u` restricts to a Sobolev function of every finite exponent `
 `V_R` of `V` in that ball, which has finite measure. So `u ∘ Φ` is a Sobolev function of exponent
 `q` on `U_R`, with the norm bound `compLBound q k L c * μ(V_R) ^ (1/q) * ‖u‖`. These local
 functions supply weak derivative chains of `u ∘ Φ` near every point of `U`, which glue to a chain
-on `U` (`TauCeti.Wkp.exists_hasWeakFDerivOn_chain_of_locally`). On `U_R` the fields of the chain
+on `U` (`TauCeti.exists_hasWeakFDerivOn_chain_of_locally`). On `U_R` the fields of the chain
 are bounded in `L^q` by the same constant, and as `q → ∞` it tends to `compLBound ∞ k L c * ‖u‖`
 (`TauCeti.eLpNorm_exponent_top_le_liminf`), uniformly in `R`. -/
 
@@ -975,13 +988,8 @@ private theorem aestronglyMeasurable_and_eLpNorm_top_le_of_chain {n : ℕ}
         (Real.continuousAt_const_rpow hB.ne').tendsto.comp ht
   have hK : Tendsto (fun q : ℝ≥0 => compLBound q (n + 1) L c * max 1 M ^ (q : ℝ)⁻¹ * ‖u‖)
       atTop (𝓝 (compLBound ⊤ (n + 1) L c * ‖u‖)) := by
-    have hlim := (((hpow (inv_pos.2 h.pos)).mul_const
-      (∑ j ∈ Finset.range (n + 1 + 1), max 1 L ^ j *
-        (Fintype.card (OrderedFinpartition j) : ℝ))).mul
+    simpa only [mul_one] using ((tendsto_compLBound_coe_atTop (n + 1) L h.pos.ne').mul
       (hpow (zero_lt_one.trans_le (le_max_left 1 M)))).mul_const ‖u‖
-    simp only [compLBound, one_div, ENNReal.toReal_inv, ENNReal.coe_toReal, ENNReal.toReal_top,
-      inv_zero, Real.rpow_zero, one_mul, mul_one] at hlim ⊢
-    exact hlim
   refine eLpNorm_exponent_top_le_liminf.trans ?_
   rw [← (ENNReal.tendsto_ofReal hK).liminf_eq]
   exact liminf_le_liminf (eventually_atTop.2 ⟨1, fun q hq1 => (hq q hq1).2⟩)
@@ -1048,6 +1056,10 @@ private def compₗ (h : IsChangeOfVariables k U V Φ L c) : Wkp mu V p k →ₗ
       h.ae_comp (Lp.coeFn_smul a (value k u))] with x h2 h3 h4
     rw [h3, Pi.smul_apply, h2, h4, Pi.smul_apply]
 
+private theorem compₗ_apply (h : IsChangeOfVariables k U V Φ L c) (u : Wkp mu V p k) :
+    compₗ h u = (exists_comp h u).choose :=
+  rfl
+
 private theorem value_compₗ (h : IsChangeOfVariables k U V Φ L c) (u : Wkp mu V p k) :
     value k (compₗ h u) = compLp h (value k u) :=
   Lp.ext ((exists_comp h u).choose_spec.trans (compLp_ae h _).symm)
@@ -1070,8 +1082,9 @@ def compL (h : IsChangeOfVariables k U V Φ L c) : Wkp mu V p k →L[ℝ] Wkp mu
 
 /-- The value of `compL h u` is `u ∘ Φ`, almost everywhere on `U`. -/
 theorem value_compL_ae (h : IsChangeOfVariables k U V Φ L c) (u : Wkp mu V p k) :
-    (value k (compL h u) : E → ℝ) =ᵐ[mu.restrict U] fun x => value k u (Φ x) :=
-  (exists_comp h u).choose_spec
+    (value k (compL h u) : E → ℝ) =ᵐ[mu.restrict U] fun x => value k u (Φ x) := by
+  rw [compL, ContinuousLinearMap.coeFn_ofSeqClosedGraph, compₗ_apply]
+  exact (exists_comp h u).choose_spec
 
 /-- An element of `W^{k,p}(U)` is `compL h u` exactly when its value is `u ∘ Φ` almost everywhere
 on `U`. -/
