@@ -42,6 +42,8 @@ the cusp `σ ∞` of `Γ'`.
   to the index and there are `cuspCount` of them.
 * `TauCeti.ModularGroup.minimalPeriod_permT_eq_integerCuspWidth`: the length of the cycle of
   `σinf` through the coset of `σ⁻¹` is the integer width of `σ⁻¹ (±Γ') σ` at `∞`.
+* `TauCeti.ModularGroup.mem_cuspWidths_iff`: the cusp widths are exactly these widths, for
+  `σ ∈ SL(2, ℤ)`.
 * `TauCeti.ModularGroup.cuspWidths_eq_of_equivalent` and its companions for `cuspCount`,
   `ellipticTwo` and `ellipticThree`: the invariants depend only on the isomorphism class of the
   modular triple, hence not on the coset numbering (`TauCeti.ModularGroup.cuspWidths_congr`, …)
@@ -140,9 +142,9 @@ theorem ellipticThree_eq_count_fullCycleType :
 /-- `permT Γ' e ^ j` fixes the coset of `g` exactly when `g⁻¹ Tʲ g ∈ Γ'`. -/
 theorem permT_pow_apply_eq_iff (g : PSL(2, ℤ)) (j : ℕ) :
     (permT Γ' e ^ j) (e g) = e g ↔ g⁻¹ * (T : PSL(2, ℤ)) ^ j * g ∈ Γ' := by
-  rw [permT, modularTriple_σinf, ← map_pow, Equiv.permutationRepresentation_apply,
-    e.symm_apply_apply, e.apply_eq_iff_eq, MulAction.Quotient.smul_mk, QuotientGroup.eq,
-    smul_eq_mul, ← inv_mem_iff]
+  simp only [permT, modularTriple_σinf, ← map_pow, Equiv.permutationRepresentation_apply,
+    e.symm_apply_apply, e.apply_eq_iff_eq, MulAction.Quotient.smul_mk, smul_eq_mul]
+  rw [QuotientGroup.eq, ← inv_mem_iff]
   group
 
 /-- The image of `γ ∈ SL(2, ℤ)` in `GL(2, ℝ)` lies in the conjugate `σ⁻¹ (±Γ') σ` of the lift
@@ -163,8 +165,9 @@ theorem minimalPeriod_permT_eq_integerCuspWidth (σ : SL(2, ℤ)) :
         ((ConjAct.toConjAct σ⁻¹ • Γ'.liftSL).map (mapGL ℝ)) := by
   refine Nat.dvd_right_iff_eq.mp fun j ↦ ?_
   rw [← Function.isPeriodicPt_iff_minimalPeriod_dvd, ← TauCeti.Subgroup.T_pow_mem_iff,
-    coe_GL_eq_mapGL, ← map_pow, mapGL_mem_map_conjAct_liftSL_iff, Function.IsPeriodicPt,
-    Function.IsFixedPt, Perm.iterate_eq_pow, permT_pow_apply_eq_iff]
+    coe_GL_eq_mapGL, ← map_pow, mapGL_mem_map_conjAct_liftSL_iff]
+  simp only [Function.IsPeriodicPt, Function.IsFixedPt, Perm.iterate_eq_pow,
+    permT_pow_apply_eq_iff]
   simp
 
 /-- **The width at `∞`.** The cycle of `permT Γ' e` through the base coset has length the integer
@@ -174,13 +177,26 @@ theorem minimalPeriod_permT_one_eq_integerCuspWidth :
       TauCeti.Subgroup.integerCuspWidth (Γ'.liftSL.map (mapGL ℝ)) := by
   simpa using minimalPeriod_permT_eq_integerCuspWidth Γ' e 1
 
+/-- The cusp widths are exactly the widths at `∞` of the conjugates `σ⁻¹ (±Γ') σ`, the widths of
+the cusps `σ ∞`. -/
+theorem mem_cuspWidths_iff {w : ℕ} :
+    w ∈ cuspWidths Γ' e ↔ ∃ σ : SL(2, ℤ),
+      TauCeti.Subgroup.integerCuspWidth ((ConjAct.toConjAct σ⁻¹ • Γ'.liftSL).map (mapGL ℝ)) =
+        w := by
+  simp_rw [← minimalPeriod_permT_eq_integerCuspWidth Γ' e, cuspWidths,
+    Perm.mem_fullCycleType_iff]
+  refine ⟨fun ⟨i, hi⟩ ↦ ?_, fun ⟨σ, hσ⟩ ↦ ⟨_, hσ⟩⟩
+  obtain ⟨q, rfl⟩ := e.surjective i
+  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
+  obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective g
+  exact ⟨σ⁻¹, by rwa [inv_inv]⟩
+
 /-- The width at `∞` of each conjugate `σ⁻¹ (±Γ') σ`, the width of the cusp `σ ∞`, is one of the
 cusp widths. -/
 theorem integerCuspWidth_mem_cuspWidths (σ : SL(2, ℤ)) :
     TauCeti.Subgroup.integerCuspWidth ((ConjAct.toConjAct σ⁻¹ • Γ'.liftSL).map (mapGL ℝ)) ∈
-      cuspWidths Γ' e := by
-  rw [← minimalPeriod_permT_eq_integerCuspWidth]
-  exact Perm.minimalPeriod_mem_fullCycleType _ _
+      cuspWidths Γ' e :=
+  (mem_cuspWidths_iff Γ' e).mpr ⟨σ, rfl⟩
 
 /-! ### The full modular group -/
 
@@ -221,8 +237,7 @@ variable {Γ₁ Γ₂ : Subgroup PSL(2, ℤ)} {e₁ : PSL(2, ℤ) ⧸ Γ₁ ≃ 
 theorem cuspWidths_eq_of_equivalent
     (h : (modularTriple Γ₁ e₁).Equivalent (modularTriple Γ₂ e₂)) :
     cuspWidths Γ₁ e₁ = cuspWidths Γ₂ e₂ := by
-  have := congrArg (·.2.2) (cycleData_eq_of_equivalent h)
-  simpa [cuspWidths, Perm.fullCycleType_def] using this
+  rw [cuspWidths, cuspWidths, permT, permT, fullCycleType_σinf_eq_of_equivalent h]
 
 /-- Isomorphic modular triples have the same number of cusps. -/
 theorem cuspCount_eq_of_equivalent
@@ -234,19 +249,15 @@ theorem cuspCount_eq_of_equivalent
 theorem ellipticTwo_eq_of_equivalent
     (h : (modularTriple Γ₁ e₁).Equivalent (modularTriple Γ₂ e₂)) :
     ellipticTwo Γ₁ e₁ = ellipticTwo Γ₂ e₂ := by
-  have := congrArg (·.2.1) (cycleData_eq_of_equivalent h)
-  simp only [cycleData_σ1] at this
-  rw [ellipticTwo_eq_count_fullCycleType, ellipticTwo_eq_count_fullCycleType,
-    Perm.fullCycleType_def, Perm.fullCycleType_def, permS, permS, this]
+  rw [ellipticTwo_eq_count_fullCycleType, ellipticTwo_eq_count_fullCycleType, permS, permS,
+    fullCycleType_σ1_eq_of_equivalent h]
 
 /-- Isomorphic modular triples have the same number of elliptic points of period three. -/
 theorem ellipticThree_eq_of_equivalent
     (h : (modularTriple Γ₁ e₁).Equivalent (modularTriple Γ₂ e₂)) :
     ellipticThree Γ₁ e₁ = ellipticThree Γ₂ e₂ := by
-  have := congrArg (·.1) (cycleData_eq_of_equivalent h)
-  simp only [cycleData_σ0] at this
   rw [ellipticThree_eq_count_fullCycleType, ellipticThree_eq_count_fullCycleType,
-    Perm.fullCycleType_def, Perm.fullCycleType_def, this]
+    fullCycleType_σ0_eq_of_equivalent h]
 
 /-- The cusp widths do not depend on the coset numbering. -/
 theorem cuspWidths_congr (e e' : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) : cuspWidths Γ' e = cuspWidths Γ' e' :=
