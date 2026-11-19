@@ -39,7 +39,9 @@ On an open set on which the limit is continuous, locally uniform convergence is 
 continuous convergence at every point of the set
 (`IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn`). Locally uniform
 convergence passes to subsequences, and more generally along any map of filters
-(`TendstoLocallyUniformlyOn.comp_tendsto`).
+(`TendstoLocallyUniformlyOn.comp_tendsto`). Convergence of `Fᵢ ∘ g` on an open set `s`, for an
+open map `g` injective on `s`, is convergence of `Fᵢ` on `g '' s`
+(`TendstoLocallyUniformlyOn.image_of_isOpenMap`).
 
 A locally uniform limit `w` of maps `e ∘ uᵢ`, for an open partial homeomorphism `e` and maps `uᵢ`
 with values in a subset `K` of its source, is read back through `e.symm` when `w` takes values in
@@ -112,6 +114,23 @@ theorem TendstoLocallyUniformlyOn.comp_tendsto {ι ι' α β : Type*} [Topologic
     {q : Filter ι'} (h : TendstoLocallyUniformlyOn F f p s) (hg : Tendsto g q p) :
     TendstoLocallyUniformlyOn (F ∘ g) f q s :=
   fun u hu x hx ↦ (h u hu x hx).imp fun _ ⟨ht, hev⟩ ↦ ⟨ht, hg.eventually hev⟩
+
+/-- Locally uniform convergence of the maps `Fᵢ ∘ g` on an open set `s`, for an open map `g`
+injective on `s`, is locally uniform convergence of the maps `Fᵢ` on `g '' s`, to the limit read
+through the inverse of `g` on `s`. -/
+theorem TendstoLocallyUniformlyOn.image_of_isOpenMap {ι α β γ : Type*} [TopologicalSpace α]
+    [TopologicalSpace γ] [Nonempty γ] [UniformSpace β] {F : ι → α → β} {f : γ → β}
+    {p : Filter ι} {g : γ → α} {s : Set γ}
+    (h : TendstoLocallyUniformlyOn (fun i ↦ F i ∘ g) f p s) (hs : IsOpen s) (hg : IsOpenMap g)
+    (hinj : InjOn g s) :
+    TendstoLocallyUniformlyOn F (f ∘ Function.invFunOn g s) p (g '' s) := by
+  rintro u hu _ ⟨x, hx, rfl⟩
+  obtain ⟨t, ht, hev⟩ := h u hu x hx
+  obtain ⟨o, hot, ho, hxo⟩ := mem_nhds_iff.1 (hs.nhdsWithin_eq hx ▸ ht)
+  refine ⟨g '' (o ∩ s), mem_nhdsWithin_of_mem_nhds
+    ((hg _ (ho.inter hs)).mem_nhds ⟨x, ⟨hxo, hx⟩, rfl⟩), hev.mono fun i hi ↦ ?_⟩
+  rintro _ ⟨y, ⟨hyo, hys⟩, rfl⟩
+  simpa [hinj.leftInvOn_invFunOn hys] using hi y (hot hyo)
 
 variable {α β ι : Type*} [TopologicalSpace α] [PseudoMetricSpace β] {l : Filter ι}
   {F : ι → α → β} {u : α → β} {s : Set α}
