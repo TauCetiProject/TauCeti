@@ -13,9 +13,10 @@ import Mathlib.Algebra.BigOperators.Intervals
 
 `Finset.sum_sq_le_sum_mul` bounds the sum of squares of nonnegative elements by their sum
 times a common upper bound, in a partially ordered semiring.
-`Finset.sum_range_sq_sub_le` specializes this to successive differences `t (i + 1) - t i`
-along a monotone prefix in a partially ordered ring, bounding the sum of their squares by
-the endpoint difference `t n - t 0` times a common upper bound.
+`Finset.sum_sq_le_zero_iff` characterizes when a finite sum of squares is nonpositive.
+`Finset.sum_range_sq_sub_le` specializes `sum_sq_le_sum_mul` to successive differences
+`t (i + 1) - t i` along a monotone prefix in a partially ordered ring, bounding the sum of their
+squares by the endpoint difference `t n - t 0` times a common upper bound.
 These bounds convert sums of squared partition increments into mesh bounds by telescoping.
 
 `Finset.prod_abs_eq_neg_one_pow_card_filter_neg_mul_prod` computes the sign of a finite product in
@@ -36,6 +37,13 @@ theorem sum_sq_le_sum_mul {ι R : Type*} [Semiring R] [PartialOrder R] [IsOrdere
   rw [sum_mul]
   exact sum_le_sum fun i hi ↦ by
     simpa only [pow_two] using mul_le_mul_of_nonneg_left (hδ i hi) (hf i hi)
+
+/-- A finite sum of squares is nonpositive if and only if every summand on the finset vanishes. -/
+theorem sum_sq_le_zero_iff {ι R : Type*} [Semiring R] [LinearOrder R] [IsStrictOrderedRing R]
+    [ExistsAddOfLE R] (s : Finset ι) (f : ι → R) :
+    ∑ i ∈ s, f i ^ 2 ≤ 0 ↔ ∀ i ∈ s, f i = 0 := by
+  rw [← sum_sq_eq_zero_iff]
+  exact ⟨fun h ↦ le_antisymm h (sum_nonneg fun _ _ ↦ sq_nonneg _), le_of_eq⟩
 
 /-- Along a monotone prefix, the sum of squared successive differences is at most the
 endpoint difference times any common upper bound on the successive differences. -/
