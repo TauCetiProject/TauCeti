@@ -126,7 +126,9 @@ private def prodComparisonτ₂ :
 private theorem prodLeftMap_comp_prodLeftToTotalPair :
     prodLeftMap (𝟙 (ofSubset B)) (ofSubset A).map ≫ prodLeftToTotalPair A B =
       prodExcisionSnd A B ≫ TopTriple.innerToTotal.app (prodUnionTripleSnd A B) :=
-  hom_ext_of_fst _ (by ext; rfl)
+  hom_ext_of_fst _ (by
+    rw [Hom.fst_comp, Hom.fst_comp, prodExcisionSnd_fst, TopTriple.innerToTotal_app_fst]
+    ext; rfl)
 
 @[reassoc]
 private theorem prodComparison_comm₁₂ :

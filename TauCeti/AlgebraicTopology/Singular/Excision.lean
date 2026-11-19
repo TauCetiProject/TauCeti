@@ -470,7 +470,6 @@ abbrev prodUnionTripleSnd : TauCeti.TopTriple.{w} :=
 /-- The inclusion of pairs `(X × B, A × B) ⟶ (A × Y ∪ X × B, A × Y)` into the inner pair of
 `TopPair.prodUnionTripleFst`, an excision when `A` and `B` are open
 (`TopPair.isIso_singularHomologyMap_prodExcisionFst`). -/
-@[expose]
 def prodExcisionFst :
     ofSubset (CartesianMonoidalCategory.fst X (ofSubset B).snd ⁻¹' A) ⟶
       TauCeti.TopTriple.innerPair.obj (prodUnionTripleFst A B) :=
@@ -478,17 +477,50 @@ def prodExcisionFst :
     (TopCat.ofHom ⟨fun p ↦ ⟨(CartesianMonoidalCategory.fst X _ p.1,
       (CartesianMonoidalCategory.snd X (ofSubset B).snd p.1).1), p.2⟩, by fun_prop⟩) (by ext; rfl)
 
+/-- On ambient spaces, `TopPair.prodExcisionFst` is the inclusion `X × B ⟶ A × Y ∪ X × B`. -/
+@[simp]
+theorem prodExcisionFst_fst :
+    Hom.fst (prodExcisionFst A B) =
+      TopCat.ofHom ⟨fun p ↦ ⟨(p.1, p.2.1), Or.inr p.2.2⟩, by fun_prop⟩ :=
+  (rfl)
+
 /-- The inclusion of pairs `(A × Y, A × B) ⟶ (A × Y ∪ X × B, X × B)` into the inner pair of
 `TopPair.prodUnionTripleSnd`, an excision when `A` and `B` are open
 (`TopPair.isIso_singularHomologyMap_prodExcisionSnd`). -/
-@[expose]
 def prodExcisionSnd :
     (ofSubset B).prodLeft (ofSubset A).snd ⟶
       TauCeti.TopTriple.innerPair.obj (prodUnionTripleSnd A B) :=
   ofHom (TopCat.ofHom ⟨fun x ↦ ⟨(x.1.1, x.2), Or.inl x.1.2⟩, by fun_prop⟩)
     (TopCat.ofHom ⟨fun x ↦ ⟨(x.1.1, x.2.1), x.2.2⟩, by fun_prop⟩) (by ext; rfl)
 
+/-- On ambient spaces, `TopPair.prodExcisionSnd` is the inclusion `A × Y ⟶ A × Y ∪ X × B`. -/
+@[simp]
+theorem prodExcisionSnd_fst :
+    Hom.fst (prodExcisionSnd A B) =
+      TopCat.ofHom ⟨fun x ↦ ⟨(x.1.1, x.2), Or.inl x.1.2⟩, by fun_prop⟩ :=
+  (rfl)
+
+/-- The open cover of `A × Y ∪ X × B` by `A × Y` and `X × B`, along which both excisions are
+proved. -/
+private abbrev prodUnionCover : Fin 2 → Set ↥(CartesianMonoidalCategory.fst X Y ⁻¹' A ∪
+    CartesianMonoidalCategory.snd X Y ⁻¹' B) :=
+  ![(↑) ⁻¹' (CartesianMonoidalCategory.fst X Y ⁻¹' A),
+    (↑) ⁻¹' (CartesianMonoidalCategory.snd X Y ⁻¹' B)]
+
+/-- The sets `A × Y` and `X × B` cover `A × Y ∪ X × B`. -/
+private theorem iUnion_prodUnionCover : ⋃ i, prodUnionCover A B i = Set.univ := by
+  ext w
+  simp only [Set.mem_iUnion, Fin.exists_fin_two, Set.mem_univ, iff_true]
+  exact w.2
+
 variable {A B}
+
+/-- For open `A` and `B`, the sets `A × Y` and `X × B` are open in `A × Y ∪ X × B`. -/
+private theorem isOpen_prodUnionCover (hA : IsOpen A) (hB : IsOpen B) (i : Fin 2) :
+    IsOpen (prodUnionCover A B i) := by
+  fin_cases i
+  · exact TopCat.isOpen_subtypeVal_preimage_preimage_fst_union hA
+  · exact TopCat.isOpen_subtypeVal_preimage_preimage_snd_union hB
 
 /-- **Excision onto `X × B`**: for open `A` and `B`, the inclusion of pairs
 `(X × B, A × B) ⟶ (A × Y ∪ X × B, A × Y)` induces isomorphisms on relative singular homology. The
@@ -497,10 +529,7 @@ image of the inclusion. -/
 theorem isIso_singularHomologyMap_prodExcisionFst (hA : IsOpen A) (hB : IsOpen B) (n : ℕ) :
     IsIso (TopPair.singularHomologyMap (prodExcisionFst A B) R n) := by
   refine isIso_singularHomologyMap_of_open_cover R (prodExcisionFst A B) ?_ ?_
-    (![(↑) ⁻¹' (CartesianMonoidalCategory.fst X Y ⁻¹' A),
-        (↑) ⁻¹' (CartesianMonoidalCategory.snd X Y ⁻¹' B)] :
-      Fin 2 → Set ↥(CartesianMonoidalCategory.fst X Y ⁻¹' A ∪
-        CartesianMonoidalCategory.snd X Y ⁻¹' B)) ?_ ?_ ?_ n
+    (prodUnionCover A B) (isOpen_prodUnionCover hA hB) (iUnion_prodUnionCover A B) ?_ n
   · refine ⟨IsEmbedding.subtypeVal.isInducing.of_comp_iff.1
       (IsEmbedding.id.prodMap IsEmbedding.subtypeVal).isInducing, fun x y h ↦ ?_⟩
     have h' : (x.1, (x.2.1 : Y)) = (y.1, (y.2.1 : Y)) := congrArg Subtype.val h
@@ -509,12 +538,6 @@ theorem isIso_singularHomologyMap_prodExcisionFst (hA : IsOpen A) (hB : IsOpen B
   · rintro x ⟨a, ha⟩
     have hx : (a.1 : X ⊗ Y).1 = x.1 := congrArg (fun w ↦ (w.1 : X ⊗ Y).1) ha
     exact ⟨⟨x, show x.1 ∈ A from hx ▸ a.2⟩, rfl⟩
-  · simp only [Fin.forall_fin_two]
-    exact ⟨TopCat.isOpen_subtypeVal_preimage_preimage_fst_union hA,
-      TopCat.isOpen_subtypeVal_preimage_preimage_snd_union hB⟩
-  · ext w
-    simp only [Set.mem_iUnion, Fin.exists_fin_two, Set.mem_univ, iff_true]
-    exact w.2
   · simp only [Fin.forall_fin_two]
     exact ⟨Or.inl fun w hw ↦ ⟨⟨w.1, hw⟩, rfl⟩, Or.inr fun w hw ↦ ⟨(w.1.1, ⟨w.1.2, hw⟩), rfl⟩⟩
 
@@ -525,10 +548,7 @@ the second is the subspace. -/
 theorem isIso_singularHomologyMap_prodExcisionSnd (hA : IsOpen A) (hB : IsOpen B) (n : ℕ) :
     IsIso (TopPair.singularHomologyMap (prodExcisionSnd A B) R n) := by
   refine isIso_singularHomologyMap_of_open_cover R (prodExcisionSnd A B) ?_ ?_
-    (![(↑) ⁻¹' (CartesianMonoidalCategory.fst X Y ⁻¹' A),
-        (↑) ⁻¹' (CartesianMonoidalCategory.snd X Y ⁻¹' B)] :
-      Fin 2 → Set ↥(CartesianMonoidalCategory.fst X Y ⁻¹' A ∪
-        CartesianMonoidalCategory.snd X Y ⁻¹' B)) ?_ ?_ ?_ n
+    (prodUnionCover A B) (isOpen_prodUnionCover hA hB) (iUnion_prodUnionCover A B) ?_ n
   · refine ⟨IsEmbedding.subtypeVal.isInducing.of_comp_iff.1
       (IsEmbedding.subtypeVal.prodMap IsEmbedding.id).isInducing, fun x y h ↦ ?_⟩
     have h' : ((x.1.1 : X), x.2) = ((y.1.1 : X), y.2) := congrArg Subtype.val h
@@ -537,12 +557,6 @@ theorem isIso_singularHomologyMap_prodExcisionSnd (hA : IsOpen A) (hB : IsOpen B
   · rintro x ⟨b, hb⟩
     have hx : (b.1 : X ⊗ Y).2 = x.2 := congrArg (fun w ↦ (w.1 : X ⊗ Y).2) hb
     exact ⟨(x.1, ⟨x.2, hx ▸ b.2⟩), rfl⟩
-  · simp only [Fin.forall_fin_two]
-    exact ⟨TopCat.isOpen_subtypeVal_preimage_preimage_fst_union hA,
-      TopCat.isOpen_subtypeVal_preimage_preimage_snd_union hB⟩
-  · ext w
-    simp only [Set.mem_iUnion, Fin.exists_fin_two, Set.mem_univ, iff_true]
-    exact w.2
   · simp only [Fin.forall_fin_two]
     exact ⟨Or.inr fun w hw ↦ ⟨(⟨w.1.1, hw⟩, w.1.2), rfl⟩, Or.inl fun w hw ↦ ⟨⟨w.1, hw⟩, rfl⟩⟩
 

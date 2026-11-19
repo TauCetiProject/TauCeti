@@ -142,19 +142,34 @@ instance epi_singularChainComplexπ_tensorHom_singularChainComplexπ :
   rw [singularChainComplexπ_tensorHom_singularChainComplexπ_eq X Y A B R S]
   exact epi_comp' h₁ h₂
 
-/-- On `C(X; R) ⊗ C(Y; S)`, the relative shuffle map of `(X, A)` and `Y` followed by the quotient
-modulo the chains of `A × Y ∪ X × B` is the shuffle map followed by the projection to the relative
-chains of `(X × Y, A × Y ∪ X × B)`. -/
-private theorem shuffleRel_preimageFstToPreimageUnion :
+/-- On `C(X; R) ⊗ C(Y; S)`, the relative shuffle map of `(X, A)` and `Y` followed by a map of pairs
+`f` out of `(X × Y, A × Y)` is the shuffle map followed by the map of ambient chains induced by `f`
+and the projection to the relative chains of the target. -/
+private theorem singularChainComplexπ_tensorHom_id_shuffleRel_singularChainComplexMap
+    {P : TopPair.{w}} (f : TopPair.ofSubset (fst X Y ⁻¹' A) ⟶ P) :
     ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
         𝟙 ((toSSet.obj Y).chainComplex S)) ≫ shuffleRel X Y A R S ≫
-          TopPair.singularChainComplexMap (TopPair.preimageFstToPreimageUnion A B) (R ⊗ S) =
-      shuffle X Y R S ≫
-        (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularChainComplexπ (R ⊗ S) :=
+          TopPair.singularChainComplexMap f (R ⊗ S) =
+      shuffle X Y R S ≫ SSet.chainComplexMap (toSSet.map (TopPair.Hom.fst f)) (R ⊗ S) ≫
+        P.singularChainComplexπ (R ⊗ S) :=
   (singularChainComplexπ_tensorHom_id_shuffleRel_assoc X Y A R S _).trans
     ((Category.assoc _ _ _).trans (congrArg (shuffle X Y R S ≫ ·)
-      (TopPair.singularChainComplexπ_comp_singularChainComplexMap_of_fst_eq_id (R ⊗ S)
-        (TopPair.preimageFstToPreimageUnion A B) (TopPair.ofSubsetMap_fst _ _))))
+      (TopPair.singularChainComplexπ_pair_naturality f (R ⊗ S)).symm))
+
+/-- On `C(X; R) ⊗ C(Y; S)`, the relative shuffle map of `(X, A)` and `Y` followed by a map of pairs
+out of `(X × Y, A × Y)` that is the identity of `X × Y` is the shuffle map followed by the
+projection to the relative chains of the target. -/
+private theorem singularChainComplexπ_tensorHom_id_shuffleRel_singularChainComplexMap_of_fst_eq_id
+    {Z : TopCat.{w}} {j : Z ⟶ X ⊗ Y} {hj : Topology.IsEmbedding j}
+    (f : TopPair.ofSubset (fst X Y ⁻¹' A) ⟶ TopPair.of j hj)
+    (hf : TopPair.Hom.fst f = 𝟙 (X ⊗ Y)) :
+    ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
+        𝟙 ((toSSet.obj Y).chainComplex S)) ≫ shuffleRel X Y A R S ≫
+          TopPair.singularChainComplexMap f (R ⊗ S) =
+      shuffle X Y R S ≫ (TopPair.of j hj).singularChainComplexπ (R ⊗ S) :=
+  (singularChainComplexπ_tensorHom_id_shuffleRel_singularChainComplexMap X Y A R S f).trans
+    (congrArg (shuffle X Y R S ≫ ·) ((TopPair.singularChainComplexπ_pair_naturality f (R ⊗ S)).trans
+      (TopPair.singularChainComplexπ_comp_singularChainComplexMap_of_fst_eq_id (R ⊗ S) f hf)))
 
 /-- The pair `(X × Y, A × Y)` is the total pair of the triple `(X × Y, A × Y ∪ X × B, A × Y)`. -/
 private abbrev prodUnionTripleFstTotalPairIso :
@@ -173,12 +188,28 @@ private theorem prodUnionTripleFstTotalPairIso_hom_comp_totalToOuter :
       TauCeti.TopTriple.totalToOuter_app_fst]
     exact (Category.comp_id _).trans (TopPair.ofSubsetMap_fst _ _).symm)
 
+omit [MonoidalCategory C] [MonoidalPreadditive C]
+  [∀ (T : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorLeft T)]
+  [∀ (T : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorRight T)] in
+/-- On relative chains, the inclusion `(X × Y, A × Y) ⟶ (X × Y, A × Y ∪ X × B)` is the reading of
+`(X × Y, A × Y)` as the total pair of the triple `(X × Y, A × Y ∪ X × B, A × Y)`, followed by the
+map to the outer pair. -/
+private theorem singularChainComplexMap_preimageFstToPreimageUnion (M : C) :
+    TopPair.singularChainComplexMap (TopPair.preimageFstToPreimageUnion A B) M =
+      TopPair.singularChainComplexMap (prodUnionTripleFstTotalPairIso X Y A B).hom M ≫
+        TopPair.singularChainComplexMap
+          (TauCeti.TopTriple.totalToOuter.app (TopPair.prodUnionTripleFst A B)) M :=
+  (congrArg (TopPair.singularChainComplexMap · M)
+    (prodUnionTripleFstTotalPairIso_hom_comp_totalToOuter X Y A B).symm).trans
+      (TopPair.singularChainComplexMap_comp _ _ _)
+
 /-- The excision map, followed by the inclusion of pairs `(A × Y ∪ X × B, A × Y) ⟶ (X × Y, A × Y)`,
 is the product of the identity of `X` with the inclusion of `B` on ambient spaces. -/
 private theorem fst_prodExcisionFst_comp_innerToTotal :
     TopPair.Hom.fst (TopPair.prodExcisionFst A B ≫
         TauCeti.TopTriple.innerToTotal.app (TopPair.prodUnionTripleFst A B)) =
       𝟙 X ⊗ₘ ((TopPair.ofSubset B).map : (TopPair.ofSubset B).snd ⟶ Y) := by
+  rw [TopPair.Hom.fst_comp, TopPair.prodExcisionFst_fst, TauCeti.TopTriple.innerToTotal_app_fst]
   ext; rfl
 
 /-- The comparison on the first terms: the relative shuffle map of `(X, A)` and `B`, followed by
@@ -200,25 +231,6 @@ private def shufflePairτ₂ :
   shuffleRel X Y A R S ≫
     TopPair.singularChainComplexMap (prodUnionTripleFstTotalPairIso X Y A B).hom (R ⊗ S)
 
-omit [MonoidalCategory C] [MonoidalPreadditive C]
-  [∀ (T : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorLeft T)]
-  [∀ (T : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorRight T)] in
-/-- The excision map followed by the inclusion into the total pair of the triple is induced on
-ambient chains by the product of the identity of `X` with the inclusion of `B`. -/
-private theorem singularChainComplexπ_prodExcisionFst_innerToTotal (M : C) :
-    (TopPair.ofSubset (fst X (TopPair.ofSubset B).snd ⁻¹' A)).singularChainComplexπ M ≫
-        TopPair.singularChainComplexMap (TopPair.prodExcisionFst A B) M ≫
-          TopPair.singularChainComplexMap
-            (TauCeti.TopTriple.innerToTotal.app (TopPair.prodUnionTripleFst A B)) M =
-      SSet.chainComplexMap
-          (toSSet.map (𝟙 X ⊗ₘ ((TopPair.ofSubset B).map : (TopPair.ofSubset B).snd ⟶ Y))) M ≫
-        (TauCeti.TopTriple.totalPair.obj
-          (TopPair.prodUnionTripleFst A B)).singularChainComplexπ M := by
-  have h := TopPair.singularChainComplexπ_pair_naturality (TopPair.prodExcisionFst A B ≫
-    TauCeti.TopTriple.innerToTotal.app (TopPair.prodUnionTripleFst A B)) M
-  rw [fst_prodExcisionFst_comp_innerToTotal, TopPair.singularChainComplexMap_comp] at h
-  exact h.symm
-
 /-- The comparison maps commute with the maps of the sequences on the first two terms. -/
 private theorem shufflePair_comm₁₂ :
     (𝟙 ((TopPair.ofSubset A).singularChainComplex R) ⊗ₘ
@@ -235,14 +247,13 @@ private theorem shufflePair_comm₁₂ :
     R S
   simp only [CategoryTheory.Functor.map_id] at h₂
   have hx := singularChainComplexπ_tensorHom_comp_tensorHom_chainComplexMap X Y A B R S
-  have e₂ := (singularChainComplexπ_tensorHom_id_shuffleRel_assoc X Y A R S _).trans
-    ((Category.assoc _ _ _).trans (congrArg (shuffle X Y R S ≫ ·)
-      (TopPair.singularChainComplexπ_comp_singularChainComplexMap_of_fst_eq_id (R ⊗ S)
-        (prodUnionTripleFstTotalPairIso X Y A B).hom
-        (TauCeti.TopTriple.ofSubsetTotalPairIso_hom_fst _))))
-  have e₁ := (singularChainComplexπ_tensorHom_id_shuffleRel_assoc X (TopPair.ofSubset B).snd A R S
-    _).trans ((Category.assoc _ _ _).trans (congrArg (shuffle X (TopPair.ofSubset B).snd R S ≫ ·)
-      (singularChainComplexπ_prodExcisionFst_innerToTotal X Y A B (R ⊗ S))))
+  have e₂ := singularChainComplexπ_tensorHom_id_shuffleRel_singularChainComplexMap_of_fst_eq_id X Y
+    A R S (prodUnionTripleFstTotalPairIso X Y A B).hom
+    (TauCeti.TopTriple.ofSubsetTotalPairIso_hom_fst _)
+  have e₁ := singularChainComplexπ_tensorHom_id_shuffleRel_singularChainComplexMap X
+    (TopPair.ofSubset B).snd A R S (TopPair.prodExcisionFst A B ≫
+      TauCeti.TopTriple.innerToTotal.app (TopPair.prodUnionTripleFst A B))
+  rw [fst_prodExcisionFst_comp_innerToTotal, TopPair.singularChainComplexMap_comp] at e₁
   -- Both sides are the shuffle map of `X` and `B`, followed by the map induced by `X × B ⟶ X × Y`
   -- and the projection to the relative chains of `(X × Y, A × Y)`. The chain complexes appear in
   -- several forms that agree only up to unfolding, so the composites are reassociated by hand.
@@ -265,9 +276,7 @@ private theorem shuffleRel_cokernel_condition :
   -- `rw` does not apply: the chains of the pairs appear in several forms that agree only up to
   -- unfolding, so the composites are rewritten and reassociated by hand.
   exact (congrArg (_ ≫ ·) (congrArg (shuffleRel X Y A R S ≫ ·)
-    ((congrArg (TopPair.singularChainComplexMap · (R ⊗ S))
-      (prodUnionTripleFstTotalPairIso_hom_comp_totalToOuter X Y A B).symm).trans
-        (TopPair.singularChainComplexMap_comp _ _ _)))).trans <|
+    (singularChainComplexMap_preimageFstToPreimageUnion X Y A B (R ⊗ S)))).trans <|
     (congrArg (_ ≫ ·) (Category.assoc _ _ _).symm).trans <| (Category.assoc _ _ _).symm.trans <|
       (congrArg (· ≫ _) (shufflePair_comm₁₂ X Y A B R S)).trans <| (Category.assoc _ _ _).trans <|
         (congrArg (_ ≫ ·)
@@ -312,7 +321,8 @@ theorem singularChainComplexπ_tensorHom_singularChainComplexπ_shufflePair :
   -- ambient chains of the pair `(Y, B)`, which agree only up to unfolding `TopPair.ofSubset`.
   exact (congrArg (· ≫ shufflePair X Y A B R S) h).trans ((Category.assoc _ _ _).trans
     ((congrArg (_ ≫ ·) (id_tensorHom_singularChainComplexπ_shufflePair X Y A B R S)).trans
-      (shuffleRel_preimageFstToPreimageUnion X Y A B R S)))
+      (singularChainComplexπ_tensorHom_id_shuffleRel_singularChainComplexMap_of_fst_eq_id X Y A R S
+        (TopPair.preimageFstToPreimageUnion A B) (TopPair.ofSubsetMap_fst _ _))))
 
 end Construction
 
@@ -379,9 +389,8 @@ private theorem shufflePair_comm₂₃ :
         (TauCeti.TopTriple.totalToOuter.app (TopPair.prodUnionTripleFst A B)) (R ⊗ S) :=
   (id_tensorHom_singularChainComplexπ_shufflePair X Y A B R S).trans
     ((congrArg (shuffleRel X Y A R S ≫ ·)
-      ((congrArg (TopPair.singularChainComplexMap · (R ⊗ S))
-        (prodUnionTripleFstTotalPairIso_hom_comp_totalToOuter X Y A B).symm).trans
-          (TopPair.singularChainComplexMap_comp _ _ _))).trans (Category.assoc _ _ _).symm)
+      (singularChainComplexMap_preimageFstToPreimageUnion X Y A B (R ⊗ S))).trans
+        (Category.assoc _ _ _).symm)
 
 /-- The morphism from the sequence `C(X, A) ⊗ (C(B) ⟶ C(Y) ⟶ C(Y, B))` to the singular chain
 sequence of the triple `(X × Y, A × Y ∪ X × B, A × Y)` given by the relative shuffle maps and the
