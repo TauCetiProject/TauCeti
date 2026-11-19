@@ -186,13 +186,11 @@ theorem homologyEulerChar_twistedCellularChainComplex [RelCWComplex.Finite C]
     FiniteDimensional.eventually_isEmpty_cell.mono fun n hn ↦
       have : IsEmpty (cell C n) := hn
       isZero_twistedCellularChainComplex_X C L n
-  rw [← ChainComplex.eulerChar_eq_homologyEulerChar _ hzero, HomologicalComplex.eulerChar,
-    GradedObject.eulerChar, cwEulerChar_def, mul_finsum]
+  rw [← ChainComplex.eulerChar_eq_homologyEulerChar _ hzero,
+    ChainComplex.eulerChar_eq_finsum_finrank, cwEulerChar_def, mul_finsum]
   refine finsum_congr fun i ↦ ?_
   have := FiniteType.finite_cell (C := C) (D := D) i
   rw [twistedCellularChainComplex_X, finrank_twistedCellularChainGroup C L hL]
-  simp only [ComplexShape.eulerCharSignsDownNat_χ, Units.val_pow_eq_pow_val, Units.val_neg,
-    Units.val_one]
   push_cast
   ring
 
@@ -205,9 +203,8 @@ theorem finsum_finrank_twistedHomology_complexBasePair [RelCWComplex.Finite C]
     ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank k ((complexBasePair C).twistedHomology L i) =
       r * cwEulerChar C := by
   simp_rw [← (twistedCellularSingularHomologyIso C L _).toLinearEquiv.finrank_eq]
-  simpa only [HomologicalComplex.homologyEulerChar, GradedObject.eulerChar,
-    ComplexShape.eulerCharSignsDownNat_χ, Units.val_pow_eq_pow_val, Units.val_neg,
-    Units.val_one] using homologyEulerChar_twistedCellularChainComplex C L hL
+  rw [← ChainComplex.homologyEulerChar_eq_finsum_finrank]
+  exact homologyEulerChar_twistedCellularChainComplex C L hL
 
 end DivisionRing
 

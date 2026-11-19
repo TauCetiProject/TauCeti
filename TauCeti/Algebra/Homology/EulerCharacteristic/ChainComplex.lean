@@ -39,6 +39,10 @@ complexes indexed by `ℤ` with terms in `FGModuleCat k` is
 `ModuleCat k` with the homological indexing by `ℕ`, and finite-dimensionality of its terms is a
 hypothesis.
 
+Over any ring, both Euler characteristics of a complex indexed by `ℕ` unfold to the alternating
+sums `∑ᶠ i, (-1)ⁱ · finrank` (`ChainComplex.eulerChar_eq_finsum_finrank` and
+`ChainComplex.homologyEulerChar_eq_finsum_finrank`).
+
 The telescoping rests on the description of the homology of one short complex `X₁ ⟶ X₂ ⟶ X₃` of
 modules as the kernel of the second map modulo the range of the first: over a division ring its
 dimension is `dim ker g - dim im f`
@@ -58,6 +62,26 @@ open CategoryTheory Limits Module
 universe u v
 
 namespace ChainComplex
+
+section Ring
+
+variable {R : Type u} [Ring R] (K : ChainComplex (ModuleCat.{v} R) ℕ)
+
+/-- For a chain complex indexed by `ℕ`, Mathlib's Euler characteristic of the terms is the
+alternating sum `∑ᶠ i, (-1)ⁱ · finrank R (Kᵢ)`. -/
+theorem eulerChar_eq_finsum_finrank :
+    K.eulerChar = ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank R (K.X i) := by
+  simp only [HomologicalComplex.eulerChar, GradedObject.eulerChar,
+    ComplexShape.eulerCharSignsDownNat_χ, Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one]
+
+/-- For a chain complex indexed by `ℕ`, Mathlib's Euler characteristic of the homology is the
+alternating sum `∑ᶠ i, (-1)ⁱ · finrank R (Hᵢ(K))`. -/
+theorem homologyEulerChar_eq_finsum_finrank :
+    K.homologyEulerChar = ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank R (K.homology i) := by
+  simp only [HomologicalComplex.homologyEulerChar, GradedObject.eulerChar,
+    ComplexShape.eulerCharSignsDownNat_χ, Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one]
+
+end Ring
 
 variable {k : Type u} [DivisionRing k] (K : ChainComplex (ModuleCat.{v} k) ℕ)
 
