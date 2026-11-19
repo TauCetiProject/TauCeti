@@ -60,14 +60,6 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {p : ℝ≥0} [Fact (1 ≤ (p : ℝ≥0∞))]
 
-private theorem W1p.norm_morreyRepresentative_le_embedding
-    (hp : (finrank ℝ E : ℝ≥0) < p) (u : W1p mu ⊤ (p : ℝ≥0∞)) (x : E) :
-    ‖W1p.morreyRepresentative u hp x‖ ≤ ‖W1p.morreyEmbedding hp u‖ := by
-  rw [← W1p.morreyEmbedding_apply_apply, ← HolderSpace.toBoundedContinuousFunction_apply]
-  exact (BoundedContinuousFunction.norm_coe_le_norm
-    (W1p.morreyEmbedding hp u).toBoundedContinuousFunction x).trans
-      (HolderSpace.norm_toBoundedContinuousFunction_le (W1p.morreyEmbedding hp u))
-
 private theorem W1p.enorm_morreyRepresentative_le_embedding
     (hp : (finrank ℝ E : ℝ≥0) < p) (u : W1p mu ⊤ (p : ℝ≥0∞)) (x : E) :
     ‖W1p.morreyRepresentative u hp x‖ₑ ≤ ‖W1p.morreyEmbedding hp u‖ₑ := by
@@ -88,15 +80,6 @@ private theorem W1p.enorm_morreyRepresentative_sub_le_embedding_sub
     _ ≤ ‖W1p.morreyEmbedding hp (u - v)‖ₑ :=
       W1p.enorm_morreyRepresentative_le_embedding hp (u - v) x
     _ = ‖W1p.morreyEmbedding hp u - W1p.morreyEmbedding hp v‖ₑ := by rw [map_sub]
-
-private theorem W1p.memLp_top_morreyRepresentative (hp : (finrank ℝ E : ℝ≥0) < p)
-    (u : W1p mu ⊤ (p : ℝ≥0∞)) :
-    MemLp (W1p.morreyRepresentative u hp) ∞ (mu.restrict (⊤ : Opens E)) := by
-  refine ((W1p.morreyEmbedding hp u).toBoundedContinuousFunction.memLp_top
-    (μ := mu.restrict (⊤ : Opens E))).ae_eq ?_
-  filter_upwards with x
-  rw [HolderSpace.toBoundedContinuousFunction_apply,
-    W1p.morreyEmbedding_apply_apply]
 
 private theorem W1p.memLp_mul_morreyRepresentative (hp : (finrank ℝ E : ℝ≥0) < p)
     (u v : W1p mu ⊤ (p : ℝ≥0∞)) :
