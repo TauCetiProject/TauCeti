@@ -300,23 +300,14 @@ theorem sum_Ico_littlewoodPaley_mul_littlewoodPaley {L : ℕ}
     (j : ℤ) (ξ : E) :
     (∑ k ∈ Finset.Ico (j + 1 - L) (j + L), φ.littlewoodPaley k ξ) * φ.littlewoodPaley j ξ =
       φ.littlewoodPaley j ξ := by
-  rcases eq_or_ne ξ 0 with rfl | hξ
-  · rw [φ.littlewoodPaley_eq_zero_of_norm_le
-      (by rw [norm_zero]; exact (mul_pos (zpow_pos two_pos _) φ.rIn_pos).le), mul_zero]
-  -- Multiply the partition of unity `∑ₖ ψₖ ξ = 1` by `ψⱼ ξ`: the terms with `k` at distance at
-  -- least `L` from `j` vanish.
-  have hsum := (φ.hasSum_littlewoodPaley hξ).mul_right (φ.littlewoodPaley j ξ)
-  rw [one_mul] at hsum
-  have hzero : ∀ k ∉ Finset.Ico (j + 1 - L) (j + L),
-      φ.littlewoodPaley k ξ * φ.littlewoodPaley j ξ = 0 := by
-    intro k hk
-    rw [Finset.mem_Ico, not_and_or, not_le, not_lt] at hk
-    rcases hk with hk | hk
-    · exact hL k j (by omega) ξ
-    · rw [mul_comm]
-      exact hL j k hk ξ
-  rw [Finset.sum_mul]
-  exact (hasSum_sum_of_ne_finset_zero hzero).unique hsum
+  refine sum_mul_eq_right_of_mul_eq_zero (e := id) hL (fun h ↦ φ.hasSum_littlewoodPaley ?_)
+    fun k hk ↦ ?_
+  · rintro rfl
+    exact h (φ.littlewoodPaley_eq_zero_of_norm_le
+      (by rw [norm_zero]; exact (mul_pos (zpow_pos two_pos _) φ.rIn_pos).le))
+  · rw [id, id, abs_sub_lt_iff] at hk
+    rw [Finset.mem_Ico]
+    omega
 
 /-! ### The inhomogeneous partition -/
 
@@ -534,21 +525,12 @@ theorem enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley {L : ℕ}
     (j : ℕ) (ξ : E) :
     φ.enlargedLittlewoodPaley L j ξ * φ.inhomogeneousLittlewoodPaley j ξ =
       φ.inhomogeneousLittlewoodPaley j ξ := by
-  -- Multiply the partition of unity `∑ₖ ψₖ ξ = 1` by `ψⱼ ξ`: the terms with `k` at distance at
-  -- least `L` from `j` vanish.
-  have hsum := (φ.hasSum_inhomogeneousLittlewoodPaley ξ).mul_right
-    (φ.inhomogeneousLittlewoodPaley j ξ)
-  rw [one_mul] at hsum
-  have hzero : ∀ k ∉ Finset.Ico (j + 1 - L) (j + L),
-      φ.inhomogeneousLittlewoodPaley k ξ * φ.inhomogeneousLittlewoodPaley j ξ = 0 := by
-    intro k hk
-    rw [Finset.mem_Ico, not_and_or, not_le, not_lt] at hk
-    rcases hk with hk | hk
-    · exact hL k j (by omega) ξ
-    · rw [mul_comm]
-      exact hL j k hk ξ
-  rw [enlargedLittlewoodPaley_apply, Finset.sum_mul]
-  exact (hasSum_sum_of_ne_finset_zero hzero).unique hsum
+  rw [enlargedLittlewoodPaley_apply]
+  refine sum_mul_eq_right_of_mul_eq_zero (e := Nat.cast) (fun j k h ↦ hL j k (by exact_mod_cast h))
+    (fun _ ↦ φ.hasSum_inhomogeneousLittlewoodPaley ξ) fun k hk ↦ ?_
+  rw [abs_sub_lt_iff] at hk
+  rw [Finset.mem_Ico]
+  omega
 
 /-- Each enlarged cutoff is smooth. -/
 @[fun_prop]

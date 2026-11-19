@@ -7,9 +7,12 @@ module
 
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Basic.Real.Basic
+public import Mathlib.Topology.Algebra.InfiniteSum.Defs
+public import Mathlib.Topology.Algebra.Ring.Real
 import Mathlib.Data.Finset.Max
 import Mathlib.Data.Int.Interval
 import Mathlib.Order.Interval.Finset.Nat
+import Mathlib.Topology.Algebra.InfiniteSum.Ring
 
 /-!
 # Bounded overlap of families labelled by integers
@@ -22,7 +25,9 @@ of the banded Cauchy–Schwarz inequality `ENNReal.tsum_sum_mul_le_of_card_le`.
 
 Similarly, if the members of a family of real functions whose labels are at least `L` apart have
 disjoint supports, then at most `L` members are nonzero at each point, so that the sum of squares
-of the family is at most `L` when its values lie in `[-1, 1]`.
+of the family is at most `L` when its values lie in `[-1, 1]`; and if the family is moreover a
+partition of unity, then the members whose labels lie within `L` of that of `i` sum to `1` on the
+support of the `i`-th member.
 
 ## Main results
 
@@ -34,6 +39,8 @@ of the family is at most `L` when its values lie in `[-1, 1]`.
   `L`-separated disjoint supports are nonzero at each point.
 * `TauCeti.sum_sq_le_of_mul_eq_zero`: the sum of squares of such a family with values in
   `[-1, 1]` is at most `L`.
+* `TauCeti.sum_mul_eq_right_of_mul_eq_zero`: for such a family summing to `1`, the members with
+  labels within `L` of that of `i` sum to `1` on the support of the `i`-th member.
 -/
 
 public section
@@ -92,5 +99,26 @@ theorem sum_sq_le_of_mul_eq_zero {ψ : ι → α → ℝ} {e : ι → ℤ} (he :
       ≤ ∑ _i ∈ s.filter (fun i ↦ ψ i ξ ≠ 0), (1 : ℝ) :=
         Finset.sum_le_sum fun i _ ↦ (sq_le_one_iff_abs_le_one _).2 (habs i ξ)
     _ ≤ L := by simpa using card_filter_ne_zero_le_of_mul_eq_zero he hL s ξ
+
+/-- **Neighbouring members of a partition of unity.** Let the members of `ψ : ι → α → ℝ` whose
+labels under `e : ι → ℤ` are at least `L` apart have disjoint supports, and let `∑ₖ ψ k ξ = 1` if
+`ψ i ξ ≠ 0`. Then `(∑_{k ∈ W} ψ k ξ) ψ i ξ = ψ i ξ` for every finite set `W` containing the indices
+whose labels lie within `L` of that of `i`. -/
+theorem sum_mul_eq_right_of_mul_eq_zero {ψ : ι → α → ℝ} {e : ι → ℤ} {L : ℕ}
+    (hL : ∀ i k, e i + L ≤ e k → ∀ ξ, ψ i ξ * ψ k ξ = 0) {i : ι} {ξ : α}
+    (hsum : ψ i ξ ≠ 0 → HasSum (ψ · ξ) 1) {W : Finset ι} (hW : ∀ k, |e k - e i| < L → k ∈ W) :
+    (∑ k ∈ W, ψ k ξ) * ψ i ξ = ψ i ξ := by
+  rcases eq_or_ne (ψ i ξ) 0 with h | h
+  · rw [h, mul_zero]
+  -- Multiply `∑ₖ ψ k ξ = 1` by `ψ i ξ`: the terms with `k ∉ W` vanish.
+  have hzero : ∀ k ∉ W, ψ k ξ * ψ i ξ = 0 := fun k hk ↦ by
+    have hk := mt (hW k) hk
+    rw [abs_sub_lt_iff, not_and_or, not_lt, not_lt] at hk
+    rcases hk with hk | hk
+    · rw [mul_comm]
+      exact hL i k (by omega) ξ
+    · exact hL k i (by omega) ξ
+  rw [Finset.sum_mul]
+  exact (hasSum_sum_of_ne_finset_zero hzero).unique (by simpa using (hsum h).mul_right (ψ i ξ))
 
 end TauCeti

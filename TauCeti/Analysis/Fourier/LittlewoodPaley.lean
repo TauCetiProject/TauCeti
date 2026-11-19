@@ -147,6 +147,29 @@ private structure IsDyadic (ψ : ι → V → ℝ) (σ : ι → 𝓢(V, ℂ)) (e
 
 variable {ψ : ι → V → ℝ} {σ : ι → 𝓢(V, ℂ)} {e : ι → ℤ}
 
+omit [FiniteDimensional ℝ V] in
+/-- A family of symbols supported in the balls of radius `2 ^ a i * R` for an injective
+`a : ι → ℤ`, with derivatives of order `k` bounded by `B_k / (2 ^ a i) ^ k` uniformly in `i` and
+with bounded sums of squares, is a dyadic family: rescaling `a` by a power of `2` above `R` absorbs
+the radius. -/
+private theorem IsDyadic.of_scale {a : ι → ℤ} (ha : Function.Injective a)
+    (hσ : ∀ i ξ, σ i ξ = ψ i ξ) (hψ : ∀ i, ContDiff ℝ ∞ (ψ i)) {R : ℝ}
+    (hR : ∀ i ξ, ψ i ξ ≠ 0 → ‖ξ‖ < 2 ^ a i * R)
+    (hderiv : ∀ k : ℕ, ∃ B, 0 ≤ B ∧ ∀ i ξ, ‖iteratedFDeriv ℝ k (ψ i) ξ‖ ≤ B / (2 ^ a i) ^ k)
+    (hsum : ∃ L : ℕ, ∀ (s : Finset ι) (ξ : V), ∑ i ∈ s, ψ i ξ ^ 2 ≤ L) :
+    ∃ e : ι → ℤ, IsDyadic ψ σ e := by
+  obtain ⟨m, hm⟩ := pow_unbounded_of_one_lt R (one_lt_two (α := ℝ))
+  refine ⟨fun i ↦ a i + m, ⟨hσ, hψ, fun i j hij ↦ ha (by simpa using hij), fun i ξ hξ ↦ ?_,
+    fun k ↦ ?_, ?_⟩⟩
+  · rw [zpow_add₀ two_ne_zero, zpow_natCast]
+    exact (hR i ξ hξ).le.trans (mul_le_mul_of_nonneg_left hm.le (by positivity))
+  · obtain ⟨B, hB0, hB⟩ := hderiv k
+    refine ⟨B * (2 ^ m) ^ k, by positivity, fun i ξ ↦ (hB i ξ).trans_eq ?_⟩
+    rw [zpow_add₀ two_ne_zero, zpow_natCast, mul_pow]
+    field_simp
+  · obtain ⟨L, hL⟩ := hsum
+    exact ⟨L, Nat.cast_nonneg L, hL⟩
+
 variable (V ι) in
 /-- Schwartz functions with values in `ℓ²(ι, ℂ)`, with the real structure induced by the complex
 one, which is the structure the Fourier transform on Schwartz space is stated for. -/
@@ -671,20 +694,12 @@ namespace LittlewoodPaleySquare
 private theorem isDyadic_inhomogeneousLittlewoodPaley (φ : ContDiffBump (0 : V)) :
     ∃ e : ℕ → ℤ, IsDyadic φ.inhomogeneousLittlewoodPaley φ.inhomogeneousLittlewoodPaleySchwartz e
       := by
-  obtain ⟨m, hm⟩ := pow_unbounded_of_one_lt φ.rOut (one_lt_two (α := ℝ))
-  refine ⟨fun j ↦ j + m, ⟨φ.inhomogeneousLittlewoodPaleySchwartz_apply,
-    fun j ↦ φ.contDiff_inhomogeneousLittlewoodPaley j,
-    fun a b hab ↦ by simpa using hab, fun j ξ hξ ↦ ?_, fun k ↦ ?_, ?_⟩⟩
-  · have hlt : ‖ξ‖ < 2 ^ j * φ.rOut :=
-      lt_of_not_ge fun hle ↦ hξ (φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm hle)
-    rw [zpow_add₀ two_ne_zero, zpow_natCast, zpow_natCast]
-    exact hlt.le.trans (mul_le_mul_of_nonneg_left hm.le (by positivity))
-  · obtain ⟨B, hB0, hB⟩ := φ.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_le k
-    refine ⟨B * (2 ^ m) ^ k, by positivity, fun j ξ ↦ (hB j ξ).trans_eq ?_⟩
-    rw [zpow_add₀ two_ne_zero, zpow_natCast, zpow_natCast, mul_pow]
-    field_simp
-  · obtain ⟨L, hL⟩ := φ.exists_sum_sq_inhomogeneousLittlewoodPaley_le
-    exact ⟨L, Nat.cast_nonneg L, hL⟩
+  refine IsDyadic.of_scale Nat.cast_injective φ.inhomogeneousLittlewoodPaleySchwartz_apply
+    (fun j ↦ φ.contDiff_inhomogeneousLittlewoodPaley j) (R := φ.rOut) (fun j ξ hξ ↦ ?_)
+    (fun k ↦ ?_) φ.exists_sum_sq_inhomogeneousLittlewoodPaley_le
+  · rw [zpow_natCast]
+    exact lt_of_not_ge fun hle ↦ hξ (φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm hle)
+  · simpa only [zpow_natCast] using φ.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_le k
 
 end LittlewoodPaleySquare
 
@@ -834,20 +849,11 @@ namespace LittlewoodPaleySquare
 
 /-- The homogeneous Littlewood–Paley cutoffs form a dyadic family. -/
 private theorem isDyadic_littlewoodPaley (φ : ContDiffBump (0 : V)) :
-    ∃ e : ℤ → ℤ, IsDyadic φ.littlewoodPaley φ.littlewoodPaleySchwartz e := by
-  obtain ⟨m, hm⟩ := pow_unbounded_of_one_lt φ.rOut (one_lt_two (α := ℝ))
-  refine ⟨fun j ↦ j + m, ⟨φ.littlewoodPaleySchwartz_apply, fun j ↦ φ.contDiff_littlewoodPaley j,
-    fun a b hab ↦ by simpa using hab, fun j ξ hξ ↦ ?_, fun k ↦ ?_, ?_⟩⟩
-  · have hlt : ‖ξ‖ < 2 ^ j * φ.rOut :=
-      lt_of_not_ge fun hle ↦ hξ (φ.littlewoodPaley_eq_zero_of_le_norm hle)
-    rw [zpow_add₀ two_ne_zero, zpow_natCast]
-    exact hlt.le.trans (mul_le_mul_of_nonneg_left hm.le (by positivity))
-  · obtain ⟨B, hB0, hB⟩ := φ.exists_norm_iteratedFDeriv_littlewoodPaley_le k
-    refine ⟨B * (2 ^ m) ^ k, by positivity, fun j ξ ↦ (hB j ξ).trans_eq ?_⟩
-    rw [zpow_add₀ two_ne_zero, zpow_natCast, mul_pow]
-    field_simp
-  · obtain ⟨L, hL⟩ := φ.exists_sum_sq_littlewoodPaley_le
-    exact ⟨L, Nat.cast_nonneg L, hL⟩
+    ∃ e : ℤ → ℤ, IsDyadic φ.littlewoodPaley φ.littlewoodPaleySchwartz e :=
+  IsDyadic.of_scale Function.injective_id φ.littlewoodPaleySchwartz_apply
+    (fun j ↦ φ.contDiff_littlewoodPaley j) (R := φ.rOut)
+    (fun _ _ hξ ↦ lt_of_not_ge fun hle ↦ hξ (φ.littlewoodPaley_eq_zero_of_le_norm hle))
+    φ.exists_norm_iteratedFDeriv_littlewoodPaley_le φ.exists_sum_sq_littlewoodPaley_le
 
 end LittlewoodPaleySquare
 
