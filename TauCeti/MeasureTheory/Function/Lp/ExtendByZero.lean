@@ -42,6 +42,8 @@ against `μ`, hence against every restriction of `μ`.
   and through pointwise postcomposition by a map fixing `0`.
 * `TauCeti.setIntegral_extendByZeroLpₗᵢ`: integrating against the extension over `t` is
   integrating against the original function over `s`.
+* `MeasureTheory.MemLp.of_restrict_of_support_subset`: the unbundled form for the whole space, a
+  function supported in `s` and in `Lᵖ(s)` is in `Lᵖ`.
 -/
 
 public section
@@ -191,5 +193,14 @@ theorem setIntegral_extendByZeroLpₗᵢ {E : Type*} [NormedAddCommGroup E] [Nor
     _ = ∫ x in s, L x (f x) ∂μ := by
         rw [integral_indicator₀ (hs.mono Measure.restrict_le_self),
           Measure.restrict_restrict_of_subset hst]
+
+omit 𝕜 in
+/-- A function supported in a null-measurable set `s` and in `Lᵖ(s)` is in `Lᵖ` of the whole
+space: its extension by zero is itself. -/
+theorem _root_.MeasureTheory.MemLp.of_restrict_of_support_subset {f : α → F}
+    (hs : NullMeasurableSet s μ) (hf : MemLp f p (μ.restrict s)) (hfs : Function.support f ⊆ s) :
+    MemLp f p μ := by
+  rw [← indicator_eq_self.2 hfs, memLp_indicator_iff_restrict hs]
+  exact hf
 
 end TauCeti
