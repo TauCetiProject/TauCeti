@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Fin
 public import TauCeti.Algebra.Homology.DG.Twisted.Complex
 public import TauCeti.RingTheory.GradedAlgebra.Trivial
 
@@ -132,22 +133,13 @@ end Snd
 
 section Upper
 
-/-- The coordinatewise left action of `ℚ × ℚ` on `ℚ²`: `(a, b) • (u, v) = (a u, b v)`. -/
-local instance instSMulDiag : SMul (ℚ × ℚ) (Fin 2 → ℚ) :=
-  ⟨fun a v ↦ ![a.1 * v 0, a.2 * v 1]⟩
-
-private theorem smul_diag (a : ℚ × ℚ) (v : Fin 2 → ℚ) : a • v = ![a.1 * v 0, a.2 * v 1] :=
-  rfl
-
-/-- `ℚ²` as a left `ℚ × ℚ`-module, coordinatewise. -/
+/-- `ℚ²` as a left `ℚ × ℚ`-module, coordinatewise: `(a, b) • (u, v) = (a u, b v)`. -/
 local instance instModuleDiag : Module (ℚ × ℚ) (Fin 2 → ℚ) :=
-  { instSMulDiag with
-    one_smul v := by ext i; fin_cases i <;> simp [smul_diag]
-    mul_smul a b v := by ext i; fin_cases i <;> simp [smul_diag, mul_assoc]
-    smul_zero a := by ext i; fin_cases i <;> simp [smul_diag]
-    smul_add a v w := by ext i; fin_cases i <;> simp [smul_diag, mul_add]
-    add_smul a b v := by ext i; fin_cases i <;> simp [smul_diag, add_mul]
-    zero_smul v := by ext i; fin_cases i <;> simp [smul_diag] }
+  Module.compHom (Fin 2 → ℚ) (RingEquiv.piFinTwo fun _ ↦ ℚ).symm.toRingHom
+
+private theorem smul_diag (a : ℚ × ℚ) (v : Fin 2 → ℚ) : a • v = ![a.1 * v 0, a.2 * v 1] := by
+  ext i
+  fin_cases i <;> rfl
 
 /-- The right action of `ℚ × ℚ` on `ℚ²` through upper triangular matrices:
 `(u, v) · (a, b) = (a u + (b - a) v, b v)`. -/
