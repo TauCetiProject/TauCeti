@@ -46,6 +46,9 @@ Topology*, Appendix A. The local chart is Mathlib's
   obtained by fixing the essential coordinate.
 * `ContinuousLinearMap.FredholmPackage.apply_normalFormOpenPartialHomeomorph_symm`:
   reconstruction of the original map from its essential coordinate and obstruction map.
+* `ContinuousLinearMap.FredholmPackage.apply_normalFormOpenPartialHomeomorph_symm_eq_iff`: the
+  solutions of `f x = v` in the chart are the zeros of the obstruction over the essential part of
+  `v`; this is the Lyapunov--Schmidt reduction.
 * `ContinuousLinearMap.FredholmPackage.hasStrictFDerivAt_obstructionMap_self`: the obstruction has
   zero derivative at the base point.
 * `ContinuousLinearMap.FredholmPackage.hasStrictFDerivAt_obstructionSlice_self`: the same for the
@@ -213,6 +216,14 @@ theorem normalFormOpenPartialHomeomorph_symm_self {f : E → F} {a : E}
   exact (pkg.normalFormOpenPartialHomeomorph hf).left_inv
     (pkg.mem_normalFormOpenPartialHomeomorph_source hf)
 
+/-- `normalFormOpenPartialHomeomorph_symm_self` with the essential coordinate written as
+`pkg.decCodom.proj (f a)`, the form in which the base coordinate appears in the rest of the
+normal-form API. -/
+theorem normalFormOpenPartialHomeomorph_symm_proj_self {f : E → F} {a : E}
+    (hf : HasStrictFDerivAt f T a) :
+    (pkg.normalFormOpenPartialHomeomorph hf).symm (pkg.decCodom.proj (f a), 0) = a := by
+  simpa only [Submodule.coe_projectionOntoL] using pkg.normalFormOpenPartialHomeomorph_symm_self hf
+
 /-! ### The finite-dimensional obstruction map -/
 
 /-- The inessential-codomain component of `f` in Fredholm normal-form coordinates. Its codomain is
@@ -295,6 +306,24 @@ theorem apply_normalFormOpenPartialHomeomorph_symm {f : E → F} {a : E}
     (Submodule.projectionL_add_projectionL_eq_self pkg.decCodom.isTopCompl
       (f ((pkg.normalFormOpenPartialHomeomorph hf).symm y))).symm
 
+/-- **Zeros in normal-form coordinates.** On the target of the normal-form chart, `f` takes the
+value `v` exactly when the essential coordinate is the essential part of `v` and the obstruction
+is the complementary part of `v`. -/
+theorem apply_normalFormOpenPartialHomeomorph_symm_eq_iff {f : E → F} {a : E}
+    (hf : HasStrictFDerivAt f T a) {y : pkg.decCodom.X₁ × pkg.decDom.X₀}
+    (hy : y ∈ (pkg.normalFormOpenPartialHomeomorph hf).target) (v : F) :
+    f ((pkg.normalFormOpenPartialHomeomorph hf).symm y) = v ↔
+      y.1 = pkg.decCodom.proj v ∧
+        pkg.obstructionMap hf y =
+          pkg.decCodom.X₀.projectionOntoL pkg.decCodom.X₁ pkg.decCodom.isTopCompl.symm v := by
+  have hv : ((pkg.decCodom.proj v : pkg.decCodom.X₁) : F) +
+      (pkg.decCodom.X₀.projectionOntoL pkg.decCodom.X₁ pkg.decCodom.isTopCompl.symm v : F) = v := by
+    simpa only [Submodule.coe_projectionOntoL_apply] using
+      Submodule.projectionL_add_projectionL_eq_self pkg.decCodom.isTopCompl v
+  rw [pkg.apply_normalFormOpenPartialHomeomorph_symm hf hy, ← Prod.mk.injEq,
+    ← (Submodule.prodEquivOfIsCompl _ _ pkg.decCodom.isTopCompl.isCompl).injective.eq_iff,
+    Submodule.coe_prodEquivOfIsCompl', Submodule.coe_prodEquivOfIsCompl', hv]
+
 /-- The inverse normal-form coordinates have derivative inverse to the linear normal-form
 equivalence at the coordinate of the base point. -/
 theorem hasStrictFDerivAt_normalFormOpenPartialHomeomorph_symm_self {f : E → F} {a : E}
@@ -319,8 +348,7 @@ theorem hasStrictFDerivAt_obstructionMap_self {f : E → F} {a : E}
   have hinv := pkg.hasStrictFDerivAt_normalFormOpenPartialHomeomorph_symm_self hf
   have hf' : HasStrictFDerivAt f T
       ((pkg.normalFormOpenPartialHomeomorph hf).symm (pkg.decCodom.proj (f a), 0)) := by
-    simpa only [Submodule.coe_projectionOntoL,
-      pkg.normalFormOpenPartialHomeomorph_symm_self hf] using hf
+    rwa [pkg.normalFormOpenPartialHomeomorph_symm_proj_self hf]
   have hcomp : HasStrictFDerivAt
       (fun y ↦ P (f ((pkg.normalFormOpenPartialHomeomorph hf).symm y)))
       (P.comp (T.comp (pkg.normalFormEquivL.symm :
@@ -365,10 +393,7 @@ theorem contDiffAt_normalFormOpenPartialHomeomorph_symm_self {f : E → F} {a : 
     (hfd : HasStrictFDerivAt f T a) (hf : ContDiffAt 𝕜 n f a) :
     ContDiffAt 𝕜 n (pkg.normalFormOpenPartialHomeomorph hfd).symm
       (pkg.decCodom.proj (f a), 0) := by
-  have hpt : (pkg.normalFormOpenPartialHomeomorph hfd).symm
-      (pkg.decCodom.proj (f a), 0) = a := by
-    simpa only [Submodule.coe_projectionOntoL] using
-      pkg.normalFormOpenPartialHomeomorph_symm_self hfd
+  have hpt := pkg.normalFormOpenPartialHomeomorph_symm_proj_self hfd
   apply (pkg.normalFormOpenPartialHomeomorph hfd).contDiffAt_symm
     (f₀' := pkg.normalFormEquivL)
     (pkg.normalFormOpenPartialHomeomorph_self_mem_target hfd)
@@ -386,8 +411,7 @@ theorem contDiffAt_obstructionMap_self {f : E → F} {a : E} {n : ℕ∞ω}
   have hinv := pkg.contDiffAt_normalFormOpenPartialHomeomorph_symm_self hfd hf
   have hf' : ContDiffAt 𝕜 n f
       ((pkg.normalFormOpenPartialHomeomorph hfd).symm (pkg.decCodom.proj (f a), 0)) := by
-    simpa only [Submodule.coe_projectionOntoL,
-      pkg.normalFormOpenPartialHomeomorph_symm_self hfd] using hf
+    rwa [pkg.normalFormOpenPartialHomeomorph_symm_proj_self hfd]
   rw [funext (pkg.obstructionMap_apply hfd)]
   exact P.contDiff.contDiffAt.comp _ (hf'.comp _ hinv)
 

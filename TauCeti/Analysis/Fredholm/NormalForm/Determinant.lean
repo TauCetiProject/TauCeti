@@ -53,8 +53,10 @@ sign times the signed count of the zeros of the slice, for every `v`
 In Taubes's construction of the weighted count of pseudoholomorphic curves, the deformation
 problem near a degenerate curve is reduced in this way to a finite-dimensional obstruction map
 between the kernel and the cokernel of the linearized operator. Births and deaths of curves, and
-the local degrees of covered tori, are then read off the obstruction map, with orientations
-transported by this correspondence. The fold and pitchfork models of
+the local degrees of covered tori, are then read off the obstruction map. There the problem is
+infinite-dimensional, and orientations are transported by the analogous correspondence with
+Jacobian signs replaced by orientations of the Fredholm determinant line; this file proves only
+the finite-dimensional case. The fold and pitchfork models of
 `TauCeti.Analysis.Calculus.Bifurcation` describe the one-dimensional obstruction maps that arise.
 
 ## Main definitions
@@ -66,9 +68,6 @@ transported by this correspondence. The fold and pitchfork models of
 
 ## Main results
 
-* `ContinuousLinearMap.FredholmPackage.apply_normalFormOpenPartialHomeomorph_symm_eq_iff`: the
-  solutions of `f x = v` in the chart are the zeros of the obstruction over the essential part of
-  `v`.
 * `ContinuousLinearMap.FredholmPackage.det_fderiv_mul_det_eq`: the Jacobian identity above.
 * `ContinuousLinearMap.FredholmPackage.eventually_sign_det_fderiv_eq`: near the base point, the
   Jacobian sign of `f` is the reduction sign times that of the obstruction slice.
@@ -92,30 +91,38 @@ open scoped Topology
 
 namespace ContinuousLinearMap.FredholmPackage
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {T : E →L[ℝ] E} (pkg : T.FredholmPackage)
+section CodomainEquiv
 
-/-- The identification of the codomain `E = Y₁ ⊕ Y₀` of a Fredholm package with the normal-form
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {T : E →L[𝕜] F} (pkg : T.FredholmPackage)
+
+/-- The identification of the codomain `F = Y₁ ⊕ Y₀` of a Fredholm package with the normal-form
 coordinate space `Y₁ × X₀`, using a chosen linear equivalence `ι : Y₀ ≃ X₀` from the
 complement of the range to the complement of the essential domain summand. Here `Y₁` is the
 range of `T`, so `Y₀` is a cokernel and `X₀` the kernel. -/
-def codomainEquiv (ι : pkg.decCodom.X₀ ≃ₗ[ℝ] pkg.decDom.X₀) :
-    E ≃ₗ[ℝ] pkg.decCodom.X₁ × pkg.decDom.X₀ :=
+def codomainEquiv (ι : pkg.decCodom.X₀ ≃ₗ[𝕜] pkg.decDom.X₀) :
+    F ≃ₗ[𝕜] pkg.decCodom.X₁ × pkg.decDom.X₀ :=
   (Submodule.prodEquivOfIsCompl _ _ pkg.decCodom.isTopCompl.isCompl).symm.trans
-    ((LinearEquiv.refl ℝ _).prodCongr ι)
+    ((LinearEquiv.refl 𝕜 _).prodCongr ι)
 
 @[simp]
-theorem codomainEquiv_apply (ι : pkg.decCodom.X₀ ≃ₗ[ℝ] pkg.decDom.X₀) (v : E) :
+theorem codomainEquiv_apply (ι : pkg.decCodom.X₀ ≃ₗ[𝕜] pkg.decDom.X₀) (v : F) :
     pkg.codomainEquiv ι v =
       (pkg.decCodom.proj v,
         ι (pkg.decCodom.X₀.projectionOntoL pkg.decCodom.X₁ pkg.decCodom.isTopCompl.symm v)) := by
   simp [codomainEquiv]
 
 @[simp]
-theorem codomainEquiv_symm_apply (ι : pkg.decCodom.X₀ ≃ₗ[ℝ] pkg.decDom.X₀)
+theorem codomainEquiv_symm_apply (ι : pkg.decCodom.X₀ ≃ₗ[𝕜] pkg.decDom.X₀)
     (w : pkg.decCodom.X₁ × pkg.decDom.X₀) :
-    (pkg.codomainEquiv ι).symm w = (w.1 : E) + (ι.symm w.2 : E) := by
+    (pkg.codomainEquiv ι).symm w = (w.1 : F) + (ι.symm w.2 : F) := by
   simp [codomainEquiv, Submodule.coe_prodEquivOfIsCompl']
+
+end CodomainEquiv
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {T : E →L[ℝ] E} (pkg : T.FredholmPackage)
 
 /-- The **reduction sign** of a Fredholm package with index-zero identification
 `ι : Y₀ ≃ X₀`: the sign of the determinant of `Φ₀⁻¹ ∘ Θ`, where `Φ₀ = pkg.normalFormEquivL` is
@@ -127,37 +134,19 @@ def reductionSign (ι : pkg.decCodom.X₀ ≃ₗ[ℝ] pkg.decDom.X₀) : SignTyp
     ((pkg.normalFormEquivL.symm : (pkg.decCodom.X₁ × pkg.decDom.X₀) →L[ℝ] E).toLinearMap ∘ₗ
       (pkg.codomainEquiv ι).toLinearMap))
 
+theorem reductionSign_def (ι : pkg.decCodom.X₀ ≃ₗ[ℝ] pkg.decDom.X₀) :
+    pkg.reductionSign ι = SignType.sign (LinearMap.det
+      ((pkg.normalFormEquivL.symm : (pkg.decCodom.X₁ × pkg.decDom.X₀) →L[ℝ] E).toLinearMap ∘ₗ
+        (pkg.codomainEquiv ι).toLinearMap)) :=
+  (rfl)
+
 theorem reductionSign_ne_zero (ι : pkg.decCodom.X₀ ≃ₗ[ℝ] pkg.decDom.X₀) :
     pkg.reductionSign ι ≠ 0 := by
-  rw [reductionSign, Ne, sign_eq_zero_iff]
+  rw [reductionSign_def, Ne, sign_eq_zero_iff]
   exact (LinearEquiv.isUnit_det' ((pkg.codomainEquiv ι).trans
     pkg.normalFormEquivL.symm.toLinearEquiv)).ne_zero
 
 variable {f : E → E} {a : E}
-
-section CompleteSpace
-
-variable [CompleteSpace E]
-
-/-- **Zeros in normal-form coordinates.** On the target of the normal-form chart, `f` takes the
-value `v` exactly when the essential coordinate is the essential part of `v` and the obstruction
-is the complementary part of `v`. -/
-theorem apply_normalFormOpenPartialHomeomorph_symm_eq_iff (hT : HasStrictFDerivAt f T a)
-    {y : pkg.decCodom.X₁ × pkg.decDom.X₀}
-    (hy : y ∈ (pkg.normalFormOpenPartialHomeomorph hT).target) (v : E) :
-    f ((pkg.normalFormOpenPartialHomeomorph hT).symm y) = v ↔
-      y.1 = pkg.decCodom.proj v ∧
-        pkg.obstructionMap hT y =
-          pkg.decCodom.X₀.projectionOntoL pkg.decCodom.X₁ pkg.decCodom.isTopCompl.symm v := by
-  have hv : ((pkg.decCodom.proj v : pkg.decCodom.X₁) : E) +
-      (pkg.decCodom.X₀.projectionOntoL pkg.decCodom.X₁ pkg.decCodom.isTopCompl.symm v : E) = v := by
-    simpa only [Submodule.coe_projectionOntoL_apply] using
-      Submodule.projectionL_add_projectionL_eq_self pkg.decCodom.isTopCompl v
-  rw [pkg.apply_normalFormOpenPartialHomeomorph_symm hT hy, ← Prod.mk.injEq,
-    ← (Submodule.prodEquivOfIsCompl _ _ pkg.decCodom.isTopCompl.isCompl).injective.eq_iff,
-    Submodule.coe_prodEquivOfIsCompl', Submodule.coe_prodEquivOfIsCompl', hv]
-
-end CompleteSpace
 
 variable [FiniteDimensional ℝ E]
 
@@ -229,27 +218,29 @@ private theorem eventually_sign_det_fderiv_symm_comp_codomainEquiv (hT : HasStri
   set y₀ : pkg.decCodom.X₁ × pkg.decDom.X₀ := (pkg.decCodom.proj (f a), 0)
   let Θ : E →L[ℝ] pkg.decCodom.X₁ × pkg.decDom.X₀ :=
     LinearMap.toContinuousLinearMap (pkg.codomainEquiv ι).toLinearMap
-  let c : pkg.decCodom.X₁ × pkg.decDom.X₀ → ℝ := fun y ↦ LinearMap.det
-    ((fderiv ℝ (pkg.normalFormOpenPartialHomeomorph hT).symm y).toLinearMap ∘ₗ
-      (pkg.codomainEquiv ι).toLinearMap)
-  -- `ContinuousLinearMap.det` is by definition the determinant of the underlying linear map.
+  let c : pkg.decCodom.X₁ × pkg.decDom.X₀ → ℝ := fun y ↦
+    ((fderiv ℝ (pkg.normalFormOpenPartialHomeomorph hT).symm y).comp Θ).det
   have hc : ContinuousAt c y₀ :=
-    show ContinuousAt
-      (fun y ↦ ((fderiv ℝ (pkg.normalFormOpenPartialHomeomorph hT).symm y).comp Θ).det) y₀ from
-      ContinuousLinearMap.continuous_det.continuousAt.comp
-        (((pkg.contDiffAt_normalFormOpenPartialHomeomorph_symm_self hT hf).continuousAt_fderiv
-          one_ne_zero).clm_comp continuousAt_const)
+    ContinuousLinearMap.continuous_det.continuousAt.comp
+      (((pkg.contDiffAt_normalFormOpenPartialHomeomorph_symm_self hT hf).continuousAt_fderiv
+        one_ne_zero).clm_comp continuousAt_const)
+  have hc_eq : ∀ y, c y = LinearMap.det
+      ((fderiv ℝ (pkg.normalFormOpenPartialHomeomorph hT).symm y).toLinearMap ∘ₗ
+        (pkg.codomainEquiv ι).toLinearMap) := fun y ↦ by
+    simp only [c, ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_comp, Θ,
+      LinearMap.coe_toContinuousLinearMap]
   have hd : fderiv ℝ (pkg.normalFormOpenPartialHomeomorph hT).symm y₀ =
       pkg.normalFormEquivL.symm :=
     (pkg.hasStrictFDerivAt_normalFormOpenPartialHomeomorph_symm_self hT).hasFDerivAt.fderiv
   have hc₀ : SignType.sign (c y₀) = pkg.reductionSign ι := by
-    simp only [c, reductionSign, hd]
+    rw [hc_eq, reductionSign_def, hd]
   have hc₀ne : c y₀ ≠ 0 := by
     rw [← sign_ne_zero, hc₀]
     exact pkg.reductionSign_ne_zero ι
   rw [← hc₀]
-  exact ((continuousAt_sign_of_ne_zero hc₀ne).comp hc).eventually_mem
-    ((isOpen_discrete {SignType.sign (c y₀)}).mem_nhds rfl)
+  filter_upwards [((continuousAt_sign_of_ne_zero hc₀ne).comp hc).eventually_mem
+    ((isOpen_discrete {SignType.sign (c y₀)}).mem_nhds rfl)] with y hy
+  rwa [← hc_eq]
 
 /-- **Signs of the Jacobian under the Lyapunov–Schmidt reduction.** Let `f` be `C¹` at `a`, with
 derivative `T` and a Fredholm package for `T`, and let `ι : Y₀ ≃ X₀` identify the complement of
@@ -269,12 +260,9 @@ theorem eventually_sign_det_fderiv_eq (hT : HasStrictFDerivAt f T a) (hf : ContD
         pkg.reductionSign ι * SignType.sign (LinearMap.det (ι.toLinearMap ∘ₗ
           (fderiv ℝ (pkg.obstructionSlice hT y.1) y.2).toLinearMap)) := by
   set Φ := pkg.normalFormOpenPartialHomeomorph hT with hΦdef
-  set y₀ : pkg.decCodom.X₁ × pkg.decDom.X₀ := (pkg.decCodom.proj (f a), 0) with hy₀def
+  set y₀ : pkg.decCodom.X₁ × pkg.decDom.X₀ := (pkg.decCodom.proj (f a), 0)
   have hy₀ : y₀ ∈ Φ.target := pkg.normalFormOpenPartialHomeomorph_self_mem_target hT
-  have hsymy₀ : Φ.symm y₀ = a := by
-    rw [hy₀def, hΦdef]
-    simpa only [Submodule.coe_projectionOntoL] using
-      pkg.normalFormOpenPartialHomeomorph_symm_self hT
+  have hsymy₀ : Φ.symm y₀ = a := pkg.normalFormOpenPartialHomeomorph_symm_proj_self hT
   have hqC : ContDiffAt ℝ 1 (pkg.obstructionMap hT) y₀ :=
     pkg.contDiffAt_obstructionMap_self hT hf
   have hsymC : ContDiffAt ℝ 1 Φ.symm y₀ :=
@@ -305,8 +293,8 @@ of `a`, such that for every value `v` the signed count of the solutions of `f x 
 is `pkg.reductionSign ι` times the signed count of the zeros of the finite-dimensional equation
 `q (v₁, z) = v₀` in the slice of `V` over the essential part `v₁` of `v`, where `v₀` is the
 complementary part. Solutions are counted by the signs of the Jacobians of `f` and of
-`ι ∘ q (v₁, ·)`; a degenerate solution contributes `0` on both sides, and if there are infinitely
-many solutions both counts are `0`. -/
+`ι ∘ q (v₁, ·)`; a degenerate solution contributes `0` on both sides, and if infinitely many
+solutions are nondegenerate, both counts are `0` (the `finsum` convention). -/
 theorem exists_mem_nhds_finsum_sign_det_eq (hT : HasStrictFDerivAt f T a)
     (hf : ContDiffAt ℝ 1 f a) (ι : pkg.decCodom.X₀ ≃ₗ[ℝ] pkg.decDom.X₀) :
     ∃ V ∈ 𝓝 (pkg.decCodom.proj (f a), (0 : pkg.decDom.X₀)),
@@ -319,9 +307,8 @@ theorem exists_mem_nhds_finsum_sign_det_eq (hT : HasStrictFDerivAt f T a)
             (SignType.sign (LinearMap.det (ι.toLinearMap ∘ₗ
               (fderiv ℝ (pkg.obstructionSlice hT (pkg.decCodom.proj v)) z).toLinearMap)) : ℤ) := by
   set Φ := pkg.normalFormOpenPartialHomeomorph hT
-  have hsymy₀ : Φ.symm (pkg.decCodom.proj (f a), 0) = a := by
-    simpa only [Submodule.coe_projectionOntoL] using
-      pkg.normalFormOpenPartialHomeomorph_symm_self hT
+  have hsymy₀ : Φ.symm (pkg.decCodom.proj (f a), 0) = a :=
+    pkg.normalFormOpenPartialHomeomorph_symm_proj_self hT
   set V := {y | y ∈ Φ.target ∧ DifferentiableAt ℝ (pkg.obstructionSlice hT y.1) y.2 ∧
       SignType.sign (LinearMap.det (fderiv ℝ f (Φ.symm y) : E →ₗ[ℝ] E)) =
         pkg.reductionSign ι * SignType.sign (LinearMap.det (ι.toLinearMap ∘ₗ
