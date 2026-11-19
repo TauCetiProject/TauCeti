@@ -12,8 +12,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 /-!
 # The smooth diagonal embedding
 
-The diagonal of a boundaryless smooth manifold is a smooth embedding, with the first projection
-as a smooth left inverse. Its differential is the pair of the two identity tangent maps.
+The diagonal of a boundaryless smooth manifold is a smooth embedding. Its differential is the
+pair of the two identity tangent maps.
 -/
 
 public noncomputable section
@@ -28,7 +28,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
 
-/-- The smooth diagonal embedding. The first projection is a smooth left inverse. -/
+/-- The smooth diagonal embedding of a boundaryless manifold. -/
 def diagonal : SmoothEmbedding I (I.prod I) ∞ M (M × M) where
   toContMDiffMap := ⟨fun x ↦ (x, x), contMDiff_id.prodMk contMDiff_id⟩
   isSmoothEmbedding_toFun := _root_.ContMDiff.isSmoothEmbedding_graph
