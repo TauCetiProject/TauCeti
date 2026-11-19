@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Bilinear
 public import Mathlib.Analysis.Normed.Module.Multilinear.Curry
 import Mathlib.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 
 /-!
 # The Leibniz rule on jets of multilinear maps
@@ -345,8 +344,8 @@ theorem iteratedFDeriv_bilinear_eq_leibnizJet {n : WithTop ℕ∞} {f : E → F}
     have hD := hasFDerivAt_leibnizJet B (n := m) (x := x)
       (f := fun y (i : Fin (m + 2)) ↦ iteratedFDeriv 𝕜 i f y)
       (g := fun y (i : Fin (m + 2)) ↦ iteratedFDeriv 𝕜 i g y)
-      (fun i ↦ hf.hasFDerivAt_iteratedFDeriv (hi i) x)
-      (fun i ↦ hg.hasFDerivAt_iteratedFDeriv (hi i) x)
+      (fun i ↦ hf.ftaylorSeries.fderiv i (hi i) x)
+      (fun i ↦ hg.ftaylorSeries.fderiv i (hi i) x)
     have hfun : iteratedFDeriv 𝕜 m (fun y ↦ B (f y) (g y)) = fun y ↦
         leibnizJet B E m (jetInit 𝕜 E F m fun i : Fin (m + 2) ↦ iteratedFDeriv 𝕜 i f y)
           (jetInit 𝕜 E G m fun i : Fin (m + 2) ↦ iteratedFDeriv 𝕜 i g y) :=

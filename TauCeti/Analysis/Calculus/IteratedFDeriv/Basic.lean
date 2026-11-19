@@ -37,9 +37,7 @@ common bound is nonnegative and bounds the function itself
 change its iterated derivatives of positive order (`TauCeti.iteratedFDeriv_succ_add_const`). The
 iterated derivatives of a constant `c` have norm at most `‖c‖`
 (`TauCeti.norm_iteratedFDeriv_const_le`), and those of positive order of the identity have norm at
-most one (`TauCeti.norm_iteratedFDeriv_id_le_one`). For a `C^n` map and `i < n`, the `i`-th
-iterated derivative has derivative the `(i + 1)`-th, curried on the left
-(`ContDiff.hasFDerivAt_iteratedFDeriv`).
+most one (`TauCeti.norm_iteratedFDeriv_id_le_one`).
 -/
 
 public section
@@ -199,13 +197,6 @@ theorem norm_iteratedFDeriv_iteratedFDeriv (f : E → F) (i m : ℕ) (x : E) :
       (fderiv 𝕜 (iteratedFDeriv 𝕜 m f)) x i
     rw [← h] at he
     rw [he, norm_iteratedFDeriv_fderiv, ih, Nat.add_right_comm, Nat.add_assoc]
-
-/-- The `i`-th iterated derivative of a `C^n` map, `i < n`, has derivative the `(i + 1)`-th
-iterated derivative, curried on the left. -/
-theorem _root_.ContDiff.hasFDerivAt_iteratedFDeriv {n : WithTop ℕ∞} {f : E → F}
-    (hf : ContDiff 𝕜 n f) {i : ℕ} (hi : (i : WithTop ℕ∞) < n) (x : E) :
-    HasFDerivAt (iteratedFDeriv 𝕜 i f) (iteratedFDeriv 𝕜 (i + 1) f x).curryLeft x :=
-  ((hf.differentiable_iteratedFDeriv hi) x).hasFDerivAt
 
 /-- Adding a constant to a function does not change its iterated derivatives of positive order. No
 differentiability is needed, since the derivative of `f + c` is that of `f` everywhere. -/
