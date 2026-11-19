@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.FSymbols.Basic
+import TauCeti.Algebra.BigOperators.Group.Finset.Equiv
 
 /-!
 # Relabeling and base change of F-symbols and R-symbols
@@ -185,7 +186,11 @@ spaces induced by an isomorphism of fusion rules. -/
 def finCongr (σ : N.Equiv N') (a b c : ι) : Fin (N.N a b c) ≃ Fin (N'.N (σ a) (σ b) (σ c)) :=
   _root_.finCongr (σ.map_N a b c).symm
 
+/-- The identification `σ.finCongr a b c` is the cast along `N_{ab}^c = N'_{σa σb}^{σc}`. -/
 @[simp]
+theorem finCongr_apply (σ : N.Equiv N') {a b c : ι} (i : Fin (N.N a b c)) :
+    σ.finCongr a b c i = Fin.cast (σ.map_N a b c).symm i := (rfl)
+
 theorem coe_finCongr (σ : N.Equiv N') {a b c : ι} (i : Fin (N.N a b c)) :
     (σ.finCongr a b c i : ℕ) = i := (rfl)
 
@@ -230,31 +235,6 @@ end ofMul
 end Equiv
 
 end FusionRules
-
-section sum
-
-variable {M : Type*} [AddCommMonoid M]
-
-/-- A double sum is invariant under reindexing both summation indices. -/
-private theorem sum_equiv₂ {X X' Y Y' : Type*} [Fintype X] [Fintype X'] [Fintype Y] [Fintype Y']
-    (eX : X ≃ X') (eY : Y ≃ Y') {f : X → Y → M} {g : X' → Y' → M}
-    (h : ∀ x y, f x y = g (eX x) (eY y)) :
-    ∑ x, ∑ y, f x y = ∑ x, ∑ y, g x y :=
-  Fintype.sum_equiv eX _ _ fun x ↦ Fintype.sum_equiv eY _ _ fun y ↦ h x y
-
-/-- A sum over `t` of a triple sum over types depending on `t` is invariant under reindexing all
-four summation indices. -/
-private theorem sum_equiv₄ {α α' : Type*} [Fintype α] [Fintype α'] {X Y Z : α → Type*}
-    {X' Y' Z' : α' → Type*} [∀ t, Fintype (X t)] [∀ t, Fintype (Y t)] [∀ t, Fintype (Z t)]
-    [∀ t, Fintype (X' t)] [∀ t, Fintype (Y' t)] [∀ t, Fintype (Z' t)] (e : α ≃ α')
-    (eX : ∀ t, X t ≃ X' (e t)) (eY : ∀ t, Y t ≃ Y' (e t)) (eZ : ∀ t, Z t ≃ Z' (e t))
-    {f : ∀ t, X t → Y t → Z t → M} {g : ∀ t, X' t → Y' t → Z' t → M}
-    (h : ∀ t x y z, f t x y z = g (e t) (eX t x) (eY t y) (eZ t z)) :
-    ∑ t, ∑ x, ∑ y, ∑ z, f t x y z = ∑ t, ∑ x, ∑ y, ∑ z, g t x y z :=
-  Fintype.sum_equiv e _ _ fun t ↦ Fintype.sum_equiv (eX t) _ _ fun x ↦
-    sum_equiv₂ (eY t) (eZ t) (h t x)
-
-end sum
 
 namespace FSymbols
 
@@ -315,7 +295,7 @@ def reindex (σ : N.Equiv N') (P : FSymbols R N) : FSymbols R N' where
     -- index sets of the fusion spaces.
     convert h using 1
     · exact Fintype.sum_equiv (σ.symm.finCongr _ _ _) _ _ fun _ ↦ rfl
-    · exact sum_equiv₄ σ.symm.toEquiv (fun _ ↦ σ.symm.finCongr _ _ _)
+    · exact Fintype.sum_equiv₄ σ.symm.toEquiv (fun _ ↦ σ.symm.finCongr _ _ _)
         (fun _ ↦ σ.symm.finCongr _ _ _) (fun _ ↦ σ.symm.finCongr _ _ _) fun _ _ _ _ ↦ rfl
   triangle a c d j l := by
     simp only [Matrix.submatrix_apply, FusionRules.Equiv.leftCongr_mk,
@@ -462,9 +442,10 @@ def reindex (σ : N.Equiv N') (Q : RSymbols P) : RSymbols (P.reindex σ) where
     -- Both sides are the sums of `h`, reindexed along `σ⁻¹` and the identifications of the
     -- index sets of the fusion spaces.
     convert h using 1
-    · exact sum_equiv₄ σ.symm.toEquiv (fun _ ↦ σ.symm.finCongr _ _ _)
+    · exact Fintype.sum_equiv₄ σ.symm.toEquiv (fun _ ↦ σ.symm.finCongr _ _ _)
         (fun _ ↦ σ.symm.finCongr _ _ _) (fun _ ↦ σ.symm.finCongr _ _ _) fun _ _ _ _ ↦ rfl
-    · exact sum_equiv₂ (σ.symm.finCongr _ _ _) (σ.symm.finCongr _ _ _) fun _ _ ↦ rfl
+    · exact Fintype.sum_equiv₂ (σ.symm.finCongr _ _ _) (fun _ ↦ σ.symm.finCongr _ _ _)
+        fun _ _ ↦ rfl
   hexagon_reverse a b c d f g k l n o := by
     have h := Q.hexagon_reverse (σ.symm a) (σ.symm b) (σ.symm c) (σ.symm d) (σ.symm f)
       (σ.symm g) (σ.symm.finCongr _ _ _ k) (σ.symm.finCongr _ _ _ l) (σ.symm.finCongr _ _ _ n)
@@ -473,9 +454,10 @@ def reindex (σ : N.Equiv N') (Q : RSymbols P) : RSymbols (P.reindex σ) where
       FusionRules.Equiv.rightCongr_mk]
     -- As for the forward hexagon.
     convert h using 1
-    · exact sum_equiv₄ σ.symm.toEquiv (fun _ ↦ σ.symm.finCongr _ _ _)
+    · exact Fintype.sum_equiv₄ σ.symm.toEquiv (fun _ ↦ σ.symm.finCongr _ _ _)
         (fun _ ↦ σ.symm.finCongr _ _ _) (fun _ ↦ σ.symm.finCongr _ _ _) fun _ _ _ _ ↦ rfl
-    · exact sum_equiv₂ (σ.symm.finCongr _ _ _) (σ.symm.finCongr _ _ _) fun _ _ ↦ rfl
+    · exact Fintype.sum_equiv₂ (σ.symm.finCongr _ _ _) (fun _ ↦ σ.symm.finCongr _ _ _)
+        fun _ _ ↦ rfl
 
 @[simp]
 theorem reindex_R (σ : N.Equiv N') (Q : RSymbols P) (a b c : ι') :
@@ -520,7 +502,12 @@ theorem reindex_Rinv_finCongr (σ : N.Equiv N') (Q : RSymbols P) {a b c : ι}
       Q.Rinv a b c i j :=
   Q.Rinv_congr (σ.symm_apply_apply a) (σ.symm_apply_apply b) (σ.symm_apply_apply c) rfl rfl
 
-/-- Relabeling R-symbols along the identity does not change the R-matrices. -/
+/-- Relabeling R-symbols along the identity does not change the R-matrices.
+
+This and the two round-trip lemmas below have high simp priority so that they fire before
+`reindex_R`: after unfolding, simp cannot rewrite the relabeled outer indices of `Q.R`, on which
+the types of the inner indices depend. -/
+@[simp high]
 theorem reindex_refl_R (Q : RSymbols P) : (Q.reindex (FusionRules.Equiv.refl N)).R = Q.R := by
   -- the identifications of index sets along the identity are the identity on elements
   ext a b c i j
@@ -532,6 +519,18 @@ theorem reindex_reindex_R (σ : N.Equiv N') (τ : N'.Equiv N'') (Q : RSymbols P)
   -- the identifications of index sets along `σ.trans τ` compose those along `σ` and `τ`
   ext a b c i j
   rfl
+
+/-- Relabeling R-symbols along `σ` and then along `σ⁻¹` does not change the R-matrices. -/
+@[simp high]
+theorem reindex_symm_reindex_R (σ : N.Equiv N') (Q : RSymbols P) :
+    ((Q.reindex σ).reindex σ.symm).R = Q.R := by
+  rw [reindex_reindex_R, FusionRules.Equiv.self_trans_symm, reindex_refl_R]
+
+/-- Relabeling R-symbols along `σ⁻¹` and then along `σ` does not change the R-matrices. -/
+@[simp high]
+theorem reindex_reindex_symm_R (σ : N.Equiv N') {P : FSymbols K N'} (Q : RSymbols P) :
+    ((Q.reindex σ.symm).reindex σ).R = Q.R := by
+  rw [reindex_reindex_R, FusionRules.Equiv.symm_trans_self, reindex_refl_R]
 
 /-- **Base change** of R-symbols along a ring homomorphism, applied entrywise: R-symbols for the
 base-changed F-symbols. -/
