@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.DifferentialOperator.Coordinates
 public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Algebra.BigOperators.Pi
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
 
@@ -66,6 +67,9 @@ compositions.
 * `LinearMap.isFormalTranspose_self_of_mem_differentialOperators_zero`: operators of order zero,
   that is multiplication operators, are their own transposes.
 * `LinearMap.IsFormalTranspose.smulCommutator`: the transpose of `[D, a]` is `-[D', a]`.
+* `LinearMap.IsFormalTranspose.withDensity`: if `D'` is a transpose of `D` with respect to `μ`,
+  `ρ ≥ 0` is smooth and `ρ D'' g = D' (ρ g)` for all `g`, then `D''` is a transpose of `D` with
+  respect to the weighted measure `ρ μ` (for `ρ > 0`, `D'' g = ρ⁻¹ D' (ρ g)`).
 * `LinearMap.IsFormalTranspose.mem_differentialOperators`: on a boundaryless manifold, a formal
   transpose of a differential operator of order at most `m` that is a differential operator has
   order at most `m`.
@@ -287,6 +291,34 @@ theorem isFormalTranspose_self_of_mem_differentialOperators_zero
     simpa [mul_comm] using mem_differentialOperators_zero_iff.1 hD f 1
   rw [hD1]
   exact isFormalTranspose_mulLeft _
+
+/-! ### Change of density -/
+
+/-- **Change of density.** Let `D'` be a formal transpose of `D` with respect to `μ`, and let
+`ρ ≥ 0` be smooth. An operator `D''` with `ρ D'' g = D' (ρ g)` for every `g` is a formal transpose
+of `D` with respect to the weighted measure `ρ μ`. For `ρ > 0` this says `D'' g = ρ⁻¹ D' (ρ g)`. -/
+theorem IsFormalTranspose.withDensity [OpensMeasurableSpace M] (h : D.IsFormalTranspose D' μ)
+    {D'' : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯} {ρ : C^∞⟮I, M; ℝ⟯} (hρ : ∀ x, 0 ≤ ρ x)
+    (hD'' : ∀ g, ρ * D'' g = D' (ρ * g)) :
+    D.IsFormalTranspose D'' (μ.withDensity fun x ↦ ENNReal.ofReal (ρ x)) := by
+  intro f g hfg
+  have hρm : Measurable fun x ↦ ENNReal.ofReal (ρ x) :=
+    ENNReal.measurable_ofReal.comp ρ.contMDiff.continuous.measurable
+  have hρt : ∀ᵐ x ∂μ, ENNReal.ofReal (ρ x) < ⊤ := .of_forall fun _ ↦ ENNReal.ofReal_lt_top
+  simp only [integral_withDensity_eq_integral_toReal_smul hρm hρt, ENNReal.toReal_ofReal (hρ _),
+    smul_eq_mul]
+  have hρg : HasCompactSupport f ∨ HasCompactSupport (ρ * g) :=
+    hfg.imp _root_.id fun hg ↦ by simpa only [ContMDiffMap.coe_mul] using hg.mul_left
+  calc ∫ x, ρ x * (D f x * g x) ∂μ = ∫ x, D f x * (ρ * g) x ∂μ := by
+        congr 1 with x
+        simp only [ContMDiffMap.coe_mul, Pi.mul_apply]
+        ring
+    _ = ∫ x, f x * D' (ρ * g) x ∂μ := h f _ hρg
+    _ = ∫ x, ρ x * (f x * D'' g x) ∂μ := by
+        congr 1 with x
+        rw [← hD'']
+        simp only [ContMDiffMap.coe_mul, Pi.mul_apply]
+        ring
 
 /-! ### Uniqueness -/
 
