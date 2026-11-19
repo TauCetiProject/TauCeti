@@ -30,16 +30,13 @@ The laws are the canonical Euler-class laws at `r := 0`, applied directly throug
   `TauCeti.complexEulerClass_eq_neg_one_pow_smul_singularCohomologyMap_of_conjugateFiberwise`
   at `r := 0`, simplifying `pow_one` and `neg_one_zsmul`.
 
-The conjugate statement is phrased for an abstract fibrewise conjugate-linear isomorphism, so it
-applies to every model of the conjugate line `conj L`, and, through the conjugate-linear Riesz
-isomorphism of a Hermitian metric, to the dual line `L*`.
+The conjugate statement applies to any line bundle supplied with a fibrewise conjugate-linear
+isomorphism to `L`.
 
 ## Implementation notes
 
 The class is named `lineFirstChernClass` because it is the first Chern class of a line bundle,
-defined directly as an Euler class. The first Chern class of a complex vector bundle `E` of higher
-constant rank is to be the class of its determinant line, `c₁(E) = c₁(det E)`, and on a line the
-two agree through `det L ≃ L`. The rank hypothesis is `finrank ℂ F = 1`, and the class lives in
+defined directly as an Euler class. The rank hypothesis is `finrank ℂ F = 1`, and the class lives in
 degree `2`, definitionally the degree `2 * 0 + 2` of `complexEulerClass` in rank `0 + 1`.
 Integral coefficients are `ULift ℤ`, as for the Euler class.
 
