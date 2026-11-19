@@ -66,7 +66,7 @@ theorem bind_map_add_eq_conv {β : Type*} [MeasurableSpace β] (μ : Measure β)
     lintegral_map (measurable_measure_prodMk_left (measurable_add hs)) hf]
   refine lintegral_congr fun y ↦ ?_
   rw [map_apply (measurable_const_add _) hs]
-  rfl
+  simp only [Set.preimage_preimage]
 
 end AddMonoid
 

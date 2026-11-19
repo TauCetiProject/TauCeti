@@ -115,7 +115,7 @@ theorem noiseKernel_comp {a b : ℝ} (ha₁ : a ≤ 1) (hb₀ : 0 ≤ b) (hb₁ 
     congr 1
     funext y
     rw [noiseKernel_apply_eq_map, Measure.map_map (by fun_prop) (by fun_prop)]
-    rfl
+    simp only [Function.comp_def]
   have hν : ν = multivariateGaussian 0 ((1 - b) • 1) := by
     simpa only [zero_add, smul_zero, multivariateGaussian_zero_one,
       Real.sq_sqrt (sub_nonneg.2 hb₁)] using
