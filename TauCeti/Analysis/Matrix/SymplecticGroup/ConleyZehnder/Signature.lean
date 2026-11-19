@@ -11,6 +11,8 @@ public import TauCeti.Geometry.Lie.Subgroup.Symplectic
 public import TauCeti.LinearAlgebra.Matrix.Signature
 import TauCeti.Analysis.Matrix.Exponential.Spectrum
 import TauCeti.Analysis.Matrix.HermitianSignature.Matrix
+import TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder.Cayley
+import TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder.Zero
 import TauCeti.Analysis.Matrix.SymplecticGroup.L2OpNorm
 import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Crossing
 import TauCeti.LinearAlgebra.Matrix.Determinant.Smul
@@ -30,15 +32,15 @@ For the form `ω(x, y) = xᵀ J y`, `exp (t J S)` is the linearized flow of the 
 `H(x) = xᵀ S x / 2` with `ι_{X_H} ω = dH`. The case of the rotations `S = diag (α, α)` is
 `TauCeti.GLSymplectic.conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation`. Since `J` is
 unitary, `‖J S‖ = ‖S‖` (`Matrix.l2_opNorm_J_mul`), which is how the bound on `S` controls
-`exp (t J S)`.
+`exp (t J S)`. This extends the normalization for small `S`,
+`TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_signature_div_two`, to the whole range `‖S‖ < 2π`.
 
 ## Proof
 
-A symplectic matrix `A` without eigenvalue `-1` has the Cayley generator
-`B = J (1 - A) (1 + A)⁻¹`, a symmetric matrix
-(`SymplecticGroup.isSymm_J_mul_one_sub_mul_inv_one_add`), and the straightened graph `T Γ(A)` is
-the graph `{x + i B x}` of `B`, so its Souriau map is the Cayley transform of `B`
-(`TauCeti.GLSymplectic.souriau_graphUnitaryFrame_eq_cayley`). Along `t ↦ exp (t J S)` with
+A symplectic matrix `A` without eigenvalue `-1` has the symmetric symplectic Cayley transform
+`B = J (1 - A) (1 + A)⁻¹` (`Matrix.isSymm_symplecticCayley`), and the straightened graph `T Γ(A)`
+is the graph `{x + i B x}` of `B`, so its Souriau map is the Cayley transform of `B`
+(`TauCeti.GLSymplectic.coe_souriau_graphUnitaryFrame_eq_cayley`). Along `t ↦ exp (t J S)` with
 `‖S‖ < π` there is no eigenvalue `-1` (`Matrix.isUnit_exp_add_one_real`), and the crossing form
 formula `Matrix.UnitaryGroup.maslovIndex_eq_crossingForm_add_finsum_of_souriau_eq_cayley` applies to
 `B t = J (1 - exp (t J S)) (1 + exp (t J S))⁻¹`. Its only crossing is at `t = 0`, since
@@ -46,7 +48,7 @@ formula `Matrix.UnitaryGroup.maslovIndex_eq_crossingForm_add_finsum_of_souriau_e
 `B 0 = 0` and `B' 0 = S / 2`, so the crossing contributes half the signature of `S`. For
 `‖S‖ < 2π` the path is the catenation of the path of `S / 2` with a path along which
 `exp (t J S)` has no eigenvalue `1`, whose index vanishes by the zero axiom
-`TauCeti.GLSymplectic.conleyZehnderIndex_eq_zero_of_forall_isUnit_sub_one`.
+`TauCeti.GLSymplectic.conleyZehnderIndex_eq_zero_of_finrank_eigenspace_eq`.
 
 ## References
 
@@ -58,7 +60,7 @@ formula `Matrix.UnitaryGroup.maslovIndex_eq_crossingForm_add_finsum_of_souriau_e
 
 public section
 
-open Matrix NormedSpace Set
+open Matrix NormedSpace Set Module
 open scoped unitInterval Matrix.Norms.L2Operator
 
 namespace TauCeti
@@ -78,15 +80,24 @@ private theorem norm_smul_J_mul (t : ℝ) (S : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
     ‖t • (J n ℝ * S)‖ = |t| * ‖S‖ := by
   rw [norm_smul, Real.norm_eq_abs, l2_opNorm_J_mul]
 
-/-- The Cayley generator `J (1 - exp (t J S)) (1 + exp (t J S))⁻¹` of `exp (t J S)`. -/
+/-- A matrix without eigenvalue `1` has a trivial `1`-eigenspace. -/
+private theorem finrank_eigenspace_one_eq_zero {M : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (h : IsUnit (M - 1)) : finrank ℝ (End.eigenspace (toLin' M) 1) = 0 := by
+  refine Submodule.finrank_eq_zero.2 ((Submodule.eq_bot_iff _).2 fun v hv ↦ ?_)
+  rw [End.mem_eigenspace_iff, Matrix.toLin'_apply, one_smul] at hv
+  refine mulVec_injective_iff_isUnit.2 h ?_
+  rw [sub_mulVec, hv, one_mulVec, sub_self, mulVec_zero]
+
+/-- The symplectic Cayley transform `J (1 - exp (t J S)) (1 + exp (t J S))⁻¹` of `exp (t J S)`. -/
 private noncomputable def cayleyGen (S : Matrix (n ⊕ n) (n ⊕ n) ℝ) (t : ℝ) :
     Matrix (n ⊕ n) (n ⊕ n) ℝ :=
-  J n ℝ * (1 - exp (t • (J n ℝ * S))) * (1 + exp (t • (J n ℝ * S)))⁻¹
+  symplecticCayley (exp (t • (J n ℝ * S)))
 
 /-- The Cayley generator `cayleyGen S` has derivative `S / 2` at `t = 0`. -/
 private theorem hasDerivAt_cayleyGen (S : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
     HasDerivAt (cayleyGen S) ((2⁻¹ : ℝ) • S) 0 := by
   unfold cayleyGen
+  simp only [symplecticCayley_def]
   set X := J n ℝ * S with hX
   have hE : HasDerivAt (fun t : ℝ ↦ exp (t • X)) X 0 := by
     simpa using hasDerivAt_exp_smul_const (𝕂 := ℝ) X 0
@@ -117,6 +128,7 @@ private theorem continuousOn_cayleyGen (S : Matrix (n ⊕ n) (n ⊕ n) ℝ) {s :
     (hs : ∀ t ∈ s, IsUnit (1 + exp (t • (J n ℝ * S)))) :
     ContinuousOn (cayleyGen S) s := by
   unfold cayleyGen
+  simp only [symplecticCayley_def]
   let +nondep : NormedAlgebra ℚ (Matrix (n ⊕ n) (n ⊕ n) ℝ) := .restrictScalars ℚ ℝ _
   have hE : Continuous fun t : ℝ ↦ exp (t • (J n ℝ * S)) :=
     NormedSpace.exp_continuous.comp (continuous_id.smul continuous_const)
@@ -138,10 +150,10 @@ private theorem isUnit_one_add_exp_smul_J_mul {S : Matrix (n ⊕ n) (n ⊕ n) �
 `0 ≤ t ≤ 1`. -/
 private theorem isSymm_cayleyGen {S : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hS : S.IsSymm)
     (hSπ : ‖S‖ < Real.pi) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : (cayleyGen S t).IsSymm :=
-  SymplecticGroup.isSymm_J_mul_one_sub_mul_inv_one_add
+  isSymm_symplecticCayley
     (exp_mem_symplecticGroup_of_mem_sp _
       ((LieAlgebra.Symplectic.sp n ℝ).smul_mem t (LieAlgebra.Symplectic.J_mul_mem_sp_iff.2 hS)))
-    (isUnit_one_add_exp_smul_J_mul hSπ ht)
+    ((isUnit_iff_isUnit_det _).1 (isUnit_one_add_exp_smul_J_mul hSπ ht))
 
 /-- For `S` invertible with `‖S‖ < π`, the Cayley generator `cayleyGen S t` is invertible for
 `0 < t ≤ 1`. -/
@@ -152,7 +164,7 @@ private theorem det_cayleyGen_ne_zero {S : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hdet
     isUnit_exp_sub_one_real ((isUnit_iff_isUnit_det _).2 (by simp [ht0, hdet]))
       (by rw [norm_smul_J_mul, abs_of_nonneg ht.1]
           nlinarith [norm_nonneg S, ht.2, Real.pi_pos])
-  rw [cayleyGen, det_mul]
+  rw [cayleyGen, symplecticCayley_def, det_mul]
   exact mul_ne_zero ((isUnit_iff_isUnit_det _).1 (isUnit_J_mul_one_sub h1)).ne_zero
     ((isUnit_iff_isUnit_det _).1 (isUnit_nonsing_inv_iff.2
       (isUnit_one_add_exp_smul_J_mul hSπ ht))).ne_zero
@@ -174,8 +186,8 @@ private theorem conleyZehnderIndex_expPath_J_mul_of_norm_lt_pi {S : Matrix (n �
   have hA0 : cayleyGen S 0 = 0 := by simp [cayleyGen]
   have hγ (t : I) : (souriau (((expPath X hXsp).map continuous_graphUnitaryFrame) t) :
       Matrix (n ⊕ n) (n ⊕ n) ℂ) = cayley ((cayleyGen S t).map ((↑) : ℝ → ℂ)) := by
-    have h := souriau_graphUnitaryFrame_eq_cayley (expPath X hXsp t)
-      (by rw [coe_expPath_apply]; exact hunit t t.2)
+    have h := coe_souriau_graphUnitaryFrame_eq_cayley (A := expPath X hXsp t)
+      (by rw [coe_expPath_apply]; exact (isUnit_iff_isUnit_det _).1 (hunit t t.2))
     simpa only [coe_expPath_apply, cayleyGen, Path.map_coe, Function.comp_apply] using h
   -- The only crossing is at `t = 0`, where `cayleyGen S` vanishes with derivative `S / 2`.
   have hmas := Matrix.UnitaryGroup.maslovIndex_eq_crossingForm_add_finsum_of_souriau_eq_cayley
@@ -245,8 +257,8 @@ theorem conleyZehnderIndex_expPath_J_mul_eq_neg_signature_div_two {S : Matrix (n
     linarith
   rw [← hsplit, conleyZehnderIndex_trans, conleyZehnderIndex_expPath_J_mul_of_norm_lt_pi hS'
     (det_smul_ne_zero (by norm_num) hdet) hnorm,
-    signature_smul_of_pos (by norm_num), conleyZehnderIndex_eq_zero_of_forall_isUnit_sub_one δ
-    fun s ↦ ?_, add_zero]
+    signature_smul_of_pos (by norm_num), conleyZehnderIndex_eq_zero_of_finrank_eigenspace_eq δ
+    (k := 0) fun s ↦ finrank_eigenspace_one_eq_zero ?_, add_zero]
   have hs : 0 < (1 + (s : ℝ)) / 2 := by linarith [s.2.1]
   rw [hδ]
   refine isUnit_exp_sub_one_real ((isUnit_iff_isUnit_det _).2 (by simp [X, hs.ne', hdet])) ?_

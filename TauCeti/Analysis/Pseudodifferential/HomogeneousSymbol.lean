@@ -40,7 +40,9 @@ The file develops:
   composition `HomogeneousSymbol.comp`, which adds degrees and has the identity symbol
   `HomogeneousSymbol.id` of degree `0` as its unit;
 * the pullback `HomogeneousSymbol.compPosition` of the position along a smooth map, which keeps
-  the degree and in particular restricts a symbol to a set of positions;
+  the degree and in particular restricts a symbol to a set of positions, and the linear change
+  of variables `HomogeneousSymbol.compProdMap`, `(x, ξ) ↦ a(P x, Q ξ)` for a linear map `P` and a
+  linear isomorphism `Q`;
 * the derivatives `HomogeneousSymbol.spatialDeriv` in a position direction, which keeps the
   degree, and `HomogeneousSymbol.frequencyDeriv` in a frequency direction, which lowers it by
   one; iterating them gives every mixed partial derivative `∂ₓ^α ∂_ξ^β a`, homogeneous of degree
@@ -487,6 +489,77 @@ theorem compPosition_compPosition (a : HomogeneousSymbol X E V W m) (g' : Z → 
   (rfl)
 
 end CompPosition
+
+/-! ### Linear change of variables -/
+
+section CompProdMap
+
+variable {X' X'' E' E'' : Type*} [NormedAddCommGroup X'] [NormedSpace ℝ X']
+  [NormedAddCommGroup X''] [NormedSpace ℝ X''] [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+
+/-- A linear change of variables `(x, ξ) ↦ a(P x, Q ξ)` in a homogeneous symbol of degree `m`, for
+a linear map `P` of positions and a linear isomorphism `Q` of frequencies. -/
+def compProdMap (a : HomogeneousSymbol X E V W m) (P : X' →L[ℝ] X) (Q : E' ≃L[ℝ] E) :
+    HomogeneousSymbol X' E' V W m where
+  coefficient := a.coefficient ∘ P.prodMap (Q : E' →L[ℝ] E)
+  zero_covector x := by simp
+  contDiffOn_coefficient := a.contDiffOn_coefficient.comp
+    (P.prodMap (Q : E' →L[ℝ] E)).contDiff.contDiffOn fun p hp => by simpa using hp
+  homogeneous x ξ t ht := by simpa using a.homogeneous (P x) (Q ξ) t ht
+
+@[simp]
+theorem coefficient_compProdMap (a : HomogeneousSymbol X E V W m) (P : X' →L[ℝ] X)
+    (Q : E' ≃L[ℝ] E) (p : X' × E') :
+    (a.compProdMap P Q).coefficient p = a.coefficient (P p.1, Q p.2) :=
+  (rfl)
+
+variable (P : X' →L[ℝ] X) (Q : E' ≃L[ℝ] E)
+
+@[simp]
+theorem zero_compProdMap : (0 : HomogeneousSymbol X E V W m).compProdMap P Q = 0 :=
+  (rfl)
+
+@[simp]
+theorem add_compProdMap (a b : HomogeneousSymbol X E V W m) :
+    (a + b).compProdMap P Q = a.compProdMap P Q + b.compProdMap P Q :=
+  (rfl)
+
+@[simp]
+theorem neg_compProdMap (a : HomogeneousSymbol X E V W m) :
+    (-a).compProdMap P Q = -a.compProdMap P Q :=
+  (rfl)
+
+@[simp]
+theorem sub_compProdMap (a b : HomogeneousSymbol X E V W m) :
+    (a - b).compProdMap P Q = a.compProdMap P Q - b.compProdMap P Q :=
+  (rfl)
+
+@[simp]
+theorem smul_compProdMap {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)]
+    [SMulCommClass ℝ R (V →L[ℂ] W)] [ContinuousConstSMul R (V →L[ℂ] W)] (c : R)
+    (a : HomogeneousSymbol X E V W m) : (c • a).compProdMap P Q = c • a.compProdMap P Q :=
+  (rfl)
+
+@[simp]
+theorem comp_compProdMap (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m) :
+    (b.comp a).compProdMap P Q = (b.compProdMap P Q).comp (a.compProdMap P Q) :=
+  (rfl)
+
+/-- The identity change of variables leaves a homogeneous symbol unchanged. -/
+@[simp]
+theorem compProdMap_id (a : HomogeneousSymbol X E V W m) :
+    a.compProdMap (.id ℝ X) (.refl ℝ E) = a :=
+  (rfl)
+
+/-- Two successive linear changes of variables compose: first `(P, Q)`, then `(P', Q')`. -/
+@[simp]
+theorem compProdMap_compProdMap (a : HomogeneousSymbol X E V W m) (P' : X'' →L[ℝ] X')
+    (Q' : E'' ≃L[ℝ] E') :
+    (a.compProdMap P Q).compProdMap P' Q' = a.compProdMap (P.comp P') (Q'.trans Q) :=
+  (rfl)
+
+end CompProdMap
 
 /-! ### Spatial and frequency derivatives -/
 

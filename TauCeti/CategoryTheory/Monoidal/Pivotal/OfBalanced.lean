@@ -16,14 +16,24 @@ If `u_X : X ≅ Xᘁᘁ` is the Drinfeld isomorphism, a twist `θ` gives the piv
 Conversely, the twist associated to a pivotal structure is `θ_X = φ_X ≫ u_X⁻¹`.
 
 This file constructs the inverse of `balancedOfBraidedPivotal`, proves both round trips as
-equalities of structures, and packages them as `pivotalBalancedEquiv`. No semisimplicity,
+equalities of structures together with injectivity (`balancedOfBraidedPivotal_inj` and
+`pivotalOfBalanced_inj`), and packages them as `pivotalBalancedEquiv`. No semisimplicity,
 sphericity, or compatibility of the twist with duals is required.
+
+## Main declarations
+
+* `TauCeti.pivotalOfBalanced`: the pivotal structure of a balanced rigid category, with pivotal
+  isomorphism `φ_X = θ_X ≫ u_X`;
+* `TauCeti.pivotalOfBalanced_balancedOfBraidedPivotal` and
+  `TauCeti.balancedOfBraidedPivotal_pivotalOfBalanced`: the two round trips;
+* `TauCeti.pivotalBalancedEquiv`: the resulting equivalence between pivotal and balanced
+  structures on a braided rigid category.
 
 ## References
 
 * A. Henriques, D. Penneys, J. Tener, *Categorified trace for module tensor categories over
-  braided tensor categories*, [arXiv:1509.02937](https://arxiv.org/abs/1509.02937), §2.1,
-  equation (3) and Appendix A.2
+  braided tensor categories*, [arXiv:1509.02937](https://arxiv.org/abs/1509.02937), §2.1 and §2.3,
+  equation (3); Appendix A.2, Corollary A.3
 * [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §8.10
 -/
 
@@ -100,7 +110,6 @@ theorem pivotalOfBalanced_balancedOfBraidedPivotal (P : PivotalCategory C) :
 @[simp]
 theorem balancedOfBraidedPivotal_pivotalOfBalanced (B : BalancedCategory C) :
     @balancedOfBraidedPivotal C _ _ _ _ (@pivotalOfBalanced C _ _ _ _ B) = B := by
-  let := B
   apply BalancedCategory.ext
   ext X
   -- Keep the new pivotal instance explicit, and bridge its functor-valued component to the
@@ -108,6 +117,26 @@ theorem balancedOfBraidedPivotal_pivotalOfBalanced (B : BalancedCategory C) :
   exact (@balancedOfBraidedPivotal_twist_hom_app C _ _ _ _ (pivotalOfBalanced C) X).trans
     ((congrArg (· ≫ (drinfeldIso X).inv)
       (pivotalOfBalanced_pivotalIsoApp_hom X)).trans (by simp))
+
+/-- Passing from pivotal structures to induced balanced structures on a braided rigid category is
+injective. -/
+@[simp]
+theorem balancedOfBraidedPivotal_inj {P Q : PivotalCategory C} :
+    @balancedOfBraidedPivotal C _ _ _ _ P = @balancedOfBraidedPivotal C _ _ _ _ Q ↔ P = Q :=
+  ⟨fun h ↦ by
+    rw [← pivotalOfBalanced_balancedOfBraidedPivotal P,
+      ← pivotalOfBalanced_balancedOfBraidedPivotal Q, h],
+    fun h ↦ h ▸ rfl⟩
+
+/-- Passing from balanced structures to induced pivotal structures on a braided rigid category is
+injective. -/
+@[simp]
+theorem pivotalOfBalanced_inj {B₁ B₂ : BalancedCategory C} :
+    @pivotalOfBalanced C _ _ _ _ B₁ = @pivotalOfBalanced C _ _ _ _ B₂ ↔ B₁ = B₂ :=
+  ⟨fun h ↦ by
+    rw [← balancedOfBraidedPivotal_pivotalOfBalanced B₁,
+      ← balancedOfBraidedPivotal_pivotalOfBalanced B₂, h],
+    fun h ↦ h ▸ rfl⟩
 
 /-- Pivotal structures on a braided rigid category correspond to balanced structures via
 `θ_X = φ_X ≫ u_X⁻¹`, with inverse `φ_X = θ_X ≫ u_X`. -/

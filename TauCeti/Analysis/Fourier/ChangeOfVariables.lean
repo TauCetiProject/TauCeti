@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 
 /-!
@@ -39,8 +40,10 @@ complex normed space, including Schwartz functions by coercion.
 * `TauCeti.fourier_comp_smul`, `TauCeti.fourierInv_comp_smul`: the dilation formulas.
 * `TauCeti.support_fourier_comp_smul`: dilating a function by `c` dilates the support of its
   Fourier transform by `c`.
-* `TauCeti.integral_norm_pow_mul_norm_fourierInv_comp_smul`: dilation by `c` multiplies the
-  `k`-th moment of the inverse Fourier transform by `|c| ^ k`.
+* `TauCeti.integral_norm_rpow_mul_norm_fourierInv_comp_smul`,
+  `TauCeti.integral_norm_pow_mul_norm_fourierInv_comp_smul`: dilation by `c` multiplies the
+  moment of order `s` of the inverse Fourier transform by `|c| ^ s`, for real `s` and for natural
+  `s = k`.
 * `TauCeti.integral_norm_fourierInv_comp_smul`: dilation preserves the `L¹` norm of the inverse
   Fourier transform.
 * `TauCeti.eLpNorm_fourierInv_comp_inv_smul`: dilation rescales the `Lʳ` norm of the inverse
@@ -51,6 +54,8 @@ complex normed space, including Schwartz functions by coercion.
 * `TauCeti.fourier_fourierChar_smul`: modulation by the character `𝐞 ⟪·, c⟫` translates the
   Fourier transform by `c`.
 * `TauCeti.fourier_smul_const`: the Fourier transform of `f · • v` is `𝓕 f · • v`.
+* `Real.conj_fourier_apply`, `Real.conj_fourierInv_apply`: conjugating the Fourier transform of
+  `v` gives the Fourier transform of `ξ ↦ conj (v (-ξ))`.
 * `TauCeti.exp_inner_mul_I_eq_fourierChar`: the exponential `exp(i ⟪y, ξ⟫)` is the Fourier
   character at the frequency `ξ / 2π`.
 -/
@@ -133,22 +138,29 @@ theorem fourierInv_comp_smul (f : E → F) (c : ℝ) (y : E) :
     𝓕⁻ (fun x ↦ f (c • x)) y = |c ^ finrank ℝ E|⁻¹ • 𝓕⁻ f (c⁻¹ • y) := by
   simp only [Real.fourierInv_eq_fourier_neg, fourier_comp_smul f, smul_neg]
 
+/-- Dilating a function by `c` multiplies the moment of order `s` of its inverse Fourier transform
+by `|c| ^ s`: `∫ ‖y‖ ^ s ‖𝓕⁻ (f (c • ·)) y‖ = |c| ^ s ∫ ‖y‖ ^ s ‖𝓕⁻ f y‖`, for every real `s`. -/
+theorem integral_norm_rpow_mul_norm_fourierInv_comp_smul (f : E → F) (s : ℝ) {c : ℝ}
+    (hc : c ≠ 0) :
+    ∫ y, ‖y‖ ^ s * ‖𝓕⁻ (fun x ↦ f (c • x)) y‖ = |c| ^ s * ∫ y, ‖y‖ ^ s * ‖𝓕⁻ f y‖ := by
+  have hc' : |c ^ finrank ℝ E| ≠ 0 := abs_ne_zero.2 (pow_ne_zero _ hc)
+  have hcs : |c| ^ s ≠ 0 := (Real.rpow_pos_of_pos (abs_pos.2 hc) s).ne'
+  have h (y : E) : ‖y‖ ^ s * ‖𝓕⁻ (fun x ↦ f (c • x)) y‖ =
+      (|c ^ finrank ℝ E|⁻¹ * |c| ^ s) * (‖c⁻¹ • y‖ ^ s * ‖𝓕⁻ f (c⁻¹ • y)‖) := by
+    simp (disch := positivity) only [fourierInv_comp_smul f, norm_smul, norm_inv,
+      Real.norm_eq_abs, abs_abs, Real.mul_rpow, Real.inv_rpow]
+    field_simp
+  simp_rw [h]
+  rw [integral_const_mul, Measure.integral_comp_inv_smul volume (fun y ↦ ‖y‖ ^ s * ‖𝓕⁻ f y‖),
+    smul_eq_mul]
+  field_simp
+
 /-- Dilating a function by `c` multiplies the `k`-th moment of its inverse Fourier transform by
 `|c| ^ k`: `∫ ‖y‖ ^ k ‖𝓕⁻ (f (c • ·)) y‖ = |c| ^ k ∫ ‖y‖ ^ k ‖𝓕⁻ f y‖`. -/
 theorem integral_norm_pow_mul_norm_fourierInv_comp_smul (f : E → F) (k : ℕ) {c : ℝ}
     (hc : c ≠ 0) :
     ∫ y, ‖y‖ ^ k * ‖𝓕⁻ (fun x ↦ f (c • x)) y‖ = |c| ^ k * ∫ y, ‖y‖ ^ k * ‖𝓕⁻ f y‖ := by
-  have hc' : |c ^ finrank ℝ E| ≠ 0 := abs_ne_zero.2 (pow_ne_zero _ hc)
-  have hck : |c| ^ k ≠ 0 := pow_ne_zero _ (abs_ne_zero.2 hc)
-  have h (y : E) : ‖y‖ ^ k * ‖𝓕⁻ (fun x ↦ f (c • x)) y‖ =
-      (|c ^ finrank ℝ E|⁻¹ * |c| ^ k) * (‖c⁻¹ • y‖ ^ k * ‖𝓕⁻ f (c⁻¹ • y)‖) := by
-    simp only [fourierInv_comp_smul f, norm_smul, norm_inv, Real.norm_eq_abs, abs_abs, mul_pow,
-      inv_pow]
-    field_simp
-  simp_rw [h]
-  rw [integral_const_mul, Measure.integral_comp_inv_smul volume (fun y ↦ ‖y‖ ^ k * ‖𝓕⁻ f y‖),
-    smul_eq_mul]
-  field_simp
+  simpa only [Real.rpow_natCast] using integral_norm_rpow_mul_norm_fourierInv_comp_smul f k hc
 
 /-- Dilating a function does not change the `L¹` norm of its inverse Fourier transform:
 `∫ ‖𝓕⁻ (f (c • ·))‖ = ∫ ‖𝓕⁻ f‖`. -/
@@ -209,6 +221,28 @@ theorem fourier_smul_const [CompleteSpace F] (f : E → ℂ) (v : F) (w : E) :
     𝓕 (fun z ↦ f z • v) w = 𝓕 f w • v := by
   simp only [Real.fourier_eq, ← smul_assoc]
   exact integral_smul_const _ v
+
+/-! ### Complex conjugation -/
+
+open ComplexConjugate in
+/-- **The Fourier transform of a conjugate.** Conjugating the Fourier integral of `v` gives the
+Fourier integral of `ξ ↦ conj (v (-ξ))`. -/
+theorem _root_.Real.conj_fourier_apply (v : E → ℂ) (x : E) :
+    conj (𝓕 v x) = 𝓕 (fun ξ ↦ conj (v (-ξ))) x := by
+  rw [Real.fourier_eq', Real.fourier_eq', ← integral_conj, ← integral_neg_eq_self]
+  congr 1
+  ext ξ
+  simp [← Complex.exp_conj, inner_neg_left, map_ofNat]
+
+open ComplexConjugate in
+/-- **The inverse Fourier transform of a conjugate.** Conjugating the inverse Fourier integral
+of `v` gives the inverse Fourier integral of `ξ ↦ conj (v (-ξ))`. -/
+theorem _root_.Real.conj_fourierInv_apply (v : E → ℂ) (x : E) :
+    conj (𝓕⁻ v x) = 𝓕⁻ (fun ξ ↦ conj (v (-ξ))) x := by
+  rw [Real.fourierInv_eq', Real.fourierInv_eq', ← integral_conj, ← integral_neg_eq_self]
+  congr 1
+  ext ξ
+  simp [← Complex.exp_conj, inner_neg_left, map_ofNat]
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The exponential `exp(i ⟪y, ξ⟫)` is the Fourier character `𝐞 ⟪y, ξ / 2π⟫`. -/

@@ -5,16 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.Cayley
 public import TauCeti.Analysis.Matrix.SymplecticGroup.Graph
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.LinearAlgebra.TotallyReal.Lagrangian
-import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Localization
-import TauCeti.LinearAlgebra.Matrix.DetDescent
-import TauCeti.LinearAlgebra.Matrix.Determinant.Smul
-import TauCeti.LinearAlgebra.Matrix.OfReal
-import TauCeti.LinearAlgebra.SymplecticGroup
+import Mathlib.AlgebraicTopology.FundamentalGroupoid.Basic
+import Mathlib.Topology.Homotopy.Product
 
 /-!
 # The Conley–Zehnder index of a path of symplectic matrices
@@ -33,7 +29,7 @@ In `ℂⁿ × ℂⁿ = ℂ^{n ⊕ n}`, with the identification of
 columns of the graph frame `Matrix.graphFrame A`, and the diagonal is `Γ(1) = {(conj z, z)}`.
 The unitary matrix `T = (1/√2) [[1, 1], [i, -i]]` (`TauCeti.diagonalStraightening`) sends
 `(conj z, z)` to `√2 (Re z, Im z)`, so it carries the diagonal onto the real points `ℝ^{n ⊕ n}`
-(`TauCeti.GLSymplectic.souriau_graphUnitaryFrame_one`). The index relative to the diagonal
+(`TauCeti.realImage_diagonalStraightening_mul_graphFrame_one`). The index relative to the diagonal
 is therefore the index of the path `T Γ(Ψ t)` relative to `ℝ^{n ⊕ n}`, which is
 `Matrix.UnitaryGroup.maslovIndex`, defined on paths of unitary frames. The graph of a symplectic
 matrix is Lagrangian (`Matrix.map_im_conjTranspose_graphFrame_mul_graphFrame`), so the real
@@ -47,14 +43,24 @@ The **Conley–Zehnder index** `TauCeti.GLSymplectic.conleyZehnderIndex` is defi
 as a real number, and it does not depend on the choice of unitary frames of the graphs
 (`TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_maslovIndex`). It inherits from the Maslov index
 the invariance under homotopies fixing the endpoints, additivity under catenation, and the change
-of sign under reversal. A path of symplectic matrices none of which has the eigenvalue `1` has
-index zero (`TauCeti.GLSymplectic.conleyZehnderIndex_eq_zero_of_forall_isUnit_sub_one`): the
-imaginary part of the straightened graph frame of `A` is `J (1 - A) / √2`
-(`TauCeti.diagonalStraightening_mul_graphFrame`), so the graphs stay transverse to the diagonal.
-For a symplectic matrix `A` without eigenvalue `-1`, the straightened graph `T Γ(A)` is the graph
-`{x + i B x}` of the symmetric Cayley generator `B = J (1 - A) (1 + A)⁻¹`
-(`TauCeti.diagonalStraightening_mul_graphFrame_eq_mul`), so its Souriau map is the Cayley
-transform of `B` (`TauCeti.GLSymplectic.souriau_graphUnitaryFrame_eq_cayley`).
+of sign under reversal.
+
+It is additive under direct sums (`TauCeti.GLSymplectic.conleyZehnderIndex_sum`): the graph of
+`A ⊕ B` is the product of the graphs of `A` and `B`, in the regrouped coordinates of
+`Matrix.symplecticSum`, so the direct sum of unitary frames of the two straightened graphs frames
+the straightened graph of the sum, and the Maslov index of such a direct sum of frames is the sum
+of the indices (`Matrix.UnitaryGroup.maslovIndex_eq_add_of_coe_eq_symplecticSum`).
+
+On a loop `γ` of symplectic matrices it is `-2 μ(γ)`, where `μ` is the Maslov index of loops
+`TauCeti.GLSymplectic.maslovIndex`
+(`TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_two_mul_maslovIndex`). Indeed the unitary graph
+frames then form a loop, whose Maslov index is twice the degree of their determinants; the
+squares of these determinants are, up to a constant factor, the determinant phases of the graph
+frames, whose degree is `2 μ(γ)` (`TauCeti.GLSymplectic.maslovIndex_graphLoop`). Since `φ γ` is
+homotopic to the catenation of `t ↦ φ t A` and `γ`, this gives the **loop axiom**: multiplying a
+path `γ` by a loop `φ` based at the identity, a change of symplectic trivialization along a loop,
+changes the index by `-2 μ(φ)` (`TauCeti.GLSymplectic.conleyZehnderIndex_mul`). For instance the
+full rotation `t ↦ e^{2π i t}` of `ℝ²` has `μ = 1` and Conley–Zehnder index `-2`.
 
 On a path of realified diagonal unitary matrices `diag (e^{i θ_j(t)})` it is computed explicitly
 (`TauCeti.GLSymplectic.conleyZehnderIndex_map_ofUnitary_eq_neg_sum_of_diagonal`): each angle
@@ -84,21 +90,22 @@ The standard form `dx ∧ dy` is `-xᵀ J y`, and for it the flow of `H = ε (x�
 
 ## Main results
 
+* `TauCeti.diagonalStraightening_mul_graphFrame`: the straightened graph frame of a real matrix
+  `A` is `(1/√2) ((1 + A) + i J (1 - A))`.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_maslovIndex`: the index is minus the Maslov
   index of any path of unitary frames of the straightened graphs.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_eq_of_homotopic`,
   `TauCeti.GLSymplectic.conleyZehnderIndex_trans`, `TauCeti.GLSymplectic.conleyZehnderIndex_symm`,
   `TauCeti.GLSymplectic.conleyZehnderIndex_refl`: homotopy invariance, catenation, reversal and
   the constant path.
-* `TauCeti.diagonalStraightening_mul_graphFrame`: the straightened graph frame of `A` is
-  `((1 + A) + i J (1 - A)) / √2`.
-* `TauCeti.GLSymplectic.souriau_graphUnitaryFrame_eq_cayley`: without eigenvalue `-1`, the Souriau
-  map of the straightened graph is the Cayley transform of the Cayley generator.
-* `TauCeti.GLSymplectic.conleyZehnderIndex_eq_zero_of_forall_isUnit_sub_one`: the zero axiom.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_map_ofUnitary_eq_neg_sum_of_diagonal`: the index of a
   path of diagonal unitary matrices.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation`: the
   normalization on rotations, `CZ = -∑ j, sign α_j`.
+* `TauCeti.GLSymplectic.conleyZehnderIndex_sum`: the direct-sum axiom.
+* `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_two_mul_maslovIndex`: the index of a loop is
+  `-2 μ`.
+* `TauCeti.GLSymplectic.conleyZehnderIndex_mul`: the loop axiom, `CZ(φ γ) = CZ(γ) - 2 μ(φ)`.
 
 ## References
 
@@ -107,13 +114,14 @@ The standard form `dx ∧ dy` is `-xᵀ J y`, and for it the flow of `H = ε (x�
 * C. Conley and E. Zehnder, *Morse-type index theory for flows and periodic solutions for
   Hamiltonian equations*, Comm. Pure Appl. Math. **37** (1984), 207–253.
 * D. Salamon, *Lectures on Floer homology*, in *Symplectic geometry and topology*, IAS/Park City
-  Math. Ser. **7**, AMS, 1999 (the axioms and the normalization of the Conley–Zehnder index).
+  Math. Ser. **7**, AMS, 1999 (the axioms and the normalization of the Conley–Zehnder index,
+  among them the product and loop axioms).
 -/
 
 public section
 
 open Matrix Matrix.GeneralLinearGroup Matrix.UnitaryGroup Complex
-open scoped unitInterval
+open scoped unitInterval ComplexConjugate
 
 namespace TauCeti
 
@@ -173,38 +181,55 @@ theorem diagonalStraightening_mem_unitaryGroup :
     conjTranspose_smul, smul_mul_smul, straightening_mul_conjTranspose]
   simp [smul_smul, ← mul_inv, sqrt_two_mul_sqrt_two]
 
-/-- The straightened graph frame of a real matrix `A` is `((1 + A) + i J (1 - A)) / √2`. -/
+/-- **The straightened graph frame.** The diagonal straightening `T` times the graph frame of a
+real matrix `A` is `(1/√2) ((1 + A) + i J (1 - A))`: its real and imaginary parts are
+`(1 + A) / √2` and `J (1 - A) / √2`. -/
 theorem diagonalStraightening_mul_graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
     diagonalStraightening n * graphFrame A = ((√2 : ℝ) : ℂ)⁻¹ •
       ((1 + A).map ((↑) : ℝ → ℂ) + Complex.I • (J n ℝ * (1 - A)).map ((↑) : ℝ → ℂ)) := by
-  rw [diagonalStraightening_def, Matrix.smul_mul]
-  congr 1
-  rw [← fromBlocks_toBlocks A, graphFrame_def, fromBlocks_multiply]
-  simp only [toBlocks_fromBlocks₁₁, toBlocks_fromBlocks₁₂, toBlocks_fromBlocks₂₁,
-    toBlocks_fromBlocks₂₂, J, ← fromBlocks_one, fromBlocks_add, sub_eq_add_neg, fromBlocks_neg,
-    fromBlocks_multiply, fromBlocks_map, fromBlocks_smul]
-  congr 1
-  all_goals
-    simp only [Matrix.one_mul, Matrix.mul_one, Matrix.zero_mul, Matrix.neg_mul, Matrix.mul_neg,
-      Matrix.smul_mul, Matrix.mul_smul, zero_add, add_zero, neg_neg, neg_zero, Matrix.mul_add,
-      smul_smul, Complex.I_mul_I, neg_smul, one_smul, Matrix.map_add _ Complex.ofReal_add,
-      Matrix.map_neg _ Complex.ofReal_neg, Matrix.map_one _ Complex.ofReal_zero Complex.ofReal_one,
-      smul_add, smul_neg]
-    abel
+  -- Compare the two matrices on the real basis vectors.
+  refine ext_of_mulVec_single fun j => ?_
+  have hj : (Pi.single j 1 : n ⊕ n → ℂ) = fun k => ((Pi.single j 1 : n ⊕ n → ℝ) k : ℂ) := by
+    ext k
+    by_cases hk : k = j <;> simp [hk]
+  rw [hj]
+  generalize (Pi.single j 1 : n ⊕ n → ℝ) = x
+  have hmap (M : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+      M.map ((↑) : ℝ → ℂ) *ᵥ (fun k => (x k : ℂ)) = fun i => ((M *ᵥ x) i : ℂ) :=
+    funext fun i => (RingHom.map_mulVec ofRealHom M x i).symm
+  rw [← Matrix.mulVec_mulVec, graphFrame_mulVec, diagonalStraightening_def]
+  simp only [Matrix.smul_mulVec, Matrix.add_mulVec, hmap]
+  rw [← Matrix.mulVec_mulVec, J]
+  ext (i | i) <;>
+    simp [Matrix.smul_mulVec, fromBlocks_mulVec, Matrix.neg_mulVec, Matrix.one_mulVec,
+      Matrix.sub_mulVec, -Matrix.mulVec_mulVec]
+  · ring
+  · linear_combination (-(x (.inr i) : ℂ) - ((A *ᵥ x) (.inr i) : ℂ)) * I_sq
 
-/-- The straightened graph frame of a matrix `A` without eigenvalue `-1` is the frame
-`1 + i B` of the graph of its Cayley generator `B = J (1 - A) (1 + A)⁻¹`, times a real invertible
-matrix. -/
-theorem diagonalStraightening_mul_graphFrame_eq_mul {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
-    (h1 : IsUnit (1 + A)) :
-    diagonalStraightening n * graphFrame A =
-      (1 + Complex.I • (J n ℝ * (1 - A) * (1 + A)⁻¹).map ((↑) : ℝ → ℂ)) *
-        ((√2 : ℝ)⁻¹ • (1 + A)).map ((↑) : ℝ → ℂ) := by
-  have hP : IsUnit (1 + A).det := (isUnit_iff_isUnit_det _).1 h1
-  rw [diagonalStraightening_mul_graphFrame, Matrix.map_smul' _ _ _ Complex.ofReal_mul,
-    Complex.ofReal_inv, Matrix.mul_smul]
-  congr 1
-  simp [Matrix.add_mul, ← map_ofReal_mul, Matrix.mul_assoc, nonsing_inv_mul _ hP]
+/-- The diagonal straightening of the graph frame of the identity, whose columns span the
+diagonal, is the real matrix `√2 • 1`. -/
+private theorem diagonalStraightening_mul_graphFrame_one :
+    diagonalStraightening n * graphFrame 1 =
+      ((√2 : ℝ) • (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ)).map ((↑) : ℝ → ℂ) := by
+  rw [diagonalStraightening_mul_graphFrame, sub_self, Matrix.mul_zero, ← two_smul ℝ 1,
+    map_ofReal_sqrt_two_smul_one]
+  ext i j
+  by_cases hij : i = j <;> simp [hij, inv_sqrt_two]
+
+/-- **The diagonal straightening carries the diagonal onto the real points**: the image under it
+of the graph `Γ(1)` of the identity is `ℝ^{n ⊕ n}`. -/
+theorem realImage_diagonalStraightening_mul_graphFrame_one :
+    (diagonalStraightening n * graphFrame 1).realImage = realSubspace (n ⊕ n) := by
+  rw [diagonalStraightening_mul_graphFrame_one, realImage_map_ofReal isUnit_sqrt_two_smul_one]
+
+omit [Fintype n] in
+/-- The diagonal straightening of `ℂ^{(n ⊕ m) ⊕ (n ⊕ m)}` is the symplectic direct sum of the
+diagonal straightenings of `ℂ^{n ⊕ n}` and of `ℂ^{m ⊕ m}`. -/
+theorem diagonalStraightening_sum {m : Type*} [DecidableEq m] :
+    diagonalStraightening (n ⊕ m) =
+      symplecticSum (diagonalStraightening n) (diagonalStraightening m) := by
+  ext ((i | i) | (i | i)) ((j | j) | (j | j)) <;>
+    simp [diagonalStraightening_def, symplecticSum_def, Equiv.sumSumSumComm, ← fromBlocks_one]
 
 namespace GLSymplectic
 
@@ -247,58 +272,33 @@ theorem realImage_graphUnitaryFrame (A : GLSymplectic n ℝ) :
   rw [graphUnitaryFrame, realImage_mul, realImage_mul, realImage_realOrthonormalize,
     coe_graphFrameUnit]
 
+open scoped MatrixOrder Matrix.Norms.L2Operator in
+/-- The unitary graph frame is the straightened graph frame `T Γ(A)` followed by the real
+change of basis `Re (Γ(A)ᴴ Γ(A)) ^ (-1/2)`. -/
+theorem coe_graphUnitaryFrame (A : GLSymplectic n ℝ) :
+    (graphUnitaryFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
+      diagonalStraightening n * graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) *
+        (((graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ))ᴴ *
+          graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).map Complex.re ^
+            (-(1 / 2) : ℝ)).map ((↑) : ℝ → ℂ) := by
+  rw [graphUnitaryFrame, Subtype.coe_mk, coe_realOrthonormalize, coe_graphFrameUnit,
+    Matrix.mul_assoc]
+
 /-- The unitary graph frame depends continuously on the symplectic matrix. -/
 theorem continuous_graphUnitaryFrame : Continuous (graphUnitaryFrame (n := n)) :=
   Continuous.subtype_mk (continuous_const.mul (Units.continuous_val.comp
     (continuous_realOrthonormalize continuous_graphFrameUnit))) _
 
-/-- **The Souriau map of a graph without eigenvalue `-1`.** If the symplectic matrix `A` has no
-eigenvalue `-1`, the straightened graph `T Γ(A)` is the graph `{x + i B x}` of the symmetric
-matrix `B = J (1 - A) (1 + A)⁻¹`, so its Souriau map is the Cayley transform of `B`. -/
-theorem souriau_graphUnitaryFrame_eq_cayley (A : GLSymplectic n ℝ)
-    (h1 : IsUnit (1 + ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ))) :
-    (souriau (graphUnitaryFrame A) : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
-      cayley ((J n ℝ * (1 - ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) *
-        (1 + ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ))⁻¹).map ((↑) : ℝ → ℂ)) := by
-  set M : Matrix (n ⊕ n) (n ⊕ n) ℝ := ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)
-  set B : Matrix (n ⊕ n) (n ⊕ n) ℝ := J n ℝ * (1 - M) * (1 + M)⁻¹
-  have hB : B.IsHermitian := isHermitian_iff_isSymm.2
-    (SymplecticGroup.isSymm_J_mul_one_sub_mul_inv_one_add (mem_iff_mem_symplecticGroup.1 A.2) h1)
-  have hBc := hB.map_ofReal
-  set F : GL (n ⊕ n) ℂ := ((isUnit_iff_isUnit_det _).2 hBc.isUnit_det_one_add_I_smul).unit
-  have hF : (F : Matrix (n ⊕ n) (n ⊕ n) ℂ) = 1 + Complex.I • B.map ((↑) : ℝ → ℂ) :=
-    IsUnit.unit_spec _
-  -- The frame `1 + i B` is Lagrangian: `(1 + i B)ᴴ (1 + i B) = 1 + B²` is real.
-  have hlag : ((F : Matrix (n ⊕ n) (n ⊕ n) ℂ)ᴴ * F).map Complex.im = 0 := by
-    have hFF : (F : Matrix (n ⊕ n) (n ⊕ n) ℂ)ᴴ * F = (1 + B * B).map ((↑) : ℝ → ℂ) := by
-      rw [hF, conjTranspose_add, conjTranspose_one, conjTranspose_smul, hBc.eq, Complex.star_def,
-        Complex.conj_I]
-      simp [Matrix.add_mul, Matrix.mul_add, smul_smul, Matrix.map_add _ Complex.ofReal_add,
-        map_ofReal_mul]
-    rw [hFF]
-    ext i j
-    simp
-  let U : unitaryGroup (n ⊕ n) ℂ := ⟨realOrthonormalize F, realOrthonormalize_mem_unitaryGroup hlag⟩
-  have hU : (souriau U : Matrix (n ⊕ n) (n ⊕ n) ℂ) = cayley (B.map ((↑) : ℝ → ℂ)) :=
-    souriau_eq_cayley_of_coe_eq_mul hB ((coe_realOrthonormalize F).trans (by rw [hF]))
-  have hreal : (graphUnitaryFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage =
-      (U : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage := by
-    have hunit : IsUnit ((√2 : ℝ)⁻¹ • (1 + M)) := (isUnit_iff_isUnit_det _).2
-      (det_smul_ne_zero (by positivity) ((isUnit_iff_isUnit_det _).1 h1).ne_zero).isUnit
-    rw [realImage_graphUnitaryFrame, diagonalStraightening_mul_graphFrame_eq_mul h1,
-      realImage_mul_map_ofReal _ hunit, realImage_realOrthonormalize, hF]
-  rw [souriau_eq_of_realImage_eq hreal, hU]
-
 /-- At the identity, the unitary graph frame frames the real points: the Souriau map of the
-straightened diagonal is the identity, the Cayley transform of the Cayley generator `0`. -/
+straightened diagonal is the identity. -/
 theorem souriau_graphUnitaryFrame_one :
     souriau (graphUnitaryFrame (1 : GLSymplectic n ℝ)) = 1 := by
-  have h1 : IsUnit (1 + (((1 : GLSymplectic n ℝ) : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) := by
-    rw [OneMemClass.coe_one, Units.val_one, ← two_smul ℝ, ← Algebra.algebraMap_eq_smul_one]
-    exact (IsUnit.mk0 _ two_ne_zero).map _
-  refine Subtype.ext ?_
-  rw [souriau_graphUnitaryFrame_eq_cayley 1 h1]
-  simp
+  have h : (graphUnitaryFrame (1 : GLSymplectic n ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage =
+      ((1 : unitaryGroup (n ⊕ n) ℂ) : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage := by
+    simpa [realImage_graphUnitaryFrame, realImage_diagonalStraightening_mul_graphFrame_one]
+      using (realImage_map_ofReal (isUnit_one (M := Matrix (n ⊕ n) (n ⊕ n) ℝ))).symm
+  rw [souriau_eq_of_realImage_eq h]
+  exact Subtype.ext (by simp)
 
 /-! ### The Conley–Zehnder index -/
 
@@ -322,6 +322,14 @@ theorem conleyZehnderIndex_eq_neg_maslovIndex {A B : GLSymplectic n ℝ} (γ : P
     conleyZehnderIndex γ = -Matrix.UnitaryGroup.maslovIndex δ := by
   rw [conleyZehnderIndex, maslovIndex_eq_of_souriau_eq _ δ fun t ↦
     souriau_eq_of_realImage_eq ((realImage_graphUnitaryFrame (γ t)).trans (h t).symm)]
+
+/-- The Conley–Zehnder index only depends on the path as a function of time, not on the way its
+endpoints are written. -/
+theorem conleyZehnderIndex_congr {A B A' B' : GLSymplectic n ℝ} (γ : Path A B) (γ' : Path A' B')
+    (h : ∀ t, γ t = γ' t) : conleyZehnderIndex γ = conleyZehnderIndex γ' := by
+  rw [conleyZehnderIndex, conleyZehnderIndex, maslovIndex_eq_of_souriau_eq
+    (γ.map continuous_graphUnitaryFrame) (γ'.map continuous_graphUnitaryFrame) fun t ↦ by
+      rw [Path.map_coe, Path.map_coe, Function.comp_apply, Function.comp_apply, h t]]
 
 /-- **Homotopy invariance.** Paths of symplectic matrices that are homotopic relative to their
 endpoints have the same Conley–Zehnder index. -/
@@ -352,54 +360,6 @@ theorem conleyZehnderIndex_symm {A B : GLSymplectic n ℝ} (γ : Path A B) :
     conleyZehnderIndex γ.symm = -conleyZehnderIndex γ := by
   rw [conleyZehnderIndex, ← Path.map_symm, Matrix.UnitaryGroup.maslovIndex_symm,
     conleyZehnderIndex]
-
-/-! ### The zero axiom -/
-
-/-- **Graphs transverse to the diagonal.** If the symplectic matrix `A` has no eigenvalue `1`, the
-Souriau map of its straightened graph does not have the eigenvalue `1`. -/
-theorem not_isRoot_one_charpoly_souriau_graphUnitaryFrame (A : GLSymplectic n ℝ)
-    (h1 : IsUnit (((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) - 1)) :
-    ¬(souriau (graphUnitaryFrame A) : Matrix (n ⊕ n) (n ⊕ n) ℂ).charpoly.IsRoot 1 := by
-  set M : Matrix (n ⊕ n) (n ⊕ n) ℝ := ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)
-  have hT : IsUnit (diagonalStraightening n).det :=
-    UnitaryGroup.det_isUnit ⟨_, diagonalStraightening_mem_unitaryGroup⟩
-  set G : GL (n ⊕ n) ℂ := ((isUnit_iff_isUnit_det _).2 (by
-    rw [det_mul]
-    exact hT.mul (isUnit_det_graphFrame (mem_iff_mem_symplecticGroup.1 A.2)))).unit
-  have hG : (G : Matrix (n ⊕ n) (n ⊕ n) ℂ) = diagonalStraightening n * graphFrame M :=
-    IsUnit.unit_spec _
-  set U : GL (n ⊕ n) ℂ := Unitary.toUnits (graphUnitaryFrame A)
-  have hU : (U : Matrix (n ⊕ n) (n ⊕ n) ℂ) = graphUnitaryFrame A := Unitary.val_toUnits_apply _
-  obtain ⟨O, hO⟩ := exists_eq_mul_map_ofReal (M := G) (M' := U) (by
-    rw [hG, hU, realImage_graphUnitaryFrame])
-  -- The imaginary part of `T Γ(A)` is `J (1 - A) / √2`, which is invertible.
-  have hImG : (G : Matrix (n ⊕ n) (n ⊕ n) ℂ).map Complex.im = (√2 : ℝ)⁻¹ • (J n ℝ * (1 - M)) := by
-    have hs : √2 / 2 = (√2 : ℝ)⁻¹ := by
-      field_simp
-      simp
-    rw [hG, diagonalStraightening_mul_graphFrame]
-    ext i j
-    simp [hs, -map_ofReal_mul]
-  have hdetO : O.det ≠ 0 := by
-    intro h0
-    have h := (isUnit_iff_isUnit_det _).1 U.isUnit
-    rw [hO, det_mul, det_map_ofReal, h0, Complex.ofReal_zero, mul_zero] at h
-    exact not_isUnit_zero h
-  have hIm : ((G : Matrix (n ⊕ n) (n ⊕ n) ℂ) * O.map ((↑) : ℝ → ℂ)).map Complex.im =
-      (G : Matrix (n ⊕ n) (n ⊕ n) ℂ).map Complex.im * O :=
-    map_mul_algebraMap Complex.imLm O _
-  rw [isRoot_one_charpoly_souriau_iff, ← hU, hO, hIm, hImG, det_mul]
-  exact mul_ne_zero (det_smul_ne_zero (by positivity)
-    ((isUnit_iff_isUnit_det _).1 (isUnit_J_mul_one_sub h1)).ne_zero) hdetO
-
-/-- **The zero axiom.** A path of symplectic matrices none of which has the eigenvalue `1` has
-Conley–Zehnder index zero. -/
-theorem conleyZehnderIndex_eq_zero_of_forall_isUnit_sub_one {A B : GLSymplectic n ℝ}
-    (γ : Path A B) (h : ∀ t, IsUnit (((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) - 1)) :
-    conleyZehnderIndex γ = 0 := by
-  rw [conleyZehnderIndex_def, maslovIndex_eq_zero_of_forall_not_isRoot _ fun t ↦ by
-    rw [Path.map_coe, Function.comp_apply]
-    exact not_isRoot_one_charpoly_souriau_graphUnitaryFrame (γ t) (h t), neg_zero]
 
 /-! ### Paths of unitary matrices -/
 
@@ -537,6 +497,130 @@ theorem conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation {U V : unit
   simp only [Set.Icc.coe_one, mul_one, Set.Icc.coe_zero, mul_zero, zero_div, Int.floor_zero,
     Int.ceil_zero, add_zero, Int.cast_zero, sub_zero]
   exact floor_add_ceil_div_eq_sign_of_abs_lt (hα j)
+
+/-! ### Direct sums -/
+
+section Sum
+
+variable {m : Type*} [Fintype m] [DecidableEq m]
+
+/-- The unitary graph frame and the straightened graph frame span the same real subspace, as
+invertible matrices. -/
+private theorem realImage_graphUnitaryFrame_toUnits (A : GLSymplectic n ℝ) :
+    ((Unitary.toUnits (graphUnitaryFrame A) : GL (n ⊕ n) ℂ) : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage =
+      ((Unitary.toUnits (⟨_, diagonalStraightening_mem_unitaryGroup⟩ : unitaryGroup (n ⊕ n) ℂ) *
+        graphFrameUnit A : GL (n ⊕ n) ℂ) : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage := by
+  rw [Unitary.val_toUnits_apply, Units.val_mul, Unitary.val_toUnits_apply, coe_graphFrameUnit]
+  exact realImage_graphUnitaryFrame A
+
+/-- The symplectic direct sum of the unitary graph frames of `A` and `B` frames the straightened
+graph of their direct sum. -/
+private theorem realImage_symplecticSum_graphUnitaryFrame (A : GLSymplectic n ℝ)
+    (B : GLSymplectic m ℝ) :
+    (symplecticSum (graphUnitaryFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ)
+        (graphUnitaryFrame B : Matrix (m ⊕ m) (m ⊕ m) ℂ)).realImage =
+      (diagonalStraightening (n ⊕ m) *
+        graphFrame ((sum (A, B) : GL ((n ⊕ m) ⊕ (n ⊕ m)) ℝ) : Matrix _ _ ℝ)).realImage := by
+  have h := realImage_symplecticSum_congr (realImage_graphUnitaryFrame_toUnits A)
+    (realImage_graphUnitaryFrame_toUnits B)
+  simp only [Unitary.val_toUnits_apply, Units.val_mul, coe_graphFrameUnit] at h
+  rw [h, symplecticSum_mul, coe_sum, graphFrame_symplecticSum, diagonalStraightening_sum]
+
+/-- **The direct-sum axiom.** The Conley–Zehnder index of the direct sum `A ⊕ B` of two paths of
+symplectic matrices is the sum of their Conley–Zehnder indices. -/
+theorem conleyZehnderIndex_sum {A B : GLSymplectic n ℝ} {C D : GLSymplectic m ℝ}
+    (γ₁ : Path A B) (γ₂ : Path C D) :
+    conleyZehnderIndex ((γ₁.prod γ₂).map continuous_sum) =
+      conleyZehnderIndex γ₁ + conleyZehnderIndex γ₂ := by
+  -- Frame the straightened graphs of the direct sum by the direct sums of the unitary frames.
+  let f : I → unitaryGroup ((n ⊕ m) ⊕ (n ⊕ m)) ℂ := fun t ↦
+    ⟨symplecticSum (graphUnitaryFrame (γ₁ t) : Matrix (n ⊕ n) (n ⊕ n) ℂ)
+      (graphUnitaryFrame (γ₂ t) : Matrix (m ⊕ m) (m ⊕ m) ℂ),
+      symplecticSum_mem_unitaryGroup (graphUnitaryFrame _).2 (graphUnitaryFrame _).2⟩
+  have hf : Continuous f := Continuous.subtype_mk
+    (Continuous.matrix_symplecticSum
+      (continuous_subtype_val.comp (continuous_graphUnitaryFrame.comp γ₁.continuous))
+      (continuous_subtype_val.comp (continuous_graphUnitaryFrame.comp γ₂.continuous))) _
+  let δ : Path (f 0) (f 1) := ⟨⟨f, hf⟩, rfl, rfl⟩
+  rw [conleyZehnderIndex_eq_neg_maslovIndex _ δ fun t ↦
+      realImage_symplecticSum_graphUnitaryFrame (γ₁ t) (γ₂ t),
+    maslovIndex_eq_add_of_coe_eq_symplecticSum (γ₁.map continuous_graphUnitaryFrame)
+      (γ₂.map continuous_graphUnitaryFrame) δ fun t ↦ rfl,
+    conleyZehnderIndex, conleyZehnderIndex, neg_add]
+
+end Sum
+
+/-! ### Loops of symplectic matrices -/
+
+/-- The square of the determinant of the unitary graph frame of `A` is the graph phase of `A`, up
+to the constant factor `(det T) ^ 2` of the diagonal straightening `T`. -/
+private theorem detCircle_graphUnitaryFrame_sq (A : GLSymplectic n ℝ) :
+    detCircle (graphUnitaryFrame A) ^ 2 =
+      detCircle (⟨_, diagonalStraightening_mem_unitaryGroup⟩ : unitaryGroup (n ⊕ n) ℂ) ^ 2 *
+        graphPhase A := by
+  obtain ⟨r, -, hr⟩ := exists_pos_det_realOrthonormalize_eq_mul_det (graphFrameUnit A)
+  set T : unitaryGroup (n ⊕ n) ℂ := ⟨_, diagonalStraightening_mem_unitaryGroup⟩
+  set d := (graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det
+  -- The determinant of the unitary graph frame is `det T * r * d`.
+  have hu : (detCircle (graphUnitaryFrame A) : ℂ) = (detCircle T : ℂ) * (r * d) := by
+    rw [coe_detCircle, coe_detCircle, graphUnitaryFrame, det_mul, hr, coe_graphFrameUnit]
+  -- Both determinants lie on the unit circle.
+  have hconj (z : Circle) : (z : ℂ) * conj (z : ℂ) = 1 := by
+    rw [← Circle.coe_inv_eq_conj, ← Circle.coe_mul, mul_inv_cancel, Circle.coe_one]
+  have huu := hconj (detCircle (graphUnitaryFrame A))
+  rw [hu, map_mul, map_mul, conj_ofReal] at huu
+  have hd : conj d ≠ 0 := (map_ne_zero _).2 (det_graphFrame_ne_zero A)
+  refine Circle.ext ?_
+  rw [Circle.coe_pow, Circle.coe_mul, Circle.coe_pow, coe_graphPhase, hu, mul_div_assoc',
+    eq_div_iff hd]
+  linear_combination ((detCircle T : ℂ) ^ 2 * d) * huu -
+    ((detCircle T : ℂ) ^ 2 * d * r ^ 2 * d * conj d) * hconj (detCircle T)
+
+/-- **The Conley–Zehnder index of a loop.** A loop `γ` of symplectic matrices has
+Conley–Zehnder index `-2 μ(γ)`, where `μ` is the Maslov index of loops of symplectic matrices. -/
+theorem conleyZehnderIndex_eq_neg_two_mul_maslovIndex {A : GLSymplectic n ℝ} (γ : Path A A) :
+    conleyZehnderIndex γ = -2 * maslovIndex γ := by
+  set T : unitaryGroup (n ⊕ n) ℂ := ⟨_, diagonalStraightening_mem_unitaryGroup⟩
+  -- The path of unitary graph frames is a loop, so its Maslov index is twice the degree of its
+  -- determinants. Their squares are the graph phases up to a constant factor, and the degree of
+  -- the graph phases is the Maslov index of the graph loop, which is `2 μ(γ)`.
+  have hsq : Circle.degree (((γ.map continuous_graphUnitaryFrame).map continuous_detCircle).map
+      (continuous_pow 2)) = Circle.degree ((Path.refl (detCircle T ^ 2)).mul
+        (γ.map continuous_graphPhase)) :=
+    Circle.degree_congr _ _ fun t ↦ by
+      simp only [Path.map_coe, Function.comp_apply, Path.mul_apply, Path.refl_apply]
+      exact detCircle_graphUnitaryFrame_sq (γ t)
+  have hphase : Circle.degree (γ.map continuous_graphPhase) = (graphLoop γ).maslovIndex :=
+    ((graphLoop γ).maslovIndex_eq_degree isMaximalTotallyReal_realSubspace _ fun t ↦ by
+      rw [Path.map_coe, Function.comp_apply, coe_graphPhase_eq_maslovPhase]
+      exact IsMaximalTotallyReal.maslovPhase_congr _ _ _ (graphLoop_apply γ t).symm).symm
+  rw [Circle.degree_map_pow, Circle.degree_mul, Circle.degree_refl, zero_add, hphase,
+    maslovIndex_graphLoop] at hsq
+  rw [conleyZehnderIndex, Matrix.UnitaryGroup.maslovIndex_eq_two_mul_degree]
+  have hdeg : Circle.degree ((γ.map continuous_graphUnitaryFrame).map continuous_detCircle) =
+      maslovIndex γ := by
+    omega
+  rw [hdeg]
+  ring
+
+/-- **The loop axiom.** Multiplying a path `γ` of symplectic matrices by a loop `φ` of symplectic
+matrices based at the identity, a change of symplectic trivialization along a loop, changes its
+Conley–Zehnder index by `-2 μ(φ)`, where `μ` is the Maslov index of loops of symplectic
+matrices. -/
+theorem conleyZehnderIndex_mul (φ : Path (1 : GLSymplectic n ℝ) 1) {A B : GLSymplectic n ℝ}
+    (γ : Path A B) :
+    conleyZehnderIndex (φ.mul γ) = conleyZehnderIndex γ - 2 * maslovIndex φ := by
+  -- `φ γ` is homotopic to `(t ↦ φ t A)` followed by `γ`.
+  have h : (φ.mul γ).Homotopic ((φ.mul (Path.refl A)).trans ((Path.refl 1).mul γ)) := by
+    have H := (Path.Homotopic.prodHomotopy (Path.Homotopy.transRefl φ).symm
+      (Path.Homotopy.reflTrans γ).symm).map ⟨_, continuous_mul⟩
+    rw [← Path.trans_prod_eq_prod_trans, Path.map_trans] at H
+    exact ⟨H⟩
+  rw [conleyZehnderIndex_eq_of_homotopic h, conleyZehnderIndex_trans,
+    conleyZehnderIndex_eq_neg_two_mul_maslovIndex, maslovIndex_mul, GLSymplectic.maslovIndex_refl,
+    conleyZehnderIndex_congr ((Path.refl 1).mul γ) γ fun t ↦ by simp]
+  push_cast
+  ring
 
 end GLSymplectic
 

@@ -19,8 +19,10 @@ basis, with eigenvalues given by products over the indexing subsets. Their sum i
 
 A basis indexed by `Fin n` identifies the degree-`n` exterior power with the scalars by sending an
 exterior product to its determinant against that basis. The induced endomorphism acts by its
-determinant in this degree. These formulas hold over every commutative ring, including the zero
-ring. When the ring is nontrivial, `n` is the module's rank and this is its top exterior power.
+determinant in this degree, and a change of `n` vectors by a square matrix multiplies their
+exterior product by its determinant. These formulas hold over every commutative ring, including
+the zero ring. When the ring is nontrivial, `n` is the module's rank and this is its top exterior
+power.
 
 ## Main definitions
 
@@ -41,6 +43,9 @@ ring. When the ring is nontrivial, `n` is the module's rank and this is its top 
   as its determinant.
 * `Module.Basis.trace_map_exteriorPower_top` gives the degree-`n` trace as the determinant
   for a basis indexed by `Fin n`.
+* `exteriorPower.ιMulti_sum_smul` and `AlternatingMap.map_sum_smul`: replacing a family of `n`
+  vectors by its combinations with the rows of a square matrix `A` multiplies its exterior
+  product, and the value of every alternating map on it, by `det A`.
 
 ## References
 
@@ -201,9 +206,40 @@ theorem _root_.Module.Basis.trace_map_exteriorPower_top
     -- The top exterior power is one-dimensional, the diagonal case `Nat.choose n n = 1`.
     simp [b.map_exteriorPower_top_eq_det_smul f, Module.finrank_eq_card_basis b]
 
+/-- Replacing a family of `n` vectors by the combinations `∑ i, A j i • v i` with the rows of a
+square matrix `A` multiplies its exterior product by `det A`. No independence of `v` is needed. -/
+theorem ιMulti_sum_smul (A : Matrix (Fin n) (Fin n) R) (v : Fin n → M) :
+    ιMulti R n (fun j ↦ ∑ i, A j i • v i) = A.det • ιMulti R n v := by
+  classical
+  -- Both families are images under the synthesis map `Fin n → R → M` of `v`: the rows of `A`
+  -- and the standard basis, whose determinant against each other is `det A`.
+  let L := Fintype.linearCombination R v
+  have hrows : (fun j ↦ ∑ i, A j i • v i) = L ∘ Matrix.of.symm A := by
+    ext j
+    simp [L, Fintype.linearCombination_apply]
+  have hbasis : v = L ∘ Pi.basisFun R (Fin n) := by
+    ext i
+    simp [L, Fintype.linearCombination_apply_single]
+  rw [hrows, ← map_apply_ιMulti, (Pi.basisFun R (Fin n)).exteriorPower_ιMulti_eq_det_smul,
+    Pi.basisFun_det_apply, Equiv.apply_symm_apply, map_smul, map_apply_ιMulti, ← hbasis]
+
 end Top
 
 end exteriorPower
+
+namespace AlternatingMap
+
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {n : ℕ}
+
+/-- An alternating map takes the combinations `∑ i, A j i • v i` of a family with the rows of a
+square matrix `A` to `det A` times its value on the family. -/
+theorem map_sum_smul (f : M [⋀^Fin n]→ₗ[R] N) (A : Matrix (Fin n) (Fin n) R) (v : Fin n → M) :
+    f (fun j ↦ ∑ i, A j i • v i) = A.det • f v := by
+  rw [← exteriorPower.alternatingMapLinearEquiv_apply_ιMulti, exteriorPower.ιMulti_sum_smul,
+    map_smul, exteriorPower.alternatingMapLinearEquiv_apply_ιMulti]
+
+end AlternatingMap
 
 namespace Module.Basis
 

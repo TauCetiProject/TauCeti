@@ -49,6 +49,7 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 * `Matrix.det_J`: its determinant is `1`.
 * `Matrix.star_J` and `Matrix.J_mem_unitaryGroup`: over any star ring its adjoint is `-J`, so
   it is unitary (orthogonal over `ℝ`).
+* `Matrix.reindex_sumCongr_J`: reindexing both halves of `J` along an equivalence preserves `J`.
 * `Matrix.J_apply_swap` and `Matrix.sum_J_mul_J`: the two entrywise identities for `J`, its
   antisymmetry and the pairing of a row with itself; `Matrix.sum_sum_J_mul_J` is the double sum of
   the latter, `tr (J * Jᵀ) = 2 * card l`.
@@ -63,6 +64,9 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
   antisymmetric with zero diagonal, in every characteristic;
   `Matrix.transpose_mul_J_mul_transpose_sub_J` and `Matrix.mul_J_mul_transpose_sub_J_apply_self`
   say the same of the defect `M * J * Mᵀ - J` of a square matrix `M`.
+* `Matrix.transpose_transpose_mul_J_sub_J_mul`: the matrix `Ψᵀ * J - J * Ψ` is symmetric, and
+  `Matrix.transpose_J_mul_mul_J_sub_J_mul_J_mul` evaluates it on `J * S` for symmetric `S` as
+  `2 • S`.
 * `Matrix.exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero`: the linearized symplectic
   equation `E + X * J + J * Xᵀ = 0` is solvable with entries of `X` in an ideal `I` for every
   alternating `E` with entries in `I`, without dividing by two.
@@ -84,8 +88,6 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 * `SymplecticGroup.fromBlocks_diagonal_mem`: `fromBlocks A 0 0 D` when `Aᵀ * D = 1`.
 * `SymplecticGroup.isUnit_det_mul_J_add_J_mul`: for a real symplectic matrix `A`, the matrix
   `A J + J A` is invertible.
-* `SymplecticGroup.isSymm_J_mul_one_sub_mul_inv_one_add`: for a symplectic matrix `A` with `1 + A`
-  invertible, the Cayley generator `J (1 - A) (1 + A)⁻¹` is symmetric.
 -/
 
 public section
@@ -137,6 +139,12 @@ theorem star_J [StarRing R] : star (J l R) = -J l R := by
 theorem J_mem_unitaryGroup [StarRing R] : J l R ∈ unitaryGroup (l ⊕ l) R := by
   rw [mem_unitaryGroup_iff', star_J]
   exact neg_J_mul_J l R
+
+/-- Reindexing both halves of the canonical skew-symmetric matrix `Matrix.J` along an equivalence
+`e : l₁ ≃ l₂` gives `Matrix.J l₂ R`. -/
+theorem reindex_sumCongr_J {l₁ l₂ : Type*} [DecidableEq l₁] [DecidableEq l₂] (e : l₁ ≃ l₂) :
+    Matrix.reindex (Equiv.sumCongr e e) (Equiv.sumCongr e e) (J l₁ R) = J l₂ R := by
+  ext (i | i) (j | j) <;> simp [Matrix.J, Matrix.one_apply, e.symm.injective.eq_iff]
 
 omit [Fintype l] in
 /-- `J` is antisymmetric, entrywise: `Jᵀ = -J` read at a pair of indices. -/
@@ -220,6 +228,22 @@ theorem mul_J_mul_transpose_apply_self {m : Type*} (C : Matrix m (l ⊕ l) R) (i
 theorem transpose_mul_J_mul_transpose_sub_J (M : Matrix (l ⊕ l) (l ⊕ l) R) :
     (M * J l R * Mᵀ - J l R)ᵀ = -(M * J l R * Mᵀ - J l R) := by
   rw [transpose_sub, transpose_mul_J_mul_transpose, J_transpose, neg_sub_neg, neg_sub]
+
+/-- For any square matrix `Ψ`, the matrix `Ψᵀ * J - J * Ψ` is symmetric. When `Ψ` is symplectic
+it is `(Ψ + 1)ᵀ * (-J * (Ψ - 1))`, the numerator of the Cayley transform of `Ψ`. -/
+theorem transpose_transpose_mul_J_sub_J_mul (Ψ : Matrix (l ⊕ l) (l ⊕ l) R) :
+    (Ψᵀ * J l R - J l R * Ψ)ᵀ = Ψᵀ * J l R - J l R * Ψ := by
+  simp only [transpose_sub, transpose_mul, transpose_transpose, J_transpose, Matrix.neg_mul,
+    Matrix.mul_neg]
+  abel
+
+/-- For a symmetric `S` and `K = J * S`, the matrix `Kᵀ * J - J * K` is `2 • S`. This is the
+linearization at `Ψ = 1` of `Ψᵀ * J - J * Ψ` along `Ψ = 1 + K`. -/
+theorem transpose_J_mul_mul_J_sub_J_mul_J_mul {S : Matrix (l ⊕ l) (l ⊕ l) R} (hS : S.IsSymm) :
+    (J l R * S)ᵀ * J l R - J l R * (J l R * S) = (2 : R) • S := by
+  rw [transpose_mul, J_transpose, hS.eq, ← Matrix.mul_assoc, Matrix.mul_assoc, Matrix.neg_mul,
+    J_squared]
+  simp only [Matrix.mul_one, Matrix.neg_mul, Matrix.one_mul, neg_neg, two_smul, sub_neg_eq_add]
 
 /-- The defect `M * J * Mᵀ - J` of a matrix has zero diagonal. -/
 theorem mul_J_mul_transpose_sub_J_apply_self (M : Matrix (l ⊕ l) (l ⊕ l) R) (i : l ⊕ l) :
@@ -432,34 +456,5 @@ theorem symm_and_toBlocks₂₂_of_mem_symplecticGroup {n R : Type*} [Fintype n]
       _ = Ainvᵀ + C * Ainv * A * (Ainv * B) := by
         rw [← mul_assoc (C * Ainv * A) Ainv B, mul_assoc (C * Ainv) A Ainv, hright, mul_one]
       _ = C * Ainv * A * (Ainv * B) + Ainvᵀ := add_comm _ _
-
-/-- **The Cayley generator of a symplectic matrix is symmetric.** For a symplectic matrix `A` with
-`1 + A` invertible, the matrix `J (1 - A) (1 + A)⁻¹` is symmetric: conjugating its antisymmetric
-part by `1 + A` gives `2 (Aᵀ J A - J) = 0`. -/
-theorem isSymm_J_mul_one_sub_mul_inv_one_add {A : Matrix (l ⊕ l) (l ⊕ l) R}
-    (hA : A ∈ symplecticGroup l R) (h1 : IsUnit (1 + A)) :
-    (J l R * (1 - A) * (1 + A)⁻¹).IsSymm := by
-  have hJ : Aᵀ * J l R * A = J l R := mem_iff'.1 hA
-  have hP : IsUnit (1 + A).det := (isUnit_iff_isUnit_det _).1 h1
-  have hPT : IsUnit (1 + A)ᵀ.det := by rwa [det_transpose]
-  -- Conjugating `Bᵀ - B` by `1 + A` gives `-2 J + 2 Aᵀ J A = 0`.
-  have key : (1 + A)ᵀ * ((J l R * (1 - A) * (1 + A)⁻¹)ᵀ - J l R * (1 - A) * (1 + A)⁻¹) *
-      (1 + A) = 0 := by
-    have h₁ : (1 + A)ᵀ * ((1 + A)⁻¹)ᵀ = 1 := by
-      rw [← transpose_mul, nonsing_inv_mul _ hP, transpose_one]
-    have h₂ : (1 + A)⁻¹ * (1 + A) = 1 := nonsing_inv_mul _ hP
-    calc (1 + A)ᵀ * ((J l R * (1 - A) * (1 + A)⁻¹)ᵀ - J l R * (1 - A) * (1 + A)⁻¹) * (1 + A)
-        = ((1 + A)ᵀ * ((1 + A)⁻¹)ᵀ) * (1 - A)ᵀ * (J l R)ᵀ * (1 + A) -
-            (1 + A)ᵀ * J l R * (1 - A) * ((1 + A)⁻¹ * (1 + A)) := by
-          simp only [transpose_mul]
-          noncomm_ring
-      _ = -2 • J l R + 2 • (Aᵀ * J l R * A) := by
-          rw [h₁, h₂, J_transpose]
-          simp only [transpose_sub, transpose_add, transpose_one]
-          noncomm_ring
-      _ = 0 := by rw [hJ]; abel
-  -- Cancel the invertible factors `(1 + A)ᵀ` and `1 + A`.
-  exact sub_eq_zero.1 (((isUnit_iff_isUnit_det _).2 hPT).mul_right_eq_zero.1
-    (h1.mul_left_eq_zero.1 key))
 
 end SymplecticGroup

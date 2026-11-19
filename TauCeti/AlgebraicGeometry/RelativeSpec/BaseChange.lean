@@ -48,9 +48,10 @@ over-categories to the property `IsAffineHom`; no new choice of fibre product is
   `Y` between `Spec_Y (f^* A)` and the base change of `Spec_X A`;
 * `TauCeti.AlgebraicGeometry.relativeSpecBaseChangeIso`: the same isomorphism, natural in `A`;
 * `TauCeti.AlgebraicGeometry.relativeSpecPullbackFst_id`,
-  `TauCeti.AlgebraicGeometry.relativeSpecPullbackFst_comp` and
+  `TauCeti.AlgebraicGeometry.relativeSpecPullbackFst_comp`,
+  `TauCeti.AlgebraicGeometry.relativeSpecPullbackFst_congr` and
   `TauCeti.AlgebraicGeometry.relativeSpecPullbackIso_comp`: compatibility of base change with
-  identities and composition of base morphisms.
+  identities, equality, and composition of base morphisms.
 
 ## References
 
@@ -431,6 +432,15 @@ theorem relativeSpecPullbackFst_id :
   intro U
   -- On sections, the identity and composition isomorphisms of pushforward are identities.
   rfl
+
+/-- Transporting `relativeSpecPullbackFst` along an equality of base morphisms. -/
+@[reassoc]
+theorem relativeSpecPullbackFst_congr {f₁ f₂ : Y ⟶ X} (hf : f₁ = f₂) :
+    CommMon.relativeSpecMap
+        (eqToHom (congrArg (fun k ↦ (QuasicoherentAlgebra.pullback k).obj A) hf)).hom ≫
+      relativeSpecPullbackFst A f₁ = relativeSpecPullbackFst A f₂ := by
+  subst hf
+  simp
 
 /-- **Relative Spec commutes with base change, compatibly with composition.** For `g : Z ⟶ Y`
 and `f : Y ⟶ X`, the isomorphism `Spec_Z ((g ≫ f)^* A) ≅ Z ×_X Spec_X A` is the composite of the

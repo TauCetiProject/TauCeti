@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Niemeier
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
 
+import TauCeti.Data.Fin.Cast
+
 /-!
 # Symmetries of the glue columns act on the rootful rank-24 lattices
 
@@ -17,8 +19,8 @@ A permutation `g` of the component positions is a *glue symmetry* of the row
 (`TauCeti.RootfulNiemeierType.glueSymmetries`) when it maps every component to one of the same
 type and permuting the components of glue words along it carries `H_r` onto itself.  The glue
 symmetries form a subgroup of the permutations of the positions.  A type-preserving permutation
-that permutes the digit words, in the sense that a word with digits `d` is a digit word of the row
-exactly when the word with digits `d ∘ g` is, is a glue symmetry
+that preserves the digit words, in the sense that a word with digits `d ∘ g` is a digit word of the
+row whenever the word with digits `d` is, is a glue symmetry
 (`mem_glueSymmetries_of_glueWords`).
 
 Permuting the components of `R_r` along a glue symmetry therefore restricts to a self-isometry of
@@ -36,7 +38,9 @@ row except `A₅⁴ D₄` (`mem_glueSymmetries_of_mem_symmetries`), and they act
 `E₆⁴`, `A₈³`, `A₆⁴`, `D₄⁶`, `A₄⁶`, `A₃⁸`, `A₂¹²` and `A₁²⁴`, and the alternating group on the
 four components of `D₆⁴`.  In the row `A₅⁴ D₄` the rotation of the three `A₅` components marked
 in `[2(024)0]` does not preserve the glue subgroup: it carries `[33001]` to `[30301]`, whose
-difference with `[30302]` is the nonzero word `[00003]` of shortest norm `1`.
+difference with `[30302]` is the nonzero word `[00003]` of shortest norm `1`.  That row's rotation
+acts on its lattice only when combined with triality on the `D₄` component; see
+`TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.A5FourthD4`.
 
 ## Main declarations
 
@@ -118,48 +122,38 @@ theorem piGlueAlphabetCongr_mem_glueSubgroup_iff {g : Equiv.Perm (Fin r.componen
   (r.mem_glueSymmetries_iff.mp hg).snd w
 
 /-- **Glue symmetries from the digit words**: a permutation preserving the component types is a
-glue symmetry of a row as soon as it permutes the digit words of the row, in the sense that the
-word with digits `d ∘ g` is a digit word exactly when the word with digits `d` is.  Such a
+glue symmetry of a row as soon as it preserves the digit words of the row, in the sense that the
+word with digits `d ∘ g` is a digit word whenever the word with digits `d` is. Such a
 permutation preserves the glue generators, hence the subgroup they generate. -/
 theorem mem_glueSymmetries_of_glueWords {g : Equiv.Perm (Fin r.components.length)}
     (hg : ∀ k, r.componentType (g k) = r.componentType k)
     (hw : ∀ d : Fin r.components.length → ℕ,
-      List.ofFn (d ∘ g) ∈ r.glueWords ↔ List.ofFn d ∈ r.glueWords) :
+      List.ofFn d ∈ r.glueWords → List.ofFn (d ∘ g) ∈ r.glueWords) :
     g ∈ r.glueSymmetries := by
   refine ⟨hg, fun w ↦ ?_⟩
   set φ := piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType g hg
     (hs := r.isSimplyLaced_componentType)
-  have hgen : φ ⁻¹' r.glueGenerators = r.glueGenerators := by
-    ext v
-    rw [Set.mem_preimage, mem_glueGenerators_iff, mem_glueGenerators_iff,
+  have hgen (v : r.glueModule) : v ∈ r.glueGenerators → φ v ∈ r.glueGenerators := by
+    rw [mem_glueGenerators_iff, mem_glueGenerators_iff,
       encodeGlueWord_piGlueAlphabetCongr_eq_ofFn, encodeGlueWord_def]
     exact hw fun i ↦ (((r.componentType i).glueLabelEquiv
       (r.isSimplyLaced_componentType i)).symm (v i)).val
-  have hmap : r.glueSubgroup.map (φ : r.glueModule →+ r.glueModule) = r.glueSubgroup := by
-    rw [glueSubgroup_def, AddMonoidHom.map_closure, AddMonoidHom.coe_ofClass]
-    exact congrArg AddSubgroup.closure
-      ((congrArg _ hgen.symm).trans (Set.image_preimage_eq _ (EquivLike.surjective φ)))
-  have h := AddSubgroup.mem_map_iff_mem (f := (φ : r.glueModule →+ r.glueModule))
-    (by rw [AddMonoidHom.coe_ofClass]; exact EquivLike.injective φ) (K := r.glueSubgroup) (x := w)
-  rwa [hmap, AddMonoidHom.coe_ofClass] at h
+  exact r.apply_mem_glueSubgroup_iff_of_forall_mem φ
+    (fun v hv ↦ r.glueGenerators_subset_glueSubgroup (hgen v hv)) w
 
 /-- **Glue symmetries from the patterns**: a permutation preserving the component types is a glue
 symmetry of a row as soon as the expansion of every pattern of the row is invariant under it. -/
 theorem mem_glueSymmetries_of_forall_gluePatterns {g : Equiv.Perm (Fin r.components.length)}
     (hg : ∀ k, r.componentType (g k) = r.componentType k)
     (hp : ∀ p ∈ r.gluePatterns, ∀ d : Fin r.components.length → ℕ,
-      List.ofFn (d ∘ g) ∈ p.expand ↔ List.ofFn d ∈ p.expand) :
+      List.ofFn d ∈ p.expand → List.ofFn (d ∘ g) ∈ p.expand) :
     g ∈ r.glueSymmetries := by
   refine r.mem_glueSymmetries_of_glueWords hg fun d ↦ ?_
   simp only [mem_glueWords_iff_exists_ofFn]
-  -- Reindex the expanded word `e` as `e ∘ g`, which ranges over all digit functions.
-  refine ⟨fun ⟨p, hp', e, he, hd⟩ ↦ ⟨p, hp', e ∘ ⇑g⁻¹, ?_, ?_⟩,
-    fun ⟨p, hp', e, he, hd⟩ ↦ ⟨p, hp', e ∘ g, (hp p hp' e).mpr he, ?_⟩⟩
-  · rw [← hp p hp']
-    simpa [Function.comp_assoc] using he
-  · rw [← r.spanMode.ofFn_comp_mem_scalarOrbit_ofFn_comp_iff g]
-    simpa [Function.comp_assoc] using hd
-  · exact (r.spanMode.ofFn_comp_mem_scalarOrbit_ofFn_comp_iff g d e).mpr hd
+  -- Reindex the expanded word and its scalar orbit along the same permutation.
+  rintro ⟨p, hp', e, he, hd⟩
+  exact ⟨p, hp', e ∘ g, hp p hp' e he,
+    (r.spanMode.ofFn_comp_mem_scalarOrbit_ofFn_comp_iff g d e).mpr hd⟩
 
 /-! ### Glue symmetries act on the glued lattice -/
 
@@ -186,16 +180,6 @@ private theorem glueSymmetryIsometry_apply {g : Equiv.Perm (Fin r.components.len
     Isometry.ofEq_apply]
   exact gluedLatticeIsometryOfEq_apply _ _ _ _ _ _ _ _ _ _ x k j
 
-/-- Reading coordinates of `x` at equal positions, through casts of the coordinate index to their
-ranks, gives the same value. -/
-private theorem apply_cast_eq_apply_cast (x : ∀ i, Fin (r.componentType i).rank → ℚ)
-    {a b : Fin r.components.length} (hab : a = b) {n : ℕ} (ha : n = (r.componentType a).rank)
-    (hb : n = (r.componentType b).rank) (j : Fin n) :
-    x a (Fin.cast ha j) = x b (Fin.cast hb j) := by
-  subst hab
-  -- The two casts now have the same source and target, so they agree by proof irrelevance.
-  rfl
-
 /-- **The glue symmetries of a row act on its lattice `N_r`** by permuting the components: a glue
 symmetry `g` moves the component in position `k` to position `g k`. -/
 noncomputable def latticeIsometryHom :
@@ -203,12 +187,12 @@ noncomputable def latticeIsometryHom :
   toFun g := r.glueSymmetryIsometry (inv_mem g.2)
   map_one' := Isometry.ext fun x ↦ funext fun k ↦ funext fun j ↦ by
     rw [glueSymmetryIsometry_apply, Isometry.one_apply]
-    exact (r.apply_cast_eq_apply_cast x (by simp) _ rfl j).trans
+    exact (Fin.apply_cast_eq_apply_cast x (by simp) _ rfl j).trans
       (congrArg (x k) (Fin.cast_eq_self j))
   map_mul' g h := Isometry.ext fun x ↦ funext fun k ↦ funext fun j ↦ by
     rw [Isometry.mul_apply, glueSymmetryIsometry_apply, glueSymmetryIsometry_apply,
       glueSymmetryIsometry_apply, Fin.cast_cast]
-    exact r.apply_cast_eq_apply_cast x (by simp) _ _ j
+    exact Fin.apply_cast_eq_apply_cast x (by simp) _ _ j
 
 /-- The action of a glue symmetry `g` on `N_r` reads the component in position `k` from position
 `g⁻¹ k`. -/
@@ -248,10 +232,10 @@ theorem mem_glueSymmetries_of_mem_symmetries {r : RootfulNiemeierType}
       simp only [gluePatterns] at hq
       rcases hq with _ | ⟨_, _ | ⟨_, ⟨⟩⟩⟩
       all_goals first
-        | exact GluePattern.ofFn_comp_permCongr_mem_expand_iff _ _ hg d
+        | exact (GluePattern.ofFn_comp_permCongr_mem_expand_iff _ _ hg d).mpr
         | have h : [1, 1, 1, 1, 1, 1] = List.ofFn fun _ : Fin d4Sixth.components.length ↦ 1 := rfl
           simp only [GluePattern.expand_literal, Finset.mem_singleton, h, List.ofFn_inj]
-          exact (Equiv.surjective _).injective_comp_right.eq_iff' rfl
+          exact ((Equiv.surjective _).injective_comp_right.eq_iff' rfl).mpr
 
 /-- **The indicated symmetries of a table pattern act on the lattice of its row**, for every row
 other than `A₅⁴ D₄`, by moving the component in position `k` to position `g k`. -/
