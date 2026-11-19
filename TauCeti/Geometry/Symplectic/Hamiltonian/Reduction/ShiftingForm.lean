@@ -28,10 +28,12 @@ of `ξ` and `η` to `c ⁅ξ, η⁆`. This file proves the **shifting identity**
 `a^* σ = pr_G^* σ_c + pr_Z^* (i^* σ)`
 
 on `G × Z`, for the inclusion `i : Z → M`
-(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.mpullback_smul_eq_prod_leftInvariantKirillovForm`).
+(`TauCeti.SmoothTwoForm.IsMomentMap.mpullback_smul_eq_prod_leftInvariantKirillovForm`).
 It is stated for any smooth map `i : Z → M` from a manifold into the level, so it applies to the
 regular level `μ⁻¹(c)` with its submanifold atlas, and needs neither a regular value nor
-nondegeneracy of `σ`.
+nondegeneracy of `σ`. Instead of equivariance of `μ` it only assumes that the moment cocycle
+vanishes on the image of `i`, which holds for a coadjoint-equivariant moment map
+(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.momentCocycle_eq_zero`).
 
 The quotient `Y_O = G ×_{G_c} Z` of `G × Z` by `h · (g, z) = (g h⁻¹, h • z)` maps to the reduced
 space `Q = Z / G_c` by `q_Y [g, z] = [z]`, to `M` by `i_Y [g, z] = g • z` and to `O` by
@@ -53,8 +55,7 @@ tangent to the level, and infinitesimal equivariance gives `σ(ξ_M, η_M) = μ(
 
 ## Main results
 
-The pointwise identity is in the namespace `TauCeti.SmoothTwoForm.IsMomentMap`, and the shifting
-identities are in `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`.
+All results are in the namespace `TauCeti.SmoothTwoForm.IsMomentMap`.
 
 * `IsMomentMap.eval₂_mfderiv_smul_add_fundamentalVectorField`: the pointwise identity
   `σ(d(g •)(ξ_M + v), d(g •)(η_M + w)) = μ(x) ⁅ξ, η⁆ + σ(v, w)` for `v`, `w` in `ker dμ_x`,
@@ -129,25 +130,24 @@ theorem eval₂_mfderiv_smul_add_fundamentalVectorField
     SmoothBundleForm.eval₂_add_right, horbit, hcross ξ hw,
     SmoothBundleForm.eval₂_swap σ x v, hcross η hv, neg_zero, add_zero, zero_add]
 
-end IsMomentMap
-
-namespace IsEquivariantMomentMap
-
 variable {EZ HZ : Type*} [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [TopologicalSpace HZ]
   {IZ : ModelWithCorners ℝ EZ HZ} {Z : Type*} [TopologicalSpace Z] [ChartedSpace HZ Z]
   [IsManifold IZ ∞ Z] {i : Z → M}
 
-/-- **The shifting identity.** Let `G` act by symplectomorphisms of `(M, σ)` with
-coadjoint-equivariant moment map `μ`, and let `i : Z → M` be a smooth map into the level
-`μ⁻¹(c)`, such as the inclusion of a regular level. The action map `a(g, z) = g • i z` on `G × Z`
-pulls `σ` back to `pr_G^* σ_c + pr_Z^* (i^* σ)`, where `σ_c` is the left-invariant Kirillov form
-of `c`, the pullback of the Kirillov–Kostant–Souriau form of the coadjoint orbit of `c` along
+/-- **The shifting identity.** Let `G` act by symplectomorphisms of `(M, σ)` with moment map `μ`,
+and let `i : Z → M` be a smooth map into the level `μ⁻¹(c)`, such as the inclusion of a regular
+level, on whose image the moment cocycle vanishes, as it does everywhere for a
+coadjoint-equivariant moment map. The action map `a(g, z) = g • i z` on `G × Z` pulls `σ` back to
+`pr_G^* σ_c + pr_Z^* (i^* σ)`, where `σ_c` is the left-invariant Kirillov form of `c`, the
+pullback of the Kirillov–Kostant–Souriau form of the coadjoint orbit of `c` along
 `g ↦ Ad*_g c`. -/
-theorem mpullback_smul_eq_prod_leftInvariantKirillovForm (h : σ.IsEquivariantMomentMap μ)
+theorem mpullback_smul_eq_prod_leftInvariantKirillovForm
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ)
     (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
       (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)
     (hi : ContMDiff IZ I' ∞ i) {c : Module.Dual ℝ (GroupLieAlgebra I G)}
-    (hic : ∀ z, μ (i z) = c) :
+    (hic : ∀ z, μ (i z) = c)
+    (hc : ∀ z, σ.momentCocycle (InfinitesimalAction.fundamental I G I' M) μ (i z) = 0) :
     SmoothForm.mpullback (fun p : G × Z ↦ p.1 • i p.2)
         (contMDiff_fst.smul (hi.comp contMDiff_snd)) σ =
       SmoothTwoForm.prod c.leftInvariantKirillovForm (SmoothForm.mpullback i hi σ) := by
@@ -172,26 +172,25 @@ theorem mpullback_smul_eq_prod_leftInvariantKirillovForm (h : σ.IsEquivariantMo
   obtain ⟨ξ, hξ⟩ := exists_mulInvariantVectorField_eq (I := I) (g := g) v.1
   obtain ⟨η, hη⟩ := exists_mulInvariantVectorField_eq (I := I) (g := g) w.1
   rw [SmoothForm.eval₂_mpullback, eval₂_prod, hda v hξ, hda w hη]
-  refine (h.toIsMomentMap.eval₂_mfderiv_smul_add_fundamentalVectorField (hG g)
-    (h.momentCocycle_eq_zero (i z)) ξ η
-    (h.toIsMomentMap.differential_mfderiv_eq_zero hic z v.2)
-    (h.toIsMomentMap.differential_mfderiv_eq_zero hic z w.2)).trans ?_
+  refine (h.eval₂_mfderiv_smul_add_fundamentalVectorField (hG g) (hc z) ξ η
+    (h.differential_mfderiv_eq_zero hic z v.2) (h.differential_mfderiv_eq_zero hic z w.2)).trans ?_
   rw [hic z, SmoothForm.eval₂_mpullback, Manifold.tangentSpaceProdEquiv_apply,
     Manifold.tangentSpaceProdEquiv_apply, ← hξ, ← hη,
     c.eval₂_leftInvariantKirillovForm_mulInvariantVectorField]
 
 /-- **The shifting identity on `M × G`.** With the hypotheses of
-`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.mpullback_smul_eq_prod_leftInvariantKirillovForm`,
+`TauCeti.SmoothTwoForm.IsMomentMap.mpullback_smul_eq_prod_leftInvariantKirillovForm`,
 the map `(g, z) ↦ (g • i z, g)` from `G × Z` to `M × G` pulls the product form
 `pr_M^* σ - pr_G^* σ_c` back to `pr_Z^* (i^* σ)`. Its image lies over the zero level of the
 shifting moment map `(x, g) ↦ μ x - Ad*_g c`, and on `M × O⁻` this is the identity
 `q_O^* ω_red = pr_M^* σ - pr_O^* ω_KKS` read on `G × Z`. -/
 theorem mpullback_smul_prodMk_prod_neg_leftInvariantKirillovForm
-    (h : σ.IsEquivariantMomentMap μ)
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ)
     (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
       (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)
     (hi : ContMDiff IZ I' ∞ i) {c : Module.Dual ℝ (GroupLieAlgebra I G)}
-    (hic : ∀ z, μ (i z) = c) :
+    (hic : ∀ z, μ (i z) = c)
+    (hc : ∀ z, σ.momentCocycle (InfinitesimalAction.fundamental I G I' M) μ (i z) = 0) :
     SmoothForm.mpullback (fun p : G × Z ↦ (p.1 • i p.2, p.1))
         ((contMDiff_fst.smul (hi.comp contMDiff_snd)).prodMk contMDiff_fst)
         (SmoothTwoForm.prod σ (-c.leftInvariantKirillovForm)) =
@@ -207,9 +206,9 @@ theorem mpullback_smul_prodMk_prod_neg_leftInvariantKirillovForm
         SmoothForm.mpullback Prod.fst contMDiff_fst c.leftInvariantKirillovForm :=
     SmoothForm.mpullback_mpullback _ _ _ _ _
   rw [prod_def, map_add, map_neg, map_neg, hM, hK,
-    h.mpullback_smul_eq_prod_leftInvariantKirillovForm hG hi hic, prod_def, add_neg_cancel_comm]
+    h.mpullback_smul_eq_prod_leftInvariantKirillovForm hG hi hic hc, prod_def, add_neg_cancel_comm]
 
-end IsEquivariantMomentMap
+end IsMomentMap
 
 end SmoothTwoForm
 
