@@ -100,23 +100,13 @@ theorem signature_submatrix_equiv_self (e : ι ≃ κ) (A : Matrix ι ι 𝕜) :
   exact signature_eq_of_equivalent ⟨isometryEquivReindex e A⟩
 
 /-- **The signature of a Gram matrix.** The matrix of a bilinear form in a basis has the signature
-of the quadratic form of the bilinear form: the coordinates of the basis are an isometry from the
-quadratic form of the matrix to that of the bilinear form. -/
+of the quadratic form of the bilinear form, by `LinearMap.BilinForm.sigPos_toMatrix` and
+`LinearMap.BilinForm.sigNeg_toMatrix`. -/
 theorem _root_.LinearMap.BilinForm.signature_toMatrix {M : Type*} [AddCommGroup M] [Module 𝕜 M]
     [DecidableEq ι] (b : Module.Basis ι 𝕜 M) (B : LinearMap.BilinForm 𝕜 M) :
     signature (LinearMap.BilinForm.toMatrix b B) =
       (_root_.sigPos B.toQuadraticMap : ℤ) - (_root_.sigNeg B.toQuadraticMap : ℤ) := by
-  let e : QuadraticMap.IsometryEquiv (LinearMap.BilinForm.toMatrix b B).toQuadraticForm'
-      B.toQuadraticMap :=
-    { b.equivFun.symm with
-      map_app' := fun x ↦ by
-        simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
-          Module.Basis.equivFun_symm_apply, LinearMap.BilinMap.toQuadraticMap_apply, map_sum,
-          map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul, Finset.mul_sum,
-          toQuadraticForm'_apply, dotProduct, mulVec, LinearMap.BilinForm.toMatrix_apply]
-        rw [Finset.sum_comm]
-        exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring }
-  rw [signature_def, QuadraticMap.Equivalent.sigPos_eq ⟨e⟩, QuadraticMap.Equivalent.sigNeg_eq ⟨e⟩]
+  rw [signature_def, LinearMap.BilinForm.sigPos_toMatrix, LinearMap.BilinForm.sigNeg_toMatrix]
 
 /-- Transposing a matrix does not change its signature. -/
 @[simp]

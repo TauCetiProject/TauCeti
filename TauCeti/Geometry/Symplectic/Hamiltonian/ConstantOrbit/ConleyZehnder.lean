@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder.Normalizatio
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ConstantOrbit
 public import TauCeti.LinearAlgebra.Matrix.Signature
 import TauCeti.Algebra.Lie.Symplectic.Basic
+import TauCeti.Analysis.Normed.Operator.Exponential
 import TauCeti.Geometry.Lie.Exponential.Matrix.Symplectic
 
 /-!
@@ -33,29 +34,33 @@ The computation has three steps.
 * **The linearized vector field.** Contracting `dX_F(p)` with `ω` gives the Hessian,
   `ω(dX_F(p) u, v) = d²F(p)(u, v)`. In matrices, if `G` is the matrix of `ω` and `S` the matrix of
   the Hessian in the basis `b`, the matrix `M` of `dX_F(p)` satisfies `Mᵀ G = S`
-  (`TauCeti.SymplecticForm.transpose_toMatrix_fderiv_hamiltonianVectorField_mul`).
+  (`TauCeti.SymplecticForm.transpose_toMatrix_fderiv_hamiltonianVectorField_mul`). Since `ω` is
+  antisymmetric and the Hessian symmetric, `G M = -S`
+  (`TauCeti.SymplecticForm.toMatrix_mul_toMatrix_fderiv_hamiltonianVectorField`), so `M = J S` when
+  `G = J` and `M = J (-S)` when `G = -J`.
 * **The linearized flow.** Hence the matrix of `exp (t ε dX_F(p))` is `exp (t ε M)`
   (`TauCeti.SymplecticForm.toMatrix_fderiv_timeDependentHamiltonianFlow_const_mul`). When `G` is
-  `±J` this is `exp (t J T)` with `T = ∓ε S` symmetric and nondegenerate, and the normalization of
+  `±J` this is `exp (t J T)` with `T = ±ε S` symmetric and nondegenerate, and the normalization of
   the Conley–Zehnder index on such paths
   (`TauCeti.GLSymplectic.eventually_conleyZehnderIndex_eq_neg_signature_div_two`) gives
   `CZ = -signature (T) / 2` for small `ε`.
 * **The Morse index.** The signature of the Hessian matrix is `2n - 2 ind_p(F)`
-  (`LinearMap.BilinForm.signature_toMatrix`), since the positive and negative indices of a
-  nondegenerate Hessian add up to the dimension.
+  (`TauCeti.IsNondegenerateCriticalPoint.signature_toMatrix_toBilinForm_fderiv_fderiv`), since the
+  positive and negative indices of a nondegenerate Hessian add up to the dimension.
 
 The sign of the index depends on the orientation of the basis. In a basis with
 `ω (b (inl i)) (b (inr j)) = δᵢⱼ`, that is, in which `ω` has matrix `-J` for Mathlib's `Matrix.J`,
 the coordinates `(b (inl i), b (inr i))` are the real and imaginary parts of `ℂⁿ`, with `ω` the
 imaginary part of the Hermitian product and `J` the multiplication by `i`. There the index is
-`n - ind_p(F)` (`TauCeti.SymplecticForm.conleyZehnderIndex_eq_card_sub_morseIndex`). For example,
-on `ℂ` the counterclockwise rotations `exp (t J θ)`, `θ > 0` small, are the flow of the maximum
+`n - ind_p(F)` for small `ε`
+(`TauCeti.SymplecticForm.eventually_conleyZehnderIndex_eq_card_sub_morseIndex`). For example, on
+`ℂ` the counterclockwise rotations `exp (t J θ)`, `θ > 0` small, are the flow of the maximum
 `-θ |z|² / 2`, and have index `-1 = 1 - 2`, as in
 `TauCeti.GLSymplectic.conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation`; the clockwise
 ones are the flow of the minimum `θ |z|² / 2` and have index `1 = 1 - 0`. In a basis in which `ω`
 has matrix `J`, such as `TauCeti.stdSymplecticBasis`, the same computation gives `ind_p(F) - n`
-(`TauCeti.SymplecticForm.conleyZehnderIndex_eq_morseIndex_sub_card`). The smallness of `ε` is
-needed: for `F = π |z|²` and `ε = 1` the time-one map is the identity.
+(`TauCeti.SymplecticForm.eventually_conleyZehnderIndex_eq_morseIndex_sub_card`). The smallness of
+`ε` is needed: for `F = π |z|²` and `ε = 1` the time-one map is the identity.
 
 The paths are the actual matrices of the derivatives of the global Hamiltonian evolution, which
 form a path of symplectic matrices for every `ε`
@@ -66,6 +71,8 @@ a symplectic vector space, the local model at a critical point of a symplectic m
 
 * `TauCeti.SymplecticForm.transpose_toMatrix_fderiv_hamiltonianVectorField_mul`: the matrix of
   `dX_F(p)` contracted with the matrix of `ω` is the Hessian matrix.
+* `TauCeti.SymplecticForm.toMatrix_mul_toMatrix_fderiv_hamiltonianVectorField`: the matrix of `ω`
+  times the matrix of `dX_F(p)` is minus the Hessian matrix.
 * `TauCeti.SymplecticForm.toMatrix_fderiv_hamiltonianVectorField_eq_J_mul` and
   `TauCeti.SymplecticForm.toMatrix_fderiv_hamiltonianVectorField_eq_J_mul_neg`: in a basis in which
   `ω` has matrix `±J`, this matrix is `±J S`.
@@ -73,10 +80,10 @@ a symplectic vector space, the local model at a critical point of a symplectic m
   the linearized evolution of `εF` at a critical point is a matrix exponential.
 * `TauCeti.SymplecticForm.exists_path_toMatrix_fderiv_timeDependentHamiltonianFlow`: these matrices
   form a path of symplectic matrices.
-* `TauCeti.SymplecticForm.conleyZehnderIndex_eq_card_sub_morseIndex`: for small `ε > 0`, its
-  Conley–Zehnder index is `n - ind_p(F)` in a basis in which `ω` has matrix `-J`.
-* `TauCeti.SymplecticForm.conleyZehnderIndex_eq_morseIndex_sub_card`: it is `ind_p(F) - n` in a
-  basis in which `ω` has matrix `J`.
+* `TauCeti.SymplecticForm.eventually_conleyZehnderIndex_eq_card_sub_morseIndex`: for small
+  `ε > 0`, its Conley–Zehnder index is `n - ind_p(F)` in a basis in which `ω` has matrix `-J`.
+* `TauCeti.SymplecticForm.eventually_conleyZehnderIndex_eq_morseIndex_sub_card`: it is
+  `ind_p(F) - n` in a basis in which `ω` has matrix `J`.
 
 ## References
 
@@ -117,7 +124,25 @@ theorem transpose_toMatrix_fderiv_hamiltonianVectorField_mul (b : Module.Basis �
   ext u v
   exact ω.apply_fderiv_hamiltonianVectorField hF u v
 
-open scoped Matrix.Norms.L2Operator in
+/-- **The matrix of the linearized Hamiltonian vector field, contracted on the left.** In a basis
+`b`, the matrix of `ω` times the matrix of `dX_F(p)` is minus the matrix of the Hessian of `F` at
+`p`, since `ω` is antisymmetric and the Hessian is symmetric. -/
+theorem toMatrix_mul_toMatrix_fderiv_hamiltonianVectorField (b : Module.Basis ι ℝ V)
+    (hF : ContDiffAt ℝ 2 F p) :
+    LinearMap.BilinForm.toMatrix b ω.toBilinForm *
+        LinearMap.toMatrix b b (fderiv ℝ (ω.hamiltonianVectorField F) p) =
+      -LinearMap.BilinForm.toMatrix b (fderiv ℝ (fderiv ℝ F) p).toBilinForm := by
+  have hω : (LinearMap.BilinForm.toMatrix b ω.toBilinForm)ᵀ =
+      -LinearMap.BilinForm.toMatrix b ω.toBilinForm := by
+    ext i j
+    simpa [LinearMap.BilinForm.toMatrix_apply] using (ω.isAlt.neg_eq (b i) (b j)).symm
+  -- Transposing `Mᵀ G = S` gives `Gᵀ M = Sᵀ`, that is `-(G M) = S`.
+  have h := congrArg transpose (ω.transpose_toMatrix_fderiv_hamiltonianVectorField_mul b
+    ((hF.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero))
+  rw [transpose_mul, transpose_transpose, hω, ← conjTranspose_eq_transpose_of_trivial,
+    (isHermitian_toMatrix_toBilinForm_fderiv_fderiv b hF).eq] at h
+  rw [← h, Matrix.neg_mul, neg_neg]
+
 /-- **The matrix of the linearized evolution at a critical point.** If `p` is a critical point of a
 `C²` function `F`, the matrix in a basis `b` of the derivative at `p` of the Hamiltonian evolution
 of `εF` from time `s` to time `t` is the exponential of `(t - s) ε` times the matrix of
@@ -128,19 +153,8 @@ theorem toMatrix_fderiv_timeDependentHamiltonianFlow_const_mul (b : Module.Basis
     LinearMap.toMatrix b b
         (fderiv ℝ (ω.timeDependentHamiltonianFlow (fun _ y ↦ ε * F y) hX s t) p) =
       exp (((t - s) * ε) • LinearMap.toMatrix b b (fderiv ℝ (ω.hamiltonianVectorField F) p)) := by
-  -- `L ↦ matrix of L` is a continuous ring homomorphism, so it commutes with `exp`.
-  let f : (V →L[ℝ] V) →+* Matrix ι ι ℝ :=
-    (LinearMap.toMatrixAlgEquiv b).toRingHom.comp ContinuousLinearMap.toLinearMapRingHom
-  have hfg (L : V →L[ℝ] V) : f L = LinearMap.toMatrix b b L := by
-    ext i j
-    simp [f, LinearMap.toMatrixAlgEquiv_apply, LinearMap.toMatrix_apply]
-  have hf : Continuous f :=
-    (((LinearMap.toMatrix b b).toLinearMap.comp
-      (ContinuousLinearMap.coeLM ℝ)).continuous_of_finiteDimensional).congr fun L ↦ by
-        simp [hfg]
-  let +nondep : NormedAlgebra ℚ (V →L[ℝ] V) := .restrictScalars ℚ ℝ _
-  rw [ω.fderiv_timeDependentHamiltonianFlow_const_mul hF hp ε hX s t, ← hfg,
-    NormedSpace.map_exp f hf, hfg, ContinuousLinearMap.toLinearMap_smul, LinearEquiv.map_smul]
+  rw [ω.fderiv_timeDependentHamiltonianFlow_const_mul hF hp ε hX s t,
+    ContinuousLinearMap.toMatrix_exp, ContinuousLinearMap.toLinearMap_smul, LinearEquiv.map_smul]
 
 end Matrices
 
@@ -150,15 +164,6 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 
 /-! ### Bases in which `ω` has matrix `±J` -/
 
-omit [FiniteDimensional ℝ V] in
-/-- The matrix of the Hessian of a function `C²` at `p` is symmetric. -/
-private theorem isHermitian_toMatrix_hessian (b : Module.Basis (n ⊕ n) ℝ V)
-    (hF : ContDiffAt ℝ 2 F p) :
-    (LinearMap.BilinForm.toMatrix b (fderiv ℝ (fderiv ℝ F) p).toBilinForm).IsHermitian :=
-  isHermitian_iff_isSymm.2 <| (LinearMap.BilinForm.isSymm_toMatrix_iff_isSymm b).2 <|
-    ContinuousLinearMap.isSymm_toBilinForm_iff.2
-      (hF.isSymmSndFDerivAt (by simp [minSmoothness_of_isRCLikeNormedField]))
-
 /-- **The matrix of the linearized Hamiltonian vector field in a symplectic basis.** In a basis
 `b` in which `ω` has matrix `J`, the matrix of `dX_F(p)` is `J S`, for the matrix `S` of the
 Hessian of `F` at `p`. The point `p` need not be critical. -/
@@ -166,16 +171,12 @@ theorem toMatrix_fderiv_hamiltonianVectorField_eq_J_mul (b : Module.Basis (n ⊕
     (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J n ℝ) (hF : ContDiffAt ℝ 2 F p) :
     LinearMap.toMatrix b b (fderiv ℝ (ω.hamiltonianVectorField F) p) =
       J n ℝ * LinearMap.BilinForm.toMatrix b (fderiv ℝ (fderiv ℝ F) p).toBilinForm := by
+  have h := ω.toMatrix_mul_toMatrix_fderiv_hamiltonianVectorField b hF
+  rw [hb] at h
   set M := LinearMap.toMatrix b b (fderiv ℝ (ω.hamiltonianVectorField F) p)
-  have h := ω.transpose_toMatrix_fderiv_hamiltonianVectorField_mul b
-    ((hF.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero)
-  -- Since the Hessian matrix `S = Mᵀ J` is symmetric, `S = Jᵀ M = -J M`, so `J S = M`.
-  calc M = -(J n ℝ * J n ℝ) * M := by rw [J_squared, neg_neg, Matrix.one_mul]
-    _ = J n ℝ * ((J n ℝ)ᵀ * M) := by rw [J_transpose]; noncomm_ring
-    _ = J n ℝ * (Mᵀ * LinearMap.BilinForm.toMatrix b ω.toBilinForm)ᵀ := by
-      rw [transpose_mul, transpose_transpose, hb]
-    _ = _ := by
-      rw [h, ← conjTranspose_eq_transpose_of_trivial, (isHermitian_toMatrix_hessian b hF).eq]
+  -- `J M = -S`, so `M = -J (J M) = J S`.
+  calc M = -J n ℝ * (J n ℝ * M) := by rw [← Matrix.mul_assoc, neg_J_mul_J, Matrix.one_mul]
+    _ = _ := by rw [h, neg_mul_neg]
 
 /-- **The matrix of the linearized Hamiltonian vector field in a complex basis.** In a basis `b` in
 which `ω` has matrix `-J`, the matrix of `dX_F(p)` is `J (-S)`, for the matrix `S` of the Hessian
@@ -184,16 +185,12 @@ theorem toMatrix_fderiv_hamiltonianVectorField_eq_J_mul_neg (b : Module.Basis (n
     (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = -J n ℝ) (hF : ContDiffAt ℝ 2 F p) :
     LinearMap.toMatrix b b (fderiv ℝ (ω.hamiltonianVectorField F) p) =
       J n ℝ * -LinearMap.BilinForm.toMatrix b (fderiv ℝ (fderiv ℝ F) p).toBilinForm := by
+  have h := ω.toMatrix_mul_toMatrix_fderiv_hamiltonianVectorField b hF
+  rw [hb] at h
   set M := LinearMap.toMatrix b b (fderiv ℝ (ω.hamiltonianVectorField F) p)
-  have h := ω.transpose_toMatrix_fderiv_hamiltonianVectorField_mul b
-    ((hF.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero)
-  -- Since the Hessian matrix `S = -Mᵀ J` is symmetric, `S = -Jᵀ M = J M`, so `J (-S) = M`.
-  calc M = -(J n ℝ * J n ℝ) * M := by rw [J_squared, neg_neg, Matrix.one_mul]
-    _ = J n ℝ * -((-J n ℝ)ᵀ * M) := by rw [transpose_neg, J_transpose]; noncomm_ring
-    _ = J n ℝ * -(Mᵀ * LinearMap.BilinForm.toMatrix b ω.toBilinForm)ᵀ := by
-      rw [transpose_mul, transpose_transpose, hb]
-    _ = _ := by
-      rw [h, ← conjTranspose_eq_transpose_of_trivial, (isHermitian_toMatrix_hessian b hF).eq]
+  -- `-J M = -S`, so `M = J (-J M) = J (-S)`.
+  calc M = J n ℝ * (-J n ℝ * M) := by rw [← Matrix.mul_assoc, J_mul_neg_J, Matrix.one_mul]
+    _ = _ := by rw [h]
 
 /-- In a basis in which `ω` has matrix `±J`, the matrix of `dX_F(p)` is `J T` for a symmetric
 `T`. -/
@@ -204,12 +201,19 @@ private theorem exists_isHermitian_toMatrix_fderiv_hamiltonianVectorField_eq
     ∃ T : Matrix (n ⊕ n) (n ⊕ n) ℝ, T.IsHermitian ∧
       LinearMap.toMatrix b b (fderiv ℝ (ω.hamiltonianVectorField F) p) = J n ℝ * T := by
   rcases hb with hb | hb
-  · exact ⟨_, isHermitian_toMatrix_hessian b hF,
+  · exact ⟨_, isHermitian_toMatrix_toBilinForm_fderiv_fderiv b hF,
       ω.toMatrix_fderiv_hamiltonianVectorField_eq_J_mul b hb hF⟩
-  · exact ⟨_, (isHermitian_toMatrix_hessian b hF).neg,
+  · exact ⟨_, (isHermitian_toMatrix_toBilinForm_fderiv_fderiv b hF).neg,
       ω.toMatrix_fderiv_hamiltonianVectorField_eq_J_mul_neg b hb hF⟩
 
 /-! ### The path of linearized evolutions -/
+
+/-- `J S` lies in the symplectic Lie algebra for a symmetric `S`: `(J S)ᵀ J = S (-J) J = S` and
+`-(J (J S)) = S`. -/
+private theorem J_mul_mem_sp {S : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hS : S.IsHermitian) :
+    J n ℝ * S ∈ LieAlgebra.Symplectic.sp n ℝ := by
+  rw [LieAlgebra.Symplectic.mem_sp, transpose_mul, J_transpose, hS.isSymm.eq, Matrix.mul_assoc,
+    neg_J_mul_J, ← Matrix.neg_mul, ← Matrix.mul_assoc, neg_J_mul_J, Matrix.mul_one, Matrix.one_mul]
 
 /-- The linearized evolution of `εF` at a critical point, in a basis in which the matrix of
 `dX_F(p)` is `J T` for a symmetric `T`, is `exp (t (J (ε T)))`. -/
@@ -245,13 +249,8 @@ theorem exists_path_toMatrix_fderiv_timeDependentHamiltonianFlow (b : Module.Bas
   set K' := J n ℝ * (ε • T)
   have hmem (t : ℝ) : expUnit (t • K') ∈ GLSymplectic n ℝ := by
     rw [GLSymplectic.mem_iff_mem_symplecticGroup, expUnit_coe]
-    refine exp_mem_symplecticGroup_of_mem_sp _ ?_
-    -- `t • K' = J S` for the symmetric `S = t ε T`, and `(J S)ᵀ J = S Jᵀ J = S = -(J (J S))`.
-    have hS := (((hT.smul (IsSelfAdjoint.all ε)).smul (IsSelfAdjoint.all t)).isSymm).eq
-    rw [show t • K' = J n ℝ * (t • ε • T) by simp only [K', Matrix.mul_smul],
-      LieAlgebra.Symplectic.mem_sp, transpose_mul, hS, J_transpose, Matrix.mul_assoc,
-      Matrix.neg_mul, J_squared, ← Matrix.mul_assoc, J_squared]
-    simp
+    exact (forall_exp_smul_mem_symplecticGroup_iff_mem_sp K').2
+      (J_mul_mem_sp (hT.smul (IsSelfAdjoint.all ε))) t
   let γ : Path (1 : GLSymplectic n ℝ) ⟨expUnit K', by simpa using hmem 1⟩ :=
     { toFun := fun t ↦ ⟨expUnit ((t : ℝ) • K'), hmem t⟩
       continuous_toFun := (continuous_expUnit.comp
@@ -288,22 +287,6 @@ private theorem eventually_conleyZehnderIndex_eq_neg_signature_div_two
       fun t ↦ by rw [hγ t, ω.toMatrix_fderiv_timeDependentHamiltonianFlow_eq_exp b hM hF hp ε hX],
     signature_smul_of_pos hε0]
 
-/-- The Hessian matrix at a nondegenerate critical point is invertible, and its signature is
-`2n - 2 ind_p(F)`. -/
-private theorem isUnit_det_toMatrix_hessian_and_signature_eq (b : Module.Basis (n ⊕ n) ℝ V)
-    (hp : IsNondegenerateCriticalPoint F p) :
-    IsUnit (LinearMap.BilinForm.toMatrix b (fderiv ℝ (fderiv ℝ F) p).toBilinForm).det ∧
-      (signature (LinearMap.BilinForm.toMatrix b (fderiv ℝ (fderiv ℝ F) p).toBilinForm) : ℝ) =
-        2 * Fintype.card n - 2 * morseIndex F p := by
-  refine ⟨isUnit_iff_ne_zero.2 ((LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b).1
-    (LinearMap.BilinForm.Nondegenerate.ofSeparatingLeft hp.separatingLeft)), ?_⟩
-  have hsum := hp.sigPos_hessianQuadraticForm_add_morseIndex_eq_finrank
-  rw [Module.finrank_eq_card_basis b, Fintype.card_sum, ← two_mul] at hsum
-  rw [LinearMap.BilinForm.signature_toMatrix, ← hessianQuadraticForm_def, ← morseIndex_def]
-  have h := congrArg (Nat.cast (R := ℝ)) hsum
-  push_cast at h ⊢
-  linarith
-
 variable (b : Module.Basis (n ⊕ n) ℝ V)
 
 /-- **The Conley–Zehnder index of the constant orbits of a small Hamiltonian.** Let `b` be a
@@ -312,7 +295,7 @@ matrix `-J`, and let `p` be a nondegenerate critical point of a `C²` function `
 `ε > 0`, the path `t ↦ dφ_{0,t}(p)`, `t ∈ [0, 1]`, of the matrices in `b` of the derivatives of the
 Hamiltonian evolution of `εF` has Conley–Zehnder index `n - ind_p(F)`. Such paths exist by
 `TauCeti.SymplecticForm.exists_path_toMatrix_fderiv_timeDependentHamiltonianFlow`. -/
-theorem conleyZehnderIndex_eq_card_sub_morseIndex
+theorem eventually_conleyZehnderIndex_eq_card_sub_morseIndex
     (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = -J n ℝ) (hF : ContDiff ℝ 2 F)
     (hp : IsNondegenerateCriticalPoint F p) :
     ∀ᶠ ε in 𝓝[>] 0, ∀ {K : ℝ≥0}
@@ -322,21 +305,25 @@ theorem conleyZehnderIndex_eq_card_sub_morseIndex
         LinearMap.toMatrix b b
           (fderiv ℝ (ω.timeDependentHamiltonianFlow (fun _ y ↦ ε * F y) hX 0 t) p)) →
       GLSymplectic.conleyZehnderIndex γ = Fintype.card n - morseIndex F p := by
-  obtain ⟨hdet, hsig⟩ := isUnit_det_toMatrix_hessian_and_signature_eq b hp
   filter_upwards [ω.eventually_conleyZehnderIndex_eq_neg_signature_div_two b
-    (isHermitian_toMatrix_hessian b hp.contDiffAt).neg
-    (by rw [det_neg]; exact ((isUnit_neg_one (α := ℝ)).pow _).mul hdet)
+    (isHermitian_toMatrix_toBilinForm_fderiv_fderiv b hp.contDiffAt).neg
+    (by
+      rw [det_neg]
+      exact ((isUnit_neg_one (α := ℝ)).pow _).mul
+        (hp.isUnit_det_toMatrix_toBilinForm_fderiv_fderiv b))
     (ω.toMatrix_fderiv_hamiltonianVectorField_eq_J_mul_neg b hb hp.contDiffAt) hF
     hp.fderiv_eq_zero] with ε hε K hX A B γ hγ
-  rw [hε hX γ hγ, signature_neg, Int.cast_neg, hsig]
+  rw [hε hX γ hγ, signature_neg, hp.signature_toMatrix_toBilinForm_fderiv_fderiv b,
+    Module.finrank_eq_card_basis b, Fintype.card_sum]
+  push_cast
   ring
 
 /-- **The Conley–Zehnder index in the opposite orientation.** In a basis `b` in which `ω` has
 matrix `J`, as for `TauCeti.stdSymplecticBasis`, the path of the linearized evolutions of `εF` at a
 nondegenerate critical point `p` has Conley–Zehnder index `ind_p(F) - n` for every small `ε > 0`:
-the opposite of `TauCeti.SymplecticForm.conleyZehnderIndex_eq_card_sub_morseIndex`, since this
-change of orientation is antisymplectic. -/
-theorem conleyZehnderIndex_eq_morseIndex_sub_card
+the opposite of `TauCeti.SymplecticForm.eventually_conleyZehnderIndex_eq_card_sub_morseIndex`, since
+this change of orientation is antisymplectic. -/
+theorem eventually_conleyZehnderIndex_eq_morseIndex_sub_card
     (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J n ℝ) (hF : ContDiff ℝ 2 F)
     (hp : IsNondegenerateCriticalPoint F p) :
     ∀ᶠ ε in 𝓝[>] 0, ∀ {K : ℝ≥0}
@@ -346,12 +333,14 @@ theorem conleyZehnderIndex_eq_morseIndex_sub_card
         LinearMap.toMatrix b b
           (fderiv ℝ (ω.timeDependentHamiltonianFlow (fun _ y ↦ ε * F y) hX 0 t) p)) →
       GLSymplectic.conleyZehnderIndex γ = morseIndex F p - Fintype.card n := by
-  obtain ⟨hdet, hsig⟩ := isUnit_det_toMatrix_hessian_and_signature_eq b hp
   filter_upwards [ω.eventually_conleyZehnderIndex_eq_neg_signature_div_two b
-    (isHermitian_toMatrix_hessian b hp.contDiffAt) hdet
+    (isHermitian_toMatrix_toBilinForm_fderiv_fderiv b hp.contDiffAt)
+    (hp.isUnit_det_toMatrix_toBilinForm_fderiv_fderiv b)
     (ω.toMatrix_fderiv_hamiltonianVectorField_eq_J_mul b hb hp.contDiffAt) hF
     hp.fderiv_eq_zero] with ε hε K hX A B γ hγ
-  rw [hε hX γ hγ, hsig]
+  rw [hε hX γ hγ, hp.signature_toMatrix_toBilinForm_fderiv_fderiv b,
+    Module.finrank_eq_card_basis b, Fintype.card_sum]
+  push_cast
   ring
 
 end SymplecticBasis

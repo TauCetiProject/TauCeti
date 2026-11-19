@@ -537,6 +537,19 @@ namespace LinearMap.BilinForm
 
 open _root_.QuadraticForm
 
+/-- The positive index of a bilinear form agrees with that of its Gram matrix in any basis. -/
+@[simp]
+theorem sigPos_toMatrix {R M I : Type*} [CommRing R] [LinearOrder R] [AddCommGroup M]
+    [Module R M] [Fintype I] [DecidableEq I] (b : Module.Basis I R M)
+    (B : LinearMap.BilinForm R M) :
+    _root_.sigPos ((B.toMatrix b).toQuadraticForm') = _root_.sigPos B.toQuadraticMap := by
+  apply QuadraticMap.Equivalent.sigPos_eq
+  refine ⟨{
+    toLinearEquiv := b.equivFun.symm
+    map_app' := fun v ↦ ?_ }⟩
+  rw [Matrix.toQuadraticForm'_apply, LinearMap.BilinMap.toQuadraticMap_apply]
+  exact (B.dotProduct_toMatrix_mulVec b v v).symm
+
 /-- The negative index of a bilinear form agrees with that of its Gram matrix in any basis. -/
 @[simp]
 theorem sigNeg_toMatrix {R M I : Type*} [CommRing R] [LinearOrder R] [AddCommGroup M]
