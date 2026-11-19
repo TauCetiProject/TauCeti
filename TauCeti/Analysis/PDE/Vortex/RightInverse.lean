@@ -38,7 +38,11 @@ solution of `L_x y = f` for every `f`, and `Q f` is orthogonal to the weak kerne
 `Q f` is the weak solution of least norm, and `Q` is the right inverse `L_x* (L_x L_x*)⁻¹` on the
 `L²`-orthogonal complement of the weak kernel. At an actual vortex with `|α| → 1`, the spectral
 gap `exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` supplies the lower
-bound (`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`).
+bound (`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`). The
+uniform gap `exists_pos_forall_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` over
+the smooth vortices of a given degree `m` gives the same for the bound on `Q`: one constant,
+depending only on `m`, bounds the norm of `Q` over the whole moduli space `Sym^m ℂ`
+(`exists_forall_exists_continuousLinearMap_norm_le_integral_inner_gaugeFixedAdjoint_eq`).
 
 At such a vortex `Q` also respects exponential decay. With `ρ = √(1 + |z|²)` and `|c| < 1/2`,
 every weak solution `y` of `L_x y = f` orthogonal to the weak kernel, in particular `y = Q f`,
@@ -69,6 +73,8 @@ are not proved here.
   lower bound on `L_x*` gives a bounded weak right inverse of `L_x` orthogonal to its weak kernel.
 * `TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`: the weak
   right inverse at a plane vortex with `|α| → 1`.
+* `exists_forall_exists_continuousLinearMap_norm_le_integral_inner_gaugeFixedAdjoint_eq`: a bound
+  on its norm uniform over the smooth vortices of degree `m`.
 * `TauCeti.Vortex.exists_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq`: the
   exponentially weighted `L²` estimate for the weak right inverse at such a vortex.
 * `TauCeti.Vortex.adjoint_apply_ae_eq_of_ae_eq_gaugeFixedAdjoint`,
@@ -90,7 +96,7 @@ public section
 namespace TauCeti.Vortex
 
 open MeasureTheory Filter
-open scoped RealInnerProductSpace Topology NNReal ENNReal
+open scoped ContDiff RealInnerProductSpace Topology NNReal ENNReal
 
 variable {μ : Measure ℂ} [μ.IsAddHaarMeasure] {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
@@ -191,6 +197,31 @@ theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq (hx : Con
   obtain ⟨Q, -, hQ⟩ :=
     exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le hx.continuous hc hgap
   exact ⟨Q, hQ⟩
+
+/-- **Uniform weak right inverse over all vortices of degree `m`.** There is `K`, depending only
+on `m`, such that at every smooth plane vortex `x` with the degree-`m` end framing there is a
+bounded operator `Q` on `L²(ℂ; ℝ⁴)` of norm at most `K` such that `Q f` is a weak solution of
+`L_x y = f` for every `f ∈ L²`, orthogonal to the weak kernel of `L_x`. The bound is uniform over
+the whole noncompact moduli space `Sym^m ℂ`. -/
+theorem exists_forall_exists_continuousLinearMap_norm_le_integral_inner_gaugeFixedAdjoint_eq
+    (m : ℕ) :
+    ∃ K, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
+      (∀ z, equation x z = 0) →
+      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) →
+      ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+        ‖Q‖ ≤ K ∧
+        (∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
+          ∫ z, ⟪Q f z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) ∧
+        ∀ f u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+          (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+            ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+          ∫ z, ⟪Q f z, u z⟫ ∂μ = 0 := by
+  obtain ⟨c, hc, hgap⟩ :=
+    exists_pos_forall_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint (μ := μ) m
+  exact ⟨(√c)⁻¹, fun x D hx hsol hframe hD ↦
+    exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le hx.continuous hc
+      (hgap x D hx hsol hframe hD)⟩
 
 /-! ### The exponentially weighted estimate -/
 
