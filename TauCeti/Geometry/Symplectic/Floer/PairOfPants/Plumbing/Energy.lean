@@ -406,9 +406,7 @@ theorem integrableOn_hamiltonianCurvature_plumbedTruncation (ω : SmoothTwoForm 
         z (u z)) (Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R) := by
   have hR₀ (r r' : Puncture) : 0 ≤ Function.update (fun _ ↦ R) r (L / 2) r' :=
     le_update_iff (x := fun _ ↦ (0 : ℝ)).2 ⟨by linarith, fun _ _ ↦ by linarith⟩ r'
-  rw [preimage_plumbedTruncation hq L R]
-  simp only [← fst_positiveEndCoord]
-  rw [preimage_truncation_inter_eq_preimage_truncationAt q hR,
+  rw [preimage_plumbedTruncation hq L R, preimage_truncation_inter_eq_preimage_truncationAt q hR,
     preimage_truncation_inter_eq_preimage_truncationAt inf hR]
   exact (integrableOn_hamiltonianCurvature_plumbedPerturbation_receiving ω hq hHb hHbs hab hL
     (hR₀ q) (by simp) hu).union
@@ -919,10 +917,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_plumbedTruncation
   set B := Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
     {z | inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2}
   have hL2 : (1 : ℝ) ≤ L / 2 := by linarith
-  have hAeq : A = _ := .trans (by simp only [A, fst_positiveEndCoord])
-    (preimage_truncation_inter_eq_preimage_truncationAt q hR)
-  have hBeq : B = _ := .trans (by simp only [B, fst_positiveEndCoord])
-    (preimage_truncation_inter_eq_preimage_truncationAt inf hR)
+  have hAeq : A = _ := preimage_truncation_inter_eq_preimage_truncationAt q hR
+  have hBeq : B = _ := preimage_truncation_inter_eq_preimage_truncationAt inf hR
   have hAc : IsCompact A := by rw [hAeq]; exact isCompact_preimage_truncationAt _
   have hBc : IsCompact B := by rw [hBeq]; exact isCompact_preimage_truncationAt _
   have hAm := hAc.isClosed.measurableSet

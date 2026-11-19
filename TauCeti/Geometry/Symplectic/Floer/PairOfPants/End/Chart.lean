@@ -283,9 +283,9 @@ theorem preimage_truncationAt_subset_thricePuncturedSphereReal (R : Puncture →
 `c ≤ R`, gives the truncation at the height `c` on `q` and `R` on the other two ends. -/
 theorem preimage_truncation_inter_eq_preimage_truncationAt (q : Puncture) {c R : ℝ}
     (hcR : c ≤ R) :
-    Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩ {z | (positiveEndCoord q z).1 ≤ c} =
+    Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
+        {z | q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ c} =
       Complex.equivRealProdCLM.symm ⁻¹' truncationAt (Function.update (fun _ ↦ R) q c) := by
-  simp_rw [fst_positiveEndCoord]
   rw [← truncation_inter_eq_truncationAt q hcR, preimage_inter,
     preimage_ofPred_eq (p := fun w ↦ q.endSign * (q.endCoord w).re ≤ c)]
 
