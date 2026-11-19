@@ -37,13 +37,11 @@ base, shifted up by the index.
 
 For a non-orientable negative bundle and a field of characteristic other than `2` the shifted
 homology of the base must be taken with coefficients twisted by the orientation of `V`, which this
-file does not treat. The base `B` is compact, since `g` embeds the disc bundle, which contains the
-zero section, as a closed subset of a compact set
-(`TauCeti.IsFiberGauge.compactSpace_of_isCompact_image_gaugeDiscBundle`). The rank `1` is
-excluded because the Thom isomorphism over a compact base used here
+file does not treat. No compactness hypothesis on the base `B` is needed, since `hK` and `hg`
+already force it (`TauCeti.IsFiberGauge.compactSpace_of_isCompact_image_gaugeDiscBundle`). The
+rank `1` is excluded because the Thom isomorphism over a compact base used here
 (`TauCeti.IsThomClass.bijective_homologyThomMap`) needs rank at least `2`; rank `0`, the case of a
-family of local minima, is
-`TauCeti.IsThomClass.bijective_homologyThomMap_of_finrank_eq_zero`.
+family of local minima, is `TauCeti.IsThomClass.bijective_homologyThomMap_of_finrank_eq_zero`.
 
 ## References
 
@@ -108,7 +106,7 @@ submanifold.** In the setting of `TauCeti.nonempty_singularHomology_sublevelPair
 let the negative disc bundle of the quadratic normal form `f = c - s + t` be parametrized by the
 disc bundle of a real vector bundle `V → B` of rank `r ≠ 1`, and let `u` be a Thom class of `V`
 with coefficients in a field `K`. Then `H_{p + r}({f ≤ c + ε}, {f ≤ c - ε}; K) ≅ Hₚ(B; K)` for
-every degree `p`. The base `B` is then compact. -/
+every degree `p`. -/
 theorem nonempty_singularHomology_sublevelPair_iso_singularHomology_of_isThomClass
     (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hW : IsOpen W) (hs : ContMDiffOn I 𝓘(ℝ) ∞ s W)
     (ht : ContMDiffOn I 𝓘(ℝ) ∞ t W) (hs₀ : ∀ x ∈ W, 0 ≤ s x) (ht₀ : ∀ x ∈ W, 0 ≤ t x)
