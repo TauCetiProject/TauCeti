@@ -204,7 +204,7 @@ theorem map_mk (t : ℝ) (x : M) : map φ ψ g h (mk φ t x) = mk ψ t (g x) :=
 /-- On `ℝ × M`, the induced map is `(t, x) ↦ (t, g x)` followed by the quotient map of `Y_ψ`. -/
 theorem map_comp_uncurry_mk :
     map φ ψ g h ∘ uncurry (mk φ) = uncurry (mk ψ) ∘ Prod.map id g :=
-  mapFamily_comp_uncurry_mk φ ψ _ _
+  funext fun p ↦ map_mk φ ψ g h p.1 p.2
 
 /-- The induced map lies over the circle. -/
 @[simp]
