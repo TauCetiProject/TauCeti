@@ -187,9 +187,7 @@ theorem div_ofReal_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) {c : ℝ} (hc 
   rw [div_eq_mul_inv, ← ofReal_inv, mul_comm]
   exact ofReal_mul_mem_slitPlane (inv_pos.mpr hc) hz
 
-/-- For a point `z ≠ 1` of the unit circle, `-z` lies in the slit plane.
-
-Translating a point of the slit plane by a nonnegative real number keeps it in the slit
+/-- Translating a point of the slit plane by a nonnegative real number keeps it in the slit
 plane. -/
 theorem ofReal_add_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) {t : ℝ} (ht : 0 ≤ t) :
     (t : ℂ) + z ∈ slitPlane := by
