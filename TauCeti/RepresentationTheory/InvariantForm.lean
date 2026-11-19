@@ -62,6 +62,8 @@ representation, makes `G` a group, as does averaging over `G`
   the intertwiners from `ρ` to its dual.
 * `TauCeti.Representation.IsInvariantForm.equivDual`: in finite dimensions, a nondegenerate
   invariant form identifies `ρ` with its dual.
+* `TauCeti.Representation.IsInvariantForm.kerRepresentation`: the restriction of `ρ` to the left
+  radical of an invariant form.
 
 ## Main results
 
@@ -340,6 +342,28 @@ theorem isInvariantForm_iff_isIntertwiningMap (ρ : Representation k G V) (B : B
     refine BilinForm.isIsometry_iff.mpr fun x y => ?_
     have h := DFunLike.congr_fun (hB.isIntertwining g x) (ρ g y)
     simpa [Module.Dual.transpose_apply] using h
+
+/-- The left radical `ker B = {x | B x = 0}` of an invariant form is invariant. -/
+theorem IsInvariantForm.apply_mem_ker (hB : IsInvariantForm ρ B) (g : G) {x : V}
+    (hx : x ∈ LinearMap.ker B) : ρ g x ∈ LinearMap.ker B := by
+  rw [LinearMap.mem_ker] at hx ⊢
+  ext y
+  rw [hB.apply_left, hx, LinearMap.zero_apply, LinearMap.zero_apply]
+
+/-- The restriction of `ρ` to the left radical `ker B = {x | B x = 0}` of an invariant form: the
+kernel of `B`, read as an intertwiner from `ρ` to `ρ.dual`, is a subrepresentation. -/
+def IsInvariantForm.kerRepresentation (hB : IsInvariantForm ρ B) :
+    Representation k G (LinearMap.ker B) :=
+  -- The carrier of `IntertwiningMap.ker f` is `LinearMap.ker f.toLinearMap` by definition, and
+  -- `LinearMap.intertwiningMap_of_isIntertwiningMap` keeps `B` as its underlying linear map, so
+  -- this carrier is `LinearMap.ker B` by unfolding these two structure projections.
+  (B.intertwiningMap_of_isIntertwiningMap ρ ρ.dual
+    ((isInvariantForm_iff_isIntertwiningMap ρ B).mp hB).isIntertwining).ker.toRepresentation
+
+@[simp]
+theorem IsInvariantForm.coe_kerRepresentation_apply (hB : IsInvariantForm ρ B) (g : G)
+    (x : LinearMap.ker B) : (hB.kerRepresentation g x : V) = ρ g x :=
+  (Subrepresentation.toRepresentation_apply_coe.1 rfl).symm
 
 end Group
 
