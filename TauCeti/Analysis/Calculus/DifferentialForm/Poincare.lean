@@ -219,8 +219,7 @@ theorem curryLeft_poincareHomotopy_sub_eq_zero (x₀ : E)
   · simp [intervalIntegral, integral_of_not_completeSpace hG]
   by_cases h : IntervalIntegrable
       (fun t : ℝ ↦ t ^ (n + 1) • (ω (lineMap x₀ x t)).curryLeft (x - x₀)) volume 0 1
-  · let L := (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
-      (n := n)).toContinuousLinearMap.flip (x - x₀)
+  · let L := ContinuousAlternatingMap.curryLeftFlipL (𝕜 := ℝ) (F := F) (n := n) (x - x₀)
     have hL (f : E [⋀^Fin (n + 1)]→L[ℝ] F) : L f = f.curryLeft (x - x₀) := by simp [L]
     -- The codomain of `L` need not be complete, so commute the integral in its completion.
     have key := ContinuousLinearMap.intervalIntegral_comp_comm (𝕜 := ℝ)
