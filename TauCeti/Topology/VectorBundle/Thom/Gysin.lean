@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.Thom.Isomorphism
-import TauCeti.Topology.VectorBundle.Smul
 
 /-!
 # The Gysin sequence of a vector bundle
@@ -37,7 +36,8 @@ The sequence is the long exact sequence of the Thom pair,
 
 rewritten through two identifications: `Hᵐ(E) ≅ Hᵐ(B)` by `π^*`, inverse to the pull-back along
 the zero section `s`, because `s ∘ π` is homotopic to the identity of `E` through `t • v`
-(`TauCeti.singularCohomologyMap_zeroSectionHom_comp_thomPairProj`), and
+(`TauCeti.singularCohomologyMap_zeroSectionHom_comp_thomPairProj`, in
+`TauCeti/Topology/VectorBundle/EulerClass.lean`), and
 `Hᵖ(B) ≅ Hᵖ⁺ⁿ(E, E₀)` by the Thom map. Under these the map `Hᵖ⁺ⁿ(E, E₀) ⟶ Hᵖ⁺ⁿ(E)` becomes the cup
 product with the Euler class: the image of `Φ_u(a)` in `Hᵖ⁺ⁿ(E)` is `π^*(a ⌣ e)`
 (`TauCeti.singularCohomologyπ_thomMap`).
@@ -71,86 +71,6 @@ open Bundle CategoryTheory MonoidalCategory Module
 universe w
 
 namespace TauCeti
-
-section VectorBundle
-
-variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
-  (E : B → Type w) [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
-  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
-
-/-! ### The total space and the base have the same cohomology -/
-
-/-- The zero section followed by the projection is the identity of the base. -/
-@[reassoc (attr := simp)]
-theorem zeroSectionHom_comp_thomPairProj : zeroSectionHom F E ≫ thomPairProj F E = 𝟙 _ :=
-  TopCat.ext fun b ↦ by
-    rw [ConcreteCategory.comp_apply, zeroSectionHom_apply, thomPairProj_apply]
-    simp only [zeroSection_proj, TopCat.hom_id, ContinuousMap.id_apply]
-
-/-- The straight-line homotopy `(t, v) ↦ t • v` from the projection followed by the zero section
-to the identity of the total space. -/
-def thomPairProjZeroSectionHomotopy :
-    TopCat.Homotopy (thomPairProj F E ≫ zeroSectionHom F E) (𝟙 _) where
-  toFun p := TotalSpace.mk' F p.2.proj ((p.1 : ℝ) • p.2.2)
-  continuous_toFun := (TauCeti.VectorBundle.continuous_smul ℝ F E).comp
-    ((continuous_subtype_val.comp continuous_fst).prodMk continuous_snd)
-  map_zero_left v := by
-    refine (congrArg (TotalSpace.mk' F v.proj) (zero_smul ℝ v.2)).trans ?_
-    rw [ConcreteCategory.comp_apply]
-    exact ((zeroSectionHom_apply F E _).trans
-      (congrArg (zeroSection F E) (thomPairProj_apply F E v))).symm
-  map_one_left v := congrArg (TotalSpace.mk' F v.proj) (one_smul ℝ v.2)
-
-section Cohomology
-
-variable {C : Type*} [Category C] [Limits.HasCoproducts.{w} C] [Abelian C] (R : C)
-  (k : Type*) [Ring k] [Linear k C] (M : C)
-
-/-- Pulling back along the projection and then along the zero section is the identity of the
-cohomology of the base. -/
-@[reassoc (attr := simp)]
-theorem singularCohomologyMap_thomPairProj_comp_zeroSectionHom (n : ℕ) :
-    TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (thomPairProj F E) n ≫
-      TopCat.singularCohomologyMap (zeroSectionHom F E) n = 𝟙 _ := by
-  rw [← TopCat.singularCohomologyMap_comp, zeroSectionHom_comp_thomPairProj,
-    TopCat.singularCohomologyMap_id]
-
-/-- **The total space has the cohomology of the base**: pulling back along the zero section and
-then along the projection is the identity of the cohomology of the total space, since the zero
-section followed by the projection is homotopic to the identity through `t • v`. -/
-@[reassoc (attr := simp)]
-theorem singularCohomologyMap_zeroSectionHom_comp_thomPairProj (n : ℕ) :
-    TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (zeroSectionHom F E) n ≫
-      TopCat.singularCohomologyMap (thomPairProj F E) n = 𝟙 _ := by
-  rw [← TopCat.singularCohomologyMap_comp,
-    (thomPairProjZeroSectionHomotopy F E).congr_singularCohomologyMap R k M n,
-    TopCat.singularCohomologyMap_id]
-
-variable {R k M}
-
-/-- Elementwise form of `TauCeti.singularCohomologyMap_thomPairProj_comp_zeroSectionHom`:
-`s^*(π^*x) = x`. -/
-@[simp]
-theorem singularCohomologyMap_thomPairProj_comp_zeroSectionHom_apply {n : ℕ}
-    (x : (TopCat.of B).singularCohomology R k M n) :
-    TopCat.singularCohomologyMap (zeroSectionHom F E) n
-      (TopCat.singularCohomologyMap (thomPairProj F E) n x) = x := by
-  rw [← ConcreteCategory.comp_apply, singularCohomologyMap_thomPairProj_comp_zeroSectionHom,
-    ConcreteCategory.id_apply]
-
-/-- Elementwise form of `TauCeti.singularCohomologyMap_zeroSectionHom_comp_thomPairProj`:
-`π^*(s^*x) = x`. -/
-@[simp]
-theorem singularCohomologyMap_zeroSectionHom_comp_thomPairProj_apply {n : ℕ}
-    (x : (thomPair F E).fst.singularCohomology R k M n) :
-    TopCat.singularCohomologyMap (thomPairProj F E) n
-      (TopCat.singularCohomologyMap (zeroSectionHom F E) n x) = x := by
-  rw [← ConcreteCategory.comp_apply, singularCohomologyMap_zeroSectionHom_comp_thomPairProj,
-    ConcreteCategory.id_apply]
-
-end Cohomology
-
-end VectorBundle
 
 /-! ### The Gysin map -/
 
@@ -291,12 +211,9 @@ theorem exact_eulerCup_singularCohomologyMap {n : ℕ}
   obtain ⟨a, rfl⟩ := hu y
   refine ⟨a, ?_⟩
   -- Then `π^*x = π^*(a ⌣ e(u))`, and `π^*` is injective.
-  have hy' : TopCat.singularCohomologyMap (thomPairProj F E) m (eulerCup F E M u p m h a) =
-      TopCat.singularCohomologyMap (thomPairProj F E) m x := by
-    rw [← singularCohomologyπ_thomMap]
-    exact hy
-  simpa only [singularCohomologyMap_thomPairProj_comp_zeroSectionHom_apply] using
-    congrArg (TopCat.singularCohomologyMap (zeroSectionHom F E) m) hy'
+  refine singularCohomologyMap_thomPairProj_injective F E m ?_
+  rw [← singularCohomologyπ_thomMap]
+  exact hy
 
 /-- **Exactness of the Gysin sequence at `Hᵐ(E₀)`**: if the Thom map `Hᵖ(B) ⟶ Hᵐ⁺¹(E, E₀)` of `u`
 is bijective, `p + n = m + 1`, then a class of `Hᵐ(E₀; M)` is killed by the Gysin map exactly when
@@ -328,15 +245,12 @@ theorem gysinMap_comp_eulerCup {n p q m : ℕ} (h : p + n = q)
     gysinMap F E h hu hm ≫ eulerCup F E M u p q h = 0 := by
   ext z
   rw [ConcreteCategory.comp_apply]
-  have hz : TopCat.singularCohomologyMap (thomPairProj F E) q
-      (eulerCup F E M u p q h (gysinMap F E h hu hm z)) = 0 := by
-    rw [← singularCohomologyπ_thomMap, thomMap_gysinMap, ← ConcreteCategory.comp_apply,
-      ((thomPair F E).shortExact_singularCochainComplexShortComplex (ModuleCat.of K K) K
-        M).δ_comp m q (by simpa)]
-    simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
-  have hz' := congrArg (TopCat.singularCohomologyMap (zeroSectionHom F E) q) hz
-  rw [singularCohomologyMap_thomPairProj_comp_zeroSectionHom_apply, map_zero] at hz'
-  exact hz'
+  refine singularCohomologyMap_thomPairProj_injective F E q ?_
+  rw [ModuleCat.hom_zero, LinearMap.zero_apply, map_zero, ← singularCohomologyπ_thomMap,
+    thomMap_gysinMap, ← ConcreteCategory.comp_apply,
+    TopPair.singularCohomologyδ_comp_singularCohomologyπ (thomPair F E) (ModuleCat.of K K) K M m q
+      hm]
+  simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
 
 /-- **Exactness of the Gysin sequence at `Hᵖ(B)`**: if the Thom map `Hᵖ(B) ⟶ Hᵐ⁺¹(E, E₀)` of `u`
 is bijective, `p + n = m + 1`, then `a ∈ Hᵖ(B; M)` satisfies `a ⌣ e(u) = 0` exactly when it is the

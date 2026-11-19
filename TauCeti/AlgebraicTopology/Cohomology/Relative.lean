@@ -359,6 +359,11 @@ lemma singularCohomologyMap_comp_singularCohomologyδ (n m : ℕ) (h : n + 1 = m
     TopCat.singularCohomologyMap P.map n ≫ P.singularCohomologyδ R k M n m h = 0 :=
   (P.shortExact_singularCochainComplexShortComplex R k M).comp_δ n m (by simpa)
 
+@[reassoc]
+lemma singularCohomologyδ_comp_singularCohomologyπ (n m : ℕ) (h : n + 1 = m := by lia) :
+    P.singularCohomologyδ R k M n m h ≫ P.singularCohomologyπ R k M m = 0 :=
+  (P.shortExact_singularCochainComplexShortComplex R k M).δ_comp n m (by simpa)
+
 /-- Exactness at relative cohomology: `Hⁿ(A) ⟶ Hᵐ(X, A) ⟶ Hᵐ(X)` is exact for `n + 1 = m`. -/
 lemma singularCohomology_exact_relative (n m : ℕ) (h : n + 1 = m := by lia) :
     (ShortComplex.mk _ _
