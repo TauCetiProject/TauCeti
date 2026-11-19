@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.MvPowerSeries.Primitive.Basic
 
-import TauCeti.Algebra.Algebra.NatCast
 
 /-!
 # The normalised formal primitive of a power series
@@ -37,10 +36,12 @@ a derivative, since the derivative of `X ^ p` vanishes.
 * `PowerSeries.coeff_primitive`, `PowerSeries.coeff_succ_primitive`,
   `PowerSeries.constantCoeff_primitive`: its coefficients.
 * `PowerSeries.derivative_primitive`: `d/dX (∫ f dX) = f`.
-* `PowerSeries.primitive_derivative`: `∫ (d/dX f) dX = f - C (constantCoeff f)`.
+* `PowerSeries.primitive_derivative`, `PowerSeries.coeff_primitive_derivative`:
+  `∫ (d/dX f) dX = f - C (constantCoeff f)`.
 * `PowerSeries.eq_C_add_primitive_iff`: `g = C c + ∫ f dX` iff `d/dX g = f` and
   `constantCoeff g = c`.
-* `PowerSeries.primitive_monomial`, `PowerSeries.primitive_X_pow`: `∫ Xⁿ dX = Xⁿ⁺¹ / (n + 1)`.
+* `PowerSeries.primitive_monomial`, `PowerSeries.primitive_X_pow`,
+  `PowerSeries.primitive_X`: `∫ Xⁿ dX = Xⁿ⁺¹ / (n + 1)`.
 * `PowerSeries.map_primitive`: the primitive commutes with change of coefficients.
 * `PowerSeries.primitive_mk_neg_one_pow`: the primitive of `∑ (-1)ⁿ Xⁿ = 1 / (1 + X)` is the
   formal logarithm `log (1 + X)`.
@@ -91,13 +92,7 @@ theorem coeff_succ_primitive (f : R⟦X⟧) (n : ℕ) :
 @[simp]
 theorem primitive_monomial (n : ℕ) (a : R) :
     primitive (monomial n a) = monomial (n + 1) (((n : ℚ) + 1)⁻¹ • a) := by
-  ext m
-  rcases m with _ | m
-  · simp [coeff_monomial]
-  · simp only [coeff_succ_primitive, coeff_monomial, add_left_inj]
-    split_ifs with h
-    · rw [h]
-    · exact smul_zero _
+  simp [primitive, monomial, ← Finsupp.single_add]
 
 /-- The primitive of a constant: `∫ a dX = a X`. -/
 @[simp]
@@ -114,6 +109,11 @@ theorem primitive_one : primitive (1 : R⟦X⟧) = X := by
 theorem primitive_X_pow (n : ℕ) :
     primitive (X ^ n : R⟦X⟧) = ((n : ℚ) + 1)⁻¹ • X ^ (n + 1) := by
   rw [X_pow_eq, primitive_monomial, X_pow_eq, ← LinearMap.map_smul_of_tower]
+
+/-- The primitive of `X` is `X ^ 2 / 2`. -/
+@[simp]
+theorem primitive_X : primitive (X : R⟦X⟧) = (2 : ℚ)⁻¹ • X ^ 2 := by
+  simpa [one_add_one_eq_two] using primitive_X_pow (R := R) 1
 
 /-- The primitive commutes with change of coefficients along a ring homomorphism of
 `ℚ`-algebras. -/
@@ -138,6 +138,11 @@ variable {R : Type*} [CommSemiring R] [Algebra ℚ R]
 theorem derivative_primitive (f : R⟦X⟧) : d⁄dX (primitive f) = f :=
   MvPowerSeries.pderiv_primitive () f
 
+/-- **The primitive of a derivative**: `∫ (d/dX f) dX` is `f` with its constant term removed. -/
+theorem coeff_primitive_derivative (f : R⟦X⟧) (n : ℕ) :
+    coeff n (primitive (d⁄dX f)) = if n = 0 then 0 else coeff n f :=
+  (MvPowerSeries.coeff_primitive_pderiv () f (Finsupp.single () n)).trans (by simp)
+
 /-- **Characterisation of the primitive**: `g = C c + ∫ f dX` iff `d/dX g = f` and
 `constantCoeff g = c`. -/
 theorem eq_C_add_primitive_iff {f g : R⟦X⟧} {c : R} :
@@ -149,9 +154,7 @@ theorem eq_C_add_primitive_iff {f g : R⟦X⟧} {c : R} :
     ext n
     rcases n with _ | n
     · simp
-    · rw [map_add, coeff_succ_C, zero_add, coeff_succ_primitive,
-        coeff_derivative, ← smul_mul_assoc,
-        TauCeti.inv_natCast_add_one_smul_mul_natCast_add_one]
+    · simp [coeff_primitive_derivative, -coeff_succ_primitive]
 
 /-- **Characterisation of the primitive**: `g = ∫ f dX` iff `d/dX g = f` and `g` has constant
 coefficient zero. -/
@@ -166,6 +169,7 @@ section CommRing
 variable {R : Type*} [CommRing R] [Algebra ℚ R]
 
 /-- **The primitive of a derivative**: `∫ (d/dX f) dX = f - C (constantCoeff f)`. -/
+@[simp]
 theorem primitive_derivative (f : R⟦X⟧) : primitive (d⁄dX f) = f - C (constantCoeff f) := by
   rw [eq_sub_iff_add_eq, add_comm, eq_comm, eq_C_add_primitive_iff]
   exact ⟨rfl, rfl⟩
