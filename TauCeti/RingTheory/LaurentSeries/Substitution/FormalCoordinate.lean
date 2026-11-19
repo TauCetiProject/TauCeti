@@ -75,19 +75,6 @@ namespace LaurentSeries
 
 variable {R : Type*} [CommRing R]
 
-/-- The variable `X` as a unit of `R⸨X⸩`, with inverse `X⁻¹`. -/
-private noncomputable def unitX : R⸨X⸩ˣ :=
-  ⟨single 1 1, single (-1) 1, by simp [single_mul_single], by simp [single_mul_single]⟩
-
-private theorem val_unitX : ((unitX : R⸨X⸩ˣ) : R⸨X⸩) = single 1 1 :=
-  (rfl)
-
-/-- The integer powers of the unit `X` are the monomials `Xⁿ`. -/
-private theorem val_unitX_zpow (n : ℤ) : ((unitX ^ n : R⸨X⸩ˣ) : R⸨X⸩) = single n 1 := by
-  rcases n.eq_nat_or_neg with ⟨m, rfl | rfl⟩
-  · simp [unitX, single_pow]
-  · simp [unitX, single_pow, ← inv_pow]
-
 /-- A formal coordinate `φ = X (u + ⋯)` as a unit of `R⸨X⸩`: the product of the units `X` and
 `u + ⋯`. -/
 private noncomputable def unitCoord (φ : FormalCoordinate R) : R⸨X⸩ˣ :=
@@ -195,7 +182,9 @@ theorem substAlgEquiv_single_one (φ : FormalCoordinate R) :
 private theorem substAlgEquiv_single_one_zpow (φ : FormalCoordinate R) (n : ℤ) :
     substAlgEquiv φ (single n 1) = ↑(unitCoord φ ^ n) := by
   have hx : Units.map (substAlgEquiv φ : R⸨X⸩ →* R⸨X⸩) unitX = unitCoord φ :=
-    Units.ext <| (substAlgEquiv_single_one φ).trans (val_unitCoord φ).symm
+    Units.ext <| by
+      rw [Units.coe_map, MonoidHom.coe_ofClass, val_unitX, substAlgEquiv_single_one,
+        val_unitCoord]
   rw [← val_unitX_zpow, ← hx, ← map_zpow, Units.coe_map, MonoidHom.coe_ofClass]
 
 /-- `σ_φ` sends the monomial `a X ^ n`, for every integer `n`, to `a φ ^ n`, a power of the unit
