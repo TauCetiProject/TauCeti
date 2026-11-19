@@ -8,11 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Basic
 public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Inner
 public import Mathlib.Topology.VectorBundle.Riemannian
-import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
-import Mathlib.Analysis.InnerProductSpace.LinearMap
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.FinCases
-import Mathlib.Tactic.Ring
+public import TauCeti.Geometry.Symplectic.Complex.HilbertSchmidt
+import Mathlib.Topology.Instances.RealVectorSpace
 
 /-!
 # Hilbert–Schmidt pairing of native zero-one forms
@@ -22,16 +19,14 @@ metric and a Hermitian fibre metric, this projection is self-adjoint for the rea
 pairing `ContinuousLinearMap.hilbertSchmidtInner`. In particular, pairing any native zero-one
 form against `j.zeroOnePart A` gives the same result as pairing against `A`.
 
-In real source dimension two, every unit vector `v` gives the orthonormal basis `(v, j v)`.
-For zero-one forms `η` and `θ`, their Hilbert–Schmidt pairing is therefore
+In real source dimension two, for every unit vector `v` and zero-one forms `η` and `θ`,
+their Hilbert–Schmidt pairing is
 `2 * ⟪η v, θ v⟫_ℝ`. Applying this to `θ = j.zeroOnePart A` cancels the projection's factor
 `½`, giving `⟪η v, A v + I • A (j v)⟫_ℝ` for an arbitrary real-linear `A`.
 
-All maps have their original carrier `TangentSpace I x →L[ℝ] V x`; the pairing is the existing
-real metric trace and Hom retains its operator norm. The target fibres may have arbitrary rank
-and need no completeness. The self-adjoint pairing includes source dimension zero. These are
-pointwise identities supplying the normalization of the zero-one principal part; geometric
-integration and boundary terms belong to the corresponding global adjunction statements.
+The target fibres may have arbitrary dimension and need no completeness. The self-adjoint
+pairing includes source dimension zero. All four statements are pointwise identities for
+orthogonal almost complex structures, specialized here to tangent fibres.
 
 ## Main results
 
@@ -58,6 +53,33 @@ noncomputable section
 
 namespace TauCeti.SmoothAlmostComplexStructure
 
+-- Orthogonality makes multiplication by `i` continuous and hence real-linear, even when
+-- no compatibility between the independently supplied real and complex scalar actions is given.
+private def orthogonalSmulI {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [Module ℂ V] (hV : ∀ u v : V, ⟪Complex.I • u, Complex.I • v⟫_ℝ = ⟪u, v⟫_ℝ) :
+    AlmostComplexStructure V := by
+  let f : V →+ V :=
+    { toFun := fun v ↦ Complex.I • v
+      map_zero' := smul_zero _
+      map_add' := smul_add _ }
+  have hf_apply (v : V) : f v = Complex.I • v := rfl
+  have hf : Isometry f := AddMonoidHomClass.isometry_of_norm _ fun v ↦ by
+    simp only [hf_apply]
+    rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner, hV]
+  exact
+    { toLinearMap := (f.toRealLinearMap hf.continuous).toLinearMap
+      square_neg := LinearMap.ext fun v ↦ by
+        simp only [LinearMap.comp_apply, coe_coe, AddMonoidHom.coe_toRealLinearMap,
+          hf_apply, smul_smul, Complex.I_mul_I, neg_one_smul,
+          LinearMap.neg_apply, LinearMap.id_apply] }
+
+private theorem orthogonalSmulI_apply {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [Module ℂ V]
+    (hV : ∀ u v : V, ⟪Complex.I • u, Complex.I • v⟫_ℝ = ⟪u, v⟫_ℝ) (v : V) :
+    orthogonalSmulI hV v = Complex.I • v :=
+  -- The continuous additive-to-real-linear conversion keeps the underlying function.
+  rfl
+
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
@@ -66,36 +88,44 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [RiemannianBundle (TangentSpace I : M → Type _)]
   (j : SmoothAlmostComplexStructure I M) (x : M)
 
+omit [RiemannianBundle (TangentSpace I : M → Type _)] in
+private theorem zeroOnePart_eq_complexAntilinearPart
+    (hV : ∀ u v : V x, ⟪Complex.I • u, Complex.I • v⟫_ℝ = ⟪u, v⟫_ℝ)
+    (A : TangentSpace I x →L[ℝ] V x) :
+    j.zeroOnePart A = (complexAntilinearPart (j.almostComplexStructureAt x).toLinearMap
+      (orthogonalSmulI hV).toLinearMap A.toLinearMap).toContinuousLinearMap := by
+  ext v
+  simp only [zeroOnePart_apply, LinearMap.coe_toContinuousLinearMap',
+    complexAntilinearPart_apply, almostComplexStructureAt_apply, orthogonalSmulI_apply, coe_coe]
+
+variable {j x}
+
+omit [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)]
+  [FiniteDimensional ℝ E] [RiemannianBundle (TangentSpace I : M → Type _)] in
+private theorem isZeroOneForm_iff_orthogonalSmulI
+    (hV : ∀ u v : V x, ⟪Complex.I • u, Complex.I • v⟫_ℝ = ⟪u, v⟫_ℝ)
+    (η : TangentSpace I x →L[ℝ] V x) :
+    j.IsZeroOneForm η ↔ IsComplexAntilinear (j.almostComplexStructureAt x).toLinearMap
+      (orthogonalSmulI hV).toLinearMap η.toLinearMap := by
+  rw [isZeroOneForm_iff]
+  exact ⟨fun h ↦ isComplexAntilinear_of_apply fun v ↦ by
+    simpa only [almostComplexStructureAt_apply, orthogonalSmulI_apply, coe_coe] using h v,
+    fun h v ↦ by
+      simpa only [almostComplexStructureAt_apply, orthogonalSmulI_apply, coe_coe] using h.apply v⟩
+
+variable (j x)
+
 /-- For a compatible tangent metric and a Hermitian fibre metric, the actual zero-one projection
-is self-adjoint for the real Hilbert–Schmidt pairing on the original Hom fibre. -/
+is self-adjoint for the real Hilbert–Schmidt pairing. -/
 theorem hilbertSchmidtInner_zeroOnePart_left_eq_right
     (hJ : ∀ u v, ⟪j x u, j x v⟫_ℝ = ⟪u, v⟫_ℝ)
     (hV : ∀ u v : V x, ⟪Complex.I • u, Complex.I • v⟫_ℝ = ⟪u, v⟫_ℝ)
     (A B : TangentSpace I x →L[ℝ] V x) :
     hilbertSchmidtInner (j.zeroOnePart A) B = hilbertSchmidtInner A (j.zeroOnePart B) := by
-  have hp (C : TangentSpace I x →L[ℝ] V x) : j.zeroOnePart C =
-      (2⁻¹ : ℝ) • (C + Complex.I • C.comp (j.toEndomorphism x)) := by
-    ext v
-    exact zeroOnePart_apply C v
-  rw [hp, hp]
-  let e : TangentSpace I x ≃ₗᵢ[ℝ] TangentSpace I x := LinearIsometryEquiv.ofSurjective
-    ((j.toEndomorphism x).toLinearMap.isometryOfInner hJ) (j.surjective x)
-  have he (v : TangentSpace I x) : e v = j x v := rfl
-  have hIskew (u v : V x) : ⟪Complex.I • u, v⟫_ℝ = -⟪u, Complex.I • v⟫_ℝ := by
-    have h := hV u (Complex.I • v)
-    simp only [smul_smul, Complex.I_mul_I, neg_one_smul, inner_neg_right] at h
-    linarith
-  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  have htwist : hilbertSchmidtInner (Complex.I • A.comp (j.toEndomorphism x)) B =
-      hilbertSchmidtInner A (Complex.I • B.comp (j.toEndomorphism x)) := by
-    rw [hilbertSchmidtInner_eq_sum _ _ b, hilbertSchmidtInner_eq_sum _ _ (b.map e)]
-    apply Finset.sum_congr rfl
-    intro i _
-    simp only [smul_apply, comp_apply, OrthonormalBasis.map_apply, he, j.apply_apply,
-      map_neg, smul_neg, inner_neg_right]
-    exact hIskew _ _
-  rw [hilbertSchmidtInner_smul_left, hilbertSchmidtInner_add_left,
-    hilbertSchmidtInner_smul_right, hilbertSchmidtInner_add_right, htwist]
+  simpa only [zeroOnePart_eq_complexAntilinearPart j x hV] using
+    (j.almostComplexStructureAt x).hilbertSchmidtInner_complexAntilinearPart_left_eq_right
+      (orthogonalSmulI hV) (by simpa only [almostComplexStructureAt_apply] using hJ)
+      (by simpa only [orthogonalSmulI_apply] using hV) A B
 
 variable {j x}
 
@@ -107,46 +137,29 @@ theorem IsZeroOneForm.hilbertSchmidtInner_zeroOnePart_right
     (hV : ∀ u v : V x, ⟪Complex.I • u, Complex.I • v⟫_ℝ = ⟪u, v⟫_ℝ)
     (A : TangentSpace I x →L[ℝ] V x) :
     hilbertSchmidtInner η (j.zeroOnePart A) = hilbertSchmidtInner η A := by
-  rw [← j.hilbertSchmidtInner_zeroOnePart_left_eq_right x hJ hV η A, hη.zeroOnePart_eq]
+  simpa only [zeroOnePart_eq_complexAntilinearPart j x hV] using
+    TauCeti.IsComplexAntilinear.hilbertSchmidtInner_complexAntilinearPart_right
+      ((isZeroOneForm_iff_orthogonalSmulI hV η).mp hη)
+        (by simpa only [almostComplexStructureAt_apply] using hJ)
+        (by simpa only [orthogonalSmulI_apply] using hV) A
 
 omit [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] in
-/-- On a real two-dimensional tangent fibre, the geometric Hilbert–Schmidt pairing of native
-zero-one forms is twice their real fibre pairing on any unit tangent vector. The orthonormal
-basis consisting of that vector and its `j`-image is derived from metric compatibility. -/
+/-- On a real two-dimensional tangent fibre, the Hilbert–Schmidt pairing of native zero-one
+forms is twice their real fibre pairing on any unit vector, for compatible metrics. -/
 theorem IsZeroOneForm.hilbertSchmidtInner_eq_two_mul_inner_apply
     {η θ : TangentSpace I x →L[ℝ] V x} (hη : j.IsZeroOneForm η) (hθ : j.IsZeroOneForm θ)
     (hJ : ∀ u v, ⟪j x u, j x v⟫_ℝ = ⟪u, v⟫_ℝ)
     (hV : ∀ u v : V x, ⟪Complex.I • u, Complex.I • v⟫_ℝ = ⟪u, v⟫_ℝ)
     (hDim : Module.finrank ℝ (TangentSpace I x) = 2)
     (v : TangentSpace I x) (hv : ‖v‖ = 1) :
-    hilbertSchmidtInner η θ = 2 * ⟪η v, θ v⟫_ℝ := by
-  have hvself : ⟪v, v⟫_ℝ = 1 := by rw [real_inner_self_eq_norm_sq, hv]; norm_num
-  have hjself : ⟪j x v, j x v⟫_ℝ = 1 := (hJ v v).trans hvself
-  have hcross : ⟪v, j x v⟫_ℝ = 0 := by
-    rw [real_inner_comm]
-    simpa only [almostComplexStructureAt_apply] using
-      (j.almostComplexStructureAt x).inner_apply_self
-        (by simpa only [almostComplexStructureAt_apply] using hJ) v
-  have hon : Orthonormal ℝ ![v, j x v] := by
-    rw [orthonormal_iff_ite]
-    intro i k
-    fin_cases i <;> fin_cases k
-    · exact hvself
-    · exact hcross
-    · exact (real_inner_comm _ _).trans hcross
-    · exact hjself
-  have hspan := hon.linearIndependent.span_eq_top_of_card_eq_finrank
-    (by simpa only [Fintype.card_fin] using hDim.symm)
-  let b := OrthonormalBasis.mk hon hspan.ge
-  have hb0 : b 0 = v := by simp [b]
-  have hb1 : b 1 = j x v := by simp [b]
-  rw [hilbertSchmidtInner_eq_sum η θ b, Fin.sum_univ_two, hb0, hb1,
-    isZeroOneForm_iff.mp hη, isZeroOneForm_iff.mp hθ, inner_neg_neg, hV]
-  ring
+    hilbertSchmidtInner η θ = 2 * ⟪η v, θ v⟫_ℝ :=
+  ((isZeroOneForm_iff_orthogonalSmulI hV η).mp hη).hilbertSchmidtInner_eq_two_mul_inner_apply
+    ((isZeroOneForm_iff_orthogonalSmulI hV θ).mp hθ)
+    (by simpa only [almostComplexStructureAt_apply] using hJ)
+    (by simpa only [orthogonalSmulI_apply] using hV) hDim v hv
 
-/-- In real source dimension two, the geometric Hilbert–Schmidt factor two cancels the native
-projection's factor one half. The resulting coefficient is the full Cauchy–Riemann expression
-`A v + I • A (j v)` in the original fibre. -/
+/-- In real source dimension two, the Hilbert–Schmidt factor two cancels the native projection's
+factor one half, giving `⟪η v, A v + I • A (j v)⟫_ℝ`. -/
 theorem IsZeroOneForm.hilbertSchmidtInner_zeroOnePart_eq_inner_apply
     {η : TangentSpace I x →L[ℝ] V x} (hη : j.IsZeroOneForm η)
     (hJ : ∀ u v, ⟪j x u, j x v⟫_ℝ = ⟪u, v⟫_ℝ)
@@ -154,8 +167,11 @@ theorem IsZeroOneForm.hilbertSchmidtInner_zeroOnePart_eq_inner_apply
     (hDim : Module.finrank ℝ (TangentSpace I x) = 2)
     (v : TangentSpace I x) (hv : ‖v‖ = 1) (A : TangentSpace I x →L[ℝ] V x) :
     hilbertSchmidtInner η (j.zeroOnePart A) = ⟪η v, A v + Complex.I • A (j x v)⟫_ℝ := by
-  rw [hη.hilbertSchmidtInner_eq_two_mul_inner_apply (isZeroOneForm_zeroOnePart A)
-      hJ hV hDim v hv, zeroOnePart_apply, real_inner_smul_right]
-  ring
+  simpa only [zeroOnePart_eq_complexAntilinearPart j x hV,
+    almostComplexStructureAt_apply, orthogonalSmulI_apply] using
+    TauCeti.IsComplexAntilinear.hilbertSchmidtInner_complexAntilinearPart_eq_inner_apply
+      ((isZeroOneForm_iff_orthogonalSmulI hV η).mp hη)
+        (by simpa only [almostComplexStructureAt_apply] using hJ)
+        (by simpa only [orthogonalSmulI_apply] using hV) hDim v hv A
 
 end TauCeti.SmoothAlmostComplexStructure

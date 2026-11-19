@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.HilbertSchmidt
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
-import Mathlib.Tactic
+import Mathlib.Tactic.Ring
+import Mathlib.Tactic.NormNum
 
 /-!
 # Intrinsic zero-one pairing examples
@@ -78,42 +79,59 @@ private def antilinearForm (a : ℂ) : TangentSpace 𝓘(ℝ, ℂ) (0 : ℂ) →
 private def linearForm (a : ℂ) :
     TangentSpace 𝓘(ℝ, ℂ) (0 : ℂ) →L[ℝ] Trivial ℂ ℂ 0 := a • tangentToComplex
 
+-- These evaluation laws identify the actual constant fibre `Trivial ℂ ℂ 0` with ℂ once.
+private theorem complex_smul_trivial (a : ℂ) (v : Trivial ℂ ℂ 0) : a • v = a * v := rfl
+
+private theorem antilinearForm_apply (a : ℂ) (v : TangentSpace 𝓘(ℝ, ℂ) (0 : ℂ)) :
+    antilinearForm a v = a * (starRingEnd ℂ) (tangentToComplex v) := by
+  simp only [antilinearForm, smul_apply, comp_apply, ContinuousLinearEquiv.coe_coe,
+    Complex.conjCLE_apply, complex_smul_trivial]
+
+private theorem linearForm_apply (a : ℂ) (v : TangentSpace 𝓘(ℝ, ℂ) (0 : ℂ)) :
+    linearForm a v = a * tangentToComplex v := by
+  simp only [linearForm, smul_apply, complex_smul_trivial]
+
+private theorem tangentToComplex_standardComplexStructure
+    (v : TangentSpace 𝓘(ℝ, ℂ) (0 : ℂ)) :
+    tangentToComplex (standardComplexStructure 0 v) = Complex.I * tangentToComplex v := by
+  dsimp only [standardComplexStructure]
+  rw [toEndomorphism_ofComplexManifold]
+  -- The standard vector-space tangent cast is the identity on model vectors; its real-linear
+  -- equivalence therefore carries the model's multiplication by `i` to multiplication in ℂ.
+  rfl
+
+private theorem inner_tangentToComplex (u v : TangentSpace 𝓘(ℝ, ℂ) (0 : ℂ)) :
+    ⟪tangentToComplex u, tangentToComplex v⟫_ℝ = ⟪u, v⟫_ℝ := by
+  let e : TangentSpace 𝓘(ℝ, ℂ) (0 : ℂ) →ₗᵢ[ℝ] ℂ :=
+    { toLinearMap := tangentToComplex.toLinearMap
+      norm_map' := fun _ ↦ norm_tangentSpace_vectorSpace.symm }
+  exact e.inner_map_map u v
+
 private theorem inner_I_smul_I_smul (u v : ℂ) :
     ⟪Complex.I • u, Complex.I • v⟫_ℝ = ⟪u, v⟫_ℝ := by
   simp [Complex.inner, Complex.mul_re, Complex.mul_im]
 
 private theorem inner_standardComplexStructure_apply_apply (u v : TangentSpace 𝓘(ℝ, ℂ) (0 : ℂ)) :
     ⟪standardComplexStructure 0 u, standardComplexStructure 0 v⟫_ℝ = ⟪u, v⟫_ℝ := by
-  -- Mathlib's actual tangent Riemannian metric on a vector space is `innerSL` of that space.
-  -- Its `fromTangentSpace` and the standard complex structure preserve the original vectors.
-  dsimp only [standardComplexStructure, tangentToComplex]
-  rw [TauCeti.SmoothAlmostComplexStructure.toEndomorphism_ofComplexManifold]
-  change ⟪Complex.I • (tangentToComplex u), Complex.I • (tangentToComplex v)⟫_ℝ =
-    ⟪tangentToComplex u, tangentToComplex v⟫_ℝ
-  exact inner_I_smul_I_smul _ _
+  rw [← inner_tangentToComplex, tangentToComplex_standardComplexStructure,
+    tangentToComplex_standardComplexStructure, ← inner_tangentToComplex u v]
+  simpa only [smul_eq_mul] using
+    inner_I_smul_I_smul (tangentToComplex u) (tangentToComplex v)
 
 private theorem antilinearForm_zero_one (a : ℂ) :
     standardComplexStructure.IsZeroOneForm (antilinearForm a) := by
-  apply TauCeti.SmoothAlmostComplexStructure.isZeroOneForm_iff.mpr
+  apply isZeroOneForm_iff.mpr
   intro w
-  dsimp only [antilinearForm, tangentToComplex, standardComplexStructure]
-  rw [TauCeti.SmoothAlmostComplexStructure.toEndomorphism_ofComplexManifold]
-  change a * (starRingEnd ℂ) (Complex.I * tangentToComplex w) =
-    -(Complex.I * (a * (starRingEnd ℂ) (tangentToComplex w)))
-  rw [map_mul, Complex.conj_I]
+  rw [antilinearForm_apply, tangentToComplex_standardComplexStructure, antilinearForm_apply,
+    complex_smul_trivial, map_mul, Complex.conj_I]
   ring
 
 private theorem linearForm_negative_zero_one (a : ℂ) :
     (-standardComplexStructure).IsZeroOneForm (linearForm a) := by
-  apply TauCeti.SmoothAlmostComplexStructure.isZeroOneForm_iff.mpr
+  apply isZeroOneForm_iff.mpr
   intro w
-  dsimp only [linearForm]
-  rw [TauCeti.SmoothAlmostComplexStructure.neg_toEndomorphism]
-  simp only [ContMDiffSection.coe_neg, Pi.neg_apply, _root_.neg_apply]
-  rw [map_neg]
-  dsimp only [standardComplexStructure, tangentToComplex]
-  rw [TauCeti.SmoothAlmostComplexStructure.toEndomorphism_ofComplexManifold]
-  change -(a * (Complex.I * tangentToComplex w)) = -(Complex.I * (a * tangentToComplex w))
+  rw [linearForm_apply, TauCeti.SmoothAlmostComplexStructure.neg_apply, map_neg,
+    tangentToComplex_standardComplexStructure, linearForm_apply, complex_smul_trivial]
   ring
 
 private def unitTangent := (NormedSpace.fromTangentSpace (𝕜 := ℝ) (0 : ℂ)).symm (1 : ℂ)
@@ -122,10 +140,13 @@ private theorem norm_unitTangent : ‖unitTangent‖ = 1 := by
   rw [norm_tangentSpace_vectorSpace]
   simp [unitTangent]
 
+private theorem tangentToComplex_unitTangent : tangentToComplex unitTangent = 1 :=
+  (NormedSpace.fromTangentSpace (𝕜 := ℝ) (0 : ℂ)).apply_symm_apply 1
+
 private theorem finrank_tangent_complex :
     Module.finrank ℝ (TangentSpace 𝓘(ℝ, ℂ) (0 : ℂ)) = 2 := by
-  change Module.finrank ℝ ℂ = 2
-  exact Complex.finrank_real_complex
+  exact (NormedSpace.fromTangentSpace (𝕜 := ℝ) (0 : ℂ)).toLinearEquiv.finrank_eq.trans
+    Complex.finrank_real_complex
 
 private theorem std_factor_two (a b : ℂ) :
     hilbertSchmidtInner (antilinearForm a) (antilinearForm b) = 2 * ⟪a, b⟫_ℝ := by
@@ -133,7 +154,7 @@ private theorem std_factor_two (a b : ℂ) :
     (antilinearForm_zero_one b)
     inner_standardComplexStructure_apply_apply inner_I_smul_I_smul
       finrank_tangent_complex unitTangent norm_unitTangent
-  simpa [antilinearForm, tangentToComplex, unitTangent] using h
+  simpa only [antilinearForm_apply, tangentToComplex_unitTangent, map_one, mul_one] using h
 
 private theorem nonzero_standard_and_negative_clients (a : ℂ) (ha : a ≠ 0) :
     standardComplexStructure.zeroOnePart (antilinearForm a) = antilinearForm a ∧
@@ -151,11 +172,8 @@ private theorem nonzero_standard_and_negative_clients (a : ℂ) (ha : a ≠ 0) :
 private theorem linearForm_project_std (a : ℂ) :
     standardComplexStructure.zeroOnePart (linearForm a) = 0 := by
   ext w
-  rw [TauCeti.SmoothAlmostComplexStructure.zeroOnePart_apply]
-  dsimp only [linearForm, tangentToComplex, standardComplexStructure]
-  rw [TauCeti.SmoothAlmostComplexStructure.toEndomorphism_ofComplexManifold]
-  change (2⁻¹ : ℝ) •
-    (a * tangentToComplex w + Complex.I * (a * (Complex.I * tangentToComplex w))) = 0
+  rw [zeroOnePart_apply, linearForm_apply, linearForm_apply,
+    tangentToComplex_standardComplexStructure, complex_smul_trivial, zero_apply]
   have h : a * tangentToComplex w + Complex.I * (a * (Complex.I * tangentToComplex w)) = 0 := by
     calc _ = (a * tangentToComplex w) * (1 + Complex.I ^ 2) := by ring
          _ = 0 := by simp
@@ -177,32 +195,63 @@ private theorem negative_factor_two (a b : ℂ) :
   have h := (linearForm_negative_zero_one a).hilbertSchmidtInner_eq_two_mul_inner_apply
     (linearForm_negative_zero_one b) hJ inner_I_smul_I_smul
       finrank_tangent_complex unitTangent norm_unitTangent
-  simpa [linearForm, tangentToComplex, unitTangent] using h
+  simpa only [linearForm_apply, tangentToComplex_unitTangent, mul_one] using h
 
 private theorem mixed_principal_pairing (a b c : ℂ) :
     hilbertSchmidtInner (antilinearForm a)
       (standardComplexStructure.zeroOnePart (linearForm b + antilinearForm c)) =
       ⟪a, (2 : ℝ) • c⟫_ℝ := by
-  have h := (antilinearForm_zero_one a).hilbertSchmidtInner_zeroOnePart_eq_inner_apply
+  rw [(antilinearForm_zero_one a).hilbertSchmidtInner_zeroOnePart_eq_inner_apply
     inner_standardComplexStructure_apply_apply inner_I_smul_I_smul
-      finrank_tangent_complex unitTangent norm_unitTangent
-      (linearForm b + antilinearForm c)
-  rw [h]
-  let u := (NormedSpace.fromTangentSpace (𝕜 := ℝ) (0 : ℂ)).symm (1 : ℂ)
-  have hu : tangentToComplex u = 1 :=
-    (NormedSpace.fromTangentSpace (𝕜 := ℝ) (0 : ℂ)).apply_symm_apply 1
-  dsimp only [antilinearForm, linearForm, tangentToComplex, standardComplexStructure]
-  rw [TauCeti.SmoothAlmostComplexStructure.toEndomorphism_ofComplexManifold]
-  change ⟪a * (starRingEnd ℂ) (tangentToComplex u),
-    b * tangentToComplex u + c * (starRingEnd ℂ) (tangentToComplex u) +
-      Complex.I * (b * (Complex.I * tangentToComplex u) +
-        c * (starRingEnd ℂ) (Complex.I * tangentToComplex u))⟫_ℝ = ⟪a, (2 : ℝ) • c⟫_ℝ
-  rw [hu]
-  simp only [map_one, mul_one, Complex.conj_I]
-  congr 1
-  change b + c + Complex.I * (b * Complex.I + c * -Complex.I) = 2 * c
-  calc _ = 2 * c + b * (1 + Complex.I ^ 2) - c * (1 + Complex.I ^ 2) := by ring
-       _ = 2 * c := by simp
+    finrank_tangent_complex unitTangent norm_unitTangent (linearForm b + antilinearForm c)]
+  simp only [antilinearForm_apply, linearForm_apply, add_apply,
+    tangentToComplex_standardComplexStructure, tangentToComplex_unitTangent,
+    complex_smul_trivial, map_one, mul_one, Complex.conj_I]
+  have hsum : b + c + Complex.I * (b * Complex.I + c * -Complex.I) = (2 : ℝ) • c := by
+    rw [Complex.real_smul]
+    calc _ = 2 * c + b * (1 + Complex.I ^ 2) - c * (1 + Complex.I ^ 2) := by ring
+         _ = _ := by simp
+  rw [hsum]
+
+private theorem algebraic_antilinear (a : ℂ) :
+    TauCeti.IsComplexAntilinear (TauCeti.AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
+      (TauCeti.AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
+      (a • Complex.conjCLE.toContinuousLinearMap).toLinearMap := by
+  apply isComplexAntilinear_of_apply
+  intro v
+  simp only [coe_coe, smul_apply, ContinuousLinearEquiv.coe_coe,
+    AlmostComplexStructure.ofComplexModule_apply, smul_eq_mul, Complex.conjCLE_apply,
+    map_mul, Complex.conj_I]
+  ring
+
+/-- The lower-level theorem applies directly to nonzero algebraic coefficients, without a
+manifold or tangent carrier. -/
+example (a b : ℂ) :
+    hilbertSchmidtInner (a • Complex.conjCLE.toContinuousLinearMap)
+      (b • Complex.conjCLE.toContinuousLinearMap) = 2 * ⟪a, b⟫_ℝ := by
+  have hmetric (u v : ℂ) :
+      ⟪AlmostComplexStructure.ofComplexModule ℂ u,
+        AlmostComplexStructure.ofComplexModule ℂ v⟫_ℝ = ⟪u, v⟫_ℝ := by
+    simpa only [AlmostComplexStructure.ofComplexModule_apply] using inner_I_smul_I_smul u v
+  have h := (algebraic_antilinear a).hilbertSchmidtInner_eq_two_mul_inner_apply
+    (algebraic_antilinear b) hmetric hmetric Complex.finrank_real_complex (1 : ℂ) norm_one
+  simpa only [smul_apply, ContinuousLinearEquiv.coe_coe, Complex.conjCLE_apply,
+    map_one, mul_one, smul_eq_mul] using h
+
+/-- The target needs neither a complex module, finite dimension nor completeness. -/
+example {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    (K : AlmostComplexStructure V) (hK : ∀ u v, ⟪K u, K v⟫_ℝ = ⟪u, v⟫_ℝ)
+    (A B : ℂ →L[ℝ] V) :
+    hilbertSchmidtInner
+        (complexAntilinearPart (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
+          K.toLinearMap A.toLinearMap).toContinuousLinearMap B =
+      hilbertSchmidtInner A
+        (complexAntilinearPart (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
+          K.toLinearMap B.toLinearMap).toContinuousLinearMap :=
+  AlmostComplexStructure.hilbertSchmidtInner_complexAntilinearPart_left_eq_right
+    (AlmostComplexStructure.ofComplexModule ℂ) K
+    (by simpa only [AlmostComplexStructure.ofComplexModule_apply] using inner_I_smul_I_smul)
+    hK A B
 
 private abbrev ZR := EuclideanSpace ℝ (Fin 0)
 private def jZero : TauCeti.SmoothAlmostComplexStructure 𝓘(ℝ, ZR) ZR :=
@@ -213,23 +262,20 @@ private theorem source_zero_client (A : TangentSpace 𝓘(ℝ, ZR) (0 : ZR) →L
       hilbertSchmidtInner A (jZero.zeroOnePart A) ∧
     jZero.zeroOnePart A = 0 ∧ hilbertSchmidtInner A A = 0 ∧
       Module.finrank ℝ (TangentSpace 𝓘(ℝ, ZR) (0 : ZR)) = 0 := by
+  have : Subsingleton (TangentSpace 𝓘(ℝ, ZR) (0 : ZR)) :=
+    (NormedSpace.fromTangentSpace (𝕜 := ℝ) (0 : ZR)).injective.subsingleton
   refine ⟨jZero.hilbertSchmidtInner_zeroOnePart_left_eq_right 0 ?_
     inner_I_smul_I_smul A A, ?_⟩
   · intro u v
-    have hz (w : TangentSpace 𝓘(ℝ, ZR) (0 : ZR)) : w = 0 := by
-      apply (NormedSpace.fromTangentSpace (𝕜 := ℝ) (0 : ZR)).injective
-      exact Subsingleton.elim _ _
-    rw [hz u, hz v, hz (jZero 0 0)]
+    rw [Subsingleton.elim u 0, Subsingleton.elim v 0,
+      Subsingleton.elim (jZero 0 0) 0]
   have hA : A = 0 := by
     ext v
-    have hv : v = 0 := by
-      apply (NormedSpace.fromTangentSpace (𝕜 := ℝ) (0 : ZR)).injective
-      exact Subsingleton.elim _ _
-    rw [hv, map_zero, zero_apply]
+    rw [Subsingleton.elim v 0, map_zero, zero_apply]
   rw [hA]
   refine ⟨by simp, by simp, ?_⟩
-  change Module.finrank ℝ ZR = 0
-  simp [ZR]
+  exact (NormedSpace.fromTangentSpace (𝕜 := ℝ) (0 : ZR)).toLinearEquiv.finrank_eq.trans
+    (by simp [ZR])
 
 private abbrev ZC := EuclideanSpace ℂ (Fin 0)
 /-- The zero-dimensional complex target carries its inherited real metric. -/
