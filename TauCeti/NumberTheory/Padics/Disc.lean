@@ -31,6 +31,8 @@ For `h : ℕ`, the residue classes `a ∈ ZMod (p ^ h)` cut `ℤ_p` into the dis
 * `PadicInt.discHomeomorph_symm_natCast_val_add_mul`: the inverse decomposition of `a.val + pʰ w`
   is `(a, w)`.
 * `PadicInt.discHomeomorph_symm_cast_add_mul`: the same statement in simp normal form.
+* `PadicInt.natCast_val_eq_natCast_val_add_mul`: the natural representative of a class modulo `pᵏ`
+  is that of its class modulo `pʰ` plus `pʰ` times a quotient.
 -/
 
 public section
@@ -103,5 +105,14 @@ natural representative. This is the simp normal form of
 theorem discHomeomorph_symm_cast_add_mul (h : ℕ) (a : ZMod (p ^ h)) (w : ℤ_[p]) :
     (discHomeomorph p h).symm ((a.cast : ℤ_[p]) + (p : ℤ_[p]) ^ h * w) = (a, w) := by
   rw [← ZMod.natCast_val, discHomeomorph_symm_natCast_val_add_mul]
+
+/-- The natural representative of `a` modulo `pᵏ` is the natural representative of its class
+modulo `pʰ` plus `pʰ` times the quotient `a.val / pʰ`. For `h ≤ k` this places the disc of `a` of
+level `k` inside the disc of level `h` below it. -/
+theorem natCast_val_eq_natCast_val_add_mul (h : ℕ) {k : ℕ} (a : ZMod (p ^ k)) :
+    (a.val : ℤ_[p]) =
+      ((a.val : ZMod (p ^ h)).val : ℤ_[p]) + (p : ℤ_[p]) ^ h * ((a.val / p ^ h : ℕ) : ℤ_[p]) := by
+  rw [ZMod.val_natCast]
+  exact_mod_cast (Nat.mod_add_div a.val (p ^ h)).symm
 
 end PadicInt

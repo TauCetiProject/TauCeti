@@ -156,15 +156,11 @@ theorem transition_compMulLeft (a : ℤ_[p]) (c : AnalyticStage p h E) :
       ((((mulDisc a b').1.val / p ^ h : ℕ) : ℤ_[p]) + p * (mulDisc a b').2)) =
       ((mulDisc a (b'.val : ZMod (p ^ h))).1,
         (mulDisc a (b'.val : ZMod (p ^ h))).2 + a * ((b'.val / p ^ h : ℕ) : ℤ_[p])) := by
-    -- A centre of level `h + 1` is the centre of level `h` below it plus `pʰ` times a digit.
-    have hval (b' : ZMod (p ^ (h + 1))) : (b'.val : ℤ_[p]) =
-        (((b'.val : ZMod (p ^ h)).val : ℕ) : ℤ_[p]) +
-          (p : ℤ_[p]) ^ h * ((b'.val / p ^ h : ℕ) : ℤ_[p]) := by
-      rw [ZMod.val_natCast]
-      exact_mod_cast (Nat.mod_add_div b'.val (p ^ h)).symm
     have h₁ := natCast_val_mulDisc_add a b'
     have h₂ := natCast_val_mulDisc_add a (b'.val : ZMod (p ^ h))
-    rw [hval, hval b'] at h₁
+    -- A centre of level `h + 1` is the centre of level `h` below it plus `pʰ` times a digit.
+    rw [PadicInt.natCast_val_eq_natCast_val_add_mul h,
+      PadicInt.natCast_val_eq_natCast_val_add_mul h b'] at h₁
     rw [← PadicInt.discHomeomorph_symm_natCast_val_add_mul h,
       ← PadicInt.discHomeomorph_symm_natCast_val_add_mul h]
     congr 1

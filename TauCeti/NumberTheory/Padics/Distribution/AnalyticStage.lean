@@ -376,8 +376,9 @@ theorem sum_reexpandScalar_mul (s₁ t₁ s₂ t₂ : ℤ_[p]) (n j : ℕ) :
     ring
   have h := coeff_comp_C_add_C_mul_X _ hdeg s₂ t₂ j
   rw [hcomp, coeff_C_add_C_mul_X_pow] at h
-  rw [reexpandScalar, h]
-  exact Finset.sum_congr rfl fun m _ ↦ by rw [coeff_C_add_C_mul_X_pow, mul_comm]; rfl
+  rw [reexpandScalar_def, h]
+  exact Finset.sum_congr rfl fun m _ ↦ by
+    rw [coeff_C_add_C_mul_X_pow, reexpandScalar_def, reexpandScalar_def, mul_comm]
 
 omit [IsBoundedSMul ℤ_[p] E] [IsUltrametricDist E] [CompleteSpace E] in
 /-- The coefficients `∑ₙ (n choose j) sⁿ⁻ʲ tʲ • cₙ` of `∑ₙ (s + t v)ⁿ • cₙ` in powers of `v`. -/
@@ -603,10 +604,7 @@ theorem eval_transition (c : AnalyticStage p h E) : eval S (transition S c) = ev
   set b : ℤ_[p] := ((a'.val / p ^ h : ℕ) : ℤ_[p])
   have hx : (a'.val : ℤ_[p]) + (p : ℤ_[p]) ^ (h + 1) * v =
       (a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * (b + p * v) := by
-    have hval : a'.val = a.val + p ^ h * (a'.val / p ^ h) := by
-      rw [ZMod.val_natCast, Nat.mod_add_div]
-    rw [hval, Nat.cast_add, Nat.cast_mul, Nat.cast_pow]
-    simp only [b]
+    rw [PadicInt.natCast_val_eq_natCast_val_add_mul h a']
     ring
   rw [PadicInt.discHomeomorph_apply, transition, eval_reexpandMap_natCast_val_add_mul, hx]
 
