@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.GroupWithZero.Units.Lemmas
 public import Mathlib.GroupTheory.FreeAbelianGroup
 public import Mathlib.GroupTheory.QuotientGroup.Defs
@@ -88,7 +89,7 @@ variable {A B : Type*} [Ring A] [Ring B]
 
 variable (A) in
 /-- The *exceptional units* of a ring: the elements `x` such that `x` and `1 - x` are both units.
-Over a field these are the elements different from `0` and `1`. -/
+Over a field these are the elements different from `0` and `1` (`mem_exceptionalUnits_iff_ne`). -/
 def exceptionalUnits : Set A := {x | IsUnit x ∧ IsUnit (1 - x)}
 
 @[simp]
@@ -112,7 +113,7 @@ theorem map_mem_exceptionalUnits_iff {F : Type*} [FunLike F A B] [RingHomClass F
 
 /-- A pair `(x, y)` of elements of a ring is *admissible* for the five-term relation when `x` and
 `y` are exceptional units and `x - y` is a unit. Over a field these are the pairs of distinct
-elements of `F ∖ {0, 1}`. -/
+elements of `F ∖ {0, 1}` (`isFiveTermAdmissible_iff_ne`). -/
 structure IsFiveTermAdmissible (x y : A) : Prop where
   left_mem : x ∈ exceptionalUnits A
   right_mem : y ∈ exceptionalUnits A
@@ -203,6 +204,29 @@ end map
 end IsFiveTermAdmissible
 
 end Ring
+
+section DivisionRing
+
+variable {K : Type*} [DivisionRing K]
+
+/-- Over a division ring, the exceptional units are the elements different from `0` and `1`. -/
+theorem mem_exceptionalUnits_iff_ne {x : K} : x ∈ exceptionalUnits K ↔ x ≠ 0 ∧ x ≠ 1 := by
+  rw [mem_exceptionalUnits, isUnit_iff_ne_zero, isUnit_iff_ne_zero, sub_ne_zero,
+    ne_comm (a := (1 : K))]
+
+/-- Over a division ring, the admissible pairs are the pairs of distinct elements different from
+`0` and `1`. -/
+theorem isFiveTermAdmissible_iff_ne {x y : K} :
+    IsFiveTermAdmissible x y ↔ x ≠ 0 ∧ x ≠ 1 ∧ y ≠ 0 ∧ y ≠ 1 ∧ x ≠ y := by
+  constructor
+  · rintro ⟨hx, hy, hxy⟩
+    rw [mem_exceptionalUnits_iff_ne] at hx hy
+    exact ⟨hx.1, hx.2, hy.1, hy.2, sub_ne_zero.1 hxy.ne_zero⟩
+  · rintro ⟨hx0, hx1, hy0, hy1, hxy⟩
+    exact ⟨mem_exceptionalUnits_iff_ne.2 ⟨hx0, hx1⟩, mem_exceptionalUnits_iff_ne.2 ⟨hy0, hy1⟩,
+      isUnit_iff_ne_zero.2 (sub_ne_zero.2 hxy)⟩
+
+end DivisionRing
 
 section Monoid
 
@@ -473,8 +497,12 @@ noncomputable def lift (f : A → G) (hf : ∀ x, x ∉ exceptionalUnits A → f
 theorem lift_preBlochSymbol (f : A → G) (hf : ∀ x, x ∉ exceptionalUnits A → f x = 0)
     (h₅ : ∀ x y, IsFiveTermAdmissible x y →
       f x - f y + f (y * x⁻¹ʳ) - f ((1 - x⁻¹ʳ) * (1 - y⁻¹ʳ)⁻¹ʳ) + f ((1 - x) * (1 - y)⁻¹ʳ) = 0)
-    (x : A) : lift f hf h₅ (preBlochSymbol x) = f x :=
-  lift_preBlochRawSymbol (fun x hx => hf x fun h => hx h.1) x
+    (x : A) : lift f hf h₅ (preBlochSymbol x) = f x := by
+  -- `lift` is `QuotientAddGroup.lift` and `mk` is `QuotientAddGroup.mk'`, so `lift_mk` applies
+  -- once both sides are unfolded.
+  rw [← mk_preBlochRawSymbol]
+  exact (QuotientAddGroup.lift_mk _ _ _).trans
+    (lift_preBlochRawSymbol (fun x hx => hf x fun h => hx h.1) x)
 
 /-- The homomorphism `P(A) → P(B)` induced by a ring homomorphism `f : A →+* B`: it sends the symbol
 `[x]` of an exceptional unit to `[f x]`. It is not induced by the map of free abelian groups on the
@@ -603,8 +631,8 @@ private noncomputable def ofReduced :
       exact preBlochSymbol_fiveTerm h)
 
 private theorem ofReduced_mk_of (w : exceptionalUnits A) :
-    ofReduced (QuotientAddGroup.mk (FreeAbelianGroup.of w)) = preBlochSymbol (w : A) :=
-  FreeAbelianGroup.lift_apply_of _ _
+    ofReduced (QuotientAddGroup.mk (FreeAbelianGroup.of w)) = preBlochSymbol (w : A) := by
+  rw [ofReduced, QuotientAddGroup.lift_mk, FreeAbelianGroup.lift_apply_of]
 
 /-- The pre-Bloch group of a commutative ring has the *reduced presentation*: generators `[x]` for
 the exceptional units `x`, subject only to the five-term relations at the admissible pairs. The
@@ -623,8 +651,9 @@ noncomputable def preBlochEquivReduced :
 @[simp]
 theorem preBlochEquivReduced_preBlochSymbol (x : A) :
     preBlochEquivReduced (preBlochSymbol x) =
-      (preBlochReducedRawSymbol x : FreeAbelianGroup (exceptionalUnits A)) :=
-  toReduced_preBlochSymbol x
+      (preBlochReducedRawSymbol x : FreeAbelianGroup (exceptionalUnits A)) := by
+  rw [preBlochEquivReduced, AddMonoidHom.toAddEquiv_apply]
+  exact toReduced_preBlochSymbol x
 
 @[simp]
 theorem preBlochEquivReduced_symm_of (w : exceptionalUnits A) :
@@ -646,9 +675,17 @@ noncomputable def preBlochEquivFreeAbelianGroup (h : ∀ x y : A, ¬IsFiveTermAd
 @[simp]
 theorem preBlochEquivFreeAbelianGroup_preBlochSymbol
     (h : ∀ x y : A, ¬IsFiveTermAdmissible x y) (x : A) :
-    preBlochEquivFreeAbelianGroup h (preBlochSymbol x) = preBlochReducedRawSymbol x :=
-  preBloch.lift_preBlochSymbol _ (fun _ => preBlochReducedRawSymbol_of_notMem)
+    preBlochEquivFreeAbelianGroup h (preBlochSymbol x) = preBlochReducedRawSymbol x := by
+  rw [preBlochEquivFreeAbelianGroup, AddMonoidHom.toAddEquiv_apply]
+  exact preBloch.lift_preBlochSymbol _ (fun _ => preBlochReducedRawSymbol_of_notMem)
     (fun x y hxy => absurd hxy (h x y)) x
+
+@[simp]
+theorem preBlochEquivFreeAbelianGroup_symm_of (h : ∀ x y : A, ¬IsFiveTermAdmissible x y)
+    (w : exceptionalUnits A) :
+    (preBlochEquivFreeAbelianGroup h).symm (FreeAbelianGroup.of w) = preBlochSymbol (w : A) := by
+  rw [AddEquiv.symm_apply_eq, preBlochEquivFreeAbelianGroup_preBlochSymbol,
+    preBlochReducedRawSymbol_coe]
 
 /-- The pre-Bloch group of a commutative ring without exceptional units is trivial. -/
 theorem subsingleton_preBloch (h : exceptionalUnits A = ∅) : Subsingleton (preBloch A) := by
@@ -672,22 +709,19 @@ example : Subsingleton (preBloch ℤ) := by
 /-- The pre-Bloch group of `𝔽₂` is trivial: its only unit is `1`, which is not exceptional. -/
 example : Subsingleton (preBloch (ZMod 2)) := by
   refine subsingleton_preBloch (Set.eq_empty_of_forall_notMem fun x => ?_)
-  have : ∀ x : ZMod 2, ¬(x ≠ 0 ∧ 1 - x ≠ 0) := by decide
-  simpa only [mem_exceptionalUnits, isUnit_iff_ne_zero] using this x
+  have : ∀ x : ZMod 2, ¬(x ≠ 0 ∧ x ≠ 1) := by decide
+  simpa only [mem_exceptionalUnits_iff_ne] using this x
 
 /-- The pre-Bloch group of `𝔽₃` is infinite cyclic, generated by `[-1]`: the only exceptional unit
 is `-1`, and there is no admissible pair. -/
 example : Nonempty (preBloch (ZMod 3) ≃+ ℤ) := by
   have hW : exceptionalUnits (ZMod 3) = {-1} := by
-    have : ∀ x : ZMod 3, (x ≠ 0 ∧ 1 - x ≠ 0 ↔ x = -1) := by decide
+    have : ∀ x : ZMod 3, (x ≠ 0 ∧ x ≠ 1 ↔ x = -1) := by decide
     ext x
-    simpa only [mem_exceptionalUnits, isUnit_iff_ne_zero, Set.mem_singleton_iff] using this x
-  have hA : ∀ x y : ZMod 3, ¬IsFiveTermAdmissible x y := fun x y h => by
-    have hx := h.left_mem
-    have hy := h.right_mem
-    have hxy := h.isUnit_sub
-    rw [hW, Set.mem_singleton_iff] at hx hy
-    simp [hx, hy] at hxy
+    simpa only [mem_exceptionalUnits_iff_ne, Set.mem_singleton_iff] using this x
+  have hA : ∀ x y : ZMod 3, ¬IsFiveTermAdmissible x y := by
+    have : ∀ x y : ZMod 3, ¬(x ≠ 0 ∧ x ≠ 1 ∧ y ≠ 0 ∧ y ≠ 1 ∧ x ≠ y) := by decide
+    simpa only [isFiveTermAdmissible_iff_ne] using this
   have : Unique (exceptionalUnits (ZMod 3)) := by rw [hW]; infer_instance
   exact ⟨(preBlochEquivFreeAbelianGroup hA).trans (FreeAbelianGroup.uniqueEquiv _)⟩
 
