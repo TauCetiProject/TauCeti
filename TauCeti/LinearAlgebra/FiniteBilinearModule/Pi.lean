@@ -89,7 +89,7 @@ theorem isNondegenerate_pi_iff :
     rw [AddSubgroup.mem_bot]
     -- `Pi.single i x` pairs with `y` as `x` pairs with `y i`, so it lies in the radical.
     have hsingle : (Pi.single i x : pi A) = 0 :=
-      FiniteBilinearModule.IsNondegenerate.eq_zero_of_forall_pairing_eq_zero _ h fun y ↦ by
+      FiniteBilinearModule.IsNondegenerate.eq_zero_of_forall_pairing_eq_zero h fun y ↦ by
         rw [pi_pairing, Finset.sum_eq_single i (fun j _ hj ↦ by
           rw [Pi.single_eq_of_ne hj, FiniteBilinearModule.pairing_zero_left]) (by simp),
           Pi.single_eq_same]
@@ -101,7 +101,7 @@ theorem isNondegenerate_pi_iff :
     rw [AddSubgroup.mem_bot]
     funext i
     -- `x i` pairs with `y` as `x` pairs with `Pi.single i y`.
-    refine FiniteBilinearModule.IsNondegenerate.eq_zero_of_forall_pairing_eq_zero _ (h i)
+    refine FiniteBilinearModule.IsNondegenerate.eq_zero_of_forall_pairing_eq_zero (h i)
       fun y ↦ ?_
     have hxy := hx (Pi.single i y)
     rwa [pi_pairing, Finset.sum_eq_single i (fun j _ hj ↦ by
