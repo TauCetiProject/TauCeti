@@ -52,10 +52,10 @@ zero set of a Seiberg–Witten section, is asymptotically the same in both tubes
 * `TauCeti.tendstoUniformlyOn_iteratedFDeriv_normalDilationMap_of_isOpen_of_firstJet_eq_id`: for
   a first-jet identical change of tube they converge to the identity in `Cⁱ`; with `i = 1`, this is
   rescaled `C¹` convergence to the identity.
-* `TauCeti.exists_pos_forall_norm_sub_le_mul_norm_sq`: a change of tube that is `C²` and first-jet
+* `IsCompact.exists_pos_forall_norm_sub_le_mul_norm_sq`: a change of tube that is `C²` and first-jet
   identical over a compact set of base points satisfies `‖g(z, ξ) - (z, ξ)‖ ≤ C ‖ξ‖²` there.
-* `TauCeti.exists_pos_forall_abs_norm_snd_sub_norm_le_mul`,
-  `TauCeti.tendsto_sSup_norm_snd_div_sSup_norm_snd`: the normal distances `‖ξ‖` and `‖g₂(z, ξ)‖`
+* `IsCompact.exists_pos_forall_abs_norm_snd_sub_norm_le_mul`,
+  `IsCompact.tendsto_sSup_norm_snd_div_sSup_norm_snd`: the normal distances `‖ξ‖` and `‖g₂(z, ξ)‖`
   of a point in the two tubes have ratio tending to one, uniformly; hence the largest normal
   distances of sets shrinking to the zero section have ratio tending to one.
 
@@ -249,15 +249,18 @@ theorem tendstoUniformlyOn_iteratedFDeriv_normalDilationMap_of_isOpen_of_firstJe
     |>.preimage_mem_nhds (hΩ.mem_nhds (hKΩ p hp))] with q hq
   exact normalLinearizationMap_eq_self (hg₀ q.1 hq) (hg₁ q.1 hq)
 
-omit [CompleteSpace N]
+end TauCeti
 
 /-! ### First-jet identical tubes differ quadratically -/
+
+variable {E N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup N]
+  [NormedSpace ℝ N] {g : E × N → E × N}
 
 /-- **First-jet identical tubes differ quadratically.** Let `K` be a compact set of base points
 such that `g` is `C²` at `(z, 0)` with `g(z, 0) = (z, 0)` and `dg(z, 0) (0, ξ) = (0, ξ)` for
 `z ∈ K`. Then there are `r > 0` and `C` such that `‖g(z, ξ) - (z, ξ)‖ ≤ C ‖ξ‖²` for `z ∈ K`
 and `‖ξ‖ ≤ r`. -/
-theorem exists_pos_forall_norm_sub_le_mul_norm_sq {K : Set E} (hK : IsCompact K)
+theorem IsCompact.exists_pos_forall_norm_sub_le_mul_norm_sq {K : Set E} (hK : IsCompact K)
     (hg : ∀ z ∈ K, ContDiffAt ℝ 2 g (z, 0)) (hg₀ : ∀ z ∈ K, g (z, 0) = (z, 0))
     (hg₁ : ∀ z ∈ K, ∀ ξ, fderiv ℝ g (z, 0) (0, ξ) = (0, ξ)) :
     ∃ r > 0, ∃ C, ∀ z ∈ K, ∀ ξ : N, ‖ξ‖ ≤ r → ‖g (z, ξ) - (z, ξ)‖ ≤ C * ‖ξ‖ ^ 2 := by
@@ -281,13 +284,13 @@ theorem exists_pos_forall_norm_sub_le_mul_norm_sq {K : Set E} (hK : IsCompact K)
   rwa [hd, hsub, max_eq_left (norm_nonneg ξ), mul_assoc, ← sq] at hT
 
 /-- **Normal distances in first-jet identical tubes are asymptotic.** Under the hypotheses of
-`TauCeti.exists_pos_forall_norm_sub_le_mul_norm_sq`, for every `ε > 0` there is `δ > 0` such that
+`IsCompact.exists_pos_forall_norm_sub_le_mul_norm_sq`, for every `ε > 0` there is `δ > 0` such that
 for `z ∈ K` and `‖ξ‖ < δ` the normal coordinate of `g(z, ξ)` has norm within `ε ‖ξ‖` of `‖ξ‖`. -/
-theorem exists_pos_forall_abs_norm_snd_sub_norm_le_mul {K : Set E} (hK : IsCompact K)
+theorem IsCompact.exists_pos_forall_abs_norm_snd_sub_norm_le_mul {K : Set E} (hK : IsCompact K)
     (hg : ∀ z ∈ K, ContDiffAt ℝ 2 g (z, 0)) (hg₀ : ∀ z ∈ K, g (z, 0) = (z, 0))
     (hg₁ : ∀ z ∈ K, ∀ ξ, fderiv ℝ g (z, 0) (0, ξ) = (0, ξ)) {ε : ℝ} (hε : 0 < ε) :
     ∃ δ > 0, ∀ z ∈ K, ∀ ξ : N, ‖ξ‖ < δ → |‖(g (z, ξ)).2‖ - ‖ξ‖| ≤ ε * ‖ξ‖ := by
-  obtain ⟨r, hr, C, hC⟩ := exists_pos_forall_norm_sub_le_mul_norm_sq hK hg hg₀ hg₁
+  obtain ⟨r, hr, C, hC⟩ := hK.exists_pos_forall_norm_sub_le_mul_norm_sq hg hg₀ hg₁
   refine ⟨min r (ε / (|C| + 1)), by positivity, fun z hz ξ hξ ↦ ?_⟩
   have hξε : (|C| + 1) * ‖ξ‖ ≤ ε :=
     ((lt_div_iff₀' (by positivity)).1 (hξ.trans_le (min_le_right _ _))).le
@@ -301,10 +304,10 @@ theorem exists_pos_forall_abs_norm_snd_sub_norm_le_mul {K : Set E} (hK : IsCompa
     _ ≤ ε * ‖ξ‖ := by gcongr
 
 /-- **The largest normal distances in first-jet identical tubes have ratio tending to one.** Under
-the hypotheses of `TauCeti.exists_pos_forall_norm_sub_le_mul_norm_sq`, let `S i` be sets of points
+the hypotheses of `IsCompact.exists_pos_forall_norm_sub_le_mul_norm_sq`, let `S i` be sets of points
 over `K` whose largest normal distance `a i = sup_{(z, ξ) ∈ S i} ‖ξ‖` is eventually positive and
 tends to zero. Then the largest normal distance of `g (S i)` divided by `a i` tends to one. -/
-theorem tendsto_sSup_norm_snd_div_sSup_norm_snd {K : Set E} (hK : IsCompact K)
+theorem IsCompact.tendsto_sSup_norm_snd_div_sSup_norm_snd {K : Set E} (hK : IsCompact K)
     (hg : ∀ z ∈ K, ContDiffAt ℝ 2 g (z, 0)) (hg₀ : ∀ z ∈ K, g (z, 0) = (z, 0))
     (hg₁ : ∀ z ∈ K, ∀ ξ, fderiv ℝ g (z, 0) (0, ξ) = (0, ξ)) {ι : Type*} {l : Filter ι}
     {S : ι → Set (E × N)} (hSK : ∀ i, ∀ p ∈ S i, p.1 ∈ K)
@@ -315,7 +318,7 @@ theorem tendsto_sSup_norm_snd_div_sSup_norm_snd {K : Set E} (hK : IsCompact K)
   rw [Metric.tendsto_nhds]
   intro ε hε
   obtain ⟨δ, hδ, hgδ⟩ :=
-    exists_pos_forall_abs_norm_snd_sub_norm_le_mul hK hg hg₀ hg₁ (half_pos hε)
+    hK.exists_pos_forall_abs_norm_snd_sub_norm_le_mul hg hg₀ hg₁ (half_pos hε)
   filter_upwards [hpos, hS.eventually (gt_mem_nhds hδ)] with i hi hiδ
   set a := sSup ((fun p ↦ ‖p.2‖) '' S i)
   set b := sSup ((fun p ↦ ‖(g p).2‖) '' S i)
@@ -341,5 +344,3 @@ theorem tendsto_sSup_norm_snd_div_sSup_norm_snd {K : Set E} (hK : IsCompact K)
     linarith [(abs_le.1 (hpt p hp)).1, le_csSup hbdd' (mem_image_of_mem _ hp)]
   rw [Real.dist_eq, div_sub_one hi.ne', abs_div, abs_of_pos hi, div_lt_iff₀ hi, abs_lt]
   constructor <;> nlinarith
-
-end TauCeti
