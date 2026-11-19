@@ -34,6 +34,9 @@ On an open set on which the limit is continuous, locally uniform convergence is 
 continuous convergence at every point of the set
 (`IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn`).
 
+Locally uniform convergence passes to subsequences, and more generally along any map of index
+filters (`TendstoLocallyUniformlyOn.comp_tendsto`).
+
 A locally uniform limit `w` of maps `e ∘ uᵢ`, for an open partial homeomorphism `e` and maps `uᵢ`
 with values in a subset `K` of its source, is read back through `e.symm` when `w` takes values in
 `e '' K`: the maps `uᵢ` converge pointwise to the continuous map `e.symm ∘ w`
@@ -64,6 +67,15 @@ theorem IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn {ι 
     ((hf.continuousAt (hs.mem_nhds hx)).tendsto).comp tendsto_snd
   refine ⟨fun h ↦ hfx.congr_uniformity h, fun h ↦ ?_⟩
   exact (hfx.prodMk_nhds h).mono_right (nhds_le_uniformity (f x))
+
+/-- **Locally uniform convergence along a finer index filter.** If `F i → f` locally uniformly on
+`s` as `i → l`, and `ψ` tends to `l` along `l'`, then `F (ψ j) → f` locally uniformly on `s` as
+`j → l'`; for instance along a subsequence `ψ` of a sequence. -/
+theorem TendstoLocallyUniformlyOn.comp_tendsto {ι κ α β : Type*} [TopologicalSpace α]
+    [UniformSpace β] {F : ι → α → β} {f : α → β} {l : Filter ι} {l' : Filter κ} {s : Set α}
+    (h : TendstoLocallyUniformlyOn F f l s) {ψ : κ → ι} (hψ : Tendsto ψ l' l) :
+    TendstoLocallyUniformlyOn (fun j ↦ F (ψ j)) f l' s := fun U hU x hx ↦
+  (h U hU x hx).imp fun _ ⟨ht, h'⟩ ↦ ⟨ht, hψ.eventually h'⟩
 
 /-- A locally uniform limit `w` of maps `e ∘ uᵢ`, where the `uᵢ` take values in a set
 `K ⊆ e.source` and `w` takes values in `e '' K`, is read back through the inverse of `e`:
