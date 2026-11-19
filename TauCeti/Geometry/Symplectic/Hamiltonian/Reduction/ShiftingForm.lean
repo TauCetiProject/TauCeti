@@ -181,9 +181,9 @@ theorem mpullback_smul_eq_prod_leftInvariantKirillovForm
 /-- **The shifting identity on `M × G`.** With the hypotheses of
 `TauCeti.SmoothTwoForm.IsMomentMap.mpullback_smul_eq_prod_leftInvariantKirillovForm`,
 the map `(g, z) ↦ (g • i z, g)` from `G × Z` to `M × G` pulls the product form
-`pr_M^* σ - pr_G^* σ_c` back to `pr_Z^* (i^* σ)`. Its image lies over the zero level of the
-shifting moment map `(x, g) ↦ μ x - Ad*_g c`, and on `M × O⁻` this is the identity
-`q_O^* ω_red = pr_M^* σ - pr_O^* ω_KKS` read on `G × Z`. -/
+`pr_M^* σ - pr_G^* σ_c` back to `pr_Z^* (i^* σ)`. When `μ` is moreover coadjoint-equivariant,
+its image lies over the zero level of the shifting moment map `(x, g) ↦ μ x - Ad*_g c`, and on
+`M × O⁻` this is the identity `q_O^* ω_red = pr_M^* σ - pr_O^* ω_KKS` read on `G × Z`. -/
 theorem mpullback_smul_prodMk_prod_neg_leftInvariantKirillovForm
     (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ)
     (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
