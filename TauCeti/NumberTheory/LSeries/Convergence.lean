@@ -49,6 +49,8 @@ two abscissae is named.
 * `TauCeti.LSeries.abscissaOfConv_le_abscissaOfAbsConv` and
   `TauCeti.LSeries.abscissaOfAbsConv_le_abscissaOfConv_add_one`: the classical comparisons
   `σ_c ≤ σ_a ≤ σ_c + 1`.
+* `TauCeti.LSeries.abscissaOfAbsConv_eq_of_LSeriesSummable_iff`: a series converging absolutely
+  exactly on `x < Re s` has abscissa of absolute convergence `x`.
 * `TauCeti.LSeries.abscissaOfConv_lt_abscissaOfAbsConv_neg_one_pow`: the two abscissae are
   different for the alternating coefficients.
 * `TauCeti.LSeries.norm_sum_Icc_neg_one_pow_add_one_le`: the partial sums of the alternating
@@ -250,6 +252,13 @@ theorem abscissaOfAbsConv_le_abscissaOfConv_add_one (f : ℕ → ℂ) :
   have hbd : ‖LSeries.term f x n‖ ≤ C := hC ⟨n, rfl⟩
   rw [LSeries.norm_term_eq, ite_eq_right hn, div_le_iff₀ (by positivity)] at hbd
   simpa using hbd
+
+/-- A Dirichlet series that converges absolutely exactly on the half-plane `x < Re s` has abscissa
+of absolute convergence `x`. -/
+theorem abscissaOfAbsConv_eq_of_LSeriesSummable_iff {x : ℝ}
+    (h : ∀ s : ℂ, LSeriesSummable f s ↔ x < s.re) :
+    _root_.LSeries.abscissaOfAbsConv f = x := by
+  simp [_root_.LSeries.abscissaOfAbsConv, h, Set.Ioi_def, EReal.image_coe_Ioi]
 
 end LSeries
 
