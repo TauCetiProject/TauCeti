@@ -80,6 +80,8 @@ relative homotopy invariance of cubical homology is transported from the simplic
   induces its relative singular homology map, conjugated by the comparison isomorphisms.
 * `TopPair.Homotopy.congr_homologyMap_cubicalChainComplexMap`: homotopic maps of pairs induce the
   same map on relative cubical homology.
+* `TopPair.IsCubicalRepresentative.map`: a map of pairs carries a representative of a relative
+  class to a representative of its image.
 * `TopPair.quasiIsoAt_cubicalChainComplexMap_iff`: a map of pairs induces a quasi-isomorphism of
   relative chains in a degree exactly when, on chains of the ambient spaces, every relative cycle
   of the target is the image of a relative cycle up to a boundary and the chains of the subspace,
@@ -337,6 +339,20 @@ theorem π_cubicalChainComplexMap_f_apply {P P' : TopPair.{u}} (f : P ⟶ P') (n
       (cokernel.π ((normalizedCubicalChainComplex k).map P'.map)).f n
         (NormalizedCubicalChain.map k (Hom.fst f).hom n x) :=
   ConcreteCategory.congr_hom (congrArg (fun φ ↦ φ.f n) (π_cubicalChainComplexMap k f)) x
+
+variable {k} in
+/-- A map of pairs sends a representative of a relative class to a representative of its image:
+the push-forward of the chain along the map of ambient spaces. -/
+theorem IsCubicalRepresentative.map {P P' : TopPair.{u}} (f : P ⟶ P') {n : ℕ}
+    {c : NormalizedCubicalChain P.fst k n} {μ : (P.cubicalChainComplex k).homology n}
+    (h : P.IsCubicalRepresentative k c μ) :
+    P'.IsCubicalRepresentative k (NormalizedCubicalChain.map k (Hom.fst f).hom n c)
+      (HomologicalComplex.homologyMap (cubicalChainComplexMap k f) n μ) := by
+  obtain ⟨r, hc, rfl⟩ := h
+  refine ⟨(HomologicalComplex.cyclesMap (cubicalChainComplexMap k f) n).hom r, ?_, ?_⟩
+  · refine (π_cubicalChainComplexMap_f_apply k f n c).symm.trans ?_
+    rw [hc, ← ModuleCat.comp_apply, ← HomologicalComplex.cyclesMap_i, ModuleCat.comp_apply]
+  · rw [← ModuleCat.comp_apply, ← HomologicalComplex.homologyπ_naturality, ModuleCat.comp_apply]
 
 @[simp]
 theorem cubicalChainComplexMap_id (P : TopPair.{u}) :
