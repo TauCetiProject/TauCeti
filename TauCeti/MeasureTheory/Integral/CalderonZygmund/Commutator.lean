@@ -16,6 +16,7 @@ import TauCeti.MeasureTheory.Function.BoundedMeanOscillation.Truncation
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.Lp.Operator.Extension
 import TauCeti.MeasureTheory.Function.LpSeminorm.Clipping
+import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.SpanningSets
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
@@ -753,11 +754,12 @@ private theorem eLpNorm_smul_sub_le_of_forall_max_min {F : Type*} [NormedAddComm
   have hfs_supp (k : ℕ) (y : ι → ℝ) (hy : y ∉ spanningSets volume k) : fs k y = 0 :=
     indicator_of_notMem (s := spanningSets volume k ∩ _) (fun h => hy h.1) _
   have hfs (k : ℕ) (r : ℝ≥0∞) : MemLp (fs k) r volume :=
-    memLp_of_norm_le_of_eq_zero_of_notMem_spanningSets (hfsm k) (.of_forall (hfs_bd k))
-      (hfs_supp k) r
+    memLp_of_norm_le_of_measure_support_ne_top (hfsm k) (.of_forall (hfs_bd k))
+      (measure_spanningSets_lt_top volume k).ne (hfs_supp k) r
   have hgs (k : ℕ) (r : ℝ≥0∞) : MemLp (fun y => bs k y • fs k y) r volume := by
-    refine memLp_of_norm_le_of_eq_zero_of_notMem_spanningSets (u := fun y => bs k y • fs k y)
-      (c := k * k) (N := k) ((hbsm k).smul (hfsm k)) (.of_forall fun y => ?_) (fun y hy => ?_) r
+    refine memLp_of_norm_le_of_measure_support_ne_top (u := fun y => bs k y • fs k y)
+      (c := k * k) ((hbsm k).smul (hfsm k)) (.of_forall fun y => ?_)
+      (measure_spanningSets_lt_top volume k).ne (fun y hy => ?_) r
     · rw [norm_smul, Real.norm_eq_abs]
       exact mul_le_mul ((abs_max_min_le _ _).trans_eq (Nat.abs_cast k)) (hfs_bd k y)
         (norm_nonneg _) (Nat.cast_nonneg _)

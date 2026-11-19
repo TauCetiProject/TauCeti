@@ -11,6 +11,8 @@ import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.SpanningSets
 
 /-!
@@ -63,16 +65,6 @@ theorem Lp.simpleFunc.memLp_two [Fact (1 ≤ p)] (hp : p ≠ ∞) (f : Lp.simple
       (indicatorConstLp_coeFn (p := p) (hs := hs) (hμs := hμ.ne) (c := c)).symm)
   · intro f g hf hg _ hmf hmg
     exact (hmf.add hmg).ae_eq (Lp.coeFn_add (f.toLp hf : Lp E p μ) (g.toLp hg)).symm
-
-/-- An `eLpNorm` bound `‖g‖_p ≤ B ‖u‖_p`, with `u` a representative of `v ∈ Lᵖ`, is the norm
-bound `‖g‖ ≤ B ‖v‖` in `Lᵖ`. -/
-theorem MemLp.norm_toLp_le_of_eLpNorm_le {F : Type*} [NormedAddCommGroup F] {g : α → F}
-    (hg : MemLp g p μ) {u : α → E} {v : Lp E p μ} (hv : u =ᵐ[μ] v) {B : ℝ≥0}
-    (h : eLpNorm g p μ ≤ B * eLpNorm u p μ) : ‖hg.toLp g‖ ≤ B * ‖v‖ := by
-  rw [Lp.norm_toLp, Lp.norm_def, ← eLpNorm_congr_ae hv, ← ENNReal.coe_toReal,
-    ← ENNReal.toReal_mul]
-  exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top
-    ((eLpNorm_congr_ae hv).trans_ne (Lp.eLpNorm_ne_top v))) h
 
 variable [NormedSpace ℝ E]
 
@@ -215,11 +207,12 @@ private theorem memLp_indicator_and_memLp_smul_indicator [SigmaFinite μ]
   have hS : MeasurableSet S := measurableSet_spanningSets_inter_norm_le (hφ.prodMk hb) k
   have hzero (x : α) (hx : x ∉ spanningSets μ k) : S.indicator φ x = 0 :=
     Set.indicator_of_notMem (s := S) (fun h => hx h.1) _
-  refine ⟨memLp_of_norm_le_of_eq_zero_of_notMem_spanningSets (c := k)
-      (hφ.indicator hS).aestronglyMeasurable (.of_forall fun x => ?_) hzero r,
-    memLp_of_norm_le_of_eq_zero_of_notMem_spanningSets (u := fun x => b x • S.indicator φ x)
+  have hk := (measure_spanningSets_lt_top μ k).ne
+  refine ⟨memLp_of_norm_le_of_measure_support_ne_top (c := k)
+      (hφ.indicator hS).aestronglyMeasurable (.of_forall fun x => ?_) hk hzero r,
+    memLp_of_norm_le_of_measure_support_ne_top (u := fun x => b x • S.indicator φ x)
       (c := k * k) (hb.aestronglyMeasurable.smul (hφ.indicator hS).aestronglyMeasurable)
-      (.of_forall fun x => ?_) (fun x hx => by rw [hzero x hx, smul_zero]) r⟩
+      (.of_forall fun x => ?_) hk (fun x hx => by rw [hzero x hx, smul_zero]) r⟩
   · by_cases hx : x ∈ S
     · simpa [hx] using (norm_fst_le ((φ x, b x) : E × ℝ)).trans hx.2
     · simp [hx]
