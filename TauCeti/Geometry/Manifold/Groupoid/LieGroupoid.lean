@@ -31,7 +31,7 @@ this atlas. By the universal property of the embedded fibre product
 (`TauCeti.contMDiff_composablePairs_iff`), this says that `x ↦ (a x).comp (b x) _` is smooth
 whenever `a` and `b` are smooth maps into `Γ` with `right ∘ a = left ∘ b`
 (`ContMDiff.totalComp`). Conversely, composition is smooth as soon as it is the restriction of a
-smooth map on `Γ × Γ` (`TauCeti.contMDiff_comp_of_eq`).
+smooth map on `Γ × Γ` (`TauCeti.contMDiff_composablePairs_comp_of_eq`).
 
 The object manifold is required to be Hausdorff. The arrow manifold need not be: it is locally
 Hausdorff through its charts and is required to be second-countable, while each source fibre
@@ -131,7 +131,8 @@ theorem contMDiff_composablePairs_iff {F G X : Type*} [NormedAddCommGroup F] [No
 
 /-- Composition is smooth on the manifold of composable pairs as soon as it is the restriction of
 a smooth map on `Γ × Γ`. -/
-theorem contMDiff_comp_of_eq {Φ : Quiver.Total C × Quiver.Total C → Quiver.Total C}
+theorem contMDiff_composablePairs_comp_of_eq
+    {Φ : Quiver.Total C × Quiver.Total C → Quiver.Total C}
     (hΦ : ContMDiff (J.prod J) J ∞ Φ)
     (h : ∀ p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left},
       p.1.1.comp p.1.2 p.2 = Φ p.1) :

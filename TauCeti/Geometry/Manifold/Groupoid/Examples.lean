@@ -178,8 +178,8 @@ instance lieGroupoid [T2Space N] [SecondCountableTopology N] : LieGroupoid I I (
   contMDiff_inverse := contMDiff_inverse
   -- An arrow of the unit groupoid is determined by its source, so composition is the first
   -- projection.
-  contMDiff_comp := contMDiff_comp_of_eq isSubmersion_source contMDiff_inverse contMDiff_fst
-    fun p ↦ (arrowHomeomorph N).injective (by simp)
+  contMDiff_comp := contMDiff_composablePairs_comp_of_eq isSubmersion_source contMDiff_inverse
+    contMDiff_fst fun p ↦ (arrowHomeomorph N).injective (by simp)
   t2Space_objects := inferInstance
   secondCountableTopology_arrows := inferInstance
   t2Space_sourceFiber _ := inferInstance
@@ -301,7 +301,7 @@ instance lieGroupoid [T2Space N] [SecondCountableTopology N] :
   -- The composite of `x → y` and `y → z` is the arrow with coordinates `(z, x)`.
   contMDiff_comp := by
     have ha := (arrowDiffeomorph I ∞ N).contMDiff
-    exact contMDiff_comp_of_eq isSubmersion_source contMDiff_inverse
+    exact contMDiff_composablePairs_comp_of_eq isSubmersion_source contMDiff_inverse
       ((arrowDiffeomorph I ∞ N).symm.contMDiff.comp
         ((ha.comp contMDiff_snd).fst.prodMk (ha.comp contMDiff_fst).snd))
       fun p ↦ (arrowHomeomorph N).injective (by simp)
