@@ -265,16 +265,23 @@ theorem isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart_add
       (Jq (q.endSign * z.2) (u (positiveEndChart q (z + (R, 0)))))
       (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
         (fun z ↦ u (positiveEndChart q (z + (R, 0)))) z : ℝ × ℝ →ₗ[ℝ] V) := by
-  have h := isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart_of_cylindrical hKH hH hHd
-    hu hfloer hJ (ζ := z + (R, 0)) (by simpa using hz)
-  have heq : ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
-      (fun z ↦ u (positiveEndChart q (z + (R, 0)))) z =
-        ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
-          (u ∘ positiveEndChart q) (z + (R, 0)) := by
-    rw [← ω.perturbedFDeriv_comp_add_right]
-    exact ω.perturbedFDeriv_congr _ rfl (by simp)
-  rw [heq]
-  simpa using h
+  -- This is the manifold statement for the constant form.
+  have h (Ks Kt : ℝ × ℝ → V → ℝ) (v : ℝ × ℝ → V) (z : ℝ × ℝ) :
+      (ω.constSmooth.perturbedMFDeriv Ks Kt v z).toLinearMap =
+        (ω.perturbedFDeriv Ks Kt v z : ℝ × ℝ →ₗ[ℝ] V) :=
+    LinearMap.ext (ω.fromTangentSpace_perturbedMFDeriv_constSmooth_apply Ks Kt v z)
+  have hz' : max T₀ 0 < (z + (R, 0)).1 := by simpa using hz
+  have hmem : positiveEndChart q (z + (R, 0)) ∈ thricePuncturedSphereReal :=
+    positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt hz')
+  have hJz := eq_comp_positiveEndChart hJ ((le_max_left _ _).trans hz'.le)
+  simp only [Prod.snd_add, add_zero, comp_apply] at hJz
+  rw [← hJz, ← h]
+  exact SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart_add
+    (ω := ω.constSmooth) hKH hH (fun q t ↦ (hHd q t).mdifferentiable) R
+    ((le_max_left _ _).trans hz'.le)
+    ((hu _ hmem).differentiableAt
+      (isOpen_thricePuncturedSphereReal.mem_nhds hmem)).mdifferentiableAt
+    (by rw [h]; exact hfloer _ hmem)
 
 /-- **The energy of a translated end of a Floer pair of pants.** Under the hypotheses of
 `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart`, let `R` be a
@@ -294,15 +301,11 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_le
       ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) := by
-  have h := ω.lintegral_floerEnergyDensity_comp_add_right (fun _ _ ↦ 0)
-    (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) (R, 0)
-    ((· + ((R, 0) : ℝ × ℝ)) '' s)
-  rw [preimage_image_eq _ (add_left_injective _)] at h
-  simp only [Prod.snd_add, add_zero, comp_apply] at h
-  rw [h]
-  exact setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset hKH hH hHd hu q
-    ((measurableEmbedding_addRight _).measurableSet_image' hs)
-    (by rintro _ ⟨z, hz, rfl⟩; exact hst z hz)
+  -- This is the manifold statement for the constant form.
+  simpa only [floerEnergyDensity_constSmooth] using
+    SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_le
+      (ω := ω.constSmooth) hKH hH (fun q t ↦ (hHd q t).mdifferentiable) hu.mdifferentiableOn q R hs
+      hst
 
 /-- **The energy of an end of a Floer pair of pants.** Under the hypotheses of
 `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart`, the energy of
