@@ -88,8 +88,9 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
 * `Module.Basis.det_map_eq_det_toMatrix`: evaluating `b'.det` on the image `b.map e` of a basis `b`
   under a linear equivalence `e` gives the determinant of `LinearMap.toMatrix b b' e`.
 * `LinearMap.det_smul_mem_range`: Cramer's rule, `det φ • x ∈ range φ`.
-* `LinearMap.injective_of_det_ne_zero`: over a ring without zero divisors, an endomorphism of a
-  free module of finite rank with nonzero determinant is injective.
+* `LinearMap.injective_of_det_mem_nonZeroDivisors`: an endomorphism of a free module of finite
+  rank whose determinant is a non-zero-divisor is injective, with the special case
+  `LinearMap.injective_of_det_ne_zero` over a ring without zero divisors.
 * `LinearMap.apply_eq_det_smul_of_finrank_eq_one`: on a free module of rank one, an endomorphism
   is multiplication by its determinant.
 
@@ -136,6 +137,7 @@ that port and is not from the source, nor is the left-separating recovery statem
 public section
 
 open Module
+open scoped nonZeroDivisors
 
 namespace AlternatingMap
 
@@ -325,10 +327,10 @@ theorem det_smul_mem_range {F : Type*} [AddCommGroup F] [Module R F] [Module.Fre
     det_toMatrix] at h
   simpa using h
 
-/-- An endomorphism of a free module of finite rank over a ring without zero divisors whose
-determinant is nonzero is injective. -/
-theorem injective_of_det_ne_zero [NoZeroDivisors R] {F : Type*} [AddCommGroup F] [Module R F]
-    [Module.Free R F] [Module.Finite R F] {φ : F →ₗ[R] F} (hφ : LinearMap.det φ ≠ 0) :
+/-- An endomorphism of a free module of finite rank whose determinant is a non-zero-divisor is
+injective. -/
+theorem injective_of_det_mem_nonZeroDivisors {F : Type*} [AddCommGroup F] [Module R F]
+    [Module.Free R F] [Module.Finite R F] {φ : F →ₗ[R] F} (hφ : LinearMap.det φ ∈ R⁰) :
     Function.Injective φ := by
   classical
   let b := Free.chooseBasis R F
@@ -338,7 +340,14 @@ theorem injective_of_det_ne_zero [NoZeroDivisors R] {F : Type*} [AddCommGroup F]
   ext i
   have h := congrArg (fun z ↦ (b.repr z : _ → R)) hxy
   rw [← toMatrix_mulVec_repr b b, ← toMatrix_mulVec_repr b b] at h
-  exact congrFun (Matrix.mulVec_injective_of_det_ne_zero hφ h) i
+  exact congrFun (Matrix.mulVec_injective_of_det_mem_nonZeroDivisors hφ h) i
+
+/-- An endomorphism of a free module of finite rank over a ring without zero divisors whose
+determinant is nonzero is injective. -/
+theorem injective_of_det_ne_zero [NoZeroDivisors R] {F : Type*} [AddCommGroup F] [Module R F]
+    [Module.Free R F] [Module.Finite R F] {φ : F →ₗ[R] F} (hφ : LinearMap.det φ ≠ 0) :
+    Function.Injective φ :=
+  injective_of_det_mem_nonZeroDivisors (mem_nonZeroDivisors_of_ne_zero hφ)
 
 /-- An endomorphism of a free module of rank one is multiplication by its determinant. -/
 theorem apply_eq_det_smul_of_finrank_eq_one [Module.Free R M] (hM : Module.finrank R M = 1)

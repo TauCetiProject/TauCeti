@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.FibreClass
 import TauCeti.LinearAlgebra.Determinant.Basic
+import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 import TauCeti.Algebra.Homology.UniversalCoefficient.Basic
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
@@ -78,6 +79,8 @@ private theorem injective_id_sub_homologyMap_monodromyChainMap_ulift
     Function.Injective (LinearMap.id -
       (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ (ULift.{0} ℤ))) 1).hom :
         _ →ₗ[ℤ] _) := by
+  -- `uliftIntHomologyIso` is stated for `SSet.homology`, which is by definition the homology of
+  -- `singularChainComplexFunctor`.
   let e : (((singularChainComplexFunctor (ModuleCat.{0} ℤ)).obj
       (ModuleCat.of ℤ (ULift.{0} ℤ))).obj (TopCat.of F)).homology 1 ≃ₗ[ℤ]
         (((singularChainComplexFunctor (ModuleCat.{0} ℤ)).obj (ModuleCat.of ℤ ℤ)).obj
@@ -112,8 +115,8 @@ private theorem exists_comp_eq_natAbs_det_smul_id [PathConnectedSpace F]
       f ≫ g = ((LinearMap.id -
         (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det.natAbs : ℤ) • 𝟙 _ := by
   set r := (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det.natAbs
-  -- `ψ = ε ∘ δ` maps `H₁(Y_φ; ℤ)` onto `ℤ` with kernel the torsion. For `a₀` with `ψ a₀ = 1`,
-  -- each `y` differs from `ψ y • a₀` by torsion, which `r` annihilates.
+  -- `ψ = ε ∘ δ` maps `H₁(Y_φ; ℤ)` onto `ℤ` with kernel the torsion, which `r` annihilates, so
+  -- `r • 𝟙` factors through `ψ`.
   let ψ : (((singularChainComplexFunctor (ModuleCat.{0} ℤ)).obj (ModuleCat.of ℤ ℤ)).obj
       (TopCat.of (MappingTorus φ))).homology 1 →ₗ[ℤ] ℤ :=
     ((TopCat.of F).singularHomology₀ε (ModuleCat.of ℤ ℤ)).hom ∘ₗ (wangδ φ (ModuleCat.of ℤ ℤ) 0).hom
@@ -127,26 +130,25 @@ private theorem exists_comp_eq_natAbs_det_smul_id [PathConnectedSpace F]
       (ModuleCat.of ℤ ℤ)).obj (TopCat.of (MappingTorus φ))).homology 1)) = r :=
     card_torsion_homology_one_eq_natAbs_det φ hdet
   obtain ⟨a₀, ha₀⟩ := hψ 1
-  -- Read `H₁(Y_φ; ULift ℤ)` as `H₁(Y_φ; ℤ)` through the coefficient isomorphism.
+  have hψr := Module.Dual.smulRight_smul_eq_smul_id ψ ha₀ (r := (r : ℤ)) fun y hy ↦ by
+    rw [hker] at hy
+    rw [Nat.cast_smul_eq_nsmul ℤ, ← hr]
+    exact congrArg Subtype.val (card_nsmul_eq_zero' (x := (⟨y, hy⟩ : Submodule.torsion ℤ _)))
+  -- Read `H₁(Y_φ; ULift ℤ)` as `H₁(Y_φ; ℤ)` through the coefficient isomorphism, which is stated
+  -- for `SSet.homology`: this is by definition the homology of `singularChainComplexFunctor`.
   let e : (TopCat.toSSet.obj (TopCat.of (MappingTorus φ))).homology
       (ModuleCat.of ℤ (ULift.{0} ℤ)) 1 ≅ (((singularChainComplexFunctor (ModuleCat.{0} ℤ)).obj
         (ModuleCat.of ℤ ℤ)).obj (TopCat.of (MappingTorus φ))).homology 1 :=
     uliftIntHomologyIso (TopCat.of (MappingTorus φ)) 1
-  refine ⟨ConcreteCategory.ofHom (LinearMap.lsmul ℤ ℤ (r : ℤ) ∘ₗ ψ ∘ₗ e.hom.hom),
+  refine ⟨ConcreteCategory.ofHom (((r : ℤ) • ψ) ∘ₗ e.hom.hom),
     ConcreteCategory.ofHom (e.inv.hom ∘ₗ LinearMap.toSpanSingleton ℤ _ a₀),
     ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_)⟩
-  have hx : e.hom.hom x - LinearMap.toSpanSingleton ℤ _ a₀ (ψ (e.hom.hom x)) ∈
-      Submodule.torsion ℤ _ := by
-    rw [← hker, LinearMap.mem_ker]
-    simp [ha₀]
-  have h : r • (e.hom.hom x - LinearMap.toSpanSingleton ℤ _ a₀ (ψ (e.hom.hom x))) = 0 := by
-    rw [← hr]
-    exact congrArg Subtype.val (card_nsmul_eq_zero' (x := (⟨_, hx⟩ : Submodule.torsion ℤ _)))
-  rw [nsmul_sub, sub_eq_zero] at h
   simp only [ModuleCat.hom_comp, ConcreteCategory.hom_ofHom, LinearMap.coe_comp,
-    Function.comp_apply, LinearMap.lsmul_apply, smul_eq_mul]
-  rw [← nsmul_eq_mul, map_nsmul, ← h, map_nsmul, Iso.hom_inv_id_apply]
-  simp
+    Function.comp_apply, LinearMap.toSpanSingleton_apply]
+  have h := DFunLike.congr_fun hψr (e.hom.hom x)
+  simp only [LinearMap.smulRight_apply, LinearMap.smul_apply, LinearMap.id_apply] at h
+  rw [LinearMap.smul_apply, h, LinearMap.map_smul, Iso.hom_inv_id_apply]
+  simpa using Nat.cast_smul_eq_nsmul ℤ r x
 
 variable {E : Type} [T2Space F] [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [ChartedSpace E F] [CompactSpace F] [ConnectedSpace F]
@@ -175,6 +177,8 @@ theorem isOfFinAddOrder_sub_evalFundamentalClass_smul
   obtain ⟨f, g, hfg⟩ := exists_comp_eq_natAbs_det_smul_id φ hdet
   have : Projective (ModuleCat.of ℤ ℤ) := (IsProjective.iff_projective ℤ).1 inferInstance
   rw [TopCat.singularKronecker_def] at hz
+  -- `f`, `g` and `hz` are stated for `SSet.homology`, which is by definition the homology of the
+  -- chain complex of `TopCat.toSSet.obj _` that `smul_eq_zero_of_kronecker_eq_zero` expects.
   have hr := TauCeti.ChainComplex.smul_eq_zero_of_kronecker_eq_zero (i := 1 + 1) (j := 1) rfl f g
     hfg hz
   rw [Nat.cast_smul_eq_nsmul ℤ] at hr
