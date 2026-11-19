@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
 import TauCeti.MeasureTheory.Function.Jacobian
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
@@ -185,8 +186,9 @@ theorem MemSobolev.compCLM_of_norm_iteratedFDeriv_le (hp : 1 < p) (hp_top : p �
     have hc : ∀ n ≤ k, ∃ C, ∀ x,
         ‖iteratedFDeriv ℝ n (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ x v) i : ℝ) : ℂ)) x‖ ≤ C := by
       obtain ⟨L, hL⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_one_le hΦb
-      simpa [b.repr_apply_apply] using fun n hn ↦ ⟨_, hΦ.1.norm_iteratedFDeriv_clm_fderiv_apply_le
-        (by simp) (Complex.ofRealCLM.comp (innerSL ℝ (b i))) hL v n hn⟩
+      obtain ⟨A, -, hAy⟩ := b.exists_clm_norm_le_one_and_repr_eq i
+      simp only [hAy]
+      exact fun n hn ↦ ⟨_, hΦ.1.norm_iteratedFDeriv_clm_fderiv_apply_le (by simp) A hL v n hn⟩
     exact MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top
       (hΦ.basis_repr_fderiv_apply b.toBasis v i) hc
       (ih (fun n h₁ h₂ ↦ hΦb n h₁ (by omega)) (by simpa using hT'.2 (b i)))
@@ -219,9 +221,10 @@ theorem MemSobolev.compCLM_of_norm_iteratedFDeriv_le_neg (hp : 1 < p) (hp_top : 
         (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ.symm (Φ x) v) j : ℝ) : ℂ)) x‖ ≤ C := by
       obtain ⟨K, hK⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_one_le hΦb
       obtain ⟨L, hL⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_one_le hΨb
-      have h := hΨ.1.norm_iteratedFDeriv_clm_fderiv_comp_apply_le hΦ.1 (by simp)
-        (Complex.ofRealCLM.comp (innerSL ℝ (b j))) hK hL v
-      simpa [b.repr_apply_apply] using fun n hn ↦ ⟨_, h n hn⟩
+      obtain ⟨A, -, hAy⟩ := b.exists_clm_norm_le_one_and_repr_eq j
+      simp only [hAy]
+      exact fun n hn ↦ ⟨_, hΨ.1.norm_iteratedFDeriv_clm_fderiv_comp_apply_le hΦ.1 (by simp) A hK hL
+        v n hn⟩
     -- Write `T = u + ∑ᵢ ∂ᵢ wᵢ` with `u` and `wᵢ` in `H^{-k,p}`. By the chain rule
     -- `Φ^* (∂ᵢ wᵢ) = ∑ⱼ cᵢⱼ ∂ⱼ (Φ^* wᵢ) = ∑ⱼ (∂ⱼ (cᵢⱼ Φ^* wᵢ) - (∂ⱼ cᵢⱼ) Φ^* wᵢ)`, so `Φ^* T` is
     -- again of this form.

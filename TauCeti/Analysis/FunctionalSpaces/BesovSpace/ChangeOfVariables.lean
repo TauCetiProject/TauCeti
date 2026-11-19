@@ -17,6 +17,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.AlmostDiagonal
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 import TauCeti.MeasureTheory.Function.Jacobian
 
 /-!
@@ -89,23 +90,13 @@ namespace TauCeti
 open TemperedDistribution
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The coordinate `y ↦ bᵢ(y)` in an orthonormal basis, as a complex-valued continuous linear form
-of norm at most one. -/
-private theorem exists_clm_norm_le_one_and_repr_eq {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) (i : ι) :
-    ∃ A : E →L[ℝ] ℂ, ‖A‖ ≤ 1 ∧ ∀ y, ((b.toBasis.repr y i : ℝ) : ℂ) = A y := by
-  refine ⟨Complex.ofRealCLM.comp (innerSL ℝ (b i)), ?_, fun y ↦ by simp [b.repr_apply_apply]⟩
-  refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun y ↦ ?_
-  simpa [b.orthonormal.1 i] using norm_inner_le_norm (𝕜 := ℝ) (b i) y
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 private theorem norm_iteratedFDeriv_repr_fderiv_apply_le {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ E) {Φ : E → E} (hΦ : ContDiff ℝ ∞ Φ) {M : ℕ} {L : ℝ}
     (hL : ∀ n, 1 ≤ n → n ≤ M + 1 → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L) (v : E) (i : ι) :
     ∀ n ≤ M, ∀ x,
       ‖iteratedFDeriv ℝ n (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ x v) i : ℝ) : ℂ)) x‖ ≤ L * ‖v‖ := by
   intro n hn x
-  obtain ⟨A, hA, hAy⟩ := exists_clm_norm_le_one_and_repr_eq b i
+  obtain ⟨A, hA, hAy⟩ := b.exists_clm_norm_le_one_and_repr_eq i
   have hL0 : 0 ≤ L * ‖v‖ :=
     mul_nonneg ((norm_nonneg _).trans (hL 1 le_rfl (by omega) x)) (norm_nonneg v)
   simp only [hAy]
@@ -121,7 +112,7 @@ private theorem norm_iteratedFDeriv_repr_fderiv_comp_le {ι : Type*} [Fintype ι
       (fun x ↦ ((b.toBasis.repr (fderiv ℝ Ψ (Φ x) v) i : ℝ) : ℂ)) x‖ ≤
         M.factorial * (L * ‖v‖) * max 1 L ^ M := by
   intro n hn x
-  obtain ⟨A, hA, hAy⟩ := exists_clm_norm_le_one_and_repr_eq b i
+  obtain ⟨A, hA, hAy⟩ := b.exists_clm_norm_le_one_and_repr_eq i
   have hL0 : 0 ≤ L * ‖v‖ :=
     mul_nonneg ((norm_nonneg _).trans (hΨL 1 le_rfl (by omega) x)) (norm_nonneg v)
   simp only [hAy]
