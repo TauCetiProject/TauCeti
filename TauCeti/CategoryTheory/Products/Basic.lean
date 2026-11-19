@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Endomorphism
 public import Mathlib.CategoryTheory.EssentiallySmall
 public import Mathlib.CategoryTheory.Limits.Shapes.ZeroObjects
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import Mathlib.CategoryTheory.Limits.Shapes.ZeroMorphisms
+public import Mathlib.SetTheory.Cardinal.Finite
 
 import Mathlib.CategoryTheory.Adjunction.Limits
 
@@ -22,6 +24,10 @@ It also shows that pushout and pullback squares in a product category are detect
 componentwise: a square in `C × D` is a pushout (resp. pullback) exactly when both of its
 projected squares are (`CategoryTheory.IsPushout.fst`, `CategoryTheory.IsPushout.snd`,
 `CategoryTheory.IsPushout.prod`, and their pullback counterparts).
+
+Finally, an isomorphism of pairs is a pair of isomorphisms (`CategoryTheory.Prod.isoEquiv`), so
+the automorphism group of a pair `(x, y)` has cardinality `#Aut x * #Aut y`
+(`TauCeti.natCard_aut_prod`).
 -/
 
 public section
@@ -142,3 +148,35 @@ theorem prod (h₁ : IsPullback f.1 g.1 g'.1 f'.1) (h₂ : IsPullback f.2 g.2 g'
 end IsPullback
 
 end CategoryTheory
+
+namespace CategoryTheory.Prod
+
+universe v₁ v₂ u₁ u₂
+
+variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+
+/-- An isomorphism between pairs of objects of a product category is a pair of isomorphisms. -/
+@[expose, simps]
+def isoEquiv {x x' : C} {y y' : D} : ((x, y) ≅ (x', y')) ≃ (x ≅ x') × (y ≅ y') where
+  toFun e := ((CategoryTheory.Prod.fst C D).mapIso e, (CategoryTheory.Prod.snd C D).mapIso e)
+  invFun p := Iso.prod p.1 p.2
+  left_inv _ := by ext <;> rfl
+  right_inv _ := by ext <;> rfl
+
+end CategoryTheory.Prod
+
+namespace TauCeti
+
+universe v₁ v₂ u₁ u₂
+
+variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+
+/-- The automorphism group of a pair `(x, y)` has cardinality `#Aut x * #Aut y`. -/
+@[simp]
+theorem natCard_aut_prod (x : C) (y : D) :
+    Nat.card (Aut (x, y)) = Nat.card (Aut x) * Nat.card (Aut y) := by
+  rw [← Nat.card_prod]
+  exact Nat.card_congr <|
+    Aut.isoEquiv.trans <| Prod.isoEquiv.trans (Aut.isoEquiv.prodCongr Aut.isoEquiv).symm
+
+end TauCeti

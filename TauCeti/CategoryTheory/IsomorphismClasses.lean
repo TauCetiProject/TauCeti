@@ -7,6 +7,8 @@ module
 
 public import Mathlib.CategoryTheory.IsomorphismClasses
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Basic
+public import Mathlib.CategoryTheory.Products.Basic
+public import TauCeti.CategoryTheory.Sums.Basic
 
 /-!
 # Functors on isomorphism classes
@@ -14,9 +16,14 @@ public import Mathlib.CategoryTheory.Functor.ReflectsIso.Basic
 Mathlib's `CategoryTheory.isomorphismClasses` already supplies the action of functors on
 isomorphism classes. Here we record its representative formula, invariance under natural
 isomorphism, and injectivity for full functors reflecting isomorphisms, such as fully faithful
-functors or full functors out of groupoids, together with a representative form of injectivity
-for fully faithful functors between categories in arbitrary universes. These facts allow
-comparisons of presentations to descend to their spaces of objects up to isomorphism.
+functors or full functors out of groupoids. These facts allow comparisons of presentations to
+descend to their spaces of objects up to isomorphism.
+
+For categories in arbitrary universes we also identify the isomorphism classes of a product
+`C × D` with pairs of classes (`CategoryTheory.Prod.isomorphismClassesEquiv`), those of a
+disjoint union `C ⊕ D` with the disjoint union of the classes
+(`CategoryTheory.Sum.isomorphismClassesEquiv`), and those of equivalent categories
+(`CategoryTheory.Equivalence.isomorphismClassesEquiv`).
 -/
 
 public section
@@ -70,19 +77,89 @@ theorem isomorphismClasses_map_injective (F : C ⥤ D) [F.Full] [F.ReflectsIsomo
 
 end CategoryTheory.Functor
 
-namespace CategoryTheory.Functor.FullyFaithful
-
 universe v₁ v₂ u₁ u₂
+
+open CategoryTheory
 
 variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
 
-/-- A fully faithful functor is injective on isomorphism classes, in the representative form
-`⟦x⟧ ↦ ⟦F.obj x.out⟧`. Unlike `CategoryTheory.Functor.isomorphismClasses_map_injective`, this
-does not need the two categories to live in the same universes. -/
-theorem injective_mk_obj_out {F : C ⥤ D} (hF : F.FullyFaithful) :
-    Function.Injective fun c : Quotient (isIsomorphicSetoid C) =>
-      Quotient.mk (isIsomorphicSetoid D) (F.obj c.out) := fun a b h => by
-  rw [← Quotient.out_eq a, ← Quotient.out_eq b]
-  exact Quotient.sound ⟨hF.preimageIso (Quotient.exact h).some⟩
+namespace CategoryTheory.Prod
 
-end CategoryTheory.Functor.FullyFaithful
+variable (C D) in
+/-- The isomorphism classes of a product category are the pairs of isomorphism classes of the
+factors. The inverse sends a pair of classes to the class of the pair of chosen
+representatives. -/
+@[expose]
+noncomputable def isomorphismClassesEquiv :
+    Quotient (isIsomorphicSetoid (C × D)) ≃
+      Quotient (isIsomorphicSetoid C) × Quotient (isIsomorphicSetoid D) where
+  toFun := Quotient.lift (fun z => (⟦z.1⟧, ⟦z.2⟧)) fun _ _ ⟨e⟩ =>
+    _root_.Prod.ext (Quotient.sound ⟨(CategoryTheory.Prod.fst C D).mapIso e⟩)
+      (Quotient.sound ⟨(CategoryTheory.Prod.snd C D).mapIso e⟩)
+  invFun p := ⟦(p.1.out, p.2.out)⟧
+  left_inv := Quotient.ind fun z => Quotient.sound
+    ⟨Iso.prod (Quotient.mk_out (s := isIsomorphicSetoid C) z.1).some
+      (Quotient.mk_out (s := isIsomorphicSetoid D) z.2).some⟩
+  right_inv p := _root_.Prod.ext p.1.out_eq p.2.out_eq
+
+@[simp]
+theorem isomorphismClassesEquiv_mk (z : C × D) :
+    isomorphismClassesEquiv C D ⟦z⟧ = (⟦z.1⟧, ⟦z.2⟧) := rfl
+
+end CategoryTheory.Prod
+
+namespace CategoryTheory.Sum
+
+variable (C D) in
+/-- The isomorphism classes of a disjoint union of categories are the disjoint union of the
+isomorphism classes of the summands. The inverse sends a class to the class of the image of its
+chosen representative. -/
+@[expose]
+noncomputable def isomorphismClassesEquiv :
+    Quotient (isIsomorphicSetoid (C ⊕ D)) ≃
+      Quotient (isIsomorphicSetoid C) ⊕ Quotient (isIsomorphicSetoid D) where
+  toFun := Quotient.lift (_root_.Sum.map (⟦·⟧) (⟦·⟧)) <| by
+    rintro (a | b) (a' | b') ⟨e⟩
+    · exact congrArg _root_.Sum.inl (Quotient.sound ⟨(fullyFaithfulInl C D).preimageIso e⟩)
+    · exact (hom_inl_inr_false C D e.hom).elim
+    · exact (hom_inr_inl_false D C e.hom).elim
+    · exact congrArg _root_.Sum.inr (Quotient.sound ⟨(fullyFaithfulInr C D).preimageIso e⟩)
+  invFun p := ⟦p.elim (fun a => _root_.Sum.inl a.out) (fun b => _root_.Sum.inr b.out)⟧
+  left_inv := Quotient.ind <| by
+    rintro (a | b)
+    · exact Quotient.sound
+        ⟨(inl_ C D).mapIso (Quotient.mk_out (s := isIsomorphicSetoid C) a).some⟩
+    · exact Quotient.sound
+        ⟨(inr_ C D).mapIso (Quotient.mk_out (s := isIsomorphicSetoid D) b).some⟩
+  right_inv := by
+    rintro (a | b)
+    · exact congrArg _root_.Sum.inl a.out_eq
+    · exact congrArg _root_.Sum.inr b.out_eq
+
+@[simp]
+theorem isomorphismClassesEquiv_mk_inl (x : C) :
+    isomorphismClassesEquiv C D ⟦_root_.Sum.inl x⟧ = _root_.Sum.inl ⟦x⟧ := rfl
+
+@[simp]
+theorem isomorphismClassesEquiv_mk_inr (y : D) :
+    isomorphismClassesEquiv C D ⟦_root_.Sum.inr y⟧ = _root_.Sum.inr ⟦y⟧ := rfl
+
+end CategoryTheory.Sum
+
+namespace CategoryTheory.Equivalence
+
+/-- An equivalence of categories induces an equivalence of their isomorphism classes, sending the
+class of `x` to the class of `e.functor.obj x`. -/
+@[expose]
+def isomorphismClassesEquiv (e : C ≌ D) :
+    Quotient (isIsomorphicSetoid C) ≃ Quotient (isIsomorphicSetoid D) where
+  toFun := Quotient.map' e.functor.obj fun _ _ ⟨i⟩ => ⟨e.functor.mapIso i⟩
+  invFun := Quotient.map' e.inverse.obj fun _ _ ⟨i⟩ => ⟨e.inverse.mapIso i⟩
+  left_inv := Quotient.ind fun x => Quotient.sound ⟨(e.unitIso.app x).symm⟩
+  right_inv := Quotient.ind fun y => Quotient.sound ⟨e.counitIso.app y⟩
+
+@[simp]
+theorem isomorphismClassesEquiv_mk (e : C ≌ D) (x : C) :
+    e.isomorphismClassesEquiv ⟦x⟧ = ⟦e.functor.obj x⟧ := rfl
+
+end CategoryTheory.Equivalence
