@@ -44,6 +44,8 @@ against exactly this metric.
   `InnerProductSpace.Core ℝ V`.
 * `TauCeti.SymplecticForm.abs_apply_le_norm_mul_norm`: when the inner product of `V` is the
   metric `ω(·, J ·)`, the symplectic form is bounded by it, `|ω(v, w)| ≤ ‖v‖ ‖w‖`.
+* `TauCeti.SymplecticForm.compatible_of_apply_apply_eq_inner`: an almost complex structure whose
+  metric `ω(·, J ·)` is the inner product of `V` is `ω`-compatible.
 * `TauCeti.SymplecticForm.inner_apply_left_eq_of_apply_apply_eq_inner` and
   `TauCeti.SymplecticForm.inner_apply_left_eq_neg_of_apply_apply_eq_inner`: for that inner
   product, `⟪J v, w⟫ = ω(v, w)` and `J` is skew-adjoint.
@@ -284,6 +286,15 @@ theorem inner_apply_left_eq_neg_of_apply_apply_eq_inner (hg : ∀ v w, ω v (J w
     (v w : V) : ⟪J v, w⟫ = -⟪v, J w⟫ := by
   rw [inner_apply_left_eq_of_apply_apply_eq_inner hg, real_inner_comm,
     inner_apply_left_eq_of_apply_apply_eq_inner hg, ω.neg_eq]
+
+/-- An almost complex structure whose associated metric `ω(·, J ·)` is the inner product is
+`ω`-compatible. -/
+lemma compatible_of_apply_apply_eq_inner {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] {ω : SymplecticForm V} {J : AlmostComplexStructure V}
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) : ω.Compatible J :=
+  .of_tames (ω.invariant_of_apply_apply_eq_inner hg) fun v hv ↦ by
+    rw [hg]
+    exact real_inner_self_pos.2 hv
 
 end InnerProductSpace
 

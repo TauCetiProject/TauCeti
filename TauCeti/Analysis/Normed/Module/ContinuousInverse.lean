@@ -48,6 +48,8 @@ This gives continuity of quotient-range coordinates for families of valid splitt
   where the family is eventually invertible, without completeness.
 * `Continuous.clm_inverse`: inversion is continuous along a continuous family
   of invertible operators between seminormed spaces, with no completeness assumption.
+* `ContinuousAt.continuousLinearEquiv_symm`, `Continuous.continuousLinearEquiv_symm`: the same
+  for the inverses of a family of continuous linear equivalences.
 * `ContinuousAt.exists_continuousAt_leftInverse`: continuously varying left inverses of a
   continuous family of operators whose member at `x₀` has a continuous left inverse.
 -/
@@ -146,6 +148,24 @@ theorem Continuous.clm_inverse {X E F : Type*} [TopologicalSpace X]
     Continuous (fun x => (f x).inverse) :=
   continuous_iff_continuousAt.mpr fun _ =>
     hf.continuousAt.clm_inverse_of_eventually_isInvertible (.of_forall h)
+
+/-- A family of continuous linear equivalences, continuous at a point, has inverse operators
+continuous there, with no completeness assumption. -/
+theorem ContinuousAt.continuousLinearEquiv_symm {X E F : Type*} [TopologicalSpace X]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {A : X → E ≃L[𝕜] F} {x₀ : X} (hA : ContinuousAt (fun x ↦ (A x : E →L[𝕜] F)) x₀) :
+    ContinuousAt (fun x ↦ ((A x).symm : F →L[𝕜] E)) x₀ := by
+  simpa only [ContinuousLinearMap.inverse_equiv] using
+    hA.clm_inverse_of_eventually_isInvertible
+      (.of_forall fun _ ↦ ContinuousLinearMap.isInvertible_equiv)
+
+/-- A continuous family of continuous linear equivalences has a continuous family of inverse
+operators, with no completeness assumption. -/
+theorem Continuous.continuousLinearEquiv_symm {X E F : Type*} [TopologicalSpace X]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {A : X → E ≃L[𝕜] F} (hA : Continuous fun x ↦ (A x : E →L[𝕜] F)) :
+    Continuous fun x ↦ ((A x).symm : F →L[𝕜] E) :=
+  continuous_iff_continuousAt.2 fun _ ↦ hA.continuousAt.continuousLinearEquiv_symm
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G]
   {F : Type*} [TopologicalSpace F] [AddCommGroup F] [Module 𝕜 F] [IsTopologicalAddGroup F]
