@@ -14,8 +14,9 @@ public import Mathlib.CategoryTheory.Functor.ReflectsIso.Basic
 Mathlib's `CategoryTheory.isomorphismClasses` already supplies the action of functors on
 isomorphism classes. Here we record its representative formula, invariance under natural
 isomorphism, and injectivity for full functors reflecting isomorphisms, such as fully faithful
-functors or full functors out of groupoids. These facts allow comparisons of
-presentations to descend to their spaces of objects up to isomorphism.
+functors or full functors out of groupoids, together with a representative form of injectivity
+for fully faithful functors between categories in arbitrary universes. These facts allow
+comparisons of presentations to descend to their spaces of objects up to isomorphism.
 -/
 
 public section
@@ -68,3 +69,20 @@ theorem isomorphismClasses_map_injective (F : C ⥤ D) [F.Full] [F.ReflectsIsomo
       exact Quotient.sound ⟨asIso (F.preimage e.hom)⟩
 
 end CategoryTheory.Functor
+
+namespace CategoryTheory.Functor.FullyFaithful
+
+universe v₁ v₂ u₁ u₂
+
+variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+
+/-- A fully faithful functor is injective on isomorphism classes, in the representative form
+`⟦x⟧ ↦ ⟦F.obj x.out⟧`. Unlike `CategoryTheory.Functor.isomorphismClasses_map_injective`, this
+does not need the two categories to live in the same universes. -/
+theorem injective_mk_obj_out {F : C ⥤ D} (hF : F.FullyFaithful) :
+    Function.Injective fun c : Quotient (isIsomorphicSetoid C) =>
+      Quotient.mk (isIsomorphicSetoid D) (F.obj c.out) := fun a b h => by
+  rw [← Quotient.out_eq a, ← Quotient.out_eq b]
+  exact Quotient.sound ⟨hF.preimageIso (Quotient.exact h).some⟩
+
+end CategoryTheory.Functor.FullyFaithful

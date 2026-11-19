@@ -15,6 +15,7 @@ import Mathlib.Algebra.BigOperators.Field
 import Mathlib.GroupTheory.GroupAction.Quotient
 import Mathlib.Tactic.Positivity
 import TauCeti.Algebra.BigOperators.Finprod
+import TauCeti.CategoryTheory.IsomorphismClasses
 
 /-!
 # The mass of a groupoid
@@ -29,12 +30,17 @@ number of rational points of a stack over a finite field is the mass of its grou
 
 The summand is a function of the isomorphism class because an isomorphism `x ≅ y` conjugates
 `Aut x` onto `Aut y` (`CategoryTheory.Aut.autMulEquivOfIso`). The definition uses `finsum` and
-`Nat.card`, so no finiteness is required to state it: when there are infinitely many classes the
-mass is `0` by convention, and an object with infinitely many automorphisms contributes `0`.
-Theorems that need finiteness take it as a hypothesis.
+`Nat.card`, so no finiteness is required to state it: an object with infinitely many
+automorphisms contributes `0`, and when infinitely many classes have finite automorphism groups
+(so the sum has infinite support) the mass is `0` by convention. Theorems that need finiteness take
+it as a hypothesis.
 
 ## Main declarations
 
+* `CategoryTheory.Iso.natCard_aut_eq`: isomorphic objects have automorphism groups of the same
+  cardinality.
+* `TauCeti.natCard_aut_prod`: the automorphism group of a pair `(x, y)` has cardinality
+  `#Aut x * #Aut y`.
 * `TauCeti.groupoidMass`: the mass of a category.
 * `TauCeti.groupoidMass_eq_finsum`: the mass is the sum of `1 / #Aut (s i)` over any family `s`
   of objects meeting every isomorphism class exactly once.
@@ -62,7 +68,44 @@ open CategoryTheory Function
 
 universe v₁ v₂ u₁ u₂
 
+namespace CategoryTheory
+
+variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+
+/-- Isomorphic objects have automorphism groups of the same cardinality: an isomorphism `x ≅ y`
+conjugates `Aut x` onto `Aut y`. -/
+theorem Iso.natCard_aut_eq {X Y : C} (e : X ≅ Y) : Nat.card (Aut X) = Nat.card (Aut Y) :=
+  Nat.card_congr (Aut.autMulEquivOfIso e).toEquiv
+
+/-- A fully faithful functor preserves the cardinality of automorphism groups. -/
+theorem Functor.FullyFaithful.natCard_aut_obj {F : C ⥤ D} (hF : F.FullyFaithful) (x : C) :
+    Nat.card (Aut (F.obj x)) = Nat.card (Aut x) :=
+  (Nat.card_congr (hF.autMulEquivOfFullyFaithful x).toEquiv).symm
+
+end CategoryTheory
+
 namespace TauCeti
+
+section Prod
+
+variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+
+/-- An isomorphism between pairs of objects of a product category is a pair of isomorphisms. -/
+@[expose, simps]
+def prodIsoEquiv {x x' : C} {y y' : D} : ((x, y) ≅ (x', y')) ≃ (x ≅ x') × (y ≅ y') where
+  toFun e := ((CategoryTheory.Prod.fst C D).mapIso e, (CategoryTheory.Prod.snd C D).mapIso e)
+  invFun p := Iso.prod p.1 p.2
+  left_inv _ := by ext <;> rfl
+  right_inv _ := by ext <;> rfl
+
+/-- The automorphism group of a pair `(x, y)` has cardinality `#Aut x * #Aut y`. -/
+theorem natCard_aut_prod (x : C) (y : D) :
+    Nat.card (Aut (x, y)) = Nat.card (Aut x) * Nat.card (Aut y) := by
+  rw [← Nat.card_prod]
+  exact Nat.card_congr <|
+    Aut.isoEquiv.trans <| prodIsoEquiv.trans (Aut.isoEquiv.prodCongr Aut.isoEquiv).symm
+
+end Prod
 
 variable (C : Type u₁) [Category.{v₁} C]
 
@@ -71,13 +114,12 @@ of the order of the automorphism group of a representative.
 
 When `C` has finitely many isomorphism classes and finite automorphism groups this is the
 groupoid cardinality `∑_{[x]} 1 / #Aut x`. Without these finiteness conditions it is a junk value:
-`0` when there are infinitely many classes, and an object with an infinite automorphism group
-contributes `0`. -/
+an object with an infinite automorphism group contributes `0`, and the mass is `0` when infinitely
+many isomorphism classes have finite automorphism groups (the sum has infinite support). -/
 noncomputable def groupoidMass : ℚ :=
   ∑ᶠ c : _root_.Quotient (isIsomorphicSetoid C),
     Quotient.lift (s := isIsomorphicSetoid C) (fun x => ((Nat.card (Aut x) : ℚ))⁻¹)
-      -- Isomorphic objects have isomorphic automorphism groups.
-      (fun _ _ h => by rw [Nat.card_congr (Aut.autMulEquivOfIso h.some).toEquiv]) c
+      (fun _ _ h => by rw [h.some.natCard_aut_eq]) c
 
 variable {C}
 
@@ -115,15 +157,12 @@ classes and isomorphisms of automorphism groups. -/
 theorem groupoidMass_eq (e : C ≌ D) : groupoidMass C = groupoidMass D := by
   have hs : Bijective fun c : _root_.Quotient (isIsomorphicSetoid C) =>
       (⟦e.functor.obj c.out⟧ : _root_.Quotient (isIsomorphicSetoid D)) := by
-    refine ⟨fun a b h => ?_, fun d => _root_.Quotient.inductionOn d fun d => ?_⟩
-    · rw [← _root_.Quotient.out_eq a, ← _root_.Quotient.out_eq b]
-      exact _root_.Quotient.sound
-        ⟨e.fullyFaithfulFunctor.preimageIso (_root_.Quotient.exact h).some⟩
-    · exact ⟨⟦e.inverse.obj d⟧, _root_.Quotient.sound ⟨e.functor.mapIso
-        (_root_.Quotient.mk_out (s := isIsomorphicSetoid C) _).some ≪≫ e.counitIso.app d⟩⟩
+    refine ⟨e.fullyFaithfulFunctor.injective_mk_obj_out,
+      fun d => _root_.Quotient.inductionOn d fun d => ?_⟩
+    exact ⟨⟦e.inverse.obj d⟧, _root_.Quotient.sound ⟨e.functor.mapIso
+      (_root_.Quotient.mk_out (s := isIsomorphicSetoid C) _).some ≪≫ e.counitIso.app d⟩⟩
   rw [groupoidMass_eq_finsum _ hs, groupoidMass_eq_finsum_out]
-  exact finsum_congr fun c => by
-    rw [Nat.card_congr (e.fullyFaithfulFunctor.autMulEquivOfFullyFaithful c.out).toEquiv]
+  exact finsum_congr fun c => by rw [e.fullyFaithfulFunctor.natCard_aut_obj]
 
 end CategoryTheory.Equivalence
 
@@ -165,11 +204,10 @@ theorem groupoidMass_singleObj (G : Type u₁) [Group G] :
 
 variable (C : Type u₁) [Category.{v₁} C] (D : Type u₂) [Category.{v₂} D]
 
-/-- The mass of a product of two categories with finitely many isomorphism classes is the product
-of their masses. -/
-theorem groupoidMass_prod [Finite (_root_.Quotient (isIsomorphicSetoid C))]
-    [Finite (_root_.Quotient (isIsomorphicSetoid D))] :
-    groupoidMass (C × D) = groupoidMass C * groupoidMass D := by
+/-- The mass of a product of two categories is the product of their masses. No finiteness is
+needed: when one factor's sum has infinite support and the other's is nonempty, so does the sum
+for the product, and both sides are `0`. -/
+theorem groupoidMass_prod : groupoidMass (C × D) = groupoidMass C * groupoidMass D := by
   have hs : Bijective fun p : _root_.Quotient (isIsomorphicSetoid C) ×
       _root_.Quotient (isIsomorphicSetoid D) =>
       (⟦(p.1.out, p.2.out)⟧ : _root_.Quotient (isIsomorphicSetoid (C × D))) := by
@@ -183,20 +221,21 @@ theorem groupoidMass_prod [Finite (_root_.Quotient (isIsomorphicSetoid C))]
         exact Quotient.sound ⟨(CategoryTheory.Prod.snd C D).mapIso e⟩
     · exact Iso.prod (Quotient.mk_out (s := isIsomorphicSetoid C) _).some
         (Quotient.mk_out (s := isIsomorphicSetoid D) _).some
-  -- An automorphism of a pair is a pair of automorphisms.
-  have haut (x : C) (y : D) : Nat.card (Aut (x, y)) = Nat.card (Aut x) * Nat.card (Aut y) := by
-    rw [← Nat.card_prod]
-    let e : ((x, y) ≅ (x, y)) ≃ (x ≅ x) × (y ≅ y) :=
-      { toFun e := ((CategoryTheory.Prod.fst C D).mapIso e, (CategoryTheory.Prod.snd C D).mapIso e)
-        invFun p := Iso.prod p.1 p.2
-        left_inv _ := by ext <;> rfl
-        right_inv _ := by ext <;> rfl }
-    exact Nat.card_congr <| Aut.isoEquiv.trans <| e.trans (Aut.isoEquiv.prodCongr Aut.isoEquiv).symm
   rw [groupoidMass_eq_finsum _ hs, groupoidMass_eq_finsum_out, groupoidMass_eq_finsum_out]
-  simp_rw [haut, Nat.cast_mul, mul_inv]
-  rw [finsum_curry _ (Set.toFinite _), finsum_mul]
-  refine finsum_congr fun a => ?_
-  rw [mul_finsum]
+  simp_rw [natCard_aut_prod, Nat.cast_mul, mul_inv]
+  set f := fun a : _root_.Quotient (isIsomorphicSetoid C) => ((Nat.card (Aut a.out) : ℚ))⁻¹
+  set g := fun b : _root_.Quotient (isIsomorphicSetoid D) => ((Nat.card (Aut b.out) : ℚ))⁻¹
+  by_cases h : (support fun p : _ × _ => f p.1 * g p.2).Finite
+  · rw [finsum_curry _ h, finsum_mul]
+    exact finsum_congr fun a => by rw [mul_finsum]
+  -- The support of the summand is `support f ×ˢ support g`, so one factor has infinite support.
+  have hfg : (support fun p : _ × _ => f p.1 * g p.2) = support f ×ˢ support g := by
+    ext; simp
+  rw [finsum_of_infinite_support h]
+  rcases Set.infinite_prod.mp (hfg ▸ h : (support f ×ˢ support g).Infinite) with
+    ⟨hf, -⟩ | ⟨hg, -⟩
+  · rw [finsum_of_infinite_support hf, zero_mul]
+  · rw [finsum_of_infinite_support hg, mul_zero]
 
 /-- The mass of a disjoint union of two categories with finitely many isomorphism classes is the
 sum of their masses. -/
@@ -211,15 +250,11 @@ theorem groupoidMass_sum [Finite (_root_.Quotient (isIsomorphicSetoid C))]
       (⟦Sum.elim (fun a => Sum.inl a.out) (fun b => Sum.inr b.out) p⟧ :
         _root_.Quotient (isIsomorphicSetoid (C ⊕ D))) := by
     refine ⟨?_, ?_⟩
-    · rintro (a | b) (a' | b') h <;> obtain ⟨e⟩ := Quotient.exact h
-      · rw [← Quotient.out_eq a, ← Quotient.out_eq a',
-          Quotient.sound (s := isIsomorphicSetoid C)
-            ⟨hl.preimageIso (X := a.out) (Y := a'.out) e⟩]
-      · exact (hom_inl_inr_false C D (X := a.out) (Y := b'.out) e.hom).elim
-      · exact (hom_inr_inl_false D C (X := b.out) (Y := a'.out) e.hom).elim
-      · rw [← Quotient.out_eq b, ← Quotient.out_eq b',
-          Quotient.sound (s := isIsomorphicSetoid D)
-            ⟨hr.preimageIso (X := b.out) (Y := b'.out) e⟩]
+    · rintro (a | b) (a' | b') h
+      · exact congrArg Sum.inl (hl.injective_mk_obj_out h)
+      · exact (hom_inl_inr_false C D (X := a.out) (Y := b'.out) (Quotient.exact h).some.hom).elim
+      · exact (hom_inr_inl_false D C (X := b.out) (Y := a'.out) (Quotient.exact h).some.hom).elim
+      · exact congrArg Sum.inr (hr.injective_mk_obj_out h)
     · rintro ⟨x | y⟩
       · exact ⟨Sum.inl ⟦x⟧, Quotient.sound
           ⟨(Sum.inl_ C D).mapIso (Quotient.mk_out (s := isIsomorphicSetoid C) x).some⟩⟩
@@ -228,12 +263,8 @@ theorem groupoidMass_sum [Finite (_root_.Quotient (isIsomorphicSetoid C))]
   rw [groupoidMass_eq_finsum _ hs, finsum_sum_type _ (Set.toFinite _) (Set.toFinite _),
     groupoidMass_eq_finsum_out, groupoidMass_eq_finsum_out]
   congr 1
-  · exact finsum_congr fun a => by
-      rw [Sum.elim_inl, Nat.card_congr (hl.autMulEquivOfFullyFaithful a.out).toEquiv,
-        Sum.inl__obj]
-  · exact finsum_congr fun b => by
-      rw [Sum.elim_inr, Nat.card_congr (hr.autMulEquivOfFullyFaithful b.out).toEquiv,
-        Sum.inr__obj]
+  · exact finsum_congr fun a => congrArg (fun n : ℕ => (n : ℚ)⁻¹) (hl.natCard_aut_obj a.out)
+  · exact finsum_congr fun b => congrArg (fun n : ℕ => (n : ℚ)⁻¹) (hr.natCard_aut_obj b.out)
 
 /-- **Orbit–stabilizer for masses.** For a finite group `G` acting on a type `Y`, the action
 groupoid `G ⋉ Y` has mass `#Y / #G`. The action need not be free: the orbit of a point
