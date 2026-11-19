@@ -46,19 +46,6 @@ attribute [local instance 1100] HahnSeries.instAlgebra
 
 variable {k : Type*} [CommRing k]
 
-/-- Every subset of `k[x]` containing `x` generates `k[x]` as a `k`-algebra. -/
-theorem adjoin_eq_top_of_ι_one_mem {s : Set (SymmetricAlgebra k k)} (h : ι k k 1 ∈ s) :
-    Algebra.adjoin k s = ⊤ := by
-  have hmem (y : SymmetricAlgebra k k) : y ∈ Algebra.adjoin k s := by
-    induction y using SymmetricAlgebra.induction with
-    | algebraMap r => exact Subalgebra.algebraMap_mem _ r
-    | ι m =>
-      rw [← mul_one m, ← smul_eq_mul, map_smul]
-      exact Subalgebra.smul_mem _ (Algebra.subset_adjoin h) m
-    | mul a b ha hb => exact mul_mem ha hb
-    | add a b ha hb => exact add_mem ha hb
-  exact eq_top_iff.2 fun y _ ↦ hmem y
-
 variable {R : Type*} [CommRing R] [Algebra k R]
 
 /-- The inverse of a loop `f` of `𝔾ₐ` is `-f`. -/
@@ -87,24 +74,16 @@ theorem coe_poleBoundedLoopsEquivLattice_apply {N : ℕ} (g : poleBoundedLoops k
     (poleBoundedLoopsEquivLattice k R N g : R⸨X⸩) = g.1.ofConv (ι k k 1) := by
   simp [poleBoundedLoopsEquivLattice]
 
-/-- A series `f ∈ X⁻¹ R⟦X⟧` has `f² ∈ X⁻¹ R⟦X⟧` exactly when its coefficient of `X⁻¹` squares to
-`0`. -/
-private theorem sq_mem_lattice_neg_one_iff {f : R⸨X⸩} (hf : f ∈ lattice R R (-1)) :
-    f ^ 2 ∈ lattice R R (-1) ↔ f.coeff (-1) ^ 2 = 0 := by
-  have h2 : f ^ 2 ∈ lattice R R (-1 + -1) := sq f ▸ mul_mem_lattice hf hf
-  have hcoeff : (f ^ 2).coeff (-1 + -1) = f.coeff (-1) ^ 2 := by
-    rw [sq, sq, coeff_mul_of_mem_lattice hf hf]
-  refine ⟨fun h ↦ hcoeff ▸ mem_lattice_iff.1 h _ (by norm_num), fun h ↦ ?_⟩
-  refine mem_lattice_iff.2 fun n hn ↦ ?_
-  obtain hn' | rfl : n < -1 + -1 ∨ n = -1 + -1 := by omega
-  · exact mem_lattice_iff.1 h2 n hn'
-  · rw [hcoeff, h]
-
 /-- **The piece of level `1` for the generators `x, x²` of `𝔾ₐ`.** A loop `f` lies in it exactly
 when `f = a₋₁ X⁻¹ + a₀ + a₁ X + ⋯` with `a₋₁² = 0`. -/
 theorem mem_poleBoundedLoops_ι_sq_iff {g : WithConv (SymmetricAlgebra k k →ₐ[k] R⸨X⸩)} :
     g ∈ poleBoundedLoops k ![ι k k 1, ι k k 1 ^ 2] R 1 ↔
       g.ofConv (ι k k 1) ∈ lattice R R (-1) ∧ (g.ofConv (ι k k 1)).coeff (-1) ^ 2 = 0 := by
+  -- A series `f ∈ X⁻¹ R⟦X⟧` has `f² ∈ X⁻¹ R⟦X⟧` exactly when its coefficient of `X⁻¹` squares
+  -- to `0`.
+  have sq_mem_lattice_neg_one_iff {f : R⸨X⸩} (hf : f ∈ lattice R R (-1)) :
+      f ^ 2 ∈ lattice R R (-1) ↔ f.coeff (-1) ^ 2 = 0 := by
+    simpa only [sq, Int.reduceNeg, Int.reduceAdd] using mul_mem_lattice_add_one_iff hf hf
   simp only [mem_poleBoundedLoops_iff, Fin.forall_fin_two, Matrix.cons_val_zero,
     Matrix.cons_val_one, map_pow, inv_ofConv_ι_one, neg_mem_iff, neg_sq, Nat.cast_one]
   refine ⟨fun h ↦ ⟨h.1.1, (sq_mem_lattice_neg_one_iff h.1.1).1 h.2.1⟩, fun h ↦ ?_⟩

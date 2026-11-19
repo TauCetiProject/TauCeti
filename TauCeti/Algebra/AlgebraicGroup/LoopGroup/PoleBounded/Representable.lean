@@ -15,8 +15,9 @@ public import TauCeti.RingTheory.HahnSeries.Map
 Let `H` be a commutative Hopf algebra over a commutative ring `k`, generated as a `k`-algebra by a
 family `x : ι → H`. This file shows that each piece `LG_(≤N)` of pole-bounded loops
 (`TauCeti.HopfAlgebra.poleBoundedLoops`) is represented by a commutative `k`-algebra, and that the
-inclusion `LG_(≤N) ⊆ LG_(≤M)` for `N ≤ M` is induced by a surjection of these algebras: the loop
-group is an ind-affine functor.
+inclusion `LG_(≤N) ⊆ LG_(≤M)` for `N ≤ M` is induced by a surjection of these algebras. When `x`
+is finite, the pieces moreover exhaust the loop group
+(`TauCeti.HopfAlgebra.iUnion_poleBoundedLoops`), so that the loop group is an ind-affine functor.
 
 A loop `g` of `LG_(≤N)(R)` is determined by the coefficients `a_(i,m) ∈ R` of
 `g (x i) = Σ_(m ≥ 0) a_(i,m) X^(m - N)`. The representing algebra is the polynomial algebra
@@ -26,7 +27,9 @@ A loop `g` of `LG_(≤N)(R)` is determined by the coefficients `a_(i,m) ∈ R` o
 * every coefficient of `X`-degree below `-N` of `f(Σ_m a_(·,m) X^(m - N))`, for each `f` with
   `f(x) = S(x i)`, where `S` is the antipode: this bounds the poles of the inverse loop.
 
-No finiteness is needed for this: the family `x` and the relations may be infinite.
+No finiteness is needed for the representability of each piece or for the transition maps: the
+family `x` and the relations may be infinite. Exhaustion of the loop group by the pieces, and
+the independence of the ind-affine presentation from the generators, require finite families.
 
 ## Main definitions
 
@@ -91,25 +94,6 @@ theorem coeff_poleBoundedSeries (N : ℕ) (i : ι) (m : ℕ) :
   rw [poleBoundedSeries, sub_eq_add_neg, coeff_single_mul_add, one_mul,
     LaurentSeries.coeff_coe_powerSeries, PowerSeries.coeff_mk]
 
-/-- Applying a coefficient map to the value of a polynomial at Laurent series is the value of the
-polynomial at the mapped series: the coefficientwise form of `MvPolynomial.comp_aeval`. -/
-private theorem map_aeval {σ A B : Type*} [CommRing A] [Algebra k A] [CommRing B] [Algebra k B]
-    (φ : A →ₐ[k] B) (s : σ → A⸨X⸩) (f : MvPolynomial σ k) :
-    (aeval s f).map φ = aeval (fun i ↦ (s i).map φ) f := by
-  let Φ : A⸨X⸩ →ₐ[k] B⸨X⸩ :=
-    { mapRingHom (φ : A →+* B) with
-      commutes' := fun c ↦ by
-        ext n
-        simp only [RingHom.toMonoidHom_eq_coe, OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe,
-          MonoidHom.coe_ofClass, mapRingHom_apply, map_coeff, HahnSeries.algebraMap_apply,
-          HahnSeries.C_apply, HahnSeries.coeff_single]
-        split_ifs <;> simp }
-  have hΦ (y : A⸨X⸩) : Φ y = y.map φ := by
-    ext n
-    simp [Φ, mapRingHom_apply]
-  have h := DFunLike.congr_fun (comp_aeval (R := k) s Φ) f
-  simpa only [AlgHom.comp_apply, hΦ] using h
-
 /-- Specializing the universal series of level `N` along `ψ` gives the series with coefficients
 `ψ (a_(i,m))`. -/
 theorem coeff_map_poleBoundedSeries {R : Type*} [CommRing R] [Algebra k R]
@@ -165,7 +149,7 @@ theorem poleBoundedIdeal_le_ker_iff {R : Type*} [CommRing R] [Algebra k R] {N : 
         aeval (fun i ↦ (poleBoundedSeries ι k N i).map ψ) f = 0) ∧
       ∀ (f : MvPolynomial ι k) (i : ι), aeval x f = antipode k (x i) →
         aeval (fun i ↦ (poleBoundedSeries ι k N i).map ψ) f ∈ lattice R R (-N) := by
-  simp only [poleBoundedIdeal, Ideal.span_le, Set.union_subset_iff, ← map_aeval]
+  simp only [poleBoundedIdeal, Ideal.span_le, Set.union_subset_iff, ← HahnSeries.map_aeval]
   refine and_congr ⟨fun h f hf ↦ ?_, fun h a ⟨f, n, hf, ha⟩ ↦ ?_⟩
     ⟨fun h f i hf ↦ mem_lattice_iff.2 fun n hn ↦ ?_, fun h a ⟨f, i, n, hn, hf, ha⟩ ↦ ?_⟩
   · ext n
@@ -290,7 +274,8 @@ theorem poleBoundedEquiv_comp_apply {S : Type*} [CommRing S] [Algebra k S] {N : 
     (poleBoundedEquiv x hx S N (ψ.comp φ)).1.ofConv h =
       ((poleBoundedEquiv x hx R N φ).1.ofConv h).map ψ := by
   obtain ⟨f, rfl⟩ := aeval_surjective x hx h
-  simp only [poleBoundedEquiv, Equiv.coe_fn_mk, ofConv_toConv, loopOfHom_aeval, map_aeval]
+  simp only [poleBoundedEquiv, Equiv.coe_fn_mk, ofConv_toConv, loopOfHom_aeval,
+    HahnSeries.map_aeval]
   refine congrArg (fun s ↦ aeval s f) (funext fun i ↦ HahnSeries.ext (funext fun n ↦ ?_))
   simp only [map_coeff, AlgHom.comp_apply]
 

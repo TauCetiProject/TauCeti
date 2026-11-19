@@ -66,6 +66,8 @@ preserving every lattice; these maps respect identities, composition, and monomi
 * `TauCeti.LaurentSeries.mem_lattice_iff_exists`: `U_a(R) = Xᵃ R⟦X⟧`.
 * `TauCeti.LaurentSeries.mul_mem_lattice`: `U_a U_b ⊆ U_{a + b}`, and
   `TauCeti.LaurentSeries.coeff_mul_of_mem_lattice`: the coefficient of `Xᵃ⁺ᵇ` of such a product.
+* `TauCeti.LaurentSeries.mul_mem_lattice_add_one_iff`: such a product lies in `U_{a + b + 1}`
+  exactly when the product of the coefficients of `Xᵃ` and `Xᵇ` vanishes.
 * `TauCeti.LaurentSeries.mem_lattice_iff_valuation_le`: over a field, `U_a` is a closed
   valuation ball.
 * `TauCeti.LaurentSeries.hasBasis_nhds_zero_lattice`: the lattices form a neighbourhood basis
@@ -164,6 +166,14 @@ theorem eq_of_mem_lattice_of_coeff_eq {a : ℤ} {f f' : HahnSeries ℤ V} (hf : 
   · rw [hf n hn, hf' n hn]
   · exact h n hn
 
+/-- A series of `U_a(V)` lies in `U_{a + 1}(V)` exactly when its coefficient of `Xᵃ` vanishes. -/
+theorem mem_lattice_add_one_iff {a : ℤ} {f : HahnSeries ℤ V} (hf : f ∈ lattice R V a) :
+    f ∈ lattice R V (a + 1) ↔ f.coeff a = 0 := by
+  refine ⟨fun h ↦ h a (Int.lt_succ a), fun h n hn ↦ ?_⟩
+  obtain hn | rfl := (Int.lt_add_one_iff.1 hn).lt_or_eq
+  · exact hf n hn
+  · exact h
+
 end Module
 
 section Ring
@@ -201,16 +211,16 @@ theorem mem_lattice_zero_iff {f : R⸨X⸩} : f ∈ lattice R R 0 ↔ ∃ p : R�
 
 /-- The coefficient of `Xᵃ⁺ᵇ` in a product of series of `U_a` and `U_b` is the product of their
 coefficients of `Xᵃ` and `Xᵇ`. -/
-theorem coeff_mul_of_mem_lattice {R : Type*} [CommSemiring R] {a b : ℤ} {f g : R⸨X⸩}
-    (hf : f ∈ lattice R R a) (hg : g ∈ lattice R R b) :
-    (f * g).coeff (a + b) = f.coeff a * g.coeff b := by
-  obtain ⟨p, rfl⟩ := mem_lattice_iff_exists.1 hf
-  obtain ⟨q, rfl⟩ := mem_lattice_iff_exists.1 hg
-  have hcoeff (c : ℤ) (r : R⟦X⟧) :
-      (single c (1 : R) * (r : R⸨X⸩)).coeff c = PowerSeries.constantCoeff r := by
-    rw [coeff_single_mul, sub_self, one_mul, ← Nat.cast_zero,
-      _root_.LaurentSeries.coeff_coe_powerSeries, PowerSeries.coeff_zero_eq_constantCoeff_apply]
-  rw [mul_mul_mul_comm, single_mul_single, one_mul, ← map_mul, hcoeff, hcoeff, hcoeff, map_mul]
+theorem coeff_mul_of_mem_lattice {a b : ℤ} {f g : R⸨X⸩} (hf : f ∈ lattice R R a)
+    (hg : g ∈ lattice R R b) : (f * g).coeff (a + b) = f.coeff a * g.coeff b :=
+  coeff_mul_add_of_forall_le (fun _ hi ↦ not_lt.1 fun h ↦ hi (hf _ h))
+    fun _ hj ↦ not_lt.1 fun h ↦ hj (hg _ h)
+
+/-- A product of series of `U_a` and `U_b` lies in `U_{a + b + 1}` exactly when the product of
+their coefficients of `Xᵃ` and `Xᵇ` vanishes. -/
+theorem mul_mem_lattice_add_one_iff {a b : ℤ} {f g : R⸨X⸩} (hf : f ∈ lattice R R a)
+    (hg : g ∈ lattice R R b) : f * g ∈ lattice R R (a + b + 1) ↔ f.coeff a * g.coeff b = 0 := by
+  rw [mem_lattice_add_one_iff (mul_mem_lattice hf hg), coeff_mul_of_mem_lattice hf hg]
 
 /-- Over a field, `U_a` is the closed valuation ball `{f | v f ≤ exp (-a)}`. -/
 theorem mem_lattice_iff_valuation_le {K : Type*} [Field K] {a : ℤ} {f : K⸨X⸩} :

@@ -21,8 +21,9 @@ select it with `attribute [local instance 1100] HahnSeries.instAlgebra`.
 
 Fix a family `x : ι → H`, for instance a finite family of algebra generators. A loop `g` is
 **pole-bounded of level `N`** for `x` when `g` and its inverse `g⁻¹ = g ∘ S` send every `x i`
-into the lattice `X^(-N) R⟦X⟧`. These are the pieces `LG_(≤N)(R)` of the ind-affine
-presentation of the loop group. Both bounds are needed: for `𝔾ₘ` with the generator `T`, the
+into the lattice `X^(-N) R⟦X⟧`. For a finite generating family these are the pieces `LG_(≤N)(R)`
+of the ind-affine presentation of the loop group; for an infinite family the pieces need not
+exhaust the loop group. Both bounds are needed: for `𝔾ₘ` with the generator `T`, the
 loop `X^M` sends `T` into `R⟦X⟧` for every `M ≥ 0`, while its inverse has a pole of order `M`.
 
 This file proves the properties of the pieces that do not depend on a representing algebra:
@@ -31,8 +32,9 @@ This file proves the properties of the pieces that do not depend on a representi
 * they are stable under coefficient maps `R → S`;
 * the piece of level `0` consists of the positive loops `G(R⟦X⟧)`, when `x` generates `H`;
 * for a finite family, every loop lies in some piece;
-* for two generating families, the pieces of either are contained in pieces of the other, with
-  levels depending only on the families, not on `R`.
+* if `x` generates `H`, each piece for `x` is contained in a piece for any finite family `y`, of
+  a level depending only on the families, not on `R`; so the pieces of two finite generating
+  families are cofinal in each other.
 
 ## Main definitions
 
@@ -48,9 +50,11 @@ This file proves the properties of the pieces that do not depend on a representi
 * `TauCeti.HopfAlgebra.exists_forall_apply_mem_lattice`: bounds on generators give bounds on
   every element, uniformly in the coefficient algebra.
 * `TauCeti.HopfAlgebra.poleBoundedLoops_zero`: `LG_(≤0)(R)` is the image of `G(R⟦X⟧)`.
-* `TauCeti.HopfAlgebra.iUnion_poleBoundedLoops`: `LG(R)` is the union of the `LG_(≤N)(R)`.
-* `TauCeti.HopfAlgebra.exists_poleBoundedLoops_subset`: the pieces of two generating families
-  are cofinal in each other.
+* `TauCeti.HopfAlgebra.iUnion_poleBoundedLoops`: for a finite family, `LG(R)` is the union of
+  the `LG_(≤N)(R)`.
+* `TauCeti.HopfAlgebra.exists_poleBoundedLoops_subset`: the pieces for a generating family lie
+  in pieces for any finite family, so the pieces of two finite generating families are cofinal
+  in each other.
 
 ## References
 
@@ -71,8 +75,47 @@ attribute [local instance 1100] HahnSeries.instAlgebra
 
 universe u v w
 
-variable {k : Type u} [CommRing k] {H : Type v} [Semiring H] [_root_.HopfAlgebra k H]
-  {ι : Type*} (x : ι → H)
+variable {k : Type u} {H : Type v} [Semiring H] {ι : Type*} (x : ι → H)
+
+section Bounds
+
+variable [CommSemiring k] [Algebra k H]
+
+/-- Pole bounds on a generating family propagate to every element, uniformly in the
+coefficient algebra: for each `h : H` there is `d` such that every `k`-algebra map
+`g : H → R⸨X⸩` sending all `x i` into `X^(-N) R⟦X⟧` sends `h` into `X^(-N d) R⟦X⟧`. For `N = 0`
+this says that `g` then takes values in `R⟦X⟧`. -/
+theorem exists_forall_apply_mem_lattice (hx : Algebra.adjoin k (Set.range x) = ⊤) (N : ℕ)
+    (h : H) : ∃ d : ℕ, ∀ (R : Type w) [Semiring R] [Algebra k R] (g : H →ₐ[k] R⸨X⸩),
+      (∀ i, g (x i) ∈ lattice R R (-N)) → g h ∈ lattice R R (-(N * d : ℕ)) := by
+  have hh : h ∈ Algebra.adjoin k (Set.range x) := hx ▸ Algebra.mem_top
+  induction hh using Algebra.adjoin_induction with
+  | mem h hh =>
+    obtain ⟨i, rfl⟩ := hh
+    exact ⟨1, fun R _ _ g hg ↦ by simpa using hg i⟩
+  | algebraMap c =>
+    refine ⟨0, fun R _ _ g _ ↦ ?_⟩
+    rw [AlgHom.commutes, HahnSeries.algebraMap_apply, mul_zero, Nat.cast_zero, neg_zero]
+    exact single_mem_lattice le_rfl _
+  | add a b _ _ ha hb =>
+    obtain ⟨d, hd⟩ := ha
+    obtain ⟨e, he⟩ := hb
+    refine ⟨max d e, fun R _ _ g hg ↦ ?_⟩
+    have hd' : N * d ≤ N * max d e := Nat.mul_le_mul_left _ (le_max_left _ _)
+    have he' : N * e ≤ N * max d e := Nat.mul_le_mul_left _ (le_max_right _ _)
+    rw [map_add]
+    exact add_mem (lattice_antitone (by omega) (hd R g hg))
+      (lattice_antitone (by omega) (he R g hg))
+  | mul a b _ _ ha hb =>
+    obtain ⟨d, hd⟩ := ha
+    obtain ⟨e, he⟩ := hb
+    refine ⟨d + e, fun R _ _ g hg ↦ ?_⟩
+    rw [map_mul, Nat.mul_add, Nat.cast_add, neg_add]
+    exact mul_mem_lattice (hd R g hg) (he R g hg)
+
+end Bounds
+
+variable [CommRing k] [_root_.HopfAlgebra k H]
 
 section Pieces
 
@@ -130,38 +173,6 @@ end Pieces
 
 section Generated
 
-/-- Pole bounds on a generating family propagate to every element, uniformly in the
-coefficient algebra: for each `h : H` there is `d` such that every `k`-algebra map
-`g : H → R⸨X⸩` sending all `x i` into `X^(-N) R⟦X⟧` sends `h` into `X^(-N d) R⟦X⟧`. For `N = 0`
-this says that `g` then takes values in `R⟦X⟧`. -/
-theorem exists_forall_apply_mem_lattice (hx : Algebra.adjoin k (Set.range x) = ⊤) (N : ℕ)
-    (h : H) : ∃ d : ℕ, ∀ (R : Type w) [CommRing R] [Algebra k R] (g : H →ₐ[k] R⸨X⸩),
-      (∀ i, g (x i) ∈ lattice R R (-N)) → g h ∈ lattice R R (-(N * d : ℕ)) := by
-  have hh : h ∈ Algebra.adjoin k (Set.range x) := hx ▸ Algebra.mem_top
-  induction hh using Algebra.adjoin_induction with
-  | mem h hh =>
-    obtain ⟨i, rfl⟩ := hh
-    exact ⟨1, fun R _ _ g hg ↦ by simpa using hg i⟩
-  | algebraMap c =>
-    refine ⟨0, fun R _ _ g _ ↦ ?_⟩
-    rw [AlgHom.commutes, HahnSeries.algebraMap_apply, mul_zero, Nat.cast_zero, neg_zero]
-    exact single_mem_lattice le_rfl _
-  | add a b _ _ ha hb =>
-    obtain ⟨d, hd⟩ := ha
-    obtain ⟨e, he⟩ := hb
-    refine ⟨max d e, fun R _ _ g hg ↦ ?_⟩
-    have hd' : N * d ≤ N * max d e := Nat.mul_le_mul_left _ (le_max_left _ _)
-    have he' : N * e ≤ N * max d e := Nat.mul_le_mul_left _ (le_max_right _ _)
-    rw [map_add]
-    exact add_mem (lattice_antitone (by omega) (hd R g hg))
-      (lattice_antitone (by omega) (he R g hg))
-  | mul a b _ _ ha hb =>
-    obtain ⟨d, hd⟩ := ha
-    obtain ⟨e, he⟩ := hb
-    refine ⟨d + e, fun R _ _ g hg ↦ ?_⟩
-    rw [map_mul, Nat.mul_add, Nat.cast_add, neg_add]
-    exact mul_mem_lattice (hd R g hg) (he R g hg)
-
 variable (R : Type w) [CommRing R] [Algebra k R]
 
 /-- For a generating family, the pole-bounded loops of level `0` are the positive loops: the
@@ -198,9 +209,10 @@ theorem iUnion_poleBoundedLoops [Finite ι] : ⋃ N, poleBoundedLoops k x R N = 
     simp only [max_le_iff] at this
     omega
 
-/-- The pieces of two generating families are cofinal in each other: if `x` generates `H` and
-`y` is a finite family, each piece of level `N` for `x` lies in a piece for `y`, of a level `M`
-depending only on `x`, `y` and `N`, not on the coefficient algebra. -/
+/-- If `x` generates `H` and `y` is a finite family, each piece of level `N` for `x` lies in a
+piece for `y`, of a level `M` depending only on `x`, `y` and `N`, not on the coefficient algebra.
+Applied in both directions, the pieces of two finite generating families are cofinal in each
+other. -/
 theorem exists_poleBoundedLoops_subset (hx : Algebra.adjoin k (Set.range x) = ⊤) {κ : Type*}
     [Finite κ] (y : κ → H) (N : ℕ) :
     ∃ M : ℕ, ∀ (R : Type w) [CommRing R] [Algebra k R],
