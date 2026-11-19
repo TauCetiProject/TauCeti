@@ -929,6 +929,13 @@ variable (hb : ContDiff ℝ ∞ b)
 theorem coefficient_ofFrequency (p : CoordinateSpace n × CoordinateSpace n) :
     (ofFrequency b hb hbound).coefficient p = b p.2 := (rfl)
 
+/-- A frequency-only symbol does not depend on the position. -/
+@[simp]
+theorem spatialDeriv_ofFrequency (j : Fin n) : spatialDeriv j (ofFrequency b hb hbound) = 0 := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp [coordinateDeriv_const _ (List.cons_ne_nil j [])]
+
 /-- A frequency-only symbol satisfies its estimates uniformly in the position. -/
 theorem isUniform_ofFrequency : (ofFrequency b hb hbound).IsUniform :=
   isUniform_iff.2 fun α β =>

@@ -92,12 +92,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
 
 section Coordinates
 
-/-- The coefficient `⟪ξ, eⱼ⟫ • 1` of `ofInner eⱼ` is `ξⱼ • 1`. -/
-private theorem coefficient_ofInner_single (j : Fin n) (p : CoordinateSpace n × CoordinateSpace n) :
-    (ofInner (EuclideanSpace.single j 1) : Symbol n V V 1).coefficient p =
-      p.2 j • ContinuousLinearMap.id ℂ V := by
-  simp [EuclideanSpace.inner_single_right]
-
 /-- The derivative `∂_{xₗ} xₖ` is `(eₗ)ₖ`. -/
 private theorem coefficient_spatialDeriv_coordSubSymbol_zero (k l : Fin n)
     (x ξ : CoordinateSpace n) :
@@ -155,12 +149,12 @@ theorem sum_coefficient_ofInner_sharpTerm_coordSubSymbol (j k : Fin n) {N : ℕ}
         (coordSubSymbol 0 k) i).coefficient (x, ξ) =
       (x k * ξ j) • ContinuousLinearMap.id ℂ V -
         (if j = k then Complex.I else 0) • ContinuousLinearMap.id ℂ V := by
-  rw [← Finset.sum_subset (Finset.range_subset_range.2 hN) fun i _ hi ↦ ?_]
+  rw [Finset.eventually_constant_sum (fun i hi ↦ ?_) hN]
   · simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, zero_add,
       coefficient_ofInner_sharpTerm_coordSubSymbol_zero,
       coefficient_ofInner_sharpTerm_coordSubSymbol_one]
     split_ifs <;> simp [sub_eq_add_neg]
-  · obtain ⟨i, rfl⟩ := Nat.exists_eq_add_of_le' (not_lt.1 (Finset.mem_range.not.1 hi))
+  · obtain ⟨i, rfl⟩ := Nat.exists_eq_add_of_le' hi
     rw [ofInner_sharpTerm_coordSubSymbol_add_two, coefficient_zero, Pi.zero_apply]
 
 /-- **The leading term of `xₖ # ξⱼ`** is the product `xₖ ξⱼ`. -/
@@ -313,8 +307,8 @@ theorem coefficient_adjointTerm_expMulFreq_zero (j : Fin n) (x ξ : CoordinateSp
     ((expMulFreq j : Symbol n H H 1).adjointTerm 0).coefficient (x, ξ) =
       ξ j • Complex.exp (-(Complex.I * (x j : ℂ))) • ContinuousLinearMap.id ℂ H := by
   rw [coefficient_adjointTerm_zero, coefficient_expMulFreq, ← Complex.coe_smul, smul_smul,
-    map_smulₛₗ, ContinuousLinearMap.adjoint_id, ← Complex.coe_smul, smul_smul]
-  simp [← Complex.exp_conj]
+    map_smulₛₗ, ContinuousLinearMap.adjoint_id]
+  simp [← Complex.exp_conj, mul_smul]
 
 /-- **The first correction term of the formal adjoint** of `e^{i xⱼ} ξⱼ` is
 `-i (∂_{xⱼ} ∂_{ξⱼ} (e^{i xⱼ} ξⱼ))† = -i (i e^{i xⱼ})† = -e^{-i xⱼ}`. -/
@@ -325,13 +319,7 @@ theorem coefficient_adjointTerm_expMulFreq_one (j : Fin n) (x ξ : CoordinateSpa
       rw [coefficient_adjointTerm_zero, coefficient_spatialDeriv_frequencyDeriv_expMulFreq]
       simp [hl]) (by simp),
     coefficient_adjointTerm_zero, coefficient_spatialDeriv_frequencyDeriv_expMulFreq]
-  simp only [↓reduceIte]
-  rw [map_smulₛₗ, ContinuousLinearMap.adjoint_id, smul_smul, map_mul, ← Complex.exp_conj]
-  simp only [map_mul, Complex.conj_I, Complex.conj_ofReal, Nat.cast_zero, zero_add, div_one]
-  rw [← neg_smul]
-  congr 1
-  ring_nf
-  simp [Complex.I_sq]
+  simp [map_smulₛₗ, ContinuousLinearMap.adjoint_id, ← Complex.exp_conj, smul_smul, ← mul_assoc]
 
 /-- The terms of the formal adjoint of `e^{i xⱼ} ξⱼ` of order `-1` and below vanish: `ξⱼ` has no
 second frequency derivatives. -/
@@ -356,11 +344,11 @@ theorem sum_coefficient_adjointTerm_expMulFreq (j : Fin n) {N : ℕ} (hN : 2 ≤
     (x ξ : CoordinateSpace n) :
     ∑ i ∈ range N, ((expMulFreq j : Symbol n H H 1).adjointTerm i).coefficient (x, ξ) =
       (ξ j - 1) • Complex.exp (-(Complex.I * (x j : ℂ))) • ContinuousLinearMap.id ℂ H := by
-  rw [← Finset.sum_subset (Finset.range_subset_range.2 hN) fun i _ hi ↦ ?_]
+  rw [Finset.eventually_constant_sum (fun i hi ↦ ?_) hN]
   · simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, zero_add,
       coefficient_adjointTerm_expMulFreq_zero, coefficient_adjointTerm_expMulFreq_one]
     rw [sub_smul, one_smul, sub_eq_add_neg]
-  · obtain ⟨i, rfl⟩ := Nat.exists_eq_add_of_le' (not_lt.1 (Finset.mem_range.not.1 hi))
+  · obtain ⟨i, rfl⟩ := Nat.exists_eq_add_of_le' hi
     rw [adjointTerm_expMulFreq_add_two, coefficient_zero, Pi.zero_apply]
 
 /-- **The formal adjoint of `e^{i xⱼ} ξⱼ` is not just its pointwise adjoint `e^{-i xⱼ} ξⱼ`**: the

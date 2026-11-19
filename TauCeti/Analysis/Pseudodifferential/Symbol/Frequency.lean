@@ -133,16 +133,20 @@ theorem coefficient_ofInner (v : CoordinateSpace n) (p : CoordinateSpace n × Co
       ((⟪p.2, v⟫ : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V :=
   coefficient_ofFrequency _ _ p
 
+/-- The coefficient `⟪ξ, eⱼ⟫ • 1` of the frequency coordinate `ofInner eⱼ` is `ξⱼ • 1`. -/
+theorem coefficient_ofInner_single (j : Fin n) (p : CoordinateSpace n × CoordinateSpace n) :
+    (ofInner (EuclideanSpace.single j 1) : Symbol n V V 1).coefficient p =
+      p.2 j • ContinuousLinearMap.id ℂ V := by
+  simp [EuclideanSpace.inner_single_right]
+
 theorem isUniform_ofInner (v : CoordinateSpace n) : (ofInner v : Symbol n V V 1).IsUniform :=
   isUniform_ofFrequency _ _
 
 /-- `⟪ξ, v⟫` does not depend on the position. -/
 @[simp]
 theorem spatialDeriv_ofInner (v : CoordinateSpace n) (j : Fin n) :
-    spatialDeriv j (ofInner v : Symbol n V V 1) = 0 := by
-  ext1
-  funext ⟨x, ξ⟩
-  simp [coordinateDeriv_const _ (List.cons_ne_nil j [])]
+    spatialDeriv j (ofInner v : Symbol n V V 1) = 0 :=
+  spatialDeriv_ofFrequency _ _ j
 
 /-- The frequency derivative `∂_{ξⱼ} ⟪ξ, v⟫` is the constant `vⱼ`. -/
 theorem coefficient_frequencyDeriv_ofInner (v : CoordinateSpace n) (j : Fin n)
