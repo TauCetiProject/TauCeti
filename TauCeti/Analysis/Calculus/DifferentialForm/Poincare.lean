@@ -42,7 +42,11 @@ derivatives are taken within `s`, and the homotopy formula reads
 `extDerivWithin (K ω) s + K (extDerivWithin ω s) = ω` on `s`
 (`Convex.extDerivWithin_poincareHomotopy_add_poincareHomotopy_extDerivWithin`). Differentiating
 `K ω` within `s` uses Mathlib's mean value inequality along the segments of `s`, which is why the
-relative statements ask for convexity rather than star-convexity.
+relative statements ask for convexity rather than star-convexity. For a family of forms `ω q`
+depending jointly `C^r` on a parameter `q` ranging over a convex set with unique derivatives, the
+operators `K (ω q)` depend jointly `C^r` on `q` and the point
+(`Convex.contDiffOn_uncurry_poincareHomotopy`), so that a smooth family of closed forms has a
+smooth family of primitives.
 
 Mathlib proves the Poincaré lemma for `1`-forms on convex sets by integrating along segments
 (`Convex.exists_forall_hasFDerivAt_of_fderiv_symmetric`); this file treats forms of every
@@ -81,6 +85,8 @@ term is split by the constant-coefficient Cartan formula
   degree-zero homotopy formula `K (d f) x = f x - f x₀`.
 * `StarConvex.extDeriv_poincareHomotopy` and `StarConvex.exists_contDiffOn_forall_extDeriv_eq`: the
   Poincaré lemma.
+* `Convex.contDiffOn_uncurry_poincareHomotopy`: on convex sets with unique derivatives, it
+  depends jointly smoothly on parameters.
 * `Convex.contDiffOn_poincareHomotopy`,
   `Convex.extDerivWithin_poincareHomotopy_add_poincareHomotopy_extDerivWithin`,
   `Convex.extDerivWithin_poincareHomotopy` and `Convex.exists_contDiffOn_forall_extDerivWithin_eq`:
@@ -724,18 +730,45 @@ namespace Convex
 
 variable {x₀ : E} {s : Set E} {ω : E → E [⋀^Fin (n + 1)]→L[ℝ] F}
 
+/-- **The Poincaré homotopy operator depends smoothly on parameters.** Let `ω q` be a family of
+forms indexed by a convex set `t` with unique derivatives in a normed space `P`, jointly `C^r` on
+`t ×ˢ s` for a convex set `s` with unique derivatives containing `x₀`. Then the Poincaré homotopy
+operators `poincareHomotopy x₀ (ω q)` are jointly `C^r` in `(q, x)` on `t ×ˢ s`. -/
+theorem contDiffOn_uncurry_poincareHomotopy {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    {t : Set P} {ω : P → E → E [⋀^Fin (n + 1)]→L[ℝ] F} (ht : Convex ℝ t) (htu : UniqueDiffOn ℝ t)
+    (hs : Convex ℝ s) (hsu : UniqueDiffOn ℝ s) (hx₀ : x₀ ∈ s) {r : ℕ∞}
+    (hω : ContDiffOn ℝ r (Function.uncurry ω) (t ×ˢ s)) :
+    ContDiffOn ℝ r (fun q : P × E ↦ poincareHomotopy x₀ (ω q.1) q.2) (t ×ˢ s) := by
+  have hpow : Integrable (fun t : I ↦ (t : ℝ) ^ n) volume :=
+    (continuous_subtype_val.pow n).integrable_of_hasCompactSupport (.of_compactSpace _)
+  -- The integrand, as a function of the parameter, the point and the time.
+  have hcomp : ContDiffOn ℝ r (fun p : (P × E) × ℝ ↦ ω p.1.1 (lineMap x₀ p.1.2 p.2))
+      ((t ×ˢ s) ×ˢ Icc 0 1) :=
+    hω.comp (contDiff_fst.comp contDiff_fst |>.prodMk
+      (contDiff_const.lineMap (contDiff_snd.comp contDiff_fst) contDiff_snd)).contDiffOn
+      fun p hp ↦ ⟨hp.1.1, (hs.starConvex hx₀).segment_subset hp.1.2
+        (lineMap_mem_segment ℝ x₀ p.1.2 hp.2)⟩
+  have hint : ContDiffOn ℝ r
+      (fun p : (P × E) × ℝ ↦ (ω p.1.1 (lineMap x₀ p.1.2 p.2)).curryLeft (p.1.2 - x₀))
+      ((t ×ˢ s) ×ˢ Icc 0 1) :=
+    (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
+      (n := n)).toContinuousLinearMap.contDiff.comp_contDiffOn hcomp |>.clm_apply
+        ((contDiff_snd.comp contDiff_fst).sub contDiff_const).contDiffOn
+  refine ((ht.prod hs).contDiffOn_integral_smul_of_contDiffOn (μ := (volume : Measure I)) hpow
+    continuous_subtype_val (htu.prod hsu) ((htu.prod hsu).prod uniqueDiffOn_Icc_zero_one) hint
+    fun x hx τ ↦ ⟨hx, τ.2⟩).congr fun x _ ↦ ?_
+  rw [poincareHomotopy_apply, intervalIntegral_eq_integral_unitInterval]
+
 /-- The Poincaré homotopy operator of a `C^r` form on a convex set with unique derivatives, with
 centre in that set, is `C^r` there. -/
 theorem contDiffOn_poincareHomotopy (hs : Convex ℝ s) (hsu : UniqueDiffOn ℝ s) (hx₀ : x₀ ∈ s)
     {r : ℕ∞} (hω : ContDiffOn ℝ r ω s) : ContDiffOn ℝ r (poincareHomotopy x₀ ω) s := by
-  have hpow : Integrable (fun t : I ↦ (t : ℝ) ^ n) volume :=
-    (continuous_subtype_val.pow n).integrable_of_hasCompactSupport (.of_compactSpace _)
-  refine (hs.contDiffOn_integral_smul_of_contDiffOn (μ := (volume : Measure I)) hpow
-    continuous_subtype_val hsu (hsu.prod uniqueDiffOn_Icc_zero_one)
-    ((contDiffOn_integrand hω).mono fun p hp ↦
-      (hs.starConvex hx₀).segment_subset hp.1 (lineMap_mem_segment ℝ x₀ p.1 hp.2))
-    fun x hx t ↦ ⟨hx, t.2⟩).congr fun x _ ↦ ?_
-  rw [poincareHomotopy_apply, intervalIntegral_eq_integral_unitInterval]
+  -- The constant family over the parameter space `ℝ`, restricted to the parameter `0`.
+  have h := contDiffOn_uncurry_poincareHomotopy (P := ℝ) (t := univ) (ω := fun _ ↦ ω)
+    convex_univ uniqueDiffOn_univ hs hsu hx₀ (hω.comp contDiff_snd.contDiffOn fun p hp ↦ hp.2)
+  refine (h.comp (contDiff_const.prodMk contDiff_id).contDiffOn
+    fun x hx ↦ ⟨mem_univ (0 : ℝ), hx⟩).congr fun x _ ↦ ?_
+  simp only [Function.comp_apply, id_eq]
 
 variable [CompleteSpace F]
 
