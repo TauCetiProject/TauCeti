@@ -20,7 +20,7 @@ import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 Let `λ` be a weight of a finite reduced root datum with a base, and let `τ₀, …, τ_{n-1}` be minimal
 coset representatives of `W / W_λ`, typically a chain `τ₀ > ⋯ > τ_{n-1}`, that is a simplex of the
-order complex of the Bruhat order on `W / W_λ` (for `S₃` this complex is
+order complex of the Bruhat order on `W / W_λ` (for regular `λ` in type `A₂` this complex is
 `TauCeti.symmetricThreeBruhatComplex`, with four maximal tetrahedra). A point `x` of the standard
 simplex `Convexity.StdSimplex 𝕜 (Fin n)` over an ordered field `𝕜` gives the piecewise-linear path
 `TauCeti.LSPath.chainSimplexPath`, which runs along the realized orbit weight `f (τ_j λ)` for the
@@ -43,11 +43,12 @@ along their common faces.
 The simplices are continua, whereas the Lakshmibai–Seshadri paths of a dominant shape are finitely
 many. The Lakshmibai–Seshadri points `TauCeti.LSPath.chainLSPoints` of a simplex are the points
 whose face data are the directions and durations of an LS path, equivalently whose path is the
-realized path of an LS path; they are finitely many, and in the open simplex of a chain they are cut
-out by the integral break test: the break `a_{j+1} = x_0 + ⋯ + x_j` has denominator dividing the
-interval bond gcd `d_λ(τ_j, τ_{j+1})`. On the edge of a chain `x > y` the interior
-Lakshmibai–Seshadri points are the `d_λ(x, y) - 1` breaks `k / d_λ(x, y)`; for a bond `2` the only
-one is `1 / 2`, while `1 / 3` is a point of the edge failing the test.
+realized path of an LS path; for distinct directions they are finitely many, and the rational
+points among them in the open simplex of a chain are cut out by the integral break test: the break
+`a_{j+1} = x_0 + ⋯ + x_j` has denominator dividing the interval bond gcd `d_λ(τ_j, τ_{j+1})`. On
+the edge of a chain `x > y` the interior Lakshmibai–Seshadri points are the `d_λ(x, y) - 1` breaks
+`k / d_λ(x, y)`; for a bond `2` the only one is `1 / 2`, while `1 / 3` is a point of the edge
+failing the test.
 
 ## Main definitions
 
@@ -60,8 +61,6 @@ one is `1 / 2`, while `1 / 3` is a point of the edge failing the test.
 
 ## Main results
 
-* `TauCeti.PLPath.ofSegments_ofFn_smul_comp_of_monotone`: regrouping segments along a monotone
-  map does not change the presented path.
 * `TauCeti.LSPath.chainSimplexPath_map`: **the realization commutes with the face and degeneracy
   maps**.
 * `TauCeti.LSPath.chainSimplexPath_eq_straight`: the simplex of one direction is a single point.
@@ -72,12 +71,11 @@ one is `1 / 2`, while `1 / 3` is a point of the edge failing the test.
   the Lakshmibai–Seshadri points.
 * `TauCeti.LSPath.finite_chainLSPoints`: a chain simplex has finitely many Lakshmibai–Seshadri
   points.
-* `TauCeti.LSPath.linked_ofFn_iff_den_dvd` and `TauCeti.LSPath.mem_chainLSPoints_iff_den_dvd`:
-  **the integral break test** for the directions and durations of a chain, and in the open simplex
-  of a chain.
-* `TauCeti.LSPath.mem_chainLSPoints_pair_iff` and `TauCeti.LSPath.ncard_chainLSPoints_pair`: the
-  interior Lakshmibai–Seshadri points of an edge `x > y` are the `d_λ(x, y) - 1` breaks
-  `k / d_λ(x, y)`.
+* `TauCeti.LSPath.mem_chainLSPoints_iff_den_dvd`: **the integral break test** for the rational
+  points of the open simplex of a chain.
+* `TauCeti.LSPath.mem_chainLSPoints_pair_iff` and
+  `TauCeti.LSPath.ncard_interior_chainLSPoints_pair`: the interior Lakshmibai–Seshadri points of an
+  edge `x > y` are the `d_λ(x, y) - 1` breaks `k / d_λ(x, y)`.
 
 ## References
 
@@ -90,74 +88,6 @@ one is `1 / 2`, while `1 / 3` is a point of the edge failing the test.
 public section
 
 open Convexity
-
-namespace TauCeti.PLPath
-
-variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup V]
-  [Module 𝕜 V]
-
-/-- Appending a segment `e • v K` to segments `c k • v k`, `k : Fin n`, all of which vanish after
-`K`, adds `e` to the coefficient of `v K`. -/
-private theorem ofSegments_ofFn_append_smul {n : ℕ} (v : Fin n → V) {c : Fin n → 𝕜} (hc : 0 ≤ c)
-    {K : Fin n} (hK : ∀ k, K < k → c k = 0) {e : 𝕜} (he : 0 ≤ e) :
-    ofSegments 𝕜 ((List.ofFn fun k ↦ c k • v k) ++ [e • v K]) =
-      ofSegments 𝕜 (List.ofFn fun k ↦ (c k + if k = K then e else 0) • v k) := by
-  induction n with
-  | zero => exact K.elim0
-  | succ n ih =>
-    rw [List.ofFn_succ', List.ofFn_succ', List.concat_eq_append, List.concat_eq_append]
-    induction K using Fin.lastCases with
-    | last =>
-      have hne (k : Fin n) : k.castSucc ≠ Fin.last n := (Fin.castSucc_lt_last k).ne
-      simp only [hne, ite_true, ite_false, add_zero, List.append_assoc, List.singleton_append]
-      rw [ofSegments_append, ofSegments_append, ofSegments_smul_cons_smul_cons (hc _) he]
-    | cast K =>
-      have hlast : c (Fin.last n) = 0 := hK _ (Fin.castSucc_lt_last K)
-      have hne : Fin.last n ≠ K.castSucc := (Fin.castSucc_lt_last K).ne'
-      simp only [hlast, hne, ite_false, add_zero, zero_smul, List.append_assoc,
-        List.singleton_append, Fin.castSucc_inj]
-      rw [ofSegments_append, ofSegments_zero_cons, ← ofSegments_append, ofSegments_append _ [0],
-        ofSegments_zero_cons, ofSegments_nil, mul_one]
-      exact ih (fun k ↦ v k.castSucc) (fun k ↦ hc _) (fun k hk ↦ hK _ (by simpa using hk))
-
-/-- **Regrouping segments along a monotone map.** For nonnegative coefficients `c` and a monotone
-map `σ : Fin m → Fin n`, the segments `c i • v (σ i)` present the same path as the segments
-`(∑_{σ i = k} c i) • v k`: consecutive segments along a common vector merge, and the vectors
-`v k` that `σ` misses contribute stationary segments. -/
-theorem ofSegments_ofFn_smul_comp_of_monotone {m n : ℕ} (v : Fin n → V) {σ : Fin m → Fin n}
-    (hσ : Monotone σ) {c : Fin m → 𝕜} (hc : 0 ≤ c) :
-    ofSegments 𝕜 (List.ofFn fun i ↦ c i • v (σ i)) =
-      ofSegments 𝕜 (List.ofFn fun k ↦ (∑ i, if σ i = k then c i else 0) • v k) := by
-  induction m with
-  | zero =>
-    simp only [List.ofFn_zero, Finset.univ_eq_empty, Finset.sum_empty, zero_smul]
-    rw [ofSegments_nil, eq_comm, ofSegments_eq_one_iff]
-    simp
-  | succ m ih =>
-    have h := ih (σ := fun i ↦ σ i.castSucc) (hσ.comp Fin.strictMono_castSucc.monotone)
-      (c := fun i ↦ c i.castSucc) (fun i ↦ hc _)
-    rw [List.ofFn_succ', List.concat_eq_append, ofSegments_append, h, ← ofSegments_append,
-      ofSegments_ofFn_append_smul v (fun k ↦ Finset.sum_nonneg fun i _ ↦ by
-        split_ifs; exacts [hc _, le_rfl]) (fun k hk ↦ Finset.sum_eq_zero fun i _ ↦ by
-          simp [((hσ (Fin.castSucc_lt_last i).le).trans_lt hk).ne]) (hc _)]
-    simp only [Fin.sum_univ_castSucc, eq_comm (a := σ (Fin.last m))]
-
-/-- Removing the segments a predicate rejects does not change the presented path, provided each
-rejected entry gives a stationary segment. -/
-theorem ofSegments_map_filter {α : Type*} (g : α → V) {q : α → Bool} (l : List α)
-    (hq : ∀ a ∈ l, q a = false → g a = 0) :
-    ofSegments 𝕜 ((l.filter q).map g) = ofSegments 𝕜 (l.map g) := by
-  induction l with
-  | nil => rfl
-  | cons a l ih =>
-    have ih' := ih fun a' ha' ↦ hq a' (List.mem_cons_of_mem _ ha')
-    by_cases ha : q a
-    · rw [List.filter_cons_of_pos ha, List.map_cons, List.map_cons, ofSegments_cons, ih',
-        ← ofSegments_cons]
-    · rw [List.filter_cons_of_neg ha, ih', List.map_cons,
-        hq a List.mem_cons_self (by simpa using ha), ofSegments_zero_cons]
-
-end TauCeti.PLPath
 
 namespace TauCeti.LSPath
 
@@ -425,9 +355,10 @@ variable (b lam) in
 /-- The **Lakshmibai–Seshadri points** of the simplex of a list of directions `τ`: the points whose
 face data are the directions and durations of an LS path of shape `λ`. For distinct minimal coset
 representatives they are the points whose path is the realized path of an LS path
-(`TauCeti.LSPath.mem_chainLSPoints_iff_exists_toPLPath_eq`); for a dominant shape there are finitely
-many (`TauCeti.LSPath.finite_chainLSPoints`), and in the open simplex of a chain they are cut out
-by the integrality of the breaks (`TauCeti.LSPath.mem_chainLSPoints_iff_den_dvd`). -/
+(`TauCeti.LSPath.mem_chainLSPoints_iff_exists_toPLPath_eq`); for a dominant shape and distinct
+directions there are finitely many (`TauCeti.LSPath.finite_chainLSPoints`), and for rational points
+of the open simplex of a chain they are cut out by the integrality of the breaks
+(`TauCeti.LSPath.mem_chainLSPoints_iff_den_dvd`). -/
 def chainLSPoints (τ : Fin n → P.weylGroup) : Set (StdSimplex 𝕜 (Fin n)) :=
   {x | ∃ π : LSPath P b lam, faceData τ x = π.dirDurations.map fun p ↦ (p.1, (p.2 : 𝕜))}
 
@@ -469,37 +400,6 @@ theorem finite_chainLSPoints (hlam : lam ∈ dominantChamber P b) {τ : Fin n �
     π.dirDurations.map fun p ↦ (p.1, (p.2 : 𝕜))).subset ?_) (faceData_injective hτ).injOn
   rintro _ ⟨x, ⟨π, hπ⟩, rfl⟩
   exact ⟨π, hπ.symm⟩
-
-/-- **Linked chains.** For a dominant shape, minimal coset representatives `τ₀ ≥ τ₁ ≥ ⋯ ≥ τ_s` and
-durations `d`, the list `[(τ₀, d₀), …, (τ_s, d_s)]` is linked from time `0` exactly when each break
-`a_{j+1} = d₀ + ⋯ + d_j` has denominator dividing the interval bond gcd `d_λ(τ_j, τ_{j+1})`. -/
-theorem linked_ofFn_iff_den_dvd (hlam : lam ∈ dominantChamber P b) {s : ℕ}
-    {τ : Fin (s + 1) → P.weylGroup}
-    (hmin : ∀ j, (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) (τ j))
-    (hle : ∀ j : Fin s, (weylCoxeterSystem P b).BruhatLE (τ j.succ) (τ j.castSucc))
-    (d : Fin (s + 1) → ℚ) :
-    Linked P b lam 0 (List.ofFn fun j ↦ (τ j, d j)) ↔ ∀ j : Fin s,
-      (∑ k ∈ Finset.Iic j.castSucc, d k).den ∣ intervalBondGcd b lam (τ j.castSucc) (τ j.succ) := by
-  have hbreak (j : Fin s) : (((List.ofFn fun j ↦ (τ j, d j)).take (j + 1)).map Prod.snd).sum =
-      ∑ k ∈ Finset.Iic j.castSucc, d k := by
-    rw [List.map_take, List.map_ofFn, List.sum_take_ofFn]
-    exact Finset.sum_congr (by ext k; simp [Fin.le_iff_val_le_val]) fun _ _ ↦ rfl
-  rw [linked_iff_getElem]
-  constructor
-  · intro h j
-    obtain ⟨C, hhead, hlast, hC⟩ := h j (by simp)
-    rw [zero_add, hbreak, isAChain_iff_den_dvd_intervalBondGcd hlam, hhead, hlast] at hC
-    simp only [List.getElem_ofFn] at hC
-    exact hC
-  · intro h k hk
-    have hk' : k < s := by simpa using hk
-    obtain ⟨C, hhead, hlast, hC⟩ := (exists_isAChain_iff_den_dvd_intervalBondGcd hlam (hmin _)
-      (hmin _) (hle ⟨k, hk'⟩)).mpr (h ⟨k, hk'⟩)
-    refine ⟨C, ?_, ?_, by rw [zero_add, hbreak ⟨k, hk'⟩]; exact hC⟩
-    · simp only [List.getElem_ofFn]
-      exact hhead
-    · simp only [List.getElem_ofFn]
-      exact hlast
 
 /-- **The integral break test.** For a dominant shape and a chain `τ₀ > τ₁ > ⋯ > τ_s` of minimal
 coset representatives, a rational point of the open simplex of the chain is a
@@ -574,7 +474,7 @@ theorem mem_chainLSPoints_pair_iff (hlam : lam ∈ dominantChamber P b) {x y : P
 /-- **The edge from `x` to `y` carries `d_λ(x, y) - 1` interior Lakshmibai–Seshadri points**, for a
 dominant shape and minimal coset representatives `y < x`: one for each break `k / d_λ(x, y)`,
 `0 < k < d_λ(x, y)`. -/
-theorem ncard_chainLSPoints_pair (hlam : lam ∈ dominantChamber P b) {x y : P.weylGroup}
+theorem ncard_interior_chainLSPoints_pair (hlam : lam ∈ dominantChamber P b) {x y : P.weylGroup}
     (hx : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) x)
     (hy : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) y)
     (hyx : (weylCoxeterSystem P b).BruhatLE y x) (hne : y ≠ x) :
@@ -584,16 +484,12 @@ theorem ncard_chainLSPoints_pair (hlam : lam ∈ dominantChamber P b) {x y : P.w
   have hg : (0 : ℚ) < g := by
     exact_mod_cast Nat.pos_of_ne_zero
       ((intervalBondGcd_eq_zero_iff hlam hx hy hyx).not.mpr hne.symm)
-  -- A point of the edge is determined by its coordinate at `x`.
-  have hinj : Set.InjOn (fun z : StdSimplex ℚ (Fin 2) ↦ z.weights 0) Set.univ := by
-    intro z _ z' _ h
-    have h1 : z.weights 1 = z'.weights 1 := by
-      simp only at h
-      linarith [z.total_fin_two, z'.total_fin_two]
-    refine StdSimplex.ext (Finsupp.ext fun j ↦ ?_)
-    fin_cases j
-    · exact h
-    · exact h1
+  -- A point of the edge is determined by its coordinate at `x`, through `StdSimplex.equivIcc`.
+  have hinj : Function.Injective fun z : StdSimplex ℚ (Fin 2) ↦ z.weights 0 := by
+    intro z z' (h : z.weights 0 = z'.weights 0)
+    refine StdSimplex.equivIcc.injective (Subtype.ext ?_)
+    simp only [StdSimplex.equivIcc_apply_coe]
+    linarith [z.total_fin_two, z'.total_fin_two]
   have himage : (fun z : StdSimplex ℚ (Fin 2) ↦ z.weights 0) ''
       {z : StdSimplex ℚ (Fin 2) | z ∈ chainLSPoints b lam ![x, y] ∧ ∀ j, z.weights j ≠ 0} =
       (fun k : ℕ ↦ (k : ℚ) / g) '' Set.Ioo 0 g := by
@@ -606,17 +502,18 @@ theorem ncard_chainLSPoints_pair (hlam : lam ∈ dominantChamber P b) {x y : P.w
     · rintro ⟨k, ⟨hk0, hkg⟩, rfl⟩
       have hpos : (0 : ℚ) < k / g := div_pos (by exact_mod_cast hk0) hg
       have hlt : (k : ℚ) / g < 1 := (div_lt_one hg).mpr (by exact_mod_cast hkg)
-      let z : StdSimplex ℚ (Fin 2) :=
-        StdSimplex.duple 0 1 hpos.le (sub_nonneg.mpr hlt.le) (add_sub_cancel _ _)
-      have hz0 : z.weights 0 = k / g := by simp [z]
-      have hz1 : z.weights 1 = 1 - k / g := by simp [z]
+      let z := StdSimplex.equivIcc.symm
+        (⟨1 - k / g, sub_nonneg.mpr hlt.le, sub_le_self _ hpos.le⟩ : Set.Icc (0 : ℚ) 1)
+      have hz1 : z.weights 1 = 1 - k / g :=
+        congrArg Subtype.val (StdSimplex.equivIcc.apply_symm_apply _)
+      have hz0 : z.weights 0 = k / g := by linarith [z.total_fin_two]
       have hznz : ∀ j, z.weights j ≠ 0 := fun j ↦ by
         fin_cases j
         · simpa [hz0] using hpos.ne'
         · simpa [hz1] using (sub_pos.mpr hlt).ne'
       exact ⟨z, ⟨(mem_chainLSPoints_pair_iff hlam hx hy hyx hne hznz).mpr
         ⟨k, hk0, hkg, hz0⟩, hznz⟩, hz0⟩
-  rw [← (hinj.mono (Set.subset_univ _)).ncard_image, himage,
+  rw [← Set.ncard_image_of_injective _ hinj, himage,
     Set.ncard_image_of_injective _ fun k k' h ↦ by simpa [div_left_inj₀ hg.ne'] using h,
     Set.ncard_Ioo_nat, Nat.sub_zero]
 

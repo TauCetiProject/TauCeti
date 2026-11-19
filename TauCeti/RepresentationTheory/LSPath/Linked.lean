@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.IntervalBondGcd
 public import TauCeti.RepresentationTheory.LSPath.Basic
+
+import Mathlib.Algebra.BigOperators.Fin
 
 /-!
 # Lakshmibai–Seshadri paths from linked lists of directions
@@ -37,6 +40,9 @@ concatenated, and it does not change the piecewise-linear path that the list pre
 
 * `TauCeti.LSPath.linked_iff_getElem`: a list is linked exactly when each of its breaks carries an
   `a`-chain at the total duration before it.
+* `TauCeti.LSPath.linked_ofFn_iff_den_dvd`: **the integral break test**, a Bruhat chain of
+  minimal coset representatives with durations is linked exactly when the denominator of each
+  break divides the interval bond gcd of its two directions.
 * `TauCeti.LSPath.Linked.split`: subdividing an entry keeps a list linked.
 * `TauCeti.LSPath.Linked.exists_sum_take_sub_mul_eq_intCast`: along a linked list, the height at a
   break `a` before the direction `τ` differs from `a ⟨τ λ, -⟩` by an integer.
@@ -280,6 +286,37 @@ theorem linked_iff_getElem {t : ℚ} {l : List (P.weylGroup × ℚ)} :
         · obtain rfl : q = r := by simpa using hr
           simpa using h 0 (by simp)
         · simpa [add_assoc] using h (k + 1) (by simpa using hk)
+
+/-- **Linked chains.** For a dominant shape, minimal coset representatives `τ₀ ≥ τ₁ ≥ ⋯ ≥ τ_s` and
+durations `d`, the list `[(τ₀, d₀), …, (τ_s, d_s)]` is linked from time `0` exactly when each break
+`a_{j+1} = d₀ + ⋯ + d_j` has denominator dividing the interval bond gcd `d_λ(τ_j, τ_{j+1})`. -/
+theorem linked_ofFn_iff_den_dvd (hlam : lam ∈ dominantChamber P b) {s : ℕ}
+    {τ : Fin (s + 1) → P.weylGroup}
+    (hmin : ∀ j, (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) (τ j))
+    (hle : ∀ j : Fin s, (weylCoxeterSystem P b).BruhatLE (τ j.succ) (τ j.castSucc))
+    (d : Fin (s + 1) → ℚ) :
+    Linked P b lam 0 (List.ofFn fun j ↦ (τ j, d j)) ↔ ∀ j : Fin s,
+      (∑ k ∈ Finset.Iic j.castSucc, d k).den ∣ intervalBondGcd b lam (τ j.castSucc) (τ j.succ) := by
+  have hbreak (j : Fin s) : (((List.ofFn fun j ↦ (τ j, d j)).take (j + 1)).map Prod.snd).sum =
+      ∑ k ∈ Finset.Iic j.castSucc, d k := by
+    rw [List.map_take, List.map_ofFn, List.sum_take_ofFn]
+    exact Finset.sum_congr (by ext k; simp [Fin.le_iff_val_le_val]) fun _ _ ↦ rfl
+  rw [linked_iff_getElem]
+  constructor
+  · intro h j
+    obtain ⟨C, hhead, hlast, hC⟩ := h j (by simp)
+    rw [zero_add, hbreak, isAChain_iff_den_dvd_intervalBondGcd hlam, hhead, hlast] at hC
+    simp only [List.getElem_ofFn] at hC
+    exact hC
+  · intro h k hk
+    have hk' : k < s := by simpa using hk
+    obtain ⟨C, hhead, hlast, hC⟩ := (exists_isAChain_iff_den_dvd_intervalBondGcd hlam (hmin _)
+      (hmin _) (hle ⟨k, hk'⟩)).mpr (h ⟨k, hk'⟩)
+    refine ⟨C, ?_, ?_, by rw [zero_add, hbreak ⟨k, hk'⟩]; exact hC⟩
+    · simp only [List.getElem_ofFn]
+      exact hhead
+    · simp only [List.getElem_ofFn]
+      exact hlast
 
 /-- Splitting an entry `(w, d₁ + d₂)` of a linked list into two consecutive entries `(w, d₁)` and
 `(w, d₂)` keeps it linked. -/
