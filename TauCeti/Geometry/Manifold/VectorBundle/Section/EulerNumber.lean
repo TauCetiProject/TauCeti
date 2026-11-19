@@ -50,7 +50,7 @@ transport of the local orientation selected by an oriented chart along a linear 
   a zero with surjective linearization.
 * `TauCeti.VectorBundleOrientation.evalFundamentalClass_eulerClass_eq_sum_sign`: on a compact
   manifold, the Euler class evaluated on the fundamental class is the signed count of the zeros of
-  a section with only transverse zeros.
+  a continuous section with finitely many zeros, all transverse.
 * `TauCeti.VectorBundleOrientation.exists_contMDiffSection_eulerClass_eq_sum_sign`:
   a smooth oriented bundle of rank the dimension of a compact oriented manifold has a smooth section
   with finitely many zeros, all transverse, whose signed count is the Euler number.
