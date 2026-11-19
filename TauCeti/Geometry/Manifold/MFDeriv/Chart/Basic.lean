@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 
@@ -56,6 +57,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   some chart locally agree with maps having equal Fréchet derivatives have equal differentials.
 * `TauCeti.eventually_mfderiv_eq_zero_iff_extChartAt_symm`: local uniqueness of critical points
   of a family with differentiable slices in the extended chart at `x` transfers to the manifold.
+* `TauCeti.exists_norm_fderiv_comp_extend_symm_le_mul_norm_fderiv_comp_extChartAt_symm`: near `x`,
+  the differential of the coordinate expression of a `C¹` map in any chart containing `x` is
+  bounded by a multiple of that in the preferred chart at `x`.
 * `ContMDiffAt.contDiffAt_comp_extChartAt_symm` and
   `MDifferentiableAt.differentiableAt_comp_extChartAt_symm`: on a boundaryless manifold, the
   coordinate expression of a `C^n` (resp. differentiable) map into a normed space is `C^n` (resp.
@@ -451,6 +455,47 @@ theorem mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
   ext u
   rw [← L.apply_symm_apply u]
   exact DFunLike.congr_fun h (L.symm u)
+
+/-- **Bounds on the differential read in a chart do not depend on the chart.** If `f` is `C¹` at
+`x` and `e` is a chart of the `C¹` maximal atlas whose source contains `x`, then near `x` the
+differential of the coordinate expression of `f` in `e` has norm at most a fixed multiple of that of
+its coordinate expression in the preferred extended chart at `x`. The constant bounds the
+derivative of the change of coordinates near the image of `x`. -/
+theorem exists_norm_fderiv_comp_extend_symm_le_mul_norm_fderiv_comp_extChartAt_symm
+    {e : OpenPartialHomeomorph M H} (he : e ∈ IsManifold.maximalAtlas I 1 M) (hx : x ∈ e.source)
+    (hf : ContMDiffAt I 𝓘(𝕜, F) 1 f x) :
+    ∃ K > 0, ∀ᶠ y in 𝓝 x, ‖fderiv 𝕜 (f ∘ (e.extend I).symm) (e.extend I y)‖ ≤
+      K * ‖fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x y)‖ := by
+  -- The change of coordinates `T` from `e` to the preferred chart is `C¹` near `e.extend I x`.
+  set T := I.extendCoordChange e (chartAt H x)
+  have hT : ContDiffOn 𝕜 1 T T.source :=
+    I.contDiffOn_extendCoordChange he (IsManifold.chart_mem_maximalAtlas x)
+  have hTe (y) (hy : y ∈ e.source ∩ (chartAt H x).source) :
+      T (e.extend I y) = extChartAt I x y := by
+    rw [OpenPartialHomeomorph.extend_coe, Function.comp_apply, extChartAt_coe, Function.comp_apply]
+    exact I.extendCoordChange_apply hy.1
+  have hTx : T.source ∈ 𝓝 (e.extend I x) := by
+    rw [OpenPartialHomeomorph.extend_coe, Function.comp_apply]
+    exact I.extendCoordChange_source_mem_nhds hx (mem_chart_source H x)
+  -- Near `e.extend I x`, the expression of `f` in `e` is its expression in the preferred chart
+  -- composed with `T`, and that expression is differentiable along `T`.
+  have hcomp : f ∘ (e.extend I).symm =ᶠ[𝓝 (e.extend I x)] (f ∘ (extChartAt I x).symm) ∘ T := by
+    rw [OpenPartialHomeomorph.extend_coe, Function.comp_apply]
+    exact (I.extend_symm_comp_extendCoordChange_eventuallyEq hx
+      (mem_chart_source H x)).symm.fun_comp f
+  have hd := (contMDiffAt_iff_contDiffAt_comp_extChartAt_symm.1 hf).eventually (by simp)
+  rw [← hTe x ⟨hx, mem_chart_source H x⟩] at hd
+  obtain ⟨K, hK, hKb⟩ := exists_norm_fderiv_comp_le_mul_norm_fderiv hcomp
+    (Filter.mem_of_superset (I.isOpen_extendCoordChange_source.mem_nhds (mem_of_mem_nhds hTx))
+      fun w hw ↦ ((hT.contDiffAt (I.isOpen_extendCoordChange_source.mem_nhds hw)).differentiableAt
+        one_ne_zero))
+    ((hT.contDiffAt hTx).fderiv_right (m := 0) le_rfl).continuousAt
+    ((hT.contDiffAt hTx).continuousAt.eventually
+      (hd.mono fun w hw ↦ hw.differentiableAt one_ne_zero))
+  refine ⟨K, hK, ?_⟩
+  filter_upwards [(e.continuousAt_extend (I := I) hx).eventually hKb, e.open_source.mem_nhds hx,
+    chart_source_mem_nhds H x] with y hy hye hyc
+  rwa [hTe y ⟨hye, hyc⟩] at hy
 
 end TauCeti
 
