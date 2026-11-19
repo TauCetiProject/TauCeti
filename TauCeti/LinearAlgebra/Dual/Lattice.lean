@@ -22,8 +22,8 @@ linear maps. This is the linear-algebra input to contragredient actions on
 admissible integral lattices.
 
 Evaluation restricts to an `R`-valued pairing between the integral dual and the
-submodule. Over a ring with fraction field `K`, this pairing is perfect for a free
-full lattice: its integral dual is its `R`-linear dual.
+submodule. When `R` embeds in `K`, this pairing is perfect for a free full lattice:
+its integral dual is its `R`-linear dual.
 -/
 
 public section
@@ -143,13 +143,6 @@ theorem algebraMap_dualLatticePairing (N : Submodule R V) (φ : N.dualLattice K)
   LinearMap.restrictScalarsRange₂_apply (N.dualLattice K).subtype N.subtype (Algebra.linearMap R K)
     (FaithfulSMul.algebraMap_injective R K) LinearMap.id _ φ x
 
-end Pairing
-
-section PerfectPairing
-
-variable {R K V : Type*} [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
-  [AddCommGroup V] [Module K V] [Module R V] [IsScalarTower R K V]
-
 /-- **The integral dual of a free full lattice is its `R`-linear dual.** Evaluation pairs the
 integral dual of `N` perfectly with `N`: every `R`-linear functional on `N` extends uniquely to a
 `K`-linear functional on the ambient space. -/
@@ -175,6 +168,6 @@ instance isPerfPair_dualLatticePairing (N : Submodule R V) [N.IsFullLattice K] [
     apply FaithfulSMul.algebraMap_injective R K
     simp [hφ]
 
-end PerfectPairing
+end Pairing
 
 end Submodule

@@ -33,9 +33,9 @@ commutative rings. Finally, scalar extension of a free full lattice recovers its
   lattice.
 * `Module.Basis.toAddSubgroup_eq_closure_range_extendOfIsFullLattice`: the additive
   closure of an extended lattice basis is the lattice's underlying additive subgroup.
-* `TauCeti.Submodule.IsFullLattice.relIndex_ne_zero`: a full `ℤ`-lattice has finite index in every
+* `Submodule.IsFullLattice.relIndex_ne_zero`: a full `ℤ`-lattice has finite index in every
   full `ℤ`-lattice.
-* `TauCeti.Submodule.IsFullLattice.relIndex_span_eq_abs_det_mul`: the indices of a full `ℤ`-lattice
+* `Submodule.IsFullLattice.relIndex_span_eq_abs_det_mul`: the indices of a full `ℤ`-lattice
   in the `ℤ`-spans of two `ℚ`-bases differ by the determinant of the change of basis.
 * `Submodule.toAddSubgroup_submoduleOf`: taking the underlying additive subgroup commutes
   with restricting a submodule to another submodule.
@@ -136,7 +136,7 @@ variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 
 /-- A full `ℤ`-submodule has finite index in every full `ℤ`-submodule: its index is that of its
 intersection with it. -/
-theorem Submodule.IsFullLattice.relIndex_ne_zero {N M : Submodule ℤ V} [N.IsFullLattice ℚ]
+theorem _root_.Submodule.IsFullLattice.relIndex_ne_zero {N M : Submodule ℤ V} [N.IsFullLattice ℚ]
     [M.IsFullLattice ℚ] : N.toAddSubgroup.relIndex M.toAddSubgroup ≠ 0 := by
   classical
   -- needed for the `IsFullLattice.inf` instance on `N ⊓ M`
@@ -162,8 +162,8 @@ theorem Submodule.IsFullLattice.relIndex_ne_zero {N M : Submodule ℤ V} [N.IsFu
 /-- **Indices of a common full sublattice differ by a determinant.** If a full `ℤ`-submodule `N`
 lies in the `ℤ`-spans of two `ℚ`-bases `b` and `c`, then its index in the span of `b` is
 `|b.det c|` times its index in the span of `c`. -/
-theorem Submodule.IsFullLattice.relIndex_span_eq_abs_det_mul {ι : Type*} [Fintype ι] [DecidableEq ι]
-    {N : Submodule ℤ V} [N.IsFullLattice ℚ] (b c : Basis ι ℚ V)
+theorem _root_.Submodule.IsFullLattice.relIndex_span_eq_abs_det_mul {ι : Type*} [Fintype ι]
+    [DecidableEq ι] {N : Submodule ℤ V} [N.IsFullLattice ℚ] (b c : Basis ι ℚ V)
     (hb : N ≤ Submodule.span ℤ (Set.range b)) (hc : N ≤ Submodule.span ℤ (Set.range c)) :
     (N.toAddSubgroup.relIndex (Submodule.span ℤ (Set.range b)).toAddSubgroup : ℚ) =
       |b.det c| * N.toAddSubgroup.relIndex (Submodule.span ℤ (Set.range c)).toAddSubgroup := by
