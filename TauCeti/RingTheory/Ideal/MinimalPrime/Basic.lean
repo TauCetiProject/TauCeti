@@ -10,19 +10,26 @@ public import Mathlib.RingTheory.Ideal.Quotient.Defs
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
-# Reduced rings embed into their minimal-prime quotients
+# Minimal primes of domains and reduced rings
 
-Since the minimal primes of a reduced ring intersect in `0`, a reduced ring embeds into the
-product of its quotients by its minimal primes. No finiteness of the set of minimal primes is
-needed.
+The zero ideal is the unique minimal prime of an integral domain. Since the minimal primes of a
+reduced ring intersect in `0`, a reduced ring embeds into the product of its quotients by its
+minimal primes. No finiteness of the set of minimal primes is needed.
 
 ## Main results
 
+* `IsDomain.uniqueMinimalPrimes`: an integral domain has a unique minimal prime.
 * `Ideal.injective_pi_quotient_mk_minimalPrimes`: a reduced ring embeds into the product of its
   quotients by its minimal primes.
 -/
 
 public section
+
+/-- The zero ideal is the unique minimal prime of an integral domain. -/
+instance IsDomain.uniqueMinimalPrimes (R : Type*) [CommSemiring R] [IsDomain R] :
+    Unique (minimalPrimes R) where
+  default := ⟨⊥, by simp [IsDomain.minimalPrimes_eq_singleton_bot]⟩
+  uniq p := Subtype.ext <| by simpa [IsDomain.minimalPrimes_eq_singleton_bot] using p.2
 
 namespace Ideal
 

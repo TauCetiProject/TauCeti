@@ -16,7 +16,7 @@ import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
 /-!
 # The dual graph of a prestable curve
 
-Let `X` be a prestable curve over an algebraically closed field `K`: a proper connected curve with
+Let `X` be a prestable curve over a separably closed field `K`: a proper connected curve with
 at worst nodes (`TauCeti.AlgebraicGeometry.PrestableFamily`). Blowing up its singular subscheme
 gives a finite surjective morphism `ν : X^ν ⟶ X` from a regular scheme which is an isomorphism over
 the smooth locus. Exactly one point of `X^ν` lies over each smooth point of `X`, and exactly two lie
@@ -53,7 +53,7 @@ here.
 * `AlgebraicGeometry.Scheme.branchPointEquiv`: the two points over a node, labelled by `Fin 2`.
 * `AlgebraicGeometry.Scheme.blowupComponent`: an irreducible component of the blowup of a
   prestable curve along its singular subscheme, as an open subscheme.
-* `AlgebraicGeometry.Scheme.dualGraph`: the dual graph of a prestable curve over an algebraically
+* `AlgebraicGeometry.Scheme.dualGraph`: the dual graph of a prestable curve over a separably
   closed field with markings at smooth points.
 * `AlgebraicGeometry.Scheme.dualGraphVertexEquiv` and `AlgebraicGeometry.Scheme.dualGraphEdgeEquiv`:
   its vertices are the components of the blowup, and its edges are the nodes.
@@ -149,7 +149,7 @@ instance (v : irreducibleComponents (X.singularLocus K).blowup) (n : ℕ) :
 
 /-! ### The points over a node -/
 
-variable [IsAlgClosed K]
+variable [IsSepClosed K]
 
 private theorem natCard_preimage_blowupToBase_eq_two
     (x : ↥(((X ↘ Spec (.of K)).smoothLocus : Set X)ᶜ)) :
@@ -172,7 +172,7 @@ theorem blowupToBase_branchPointEquiv (x : ↥(((X ↘ Spec (.of K)).smoothLocus
 
 /-! ### Finiteness and connectedness -/
 
-omit [IsAlgClosed K] in
+omit [IsSepClosed K] in
 private theorem finite_irreducibleComponents_blowup :
     (irreducibleComponents (X.singularLocus K).blowup).Finite := by
   have := X.isFinite_blowupToBase_singularLocus (atWorstNodal K X)
@@ -182,7 +182,7 @@ private theorem finite_irreducibleComponents_blowup :
   have : IsNoetherian (X.singularLocus K).blowup := {}
   exact TopologicalSpace.NoetherianSpace.finite_irreducibleComponents
 
-omit [IsAlgClosed K] in
+omit [IsSepClosed K] in
 private theorem nonempty_irreducibleComponents_blowup :
     Nonempty (irreducibleComponents (X.singularLocus K).blowup) := by
   obtain ⟨x⟩ : Nonempty X := (X ↘ Spec (.of K)).surjective.nonempty
@@ -221,7 +221,7 @@ private theorem eq_or_adj_of_blowupToBase_eq {b b' : (X.singularLocus K).blowup}
       refine ⟨e, ?_⟩
       fin_cases i <;> fin_cases j <;> simp_all
 
-/-- The dual graph of a prestable curve over an algebraically closed field is connected. -/
+/-- The dual graph of a prestable curve over a separably closed field is connected. -/
 private theorem reflTransGen_adj (v w : irreducibleComponents (X.singularLocus K).blowup) :
     Relation.ReflTransGen (Adj X) v w := by
   let ν := (X.singularLocus K).blowupToBase
@@ -271,12 +271,12 @@ private def pointOver (x : (X ↘ Spec (.of K)).smoothLocus) : (X.singularLocus 
   (X.surjective_blowupToBase_singularLocus
     (atWorstNodal K X)).surj x.1 |>.choose
 
-omit [IsAlgClosed K] in
+omit [IsSepClosed K] in
 private theorem blowupToBase_pointOver (x : (X ↘ Spec (.of K)).smoothLocus) :
     (X.singularLocus K).blowupToBase (pointOver X x) = x :=
   ((X.surjective_blowupToBase_singularLocus (atWorstNodal K X)).surj x.1).choose_spec
 
-/-- **The dual graph of a prestable curve** `X` over an algebraically closed field `K`, with
+/-- **The dual graph of a prestable curve** `X` over a separably closed field `K`, with
 markings at the smooth points `p i`. Its vertices are the irreducible components of the blowup
 `X^ν` of `X` along its singular subscheme (`AlgebraicGeometry.Scheme.dualGraphVertexEquiv`); its
 edges are the nodes of `X` (`AlgebraicGeometry.Scheme.dualGraphEdgeEquiv`); the endpoints of the

@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.AlgebraicGeometry.Properties
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 public import TauCeti.Topology.Irreducible
+import TauCeti.RingTheory.Ideal.MinimalPrime.Basic
 
 /-!
 # Irreducibility of connected schemes with domain stalks
@@ -404,12 +405,6 @@ theorem irreducibleSpace_of_connected_of_unique_minimalPrime_stalk (Z : Scheme.{
   intro c
   exact isOpen_of_mem_irreducibleComponents_of_unique_minimalPrime_stalk hStalks c.2
 
-/-- The unique minimal prime `⊥` of a stalk that is an integral domain. -/
-private noncomputable abbrev uniqueMinimalPrimesOfIsDomain {Z : Scheme.{u}} (x : Z)
-    [IsDomain (Z.presheaf.stalk x)] : Unique (minimalPrimes (Z.presheaf.stalk x)) := by
-  rw [IsDomain.minimalPrimes_eq_singleton_bot]
-  exact Set.uniqueSingleton ⊥
-
 /-- A locally noetherian connected scheme whose stalks are integral domains
 is irreducible. -/
 theorem irreducibleSpace_of_connected_of_isDomain_stalk (Z : Scheme.{u}) [IsLocallyNoetherian Z]
@@ -417,14 +412,13 @@ theorem irreducibleSpace_of_connected_of_isDomain_stalk (Z : Scheme.{u}) [IsLoca
     IrreducibleSpace Z :=
   irreducibleSpace_of_connected_of_unique_minimalPrime_stalk Z fun x ↦
     have := hStalks x
-    uniqueMinimalPrimesOfIsDomain x
+    inferInstance
 
 /-- If the stalk at `x` is an integral domain, then `x` lies on exactly one irreducible
 component. -/
 theorem existsUnique_mem_irreducibleComponents_of_isDomain_stalk {Z : Scheme.{u}} (x : Z)
     [IsDomain (Z.presheaf.stalk x)] :
     ∃! c : irreducibleComponents Z.carrier, x ∈ (c : Set Z.carrier) :=
-  have := uniqueMinimalPrimesOfIsDomain x
   existsUnique_mem_irreducibleComponents_of_unique_minimalPrime_stalk x
 
 /-- If the stalk at `x` is an integral domain, then `irreducibleComponentOf x` is the irreducible
@@ -441,7 +435,7 @@ theorem isOpen_of_mem_irreducibleComponents_of_isDomain_stalk {Z : Scheme.{u}}
     [IsLocallyNoetherian Z] (hStalks : ∀ x : Z.carrier, IsDomain (Z.presheaf.stalk x))
     {c : Set Z.carrier} (hc : c ∈ irreducibleComponents Z.carrier) : IsOpen c :=
   isOpen_of_mem_irreducibleComponents_of_unique_minimalPrime_stalk
-    (fun x ↦ have := hStalks x; uniqueMinimalPrimesOfIsDomain x) hc
+    (fun x ↦ have := hStalks x; inferInstance) hc
 
 /-- A locally noetherian connected scheme whose stalks are regular local rings is integral. -/
 theorem isIntegral_of_connected_of_isRegularLocalRing_stalk (Z : Scheme.{u})

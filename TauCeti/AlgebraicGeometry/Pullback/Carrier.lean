@@ -169,7 +169,7 @@ theorem natCard_preimage_fst_singleton_of_isPullback (H : IsPullback fst snd f g
   refine ⟨⟨H.isoPullback.inv q, ?_⟩, Subtype.ext ?_⟩
   · rw [Set.mem_preimage, Set.mem_singleton_iff, ← Scheme.Hom.comp_apply,
       IsPullback.isoPullback_inv_fst, hq]
-  · change snd (H.isoPullback.inv q) = y.1
+  · dsimp only
     rw [← Scheme.Hom.comp_apply, IsPullback.isoPullback_inv_snd, hy]
 
 end AlgebraicGeometry.Scheme
