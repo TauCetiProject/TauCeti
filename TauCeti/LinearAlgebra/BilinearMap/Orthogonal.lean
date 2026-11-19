@@ -27,7 +27,7 @@ open Module
 
 namespace LinearMap.IsOrthoᵢ
 
-variable {R M N ι : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
+variable {R M N ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
   [Module R N] {B : M →ₗ[R] M →ₗ[R] N}
 
 /-- Rescaling the members of an orthogonal family keeps it orthogonal. -/

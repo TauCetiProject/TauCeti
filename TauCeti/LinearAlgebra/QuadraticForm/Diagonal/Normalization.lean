@@ -70,7 +70,9 @@ open Module QuadraticMap
 
 namespace QuadraticForm
 
-variable {R M ι : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+section CommSemiring
+
+variable {R M ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 
 /-- Dividing a vector by a unit square root of its value normalizes that value to `1`. -/
 theorem apply_inv_smul_eq_one_of_mul_self {Q : QuadraticForm R M} {x : M} {c : Rˣ}
@@ -85,7 +87,10 @@ theorem apply_unitsSMul_inv_eq_one {Q : QuadraticForm R M} {b : Basis ι R M} {c
   rw [Basis.unitsSMul_apply]
   exact apply_inv_smul_eq_one_of_mul_self (hc i)
 
-variable [Invertible (2 : R)] [Fintype ι]
+end CommSemiring
+
+variable {R M ι : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Invertible (2 : R)]
+  [Fintype ι]
 
 /-- Coordinates in a basis `b` that is orthogonal for `Q` with `Q (b i) = 1` for every `i`, as an
 isometry from `Q` to the standard sum of squares. -/
