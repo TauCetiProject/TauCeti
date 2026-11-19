@@ -272,8 +272,8 @@ example :
   have h1 : (1 : DirichletCharacter ℂ 6) (-1) = 1 := MulChar.one_apply isUnit_one.neg
   rw [ite_eq_left h1, conductor_one, Nat.cast_one]
 
--- Lifting `χ₄` to level `12` gives primitive discriminant `D = -4`; agreement holds at integers
--- prime to `12`, while at `3` the lifted character vanishes whereas `χ_{-4}(3) = -1`.
+-- Lifting `χ₄` to level `12` gives signed conductor `-4`; at `3` the lifted character
+-- vanishes whereas `χ_{-4}(3) = -1`.
 example :
     let χ : DirichletCharacter ℂ 12 :=
       changeLevel (by decide : 4 ∣ 12) (ZMod.χ₄.ringHomComp (Int.castRingHom ℂ))
@@ -293,9 +293,8 @@ example :
   · rw [fundamentalDiscriminantCharCast_apply, fundamentalDiscriminantChar_neg_four]
     exact_mod_cast h3
 
--- The conductor-`12` character `χ₄ · (Legendre mod 3)` has primitive discriminant `D = 12`
--- (squarefree radicand `d = 3`), retains conductor `12` and discriminant `12` when lifted to
--- level `24`, takes values `-1, -1, 1` at `5, 7, 11`, and certifies `3` nonsquare modulo `5`.
+-- The conductor-`12` character `χ₄ · (Legendre mod 3)` has signed conductor `12`,
+-- and retains that signed conductor when lifted to level `24`.
 example [Fact (Nat.Prime 3)] :
     let χ₄c : DirichletCharacter ℂ 4 := ZMod.χ₄.ringHomComp (Int.castRingHom ℂ)
     let χ₃c : DirichletCharacter ℂ 3 := (quadraticChar (ZMod 3)).ringHomComp (Int.castRingHom ℂ)
@@ -327,6 +326,8 @@ example [Fact (Nat.Prime 3)] :
     norm_num
   exact ⟨hite, (conductor_ite_changeLevel (by decide : 12 ∣ 24) χ).trans hite⟩
 
+-- A quadratic character with signed conductor `12` takes values `-1, -1, 1` at `5, 7, 11`
+-- and certifies `3` nonsquare modulo `5`.
 example {χ : DirichletCharacter ℂ 12} (hq : χ.IsQuadratic)
     (hite : (if χ (-1) = 1 then (χ.conductor : ℤ) else -(χ.conductor : ℤ)) = 12) :
     χ (5 : ℤ) = -1 ∧ χ (7 : ℤ) = -1 ∧ χ (11 : ℤ) = 1 ∧ ¬ IsSquare ((3 : ℤ) : ZMod 5) := by

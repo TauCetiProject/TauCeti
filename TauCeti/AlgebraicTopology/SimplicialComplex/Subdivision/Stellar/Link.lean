@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Link
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Star
 
 /-!
-# Links of old faces after stellar subdivision
+# Links of faces after stellar subdivision
 
 Starring `σ` at `v` changes the link of a face `τ` avoiding `v` by starring its old link
 at `σ \ τ`. This includes faces meeting `σ`: their links are starred at the complementary
@@ -16,9 +18,10 @@ part of `σ`, rather than at `σ` itself. If `τ` contains `σ`, it is removed a
 of the formula are void, since starring the empty set gives the void complex.
 
 These link identities transfer sphere-or-ball link conditions at surviving old vertices when
-the starring vertex is unused in their old links, and preserve void links in dimension zero.
-The complementary new-vertex link is the boundary of the closed star, computed in
-`Subdivision.Stellar.Basic`.
+the starring vertex is unused in their old links, preserve void links in dimension zero, and
+match every old vertex link with a stellar-equivalent vertex link in the subdivision. For faces
+`insert v ρ` containing the new vertex `v`, tagging vertices by membership in `σ` identifies
+their link with the join `join (simplexBoundary (σ \ ρ)) (link K (ρ ∪ σ))`.
 
 ## References
 
@@ -38,7 +41,7 @@ The complementary new-vertex link is the boundary of the closed star, computed i
 
 public section
 
-open Finset
+open Finset TauCeti
 
 namespace PreAbstractSimplicialComplex
 
@@ -88,6 +91,60 @@ theorem stellarEquivalent_link_stellarSubdivision_of_notMem
   by_cases hrem : σ \ τ ∈ link K τ
   · exact stellarEquivalent_stellarSubdivision hrem hv
   · rw [stellarSubdivision_eq_self_of_notMem hv hne hrem]
+
+/-- Every vertex of `K` has its link stellar equivalent to the link of some vertex of
+`stellarSubdivision K σ v` for any nonempty `σ`: the new vertex `v` when `σ = {w}`, and `w`
+itself otherwise. -/
+theorem exists_singleton_mem_stellarSubdivision_stellarEquivalent_link
+    (hσne : σ.Nonempty) (hv : ({v} : Finset ι) ∉ K) (hw : ({w} : Finset ι) ∈ K) :
+    ∃ u, ({u} : Finset ι) ∈ stellarSubdivision K σ v ∧
+      StellarEquivalent (link K {w}) (link (stellarSubdivision K σ v) {u}) := by
+  have hwv : w ≠ v := fun h => hv (h ▸ hw)
+  have hvw : v ∉ ({w} : Finset ι) := by simpa [eq_comm] using hwv
+  by_cases hsubw : σ ⊆ {w}
+  · obtain rfl : σ = {w} := (subset_singleton_iff.mp hsubw).resolve_left hσne.ne_empty
+    refine ⟨v, singleton_mem_stellarSubdivision_iff.mpr hw, ?_⟩
+    rw [link_stellarSubdivision_singleton hv, closedStar_inf_deletion_singleton]
+  · exact ⟨w, (mem_stellarSubdivision_iff_of_notMem hvw).mpr ⟨hw, hsubw⟩,
+      stellarEquivalent_link_stellarSubdivision_of_notMem (notMem_link_of_notMem hv) hvw
+        (sdiff_nonempty.mpr hsubw)⟩
+
+/-- Tagging vertices according to membership in `σ` identifies the link of a face `insert v ρ`
+containing the new vertex in `stellarSubdivision K σ v` with the join of `simplexBoundary (σ \ ρ)`
+and `link K (ρ ∪ σ)`. -/
+theorem map_link_stellarSubdivision_insert_eq_join {ρ : Finset ι}
+    (hv : ({v} : Finset ι) ∉ K) (havoid : ¬ σ ⊆ ρ) (hunion : ρ ∪ σ ∈ K) :
+    (link (stellarSubdivision K σ v) (insert v ρ)).map (partitionEmbedding (· ∈ σ)) =
+      join (simplexBoundary (σ \ ρ)) (link K (ρ ∪ σ)) := by
+  have hvρ : v ∉ ρ := fun h => notMem_of_singleton_notMem hv hunion (mem_union_left σ h)
+  have hσ : σ ∈ K :=
+    (K.isRelLowerSet_faces hunion).2 subset_union_right
+      ((sdiff_nonempty.mpr havoid).mono sdiff_subset)
+  have hs : ρ ∩ σ = ∅ ∨ ρ ∩ σ ∈ simplexBoundary σ := by
+    by_cases he : ρ ∩ σ = ∅
+    · exact Or.inl he
+    · refine Or.inr (mem_simplexBoundary.mpr ⟨nonempty_iff_ne_empty.mpr he, ?_⟩)
+      exact Finset.ssubset_iff_subset_ne.mpr
+        ⟨inter_subset_right, fun h => havoid (h ▸ inter_subset_left)⟩
+  have ht : ρ \ σ = ∅ ∨ ρ \ σ ∈ link K σ := by
+    by_cases he : ρ \ σ = ∅
+    · exact Or.inl he
+    · exact Or.inr (mem_link_nonempty.mpr ⟨nonempty_iff_ne_empty.mpr he,
+        sdiff_disjoint, by rwa [sdiff_union_self_eq_union]⟩)
+  have hstellar :
+      (link (stellarSubdivision K σ v) (insert v ρ)).map (partitionEmbedding (· ∈ σ)) =
+        link (join (simplexBoundary σ) (link K σ)) ((ρ ∩ σ).disjSum (ρ \ σ)) := by
+    rw [link_stellarSubdivision_insert hv hvρ,
+      map_link (partitionEmbedding (· ∈ σ)) (partitionEmbedding (· ∈ σ)).injective,
+      map_closedStar_inf_deletion_eq_join hσ]
+    simp only [image_partitionEmbedding, filter_mem_eq_inter, filter_notMem_eq_sdiff]
+  have hjoin :
+      link (join (simplexBoundary σ) (link K σ)) ((ρ ∩ σ).disjSum (ρ \ σ)) =
+        join (simplexBoundary (σ \ ρ)) (link K (ρ ∪ σ)) := by
+    rw [link_join hs ht, link_simplexBoundary inter_subset_right,
+      link_link sdiff_disjoint.symm]
+    simp only [sdiff_inter_self_right, union_sdiff_self_eq_union, union_comm σ ρ]
+  exact hstellar.trans hjoin
 
 /-- A surviving old vertex of a zero-dimensional combinatorial manifold still has void link
 after stellar subdivision. -/

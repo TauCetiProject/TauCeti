@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Basic
 
 /-!
@@ -42,6 +43,9 @@ law in `Quadratic/Ramification.lean`: a prime coprime to `2` divides it exactly 
   and `D / 4` otherwise.
 * `TauCeti.Multiquadratic.exists_sq_mul_eq_fundamentalDiscriminant`: it equals `c² * d` for some
   `c ∈ {1, 2}`, so it lies in the square class of `d`.
+* `TauCeti.Multiquadratic.jacobiSym_fundamentalDiscriminant`,
+  `TauCeti.Multiquadratic.legendreSym_fundamentalDiscriminant`: the square factor does not change
+  Jacobi symbols at odd arguments or Legendre symbols at odd primes.
 * `TauCeti.Multiquadratic.dvd_fundamentalDiscriminant_iff`: for `p` coprime to `2`,
   `p ∣ fundamentalDiscriminant d ↔ p ∣ d` (the ramified odd primes are the divisors of `d`).
 * `TauCeti.Multiquadratic.two_not_dvd_fundamentalDiscriminant_iff_mod_four_eq_one`:
@@ -103,6 +107,24 @@ theorem exists_sq_mul_eq_fundamentalDiscriminant (d : ℤ) :
   rcases fundamentalDiscriminant_eq_self_or_four_mul d with h | h
   · exact ⟨1, Or.inl rfl, by rw [h]; ring⟩
   · exact ⟨2, Or.inr rfl, by rw [h]; ring⟩
+
+/-- At an odd natural number `n`, `fundamentalDiscriminant d` has the same Jacobi symbol as `d`,
+since the two differ by a square factor `1` or `4`, both squares prime to `n`. -/
+theorem jacobiSym_fundamentalDiscriminant (d : ℤ) {n : ℕ} (hn : Odd n) :
+    jacobiSym (fundamentalDiscriminant d) n = jacobiSym d n := by
+  obtain ⟨c, hc, hcd⟩ := exists_sq_mul_eq_fundamentalDiscriminant d
+  have hcop : IsCoprime c n := by
+    rcases hc with rfl | rfl
+    · exact isCoprime_one_left
+    · exact Nat.isCoprime_iff_coprime.mpr hn.coprime_two_left
+  rw [← hcd, jacobiSym_sq_mul_of_isCoprime hcop]
+
+/-- At an odd prime `p`, `fundamentalDiscriminant d` has the same Legendre symbol as `d`,
+including `0` at primes dividing `d`. -/
+theorem legendreSym_fundamentalDiscriminant (d : ℤ) {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
+    legendreSym p (fundamentalDiscriminant d) = legendreSym p d := by
+  rw [jacobiSym.legendreSym.to_jacobiSym, jacobiSym.legendreSym.to_jacobiSym,
+    jacobiSym_fundamentalDiscriminant d ((Fact.out : p.Prime).odd_of_ne_two hp)]
 
 /-- **The fundamental discriminant of a nonzero integer is nonzero**, being a nonzero square
 multiple of it. -/

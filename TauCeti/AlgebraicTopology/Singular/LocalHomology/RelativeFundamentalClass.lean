@@ -54,6 +54,8 @@ the connecting morphism.
 
 * `TauCeti.HomologicalOrientation.localHomologyRestriction_fundamentalClassRel`: its image in the
   local homology at every interior point is the local orientation there.
+* `TauCeti.HomologicalOrientation.isLocalOrientation_localHomologyRestriction_fundamentalClassRel`:
+  so it restricts to a local orientation at every interior point.
 * `TauCeti.HomologicalOrientation.eq_fundamentalClassRel`: it is the only class with this
   property.
 * `TauCeti.HomologicalOrientation.localHomologyRestriction_fundamentalClassRel_image`: its image
@@ -263,6 +265,15 @@ theorem localHomologyRestriction_fundamentalClassRel (x : M) :
         (singleton_subset_iff.2 (mem_range_self x)) n (o.fundamentalClassRel hn hι hιf hf) =
       (localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ)) hι x n).hom (o x).val :=
   (o.existsUnique_fundamentalClassRel hn hι hιf hf).exists.choose_spec x
+
+/-- The relative fundamental class restricts to a local orientation at every interior point. -/
+theorem isLocalOrientation_localHomologyRestriction_fundamentalClassRel {p : X}
+    (hp : p ∈ range ι) :
+    IsLocalOrientation p n (localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ))
+      (singleton_subset_iff.2 hp) n (o.fundamentalClassRel hn hι hιf hf)) := by
+  obtain ⟨x, rfl⟩ := hp
+  rw [o.localHomologyRestriction_fundamentalClassRel hn hι hιf hf x]
+  exact (o x).property.map _
 
 /-- **Uniqueness of the relative fundamental class**: a class of `Hₙ(X, ∂X; ℤ)` restricting to the
 local orientation at every interior point is the relative fundamental class. -/

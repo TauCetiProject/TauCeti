@@ -297,15 +297,8 @@ theorem genusCharFun_natCast_eq_legendreSym {s : Finset ℤ} {d : ℤ}
     (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d)
     {q : ℕ} [Fact q.Prime] (hq : q ≠ 2) :
     genusCharFun s (q : ℤ) = legendreSym q d := by
-  obtain ⟨c, hc, hcd⟩ := exists_sq_mul_eq_fundamentalDiscriminant d
-  have hc0 : ((c : ℤ) : ZMod q) ≠ 0 := by
-    rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]
-    rcases hc with rfl | rfl
-    · exact fun h => (Fact.out : q.Prime).ne_one (Nat.dvd_one.mp (by exact_mod_cast h))
-    · exact fun h =>
-        hq ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp (by exact_mod_cast h))
-  rw [genusCharFun_natCast_eq_legendreSym_prod hs hq, hprod, ← hcd, legendreSym.mul,
-    legendreSym.sq_one' q hc0, one_mul]
+  rw [genusCharFun_natCast_eq_legendreSym_prod hs hq, hprod,
+    legendreSym_fundamentalDiscriminant d hq]
 
 /-! ### Genus characters on the norms of a quadratic field -/
 

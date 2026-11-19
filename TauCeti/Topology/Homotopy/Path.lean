@@ -29,6 +29,13 @@ Tau Ceti work in [#42](https://github.com/TauCetiProject/TauCeti/pull/42).
 ambient space whose intermediate paths all stay in `V`. Analytic continuation consumes it in
 `Analysis/Complex/Conformal/GlobalBranch.lean`.
 
+`Path.continuousFamily` packages a jointly continuous map on `Y × [0, 1]` with fixed ends as a
+continuous family of paths, and `Path.ofContinuousFamily` reads the case `Y = [0, 1]` with
+prescribed end paths as a path between paths. The smoothing of caps in
+`Geometry/Symplectic/Floer/Cap/Smoothing.lean` feeds such families to
+`Path.homotopic_of_continuous_square`, and `IsSmoothBasedCap.toPath` in
+`Geometry/Symplectic/Floer/Cap/Area.lean` is built with `Path.ofContinuousFamily`.
+
 `Path.homotopic_of_continuous_square` is likewise adapted from Kim Morrison's
 [#38292](https://github.com/leanprover-community/mathlib4/pull/38292). It is used by
 `AlgebraicTopology/UniversalCover/BasedPath.lean`, where it previously lived privately, and by
@@ -39,7 +46,11 @@ classes of loops with conjugacy classes in
 `AlgebraicTopology/FundamentalGroup/FreeLoop.lean`, together with the converse
 `Path.homotopicWith_trans_trans_symm`: a conjugate loop `χ · ℓ · χ⁻¹` is homotopic to `ℓ` through
 closed paths. Its family version `Path.homotopicWith_uncurry_trans_trans_symm` gives the conjugation
-homotopy of families of loops in `Topology/MappingSpace/Sphere/LoopFamily.lean`. The lemma
+homotopy of families of loops in `Topology/MappingSpace/Sphere/LoopFamily.lean`. The family version
+`Path.homotopic_trans_symm_trans_trans_symm` of the cancellation `ρ⁻¹ · ρ ≃ refl` shrinks a
+detour `(α · ρ⁻¹) · (ρ · β⁻¹)` to `α · β⁻¹` uniformly in a parameter, as a homotopy of maps into the
+space of paths; it compares families of loops on spheres with products of loops in
+`AlgebraicTopology/Sphere/Stiefel/MeridianProduct.lean`. The lemma
 `Path.Homotopic.refl_of_forall_mem_of_nullhomotopic` is not from #38292; it was factored out of
 `AlgebraicTopology/SemilocallySimplyConnected/Basic.lean`.
 
@@ -73,6 +84,12 @@ endpoints composes the cast images of the factors (`Path.Homotopic.Quotient.map_
 `Path.refl_trans_eq_reparam`, the left counterpart of Mathlib's
 `Path.Homotopy.trans_refl_reparam`, and `map_trans_cast` are used by the gluing of caps along a
 pair of pants in `Geometry/Symplectic/Floer/Cap/Loop.lean`.
+
+Every point of a path lies in the path component of its source (`Path.mem_pathComponent`). So the
+paths in a subspace `S` starting at a point whose path component lies in `S` are the paths of the
+ambient space: the inclusion of `S` induces a homeomorphism of path spaces
+(`Path.subtypeValHomeomorph`). In particular a path component, with the subspace topology, has
+the loop space of the ambient space at each of its points.
 -/
 
 public section
@@ -203,6 +220,34 @@ theorem mem_pathComponent_of_mem {a b x₀ : X} (γ : Path a b) (ha : a ∈ path
     (t : I) : γ t ∈ pathComponent x₀ :=
   Joined.mem_pathComponent (γ.mem_pathComponent t) ha
 
+/-- **Paths in a subspace containing a path component.** If the path component of `a` lies in a
+subspace `S`, the inclusion of `S` induces a homeomorphism from the paths in `S` from `a` to `b`
+to the paths in the ambient space from `a` to `b`: every such path stays in the path component of
+`a`, hence in `S`. -/
+def subtypeValHomeomorph {S : Set X} {a b : S} (hS : pathComponent (a : X) ⊆ S) :
+    Path a b ≃ₜ Path (a : X) b where
+  toFun γ := γ.map continuous_subtype_val
+  invFun γ := γ.codRestrict fun t ↦ hS (γ.mem_pathComponent t)
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := continuous_induced_rng.2 <|
+    (ContinuousMap.continuous_postcomp ⟨Subtype.val, continuous_subtype_val⟩).comp
+      continuous_induced_dom
+  continuous_invFun := continuous_induced_rng.2 <|
+    (ContinuousMap.isEmbedding_postcomp ⟨Subtype.val, continuous_subtype_val⟩
+      IsEmbedding.subtypeVal).isInducing.continuous_iff.2 continuous_induced_dom
+
+@[simp]
+theorem subtypeValHomeomorph_apply {S : Set X} {a b : S} (hS : pathComponent (a : X) ⊆ S)
+    (γ : Path a b) (t : I) : subtypeValHomeomorph hS γ t = γ t :=
+  (rfl)
+
+@[simp]
+theorem coe_subtypeValHomeomorph_symm_apply {S : Set X} {a b : S}
+    (hS : pathComponent (a : X) ⊆ S) (γ : Path (a : X) b) (t : I) :
+    ((subtypeValHomeomorph hS).symm γ t : X) = γ t :=
+  (rfl)
+
 theorem continuous_initialSegmentFamily_uncurry {a b : X} (γ : Path a b) :
     Continuous ↿(initialSegmentFamily γ) := by
   have hincl : Continuous (fun ts : I × I ↦ ((ts.1 : ℝ), ts.2) : I × I → ℝ × I) := by fun_prop
@@ -248,6 +293,35 @@ theorem exists_homotopy_forall_mem_of_isSimplyConnected {V : Set X} (hV : IsSimp
     (map_codRestrict (x := ⟨a, haV⟩) (y := ⟨b, hbV⟩) p hp)
     (map_codRestrict (x := ⟨a, haV⟩) (y := ⟨b, hbV⟩) q hq), fun t x => ?_⟩
   simp
+
+/-- The continuous family of paths from `x₀` to `x₁` given by a jointly continuous map `F` on
+`Y × [0, 1]` which sends `Y × {0}` to `x₀` and `Y × {1}` to `x₁`. -/
+def continuousFamily {Y : Type*} [TopologicalSpace Y] {x₀ x₁ : X} (F : Y → I → X)
+    (hF : Continuous ↿F) (h₀ : ∀ y, F y 0 = x₀) (h₁ : ∀ y, F y 1 = x₁) : C(Y, Path x₀ x₁) where
+  toFun y := ⟨⟨F y, hF.comp (continuous_const.prodMk continuous_id)⟩, h₀ y, h₁ y⟩
+  continuous_toFun := continuous_uncurry_iff.1 hF
+
+@[simp]
+theorem continuousFamily_apply {Y : Type*} [TopologicalSpace Y] {x₀ x₁ : X} (F : Y → I → X)
+    (hF : Continuous ↿F) (h₀ : ∀ y, F y 0 = x₀) (h₁ : ∀ y, F y 1 = x₁) (y : Y) (t : I) :
+    continuousFamily F hF h₀ h₁ y t = F y t :=
+  (rfl)
+
+/-- The path from `p` to `q` in the space of paths from `x₀` to `x₁` given by a jointly continuous
+map `F` on `[0, 1] × [0, 1]` which sends `[0, 1] × {0}` to `x₀` and `[0, 1] × {1}` to `x₁`, and
+restricts to `p` on `{0} × [0, 1]` and to `q` on `{1} × [0, 1]`. -/
+def ofContinuousFamily {x₀ x₁ : X} {p q : Path x₀ x₁} (F : I → I → X) (hF : Continuous ↿F)
+    (h₀ : ∀ s, F s 0 = x₀) (h₁ : ∀ s, F s 1 = x₁) (hp : ∀ t, F 0 t = p t)
+    (hq : ∀ t, F 1 t = q t) : Path p q where
+  toContinuousMap := continuousFamily F hF h₀ h₁
+  source' := Path.ext (funext fun t ↦ (continuousFamily_apply F hF h₀ h₁ 0 t).trans (hp t))
+  target' := Path.ext (funext fun t ↦ (continuousFamily_apply F hF h₀ h₁ 1 t).trans (hq t))
+
+@[simp]
+theorem ofContinuousFamily_apply {x₀ x₁ : X} {p q : Path x₀ x₁} (F : I → I → X)
+    (hF : Continuous ↿F) (h₀ : ∀ s, F s 0 = x₀) (h₁ : ∀ s, F s 1 = x₁) (hp : ∀ t, F 0 t = p t)
+    (hq : ∀ t, F 1 t = q t) (s t : I) : ofContinuousFamily F hF h₀ h₁ hp hq s t = F s t :=
+  (rfl)
 
 /-- **A square with prescribed edges is a path homotopy.** A continuous map on `I × I` that
 restricts to `p` at `t = 0` and to `q` at `t = 1`, and is constant along each of the edges `s = 0`
@@ -407,6 +481,124 @@ theorem homotopicWith_trans_trans_symm {a b : X} (χ : Path a b) (ℓ : Path b b
      prop' s := conjHomotopyFun_zero_eq_one (A := Unit) (fun _ ↦ χ) (fun _ ↦ ℓ) (s, ()) }⟩
 
 end Conjugation
+
+section Cancellation
+
+variable {A : Type*} {x y z w : X}
+
+/-- The explicit homotopy from `(α · ρ⁻¹) · (ρ · β⁻¹)` to `α · β⁻¹`: at time `r`, with
+`c = (1 + r) / 4`, it runs along `α` on `[0, c]`, then on `[c, 1 - c]` backwards along `ρ` down to
+`ρ r` and forwards again, and finally backwards along `β` on `[1 - c, 1]`. -/
+private noncomputable def cancelHomotopyFun (α : A → Path x y) (ρ : A → Path w y)
+    (β : A → Path z y) (q : (I × A) × I) : X :=
+  if (q.2 : ℝ) ≤ (1 + (q.1.1 : ℝ)) / 4 then (α q.1.2).extend ((q.2 : ℝ) / ((1 + q.1.1) / 4))
+  else if (q.2 : ℝ) ≤ 1 - (1 + (q.1.1 : ℝ)) / 4 then
+    (ρ q.1.2).extend ((q.1.1 : ℝ) + 2 * |2 * (q.2 : ℝ) - 1|)
+  else (β q.1.2).extend ((1 - (q.2 : ℝ)) / ((1 + q.1.1) / 4))
+
+private theorem pos_cancel (r : I) : 0 < (1 + (r : ℝ)) / 4 := by
+  have := r.2.1; positivity
+
+private theorem continuous_cancelHomotopyFun [TopologicalSpace A] {α : A → Path x y}
+    {ρ : A → Path w y} {β : A → Path z y} (hα : Continuous α) (hρ : Continuous ρ)
+    (hβ : Continuous β) : Continuous (cancelHomotopyFun α ρ β) := by
+  have hαe := continuous_uncurry_extend_of_continuous_family α (continuous_uncurry_iff.2 hα)
+  have hρe := continuous_uncurry_extend_of_continuous_family ρ (continuous_uncurry_iff.2 hρ)
+  have hβe := continuous_uncurry_extend_of_continuous_family β (continuous_uncurry_iff.2 hβ)
+  refine Continuous.if_le ?_ (Continuous.if_le ?_ ?_ (by fun_prop) (by fun_prop) ?_)
+    (by fun_prop) (by fun_prop) ?_
+  · exact hαe.comp ((by fun_prop : Continuous fun q : (I × A) × I => q.1.2).prodMk
+      ((by fun_prop : Continuous fun q : (I × A) × I => (q.2 : ℝ)).div (by fun_prop)
+        fun q => (pos_cancel q.1.1).ne'))
+  · exact hρe.comp ((by fun_prop : Continuous fun q : (I × A) × I => q.1.2).prodMk
+      (by fun_prop : Continuous fun q : (I × A) × I => (q.1.1 : ℝ) + 2 * |2 * (q.2 : ℝ) - 1|))
+  · exact hβe.comp ((by fun_prop : Continuous fun q : (I × A) × I => q.1.2).prodMk
+      ((by fun_prop : Continuous fun q : (I × A) × I => 1 - (q.2 : ℝ)).div (by fun_prop)
+        fun q => (pos_cancel q.1.1).ne'))
+  · rintro ⟨⟨r, a⟩, t⟩ (h : (t : ℝ) = 1 - (1 + r) / 4)
+    have hr := r.2.2
+    rw [h, show |2 * (1 - (1 + (r : ℝ)) / 4) - 1| = 1 - 2 * ((1 + r) / 4) by
+        rw [abs_of_nonneg (by linarith)]; ring,
+      show (r : ℝ) + 2 * (1 - 2 * ((1 + r) / 4)) = 1 by ring,
+      show 1 - (1 - (1 + (r : ℝ)) / 4) = (1 + r) / 4 by ring, div_self (pos_cancel r).ne',
+      extend_one, extend_one]
+  · rintro ⟨⟨r, a⟩, t⟩ (h : (t : ℝ) = (1 + r) / 4)
+    have hr := r.2.2
+    have hle : (1 + (r : ℝ)) / 4 ≤ 1 - (1 + r) / 4 := by linarith
+    simp only [h, hle, ite_true]
+    rw [div_self (pos_cancel r).ne', show |2 * ((1 + (r : ℝ)) / 4) - 1| = 1 - 2 * ((1 + r) / 4) by
+        rw [abs_of_nonpos (by linarith)]; ring,
+      show (r : ℝ) + 2 * (1 - 2 * ((1 + r) / 4)) = 1 by ring, extend_one, extend_one]
+
+private theorem cancelHomotopyFun_zero (α : A → Path x y) (ρ : A → Path w y)
+    (β : A → Path z y) (a : A) (t : I) :
+    cancelHomotopyFun α ρ β ((0, a), t) =
+      (((α a).trans (ρ a).symm).trans ((ρ a).trans (β a).symm)) t := by
+  have ht0 := t.2.1
+  have ht1 := t.2.2
+  simp only [cancelHomotopyFun, Set.Icc.coe_zero, add_zero, trans_apply, symm_apply]
+  split_ifs with h₁ h₂ h₃ h₄ h₅ h₆ <;> try (exfalso; linarith)
+  · rw [extend_apply _ ⟨by positivity, by linarith⟩]
+    congr 1; ext; simp only; ring
+  · rw [abs_of_nonpos (by linarith), extend_apply _ ⟨by linarith, by linarith⟩]
+    simp only [Function.comp_apply, unitInterval.symm]
+    congr 1; ext; simp only; ring
+  · rw [abs_of_nonneg (by linarith), extend_apply _ ⟨by linarith, by linarith⟩]
+    congr 1; ext; simp only; ring
+  · rw [extend_apply _ ⟨by linarith, by linarith⟩]
+    simp only [Function.comp_apply, unitInterval.symm]
+    congr 1; ext; simp only; ring
+
+private theorem cancelHomotopyFun_one (α : A → Path x y) (ρ : A → Path w y)
+    (β : A → Path z y) (a : A) (t : I) :
+    cancelHomotopyFun α ρ β ((1, a), t) = ((α a).trans (β a).symm) t := by
+  have ht0 := t.2.1
+  have ht1 := t.2.2
+  simp only [cancelHomotopyFun, Set.Icc.coe_one, trans_apply, symm_apply]
+  split_ifs with h₁ h₂ h₃ h₄ <;> try (exfalso; linarith)
+  · rw [extend_apply _ ⟨by positivity, by linarith⟩]
+    congr 1; ext; simp only; ring
+  · rw [extend_apply _ ⟨by linarith, by linarith⟩]
+    simp only [Function.comp_apply, unitInterval.symm]
+    congr 1; ext; simp only; ring
+
+private theorem cancelHomotopyFun_source (α : A → Path x y) (ρ : A → Path w y)
+    (β : A → Path z y) (q : I × A) : cancelHomotopyFun α ρ β (q, 0) = x := by
+  simp [cancelHomotopyFun, (pos_cancel q.1).le]
+
+private theorem cancelHomotopyFun_target (α : A → Path x y) (ρ : A → Path w y)
+    (β : A → Path z y) (q : I × A) : cancelHomotopyFun α ρ β (q, 1) = z := by
+  have := q.1.2.1
+  have h₁ : ¬ (1 : ℝ) ≤ (1 + q.1) / 4 := by linarith [q.1.2.2]
+  have h₂ : ¬ (1 : ℝ) ≤ 1 - (1 + q.1) / 4 := by linarith
+  simp [cancelHomotopyFun, h₁, h₂]
+
+variable [TopologicalSpace A]
+
+/-- **Cancelling a back-and-forth path, in families.** For continuous families of paths
+`α a : x ⇝ y`, `ρ a : w ⇝ y` and `β a : z ⇝ y`, the two families of paths from `x` to `z`
+
+`a ↦ (α a · (ρ a)⁻¹) · (ρ a · (β a)⁻¹)` and `a ↦ α a · (β a)⁻¹`
+
+are homotopic as maps from `A` to the space of paths: the detour along `ρ a` and back is
+shrunk to the end point `y`, uniformly in `a`. -/
+theorem homotopic_trans_symm_trans_trans_symm {α : A → Path x y} {ρ : A → Path w y}
+    {β : A → Path z y} (hα : Continuous α) (hρ : Continuous ρ) (hβ : Continuous β) :
+    (⟨fun a ↦ ((α a).trans (ρ a).symm).trans ((ρ a).trans (β a).symm),
+        (hα.path_trans (continuous_symm.comp hρ)).path_trans
+          (hρ.path_trans (continuous_symm.comp hβ))⟩ : C(A, Path x z)).Homotopic
+      ⟨fun a ↦ (α a).trans (β a).symm, hα.path_trans (continuous_symm.comp hβ)⟩ :=
+  ⟨{ toFun q :=
+      { toFun t := cancelHomotopyFun α ρ β (q, t)
+        continuous_toFun := (continuous_cancelHomotopyFun hα hρ hβ).comp (by fun_prop)
+        source' := cancelHomotopyFun_source α ρ β q
+        target' := cancelHomotopyFun_target α ρ β q }
+     continuous_toFun := continuous_uncurry_iff.mp
+        ((continuous_cancelHomotopyFun hα hρ hβ).comp (by fun_prop))
+     map_zero_left a := Path.ext <| funext <| cancelHomotopyFun_zero α ρ β a
+     map_one_left a := Path.ext <| funext <| cancelHomotopyFun_one α ρ β a }⟩
+
+end Cancellation
 
 /-- If every parameter `s` has some `γ ⁻¹' U i` as a neighbourhood, then `γ` can be subdivided
 at finitely many monotone times, starting at `0` and ending at `1`, so that the subpath between

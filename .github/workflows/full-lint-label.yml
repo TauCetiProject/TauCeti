@@ -19,7 +19,10 @@ jobs:
       (github.event.action == 'labeled' && github.event.label.name == 'full-lint') ||
       (contains(github.event.pull_request.labels.*.name, 'self-tested') &&
        contains(fromJSON('["full-lint", "lint-repair"]'), github.event.label.name))
-    runs-on: ubuntu-latest
+    # Fleet CI pool (the class nightly-verify uses), not the backlogged GitHub-hosted pool.
+    # No App private key enters this job; it holds only the workflow token.
+    # Set vars.PICKER_GITHUB_FALLBACK='true' to fall back to ubuntu-24.04 without a PR.
+    runs-on: ${{ (vars.FLEET_CI_ENABLED == 'true' && vars.PICKER_GITHUB_FALLBACK != 'true') && fromJSON('{"group":"TauCetiFleet","labels":["self-hosted","linux","x64","tauceti-fleet-pr"]}') || 'ubuntu-24.04' }}
     steps:
       - name: Dispatch pr-build for this PR
         env:
