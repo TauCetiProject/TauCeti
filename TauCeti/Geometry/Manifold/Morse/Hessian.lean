@@ -57,7 +57,7 @@ Morse index is the negative index of inertia of the critical Hessian.
   tangent to a family of critical points.
 * `TauCeti.criticalHessian_comp_apply`: the second-order chain rule at a critical point, for a
   `C²` map between boundaryless manifolds. `TauCeti.toQuadraticMap_toBilinForm_criticalHessian_comp`
-  applies it to `ℓ ∘ F` for a linear functional `ℓ` vanishing on the image of `dF`.
+  states it as an equality of quadratic forms precomposed with `dφ`.
 * `TauCeti.criticalHessian_comp_snd_apply`: the critical Hessian of `(x, v) ↦ q v` on `M × V` is the
   second derivative of `q` on the second components.
   Its kernel is described by `TauCeti.criticalHessian_comp_snd_apply_eq_zero_iff`.
@@ -706,25 +706,17 @@ theorem criticalHessian_comp_apply {x : M} (hφx : φ y = x) (hf : ContMDiffAt I
   -- `writtenInExtChartAt` is by definition `φ` read in the extended charts at `y` and `φ y`.
   rfl
 
-/-- **Hessians of `ℓ ∘ F` under a `C²` map.** Let `φ` be `C²` at `y` and let `F` be `C²` at `φ y`.
-For a linear functional `ℓ` on `G` vanishing on the image of `dF_{φ y}`, the point `φ y` is
-critical for `ℓ ∘ F`, and the second-order chain rule identifies the critical Hessian of
-`ℓ ∘ F ∘ φ` at `y` with that of `ℓ ∘ F` at `φ y` precomposed with `dφ_y`. No condition is put on
+/-- **The second-order chain rule as quadratic forms.** If `φ y` is a critical point of a
+function `f` which is `C²` there, and `φ` is `C²` at `y`, then the quadratic form of the critical
+Hessian of `f ∘ φ` at `y` is that of `f` at `φ y` precomposed with `dφ_y`. No condition is put on
 `dφ_y`. -/
-theorem toQuadraticMap_toBilinForm_criticalHessian_comp {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] {F : M → G} (hφ : ContMDiffAt I' I 2 φ y)
-    (hF : ContMDiffAt I 𝓘(ℝ, G) 2 F (φ y)) {ℓ : G →L[ℝ] ℝ}
-    (hℓ : ℓ.comp (mvfderiv I F (φ y)) = 0) :
-    (criticalHessian I' (ℓ ∘ F ∘ φ) y).toBilinForm.toQuadraticMap =
-      (criticalHessian I (ℓ ∘ F) (φ y)).toBilinForm.toQuadraticMap.comp
+theorem toQuadraticMap_toBilinForm_criticalHessian_comp (hf : ContMDiffAt I 𝓘(ℝ) 2 f (φ y))
+    (hφ : ContMDiffAt I' I 2 φ y) (hcrit : φ y ∈ criticalPoints I f) :
+    (criticalHessian I' (f ∘ φ) y).toBilinForm.toQuadraticMap =
+      (criticalHessian I f (φ y)).toBilinForm.toQuadraticMap.comp
         (mfderiv I' I φ y : TangentSpace I' y →ₗ[ℝ] TangentSpace I (φ y)) := by
-  have hcrit : φ y ∈ criticalPoints I (ℓ ∘ F) := by
-    refine mem_criticalPoints.2 (ContinuousLinearMap.ext fun v ↦ ?_)
-    rw [ℓ.mvfderiv_comp_apply (hF.mdifferentiableAt two_ne_zero)]
-    simpa using congr($hℓ v)
   ext u
-  simp [← Function.comp_assoc,
-    criticalHessian_comp_apply rfl (ℓ.contMDiff.contMDiffAt.comp _ hF) hφ hcrit]
+  simp [criticalHessian_comp_apply rfl hf hφ hcrit]
 
 end Comp
 

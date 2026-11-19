@@ -192,7 +192,10 @@ private theorem isNondegeneratePoint_iff_comp_right_aux
   have hQ (ℓ : G →L[ℝ] ℝ) (hℓ : ℓ.comp (mvfderiv I F (φ y)) = 0) :
       (criticalHessian I' (ℓ ∘ F ∘ φ) y).toBilinForm.toQuadraticMap =
         (criticalHessian I (ℓ ∘ F) (φ y)).toBilinForm.toQuadraticMap.comp e.toLinearEquiv := by
-    rw [toQuadraticMap_toBilinForm_criticalHessian_comp hφ hF hℓ, ← he,
+    have hcrit : φ y ∈ criticalPoints I (ℓ ∘ F) := mem_criticalPoints.2 <|
+      ContinuousLinearMap.ext fun v ↦ by simpa [ℓ.mvfderiv_comp_apply hFd] using congr($hℓ v)
+    rw [← Function.comp_assoc, toQuadraticMap_toBilinForm_criticalHessian_comp
+      (ℓ.contMDiff.contMDiffAt.comp _ hF) hφ hcrit, ← he,
       ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
   have hsymp : SymplecticForm.IsSymplectomorphism η (hσ.symplecticFormAt (φ y)) e.toLinearEquiv :=
     SymplecticForm.isSymplectomorphism_iff.2 fun u w ↦ by simp [← hη, ← he]
