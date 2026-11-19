@@ -7,13 +7,17 @@ module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import Mathlib.Data.Nat.GCD.BigOperators
+import Mathlib.Algebra.CharP.Basic
+import Mathlib.Algebra.Group.Int.Units
 
 /-!
 # Dirichlet character conductors
 
 Inversion preserves primitivity, and a primitive character is trivial exactly at level one. An
 injective change of coefficient ring preserves factorization through a lower level, hence the
-conductor and primitivity of a Dirichlet character. The conductor of a product of Dirichlet
+conductor and primitivity of a Dirichlet character. Casting an integer-valued character into a
+nontrivial ring of characteristic different from two also preserves its conductor. The conductor
+of a product of Dirichlet
 characters with pairwise coprime conductors is the product of their conductors.
 -/
 
@@ -26,7 +30,7 @@ theorem IsPrimitive.eq_one_iff {R : Type*} [CommMonoidWithZero R] {n : ℕ} [NeZ
     {χ : DirichletCharacter R n} (hχ : χ.IsPrimitive) : χ = 1 ↔ n = 1 := by
   rw [eq_one_iff_conductor_eq_one, (isPrimitive_def _).mp hχ]
 
-/-! ### Injective changes of the coefficient ring -/
+/-! ### Changes of the coefficient ring -/
 
 /-- Factoring a Dirichlet character through a lower level is unchanged by an injective change of
 coefficient ring. -/
@@ -48,6 +52,32 @@ theorem conductor_ringHomComp {R R' : Type*} [CommRing R] [CommRing R']
   obtain rfl | _ := eq_zero_or_neZero n
   · simp only [conductor_eq_zero_iff_level_eq_zero.mpr]
   exact congrArg sInf (Set.ext fun _ ↦ factorsThrough_ringHomComp_iff χ f hf)
+
+/-- Casting an integer-valued Dirichlet character into a nontrivial ring of characteristic
+other than two preserves its conductor, including at level zero. No quadraticity hypothesis is
+needed: integer-valued characters take only `1` and `-1` on units. -/
+theorem conductor_ringHomComp_intCast {R : Type*} [CommRing R] [Nontrivial R]
+    {n : ℕ} (χ : DirichletCharacter ℤ n) (hR : ringChar R ≠ 2) :
+    conductor (χ.ringHomComp (Int.castRingHom R)) = conductor χ := by
+  obtain rfl | _ := eq_zero_or_neZero n
+  · simp only [conductor_eq_zero_iff_level_eq_zero.mpr]
+  refine congrArg sInf (Set.ext fun d ↦ ?_)
+  -- ConductorSet is definitionally the set of levels through which the character factors.
+  change FactorsThrough (χ.ringHomComp (Int.castRingHom R)) d ↔ FactorsThrough χ d
+  by_cases hd : d ∣ n
+  · rw [factorsThrough_iff_ker_unitsMap hd, factorsThrough_iff_ker_unitsMap hd]
+    suffices (χ.ringHomComp (Int.castRingHom R)).toUnitHom.ker = χ.toUnitHom.ker by rw [this]
+    ext u
+    simp only [MonoidHom.mem_ker, Units.ext_iff, MulChar.coe_toUnitHom,
+      MulChar.ringHomComp_apply, eq_intCast, Units.val_one]
+    refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+    · have hunit : IsUnit (χ (u : ZMod n)) := u.isUnit.map χ.toMonoidHom
+      rcases Int.isUnit_iff.mp hunit with hu | hu
+      · exact hu
+      · rw [hu, Int.cast_neg, Int.cast_one] at h
+        exact (Ring.neg_one_ne_one_of_char_ne_two hR h).elim
+    · rw [h, Int.cast_one]
+  · exact iff_of_false (mt FactorsThrough.dvd hd) (mt FactorsThrough.dvd hd)
 
 /-- An injective change of coefficient ring preserves primitivity of a Dirichlet character. -/
 theorem isPrimitive_ringHomComp_iff {R R' : Type*} [CommRing R] [CommRing R']

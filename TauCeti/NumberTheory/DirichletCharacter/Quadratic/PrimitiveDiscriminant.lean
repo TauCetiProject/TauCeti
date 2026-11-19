@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.OfSquarefree
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Realization
 import Mathlib.Tactic.NormNum.LegendreSymbol
+import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.NumberTheory.DirichletCharacter.Dyadic.Classification
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic.FundamentalDiscriminant
 import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Values
@@ -243,9 +244,8 @@ theorem not_isSquare_of_apply_natCast_eq_neg_one [NeZero (2 : R)] {N : ℕ}
     (hval : ∀ m : ℤ, IsCoprime m N → χ m = fundamentalDiscriminantCharCast R D hD m)
     {n : ℕ} (hn : _root_.Odd n) (hχn : χ n = -1) :
     ¬ IsSquare (D : ZMod n) := by
-  have : Nontrivial R := nontrivial_of_ne 2 0 two_ne_zero
-  have hR : ringChar R ≠ 2 := fun h ↦
-    two_ne_zero (Nat.cast_two (R := R) ▸ (ringChar.spec R 2).mpr h.dvd)
+  have : Nontrivial R := NeZero.nontrivial (2 : R)
+  have hR : ringChar R ≠ 2 := TauCeti.ringChar_ne_two_of_neZero_two R
   have hcop : n.Coprime N := Nat.isCoprime_iff_coprime.mp <|
     (χ.apply_ne_zero_iff n).mp (by rw [Int.cast_natCast, hχn]; exact neg_ne_zero.mpr one_ne_zero)
   have hjac : (jacobiSym D n : R) = ((-1 : ℤ) : R) := by

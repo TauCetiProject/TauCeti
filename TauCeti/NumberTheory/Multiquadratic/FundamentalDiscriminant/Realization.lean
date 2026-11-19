@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Character
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
+import TauCeti.Algebra.CharP.Lemmas
 
 /-!
 # Scalar realizations of fundamental-discriminant characters
@@ -59,27 +60,10 @@ variable {R : Type*} [CommRing R] [NeZero (2 : R)]
 level `|D|`. -/
 theorem isPrimitive_fundamentalDiscriminantCharCast (hD : Int.IsFundamentalDiscr D) :
     (fundamentalDiscriminantCharCast R D hD).IsPrimitive := by
-  have := hD.neZero_natAbs
-  have : Nontrivial R := nontrivial_of_ne 2 0 two_ne_zero
-  have hR : ringChar R ≠ 2 := fun h ↦
-    two_ne_zero (Nat.cast_two (R := R) ▸ (ringChar.spec R 2).mpr h.dvd)
-  refine Nat.dvd_antisymm (conductor_dvd_level _) ?_
-  have hdvd : (fundamentalDiscriminantChar D hD).conductor ∣
-      (fundamentalDiscriminantCharCast R D hD).conductor := by
-    refine conductor_dvd_of_mem_conductorSet _ ?_
-    have hfac := factorsThrough_conductor (fundamentalDiscriminantCharCast R D hD)
-    rw [mem_conductorSet_iff, factorsThrough_iff_ker_unitsMap (conductor_dvd_level _)]
-    rw [factorsThrough_iff_ker_unitsMap (conductor_dvd_level _)] at hfac
-    intro u hu
-    have h1 : (fundamentalDiscriminantChar D hD u : R) = ((1 : ℤ) : R) := by
-      have hu' := congrArg Units.val (MonoidHom.mem_ker.mp (hfac hu))
-      rw [MulChar.coe_toUnitHom, fundamentalDiscriminantCharCast_apply, Units.val_one,
-        ← Int.cast_one] at hu'
-      exact hu'
-    rw [MonoidHom.mem_ker, Units.ext_iff, MulChar.coe_toUnitHom, Units.val_one]
-    exact Int.cast_injOn_of_ringChar_ne_two hR
-      (fundamentalDiscriminantChar_isQuadratic hD u) (Or.inr (Or.inl rfl)) h1
-  rwa [(isPrimitive_def _).mp (isPrimitive_fundamentalDiscriminantChar hD)] at hdvd
+  have : Nontrivial R := NeZero.nontrivial (2 : R)
+  simpa only [fundamentalDiscriminantCharCast, isPrimitive_def,
+    conductor_ringHomComp_intCast _ (TauCeti.ringChar_ne_two_of_neZero_two R)] using
+    isPrimitive_fundamentalDiscriminantChar hD
 
 /-- Whenever `2 ≠ 0` in the coefficient ring, the realized character has conductor
 exactly `|D|`. -/
