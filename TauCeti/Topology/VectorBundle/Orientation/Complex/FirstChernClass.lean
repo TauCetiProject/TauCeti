@@ -16,19 +16,19 @@ oriented by `(v, i v)` for any nonzero `v` (`TauCeti.VectorBundleOrientation.com
 **first Chern class** `c₁(L) ∈ H²(B; ℤ)` (`TauCeti.lineFirstChernClass`) is the Euler class of this
 oriented plane bundle, which is `TauCeti.complexEulerClass` in complex rank one.
 
-The first laws are inherited from those of the Euler class:
+The laws are the canonical Euler-class laws at `r := 0`, applied directly through
+`TauCeti.lineFirstChernClass_def`:
 
-* naturality under continuous pullback (`TauCeti.lineFirstChernClass_pullback`), and more generally
-  under a fibrewise complex-linear isomorphism over a continuous map of bases
-  (`TauCeti.lineFirstChernClass_eq_singularCohomologyMap_of_fiberwise`);
-* invariance under complex-linear isomorphism of line bundles over the same base, possibly with
-  different model fibres (`TauCeti.lineFirstChernClass_eq_of_fiberwise`);
-* vanishing for a line bundle with a nowhere-zero continuous section
-  (`TauCeti.lineFirstChernClass_eq_zero_of_forall_ne_zero`), in particular for the trivial line
-  bundle `B × F` (`TauCeti.lineFirstChernClass_trivial`);
-* the sign rule for the conjugate line: a fibrewise conjugate-linear isomorphism `L' ≅ L` gives
-  `c₁(L') = -c₁(L)` (`TauCeti.lineFirstChernClass_eq_neg_of_conjugateFiberwise`), since it carries
-  the complex orientation `(v, i v)` of `L'` to the opposite orientation `(φ v, -i φ v)` of `L`.
+* `TauCeti.complexEulerClass_pullback` and
+  `TauCeti.complexEulerClass_eq_singularCohomologyMap_of_fiberwise` give naturality under
+  continuous pullback and fibrewise complex-linear isomorphisms over a continuous base map;
+* `TauCeti.complexEulerClass_eq_of_fiberwise` gives invariance under bundle isomorphism;
+* `TauCeti.complexEulerClass_eq_zero_of_forall_ne_zero` and
+  `TauCeti.complexEulerClass_trivial` give vanishing for a nowhere-zero section and a trivial line;
+* `TauCeti.complexEulerClass_eq_neg_of_finrank_eq_one_of_conjugateFiberwise` gives
+  `c₁(L') = -c₁(L)` under a fibrewise conjugate-linear isomorphism; for a continuous base map use
+  `TauCeti.complexEulerClass_eq_neg_one_pow_smul_singularCohomologyMap_of_conjugateFiberwise`
+  at `r := 0`, simplifying `pow_one` and `neg_one_zsmul`.
 
 The conjugate statement is phrased for an abstract fibrewise conjugate-linear isomorphism, so it
 applies to every model of the conjugate line `conj L`, and, through the conjugate-linear Riesz
@@ -92,98 +92,6 @@ theorem lineFirstChernClass_def :
     lineFirstChernClass F E hF = complexEulerClass F E (r := 0) hF :=
   (rfl)
 
-/-- **Naturality of the first Chern class.** The first Chern class of the pullback `f*L` along a
-continuous map `f : B' → B` is the pull-back along `f` of the first Chern class of `L`. -/
-theorem lineFirstChernClass_pullback {B' : Type w} [TopologicalSpace B'] (f : C(B', B)) :
-    lineFirstChernClass F ((⇑f) *ᵖ E) hF =
-      TopCat.singularCohomologyMap (TopCat.ofHom f) 2 (lineFirstChernClass F E hF) :=
-  complexEulerClass_pullback F E (r := 0) hF f
-
-/-- **A nowhere-vanishing section kills the first Chern class.** If the complex line bundle `L` has
-a continuous section `s` with `s b ≠ 0` for every `b`, then `c₁(L) = 0`. -/
-theorem lineFirstChernClass_eq_zero_of_forall_ne_zero {s : ∀ b, E b}
-    (hs : Continuous fun b ↦ TotalSpace.mk' F b (s b)) (hs₀ : ∀ b, s b ≠ 0) :
-    lineFirstChernClass F E hF = 0 :=
-  complexEulerClass_eq_zero_of_forall_ne_zero F E (r := 0) hF hs hs₀
-
-variable (B) in
-/-- **The first Chern class of the trivial line bundle vanishes**: `c₁(B × F) = 0` for a model
-fibre `F` of complex dimension one. -/
-@[simp]
-theorem lineFirstChernClass_trivial : lineFirstChernClass F (Bundle.Trivial B F) hF = 0 :=
-  complexEulerClass_trivial B F (r := 0) hF
-
 end Definition
-
-/-! ### Fibrewise complex- and conjugate-linear isomorphisms -/
-
-section Fiberwise
-
-variable {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F]
-  [IsScalarTower ℝ ℂ F] [FiniteDimensional ℂ F]
-  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommGroup (E b)]
-  [∀ b, Module ℝ (E b)] [∀ b, Module ℂ (E b)] [∀ b, IsScalarTower ℝ ℂ (E b)]
-  [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℂ F E]
-  (hF : finrank ℂ F = 1)
-
-section BaseMap
-
-variable {B' : Type w} [TopologicalSpace B']
-  {F' : Type w} [NormedAddCommGroup F'] [NormedSpace ℝ F'] [NormedSpace ℂ F']
-  [IsScalarTower ℝ ℂ F'] [FiniteDimensional ℂ F']
-  {E' : B' → Type w} [TopologicalSpace (TotalSpace F' E')] [∀ b, AddCommGroup (E' b)]
-  [∀ b, Module ℝ (E' b)] [∀ b, Module ℂ (E' b)] [∀ b, IsScalarTower ℝ ℂ (E' b)]
-  [∀ b, TopologicalSpace (E' b)] [FiberBundle F' E'] [VectorBundle ℂ F' E']
-  (hF' : finrank ℂ F' = 1)
-
-/-- **Naturality of the first Chern class under complex-linear bundle maps.** For a fibrewise
-complex-linear isomorphism `φ b' : L'_{b'} ≃ L_{g b'}` of complex line bundles over a continuous
-map `g : B' → B`, continuous on total spaces, `c₁(L')` is the pull-back along `g` of `c₁(L)`. -/
-theorem lineFirstChernClass_eq_singularCohomologyMap_of_fiberwise {g : C(B', B)}
-    {φ : ∀ b', E' b' ≃L[ℂ] E (g b')}
-    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.2)) :
-    lineFirstChernClass F' E' hF' =
-      TopCat.singularCohomologyMap (TopCat.ofHom g) 2 (lineFirstChernClass F E hF) :=
-  complexEulerClass_eq_singularCohomologyMap_of_fiberwise (r := 0) hF hF' hφ
-
-/-- **Conjugate-linear bundle maps negate the first Chern class.** For a fibrewise conjugate-linear
-isomorphism `φ b' : L'_{b'} ≃ L_{g b'}` of complex line bundles over a continuous map `g : B' → B`,
-continuous on total spaces, `c₁(L')` is minus the pull-back along `g` of `c₁(L)`. -/
-theorem lineFirstChernClass_eq_neg_singularCohomologyMap_of_conjugateFiberwise {g : C(B', B)}
-    {φ : ∀ b', E' b' ≃L⋆[ℂ] E (g b')}
-    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.2)) :
-    lineFirstChernClass F' E' hF' =
-      -TopCat.singularCohomologyMap (TopCat.ofHom g) 2 (lineFirstChernClass F E hF) := by
-  rw [lineFirstChernClass_def,
-    complexEulerClass_eq_neg_one_pow_smul_singularCohomologyMap_of_conjugateFiberwise (r := 0) hF
-      hF' hφ, pow_one, neg_one_zsmul]
-  rfl
-
-end BaseMap
-
-variable {F' : Type w} [NormedAddCommGroup F'] [NormedSpace ℝ F'] [NormedSpace ℂ F']
-  [IsScalarTower ℝ ℂ F'] [FiniteDimensional ℂ F']
-  {E' : B → Type w} [TopologicalSpace (TotalSpace F' E')] [∀ b, AddCommGroup (E' b)]
-  [∀ b, Module ℝ (E' b)] [∀ b, Module ℂ (E' b)] [∀ b, IsScalarTower ℝ ℂ (E' b)]
-  [∀ b, TopologicalSpace (E' b)] [FiberBundle F' E'] [VectorBundle ℂ F' E']
-  (hF' : finrank ℂ F' = 1)
-
-/-- **Isomorphic complex line bundles have the same first Chern class.** For a fibrewise
-complex-linear isomorphism `φ b : L'_b ≃ L_b` over the same base, continuous on total spaces,
-`c₁(L') = c₁(L)`. The model fibres of `L'` and `L` may differ. -/
-theorem lineFirstChernClass_eq_of_fiberwise {φ : ∀ b, E' b ≃L[ℂ] E b}
-    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F v.proj (φ v.proj v.2)) :
-    lineFirstChernClass F' E' hF' = lineFirstChernClass F E hF :=
-  complexEulerClass_eq_of_fiberwise (r := 0) hF hF' hφ
-
-/-- **The first Chern class of the conjugate line is the negative**: for a fibrewise
-conjugate-linear isomorphism `φ b : L'_b ≃ L_b` over the same base, continuous on total spaces,
-`c₁(L') = -c₁(L)`. This is `c₁(conj L) = -c₁(L)` for any model of the conjugate line `conj L`. -/
-theorem lineFirstChernClass_eq_neg_of_conjugateFiberwise {φ : ∀ b, E' b ≃L⋆[ℂ] E b}
-    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F v.proj (φ v.proj v.2)) :
-    lineFirstChernClass F' E' hF' = -lineFirstChernClass F E hF :=
-  complexEulerClass_eq_neg_of_finrank_eq_one_of_conjugateFiberwise hF hF' hφ
-
-end Fiberwise
 
 end TauCeti
