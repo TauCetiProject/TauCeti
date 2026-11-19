@@ -95,6 +95,22 @@ theorem isOrientationPreservingAt_iff [IsManifold I 1 M] [IsManifold I' 1 M']
           _root_.Orientation.map ι e.toLinearEquiv (o.orientationAt x) = o'.orientationAt (f x) :=
   Iff.rfl
 
+/-- An orientation-preserving map preserves the actual empty-basis sign of a rank-zero tangent
+orientation, even when its source and target use different normed models. -/
+theorem IsOrientationPreservingAt.orientationAt_eq_positiveOrientation_iff
+    [IsManifold I 1 M] [IsManifold I' 1 M'] [IsEmpty ι]
+    {o : Manifold.Orientation I M ι} {o' : Manifold.Orientation I' M' ι}
+    {f : M → M'} {x : M} (h : IsOrientationPreservingAt o o' f x) :
+    o.orientationAt x = positiveOrientation ↔ o'.orientationAt (f x) = positiveOrientation := by
+  obtain ⟨e, _, he⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 h
+  have hp := _root_.Orientation.map_positiveOrientation_of_isEmpty (ι := ι) e.toLinearEquiv
+  constructor
+  · intro hx
+    exact he.symm.trans ((congrArg (_root_.Orientation.map ι e.toLinearEquiv) hx).trans hp)
+  · intro hx
+    exact (_root_.Orientation.map ι e.toLinearEquiv).injective
+      (he.trans (hx.trans hp.symm))
+
 /-- A map reverses orientations at `x` when its manifold derivative is an equivalence that maps
 `o`'s tangent orientation at `x` to the opposite of `o'`'s tangent orientation at `f x`. -/
 def IsOrientationReversingAt [IsManifold I 1 M] [IsManifold I' 1 M']

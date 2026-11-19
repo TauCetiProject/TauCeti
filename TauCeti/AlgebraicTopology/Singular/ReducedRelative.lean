@@ -52,6 +52,9 @@ lemma singularHomology₀Section_singularHomologyMap {Q : TopPair.{w}} (f : P �
     (singularHomology₀Section R x ≫ P.singularHomologyπ R 0) ≫
         TopPair.singularHomologyMap f R 0 =
       singularHomology₀Section R y ≫ Q.singularHomologyπ R 0 := by
+  -- The singular-functor and simplicial homology objects are only definitionally equal after
+  -- unfolding. Rewriting `Category.assoc` at implicit transparency cannot type-check these
+  -- composites; the following terms elaborate with the required common homology object.
   have h := singularHomology₀Section_naturality R (Hom.fst f) x =≫ Q.singularHomologyπ R 0
   exact (Category.assoc _ _ _).trans
     ((singularHomology₀Section R x ≫= (singularHomologyπ_naturality f R 0).symm).trans

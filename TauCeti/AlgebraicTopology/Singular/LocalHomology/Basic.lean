@@ -177,8 +177,8 @@ lemma singularHomology₀Section_comp_singularHomologyComplSingletonIsoOfChart_h
     _ = (a ≫ TopPair.singularHomologyMap g.hom R 0) ≫
         TopPair.singularHomologyMap f' R 0 := by
       rw [Category.assoc,
-        singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_hom]
-      exact (Category.assoc _ _ _).symm
+        singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_hom,
+        ← Category.assoc]
     _ = _ := by
       exact (congrArg (fun k ↦ k ≫ TopPair.singularHomologyMap f' R 0)
         (TopPair.singularHomology₀Section_singularHomologyMap _ R g.hom ⟨x, hx⟩
@@ -440,14 +440,10 @@ lemma singularHomologyComplSingletonIsoOfFinrankEqZero_inv_eq_pointClass
     _ = singularHomology₀Section R (φ x) ≫
         (TopPair.ofSubset ({φ x}ᶜ : Set (TopCat.of E))).singularHomologyπ R 0 := by
       rw [singularHomologyComplSingletonIsoOfFinrankEqZero_inv]
-      have hπ := (Category.assoc
-        ((TopPair.ofSubset ({φ x}ᶜ : Set (TopCat.of E))).singularHomologyπ R 0)
-        (singularHomologyComplSingletonIsoOfChart R φ hx 0).inv
-        (singularHomologyComplSingletonIsoOfChart R φ hx 0).hom).trans
-        ((((TopPair.ofSubset ({φ x}ᶜ : Set (TopCat.of E))).singularHomologyπ R 0) ≫=
-          (Iso.inv_hom_id (singularHomologyComplSingletonIsoOfChart R φ hx 0))).trans
-            (Category.comp_id _))
-      exact (Category.assoc _ _ _).trans (singularHomology₀Section R (φ x) ≫= hπ)
+      -- The point section uses the singular functor's object, whereas the projection uses
+      -- simplicial homology; `erw` unfolds these equal presentations before reassociating.
+      erw [Category.assoc, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+      rfl
     _ = _ := (singularHomology₀Section_comp_singularHomologyComplSingletonIsoOfChart_hom
       R φ hx).symm
 

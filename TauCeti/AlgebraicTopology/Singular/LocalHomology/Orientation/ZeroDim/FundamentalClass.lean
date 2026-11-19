@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.ZeroDim
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.ZeroDim.Basic
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 
 /-!
@@ -14,7 +14,6 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 The homological orientation constructed from a smooth orientation of a point has fundamental
 class equal to its signed actual singular point class. The examples include both orientations of
 `Fin 0 → ℝ` and opposite local signs on the disjoint sum of two copies of that native manifold.
-No homological orientation or generator equation is supplied as input.
 
 ## References
 
@@ -41,7 +40,7 @@ its positive or negative singular point class, with the sign of the given tangen
 theorem fundamentalClass_toHomologicalOrientationOfZeroDim_of_subsingleton
     (o : Manifold.Orientation I M (Fin 0)) (x : M) :
     o.toHomologicalOrientationOfZeroDim.fundamentalClass
-        (by simpa only [Fintype.card_fin] using o.card_eq.symm) =
+        (o.finrank_eq_zero) =
       if o.orientationAt x = positiveOrientation then
         singularHomology₀Section (ModuleCat.of ℤ (ULift.{0} ℤ)) (X := TopCat.of M) x 1
       else -(singularHomology₀Section (ModuleCat.of ℤ (ULift.{0} ℤ)) (X := TopCat.of M) x 1) := by
@@ -58,10 +57,11 @@ theorem fundamentalClass_toHomologicalOrientationOfZeroDim_of_subsingleton
   have hy : y = x := Subsingleton.elim _ _
   subst y
   rw [toHomologicalOrientationOfZeroDim_apply, localOrientationOfZeroDim_coe]
-  by_cases hp : o.orientationAt x = positiveOrientation
-  · simpa only [hp, ↓reduceIte] using hpt
-  · simp only [hp, ↓reduceIte]
-    exact ((singularHomologyToLocalHomology R x 0).map_neg _).trans (congrArg Neg.neg hpt)
+  dsimp only [R] at hpt
+  split_ifs
+  · exact hpt
+  · exact ((singularHomologyToLocalHomology R x 0).map_neg _).trans
+      (congrArg Neg.neg hpt)
 
 end TauCeti.Manifold.Orientation
 
@@ -110,6 +110,10 @@ private def mixedOrientation :
   Manifold.Orientation.ofVectorBundleOrientation positiveOrientation (by simp [PointModel])
     mixedVectorOrientation
 
+private theorem orientationAt_mixedOrientation (x : PointModel ⊕ PointModel) :
+    mixedOrientation.orientationAt x = mixedVectorOrientation x := by
+  rw [mixedOrientation, Manifold.Orientation.orientationAt_ofVectorBundleOrientation]
+
 /-- The native two-point manifold has an actual smooth orientation whose two components give
 opposite signed local point generators. -/
 example : ∃ o : Manifold.Orientation 𝓘(ℝ, PointModel) (PointModel ⊕ PointModel) (Fin 0),
@@ -121,16 +125,12 @@ example : ∃ o : Manifold.Orientation 𝓘(ℝ, PointModel) (PointModel ⊕ Poi
           (ModuleCat.of ℤ (ULift.{0} ℤ)) {(.inr 0)} (.inr 0) 1) := by
   refine ⟨mixedOrientation, ?_, ?_⟩
   · have hp : mixedOrientation.orientationAt (.inl (0 : PointModel)) = positiveOrientation := by
-      change (Manifold.Orientation.ofVectorBundleOrientation _ _ _).orientationAt _ = _
-      rw [Manifold.Orientation.orientationAt_ofVectorBundleOrientation]
-      rfl
+      exact orientationAt_mixedOrientation (.inl 0)
     rw [Manifold.Orientation.toHomologicalOrientationOfZeroDim_apply,
       Manifold.Orientation.localOrientationOfZeroDim_coe]
     simp only [hp, ↓reduceIte]
   · have hp : mixedOrientation.orientationAt (.inr (0 : PointModel)) = -positiveOrientation := by
-      change (Manifold.Orientation.ofVectorBundleOrientation _ _ _).orientationAt _ = _
-      rw [Manifold.Orientation.orientationAt_ofVectorBundleOrientation]
-      rfl
+      exact orientationAt_mixedOrientation (.inr 0)
     rw [Manifold.Orientation.toHomologicalOrientationOfZeroDim_apply,
       Manifold.Orientation.localOrientationOfZeroDim_coe]
     have hn : -(positiveOrientation :
