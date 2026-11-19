@@ -496,12 +496,15 @@ theorem maslovIndex_eq_of_homotopy_of_rootMultiplicity_eq {U₀ V₀ U₁ V₁ :
       continuous_toFun := F.continuous
       map_zero_left := h₀
       map_one_left := h₁ }
+  -- The edge `G.evalAt x` traces `s ↦ F (s, x)`; this holds by definition of `G` and `evalAt`.
+  have hG : ∀ x s, G.evalAt x s = F (s, x) := fun _ _ ↦ rfl
   -- `γ₀` followed by the final edge is homotopic to the initial edge followed by `γ₁`, and the
   -- two edges have index zero by the zero axiom.
   have h := maslovIndex_eq_of_homotopic (Path.Homotopic.map_trans_evalAt G Path.id)
   rw [maslovIndex_trans, maslovIndex_trans,
-    maslovIndex_eq_zero_of_rootMultiplicity_eq (G.evalAt 0) hk₀,
-    maslovIndex_eq_zero_of_rootMultiplicity_eq (G.evalAt 1) hk₁, add_zero, zero_add] at h
+    maslovIndex_eq_zero_of_rootMultiplicity_eq (G.evalAt 0) fun s ↦ by rw [hG]; exact hk₀ s,
+    maslovIndex_eq_zero_of_rootMultiplicity_eq (G.evalAt 1) fun s ↦ by rw [hG]; exact hk₁ s,
+    add_zero, zero_add] at h
   rw [maslovIndex_eq_of_souriau_eq γ₀ (Path.id.map (map_continuous γ₀.toContinuousMap))
     fun t ↦ by simp, h]
   exact maslovIndex_eq_of_souriau_eq _ _ fun t ↦ by simp
