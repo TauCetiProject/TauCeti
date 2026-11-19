@@ -11,7 +11,6 @@ public import Mathlib.FieldTheory.AlgebraicClosure
 public import Mathlib.FieldTheory.Minpoly.Field
 
 import Mathlib.Algebra.Algebra.Hom.Rat
-import Mathlib.Algebra.CharP.IntermediateField
 import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.Analysis.Complex.Polynomial.Basic
@@ -21,6 +20,7 @@ import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 import Mathlib.Tactic.ComputeDegree
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
+import TauCeti.FieldTheory.AlgebraicClosure
 
 /-!
 # Weil numbers
@@ -166,17 +166,6 @@ theorem isWeilNumber_iff_forall_norm_apply_eq [Algebra.IsAlgebraic ℚ K] :
   rw [← Algebra.IsAlgebraic.range_eval_eq_rootSet_minpoly] at hz'
   obtain ⟨ψ, rfl⟩ := hz'
   exact h ψ.toRingHom
-
-/-- An algebraic element `α` is a Weil `q`-number of weight `n` if and only if `1 < q` and every
-field embedding into `ℂ` of the algebraic closure of `ℚ` in `K` sends `α` to a complex number of
-absolute value `q ^ (n / 2)`. -/
--- The `ℚ`-algebra structure found by instance search on the subfield is
--- `DivisionRing.toRatAlgebra`, not the subfield's own, so algebraicity is transported by hand.
-private theorem isAlgebraic_algebraicClosure : Algebra.IsAlgebraic ℚ (algebraicClosure ℚ K) := by
-  have h := algebraicClosure.isAlgebraic (F := ℚ) (E := K)
-  rwa [Subsingleton.elim (algebraicClosure ℚ K).algebra' DivisionRing.toRatAlgebra] at h
-
-attribute [local instance] isAlgebraic_algebraicClosure
 
 /-- An algebraic element of `K` lies in the algebraic closure of `ℚ` in `K`. Weil-number
 statements about such elements are transported to that subfield with `isWeilNumber_map_iff`. -/
