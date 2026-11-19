@@ -10,7 +10,10 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Bijection
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.DeckGroup
 public import TauCeti.Geometry.Manifold.Topology
 public import TauCeti.Geometry.Manifold.Instances.UniversalCover
+public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
+import TauCeti.Geometry.Manifold.DeRham.SimplyConnected
+import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
 # The period-kernel cover of a closed one-form
@@ -33,6 +36,13 @@ attached to the class of a loop `g` shifts `f` by `-∫_g θ`, because it prepen
 the deck transformation labelled by the period `c` sends `f y` to `f y + c`
 (`PeriodCover.apply_deck_apply`). This is the equivariance `f (h • y) = f y + P h` of a primitive
 under the deck group, with `P` the period homomorphism on the deck group.
+
+The same holds on the universal cover itself: a primitive of the pulled-back form takes the value
+`f (mk x refl) + ∫_q θ` at the point represented by a path class `q`
+(`UniversalCover.apply_mk_eq_apply_mk_refl_add_pathClassIntegral`). Since the universal cover is
+simply connected, every closed form pulls back to an exact one there, and comparing primitives
+shows that integration commutes with continuous linear maps of the coefficients,
+`∫_γ L ∘ φ = L (∫_γ φ)` (`pathClassIntegral_mapCoeff`).
 
 The construction uses the subgroup-cover classification and the period exactness criterion.
 Our universal-cover action prepends inverse loops; consequently the deck transformation labelled
@@ -141,6 +151,36 @@ theorem SubgroupQuotient.apply_mk_eq_apply_basepoint_add_pathClassIntegral
     pathClassIntegral_cast] at h
   exact eq_add_of_sub_eq' h.symm
 
+/-- **Primitives on the universal cover.** Let `f` be a `C²` primitive of the pullback of a
+closed `C¹` form `θ` to the universal cover based at `x`. At the point represented by a path class
+`q` from `x` to `y`, `f` is its value at the constant-path point plus the integral of `θ` along
+`q`. In particular `f` is determined by that value. -/
+theorem apply_mk_eq_apply_mk_refl_add_pathClassIntegral
+    (hθ : IsSmoothForm I 1 θ) (hclosed : mextDeriv θ = 0) {f : UniversalCover x → F}
+    (hf : ContMDiff I 𝓘(ℝ, F) 2 f)
+    (hdf : mextDeriv (RoughForm.ofFunction I f) = mpullback I I proj θ)
+    {y : M} (q : Path.Homotopic.Quotient x y) :
+    f (mk y q) = f (mk x (Path.Homotopic.Quotient.refl x)) + pathClassIntegral θ q := by
+  have : T2Space (UniversalCover x) := (isCoveringMap x).t2Space
+  induction q with | mk γ =>
+  -- The initial segments of `γ` give a path `Γ` in the cover from the constant-path point,
+  -- lying over `γ`.
+  let Γ : Path (mk x (Path.Homotopic.Quotient.refl x)) (mk y (.mk γ)) :=
+    { toFun t := ofBasedPath x ((BasedPath.ofPath γ).initialSegmentFamily t)
+      continuous_toFun := by fun_prop
+      source' := by
+        simp [← BasedPath.ofPath_refl, Path.Homotopic.Quotient.mk_refl]
+      target' := by simp }
+  have hΓ : Γ.map (continuous_proj x) = γ := by
+    ext t
+    simp [Γ, proj_ofBasedPath]
+  -- Integrate `df` along `Γ` in two ways: downstairs, `Γ` projects to `γ`.
+  have h := pathClassIntegral_mextDeriv_ofFunction hf (.mk Γ)
+  rw [hdf, pathClassIntegral_mpullback
+    ((isLocalDiffeomorph_proj (I := I) (n := 2) x).contMDiff) hθ hclosed] at h
+  simp only [← Path.Homotopic.Quotient.mk_map, hΓ] at h
+  exact eq_add_of_sub_eq' h.symm
+
 /-- **Deck transformations shift primitives by periods.** For a normal subgroup `K` of the
 fundamental group of a path-connected manifold, the deck transformation of the cover attached to
 `K` given by the class of a loop `g` changes every `C²` primitive `f` of the pullback of a closed
@@ -165,6 +205,50 @@ theorem apply_deckSubgroupQuotientProjEquivOfNormal_mk_apply [PathConnectedSpace
 end UniversalCover
 
 end Primitive
+
+section MapCoeff
+
+variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+  [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G] {φ : RoughForm I M F 1} {x y : M}
+
+/-- **Integrals are natural in the coefficients.** A continuous linear map `L` of coefficient
+spaces carries the integral of a closed `C²` form `φ` along a path class to the integral of the
+form `L ∘ φ`. The proof integrates a primitive of the pullback of `φ` to the universal cover. -/
+theorem pathClassIntegral_mapCoeff (L : F →L[ℝ] G) (hφ : IsSmoothForm I 2 φ)
+    (hclosed : mextDeriv φ = 0) (γ : Path.Homotopic.Quotient x y) :
+    pathClassIntegral (RoughForm.mapCoeff L φ) γ = L (pathClassIntegral φ γ) := by
+  let : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
+  let : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
+  have : T2Space (UniversalCover x) := (UniversalCover.isCoveringMap x).t2Space
+  have hproj := UniversalCover.contMDiff_proj (I := I) (n := 3) x
+  -- A `C²` primitive `f` of the pullback of `φ` to the simply connected universal cover.
+  obtain ⟨ψ, hψ, hdψ⟩ := exists_mextDeriv_eq_of_simplyConnectedSpace (r := 2) (by norm_num)
+    (hφ.mpullback hproj) (hφ.of_le (by norm_num) |>.mextDeriv_mpullback_eq_zero hclosed
+      (hproj.of_le (by norm_num)))
+  rw [RoughForm.eq_ofFunction ψ] at hψ hdψ
+  have hf := isSmoothForm_ofFunction_iff.mp hψ
+  -- `L ∘ f` is a primitive of the pullback of `L ∘ φ`.
+  have hLf : mextDeriv (RoughForm.ofFunction I (L ∘ fun p ↦ ψ p 0)) =
+      mpullback I I UniversalCover.proj (RoughForm.mapCoeff L φ) := by
+    have h : RoughForm.ofFunction I (L ∘ fun p ↦ ψ p 0) =
+        RoughForm.mapCoeff L (RoughForm.ofFunction I fun p ↦ ψ p 0) := by
+      ext p v
+      simp [RoughForm.ofFunction_apply]
+    rw [h, mextDeriv_mapCoeff L (hψ.of_le (by norm_num)), hdψ, mpullback_mapCoeff]
+  have hφL : IsSmoothForm I 1 (RoughForm.mapCoeff L φ) := (hφ.of_le (by norm_num)).mapCoeff L
+  have hφLc : mextDeriv (RoughForm.mapCoeff L φ) = 0 := by
+    rw [mextDeriv_mapCoeff L (hφ.of_le (by norm_num)), hclosed]
+    ext p v
+    simp
+  induction γ using Quotient.inductionOn with | h γ =>
+  have h₁ := UniversalCover.apply_mk_eq_apply_mk_refl_add_pathClassIntegral
+    (hφ.of_le (by norm_num)) hclosed hf hdψ (Path.Homotopic.Quotient.mk γ)
+  have h₂ := UniversalCover.apply_mk_eq_apply_mk_refl_add_pathClassIntegral hφL hφLc
+    (L.contDiff.contMDiff.comp hf) hLf (Path.Homotopic.Quotient.mk γ)
+  simp only [Function.comp_apply, h₁, map_add] at h₂
+  exact (add_left_cancel h₂).symm
+
+end MapCoeff
 
 namespace PeriodCover
 
