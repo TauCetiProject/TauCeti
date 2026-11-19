@@ -68,6 +68,8 @@ strip around the real axis has exponentially decaying Fourier coefficients, by C
 * `TauCeti.integral_eq_integral_add_mul_I_of_differentiableOn_strip`: the integral over a period of
   a periodic function holomorphic on a strip `|Im z| ≤ |y|` is unchanged by shifting the line of
   integration to `Im z = y`.
+* `Function.Periodic.intervalIntegral_comp_add_eq_of_differentiable`: for an entire periodic
+  function, the integral over a period of the line `ℝ + w` does not depend on `w : ℂ`.
 * `TauCeti.norm_fourierCoeff_le_of_differentiableOn_strip`: if `f : AddCircle T → ℂ` extends to a
   periodic function holomorphic and bounded by `M` on the strip `|Im z| ≤ δ`, then
   `‖fourierCoeff f n‖ ≤ M e^{-2π |n| δ / T}`.
@@ -337,6 +339,25 @@ theorem integral_eq_integral_add_mul_I_of_differentiableOn_strip {h : ℂ → �
       exact hper _ (by simpa using hmem ht)
   rw [hside, add_sub_cancel_right, sub_eq_zero] at key
   exact key
+
+omit hT in
+/-- **Translating a period integral by a complex number.** If `h` is entire and `T`-periodic, then
+its integral over a period of the line `ℝ + w` equals its integral over a period of the real axis,
+for every `w : ℂ`. The real part of `w` does not matter by periodicity, and the imaginary part by
+`TauCeti.integral_eq_integral_add_mul_I_of_differentiableOn_strip`. -/
+theorem _root_.Function.Periodic.intervalIntegral_comp_add_eq_of_differentiable {h : ℂ → ℂ}
+    (hper : Function.Periodic h T) (hh : Differentiable ℂ h) (w : ℂ) :
+    ∫ x in (0 : ℝ)..T, h (x + w) = ∫ x in (0 : ℝ)..T, h x := by
+  have hline : Function.Periodic (fun t : ℝ ↦ h (t + w.im * I)) T := fun t ↦ by
+    simpa [add_right_comm] using hper (t + w.im * I)
+  have hre : ∫ x in (0 : ℝ)..T, h (x + w) = ∫ x in (0 : ℝ)..T, h (x + w.im * I) := by
+    have hw (x : ℝ) : h (x + w) = h (((x + w.re : ℝ) : ℂ) + w.im * I) := by
+      rw [ofReal_add, add_assoc, re_add_im]
+    simp_rw [hw]
+    rw [intervalIntegral.integral_comp_add_right (fun t : ℝ ↦ h (t + w.im * I)), zero_add,
+      add_comm T, hline.intervalIntegral_add_eq w.re 0, zero_add]
+  rw [hre, integral_eq_integral_add_mul_I_of_differentiableOn_strip (fun z _ ↦ hper z)
+    hh.differentiableOn]
 
 /-- **Exponential decay of the Fourier coefficients of a function holomorphic in a strip.** If
 `f : AddCircle T → ℂ` is the restriction to `ℝ` of a function `g` which is `T`-periodic and
