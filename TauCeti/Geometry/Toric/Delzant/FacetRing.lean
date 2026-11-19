@@ -145,9 +145,20 @@ theorem isNonface_def {s : Finset ι} :
 theorem linearRelation_def (φ : N →+ k) : linearRelation u k φ = ∑ j, C (φ (u j)) * X j :=
   (rfl)
 
+theorem facetIdeal_def :
+    facetIdeal i u c k = stanleyReisnerIdeal i u c k ⊔ linearRelationIdeal u k :=
+  (rfl)
+
 theorem supportClass_def : supportClass c = ∑ j, C (c j) * X j :=
   (rfl)
 
+/-- An ideal contains the ideal of the facet presentation exactly when it contains both the
+Stanley–Reisner ideal and the linear relations. -/
+theorem facetIdeal_le_iff {J : Ideal (MvPolynomial ι k)} :
+    facetIdeal i u c k ≤ J ↔ stanleyReisnerIdeal i u c k ≤ J ∧ linearRelationIdeal u k ≤ J :=
+  sup_le_iff
+
+@[simp]
 theorem linearRelation_mem_linearRelationIdeal (φ : N →+ k) :
     linearRelation u k φ ∈ linearRelationIdeal u k :=
   Ideal.subset_span ⟨φ, rfl⟩
@@ -174,13 +185,32 @@ theorem IsNonface.mono {s t : Finset ι} (hs : IsNonface i u c s) (hst : s ⊆ t
 
 omit [Fintype ι] in
 /-- The empty set of facets is a nonface exactly when the polyhedron is empty. -/
+@[simp]
 theorem isNonface_empty_iff : IsNonface i u c ∅ ↔ facetPolyhedron i u c = ∅ := by
   simp [IsNonface, eq_empty_iff_forall_notMem]
 
+/-- The linear relation of the zero weight is zero. -/
+@[simp]
+theorem linearRelation_zero : linearRelation u k 0 = 0 := by
+  simp [linearRelation]
+
 /-- The linear relation of the sum of two weights is the sum of their linear relations. -/
+@[simp]
 theorem linearRelation_add (φ ψ : N →+ k) :
     linearRelation u k (φ + ψ) = linearRelation u k φ + linearRelation u k ψ := by
   simp [linearRelation, add_mul, Finset.sum_add_distrib]
+
+/-- The linear relation of the negative of a weight is the negative of its linear relation. -/
+@[simp]
+theorem linearRelation_neg (φ : N →+ k) : linearRelation u k (-φ) = -linearRelation u k φ := by
+  simp [linearRelation, neg_mul, Finset.sum_neg_distrib]
+
+/-- The linear relation of the difference of two weights is the difference of their linear
+relations. -/
+@[simp]
+theorem linearRelation_sub (φ ψ : N →+ k) :
+    linearRelation u k (φ - ψ) = linearRelation u k φ - linearRelation u k ψ := by
+  simp [sub_eq_add_neg]
 
 /-! ### Translations -/
 
@@ -207,7 +237,7 @@ theorem stanleyReisnerIdeal_add :
 @[simp]
 theorem facetIdeal_add :
     facetIdeal i u (fun j ↦ c j + y (i (u j))) k = facetIdeal i u c k := by
-  rw [facetIdeal, facetIdeal, stanleyReisnerIdeal_add]
+  rw [facetIdeal_def, facetIdeal_def, stanleyReisnerIdeal_add]
 
 /-- Translating the polyhedron by `y` changes the class `∑ j, c j D j` by the linear relation of
 the weight `⟨y, i ·⟩`. -/
@@ -245,24 +275,23 @@ theorem isNonface_simplex_iff (ha : 0 < a) {s : Finset (Option κ)} :
     obtain ⟨o, -, ho⟩ := Finset.exists_of_ssubset (Finset.ssubset_univ_iff.2 hne)
     cases o with
     | none =>
-      refine hs 0 ?_ fun o ho' ↦ ?_
-      · simp [ha.le]
-      · cases o with
-        | none => exact absurd ho' ho
-        | some k => simp
+      refine hs 0 ((mem_extremePoints_facetPolyhedron_simplex_iff ha).2 (Or.inl rfl)).1
+        fun o ho' ↦ ?_
+      cases o with
+      | none => exact absurd ho' ho
+      | some k => simp
     | some k₀ =>
       let x : StrongDual ℝ (κ → ℝ) := a • ContinuousLinearMap.proj k₀
       have hx (k : κ) : x (Pi.single k 1) = if k = k₀ then a else 0 := by
         by_cases hk : k = k₀ <;> simp [x, hk]
-      refine hs x ?_ fun o ho' ↦ ?_
-      · rw [mem_facetPolyhedron_simplex_iff]
-        exact ⟨fun k ↦ by rw [hx]; split_ifs <;> simp [ha.le], by simp [hx]⟩
-      · cases o with
-        | none => simp [hx]
-        | some k =>
-          have hk : k ≠ k₀ := by rintro rfl; exact ho ho'
-          rw [some_mem_activeSet_simplex_iff, hx]
-          simp [hk]
+      refine hs x ((mem_extremePoints_facetPolyhedron_simplex_iff ha).2 (Or.inr ⟨k₀, rfl⟩)).1
+        fun o ho' ↦ ?_
+      cases o with
+      | none => simp [hx]
+      | some k =>
+        have hk : k ≠ k₀ := by rintro rfl; exact ho ho'
+        rw [some_mem_activeSet_simplex_iff, hx]
+        simp [hk]
   · -- On all the facets, the coordinates vanish and sum to `a`, which is impossible.
     rintro rfl x - hx
     have hnone : none ∈ activeSet (facetPairing ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ))
@@ -337,7 +366,7 @@ private def simplexGeneratorHom :
 private theorem facetIdeal_simplex_le_ker (ha : 0 < a) :
     facetIdeal ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a) k ≤
       RingHom.ker (simplexGeneratorHom k) := by
-  rw [facetIdeal, stanleyReisnerIdeal_simplex ha, linearRelationIdeal_simplex, sup_le_iff,
+  rw [facetIdeal_le_iff, stanleyReisnerIdeal_simplex ha, linearRelationIdeal_simplex,
     Ideal.span_le, Ideal.span_le]
   constructor
   · rintro _ rfl
@@ -353,9 +382,12 @@ private theorem facetIdeal_simplex_le_ker (ha : 0 < a) :
 private theorem mk_X_none_pow_simplex (ha : 0 < a) :
     Ideal.Quotient.mk (facetIdeal ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ)
       (simplexSupport a) k) (X none) ^ (Fintype.card κ + 1) = 0 := by
-  rw [← Fintype.card_option, ← Finset.card_univ, ← Finset.prod_const,
-    ← Finset.prod_congr rfl fun o _ ↦ mk_X_simplex k (simplexSupport a) o, ← map_prod,
-    Ideal.Quotient.eq_zero_iff_mem]
+  -- Every generator is `D none`, so this power is the class of the monomial `∏ o, D o`.
+  have hprod : Ideal.Quotient.mk (facetIdeal ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ)
+      (simplexSupport a) k) (∏ o, X o) = Ideal.Quotient.mk _ (X none) ^ (Fintype.card κ + 1) := by
+    simp only [map_prod, mk_X_simplex k (simplexSupport a), Finset.prod_const, Finset.card_univ,
+      Fintype.card_option]
+  rw [← hprod, Ideal.Quotient.eq_zero_iff_mem]
   exact stanleyReisnerIdeal_le_facetIdeal _ _ _ k
     ((isNonface_simplex_iff ha).2 rfl).prod_mem_stanleyReisnerIdeal
 
@@ -367,10 +399,11 @@ private def facetRingSimplexHom (ha : 0 < a) :
   Ideal.Quotient.liftₐ _ (simplexGeneratorHom k) fun _ hp ↦
     RingHom.mem_ker.1 (facetIdeal_simplex_le_ker ha hp)
 
-/-- `facetRingSimplexHom` on the class of a polynomial, by the definition of the lift. -/
+/-- `facetRingSimplexHom` on the class of a polynomial. -/
 private theorem facetRingSimplexHom_mk (ha : 0 < a) (p : MvPolynomial (Option κ) k) :
-    facetRingSimplexHom ha (Ideal.Quotient.mk _ p) = simplexGeneratorHom k p :=
-  (rfl)
+    facetRingSimplexHom ha (Ideal.Quotient.mk _ p) = simplexGeneratorHom k p := by
+  rw [← Ideal.Quotient.mkₐ_eq_mk k, ← AlgHom.comp_apply, facetRingSimplexHom,
+    Ideal.Quotient.liftₐ_comp]
 
 /-- The map of `k[x] ⧸ (x ^ (#κ + 1))` to the facet ring of the simplex sending `x` to `D none`. -/
 private def simplexFacetRingHom (ha : 0 < a) :
@@ -380,12 +413,13 @@ private def simplexFacetRingHom (ha : 0 < a) :
     obtain ⟨q, rfl⟩ := Ideal.mem_span_singleton'.1 hp
     simp [Ideal.Quotient.mkₐ_eq_mk, mk_X_none_pow_simplex ha]
 
-/-- `simplexFacetRingHom` on the class of a polynomial, by the definition of the lift. -/
+/-- `simplexFacetRingHom` on the class of a polynomial. -/
 private theorem simplexFacetRingHom_mk (ha : 0 < a) (p : Polynomial k) :
     simplexFacetRingHom ha (Ideal.Quotient.mk _ p) =
       Ideal.Quotient.mk (facetIdeal ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ)
-        (simplexSupport a) k) (Polynomial.aeval (X none) p) :=
-  (rfl)
+        (simplexSupport a) k) (Polynomial.aeval (X none) p) := by
+  rw [← Ideal.Quotient.mkₐ_eq_mk k (Ideal.span _), ← AlgHom.comp_apply, simplexFacetRingHom,
+    Ideal.Quotient.liftₐ_comp, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk]
 
 omit [DecidableEq κ] in
 /-- `simplexGeneratorHom` sends every generator to `x`. -/
@@ -413,10 +447,22 @@ theorem facetRingSimplexEquiv_mk_X (ha : 0 < a) (o : Option κ) :
     facetRingSimplexEquiv (k := k) ha (Ideal.Quotient.mk _ (X o)) =
       Ideal.Quotient.mk (Ideal.span {(Polynomial.X : Polynomial k) ^ (Fintype.card κ + 1)})
         Polynomial.X := by
-  exact (facetRingSimplexHom_mk ha (X o)).trans (simplexGeneratorHom_X o)
+  rw [← AlgEquiv.coe_toAlgHom, facetRingSimplexEquiv, AlgEquiv.toAlgHom_ofAlgHom,
+    facetRingSimplexHom_mk, simplexGeneratorHom_X]
+
+/-- The inverse of `facetRingSimplexEquiv` sends `x` to the generator `D none`. -/
+@[simp]
+theorem facetRingSimplexEquiv_symm_mk_X (ha : 0 < a) :
+    (facetRingSimplexEquiv (k := k) ha).symm
+        (Ideal.Quotient.mk (Ideal.span {(Polynomial.X : Polynomial k) ^ (Fintype.card κ + 1)})
+          Polynomial.X) =
+      Ideal.Quotient.mk (facetIdeal ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ)
+        (simplexSupport a) k) (X none) := by
+  rw [AlgEquiv.symm_apply_eq, facetRingSimplexEquiv_mk_X]
 
 omit [DecidableEq κ] in
 /-- The class `∑ j, c j D j` of the simplex of size `a` is `-a D none`. -/
+@[simp]
 theorem supportClass_simplex : supportClass (simplexSupport (κ := κ) a) = -(C a * X none) := by
   simp [supportClass, Fintype.sum_option]
 
@@ -428,8 +474,10 @@ theorem facetRingSimplexEquiv_mk_neg_supportClass (ha : 0 < a) :
     facetRingSimplexEquiv ha (Ideal.Quotient.mk _ (-supportClass (simplexSupport (κ := κ) a))) =
       a • Ideal.Quotient.mk (Ideal.span {(Polynomial.X : Polynomial ℝ) ^ (Fintype.card κ + 1)})
         Polynomial.X := by
-  rw [supportClass_simplex, neg_neg, ← smul_eq_C_mul, ← Ideal.Quotient.mkₐ_eq_mk ℝ, map_smul,
-    map_smul, Ideal.Quotient.mkₐ_eq_mk, facetRingSimplexEquiv_mk_X]
+  -- `-∑ j, c j D j` is `a • D none`; the quotient map is `ℝ`-linear as `mkₐ`, so the scalar
+  -- comes out through both maps.
+  rw [supportClass_simplex, neg_neg, C_mul', ← Ideal.Quotient.mkₐ_eq_mk ℝ, map_smul, map_smul]
+  simp
 
 end Simplex
 
