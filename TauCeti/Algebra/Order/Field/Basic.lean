@@ -111,11 +111,19 @@ zero only at `0`.
   `TauCeti.div_one_add_mono`, `TauCeti.div_one_add_add_le`, `TauCeti.mul_div_one_add_mul_le`,
   `TauCeti.div_one_add_eq_zero_iff`: nonnegativity, unit bound, monotonicity, subadditivity,
   scaling bound, and zero characterization of the gauge `t / (1 + t)` for `0 ≤ t`.
+* `TauCeti.two_mul_sq_inv_mul_lt_one_iff`: `2 * (r ^ 2)⁻¹ * t < 1` iff `t < r ^ 2 / 2` for `r ≠ 0`.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- Normalizing by a nonzero square converts a scale inequality into a bound on time. -/
+theorem two_mul_sq_inv_mul_lt_one_iff {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {r t : K} (hr : r ≠ 0) :
+    2 * (r ^ 2)⁻¹ * t < 1 ↔ t < r ^ 2 / 2 := by
+  rw [mul_right_comm, ← div_eq_mul_inv, div_lt_one (sq_pos_of_ne_zero hr),
+    lt_div_iff₀ zero_lt_two, mul_comm t]
 
 /-- A scalar inequality is equivalent to its sign-dependent bounds: a negative coefficient
 gives a lower bound, a positive coefficient gives an upper bound, and a zero coefficient
