@@ -114,12 +114,13 @@ private theorem IsMaximalTorus.bijective_weylOrbitMap (hT : IsMaximalTorus T) :
   refine ⟨fun x y hxy ↦ ?_, fun y ↦ ?_⟩
   · induction x using Quotient.inductionOn' with | h X => ?_
     induction y using Quotient.inductionOn' with | h Y => ?_
+    rw [hT.weylOrbitMap_mk, hT.weylOrbitMap_mk] at hxy
     exact Quotient.sound' ((hT.orbitRel_weylAdjointRepresentation_iff X Y).mpr
-      (Quotient.exact' hxy))
+      (Quotient.exact hxy))
   · induction y using Quotient.inductionOn' with | h X => ?_
     obtain ⟨g, hg⟩ := hT.exists_Ad_mem_lieSubalgebraOfSubgroup X
-    refine ⟨Quotient.mk'' ⟨Ad (I := I) g X, hg⟩,
-      Quotient.sound' ((Representation.orbitRel_apply _).mpr ⟨g, ?_⟩)⟩
+    refine ⟨Quotient.mk'' ⟨Ad (I := I) g X, hg⟩, (hT.weylOrbitMap_mk _).trans
+      (Quotient.sound' ((Representation.orbitRel_apply _).mpr ⟨g, ?_⟩))⟩
     simp
 
 /-- **The adjoint orbit space of a compact Lie group is the quotient of a torus Lie algebra by the
