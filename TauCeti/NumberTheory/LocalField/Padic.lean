@@ -52,8 +52,8 @@ concrete p-adic norm and valuation APIs.
   `p`.
 * `TauCeti.Padic.irreducible_natCast_self` shows that the residue prime is a uniformizer of
   the integer ring, `TauCeti.Padic.irreducible_intCast_mul_natCast_self` that so is its product
-  with an integer prime to `p`, and `TauCeti.Padic.isUniformizer_natCast_self` that it is a
-  uniformizer of `ℚ_[p]`. `TauCeti.padicPrimeUnit p` is `p` as a unit of `ℚ_[p]`, and
+  with an integer prime to `p`. `TauCeti.padicPrimeUnit p` is `p` as a unit of `ℚ_[p]`,
+  `TauCeti.isUniformizer_padicPrimeUnit` shows that it is a uniformizer of `ℚ_[p]`, and
   `TauCeti.normalizedValuation_padicPrimeUnit` records that its normalized valuation is one.
 * `TauCeti.Padic.mem_maximalIdeal_pow_iff_norm_le`: `𝓂 ^ i` is the disc `‖x‖ ≤ p ^ (-i)`.
 * `TauCeti.Padic.valuation_eq_one_of_coe_eq`: a unit of `ℤ_[p]` has valuation one in `ℚ_[p]`.
@@ -330,13 +330,6 @@ theorem irreducible_intCast_mul_natCast_self {m : ℤ} (hm : ¬ (p : ℤ) ∣ m)
   (irreducible_isUnit_mul (_root_.Padic.isUnit_intCast_integerRing hm)).2
     (irreducible_natCast_self p)
 
-/-- The residue prime `p` is a uniformizer of `ℚ_[p]`. -/
-theorem isUniformizer_natCast_self : IsUniformizer ℚ_[p] (padicPrimeUnit p) := by
-  rw [isUniformizer_def]
-  apply Multiplicative.toAdd.injective
-  rw [_root_.Padic.toAdd_normalizedValuation_eq_valuation, coe_padicPrimeUnit,
-    _root_.Padic.valuation_p, toAdd_ofAdd]
-
 variable {p} in
 /-- A unit of `ℤ_[p]` has valuation one in `ℚ_[p]`. -/
 theorem valuation_eq_one_of_coe_eq {a : ℚ_[p]ˣ} {u : ℤ_[p]ˣ} (ha : (a : ℚ_[p]) = u) :
@@ -357,10 +350,17 @@ end TauCeti.Padic
 
 namespace TauCeti
 
+/-- The unit `TauCeti.padicPrimeUnit p` is a uniformizer of `ℚ_[p]`. -/
+theorem isUniformizer_padicPrimeUnit : IsUniformizer ℚ_[p] (padicPrimeUnit p) := by
+  rw [isUniformizer_def]
+  apply Multiplicative.toAdd.injective
+  rw [_root_.Padic.toAdd_normalizedValuation_eq_valuation, coe_padicPrimeUnit,
+    _root_.Padic.valuation_p, toAdd_ofAdd]
+
 /-- The unit `p` of `ℚ_[p]` has normalized valuation one. -/
 @[simp]
 theorem normalizedValuation_padicPrimeUnit :
     normalizedValuation ℚ_[p] (padicPrimeUnit p) = .ofAdd 1 :=
-  (isUniformizer_def _).1 (Padic.isUniformizer_natCast_self p)
+  (isUniformizer_def _).1 (isUniformizer_padicPrimeUnit p)
 
 end TauCeti

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Ring.Units
 public import TauCeti.NumberTheory.LocalField.Padic
-public import TauCeti.NumberTheory.LocalField.UnramifiedCharacter
+public import TauCeti.NumberTheory.LocalField.Unramified.Character
 public import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
 

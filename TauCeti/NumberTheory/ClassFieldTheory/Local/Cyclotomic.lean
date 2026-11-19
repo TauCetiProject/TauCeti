@@ -196,7 +196,7 @@ theorem localArtinMap_cyclotomic_padic (p : ℕ) [Fact p.Prime] (L : Type*) [Fie
     {m : ℕ} (hm : p.Coprime m) {ζ : L} (hζ : ζ ^ m = 1) :
     σ ζ = ζ ^ p := by
   have h := localArtinMap_cyclotomic_uniformizer ℚ_[p] L ι
-    (Padic.isUniformizer_natCast_self p) hσ
+    (isUniformizer_padicPrimeUnit p) hσ
     (by rwa [Padic.natCard_residueField]) hζ
   rwa [Padic.natCard_residueField] at h
 
@@ -387,7 +387,7 @@ theorem exists_localCyclotomicCharacter_eq_and_apply_of_pow_eq_one (u : ℤ_[p]�
     (artinMap ℚ_[p] (padicPrimeUnit p))
   have hτχ := localCyclotomicCharacter_artinMap_padic_uniformizer p τ hτ
   have hτF := isArithFrobeniusLift_of_mk_eq_artinMap_uniformizer ℚ_[p]
-    (Padic.isUniformizer_natCast_self p) τ hτ
+    (isUniformizer_padicPrimeUnit p) τ hτ
   have hτz (z : AlgebraicClosure ℚ_[p]) (hz : z ^ (p ^ f - 1) = 1) :
       DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) τ z = z ^ p := by
     -- The roots of unity of order `p ^ f - 1` are the nonzero roots of `X ^ (p ^ f) - X`.

@@ -121,7 +121,7 @@ theorem hilbertSymbol_formula_of_ne_two (hp : p ≠ 2) {a b : ℚ_[p]ˣ} {α β 
     Units.ext (by simp [hc, π, ι])
   rw [hdecomp ha, hdecomp hb,
     hilbertSymbol_oddResidue_formula (_root_.Padic.isUnit_two_integerRing hp)
-      (isUniformizer_natCast_self p), Fintype.card_eq_nat_card, _root_.Padic.natCard_residueField,
+      (isUniformizer_padicPrimeUnit p), Fintype.card_eq_nat_card, _root_.Padic.natCard_residueField,
     Units.oddResidueSign_map_integerRingEquiv_symm_eq_quadraticChar,
     Units.oddResidueSign_map_integerRingEquiv_symm_eq_quadraticChar]
 
@@ -182,7 +182,7 @@ theorem isSquare_intCast_iff_legendreSym_eq_one (hp : p ≠ 2) {n : ℤ} (hn : �
     (a := Units.mk0 (n : ℚ_[p]) (Int.cast_ne_zero.2 fun h ↦ hn (h ▸ dvd_zero _)))
     (u := (PadicInt.isUnit_intCast_iff.2 hn).unit) (by simp)
   have h := hilbertSymbol_eq_one_iff_isSquare_of_valuation_zero_of_isUniformizer
-    (_root_.Padic.isUnit_two_integerRing hp) hval (isUniformizer_natCast_self p)
+    (_root_.Padic.isUnit_two_integerRing hp) hval (isUniformizer_padicPrimeUnit p)
   rw [← Units.val_eq_one, hilbertSymbol_intCast_self_eq_legendreSym hp hn] at h
   rw [h, ← Units.isSquare_coe_iff, Units.val_mk0]
 
@@ -202,7 +202,7 @@ theorem hilbertSymbol_neg_one_eq_neg_one_of_mod_four_eq_three (hp : p % 4 = 3) :
     simpa [padicValInt] using valuation_intCast (p := p) (-1)
   rcases Int.units_eq_one_or (hilbertSymbol (-1 : ℚ_[p]ˣ) _) with h | h
   · have hsq := (hilbertSymbol_eq_one_iff_isSquare_of_valuation_zero_of_isUniformizer h2 hu
-      (TauCeti.Padic.isUniformizer_natCast_self p)).mp h
+      (TauCeti.isUniformizer_padicPrimeUnit p)).mp h
     exact absurd (Units.isSquare_coe_iff.mpr hsq)
       (by simpa using not_isSquare_neg_one_of_mod_four_ne_one p (by omega))
   · exact h
