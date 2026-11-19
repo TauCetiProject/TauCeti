@@ -66,7 +66,7 @@ tubular map defined on a disk bundle. This file proves:
   `TauCeti.inv_smul_sub_eq_integral_fderiv_of_mem_normalSegmentDomain`, and
   `TauCeti.integral_clm_fderiv_eq_integral_fderiv_of_mem_normalSegmentDomain` to pass a fixed
   linear map such as a block projection through the average), so that it also serves the normal
-  dilations of maps. These statements take `N` complete, so that the average in
+  dilations of maps. The convergence theorems take `N` complete, so that the average in
   Hadamard's lemma is a Bochner integral;
 * `J_N(z, W)` squares to `-1` when `J` squares to `-1` near `(z, 0)` and `J(z, 0)` preserves
   `E × {0}`
