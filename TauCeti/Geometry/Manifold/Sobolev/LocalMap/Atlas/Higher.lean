@@ -208,8 +208,8 @@ theorem MemWkpLocMapOn.contMDiffOn_comp_of_two_lt {n : ℕ∞ω} {f : M → N} {
     (hkn : (k : ℕ∞ω) ≤ n) (hs : IsOpen s) (ht : IsOpen t) (hst : MapsTo u s t) :
     MemWkpLocMapOn I' p k (f ∘ u) s :=
   hu.contMDiffOn_comp_of_planar
-    (fun hk _ _ _ _ hW hv hvc hO hg hmaps ↦
-      hv.contDiffOn_comp_of_one_le hp hp' hk hW hvc hO hg hmaps)
+    (fun hk φ _ _ _ _ _ hT hv hvc hO hg hmaps ↦ hv.contDiffOn_comp_of_one_le hp hp' hk
+      (φ.continuousOn_extend_symm.isOpen_inter_preimage φ.isOpen_extend_target hT) hvc hO hg hmaps)
     hf hkn hs ht hst
 
 /-- **Composition with `C^ℓ` maps at every order.** Let `2 < p < ∞`. If `u` is a local Sobolev map
