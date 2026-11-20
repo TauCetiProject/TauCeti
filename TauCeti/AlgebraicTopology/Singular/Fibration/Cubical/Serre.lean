@@ -114,7 +114,6 @@ def serreSpectralObjectIsoCubical (C : Set B) {D : Set B} [RelCWComplex C D] (p 
 /-- The isomorphism `TauCeti.TopCat.serreSpectralObjectIsoCubical` is the morphism of spectral
 objects induced by the comparison `TauCeti.singularToCubical`, as a morphism of filtered
 complexes. -/
-@[simp]
 lemma serreSpectralObjectIsoCubical_hom (C : Set B) {D : Set B} [RelCWComplex C D] (p : E ⟶ B)
     (R : Type u) [Ring R] :
     (serreSpectralObjectIsoCubical C p R).hom =
@@ -166,7 +165,7 @@ def serreSpectralObjectPullbackAbutmentIsoCubical {g : B' ⟶ B}
 /-- The isomorphism `TauCeti.TopCat.serreSpectralObjectPullbackAbutmentIsoCubical` is the abutment
 isomorphism with simplicial singular homology, followed by the map induced on homology by the
 comparison `TauCeti.singularToCubical`. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 lemma serreSpectralObjectPullbackAbutmentIsoCubical_hom {g : B' ⟶ B}
     (hg : g.hom.IsWeakHomotopyEquivalence) (n : ℕ) :
     (serreSpectralObjectPullbackAbutmentIsoCubical hp R C hg n).hom =
@@ -179,7 +178,7 @@ lemma serreSpectralObjectPullbackAbutmentIsoCubical_hom {g : B' ⟶ B}
 /-- The inverse of `TauCeti.TopCat.serreSpectralObjectPullbackAbutmentIsoCubical` is the map
 induced on homology by the comparison `TauCeti.cubicalToSingular`, followed by the inverse of the
 abutment isomorphism with simplicial singular homology. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 lemma serreSpectralObjectPullbackAbutmentIsoCubical_inv {g : B' ⟶ B}
     (hg : g.hom.IsWeakHomotopyEquivalence) (n : ℕ) :
     (serreSpectralObjectPullbackAbutmentIsoCubical hp R C hg n).inv =
@@ -207,7 +206,7 @@ def serreSpectralSequencePullbackFirstPageXIsoSigmaCubical (g : B' ⟶ B) (k q :
 /-- The isomorphism `TauCeti.TopCat.serreSpectralSequencePullbackFirstPageXIsoSigmaCubical` is the
 first-page isomorphism with simplicial singular homology of the fibres, followed on each summand
 by the map induced on homology by the comparison `TauCeti.singularToCubical`. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 lemma serreSpectralSequencePullbackFirstPageXIsoSigmaCubical_hom (g : B' ⟶ B) (k q : ℕ)
     (pq : ℤ × ℤ) (hb : pq.2 = k - 1) (ha : pq.1 + pq.2 = -(q + k : ℕ)) :
     (serreSpectralSequencePullbackFirstPageXIsoSigmaCubical hp R C g k q pq hb ha).hom =
@@ -252,7 +251,7 @@ def arbitraryBaseSerreAbutmentIsoCubical (n : ℕ) :
 /-- The isomorphism `TauCeti.TopCat.arbitraryBaseSerreAbutmentIsoCubical` is the abutment
 isomorphism with simplicial singular homology, followed by the map induced on homology by the
 comparison `TauCeti.singularToCubical`. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 lemma arbitraryBaseSerreAbutmentIsoCubical_hom (n : ℕ) :
     (arbitraryBaseSerreAbutmentIsoCubical hp R n).hom =
       (arbitraryBaseSerreAbutmentIso hp R n).hom ≫
@@ -264,7 +263,7 @@ lemma arbitraryBaseSerreAbutmentIsoCubical_hom (n : ℕ) :
 /-- The inverse of `TauCeti.TopCat.arbitraryBaseSerreAbutmentIsoCubical` is the map induced on
 homology by the comparison `TauCeti.cubicalToSingular`, followed by the inverse of the abutment
 isomorphism with simplicial singular homology. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 lemma arbitraryBaseSerreAbutmentIsoCubical_inv (n : ℕ) :
     (arbitraryBaseSerreAbutmentIsoCubical hp R n).inv =
       HomologicalComplex.homologyMap ((cubicalToSingular R).app E) n ≫
@@ -292,7 +291,7 @@ def arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigmaCubical (k q : ℕ) (pq 
 /-- The isomorphism `TauCeti.TopCat.arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigmaCubical` is
 the first-page isomorphism with simplicial singular homology of the fibres, followed on each summand
 by the map induced on homology by the comparison `TauCeti.singularToCubical`. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 lemma arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigmaCubical_hom (k q : ℕ) (pq : ℤ × ℤ)
     (hb : pq.2 = k - 1) (ha : pq.1 + pq.2 = -(q + k : ℕ)) :
     (arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigmaCubical hp R k q pq hb ha).hom =

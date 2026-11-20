@@ -348,7 +348,6 @@ def chainFiltrationSpectralObjectIso [∀ Z, QuasiIso (α.app Z)] :
 
 /-- The isomorphism `TauCeti.chainFiltrationSpectralObjectIso α hX` is the morphism of spectral
 objects induced by `TauCeti.chainFiltrationMap`. -/
-@[simp]
 lemma chainFiltrationSpectralObjectIso_hom [∀ Z, QuasiIso (α.app Z)] :
     (chainFiltrationSpectralObjectIso α hX).hom =
       CochainComplex.spectralObjectMap (chainFiltrationMap α hX hX (𝟙 Y) fun _ _ hx ↦ hx) := by

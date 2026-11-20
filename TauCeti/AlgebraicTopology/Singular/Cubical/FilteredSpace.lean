@@ -155,7 +155,6 @@ def singularCubicalSpectralObjectIso :
 
 /-- The isomorphism `TauCeti.singularCubicalSpectralObjectIso` is the morphism of spectral objects
 induced by the comparison `TauCeti.singularToCubical`, as a morphism of filtered complexes. -/
-@[simp]
 lemma singularCubicalSpectralObjectIso_hom :
     (singularCubicalSpectralObjectIso k hX).hom =
       CochainComplex.spectralObjectMap
