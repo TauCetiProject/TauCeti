@@ -21,7 +21,8 @@ with compact supports covariant in open embeddings. Finally, a compact set lies 
 directed open cover (`TopologicalSpace.Compacts.exists_subset_of_iSup_eq_top`). A compact set
 whose interior contains `K` is a compact neighbourhood of `K`
 (`TopologicalSpace.Compacts.compactNhdsOfSubsetInterior`), and open sets containing two compact sets
-together contain their union (`TopologicalSpace.Compacts.coe_sup_subset_coe_sup`).
+together contain their union (`TopologicalSpace.Compacts.coe_sup_subset_coe_sup`). Inducing maps
+also pull back compact sets contained in their range (`IsInducing.preimageCompacts`).
 -/
 
 public section
@@ -88,3 +89,20 @@ lemma coe_sup_subset_coe_sup {K L : Compacts α} {U V : Opens α} (hK : (K : Set
   exact union_subset_union hK hL
 
 end TopologicalSpace.Compacts
+
+namespace Topology.IsInducing
+
+variable {α β : Type*} [TopologicalSpace α] [TopologicalSpace β] {f : α → β}
+
+/-- The compact preimage of a compact set contained in the range of an inducing map.
+Its carrier is definitionally the preimage, as for `Compacts.compactNhdsOfSubsetInterior`. -/
+@[expose, simps] def preimageCompacts (hf : IsInducing f) {S : Set β} (hS : IsCompact S)
+    (hSf : S ⊆ Set.range f) : TopologicalSpace.Compacts α :=
+  ⟨f ⁻¹' S, hf.isCompact_preimage' hS hSf⟩
+
+lemma subset_map_preimageCompacts (hf : IsInducing f) {S : Set β} (hS : IsCompact S)
+    (hSf : S ⊆ Set.range f) :
+    S ⊆ ((hf.preimageCompacts hS hSf).map f hf.continuous : Set β) :=
+  (Set.image_preimage_eq_of_subset hSf).ge
+
+end Topology.IsInducing

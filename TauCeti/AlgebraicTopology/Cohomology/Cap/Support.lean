@@ -361,14 +361,9 @@ lemma relativeCapInto_comp_d_of_cycles (φ : Q⁎[A].cycles p) :
             (Q⁎[A].iCycles p φ)) := by
   have hc := relativeCapInto_comp_d L S U A hS p q n h
     (Q⁎[A].iCycles p φ)
-  have hd : Q[A].d (p + 1) p ≫
-      Q⁎[A].iCycles p φ =
-      (0 : Q[A].X (p + 1) ⟶ L) :=
-    ChainComplex.d_comp_linearYonedaObj_iCycles p (p + 1) φ
-  have hz := relativeCapInto_zero L S U A (p + 1) q (n + 1) (by omega)
-  have hcapzero := (congrArg (relativeCapInto L S U A (p + 1) q (n + 1)
-    (by omega)) hd).trans hz
-  simpa only [hcapzero, sub_zero] using hc
+  erw [ChainComplex.d_comp_linearYonedaObj_iCycles p (p + 1) φ,
+    relativeCapInto_zero L S U A (p + 1) q (n + 1) (by omega), sub_zero] at hc
+  exact hc
 
 private lemma toCycles_capIntoCycles (φ : Q⁎[A].cycles p) :
     R[A].toCycles (n + 1) n ≫
@@ -406,7 +401,9 @@ end Subordinate
 
 section Subspace
 
-variable (T : (TopPair.toSSetPair.obj (openSubspacePair U A)).right.Subcomplex)
+local notation "P[" U "," A "]" => openSubspacePair U A
+
+variable (T : (TopPair.toSSetPair.obj P[U,A]).right.Subcomplex)
   (hT : T ≤ S.preimage (TopPair.toSSetPair.map (openSubspaceInclusion U A)).right)
   (hS : ∀ m (σ : (S : SSet) _⦋m⦌),
     Set.range (X.toSSetObjEquiv _ σ.val) ⊆ U ∨ Set.range (X.toSSetObjEquiv _ σ.val) ⊆ A)
@@ -418,9 +415,8 @@ private lemma capInto_subspace_chains (φ : Q[A].X p ⟶ L) :
     (SSetPair.chainComplexMap
         (SSetPair.restrictMap (TopPair.toSSetPair.map (openSubspaceInclusion U A)) hT)
         ℤₘ).f n ≫ relativeCapInto L S U A p q n h φ =
-      (SSetPair.chainComplexMap
-          ((TopPair.toSSetPair.obj (openSubspacePair U A)).restrictι T) ℤₘ).f n ≫
-        ChainComplex.capChain ℤ ((openSubspacePair U A).alexanderWhitneyDiagonal (ρ_ ℤₘ).inv)
+      (SSetPair.chainComplexMap ((TopPair.toSSetPair.obj P[U,A]).restrictι T) ℤₘ).f n ≫
+        ChainComplex.capChain ℤ (P[U,A].alexanderWhitneyDiagonal (ρ_ ℤₘ).inv)
           ((TopCat.toSSet.obj ((Opens.toTopCat X).obj U)).chainComplexPairing (ρ_ L).hom) p q n h
           ((TopPair.singularChainComplexMap (openSubspaceInclusion U A) ℤₘ).f p ≫ φ) := by
   rw [← cancel_mono ((SSet.chainComplexMap (TopCat.toSSet.map (Opens.inclusion' U)) L).f q)]
@@ -439,54 +435,38 @@ private lemma capInto_subspace_cycles (φ : Q⁎[A].cycles p) :
         (SSetPair.restrictMap (TopPair.toSSetPair.map (openSubspaceInclusion U A)) hT)
         ℤₘ) n ≫ capIntoCycles L S U A hS p q n h φ =
       HomologicalComplex.cyclesMap
-        (SSetPair.chainComplexMap
-          ((TopPair.toSSetPair.obj (openSubspacePair U A)).restrictι T) ℤₘ) n ≫
-        ChainComplex.capCycles ℤ ((openSubspacePair U A).alexanderWhitneyDiagonal (ρ_ ℤₘ).inv)
+        (SSetPair.chainComplexMap ((TopPair.toSSetPair.obj P[U,A]).restrictι T) ℤₘ) n ≫
+        ChainComplex.capCycles ℤ (P[U,A].alexanderWhitneyDiagonal (ρ_ ℤₘ).inv)
           ((TopCat.toSSet.obj ((Opens.toTopCat X).obj U)).chainComplexPairing (ρ_ L).hom) p q n h
           (HomologicalComplex.cyclesMap
             (TopPair.singularCochainComplexMap (openSubspaceInclusion U A)) p φ) := by
-  rw [← cancel_mono
-    (C[U].iCycles q)]
-  have hleft := capIntoCycles_i L S U A hS p q n h φ
-  have hright := ChainComplex.capCycles_i (k := ℤ)
-    ((openSubspacePair U A).alexanderWhitneyDiagonal (ρ_ ℤₘ).inv)
-    ((TopCat.toSSet.obj ((Opens.toTopCat X).obj U)).chainComplexPairing (ρ_ L).hom)
-    p q n h (HomologicalComplex.cyclesMap
-      (TopPair.singularCochainComplexMap (openSubspaceInclusion U A)) p φ)
-  have hφ := ChainComplex.iCycles_cyclesMap_linearYonedaFunctor_map_apply
-    (k := ℤ) (TopPair.singularChainComplexMap (openSubspaceInclusion U A) ℤₘ) p φ
-  erw [Category.assoc, hleft, HomologicalComplex.cyclesMap_i_assoc,
-    Category.assoc, hright, HomologicalComplex.cyclesMap_i_assoc, hφ]
-  erw [capInto_subspace_chains L S U A T hT hS p q n h]
+  rw [← cancel_mono (C[U].iCycles q)]
+  erw [Category.assoc, capIntoCycles_i L S U A hS p q n h φ,
+    HomologicalComplex.cyclesMap_i_assoc, Category.assoc,
+    ChainComplex.capCycles_i (k := ℤ) (p := p) (q := q) (n := n),
+    HomologicalComplex.cyclesMap_i_assoc,
+    ChainComplex.iCycles_cyclesMap_linearYonedaFunctor_map_apply (k := ℤ),
+    capInto_subspace_chains L S U A T hT hS p q n h]
 
 private lemma capInto_subspace_homology (φ : Q⁎[A].cycles p) :
     HomologicalComplex.homologyMap (SSetPair.chainComplexMap
         (SSetPair.restrictMap (TopPair.toSSetPair.map (openSubspaceInclusion U A)) hT)
         ℤₘ) n ≫ capIntoHomology L S U A hS p q n h φ =
       HomologicalComplex.homologyMap
-        (SSetPair.chainComplexMap
-          ((TopPair.toSSetPair.obj (openSubspacePair U A)).restrictι T) ℤₘ) n ≫
-        (openSubspacePair U A).singularCap ℤ (ρ_ ℤₘ).inv (ρ_ L).hom p q n h
-          (((openSubspacePair U A).singularCochainComplex ℤₘ ℤ L).homologyπ p
-            (HomologicalComplex.cyclesMap
+        (SSetPair.chainComplexMap ((TopPair.toSSetPair.obj P[U,A]).restrictι T) ℤₘ) n ≫
+        P[U,A].singularCap ℤ (ρ_ ℤₘ).inv (ρ_ L).hom p q n h
+          ((P[U,A].singularCochainComplex ℤₘ ℤ L).homologyπ p (HomologicalComplex.cyclesMap
               (TopPair.singularCochainComplexMap (openSubspaceInclusion U A)) p φ)) := by
   erw [← cancel_epi
-    ((((TopPair.toSSetPair.obj (openSubspacePair U A)).restrict T).chainComplex ℤₘ).homologyπ n)]
+    ((((TopPair.toSSetPair.obj P[U,A]).restrict T).chainComplex ℤₘ).homologyπ n)]
   have hc := capInto_subspace_cycles L S U A T hT hS p q n h φ
-  have hr := TopPair.singularCap_homologyπ (openSubspacePair U A) ℤ (ρ_ ℤₘ).inv (ρ_ L).hom p q n h
-    (HomologicalComplex.cyclesMap
-      (TopPair.singularCochainComplexMap (openSubspaceInclusion U A)) p φ)
-  have hl := homologyπ_capIntoHomology L S U A hS p q n h φ
-  have hnl := HomologicalComplex.homologyπ_naturality
-    (SSetPair.chainComplexMap
-      (SSetPair.restrictMap (TopPair.toSSetPair.map (openSubspaceInclusion U A)) hT) ℤₘ) n
-  have hnr := HomologicalComplex.homologyπ_naturality
-    (SSetPair.chainComplexMap
-          ((TopPair.toSSetPair.obj (openSubspacePair U A)).restrictι T) ℤₘ) n
-  conv_lhs => erw [← Category.assoc, hnl, Category.assoc, hl]
-  conv_rhs => erw [← Category.assoc, hnr, Category.assoc, hr]
-  have hc' := congrArg
-    (· ≫ C[U].homologyπ q) hc
+  conv_lhs =>
+    erw [HomologicalComplex.homologyπ_naturality_assoc,
+      homologyπ_capIntoHomology L S U A hS p q n h φ]
+  conv_rhs =>
+    erw [HomologicalComplex.homologyπ_naturality_assoc,
+      TopPair.singularCap_homologyπ P[U,A] ℤ (ρ_ ℤₘ).inv (ρ_ L).hom p q n h]
+  have hc' := congrArg (· ≫ C[U].homologyπ q) hc
   simp only [Category.assoc] at hc'
   -- Pair homology is homology of its native relative chain complex.
   convert hc' using 1
@@ -497,20 +477,20 @@ lemma capIntoHomology_apply_eq_singularCap
     [Mono (SSetPair.homologyMap
       ((TopPair.toSSetPair.obj (TopPair.ofSubset (A : Set X))).restrictι S) ℤₘ n)]
     [IsIso (SSetPair.homologyMap
-      ((TopPair.toSSetPair.obj (openSubspacePair U A)).restrictι T) ℤₘ n)]
+      ((TopPair.toSSetPair.obj P[U,A]).restrictι T) ℤₘ n)]
     (φ : Q⁎[A].cycles p)
     (z : R[A].homology n)
-    (y : ((openSubspacePair U A).singularChainComplex ℤₘ).homology n)
+    (y : (P[U,A].singularChainComplex ℤₘ).homology n)
     (hz : SSetPair.homologyMap
         ((TopPair.toSSetPair.obj (TopPair.ofSubset (A : Set X))).restrictι S) ℤₘ n z =
       TopPair.singularHomologyMap (openSubspaceInclusion U A) ℤₘ n y) :
     capIntoHomology L S U A hS p q n h φ z =
-      ((openSubspacePair U A).singularCap ℤ (ρ_ ℤₘ).inv (ρ_ L).hom p q n h
-        (((openSubspacePair U A).singularCochainComplex ℤₘ ℤ L).homologyπ p
+      (P[U,A].singularCap ℤ (ρ_ ℤₘ).inv (ρ_ L).hom p q n h
+        ((P[U,A].singularCochainComplex ℤₘ ℤ L).homologyπ p
           (HomologicalComplex.cyclesMap
             (TopPair.singularCochainComplexMap (openSubspaceInclusion U A)) p φ))).hom y := by
   let j := SSetPair.homologyMap
-    ((TopPair.toSSetPair.obj (openSubspacePair U A)).restrictι T) ℤₘ n
+    ((TopPair.toSSetPair.obj P[U,A]).restrictι T) ℤₘ n
   obtain ⟨y', hy'⟩ := (ConcreteCategory.bijective_of_isIso j).surjective y
   have hz' : SSetPair.homologyMap
       (SSetPair.restrictMap
@@ -526,7 +506,7 @@ lemma capIntoHomology_apply_eq_singularCap
   have hc := ConcreteCategory.congr_hom
     (capInto_subspace_homology L S U A T hT hS p q n h φ) y'
   have hy'' : HomologicalComplex.homologyMap
-      (SSetPair.chainComplexMap ((TopPair.toSSetPair.obj (openSubspacePair U A)).restrictι T)
+      (SSetPair.chainComplexMap ((TopPair.toSSetPair.obj P[U,A]).restrictι T)
         ℤₘ) n y' = y := hy'
   erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hy''] at hc
   exact hc
@@ -549,8 +529,7 @@ lemma restrictSubsetMap_relativeCapInto (hAB : A ≤ B)
   have hp0 := (TopPair.singularChainComplexπ_pair_naturality
     (TopPair.ofSubsetMap (𝟙 X) hAB) ℤₘ).symm
   erw [TopPair.ofSubsetMap_fst, CategoryTheory.Functor.map_id,
-    show SSet.chainComplexMap (𝟙 (TopCat.toSSet.obj X)) ℤₘ = 𝟙 _ from
-      CategoryTheory.Functor.map_id _ _, Category.id_comp] at hp0
+    SSet.chainComplexMap_id, Category.id_comp] at hp0
   have hp := congrArg (fun f ↦ f.f p) hp0
   simp only [HomologicalComplex.comp_f] at hp
   erw [← Category.assoc, hp]

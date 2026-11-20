@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Smoot
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 public import TauCeti.AlgebraicTopology.Singular.Sphere
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Unit
-public import TauCeti.AlgebraicTopology.Cohomology.Cap.MayerVietoris
+public import TauCeti.AlgebraicTopology.Cohomology.Cap.MayerVietoris.Basic
 public import Mathlib.Data.ZMod.Basic
 
 /-! # Signed connecting maps and degree-zero duality
@@ -65,20 +65,14 @@ theorem two_smul_circleMV_fundamentalClass_ne_zero (p : S¹) :
           (U := {p}ᶜ) (V := {-p}ᶜ) isOpen_compl_singleton isOpen_compl_singleton
           (compl_singleton_union_compl_singleton_neg one_ne_zero p) 1 0)
           (circleOrientation.fundamentalClass (by simp)) ≠ 0 := by
-  have hIso : IsIso (TopCat.reducedMayerVietorisδ ℤₘ
-      (X := TopCat.of (S¹))
-      (U := {p}ᶜ) (V := {-p}ᶜ) isOpen_compl_singleton isOpen_compl_singleton
-      (compl_singleton_union_compl_singleton_neg one_ne_zero p) 0) :=
-    isIso_reducedMayerVietorisδ_sphere _ p 0
+  have := isIso_reducedMayerVietorisδ_sphere ℤₘ p 0
   have hm : Mono (TopCat.mayerVietorisδ ℤₘ
       (X := TopCat.of (S¹))
       (U := {p}ᶜ) (V := {-p}ᶜ) isOpen_compl_singleton isOpen_compl_singleton
       (compl_singleton_union_compl_singleton_neg one_ne_zero p) 1 0) := by
-    rw [← TopCat.reducedMayerVietorisδ_comp_ι]
-    have hi : Mono ((reducedSingularHomologyι ℤₘ 0).app (TopCat.of ({p}ᶜ ∩ {-p}ᶜ : Set (S¹)))) := by
-      rw [reducedSingularHomologyι_zero_app]
-      exact mono_comp _ _
-    exact mono_comp' (by infer_instance) hi
+    rw [← TopCat.reducedMayerVietorisδ_comp_ι, reducedSingularHomologyι_zero_app]
+    apply mono_comp' (by infer_instance)
+    exact mono_comp' (by infer_instance) equalizer.ι_mono
   intro h
   apply two_smul_circleFundamentalClass_ne_zero
   apply (ModuleCat.mono_iff_injective _).1 hm

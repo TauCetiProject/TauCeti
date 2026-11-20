@@ -79,19 +79,6 @@ private lemma supportCover_subordinate (U V : Opens X) (K N : Set X) (m : ℕ)
   · exact ⟨Or.inr (hi.trans (Set.sdiff_subset_compl _ _)), Or.inl (hi.trans Set.sdiff_subset),
       Or.inr fun x hx hkn ↦ (hi hx).2 hkn.1⟩
 
-private def preimageCompacts (W : Opens X) (K : Compacts X)
-    (hKW : (K : Set X) ⊆ W) : Compacts ((Opens.toTopCat X).obj W) :=
-  ⟨Opens.inclusion' W ⁻¹' (K : Set X),
-    W.isOpenEmbedding.isInducing.isCompact_preimage' K.isCompact
-      (by rwa [Opens.set_range_inclusion'])⟩
-
-private lemma subset_map_preimageCompacts (W : Opens X) (K : Compacts X)
-    (hKW : (K : Set X) ⊆ W) :
-    (K : Set X) ⊆ ((preimageCompacts W K hKW).map (Opens.inclusion' W)
-      (Opens.inclusion' W).hom.continuous : Set X) :=
-  (Set.image_preimage_eq_of_subset (f := Opens.inclusion' W)
-    (s := (K : Set X)) (by rwa [Opens.set_range_inclusion'])).symm.subset
-
 section Manifold
 
 variable {M E : Type} [TopologicalSpace M] [T2Space M]
@@ -110,27 +97,28 @@ private def openFundamentalClass (W : Opens Mₜ)
   (show localHomology (A := ModuleCat.{0} ℤ) ℤₘ (Opens.inclusion' W ⁻¹' (K : Set Mₜ)) d from
     (o.comap (j := (Opens.inclusion' W).hom) W.isOpenEmbedding).fundamentalClassOn hn
       (show IsCompact (Opens.inclusion' W ⁻¹' (K : Set Mₜ)) from
-        (preimageCompacts W K hKW).isCompact))
+        W.isOpenEmbedding.isInducing.isCompact_preimage' K.isCompact
+        (fun x hx ↦ ⟨⟨x, hKW hx⟩, rfl⟩)))
 
 private lemma fundamentalClassOn_open_preimage (W : Opens Mₜ)
     (K : Compacts Mₜ) (hKW : (K : Set Mₜ) ⊆ W) :
     TopPair.singularHomologyMap
       (openSubspaceInclusion W (K : Set Mₜ)ᶜ) ℤₘ d
       (openFundamentalClass o hn W K hKW) = o.fundamentalClassOn hn K.isCompact := by
-  have hy := o.localHomologyMap_fundamentalClassOn_comap hn
-    (j := (Opens.inclusion' W).hom) W.isOpenEmbedding (
-      (preimageCompacts W K hKW).isCompact)
-  have hKI := subset_map_preimageCompacts W K hKW
-  have hh := congrArg
-    (localHomologyRestriction ℤₘ hKI d) hy
-  -- The private compact constructor has the native preimage as its carrier.
-  erw [o.localHomologyRestriction_fundamentalClassOn_of_subset hn
-    (((preimageCompacts W K hKW).isCompact).image (Opens.inclusion' W).hom.continuous)
-    K.isCompact hKI] at hh
-  erw [← ConcreteCategory.comp_apply, localHomologyMap_comp_localHomologyRestriction,
-    localHomologyMap_def] at hh
-  -- The open-subspace pair is the complement pair used by local homology.
-  exact hh
+  have hy := HomologicalOrientation.eq_localHomologyMap_fundamentalClassOn
+    (o.comap (j := (Opens.inclusion' W).hom) W.isOpenEmbedding) hn W.isOpenEmbedding
+      (W.isOpenEmbedding.isInducing.isCompact_preimage' K.isCompact
+        (fun x hx ↦ ⟨⟨x, hKW hx⟩, rfl⟩)) rfl K.isCompact.isClosed
+      (fun x hx ↦ ⟨⟨x, hKW hx⟩, rfl⟩)
+      (γ := o.fundamentalClassOn hn K.isCompact) (by
+        intro x hx
+        rw [o.localHomologyRestriction_fundamentalClassOn hn K.isCompact hx,
+          ← IsOpenEmbedding.coe_localOrientationEquiv,
+          HomologicalOrientation.localOrientationEquiv_comap_apply])
+  erw [localHomologyMap_def] at hy
+  convert hy.symm using 1
+  -- Both native pair maps have the open inclusion as their ambient component.
+  congr 2
 
 private lemma localized_cap_fundamentalClass (W : Opens Mₜ) (K : Compacts Mₜ)
     (hKW : (K : Set Mₜ) ⊆ W) {ι : Type}
@@ -149,7 +137,8 @@ private lemma localized_cap_fundamentalClass (W : Opens Mₜ) (K : Compacts Mₜ
     capIntoHomology L ((Mₜ).smallSingularSubcomplex F) W
         ⟨(K : Set Mₜ)ᶜ, K.isCompact.isClosed.isOpen_compl⟩ hSW p q d h ζ z =
       (o.comap (j := (Opens.inclusion' W).hom) W.isOpenEmbedding).capFundamentalClassOn
-        hn L ((preimageCompacts W K hKW).isCompact) p q h (TopPair.singularCohomologyMap
+        hn L (W.isOpenEmbedding.isInducing.isCompact_preimage' K.isCompact
+        (fun x hx ↦ ⟨⟨x, hKW hx⟩, rfl⟩)) p q h (TopPair.singularCohomologyMap
           (openSubspaceInclusion W (K : Set Mₜ)ᶜ) p
           (((TopPair.ofSubset (K : Set Mₜ)ᶜ).singularCochainComplex ℤₘ ℤ L).homologyπ
             p ζ)) := by
@@ -174,7 +163,6 @@ private lemma localized_cap_fundamentalClass (W : Opens Mₜ) (K : Compacts Mₜ
   have hy := fundamentalClassOn_open_preimage o hn W K hKW
   have hc := capIntoHomology_apply_eq_singularCap L S W D T hT hSW p q d h ζ z
     (openFundamentalClass o hn W K hKW) (hz.trans hy.symm)
-  -- The compact constructor projects to the native complement-preimage carrier.
   erw [HomologicalOrientation.capFundamentalClassOn_apply]
   erw [HomologicalComplex.moduleCat_homologyMap_homologyπ]
   -- The cap-fundamental-class map uses the homology of this literal relative pair.
@@ -184,9 +172,11 @@ private lemma localized_cap_fundamentalClass (W : Opens Mₜ) (K : Compacts Mₜ
 omit [T2Space M] in
 private lemma support_excision_preimage (W : Opens Mₜ)
     (K : Compacts Mₜ) (hKW : (K : Set Mₜ) ⊆ W) (p : ℕ) :
-    TopCat.singularCohomologyComplRestrict ℤₘ ℤ L (subset_map_preimageCompacts W K hKW) p ≫
+    TopCat.singularCohomologyComplRestrict ℤₘ ℤ L (W.isOpenEmbedding.subset_map_preimageCompacts
+      K.isCompact
+      (fun x hx ↦ ⟨⟨x, hKW hx⟩, rfl⟩)) p ≫
       TopCat.singularCohomologyComplCompactsMap W.isOpenEmbedding.injective
-        (preimageCompacts W K hKW) p =
+        (W.isOpenEmbedding.preimageCompacts K.isCompact (fun x hx ↦ ⟨⟨x, hKW hx⟩, rfl⟩)) p =
       TopPair.singularCohomologyMap
         (R := ℤₘ) (k := ℤ) (M := L)
         (openSubspaceInclusion W (K : Set Mₜ)ᶜ) p := by
@@ -195,9 +185,7 @@ private lemma support_excision_preimage (W : Opens Mₜ)
   erw [← TopPair.singularCohomologyMap_comp]
   apply congrArg (fun f ↦ TopPair.singularCohomologyMap
     (R := ℤₘ) (k := ℤ) (M := L) f p)
-  apply TopPair.hom_ext_of_fst
-  erw [TopPair.Hom.fst_comp, TopPair.ofSubsetMap_fst, TopPair.ofSubsetMap_fst,
-    Category.comp_id, openSubspaceInclusion_fst]
+  exact TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (Category.comp_id _)
 
 private lemma exists_small_fundamentalCycle (K : Compacts Mₜ) {ι : Type}
     (F : ι → Set Mₜ) (hF : ∀ i, IsOpen (F i)) (hcov : ⋃ i, F i = Set.univ) :
@@ -277,31 +265,31 @@ private lemma duality_excision_preimage (W : Opens Mₜ)
     (K : Compacts Mₜ) (hKW : (K : Set Mₜ) ⊆ W)
     (p q : ℕ) (h : p + q = d)
     (a : (TopPair.ofSubset (K : Set Mₜ)ᶜ).singularCohomology ℤₘ ℤ L p) :
+    let NW := W.isOpenEmbedding.preimageCompacts K.isCompact (fun x hx ↦ ⟨⟨x, hKW hx⟩, rfl⟩)
+    let hKI := W.isOpenEmbedding.subset_map_preimageCompacts K.isCompact
+      (fun x hx ↦ ⟨⟨x, hKW hx⟩, rfl⟩)
     (o.comap (j := (Opens.inclusion' W).hom) W.isOpenEmbedding).dualityMap hn L p q h
-        (TopCat.compactSupportCohomologyι p
-          (preimageCompacts W K hKW)
-          (TopCat.singularCohomologyComplCompactsMap W.isOpenEmbedding.injective
-            (preimageCompacts W K hKW) p
-            (TopCat.singularCohomologyComplRestrict ℤₘ ℤ L
-              (subset_map_preimageCompacts W K hKW) p a))) =
+        (TopCat.compactSupportCohomologyι p NW
+          (TopCat.singularCohomologyComplCompactsMap W.isOpenEmbedding.injective NW p
+            (TopCat.singularCohomologyComplRestrict ℤₘ ℤ L hKI p a))) =
       (o.comap (j := (Opens.inclusion' W).hom) W.isOpenEmbedding).capFundamentalClassOn
-        hn L ((preimageCompacts W K hKW).isCompact) p q h (TopPair.singularCohomologyMap
+        hn L (W.isOpenEmbedding.isInducing.isCompact_preimage' K.isCompact
+        (fun x hx ↦ ⟨⟨x, hKW hx⟩, rfl⟩)) p q h (TopPair.singularCohomologyMap
           (openSubspaceInclusion W (K : Set Mₜ)ᶜ)
           p a) := by
-  let NW : Compacts ((Opens.toTopCat Mₜ).obj W) :=
-    preimageCompacts W K hKW
+  intro NW hKI
   have hc := ConcreteCategory.congr_hom (support_excision_preimage L W K hKW p) a
   erw [ConcreteCategory.comp_apply] at hc
   have hd := HomologicalOrientation.dualityMap_compactSupportCohomologyι_apply
     (o.comap (j := (Opens.inclusion' W).hom) W.isOpenEmbedding) hn L p q h NW
       (TopCat.singularCohomologyComplCompactsMap W.isOpenEmbedding.injective NW p
-        (TopCat.singularCohomologyComplRestrict ℤₘ ℤ L (subset_map_preimageCompacts W K hKW) p a))
+        (TopCat.singularCohomologyComplRestrict ℤₘ ℤ L hKI p a))
   erw [hc] at hd
   erw [hc]
-  -- The compact constructor projects to the native complement-preimage carrier.
   erw [HomologicalOrientation.capFundamentalClassOn_apply]
   -- The native complement-preimage pair and its inclusion are the open-subspace pair/map.
   convert hd using 1
+  rfl
 
 private lemma localized_duality_compact_union (U V : Opens Mₜ)
     (hUV : U ⊔ V = ⊤) (K N : Compacts Mₜ)
@@ -373,8 +361,9 @@ private lemma localized_duality_compact_union (U V : Opens Mₜ)
     hKW F hF hcov hSW (p + 1) q (by omega) ζ _ hμD)
   erw [hζ] at hright
   let NW : Compacts ((Opens.toTopCat Mₜ).obj W) :=
-    preimageCompacts W (K ⊓ N) hKW
-  have hN := subset_map_preimageCompacts W (K ⊓ N) hKW
+    W.isOpenEmbedding.preimageCompacts (K ⊓ N).isCompact (fun x hx ↦ ⟨⟨x, hKW hx⟩, rfl⟩)
+  have hN := W.isOpenEmbedding.subset_map_preimageCompacts (K ⊓ N).isCompact
+    (fun x hx ↦ ⟨⟨x, hKW hx⟩, rfl⟩)
   have hδc := ConcreteCategory.congr_hom
     (TopCat.compactSupportCohomologyι_compactSupportCohomologyMayerVietorisδ ℤₘ ℤ L U V hUV (K ⊔ N)
       K.isCompact N.isCompact hKU hNV (by exact Set.Subset.rfl) NW hN p (p + 1) rfl) a
@@ -469,10 +458,7 @@ lemma _root_.TauCeti.HomologicalOrientation.dualityMap_mayerVietorisδ
   apply TopCat.compactSupportCohomology_hom_ext
   intro C
   have hcover : (C : Set Mₜ) ⊆ (U : Set Mₜ) ∪ V := by
-    have hh := congrArg (fun W : Opens Mₜ ↦ (W : Set Mₜ)) hUV
-    rw [Opens.coe_sup, Opens.coe_top] at hh
-    rw [hh]
-    exact Set.subset_univ _
+    simpa only [← Opens.coe_sup, hUV, Opens.coe_top] using Set.subset_univ (C : Set Mₜ)
   obtain ⟨k, n, hk, hn', hku, hnv, heq⟩ :=
     C.isCompact.binary_compact_cover U.isOpen V.isOpen hcover
   let K : Compacts Mₜ := ⟨k, hk⟩

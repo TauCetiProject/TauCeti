@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Relative
 public import Mathlib.Topology.Category.TopCat.EpiMono
 public import Mathlib.Topology.Category.TopPair
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Restrict
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
@@ -750,9 +751,8 @@ lemma chainComplexπ_restrictSubsetMap
     ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).restrict S).chainComplexπ R ≫
       SSetPair.chainComplexMap (restrictSubsetMap S hAB) R =
       ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).restrict S).chainComplexπ R := by
-  erw [← SSetPair.chainComplexπ_naturality, restrictSubsetMap_right,
-    show SSet.chainComplexMap (𝟙 S.toSSet) R = 𝟙 _ from CategoryTheory.Functor.map_id _ _,
-    Category.id_comp]
+  erw [← SSetPair.chainComplexπ_naturality, restrictSubsetMap_right]
+  erw [SSet.chainComplexMap_id, Category.id_comp]
 
 /-- Support change commutes with the original relative-chain inclusion. -/
 lemma chainComplexMap_restrictSubsetMap_comp_restrictι

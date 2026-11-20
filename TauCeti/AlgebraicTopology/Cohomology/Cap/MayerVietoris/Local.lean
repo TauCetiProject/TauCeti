@@ -64,8 +64,7 @@ private lemma localized_cap_ambient (hCA : C ≤ A)
   have hn := TopPair.capChain_naturality (TopPair.ofSubsetMap (𝟙 X) hCA)
     ℤ (ρ_ ℤₘ).inv (ρ_ L).hom p q n h φ
   erw [TopPair.ofSubsetMap_fst, CategoryTheory.Functor.map_id,
-    show SSet.chainComplexMap (𝟙 (TopCat.toSSet.obj X)) L = 𝟙 _ from
-      CategoryTheory.Functor.map_id _ _, Category.comp_id] at hn
+    SSet.chainComplexMap_id, Category.comp_id] at hn
   exact congrArg ((SSetPair.chainComplexMap
     ((TopPair.toSSetPair.obj (TopPair.ofSubset (C : Set X))).restrictι S) ℤₘ).f n ≫ ·) hn
 
