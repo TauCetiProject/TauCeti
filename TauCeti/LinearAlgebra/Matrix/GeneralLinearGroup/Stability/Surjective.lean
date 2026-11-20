@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 public import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
-public import TauCeti.RingTheory.StableRange
+public import TauCeti.RingTheory.StableRange.Basic
 
 /-!
 # Surjective stability, normality of `Eₙ(R)`, and unimodular orbits
