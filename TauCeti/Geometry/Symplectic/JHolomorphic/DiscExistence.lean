@@ -56,7 +56,7 @@ Lipschitz bounds on `K` and its derivative make `h ↦ K(u)` Lipschitz in the H�
 smallness properties after rescaling `x ↦ J(λ x)` with small `λ`, which gives the local theorem for
 every `ξ`.
 
-The supported Hölder source space and bounded Cauchy derivative also occur in the zero-order
+The supported Hölder source space also occurs in the zero-order
 Beltrami theorem `TauCeti.exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv`. Its scalar
 `C^{k,α}` variant is `TauCeti.exists_ckHolder_conjWirtingerDeriv_eq_mul_wirtingerDeriv`.
 The Cauchy transform regularity here is provided by the zero-order source lemmas
