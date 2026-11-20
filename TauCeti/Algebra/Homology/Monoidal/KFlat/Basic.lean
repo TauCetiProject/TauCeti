@@ -61,6 +61,7 @@ K-flat. K-flat resolutions of unbounded complexes are constructed in
   K-flat.
 * `CochainComplex.isKFlat_of_d_eq_zero`: complexes with zero differentials and flat terms are
   K-flat.
+* `CochainComplex.isKFlat_tensorUnit`: the monoidal unit of cochain complexes is K-flat.
 
 The tensor factor containing the K-flat complex is placed on the left. In a symmetric
 monoidal category this is the usual K-flat condition, with the two factors interchanged
@@ -376,5 +377,18 @@ theorem isKFlat_of_boundedAbove_flat [HasColimitsOfShape ℕ C] [HasExactColimit
   exact isKFlat_of_isColimit K.isColimitStupidTruncGESequenceCocone
 
 end Bounded
+
+section TensorUnit
+
+variable [∀ (X Y : GradedObject ℤ C), GradedObject.HasTensor X Y]
+  [∀ X, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X)]
+  [∀ (X Y Z : GradedObject ℤ C), GradedObject.HasGoodTensor₁₂Tensor X Y Z]
+  [∀ (X Y Z : GradedObject ℤ C), GradedObject.HasGoodTensorTensor₂₃ X Y Z]
+
+/-- The monoidal unit of cochain complexes, the unit `𝟙_ C` placed in degree `0`, is K-flat. -/
+instance isKFlat_tensorUnit : (𝟙_ (CochainComplex C ℤ)).IsKFlat :=
+  ⟨fun A hA i ↦ (hA i).of_iso (λ_ A).symm⟩
+
+end TensorUnit
 
 end CochainComplex
