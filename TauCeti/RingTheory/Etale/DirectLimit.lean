@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Etale.Finite
-public import TauCeti.Algebra.Colimit.Ring
+public import TauCeti.Algebra.Colimit.FinitePresentation
 public import TauCeti.RingTheory.Etale.NoetherianDescent
 
 /-!

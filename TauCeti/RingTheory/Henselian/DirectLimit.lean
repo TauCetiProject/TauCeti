@@ -72,7 +72,7 @@ private theorem henselianRing_of_nonempty [Nonempty ι] [IsDirectedOrder ι]
     simp only [derivative_map, eval_map_apply] at h₁ h₂
     -- Both conditions descend to a common later stage `l`, where `(G l, I l)` is Henselian.
     obtain ⟨l₁, hkl₁, h₁⟩ := (of_mem_iSup_map_of_iff hI).1 h₁
-    obtain ⟨l₂, hkl₂, h₂⟩ := (isUnit_mk_of_iff hI).1 h₂
+    obtain ⟨l₂, hkl₂, h₂⟩ := (isUnit_quotientMk_of_iff hI).1 h₂
     obtain ⟨l, hl₁l, hl₂l⟩ := exists_ge_ge l₁ l₂
     have h₂ := h₂.map (Ideal.quotientMap (I l) (f l₂ l hl₂l) (hI l₂ l hl₂l))
     obtain ⟨a, ha, hab⟩ := HenselianRing.is_henselian (I := I l)

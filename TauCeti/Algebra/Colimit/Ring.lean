@@ -7,35 +7,32 @@ module
 
 public import Mathlib.Algebra.Colimit.Ring
 public import Mathlib.Algebra.Polynomial.Lifts
-public import Mathlib.RingTheory.FinitePresentation
-import Mathlib.Data.Fintype.Order
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
-# Ideals, monic polynomials and finitely presented rings over directed colimits of rings
+# Ideals and monic polynomials over directed colimits of rings
 
 Let `I i` be a compatible family of ideals in a directed system of commutative rings `G i`,
 indexed by a nonempty directed preorder: the transition maps `f i j` carry `I i` into `I j`. The
 colimit ideal of `Ring.DirectLimit G f` is `⨆ i, (I i).map (of G f i)`. This file shows that its
-elements are exactly the images of elements of the `I i`, and that membership in it, and being a
-unit modulo it, are detected at a finite stage. It also shows that monic polynomials over the
-colimit come from monic polynomials over some stage, and that ring homomorphisms from a finitely
-presented ring into the colimit factor through some stage.
+elements are exactly the images of elements of the `I i`, and that the image of an element of a
+stage `i` lies in it, or is a unit modulo it, if and only if the same holds for the ideal `I j` at
+some stage `j ≥ i`. It also shows that monic polynomials over the colimit come from monic
+polynomials over some stage.
 
 ## Main results
 
 * `Ring.DirectLimit.mem_iSup_map_of_iff`: membership in the colimit ideal.
-* `Ring.DirectLimit.of_mem_iSup_map_of_iff`, `Ring.DirectLimit.isUnit_mk_of_iff`: the image of
-  an element of a stage lies in the colimit ideal, or is a unit modulo it, if and only if this
-  holds for the ideal at some later stage.
+* `Ring.DirectLimit.of_mem_iSup_map_of_iff`, `Ring.DirectLimit.isUnit_quotientMk_of_iff`: the
+  image of an element of a stage `i` lies in the colimit ideal, or is a unit modulo it, if and
+  only if this holds for the ideal at some stage `j ≥ i`.
 * `Ring.DirectLimit.Polynomial.exists_monic_of`: a monic polynomial over the colimit comes from a
   monic polynomial over some stage.
-* `Ring.DirectLimit.exists_of_comp_eq_of_finitePresentation`: a ring homomorphism from a
-  finitely presented ring into the colimit factors through some stage.
 -/
 
 public section
 
-open Polynomial MvPolynomial
+open Polynomial
 
 namespace Ring.DirectLimit
 
@@ -85,16 +82,14 @@ theorem of_mem_iSup_map_of_iff [IsDirectedOrder ι] [DirectedSystem G (f · · �
     of_f hij x ▸ Ideal.mem_iSup_of_mem j (Ideal.mem_map_of_mem _ hj)⟩
   have : Nonempty ι := ⟨i⟩
   obtain ⟨m, y, hy, hyx⟩ := (mem_iSup_map_of_iff hI).1 hx
-  obtain ⟨k, hik, hmk⟩ := exists_ge_ge i m
-  obtain ⟨j, hkj, hj⟩ : ∃ j, ∃ hkj : k ≤ j, f k j hkj (f i k hik x - f m k hmk y) = 0 :=
-    of.zero_exact (by simp [hyx])
-  refine ⟨j, hik.trans hkj, ?_⟩
-  rw [map_sub, sub_eq_zero, DirectedSystem.map_map' f, DirectedSystem.map_map' f] at hj
-  exact hj ▸ hI m j _ hy
+  -- `x` and `y` have the same image in the colimit, so they agree at a common later stage.
+  obtain ⟨j, hij, hmj, hj⟩ := Quotient.eq.mp <| by
+    simpa only [ringEquiv_of] using congr(ringEquiv G f $hyx.symm)
+  exact ⟨j, hij, hj ▸ hI m j hmj hy⟩
 
 /-- An element of a stage is a unit modulo the colimit of a compatible family of ideals if and only
 if it is a unit modulo the ideal at some later stage. -/
-theorem isUnit_mk_of_iff [IsDirectedOrder ι] [DirectedSystem G (f · · ·)]
+theorem isUnit_quotientMk_of_iff [IsDirectedOrder ι] [DirectedSystem G (f · · ·)]
     (hI : ∀ i j (hij : i ≤ j), I i ≤ (I j).comap (f i j hij)) {i : ι} {x : G i} :
     IsUnit (Ideal.Quotient.mk (⨆ i, (I i).map (of G (f · · ·) i)) (of G (f · · ·) i x)) ↔
       ∃ j, ∃ hij : i ≤ j, IsUnit (Ideal.Quotient.mk (I j) (f i j hij x)) := by
@@ -107,11 +102,11 @@ theorem isUnit_mk_of_iff [IsDirectedOrder ι] [DirectedSystem G (f · · ·)]
   obtain ⟨u, rfl⟩ := Ideal.Quotient.mk_surjective u
   obtain ⟨m, v, rfl⟩ := exists_of u
   obtain ⟨k, hik, hmk⟩ := exists_ge_ge i m
-  rw [← map_mul, ← map_one (Ideal.Quotient.mk _), Ideal.Quotient.eq] at hu
+  rw [← map_mul, Ideal.Quotient.mk_eq_one_iff_sub_mem] at hu
   obtain ⟨j, hkj, hj⟩ := (of_mem_iSup_map_of_iff hI
     (x := f m k hmk v * f i k hik x - 1)).1 (by simpa using hu)
   refine ⟨j, hik.trans hkj, .of_mul_eq_one_right (Ideal.Quotient.mk _ (f m j (hmk.trans hkj) v)) ?_⟩
-  rw [← map_mul, ← map_one (Ideal.Quotient.mk _), Ideal.Quotient.eq]
+  rw [← map_mul, Ideal.Quotient.mk_eq_one_iff_sub_mem]
   simpa [DirectedSystem.map_map' f] using hj
 
 /-- A monic polynomial over a directed colimit of rings is the image of a monic polynomial over
@@ -122,41 +117,5 @@ theorem Polynomial.exists_monic_of [Nonempty ι] [IsDirectedOrder ι]
   obtain ⟨i, p, hp⟩ := Ring.DirectLimit.Polynomial.exists_of P
   obtain ⟨q, hq, -, hqm⟩ := lifts_and_natDegree_eq_and_monic ((mem_lifts P).2 ⟨p, hp⟩) hP
   exact ⟨i, q, hqm, hq⟩
-
-/-- A ring homomorphism from a finitely presented ring into a directed colimit of rings factors
-through some stage. This is the surjectivity half of the statement that `Hom(A, -)` commutes
-with directed colimits for a finitely presented ring `A`.
-
-The proof adapts Mathlib's `RingHom.EssFiniteType.exists_eq_comp_ι_app_of_isColimit`
-(`Mathlib/Algebra/Category/Ring/FinitePresentation.lean`), which is stated for `IsColimit` cocones
-in `CommRingCat`, to `Ring.DirectLimit`. -/
-theorem exists_of_comp_eq_of_finitePresentation [Nonempty ι] [IsDirectedOrder ι]
-    [DirectedSystem G (f · · ·)] {A : Type*} [CommRing A] [Algebra.FinitePresentation ℤ A]
-    (g : A →+* DirectLimit G (f · · ·)) :
-    ∃ i, ∃ g' : A →+* G i, (of G (f · · ·) i).comp g' = g := by
-  classical
-  obtain ⟨n, π, hπ, s, hs⟩ := Algebra.FinitePresentation.out (R := ℤ) (A := A)
-  -- Lift the images of the generators to a common stage `i`.
-  choose j x hx using fun k : Fin n ↦ exists_of (g (π (X k)))
-  obtain ⟨i, hji⟩ := Finite.exists_le j
-  let ψ : MvPolynomial (Fin n) ℤ →+* G i := eval₂Hom (Int.castRingHom _)
-    fun k ↦ f (j k) i (hji k) (x k)
-  have hψ : (of G (f · · ·) i).comp ψ = g.comp π.toRingHom :=
-    MvPolynomial.ringHom_ext (fun k ↦ by simp) fun k ↦ by simp [ψ, hx]
-  -- Each of the finitely many relations dies at some later stage `l`.
-  have hrel (r : s) : ∃ m, ∃ him : i ≤ m, f i m him (ψ r) = 0 := by
-    have hr : π r = 0 := RingHom.mem_ker.mp (hs ▸ Ideal.subset_span r.2)
-    exact of.zero_exact <| by simpa [hr] using congr($hψ r)
-  choose m him hm using hrel
-  obtain ⟨l₀, hl₀⟩ := Finite.exists_le m
-  obtain ⟨l, hil, hl₀l⟩ := exists_ge_ge i l₀
-  have hml (r : s) : m r ≤ l := (hl₀ r).trans hl₀l
-  have hker : RingHom.ker π.toRingHom ≤ RingHom.ker ((f i l hil).comp ψ) := by
-    rw [← hs, Ideal.span_le]
-    intro r hr
-    simp [← DirectedSystem.map_map' f (him ⟨r, hr⟩) (hml ⟨r, hr⟩), hm]
-  refine ⟨l, π.toRingHom.liftOfSurjective hπ ⟨_, hker⟩, (RingHom.cancel_right hπ).mp ?_⟩
-  -- Both sides become `(of G f l).comp ((f i l hil).comp ψ)` after composing with `π`.
-  rw [RingHom.comp_assoc, RingHom.liftOfSurjective_comp, ← RingHom.comp_assoc, of_comp_f, hψ]
 
 end Ring.DirectLimit
