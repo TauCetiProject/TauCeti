@@ -90,8 +90,6 @@ polynomial of weight `m` that lies in the square of `idealOfVars σ R` has weigh
   `c ^ w i` multiplies the value of a polynomial of weight `m` by `c ^ m`.
 * `MvPolynomial.coeff_aeval_C_X_mul_X_pow`: the coefficient of `T ^ n` in the substitution
   `X i ↦ X i * T ^ w i` is the weighted homogeneous component of weight `n`.
-* `MvPolynomial.IsWeightedHomogeneous.aeval_C_X_mul_X_pow`: that substitution multiplies a
-  polynomial of weight `n` by `T ^ n`.
 * `MvPolynomial.IsWeightedHomogeneous.comp_weight`: an additive map of the weights preserves
   weighted homogeneity.
 * `MvPolynomial.IsWeightedHomogeneous.eval₂_eq_zero`: a polynomial of nonzero weight vanishes at
@@ -213,19 +211,6 @@ theorem coeff_aeval_C_X_mul_X_pow (w : σ → ℕ) (φ : MvPolynomial σ R) (n :
     rw [h, Polynomial.coeff_C_mul_X_pow, weightedHomogeneousComponent_of_mem
       (isWeightedHomogeneous_monomial w d r rfl)]
   | add p q hp hq => simp [hp, hq]
-
-/-- Substituting `X i * T ^ w i` for each variable `X i` turns a polynomial that is weighted
-homogeneous of weight `n` into its own constant multiple `φ * T ^ n`. -/
-theorem IsWeightedHomogeneous.aeval_C_X_mul_X_pow {w : σ → ℕ} {φ : MvPolynomial σ R} {n : ℕ}
-    (hφ : φ.IsWeightedHomogeneous w n) :
-    MvPolynomial.aeval (fun i ↦ Polynomial.C (X i) * Polynomial.X ^ w i) φ =
-      Polynomial.C φ * Polynomial.X ^ n := by
-  ext k : 2
-  rw [coeff_aeval_C_X_mul_X_pow, Polynomial.coeff_C_mul_X_pow]
-  split_ifs with hk
-  · subst hk
-    exact hφ.weightedHomogeneousComponent_same
-  · exact hφ.weightedHomogeneousComponent_ne k hk
 
 /-- Substituting `t ^ w i • X i` for each variable `X i` multiplies the coefficient of every
 monomial by `t` to the power of its weight. -/

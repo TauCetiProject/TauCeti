@@ -40,22 +40,28 @@ weight `p.natDegree * (p.natDegree - 1)`. -/
 theorem isWeightedHomogeneous_discr {w : σ → ℕ} {p : (MvPolynomial σ R)[X]}
     (hp : ∀ i, (p.coeff i).IsWeightedHomogeneous w (p.natDegree - i)) :
     p.discr.IsWeightedHomogeneous w (p.natDegree * (p.natDegree - 1)) := by
-  -- The substitution `X i ↦ X i * T ^ w i`, valued in polynomials in `T`.
+  -- The substitution `X i ↦ T ^ w i * X i`, valued in polynomials in `T`.
   let ψ : MvPolynomial σ R →+* (MvPolynomial σ R)[X] :=
-    (MvPolynomial.aeval fun i ↦ C (MvPolynomial.X i) * X ^ w i).toRingHom
+    (MvPolynomial.aeval fun i ↦ X ^ w i * C (MvPolynomial.X i)).toRingHom
   have hC : (p.map C).natDegree = p.natDegree := natDegree_map_eq_of_injective C_injective p
   -- It scales the roots of `p` by `T`.
   have hmap : p.map ψ = (p.map C).scaleRoots X := by
     ext i : 2
-    rw [coeff_map, coeff_scaleRoots, coeff_map, hC]
-    exact (hp i).aeval_C_X_mul_X_pow
+    rw [coeff_map, coeff_scaleRoots, coeff_map, hC, mul_comm]
+    have hCφ : MvPolynomial.aeval (fun j ↦ C (MvPolynomial.X j)) (p.coeff i) = C (p.coeff i) := by
+      conv_rhs => rw [← MvPolynomial.aeval_X_left_apply (p.coeff i)]
+      exact (MvPolynomial.comp_aeval_apply _ ((Algebra.ofId _ _).restrictScalars R) _).symm
+    rw [← hCφ]
+    exact (hp i).aeval_pow_mul X _
   have hdeg : (p.map ψ).natDegree = p.natDegree := by rw [hmap, natDegree_scaleRoots, hC]
   have key : ψ p.discr = C p.discr * X ^ (p.natDegree * (p.natDegree - 1)) := by
     rw [← discr_map_of_natDegree_eq ψ hdeg, hmap, discr_scaleRoots, hC,
       discr_map_of_natDegree_eq C hC, mul_comm]
   -- Read off the coefficient of `T ^ (n (n - 1))`.
-  have hcomp : (ψ p.discr).coeff (p.natDegree * (p.natDegree - 1)) = _ :=
-    MvPolynomial.coeff_aeval_C_X_mul_X_pow w p.discr _
+  have hcomp : (ψ p.discr).coeff (p.natDegree * (p.natDegree - 1)) =
+      MvPolynomial.weightedHomogeneousComponent w (p.natDegree * (p.natDegree - 1)) p.discr := by
+    simp_rw [ψ, mul_comm (X ^ _)]
+    exact MvPolynomial.coeff_aeval_C_X_mul_X_pow w p.discr _
   rw [key, coeff_C_mul_X_pow, ite_eq_left rfl] at hcomp
   rw [hcomp]
   exact MvPolynomial.weightedHomogeneousComponent_isWeightedHomogeneous _ _
