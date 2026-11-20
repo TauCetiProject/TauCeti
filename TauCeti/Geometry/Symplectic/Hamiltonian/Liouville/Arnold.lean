@@ -301,16 +301,14 @@ theorem hamiltonianFlowAction_apply_eq_iff {x : M} {v w : ι → ℝ} :
     (a := (v : (ι → ℝ) ⧸ AddAction.stabilizer (ι → ℝ) x)) (b := w) |>.trans QuotientAddGroup.eq
 
 /-- **Points of one orbit have the same stabilizer.** Since `ι → ℝ` is commutative, `v • x` and
-`x` have the same stabilizer: the Liouville tori carry a single period lattice. -/
+`x` have the same stabilizer: the Liouville tori carry a single period lattice. This is Mathlib's
+`AddAction.stabilizer_vadd_eq_right` for the flow action. -/
 @[simp]
 theorem hamiltonianFlowStabilizer_hamiltonianFlowAction_apply (v : ι → ℝ) (x : M) :
     hσ.hamiltonianFlowStabilizer hF hcomm hc ((hσ.hamiltonianFlowAction hF hcomm hc v).toMul x) =
-      hσ.hamiltonianFlowStabilizer hF hcomm hc x := by
-  ext w
-  rw [mem_hamiltonianFlowStabilizer, mem_hamiltonianFlowStabilizer,
-    ← hσ.hamiltonianFlowAction_add_apply hF hcomm hc, add_comm,
-    hσ.hamiltonianFlowAction_add_apply hF hcomm hc]
-  exact (hσ.hamiltonianFlowAction hF hcomm hc v).toMul.injective.eq_iff
+      hσ.hamiltonianFlowStabilizer hF hcomm hc x :=
+  letI := hσ.hamiltonianFlowAddAction hF hcomm hc
+  AddAction.stabilizer_vadd_eq_right v x
 
 /-- **The linearized return map of a period is symplectic.** If `v` is a period of `y`, the action
 of `v` fixes `y`, and its derivative at `y` is a linear symplectic map of `T_y M`. -/
