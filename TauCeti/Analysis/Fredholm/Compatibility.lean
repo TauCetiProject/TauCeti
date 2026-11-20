@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.Adjoint
-public import TauCeti.LinearAlgebra.Dual.Codimension
 
 /-!
 # Compatibility conditions for Fredholm operators
@@ -31,8 +30,9 @@ over a basis of `ker T†`.
 * `ContinuousLinearMap.mem_range_iff_forall_inner_basis_eq_zero` and
   `ContinuousLinearMap.iInf_ker_innerSL_basis_eq_range`: it suffices to test `z` against a basis
   of `ker T†`.
-* `ContinuousLinearMap.linearIndependent_innerSL_basis`: the compatibility functionals
-  `⟪zᵢ, ·⟫` of a finite basis of `ker T†` are linearly independent.
+* `LinearIndependent.innerSL`: the functionals `⟪vᵢ, ·⟫` of a linearly independent family are
+  linearly independent; in particular so are the compatibility functionals of a basis of
+  `ker T†`.
 * `ContinuousLinearMap.IsFredholm.bijective_or_exists_basis_of_index_eq_zero`: the Fredholm
   alternative for operators of index zero, with `dim ker T` compatibility conditions.
 
@@ -47,6 +47,20 @@ public section
 
 open Module
 open scoped InnerProduct InnerProductSpace
+
+/-- The inner-product functionals `⟪vᵢ, ·⟫` of a linearly independent family `vᵢ` are linearly
+independent, since `v ↦ ⟪v, ·⟫` is injective and conjugate-linear. Applied to a basis `zᵢ` of
+the kernel of the adjoint of a closed-range operator `T`, the compatibility functionals
+`⟪zᵢ, ·⟫` are linearly independent; their number is the dimension of the cokernel of `T`, so by
+`Submodule.isLeast_card_iInf_ker_eq` no smaller family of functionals, continuous or not, has
+the range of `T` as its common kernel. -/
+theorem LinearIndependent.innerSL {𝕜 F ι : Type*} [RCLike 𝕜] [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] {v : ι → F} (hv : LinearIndependent 𝕜 v) :
+    LinearIndependent 𝕜 fun i ↦ _root_.innerSL 𝕜 (v i) :=
+  -- `_root_` is needed because `innerSL` alone would refer to this theorem.
+  hv.map_of_surjective_injectiveₛ (starRingEnd 𝕜)
+    (_root_.innerSL 𝕜 : F →L⋆[𝕜] StrongDual 𝕜 F).toLinearMap.toAddMonoidHom
+    (starRingEnd 𝕜).surjective (fun _ _ ↦ innerSL_inj.mp) fun _ _ ↦ by simp
 
 namespace ContinuousLinearMap
 
@@ -85,27 +99,11 @@ theorem iInf_ker_innerSL_basis_eq_range (T : E →L[𝕜] F)
   ext y
   simp [T.mem_range_iff_forall_inner_basis_eq_zero hT b]
 
-/-- For a continuous linear map with closed range, the compatibility functionals `⟪zᵢ, ·⟫` of a
-finite basis `zᵢ` of the kernel of the adjoint are linearly independent. Their number is the
-dimension of the cokernel, so by `Submodule.isLeast_card_iInf_ker_eq` no smaller family of
-functionals, continuous or not, has the range as its common kernel. -/
-theorem linearIndependent_innerSL_basis [Finite ι] (T : E →L[𝕜] F)
-    (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F))
-    (b : Basis ι 𝕜 (LinearMap.ker (T† : F →ₗ[𝕜] E))) :
-    LinearIndependent 𝕜 fun i ↦ innerSL 𝕜 (b i : F) := by
-  have := Fintype.ofFinite ι
-  have hdual : LinearIndependent 𝕜 fun i ↦ (innerSL 𝕜 (b i : F) : Dual 𝕜 F) := by
-    rw [Dual.linearIndependent_iff_finrank_quotient_iInf_ker_eq_card,
-      T.iInf_ker_innerSL_basis_eq_range hT b,
-      (T.cokerEquivKerAdjoint hT).toLinearEquiv.finrank_eq, finrank_eq_card_basis b]
-  -- Forgetting continuity is linear, so independence in `Dual 𝕜 F` lifts to `StrongDual 𝕜 F`.
-  exact hdual.of_comp (coeLM 𝕜)
-
 /-- **The Fredholm alternative** for a Fredholm operator `T` of index zero between Hilbert
 spaces: either `T` is bijective, or `T` has a nonzero kernel and the kernel of the adjoint has a
 basis `zᵢ` indexed by `Fin (dim ker T)` such that `T x = y` is solvable exactly when
 `⟪zᵢ, y⟫ = 0` for every `i`. The compatibility functionals `⟪zᵢ, ·⟫` are linearly independent
-by `ContinuousLinearMap.linearIndependent_innerSL_basis`. -/
+by `LinearIndependent.innerSL`. -/
 theorem IsFredholm.bijective_or_exists_basis_of_index_eq_zero {T : E →L[𝕜] F}
     (hT : T.IsFredholm) (h0 : T.index = 0) :
     Function.Bijective T ∨

@@ -22,8 +22,9 @@ linearly independent. Conversely, a subspace of finite codimension `n` is the co
 Read as a statement about systems of linear equations, a subspace `W` of finite codimension is
 cut out by `finrank K (V ⧸ W)` equations and by no fewer, and a system of that minimal size is
 independent. Applied to the range of a linear map `f`, the minimal number of solvability
-conditions for `f x = y` is the dimension of the cokernel of `f`, and it equals the dimension of
-the kernel exactly when `f` has index zero (`LinearMap.isLeast_finrank_ker_iff_index_eq_zero`).
+conditions for `f x = y` is the dimension of the cokernel of `f`. When the kernel is also
+finite-dimensional, so that `f` is Fredholm, this number equals the dimension of the kernel
+exactly when `f` has index zero (`LinearMap.isLeast_finrank_ker_iff_index_eq_zero`).
 
 ## Main results
 
@@ -39,9 +40,9 @@ the kernel exactly when `f` has index zero (`LinearMap.isLeast_finrank_ker_iff_i
 * `Submodule.exists_linearIndependent_iInf_ker_eq` and `Submodule.isLeast_card_iInf_ker_eq`: a
   subspace of finite codimension `n` is the common kernel of `n` linearly independent
   functionals, and of no fewer.
-* `LinearMap.isLeast_finrank_ker_iff_index_eq_zero`: the dimension of the kernel of a linear
-  map with finite-dimensional cokernel is the minimal number of functionals cutting out its range
-  exactly when the map has index zero.
+* `LinearMap.isLeast_finrank_ker_iff_index_eq_zero`: for a linear map with finite-dimensional
+  kernel and cokernel, the dimension of the kernel is the minimal number of functionals cutting
+  out its range exactly when the map has index zero.
 -/
 
 public section
@@ -137,9 +138,12 @@ namespace LinearMap
 
 variable {K M N : Type*} [Field K] [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
 
-/-- For a linear map `f` with finite-dimensional cokernel, the dimension of the kernel is the
-least number of functionals whose common kernel is the range of `f` (the least number of
-solvability conditions for `f x = y`) if and only if `f` has index zero. -/
+/-- For a linear map `f` with finite-dimensional cokernel, `finrank K (ker f)` is the least
+number of functionals whose common kernel is the range of `f` (the least number of solvability
+conditions for `f x = y`) if and only if `f.index = 0`. When the kernel is finite-dimensional this
+says that the dimension of the kernel is that least number exactly when `f` has index zero.
+Otherwise both sides use the convention `finrank K (ker f) = 0`, under which `f.index` is minus
+the dimension of the cokernel and is not a genuine index. -/
 theorem isLeast_finrank_ker_iff_index_eq_zero (f : M →ₗ[K] N)
     [FiniteDimensional K (N ⧸ range f)] :
     IsLeast {n : ℕ | ∃ L : Fin n → Dual K N, ⨅ i, ker (L i) = range f} (finrank K (ker f)) ↔
