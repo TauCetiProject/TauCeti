@@ -12,6 +12,7 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Symplectic.Complex.Polar
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.LinearAlgebra.BilinearForm.Isometry
 
 /-!
 # The changes of slices of the weighted ellipsoid quotient are local symplectomorphisms
@@ -173,8 +174,10 @@ theorem isLocalDiffeomorphAt_weightedSliceTransitionBranch (ha : 0 < a) (hb : 0 
     IsLocalDiffeomorphAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) n (weightedSliceTransitionBranch a b ε w₀) w := by
   -- The differential preserves the nondegenerate area form, so it is injective.
   have hinj : Function.Injective (fderiv ℝ (weightedSliceTransitionBranch a b ε w₀) w) :=
-    SymplecticForm.injective_of_forall_apply_eq (f := (fderiv ℝ _ w : ℂ →L[ℝ] ℂ).toLinearMap)
-      (stdComplexSymplecticForm_fderiv_weightedSliceTransitionBranch ha hb hw hwε)
+    LinearMap.BilinForm.Isometry.injective (B := stdComplexSymplecticForm.toBilinForm)
+      ⟨(fderiv ℝ _ w : ℂ →L[ℝ] ℂ).toLinearMap,
+        stdComplexSymplecticForm_fderiv_weightedSliceTransitionBranch ha hb hw hwε⟩
+      stdComplexSymplecticForm.nondegenerate.1
   let t : Set ℂ := {y | y / w₀ ∈ slitPlane ∧ b * ‖y‖ ^ 2 < 2 * ε}
   have ht : IsOpen t :=
     (isOpen_slitPlane.preimage (continuous_id.div_const w₀)).inter
