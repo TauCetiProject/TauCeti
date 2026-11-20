@@ -85,6 +85,7 @@ theorem separatesIn_symm : γ.symm.SeparatesIn U z w ↔ γ.SeparatesIn U z w :=
 
 /-- A topological embedding preserves separation by a path. For an ambient homeomorphism `e`, use
 `e.isEmbedding`. -/
+@[simp]
 theorem separatesIn_map_iff {Y : Type v} [TopologicalSpace Y] {f : X → Y} (hf : IsEmbedding f) :
     (γ.map hf.continuous).SeparatesIn (f '' U) (f z) (f w) ↔ γ.SeparatesIn U z w := by
   have hcut : f '' U \ range (γ.map hf.continuous) = f '' (U \ range γ) := by
