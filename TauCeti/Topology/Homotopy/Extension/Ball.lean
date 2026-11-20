@@ -8,7 +8,7 @@ module
 public import TauCeti.Topology.Homotopy.Extension.Basic
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.Analysis.Normed.Module.Convex
-import TauCeti.Analysis.Normed.Module.Connected
+import TauCeti.Analysis.Convex.Contractible
 
 /-!
 # The unit sphere is a closed cofibration in the closed unit ball

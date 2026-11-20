@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Fibration.FirstPage
 public import TauCeti.AlgebraicTopology.Singular.Fibration.SerreLocalSystem
 public import TauCeti.AlgebraicTopology.Singular.Additivity
-import TauCeti.Analysis.Normed.Module.Connected
+import TauCeti.Analysis.Convex.Contractible
 
 /-!
 # The column `p = 0` of the second page of the Serre spectral sequence

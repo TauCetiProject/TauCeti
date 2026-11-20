@@ -10,7 +10,7 @@ public import Mathlib.Data.ENat.Lattice
 public import TauCeti.AlgebraicTopology.Singular.SurfaceGenus
 public import TauCeti.KnotTheory.Slice.Basic
 public import TauCeti.Geometry.Manifold.Orientation.ClosedBall
-import TauCeti.Analysis.Normed.Module.Connected
+import TauCeti.Analysis.Convex.Contractible
 
 /-!
 # The smooth slice genus of a knot

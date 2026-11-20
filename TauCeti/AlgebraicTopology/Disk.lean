@@ -14,7 +14,7 @@ public import TauCeti.Topology.Category.TopPair
 public import TauCeti.Topology.Homotopy.Cube.Radius
 public import TauCeti.Topology.Homotopy.Extension.Ball
 
-import TauCeti.Analysis.Normed.Module.Connected
+import TauCeti.Analysis.Convex.Contractible
 import TauCeti.Topology.Homotopy.Contractible
 import TauCeti.Topology.UnitInterval.OpenSquare
 

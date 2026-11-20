@@ -11,7 +11,7 @@ public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Hemisphere
 public import TauCeti.Geometry.Manifold.Orientation.ClosedBall
 public import TauCeti.KnotTheory.SmoothCircle
-import TauCeti.Analysis.Normed.Module.Connected
+import TauCeti.Analysis.Convex.Contractible
 
 /-!
 # Seifert surfaces and the Seifert genus of a knot

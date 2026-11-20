@@ -22,9 +22,6 @@ the local input for showing that removing a discrete set from a connected manifo
 greater than one keeps it connected: through a partial homeomorphism to the affine space, every
 point of its source has arbitrarily small neighbourhoods whose punctured versions are connected.
 
-The file also records, as an instance, that the closed unit ball of a real seminormed space is
-contractible, being convex.
-
 In any real seminormed space, the `δ`-thickening of a preconnected set is again preconnected
 (`IsPreconnected.thickening`), because `thickening δ s = s + ball 0 δ` is the continuous sum image
 of the product of two preconnected sets.
@@ -40,7 +37,6 @@ of the product of two preconnected sets.
   punctured versions are connected.
 * `IsPreconnected.thickening`: the `δ`-thickening of a preconnected set in a real seminormed space
   is preconnected.
-* `Metric.contractibleSpace_closedBall_one`: the closed unit ball is contractible.
 -/
 
 public section
@@ -108,12 +104,3 @@ theorem exists_mem_nhds_subset_isConnected_sdiff_singleton_of_mem_source
     (φ.continuousOn_symm.mono (sdiff_subset.trans hbt))
 
 end TauCeti
-
-namespace Metric
-
-/-- The closed unit ball of a real seminormed space is contractible, being convex. -/
-instance contractibleSpace_closedBall_one {E : Type*} [SeminormedAddCommGroup E]
-    [NormedSpace ℝ E] {x : E} : ContractibleSpace (closedBall x 1) :=
-  (convex_closedBall x 1).contractibleSpace ⟨x, mem_closedBall_self zero_le_one⟩
-
-end Metric

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Realization
 public import TauCeti.AlgebraicTopology.Sphere.Contractible
-import TauCeti.Analysis.Normed.Module.Connected
+import TauCeti.Analysis.Convex.Contractible
 
 /-!
 # Distinguishing combinatorial balls and spheres

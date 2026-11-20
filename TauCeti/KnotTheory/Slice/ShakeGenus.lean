@@ -11,7 +11,7 @@ public import TauCeti.LowDimTopology.DehnSurgery.SeifertFraming
 import TauCeti.AlgebraicTopology.Singular.Contractible
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import TauCeti.AlgebraicTopology.Singular.Sphere
-import TauCeti.Analysis.Normed.Module.Connected
+import TauCeti.Analysis.Convex.Contractible
 import TauCeti.Geometry.Manifold.Instances.ClosedBall.Boundary
 import TauCeti.LowDimTopology.DehnSurgery.Unknot
 
