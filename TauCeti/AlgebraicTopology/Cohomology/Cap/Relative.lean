@@ -81,6 +81,22 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] [Mo
   [MonoidalPreadditive C] {R S T M N : C}
   [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M)]
 
+/-- Relative cap chains commute with maps of pairs and the induced ambient chain maps. -/
+lemma capChain_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (k : Type*)
+    [Semiring k] [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ N)
+    (p q n : ℕ) (h : p + q = n) (φ : (P'.singularChainComplex R).X p ⟶ M) :
+    (TopPair.singularChainComplexMap f T).f n ≫
+        TauCeti.ChainComplex.capChain k (P'.alexanderWhitneyDiagonal u)
+          ((TopCat.toSSet.obj P'.fst).chainComplexPairing μ) p q n h φ =
+      TauCeti.ChainComplex.capChain k (P.alexanderWhitneyDiagonal u)
+          ((TopCat.toSSet.obj P.fst).chainComplexPairing μ) p q n h
+          ((TopPair.singularChainComplexMap f R).f p ≫ φ) ≫
+        (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.Hom.fst f)) N).f q :=
+  (TauCeti.ChainComplex.capChain_naturality _ _ _ _ _ _ _ _
+    (TopPair.alexanderWhitneyDiagonal_naturality f u)
+    (SSet.chainComplexPairing_naturality (TopCat.toSSet.map (TopPair.Hom.fst f)) μ).symm
+    p q n h φ).symm
+
 /-- Capping the image of a singular chain of `X` in the relative chains of `(X, A)` with a
 relative cochain is capping the chain with the cochain of `X` it restricts to. -/
 @[reassoc]
