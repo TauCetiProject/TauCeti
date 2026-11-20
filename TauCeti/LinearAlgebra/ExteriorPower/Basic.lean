@@ -50,9 +50,10 @@ and moving the remaining factors by vectors of that subspace does not change the
   modules in every characteristic, without factorial invertibility.
 * `exteriorPower.range_toTensorPower`: the image of the antisymmetrization is the image of the
   antisymmetrization operator on the tensor power.
-* `exteriorPower.map_apply_ιMulti_two` and `exteriorPower.map_bijective`: the map induced by `f`
-  sends a two-vector `u ∧ w` to `f u ∧ f w`, and bijective maps induce bijections of exterior
-  powers.
+* `exteriorPower.map_apply_ιMulti_two`, `exteriorPower.map_apply_map_of_comp_eq` and
+  `exteriorPower.map_bijective`: the map induced by `f` sends a two-vector `u ∧ w` to
+  `f u ∧ f w`, induced maps preserve commuting squares, and bijective maps induce bijections of
+  exterior powers.
 * `exteriorPower.ofEq_ιMulti`: the identification of exterior powers of equal degree renumbers the
   factors of an exterior product.
 * `Submodule.ιMulti_eq_zero_of_finrank_lt`: an exterior product vanishes when more of its factors
@@ -294,6 +295,14 @@ theorem map_apply_ιMulti_two (f : M →ₗ[R] N) (u w : M) :
   congr 1
   funext i
   fin_cases i <;> rfl
+
+/-- Exterior powers carry a commuting square `e' ∘ f = g ∘ e` of linear maps to a commuting
+square. -/
+theorem map_apply_map_of_comp_eq {n : ℕ} {M' N' : Type*} [AddCommGroup M'] [Module R M']
+    [AddCommGroup N'] [Module R N'] {f : M →ₗ[R] M'} {g : N →ₗ[R] N'} {e : M →ₗ[R] N}
+    {e' : M' →ₗ[R] N'} (h : e' ∘ₗ f = g ∘ₗ e) (y : ⋀[R]^n M) :
+    map n e' (map n f y) = map n g (map n e y) := by
+  rw [← LinearMap.comp_apply (map n e'), ← map_comp, h, map_comp, LinearMap.comp_apply]
 
 /-- A bijective linear map induces a bijective map on every exterior power. -/
 theorem map_bijective {n : ℕ} {f : M →ₗ[R] N} (hf : Function.Bijective f) :
