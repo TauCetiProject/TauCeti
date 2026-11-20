@@ -8,8 +8,10 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Algebra.Lie.Orthogonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.Matrix.DotProduct
+import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
 # The indefinite unitary group `U(p, q)`
@@ -29,6 +31,9 @@ hyperbolic `n`-space. Over `ℝ`, where the star is trivial, it is the indefinit
 
 The basic structure of these groups is recorded here.
 
+* Its determinant-one elements form the special isometry group
+  `Matrix.specialIsometryGroup A (starRingEnd R)` of the same form, whose defining equation is
+  written `(g.map σ)ᵀ * A * g = A`.
 * Membership in `unitaryGroupOf A` is equivalent to the preservation `⟨g z, g w⟩ = ⟨z, w⟩` of the
   form and, for invertible `A`, to `g * A⁻¹ * star g = A⁻¹`, that is to `star g` lying in
   `unitaryGroupOf A⁻¹`. For `J`, which is its own inverse, `U(p, q)` is stable under `star`.
@@ -69,6 +74,8 @@ The basic structure of these groups is recorded here.
 
 * `Matrix.mem_unitaryGroupOf_iff_forall_dotProduct`: membership as preservation of the
   form.
+* `Matrix.specialIsometryGroup_starRingEnd_eq_comap_unitaryGroupOf`: the determinant-one elements
+  of `unitaryGroupOf A` are the special isometry group of the form.
 * `Matrix.mem_unitaryGroupOf_iff'`: membership as the equation `g * A⁻¹ * star g = A⁻¹`.
 * `Matrix.val_inv_of_mem_unitaryGroupOf`: the inverse of `g` is `A⁻¹ * star g * A`.
 * `Matrix.det_mem_unitary_of_mem_unitaryGroupOf`: `star (det g) * det g = 1`.
@@ -144,10 +151,21 @@ when `⟨g x, g y⟩ = ⟨x, y⟩` for all `x` and `y`, where `⟨x, y⟩ = star
 theorem mem_unitaryGroupOf_iff_forall_dotProduct {g : GL n R} :
     g ∈ unitaryGroupOf A ↔ ∀ x y : n → R,
       star ((g : Matrix n n R) *ᵥ x) ⬝ᵥ A *ᵥ (g *ᵥ y) = star x ⬝ᵥ A *ᵥ y := by
-  simp only [← star_dotProduct_conjTranspose_mul_mul_mulVec, ← star_eq_conjTranspose]
-  refine ⟨fun h x y => by rw [mem_unitaryGroupOf_iff.mp h], fun h => ?_⟩
+  refine ⟨fun h => comp_mulVec_dotProduct_mulVec_mulVec (σ := starRingEnd R) h, fun h => ?_⟩
+  simp only [← star_dotProduct_conjTranspose_mul_mul_mulVec, ← star_eq_conjTranspose] at h
   ext i j
   simpa [mulVec_single_one, Pi.star_single] using h (Pi.single i 1) (Pi.single j 1)
+
+/-- The determinant-one elements of `unitaryGroupOf A` form Tau Ceti's special isometry group
+`Matrix.specialIsometryGroup A (starRingEnd R)` of the `star`-sesquilinear form: the two defining
+equations agree, since `star g = (g.map star)ᵀ`. -/
+theorem specialIsometryGroup_starRingEnd_eq_comap_unitaryGroupOf :
+    A.specialIsometryGroup (starRingEnd R) =
+      (unitaryGroupOf A).comap SpecialLinearGroup.toGL :=
+  Subgroup.ext fun _ => by
+    rw [mem_specialIsometryGroup_iff, Subgroup.mem_comap, mem_unitaryGroupOf_iff,
+      SpecialLinearGroup.coe_GL_coe_matrix, star_eq_conjTranspose, conjTranspose, transpose_map,
+      (funext starRingEnd_apply : ⇑(starRingEnd R) = star)]
 
 /-- **The inverse of an element of `unitaryGroupOf A`**, for invertible `A`, is
 `A⁻¹ * star g * A`. -/
