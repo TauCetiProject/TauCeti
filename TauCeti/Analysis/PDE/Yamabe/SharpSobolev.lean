@@ -401,11 +401,11 @@ theorem sphereYamabeConstant_mul_rpow_sobolevEmbeddingL_le_conformalCoefficient_
     sphereYamabeConstant (finrank ℝ E) *
         (∫ x, |D1p0.sobolevEmbeddingL (inv_ofReal_criticalExponent_add_inv_eq_inv hn) u x| ^
             criticalExponent (finrank ℝ E)) ^ (2 / criticalExponent (finrank ℝ E)) ≤
-      conformalCoefficient (finrank ℝ E) * ∫ x, ‖u.1 x‖ ^ 2 := by
+      conformalCoefficient (finrank ℝ E) * ∫ x, ‖u.val x‖ ^ 2 := by
   set hexp := inv_ofReal_criticalExponent_add_inv_eq_inv hn
   have : Fact (1 ≤ ENNReal.ofReal (criticalExponent (finrank ℝ E))) :=
     ⟨one_le_of_inv_add_eq_inv hexp⟩
-  have hsq := Lp.integral_norm_sq_eq_norm_sq u.1
+  have hsq := Lp.integral_norm_sq_eq_norm_sq u.val
   rw [setIntegral_top_opens, Submodule.norm_coe] at hsq
   rw [← norm_lp_criticalExponent_sq hn, hsq]
   exact sphereYamabeConstant_mul_norm_sobolevEmbeddingL_sq_le_conformalCoefficient_mul_norm_sq hn u
@@ -434,7 +434,7 @@ theorem isLeast_image_conformalCoefficient_mul_norm_sq_div (hn : 2 < finrank ℝ
       exact Real.rpow_pos_of_pos (roundSphereVolume_pos _) _
     have hu_ne : u ≠ 0 := by rintro rfl; simp [map_zero] at hu_norm_pow; linarith
     have hu_grad_sq : ‖u‖ ^ 2 = ∫ x, ‖fderiv ℝ (bubble 1 (0 : E)) x‖ ^ 2 := by
-      have hsq := Lp.integral_norm_sq_eq_norm_sq u.1
+      have hsq := Lp.integral_norm_sq_eq_norm_sq u.val
       rw [setIntegral_top_opens, Submodule.norm_coe] at hsq
       exact hsq.symm.trans (integral_congr_ae (hu_grad.mono fun x hx ↦ by
         dsimp only; rw [hx, norm_gradient_eq_norm_fderiv]))

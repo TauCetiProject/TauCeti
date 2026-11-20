@@ -129,7 +129,7 @@ theorem map_funOnFinite_map_pi_gammaMeasure {f : ι → κ} (hf : Function.Surje
       (gammaMeasure (∑ i with f i = j, a i) r) := by
     have := hfib j
     refine ⟨by fun_prop, ?_⟩
-    rw [map_sum_pi_gammaMeasure (fun i : {i // f i = j} ↦ ha i.1) hr, hsub]
+    rw [map_sum_pi_gammaMeasure (fun i : {i // f i = j} ↦ ha i.val) hr, hsub]
   have h := measurePreserving_pi_fiberwise f (fun i => gammaMeasure (a i) r)
     (fun j => gammaMeasure (∑ i with f i = j, a i) r) hfactor
   have hfun : (fun x j => ∑ i : {i // f i = j}, x i) = FunOnFinite.map (M := ℝ) f := by

@@ -12,7 +12,12 @@ import Mathlib.RingTheory.Ideal.GoingUp
 import Mathlib.RingTheory.RingHom.Integral
 
 /-!
-# Residue fields of points of a fibre product
+# Underlying sets and residue fields of fibre products
+
+In any cartesian square of schemes, the topological image of either projection is the preimage of
+the image of the opposite morphism (`AlgebraicGeometry.Scheme.Pullback.range_fst_of_isPullback`
+and `AlgebraicGeometry.Scheme.Pullback.range_snd_of_isPullback`), extending Mathlib's
+`range_fst` and `range_snd` from chosen pullbacks to arbitrary cartesian squares.
 
 Let `t` be a point of `X ×_S Y` lying over `x ∈ X`, `y ∈ Y` and `s ∈ S`. Mathlib's
 `AlgebraicGeometry.Scheme.Pullback.ofPointTensor` is the canonical map
@@ -28,6 +33,9 @@ Lemma 58.31.1 (0EYD).
 
 ## Main results
 
+* `AlgebraicGeometry.Scheme.Pullback.range_fst_of_isPullback` and
+  `AlgebraicGeometry.Scheme.Pullback.range_snd_of_isPullback`: the topological range of a
+  projection in a cartesian square of schemes is the preimage of the opposite morphism's range.
 * `AlgebraicGeometry.Scheme.Pullback.ofPointTensor_surjective`: `κ(x) ⊗[κ(s)] κ(y) ⟶ κ(t)` is
   surjective when `κ(x)` is integral over `κ(s)`.
 * `AlgebraicGeometry.Scheme.Pullback.closure_range_residueFieldMap_eq_top`: in that case `κ(t)`
@@ -44,6 +52,21 @@ open CategoryTheory Limits
 namespace AlgebraicGeometry.Scheme.Pullback
 
 universe u
+
+/-- In a cartesian square of schemes, the range of the first projection is the preimage of the
+range of the opposite morphism. -/
+theorem range_fst_of_isPullback {P X Y S : Scheme.{u}} {fst : P ⟶ X} {snd : P ⟶ Y}
+    {f : X ⟶ S} {g : Y ⟶ S} (h : IsPullback fst snd f g) :
+    Set.range fst = f ⁻¹' Set.range g := by
+  rw [← h.isoPullback_hom_fst, Scheme.Hom.comp_base, TopCat.coe_comp, Set.range_comp,
+    Set.range_eq_univ.mpr h.isoPullback.hom.surjective, Set.image_univ, range_fst]
+
+/-- In a cartesian square of schemes, the range of the second projection is the preimage of the
+range of the opposite morphism. -/
+theorem range_snd_of_isPullback {P X Y S : Scheme.{u}} {fst : P ⟶ X} {snd : P ⟶ Y}
+    {f : X ⟶ S} {g : Y ⟶ S} (h : IsPullback fst snd f g) :
+    Set.range snd = g ⁻¹' Set.range f :=
+  range_fst_of_isPullback h.flip
 
 variable {X Y S : Scheme.{u}} {f : X ⟶ S} {g : Y ⟶ S}
 

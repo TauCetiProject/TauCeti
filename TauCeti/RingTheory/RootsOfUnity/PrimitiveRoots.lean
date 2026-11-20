@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import Mathlib.FieldTheory.Normal.Defs
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
+import Mathlib.FieldTheory.KummerExtension
 import Mathlib.FieldTheory.Minpoly.IsConjRoot
 import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
 
@@ -36,6 +37,10 @@ Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th
 If `q²` is a primitive `l`-th root of unity, then `q^(l(l+1)) = (-1)^(l+1)`, the sign that appears
 when quantum binomial coefficients are evaluated at such a `q`.
 
+For a primitive `n`-th root of unity `ζ` with `0 < n`, factoring `1 - X ^ n` via the powers of `ζ`
+gives the reciprocal cyclotomic factorization `∏ i < n, (1 - ζ ^ i X) = 1 - X ^ n` and its
+evaluated scalar form.
+
 ## Main results
 
 * `IsPrimitiveRoot.map_eq_pow`: a monoid endomorphism sending a primitive `n`-th root of
@@ -62,6 +67,10 @@ when quantum binomial coefficients are evaluated at such a `q`.
   `n ≠ 0`, exactly `n` elements have `n`-th power `1`.
 * `IsPrimitiveRoot.pow_mul_add_one_eq_neg_one_pow`: if `q²` is a primitive `l`-th root of unity
   with `l > 0`, then `q^(l(l+1)) = (-1)^(l+1)`.
+* `IsPrimitiveRoot.prod_one_sub_pow_mul_X`: for a primitive `n`-th root of unity `ζ` in a domain
+  with `0 < n`, `∏ i ∈ range n, (1 - C (ζ ^ i) * X) = 1 - X ^ n` in `R[X]`.
+* `IsPrimitiveRoot.prod_one_sub_pow_mul`: the evaluated form
+  `∏ i ∈ range n, (1 - ζ ^ i * z) = 1 - z ^ n`.
 
 ## References
 
@@ -215,5 +224,42 @@ theorem _root_.AlgEquiv.apply_eq_apply_of_abelianization_of_eq {K M : Type*} [Co
   have h' := congrArg (Group.Abelianization.lift (hμ'.autToPow K)) h
   rw [Group.Abelianization.lift_apply_of, Group.Abelianization.lift_apply_of] at h'
   rw [← hμ'.autToPow_spec K σ, ← hμ'.autToPow_spec K τ, h']
+
+open Polynomial in
+/-- **Reciprocal cyclotomic factorization of `1 - X ^ n`.** If `ζ` is a primitive `n`-th root of
+unity in an integral domain `R` and `0 < n`, then `1 - X ^ n` is the product over `i < n` of the
+linear Euler factors `1 - C (ζ ^ i) * X` in `R[X]`. The positivity hypothesis `0 < n` is needed
+because at `n = 0` the empty product is `1` while `1 - X ^ 0 = 0`. -/
+theorem _root_.IsPrimitiveRoot.prod_one_sub_pow_mul_X {n : ℕ} {ζ : R} (hζ : IsPrimitiveRoot ζ n)
+    (hn : 0 < n) : ∏ i ∈ Finset.range n, (1 - C (ζ ^ i) * X) = 1 - X ^ n := by
+  let u : Rˣ := (hζ.isUnit hn.ne').unit
+  have hu : IsPrimitiveRoot u n := IsPrimitiveRoot.coe_units_iff.mp (by simpa [u] using hζ)
+  have hη : IsPrimitiveRoot ((u⁻¹ : Rˣ) : R) n := IsPrimitiveRoot.coe_units_iff.mpr hu.inv
+  -- Evaluating `X ^ n - 1 = ∏ (X - ζ ^ i)` at `0` pins down the product of `-ζ ^ i` as `-1`.
+  have hprod_ζ := X_pow_sub_C_eq_prod hζ hn (one_pow n)
+  have hprod_η := X_pow_sub_C_eq_prod hη hn (one_pow n)
+  simp only [mul_one, C_1] at hprod_ζ hprod_η
+  have hzero : ∏ i ∈ Finset.range n, -(ζ ^ i) = -1 := by
+    have h0 := congrArg (Polynomial.eval 0) hprod_ζ
+    simpa [hn.ne', eval_prod] using h0.symm
+  -- Each factor `1 - ζ ^ i X` is `(-ζ ^ i) * (X - (u⁻¹) ^ i)`.
+  have hterm (i : ℕ) :
+      (1 : R[X]) - C (ζ ^ i) * X = C (-(ζ ^ i)) * (X - C (((u⁻¹ : Rˣ) : R) ^ i)) := by
+    have hmul : ζ ^ i * ((u⁻¹ : Rˣ) : R) ^ i = 1 := by
+      have hu1 : ζ * ((u⁻¹ : Rˣ) : R) = 1 := by
+        simp [u]
+      rw [← mul_pow, hu1, one_pow]
+    rw [mul_sub, ← C_mul, neg_mul, hmul]
+    simp [sub_eq_add_neg, add_comm]
+  simp_rw [hterm, Finset.prod_mul_distrib, ← map_prod, hzero, ← hprod_η]
+  simp [sub_eq_add_neg, add_comm]
+
+/-- **Scalar product of `1 - ζ ^ i * z` over the powers of a primitive root.** For `0 < n` and a
+primitive `n`-th root of unity `ζ` in an integral domain `R`, the product of `1 - ζ ^ i * z` over
+`i < n` equals `1 - z ^ n`. -/
+theorem _root_.IsPrimitiveRoot.prod_one_sub_pow_mul {n : ℕ} {ζ : R} (hζ : IsPrimitiveRoot ζ n)
+    (hn : 0 < n) (z : R) : ∏ i ∈ Finset.range n, (1 - ζ ^ i * z) = 1 - z ^ n := by
+  have h := congrArg (Polynomial.eval z) (hζ.prod_one_sub_pow_mul_X hn)
+  simpa [Polynomial.eval_prod] using h
 
 end TauCeti

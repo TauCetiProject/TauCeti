@@ -207,19 +207,20 @@ theorem IsTopologicallyFinitelyGenerated.exists_isTopCharacteristic_le
   have := hG.finite_openSubgroup_index_eq (U : Subgroup G).index
   let K : Subgroup G :=
     ⨅ V : {V : OpenSubgroup G // (V : Subgroup G).index = (U : Subgroup G).index},
-      (V.1 : Subgroup G)
+      (V.val : Subgroup G)
   have hKopen : IsOpen (K : Set G) := by
     rw [Subgroup.coe_iInf]
-    exact isOpen_iInter_of_finite fun V ↦ V.1.isOpen
+    exact isOpen_iInter_of_finite fun V ↦ V.val.isOpen
   have hKchar : IsTopCharacteristic G K := by
     rw [isTopCharacteristic_iff_le_comap]
     intro φ
     rw [Subgroup.comap_iInf]
     refine le_iInf fun V ↦ ?_
-    have hV : ((V.1 : Subgroup G).comap φ.toMulEquiv.toMonoidHom).index = (U : Subgroup G).index :=
-      (Subgroup.index_comap_of_surjective (V.1 : Subgroup G) (f := φ.toMulEquiv.toMonoidHom)
-        φ.toMulEquiv.surjective).trans V.2
-    exact iInf_le_of_le ⟨OpenSubgroup.comap φ.toMulEquiv.toMonoidHom φ.continuous V.1, hV⟩ le_rfl
+    have hV : ((V.val : Subgroup G).comap φ.toMulEquiv.toMonoidHom).index = (U : Subgroup G).index
+        :=
+      (Subgroup.index_comap_of_surjective (V.val : Subgroup G) (f := φ.toMulEquiv.toMonoidHom)
+        φ.toMulEquiv.surjective).trans V.property
+    exact iInf_le_of_le ⟨OpenSubgroup.comap φ.toMulEquiv.toMonoidHom φ.continuous V.val, hV⟩ le_rfl
   have := hKchar.normal
   exact ⟨⟨⟨K, hKopen⟩, inferInstance⟩, hKchar, iInf_le_of_le ⟨U, rfl⟩ le_rfl⟩
 
@@ -238,7 +239,7 @@ theorem IsTopologicallyFinitelyGenerated.exists_isTopCharacteristic_subset
 normal subgroups intersect in the trivial subgroup. -/
 theorem IsTopologicallyFinitelyGenerated.iInf_isTopCharacteristic_eq_bot
     (hG : IsTopologicallyFinitelyGenerated G) :
-    ⨅ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N}, (N.1 : Subgroup G) = ⊥ := by
+    ⨅ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N}, (N.val : Subgroup G) = ⊥ := by
   refine eq_bot_iff.mpr fun g hg ↦
     Subgroup.mem_bot.mpr (Subgroup.eq_one_of_mem_iInf_openNormalSubgroup fun U ↦ ?_)
   obtain ⟨N, hN, hle⟩ := hG.exists_isTopCharacteristic_le U.toOpenSubgroup

@@ -48,11 +48,11 @@ private theorem finiteVertexOrbit_mem_ellipticOrbits_iff
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
     (j : {i : Fin n // (P.vertex i).isLeft}) :
-    (Quotient.mk'' ((P.vertex j).getLeft j.2) : orbitRel.Quotient Γ ℍ) ∈
+    (Quotient.mk'' ((P.vertex j).getLeft j.property) : orbitRel.Quotient Γ ℍ) ∈
       Γ.ellipticOrbits ↔ σ.cycleMap j ≠ 1 := by
   rw [Γ.quotientMk_mem_ellipticOrbits_iff, mem_freeLocus]
   exact (σ.stabilizer_eq_bot_iff_cycleMap_eq_one
-    (Sum.inl_getLeft (P.vertex j) j.2).symm hmap hdisj).not
+    (Sum.inl_getLeft (P.vertex j) j.property).symm hmap hdisj).not
 
 private noncomputable def ellipticVertexCycleEquivRange
     (hmap : ∀ i, σ.map i ∈ Γ)
@@ -60,7 +60,7 @@ private noncomputable def ellipticVertexCycleEquivRange
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
     σ.EllipticVertexCycle ≃
       Set.range (fun j : {i : Fin n // (P.vertex i).isLeft ∧ σ.cycleMap i ≠ 1} ↦
-        (Quotient.mk'' ((P.vertex j).getLeft j.2.1) : orbitRel.Quotient Γ ℍ)) := by
+        (Quotient.mk'' ((P.vertex j).getLeft j.property.1) : orbitRel.Quotient Γ ℍ)) := by
   let s : Setoid {i : Fin n // (P.vertex i).isLeft} :=
     Setoid.comap Subtype.val (Equiv.Perm.SameCycle.setoid σ.next)
   let e := σ.finiteVertexCycleEquiv hmap hdisj
@@ -77,17 +77,17 @@ private noncomputable def ellipticVertexCycleEquivRange
     Quotient.congr flatten.symm (fun _ _ ↦ Iff.rfl)
   have hr (q : orbitRel.Quotient Γ ℍ) :
       (q ∈ Set.range (fun j : {i : Fin n // (P.vertex i).isLeft} ↦
-        (Quotient.mk'' ((P.vertex j).getLeft j.2) : orbitRel.Quotient Γ ℍ)) ∧
+        (Quotient.mk'' ((P.vertex j).getLeft j.property) : orbitRel.Quotient Γ ℍ)) ∧
         q ∈ Γ.ellipticOrbits) ↔
       q ∈ Set.range (fun j : {i : Fin n // (P.vertex i).isLeft ∧ σ.cycleMap i ≠ 1} ↦
-        (Quotient.mk'' ((P.vertex j).getLeft j.2.1) : orbitRel.Quotient Γ ℍ)) := by
+        (Quotient.mk'' ((P.vertex j).getLeft j.property.1) : orbitRel.Quotient Γ ℍ)) := by
     constructor
     · rintro ⟨⟨j, rfl⟩, hj⟩
-      exact ⟨⟨j, j.2, (σ.finiteVertexOrbit_mem_ellipticOrbits_iff hmap hdisj j).mp hj⟩,
+      exact ⟨⟨j, j.property, (σ.finiteVertexOrbit_mem_ellipticOrbits_iff hmap hdisj j).mp hj⟩,
         rfl⟩
     · rintro ⟨j, rfl⟩
-      exact ⟨⟨⟨j, j.2.1⟩, rfl⟩,
-        (σ.finiteVertexOrbit_mem_ellipticOrbits_iff hmap hdisj ⟨j, j.2.1⟩).mpr j.2.2⟩
+      exact ⟨⟨⟨j, j.property.1⟩, rfl⟩,
+        (σ.finiteVertexOrbit_mem_ellipticOrbits_iff hmap hdisj ⟨j, j.property.1⟩).mpr j.property.2⟩
   exact unflatten.trans
     (((Equiv.subtypeQuotientEquivQuotientSubtype
       (fun j : {i : Fin n // (P.vertex i).isLeft} ↦ σ.cycleMap j ≠ 1)
@@ -101,7 +101,7 @@ private theorem ellipticVertexCycleEquivRange_apply
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
     (j : {i : Fin n // (P.vertex i).isLeft ∧ σ.cycleMap i ≠ 1}) :
     (σ.ellipticVertexCycleEquivRange hmap hdisj (Quotient.mk'' j)).val =
-      Quotient.mk'' ((P.vertex j).getLeft j.2.1) := by
+      Quotient.mk'' ((P.vertex j).getLeft j.property.1) := by
   dsimp only [ellipticVertexCycleEquivRange]
   simp only [Equiv.trans_apply, Equiv.subtypeEquivRight_apply,
     Equiv.subtypeSubtypeEquivSubtypeInter_apply_coe, Equiv.subtypeEquiv_apply]
@@ -114,9 +114,9 @@ private theorem ellipticVertexOrbit_mem
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
     (j : {i : Fin n // (P.vertex i).isLeft ∧ σ.cycleMap i ≠ 1}) :
-    (Quotient.mk'' ((P.vertex j).getLeft j.2.1) : orbitRel.Quotient Γ ℍ) ∈
+    (Quotient.mk'' ((P.vertex j).getLeft j.property.1) : orbitRel.Quotient Γ ℍ) ∈
       Γ.ellipticOrbits := by
-  exact (σ.finiteVertexOrbit_mem_ellipticOrbits_iff hmap hdisj ⟨j, j.2.1⟩).mpr j.2.2
+  exact (σ.finiteVertexOrbit_mem_ellipticOrbits_iff hmap hdisj ⟨j, j.property.1⟩).mpr j.property.2
 
 private theorem selfPairedSideOrbit_mem
     (hmap : ∀ i, σ.map i ∈ Γ)
@@ -148,7 +148,7 @@ private theorem ellipticOrbitMap_apply_inl_mk
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
     (j : {i : Fin n // (P.vertex i).isLeft ∧ σ.cycleMap i ≠ 1}) :
     (σ.ellipticOrbitMap hmap hdisj (.inl (Quotient.mk'' j))).val =
-      Quotient.mk'' ((P.vertex j).getLeft j.2.1) := by
+      Quotient.mk'' ((P.vertex j).getLeft j.property.1) := by
   exact σ.ellipticVertexCycleEquivRange_apply hmap hdisj j
 
 private theorem ellipticOrbitMap_apply_inr
@@ -212,11 +212,11 @@ private theorem ellipticOrbitMap_injective
       (Subtype.ext (congrArg (fun q : Γ.ellipticOrbits ↦ q.val) heq)))
   · obtain ⟨k, hk⟩ := (σ.ellipticVertexCycleEquivRange hmap hdisj c).property
     exact False.elim ((σ.quotientMk_vertex_ne_selfPairedSideFixedPoint hmap hdisj
-      (Sum.inl_getLeft (P.vertex k) k.2.1).symm j)
+      (Sum.inl_getLeft (P.vertex k) k.property.1).symm j)
       (hk.trans (congrArg Subtype.val heq)))
   · obtain ⟨k, hk⟩ := (σ.ellipticVertexCycleEquivRange hmap hdisj d).property
     exact False.elim ((σ.quotientMk_vertex_ne_selfPairedSideFixedPoint hmap hdisj
-      (Sum.inl_getLeft (P.vertex k) k.2.1).symm i)
+      (Sum.inl_getLeft (P.vertex k) k.property.1).symm i)
       (hk.trans (congrArg Subtype.val heq.symm)))
   · exact congrArg Sum.inr (σ.injective_quotientMk_selfPairedSideFixedPoint hmap hdisj
       (congrArg Subtype.val heq))
@@ -273,7 +273,7 @@ theorem ellipticOrbitEquiv_apply_inl_mk
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
     (j : {i : Fin n // (P.vertex i).isLeft ∧ σ.cycleMap i ≠ 1}) :
     (σ.ellipticOrbitEquiv hmap hcover hdisj (.inl (Quotient.mk'' j))).val =
-      Quotient.mk'' ((P.vertex j).getLeft j.2.1) := by
+      Quotient.mk'' ((P.vertex j).getLeft j.property.1) := by
   exact (congrArg (fun f ↦ (f (.inl (Quotient.mk'' j))).val)
     (Equiv.coe_ofBijective (σ.ellipticOrbitMap hmap hdisj)
       ⟨σ.ellipticOrbitMap_injective hmap hdisj,
@@ -308,7 +308,7 @@ theorem cardStabilizerOnOrbit_ellipticOrbitEquiv_inl_mk
       (.inl (Quotient.mk'' j))).val = orderOf (σ.cycleMap j) := by
   rw [σ.ellipticOrbitEquiv_apply_inl_mk, cardStabilizerOnOrbit_mk]
   exact σ.natCard_stabilizer_eq_orderOf_cycleMap
-    (Sum.inl_getLeft (P.vertex j) j.2.1).symm hmap hdisj
+    (Sum.inl_getLeft (P.vertex j) j.property.1).symm hmap hdisj
 
 /-- Every side summand has elliptic stabilizer order two. -/
 @[simp↓]

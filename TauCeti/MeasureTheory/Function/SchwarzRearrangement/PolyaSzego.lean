@@ -12,7 +12,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.MeasureTheory.Function.SchwarzRearrangement.Lipschitz
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
-import TauCeti.Analysis.BoundedVariation.LevelPerimeter
+import TauCeti.Analysis.BoundedVariation.LevelSurface
 import TauCeti.Analysis.BoundedVariation.SchwarzRearrangement
 import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Convex.Continuous
@@ -269,8 +269,8 @@ private theorem ae_fiber_bounds_toReal_schwarzRearrangement
   have hcrit := hh.volume_image_setOf_fderiv_toReal_schwarzRearrangement_eq_zero volume
   filter_upwards [compl_mem_ae_iff.2 hcrit, hh.ae_restrict_inter_setOf_regular_preimage_eq univ,
     hv_lip.ae_restrict_inter_setOf_regular_preimage_eq univ,
-    hh.ae_perimeter_setOf_lt_eq_euclideanHausdorffMeasure_preimage,
-    hv_lip.ae_perimeter_setOf_lt_eq_euclideanHausdorffMeasure_preimage,
+    hh.locallyLipschitz.ae_perimeter_setOf_lt_eq_euclideanHausdorffMeasure ⊤,
+    hv_lip.locallyLipschitz.ae_perimeter_setOf_lt_eq_euclideanHausdorffMeasure ⊤,
     ae_setLIntegral_inv_enorm_fderiv_le_ofReal_neg_deriv hfin,
     hh.ae_setLIntegral_inv_enorm_fderiv_toReal_schwarzRearrangement_eq_ofReal_neg_deriv hfin]
     with t hcritt hregh hregv hperh hperv hdisth hdistv ht
@@ -285,6 +285,7 @@ private theorem ae_fiber_bounds_toReal_schwarzRearrangement
   have hmeas_h : μHE[finrank ℝ E - 1] ({x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t}) =
       μHE[finrank ℝ E - 1] (h ⁻¹' {t}) := by
     simpa only [Measure.restrict_apply_univ] using congrArg (fun ν : Measure E ↦ ν univ) hregh.symm
+  simp only [TopologicalSpace.Opens.coe_top, univ_inter] at hperh hperv
   rw [hmeas_v, hmeas_h, ← hperv, ← hperh, hv_level ht, ← hh_level ht]
   have hm : MeasurableSet {x | ENNReal.ofReal t < f x} :=
     measurableSet_lt measurable_const hh.continuous.measurable.ennreal_ofReal

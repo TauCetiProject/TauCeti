@@ -9,16 +9,19 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.FDeriv.Norm
+import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 
 /-!
 # Derivatives and norms
 
-A map whose norm is locally constant has derivative orthogonal to its value. In particular, the
-derivative of a map into a sphere is tangent to the sphere. Away from the origin, a vanishing
-derivative of a norm-composition forces the one-dimensional profile derivative to vanish, and a
-radial function on a real inner product space has Fréchet derivatives of equal operator norm at
-points of equal norm (`TauCeti.norm_fderiv_eq_of_norm_eq`).
+At a local extremum of the norm of a map, its derivative is orthogonal to its value. In
+particular, the derivative of a map into a sphere is tangent to the sphere. Away from the origin,
+a vanishing derivative of a norm-composition forces the one-dimensional profile derivative to
+vanish, and a radial function on a real inner product space has Fréchet derivatives of equal
+operator norm at points of equal norm (`TauCeti.norm_fderiv_eq_of_norm_eq`). In any real normed
+space, a curve whose derivative is a multiple `c • f a` of its value has norm with derivative
+`c * ‖f a‖` (`HasDerivAt.norm_of_smul_self`).
 
 The squared norm of the derivative of a map from `ℂ` to a Euclidean space is at most twice the
 sum of the squared partial derivatives of its components along `1` and `I`
@@ -31,8 +34,7 @@ origin.
 
 public section
 
-open Filter
-open scoped Topology RealInnerProductSpace
+open scoped RealInnerProductSpace Topology
 
 namespace TauCeti
 
@@ -61,19 +63,36 @@ theorem norm_fderiv_eq_of_norm_eq {v : F → E} (hrad : ∀ x y, ‖x‖ = ‖y�
   have hnorm := congrArg norm h
   simpa only [ContinuousLinearMap.opNorm_comp_linearIsometryEquiv] using hnorm
 
-/-- A map whose norm is constant near `w` has Fréchet derivative at `w` orthogonal to its
-value. In particular, the derivative of a map into a sphere is tangent to the sphere.
-At nondifferentiable points, the Fréchet derivative is zero by definition. -/
-theorem inner_fderiv_eq_zero_of_eventually_norm_eq {ψ : E → F} {w : E}
-    (hψ : ∀ᶠ y in 𝓝 w, ‖ψ y‖ = ‖ψ w‖) (u : E) :
+/-- At a local extremum `w` of `‖ψ‖`, the Fréchet derivative of `ψ` is orthogonal to `ψ w`. This
+covers a map whose norm is constant near `w`: the derivative of a map into a sphere is tangent to
+the sphere. At nondifferentiable points, the Fréchet derivative is zero by definition. -/
+theorem _root_.IsLocalExtr.inner_fderiv_eq_zero {ψ : E → F} {w : E}
+    (hψ : IsLocalExtr (fun y ↦ ‖ψ y‖) w) (u : E) :
     ⟪ψ w, fderiv ℝ ψ w u⟫ = 0 := by
   by_cases hd : DifferentiableAt ℝ ψ w
-  · have h₁ := HasFDerivAt.norm_sq hd.hasFDerivAt
-    have h₂ : HasFDerivAt (fun y => ‖ψ y‖ ^ 2) (0 : E →L[ℝ] ℝ) w :=
-      (hasFDerivAt_const (‖ψ w‖ ^ 2) w).congr_of_eventuallyEq
-        (hψ.mono fun y hy => by simp [hy])
-    simpa using congrArg (fun L : E →L[ℝ] ℝ => L u) (h₁.unique h₂)
+  · -- Squaring is monotone on `[0, ∞)`, so `‖ψ‖ ^ 2` also has a local extremum at `w`.
+    have hsq : IsLocalExtr (fun y ↦ ‖ψ y‖ ^ 2) w := hψ.elim
+      (fun h ↦ IsMinFilter.isExtrFilter <| h.mono fun _ hy ↦ pow_le_pow_left₀ (norm_nonneg _) hy 2)
+      (fun h ↦ IsMaxFilter.isExtrFilter <| h.mono fun _ hy ↦ pow_le_pow_left₀ (norm_nonneg _) hy 2)
+    -- Fermat's theorem: the derivative `2 ⟪ψ w, fderiv ℝ ψ w ·⟫` of `‖ψ‖ ^ 2` vanishes at `w`.
+    simpa using congr($(IsLocalExtr.hasFDerivAt_eq_zero hsq hd.hasFDerivAt.norm_sq) u)
   · simp [fderiv_zero_of_not_differentiableAt hd]
+
+/-- If a curve `f` has derivative `c • f a` at `a`, so that it moves radially to first order, then
+its norm has derivative `c * ‖f a‖` at `a`. The norm need not come from an inner product. -/
+theorem _root_.HasDerivAt.norm_of_smul_self {f : ℝ → E} {a c : ℝ} (hf : HasDerivAt f (c • f a) a) :
+    HasDerivAt (fun t ↦ ‖f t‖) (c * ‖f a‖) a := by
+  rw [hasDerivAt_iff_isLittleO_nhds_zero] at hf ⊢
+  refine (Asymptotics.IsBigO.of_bound' ?_).trans_isLittleO hf
+  -- Near `0`, `1 + t * c > 0`, so `‖(1 + t * c) • f a‖ = (1 + t * c) * ‖f a‖`.
+  have hpos : ∀ᶠ t in 𝓝 (0 : ℝ), 0 < 1 + t * c :=
+    continuousAt_const.eventually_lt (by fun_prop) (by simp)
+  filter_upwards [hpos] with t ht
+  calc ‖‖f (a + t)‖ - ‖f a‖ - t • (c * ‖f a‖)‖ = |‖f (a + t)‖ - ‖(1 + t * c) • f a‖| := by
+        rw [norm_smul, Real.norm_of_nonneg ht.le, Real.norm_eq_abs]
+        ring_nf
+    _ ≤ ‖f (a + t) - (1 + t * c) • f a‖ := abs_norm_sub_norm_le _ _
+    _ = ‖f (a + t) - f a - t • c • f a‖ := by congr 1; module
 
 /-- The squared operator norm of the derivative of a map from `ℂ` to a Euclidean space is at most
 twice the sum, over the components, of the squared partial derivatives along `1` and `I`. -/
