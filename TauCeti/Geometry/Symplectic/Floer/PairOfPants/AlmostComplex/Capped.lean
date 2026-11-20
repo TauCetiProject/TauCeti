@@ -268,12 +268,9 @@ theorem eventually_cocompact_cappedAlmostComplex_eq_base (h₀ : ω.Compatible J
 contains the truncation `S_{L + 3}`. -/
 theorem cappedAlmostComplex_eq_base_of_lt_norm (h₀ : ω.Compatible J₀) (r : ℝ) {L₀ : ℝ}
     (hL : L ≤ L₀) {w : ℂ} (hw : 2 * Real.exp (2 * π * (L₀ + 3)) < ‖w‖) (x : M) :
-    cappedAlmostComplex h₀ J hJ r L w x = J₀ := by
-  refine cappedAlmostComplex_eq_base_of_notMem_truncation h₀ r (fun hmem ↦ ?_) x
-  have h := (truncation_subset_closedBall_sdiff_ball _
-    (truncation_mono (by linarith : L + 3 ≤ L₀ + 3) hmem)).1
-  rw [Metric.mem_closedBall, dist_zero_right] at h
-  linarith
+    cappedAlmostComplex h₀ J hJ r L w x = J₀ :=
+  cappedAlmostComplex_eq_base_of_notMem_truncation h₀ r
+    (notMem_truncation_of_lt_norm (by linarith : L + 3 ≤ L₀ + 3) hw) x
 
 variable {q : Puncture}
 

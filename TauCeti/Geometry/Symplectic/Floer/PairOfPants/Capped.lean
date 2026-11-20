@@ -266,12 +266,9 @@ theorem eventually_cocompact_cappedPerturbation_eq_zero :
 `L ≤ L₀` the datum vanishes outside the disc of radius `2 exp (2π (L₀ + 3))`, which contains the
 truncation `S_{L + 3}`. -/
 theorem cappedPerturbation_eq_zero_of_lt_norm {L₀ : ℝ} (hL : L ≤ L₀) {w : ℂ}
-    (hw : 2 * Real.exp (2 * π * (L₀ + 3)) < ‖w‖) (x : M) : cappedPerturbation a L H w x = 0 := by
-  refine cappedPerturbation_eq_zero_of_notMem_truncation (fun hmem ↦ ?_) x
-  have h := (truncation_subset_closedBall_sdiff_ball _
-    (truncation_mono (by linarith : L + 3 ≤ L₀ + 3) hmem)).1
-  rw [Metric.mem_closedBall, dist_zero_right] at h
-  linarith
+    (hw : 2 * Real.exp (2 * π * (L₀ + 3)) < ‖w‖) (x : M) : cappedPerturbation a L H w x = 0 :=
+  cappedPerturbation_eq_zero_of_notMem_truncation
+    (notMem_truncation_of_lt_norm (by linarith : L + 3 ≤ L₀ + 3) hw) x
 
 /-- **The datum on an end.** On the part `±s > 0` of the end `q`, the pullback of the datum along
 the end lift `φ` is `a P_L(±s) H_q(t) dt`: it sends a tangent vector `v` of the cylinder to

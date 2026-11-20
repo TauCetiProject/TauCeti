@@ -94,16 +94,11 @@ theorem integrableOn_and_setIntegral_le_of_eq_comp_inv (ω : SymplecticForm V) (
       (-((equivRealProdCLM.symm y) ^ 2)⁻¹) (equivRealProdCLM.symm y) :=
     hasDerivAt_inv (by simpa using hy.2)
   have hmaps : MapsTo ι s S := fun y hy ↦ by
-    change equivRealProdCLM.symm (ι y) ∈ (closedBall 0 T)ᶜ
-    rw [equivRealProdCLM_symm_realChart]
+    rw [mem_preimage, equivRealProdCLM_symm_realChart]
     exact mapsTo_inv_ball_diff_singleton_compl_closedBall T ⟨hΩT hy.1, by simpa using hy.2⟩
   have hinj : InjOn ι s := (realChart_injective inv_injective).injOn
   -- With zero perturbation the Floer energy density is the area density.
-  have harea (f : ℝ × ℝ → V) : ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) f =
-      fun z ↦ ω (fderiv ℝ f z stdComplexLineReal) (fderiv ℝ f z stdComplexLineImag) :=
-    funext (ω.floerEnergyDensity_zero f)
-  rw [← harea] at hint
-  rw [← harea, ← harea]
+  simp only [← floerEnergyDensity_zero] at hint ⊢
   -- The area density of `w` on the punctured window is that of `u` pulled back along `ι`.
   have hdens (y : ℝ × ℝ) (hy : y ∈ s) :
       ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) w y =
@@ -178,16 +173,14 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_inv (ω : 
   refine ⟨δ, hδ, fun Ω u w E hΩ hΩT hu hhol hint hE hw hwu hwK ↦ ?_⟩
   have hwE (k : ℕ) := ω.integrableOn_and_setIntegral_le_of_eq_comp_inv hJ₀ hΩ hΩT (hu k)
     (hhol k) (hint k) (hwu k)
-  have harea (f : ℝ × ℝ → V) : ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) f =
-      fun z ↦ ω (fderiv ℝ f z stdComplexLineReal) (fderiv ℝ f z stdComplexLineImag) :=
-    funext (ω.floerEnergyDensity_zero f)
   obtain ⟨φ, Z, v, hφ, hZΩ, hcard, hconc, hbd, hvc, hvK, hlim⟩ := hconv hΩ
     (hΩT.trans (preimage_mono ball_subset_closedBall)) hw
     (fun k y hy ↦ by
       rw [perturbedFDeriv_const ω (fun _ ↦ 0) (fun _ ↦ 0)]
       exact isComplexLinearMap_fderiv_of_eq_comp_inv hΩ hΩT (hu k) (hhol k)
         ((hw k).of_le (by norm_num)) (hwu k) hy) hwK
-    (fun k ↦ by rw [harea]; exact (hwE k).1) (fun k ↦ by rw [harea]; exact (hwE k).2.trans (hE k))
+    (fun k ↦ by simpa only [← floerEnergyDensity_zero] using (hwE k).1)
+    (fun k ↦ by simpa only [← floerEnergyDensity_zero] using (hwE k).2.trans (hE k))
   refine ⟨φ, Z, v, hφ, hZΩ, hcard, fun z hz ε hε ↦ ?_, hbd, hvc, hvK, hlim⟩
   simpa only [floerEnergyDensity_zero] using hconc z hz ε hε
 
