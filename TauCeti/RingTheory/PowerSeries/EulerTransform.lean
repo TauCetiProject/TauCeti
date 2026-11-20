@@ -217,36 +217,22 @@ private theorem val_invOneSubXPow (r : ℕ+) :
   funext n
   simp
 
-private theorem val_inv_invOneSubXPow (r : ℕ+) :
-    (↑(invOneSubXPow r)⁻¹ : ℤ⟦X⟧) = 1 - X ^ (r : ℕ) := by
-  rw [← zpow_neg_one, ← expand_invOneSubPow_zpow, zpow_neg_one, expand_val_inv_invOneSubPow]
-
-/-- `(1 - X ^ r) ^ (-k)` is `1` modulo `X ^ r`. -/
-private theorem X_pow_dvd_invOneSubXPow_zpow_sub_one (r : ℕ+) (k : ℤ) :
-    X ^ (r : ℕ) ∣ (↑(invOneSubXPow r ^ k) : ℤ⟦X⟧) - 1 := by
-  rw [← expand_invOneSubPow_zpow]
-  exact X_pow_dvd_expand_invOneSubPow_zpow_sub_one (r : ℕ) r.ne_zero k
-
-/-- `(1 - X ^ r) ^ (-k)` is `1 + k X ^ r` modulo `X ^ (r + 1)`. -/
-private theorem X_pow_dvd_invOneSubXPow_zpow_sub (r : ℕ+) (k : ℤ) :
-    X ^ ((r : ℕ) + 1) ∣ (↑(invOneSubXPow r ^ k) : ℤ⟦X⟧) - 1 - C k * X ^ (r : ℕ) := by
-  rw [← expand_invOneSubPow_zpow]
-  simpa using X_pow_dvd_expand_invOneSubPow_zpow_sub (R := ℤ) (r : ℕ) r.ne_zero k
-
 /-- `X` times the logarithmic derivative of `(1 - X ^ r)⁻¹` is `r X ^ r (1 - X ^ r)⁻¹`. -/
 private theorem toAdd_xLogDeriv_invOneSubXPow (r : ℕ+) :
     (xLogDeriv (invOneSubXPow r)).toAdd =
       C (r : ℤ) * X ^ (r : ℕ) * (↑(invOneSubXPow r) : ℤ⟦X⟧) := by
   set w : ℤ⟦X⟧ := ↑(invOneSubXPow r)
+  have hinv : (↑(invOneSubXPow r)⁻¹ : ℤ⟦X⟧) = 1 - X ^ (r : ℕ) := by
+    rw [← zpow_neg_one, ← expand_invOneSubPow_zpow, zpow_neg_one, expand_val_inv_invOneSubPow]
   have hw : w * (1 - X ^ (r : ℕ)) = 1 := by
-    rw [← val_inv_invOneSubXPow]
+    rw [← hinv]
     exact (invOneSubXPow r).mul_inv
   have hd := congrArg d⁄dX hw
   rw [Derivation.leibniz, map_sub, Derivation.map_one_eq_zero, derivative_X_pow, smul_eq_mul,
     smul_eq_mul] at hd
   have hX : X * X ^ ((r : ℕ) - 1) = (X : ℤ⟦X⟧) ^ (r : ℕ) := by
     rw [← pow_succ', Nat.sub_add_cancel r.pos]
-  rw [toAdd_xLogDeriv, val_inv_invOneSubXPow]
+  rw [toAdd_xLogDeriv, hinv]
   linear_combination X * hd + C (r : ℤ) * w * hX
 
 /-- The coefficients of `X ^ r (1 - X ^ r)⁻¹ = ∑_{j ≥ 1} X ^ (r * j)`. -/
@@ -276,7 +262,9 @@ private theorem coeff_val_eulerUnit_of_le (e : ℕ → ℤ) {m n : ℕ} (hmn : m
   simp only [eulerUnit, Units.coe_prod]
   refine coeff_prod_eq_coeff_prod_of_X_pow_dvd_sub_one (range_subset_range.2 hmn) fun i hi ↦ ?_
   have him : m < i + 1 := by simp at hi; omega
-  exact (pow_dvd_pow X him).trans (X_pow_dvd_invOneSubXPow_zpow_sub_one i.succPNat _)
+  rw [← expand_invOneSubPow_zpow]
+  exact (pow_dvd_pow X him).trans
+    (X_pow_dvd_expand_invOneSubPow_zpow_sub_one _ i.succPNat.ne_zero _)
 
 private theorem constantCoeff_val_eulerUnit (e : ℕ → ℤ) (n : ℕ) :
     constantCoeff (↑(eulerUnit e n) : ℤ⟦X⟧) = 1 := by
@@ -305,14 +293,16 @@ private theorem coeff_toAdd_xLogDeriv_eulerUnit (e : ℕ → ℤ) {m n : ℕ} (h
     split_ifs <;> simp [mul_comm]
   rw [toAdd_xLogDeriv_eulerUnit, map_sum]
   simp only [hterm]
-  rw [← sum_filter, Nat.divisors]
+  rw [← sum_filter]
   refine sum_nbij' (· + 1) (· - 1) ?_ ?_ ?_ ?_ ?_ <;> intro i hi
-  all_goals simp only [mem_filter, mem_range, mem_Ico] at hi ⊢
-  · have := Nat.le_of_dvd (Nat.pos_of_ne_zero hi.2.2) hi.2.1
-    exact ⟨⟨by omega, by omega⟩, hi.2.1⟩
-  · exact ⟨by omega, by rw [Nat.sub_add_cancel hi.1.1]; exact hi.2, by omega⟩
+  all_goals simp only [mem_filter, mem_range, Nat.mem_divisors] at hi ⊢
+  · exact hi.2
+  · have := Nat.le_of_dvd (Nat.pos_of_ne_zero hi.2) hi.1
+    have := Nat.pos_of_dvd_of_pos hi.1 (Nat.pos_of_ne_zero hi.2)
+    exact ⟨by omega, by rw [Nat.sub_add_cancel this]; exact hi⟩
   · omega
-  · omega
+  · have := Nat.pos_of_dvd_of_pos hi.1 (Nat.pos_of_ne_zero hi.2)
+    omega
 
 /-- **Integral Euler products.** The product of the factors `(1 - X ^ r) ^ (-e r)` over the
 positive integers `r` converges to `f` in the coefficientwise topology exactly when `f` agrees
@@ -329,9 +319,7 @@ theorem hasProd_expand_invOneSubPow_zpow_iff {e : ℕ → ℤ} {f : ℤ⟦X⟧} 
       by_contra hrn
       refine hr (mem_map.2 ⟨(r : ℕ) - 1, mem_range.2 (by omega), PNat.eq ?_⟩)
       simp [Nat.sub_add_cancel r.pos]
-    have := X_pow_dvd_invOneSubXPow_zpow_sub_one r (e r)
-    rw [← expand_invOneSubPow_zpow] at this
-    exact (pow_dvd_pow X hnr).trans this
+    exact (pow_dvd_pow X hnr).trans (X_pow_dvd_expand_invOneSubPow_zpow_sub_one _ r.ne_zero _)
   have hprod (n : ℕ) :
       ∏ r ∈ (range n).map ⟨Nat.succPNat, Nat.succPNat_injective⟩, g r = ↑(eulerUnit e n) := by
     simp only [prod_map, val_eulerUnit, Function.Embedding.coeFn_mk, Nat.succPNat_coe,
@@ -368,17 +356,28 @@ private theorem X_pow_dvd_eulerRemainder_sub_one {f : ℤ⟦X⟧} (hf : constant
   | succ n ih =>
     set g := eulerRemainder f n
     set a := coeff (n + 1) g
-    obtain ⟨h, hh⟩ := ih
-    obtain ⟨q, hq⟩ := X_pow_dvd_invOneSubXPow_zpow_sub n.succPNat (-a)
-    have ha : a = constantCoeff h := by
-      rw [show a = coeff (n + 1) (g - 1) by simp [a], hh, coeff_X_pow_mul', ite_eq_left le_rfl,
-        Nat.sub_self, coeff_zero_eq_constantCoeff_apply]
-    set h' := mk fun p ↦ coeff (p + 1) h
-    have hsplit : h = X * h' + C a := by rw [ha]; exact eq_X_mul_shift_add_const h
-    refine ⟨h' + q + X ^ n * h * (-C a + X * q), ?_⟩
-    simp only [eulerRemainder, Nat.succPNat_coe, Nat.succ_eq_add_one, map_neg] at hq ⊢
-    linear_combination (↑(invOneSubXPow n.succPNat ^ (-a)) : ℤ⟦X⟧) * hh +
-      (1 + X ^ (n + 1) * h) * hq + X ^ (n + 1) * hsplit
+    -- Modulo `X ^ (n + 2)`, `g = 1 + a X ^ (n + 1)` and the new factor is `1 - a X ^ (n + 1)`.
+    have hg : X ^ (n + 1 + 1) ∣ g - (1 + C a * X ^ (n + 1)) := by
+      rw [X_pow_dvd_iff]
+      intro m hm
+      rcases Nat.lt_succ_iff_lt_or_eq.1 hm with hm | rfl
+      · rw [← sub_sub, map_sub, X_pow_dvd_iff.1 ih m hm, coeff_C_mul_X_pow, ite_eq_right hm.ne,
+          sub_zero]
+      · simp [a, coeff_one]
+    have hw : X ^ (n + 1 + 1) ∣
+        (↑(invOneSubXPow n.succPNat ^ (-a)) : ℤ⟦X⟧) - (1 - C a * X ^ (n + 1)) := by
+      have := X_pow_dvd_expand_invOneSubPow_zpow_sub (R := ℤ) _ n.succPNat.ne_zero (-a)
+      rw [expand_invOneSubPow_zpow, Nat.succPNat_coe, Nat.succ_eq_add_one, Int.cast_id,
+        map_neg] at this
+      convert this using 1
+      ring
+    have hsq : X ^ (n + 1 + 1) ∣ (1 + C a * X ^ (n + 1)) * (1 - C a * X ^ (n + 1)) - 1 := by
+      rw [show (1 + C a * X ^ (n + 1)) * (1 - C a * X ^ (n + 1)) - 1 =
+        -(C a ^ 2 * X ^ (2 * (n + 1))) by ring, dvd_neg]
+      exact dvd_mul_of_dvd_right (pow_dvd_pow X (by omega)) _
+    rw [eulerRemainder]
+    convert dvd_add (dvd_mul_sub_mul hg hw) hsq using 1
+    ring
 
 /-- The integral Euler exponents constructed recursively from the remainders. -/
 private noncomputable def recExponents (f : ℤ⟦X⟧) (r : ℕ) : ℤ :=
@@ -434,17 +433,23 @@ theorem eq_of_hasProd_expand_invOneSubPow_zpow_of_X_pow_dvd_sub {e e' : ℕ → 
   have hdiv := dvd_sub (dvd_add ((pow_dvd_pow X (by omega : k + 1 + 1 ≤ s + 1)).trans hs)
     (h' (k + 1))) (h (k + 1))
   rw [val_eulerUnit_succ, val_eulerUnit_succ, hU] at hdiv
-  obtain ⟨c, hc⟩ := hdiv
   set Q : ℤ⟦X⟧ := ↑(eulerUnit e' k)
-  obtain ⟨qa, ha⟩ := X_pow_dvd_invOneSubXPow_zpow_sub k.succPNat (e (k + 1))
-  obtain ⟨qb, hb⟩ := X_pow_dvd_invOneSubXPow_zpow_sub k.succPNat (e' (k + 1))
-  obtain ⟨q0, hq0⟩ : X ∣ Q - 1 := by
+  -- Modulo `X ^ (k + 2)`, the factor of index `k + 1` with exponent `j` is `1 + j X ^ (k + 1)`.
+  have hW (j : ℤ) : X ^ (k + 1 + 1) ∣
+      (↑(invOneSubXPow k.succPNat ^ j) : ℤ⟦X⟧) - 1 - C j * X ^ (k + 1) := by
+    have := X_pow_dvd_expand_invOneSubPow_zpow_sub (R := ℤ) _ k.succPNat.ne_zero j
+    rwa [expand_invOneSubPow_zpow, Nat.succPNat_coe, Nat.succ_eq_add_one, Int.cast_id] at this
+  have hQ : X ∣ Q - 1 := by
     rw [X_dvd_iff, map_sub, constantCoeff_val_eulerUnit, map_one, sub_self]
-  simp only [Nat.succPNat_coe, Nat.succ_eq_add_one] at ha hb
-  have hdvd : X ^ (k + 1 + 1) ∣ C (e (k + 1)) * X ^ (k + 1) - C (e' (k + 1)) * X ^ (k + 1) :=
-    ⟨c - (qa - qb + q0 * (C (e (k + 1)) - C (e' (k + 1))) + X * q0 * (qa - qb)), by
-      linear_combination hc - Q * ha + Q * hb - ((C (e (k + 1)) - C (e' (k + 1))) * X ^ (k + 1) +
-        X ^ (k + 1 + 1) * (qa - qb)) * hq0⟩
+  -- So `Q (1 + e X ^ (k + 1)) = Q (1 + e' X ^ (k + 1))` mod `X ^ (k + 2)`, and `Q = 1` mod `X`.
+  have hdvd : X ^ (k + 1 + 1) ∣ C (e (k + 1)) * X ^ (k + 1) - C (e' (k + 1)) * X ^ (k + 1) := by
+    have hQW := (dvd_sub (hW (e (k + 1))) (hW (e' (k + 1)))).mul_left Q
+    have hQ1 : X ^ (k + 1 + 1) ∣
+        (Q - 1) * (C (e (k + 1)) * X ^ (k + 1) - C (e' (k + 1)) * X ^ (k + 1)) := by
+      rw [pow_succ']
+      exact mul_dvd_mul hQ (dvd_sub (dvd_mul_left _ _) (dvd_mul_left _ _))
+    convert dvd_sub (dvd_sub hdiv hQW) hQ1 using 1
+    ring
   have := X_pow_dvd_iff.1 hdvd (k + 1) (Nat.lt_succ_self _)
   rwa [map_sub, coeff_C_mul_X_pow, coeff_C_mul_X_pow, ite_eq_left rfl, ite_eq_left rfl,
     sub_eq_zero] at this
