@@ -15,11 +15,14 @@ import TauCeti.RingTheory.Valuation.AdicSeparated
 /-!
 # The completed generic field of an affine lift
 
-Let `A` be a Noetherian ring and let `π` be a nonzerodivisor generating a prime ideal. Localizing
-at `(π)` gives a discrete valuation ring, even when `A` itself is not a domain. Its maximal-ideal
-completion is the valuation ring of the completed generic field, obtained by inverting `π`.
-The field is complete for the normalized discrete valuation, and its residue field is canonically
-the fraction field of `A ⧸ (π)`.
+Let `A` be a commutative ring and let `π` generate a prime ideal. The maximal ideal of the
+localization at `(π)` is principal, so its completion is local, complete, and has residue field
+canonically isomorphic to the fraction field of `A ⧸ (π)`.
+
+If `A` is Noetherian and `π` is a nonzerodivisor, the localization is a discrete valuation ring,
+even when `A` itself is not a domain. Its maximal-ideal completion is the valuation ring of the
+completed generic field, obtained by inverting `π`. The field is complete for the normalized
+discrete valuation.
 
 For a smooth affine lift of an integral curve over a discrete valuation ring, this is the
 completed generic field appearing in the study of differential equations. In particular, the
@@ -36,7 +39,7 @@ public section
 
 open IsLocalRing
 
-namespace TauCeti.Dagger
+namespace TauCeti.AdicCompletion
 
 variable {A : Type*} [CommRing A] (π : A) [(Ideal.span {π}).IsPrime]
 
@@ -46,6 +49,71 @@ abbrev genericLocalRing := Localization.AtPrime (Ideal.span {π})
 /-- The integral ring of the completed generic field: the maximal-ideal completion of `A_(π)`. -/
 abbrev completedGenericIntegers :=
   AdicCompletion (maximalIdeal (genericLocalRing π)) (genericLocalRing π)
+
+private theorem maximalIdeal_genericLocalRing :
+    maximalIdeal (genericLocalRing π) =
+      Ideal.span {algebraMap A (genericLocalRing π) π} := by
+  rw [← Localization.AtPrime.map_eq_maximalIdeal, Ideal.map_span, Set.image_singleton]
+
+private theorem fg_maximalIdeal_genericLocalRing :
+    (maximalIdeal (genericLocalRing π)).FG := by
+  rw [maximalIdeal_genericLocalRing]
+  exact Submodule.fg_span_singleton _
+
+/-- The completion at the principal maximal ideal is local without a Noetherian hypothesis. -/
+instance : IsLocalRing (completedGenericIntegers π) :=
+  _root_.AdicCompletion.isLocalRing_of_fg (fg_maximalIdeal_genericLocalRing π)
+
+/-- The completion map is local without a Noetherian hypothesis. -/
+instance : IsLocalHom (algebraMap (genericLocalRing π) (completedGenericIntegers π)) :=
+  _root_.AdicCompletion.algebraMap_isLocalHom_of_fg (fg_maximalIdeal_genericLocalRing π)
+
+/-- The original parameter generates the maximal ideal of the completed generic ring. -/
+theorem maximalIdeal_completedGenericIntegers :
+    maximalIdeal (completedGenericIntegers π) =
+      Ideal.span {algebraMap A (completedGenericIntegers π) π} := by
+  rw [_root_.AdicCompletion.maximalIdeal_eq_map_of_fg
+    (fg_maximalIdeal_genericLocalRing π)]
+  exact (congrArg (Ideal.map
+    (algebraMap (genericLocalRing π) (completedGenericIntegers π)))
+    (maximalIdeal_genericLocalRing π)).trans (by
+      rw [Ideal.map_span, Set.image_singleton]
+      rfl)
+
+/-- The completed generic ring is separated and complete for its `π`-adic filtration. -/
+theorem isAdicComplete_completedGenericIntegers :
+    IsAdicComplete (Ideal.span {algebraMap A (completedGenericIntegers π) π})
+      (completedGenericIntegers π) := by
+  rw [← maximalIdeal_completedGenericIntegers]
+  exact _root_.AdicCompletion.isAdicComplete_of_fg (fg_maximalIdeal_genericLocalRing π)
+
+/-- The residue field of the completed generic ring is the function field of the original
+special fibre. -/
+noncomputable def completedGenericResidueEquiv :
+    ResidueField (completedGenericIntegers π) ≃+* FractionRing (A ⧸ Ideal.span {π}) :=
+  (RingEquiv.ofBijective
+    (ResidueField.map (algebraMap (genericLocalRing π) (completedGenericIntegers π)))
+    (_root_.AdicCompletion.residueField_map_bijective_of_fg
+      (fg_maximalIdeal_genericLocalRing π))).symm.trans
+      (FractionRing.algEquiv (A ⧸ Ideal.span {π}) (Ideal.span {π}).ResidueField).symm.toRingEquiv
+
+/-- The canonical residue-field identification agrees with reduction of the original affine ring. -/
+@[simp]
+theorem completedGenericResidueEquiv_residue_algebraMap (a : A) :
+    completedGenericResidueEquiv π
+      (residue (completedGenericIntegers π) (algebraMap A (completedGenericIntegers π) a)) =
+        algebraMap (A ⧸ Ideal.span {π}) (FractionRing (A ⧸ Ideal.span {π}))
+          (Ideal.Quotient.mk _ a) := by
+  apply (FractionRing.algEquiv (A ⧸ Ideal.span {π}) (Ideal.span {π}).ResidueField).injective
+  dsimp only [completedGenericResidueEquiv, RingEquiv.trans_apply]
+  rw [AlgEquiv.coe_toRingEquiv, AlgEquiv.apply_symm_apply, AlgEquiv.commutes,
+    Ideal.algebraMap_quotient_residueField_mk]
+  apply (RingEquiv.ofBijective
+    (ResidueField.map (algebraMap (genericLocalRing π) (completedGenericIntegers π)))
+    (_root_.AdicCompletion.residueField_map_bijective_of_fg
+      (fg_maximalIdeal_genericLocalRing π))).symm_apply_eq.mpr
+  rw [IsScalarTower.algebraMap_apply A (genericLocalRing π) (completedGenericIntegers π)]
+  exact (ResidueField.map_residue _ (algebraMap A (genericLocalRing π) a)).symm
 
 variable [IsNoetherianRing A]
 
@@ -77,32 +145,12 @@ theorem isDiscreteValuationRing_completedGenericIntegers (hπ : π ∈ nonZeroDi
   let := isDiscreteValuationRing_genericLocalRing π hπ
   infer_instance
 
-/-- The original parameter generates the maximal ideal of the completed generic ring. -/
-theorem maximalIdeal_completedGenericIntegers :
-    maximalIdeal (completedGenericIntegers π) =
-      Ideal.span {algebraMap A (completedGenericIntegers π) π} := by
-  have hmax : maximalIdeal (genericLocalRing π) =
-      Ideal.span {algebraMap A (genericLocalRing π) π} := by
-    rw [← Localization.AtPrime.map_eq_maximalIdeal, Ideal.map_span, Set.image_singleton]
-  rw [AdicCompletion.maximalIdeal_eq_map]
-  exact (congrArg (Ideal.map
-    (algebraMap (genericLocalRing π) (completedGenericIntegers π))) hmax).trans (by
-      rw [Ideal.map_span, Set.image_singleton]
-      rfl)
-
 /-- The image of `π` is a uniformizer in the completed generic ring. -/
 theorem irreducible_completedGenericIntegers (hπ : π ∈ nonZeroDivisors A) :
     Irreducible (algebraMap A (completedGenericIntegers π) π) := by
   let := isRegularLocalRing_completedGenericIntegers π hπ
   let := isDiscreteValuationRing_completedGenericIntegers π hπ
   rw [IsDiscreteValuationRing.irreducible_iff_uniformizer, maximalIdeal_completedGenericIntegers]
-
-/-- The completed generic ring is separated and complete for its `π`-adic filtration. -/
-theorem isAdicComplete_completedGenericIntegers :
-    IsAdicComplete (Ideal.span {algebraMap A (completedGenericIntegers π) π})
-      (completedGenericIntegers π) := by
-  rw [← maximalIdeal_completedGenericIntegers]
-  infer_instance
 
 /-- The fraction field of the completed generic ring. The nonzerodivisor hypothesis ensures
 that this particular completion is a domain and therefore gives a field structure. -/
@@ -192,32 +240,6 @@ instance (hπ : π ∈ nonZeroDivisors A) : CompleteSpace (completedGenericField
 
 end Valuation
 
-/-- The residue field of the completed generic ring is the function field of the original
-special fibre. -/
-noncomputable def completedGenericResidueEquiv :
-    ResidueField (completedGenericIntegers π) ≃+* FractionRing (A ⧸ Ideal.span {π}) :=
-  (RingEquiv.ofBijective
-    (ResidueField.map (algebraMap (genericLocalRing π) (completedGenericIntegers π)))
-    (AdicCompletion.residueField_map_bijective (genericLocalRing π))).symm.trans
-      (FractionRing.algEquiv (A ⧸ Ideal.span {π}) (Ideal.span {π}).ResidueField).symm.toRingEquiv
-
-/-- The canonical residue-field identification agrees with reduction of the original affine ring. -/
-@[simp]
-theorem completedGenericResidueEquiv_residue_algebraMap (a : A) :
-    completedGenericResidueEquiv π
-      (residue (completedGenericIntegers π) (algebraMap A (completedGenericIntegers π) a)) =
-        algebraMap (A ⧸ Ideal.span {π}) (FractionRing (A ⧸ Ideal.span {π}))
-          (Ideal.Quotient.mk _ a) := by
-  apply (FractionRing.algEquiv (A ⧸ Ideal.span {π}) (Ideal.span {π}).ResidueField).injective
-  dsimp only [completedGenericResidueEquiv, RingEquiv.trans_apply]
-  rw [AlgEquiv.coe_toRingEquiv, AlgEquiv.apply_symm_apply, AlgEquiv.commutes,
-    Ideal.algebraMap_quotient_residueField_mk]
-  apply (RingEquiv.ofBijective
-    (ResidueField.map (algebraMap (genericLocalRing π) (completedGenericIntegers π)))
-    (AdicCompletion.residueField_map_bijective (genericLocalRing π))).symm_apply_eq.mpr
-  rw [IsScalarTower.algebraMap_apply A (genericLocalRing π) (completedGenericIntegers π)]
-  exact (ResidueField.map_residue _ (algebraMap A (genericLocalRing π) a)).symm
-
 section Coefficients
 
 variable {O K : Type*} [CommRing O] [CommRing K] [Algebra O A] [Algebra O K]
@@ -242,4 +264,4 @@ noncomputable def completedGenericFieldScalarHom :
 
 end Coefficients
 
-end TauCeti.Dagger
+end TauCeti.AdicCompletion
