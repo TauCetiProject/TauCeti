@@ -264,7 +264,7 @@ private theorem continuous_restrictScalarsHomRangeMulEquiv_symm :
   have : FiniteDimensional F E₀ := IntermediateField.finiteDimensional_adjoin fun _ ⟨i, hi⟩ ↦
     hi ▸ isIntegral_trans (A := K) _ ((Algebra.IsIntegral.isIntegral (R := K) (b i)).map E.val)
   refine Filter.mem_map.2 <| Filter.mem_of_superset
-    (continuous_subtype_val.continuousAt (E₀.fixingSubgroup_isOpen.mem_nhds (one_mem _)))
+    (continuous_subtypeVal.continuousAt (E₀.fixingSubgroup_isOpen.mem_nhds (one_mem _)))
     fun σ hσ ↦ hEU ?_
   rw [MulEquiv.coe_toMonoidHom, SetLike.mem_coe, IntermediateField.mem_fixingSubgroup_iff]
   intro x hx

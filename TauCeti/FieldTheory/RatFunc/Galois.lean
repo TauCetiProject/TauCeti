@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Galois.Infinite
+public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import TauCeti.Algebra.Polynomial.Lifts
 public import TauCeti.FieldTheory.RatFunc.Map
 public import TauCeti.FieldTheory.RatFunc.NumDenom
@@ -53,8 +54,9 @@ for the Krull topologies (`TauCeti.RatFunc.mapAlgEquivContinuousMulEquiv`).
   `TauCeti.RatFunc.forall_map_mapRingEquiv_eq_iff_mem_lifts`: the same for polynomials over
   `K(X)`.
 * `TauCeti.RatFunc.isAlgebraic_of_isAlgebraic`, `TauCeti.RatFunc.isSeparable_of_isSeparable`,
-  `TauCeti.RatFunc.normal_of_normal`, `TauCeti.RatFunc.isGalois_of_isGalois`: transfer of field
-  extension properties from `K / F` to `K(X) / F(X)`.
+  `TauCeti.RatFunc.normal_of_normal`, `TauCeti.RatFunc.isGalois_of_isGalois`,
+  `TauCeti.RatFunc.normal_algebraicClosure`: transfer of field extension properties from
+  `K / F` to `K(X) / F(X)` and `AlgebraicClosure (K(X)) / F(X)`.
 * `RatFunc.mem_range_mapRingHom_iff_fixed`: the case of a Galois extension `K / F`.
 
 ## References
@@ -374,6 +376,17 @@ theorem C_mapAlgEquivContinuousMulEquiv_symm (ψ : Gal(RatFunc K/RatFunc F)) (c 
 end IsAlgebraic
 
 end ConstantExtension
+
+/-- For any algebraic extension `K / F`, `AlgebraicClosure (RatFunc K)` is normal over `RatFunc F`
+with respect to `RatFunc.mapAlgebra F K`. -/
+theorem normal_algebraicClosure (F K : Type*) [Field F] [Field K] [Algebra F K]
+    [Algebra.IsAlgebraic F K] :
+    letI : Algebra (RatFunc F) (RatFunc K) := mapAlgebra F K
+    Normal (RatFunc F) (AlgebraicClosure (RatFunc K)) :=
+  letI := mapAlgebra F K
+  haveI := isScalarTower_mapAlgebra F K
+  haveI := isAlgebraic_of_isAlgebraic (algebraMap_mapAlgebra_X F K)
+  IsAlgClosure.normal (RatFunc F) (AlgebraicClosure (RatFunc K))
 
 end TauCeti.RatFunc
 

@@ -153,7 +153,7 @@ theorem etale_pullback_snd_puncturedSpectrum {B : Type u} [CommRing B] [Algebra 
     let q : PrimeSpectrum B := pullback.fst g U.ι x
     have hq : g q ∈ U := by
       rw [← Scheme.Hom.comp_apply, pullback.condition, Scheme.Hom.comp_apply]
-      exact (pullback.snd g U.ι x).2
+      exact (pullback.snd g U.ι x).property
     obtain ⟨O, hqO, hO⟩ := (Scheme.Hom.etaleAt_spec_iff q).mpr <| h q.asIdeal fun he ↦
       (mem_puncturedSpectrum_iff A (g q)).mp hq (PrimeSpectrum.ext he)
     refine ⟨pullback.fst g U.ι ⁻¹ᵁ O, hqO, ?_⟩

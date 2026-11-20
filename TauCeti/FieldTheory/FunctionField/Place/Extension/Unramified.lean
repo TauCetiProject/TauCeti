@@ -204,7 +204,7 @@ private theorem unramified_map_iff (e : L ≃ₐ[F] L') (Q : Place k L) :
   -- The residue fields below are identified by the cast along `hrestrict`, those above by `e`.
   obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
   rw [RingHom.comp_apply, RingHom.comp_apply, RingHom.coe_coe, RingHom.coe_coe,
-    cast_residue hrestrict x ⟨x, hrestrict ▸ x.2⟩ rfl, AlgEquiv.coe_toRingEquiv,
+    cast_residue hrestrict x ⟨x, hrestrict ▸ x.property⟩ rfl, AlgEquiv.coe_toRingEquiv,
     AlgEquiv.eq_symm_apply, IsLocalRing.ResidueField.algebraMap_residue,
     IsLocalRing.ResidueField.algebraMap_residue, residueFieldEquivMap_residue]
   congr 1
@@ -232,7 +232,7 @@ theorem isUnramified_self (P : Place k F) : P.IsUnramified (k' := k) (F' := F) :
   refine ⟨⟨P, restrict_self P⟩, fun Q _ ↦ ⟨ramificationIdx_self Q, ⟨fun y ↦ ?_⟩⟩⟩
   obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective y
   have hx : algebraMap (Q.restrict k F).ResidueField Q.ResidueField
-      (IsLocalRing.residue _ ⟨x, (restrict_self Q).symm ▸ x.2⟩) =
+      (IsLocalRing.residue _ ⟨x, (restrict_self Q).symm ▸ x.property⟩) =
       IsLocalRing.residue Q.integers x := by
     rw [IsLocalRing.ResidueField.algebraMap_residue]
     rfl

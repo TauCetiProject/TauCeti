@@ -369,17 +369,6 @@ end Tower
 
 section BelyiGeometricFundamentalGroup
 
-/-- For any algebraic extension `K / F`, `AlgebraicClosure (RatFunc K)` is normal over `RatFunc F`
-with respect to `RatFunc.mapAlgebra F K`. -/
-theorem normal_algebraicClosure_ratFunc (F K : Type*) [Field F] [Field K] [Algebra F K]
-    [Algebra.IsAlgebraic F K] :
-    letI : Algebra (RatFunc F) (RatFunc K) := RatFunc.mapAlgebra F K
-    Normal (RatFunc F) (AlgebraicClosure (RatFunc K)) :=
-  letI := RatFunc.mapAlgebra F K
-  haveI := RatFunc.isScalarTower_mapAlgebra F K
-  haveI := RatFunc.isAlgebraic_of_isAlgebraic (RatFunc.algebraMap_mapAlgebra_X F K)
-  IsAlgClosure.normal (RatFunc F) (AlgebraicClosure (RatFunc K))
-
 section NormalField
 
 variable (F K : Type*) [Field F] [Field K] [CharZero K] [Algebra F K] [Normal F K]
@@ -393,7 +382,7 @@ noncomputable def belyiGeometricFundamentalGroupOuterAction :
     Gal(K/F) →* ContinuousOut (BelyiGeometricFundamentalGroup K) :=
   letI := RatFunc.mapAlgebra F K
   haveI := RatFunc.isScalarTower_mapAlgebra F K
-  haveI := normal_algebraicClosure_ratFunc F K
+  haveI := RatFunc.normal_algebraicClosure F K
   belyiOuterActionOfTower M₀ hX₀
 
 /-- `belyiGeometricFundamentalGroupOuterAction F K` is `belyiOuterActionOfTower` for
@@ -401,7 +390,7 @@ noncomputable def belyiGeometricFundamentalGroupOuterAction :
 theorem belyiGeometricFundamentalGroupOuterAction_def :
     letI : Algebra (RatFunc F) (RatFunc K) := RatFunc.mapAlgebra F K
     haveI : IsScalarTower F (RatFunc F) (RatFunc K) := RatFunc.isScalarTower_mapAlgebra F K
-    haveI : Normal (RatFunc F) M₀ := normal_algebraicClosure_ratFunc F K
+    haveI : Normal (RatFunc F) M₀ := RatFunc.normal_algebraicClosure F K
     belyiGeometricFundamentalGroupOuterAction F K = belyiOuterActionOfTower M₀ hX₀ := (rfl)
 
 /-- Evaluating `belyiGeometricFundamentalGroupOuterAction F K` on the arithmetic projection of a
@@ -415,7 +404,7 @@ theorem belyiGeometricFundamentalGroupOuterAction_belyiArithmeticRestrict :
         (belyiConjByLift hX₀ τ : ContinuousOut (BelyiGeometricFundamentalGroup K)) :=
   letI := RatFunc.mapAlgebra F K
   haveI := RatFunc.isScalarTower_mapAlgebra F K
-  haveI := normal_algebraicClosure_ratFunc F K
+  haveI := RatFunc.normal_algebraicClosure F K
   belyiOuterActionOfTower_belyiArithmeticRestrict hX₀
 
 /-- Conjugacy-class action of `belyiGeometricFundamentalGroupOuterAction F K` along a lift `τ`. -/
@@ -438,7 +427,7 @@ theorem continuous_belyiGeometricFundamentalGroupOuterAction :
     Continuous (belyiGeometricFundamentalGroupOuterAction F K) :=
   letI := RatFunc.mapAlgebra F K
   haveI := RatFunc.isScalarTower_mapAlgebra F K
-  haveI := normal_algebraicClosure_ratFunc F K
+  haveI := RatFunc.normal_algebraicClosure F K
   continuous_belyiOuterActionOfTower (M := M₀) hX₀
 
 end NormalField

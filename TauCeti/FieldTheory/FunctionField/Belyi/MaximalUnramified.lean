@@ -97,10 +97,10 @@ private instance : Nonempty (BelyiSubextension k M) :=
   ⟨⟨⊥, inferInstance, isAlgebraicBelyiPair_bot k M⟩⟩
 
 private theorem maximalBelyiExtension_eq_iSup_belyiSubextension :
-    maximalBelyiExtension k M = ⨆ i : BelyiSubextension k M, i.1 :=
+    maximalBelyiExtension k M = ⨆ i : BelyiSubextension k M, i.val :=
   le_antisymm
     (iSup_le fun E ↦ iSup_le fun hfin ↦ iSup_le fun hB ↦
-      le_iSup (fun i : BelyiSubextension k M ↦ i.1) ⟨E, hfin, hB⟩)
+      le_iSup (fun i : BelyiSubextension k M ↦ i.val) ⟨E, hfin, hB⟩)
     (iSup_le fun ⟨E, hfin, hB⟩ ↦ le_iSup_of_le E (le_iSup_of_le hfin (le_iSup_of_le hB le_rfl)))
 
 variable {k M}
@@ -149,8 +149,8 @@ end Lift
 
 instance isAlgebraic_maximalBelyiExtension :
     Algebra.IsAlgebraic (RatFunc k) ↥(maximalBelyiExtension k M) :=
-  have := IntermediateField.isAlgebraic_iSup (t := fun i : BelyiSubextension k M ↦ i.1)
-    fun i ↦ have := i.2.1; inferInstance
+  have := IntermediateField.isAlgebraic_iSup (t := fun i : BelyiSubextension k M ↦ i.val)
+    fun i ↦ have := i.property.1; inferInstance
   let e := IntermediateField.equivOfEq (maximalBelyiExtension_eq_iSup_belyiSubextension k M)
   Algebra.IsAlgebraic.of_injective e.toAlgHom e.injective
 
@@ -167,7 +167,7 @@ instance isIntegrallyClosedIn_maximalBelyiExtension :
     IsIntegrallyClosedIn k ↥(maximalBelyiExtension k M) := isIntegrallyClosedIn_of_isAlgClosed
 
 private theorem directed_belyiSubextension :
-    Directed (· ≤ ·) (fun i : BelyiSubextension k M ↦ i.1) := fun ⟨E₁, _, hB₁⟩ ⟨E₂, _, hB₂⟩ ↦
+    Directed (· ≤ ·) (fun i : BelyiSubextension k M ↦ i.val) := fun ⟨E₁, _, hB₁⟩ ⟨E₂, _, hB₂⟩ ↦
   ⟨⟨E₁ ⊔ E₂, inferInstance, (isAlgebraicBelyiPair_sup_iff E₁ E₂).mpr ⟨hB₁, hB₂⟩⟩,
     le_sup_left, le_sup_right⟩
 
@@ -189,7 +189,7 @@ theorem le_maximalBelyiExtension_iff (E : IntermediateField (RatFunc k) M)
     E ≤ maximalBelyiExtension k M ↔ IsAlgebraicBelyiPair k E := by
   refine ⟨fun hle ↦ ?_, le_maximalBelyiExtension⟩
   let b := Module.finBasis (RatFunc k) E
-  choose F hfin hBF hmem using fun i ↦ mem_maximalBelyiExtension_iff.mp (hle (b i).2)
+  choose F hfin hBF hmem using fun i ↦ mem_maximalBelyiExtension_iff.mp (hle (b i).property)
   refine IsAlgebraicBelyiPair.of_le (E₂ := ⨆ i, F i) (fun y hy ↦ ?_)
     ((isAlgebraicBelyiPair_iSup_iff F).mpr hBF)
   have hy' := congrArg Subtype.val (b.sum_repr ⟨y, hy⟩).symm
@@ -204,7 +204,7 @@ theorem IsAlgebraicBelyiPair.of_algHom_maximalBelyiExtension {F : Type*} [Field 
     (f : F →ₐ[RatFunc k] ↥(maximalBelyiExtension k M)) : IsAlgebraicBelyiPair k F :=
   let g : F →ₐ[RatFunc k] M := (maximalBelyiExtension k M).val.comp f
   have := g.equivFieldRange.toLinearEquiv.finiteDimensional
-  ((le_maximalBelyiExtension_iff g.fieldRange).mp fun _ ⟨x, hx⟩ ↦ hx ▸ (f x).2).of_algEquiv
+  ((le_maximalBelyiExtension_iff g.fieldRange).mp fun _ ⟨x, hx⟩ ↦ hx ▸ (f x).property).of_algEquiv
     g.equivFieldRange.symm
 
 /-- Over algebraically closed `k`, every finite intermediate field of `maximalBelyiExtension k M`
