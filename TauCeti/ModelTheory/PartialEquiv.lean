@@ -82,6 +82,7 @@ theorem cod_comp_le : (g.comp f h).cod ≤ g.cod :=
 
 /-- The composite has the codomain of the second partial equivalence exactly when the codomain of
 the first is the domain of the second. -/
+@[simp]
 theorem cod_comp_eq_cod_iff : (g.comp f h).cod = g.cod ↔ f.cod = g.dom := by
   refine ⟨fun he => h.antisymm fun n hn => ?_,
     fun he => (cod_comp_le g f h).antisymm fun p hp => (mem_cod_comp g f h).2 ?_⟩
