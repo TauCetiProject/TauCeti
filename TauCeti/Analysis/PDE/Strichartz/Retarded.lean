@@ -45,6 +45,7 @@ The mixed norm of a function `F : ℝ → L²(X, μ)` is written
 
 ## Main declarations
 
+* `TauCeti.enorm_setIntegral_adjoint_le`: a dual estimate restricted to a set of times.
 * `TauCeti.enorm_integral_setIntegral_Iio_inner_adjoint_le`: the retarded estimate from the two
   dual estimates.
 * `TauCeti.one_lt_inv_add_inv_of_holderConjugate`: two time exponents, at most one of them at
@@ -88,11 +89,12 @@ theorem one_lt_inv_add_inv_of_holderConjugate {p q p₁ q₁ : ℝ≥0} (hpq : p
 
 /-- A dual estimate applies to the restriction of `F` to a set of times `I`, and bounds
 `∫_I U(s)* F(s) ds` by the mixed norm of `1_I F`. -/
-private theorem enorm_setIntegral_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {a p C : ℝ≥0∞}
+theorem enorm_setIntegral_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {a p C : ℝ≥0∞}
     (hC : ∀ F : ℝ → Lp E 2 μ, AEStronglyMeasurable F → Integrable (fun s ↦ ((U s)†) (F s)) →
       ‖∫ s, ((U s)†) (F s)‖ₑ ≤ C * eLpNorm (fun s ↦ eLpNorm (F s) a μ) p)
-    {F : ℝ → Lp E 2 μ} (hF : AEStronglyMeasurable F)
-    (hUF : Integrable (fun s ↦ ((U s)†) (F s))) {I : Set ℝ} (hI : MeasurableSet I) :
+    {F : ℝ → Lp E 2 μ} {I : Set ℝ} (hI : MeasurableSet I)
+    (hF : AEStronglyMeasurable F (volume.restrict I))
+    (hUF : IntegrableOn (fun s ↦ ((U s)†) (F s)) I) :
     ‖∫ s in I, ((U s)†) (F s)‖ₑ ≤ C * eLpNorm (I.indicator fun s ↦ eLpNorm (F s) a μ) p := by
   have hind : (fun s ↦ ((U s)†) (I.indicator F s)) = I.indicator fun s ↦ ((U s)†) (F s) := by
     funext s
@@ -105,7 +107,8 @@ private theorem enorm_setIntegral_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ
     · rw [Set.indicator_of_notMem hs, Set.indicator_of_notMem hs,
         eLpNorm_congr_ae (Lp.coeFn_zero _ _ _), eLpNorm_zero]
   rw [← integral_indicator hI, ← hnorm, ← hind]
-  exact hC _ (hF.indicator hI) (by rw [hind]; exact hUF.indicator hI)
+  exact hC _ ((aestronglyMeasurable_indicator_iff hI).2 hF)
+    (by rw [hind]; exact (integrable_indicator_iff hI).2 hUF)
 
 /-- **The retarded estimate from two dual estimates.** Let `U(t) : H → L²(X, μ)` be bounded
 operators satisfying the dual estimates
@@ -168,8 +171,8 @@ theorem enorm_integral_setIntegral_Iio_inner_adjoint_le {p₁ p a₁ a : ℝ≥0
     _ ≤ C₁ * eLpNorm (I.indicator fun s ↦ eLpNorm (F s) a₁ μ) p₁ *
           (C * eLpNorm (J.indicator fun t ↦ eLpNorm (G t) a μ) p) := by
         gcongr
-        exacts [enorm_setIntegral_adjoint_le hC₁ hF hUF hI.measurableSet,
-          enorm_setIntegral_adjoint_le hC hG hUG hJ.measurableSet]
+        exacts [enorm_setIntegral_adjoint_le hC₁ hI.measurableSet hF.restrict hUF.integrableOn,
+          enorm_setIntegral_adjoint_le hC hJ.measurableSet hG.restrict hUG.integrableOn]
     _ = _ := by ring
 
 end TauCeti
