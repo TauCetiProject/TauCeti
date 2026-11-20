@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.Affinoid.SupSeminorm
 
 import Mathlib.RingTheory.Polynomial.RationalRoot
-import TauCeti.Analysis.Normed.Unbundled.RootBound
+import TauCeti.Analysis.Polynomial.Ultra
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.RingTheory.Affinoid.MaximumModulus
 import TauCeti.RingTheory.Affinoid.MinimalPolynomial

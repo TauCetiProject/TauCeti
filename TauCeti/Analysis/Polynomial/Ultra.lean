@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 public import Mathlib.Algebra.Polynomial.AlgebraMap
+public import Mathlib.Algebra.Polynomial.BigOperators
 public import Mathlib.Algebra.Polynomial.Degree.SmallDegree
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Ring.Basic
@@ -24,6 +26,12 @@ bounds the coefficients of determinants such as `det (1 - X A)` and of the adjug
 
 An integral polynomial has norm at most one on the closed unit ball of an ultrametric
 seminormed ring with `‖1‖ = 1` (`Polynomial.norm_aeval_le_one`).
+
+For a nonarchimedean, nonnegative, submultiplicative function `f` with `f 0 = 0` on a semiring,
+such as a nonarchimedean ring seminorm, bounds `f (p.coeff i) ≤ M ^ (d - i)` on the coefficients
+of a polynomial `p` of degree at most `d` pass to products and powers, since each coefficient of a
+product is a sum of products of coefficients (`Polynomial.apply_coeff_mul_le_pow`,
+`Polynomial.apply_coeff_pow_le_pow`, `Polynomial.apply_coeff_prod_le_pow`).
 
 ## References
 
@@ -45,6 +53,79 @@ theorem norm_aeval_le_one {K : Type*} [SeminormedRing K] [NormOneClass K] [IsUlt
   refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one fun i _ ↦ ?_
   exact (IsUltrametricDist.norm_zsmul_le (x ^ i) (p.coeff i)).trans
     ((norm_pow_le x i).trans (pow_le_one₀ (norm_nonneg _) hx))
+
+section CoeffBound
+
+variable {R F : Type*} [FunLike F R ℝ] {f : F} {M : ℝ}
+
+section Semiring
+
+variable [Semiring R] [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ]
+  [SubmultiplicativeHomClass F R ℝ]
+
+/-- **Coefficient bounds multiply.** Let `p` and `q` be polynomials of degree at most `d` and `e`
+with `f (p.coeff i) ≤ M ^ (d - i)` and `f (q.coeff i) ≤ M ^ (e - i)` for every `i`. Then
+`f ((p * q).coeff k) ≤ M ^ (d + e - k)` for every `k`, for every nonarchimedean, nonnegative,
+submultiplicative `f` with `f 0 = 0`, such as a nonarchimedean ring seminorm. -/
+theorem apply_coeff_mul_le_pow (hf_na : IsNonarchimedean f) {p q : R[X]}
+    {d e : ℕ} (hpd : p.natDegree ≤ d) (hqe : q.natDegree ≤ e)
+    (hp : ∀ i, f (p.coeff i) ≤ M ^ (d - i)) (hq : ∀ i, f (q.coeff i) ≤ M ^ (e - i)) (k : ℕ) :
+    f ((p * q).coeff k) ≤ M ^ (d + e - k) := by
+  -- The coefficient is a sum over `i + j = k`, dominated by one of its terms.
+  rw [coeff_mul]
+  obtain ⟨⟨i, j⟩, hij, hle⟩ := hf_na.finset_image_add_of_nonempty
+    (fun x : ℕ × ℕ ↦ p.coeff x.1 * q.coeff x.2) (s := antidiagonal k)
+    ⟨(k, 0), mem_antidiagonal.mpr (add_zero k)⟩
+  rw [mem_antidiagonal] at hij
+  refine hle.trans ((map_mul_le_mul f _ _).trans ?_)
+  -- When a factor vanishes, `M ^ (d + e - k)` is one of the bounds in `hp` or `hq`, hence
+  -- nonnegative.
+  rcases le_or_gt i d with hi | hi
+  · rcases le_or_gt j e with hj | hj
+    · calc f (p.coeff i) * f (q.coeff j) ≤ M ^ (d - i) * M ^ (e - j) :=
+            mul_le_mul (hp i) (hq j) (apply_nonneg f _) ((apply_nonneg f _).trans (hp i))
+        _ = M ^ (d + e - k) := by rw [← pow_add]; congr 1; omega
+    · rw [coeff_eq_zero_of_natDegree_lt (hqe.trans_lt hj), map_zero, mul_zero]
+      exact (apply_nonneg f _).trans ((hp (k - e)).trans_eq (by congr 1; omega))
+  · rw [coeff_eq_zero_of_natDegree_lt (hpd.trans_lt hi), map_zero, zero_mul]
+    exact (apply_nonneg f _).trans ((hq (k - d)).trans_eq (by congr 1; omega))
+
+/-- **Coefficient bounds pass to powers.** Let `p` be a polynomial of degree at most `d` with
+`f (p.coeff i) ≤ M ^ (d - i)` for every `i`. Then `f ((p ^ n).coeff k) ≤ M ^ (n * d - k)` for
+every `n` and `k`, for every `f` as in `Polynomial.apply_coeff_mul_le_pow` with `f 1 ≤ 1`. -/
+theorem apply_coeff_pow_le_pow (hf1 : f 1 ≤ 1) (hf_na : IsNonarchimedean f)
+    {p : R[X]} {d : ℕ} (hpd : p.natDegree ≤ d) (hp : ∀ i, f (p.coeff i) ≤ M ^ (d - i))
+    (n k : ℕ) : f ((p ^ n).coeff k) ≤ M ^ (n * d - k) := by
+  induction n generalizing k with
+  | zero => rw [pow_zero, coeff_one]; split_ifs <;> simp [hf1]
+  | succ n ih =>
+    rw [pow_succ, Nat.succ_mul]
+    exact apply_coeff_mul_le_pow hf_na (natDegree_pow_le_of_le n hpd) hpd ih hp k
+
+end Semiring
+
+variable [CommSemiring R] [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ]
+  [SubmultiplicativeHomClass F R ℝ]
+
+/-- **Coefficient bounds pass to finite products.** Suppose that for each `a ∈ s`, the polynomial
+`p a` has degree at most `d a` and satisfies `f ((p a).coeff i) ≤ M ^ (d a - i)` for every `i`.
+Then `f ((∏ a ∈ s, p a).coeff k) ≤ M ^ (∑ a ∈ s, d a - k)` for every `k`, for every `f` as in
+`Polynomial.apply_coeff_mul_le_pow` with `f 1 ≤ 1`. -/
+theorem apply_coeff_prod_le_pow (hf1 : f 1 ≤ 1) (hf_na : IsNonarchimedean f)
+    {ι : Type*} (s : Finset ι) (p : ι → R[X]) (d : ι → ℕ)
+    (hpd : ∀ a ∈ s, (p a).natDegree ≤ d a)
+    (hp : ∀ a ∈ s, ∀ i, f ((p a).coeff i) ≤ M ^ (d a - i)) (k : ℕ) :
+    f ((∏ a ∈ s, p a).coeff k) ≤ M ^ (∑ a ∈ s, d a - k) := by
+  classical
+  induction s using Finset.induction_on generalizing k with
+  | empty => rw [prod_empty, sum_empty, coeff_one]; split_ifs <;> simp [hf1]
+  | insert a s ha ih =>
+    rw [prod_insert ha, sum_insert ha]
+    simp only [forall_mem_insert] at hpd hp
+    exact apply_coeff_mul_le_pow hf_na hpd.1
+      ((natDegree_prod_le _ _).trans (sum_le_sum hpd.2)) hp.1 (ih hpd.2 hp.2) k
+
+end CoeffBound
 
 end Polynomial
 
