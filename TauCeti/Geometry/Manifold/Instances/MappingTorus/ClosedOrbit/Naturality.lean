@@ -33,7 +33,7 @@ their orbit tori `(s, θ) ↦ (s, γ θ)` behave under the three natural operati
   (`TauCeti.SmoothMappingTorus.iterateMap`), sends the closed orbit of `φ ^ k` through `x` to the
   closed orbit of `φ` through `x`. When `k ≠ 0` and `d ≠ 0`, the parameter map is the signed
   rescaling `ℝ / dℤ ≃ ℝ / (k.natAbs * d)ℤ`, `[t] ↦ [k t]`, reversing orientation for negative `k`.
-  For any `d`, the two orbit images agree when `k ≠ 0`.
+  For any `d`, the two orbit images agree when `k ≠ 0`. The same holds for the orbit tori.
 
 ## Main results
 
@@ -46,9 +46,11 @@ their orbit tori `(s, θ) ↦ (s, γ θ)` behave under the three natural operati
   orbits and orbit tori to closed orbits and orbit tori.
 * `TauCeti.SmoothMappingTorus.iterateMap_closedOrbit_coe`,
   `TauCeti.SmoothMappingTorus.iterateMap_comp_closedOrbit`,
-  `TauCeti.SmoothMappingTorus.image_iterateMap_range_closedOrbit`: the iterate map sends closed
-  orbits of `φ ^ k` to closed orbits of `φ`, with target period `k.natAbs * d`. The parameter
-  rescaling requires nonzero `k` and `d`; the image equality requires only nonzero `k`.
+  `TauCeti.SmoothMappingTorus.image_iterateMap_range_closedOrbit`,
+  `TauCeti.SmoothMappingTorus.prodMap_iterateMap_comp_orbitTorus`,
+  `TauCeti.SmoothMappingTorus.image_prodMap_iterateMap_range_orbitTorus`: the iterate map sends
+  closed orbits and orbit tori of `φ ^ k` to those of `φ`, with target period `k.natAbs * d`. The
+  parameter rescaling requires nonzero `k` and `d`; the image equality requires only nonzero `k`.
 
 ## References
 
@@ -170,6 +172,26 @@ theorem image_iterateMap_range_closedOrbit (hk : k ≠ 0) :
     | H t =>
       refine ⟨((t / k : ℝ) : AddCircle (d : ℝ)), ?_⟩
       rw [comp_apply, iterateMap_closedOrbit_coe k hx hx', mul_div_cancel₀ t hk']
+
+/-- When `d` and `k.natAbs * d` are nonzero, the map `(s, y) ↦ (s, iterateMap φ k y)` sends the
+orbit torus of `φ ^ k` through `x` to the orbit torus of `φ` through `x`, after the signed
+rescaling `[t] ↦ [k t]` of the second parameter circle. -/
+theorem prodMap_iterateMap_comp_orbitTorus (hd : (d : ℝ) ≠ 0)
+    (hkd : ((k.natAbs * d : ℕ) : ℝ) ≠ 0) :
+    Prod.map id (iterateMap φ k) ∘ orbitTorus (φ ^ k) hx =
+      orbitTorus φ hx' ∘ Prod.map id
+        (AddCircle.equivAddCircle (d : ℝ) ((k.natAbs * d : ℕ) : ℝ) hd hkd ∘
+          (fun θ ↦ k.sign • θ)) :=
+  funext fun p ↦ by
+    simpa using congrFun (iterateMap_comp_closedOrbit k hx hx' hd hkd) p.2
+
+/-- For nonzero `k`, the map `(s, y) ↦ (s, iterateMap φ k y)` sends the image of the orbit torus
+of `φ ^ k` through `x` onto the image of the orbit torus of `φ` through `x`. -/
+theorem image_prodMap_iterateMap_range_orbitTorus (hk : k ≠ 0) :
+    Prod.map id (iterateMap φ k) '' range (orbitTorus (φ ^ k) hx) =
+      range (orbitTorus φ hx') := by
+  rw [range_orbitTorus, range_orbitTorus, prodMap_image_prod, image_id,
+    image_iterateMap_range_closedOrbit k hx hx' hk]
 
 end Iterate
 

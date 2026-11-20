@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.PlanInterpolation
-public import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.Subsolution
 import TauCeti.Analysis.PDE.HopfLax.Integrable
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
+import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.Subsolution
 import TauCeti.MeasureTheory.OptimalTransport.Duality.LowerSemicontinuous
-import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 import TauCeti.Topology.Order.Interval
 
 /-!
@@ -61,7 +60,9 @@ endpoint is recovered by narrow continuity of `ν` at `b`.
 * L. Ambrosio, N. Gigli and G. Savaré, *Gradient Flows in Metric Spaces and in the Space of
   Probability Measures*, Birkhäuser, 2nd ed. 2008, §8.1 and §8.3.
 * C. Villani, *Optimal Transport: Old and New*, Grundlehren 338, Springer 2009, Chapter 7.
-* F. Santambrogio, *Optimal Transport for Applied Mathematicians*, Birkhäuser 2015, §5.3.
+* F. Santambrogio, *Optimal Transport for Applied Mathematicians*, Birkhäuser 2015, §5.3 and, in
+  §5.4 of the May 2015 preprint version, Theorem 5.28 (stated there for a compact convex domain
+  and `p > 1`).
 -/
 
 public section

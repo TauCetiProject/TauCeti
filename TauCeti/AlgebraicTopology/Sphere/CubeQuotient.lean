@@ -171,7 +171,7 @@ def closedBallToSphere :
     C(closedBall (0 : EuclideanSpace ℝ (Fin n)) 1, sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
     where
   toFun x := ⟨closedBallToSphereAux x, by
-    simpa using norm_closedBallToSphereAux (mem_closedBall_zero_iff.1 x.2)⟩
+    simpa using norm_closedBallToSphereAux (mem_closedBall_zero_iff.1 x.property)⟩
   continuous_toFun := by
     refine Continuous.subtype_mk ((PiLp.continuous_toLp 2 _).comp ?_) _
     refine Continuous.finSnoc (continuous_pi fun i ↦ ?_) ?_ <;> fun_prop
@@ -209,7 +209,7 @@ theorem closedBallToSphere_eq_sphereNorthPole_iff
 private lemma norm_lt_one_of_closedBallToSphere_ne
     {x : closedBall (0 : EuclideanSpace ℝ (Fin n)) 1}
     (hx : closedBallToSphere n x ≠ sphereNorthPole n) : ‖(x : EuclideanSpace ℝ (Fin n))‖ < 1 :=
-  lt_of_le_of_ne (mem_closedBall_zero_iff.1 x.2) fun h ↦
+  lt_of_le_of_ne (mem_closedBall_zero_iff.1 x.property) fun h ↦
     hx (closedBallToSphere_eq_sphereNorthPole_iff.2 h)
 
 /-- `TauCeti.closedBallToSphere` identifies exactly the points of the boundary sphere: it is
@@ -466,17 +466,17 @@ variable {n : ℕ} [NeZero n] {X Y : Type*} [TopologicalSpace X] [TopologicalSpa
 omit [NeZero n] in
 /-- A generalized loop is constant on the fibres of `TauCeti.cubeToSphere`. -/
 private lemma factorsThrough_cubeToSphere (p : Ω^ (Fin n) X x) :
-    Function.FactorsThrough p.1 (cubeToSphere n) := fun y z h ↦ by
+    Function.FactorsThrough p.val (cubeToSphere n) := fun y z h ↦ by
   rcases cubeToSphere_eq_cubeToSphere_iff.1 h with rfl | ⟨hy, hz⟩
   · rfl
-  · exact (p.2 y hy).trans (p.2 z hz).symm
+  · exact (p.property y hy).trans (p.property z hz).symm
 
 /-- A generalized loop `I^n → X`, constant on the boundary of the cube, descends along
 `TauCeti.cubeToSphere` to a map out of the unit sphere of `EuclideanSpace ℝ (Fin (n + 1))`
 (`GenLoop.toSphere_cubeToSphere`), sending the north pole to the base point
 (`GenLoop.toSphere_sphereNorthPole`). -/
 def toSphere (p : Ω^ (Fin n) X x) : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, X) :=
-  (isQuotientMap_cubeToSphere n).lift p.1 (factorsThrough_cubeToSphere p)
+  (isQuotientMap_cubeToSphere n).lift p.val (factorsThrough_cubeToSphere p)
 
 @[simp]
 theorem toSphere_cubeToSphere (p : Ω^ (Fin n) X x) (z : I^(Fin n)) :
@@ -486,7 +486,7 @@ theorem toSphere_cubeToSphere (p : Ω^ (Fin n) X x) (z : I^(Fin n)) :
 @[simp]
 theorem toSphere_sphereNorthPole (p : Ω^ (Fin n) X x) : toSphere p (sphereNorthPole n) = x := by
   rw [← cubeToSphere_eq_sphereNorthPole_iff.2 zero_mem_cubeBoundary, toSphere_cubeToSphere]
-  exact p.2 0 zero_mem_cubeBoundary
+  exact p.property 0 zero_mem_cubeBoundary
 
 /-- The pointed map out of the sphere of the image of a generalized loop under a based map is the
 composite. -/
@@ -541,8 +541,8 @@ def sphereEquiv :
     Ω^ (Fin n) X x ≃
       {f : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, X) // f (sphereNorthPole n) = x} where
   toFun p := ⟨toSphere p, toSphere_sphereNorthPole p⟩
-  invFun f := ⟨f.1.comp (cubeToSphere n), fun z hz ↦ by
-    simp [cubeToSphere_eq_sphereNorthPole_iff.2 hz, f.2]⟩
+  invFun f := ⟨f.val.comp (cubeToSphere n), fun z hz ↦ by
+    simp [cubeToSphere_eq_sphereNorthPole_iff.2 hz, f.property]⟩
   left_inv p := by
     ext z
     exact toSphere_cubeToSphere p z
@@ -552,20 +552,20 @@ def sphereEquiv :
     exact toSphere_cubeToSphere _ z
 
 @[simp]
-lemma coe_sphereEquiv_apply (p : Ω^ (Fin n) X x) : (sphereEquiv n X x p).1 = toSphere p :=
+lemma coe_sphereEquiv_apply (p : Ω^ (Fin n) X x) : (sphereEquiv n X x p).val = toSphere p :=
   (rfl)
 
 @[simp]
 lemma coe_sphereEquiv_symm_apply
     (f : {f : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, X) // f (sphereNorthPole n) = x}) :
-    ((sphereEquiv n X x).symm f).1 = f.1.comp (cubeToSphere n) :=
+    ((sphereEquiv n X x).symm f).val = f.val.comp (cubeToSphere n) :=
   (rfl)
 
 @[simp]
 lemma sphereEquiv_symm_apply_apply
     (f : {f : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, X) // f (sphereNorthPole n) = x})
     (z : I^(Fin n)) :
-    (sphereEquiv n X x).symm f z = f.1 (cubeToSphere n z) :=
+    (sphereEquiv n X x).symm f z = f.val (cubeToSphere n z) :=
   (rfl)
 
 /-- **Homotopies of generalized loops are pointed homotopies of maps out of the sphere.**  Two
@@ -577,7 +577,8 @@ theorem homotopic_iff_toSphere {p q : Ω^ (Fin n) X x} :
   · rintro ⟨H⟩
     have hH (t : I) (y : I^(Fin n)) (hy : y ∈ Cube.boundary (Fin n)) (z : I^(Fin n))
         (hz : z ∈ Cube.boundary (Fin n)) : H (t, y) = H (t, z) :=
-      (H.eq_fst t hy).trans <| (p.2 y hy).trans <| (p.2 z hz).symm.trans (H.eq_fst t hz).symm
+      (H.eq_fst t hy).trans <| (p.property y hy).trans <| (p.property z hz).symm.trans
+          (H.eq_fst t hz).symm
     refine ⟨⟨⟨liftProdCubeToSphere H.toContinuousMap hH, fun s ↦ ?_, fun s ↦ ?_⟩, fun t s hs ↦ ?_⟩⟩
     · obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
       simp
@@ -654,7 +655,7 @@ variable {n : ℕ} {X : TopCat.{u}} {x : X}
 `TauCeti.diskHomeomorphCube`. When `TopCat.diskBoundary n` is attached at `x` along a constant
 map, this is the map onto `γ` of the resulting sphere. -/
 def diskMap (γ : Ω^ (Fin n) X x) : TopCat.disk.{u} n ⟶ X :=
-  TopCat.ofHom (γ.1.comp (diskHomeomorphCube n : C(TopCat.disk.{u} n, I^(Fin n))))
+  TopCat.ofHom (γ.val.comp (diskHomeomorphCube n : C(TopCat.disk.{u} n, I^(Fin n))))
 
 @[simp]
 theorem diskMap_apply (γ : Ω^ (Fin n) X x) (s : TopCat.disk.{u} n) :
@@ -668,7 +669,7 @@ theorem diskBoundaryInclusion_comp_diskMap (γ : Ω^ (Fin n) X x) :
     TopCat.diskBoundaryInclusion n ≫ diskMap γ = TopCat.ofHom (ContinuousMap.const _ x) := by
   ext s
   -- The boundary sphere of the disk goes to the boundary of the cube, where `γ` is `x`.
-  exact γ.2 _ ((diskHomeomorphCube_mem_boundary_iff _).2 ⟨s, rfl⟩)
+  exact γ.property _ ((diskHomeomorphCube_mem_boundary_iff _).2 ⟨s, rfl⟩)
 
 end GenLoop
 

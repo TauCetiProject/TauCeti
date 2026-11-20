@@ -116,7 +116,7 @@ theorem graphClass_comp_of_conj (U V : OpenSubgroup G) (hU : U.toSubgroup.index 
       trivialF2Map_id]
   have hVW : V = U.comap (c : G →* G) c.continuous := by
     have hle : V.toSubgroup ≤ (U.comap (c : G →* G) c.continuous).toSubgroup := fun v hv =>
-      Subgroup.mem_comap.2 (by rw [hc, ← hκ ⟨v, hv⟩]; exact (κ ⟨v, hv⟩).2)
+      Subgroup.mem_comap.2 (by rw [hc, ← hκ ⟨v, hv⟩]; exact (κ ⟨v, hv⟩).property)
     have hW : (U.comap (c : G →* G) c.continuous).toSubgroup.index = 2 := by
       rw [OpenSubgroup.toSubgroup_comap, Subgroup.index_comap_of_surjective U.toSubgroup
         fun y => ⟨g * y * g⁻¹, by rw [hc]; group⟩, hU]

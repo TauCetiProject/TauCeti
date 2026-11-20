@@ -134,7 +134,7 @@ theorem star_mem_of_isClosed {a : A} (ha : a ∈ I) : star a ∈ I := by
     rw [Real.norm_of_nonneg (norm_nonneg _)]
     exact Real.le_sqrt_of_sq_le he
   exact hI.mem_of_tendsto hlim
-    (Eventually.of_forall fun e => I.mul_mem_right (e : A) (star a) e.2.1)
+    (Eventually.of_forall fun e => I.mul_mem_right (e : A) (star a) e.property.1)
 
 @[simp]
 theorem star_mem_iff_of_isClosed {a : A} : star a ∈ I ↔ a ∈ I :=
@@ -177,7 +177,7 @@ instance isClosed_toNonUnitalStarSubalgebra :
   hI
 
 instance instStar : Star I where
-  star x := ⟨star (x : A), I.star_mem_of_isClosed x.2⟩
+  star x := ⟨star (x : A), I.star_mem_of_isClosed x.property⟩
 
 @[simp, norm_cast]
 theorem coe_star (x : I) : ((star x : I) : A) = star (x : A) :=
@@ -189,7 +189,7 @@ instance instStarRing : StarRing I where
   star_add x y := Subtype.ext (star_add (x : A) (y : A))
 
 instance instSMulComplex : SMul ℂ I where
-  smul c x := ⟨c • (x : A), I.smul_mem_of_isClosed c x.2⟩
+  smul c x := ⟨c • (x : A), I.smul_mem_of_isClosed c x.property⟩
 
 @[simp, norm_cast]
 theorem coe_smul_complex (c : ℂ) (x : I) : ((c • x : I) : A) = c • (x : A) :=
@@ -245,7 +245,7 @@ theorem starAlgHom_injective : Function.Injective I.starAlgHom :=
   Subtype.coe_injective
 
 theorem isometry_starAlgHom : Isometry I.starAlgHom :=
-  isometry_subtype_coe
+  isometry_subtypeVal
 
 @[simp]
 theorem range_starAlgHom :
@@ -263,19 +263,19 @@ theorem ker_starAlgHom : TwoSidedIdeal.ker I.starAlgHom = ⊥ := by
 nonunital `⋆`-subalgebra `I.toNonUnitalStarSubalgebra`. -/
 def toNonUnitalStarSubalgebraEquiv : I ≃⋆ₐ[ℂ] I.toNonUnitalStarSubalgebra :=
   { NonUnitalStarAlgHom.codRestrict I.starAlgHom I.toNonUnitalStarSubalgebra
-      fun x => I.mem_toNonUnitalStarSubalgebra.mpr x.2 with
-    invFun := fun x => ⟨x, I.mem_toNonUnitalStarSubalgebra.mp x.2⟩
+      fun x => I.mem_toNonUnitalStarSubalgebra.mpr x.property with
+    invFun := fun x => ⟨x, I.mem_toNonUnitalStarSubalgebra.mp x.property⟩
     left_inv := fun _ => Subtype.ext rfl
     right_inv := fun _ => Subtype.ext rfl }
 
 @[simp]
 theorem toNonUnitalStarSubalgebraEquiv_apply (x : I) :
-    I.toNonUnitalStarSubalgebraEquiv x = ⟨x, I.mem_toNonUnitalStarSubalgebra.mpr x.2⟩ :=
+    I.toNonUnitalStarSubalgebraEquiv x = ⟨x, I.mem_toNonUnitalStarSubalgebra.mpr x.property⟩ :=
   (rfl)
 
 @[simp]
 theorem toNonUnitalStarSubalgebraEquiv_symm_apply (x : I.toNonUnitalStarSubalgebra) :
-    I.toNonUnitalStarSubalgebraEquiv.symm x = ⟨x, I.mem_toNonUnitalStarSubalgebra.mp x.2⟩ :=
+    I.toNonUnitalStarSubalgebraEquiv.symm x = ⟨x, I.mem_toNonUnitalStarSubalgebra.mp x.property⟩ :=
   (rfl)
 
 theorem coe_toNonUnitalStarSubalgebraEquiv_apply (x : I) :
@@ -349,7 +349,7 @@ omit [IsScalarTower 𝕜 A A] in
 /-- Left multiplication by `a : A` as a continuous linear endomorphism of a star ideal `I`. -/
 private def idealMulLeftCLM (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) (a : A) : I →L[𝕜] I :=
   LinearMap.mkContinuous
-    { toFun := fun x => ⟨a * x, hmul a x x.2⟩
+    { toFun := fun x => ⟨a * x, hmul a x x.property⟩
       map_add' := fun x y => Subtype.ext (mul_add a x y)
       map_smul' := fun c x => Subtype.ext (mul_smul_comm c a x) }
     ‖a‖ fun x => norm_mul_le a (x : A)
@@ -358,7 +358,7 @@ omit [SMulCommClass 𝕜 A A] in
 /-- Right multiplication by `a : A` as a continuous linear endomorphism of a star ideal `I`. -/
 private def idealMulRightCLM (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) (a : A) : I →L[𝕜] I :=
   LinearMap.mkContinuous
-    { toFun := fun x => ⟨x * a, StarMemClass.mul_mem_right_of_mul_mem_left hmul a x.2⟩
+    { toFun := fun x => ⟨x * a, StarMemClass.mul_mem_right_of_mul_mem_left hmul a x.property⟩
       map_add' := fun x y => Subtype.ext (add_mul (x : A) y a)
       map_smul' := fun c x => Subtype.ext (smul_mul_assoc c (x : A) a) }
     ‖a‖ fun x => (norm_mul_le (x : A) a).trans_eq (mul_comm ‖(x : A)‖ ‖a‖)
@@ -408,14 +408,14 @@ variable {I}
 /-- The left centralizer of `I.multiplierHom hmul a` acts on `I` by left multiplication by `a`. -/
 @[simp]
 theorem multiplierHom_fst_apply (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) (a : A) (x : I) :
-    (I.multiplierHom hmul a).fst x = ⟨a * x, hmul a x x.2⟩ :=
+    (I.multiplierHom hmul a).fst x = ⟨a * x, hmul a x x.property⟩ :=
   (rfl)
 
 /-- The right centralizer of `I.multiplierHom hmul a` acts on `I` by right multiplication by `a`. -/
 @[simp]
 theorem multiplierHom_snd_apply (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) (a : A) (x : I) :
     (I.multiplierHom hmul a).snd x =
-      ⟨x * a, StarMemClass.mul_mem_right_of_mul_mem_left hmul a x.2⟩ :=
+      ⟨x * a, StarMemClass.mul_mem_right_of_mul_mem_left hmul a x.property⟩ :=
   (rfl)
 
 /-- Coercing `(I.multiplierHom hmul a).fst x` to `A` gives `a * x`. -/
@@ -464,12 +464,12 @@ left-annihilates `I`. -/
 theorem multiplierHom_eq_zero_iff [IsProperStar A] (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) {a : A} :
     I.multiplierHom hmul a = 0 ↔ ∀ x ∈ I, a * x = 0 := by
   refine ⟨fun h x hx => ?_, fun h => DoubleCentralizer.ext_fst_snd
-    (fun x => Subtype.ext (h x x.2)) fun x => Subtype.ext ?_⟩
+    (fun x => Subtype.ext (h x x.property)) fun x => Subtype.ext ?_⟩
   · have := congrArg (fun m : 𝓜(𝕜, I) => ((m.fst ⟨x, hx⟩ : I) : A)) h
     simpa using this
   · -- Right annihilation `x * a = 0` follows from `(x * a) * star (x * a) = x * (a * _) = 0`.
     have hzero : (x : A) * a * star ((x : A) * a) = 0 := by
-      rw [mul_assoc, h _ (star_mem (StarMemClass.mul_mem_right_of_mul_mem_left hmul a x.2)),
+      rw [mul_assoc, h _ (star_mem (StarMemClass.mul_mem_right_of_mul_mem_left hmul a x.property)),
         mul_zero]
     exact mul_star_self_eq_zero.mp hzero
 

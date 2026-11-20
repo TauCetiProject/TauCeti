@@ -235,11 +235,11 @@ theorem exists_continuous_section [CompactSpace G] [TotallyDisconnectedSpace G]
   have : IsClosed (H : Set G) := hH
   have : CompactSpace C := isCompact_iff_compactSpace.mp hCclosed.isCompact
   have hcont : Continuous fun x : C => (QuotientGroup.mk (x : G) : G ⧸ H) :=
-    QuotientGroup.continuous_mk.comp continuous_subtype_val
+    QuotientGroup.continuous_mk.comp continuous_subtypeVal
   let e : C ≃ₜ G ⧸ H :=
     Continuous.homeoOfEquivCompactToT2 (f := hC.leftQuotientEquiv.symm) hcont
   exact H.exists_continuous_section_one_eq_one_of_section (fun q => ((e.symm q : C) : G))
-    (continuous_subtype_val.comp e.symm.continuous) hC.quotientGroupMk_leftQuotientEquiv
+    (continuous_subtypeVal.comp e.symm.continuous) hC.quotientGroupMk_leftQuotientEquiv
 
 /-- **The continuous section of a projection between quotients of a profinite group.** For subgroups
 `K ≤ H` of a profinite group with `H` closed, the projection `G ⧸ K → G ⧸ H` has a continuous
