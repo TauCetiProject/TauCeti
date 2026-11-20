@@ -76,15 +76,17 @@ theorem nonempty_iso_arTranslate_simpleRep_src_kronecker
       ⟨isNoetherian_of_tower k inferInstance, isArtinian_of_tower k inferInstance⟩
   have : Module.Finite k (AuslanderReitenTranspose P.p) :=
     Module.Finite.trans (pathAlgebra k Q)ᵐᵒᵖ _
-  let T := ModuleCat.of (pathAlgebra k Q) (AuslanderReitenTranslate k P.p)
+  let T := ModuleCat.of (pathAlgebra k Q) (AuslanderReitenTranslate k k P.p)
   have hiT : Indecomposable T := (indecomposable_iff_isIndecomposableModule T).mpr
-    ((AuslanderReitenTranslate.isIndecomposableModule_iff P.p k).mpr
+    ((AuslanderReitenTranslate.isIndecomposableModule_iff (length_quotient_linearMap_self_eq_one k)
+      (isFiniteLength_of_finite k _)).mpr
       ((P.isIndecomposableModule_auslanderReitenTranspose_iff hP hlen hiM).mpr hnp))
   have hnT : ¬ Injective T := by
     intro ht
     have := (Module.injective_iff_injective_object (pathAlgebra k Q)
-      (AuslanderReitenTranslate k P.p)).mpr ht
-    exact hnp (hP.moduleInjective_auslanderReitenTranslate_iff_projective.mp this)
+      (AuslanderReitenTranslate k k P.p)).mpr ht
+    exact hnp ((hP.moduleInjective_auslanderReitenTranslate_iff_projective
+      (length_quotient_linearMap_self_eq_one k)).mp this)
   -- Transport the landing properties of D Tr, then classify its indecomposable value.
   have hiF : Indecomposable (E.inverse.obj T) :=
     Functor.indecomposable_obj_of_map_bijective E.inverse hiT

@@ -194,6 +194,23 @@ theorem isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem :
   ⟨fun h ↦ ⟨h.nontrivial, fun _ hf ↦ h.eq_zero_or_eq_one_of_isIdempotentElem hf⟩,
     fun ⟨_, h⟩ ↦ isIndecomposableModule_of_forall_isIdempotentElem h⟩
 
+/-- Indecomposability is detected by the endomorphism ring with multiplication reversed: two
+modules that are nonzero together, with anti-isomorphic endomorphism rings, are indecomposable
+together. This is how a duality transfers indecomposability. -/
+theorem isIndecomposableModule_iff_of_ringEquiv_op {B : Type*} [Ring B] {N : Type*}
+    [AddCommGroup N] [Module B N] (d : (Module.End B N)ᵐᵒᵖ ≃+* Module.End A M)
+    (h : Nontrivial M ↔ Nontrivial N) :
+    IsIndecomposableModule A M ↔ IsIndecomposableModule B N := by
+  rw [isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem,
+    isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem]
+  refine and_congr h ⟨fun H f hf ↦ ?_, fun H g hg ↦ ?_⟩
+  · have hop : IsIdempotentElem (MulOpposite.op f) := congrArg MulOpposite.op hf
+    simpa using (H _ (hop.map d)).imp
+      (congrArg fun g ↦ (d.symm g).unop) (congrArg fun g ↦ (d.symm g).unop)
+  · have hunop : IsIdempotentElem (d.symm g).unop := congrArg MulOpposite.unop (hg.map d.symm)
+    simpa using (H _ hunop).imp
+      (congrArg fun f ↦ d (MulOpposite.op f)) (congrArg fun f ↦ d (MulOpposite.op f))
+
 /-- A simple module is indecomposable: it has no proper nonzero submodule to decompose along. -/
 theorem IsSimpleModule.isIndecomposableModule [IsSimpleModule A M] :
     IsIndecomposableModule A M := by

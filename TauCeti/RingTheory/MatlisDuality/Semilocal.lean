@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.HopkinsLevitzki
 public import TauCeti.Algebra.Module.Injective.Cogenerator
 public import TauCeti.Algebra.Module.Injective.Envelope.Existence
-import Mathlib.RingTheory.SimpleModule.InjectiveProjective
+public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 
 /-!
 # Matlis duality over a semilocal ring
@@ -40,7 +40,9 @@ at most one-dimensional over `R ⧸ 𝔪` because `J(R)` is a radical ideal.
   `TauCeti.IsInjectiveEnvelope.bijective_applyₗ_quotient_jacobson`: Matlis duality for modules of
   finite length over `R`.
 * `TauCeti.isInjectiveEnvelope_quotEquivOfEqBot_jacobson`: over a semisimple commutative ring,
-  for instance a field, `R` itself is the injective hull of `R ⧸ J(R)`.
+  for instance a field, `R` itself is the injective hull of `R ⧸ J(R)`, so that `E = R` satisfies
+  this hypothesis (`TauCeti.length_quotient_linearMap_self_eq_one`); such a ring is injective over
+  itself (`TauCeti.moduleInjective_self_of_isSemisimpleRing`).
 * `TauCeti.IsInjectiveEnvelope.isFiniteLength_quotient_jacobson` and
   `TauCeti.exists_isInjectiveEnvelope_quotient_jacobson`: over a commutative Artinian ring, every
   injective hull of `R ⧸ J(R)` has finite length, and one exists in the universe of `R`.
@@ -167,6 +169,18 @@ theorem isInjectiveEnvelope_quotEquivOfEqBot_jacobson :
   isEssential_range := by
     rw [LinearEquiv.range]
     exact isEssential_top
+
+/-- A semisimple ring, for instance a field, is injective over itself. With
+`TauCeti.length_quotient_linearMap_self_eq_one`, this makes `E = R` an admissible coefficient module
+for Matlis duality over such a ring. -/
+instance moduleInjective_self_of_isSemisimpleRing : Module.Injective R R :=
+  Module.injective_of_isSemisimpleRing R R
+
+/-- Over a semisimple commutative ring, for instance a field, `R` itself satisfies the hypothesis of
+Matlis duality: each `Hom_R(R ⧸ 𝔪, R)` has length one. -/
+theorem length_quotient_linearMap_self_eq_one (𝔪 : Ideal R) (h𝔪 : 𝔪.IsMaximal) :
+    Module.length R (R ⧸ 𝔪 →ₗ[R] R) = 1 :=
+  (isInjectiveEnvelope_quotEquivOfEqBot_jacobson R).length_quotient_linearMap_eq_one 𝔪 h𝔪
 
 end Semisimple
 
