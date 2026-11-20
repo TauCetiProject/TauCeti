@@ -33,9 +33,9 @@ unitary and depends continuously on `f` by the continuity of the Gram–Schmidt 
 the identity at the standard frame (`TauCeti.exists_unitaryFrameMap_localSection`). Translating
 this section by `U(r + m)` gives one near every frame, and such a section defines a chart with
 fibre the stabilizer of the standard frame (`Subgroup.localSectionTrivializationOfCosetFibers`),
-which is `U(m)`. The special orthogonal Stiefel fibration
-`TauCeti.Topology.Grassmannian.StiefelFibration.Basic` restricts the same section to the frames
-where it has determinant `1`.
+which is `U(m)`. The special unitary Stiefel fibration
+`TauCeti.Topology.Grassmannian.StiefelFibration.SpecialUnitary`, and with it the special
+orthogonal one, corrects the same section to determinant `1` in a column outside the first `r`.
 
 ## Main definitions
 
