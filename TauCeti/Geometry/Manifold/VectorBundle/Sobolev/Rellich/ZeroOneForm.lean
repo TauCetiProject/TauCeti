@@ -5,36 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Rellich.Higher
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Rellich
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm
 
 /-!
-# Rellich compactness for Sobolev `(0,1)`-forms
+# Rellich compactness for native Sobolev `(0,1)`-forms
 
-Let `M` be a compact Hausdorff complex curve without boundary, given by a finite bundle atlas `A` of
-a complex vector bundle `V → M` with finite-dimensional model fibre, and suppose that `V` is smooth
-as a real vector bundle. The Sobolev `(0,1)`-forms `TauCeti.zeroOneSobolevSections A μ p k` form a
-closed subspace of the Sobolev space `TauCeti.SobolevSection A.tangentHom μ p k` of `V`-valued
-one-forms, and lowering the order maps the `(0,1)`-forms of order `k` to those of any order
-`l ≤ k`, giving the continuous inclusion `TauCeti.zeroOneOfOrderLEL`.
-
-For `1 ≤ p < ∞` and `l < k`, this inclusion is a compact operator: it is the restriction of the
-compact inclusion `W^{k,p} → W^{l,p}` of `V`-valued one-forms
-(`TauCeti.SobolevSection.isCompactOperator_ofOrderLEL` for the atlas `A.tangentHom`) to closed
-subspaces. This is the compactness used for the formal adjoint of a real Cauchy–Riemann operator,
-which acts on `(0,1)`-forms.
-
-## Main definitions
-
-* `TauCeti.zeroOneOfOrderLEL`: the continuous inclusion of the `(0,1)`-forms of order `k` into
-  those of order `l ≤ k`.
+On a compact Hausdorff complex curve without boundary, the canonical inclusion
+`zeroOneLowerOrdersL A μ p k (d + 1)` from order `k + d + 1` to order `k` is compact for
+`1 ≤ p < ∞`. It is the restriction of the canonical Sobolev order inclusion to the closed native
+subspaces `zeroOneSobolevSections`; the complex bundle is smooth as a real vector bundle.
 
 ## Main results
 
-* `TauCeti.isCompactOperator_zeroOneLowerOrderL`: the inclusion of order `k + 1` into order `k` is
-  compact.
-* `TauCeti.isCompactOperator_zeroOneOfOrderLEL`: the inclusion of order `k` into order `l < k` is
-  compact.
+* `TauCeti.isCompactOperator_zeroOneLowerOrdersL`: compactness for every positive loss of order.
+* `TauCeti.isCompactOperator_zeroOneLowerOrderL`: compactness of the existing one-step inclusion.
 -/
 
 public section
@@ -42,7 +27,7 @@ public section
 noncomputable section
 
 open Bundle MeasureTheory Set
-open scoped Manifold ContDiff ENNReal
+open scoped Manifold ContDiff ENNReal TauCeti.ComplexManifold
 
 namespace TauCeti
 
@@ -54,68 +39,41 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(
   [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
   [FiberBundle F V] [VectorBundle ℂ F V]
 
-/-- The complex vector bundle `V` regarded as a real vector bundle, as in
-`TauCeti.zeroOneSobolevSections`. -/
-local instance instVectorBundleRealRellichZeroOneForm : VectorBundle ℝ F V :=
-  VectorBundle.restrictScalars ℝ ℂ F V
-
-/-- A complex curve is a smooth real surface. -/
-local instance instIsManifoldRealRellichZeroOneForm : IsManifold 𝓘(ℝ, ℂ) ∞ M :=
-  IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ) ∞ M)
+attribute [local instance] instVectorBundleRealZeroOneForm
 
 variable {A : FiniteBundleAtlas ℂ M F V} {μ : Measure ℂ} [μ.IsAddHaarMeasure] {p : ℝ≥0∞}
-  [Fact (1 ≤ p)] {l k : ℕ}
-
-/-- Lowering the order of a `(0,1)`-form gives a `(0,1)`-form. -/
-theorem ofOrderLEL_mem_zeroOneSobolevSections (h : l ≤ k)
-    {w : SobolevSection A.tangentHom μ p k} (hw : w ∈ zeroOneSobolevSections A μ p k) :
-    A.tangentHom.sectionChartData.ofOrderLEL μ p h w ∈ zeroOneSobolevSections A μ p l := by
-  rw [mem_zeroOneSobolevSections_iff] at hw ⊢
-  intro i
-  rw [SectionChartData.chartValueL_ofOrderLEL]
-  exact hw i
-
-variable (A μ p) in
-/-- The continuous inclusion of the `(0,1)`-forms of order `k` into those of order `l ≤ k`. -/
-def zeroOneOfOrderLEL (h : l ≤ k) :
-    zeroOneSobolevSections A μ p k →L[ℝ] zeroOneSobolevSections A μ p l :=
-  ((A.tangentHom.sectionChartData.ofOrderLEL μ p h).comp
-    (zeroOneSobolevSections A μ p k).subtypeL).codRestrict _
-      fun w ↦ ofOrderLEL_mem_zeroOneSobolevSections h w.2
-
-/-- The inclusion of `(0,1)`-forms lowers the order of the underlying one-form. -/
-@[simp]
-theorem coe_zeroOneOfOrderLEL (h : l ≤ k) (w : zeroOneSobolevSections A μ p k) :
-    (zeroOneOfOrderLEL A μ p h w : SobolevSection A.tangentHom μ p l) =
-      A.tangentHom.sectionChartData.ofOrderLEL μ p h w :=
-  ContinuousLinearMap.coe_codRestrict_apply _ _ _ _
-
-/-- The inclusion of `(0,1)`-forms of order `k + 1` into order `k` is the one-step inclusion
-`TauCeti.zeroOneLowerOrderL`. -/
-theorem zeroOneOfOrderLEL_succ (w : zeroOneSobolevSections A μ p (k + 1)) :
-    zeroOneOfOrderLEL A μ p k.le_succ w = zeroOneLowerOrderL A μ p k w :=
-  Subtype.ext <| by
-    rw [coe_zeroOneOfOrderLEL, coe_zeroOneLowerOrderL]
-    exact (SectionChartData.ofOrderLEL_lowerOrderL le_rfl (w : SobolevSection A.tangentHom μ p
-      (k + 1))).symm.trans (SectionChartData.ofOrderLEL_self _)
+  [Fact (1 ≤ p)] {k : ℕ}
 
 variable [T2Space M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)]
 
-/-- **Rellich's theorem between any two orders for `(0,1)`-forms.** On a compact complex curve
-without boundary, given by a finite bundle atlas, the inclusion of the Sobolev `(0,1)`-forms of
-order `k` into those of order `l < k` is a compact operator for every `1 ≤ p < ∞`. -/
-theorem isCompactOperator_zeroOneOfOrderLEL (hp : p ≠ ⊤) (hlk : l < k) :
-    IsCompactOperator (zeroOneOfOrderLEL A μ p hlk.le) :=
-  ((SobolevSection.isCompactOperator_ofOrderLEL A.tangentHom μ hp hlk).comp_clm
-    (zeroOneSobolevSections A μ p k).subtypeL).codRestrict _ isClosed_zeroOneSobolevSections
+variable (A μ p k)
 
-/-- **Rellich's theorem for `(0,1)`-forms.** On a compact complex curve without boundary, given by a
-finite bundle atlas, the inclusion of the Sobolev `(0,1)`-forms of order `k + 1` into those of
-order `k` is a compact operator for every `1 ≤ p < ∞`. -/
+/-- The native inclusion of `(0,1)`-forms with any positive loss of order is compact for finite
+exponent `p`. -/
+theorem isCompactOperator_zeroOneLowerOrdersL (hp : p ≠ ⊤) (d : ℕ) :
+    IsCompactOperator (zeroOneLowerOrdersL A μ p k (d + 1)) := by
+  have hmem (w : zeroOneSobolevSections A μ p (k + (d + 1))) :
+      A.tangentHom.sectionChartData.lowerOrdersL μ p k (d + 1) w ∈
+        zeroOneSobolevSections A μ p k :=
+    lowerOrdersL_mem_zeroOneSobolevSections (d + 1) w.2
+  have h : IsCompactOperator (fun w : zeroOneSobolevSections A μ p (k + (d + 1)) ↦
+      (⟨A.tangentHom.sectionChartData.lowerOrdersL μ p k (d + 1) w, hmem w⟩ :
+        zeroOneSobolevSections A μ p k)) :=
+    ((SobolevSection.isCompactOperator_lowerOrdersL A.tangentHom μ p k hp d).comp_clm
+      (zeroOneSobolevSections A μ p (k + (d + 1))).subtypeL).codRestrict hmem
+        isClosed_zeroOneSobolevSections
+  have heq : (fun w : zeroOneSobolevSections A μ p (k + (d + 1)) ↦
+      (⟨A.tangentHom.sectionChartData.lowerOrdersL μ p k (d + 1) w, hmem w⟩ :
+        zeroOneSobolevSections A μ p k)) = ⇑(zeroOneLowerOrdersL A μ p k (d + 1)) := by
+    funext w
+    apply Subtype.ext
+    exact (coe_zeroOneLowerOrdersL (d + 1) w).symm
+  rwa [heq] at h
+
+/-- The native one-step inclusion of Sobolev `(0,1)`-forms is compact for finite exponent `p`. -/
 theorem isCompactOperator_zeroOneLowerOrderL (hp : p ≠ ⊤) :
     IsCompactOperator (zeroOneLowerOrderL A μ p k) := by
-  convert isCompactOperator_zeroOneOfOrderLEL (A := A) (μ := μ) hp k.lt_succ_self using 1
-  funext w
-  exact (zeroOneOfOrderLEL_succ w).symm
+  rw [← zeroOneLowerOrdersL_one]
+  exact isCompactOperator_zeroOneLowerOrdersL A μ p k hp 0
 
 end TauCeti

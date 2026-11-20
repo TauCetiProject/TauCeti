@@ -13,8 +13,8 @@ import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 /-!
 # Elementary asymptotic criteria
 
-Nine general criteria that supplement Mathlib's asymptotics API, two elementary estimates, and
-an elementary limit of ratios.
+General criteria that supplement Mathlib's asymptotics API, elementary estimates, and an
+elementary limit of ratios.
 
 For functions into a normed division ring, `f` satisfies `f = a g + o(g)` exactly when `f / g`
 tends to `a`, provided `g` is eventually nonzero. This criterion converts little-o error estimates
@@ -50,7 +50,9 @@ dominated function is bounded on compact intervals and the dominating one is bou
 zero. This is how an asymptotic estimate becomes an explicit inequality valid at every point,
 which a summation argument can apply at infinitely many points at once. Continuity of both
 functions on the half-line, with a nonvanishing dominating function, is another sufficient
-condition: it covers exponentially decaying majorants such as `exp (-p x)`.
+condition: it covers exponentially decaying majorants such as `exp (-p x)`. For the slowly decaying
+majorant `(log x)⁻¹` on `[a, ∞)` (`a > 1`), local boundedness of `f` on compact intervals alone
+suffices, covering step functions such as summatory functions.
 
 A fixed power of a shifted natural number times a geometric sequence of ratio in `[0, 1)` tends
 to zero. This is the form needed to absorb polynomial growth after shifting an index.
@@ -85,6 +87,8 @@ evaluations of elliptic integrals.
   when `f` is bounded on each `[a, b]` and `‖g‖` is bounded below there.
 * `Asymptotics.IsBigO.isBigO_principal_Ici_of_continuousOn`: the same conclusion when `f` and `g`
   are continuous on `[a, ∞)` and `g` does not vanish there.
+* `Asymptotics.IsBigO.exists_norm_le_div_log`: `f = O((log x)⁻¹)` at `atTop` gives a uniform bound
+  `‖f x‖ ≤ C / log x` on `[a, ∞)` (`a > 1`) when `f` is bounded on each `[a, b]`.
 * `TauCeti.tendsto_add_pow_mul_pow_of_lt_one`: `(n + k) ^ k * ρ ^ n` tends to zero when
   `0 ≤ ρ < 1`.
 * `TauCeti.mul_abs_pow_le_of_forall_mul_pow_le`: weighted terms bounded by `A` at a radius `q > 0`
@@ -254,6 +258,31 @@ theorem IsBigO.smul_const_self {α 𝕜 E : Type*} [NormedAddCommGroup 𝕜] [No
     [SMul 𝕜 E] [NormSMulClass 𝕜 E] {l : Filter α} (u : α → 𝕜) (c : E) :
     (fun x => u x • c) =O[l] u :=
   IsBigO.of_bound ‖c‖ (Eventually.of_forall fun x => by rw [norm_smul, mul_comm])
+
+/-- **An eventual `O((log x)⁻¹)` bound holds on a whole half-line `[a, ∞)` (`a > 1`).** If
+`f = O((log x)⁻¹)` at `atTop` and `f` is bounded on every compact interval `[a, b]`, then there is
+a constant `C ≥ 0` with `‖f x‖ ≤ C / log x` for all `x ≥ a`. Unlike `IsBigO.isBigO_principal_Ici`,
+`(log x)⁻¹` tends to zero; unlike `IsBigO.isBigO_principal_Ici_of_continuousOn`, `f` need not be
+continuous. -/
+theorem IsBigO.exists_norm_le_div_log {E : Type*} [Norm E] {f : ℝ → E} {a : ℝ}
+    (hO : f =O[atTop] fun x ↦ (Real.log x)⁻¹) (ha : 1 < a)
+    (hbdd : ∀ b : ℝ, ∃ B : ℝ, ∀ x ∈ Set.Icc a b, ‖f x‖ ≤ B) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ x : ℝ, a ≤ x → ‖f x‖ ≤ C / Real.log x := by
+  obtain ⟨c₀, hc₀⟩ := hO.bound
+  obtain ⟨b, hb⟩ := eventually_atTop.mp hc₀
+  obtain ⟨B, hB⟩ := hbdd b
+  have hM0 : 0 ≤ max B 0 * max (Real.log b) 0 := by positivity
+  refine ⟨max c₀ (max B 0 * max (Real.log b) 0), hM0.trans (le_max_right _ _), fun x hx ↦ ?_⟩
+  have hlog : 0 < Real.log x := Real.log_pos (ha.trans_le hx)
+  rcases le_or_gt b x with hbx | hbx
+  · have hx' := hb x hbx
+    rw [norm_inv, Real.norm_of_nonneg hlog.le, ← div_eq_mul_inv] at hx'
+    exact hx'.trans (div_le_div_of_nonneg_right (le_max_left _ _) hlog.le)
+  · have hlog_le : Real.log x ≤ max (Real.log b) 0 :=
+      (Real.log_le_log (zero_lt_one.trans (ha.trans_le hx)) hbx.le).trans (le_max_left _ _)
+    rw [le_div_iff₀ hlog]
+    exact (mul_le_mul ((hB x ⟨hx, hbx.le⟩).trans (le_max_left _ _)) hlog_le hlog.le
+      (le_max_right _ _)).trans (le_max_right _ _)
 
 end Asymptotics
 

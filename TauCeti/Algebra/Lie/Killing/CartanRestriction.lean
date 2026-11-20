@@ -65,6 +65,8 @@ functions on the weights `H*`, the restriction evaluates a polynomial on `L*` at
   restriction on the `S(L)` side being `lieCartanRestriction H`.
 * `TauCeti.lift_lieCartanRestriction`: the value of `lieCartanRestriction H p` at a weight `λ` is
   the value of `p` at `TauCeti.killingExtend λ`.
+* `TauCeti.lift_eval_killingSymmetricEquiv_coe`: evaluating `killingSymmetricEquiv K L r` at a
+  Cartan element `z : H` agrees with evaluating `lieCartanRestriction H r` at `cartanEquivDual H z`.
 * `TauCeti.lieCartanRestriction_mem_homogeneousSubmodule`: the restriction preserves degrees.
 * `TauCeti.lieCartanRestriction_surjective`: the restriction is onto, split by the map induced by
   the inclusion `H → L`.
@@ -270,5 +272,16 @@ theorem lift_lieCartanRestriction (lam : Dual K H) (p : SymmetricAlgebra K L) :
   congr 1
   refine SymmetricAlgebra.algHom_ext (LinearMap.ext fun x ↦ ?_)
   simp [killingExtend_eq_comp_killingCartanProjection H]
+
+variable {H} in
+/-- Evaluating `killingSymmetricEquiv K L r` at `(z : L)` for `z : H` agrees with evaluating the
+Cartan restriction `lieCartanRestriction H r` at `cartanEquivDual H z`. -/
+theorem lift_eval_killingSymmetricEquiv_coe (z : H) (r : SymmetricAlgebra K L) :
+    SymmetricAlgebra.lift (Dual.eval K L (z : L)) (killingSymmetricEquiv K L r) =
+      SymmetricAlgebra.lift (cartanEquivDual H z) (lieCartanRestriction H r) := by
+  rw [lift_lieCartanRestriction, killingSymmetricEquiv_apply, ← AlgHom.comp_apply]
+  congr 1
+  refine SymmetricAlgebra.algHom_ext (LinearMap.ext fun x ↦ ?_)
+  simp [killingExtend_apply, traceForm_comm K L L x (z : L)]
 
 end TauCeti

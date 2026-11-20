@@ -398,6 +398,30 @@ theorem sphere2HomotopyEquivMoorePaths_symm_apply (f : C(Sphere2, Q)) :
   simp
 
 variable (Q) in
+/-- **`P_{Q→Q} 𝓛₀Q` is fibre homotopy equivalent to `Map(S², Q)` over `Q`**, projecting a Moore
+path to the point of its target constant loop and a sphere map to its value at the south pole.
+Over a subset `Y ⊆ Q` this compares the Moore paths ending at a constant loop at a point of `Y`,
+`P_{Q→Y} 𝓛₀Q`, with the maps sending the south pole into `Y`
+(`TauCeti.FiberHomotopyEquiv.restrictPreimage`). -/
+def sphere2SouthFiberHomotopyEquivMoorePaths :
+    FiberHomotopyEquiv (ContinuousMap.snd.comp (constContractibleMooreEndpoints Q))
+      (mappingSpaceEval (X := Q) Sphere2.south) :=
+  ((sphere2FiberHomotopyEquivMoorePaths Q).compBase ContinuousMap.snd).trans
+    (.ofHomeomorph (Homeomorph.refl _) (ContinuousMap.ext fun f ↦ by simp))
+
+@[simp]
+theorem sphere2SouthFiberHomotopyEquivMoorePaths_toFun :
+    (sphere2SouthFiberHomotopyEquivMoorePaths Q).toFun =
+      (sphere2FiberHomotopyEquivMoorePaths Q).toFun := by
+  simp [sphere2SouthFiberHomotopyEquivMoorePaths]
+
+@[simp]
+theorem sphere2SouthFiberHomotopyEquivMoorePaths_invFun :
+    (sphere2SouthFiberHomotopyEquivMoorePaths Q).invFun =
+      (sphere2FiberHomotopyEquivMoorePaths Q).invFun := by
+  simp [sphere2SouthFiberHomotopyEquivMoorePaths]
+
+variable (Q) in
 /-- Constant duration-zero Moore paths of constant contractible loops, `Q → P_{Q→Q} 𝓛₀Q`. -/
 def constContractibleMooreSection : C(Q, ConstContractibleMoorePaths Q) :=
   (MoorePath.constantBetween (Set.range (constContractibleLoop (Q := Q)))

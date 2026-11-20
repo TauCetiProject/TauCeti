@@ -33,6 +33,8 @@ For a finite bundle atlas `A`, every chart image has compact closure, so it has 
 
 ## Main results
 
+* `TauCeti.SectionChartData.lowerOrdersL_ofExponentLEL`: order and exponent inclusions commute,
+  including an infinite source exponent.
 * `TauCeti.SectionChartData.chartValueL_ofExponentLEL`: the chart data are their `Lᵖ` copies.
 * `TauCeti.SectionChartData.ofExponentLEL_injective`: the inclusion is injective.
 * `TauCeti.SectionChartData.ofExponentLEL_self`,
@@ -144,6 +146,16 @@ theorem lowerOrderL_ofExponentLEL (hpq : p ≤ q) (w : C.sobolevSections μ q (k
   Subtype.ext <| funext fun i ↦ funext fun j ↦ by
     rw [lowerOrderL_apply, ofExponentLEL_apply, ofExponentLEL_apply, lowerOrderL_apply,
       Wkp.lowerOrder_ofExponentLEL]
+
+/-- Lowering any number of derivatives commutes with lowering the exponent, including an
+infinite source exponent. -/
+theorem lowerOrdersL_ofExponentLEL (d : ℕ) (hpq : p ≤ q)
+    (w : C.sobolevSections μ q (k + d)) :
+    C.lowerOrdersL μ p k d (C.ofExponentLEL μ (k + d) hpq w) =
+      C.ofExponentLEL μ k hpq (C.lowerOrdersL μ q k d w) := by
+  apply C.chartValuesL_injective μ p k
+  funext i
+  simp only [chartValuesL_apply, chartValueL_lowerOrdersL, chartValueL_ofExponentLEL]
 
 variable {T : Type*} [AddCommGroup T] [Module ℝ T] (ι : T →ₗ[ℝ] S)
 

@@ -62,6 +62,8 @@ range, so the value is a `dite` rather than a plain application.
 * `Finset.card_filter_val_lt_le`: at most `j` indices have value below `j`.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castLE_last`: the last index of an initial segment embeds as the specified endpoint.
+* `Fin.map_partialProd`, `Fin.comp_partialProd`: applying a monoid homomorphism entrywise commutes
+  with `Fin.partialProd` (`Fin.map_partialSum` and `Fin.comp_partialSum` for `Fin.partialSum`).
 * `Fin.partialProd_last_eq_mul_tail`, `Fin.partialProd_last_eq_init_mul`: the final partial
   product of a tuple in a monoid, split at its first or its last entry.
 * `Fin.castSucc_add_one_of_ne_last`, `Fin.castSucc_sub_one_of_ne_zero`: how `Fin.castSucc`
@@ -151,6 +153,8 @@ range, so the value is a `dite` rather than a plain application.
   consecutive entries.
 * `Fin.exists_succ_lt_lt_castSucc`: a `Fin` family in a linear order that starts above a level,
   ends below it and never equals it drops below the level at some step.
+* `Antitone.eq_of_mem_Ioo_of_mem_Icc_fin`: for an antitone `Fin` family, the open interval between
+  two consecutive values meets the closed interval of no other step.
 * `TauCeti.exists_mem_Icc_castSucc_succ`: consecutive closed intervals cover the interval
   between the first and last values of any `Fin` family with at least two entries.
 * `TauCeti.univ_eq_Iic_union_Ici_union_iUnion_Icc_castSucc_succ`: in a linear order, the two outer
@@ -295,6 +299,22 @@ theorem partialProd_contractNth_castSucc {M : Type*} [Monoid M] {n : ℕ} (j : F
     partialProd (contractNth j.castSucc (· * ·) y) (last n) = partialProd y (last (n + 1)) := by
   rw [partialProd_contractNth, Function.comp_apply, succAbove_of_le_castSucc, succ_last]
   simp [le_def]
+
+/-- Applying a monoid homomorphism to a partial product applies it to each entry. -/
+@[to_additive /-- Applying an additive monoid homomorphism to a partial sum applies it to each
+entry. -/]
+theorem map_partialProd {G H F : Type*} [Monoid G] [Monoid H] [FunLike F G H]
+    [MonoidHomClass F G H] (φ : F) {n : ℕ} (x : Fin n → G) (i : Fin (n + 1)) :
+    φ (partialProd x i) = partialProd (φ ∘ x) i := by
+  simp [partialProd, map_list_prod, List.map_take, List.map_ofFn]
+
+/-- Composing a monoid homomorphism with `Fin.partialProd` applies it entrywise. -/
+@[to_additive /-- Composing an additive monoid homomorphism with `Fin.partialSum` applies it
+entrywise. -/]
+theorem comp_partialProd {G H F : Type*} [Monoid G] [Monoid H] [FunLike F G H]
+    [MonoidHomClass F G H] (φ : F) {n : ℕ} (x : Fin n → G) :
+    φ ∘ partialProd x = partialProd (φ ∘ x) :=
+  funext (map_partialProd φ x)
 
 /-- A product over `Fin n` of a family equal to `1` beyond `i` is its product over the first
 `i` indices times its value at `i`. -/
@@ -935,6 +955,18 @@ theorem exists_succ_lt_lt_castSucc {α : Type*} [LinearOrder α] {k : ℕ} {g : 
   exact ⟨i, lt_of_le_of_ne hi.2 (hne _), lt_of_le_of_ne hi.1 (hne _).symm⟩
 
 end Fin
+
+/-- **The steps of an antitone sequence overlap only at their ends.** If `a : Fin (n + 1) → α` is
+antitone, a point strictly between `a (i + 1)` and `a i` lies between `a (j + 1)` and `a j` only
+for `j = i`. -/
+theorem Antitone.eq_of_mem_Ioo_of_mem_Icc_fin {α : Type*} [Preorder α] {n : ℕ}
+    {a : Fin (n + 1) → α} (ha : Antitone a) {i j : Fin n} {x : α}
+    (hi : x ∈ Set.Ioo (a i.succ) (a i.castSucc)) (hj : x ∈ Set.Icc (a j.succ) (a j.castSucc)) :
+    i = j := by
+  rcases lt_trichotomy i j with hij | rfl | hij
+  · exact absurd (hj.2.trans (ha (Fin.succ_le_castSucc_iff.2 hij))) (not_le_of_gt hi.1)
+  · rfl
+  · exact absurd ((ha (Fin.succ_le_castSucc_iff.2 hij)).trans hj.1) (not_le_of_gt hi.2)
 
 namespace TauCeti
 
