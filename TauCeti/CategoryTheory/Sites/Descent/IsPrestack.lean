@@ -142,38 +142,6 @@ lemma pullHom_mapComp'_hom ⦃Z X : C⦄ (p : X ⟶ Z) (N : F.obj (.mk (op Z))) 
     (hf := by simp [← Quiver.Hom.comp_toLoc, ← op_comp])]
   simp [pullHom]
 
-/-- Pulling back a local morphism between objects of the form `p^* N`, written through the
-comparison isomorphisms `(f ≫ p)^* N ≅ f^* (p^* N)`, is pulling back the corresponding local
-morphism between pullbacks of `N`. -/
-lemma pullHom_mapComp'_conj ⦃Z₁ Z₂ X₁ X₂ : C⦄ (p₁ : X₁ ⟶ Z₁) (p₂ : X₂ ⟶ Z₂)
-    ⦃N₁ : F.obj (.mk (op Z₁))⦄ ⦃N₂ : F.obj (.mk (op Z₂))⦄ ⦃Y : C⦄ (f₁ : Y ⟶ X₁) (f₂ : Y ⟶ X₂)
-    (k₁ : Y ⟶ Z₁) (k₂ : Y ⟶ Z₂) (hk₁ : f₁ ≫ p₁ = k₁) (hk₂ : f₂ ≫ p₂ = k₂)
-    (x : (F.map k₁.op.toLoc).toFunctor.obj N₁ ⟶ (F.map k₂.op.toLoc).toFunctor.obj N₂) ⦃Y' : C⦄
-    (g : Y' ⟶ Y) (gf₁ : Y' ⟶ X₁) (gf₂ : Y' ⟶ X₂) (gk₁ : Y' ⟶ Z₁) (gk₂ : Y' ⟶ Z₂)
-    (hgf₁ : g ≫ f₁ = gf₁) (hgf₂ : g ≫ f₂ = gf₂) (hgk₁ : gf₁ ≫ p₁ = gk₁) (hgk₂ : gf₂ ≫ p₂ = gk₂) :
-    pullHom (M₁ := (F.map p₁.op.toLoc).toFunctor.obj N₁)
-      (M₂ := (F.map p₂.op.toLoc).toFunctor.obj N₂)
-      ((F.mapComp' p₁.op.toLoc f₁.op.toLoc k₁.op.toLoc (by rw [← hk₁]; rfl)).inv.toNatTrans.app N₁ ≫
-        x ≫ (F.mapComp' p₂.op.toLoc f₂.op.toLoc k₂.op.toLoc
-          (by rw [← hk₂]; rfl)).hom.toNatTrans.app N₂) g gf₁ gf₂ hgf₁ hgf₂ =
-      (F.mapComp' p₁.op.toLoc gf₁.op.toLoc gk₁.op.toLoc
-          (by rw [← hgk₁]; rfl)).inv.toNatTrans.app N₁ ≫
-        pullHom x g gk₁ gk₂ (by rw [← hgk₁, ← hgf₁, ← hk₁, Category.assoc])
-          (by rw [← hgk₂, ← hgf₂, ← hk₂, Category.assoc]) ≫
-        (F.mapComp' p₂.op.toLoc gf₂.op.toLoc gk₂.op.toLoc
-          (by rw [← hgk₂]; rfl)).hom.toNatTrans.app N₂ := by
-  subst hk₁ hk₂ hgf₁ hgf₂ hgk₁ hgk₂
-  simp only [pullHom, Functor.map_comp, Category.assoc]
-  rw [F.mapComp'₀₁₃_inv_comp_mapComp'₀₂₃_hom_app_assoc (f₀₁ := p₁.op.toLoc)
-      (f₁₂ := f₁.op.toLoc) (f₂₃ := g.op.toLoc) (f₀₂ := (f₁ ≫ p₁).op.toLoc)
-      (f₁₃ := (g ≫ f₁).op.toLoc) (f := ((g ≫ f₁) ≫ p₁).op.toLoc) (h₀₂ := rfl) (h₁₃ := rfl)
-      (hf := rfl),
-    F.mapComp'₀₂₃_inv_comp_mapComp'₀₁₃_hom_app (f₀₁ := p₂.op.toLoc)
-      (f₁₂ := f₂.op.toLoc) (f₂₃ := g.op.toLoc) (f₀₂ := (f₂ ≫ p₂).op.toLoc)
-      (f₁₃ := (g ≫ f₂).op.toLoc) (f := ((g ≫ f₂) ≫ p₂).op.toLoc) (h₀₂ := rfl) (h₁₃ := rfl)
-      (hf := by simp [← Quiver.Hom.comp_toLoc, ← op_comp])]
-
-
 namespace IsPrestack
 
 variable {J : GrothendieckTopology C} [F.IsPrestack J]
@@ -261,8 +229,11 @@ lemma exists_pullHom_eq {R : Sieve Y} (hR : R ∈ J Y)
         (F.mapComp' f₂.op.toLoc g.op.toLoc (g ≫ f₂).op.toLoc).hom.toNatTrans.app M₂)
     (fun T g hg T' h g' hg' e ↦ by
       subst e
-      rw [← hs g _ _ rfl rfl hg h _ _ _ rfl rfl hg' rfl]
-      exact pullHom_mapComp'_conj f₁ f₂ g g _ _ rfl rfl _ h _ _ _ _ rfl rfl rfl rfl)
+      rw [← hs g _ _ rfl rfl hg h _ _ _ rfl rfl hg' rfl,
+        pullHom_comp _ _ h (h ≫ g) ((h ≫ g) ≫ f₁) (h ≫ g) rfl (Category.assoc _ _ _).symm rfl,
+        pullHom_comp _ _ h ((h ≫ g) ≫ f₁) ((h ≫ g) ≫ f₂) (h ≫ g) (Category.assoc _ _ _).symm
+          (Category.assoc _ _ _).symm rfl]
+      simp only [pullHom_mapComp'_inv, pullHom_mapComp'_hom])
   refine ⟨φ, fun T g gf₁ gf₂ hgf₁ hgf₂ hg ↦ ?_⟩
   subst hgf₁ hgf₂
   rw [pullHom, hφ g hg]
