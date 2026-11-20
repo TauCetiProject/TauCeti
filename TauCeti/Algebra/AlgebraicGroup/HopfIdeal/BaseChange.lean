@@ -696,7 +696,7 @@ noncomputable def baseChangeLiftQuotient {A : _root_.CommHopfAlgCat.{max w v} K}
 
 /-- The lift through the base change of a quotient recovers the original morphism after the
 base-changed quotient morphism. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem baseChangeMap_mkQuotient_comp_baseChangeLiftQuotient
     {A : _root_.CommHopfAlgCat.{max w v} K} (I : HopfIdeal k H)
     (f : baseChange (K := K) H ⟶ A)

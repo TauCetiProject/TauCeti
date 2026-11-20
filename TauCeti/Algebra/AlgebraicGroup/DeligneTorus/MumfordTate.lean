@@ -93,7 +93,7 @@ noncomputable def mumfordTateLift (h : baseChange (K := ℝ) H ⟶ _root_.CommHo
   baseChangeLiftQuotient _ h (baseChangeHopfIdeal_mumfordTateHopfIdeal_toIdeal_le_ker h)
 
 /-- Composing the factorization through `MT(h)_ℝ` with the inclusion into `G_ℝ` gives `h`. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem baseChangeMap_mkQuotient_comp_mumfordTateLift
     (h : baseChange (K := ℝ) H ⟶ _root_.CommHopfAlgCat.of ℝ S) :
     baseChangeMap (K := ℝ) (mkQuotient H (mumfordTateHopfIdeal h)) ≫ mumfordTateLift h = h :=
