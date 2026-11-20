@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Reaction
+public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Reaction.Basic
 public import TauCeti.Analysis.ODE.ConvexInvariance
 
 /-!
@@ -128,16 +128,21 @@ theorem hasDerivAt_div_smul_constantCurvature {κ₀ a t : ℝ}
   field_simp
   ring
 
+/-- The quadruple `(e₀, e₁, e₀, e₁)` built from the first two vectors `e₀, e₁` of the standard
+orthonormal basis, on which a four-tensor is evaluated to read off its sectional curvature along
+the plane spanned by `e₀, e₁`. -/
+private def stdOrthonormalBasisQuad (hn : 2 ≤ Module.finrank ℝ V) : Fin 4 → V :=
+  ![stdOrthonormalBasis ℝ V ⟨0, by omega⟩, stdOrthonormalBasis ℝ V ⟨1, by omega⟩,
+    stdOrthonormalBasis ℝ V ⟨0, by omega⟩, stdOrthonormalBasis ℝ V ⟨1, by omega⟩]
+
 /-- On the quadruple `(e₀, e₁, e₀, e₁)` built from the first two vectors of the standard
 orthonormal basis, the tensor `κ I` takes the value `κ`. -/
-private theorem smul_constantCurvature_apply_stdOrthonormalBasis
+private theorem smul_constantCurvature_apply_stdOrthonormalBasisQuad
     (hn : 2 ≤ Module.finrank ℝ V) (κ : ℝ) :
-    (κ • constantCurvature V) ![stdOrthonormalBasis ℝ V ⟨0, by omega⟩,
-      stdOrthonormalBasis ℝ V ⟨1, by omega⟩, stdOrthonormalBasis ℝ V ⟨0, by omega⟩,
-      stdOrthonormalBasis ℝ V ⟨1, by omega⟩] = κ := by
+    (κ • constantCurvature V) (stdOrthonormalBasisQuad hn) = κ := by
   have h01 := (stdOrthonormalBasis ℝ V).orthonormal.2 (i := ⟨0, by omega⟩) (j := ⟨1, by omega⟩)
     (by simp [Fin.ext_iff])
-  simp [h01]
+  simp [stdOrthonormalBasisQuad, h01]
 
 /-- The denominator `1 - c (τ - a)` of the round solution is positive on `[a, b]` once
 `c (b - a) < 1`. -/
@@ -216,9 +221,7 @@ theorem mul_sub_lt_one_of_hasDerivWithinAt_reactionTensor [Nontrivial V] {f : �
       (hf.mono (Icc_subset_Icc_right (ht.2.le.trans hTb)))
       (fun τ hτ ↦ hf' τ ⟨hτ.1, hτ.2.trans_le (ht.2.le.trans hTb)⟩) ha hct ⟨ht.1, le_rfl⟩
   -- Evaluating on an orthonormal pair, `κ₀ / (1 - c (t - a))` would have a finite limit at `T`.
-  let φ : FourTensor V → ℝ := fun r ↦ r ![stdOrthonormalBasis ℝ V ⟨0, by omega⟩,
-    stdOrthonormalBasis ℝ V ⟨1, by omega⟩, stdOrthonormalBasis ℝ V ⟨0, by omega⟩,
-    stdOrthonormalBasis ℝ V ⟨1, by omega⟩]
+  let φ : FourTensor V → ℝ := fun r ↦ r (stdOrthonormalBasisQuad hn)
   have hlim : Tendsto (fun t ↦ κ₀ / (1 - c * (t - a))) (𝓝[<] T) (𝓝 (φ (f T))) := by
     have hcont : ContinuousWithinAt (φ ∘ f) (Ico a T) T :=
       ((continuous_eval_const _).comp_continuousOn hf _
@@ -227,7 +230,7 @@ theorem mul_sub_lt_one_of_hasDerivWithinAt_reactionTensor [Nontrivial V] {f : �
     refine hcont.congr' ?_
     rw [← nhdsWithin_Ico_eq_nhdsLT haT]
     filter_upwards [self_mem_nhdsWithin] with t ht
-    simp [φ, hround t ht, smul_constantCurvature_apply_stdOrthonormalBasis hn]
+    simp [φ, hround t ht, smul_constantCurvature_apply_stdOrthonormalBasisQuad hn]
   -- But it tends to `+∞`.
   exact not_tendsto_nhds_of_tendsto_atTop (tendsto_div_one_sub_mul_sub_atTop hc hκ₀) _ hlim
 
@@ -259,6 +262,21 @@ def IsReactionInvariant (K : Set (FourTensor V)) : Prop :=
     (∀ t ∈ Ico a b, HasDerivWithinAt R (reactionTensor (R t)) (Ici t) t) →
       R a ∈ K → MapsTo R (Icc a b) K
 
+/-- Unfolding `IsReactionInvariant`: every forward solution of `R' = Q(R)` on an interval `[a, b]`
+which starts in `K` stays in `K`. -/
+theorem isReactionInvariant_iff {K : Set (FourTensor V)} :
+    IsReactionInvariant K ↔ ∀ (R : ℝ → FourTensor V) (a b : ℝ), ContinuousOn R (Icc a b) →
+      (∀ t ∈ Ico a b, HasDerivWithinAt R (reactionTensor (R t)) (Ici t) t) →
+        R a ∈ K → MapsTo R (Icc a b) K :=
+  Iff.rfl
+
+/-- A solution of the reaction ODE on `[a, b]` which starts in an invariant set stays in it. -/
+theorem IsReactionInvariant.mapsTo {K : Set (FourTensor V)} (hK : IsReactionInvariant K)
+    {R : ℝ → FourTensor V} {a b : ℝ} (hR : ContinuousOn R (Icc a b))
+    (hR' : ∀ t ∈ Ico a b, HasDerivWithinAt R (reactionTensor (R t)) (Ici t) t) (ha : R a ∈ K) :
+    MapsTo R (Icc a b) K :=
+  hK R a b hR hR' ha
+
 /-- **Nagumo's criterion for the reaction ODE.** A closed convex set `K` of four-tensors is
 invariant under `R' = Q(R)` if and only if `Q(r)` is a positive tangent vector of `K` at every
 `r ∈ K`. -/
@@ -281,12 +299,12 @@ theorem isReactionInvariant_algebraicCurvatureSubmodule :
 /-- The intersection of two sets invariant under the reaction ODE is invariant. -/
 theorem IsReactionInvariant.inter {K L : Set (FourTensor V)} (hK : IsReactionInvariant K)
     (hL : IsReactionInvariant L) : IsReactionInvariant (K ∩ L) :=
-  fun R a b hR hR' ha ↦ (hK R a b hR hR' ha.1).inter (hL R a b hR hR' ha.2)
+  fun _ _ _ hR hR' ha ↦ (hK.mapsTo hR hR' ha.1).inter (hL.mapsTo hR hR' ha.2)
 
 /-- The intersection of a family of sets invariant under the reaction ODE is invariant. -/
 theorem isReactionInvariant_iInter {ι : Sort*} {K : ι → Set (FourTensor V)}
     (hK : ∀ i, IsReactionInvariant (K i)) : IsReactionInvariant (⋂ i, K i) :=
-  fun R a b hR hR' ha ↦ mapsTo_iInter.2 fun i ↦ hK i R a b hR hR' (mem_iInter.1 ha i)
+  fun _ _ _ hR hR' ha ↦ mapsTo_iInter.2 fun i ↦ (hK i).mapsTo hR hR' (mem_iInter.1 ha i)
 
 /-- Invariance under the reaction ODE is preserved by scaling by `c ≥ 0`, since the rescaling
 `τ ↦ c⁻¹ • R (c⁻¹ τ)` of a solution `R` is again a solution. -/
@@ -301,22 +319,22 @@ theorem IsReactionInvariant.smul {K : Set (FourTensor V)} (hK : IsReactionInvari
         (fun t _ ↦ by simpa using hasDerivWithinAt_const t (Ici t) (0 : FourTensor V))
         (by simp [← hka])
     exact fun t ht ↦ ⟨k, hk, by simp [h0 ht]⟩
+  -- The rescaled solution `τ ↦ c⁻¹ • R (c⁻¹ τ)` lives on `[a c, b c]`.
+  have hc' : 0 < c⁻¹ := inv_pos.2 hc
   have hinv (τ : ℝ) : c⁻¹ * (c * τ) = τ := inv_mul_cancel_left₀ hc.ne' τ
-  have hmaps : MapsTo (c⁻¹ * ·) (Icc (c * a) (c * b)) (Icc a b) := fun τ hτ ↦
-    ⟨(hinv a).symm.trans_le (mul_le_mul_of_nonneg_left hτ.1 (inv_nonneg.2 hc.le)),
-      (mul_le_mul_of_nonneg_left hτ.2 (inv_nonneg.2 hc.le)).trans_eq (hinv b)⟩
-  have hS := hK (fun τ ↦ c⁻¹ • R (c⁻¹ * τ)) (c * a) (c * b)
-    ((hR.comp (by fun_prop) hmaps).const_smul c⁻¹)
+  have hIcc : (c⁻¹ * ·) ⁻¹' Icc a b = Icc (a * c) (b * c) := by
+    rw [preimage_const_mul_Icc₀ a b hc', div_inv_eq_mul, div_inv_eq_mul]
+  have hIco : (c⁻¹ * ·) ⁻¹' Ico a b = Ico (a * c) (b * c) := by
+    rw [preimage_const_mul_Ico₀ a b hc', div_inv_eq_mul, div_inv_eq_mul]
+  have hS := hK.mapsTo (R := fun τ ↦ c⁻¹ • R (c⁻¹ * τ)) (a := a * c) (b := b * c)
+    ((hR.comp (by fun_prop) (hIcc ▸ mapsTo_preimage _ _)).const_smul c⁻¹)
     (fun τ hτ ↦ by
-      have hτ' : c⁻¹ * τ ∈ Ico a b :=
-        ⟨(hinv a).symm.trans_le (mul_le_mul_of_nonneg_left hτ.1 (inv_nonneg.2 hc.le)),
-          (mul_lt_mul_of_pos_left hτ.2 (inv_pos.2 hc)).trans_eq (hinv b)⟩
-      have := hasDerivWithinAt_smul_comp_mul_reactionTensor (hR' _ hτ')
-      rwa [show (c⁻¹ * ·) ⁻¹' Ici (c⁻¹ * τ) = Ici τ by
-        ext x; simp [mul_le_mul_iff_of_pos_left (inv_pos.2 hc)]] at this)
-    (by simpa [← hka, hinv, smul_smul, inv_mul_cancel₀ hc.ne'] using hk)
-  refine fun t ht ↦ ⟨c⁻¹ • R (c⁻¹ * (c * t)),
-    hS ⟨mul_le_mul_of_nonneg_left ht.1 hc.le, mul_le_mul_of_nonneg_left ht.2 hc.le⟩, ?_⟩
+      have := hasDerivWithinAt_smul_comp_mul_reactionTensor
+        (hR' _ (show τ ∈ (c⁻¹ * ·) ⁻¹' Ico a b from hIco ▸ hτ))
+      rwa [preimage_const_mul_Ici₀ _ hc', mul_div_cancel_left₀ _ hc'.ne'] at this)
+    (by simpa [← hka, mul_comm a c, hinv, smul_smul, inv_mul_cancel₀ hc.ne'] using hk)
+  rw [← hIcc] at hS
+  refine fun t ht ↦ ⟨c⁻¹ • R (c⁻¹ * (c * t)), hS (show c⁻¹ * (c * t) ∈ Icc a b by rwa [hinv]), ?_⟩
   simp only [smul_smul, mul_inv_cancel₀ hc.ne', one_smul, hinv]
 
 /-- **The nonnegative round ray is invariant.** The set of the tensors `κ I` with `κ ≥ 0`, where

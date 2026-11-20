@@ -146,6 +146,7 @@ theorem HasFDerivWithinAt.mapsTo_posTangentConeAt {E F : Type*} [NormedAddCommGr
 
 /-- A continuous linear equivalence `e` identifies the positive tangent cone of `e '' s` at `e x`
 with the image of the positive tangent cone of `s` at `x`. -/
+@[simp]
 theorem ContinuousLinearEquiv.mem_posTangentConeAt_image_iff {E F : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] (e : E ≃L[ℝ] F) {s : Set E}
     {x y : E} : e y ∈ posTangentConeAt (e '' s) (e x) ↔ y ∈ posTangentConeAt s x := by

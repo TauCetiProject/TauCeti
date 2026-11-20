@@ -229,7 +229,7 @@ theorem Convex.forall_mem_posTangentConeAt_iff_forall_mapsTo_Icc_of_finiteDimens
   have hKc' : Convex ℝ (e '' K) := by simpa using hKc.linear_image e.toLinearEquiv.toLinearMap
   have htan : (∀ y ∈ K, v y ∈ posTangentConeAt K y) ↔
       ∀ z ∈ e '' K, (e ∘ v ∘ e.symm) z ∈ posTangentConeAt (e '' K) z := by
-    simp [e.mem_posTangentConeAt_image_iff]
+    simp
   rw [htan, hKc'.forall_mem_posTangentConeAt_iff_forall_mapsTo_Icc
     (e.toHomeomorph.isClosed_image.mpr hK) hw]
   constructor
