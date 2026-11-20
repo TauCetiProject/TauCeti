@@ -51,10 +51,11 @@ disc of radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)
 (`Complex.dist_equivRealProdCLM_le`).
 
 Reading a map `ξ` on `ℝ × ℝ` in the complex coordinate `ξ ∘ equivRealProdCLM` preserves its
-zero structure: vanishing on a set (`Complex.eqOn_zero_of_eqOn_zero_comp_equivRealProdCLM`),
-vanishing to a given order at a point (`Complex.isBigO_comp_equivRealProdCLM`) and having a
-codiscrete nonvanishing set (`Complex.setOf_ne_zero_mem_codiscreteWithin_of_comp_equivRealProdCLM`)
-all pass back from the complex coordinate to `ℝ × ℝ`.
+zero structure. Vanishing to a given order at a point passes into the complex coordinate
+(`Complex.isBigO_comp_equivRealProdCLM`), while vanishing on a set
+(`Complex.eqOn_zero_of_eqOn_zero_comp_equivRealProdCLM`) and having a codiscrete nonvanishing set
+(`Complex.setOf_ne_zero_mem_codiscreteWithin_of_comp_equivRealProdCLM`) pass back from the
+complex coordinate to `ℝ × ℝ`.
 -/
 
 public section
