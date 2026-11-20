@@ -70,8 +70,8 @@ stack is the Picard stack `h¹/h⁰`. The groupoid sees exactly the cohomology o
 ## References
 
 * P. Deligne, *La formule de dualité globale*, SGA 4, Exposé XVIII, §1.4.
-* K. Behrend and B. Fantechi, *The intrinsic normal cone*, Invent. Math. 128 (1997), §2,
-  pp. 16–17 and Proposition 2.1.
+* K. Behrend and B. Fantechi, *The intrinsic normal cone*, Invent. Math. 128 (1997), §2 and
+  Proposition 2.1.
 -/
 
 public section
@@ -170,12 +170,23 @@ variable (d : A →+ B)
 def objEquiv : B ≃ d.QuotientGroupoid :=
   (TranslationSpace.of d).trans (ActionCategory.objEquiv _ _)
 
+/-- The object `x` of the quotient groupoid is the object of the action groupoid at the point `x`
+of the translation space. -/
+theorem objEquiv_apply (x : B) :
+    objEquiv d x = ActionCategory.objEquiv _ _ (TranslationSpace.of d x) := (rfl)
+
 variable {d}
 
 /-- The label `a : A` of an arrow `x ⟶ y` of the quotient groupoid; it satisfies
 `d a + x = y` (`AddMonoidHom.QuotientGroupoid.apply_label_add`). -/
 def label {X Y : d.QuotientGroupoid} (f : X ⟶ Y) : A :=
   Multiplicative.toAdd f.hom
+
+/-- The label of an arrow is the element of `Multiplicative A` underlying the arrow of the action
+groupoid, read additively. -/
+@[simp]
+theorem ofAdd_label {X Y : d.QuotientGroupoid} (f : X ⟶ Y) :
+    Multiplicative.ofAdd (label f) = f.hom := (rfl)
 
 /-- An arrow of the quotient groupoid translates its source to its target by the image of its
 label. -/
@@ -213,7 +224,8 @@ theorem label_id (X : d.QuotientGroupoid) : label (𝟙 X) = 0 := by
 
 @[simp]
 theorem label_eqToHom {X Y : d.QuotientGroupoid} (h : X = Y) : label (eqToHom h) = 0 := by
-  simp [label, ActionCategory.eqToHom_hom]
+  apply Multiplicative.ofAdd.injective
+  simp [ActionCategory.eqToHom_hom]
 
 @[simp]
 theorem label_comp {X Y Z : d.QuotientGroupoid} (f : X ⟶ Y) (g : Y ⟶ Z) :
@@ -222,7 +234,8 @@ theorem label_comp {X Y Z : d.QuotientGroupoid} (f : X ⟶ Y) (g : Y ⟶ Z) :
 
 @[simp]
 theorem label_inv {X Y : d.QuotientGroupoid} (f : X ⟶ Y) : label (inv f) = -label f := by
-  simp [label]
+  apply Multiplicative.ofAdd.injective
+  simp
 
 /-- The arrows `x ⟶ y` of the quotient groupoid are the elements `a : A` with `d a + x = y`. -/
 def homEquiv (x y : B) :
@@ -250,7 +263,7 @@ variable {d : A →+ B}
 the range of `d`. -/
 theorem isIsomorphic_objEquiv_iff {x y : B} :
     IsIsomorphic (objEquiv d x) (objEquiv d y) ↔ y - x ∈ d.range := by
-  simp [objEquiv, ActionCategory.isIsomorphic_iff_orbitRel, TranslationSpace.orbitRel_of_iff,
+  simp [objEquiv_apply, ActionCategory.isIsomorphic_iff_orbitRel, TranslationSpace.orbitRel_of_iff,
     sub_mem_comm_iff]
 
 variable (d) in
@@ -266,7 +279,7 @@ def isomorphismClassesEquiv :
 theorem isomorphismClassesEquiv_mk (x : B) :
     isomorphismClassesEquiv d (_root_.Quotient.mk _ (objEquiv d x)) = (x : B ⧸ d.range) := by
   rw [isomorphismClassesEquiv, Equiv.symm_apply_eq, Equiv.trans_apply, Quotient.congr_mk]
-  simp [objEquiv]
+  simp [objEquiv_apply]
 
 variable (d) in
 /-- The automorphisms of any object of the quotient groupoid of `d : A →+ B` are the kernel
@@ -279,13 +292,15 @@ def autMulEquiv (X : d.QuotientGroupoid) : Aut X ≃* Multiplicative d.ker :=
 @[simp]
 theorem coe_toAdd_autMulEquiv_apply (X : d.QuotientGroupoid) (e : Aut X) :
     ((Multiplicative.toAdd (autMulEquiv d X e) : d.ker) : A) = label e.asIso.hom := by
-  simp [autMulEquiv, label, ActionCategory.comp_hom]
+  apply Multiplicative.ofAdd.injective
+  simp [autMulEquiv, ActionCategory.comp_hom]
 
 @[simp]
 theorem label_autMulEquiv_symm_apply_asIso_hom (X : d.QuotientGroupoid)
     (a : Multiplicative d.ker) :
     label ((autMulEquiv d X).symm a).asIso.hom = (Multiplicative.toAdd a : d.ker) := by
-  simp [autMulEquiv, label, ActionCategory.comp_hom]
+  apply Multiplicative.ofAdd.injective
+  simp [autMulEquiv]
 
 variable (d) in
 /-- The quotient groupoid of `d : A →+ B` is equivalent to the point exactly when `d` is
@@ -341,8 +356,7 @@ variable (f₀ : A →+ A') (f₁ : B →+ B') (h : f₁.comp d = d'.comp f₀)
 
 @[simp]
 theorem map_obj_objEquiv (x : B) : (map f₀ f₁ h).obj (objEquiv d x) = objEquiv d' (f₁ x) := by
-  rw [map, objEquiv, objEquiv, Equiv.trans_apply, Equiv.trans_apply, ActionCategory.map_obj,
-    translationSpaceMap_of]
+  rw [map, objEquiv_apply, objEquiv_apply, ActionCategory.map_obj, translationSpaceMap_of]
 
 @[simp]
 theorem objEquiv_symm_map_obj (X : d.QuotientGroupoid) :
@@ -353,7 +367,9 @@ theorem objEquiv_symm_map_obj (X : d.QuotientGroupoid) :
 @[simp]
 theorem label_map_map {X Y : d.QuotientGroupoid} (g : X ⟶ Y) :
     label ((map f₀ f₁ h).map g) = f₀ (label g) := by
-  simp [label, map]
+  apply Multiplicative.ofAdd.injective
+  rw [ofAdd_label, map, ActionCategory.map_map_hom, ← ofAdd_label g, toMultiplicative_apply_apply,
+    toAdd_ofAdd]
 
 variable (d) in
 /-- The identity chain map induces the identity functor. -/

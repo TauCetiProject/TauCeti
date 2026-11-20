@@ -59,17 +59,16 @@ theorem range_le_comap_range_of_comp_eq {H G' H' : Type*} [Group H] [Group G'] [
   rintro _ ⟨a, rfl⟩
   exact ⟨f₀ a, (DFunLike.congr_fun h a).symm⟩
 
-/-- In a commutative square `f₁ ∘ d = d' ∘ f₀` of group homomorphisms, `f₀` carries the kernel of
-`d` into the kernel of `d'`; this is what makes the square restrict to a map of kernels
-`ker d → ker d'`. -/
-@[to_additive /-- In a commutative square `f₁ ∘ d = d' ∘ f₀` of additive group homomorphisms, `f₀`
-carries the kernel of `d` into the kernel of `d'`; this is what makes the square restrict to a map
-`ker d → ker d'` of kernels. -/]
-theorem ker_le_comap_ker_of_comp_eq {H G' H' : Type*} [Group H] [Group G'] [Group H']
+/-- In a commutative square `f₁ ∘ d = d' ∘ f₀` of monoid homomorphisms out of the groups `G` and
+`G'`, `f₀` carries the kernel of `d` into the kernel of `d'`; this is what makes the square restrict
+to a map of kernels `ker d → ker d'`. -/
+@[to_additive /-- In a commutative square `f₁ ∘ d = d' ∘ f₀` of additive monoid homomorphisms out of
+the additive groups `G` and `G'`, `f₀` carries the kernel of `d` into the kernel of `d'`; this is
+what makes the square restrict to a map `ker d → ker d'` of kernels. -/]
+theorem ker_le_comap_ker_of_comp_eq {H G' H' : Type*} [MulOneClass H] [Group G'] [MulOneClass H']
     {d : G →* H} {d' : G' →* H'} {f₀ : G →* G'} {f₁ : H →* H'} (h : f₁.comp d = d'.comp f₀) :
-    d.ker ≤ d'.ker.comap f₀ := by
-  rw [comap_ker, ← h, ← comap_ker]
-  exact ker_le_comap d _
+    d.ker ≤ d'.ker.comap f₀ := fun a ha => by
+  rw [Subgroup.mem_comap, mem_ker, ← comp_apply, ← h, comp_apply, mem_ker.mp ha, map_one]
 
 /-- The pointwise inverse of a homomorphism into a commutative group has the same range. -/
 @[to_additive (attr := simp) /-- The pointwise negation of a homomorphism into a commutative
