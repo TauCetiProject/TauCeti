@@ -8,17 +8,18 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.FieldTheory.IsRealClosed.Basic
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
-import Mathlib.FieldTheory.IsRealClosed.Real
+import Mathlib.RingTheory.Polynomial.SmallDegreeVieta
 import Mathlib.RingTheory.Polynomial.Vieta
 import TauCeti.Algebra.Polynomial.QuadraticDiscriminant
 import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.FieldTheory.RealClosure.AbstractRolle
+import TauCeti.FieldTheory.RealClosure.Basic
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 
 /-!
 # Newton's and Maclaurin's inequalities
 
-For a multiset `s` of `n` elements of a real closed ordered field `R` (for instance `ℝ`), let
+For a multiset `s` of `n` elements of an ordered field `K` (for instance `ℝ`), let
 `σ_k = s.esymm k` be its `k`-th elementary symmetric function and `S_k = σ_k / binom(n, k)` the
 corresponding elementary symmetric mean, so that `S_0 = 1`, `S_1` is the arithmetic mean and, for
 `s` nonnegative, `S_n` is the `n`-th power of the geometric mean. This file proves:
@@ -41,7 +42,10 @@ Through `MvPolynomial.aeval_esymm_eq_multiset_esymm`, these apply to the values
 `MvPolynomial.eval μ (MvPolynomial.esymm σ ℝ k)` of the elementary symmetric polynomials at a
 vector `μ : σ → ℝ`, with `s = Finset.univ.val.map μ`.
 
-The proof of Newton's inequalities is the classical one through Rolle's theorem. The polynomial
+The proof of Newton's inequalities is the classical one through Rolle's theorem. Both sides are
+rational expressions in the elements of `s`, so mapping `s` along an order embedding into a real
+closure of `K` (`TauCeti.RealClosure.exists_realClosure`) reduces it to a real closed ordered field
+`R`. There the polynomial
 `∏_{x ∈ s} (X + x) = ∑_j σ_j X^{n - j}` splits over `R`; differentiating it `n - k - 2` times,
 reflecting the result at degree `k + 2` and differentiating `k` more times gives the quadratic
 `(n!/2) S_{k+2} X² + n! S_{k+1} X + (n!/2) S_k`, and each step preserves splitting
@@ -132,15 +136,12 @@ private lemma esymm_div_choose_mul_esymm_div_choose_le_sq_of_le {k : ℕ} (hk : 
       (s.esymm (k + 1) / (card s).choose (k + 1)) ^ 2 := by
   obtain ⟨a, ha⟩ := Nat.exists_eq_add_of_le hk
   set q := s.newtonQuadratic k
-  have hq : q = C (q.coeff 2) * X ^ 2 + C (q.coeff 1) * X + C (q.coeff 0) := by
-    have hdeg : q.natDegree < 3 :=
-      (natDegree_iterate_derivative _ _).trans_lt (by
-        have := natDegree_reflect_le_of_natDegree_le
-          (s.natDegree_iterate_derivative_prod_X_add_C_le k)
-        omega)
-    conv_lhs => rw [as_sum_range' q 3 hdeg]
-    simp only [Finset.sum_range_succ, Finset.sum_range_zero, ← C_mul_X_pow_eq_monomial]
-    ring
+  have hdeg : q.natDegree ≤ 2 :=
+    (natDegree_iterate_derivative _ _).trans (by
+      have := natDegree_reflect_le_of_natDegree_le
+        (s.natDegree_iterate_derivative_prod_X_add_C_le k)
+      omega)
+  have hq := eq_quadratic_of_degree_le_two (degree_le_of_natDegree_le hdeg)
   have hdisc : 0 ≤ discrim (q.coeff 2) (q.coeff 1) (q.coeff 0) :=
     (splits_quadratic_iff_isSquare.mp (hq ▸ s.splits_newtonQuadratic k)).nonneg
   have h₀ := s.coeff_newtonQuadratic ha (m := 0) (by norm_num)
@@ -152,7 +153,8 @@ private lemma esymm_div_choose_mul_esymm_div_choose_le_sq_of_le {k : ℕ} (hk : 
   have hc₁ := hc (k + 1) (by omega)
   have hc₂ := hc (k + 2) (by omega)
   have hfact : (0 : R) < (card s)! := by exact_mod_cast Nat.factorial_pos _
-  norm_num at h₀ h₁ h₂
+  simp only [Nat.factorial_zero, Nat.factorial_one, Nat.factorial_two, Nat.sub_zero,
+    Nat.sub_self, add_zero, one_mul, mul_one, Nat.cast_mul, Nat.cast_ofNat] at h₀ h₁ h₂
   have e₀ : q.coeff 0 = (card s)! * s.esymm k / (2 * (card s).choose k) := by
     rw [eq_div_iff (by positivity)]; linear_combination h₀
   have e₁ : q.coeff 1 = (card s)! * s.esymm (k + 1) / (card s).choose (k + 1) := by
@@ -166,20 +168,30 @@ private lemma esymm_div_choose_mul_esymm_div_choose_le_sq_of_le {k : ℕ} (hk : 
     convert hdisc using 1
     field_simp
     ring
-  nlinarith [(mul_nonneg_iff_of_pos_left (by positivity)).mp key]
+  exact sub_nonneg.mp ((mul_nonneg_iff_of_pos_left (by positivity)).mp key)
 
-/-- **Newton's inequalities**: for a multiset `s` of real numbers and every `k`, the elementary
-symmetric means `S_j = σ_j(s) / binom(card s, j)` satisfy `S_k S_{k+2} ≤ S_{k+1}²`. No sign
-condition on the elements of `s` is needed. -/
+end RealClosed
+
+section OrderedField
+
+variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] (s : Multiset K)
+
+/-- **Newton's inequalities**: for a multiset `s` of elements of an ordered field and every `k`,
+the elementary symmetric means `S_j = σ_j(s) / binom(card s, j)` satisfy `S_k S_{k+2} ≤ S_{k+1}²`.
+No sign condition on the elements of `s` is needed. -/
 theorem esymm_div_choose_mul_esymm_div_choose_le_sq (k : ℕ) :
     s.esymm k / (card s).choose k * (s.esymm (k + 2) / (card s).choose (k + 2)) ≤
       (s.esymm (k + 1) / (card s).choose (k + 1)) ^ 2 := by
   rcases le_or_gt (k + 2) (card s) with hk | hk
-  · exact s.esymm_div_choose_mul_esymm_div_choose_le_sq_of_le hk
+  · -- Transfer the real closed case along an order embedding into a real closure.
+    obtain ⟨R, _, _, _, _, ι, hι, -⟩ := TauCeti.RealClosure.exists_realClosure K
+    have h := (s.map ι).esymm_div_choose_mul_esymm_div_choose_le_sq_of_le
+      (k := k) (by rwa [card_map])
+    simp only [card_map, esymm_map, ← map_natCast ι, ← map_div₀, ← map_mul, ← map_pow] at h
+    exact hι.le_iff_le.mp h
   · rw [esymm_of_card_lt hk, zero_div, mul_zero]
     positivity
 
-omit [IsRealClosed R] in
 /-- On the cone `σ_1, …, σ_l > 0`, the elementary symmetric means `S_1, …, S_l` are positive. -/
 theorem esymm_div_choose_pos {l : ℕ} (hpos : ∀ j ∈ Finset.Icc 1 l, 0 < s.esymm j) {j : ℕ}
     (hj : j ≤ l) : 0 < s.esymm j / (card s).choose j := by
@@ -200,7 +212,7 @@ private lemma esymm_div_choose_pow_le_pow_succ {l : ℕ}
   induction j with
   | zero => simp
   | succ j ih =>
-    set S : ℕ → R := fun i ↦ s.esymm i / (card s).choose i
+    set S : ℕ → K := fun i ↦ s.esymm i / (card s).choose i
     have h₀ := s.esymm_div_choose_pos hpos (j := j) (by omega)
     have h₁ := s.esymm_div_choose_pos hpos (j := j + 1) (by omega)
     have h₂ := s.esymm_div_choose_pos hpos (j := j + 2) (by omega)
@@ -220,7 +232,7 @@ symmetric means `S_j = σ_j(s) / binom(card s, j)` satisfy `S_l^k ≤ S_k^l` for
 theorem esymm_div_choose_pow_le_pow {k l : ℕ} (hkl : k ≤ l)
     (hpos : ∀ j ∈ Finset.Icc 1 l, 0 < s.esymm j) :
     (s.esymm l / (card s).choose l) ^ k ≤ (s.esymm k / (card s).choose k) ^ l := by
-  set S : ℕ → R := fun i ↦ s.esymm i / (card s).choose i
+  set S : ℕ → K := fun i ↦ s.esymm i / (card s).choose i
   rcases Nat.eq_zero_or_pos k with rfl | hk
   · simp
   induction l, hkl using Nat.le_induction with
@@ -242,7 +254,7 @@ theorem esymm_div_choose_pow_le_pow {k l : ℕ} (hkl : k ≤ l)
       _ ≤ (S k ^ l) ^ (l + 1) := by gcongr; exact ih hpos'
       _ = (S k ^ (l + 1)) ^ l := by ring
 
-end RealClosed
+end OrderedField
 
 variable (s : Multiset ℝ)
 

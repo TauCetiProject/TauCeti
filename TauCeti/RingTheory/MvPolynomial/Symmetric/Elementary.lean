@@ -31,6 +31,7 @@ product in elementary symmetric polynomials.
 * `Multiset.esymm_cons_zero`: adjoining a zero gives `e_{n+1}(0, s) = e_{n+1}(s)`, and
   `Multiset.esymm_cons_zero_eq_snoc` lists `e₁, …, e_{n+1}` of `0 ::ₘ s` for `card s ≤ n`.
 * `Multiset.esymm_one`: `e₁(s)` is the sum of `s`.
+* `Multiset.esymm_map`: elementary symmetric functions commute with ring homomorphisms.
 * `Multiset.esymm_nonneg`, `Multiset.esymm_eq_zero_of_le`: for a multiset of nonnegative elements
   of an ordered semiring, every `eₙ(s)` is nonnegative, and once one vanishes so do all those of
   higher degree.
@@ -86,6 +87,14 @@ theorem Multiset.esymm_cons_zero_eq_snoc {R : Type*} [CommSemiring R] {n : ℕ} 
 is the multiset counterpart of `MvPolynomial.esymm_one`. -/
 theorem Multiset.esymm_one {R : Type*} [CommSemiring R] (s : Multiset R) : s.esymm 1 = s.sum := by
   simp [Multiset.esymm, Multiset.powersetCard_one]
+
+/-- Elementary symmetric functions commute with ring homomorphisms:
+`e_n(f(s)) = f(e_n(s))`. This is the multiset counterpart of `MvPolynomial.map_esymm`. -/
+theorem Multiset.esymm_map {R S F : Type*} [CommSemiring R] [CommSemiring S] [FunLike F R S]
+    [RingHomClass F R S] (f : F) (s : Multiset R) (n : ℕ) :
+    (s.map f).esymm n = f (s.esymm n) := by
+  simp only [Multiset.esymm, Multiset.powersetCard_map, Multiset.map_map, map_multiset_sum,
+    Function.comp_def, map_multiset_prod]
 
 /-- The elementary symmetric functions of a multiset of nonnegative elements of an ordered
 semiring are nonnegative. -/
