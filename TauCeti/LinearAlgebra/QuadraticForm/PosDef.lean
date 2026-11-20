@@ -11,7 +11,6 @@ public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
-public import Mathlib.Data.Int.Interval
 import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
 
 /-!
@@ -60,10 +59,9 @@ available by dot notation on a `QuadraticForm.PosDef` hypothesis.
 
 ## Implementation notes
 
-The finiteness argument stays inside `ℤ`; no rational or real coefficients, no compactness, and no
-diagonalization enter. A positive definite form makes the module torsion free, hence free; let `b`
-be a basis. The Gram matrix of the polar form in `b` is a positive definite integer matrix, since
-the polar form is symmetric with diagonal `2 • q`, and its sublevel sets are finite by
+A positive definite form makes the module torsion free, hence free; let `b` be a basis. The Gram
+matrix of the polar form in `b` is a positive definite integer matrix, since the polar form is
+symmetric with diagonal `2 • q`, and its sublevel sets are finite by Mathlib's
 `Matrix.PosDef.finite_setOfPred_dotProduct_mulVec_le`. The set in question is the preimage of one
 of them under the injective coordinate map `b.equivFun`.
 -/
