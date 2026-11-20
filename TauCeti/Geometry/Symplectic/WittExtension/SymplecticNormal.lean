@@ -134,9 +134,10 @@ theorem IsAlt.exists_linearEquiv_extend_of_injective [FiniteDimensional ℝ V]
 nondegenerate alternating forms on finite-dimensional real vector spaces, with values in the lines
 `Q` and `Q'`, and let `c : Q ≃ Q'`. Let `L : W ≃ W'` be a linear isomorphism of subspaces and `S`
 one of their symplectic normal spaces `W^⊥ ⧸ (W ∩ W^⊥) ≃ W'^⊥ ⧸ (W' ∩ W'^⊥)`, both carrying the
-forms to `c` composed with the forms. Then some linear isomorphism `A : V ≃ V'` carries `B` to `c`
-composed with `B'`, restricts to `L` on `W`, and induces `S`: it maps each `u ∈ W^⊥` to a vector
-`u' ∈ W'^⊥` whose class is `S [u]`. -/
+forms to the forms up to `c`: `B'(L x, L y) = c (B(x, y))`, and likewise for `S` and the induced
+forms. Then some linear isomorphism `A : V ≃ V'` satisfies `B'(A x, A y) = c (B(x, y))`, restricts
+to `L` on `W`, and induces `S`: it maps each `u ∈ W^⊥` to a vector `u' ∈ W'^⊥` whose class is
+`S [u]`. -/
 theorem IsAlt.exists_linearEquiv_extend_symplecticNormal [FiniteDimensional ℝ V]
     [FiniteDimensional ℝ V'] (hB : B.IsAlt) (hB' : B'.IsAlt) (hinj : Injective B)
     (hinj' : Injective B') (hQ : finrank ℝ Q = 1) (c : Q ≃ₗ[ℝ] Q') (L : W ≃ₗ[ℝ] W')
@@ -165,7 +166,7 @@ theorem IsAlt.exists_linearEquiv_extend_symplecticNormal [FiniteDimensional ℝ 
   have hf (w : W) (s) : f (w, s) = L w + σ' (S s) := by simp [f]
   have hginj : Injective g := injective_coprod_subtype hσ_mk
   have hfinj : Injective f := (injective_coprod_subtype hσ'_mk).comp (L.prodCongr S).injective
-  -- `f` carries `B` restricted along `g` to `c ∘ B'`.
+  -- `B'(f x, f y) = c (B(g x, g y))`.
   have hfg (x y) : B' (f x) (f y) = c (B (g x) (g y)) := by
     obtain ⟨w₁, s₁⟩ := x
     obtain ⟨w₂, s₂⟩ := y
@@ -202,9 +203,10 @@ theorem IsAlt.exists_linearEquiv_extend_symplecticNormal [FiniteDimensional ℝ 
 nondegenerate alternating forms `B` and `B'` with values in the lines `V ⧸ H` and `V' ⧸ H'`, as the
 Levi form of a contact structure takes values in its contact line. Let `c : V ⧸ H ≃ V' ⧸ H'`, and
 let `L : W ≃ W'` and `S : W^⊥ ⧸ (W ∩ W^⊥) ≃ W'^⊥ ⧸ (W' ∩ W'^⊥)`, for subspaces `W ≤ H` and
-`W' ≤ H'`, carry the forms to `c` composed with the forms. Then some linear isomorphism
+`W' ≤ H'`, carry the forms to the forms up to `c`, as in
+`LinearMap.IsAlt.exists_linearEquiv_extend_symplecticNormal`. Then some linear isomorphism
 `A : V ≃ V'` maps `H` onto `H'` by a linear isomorphism `A₀ : H ≃ H'` and induces `c` on the
-quotient lines, and `A₀` carries `B` to `c` composed with `B'`, restricts to `L` on `W` and
+quotient lines, and `A₀` satisfies `B'(A₀ x, A₀ y) = c (B(x, y))`, restricts to `L` on `W` and
 induces `S`. -/
 theorem IsAlt.exists_linearEquiv_extend_symplecticNormal_of_hyperplane [FiniteDimensional ℝ V]
     [FiniteDimensional ℝ V'] {H : Submodule ℝ V} {H' : Submodule ℝ V'}
