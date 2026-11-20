@@ -216,6 +216,19 @@ theorem quantumInteger_natCast_eq_sum {q : K} (hq : q - q⁻¹ ≠ 0) (n : ℕ) 
   rw [Finset.sum_congr rfl hterm, quantumInteger, div_eq_iff hq, geom_sum₂_mul]
   simp only [zpow_neg, zpow_natCast, inv_pow]
 
+/-- The geometric sum `∑_(i ≤ n) q^(2i)` is `q^n [n + 1]_q`. -/
+theorem sum_range_pow_two_mul_eq_pow_mul_quantumInteger {q : K} (hq : q - q⁻¹ ≠ 0) (n : ℕ) :
+    ∑ i ∈ Finset.range (n + 1), q ^ (2 * i) = q ^ n * quantumInteger q ((n : ℤ) + 1) := by
+  have hq0 := ne_zero_of_sub_inv_ne_zero hq
+  have h := quantumInteger_natCast_eq_sum hq (n + 1)
+  push_cast at h
+  rw [h, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [← zpow_natCast, ← zpow_natCast, ← zpow_add₀ hq0]
+  congr 1
+  push_cast
+  ring
+
 /-- The symmetric quantum integers satisfy the usual three-term recurrence. -/
 theorem quantumInteger_add_one (q : K) (r : ℤ) :
     quantumInteger q (r + 1) =
