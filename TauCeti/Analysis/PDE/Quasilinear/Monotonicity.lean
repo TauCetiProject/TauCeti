@@ -40,7 +40,7 @@ boundary values and `‖∇v‖ ≤ K`, then
 `‖u - v‖_{H¹} ≤ (P² + 1) ‖ℓ - ℓ'‖ / (λ - L K P)`
 
 (`TauCeti.PDE.norm_sub_le_of_forall_energyFormH1_quasilinear_eq`), with the bounded-domain form
-`TauCeti.PDE.norm_sub_le_of_forall_energyFormH1_quasilinear_eq_of_norm_gradient_le_of_subset_ball`.
+`TauCeti.PDE.norm_sub_le_of_forall_energyFormH1_quasilinear_eq_of_subset_ball`.
 Only `v` needs a bounded gradient. For a coefficient independent of `u` (`L = 0`) the smallness
 condition `L K P < λ` holds for every `K`, but `∇v` must still be essentially bounded; the general
 linear estimate is in `TauCeti/Analysis/PDE/DirichletProblem/ContinuousDependence.lean`.
@@ -246,7 +246,7 @@ with constant `L ≥ 0`, uniformly in `x ∈ Ω`. Let `u, v ∈ W^{1,2}(Ω)` be 
 `-div(A(x, u) ∇u) = ℓ` and `-div(A(x, v) ∇v) = ℓ'` with the same boundary values `g`, and with
 `x ↦ A(x, u(x))` and `x ↦ A(x, v(x))` measurable. If `‖∇v‖ ≤ K` almost everywhere, with `K ≥ 0`
 and `2 L K R < λ`, then `‖u - v‖_{H¹} ≤ ((2R)² + 1) ‖ℓ - ℓ'‖ / (λ - 2 L K R)`. -/
-theorem norm_sub_le_of_forall_energyFormH1_quasilinear_eq_of_norm_gradient_le_of_subset_ball
+theorem norm_sub_le_of_forall_energyFormH1_quasilinear_eq_of_subset_ball
     {n : ℕ}
     {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
     {A : EuclideanSpace ℝ (Fin (n + 1)) → ℝ → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}

@@ -713,15 +713,8 @@ theorem W1p.norm_sq_le_mul_norm_gradient_sq_of_norm_value_le {u : W1p mu Omega 2
 `∫_Ω |u| ‖∇u‖ ≤ ‖u‖₂ ‖∇u‖₂`. -/
 theorem W1p.integral_norm_value_mul_norm_gradient_le (u : W1p mu Omega 2) :
     ∫ x in Omega, ‖W1p.value u x‖ * ‖W1p.gradient u x‖ ∂mu ≤
-      ‖W1p.value u‖ * ‖W1p.gradient u‖ := by
-  have hf : MemLp (fun x => ‖W1p.value u x‖) (ENNReal.ofReal (2 : ℝ)) (mu.restrict Omega) := by
-    simpa using (Lp.memLp (W1p.value u)).norm
-  have hg : MemLp (fun x => ‖W1p.gradient u x‖) (ENNReal.ofReal (2 : ℝ)) (mu.restrict Omega) := by
-    simpa using (Lp.memLp (W1p.gradient u)).norm
-  have h := integral_mul_norm_le_Lp_mul_Lq Real.HolderConjugate.two_two hf hg
-  simp only [norm_norm, Real.rpow_two, ← Real.sqrt_eq_rpow, Lp.integral_norm_sq_eq_norm_sq,
-    Real.sqrt_sq_eq_abs, abs_norm] at h
-  exact h
+      ‖W1p.value u‖ * ‖W1p.gradient u‖ :=
+  Lp.integral_norm_mul_norm_le (W1p.value u) (W1p.gradient u)
 
 /-- The integral of the squared Sobolev gradient is its squared `L²` norm. -/
 theorem W1p.integral_norm_gradient_sq_eq_norm_gradient_sq (u : W1p mu Omega 2) :
