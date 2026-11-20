@@ -7,6 +7,9 @@ module
 
 public import Mathlib.RingTheory.Bialgebra.Equiv
 public import TauCeti.Algebra.HopfAlgebra.FiniteDual.Basic
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
+import TauCeti.LinearAlgebra.TensorProduct.Basis
+import TauCeti.LinearAlgebra.TensorProduct.Dual
 
 /-!
 # Functoriality and reflexivity of the finite Hopf dual
@@ -31,6 +34,8 @@ scheme-level duality remains a separate step.
   equivalence.
 * `TauCeti.ConvolutionDual.evalAlgEquiv`: evaluation as an algebra equivalence with the
   convolution algebra of the dual coalgebra.
+* `TauCeti.ConvolutionDual.tensor_eq_of_forall_tensorComponent_evalAlgEquiv_eq`: contractions
+  against evaluation at the elements of the algebra detect equality of tensors with its dual.
 * `TauCeti.ConvolutionDual.evalBialgEquiv`: evaluation as a bialgebra equivalence with the double
   convolution dual.
 * `TauCeti.ConvolutionDual.evalBialgEquiv_naturality`: naturality of evaluation.
@@ -256,6 +261,20 @@ theorem ofConv_evalAlgEquiv_comp_coalgMap {K : Type w} [Semiring K] [Algebra k K
       (evalAlgEquiv k K (f x)).ofConv := by
   ext phi
   simp
+
+variable {k H} in
+/-- A tensor with the dual coalgebra of a finite projective algebra is determined by its
+contractions against evaluation at the elements of the algebra. -/
+theorem tensor_eq_of_forall_tensorComponent_evalAlgEquiv_eq {M : Type*} [AddCommMonoid M]
+    [Module k M] {x y : M ⊗[k] ConvolutionDual k H}
+    (h : ∀ a : H, LinearMap.tensorComponent (evalAlgEquiv k H a).ofConv x =
+      LinearMap.tensorComponent (evalAlgEquiv k H a).ofConv y) :
+    x = y := by
+  refine TensorProduct.tensor_eq_of_forall_tensorComponent_eq fun φ => ?_
+  have hφ : (evalAlgEquiv k H ((evalAlgEquiv k H).symm (WithConv.toConv φ))).ofConv = φ := by
+    simp
+  rw [← hφ]
+  exact h _
 
 end AlgebraEvaluation
 

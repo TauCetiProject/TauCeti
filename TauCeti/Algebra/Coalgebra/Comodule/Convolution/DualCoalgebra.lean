@@ -12,7 +12,6 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Finite
 public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Preadditive
 public import TauCeti.Algebra.HopfAlgebra.FiniteDual.Functoriality
-import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
 # Modules over a finite algebra are comodules over its dual coalgebra
@@ -70,25 +69,6 @@ open scoped TensorProduct
 open TensorProduct WithConv
 
 namespace TauCeti
-
-namespace ConvolutionDual
-
-variable {R A M : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-  [Module.Finite R A] [Module.Projective R A] [AddCommMonoid M] [Module R M]
-
-/-- A tensor with the dual coalgebra of a finite projective algebra is determined by its
-contractions against evaluation at the elements of the algebra. -/
-theorem tensor_eq_of_forall_tensorComponent_evalAlgEquiv_eq
-    {x y : M ⊗[R] ConvolutionDual R A}
-    (h : ∀ a : A, LinearMap.tensorComponent (evalAlgEquiv R A a).ofConv x =
-      LinearMap.tensorComponent (evalAlgEquiv R A a).ofConv y) :
-    x = y := by
-  refine TensorProduct.tensor_eq_of_forall_tensorComponent_eq fun φ => ?_
-  have hφ : (evalAlgEquiv R A ((evalAlgEquiv R A).symm (toConv φ))).ofConv = φ := by simp
-  rw [← hφ]
-  exact h _
-
-end ConvolutionDual
 
 namespace Comodule
 
@@ -283,8 +263,9 @@ theorem ofModuleCat_obj_smul (M : ModuleCat.{w} A) (r : R) (m : (ofModuleCat R A
   (rfl)
 
 /-- The functor `ofModuleCat` does not change the underlying function of a morphism. -/
+@[simp]
 theorem ofModuleCat_map_apply {M N : ModuleCat.{w} A} (f : M ⟶ N) (m : (ofModuleCat R A).obj M) :
-    (ofModuleCat R A).map f m = f (show M from m) :=
+    dsimp% (ofModuleCat R A).map f m = f (show M from m) :=
   (rfl)
 
 /-- The coaction of `ofModuleCat` contracts against evaluation at `a` to the action of `a`. -/
@@ -415,27 +396,31 @@ theorem equivalenceModuleCat_inverse : (equivalenceModuleCat.{u, v, w} R A).inve
   rfl
 
 /-- The unit of `equivalenceModuleCat` is the identity on elements. -/
+@[simp]
 theorem equivalenceModuleCat_unitIso_hom_app_apply (M : ModuleCat.{w} A) (m : M) :
-    ((equivalenceModuleCat R A).unitIso.hom.app M).hom m = m :=
+    dsimp% ((equivalenceModuleCat R A).unitIso.hom.app M).hom m = m :=
   (rfl)
 
 /-- The inverse of the unit of `equivalenceModuleCat` is the identity on elements. -/
+@[simp]
 theorem equivalenceModuleCat_unitIso_inv_app_apply (M : ModuleCat.{w} A)
     (m : (toModuleCat R A).obj ((ofModuleCat R A).obj M)) :
-    ((equivalenceModuleCat R A).unitIso.inv.app M).hom m = m :=
+    dsimp% ((equivalenceModuleCat R A).unitIso.inv.app M).hom m = m :=
   (rfl)
 
 /-- The counit of `equivalenceModuleCat` is the identity on elements. -/
+@[simp]
 theorem equivalenceModuleCat_counitIso_hom_app_apply
     (M : ComoduleCat.{u, max u v, w} R (ConvolutionDual R A))
     (m : (ofModuleCat R A).obj ((toModuleCat R A).obj M)) :
-    (equivalenceModuleCat R A).counitIso.hom.app M m = m :=
+    dsimp% (equivalenceModuleCat R A).counitIso.hom.app M m = m :=
   (rfl)
 
 /-- The inverse of the counit of `equivalenceModuleCat` is the identity on elements. -/
+@[simp]
 theorem equivalenceModuleCat_counitIso_inv_app_apply
     (M : ComoduleCat.{u, max u v, w} R (ConvolutionDual R A)) (m : M) :
-    (equivalenceModuleCat R A).counitIso.inv.app M m = m :=
+    dsimp% (equivalenceModuleCat R A).counitIso.inv.app M m = m :=
   (rfl)
 
 /-- The `R`-module underlying the comodule of an `A`-module is its restriction of scalars. The
@@ -452,16 +437,18 @@ def ofModuleCatCompForget₂Iso :
       rfl
 
 /-- The components of `ofModuleCatCompForget₂Iso` are the identity on elements. -/
+@[simp]
 theorem ofModuleCatCompForget₂Iso_hom_app_apply (M : ModuleCat.{w} A)
     (m : (ofModuleCat R A ⋙ forget₂ (ComoduleCat.{u, max u v, w} R (ConvolutionDual R A))
       (ModuleCat.{w} R)).obj M) :
-    ((ofModuleCatCompForget₂Iso R A).hom.app M).hom m = m :=
+    dsimp% ((ofModuleCatCompForget₂Iso R A).hom.app M).hom m = m :=
   (rfl)
 
 /-- The inverse components of `ofModuleCatCompForget₂Iso` are the identity on elements. -/
+@[simp]
 theorem ofModuleCatCompForget₂Iso_inv_app_apply (M : ModuleCat.{w} A)
     (m : (ModuleCat.restrictScalars.{w} (algebraMap R A)).obj M) :
-    ((ofModuleCatCompForget₂Iso R A).inv.app M).hom m = m :=
+    dsimp% ((ofModuleCatCompForget₂Iso R A).inv.app M).hom m = m :=
   (rfl)
 
 section Transition
@@ -511,15 +498,17 @@ def restrictScalarsCompOfModuleCatIso (f : A →ₐ[R] B) :
       rfl
 
 /-- The components of `restrictScalarsCompOfModuleCatIso` are the identity on elements. -/
+@[simp]
 theorem restrictScalarsCompOfModuleCatIso_hom_app_apply (f : A →ₐ[R] B) (M : ModuleCat.{w} B)
     (m : (ModuleCat.restrictScalars.{w} f.toRingHom ⋙ ofModuleCat R A).obj M) :
-    (restrictScalarsCompOfModuleCatIso R f).hom.app M m = m :=
+    dsimp% (restrictScalarsCompOfModuleCatIso R f).hom.app M m = m :=
   (rfl)
 
 /-- The inverse components of `restrictScalarsCompOfModuleCatIso` are the identity on elements. -/
+@[simp]
 theorem restrictScalarsCompOfModuleCatIso_inv_app_apply (f : A →ₐ[R] B) (M : ModuleCat.{w} B)
     (m : (ofModuleCat R B ⋙ corestrict (ConvolutionDual.coalgMap R f)).obj M) :
-    (restrictScalarsCompOfModuleCatIso R f).inv.app M m = m :=
+    dsimp% (restrictScalarsCompOfModuleCatIso R f).inv.app M m = m :=
   (rfl)
 
 end Transition
