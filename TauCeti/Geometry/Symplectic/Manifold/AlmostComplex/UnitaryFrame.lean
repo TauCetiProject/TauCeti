@@ -19,7 +19,7 @@ and `(TM, J)` is a complex vector bundle. Let `G` be a complex inner product spa
 `dim_ℝ E = 2 dim_ℂ G`, such as `ℂⁿ`. Along a continuous map `f : Y → M` from a contractible
 paracompact R₁ space `Y`, for instance a disc or the domain of a cap of a loop, this file
 constructs a **unitary frame** of `TM`
-(`TauCeti.SmoothTwoForm.Compatible.exists_unitaryFrame`): real-linear isomorphisms
+(`TauCeti.SmoothTwoForm.Compatible.exists_continuous_unitary_frame`): real-linear isomorphisms
 `φ y : G ≃ T_(f y) M`, continuous into the tangent bundle, with
 
 * `φ y (i v) = J (φ y v)`: each `φ y` is complex linear;
@@ -31,8 +31,7 @@ is the trivialization of the tangent bundle over a cap of a contractible orbit i
 linearized flow along the orbit becomes a path of symplectic matrices, the path whose
 Conley–Zehnder index grades the capped orbit. Any two unitary frames along the same map differ by
 a family of unitary automorphisms of `G`
-(`TauCeti.SymplecticForm.inner_symm_apply_symm_apply_of_unitary`), which is continuous
-(`TauCeti.continuous_trans_symm_of_continuous_frame`).
+(`TauCeti.SymplecticForm.inner_symm_apply_symm_apply_of_unitary`).
 
 The construction starts from a frame of the complex vector bundle `(TM, J)` along `f`
 (`TauCeti.ContMDiffAlmostComplexStructure.exists_continuous_frame`), which exists because `Y` is
@@ -75,8 +74,9 @@ of half the real dimension of `M`. Along a continuous map `f` from a contractibl
 space, there are real-linear isomorphisms `φ y : G ≃ T_(f y) M`, continuous into the tangent bundle,
 which are complex linear and carry the Hermitian inner product of `G` to the one of `(σ, J)`: the
 metric `σ(·, J ·)` restricts to `Re ⟪·, ·⟫` and `σ` to the standard symplectic form `Im ⟪·, ·⟫`. -/
-theorem Compatible.exists_unitaryFrame [Fact (finrank ℝ E = 2 * finrank ℂ G)] [R1Space Y]
-    [ParacompactSpace Y] [ContractibleSpace Y] (hJ : σ.Compatible J) (hf : Continuous f) :
+theorem Compatible.exists_continuous_unitary_frame [Fact (finrank ℝ E = 2 * finrank ℂ G)]
+    [R1Space Y] [ParacompactSpace Y] [ContractibleSpace Y] (hJ : σ.Compatible J)
+    (hf : Continuous f) :
     ∃ φ : ∀ y, G ≃L[ℝ] TangentSpace I (f y),
       Continuous (fun q : Y × G ↦ (⟨f q.1, φ q.1 q.2⟩ : TangentBundle I M)) ∧
       (∀ y v, φ y (Complex.I • v) = J (f y) (φ y v)) ∧

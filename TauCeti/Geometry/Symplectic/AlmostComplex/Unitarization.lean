@@ -15,7 +15,7 @@ import TauCeti.Topology.Algebra.Module.ComplexSmulI
 # Unitary normalization of complex-linear frames
 
 Let `(V, ω)` be a real vector space with a symplectic form and an `ω`-compatible complex
-structure `J`, so that `g(v, w) = ω(v, J w)` is an inner product and `h = g - i ω` is a Hermitian
+structure `J`, so that `g(v, w) = ω(v, J w)` is an inner product and `h = g + i ω` is a Hermitian
 inner product on the complex vector space `(V, J)`. Let `G` be a finite-dimensional complex inner
 product space, such as `ℂⁿ`. A **unitary frame** of `V` is a real-linear map `φ : G → V` with
 `J φ = φ i` that carries the inner product of `G` to `h`:
@@ -32,11 +32,11 @@ the Riesz operator of `k`. The **unitarization** of `φ` is `φ ∘ T`
 (`TauCeti.SymplecticForm.unitarization`). Since `k` is invariant under multiplication by `i`, so is
 `T`, by naturality of the metric change transport under the isometry `v ↦ i v`. Hence:
 
-* the unitarization is complex linear (`TauCeti.SymplecticForm.unitarization_I_smul`);
-* it is unitary (`TauCeti.SymplecticForm.apply_unitarization_apply_unitarization`,
-  `TauCeti.SymplecticForm.apply_unitarization_unitarization`);
-* it is injective (`TauCeti.SymplecticForm.injective_unitarization`), and a frame that is already
-  unitary is its own unitarization (`TauCeti.SymplecticForm.unitarization_eq_self`).
+* the unitarization is complex linear (`TauCeti.SymplecticForm.Compatible.unitarization_I_smul`);
+* it is unitary (`TauCeti.SymplecticForm.Compatible.apply_unitarization_apply_unitarization`,
+  `TauCeti.SymplecticForm.Compatible.apply_unitarization_unitarization`);
+* it is injective (`TauCeti.SymplecticForm.Compatible.unitarization_injective`), and a frame that is
+  already unitary is its own unitarization (`TauCeti.SymplecticForm.unitarization_eq_self`).
 
 Two unitary frames onto the same space differ by a unitary automorphism of `G`
 (`TauCeti.SymplecticForm.inner_symm_apply_symm_apply_of_unitary`).
@@ -92,7 +92,8 @@ variable (ω J) in
 /-- The **unitarization** of a real-linear map `φ : G → V`: its composite `φ ∘ T` with the metric
 change transport `T` of the metric `ω(φ ·, J φ ·)` it pulls back to `G`, for the real inner product
 `Re ⟪·, ·⟫` of `G`. For an `ω`-compatible `J` and an injective complex-linear `φ` it is a unitary
-frame (`TauCeti.SymplecticForm.apply_unitarization_unitarization`). -/
+frame (`TauCeti.SymplecticForm.Compatible.apply_unitarization_apply_unitarization`,
+`TauCeti.SymplecticForm.Compatible.apply_unitarization_unitarization`). -/
 def unitarization (φ : G →ₗ[ℝ] V) : G →ₗ[ℝ] V :=
   φ ∘ₗ ((ω.frameMetric J φ).metricChangeTransport : G →ₗ[ℝ] G)
 
@@ -166,7 +167,7 @@ theorem Compatible.apply_unitarization_unitarization (hJ : ω.Compatible J)
   linarith
 
 /-- The unitarization of an injective map is injective. -/
-theorem Compatible.injective_unitarization (hJ : ω.Compatible J) (hφ : Function.Injective φ) :
+theorem Compatible.unitarization_injective (hJ : ω.Compatible J) (hφ : Function.Injective φ) :
     Function.Injective (ω.unitarization J φ) :=
   hφ.comp (ContinuousLinearMap.isUnit_iff_bijective.1
     (ContinuousLinearMap.isStrictlyPositive_metricChangeTransport

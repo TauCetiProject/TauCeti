@@ -185,34 +185,25 @@ theorem continuous_trans_symm_of_continuous_frame [CompleteSpace 𝕜] [FiniteDi
       (hχ.comp (Continuous.prodMk_left v)).continuousOn fun y hy ↦ e.mem_source.2 hy)).congr
         fun y (hy : f y ∈ e.baseSet) ↦ ?_
     simp [e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hy]
+  -- On the base set the coordinate of `ψ y` is the unit `e ∘ ψ y`.
+  have hcoordψ {y : B} (hy : f y ∈ e.baseSet) :
+      (e.continuousLinearMapAt 𝕜 (f y)).comp (ψ y : F →L[𝕜] E (f y)) =
+        (((ψ y).trans (e.continuousLinearEquivAt 𝕜 (f y) hy)).toUnit : F →L[𝕜] F) := by
+    rw [ContinuousLinearEquiv.toUnit, Units.val_mk, ← ContinuousLinearEquiv.comp_coe,
+      e.coe_continuousLinearEquivAt_eq' (R := 𝕜) hy]
   -- The coordinate of `ψ` is invertible at `y₀`, so its inverse is continuous there.
   have hy₀ : f y₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' (f y₀)
-  let u : (F →L[𝕜] F)ˣ :=
-    ((ψ y₀).trans (e.continuousLinearEquivAt 𝕜 (f y₀) hy₀)).toUnit
-  have hu : (e.continuousLinearMapAt 𝕜 (f y₀)).comp (ψ y₀ : F →L[𝕜] E (f y₀)) =
-      (u : F →L[𝕜] F) := by
-    ext v
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hy₀]
-    rfl
   have hinv : ContinuousAt (fun y ↦ Ring.inverse
       ((e.continuousLinearMapAt 𝕜 (f y)).comp (ψ y : F →L[𝕜] E (f y)))) y₀ :=
-    (NormedRing.inverse_continuousAt u).comp_of_eq ((hcoord hψ).continuousAt hU) hu
+    (NormedRing.inverse_continuousAt _).comp_of_eq ((hcoord hψ).continuousAt hU) (hcoordψ hy₀)
   refine ((hinv.mul ((hcoord hφ).continuousAt hU))).congr_of_eventuallyEq ?_
   filter_upwards [hU] with y (hy : f y ∈ e.baseSet)
-  -- On the base set the coordinate of `ψ y` is the unit `e ∘ ψ y`.
-  have hψy : (e.continuousLinearMapAt 𝕜 (f y)).comp (ψ y : F →L[𝕜] E (f y)) =
-      (((ψ y).trans (e.continuousLinearEquivAt 𝕜 (f y) hy)).toUnit : F →L[𝕜] F) := by
-    ext v
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hy]
-    rfl
-  simp only [Pi.mul_apply]
-  rw [hψy, Ring.inverse_unit, ← e.coe_continuousLinearEquivAt_eq' (R := 𝕜) hy]
+  rw [Pi.mul_apply, hcoordψ hy, Ring.inverse_unit, ContinuousLinearEquiv.toUnit, Units.inv_mk,
+    Units.val_mk, ← e.coe_continuousLinearEquivAt_eq' (R := 𝕜) hy]
   ext v
-  change (ψ y).symm (φ y v) = ((ψ y).trans (e.continuousLinearEquivAt 𝕜 (f y) hy)).symm
-    (e.continuousLinearEquivAt 𝕜 (f y) hy (φ y v))
-  rw [ContinuousLinearEquiv.symm_trans_apply, ContinuousLinearEquiv.symm_apply_apply]
+  simp only [mul_apply_eq_comp, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_trans_apply,
+    ContinuousLinearEquiv.symm_apply_apply, ContinuousLinearEquiv.trans_apply]
 
 /-- **Frames over contractible spaces.** Along every continuous map `f` from a contractible
 paracompact R₁ space, for instance a cube, a vector bundle `E` has a frame: linear isomorphisms

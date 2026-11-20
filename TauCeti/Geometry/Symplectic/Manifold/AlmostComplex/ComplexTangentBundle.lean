@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.ContMDiff
 public import TauCeti.Topology.VectorBundle.Complex.Structure
 public import TauCeti.Topology.VectorBundle.Contractible
+import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 
 /-!
 # The tangent bundle of an almost complex manifold as a complex vector bundle
@@ -94,16 +95,13 @@ theorem exists_continuous_frame (J : ContMDiffAlmostComplexStructure I n M)
   set Jc := J.toContinuousComplexStructure
   obtain ⟨ψ, hψ⟩ := _root_.TauCeti.exists_continuous_frame (𝕜 := ℂ) (F := G) (E := Jc.Fiber) hf
   let φ : ∀ y, G ≃L[ℝ] TangentSpace I (f y) := fun y ↦
-    ({ toLinearEquiv := (ψ y).toLinearEquiv.restrictScalars ℝ
-       continuous_toFun := (ψ y).continuous
-       continuous_invFun := (ψ y).symm.continuous } : G ≃L[ℝ] Jc.Fiber (f y)).trans
-      (Jc.fiberEquiv (f y))
+    ((ψ y).restrictScalars' ℝ).trans (Jc.fiberEquiv (f y))
+  have hφ (y : Y) (v : G) : φ y v = Jc.fiberEquiv (f y) (ψ y v) := by
+    simp only [φ, ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.coe_restrictScalars']
   refine ⟨φ, ((Jc.totalSpaceHomeomorph G).continuous.comp hψ).congr fun q ↦ ?_, fun y v ↦ ?_⟩
-  · simp only [Function.comp_apply, Bundle.ContinuousComplexStructure.totalSpaceHomeomorph_apply]
-    rfl
-  · -- Unfold the local definition of `φ y` as the fibre identification after `ψ y`.
-    change Jc.fiberEquiv (f y) (ψ y (Complex.I • v)) = J (f y) (Jc.fiberEquiv (f y) (ψ y v))
-    rw [map_smul, Bundle.ContinuousComplexStructure.fiberEquiv_I_smul]
+  · simp only [Function.comp_apply, Bundle.ContinuousComplexStructure.totalSpaceHomeomorph_apply,
+      hφ]
+  · rw [hφ, hφ, map_smul, Bundle.ContinuousComplexStructure.fiberEquiv_I_smul]
     exact J.toContinuousComplexStructure_apply (f y) _
 
 end Frame
