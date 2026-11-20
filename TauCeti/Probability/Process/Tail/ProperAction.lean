@@ -65,9 +65,10 @@ private lemma exists_measurableSet_cylinderEvents_compl_measure_symmDiff_lt
   simp only [inv_inv] at hμg hAg'
   set T : (ι → S) → ι → S := fun ω i => ω (g • i)
   refine ⟨T ⁻¹' cylinder F C, ?_, ?_⟩
-  · have hT : Measurable[cylinderEvents (↑Λ)ᶜ] fun ω => F.restrict (T ω) := by
+  · have hT : Measurable[cylinderEvents (↑Λ)ᶜ] (F.restrict ∘ T) := by
       rw [@measurable_pi_iff]
       exact fun i => measurable_cylinderEvent_apply fun hi => hg i i.2 hi
+    rw [cylinder, ← preimage_comp]
     exact hT hC
   · calc μ ((T ⁻¹' cylinder F C) ∆ A)
         ≤ μ ((T ⁻¹' cylinder F C) ∆ (T ⁻¹' A)) + μ ((T ⁻¹' A) ∆ A) := measure_symmDiff_le _ _ _
