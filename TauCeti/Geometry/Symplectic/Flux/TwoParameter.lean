@@ -77,19 +77,19 @@ include hφ
 `t ↦ φ_(t, u)`. -/
 private theorem mfderiv_apply_one_zero (q : ℝ × ℝ) (y : M) :
     mfderiv (𝓘(ℝ, ℝ × ℝ).prod I) I (fun z : (ℝ × ℝ) × M ↦ φ z.1 z.2) (q, y) ((1, 0), 0) =
-      eulerianField I (fun s ↦ φ (s, q.2)) q.1 (φ q y) := by
-  rw [eulerianField_apply_apply]
-  exact (((hφ (q, y)).mdifferentiableAt (by simp)).curveVelocity_eq_mfderiv_uncurry_apply_mk_zero
-    (f := fun q y ↦ φ q y) ((hasDerivAt_id q.1).prodMk (hasDerivAt_const q.1 q.2))).symm
+      eulerianField I (fun s ↦ φ (s, q.2)) q.1 (φ q y) :=
+  (eulerianField_apply_eq_mfderiv_apply_mk_zero (g := fun s ↦ (s, q.2))
+    ((hφ (q, y)).mdifferentiableAt (by simp))
+    ((hasDerivAt_id q.1).prodMk (hasDerivAt_const q.1 q.2))).symm
 
 /-- The differential of the uncurried family sends `∂_u` to the Eulerian velocity of
 `u ↦ φ_(t, u)`. -/
 private theorem mfderiv_apply_zero_one (q : ℝ × ℝ) (y : M) :
     mfderiv (𝓘(ℝ, ℝ × ℝ).prod I) I (fun z : (ℝ × ℝ) × M ↦ φ z.1 z.2) (q, y) ((0, 1), 0) =
-      eulerianField I (fun s ↦ φ (q.1, s)) q.2 (φ q y) := by
-  rw [eulerianField_apply_apply]
-  exact (((hφ (q, y)).mdifferentiableAt (by simp)).curveVelocity_eq_mfderiv_uncurry_apply_mk_zero
-    (f := fun q y ↦ φ q y) ((hasDerivAt_const q.2 q.1).prodMk (hasDerivAt_id q.2))).symm
+      eulerianField I (fun s ↦ φ (q.1, s)) q.2 (φ q y) :=
+  (eulerianField_apply_eq_mfderiv_apply_mk_zero (g := fun s ↦ (q.1, s))
+    ((hφ (q, y)).mdifferentiableAt (by simp))
+    ((hasDerivAt_const q.2 q.1).prodMk (hasDerivAt_id q.2))).symm
 
 /-- The differential of the uncurried family sends a vertical vector `(0, w)` to `dφ_q w`. -/
 private theorem mfderiv_apply_zero_mk (q : ℝ × ℝ) (y : M) (w : TangentSpace I y) :
