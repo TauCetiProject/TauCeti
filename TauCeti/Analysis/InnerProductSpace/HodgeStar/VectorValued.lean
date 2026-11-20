@@ -232,6 +232,12 @@ theorem vectorFormHodgeStar_apply (hkl : k + l = finrank ℝ E) (F : ⋀[ℝ]^k 
     (x : ⋀[ℝ]^l E) : o.vectorFormHodgeStar hkl F x = F ((o.hodgeStar hkl).symm x) := by
   simp [vectorFormHodgeStar]
 
+/-- The inverse Hodge star of an `l`-form `G` evaluates on a `k`-vector `y` as `G (⋆y)`. -/
+@[simp]
+theorem vectorFormHodgeStar_symm_apply (hkl : k + l = finrank ℝ E) (G : ⋀[ℝ]^l E →ₗ[ℝ] V)
+    (y : ⋀[ℝ]^k E) : (o.vectorFormHodgeStar hkl).symm G y = G (o.hodgeStar hkl y) := by
+  simp [vectorFormHodgeStar]
+
 /-- The Hodge star of `V`-valued forms commutes with every linear map `T : V → W` of the values. -/
 @[simp]
 theorem vectorFormHodgeStar_comp (hkl : k + l = finrank ℝ E) (T : V →ₗ[ℝ] W)
