@@ -765,4 +765,17 @@ lemma hurewiczHomologyAddEquiv_ofMul_of_mk [PathConnectedSpace X] {x : X} (γ : 
         H₁AddEquivHomology X (loopClass γ) := by
   rw [hurewiczHomologyAddEquiv, AddEquiv.trans_apply, hurewiczAddEquiv_ofMul_of_mk]
 
+/-- Two additive maps out of the first homology group of the singular chain complex of a
+path-connected space agree once they agree on the Hurewicz classes of the loops at `x`. -/
+lemma homology_one_addMonoidHom_ext_of_fundamentalGroup [PathConnectedSpace X] {A : Type*}
+    [AddZeroClass A] (x : X) {f g : ((singularChains ℤ).obj X).homology 1 →+ A}
+    (h : ∀ γ : FundamentalGroup X x,
+      f (hurewiczHomologyAddEquiv x (Additive.ofMul (Group.Abelianization.of γ))) =
+        g (hurewiczHomologyAddEquiv x (Additive.ofMul (Group.Abelianization.of γ)))) :
+    f = g := by
+  refine AddMonoidHom.ext fun y ↦ ?_
+  obtain ⟨a, rfl⟩ := (hurewiczHomologyAddEquiv x).surjective y
+  obtain ⟨γ, rfl⟩ := Group.Abelianization.exists_eq_ofMul_of a
+  exact h γ
+
 end TauCeti.HurewiczOne
