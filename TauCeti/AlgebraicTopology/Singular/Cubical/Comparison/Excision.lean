@@ -56,8 +56,9 @@ of `TauCeti.AlgebraicTopology.Singular.Excision`.
   the subspace.
 * `TopPair.cubicalHomologyδ_homologyπ_cubicalCycleOfCube`: the connecting morphism sends the class
   of a relative cube to the class of its boundary.
-* `TopPair.isIso_cubicalHomologyδ_of_contractibleSpace`: with contractible ambient space, the
-  connecting morphism `Hₘ₊₂(X, A) ⟶ Hₘ₊₁(A)` is an isomorphism.
+* `TopPair.isIso_cubicalHomologyδ_of_contractibleSpace_of_ne_zero`,
+  `TopPair.isIso_cubicalHomologyδ_of_contractibleSpace`: with contractible ambient space, the
+  connecting morphism `Hₘ₊₁(X, A) ⟶ Hₘ(A)` is an isomorphism for `m ≥ 1`.
 * `TopPair.isIso_homologyMap_cubicalChainComplexMap_excisionMap`,
   `TopPair.isIso_homologyMap_cubicalChainComplexMap_excisionMap_compl`: excision.
 
@@ -291,17 +292,22 @@ theorem cubicalHomologyδ_homologyπ_cubicalCycleOfCube {m : ℕ} (c : SingularC
       ((map_cubicalBoundaryChainOfCube k c hc).trans
         (normalizedCubicalChainComplex_obj_d_apply P.fst m _).symm)
 
-/-- If the ambient space of a pair is contractible, the connecting morphism
-`Hₘ₊₂(X, A) ⟶ Hₘ₊₁(A)` of cubical homology is an isomorphism: its neighbours `Hₘ₊₂(X)` and
-`Hₘ₊₁(X)` in the long exact sequence vanish. -/
-instance isIso_cubicalHomologyδ_of_contractibleSpace [ContractibleSpace P.fst] (m : ℕ) :
-    IsIso (P.cubicalHomologyδ k (m + 2) (m + 1)) := by
+/-- If the ambient space of a pair is contractible, the connecting morphism `Hₙ(X, A) ⟶ Hₘ(A)` of
+cubical homology, `m + 1 = n`, is an isomorphism for `m ≠ 0`: its neighbours `Hₙ(X)` and `Hₘ(X)` in
+the long exact sequence vanish. -/
+theorem isIso_cubicalHomologyδ_of_contractibleSpace_of_ne_zero [ContractibleSpace P.fst]
+    {n m : ℕ} (h : m + 1 = n) (hm : m ≠ 0) : IsIso (P.cubicalHomologyδ k n m h) := by
   have hX (n : ℕ) (hn : n ≠ 0) :
       IsZero (((normalizedCubicalChainComplex k).obj P.fst).homology n) :=
     (isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of k k) P.fst hn).of_iso
       (TauCeti.singularCubicalHomologyIso k P.fst n).symm
-  exact (shortExact_cubicalChainComplexShortComplex k P).isIso_δ (m + 2) (m + 1) rfl
-    (hX _ (by lia)) (hX _ (by lia))
+  exact (shortExact_cubicalChainComplexShortComplex k P).isIso_δ n m h (hX n (by lia)) (hX m hm)
+
+/-- If the ambient space of a pair is contractible, the connecting morphism
+`Hₘ₊₂(X, A) ⟶ Hₘ₊₁(A)` of cubical homology is an isomorphism. -/
+instance isIso_cubicalHomologyδ_of_contractibleSpace [ContractibleSpace P.fst] (m : ℕ) :
+    IsIso (P.cubicalHomologyδ k (m + 2) (m + 1)) :=
+  isIso_cubicalHomologyδ_of_contractibleSpace_of_ne_zero k P rfl m.succ_ne_zero
 
 /-! ### Excision -/
 
