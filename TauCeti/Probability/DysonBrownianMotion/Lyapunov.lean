@@ -15,6 +15,8 @@ import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Pow
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Algebra.BigOperators.Field
+import TauCeti.Analysis.Calculus.FDeriv.DiagonalQuadratic
 import TauCeti.Topology.Constructions.Pi
 
 /-!
@@ -25,12 +27,13 @@ generator
 `dysonGenerator β n f x = (β n)⁻¹ ∑ᵢ ∂ᵢ² f x + ∑ᵢ dysonDrift n x i ∂ᵢ f x`,
 the drift term that Itô's formula attaches to `f (X_t)`. This file computes it on the two
 functions that control the particles: the squared norm `∑ᵢ xᵢ²` and the logarithmic Vandermonde
-potential `logVandermonde n x = ∑_{i < j} log (xᵢ - xⱼ)`, the logarithm of the absolute value of
-the Vandermonde determinant. Off the collision hyperplanes, the gradient of `logVandermonde n` is
-`n • dysonDrift n`, and the Calogero–Moser identity `sum_dysonDrift_sq` gives
+potential `logVandermonde n x = ∑_{i < j} log (xᵢ - xⱼ)`, which for distinct coordinates is the
+logarithm of the absolute value of the Vandermonde determinant. Off the collision hyperplanes, the
+gradient of `logVandermonde n` is `n • dysonDrift n`, and the Calogero–Moser identity
+`sum_dysonDrift_sq` gives
 * `dysonGenerator β n (fun y ↦ ∑ i, y i ^ 2) x = n - 1 + 2 / β`;
 * `dysonGenerator β n (logVandermonde n) x = 2 (1 - β⁻¹) n⁻¹ ∑_{i < j} (xᵢ - xⱼ)⁻²`, which is
-  nonnegative exactly in the repulsive regime `β ≥ 1`.
+  nonnegative in the repulsive regime `β ≥ 1`.
 
 Their difference `dysonLyapunov n x = ∑ᵢ xᵢ² - logVandermonde n x` is smooth on the open Weyl
 chamber, its generator is at most `n - 1 + 2 / β` there when `β ≥ 1`, it is bounded below, and its
@@ -125,14 +128,6 @@ theorem hasFDerivAt_dysonDrift_apply {x : Fin n → ℝ} (hx : Function.Injectiv
   exact (hasDerivAt_inv (sub_ne_zero.2 (hx.ne (Finset.ne_of_mem_erase hj).symm))).comp_hasFDerivAt
     (f := fun y : Fin n → ℝ ↦ y i - y j) x
     ((hasFDerivAt_apply (𝕜 := ℝ) i x).sub (hasFDerivAt_apply (𝕜 := ℝ) j x))
-
-/-- The gradient of `∑ᵢ xᵢ²` is `2 x`. -/
-private theorem hasFDerivAt_sum_sq (x : Fin n → ℝ) :
-    HasFDerivAt (fun y : Fin n → ℝ ↦ ∑ i, y i ^ 2)
-      (∑ i, (2 * x i) • (proj i : (Fin n → ℝ) →L[ℝ] ℝ)) x := by
-  refine HasFDerivAt.fun_sum fun i _ ↦ ?_
-  convert (hasFDerivAt_apply (𝕜 := ℝ) i x).pow 2 using 1
-  simp
 
 /-! ### The logarithmic Vandermonde potential -/
 
@@ -252,7 +247,7 @@ theorem dysonGenerator_logVandermonde {x : Fin n → ℝ} (hx : Function.Injecti
       fun _ hy ↦ hasFDerivAt_logVandermonde hy)
     fun i ↦ (hasFDerivAt_dysonDrift_apply hx i).const_mul (n : ℝ)]
   simp_rw [smul_fderiv_dysonDrift_apply_single, Finset.sum_neg_distrib,
-    sum_sum_erase_sub_inv_sq]
+    Finset.sum_sum_erase_sub_inv_sq]
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · simp
   have hn₀ : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn.ne'
