@@ -327,8 +327,8 @@ private theorem exists_isothermal_chart_of_contDiffAt_of_tames {α : ℝ≥0} (h
 /-- Transporting a structure along complex conjugation conjugates it: `v ↦ conj (J (conj v))`. -/
 private theorem transport_conjCLE_apply (J : AlmostComplexStructure ℂ) (v : ℂ) :
     J.transport conjCLE.toLinearEquiv v = conj (J (conj v)) := by
-  have hs : conjCLE.symm = conjCLE :=
-    congrArg LinearIsometryEquiv.toContinuousLinearEquiv conjLIE_symm
+  have hs : conjCLE.symm = conjCLE := by
+    rw [← conjLIE_toCLE, ← LinearIsometryEquiv.toContinuousLinearEquiv_symm, conjLIE_symm]
   rw [AlmostComplexStructure.transport_apply, ContinuousLinearEquiv.coe_symm_toLinearEquiv, hs,
     ContinuousLinearEquiv.coe_toLinearEquiv, conjCLE_apply, conjCLE_apply]
 
@@ -394,7 +394,7 @@ theorem exists_isothermal_chart_of_contDiffAt {α : ℝ≥0} (hα0 : 0 < α) (h�
   · exact exists_isothermal_chart_of_contDiffAt_of_tames hα0 hα1 hJ hJc
   -- Otherwise the conjugated field `J'` is `C¹` and tame at `conj c`.
   set σ : ℂ ≃L[ℝ] ℂ := conjCLE
-  have hσc : σ (σ c) = c := conj_conj c
+  have hσc : σ (σ c) = c := by simp only [σ, conjCLE_apply, conj_conj]
   set J' : ℂ → AlmostComplexStructure ℂ := fun z ↦ (J (conj z)).transport σ.toLinearEquiv
   have hJ'eq : (fun z ↦ LinearMap.toContinuousLinearMap (J' z).toLinearMap) = fun z ↦
       (σ : ℂ →L[ℝ] ℂ) ∘L LinearMap.toContinuousLinearMap (J (σ z)).toLinearMap ∘L
