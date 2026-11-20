@@ -246,8 +246,8 @@ theorem glue_apply_top (B : HalfDiagram n k) (T : HalfDiagram m k) (j : Fin m) :
 
 /-- Cutting the bottom of a glued matching recovers the first half-diagram. -/
 @[simp]
-theorem bottomHalf_glue_val (B : HalfDiagram n k) (T : HalfDiagram m k) :
-    (TLDiagram.mk (B.glue T) 0).bottomHalf.val = B.val := by
+theorem bottomHalf_glue_val (B : HalfDiagram n k) (T : HalfDiagram m k) {c : ℕ} :
+    (TLDiagram.mk (B.glue T) c).bottomHalf.val = B.val := by
   apply Equiv.ext
   intro i
   rw [TLDiagram.bottomHalf_apply, glue_apply_bottom]
@@ -261,8 +261,8 @@ theorem bottomHalf_glue_val (B : HalfDiagram n k) (T : HalfDiagram m k) :
 
 /-- Cutting the top of a glued matching recovers the second half-diagram. -/
 @[simp]
-theorem topHalf_glue_val (B : HalfDiagram n k) (T : HalfDiagram m k) :
-    (TLDiagram.mk (B.glue T) 0).topHalf.val = T.val := by
+theorem topHalf_glue_val (B : HalfDiagram n k) (T : HalfDiagram m k) {c : ℕ} :
+    (TLDiagram.mk (B.glue T) c).topHalf.val = T.val := by
   apply Equiv.ext
   intro j
   apply Fin.ext
@@ -282,11 +282,24 @@ theorem topHalf_glue_val (B : HalfDiagram n k) (T : HalfDiagram m k) :
 
 /-- The through strands of a glued matching are precisely the joined defects. -/
 @[simp]
-theorem through_glue (B : HalfDiagram n k) (T : HalfDiagram m k) :
-    (TLDiagram.mk (B.glue T) 0).through = k := by
-  have h := (TLDiagram.mk (B.glue T) 0).bottomHalf.property.2
+theorem through_glue (B : HalfDiagram n k) (T : HalfDiagram m k) {c : ℕ} :
+    (TLDiagram.mk (B.glue T) c).through = k := by
+  have h := (TLDiagram.mk (B.glue T) c).bottomHalf.property.2
   rw [bottomHalf_glue_val, B.property.2] at h
   exact h.symm
+
+/-- Gluing the identity half-diagram to itself yields the fully nested matching. -/
+@[simp]
+theorem id_glue_id (k : ℕ) : (HalfDiagram.id k).glue (HalfDiagram.id k) = PlanarMatching.nested k :=
+  (TLDiagram.matching_eq_of_halves (D := ⟨(HalfDiagram.id k).glue (HalfDiagram.id k), 0⟩)
+    (E := TLDiagram.id k) (by simp) (by simp)).trans (TLDiagram.matching_id k)
+
+/-- Gluing the bottom and top half-diagrams of `D` recovers `D.matching`. -/
+@[simp]
+theorem _root_.TauCeti.TLDiagram.glue_bottomHalf_topHalf (D : TLDiagram n m) :
+    D.bottomHalf.glue D.topHalf = D.matching :=
+  TLDiagram.matching_eq_of_halves (D := ⟨D.bottomHalf.glue D.topHalf, 0⟩) (E := D)
+    (D.bottomHalf.bottomHalf_glue_val D.topHalf) (D.bottomHalf.topHalf_glue_val D.topHalf)
 
 /-- Gluing halves with a cap on the last two points joins the remaining two defects in
 order; cyclic top labels run in the opposite direction. -/

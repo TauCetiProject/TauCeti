@@ -52,6 +52,8 @@ are therefore indexed by the image `RootPairing.foldedIndices P σ`, a finite se
   each orbit sum is fixed by `σ`.
 * `RootPairing.orbitSum_reflectionPerm_self`: the orbit sum of a negated root is the negated
   orbit sum.
+* `RootPairing.mem_support_iff_of_mem_orbitIndices`: for an automorphism permuting the simple roots
+  of a base, a root orbit either consists entirely of simple roots or contains none.
 * `RootPairing.orbitSum_mem_posRootCone` and `RootPairing.orbitSum_ne_zero`: for an automorphism
   permuting the simple roots of a base, the orbit sum of a positive root is a natural combination
   of simple roots, and no orbit sum vanishes (`RootPairing.zero_notMem_foldedIndices`).
@@ -282,12 +284,12 @@ section Base
 
 variable {P σ i} {b : P.Base}
 
-/-- For an automorphism permuting the simple roots of `b`, the orbit of a simple root consists of
-simple roots. -/
-theorem mem_support_of_mem_orbitIndices (hσ : ∀ k ∈ b.support, σ.indexEquiv k ∈ b.support)
-    {s k : ι} (hs : s ∈ b.support) (hk : k ∈ P.orbitIndices σ s) : k ∈ b.support := by
-  obtain ⟨m, rfl⟩ := mem_orbitIndices_iff_exists_pow.mp hk
-  exact (Set.MapsTo.perm_pow (s := (↑b.support : Set ι)) hσ m) hs
+/-- For an automorphism permuting the simple roots of `b`, a `σ`-orbit either consists entirely of
+simple roots or contains none. -/
+theorem mem_support_iff_of_mem_orbitIndices (hσ : ∀ k ∈ b.support, σ.indexEquiv k ∈ b.support)
+    (h : j ∈ P.orbitIndices σ i) : j ∈ b.support ↔ i ∈ b.support :=
+  Iff.of_eq ((mem_orbitIndices.mp h).apply_eq_of_apply_eq (f := (· ∈ b.support)) fun z ↦
+    propext (b.mem_support_indexEquiv_iff hσ z)).symm
 
 variable [CharZero R]
 

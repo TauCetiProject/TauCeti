@@ -102,8 +102,8 @@ private theorem apply_eq_of_mem_orbitIndices {X : Type*} {f : ι → X}
   | succ m ih =>
     have hm : (σ.indexEquiv ^ m) i ∈ P.orbitIndices σ i :=
       mem_orbitIndices_iff_exists_pow.mpr ⟨m, rfl⟩
-    rw [pow_succ', Equiv.Perm.mul_apply, hf _ (mem_support_of_mem_orbitIndices hσ hi hm),
-      ih hm]
+    rw [pow_succ', Equiv.Perm.mul_apply,
+      hf _ ((mem_support_iff_of_mem_orbitIndices hσ hm).mpr hi), ih hm]
 
 /-- The simple indices whose orbit is the orbit of a simple index `i` form exactly that orbit. -/
 private theorem filter_orbitIndices_eq [DecidableEq ι]
@@ -111,7 +111,7 @@ private theorem filter_orbitIndices_eq [DecidableEq ι]
     {j ∈ b.support | P.orbitIndices σ j = P.orbitIndices σ i} = P.orbitIndices σ i := by
   ext j
   refine ⟨fun hj ↦ ?_, fun hj ↦ mem_filter.mpr
-    ⟨mem_support_of_mem_orbitIndices hσ hi hj, orbitIndices_eq_of_mem hj⟩⟩
+    ⟨(mem_support_iff_of_mem_orbitIndices hσ hj).mpr hi, orbitIndices_eq_of_mem hj⟩⟩
   rw [← (mem_filter.mp hj).2]
   exact self_mem_orbitIndices P σ j
 
@@ -148,7 +148,8 @@ theorem span_orbitSum_support (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.
     refine Submodule.mem_inf.mpr ⟨?_, (restrictScalars_mem ..).mpr
       (orbitSum_mem_fixedSubmodule P σ i)⟩
     rw [orbitSum_def]
-    exact sum_mem fun k hk ↦ subset_span ⟨k, mem_support_of_mem_orbitIndices hσ hi hk, rfl⟩
+    exact sum_mem fun k hk ↦
+      subset_span ⟨k, (mem_support_iff_of_mem_orbitIndices hσ hk).mpr hi, rfl⟩
   obtain ⟨c, rfl⟩ := (mem_span_image_finset_iff_exists_fun' A).mp hx
   refine sum_smul_root_mem_span_orbitSum hσ fun j hj ↦
     apply_indexEquiv_eq_of_weightMap_sum_smul_root_eq (f := fun j ↦ algebraMap A R (c j)) hσ ?_ hj

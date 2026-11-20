@@ -333,6 +333,17 @@ theorem thomPairOverIso_inv_snd_apply (p : (prodThomPair W F).snd) :
   (congrArg Subtype.val ((TopPair.Hom.w_apply (e.thomPairOverIso R hW).inv p).trans
     (e.thomPairOverIso_inv_fst_apply R hW p.1)) :)
 
+/-- The trivialization isomorphism `(E|_W, E₀|_W) ≅ (W × F, W × (F ∖ {0}))` commutes with the
+projections `TauCeti.thomPairOverProj` and `TauCeti.prodThomPairProj` onto `W`. -/
+@[reassoc]
+theorem thomPairOverIso_hom_fst_comp_prodThomPairProj
+    [∀ b, TopologicalSpace (E b)] [FiberBundle F E] :
+    TopPair.Hom.fst (e.thomPairOverIso R hW).hom ≫ prodThomPairProj W F =
+      thomPairOverProj F E W := by
+  refine TopCat.ext fun v ↦ (TopCat.comp_app _ _ v).trans ?_
+  exact (congrArg (prodThomPairProj W F) (e.thomPairOverIso_hom_fst_apply R hW v)).trans
+    ((prodThomPairProj_apply F _).trans (thomPairOverProj_apply F E v).symm)
+
 end ThomPairOver
 
 section ThomPairOverFiber
