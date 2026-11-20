@@ -44,7 +44,8 @@ closed-loop analogue of the fixed-endpoint discrete energy `TauCeti.discreteEner
 * **Subdivision.** Repeating the base vertex, the embedding `ιⁿ` of the distance cuts
   (`TauCeti.cyclicDistanceCutRepeatFirst`), preserves the energy for any step of the new edge of
   length zero (`TauCeti.cyclicDiscreteEnergy_cons_self`), and so maps energy carriers into each
-  other by an embedding (`TauCeti.cyclicDiscreteEnergyRepeatFirst`). Forgetting vertices, with the
+  other by an embedding (`TauCeti.cyclicDiscreteEnergyRepeatFirst`), closed when `X` is Hausdorff
+  (`TauCeti.isClosedEmbedding_cyclicDiscreteEnergyRepeatFirst`). Forgetting vertices, with the
   steps of the coarse edges the sums of the fine steps they span, does not increase the energy
   (`TauCeti.cyclicDiscreteEnergy_cyclicDiscreteEnergyForget_le`), the induced maps of carriers
   compose (`TauCeti.cyclicDiscreteEnergyForgetMap_trans`), and in a geodesic space every
@@ -312,6 +313,31 @@ continuous left inverse on tuples. -/
 theorem isEmbedding_cyclicDiscreteEnergyRepeatFirst (τ : Fin (n + 1) → ℝ) (s c : ℝ) :
     Topology.IsEmbedding (cyclicDiscreteEnergyRepeatFirst (X := X) τ s c) :=
   isEmbedding_cons_apply_zero.restrict fun q hq ↦ (cyclicDiscreteEnergyRepeatFirst τ s c ⟨q, hq⟩).2
+
+/-- The range of the map repeating the base vertex: the closed chains of the target carrier whose
+first two vertices agree. Their tails automatically lie in the source carrier, since repeating the
+base vertex preserves the energy. -/
+theorem range_cyclicDiscreteEnergyRepeatFirst (τ : Fin (n + 1) → ℝ) (s c : ℝ) :
+    range (cyclicDiscreteEnergyRepeatFirst (X := X) τ s c) = Subtype.val ⁻¹' {p | p 1 = p 0} := by
+  ext ⟨p, hp⟩
+  constructor
+  · rintro ⟨q, hq⟩
+    rw [← hq]
+    simp [Fin.cons_one]
+  · intro h01
+    have hp' : p = Fin.cons (Fin.tail p 0) (Fin.tail p) := by
+      rw [show Fin.tail p 0 = p 0 from h01, Fin.cons_self_tail]
+    refine ⟨⟨Fin.tail p, ?_⟩, Subtype.ext ?_⟩
+    · rw [mem_cyclicDiscreteEnergyStrictSublevel, ← cyclicDiscreteEnergy_cons_self τ s, ← hp']
+      exact hp
+    · rw [coe_cyclicDiscreteEnergyRepeatFirst_apply, ← hp']
+
+/-- In a Hausdorff space, repeating the base vertex is a closed embedding of energy carriers. -/
+theorem isClosedEmbedding_cyclicDiscreteEnergyRepeatFirst [T2Space X] (τ : Fin (n + 1) → ℝ)
+    (s c : ℝ) : Topology.IsClosedEmbedding (cyclicDiscreteEnergyRepeatFirst (X := X) τ s c) := by
+  refine ⟨isEmbedding_cyclicDiscreteEnergyRepeatFirst τ s c, ?_⟩
+  rw [range_cyclicDiscreteEnergyRepeatFirst]
+  exact (isClosed_eq (continuous_apply 1) (continuous_apply 0)).preimage continuous_subtype_val
 
 /-! ### Forgetting and inserting vertices -/
 
