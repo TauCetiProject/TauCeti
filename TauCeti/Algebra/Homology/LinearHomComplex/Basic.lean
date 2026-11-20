@@ -40,6 +40,9 @@ complexes.
   `CochainComplex.HomComplex.Cochain.v_apply_mem_ker_of_δ_eq_zero`: element-level formulas for the
   differential of a cochain of complexes of modules on an element killed by the source
   differential, and the resulting behaviour of closed degree-zero cochains on kernels.
+* `CochainComplex.HomComplex.Cochain.smul_linearHomComplex_v` and
+  `CochainComplex.HomComplex.Cochain.zsmul_linearHomComplex_v`: the components of a scalar multiple
+  of an element of the `R`-linear Hom complex.
 * `CochainComplex.HomComplex.Cochain.ext_linearHomComplex`: a cochain from a complex of modules
   to the Hom complex of two complexes of modules is determined by its values on pairs of elements.
 
@@ -239,6 +242,33 @@ theorem v_apply_mem_ker_of_δ_eq_zero {R : Type*} [Ring R] {K L : CochainComplex
   simpa only [δ_zero_cochain_v, Cochain.zero_v, ModuleCat.hom_sub, ModuleCat.hom_comp,
     LinearMap.sub_apply, LinearMap.comp_apply, ha, map_zero, sub_zero, ModuleCat.hom_zero,
     LinearMap.zero_apply, LinearMap.mem_ker] using key
+
+section LinearHomComplexSMul
+
+variable {R : Type w} [Ring R] {C : Type u} [Category.{v} C] [Preadditive C] [Linear R C]
+  {F G : CochainComplex C ℤ} {q : ℤ}
+
+/- The scalar actions of `R` and `ℤ` on the `ModuleCat` carrier of the Hom complex agree with the
+`SMul` instances of `Cochain` only up to unfolding instances, so `Cochain.smul_v` does not fire on
+them under `rw` or `simp`.  The next two restatements are proved by `Cochain.smul_v` itself. -/
+
+/-- A scalar multiple of an element of the `R`-linear Hom complex has the scaled components. -/
+@[simp]
+lemma smul_linearHomComplex_v (r : R) (z : (linearHomComplex R F G).X q) (a b : ℤ)
+    (hab : a + q = b) :
+    ((r • z : (linearHomComplex R F G).X q) : Cochain F G q).v a b hab =
+      r • (z : Cochain F G q).v a b hab :=
+  Cochain.smul_v r z a b hab
+
+/-- An integer multiple of an element of the `R`-linear Hom complex has the scaled components. -/
+@[simp]
+lemma zsmul_linearHomComplex_v (k : ℤ) (z : (linearHomComplex R F G).X q) (a b : ℤ)
+    (hab : a + q = b) :
+    ((k • z : (linearHomComplex R F G).X q) : Cochain F G q).v a b hab =
+      k • (z : Cochain F G q).v a b hab :=
+  Cochain.smul_v k z a b hab
+
+end LinearHomComplexSMul
 
 /-- Two cochains from `K` to the `R`-linear Hom complex of `L` and `M`, for complexes of modules,
 agree as soon as their values agree on all pairs of elements. -/

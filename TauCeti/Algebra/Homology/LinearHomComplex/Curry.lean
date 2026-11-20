@@ -101,21 +101,6 @@ lemma curry_v_hom_apply_v_hom_apply (w : Cochain (K ⊗ L) M n) {p q : ℤ} (hpq
   subst hi
   rfl
 
-/- The scalar actions of `R` and `ℤ` on the `ModuleCat` carrier of the Hom complex agree with the
-`SMul` instances of `Cochain` only up to unfolding instances, so `Cochain.smul_v` does not fire on
-them under `rw` or `simp`.  These two restatements are proved by `Cochain.smul_v` itself. -/
-private lemma smul_linearHomComplex_v {q : ℤ} (r : R) (z : (linearHomComplex R L M).X q)
-    (a b : ℤ) (hab : a + q = b) :
-    ((r • z : (linearHomComplex R L M).X q) : Cochain L M q).v a b hab =
-      r • (z : Cochain L M q).v a b hab :=
-  Cochain.smul_v r z a b hab
-
-private lemma zsmul_linearHomComplex_v {q : ℤ} (k : ℤ) (z : (linearHomComplex R L M).X q)
-    (a b : ℤ) (hab : a + q = b) :
-    ((k • z : (linearHomComplex R L M).X q) : Cochain L M q).v a b hab =
-      k • (z : Cochain L M q).v a b hab :=
-  Cochain.smul_v k z a b hab
-
 /-- The component `x ⊗ y ↦ z(x)(y)` of the uncurried cochain on the summand `K^p ⊗ L^a`. -/
 private def uncurryAux (z : Cochain K (linearHomComplex R L M) n) (p a j : ℤ)
     (h : p + a + n = j) : K.X p ⊗ L.X a ⟶ M.X j :=
@@ -184,6 +169,50 @@ lemma curry_zero : (0 : Cochain (K ⊗ L) M n).curry = 0 :=
 @[simp]
 lemma uncurry_zero : (0 : Cochain K (linearHomComplex R L M) n).uncurry = 0 :=
   (curryLinearEquiv R K L M n).symm.map_zero
+
+@[simp]
+lemma curry_add (w w' : Cochain (K ⊗ L) M n) : (w + w').curry = w.curry + w'.curry :=
+  (curryLinearEquiv R K L M n).map_add w w'
+
+@[simp]
+lemma uncurry_add (z z' : Cochain K (linearHomComplex R L M) n) :
+    (z + z').uncurry = z.uncurry + z'.uncurry :=
+  (curryLinearEquiv R K L M n).symm.map_add z z'
+
+@[simp]
+lemma curry_neg (w : Cochain (K ⊗ L) M n) : (-w).curry = -w.curry :=
+  (curryLinearEquiv R K L M n).map_neg w
+
+@[simp]
+lemma uncurry_neg (z : Cochain K (linearHomComplex R L M) n) : (-z).uncurry = -z.uncurry :=
+  (curryLinearEquiv R K L M n).symm.map_neg z
+
+@[simp]
+lemma curry_sub (w w' : Cochain (K ⊗ L) M n) : (w - w').curry = w.curry - w'.curry :=
+  (curryLinearEquiv R K L M n).map_sub w w'
+
+@[simp]
+lemma uncurry_sub (z z' : Cochain K (linearHomComplex R L M) n) :
+    (z - z').uncurry = z.uncurry - z'.uncurry :=
+  (curryLinearEquiv R K L M n).symm.map_sub z z'
+
+@[simp]
+lemma curry_smul (r : R) (w : Cochain (K ⊗ L) M n) : (r • w).curry = r • w.curry :=
+  (curryLinearEquiv R K L M n).map_smul r w
+
+@[simp]
+lemma uncurry_smul (r : R) (z : Cochain K (linearHomComplex R L M) n) :
+    (r • z).uncurry = r • z.uncurry :=
+  (curryLinearEquiv R K L M n).symm.map_smul r z
+
+@[simp]
+lemma curry_zsmul (k : ℤ) (w : Cochain (K ⊗ L) M n) : (k • w).curry = k • w.curry :=
+  map_zsmul (curryLinearEquiv R K L M n) k w
+
+@[simp]
+lemma uncurry_zsmul (k : ℤ) (z : Cochain K (linearHomComplex R L M) n) :
+    (k • z).uncurry = k • z.uncurry :=
+  map_zsmul (curryLinearEquiv R K L M n).symm k z
 
 /-- Currying commutes with the differentials of the Hom complexes. -/
 lemma δ_curry (w : Cochain (K ⊗ L) M n) (m : ℤ) : δ n m w.curry = (δ n m w).curry := by
@@ -376,9 +405,11 @@ lemma ofHom_linearHomComplexHomEquiv_symm (g : K ⟶ linearHomComplex R L M) :
   simp [linearHomComplexHomEquiv]
 
 /-- The curried morphism sends `x` of degree `p` to the cochain `y ↦ f (x ⊗ y)`. -/
+@[simp]
 lemma linearHomComplexHomEquiv_f_hom_apply_v_hom_apply (f : K ⊗ L ⟶ M) {p : ℤ} (x : K.X p)
     {a b : ℤ} (hab : a + p = b) (y : L.X a) :
-    ((((linearHomComplexHomEquiv K L M f).f p).hom x : Cochain L M p).v a b hab).hom y =
+    (dsimp% only [linearHomComplex_X]
+      ((((linearHomComplexHomEquiv K L M f).f p).hom x : Cochain L M p).v a b hab).hom y) =
       (f.f b).hom ((ιTensorObj K L p a b (by omega)).hom (x ⊗ₜ y)) := by
   have h := Cochain.congr_v (ofHom_linearHomComplexHomEquiv f) p p (add_zero p)
   rw [Cochain.ofHom_v] at h
