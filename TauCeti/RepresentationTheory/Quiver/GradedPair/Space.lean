@@ -92,7 +92,7 @@ theorem mem_grade_iff {a : ℤ} {v : S.Carrier} : v ∈ S.grade a ↔ ∀ i, S.d
 
 /-- The basis vector of a coordinate lies in the grade of that coordinate's degree. -/
 theorem single_mem_grade (i : Fin S.n) (x : ℂ) : Pi.single i x ∈ S.grade (S.degree i) := by
-  intro j hj
+  refine mem_grade_iff.2 fun j hj ↦ ?_
   rw [Pi.single_eq_of_ne fun h ↦ hj (congrArg S.degree h)]
 
 /-- The degree-`a` piece is spanned by the standard basis vectors of the coordinates of
@@ -119,7 +119,8 @@ theorem finrank_grade (a : ℤ) :
 
 /-- A grade is zero exactly when no coordinate has that degree. -/
 theorem grade_eq_bot_iff (a : ℤ) : S.grade a = ⊥ ↔ ∀ i, S.degree i ≠ a := by
-  refine ⟨fun h i hi ↦ ?_, fun h ↦ (Submodule.eq_bot_iff _).2 fun v hv ↦ funext fun i ↦ hv i (h i)⟩
+  refine ⟨fun h i hi ↦ ?_, fun h ↦
+    (Submodule.eq_bot_iff _).2 fun v hv ↦ funext fun i ↦ mem_grade_iff.1 hv i (h i)⟩
   have hmem := hi ▸ S.single_mem_grade i 1
   rw [h, Submodule.mem_bot] at hmem
   simpa using congrFun hmem i
@@ -147,7 +148,7 @@ theorem degree_constant (n : ℕ) (a : ℤ) (i : Fin (constant n a).n) :
 /-- The constant presentation in degree `a` is concentrated in degree `a`. -/
 @[simp]
 theorem grade_constant_self (n : ℕ) (a : ℤ) : (constant n a).grade a = ⊤ :=
-  eq_top_iff.2 fun _ _ _ hi ↦ absurd rfl hi
+  eq_top_iff.2 fun _ _ ↦ mem_grade_iff.2 fun _ hi ↦ absurd rfl hi
 
 /-- The constant presentation in degree `a` vanishes in every other degree. -/
 @[simp]
