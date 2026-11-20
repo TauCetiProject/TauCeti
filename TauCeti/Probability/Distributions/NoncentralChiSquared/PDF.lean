@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.NoncentralChiSquared.Basic
-public import TauCeti.Analysis.SpecialFunctions.BesselI
+public import TauCeti.Analysis.SpecialFunctions.Bessel.I
 
 /-!
 # Densities of noncentral chi-squared laws

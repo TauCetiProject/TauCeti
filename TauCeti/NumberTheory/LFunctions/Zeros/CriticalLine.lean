@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Meromorphic.Counting.Certificate
-public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta
+public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Basic
 
 /-!
 # Zeros on the critical line

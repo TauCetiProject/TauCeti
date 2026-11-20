@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 public import TauCeti.RepresentationTheory.Induction.Permutation
-public import TauCeti.RepresentationTheory.Symmetric.YoungSubgroup
+public import TauCeti.RepresentationTheory.Symmetric.YoungSubgroup.Basic
 
 /-!
 # Young permutation modules

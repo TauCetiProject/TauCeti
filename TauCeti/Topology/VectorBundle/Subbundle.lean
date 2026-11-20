@@ -109,16 +109,23 @@ def subbundleTopology {F' : Type*} (V : Π x, Submodule 𝕜 (E x)) :
     TopologicalSpace (TotalSpace F' fun x ↦ V x) :=
   .induced (fun p ↦ (⟨p.proj, p.2⟩ : TotalSpace F E)) inferInstance
 
+omit [TopologicalSpace B] [TopologicalSpace (TotalSpace F E)] in
+/-- The inclusion of the total space of a family of subspaces of the fibres of `E` into the total
+space of `E` is injective. No topology is involved. -/
+theorem injective_totalSpace_subbundle (F' : Type*) (V : Π x, Submodule 𝕜 (E x)) :
+    Injective fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.2⟩ : TotalSpace F E) := by
+  rintro ⟨x, v⟩ ⟨y, w⟩ h
+  obtain rfl : x = y := congrArg TotalSpace.proj h
+  exact congrArg (TotalSpace.mk x) (Subtype.ext (TotalSpace.mk_inj.mp h))
+
 omit [TopologicalSpace B] in
 /-- The total space of a family of subspaces of the fibres of `E` is embedded in the total space
 of `E`. -/
 theorem isEmbedding_totalSpace_subbundle (F' : Type*) (V : Π x, Submodule 𝕜 (E x)) :
     letI := subbundleTopology F (F' := F') V
-    IsEmbedding fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.2⟩ : TotalSpace F E) := by
+    IsEmbedding fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.2⟩ : TotalSpace F E) :=
   let := subbundleTopology F (F' := F') V
-  refine ⟨⟨rfl⟩, fun ⟨x, v⟩ ⟨y, w⟩ h ↦ ?_⟩
-  obtain rfl : x = y := congrArg TotalSpace.proj h
-  exact congrArg (TotalSpace.mk x) (Subtype.ext (TotalSpace.mk_inj.mp h))
+  ⟨⟨rfl⟩, injective_totalSpace_subbundle F F' V⟩
 
 variable [TopologicalSpace F] [∀ x, TopologicalSpace (E x)] [FiberBundle F E]
 
@@ -291,6 +298,18 @@ theorem trivOperator_apply {y₀ y : B} (hy : y ∈ (trivializationAt F E y₀).
   have h := (trivializationAt F E y₀).continuousLinearMapAt_apply_of_mem (R := 𝕜) hy
   simp only [trivOperator, FunLike.coe_sum, Finset.sum_apply,
     ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.proj_apply, ← h, map_sum, map_smul]
+
+/-- A functional `c` on the model fibre that kills the frame read in the trivialization at `y₀`
+vanishes on `V y` once pulled back through that trivialization. -/
+theorem apply_continuousLinearMapAt_eq_zero (hX : IsSubbundleFrameOn F V X U) {y₀ y : B}
+    (hyU : y ∈ U) (hy : y ∈ (trivializationAt F E y₀).baseSet) {c : F →L[𝕜] 𝕜}
+    (hc : c ∘L trivOperator 𝕜 F X y₀ y = 0) {v : E y} (hv : v ∈ V y) :
+    c ((trivializationAt F E y₀).continuousLinearMapAt 𝕜 y v) = 0 := by
+  rw [← hX.span_eq hyU] at hv
+  obtain ⟨a, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun 𝕜).mp hv
+  rw [(trivializationAt F E y₀).continuousLinearMapAt_apply_of_mem (R := 𝕜) hy,
+    ← trivOperator_apply hy]
+  exact DFunLike.congr_fun hc a
 
 omit [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)] [VectorBundle 𝕜 F E] in
 /-- A family of sections `X i` of `E` that are continuous at `y₀`, read in the trivialization of
