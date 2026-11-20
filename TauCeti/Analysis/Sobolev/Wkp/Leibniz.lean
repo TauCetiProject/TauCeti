@@ -44,7 +44,7 @@ Such a `w` also exists in `W^{k,p}(Ω)` whenever `ζ` is `Cᵏ` on a set of uniq
 differentiability, for instance an open set, containing the compact set `closure Ω`
 (`TauCeti.Wkp.exists_value_ae_eq_mul_of_contDiffOn`), for every `1 ≤ p ≤ ∞`. The factor need
 not be differentiable away from `closure Ω`: this is the form in which the derivatives of a
-coefficient field of class `Cᵏ` on a larger domain act on Sobolev functions on a compactly
+coefficient field of class `C^{k+1}` on a larger domain act on Sobolev functions on a compactly
 contained subdomain. On an arbitrary open `Ω`, such a `w` exists in `W^{k,p}(Ω)` whenever `ζ` has
 compact support (`TauCeti.Wkp.exists_value_ae_eq_mul_of_hasCompactSupport`); the support may meet
 `∂Ω`, which is the situation of a cutoff near a boundary point.
