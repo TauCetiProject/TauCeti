@@ -120,12 +120,8 @@ private theorem isHermitian_graphSymm (Ψ : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
 
 private theorem graphSymm_mul {Ψ : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hΨ : Ψ ∈ symplecticGroup n ℝ)
     (h : IsUnit (Ψ + 1).det) : graphSymm Ψ * (Ψ + 1) = -(J n ℝ * (Ψ - 1)) := by
-  have hD : Ψᵀ * J n ℝ - J n ℝ * Ψ = (Ψ + 1)ᵀ * -(J n ℝ * (Ψ - 1)) := by
-    rw [transpose_add, transpose_one]
-    simp only [Matrix.add_mul, Matrix.mul_neg, Matrix.mul_sub, Matrix.one_mul, Matrix.mul_one,
-      ← Matrix.mul_assoc, SymplecticGroup.mem_iff'.1 hΨ]
-    abel
-  rw [graphSymm, Matrix.mul_assoc, nonsing_inv_mul _ h, Matrix.mul_one, hD, ← Matrix.mul_assoc,
+  rw [graphSymm, Matrix.mul_assoc, nonsing_inv_mul _ h, Matrix.mul_one,
+    transpose_mul_J_sub_J_mul_eq_transpose_mul_neg_J_mul hΨ, ← Matrix.mul_assoc,
     ← transpose_mul, mul_nonsing_inv _ h, transpose_one, Matrix.one_mul]
 
 private theorem signature_graphSymm {Ψ : Matrix (n ⊕ n) (n ⊕ n) ℝ} (h : IsUnit (Ψ + 1).det) :
