@@ -39,6 +39,7 @@ between `Lp ℝ p μ` and `Lp 𝕜 p μ`.
 * `MeasureTheory.Lp.coeFn_add_ae_eq_of_ae_eq`, `MeasureTheory.Lp.coeFn_sub_ae_eq_of_ae_eq`,
   `MeasureTheory.Lp.coeFn_neg_ae_eq_of_ae_eq`, `MeasureTheory.Lp.coeFn_smul_ae_eq_of_ae_eq`: if
   `⇑u =ᵐ[μ] g` and `⇑v =ᵐ[μ] h`, then `⇑(u + v) =ᵐ[μ] g + h`, and similarly for `-` and `•`.
+* `ContinuousLinearMap.compLpL_comp`: postcomposition preserves semilinear composition.
 * `ContinuousLinearMap.compLpL_apply`: the bundled composition applied to `f` is `L.compLp f`.
 * `LinearIsometry.toContinuousLinearMap_compLpₗᵢ`: postcomposition of `Lp` classes by a
   semilinear isometry (`LinearIsometry.compLpₗᵢ`) underlies `ContinuousLinearMap.compLpL`.
@@ -109,6 +110,29 @@ variable {α E F 𝕜 𝕜' : Type*} {_ : MeasurableSpace α} {μ : Measure α} 
 theorem compLpL_apply [Fact (1 ≤ p)] (L : E →SL[σ] F) (f : Lp E p μ) :
     L.compLpL p μ f = L.compLp f :=
   rfl
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+open MeasureTheory
+
+variable {α 𝕜 𝕜' 𝕜'' E F G : Type*} [MeasurableSpace α]
+  [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] [NontriviallyNormedField 𝕜'']
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜' F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜'' G]
+  {σ : 𝕜 →+* 𝕜'} {τ : 𝕜' →+* 𝕜''} {ρ : 𝕜 →+* 𝕜''}
+  [RingHomIsometric σ] [RingHomIsometric τ] [RingHomIsometric ρ]
+  [RingHomCompTriple σ τ ρ] {μ : Measure α} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- Postcomposition of `Lp` classes preserves composition of continuous semilinear maps. -/
+theorem compLpL_comp (g : F →SL[τ] G) (f : E →SL[σ] F) (u : Lp E p μ) :
+    g.compLpL p μ (f.compLpL p μ u) = (g.comp f).compLpL p μ u := by
+  apply Lp.ext
+  filter_upwards [g.coeFn_compLpL (f.compLpL p μ u), f.coeFn_compLpL u,
+    (g.comp f).coeFn_compLpL u] with x hg hf hgf
+  simp only [hg, hf, hgf, ContinuousLinearMap.comp_apply]
 
 end ContinuousLinearMap
 

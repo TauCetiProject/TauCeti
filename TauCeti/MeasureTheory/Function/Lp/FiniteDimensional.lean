@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+public import TauCeti.MeasureTheory.Function.Lp.Basic
 public import TauCeti.Analysis.Normed.Operator.Compact.Pi
 
 /-!
@@ -24,6 +24,24 @@ its scalar projections is compact
 public section
 
 open MeasureTheory
+
+namespace ContinuousLinearMap
+
+variable {α 𝕜 F : Type*} [MeasurableSpace α] [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {μ : Measure α} {p : ENNReal} [Fact (1 ≤ p)]
+
+/-- A scalar functional after rank-one `Lp` reconstruction is scalar multiplication. -/
+theorem compLpL_toSpanSingleton (ℓ : F →L[𝕜] 𝕜) (v : F) (u : Lp 𝕜 p μ) :
+    ℓ.compLpL p μ ((ContinuousLinearMap.toSpanSingleton 𝕜 v).compLpL p μ u) = ℓ v • u := by
+  apply Lp.ext
+  filter_upwards [ℓ.coeFn_compLpL
+    ((ContinuousLinearMap.toSpanSingleton 𝕜 v).compLpL p μ u),
+    (ContinuousLinearMap.toSpanSingleton 𝕜 v).coeFn_compLpL u,
+    Lp.coeFn_smul (ℓ v) u] with x hℓ hv hs
+  simp only [hℓ, hv, hs, ContinuousLinearMap.toSpanSingleton_apply, map_smul,
+    Pi.smul_apply, smul_eq_mul, mul_comm]
+
+end ContinuousLinearMap
 
 variable {α 𝕜 F ι : Type*} [MeasurableSpace α]
   [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]

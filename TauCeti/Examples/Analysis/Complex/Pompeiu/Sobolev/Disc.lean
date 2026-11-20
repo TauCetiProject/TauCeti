@@ -9,7 +9,19 @@ public import TauCeti.Analysis.Complex.Pompeiu.Sobolev.Comparison
 public import TauCeti.Analysis.Complex.Pompeiu.Disc.Lp
 public import Mathlib.Tactic.NormNum
 
-/-! # Disc indicators, product norms and degenerate Cauchy graphs -/
+/-!
+# Disc indicators, product norms and degenerate Cauchy graphs
+
+The unit-disc indicator has a Cauchy integral equal to `conj w` inside the disc and `w⁻¹`
+outside. Its bounded-disc Sobolev graph is defined at every finite `1 < p < ∞`, whereas
+its Cauchy integral is not globally `Lᵖ` when `p ≤ 2`. Its Beurling field has zero interior
+and the negative reciprocal-square tail. The examples instantiate the constructed operators
+at `p = 4/3, 2, 3` and separate a.e. graph representatives from pointwise integral formulas.
+
+The product target retains its sup norm and two nonzero complex coefficients through a constant
+frame change and continuous parameter families. Empty coefficient indices and zero input/output
+radii give zero graph elements; real scalar projection recovers the real weak gradient.
+-/
 
 public noncomputable section
 
@@ -54,7 +66,7 @@ theorem discDatum_one_transform (w : ℂ) :
   simpa [cauchyTransform_apply, discDatum, smul_eq_mul] using
     (pi_inv_mul_integral_sub_inv_mul_indicator_ball (r := 1) zero_le_one (0 : ℂ) w)
 
-/-- This is the graph output, including the circle and the exterior tail. -/
+/-- The graph value agrees a.e. on the output disc with the indicator Cauchy formula. -/
 theorem indicator_value (hp : 1 < p) (hp_top : p ≠ ∞) :
     WeakDerivStep.prev _
       (graphL hp hp_top 0 1 2 (((discDatum_memLp (1 : ℂ) p).restrict

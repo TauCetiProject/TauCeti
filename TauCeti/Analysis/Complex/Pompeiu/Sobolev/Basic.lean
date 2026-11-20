@@ -11,14 +11,14 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 public import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 public import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
-public import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
+public import TauCeti.Analysis.Complex.Wirtinger.Beurling.FiniteDimensional
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # Cauchy and Beurling operators in finite-dimensional complex norms
 
 For every finite-dimensional complex normed target and `1 < p < ∞`,
-`TauCeti.CauchyTransform.beurlingL` is a bounded complex-linear operator on whole-plane `Lᵖ`.
+`TauCeti.beurlingL` is a bounded complex-linear operator on whole-plane `Lᵖ`.
 `TauCeti.CauchyTransform.graphL` maps data supported in a fixed closed disc to the native
 real weak-derivative graph on any bounded open output disc, with its original target norm.
 Its value is the Cauchy integral with kernel `π⁻¹ (w - z)⁻¹` and its weak derivative is
@@ -328,122 +328,6 @@ private theorem scalarL_weakFDeriv (hp : 1 < p) (hp_top : p ≠ ∞) (c : ℂ) (
 
 end Scalar
 
-section Finite
-
-variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℂ F]
-variable {ι : Type*} [Fintype ι]
-
-/-- Scalar Beurling transformation followed by finite reconstruction in the original norm. -/
-private def beurlingWithBasis (b : Module.Basis ι ℂ F) (hp : 1 < p) (hp_top : p ≠ ∞) :
-    Lp F p (volume : Measure ℂ) →L[ℂ] Lp F p (volume : Measure ℂ) :=
-  ∑ i, ((ContinuousLinearMap.toSpanSingleton ℂ (b i)).compLpL p volume).comp
-    ((beurlingLp (F := ℂ) p hp hp_top).comp (((b.coord i).toContinuousLinearMap).compLpL p volume))
-
-omit [FiniteDimensional ℂ F] in
-/-- A scalar functional after a rank-one `Lp` map is scalar multiplication. -/
-private theorem functional_span (ℓ : F →L[ℂ] ℂ) (v : F)
-    (u : Lp ℂ p (volume : Measure ℂ)) :
-    ℓ.compLpL p volume ((ContinuousLinearMap.toSpanSingleton ℂ v).compLpL p volume u) =
-      ℓ v • u := by
-  apply Lp.ext
-  filter_upwards [ℓ.coeFn_compLpL
-    ((ContinuousLinearMap.toSpanSingleton ℂ v).compLpL p volume u),
-    (ContinuousLinearMap.toSpanSingleton ℂ v).coeFn_compLpL u,
-    Lp.coeFn_smul (ℓ v) u] with w hℓ hv hs
-  simp only [hℓ, hv, hs, ContinuousLinearMap.toSpanSingleton_apply, map_smul,
-    Pi.smul_apply, smul_eq_mul, mul_comm]
-
-/-- Every scalar functional intertwines the finite reconstruction with scalar Beurling. -/
-private theorem functional_beurlingWithBasis (b : Module.Basis ι ℂ F)
-    (hp : 1 < p) (hp_top : p ≠ ∞) (ℓ : F →L[ℂ] ℂ)
-    (u : Lp F p (volume : Measure ℂ)) :
-    ℓ.compLpL p volume (beurlingWithBasis b hp hp_top u) =
-      beurlingLp (F := ℂ) p hp hp_top (ℓ.compLpL p volume u) := by
-  classical
-  have h := congrArg (fun v ↦ ℓ.compLpL p volume v) (eq_sum_basis_compLpL b u)
-  simp only [map_sum, functional_span] at h
-  simp only [beurlingWithBasis, sum_apply, ContinuousLinearMap.comp_apply, map_sum,
-    functional_span]
-  rw [h, map_sum]
-  simp only [map_smul]
-
-/-- The finite sum giving the original-norm Beurling representative. -/
-private theorem coe_beurlingWithBasis (b : Module.Basis ι ℂ F) (hp : 1 < p) (hp_top : p ≠ ∞)
-    (u : Lp F p (volume : Measure ℂ)) :
-    beurlingWithBasis b hp hp_top u =ᵐ[volume]
-      fun w ↦ ∑ i, (beurlingLp (F := ℂ) p hp hp_top
-        (((b.coord i).toContinuousLinearMap).compLpL p volume u) w) • b i := by
-  classical
-  simp only [beurlingWithBasis, sum_apply, ContinuousLinearMap.comp_apply]
-  have hi (i : ι) := (ContinuousLinearMap.toSpanSingleton ℂ (b i)).coeFn_compLpL
-    (beurlingLp (F := ℂ) p hp hp_top (((b.coord i).toContinuousLinearMap).compLpL p volume u))
-  filter_upwards [Lp.coeFn_fun_finsetSum Finset.univ (fun i ↦
-    (ContinuousLinearMap.toSpanSingleton ℂ (b i)).compLpL p volume
-      (beurlingLp (F := ℂ) p hp hp_top (((b.coord i).toContinuousLinearMap).compLpL p volume u))),
-    ae_all_iff.mpr hi] with w hsum hcoords
-  simp only [hsum]
-  apply Finset.sum_congr rfl
-  intro i _
-  simpa only [ContinuousLinearMap.toSpanSingleton_apply] using hcoords i
-
-/-- The finite-coordinate construction does not depend on the chosen basis. -/
-private theorem beurlingWithBasis_eq {κ : Type*} [Fintype κ]
-    (b : Module.Basis ι ℂ F) (d : Module.Basis κ ℂ F) (hp : 1 < p) (hp_top : p ≠ ∞) :
-    beurlingWithBasis b hp hp_top = beurlingWithBasis d hp hp_top := by
-  classical
-  ext1 u
-  rw [eq_sum_basis_compLpL d (beurlingWithBasis b hp hp_top u)]
-  simp_rw [functional_beurlingWithBasis b hp hp_top]
-  simp only [beurlingWithBasis, sum_apply, ContinuousLinearMap.comp_apply]
-
-/-- The global Beurling map on the original finite-dimensional complex normed target. -/
-def beurlingL (hp : 1 < p) (hp_top : p ≠ ∞) :
-    Lp F p (volume : Measure ℂ) →L[ℂ] Lp F p (volume : Measure ℂ) :=
-  beurlingWithBasis (Module.finBasis ℂ F) hp hp_top
-
-/-- The intrinsic original-norm operator has the same reconstruction in every complex basis. -/
-private theorem beurling_eq_withBasis (b : Module.Basis ι ℂ F) (hp : 1 < p) (hp_top : p ≠ ∞) :
-    beurlingL (F := F) hp hp_top = beurlingWithBasis b hp hp_top := by
-  rw [beurlingL]
-  exact beurlingWithBasis_eq _ b hp hp_top
-
-/-- Every scalar functional intertwines the intrinsic vector and scalar Beurling maps. -/
-theorem functional_beurling (hp : 1 < p) (hp_top : p ≠ ∞) (ℓ : F →L[ℂ] ℂ)
-    (u : Lp F p (volume : Measure ℂ)) :
-    ℓ.compLpL p volume (beurlingL hp hp_top u) =
-      beurlingLp (F := ℂ) p hp hp_top (ℓ.compLpL p volume u) := by
-  rw [beurlingL]
-  exact functional_beurlingWithBasis _ hp hp_top ℓ u
-
-omit [FiniteDimensional ℂ F] in
-/-- coefficient composition commutes with passage to `Lp`. -/
-private theorem post_comp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
-    (L : F →L[ℂ] G) (ℓ : G →L[ℂ] ℂ) (u : Lp F p (volume : Measure ℂ)) :
-    ℓ.compLpL p volume (L.compLpL p volume u) =
-      (ℓ.comp L).compLpL p volume u := by
-  apply Lp.ext
-  filter_upwards [ℓ.coeFn_compLpL (L.compLpL p volume u), L.coeFn_compLpL u,
-    (ℓ.comp L).coeFn_compLpL u] with w h₁ h₂ h₃
-  simp only [h₁, h₂, h₃, ContinuousLinearMap.comp_apply]
-
-/-- The original-norm Beurling map is natural for complex-linear coefficient maps. -/
-theorem beurling_naturality {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
-    [FiniteDimensional ℂ G] (hp : 1 < p) (hp_top : p ≠ ∞) (L : F →L[ℂ] G)
-    (u : Lp F p (volume : Measure ℂ)) :
-    L.compLpL p volume (beurlingL hp hp_top u) =
-      beurlingL hp hp_top (L.compLpL p volume u) := by
-  classical
-  let d := Module.finBasis ℂ G
-  rw [eq_sum_basis_compLpL d (L.compLpL p volume (beurlingL hp hp_top u)),
-    eq_sum_basis_compLpL d (beurlingL hp hp_top (L.compLpL p volume u))]
-  apply Finset.sum_congr rfl
-  intro i _
-  congr 1
-  rw [post_comp, functional_beurling, ← post_comp, ← functional_beurling]
-
-end Finite
-
 section Jet
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
@@ -532,64 +416,6 @@ end Jet
 section Native
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
-section Line
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
-
-/-- Reconstruct a complex scalar graph along one vector in the original fibre. -/
-private def lineL (Ω : Opens ℂ) (v : F) : Graph ℂ Ω p →L[ℝ] Graph F Ω p :=
-  (WeakDerivStep.smulRightW1pL v).comp
-    (WeakDerivStep.toW1pL _ Complex.reCLM) +
-  (WeakDerivStep.smulRightW1pL (I • v)).comp
-    (WeakDerivStep.toW1pL _ Complex.imCLM)
-
-/-- rank-one reconstruction has the expected coefficient value. -/
-private theorem lineL_prev (Ω : Opens ℂ) (v : F) (u : Graph ℂ Ω p) :
-    WeakDerivStep.prev _ (lineL Ω v u) =
-      (ContinuousLinearMap.toSpanSingleton ℂ v).compLpL p (volume.restrict (Ω : Set ℂ))
-        (WeakDerivStep.prev _ u) := by
-  rw [lineL]
-  simp only [add_apply, ContinuousLinearMap.comp_apply]
-  rw [← WeakDerivStep.prevL_apply, map_add]
-  simp only [WeakDerivStep.prevL_apply, WeakDerivStep.prev_smulRightW1pL,
-    WeakDerivStep.value_toW1pL, ContinuousLinearMap.id_apply]
-  apply Lp.ext
-  filter_upwards [Lp.coeFn_add
-    ((ContinuousLinearMap.toSpanSingleton ℝ v).compLpL p (volume.restrict (Ω : Set ℂ))
-      (Complex.reCLM.compLpL p (volume.restrict (Ω : Set ℂ)) (WeakDerivStep.prev _ u)))
-    ((ContinuousLinearMap.toSpanSingleton ℝ (I • v)).compLpL p
-      (volume.restrict (Ω : Set ℂ))
-      (Complex.imCLM.compLpL p (volume.restrict (Ω : Set ℂ)) (WeakDerivStep.prev _ u))),
-    (ContinuousLinearMap.toSpanSingleton ℝ v).coeFn_compLpL
-      (Complex.reCLM.compLpL p (volume.restrict (Ω : Set ℂ)) (WeakDerivStep.prev _ u)),
-    (ContinuousLinearMap.toSpanSingleton ℝ (I • v)).coeFn_compLpL
-      (Complex.imCLM.compLpL p (volume.restrict (Ω : Set ℂ)) (WeakDerivStep.prev _ u)),
-    Complex.reCLM.coeFn_compLpL (WeakDerivStep.prev _ u),
-    Complex.imCLM.coeFn_compLpL (WeakDerivStep.prev _ u),
-    (ContinuousLinearMap.toSpanSingleton ℂ v).coeFn_compLpL (WeakDerivStep.prev _ u)]
-      with x hadd hreal himag hr hi hc
-  rw [hadd]
-  simp only [Pi.add_apply]
-  rw [hreal, himag, hr, hi, hc]
-  simp only [ContinuousLinearMap.toSpanSingleton_apply, Complex.reCLM_apply,
-    Complex.imCLM_apply, Complex.re_smul_add_im_smul]
-
-/-- The line reconstruction also composes the weak derivative. -/
-private theorem lineL_weakFDeriv_ae (Ω : Opens ℂ) (v : F) (u : Graph ℂ Ω p) :
-    WeakDerivStep.weakFDeriv _ (lineL Ω v u) =ᵐ[volume.restrict (Ω : Set ℂ)]
-      fun x ↦ ((ContinuousLinearMap.toSpanSingleton ℂ v).restrictScalars ℝ).comp
-        (WeakDerivStep.weakFDeriv _ u x) := by
-  have hu := (WeakDerivStep.hasWeakFDerivOn_base_prev _ u).clm_comp
-    ((ContinuousLinearMap.toSpanSingleton ℂ v).restrictScalars ℝ)
-  simp only [ContinuousLinearMap.id_apply] at hu
-  have hv := (ContinuousLinearMap.toSpanSingleton ℂ v).coeFn_compLpL
-    (WeakDerivStep.prev _ u)
-  rw [← lineL_prev Ω v u] at hv
-  have hl := WeakDerivStep.hasWeakFDerivOn_base_prev _ (lineL Ω v u)
-  simp only [ContinuousLinearMap.id_apply] at hl
-  exact hl.ae_eq (hu.congr_ae hv.symm)
-
-end Line
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℂ F]
 
@@ -599,7 +425,7 @@ variable {ι : Type*} [Fintype ι]
 private def graphWithBasis (b : Module.Basis ι ℂ F) (hp : 1 < p) (hp_top : p ≠ ∞)
     (c : ℂ) (r R : ℝ≥0) :
     Lp F p (volume.restrict (closedBall c (r : ℝ))) →L[ℝ] Graph F (disc c R) p :=
-  ∑ i, (lineL (disc c R) (b i)).comp
+  ∑ i, (WeakDerivStep.smulRightComplexL (disc c R) (b i)).comp
     ((scalarL hp hp_top c r R).comp
       (((b.coord i).toContinuousLinearMap.compLpL p
         (volume.restrict (closedBall c (r : ℝ)))).restrictScalars ℝ))
@@ -614,7 +440,7 @@ private theorem graphWithBasis_prev (b : Module.Basis ι ℂ F) (hp : 1 < p) (hp
   simp only [sum_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.coe_restrictScalars']
   rw [← WeakDerivStep.prevL_apply, map_sum]
-  simp only [WeakDerivStep.prevL_apply, lineL_prev, scalarL_prev]
+  simp only [WeakDerivStep.prevL_apply, WeakDerivStep.prev_smulRightComplexL, scalarL_prev]
   simp_rw [← valueL_comp (ContinuousLinearMap.toSpanSingleton ℂ _) c r R]
   rw [← map_sum]
   congr 1
@@ -635,7 +461,7 @@ private theorem graphWithBasis_weakFDeriv (b : Module.Basis ι ℂ F) (hp : 1 < 
   simp only [WeakDerivStep.weakFDerivL_apply]
   let a (i : ι) := (b.coord i).toContinuousLinearMap.compLpL p
     (volume.restrict (closedBall c (r : ℝ))) u
-  have hl (i : ι) := lineL_weakFDeriv_ae (disc c R) (b i)
+  have hl (i : ι) := WeakDerivStep.weakFDeriv_smulRightComplexL_ae (disc c R) (b i)
     (scalarL hp hp_top c r R (a i))
   have hr (i : ι) := (LpToLpRestrictCLM_coeFn ℂ ((disc c R) : Set ℂ) (jetL (beurlingLp (F := ℂ) p
     hp hp_top) (zeroExtend c r (a i))))
@@ -643,7 +469,7 @@ private theorem graphWithBasis_weakFDeriv (b : Module.Basis ι ℂ F) (hp : 1 < 
     (ae_mono (Measure.restrict_le_self (s := (disc c R : Set ℂ))))
   apply Lp.ext
   filter_upwards [Lp.coeFn_fun_finsetSum Finset.univ (fun i ↦
-    WeakDerivStep.weakFDeriv _ (lineL (disc c R) (b i)
+    WeakDerivStep.weakFDeriv _ (WeakDerivStep.smulRightComplexL (disc c R) (b i)
       (scalarL hp hp_top c r R (a i)))), ae_all_iff.mpr hl, ae_all_iff.mpr hr,
     (LpToLpRestrictCLM_coeFn ℂ ((disc c R) : Set ℂ) (jetWithBasis b hp hp_top (zeroExtend c r
       u))), hg]
@@ -855,7 +681,6 @@ theorem graphL_output_radius_value (hp : 1 < p) (hp_top : p ≠ ∞)
     (coe_valueL c r R u))
       (Filter.EventuallyEq.symm
         (ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hSle) (coe_valueL c r S u)))
-
 
 /-- Weak derivatives on two output discs restrict the same single global jet. -/
 theorem graphL_output_radius_derivative (hp : 1 < p) (hp_top : p ≠ ∞)

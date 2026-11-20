@@ -8,7 +8,14 @@ module
 public import TauCeti.Analysis.Complex.Pompeiu.Sobolev.Comparison
 public import Mathlib.Tactic.NormNum
 
-/-! # A nonzero square-root cone in the Sobolev Cauchy graph -/
+/-!
+# A nonzero square-root cone in the Sobolev Cauchy graph
+
+The compactly supported datum `‖z‖^(1/2) χ(z)` is continuous and Hölder of order one half.
+Its Cauchy integral gains one derivative: it is `C¹`, and its derivative is one-half Hölder.
+The graph operator constructed from `Lᵖ` data has this same derivative almost everywhere.
+This tests the rough order-zero Hölder gain on a nonzero datum without a `C¹` input assumption.
+-/
 
 public noncomputable section
 
