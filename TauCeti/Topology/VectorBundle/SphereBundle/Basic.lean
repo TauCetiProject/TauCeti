@@ -29,11 +29,7 @@ bundle `{-½ Hess(v, v) ≤ ε}` of a Morse–Bott critical submanifold, where `
 on the negative normal bundle. Each point of `S(E)` gives a unit vector in its fibre
 (`TauCeti.unitSphereOfSphereBundle`), and the unit sphere bundle projects continuously onto the
 base (`TauCeti.sphereBundleProj`). The disc bundle of a fibre gauge contains the zero section
-(`TauCeti.IsFiberGauge.zeroSection_mem_gaugeDiscBundle`), so it projects onto the base, and the
-base is compact when the disc bundle is
-(`TauCeti.IsFiberGauge.compactSpace_of_compactSpace_gaugeDiscBundle`), for instance when the disc
-bundle embeds with compact image
-(`TauCeti.IsFiberGauge.compactSpace_of_isCompact_image_gaugeDiscBundle`).
+(`TauCeti.IsFiberGauge.zeroSection_mem_gaugeDiscBundle`).
 
 The unit disc and sphere bundles are closed in the total space (`TauCeti.isClosed_discBundle`,
 `TauCeti.isClosed_sphereBundle`). For a finite-rank bundle whose fibres carry inner products, the
@@ -421,32 +417,6 @@ theorem isCompact_discBundle_inter_proj_preimage_singleton (b : B) :
   exact ⟨fun ⟨hv, hvb⟩ ↦ ⟨hv, hvb⟩, fun ⟨hv, hvb⟩ ↦ ⟨hv, hvb⟩⟩
 
 end Proper
-
-section Compact
-
-variable {B : Type w} [TopologicalSpace B] {F : Type*} [TopologicalSpace F] {E : B → Type w}
-  [∀ b, AddCommGroup (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)]
-  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
-
-/-- The base of a bundle is compact when the disc bundle of a fibre gauge is: the projection maps
-the disc bundle onto the base, since the disc bundle contains the zero section. -/
-theorem IsFiberGauge.compactSpace_of_compactSpace_gaugeDiscBundle {ρ : TotalSpace F E → ℝ}
-    (hρ : IsFiberGauge ρ) [CompactSpace (gaugeDiscBundle ρ)] : CompactSpace B :=
-  Function.Surjective.compactSpace (f := fun v : gaugeDiscBundle ρ ↦ v.1.proj)
-    ((FiberBundle.continuous_proj F E).comp continuous_subtype_val)
-    fun b ↦ ⟨⟨zeroSection F E b, hρ.zeroSection_mem_gaugeDiscBundle b⟩, rfl⟩
-
-/-- The base of a bundle is compact when a map `g`, restricted to the disc bundle of a fibre gauge,
-is inducing and has compact image: the disc bundle is then compact. -/
-theorem IsFiberGauge.compactSpace_of_isCompact_image_gaugeDiscBundle {ρ : TotalSpace F E → ℝ}
-    (hρ : IsFiberGauge ρ) {X : Type*} [TopologicalSpace X] {g : TotalSpace F E → X}
-    (hg : Topology.IsInducing ((gaugeDiscBundle ρ).domRestrict g))
-    (hK : IsCompact (g '' gaugeDiscBundle ρ)) : CompactSpace B :=
-  have : CompactSpace (gaugeDiscBundle ρ) :=
-    isCompact_univ_iff.1 <| hg.isCompact_iff.2 <| by rwa [image_univ, range_domRestrict]
-  hρ.compactSpace_of_compactSpace_gaugeDiscBundle
-
-end Compact
 
 section GaugePair
 
