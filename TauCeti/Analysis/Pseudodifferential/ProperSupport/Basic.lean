@@ -375,6 +375,16 @@ theorem coefficient_kernelCutoff (b : Symbol n V W m) (x ξ : CoordinateSpace n)
     (kernelCutoff χ b).coefficient (x, ξ) = ∫ θ, 𝓕 χ θ • b.coefficient (x, ξ - (2 * π) • θ) :=
   (rfl)
 
+/-- The kernel cutoff of a spatial multiplier depends only on the cutoff value at zero.
+Completeness is needed only for the actual operator-valued integral. -/
+theorem coefficient_kernelCutoff_ofSpatial [CompleteSpace (V →L[ℂ] W)]
+    (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f)
+    (x ξ : CoordinateSpace n) :
+    (kernelCutoff χ (ofSpatial f hf)).coefficient (x, ξ) = χ 0 • f x := by
+  rw [coefficient_kernelCutoff]
+  simp only [coefficient_ofSpatial]
+  rw [integral_smul_const, SchwartzMap.integral_fourier_eq]
+
 private theorem coefficient_kernelCutoff_eq_cutoffCoeff (b : Symbol n V W m) :
     (kernelCutoff χ b).coefficient = cutoffCoeff χ b (2 * π) :=
   (rfl)
