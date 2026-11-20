@@ -247,6 +247,21 @@ theorem mul_sum_Ioi_sub_inv_le_sum_sub_two_mul_mul_dysonDrift {n : ℕ} {x : Fin
     exact_mod_cast Nat.succ_le_of_lt (Fin.lt_def.1 hij)
   exact le_mul_of_one_le_left (inv_nonneg.2 (sub_nonneg.2 (hx hij.le))) (by linarith)
 
+/-- **Symmetrizing the squared inverse gaps.** Summing `(x i - x j)⁻¹ ^ 2` over all ordered pairs
+of distinct indices counts every unordered pair twice. -/
+theorem sum_sum_erase_sub_inv_sq {n : ℕ} (x : Fin n → ℝ) :
+    ∑ i : Fin n, ∑ j ∈ Finset.univ.erase i, (x i - x j)⁻¹ ^ 2 =
+      2 * ∑ i : Fin n, ∑ j ∈ Finset.Ioi i, (x i - x j)⁻¹ ^ 2 :=
+  calc ∑ i : Fin n, ∑ j ∈ Finset.univ.erase i, (x i - x j)⁻¹ ^ 2
+      = ∑ i : Fin n, ∑ j ∈ ({i}ᶜ : Finset (Fin n)), (x i - x j)⁻¹ ^ 2 := by
+        simp_rw [Finset.compl_singleton]
+    _ = ∑ i : Fin n, ∑ j ∈ Finset.Ioi i, ((x i - x j)⁻¹ ^ 2 + (x j - x i)⁻¹ ^ 2) :=
+        (Finset.sum_sum_Ioi_add_eq_sum_sum_off_diag (fun j i : Fin n ↦ (x i - x j)⁻¹ ^ 2)).symm
+    _ = 2 * ∑ i : Fin n, ∑ j ∈ Finset.Ioi i, (x i - x j)⁻¹ ^ 2 := by
+        have hsym (i j : Fin n) : (x j - x i)⁻¹ ^ 2 = (x i - x j)⁻¹ ^ 2 := by
+          rw [← neg_sub (x i) (x j), inv_neg, neg_sq]
+        simp_rw [hsym, ← two_mul, ← Finset.mul_sum]
+
 /-- **Calogero–Moser partial-fraction identity for `dysonDrift`.** For any configuration `x` with
 pairwise distinct coordinates, all off-diagonal products `(x i - x j)⁻¹ (x i - x k)⁻¹` (`j ≠ k`)
 cancel in cyclic triples, leaving
@@ -264,19 +279,9 @@ theorem sum_dysonDrift_sq {n : ℕ} {x : Fin n → ℝ} (hx : Function.Injective
     simp_rw [hsplit, Finset.sum_add_distrib]
     rw [← Finset.add_sum_erase Finset.univ (fun j ↦ (x i - x j)⁻¹ ^ 2) (Finset.mem_univ i),
       sub_self, inv_zero, zero_pow two_ne_zero, zero_add]
-  have hpair : (∑ i : Fin n, ∑ j ∈ Finset.univ.erase i, (x i - x j)⁻¹ ^ 2) =
-      2 * ∑ i : Fin n, ∑ j ∈ Finset.Ioi i, (x i - x j)⁻¹ ^ 2 := by
-    calc ∑ i : Fin n, ∑ j ∈ Finset.univ.erase i, (x i - x j)⁻¹ ^ 2
-        = ∑ i : Fin n, ∑ j ∈ ({i}ᶜ : Finset (Fin n)), (x i - x j)⁻¹ ^ 2 := by
-          simp_rw [Finset.compl_singleton]
-      _ = ∑ i : Fin n, ∑ j ∈ Finset.Ioi i, ((x i - x j)⁻¹ ^ 2 + (x j - x i)⁻¹ ^ 2) :=
-          (Finset.sum_sum_Ioi_add_eq_sum_sum_off_diag (fun j i : Fin n ↦ (x i - x j)⁻¹ ^ 2)).symm
-      _ = 2 * ∑ i : Fin n, ∑ j ∈ Finset.Ioi i, (x i - x j)⁻¹ ^ 2 := by
-          have hsym (i j : Fin n) : (x j - x i)⁻¹ ^ 2 = (x i - x j)⁻¹ ^ 2 := by
-            rw [← neg_sub (x i) (x j), inv_neg, neg_sq]
-          simp_rw [hsym, ← two_mul, ← Finset.mul_sum]
   simp_rw [dysonDrift_eq_inv_mul_sum, mul_pow, ← Finset.mul_sum, hexpand, Finset.sum_add_distrib]
-  rw [Finset.sum_sum_sum_erase_sub_inv_mul_sub_inv_eq_zero Finset.univ hx.injOn, add_zero, hpair]
+  rw [Finset.sum_sum_sum_erase_sub_inv_mul_sub_inv_eq_zero Finset.univ hx.injOn, add_zero,
+    sum_sum_erase_sub_inv_sq]
   ring
 
 /-! ### Globally Lipschitz chamber truncations -/
