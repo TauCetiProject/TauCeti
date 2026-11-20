@@ -86,8 +86,9 @@ private theorem eLpNorm_simpleGains_sub (hW : IsFilteredPreBrownianReal ℱ W P)
     have hmem : ρ (j + 1) ∈ Ioc (ρ j) (ρ (j + 1)) :=
       ⟨hρ (mem_Iic.mpr hj.le) (mem_Iic.mpr hj) (Nat.lt_succ_self j), le_rfl⟩
     rw [← Finance.simpleHolding_of_mem_Ioc (a := c) hρ.monotoneOn hj hmem ω, hhold]
-    exact (norm_sub_le _ _).trans (add_le_add (Finance.norm_simpleHolding_le hτ haC _ ω)
-      (Finance.norm_simpleHolding_le hσ hbD _ ω))
+    exact (norm_sub_le _ _).trans
+      (add_le_add (Finance.norm_simpleHolding_le hτ _ ω fun j hj ↦ haC j hj ω)
+        (Finance.norm_simpleHolding_le hσ _ ω fun j hj ↦ hbD j hj ω))
   have hG : Finance.simpleGains τ n a W t - Finance.simpleGains σ m b W t =
       Finance.simpleGains ρ N c W t := funext fun ω ↦ (hgain W t ω).symm
   have hK : Function.uncurry (Finance.simpleHolding τ n a) -
@@ -123,7 +124,8 @@ private theorem _root_.TauCeti.BrownianIntegrable.exists_simpleGains_cauchySeq
       2 ((timeMeasure t).prod P) :=
     MemLp.of_bound (((Finance.isStronglyPredictable_simpleHolding (ha k)).mono
         ℱ.predictable_le_prod).aestronglyMeasurable) (max (C k) 0)
-      (ae_of_all _ fun p ↦ Finance.norm_simpleHolding_le (hτ k).monotoneOn (haC k) p.1 p.2)
+      (ae_of_all _ fun p ↦
+        Finance.norm_simpleHolding_le (hτ k).monotoneOn p.1 p.2 fun j hj ↦ haC k j hj p.2)
   refine ⟨n, τ, a, hmem, fun k ↦ (hτ k).monotoneOn, ha, fun k ↦ ?_, fun t ↦ ?_, hKH,
     fun k t ↦ hW.eLpNorm_simpleGains (hτ k).monotoneOn (ha k) (ha₂ k) t⟩
   · exact hW.martingale.simpleGains_of_bdd (hτ k).monotoneOn (ha k)
