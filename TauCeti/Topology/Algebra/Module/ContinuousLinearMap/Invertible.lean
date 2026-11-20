@@ -311,10 +311,7 @@ private theorem isUnit_one_sub_comp_of (u : N →L[R] M) (v : M →L[R] N)
       map_sub] at this ⊢
     exact sub_eq_zero.mp (.trans (by abel) this)
 
-/-- An invertible map restricts to an invertible map between submodules `p` and `q` as soon as its
-inverse maps `q` into `p` (`ContinuousLinearMap.IsInvertible.restrict`).
-
-The rectangular Jacobson identity: for maps between two topological modules,
+/-- The rectangular Jacobson identity: for maps between two topological modules,
 `1 - u ∘ v` is invertible exactly when `1 - v ∘ u` is invertible. -/
 theorem isUnit_one_sub_comp_comm (u : N →L[R] M) (v : M →L[R] N) :
     IsUnit (1 - u.comp v) ↔ IsUnit (1 - v.comp u) :=

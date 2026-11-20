@@ -44,9 +44,10 @@ twisted, then `D (R x) = R (D x) = -D x = D (-x)`, so `R x = -x` by injectivity:
 `ContinuousLinearMap.IsInvertible.restrict`). For `S = 0` it is complex linear
 (`TauCeti.doublyAntiperiodicTorusOperator_zero_apply_smul`). Since `τ • S` is again
 infinitesimally symplectic and invariant under the half rotation, every operator of the path
-`τ ↦ ∂s + J₀ (∂t - τ S)` is invertible; this is the invertible homotopy to a complex-linear
-reference operator along which the determinant line of the doubly twisted orbit-torus operator is
-oriented.
+`τ ↦ ∂s + J₀ (∂t - τ S)` is invertible. On the double cover this path depends continuously on
+`τ` (`TauCeti.continuous_antiperiodicTorusOperator`), and restricting to the closed twisted
+subspaces does not increase operator norms. This file states the invertibility along the path;
+the continuity of the restricted path is not stated here.
 
 ## Main definitions
 
@@ -95,6 +96,19 @@ section Space
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
 
+/-- For continuous mode maps `φ k`, the set of `x` all of whose modes `φ k x` are pairs of
+antiperiodic loops is closed, as an intersection of preimages of the closed subspaces of
+antiperiodic loops. -/
+private theorem isClosed_setOf_forall_mem_antiperiodic {X : Type*} [TopologicalSpace X] (s : ℝ)
+    {φ : ℕ → X → WithLp 2 (CircleSobolev s F × CircleSobolev s F)} (hφ : ∀ k, Continuous (φ k)) :
+    IsClosed {x | ∀ k, (φ k x).fst ∈ antiperiodic s F ∧ (φ k x).snd ∈ antiperiodic s F} := by
+  simp only [Set.ofPred_forall, Set.ofPred_and]
+  exact isClosed_iInter fun k ↦
+    (isClosed_antiperiodic.preimage (continuous_fst.comp ((WithLp.prod_continuous_ofLp 2 _ _).comp
+      (hφ k)))).inter
+    (isClosed_antiperiodic.preimage (continuous_snd.comp ((WithLp.prod_continuous_ofLp 2 _ _).comp
+      (hφ k))))
+
 variable (F) in
 /-- The Sobolev space `H¹` of maps `u(s, t)` antiperiodic of antiperiod `ℓ` in `s` and antiperiodic
 of antiperiod `T / 2` in `t`, for any period `T` of the modes: the elements of
@@ -115,20 +129,9 @@ theorem mem_doublyAntiperiodicSobolev_iff {ℓ : ℝ} {x : antiperiodicSobolev F
 /-- `TauCeti.doublyAntiperiodicSobolev` is closed, as an intersection of preimages of the closed
 subspaces of antiperiodic loops. -/
 theorem isClosed_doublyAntiperiodicSobolev (ℓ : ℝ) :
-    IsClosed (doublyAntiperiodicSobolev F ℓ : Set (antiperiodicSobolev F ℓ)) := by
-  have : (doublyAntiperiodicSobolev F ℓ : Set (antiperiodicSobolev F ℓ)) =
-      ⋂ k : ℕ, {x : antiperiodicSobolev F ℓ | ((x : 𝕏[F]).1 k).fst ∈ antiperiodic 1 F} ∩
-        {x | ((x : 𝕏[F]).1 k).snd ∈ antiperiodic 1 F} := by
-    ext x
-    simp [mem_doublyAntiperiodicSobolev_iff, Set.mem_iInter]
-  rw [this]
-  have hk (k : ℕ) : Continuous fun x : antiperiodicSobolev F ℓ ↦ (x : 𝕏[F]).1 k :=
+    IsClosed (doublyAntiperiodicSobolev F ℓ : Set (antiperiodicSobolev F ℓ)) :=
+  isClosed_setOf_forall_mem_antiperiodic 1 fun k ↦
     (lp.evalCLM ℂ _ 2 k).continuous.comp (continuous_fst.comp continuous_subtype_val)
-  exact isClosed_iInter fun k ↦
-    (isClosed_antiperiodic.preimage (continuous_fst.comp ((WithLp.prod_continuous_ofLp 2 _ _).comp
-      (hk k)))).inter
-    (isClosed_antiperiodic.preimage (continuous_snd.comp ((WithLp.prod_continuous_ofLp 2 _ _).comp
-      (hk k))))
 
 /-- The Sobolev space `H¹` of maps antiperiodic in both factors is complete. -/
 instance [CompleteSpace F] (ℓ : ℝ) : CompleteSpace (doublyAntiperiodicSobolev F ℓ) :=
@@ -151,18 +154,8 @@ theorem mem_doublyAntiperiodicL2_iff {y : 𝕐[F]} :
 
 /-- `TauCeti.doublyAntiperiodicL2` is closed, as an intersection of preimages of the closed
 subspaces of antiperiodic loops. -/
-theorem isClosed_doublyAntiperiodicL2 : IsClosed (doublyAntiperiodicL2 F : Set 𝕐[F]) := by
-  have : (doublyAntiperiodicL2 F : Set 𝕐[F]) =
-      ⋂ k : ℕ, {y : 𝕐[F] | (y k).fst ∈ antiperiodic 0 F} ∩ {y | (y k).snd ∈ antiperiodic 0 F} := by
-    ext y
-    simp [mem_doublyAntiperiodicL2_iff, Set.mem_iInter]
-  rw [this]
-  have hk (k : ℕ) : Continuous fun y : 𝕐[F] ↦ y k := (lp.evalCLM ℂ _ 2 k).continuous
-  exact isClosed_iInter fun k ↦
-    (isClosed_antiperiodic.preimage (continuous_fst.comp ((WithLp.prod_continuous_ofLp 2 _ _).comp
-      (hk k)))).inter
-    (isClosed_antiperiodic.preimage (continuous_snd.comp ((WithLp.prod_continuous_ofLp 2 _ _).comp
-      (hk k))))
+theorem isClosed_doublyAntiperiodicL2 : IsClosed (doublyAntiperiodicL2 F : Set 𝕐[F]) :=
+  isClosed_setOf_forall_mem_antiperiodic 0 fun k ↦ (lp.evalCLM ℂ _ 2 k).continuous
 
 /-- The `L²` space of maps antiperiodic in both factors is complete. -/
 instance [CompleteSpace F] : CompleteSpace (doublyAntiperiodicL2 F) :=
