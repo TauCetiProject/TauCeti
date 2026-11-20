@@ -11,6 +11,7 @@ public import Mathlib.Data.ZMod.Defs
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.LinearAlgebra.Projectivization.Basic
 import Mathlib.LinearAlgebra.Dimension.RankNullity
+import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.OfMapSMul
 import TauCeti.LinearAlgebra.Projectivization.Action
 
 /-!
@@ -19,9 +20,10 @@ import TauCeti.LinearAlgebra.Projectivization.Action
 For a complex normed space `H`, the **unitary–antiunitary group** `UA(H)` is the group of
 surjective real-linear isometries of `H` which are either complex linear or conjugate linear
 (`TauCeti.unitaryAntiunitary H`, a subgroup of `H ≃ₗᵢ[ℝ] H`). For a complex Hilbert space these
-are exactly the unitary and the antiunitary operators; they are the symmetries of quantum
-mechanics in Wigner's sense, and `UA(H)` modulo the scalar circle is the symmetry group of the
-space of rays `ℙ ℂ H`.
+are exactly the unitary and the antiunitary operators, the symmetries of quantum mechanics in
+Wigner's sense: by Wigner's theorem (not proved here), for a Hilbert space of dimension at least
+two, `UA(H)` modulo the scalar circle is the group of transition-probability-preserving
+bijections of the space of rays `ℙ ℂ H`.
 
 The **grade** `TauCeti.unitaryAntiunitary.grade : UA(H) →* Multiplicative (ZMod 2)` is `0` on the
 complex-linear elements and `1` on the others; on a nonzero space the others are exactly the
@@ -60,7 +62,8 @@ and the grade of an element of `UA(H)` is determined by its action on rays.
   scalar `z` to `z⁻¹`.
 * `TauCeti.unitaryAntiunitary.ker_toPermHom`: for `1 < Module.rank ℂ H` the elements acting
   trivially on rays are exactly the scalars.
-* `TauCeti.ProjectiveUnitaryAntiunitary.toPermHom_injective`: `PUA(H)` acts faithfully on rays in
+* `TauCeti.ProjectiveUnitaryAntiunitary.toPermHom_injective`,
+  `TauCeti.ProjectiveUnitaryAntiunitary.faithfulSMul`: `PUA(H)` acts faithfully on rays in
   dimension at least two.
 * `TauCeti.unitaryAntiunitary.grade_eq_grade_of_forall_smul_eq`: in dimension at least two the
   grade is determined by the action on rays.
@@ -110,28 +113,6 @@ namespace unitaryAntiunitary
 
 section Classification
 
-/-- The complex-linear isometric equivalence underlying a complex-linear element. -/
-private def toLinearIsometryEquivOfMapSMul (f : H ≃ₗᵢ[ℝ] H)
-    (hf : ∀ (c : ℂ) (x : H), f (c • x) = c • f x) : H ≃ₗᵢ[ℂ] H where
-  toFun := f
-  invFun := f.symm
-  map_add' := map_add f
-  map_smul' := hf
-  left_inv := f.symm_apply_apply
-  right_inv := f.apply_symm_apply
-  norm_map' := f.norm_map
-
-/-- The conjugate-linear isometric equivalence underlying a conjugate-linear element. -/
-private def toConjLinearIsometryEquivOfMapSMul (f : H ≃ₗᵢ[ℝ] H)
-    (hf : ∀ (c : ℂ) (x : H), f (c • x) = conj c • f x) : H ≃ₗᵢ⋆[ℂ] H where
-  toFun := f
-  invFun := f.symm
-  map_add' := map_add f
-  map_smul' := hf
-  left_inv := f.symm_apply_apply
-  right_inv := f.apply_symm_apply
-  norm_map' := f.norm_map
-
 variable (H)
 
 /-- A complex-linear isometric equivalence, as an (even) element of `UA(H)`. -/
@@ -173,8 +154,10 @@ theorem eq_ofLinearIsometryEquiv_or_eq_ofConjLinearIsometryEquiv (g : unitaryAnt
     (∃ U : H ≃ₗᵢ[ℂ] H, g = ofLinearIsometryEquiv H U) ∨
       ∃ U : H ≃ₗᵢ⋆[ℂ] H, g = ofConjLinearIsometryEquiv H U := by
   rcases g.2 with hg | hg
-  · exact Or.inl ⟨toLinearIsometryEquivOfMapSMul _ hg, rfl⟩
-  · exact Or.inr ⟨toConjLinearIsometryEquivOfMapSMul _ hg, rfl⟩
+  · exact Or.inl ⟨(g : H ≃ₗᵢ[ℝ] H).toSemilinearIsometryEquivOfMapSMul hg,
+      Subtype.ext <| LinearIsometryEquiv.ext fun _ ↦ by simp⟩
+  · exact Or.inr ⟨(g : H ≃ₗᵢ[ℝ] H).toSemilinearIsometryEquivOfMapSMul hg,
+      Subtype.ext <| LinearIsometryEquiv.ext fun _ ↦ by simp⟩
 
 end Classification
 
@@ -193,10 +176,11 @@ private theorem map_smul_conj_iff_not_isLinear [Nontrivial H] (k : unitaryAntiun
   -- A map that is both complex linear and conjugate linear sends `i • x` to both `i • k x` and
   -- `-(i • k x)`, hence vanishes; this is impossible for an injective map on `H ≠ 0`.
   obtain ⟨x, hx⟩ := exists_ne (0 : H)
-  have h := (hl Complex.I x).symm.trans (ha Complex.I x)
-  rw [Complex.conj_I, neg_smul, eq_neg_iff_add_eq_zero, ← two_smul ℂ, smul_smul,
-    smul_eq_zero, (k : H ≃ₗᵢ[ℝ] H).map_eq_zero_iff] at h
-  exact hx (h.resolve_left (by simp))
+  have hI := ha Complex.I x
+  rw [Complex.conj_I] at hI
+  have h : (2 * Complex.I) • (k : H ≃ₗᵢ[ℝ] H) x = 0 := by
+    linear_combination (norm := module) hI - hl Complex.I x
+  simp [Complex.I_ne_zero, hx] at h
 
 private theorem isLinear_mul_iff [Nontrivial H] (g h : unitaryAntiunitary H) :
     IsLinear (g * h) ↔ (IsLinear g ↔ IsLinear h) := by
@@ -229,7 +213,7 @@ def grade : unitaryAntiunitary H →* Multiplicative (ZMod 2) where
     · simp [hg, hh]
     · simp [hg, hh]
     · simp only [hg, hh, iff_self, ite_true, ite_false]
-      rfl
+      decide
 
 open Classical in
 private theorem grade_apply (g : unitaryAntiunitary H) :
@@ -265,7 +249,8 @@ theorem grade_ofConjLinearIsometryEquiv [Nontrivial H] (U : H ≃ₗᵢ⋆[ℂ] 
 /-- The even part of `UA(H)` is the group of complex-linear isometric equivalences. -/
 theorem range_ofLinearIsometryEquiv : (ofLinearIsometryEquiv H).range = (grade H).ker := by
   ext g
-  refine ⟨?_, fun hg ↦ ⟨toLinearIsometryEquivOfMapSMul _ ((grade_eq_one_iff g).1 hg), rfl⟩⟩
+  refine ⟨?_, fun hg ↦ ⟨(g : H ≃ₗᵢ[ℝ] H).toSemilinearIsometryEquivOfMapSMul
+    ((grade_eq_one_iff g).1 hg), Subtype.ext <| LinearIsometryEquiv.ext fun _ ↦ by simp⟩⟩
   rintro ⟨U, rfl⟩
   exact grade_ofLinearIsometryEquiv U
 
@@ -393,11 +378,11 @@ theorem forall_smul_eq_iff_mem_range_scalar_of_grade_eq_one {g : unitaryAntiunit
   exact ⟨⟨c, mem_sphere_zero_iff_norm.2 hnorm⟩,
     Subtype.ext <| LinearIsometryEquiv.ext fun v ↦ (hc v).symm⟩
 
-/-- In complex dimension at least two an element of `UA(H)` fixing every ray is even: a
-conjugate-linear map fixing the rays of `x`, `y`, `x + y` and `x + i • y` for linearly
-independent `x`, `y` would vanish at `x`. -/
+/-- In complex dimension at least two an element of `UA(H)` fixing every ray is even. -/
 theorem grade_eq_one_of_forall_smul_eq (h : 1 < Module.rank ℂ H) {g : unitaryAntiunitary H}
     (hfix : ∀ p : ℙ ℂ H, g • p = p) : grade H g = 1 := by
+  -- A conjugate-linear map fixing the rays of `x`, `y`, `x + y` and `x + i • y` for linearly
+  -- independent `x`, `y` would vanish at `x`.
   by_contra hg
   have hc := g.2.resolve_left (mt (grade_eq_one_iff g).2 hg)
   have : Nontrivial H := rank_pos_iff_nontrivial.1 (zero_lt_one.trans h)
@@ -467,11 +452,17 @@ theorem mk_smul (g : unitaryAntiunitary H) (p : ℙ ℂ H) :
     (g : ProjectiveUnitaryAntiunitary H) • p = g • p :=
   (rfl)
 
+@[simp]
+theorem toPermHom_mk_apply (g : unitaryAntiunitary H) (p : ℙ ℂ H) :
+    toPermHom H (g : ProjectiveUnitaryAntiunitary H) p = g • p :=
+  (rfl)
+
 /-- In complex dimension at least two, `PUA(H)` acts faithfully on the rays of `H`. -/
 theorem toPermHom_injective (h : 1 < Module.rank ℂ H) : Function.Injective (toPermHom H) := by
   rw [← MonoidHom.ker_eq_bot_iff, toPermHom, QuotientGroup.ker_lift, ker_toPermHom h,
     QuotientGroup.map_mk'_self]
 
+/-- In complex dimension at least two, `PUA(H)` acts faithfully on the rays of `H`. -/
 theorem faithfulSMul (h : 1 < Module.rank ℂ H) :
     FaithfulSMul (ProjectiveUnitaryAntiunitary H) (ℙ ℂ H) :=
   ⟨fun hxy ↦ toPermHom_injective h (Equiv.ext hxy)⟩
