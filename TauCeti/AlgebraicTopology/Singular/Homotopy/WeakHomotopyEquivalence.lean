@@ -192,8 +192,8 @@ theorem isIso_twistedHomologyMap (hf : f.IsWeakHomotopyEquivalence)
   inferInstance
 
 /-- **An inclusion of subspaces which is a weak homotopy equivalence induces a quasi-isomorphism
-of singular chains with local coefficients**: if `A ⊆ B ⊆ X` and the inclusion of `A` in `B` is a
-weak homotopy equivalence, then for every local coefficient system `L` on `X` the map of twisted
+of singular chains with local coefficients**: if `A ⊆ B ⊆ Z` and the inclusion of `A` in `B` is a
+weak homotopy equivalence, then for every local coefficient system `L` on `Z` the map of twisted
 chains of `A` and of `B`, with `L` restricted to each, is a quasi-isomorphism. -/
 theorem quasiIso_subsetTwistedChainComplexMap {Z : TopCat.{v}} {A B : Set Z} {h : A ⊆ B}
     (hf : (ContinuousMap.inclusion h).IsWeakHomotopyEquivalence)
