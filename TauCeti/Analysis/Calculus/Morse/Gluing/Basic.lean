@@ -169,7 +169,7 @@ private theorem lipschitzOnWith_gluing_fixedPt
     |>.dist_fixedPoint_fixedPoint_of_dist_le' ((mapsTo_gluing hgε hkε hr').restrict _ _ _)
       (x := ⟨w r, (hw r hr).1⟩) (y := ⟨w r', (hw r' hr').1⟩) (Subtype.ext (hw r hr).2)
       (Subtype.ext (hw r' hr').2) fun v ↦
-        dist_gluing_le_dist hg hgε hk hr₀ hr hr' (mem_closedBall_zero_iff.1 v.2)
+        dist_gluing_le_dist hg hgε hk hr₀ hr hr' (mem_closedBall_zero_iff.1 v.property)
   rw [Subtype.dist_eq, coe_mul_mul_toNNReal_sq (hr.1.trans hr.2), ← div_mul_eq_mul_div] at hle
   exact hle.trans (mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal _) dist_nonneg)
 

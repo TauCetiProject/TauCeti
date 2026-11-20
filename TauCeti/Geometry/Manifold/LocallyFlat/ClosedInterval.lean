@@ -68,7 +68,7 @@ theorem continuous_bicollarOfClosedInterval [TopologicalSpace N] [TopologicalSpa
     {β : N × Icc (-1 : ℝ) 1 → M}
     (hβ : Continuous β) : Continuous (bicollarOfClosedInterval β) := by
   exact hβ.comp (continuous_fst.prodMk
-    ((continuous_subtype_val.comp
+    ((continuous_subtypeVal.comp
       (Homeomorph.unitBall.continuous.comp continuous_snd)).subtype_mk _))
 
 /-- An injective closed-strip map remains injective after reparametrization. -/

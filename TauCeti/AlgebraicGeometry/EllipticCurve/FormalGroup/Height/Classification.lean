@@ -6,28 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Basic
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Supersingular
--- Proof-only: height of an elliptic curve via the inseparable degree of `[p]`.
+-- Proof-only: elliptic height classification and singular reduction to `y² + a x y = x³`.
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
+import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Supersingular
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Multiplicative
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.VariableChange
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.MulByInt
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Order
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Degree
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Supersingular
 
 /-!
 # Classification of Weierstrass formal group heights at every prime
 
 Let `W` be a Weierstrass curve over a field `K` of prime characteristic `p`, and let `Ê` be its
-formal group law. This file classifies the height of `Ê` for every Weierstrass curve, smooth or
-singular, in every prime characteristic including `2` and `3`:
+formal group law. Building on the elliptic height-1/2 stratification in
+`TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Supersingular`, this file extends the
+classification to all Weierstrass curves, smooth or singular, in every prime characteristic
+including `2` and `3`:
 
-* If `W` is elliptic (`Δ ≠ 0`), then `Ê` has height `1` or `2`: height `1` exactly when `W` is
-  ordinary (equivalently, the Hasse invariant `coeff (p - 1) ω` is nonzero), and height `2`
-  exactly when `W` is supersingular (equivalently, the Hasse invariant vanishes).
+* If `W` is elliptic (`Δ ≠ 0`), then `Ê` has height `1` or `2`, with height `2` exactly when the
+  Hasse invariant `coeff (p - 1) ω` vanishes.
 * If `W` is nodal (`Δ = 0` and `c₄ ≠ 0`), then `Ê` has height `1`, and its Hasse invariant is
   nonzero.
 * If `W` is cuspidal (`Δ = 0` and `c₄ = 0`), then `Ê` has height `⊤`.
@@ -37,20 +34,11 @@ smooth or nodal (`c₄ ≠ 0 ∨ Δ ≠ 0`), height `2` exactly when `W` is smoo
 invariant (`Δ ≠ 0 ∧ coeff (p - 1) ω = 0`), and infinite height exactly at a cusp
 (`Δ = 0 ∧ c₄ = 0`).
 
-This field-level classification characterizes the ordinary and supersingular strata at every prime
-`p` and supplies the residue-field input for ring-level height-ideal bounds, Landweber's `v₂`-unit
-condition, and the nodal Hasse-invariant unit condition in
-`TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Bound`.
+This field-level classification supplies the residue-field input for the exact ring-level
+height-ideal characterizations, Landweber's `v₂`-unit condition, and the nodal Hasse-invariant
+unit condition in `TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Bound`.
 
 ## Strategy
-
-For an elliptic curve `W`, the multiplication-by-`p` series `[p]_Ê` is the formal power series of
-the isogeny `[p]` (`TauCeti.Isogeny.formalSeries_mulByIntIsogeny`), whose order equals the
-inseparable degree `deg_i [p]` (`TauCeti.Isogeny.order_formalSeries_eq_inseparableDegree`). Since
-`deg_s [p] * deg_i [p] = deg [p] = p²`, the characterizations of ordinarity (`deg_s [p] = p`) and
-supersingularity (`deg_s [p] = 1`) from
-`TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Supersingular` immediately give
-`deg_i [p] = p` (height `1`) and `deg_i [p] = p²` (height `2`).
 
 For a singular curve (`Δ = 0`), passing to `AlgebraicClosure K` preserves the formal-group height
 and supplies a singular point `(x, y)` together with a root `α` of the tangent quadratic
@@ -63,19 +51,9 @@ cubic has height `1` when `c₄ ≠ 0` and `⊤` when `c₄ = 0`.
 
 ## Main results
 
-* `WeierstrassCurve.isOrdinary_iff_height_formalGroup_eq_one`,
-  `WeierstrassCurve.isSupersingular_iff_one_lt_height_formalGroup`, and
-  `WeierstrassCurve.isSupersingular_iff_height_formalGroup_eq_two`: an elliptic curve in prime
-  characteristic `p` is ordinary iff its formal group has height `1`, and supersingular iff its
-  formal group has height greater than `1` (equivalently, height `2`).
-* `WeierstrassCurve.height_formalGroup_eq_one_or_eq_two` and
-  `WeierstrassCurve.height_formalGroup_le_two`: the formal group of an elliptic curve has height
-  `1` or `2`.
-* `WeierstrassCurve.isOrdinary_iff_coeff_invariantDifferential_formalGroup_ne_zero`,
-  `WeierstrassCurve.isSupersingular_iff_coeff_invariantDifferential_formalGroup_eq_zero`, and
-  `WeierstrassCurve.height_formalGroup_eq_two_iff_coeff_invariantDifferential_formalGroup_eq_zero`:
-  ordinarity, supersingularity, and height `2` on elliptic curves characterized by the Hasse
-  invariant in every prime characteristic.
+* `WeierstrassCurve.height_formalGroup_eq_two_iff_coeff_invariantDifferential_formalGroup_eq_zero`:
+  height `2` on elliptic curves characterized by vanishing of the Hasse invariant in every prime
+  characteristic.
 * `WeierstrassCurve.height_formalGroup_eq_one_of_Δ_eq_zero_of_c₄_ne_zero` and
   `WeierstrassCurve.height_formalGroup_eq_top_of_Δ_eq_zero_of_c₄_eq_zero`: nodal cubics have
   height `1` and cuspidal cubics have height `⊤`.
@@ -100,94 +78,8 @@ namespace WeierstrassCurve
 
 section Elliptic
 
-variable {K : Type*} [Field K] {p : ℕ} [hp : Fact p.Prime] [CharP K p]
+variable {K : Type*} [Field K] {p : ℕ} [Fact p.Prime] [CharP K p]
   (W : WeierstrassCurve K) [W.IsElliptic]
-
-/-- Over a field of prime characteristic `p`, the formal group of an elliptic curve has finite
-height `h` exactly when the isogeny `[p]` has inseparable degree `p ^ h`. -/
-private theorem height_formalGroup_eq_natCast_iff_inseparableDegree {h : ℕ} :
-    (formalGroup W).height p = h ↔
-      (TauCeti.Isogeny.mulByIntIsogenyOfNeZero W.toAffine
-        (mod_cast hp.out.ne_zero : (p : ℤ) ≠ 0)).inseparableDegree = p ^ h := by
-  rw [(formalGroup W).height_eq_natCast_iff, ← FormalGroup.zsmulSeries_natCast,
-    ← TauCeti.Isogeny.formalSeries_mulByIntIsogeny W _,
-    TauCeti.Isogeny.order_formalSeries_eq_inseparableDegree, Nat.cast_inj]
-
-/-- **In prime characteristic `p`, an elliptic curve is ordinary exactly when its formal group has
-height `1`** (Silverman V.3.1). -/
-theorem isOrdinary_iff_height_formalGroup_eq_one :
-    W.IsOrdinary p ↔ (formalGroup W).height p = 1 := by
-  have : ExpChar K p := .prime hp.out
-  have hpZ : (p : ℤ) ≠ 0 := mod_cast hp.out.ne_zero
-  set φ := TauCeti.Isogeny.mulByIntIsogenyOfNeZero W.toAffine hpZ
-  have hdeg : φ.separableDegree * φ.inseparableDegree = p ^ 2 := by
-    rw [φ.separableDegree_mul_inseparableDegree, TauCeti.Isogeny.degree_mulByIntIsogenyOfNeZero,
-      Int.natAbs_natCast]
-  rw [isOrdinary_iff_separableDegree_mulByIntIsogenyOfNeZero_eq p W hp.out, ← Nat.cast_one,
-    W.height_formalGroup_eq_natCast_iff_inseparableDegree, pow_one]
-  constructor
-  · intro hs
-    rw [hs, sq] at hdeg
-    exact Nat.eq_of_mul_eq_mul_left hp.out.pos hdeg
-  · intro hi
-    rw [hi, sq] at hdeg
-    exact Nat.eq_of_mul_eq_mul_right hp.out.pos hdeg
-
-/-- **In prime characteristic `p`, an elliptic curve is supersingular exactly when its formal
-group has height greater than `1`.** -/
-theorem isSupersingular_iff_one_lt_height_formalGroup :
-    W.IsSupersingular p ↔ 1 < (formalGroup W).height p := by
-  rw [← not_isOrdinary, W.isOrdinary_iff_height_formalGroup_eq_one,
-    (formalGroup W).one_le_height.lt_iff_ne', Ne]
-
-/-- **In prime characteristic `p`, an elliptic curve is supersingular exactly when its formal group
-has height `2`** (Silverman V.3.1). -/
-theorem isSupersingular_iff_height_formalGroup_eq_two :
-    W.IsSupersingular p ↔ (formalGroup W).height p = 2 := by
-  have : ExpChar K p := .prime hp.out
-  have hpZ : (p : ℤ) ≠ 0 := mod_cast hp.out.ne_zero
-  set φ := TauCeti.Isogeny.mulByIntIsogenyOfNeZero W.toAffine hpZ
-  have hdeg : φ.separableDegree * φ.inseparableDegree = p ^ 2 := by
-    rw [φ.separableDegree_mul_inseparableDegree, TauCeti.Isogeny.degree_mulByIntIsogenyOfNeZero,
-      Int.natAbs_natCast]
-  rw [isSupersingular_iff_separableDegree_mulByIntIsogenyOfNeZero_eq_one p W,
-    ← Nat.cast_ofNat (n := 2), W.height_formalGroup_eq_natCast_iff_inseparableDegree]
-  constructor
-  · intro hs
-    rw [hs, one_mul] at hdeg
-    exact hdeg
-  · intro hi
-    rw [hi] at hdeg
-    exact (Nat.mul_eq_right (pow_ne_zero 2 hp.out.ne_zero)).mp hdeg
-
-/-- **The formal group of an elliptic curve over a field of prime characteristic has height `1` or
-`2`.** -/
-theorem height_formalGroup_eq_one_or_eq_two :
-    (formalGroup W).height p = 1 ∨ (formalGroup W).height p = 2 := by
-  by_cases h : W.IsOrdinary p
-  · exact Or.inl (W.isOrdinary_iff_height_formalGroup_eq_one.mp h)
-  · exact Or.inr (W.isSupersingular_iff_height_formalGroup_eq_two.mp (not_isOrdinary.mp h))
-
-/-- **The formal group of an elliptic curve over a field of prime characteristic has height at most
-`2`.** -/
-theorem height_formalGroup_le_two : (formalGroup W).height p ≤ 2 := by
-  rcases W.height_formalGroup_eq_one_or_eq_two with h | h
-  · rw [h]; decide
-  · exact h.le
-
-/-- **Ordinarity from the Hasse invariant**: in prime characteristic `p`, an elliptic curve is
-ordinary exactly when the coefficient of `Tᵖ⁻¹` in the invariant differential of its formal group
-is nonzero. -/
-theorem isOrdinary_iff_coeff_invariantDifferential_formalGroup_ne_zero :
-    W.IsOrdinary p ↔ PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential ≠ 0 := by
-  rw [W.isOrdinary_iff_height_formalGroup_eq_one, W.height_formalGroup_eq_one_iff]
-
-/-- **Supersingularity from the Hasse invariant**: in prime characteristic `p`, an elliptic curve is
-supersingular exactly when the coefficient of `Tᵖ⁻¹` in the invariant differential of its formal
-group vanishes. -/
-theorem isSupersingular_iff_coeff_invariantDifferential_formalGroup_eq_zero :
-    W.IsSupersingular p ↔ PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential = 0 := by
-  rw [← not_isOrdinary, W.isOrdinary_iff_coeff_invariantDifferential_formalGroup_ne_zero, not_not]
 
 /-- **Height two from the Hasse invariant**: in prime characteristic `p`, an elliptic curve has
 formal group of height `2` exactly when the coefficient of `Tᵖ⁻¹` in the invariant differential of

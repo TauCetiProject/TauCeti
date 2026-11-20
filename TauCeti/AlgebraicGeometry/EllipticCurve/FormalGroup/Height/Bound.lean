@@ -143,17 +143,17 @@ theorem isUnit_mk_coeff_nsmulSeries_formalGroup_of_span_c₄_Δ_eq_top
   ((formalGroup W).isUnit_mk_coeff_nsmulSeries_iff hp 2).mpr
     (W.heightIdeal_formalGroup_eq_top_of_span_c₄_Δ_eq_top h hp le_rfl)
 
-/-- **Height-two bound for elliptic Weierstrass curves.** At every prime `p`, every height ideal
-from `I₃` onward of the formal group of an elliptic Weierstrass curve is the unit ideal. This holds
-over arbitrary commutative coefficient rings. -/
+/-- For an elliptic Weierstrass curve over any commutative ring and any prime `p`, every height
+ideal from `I₃` onward of its formal group is the unit ideal. This holds over arbitrary
+commutative coefficient rings. -/
 theorem heightIdeal_formalGroup_eq_top [W.IsElliptic] (hp : p.Prime) (hn : 3 ≤ n) :
     (formalGroup W).heightIdeal p n = ⊤ :=
   W.heightIdeal_formalGroup_eq_top_of_span_c₄_Δ_eq_top
     (Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) W.isUnit_Δ) hp hn
 
-/-- **Landweber's `v₂`-unit condition for elliptic Weierstrass curves.** At every prime `p`,
-Landweber's `v₂` of the formal group of an elliptic Weierstrass curve is a unit modulo `(p, v₁)`.
-This is the height-two unit condition, with no regularity assumption on the coefficient ring. -/
+/-- For an elliptic Weierstrass curve over any commutative ring and any prime `p`, Landweber's
+`v₂` of its formal group is a unit modulo `(p, v₁)`. This is the height-two unit condition, with
+no regularity assumption on the coefficient ring. -/
 theorem isUnit_mk_coeff_nsmulSeries_formalGroup [W.IsElliptic] (hp : p.Prime) :
     IsUnit (Ideal.Quotient.mk ((formalGroup W).heightIdeal p 2)
       (PowerSeries.coeff (p ^ 2) ((formalGroup W).nsmulSeries p))) :=

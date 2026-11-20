@@ -187,7 +187,7 @@ theorem mem_seifertLoops {p : ℕ × ℕ} : p ∈ w.seifertLoops ↔ w.IsSeifert
 /-- The empty braid word has no basis loops, regardless of its strand count. -/
 instance isEmpty_seifertLoops_nil : IsEmpty (seifertLoops (n := n) []) := by
   refine ⟨fun x ↦ ?_⟩
-  simpa [seifertLoops] using x.2
+  simpa [seifertLoops] using x.property
 
 /-- A loop of `w ++ [y]` not running through the appended letter is a loop of `w`. -/
 theorem isSeifertLoop_append_singleton_iff (y : Fin (n - 1) × ℤˣ) {p : ℕ × ℕ}
@@ -243,14 +243,14 @@ interleave. -/
 theorem seifertMatrix_apply (a b : w.seifertLoops) :
     w.seifertMatrix a b =
       if a = b then
-        if w.signAt a.1.1 = w.signAt a.1.2 then -w.signAt a.1.1 else 0
-      else if w.levelAt a.1.1 = w.levelAt b.1.1 then
-        if a.1.2 = b.1.1 then (if w.signAt a.1.2 = -1 then -1 else 0)
-        else if b.1.2 = a.1.1 then (if w.signAt a.1.1 = 1 then 1 else 0)
+        if w.signAt a.val.1 = w.signAt a.val.2 then -w.signAt a.val.1 else 0
+      else if w.levelAt a.val.1 = w.levelAt b.val.1 then
+        if a.val.2 = b.val.1 then (if w.signAt a.val.2 = -1 then -1 else 0)
+        else if b.val.2 = a.val.1 then (if w.signAt a.val.1 = 1 then 1 else 0)
         else 0
-      else if w.levelAt a.1.1 = (w.levelAt b.1.1).map (· + 1) then
-        if b.1.1 < a.1.1 ∧ a.1.1 < b.1.2 ∧ b.1.2 < a.1.2 then -1
-        else if a.1.1 < b.1.1 ∧ b.1.1 < a.1.2 ∧ a.1.2 < b.1.2 then 1
+      else if w.levelAt a.val.1 = (w.levelAt b.val.1).map (· + 1) then
+        if b.val.1 < a.val.1 ∧ a.val.1 < b.val.2 ∧ b.val.2 < a.val.2 then -1
+        else if a.val.1 < b.val.1 ∧ b.val.1 < a.val.2 ∧ a.val.2 < b.val.2 then 1
         else 0
       else 0 := by
   rw [seifertMatrix, Matrix.of_apply, seifertEntry]
@@ -259,14 +259,14 @@ theorem seifertMatrix_apply (a b : w.seifertLoops) :
 /-- The diagonal entry at a loop whose two bands have the same sign `ε` is `-ε`. -/
 @[simp]
 theorem seifertMatrix_apply_self (a : w.seifertLoops) :
-    w.seifertMatrix a a = if w.signAt a.1.1 = w.signAt a.1.2 then -w.signAt a.1.1 else 0 := by
+    w.seifertMatrix a a = if w.signAt a.val.1 = w.signAt a.val.2 then -w.signAt a.val.1 else 0 := by
   simp [seifertMatrix_apply]
 
 /-- A loop has linking number zero with the push-off of a loop on the level above it. -/
 theorem seifertMatrix_apply_eq_zero_of_levelAt_eq_map_succ {a b : w.seifertLoops}
-    (h : w.levelAt b.1.1 = (w.levelAt a.1.1).map (· + 1)) : w.seifertMatrix a b = 0 := by
-  have ha : w.levelAt a.1.1 ≠ none := (w.levelAt_ne_none_iff).2
-    (((w.mem_seifertLoops).1 a.2).1.trans ((w.mem_seifertLoops).1 a.2).2.1)
+    (h : w.levelAt b.val.1 = (w.levelAt a.val.1).map (· + 1)) : w.seifertMatrix a b = 0 := by
+  have ha : w.levelAt a.val.1 ≠ none := (w.levelAt_ne_none_iff).2
+    (((w.mem_seifertLoops).1 a.property).1.trans ((w.mem_seifertLoops).1 a.property).2.1)
   obtain ⟨l, hl⟩ := Option.ne_none_iff_exists'.1 ha
   rw [hl, Option.map_some] at h
   have hab : a ≠ b := by
@@ -357,8 +357,8 @@ private theorem exists_seifertMatrix_eq_submatrix_of_equiv
   obtain ⟨a, rfl⟩ := κ.surjective a'
   obtain ⟨b, rfl⟩ := κ.surjective b'
   simp only [Matrix.submatrix_apply, Equiv.symm_apply_apply, seifertMatrix, Matrix.of_apply]
-  exact seifertEntry_map e hlevel hlt hsign ((w.mem_seifertLoops).1 a.2)
-    ((w.mem_seifertLoops).1 b.2)
+  exact seifertEntry_map e hlevel hlt hsign ((w.mem_seifertLoops).1 a.property)
+    ((w.mem_seifertLoops).1 b.property)
 
 end Transport
 
@@ -429,8 +429,8 @@ theorem exists_seifertMatrix_stabilize :
   have hloops : ∀ p, p ∈ (w.stabilize ε).seifertLoops ↔ p ∈ w.seifertLoops := fun p ↦ by
     simp only [mem_seifertLoops, isSeifertLoop_stabilize_iff]
   refine ⟨Equiv.subtypeEquivRight hloops, Matrix.ext fun a b ↦ ?_⟩
-  obtain ⟨ha12, ha2, -, -⟩ := (w.mem_seifertLoops).1 ((hloops a).1 a.2)
-  obtain ⟨hb12, hb2, -, -⟩ := (w.mem_seifertLoops).1 ((hloops b).1 b.2)
+  obtain ⟨ha12, ha2, -, -⟩ := (w.mem_seifertLoops).1 ((hloops a).1 a.property)
+  obtain ⟨hb12, hb2, -, -⟩ := (w.mem_seifertLoops).1 ((hloops b).1 b.property)
   simp only [Matrix.submatrix_apply, Equiv.subtypeEquivRight_apply_coe, seifertMatrix,
     Matrix.of_apply, seifertEntry, levelAt_stabilize_of_lt w ε (ha12.trans ha2),
     levelAt_stabilize_of_lt w ε (hb12.trans hb2), signAt_stabilize_of_lt w ε ha2,
@@ -492,7 +492,7 @@ theorem exists_seifertMatrix_append_cons_of_not_exists (h : ¬∃ x ∈ u ++ v, 
         List.length_append, List.length_cons]
   refine ⟨Equiv.subtypeEquivRight hloops, Matrix.ext fun a b ↦ ?_⟩
   obtain ⟨ha1, ha2⟩ := IsSeifertLoop.ne_length_of_not_exists u v i ε h
-    ((mem_seifertLoops _).1 ((hloops a).1 a.2))
+    ((mem_seifertLoops _).1 ((hloops a).1 a.property))
   simp only [Matrix.submatrix_apply, Equiv.subtypeEquivRight_apply_coe, seifertMatrix,
     Matrix.of_apply, seifertEntry, levelAt_append_cons_sign u v i ε' ε,
     signAt_append_cons_sign u v i ε' ε ha1, signAt_append_cons_sign u v i ε' ε ha2]
@@ -1023,22 +1023,22 @@ private theorem seifertEntry_append_singleton_eq_sum {a b : ℕ × ℕ}
 that a loop through the first letter goes to the loop through the moved letter. -/
 private theorem exists_rotate_map :
     ∃ κ : seifertLoops (n := n) (x :: v) → (v ++ [x]).seifertLoops,
-      (∀ c, c.1.1 ≠ 0 → (κ c).1 = (c.1.1 - 1, c.1.2 - 1)) ∧
-        ∀ c, c.1.1 = 0 → (κ c).1 = (m - 1, v.length) := by
+      (∀ c, c.val.1 ≠ 0 → (κ c).val = (c.val.1 - 1, c.val.2 - 1)) ∧
+        ∀ c, c.val.1 = 0 → (κ c).val = (m - 1, v.length) := by
   -- a loop through the first letter lies on the level of `x`, so that level has a second letter
-  have hm0 : ∀ c : seifertLoops (n := n) (x :: v), c.1.1 = 0 → m ≠ 0 := fun c h0 ↦ by
-    have hc := (mem_seifertLoops _).1 c.2
-    have hl : levelAt (n := n) (x :: v) c.1.2 = some (x.1 : ℕ) := by
+  have hm0 : ∀ c : seifertLoops (n := n) (x :: v), c.val.1 = 0 → m ≠ 0 := fun c h0 ↦ by
+    have hc := (mem_seifertLoops _).1 c.property
+    have hl : levelAt (n := n) (x :: v) c.val.2 = some (x.1 : ℕ) := by
       rw [hc.2.2.1, h0, levelAt_cons_zero]
     have := not_lt.1 fun h ↦ hm' _ h hl
-    have := ((mem_seifertLoops _).1 c.2).fst_lt_snd
+    have := ((mem_seifertLoops _).1 c.property).fst_lt_snd
     omega
   refine ⟨fun c ↦
-    ⟨if c.1.1 = 0 then (m - 1, v.length) else (c.1.1 - 1, c.1.2 - 1), by
+    ⟨if c.val.1 = 0 then (m - 1, v.length) else (c.val.1 - 1, c.val.2 - 1), by
       rw [mem_seifertLoops]
       split_ifs with h0
       · exact isSeifertLoop_sub_one_length hm hm' (hm0 c h0)
-      · have hc := (mem_seifertLoops _).1 c.2
+      · have hc := (mem_seifertLoops _).1 c.property
         have h1 := hc.fst_lt_snd
         have h2 := hc.snd_lt_length
         simp only [List.length_cons] at h2
@@ -1050,18 +1050,18 @@ private theorem exists_rotate_map :
 /-- The map `κ` of `exists_rotate_map` is a bijection. -/
 private theorem bijective_of_rotate_map
     (κ : seifertLoops (n := n) (x :: v) → (v ++ [x]).seifertLoops)
-    (hκ : ∀ c, c.1.1 ≠ 0 → (κ c).1 = (c.1.1 - 1, c.1.2 - 1))
-    (hκ₀ : ∀ c, c.1.1 = 0 → (κ c).1 = (m - 1, v.length)) : Function.Bijective κ := by
+    (hκ : ∀ c, c.val.1 ≠ 0 → (κ c).val = (c.val.1 - 1, c.val.2 - 1))
+    (hκ₀ : ∀ c, c.val.1 = 0 → (κ c).val = (m - 1, v.length)) : Function.Bijective κ := by
   refine ⟨fun c d h ↦ Subtype.ext ?_, fun a ↦ ?_⟩
-  · have hc := (mem_seifertLoops _).1 c.2
-    have hd := (mem_seifertLoops _).1 d.2
+  · have hc := (mem_seifertLoops _).1 c.property
+    have hd := (mem_seifertLoops _).1 d.property
     have hc1 := hc.fst_lt_snd
     have hc2 := hc.snd_lt_length
     have hd1 := hd.fst_lt_snd
     have hd2 := hd.snd_lt_length
     simp only [List.length_cons] at hc2 hd2
     have h' := congrArg Subtype.val h
-    by_cases h0 : c.1.1 = 0 <;> by_cases h0' : d.1.1 = 0
+    by_cases h0 : c.val.1 = 0 <;> by_cases h0' : d.val.1 = 0
     · exact hc.eq_of_fst_eq hd (h0.trans h0'.symm)
     · rw [hκ₀ c h0, hκ d h0', Prod.mk.injEq] at h'
       omega
@@ -1069,8 +1069,8 @@ private theorem bijective_of_rotate_map
       omega
     · rw [hκ c h0, hκ d h0', Prod.mk.injEq] at h'
       exact Prod.ext (by omega) (by omega)
-  · have ha := (mem_seifertLoops _).1 a.2
-    by_cases ha2 : a.1.2 = v.length
+  · have ha := (mem_seifertLoops _).1 a.property
+    by_cases ha2 : a.val.2 = v.length
     · -- the loop through the moved letter comes from the first loop of the level of `x`
       have ha1 := fst_add_one_eq_of_snd_eq_length hm hm' ha ha2
       have hex : ∃ j, 0 < j ∧ levelAt (n := n) (x :: v) j = some (x.1 : ℕ) := ⟨m, by omega, hm⟩
@@ -1084,7 +1084,7 @@ private theorem bijective_of_rotate_map
       rw [hκ₀ _ rfl]
       exact Prod.ext (by simp only; omega) ha2.symm
     · have ha2' := snd_lt_length_of_ne ha ha2
-      refine ⟨⟨(a.1.1 + 1, a.1.2 + 1), (mem_seifertLoops _).2
+      refine ⟨⟨(a.val.1 + 1, a.val.2 + 1), (mem_seifertLoops _).2
         ((isSeifertLoop_append_singleton_iff_cons x v ha2').1 ha)⟩, Subtype.ext ?_⟩
       rw [hκ _ (Nat.succ_ne_zero _)]
       simp
@@ -1094,26 +1094,26 @@ omit hm hm' in
 of the level of `x`, so it is unimodular. -/
 private theorem isUnit_det_rotateRow
     (κ : seifertLoops (n := n) (x :: v) → (v ++ [x]).seifertLoops)
-    (hκ : ∀ c, c.1.1 ≠ 0 → (κ c).1 = (c.1.1 - 1, c.1.2 - 1))
-    (hκ₀ : ∀ c, c.1.1 = 0 → (κ c).1 = (m - 1, v.length)) :
+    (hκ : ∀ c, c.val.1 ≠ 0 → (κ c).val = (c.val.1 - 1, c.val.2 - 1))
+    (hκ₀ : ∀ c, c.val.1 = 0 → (κ c).val = (m - 1, v.length)) :
     IsUnit (Matrix.of fun c d ↦ rotateRow x v (κ c) d :
       Matrix (seifertLoops (n := n) (x :: v)) (seifertLoops (n := n) (x :: v)) ℤ).det := by
   set P : Matrix (seifertLoops (n := n) (x :: v)) (seifertLoops (n := n) (x :: v)) ℤ :=
     Matrix.of fun c d ↦ rotateRow x v (κ c) d with hPdef
-  have hrow : ∀ c d : seifertLoops (n := n) (x :: v), c.1.1 ≠ 0 →
+  have hrow : ∀ c d : seifertLoops (n := n) (x :: v), c.val.1 ≠ 0 →
       rotateRow x v (κ c) d = (1 : Matrix _ _ ℤ) c d := fun c d h0 ↦ by
-    have hc := (mem_seifertLoops _).1 c.2
+    have hc := (mem_seifertLoops _).1 c.property
     have h1 := hc.fst_lt_snd
     have h2 := hc.snd_lt_length
     simp only [List.length_cons] at h2
-    have hne : c.1.2 - 1 ≠ v.length := by omega
+    have hne : c.val.2 - 1 ≠ v.length := by omega
     rw [rotateRow, hκ c h0, Matrix.one_apply]
-    simp only [hne, ↓reduceIte, sub_one_add_one_pair h0 (by omega), eq_comm (a := d.1),
+    simp only [hne, ↓reduceIte, sub_one_add_one_pair h0 (by omega), eq_comm (a := d.val),
       Subtype.ext_iff]
-  by_cases h₀ : ∃ c₀ : seifertLoops (n := n) (x :: v), c₀.1.1 = 0
+  by_cases h₀ : ∃ c₀ : seifertLoops (n := n) (x :: v), c₀.val.1 = 0
   · obtain ⟨c₀, hc₀⟩ := h₀
     set r : seifertLoops (n := n) (x :: v) → ℤ := fun d ↦
-      if levelAt (n := n) (x :: v) d.1.1 = some (x.1 : ℕ) then -1 else 0 with hr
+      if levelAt (n := n) (x :: v) d.val.1 = some (x.1 : ℕ) then -1 else 0 with hr
     have hsum : ∑ k, r k • (1 : Matrix (seifertLoops (n := n) (x :: v))
         (seifertLoops (n := n) (x :: v)) ℤ) k = r := by
       ext d
@@ -1127,7 +1127,7 @@ private theorem isUnit_det_rotateRow
       · subst hc
         simp [hPdef, rotateRow, hκ₀ c hc₀, hr]
       · rw [hPdef, Matrix.of_apply, Matrix.updateRow_ne hc, hrow c d fun h ↦ hc (Subtype.ext
-          (((mem_seifertLoops _).1 c.2).eq_of_fst_eq ((mem_seifertLoops _).1 c₀.2)
+          (((mem_seifertLoops _).1 c.property).eq_of_fst_eq ((mem_seifertLoops _).1 c₀.property)
             (h.trans hc₀.symm)))]
     rw [hP, Matrix.det_updateRow_sum, Matrix.det_one, smul_eq_mul, mul_one, hr]
     simp [hc₀]
@@ -1160,8 +1160,9 @@ theorem exists_seifertMatrix_append_singleton :
   ext a b
   simp only [hPdef, seifertMatrix, Matrix.submatrix_apply, Matrix.mul_apply,
     Matrix.transpose_apply, Matrix.of_apply, Equiv.ofBijective_apply_symm_apply]
-  rw [Finset.univ_eq_attach, seifertEntry_append_singleton_eq_sum ((mem_seifertLoops _).1 a.2)
-    ((mem_seifertLoops _).1 b.2), ← Finset.sum_attach]
+  rw [Finset.univ_eq_attach, seifertEntry_append_singleton_eq_sum
+      ((mem_seifertLoops _).1 a.property)
+    ((mem_seifertLoops _).1 b.property), ← Finset.sum_attach]
   refine Finset.sum_congr rfl fun d _ ↦ ?_
   rw [← Finset.sum_attach]
 
