@@ -9,8 +9,9 @@ public import TauCeti.MeasureTheory.Measure.LogarithmicPotential.Basic
 
 import Mathlib.Probability.ConditionalProbability
 import TauCeti.MeasureTheory.Measure.Portmanteau
+import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.UniformIntegrable
-import TauCeti.MeasureTheory.Integral.Bochner.Lp
+import TauCeti.MeasureTheory.Integral.Bochner.OperatorField
 import TauCeti.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Integral
 
@@ -156,16 +157,17 @@ private theorem tendsto_integral_contDiff_of_ae_tendsto_normalizedLogarithmicPot
         (σ : Measure ℂ).normalizedLogarithmicPotential p.2) (ν.prod ν) :=
     (memLp_iff.mpr ((eLpNorm_normalizedPotential_sub_le (hLp σ)).trans_lt
       (by finiteness : _ < ∞))).integrable (by norm_num)
-  have htest := tendsto_integral_mul_of_tendsto_eLpNorm (.of_forall fun n ↦ hi (μs n)) (hi μ)
+  have htest := tendsto_integral_mul_of_integral_norm_sub (.of_forall fun n ↦ hi (μs n)) (hi μ)
     (hf.continuous_laplacian.measurable.comp measurable_fst).aestronglyMeasurable
-    (ae_of_all _ fun p ↦ hB' p.1) hpot
+    (ae_of_all _ fun p ↦ hB' p.1)
+    (TauCeti.MeasureTheory.tendsto_integral_norm_of_tendsto_eLpNorm le_rfl hpot)
   have hpair (σ : ProbabilityMeasure ℂ) :
       ∫ p : ℂ × ℂ, Δ f p.1 * ((σ : Measure ℂ).normalizedLogarithmicPotential p.1 -
         (σ : Measure ℂ).normalizedLogarithmicPotential p.2) ∂ν.prod ν =
         (((volume s)⁻¹).toReal * (2 * Real.pi)) * ∫ z, f z ∂(σ : Measure ℂ) :=
     integral_laplacian_mul_normalizedPotential_sub_cond hf hc hsub hs hfin σ hB'
       ((memLp_iff.mpr ((hLp σ).trans_lt hC'.lt_top)).integrable (by norm_num))
-  simp only [Function.comp_apply, hpair] at htest
+  simp only [Function.comp_apply, mul_comm _ (Δ f _), hpair] at htest
   have hne : ((volume s)⁻¹).toReal * (2 * Real.pi) ≠ 0 := by
     rw [ENNReal.toReal_inv]
     positivity [ENNReal.toReal_pos hs hfin, Real.pi_pos]

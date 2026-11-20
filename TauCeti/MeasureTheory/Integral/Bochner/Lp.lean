@@ -23,36 +23,10 @@ time integrals, without treating point evaluation as a continuous functional on 
 
 public section
 
-open Filter MeasureTheory
-open scoped ENNReal Topology
+open MeasureTheory
+open scoped ENNReal
 
 namespace MeasureTheory
-
-/-- Testing against a bounded measurable multiplier preserves convergence of the
-integrals along an `L¹`-convergent family. -/
-theorem tendsto_integral_mul_of_tendsto_eLpNorm {α : Type*} [MeasurableSpace α]
-    {ι : Type*} {l : Filter ι} {ν : Measure α} {u : ι → α → ℝ} {v f : α → ℝ}
-    (hu : ∀ᶠ i in l, Integrable (u i) ν)
-    (hv : Integrable v ν) (hf : AEStronglyMeasurable f ν) {B : ℝ} (hB : ∀ᵐ x ∂ν, ‖f x‖ ≤ B)
-    (h : Tendsto (fun n ↦ eLpNorm (u n - v) 1 ν) l (𝓝 0)) :
-    Tendsto (fun n ↦ ∫ x, f x * u n x ∂ν) l (𝓝 (∫ x, f x * v x ∂ν)) := by
-  have hF : ∀ᶠ i in l, Integrable (fun x ↦ f x * u i x) ν :=
-    hu.mono fun _ hi ↦ hi.bdd_mul hf hB
-  have hG : Integrable (fun x ↦ f x * v x) ν := hv.bdd_mul hf hB
-  refine tendsto_integral_of_L1' _ hF ?_
-  have hmul := ENNReal.Tendsto.const_mul (a := ENNReal.ofReal B) h (Or.inr ENNReal.ofReal_ne_top)
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    (by simpa only [mul_zero] using hmul)
-    (Eventually.of_forall fun _ ↦ bot_le) ?_
-  filter_upwards [hu, hF] with i hi hiF
-  rw [eLpNorm_one_eq_lintegral_eNorm (hiF.sub hG).aestronglyMeasurable,
-    eLpNorm_one_eq_lintegral_eNorm (hi.sub hv).aestronglyMeasurable,
-    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-  apply lintegral_mono_ae
-  filter_upwards [hB] with x hx
-  simp only [Pi.sub_apply, ← mul_sub, eNorm_mul]
-  gcongr
-  exact (Real.eNorm_eq_ofReal_abs _).le.trans (ENNReal.ofReal_le_ofReal hx)
 
 variable {α Ω : Type*} [MeasurableSpace α] [MeasurableSpace Ω]
   {μ : Measure α} {P : Measure Ω} [IsFiniteMeasure P]
