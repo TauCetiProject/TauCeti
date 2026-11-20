@@ -93,7 +93,7 @@ theorem extendByZero_apply_of_mem_orthogonal (S : U →L[𝕜] U) {x : E} (hx : 
 /-- Every image vector of `U.extendByZero S` lies in `U`. -/
 theorem extendByZero_apply_mem (S : U →L[𝕜] U) (x : E) :
     U.extendByZero S x ∈ U :=
-  (S (U.orthogonalProjectionOnto x)).2
+  (S (U.orthogonalProjectionOnto x)).property
 
 /-- Compressing `U.extendByZero S` back to `U` recovers `S`. -/
 @[simp]

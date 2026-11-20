@@ -475,7 +475,7 @@ theorem measurable_variationMeasure_indicator_setOf_lt [IsLocallyFiniteMeasure �
   -- Apply the generating π-system criterion along the finite-measure traces of `V j`.
   refine Measurable.measure_of_isPiSystem_of_iUnion BorelSpace.measurable_eq
     isPiSystem_isOpen (B := fun j ↦ (↑) ⁻¹' (V j : Set E))
-    (fun j ↦ (V j).isOpen.preimage continuous_subtype_val) hcover (fun t j ↦ ?_)
+    (fun j ↦ (V j).isOpen.preimage continuous_subtypeVal) hcover (fun t j ↦ ?_)
     (fun W hW ↦ hopen' hW)
   have hK : IsCompact (((↑) : Ω → E) ⁻¹' closure (V j : Set E)) := by
     rw [Subtype.isCompact_iff, image_preimage_eq_of_subset (by simpa using hVΩ j)]
@@ -517,7 +517,7 @@ theorem variationMeasure_eq_bind (hu : LocallyIntegrableOn u Ω μ)
   -- them on open sets, where this is the coarea formula on each open subset of `Ω`.
   refine Measure.ext_of_generateFrom_of_iUnion {W | IsOpen W} (fun j => (↑) ⁻¹' (V j : Set E))
     BorelSpace.measurable_eq isPiSystem_isOpen ?_
-    (fun j => (V j).isOpen.preimage continuous_subtype_val) (fun j => ?_) fun W hW => ?_
+    (fun j => (V j).isOpen.preimage continuous_subtypeVal) (fun j => ?_) fun W hW => ?_
   · exact hcover
   · rw [variationMeasure_preimage_coe hu hfin (hVsub j)]
     exact (hlf u).1 hfin j

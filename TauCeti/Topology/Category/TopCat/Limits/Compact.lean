@@ -45,9 +45,9 @@ theorem exists_preimage_eq_empty_of_isLimit {i : J} {s : Set (F.obj i)} (hs : Is
   let G : Over i ⥤ TopCat.{max v u} :=
     { obj := fun j ↦ TopCat.of (F.map j.hom ⁻¹' s)
       map := fun {j k} a ↦ TopCat.ofHom
-        ⟨fun x ↦ ⟨F.map a.left x.1, by
+        ⟨fun x ↦ ⟨F.map a.left x.val, by
           simpa only [mem_preimage, ← ConcreteCategory.comp_apply, ← F.map_comp,
-            Over.w a] using x.2⟩,
+            Over.w a] using x.property⟩,
           by fun_prop⟩
       map_id := by intro j; ext x; simp
       map_comp := by intro j k l a b; ext x; simp }
@@ -62,18 +62,18 @@ theorem exists_preimage_eq_empty_of_isLimit {i : J} {s : Set (F.obj i)} (hs : Is
   let d : Cone (Over.forget i ⋙ F) :=
     { pt := TopCat.of PUnit
       π :=
-        { app := fun j ↦ TopCat.ofHom ⟨fun _ ↦ (x.1 j).1, continuous_const⟩
+        { app := fun j ↦ TopCat.ofHom ⟨fun _ ↦ (x.val j).val, continuous_const⟩
           naturality := by
             intro j k a
             ext
-            exact (congrArg Subtype.val (x.2 a)).symm } }
+            exact (congrArg Subtype.val (x.property a)).symm } }
   let hc' := (Functor.Initial.isLimitWhiskerEquiv (Over.forget i) c).symm hc
   let y := hc'.lift d PUnit.unit
   have hy : c.π.app i y ∈ s := by
-    have he : c.π.app i y = (x.1 (Over.mk (𝟙 i))).1 :=
+    have he : c.π.app i y = (x.val (Over.mk (𝟙 i))).val :=
       ConcreteCategory.congr_hom (hc'.fac d (Over.mk (𝟙 i))) PUnit.unit
     rw [he]
-    simpa using (x.1 (Over.mk (𝟙 i))).2
+    simpa using (x.val (Over.mk (𝟙 i))).property
   have hm : y ∈ c.π.app i ⁻¹' s := hy
   rw [h] at hm
   exact hm

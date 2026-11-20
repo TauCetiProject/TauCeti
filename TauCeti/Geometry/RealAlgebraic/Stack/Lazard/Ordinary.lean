@@ -62,16 +62,16 @@ variable {ι : Type*} {n : ℕ} {F : ι → MvPolynomial (Fin (n + 1)) ℝ} {S :
 namespace Delineation
 
 variable (D : Delineation fun k (x : S) ↦
-    (optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval x.1))
+    (optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval x.val))
   (hS : S.Nonempty)
   (hnull : ∀ k, (∀ x : S,
-    (optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval x.1) = 0) → F k = 0)
+    (optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval x.val) = 0) → F k = 0)
 
 include D hnull in
 /-- If every member nullified everywhere on the base is zero, then so is every member nullified
 at some point of the base, since a delineation has no partly nullified member. -/
 private theorem eq_zero_of_map_eq_zero {k : ι} {x : S}
-    (hx : (optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval x.1) = 0) :
+    (hx : (optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval x.val) = 0) :
     F k = 0 :=
   hnull k ((D.eq_zero_or_ne_zero k).resolve_right fun h ↦ h x hx)
 
@@ -133,17 +133,17 @@ namespace LazardDelineation
 
 variable (D : LazardDelineation F S) (hS : IsPreconnected S)
   (hnull : ∀ k (x : S),
-    (optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval x.1) = 0 → F k = 0)
+    (optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval x.val) = 0 → F k = 0)
   (hdeg : ∀ k (x y : S),
-    ((optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval x.1)).natDegree =
-      ((optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval y.1)).natDegree)
+    ((optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval x.val)).natDegree =
+      ((optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval y.val)).natDegree)
 
 /-- **A Lazard delineation without nullification is a delineation.** Over a preconnected base on
 which no nonzero member of the family is nullified and every ordinary fibre has constant degree,
 a Lazard delineation of the family is a delineation of its ordinary fibres, with the same root
 functions and multiplicities. -/
 def toDelineation : Delineation fun k (x : S) ↦
-    (optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval x.1) where
+    (optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval x.val) where
   count := D.count
   root := D.root
   continuous_root := D.continuous_root
@@ -192,12 +192,12 @@ ordinary fibres have a delineation exactly when the family has a Lazard delineat
 theorem nonempty_delineation_iff_nonempty_lazardDelineation (hne : S.Nonempty)
     (hS : IsPreconnected S)
     (hnull : ∀ k (x : S),
-      (optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval x.1) = 0 → F k = 0)
+      (optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval x.val) = 0 → F k = 0)
     (hdeg : ∀ k (x y : S),
-      ((optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval x.1)).natDegree =
-        ((optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval y.1)).natDegree) :
+      ((optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval x.val)).natDegree =
+        ((optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval y.val)).natDegree) :
     Nonempty (Delineation fun k (x : S) ↦
-        (optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval x.1)) ↔
+        (optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval x.val)) ↔
       Nonempty (LazardDelineation F S) :=
   ⟨fun ⟨D⟩ ↦ ⟨D.toLazardDelineation hne fun k h ↦ hnull k ⟨_, hne.some_mem⟩ (h _)⟩,
     fun ⟨D⟩ ↦ ⟨D.toDelineation hS hnull hdeg⟩⟩

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Subgroup.Simple
 public import TauCeti.GroupTheory.Torsion
+import TauCeti.GroupTheory.OrderOfElement.Basic
 
 /-!
 # Simplicity from normal generation by elements of prime order
@@ -100,11 +101,7 @@ theorem isSimpleGroup_of_normalClosure_eq_top_of_forall_prime_dvd_natCard [Nontr
     (a : G) (ha : a ^ p = 1) (hgen : normalClosure ({a} : Set G) = ⊤) : IsSimpleGroup G := by
   refine ⟨fun N _ ↦ or_iff_not_imp_left.mpr fun hN ↦ ?_⟩
   -- The order of `N` is divisible by `p`, so its index is not, and `a` lies in `N`.
-  have hcop : (Nat.card (G ⧸ N)).Coprime p := by
-    rw [← index_eq_card, Nat.coprime_comm, hp.coprime_iff_not_dvd]
-    exact fun hi ↦ hcard (by rw [← N.card_mul_index, pow_two]; exact Nat.mul_dvd_mul (hdvd N hN) hi)
-  have hmem : a ∈ N := (QuotientGroup.eq_one_iff a).mp (hcop.pow_left_bijective.injective
-    (by simp only [← QuotientGroup.mk_pow, ha, QuotientGroup.mk_one, one_pow]))
-  exact top_unique (hgen ▸ normalClosure_le_normal (Set.singleton_subset_iff.mpr hmem))
+  exact top_unique (hgen ▸ normalClosure_le_normal (Set.singleton_subset_iff.mpr
+    (mem_of_pow_eq_one_of_dvd_natCard_of_not_sq_dvd hp ha (hdvd N hN) hcard)))
 
 end TauCeti

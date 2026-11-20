@@ -96,7 +96,7 @@ def mappingPathRightHomotopy :
     refine ((by fun_prop : Continuous fun q : I × MappingPathSpace p ↦
       Λ.toContinuousMap q.2 (σ q.1)).prodMk ?_).subtype_mk _
     apply ContinuousMap.continuous_of_continuous_uncurry
-    exact ((continuous_snd.comp continuous_fst).subtype_val.snd).eval
+    exact ((continuous_snd.comp continuous_fst).subtypeVal.snd).eval
       (Set.Icc.continuous_convexComb_prod.comp
         (((continuous_symm.comp (continuous_fst.comp continuous_fst)).prodMk
           (continuous_const.prodMk continuous_snd))))
@@ -154,10 +154,17 @@ def fiberHomotopyEquiv (b : B) :
   (Λ.mappingPathFiberHomotopyEquiv.fiber b).trans
     (MappingPathFiber.endpointHomeomorph p b).symm.toHomotopyEquiv
 
-@[simp]
 theorem fiberHomotopyEquiv_apply_val (b : B) (e : {e // p e = b}) :
     (Λ.fiberHomotopyEquiv b e).val = (e.val, ContinuousMap.const I (p e.val)) := by
   simp [fiberHomotopyEquiv, -Homeomorph.symm_toHomotopyEquiv]
+
+@[simp]
+theorem fiberHomotopyEquiv_toFun (b : B) :
+    (Λ.fiberHomotopyEquiv b).toFun = MappingPathFiber.ofFiber p b := by
+  ext e : 1
+  exact Subtype.ext <| (Λ.fiberHomotopyEquiv_apply_val b e).trans <|
+    (congrArg (e.val, ContinuousMap.const I ·) e.property).trans
+      (MappingPathFiber.ofFiber_val p b e).symm
 
 @[simp]
 theorem fiberHomotopyEquiv_symm_apply_coe (b : B) (x : MappingPathFiber p b) :
@@ -171,10 +178,8 @@ theorem fiberHomotopyEquiv_symm_homotopic (Λ' : LiftingFunction p) (b : B) :
     (Λ.fiberHomotopyEquiv b).invFun.Homotopic (Λ'.fiberHomotopyEquiv b).invFun := by
   let e := Λ.fiberHomotopyEquiv b
   let e' := Λ'.fiberHomotopyEquiv b
-  have hf : e.toFun = e'.toFun := by
-    ext x : 1
-    apply Subtype.ext
-    simp [e, e']
+  have hf : e.toFun = e'.toFun :=
+    (Λ.fiberHomotopyEquiv_toFun b).trans (Λ'.fiberHomotopyEquiv_toFun b).symm
   have h₀ := e'.left_inv.comp (ContinuousMap.Homotopic.refl e.invFun)
   have h₁ := (ContinuousMap.Homotopic.refl e'.invFun).comp e.right_inv
   rw [← hf] at h₀
@@ -211,6 +216,10 @@ noncomputable def fiberHomotopyEquiv (hp : IsHurewiczFibration.{max u v} p) (b :
   hp.nonempty_liftingFunction.some.fiberHomotopyEquiv b
 
 @[simp]
+theorem fiberHomotopyEquiv_toFun (hp : IsHurewiczFibration.{max u v} p) (b : B) :
+    (hp.fiberHomotopyEquiv b).toFun = MappingPathFiber.ofFiber p b :=
+  LiftingFunction.fiberHomotopyEquiv_toFun _ b
+
 theorem fiberHomotopyEquiv_apply_val (hp : IsHurewiczFibration.{max u v} p) (b : B)
     (e : {e // p e = b}) :
     (hp.fiberHomotopyEquiv b e).val = (e.val, ContinuousMap.const I (p e.val)) :=

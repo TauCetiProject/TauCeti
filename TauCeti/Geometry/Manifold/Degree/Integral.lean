@@ -90,12 +90,12 @@ private theorem exists_stack_of_records [T2Space M] [BoundarylessManifold I M]
   have key (x : s) : ∃ e : OpenPartialHomeomorph M N, (x : M) ∈ e.source ∧ EqOn f e e.source ∧
       e.source ⊆ U x ∧ ∀ z ∈ e.source, orientationSign o o' f z = orientationSign o o' f x := by
     obtain ⟨D, hD⟩ := (isRegularPoint_iff_isInvertible_mfderiv rfl).mp
-      (hy.isRegularPoint ((hs x).mp x.2))
+      (hy.isRegularPoint ((hs x).mp x.property))
     have hld : IsLocalDiffeomorphAt I J 1 f x := isLocalDiffeomorphAt_of_mfderiv_eq
       hf.contMDiffOn isOpen_univ (mem_univ _) BoundarylessManifold.isInteriorPoint le_rfl hD
     have hlh : IsLocalHomeomorphOn f {(x : M)} :=
       ((isLocalDiffeomorphOn_iff _).mpr fun z ↦
-        (mem_singleton_iff.mp z.2) ▸ hld).isLocalHomeomorphOn
+        (mem_singleton_iff.mp z.property) ▸ hld).isLocalHomeomorphOn
     obtain ⟨Φ, hxΦ, hfΦ⟩ := hlh x rfl
     obtain ⟨W, hWsub, hWo, hxW⟩ := mem_nhds_iff.mp
       (inter_mem ((hU x).2.mem_nhds (hU x).1)
@@ -104,7 +104,7 @@ private theorem exists_stack_of_records [T2Space M] [BoundarylessManifold I M]
       fun z hz ↦ (hWsub hz.2).1, fun z hz ↦ (hWsub hz.2).2⟩
   choose e hxe hfe hU' hsgn using key
   refine ⟨e, hxe, hfe, hsgn, fun x x' hxx' ↦ ?_, ?_⟩
-  · exact (hUd x.2 x'.2 (Subtype.coe_injective.ne hxx')).mono (hU' x) (hU' x')
+  · exact (hUd x.property x'.property (Subtype.coe_injective.ne hxx')).mono (hU' x) (hU' x')
   -- Since `f` is a closed map, the fibres near `y` stay inside the open union of the sheets.
   have hE := hfp.isClosedMap.eventually_nhds_fiber (p := (· ∈ ⋃ x, (e x).source)) y
     fun z hz ↦ (isOpen_iUnion fun x ↦ (e x).open_source).mem_nhds
@@ -112,7 +112,7 @@ private theorem exists_stack_of_records [T2Space M] [BoundarylessManifold I M]
   refine ⟨(⋂ x, (e x).target) ∩ {y' | ∀ z ∈ f ⁻¹' {y'}, z ∈ ⋃ x, (e x).source}, inter_mem
     (Filter.iInter_mem.mpr fun x ↦ (e x).open_target.mem_nhds ?_) hE,
     fun x ↦ inter_subset_left.trans (iInter_subset _ x), fun z hz ↦ hz.2 z rfl⟩
-  rw [← (hs x).mp x.2, hfe x (hxe x)]
+  rw [← (hs x).mp x.property, hfe x (hxe x)]
   exact (e x).map_source (hxe x)
 
 /-- **One sheet of the stack of records.** Let `e` be an open partial homeomorphism agreeing with
@@ -188,7 +188,7 @@ theorem exists_mem_nhds_integralTopForm_mpullback_eq_degreeAtRegularValue_mul [T
     mpullback_apply_eq_zero (image_eq_zero_of_notMem_tsupport hz)
   -- Each part is integrable, with integral the orientation sign at `x` times `∫_N φ`.
   have hsheet (x : s) := integrableTopForm_and_integralTopForm_sheet o o' hf (e x) (hfe x)
-    (hy.isRegularPoint ((hs x).mp x.2)) (hsgn x) hφ (hφV.trans (hVt x)) (hψ_zero x) (hψ_eq x)
+    (hy.isRegularPoint ((hs x).mp x.property)) (hsgn x) hφ (hφV.trans (hVt x)) (hψ_zero x) (hψ_eq x)
   -- The sheets decompose `f^*φ`.
   have hsum : mpullback I J f φ = ∑ x, ψ x := by
     funext z

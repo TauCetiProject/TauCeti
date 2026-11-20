@@ -62,7 +62,7 @@ private theorem primitive_highest (i : Fin t.rank) : IsPrimitive (highest t ht i
   -- Direct-sum operations are pointwise, and subtype operations are inherited,
   -- so the two linearity equations below hold definitionally.
   let p : M →ₗ[ℤ] t.fundamentalLattice ht i :=
-    { toFun x := ⟨(x : t.scModule ht) i, mem_scLattice_iff.mp x.2 i⟩
+    { toFun x := ⟨(x : t.scModule ht) i, mem_scLattice_iff.mp x.property i⟩
       map_add' _ _ := rfl
       map_smul' _ _ := rfl }
   have hp : p (highest t ht i) = ⟨t.fundamentalModuleGenerator ht i,
