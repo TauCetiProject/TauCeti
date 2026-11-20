@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Basic
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 
 import Mathlib.Geometry.Manifold.Algebra.Structures
+import TauCeti.Geometry.Manifold.ContMDiff.PiLp
 
 /-!
 # Smoothness of the rotation torus action
@@ -34,14 +35,6 @@ namespace TauCeti
 variable {ι : Type*} [Fintype ι]
 
 local instance : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
-
-/-- A map into `EuclideanSpace ℝ ι` is `C^n` when each of its coordinates is. -/
-private theorem contMDiff_euclideanSpace_of_apply {E H M : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
-    [ChartedSpace H M] {n : ℕ∞ω} {g : M → EuclideanSpace ℝ ι}
-    (h : ∀ j, ContMDiff I 𝓘(ℝ) n fun x ↦ g x j) : ContMDiff I 𝓘(ℝ, EuclideanSpace ℝ ι) n g :=
-  ((EuclideanSpace.equiv ι ℝ).symm : (ι → ℝ) →L[ℝ] EuclideanSpace ℝ ι).contMDiff.comp
-    (contMDiff_pi_module_iff.2 h)
 
 /-- The coefficients `cos θ_j` and `sin θ_j` of the rotation by `θ`, and the coordinates `z.1 j` and
 `z.2 j` of the rotated point, are smooth functions of `(θ, z)`. -/
@@ -87,8 +80,8 @@ theorem contMDiff_torusRotation :
     (rfl)
   rw [hpair]
   -- Each coordinate of the rotated point is a polynomial in smooth functions.
-  refine ContMDiff.prodMk_space (contMDiff_euclideanSpace_of_apply fun j ↦ ?_)
-    (contMDiff_euclideanSpace_of_apply fun j ↦ ?_) <;>
+  refine ContMDiff.prodMk_space (contMDiff_piLp_iff.2 fun j ↦ ?_)
+    (contMDiff_piLp_iff.2 fun j ↦ ?_) <;>
   obtain ⟨hcos, hsin, hfst, hsnd⟩ := contMDiff_torusRotation_coefficients (ι := ι) j
   · exact ((hcos.mul hfst).add (hsin.mul hsnd)).congr fun p ↦ torusRotation_apply_fst p.1 p.2 j
   · exact ((hsin.mul hfst).neg.add (hcos.mul hsnd)).congr fun p ↦ torusRotation_apply_snd p.1 p.2 j

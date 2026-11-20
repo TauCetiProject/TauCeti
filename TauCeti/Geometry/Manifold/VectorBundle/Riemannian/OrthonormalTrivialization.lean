@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 public import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
 public import Mathlib.Geometry.Manifold.Diffeomorph
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
+import TauCeti.Geometry.Manifold.ContMDiff.PiLp
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
 
@@ -142,12 +143,8 @@ theorem contMDiff_orthonormalBasis_repr_totalSpace [IsContMDiffRiemannianBundle 
     (hd : ∀ i, ContMDiff IB (IB.prod 𝓘(ℝ, F)) n (fun b ↦ TotalSpace.mk' F b (d b i))) :
     ContMDiff (IB.prod 𝓘(ℝ, F)) 𝓘(ℝ, EuclideanSpace ℝ ι) n
       (fun p : TotalSpace F E ↦ (d p.proj).repr p.2) := by
-  have hpi : ContMDiff (IB.prod 𝓘(ℝ, F)) 𝓘(ℝ, ι → ℝ) n
-      (fun p : TotalSpace F E ↦ fun i ↦ ⟪d p.proj i, p.2⟫_ℝ) :=
-    contMDiff_pi_module_iff.mpr fun i ↦
-      ((hd i).comp (Bundle.contMDiff_proj E)).inner_bundle contMDiff_id
-  refine ((EuclideanSpace.equiv ι ℝ).symm.contDiff.comp_contMDiff hpi).congr fun p ↦ ?_
-  ext i
+  refine contMDiff_piLp_iff.2 fun i ↦
+    (((hd i).comp (Bundle.contMDiff_proj E)).inner_bundle contMDiff_id).congr fun p ↦ ?_
   exact (d p.proj).repr_apply_apply p.2 i
 
 /-- Reconstructing fibre vectors from `EuclideanSpace ℝ ι` coordinates in a `C^n` global
