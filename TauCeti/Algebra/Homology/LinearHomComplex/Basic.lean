@@ -40,6 +40,8 @@ complexes.
   `CochainComplex.HomComplex.Cochain.v_apply_mem_ker_of_δ_eq_zero`: element-level formulas for the
   differential of a cochain of complexes of modules on an element killed by the source
   differential, and the resulting behaviour of closed degree-zero cochains on kernels.
+* `CochainComplex.HomComplex.Cochain.ext_linearHomComplex`: a cochain from a complex of modules
+  to the Hom complex of two complexes of modules is determined by its values on pairs of elements.
 
 The cochain modules, the differential `δ`, its `R`-linearity and the Leibniz rule for composition
 are supplied by Mathlib.
@@ -237,5 +239,17 @@ theorem v_apply_mem_ker_of_δ_eq_zero {R : Type*} [Ring R] {K L : CochainComplex
   simpa only [δ_zero_cochain_v, Cochain.zero_v, ModuleCat.hom_sub, ModuleCat.hom_comp,
     LinearMap.sub_apply, LinearMap.comp_apply, ha, map_zero, sub_zero, ModuleCat.hom_zero,
     LinearMap.zero_apply, LinearMap.mem_ker] using key
+
+/-- Two cochains from `K` to the `R`-linear Hom complex of `L` and `M`, for complexes of modules,
+agree as soon as their values agree on all pairs of elements. -/
+theorem ext_linearHomComplex {R : Type v} [CommRing R]
+    {K L M : CochainComplex (ModuleCat.{v} R) ℤ} {n : ℤ}
+    {z z' : Cochain K (linearHomComplex R L M) n}
+    (h : ∀ (p q : ℤ) (hpq : p + n = q) (x : K.X p) (a b : ℤ) (hab : a + q = b) (y : L.X a),
+      (((z.v p q hpq).hom x : Cochain L M q).v a b hab).hom y =
+        (((z'.v p q hpq).hom x : Cochain L M q).v a b hab).hom y) :
+    z = z' :=
+  Cochain.ext _ _ fun p q hpq => ModuleCat.hom_ext <| LinearMap.ext fun x =>
+    Cochain.ext _ _ fun a b hab => ModuleCat.hom_ext <| LinearMap.ext fun y => h p q hpq x a b hab y
 
 end CochainComplex.HomComplex.Cochain
