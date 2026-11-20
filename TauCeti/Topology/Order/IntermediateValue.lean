@@ -30,9 +30,6 @@ A continuous function on `Ioo a b` which lies above `c` just to the right of `a`
 
 A function continuous and strictly monotone on a neighbourhood `s` of `x` maps it onto a
 neighbourhood of `f x`, `StrictMonoOn.image_mem_nhds`.
-
-A function continuous on `[a, b]` with `f a = f b` is not injective on `[a, b)`,
-`ContinuousOn.not_injOn_Ico_of_apply_eq`: a closed loop does not embed in a densely ordered line.
 -/
 
 public section
@@ -145,30 +142,3 @@ theorem StrictMonoOn.image_mem_nhds [ConditionallyCompleteLinearOrder X] [OrderT
   exact Filter.mem_of_superset (Icc_mem_nhds (hf (hab ⟨le_rfl, (hax.trans hxb).le⟩) hx hax)
     (hf hx (hab ⟨(hax.trans hxb).le, le_rfl⟩) hxb))
     ((intermediate_value_Icc (hax.trans hxb).le (hcont.mono hab)).trans (image_mono hab))
-
-/-- A function continuous on `[a, b]`, with `a < b`, that takes the same value at both endpoints is
-not injective on `[a, b)`: a value strictly between `f a` and `f m`, for a point `m ∈ (a, b)`, is
-taken both on `[a, m)` and on `(m, b)`. So a closed loop, such as a continuous periodic function
-over one period, does not embed in a densely ordered line. -/
-theorem ContinuousOn.not_injOn_Ico_of_apply_eq [ConditionallyCompleteLinearOrder X]
-    [OrderTopology X] [DenselyOrdered X] [DenselyOrdered α] {f : X → α} {a b : X}
-    (hf : ContinuousOn f (Icc a b)) (hab : a < b) (hfab : f a = f b) : ¬InjOn f (Ico a b) := by
-  intro hinj
-  obtain ⟨m, ham, hmb⟩ := exists_between hab
-  have hne : f a ≠ f m := fun h ↦ ham.ne (hinj ⟨le_rfl, hab⟩ ⟨ham.le, hmb⟩ h)
-  obtain ⟨v, hv⟩ := nonempty_uIoo.2 hne
-  have hv' : v ∈ uIoo (f m) (f b) := by rwa [← hfab, uIoo_comm]
-  obtain ⟨s, hs, hfs⟩ := intermediate_value_uIcc (a := a) (b := m)
-    (hf.mono (by rw [uIcc_of_le ham.le]; exact Icc_subset_Icc_right hmb.le))
-    (uIoo_subset_uIcc_self hv)
-  obtain ⟨t, ht, hft⟩ := intermediate_value_uIcc (a := m) (b := b)
-    (hf.mono (by rw [uIcc_of_le hmb.le]; exact Icc_subset_Icc_left ham.le))
-    (uIoo_subset_uIcc_self hv')
-  rw [uIcc_of_le ham.le] at hs
-  rw [uIcc_of_le hmb.le] at ht
-  -- Neither `s` nor `t` is `m`, and `t` is not `b`, since `v` differs from `f m` and `f b`.
-  have hsm : s < m := hs.2.lt_of_ne fun h ↦ right_notMem_uIoo (h ▸ hfs ▸ hv)
-  have htm : m < t := ht.1.lt_of_ne fun h ↦ left_notMem_uIoo (h ▸ hft ▸ hv')
-  have htb : t < b := ht.2.lt_of_ne fun h ↦ right_notMem_uIoo (h ▸ hft ▸ hv')
-  exact (hsm.trans htm).ne
-    (hinj ⟨hs.1, hsm.trans hmb⟩ ⟨ham.le.trans htm.le, htb⟩ (hfs.trans hft.symm))

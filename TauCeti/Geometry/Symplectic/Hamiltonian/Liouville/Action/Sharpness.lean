@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Oscillator.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
-import TauCeti.Topology.Order.IntermediateValue
+import TauCeti.Topology.Order.Interval
 
 /-!
 # The hypotheses of the action–angle theorem cannot be dropped
@@ -41,7 +41,7 @@ continuous map into that level (`TauCeti.exists_continuous_mem_eq_actionAngleCov
   (`TauCeti.connectedComponentIn_preimage_momentum`), which is not compact
   (`TauCeti.not_isCompact_connectedComponentIn_preimage_momentum`). The conclusion fails at every
   point (`TauCeti.not_exists_actionAngle_momentum`): it would embed a circle continuously in a
-  line, which is impossible (`ContinuousOn.not_injOn_Ico_of_apply_eq`).
+  line, which is impossible (`ContinuousOn.apply_ne_apply_of_injOn_Ico`).
 
 In both examples the other hypotheses hold: the integrals are smooth, a single function commutes
 with itself (`TauCeti.SmoothTwoForm.poissonBracket_self`) and the plane has dimension `2 · 1`. The
@@ -308,7 +308,7 @@ theorem not_exists_actionAngle_momentum (x : ℝ × ℝ) (p : ℝ) [Fact (0 < p)
     refine congrArg Prod.fst (hinj (hGU _).1 (hGU _).1 ?_)
     rw [(hGU _).2.2, (hGU _).2.2, CotangentBundle.actionAngleCover_eq_actionAngleCover_iff]
     exact ⟨rfl, fun _ ↦ 1, funext fun _ ↦ by simp⟩
-  refine hf.continuousOn.not_injOn_Ico_of_apply_eq hp hperiod fun s hs t ht hst ↦ ?_
+  refine hf.continuousOn.apply_ne_apply_of_injOn_Ico hp (fun s hs t ht hst ↦ ?_) hperiod
   have hcoe := congrFun ((hproj s).symm.trans ((congrArg (fun y ↦ (Φ y).proj) (hGeq hst)).trans
     (hproj t))) 0
   exact (AddCircle.coe_eq_coe_iff_of_mem_Ico (a := 0) (by simpa using hs) (by simpa using ht)).1
