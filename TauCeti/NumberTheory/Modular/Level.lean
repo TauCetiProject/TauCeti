@@ -10,7 +10,9 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Projective
 public import TauCeti.NumberTheory.Modular.CosetTriple
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Projective
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Wohlfahrt
+public import Mathlib.NumberTheory.Chebyshev
 import TauCeti.GroupTheory.Perm.Partition
+import TauCeti.NumberTheory.LcmUpto
 
 /-!
 # The general level of a subgroup of the modular group
@@ -161,12 +163,10 @@ theorem generalLevel_eq_lcm_fullCycleType :
 
 /-- The general level divides `lcm(1, …, n)`, every cusp width being at most the index `n`. It need
 not be at most `n`. -/
-theorem generalLevel_dvd_lcm_Icc : generalLevel Γ' e ∣ (Finset.Icc 1 n).lcm id := by
+theorem generalLevel_dvd_lcmUpto : generalLevel Γ' e ∣ Nat.lcmUpto n := by
   rw [generalLevel_eq_lcm_fullCycleType, Multiset.lcm_dvd]
-  intro w hw
-  refine Finset.dvd_lcm (s := Finset.Icc 1 n) (f := id) (Finset.mem_Icc.mpr ⟨?_, ?_⟩)
-  · exact Perm.pos_of_mem_fullCycleType hw
-  · simpa [Perm.sum_fullCycleType] using Multiset.le_sum_of_mem hw
+  exact fun w hw ↦ Nat.dvd_lcmUpto (Perm.pos_of_mem_fullCycleType hw)
+    (by simpa [Perm.sum_fullCycleType] using Multiset.le_sum_of_mem hw)
 
 /-- The general level is the order of `σ1 * σ0 = σinf⁻¹`. -/
 theorem orderOf_σ1_mul_σ0 :
@@ -232,19 +232,11 @@ theorem strictLevel_eq_generalLevel_of_neg_one_mem (h : (-1 : SL(2, ℤ)) ∈ Γ
 theorem generalLevel_map_Gamma {N : ℕ}
     (e : PSL(2, ℤ) ⧸ (Gamma N).map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))) ≃ Fin n) :
     generalLevel _ e = N := by
+  rw [generalLevel_map_eq_strictLevel_withCenter]
   refine Nat.dvd_antisymm ?_ ?_
-  · have := generalLevel_map_dvd_strictLevel _ e
-    rwa [strictLevel_Gamma] at this
-  · -- `±T ^ L` has upper right entry `±L`, which vanishes modulo `N` only when `N ∣ L`.
-    obtain ⟨γ, hγ, z, hz, hγz⟩ := Subgroup.mem_withCenter_iff.mp <| by
-      simpa [Subgroup.liftSL_map] using T_pow_generalLevel_mem_liftSL _ e
-    have h01 := (Gamma_mem.mp hγ).2.1
-    rw [← ZMod.natCast_eq_zero_iff]
-    rcases mem_center_iff_eq_one_or_eq_neg_one.mp hz with rfl | rfl
-    · rw [mul_one] at hγz
-      simpa [hγz, ← zpow_natCast, coe_T_zpow] using h01
-    · rw [mul_neg_one, neg_eq_iff_eq_neg] at hγz
-      simpa [hγz, ← zpow_natCast, coe_T_zpow] using h01
+  · simpa only [strictLevel_Gamma] using (Gamma N).strictLevel_withCenter_dvd
+  · simpa only [strictLevel_Gamma0] using
+      Subgroup.strictLevel_dvd_of_le (withCenter_le_Gamma0 (Gamma_le_Gamma0 N))
 
 end Comparison
 
