@@ -102,8 +102,8 @@ theorem denseRange_pi [TopologicalSpace K] (hf : LinearIndependent K f) :
   intro W hW
   rw [nhds_pi, Filter.mem_pi'] at hW
   obtain ⟨s, t, ht, hst⟩ := hW
-  have hfs : LinearIndependent K (fun i : s ↦ f i.1) := hf.comp Subtype.val Subtype.val_injective
-  obtain ⟨v, hv⟩ := hfs.pi_surjective (fun i : s ↦ y i.1)
+  have hfs : LinearIndependent K (fun i : s ↦ f i.val) := hf.comp Subtype.val Subtype.val_injective
+  obtain ⟨v, hv⟩ := hfs.pi_surjective (fun i : s ↦ y i.val)
   refine ⟨LinearMap.pi f v, hst fun i hi ↦ ?_, v, rfl⟩
   have hvi : f i v = y i := by simpa [LinearMap.pi_apply] using congr_fun hv ⟨i, hi⟩
   rw [LinearMap.pi_apply, hvi]

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Projective
-public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Basic
+public import TauCeti.Algebra.Homology.Monoidal.Homology.Braiding
 
 /-!
 # The Künneth theorem for a factor with projective homology
@@ -29,9 +29,13 @@ Künneth theorem for a flat factor with zero differentials
 invariant under homotopy equivalences
 (`HomologicalComplex.isIso_homologyKunneth_iff_of_homotopyEquiv`).
 
+By the symmetry of the Künneth map (`TauCeti.NatChainComplex.isIso_homologyKunneth_comm`), the same
+holds with the factors interchanged, the projective factor second
+(`HomologicalComplex.isIso_homologyKunneth_of_projective_right`).
+
 A typical `K` is the relative chain complex of a topological pair with free relative homology, such
 as a cube modulo its boundary; the theorem then computes the relative homology of the product of
-the pair with an arbitrary space.
+the pair with an arbitrary space, on either side.
 
 ## References
 
@@ -67,5 +71,13 @@ theorem isIso_homologyKunneth_of_projective (n : ℕ) : IsIso (homologyKunneth K
     inferInstance
   rw [isIso_homologyKunneth_iff_of_homotopyEquiv n e (HomotopyEquiv.refl L)]
   exact isIso_homologyKunneth_of_d_eq_zero_of_flat K' L hK' n
+
+/-- **The Künneth theorem when the second factor is projective with projective homology.**  If `K`
+is a complex of projective modules indexed by `ℕ` whose homology modules are projective, then for
+every complex `L` the Künneth map `⨁_{p + q = n} Hₚ(L) ⊗ H_q(K) ⟶ Hₙ(L ⊗ K)` is an isomorphism.
+This is `HomologicalComplex.isIso_homologyKunneth_of_projective` with the factors interchanged. -/
+theorem isIso_homologyKunneth_of_projective_right (n : ℕ) : IsIso (homologyKunneth L K n) :=
+  (TauCeti.NatChainComplex.isIso_homologyKunneth_comm L K n).2
+    (isIso_homologyKunneth_of_projective K L n)
 
 end HomologicalComplex

@@ -101,7 +101,7 @@ private theorem linearIndependent_functionFieldMap_basis (φ : Isogeny W₁ W₂
   rw [Fintype.linearIndependent_iff]
   intro g hg i
   -- each coefficient is a pulled-back function `φ_K^* (h i)`
-  choose h hh using fun i ↦ AlgHom.mem_fieldRange.1 (g i).2
+  choose h hh using fun i ↦ AlgHom.mem_fieldRange.1 (g i).property
   -- with a common denominator `s`: `s • h i` is the function `r i` of the coordinate ring
   obtain ⟨s, hs⟩ := IsLocalization.exist_integer_multiples (W₂.map f).CoordinateRing⁰
     Finset.univ h
@@ -142,7 +142,7 @@ private theorem linearIndependent_functionFieldMap_basis (φ : Isogeny W₁ W₂
     · simpa using hc (j, i) (Finset.mk_mem_product hj (Finset.mem_univ i))
     · simpa using Finsupp.notMem_support_iff.1 fun h ↦ hj (hT i h)
   have hs0 : algebraMap (W₂.map f).CoordinateRing (W₂.map f).FunctionField s ≠ 0 :=
-    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors s.2
+    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors s.property
   have hh0 : h i = 0 := by
     have := hr i
     rw [hr0, map_zero, Algebra.smul_def, eq_comm, mul_eq_zero] at this
@@ -160,7 +160,7 @@ private theorem span_functionFieldMap_basis (φ : Isogeny W₁ W₂) (f : F →+
   set V := Submodule.span M' (Set.range (FunctionField.map W₁ f ∘ b))
   -- `FunctionField.map W₁ f` carries `φ^* F(W₂)` into `φ_K^* K(W₂)`
   have hM (c : φ.fieldPullback.fieldRange) : FunctionField.map W₁ f c ∈ M' := by
-    obtain ⟨z, hz⟩ := AlgHom.mem_fieldRange.1 c.2
+    obtain ⟨z, hz⟩ := AlgHom.mem_fieldRange.1 c.property
     exact AlgHom.mem_fieldRange.2 ⟨FunctionField.map W₂ f z, by rw [map_fieldPullback_map, hz]⟩
   -- so the image of `F(W₁)` lies in `V`
   have hE (e : W₁.FunctionField) : FunctionField.map W₁ f e ∈ V := by

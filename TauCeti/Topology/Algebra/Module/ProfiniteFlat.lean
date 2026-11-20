@@ -475,8 +475,8 @@ theorem exists_continuousLinearMap_mk_maximalIdeal_eq {M : Type v} [AddCommGroup
       { g' : TowerStep (n + 1) //
         ∀ m, Ideal.Quotient.factor
           (Ideal.span_singleton_le_span_singleton.mpr (pow_dvd_pow ϖ (Nat.le_succ (n + 1))))
-          (g'.1 m) = s.1 m } := fun n s ↦ by
-    choose g' hg'_open hg'_comp using hM.exists_lift_span_pow_succ hϖ.ne_zero n s.1 s.2
+          (g'.val m) = s.val m } := fun n s ↦ by
+    choose g' hg'_open hg'_comp using hM.exists_lift_span_pow_succ hϖ.ne_zero n s.val s.property
     exact ⟨⟨g', hg'_open⟩, hg'_comp⟩
   let e₀ : (O ⧸ maximalIdeal O) ≃ₗ[O] (O ⧸ Ideal.span {ϖ ^ 1}) :=
     Submodule.quotEquivOfEq _ _ (by rw [hmax, pow_one])
@@ -484,17 +484,17 @@ theorem exists_continuousLinearMap_mk_maximalIdeal_eq {M : Type v} [AddCommGroup
     convert (isOpen_discrete ({0} : Set (O ⧸ maximalIdeal O))).preimage φ₀.continuous
     ext m; simp
   let tower : (n : ℕ) → TowerStep n :=
-    Nat.rec ⟨e₀.toLinearMap.comp φ₀.toLinearMap, hker₀⟩ fun n s ↦ (hstep n s).1
-  have htower0 : (tower 0).1 = e₀.toLinearMap.comp φ₀.toLinearMap := rfl
+    Nat.rec ⟨e₀.toLinearMap.comp φ₀.toLinearMap, hker₀⟩ fun n s ↦ (hstep n s).val
+  have htower0 : (tower 0).val = e₀.toLinearMap.comp φ₀.toLinearMap := rfl
   have hK (n : ℕ) : Ideal.span {ϖ ^ (n + 1)} = (maximalIdeal O) ^ (id n + 1) := by
     rw [hmax, id_eq, Ideal.span_singleton_pow]
-  let F : M →L[O] O := hadic.liftIdealTower (strictMono_id.add_const 1) hK (fun n ↦ (tower n).1)
-    (fun n ↦ (tower n).2) (fun n m ↦ (hstep n (tower n)).2 m)
+  let F : M →L[O] O := hadic.liftIdealTower (strictMono_id.add_const 1) hK (fun n ↦ (tower n).val)
+    (fun n ↦ (tower n).property) (fun n m ↦ (hstep n (tower n)).property m)
   refine ⟨F, fun m ↦ e₀.injective ?_⟩
   calc
     e₀ (Ideal.Quotient.mk (maximalIdeal O) (F m))
       = Ideal.Quotient.mk (Ideal.span {ϖ ^ 1}) (F m) := Submodule.quotEquivOfEq_ideal_mk _ _
-    _ = (tower 0).1 m := hadic.mk_liftIdealTower _ hK _ _ _ 0 m
+    _ = (tower 0).val m := hadic.mk_liftIdealTower _ hK _ _ _ 0 m
     _ = e₀ (φ₀ m) := by
         rw [htower0, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, ContinuousLinearMap.coe_coe]
 

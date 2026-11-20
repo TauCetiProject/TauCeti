@@ -68,7 +68,7 @@ theorem exists_det_submatrix_eq_units_smul_of_sum_eq_zero (M : Matrix ι κ R)
     Subtype.val_injective.comp e₁.injective
   by_cases h : j₁ = j₂
   · subst h
-    exact exists_det_submatrix_eq_units_smul_of_injective M e₂ he₁ fun k ↦ (e₁ k).2
+    exact exists_det_submatrix_eq_units_smul_of_injective M e₂ he₁ fun k ↦ (e₁ k).property
   -- Replace the column `j₂` by `-M · j₁`, the sum of the other columns, without changing the
   -- determinant up to sign. The result chooses its columns along `g`, which avoids `j₂`.
   set k₀ := e₁.symm ⟨j₂, Ne.symm h⟩
@@ -81,10 +81,10 @@ theorem exists_det_submatrix_eq_units_smul_of_sum_eq_zero (M : Matrix ι κ R)
     · rw [ha, hb]
     · simp only [g, ha, hb, Function.update_self, ne_eq, not_false_eq_true,
         Function.update_of_ne] at hab
-      exact absurd hab.symm (e₁ b).2
+      exact absurd hab.symm (e₁ b).property
     · simp only [g, ha, hb, Function.update_self, ne_eq, not_false_eq_true,
         Function.update_of_ne] at hab
-      exact absurd hab (e₁ a).2
+      exact absurd hab (e₁ a).property
     · exact he₁ (by simpa [g, ha, hb] using hab)
   have hgj (k : ι) : g k ≠ j₂ := by
     by_cases hk : k = k₀

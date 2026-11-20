@@ -79,7 +79,7 @@ private theorem inv_one_add_norm_sub_sq_interAffineOpenHomeomorph
     (hZ : affineChart i '' (X ∩ affineOpen i) = Z) (y : ↥(X ∩ affineOpen i)) :
     (1 + ‖WithLp.toLp 2 (interAffineOpenHomeomorph hZ y : Fin n → 𝕜) - a‖ ^ 2)⁻¹ =
       affineChartInvOneAddDistSq i a y := by
-  rw [affineChartInvOneAddDistSq_of_mem y.2.2, dist_eq_norm]
+  rw [affineChartInvOneAddDistSq_of_mem y.property.2, dist_eq_norm]
   simp
 
 /-- **Excision onto the affine part.** For `ε > 0`, the inclusion of the sublevel pair
@@ -96,7 +96,7 @@ private theorem isZero_singularHomology_inter_setOf_le_of_isZero_sublevelPair
         R j) := by
   set g : Z → ℝ := fun z ↦ (1 + ‖WithLp.toLp 2 (z : Fin n → 𝕜) - a‖ ^ 2)⁻¹
   have hF : Continuous fun x : X ↦ affineChartInvOneAddDistSq i a x :=
-    (continuous_affineChartInvOneAddDistSq i a).comp continuous_subtype_val
+    (continuous_affineChartInvOneAddDistSq i a).comp continuous_subtypeVal
   -- The affine part of `X`, as a subspace of `X`, is the image of `Z`.
   let φ : C({z | g z ≤ ε + 1}, X) :=
     ⟨inclusion inter_subset_left ∘ (interAffineOpenHomeomorph hZ).symm ∘ Subtype.val, by fun_prop⟩
@@ -106,7 +106,7 @@ private theorem isZero_singularHomology_inter_setOf_le_of_isZero_sublevelPair
   let f := TopPair.ofInclusionMap (X := TopCat.of Z) (Y := TopCat.of (ℙ 𝕜 (Fin (n + 1) → 𝕜)))
     (sublevel_mono g (by linarith : ε ≤ ε + 1))
     (inter_subset_left : X ∩ {x | affineChartInvOneAddDistSq i a x ≤ ε} ⊆ X) φ
-    fun z hz ↦ ⟨(φ z).2, (hφ ⟨z, _⟩).trans_le hz⟩
+    fun z hz ↦ ⟨(φ z).property, (hφ ⟨z, _⟩).trans_le hz⟩
   have hf (z : {z | g z ≤ ε + 1}) : TopPair.Hom.fst f z = φ z :=
     TopPair.ofInclusionMap_fst_apply (X := TopCat.of Z) (Y := TopCat.of (ℙ 𝕜 (Fin (n + 1) → 𝕜)))
       φ _ z
@@ -123,7 +123,7 @@ private theorem isZero_singularHomology_inter_setOf_le_of_isZero_sublevelPair
     (fun z ⟨⟨y, hyS⟩, hy⟩ ↦ by
       have hyz : y = (φ z : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :=
         (congrArg (Subtype.val : X → ℙ 𝕜 (Fin (n + 1) → 𝕜)) hy).trans (congrArg _ (hf z))
-      exact ⟨⟨z.1, (hφ z).symm.trans_le (hyz ▸ hyS.2)⟩, rfl⟩)
+      exact ⟨⟨z.val, (hφ z).symm.trans_le (hyz ▸ hyS.2)⟩, rfl⟩)
     U (fun b ↦ by cases b <;> exact isOpen_lt (by fun_prop) (by fun_prop))
     (eq_univ_iff_forall.2 fun ⟨x, _⟩ ↦ mem_iUnion.2 <| by
       by_cases hx : affineChartInvOneAddDistSq i a x < ε
@@ -172,7 +172,7 @@ theorem isZero_singularHomology_inter_setOf_affineChartInvOneAddDistSq_le
       rw [Subtype.isCompact_iff]
       convert (isCompact_setOf_le_affineChartInvOneAddDistSq i a ε).inter_left hX using 1
       ext x
-      exact ⟨fun ⟨y, hy, hyx⟩ ↦ hyx ▸ ⟨y.2.1, hy⟩, fun hx ↦
+      exact ⟨fun ⟨y, hy, hyx⟩ ↦ hyx ▸ ⟨y.property.1, hy⟩, fun hx ↦
         ⟨⟨x, hx.1, setOf_le_affineChartInvOneAddDistSq_subset_affineOpen i a hε hx.2⟩, hx.2,
           rfl⟩⟩
     convert hK.image (interAffineOpenHomeomorph hZ).continuous using 1
