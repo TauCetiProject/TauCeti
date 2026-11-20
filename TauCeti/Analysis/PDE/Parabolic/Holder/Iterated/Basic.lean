@@ -146,6 +146,10 @@ theorem mem_parabolicDerivPairs {k : ℕ} {p : ℕ × ℕ} :
     and_iff_right_iff_imp]
   omega
 
+/-- There are at most `(k + 1)²` pairs `(r, m)` with `2 r + m ≤ k`. -/
+theorem card_parabolicDerivPairs_le (k : ℕ) : (parabolicDerivPairs k).card ≤ (k + 1) ^ 2 :=
+  (Finset.card_filter_le _ _).trans_eq (by rw [Finset.card_product, Finset.card_range, sq])
+
 variable (k α E F) in
 /-- Bounded parabolic Hölder maps of order `k` on a nondegenerate closed time slab
 `E × [a, b]`: maps whose mixed derivatives `D_t^r D_x^m u` with `2 r + m ≤ k` exist and are
@@ -492,18 +496,37 @@ theorem coe_timeSliceL (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
     ⇑(timeSliceL r m f x) = fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) :=
   funext (timeSliceL_apply f h x)
 
+/-- The fields of top order `2 r + m = k` are parabolically `α`-Hölder, with the norm of their
+Hölder field as constant. -/
+theorem holderWith_mixedDerivL (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
+    (h : 2 * r + m = k) :
+    HolderWith ‖mixedDerivHolderL r m f‖₊ α
+      (mixedDerivL r m f : slab (E := E) a b → E [×m]→L[ℝ] F) := by
+  have hf := (mixedDerivHolderL r m f).holderWith_nnnorm
+  rwa [← HolderSpace.coe_toBoundedContinuousFunction,
+    toBoundedContinuousFunction_mixedDerivHolderL f h] at hf
+
 /-- The fields of top order `2 r + m = k` are parabolically `α`-Hölder. -/
 theorem memHolder_mixedDerivL (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
-    (h : 2 * r + m = k) : MemHolder α (mixedDerivL r m f : slab (E := E) a b → E [×m]→L[ℝ] F) := by
-  rw [← toBoundedContinuousFunction_mixedDerivHolderL f h]
-  exact (mixedDerivHolderL r m f).memHolder
+    (h : 2 * r + m = k) : MemHolder α (mixedDerivL r m f : slab (E := E) a b → E [×m]→L[ℝ] F) :=
+  ⟨_, holderWith_mixedDerivL f h⟩
+
+/-- The time slices of the fields of order `2 r + m = k - 1` are `(1 + α) / 2`-Hölder uniformly in
+space, with constant the norm of the family of slices. -/
+theorem holderWith_mixedDerivL_slabMk (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
+    (h : 2 * r + m + 1 = k) (x : E) :
+    HolderWith ‖timeSliceL r m f‖₊ ((1 + α) / 2)
+      fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) := by
+  have hx : ‖timeSliceL r m f x‖₊ ≤ ‖timeSliceL r m f‖₊ :=
+    lp.norm_apply_le_norm ENNReal.top_ne_zero _ x
+  rw [← coe_timeSliceL f h x]
+  exact ((timeSliceL r m f x).holderWith_nnnorm).mono hx
 
 /-- The time slices of the fields of order `2 r + m = k - 1` are `(1 + α) / 2`-Hölder. -/
 theorem memHolder_mixedDerivL_slabMk (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
     (h : 2 * r + m + 1 = k) (x : E) :
-    MemHolder ((1 + α) / 2) fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) := by
-  have hm := (timeSliceL r m f x).memHolder
-  rwa [HolderSpace.coe_toBoundedContinuousFunction, coe_timeSliceL f h x] at hm
+    MemHolder ((1 + α) / 2) fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) :=
+  ⟨_, holderWith_mixedDerivL_slabMk f h x⟩
 
 /-! ### The underlying map -/
 
@@ -629,6 +652,14 @@ theorem ext {f g : ParabolicCkHolderSpace k α E F hab} (h : ∀ p, f p = g p) :
 theorem mixedDerivL_zero_zero_apply (f : ParabolicCkHolderSpace k α E F hab)
     (p : slab (E := E) a b) (v : Fin 0 → E) : mixedDerivL 0 0 f p v = f p := by
   rw [Subsingleton.elim v 0, ← toFun_eq_coe, toFun, ContinuousMultilinearMap.curry0_apply]
+
+/-- The order-zero field is the underlying map, read as a `0`-multilinear map. -/
+theorem mixedDerivL_zero_zero_eq (f : ParabolicCkHolderSpace k α E F hab)
+    (p : slab (E := E) a b) :
+    mixedDerivL 0 0 f p = (continuousMultilinearCurryFin0 ℝ E F).symm (f p) :=
+  ContinuousMultilinearMap.ext fun v ↦ by
+    rw [mixedDerivL_zero_zero_apply, continuousMultilinearCurryFin0_symm_apply,
+      ContinuousMultilinearMap.uncurry0_apply]
 
 /-- **The fields are the mixed derivatives.** For `2 r + m ≤ k`, the field `D_t^r D_x^m u` at
 `(x, t)` is the `m`-th iterated Fréchet derivative in `x` of the `r`-th iterated derivative of `u`

@@ -77,7 +77,7 @@ variable {k : ℕ} {α : ℝ≥0} {E F : Type*} [NormedAddCommGroup E] [NormedSp
 `(1 + α) / 2`-Hölder, uniformly in space, with constant `‖D_t^(r+1) D_x^m u‖ + 2 ‖D_t^r D_x^m u‖`:
 they are Lipschitz with the first constant, and at time differences larger than one the
 oscillation bound wins. -/
-private theorem holderWith_mixedDerivL_slabMk (f : ParabolicCkHolderSpace k α E F hab)
+private theorem holderWith_mixedDerivL_slabMk_of_add_two_le (f : ParabolicCkHolderSpace k α E F hab)
     {r m : ℕ} (h : 2 * r + m + 2 ≤ k) (hα : α ≤ 1) (x : E) :
     HolderWith (‖mixedDerivL (r + 1) m f‖₊ + 2 * ‖mixedDerivL r m f‖₊) ((1 + α) / 2)
       fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) := by
@@ -101,8 +101,8 @@ private theorem holderWith_mixedDerivL_slabMk (f : ParabolicCkHolderSpace k α E
 
 /-- For `2 r + m + 1 = k` and `α ≤ 1`, the field `D_t^r D_x^m u` is parabolically `α`-Hölder:
 it is bounded, Lipschitz in space, and `(1 + α) / 2`-Hölder in time. -/
-private theorem holderWith_mixedDerivL (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
-    (h : 2 * r + m + 1 = k) (hα : α ≤ 1) :
+private theorem holderWith_mixedDerivL_of_add_one_eq (f : ParabolicCkHolderSpace k α E F hab)
+    {r m : ℕ} (h : 2 * r + m + 1 = k) (hα : α ≤ 1) :
     HolderWith (‖mixedDerivL r (m + 1) f‖₊ + 2 * ‖mixedDerivL r m f‖₊ +
       (‖timeSliceL r m f‖₊ + 2 * ‖mixedDerivL r m f‖₊)) α ⇑(mixedDerivL r m f) := by
   -- The spatial derivative of `D_t^r D_x^m u` is `D_t^r D_x^(m+1) u`, curried on the left.
@@ -137,8 +137,8 @@ private def ofSucc (hα : α ≤ 1) (f : ParabolicCkHolderSpace (k + 1) α E F h
     ParabolicCkHolderSpace k α E F hab :=
   mk (fun r m ↦ mixedDerivL r m f) (fun _ _ h t x ↦ f.hasFDerivAt_mixedDerivL (by omega) t x)
     (fun _ _ h x t ↦ f.hasDerivWithinAt_mixedDerivL (by omega) x t)
-    (fun _ _ h ↦ ⟨_, holderWith_mixedDerivL_slabMk f (by omega) hα⟩)
-    (fun _ _ h ↦ (holderWith_mixedDerivL f (by omega) hα).memHolder)
+    (fun _ _ h ↦ ⟨_, holderWith_mixedDerivL_slabMk_of_add_two_le f (by omega) hα⟩)
+    (fun _ _ h ↦ (holderWith_mixedDerivL_of_add_one_eq f (by omega) hα).memHolder)
 
 private theorem mixedDerivL_ofSucc (hα : α ≤ 1) (f : ParabolicCkHolderSpace (k + 1) α E F hab)
     {r m : ℕ} (h : 2 * r + m ≤ k) : mixedDerivL r m (ofSucc hα f) = mixedDerivL r m f :=
@@ -159,7 +159,7 @@ private theorem norm_timeSliceL_add_norm_mixedDerivHolderL_ofSucc_le (hα : α �
   · -- The order `k - 1`: the Hölder field vanishes, and the time slices are those of the
     -- `(1 + α) / 2`-Hölder field `D_t^r D_x^m u`.
     rw [mixedDerivHolderL_of_ne (by omega), zero_apply, norm_zero, add_zero]
-    have hholder := holderWith_mixedDerivL_slabMk f (r := r) (m := m) (by omega) hα
+    have hholder := holderWith_mixedDerivL_slabMk_of_add_two_le f (r := r) (m := m) (by omega) hα
     have hK : ((‖mixedDerivL (r + 1) m f‖₊ + 2 * ‖mixedDerivL r m f‖₊ : ℝ≥0) : ℝ) ≤
         3 * ‖f‖ := by
       push_cast
@@ -175,7 +175,7 @@ private theorem norm_timeSliceL_add_norm_mixedDerivHolderL_ofSucc_le (hα : α �
   · rw [timeSliceL_of_ne hs, zero_apply, norm_zero, zero_add]
     by_cases hh : 2 * r + m = k
     · -- The order `k`: the Hölder field is the parabolically `α`-Hölder field `D_t^r D_x^m u`.
-      have hholder := holderWith_mixedDerivL f (r := r) (m := m) (by omega) hα
+      have hholder := holderWith_mixedDerivL_of_add_one_eq f (r := r) (m := m) (by omega) hα
       have hK : ((‖mixedDerivL r (m + 1) f‖₊ + 2 * ‖mixedDerivL r m f‖₊ +
           (‖timeSliceL r m f‖₊ + 2 * ‖mixedDerivL r m f‖₊) : ℝ≥0) : ℝ) ≤ 6 * ‖f‖ := by
         push_cast

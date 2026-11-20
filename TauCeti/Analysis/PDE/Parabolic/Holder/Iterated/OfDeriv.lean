@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Basic
+import TauCeti.Analysis.Normed.Module.Multilinear.Curry
 import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -25,8 +26,7 @@ spatial derivative lowers the order by one and a time derivative by two, so this
 differentiation. It is the step that raises the order in the higher regularity theory of parabolic
 equations: for a solution of `∂ₜu = aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u + f`, regularity of `D_x u` one
 order up makes the right-hand side, hence `∂ₜu`, regular two orders below the target, and the
-construction here then places `u` itself at the target order. The heat potentials of every order
-are obtained by the same induction.
+construction here then places `u` itself at the target order.
 
 ## The argument
 
@@ -43,8 +43,9 @@ the integral sign, gives
 
 `ℓ (D_x u (x, t) v) - ℓ (D_x u (x, a) v) = ∫_a^t ℓ (D_x ∂ₜu (x, τ) v) dτ`,
 
-and differentiating in `t` identifies the two mixed derivatives inside `(a, b)`, and by continuity
-on `[a, b]`. The Hölder conditions at the top two orders are those of `G` and `H`.
+and differentiating in `t` within `[a, b]` identifies the two mixed derivatives, since one-sided
+derivatives at the ends of `[a, b]` are unique. The Hölder conditions at the top two orders are
+those of `G` and `H`.
 
 ## Main declarations
 
@@ -81,13 +82,6 @@ variable {φ : slab (E := E) a b → F} {ψ ψ₁ χ₁ : slab (E := E) a b → 
   {χ : slab (E := E) a b → F}
 
 omit [NormedSpace ℝ E] in
-/-- Time slices of the clamped extension of a continuous field are continuous. -/
-private theorem continuous_timeExtension_slice {X : Type*} [NormedAddCommGroup X] (hab : a < b)
-    {f : slab (E := E) a b → X} (hf : Continuous f) (y : E) :
-    Continuous (timeExtension hab.le f y) :=
-  (continuous_timeExtension hab.le hf).comp (continuous_id.prodMk continuous_const)
-
-omit [NormedSpace ℝ E] in
 /-- **The fundamental theorem of calculus in time.** Tested against a functional `ℓ`, the
 increment of `φ` in time at a point `y` is the integral of its time derivative `χ`. -/
 private theorem integral_timeExtension_eq_sub (hab : a < b) (hχ : Continuous χ)
@@ -99,7 +93,7 @@ private theorem integral_timeExtension_eq_sub (hab : a < b) (hχ : Continuous χ
   have hcont : ContinuousOn (fun τ ↦ ℓ (timeExtension hab.le φ y τ)) (Icc a b) := fun τ hτ ↦
     ℓ.continuous.continuousAt.comp_continuousWithinAt (hφt y ⟨τ, hτ⟩).continuousWithinAt
   have hint : Continuous fun τ ↦ ℓ (timeExtension hab.le χ y τ) :=
-    ℓ.continuous.comp (continuous_timeExtension_slice hab hχ y)
+    ℓ.continuous.comp (continuous_timeExtension_slice hab.le hχ y)
   rw [intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le t.2.1
     (hcont.mono (Icc_subset_Icc_right t.2.2)) (fun τ hτ ↦ ?_) (hint.intervalIntegrable _ _)]
   · have ha := timeExtension_of_mem hab.le φ y ⟨a, left_mem_Icc.2 hab.le⟩
@@ -129,10 +123,10 @@ private theorem sub_eq_integral_timeExtension (hab : a < b) (hχ : Continuous χ
   let g : ℝ → ℝ → ℝ := fun s τ ↦ ℓ (timeExtension hab.le χ (x + s • v) τ)
   let g' : ℝ → ℝ → ℝ := fun s τ ↦ ℓ (timeExtension hab.le χ₁ (x + s • v) τ v)
   have hgs (s : ℝ) : Continuous (g s) :=
-    ℓ.continuous.comp (continuous_timeExtension_slice hab hχ _)
+    ℓ.continuous.comp (continuous_timeExtension_slice hab.le hχ _)
   have hg's (s : ℝ) : Continuous (g' s) :=
     (ℓ.comp (ContinuousLinearMap.apply ℝ F v)).continuous.comp
-      (continuous_timeExtension_slice hab hχ₁ _)
+      (continuous_timeExtension_slice hab.le hχ₁ _)
   -- A bound for `χ₁` on the compact set swept by `x + s v`, `|s| ≤ 1`, `t ∈ [a, b]`.
   obtain ⟨M, hM⟩ :=
     ((isCompact_closedBall (0 : ℝ) 1).prod isCompact_Icc).exists_bound_of_continuousOn
@@ -173,11 +167,11 @@ private theorem sub_eq_integral_timeExtension (hab : a < b) (hχ : Continuous χ
 
 /-- **Symmetry of the mixed space-time derivatives on a slab.** Let `φ` have spatial Fréchet
 derivative `ψ` and time derivative `χ` within `[a, b]` at every point of the slab `E × [a, b]`.
-If `χ` is continuous, `ψ` has a continuous time derivative `ψ₁` and `χ` a continuous spatial
-derivative `χ₁`, then `ψ₁ = χ₁`: the time derivative of `D_x φ` is the spatial derivative of
+If `χ` is continuous with a continuous spatial derivative `χ₁`, and `ψ` has a time derivative `ψ₁`
+within `[a, b]`, then `ψ₁ = χ₁`: the time derivative of `D_x φ` is the spatial derivative of
 `∂ₜφ`. -/
 theorem eq_of_hasFDerivAt_of_hasDerivWithinAt_slab (hab : a < b) (hχ : Continuous χ)
-    (hψ₁ : Continuous ψ₁) (hχ₁ : Continuous χ₁)
+    (hχ₁ : Continuous χ₁)
     (hφx : ∀ (t : Icc a b) (x : E), HasFDerivAt (fun y ↦ φ (slabMk y t)) (ψ (slabMk x t)) x)
     (hφt : ∀ (x : E) (t : Icc a b), HasDerivWithinAt
       (timeExtension hab.le φ x) (χ (slabMk x t)) (Icc a b) t)
@@ -191,41 +185,32 @@ theorem eq_of_hasFDerivAt_of_hasDerivWithinAt_slab (hab : a < b) (hχ : Continuo
     ext p v
     rw [← slabMk_space_slabTime p]
     exact (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun ℓ ↦ key _ v ℓ _
-  intro x v ℓ
-  have hc₁ : Continuous fun τ ↦ ℓ (timeExtension hab.le ψ₁ x τ v) :=
-    (ℓ.comp (ContinuousLinearMap.apply ℝ F v)).continuous.comp
-      (continuous_timeExtension_slice hab hψ₁ x)
+  intro x v ℓ t
   have hc₂ : Continuous fun τ ↦ ℓ (timeExtension hab.le χ₁ x τ v) :=
     (ℓ.comp (ContinuousLinearMap.apply ℝ F v)).continuous.comp
-      (continuous_timeExtension_slice hab hχ₁ x)
-  -- On `(a, b)`, `t ↦ D_x φ (x, t) v` has derivative `ψ₁ (x, t) v`, and it is an integral of
-  -- `χ₁ (x, ·) v` by `sub_eq_integral_timeExtension`, whose derivative is `χ₁ (x, t) v`.
+      (continuous_timeExtension_slice hab.le hχ₁ x)
+  -- Within `[a, b]`, `τ ↦ D_x φ (x, τ) v` has derivative `ψ₁ (x, t) v` at `t`, and on `[a, b]` it
+  -- is an integral of `χ₁ (x, ·) v` by `sub_eq_integral_timeExtension`, with derivative
+  -- `χ₁ (x, t) v`. Derivatives within `[a, b]` are unique, also at its ends.
   let A : ℝ → ℝ := fun τ ↦ ℓ (timeExtension hab.le ψ x τ v)
-  have hA : ∀ t ∈ Ioo a b, ℓ (timeExtension hab.le ψ₁ x t v) =
-      ℓ (timeExtension hab.le χ₁ x t v) := by
-    intro t ht
-    have ht' : t ∈ Icc a b := Ioo_subset_Icc_self ht
-    have hd₁ := ((ℓ.comp (ContinuousLinearMap.apply ℝ F v)).hasFDerivAt.comp_hasDerivWithinAt t
-      (hψt x ⟨t, ht'⟩)).hasDerivAt (Icc_mem_nhds ht.1 ht.2)
-    have hd₂ := (intervalIntegral.integral_hasDerivAt_right (hc₂.intervalIntegrable a t)
-      (hc₂.stronglyMeasurableAtFilter _ _) hc₂.continuousAt).const_add (A a)
-    have heq : A =ᶠ[𝓝 t] fun u ↦ A a + ∫ τ in a..u, ℓ (timeExtension hab.le χ₁ x τ v) := by
-      filter_upwards [Icc_mem_nhds ht.1 ht.2] with u hu
-      have h := sub_eq_integral_timeExtension hab hχ hχ₁ hφx hφt hχx ℓ x v ⟨u, hu⟩
-      have h₁ : timeExtension hab.le ψ x u = ψ (slabMk x ⟨u, hu⟩) :=
-        timeExtension_of_mem hab.le ψ x ⟨u, hu⟩
-      have h₂ : timeExtension hab.le ψ x a = ψ (slabMk x ⟨a, left_mem_Icc.2 hab.le⟩) :=
-        timeExtension_of_mem hab.le ψ x ⟨a, left_mem_Icc.2 hab.le⟩
-      simp only [A, h₁, h₂]
-      linarith
-    have e : timeExtension hab.le ψ₁ x t = ψ₁ (slabMk x ⟨t, ht'⟩) :=
-      timeExtension_of_mem hab.le ψ₁ x ⟨t, ht'⟩
-    rw [e]
-    exact hd₁.unique (hd₂.congr_of_eventuallyEq heq)
-  -- Both sides are continuous in time, so they agree on `closure (Ioo a b) = [a, b]`.
-  intro t
-  have h := Set.EqOn.closure hA hc₁ hc₂ (by rw [closure_Ioo hab.ne]; exact t.2)
-  simpa only [timeExtension_of_mem] using h
+  have hd₁ : HasDerivWithinAt A (ℓ (ψ₁ (slabMk x t) v)) (Icc a b) t :=
+    (ℓ.comp (ContinuousLinearMap.apply ℝ F v)).hasFDerivAt.comp_hasDerivWithinAt (t : ℝ)
+      (hψt x t)
+  have hd₂ := ((intervalIntegral.integral_hasDerivAt_right (hc₂.intervalIntegrable a t)
+    (hc₂.stronglyMeasurableAtFilter _ _) hc₂.continuousAt).const_add (A a)).hasDerivWithinAt
+    (s := Icc a b)
+  have heq : ∀ u ∈ Icc a b, A u = A a + ∫ τ in a..u, ℓ (timeExtension hab.le χ₁ x τ v) := by
+    intro u hu
+    have h := sub_eq_integral_timeExtension hab hχ hχ₁ hφx hφt hχx ℓ x v ⟨u, hu⟩
+    have h₁ : timeExtension hab.le ψ x u = ψ (slabMk x ⟨u, hu⟩) :=
+      timeExtension_of_mem hab.le ψ x ⟨u, hu⟩
+    have h₂ : timeExtension hab.le ψ x a = ψ (slabMk x ⟨a, left_mem_Icc.2 hab.le⟩) :=
+      timeExtension_of_mem hab.le ψ x ⟨a, left_mem_Icc.2 hab.le⟩
+    simp only [A, h₁, h₂]
+    linarith
+  have hd := hd₂.congr_of_mem heq t.2
+  rw [timeExtension_of_mem] at hd
+  exact (uniqueDiffOn_Icc hab t t.2).eq_deriv _ hd₁ hd
 
 end MixedDerivatives
 
@@ -241,59 +226,10 @@ with values in `E →L[ℝ] F` read as an `(m + 1)`-multilinear map. -/
 private abbrev uncurryRightL (m : ℕ) : (E [×m]→L[ℝ] (E →L[ℝ] F)) →L[ℝ] E [×(m + 1)]→L[ℝ] F :=
   (continuousMultilinearCurryRightEquiv' ℝ m E F).symm.toLinearIsometry.toContinuousLinearMap
 
+/-- Separating the first variable commutes with `uncurryRightL`. -/
 private theorem curryLeft_uncurryRightL_succ {m : ℕ} (M : E [×(m + 1)]→L[ℝ] (E →L[ℝ] F)) :
     (uncurryRightL E F (m + 1) M).curryLeft = (uncurryRightL E F m).comp M.curryLeft :=
-  ContinuousLinearMap.ext fun v ↦ ContinuousMultilinearMap.ext fun w ↦ by
-    have hw : Fin.init (Fin.cons v w : Fin (m + 2) → E) = Fin.cons v (Fin.init w) := by
-      ext i
-      refine Fin.cases ?_ (fun j ↦ ?_) i
-      · rfl
-      · simp only [Fin.init, Fin.cons_succ, ← Fin.succ_castSucc]
-    simp [hw]
-
-private theorem curryLeft_uncurryRightL_zero (L : E →L[ℝ] F) :
-    (uncurryRightL E F 0 ((continuousMultilinearCurryFin0 ℝ E (E →L[ℝ] F)).symm L)).curryLeft =
-      (continuousMultilinearCurryFin0 ℝ E F).symm.toLinearIsometry.toContinuousLinearMap.comp L :=
-  ContinuousLinearMap.ext fun v ↦ ContinuousMultilinearMap.ext fun w ↦ by simp
-
-private theorem uncurryRightL_zero (N : E [×0]→L[ℝ] (E →L[ℝ] F)) :
-    uncurryRightL E F 0 N =
-      (continuousMultilinearCurryFin1 ℝ E F).symm (continuousMultilinearCurryFin0 ℝ E _ N) :=
-  ContinuousMultilinearMap.ext fun w ↦ by
-    simp only [LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry,
-      continuousMultilinearCurryRightEquiv_symm_apply', continuousMultilinearCurryFin0_apply]
-    rw [Subsingleton.elim (Fin.init w : Fin 0 → E) ![]]
-    simp
-
-private theorem curryLeft_injective {n : ℕ} {M N : E [×(n + 1)]→L[ℝ] F}
-    (h : M.curryLeft = N.curryLeft) : M = N := by
-  rw [← M.uncurry_curryLeft, h, N.uncurry_curryLeft]
-
-/-! ### Uniform Hölder constants of the top fields -/
-
-/-- The time slices of order `n - 1` are `(1 + α) / 2`-Hölder with the norm of their family as
-a common constant. -/
-private theorem holderWith_timeSlice {n : ℕ} {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
-    (f : ParabolicCkHolderSpace n α E X hab) {r m : ℕ} (h : 2 * r + m + 1 = n) (x : E) :
-    HolderWith ‖timeSliceL r m f‖₊ ((1 + α) / 2)
-      fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) := by
-  have hx : HolderWith ‖timeSliceL r m f x‖₊ ((1 + α) / 2)
-      ⇑(HolderSpace.toBoundedContinuousFunction (timeSliceL r m f x)) :=
-    (timeSliceL r m f x).memHolder.holderWith.mono (timeSliceL r m f x).nnHolderNorm_le
-  rw [HolderSpace.coe_toBoundedContinuousFunction, coe_timeSliceL f h x] at hx
-  refine hx.mono ?_
-  have := lp.norm_apply_le_norm ENNReal.top_ne_zero (timeSliceL r m f) x
-  exact_mod_cast this
-
-/-- The fields of top order are `α`-Hölder with the norm of their Hölder field as constant. -/
-private theorem holderWith_mixedDerivL {n : ℕ} {X : Type*} [NormedAddCommGroup X]
-    [NormedSpace ℝ X] (f : ParabolicCkHolderSpace n α E X hab) {r m : ℕ} (h : 2 * r + m = n) :
-    HolderWith ‖mixedDerivHolderL r m f‖₊ α
-      (mixedDerivL r m f : slab (E := E) a b → E [×m]→L[ℝ] X) := by
-  have hx : HolderWith ‖mixedDerivHolderL r m f‖₊ α
-      ⇑(mixedDerivHolderL r m f).toBoundedContinuousFunction :=
-    (mixedDerivHolderL r m f).memHolder.holderWith.mono (mixedDerivHolderL r m f).nnHolderNorm_le
-  rwa [toBoundedContinuousFunction_mixedDerivHolderL f h] at hx
+  ContinuousLinearMap.ext M.curryLeft_continuousMultilinearCurryRightEquiv'_symm
 
 /-! ### The fields -/
 
@@ -324,14 +260,6 @@ private theorem ofDerivFields_succ (r m : ℕ) :
     ofDerivFields u G H (r + 1) m = mixedDerivL r m H :=
   (rfl)
 
-/-- The order-zero field of a map, as a `0`-multilinear map of its value. -/
-private theorem mixedDerivL_zero_zero_eq {n : ℕ} {X : Type*} [NormedAddCommGroup X]
-    [NormedSpace ℝ X] (f : ParabolicCkHolderSpace n α E X hab) (p : slab (E := E) a b) :
-    mixedDerivL 0 0 f p = (continuousMultilinearCurryFin0 ℝ E X).symm (f p) :=
-  ContinuousMultilinearMap.ext fun v ↦ by
-    rw [mixedDerivL_zero_zero_apply, continuousMultilinearCurryFin0_symm_apply,
-      ContinuousMultilinearMap.uncurry0_apply]
-
 /-- **The mixed derivatives commute.** The time derivatives of the spatial derivatives in `G`
 are the spatial derivatives of the time derivative `H`. -/
 private theorem uncurryRightL_mixedDerivL_one
@@ -350,20 +278,20 @@ private theorem uncurryRightL_mixedDerivL_one
         |>.toContinuousLinearMap.compLeftContinuousBounded _ (mixedDerivL 1 0 G)))
       (χ₁ := ⇑((continuousMultilinearCurryFin1 ℝ E F).toLinearIsometry.toContinuousLinearMap
         |>.compLeftContinuousBounded _ (mixedDerivL 0 1 H)))
-      (BoundedContinuousFunction.continuous _) (BoundedContinuousFunction.continuous _)
-      (BoundedContinuousFunction.continuous _) hG (fun x t ↦ ?_) (fun x t ↦ ?_) (fun t x ↦ ?_)
+      (BoundedContinuousFunction.continuous _) (BoundedContinuousFunction.continuous _) hG
+      (fun x t ↦ ?_) (fun x t ↦ ?_) (fun t x ↦ ?_)
     · have h := congrFun hsymm p
       simp only [ContinuousLinearMap.compLeftContinuousBounded_apply,
         LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry] at h
-      rw [uncurryRightL_zero, h, LinearIsometryEquiv.symm_apply_apply]
+      rw [uncurryRightL, LinearIsometry.coe_toContinuousLinearMap,
+        LinearIsometryEquiv.coe_toLinearIsometry,
+        continuousMultilinearCurryRightEquiv'_zero_symm_apply, h,
+        LinearIsometryEquiv.symm_apply_apply]
     · simpa [mixedDerivL_zero_zero_eq] using hH x t
-    · have he : ParabolicC2HolderSpace.timeExtension hab.le (⇑G) x =
-          (continuousMultilinearCurryFin0 ℝ E (E →L[ℝ] F)) ∘
-            ParabolicC2HolderSpace.timeExtension hab.le (mixedDerivL 0 0 G) x := by
-        ext1 s
-        simp only [ParabolicC2HolderSpace.timeExtension_def, Function.comp_apply,
-          mixedDerivL_zero_zero_eq, LinearIsometryEquiv.apply_symm_apply]
-      rw [he]
+    · have hG₀ : ⇑G = continuousMultilinearCurryFin0 ℝ E (E →L[ℝ] F) ∘ mixedDerivL 0 0 G :=
+        funext fun p ↦ by
+          rw [Function.comp_apply, mixedDerivL_zero_zero_eq, LinearIsometryEquiv.apply_symm_apply]
+      rw [hG₀, ParabolicC2HolderSpace.timeExtension_comp]
       exact (continuousMultilinearCurryFin0 ℝ E (E →L[ℝ] F)).toLinearIsometry.toContinuousLinearMap
         |>.hasFDerivAt.comp_hasDerivWithinAt (t : ℝ)
           (hasDerivWithinAt_mixedDerivL G (r := 0) (m := 0) (by omega) x t)
@@ -385,21 +313,11 @@ private theorem uncurryRightL_mixedDerivL_one
         (uncurryRightL E F m) ∘ fun y ↦ mixedDerivL 1 m G (slabMk y t) :=
       funext fun y ↦ (ih (by omega) (slabMk y t)).symm
     rw [hfun] at h₂
-    refine curryLeft_injective ?_
+    refine Function.LeftInverse.injective ContinuousMultilinearMap.uncurry_curryLeft ?_
     rw [curryLeft_uncurryRightL_succ]
     exact h₁.unique h₂
 
 /-! ### The norm -/
-
-/-- There are at most `(n + 1)²` pairs `(r, m)` with `2 r + m ≤ n`. -/
-private theorem card_parabolicDerivPairs_le (n : ℕ) : (parabolicDerivPairs n).card ≤ (n + 1) ^ 2 :=
-  by
-  refine (Finset.card_le_card (t := Finset.range (n + 1) ×ˢ Finset.range (n + 1))
-    fun p hp ↦ ?_).trans ?_
-  · rw [mem_parabolicDerivPairs] at hp
-    rw [Finset.mem_product, Finset.mem_range, Finset.mem_range]
-    omega
-  · rw [Finset.card_product, Finset.card_range, sq]
 
 /-- The contribution of the pair `(r, m)` to the norm is at most `2 B + C`, where `B` bounds the
 field and `C` is a Hölder constant of its time slices (order `n - 1`) or of the field itself
@@ -440,7 +358,12 @@ private theorem hasFDerivAt_ofDerivFields (r m : ℕ) (h : 2 * r + m + 1 ≤ k +
       (ofDerivFields u G H r (m + 1) (slabMk x t)).curryLeft x := by
   rcases r with _ | r
   · rcases m with _ | m
-    · rw [ofDerivFields_zero_succ_apply, mixedDerivL_zero_zero_eq, curryLeft_uncurryRightL_zero]
+    · have hL (L : E →L[ℝ] F) : (uncurryRightL E F 0
+          ((continuousMultilinearCurryFin0 ℝ E (E →L[ℝ] F)).symm L)).curryLeft =
+          (continuousMultilinearCurryFin0 ℝ E F).symm.toLinearIsometry.toContinuousLinearMap.comp
+            L :=
+        ContinuousLinearMap.ext fun v ↦ ContinuousMultilinearMap.ext fun w ↦ by simp
+      rw [ofDerivFields_zero_succ_apply, mixedDerivL_zero_zero_eq, hL]
       exact (continuousMultilinearCurryFin0 ℝ E F).symm.toLinearIsometry.toContinuousLinearMap
         |>.hasFDerivAt.comp x (hG t x)
     · rw [ofDerivFields_zero_succ_apply, curryLeft_uncurryRightL_succ]
@@ -454,22 +377,14 @@ private theorem hasDerivWithinAt_ofDerivFields (r m : ℕ) (h : 2 * r + m + 2 �
       (ofDerivFields u G H (r + 1) m (slabMk x t)) (Icc a b) t := by
   rcases r with _ | r
   · rcases m with _ | m
-    · have he : ParabolicC2HolderSpace.timeExtension hab.le (ofDerivFields u G H 0 0) x =
-          (continuousMultilinearCurryFin0 ℝ E F).symm ∘
-            ParabolicC2HolderSpace.timeExtension hab.le u x := by
-        ext1 s
-        simp only [ParabolicC2HolderSpace.timeExtension_def, Function.comp_apply,
-          ofDerivFields_zero_zero_apply]
-      rw [he, ofDerivFields_succ, mixedDerivL_zero_zero_eq]
+    · rw [show ⇑(ofDerivFields u G H 0 0) = (continuousMultilinearCurryFin0 ℝ E F).symm ∘ u from
+          funext ofDerivFields_zero_zero_apply, ParabolicC2HolderSpace.timeExtension_comp,
+        ofDerivFields_succ, mixedDerivL_zero_zero_eq]
       exact (continuousMultilinearCurryFin0 ℝ E F).symm.toLinearIsometry.toContinuousLinearMap
         |>.hasFDerivAt.comp_hasDerivWithinAt (t : ℝ) (hH x t)
-    · have he : ParabolicC2HolderSpace.timeExtension hab.le (ofDerivFields u G H 0 (m + 1)) x =
-          (uncurryRightL E F m) ∘
-            ParabolicC2HolderSpace.timeExtension hab.le (mixedDerivL 0 m G) x := by
-        ext1 s
-        simp only [ParabolicC2HolderSpace.timeExtension_def, Function.comp_apply,
-          ofDerivFields_zero_succ_apply]
-      rw [he, ofDerivFields_succ, ← uncurryRightL_mixedDerivL_one hG hH (by omega)]
+    · rw [show ⇑(ofDerivFields u G H 0 (m + 1)) = uncurryRightL E F m ∘ mixedDerivL 0 m G from
+          funext (ofDerivFields_zero_succ_apply m), ParabolicC2HolderSpace.timeExtension_comp,
+        ofDerivFields_succ, ← uncurryRightL_mixedDerivL_one hG hH (by omega)]
       exact (uncurryRightL E F m).hasFDerivAt.comp_hasDerivWithinAt (t : ℝ)
         (hasDerivWithinAt_mixedDerivL G (r := 0) (m := m) (by omega) x t)
   · exact hasDerivWithinAt_mixedDerivL H (r := r) (m := m) (by omega) x t
@@ -483,8 +398,8 @@ private theorem holderWith_ofDerivFields_slabMk (r m : ℕ) (h : 2 * r + m + 1 =
     · omega
     · exact ⟨_, fun x ↦
         (continuousMultilinearCurryRightEquiv' ℝ m E F).symm.isometry.comp_holderWith
-        (holderWith_timeSlice G (r := 0) (m := m) (by omega) x)⟩
-  · exact ⟨_, holderWith_timeSlice H (r := r) (m := m) (by omega)⟩
+        (holderWith_mixedDerivL_slabMk G (r := 0) (m := m) (by omega) x)⟩
+  · exact ⟨_, holderWith_mixedDerivL_slabMk H (r := r) (m := m) (by omega)⟩
 
 omit hG hH in
 private theorem memHolder_ofDerivFields (r m : ℕ) (h : 2 * r + m = k + 2) :
@@ -526,15 +441,14 @@ theorem mixedDerivL_zero_succ_ofSpatialFDerivTimeDeriv {m : ℕ} (hm : m ≤ k +
     (p : slab (E := E) a b) :
     mixedDerivL 0 (m + 1) (ofSpatialFDerivTimeDeriv u G H hG hH) p =
       (continuousMultilinearCurryRightEquiv' ℝ m E F).symm (mixedDerivL 0 m G p) := by
-  rw [ofSpatialFDerivTimeDeriv, mixedDerivL_mk _ _ _ _ (by omega)]
-  rfl
+  rw [ofSpatialFDerivTimeDeriv, mixedDerivL_mk _ _ _ _ (by omega), ofDerivFields_zero_succ_apply,
+    LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry]
 
 /-- The fields `D_t^(r+1) D_x^m u` of the map built from its first derivatives are the fields
 `D_t^r D_x^m H` of its time derivative `H`. -/
 theorem mixedDerivL_succ_ofSpatialFDerivTimeDeriv {r m : ℕ} (h : 2 * r + m ≤ k) :
     mixedDerivL (r + 1) m (ofSpatialFDerivTimeDeriv u G H hG hH) = mixedDerivL r m H := by
-  rw [ofSpatialFDerivTimeDeriv, mixedDerivL_mk _ _ _ _ (by omega)]
-  rfl
+  rw [ofSpatialFDerivTimeDeriv, mixedDerivL_mk _ _ _ _ (by omega), ofDerivFields_succ]
 
 /-- The contribution of each pair `(r, m)` to the norm of the map built from its first
 derivatives is at most `4 (‖u‖ + ‖G‖ + ‖H‖)`. -/
@@ -570,7 +484,7 @@ private theorem norm_add_norm_add_norm_ofSpatialFDerivTimeDeriv_le :
         exact ((mixedDerivL 0 m G).norm_coe_le_norm p).trans (norm_mixedDerivL_le G 0 m)
       · rw [hfield]
         exact ((continuousMultilinearCurryRightEquiv' ℝ m E F).symm.isometry.comp_holderWith
-          (holderWith_timeSlice G (r := 0) (m := m) (by omega) x)).mono le_self_add
+          (holderWith_mixedDerivL_slabMk G (r := 0) (m := m) (by omega) x)).mono le_self_add
       · rw [hfield]
         exact ((continuousMultilinearCurryRightEquiv' ℝ m E F).symm.isometry.comp_holderWith
           (holderWith_mixedDerivL G (r := 0) (m := m) (by omega))).mono le_add_self
@@ -583,7 +497,7 @@ private theorem norm_add_norm_add_norm_ofSpatialFDerivTimeDeriv_le :
     · rw [hfield, ofDerivFields_succ]
       exact norm_mixedDerivL_le H r m
     · rw [hfield, ofDerivFields_succ]
-      exact (holderWith_timeSlice H (r := r) (m := m) (by omega) x).mono le_self_add
+      exact (holderWith_mixedDerivL_slabMk H (r := r) (m := m) (by omega) x).mono le_self_add
     · rw [hfield, ofDerivFields_succ]
       exact (holderWith_mixedDerivL H (r := r) (m := m) (by omega)).mono le_add_self
 

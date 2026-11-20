@@ -105,12 +105,24 @@ theorem timeExtension_smul (hab : a ≤ b) (c : ℝ) (f : slab (E := E) a b → 
   funext x t
   simp only [timeExtension_def, Pi.smul_apply]
 
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- Clamped time extension commutes with postcomposition. -/
+theorem timeExtension_comp {G : Type*} (hab : a ≤ b) (L : F → G) (f : slab (E := E) a b → F)
+    (x : E) : timeExtension hab (L ∘ f) x = L ∘ timeExtension hab f x :=
+  (rfl)
+
 omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
 /-- The clamped time extension of a continuous slab map is jointly continuous. -/
 theorem continuous_timeExtension (hab : a ≤ b) {f : slab (E := E) a b → F}
     (hf : Continuous f) : Continuous (fun p : ℝ × E => timeExtension hab f p.2 p.1) := by
   simpa only [timeExtension_def, Function.comp_def] using hf.comp (continuous_slabMk.comp
     (continuous_snd.prodMk ((continuous_projIcc (h := hab)).comp continuous_fst)))
+
+omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
+/-- The time slices of the clamped time extension of a continuous slab map are continuous. -/
+theorem continuous_timeExtension_slice (hab : a ≤ b) {f : slab (E := E) a b → F}
+    (hf : Continuous f) (x : E) : Continuous (timeExtension hab f x) :=
+  (continuous_timeExtension hab hf).comp (continuous_id.prodMk continuous_const)
 
 omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
 /-- Clamping time preserves the supremum bound of a bounded continuous slab map. -/
