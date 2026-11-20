@@ -166,6 +166,25 @@ private theorem exists_isChangeOfVariables_inf {F : Type*} [NormedAddCommGroup F
       obtain ⟨x, ⟨hxH, hxU'⟩, rfl⟩ : y ∈ Φ '' (H ∩ U') := himage ▸ ⟨hyΩ, hyU⟩
       exact ⟨x, ⟨hxH, hxU', hyW⟩, rfl⟩
 
+/-- **The chart between the two sides.** If `Φ` maps the part of `U'` in `H` onto `Ω ∩ U`, with
+inverse `Ψ`, then `Φ` restricts to a change of variables from `H ∩ U'` into `Ω ∩ U` and `Ψ` to one
+from `Ω ∩ U` into `H ∩ U'`, with the same constants. -/
+private theorem isChangeOfVariables_inf_of_image_eq {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] {U U' Omega H : Opens F} {Φ Ψ : F → F} {k : ℕ} {L L' c c' : ℝ}
+    (hΦ : IsChangeOfVariables k U' U Φ L c) (hΨ : IsChangeOfVariables k U U' Ψ L' c')
+    (hΨΦ : LeftInvOn Ψ Φ U') (himage : Φ '' ((H : Set F) ∩ U') = (Omega : Set F) ∩ U) :
+    IsChangeOfVariables k (H ⊓ U') (Omega ⊓ U) Φ L c ∧
+      IsChangeOfVariables k (Omega ⊓ U) (H ⊓ U') Ψ L' c' := by
+  refine ⟨hΦ.mono_set inf_le_right fun x hx => ?_, hΨ.mono_set inf_le_right fun y hy => ?_⟩
+  · have h : Φ x ∈ Φ '' ((H : Set F) ∩ U') := mem_image_of_mem Φ hx
+    rw [himage] at h
+    exact h
+  · have h : y ∈ (Omega : Set F) ∩ U := hy
+    rw [← himage] at h
+    obtain ⟨x, hx, rfl⟩ := h
+    rw [hΨΦ hx.2]
+    exact hx
+
 section Transport
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
@@ -289,19 +308,11 @@ private theorem lpNorm_iteratedGradient_inter_le (hL' : 0 ≤ L')
   have hmaps1 : MapsTo Ψ ((Omega : Set F) ∩ K) ((Ω' : Set F) ∩ Ψ '' K) := fun y hy =>
     ⟨hΨ.mapsTo (hsub hy), mem_image_of_mem Ψ hy.2⟩
   have hmaps2 : MapsTo Ψ ((Omega : Set F) ∩ K) Ω' := fun y hy => hΨ.mapsTo (hsub hy)
-  have h1 := hΨ.lpNorm_comp_le hS hsub hmaps1
-    ((Lp.memLp (iteratedGradient 1 v)).mono_measure
-      (Measure.restrict_mono inter_subset_left le_rfl)).norm
-  have h2 := hΨ.lpNorm_comp_le hS hsub hmaps2
-    (Lp.memLp (iteratedGradient 0 (lowerOrder 1 v))).norm
-  have hm1 := hΨ.memLp_comp hS hsub hmaps1
-    ((Lp.memLp (iteratedGradient 1 v)).mono_measure
-      (Measure.restrict_mono inter_subset_left le_rfl)).norm
-  have hm2 := hΨ.memLp_comp hS hsub hmaps2
-    (Lp.memLp (iteratedGradient 0 (lowerOrder 1 v))).norm
-  rw [lpNorm_norm ((Lp.aestronglyMeasurable _).mono_measure
-    (Measure.restrict_mono inter_subset_left le_rfl))] at h1
-  rw [lpNorm_norm (Lp.aestronglyMeasurable _)] at h2
+  have hv1 : MemLp (iteratedGradient 1 v) p (mu.restrict ((Ω' : Set F) ∩ Ψ '' K)) :=
+    (Lp.memLp _).mono_measure (Measure.restrict_mono inter_subset_left le_rfl)
+  have hm1 := (hΨ.memLp_comp hS hsub hmaps1 hv1).norm.const_mul (L' ^ 2)
+  have hm2 := (hΨ.memLp_comp hS hsub hmaps2
+    (Lp.memLp (iteratedGradient 0 (lowerOrder 1 v)))).norm.const_mul L'
   rw [Lp.norm_def, toReal_eLpNorm]
   calc lpNorm (iteratedGradient 1 u) p (mu.restrict ((Omega : Set F) ∩ K))
       ≤ 1 * lpNorm (fun y => L' ^ 2 * ‖iteratedGradient 1 v (Ψ y)‖ +
@@ -309,21 +320,20 @@ private theorem lpNorm_iteratedGradient_inter_le (hL' : 0 ≤ L')
           (mu.restrict ((Omega : Set F) ∩ K)) :=
         lpNorm_le_mul_lpNorm_of_ae_le_mul ((Lp.aestronglyMeasurable _).mono_measure
           (Measure.restrict_mono inter_subset_left le_rfl))
-          ((hm1.const_mul _).add (hm2.const_mul _)) (by simpa only [one_mul] using hpt)
+          (hm1.add hm2) (by simpa only [one_mul] using hpt)
     _ ≤ lpNorm (fun y => L' ^ 2 * ‖iteratedGradient 1 v (Ψ y)‖) p
           (mu.restrict ((Omega : Set F) ∩ K)) +
         lpNorm (fun y => L' * ‖iteratedGradient 0 (lowerOrder 1 v) (Ψ y)‖) p
           (mu.restrict ((Omega : Set F) ∩ K)) := by
       rw [one_mul]
-      exact lpNorm_add_le (hm1.const_mul _) Fact.out
+      exact lpNorm_add_le hm1 Fact.out
     _ ≤ _ := by
       gcongr
-      · exact (lpNorm_le_mul_lpNorm_of_ae_le_mul (hm1.const_mul _).aestronglyMeasurable hm1
-          (ae_of_all _ fun y => by rw [norm_mul, Real.norm_of_nonneg (by positivity)])).trans
-          (mul_le_mul_of_nonneg_left h1 (by positivity))
-      · exact (lpNorm_le_mul_lpNorm_of_ae_le_mul (hm2.const_mul _).aestronglyMeasurable hm2
-          (ae_of_all _ fun y => by rw [norm_mul, Real.norm_of_nonneg hL'])).trans
-          (mul_le_mul_of_nonneg_left h2 hL')
+      · exact hΨ.lpNorm_le_of_ae_le_mul_comp hS hsub hmaps1 (sq_nonneg L')
+          hm1.aestronglyMeasurable hv1
+          (ae_of_all _ fun y => by rw [norm_mul, norm_norm, Real.norm_of_nonneg (sq_nonneg L')])
+      · exact hΨ.lpNorm_le_of_ae_le_mul_comp hS hsub hmaps2 hL' hm2.aestronglyMeasurable
+          (Lp.memLp _) (ae_of_all _ fun y => by rw [norm_mul, norm_norm, Real.norm_of_nonneg hL'])
 
 end Transport
 
@@ -435,36 +445,27 @@ private theorem exists_lpNorm_iteratedGradient_le_of_pullback (hp : 1 < p) (hp_t
         C * (‖f‖ + ‖iteratedGradient 0 (lowerOrder 1 v)‖ + ‖value 2 v‖) := by
   set Ω' : Opens (WithLp 2 (ℝ × E)) := normalHalfSpace (E := E) a ⊓ U'
   have hΩ'm : MeasurableSet (Ω' : Set (WithLp 2 (ℝ × E))) := Ω'.isOpen.measurableSet
-  have hΦmaps : MapsTo Φ Ω' ((Omega : Set (WithLp 2 (ℝ × E))) ∩ U) := fun x hx =>
-    himage ▸ mem_image_of_mem Φ hx
+  have hΦ' := (isChangeOfVariables_inf_of_image_eq hΦ hΨ hΨΦ himage).1
+  have hΦmaps := hΦ'.mapsTo
   have hΦc : ContinuousOn Φ U' := hΦ.differentiableOn.continuousOn
-  have hΩ'U' : (Ω' : Set (WithLp 2 (ℝ × E))) ⊆ U' := fun x hx => hx.2
-  have hΦU : MapsTo Φ Ω' U := fun x hx => (hΦmaps hx).2
+  have hD : ((Omega ⊓ U : Opens (WithLp 2 (ℝ × E))) : Set (WithLp 2 (ℝ × E))) ⊆ Omega :=
+    fun y hy => hy.1
   -- Composition with `Φ` preserves almost-everywhere properties and measurability.
   have hac : (volume.restrict (Ω' : Set (WithLp 2 (ℝ × E)))).map Φ ≪
       volume.restrict (Omega : Set (WithLp 2 (ℝ × E))) :=
-    (Measure.absolutelyContinuous_of_le_smul
-      ((map_restrict_le_smul_restrict_image_of_differentiableOn volume U'.isOpen
-        hΦ.differentiableOn (hΦ.injOn.mono hΩ'U') hΩ'U' hΩ'm hΦ.pos
-        fun x hx => hΦ.le_abs_det x (hΩ'U' hx)).trans
-        (by gcongr; exact hΦmaps.image_subset))).trans
-      (Measure.restrict_mono inter_subset_left le_rfl).absolutelyContinuous
-  have hΦm : AEMeasurable Φ (volume.restrict (Ω' : Set (WithLp 2 (ℝ × E)))) :=
-    hΦ.aemeasurable.mono_measure (Measure.restrict_mono hΩ'U' le_rfl)
-  have hAΦ : AEStronglyMeasurable (fun x => A (Φ x))
-      (volume.restrict (Ω' : Set (WithLp 2 (ℝ × E)))) := (hA.mono_ac hac).comp_aemeasurable hΦm
-  have hae {P : WithLp 2 (ℝ × E) → Prop}
-      (hP : ∀ᵐ y ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), P y) :
-      ∀ᵐ x ∂volume.restrict (Ω' : Set (WithLp 2 (ℝ × E))), P (Φ x) :=
-    ae_comp_of_map_absolutelyContinuous hΦm hac hP
+    (Measure.absolutelyContinuous_of_le_smul (hΦ'.map_restrict_le volume)).trans
+      (Measure.restrict_mono hD le_rfl).absolutelyContinuous
   obtain ⟨hA', hb'⟩ := aestronglyMeasurable_comp_comp_adjoint_and_add_sum e hΨ hΩ'm
-    (hΦc.mono hΩ'U') hΦU hAΦ ((hb.mono_ac hac).comp_aemeasurable hΦm)
+    (hΦc.mono fun x hx => hx.2) (fun x hx => (hΦmaps hx).2)
+    ((hA.mono_ac hac).comp_aemeasurable hΦ'.aemeasurable)
+    ((hb.mono_ac hac).comp_aemeasurable hΦ'.aemeasurable)
   refine exists_lpNorm_iteratedGradient_le_of_continuousWithinAt_of_normalHalfSpace hp hp_top a
     (Omega := Ω') (U := U') (β := L' * β + Fintype.card ι * (L' * Λ))
     (by simp [Ω'])
     (hK.image_of_continuousOn (hΨ.differentiableOn.continuousOn.mono hKU))
     ((hΨ.mapsTo.mono_left hKU).image_subset)
-    hA' ?_ ?_ hb' ?_ ((hc.mono_ac hac).comp_aemeasurable hΦm) (hae hcγ)
+    hA' ?_ ?_ hb' ?_ ((hc.mono_ac hac).comp_aemeasurable hΦ'.aemeasurable)
+    (hΦ'.ae_comp (ae_restrict_of_ae_restrict_of_subset hD hcγ))
   · rintro _ ⟨y, hy, rfl⟩
     have hyx : Φ (Ψ y) = y := hΦΨ (hKU hy)
     exact continuousWithinAt_comp_comp_adjoint hΨ
@@ -476,14 +477,15 @@ private theorem exists_lpNorm_iteratedGradient_le_of_pullback (hp : 1 < p) (hp_t
       have h := ((hΦc.continuousAt (U'.isOpen.mem_nhds (hΨ.mapsTo (hKU hy)))).continuousWithinAt
         (s := Ω')).mem_closure_image hcl
       rw [hyx] at h
-      exact closure_mono ((hΦmaps.image_subset).trans inter_subset_left) h
+      exact closure_mono (hΦmaps.image_subset.trans hD) h
     obtain ⟨lam, hlam, hA₀⟩ := hell y hy hyΩ
     refine ⟨lam / (‖fderiv ℝ Φ (Ψ y)‖ + 1) ^ 2, by positivity, fun ξ => ?_⟩
     have h := mul_norm_sq_le_inner_comp_comp_adjoint hΦ hΨ hΨΦ hΦΨ (hΨ.mapsTo (hKU hy)) hlam.le
       (A₀ := A y) hA₀ ξ
     rw [hyx] at h ⊢
     exact h
-  · filter_upwards [hae hbβ, ae_restrict_mem hΩ'm] with x hx hxΩ'
+  · filter_upwards [hΦ'.ae_comp (ae_restrict_of_ae_restrict_of_subset hD hbβ),
+      ae_restrict_mem hΩ'm] with x hx hxΩ'
     exact norm_add_sum_le e hΨ (hΦmaps hxΩ').2 (hAΛ _ (hΦmaps hxΩ')) hx
 
 /-- The arithmetic combining the estimates in
@@ -550,23 +552,9 @@ private theorem exists_lpNorm_iteratedGradient_le_of_norm_le (hp : 1 < p) (hp_to
     (stdOrthonormalBasis ℝ (WithLp 2 (ℝ × E))) a hΦ hΨ hΨΦ hΦΨ himage hK hKU hA hAΛ hcont hell hb
     hbβ hc hcγ
   -- Restrict the chart to the flat side `Ω' = H ∩ U'` and the curved side `D = Ω ∩ U`.
-  have hΦmaps : MapsTo Φ (normalHalfSpace (E := E) a ⊓ U' : Opens (WithLp 2 (ℝ × E)))
-      (Omega ⊓ U : Opens (WithLp 2 (ℝ × E))) := fun x hx => by
-    have h : Φ x ∈ Φ '' ((normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) ∩ U') :=
-      mem_image_of_mem Φ hx
-    rw [himage] at h
-    exact h
-  have hΨmaps : MapsTo Ψ (Omega ⊓ U : Opens (WithLp 2 (ℝ × E)))
-      (normalHalfSpace (E := E) a ⊓ U' : Opens (WithLp 2 (ℝ × E))) := fun y hy => by
-    have h : y ∈ (Omega : Set (WithLp 2 (ℝ × E))) ∩ U := hy
-    rw [← himage] at h
-    obtain ⟨x, hx, rfl⟩ := h
-    rw [hΨΦ hx.2]
-    exact hx
-  have hΦ' := hΦ.mono_set (inf_le_right : normalHalfSpace (E := E) a ⊓ U' ≤ U') hΦmaps
-  have hΨ' := hΨ.mono_set (inf_le_right : Omega ⊓ U ≤ U) hΨmaps
+  obtain ⟨hΦ', hΨ'⟩ := isChangeOfVariables_inf_of_image_eq hΦ hΨ hΨΦ himage
   have hΦΩ : MapsTo Φ (normalHalfSpace (E := E) a ⊓ U' : Opens (WithLp 2 (ℝ × E))) Omega :=
-    fun x hx => (hΦmaps hx).1
+    fun x hx => (hΦ'.mapsTo hx).1
   have hκ : 0 ≤ c⁻¹ ^ (1 / p).toReal := Real.rpow_nonneg (inv_nonneg.2 hΦ.pos.le) _
   have hκ' : 0 ≤ c'⁻¹ ^ (1 / p).toReal := Real.rpow_nonneg (inv_nonneg.2 hΨ.pos.le) _
   refine ⟨(L' ^ 2 * c'⁻¹ ^ (1 / p).toReal * max C₀ 0 + L' * c'⁻¹ ^ (1 / p).toReal) *
@@ -578,7 +566,7 @@ private theorem exists_lpNorm_iteratedGradient_le_of_norm_le (hp : 1 < p) (hp_to
       (Lp.memLp f)
   have hest := hC₀ _ (hfΦ.toLp _)
     (exists_w1p0_value_ae_eq_mul_value_compL hΦ' hp_top hΦ.differentiableOn.continuousOn
-      hΦ.mapsTo (hΨ.differentiableOn.continuousOn.mono fun y hy => hy.2) hΨmaps
+      hΦ.mapsTo (hΨ.differentiableOn.continuousOn.mono fun y hy => hy.2) hΨ'.mapsTo
       (hΨΦ.mono fun x hx => hx.2) hu0)
     (by
       filter_upwards [ae_traceCLM_comp_iteratedGradient_compL_restrictL_eq
