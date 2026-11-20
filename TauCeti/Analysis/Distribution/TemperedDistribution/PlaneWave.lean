@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
+public import TauCeti.Analysis.Fourier.FourierCharDeriv
+import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 
 /-!
 # Plane waves and their Littlewood–Paley blocks
@@ -22,7 +24,7 @@ basic example on which the dyadic decomposition can be computed exactly.
   blocks are `Δⱼ e_ξ = ψⱼ(ξ) e_ξ` (`TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta`).
   If `2^j φ.rOut ≤ ‖ξ‖ ≤ 2^{j+1} φ.rIn`, the plane wave is its own block of index `j + 1` and all
   its other blocks vanish
-  (`TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta_of_mem_annulus`); for the bump
+  (`TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta_of_le_norm_of_norm_le`); for the bump
   with `φ.rIn = 1` and `φ.rOut = 2` this is the frequency `‖ξ‖ = 2^{j+1}`. The index is that of
   the piece `ψ_{j+1} = φ (2^{-(j+1)} ·) - φ (2^{-j} ·)` of the convention here, which is
   supported in the annulus `2^j φ.rIn ≤ ‖ξ‖ ≤ 2^{j+1} φ.rOut`. If `‖ξ‖ ≤ φ.rIn`, the plane wave
@@ -30,7 +32,7 @@ basic example on which the dyadic decomposition can be computed exactly.
   (`TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta_of_norm_le`). For `ξ = 0` this is
   the constant function `1`, which is the distribution `volume.toTemperedDistribution`
   (`TemperedDistribution.fourierInv_delta_zero`): `Δ₀ 1 = 1` and `Δⱼ 1 = 0` for `j ≥ 1`
-  (`TemperedDistribution.littlewoodPaleyBlock_volume`).
+  (`TemperedDistribution.littlewoodPaleyBlock_toTemperedDistribution_volume`).
 * Differentiation multiplies `e_ξ` by its frequency, `∂_m e_ξ = 2πi ⟪ξ, m⟫ e_ξ`
   (`TemperedDistribution.lineDerivOp_fourierInv_delta`). Since `|e_ξ| = 1`, the plane wave of
   frequency `‖ξ‖ = R` in the direction `m = ξ / R` has `‖∂_m e_ξ‖_∞ = 2π R ‖e_ξ‖_∞`, while its
@@ -41,17 +43,13 @@ basic example on which the dyadic decomposition can be computed exactly.
 
 ## Main declarations
 
-* `TemperedDistribution.smulLeftCLM_delta`: multiplication of the Dirac mass by a function of
-  temperate growth, `g • δ_ξ = g(ξ) δ_ξ`.
 * `TemperedDistribution.fourierInv_delta`, `TemperedDistribution.fourierInv_delta_zero`: the
   inverse Fourier transform of `δ_ξ` is the plane wave `e_ξ`, and that of `δ₀` is the constant `1`.
-* `TemperedDistribution.fourierMultiplierCLM_fourierInv_delta`: a Fourier multiplier with symbol
-  `g` acts on `e_ξ` as multiplication by `g(ξ)`.
 * `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta`,
-  `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta_of_mem_annulus`,
+  `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta_of_le_norm_of_norm_le`,
   `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta_of_norm_le`,
-  `TemperedDistribution.littlewoodPaleyBlock_volume`: the blocks of plane waves and of the
-  constant `1`.
+  `TemperedDistribution.littlewoodPaleyBlock_toTemperedDistribution_volume`: the blocks of plane
+  waves and of the constant `1`.
 * `TemperedDistribution.lineDerivOp_fourierInv_delta`: the derivatives of a plane wave.
 * `TauCeti.two_mul_pi_le_of_forall_lineDerivOp_eq_and_norm_le`: the constant of Bernstein's
   inequality for one derivative in `L^∞` is at least `2π`.
@@ -72,27 +70,7 @@ open scoped SchwartzMap LineDeriv RealInnerProductSpace ENNReal
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The plane wave `x ↦ 𝐞 ⟪x, ξ⟫` has temperate growth. -/
-theorem hasTemperateGrowth_fourierChar_inner (ξ : E) :
-    (fun x : E ↦ (𝐞 ⟪x, ξ⟫ : ℂ)).HasTemperateGrowth := by
-  have h : (fun x : E ↦ (𝐞 ⟪x, ξ⟫ : ℂ)) =
-      fun x ↦ Complex.exp (((2 * π * ⟪x, ξ⟫ : ℝ) : ℂ) * Complex.I) := by
-    funext x
-    rw [Real.fourierChar_apply]
-  rw [h]
-  exact Complex.hasTemperateGrowth_exp_mul_I.comp (by fun_prop)
-
 namespace TemperedDistribution
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- Multiplying the Dirac mass at `ξ` by a function `g` of temperate growth multiplies it by the
-value `g ξ`. -/
-@[simp]
-theorem smulLeftCLM_delta {g : E → ℂ} (hg : g.HasTemperateGrowth) (ξ : E) :
-    smulLeftCLM ℂ g (delta ξ) = g ξ • delta ξ := by
-  ext f
-  simp [SchwartzMap.smulLeftCLM_apply_apply hg]
 
 /-- **The inverse Fourier transform of a Dirac mass is a plane wave.** As tempered distributions,
 `𝓕⁻ δ_ξ` is the function `x ↦ 𝐞 ⟪x, ξ⟫`. -/
@@ -107,13 +85,6 @@ theorem fourierInv_delta_zero : 𝓕⁻ (delta (0 : E)) = volume.toTemperedDistr
   ext f
   simp [SchwartzMap.fourierInv_coe, Real.fourierInv_eq]
 
-/-- **Fourier multipliers act on plane waves by their symbol.** The Fourier multiplier with symbol
-`g` of temperate growth multiplies the plane wave `𝓕⁻ δ_ξ` by `g ξ`. -/
-theorem fourierMultiplierCLM_fourierInv_delta {g : E → ℂ} (hg : g.HasTemperateGrowth) (ξ : E) :
-    fourierMultiplierCLM ℂ g (𝓕⁻ (delta ξ)) = g ξ • 𝓕⁻ (delta ξ) := by
-  rw [fourierMultiplierCLM_apply, FourierTransform.fourier_fourierInv_eq, smulLeftCLM_delta hg,
-    FourierTransform.fourierInv_smul]
-
 variable (φ : ContDiffBump (0 : E))
 
 /-- **The Littlewood–Paley blocks of a plane wave.** The block `Δⱼ` multiplies the plane wave
@@ -127,21 +98,13 @@ theorem littlewoodPaleyBlock_fourierInv_delta (j : ℕ) (ξ : E) :
 
 /-- **A plane wave of dyadic frequency is a single block.** If `2^j φ.rOut ≤ ‖ξ‖ ≤ 2^{j+1} φ.rIn`,
 then the plane wave `𝓕⁻ δ_ξ` is its own block of index `j + 1`, and all its other blocks vanish. -/
-theorem littlewoodPaleyBlock_fourierInv_delta_of_mem_annulus {j : ℕ} {ξ : E}
+theorem littlewoodPaleyBlock_fourierInv_delta_of_le_norm_of_norm_le {j : ℕ} {ξ : E}
     (h₁ : 2 ^ j * φ.rOut ≤ ‖ξ‖) (h₂ : ‖ξ‖ ≤ 2 ^ (j + 1) * φ.rIn) (k : ℕ) :
     littlewoodPaleyBlock ℂ φ k (𝓕⁻ (delta ξ)) = if k = j + 1 then 𝓕⁻ (delta ξ) else 0 := by
   rw [littlewoodPaleyBlock_fourierInv_delta]
   split_ifs with hk
   · subst hk
-    have h₀ : φ (((2 : ℝ) ^ j)⁻¹ • ξ) = 0 := by
-      refine φ.zero_of_le_dist ?_
-      rw [dist_zero_right, norm_smul, norm_inv, norm_pow, Real.norm_two]
-      exact (le_inv_mul_iff₀ (by positivity)).2 (by linarith)
-    have h₁' : φ (((2 : ℝ) ^ (j + 1))⁻¹ • ξ) = 1 := by
-      refine φ.one_of_mem_closedBall ?_
-      rw [mem_closedBall_zero_iff, norm_smul, norm_inv, norm_pow, Real.norm_two]
-      exact (inv_mul_le_iff₀ (by positivity)).2 h₂
-    rw [φ.inhomogeneousLittlewoodPaley_succ_apply, h₀, h₁']
+    rw [φ.inhomogeneousLittlewoodPaley_succ_eq_one_of_le_norm_of_norm_le h₁ h₂]
     simp
   · rcases le_or_gt k j with hkj | hkj
     · rw [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm]
@@ -170,7 +133,7 @@ theorem littlewoodPaleyBlock_fourierInv_delta_of_norm_le {ξ : E} (h : ‖ξ‖ 
 distribution `volume.toTemperedDistribution`, is its own low-frequency block `Δ₀`, and its blocks
 `Δⱼ`, `j ≥ 1`, vanish. -/
 @[simp]
-theorem littlewoodPaleyBlock_volume (k : ℕ) :
+theorem littlewoodPaleyBlock_toTemperedDistribution_volume (k : ℕ) :
     littlewoodPaleyBlock ℂ φ k (volume : Measure E).toTemperedDistribution =
       if k = 0 then (volume : Measure E).toTemperedDistribution else 0 := by
   rw [← fourierInv_delta_zero]
@@ -191,12 +154,6 @@ namespace TauCeti
 
 open TemperedDistribution
 
-/-- The plane wave `x ↦ 𝐞 ⟪x, ξ⟫` is essentially bounded. -/
-theorem memLp_top_fourierChar_inner (ξ : E) :
-    MemLp (fun x : E ↦ (𝐞 ⟪x, ξ⟫ : ℂ)) ∞ (volume : Measure E) :=
-  memLp_top_of_bound (by fun_prop : Continuous fun x : E ↦ (𝐞 ⟪x, ξ⟫ : ℂ)).aestronglyMeasurable 1
-    (ae_of_all _ fun x ↦ by simp)
-
 /-- The plane wave `x ↦ 𝐞 ⟪x, ξ⟫`, as an element of `L^∞`, is the tempered distribution
 `𝓕⁻ δ_ξ`. -/
 theorem toTemperedDistribution_toLp_fourierChar_inner (ξ : E) :
@@ -209,39 +166,32 @@ theorem toTemperedDistribution_toLp_fourierChar_inner (ξ : E) :
   filter_upwards [(memLp_top_fourierChar_inner ξ).coeFn_toLp] with x hx
   simp [hx, Circle.smul_def, mul_comm]
 
-/-- The plane wave `x ↦ 𝐞 ⟪x, ξ⟫` has norm one in `L^∞`. -/
-theorem norm_toLp_fourierChar_inner (ξ : E) :
-    ‖(memLp_top_fourierChar_inner ξ).toLp _‖ = 1 := by
-  rw [Lp.norm_toLp, eLpNorm_congr_norm_ae (memLp_top_fourierChar_inner ξ).aestronglyMeasurable
-    aestronglyMeasurable_const (g := fun _ : E ↦ (1 : ℂ)) (ae_of_all _ fun x ↦ by simp),
-    eLpNorm_const _ ENNReal.top_ne_zero (NeZero.ne volume)]
-  simp
-
 /-- **The constant of Bernstein's inequality is at least `2π`.** Suppose that `C` is a constant in
-Bernstein's inequality for one derivative in `L^∞`: every `f ∈ L^∞` whose Fourier transform
-vanishes outside the closed ball of radius `R > 0` has `∂_m f ∈ L^∞` with
+Bernstein's inequality for one derivative in `L^∞` at a radius `R > 0`: every `f ∈ L^∞` whose
+Fourier transform vanishes outside the closed ball of radius `R` has `∂_m f ∈ L^∞` with
 `‖∂_m f‖_∞ ≤ C R ‖m‖ ‖f‖_∞`, as `TauCeti.exists_lineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier`
 provides. Then `2π ≤ C`: a plane wave `e_ξ` with `‖ξ‖ = R` has `∂_ξ e_ξ = 2πi R² e_ξ`. -/
-theorem two_mul_pi_le_of_forall_lineDerivOp_eq_and_norm_le [Nontrivial E] {C : ℝ}
-    (hC : ∀ {R : ℝ}, 0 < R → ∀ f : Lp ℂ ∞ (volume : Measure E),
+theorem two_mul_pi_le_of_forall_lineDerivOp_eq_and_norm_le [Nontrivial E] {C R : ℝ} (hR : 0 < R)
+    (hC : ∀ f : Lp ℂ ∞ (volume : Measure E),
       Distribution.IsVanishingOn (𝓕 (f : 𝓢'(E, ℂ)) : 𝓢'(E, ℂ)) (closedBall 0 R)ᶜ → ∀ m : E,
       ∃ g : Lp ℂ ∞ (volume : Measure E), ∂_{m} (f : 𝓢'(E, ℂ)) = g ∧
         ‖g‖ ≤ C * R * ‖m‖ * ‖f‖) :
     2 * π ≤ C := by
-  obtain ⟨ξ, hξ⟩ := exists_norm_eq E zero_le_one
+  obtain ⟨ξ, hξ⟩ := exists_norm_eq E hR.le
   set f : Lp ℂ ∞ (volume : Measure E) := (memLp_top_fourierChar_inner ξ).toLp _
   have hf : (f : 𝓢'(E, ℂ)) = 𝓕⁻ (delta ξ) := toTemperedDistribution_toLp_fourierChar_inner ξ
-  have hvan : Distribution.IsVanishingOn (𝓕 (f : 𝓢'(E, ℂ)) : 𝓢'(E, ℂ)) (closedBall 0 1)ᶜ := by
+  have hvan : Distribution.IsVanishingOn (𝓕 (f : 𝓢'(E, ℂ)) : 𝓢'(E, ℂ)) (closedBall 0 R)ᶜ := by
     rw [hf, FourierTransform.fourier_fourierInv_eq]
     exact (isVanishingOn_delta ξ).mono <| Set.compl_subset_compl.2 <|
       Set.singleton_subset_iff.2 (by rw [mem_closedBall_zero_iff, hξ])
-  obtain ⟨g, hg, hgC⟩ := hC one_pos f hvan ξ
-  have hge : g = (2 * π * Complex.I) • f := Lp.toTemperedDistribution_injective <| by
+  obtain ⟨g, hg, hgC⟩ := hC f hvan ξ
+  have hge : g = (2 * π * Complex.I * (R ^ 2 : ℝ)) • f := Lp.toTemperedDistribution_injective <| by
     dsimp only
     rw [← hg, Lp.toTemperedDistribution_smul, hf, lineDerivOp_fourierInv_delta,
       real_inner_self_eq_norm_sq, hξ]
-    simp
   rw [hge, norm_smul, norm_toLp_fourierChar_inner, hξ] at hgC
-  simpa [abs_of_pos Real.pi_pos] using hgC
+  have hR2 : 0 < R * R := mul_pos hR hR
+  refine le_of_mul_le_mul_right ?_ hR2
+  simpa [abs_of_pos Real.pi_pos, abs_of_pos hR, sq, mul_assoc, mul_comm, mul_left_comm] using hgC
 
 end TauCeti
