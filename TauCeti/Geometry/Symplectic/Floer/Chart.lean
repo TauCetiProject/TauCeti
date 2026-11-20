@@ -101,7 +101,7 @@ noncomputable section
 section
 
 open Bundle ContinuousLinearMap Set
-open scoped Manifold
+open scoped Manifold Topology
 
 namespace TauCeti
 
@@ -294,6 +294,52 @@ theorem fderiv_extChartAt_comp_stdComplexLineImag_sub (ω : SmoothTwoForm I M)
   simp only [ContinuousLinearMap.coe_coe] at h'
   rw [← hre, ← him, h', Floer.almostComplexInChartAt_apply, (extChartAt I α).left_inv hz,
     Trivialization.symmL_continuousLinearMapAt _ hb]
+
+omit [FiniteDimensional ℝ E] in
+/-- **Continuity of a Hamiltonian vector field from its chart readings.** On a boundaryless
+manifold, let the Hamiltonian vector field of a family of Hamiltonians `K(z)`, read in the chart at
+every point `α`, be continuous on `U × (extChartAt I α).target` for an open set `U` of the domain.
+Then `(z, x) ↦ X_{K(z)}(x)` is continuous on `U × M` as a map into the tangent bundle. -/
+theorem continuousOn_hamiltonianVectorField_of_continuousOn_inChartAt [I.Boundaryless]
+    (ω : SmoothTwoForm I M) {K : ℝ × ℝ → M → ℝ} {U : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hK : ∀ α, ContinuousOn (ω.hamiltonianVectorFieldInChartAt α K)
+      (U ×ˢ (extChartAt I α).target)) :
+    ContinuousOn (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (K p.1) p.2⟩ : TangentBundle I M)) (U ×ˢ univ) := by
+  rintro ⟨z₀, x₀⟩ ⟨hz₀, -⟩
+  refine ContinuousAt.continuousWithinAt <|
+    (FiberBundle.continuousAt_totalSpace E _).2 ⟨continuousAt_snd, ?_⟩
+  -- Near `(z₀, x₀)`, the fibre coordinate in the trivialization at `x₀` is the vector field read
+  -- in the chart at `x₀`.
+  have hev : (fun p : (ℝ × ℝ) × M ↦ ω.hamiltonianVectorFieldInChartAt x₀ K
+      (p.1, extChartAt I x₀ p.2)) =ᶠ[𝓝 (z₀, x₀)] fun p ↦
+      (trivializationAt E (TangentSpace I) x₀ ⟨p.2, ω.hamiltonianVectorField (K p.1) p.2⟩).2 := by
+    filter_upwards [continuousAt_snd.preimage_mem_nhds (extChartAt_source_mem_nhds (I := I) x₀)]
+      with p hp
+    rw [hamiltonianVectorFieldInChartAt_apply, (extChartAt I x₀).left_inv hp,
+      Trivialization.continuousLinearMapAt_apply_of_mem]
+    rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
+  refine ContinuousAt.congr ?_ hev
+  exact ((hK x₀).continuousAt ((hU.prod (isOpen_extChartAt_target x₀)).mem_nhds
+    ⟨hz₀, mem_extChartAt_target x₀⟩)).comp
+    (continuousAt_fst.prodMk ((continuousAt_extChartAt (I := I) x₀).comp continuousAt_snd))
+
+omit [FiniteDimensional ℝ E] in
+/-- **Continuity of the Floer energy density from chart readings.** On a boundaryless manifold, if
+`u` is `C¹` on an open set `U` of the domain and the Hamiltonian vector fields of `K_s` and `K_t`,
+read in the chart at every point `α`, are continuous on `U × (extChartAt I α).target`, then the
+Floer energy density of `u` is continuous on `U`. -/
+theorem continuousOn_floerEnergyDensity_of_continuousOn_inChartAt [I.Boundaryless]
+    (ω : SmoothTwoForm I M) {U : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U)
+    (hXs : ∀ α, ContinuousOn (ω.hamiltonianVectorFieldInChartAt α Ks)
+      (U ×ˢ (extChartAt I α).target))
+    (hXt : ∀ α, ContinuousOn (ω.hamiltonianVectorFieldInChartAt α Kt)
+      (U ×ˢ (extChartAt I α).target)) :
+    ContinuousOn (ω.floerEnergyDensity Ks Kt u) U :=
+  ω.continuousOn_floerEnergyDensity hU hu
+    (ω.continuousOn_hamiltonianVectorField_of_continuousOn_inChartAt hU hXs)
+    (ω.continuousOn_hamiltonianVectorField_of_continuousOn_inChartAt hU hXt)
 
 end SmoothTwoForm
 
