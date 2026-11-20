@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.Pullback
 public import TauCeti.Topology.VectorBundle.Riemannian.Basic
+import Mathlib.Analysis.RCLike.Lemmas
 
 /-!
 # Continuous Hermitian metrics on vector bundles
@@ -37,6 +38,9 @@ vector bundle.
   into the fibres is continuous, with `ContinuousAt`, `ContinuousOn` and `Continuous` versions.
 * `ContinuousWithinAt.inner_bundle_of_continuousFiberNorm`: inner products of continuous maps into
   the fibres are continuous, with `ContinuousAt`, `ContinuousOn` and `Continuous` versions.
+* `Bundle.Trivialization.exists_norm_symm_le_and_norm_le_of_isCompact`: with a finite-dimensional
+  model fibre, the fibre norms are uniformly comparable to the norm of the model fibre over each
+  compact subset of the base set of an atlas chart.
 -/
 
 public section
@@ -113,6 +117,76 @@ theorem Continuous.norm_bundle_of_continuousFiberNorm
   ContinuousFiberNorm.continuous_norm.comp hv
 
 end Norm
+
+section Compact
+
+variable {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 F] [∀ x, NormedSpace 𝕜 (E x)] [FiberBundle F E]
+  [VectorBundle 𝕜 F E] [ContinuousFiberNorm F E] [FiniteDimensional 𝕜 F]
+
+namespace Bundle.Trivialization
+
+variable (𝕜) in
+include 𝕜 in
+/-- **Comparison with the model fibre over compact sets.** Over a compact subset `K` of the base
+set of an atlas chart `e` of a vector bundle with finite-dimensional model fibre `F` and
+continuous fibre norm, the fibre norms are uniformly comparable to the norm of `F`: there are
+constants `C` and `C'` with `‖e.symm x v‖ ≤ C ‖v‖` and `‖v‖ ≤ C' ‖e.symm x v‖` for all `x ∈ K`
+and `v : F`. On a noncompact part of the base set no such constants need exist. -/
+theorem exists_norm_symm_le_and_norm_le_of_isCompact (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] {K : Set B} (hK : IsCompact K) (hKe : K ⊆ e.baseSet) :
+    ∃ C C' : NNReal, ∀ x ∈ K, ∀ v : F, ‖e.symm x v‖ ≤ C * ‖v‖ ∧ ‖v‖ ≤ C' * ‖e.symm x v‖ := by
+  -- On `K × sphere 0 1`, the continuous function `(x, u) ↦ ‖e.symm x u‖` is bounded above, and
+  -- below by its positive minimum; homogeneity in `u` extends both bounds to all of `F`.
+  have := FiniteDimensional.proper_rclike 𝕜 F
+  set S := K ×ˢ Metric.sphere (0 : F) 1
+  have hS : IsCompact S := hK.prod (isCompact_sphere 0 1)
+  have hφ : ContinuousOn (fun z : B × F ↦ ‖e.symm z.1 z.2‖) S :=
+    (e.continuousOn_symm.norm_bundle_of_continuousFiberNorm).mono
+      (Set.prod_mono hKe (Set.subset_univ _))
+  -- Writing `v = ‖v‖ • u` with `‖u‖ = 1`, linearity of `e.symm x` gives the homogeneity.
+  have hhom : ∀ x ∈ K, ∀ v : F, v ≠ 0 →
+      ((((‖v‖⁻¹ : ℝ) : 𝕜) • v) ∈ Metric.sphere (0 : F) 1 ∧
+        ‖e.symm x v‖ = ‖v‖ * ‖e.symm x (((‖v‖⁻¹ : ℝ) : 𝕜) • v)‖) := by
+    intro x hx v hv
+    have hv' : ‖v‖ ≠ 0 := norm_ne_zero_iff.2 hv
+    refine ⟨?_, ?_⟩
+    · rw [mem_sphere_zero_iff_norm, norm_smul, RCLike.norm_ofReal, abs_inv, abs_norm,
+        inv_mul_cancel₀ hv']
+    rw [← e.symmL_apply (R := 𝕜) (hKe hx), ← e.symmL_apply (R := 𝕜) (hKe hx), map_smul,
+      norm_smul, RCLike.norm_ofReal, abs_inv, abs_norm, mul_inv_cancel_left₀ hv']
+  obtain ⟨C, hC⟩ := hS.exists_bound_of_continuousOn hφ
+  -- The minimum of `‖e.symm x u‖` on `S` is positive, as `e.symm x` is injective on the base set.
+  obtain ⟨m, hm, hmS⟩ : ∃ m : ℝ, 0 < m ∧ ∀ z ∈ S, m ≤ ‖e.symm z.1 z.2‖ := by
+    rcases S.eq_empty_or_nonempty with hSe | hSne
+    · exact ⟨1, one_pos, by simp [hSe]⟩
+    obtain ⟨z, hz, hmin⟩ := hS.exists_isMinOn hSne hφ
+    refine ⟨‖e.symm z.1 z.2‖, norm_pos_iff.2 fun h ↦ ?_, fun w hw ↦ hmin hw⟩
+    have h2 := congrArg Prod.snd (e.apply_mk_symm (hKe hz.1) z.2)
+    rw [h, ← e.continuousLinearMapAt_apply_of_mem 𝕜 (hKe hz.1), map_zero] at h2
+    have h1 : ‖z.2‖ = 1 := mem_sphere_zero_iff_norm.1 hz.2
+    rw [← h2, norm_zero] at h1
+    exact zero_ne_one h1
+  have hzero : ∀ x ∈ K, e.symm x 0 = 0 := fun x hx ↦ by
+    rw [← e.symmL_apply (R := 𝕜) (hKe hx), map_zero]
+  refine ⟨Real.toNNReal C, Real.toNNReal m⁻¹, fun x hx v ↦ ?_⟩
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp [hzero x hx]
+  obtain ⟨hu, hnorm⟩ := hhom x hx v hv
+  have hup : ‖e.symm x (((‖v‖⁻¹ : ℝ) : 𝕜) • v)‖ ≤ C := by simpa using hC (x, _) ⟨hx, hu⟩
+  have hlow : m ≤ ‖e.symm x (((‖v‖⁻¹ : ℝ) : 𝕜) • v)‖ := hmS (x, _) ⟨hx, hu⟩
+  rw [hnorm, Real.coe_toNNReal _ ((norm_nonneg _).trans hup),
+    Real.coe_toNNReal _ (inv_nonneg.2 hm.le)]
+  constructor
+  · rw [mul_comm]
+    exact mul_le_mul_of_nonneg_right hup (norm_nonneg _)
+  · rw [mul_left_comm]
+    refine le_mul_of_one_le_right (norm_nonneg _) ?_
+    rw [inv_mul_eq_div, one_le_div hm]
+    exact hlow
+
+end Bundle.Trivialization
+
+end Compact
 
 variable {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 F] [∀ x, InnerProductSpace 𝕜 (E x)]
   [FiberBundle F E] [VectorBundle 𝕜 F E] [ContinuousFiberNorm F E]

@@ -157,6 +157,16 @@ theorem AEStronglyMeasurableSection.sub (hs : AEStronglyMeasurableSection 𝕜 F
     AEStronglyMeasurableSection 𝕜 F μ (fun x ↦ s x - t x) :=
   fun e _ ↦ ((hs e).sub (ht e)).congr (.of_forall fun x ↦ by simp)
 
+/-- The section equal to `s` on a measurable set `A` and to `t` off it is a.e.-strongly measurable
+when `s` and `t` are. -/
+theorem AEStronglyMeasurableSection.piecewise {A : Set B} [DecidablePred (· ∈ A)]
+    (hA : MeasurableSet A) (hs : AEStronglyMeasurableSection 𝕜 F μ s)
+    (ht : AEStronglyMeasurableSection 𝕜 F μ t) :
+    AEStronglyMeasurableSection 𝕜 F μ (A.piecewise s t) :=
+  fun e _ ↦ (((hs e).restrict (s := A)).piecewise hA.nullMeasurableSet
+    ((ht e).restrict (s := Aᶜ))).congr (.of_forall fun x ↦ by
+      by_cases hx : x ∈ A <;> simp [hx])
+
 variable [OpensMeasurableSpace B]
 
 /-- The coordinates of a measurable section in an atlas chart, read through the chart itself, are
@@ -231,6 +241,13 @@ theorem aestronglyMeasurableSection_restrict_symm {U : Set B} (hU : MeasurableSe
   refine (aestronglyMeasurableSection_restrict_iff_of_subset_baseSet hU e hUe).2 (hg.congr ?_)
   filter_upwards [ae_restrict_mem hU] with x hx
   rw [e.apply_mk_symm (hUe hx)]
+
+/-- A continuous section is a.e.-strongly measurable: its coordinates in each atlas chart are
+continuous on the base set of the chart. -/
+theorem _root_.Continuous.aestronglyMeasurableSection
+    (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x)) : AEStronglyMeasurableSection 𝕜 F μ s :=
+  .of_coord fun e _ ↦ (e.continuousOn.comp hs.continuousOn fun _ hx ↦ e.mem_source.2 hx).snd
+    |>.aestronglyMeasurable e.open_baseSet.measurableSet
 
 /-- Measurability of a section can be tested on a countable family of atlas charts whose base sets
 cover the base. -/
