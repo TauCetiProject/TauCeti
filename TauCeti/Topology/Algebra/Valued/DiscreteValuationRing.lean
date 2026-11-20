@@ -33,6 +33,8 @@ field fixed by a Frobenius lift, as a finite extension of `ℚ_[p]`.
 
 ## Main results
 
+* `NormedField.instRankOneToValued`: the valuation `Valued.v` of a nonarchimedean nontrivially
+  normed field has rank one.
 * `RingHom.isDiscreteValuationRing_integer_of_norm_map_eq`: a nontrivially normed field embedded
   isometrically into a discretely valued field is discretely valued.
 * `Valued.integer.pow_eq_self_of_norm_pow_sub_lt_one`,
@@ -59,6 +61,12 @@ section Discrete
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
 
+/-- The valuation `Valued.v` of a nonarchimedean nontrivially normed field has rank one: the
+valuation of `NormedField.toValued` is by definition `NormedField.valuation`, which has rank one. -/
+noncomputable instance _root_.NormedField.instRankOneToValued :
+    (Valued.v : Valuation K ℝ≥0).RankOne :=
+  inferInstanceAs (NormedField.valuation (K := K)).RankOne
+
 /-- A nontrivially normed field `L` admitting a norm-preserving ring homomorphism into a
 nonarchimedean field `K` whose valuation ring is a discrete valuation ring has a discrete
 valuation ring as well: a nontrivially valued subfield of a discretely valued field is discretely
@@ -78,9 +86,8 @@ theorem _root_.RingHom.isDiscreteValuationRing_integer_of_norm_map_eq {L : Type*
   have hle : (Valued.v : Valuation L ℝ≥0).valueGroup ≤ (Valued.v : Valuation K ℝ≥0).valueGroup :=
     (Subgroup.closure_le _).2 fun _ ⟨x, hx⟩ ↦ MonoidWithZeroHom.mem_valueGroup _ ⟨φ x,
       by simpa [NormedField.valuation_apply, ← NNReal.coe_inj, hφ] using hx⟩
-  -- `L` is nontrivially normed, so its value group is nontrivial.
-  have : (Valued.v : Valuation L ℝ≥0).RankOne :=
-    inferInstanceAs (NormedField.valuation (K := L)).RankOne
+  -- `L` is nontrivially normed, so its value group is nontrivial: `Valued.v` has rank one by
+  -- `NormedField.instRankOneToValued`.
   have : IsCyclic (Valued.v : Valuation L ℝ≥0).valueGroup := Subgroup.isCyclic_of_le hle
   -- As for `K`, `𝒪[L]` is by definition the carrier of `Valued.v.valuationSubring`.
   exact inferInstanceAs (IsDiscreteValuationRing (Valued.v : Valuation L ℝ≥0).valuationSubring)
@@ -130,9 +137,6 @@ normed field `𝕜` acting continuously on it; its valuation ring is a totally b
 of `0`. For `𝕜 = ℚ_[p]` this recognises such a field as a finite extension of `ℚ_[p]`. -/
 theorem finiteDimensional_of_finite_residueField [IsDiscreteValuationRing 𝒪[K]]
     [Finite 𝓀[K]] : FiniteDimensional 𝕜 K := by
-  -- The valuation of `NormedField.toValued` is `NormedField.valuation`, which has rank one.
-  have : (Valued.v : Valuation K NNReal).RankOne :=
-    inferInstanceAs (NormedField.valuation (K := K)).RankOne
   have htb : TotallyBounded (𝒪[K] : Set K) := by
     simpa using (totallyBounded_iff_finite_residueField.2 ‹_›).image uniformContinuous_subtype_val
   have hball : (𝒪[K] : Set K) = Metric.closedBall 0 1 := by

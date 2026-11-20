@@ -79,6 +79,8 @@ theorem toSubfield_padicFixedField :
 /-- The fixed field of a continuous endomorphism of a complete field is closed, hence complete. -/
 instance completeSpace_padicFixedField [CompleteSpace K] :
     CompleteSpace (σ.padicFixedField p hσ) :=
+  -- The carrier of `K^σ` is by definition that of `σ.eqLocusField (RingHom.id K)`, the set
+  -- `{x | σ x = x}`, which is `{x | σ x = id x}` by unfolding `RingHom.id`.
   (isClosed_eq hσ continuous_id : IsClosed (σ.padicFixedField p hσ : Set K)).completeSpace_coe
 
 variable [IsUltrametricDist K]
