@@ -262,10 +262,9 @@ theorem AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_simpleFun
   set S := spanningSets μ N ∩ {x | ‖h' x‖ ≤ N}
   have hS : MeasurableSet S := measurableSet_spanningSets_inter_norm_le hh' N
   have hmem : MemLp (S.indicator h') q μ := by
-    refine (memLp_top_of_bound (hh'.indicator hS).aestronglyMeasurable N
-      (ae_of_all _ fun x => ?_)).mono_exponent_of_measure_support_ne_top
-      (fun x hx => Set.indicator_of_notMem (fun h => hx (Set.mem_of_mem_inter_left h)) _)
-      (measure_spanningSets_lt_top μ N).ne le_top
+    refine memLp_of_norm_le_of_measure_support_ne_top (hh'.indicator hS).aestronglyMeasurable
+      (c := N) (ae_of_all _ fun x => ?_) (measure_spanningSets_lt_top μ N).ne
+      (fun x hx => Set.indicator_of_notMem (fun h => hx (Set.mem_of_mem_inter_left h)) _) q
     by_cases hx : x ∈ S
     · simpa [Set.indicator_of_mem hx] using hx.2
     · simp [Set.indicator_of_notMem hx]
