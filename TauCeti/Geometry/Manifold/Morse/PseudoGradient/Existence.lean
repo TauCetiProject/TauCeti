@@ -43,6 +43,7 @@ union with the interiors of the critical-point neighbourhoods is the returned ne
 
 * `TauCeti.MorseChart.field`: the linear field of a Morse chart, on the manifold, with
   `TauCeti.MorseChart.mvfderiv_field_apply_lt_zero` and `TauCeti.MorseChart.mfderiv_eq_zero_iff`.
+  The differential of `f` in a Morse chart is `TauCeti.MorseChart.mvfderiv_apply`.
 * `TauCeti.MorseChart.hessianQuadraticForm_quadratic` and
   `TauCeti.MorseChart.hessianQuadraticForm_extChartAt`: the Hessian of the quadratic normal form,
   and the Hessian of `f` at the centre of a Morse chart, read in the preferred chart.
@@ -266,6 +267,18 @@ theorem mvfderiv_field_apply_lt_zero {y : M} (hy : y ∈ φ.toChart.source) (hyx
   obtain ⟨i, hi⟩ := Function.ne_iff.1 hne
   exact Finset.sum_pos' (fun j _ ↦ sq_nonneg _)
     ⟨i, Finset.mem_univ _, by simpa using (sq_pos_of_ne_zero hi : (0 : ℝ) < _)⟩
+
+/-- **The differential in a Morse chart**: on the source of the chart, `df_y v` is
+`Σᵢ wᵢ (L (ψ y))ᵢ (L (dψ v))ᵢ`. -/
+theorem mvfderiv_apply {y : M} (hy : y ∈ φ.toChart.source) (v : TangentSpace 𝓘(ℝ, E) y) :
+    mvfderiv 𝓘(ℝ, E) f y v = ∑ i, φ.weight i * φ.coord (φ.toChart y) i *
+      φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y v) i := by
+  -- `mvfderiv` composes `mfderiv` with `NormedSpace.fromTangentSpace`, which is the identity
+  -- on the underlying type `ℝ` of `TangentSpace 𝓘(ℝ) (f y)` and has no Mathlib `simp` lemma.
+  rw [mvfderiv, ContinuousLinearMap.comp_apply,
+    mfderiv_eq_fderiv_comp_of_eqOn
+      (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.eqOn_quadratic hy]
+  exact φ.fderiv_quadratic_apply _ _
 
 /-- The centre is the only critical point of `f` in the source of a Morse chart. -/
 theorem mfderiv_eq_zero_iff {y : M} (hy : y ∈ φ.toChart.source) :

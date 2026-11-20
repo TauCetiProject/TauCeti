@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.MetricSpace.ProperSpace
 public import Mathlib.Topology.MetricSpace.Thickening
+public import Mathlib.Topology.Sets.Compacts
 
 import Mathlib.Topology.Compactness.LocallyFinite
 import Mathlib.Topology.Order.AtTopBotIxx
@@ -27,7 +28,10 @@ In a pseudometric space, the closed `δ`-thickening of a nonempty set, for `δ �
 points at distance at most `δ` from it (`TauCeti.mem_cthickening_iff_infDist_le`). This is the
 closed counterpart of Mathlib's `Metric.mem_thickening_iff_infDist_lt`, and describes closed
 thickenings as sublevel sets of the distance function, and their complements as strict
-superlevel sets (`TauCeti.compl_cthickening_eq_setOf_lt_infDist`). If balls of radius `η` cover a
+superlevel sets (`TauCeti.compl_cthickening_eq_setOf_lt_infDist`). If a compact set does not meet
+the closed `δ`-thickening of a set `t`, its own closed `δ`-thickening does not meet `t`
+(`IsCompact.disjoint_cthickening_left`). In a proper space, the closed `δ`-thickening of a compact
+set is compact (`TopologicalSpace.Compacts.cthickening`). If balls of radius `η` cover a
 set `T`, the closed balls of radius `η` meeting `T` among them lie in the closed `2 η`-thickening
 of `T`, so their union contains `T` and has extended diameter at most `ediam T + 4 η`
 (`TauCeti.exists_subset_biUnion_closedBall_and_ediam_le`).
@@ -110,6 +114,28 @@ theorem exists_subset_biUnion_closedBall_and_ediam_le {X : Type*} [PseudoMetricS
   rw [← ENNReal.ofReal_coe_nnreal, Real.coe_toNNReal _ (by positivity), ← ENNReal.ofReal_ofNat 2,
     ← ENNReal.ofReal_mul zero_le_two]
   ring_nf
+
+/-- If a compact set `s` does not meet the closed `δ`-thickening of `t`, then the closed
+`δ`-thickening of `s` does not meet `t`: a point of `t` within `δ` of `s` is within `δ` of a
+point of `s`, since the distance to the compact set `s` is attained. -/
+theorem _root_.IsCompact.disjoint_cthickening_left {X : Type*} [PseudoMetricSpace X]
+    {s t : Set X} (hs : IsCompact s) {δ : ℝ} (h : Disjoint s (cthickening δ t)) :
+    Disjoint (cthickening δ s) t := by
+  rw [← cthickening_max_zero] at h ⊢
+  rw [hs.cthickening_eq_biUnion_closedBall (le_max_left 0 δ), Set.disjoint_iUnion₂_left]
+  refine fun x hx ↦ Set.disjoint_left.2 fun y hy hyt ↦ Set.disjoint_left.1 h hx ?_
+  exact mem_cthickening_of_dist_le x y _ t hyt (by rw [dist_comm]; exact mem_closedBall.1 hy)
+
+/-- The closed `δ`-thickening of a compact set in a proper pseudometric space, as a compact set. -/
+def _root_.TopologicalSpace.Compacts.cthickening {X : Type*} [PseudoMetricSpace X] [ProperSpace X]
+    (δ : ℝ) (K : TopologicalSpace.Compacts X) : TopologicalSpace.Compacts X :=
+  ⟨Metric.cthickening δ K, K.isCompact.cthickening⟩
+
+@[simp]
+theorem _root_.TopologicalSpace.Compacts.coe_cthickening {X : Type*} [PseudoMetricSpace X]
+    [ProperSpace X] (δ : ℝ) (K : TopologicalSpace.Compacts X) :
+    (K.cthickening δ : Set X) = Metric.cthickening δ K :=
+  (rfl)
 
 /-- Under a `K`-Lipschitz map, the `R / K`-thickening of a preimage lies in the preimage of the
 `R`-thickening. -/

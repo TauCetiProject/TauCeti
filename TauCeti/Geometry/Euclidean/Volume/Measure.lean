@@ -24,7 +24,9 @@ either normalization. Since `μHE[finrank ℝ E]` is Lebesgue volume on a finite
 inner product space `E` and Hausdorff measure decreases with the dimension parameter, every
 Lebesgue-null set in `E` is `μH[d]`- and `μHE[d]`-null for `d ≥ finrank ℝ E`
 (`TauCeti.hausdorffMeasure_eq_zero_of_volume_eq_zero`,
-`TauCeti.euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero`). In dimension zero, Hausdorff
+`TauCeti.euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero`); conversely, every subset of `E`
+with finite `μHE[d]` measure for `d < finrank ℝ E` has Lebesgue volume zero
+(`TauCeti.volume_eq_zero_of_euclideanHausdorffMeasure_ne_top`). In dimension zero, Hausdorff
 measure is counting measure (`TauCeti.hausdorffMeasure_zero_eq_count`). In dimension one the
 normalizing constant is `1`, because `μH[1]` already agrees with Lebesgue measure on `ℝ`. Hence
 `μHE[1] = μH[1]` on every extended metric space, so length statements may be proved with either
@@ -153,6 +155,15 @@ theorem euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero {E : Type*} [NormedA
   Measure.euclideanHausdorffMeasure_eq_zero_iff.2
     (hausdorffMeasure_eq_zero_of_volume_eq_zero hs (Nat.cast_le.2 hd))
 
+/-- A subset of a finite-dimensional real inner product space `E` with finite `d`-dimensional
+Euclidean Hausdorff measure has Lebesgue volume zero whenever `d < finrank ℝ E`. -/
+theorem volume_eq_zero_of_euclideanHausdorffMeasure_ne_top {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {d : ℕ} (hd : d < finrank ℝ E) {s : Set E} (hs : μHE[d] s ≠ ∞) :
+    volume s = 0 := by
+  rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume]
+  exact (Measure.euclideanHausdorffMeasure_zero_or_top hd s).resolve_right hs
+
 end TauCeti
 
 section Normalization
@@ -206,7 +217,7 @@ theorem volume_eq_smul_hausdorffMeasure (k : ℕ) :
     rw [_root_.smul_apply, smul_eq_mul, ← ENNReal.inv_mul_le_iff hω0 hωtop]
     simpa using hle s
   · rw [_root_.smul_apply, smul_eq_mul]
-    exact mul_hausdorffMeasure_le_measure volume (Nat.cast_nonneg k) fun x _ =>
+    exact mul_hausdorffMeasure_le_measure volume fun x _ =>
       (eventually_mem_nhdsWithin.mono fun r (hr : 0 < r) =>
         (volume_closedBall_eq_div_mul x hr.le).ge).frequently
 
@@ -258,7 +269,7 @@ theorem mul_euclideanHausdorffMeasure_le_measure_of_isOpen (μ : Measure X) (k :
     c * μHE[k] A ≤ μ U := by
   rw [TauCeti.euclideanHausdorffMeasure_eq_smul_hausdorffMeasure, smul_apply, smul_eq_mul,
     ← mul_assoc]
-  refine mul_hausdorffMeasure_le_measure_of_isOpen μ (Nat.cast_nonneg k) hU hAU fun x hx =>
+  refine mul_hausdorffMeasure_le_measure_of_isOpen μ hU hAU fun x hx =>
     (h x hx).mp (eventually_mem_nhdsWithin.mono fun r (hr : 0 < r) hle => ?_)
   rwa [EuclideanSpace.volume_closedBall_eq_div_mul 0 hr.le, ← mul_assoc] at hle
 
@@ -315,7 +326,7 @@ theorem ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div (k : ℕ) {A :
   replace hAfin : μH[k] A ≠ ∞ := fun h => hAfin (by
     rw [_root_.smul_apply, smul_eq_mul, h]; exact ENNReal.mul_top hω0)
   refine ae_smul_measure ?_ _
-  filter_upwards [ae_tendsto_hausdorffMeasure_inter_closedBall_div (Nat.cast_nonneg k)
+  filter_upwards [ae_tendsto_hausdorffMeasure_inter_closedBall_div
     (hA.mono_ac (absolutelyContinuous_smul hω0)) hAfin] with x hx hxA
   refine (hx hxA).congr' (eventually_mem_nhdsWithin.mono fun r (hr : 0 < r) => ?_)
   dsimp only

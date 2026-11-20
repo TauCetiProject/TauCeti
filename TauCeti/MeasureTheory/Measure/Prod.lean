@@ -30,7 +30,9 @@ of the first coordinate commutes with taking the first marginal (`fst_withDensit
 Projecting a measurable restriction of a product weights the first factor by the masses of
 its vertical sections (`map_fst_restrict_prod_eq_withDensity`). Rectangle bounds also give
 finite interval-selection masses and a local-finiteness criterion for projected restrictions
-away from an initial endpoint.
+away from an initial endpoint. Partitioning an arbitrary measure on `X × ι` into countable
+singleton slices `univ ×ˢ {i}` and projecting onto `X` sums back to `μ.map Prod.fst`
+(`sum_map_fst_restrict_univ_prod_singleton`).
 
 If the pushforward of a product `(μ.map Z).prod ρ` along `(z, t) ↦ (z, f z t)` is the joint law of
 `(Z, X)` for a nonzero finite `μ`, then `ρ` is a probability measure
@@ -67,6 +69,22 @@ public section
 open scoped ENNReal
 
 namespace MeasureTheory.Measure
+
+/-- Partitioning a measure on `X × ι` (for a countable discrete space `ι`) into vertical singleton
+slices `univ ×ˢ {i}` and projecting onto `X` recovers `μ.map Prod.fst` for every measure `μ`. -/
+theorem sum_map_fst_restrict_univ_prod_singleton {X ι : Type*} [MeasurableSpace X] [Countable ι]
+    [MeasurableSpace ι] [MeasurableSingletonClass ι] (μ : Measure (X × ι)) :
+    (Measure.sum fun i : ι ↦ (μ.restrict (Set.univ ×ˢ {i})).map Prod.fst) = μ.map Prod.fst := by
+  have hunion : (⋃ i : ι, (Set.univ ×ˢ ({i} : Set ι) : Set (X × ι))) = Set.univ := by
+    ext ⟨_, i⟩
+    simp
+  have hd : Pairwise (Function.onFun Disjoint
+      fun i : ι ↦ (Set.univ ×ˢ ({i} : Set ι) : Set (X × ι))) :=
+    fun _ _ hij ↦ Set.disjoint_left.mpr fun _ h₁ h₂ ↦
+      hij ((Set.mem_singleton_iff.mp h₁.2).symm.trans (Set.mem_singleton_iff.mp h₂.2))
+  rw [← Measure.map_sum measurable_fst.aemeasurable,
+    ← Measure.restrict_iUnion hd (fun i ↦ MeasurableSet.univ.prod (measurableSet_singleton i)),
+    hunion, Measure.restrict_univ]
 
 /-- Projecting a joint measure restricted to `u ×ˢ A` assigns mass `μ ((s ∩ u) ×ˢ A)`
 to each measurable set `s` in the first coordinate. -/
