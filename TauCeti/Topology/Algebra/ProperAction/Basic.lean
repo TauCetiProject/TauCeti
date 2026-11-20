@@ -39,6 +39,8 @@ quotient.
 * `Topology.IsEmbedding.properSMul_of_isEmbedding`: the same along a topological embedding of
   the acting groups, provided the elements of the larger group carrying a point of the image into
   the image come from the smaller group.
+* `Continuous.properSMul`: an action which a continuous map out of a Hausdorff space intertwines
+  with a proper action is proper.
 -/
 
 public section
@@ -123,3 +125,23 @@ theorem Topology.IsEmbedding.properSMul {G X Y : Type*} [Group G] [TopologicalSp
     {f : Y → X} (hf : IsEmbedding f) (hsmul : ∀ (g : G) (y : Y), f (g • y) = g • f y) :
     ProperSMul G Y :=
   hf.properSMul_of_isEmbedding IsEmbedding.id hsmul fun g _ _ _ ↦ ⟨g, rfl⟩
+
+open Filter Topology in
+/-- **Proper actions pull back along equivariant maps out of Hausdorff spaces.** If a continuous
+map `f : Y → X` out of a Hausdorff space intertwines a continuous action of `G` on `Y` with a proper
+action of `G` on `X`, then the action on `Y` is proper. Unlike `Topology.IsEmbedding.properSMul`,
+`f` need not be injective; for instance the cotangent lift of a proper action is proper, through
+the bundle projection. -/
+theorem Continuous.properSMul {G X Y : Type*} [Group G] [TopologicalSpace G]
+    [MulAction G X] [TopologicalSpace X] [ProperSMul G X] [MulAction G Y] [TopologicalSpace Y]
+    [T2Space Y] [ContinuousSMul G Y] {f : Y → X} (hf : Continuous f)
+    (hsmul : ∀ (g : G) (y : Y), f (g • y) = g • f y) : ProperSMul G Y := by
+  refine properSMul_iff_continuousSMul_ultrafilter_tendsto_t2.2
+    ⟨inferInstance, fun 𝒰 y₁ y₂ hyy ↦ ?_⟩
+  -- The image ultrafilter converges along the action map of `X`, whose properness bounds `g`.
+  obtain ⟨g, -, hg⟩ := (properSMul_iff_continuousSMul_ultrafilter_tendsto.1 ‹ProperSMul G X›).2
+    (𝒰.map (Prod.map id f)) (f y₁) (f y₂) <| by
+      rw [Ultrafilter.coe_map, tendsto_map'_iff]
+      exact (((hf.prodMap hf).tendsto (y₁, y₂)).comp hyy).congr fun gy ↦ by simp [hsmul]
+  rw [Ultrafilter.coe_map, tendsto_map'_iff] at hg
+  exact ⟨g, hg⟩
