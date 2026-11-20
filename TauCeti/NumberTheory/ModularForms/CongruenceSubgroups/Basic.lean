@@ -63,8 +63,9 @@ infrastructure independent of the diamond operators.
   `Γ(N) ≤ Γ(M)` whenever `M ∣ N`.
 * `CongruenceSubgroup.index_Gamma`: `[SL₂(ℤ) : Γ(N)] = |SL₂(ℤ/Nℤ)|`; in particular
   `CongruenceSubgroup.index_Gamma_three`: `[SL₂(ℤ) : Γ(3)] = 24`.
-* `CongruenceSubgroup.map_eq_one_of_mem_Gamma`: a matrix of `Γ(N)` is the identity matrix modulo
-  `N`, as an integral matrix.
+* `CongruenceSubgroup.ker_map_intCast_zmod`, `CongruenceSubgroup.map_eq_one_of_mem_Gamma`,
+  `CongruenceSubgroup.mem_Gamma_iff_dvd`: `Γ(N)` is the kernel of reduction modulo `N`, and its
+  membership is equivalent to four entrywise integer divisibilities (valid at `N = 0` as well).
 * `CongruenceSubgroup.mem_Gamma0_iff_dvd`: `Γ₀(N)` membership read as the integer divisibility
   `(N : ℤ) ∣ A 1 0` rather than as a `ZMod N` congruence, for a proof that wants to name the
   quotient. Valid at every level, `N = 0` included.
@@ -146,6 +147,18 @@ infrastructure independent of the diamond operators.
 * `CongruenceSubgroup.Gamma0_index_eq_prod_factorization` and
   `CongruenceSubgroup.Gamma0_index_mul_prod_primeFactors`: `[SL₂(ℤ) : Γ₀(N)]` is
   `∏_{pᵏ ∥ N} p^(k-1) (p + 1) = N ∏_{p ∣ N} (1 + 1/p)` for `N ≠ 0`.
+* `CongruenceSubgroup.normalClosure_T_pow_le_Gamma`: the normal closure of `T ^ N` lies in `Γ(N)`.
+* `CongruenceSubgroup.isCongruenceSubgroup_top`, `CongruenceSubgroup.not_isCongruenceSubgroup_bot`,
+  `CongruenceSubgroup.isCongruenceSubgroup_Gamma_iff`,
+  `CongruenceSubgroup.isCongruenceSubgroup_Gamma0_iff`,
+  `CongruenceSubgroup.isCongruenceSubgroup_Gamma1_iff`,
+  `CongruenceSubgroup.IsCongruenceSubgroup.inf`,
+  `CongruenceSubgroup.IsCongruenceSubgroup.withCenter`,
+  `CongruenceSubgroup.isCongruenceSubgroup_normalCore_iff`,
+  `CongruenceSubgroup.iInf_Gamma_ne_zero_eq_bot`,
+  `CongruenceSubgroup.iInf_Gamma0_ne_zero_eq_Gamma0_zero`,
+  `CongruenceSubgroup.iInf_Gamma1_ne_zero_eq_Gamma1_zero`: elementary lattice and level properties
+  of congruence subgroups, and intersections of `Γ(N)`, `Γ₀(N)` and `Γ₁(N)` over `N ≠ 0`.
 
 ## References
 
@@ -191,6 +204,19 @@ theorem map_eq_one_of_mem_Gamma {N : ℕ} {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma 
     (γ : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom (ZMod N)) = 1 := by
   simpa only [Matrix.SpecialLinearGroup.map_apply_coe, Matrix.SpecialLinearGroup.coe_one,
     RingHom.mapMatrix_apply] using congrArg Subtype.val (Gamma_mem'.mp hγ)
+
+/-- The principal congruence subgroup `Γ(N)` is the kernel of entrywise reduction modulo `N`. -/
+theorem ker_map_intCast_zmod (N : ℕ) :
+    (map (Int.castRingHom (ZMod N)) : SL(2, ℤ) →* SL(2, ZMod N)).ker = Gamma N := (rfl)
+
+/-- **Membership in `Γ(N)` as four integer divisibilities**, the principal-subgroup counterpart of
+`mem_Gamma0_iff_dvd` and `mem_Gamma1_iff_dvd_lowerRow`. Valid at every `N`, `N = 0` included. -/
+theorem mem_Gamma_iff_dvd {N : ℕ} {γ : SL(2, ℤ)} :
+    γ ∈ Gamma N ↔
+      (N : ℤ) ∣ γ 0 0 - 1 ∧ (N : ℤ) ∣ γ 0 1 ∧ (N : ℤ) ∣ γ 1 0 ∧ (N : ℤ) ∣ γ 1 1 - 1 := by
+  rw [Gamma_mem]
+  simp only [eq_comm (b := (1 : ZMod N)), ← ZMod.intCast_eq_intCast_iff_dvd_sub, Int.cast_one,
+    ZMod.intCast_zmod_eq_zero_iff_dvd]
 
 /-- **The index of the principal congruence subgroup** is the order of `SL₂(ℤ/Nℤ)`: `Γ(N)` is
 the kernel of reduction modulo `N`, which is surjective by strong approximation
@@ -640,6 +666,13 @@ theorem dvd_apply_one_zero_of_conj_mem_Gamma {γ g : SL(2, ℤ)} (h : γ * g * �
 condition on `n` or `N`. (In particular the width of the cusp `∞` for `Γ₁(N)` is `1`.) -/
 theorem T_zpow_mem_Gamma1 (N : ℕ) (n : ℤ) : ModularGroup.T ^ n ∈ Gamma1 N := by
   simp [Gamma1_mem, ModularGroup.coe_T_zpow]
+
+/-- The normal closure of `T ^ N` in `SL(2, ℤ)` is contained in `Γ(N)` for every `N : ℕ`. -/
+theorem normalClosure_T_pow_le_Gamma (N : ℕ) :
+    Subgroup.normalClosure ({ModularGroup.T ^ N} : Set SL(2, ℤ)) ≤ Gamma N := by
+  have := Gamma_normal N
+  exact Subgroup.normalClosure_le_normal
+    (Set.singleton_subset_iff.mpr (by simpa using ModularGroup_T_pow_mem_Gamma N N dvd_rfl))
 
 /-! ## The index of `Γ₀(pᵏ)`
 
@@ -1134,6 +1167,113 @@ theorem Gamma0_index_mul_prod_primeFactors {N : ℕ} :
   refine Finsupp.prod_congr (M := ℕ) (N := ℕ) fun p hp ↦ ?_
   rw [Finsupp.mem_support_iff, ← pos_iff_ne_zero] at hp
   rw [mul_right_comm, ← pow_succ, Nat.sub_add_cancel hp]
+
+/-! ### Lattice and level properties of `IsCongruenceSubgroup` -/
+
+/-- `SL(2, ℤ)` is a congruence subgroup. -/
+@[simp]
+theorem isCongruenceSubgroup_top : IsCongruenceSubgroup ⊤ :=
+  Gamma_one_top ▸ Gamma_is_cong_sub 1
+
+/-- The trivial subgroup of `SL(2, ℤ)` is not a congruence subgroup. -/
+@[simp]
+theorem not_isCongruenceSubgroup_bot : ¬ IsCongruenceSubgroup ⊥ :=
+  fun h ↦ (isCongruenceSubgroup_trans _ _ bot_le h).finiteIndex.index_ne_zero Gamma0_zero_index
+
+/-- `Γ(N)` is a congruence subgroup if and only if `N ≠ 0`. -/
+@[simp]
+theorem isCongruenceSubgroup_Gamma_iff {N : ℕ} :
+    IsCongruenceSubgroup (Gamma N) ↔ N ≠ 0 :=
+  ⟨fun h hN ↦ (isCongruenceSubgroup_trans _ _ (Gamma_le_Gamma0 0)
+      (hN ▸ h)).finiteIndex.index_ne_zero Gamma0_zero_index,
+    fun h ↦
+      letI : NeZero N := ⟨h⟩
+      Gamma_is_cong_sub N⟩
+
+/-- `Γ₀(N)` is a congruence subgroup if and only if `N ≠ 0`. -/
+@[simp]
+theorem isCongruenceSubgroup_Gamma0_iff {N : ℕ} :
+    IsCongruenceSubgroup (Gamma0 N) ↔ N ≠ 0 :=
+  ⟨fun h hN ↦ (hN ▸ h).finiteIndex.index_ne_zero Gamma0_zero_index, fun h ↦
+    letI : NeZero N := ⟨h⟩
+    Gamma0_is_congruence N⟩
+
+/-- `Γ₁(N)` is a congruence subgroup if and only if `N ≠ 0`. -/
+@[simp]
+theorem isCongruenceSubgroup_Gamma1_iff {N : ℕ} :
+    IsCongruenceSubgroup (Gamma1 N) ↔ N ≠ 0 :=
+  ⟨fun h hN ↦ (isCongruenceSubgroup_trans _ _ (Gamma1_le_Gamma0 0)
+      (hN ▸ h)).finiteIndex.index_ne_zero Gamma0_zero_index,
+    fun h ↦
+      letI : NeZero N := ⟨h⟩
+      Gamma1_is_congruence N⟩
+
+/-- The intersection of two congruence subgroups is a congruence subgroup. -/
+theorem IsCongruenceSubgroup.inf {Γ₁ Γ₂ : Subgroup SL(2, ℤ)}
+    (h₁ : IsCongruenceSubgroup Γ₁) (h₂ : IsCongruenceSubgroup Γ₂) :
+    IsCongruenceSubgroup (Γ₁ ⊓ Γ₂) := by
+  obtain ⟨N₁, hN₁, hle₁⟩ := h₁
+  obtain ⟨N₂, hN₂, hle₂⟩ := h₂
+  exact ⟨Nat.lcm N₁ N₂, Nat.lcm_ne_zero hN₁ hN₂,
+    Gamma_lcm_eq_inf N₁ N₂ ▸ inf_le_inf hle₁ hle₂⟩
+
+/-- Adjoining `{±I}` to a congruence subgroup produces a congruence subgroup. -/
+theorem IsCongruenceSubgroup.withCenter {Γ : Subgroup SL(2, ℤ)}
+    (h : IsCongruenceSubgroup Γ) : IsCongruenceSubgroup Γ.withCenter :=
+  isCongruenceSubgroup_trans _ _ Γ.le_withCenter h
+
+/-- A subgroup of `SL(2, ℤ)` is a congruence subgroup if and only if its normal core is. -/
+@[simp]
+theorem isCongruenceSubgroup_normalCore_iff {Γ : Subgroup SL(2, ℤ)} :
+    IsCongruenceSubgroup Γ.normalCore ↔ IsCongruenceSubgroup Γ :=
+  ⟨isCongruenceSubgroup_trans _ _ Γ.normalCore_le, fun ⟨N, hN, hle⟩ ↦
+    have := Gamma_normal N
+    ⟨N, hN, Subgroup.normal_le_normalCore.mpr hle⟩⟩
+
+/-- The intersection of all principal congruence subgroups `Γ(N)` (`N ≠ 0`) is trivial:
+`SL(2, ℤ)` is residually finite with respect to principal congruence subgroups. -/
+@[simp]
+theorem iInf_Gamma_ne_zero_eq_bot : (⨅ (N : ℕ) (_ : N ≠ 0), Gamma N) = ⊥ := by
+  refine eq_bot_iff.mpr fun γ hγ ↦ ?_
+  rw [Subgroup.mem_bot]
+  ext i j
+  set d : ℤ := (γ : Matrix (Fin 2) (Fin 2) ℤ) i j - (if i = j then 1 else 0)
+  have hmem : γ ∈ Gamma (d.natAbs + 1) :=
+    Subgroup.mem_iInf.mp (Subgroup.mem_iInf.mp hγ (d.natAbs + 1)) (Nat.succ_ne_zero _)
+  rw [← ker_map_intCast_zmod] at hmem
+  have hd0 : d = 0 :=
+    Int.eq_zero_of_dvd_of_natAbs_lt_natAbs ((mem_ker_map_intCast_zmod_iff.mp hmem) i j)
+      (by rw [Int.natAbs_natCast]; exact Nat.lt_succ_self _)
+  have h1 : ((1 : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) i j = if i = j then 1 else 0 := by
+    simp [Matrix.one_apply]
+  linarith
+
+/-- The intersection of `Γ₀(N)` over all `N ≠ 0` is `Γ₀(0)`. -/
+@[simp]
+theorem iInf_Gamma0_ne_zero_eq_Gamma0_zero : (⨅ (N : ℕ) (_ : N ≠ 0), Gamma0 N) = Gamma0 0 := by
+  refine le_antisymm (fun γ hγ ↦ ?_) (le_iInf₂ fun N _ ↦ Gamma0_le_Gamma0_of_dvd (dvd_zero N))
+  rw [mem_Gamma0_iff_dvd, Nat.cast_zero, zero_dvd_iff]
+  exact Int.eq_zero_of_dvd_of_natAbs_lt_natAbs
+    (mem_Gamma0_iff_dvd.mp
+      (Subgroup.mem_iInf.mp (Subgroup.mem_iInf.mp hγ ((γ 1 0).natAbs + 1)) (Nat.succ_ne_zero _)))
+    (by rw [Int.natAbs_natCast]; exact Nat.lt_succ_self _)
+
+/-- The intersection of `Γ₁(N)` over all `N ≠ 0` is `Γ₁(0)`. -/
+@[simp]
+theorem iInf_Gamma1_ne_zero_eq_Gamma1_zero : (⨅ (N : ℕ) (_ : N ≠ 0), Gamma1 N) = Gamma1 0 := by
+  refine le_antisymm (fun γ hγ ↦ ?_) (le_iInf₂ fun N _ ↦ Gamma1_le_Gamma1_of_dvd (dvd_zero N))
+  rw [mem_Gamma1_iff_dvd_lowerRow, Nat.cast_zero, zero_dvd_iff, zero_dvd_iff]
+  have h10 : γ 1 0 = 0 := by
+    have h0 : γ ∈ Gamma0 0 := iInf_Gamma0_ne_zero_eq_Gamma0_zero ▸
+      iInf₂_mono (fun N _ ↦ Gamma1_le_Gamma0 N) hγ
+    simpa [mem_Gamma0_iff_dvd] using h0
+  have h11 : γ 1 1 - 1 = 0 :=
+    Int.eq_zero_of_dvd_of_natAbs_lt_natAbs
+      (mem_Gamma1_iff_dvd_lowerRow.mp
+        (Subgroup.mem_iInf.mp (Subgroup.mem_iInf.mp hγ ((γ 1 1 - 1).natAbs + 1))
+          (Nat.succ_ne_zero _))).2
+      (by rw [Int.natAbs_natCast]; exact Nat.lt_succ_self _)
+  exact ⟨h10, h11⟩
 
 end CongruenceSubgroup
 

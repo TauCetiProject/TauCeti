@@ -147,7 +147,7 @@ theorem mem_cyclicCocycles_zero_iff {φ : cyclicCochains R A M 0} :
         (φ : MultilinearMap (RingHom.id R) (fun _ : Fin 1 ↦ A) M) (fun _ ↦ y * x) := by
   rw [mem_cyclicCocycles_iff, hochschildCoboundary_zero_eq_zero_iff]
 
-variable {R A M} {B : Type u} [NonUnitalNonAssocSemiring B] [Module R B] [IsScalarTower R B B]
+variable {R A M} {B : Type*} [NonUnitalNonAssocSemiring B] [Module R B] [IsScalarTower R B B]
   [SMulCommClass R B B]
 
 /-- The pullback of a cyclic cocycle is a cyclic cocycle. -/
@@ -156,6 +156,17 @@ theorem cyclicCochainsMap_mem_cyclicCocycles (f : A →ₙₐ[R] B) {n : ℕ}
     cyclicCochainsMap M (f : A →ₗ[R] B) n φ ∈ cyclicCocycles R A M n := by
   rw [cyclicCocycles, LinearMap.mem_ker, cyclicHochschildCoboundary_cyclicCochainsMap,
     LinearMap.mem_ker.1 hφ, map_zero]
+
+/-- The pullback of a cyclic coboundary is a cyclic coboundary. -/
+theorem cyclicCochainsMap_mem_cyclicCoboundaries (f : A →ₙₐ[R] B) {n : ℕ}
+    {φ : cyclicCochains R B M n} (hφ : φ ∈ cyclicCoboundaries R B M n) :
+    cyclicCochainsMap M (f : A →ₗ[R] B) n φ ∈ cyclicCoboundaries R A M n := by
+  cases n with
+  | zero => rw [cyclicCoboundaries_zero, Submodule.mem_bot] at hφ ⊢; rw [hφ, map_zero]
+  | succ n =>
+    obtain ⟨ψ, rfl⟩ := (mem_cyclicCoboundaries_succ_iff _ _ _).1 hφ
+    exact (mem_cyclicCoboundaries_succ_iff _ _ _).2
+      ⟨_, cyclicHochschildCoboundary_cyclicCochainsMap f ψ⟩
 
 end Cocycles
 

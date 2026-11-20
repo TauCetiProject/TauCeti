@@ -68,6 +68,7 @@ automorphisms of an algebraic closure are the points over the perfect closure of
   `K → Kˢ` (`WeierstrassCurve.basePointCoeff_eq_pointCoeffEquiv_mapAlong`).
 * `WeierstrassCurve.basePointEquivInvariants`: the isomorphism `E(K) ≅ H⁰(G_K, E(Kˢ))`.
 * `WeierstrassCurve.baseTorsionCoeff`: the inclusion `E(K)[m] → E(Kˢ)[m]`.
+* `WeierstrassCurve.baseTorsionEquivInvariants`: the isomorphism `E(K)[m] ≅ H⁰(G_K, E(Kˢ)[m])`.
 
 ## Main results
 
@@ -524,6 +525,22 @@ def basePointEquivInvariants : W.toAffine.Point ≃+ H0 (AbsoluteGaloisGroup K) 
 @[simp]
 theorem coe_basePointEquivInvariants (P : W.toAffine.Point) :
     (W.basePointEquivInvariants P : W.PointCoeff) = W.basePointCoeff P :=
+  (rfl)
+
+/-- **The invariants of `E(Kˢ)[m]` are the points of `E(K)[m]`**: `E(K)[m] ≃+ H⁰(G_K, E(Kˢ)[m])`. -/
+def baseTorsionEquivInvariants (m : ℕ) :
+    AddSubgroup.torsionBy W.toAffine.Point m ≃+ H0 (AbsoluteGaloisGroup K) (W.TorsionCoeff m) :=
+  AddEquiv.ofBijective
+    ((W.baseTorsionCoeff m).codRestrict _ fun T =>
+      (FixedPoints.mem_addSubgroup _ _ _).2 fun σ => W.smul_baseTorsionCoeff σ T)
+    ⟨fun _ _ h => W.baseTorsionCoeff_injective m (congrArg Subtype.val h), fun Q => by
+      obtain ⟨T, hT⟩ := W.exists_baseTorsionCoeff_eq_of_forall_smul_eq
+        ((FixedPoints.mem_addSubgroup _ _ _).1 Q.property)
+      exact ⟨T, Subtype.ext hT⟩⟩
+
+@[simp]
+theorem coe_baseTorsionEquivInvariants (m : ℕ) (T : AddSubgroup.torsionBy W.toAffine.Point m) :
+    (W.baseTorsionEquivInvariants m T : W.TorsionCoeff m) = W.baseTorsionCoeff m T :=
   (rfl)
 
 end WeierstrassCurve

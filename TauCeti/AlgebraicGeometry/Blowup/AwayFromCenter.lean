@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import TauCeti.AlgebraicGeometry.Blowup.AffineCharts
 import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Proper
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Restrict
 import TauCeti.RingTheory.GradedAlgebra.FiniteType
 

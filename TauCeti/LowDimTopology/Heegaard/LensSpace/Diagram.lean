@@ -112,7 +112,7 @@ def lensSpace (r : ZMod p) : HeegaardRegionSystem 1 (ZMod p) (ZMod p) Unit where
   betaLeft j := j - 1
   betaRight j := j
   regionNonempty := inferInstance
-  crossingCompatible j := Or.inl ⟨by simp [sub_eq_add_neg],
+  crossingCompatible j := isCrossingCompatible_iff.mpr <| Or.inl ⟨by simp [sub_eq_add_neg],
     by simp [sub_eq_add_neg, add_right_comm], rfl, by simp [sub_eq_add_neg]⟩
   regionCovered s := Or.inl ⟨s, Or.inl rfl⟩
   basepoint _ := r

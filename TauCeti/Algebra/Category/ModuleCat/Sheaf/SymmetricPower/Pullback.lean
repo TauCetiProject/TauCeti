@@ -96,7 +96,6 @@ theorem unit_comp_forget_map_pushforwardSymmetricPowerComparison_app (n : ℕ)
 /-- On sections over `U`, the pushforward comparison sends the sheafification of a sectionwise
 symmetric tensor `x` of `φ_* M` to the sheafification of the same symmetric tensor of `M` over
 `F U`, with its coefficients mapped along `φ`. -/
-@[simp]
 theorem pushforwardSymmetricPowerComparison_app_val_app_unit (n : ℕ)
     (M : SheafOfModules.{u} (ringCatSheaf R)) (U : Cᵒᵖ)
     (x : (PresheafOfModulesOfCommRing.obj (R := S.obj)
@@ -190,7 +189,6 @@ theorem unit_comp_pushforward_pullbackSymmetricPowerComparison (n : ℕ)
 /-- On the sheafification of a sectionwise symmetric tensor `x` in the image of the adjunction
 unit, the pullback comparison takes the sheafification of the image of `x` under the map of
 symmetric algebras induced by the unit. -/
-@[simp]
 theorem pullbackSymmetricPowerComparison_app_val_app_unit (n : ℕ)
     (M : SheafOfModules.{u} (ringCatSheaf S)) (U : Cᵒᵖ)
     (x : (PresheafOfModulesOfCommRing.obj (R := S.obj) M.val U).symmetricPower n) :

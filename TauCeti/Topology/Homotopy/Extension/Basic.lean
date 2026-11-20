@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.Basic
+import TauCeti.Topology.Homotopy.Trans
 
 /-!
 # The homotopy extension property
@@ -310,44 +311,9 @@ theorem HasHomotopyExtensionProperty.image_of_isEmbedding {X' : Type u} [Topolog
   rw [hG' t ⟨j a, mem_range_self a⟩]
   simp [hG t ⟨a, ha⟩]
 
-/-- The tent map `t ↦ min (2 t) (2 - 2 t)` on the unit interval, which rises from `0` to `1` on
-`[0, 1/2]` and falls back to `0` on `[1/2, 1]`. -/
-private noncomputable def tent (t : I) : I :=
-  ⟨min (2 * t) (2 - 2 * t), le_min (by linarith [t.property.1]) (by linarith [t.property.2]),
-    min_le_iff.2 <| (le_total (t : ℝ) (1 / 2)).imp (fun h => by linarith) fun h => by linarith⟩
-
-private lemma continuous_tent : Continuous tent := by
-  unfold tent
-  fun_prop
-
-private lemma tent_zero : tent 0 = 0 := by
-  ext
-  simp [tent]
-
-private lemma tent_one : tent 1 = 0 := by
-  ext
-  norm_num [tent]
-
 section Retracing
 
 variable {Y : Type u} [TopologicalSpace Y] {f₀ f₁ f₂ : C(X, Y)}
-
-/-- At a point where the homotopy `G` runs backwards along `F`, the concatenation `F.trans G`
-is `F` reparametrised by the tent map. -/
-private lemma trans_apply_of_retracing (F : f₀.Homotopy f₁) (G : f₁.Homotopy f₂) {x : X}
-    (hG : ∀ t, G (t, x) = F (σ t, x)) (t : I) :
-    F.trans G (t, x) = F (tent t, x) := by
-  rw [ContinuousMap.Homotopy.trans_apply]
-  split_ifs with ht
-  · congr 2
-    ext
-    simp [tent, min_eq_left (by linarith : (2 : ℝ) * t ≤ 2 - 2 * t)]
-  · rw [hG]
-    congr 2
-    ext
-    simp only [tent, coe_symm_eq]
-    rw [min_eq_right (by linarith)]
-    ring
 
 /-- **A homotopy which retraces itself on `A` can be made stationary on `A`.** Let `F` be a
 homotopy from `f₀` to `f₁`, and `G` a homotopy from `f₁` to `f₂` which, at every point of a subset
@@ -363,21 +329,18 @@ theorem HasHomotopyExtensionProperty.homotopicRel_of_retracing
   obtain ⟨E, hE₀, hE₁⟩ := hA.exists_extension
     (ContinuousMap.curry ⟨fun p : X × I => F.trans G (p.2, p.1), by fun_prop⟩)
     (ContinuousMap.curry ⟨fun p : (I × A) × I =>
-      F (projIcc 0 1 zero_le_one ((tent p.2 : ℝ) - p.1.1), p.1.2), by
-        have := continuous_tent
-        fun_prop⟩)
+      F (projIcc 0 1 zero_le_one ((tent p.2 : ℝ) - p.1.1), p.1.2), by fun_prop⟩)
     fun a => ContinuousMap.ext fun t => by
-      simp [trans_apply_of_retracing F G (hG · a a.property)]
+      simp only [ContinuousMap.curry_apply, ContinuousMap.coe_mk, Icc.coe_zero, sub_zero,
+        projIcc_val, F.trans_apply_of_retracing G (hG · a a.property)]
   -- Read the extended contraction off along the path `s ↦ (tent s, s)` in the square.
   refine ⟨{ toFun := fun p => E (tent p.1, p.2) p.1
-            continuous_toFun := by
-              have := continuous_tent
-              fun_prop
+            continuous_toFun := by fun_prop
             map_zero_left := fun x => ?_
             map_one_left := fun x => ?_
             prop' := fun s x hx => ?_ }⟩
-  · simp [tent_zero, hE₀]
-  · simp [tent_one, hE₀]
+  · simp [hE₀]
+  · simp [hE₀]
   · simp [hE₁ _ ⟨x, hx⟩]
 
 end Retracing

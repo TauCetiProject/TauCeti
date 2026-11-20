@@ -235,6 +235,19 @@ theorem tendsto_subtypeVal_cocompact_nhds [CompactSpace X] (x₀ : X) :
   rw [Topology.IsEmbedding.subtypeVal.isCompact_iff, image_preimage_eq_iff.mpr hsub]
   exact hU₂.isClosed_compl.isCompact
 
+/-- In a T₀ space, a compact closed subset `S` is contained in an open subset `U` as soon as every
+closed point in `S` belongs to `U`. -/
+theorem _root_.IsCompact.subset_of_isClosed_of_forall_isClosed_singleton [T0Space X]
+    {S U : Set X} (hSc : IsCompact S) (hS : IsClosed S) (hU : IsOpen U)
+    (h : ∀ z ∈ S, IsClosed ({z} : Set X) → z ∈ U) : S ⊆ U := by
+  intro z hzS
+  by_contra hzU
+  have : CompactSpace S := isCompact_iff_compactSpace.1 hSc
+  obtain ⟨⟨w, hwS⟩, hwU, hwcl⟩ :=
+    (hU.preimage continuous_subtypeVal).isClosed_compl.exists_closed_singleton ⟨⟨z, hzS⟩, hzU⟩
+  exact hwU (h w hwS (by simpa [image_singleton] using
+    hS.isClosedEmbedding_subtypeVal.isClosedMap _ hwcl))
+
 section TubeLemma
 
 variable {α E P : Type*} [TopologicalSpace α] [CompactSpace α] [TopologicalSpace E]

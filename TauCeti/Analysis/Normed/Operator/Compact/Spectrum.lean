@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.Normed.Operator.Compact.FredholmAlternative
+public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Data.Set.Countable
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Normed.Module.RieszLemma
@@ -156,5 +157,19 @@ theorem eq_zero_of_accPt_spectrum (hK : IsCompactOperator K) {μ : 𝕜}
   obtain ⟨ν, ⟨hne, hν⟩, hnorm, hnot⟩ :=
     ((accPt_iff_frequently.mp hμ).and_eventually (hnear.and havoid)).exists
   exact hnot ⟨⟨hν, hnorm.le⟩, hne⟩
+
+open Filter Topology in
+/-- The nonzero points of the real spectrum of a compact operator on a complex Banach space are
+isolated. -/
+theorem eventually_mem_spectrum_real_imp_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [CompleteSpace E] {T : E →L[ℂ] E} (hT : IsCompactOperator T) {μ : ℝ}
+    (hμ : μ ≠ 0) : ∀ᶠ y in 𝓝 μ, y ∈ spectrum ℝ T → y = μ := by
+  by_contra hacc
+  simp only [not_eventually, Classical.not_imp] at hacc
+  have hacc' : AccPt (μ : ℂ) (𝓟 (spectrum ℂ T)) :=
+    accPt_iff_frequently.2 <| Complex.continuous_ofReal.tendsto μ |>.frequently <|
+      hacc.mono fun _ ⟨hy, hne⟩ ↦
+        ⟨Complex.ofReal_injective.ne hne, (spectrum.algebraMap_mem_iff ℂ).2 hy⟩
+  exact hμ (Complex.ofReal_eq_zero.1 (hT.eq_zero_of_accPt_spectrum hacc'))
 
 end IsCompactOperator

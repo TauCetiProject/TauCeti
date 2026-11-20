@@ -551,33 +551,6 @@ private theorem thomPairSingularHomologyFinrankInv_restrict (hg : IsLocalFiberGe
     ← TopPair.singularHomologyMap_comp, fiberThomPairOverMap_comp_thomPairOverMap_assoc,
     fiberThomPairOverMap_comp_thomPairOverUnivIso_hom]
 
-variable (F E) in
-/-- The finite unions of the chosen trivializing open sets, as subspaces of the base: the bases of
-the Thom pairs in `TauCeti.thomPairFiniteTrivializingUnionDiagram`. -/
-private def baseFiniteTrivializingUnionDiagram : Finset B ⥤ TopCat.{w} where
-  obj s := TopCat.of ↥(⋃ b ∈ s, (trivializationAt F E b).baseSet)
-  map f := TopCat.ofHom (ContinuousMap.inclusion (biUnion_subset_biUnion_left f.le))
-
-variable (F E) in
-/-- The inclusions of the finite unions of the chosen trivializing open sets into the base. -/
-private def baseFiniteTrivializingUnionCocone :
-    Cocone (baseFiniteTrivializingUnionDiagram (B := B) F E) where
-  pt := TopCat.of B
-  ι := { app _ := TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ }
-
-variable (K F E) in
-/-- The homology of the base is the filtered colimit of the homologies of the finite unions of the
-chosen trivializing sets. -/
-private def isColimitSingularHomologyBaseFiniteTrivializingUnion :
-    IsColimit (((singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K)).mapCocone
-      (baseFiniteTrivializingUnionCocone (B := B) F E)) :=
-  isColimitMapCoconeSingularHomology (ModuleCat.of K K) 0
-    (baseFiniteTrivializingUnionCocone F E) (fun _ ↦ IsEmbedding.subtypeVal) fun L hL ↦ by
-      obtain ⟨s, hs⟩ := hL.elim_finite_subcover _
-        (fun b ↦ (trivializationAt F E b).open_baseSet) fun b _ ↦
-          mem_iUnion.2 ⟨b, mem_baseSet_trivializationAt F E b⟩
-      exact ⟨s, fun b hb ↦ ⟨⟨b, hs hb⟩, rfl⟩⟩
-
 /-- The map is an isomorphism over each finite union of the chosen trivializing sets. -/
 private theorem isIso_thomPairOverSingularHomologyFinrankInv_finiteTrivializingUnion
     (hg : IsLocalFiberGenerator K F E g ε) (s : Finset B) :
@@ -585,27 +558,6 @@ private theorem isIso_thomPairOverSingularHomologyFinrankInv_finiteTrivializingU
       (⋃ b ∈ s, (trivializationAt F E b).baseSet)) :=
   isIso_thomPairOverSingularHomologyFinrankInv_biUnion hg s
     (fun b _ ↦ (trivializationAt F E b).open_baseSet) fun b _ ↦ ⟨b, subset_rfl⟩
-
-omit [FiniteDimensional ℝ F] [∀ b, Module ℝ (E b)] [VectorBundle ℝ F E] in
-variable (K) in
-/-- The objects of the diagram of Thom pairs are the Thom pairs over the finite unions only up to
-the equations `thomPairFiniteTrivializingUnionDiagram_obj`. -/
-private theorem singularHomology_thomPairOver_finiteTrivializingUnion_eq (s : Finset B) :
-    (thomPairOver F E (⋃ b ∈ s, (trivializationAt F E b).baseSet)).singularHomology
-        (ModuleCat.of K K) (finrank ℝ F) =
-      (TopPair.singularHomologyFunctor (ModuleCat.of K K) (finrank ℝ F)).obj
-        ((thomPairFiniteTrivializingUnionDiagram (F := F) (E := E)).obj s) := by
-  rw [thomPairFiniteTrivializingUnionDiagram_obj, TopPair.singularHomologyFunctor_obj]
-
-omit [FiniteDimensional ℝ F] [∀ b, Module ℝ (E b)] [VectorBundle ℝ F E] in
-variable (K) in
-/-- The Thom pair is the cocone point of the diagram of Thom pairs only up to the equation
-`thomPairFiniteTrivializingUnionCocone_pt`. -/
-private theorem singularHomology_thomPair_eq :
-    (thomPair F E).singularHomology (ModuleCat.of K K) (finrank ℝ F) =
-      (TopPair.singularHomologyFunctor (ModuleCat.of K K) (finrank ℝ F)).obj
-        (thomPairFiniteTrivializingUnionCocone (F := F) (E := E)).pt := by
-  rw [thomPairFiniteTrivializingUnionCocone_pt, TopPair.singularHomologyFunctor_obj]
 
 /-- The maps over the finite unions of the chosen trivializing sets, as a natural isomorphism
 between the homologies of the bases and of the Thom pairs. -/
@@ -615,22 +567,24 @@ private def thomPairFiniteTrivializingUnionSingularHomologyFinrankIso
         (singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K) ≅
       thomPairFiniteTrivializingUnionDiagram (F := F) (E := E) ⋙
         TopPair.singularHomologyFunctor (ModuleCat.of K K) (finrank ℝ F) :=
-  NatIso.ofComponents (fun s ↦ @asIso _ _ _ _ (thomPairOverSingularHomologyFinrankInv hg
-      (⋃ b ∈ s, (trivializationAt F E b).baseSet))
-        (isIso_thomPairOverSingularHomologyFinrankInv_finiteTrivializingUnion hg s) ≪≫
-      eqToIso (singularHomology_thomPairOver_finiteTrivializingUnion_eq K s))
+  NatIso.ofComponents (fun s ↦ eqToIso (by simp) ≪≫
+      @asIso _ _ _ _ (thomPairOverSingularHomologyFinrankInv hg
+        (⋃ b ∈ s, (trivializationAt F E b).baseSet))
+          (isIso_thomPairOverSingularHomologyFinrankInv_finiteTrivializingUnion hg s) ≪≫
+      eqToIso (singularHomologyFunctor_obj_thomPairFiniteTrivializingUnionDiagram_obj
+        (ModuleCat.of K K) (finrank ℝ F) s).symm)
     fun {s t} f ↦ by
       have := isIso_thomPairOverSingularHomologyFinrankInv_finiteTrivializingUnion hg s
       have := isIso_thomPairOverSingularHomologyFinrankInv_finiteTrivializingUnion hg t
-      dsimp only [Functor.comp_obj, Functor.comp_map, baseFiniteTrivializingUnionDiagram]
-      simp only [thomPairFiniteTrivializingUnionDiagram_map,
+      simp only [Functor.comp_obj, Functor.comp_map, baseFiniteTrivializingUnionDiagram_map,
+        thomPairFiniteTrivializingUnionDiagram_map, Functor.map_comp, eqToHom_map,
         TopPair.singularHomologyFunctor_map, Iso.trans_hom, asIso_hom, eqToIso.hom,
         Category.assoc, TopPair.singularHomologyMap_comp, TopPair.singularHomologyMap_eqToHom,
         eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-      rw [← Category.assoc, thomPairOverSingularHomologyFinrankInv_naturality hg
+      rw [reassoc_of% (thomPairOverSingularHomologyFinrankInv_naturality hg
         (W := ⋃ b ∈ s, (trivializationAt F E b).baseSet)
-        (W' := ⋃ b ∈ t, (trivializationAt F E b).baseSet) (biUnion_subset_biUnion_left f.le),
-        Category.assoc, eqToHom_trans]
+        (W' := ⋃ b ∈ t, (trivializationAt F E b).baseSet)
+        (biUnion_subset_biUnion_left (Finset.coe_subset.2 f.le))), eqToHom_trans]
 
 /-- On a finite union of the chosen trivializing sets, the map over the base is the map over the
 union followed by the inclusion into the whole Thom pair: these are the components of
@@ -638,14 +592,20 @@ union followed by the inclusion into the whole Thom pair: these are the componen
 cocones. -/
 private theorem singularHomologyMap_ι_thomPairSingularHomologyFinrankInv
     (hg : IsLocalFiberGenerator K F E g ε) (s : Finset B) :
-    ((singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K)).map
-        (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ :
-          TopCat.of ↥(⋃ b ∈ s, (trivializationAt F E b).baseSet) ⟶ TopCat.of B) ≫
-        thomPairSingularHomologyFinrankInv hg ≫ eqToHom (singularHomology_thomPair_eq K) =
-      thomPairOverSingularHomologyFinrankInv hg (⋃ b ∈ s, (trivializationAt F E b).baseSet) ≫
-        eqToHom (singularHomology_thomPairOver_finiteTrivializingUnion_eq K s) ≫
-          (TopPair.singularHomologyFunctor (ModuleCat.of K K) (finrank ℝ F)).map
-            ((thomPairFiniteTrivializingUnionCocone (F := F) (E := E)).ι.app s) := by
+    (((singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K)).mapCocone
+        (baseFiniteTrivializingUnionCocone F E)).ι.app s ≫
+      eqToHom (congrArg (((singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K)).obj)
+        (baseFiniteTrivializingUnionCocone_pt F E)) ≫
+      thomPairSingularHomologyFinrankInv hg ≫
+      eqToHom (singularHomologyFunctor_obj_thomPairFiniteTrivializingUnionCocone_pt
+        (ModuleCat.of K K) (finrank ℝ F)).symm =
+      (thomPairFiniteTrivializingUnionSingularHomologyFinrankIso hg).hom.app s ≫
+        (TopPair.singularHomologyFunctor (ModuleCat.of K K) (finrank ℝ F)).map
+          ((thomPairFiniteTrivializingUnionCocone (F := F) (E := E)).ι.app s) := by
+  dsimp only [Functor.mapCocone_ι_app, thomPairFiniteTrivializingUnionSingularHomologyFinrankIso,
+    NatIso.ofComponents_hom_app, Iso.trans_hom, eqToIso.hom, asIso_hom]
+  simp only [baseFiniteTrivializingUnionCocone_ι_app, Functor.map_comp, eqToHom_map,
+    Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
   rw [reassoc_of% (thomPairSingularHomologyFinrankInv_restrict hg s)]
   simp only [thomPairFiniteTrivializingUnionCocone_ι_app, TopPair.singularHomologyFunctor_map,
     Category.assoc, TopPair.singularHomologyMap_comp, TopPair.singularHomologyMap_eqToHom,
@@ -656,19 +616,25 @@ filtered colimits of their homologies over the finite unions of the chosen trivi
 over these the map is an isomorphism. -/
 private theorem isIso_thomPairSingularHomologyFinrankInv (hg : IsLocalFiberGenerator K F E g ε) :
     IsIso (thomPairSingularHomologyFinrankInv hg) := by
-  let P₁ := isColimitSingularHomologyBaseFiniteTrivializingUnion K F E
+  let P₁ := isColimitMapCoconeSingularHomologyBaseFiniteTrivializingUnion F E
+    (ModuleCat.of K K) 0
   let P₂ := isColimitMapCoconeSingularHomologyThomPairFiniteTrivializingUnion (F := F) (E := E)
     (ModuleCat.of K K) (finrank ℝ F)
   let α := thomPairFiniteTrivializingUnionSingularHomologyFinrankIso hg
-  have h : thomPairSingularHomologyFinrankInv hg ≫ eqToHom (singularHomology_thomPair_eq K) =
+  let hbase := congrArg (((singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K)).obj)
+    (baseFiniteTrivializingUnionCocone_pt F E)
+  let hthom := (singularHomologyFunctor_obj_thomPairFiniteTrivializingUnionCocone_pt
+    (F := F) (E := E) (ModuleCat.of K K) (finrank ℝ F)).symm
+  have h : eqToHom hbase ≫ thomPairSingularHomologyFinrankInv hg ≫ eqToHom hthom =
       (P₁.coconePointsIsoOfNatIso P₂ α).hom :=
     P₁.hom_ext fun s ↦ (singularHomologyMap_ι_thomPairSingularHomologyFinrankInv hg s).trans
       (P₁.comp_coconePointsIsoOfNatIso_hom P₂ α s).symm
-  have : IsIso (thomPairSingularHomologyFinrankInv hg ≫
-      eqToHom (singularHomology_thomPair_eq K)) := by
+  have : IsIso (eqToHom hbase ≫ thomPairSingularHomologyFinrankInv hg ≫ eqToHom hthom) := by
     rw [h]
     exact (P₁.coconePointsIsoOfNatIso P₂ α).isIso_hom
-  exact IsIso.of_isIso_comp_right _ (eqToHom (singularHomology_thomPair_eq K))
+  have : IsIso (thomPairSingularHomologyFinrankInv hg ≫ eqToHom hthom) :=
+    IsIso.of_isIso_comp_left (eqToHom hbase) _
+  exact IsIso.of_isIso_comp_right _ (eqToHom hthom)
 
 /-- The isomorphism `Hᵣ(E, E₀; K) ≅ H₀(B; K)` sending the fibre class of each `g b` to the class of
 `b`. -/

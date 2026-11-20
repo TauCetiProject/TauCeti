@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.ChartedSpace
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Glue
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
 public import TauCeti.Topology.OpenPartialHomeomorph.Basic
+import TauCeti.Geometry.Manifold.ModelTransport.Finrank
 
 /-!
 # The local homology system of a manifold
@@ -38,7 +39,9 @@ compatibility with composition characterizes the transport
 * `TauCeti.singularHomologyToLocalHomology`: with module coefficients, the map
   `Hₖ(M; N) → Hₖ(M, M ∖ {x}; N)` from singular homology to the local homology at `x`, the map of
   the long exact sequence of the pair `(M, M ∖ {x})`
-  (`TauCeti.singularHomologyToLocalHomology_eq_singularHomologyπ`).
+  (`TauCeti.singularHomologyToLocalHomology_eq_singularHomologyπ`), vanishing on classes pushed
+  forward from subsets avoiding `x`
+  (`TauCeti.singularHomologyToLocalHomology_map_subtypeVal_eq_zero_of_notMem`).
 * `TauCeti.singularHomologyπ_compl_univ_bijective`: the quotient map `Hₖ(M) → Hₖ(M, M ∖ M)` is
   bijective.
 * `TauCeti.localHomologySingletonLinearEquiv`: with coefficients `N ≃ₗ[Λ] Λ`, the local homology
@@ -58,6 +61,8 @@ compatibility with composition characterizes the transport
   inside a compact convex set in a chart.
 * `TauCeti.eq_localHomologyTransport`: the transport is the only family of maps compatible with
   composition that has this property.
+* `TauCeti.singularHomologyToLocalHomology_eq_zero_of_joined`: vanishing in local homology
+  transports along paths on any Hausdorff boundaryless manifold.
 
 ## Implementation notes
 
@@ -211,6 +216,41 @@ theorem singularHomologyToLocalHomology_eq_singularHomologyπ (x : M) {k : ℕ}
   exact congrArg (fun φ ↦ ModuleCat.Hom.hom φ μ)
     (TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id N
       (fun _ h ↦ absurd h (by simp)) k)
+
+private lemma homologyMap_subtypeVal_comp_singularHomologyπ_eq_zero {K : Set M} {x : M}
+    (hx : x ∉ K) (k : ℕ) :
+    SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal K))) N k ≫
+      (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularHomologyπ (C := ModuleCat.{w} Λ) N k =
+        0 := by
+  let P := TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))
+  let j : TopCat.of K ⟶ P.snd := TopCat.ofHom ⟨fun y ↦ ⟨y.val, fun h ↦ hx (h ▸ y.property)⟩,
+      by fun_prop⟩
+  have hj : (TopCat.ofHom (ContinuousMap.subtypeVal K) : TopCat.of K ⟶ P.fst) = j ≫ P.map := by
+    ext; rfl
+  -- `P.fst` is definitionally `TopCat.of M`.
+  change SSet.homologyMap (TopCat.toSSet.map (Y := P.fst)
+      (TopCat.ofHom (ContinuousMap.subtypeVal K))) N k ≫
+    P.singularHomologyπ (C := ModuleCat.{w} Λ) N k = 0
+  rw [hj, TopCat.toSSet.map_comp, SSet.homologyMap_comp]
+  exact (Category.assoc _ _ _).trans (by simp)
+
+/-- A class pushed forward from a subset `K ⊆ M` vanishes in the local homology at every point
+outside `K`. -/
+theorem singularHomologyToLocalHomology_map_subtypeVal_eq_zero_of_notMem {K : Set M} {x : M}
+    (hx : x ∉ K) {k : ℕ}
+    (α : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj
+      (TopCat.of K)) :
+    singularHomologyToLocalHomology N x k
+        (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).map
+          (TopCat.ofHom (ContinuousMap.subtypeVal K)) α) = 0 := by
+  -- `((singularHomologyFunctor _ k).obj N).obj X` and `.map f` are definitionally
+  -- `(TopCat.toSSet.obj X).homology N k` and `SSet.homologyMap (TopCat.toSSet.map f) N k`.
+  let α' : ((TopCat.toSSet.obj (TopCat.of K)).homology N k : ModuleCat.{w} Λ) := α
+  have h := DFunLike.congr_fun (congrArg ModuleCat.Hom.hom
+    (homologyMap_subtypeVal_comp_singularHomologyπ_eq_zero N hx k)) α'
+  rw [ModuleCat.hom_zero, LinearMap.zero_apply] at h
+  exact (singularHomologyToLocalHomology_eq_singularHomologyπ N x _).trans
+    ((ConcreteCategory.comp_apply _ _ α').symm.trans h)
 
 variable (M) in
 /-- The quotient map `Hₖ(M) → Hₖ(M, M ∖ M)` is bijective, the subspace `M ∖ M` being empty. -/
@@ -693,5 +733,43 @@ theorem localHomologyRestriction_univ_comp_localHomologyTransport (k : ℕ)
   exact hf
 
 end Chart
+
+section SingularHomologyTransport
+
+variable {M : Type w} [TopologicalSpace M] [T2Space M] {Λ : Type*} [Ring Λ] (N : ModuleCat.{w} Λ)
+
+private theorem singularHomologyToLocalHomology_eq_zero_of_joined_aux (E : Type w)
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
+    {x y : M} (hxy : Joined x y) {k : ℕ}
+    {α : ((TopCat.toSSet.obj (TopCat.of M)).homology N k : ModuleCat.{w} Λ)}
+    (hα : singularHomologyToLocalHomology N x k α = 0) :
+    singularHomologyToLocalHomology N y k α = 0 := by
+  let f : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y :=
+    Path.Homotopic.Quotient.mk hxy.somePath
+  let β₀ := ((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
+    (C := ModuleCat.{w} Λ) N k).hom α
+  have hx₀ : localHomologyRestriction N (subset_univ {x}) k β₀ = 0 :=
+    (singularHomologyToLocalHomology_apply N x α).symm.trans hα
+  have hw := ConcreteCategory.congr_hom
+    (localHomologyRestriction_univ_comp_localHomologyTransport N (E := E) k f) β₀
+  exact (singularHomologyToLocalHomology_apply N y α).trans
+    (hw.symm.trans ((ConcreteCategory.comp_apply _ _ _).trans
+      ((congrArg (localHomologyTransport N M E k f) hx₀).trans (map_zero _))))
+
+/-- **Vanishing in local homology transports along paths.** On a Hausdorff boundaryless manifold,
+if `α ∈ Hₖ(M; N)` vanishes in the local homology `Hₖ(M, M ∖ {x}; N)`, then it vanishes in
+`Hₖ(M, M ∖ {y}; N)` for every point `y` in the path component of `x`. -/
+theorem singularHomologyToLocalHomology_eq_zero_of_joined (E : Type*)
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
+    {x y : M} (hxy : Joined x y) {k : ℕ}
+    {α : ((TopCat.toSSet.obj (TopCat.of M)).homology N k : ModuleCat.{w} Λ)}
+    (hα : singularHomologyToLocalHomology N x k α = 0) :
+    singularHomologyToLocalHomology N y k α = 0 := by
+  let _ : ChartedSpace (ULift.{w} (Fin (Module.finrank ℝ E)) → ℝ) M :=
+    ChartedSpace.ofFinrankEq (𝕜 := ℝ) (E := E) M (by simp)
+  exact singularHomologyToLocalHomology_eq_zero_of_joined_aux N
+    (ULift.{w} (Fin (Module.finrank ℝ E)) → ℝ) hxy hα
+
+end SingularHomologyTransport
 
 end TauCeti

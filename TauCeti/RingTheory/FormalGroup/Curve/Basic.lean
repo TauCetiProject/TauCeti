@@ -61,14 +61,17 @@ yields Cartier's relations over every commutative ring:
 * `FormalGroup.Curve.map`: base change of curves along a ring homomorphism `R →+* S`.
 * `TauCeti.FormalGroupHom.mapCurve` and `TauCeti.FormalGroupIso.curveEquiv`: pushforward of curves
   along homomorphisms and isomorphisms of formal group laws.
+* `TauCeti.FormalCoordinate.toCurve`: a formal coordinate viewed as a curve on `F`.
 * `FormalGroup.verschiebungCurve`: Cartier's Verschiebung operator `V_n : F.Curve →+ F.Curve`.
 * `FormalGroup.frobeniusCurve`: Cartier's Frobenius operator `f_n : F.Curve →+ F.Curve`.
 
 ## Main results
 
-* `FormalGroup.Curve.coe_symmSum_add` and `FormalGroup.toPowerSeries_frobeniusCurve`: formal-group
-  addition formula for `FormalGroup.Curve.symmSum` and explicit power-series formula for
-  `(f_n γ)(T)` via `MvPowerSeries.symmetricSubalgebra.evalTopEsymm`.
+* `FormalGroup.Curve.coe_symmSum_add`, `FormalGroup.toPowerSeries_frobeniusCurve`, and
+  `FormalGroup.coeff_frobeniusCurve_congr`: formal-group addition formula for
+  `FormalGroup.Curve.symmSum`, explicit power-series formula for `(f_n γ)(T)` via
+  `MvPowerSeries.symmetricSubalgebra.evalTopEsymm`, and finite-degree dependence of its
+  coefficients.
 * `FormalGroup.subst_verschiebungCurve_log` and `FormalGroup.subst_frobeniusCurve_log`: action of
   `V_n` and `f_n` on the formal logarithm over a `ℚ`-algebra.
 * `FormalGroup.frobeniusCurve_one`, `FormalGroup.frobeniusCurve_frobeniusCurve`,
@@ -255,16 +258,22 @@ theorem isSymmetric_val_sum_coordPointHom [F.IsComm] {σ : Type*} [Fintype σ] (
       exact Equiv.sum_comp e fun i ↦ coordPointHom F i γ
     rw [rename_eq_subst, ← val_substPointHom F (HasSubst.X_comp e), hsum]
 
+/-- Every coordinate embedding of a curve has zero constant coefficient. -/
+theorem constantCoeff_val_coordPointHom {σ : Type*} (i : σ) (γ : F.Curve) :
+    constantCoeff (coordPointHom F i γ).val = 0 := by
+  rw [val_coordPointHom, PowerSeries.toMvPowerSeries_apply, constantCoeff_rename]
+  exact γ.constantCoeff_toPowerSeries
+
+/-- Any formal-group sum of coordinate embeddings of a curve over a `Finset` has zero constant
+coefficient. -/
 @[simp]
-theorem constantCoeff_val_sum_coordPointHom [F.IsComm] {σ : Type*} [Fintype σ] (γ : F.Curve) :
-    constantCoeff (∑ i : σ, coordPointHom F i γ).val = 0 := by
+theorem constantCoeff_val_sum_coordPointHom [F.IsComm] {σ : Type*} (s : Finset σ) (γ : F.Curve) :
+    constantCoeff (∑ i ∈ s, coordPointHom F i γ).val = 0 := by
   refine Finset.sum_induction _ (fun x : F.Point σ ↦ constantCoeff x.val = 0)
-    (fun x y hx hy ↦ ?_) (by simp) (fun i _ ↦ ?_)
-  · exact constantCoeff_subst_eq_zero
-      (hasSubst_of_constantCoeff_zero (Fin.forall_fin_two.mpr ⟨hx, hy⟩))
-      (Fin.forall_fin_two.mpr ⟨hx, hy⟩) F.zero_constantCoeff
-  · rw [val_coordPointHom, PowerSeries.toMvPowerSeries_apply, constantCoeff_rename]
-    exact γ.constantCoeff_toPowerSeries
+    (fun x y hx hy ↦ ?_) (by simp) fun i _ ↦ constantCoeff_val_coordPointHom i γ
+  exact constantCoeff_subst_eq_zero
+    (hasSubst_of_constantCoeff_zero (Fin.forall_fin_two.mpr ⟨hx, hy⟩))
+    (Fin.forall_fin_two.mpr ⟨hx, hy⟩) F.zero_constantCoeff
 
 /-- The formal-group sum `∑ i : σ, γ(Tᵢ)` of copies of a curve `γ` in each variable of a finite
 index type `σ`, viewed in `MvPowerSeries.symmetricSubalgebra σ R`. -/
@@ -293,7 +302,7 @@ theorem coe_symmSum_add (F : FormalGroup R) [F.IsComm] (σ : Type*) [Fintype σ]
 theorem constantCoeff_symmSum (F : FormalGroup R) [F.IsComm] (σ : Type*) [Fintype σ]
     (γ : F.Curve) :
     constantCoeff (symmSum F σ γ : MvPowerSeries σ R) = 0 :=
-  constantCoeff_val_sum_coordPointHom γ
+  constantCoeff_val_sum_coordPointHom Finset.univ γ
 
 /-- Adding a curve `δ` whose coefficients vanish below degree `m` leaves degrees `< m` unchanged
 and adds `coeff m δ` in degree `m`. -/
@@ -357,6 +366,30 @@ theorem coeff_add_congr {γ₁ γ₁' γ₂ γ₂' : F.Curve} {k : ℕ}
   rw [toPowerSeries_add, toPowerSeries_add, ← hu₁, hstep₁,
     ite_eq_right (Nat.ne_of_lt (Nat.lt_succ_self k)), _root_.add_zero, ← hu₂, hstep₂,
     ite_eq_right (Nat.ne_of_lt (Nat.lt_succ_self k)), _root_.add_zero]
+
+/-- Degree-`k` coefficients of formal-group negatives depend only on coefficients up to degree
+`k`. -/
+theorem coeff_neg_congr {γ₁ γ₂ : F.Curve} {k : ℕ}
+    (h : ∀ i ≤ k, PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
+    PowerSeries.coeff k (-γ₁).toPowerSeries = PowerSeries.coeff k (-γ₂).toPowerSeries := by
+  have hcongr : PowerSeries.X ^ (k + 1) ∣ γ₁.toPowerSeries - γ₂.toPowerSeries :=
+    PowerSeries.X_pow_dvd_iff.mpr fun i hi ↦ by
+      rw [map_sub, h i (Nat.lt_succ_iff.mp hi), sub_self]
+  have hdvd := PowerSeries.X_pow_dvd_subst_sub_subst
+    γ₁.constantCoeff_toPowerSeries hcongr F.addInvX
+  have hcoeff := PowerSeries.X_pow_dvd_iff.mp hdvd k (Nat.lt_succ_self k)
+  rw [toPowerSeries_neg, toPowerSeries_neg]
+  rwa [map_sub, sub_eq_zero] at hcoeff
+
+/-- Degree-`k` coefficients of formal-group differences depend only on coefficients up to degree
+`k`. -/
+theorem coeff_sub_congr {γ₁ γ₁' γ₂ γ₂' : F.Curve} {k : ℕ}
+    (h₁ : ∀ i ≤ k, PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₁'.toPowerSeries)
+    (h₂ : ∀ i ≤ k, PowerSeries.coeff i γ₂.toPowerSeries = PowerSeries.coeff i γ₂'.toPowerSeries) :
+    PowerSeries.coeff k (γ₁ - γ₂).toPowerSeries =
+      PowerSeries.coeff k (γ₁' - γ₂').toPowerSeries := by
+  rw [sub_eq_add_neg, sub_eq_add_neg]
+  exact coeff_add_congr h₁ fun i hi ↦ coeff_neg_congr fun j hj ↦ h₂ j (hj.trans hi)
 
 /-- Extracting the linear coefficient `coeff 1` is an additive homomorphism `F.Curve →+ R`. -/
 noncomputable def coeffOneHom (F : FormalGroup R) : F.Curve →+ R where
@@ -473,6 +506,21 @@ theorem map_mapCurve (f : FormalGroupHom F G) (φ : R →+* S) (γ : F.Curve) :
     FormalGroup.Curve.toPowerSeries_map, toPowerSeries_mapCurve, map_toPowerSeries]
   exact (PowerSeries.map_subst γ.hasSubst f.toPowerSeries).symm
 
+/-- The degree-`k` coefficient of `f.mapCurve γ` depends only on the coefficients of `γ` in
+degrees `≤ k`. -/
+theorem coeff_mapCurve_congr (f : FormalGroupHom F G) {γ₁ γ₂ : F.Curve} {k : ℕ}
+    (h : ∀ i ≤ k, PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
+    PowerSeries.coeff k (f.mapCurve γ₁).toPowerSeries =
+      PowerSeries.coeff k (f.mapCurve γ₂).toPowerSeries := by
+  have hcongr : PowerSeries.X ^ (k + 1) ∣ γ₁.toPowerSeries - γ₂.toPowerSeries :=
+    PowerSeries.X_pow_dvd_iff.mpr fun i hi ↦ by
+      rw [map_sub, h i (Nat.lt_succ_iff.mp hi), sub_self]
+  have hdvd := PowerSeries.X_pow_dvd_subst_sub_subst
+    γ₁.constantCoeff_toPowerSeries hcongr f.toPowerSeries
+  have hcoeff := PowerSeries.X_pow_dvd_iff.mp hdvd k (Nat.lt_succ_self k)
+  rw [toPowerSeries_mapCurve, toPowerSeries_mapCurve]
+  rwa [map_sub, sub_eq_zero] at hcoeff
+
 @[simp]
 theorem nsmulHom_mapCurve [F.IsComm] (n : ℕ) (γ : F.Curve) :
     (F.nsmulHom n).mapCurve γ = n • γ :=
@@ -523,6 +571,40 @@ theorem curveEquiv_symm (f : FormalGroupIso F G) :
 end FormalGroupIso
 
 end Hom
+
+namespace FormalCoordinate
+
+variable {R S : Type*} [CommRing R] [CommRing S]
+
+/-- View a formal coordinate `φ(T) = u T + ⋯` as a curve on a formal group law `F`. -/
+def toCurve (φ : FormalCoordinate R) (F : FormalGroup R) : F.Curve where
+  toPowerSeries := φ.toPowerSeries
+  constantCoeff_toPowerSeries := φ.constantCoeff_toPowerSeries
+
+/-- Viewing a formal coordinate as a curve preserves its underlying power series. -/
+@[simp]
+theorem toPowerSeries_toCurve (φ : FormalCoordinate R) (F : FormalGroup R) :
+    (φ.toCurve F).toPowerSeries = φ.toPowerSeries :=
+  (rfl)
+
+/-- The identity coordinate `X` viewed as a curve on `F` is the tautological curve of `F`. -/
+@[simp]
+theorem toCurve_one (F : FormalGroup R) :
+    (1 : FormalCoordinate R).toCurve F = F.tautologicalCurve :=
+  FormalGroup.Curve.ext (by simp)
+
+/-- Two formal coordinates are equal if they give the same curve on `F`. -/
+theorem toCurve_injective (F : FormalGroup R) :
+    Function.Injective (fun φ : FormalCoordinate R ↦ φ.toCurve F) :=
+  fun _ _ h ↦ FormalCoordinate.ext (congrArg FormalGroup.Curve.toPowerSeries h)
+
+/-- Viewing a formal coordinate as a curve commutes with base change. -/
+@[simp]
+theorem toCurve_map (f : R →+* S) (φ : FormalCoordinate R) (F : FormalGroup R) :
+    (φ.map f).toCurve (F.map f) = FormalGroup.Curve.map f (φ.toCurve F) :=
+  FormalGroup.Curve.ext (by simp [toPowerSeries_map])
+
+end FormalCoordinate
 
 end TauCeti
 
@@ -643,6 +725,69 @@ theorem frobeniusCurve_congr (F : FormalGroup R) [F.IsComm] {m n : ℕ} (h : m =
     F.frobeniusCurve m hm γ = F.frobeniusCurve n hn γ :=
   h ▸ rfl
 
+private theorem truncTotal_val_symmSum_congr (F : FormalGroup R) [F.IsComm] {n N : ℕ}
+    {γ₁ γ₂ : F.Curve}
+    (h : ∀ i < N,
+      PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
+    truncTotal N (Curve.symmSum F (Fin n) γ₁).val =
+      truncTotal N (Curve.symmSum F (Fin n) γ₂).val := by
+  have hcoord : ∀ i : Fin n,
+      truncTotal N (Curve.coordPointHom F i γ₁).val =
+        truncTotal N (Curve.coordPointHom F i γ₂).val := fun i ↦ by
+    ext d
+    by_cases hd : d.degree < N
+    · rw [coeff_truncTotal _ hd, coeff_truncTotal _ hd, Curve.val_coordPointHom,
+        Curve.val_coordPointHom, PowerSeries.coeff_toMvPowerSeries,
+        PowerSeries.coeff_toMvPowerSeries]
+      split_ifs
+      · exact h (d i) ((Finsupp.le_degree i d).trans_lt hd)
+      · rfl
+    · rw [coeff_truncTotal_eq_zero _ (not_lt.mp hd), coeff_truncTotal_eq_zero _ (not_lt.mp hd)]
+  have htrunc : ∀ s : Finset (Fin n),
+      truncTotal N (∑ i ∈ s, Curve.coordPointHom F i γ₁).val =
+        truncTotal N (∑ i ∈ s, Curve.coordPointHom F i γ₂).val := fun s ↦ by
+    induction s using Finset.induction_on with
+    | empty => simp [zero_apply]
+    | @insert a s ha ih =>
+      have h₁ := truncTotal_subst (f := F.toPowerSeries) (k := N)
+        (a := ![(Curve.coordPointHom F a γ₁).val, (∑ i ∈ s, Curve.coordPointHom F i γ₁).val])
+        (Fin.forall_fin_two.mpr
+          ⟨Curve.constantCoeff_val_coordPointHom a γ₁,
+           Curve.constantCoeff_val_sum_coordPointHom s γ₁⟩)
+      have h₂ := truncTotal_subst (f := F.toPowerSeries) (k := N)
+        (a := ![(Curve.coordPointHom F a γ₂).val, (∑ i ∈ s, Curve.coordPointHom F i γ₂).val])
+        (Fin.forall_fin_two.mpr
+          ⟨Curve.constantCoeff_val_coordPointHom a γ₂,
+           Curve.constantCoeff_val_sum_coordPointHom s γ₂⟩)
+      rw [Finset.sum_insert ha, Finset.sum_insert ha, add_apply, add_apply, h₁, h₂]
+      refine congrArg (truncTotal N ∘ (truncTotal N F.toPowerSeries).toMvPowerSeries.subst) ?_
+      exact funext <| Fin.forall_fin_two.mpr
+        ⟨by simp only [Matrix.cons_val_zero, hcoord a],
+         by simp only [Matrix.cons_val_one, Matrix.cons_val_zero, ih]⟩
+  exact htrunc Finset.univ
+
+/-- The degree-`k` coefficient of `(f_n γ)(T)` depends only on the coefficients of `γ(T)` in
+degrees `≤ k * n`. -/
+theorem coeff_frobeniusCurve_congr (F : FormalGroup R) [F.IsComm] {n k : ℕ} (hn : n ≠ 0)
+    {γ₁ γ₂ : F.Curve}
+    (h : ∀ i ≤ k * n,
+      PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
+    PowerSeries.coeff k (F.frobeniusCurve n hn γ₁).toPowerSeries =
+      PowerSeries.coeff k (F.frobeniusCurve n hn γ₂).toPowerSeries := by
+  have htrunc := truncTotal_val_symmSum_congr F (n := n) (N := k * n + 1) (γ₁ := γ₁) (γ₂ := γ₂)
+    fun i hi ↦ h i (Nat.lt_succ_iff.mp hi)
+  rw [toPowerSeries_frobeniusCurve, toPowerSeries_frobeniusCurve,
+    symmetricSubalgebra.coeff_evalTopEsymm, symmetricSubalgebra.coeff_evalTopEsymm]
+  refine congrArg (fun q ↦ (MvPolynomial.symmetricSubalgebra.evalTopEsymm (Fin n) R q).coeff k)
+    (Subtype.ext <| MvPolynomial.ext _ _ fun d ↦ ?_)
+  rw [← MvPolynomial.coeff_coe, coe_homogeneousComponentPolynomial,
+    ← MvPolynomial.coeff_coe, coe_homogeneousComponentPolynomial,
+    coeff_homogeneousComponent, coeff_homogeneousComponent]
+  split_ifs with hd
+  · have hdN : d.degree < k * n + 1 := by simp [Fintype.card_fin] at hd; omega
+    rw [← coeff_truncTotal _ hdN, htrunc, coeff_truncTotal _ hdN]
+  · rfl
+
 theorem map_frobeniusCurve (F : FormalGroup R) [F.IsComm] (φ : R →+* S) (n : ℕ) (hn : n ≠ 0)
     (γ : F.Curve) :
     Curve.map φ (F.frobeniusCurve n hn γ) =
@@ -741,6 +886,29 @@ theorem coeff_subst_frobeniusCurve_log [Algebra ℚ R] (F : FormalGroup R) [F.Is
     smul_eq_mul]
 
 end FrobeniusSetup
+
+/-- Over a `ℚ`-algebra, two curves on `F` coincide if the positive-degree coefficients of their
+compositions with `F.log` agree. -/
+theorem Curve.eq_of_coeff_subst_log_eq [Algebra ℚ R] {F : FormalGroup R} {γ δ : F.Curve}
+    (h : ∀ {k : ℕ}, k ≠ 0 →
+      PowerSeries.coeff k (PowerSeries.subst γ.toPowerSeries F.log) =
+        PowerSeries.coeff k (PowerSeries.subst δ.toPowerSeries F.log)) : γ = δ := by
+  apply F.logIso.curveEquiv.injective
+  ext k
+  rcases eq_or_ne k 0 with rfl | hk0
+  · simp only [TauCeti.FormalGroupIso.curveEquiv_apply, Curve.coeff_zero_toPowerSeries]
+  · simpa only [TauCeti.FormalGroupIso.curveEquiv_apply, logIso_toHom,
+      TauCeti.FormalGroupHom.toPowerSeries_mapCurve, logHom_toPowerSeries] using h hk0
+
+/-- Over a `ℚ`-algebra, a curve on `F` vanishes if all positive-degree coefficients of its
+composition with `F.log` vanish. -/
+theorem Curve.eq_zero_of_coeff_subst_log_eq_zero [Algebra ℚ R] {F : FormalGroup R} {γ : F.Curve}
+    (h : ∀ {k : ℕ}, k ≠ 0 →
+      PowerSeries.coeff k (PowerSeries.subst γ.toPowerSeries F.log) = 0) : γ = 0 :=
+  Curve.eq_of_coeff_subst_log_eq fun hk0 ↦ by
+    rw [Curve.toPowerSeries_zero, PowerSeries.subst_zero_of_constantCoeff_zero F.constantCoeff_log,
+      map_zero]
+    exact h hk0
 
 /-! ### Lifting of curves and Cartier's operator identities -/
 

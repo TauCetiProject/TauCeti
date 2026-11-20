@@ -8,7 +8,10 @@ module
 public import Mathlib.Topology.Spectral.Prespectral
 public import Mathlib.Topology.QuasiSeparated
 public import Mathlib.Topology.Separation.Hausdorff
+public import Mathlib.Topology.Spectral.Basic
 public import TauCeti.Topology.ConnectedComponents
+import Mathlib.Topology.Separation.Regular
+import TauCeti.Topology.Spectral.PatchCriterion
 
 /-!
 # Connected components of spectral spaces
@@ -41,6 +44,10 @@ the two copies of `0` are separate components but lie in the same clopen sets.
   clopen neighbourhoods.
 * `ConnectedComponents.t2Space_of_prespectralSpace`: the space of connected components of such a
   space, for instance of a spectral space, is Hausdorff.
+* `TauCeti.spectralSpace_connectedComponents`, `ConnectedComponents.isSpectralMap_coe`: when `X` is
+  compact and `ConnectedComponents X` is Hausdorff (in particular, when `X` is spectral or compact
+  Hausdorff), `ConnectedComponents X` is spectral and the quotient projection
+  `ConnectedComponents.mk : X → ConnectedComponents X` is a spectral map.
 
 ## References
 
@@ -136,3 +143,23 @@ instance t2Space_of_prespectralSpace [CompactSpace X] [QuasiSeparatedSpace X]
   exact hcU
 
 end ConnectedComponents
+
+namespace TauCeti
+
+universe u
+
+/-- When `X` is compact and `ConnectedComponents X` is Hausdorff (for instance, when `X` is
+spectral or compact Hausdorff), `ConnectedComponents X` is spectral. -/
+instance spectralSpace_connectedComponents (X : Type u) [TopologicalSpace X]
+    [CompactSpace X] [T2Space (ConnectedComponents X)] :
+    SpectralSpace (ConnectedComponents X) :=
+  spectralSpace_of_zeroDimensionalSpace (ConnectedComponents X)
+
+/-- When `X` is compact and `ConnectedComponents X` is Hausdorff (for instance, when `X` is
+spectral), the quotient projection `X → ConnectedComponents X` is a spectral map. -/
+theorem _root_.ConnectedComponents.isSpectralMap_coe {X : Type u} [TopologicalSpace X]
+    [CompactSpace X] [T2Space (ConnectedComponents X)] :
+    IsSpectralMap (ConnectedComponents.mk : X → ConnectedComponents X) :=
+  ConnectedComponents.continuous_coe.isProperMap.isSpectralMap
+
+end TauCeti

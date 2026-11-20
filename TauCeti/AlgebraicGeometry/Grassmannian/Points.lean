@@ -42,9 +42,13 @@ it classifies there glue along the Zariski cover
 * `Module.Grassmannian.specMap_comp_toSchemeHom_eq_iff`: the morphism classifying `N`, restricted
   along `Spec B ⟶ Spec A`, is a morphism through a chart exactly when that chart morphism
   classifies the base change of `N` to `B`.
+* `Module.Grassmannian.toSchemeHom_chartHomEquiv_id`: `chartι R x` classifies the universal point
+  of `ChartAlgebra R x`.
 * `Module.Grassmannian.toSchemeHom_map`: naturality of `toSchemeHom` in the algebra.
 * `Module.Grassmannian.toSchemeHom_injective` and `Module.Grassmannian.exists_toSchemeHom_eq`:
   every morphism over `Spec R` classifies a unique point.
+* `Module.Grassmannian.isEmpty_scheme_of_rankAtStalk_lt`, `Module.Grassmannian.isIso_toSpec_zero`,
+  and `Module.Grassmannian.isIso_toSpec_of_rankAtStalk_eq`: extreme-dimension Grassmannian schemes.
 
 ## References
 
@@ -294,6 +298,11 @@ theorem toSchemeHom_chartHomEquiv (x : Fin k → M) (g : ChartAlgebra R x →ₐ
   rwa [show CommRingCat.ofHom ((AlgHom.id R A : A →ₐ[R] A) : A →+* A) = 𝟙 _ from rfl,
     Spec.map_id, Category.id_comp] at h
 
+/-- The chart open immersion `chartι R x` classifies the universal point of `ChartAlgebra R x`. -/
+theorem toSchemeHom_chartHomEquiv_id (x : Fin k → M) :
+    toSchemeHom (chartHomEquiv R x (ChartAlgebra R x) (AlgHom.id R _)).val = chartι R x := by
+  simp
+
 /-- **Naturality.** The morphism classifying the base change of `N` along `f : A →ₐ[R] B` is the
 composite of `Spec B ⟶ Spec A` with the morphism classifying `N`. -/
 theorem toSchemeHom_map (f : A →ₐ[R] B) (N : G(k, A ⊗[R] M; A)) :
@@ -431,5 +440,50 @@ theorem toSchemeHom_schemeHomEquiv_symm_apply
       h ≫ toSpec R M k = Spec.map (CommRingCat.ofHom (algebraMap R A))}) :
     toSchemeHom ((schemeHomEquiv R M k A).symm h) = h.val :=
   congrArg Subtype.val ((schemeHomEquiv R M k A).apply_symm_apply h)
+
+section Extreme
+
+/-- When `M` is finite flat over `R` and has rank strictly less than `k` at every prime of `R`,
+the Grassmannian scheme `G(k, M)` is empty. -/
+theorem isEmpty_scheme_of_rankAtStalk_lt [Module.Finite R M] [Module.Flat R M]
+    (h : ∀ p, Module.rankAtStalk (R := R) M p < k) : IsEmpty (scheme R M k) := by
+  refine ⟨fun z ↦ ?_⟩
+  obtain ⟨x, y, -⟩ := chartι_jointly_surjective z
+  let B := ChartAlgebra R x ⧸ y.asIdeal
+  have : Nontrivial B := Ideal.Quotient.nontrivial_iff.mpr y.isPrime.ne_top
+  obtain ⟨q⟩ := PrimeSpectrum.nonempty_iff_nontrivial.mpr ‹Nontrivial B›
+  have hlt : Module.rankAtStalk (R := B) (B ⊗[R] M) q < k := by
+    rw [Module.rankAtStalk_baseChange]
+    exact h _
+  exact (isEmpty_of_rankAtStalk_lt (R := B) (M := B ⊗[R] M) ⟨q, hlt⟩).false
+    (chartHomEquiv R x B (Ideal.Quotient.mkₐ R y.asIdeal)).val
+
+/-- If `G(k, A ⊗[R] M; A)` is a singleton for every `R`-algebra `A`, then the structure morphism
+`toSpec R M k : G(k, M) ⟶ Spec R` is an isomorphism. -/
+theorem isIso_toSpec_of_unique
+    (hU : ∀ (A : Type u) [CommRing A] [Algebra R A], Unique G(k, A ⊗[R] M; A)) :
+    IsIso (toSpec R M k) := by
+  refine ⟨toSchemeHom (hU R).default, ?_, ?_⟩
+  · refine (chartOpenCover R M k).hom_ext _ _ fun x ↦ ?_
+    dsimp only [chartOpenCover]
+    rw [chartι_toSpec_assoc, ← IsScalarTower.coe_toAlgHom R R (ChartAlgebra R x),
+      ← toSchemeHom_map, Category.comp_id, ← toSchemeHom_chartHomEquiv_id x]
+    let _ := hU (ChartAlgebra R x)
+    exact congrArg toSchemeHom (Subsingleton.elim _ _)
+  · rw [toSchemeHom_toSpec, Algebra.algebraMap_self, CommRingCat.ofHom_id, Spec.map_id]
+
+/-- For every module `M`, the structure morphism `G(0, M) ⟶ Spec R` is an isomorphism. -/
+instance isIso_toSpec_zero : IsIso (toSpec R M 0) :=
+  isIso_toSpec_of_unique fun _ _ _ ↦ uniqueZero
+
+/-- When `M` is finite projective over `R` of constant rank `n`, the structure morphism
+`G(n, M) ⟶ Spec R` is an isomorphism. -/
+theorem isIso_toSpec_of_rankAtStalk_eq [Module.Finite R M] [Module.Projective R M] {n : ℕ}
+    (h : ∀ p, Module.rankAtStalk (R := R) M p = n) : IsIso (toSpec R M n) :=
+  isIso_toSpec_of_unique fun A _ _ ↦ uniqueOfRankAtStalkEq fun q ↦ by
+    rw [Module.rankAtStalk_baseChange]
+    exact h _
+
+end Extreme
 
 end Module.Grassmannian

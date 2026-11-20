@@ -59,6 +59,8 @@ This file records general-purpose facts about open subsets of schemes.
   closed under intersections, and for `U` affine, a basic open covered by a basic open `A` and
   finitely many basic opens `V i` is covered by `A` and one basic open inside the union of the
   `V i`.
+* `AlgebraicGeometry.IsAffineOpen.isAffineHom_ι`: an affine open in a scheme with affine
+  diagonal has affine inclusion.
 * `AlgebraicGeometry.IsAffineOpen.finset_inf`: on a scheme with affine diagonal, nonempty finite
   intersections of affine opens are affine.
 * `AlgebraicGeometry.Scheme.OpenCover.dense_of_forall_dense_subset`: a subset of a scheme is dense
@@ -125,6 +127,13 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.iSup_affineOpens_le_preimage_eq_top 
   obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
     X.isBasis_affineOpens.exists_subset_of_mem_open hxU (f ⁻¹ᵁ U).is_open'
   exact Opens.mem_iSup.2 ⟨⟨⟨V, hV⟩, ⟨U, hU⟩, hVU⟩, hxV⟩
+
+/-- An affine open in a scheme with affine diagonal has affine inclusion. -/
+lemma _root_.AlgebraicGeometry.IsAffineOpen.isAffineHom_ι (hU : IsAffineOpen U)
+    [IsAffineHom (Limits.pullback.diagonal (Limits.terminal.from X))] : IsAffineHom U.ι :=
+  ⟨fun V hV ↦ U.ι.isAffineOpen_iff_of_isOpenImmersion.mp (by
+    rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
+    exact hU.inf hV)⟩
 
 /-- On a scheme with affine diagonal, for instance a separated one, a nonempty finite intersection
 of affine opens is affine. -/

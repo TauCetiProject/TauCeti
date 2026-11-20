@@ -337,6 +337,14 @@ theorem OnOpenDisc.coe_polynomialHom (p : Polynomial R) :
     (OnOpenDisc.polynomialHom (R₀ := R₀) p : R⟦X⟧) = p :=
   RingHom.codRestrict_apply _ _ _ p
 
+/-- The inclusion of polynomials into series on an open disc is injective at every radius. -/
+theorem OnOpenDisc.polynomialHom_injective :
+    Function.Injective (OnOpenDisc.polynomialHom (R := R) (R₀ := R₀)) := by
+  intro p q h
+  apply Polynomial.coe_injective R
+  simpa only [OnOpenDisc.coe_polynomialHom] using
+    congrArg (fun f : OnOpenDisc.subring R R₀ ↦ (f : R⟦X⟧)) h
+
 variable (R) in
 /-- The subring of series on the open disc of radius `R₀` shrinks as `R₀` grows. -/
 theorem OnOpenDisc.subring_antitone : Antitone (OnOpenDisc.subring R) :=
@@ -484,6 +492,13 @@ theorem coe_algebraMap {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
 theorem coe_smul {S : Type*} [CommSemiring S] [Algebra S R] (s : S)
     (f : OnOpenDisc.subring R R₀) :
     ((s • f : OnOpenDisc.subring R R₀) : R⟦X⟧) = s • (f : R⟦X⟧) := (rfl)
+
+/-- The algebra map into open-disc power series sends a scalar `s` to the constant polynomial
+`Polynomial.C (algebraMap S R s)`, over any (possibly noncommutative) normed ring `R`. -/
+theorem algebraMap_eq_polynomialHom_C {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
+    algebraMap S (OnOpenDisc.subring R R₀) s =
+      OnOpenDisc.polynomialHom (Polynomial.C (algebraMap S R s)) :=
+  Subtype.ext (by simp)
 
 /-- Scalar towers on the coefficients induce scalar towers on open-disc power series. -/
 instance instIsScalarTowerSubring {S T : Type*} [CommSemiring S] [CommSemiring T]

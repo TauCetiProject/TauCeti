@@ -29,11 +29,11 @@ open sets `U` and `V` of its base, this is the sequence which glues classes of t
 construction of the Thom class by induction over trivializing open sets.
 
 The construction dualizes the one in homology. For a commutative square of pairs of simplicial
-sets whose squares of subobjects and of ambient simplicial sets are pushouts with monomorphic top
-maps, the relative Mayer–Vietoris short exact sequence of chain complexes is split in each degree:
-its last map has the section obtained from a section of the absolute sequence of the ambient
-simplicial sets, since relative chains are a retract of ambient chains
-(`SSetPair.isSplitEpi_mayerVietoris_g_f`). So applying `Hom(-, M)` keeps it short exact
+sets whose squares of subobjects and of ambient simplicial sets are pushouts and whose top map of
+ambient simplicial sets is a monomorphism, the relative Mayer–Vietoris short exact sequence of chain
+complexes is split in each degree: its last map has the section obtained from a section of the
+absolute sequence of the ambient simplicial sets, since relative chains are a retract of ambient
+chains (`SSetPair.isSplitEpi_mayerVietoris_g_f`). So applying `Hom(-, M)` keeps it short exact
 (`SSetPair.shortExact_mayerVietorisCochainShortComplex`), and its cohomology sequence is the long
 exact sequence `⋯ ⟶ Hⁿ(P₄) ⟶ Hⁿ(P₂) ⊞ Hⁿ(P₃) ⟶ Hⁿ(P₁) ⟶ Hⁿ⁺¹(P₄) ⟶ ⋯`. For the square of singular
 pairs of `(A ∩ B, C ∩ D)`, `(A, C)`, `(B, D)` and the singular simplices of `X` lying in `A` or in
@@ -169,12 +169,13 @@ private lemma mayerVietorisCochainFromBiprod_eq (n : ℕ) :
         (HomologicalComplex.homologyMap (-cochainComplexMap (R := R) (k := k) (M := M) l) n) := by
   rw [mayerVietorisCochainFromBiprod, HomologicalComplex.homologyMap_neg]
 
-variable (sqL : IsPushout t.left l.left r.left b.left) [Mono t.left]
+variable (sqL : IsPushout t.left l.left r.left b.left)
   (sqR : IsPushout t.right l.right r.right b.right) [Mono t.right]
 
 /-- **The relative cochain Mayer–Vietoris short exact sequence.** For a commutative square of
 pairs of simplicial sets whose squares of subobjects and of ambient simplicial sets are pushouts
-with monomorphic top maps, the relative cochain Mayer–Vietoris sequence is short exact. -/
+and whose top map of ambient simplicial sets is a monomorphism (then so is the top map of
+subobjects), the relative cochain Mayer–Vietoris sequence is short exact. -/
 lemma shortExact_mayerVietorisCochainShortComplex :
     (mayerVietorisCochainShortComplex R k M
       (MorphismProperty.Arrow.Hom.ext sqL.w sqR.w)).ShortExact := by
@@ -260,7 +261,7 @@ lemma mayerVietorisCochain_exact₃ (n m : ℕ) (h : n + 1 = m := by lia) :
   exacts [mayerVietorisCochainFromBiprod_eq R k M n, rfl]
 
 include sqR in
-omit [Mono t.left] [Mono t.right] in
+omit [Mono t.right] in
 /-- The map `H⁰(P₄) ⟶ H⁰(P₂) ⊞ H⁰(P₃)` at the start of the relative cochain Mayer–Vietoris
 sequence is a monomorphism. -/
 lemma mono_mayerVietorisCochainToBiprod_zero :
@@ -283,7 +284,7 @@ variable {Q₁ Q₂ Q₃ Q₄ : SSetPair.{w}} {t' : Q₁ ⟶ Q₂} {l' : Q₁ �
 of pairs. -/
 @[reassoc]
 lemma mayerVietorisCochainδ_naturality (sqL' : IsPushout t'.left l'.left r'.left b'.left)
-    [Mono t'.left] (sqR' : IsPushout t'.right l'.right r'.right b'.right) [Mono t'.right]
+    (sqR' : IsPushout t'.right l'.right r'.right b'.right) [Mono t'.right]
     (ht : t ≫ φ₂ = φ₁ ≫ t') (hl : l ≫ φ₃ = φ₁ ≫ l') (hr : r ≫ φ₄ = φ₂ ≫ r')
     (hb : b ≫ φ₄ = φ₃ ≫ b') (n m : ℕ) (h : n + 1 = m := by lia) :
     mayerVietorisCochainδ R k M sqL' sqR' n m h ≫
@@ -369,8 +370,7 @@ lemma isIso_homologyMap_cochainComplexMap_smallSingularSubcomplexPairToUnion (U 
 
 variable {A B C D : Set X} (hCA : C ⊆ A) (hDB : D ⊆ B)
 
-attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_left
-  TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
+attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
 
 /-- The first map `Hⁿ(A ∪ B, C ∪ D) ⟶ Hⁿ(A, C) ⊞ Hⁿ(B, D)` of the Mayer–Vietoris sequence of the
 pairs `(A, C)` and `(B, D)` in singular cohomology, with components the restrictions `j_A^*` and

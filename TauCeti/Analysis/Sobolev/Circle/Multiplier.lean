@@ -501,7 +501,7 @@ theorem mulFourierSeries_fourierCoeff_eq_multiplicationOperator {f : C(AddCircle
   refine (toLpₗᵢ T).injective (Lp.ext ?_)
   rw [toLpₗᵢ_inclusion_eq_toLp_toContinuousMap T h₁, toLpₗᵢ_multiplicationOperator,
     toLpₗᵢ_inclusion_eq_toLp_toContinuousMap T h₁]
-  filter_upwards [Lp.multiplicationOperator_ae (E := ℂ) _ _,
+  filter_upwards [Lp.multiplicationOperator_ae (𝕜 := ℂ) (E := ℂ) (p := 2) _ _,
     ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℂ) AddCircle.haarAddCircle
       (toContinuousMap T h₁ (mulFourierSeries (fourierCoeff f) (single n x : CircleSobolev 1 ℂ))),
     ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℂ) AddCircle.haarAddCircle

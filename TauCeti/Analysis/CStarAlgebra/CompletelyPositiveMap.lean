@@ -138,14 +138,12 @@ theorem IsNPositive.id (n : ℕ) : IsNPositive n (LinearMap.id : A →ₗ[ℂ] A
 /-- The zero map is `n`-positive. -/
 @[simp]
 theorem IsNPositive.zero (n : ℕ) : IsNPositive n (0 : A →ₗ[ℂ] B) :=
-  fun _ _ => (CStarMatrix.ext fun _ _ => by simp [CStarMatrix.zero_apply]).ge
+  fun M _ => (CStarMatrix.map_zero_linearMap M).ge
 
 /-- The sum of `n`-positive maps is `n`-positive. -/
 theorem IsNPositive.add {n : ℕ} {φ ψ : A →ₗ[ℂ] B} (hφ : IsNPositive n φ) (hψ : IsNPositive n ψ) :
     IsNPositive n (φ + ψ) := fun M hM => by
-  have h : M.map ⇑(φ + ψ) = M.map φ + M.map ψ :=
-    CStarMatrix.ext fun _ _ => by simp [CStarMatrix.add_apply]
-  rw [h]
+  rw [CStarMatrix.map_add_linearMap]
   exact add_nonneg (hφ M hM) (hψ M hM)
 
 /-- The composition of `n`-positive maps is `n`-positive. -/

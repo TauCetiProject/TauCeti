@@ -13,6 +13,8 @@ public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
 import Mathlib.FieldTheory.Minpoly.Basic
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 import TauCeti.Algebra.GroupWithZero.Irreducible
+import TauCeti.RingTheory.Ideal.KrullIntersection
+import TauCeti.RingTheory.Ideal.Quotient.Integral
 import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
@@ -51,7 +53,9 @@ coefficients and hence distinguished at unit radius, shows that every quotient o
 finitely many variables which is integral over `K` is spanned by the images of polynomials
 (`TauCeti.Dagger.washnitzerAlgebra.surjective_mkₐ_comp_ofMvPolynomial`). Consequently two
 algebra homomorphisms from `K⟨X⟩†` into an algebra integral over `K` that agree on the variables
-are equal (`TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isIntegral`).
+are equal (`TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isIntegral`). By Krull intersection,
+the same holds for any noetherian `K`-algebra whose residue fields at maximal ideals are integral
+over `K` (`TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_forall_isMaximal_isIntegral`).
 
 ## Main results
 
@@ -563,6 +567,31 @@ theorem algHom_ext_of_isIntegral {σ : Type*} [Finite σ] {B : Type*} [CommRing 
   simp only [map_sub, AlgHom.prod_apply, Prod.mk_sub_mk, Prod.mk_eq_zero, sub_eq_zero] at hfp
   rw [hfp.1, hfp.2]
   exact AlgHom.congr_fun hpoly p
+
+/-- **Homomorphisms separated by integral maximal quotients are determined by the variables.** If
+`R` is a noetherian `K`-algebra whose residue fields `R ⧸ m` at maximal ideals are integral over
+`K`, then two `K`-algebra homomorphisms from the Monsky–Washnitzer algebra in finitely many
+variables into `R` agreeing on every coordinate variable are equal. No continuity or norm on `R` is
+assumed. -/
+theorem algHom_ext_of_forall_isMaximal_isIntegral {σ : Type*} [Finite σ]
+    {R : Type*} [CommRing R] [Algebra K R] [IsNoetherianRing R]
+    (hint : ∀ (m : Ideal R) [m.IsMaximal], Algebra.IsIntegral K (R ⧸ m))
+    {φ ψ : washnitzerAlgebra σ K →ₐ[K] R} (h : ∀ i, φ (X σ K i) = ψ (X σ K i)) :
+    φ = ψ := by
+  ext f
+  suffices φ f - ψ f ∈ (⊥ : Ideal R) from sub_eq_zero.mp this
+  rw [← Ideal.iInf_isMaximal_pow_eq_bot]
+  simp only [Ideal.mem_iInf]
+  intro m hm k _
+  have : Algebra.IsIntegral K (R ⧸ m) := @hint m hm
+  have : Algebra.IsIntegral K (R ⧸ m ^ k) :=
+    ⟨fun y ↦ by
+      obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
+      exact isIntegral_quotient_pow_of_isIntegral_quotient (Algebra.IsIntegral.isIntegral _) k⟩
+  let q := Ideal.Quotient.mkₐ K (m ^ k)
+  have hq : q.comp φ = q.comp ψ := algHom_ext_of_isIntegral fun i ↦ by simp [h i]
+  exact Ideal.Quotient.eq_zero_iff_mem.mp
+    (by simpa [q, map_sub] using sub_eq_zero.mpr (AlgHom.congr_fun hq f))
 
 end IntegralQuotient
 

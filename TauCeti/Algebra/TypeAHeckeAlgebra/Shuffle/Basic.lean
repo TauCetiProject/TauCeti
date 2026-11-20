@@ -151,6 +151,13 @@ def restIndex (S : ShuffleMask k l) (p : Fin (k + l)) : ℕ := #{x ∈ S.valᶜ 
 theorem restIndex_def (S : ShuffleMask k l) (p : Fin (k + l)) :
     S.restIndex p = #{x ∈ S.valᶜ | x < p} := (rfl)
 
+/-- Before position `0` there are no rest positions. -/
+@[simp]
+theorem restIndex_zero [NeZero (k + l)] (S : ShuffleMask k l) :
+    S.restIndex (0 : Fin (k + l)) = 0 := by
+  rw [restIndex_def]
+  simp
+
 /-- A selected position does not change the number of rest positions before it. -/
 theorem restIndex_of_mem {S : ShuffleMask k l} {a b : Fin (k + l)} (hab : (b : ℕ) = a + 1)
     (ha : a ∈ S.val) : S.restIndex b = S.restIndex a := by
@@ -373,6 +380,16 @@ theorem length_eq_zero_iff {S : ShuffleMask k l} : S.length = 0 ↔ S = initial 
   obtain ⟨a, b, hab, ha, hb⟩ := exists_notMem_mem_of_ne_initial hS
   have := length_swap_add_one_of_notMem_of_mem hab ha hb
   omega
+
+/-- Every `(k, l)`-mask has length at most `k * l`: each of its `k` selected positions is preceded
+by at most `l` rest positions. -/
+theorem length_le_mul (S : ShuffleMask k l) : S.length ≤ k * l := by
+  rw [length_def]
+  refine (Finset.sum_le_card_nsmul S.val _ l fun s _ ↦ ?_).trans_eq
+      (by rw [S.property, smul_eq_mul])
+  rw [restIndex_def]
+  exact (Finset.card_filter_le _ _).trans_eq
+    (by rw [Finset.card_compl, Fintype.card_fin, S.property, Nat.add_sub_cancel_left])
 
 /-- **Induction on masks along a last shuffle step.** To prove a property of every mask, it is
 enough to prove it for the initial mask, and for each mask `S` with a rest position `strand γ`

@@ -19,7 +19,8 @@ as embedded open subspaces.
 
 The base change `TopCat.pullbackFst g p` of a morphism `p : E ⟶ B` along `g : B' ⟶ B` has the
 same fibres as `p`: its fibre over `b'` is the fibre of `p` over `g b'`
-(`TopCat.Hom.fiberPullbackFstIso`). A map `f` over `B` induces a map of base changes
+(`TopCat.Hom.fiberPullbackFstIso`, identified with the square's induced fibre map by
+`CategoryTheory.CommSq.fiberMap_pullbackSnd`). A map `f` over `B` induces a map of base changes
 (`TopCat.pullbackMapOfCompEq`), which is `f` on these fibres
 (`TopCat.Hom.fiberPullbackFstIso_hom_naturality`).
 The inclusion `e ↦ (k, e)` of a fibre of `p` into the base change along `g` at a point `k` over
@@ -289,5 +290,14 @@ lemma pullbackFiberι_comp_pullbackMapOfCompEq (sq : CommSq f p p' g) {h : K ⟶
   ext x
   · rfl
   · exact (sq.fiberMap_apply_coe b x).symm
+
+/-- The map on fibres over `b'` induced by the canonical pullback square of `p : E ⟶ B` along
+`g : B' ⟶ B` is the canonical isomorphism `p.fiberPullbackFstIso g b'`. -/
+lemma fiberMap_pullbackSnd {E B B' : TopCat.{u}} {p : E ⟶ B} {g : B' ⟶ B}
+    (sq : CommSq (TopCat.pullbackSnd g p) (TopCat.pullbackFst g p) p g) (b' : B') :
+    sq.fiberMap b' = (p.fiberPullbackFstIso g b').hom := by
+  ext x
+  exact (sq.fiberMap_apply_coe b' x).trans
+    ((TopCat.pullbackSnd_apply g p x.val).trans (p.fiberPullbackFstIso_hom_apply_coe g b' x).symm)
 
 end CategoryTheory.CommSq

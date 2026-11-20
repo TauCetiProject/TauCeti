@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Sets.Opens
 public import TauCeti.Analysis.Contour.Cycle.Basic
 public import TauCeti.Analysis.Contour.Winding.UnboundedComponent
 import TauCeti.Analysis.Contour.Winding.Integer
@@ -33,7 +34,8 @@ the cycle, and hence vanishes on every unbounded connected component of the comp
 * `TauCeti.Contour.Cycle.exists_int_windingNumber_of_not_mem_trace` proves integer-valuedness off
   the trace.
 * `TauCeti.Contour.Cycle.isLocallyConstant_windingNumber` proves local constancy on the trace
-  complement.
+  complement, and `TauCeti.Contour.Cycle.windingOneOpen` packages the open set of points off the
+  trace with winding number `1`.
 * `TauCeti.Contour.Cycle.windingNumber_eq_zero_of_unbounded_component` proves vanishing on every
   unbounded component of the complement.
 
@@ -196,6 +198,22 @@ theorem isLocallyConstant_windingNumber (C : Cycle) :
     exact windingNumber_eq_sum_support C z
   rw [heq]
   exact hsum
+
+/-- The open set of points off the trace of a cycle `C` around which `C` has winding number `1`. -/
+def windingOneOpen (C : Cycle) : TopologicalSpace.Opens ℂ where
+  carrier := Subtype.val '' {z : {z : ℂ // z ∉ trace C} | windingNumber z C = 1}
+  is_open' := (isCompact_trace C).isClosed.isOpen_compl.isOpenMap_subtypeVal _
+    ((isLocallyConstant_windingNumber C).isOpen_fiber 1)
+
+/-- Membership in `windingOneOpen C` means avoiding `trace C` with winding number `1`. -/
+@[simp]
+theorem mem_windingOneOpen {C : Cycle} {z : ℂ} :
+    z ∈ windingOneOpen C ↔ z ∉ trace C ∧ windingNumber z C = 1 := by
+  constructor
+  · rintro ⟨⟨z, hz⟩, hw, rfl⟩
+    exact ⟨hz, hw⟩
+  · rintro ⟨hz, hw⟩
+    exact ⟨⟨z, hz⟩, hw, rfl⟩
 
 /-- The winding number of a contour cycle is constant on each connected component of the
 complement of its trace. -/

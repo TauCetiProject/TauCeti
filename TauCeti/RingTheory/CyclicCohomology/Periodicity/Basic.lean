@@ -546,4 +546,28 @@ theorem homologyMap_cyclicCochainComplexToTotal_comp_homologyMap_cyclicTotalComp
 
 end CyclicCohomology
 
+section MapRows
+variable {R A B M N : Type*} [CommRing R] [NonUnitalSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [NonUnitalSemiring B] [Module R B]
+  [IsScalarTower R B B] [SMulCommClass R B B] [AddCommGroup M] [Module R M] [AddCommGroup N]
+  [Module R N]
+
+/-- A rowwise induced map on `Hᵐ(Tot)` commutes with `cyclicTotalHomologyPeriodicity`. -/
+@[simp] theorem cyclicTotalHomologyMapRows_cyclicTotalHomologyPeriodicity
+    (g : ∀ q : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1) ↦ A) M →ₗ[R]
+      MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1) ↦ B) N)
+    (hh : ∀ p q φ, g q (cyclicBicomplexHorizontal R A M p q φ) =
+      cyclicBicomplexHorizontal R B N p q (g q φ))
+    (hv : ∀ p q φ, g (q + 1) (cyclicBicomplexVertical R A M p q φ) =
+      cyclicBicomplexVertical R B N p q (g q φ))
+    (m : ℕ) (c : (cyclicTotalComplex R A M).homology m) :
+    cyclicTotalHomologyMapRows g hh hv (m + 2) (cyclicTotalHomologyPeriodicity R A M m c) =
+      cyclicTotalHomologyPeriodicity R B N m (cyclicTotalHomologyMapRows g hh hv m c) := by
+  obtain ⟨x, rfl⟩ := cyclicTotalHomologyMk_surjective m c
+  simp only [cyclicTotalHomologyPeriodicity_cyclicTotalHomologyMk,
+    cyclicTotalHomologyMapRows_cyclicTotalHomologyMk]
+  exact congrArg (cyclicTotalHomologyMk R B N (m + 2))
+    (Subtype.ext <| Subtype.ext <| funext fun q ↦ by simp)
+end MapRows
+
 end TauCeti

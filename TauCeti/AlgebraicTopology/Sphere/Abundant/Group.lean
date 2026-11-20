@@ -11,6 +11,7 @@ public import TauCeti.Topology.MappingSpace.Group
 public import TauCeti.Topology.MappingSpace.Sphere.Basic
 public import Mathlib.Analysis.Quaternion
 import Mathlib.Geometry.Manifold.Instances.Sphere
+import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 import TauCeti.AlgebraicTopology.Singular.Reduced

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Graph.Connectivity.Bridge.OfSimpleGraph
 public import TauCeti.Combinatorics.Graph.Connectivity.EdgeConnectivity
 public import TauCeti.Combinatorics.Graph.Orientation.OfSimpleGraph
 public import TauCeti.Combinatorics.Graph.Orientation.Walk
@@ -40,6 +41,9 @@ any two vertices joined by a walk are joined by a directed walk.
   multigraphs.
 * `SimpleGraph.exists_stronglyConnected_orientation_iff`: Robbins' theorem for simple graphs, with
   dart orientations.
+* `SimpleGraph.exists_componentwiseStrong_orientation_iff`,
+  `SimpleGraph.Preconnected.exists_stronglyConnected_orientation_iff`: the componentwise and
+  classical forms for simple graphs, where only actual edges are tested for being bridges.
 
 ## References
 
@@ -326,5 +330,53 @@ theorem exists_stronglyConnected_orientation_iff [Finite G.edgeSet] :
   obtain ⟨o, ho⟩ := Graph.exists_stronglyConnected_orientation_iff.2
     ((Graph.isEdgeConnected_ofSimpleGraph_iff G 2).2 hG)
   exact ⟨o.toDartOrientation, o.isStronglyConnected_orientedQuiver_iff.2 ho⟩
+
+/-- **Robbins' theorem for simple graphs, componentwise form.** A simple graph with finitely many
+edges has a dart orientation in which any two vertices joined by a walk are joined by a directed
+path exactly when no edge is a bridge.
+
+Only actual edges are tested: `SimpleGraph.IsBridge` also holds for a non-edge joining two
+different connected components, so requiring no bridge among all of `Sym2 V` would also force `G`
+to be preconnected. -/
+theorem exists_componentwiseStrong_orientation_iff [Finite G.edgeSet] :
+    (∃ o : DoubledQuiver.Orientation G, ∀ x y, G.Reachable x y →
+      Nonempty (Quiver.Path (DoubledQuiver.OrientedQuiver.vertex G o x)
+        (DoubledQuiver.OrientedQuiver.vertex G o y))) ↔
+      ∀ e ∈ G.edgeSet, ¬ G.IsBridge e := by
+  have : Finite (Graph.ofSimpleGraph G).edgeSet := by
+    rwa [Graph.edgeSet_ofSimpleGraph]
+  -- Directed paths between the vertices of a dart orientation are directed walks of the
+  -- corresponding multigraph orientation.
+  have hpath (o : (Graph.ofSimpleGraph G).Orientation) (x y : (Graph.ofSimpleGraph G).vertexSet) :
+      Nonempty (Quiver.Path (DoubledQuiver.OrientedQuiver.vertex G o.toDartOrientation x.val)
+        (DoubledQuiver.OrientedQuiver.vertex G o.toDartOrientation y.val)) ↔
+        Nonempty (ArrowWalk o.Hom x y) := by
+    simpa only [Graph.Orientation.orientedVertexEquiv_apply] using o.nonempty_oriented_path_iff x y
+  have hbridge : (∀ e ∈ G.edgeSet, ¬ G.IsBridge e) ↔
+      ∀ e, ¬ (Graph.ofSimpleGraph G).IsBridge e := by
+    simp only [Graph.isBridge_ofSimpleGraph_iff, not_and]
+  rw [hbridge, ← Graph.exists_componentwiseStrong_orientation_iff,
+    ← G.graphOrientationEquiv.exists_congr_right]
+  refine exists_congr fun o ↦ ?_
+  rw [graphOrientationEquiv_apply]
+  refine ⟨fun ho x y hxy ↦ ?_, fun ho x y hxy ↦ ?_⟩
+  · rw [← hpath]
+    exact ho x.val y.val ((reachable_ofSimpleGraph_iff G x.val y.val).1 hxy)
+  · exact (hpath o ⟨x, by simp⟩ ⟨y, by simp⟩).2
+      (ho _ _ ((reachable_ofSimpleGraph_iff G x y).2 hxy))
+
+/-- **Robbins' theorem for preconnected simple graphs.** A preconnected simple graph with finitely
+many edges has a strongly connected dart orientation exactly when no edge is a bridge. Only actual
+edges are tested, as in `SimpleGraph.exists_componentwiseStrong_orientation_iff`. -/
+theorem Preconnected.exists_stronglyConnected_orientation_iff [Finite G.edgeSet]
+    (hG : G.Preconnected) :
+    (∃ o : DoubledQuiver.Orientation G,
+      Quiver.IsStronglyConnected (DoubledQuiver.OrientedQuiver G o)) ↔
+      ∀ e ∈ G.edgeSet, ¬ G.IsBridge e := by
+  rw [← exists_componentwiseStrong_orientation_iff]
+  refine exists_congr fun o ↦ ⟨fun ho x y _ ↦ ho _ _, fun ho x y ↦ ?_⟩
+  obtain ⟨x, rfl⟩ := (DoubledQuiver.OrientedQuiver.vertexEquiv G o).surjective x
+  obtain ⟨y, rfl⟩ := (DoubledQuiver.OrientedQuiver.vertexEquiv G o).surjective y
+  simpa only [DoubledQuiver.OrientedQuiver.vertexEquiv_apply] using ho x y (hG x y)
 
 end SimpleGraph

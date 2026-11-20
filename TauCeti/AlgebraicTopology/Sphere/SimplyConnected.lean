@@ -53,6 +53,8 @@ Rank two is genuinely the boundary: the circle is not simply connected.
 * `TauCeti.simplyConnectedSpace_sphere_euclideanSpace`: the case of `Sⁿ` for `2 ≤ n`.
 * `TauCeti.simplyConnectedSpace_sphere_euclideanSpace_complex`: the case of the unit sphere
   `S²ᵏ⁺¹` of `ℂᵏ⁺¹` for `1 ≤ k`.
+* `ContinuousMap.HomotopyEquiv.nonempty_of_sphere`: nonemptiness of a space homotopy equivalent
+  to a sphere of nonnegative radius.
 * `ContinuousMap.HomotopyEquiv.pathConnectedSpace_of_sphere`,
   `ContinuousMap.HomotopyEquiv.connectedSpace_of_sphere`,
   `ContinuousMap.HomotopyEquiv.simplyConnectedSpace_of_sphere`, and
@@ -470,6 +472,15 @@ end TauCeti
 namespace ContinuousMap.HomotopyEquiv
 
 open scoped ContinuousMap
+
+/-- A space homotopy equivalent to a sphere of nonnegative radius in a real seminormed space with
+nontrivial topology is nonempty. -/
+theorem nonempty_of_sphere {X : Type*} [TopologicalSpace X]
+    {F : Type*} [SeminormedAddCommGroup F] [NormedSpace ℝ F] [NontrivialTopology F]
+    {c : F} {r : ℝ} (e : X ≃ₕ sphere c r) (hr : 0 ≤ r) :
+    Nonempty X := by
+  have : Nonempty (sphere c r) := (NormedSpace.sphere_nonempty.2 hr).to_subtype
+  exact e.symm.nonempty
 
 variable {M : Type*} [TopologicalSpace M] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 

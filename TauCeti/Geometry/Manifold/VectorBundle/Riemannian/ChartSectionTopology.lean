@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.FiniteOrderTopol
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Topology
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Topology
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
-import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Cone
 import TauCeti.Geometry.Manifold.VectorBundle.Section.FrameCover
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Comp
 import TauCeti.Geometry.Manifold.ContMDiffMap.WeakWhitney.Open
@@ -389,10 +388,7 @@ theorem isOpenEmbedding_toSymmetricSection_chartCInfty [FiniteDimensional ℝ E]
     letI := ContMDiffSection.frameTopology (I := I) (n := ∞) e U hU
     IsOpenEmbedding (toSymmetricSection (IB := I) (n := ∞) (F := E)
       (V := fun x : M ↦ TangentSpace I x)) := by
-  let _ := chartCInftyTopology (I := I) (M := M)
-  let _ := ContMDiffSection.frameTopology (I := I) (n := ∞) e U hU
-  refine ⟨isEmbedding_toSymmetricSection_chartCInfty e U hU hcover, ?_⟩
-  rw [range_toSymmetricSection]
-  exact isOpen_positiveDefiniteSymmetricSections_frameTopology e U hU hcover
+  rw [chartCInftyTopology_eq_frameTopology e U hU hcover]
+  exact isOpenEmbedding_toSymmetricSection_frameTopology e U hU hcover
 
 end Bundle.ContMDiffRiemannianMetric

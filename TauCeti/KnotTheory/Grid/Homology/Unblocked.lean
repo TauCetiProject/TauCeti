@@ -344,9 +344,7 @@ variable replaced by one fixed variable `V_c`. -/
 private theorem smul_eq_rename_const_smul (hG : G.IsKnot) (c : Fin n)
     (p : MvPolynomial (Fin n) R) (x : G.unblockedHomology R) :
     p • x = MvPolynomial.rename (fun _ => c) p • x :=
-  smul_unblockedHomology_eq_rename_smul _ (fun c' =>
-    ((G.isKnot_iff_componentPerm_isCycle).mp hG).sameCycle (G.componentPerm_apply_ne_self c')
-      (G.componentPerm_apply_ne_self c)) p x
+  smul_unblockedHomology_eq_rename_smul _ (fun c' => hG.sameCycle_componentPerm c' c) p x
 
 /-- On a knot grid the unblocked grid homology is annihilated by the kernel of the evaluation
 `R[V₀, …, V_{n-1}] → R[U]` sending every variable to `U`. -/

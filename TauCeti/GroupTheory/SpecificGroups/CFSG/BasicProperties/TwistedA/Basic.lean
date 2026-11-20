@@ -37,6 +37,10 @@ modulo its centre. Nothing here asserts that this quotient is nontrivial or simp
   `SL_{r+1}(𝔽_{q²})`.
 * `TauCeti.TypeALieIndex.coe_specialUnitaryEquivFixedPoints`: the fixed point attached to a finite
   matrix is that matrix read over the closure.
+* `TauCeti.TypeALieIndex.specialIsometryEquivFixedPoints`: the determinant-one isometries of the
+  signed reversal form over `𝔽_{q²}` are identified with the Steinberg fixed points of `²A_r(q)`.
+* `TauCeti.TypeALieIndex.coe_specialIsometryEquivFixedPoints`: the special-isometry comparison
+  sends a finite matrix to its coefficient extension over the closure.
 
 ## References
 
@@ -96,6 +100,44 @@ theorem coe_specialUnitaryEquivFixedPoints (r : ℕ) (q : PrimePower)
           _).map ((ofTwistedA r q hv).val.extensionGaloisFieldEmbedding 2 two_ne_zero) := by
   rw [specialUnitaryEquivFixedPoints, MulEquiv.trans_apply, coe_fixedSubgroupCongr_symm_apply,
     MulEquiv.apply_symm_apply, ValidLieTypeIndex.coe_specialUnitaryEquivFrobeniusFixedPoints]
+
+section SpecialIsometry
+
+variable (r : ℕ) (q : PrimePower) (hv : (LieTypeIndex.twistedA r q).Valid)
+
+local notation "d" => ofTwistedA r q hv
+local notation "K" => GaloisField (ValidLieTypeIndex.characteristic (Subtype.val d))
+  (ValidLieTypeIndex.fieldExponent (Subtype.val d) * 2)
+local notation "σ" => iterateFrobenius K (ValidLieTypeIndex.characteristic (Subtype.val d))
+  (ValidLieTypeIndex.fieldExponent (Subtype.val d))
+
+/-- Identify the signed-reversal special isometries with the exact Steinberg fixed points
+of `²A_r(q)`, by coefficient extension and the designated-carrier comparison. -/
+def specialIsometryEquivFixedPoints :
+    (typeAGraphConjugator r K : Matrix (Fin (r + 1)) (Fin (r + 1)) K).specialIsometryGroup σ ≃*
+      (d).FixedPoints :=
+  (MulEquiv.subgroupCongr
+    ((d).val.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup r).symm).trans
+      (specialUnitaryEquivFixedPoints r q hv)
+
+/-- The finite special isometry is sent to its coefficient extension on the designated carrier. -/
+@[simp]
+theorem coe_specialIsometryEquivFixedPoints
+    (g : (typeAGraphConjugator r K : Matrix (Fin (r + 1)) (Fin (r + 1)) K).specialIsometryGroup σ) :
+    ((d).carrierEquivSpecialLinear
+        (specialIsometryEquivFixedPoints r q hv g : (d).AmbientGroup) :
+          Matrix (Fin ((d).val.rank + 1)) (Fin ((d).val.rank + 1)) (d).val.Closure) =
+      ((g : Matrix.SpecialLinearGroup (Fin (r + 1)) K) :
+        Matrix (Fin (r + 1)) (Fin (r + 1)) K).map
+          ((d).val.extensionGaloisFieldEmbedding 2 two_ne_zero) := by
+  -- Extended rewriting reduces (ofTwistedA r q hv).1.rank to r in the comparison's domain.
+  erw [specialIsometryEquivFixedPoints, MulEquiv.trans_apply,
+    coe_specialUnitaryEquivFixedPoints, MulEquiv.subgroupCongr_apply]
+  -- subgroupCongr preserves the underlying matrix; reducing the rank of ofTwistedA
+  -- identifies the two matrix index types definitionally.
+  rfl
+
+end SpecialIsometry
 
 end TauCeti.TypeALieIndex
 

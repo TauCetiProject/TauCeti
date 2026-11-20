@@ -430,7 +430,6 @@ theorem tildeExteriorPowerIso_inv_toOpen_mk (n : ℕ) (M : ModuleCat.{u} R)
 
 /-- The affine comparison sends the associated section of a wedge to the sheafified wedge
 of its associated sections, over every open. -/
-@[simp]
 theorem tildeExteriorPowerIso_hom_toOpen_mk (n : ℕ) (M : ModuleCat.{u} R)
     (U : (Spec R).Opens) (m : Fin n → M) :
     dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]

@@ -243,6 +243,15 @@ theorem ofSimpleGraphCapacity_apply (c : Sym2 V → K)
     (e : (Graph.ofSimpleGraph G).edgeSet) : G.ofSimpleGraphCapacity c e = c e.val :=
   (rfl)
 
+/-- Restricting pair capacities that are nonnegative on the edges of `G` produces nonnegative edge
+capacities on `Graph.ofSimpleGraph G`. Diagonal and non-edge values play no role. -/
+theorem ofSimpleGraphCapacity_nonneg [Zero K] [LE K] {c : Sym2 V → K}
+    (hc : ∀ p ∈ G.edgeSet, 0 ≤ c p) :
+    0 ≤ G.ofSimpleGraphCapacity c := by
+  intro e
+  rw [Pi.zero_apply, ofSimpleGraphCapacity_apply]
+  exact hc e.val (by simpa using e.property)
+
 /-- Include a vertex of a simple graph in the full vertex set of `Graph.ofSimpleGraph G`. -/
 def toOfSimpleGraphVertex (x : V) : (Graph.ofSimpleGraph G).vertexSet :=
   ⟨x, by rw [Graph.vertexSet_ofSimpleGraph]; exact Set.mem_univ x⟩

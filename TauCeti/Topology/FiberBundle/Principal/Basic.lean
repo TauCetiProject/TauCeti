@@ -222,6 +222,11 @@ noncomputable def division (p q : P b) : G :=
 theorem smul_division (p q : P b) : op (division G p q) • p = q :=
   (trivializationAt G P b).op_inv_mul_smul (mem_baseSet_trivializationAt G P b) p q
 
+/-- On the total space, acting on `⟨b, p⟩` by `division G p q` yields `⟨b, q⟩`. -/
+theorem smul_division_mk (p q : P b) :
+    op (division G p q) • (⟨b, p⟩ : TotalSpace G P) = ⟨b, q⟩ :=
+  congrArg (TotalSpace.mk' G b) (smul_division p q)
+
 /-- The division map of `p` and `q` is the unique `g` with `p • g = q`. -/
 theorem division_eq_iff {p q : P b} {g : G} : division G p q = g ↔ op g • p = q := by
   rw [← smul_eq_smul_iff (p := p), smul_division]

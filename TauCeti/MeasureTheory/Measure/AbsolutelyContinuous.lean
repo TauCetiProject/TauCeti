@@ -26,6 +26,9 @@ small whenever `μ s` is small. This quantitative form of `ν ≪ μ` holds for 
 reference measure `μ`, with no σ-finiteness and hence no Radon–Nikodym derivative. It is what
 transfers approximation properties, such as regularity, from `μ` to `ν`.
 
+Each summand of a sum of measures is absolutely continuous with respect to the sum, so `μ + ν`
+is a common dominating measure for `μ` and `ν`.
+
 ## Main declarations
 
 * `TauCeti.absolutelyContinuous_of_forall_singleton_ne_zero`: a measure positive on every
@@ -34,6 +37,8 @@ transfers approximation properties, such as regularity, from `μ` to `ν`.
   along `f` `μ`-almost everywhere.
 * `MeasureTheory.Measure.AbsolutelyContinuous.exists_pos_measure_lt_of_measure_lt`: the `ε`–`δ`
   form of absolute continuity of a finite measure.
+* `MeasureTheory.Measure.absolutelyContinuous_self_add`,
+  `MeasureTheory.Measure.absolutelyContinuous_add_self`: `μ ≪ μ + ν` and `ν ≪ μ + ν`.
 
 ## References
 
@@ -69,6 +74,20 @@ theorem ae_comp_of_map_absolutelyContinuous {α β : Type*} [MeasurableSpace α]
     {μ : Measure α} {ν : Measure β} {f : α → β} (hf : AEMeasurable f μ) (hmap : μ.map f ≪ ν)
     {P : β → Prop} (h : ∀ᵐ y ∂ν, P y) : ∀ᵐ x ∂μ, P (f x) :=
   ae_of_ae_map hf (hmap.ae_le h)
+
+namespace Measure
+
+variable {α : Type*} [MeasurableSpace α]
+
+/-- A measure is absolutely continuous with respect to its sum with any other measure. -/
+theorem absolutelyContinuous_self_add (μ ν : Measure α) : μ ≪ μ + ν :=
+  AbsolutelyContinuous.rfl.add_right ν
+
+/-- A measure is absolutely continuous with respect to its sum with any other measure. -/
+theorem absolutelyContinuous_add_self (μ ν : Measure α) : ν ≪ μ + ν :=
+  AbsolutelyContinuous.rfl.add_right' μ
+
+end Measure
 
 end MeasureTheory
 

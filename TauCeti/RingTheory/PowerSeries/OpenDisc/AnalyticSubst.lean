@@ -19,7 +19,8 @@ coefficient of `g` need not vanish. When Mathlib's formal substitution of `g` is
 when its constant coefficient is nilpotent (`PowerSeries.HasSubst`), the two agree.
 
 Restriction to any smaller closed disc identifies this sum with evaluation in the corresponding
-Banach algebra. This gives the local Gauss bounds and compatibility with point evaluation.
+Banach algebra. This gives the local Gauss bounds and compatibility with point evaluation and
+with radius restriction of the source and target discs.
 
 ## References
 
@@ -303,5 +304,32 @@ theorem analyticSubst_self [NormOneClass R] (f : OnOpenDisc.subring R S₀) :
     (fun s ↦ by simpa only [norm_restrict_X] using s.property.2)
     (AlgHom.id R _) continuous_id rfl
   exact (AlgHom.congr_fun heq f).symm
+
+/-- Restricting the target radius after analytic substitution substitutes the restricted inner
+series. -/
+theorem radiusHom_analyticSubst (hTS : T₀ ≤ S₀) (f : OnOpenDisc.subring R R₀) :
+    radiusHom hTS (analyticSubst g hg f) =
+      analyticSubst (radiusHom hTS g)
+        (fun t ↦ by
+          simpa only [restrict_radiusHom] using hg ⟨t, t.property.1, t.property.2.trans_le hTS⟩)
+        f := by
+  have heq := eq_analyticSubst (radiusHom hTS g)
+    (fun t ↦ by
+        simpa only [restrict_radiusHom] using hg ⟨t, t.property.1, t.property.2.trans_le hTS⟩)
+    ((radiusAlgHom R hTS).comp (analyticSubst g hg))
+    (((continuous_radiusHom hTS).congr fun f ↦ (radiusAlgHom_apply R hTS f).symm).comp
+      (continuous_analyticSubst g hg)) (by simp)
+  simpa only [AlgHom.comp_apply, radiusAlgHom_apply] using AlgHom.congr_fun heq f
+
+omit [Fact (0 < T₀)] in
+/-- Analytic substitution commutes with restricting the source radius when the inner series takes
+values inside the smaller source disc. -/
+theorem analyticSubst_radiusHom {R₁ : ℝ} (hR : R₀ ≤ R₁)
+    (hg' : ∀ s : Set.Ioo (0 : ℝ) S₀, ‖restrict s g‖ < R₁) (f : OnOpenDisc.subring R R₁) :
+    analyticSubst g hg (radiusHom hR f) = analyticSubst g hg' f := by
+  have heq := eq_analyticSubst g hg' ((analyticSubst g hg).comp (radiusAlgHom R hR))
+    ((continuous_analyticSubst g hg).comp
+      ((continuous_radiusHom hR).congr fun f ↦ (radiusAlgHom_apply R hR f).symm)) (by simp)
+  simpa only [AlgHom.comp_apply, radiusAlgHom_apply] using AlgHom.congr_fun heq f
 
 end TauCeti.PowerSeries.OnOpenDisc

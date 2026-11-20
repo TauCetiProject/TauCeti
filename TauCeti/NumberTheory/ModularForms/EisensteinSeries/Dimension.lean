@@ -71,6 +71,34 @@ namespace TauCeti.EisensteinSeries
 
 variable {N k : ℕ} [NeZero N]
 
+/-- At level `4` the Eisenstein subspace of `M_k(Γ₁(4))` has dimension at most the number of
+Eisenstein indices. The constant terms are read at the cusp representatives `∞`, `0` and `1/2`;
+in odd weight the irregular cusp `1/2` carries no constant term. -/
+private theorem finrank_congruenceEisensteinSubspace_le_card_four (hk : 3 ≤ (k : ℤ)) :
+    Module.finrank ℂ (congruenceEisensteinSubspace (Gamma_le_Gamma1 4) hk) ≤
+      Nat.card (CharIndex 4 k) := by
+  have hV := disjoint_congruenceEisensteinSubspace_cuspFormSubmodule (Gamma_le_Gamma1 4) hk
+  have hvanish {γ m : SL(2, ℤ)} (hm : γ * m * γ⁻¹ ∈ Gamma1 4) (hm₁₀ : m 1 0 = 0)
+      (hm₀₀ : m 0 0 = -1) (hodd : Odd k) (f : ModularForm ((Gamma1 4).map (mapGL ℝ)) k) :
+      ModularForm.constantTermAt γ f = 0 :=
+    ModularForm.constantTermAt_eq_zero_of_odd (Subgroup.mem_map_of_mem _ hm) hm₁₀ hm₀₀
+      (by exact_mod_cast hodd) f
+  rw [CharIndex.card_four]
+  split_ifs with hk₂
+  · -- The cusp `1/2 = α • ∞` is the third representative.
+    let α : SL(2, ℤ) := ⟨!![1, 0; 2, 1], by norm_num [Matrix.det_fin_two_of]⟩
+    have hα : ((α 1 0 : ℤ) : ZMod 4) = 2 := rfl
+    simpa using ModularForm.finrank_le_natCard_of_disjoint (Gamma1 4) k ![1, ModularGroup.S, α]
+      (fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_four γ).elim (fun h ↦ .inl ⟨0, h⟩) fun h ↦
+        h.elim (fun h ↦ .inl ⟨1, h⟩)
+          fun h ↦ .inl ⟨2, cuspOrbitOfSL2Z_Gamma1_four_eq_of_intCast_eq_two hα h⟩) hV
+  · -- In odd weight the irregular cusp `1/2` carries no constant term.
+    simpa using ModularForm.finrank_le_natCard_of_disjoint (Gamma1 4) k ![1, ModularGroup.S]
+      (fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_four γ).elim (fun h ↦ .inl ⟨0, h⟩) fun h ↦
+        h.elim (fun h ↦ .inl ⟨1, h⟩) fun h ↦ .inr (hvanish
+          (mul_neg_T_mul_inv_mem_Gamma1_four h) (by simp [ModularGroup.coe_T])
+          (by simp [ModularGroup.coe_T]) (Nat.not_even_iff_odd.mp hk₂))) hV
+
 /-- The Eisenstein subspace of `M_k(Γ₁(N))` has dimension at most the number of Eisenstein
 indices. Away from the levels `1`, `2` and `4` the indices are as many as the cusps. At those
 levels the constant terms are read at explicit cusp representatives. In odd weight every form
@@ -82,11 +110,6 @@ private theorem finrank_congruenceEisensteinSubspace_le_card (hk : 3 ≤ (k : �
   by_cases hN : 2 < N ∧ N ≠ 4
   · rw [CharIndex.card_eq_card_cuspOrbit_Gamma1 hN.1 hN.2]
     exact ModularForm.finrank_le_card_cuspOrbit_of_disjoint (Gamma1 N) k hV
-  have hvanish {γ m : SL(2, ℤ)} (hm : γ * m * γ⁻¹ ∈ Gamma1 N) (hm₁₀ : m 1 0 = 0)
-      (hm₀₀ : m 0 0 = -1) (hodd : Odd k) (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
-      ModularForm.constantTermAt γ f = 0 :=
-    ModularForm.constantTermAt_eq_zero_of_odd (Subgroup.mem_map_of_mem _ hm) hm₁₀ hm₀₀
-      (by exact_mod_cast hodd) f
   -- In odd weight at the levels `1` and `2`, `-1 ∈ Γ₁(N)` kills every form.
   have hneg (hN2 : N ∣ 2) (hodd : Odd k) :
       Module.finrank ℂ (congruenceEisensteinSubspace (Gamma_le_Gamma1 N) hk) ≤ 0 := by
@@ -104,21 +127,7 @@ private theorem finrank_congruenceEisensteinSubspace_le_card (hk : 3 ≤ (k : �
         (fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_two γ).elim (fun h ↦ .inl ⟨0, h⟩)
           (fun h ↦ .inl ⟨1, h⟩)) hV
     · exact hneg dvd_rfl (Nat.not_even_iff_odd.mp hk₂)
-  · rw [CharIndex.card_four]
-    split_ifs with hk₂
-    · -- The cusp `1/2 = α • ∞` is the third representative.
-      let α : SL(2, ℤ) := ⟨!![1, 0; 2, 1], by norm_num [Matrix.det_fin_two_of]⟩
-      have hα : ((α 1 0 : ℤ) : ZMod 4) = 2 := rfl
-      simpa using ModularForm.finrank_le_natCard_of_disjoint (Gamma1 4) k ![1, ModularGroup.S, α]
-        (fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_four γ).elim (fun h ↦ .inl ⟨0, h⟩) fun h ↦
-          h.elim (fun h ↦ .inl ⟨1, h⟩)
-            fun h ↦ .inl ⟨2, cuspOrbitOfSL2Z_Gamma1_four_eq_of_intCast_eq_two hα h⟩) hV
-    · -- In odd weight the irregular cusp `1/2` carries no constant term.
-      simpa using ModularForm.finrank_le_natCard_of_disjoint (Gamma1 4) k ![1, ModularGroup.S]
-        (fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_four γ).elim (fun h ↦ .inl ⟨0, h⟩) fun h ↦
-          h.elim (fun h ↦ .inl ⟨1, h⟩) fun h ↦ .inr (hvanish
-            (mul_neg_T_mul_inv_mem_Gamma1_four h) (by simp [ModularGroup.coe_T])
-            (by simp [ModularGroup.coe_T]) (Nat.not_even_iff_odd.mp hk₂))) hV
+  · exact finrank_congruenceEisensteinSubspace_le_card_four hk
 
 /-- **The Eisenstein series with character span the Eisenstein space** (Diamond–Shurman,
 Theorem 4.5.2): in weight `k ≥ 3`, the normalized raised series `E_k^(ψ, φ, t)` span the

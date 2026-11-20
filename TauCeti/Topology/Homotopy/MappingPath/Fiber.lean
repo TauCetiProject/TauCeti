@@ -85,6 +85,30 @@ theorem endpointHomeomorph_symm_val
     (p : {p : MappingPathSpace f // MappingPathSpace.endpoint f p = k}) :
     ((endpointHomeomorph f k).symm p).val = p.val.val := (rfl)
 
+/-- Include the ordinary fibre over `k` into the mapping-path fibre by constant paths. -/
+def ofFiber : C(f ⁻¹' {k}, MappingPathFiber f k) :=
+  ⟨fun b ↦ ⟨(b.val, ContinuousMap.const I k), b.property.symm, rfl⟩,
+    (continuous_subtypeVal.prodMk continuous_const).subtype_mk _⟩
+
+@[simp]
+theorem ofFiber_val (b : f ⁻¹' {k}) :
+    (ofFiber f k b).val = (b.val, ContinuousMap.const I k) := (rfl)
+
+@[simp]
+theorem proj_comp_ofFiber :
+    (proj f k).comp (ofFiber f k) = ⟨Subtype.val, continuous_subtypeVal⟩ := by
+  ext
+  rfl
+
+@[simp]
+theorem endpointHomeomorph_ofFiber_val (b : f ⁻¹' {k}) :
+    (endpointHomeomorph f k (ofFiber f k b)).val = MappingPathSpace.incl f b.val := by
+  apply Subtype.ext
+  rw [endpointHomeomorph_val, ofFiber_val, MappingPathSpace.incl_val]
+  refine Prod.ext rfl ?_
+  ext _
+  exact b.property.symm
+
 /-- `MappingPathFiber f k` is the base change along `f` of the fixed-end path fibration
 `proj (ContinuousMap.id K) k`. -/
 def pullbackHomeomorph :

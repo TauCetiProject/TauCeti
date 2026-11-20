@@ -78,6 +78,7 @@ also invariant under homotopies whose endpoints stay invertible
 
 ## Main results
 
+* `TauCeti.isSpectralCutOn_of_norm_lt`: a bound above the norms is a spectral cut.
 * `TauCeti.IsSpectralCutOn.spectralCount_sub_spectralCount_eq`: the local count does not depend on
   the cut.
 * `TauCeti.exists_isSpectralFlowPotential`, `TauCeti.IsSpectralFlowPotential.sub_eq_sub`: existence
@@ -139,6 +140,23 @@ theorem isSpectralCutOn_iff : IsSpectralCutOn A c s ↔ 0 < c ∧ ∀ u ∈ s,
     -c ∉ spectrum ℝ (A u) ∧ c ∉ spectrum ℝ (A u) ∧
       FiniteDimensional 𝕜 (cfc ((Icc (-c) c).indicator (1 : ℝ → ℝ)) (A u)).range :=
   Iff.rfl
+
+/-- A positive `c` strictly above the norms of `A` on `s` is a spectral cut on `s`, provided the
+spectral projections for `[-c, c]` have finite rank: then `±c` lie outside every spectrum. -/
+theorem isSpectralCutOn_of_norm_lt (hc : 0 < c) (h : ∀ u ∈ s, ‖A u‖ < c)
+    (hfin : ∀ u ∈ s,
+      FiniteDimensional 𝕜 (cfc ((Icc (-c) c).indicator (1 : ℝ → ℝ)) (A u)).range) :
+    IsSpectralCutOn A c s := by
+  have hnotMem {u : α} {r : ℝ} (hu : u ∈ s) (hr : c = |r|) : r ∉ spectrum ℝ (A u) := by
+    intro hr'
+    rcases subsingleton_or_nontrivial H with _ | _
+    · rw [spectrum.of_subsingleton] at hr'
+      exact hr'
+    · have := spectrum.norm_le_norm_of_mem hr'
+      rw [Real.norm_eq_abs] at this
+      linarith [h u hu]
+  exact ⟨hc, fun u hu ↦ ⟨hnotMem hu (by rw [abs_neg, abs_of_pos hc]),
+    hnotMem hu (abs_of_pos hc).symm, hfin u hu⟩⟩
 
 /-- A spectral cut is positive. -/
 theorem IsSpectralCutOn.pos (h : IsSpectralCutOn A c s) : 0 < c := h.1

@@ -40,6 +40,8 @@ bound. The converse bound for bipartite multigraphs is Kőnig's edge-colouring t
   graph.
 * `Graph.Iso.lineGraph`: isomorphic multigraphs have isomorphic line graphs.
 * `Graph.lineGraphOfSimpleGraphIso`: the line graph of `Graph.ofSimpleGraph H` is `H.lineGraph`.
+* `SimpleGraph.edgeColoringEquivOfSimpleGraph`: colourings of `H.lineGraph` are proper
+  edge-colourings of `Graph.ofSimpleGraph H`.
 * `Graph.EdgeColoring G C`: proper edge-colourings of `G` by `C`, with the constructor
   `Graph.EdgeColoring.mk` and the restriction `Graph.EdgeColoring.ofLE` to subgraphs, such as
   `G.deleteEdges F`.
@@ -296,3 +298,9 @@ theorem chromaticNumber_lineGraph_banana (u v : α) (F : Set β) :
     edgeSet_banana]
 
 end Graph
+
+namespace SimpleGraph
+
+variable {α : Type u} {C : Type w}
+
+end SimpleGraph

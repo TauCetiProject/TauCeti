@@ -861,6 +861,18 @@ end Coboundary
 
 /-! ### Pullback of cochains -/
 
+/-- Each Hochschild coface commutes with pulling cochains back along a nonunital algebra
+homomorphism. -/
+theorem hochschildCoface_compLinearMap {R A B M : Type*} [Semiring R] [NonUnitalNonAssocSemiring A]
+    [Module R A] [IsScalarTower R A A] [SMulCommClass R A A] [NonUnitalNonAssocSemiring B]
+    [Module R B] [IsScalarTower R B B] [SMulCommClass R B B] [AddCommMonoid M] [Module R M]
+    [SMulCommClass R R M] {n : ℕ} (f : A →ₙₐ[R] B) (i : Fin (n + 2))
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ B) M) :
+    hochschildCoface R A M i (φ.compLinearMap fun _ ↦ (f : A →ₗ[R] B)) =
+      (hochschildCoface R B M i φ).compLinearMap fun _ ↦ (f : A →ₗ[R] B) := by
+  ext a; simp only [hochschildCoface_apply, MultilinearMap.compLinearMap_apply]
+  exact congrArg φ (comp_hochschildFace f i a)
+
 section Pullback
 
 variable {R A B C M : Type*} [Semiring R] [AddCommGroup M] [Module R M] [SMulCommClass R R M]

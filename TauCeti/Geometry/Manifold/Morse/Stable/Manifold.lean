@@ -110,6 +110,32 @@ theorem card_fin_manifoldMorseIndex_eq_finrank :
       Module.finrank ℝ ({i // φ.weight i < 0} → ℝ) := by
   rw [Fintype.card_fin, φ.finrank_negativeWeight_fun]
 
+/-- The product of `ℝ` with the coordinates of negative weight has dimension one more than the
+Morse index. -/
+theorem finrank_prod_negativeWeight_fun :
+    Module.finrank ℝ (ℝ × ({i // φ.weight i < 0} → ℝ)) = 1 + manifoldMorseIndex 𝓘(ℝ, E) f x := by
+  rw [Module.finrank_prod, Module.finrank_self, φ.finrank_negativeWeight_fun]
+
+/-- A Morse chart at a critical point of index `n - 1` has exactly one coordinate of positive
+weight. -/
+theorem exists_weight_eq_one_of_add_one_eq_finrank
+    (hx : manifoldMorseIndex 𝓘(ℝ, E) f x + 1 = Module.finrank ℝ E) :
+    ∃ j, φ.weight j = 1 ∧ ∀ i, i ≠ j → φ.weight i < 0 := by
+  classical
+  set s := Finset.univ.filter fun i ↦ φ.weight i < 0
+  have hs : s.card = manifoldMorseIndex 𝓘(ℝ, E) f x := by
+    rw [← φ.ncard_weight_neg, Set.ncard_eq_toFinset_card', Set.toFinset_ofPred]
+  obtain ⟨j, hj⟩ := Finset.card_eq_one.1 (show sᶜ.card = 1 by
+    rw [Finset.card_compl, Fintype.card_fin]
+    omega)
+  have hmem (i : Fin (Module.finrank ℝ E)) : i ∈ sᶜ ↔ i = j := by rw [hj, Finset.mem_singleton]
+  refine ⟨j, ?_, fun i hi ↦ ?_⟩
+  · have h := (hmem j).2 rfl
+    simp only [s, Finset.mem_compl, Finset.mem_filter, Finset.mem_univ, true_and] at h
+    exact (φ.weight_eq_neg_one_or_eq_one j).resolve_left fun h' ↦ h (by rw [h']; norm_num)
+  · by_contra h
+    exact hi ((hmem i).1 (by simpa [s] using h))
+
 /-- The vector of the model whose coordinates in the Morse chart `φ` are `c` in the directions of
 negative weight and `0` in the directions of positive weight. -/
 noncomputable def negativeExtend : ({i // φ.weight i < 0} → ℝ) →ₗ[ℝ] E :=

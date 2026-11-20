@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Biproduct
+public import Mathlib.CategoryTheory.IsomorphismClasses
 public import Mathlib.Topology.VectorBundle.Constructions
+import TauCeti.Topology.FiberBundle.Pullback
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Pullback of point-indexed finite-rank bundle cores
@@ -18,13 +21,15 @@ presenting bundles in the universe of their base.
 
 `FiniteRankBundleCore.pullbackFunctor` pulls back both bundles and continuous linear
 bundle maps, and preserves addition. Identity and composition of base maps give
-strict equalities of functors, not just equality of bundle classes. Pullback is also strictly
-compatible with trivial cores and Whitney sums (`pullback_trivial`, `pullback_whitneySum`) together
+strict equalities of functors, not just equality of bundle classes, and `pullbackRankClass`
+gives the induced contravariant action on isomorphism classes of fixed rank. Pullback is also
+strictly compatible with trivial cores, constant maps, Whitney sums, and actual bundles
+(`pullback_trivial`, `pullback_const`, `pullback_whitneySum`, `pullback_ofBundle`) together
 with the Whitney projections, inclusions, pairings, copairings, and direct sums of maps.
-The reconstructed bundle is identified with Mathlib's actual pullback by `pullbackHomeomorph`,
-which carries each core chart to Mathlib's pulled-back trivialization
-(`pullbackHomeomorph_localTriv`, `pullback_trivializationAt_eq`), and lifts to the original core
-total space via `pullbackLift`.
+The reconstructed bundle is identified with Mathlib's actual pullback by `pullbackHomeomorph`
+(and for `ofBundle` by `pullbackOfBundleHomeomorph`), which carries each core chart to
+Mathlib's pulled-back trivialization (`pullbackHomeomorph_localTriv`,
+`pullback_trivializationAt_eq`), and lifts to the original core total space via `pullbackLift`.
 
 The construction uses Mathlib's vector-bundle cores and native pullback topology,
 and `VectorBundleCore.CoordinateHom` for descent of continuous linear bundle maps.
@@ -77,6 +82,18 @@ def pullback (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) : FiniteRankBundleC
 /-- Pulling back a trivial core gives the trivial core of the same rank. -/
 @[simp] theorem pullback_trivial (f : C(X, Y)) (n : ℕ) :
     (trivial 𝕜 Y n).pullback f = trivial 𝕜 X n := (rfl)
+
+/-- Pulling back any core along a constant map gives the trivial core of the same rank. -/
+@[simp] theorem pullback_const (A : FiniteRankBundleCore 𝕜 Y) (y : Y) :
+    A.pullback (ContinuousMap.const X y) = trivial 𝕜 X A.rank := by
+  have hbase : (fun _ : X ↦ (ContinuousMap.const X y) ⁻¹' A.core.baseSet y) = fun _ ↦ Set.univ :=
+    funext fun _ ↦ Set.eq_univ_of_forall fun _ ↦ by
+      simpa only [Set.mem_preimage, ContinuousMap.const_apply, A.indexAt_eq] using
+        A.core.mem_baseSet_at y
+  have hcoord : (fun (_ _ _ : X) ↦ A.core.coordChange y y y) =
+      fun _ _ _ ↦ ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) :=
+    funext fun _ ↦ funext fun _ ↦ funext fun _ ↦ A.coordChange_self y
+  dsimp only [pullback, trivial, ContinuousMap.const_apply]; congr
 
 /-- Pulling back commutes strictly with Whitney sums. -/
 @[simp] theorem pullback_whitneySum (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
@@ -463,4 +480,82 @@ pulled-back Whitney sum. -/
 
 end WhitneySum
 
+section OfBundle
+variable {n : ℕ} (E : Y → Type*) [∀ y, AddCommMonoid (E y)] [∀ y, Module 𝕜 (E y)]
+  [∀ y, TopologicalSpace (E y)] [TopologicalSpace (TotalSpace (Fin n → 𝕜) E)]
+  [FiberBundle (Fin n → 𝕜) E] [VectorBundle 𝕜 (Fin n → 𝕜) E] (f : C(X, Y))
+/-- Pulling back `ofBundle 𝕜 n E` along `f` agrees strictly with `ofBundle 𝕜 n ((⇑f) *ᵖ E)`. -/
+@[simp] theorem pullback_ofBundle :
+    (ofBundle 𝕜 n E).pullback f = ofBundle 𝕜 n ((⇑f) *ᵖ E) := by
+  have htriv (k : X) : trivializationAt (Fin n → 𝕜) ((⇑f) *ᵖ E) k =
+      (trivializationAt (Fin n → 𝕜) E (f k)).pullback f :=
+    FiberBundle.pullback_trivializationAt' (F := Fin n → 𝕜) (E := E) f k
+  dsimp only [pullback, ofBundle]; congr
+  · funext x; rw [VectorBundleCore.baseSet_at, VectorBundleCore.baseSet_at,
+      pointIndexedCore_localTriv_baseSet, pointIndexedCore_localTriv_baseSet,
+      htriv x, Trivialization.pullback_baseSet]
+  · funext x; exact (pointIndexedCore_indexAt 𝕜 (Fin n → 𝕜) ((⇑f) *ᵖ E) x).symm
+  · funext i j x; rw [pointIndexedCore_coordChange, pointIndexedCore_coordChange]; simp only [htriv]
+    set eᵢ := trivializationAt (Fin n → 𝕜) E (f i); set eⱼ := trivializationAt (Fin n → 𝕜) E (f j)
+    by_cases hx : x ∈ (eᵢ.pullback f).baseSet ∩ (eⱼ.pullback f).baseSet
+    · have hfx : f x ∈ eᵢ.baseSet ∩ eⱼ.baseSet := hx
+      refine ContinuousLinearMap.ext fun v ↦ ?_; simp only [ContinuousLinearEquiv.coe_coe]
+      rw [Trivialization.coordChangeL_apply' eᵢ eⱼ hfx,
+        Trivialization.coordChangeL_apply' (eᵢ.pullback f) (eⱼ.pullback f) hx]
+      exact (eᵢ.coordChange_pullback eⱼ f hfx.1 v).symm
+    · have hfx : f x ∉ eᵢ.baseSet ∩ eⱼ.baseSet := hx
+      rw [eᵢ.coordChangeL_of_notMem 𝕜 eⱼ hfx,
+        (eᵢ.pullback f).coordChangeL_of_notMem 𝕜 (eⱼ.pullback f) hx]
+
+/-- Reconstruction of `(ofBundle 𝕜 n E).pullback f` is homeomorphic to Mathlib's pullback bundle
+`TotalSpace (Fin n → 𝕜) ((⇑f) *ᵖ E)`, acting via `pointIndexedCoreFiberEquiv` at `f x`. -/
+noncomputable def pullbackOfBundleHomeomorph :
+    ((ofBundle 𝕜 n E).pullback f).core.TotalSpace ≃ₜ TotalSpace (Fin n → 𝕜) ((⇑f) *ᵖ E) where
+  toFun p := ⟨p.proj, pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) E (f p.proj) p.snd⟩
+  invFun p := ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) E (f p.proj)).symm p.snd⟩
+  left_inv := fun ⟨x, v⟩ ↦ congrArg (TotalSpace.mk x)
+    ((pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) E (f x)).symm_apply_apply v)
+  right_inv := fun ⟨x, v⟩ ↦ congrArg (TotalSpace.mk x)
+    ((pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) E (f x)).apply_symm_apply v)
+  continuous_toFun := by
+    rw [(inducing_pullbackTotalSpaceEmbedding (Fin n → 𝕜) E f).continuous_iff]
+    exact ((ofBundle 𝕜 n E).pullback f).core.continuous_proj.prodMk
+      (((pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) E).continuous.comp
+        (continuous_pullbackLift (ofBundle 𝕜 n E) f)).congr fun ⟨x, v⟩ ↦
+          pointIndexedCoreHomeomorph_apply 𝕜 (Fin n → 𝕜) E ⟨f x, v⟩)
+  continuous_invFun := (continuous_core_pullback_iff (ofBundle 𝕜 n E) f).2
+    ⟨Pullback.continuous_proj (Fin n → 𝕜) E f,
+      (((pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) E).symm.continuous.comp
+        (Pullback.continuous_lift (Fin n → 𝕜) E f)).congr fun ⟨x, v⟩ ↦
+          pointIndexedCoreHomeomorph_symm_apply 𝕜 (Fin n → 𝕜) E ⟨f x, v⟩)⟩
+@[simp] theorem pullbackOfBundleHomeomorph_apply
+    (p : ((ofBundle 𝕜 n E).pullback f).core.TotalSpace) :
+    pullbackOfBundleHomeomorph E f p =
+      ⟨p.proj, pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) E (f p.proj) p.snd⟩ := (rfl)
+@[simp] theorem pullbackOfBundleHomeomorph_symm_apply
+    (p : TotalSpace (Fin n → 𝕜) ((⇑f) *ᵖ E)) :
+    (pullbackOfBundleHomeomorph E f).symm p =
+      ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) E (f p.proj)).symm p.snd⟩ := (rfl)
+end OfBundle
+
+/-- Pullback of isomorphism classes of rank-`n` vector-bundle cores along `f : C(X, Y)`. -/
+def pullbackRankClass (f : C(X, Y)) (n : ℕ) :
+    Quotient ((CategoryTheory.isIsomorphicSetoid (FiniteRankBundleCore 𝕜 Y)).comap
+        (Subtype.val : {A : FiniteRankBundleCore 𝕜 Y // A.rank = n} → _)) →
+      Quotient ((CategoryTheory.isIsomorphicSetoid (FiniteRankBundleCore 𝕜 X)).comap
+        (Subtype.val : {A : FiniteRankBundleCore 𝕜 X // A.rank = n} → _)) :=
+  Quotient.map (fun A ↦ ⟨A.val.pullback f, A.property⟩) fun _ _ ⟨α⟩ ↦ ⟨(pullbackFunctor f).mapIso α⟩
+@[simp] theorem pullbackRankClass_mk (f : C(X, Y)) (n : ℕ)
+    (A : {A : FiniteRankBundleCore 𝕜 Y // A.rank = n}) :
+    pullbackRankClass f n (Quotient.mk _ A) = Quotient.mk _ ⟨A.val.pullback f, A.property⟩ := (rfl)
+@[simp] theorem pullbackRankClass_id (n : ℕ)
+    (c : Quotient ((CategoryTheory.isIsomorphicSetoid (FiniteRankBundleCore 𝕜 Y)).comap
+      (Subtype.val : {A : FiniteRankBundleCore 𝕜 Y // A.rank = n} → _))) :
+    pullbackRankClass (ContinuousMap.id Y) n c = c :=
+  Quotient.inductionOn c fun A ↦ congrArg (Quotient.mk _) (Subtype.ext (pullback_id A.val))
+@[simp] theorem pullbackRankClass_comp (f : C(X, Y)) (g : C(Y, Z)) (n : ℕ)
+    (c : Quotient ((CategoryTheory.isIsomorphicSetoid (FiniteRankBundleCore 𝕜 Z)).comap
+      (Subtype.val : {A : FiniteRankBundleCore 𝕜 Z // A.rank = n} → _))) :
+    pullbackRankClass f n (pullbackRankClass g n c) = pullbackRankClass (g.comp f) n c :=
+  Quotient.inductionOn c fun A ↦ congrArg (Quotient.mk _) (Subtype.ext (pullback_comp A.val f g))
 end TauCeti.FiniteRankBundleCore

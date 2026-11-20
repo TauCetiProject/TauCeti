@@ -97,7 +97,7 @@ theorem mem_map_fixedSubgroup_steinberg_iff
   · rintro ⟨x, hx, rfl⟩
     refine ⟨?_, (d.mem_fixedSubgroup_steinberg_iff x).mp hx⟩
     exact GLSymplecticFin.mem_iff.mp
-      ((SpStd.points_eq_GLSymplecticFin (K := d.val.Closure) 1) ▸ x.property)
+      ((SpStd.points_eq_GLSymplecticFin 1 d.val.Closure) ▸ x.property)
   · rintro ⟨hg, h⟩
     have hmem : g ∈ SpStd.points 1 d.val.Closure := by
       rw [SpStd.points_eq_GLSymplecticFin]

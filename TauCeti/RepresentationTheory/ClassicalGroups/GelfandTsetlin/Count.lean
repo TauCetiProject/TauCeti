@@ -163,6 +163,13 @@ def truncateSigmaEquiv (l : Fin (n + 1) → ℤ) :
     (P : {P : GTPattern (n + 1) // P.topRow = l}) :
     (truncateSigmaEquiv l P).2.val = P.val.truncate := by simp [truncateSigmaEquiv]
 
+@[simp] theorem truncateSigmaEquiv_symm_apply_coe (l : Fin (n + 1) → ℤ)
+    (x : Σ m : interlacingFinset l, {Q : GTPattern n // Q.topRow = (m : Fin n → ℤ)}) :
+    ((truncateSigmaEquiv l).symm x).val =
+      x.2.val.extend l (by rw [x.2.property]; exact mem_interlacingFinset.mp x.1.property) :=
+  truncateEquiv_symm_apply_coe l ⟨x.2.val,
+      by rw [x.2.property]; exact mem_interlacingFinset.mp x.1.property⟩
+
 /-- **The branching recursion for the pattern count.**  The Gelfand-Tsetlin patterns with `n + 1`
 rows and top row `l` are counted by the patterns with `n` rows, summed over the sequences
 interlacing `l`.

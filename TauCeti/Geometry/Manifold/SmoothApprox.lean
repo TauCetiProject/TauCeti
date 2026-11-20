@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.Euclidean
 public import Mathlib.Geometry.Manifold.SmoothApprox
 public import Mathlib.Topology.Homotopy.Path
 import TauCeti.Topology.Homotopy.Homotopic.Rel
+import TauCeti.Topology.MetricSpace.ContinuousRadius
 
 /-!
 # Whitney approximation for maps into manifolds
@@ -102,16 +103,9 @@ theorem exists_contMDiff_homotopicRel (e : SmoothEmbedding J 𝓘(ℝ, V) ∞ M 
   have hF : Continuous F := e.contMDiff.continuous.comp f.continuous
   have hFW (x : N) : F x ∈ W := heW (mem_range_self (f x))
   -- A continuous positive radius `ε` such that the `ε x`-ball about `F x` lies in `W`.
-  obtain ⟨ε, hε, hεpos, hεW⟩ : ∃ ε : N → ℝ, Continuous ε ∧ (∀ x, 0 < ε x) ∧
-      ∀ x y, dist y (F x) < ε x → y ∈ W := by
-    rcases (Wᶜ).eq_empty_or_nonempty with h | h
-    · exact ⟨fun _ ↦ 1, continuous_const, fun _ ↦ one_pos, fun _ y _ ↦ by
-        simpa using congrArg (y ∈ ·) h⟩
-    · refine ⟨fun x ↦ infDist (F x) Wᶜ, (continuous_infDist_pt _).comp hF,
-        fun x ↦ (hW.isClosed_compl.notMem_iff_infDist_pos h).1 (not_not_intro (hFW x)),
-        fun x y hy ↦ ?_⟩
-      exact not_not.1 (notMem_of_dist_lt_infDist (dist_comm y (F x) ▸ hy))
-  obtain ⟨G, hGF, hGS, -⟩ := hF.exists_contMDiff_approx_and_eqOn I n hε hεpos hS hU
+  obtain ⟨ε, hε, -, hεpos, hεW⟩ := hW.exists_continuous_forall_dist_lt hF
+  obtain ⟨G, hGF, hGS, -⟩ := hF.exists_contMDiff_approx_and_eqOn I n hε
+    (fun x ↦ hεpos x (hFW x)) hS hU
     (e.contMDiff.of_le (WithTop.coe_le_coe.2 le_top) |>.comp_contMDiffOn hfU)
   -- The segment from `F x` to `G x` stays in `W`.
   let φ : unitInterval × N → V := fun p ↦ F p.2 + (p.1 : ℝ) • (G p.2 - F p.2)

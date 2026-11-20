@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.RootSystem.DynkinType
 import Mathlib.LinearAlgebra.Determinant
 import TauCeti.Data.Fin.DistinctPairs
 import TauCeti.LinearAlgebra.Matrix.Dual
-import TauCeti.LinearAlgebra.Matrix.Gram
+import TauCeti.LinearAlgebra.Matrix.Gram.Basic
 
 /-!
 # The classical integral roots of type `Dₙ`

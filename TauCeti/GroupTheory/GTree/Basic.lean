@@ -131,6 +131,10 @@ theorem smul_ne_rev (g : G) (e : T.E) : g • e ≠ T.rev e :=
 @[simp] theorem dist_smul (g : G) (a b : T.V) : T.dist (g • a) (g • b) = T.dist a b :=
   Aut.dist_smul (T.action g) a b
 
+/-- The underlying graph of a `G`-tree is preconnected. -/
+theorem preconnected : T.Preconnected :=
+  (T.connected_iff.1 (SerreGraph.IsTree.connected _ T.isTree)).2
+
 /-- Any two vertices of a `G`-tree are joined by a path. -/
 theorem nonempty_path (a b : T.V) : Nonempty (T.Path a b) :=
   T.isTree.nonempty_path a b

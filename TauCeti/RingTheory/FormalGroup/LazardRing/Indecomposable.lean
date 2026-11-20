@@ -43,7 +43,8 @@ basis of the indecomposables of a connected graded ring generate it.
 
 ## Main definitions
 
-* `TauCeti.LazardRing.augmentation`: the augmentation `L →+* ℤ`, classifying `X + Y`.
+* `TauCeti.LazardRing.augmentation`: the augmentation `L →+* ℤ`, classifying `X + Y` (showing in
+  particular that `L` has characteristic zero).
 * `TauCeti.LazardRing.augmentationIdeal`: its kernel `I`.
 * `TauCeti.LazardRing.generator n`: the element `xₙ ∈ L₂ₙ`.
 * `TauCeti.LazardRing.cotangentBasis`: the basis `(xₙ mod I²)ₙ` of `Q(L) = I ⧸ I²` over `ℤ`.
@@ -83,6 +84,11 @@ formal group law `X + Y`. It sends every coefficient `aᵢⱼ`, `i, j ≥ 1`, of
 the universal formal group law to `0`. -/
 def augmentation : LazardRing →+* ℤ :=
   lift ⟨FormalGroup.𝔾ₐ, inferInstance⟩
+
+/-- The Lazard ring has characteristic zero, since the augmentation
+`TauCeti.LazardRing.augmentation` splits `ℤ →+* LazardRing`. -/
+instance : CharZero LazardRing :=
+  ⟨fun m n h ↦ Nat.cast_injective (R := ℤ) (by simpa using congrArg augmentation h)⟩
 
 /-- The augmentation sends a coefficient of the universal formal group law to the corresponding
 coefficient of `X + Y`. -/

@@ -29,10 +29,12 @@ torus contributes a diagonal matrix whose entries at a coordinate and at its sym
 inverse characters, because the standard weights come in the pairs `ε_a` and `-ε_a`, and a diagonal
 matrix preserves `J` exactly when each such pair multiplies to one.
 
-Only the group-scheme containment is proved here. On points over a field, the reverse inclusion is
-`TauCeti.SpStd.points_eq_GLSymplecticFin` in `Generation.lean`, which uses the symplectic generation
-theorem. Nothing below claims that the carrier is reductive, that its weight torus is maximal, or
-that the two group schemes agree; nor does it claim that any group in sight is finite or simple.
+Only the group-scheme containment is proved here. The reverse inclusion on defining ideals and
+points over every commutative ring is established in `Symplectic/Basic.lean`
+(`TauCeti.SpStd.definingIdeal_eq_symplecticDefiningHopfIdeal` and
+`TauCeti.SpStd.points_eq_GLSymplecticFin`). Nothing below claims that the carrier is reductive,
+that its weight torus is maximal, or that the two group schemes agree; nor does it claim that any
+group in sight is finite or simple.
 
 ## Main definitions
 

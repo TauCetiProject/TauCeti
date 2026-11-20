@@ -183,6 +183,22 @@ theorem isOrientationPreservingAt_iff_map_eq [IsManifold I 1 M] [IsManifold I' 1
   rw [hmap]
   exact ((trivializationAt E' (TangentSpace I') b).mapOrientation ι hp).injective.eq_iff.symm
 
+/-- Read through a map `g` preserving the orientations `o` and `o'` at `x`, a linear isomorphism
+`F` onto the tangent space at `x` carries an orientation `ov` to that of `M` exactly when its
+composite with the derivative of `g` carries `ov` to that of `M'`. -/
+theorem IsOrientationPreservingAt.exists_map_eq_orientationAt_iff [IsManifold I 1 M]
+    [IsManifold I' 1 M'] {o : Manifold.Orientation I M ι} {o' : Manifold.Orientation I' M' ι}
+    {g : M → M'} {x : M} (hg : IsOrientationPreservingAt o o' g x) {V : Type*} [AddCommGroup V]
+    [Module ℝ V] (F : V ≃ₗ[ℝ] TangentSpace I x) (ov : _root_.Orientation ℝ V ι) :
+    ∃ e : TangentSpace I x ≃L[ℝ] TangentSpace I' (g x),
+      (e : TangentSpace I x →L[ℝ] TangentSpace I' (g x)) = mfderiv I I' g x ∧
+      (_root_.Orientation.map ι F ov = o.orientationAt x ↔
+        _root_.Orientation.map ι (F.trans e.toLinearEquiv) ov = o'.orientationAt (g x)) := by
+  obtain ⟨e, he, hmap⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 hg
+  refine ⟨e, he, ?_⟩
+  rw [_root_.Orientation.map_trans, ← hmap]
+  exact (_root_.Orientation.map ι e.toLinearEquiv).injective.eq_iff.symm
+
 /-- If the derivative at `x` carries a basis `b` of the tangent space at `x` to the basis `b'` of
 the tangent space at `f x`, then `f` preserves orientations at `x` exactly when `b` and `b'` are
 both positively or both negatively oriented. -/

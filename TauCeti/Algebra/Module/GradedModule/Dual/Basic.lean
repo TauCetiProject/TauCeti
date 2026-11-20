@@ -7,6 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import TauCeti.Algebra.Module.GradedModule.Internal
+public import TauCeti.Algebra.Module.GradedModule.Trivial
+public import TauCeti.LinearAlgebra.Graded.LinearMap
 
 /-!
 # Duals of internally graded modules
@@ -36,8 +38,10 @@ The construction follows the graded-dual convention used for DG and `A∞` objec
 
 ## Main results
 
-* `InternalGrading.mem_dualPiece_iff`: a degree-`p` functional vanishes on every original degree
-  other than `-p`.
+* `InternalGrading.mem_dualPiece_iff` and
+  `InternalGrading.mem_dualPiece_iff_isHomogeneous_trivialGrading`: a degree-`p` functional vanishes
+  on every original degree other than `-p`, equivalently is homogeneous of degree `p` into
+  `trivialGrading R R`.
 * `InternalGrading.dualPiece_apply_eq_zero_of_mem_piece_of_add_ne_zero`: evaluation vanishes unless
   the degrees of the functional and vector sum to zero.
 * `InternalGrading.dualPiece_apply_eq_apply_decompose`: a degree-`p` functional sees only the
@@ -86,6 +90,16 @@ theorem mem_dualPiece_iff (G : InternalGrading R M ℤ) (p : ℤ) (φ : Module.D
     φ ∈ G.dualPiece p ↔ ∀ q (x : M), x ∈ G.piece q → q ≠ -p → φ x = 0 := by
   simp only [dualPiece, Submodule.mem_iInf, Submodule.mem_dualAnnihilator]
   aesop
+
+/-- Membership in `InternalGrading.dualPiece q` is equivalent to homogeneity of degree `q` into the
+trivial grading of the base ring. -/
+theorem mem_dualPiece_iff_isHomogeneous_trivialGrading (G : InternalGrading R M ℤ) (q : ℤ)
+    (φ : Module.Dual R M) :
+    φ ∈ G.dualPiece q ↔ LinearMap.IsHomogeneous φ G.piece (trivialGrading R R) q := by
+  rw [G.mem_dualPiece_iff, LinearMap.isHomogeneous_def]
+  refine ⟨fun hφ p x hx => (mem_trivialGrading_iff R R).mpr ?_, fun hφ p x hx hp =>
+    ((mem_trivialGrading_iff R R).mp (hφ p x hx)).resolve_left (by omega)⟩
+  exact if hp : p + q = 0 then Or.inl hp else Or.inr (hφ p x hx (by omega))
 
 /-- A functional in dual degree `p` vanishes on an original homogeneous vector of degree `q`
 unless `p + q = 0`. -/

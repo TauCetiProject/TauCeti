@@ -75,6 +75,10 @@ normality of it is equivalent to freeness of the action of the image.
 
 * `TauCeti.stabilizer_smul_eq_conj_smul`: the stabilizer of a translated point `g • a` is the
   pointwise conjugate `MulAut.conj g • MulAction.stabilizer G a`.
+* `MulAction.conj_smul_stabilizer`: pointwise conjugation of `stabilizer G a` by `g` equals
+  `stabilizer G (g • a)`, with `MulAction.mem_normalizer_stabilizer_iff` and
+  `MulAction.normalizer_stabilizer_eq_self_iff` characterizing the normalizer and self-normalizing
+  property of `stabilizer G a` pointwise along the orbit of `a`.
 * `TauCeti.conj_smul_eq_conj_smul_of_smul_eq`: if the stabilizer of `a` normalizes `T`, then the
   conjugate `g T g⁻¹` depends only on `g • a`.
 * `TauCeti.mem_stabilizer_set_iff_mapsTo`: an element stabilizes a set if and only if it and its
@@ -86,7 +90,9 @@ normality of it is equivalent to freeness of the action of the image.
 * `TauCeti.card_stabilizer_of_orbitRel`: the stabiliser order is an invariant of the orbit,
   with `TauCeti.card_stabilizer_smul` the translate-presented corollary.
 * `TauCeti.cardStabilizerOnOrbit`: that order as a function on the orbit space, with
-  `TauCeti.cardStabilizerOnOrbit_mk` its evaluation lemma.
+  `TauCeti.cardStabilizerOnOrbit_mk` its evaluation lemma, and
+  `TauCeti.cardStabilizerOnOrbit_dvd_card`, `TauCeti.cardStabilizerOnOrbit_le_card`: it divides,
+  and so for a finite group is at most, the order of the group.
 * `TauCeti.natCard_smul_mem_eq_natCard_mul_natCard_stabilizer`: the elements carrying a base point
   into a subset `S` of its orbit number `|S|` times the order of its stabiliser.
 * `TauCeti.card_stabilizer_congr`: the stabiliser order is preserved by a map carrying one action
@@ -235,6 +241,41 @@ theorem smul_eq_smul_iff_inv_mul_mem_stabilizer (x₀ : α) (a b : G) :
     a • x₀ = b • x₀ ↔ a⁻¹ * b ∈ MulAction.stabilizer G x₀ := by
   rw [MulAction.mem_stabilizer_iff, mul_smul, inv_smul_eq_iff, eq_comm]
 
+end TauCeti
+
+namespace MulAction
+
+variable {G α : Type*} [Group G] [MulAction G α]
+
+open scoped Pointwise in
+/-- Pointwise conjugation of a point stabilizer moves the stabilized point by the conjugating
+element. -/
+@[simp]
+theorem conj_smul_stabilizer (g : G) (a : α) :
+    MulAut.conj g • stabilizer G a = stabilizer G (g • a) :=
+  (TauCeti.map_conj_eq_conj_smul g _).symm.trans (stabilizer_smul_eq_stabilizer_map_conj g a).symm
+
+/-- An element `g` normalizes the point stabilizer of `a` if and only if `g • a` and `a` have the
+same stabilizer. -/
+theorem mem_normalizer_stabilizer_iff (a : α) (g : G) :
+    g ∈ Subgroup.normalizer (stabilizer G a : Set G) ↔ stabilizer G (g • a) = stabilizer G a := by
+  rw [Subgroup.mem_normalizer_iff_map_conj_eq, ← MulEquiv.toMonoidHom_eq_coe,
+    ← stabilizer_smul_eq_stabilizer_map_conj]
+
+/-- A point stabilizer `stabilizer G a` is self-normalizing if and only if no translate `g • a`
+distinct from `a` has the same stabilizer as `a`. -/
+theorem normalizer_stabilizer_eq_self_iff (a : α) :
+    Subgroup.normalizer (stabilizer G a : Set G) = stabilizer G a ↔
+      ∀ g : G, stabilizer G (g • a) = stabilizer G a → g • a = a := by
+  rw [le_antisymm_iff, and_iff_left Subgroup.le_normalizer, IsConcreteLE.le_iff]
+  simp only [mem_normalizer_stabilizer_iff, mem_stabilizer_iff]
+
+end MulAction
+
+namespace TauCeti
+
+variable {G α : Type*} [Group G] [MulAction G α]
+
 open scoped Pointwise in
 /-- The stabilizer of a translated point `g • a` is the pointwise conjugate
 `MulAut.conj g • MulAction.stabilizer G a`. -/
@@ -297,6 +338,18 @@ theorem cardStabilizerOnOrbit_mk (a : α) :
       Nat.card (MulAction.stabilizer G a) := by
   unfold cardStabilizerOnOrbit
   rfl
+
+/-- The stabiliser order of an orbit divides the order of the group. -/
+theorem cardStabilizerOnOrbit_dvd_card (q : MulAction.orbitRel.Quotient G α) :
+    cardStabilizerOnOrbit q ∣ Nat.card G := by
+  induction q using Quotient.inductionOn' with | h a => ?_
+  rw [cardStabilizerOnOrbit_mk]
+  exact Subgroup.card_subgroup_dvd_card _
+
+/-- For a finite group, the stabiliser order of an orbit is at most the order of the group. -/
+theorem cardStabilizerOnOrbit_le_card [Finite G] (q : MulAction.orbitRel.Quotient G α) :
+    cardStabilizerOnOrbit q ≤ Nat.card G :=
+  Nat.le_of_dvd Nat.card_pos (cardStabilizerOnOrbit_dvd_card q)
 
 section Congr
 

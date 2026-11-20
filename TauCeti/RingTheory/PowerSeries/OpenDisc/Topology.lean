@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PowerSeries.OpenDisc.Basic
+public import TauCeti.RingTheory.PowerSeries.Entire.Topology
 public import TauCeti.RingTheory.PowerSeries.GaussFamily
 
 /-!
@@ -24,6 +25,7 @@ Convergence may also be tested along any family of radii tending to the boundary
 cofinal sequence yields the same topology. Polynomial truncations converge in this topology,
 and coefficient maps, radius restrictions (`radiusHom`), and inclusions from the boundary
 closed-disc algebra (`ofIsRestricted`) are uniformly continuous; the latter two have dense range.
+The inclusion of entire series is likewise uniformly continuous with dense range.
 These are specializations of the Gauss topology of a family of radii in
 `TauCeti.RingTheory.PowerSeries.GaussFamily`.
 
@@ -323,5 +325,37 @@ theorem denseRange_ofIsRestricted : DenseRange (ofIsRestricted (R := R) (R₀ :=
     (denseRange_polynomialHom (R := R) (R₀ := R₀))
 
 end Radius
+
+section Entire
+
+/-- Restricting an entire series through an open disc to a smaller closed disc agrees with its
+direct restriction from entire series. -/
+@[simp]
+theorem restrict_inclusion_entire (r : Set.Ioo (0 : ℝ) R₀) (f : IsEntire.subring R) :
+    restrict r (Subring.inclusion (IsEntire.subring_le_onOpenDiscSubring R₀) f) =
+      TauCeti.PowerSeries.IsEntire.restrict ⟨r, r.property.1⟩ f :=
+  Subtype.ext (by simp)
+
+/-- The inclusion of entire series into series on any open disc is uniformly continuous. -/
+theorem uniformContinuous_inclusion_entire :
+    UniformContinuous (Subring.inclusion (IsEntire.subring_le_onOpenDiscSubring (R := R) R₀)) := by
+  refine uniformContinuous_iff.mpr fun r ↦ ?_
+  simp_rw [restrict_inclusion_entire]
+  exact TauCeti.PowerSeries.IsEntire.uniformContinuous_restrict ⟨r, r.property.1⟩
+
+/-- The inclusion of entire series into series on any open disc is continuous. -/
+@[continuity]
+theorem continuous_inclusion_entire :
+    Continuous (Subring.inclusion (IsEntire.subring_le_onOpenDiscSubring (R := R) R₀)) :=
+  uniformContinuous_inclusion_entire.continuous
+
+/-- Entire series are dense in series on any open disc. -/
+theorem denseRange_inclusion_entire :
+    DenseRange (Subring.inclusion (IsEntire.subring_le_onOpenDiscSubring (R := R) R₀)) := by
+  refine (denseRange_polynomialHom (R := R) (R₀ := R₀)).mono ?_
+  rintro _ ⟨p, rfl⟩
+  exact ⟨IsEntire.polynomialHom p, Subtype.ext (by simp)⟩
+
+end Entire
 
 end TauCeti.PowerSeries.OnOpenDisc

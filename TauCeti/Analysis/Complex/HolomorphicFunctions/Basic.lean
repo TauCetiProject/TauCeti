@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
+public import Mathlib.Analysis.Complex.RemovableSingularity
 public import Mathlib.Topology.ContinuousMap.Algebra
 
 /-!
@@ -122,6 +123,12 @@ theorem of_extend (f : holomorphicFunctions U) :
   ext z
   simp
 
+/-- Extending `of U g hg` agrees with `g` on `U`. -/
+@[simp]
+theorem extend_of {g : ℂ → ℂ} (hg : DifferentiableOn ℂ g U) {z : ℂ} (hz : z ∈ U) :
+    extend (of U g hg) z = g z := by
+  rw [extend_apply _ ⟨z, hz⟩, of_apply]
+
 /-- Restriction along an inclusion of open domains. -/
 noncomputable def restrict (h : V ≤ U) : holomorphicFunctions U →ₐ[ℂ] holomorphicFunctions V :=
   ((ContinuousMap.compRightAlgHom ℂ ℂ
@@ -140,6 +147,12 @@ theorem restrict_of (h : V ≤ U) (g : ℂ → ℂ) (hg : DifferentiableOn ℂ g
   apply Subtype.ext
   ext z
   simp
+
+/-- Extending a restricted function agrees with the original extension on the smaller domain. -/
+@[simp]
+theorem extend_restrict (h : V ≤ U) (f : holomorphicFunctions U) {z : ℂ} (hz : z ∈ V) :
+    extend (restrict h f) z = extend f z := by
+  rw [extend_apply _ ⟨z, hz⟩, restrict_apply, extend_apply f ⟨z, h hz⟩]
 
 @[simp]
 theorem restrict_refl : restrict (le_refl U) = AlgHom.id ℂ (holomorphicFunctions U) := by

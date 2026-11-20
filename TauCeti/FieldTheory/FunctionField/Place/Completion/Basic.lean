@@ -24,6 +24,10 @@ interval in the completion. In particular, completion does not change the residu
 identifications allow local calculations with finitely many coefficients to pass between the
 field and its completion. No finiteness or perfectness of the residue field is assumed.
 
+The `PlaceCompletionExtension` scope installs the single-place completion algebra structures
+`F → F̂_P`, `𝒪_P → F̂_P`, and `𝒪_P → 𝒪̂_P` together with their `algebraMap` characterizations and
+scalar towers, kept scoped to avoid global `Algebra` instance diamonds.
+
 The underlying complete field and extension of the valuation are Mathlib's
 `Valuation.Completion` and `Valued.valuedCompletion`.
 
@@ -305,5 +309,89 @@ theorem residueFieldEquivCompletion_symm_residue_completionIntegersEmbedding (x 
 theorem degree_completionPlace : P.completionPlace.degree = P.degree := by
   simp only [degree_eq_finrank]
   exact P.residueFieldEquivCompletion.toLinearEquiv.finrank_eq.symm
+
+section ScopedInstances
+
+/-- Scalar multiplication on `WithVal P.valuation` by any `F`-algebra base `S` is uniformly
+continuous. Kept as an explicit theorem rather than a global instance so it cannot compete with
+`TauCeti.Place.instAlgebraCompletion` at `S = k`. -/
+theorem uniformContinuousConstSMul_withVal {S : Type*} [CommSemiring S]
+    [Algebra S F] :
+    UniformContinuousConstSMul S (WithVal P.valuation) := ⟨fun s ↦ by
+  simp_rw [WithVal.smul_right_def, Algebra.smul_def]
+  exact (Ring.uniformContinuousConstSMul (WithVal P.valuation)).uniformContinuous_const_smul _⟩
+
+/-- The `F`-algebra structure on `F̂_P` whose scalar multiplication matches
+`UniformSpace.Completion.instSMul`. Installed in the `PlaceCompletionExtension` scope. Marked
+`@[expose]` so downstream modules retain definitional equality between its `SMul` projection and
+`UniformSpace.Completion.instSMul` in `IsScalarTower` and tensor-product instances. -/
+@[expose, instance_reducible]
+noncomputable def completionAlgebra : Algebra F P.Completion :=
+  haveI := P.uniformContinuousConstSMul_withVal (S := F)
+  UniformSpace.Completion.algebra (WithVal P.valuation) F
+
+/-- The `𝒪_P`-algebra structure on `F̂_P` whose scalar multiplication matches
+`UniformSpace.Completion.instSMul`. Installed in the `PlaceCompletionExtension` scope. Marked
+`@[expose]` so downstream modules retain definitional equality between its `SMul` projection and
+`UniformSpace.Completion.instSMul` in `IsScalarTower` and tensor-product instances. -/
+@[expose, instance_reducible]
+noncomputable def completionIntegersFieldAlgebra : Algebra P.integers P.Completion :=
+  haveI := P.uniformContinuousConstSMul_withVal (S := P.integers)
+  UniformSpace.Completion.algebra (WithVal P.valuation) P.integers
+
+/-- The valuation ring `𝒪_P` acts on its completion `𝒪̂_P` through
+`TauCeti.Place.completionIntegersEmbedding`. Installed in the `PlaceCompletionExtension` scope. -/
+@[instance_reducible]
+noncomputable def completionIntegersAlgebra :
+    Algebra P.integers P.completionPlace.integers :=
+  P.completionIntegersEmbedding.toRingHom.toAlgebra
+
+scoped[PlaceCompletionExtension] attribute [instance]
+  TauCeti.Place.completionAlgebra
+  TauCeti.Place.completionIntegersFieldAlgebra
+  TauCeti.Place.completionIntegersAlgebra
+
+open scoped PlaceCompletionExtension
+
+/-- The scoped `F`-algebra structure on `F̂_P` acts via `TauCeti.Place.completionEmbedding`. -/
+@[simp]
+theorem algebraMap_completion (x : F) :
+    algebraMap F P.Completion x = P.completionEmbedding x := by
+  rw [UniformSpace.Completion.algebraMap_def, WithVal.algebraMap_right_apply,
+    Algebra.algebraMap_self_apply, P.completionEmbedding_apply]
+
+/-- The scoped `𝒪_P`-algebra structure on `F̂_P` acts via `TauCeti.Place.completionEmbedding`. -/
+@[simp]
+theorem algebraMap_completionIntegersFieldAlgebra (r : P.integers) :
+    algebraMap P.integers P.Completion r = P.completionEmbedding r := by
+  rw [UniformSpace.Completion.algebraMap_def, WithVal.algebraMap_right_apply,
+    ValuationSubring.algebraMap_apply, P.completionEmbedding_apply]
+
+/-- The scoped `𝒪_P`-algebra structure on `𝒪̂_P` acts via
+`TauCeti.Place.completionIntegersEmbedding`. -/
+@[simp]
+theorem algebraMap_completionIntegersAlgebra (x : P.integers) :
+    algebraMap P.integers P.completionPlace.integers x = P.completionIntegersEmbedding x :=
+  (rfl)
+
+/-- The scalar tower `𝒪_P → F → F̂_P`. Installed in the `PlaceCompletionExtension` scope. -/
+theorem completionIntegersFieldIsScalarTower :
+    IsScalarTower P.integers F P.Completion :=
+  IsScalarTower.of_algebraMap_eq fun r ↦ by
+    rw [algebraMap_completionIntegersFieldAlgebra, algebraMap_completion,
+      ValuationSubring.algebraMap_apply]
+
+/-- The scalar tower `𝒪_P → 𝒪̂_P → F̂_P`. Installed in the `PlaceCompletionExtension` scope. -/
+theorem completionIntegersIsScalarTower :
+    IsScalarTower P.integers P.completionPlace.integers P.Completion :=
+  IsScalarTower.of_algebraMap_eq fun r ↦ by
+    rw [algebraMap_completionIntegersFieldAlgebra, ValuationSubring.algebraMap_apply,
+      algebraMap_completionIntegersAlgebra, P.completionIntegersEmbedding_apply]
+
+scoped[PlaceCompletionExtension] attribute [instance]
+  TauCeti.Place.completionIntegersFieldIsScalarTower
+  TauCeti.Place.completionIntegersIsScalarTower
+
+end ScopedInstances
 
 end TauCeti.Place

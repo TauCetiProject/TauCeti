@@ -72,6 +72,11 @@ linear maps used by the semigroup development.
   the adjoint `A†` when the conjugate shifts `c - A` and `conj c - B` are surjective;
   `IsFormalAdjoint.adjoint_eq_neg_of_surjective_sub_add` is the skew-symmetric case `B = -A`,
   `c = 1`.
+* `LinearPMap.IsFormalAdjoint.isSelfAdjoint_of_surjective_smul_sub` and
+  `LinearPMap.IsFormalAdjoint.dense_domain_of_surjective_smul_sub` (and the `A + c • I` forms
+  `isSelfAdjoint_of_surjective_add_smul`, `dense_domain_of_surjective_add_smul`): the symmetric
+  real-shift case `B = A`, `im c = 0`, where surjectivity of a single real shift makes `A`
+  self-adjoint and densely defined.
 
 ## References
 
@@ -471,6 +476,44 @@ theorem IsFormalAdjoint.adjoint_eq_neg_of_surjective_sub_add [CompleteSpace E] {
       obtain ⟨x, hx⟩ := hadd t
       exact ⟨⟨x, by rw [neg_domain]; exact x.property⟩, by simpa only [map_one, one_smul, neg_apply,
         sub_neg_eq_add, Subtype.coe_eta] using hx⟩
+
+/-! ## Real-shift self-adjointness criterion -/
+
+/-- **Real-shift self-adjointness criterion.** A formally self-adjoint partial linear map on a
+Hilbert space whose real shift `x ↦ c • x - A x` (`im c = 0`) is surjective is self-adjoint:
+this is `adjoint_eq_of_smul_sub_surjective` at `B = A` using `conj c = c`. -/
+theorem IsFormalAdjoint.isSelfAdjoint_of_surjective_smul_sub [CompleteSpace E] {A : E →ₗ.[𝕜] E}
+    (hA : A.IsFormalAdjoint A) {c : 𝕜} (hc : RCLike.im c = 0)
+    (hsurj : Function.Surjective fun x : A.domain => c • (x : E) - A x) :
+    IsSelfAdjoint A :=
+  isSelfAdjoint_def.mpr <|
+    hA.adjoint_eq_of_smul_sub_surjective hsurj (by simpa only [RCLike.conj_eq_iff_im.mpr hc])
+
+/-- **Surjectivity of a real shift implies dense domain.** If `A` is formally self-adjoint and
+`x ↦ c • x - A x` is surjective for a scalar `c` with `im c = 0`, then `A` is densely defined. -/
+theorem IsFormalAdjoint.dense_domain_of_surjective_smul_sub [CompleteSpace E] {A : E →ₗ.[𝕜] E}
+    (hA : A.IsFormalAdjoint A) {c : 𝕜} (hc : RCLike.im c = 0)
+    (hsurj : Function.Surjective fun x : A.domain => c • (x : E) - A x) :
+    Dense (A.domain : Set E) :=
+  (hA.isSelfAdjoint_of_surjective_smul_sub hc hsurj).dense_domain
+
+/-- **Real-shift self-adjointness criterion (`A + c • I` form).** A formally self-adjoint partial
+linear map on a Hilbert space for which `x ↦ A x + c • x` is surjective for a scalar `c` with
+`im c = 0` is self-adjoint. -/
+theorem IsFormalAdjoint.isSelfAdjoint_of_surjective_add_smul [CompleteSpace E] {A : E →ₗ.[𝕜] E}
+    (hA : A.IsFormalAdjoint A) {c : 𝕜} (hc : RCLike.im c = 0)
+    (hsurj : Function.Surjective fun x : A.domain => A x + c • (x : E)) :
+    IsSelfAdjoint A :=
+  hA.isSelfAdjoint_of_surjective_smul_sub (c := -c) (by simpa using hc)
+    ((A.surjective_neg_smul_sub_iff_surjective_add_smul c).mpr hsurj)
+
+/-- Surjectivity of `x ↦ A x + c • x` (`im c = 0`) for a formally self-adjoint partial linear map
+on a Hilbert space implies that its domain is dense. -/
+theorem IsFormalAdjoint.dense_domain_of_surjective_add_smul [CompleteSpace E] {A : E →ₗ.[𝕜] E}
+    (hA : A.IsFormalAdjoint A) {c : 𝕜} (hc : RCLike.im c = 0)
+    (hsurj : Function.Surjective fun x : A.domain => A x + c • (x : E)) :
+    Dense (A.domain : Set E) :=
+  (hA.isSelfAdjoint_of_surjective_add_smul hc hsurj).dense_domain
 
 end LinearPMap
 

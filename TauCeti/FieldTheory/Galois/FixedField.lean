@@ -10,6 +10,7 @@ public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
 import Mathlib.FieldTheory.Galois.Infinite
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 
 /-!
 # Fixed fields and fixing subgroups
@@ -95,6 +96,9 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
   automorphisms over a finite cyclic fixed field commute and restrict to powers of its generator
 * `TauCeti.natCard_algEquiv_dvd_finrank`: the automorphism group of a finite extension has order
   dividing the degree, since that order is the degree over the field fixed by all automorphisms
+* `TauCeti.fixedFieldStabilizerSmulEquiv` and `TauCeti.apply_fixedField_stabilizer_out`, with
+  `TauCeti.finrank_fixedField_stabilizer_smul` and `TauCeti.finrank_fixedField_stabilizer_out`:
+  translating a point conjugates its stabilizer, giving isomorphic fixed fields across an orbit
 -/
 
 public section
@@ -668,5 +672,71 @@ theorem natCard_algEquiv_dvd_finrank (F E : Type*) [Field F] [Field E] [Algebra 
     (IntermediateField.finrank_dvd_of_le_left
       (bot_le : (⊥ : IntermediateField F E) ≤
         IntermediateField.fixedField (⊤ : Subgroup (E ≃ₐ[F] E))))
+
+/-- Translating a point `x` by `σ : M ≃ₐ[K] M` conjugates its stabilizer, giving a `K`-algebra
+isomorphism between the fixed fields of the stabilizers of `σ • x` and `x`. -/
+noncomputable def fixedFieldStabilizerSmulEquiv (K : Type*) [Field K] {M X : Type*}
+    [Field M] [Algebra K M] [MulAction (M ≃ₐ[K] M) X] (σ : M ≃ₐ[K] M) (x : X) :
+    IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) (σ • x)) ≃ₐ[K]
+      IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x) :=
+  (IntermediateField.equivOfEq (by
+      rw [MulAction.stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
+        Subgroup.fixedField_map_conj])).trans
+    ((IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)).equivMap σ.toAlgHom).symm
+
+/-- The inverse of `fixedFieldStabilizerSmulEquiv K σ x` acts on elements of `M` as `σ`. -/
+@[simp]
+theorem coe_fixedFieldStabilizerSmulEquiv_symm_apply (K : Type*) [Field K] {M X : Type*}
+    [Field M] [Algebra K M] [MulAction (M ≃ₐ[K] M) X] (σ : M ≃ₐ[K] M) (x : X)
+    (y : IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) :
+    (((fixedFieldStabilizerSmulEquiv K σ x).symm y :
+      IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) (σ • x))) : M) = σ y := by
+  simp [fixedFieldStabilizerSmulEquiv]
+
+/-- `fixedFieldStabilizerSmulEquiv K σ x` acts on elements of `M` as `σ.symm`. -/
+@[simp]
+theorem coe_fixedFieldStabilizerSmulEquiv_apply (K : Type*) [Field K] {M X : Type*}
+    [Field M] [Algebra K M] [MulAction (M ≃ₐ[K] M) X] (σ : M ≃ₐ[K] M) (x : X)
+    (y : IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) (σ • x))) :
+    ((fixedFieldStabilizerSmulEquiv K σ x y :
+      IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) : M) = σ.symm y := by
+  apply σ.injective
+  rw [← coe_fixedFieldStabilizerSmulEquiv_symm_apply K σ x, AlgEquiv.symm_apply_apply,
+    AlgEquiv.apply_symm_apply]
+
+/-- Any `K`-algebra-isomorphism invariant of intermediate fields takes the same value on the fixed
+field of the stabilizer of an orbit's representative `ω.out` and on that of any point in `ω`. -/
+theorem apply_fixedField_stabilizer_out (K : Type*) [Field K] {M X α : Type*}
+    [Field M] [Algebra K M] [MulAction (M ≃ₐ[K] M) X]
+    {f : IntermediateField K M → α}
+    (hf : ∀ {L₁ L₂ : IntermediateField K M}, (L₁ ≃ₐ[K] L₂) → f L₁ = f L₂)
+    {ω : MulAction.orbitRel.Quotient (M ≃ₐ[K] M) X} {x : X}
+    (hx : (Quotient.mk'' x : MulAction.orbitRel.Quotient (M ≃ₐ[K] M) X) = ω) :
+    f (IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) ω.out)) =
+      f (IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) := by
+  obtain ⟨σ, rfl⟩ := MulAction.exists_smul_out_eq hx
+  exact hf (fixedFieldStabilizerSmulEquiv K σ ω.out).symm
+
+/-- Translating a point does not change the degree of its stabilizer's fixed field. -/
+@[simp]
+theorem finrank_fixedField_stabilizer_smul (K : Type*) [Field K] {M X : Type*}
+    [Field M] [Algebra K M] [MulAction (M ≃ₐ[K] M) X] (σ : M ≃ₐ[K] M) (x : X) :
+    Module.finrank K (IntermediateField.fixedField
+      (MulAction.stabilizer (M ≃ₐ[K] M) (σ • x))) =
+        Module.finrank K (IntermediateField.fixedField
+          (MulAction.stabilizer (M ≃ₐ[K] M) x)) :=
+  (fixedFieldStabilizerSmulEquiv K σ x).toLinearEquiv.finrank_eq
+
+/-- The degree of an orbit's representative fixed field can be computed at any point of the
+orbit. -/
+theorem finrank_fixedField_stabilizer_out (K : Type*) [Field K] {M X : Type*}
+    [Field M] [Algebra K M] [MulAction (M ≃ₐ[K] M) X]
+    {ω : MulAction.orbitRel.Quotient (M ≃ₐ[K] M) X} {x : X}
+    (hx : (Quotient.mk'' x : MulAction.orbitRel.Quotient (M ≃ₐ[K] M) X) = ω) :
+    Module.finrank K (IntermediateField.fixedField
+      (MulAction.stabilizer (M ≃ₐ[K] M) ω.out)) =
+        Module.finrank K (IntermediateField.fixedField
+          (MulAction.stabilizer (M ≃ₐ[K] M) x)) :=
+  apply_fixedField_stabilizer_out K (fun e ↦ e.toLinearEquiv.finrank_eq) hx
 
 end TauCeti
