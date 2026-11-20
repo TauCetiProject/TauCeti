@@ -263,6 +263,18 @@ theorem eventually_cocompact_cappedAlmostComplex_eq_base (h₀ : ω.Compatible J
   filter_upwards [(isCompact_truncation (L + 3)).compl_mem_cocompact] with w hw x
   exact cappedAlmostComplex_eq_base_of_notMem_truncation h₀ r hw x
 
+/-- **The structure is `J₀` beyond a radius depending only on a bound for the neck length.** For
+`L ≤ L₀` the capped structure is `J₀` outside the disc of radius `2 exp (2π (L₀ + 3))`, which
+contains the truncation `S_{L + 3}`. -/
+theorem cappedAlmostComplex_eq_base_of_lt_norm (h₀ : ω.Compatible J₀) (r : ℝ) {L₀ : ℝ}
+    (hL : L ≤ L₀) {w : ℂ} (hw : 2 * Real.exp (2 * π * (L₀ + 3)) < ‖w‖) (x : M) :
+    cappedAlmostComplex h₀ J hJ r L w x = J₀ := by
+  refine cappedAlmostComplex_eq_base_of_notMem_truncation h₀ r (fun hmem ↦ ?_) x
+  have h := (truncation_subset_closedBall_sdiff_ball _
+    (truncation_mono (by linarith : L + 3 ≤ L₀ + 3) hmem)).1
+  rw [Metric.mem_closedBall, dist_zero_right] at h
+  linarith
+
 variable {q : Puncture}
 
 /-- **The structure on an end.** If `J q` has period one in `t`, then on the part `±s > 0` of the
