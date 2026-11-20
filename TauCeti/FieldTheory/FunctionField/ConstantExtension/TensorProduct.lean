@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.LinearDisjoint
 public import Mathlib.RingTheory.Localization.BaseChange
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basis
 public import TauCeti.RingTheory.Localization.FractionRing
+import TauCeti.RingTheory.Localization.Defs
 
 /-!
 # A constant field extension as a tensor product
