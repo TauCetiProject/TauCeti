@@ -7,8 +7,10 @@ module
 
 public import TauCeti.MeasureTheory.Function.Lp.BallAverage
 public import Mathlib.MeasureTheory.Function.UnifTight
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 
 import Mathlib.MeasureTheory.Measure.TightNormed
+import TauCeti.MeasureTheory.Function.Lp.Translation
 import TauCeti.Topology.ContinuousMap.Ascoli
 
 /-!
@@ -37,7 +39,11 @@ set, which is the form
 that Rellich--Kondrachov for `W^{1,p}_0(Ω)` consumes: extending by zero makes a function vanish off
 `Ω`, and its translation increments are controlled by `‖h‖ ‖∇u‖_p` through
 `TauCeti.W1p.eLpNorm_value_comp_add_sub_value_le_mul_enorm_gradient`. The corresponding theorem for
-`W^{1,p}(Ω)` additionally needs an extension operator and boundary regularity.
+`W^{1,p}(Ω)` additionally needs an extension operator and boundary regularity. For `C¹`
+functions the translation increments are controlled in the same way by the `Lᵖ` norm of the
+derivative (`ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`), so `C¹` functions vanishing
+off a fixed bounded set with uniformly bounded values and derivatives in `Lᵖ` form a totally
+bounded family (`TauCeti.totallyBounded_setOf_ae_eq_of_contDiff`).
 
 ## The proof
 
@@ -66,6 +72,10 @@ is uniformly at most `η` there, and `μ K ^ (1/p) η` is made small by the choi
   `TauCeti.isCompact_closure_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl`: the criterion for a
   family vanishing almost everywhere off a fixed bounded set, in totally bounded and in relatively
   compact form.
+* `TauCeti.totallyBounded_setOf_ae_eq_of_contDiff`,
+  `TauCeti.isCompact_closure_setOf_ae_eq_of_contDiff`: `C¹` functions vanishing off a fixed bounded
+  set, with uniformly bounded values and derivatives in `Lᵖ`, form a totally bounded and relatively
+  compact family.
 
 ## References
 
@@ -378,6 +388,55 @@ theorem isCompact_closure_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl (hp' 
     IsCompact (closure S) :=
   ((totallyBounded_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl hp' hs hsupp hM hbdd
     htrans).closure).isCompact_of_isClosed isClosed_closure
+
+/-- **Compactness of bounded families of `C¹` functions with bounded derivatives.** `C¹` functions
+vanishing off a fixed bounded set, whose values and derivatives are uniformly bounded in `Lᵖ`,
+`1 ≤ p < ∞`, form a totally bounded subset of `Lᵖ`. The translation increments are controlled by
+`‖h‖ ‖Dg‖_p` (`ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`). -/
+theorem totallyBounded_setOf_ae_eq_of_contDiff [NormedSpace ℝ E] (hp' : p ≠ ∞)
+    {S : Set (E → F)} (hS : ∀ g ∈ S, ContDiff ℝ 1 g)
+    {s : Set E} (hs : Bornology.IsBounded s) (hsupp : ∀ g ∈ S, ∀ x ∉ s, g x = 0)
+    {M A : ℝ≥0∞} (hM : M ≠ ∞) (hA : A ≠ ∞) (hbdd : ∀ g ∈ S, eLpNorm g p mu ≤ M)
+    (hder : ∀ g ∈ S, eLpNorm (fderiv ℝ g) p mu ≤ A) :
+    TotallyBounded {f : Lp F p mu | ∃ g ∈ S, f =ᵐ[mu] g} := by
+  refine totallyBounded_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl hp' hs ?_ hM ?_ ?_
+  · rintro f ⟨g, hg, hfg⟩
+    filter_upwards [hfg] with x hx hxs
+    rw [hx, hsupp g hg x hxs]
+  · rintro f ⟨g, hg, hfg⟩
+    rw [eLpNorm_congr_ae hfg]
+    exact hbdd g hg
+  · intro ε hε
+    obtain ⟨r, -, hrpos, hrε⟩ := ENNReal.lt_iff_exists_real_btwn.1 hε
+    have hr : 0 < r := ENNReal.ofReal_pos.1 hrpos
+    refine ⟨r / (A.toReal + 1), by positivity, ?_⟩
+    rintro f ⟨g, hg, hfg⟩ h hh
+    have hae : (fun x ↦ f (x + h) - f x) =ᵐ[mu] fun x ↦ g (x + h) - g x :=
+      ((measurePreserving_add_right mu h).quasiMeasurePreserving.ae_eq_comp hfg).sub hfg
+    rw [eLpNorm_congr_ae hae]
+    calc _ ≤ ‖h‖ₑ * eLpNorm (fderiv ℝ g) p mu :=
+          (hS g hg).eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv Fact.out h
+      _ ≤ ENNReal.ofReal (r / (A.toReal + 1)) * ENNReal.ofReal (A.toReal + 1) := by
+          rw [← ofReal_norm]
+          gcongr
+          calc eLpNorm (fderiv ℝ g) p mu ≤ A := hder g hg
+            _ = ENNReal.ofReal A.toReal := (ENNReal.ofReal_toReal hA).symm
+            _ ≤ ENNReal.ofReal (A.toReal + 1) := ENNReal.ofReal_le_ofReal (by linarith)
+      _ = ENNReal.ofReal r := by
+          rw [← ENNReal.ofReal_mul (by positivity), div_mul_cancel₀ _ (by positivity)]
+      _ ≤ ε := hrε.le
+
+/-- **Compactness of bounded families of `C¹` functions with bounded derivatives**, relatively
+compact form. `C¹` functions vanishing off a fixed bounded set, whose values and derivatives are
+uniformly bounded in `Lᵖ`, `1 ≤ p < ∞`, form a relatively compact subset of `Lᵖ`. -/
+theorem isCompact_closure_setOf_ae_eq_of_contDiff [NormedSpace ℝ E] (hp' : p ≠ ∞)
+    {S : Set (E → F)} (hS : ∀ g ∈ S, ContDiff ℝ 1 g)
+    {s : Set E} (hs : Bornology.IsBounded s) (hsupp : ∀ g ∈ S, ∀ x ∉ s, g x = 0)
+    {M A : ℝ≥0∞} (hM : M ≠ ∞) (hA : A ≠ ∞) (hbdd : ∀ g ∈ S, eLpNorm g p mu ≤ M)
+    (hder : ∀ g ∈ S, eLpNorm (fderiv ℝ g) p mu ≤ A) :
+    IsCompact (closure {f : Lp F p mu | ∃ g ∈ S, f =ᵐ[mu] g}) :=
+  ((totallyBounded_setOf_ae_eq_of_contDiff hp' hS hs hsupp hM hA hbdd
+    hder).closure).isCompact_of_isClosed isClosed_closure
 
 end FrechetKolmogorov
 
