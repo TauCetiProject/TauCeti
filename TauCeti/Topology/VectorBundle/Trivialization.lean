@@ -28,6 +28,10 @@ linear equivalence `e.continuousLinearEquivAt 𝕜 b`, with inverse its symmetri
 (`Bundle.Trivialization.homeomorphTrivial_apply_eq_continuousLinearEquivAt`,
 `Bundle.Trivialization.homeomorphTrivial_symm_apply_eq_continuousLinearEquivAt`).
 
+For scalar coordinates `q : F ≃L[𝕜] 𝕜` of a rank-one model,
+`Bundle.Trivialization.scalarCoordChange` computes the actual scalar transition. Its
+application, nonvanishing, identity and cocycle laws follow from the native linear changes.
+
 More generally, any linear trivialization sends a vector over its base set to a nonzero vector
 exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`), and likewise
 for its inverse over the base set (`Bundle.Trivialization.symm_apply_ne_zero_iff`); both commute
@@ -393,3 +397,65 @@ theorem isClosed_submodule [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] [∀ 
   exact (L.map (e : E b →ₗ[𝕜] F)).isClosed_of_finiteDimensional
 
 end VectorBundle
+
+namespace Bundle.Trivialization
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {B : Type*} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
+  (e e' : Trivialization F (π F V)) [e.IsLinear 𝕜] [e'.IsLinear 𝕜]
+
+/-- The scalar change from a rank-one coordinate of `e` to one of `e'`. The coordinate
+isomorphisms allow any one-dimensional normed model, with no normalization of its basis. -/
+def scalarCoordChange (q q' : F ≃L[𝕜] 𝕜) (x : B) : 𝕜 :=
+  q' (e.coordChangeL 𝕜 e' x (q.symm 1))
+
+/-- The scalar coefficient is the actual linear coordinate change evaluated at the scalar unit. -/
+theorem scalarCoordChange_def (q q' : F ≃L[𝕜] 𝕜) (x : B) :
+    e.scalarCoordChange e' q q' x = q' (e.coordChangeL 𝕜 e' x (q.symm 1)) := by rfl
+
+/-- A scalar coordinate change multiplies every coordinate by its value on the unit vector. -/
+theorem apply_coordChangeL_eq_scalarCoordChange_mul (q q' : F ≃L[𝕜] 𝕜) (x : B) (v : F) :
+    q' (e.coordChangeL 𝕜 e' x v) = e.scalarCoordChange e' q q' x * q v := by
+  have hv : q v • q.symm 1 = v := by
+    rw [← map_smul, smul_eq_mul, mul_one, q.symm_apply_apply]
+  calc
+    q' (e.coordChangeL 𝕜 e' x v) = q' (e.coordChangeL 𝕜 e' x (q v • q.symm 1)) := by rw [hv]
+    _ = q v * q' (e.coordChangeL 𝕜 e' x (q.symm 1)) := by rw [map_smul, map_smul, smul_eq_mul]
+    _ = _ := mul_comm _ _
+
+/-- Scalar frame changes never vanish. -/
+theorem scalarCoordChange_ne_zero (q q' : F ≃L[𝕜] 𝕜) (x : B) :
+    e.scalarCoordChange e' q q' x ≠ 0 := by
+  simp [scalarCoordChange]
+
+/-- Reading a vector in the second frame multiplies its first scalar coordinate by the
+actual transition scalar. -/
+theorem scalarCoordChange_mul_coordinate [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
+    (q q' : F ≃L[𝕜] 𝕜) {x : B}
+    (hx : x ∈ e.baseSet) (hx' : x ∈ e'.baseSet) (v : V x) :
+    e.scalarCoordChange e' q q' x * q (e.continuousLinearMapAt 𝕜 x v) =
+      q' (e'.continuousLinearMapAt 𝕜 x v) := by
+  rw [← apply_coordChangeL_eq_scalarCoordChange_mul]
+  rw [continuousLinearMapAt_apply_of_mem 𝕜 e hx v,
+    continuousLinearMapAt_apply_of_mem 𝕜 e' hx' v,
+    e.coordChangeL_apply_snd 𝕜 e' (p := ⟨x, v⟩) hx hx']
+
+/-- The scalar coordinate change of a frame with itself is one on its base set. -/
+@[simp]
+theorem scalarCoordChange_self (q : F ≃L[𝕜] 𝕜) {x : B} (hx : x ∈ e.baseSet) :
+    e.scalarCoordChange e q q x = 1 := by
+  rw [scalarCoordChange, e.coordChangeL_same_apply 𝕜 hx, q.apply_symm_apply]
+
+/-- Scalar coordinate changes satisfy the cocycle law on triple intersections. -/
+theorem scalarCoordChange_mul_scalarCoordChange (e'' : Trivialization F (π F V)) [e''.IsLinear 𝕜]
+    (q q' q'' : F ≃L[𝕜] 𝕜) {x : B}
+    (hx : x ∈ e.baseSet) (hx' : x ∈ e'.baseSet) (hx'' : x ∈ e''.baseSet) :
+    e'.scalarCoordChange e'' q' q'' x * e.scalarCoordChange e' q q' x =
+      e.scalarCoordChange e'' q q'' x := by
+  simpa only [scalarCoordChange, e.coordChangeL_coordChangeL_apply 𝕜 e' e'' hx hx' hx''] using
+    (e'.apply_coordChangeL_eq_scalarCoordChange_mul e'' q' q'' x
+      (e.coordChangeL 𝕜 e' x (q.symm 1))).symm
+
+end Bundle.Trivialization
