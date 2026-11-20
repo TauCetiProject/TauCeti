@@ -602,6 +602,8 @@ private theorem energyFormH1_sub_posPartAbove_self_nonpos
     (he : AEStronglyMeasurable e (mu.restrict Omega))
     (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta) (hc_bound : ∀ x ∈ Omega, ‖c x‖ ≤ gamma)
     (he_bound : ∀ x ∈ Omega, ‖e x‖ ≤ delta)
+    (hcoeff' : MemLp (fun x ↦ energyIntegrand (a x) ((b - e) x) ((0 : EuclideanSpace ℝ ι → ℝ) x))
+      ⊤ (mu.restrict Omega))
     (hweak : ∀ w : W1p0 mu Omega 2,
       (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (w : W1p mu Omega 2) x) →
         0 ≤ ∫ x in Omega, c x * W1p.value (w : W1p mu Omega 2) x +
@@ -626,11 +628,6 @@ private theorem energyFormH1_sub_posPartAbove_self_nonpos
     hc_bound he_bound hweak hl hmem hv0 hlv hlg
   have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
     (fun x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc_bound
-  have hcoeff' := memLp_energyIntegrand_of_bounds (b := b - e) (c := 0) (gamma := 0)
-    h.upper_nonneg ha (hb.sub he) aestronglyMeasurable_const
-    (fun x hx eta xi ↦ h.upper_bound hx eta xi)
-    (fun x hx ↦ (norm_sub_le _ _).trans (add_le_add (hb_bound x hx) (he_bound x hx)))
-    (fun x _ ↦ by simp)
   -- Above the level `l`, `u = v + l` and `∇u = ∇v`; below it, `v` and `∇v` vanish.
   have hsplit : energyFormH1 a b c u v +
       ∫ x in Omega, W1p.value u x * ⟪e x, W1p.gradient v x⟫_ℝ ∂mu =
@@ -692,18 +689,17 @@ theorem UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le_of_integral_mul_
           ∫ x in Omega, W1p.value u x * ⟪e x, W1p.gradient (w : W1p mu Omega 2) x⟫_ℝ ∂mu ≤ 0) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ k := by
   -- The truncations `(u - l)⁺`, `l ≥ k`, have nonpositive energy for `(a, b - e, 0)`.
-  have hcoeff := memLp_energyIntegrand_of_bounds (b := b - e) (c := 0) (gamma := 0)
-    h.upper_nonneg ha (hb.sub he) aestronglyMeasurable_const
-    (fun x hx eta xi ↦ h.upper_bound hx eta xi)
-    (fun x hx ↦ (norm_sub_le _ _).trans (add_le_add (hb_bound x hx) (he_bound x hx)))
-    (fun x _ ↦ by simp)
   have hb'_bound : ∀ x ∈ Omega, ‖(b - e) x‖ ≤ beta + delta := fun x hx ↦
     (norm_sub_le _ _).trans (add_le_add (hb_bound x hx) (he_bound x hx))
+  have hcoeff := memLp_energyIntegrand_of_bounds (c := 0) (gamma := 0) h.upper_nonneg ha
+    (hb.sub he) aestronglyMeasurable_const (fun x hx eta xi ↦ h.upper_bound hx eta xi) hb'_bound
+    (fun x _ ↦ by simp)
   have henergy : ∀ l (hkl : k ≤ l), energyFormH1 a (b - e) 0
       (W1p.posPartAbove (by norm_num) (hk.trans hkl) u)
       (W1p.posPartAbove (by norm_num) (hk.trans hkl) u) ≤ 0 := fun l hkl ↦
-    energyFormH1_sub_posPartAbove_self_nonpos h ha hb hc he hb_bound hc_bound he_bound hweak
-      (hk.trans hkl) (W1p.posPartAbove_mem_w1p0Submodule_of_le (by norm_num) hk hkl hboundary) hu
+    energyFormH1_sub_posPartAbove_self_nonpos h ha hb hc he hb_bound hc_bound he_bound hcoeff
+      hweak (hk.trans hkl)
+      (W1p.posPartAbove_mem_w1p0Submodule_of_le (by norm_num) hk hkl hboundary) hu
   set θ : ℝ := 2⁻¹ - q.toReal⁻¹
   have hθ : 0 < θ := by
     rcases eq_or_ne q ∞ with rfl | hqtop
@@ -733,6 +729,18 @@ theorem UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le_of_integral_mul_
     h.ofReal_le_mul_measure_rpow_of_not_ae_value_le hcoeff hb'_bound (fun _ _ ↦ le_rfl) hq hsob
       hk (hl j).1 hboundary (henergy (l j) (hl j).1) (hl j).2) zero_le)
 
+omit [DecidableEq ι] in
+/-- For `e = 0`, the pair `(e, c)` is weakly nonnegative as soon as `c ≥ 0` on `Ω`. -/
+private theorem integral_mul_add_inner_zero_nonneg (hc_nonneg : ∀ x ∈ Omega, 0 ≤ c x)
+    (w : W1p0 mu Omega 2) (hw : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (w : W1p mu Omega 2) x) :
+    0 ≤ ∫ x in Omega, c x * W1p.value (w : W1p mu Omega 2) x +
+      ⟪(0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x,
+        W1p.gradient (w : W1p mu Omega 2) x⟫_ℝ ∂mu := by
+  simp only [Pi.zero_apply, inner_zero_left, add_zero]
+  refine integral_nonneg_of_ae ?_
+  filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet, hw] with x hx hwx
+  exact mul_nonneg (hc_nonneg x hx) hwx
+
 /-- **The weak maximum principle with bounded drift**, under a Sobolev inequality. Let
 `Ω ⊆ ℝⁿ` be open, and suppose `‖w‖_q ≤ S ‖∇w‖₂` on `H¹₀(Ω)` for some exponent `q > 2`. Let
 `L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u` have measurable, uniformly elliptic `a` with constants
@@ -760,13 +768,10 @@ theorem UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le
       (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
         energyFormH1 a b c u (v : W1p mu Omega 2) ≤ 0) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ k := by
-  refine h.value_le_const_of_forall_eLpNorm_le_of_integral_mul_add_inner_nonneg (e := 0)
+  exact h.value_le_const_of_forall_eLpNorm_le_of_integral_mul_add_inner_nonneg (e := 0)
     (delta := 0) ha hb hc aestronglyMeasurable_const hb_bound hc_bound (fun x _ ↦ by simp)
-    (fun w hw ↦ ?_) hq hsob hk hboundary fun w hw ↦ by simpa using hu w hw
-  simp only [Pi.zero_apply, inner_zero_left, add_zero]
-  refine integral_nonneg_of_ae ?_
-  filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet, hw] with x hx hwx
-  exact mul_nonneg (hc_nonneg x hx) hwx
+    (integral_mul_add_inner_zero_nonneg hc_nonneg) hq hsob hk hboundary
+    fun w hw ↦ by simpa using hu w hw
 
 /-- **The weak maximum principle with lower-order terms in divergence form.** Let `Ω ⊆ ℝⁿ`,
 `n ≥ 1`, be open with finite measure, and let `L u = -∂ᵢ(aⁱʲ ∂ⱼu + eⁱ u) + bⁱ ∂ᵢu + c u` have
@@ -914,7 +919,8 @@ theorem UniformlyEllipticOn.value_le_const_of_measure_ne_top [Nonempty ι]
 /-- **The comparison principle with bounded drift**, under a Sobolev inequality. Under the
 hypotheses of `TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le`, if
 `a(u, w) ≤ a(v, w)` for every nonnegative `w ∈ H¹₀(Ω)`, that is `L u ≤ L v` weakly, and
-`(u - v)⁺ ∈ H¹₀(Ω)`, then `u ≤ v` almost everywhere. -/
+`(u - v)⁺ ∈ H¹₀(Ω)`, then `u ≤ v` almost everywhere. This is the case `e = 0` of
+`UniformlyEllipticOn.value_le_of_forall_eLpNorm_le_of_integral_mul_add_inner_nonneg`. -/
 theorem UniformlyEllipticOn.value_le_of_forall_eLpNorm_le
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega))
@@ -933,17 +939,10 @@ theorem UniformlyEllipticOn.value_le_of_forall_eLpNorm_le
         energyFormH1 a b c u (w : W1p mu Omega 2) ≤
           energyFormH1 a b c v (w : W1p mu Omega 2)) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ W1p.value v x := by
-  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
-    (fun x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc_bound
-  have hsub := h.value_le_const_of_forall_eLpNorm_le ha hb hc hb_bound hc_bound hc_nonneg hq hsob
-    le_rfl (u := u - v) (by rwa [W1p.posPartAbove_zero]) fun w hw ↦ by
-      rw [energyFormH1_sub_left hcoeff]
-      exact sub_nonpos.2 (huv w hw)
-  have hvalue : W1p.value (u - v) = W1p.value u - W1p.value v := by
-    simp only [← W1p.valueL_apply, map_sub]
-  filter_upwards [hsub, Lp.coeFn_sub (W1p.value u) (W1p.value v)] with x hx hval
-  rw [hvalue, hval, Pi.sub_apply] at hx
-  exact sub_nonpos.mp hx
+  exact h.value_le_of_forall_eLpNorm_le_of_integral_mul_add_inner_nonneg (e := 0) (delta := 0)
+    ha hb hc aestronglyMeasurable_const hb_bound hc_bound (fun x _ ↦ by simp)
+    (integral_mul_add_inner_zero_nonneg hc_nonneg) hq hsob hboundary
+    fun w hw ↦ by simpa using huv w hw
 
 /-- **The comparison principle with bounded drift.** Under the hypotheses of
 `TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_measure_ne_top`, if `a(u, w) ≤ a(v, w)` for
