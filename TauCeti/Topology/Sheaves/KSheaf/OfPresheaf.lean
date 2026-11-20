@@ -396,10 +396,7 @@ theorem IsSheaf.isKSheaf_toKPresheaf [T2Space X] [LocallyCompactSpace X]
       reflectsLimitsOfShape_of_reflectsIsomorphisms
     exact IsPullback.of_map (forget C) (by rw [← Functor.map_comp, ← Functor.map_comp]; congr 1)
       (h.isPullback sq)
-  · have : Nonempty K.compactNhds := by
-      obtain ⟨L, hL, hKL⟩ := exists_compact_superset K.isCompact
-      exact ⟨Compacts.compactNhdsOfSubsetInterior ⟨L, hL⟩ hKL⟩
-    have : ReflectsColimitsOfShape (↥K.compactNhds)ᵒᵖ (forget C) :=
+  · have : ReflectsColimitsOfShape (↥K.compactNhds)ᵒᵖ (forget C) :=
       reflectsColimitsOfShape_of_reflectsIsomorphisms
     exact ⟨isColimitOfReflects (forget C) (h.nonempty_isColimit_coconeOfCompacts K).some⟩
 
