@@ -81,56 +81,10 @@ private theorem apply_eq_zero_of_mem_center {z : upperUnitriangularGroup (Fin (n
     simpa [Matrix.add_mul, Matrix.mul_add, single_mul_apply_of_ne (h := hij.ne),
       mul_single_apply_same] using h.symm
 
-/-- The corner matrix unit `c E₀ₙ` is absorbed by multiplication on the right with an
-upper-unitriangular matrix: its first column is that of the identity. -/
-private theorem mul_single_zero_last {G : Matrix (Fin (n + 1)) (Fin (n + 1)) R}
-    (hG : G.IsUpperUnitriangular) (c : R) :
-    G * single 0 (Fin.last n) c = single 0 (Fin.last n) c := by
-  have hlt : ∀ {a b : Fin (n + 1)}, b < a → G a b = 0 := fun h ↦ hG.isUpperTriangular h
-  ext a b
-  by_cases hb : b = Fin.last n
-  · subst hb
-    rw [mul_single_apply_same]
-    rcases Fin.eq_zero_or_eq_succ a with rfl | ⟨k, rfl⟩
-    · rw [hG.apply_diag, one_mul, Matrix.single_apply_same]
-    · rw [hlt (Fin.succ_pos k), zero_mul,
-        Matrix.single_apply_of_row_ne (Fin.succ_ne_zero k).symm]
-  · rw [mul_single_apply_of_ne (hbj := hb), Matrix.single_apply_of_col_ne _ _ (Ne.symm hb)]
-
-/-- The corner matrix unit `c E₀ₙ` is absorbed by multiplication on the left with an
-upper-unitriangular matrix: its last row is that of the identity. -/
-private theorem single_zero_last_mul {G : Matrix (Fin (n + 1)) (Fin (n + 1)) R}
-    (hG : G.IsUpperUnitriangular) (c : R) :
-    single (0 : Fin (n + 1)) (Fin.last n) c * G = single 0 (Fin.last n) c := by
-  have hlt : ∀ {a b : Fin (n + 1)}, b < a → G a b = 0 := fun h ↦ hG.isUpperTriangular h
-  ext a b
-  by_cases ha : a = 0
-  · subst ha
-    rw [single_mul_apply_same]
-    rcases eq_or_lt_of_le (Fin.le_last b) with rfl | h
-    · rw [hG.apply_diag, mul_one, Matrix.single_apply_same]
-    · rw [hlt h, mul_zero, Matrix.single_apply_of_col_ne _ _ h.ne']
-  · rw [single_mul_apply_of_ne (h := ha), Matrix.single_apply_of_row_ne (Ne.symm ha)]
-
-/-- An upper-unitriangular matrix whose entries above the diagonal vanish away from the corner
-is `1 + t E₀ₙ`, with `t` its corner entry. -/
-private theorem eq_one_add_single_zero_last {Z : Matrix (Fin (n + 1)) (Fin (n + 1)) R}
-    (hZ : Z.IsUpperUnitriangular) (hn : 0 < n)
-    (hz : ∀ i j : Fin (n + 1), i < j → ¬ (i = 0 ∧ j = Fin.last n) → Z i j = 0) :
-    Z = 1 + single 0 (Fin.last n) (Z 0 (Fin.last n)) := by
-  have h0l : (0 : Fin (n + 1)) ≠ Fin.last n := by
-    rw [ne_eq, Fin.ext_iff, Fin.val_last, Fin.val_zero]
-    omega
-  ext a b
-  by_cases hab : a = 0 ∧ b = Fin.last n
-  · obtain ⟨rfl, rfl⟩ := hab
-    rw [Matrix.add_apply, Matrix.single_apply_same, Matrix.one_apply_ne h0l, zero_add]
-  · rw [Matrix.add_apply, Matrix.single_apply_of_ne
-      (h := fun h : 0 = a ∧ Fin.last n = b ↦ hab ⟨h.1.symm, h.2.symm⟩), add_zero]
-    rcases lt_trichotomy a b with h | rfl | h
-    · rw [hz a b h hab, Matrix.one_apply_ne h.ne]
-    · rw [hZ.apply_diag, Matrix.one_apply_eq]
-    · rw [hZ.isUpperTriangular h, Matrix.one_apply_ne h.ne']
+/-- The corner matrix unit `t E₀ₙ` vanishes away from the corner. -/
+private theorem single_zero_last_apply_of_not {i j : Fin (n + 1)}
+    (hc : ¬ (i = 0 ∧ j = Fin.last n)) (t : R) : single 0 (Fin.last n) t i j = 0 :=
+  single_apply_of_ne _ _ t _ _ fun h ↦ hc ⟨h.1.symm, h.2.symm⟩
 
 /-- An element of `Uₙ₊₁(R)` is central exactly when its entries strictly above the diagonal
 vanish away from the corner `(0, n)`. -/
@@ -146,16 +100,13 @@ theorem mem_center_iff {z : upperUnitriangularGroup (Fin (n + 1)) R} :
     exact ext fun i j hij ↦ absurd hij (by rw [Fin.fin_one_eq_zero i, Fin.fin_one_eq_zero j]; simp)
   obtain ⟨t, hZ⟩ : ∃ t : R, ((z : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) =
       1 + single 0 (Fin.last n) t :=
-    ⟨_, eq_one_add_single_zero_last (isUpperUnitriangular z) hn hz⟩
+    ⟨_, (isUpperUnitriangular z).eq_one_add_single_zero_last hn hz⟩
   apply Subtype.ext
   apply Units.ext
   -- Reduce to the matrix identity `g (1 + t E₀ₙ) = (1 + t E₀ₙ) g`.
-  change ((g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) *
-      ((z : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) =
-    ((z : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) *
-      ((g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
-  rw [hZ, Matrix.mul_add, Matrix.add_mul, mul_single_zero_last (isUpperUnitriangular g),
-    single_zero_last_mul (isUpperUnitriangular g), Matrix.mul_one, Matrix.one_mul]
+  rw [Subgroup.coe_mul, Subgroup.coe_mul, Units.val_mul, Units.val_mul, hZ, Matrix.mul_add,
+    Matrix.add_mul, (isUpperUnitriangular g).mul_single_zero_last,
+    (isUpperUnitriangular g).single_zero_last_mul, Matrix.mul_one, Matrix.one_mul]
 
 /-- The centre of `Uₙ₊₁(R)` is the corner subgroup, the term `superdiagonalSubgroup n` of the
 superdiagonal filtration: the matrices whose entries vanish strictly between the diagonal and the
@@ -203,17 +154,15 @@ theorem mk_eq_mk_iff {u v : upperUnitriangularGroup (Fin (n + 1)) R} :
     obtain ⟨t, hZ⟩ : ∃ t : R, (((u⁻¹ * v : upperUnitriangularGroup (Fin (n + 1)) R) :
         GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) =
           1 + single 0 (Fin.last n) t :=
-      ⟨_, eq_one_add_single_zero_last (isUpperUnitriangular _) hn (mem_center_iff.1 hz)⟩
+      ⟨_, (isUpperUnitriangular _).eq_one_add_single_zero_last hn (mem_center_iff.1 hz)⟩
     have hv : v = u * (u⁻¹ * v) := (mul_inv_cancel_left u v).symm
     rw [hv, Subgroup.coe_mul, Units.val_mul, hZ, Matrix.mul_add, Matrix.mul_one,
-      mul_single_zero_last (isUpperUnitriangular u), Matrix.add_apply,
-      Matrix.single_apply_of_ne (h := fun h : 0 = i ∧ Fin.last n = j ↦ hc ⟨h.1.symm, h.2.symm⟩),
-      add_zero]
+      (isUpperUnitriangular u).mul_single_zero_last, Matrix.add_apply,
+      single_zero_last_apply_of_not hc, add_zero]
   · -- `v = u e₀ₙ(t)` with `t` the difference of the corner entries, and `e₀ₙ(t)` is central.
     intro h
-    have h0l : (0 : Fin (n + 1)) < Fin.last n := by
-      rw [Fin.lt_def, Fin.val_last, Fin.val_zero]
-      exact hn
+    have : NeZero n := NeZero.of_pos hn
+    have h0l : (0 : Fin (n + 1)) < Fin.last n := Fin.last_pos'
     set t := ((v : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) 0 (Fin.last n) -
       ((u : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) 0 (Fin.last n)
     let w : upperUnitriangularGroup (Fin (n + 1)) R :=
@@ -224,16 +173,15 @@ theorem mk_eq_mk_iff {u v : upperUnitriangularGroup (Fin (n + 1)) R} :
     have hvw : v = u * w := by
       refine ext fun i j hij ↦ ?_
       rw [Subgroup.coe_mul, Units.val_mul, hw, Matrix.mul_add, Matrix.mul_one,
-        mul_single_zero_last (isUpperUnitriangular u), Matrix.add_apply]
+        (isUpperUnitriangular u).mul_single_zero_last, Matrix.add_apply]
       by_cases hc : i = 0 ∧ j = Fin.last n
       · obtain ⟨rfl, rfl⟩ := hc
         rw [Matrix.single_apply_same, add_sub_cancel]
-      · rw [Matrix.single_apply_of_ne
-          (h := fun h : 0 = i ∧ Fin.last n = j ↦ hc ⟨h.1.symm, h.2.symm⟩), add_zero, h i j hij hc]
+      · rw [single_zero_last_apply_of_not hc, add_zero, h i j hij hc]
     rw [hvw, inv_mul_cancel_left, mem_center_iff]
     intro i j hij hc
-    rw [hw, Matrix.add_apply, Matrix.one_apply_ne hij.ne, Matrix.single_apply_of_ne
-      (h := fun h : 0 = i ∧ Fin.last n = j ↦ hc ⟨h.1.symm, h.2.symm⟩), add_zero]
+    rw [hw, Matrix.add_apply, Matrix.one_apply_ne hij.ne, single_zero_last_apply_of_not hc,
+      add_zero]
 
 
 end UpperUnitriangularGroup

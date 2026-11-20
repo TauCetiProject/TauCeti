@@ -31,6 +31,11 @@ only the corner, this gives Dwyer's criteria:
   entry of such a lift is a primitive of the value of the defining system formed by its other
   entries.
 
+The two directions of the first criterion are the homomorphism
+`TauCeti.ContCohomology.DefiningSystem.toQuotientLift` attached to a defining system, characterized
+by `TauCeti.ContCohomology.DefiningSystem.mk_eq_toQuotientLift_iff`, and the defining system
+`TauCeti.ContCohomology.DefiningSystem.ofLift` formed by the entries of a lift.
+
 Continuity of a homomorphism into the discrete groups `Uₙ₊₁(R)` and `Uₙ₊₁(R) / Z` is written as
 openness of its kernel. Neither criterion assumes that the `χ i` are homomorphisms, nor that the
 lifts are surjective.
@@ -80,6 +85,13 @@ private theorem isUpperUnitriangular_liftEntries (D : DefiningSystem Γ R n χ) 
   have hc : ¬ (i = 0 ∧ j = Fin.last n) := fun h ↦ absurd hji (by rw [h.1]; exact Fin.not_lt_zero j)
   rw [liftEntries_apply_of_ne D c g hji.ne' hc, D.entry_eq_zero i j (Or.inl hji.le), Pi.zero_apply]
 
+/-- The indices strictly between `i` and `j` pair with neither `i` nor `j` to form the corner. -/
+private theorem not_corner_of_mem_Ioo {i j k : Fin (n + 1)} (hk : k ∈ Finset.Ioo i j) :
+    ¬ (i = 0 ∧ k = Fin.last n) ∧ ¬ (k = 0 ∧ j = Fin.last n) := by
+  rw [Finset.mem_Ioo] at hk
+  exact ⟨fun h ↦ absurd hk.2 (by rw [h.2]; exact not_lt.2 (Fin.le_last j)),
+    fun h ↦ absurd hk.1 (by rw [h.1]; exact Fin.not_lt_zero i)⟩
+
 /-- An entry strictly above the diagonal of a product of two matrices `liftEntries`: by the
 defining equations it is the entry at the product away from the corner, while at the corner it is
 the sum of the two corner entries minus the value of `D`. -/
@@ -93,11 +105,8 @@ private theorem liftEntries_mul_apply (D : DefiningSystem Γ R n χ) (c : Γ →
   have hsum : ∑ k ∈ Finset.Ioo i j, liftEntries D c g i k * liftEntries D c h k j =
       ∑ k ∈ Finset.Ioo i j, D.entry i k g * D.entry k j h := by
     refine Finset.sum_congr rfl fun k hk ↦ ?_
+    obtain ⟨h1, h2⟩ := not_corner_of_mem_Ioo hk
     rw [Finset.mem_Ioo] at hk
-    have h1 : ¬ (i = 0 ∧ k = Fin.last n) := fun h ↦
-      absurd hk.2 (by rw [h.2]; exact not_lt.2 (Fin.le_last j))
-    have h2 : ¬ (k = 0 ∧ j = Fin.last n) := fun h ↦
-      absurd hk.1 (by rw [h.1]; exact Fin.not_lt_zero i)
     rw [liftEntries_apply_of_ne D c g hk.1.ne h1, liftEntries_apply_of_ne D c h hk.2.ne h2]
   rw [hsum]
   by_cases hc : i = 0 ∧ j = Fin.last n
@@ -151,10 +160,12 @@ private theorem isOpen_setOf_forall_apply_eq [DiscreteTopology R]
 
 /-! ### From lifts to defining systems -/
 
+omit [Group Γ] in
 /-- The defining system formed by the entries away from the diagonal and the corner of a family
 `L g` of upper-unitriangular matrices, whose entries are continuous, which multiply like a
-homomorphism away from the corner, and whose adjacent entries are the inputs. -/
-private def definingSystemOfLift (hn : 2 ≤ n) (L : Γ → upperUnitriangularGroup (Fin (n + 1)) R)
+homomorphism away from the corner, and whose adjacent entries are the inputs. Its entries are
+described by `TauCeti.ContCohomology.DefiningSystem.ofLift_entry`. -/
+def DefiningSystem.ofLift [Mul Γ] (hn : 2 ≤ n) (L : Γ → upperUnitriangularGroup (Fin (n + 1)) R)
     (hcont : ∀ i j, Continuous fun g ↦
       ((L g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) i j)
     (hmul : ∀ g h : Γ, ∀ i j : Fin (n + 1), i < j → ¬ (i = 0 ∧ j = Fin.last n) →
@@ -181,11 +192,8 @@ private def definingSystemOfLift (hn : 2 ≤ n) (L : Γ → upperUnitriangularGr
       Subgroup.coe_mul, Units.val_mul,
       (isUpperUnitriangular (L g)).mul_apply_of_lt (isUpperUnitriangular (L h)) hij]
     refine congrArg _ (Finset.sum_congr rfl fun k hk ↦ ?_)
+    obtain ⟨h1, h2⟩ := not_corner_of_mem_Ioo hk
     rw [Finset.mem_Ioo] at hk
-    have h1 : ¬ (i = 0 ∧ k = Fin.last n) := fun h ↦
-      absurd hk.2 (by rw [h.2]; exact not_lt.2 (Fin.le_last j))
-    have h2 : ¬ (k = 0 ∧ j = Fin.last n) := fun h ↦
-      absurd hk.1 (by rw [h.1]; exact Fin.not_lt_zero i)
     rw [ite_eq_left ⟨hk.1, h1⟩, ite_eq_left ⟨hk.2, h2⟩]
   entry_eq_zero i j h := by
     refine funext fun g ↦ ite_eq_right ?_
@@ -194,18 +202,42 @@ private def definingSystemOfLift (hn : 2 ≤ n) (L : Γ → upperUnitriangularGr
     · exact absurd hij (not_lt.2 h)
     · exact hc ⟨h0, hl⟩
 
-private theorem definingSystemOfLift_entry (hn : 2 ≤ n)
+omit [Group Γ] in
+/-- The entries of `DefiningSystem.ofLift` strictly above the diagonal and away from the corner
+are those of the lift. -/
+theorem DefiningSystem.ofLift_entry [Mul Γ] (hn : 2 ≤ n)
     (L : Γ → upperUnitriangularGroup (Fin (n + 1)) R) (hcont hmul hχ) {i j : Fin (n + 1)}
     (hij : i < j) (hc : ¬ (i = 0 ∧ j = Fin.last n)) (g : Γ) :
-    (definingSystemOfLift (χ := χ) hn L hcont hmul hχ).entry i j g =
+    (DefiningSystem.ofLift (χ := χ) hn L hcont hmul hχ).entry i j g =
       ((L g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) i j :=
   ite_eq_left ⟨hij, hc⟩
 
+/-- The defining system formed by the entries of a homomorphism `β : Γ → Uₙ₊₁(R)` with continuous
+entries. -/
+private def definingSystemOfMonoidHom (hn : 2 ≤ n)
+    (β : Γ →* upperUnitriangularGroup (Fin (n + 1)) R)
+    (hcont : ∀ i j, Continuous fun g ↦
+      ((β g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) i j)
+    (hχ : ∀ (g : Γ) (i : Fin n),
+      ((β g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) i.castSucc i.succ =
+        χ i g) :
+    DefiningSystem Γ R n χ :=
+  DefiningSystem.ofLift hn β hcont (fun g h _ _ _ _ ↦ by rw [map_mul]) hχ
+
+private theorem definingSystemOfMonoidHom_entry (hn : 2 ≤ n)
+    (β : Γ →* upperUnitriangularGroup (Fin (n + 1)) R) (hcont hχ) {i j : Fin (n + 1)}
+    (hij : i < j) (hc : ¬ (i = 0 ∧ j = Fin.last n)) (g : Γ) :
+    (definingSystemOfMonoidHom (χ := χ) hn β hcont hχ).entry i j g =
+      ((β g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) i j :=
+  DefiningSystem.ofLift_entry hn β _ _ _ hij hc g
+
 /-! ### Lifts attached to a defining system -/
 
-/-- The classes modulo the centre of the matrices `liftEntries D 0 g`, with zero corner, form a
-homomorphism `Γ → Uₙ₊₁(R) / Z`. -/
-private noncomputable def quotientLift (D : DefiningSystem Γ R n χ) :
+/-- The homomorphism `Γ → Uₙ₊₁(R) / Z` attached to a defining system `D`: it sends `g` to the
+class modulo the centre of any upper-unitriangular matrix whose entries away from the diagonal and
+the corner are those of `D` at `g`
+(`TauCeti.ContCohomology.DefiningSystem.mk_eq_toQuotientLift_iff`). -/
+noncomputable def DefiningSystem.toQuotientLift (D : DefiningSystem Γ R n χ) :
     Γ →* upperUnitriangularGroup (Fin (n + 1)) R ⧸
       Subgroup.center (upperUnitriangularGroup (Fin (n + 1)) R) :=
   MonoidHom.mk' (fun g ↦ (liftMatrix D 0 g : _ ⧸ _)) fun g h ↦ by
@@ -214,12 +246,25 @@ private noncomputable def quotientLift (D : DefiningSystem Γ R n χ) :
     rw [Subgroup.coe_mul, Units.val_mul, coe_liftMatrix, coe_liftMatrix, coe_liftMatrix,
       liftEntries_mul_apply D 0 g h hij, ite_eq_right hc, liftEntries_apply_of_ne D 0 _ hij.ne hc]
 
-private theorem isOpen_ker_quotientLift [DiscreteTopology R] (D : DefiningSystem Γ R n χ) :
-    IsOpen ((quotientLift D).ker : Set Γ) := by
-  have hker : ((quotientLift D).ker : Set Γ) = {g | ∀ i j, (i < j ∧ ¬ (i = 0 ∧ j = Fin.last n)) →
+/-- An element `u` of `Uₙ₊₁(R)` represents `D.toQuotientLift g` exactly when its entries
+strictly above the diagonal and away from the corner are those of `D` at `g`. -/
+theorem DefiningSystem.mk_eq_toQuotientLift_iff (D : DefiningSystem Γ R n χ) (g : Γ)
+    {u : upperUnitriangularGroup (Fin (n + 1)) R} :
+    (QuotientGroup.mk u : upperUnitriangularGroup (Fin (n + 1)) R ⧸
+        Subgroup.center (upperUnitriangularGroup (Fin (n + 1)) R)) = D.toQuotientLift g ↔
+      ∀ i j : Fin (n + 1), i < j → ¬ (i = 0 ∧ j = Fin.last n) →
+        ((u : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) i j = D.entry i j g := by
+  rw [DefiningSystem.toQuotientLift, MonoidHom.mk'_apply, mk_eq_mk_iff]
+  refine forall₄_congr fun i j hij hc ↦ ?_
+  rw [coe_liftMatrix, liftEntries_apply_of_ne D 0 g hij.ne hc]
+
+/-- For a discrete `R`, the homomorphism `D.toQuotientLift` is continuous: its kernel is open. -/
+theorem DefiningSystem.isOpen_ker_toQuotientLift [DiscreteTopology R]
+    (D : DefiningSystem Γ R n χ) : IsOpen (D.toQuotientLift.ker : Set Γ) := by
+  have hker : (D.toQuotientLift.ker : Set Γ) = {g | ∀ i j, (i < j ∧ ¬ (i = 0 ∧ j = Fin.last n)) →
       liftEntries D 0 g i j = (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R) i j} := by
     ext g
-    rw [SetLike.mem_coe, MonoidHom.mem_ker, quotientLift, MonoidHom.mk'_apply,
+    rw [SetLike.mem_coe, MonoidHom.mem_ker, DefiningSystem.toQuotientLift, MonoidHom.mk'_apply,
       ← QuotientGroup.mk_one, mk_eq_mk_iff, Set.mem_ofPred_eq]
     simp only [coe_liftMatrix, OneMemClass.coe_one, Units.val_one, and_imp]
   rw [hker]
@@ -264,34 +309,30 @@ private theorem continuous_apply_of_isOpen_ker [SeparatelyContinuousMul Γ]
 
 /-- The value of the defining system formed by the entries of a lift `β : Γ → Uₙ₊₁(R)` is the
 coboundary of its corner entry. -/
-private theorem value_definingSystemOfLift (hn : 2 ≤ n)
+private theorem value_definingSystemOfMonoidHom (hn : 2 ≤ n)
     (β : Γ →* upperUnitriangularGroup (Fin (n + 1)) R) (hcont hχ) (g h : Γ) :
-    (definingSystemOfLift (χ := χ) hn β hcont (fun g h i j _ _ ↦ by rw [map_mul]) hχ).value
-        (g, h) =
+    (definingSystemOfMonoidHom (χ := χ) hn β hcont hχ).value (g, h) =
       ((β h : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) 0 (Fin.last n) -
         ((β (g * h) : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) 0
           (Fin.last n) +
         ((β g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) 0 (Fin.last n) := by
-  have h0l : (0 : Fin (n + 1)) < Fin.last n := by
-    rw [Fin.lt_def, Fin.val_last, Fin.val_zero]
-    omega
+  have : NeZero n := ⟨by omega⟩
   rw [map_mul, Subgroup.coe_mul, Units.val_mul,
-    (isUpperUnitriangular (β g)).mul_apply_of_lt (isUpperUnitriangular (β h)) h0l,
+    (isUpperUnitriangular (β g)).mul_apply_of_lt (isUpperUnitriangular (β h)) Fin.last_pos',
     DefiningSystem.value_apply]
   -- The intermediate entries of the value are entries of the lift.
   have hsum : ∑ m ∈ Finset.Ioo (0 : Fin (n + 1)) (Fin.last n),
-      (definingSystemOfLift (χ := χ) hn β hcont (fun g h i j _ _ ↦ by rw [map_mul]) hχ).entry
-        0 m g *
-      (definingSystemOfLift (χ := χ) hn β hcont (fun g h i j _ _ ↦ by rw [map_mul]) hχ).entry
-        m (Fin.last n) h =
+      (definingSystemOfMonoidHom (χ := χ) hn β hcont hχ).entry 0 m g *
+        (definingSystemOfMonoidHom (χ := χ) hn β hcont hχ).entry m (Fin.last n) h =
         ∑ m ∈ Finset.Ioo (0 : Fin (n + 1)) (Fin.last n),
           ((β g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) 0 m *
             ((β h : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) m
               (Fin.last n) := by
     refine Finset.sum_congr rfl fun m hm ↦ ?_
+    obtain ⟨h1, h2⟩ := not_corner_of_mem_Ioo hm
     rw [Finset.mem_Ioo] at hm
-    rw [definingSystemOfLift_entry hn β _ _ _ hm.1 (fun h ↦ hm.2.ne h.2) g,
-      definingSystemOfLift_entry hn β _ _ _ hm.2 (fun h ↦ hm.1.ne' h.1) h]
+    rw [definingSystemOfMonoidHom_entry hn β _ _ hm.1 h1 g,
+      definingSystemOfMonoidHom_entry hn β _ _ hm.2 h2 h]
   rw [hsum]
   abel
 
@@ -314,11 +355,11 @@ theorem masseyDefined_iff_exists_lift [SeparatelyContinuousMul Γ] [DiscreteTopo
               ∀ i : Fin n, ((u : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
                 i.castSucc i.succ = χ i g := by
   rw [masseyDefined_iff]
-  refine ⟨fun ⟨D⟩ ↦ ⟨quotientLift D, isOpen_ker_quotientLift D,
+  refine ⟨fun ⟨D⟩ ↦ ⟨D.toQuotientLift, D.isOpen_ker_toQuotientLift,
     fun g ↦ ⟨liftMatrix D 0 g, rfl, liftMatrix_apply_castSucc_succ D hn 0 g⟩⟩, ?_⟩
   -- Representatives of the classes `β g` have well-defined entries away from the corner.
   rintro ⟨β, hβ, hlift⟩
-  refine ⟨definingSystemOfLift hn (fun g ↦ (β g).out) (fun i j ↦ ?_) (fun g h i j hij hc ↦ ?_)
+  refine ⟨DefiningSystem.ofLift hn (fun g ↦ (β g).out) (fun i j ↦ ?_) (fun g h i j hij hc ↦ ?_)
     (fun g i ↦ ?_)⟩
   · exact ((β.isLocallyConstant_of_isOpen_ker hβ).comp fun q ↦
       ((q.out : upperUnitriangularGroup (Fin (n + 1)) R) : GL (Fin (n + 1)) R) i j).continuous
@@ -351,6 +392,6 @@ theorem masseyContainsZero_iff_exists_lift [SeparatelyContinuousMul Γ] [Discret
   -- The entries of a lift form a defining system, and its corner entry is a primitive.
   exact ⟨_, fun g ↦ ((β g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) 0
     (Fin.last n), continuous_apply_of_isOpen_ker hβ 0 (Fin.last n),
-    value_definingSystemOfLift hn β (continuous_apply_of_isOpen_ker hβ) hχ⟩
+    value_definingSystemOfMonoidHom hn β (continuous_apply_of_isOpen_ker hβ) hχ⟩
 
 end TauCeti.ContCohomology
