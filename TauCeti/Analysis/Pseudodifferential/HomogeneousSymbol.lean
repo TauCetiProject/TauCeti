@@ -32,7 +32,8 @@ the frequency: `a (x, t • ξ) = t ^ m • a (x, ξ)` for every `t > 0`. These 
 A homogeneous term of degree `m` need not extend continuously to `ξ = 0` (think of
 `ξ / ‖ξ‖`, of degree `0`), so its value there is a convention: `TauCeti.HomogeneousSymbol` fixes
 it to be zero, which makes the carrier extensional on its coefficient, and `HomogeneousSymbol.mk'`
-builds a homogeneous symbol from a function given only away from `ξ = 0`.
+builds a homogeneous symbol from a function given only away from `ξ = 0`. A nonzero
+homogeneous symbol has only one degree (`HomogeneousSymbol.degree_eq_of_coefficient_eq`).
 
 The file develops:
 
@@ -61,7 +62,8 @@ The file develops:
   derivatives of `∂_{xᵢ} ∂_{ξⱼ} a` are those of `a` with one more derivative of each kind
   (`HomogeneousSymbol.mixedDeriv_spatialDeriv_frequencyDeriv`); for positive degree the growth
   bound makes a homogeneous symbol, with its value `0` at the zero frequency, continuous on all
-  of `X × E` (`HomogeneousSymbol.continuous_coefficient`);
+  of `X × E` (`HomogeneousSymbol.continuous_coefficient`), while a nonzero symbol of nonpositive
+  degree is discontinuous at the zero frequency (`HomogeneousSymbol.continuous_coefficient_iff`);
 * the homogeneity of all higher derivatives: the derivative of `a` in `j` position directions
   and `l` frequency directions is homogeneous of degree `m - l`
   (`HomogeneousSymbol.iteratedFDeriv_coefficient_smul_frequency_append`), and on a proper
@@ -215,6 +217,19 @@ instance {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)] [SMulCommClass ℝ 
 @[simp]
 theorem coefficient_zero : (0 : HomogeneousSymbol X E V W m).coefficient = 0 :=
   (rfl)
+
+/-- **Uniqueness of the degree.** A nonzero homogeneous symbol has only one degree: if its
+coefficient is also the coefficient of a homogeneous symbol of degree `m'`, then `m' = m`. -/
+theorem degree_eq_of_coefficient_eq {a : HomogeneousSymbol X E V W m}
+    {b : HomogeneousSymbol X E V W m'} (h : b.coefficient = a.coefficient) (ha : a ≠ 0) :
+    m' = m := by
+  obtain ⟨⟨x, ξ⟩, hp⟩ : ∃ p, a.coefficient p ≠ 0 := by
+    by_contra! H
+    exact ha (HomogeneousSymbol.ext (funext H))
+  have h₂ := b.norm_homogeneous x ξ (two_pos (α := ℝ))
+  rw [h, a.norm_homogeneous x ξ two_pos] at h₂
+  exact ((Real.rpow_right_inj two_pos (by norm_num)).1
+    (mul_right_cancel₀ (norm_ne_zero_iff.2 hp) h₂)).symm
 
 @[simp]
 theorem coefficient_add (a b : HomogeneousSymbol X E V W m) :
@@ -901,6 +916,40 @@ theorem continuous_coefficient [ProperSpace E] [WeaklyLocallyCompactSpace X] (hm
     filter_upwards [prod_mem_nhds hKx univ_mem] with q hq
     exact hC q.1 hq.1 q.2
   · exact (a.contDiffAt_coefficient hξ).continuousAt
+
+/-- **Discontinuity at the zero frequency.** A homogeneous symbol of nonpositive degree that is
+continuous at a point `(x, 0)` vanishes at every frequency over `x`: as `t → 0⁺` the norm
+`‖a (x, t • ξ)‖ = t ^ m ‖a (x, ξ)‖` stays at least `‖a (x, ξ)‖`, while it tends to the value `0`
+at the zero frequency. -/
+theorem coefficient_eq_zero_of_continuousAt (hm : m ≤ 0) {x : X}
+    (h : ContinuousAt a.coefficient (x, 0)) (ξ : E) : a.coefficient (x, ξ) = 0 := by
+  have hray : Tendsto (fun t : ℝ ↦ (x, t • ξ)) (𝓝[>] 0) (𝓝 (x, 0)) := by
+    have hc : Continuous fun t : ℝ ↦ (x, t • ξ) := by fun_prop
+    simpa using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
+  have hlim : Tendsto (fun t : ℝ ↦ ‖a.coefficient (x, t • ξ)‖) (𝓝[>] 0) (𝓝 0) := by
+    simpa using (h.tendsto.comp hray).norm
+  refine norm_le_zero_iff.1 (ge_of_tendsto hlim ?_)
+  filter_upwards [Ioo_mem_nhdsGT (zero_lt_one' ℝ)] with t ht
+  rw [a.norm_homogeneous x ξ ht.1]
+  exact le_mul_of_one_le_left (norm_nonneg _)
+    (Real.one_le_rpow_of_pos_of_le_one_of_nonpos ht.1 ht.2.le hm)
+
+/-- A homogeneous symbol of nonpositive degree is continuous on all of `X × E` only if it is zero.
+Compare `HomogeneousSymbol.continuous_coefficient` for positive degree. -/
+theorem continuous_coefficient_iff_eq_zero (hm : m ≤ 0) : Continuous a.coefficient ↔ a = 0 := by
+  refine ⟨fun h ↦ HomogeneousSymbol.ext (funext fun ⟨x, ξ⟩ ↦ ?_), ?_⟩
+  · simpa using a.coefficient_eq_zero_of_continuousAt hm h.continuousAt ξ
+  · rintro rfl
+    rw [coefficient_zero]
+    exact continuous_zero
+
+/-- A nonzero homogeneous symbol on a proper frequency space is continuous on all of `X × E`
+exactly when its degree is positive. -/
+theorem continuous_coefficient_iff [ProperSpace E] [WeaklyLocallyCompactSpace X] (ha : a ≠ 0) :
+    Continuous a.coefficient ↔ 0 < m := by
+  refine ⟨fun h ↦ ?_, a.continuous_coefficient⟩
+  by_contra! hm
+  exact ha ((a.continuous_coefficient_iff_eq_zero hm).1 h)
 
 /-- For a frequency cutoff `χ` and a scale `R`, the cut-off term `χ(ξ / R) • a(x, ξ)` is smooth on
 the whole space, including the zero frequency. -/
