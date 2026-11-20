@@ -312,34 +312,44 @@ private theorem isUnit_sharpPlus (x : (IsUnit.submonoid R).comap P.plus.subtype)
       ⟨x, (IsUnit.mem_submonoid_iff _).mp (Submonoid.mem_comap.mp x.2), rfl⟩)⟩ :
       (untiltDenominators p P).map (Ideal.Quotient.mk J))
 
+variable (P) in
+/-- `R` as the localisation of `R⁺` at the elements of `R⁺` that are units of `R`
+(`TauCeti.Huber.IsRingOfIntegralElements.isLocalization`). -/
+private noncomputable def plusLocalizationMap :
+    ((IsUnit.submonoid R).comap P.plus.subtype).LocalizationMap R :=
+  haveI := P.isRingOfIntegralElements.isLocalization
+  IsLocalization.toLocalizationMap _ R
+
+private theorem plusLocalizationMap_apply (x : P.plus) : plusLocalizationMap P x = x := by
+  simp [plusLocalizationMap, Algebra.algebraMap_ofSubsemiring_apply]
+
 variable (p P J) in
 /-- **The sharp map `♯_J : R → untilt p P J`.** On `x ∈ R⁺` it is the class `θ_J([x])` of the
 Teichmüller representative `[x]` (`TauCeti.Perfectoid.untilt.sharp_apply`); it is extended to `R`
 multiplicatively, every element of `R` being a quotient of an element of `R⁺` by a unit of `R`
 lying in `R⁺`. It is multiplicative and sends zero to zero, but is not additive in general. -/
 noncomputable def sharp : R →*₀ untilt p P J :=
-  haveI := P.isRingOfIntegralElements.isLocalization
-  (IsLocalization.toLocalizationMap ((IsUnit.submonoid R).comap P.plus.subtype) R).lift₀
-    (sharpPlus J) isUnit_sharpPlus
+  (plusLocalizationMap P).lift₀ (sharpPlus J) isUnit_sharpPlus
 
 /-- **The sharp map on `R⁺`**: `♯_J x` is the class of the Teichmüller representative `[x]`. -/
 @[simp]
 theorem sharp_apply (x : P.plus) :
     sharp p P J x =
-      algebraMap (𝕎 P.plus ⧸ J) (untilt p P J) (Ideal.Quotient.mk J (teichmuller p x)) :=
-  haveI := P.isRingOfIntegralElements.isLocalization
-  (IsLocalization.toLocalizationMap ((IsUnit.submonoid R).comap P.plus.subtype) R).lift_eq
-    (g := (sharpPlus J : P.plus →* untilt p P J)) isUnit_sharpPlus x
+      algebraMap (𝕎 P.plus ⧸ J) (untilt p P J) (Ideal.Quotient.mk J (teichmuller p x)) := by
+  rw [sharp, Submonoid.LocalizationMap.lift₀_def, ← plusLocalizationMap_apply,
+    Submonoid.LocalizationMap.lift_eq, MonoidHom.coe_ofClass, sharpPlus_apply]
 
 /-- **Uniqueness of the sharp map**: a multiplicative map `R → untilt p P J` which sends each
 `x ∈ R⁺` to the class of `[x]` is `♯_J`. -/
 theorem sharp_unique {f : R →* untilt p P J}
     (hf : ∀ x : P.plus, f x = algebraMap (𝕎 P.plus ⧸ J) (untilt p P J)
       (Ideal.Quotient.mk J (teichmuller p x))) :
-    f = (sharp p P J : R →* untilt p P J) :=
-  haveI := P.isRingOfIntegralElements.isLocalization
-  ((IsLocalization.toLocalizationMap ((IsUnit.submonoid R).comap P.plus.subtype) R).lift_unique
-    (g := (sharpPlus J : P.plus →* untilt p P J)) isUnit_sharpPlus hf).symm
+    f = (sharp p P J : R →* untilt p P J) := by
+  ext x
+  rw [MonoidHom.coe_ofClass, sharp, Submonoid.LocalizationMap.lift₀_def,
+    (plusLocalizationMap P).lift_unique (g := (sharpPlus J : P.plus →* untilt p P J))
+      isUnit_sharpPlus fun y ↦ by rw [plusLocalizationMap_apply, hf, MonoidHom.coe_ofClass,
+        sharpPlus_apply]]
 
 /-- The sharp map sends `R⁺` into `A⁺`. -/
 theorem sharp_mem_untiltPlus (x : P.plus) : sharp p P J x ∈ untiltPlus p P J := by
@@ -408,7 +418,8 @@ noncomputable def untiltPlusEquiv (hξ : ξ.IsPrimitive) :
 @[simp]
 theorem coe_untiltPlusEquiv (hξ : ξ.IsPrimitive) (a : 𝕎 P.plus ⧸ Ideal.span {ξ}) :
     (untiltPlusEquiv hξ a : untilt p P (Ideal.span {ξ})) = algebraMap _ _ a :=
-  (rfl)
+  (congrArg Subtype.val (RingEquiv.ofBijective_apply _ _ a)).trans
+    (RingHom.coe_rangeRestrict _ a)
 
 /-- **The reduction of `A⁺` modulo `♯ϖ` is `R⁺ ⧸ (ϖ)`**, along a primitive element `ξ` whose zeroth
 Witt coordinate is divisible by `ϖ ∈ R⁺`, for `R` a perfect Tate ring of characteristic `p`. It
@@ -439,8 +450,11 @@ theorem quotEquiv_mk_algebraMap (hξ : ξ.IsPrimitive) {ϖ : P.plus} (hξ₀ : �
     (a : 𝕎 P.plus)
     (h : algebraMap _ _ (Ideal.Quotient.mk (Ideal.span {ξ}) a) ∈ untiltPlus p P (Ideal.span {ξ})) :
     quotEquiv hξ hξ₀ (Ideal.Quotient.mk _ ⟨algebraMap _ _ (Ideal.Quotient.mk _ a), h⟩) =
-      Ideal.Quotient.mk _ (a.coeff 0) :=
-  quotEquiv_mk hξ hξ₀ a
+      Ideal.Quotient.mk _ (a.coeff 0) := by
+  have he : (⟨_, h⟩ : untiltPlus p P (Ideal.span {ξ})) =
+      untiltPlusEquiv hξ (Ideal.Quotient.mk _ a) :=
+    Subtype.ext (coe_untiltPlusEquiv hξ _).symm
+  rw [he, quotEquiv_mk]
 
 /-- `quotEquiv` sends the class of `♯x` to the class of `x`, for `x ∈ R⁺`. Not `@[simp]`: `simp`
 first rewrites `♯x` by `TauCeti.Perfectoid.untilt.sharp_apply`, and then proves this by
