@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.OfScalars
+public import Mathlib.Topology.Algebra.InfiniteSum.UniformOn
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Basic
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.Normed.Group.FunctionSeries
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
+import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log
 import TauCeti.Analysis.SpecialFunctions.Integrals.LogPower
 
@@ -32,15 +35,24 @@ open-disc Euler differential relation that analytically continues across `{z | 1
   `HasSum (fun k : ℕ ↦ z ^ (k + 1) / (k + 1 : ℂ) ^ n) (polylog n z)` for `‖z‖ < 1`.
 * `TauCeti.Polylog.hasSum_norm_polylog`: absolute convergence on the open unit disc, identifying
   the sum of norms with `(polylog n ‖z‖).re`.
-* `TauCeti.Polylog.tendstoUniformlyOn_polylog_closedBall` and
-  `TauCeti.Polylog.tendstoLocallyUniformlyOn_polylog_ball`: uniform convergence on closed subdiscs
-  `r < 1` and locally uniform convergence on `Metric.ball 0 1`.
+* `TauCeti.Polylog.tendstoUniformlyOn_polylog_closedBall`,
+  `TauCeti.Polylog.tendstoLocallyUniformlyOn_polylog_ball`,
+  `TauCeti.Polylog.hasSumUniformlyOn_polylog`, and
+  `TauCeti.Polylog.hasSumLocallyUniformlyOn_polylog`: uniform convergence on closed subdiscs
+  `r < 1` and locally uniform convergence on `Metric.ball 0 1` (both for ordered partial sums
+  and unconditional `Finset` sums).
 * `TauCeti.Polylog.hasFPowerSeriesOnBall_polylog`: native formal power-series expansion of
   `polylog n` on `Metric.eball 0 1`.
-* `TauCeti.Polylog.hasDerivAt_polylog_tsum_of_norm_lt_one`,
-  `TauCeti.Polylog.hasSum_deriv_polylog`, `TauCeti.Polylog.hasDerivAt_polylog_zero`, and
-  `TauCeti.Polylog.deriv_polylog_zero`: termwise derivative and its convergent series on the open
-  unit disc, and complex derivative `1` at `0` for all `n : ℤ`.
+* `TauCeti.Polylog.summable_norm_pow_div_natCast_add_one_zpow`,
+  `TauCeti.Polylog.summable_pow_div_natCast_add_one_zpow`,
+  `TauCeti.Polylog.hasDerivAt_polylog_tsum_of_norm_lt_one`,
+  `TauCeti.Polylog.hasSum_deriv_polylog`, `TauCeti.Polylog.deriv_polylog_eq_tsum`,
+  `TauCeti.Polylog.hasDerivAt_polylog_add_one_tsum`,
+  `TauCeti.Polylog.hasSum_deriv_polylog_add_one`,
+  `TauCeti.Polylog.deriv_polylog_add_one_eq_tsum`,
+  `TauCeti.Polylog.hasDerivAt_polylog_zero`, and `TauCeti.Polylog.deriv_polylog_zero`:
+  termwise derivative and its absolutely convergent series on the open unit disc, and complex
+  derivative `1` at `0` for all `n : ℤ`.
 
 ## References
 
@@ -148,11 +160,14 @@ private theorem hasDerivAt_tsum_div_zpow_and_summable (n : ℤ) {z : ℂ} (hz : 
     field_simp [hk0]
   have hbound_term (k : ℕ) (w : ℂ) (hw : w ∈ ball (0 : ℂ) R) : ‖g' k w‖ ≤ u k := by
     have hwR : ‖w‖ ≤ R := (mem_ball_zero_iff.mp hw).le
-    have hk1 : (1 : ℝ) ≤ k + 1 := by linarith [Nat.cast_nonneg (α := ℝ) k]
+    have hk1 : (1 : ℝ) ≤ ‖(k + 1 : ℝ)‖ := by
+      rw [Real.norm_of_nonneg (by positivity)]
+      linarith [Nat.cast_nonneg (α := ℝ) k]
     have hcast : ‖(k + 1 : ℂ)‖ = (k + 1 : ℝ) := by exact_mod_cast Complex.norm_natCast (k + 1)
     have hk_pow : ((k + 1 : ℝ) ^ (n - 1))⁻¹ ≤ (k + 1 : ℝ) ^ (1 - n).toNat := by
-      rw [← zpow_neg, neg_sub, ← zpow_natCast]
-      exact zpow_le_zpow_right₀ hk1 (Int.self_le_toNat (1 - n))
+      rw [← zpow_neg, neg_sub]
+      simpa [Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ k + 1)] using
+        TauCeti.norm_zpow_le_pow_toNat hk1 (1 - n)
     simp only [g', u, div_eq_inv_mul, norm_mul, norm_inv, norm_zpow, norm_pow, hcast]
     calc ((k + 1 : ℝ) ^ (n - 1))⁻¹ * ‖w‖ ^ k
         ≤ (k + 1 : ℝ) ^ (1 - n).toNat * R ^ k := by gcongr
@@ -258,6 +273,34 @@ theorem tendstoLocallyUniformlyOn_polylog_ball (n : ℤ) :
     mem_nhdsWithin_of_mem_nhds (closedBall_mem_nhds_of_mem hzr),
     tendstoUniformlyOn_polylog_closedBall n hr1 u hu⟩
 
+/-- The power series of `polylog n` converges unconditionally and uniformly on every closed subdisc
+`Metric.closedBall 0 r` of radius `r < 1`. -/
+theorem hasSumUniformlyOn_polylog (n : ℤ) {r : ℝ} (hr : r < 1) :
+    HasSumUniformlyOn (fun (k : ℕ) (z : ℂ) ↦ z ^ (k + 1) / (k + 1 : ℂ) ^ n) (polylog n)
+      (closedBall 0 r) := by
+  have hmax1 : max r 0 < 1 := max_lt hr zero_lt_one
+  have hmax' : ‖((max r 0 : ℝ) : ℂ)‖ < 1 := by
+    rwa [Complex.norm_real, Real.norm_of_nonneg (le_max_right r 0)]
+  have hu : Summable (fun k : ℕ ↦ ‖((max r 0 : ℝ) : ℂ) ^ (k + 1) / (k + 1 : ℂ) ^ n‖) :=
+    (hasSum_norm_polylog n hmax').summable
+  refine (HasSumUniformlyOn.of_norm_le_summable hu fun k z hz ↦ ?_).congr_right fun z hz ↦ ?_
+  · rw [mem_closedBall_zero_iff] at hz
+    simp only [norm_div, norm_pow, Complex.norm_real, Real.norm_of_nonneg (le_max_right r 0)]
+    gcongr
+    exact hz.trans (le_max_left r 0)
+  · exact (polylog_eq_tsum n ((mem_closedBall_zero_iff.mp hz).trans_lt hr)).symm
+
+/-- The power series of `polylog n` converges unconditionally and locally uniformly on the open
+unit disc `Metric.ball 0 1`. -/
+theorem hasSumLocallyUniformlyOn_polylog (n : ℤ) :
+    HasSumLocallyUniformlyOn (fun (k : ℕ) (z : ℂ) ↦ z ^ (k + 1) / (k + 1 : ℂ) ^ n) (polylog n)
+      (ball 0 1) := by
+  refine hasSumLocallyUniformlyOn_of_of_forall_exists_nhds fun z hz ↦ ?_
+  obtain ⟨r, hzr, hr1⟩ := exists_between (mem_ball_zero_iff.mp hz)
+  exact ⟨closedBall 0 r,
+    nhdsWithin_le_nhds (closedBall_mem_nhds_of_mem (mem_ball_zero_iff.mpr hzr)),
+    hasSumUniformlyOn_polylog n hr1⟩
+
 /-- On the open unit disc `Metric.eball 0 1`, `polylog n` is represented by the scalar formal
 multilinear series with constant term `0` and `(k + 1)`-st coefficient `((k + 1 : ℂ) ^ n)⁻¹`. -/
 theorem hasFPowerSeriesOnBall_polylog (n : ℤ) :
@@ -280,6 +323,22 @@ theorem hasFPowerSeriesOnBall_polylog (n : ℤ) :
       pow_zero, smul_eq_mul, zero_mul, sub_zero, inv_mul_eq_div]
     exact hasSum_polylog n hy
 
+/-- The unshifted derivative series `∑' k : ℕ, z ^ k / (k + 1) ^ n` converges absolutely at every
+`z` with `‖z‖ < 1`. -/
+theorem summable_norm_pow_div_natCast_add_one_zpow (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
+    Summable (fun k : ℕ ↦ ‖z ^ k / (k + 1 : ℂ) ^ n‖) := by
+  rcases eq_or_ne z 0 with rfl | hz0
+  · refine summable_of_ne_finset_zero (s := {0}) fun k hk ↦ ?_
+    simp [zero_pow (by simpa using hk)]
+  · refine ((hasSum_norm_polylog n hz).summable.mul_left ‖z‖⁻¹).congr fun k ↦ ?_
+    rw [pow_succ', mul_div_assoc, norm_mul, inv_mul_cancel_left₀ (norm_ne_zero_iff.mpr hz0)]
+
+/-- The unshifted derivative series `∑' k : ℕ, z ^ k / (k + 1) ^ n` is summable at every `z` with
+`‖z‖ < 1`. -/
+theorem summable_pow_div_natCast_add_one_zpow (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
+    Summable (fun k : ℕ ↦ z ^ k / (k + 1 : ℂ) ^ n) :=
+  (summable_norm_pow_div_natCast_add_one_zpow n hz).of_norm
+
 /-- On the open unit disc `‖z‖ < 1` (including `z = 0`), `polylog n` has complex derivative given
 by the differentiated power series `∑_{k ≥ 0} z ^ k / (k + 1) ^ (n - 1)`. -/
 theorem hasDerivAt_polylog_tsum_of_norm_lt_one (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
@@ -295,6 +354,28 @@ theorem hasSum_deriv_polylog (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
     HasSum (fun k : ℕ ↦ z ^ k / (k + 1 : ℂ) ^ (n - 1)) (deriv (polylog n) z) := by
   rw [(hasDerivAt_polylog_tsum_of_norm_lt_one n hz).deriv]
   exact (hasDerivAt_tsum_div_zpow_and_summable n hz).2.hasSum
+
+/-- Power-series expansion of `deriv (polylog n) z` on the open unit disc `‖z‖ < 1`. -/
+theorem deriv_polylog_eq_tsum (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
+    deriv (polylog n) z = ∑' k : ℕ, z ^ k / (k + 1 : ℂ) ^ (n - 1) :=
+  (hasSum_deriv_polylog n hz).tsum_eq.symm
+
+/-- On the open unit disc `‖z‖ < 1`, `polylog (n + 1)` has complex derivative
+`∑_{k ≥ 0} z ^ k / (k + 1) ^ n`. -/
+theorem hasDerivAt_polylog_add_one_tsum (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
+    HasDerivAt (polylog (n + 1)) (∑' k : ℕ, z ^ k / (k + 1 : ℂ) ^ n) z := by
+  simpa only [add_sub_cancel_right] using hasDerivAt_polylog_tsum_of_norm_lt_one (n + 1) hz
+
+/-- Power-series expansion (`HasSum` form) of `deriv (polylog (n + 1)) z` on the open unit disc
+`‖z‖ < 1`. -/
+theorem hasSum_deriv_polylog_add_one (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
+    HasSum (fun k : ℕ ↦ z ^ k / (k + 1 : ℂ) ^ n) (deriv (polylog (n + 1)) z) := by
+  simpa only [add_sub_cancel_right] using hasSum_deriv_polylog (n + 1) hz
+
+/-- Power-series expansion of `deriv (polylog (n + 1)) z` on the open unit disc `‖z‖ < 1`. -/
+theorem deriv_polylog_add_one_eq_tsum (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
+    deriv (polylog (n + 1)) z = ∑' k : ℕ, z ^ k / (k + 1 : ℂ) ^ n :=
+  (hasSum_deriv_polylog_add_one n hz).tsum_eq.symm
 
 /-- Every integer-weight polylogarithm has complex derivative `1` at `0`. -/
 theorem hasDerivAt_polylog_zero (n : ℤ) : HasDerivAt (polylog n) 1 0 := by

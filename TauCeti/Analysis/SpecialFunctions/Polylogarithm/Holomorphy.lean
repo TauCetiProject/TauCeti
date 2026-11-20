@@ -33,12 +33,17 @@ polylogarithms. In weight one the domain `{z | 1 - z ∈ Complex.slitPlane}` is 
 
 ## Main results
 
-* `TauCeti.Polylog.hasDerivAt_polylog_one` and `TauCeti.Polylog.hasDerivAt_polylog_nat_add_two`:
-  complex derivatives of weight one and weights `k + 2` on `{z | 1 - z ∈ Complex.slitPlane}`.
+* `TauCeti.Polylog.hasDerivAt_polylog_one`, `TauCeti.Polylog.deriv_polylog_one`,
+  `TauCeti.Polylog.intervalIntegrable_neg_log_pow_div_one_sub_mul`,
+  `TauCeti.Polylog.hasDerivAt_polylog_nat_add_two`, and
+  `TauCeti.Polylog.deriv_polylog_nat_add_two`:
+  complex derivatives of weight one and weights `k + 2` on `{z | 1 - z ∈ Complex.slitPlane}`
+  and interval integrability of the differentiated radial kernel.
 * `TauCeti.Polylog.differentiableAt_polylog`, `TauCeti.Polylog.differentiableOn_polylog`,
-  `TauCeti.Polylog.analyticAt_polylog`, and `TauCeti.Polylog.analyticOnNhd_polylog`:
-  complex differentiability and analyticity of `polylog n` on `{z | 1 - z ∈ Complex.slitPlane}`
-  for all `n : ℤ`.
+  `TauCeti.Polylog.analyticAt_polylog`, `TauCeti.Polylog.analyticOnNhd_polylog`,
+  `TauCeti.Polylog.continuousAt_polylog`, and `TauCeti.Polylog.continuousOn_polylog`:
+  complex differentiability, analyticity, and continuity of `polylog n` on
+  `{z | 1 - z ∈ Complex.slitPlane}` for all `n : ℤ`.
 * `TauCeti.Polylog.mul_deriv_polylog`, `TauCeti.Polylog.deriv_polylog`, and
   `TauCeti.Polylog.hasDerivAt_polylog` (along with their shifted forms
   `TauCeti.Polylog.mul_deriv_polylog_add_one`, `TauCeti.Polylog.deriv_polylog_add_one`, and
@@ -81,12 +86,17 @@ theorem deriv_polylog_one {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
     deriv (polylog 1) z = (1 - z)⁻¹ :=
   (hasDerivAt_polylog_one hz).deriv
 
-/-- On the principal domain `{z | 1 - z ∈ Complex.slitPlane}`, `polylog (k + 2)` has complex
-derivative `(k !)⁻¹ * ∫ t in 0..1, (-Real.log t) ^ k / (1 - t * z)`. -/
-theorem hasDerivAt_polylog_nat_add_two (k : ℕ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
-    HasDerivAt (polylog (k + 2 : ℕ))
-      ((Nat.factorial k : ℂ)⁻¹ *
-        ∫ t : ℝ in 0..1, ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * z)) z := by
+/-- Parametric differentiation of the raw weight-`(k + 2)` radial integral on the principal domain,
+yielding both interval integrability of the differentiated kernel and `HasDerivAt` of the
+integral. -/
+private lemma intervalIntegrable_and_hasDerivAt_radialIntegrand (k : ℕ) {z : ℂ}
+    (hz : 1 - z ∈ Complex.slitPlane) :
+    IntervalIntegrable
+      (fun t : ℝ ↦ ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * z)) volume 0 1 ∧
+    HasDerivAt
+      (fun w : ℂ ↦ ∫ t : ℝ in 0..1,
+        ((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - (t : ℂ) * w)) / (t : ℂ))
+      (∫ t : ℝ in 0..1, ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * z)) z := by
   obtain ⟨ε, hε, hball⟩ := Metric.nhds_basis_closedBall.mem_iff.mp
     (Complex.isOpen_setOf_one_sub_mem_slitPlane.mem_nhds hz)
   obtain ⟨δ, hδ, hδ_le⟩ := exists_le_norm_one_sub_ofReal_mul (isCompact_closedBall z ε) hball
@@ -121,14 +131,38 @@ theorem hasDerivAt_polylog_nat_add_two (k : ℕ) {z : ℂ} (hz : 1 - z ∈ Compl
     dsimp only [F']
     field_simp [ht0, htw0]
     ring
-  have hint := (intervalIntegral.hasDerivAt_integral_of_dominated_loc_of_deriv_le
+  exact intervalIntegral.hasDerivAt_integral_of_dominated_loc_of_deriv_le
     (closedBall_mem_nhds z hε)
     (Eventually.of_forall fun w ↦ (by fun_prop : Measurable (F w)).aestronglyMeasurable)
     (intervalIntegrable_radialIntegrand k z)
     (by fun_prop : Measurable (F' z)).aestronglyMeasurable
-    hbound hbound_int hdiff).2
+    hbound hbound_int hdiff
+
+/-- For every `k : ℕ` and `z` in `{z | 1 - z ∈ Complex.slitPlane}`, the differentiated radial
+kernel `t ↦ (-Real.log t) ^ k / (1 - t * z)` is interval integrable on `[0, 1]`. -/
+theorem intervalIntegrable_neg_log_pow_div_one_sub_mul (k : ℕ) {z : ℂ}
+    (hz : 1 - z ∈ Complex.slitPlane) :
+    IntervalIntegrable
+      (fun t : ℝ ↦ ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * z)) volume 0 1 :=
+  (intervalIntegrable_and_hasDerivAt_radialIntegrand k hz).1
+
+/-- On the principal domain `{z | 1 - z ∈ Complex.slitPlane}`, `polylog (k + 2)` has complex
+derivative `(k !)⁻¹ * ∫ t in 0..1, (-Real.log t) ^ k / (1 - t * z)`. -/
+theorem hasDerivAt_polylog_nat_add_two (k : ℕ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
+    HasDerivAt (polylog (k + 2 : ℕ))
+      ((Nat.factorial k : ℂ)⁻¹ *
+        ∫ t : ℝ in 0..1, ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * z)) z := by
+  have hint := (intervalIntegrable_and_hasDerivAt_radialIntegrand k hz).2
   rw [funext (polylog_nat_add_two k)]
   exact hint.const_mul (Nat.factorial k : ℂ)⁻¹
+
+/-- On the principal domain `{z | 1 - z ∈ Complex.slitPlane}`,
+`deriv (polylog (k + 2)) z = (k !)⁻¹ * ∫ t in 0..1, (-Real.log t) ^ k / (1 - t * z)`. -/
+theorem deriv_polylog_nat_add_two (k : ℕ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
+    deriv (polylog (k + 2 : ℕ)) z =
+      (Nat.factorial k : ℂ)⁻¹ *
+        ∫ t : ℝ in 0..1, ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * z) :=
+  (hasDerivAt_polylog_nat_add_two k hz).deriv
 
 /-- Every integer-weight polylogarithm is complex differentiable at each point of the principal
 domain `{z | 1 - z ∈ Complex.slitPlane}`. -/
@@ -162,6 +196,18 @@ is complex analytic on the principal domain `{z | 1 - z ∈ Complex.slitPlane}`.
 theorem analyticOnNhd_polylog (n : ℤ) :
     AnalyticOnNhd ℂ (polylog n) {z : ℂ | 1 - z ∈ Complex.slitPlane} :=
   fun _ hz ↦ analyticAt_polylog n hz
+
+/-- Every integer-weight polylogarithm is continuous at each point of the principal domain
+`{z | 1 - z ∈ Complex.slitPlane}`. -/
+theorem continuousAt_polylog (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
+    ContinuousAt (polylog n) z :=
+  (analyticAt_polylog n hz).continuousAt
+
+/-- Every integer-weight polylogarithm is continuous on the principal domain
+`{z | 1 - z ∈ Complex.slitPlane}`. -/
+theorem continuousOn_polylog (n : ℤ) :
+    ContinuousOn (polylog n) {z : ℂ | 1 - z ∈ Complex.slitPlane} :=
+  (analyticOnNhd_polylog n).continuousOn
 
 /-- **Euler differential recursion for polylogarithms.** For every integer weight `n : ℤ` and every
 `z` in the principal domain `{z | 1 - z ∈ Complex.slitPlane}`, including `z = 0`,
