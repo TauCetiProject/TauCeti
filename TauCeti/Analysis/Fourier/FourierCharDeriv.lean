@@ -28,7 +28,7 @@ at most `2π ‖ζ‖ ‖z - z'‖`, which is how increments of oscillatory inte
 are bounded by a first frequency moment.
 
 The plane wave `x ↦ 𝐞 ⟪x, ξ⟫` is a function of temperate growth, and since it has modulus one
-it lies in `L^∞` with norm one.
+it lies in `L^∞` of any measure, with norm one when the measure is nonzero.
 
 ## Main results
 
@@ -40,7 +40,7 @@ it lies in `L^∞` with norm one.
   `‖𝐞 ⟪ζ, z⟫ • v - 𝐞 ⟪ζ, z'⟫ • v‖ ≤ 2π ‖ζ‖ ‖z - z'‖ ‖v‖`.
 * `Real.hasTemperateGrowth_fourierChar_inner`: the plane wave `x ↦ 𝐞 ⟪x, ξ⟫` has temperate growth.
 * `Real.memLp_top_fourierChar_inner`, `Real.norm_toLp_fourierChar_inner`: the plane wave lies in
-  `L^∞` with norm one.
+  `L^∞` of any measure, with norm one when the measure is nonzero.
 -/
 
 public section
@@ -105,20 +105,19 @@ theorem hasTemperateGrowth_fourierChar_inner (ξ : E) :
   rw [h]
   exact Complex.hasTemperateGrowth_exp_mul_I.comp (by fun_prop)
 
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+variable [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E}
 
 /-- The plane wave `x ↦ 𝐞 ⟪x, ξ⟫` is essentially bounded. -/
-theorem memLp_top_fourierChar_inner (ξ : E) :
-    MemLp (fun x : E ↦ (𝐞 ⟪x, ξ⟫ : ℂ)) ∞ (volume : Measure E) :=
+theorem memLp_top_fourierChar_inner (ξ : E) : MemLp (fun x : E ↦ (𝐞 ⟪x, ξ⟫ : ℂ)) ∞ μ :=
   memLp_top_of_bound (by fun_prop : Continuous fun x : E ↦ (𝐞 ⟪x, ξ⟫ : ℂ)).aestronglyMeasurable 1
     (ae_of_all _ fun x ↦ by simp)
 
-/-- The plane wave `x ↦ 𝐞 ⟪x, ξ⟫` has norm one in `L^∞`. -/
-theorem norm_toLp_fourierChar_inner (ξ : E) :
-    ‖(memLp_top_fourierChar_inner ξ).toLp _‖ = 1 := by
+/-- The plane wave `x ↦ 𝐞 ⟪x, ξ⟫` has norm one in `L^∞` of any nonzero measure. -/
+theorem norm_toLp_fourierChar_inner [NeZero μ] (ξ : E) :
+    ‖(memLp_top_fourierChar_inner (μ := μ) ξ).toLp _‖ = 1 := by
   rw [Lp.norm_toLp, eLpNorm_congr_norm_ae (memLp_top_fourierChar_inner ξ).aestronglyMeasurable
     aestronglyMeasurable_const (g := fun _ : E ↦ (1 : ℂ)) (ae_of_all _ fun x ↦ by simp),
-    eLpNorm_const _ ENNReal.top_ne_zero (NeZero.ne volume)]
+    eLpNorm_const _ ENNReal.top_ne_zero (NeZero.ne μ)]
   simp
 
 end Real

@@ -109,13 +109,13 @@ theorem littlewoodPaleyBlock_fourierInv_delta_of_le_norm_of_norm_le {j : ℕ} {�
   · rcases le_or_gt k j with hkj | hkj
     · rw [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm]
       · simp
-      exact le_trans (mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two hkj)
-        φ.rOut_pos.le) h₁
+      have hr : 0 < φ.rOut := φ.rOut_pos
+      exact le_trans (by gcongr; norm_num) h₁
     · obtain ⟨m, rfl⟩ : ∃ m, k = m + 1 := ⟨k - 1, by omega⟩
       rw [φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le]
       · simp
-      exact h₂.trans (mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two (by omega))
-        φ.rIn_pos.le)
+      have hr : 0 < φ.rIn := φ.rIn_pos
+      exact h₂.trans (by gcongr <;> first | omega | norm_num)
 
 /-- **A plane wave of low frequency is its own low-frequency block.** If `‖ξ‖ ≤ φ.rIn`, then the
 plane wave `𝓕⁻ δ_ξ` is its block `Δ₀`, and all its other blocks vanish. -/
@@ -189,9 +189,9 @@ theorem two_mul_pi_le_of_forall_lineDerivOp_eq_and_norm_le [Nontrivial E] {C R :
     dsimp only
     rw [← hg, Lp.toTemperedDistribution_smul, hf, lineDerivOp_fourierInv_delta,
       real_inner_self_eq_norm_sq, hξ]
-  rw [hge, norm_smul, norm_toLp_fourierChar_inner, hξ] at hgC
-  have hR2 : 0 < R * R := mul_pos hR hR
-  refine le_of_mul_le_mul_right ?_ hR2
-  simpa [abs_of_pos Real.pi_pos, abs_of_pos hR, sq, mul_assoc, mul_comm, mul_left_comm] using hgC
+  have hn : ‖2 * π * Complex.I * ((R ^ 2 : ℝ) : ℂ)‖ = 2 * π * R ^ 2 := by
+    simp [abs_of_pos Real.pi_pos]
+  rw [hge, norm_smul, norm_toLp_fourierChar_inner, hξ, hn] at hgC
+  nlinarith [mul_pos hR hR]
 
 end TauCeti
