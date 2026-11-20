@@ -86,9 +86,8 @@ theorem not_isFirstBreak_approaching : ¬IsFirstBreak (lowerConvexEnvelope appro
     isSupportingLine_approaching.isAdmissible).isFirstBreak_iff]
   rintro ⟨-, -, c, -, -, h1, τ, hτ, hc⟩
   have hc0 : c = 0 := by
-    have := mem_supportingFace.mp h1
-    norm_num [approaching] at this
-    rw [← WithTop.coe_one, ← WithTop.coe_add, WithTop.coe_eq_coe] at this
+    have := WithTop.coe_injective (mem_supportingFace.mp h1)
+    norm_num at this
     linarith
   subst hc0
   -- A point far enough out lies below the steeper line through `(1, 1)`.

@@ -120,14 +120,12 @@ theorem isFirstBreak_newtonPolygon_iff {τ : ℝ} (hf : f.HasGaussNorm norm (b ^
     IsFirstBreak (f.newtonPolygon v) σ l j ↔ l < j ∧ f.order = l ∧
       TauCeti.PowerSeries.IsLowestDominant (b ^ σ) l f ∧
       TauCeti.PowerSeries.IsDistinguished (b ^ σ) j f := by
-  rw [(f.isConvexSeq_newtonPolygon v).isFirstBreak_iff,
-    isFiniteFace_newtonPolygon_iff f v hb hv hf hστ]
-  refine ⟨fun ⟨hlj, hl, hface⟩ => ⟨hlj, ?_, hface⟩, fun ⟨hlj, hord, hface⟩ =>
-    ⟨hlj, fun n hn => f.newtonPolygon_eq_top_of_lt_order v (by rw [hord]; exact_mod_cast hn),
-      hface⟩⟩
-  have hbr := (f.isConvexSeq_newtonPolygon v).isFirstBreak_iff.mpr ⟨hlj, hl,
-    (isFiniteFace_newtonPolygon_iff f v hb hv hf hστ).mpr hface⟩
-  exact order_eq_of_isFirstBreak_newtonPolygon (fun _ => v.top_iff.mp) hbr
+  refine ⟨fun hbr => ⟨hbr.lt, order_eq_of_isFirstBreak_newtonPolygon (fun _ => v.top_iff.mp) hbr,
+    (isFiniteFace_newtonPolygon_iff f v hb hv hf hστ).mp
+      (hbr.isFiniteFace (f.isConvexSeq_newtonPolygon v))⟩, fun ⟨hlj, hord, hface⟩ =>
+    (f.isConvexSeq_newtonPolygon v).isFirstBreak_iff.mpr ⟨hlj,
+      fun n hn => f.newtonPolygon_eq_top_of_lt_order v (by rw [hord]; exact_mod_cast hn),
+      (isFiniteFace_newtonPolygon_iff f v hb hv hf hστ).mpr hface⟩⟩
 
 /-- **First-segment factor.** If the Newton polygon of `f` has a first break at `j` of slope `σ`
 starting at `l`, and `u * P = f` for a unit `u` of the ring of series restricted at `b ^ σ` and a

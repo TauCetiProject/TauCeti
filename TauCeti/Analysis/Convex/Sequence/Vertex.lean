@@ -229,21 +229,18 @@ theorem isFiniteFace_iff (hh : IsLowerConvexEnvelope a h) {σ : ℝ} {l u : ℕ}
       ∃ τ > σ, IsSupportingLine a τ (c + (σ - τ) * u) := by
   refine ⟨fun hf => ?_, fun ⟨hlu, c, hc, hl, hu, ⟨τ₁, hτ₁, hc₁⟩, τ₂, hτ₂, hc₂⟩ =>
     hh.isFiniteFace_of_isSupportingLine hlu hc hl hu hτ₁ hc₁ hτ₂ hc₂⟩
-  obtain ⟨c, hc, hface⟩ := hf.exists_intercept
-  have hl : h l = ((c + σ * l : ℝ) : WithTop ℝ) :=
-    mem_supportingFace.mp (hface.symm.subset ⟨le_rfl, hf.left_le_right⟩)
-  have hu : h u = ((c + σ * u : ℝ) : WithTop ℝ) :=
-    mem_supportingFace.mp (hface.symm.subset ⟨hf.left_le_right, le_rfl⟩)
+  obtain ⟨c, hc, hl, hu⟩ := hh.exists_isSupportingLine_isLeast_isGreatest_of_isFiniteFace hf
+  have hl' : h l = ((c + σ * l : ℝ) : WithTop ℝ) :=
+    (hh.eq_left_of_isFiniteFace hf).trans (mem_supportingFace.mp hl.1)
+  have hu' : h u = ((c + σ * u : ℝ) : WithTop ℝ) :=
+    (hh.eq_right_of_isFiniteFace hf).trans (mem_supportingFace.mp hu.1)
   obtain ⟨ε₁, hε₁, hc₁⟩ := hf.exists_pos_isSupportingLine_left hh.isConvexSeq
   obtain ⟨ε₂, hε₂, hc₂⟩ := hf.exists_pos_isSupportingLine_right hh.isConvexSeq
   have hc₁' := hc₁ (σ - ε₁) ⟨le_rfl, by linarith⟩
   have hc₂' := hc₂ (σ + ε₂) ⟨by linarith, le_rfl⟩
-  rw [hl, WithTop.untop₀_coe] at hc₁'
-  rw [hu, WithTop.untop₀_coe] at hc₂'
-  refine ⟨hf.left_le_right, c, hh.isSupportingLine_iff.mp hc, ?_, ?_,
-    ⟨σ - ε₁, by linarith, ?_⟩, σ + ε₂, by linarith, ?_⟩
-  · rw [mem_supportingFace, ← hh.eq_left_of_isFiniteFace hf, hl]
-  · rw [mem_supportingFace, ← hh.eq_right_of_isFiniteFace hf, hu]
+  rw [hl', WithTop.untop₀_coe] at hc₁'
+  rw [hu', WithTop.untop₀_coe] at hc₂'
+  refine ⟨hf.left_le_right, c, hc, hl.1, hu.1, ⟨σ - ε₁, by linarith, ?_⟩, σ + ε₂, by linarith, ?_⟩
   · convert hh.isSupportingLine_iff.mp hc₁' using 1
     ring
   · convert hh.isSupportingLine_iff.mp hc₂' using 1
