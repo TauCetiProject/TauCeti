@@ -7,14 +7,18 @@ module
 
 public import TauCeti.ModelTheory.Order
 public import TauCeti.ModelTheory.Scott.Isomorphism
+public import Mathlib.SetTheory.Cardinal.Aleph
 
 /-!
-# Well-orders of a fixed order type are `Lω₁ω`-definable but not first-order axiomatizable
+# Well-orders of a fixed or bounded order type are `Lω₁ω`-definable
 
 By Scott's isomorphism theorem every countable order `M` has an `Lω₁ω` sentence, in the language
 of orders, whose countable models are exactly the orders isomorphic to `M`. When `M` is a
 well-order, for example `o.ToType` for a countable ordinal `o`, these are exactly the countable
-well-orders of the order type of `M`.
+well-orders of the order type of `M`. Taking the countable disjunction of these sentences over the
+ordinals below a countable ordinal `α` defines the countable well-orders of order type below `α`.
+The bound is necessary: by `TauCeti.wellFoundedLT_undefinable`, no single sentence
+defines all countable well-orders.
 
 For an infinite well-order this cannot be done in first-order logic, even by a theory with
 infinitely many sentences: by `TauCeti.exists_countable_model_not_wellFoundedLT`, every
@@ -27,6 +31,8 @@ its models.
 
 * `TauCeti.exists_sentenceω_realize_iff_nonempty_orderIso`: every countable order has an `Lω₁ω`
   sentence true in exactly the countable orders isomorphic to it.
+* `TauCeti.exists_sentenceω_realize_iff_exists_lt_nonempty_orderIso`: for a countable ordinal `α`,
+  some `Lω₁ω` sentence is true in exactly the countable well-orders of order type below `α`.
 
 ## References
 
@@ -42,7 +48,7 @@ universe w w'
 
 namespace TauCeti
 
-open FirstOrder FirstOrder.Language Structure
+open FirstOrder FirstOrder.Language Structure Ordinal
 
 /-- Every countable order `M` has an `Lω₁ω` sentence in the language of orders that holds in a
 countable order, in any universe, exactly when that order is isomorphic to `M`. For a countable
@@ -57,5 +63,26 @@ theorem exists_sentenceω_realize_iff_nonempty_orderIso (M : Type w) [LE M] [Cou
   refine ⟨σ, fun N _ _ _ _ => (hσ N).trans ⟨fun ⟨e⟩ => ?_, fun ⟨e⟩ => ⟨StrongHomClass.toEquiv e⟩⟩⟩
   let := StrongHomClass.toOrderIsoClass Language.order M N (M ≃[Language.order] N)
   exact ⟨OrderIso.ofClass e⟩
+
+/-- **Well-orders of bounded type are `Lω₁ω`-definable.** For a countable ordinal `α`, some
+`Lω₁ω` sentence in the language of orders holds in a countable order, in any universe, exactly
+when that order is isomorphic to `β.ToType` for some `β < α`, that is, when it is a well-order of
+order type below `α`. The sentence is the countable disjunction, over `β < α`, of the sentences
+of `exists_sentenceω_realize_iff_nonempty_orderIso` for `β.ToType`. -/
+theorem exists_sentenceω_realize_iff_exists_lt_nonempty_orderIso {α : Ordinal.{w}}
+    (hα : α < ω₁) :
+    ∃ σ : Language.order.Sentenceω, ∀ (N : Type w') [Language.order.Structure N] [LE N]
+      [Language.order.OrderedStructure N] [Countable N],
+      SentenceInf.Realize σ N ↔ ∃ β < α, Nonempty (β.ToType ≃o N) := by
+  have hσ (β : Set.Iio α) :=
+    haveI := Cardinal.countable_toType_of_lt_omega_one (β.property.trans hα)
+    exists_sentenceω_realize_iff_nonempty_orderIso.{w, w'} β.val.ToType
+  choose σ hσ using hσ
+  refine ⟨BoundedFormulaInf.iSupAlong
+    (IndexCoding.ofEncodableWith (Cardinal.countable_Iio_of_lt_omega_one hα).toEncodable) σ,
+    fun N _ _ _ _ => ?_⟩
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_iSupAlong]
+  simp only [← FormulaInf.realize_def, ← SentenceInf.realize_def, hσ]
+  exact ⟨fun ⟨β, h⟩ => ⟨β.val, β.property, h⟩, fun ⟨β, hβ, h⟩ => ⟨⟨β, hβ⟩, h⟩⟩
 
 end TauCeti
