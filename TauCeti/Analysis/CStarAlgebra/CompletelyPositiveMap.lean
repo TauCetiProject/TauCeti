@@ -138,14 +138,12 @@ theorem IsNPositive.id (n : ℕ) : IsNPositive n (LinearMap.id : A →ₗ[ℂ] A
 /-- The zero map is `n`-positive. -/
 @[simp]
 theorem IsNPositive.zero (n : ℕ) : IsNPositive n (0 : A →ₗ[ℂ] B) :=
-  fun _ _ => (CStarMatrix.ext fun _ _ => by simp [CStarMatrix.zero_apply]).ge
+  fun M _ => (CStarMatrix.map_zero_linearMap M).ge
 
 /-- The sum of `n`-positive maps is `n`-positive. -/
 theorem IsNPositive.add {n : ℕ} {φ ψ : A →ₗ[ℂ] B} (hφ : IsNPositive n φ) (hψ : IsNPositive n ψ) :
     IsNPositive n (φ + ψ) := fun M hM => by
-  have h : M.map ⇑(φ + ψ) = M.map φ + M.map ψ :=
-    CStarMatrix.ext fun _ _ => by simp [CStarMatrix.add_apply]
-  rw [h]
+  rw [CStarMatrix.map_add_linearMap]
   exact add_nonneg (hφ M hM) (hψ M hM)
 
 /-- The composition of `n`-positive maps is `n`-positive. -/
@@ -301,6 +299,8 @@ end Unital
 
 section UnitalDomain
 
+open scoped ComplexOrder
+
 variable [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
   {φ : A →ₗ[ℂ] B}
@@ -316,7 +316,7 @@ private theorem IsNPositive.inr {n : ℕ} (hφ : IsNPositive n φ) :
 theorem IsNPositive.star_map_mul_map_le (hφ : IsNPositive 2 φ) (a : A) :
     star (φ a) * φ a ≤ ‖φ 1‖ • φ (star a * a) := by
   have := hφ.inr.star_map_mul_map_le_of_unital a
-  rw [← Unitization.inr_le_inr_iff]
+  rw [← Unitization.inr_le_inr_iff ℂ]
   simpa [Unitization.norm_inr, Unitization.inr_smul] using this
 
 /-- A `2`-positive map with unital domain is bounded by `‖φ 1‖`. -/

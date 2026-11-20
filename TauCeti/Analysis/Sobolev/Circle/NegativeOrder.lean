@@ -112,7 +112,7 @@ theorem adjoint_precompEquivOfLift {f' : AddCircle T → ℂ} (hf' : ∀ x : ℝ
   -- Change variables `y = φ x` in the `L²` inner product of `v` and `b`.
   rw [← (toLpₗᵢ T).inner_map_map v b, ← (toLpₗᵢ T).inner_map_map a (P b), L2.inner_def,
     L2.inner_def, ← integral_haarAddCircle_deriv_smul_comp_of_lift hF hper hφ
-      (fun x ↦ (hc.trans_le (hcF x)).le) (f' := (periodic_deriv_of_lift hF hper).lift)
+      (fun x ↦ (hc.trans_le (hcF x)).le) (f' := (periodic_of_hasDerivAt_of_lift hF hper).lift)
       (fun _ ↦ rfl)
       (fun y ↦ inner ℂ (toLpₗᵢ T v y) (toLpₗᵢ T b y))]
   refine integral_congr_ae ?_

@@ -243,18 +243,15 @@ variable {C : Type*} [Category* C] [Preadditive C] [MonoidalCategory C]
   [MonoidalPreadditive C] [∀ K L : CochainComplex C ℤ, HasTensor K L]
 
 /-- The curried tensor bifunctor on complexes computes the total tensor product. -/
-@[simp]
 theorem curriedTensor_map₂CochainComplex_obj_obj (K A : CochainComplex C ℤ) :
     ((curriedTensor C).map₂CochainComplex.obj K).obj A = tensorObj K A := rfl
 
 /-- The curried tensor bifunctor acts in the right input by tensoring with an identity. -/
-@[simp]
 theorem curriedTensor_map₂CochainComplex_obj_map (K : CochainComplex C ℤ)
     {A B : CochainComplex C ℤ} (g : A ⟶ B) :
     ((curriedTensor C).map₂CochainComplex.obj K).map g = tensorHom (𝟙 K) g := rfl
 
 /-- The curried tensor bifunctor acts in the left input by tensoring with an identity. -/
-@[simp]
 theorem curriedTensor_map₂CochainComplex_map_app {K L : CochainComplex C ℤ}
     (f : K ⟶ L) (A : CochainComplex C ℤ) :
     ((curriedTensor C).map₂CochainComplex.map f).app A = tensorHom f (𝟙 A) := rfl

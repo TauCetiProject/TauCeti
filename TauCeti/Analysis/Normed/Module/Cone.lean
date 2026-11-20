@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.Analysis.Normed.Module.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Rapid decay in conic neighbourhoods
@@ -40,7 +41,10 @@ direction combine into one condition on the whole frequency space.
   cone `Γ'` containing `ξ` such that `closedBall η (c * ‖η‖) ⊆ Γ` for every `η ∈ Γ'`.
 * `TauCeti.exists_one_add_norm_pow_mul_norm_le_of_hasSum`: decay of order `N` on `Γ'` of a
   superposition of translates of a function decaying at order `N` on `Γ`, with rapidly decreasing
-  coefficients.
+  coefficients, bounded by a weighted `ℓ¹` norm of the coefficients.
+* `TauCeti.exists_one_add_norm_pow_mul_norm_apply_sub_le`: the pointwise bound behind it, and
+  behind its integral form: for `η ∈ Γ'` and every shift `θ`,
+  `(1 + ‖η‖) ^ N (1 + ‖η - θ‖) ^ M ‖F (η - θ)‖` is at most a constant times a power of `1 + ‖θ‖`.
 * `TauCeti.exists_cone_decay_mul`: if `g` decays rapidly on an open cone around `a ζ₀ ≠ 0` and `h`
   grows at most polynomially, then `ζ ↦ g (a ζ) * h (b ζ)` decays rapidly on an open cone around
   `ζ₀`, provided `‖ζ‖ ≤ ‖a ζ‖ + ‖b ζ‖`.
@@ -108,19 +112,76 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E]
 
+/-- **The pointwise bound behind rapid decay on a smaller cone.** Let `F` grow at most polynomially
+and let `(1 + ‖η‖) ^ (N + M) ‖F η‖` be bounded on a set `Γ`. If the closed ball of radius `c ‖η‖`
+about every `η ∈ Γ'` lies in `Γ`, then `(1 + ‖η‖) ^ N (1 + ‖η - θ‖) ^ M ‖F (η - θ)‖` is at most a
+constant times `(1 + ‖θ‖) ^ (N + 2 (M + k))`, for `η ∈ Γ'` and every shift `θ`. Shifts with
+`‖θ‖ ≤ c ‖η‖` evaluate `F` at points of `Γ` of size comparable to `‖η‖`, and the remaining shifts
+have `1 + ‖η‖` and `1 + ‖η - θ‖` controlled by powers of `1 + ‖θ‖`. -/
+theorem exists_one_add_norm_pow_mul_norm_apply_sub_le {G : Type*} [SeminormedAddGroup G]
+    {F : E → G} {C₀ : ℝ} {k : ℕ} (hF : ∀ ζ, ‖F ζ‖ ≤ C₀ * (1 + ‖ζ‖) ^ k) {Γ Γ' : Set E} {c : ℝ}
+    (hc : 0 < c) (hΓ' : ∀ η ∈ Γ', closedBall η (c * ‖η‖) ⊆ Γ) {N M : ℕ}
+    (hdecay : ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ (N + M) * ‖F η‖ ≤ C) :
+    ∃ D, 0 ≤ D ∧ ∀ η ∈ Γ', ∀ θ,
+      (1 + ‖η‖) ^ N * ((1 + ‖η - θ‖) ^ M * ‖F (η - θ)‖) ≤ D * (1 + ‖θ‖) ^ (N + 2 * (M + k)) := by
+  have hC₀ : 0 ≤ C₀ := (norm_nonneg (F 0)).trans (by simpa using hF 0)
+  set c' := min c (1 / 2)
+  have hc' : 0 < c' := lt_min hc (by norm_num)
+  have hc'1 : c' ≤ 1 / 2 := min_le_right _ _
+  obtain ⟨C₁, hC₁⟩ := hdecay
+  set D := max (2 ^ N * C₁) (C₀ * c'⁻¹ ^ (N + M + k))
+  have hD : 0 ≤ D := le_max_of_le_right (by positivity)
+  refine ⟨D, hD, fun η hη θ ↦ ?_⟩
+  by_cases hθ : ‖θ‖ ≤ c' * ‖η‖
+  · -- Small shifts stay in `Γ`, where `F` decays rapidly, and `‖η - θ‖ ≥ ‖η‖ / 2`.
+    have hmem : η - θ ∈ Γ := by
+      refine hΓ' η hη (mem_closedBall.2 ?_)
+      rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
+      exact hθ.trans (by gcongr; exact min_le_left _ _)
+    have hle : 1 + ‖η‖ ≤ 2 * (1 + ‖η - θ‖) := by
+      have := norm_sub_norm_le η θ
+      nlinarith [norm_nonneg η]
+    calc (1 + ‖η‖) ^ N * ((1 + ‖η - θ‖) ^ M * ‖F (η - θ)‖)
+        ≤ (2 * (1 + ‖η - θ‖)) ^ N * ((1 + ‖η - θ‖) ^ M * ‖F (η - θ)‖) := by gcongr
+      _ = 2 ^ N * ((1 + ‖η - θ‖) ^ (N + M) * ‖F (η - θ)‖) := by rw [mul_pow, pow_add]; ring
+      _ ≤ 2 ^ N * C₁ := by gcongr; exact hC₁ _ hmem
+      _ ≤ D := le_max_left _ _
+      _ ≤ D * (1 + ‖θ‖) ^ (N + 2 * (M + k)) :=
+        le_mul_of_one_le_right hD (one_le_pow₀ (by linarith [norm_nonneg θ]))
+  · -- Large shifts have `1 + ‖η‖ ≤ c'⁻¹ (1 + ‖θ‖)`; use the polynomial growth of `F`.
+    push Not at hθ
+    have hle : 1 + ‖η‖ ≤ c'⁻¹ * (1 + ‖θ‖) := by
+      rw [le_inv_mul_iff₀ hc']
+      nlinarith [norm_nonneg η]
+    have hle' : 1 + ‖η - θ‖ ≤ c'⁻¹ * (1 + ‖θ‖) ^ 2 :=
+      calc 1 + ‖η - θ‖ ≤ (1 + ‖η‖) * (1 + ‖θ‖) := by
+            simpa only [sub_eq_add_neg, norm_neg] using one_add_norm_add_le η (-θ)
+        _ ≤ c'⁻¹ * (1 + ‖θ‖) * (1 + ‖θ‖) := by gcongr
+        _ = c'⁻¹ * (1 + ‖θ‖) ^ 2 := by ring
+    calc (1 + ‖η‖) ^ N * ((1 + ‖η - θ‖) ^ M * ‖F (η - θ)‖)
+        ≤ (1 + ‖η‖) ^ N * ((1 + ‖η - θ‖) ^ M * (C₀ * (1 + ‖η - θ‖) ^ k)) := by
+          gcongr; exact hF _
+      _ = C₀ * ((1 + ‖η‖) ^ N * (1 + ‖η - θ‖) ^ (M + k)) := by ring
+      _ ≤ C₀ * ((c'⁻¹ * (1 + ‖θ‖)) ^ N * (c'⁻¹ * (1 + ‖θ‖) ^ 2) ^ (M + k)) := by gcongr
+      _ = C₀ * c'⁻¹ ^ (N + M + k) * (1 + ‖θ‖) ^ (N + 2 * (M + k)) := by
+          rw [mul_pow, mul_pow, ← pow_mul]; ring
+      _ ≤ D * (1 + ‖θ‖) ^ (N + 2 * (M + k)) := by gcongr; exact le_max_right _ _
+
 /-- **Rapid decay of a discrete convolution on a smaller cone.** A superposition
 `∑ i, a i • F (η - v i)` of translates of a function `F` of polynomial growth, with coefficients
 `a i` rapidly decreasing in `‖v i‖`, decays on every set `Γ'` whose conic neighbourhoods
 `closedBall η (c ‖η‖)`, `c > 0`, lie in a set `Γ`, at every order `N` at which `F` decays on `Γ`:
-if `(1 + ‖η‖) ^ N ‖F η‖` is bounded on `Γ`, then `(1 + ‖η‖) ^ N ‖∑ i, a i • F (η - v i)‖` is
-bounded on `Γ'`. -/
+if `F` grows at most like `(1 + ‖ζ‖) ^ k` and `(1 + ‖η‖) ^ N ‖F η‖` is bounded on `Γ`, then
+`(1 + ‖η‖) ^ N ‖∑ i, a i • F (η - v i)‖` is bounded on `Γ'` by
+`D ∑ i, (1 + ‖v i‖) ^ (N + 2 k) ‖a i‖`, with a constant `D ≥ 0` independent of the coefficients. -/
 theorem exists_one_add_norm_pow_mul_norm_le_of_hasSum {ι 𝕜 G : Type*} [NormedField 𝕜]
-    [NormedAddCommGroup G] [NormedSpace 𝕜 G] {v : ι → E} {a : ι → 𝕜}
-    (ha : ∀ j : ℕ, Summable fun i ↦ (1 + ‖v i‖) ^ j * ‖a i‖) {F : E → G} {C₀ : ℝ} {k : ℕ}
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] (v : ι → E) {F : E → G} {C₀ : ℝ} {k : ℕ}
     (hF : ∀ ζ, ‖F ζ‖ ≤ C₀ * (1 + ‖ζ‖) ^ k) {Γ Γ' : Set E} {c : ℝ} (hc : 0 < c)
     (hΓ' : ∀ η ∈ Γ', closedBall η (c * ‖η‖) ⊆ Γ)
     {N : ℕ} (hdecay : ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖F η‖ ≤ C) :
-    ∃ C, ∀ η ∈ Γ', ∀ s, HasSum (fun i ↦ a i • F (η - v i)) s → (1 + ‖η‖) ^ N * ‖s‖ ≤ C := by
+    ∃ D, 0 ≤ D ∧ ∀ a : ι → 𝕜, Summable (fun i ↦ (1 + ‖v i‖) ^ (N + 2 * k) * ‖a i‖) →
+      ∀ η ∈ Γ', ∀ s, HasSum (fun i ↦ a i • F (η - v i)) s →
+        (1 + ‖η‖) ^ N * ‖s‖ ≤ D * ∑' i, (1 + ‖v i‖) ^ (N + 2 * k) * ‖a i‖ := by
   have hC₀ : 0 ≤ C₀ := (norm_nonneg (F 0)).trans (by simpa using hF 0)
   set c' := min c (1 / 2)
   have hc' : 0 < c' := lt_min hc (by norm_num)
@@ -128,7 +189,7 @@ theorem exists_one_add_norm_pow_mul_norm_le_of_hasSum {ι 𝕜 G : Type*} [Norme
   obtain ⟨C₁, hC₁⟩ := hdecay
   set D := max (2 ^ N * C₁) (C₀ * c'⁻¹ ^ (N + k))
   have hD : 0 ≤ D := le_max_of_le_right (by positivity)
-  refine ⟨D * ∑' i, (1 + ‖v i‖) ^ (N + 2 * k) * ‖a i‖, fun η hη s hs ↦ ?_⟩
+  refine ⟨D, hD, fun a ha η hη s hs ↦ ?_⟩
   -- Each translate is bounded by `D (1 + ‖v i‖) ^ (N + 2 k) (1 + ‖η‖) ^ (-N)`.
   have hterm (i : ι) : (1 + ‖η‖) ^ N * ‖F (η - v i)‖ ≤ D * (1 + ‖v i‖) ^ (N + 2 * k) := by
     have h1 : 1 ≤ (1 + ‖v i‖) ^ (N + 2 * k) := one_le_pow₀ (by linarith [norm_nonneg (v i)])
@@ -164,13 +225,9 @@ theorem exists_one_add_norm_pow_mul_norm_le_of_hasSum {ι 𝕜 G : Type*} [Norme
         _ = C₀ * c'⁻¹ ^ (N + k) * (1 + ‖v i‖) ^ (N + 2 * k) := by rw [mul_pow]; ring
         _ ≤ D * (1 + ‖v i‖) ^ (N + 2 * k) := by gcongr; exact le_max_right _ _
   have hp : 0 < (1 + ‖η‖) ^ N := by positivity
-  have hbound := hs.norm_le_of_bounded (((ha (N + 2 * k)).hasSum.mul_left D).div_const _)
-    fun i ↦ by
-      rw [norm_smul, le_div_iff₀ hp]
-      calc ‖a i‖ * ‖F (η - v i)‖ * (1 + ‖η‖) ^ N
-          = ‖a i‖ * ((1 + ‖η‖) ^ N * ‖F (η - v i)‖) := by ring
-        _ ≤ ‖a i‖ * (D * (1 + ‖v i‖) ^ (N + 2 * k)) := by gcongr ‖a i‖ * ?_; exact hterm i
-        _ = D * ((1 + ‖v i‖) ^ (N + 2 * k) * ‖a i‖) := by ring
+  have hbound := hs.norm_le_of_bounded ((ha.hasSum.mul_left D).div_const _) fun i ↦ by
+    rw [norm_smul, le_div_iff₀ hp]
+    nlinarith [hterm i, norm_nonneg (a i)]
   rw [le_div_iff₀ hp] at hbound
   linarith
 

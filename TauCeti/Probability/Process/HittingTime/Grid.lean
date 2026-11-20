@@ -154,7 +154,7 @@ theorem eventually_gridLevelHit_le (hc : ContinuousAt (fun s ↦ X s ω) t)
   have hlim : Tendsto (fun n : ℕ ↦ (⌊(t : ℝ) * 2 ^ n⌋₊ : ℝ≥0) / 2 ^ n)
       atTop (𝓝 t) := by
     apply NNReal.tendsto_coe.mp
-    convert (tendsto_nat_floor_mul_div_atTop t.2).comp
+    convert (tendsto_nat_floor_mul_div_atTop t.property).comp
       (tendsto_pow_atTop_atTop_of_one_lt (by norm_num : (1 : ℝ) < 2)) using 1
     · ext n
       simp
@@ -162,7 +162,7 @@ theorem eventually_gridLevelHit_le (hc : ContinuousAt (fun s ↦ X s ω) t)
   filter_upwards [(hc.tendsto.comp hlim).eventually (Ioi_mem_nhds ht)] with n hn
   refine gridLevelHit_le_iff.mpr ⟨⌊(t : ℝ) * 2 ^ n⌋₊, ?_, hn⟩
   rw [div_le_iff₀ (by positivity : (0 : ℝ≥0) < 2 ^ n)]
-  exact_mod_cast Nat.floor_le (mul_nonneg t.2 (by positivity : (0 : ℝ) ≤ 2 ^ n))
+  exact_mod_cast Nat.floor_le (mul_nonneg t.property (by positivity : (0 : ℝ) ≤ 2 ^ n))
 
 /-- For an almost-surely continuous process with measurable deterministic-time samples,
 the probability that a dyadic grid misses a level before a measurable barrier tends to zero,

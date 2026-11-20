@@ -64,6 +64,8 @@ of positive (negative) square has at most as many members as the positive (negat
   index of inertia.
 * `QuadraticForm.sigPos_lift` and `QuadraticForm.sigNeg_lift`: more generally, quotienting by any
   subspace of the radical preserves both indices of inertia.
+* `QuadraticForm.sigPos_comp_of_surjective` and `QuadraticForm.sigNeg_comp_of_surjective`: pulling
+  a form back along a surjective linear map preserves both indices of inertia.
 * `QuadraticForm.sigPos_prod` and `QuadraticForm.sigNeg_prod`: the indices of
   inertia are additive under orthogonal products.
 * `QuadraticForm.posDef_iff_sigNeg_eq_zero_and_radical_eq_bot`: positive-definiteness
@@ -117,7 +119,7 @@ theorem sigNeg_eq_sigPos_of_isCompl (Q : _root_.QuadraticForm R M) {A B : Submod
   simp only [e, LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply, LinearEquiv.refl_apply,
     LinearEquiv.neg_apply, Submodule.coe_prodEquivOfIsCompl', Submodule.coe_neg]
   rw [QuadraticMap.map_add Q, QuadraticMap.map_add Q, QuadraticMap.map_neg, polar_neg_right]
-  simp [hA.apply_eq_zero a.2, hB.apply_eq_zero b.2]
+  simp [hA.apply_eq_zero a.property, hB.apply_eq_zero b.property]
 
 /-- **A positive-definite subspace of dimension the positive index of inertia exists.** This is
 Mathlib's `exists_finrank_eq_sigPos_and_posDef` without the finite-dimensionality assumption. -/
@@ -237,6 +239,14 @@ theorem forall_nonneg_iff_sigNeg_eq_zero (Q : _root_.QuadraticForm K M) :
 theorem forall_nonpos_iff_sigPos_eq_zero (Q : _root_.QuadraticForm K M) :
     (∀ x, Q x ≤ 0) ↔ sigPos Q = 0 := by
   simpa only [neg_apply, neg_nonneg, sigNeg_neg] using forall_nonneg_iff_sigNeg_eq_zero (-Q)
+
+omit [FiniteDimensional K M] in
+/-- The zero quadratic form has negative index of inertia zero. -/
+@[simp]
+theorem sigNeg_zero : sigNeg (0 : _root_.QuadraticForm K M) = 0 := by
+  by_cases hM : Module.Finite K M
+  · exact (forall_nonneg_iff_sigNeg_eq_zero 0).mp fun _ ↦ le_rfl
+  · exact sigNeg_eq_zero_of_not_finite 0 hM
 
 omit [IsStrictOrderedRing K] in
 /-- Restricting a quadratic form to a subspace cannot increase its positive index. -/
@@ -407,6 +417,36 @@ theorem sigNeg_lift (Q : _root_.QuadraticForm K M) (N : Subspace K M) (hN : N �
 theorem sigNeg_lift_radical (Q : _root_.QuadraticForm K M) :
     sigNeg (Q.lift Q.radical le_rfl) = sigNeg Q :=
   sigNeg_lift Q Q.radical le_rfl
+
+section Comp
+
+variable {N : Type*} [AddCommGroup N] [Module K N]
+
+/-- Pulling a quadratic form back along a surjective linear map preserves its positive index of
+inertia: the kernel of the map lies in the radical of the pullback, and the quotient by the kernel
+is isometric to the original form. -/
+theorem sigPos_comp_of_surjective (Q : _root_.QuadraticForm K N) {f : M →ₗ[K] N}
+    (hf : Function.Surjective f) : sigPos (Q.comp f) = sigPos Q := by
+  have hker : LinearMap.ker f ≤ (Q.comp f).radical := fun v hv ↦ by
+    rw [LinearMap.mem_ker] at hv
+    simp [QuadraticMap.mem_radical_iff', hv]
+  have hequiv : ((Q.comp f).lift (LinearMap.ker f) hker).Equivalent Q :=
+    ⟨{ f.quotKerEquivOfSurjective hf with
+      map_app' := fun x ↦ by
+        induction x using Submodule.Quotient.induction_on with
+        | H x => simp }⟩
+  rw [← sigPos_lift _ _ hker, hequiv.sigPos_eq]
+
+/-- Pulling a quadratic form back along a surjective linear map preserves its negative index of
+inertia. -/
+theorem sigNeg_comp_of_surjective (Q : _root_.QuadraticForm K N) {f : M →ₗ[K] N}
+    (hf : Function.Surjective f) : sigNeg (Q.comp f) = sigNeg Q := by
+  have hneg : (-Q).comp f = -(Q.comp f) := by
+    ext v
+    simp
+  rw [← sigPos_neg, ← sigPos_neg, ← hneg, sigPos_comp_of_surjective _ hf]
+
+end Comp
 
 /-- A quadratic form is positive-definite exactly when its negative index vanishes and its
 radical is trivial. -/

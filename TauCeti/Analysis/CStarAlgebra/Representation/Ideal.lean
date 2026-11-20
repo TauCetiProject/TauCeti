@@ -77,20 +77,20 @@ theorem idealExtension_comp_subtype (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I)
 /-- Left-multiplication formula `(π.idealExtension hmul a) * π x = π ⟨a * x, _⟩`. -/
 @[simp]
 theorem idealExtension_mul_eq (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) (a : A) (x : I) :
-    π.idealExtension hmul a * π x = π ⟨a * x, hmul a x x.2⟩ := by
+    π.idealExtension hmul a * π x = π ⟨a * x, hmul a x x.property⟩ := by
   simp [idealExtension]
 
 /-- Right-multiplication formula `π x * (π.idealExtension hmul a) = π ⟨x * a, _⟩`. -/
 @[simp]
 theorem mul_idealExtension_eq (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) (a : A) (x : I) :
     π x * π.idealExtension hmul a =
-      π ⟨x * a, StarMemClass.mul_mem_right_of_mul_mem_left hmul a x.2⟩ := by
+      π ⟨x * a, StarMemClass.mul_mem_right_of_mul_mem_left hmul a x.property⟩ := by
   simp [idealExtension]
 
 /-- Action of `π.idealExtension hmul a` on vectors of the form `π x ξ`. -/
 @[simp]
 theorem idealExtension_apply_apply (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) (a : A) (x : I) (ξ : H) :
-    π.idealExtension hmul a (π x ξ) = π ⟨a * x, hmul a x x.2⟩ ξ := by
+    π.idealExtension hmul a (π x ξ) = π ⟨a * x, hmul a x x.property⟩ ξ := by
   simp [idealExtension]
 
 /-- `π.idealExtension hmul a` vanishes on `π.essentialSubspaceᗮ`. -/
@@ -106,7 +106,8 @@ theorem idealExtension_apply_mem_essentialSubspace (hmul : ∀ a : A, ∀ x ∈ 
 /-- Uniqueness characterization of `π.idealExtension hmul a` on `H`. -/
 theorem eq_idealExtension_iff (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) {a : A} {T : H →L[ℂ] H} :
     T = π.idealExtension hmul a ↔
-      (∀ x : I, T * π x = π ⟨a * x, hmul a x x.2⟩) ∧ (∀ ξ ∈ π.essentialSubspaceᗮ, T ξ = 0) := by
+      (∀ x : I, T * π x = π ⟨a * x, hmul a x x.property⟩) ∧ (∀ ξ ∈ π.essentialSubspaceᗮ, T ξ = 0)
+          := by
   rw [idealExtension, NonUnitalStarAlgHom.comp_apply, π.eq_nonUnitalMultiplierExtension_iff]
   simp only [I.multiplierHom_fst_apply]
 
@@ -138,7 +139,7 @@ theorem eq_idealExtension_of_apply_coe (hπ : π.IsNondegenerate)
     ⇑ψ = π.idealExtension hmul := by
   funext a
   refine (π.eq_idealExtension_iff hmul).2 ⟨fun x => ?_, fun ξ hξ => ?_⟩
-  · rw [← hψ, ← map_mul, ← hψ ⟨a * x, hmul a x x.2⟩]
+  · rw [← hψ, ← map_mul, ← hψ ⟨a * x, hmul a x x.property⟩]
   · rw [π.orthogonal_essentialSubspace_eq_bot_of_isNondegenerate hπ, Submodule.mem_bot] at hξ
     simp [hξ]
 

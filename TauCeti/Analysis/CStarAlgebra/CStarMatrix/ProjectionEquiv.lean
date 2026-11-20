@@ -515,7 +515,7 @@ theorem MurrayVonNeumannEquiv.of_unitary_conj_unitization (R : Type*) [Decidable
     hι <| by simpa only [map_mul, map_conjTranspose, hv_map] using
       conjTranspose_mul_self_unitary_mul_of_isStarProjection u hpι,
     hι <| by simpa only [map_mul, map_conjTranspose, hv_map, w, ← hu, star_eq_conjTranspose,
-      ι] using self_mul_conjTranspose_mul_of_isStarProjection u.1 hpι⟩
+      ι] using self_mul_conjTranspose_mul_of_isStarProjection u.val hpι⟩
 end
 
 namespace IsPartialIsometry
@@ -752,7 +752,7 @@ def stabilizedProjPath : Path (⟨blockSum p 0, isStarProjection_blockSum_iff.mp
       ⟨blockSum 0 q, isStarProjection_blockSum_iff.mpr
         ⟨.zero _, hq ▸ hv.isStarProjection_mul_conjTranspose_self⟩⟩ :=
   ⟨⟨fun t => ⟨stabilizedProjRot v p q t, hv.isStarProjection_stabilizedProjRot hp hq t⟩,
-    ((continuous_stabilizedProjRot v p q).comp continuous_subtype_val).subtype_mk _⟩,
+    ((continuous_stabilizedProjRot v p q).comp continuous_subtypeVal).subtype_mk _⟩,
     Subtype.ext (stabilizedProjRot_zero v p q), Subtype.ext (stabilizedProjRot_one v p q)⟩
 @[simp] theorem coe_stabilizedProjPath_apply (t : unitInterval) :
     ((hv.stabilizedProjPath hp hq t : {P : CStarMatrix (m ⊕ n) (m ⊕ n) A // IsStarProjection P}) :
