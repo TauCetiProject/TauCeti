@@ -215,9 +215,10 @@ lemma frameSheaf_map_smul {T T' : Over S} (f : T ⟶ T') (g : (GmGrp S J hJ).obj
       (GmGrp S J hJ).obj.map f.op g • (frameSheaf M hJ).obj.map f.op e := by
   obtain ⟨u, rfl⟩ := (GmGrpObjEquiv T').surjective g
   refine (frameSheafObjEquiv M T).injective (Iso.ext ?_)
-  rw [GmGrp_map_GmGrpObjEquiv, frameSheafObjEquiv_GmGrpObjEquiv_smul, Iso.trans_hom, asIso_hom,
-    frameSheafObjEquiv_map_hom, frameSheafObjEquiv_map_hom, frameSheafObjEquiv_GmGrpObjEquiv_smul,
-    Iso.trans_hom, asIso_hom, Units.coe_map_inv]
+  rw [GmGrp_map_GmGrpObjEquiv]
+  simp only [frameSheafObjEquiv_GmGrpObjEquiv_smul, frameSheafObjEquiv_map_hom, Iso.trans_hom,
+    asIso_hom, Units.coe_map_inv]
+  -- The substantive step: restriction commutes with multiplication by a unit.
   exact pullHom_globalSectionsSmul_comp _ _ _ _ _ _ _
 
 /-- **The action of `𝔾_m` on frames is simply transitive.** Two frames `φ, φ'` of `M` over `T`
@@ -233,8 +234,8 @@ lemma existsUnique_smul_eq (T : Over S) (e e' : (frameSheaf M hJ).obj.obj (op T)
     rw [globalSectionsSmul_unitsGlobalSectionsMulEquivAut_symm]
     rfl
   refine ⟨GmGrpObjEquiv T v⁻¹, (frameSheafObjEquiv M T).injective (Iso.ext ?_), fun g hg ↦ ?_⟩
-  · rw [frameSheafObjEquiv_GmGrpObjEquiv_smul, Iso.trans_hom, asIso_hom, inv_inv, hv,
-      Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  · rw [frameSheafObjEquiv_GmGrpObjEquiv_smul]
+    simpa using hv =≫ (frameSheafObjEquiv M T e).hom
   · obtain ⟨w, rfl⟩ := (GmGrpObjEquiv T).surjective g
     have hw : globalSectionsSmul A ↑w⁻¹ =
         (frameSheafObjEquiv M T e').hom ≫ (frameSheafObjEquiv M T e).inv := by
@@ -364,8 +365,8 @@ lemma frameSheafObjEquiv_inv_comp_hom_app (α : frameTorsor M hJ hZ ⟶ frameTor
       (frameSheafObjEquiv M T e').inv ≫
         (frameSheafObjEquiv (hJ := hJ) N T (α.hom.hom.app (op T) e')).hom := by
   obtain ⟨g, rfl, -⟩ := existsUnique_smul_eq M T e e'
-  rw [α.map_smul, frameSheafObjEquiv_smul M (op T), frameSheafObjEquiv_smul N (op T),
-    Iso.trans_inv, Iso.trans_hom, asIso_inv, asIso_hom, Category.assoc, IsIso.inv_hom_id_assoc]
+  rw [α.map_smul]
+  simp [frameSheafObjEquiv_smul M (op T), frameSheafObjEquiv_smul N (op T)]
 
 /-- **Morphisms of frame torsors come from morphisms of sheaves.** For a morphism `α` of frame
 torsors, the isomorphisms `α(φ) ∘ φ⁻¹ : h^* M ⟶ h^* N`, over the `S`-schemes `T` carrying a frame
@@ -416,13 +417,11 @@ theorem nonempty_frameTorsor_iso_iff :
     exact congrArg (fun k ↦ k.hom.hom.app (op T) e) α.inv_hom_id
   refine ⟨⟨φ, ψ, ?_, ?_⟩⟩
   · refine Hom.ext_of_coversTop hJ _ _ (coversTop_frameSheaf (hJ := hJ) M hZ) fun ⟨T, ⟨e⟩⟩ ↦ ?_
-    rw [CategoryTheory.Functor.map_comp, CategoryTheory.Functor.map_id, hφ T e, hψ T, hα,
-      Category.assoc,
-      Iso.hom_inv_id_assoc, Iso.inv_hom_id]
+    rw [CategoryTheory.Functor.map_comp, hφ T e, hψ T (α.hom.hom.hom.app (op T) e), hα]
+    simp
   · refine Hom.ext_of_coversTop hJ _ _ (coversTop_frameSheaf (hJ := hJ) N hZ) fun ⟨T, ⟨e⟩⟩ ↦ ?_
-    rw [CategoryTheory.Functor.map_comp, CategoryTheory.Functor.map_id, ← hα' T e, hψ T, hφ T,
-      hα', Category.assoc,
-      Iso.hom_inv_id_assoc, Iso.inv_hom_id]
+    rw [CategoryTheory.Functor.map_comp, hψ T e, hφ T (α.inv.hom.hom.app (op T) e), hα']
+    simp
 
 end Invertible
 
