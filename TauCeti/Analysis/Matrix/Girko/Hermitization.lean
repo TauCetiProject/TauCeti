@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
 public import TauCeti.Analysis.Matrix.SingularValues
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
 
 /-!
 # The finite-dimensional Girko identity
@@ -55,23 +56,21 @@ theorem empiricalLogPotential_eq_log_norm_det
   classical
   rw [empiricalLogPotential, integral_eigenvalueMeasure]
   rw [smul_eq_mul]
+  have hshift : Polynomial.aeval A (Polynomial.X - Polynomial.C z) = A - scalar ι z := by
+    simp [algebraMap_eq_diagonal, scalar_apply]
   have hroots : (A - scalar ι z).det =
       (A.charpoly.roots.map fun w : ℂ => w - z).prod := by
-    rw [Matrix.det_eq_prod_roots_charpoly, Matrix.charpoly_sub_scalar]
-    have hcomp :
-        (A.charpoly.comp (Polynomial.X + Polynomial.C z)).roots =
-          A.charpoly.roots.map (fun w : ℂ => w - z) := by
-      simpa using
-        (Polynomial.roots_comp_C_mul_X_add_C A.charpoly (1 : ℂ) z isUnit_one)
-    exact congrArg Multiset.prod hcomp
+    rw [← hshift, Matrix.det_aeval_eq_prod_roots_charpoly]
+    apply congrArg Multiset.prod
+    apply Multiset.map_congr rfl
+    intro w hw
+    simp
   have hroot_ne : ∀ w ∈ A.charpoly.roots, w - z ≠ 0 := by
-    have hprod_ne : (A.charpoly.roots.map fun w : ℂ => w - z).prod ≠ 0 := by
-      rw [← hroots]
-      exact hdet
-    intro w hw hzero
-    apply hprod_ne
-    rw [Multiset.prod_eq_zero_iff]
-    exact Multiset.mem_map.mpr ⟨w, hw, hzero⟩
+    have hdet' : (Polynomial.aeval A (Polynomial.X - Polynomial.C z)).det ≠ 0 := by
+      simpa only [hshift] using hdet
+    intro w hw
+    simpa only [Polynomial.eval_sub, Polynomial.eval_X, Polynomial.eval_C] using
+      Matrix.eval_ne_zero_of_det_aeval_ne_zero A (Polynomial.X - Polynomial.C z) hdet' hw
   have hnorm :
       ‖(A - scalar ι z).det‖ =
         (A.charpoly.roots.map fun w : ℂ => ‖z - w‖).prod := by
