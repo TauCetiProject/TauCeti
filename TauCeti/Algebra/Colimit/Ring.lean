@@ -17,16 +17,16 @@ Let `I i` be a compatible family of ideals in a directed system of commutative r
 indexed by a nonempty directed preorder: the transition maps `f i j` carry `I i` into `I j`. The
 colimit ideal of `Ring.DirectLimit G f` is `⨆ i, (I i).map (of G f i)`. This file shows that its
 elements are exactly the images of elements of the `I i`, and that membership in it, and being a
-unit modulo it, descend to a finite stage. It also shows that monic polynomials over the colimit
-come from monic polynomials over some stage, and that ring homomorphisms from a finitely
+unit modulo it, are detected at a finite stage. It also shows that monic polynomials over the
+colimit come from monic polynomials over some stage, and that ring homomorphisms from a finitely
 presented ring into the colimit factor through some stage.
 
 ## Main results
 
 * `Ring.DirectLimit.mem_iSup_map_of_iff`: membership in the colimit ideal.
-* `Ring.DirectLimit.exists_f_mem_of_of_mem_iSup_map`,
-  `Ring.DirectLimit.exists_isUnit_mk_f_of_isUnit_mk_of`: descent of membership in the colimit
-  ideal, and of units modulo it, to a finite stage.
+* `Ring.DirectLimit.of_mem_iSup_map_of_iff`, `Ring.DirectLimit.isUnit_mk_of_iff`: the image of
+  an element of a stage lies in the colimit ideal, or is a unit modulo it, if and only if this
+  holds for the ideal at some later stage.
 * `Ring.DirectLimit.Polynomial.exists_monic_of`: a monic polynomial over the colimit comes from a
   monic polynomial over some stage.
 * `Ring.DirectLimit.exists_of_comp_eq_of_finitePresentation`: a ring homomorphism from a
@@ -75,12 +75,14 @@ theorem mem_iSup_map_of_iff [Nonempty ι] [IsDirectedOrder ι]
   exact (iSup_le fun i ↦ Ideal.map_le_iff_le_comap.2 fun x hx ↦ ⟨i, x, hx, rfl⟩ :
     ⨆ i, (I i).map (of G (f · · ·) i) ≤ J) hz
 
-/-- If the image of an element of a stage lies in the colimit of a compatible family of ideals,
-then the element is carried into the ideal at some later stage. -/
-theorem exists_f_mem_of_of_mem_iSup_map [IsDirectedOrder ι] [DirectedSystem G (f · · ·)]
-    (hI : ∀ i j (hij : i ≤ j), I i ≤ (I j).comap (f i j hij)) {i : ι} {x : G i}
-    (hx : of G (f · · ·) i x ∈ ⨆ i, (I i).map (of G (f · · ·) i)) :
-    ∃ j, ∃ hij : i ≤ j, f i j hij x ∈ I j := by
+/-- The image of an element of a stage lies in the colimit of a compatible family of ideals if and
+only if the element is carried into the ideal at some later stage. -/
+theorem of_mem_iSup_map_of_iff [IsDirectedOrder ι] [DirectedSystem G (f · · ·)]
+    (hI : ∀ i j (hij : i ≤ j), I i ≤ (I j).comap (f i j hij)) {i : ι} {x : G i} :
+    of G (f · · ·) i x ∈ ⨆ i, (I i).map (of G (f · · ·) i) ↔
+      ∃ j, ∃ hij : i ≤ j, f i j hij x ∈ I j := by
+  refine ⟨fun hx ↦ ?_, fun ⟨j, hij, hj⟩ ↦
+    of_f hij x ▸ Ideal.mem_iSup_of_mem j (Ideal.mem_map_of_mem _ hj)⟩
   have : Nonempty ι := ⟨i⟩
   obtain ⟨m, y, hy, hyx⟩ := (mem_iSup_map_of_iff hI).1 hx
   obtain ⟨k, hik, hmk⟩ := exists_ge_ge i m
@@ -90,20 +92,24 @@ theorem exists_f_mem_of_of_mem_iSup_map [IsDirectedOrder ι] [DirectedSystem G (
   rw [map_sub, sub_eq_zero, DirectedSystem.map_map' f, DirectedSystem.map_map' f] at hj
   exact hj ▸ hI m j _ hy
 
-/-- If an element of a stage is a unit modulo the colimit of a compatible family of ideals, then
-it is a unit modulo the ideal at some later stage. -/
-theorem exists_isUnit_mk_f_of_isUnit_mk_of [IsDirectedOrder ι] [DirectedSystem G (f · · ·)]
-    (hI : ∀ i j (hij : i ≤ j), I i ≤ (I j).comap (f i j hij)) {i : ι} {x : G i}
-    (hx : IsUnit (Ideal.Quotient.mk (⨆ i, (I i).map (of G (f · · ·) i)) (of G (f · · ·) i x))) :
-    ∃ j, ∃ hij : i ≤ j, IsUnit (Ideal.Quotient.mk (I j) (f i j hij x)) := by
+/-- An element of a stage is a unit modulo the colimit of a compatible family of ideals if and only
+if it is a unit modulo the ideal at some later stage. -/
+theorem isUnit_mk_of_iff [IsDirectedOrder ι] [DirectedSystem G (f · · ·)]
+    (hI : ∀ i j (hij : i ≤ j), I i ≤ (I j).comap (f i j hij)) {i : ι} {x : G i} :
+    IsUnit (Ideal.Quotient.mk (⨆ i, (I i).map (of G (f · · ·) i)) (of G (f · · ·) i x)) ↔
+      ∃ j, ∃ hij : i ≤ j, IsUnit (Ideal.Quotient.mk (I j) (f i j hij x)) := by
+  -- For the reverse direction, map the unit along `G j ⧸ I j → colim G ⧸ ⨆ i, (I i).map (of i)`.
+  refine ⟨fun hx ↦ ?_, fun ⟨j, hij, hj⟩ ↦ by
+    simpa using hj.map (Ideal.quotientMap _ (of G (f · · ·) j)
+      (Ideal.map_le_iff_le_comap.1 (le_iSup (fun j ↦ (I j).map (of G (f · · ·) j)) j)))⟩
   have : Nonempty ι := ⟨i⟩
   obtain ⟨u, hu⟩ := hx.exists_left_inv
   obtain ⟨u, rfl⟩ := Ideal.Quotient.mk_surjective u
   obtain ⟨m, v, rfl⟩ := exists_of u
   obtain ⟨k, hik, hmk⟩ := exists_ge_ge i m
   rw [← map_mul, ← map_one (Ideal.Quotient.mk _), Ideal.Quotient.eq] at hu
-  obtain ⟨j, hkj, hj⟩ := exists_f_mem_of_of_mem_iSup_map hI
-    (x := f m k hmk v * f i k hik x - 1) (by simpa using hu)
+  obtain ⟨j, hkj, hj⟩ := (of_mem_iSup_map_of_iff hI
+    (x := f m k hmk v * f i k hik x - 1)).1 (by simpa using hu)
   refine ⟨j, hik.trans hkj, .of_mul_eq_one_right (Ideal.Quotient.mk _ (f m j (hmk.trans hkj) v)) ?_⟩
   rw [← map_mul, ← map_one (Ideal.Quotient.mk _), Ideal.Quotient.eq]
   simpa [DirectedSystem.map_map' f] using hj
@@ -135,17 +141,12 @@ theorem exists_of_comp_eq_of_finitePresentation [Nonempty ι] [IsDirectedOrder �
   obtain ⟨i, hji⟩ := Finite.exists_le j
   let ψ : MvPolynomial (Fin n) ℤ →+* G i := eval₂Hom (Int.castRingHom _)
     fun k ↦ f (j k) i (hji k) (x k)
-  have hψ (p : MvPolynomial (Fin n) ℤ) : of G (f · · ·) i (ψ p) = g (π p) := by
-    have : (of G (f · · ·) i).comp ψ = g.comp π.toRingHom := by
-      refine MvPolynomial.ringHom_ext (fun k ↦ by simp) fun k ↦ ?_
-      simp [ψ, hx]
-    exact congr($this p)
+  have hψ : (of G (f · · ·) i).comp ψ = g.comp π.toRingHom :=
+    MvPolynomial.ringHom_ext (fun k ↦ by simp) fun k ↦ by simp [ψ, hx]
   -- Each of the finitely many relations dies at some later stage `l`.
   have hrel (r : s) : ∃ m, ∃ him : i ≤ m, f i m him (ψ r) = 0 := by
-    refine of.zero_exact ?_
-    have : π r = 0 := by
-      simpa using (hs ▸ Ideal.subset_span r.2 : (r : MvPolynomial (Fin n) ℤ) ∈ RingHom.ker π)
-    rw [hψ, this, map_zero]
+    have hr : π r = 0 := RingHom.mem_ker.mp (hs ▸ Ideal.subset_span r.2)
+    exact of.zero_exact <| by simpa [hr] using congr($hψ r)
   choose m him hm using hrel
   obtain ⟨l₀, hl₀⟩ := Finite.exists_le m
   obtain ⟨l, hil, hl₀l⟩ := exists_ge_ge i l₀
@@ -154,10 +155,8 @@ theorem exists_of_comp_eq_of_finitePresentation [Nonempty ι] [IsDirectedOrder �
     rw [← hs, Ideal.span_le]
     intro r hr
     simp [← DirectedSystem.map_map' f (him ⟨r, hr⟩) (hml ⟨r, hr⟩), hm]
-  refine ⟨l, π.toRingHom.liftOfSurjective hπ ⟨_, hker⟩, RingHom.ext fun a ↦ ?_⟩
-  obtain ⟨p, rfl⟩ := hπ a
-  have := π.toRingHom.liftOfSurjective_comp_apply hπ ⟨_, hker⟩ p
-  calc _ = of G (f · · ·) l (((f i l hil).comp ψ) p) := congrArg _ this
-    _ = g (π p) := by simp [hψ]
+  refine ⟨l, π.toRingHom.liftOfSurjective hπ ⟨_, hker⟩, (RingHom.cancel_right hπ).mp ?_⟩
+  -- Both sides become `(of G f l).comp ((f i l hil).comp ψ)` after composing with `π`.
+  rw [RingHom.comp_assoc, RingHom.liftOfSurjective_comp, ← RingHom.comp_assoc, of_comp_f, hψ]
 
 end Ring.DirectLimit

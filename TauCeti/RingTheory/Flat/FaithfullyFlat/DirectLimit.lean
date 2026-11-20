@@ -80,8 +80,8 @@ theorem exists_faithfullyFlat_baseChange
   have hsup : (⨆ j, (J j).map (Ring.DirectLimit.of B (g · · ·) j)) = ⊤ := by
     apply (Ideal.map_eq_top_of_bijective e.toRingHom e.bijective).mp
     simp only [Ideal.map_iSup, he, iSup_const, htop]
-  obtain ⟨j, hij, hj⟩ := Ring.DirectLimit.exists_f_mem_of_of_mem_iSup_map hJ
-    (i := i) (x := 1) (by simp [hsup])
+  obtain ⟨j, hij, hj⟩ := (Ring.DirectLimit.of_mem_iSup_map_of_iff hJ
+    (i := i) (x := 1)).1 (by simp [hsup])
   exact ⟨j, hij, (Ideal.faithfullyFlat_baseChange_iff_map_eq_top I hI).mpr
     (Ideal.eq_top_of_isUnit_mem _ (by simpa using hj) isUnit_one)⟩
 
