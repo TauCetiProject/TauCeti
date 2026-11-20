@@ -40,7 +40,8 @@ nondegenerate exactly when `a ≠ 0` (`nondegenerate_traceWedgeForm_iff`).
 * `TauCeti.traceWedgeForm_apply_eq_det`: `ψ_a(x, y) = Tr(a · det [x; y])`.
 * `TauCeti.isAlt_traceWedgeForm`: each `ψ_a` is alternating.
 * `TauCeti.traceWedgeForm_vecMul_vecMul`: `ψ_a(x γ, y γ) = ψ_{a det γ}(x, y)`.
-* `TauCeti.nondegenerate_traceWedgeForm_iff`: `ψ_a` is nondegenerate if and only if `a ≠ 0`.
+* `TauCeti.nondegenerate_traceWedgeForm_iff`: for a finite separable field extension `L / K`,
+  `ψ_a` is nondegenerate if and only if `a ≠ 0`.
 
 ## References
 
@@ -120,8 +121,7 @@ theorem traceWedgeForm_mul_smul_right (a b : S) (x y : Fin 2 → S) :
 theorem traceWedgeForm_vecMul_vecMul (a : S) (γ : Matrix (Fin 2) (Fin 2) S) (x y : Fin 2 → S) :
     traceWedgeForm R a (x ᵥ* γ) (y ᵥ* γ) = traceWedgeForm R (a * γ.det) x y := by
   have h : Matrix.of ![x ᵥ* γ, y ᵥ* γ] = Matrix.of ![x, y] * γ := by
-    ext i j
-    fin_cases i <;> rfl
+    simp [Matrix.cons_mul]
   rw [traceWedgeForm_apply_eq_det, traceWedgeForm_apply_eq_det, h, Matrix.det_mul, mul_comm _ γ.det,
     mul_assoc]
 
