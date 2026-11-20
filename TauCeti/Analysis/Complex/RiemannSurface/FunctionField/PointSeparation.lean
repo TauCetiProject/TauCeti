@@ -32,9 +32,9 @@ pole of order exactly `k + 1` at `x` and no other pole
   rational functions `ℂ(t)` pulled back along `β`, since the points of an unbranched fibre are
   pairwise separated.
 
-The finiteness of `H¹(X, 𝒪)` is an analytic theorem which is not proved in this library; as in
-`TauCeti.Analysis.Complex.RiemannSurface.Divisor.RiemannRoch` it is an explicit instance
-argument.
+The finiteness of `H¹(X, 𝒪)` is taken as an instance argument, as in
+`TauCeti.Analysis.Complex.RiemannSurface.Divisor.RiemannRoch`; once an instance is available,
+these results hold unconditionally by instance resolution.
 
 ## Main results
 
@@ -84,18 +84,8 @@ theorem eventually_exists_order_eq_neg (x : X) :
     (divisorSheafSectionsEquiv _ ⊤).finrank_eq] at hj
   obtain ⟨f, hfx, hf⟩ :=
     exists_order_eq_neg_of_finrank_lt (D := j • WeilDivisor.ofPoint x) (x := x) (by omega)
-  have hc (z : X) :
-      (j • WeilDivisor.ofPoint x) z = j * WeilDivisor.coeff (WeilDivisor.ofPoint x) z :=
-    WeilDivisor.coeff_nsmul _ _ z
-  have hc' (z : X) : (j • WeilDivisor.ofPoint x + WeilDivisor.ofPoint x) z =
-      j * WeilDivisor.coeff (WeilDivisor.ofPoint x) z +
-        WeilDivisor.coeff (WeilDivisor.ofPoint x) z :=
-    (WeilDivisor.coeff_add _ _ z).trans (by rw [WeilDivisor.coeff_nsmul])
-  refine ⟨f, by rw [hfx, hc, WeilDivisor.coeff_ofPoint_self, mul_one]; push_cast; rfl,
-    fun y hy ↦ ?_⟩
-  have := hf y
-  rwa [hc', WeilDivisor.coeff_ofPoint_of_ne hy, mul_zero, add_zero, neg_zero,
-    WithTop.coe_zero] at this
+  refine ⟨f, by simp [hfx, ← WeilDivisor.coeff.eq_1], fun y hy ↦ ?_⟩
+  simpa [← WeilDivisor.coeff.eq_1, hy] using hf y
 
 /-- **Meromorphic functions separate points.** On a compact connected Riemann surface with
 finite-dimensional `H¹(X, 𝒪)`, every point `x` is the only pole of some meromorphic function. -/

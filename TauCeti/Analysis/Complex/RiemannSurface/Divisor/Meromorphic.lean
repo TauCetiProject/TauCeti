@@ -144,6 +144,13 @@ theorem mem_range_toMeromorphic_iff (f : MeromorphicFunction X) :
     (fun x ↦ (isDivisorSectionAt s x).meromorphicAt) f.meromorphicAt_finitePart hEq).trans
       (MeromorphicFunction.ofMeromorphic_finitePart f)
 
+/-- The images of the section spaces grow with the divisor: if `D ≤ E`, every meromorphic
+function satisfying the bound of `𝒪(D)` satisfies that of `𝒪(E)`. -/
+theorem range_toMeromorphic_mono {D E : WeilDivisor X} (h : D ≤ E) :
+    (toMeromorphic D).range ≤ (toMeromorphic E).range := fun f hf ↦ by
+  rw [mem_range_toMeromorphic_iff] at hf ⊢
+  exact fun y ↦ le_trans (WithTop.coe_le_coe.2 (neg_le_neg (Finsupp.le_def.1 h y))) (hf y)
+
 /-- **A jump in the section spaces gives a function of exact pole order.** If adding a point `x`
 to a divisor `D` raises the dimension of the global sections, then some meromorphic function
 satisfies the bound of `𝒪(D + [x])` and has order exactly `-(D(x) + 1)` at `x`. -/
@@ -155,17 +162,10 @@ theorem _root_.TauCeti.RiemannSurface.MeromorphicFunction.exists_order_eq_neg_of
       MeromorphicFunction.order x f = ((-(D x + 1) : ℤ) : WithTop ℤ) ∧
       ∀ y, ((-(D + WeilDivisor.ofPoint x) y : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order y f := by
   set E := D + WeilDivisor.ofPoint x
-  have hE (z : X) : E z = D z + WeilDivisor.coeff (WeilDivisor.ofPoint x) z :=
-    WeilDivisor.coeff_add D _ z
   -- The image of `L(D)` lies in that of `L(D + [x])`, which is finite-dimensional, and does not
   -- contain it, since it has smaller dimension.
-  have hDE : (toMeromorphic D).range ≤ (toMeromorphic E).range := fun f hf ↦ by
-    rw [mem_range_toMeromorphic_iff] at hf ⊢
-    intro y
-    refine le_trans ?_ (hf y)
-    rw [hE]
-    exact_mod_cast neg_le_neg (le_add_of_nonneg_right
-      (WeilDivisor.coeff_nonneg (WeilDivisor.ofPoint_nonneg x) y))
+  have hDE : (toMeromorphic D).range ≤ (toMeromorphic E).range :=
+    range_toMeromorphic_mono (le_add_of_nonneg_right (WeilDivisor.ofPoint_nonneg x))
   have : Module.Finite ℂ (divisorSections E ⊤) := Module.finite_of_finrank_pos (by omega)
   have := Submodule.finiteDimensional_of_le hDE
   have hlt : ¬(toMeromorphic E).range ≤ (toMeromorphic D).range := fun hle ↦ by
@@ -180,17 +180,18 @@ theorem _root_.TauCeti.RiemannSurface.MeromorphicFunction.exists_order_eq_neg_of
   refine ⟨f, ?_, hfE⟩
   -- The bounds of `L(D)` and `L(D + [x])` differ only at `x`, so `f` violates the first there,
   -- which pins its order at `x` to `-(D(x) + 1)`.
+  -- Restate the bounds through `WeilDivisor.coeff`, whose `@[simp]` lemmas compute them.
   have hyE := hfE y
+  simp only [E, ← WeilDivisor.coeff.eq_1, WeilDivisor.coeff_add] at hy hyE ⊢
   rcases eq_or_ne y x with rfl | hyx
-  · rw [hE, WeilDivisor.coeff_ofPoint_self] at hyE
+  · rw [WeilDivisor.coeff_ofPoint_self] at hyE
     induction h : MeromorphicFunction.order y f using WithTop.recTopCoe with
     | top => rw [h] at hy; exact absurd hy not_top_lt
     | coe n =>
       rw [h] at hy hyE
       norm_cast at hy hyE ⊢
       omega
-  · rw [hE, WeilDivisor.coeff_ofPoint_of_ne hyx, add_zero] at hyE
-    exact absurd hy (not_lt.mpr hyE)
+  · exact absurd hy (not_lt.mpr (by simpa [hyx] using hyE))
 
 /-- A section space of dimension greater than one contains a section whose meromorphic
 image is not constant. No effectiveness assumption on the divisor is needed. -/
