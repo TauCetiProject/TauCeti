@@ -63,7 +63,7 @@ trivialization.
 * `Bundle.Trivialization.span_range_localFrame_map`: the image of a local frame under a linear
   map spans the range of that map at every point of the base set.
 * `Bundle.Trivialization.exists_contMDiff_eventuallyEq_localFrame`: near a point of its base set,
-  the local frame of a trivialization agrees with a family of globally smooth sections.
+  the local frame of a `C^n` trivialization agrees with a family of globally `C^n` sections.
 * `Bundle.Trivialization.contMDiff_mul_localFrameCoeff`: the local-frame coefficients of a `C^n`
   section, multiplied by a `C^n` function supported in the base set, are globally `C^n`.
 * `Bundle.Trivialization.coordRatio`, `Bundle.Trivialization.eq_coordRatio_smul`,
@@ -269,9 +269,9 @@ end TauCeti.Manifold
 
 namespace Bundle.Trivialization
 
-/-- Near a point `x` of the base set of a trivialization `e` of a smooth real vector bundle over a
-finite-dimensional Hausdorff manifold, the local frame `e.localFrame b` agrees with a family of
-globally smooth sections. -/
+/-- Near a point `x` of the base set of a trivialization `e` of a `C^n` real vector bundle over a
+finite-dimensional Hausdorff smooth manifold, the local frame `e.localFrame b` agrees with a family
+of globally `C^n` sections, for `n ≤ ∞`. -/
 theorem exists_contMDiff_eventuallyEq_localFrame
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -279,16 +279,17 @@ theorem exists_contMDiff_eventuallyEq_localFrame
     {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     {W : M → Type*} [TopologicalSpace (TotalSpace G W)]
     [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
-    [FiberBundle G W] [VectorBundle ℝ G W] [ContMDiffVectorBundle ∞ G W I]
+    [FiberBundle G W] [VectorBundle ℝ G W] {n : ℕ∞ω} [ContMDiffVectorBundle n G W I]
     {ι : Type*} (e : Trivialization G (π G W)) [MemTrivializationAtlas e] (b : Basis ι ℝ G)
-    {x : M} (hx : x ∈ e.baseSet) :
-    ∃ F : ι → Π y : M, W y, (∀ i, CMDiff ∞ (T% (F i))) ∧
+    {x : M} (hn : n ≤ ∞) (hx : x ∈ e.baseSet) :
+    ∃ F : ι → Π y : M, W y, (∀ i, CMDiff n (T% (F i))) ∧
       ∀ i, ∀ᶠ y in nhds x, F i y = e.localFrame b i y := by
   -- Cut the frame off by a smooth bump function equal to one near `x`, supported in `e.baseSet`.
   have hnhds : e.baseSet ∈ nhds x := e.open_baseSet.mem_nhds hx
   obtain ⟨ρ, hρ, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) hnhds).mem_iff.mp hnhds
   refine ⟨fun i ↦ (ρ : M → ℝ) • e.localFrame b i, fun i ↦ ?_, fun i ↦ ?_⟩
-  · exact ρ.contMDiff.contMDiffOn.smul_section_of_tsupport e.open_baseSet hρ
+  · exact (ρ.contMDiff.of_le hn).contMDiffOn
+      |>.smul_section_of_tsupport e.open_baseSet hρ
       (e.contMDiffOn_localFrame_baseSet _ b i)
   · filter_upwards [ρ.eventuallyEq_one] with y hy
     simp [hy]
