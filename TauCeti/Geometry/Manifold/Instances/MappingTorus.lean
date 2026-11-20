@@ -302,8 +302,8 @@ theorem continuous_uncurry_mk : Continuous (Function.uncurry (mk φ)) :=
 /-- The mapping torus of a diffeomorphism of a `σ`-compact manifold is `σ`-compact: it is the
 continuous image of `ℝ × M`. -/
 instance [SigmaCompactSpace M] : SigmaCompactSpace (SmoothMappingTorus φ) := by
-  rw [← isSigmaCompact_univ_iff, ← (uncurry_mk_surjective φ).range_eq, ← Set.image_univ]
-  exact isSigmaCompact_univ.image (continuous_uncurry_mk φ)
+  rw [← isSigmaCompact_univ_iff, ← (uncurry_mk_surjective φ).range_eq]
+  exact isSigmaCompact_range (continuous_uncurry_mk φ)
 
 /-- Two points of `ℝ × M` have the same class in the mapping torus exactly when they differ by
 the action of an integer. -/

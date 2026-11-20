@@ -22,15 +22,20 @@ the cross products of the class of the circle with the first homology classes of
 torus. Classes of this summand include the classes of the orbit tori `(ℝ / ℤ) × γ` over closed
 orbits `γ` of the suspension flow (`TauCeti.SmoothMappingTorus.orbitTorusHomologyClass`).
 
+When `σ` is closed, `Ω`, `ds ∧ dt` and `ω_v` are bundled as closed forms
+(`TauCeti.SmoothMappingTorus.suspensionClosedForm`, `TauCeti.SmoothMappingTorus.wedgeTimeForm` and
+`TauCeti.SmoothMappingTorus.verticalForm`), and `Ω = ds ∧ dt + ω_v` holds among closed forms
+(`TauCeti.SmoothMappingTorus.suspensionClosedForm_eq_add`).
+
 This file proves that `ω_v` has zero period on the cross summand: for every class `α` of positive
 degree of the circle and every class `a` of `Y_φ` of complementary degree, the period of the closed
 form `ω_v` on `α × a` vanishes
-(`TauCeti.SmoothMappingTorus.homologyIntegral_verticalForm_singularHomologyCrossBilinear`).
+(`SmoothMappingTorus.closedFormHomologyPeriod_verticalForm_singularHomologyCrossBilinear_eq_zero`).
 Since `ω_v` is pulled back from `Y_φ`, its period on `α × a` is the period of `σ_v` on the image of
 `α × a` under the projection `X_φ → Y_φ`, which is zero because `α` has positive degree
-(`TauCeti.homologyIntegral_mpullback_snd_singularHomologyCrossBilinear`). Consequently, on the
-cross summand the period of `Ω` is the period of `ds ∧ dt`
-(`TauCeti.SmoothMappingTorus.homologyIntegral_suspensionForm_singularHomologyCrossBilinear`).
+(`TauCeti.closedFormHomologyPeriod_mpullback_snd_singularHomologyCrossBilinear_eq_zero`).
+Consequently, on the cross summand the period of `Ω` is the period of `ds ∧ dt`
+(`SmoothMappingTorus.closedFormHomologyPeriod_suspensionClosedForm_singularHomologyCrossBilinear`).
 
 These are the homological input for compact pseudoholomorphic curves in `X_φ` whose class lies in
 the cross summand: once the vertical area `∫_C u^* ω_v` of such a curve `u : C → X_φ` is identified
@@ -42,14 +47,17 @@ No compactness of `M` and no nondegeneracy of `σ` is needed.
 
 ## Main definitions
 
+* `TauCeti.SmoothMappingTorus.wedgeTimeForm φ`: the closed form `ds ∧ dt` on `X_φ`.
 * `TauCeti.SmoothMappingTorus.verticalForm hσc`: the closed form `ω_v` on `X_φ`.
+* `TauCeti.SmoothMappingTorus.suspensionClosedForm hσc`: the closed form `Ω` on `X_φ`.
 
 ## Main results
 
-* `TauCeti.SmoothMappingTorus.homologyIntegral_verticalForm_singularHomologyCrossBilinear`: `ω_v`
-  has zero period on every cross product with a positive-degree class of the circle.
-* `TauCeti.SmoothMappingTorus.homologyIntegral_suspensionForm_singularHomologyCrossBilinear`: on
-  such cross products the periods of `Ω` and of `ds ∧ dt` agree.
+* `TauCeti.SmoothMappingTorus.suspensionClosedForm_eq_add`: `Ω = ds ∧ dt + ω_v` as closed forms.
+* `SmoothMappingTorus.closedFormHomologyPeriod_verticalForm_singularHomologyCrossBilinear_eq_zero`:
+  `ω_v` has zero period on every cross product with a positive-degree class of the circle.
+* `SmoothMappingTorus.closedFormHomologyPeriod_suspensionClosedForm_singularHomologyCrossBilinear`:
+  on such cross products the periods of `Ω` and of `ds ∧ dt` agree.
 
 ## References
 
@@ -72,6 +80,28 @@ variable {E H M : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimens
   [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M] [SigmaCompactSpace M]
   {φ : M ≃ₘ⟮I, I⟯ M} {σ : SmoothTwoForm I M} {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ}
 
+variable (φ) in
+/-- The form `ds ∧ dt` on `(ℝ / ℤ) × Y_φ`, the wedge of the time forms of the circle and of the
+mapping torus pulled back to the product, as a closed form. -/
+def wedgeTimeForm :
+    closedForms (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (UnitAddCircle × SmoothMappingTorus φ) 2 :=
+  ⟨SmoothForm.wedge (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1))
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (timeForm φ)),
+    SmoothForm.wedge_mem_closedForms
+      ((mem_closedForms _ _).2 ((SmoothForm.isClosed_def _).1
+        ((AddCircle.isClosed_timeForm 1).mpullback _ _)))
+      ((mem_closedForms _ _).2 ((SmoothForm.isClosed_def _).1
+        ((isClosed_timeForm φ).mpullback _ _)))⟩
+
+omit [FiniteDimensional ℝ E] [SigmaCompactSpace M] in
+/-- The closed form `ds ∧ dt` is the wedge of the pulled back time forms. -/
+@[simp]
+theorem coe_wedgeTimeForm :
+    (wedgeTimeForm φ).1 = SmoothForm.wedge
+      (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1))
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (timeForm φ)) :=
+  (rfl)
+
 variable (hσ) in
 /-- The vertical form `ω_v` on `(ℝ / ℤ) × Y_φ` of a closed `φ`-invariant two-form `σ`: the fiber
 form `σ_v` pulled back along the projection to the mapping torus, as a closed form. -/
@@ -88,41 +118,56 @@ theorem coe_verticalForm (hσc : σ.IsClosed) :
     (verticalForm hσ hσc).1 = SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ) :=
   closedForms.coe_mpullback _ _ _ _
 
+variable (hσ) in
+/-- The suspension form `Ω = ds ∧ dt + ω_v` on `(ℝ / ℤ) × Y_φ` of a closed `φ`-invariant two-form
+`σ`, as a closed form. -/
+def suspensionClosedForm (hσc : σ.IsClosed) :
+    closedForms (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (UnitAddCircle × SmoothMappingTorus φ) 2 :=
+  ⟨suspensionForm φ σ hσ,
+    (mem_closedForms _ _).2 ((SmoothForm.isClosed_def _).1 (isClosed_suspensionForm_iff.2 hσc))⟩
+
+omit [FiniteDimensional ℝ E] [SigmaCompactSpace M] in
+/-- The closed form `Ω` is the suspension form. -/
+@[simp]
+theorem coe_suspensionClosedForm (hσc : σ.IsClosed) :
+    (suspensionClosedForm hσ hσc).1 = suspensionForm φ σ hσ :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] [SigmaCompactSpace M] in
+/-- The closed form `Ω` splits as `ds ∧ dt + ω_v`. -/
+theorem suspensionClosedForm_eq_add (hσc : σ.IsClosed) :
+    suspensionClosedForm hσ hσc = wedgeTimeForm φ + verticalForm hσ hσc :=
+  Subtype.ext (by rw [Submodule.coe_add, coe_verticalForm, coe_suspensionClosedForm,
+    coe_wedgeTimeForm, suspensionForm_def])
+
 /-- **The vertical form has zero period on the cross summand.** For a class `α` of positive degree
 of the circle `ℝ / ℤ`, such as its fundamental class, and any class `a` of the mapping torus of
 complementary degree, the period of `ω_v` on the cross product `α × a` vanishes. -/
 @[simp]
-theorem homologyIntegral_verticalForm_singularHomologyCrossBilinear (hσc : σ.IsClosed)
+theorem closedFormHomologyPeriod_verticalForm_singularHomologyCrossBilinear_eq_zero
+    (hσc : σ.IsClosed)
     {p q : ℕ} (h : p + q = 2) (hp : p ≠ 0)
     (α : ((singularChains ℤ).obj (TopCat.of UnitAddCircle)).homology p)
     (a : ((singularChains ℤ).obj (TopCat.of (SmoothMappingTorus φ))).homology q) :
-    homologyIntegral (verticalForm hσ hσc)
+    closedFormHomologyPeriod (verticalForm hσ hσc)
       (TopCat.singularHomologyCrossBilinear ℤ (TopCat.of UnitAddCircle)
         (TopCat.of (SmoothMappingTorus φ)) p q 2 h α a) = 0 :=
-  homologyIntegral_mpullback_snd_singularHomologyCrossBilinear h hp _ α a
+  closedFormHomologyPeriod_mpullback_snd_singularHomologyCrossBilinear_eq_zero h hp _ α a
 
-/-- **On the cross summand, the periods of `Ω` are those of `ds ∧ dt`.** Let `Ω'` and `β` be the
-closed forms underlying `Ω = ds ∧ dt + ω_v` and `ds ∧ dt`. For a class `α` of positive degree of
-the circle and a class `a` of the mapping torus of complementary degree, their periods on the cross
-product `α × a` agree. -/
-theorem homologyIntegral_suspensionForm_singularHomologyCrossBilinear
-    {Ω' β : closedForms (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (UnitAddCircle × SmoothMappingTorus φ) 2}
-    (hΩ : Ω'.1 = suspensionForm φ σ hσ)
-    (hβ : β.1 = SmoothForm.wedge
-      (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1))
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (timeForm φ)))
-    {p q : ℕ} (h : p + q = 2) (hp : p ≠ 0)
+/-- **On the cross summand, the periods of `Ω` are those of `ds ∧ dt`.** For a class `α` of
+positive degree of the circle and a class `a` of the mapping torus of complementary degree, the
+periods of `Ω = ds ∧ dt + ω_v` and of `ds ∧ dt` on the cross product `α × a` agree. -/
+theorem closedFormHomologyPeriod_suspensionClosedForm_singularHomologyCrossBilinear
+    (hσc : σ.IsClosed) {p q : ℕ} (h : p + q = 2) (hp : p ≠ 0)
     (α : ((singularChains ℤ).obj (TopCat.of UnitAddCircle)).homology p)
     (a : ((singularChains ℤ).obj (TopCat.of (SmoothMappingTorus φ))).homology q) :
-    homologyIntegral Ω' (TopCat.singularHomologyCrossBilinear ℤ (TopCat.of UnitAddCircle)
-        (TopCat.of (SmoothMappingTorus φ)) p q 2 h α a) =
-      homologyIntegral β (TopCat.singularHomologyCrossBilinear ℤ (TopCat.of UnitAddCircle)
-        (TopCat.of (SmoothMappingTorus φ)) p q 2 h α a) := by
-  have hσc : σ.IsClosed := isClosed_suspensionForm_iff.1
-    ((SmoothForm.isClosed_def _).2 (hΩ ▸ (mem_closedForms _ _).1 Ω'.2))
-  have hsplit : Ω' = β + verticalForm hσ hσc :=
-    Subtype.ext (by rw [Submodule.coe_add, coe_verticalForm, hΩ, hβ, suspensionForm_def])
-  rw [hsplit, homologyIntegral_add, AddMonoidHom.add_apply,
-    homologyIntegral_verticalForm_singularHomologyCrossBilinear hσc h hp, add_zero]
+    closedFormHomologyPeriod (suspensionClosedForm hσ hσc)
+        (TopCat.singularHomologyCrossBilinear ℤ (TopCat.of UnitAddCircle)
+          (TopCat.of (SmoothMappingTorus φ)) p q 2 h α a) =
+      closedFormHomologyPeriod (wedgeTimeForm φ)
+        (TopCat.singularHomologyCrossBilinear ℤ (TopCat.of UnitAddCircle)
+          (TopCat.of (SmoothMappingTorus φ)) p q 2 h α a) := by
+  rw [suspensionClosedForm_eq_add, closedFormHomologyPeriod_add, AddMonoidHom.add_apply,
+    closedFormHomologyPeriod_verticalForm_singularHomologyCrossBilinear_eq_zero hσc h hp, add_zero]
 
 end TauCeti.SmoothMappingTorus
