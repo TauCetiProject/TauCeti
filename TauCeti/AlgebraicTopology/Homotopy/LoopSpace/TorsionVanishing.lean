@@ -49,11 +49,11 @@ is not a torsion group (`TauCeti.exists_not_isAddTorsion_reducedSingularHomology
 This is the topological input of Barraud–Damian–Humilière–Oancea's proof of their Theorem 5.14
 (Theorem B of the introduction): there the kernel of the map `i_{Q*}` induced by the constant loops
 is identified with `H~_*(Ω²Q; ℤ)`, and the theorem needs it to contain a non-torsion class. With
-`S` the powers of an integer `d`, it is the second part of their Proposition 5.11, with
-"not killed by `d`" strengthened to "killed by no power of `d`". Their proof applies the Hurewicz
-theorem modulo the class of torsion groups (their Theorem 5.12) to `Ω₀Q` and the Leray–Serre
-spectral sequence of the path fibration over `Ω₀Q`; here both steps are replaced by the vanishing
-theorems with localized coefficients.
+`S` the powers of an integer `d`, it is the second part of their Proposition 5.11, where a group is
+`d`-torsion when each of its elements is annihilated by some power of `d`. Their proof applies the
+Hurewicz theorem modulo the class of torsion groups (their Theorem 5.12) to `Ω₀Q` and the
+Leray–Serre spectral sequence of the path fibration over `Ω₀Q`; here both steps are replaced by the
+vanishing theorems with localized coefficients.
 
 The double loop space is the fixed-interval model `Ω (Ω X x) (Path.refl x)`.
 
