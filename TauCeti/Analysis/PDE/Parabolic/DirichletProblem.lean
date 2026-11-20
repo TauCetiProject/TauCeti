@@ -109,7 +109,7 @@ namespace TauCeti
 namespace PDE
 
 open MeasureTheory Set TopologicalSpace
-open scoped InnerProductSpace Interval
+open scoped InnerProductSpace
 
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
   {Omega : Opens (EuclideanSpace ℝ ι)}
@@ -394,7 +394,9 @@ end StandingHypotheses
 `‖w t‖² + 2 ∫ₛᵗ a_r(u(r), u(r)) dr = ‖w s‖² + 2 ∫ₛᵗ f(r)(u(r)) dr`,
 
 where `a_r` is the energy form of `L(r)`. No hypothesis on the coefficients is needed beyond the
-equation itself. -/
+equation itself. This is the abstract energy identity
+`TauCeti.HasWeakLineDerivOn.norm_sq_add_two_mul_integral_eq_of_gelfandDual` for the equation tested
+with `u(r)`. -/
 theorem norm_sq_add_two_mul_integral_energyFormH1_eq_of_hasWeakLineDerivOn_gelfandDual
     {f : ℝ → StrongDual ℝ (W1p0 mu Omega 2)} {u : ℝ → W1p0 mu Omega 2}
     {u' : ℝ → StrongDual ℝ (W1p0 mu Omega 2)} {w : ℝ → Lp ℝ 2 (mu.restrict Omega)}
@@ -413,28 +415,10 @@ theorem norm_sq_add_two_mul_integral_energyFormH1_eq_of_hasWeakLineDerivOn_gelfa
     ‖w t‖ ^ 2 + 2 * ∫ r in s..t,
         energyFormH1 (a r) (b r) (c r) (u r : W1p mu Omega 2) (u r : W1p mu Omega 2) =
       ‖w s‖ ^ 2 + 2 * ∫ r in s..t, f r (u r) := by
-  have hid := hd.norm_sq_sub_norm_sq_eq_of_gelfandDual hu hu' hw hae hs ht
-  -- The pairings `u'(u)` and `f(u)` are integrable on `(t₀, t₁)`, hence on the interval between
-  -- `s` and `t`, which lies in `(t₀, t₁]`.
-  have hsub : Ι s t ⊆ Ioc t₀ t₁ := fun r hr =>
-    ⟨lt_of_le_of_lt (le_min hs.1 ht.1) hr.1, hr.2.trans (max_le hs.2 ht.2)⟩
-  have hp : IntegrableOn (fun r => u' r (u r)) (Ioc t₀ t₁) := by
-    rw [IntegrableOn, ← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
-    exact hu'.integrable_apply hu
-  have hfu : IntegrableOn (fun r => f r (u r)) (Ioc t₀ t₁) := by
-    rw [IntegrableOn, ← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
-    exact hf.integrable_apply hu
-  -- Testing the equation with `u(r)` itself gives `a_r(u(r), u(r)) = f(r)(u(r)) - u'(r)(u(r))`.
-  have hE : ∀ᵐ r ∂volume, r ∈ Ι s t →
-      energyFormH1 (a r) (b r) (c r) (u r : W1p mu Omega 2) (u r : W1p mu Omega 2) =
-        f r (u r) - u' r (u r) := by
-    rw [Measure.restrict_congr_set Ioo_ae_eq_Ioc, ae_restrict_iff' measurableSet_Ioc] at heq
-    filter_upwards [heq] with r hr hrst
-    rw [← hr (hsub hrst) (u r)]
-    ring
-  rw [intervalIntegral.integral_congr_ae hE, intervalIntegral.integral_sub
-    (intervalIntegrable_iff.2 (hfu.mono_set hsub)) (intervalIntegrable_iff.2 (hp.mono_set hsub))]
-  linarith
+  refine hd.norm_sq_add_two_mul_integral_eq_of_gelfandDual hu hu' (hf.integrable_apply hu) ?_ hw
+    hae hs ht
+  -- Testing the equation with `u(r)` itself.
+  filter_upwards [heq] with r hr using hr (u r)
 
 end PDE
 

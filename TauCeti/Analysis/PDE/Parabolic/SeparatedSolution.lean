@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.DirichletProblem
 public import TauCeti.Analysis.PDE.Spectrum.Interval
+import TauCeti.Analysis.PDE.Parabolic.EnergyEstimate
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -231,19 +232,6 @@ theorem eqOn_exp_smul_of_hasWeakLineDerivOn_gelfandDual_energyFormH1
     EqOn w (fun t => Real.exp (-κ * (t - t₀)) • W1p0.valueL s) (Icc t₀ t₁) := by
   have h₂ :=
     hasWeakLineDerivOn_gelfandDual_valueL_exp_smul (mu := mu) (Omega := Omega) s (-κ) t₀ t₁
-  have heq₂ : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ v : W1p0 mu Omega 2,
-      ((-κ * Real.exp (-κ * (t - t₀))) •
-          (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)).gelfandDual (W1p0.valueL s)) v +
-        energyFormH1 a b c ((Real.exp (-κ * (t - t₀)) • s : W1p0 mu Omega 2) : W1p mu Omega 2)
-          (v : W1p mu Omega 2) = (0 : StrongDual ℝ (W1p0 mu Omega 2)) v :=
-    ae_of_all _ fun t v =>
-      (smul_gelfandDual_apply_add_energyFormH1_exp_smul_eq_zero hs t v).trans
-        (_root_.zero_apply v).symm
-  have heq₁ : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ v : W1p0 mu Omega 2,
-      u' t v + energyFormH1 a b c (u t : W1p mu Omega 2) (v : W1p mu Omega 2) =
-        (0 : StrongDual ℝ (W1p0 mu Omega 2)) v := by
-    filter_upwards [heq] with t ht v
-    exact (ht v).trans (_root_.zero_apply v).symm
   have hae₂ : (fun t => W1p0.valueL (Real.exp (-κ * (t - t₀)) • s))
       =ᵐ[volume.restrict (Ioo t₀ t₁)] fun t => Real.exp (-κ * (t - t₀)) • W1p0.valueL s :=
     ae_of_all _ fun t => map_smul _ _ _
@@ -257,7 +245,8 @@ theorem eqOn_exp_smul_of_hasWeakLineDerivOn_gelfandDual_energyFormH1
     hd h₂ hu hu' (memLp_smul_const_restrict_Ioo (by fun_prop) s t₀ t₁)
     (memLp_smul_const_restrict_Ioo (by fun_prop)
       ((W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)).gelfandDual (W1p0.valueL s)) t₀ t₁)
-    heq₁ heq₂ hw hae hw₂ hae₂ h₀'
+    heq (ae_of_all _ fun t v => smul_gelfandDual_apply_add_energyFormH1_exp_smul_eq_zero hs t v)
+    hw hae hw₂ hae₂ h₀'
 
 end Separated
 
@@ -292,16 +281,11 @@ theorem eqOn_exp_smul_of_value_ae_eq_sin (hab : a < b) (k : ℕ)
     (h₀ : w t₀ = W1p0.valueL s) :
     EqOn w (fun t => Real.exp (-(k * π / (b - a)) ^ 2 * (t - t₀)) • W1p0.valueL s)
       (Icc t₀ t₁) := by
-  have heig (v : W1p0 volume (intervalDomain a b) 2) :
-      energyFormH1 (fun _ => 1) 0 0 (s : W1p volume (intervalDomain a b) 2)
-          (v : W1p volume (intervalDomain a b) 2) =
-        (k * π / (b - a)) ^ 2 * ⟪W1p0.valueL s, W1p0.valueL v⟫_ℝ := by
-    rw [W1p0.valueL_apply, W1p0.valueL_apply]
-    exact energyFormH1_eq_of_value_ae_eq_sin hab k hs v
   exact eqOn_exp_smul_of_hasWeakLineDerivOn_gelfandDual_energyFormH1 (lam := 1) (Lam := 1)
     (beta := 0) (gamma := 0) aestronglyMeasurable_const aestronglyMeasurable_const
     aestronglyMeasurable_const (uniformlyEllipticOn_const_one_one _)
-    (fun _ _ => by simp) (fun _ _ => (norm_eq_zero.2 rfl).le) heig hd hu hu' heq hw hae h₀
+    (fun _ _ => by simp) (fun _ _ => (norm_eq_zero.2 rfl).le)
+    (energyFormH1_eq_of_value_ae_eq_sin hab k hs) hd hu hu' heq hw hae h₀
 
 /-- **The energy identity for a sine mode.** On the interval `(a, b)`, every weak solution of
 `∂ₜu - Δu = 0` with zero boundary values and initial value the sine mode
@@ -334,75 +318,15 @@ theorem norm_sq_add_two_mul_integral_energyFormH1_eq_of_value_ae_eq_sin (hab : a
     ‖w t‖ ^ 2 + 2 * ∫ r in t₀..t, energyFormH1 (fun _ => 1) 0 0
         (u r : W1p volume (intervalDomain a b) 2) (u r : W1p volume (intervalDomain a b) 2) =
       (b - a) / 2 := by
-  have heq' : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ v : W1p0 volume (intervalDomain a b) 2,
-      u' t v + energyFormH1 (fun _ => 1) 0 0 (u t : W1p volume (intervalDomain a b) 2)
-        (v : W1p volume (intervalDomain a b) 2) =
-          (0 : ℝ → StrongDual ℝ (W1p0 volume (intervalDomain a b) 2)) t v := by
-    filter_upwards [heq] with t ht v
-    exact (ht v).trans (_root_.zero_apply v).symm
-  -- Elaborating `MemLp.zero` directly at `H⁻¹(a, b)` exhausts the heartbeat budget in instance
-  -- unification; the abstract `memLp_smul_const_restrict_Ioo` avoids it.
-  have hf : MemLp (0 : ℝ → StrongDual ℝ (W1p0 volume (intervalDomain a b) 2)) 2
-      (volume.restrict (Ioo t₀ t₁)) := by
-    have h0 := memLp_smul_const_restrict_Ioo continuous_zero
-      (0 : StrongDual ℝ (W1p0 volume (intervalDomain a b) 2)) t₀ t₁
-    simp only [smul_zero] at h0
-    exact h0
-  have h := norm_sq_add_two_mul_integral_energyFormH1_eq_of_hasWeakLineDerivOn_gelfandDual
-    (a := fun _ _ => 1) (b := fun _ => 0) (c := fun _ => 0) hd hu hu' hf heq' hw hae
+  -- The energy identity, for the equation tested with `u(r)` and right-hand side `0`.
+  have h := hd.norm_sq_add_two_mul_integral_eq_of_gelfandDual (g := fun _ => 0) hu hu'
+    integrableOn_zero (by filter_upwards [heq] with r hr using hr (u r)) hw hae
     ⟨le_rfl, ht.1.trans ht.2⟩ ht
-  have hz : ∫ r in t₀..t, (0 : ℝ → StrongDual ℝ (W1p0 volume (intervalDomain a b) 2)) r (u r) =
-      0 :=
-    (intervalIntegral.integral_congr fun r _ => _root_.zero_apply (u r)).trans
-      intervalIntegral.integral_zero
   have hnorm : ‖w t₀‖ ^ 2 = (b - a) / 2 := by
     rw [h₀, W1p0.valueL_apply]
     exact norm_value_sq_of_value_ae_eq_sin hab hk hs
-  rw [hz, mul_zero, add_zero, hnorm] at h
+  rw [intervalIntegral.integral_zero, mul_zero, add_zero, hnorm] at h
   exact h
-
-/-- The Dirichlet eigenvalues `(k π / (b - a))²`, `k ≥ 1`, of `-Δ` on `(a, b)` are unbounded. -/
-private theorem exists_lt_sq (hab : a < b) (C : ℝ) :
-    ∃ k : ℕ, 0 < k ∧ C < (k * π / (b - a)) ^ 2 := by
-  have hq : 0 < π ^ 2 / (b - a) ^ 2 := by
-    have := sub_pos.2 hab
-    positivity
-  obtain ⟨k, hk⟩ := exists_nat_gt (max 1 (C / (π ^ 2 / (b - a) ^ 2)))
-  have hk1 : (1 : ℝ) < k := (le_max_left _ _).trans_lt hk
-  have hkC : C / (π ^ 2 / (b - a) ^ 2) < k := (le_max_right _ _).trans_lt hk
-  refine ⟨k, Nat.cast_pos.1 (zero_lt_one.trans hk1), ?_⟩
-  rw [div_lt_iff₀ hq] at hkC
-  have hsq : (k * π / (b - a)) ^ 2 = π ^ 2 / (b - a) ^ 2 * k ^ 2 := by
-    rw [div_pow, mul_pow]
-    ring
-  rw [hsq]
-  have hkk : (k : ℝ) ≤ k ^ 2 := by nlinarith
-  nlinarith [mul_le_mul_of_nonneg_left hkk hq.le]
-
-/-- The Dirichlet eigenvalues `(k π / (b - a))²` of `-Δ` on `(a, b)` are unbounded, with the sine
-modes as eigenfunctions. -/
-private theorem exists_lt_and_energyFormH1_eq_intervalDomain (hab : a < b) (C : ℝ) :
-    ∃ κ : ℝ, ∃ s : W1p0 volume (intervalDomain a b) 2, C < κ ∧ 0 < ‖W1p0.valueL s‖ ∧
-      ∀ v : W1p0 volume (intervalDomain a b) 2,
-        energyFormH1 (fun _ => 1) 0 0 (s : W1p volume (intervalDomain a b) 2)
-            (v : W1p volume (intervalDomain a b) 2) =
-          κ * ⟪W1p0.valueL s, W1p0.valueL v⟫_ℝ := by
-  -- `Exists.elim` rather than `obtain`, whose dependent eliminator has to abstract this goal.
-  refine (exists_lt_sq hab C).elim fun k hk => ?_
-  refine (exists_value_ae_eq_sin_and_energyFormH1_eq hab k).elim fun s hs => ?_
-  have heig (v : W1p0 volume (intervalDomain a b) 2) :
-      energyFormH1 (fun _ => 1) 0 0 (s : W1p volume (intervalDomain a b) 2)
-          (v : W1p volume (intervalDomain a b) 2) =
-        (k * π / (b - a)) ^ 2 * ⟪W1p0.valueL s, W1p0.valueL v⟫_ℝ := by
-    rw [W1p0.valueL_apply, W1p0.valueL_apply]
-    exact energyFormH1_eq_of_value_ae_eq_sin hab k hs.1 v
-  have hpos : 0 < ‖W1p0.valueL s‖ := by
-    have hnorm := norm_value_sq_of_value_ae_eq_sin hab hk.1 hs.1
-    rw [W1p0.valueL_apply]
-    refine (norm_nonneg _).lt_of_ne fun h => ?_
-    rw [← h] at hnorm
-    linarith
-  exact ⟨_, s, by linarith [hk.2], hpos, heig⟩
 
 /-- **The backward heat equation is ill-posed.** On the interval `(a, b)` and a time interval
 `(t₀, t₁)`, `t₀ < t₁`, consider weak solutions of the backward heat equation `∂ₜu + Δu = 0` with
@@ -442,7 +366,7 @@ theorem not_exists_forall_mul_norm_sq_sub_mul_norm_sq_le_neg_energyFormH1 (hab :
         -energyFormH1 (fun _ => 1) 0 0 (v : W1p volume (intervalDomain a b) 2)
           (v : W1p volume (intervalDomain a b) 2) := by
   rintro ⟨α, hα, β, h⟩
-  obtain ⟨k, hk, hlt⟩ := exists_lt_sq hab (β - α)
+  obtain ⟨k, hk, hlt⟩ := exists_lt_sq_natCast_mul_pi_div hab.ne (β - α)
   obtain ⟨s, hs, -⟩ := exists_value_ae_eq_sin_and_energyFormH1_eq hab k
   have hs' := h s
   rw [energyFormH1_self_eq_of_value_ae_eq_sin hab hk hs, W1p0.valueL_apply,
