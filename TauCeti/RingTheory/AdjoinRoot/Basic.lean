@@ -25,9 +25,11 @@ of `AdjoinRoot g`.
 
 ## Main results
 
-* `AdjoinRoot.map_mk`: the map sends the class of `x` to the class of `x.map f`. Mathlib states
-  this only in the specialised form `WeierstrassCurve.Affine.CoordinateRing.map_mk`. Marked
-  `@[simp]`, like its neighbours `AdjoinRoot.map_of` and `AdjoinRoot.map_root`.
+* `AdjoinRoot.map_mk`, `AdjoinRoot.algHomOfDvd_mk`: `AdjoinRoot.map` sends the class of `x` to the
+  class of `x.map f` (Mathlib states this only in the specialised form
+  `WeierstrassCurve.Affine.CoordinateRing.map_mk`), and `AdjoinRoot.algHomOfDvd` sends the class
+  of `x` to its class in the smaller quotient. Marked `@[simp]`, like their neighbours
+  `AdjoinRoot.map_of`, `AdjoinRoot.map_root`, and `AdjoinRoot.algHomOfDvd_root`.
 * `AdjoinRoot.map_surjective`: the map is surjective when `f` is.
 * `AdjoinRoot.algHom_mk`: an algebra map out of `AdjoinRoot g` sends the class of `p` to the
   evaluation of `p` at the image of the root.
@@ -65,10 +67,10 @@ of `AdjoinRoot g`.
   `AdjoinRoot.finrank_quotient_map_mkQ_span_op_root_X_pow_pow`: the same count for the cyclic
   right modules `M_j`, the quotients of the opposite ring by `op (x ^ j)`, and the quotient of
   `M_j` by the image of `x ^ m`, which has rank `min j m`.
-* `Polynomial.quotientSpanEquivAdjoinRoot`: the cyclic polynomial quotient as an `R`-module
-  is `AdjoinRoot f`; polynomial scalar multiplication becomes multiplication by its image.
-  The two modules agree definitionally, so this connects cyclic module structure theorems with
-  `AdjoinRoot` directly.
+* `Polynomial.quotientSpanEquivAdjoinRoot`, `Polynomial.quotientSpanAlgEquivAdjoinRoot`: the cyclic
+  polynomial quotient as an `R`-module and as an `R`-algebra is `AdjoinRoot f`; polynomial scalar
+  multiplication becomes multiplication by its image. The two quotients agree definitionally, so
+  these equivalences isolate that identification cleanly.
 
 Stated over arbitrary commutative rings.
 
@@ -118,6 +120,12 @@ lemma map_surjective {f : R →+* S} (hf : Function.Surjective f) {p : R[X]} {q 
   obtain ⟨t, rfl⟩ := mk_surjective y
   obtain ⟨u, rfl⟩ := Polynomial.map_surjective f hf t
   exact ⟨mk p u, map_mk h u⟩
+
+/-- `AdjoinRoot.algHomOfDvd` sends the class of a polynomial to its class in the quotient. -/
+@[simp]
+lemma algHomOfDvd_mk [Algebra R S] (f g : S[X]) (hgf : g ∣ f) (x : S[X]) :
+    algHomOfDvd R f g hgf (mk f x) = mk g x := by
+  simp [algHomOfDvd]
 
 end Map
 
@@ -375,6 +383,35 @@ theorem quotientSpanEquivAdjoinRoot_smul (f g : R[X]) (y : R[X] ⧸ R[X] ∙ f) 
   | H h =>
     rw [← Submodule.Quotient.mk_smul, smul_eq_mul, Ideal.Quotient.mk_eq_mk, Ideal.Quotient.mk_eq_mk,
       quotientSpanEquivAdjoinRoot_mk, quotientSpanEquivAdjoinRoot_mk, map_mul]
+
+/-- The quotient `R[X] ⧸ Ideal.span {f}`, as an `R`-algebra, is `AdjoinRoot f`. -/
+-- `AdjoinRoot f` is defined as `R[X] ⧸ Ideal.span {f}`, so the two `R`-algebras agree
+-- definitionally; this isolates that unfolding in one place.
+noncomputable def quotientSpanAlgEquivAdjoinRoot (f : R[X]) :
+    (R[X] ⧸ Ideal.span {f}) ≃ₐ[R] AdjoinRoot f :=
+  AlgEquiv.refl
+
+/-- `quotientSpanAlgEquivAdjoinRoot` sends the class of a polynomial to its image in
+`AdjoinRoot`. -/
+@[simp]
+theorem quotientSpanAlgEquivAdjoinRoot_mk (f g : R[X]) :
+    quotientSpanAlgEquivAdjoinRoot f (Ideal.Quotient.mk (Ideal.span {f}) g) =
+      AdjoinRoot.mk f g := (rfl)
+
+/-- The inverse of `quotientSpanAlgEquivAdjoinRoot` sends the image of a polynomial in `AdjoinRoot`
+to its quotient class modulo `Ideal.span {f}`. -/
+@[simp]
+theorem quotientSpanAlgEquivAdjoinRoot_symm_mk (f g : R[X]) :
+    (quotientSpanAlgEquivAdjoinRoot f).symm (AdjoinRoot.mk f g) =
+      Ideal.Quotient.mk (Ideal.span {f}) g := (rfl)
+
+/-- The inverse of `quotientSpanAlgEquivAdjoinRoot` sends `AdjoinRoot.root f` to the class of
+`X`. -/
+@[simp]
+theorem quotientSpanAlgEquivAdjoinRoot_symm_root (f : R[X]) :
+    (quotientSpanAlgEquivAdjoinRoot f).symm (AdjoinRoot.root f) =
+      Ideal.Quotient.mk (Ideal.span {f}) X := by
+  rw [← AdjoinRoot.mk_X, quotientSpanAlgEquivAdjoinRoot_symm_mk]
 
 end Polynomial
 
