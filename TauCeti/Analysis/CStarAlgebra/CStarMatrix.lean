@@ -36,7 +36,10 @@ and the transpose as a linear map.
 * `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
 * `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an
-  ordinary matrix respects multiplication and sends `star` to the conjugate transpose.
+  ordinary matrix respects multiplication and sends `star` to the conjugate transpose; the
+  companions `CStarMatrix.ofMatrix_symm_zero`, `ofMatrix_symm_one`, `ofMatrix_symm_add`,
+  `ofMatrix_symm_neg`, `ofMatrix_symm_sub` and `ofMatrix_symm_smul` do the same for the other
+  algebraic operations.
 * `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`: entries of finite sums and of
   `1 × 1` C⋆-matrices.
 * `CStarMatrix.transposeₗ`: the transpose of C⋆-matrices, as a linear map.
@@ -50,6 +53,12 @@ and the transpose as a linear map.
 * `CStarMatrix.submatrix_nonneg` and `CStarMatrix.extend_nonneg`: reindexing a positive matrix
   along any map of indices, or extending it by zero along an injective one, gives a positive
   matrix.
+* `WithCStarModule.norm_equiv_symm_pi_smul`: the vector `(vᵢ a)ᵢ` of the Hilbert `A`-module `Aᵐ`
+  has norm `‖v‖ ‖a‖`.
+* `CStarMatrix.norm_sum_smul_le`: compressing `x ∈ M_{m,n}(A)` by scalar vectors `v`, `w` gives
+  `‖∑ i j, (vᵢ wⱼ*) xᵢⱼ‖ ≤ ‖v‖ ‖x‖ ‖w‖`. The proof tests `x` against the vectors `(vᵢ a)ᵢ` and
+  `(wⱼ b)ⱼ` of `Aᵐ` and `Aⁿ`, which bounds `‖a z b*‖` for the compression `z`, and takes `a = z*`,
+  `b = z* z`; no unit is needed.
 
 ## References
 
@@ -87,6 +96,35 @@ lemma ofMatrix_symm_mul [Fintype n] [Mul A] [AddCommMonoid A] (M N : CStarMatrix
 @[simp]
 lemma ofMatrix_symm_star [Star A] (M : CStarMatrix n n A) :
     ofMatrix.symm (star M) = (ofMatrix.symm M)ᴴ := (rfl)
+
+/-- Reading a C⋆-matrix as an ordinary matrix sends `0` to `0`. -/
+@[simp]
+lemma ofMatrix_symm_zero [Zero A] : ofMatrix.symm (0 : CStarMatrix n n A) = 0 := (rfl)
+
+/-- Reading a C⋆-matrix as an ordinary matrix sends `1` to `1`. -/
+@[simp]
+lemma ofMatrix_symm_one [DecidableEq n] [Zero A] [One A] :
+    ofMatrix.symm (1 : CStarMatrix n n A) = 1 := (rfl)
+
+/-- Reading a C⋆-matrix as an ordinary matrix respects addition. -/
+@[simp]
+lemma ofMatrix_symm_add [Add A] (M N : CStarMatrix n n A) :
+    ofMatrix.symm (M + N) = ofMatrix.symm M + ofMatrix.symm N := (rfl)
+
+/-- Reading a C⋆-matrix as an ordinary matrix respects negation. -/
+@[simp]
+lemma ofMatrix_symm_neg [Neg A] (M : CStarMatrix n n A) :
+    ofMatrix.symm (-M) = -ofMatrix.symm M := (rfl)
+
+/-- Reading a C⋆-matrix as an ordinary matrix respects subtraction. -/
+@[simp]
+lemma ofMatrix_symm_sub [Sub A] (M N : CStarMatrix n n A) :
+    ofMatrix.symm (M - N) = ofMatrix.symm M - ofMatrix.symm N := (rfl)
+
+/-- Reading a C⋆-matrix as an ordinary matrix respects scalar multiplication. -/
+@[simp]
+lemma ofMatrix_symm_smul [SMul R A] (r : R) (M : CStarMatrix n n A) :
+    ofMatrix.symm (r • M) = r • ofMatrix.symm M := (rfl)
 
 /-- Entries of a finite sum of C⋆-matrices are the sums of the entries. -/
 theorem sum_apply {m : Type*} [AddCommMonoid A] {ι : Type*} (s : Finset ι)
@@ -270,5 +308,56 @@ theorem extend_nonneg {m : Type*} [Fintype m] {f : m → n} (hf : Function.Injec
   refine Fintype.sum_of_injective f hf _ _ (fun l hl => ?_) fun j => ?_
   · simp [hf.extend_apply, Function.extend_apply' _ _ _ (by simpa using hl : ¬∃ a, f a = l)]
   simp [hf.extend_apply]
+
+section Compression
+
+open WithCStarModule CStarModule
+open scoped InnerProductSpace ComplexOrder
+
+variable {m n A : Type*} [Fintype m] [Fintype n] [NonUnitalCStarAlgebra A] [PartialOrder A]
+  [StarOrderedRing A]
+
+/-- The vector `(v i • a)ᵢ` of the Hilbert `A`-module `Aᵐ` has norm `‖v‖ ‖a‖`, for a vector `v`
+of the Hilbert space `ℂᵐ` and `a ∈ A`. -/
+theorem _root_.WithCStarModule.norm_equiv_symm_pi_smul (v : C⋆ᵐᵒᵈ(ℂ, m → ℂ)) (a : A) :
+    ‖(equiv A (m → A)).symm fun i => v i • a‖ = ‖v‖ * ‖a‖ := by
+  rw [← sq_eq_sq₀ (norm_nonneg _) (by positivity), mul_pow, norm_sq_eq A, norm_sq_eq ℂ,
+    pi_inner, pi_inner]
+  simp only [equiv_symm_pi_apply, inner_def, smul_mul_smul_comm, star_smul, ← Finset.sum_smul,
+    norm_smul, CStarRing.norm_self_mul_star, sq]
+
+/-- Compressing a matrix over a C⋆-algebra by scalar vectors does not increase norms:
+`‖∑ i j, (vᵢ wⱼ*) xᵢⱼ‖ ≤ ‖v‖ ‖x‖ ‖w‖`. -/
+theorem norm_sum_smul_le (x : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(ℂ, m → ℂ))
+    (w : C⋆ᵐᵒᵈ(ℂ, n → ℂ)) :
+    ‖∑ i, ∑ j, (v i * star (w j)) • x i j‖ ≤ ‖v‖ * ‖x‖ * ‖w‖ := by
+  set z := ∑ i, ∑ j, (v i * star (w j)) • x i j
+  set K := ‖v‖ * ‖x‖ * ‖w‖
+  have key (a b : A) : ‖a * z * star b‖ ≤ K * (‖a‖ * ‖b‖) := by
+    let V : C⋆ᵐᵒᵈ(A, m → A) := (equiv A (m → A)).symm fun i => v i • a
+    let W : C⋆ᵐᵒᵈ(A, n → A) := (equiv A (n → A)).symm fun j => w j • b
+    have hz : ⟪W, toCLM x V⟫_A = a * z * star b := by
+      simp only [pi_inner, toCLM_apply_eq_sum, equiv_symm_pi_apply, inner_def, V, W, z,
+        Finset.sum_mul, Finset.mul_sum, star_smul, smul_mul_assoc, mul_smul_comm,
+        Finset.smul_sum, smul_smul, mul_comm (star (w _))]
+      exact Finset.sum_comm
+    rw [← hz]
+    calc ‖⟪W, toCLM x V⟫_A‖ ≤ ‖W‖ * ‖toCLM x V‖ := norm_inner_le _
+      _ ≤ ‖W‖ * (‖x‖ * ‖V‖) := by gcongr; exact (toCLM x).le_opNorm V
+      _ = K * (‖a‖ * ‖b‖) := by
+        rw [norm_equiv_symm_pi_smul, norm_equiv_symm_pi_smul]; simp only [K]; ring
+  have hs : star (star z * z) = star z * z := by simp
+  have h := key (star z) (star z * z)
+  have e : ‖star z * z * (star z * z)‖ = ‖star z * z‖ * ‖star z * z‖ := by
+    nth_rw 1 [← hs]
+    exact CStarRing.norm_star_mul_self (x := star z * z)
+  rw [hs, ← mul_assoc, mul_assoc (star z * z), norm_star, e, CStarRing.norm_star_mul_self] at h
+  rcases (norm_nonneg z).eq_or_lt with hz | hz
+  · rw [← hz]
+    positivity
+  have h3 : 0 < ‖z‖ * (‖z‖ * ‖z‖) := by positivity
+  nlinarith
+
+end Compression
 
 end CStarMatrix

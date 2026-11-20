@@ -14,6 +14,8 @@ public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
 A `⋆`-algebra homomorphism between complex C⋆-algebras is automatically continuous, so its
 two-sided ideal kernel is closed (`NonUnitalStarAlgHom.isClosed_ker`, stated for any morphism
 class, so it covers unital `⋆`-homomorphisms and `⋆`-equivalences as well).
+A `⋆`-homomorphism between complex C⋆-algebras is contractive, so it bundles as a continuous
+linear map `NonUnitalStarAlgHom.toContinuousLinearMap` of norm at most `1`.
 A `⋆`-algebra equivalence of complex C⋆-algebras is isometric (`StarAlgEquiv.isometry`), so it
 bundles as a continuous linear equivalence `StarAlgEquiv.toContinuousLinearEquiv` and as a linear
 isometric equivalence `StarAlgEquiv.toLinearIsometryEquiv`, whose restriction to self-adjoint
@@ -32,6 +34,26 @@ open scoped CStarAlgebra in
 in any morphism class) is closed. -/
 instance isClosed_ker : IsClosed (TwoSidedIdeal.ker φ : Set A) :=
   TwoSidedIdeal.isClosed_ker (map_continuous φ)
+
+end NonUnitalStarAlgHom
+
+namespace NonUnitalStarAlgHom
+
+variable {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+
+/-- A `⋆`-homomorphism between C⋆-algebras as a continuous linear map. It has norm at most `1`
+because `⋆`-homomorphisms between C⋆-algebras are contractive. -/
+def toContinuousLinearMap (φ : A →⋆ₙₐ[ℂ] B) : A →L[ℂ] B :=
+  LinearMap.mkContinuous (φ : A →ₗ[ℂ] B) 1 fun a => by
+    simpa using NonUnitalStarAlgHom.norm_apply_le φ a
+
+@[simp]
+theorem coe_toContinuousLinearMap (φ : A →⋆ₙₐ[ℂ] B) : ⇑φ.toContinuousLinearMap = φ :=
+  (rfl)
+
+/-- A `⋆`-homomorphism between C⋆-algebras has norm at most `1` as a continuous linear map. -/
+theorem norm_toContinuousLinearMap_le (φ : A →⋆ₙₐ[ℂ] B) : ‖φ.toContinuousLinearMap‖ ≤ 1 :=
+  LinearMap.mkContinuous_norm_le _ zero_le_one _
 
 end NonUnitalStarAlgHom
 
@@ -99,19 +121,19 @@ theorem toContinuousLinearEquiv_toLinearIsometryEquiv (e : A ≃⋆ₐ[ℂ] B) :
 an `ℝ`-linear isometric equivalence `selfAdjoint A ≃ₗᵢ[ℝ] selfAdjoint B`. -/
 noncomputable def selfAdjointLinearIsometryEquiv (e : A ≃⋆ₐ[ℂ] B) :
     selfAdjoint A ≃ₗᵢ[ℝ] selfAdjoint B where
-  toFun a := ⟨e a.1, a.2.map e⟩
-  invFun b := ⟨e.symm b.1, b.2.map e.symm⟩
-  left_inv a := Subtype.ext (e.symm_apply_apply a.1)
-  right_inv b := Subtype.ext (e.apply_symm_apply b.1)
-  map_add' a₁ a₂ := Subtype.ext (map_add e a₁.1 a₂.1)
+  toFun a := ⟨e a.val, a.property.map e⟩
+  invFun b := ⟨e.symm b.val, b.property.map e.symm⟩
+  left_inv a := Subtype.ext (e.symm_apply_apply a.val)
+  right_inv b := Subtype.ext (e.apply_symm_apply b.val)
+  map_add' a₁ a₂ := Subtype.ext (map_add e a₁.val a₂.val)
   map_smul' r a := Subtype.ext <| by
     simp only [RingHom.id_apply, selfAdjoint.val_smul, ← Complex.coe_smul, map_smul]
-  norm_map' a := StarAlgEquiv.norm_map e a.1
+  norm_map' a := StarAlgEquiv.norm_map e a.val
 
 /-- The underlying element of `e.selfAdjointLinearIsometryEquiv a` is `e a`. -/
 @[simp]
 theorem coe_selfAdjointLinearIsometryEquiv_apply (e : A ≃⋆ₐ[ℂ] B) (a : selfAdjoint A) :
-    (e.selfAdjointLinearIsometryEquiv a : B) = e a.1 :=
+    (e.selfAdjointLinearIsometryEquiv a : B) = e a.val :=
   (rfl)
 
 /-- Taking the inverse commutes with `StarAlgEquiv.selfAdjointLinearIsometryEquiv`. -/
@@ -132,6 +154,6 @@ theorem selfAdjointLinearIsometryEquiv_mul {A B : Type*} [NonUnitalCommCStarAlge
     [NonUnitalCommCStarAlgebra B] (e : A ≃⋆ₐ[ℂ] B) (a₁ a₂ : selfAdjoint A) :
     e.selfAdjointLinearIsometryEquiv (a₁ * a₂) =
       e.selfAdjointLinearIsometryEquiv a₁ * e.selfAdjointLinearIsometryEquiv a₂ :=
-  Subtype.ext (map_mul e a₁.1 a₂.1)
+  Subtype.ext (map_mul e a₁.val a₂.val)
 
 end StarAlgEquiv

@@ -175,12 +175,12 @@ theorem weakCompletionSet_subset_of_forall_mem_adjoin [Finite ι] {κ : Type*} {
   choose Q hQ using h
   obtain ⟨D, hD⟩ := Finite.exists_le fun i ↦ (Q i).totalDegree
   rintro z ⟨c, P, hP, hz⟩
-  refine ⟨c * D, fun j ↦ bind₁ Q (P j), fun j ↦ ?_, fun k ↦ ?_⟩
+  refine ⟨c * D, fun j ↦ aeval Q (P j), fun j ↦ ?_, fun k ↦ ?_⟩
   · refine (totalDegree_bind₁_le hD _).trans ?_
     calc (P j).totalDegree * D ≤ c * (j + 1) * D := Nat.mul_le_mul_right _ (hP j)
       _ = c * D * (j + 1) := by ring
   · have hQ' : (fun i ↦ aeval y (Q i)) = x := funext hQ
-    simp only [hz k, aeval_bind₁, hQ']
+    simp only [hz k, comp_aeval_apply, hQ']
 
 /-- Two finite generating families of the same subalgebra have the same degree-growth set. -/
 theorem weakCompletionSet_eq_of_adjoin_eq [Finite ι] {κ : Type*} [Finite κ] {y : κ → S}

@@ -94,6 +94,8 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
   assemble into a continuous linear map between spaces of Sobolev sections keeping the section.
 * `TauCeti.SectionChartData.chartValueL_ae_eq_smul`: multiplying the chart-`i` components of a
   tuple by a scalar function multiplies its chart data by that function.
+* `TauCeti.SectionChartData.chartValueL_ae_congr`: tuples whose chart-`i` components have the same
+  values have the same chart data in chart `i`.
 
 ## References
 
@@ -332,6 +334,18 @@ theorem chartValueL_ae_eq_smul {w w' : C.SobolevData μ p k} {i : Fin C.n} {ψ :
   exact Finset.sum_congr rfl fun j _ ↦ by rw [hj j, mul_smul]
 
 variable {C μ p k} in
+/-- Tuples, of any exponents and orders, whose chart-`i` components have the same values almost
+everywhere have the same chart data in chart `i` almost everywhere. -/
+theorem chartValueL_ae_congr {q : ℝ≥0∞} [Fact (1 ≤ q)] {k' : ℕ} {w : C.SobolevData μ p k}
+    {v : C.SobolevData μ q k'} {i : Fin C.n}
+    (h : ∀ j, (Wkp.value k (w i j) : E → ℝ) =ᵐ[μ.restrict (C.image i)] Wkp.value k' (v i j)) :
+    C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.chartValueL μ q k' i v := by
+  filter_upwards [C.chartValueL_apply_ae μ p k i w, C.chartValueL_apply_ae μ q k' i v,
+    ae_all_iff.2 h] with y hw hv hj
+  rw [hw, hv]
+  exact Finset.sum_congr rfl fun j _ ↦ by rw [hj j]
+
+variable {C μ p k} in
 /-- The components of the chart data of a tuple of Sobolev functions are the values of its
 entries: if the chart data in chart `i` agree with the reading of a section `s`, then the `j`th
 component of that reading in the basis `Module.finBasis ℝ F` is the value of the entry `w i j`,
@@ -468,7 +482,7 @@ variable (C μ p k)
 /-- An element of the Sobolev sections consists of the chartwise components of a section. -/
 theorem exists_section (w : C.sobolevSections μ p k) :
     ∃ s : S, ∀ i, C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.coord i s :=
-  w.2
+  w.property
 
 /-- Two elements of the Sobolev sections are equal when their components have equal values. -/
 theorem sobolevSections_ext {w w' : C.sobolevSections μ p k}
@@ -510,11 +524,8 @@ theorem exists_continuousLinearMap_chartValueL_ae_eq
   -- The chart data of the assembled tuple are those of `w`, component by component.
   have hchart (w : C.sobolevSections μ p k) (i : Fin C.n) :
       C.chartValueL μ q k' i (fun i m ↦ Φ i m w) =ᵐ[μ.restrict (C.image i)]
-        C.chartValueL μ p k i w := by
-    filter_upwards [C.chartValueL_apply_ae μ q k' i (fun i m ↦ Φ i m w),
-      C.chartValueL_apply_ae μ p k i w, ae_all_iff.2 (hΦ i · w)] with y hq hp hm
-    rw [hq, hp]
-    exact Finset.sum_congr rfl fun m _ ↦ by rw [hm m]
+        C.chartValueL μ p k i w :=
+    chartValueL_ae_congr (hΦ i · w)
   refine ⟨(ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.pi (Φ i)).codRestrict
     (C.sobolevSections μ q k') fun w ↦ ?_, fun w i ↦ hchart w i⟩
   obtain ⟨s, hs⟩ := C.exists_section μ p k w
@@ -538,7 +549,7 @@ forgetting the highest derivative of every component. -/
 def lowerOrderL : C.sobolevSections μ p (k + 1) →L[ℝ] C.sobolevSections μ p k :=
   ((SobolevData.mapL fun _ ↦ Wkp.lowerOrderL k).comp
     (C.sobolevSections μ p (k + 1)).subtypeL).codRestrict (C.sobolevSections μ p k) fun w ↦ by
-      obtain ⟨s, hs⟩ := w.2
+      obtain ⟨s, hs⟩ := w.property
       refine ⟨s, fun i ↦ ?_⟩
       convert hs i using 2
       rw [← C.chartValueL_lowerOrderL μ p k i w]
@@ -686,7 +697,7 @@ def constMapL (L : F →L[ℝ] F) (Ψ : S → S)
     (hΨ : ∀ i s, ∀ y ∈ C.image i, C.coord i (Ψ s) y = L (C.coord i s y)) :
     C.sobolevSections μ p k →L[ℝ] C.sobolevSections μ p k :=
   ((constMapData C μ p k L).comp (C.sobolevSections μ p k).subtypeL).codRestrict _ fun w ↦ by
-    obtain ⟨s, hs⟩ := (C.mem_sobolevSections_iff μ p k).1 w.2
+    obtain ⟨s, hs⟩ := (C.mem_sobolevSections_iff μ p k).1 w.property
     exact (C.mem_sobolevSections_iff μ p k).2
       ⟨Ψ s, fun i ↦ chartValueL_constMapData_ae_coord (hΨ i s) (hs i)⟩
 

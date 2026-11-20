@@ -28,7 +28,8 @@ of the ambient simplicial set comes from the subspace exactly when its image lie
 (`TopPair.mem_range_restrict_hom_app_iff`).
 
 The quotient map on zeroth homology is an epimorphism already for preadditive coefficients with
-coproducts and homology.
+coproducts and homology. Degree equalities induce canonical isomorphisms on relative homology
+(`TopPair.singularHomologyCongrDegreeIso`).
 
 In abelian coefficients, the long exact sequence of a pair gives five lemmas comparing maps of
 pairs: on relative homology (`TopPair.isIso_singularHomologyMap_of_isIso`) and on the homology of
@@ -92,9 +93,9 @@ exactly when its image lies in the subspace. -/
 lemma mem_range_restrict_hom_app_iff (P : TopPair.{w}) (S : (toSSetPair.obj P).right.Subcomplex)
     {n : SimplexCategoryᵒᵖ} (x : ((toSSetPair.obj P).restrict S).right.obj n) :
     x ∈ Set.range (((toSSetPair.obj P).restrict S).hom.app n) ↔
-      Set.range (P.fst.toSSetObjEquiv n x.1) ⊆ Set.range P.map :=
+      Set.range (P.fst.toSSetObjEquiv n x.val) ⊆ Set.range P.map :=
   (SSetPair.mem_range_restrict_hom_app_iff _ _ x).trans
-    (P.isEmbedding_map.isInducing.mem_range_toSSet_map_app_iff n x.1)
+    (P.isEmbedding_map.isInducing.mem_range_toSSet_map_app_iff n x.val)
 
 section ofInclusionMap
 
@@ -365,6 +366,24 @@ noncomputable def singularHomologyMapIso (e : P ≅ P') (n : ℕ) :
   inv := P'.singularHomologyMap e.inv R n
   hom_inv_id := by rw [← singularHomologyMap_comp, e.hom_inv_id, singularHomologyMap_id]
   inv_hom_id := by rw [← singularHomologyMap_comp, e.inv_hom_id, singularHomologyMap_id]
+
+/-- The canonical isomorphism `Hₘ(X, A; R) ≅ Hₙ(X, A; R)` induced by an equality of degrees
+`m = n`. -/
+noncomputable def singularHomologyCongrDegreeIso {m n : ℕ} (h : m = n) :
+    P.singularHomology R m ≅ P.singularHomology R n :=
+  eqToIso (congrArg (P.singularHomology R) h)
+
+@[simp]
+lemma singularHomologyCongrDegreeIso_hom {m n : ℕ} (h : m = n) :
+    (P.singularHomologyCongrDegreeIso R h).hom =
+      eqToHom (congrArg (P.singularHomology R) h) :=
+  (rfl)
+
+@[simp]
+lemma singularHomologyCongrDegreeIso_inv {m n : ℕ} (h : m = n) :
+    (P.singularHomologyCongrDegreeIso R h).inv =
+      eqToHom (congrArg (P.singularHomology R) h).symm :=
+  (rfl)
 
 variable {P P'} in
 /-- Relative singular homology sends the map of pairs `eqToHom h` of an equation `h : P = P'` to

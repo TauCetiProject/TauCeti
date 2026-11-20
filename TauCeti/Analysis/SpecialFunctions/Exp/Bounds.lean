@@ -24,6 +24,8 @@ is bounded on `x ≥ 0`.
 * `TauCeti.eventually_mul_add_lt_exp_mul`: `A x + B < exp (a x)` eventually, for `0 < a`.
 * `TauCeti.exists_pos_eventually_forall_le_mul_exp`: finitely many eventual exponential bounds
   `f i s t ≤ A_i exp (-κ_i s)` combine into one, with the slowest rate and the largest constant.
+* `TauCeti.not_exists_ofReal_mul_exp_le_mul_exp`: for `K > 0` and `k < μ`, `K exp (-k t)` is not
+  eventually bounded by `C exp (-μ t)`, so an exponential rate `k` cannot be improved.
 * `TauCeti.exp_neg_le_div_exp_sub_one`: `exp (-x) ≤ x / (exp x - 1)` for `0 < x`.
 * `TauCeti.div_exp_sub_one_le_one`: `x / (exp x - 1) ≤ 1` for `0 ≤ x`.
 * `TauCeti.exp_neg_le_rpow_iff`: `exp (-t) ≤ y ^ ε ↔ exp (-(t / ε)) ≤ y` for `0 ≤ y`, `0 < ε`.
@@ -38,11 +40,19 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exp_neg_mul_mul_le`: `x exp (-r x) ≤ (2 / δ) exp (-(δ / 2) x)` for `0 < δ ≤ r`.
 * `TauCeti.fourteen_le_two_mul_exp_two_pi`: the numerical bound `14 ≤ 2 exp (2π)`.
 * `Real.abs_exp_sub_exp_le`: `|exp a - exp b| ≤ exp M * |a - b|` for `a, b ≤ M`.
+* `TauCeti.pow_mul_exp_neg_mul_le`: `t ^ m exp (-a t) ≤ m! / a ^ m` for `0 < a`, `0 ≤ t`.
+* `TauCeti.one_add_pow_mul_exp_neg_mul_le`, `TauCeti.one_add_pow_mul_exp_neg_add_mul_le`:
+  `(1 + t) ^ n exp (-a t) ≤ n! exp a / a ^ n` and
+  `(1 + t) ^ n exp (-(a + b) t) ≤ (n! exp a / a ^ n) exp (-b t)` for `0 < a`, `-1 ≤ t`.
+* `TauCeti.inv_pow_add_pow_mul_exp_neg_mul_sub_one_sq_div_le`:
+  `((y ^ m)⁻¹ + y ^ m) exp (-a ((y - 1)² / y)) ≤ 2 max (m! / (a / 4) ^ m) (2 ^ m)` for `0 < a`,
+  `0 < y`.
 -/
 
 public section
 
 open Filter Real
+open scoped Nat
 
 namespace TauCeti
 
@@ -76,6 +86,26 @@ theorem exists_pos_eventually_forall_le_mul_exp {ι α : Type*} [Finite ι] {f :
       mul_le_mul ((le_max_left _ _).trans hAi)
         (exp_le_exp.2 (neg_le_neg (mul_le_mul_of_nonneg_right hκi hs₀)))
         (exp_pos _).le ((le_max_right _ _).trans hAi)
+
+/-- **Sharpness of an exponential rate.** For `K > 0` and `k < μ`, the function `K exp (-k t)` is
+not bounded by `C exp (-μ t)` for large `t`, for any `C > 0`. The comparison is stated for
+`ENNReal.ofReal`, the form taken by extended distances decaying at an exponential rate. -/
+theorem not_exists_ofReal_mul_exp_le_mul_exp {K k μ : ℝ} (hK : 0 < K) (hμ : k < μ) :
+    ¬ ∃ C > 0, ∀ᶠ t in atTop,
+      ENNReal.ofReal (K * Real.exp (-(k * t))) ≤ ENNReal.ofReal (C * Real.exp (-(μ * t))) := by
+  rintro ⟨C, hC, h⟩
+  have hgrow : Tendsto (fun t : ℝ ↦ Real.exp ((μ - k) * t)) atTop atTop :=
+    Real.tendsto_exp_atTop.comp (tendsto_id.const_mul_atTop (sub_pos.2 hμ))
+  obtain ⟨t, ht, hbig⟩ := (h.and (hgrow.eventually_gt_atTop (C / K))).exists
+  rw [ENNReal.ofReal_le_ofReal_iff (by positivity)] at ht
+  -- Multiplying the bound by `exp (μ t)` gives `K exp ((μ - k) t) ≤ C`.
+  have hle : K * Real.exp ((μ - k) * t) ≤ C :=
+    calc K * Real.exp ((μ - k) * t) = K * Real.exp (-(k * t)) * Real.exp (μ * t) := by
+          rw [mul_assoc, ← Real.exp_add]
+          ring_nf
+      _ ≤ C * Real.exp (-(μ * t)) * Real.exp (μ * t) := by gcongr
+      _ = C := by simp [Real.exp_neg]
+  linarith [(div_lt_iff₀ hK).1 hbig]
 
 /-- For `0 < x`, `exp (-x) ≤ x / (exp x - 1)`. -/
 theorem exp_neg_le_div_exp_sub_one {x : ℝ} (hx : 0 < x) : exp (-x) ≤ x / (exp x - 1) := by
@@ -158,7 +188,7 @@ theorem exp_sub_one_sq_le_two_mul_sq_mul_cosh (t : ℝ) :
   calc (exp t - 1) ^ 2 = |exp t - 1| ^ 2 := (sq_abs _).symm
     _ ≤ (|t| * exp |t|) ^ 2 := by gcongr
     _ = t ^ 2 * exp (2 * |t|) := by
-        rw [mul_pow, sq_abs, ← exp_nat_mul]; push_cast; ring_nf
+        rw [mul_pow, sq_abs, ← exp_natCast_mul]; push_cast; ring_nf
     _ ≤ t ^ 2 * (2 * cosh (2 * t)) := by gcongr
     _ = 2 * t ^ 2 * cosh (2 * t) := by ring
 
@@ -197,5 +227,75 @@ theorem _root_.Real.abs_exp_sub_exp_le {a b M : ℝ} (ha : a ≤ M) (hb : b ≤ 
   rw [h2]
   exact (mul_le_mul_of_nonneg_left h1 (exp_pos a).le).trans
     (mul_le_mul_of_nonneg_right (exp_le_exp.2 ha) (sub_nonneg.2 hba))
+
+/-- For `0 < a` and `0 ≤ t`, `t ^ m * exp (-a * t) ≤ m! / a ^ m`. -/
+theorem pow_mul_exp_neg_mul_le {a t : ℝ} (ha : 0 < a) (ht : 0 ≤ t) (m : ℕ) :
+    t ^ m * exp (-a * t) ≤ (m ! : ℝ) / a ^ m := by
+  have h := pow_div_factorial_le_exp (a * t) (mul_nonneg ha.le ht) m
+  rw [mul_pow, div_le_iff₀ (Nat.cast_pos.2 m.factorial_pos)] at h
+  rw [neg_mul, exp_neg, ← div_eq_mul_inv, div_le_iff₀ (exp_pos _), div_mul_eq_mul_div,
+    le_div_iff₀ (pow_pos ha m)]
+  linarith
+
+/-- For `0 < a` and `-1 ≤ t`, `(1 + t) ^ n * exp (-a * t) ≤ n! * exp a / a ^ n`. -/
+theorem one_add_pow_mul_exp_neg_mul_le {a t : ℝ} (ha : 0 < a) (ht : -1 ≤ t) (n : ℕ) :
+    (1 + t) ^ n * exp (-a * t) ≤ (n ! : ℝ) * exp a / a ^ n := by
+  have h := mul_le_mul_of_nonneg_right
+    (pow_mul_exp_neg_mul_le ha (t := 1 + t) (by linarith) n) (exp_pos a).le
+  rwa [mul_add, mul_one, add_comm (-a), exp_add, mul_assoc, mul_assoc, ← exp_add,
+    neg_add_cancel, exp_zero, mul_one, div_mul_eq_mul_div] at h
+
+/-- For `0 < a`, any `b : ℝ`, and `-1 ≤ t`, `(1 + t) ^ n * exp (-(a + b) * t)` is bounded by
+`((n ! * exp a) / a ^ n) * exp (-b * t)`. -/
+theorem one_add_pow_mul_exp_neg_add_mul_le {a b t : ℝ} (ha : 0 < a) (ht : -1 ≤ t) (n : ℕ) :
+    (1 + t) ^ n * exp (-(a + b) * t) ≤ ((n ! : ℝ) * exp a / a ^ n) * exp (-b * t) := by
+  rw [neg_add, add_mul, exp_add, ← mul_assoc]
+  exact mul_le_mul_of_nonneg_right (one_add_pow_mul_exp_neg_mul_le ha ht n) (exp_pos _).le
+
+/-- For `0 < a`, `0 < y`, and `m : ℕ`, the symmetric Laurent weight `(y ^ m)⁻¹ + y ^ m` against
+the exponential barrier `exp (-a * ((y - 1) ^ 2 / y))` is uniformly bounded by
+`2 * max (m! / (a / 4) ^ m) (2 ^ m)`. -/
+theorem inv_pow_add_pow_mul_exp_neg_mul_sub_one_sq_div_le {a y : ℝ} (ha : 0 < a) (hy : 0 < y)
+    (m : ℕ) :
+    ((y ^ m)⁻¹ + y ^ m) * exp (-a * ((y - 1) ^ 2 / y)) ≤
+      2 * max ((m ! : ℝ) / (a / 4) ^ m) (2 ^ m) := by
+  have hge2 : ∀ {t : ℝ}, 2 ≤ t →
+      ((t ^ m)⁻¹ + t ^ m) * exp (-a * ((t - 1) ^ 2 / t)) ≤
+        2 * max ((m ! : ℝ) / (a / 4) ^ m) (2 ^ m) := fun {t} ht => by
+    have ht0 : 0 < t := by linarith
+    have htm : (t ^ m)⁻¹ + t ^ m ≤ 2 * t ^ m := by
+      have h1 : 1 ≤ t ^ m := one_le_pow₀ (by linarith)
+      linarith [inv_le_one_of_one_le₀ h1]
+    have hquad : t / 4 ≤ (t - 1) ^ 2 / t := by
+      rw [div_le_div_iff₀ (by positivity) ht0]
+      nlinarith [mul_nonneg (a := 3 * t - 2) (b := t - 2) (by linarith) (by linarith)]
+    have hexp : exp (-a * ((t - 1) ^ 2 / t)) ≤ exp (-(a / 4) * t) :=
+      exp_le_exp.mpr (by nlinarith)
+    calc ((t ^ m)⁻¹ + t ^ m) * exp (-a * ((t - 1) ^ 2 / t))
+        ≤ (2 * t ^ m) * exp (-(a / 4) * t) := mul_le_mul htm hexp (by positivity) (by positivity)
+      _ = 2 * (t ^ m * exp (-(a / 4) * t)) := by ring
+      _ ≤ 2 * ((m ! : ℝ) / (a / 4) ^ m) :=
+          mul_le_mul_of_nonneg_left (pow_mul_exp_neg_mul_le (by positivity) ht0.le m) two_pos.le
+      _ ≤ 2 * max ((m ! : ℝ) / (a / 4) ^ m) (2 ^ m) := by gcongr; exact le_max_left _ _
+  rcases le_or_gt 2 y with hy2 | hy2
+  · exact hge2 hy2
+  · rcases le_or_gt y (1 / 2) with hy_half | hy_half
+    · have hsymm_pow : ((y⁻¹) ^ m)⁻¹ + (y⁻¹) ^ m = (y ^ m)⁻¹ + y ^ m := by
+        rw [inv_pow, inv_inv, add_comm]
+      have hsymm_quad : (y⁻¹ - 1) ^ 2 / y⁻¹ = (y - 1) ^ 2 / y := by field_simp [hy.ne']; ring
+      rw [← hsymm_pow, ← hsymm_quad]
+      exact hge2 ((le_inv_comm₀ two_pos hy).mpr (by linarith))
+    · have hym : (y ^ m)⁻¹ + y ^ m ≤ 2 * 2 ^ m := by
+        have h1 : (y ^ m)⁻¹ ≤ 2 ^ m := by
+          rw [← inv_pow]
+          exact pow_le_pow_left₀ (by positivity) ((inv_le_comm₀ hy two_pos).mpr (by linarith)) m
+        linarith [pow_le_pow_left₀ hy.le hy2.le m]
+      have hexp1 : exp (-a * ((y - 1) ^ 2 / y)) ≤ 1 := exp_le_one_iff.mpr <| by
+        rw [neg_mul]
+        exact neg_nonpos.mpr (mul_nonneg ha.le (div_nonneg (sq_nonneg _) hy.le))
+      calc ((y ^ m)⁻¹ + y ^ m) * exp (-a * ((y - 1) ^ 2 / y))
+          ≤ (2 * 2 ^ m) * 1 := mul_le_mul hym hexp1 (by positivity) (by positivity)
+        _ ≤ 2 * max ((m ! : ℝ) / (a / 4) ^ m) (2 ^ m) := by
+            rw [mul_one]; gcongr; exact le_max_right _ _
 
 end TauCeti
