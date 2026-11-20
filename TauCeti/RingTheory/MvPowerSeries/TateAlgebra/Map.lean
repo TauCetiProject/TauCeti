@@ -9,13 +9,18 @@ public import Mathlib.RingTheory.Noetherian.Basic
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Sum
 
 /-!
-# Restricted series along a strict surjection
+# Coefficientwise maps of restricted power series
 
 A bounded ring homomorphism `φ : R → S` of ultrametric normed rings, `‖φ r‖ ≤ C ‖r‖`, maps
-restricted series to restricted series coefficientwise, giving a ring homomorphism
-`R{X/c} → S{X/c}`. If `φ` is moreover *strictly* surjective, that is, every `s ∈ S` lifts to some
-`r` with `‖r‖ ≤ C' ‖s‖`, then lifting every coefficient shows that `R{X/c} → S{X/c}` is
-surjective. The norm control is what makes the lifted coefficients still tend to zero.
+restricted series at any polyradius `c` to restricted series coefficientwise, giving a ring
+homomorphism `R{X/c} → S{X/c}`. At unit polyradius `c = 1`, mere continuity of `φ` suffices:
+coefficients tend to `0` along the cofinite filter, so their images under a continuous ring
+homomorphism also tend to `0`, giving a continuous ring homomorphism `R⟨X⟩ →+* S⟨X⟩` even when `φ`
+is not Lipschitz for the norms (for instance, a continuous homomorphism of adic normed rings).
+
+If `φ` is bounded and *strictly* surjective, that is, every `s ∈ S` lifts to some `r` with
+`‖r‖ ≤ C' ‖s‖`, then lifting every coefficient shows that `R{X/c} → S{X/c}` is surjective. The norm
+control is what makes the lifted coefficients still tend to zero.
 
 Combined with the identification `R{X/c, Y/d} ≅ R{Y/d}{X/c}` of
 `TauCeti.MvPowerSeries.restrictedSumEquiv`, this gives the form in which noetherianity passes to
@@ -30,14 +35,16 @@ presentations of `B^I` as strict quotients of `A^r{Y}` (Kedlaya, Lemma 4.9).
 
 * `TauCeti.MvPowerSeries.restrictedMap`: the coefficientwise map `R{X/c} →+* S{X/c}` induced by
   a bounded ring homomorphism `R →+* S`.
+* `TauCeti.MvPowerSeries.restrictedMapOfContinuous`: the coefficientwise map `R⟨X⟩ →+* S⟨X⟩` on
+  unit-radius restricted series induced by any continuous ring homomorphism `R →+* S`.
 
 ## Main results
 
 * `TauCeti.MvPowerSeries.restrictedMap_id` and `TauCeti.MvPowerSeries.restrictedMap_comp`:
   `restrictedMap` is functorial.
 * `TauCeti.MvPowerSeries.restrictedMap_algebraMap`: `restrictedMap` sends constants to constants.
-* `MvPowerSeries.restrictedMap_polynomialToRestricted`: `restrictedMap` sends polynomials to their
-  coefficientwise images.
+* `TauCeti.MvPowerSeries.restrictedMap_polynomialToRestricted`: `restrictedMap` sends polynomials to
+  their coefficientwise images.
 * `TauCeti.MvPowerSeries.restrictedMap_renameAlgEquiv`: `restrictedMap` commutes with renaming
   the variables.
 * `TauCeti.MvPowerSeries.coe_restrictedSumEquiv_restrictedMap`: `restrictedMap` commutes with the
@@ -47,6 +54,9 @@ presentations of `B^I` as strict quotients of `A^r{Y}` (Kedlaya, Lemma 4.9).
   a norm-preserving `φ` induces an isometry for the Gauss norms.
 * `TauCeti.MvPowerSeries.restrictedMap_eq_zero_iff`: the coefficientwise kernel formula.
 * `TauCeti.MvPowerSeries.continuous_restrictedMap`: continuity for the Gauss norm topologies.
+* `TauCeti.MvPowerSeries.continuous_restrictedMapOfContinuous` and
+  `TauCeti.MvPowerSeries.restrictedMapOfContinuous_eq_restrictedMap`: Gauss-norm continuity of
+  `restrictedMapOfContinuous` and agreement with `restrictedMap` when `φ` is Lipschitz-bounded.
 * `TauCeti.MvPowerSeries.exists_restrictedMap_eq_and_norm_coeff_le`: coefficientwise bounded
   lifts.
 * `TauCeti.MvPowerSeries.restrictedMap_surjective`: a strictly surjective `φ` induces a
@@ -82,7 +92,7 @@ noncomputable def restrictedMap :
   ((MvPowerSeries.map φ).comp (IsRestricted.subring (R := R) c).subtype).codRestrict _
     -- `MvPowerSeries.map φ f` is definitionally `fun t ↦ φ (coeff t f)`, which is the series
     -- that `isRestricted_map` shows to be restricted.
-    fun f ↦ isRestricted_map c φ hφ f.2
+    fun f ↦ isRestricted_map c φ hφ f.property
 
 /-- `restrictedMap` acts as `MvPowerSeries.map` on the underlying series. -/
 theorem coe_restrictedMap (f : IsRestricted.subring (R := R) c) :
@@ -176,7 +186,7 @@ theorem exists_restrictedMap_eq_and_norm_coeff_le {C' : ℝ}
   -- Mathlib's bounded coefficient-family construction allows a nonlinear choice of lifts.
   let f : MvPowerSeries σ R := fun t ↦ r (coeff t (g : MvPowerSeries σ S))
   have hcoeff (t : σ →₀ ℕ) : coeff t f = r (coeff t (g : MvPowerSeries σ S)) := (rfl)
-  have hf : IsRestricted c f := isRestricted_map c r hrn g.2
+  have hf : IsRestricted c f := isRestricted_map c r hrn g.property
   refine ⟨⟨f, hf⟩, Subtype.ext ?_, fun t ↦ by simpa only [hcoeff] using hrn _⟩
   ext t
   rw [coeff_restrictedMap, hcoeff]
@@ -262,5 +272,99 @@ theorem isNoetherianRing_isRestricted_subring_of_surjective_of_sumElim [NormedCo
   isNoetherianRing_isRestricted_subring_of_surjective ψ hψ hlift
 
 end Noetherian
+
+section ContinuousMap
+
+local notation:max "Tate" σ':max R':max => IsRestricted.subring (R := R') (fun _ : σ' ↦ 1)
+
+variable {σ R S : Type*} [NormedRing R] [IsUltrametricDist R] [NormedRing S] [IsUltrametricDist S]
+
+omit [IsUltrametricDist R] [IsUltrametricDist S] in
+/-- A map continuous at `0` with `π 0 = 0` preserves unit-radius restricted power series. -/
+theorem isRestricted_one_map_of_continuousAt {π : R → S} (hπ : ContinuousAt π 0) (hπ₀ : π 0 = 0)
+    {f : MvPowerSeries σ R} (hf : IsRestricted (fun _ : σ ↦ 1) f) :
+    IsRestricted (fun _ : σ ↦ 1) (fun t ↦ π (coeff t f) : MvPowerSeries σ S) := by
+  have h0 : Tendsto (fun t : σ →₀ ℕ ↦ coeff t f) cofinite (𝓝 0) :=
+    tendsto_zero_iff_norm_tendsto_zero.mpr (by simpa [IsRestricted] using hf)
+  simpa [IsRestricted] using tendsto_zero_iff_norm_tendsto_zero.mp ((hπ₀ ▸ hπ.tendsto).comp h0)
+
+/-- **Coefficientwise map `R⟨X⟩ →+* S⟨X⟩` induced by any continuous ring homomorphism `φ`.** -/
+noncomputable def restrictedMapOfContinuous {φ : R →+* S} (hφ : Continuous φ) :
+    Tate σ R →+* Tate σ S :=
+  ((MvPowerSeries.map φ).comp (Tate σ R).subtype).codRestrict _
+    fun f ↦ isRestricted_one_map_of_continuousAt hφ.continuousAt (map_zero φ) f.property
+
+/-- `restrictedMapOfContinuous` acts as `MvPowerSeries.map` on the underlying power series. -/
+theorem coe_restrictedMapOfContinuous {φ : R →+* S} (hφ : Continuous φ) (f : Tate σ R) :
+    (restrictedMapOfContinuous hφ f : MvPowerSeries σ S) = MvPowerSeries.map φ f := (rfl)
+
+/-- `restrictedMapOfContinuous` applies `φ` to every coefficient. -/
+@[simp] theorem coeff_restrictedMapOfContinuous {φ : R →+* S} (hφ : Continuous φ) (f : Tate σ R)
+    (t : σ →₀ ℕ) : coeff t (restrictedMapOfContinuous hφ f : MvPowerSeries σ S) =
+      φ (coeff t (f : MvPowerSeries σ R)) := by rw [coe_restrictedMapOfContinuous, coeff_map]
+
+/-- `restrictedMapOfContinuous hφ f = 0` iff `φ` vanishes on every coefficient of `f`. -/
+@[simp] theorem restrictedMapOfContinuous_eq_zero_iff {φ : R →+* S} (hφ : Continuous φ)
+    (f : Tate σ R) : restrictedMapOfContinuous hφ f = 0 ↔
+      ∀ t, φ (coeff t (f : MvPowerSeries σ R)) = 0 := by
+  simp only [Subtype.ext_iff, MvPowerSeries.ext_iff, coeff_restrictedMapOfContinuous,
+    ZeroMemClass.coe_zero, map_zero]
+
+/-- `restrictedMapOfContinuous` preserves each coordinate variable `X i`. -/
+@[simp] theorem restrictedMapOfContinuous_X {φ : R →+* S} (hφ : Continuous φ) (i : σ) :
+    restrictedMapOfContinuous hφ ⟨X i, isRestricted_X _ i⟩ = ⟨X i, isRestricted_X _ i⟩ :=
+  Subtype.ext (by simp [coe_restrictedMapOfContinuous])
+
+/-- The identity homomorphism induces the identity on unit-radius restricted power series. -/
+@[simp] theorem restrictedMapOfContinuous_id :
+    restrictedMapOfContinuous (σ := σ) (φ := RingHom.id R) continuous_id = RingHom.id _ :=
+  RingHom.ext fun _ ↦ Subtype.ext <| MvPowerSeries.ext fun _ ↦ by simp
+
+/-- `restrictedMapOfContinuous` is functorial under composition of continuous ring homomorphisms. -/
+theorem restrictedMapOfContinuous_comp {T : Type*} [NormedRing T] [IsUltrametricDist T]
+    {φ : R →+* S} {ψ : S →+* T} (hφ : Continuous φ) (hψ : Continuous ψ) :
+    restrictedMapOfContinuous (σ := σ) (φ := ψ.comp φ) (hψ.comp hφ) =
+      (restrictedMapOfContinuous hψ).comp (restrictedMapOfContinuous hφ) :=
+  RingHom.ext fun _ ↦ Subtype.ext <| MvPowerSeries.ext fun _ ↦ by simp
+
+/-- Applying two continuous coefficient maps in turn applies the map induced by the composite. -/
+@[simp] theorem restrictedMapOfContinuous_restrictedMapOfContinuous {T : Type*} [NormedRing T]
+    [IsUltrametricDist T] {φ : R →+* S} {ψ : S →+* T} (hφ : Continuous φ) (hψ : Continuous ψ)
+    (f : Tate σ R) : restrictedMapOfContinuous hψ (restrictedMapOfContinuous hφ f) =
+      restrictedMapOfContinuous (φ := ψ.comp φ) (hψ.comp hφ) f :=
+  Subtype.ext <| MvPowerSeries.ext fun _ ↦ by simp
+
+/-- Under a multiplicative norm bound, `restrictedMapOfContinuous` agrees with `restrictedMap`. -/
+theorem restrictedMapOfContinuous_eq_restrictedMap {φ : R →+* S} (hφ : Continuous φ) {C : ℝ}
+    (hC : ∀ r, ‖φ r‖ ≤ C * ‖r‖) : restrictedMapOfContinuous (σ := σ) hφ = restrictedMap φ hC :=
+  RingHom.ext fun _ ↦ Subtype.ext <| MvPowerSeries.ext fun _ ↦ by
+    simp [coeff_restrictedMapOfContinuous, coeff_restrictedMap]
+
+/-- **A continuous ring homomorphism induces a continuous map on unit-radius restricted series.** -/
+@[continuity] theorem continuous_restrictedMapOfContinuous {φ : R →+* S} (hφ : Continuous φ) :
+    Continuous (restrictedMapOfContinuous (σ := σ) hφ) := by
+  refine continuous_of_continuousAt_zero (restrictedMapOfContinuous (σ := σ) hφ) ?_
+  rw [ContinuousAt, map_zero, Metric.tendsto_nhds]; intro ε hε
+  obtain ⟨δ, hδ, hφδ⟩ := Metric.continuousAt_iff.mp (hφ.continuousAt (x := 0)) ε hε
+  refine Metric.eventually_nhds_iff.mpr ⟨δ, hδ, fun f hf ↦ ?_⟩
+  rw [dist_zero_right] at hf ⊢; refine norm_lt_iff.mpr fun t ↦ ?_
+  simpa [coeff_restrictedMapOfContinuous, dist_zero_right, map_zero] using
+    hφδ (by simpa only [dist_zero_right] using (norm_coeff_le_norm f t).trans_lt hf)
+
+/-- `restrictedMapOfContinuous` sends the constant `r` to the constant `φ r`. -/
+@[simp] theorem restrictedMapOfContinuous_algebraMap {R S : Type*} [NormedCommRing R]
+    [IsUltrametricDist R] [NormedCommRing S] [IsUltrametricDist S] {φ : R →+* S} (hφ : Continuous φ)
+    (r : R) : restrictedMapOfContinuous (σ := σ) hφ (algebraMap R _ r) = algebraMap S _ (φ r) :=
+  Subtype.ext (by simp [coe_restrictedMapOfContinuous])
+
+/-- `restrictedMapOfContinuous` sends a polynomial to its coefficientwise image under `φ`. -/
+@[simp] theorem restrictedMapOfContinuous_polynomialToRestricted {R S : Type*} [NormedCommRing R]
+    [IsUltrametricDist R] [NormedCommRing S] [IsUltrametricDist S] {φ : R →+* S} (hφ : Continuous φ)
+    (p : MvPolynomial σ R) :
+    restrictedMapOfContinuous hφ (polynomialToRestricted (fun _ : σ ↦ 1) p) =
+      polynomialToRestricted (fun _ : σ ↦ 1) (MvPolynomial.map φ p) :=
+  Subtype.ext (by ext t; simp [coe_restrictedMapOfContinuous, MvPolynomial.coeff_map])
+
+end ContinuousMap
 
 end TauCeti.MvPowerSeries
