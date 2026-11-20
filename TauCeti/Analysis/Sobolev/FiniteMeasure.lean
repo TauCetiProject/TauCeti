@@ -260,6 +260,27 @@ theorem W1p.exists_forall_eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_bal
     ((1 - δ) / ((finrank ℝ E : ℝ)⁻¹ - δ)) ^ (1 - δ), by positivity, fun hOmega u hu =>
     W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball hOmega hpq hδ hδn hu⟩
 
+omit [Fact (1 ≤ p)] in
+/-- **The Poincaré inequality on `W^{1,2}_0` of a ball.** If `Ω = B(x₀, R)`, then every
+`u ∈ W^{1,2}_0(Ω)` satisfies
+
+`‖u‖_{L²} ≤ R ‖∇u‖_{L²}`,
+
+for every additive Haar measure. This is
+`TauCeti.W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball` at `p = q = 2`, where the
+constant reduces to `R`. -/
+theorem W1p.norm_value_le_mul_norm_gradient_of_eq_ball [Nontrivial E] {x₀ : E} {R : ℝ}
+    (hR : 0 < R) (hOmega : (Omega : Set E) = ball x₀ R) {u : W1p mu Omega 2}
+    (hu : u ∈ w1p0Submodule mu Omega 2) :
+    ‖W1p.value u‖ ≤ R * ‖W1p.gradient u‖ := by
+  have hn : (finrank ℝ E : ℝ) ≠ 0 := by exact_mod_cast finrank_pos.ne'
+  have h := W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball (mu := mu)
+    hOmega (q := 2) (by norm_num) (δ := 0) (by norm_num) (by positivity) hu
+  simp only [neg_zero, Real.rpow_zero, sub_zero, mul_zero, Real.rpow_one, mul_one, one_div,
+    inv_inv, inv_mul_cancel₀ hn, one_mul, ENNReal.coe_ofNat] at h
+  have := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top eNorm_ne_top) h
+  rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal hR.le, toReal_eNorm, ← Lp.norm_def] at this
+
 /-- **A Sobolev inequality on `W^{1,p}_0(Ω)` with a gain of integrability.** If `Ω` has finite
 measure, `n ≥ 1` and `p < ∞`, there are an exponent `q > p` and a constant `S` such that
 `‖u‖_{L^q} ≤ S ‖∇u‖_{Lᵖ}` for every `u ∈ W^{1,p}_0(Ω)`. This holds in every dimension; see
