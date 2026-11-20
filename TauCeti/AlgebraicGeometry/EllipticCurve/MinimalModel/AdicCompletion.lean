@@ -21,8 +21,8 @@ A Weierstrass equation `W` over `K` has two natural local notions of integrality
 to the completion `K_v` over its ring of integers `O_v = v.adicCompletionIntegers K` (or, when the
 residue field is finite, over `𝒪[K_v]`).
 
-This file proves that both notions agree, without any residue-characteristic or perfectness
-hypothesis:
+This file proves that both notions agree, without any residue-characteristic, perfectness, or
+ellipticity hypothesis:
 
 * Integrality agrees coefficient by coefficient because `Valued.v` on `K_v` restricts to
   `v.valuation K` on `K`.
@@ -30,7 +30,8 @@ hypothesis:
   (`WeierstrassCurve.isMinimal_baseChange_iff_forall_not_pow_dvd_a₁_a₂_a₃_a₄_a₆`): the canonical
   map `Oᵥ → O_v` carries a uniformizer to a uniformizer, reflects divisibility by its powers, and
   has dense image modulo `𝔪_v ^ 6`, so an obstruction to minimality over `O_v` can be approximated
-  by one over `Oᵥ`.
+  by one over `Oᵥ`. An equation with vanishing discriminant is minimal exactly when it is
+  integral, on either side.
 
 Consequently, globally minimal equations over `O` remain minimal at every adic completion, and the
 local minimal discriminant valuation is unchanged by completion.
@@ -39,8 +40,8 @@ local minimal discriminant valuation is unchanged by completion.
 
 * `WeierstrassCurve.isIntegral_adicCompletionIntegers_baseChange_iff`: `W.baseChange K_v` is
   integral over `O_v` if and only if `W` is integral over `Oᵥ`.
-* `WeierstrassCurve.isMinimal_adicCompletionIntegers_baseChange_iff`: for elliptic `W`,
-  `W.baseChange K_v` is minimal over `O_v` if and only if `W` is minimal over `Oᵥ`.
+* `WeierstrassCurve.isMinimal_adicCompletionIntegers_baseChange_iff`: `W.baseChange K_v` is
+  minimal over `O_v` if and only if `W` is minimal over `Oᵥ`.
 * `WeierstrassCurve.isMinimal_adicCompletion_baseChange_iff`: when `O ⧸ v` is finite, minimality at
   `𝒪[K_v]` agrees with minimality at `Oᵥ`.
 * `WeierstrassCurve.IsGlobalMinimal.isMinimal_adicCompletionIntegers` and
@@ -167,13 +168,30 @@ private theorem exists_pow_dvd_localization_of_not_isMinimal {ϖ₀ : O}
     by rwa [← map_pow, map_a₄, v.localizationToCompletionIntegers_dvd_iff] at d₄',
     by rwa [← map_pow, map_a₆, v.localizationToCompletionIntegers_dvd_iff] at d₆'⟩
 
-/-- **Minimality is preserved and reflected by adic completion**: an elliptic Weierstrass equation
-`W` over `K` becomes minimal over `O_v` upon base change to `K_v` if and only if `W` is minimal
-over the localization `Oᵥ`. -/
+/-- Over a discrete valuation ring, a Weierstrass equation with vanishing discriminant is minimal
+exactly when it is integral: every transformed equation has discriminant valuation zero. -/
+private theorem isMinimal_iff_isIntegral_of_Δ_eq_zero {S L : Type*} [CommRing S] [IsDomain S]
+    [IsDiscreteValuationRing S] [Field L] [Algebra S L] [IsFractionRing S L]
+    {W : WeierstrassCurve L} (hΔ : W.Δ = 0) : IsMinimal S W ↔ IsIntegral S W := by
+  refine ⟨fun _ ↦ inferInstance, fun h ↦ ⟨⟨by simpa using h, fun C hC _ ↦ ?_⟩⟩⟩
+  have : IsIntegral S (C • W) := hC
+  rw [← Subtype.coe_le_coe, valuation_Δ_aux_eq_of_isIntegral S (C • W), variableChange_Δ, hΔ,
+    mul_zero, map_zero]
+  exact zero_le
+
+/-- **Minimality is preserved and reflected by adic completion**: a Weierstrass equation `W` over
+`K` becomes minimal over `O_v` upon base change to `K_v` if and only if `W` is minimal over the
+localization `Oᵥ`. -/
 @[simp]
-theorem isMinimal_adicCompletionIntegers_baseChange_iff (W : WeierstrassCurve K) [W.IsElliptic] :
+theorem isMinimal_adicCompletionIntegers_baseChange_iff (W : WeierstrassCurve K) :
     IsMinimal (v.adicCompletionIntegers K) (W.baseChange (v.adicCompletion K)) ↔
       IsMinimal (Localization.AtPrime v.asIdeal) W := by
+  rcases eq_or_ne W.Δ 0 with hΔ | hΔ
+  · have hΔv : (W.baseChange (v.adicCompletion K)).Δ = 0 := by
+      rw [baseChange, map_Δ, hΔ, map_zero]
+    rw [isMinimal_iff_isIntegral_of_Δ_eq_zero hΔv, isMinimal_iff_isIntegral_of_Δ_eq_zero hΔ]
+    exact isIntegral_adicCompletionIntegers_baseChange_iff v W
+  have : W.IsElliptic := ⟨hΔ.isUnit⟩
   by_cases hint : IsIntegral (Localization.AtPrime v.asIdeal) W
   · have : IsIntegral (Localization.AtPrime v.asIdeal) W := hint
     let _ : Algebra (Localization.AtPrime v.asIdeal) (v.adicCompletionIntegers K) :=
@@ -207,8 +225,8 @@ theorem isMinimal_adicCompletionIntegers_baseChange_iff (W : WeierstrassCurve K)
   · refine ⟨fun h ↦ False.elim (hint ?_), fun h ↦ False.elim (hint inferInstance)⟩
     exact (isIntegral_adicCompletionIntegers_baseChange_iff v W).mp inferInstance
 
-/-- An elliptic equation over `K` minimal at `Oᵥ` becomes minimal over `O_v` upon completion. -/
-instance isMinimal_adicCompletionIntegers_baseChange (W : WeierstrassCurve K) [W.IsElliptic]
+/-- An equation over `K` minimal at `Oᵥ` becomes minimal over `O_v` upon completion. -/
+instance isMinimal_adicCompletionIntegers_baseChange (W : WeierstrassCurve K)
     [IsMinimal (Localization.AtPrime v.asIdeal) W] :
     IsMinimal (v.adicCompletionIntegers K) (W.baseChange (v.adicCompletion K)) :=
   (isMinimal_adicCompletionIntegers_baseChange_iff v W).mpr inferInstance
@@ -216,15 +234,15 @@ instance isMinimal_adicCompletionIntegers_baseChange (W : WeierstrassCurve K) [W
 /-- When the residue field `O ⧸ v` is finite, minimality of `W.baseChange K_v` at the valuative
 ring of integers `𝒪[K_v]` agrees with minimality of `W` at `Oᵥ`. -/
 theorem isMinimal_adicCompletion_baseChange_iff [Finite (O ⧸ v.asIdeal)]
-    (W : WeierstrassCurve K) [W.IsElliptic] :
+    (W : WeierstrassCurve K) :
     (W.baseChange (v.adicCompletion K)).IsMinimal 𝒪[v.adicCompletion K] ↔
       IsMinimal (Localization.AtPrime v.asIdeal) W :=
   (isMinimal_adicCompletion_iff (W.baseChange (v.adicCompletion K))).trans
     (isMinimal_adicCompletionIntegers_baseChange_iff v W)
 
-/-- When `O ⧸ v` is finite, an elliptic equation minimal at `Oᵥ` becomes minimal at `𝒪[K_v]`. -/
+/-- When `O ⧸ v` is finite, an equation minimal at `Oᵥ` becomes minimal at `𝒪[K_v]`. -/
 instance isMinimal_adicCompletion_baseChange [Finite (O ⧸ v.asIdeal)]
-    (W : WeierstrassCurve K) [W.IsElliptic] [IsMinimal (Localization.AtPrime v.asIdeal) W] :
+    (W : WeierstrassCurve K) [IsMinimal (Localization.AtPrime v.asIdeal) W] :
     (W.baseChange (v.adicCompletion K)).IsMinimal 𝒪[v.adicCompletion K] :=
   (isMinimal_adicCompletion_baseChange_iff v W).mpr inferInstance
 
