@@ -99,7 +99,7 @@ theorem coe_eq_scalar_of_smul_eq_self_of_denom_eq {g : SL(2, ℝ)} {z : ℍ} {e 
     rw [h1, hd, eq_div_iff hne] at h2
     rw [← h2]
     ring
-  simp only [num, denom, mapGL_coe_matrix, map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
+  simp only [num, denom, mapGL_coe_matrix, map_apply_coe, Matrix.map_apply,
     RingHom.id_apply, Algebra.algebraMap_self, Complex.ext_iff, Complex.add_re, Complex.add_im,
     Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, zero_mul, sub_zero,
     add_zero] at hd hn
