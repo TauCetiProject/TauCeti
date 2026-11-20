@@ -259,12 +259,8 @@ theorem toUpper_injective (hθ : θ ∈ Ioo 0 1) :
 
 theorem opNorm_toUpper_le :
     ‖(toUpper : C.ComplexMethodSpace θ →L[ℂ] C.UpperComplexMethodSpace θ)‖ ≤ 1 := by
-  refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u => ?_
-  refine le_of_forall_gt fun r hr => ?_
-  obtain ⟨g, rfl, hg⟩ := norm_lt_iff.1 (by simpa using hr)
-  rw [toUpper_mk]
-  exact (UpperComplexMethodSpace.norm_mk_le _).trans_lt
-    ((C.norm_stripTracesToUpper_le g).trans_lt hg)
+  rw [toUpper, norm_lift]
+  exact (UpperComplexMethodSpace.norm_mk_comp_le _).trans C.opNorm_stripTracesToUpper_le
 
 /-- **The upper norm is at most the lower norm:** `‖u‖^θ ≤ ‖u‖_θ` for `u ∈ [X₀, X₁]_θ`. -/
 theorem norm_toUpper_le (u : C.ComplexMethodSpace θ) : ‖toUpper u‖ ≤ ‖u‖ := by
