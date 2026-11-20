@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.Topology.ShrinkingLemma
 public import Mathlib.Topology.VectorBundle.Basic
+import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
@@ -73,6 +74,10 @@ closed upper half-plane are read in `ℂ` in
   domain (`TauCeti.FiniteBundleAtlas.chart_image_closure_dom_subset`). More generally, the
   expression of such a section in any chart of the maximal atlas and any trivialization of the
   trivialization atlas is `Cᵏ` (`TauCeti.contDiffOn_trivialization_comp_chart_symm_of_contMDiff`).
+* `TauCeti.FiniteBundleAtlas.contMDiff_smul_triv_symm`,
+  `TauCeti.FiniteBundleAtlas.coord_smul_triv_symm`: a function smooth on the image of chart `i`,
+  cut off by a smooth function supported in the chart domain, is the chart-`i` coordinate
+  expression of a smooth section supported in that chart.
 -/
 
 public section
@@ -455,6 +460,15 @@ theorem coord_fun_smul (i : Fin A.n) (φ : M → ℝ) (s : ∀ x, V x) {y : E} (
   have h := A.dom_subset_baseSet i (A.symm_mem_dom hy)
   simp only [coord, ← (A.triv i).continuousLinearMapAt_apply_of_mem (R := ℝ) h, map_smul]
 
+/-- The section `x ↦ ψ x • (A.triv i).symm x (f (A.chart i x))`, built from a function `f` on the
+model space and a cutoff `ψ`, has chart-`i` coordinates `ψ • f`. -/
+theorem coord_smul_triv_symm {i : Fin A.n} (ψ : M → ℝ) (f : E → F) {y : E} (hy : y ∈ A.image i) :
+    A.coord i (fun x ↦ ψ x • (A.triv i).symm x (f (A.chart i x))) y =
+      ψ ((A.chart i).symm y) • f y := by
+  obtain ⟨x, hx, rfl⟩ := A.mem_image.1 hy
+  rw [A.coord_fun_smul i ψ _ hy, A.coord_chart _ hx,
+    (A.triv i).apply_mk_symm (A.dom_subset_baseSet i hx)]
+
 theorem coord_smul (i : Fin A.n) (c : ℝ) (s : ∀ x, V x) {y : E} (hy : y ∈ A.image i) :
     A.coord i (c • s) y = c • A.coord i s y :=
   A.coord_fun_smul i (fun _ ↦ c) s hy
@@ -562,5 +576,34 @@ theorem contDiffOn_coord {s : ∀ x, V x}
 end FiniteBundleAtlas
 
 end Smooth
+
+section ChartSupport
+
+variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] {M : Type*} [TopologicalSpace M]
+  [ChartedSpace E M] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {V : M → Type*}
+  [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
+  {n : WithTop ℕ∞} [IsManifold 𝓘(ℝ, E) n M] [ContMDiffVectorBundle n F V 𝓘(ℝ, E)]
+
+namespace FiniteBundleAtlas
+
+variable (A : FiniteBundleAtlas E M F V)
+
+/-- **Sections supported in one chart.** For a function `f` that is `Cⁿ` on the image of chart `i`
+and a `Cⁿ` cutoff `ψ` whose support has closure in the domain of chart `i`, the section
+`x ↦ ψ x • (A.triv i).symm x (f (A.chart i x))` is `Cⁿ`. It vanishes outside the support of `ψ`, and
+its chart-`i` coordinates are `ψ • f` (`TauCeti.FiniteBundleAtlas.coord_smul_triv_symm`). -/
+theorem contMDiff_smul_triv_symm {i : Fin A.n} {ψ : M → ℝ} (hψ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) n ψ)
+    (hψi : tsupport ψ ⊆ A.dom i) {f : E → F} (hf : ContDiffOn ℝ n f (A.image i)) :
+    ContMDiff 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F)) n
+      fun x ↦ TotalSpace.mk' F x (ψ x • (A.triv i).symm x (f (A.chart i x))) := by
+  have hs := (A.triv i).contMDiffOn_section_symm (A.isOpen_dom i) (A.dom_subset_baseSet i)
+    (hf.contMDiffOn.comp (contMDiffOn_chart.mono (A.dom_subset_chart_source i))
+      fun x hx ↦ A.mem_image.2 ⟨x, hx, rfl⟩)
+  exact ContMDiffOn.smul_section_of_tsupport hψ.contMDiffOn (A.isOpen_dom i) hψi hs
+
+end FiniteBundleAtlas
+
+end ChartSupport
 
 end TauCeti
