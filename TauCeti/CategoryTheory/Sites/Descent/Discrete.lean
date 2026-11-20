@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
+public import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import Mathlib.CategoryTheory.Sites.Descent.IsStack
 public import TauCeti.CategoryTheory.Discrete.Basic
 
@@ -21,6 +22,8 @@ topology `J` exactly when `P` is a sheaf for `J` (Stacks, Lemma 0432).
 ## Main declarations
 
 * `CategoryTheory.Pseudofunctor.ofPresheaf`: the discrete pseudofunctor of a presheaf of types.
+* `CategoryTheory.Pseudofunctor.ofPresheafMap`: the strong transformation of discrete
+  pseudofunctors induced by a morphism of presheaves.
 * `CategoryTheory.Pseudofunctor.isStackFor_ofPresheaf_iff`: it satisfies effective descent along
   a presieve if and only if `P` satisfies the sheaf condition for that presieve.
 * `CategoryTheory.Pseudofunctor.isStack_ofPresheaf_iff`: it is a stack for `J` if and only if
@@ -92,6 +95,34 @@ and only if the underlying sections of `P` are equal. -/
 lemma nonempty_hom_ofPresheaf_obj_iff {X : LocallyDiscrete Cᵒᵖ} (x y : (ofPresheaf.{w'} P).obj X) :
     Nonempty (x ⟶ y) ↔ x.down.as = y.down.as :=
   ⟨fun ⟨f⟩ ↦ Discrete.eq_of_hom f, fun h ↦ ⟨eqToHom (ULift.ext (Discrete.ext h))⟩⟩
+
+variable {P} in
+/-- The strong transformation of discrete pseudofunctors induced by a morphism of presheaves
+`η : P ⟶ Q`: over `X` it sends the object of the section `x` to that of `η.app X x`. Its
+naturality isomorphisms are identities, by the naturality of `η`. -/
+def ofPresheafMap {Q : Cᵒᵖ ⥤ Type w} (η : P ⟶ Q) :
+    StrongTrans (ofPresheaf.{w'} P) (ofPresheaf.{w'} Q) where
+  app X := (ULift.downFunctor ⋙ Discrete.functor (fun x ↦ Discrete.mk (η.app X.as x)) ⋙
+    ULift.upFunctor).toCatHom
+  naturality f := eqToIso (Cat.Hom.ext (Functor.ext
+    (fun x ↦ congrArg (fun y ↦ ULift.up (Discrete.mk y))
+      (NatTrans.naturality_apply η f.as x.down.as))
+    (fun _ _ _ ↦ Subsingleton.elim (α := (_ : ULift.{w'} (Discrete _)) ⟶ _) _ _)))
+  naturality_naturality _ := Cat.Hom₂.ext (NatTrans.ext (funext fun _ ↦
+    Subsingleton.elim (α := (_ : ULift.{w'} (Discrete _)) ⟶ _) _ _))
+  naturality_id _ := Cat.Hom₂.ext (NatTrans.ext (funext fun _ ↦
+    Subsingleton.elim (α := (_ : ULift.{w'} (Discrete _)) ⟶ _) _ _))
+  naturality_comp _ _ := Cat.Hom₂.ext (NatTrans.ext (funext fun _ ↦
+    Subsingleton.elim (α := (_ : ULift.{w'} (Discrete _)) ⟶ _) _ _))
+
+variable {P} in
+/-- Over `X`, the strong transformation induced by `η` sends the object of the section `x` to
+that of `η.app X x`. -/
+@[simp]
+lemma ofPresheafMap_app_obj {Q : Cᵒᵖ ⥤ Type w} (η : P ⟶ Q) (X : LocallyDiscrete Cᵒᵖ)
+    (x : (ofPresheaf.{w'} P).obj X) :
+    ((ofPresheafMap.{w'} η).app X).toFunctor.obj x = ⟨⟨η.app X.as x.down.as⟩⟩ :=
+  rfl
 
 variable {P} in
 /-- The discrete pseudofunctor of `P` satisfies effective descent along a presieve if and only

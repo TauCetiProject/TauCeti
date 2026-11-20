@@ -33,6 +33,8 @@ Morphisms of stacks in groupoids are strong transformations of the underlying ps
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.ofSheaf`: the stack in setoids of an fppf sheaf of
   sets, whose fibre over `T` is the discrete groupoid on its sections over `T` (Stacks,
   Lemma 0432).
+* `TauCeti.AlgebraicGeometry.StackInGroupoids.ofSheafHom`: the morphism of stacks in setoids
+  induced by a morphism of fppf sheaves.
 
 ## References
 
@@ -117,8 +119,9 @@ end Hom
 
 /-- The stack in setoids of an fppf sheaf of sets `F` (Stacks, Lemma 0432): the discrete
 pseudofunctor `Pseudofunctor.ofPresheaf` of `F`, whose fibre over `T` is the discrete groupoid on
-`F(T)`. -/
-@[stacks 0432]
+`F(T)`. Its body is exposed so that, in other modules too, the objects of its fibres are
+definitionally sections of `F`. -/
+@[expose, stacks 0432]
 def ofSheaf (F : Sheaf Scheme.fppfTopology.{u} (Type u)) : StackInGroupoids.{u} where
   toSchPseudofunctor := Pseudofunctor.ofPresheaf.{u + 1} F.obj
   isGroupoid _ := inferInstance
@@ -127,6 +130,20 @@ def ofSheaf (F : Sheaf Scheme.fppfTopology.{u} (Type u)) : StackInGroupoids.{u} 
 @[simp]
 lemma ofSheaf_toSchPseudofunctor (F : Sheaf Scheme.fppfTopology.{u} (Type u)) :
     (ofSheaf F).toSchPseudofunctor = Pseudofunctor.ofPresheaf.{u + 1} F.obj :=
+  (rfl)
+
+/-- The morphism of stacks in setoids induced by a morphism `η : F ⟶ G` of fppf sheaves: over
+`T` it sends a section `x` of `F` to `η.app T x`. -/
+def ofSheafHom {F G : Sheaf Scheme.fppfTopology.{u} (Type u)} (η : F ⟶ G) :
+    (ofSheaf F).Hom (ofSheaf G) :=
+  Pseudofunctor.ofPresheafMap.{u + 1} η.hom
+
+/-- Over `T`, the morphism of stacks induced by `η` sends the object of the section `x` to that
+of `η.app T x`. -/
+@[simp]
+lemma ofSheafHom_app_obj {F G : Sheaf Scheme.fppfTopology.{u} (Type u)} (η : F ⟶ G)
+    (T : LocallyDiscrete Scheme.{u}ᵒᵖ) (x : (ofSheaf F).toSchPseudofunctor.obj T) :
+    ((ofSheafHom η).app T).toFunctor.obj x = ⟨⟨η.hom.app T.as x.down.as⟩⟩ :=
   (rfl)
 
 /-- The fibres of the stack in setoids of an fppf sheaf are discrete categories. -/
