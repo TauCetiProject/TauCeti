@@ -324,6 +324,14 @@ private theorem exists_isothermal_chart_of_contDiffAt_of_tames {α : ℝ≥0} (h
   obtain ⟨e, hce, -, he⟩ := exists_isothermal_chart hα0 hα1 hρ hJρ hμJ hHolder
   exact ⟨e, hce, he⟩
 
+/-- Transporting a structure along complex conjugation conjugates it: `v ↦ conj (J (conj v))`. -/
+private theorem transport_conjCLE_apply (J : AlmostComplexStructure ℂ) (v : ℂ) :
+    J.transport conjCLE.toLinearEquiv v = conj (J (conj v)) := by
+  have hs : conjCLE.symm = conjCLE :=
+    congrArg LinearIsometryEquiv.toContinuousLinearEquiv conjLIE_symm
+  rw [AlmostComplexStructure.transport_apply, ContinuousLinearEquiv.coe_symm_toLinearEquiv, hs,
+    ContinuousLinearEquiv.coe_toLinearEquiv, conjCLE_apply, conjCLE_apply]
+
 /-- **Isothermal charts after conjugation.** If `e'` is an isothermal chart at `conj c` for the
 conjugated field `z ↦ conj ∘ J (conj z) ∘ conj`, then `e' ∘ conj` is an isothermal chart at `c`
 for `J`, with derivative `de'_(conj z) ∘ conj`, again `α`-Hölder and invertible. -/
@@ -339,7 +347,7 @@ private theorem exists_isothermal_chart_of_transport_conj {α K : ℝ≥0}
       (∀ z ∈ e.source, (fderiv ℝ e z).IsInvertible) ∧
       ∀ z ∈ e.source, ∀ v, fderiv ℝ e z (J z v) = I * fderiv ℝ e z v := by
   set σ : ℂ ≃L[ℝ] ℂ := conjCLE
-  have hσ (z : ℂ) : σ z = conj z := rfl
+  have hσ (z : ℂ) : σ z = conj z := conjCLE_apply z
   set e := σ.toHomeomorph.toOpenPartialHomeomorph.trans e'
   have hes (z : ℂ) : z ∈ e.source ↔ σ z ∈ e'.source := by simp [e]
   have hecoe : (e : ℂ → ℂ) = e' ∘ σ := by
@@ -350,24 +358,21 @@ private theorem exists_isothermal_chart_of_transport_conj {α K : ℝ≥0}
   refine ⟨e, (hes c).2 hce', ?_, ⟨K, fun z hz w hw ↦ ?_⟩, fun z hz ↦ ?_, fun z hz v ↦ ?_⟩
   · rw [hecoe]
     exact he'C.comp σ.contDiff.contDiffOn fun z hz ↦ (hes z).1 hz
-  · -- Precomposition with the isometry `σ` does not increase distances of operators.
+  · -- Precomposition with the linear isometry `σ = conjLIE` preserves distances of operators.
     rw [hde, hde]
     calc edist ((fderiv ℝ e' (σ z)).comp (σ : ℂ →L[ℝ] ℂ))
           ((fderiv ℝ e' (σ w)).comp (σ : ℂ →L[ℝ] ℂ))
-        ≤ edist (fderiv ℝ e' (σ z)) (fderiv ℝ e' (σ w)) := by
+        = edist (fderiv ℝ e' (σ z)) (fderiv ℝ e' (σ w)) := by
           rw [edist_dist, edist_dist, dist_eq_norm, dist_eq_norm, ← ContinuousLinearMap.sub_comp]
-          refine ENNReal.ofReal_le_ofReal ((ContinuousLinearMap.opNorm_comp_le _ _).trans ?_)
-          refine mul_le_of_le_one_right (norm_nonneg _) ?_
-          exact ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ by simp [hσ]
+          exact congrArg ENNReal.ofReal
+            (ContinuousLinearMap.opNorm_comp_linearIsometryEquiv _ conjLIE)
       _ ≤ K * edist (σ z) (σ w) ^ (α : ℝ) := hK.edist_le ((hes z).1 hz) ((hes w).1 hw)
       _ = K * edist z w ^ (α : ℝ) := by rw [hσ, hσ, isometry_conj.edist_eq]
   · rw [hde]
     exact (he'inv _ ((hes z).1 hz)).comp ContinuousLinearMap.isInvertible_equiv
   · -- `σ (J z v)` is the conjugated structure at `σ z` applied to `σ v`.
     have hJ'z : σ (J z v) = (J (conj (σ z))).transport σ.toLinearEquiv (σ v) := by
-      have hσs (u : ℂ) : σ.symm u = conj u :=
-        σ.injective (by rw [ContinuousLinearEquiv.apply_symm_apply, hσ, conj_conj])
-      simp [hσ, hσs]
+      simp only [σ, transport_conjCLE_apply, conjCLE_apply, conj_conj]
     rw [hde, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
       ContinuousLinearEquiv.coe_coe, hJ'z, he'J _ ((hes z).1 hz)]
 
@@ -389,7 +394,6 @@ theorem exists_isothermal_chart_of_contDiffAt {α : ℝ≥0} (hα0 : 0 < α) (h�
   · exact exists_isothermal_chart_of_contDiffAt_of_tames hα0 hα1 hJ hJc
   -- Otherwise the conjugated field `J'` is `C¹` and tame at `conj c`.
   set σ : ℂ ≃L[ℝ] ℂ := conjCLE
-  have hσ (z : ℂ) : σ z = conj z := rfl
   have hσc : σ (σ c) = c := conj_conj c
   set J' : ℂ → AlmostComplexStructure ℂ := fun z ↦ (J (conj z)).transport σ.toLinearEquiv
   have hJ'eq : (fun z ↦ LinearMap.toContinuousLinearMap (J' z).toLinearMap) = fun z ↦
@@ -397,9 +401,8 @@ theorem exists_isothermal_chart_of_contDiffAt {α : ℝ≥0} (hα0 : 0 < α) (h�
         (σ : ℂ →L[ℝ] ℂ) := by
     funext z
     ext1 v
-    have hσs : σ.symm v = conj v :=
-      σ.injective (by rw [ContinuousLinearEquiv.apply_symm_apply, hσ, conj_conj])
-    simp [J', hσ, hσs]
+    simp only [J', σ, transport_conjCLE_apply, LinearMap.coe_toContinuousLinearMap',
+      ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, conjCLE_apply]
   have hJ' : ContDiffAt ℝ 1 (fun z ↦ LinearMap.toContinuousLinearMap (J' z).toLinearMap)
       (σ c) := by
     rw [hJ'eq]

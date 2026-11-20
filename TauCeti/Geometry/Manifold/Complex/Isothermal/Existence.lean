@@ -116,8 +116,7 @@ theorem exists_isIsothermalChart (x : M) :
     heC.contDiffAt (e.open_source.mem_nhds hp)
   have hes := e.contDiffOn_symm_of_isInvertible_fderiv heC heinv
   have hsrc (y : M) : y ∈ (ψ.trans e).source ↔ y ∈ ψ.source ∧ ψ y ∈ e.source := by
-    rw [OpenPartialHomeomorph.trans_source]
-    rfl
+    rw [OpenPartialHomeomorph.trans_source, mem_inter_iff, mem_preimage]
   -- The chart is `ψ` followed by `e`.
   refine ⟨ψ.trans e, ⟨trans_mem_maximalAtlas_of_contDiffAt (chart_mem_maximalAtlas x) heCA
     fun p hp ↦ hes.contDiffAt (e.open_target.mem_nhds hp), fun y hy ↦ ?_⟩,
