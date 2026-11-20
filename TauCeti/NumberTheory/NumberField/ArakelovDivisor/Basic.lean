@@ -29,7 +29,7 @@ divisors modulo units: forgetting the archimedean coefficients is a surjection o
 such a divisor is principal exactly when `λ` is the weighted logarithm `(mult(v) log |u|_v)_v`
 of a unit `u` of `𝓞 K`. This is the exact sequence
 `0 → ℝ^{InfinitePlace K} / log |(𝓞 K)ˣ| → Pic^(𝓞 K) → Cl(K) → 0`,
-whose left term is the quotient by Tau Ceti's full unit logarithmic lattice `unitLogEmbedding`.
+whose left term is the quotient by the image `TauCeti.unitLogSubgroup` of `unitLogEmbedding`.
 
 These are the compactified divisors of Szpiro; they model the hermitian line bundles over
 `Spec 𝓞 K` (the divisor `(𝔞, λ)` corresponds to `𝔞⁻¹` with the norms `e^{-λ_v / mult(v)} |·|_v`),
@@ -45,6 +45,7 @@ and in Gillet–Soulé's language their classes form `\widehat{CH}¹(Spec 𝓞 K
 * `TauCeti.ArakelovPicardGroup K`: Arakelov divisors modulo principal divisors.
 * `TauCeti.ArakelovPicardGroup.degree`, `TauCeti.ArakelovPicardGroup.toClassGroup`: the degree
   and the ideal class of a class of Arakelov divisors.
+* `TauCeti.unitLogSubgroup`: the weighted logarithms `log |(𝓞 K)ˣ|` of the units of `𝓞 K`.
 * `TauCeti.ArakelovPicardGroup.ofInfinitePartQuotient`: the map
   `ℝ^{InfinitePlace K} / log |(𝓞 K)ˣ| → Pic^(𝓞 K)`.
 
@@ -262,12 +263,31 @@ theorem principal_unit (u : (𝓞 K)ˣ) :
     principal K (Additive.ofMul (Units.map (algebraMap (𝓞 K) K) u)) =
       -ofInfinitePart K (unitLogEmbedding K (Additive.ofMul u) : InfinitePlace K → ℝ) := by
   ext1
-  · rw [finitePart_principal, finitePart_neg, finitePart_ofInfinitePart, inv_one]
-    exact (toPrincipalIdeal_eq_one_iff _).mpr ⟨u, rfl⟩
+  · simpa using (toPrincipalIdeal_eq_one_iff (K := K) _).mpr ⟨u, rfl⟩
   · ext v
     simp
 
 end ArakelovDivisor
+
+section unitLogSubgroup
+
+variable [NumberField K]
+
+/-- The **unit logarithmic subgroup** `log |(𝓞 K)ˣ| ⊆ ℝ^{InfinitePlace K}`: the weighted logarithms
+`(mult(v) log |u|_v)_v` of the units `u` of `𝓞 K`, that is the image of `TauCeti.unitLogEmbedding`
+in the ambient space of archimedean coefficients. -/
+def unitLogSubgroup : AddSubgroup (InfinitePlace K → ℝ) :=
+  ((singleParityCheckCode ℝ (InfinitePlace K)).subtype.toAddMonoidHom.comp
+    (unitLogEmbedding K)).range
+
+variable {K}
+
+@[simp] theorem mem_unitLogSubgroup {l : InfinitePlace K → ℝ} :
+    l ∈ unitLogSubgroup K ↔
+      ∃ u : (𝓞 K)ˣ, (unitLogEmbedding K (Additive.ofMul u) : InfinitePlace K → ℝ) = l :=
+  ⟨fun ⟨u, hu⟩ ↦ ⟨u.toMul, hu⟩, fun ⟨u, hu⟩ ↦ ⟨Additive.ofMul u, hu⟩⟩
+
+end unitLogSubgroup
 
 variable [NumberField K] in
 /-- The **compactified Picard group** (Arakelov divisor class group) of a number field `K`: the
@@ -361,7 +381,7 @@ variable {K}
 
 @[simp] theorem toClassGroup_ofInfinitePart (l : InfinitePlace K → ℝ) :
     toClassGroup K (ofInfinitePart K l) = 0 := by
-  rw [← mk_ofInfinitePart, toClassGroup_mk, finitePart_ofInfinitePart, map_one, ofMul_one]
+  simp [← mk_ofInfinitePart]
 
 /-- **Exactness in the middle.** A class of Arakelov divisors has trivial ideal class exactly
 when it is the class of a divisor supported at the infinite places. -/
@@ -387,18 +407,16 @@ theorem exact_ofInfinitePart_toClassGroup :
 `(𝓞 K, λ)` supported at infinity is trivial exactly when `λ` is the weighted logarithm
 `(mult(v) log |u|_v)_v` of a unit `u` of `𝓞 K`. -/
 theorem ofInfinitePart_eq_zero_iff {l : InfinitePlace K → ℝ} :
-    ofInfinitePart K l = 0 ↔
-      ∃ u : (𝓞 K)ˣ, (unitLogEmbedding K (Additive.ofMul u) : InfinitePlace K → ℝ) = l := by
-  rw [← mk_ofInfinitePart, mk_eq_zero_iff]
+    ofInfinitePart K l = 0 ↔ l ∈ unitLogSubgroup K := by
+  rw [← mk_ofInfinitePart, mk_eq_zero_iff, mem_unitLogSubgroup]
   constructor
   · rintro ⟨f, hf⟩
     have hfin := congrArg ArakelovDivisor.finitePart hf
     rw [finitePart_principal, finitePart_ofInfinitePart] at hfin
     obtain ⟨z, hz⟩ := (toPrincipalIdeal_eq_one_iff _).mp hfin
     have hinf := congrArg ArakelovDivisor.infinitePart hf
-    rw [← ofMul_toMul f, ← hz, principal_unit, infinitePart_neg, infinitePart_ofInfinitePart,
-      infinitePart_ofInfinitePart, neg_eq_iff_eq_neg] at hinf
-    exact ⟨z⁻¹, by rw [ofMul_inv, map_neg, NegMemClass.coe_neg, hinf, neg_neg]⟩
+    rw [← ofMul_toMul f, ← hz, principal_unit] at hinf
+    exact ⟨z⁻¹, by simpa using hinf⟩
   · rintro ⟨u, rfl⟩
     refine ⟨-Additive.ofMul (Units.map (algebraMap (𝓞 K) K) u), ?_⟩
     rw [map_neg, principal_unit, neg_neg]
@@ -409,11 +427,8 @@ variable (K)
 `TauCeti.ArakelovPicardGroup.ofInfinitePart` to the quotient by the weighted logarithms
 `(mult(v) log |u|_v)_v` of the units `u` of `𝓞 K`. -/
 def ofInfinitePartQuotient :
-    (InfinitePlace K → ℝ) ⧸ ((singleParityCheckCode ℝ (InfinitePlace K)).subtype.toAddMonoidHom.comp
-      (unitLogEmbedding K)).range →+ ArakelovPicardGroup K :=
-  QuotientAddGroup.lift _ (ofInfinitePart K) <| by
-    rintro _ ⟨u, rfl⟩
-    exact ofInfinitePart_eq_zero_iff.mpr ⟨u.toMul, rfl⟩
+    (InfinitePlace K → ℝ) ⧸ unitLogSubgroup K →+ ArakelovPicardGroup K :=
+  QuotientAddGroup.lift _ (ofInfinitePart K) fun _ ↦ ofInfinitePart_eq_zero_iff.mpr
 
 variable {K}
 
@@ -425,8 +440,7 @@ injective. -/
 theorem ofInfinitePartQuotient_injective : Function.Injective (ofInfinitePartQuotient K) := by
   refine (injective_iff_map_eq_zero _).mpr fun q hq ↦ ?_
   induction q using QuotientAddGroup.induction_on with | H l => ?_
-  obtain ⟨u, hu⟩ := ofInfinitePart_eq_zero_iff.mp hq
-  exact (QuotientAddGroup.eq_zero_iff l).mpr ⟨Additive.ofMul u, hu⟩
+  exact (QuotientAddGroup.eq_zero_iff l).mpr (ofInfinitePart_eq_zero_iff.mp hq)
 
 /-- **Exactness in the middle**, for the map out of `ℝ^{InfinitePlace K} / log |(𝓞 K)ˣ|`. -/
 theorem exact_ofInfinitePartQuotient_toClassGroup :
