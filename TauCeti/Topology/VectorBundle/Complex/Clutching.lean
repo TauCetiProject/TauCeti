@@ -180,12 +180,10 @@ theorem continuousOn_clutchingFunction
   let A : B → F ≃L[ℂ] F := fun y ↦ if hy : f y ∈ e.baseSet then
     (φ y).trans (e.continuousLinearEquivAt ℂ (f y) hy) else ContinuousLinearEquiv.refl ℂ F
   have hA : ContinuousOn (fun y ↦ (A y : F →L[ℂ] F)) (f ⁻¹' e.baseSet) := by
-    refine continuousOn_clm_apply.2 fun v ↦ ?_
-    have hc : ContinuousOn (fun y ↦ (e (TotalSpace.mk' F (f y) (φ y v))).2) (f ⁻¹' e.baseSet) :=
-      continuous_snd.comp_continuousOn (e.continuousOn.comp
-        (hφ.comp (Continuous.prodMk_left v)).continuousOn fun y hy ↦ e.mem_source.2 hy)
-    refine hc.congr fun y (hy : f y ∈ e.baseSet) ↦ ?_
-    simp [A, hy]
+    refine (continuousOn_continuousLinearMapAt_comp_of_continuous_frame hφ e).congr
+      fun y (hy : f y ∈ e.baseSet) ↦ ?_
+    simp only [A, hy, dite_true, ← e.coe_continuousLinearEquivAt_eq' (R := ℂ) hy,
+      ContinuousLinearEquiv.comp_coe]
   refine hA.normalizedDet.inv.congr fun y (hy : f y ∈ e.baseSet) ↦ ?_
   simp [A, clutchingFunction_of_mem hy, hy]
 
@@ -194,17 +192,8 @@ theorem continuousOn_clutchingFunction
 theorem continuous_normalizedDet_trans_symm [VectorBundle ℂ F E]
     (hφ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2))
     (hψ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (ψ q.1 q.2)) :
-    Continuous fun y ↦ ((ψ y).trans (φ y).symm).normalizedDet := by
-  refine continuous_iff_continuousAt.2 fun y₀ ↦ ?_
-  -- Near `y₀`, read both frames in a trivialization around `f y₀`.
-  let e₀ := trivializationAt F E (f y₀)
-  have hU : f ⁻¹' e₀.baseSet ∈ 𝓝 y₀ :=
-    (continuous_of_continuous_frame hφ).continuousAt.preimage_mem_nhds
-      (e₀.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E (f y₀)))
-  refine (((continuousOn_clutchingFunction hψ e₀).inv.mul
-    (continuousOn_clutchingFunction hφ e₀)).continuousAt hU).congr
-      (eventually_of_mem hU fun y (hy : f y ∈ e₀.baseSet) ↦ ?_)
-  simp [clutchingFunction_eq_mul_normalizedDet_inv (φ := φ) (ψ := ψ) hy]
+    Continuous fun y ↦ ((ψ y).trans (φ y).symm).normalizedDet :=
+  (continuous_trans_symm_of_continuous_frame hψ hφ).normalizedDet
 
 end ClutchingFunction
 
