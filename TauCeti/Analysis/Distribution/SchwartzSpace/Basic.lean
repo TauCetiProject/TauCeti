@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.Conjneg
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
@@ -46,6 +47,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_iteratedFDeriv_comp_left`,
   `SchwartzMap.integral_norm_iteratedFDeriv_comp_left_le`: for a continuous linear map `L`, the
   derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
+* `SchwartzMap.conjnegCLM`: the continuous conjugate-linear reversed-conjugation involution,
+  with exact reflected-support, compact-support and near-origin cutoff laws.
 * `SchwartzMap.conjCLM`: pointwise conjugation of scalar Schwartz functions, a continuous
   conjugate-linear map.
 * `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
@@ -362,6 +365,63 @@ theorem conjCLM_smul (c : 𝕜) (f : 𝓢(E, 𝕜)) : conjCLM (c • f) = conj c
 theorem conjCLM_conjCLM (f : 𝓢(E, 𝕜)) : conjCLM (conjCLM f) = f := by
   ext x
   simp
+
+/-- Reversed conjugation on Schwartz functions, the involution of convolution kernels.
+It is conjugate-linear and continuous for the original Schwartz topology. -/
+noncomputable def conjnegCLM : 𝓢(E, 𝕜) →L⋆[𝕜] 𝓢(E, 𝕜) :=
+  conjCLM.comp (compCLMOfContinuousLinearEquiv 𝕜
+    (LinearIsometryEquiv.neg ℝ).toContinuousLinearEquiv)
+
+/-- Reversed conjugation evaluates to the conjugate at the opposite point. -/
+@[simp]
+theorem conjnegCLM_apply (f : 𝓢(E, 𝕜)) (x : E) : conjnegCLM f x = conj (f (-x)) := by
+  simp [conjnegCLM, conjCLM_apply]
+
+/-- Forgetting the Schwartz structure recovers Mathlib's function-level reversed conjugation. -/
+theorem coe_conjnegCLM (f : 𝓢(E, 𝕜)) : ⇑(conjnegCLM f) = conjneg (f : E → 𝕜) := by
+  funext x
+  exact conjnegCLM_apply f x
+
+/-- Reversed conjugation is an algebraic involution. -/
+@[simp]
+theorem conjnegCLM_conjnegCLM (f : 𝓢(E, 𝕜)) : conjnegCLM (conjnegCLM f) = f := by
+  ext x
+  simpa only [conjnegCLM_apply, conjneg_apply] using congrFun (conjneg_conjneg (f : E → 𝕜)) x
+
+open scoped Pointwise in
+/-- The support is the reflected support, by Mathlib's function-level support law. -/
+theorem support_conjnegCLM (f : 𝓢(E, 𝕜)) :
+    Function.support (conjnegCLM f) = -Function.support f := by
+  rw [coe_conjnegCLM]
+  exact support_conjneg f
+
+/-- Reversal and conjugation preserve a support bound by a ball about zero. -/
+theorem support_conjnegCLM_subset_ball {f : 𝓢(E, 𝕜)} {R : ℝ}
+    (hf : Function.support f ⊆ Metric.ball 0 R) :
+    Function.support (conjnegCLM f) ⊆ Metric.ball 0 R := by
+  intro x hx
+  have hh : f (-x) ≠ 0 := by
+    intro hh
+    exact hx (by simp only [conjnegCLM_apply, hh, map_zero])
+  simpa only [Metric.mem_ball, dist_zero_right, norm_neg] using hf hh
+
+/-- Reversed conjugation preserves compact support. -/
+theorem hasCompactSupport_conjnegCLM {f : 𝓢(E, 𝕜)} (hf : HasCompactSupport f) :
+    HasCompactSupport (conjnegCLM f) := by
+  have h := (hf.comp_homeomorph (LinearIsometryEquiv.neg ℝ).toHomeomorph).comp_left
+    (map_zero (starRingEnd 𝕜))
+  convert h using 1
+  funext x
+  exact conjnegCLM_apply f x
+
+open scoped Topology in
+/-- Reversed conjugation preserves the normalization equal to one near the origin. -/
+theorem conjnegCLM_eventually_one {f : 𝓢(E, 𝕜)} (hf : ⇑f =ᶠ[𝓝 0] 1) :
+    ⇑(conjnegCLM f) =ᶠ[𝓝 0] 1 := by
+  have ht : Filter.Tendsto (fun x : E ↦ -x) (𝓝 0) (𝓝 0) := by
+    simpa only [neg_zero] using continuous_neg.tendsto (0 : E)
+  filter_upwards [ht.eventually hf] with x hx
+  simp only [conjnegCLM_apply, hx, Pi.one_apply, map_one]
 
 end Conj
 
