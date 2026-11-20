@@ -38,9 +38,10 @@ This is the nonlinear form of the linear gluing statement
 **Families of discs.** When the Morse indices of the three critical points of the broken
 trajectory are not consecutive, the trace of the unstable manifold of the starting critical point
 on the entrance face is no longer a single graph over the expanding factor, but a family of
-graphs `y ↦ (g p y, y)`, one for each trajectory `p` to the middle critical point; likewise the
-trace of the stable manifold of the final critical point on the exit face is a family of graphs
-`x ↦ (x, k p x)`. If the families are Lipschitz with uniform constants and depend continuously on
+graphs `y ↦ (g p y, y)`; likewise the trace of the stable manifold of the final critical point on
+the exit face is a family of graphs `x ↦ (x, k p x)`. Here `p` ranges over pairs of a trajectory
+into the middle critical point and a trajectory out of it, with `g p` depending on the first and
+`k p` on the second. If the families are Lipschitz with uniform constants and depend continuously on
 `p`, the gluing parametrizations `w r p` of the pairs of discs `g p` and `k p` can be chosen to
 depend continuously on `(r, p)` jointly
 (`TauCeti.exists_continuousOn_and_forall_setOf_mem_splitPassage_source_graph_eq_image`): the
@@ -365,11 +366,12 @@ theorem can be chosen to depend continuously on the gluing parameter `r` and on 
 is `w` with `(r, p) ↦ w r p` continuous on `[0, r₀] × S`, such that for each `p ∈ S` the map
 `r ↦ w r p` has all the properties of the parametrization of the single discs `g p` and `k p`.
 
-In the gluing of broken trajectories `p` parametrizes the trajectories of each of the two halves:
-the trace of the unstable manifold of the starting critical point on the entrance face is a family
-of graphs over the expanding factor, one for each trajectory to the middle critical point, and
-likewise on the exit face. The points `(g p (r • w r p), r • w r p)` then sweep out all orbits
-running from the first family to the second, continuously in `(r, p)`. -/
+In the gluing of broken trajectories `p` ranges over pairs of a trajectory into the middle
+critical point and a trajectory out of it: the trace of the unstable manifold of the starting
+critical point on the entrance face is a family of graphs over the expanding factor, `g p`
+depending on the first trajectory, and likewise on the exit face, `k p` depending on the second.
+The points `(g p (r • w r p), r • w r p)` then sweep out all orbits running from the first family
+to the second, continuously in `(r, p)`. -/
 theorem exists_continuousOn_and_forall_setOf_mem_splitPassage_source_graph_eq_image
     [CompleteSpace Eᵤ] {P : Type*} [TopologicalSpace P] {S : Set P}
     {g : P → Eᵤ → Eₛ} {k : P → Eₛ → Eᵤ}
