@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.FunctionField
 public import Mathlib.AlgebraicGeometry.Limits
 public import TauCeti.AlgebraicGeometry.AffineScheme
 public import TauCeti.AlgebraicGeometry.Gluing.Pushout
+public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.RingTheory.Localization.Away.AdjoinInv
 
 /-!
@@ -54,9 +55,10 @@ places; those are not available over a general base.
   `TauCeti.AlgebraicGeometry.projectiveLineNormalization.infinityChartSectionsEquiv` and
   `TauCeti.AlgebraicGeometry.projectiveLineNormalization.overlapChartSectionsEquiv`: the functions
   on the two charts and on their intersection are the elements of `A₀`, `A∞` and `A₀∞`, compatibly
-  with the inclusions of `A₀` and `A∞` into `A₀∞`.
+  with the inclusions of `A₀` and `A∞` into `A₀∞` and with the functions pulled back from
+  `Spec R`.
 * `TauCeti.AlgebraicGeometry.projectiveLineNormalization.functionFieldEquiv`: when `B` is a domain
-  and the fraction field of `A₀`, the ring isomorphism of the function field with `B`.
+  and the fraction field of `A₀`, the `R`-algebra isomorphism of the function field with `B`.
 
 ## Main results
 
@@ -289,6 +291,15 @@ theorem finiteChartSectionsEquiv_apply
     finiteChartSectionsEquiv R u a = (Scheme.ΓSpecIso _).hom (((ιFinite R u).appIso ⊤).hom a) :=
   (rfl)
 
+/-- On the finite chart, the functions on `Spec R` pulled back along the structure morphism are
+the elements of `R` in `A₀`. -/
+@[simp]
+theorem finiteChartSectionsEquiv_appLE (a : Γ(Spec (.of R), ⊤)) :
+    finiteChartSectionsEquiv R u
+        ((projectiveLineNormalization R u ↘ Spec (.of R)).appLE ⊤ _ le_top a) =
+      algebraMap R _ ((Scheme.ΓSpecIso (.of R)).hom a) :=
+  Scheme.ΓSpecIso_appIso_hom_appLE _ _ _ (ιFinite_over R u) a
+
 /-- The chart at infinity is an affine open subscheme. -/
 theorem isAffineOpen_image_ιInfinity_top : IsAffineOpen (ιInfinity R u ''ᵁ ⊤) := by
   rw [Scheme.Hom.image_top_eq_opensRange]
@@ -311,6 +322,15 @@ theorem infinityChartSectionsEquiv_apply
     infinityChartSectionsEquiv R u a =
       (Scheme.ΓSpecIso _).hom (((ιInfinity R u).appIso ⊤).hom a) :=
   (rfl)
+
+/-- On the chart at infinity, the functions on `Spec R` pulled back along the structure morphism
+are the elements of `R` in `A∞`. -/
+@[simp]
+theorem infinityChartSectionsEquiv_appLE (a : Γ(Spec (.of R), ⊤)) :
+    infinityChartSectionsEquiv R u
+        ((projectiveLineNormalization R u ↘ Spec (.of R)).appLE ⊤ _ le_top a) =
+      algebraMap R _ ((Scheme.ΓSpecIso (.of R)).hom a) :=
+  Scheme.ΓSpecIso_appIso_hom_appLE _ _ _ (ιInfinity_over R u) a
 
 /-- The intersection of the two charts is the image of `Spec A₀∞`. -/
 theorem image_specMap_infinityChartRestriction_comp_ιInfinity_top :
@@ -379,17 +399,39 @@ theorem infinityChartRestriction_infinityChartSectionsEquiv
   exact Scheme.ΓSpecIso_appIso_hom_map_eq_restrict _ (ιInfinity R u) _ rfl inf_le_right
     (image_specMap_infinityChartRestriction_comp_ιInfinity_top R u) a
 
+/-- On the intersection of the two charts, the functions on `Spec R` pulled back along the
+structure morphism are the elements of `R` in `A₀∞`. -/
+@[simp]
+theorem overlapChartSectionsEquiv_appLE (a : Γ(Spec (.of R), ⊤)) :
+    overlapChartSectionsEquiv R u
+        ((projectiveLineNormalization R u ↘ Spec (.of R)).appLE ⊤ _ le_top a) =
+      algebraMap R _ ((Scheme.ΓSpecIso (.of R)).hom a) := by
+  have h := finiteChartRestriction_finiteChartSectionsEquiv R u
+    ((projectiveLineNormalization R u ↘ Spec (.of R)).appLE ⊤ _ le_top a)
+  rw [finiteChartSectionsEquiv_appLE, AlgHom.commutes, ← CommRingCat.comp_apply] at h
+  refine Eq.trans ?_ h.symm
+  exact congr(overlapChartSectionsEquiv R u ($((Scheme.Hom.appLE_map _ _ _).symm) a))
+
 variable [IsDomain B] [IsFractionRing (finiteChart R u) B]
 
 /-- **The function field of `projectiveLineNormalization` is `B`**, when `B` is a domain and the
-fraction field of `A₀`; for instance when `B` is a field algebraic over `R[u]`. It identifies the
-germ of a function on the finite chart with the corresponding element of `A₀ ⊆ B`
+fraction field of `A₀`, as an `R`-algebra; for instance when `B` is a field algebraic over
+`R[u]`. It identifies the germ of a function on the finite chart with the corresponding element
+of `A₀ ⊆ B`
 (`TauCeti.AlgebraicGeometry.projectiveLineNormalization.functionFieldEquiv_germToFunctionField`).
 -/
 noncomputable def functionFieldEquiv :
-    (projectiveLineNormalization R u).functionField ≃+* B :=
+    (projectiveLineNormalization R u).functionField ≃ₐ[R] B :=
   haveI := functionField_isFractionRing_of_isAffineOpen _ _ (isAffineOpen_image_ιFinite_top R u)
-  IsFractionRing.ringEquivOfRingEquiv (finiteChartSectionsEquiv R u)
+  AlgEquiv.ofRingEquiv (f := IsFractionRing.ringEquivOfRingEquiv (finiteChartSectionsEquiv R u))
+    fun c ↦ by
+      rw [Scheme.algebraMap_functionField_eq_baseRingToFunctionField,
+        Scheme.baseRingToFunctionField_eq_comp_appLE R _ (ιFinite R u ''ᵁ ⊤),
+        RingHom.comp_apply]
+      -- `germToFunctionField` is by definition the algebra map of `Γ(X, U)` to `k(X)`.
+      refine (IsFractionRing.ringEquivOfRingEquiv_algebraMap _ _).trans ?_
+      rw [CommRingCat.comp_apply, finiteChartSectionsEquiv_appLE, Iso.inv_hom_id_apply]
+      exact (IsScalarTower.algebraMap_apply R _ B c).symm
 
 /-- `TauCeti.AlgebraicGeometry.projectiveLineNormalization.functionFieldEquiv` sends the germ of a
 function on the finite chart to the corresponding element of `A₀ ⊆ B`. -/

@@ -66,6 +66,9 @@ be injective. This is the local reason why an affine blowup changes nothing away
 * `AlgebraicGeometry.Scheme.ΓSpecIso_appIso_hom_map_eq_restrict`: for open immersions
   `ι : Spec A ⟶ X` and `Spec.map φ`, reading a function on the image of `ι` in `A` and mapping it
   along `φ` is restricting it to the image of `Spec A'` and reading it in `A'`.
+* `AlgebraicGeometry.Scheme.ΓSpecIso_appIso_hom_appLE`: for an open immersion `ι : Spec A ⟶ X`
+  over `Spec R` given by `φ : R ⟶ A`, a function pulled back from `Spec R` reads as its image
+  under `φ` in `A`.
 * `AlgebraicGeometry.Scheme.Hom.isBasis_range_affineOpens_le_preimage`: for `g : S' ⟶ S`, the
   affine opens of `S'` lying over affine opens of `S` form a basis.
 * `AlgebraicGeometry.Scheme.toSpecΓ_apply_asIdeal_eq_smul`: for this action, the prime ideal of
@@ -281,6 +284,27 @@ theorem Scheme.ΓSpecIso_appIso_hom_map_eq_restrict {X : Scheme.{u}} {A A' : Com
   rw [Scheme.Hom.appIso_hom', ← Category.assoc, Scheme.Hom.map_appLE, Scheme.Hom.appTop,
     Scheme.Hom.app_eq_appLE]
   rfl
+
+/-- On an affine open chart `ι : Spec A ⟶ X` lying over `Spec R` through `φ : R ⟶ A`, a function on
+`Spec R` pulled back along `f : X ⟶ Spec R` and read as an element of `A` is its image under
+`φ`. -/
+theorem Scheme.ΓSpecIso_appIso_hom_appLE {X : Scheme.{u}} {R A : CommRingCat.{u}}
+    (ι : Spec A ⟶ X) [IsOpenImmersion ι] (f : X ⟶ Spec R) (φ : R ⟶ A) (h : ι ≫ f = Spec.map φ)
+    (a : Γ(Spec R, ⊤)) :
+    (Scheme.ΓSpecIso A).hom ((ι.appIso ⊤).hom (f.appLE ⊤ (ι ''ᵁ ⊤) le_top a)) =
+      φ ((Scheme.ΓSpecIso R).hom a) := by
+  suffices h' : f.appLE ⊤ (ι ''ᵁ ⊤) le_top ≫ (ι.appIso ⊤).hom ≫ (Scheme.ΓSpecIso A).hom =
+      (Scheme.ΓSpecIso R).hom ≫ φ from congr($h' a)
+  rw [← cancel_epi (Scheme.ΓSpecIso R).inv, Iso.inv_hom_id_assoc, Scheme.Hom.appIso_hom',
+    reassoc_of% Scheme.Hom.appLE_comp_appLE ι f ⊤ (ι ''ᵁ ⊤) ⊤ le_top
+    (Scheme.Hom.preimage_image_eq _ _).ge]
+  -- The proof that `⊤` lies over `⊤` has to be generalized before rewriting `ι ≫ f`.
+  generalize_proofs e
+  revert e
+  rw [h]
+  intro e
+  rw [show Scheme.Hom.appLE _ ⊤ ⊤ e = Scheme.Hom.appTop _ from Scheme.Hom.appLE_eq_app _,
+    Scheme.ΓSpecIso_naturality, Iso.inv_hom_id_assoc]
 
 /-- For a morphism `g : S' ⟶ S`, the affine opens of `S'` contained in the preimage of an affine
 open of `S` form a basis of the topology of `S'`. -/

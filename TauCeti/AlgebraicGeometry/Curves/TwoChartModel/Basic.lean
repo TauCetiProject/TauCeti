@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.LocallyDirected
 public import TauCeti.AlgebraicGeometry.Gluing.Pushout
 public import TauCeti.FieldTheory.FunctionField.HolomorphyRing.Localization
+import TauCeti.AlgebraicGeometry.AffineScheme
 
 /-!
 # The scheme of a function field glued from two affine charts
@@ -331,24 +332,8 @@ the constants of `𝒪_x`. -/
 @[simp]
 theorem finiteChartSectionsEquiv_appLE (a : Γ(Spec (.of k), ⊤)) :
     finiteChartSectionsEquiv hF hx ((twoChartModel hF hx ↘ Spec (.of k)).appLE ⊤ _ le_top a) =
-      algebraMap k _ ((Scheme.ΓSpecIso (.of k)).hom a) := by
-  suffices h : (twoChartModel hF hx ↘ Spec (.of k)).appLE ⊤ _ le_top ≫
-        ((ιFinite hF hx).appIso ⊤).hom ≫ (Scheme.ΓSpecIso _).hom =
-      (Scheme.ΓSpecIso (.of k)).hom ≫
-        CommRingCat.ofHom (algebraMap k (holomorphyRing {P : Place k F | x ∈ P.integers})) from
-    congr($h a)
-  rw [← cancel_epi (Scheme.ΓSpecIso (.of k)).inv, Iso.inv_hom_id_assoc, Scheme.Hom.appIso_hom',
-    reassoc_of% Scheme.Hom.appLE_comp_appLE (ιFinite hF hx)
-    (twoChartModel hF hx ↘ Spec (.of k)) ⊤ (ιFinite hF hx ''ᵁ ⊤) ⊤ le_top
-    (Scheme.Hom.preimage_image_eq _ _).ge]
-  -- The composite of the chart with the structure morphism is `Spec` of the inclusion of `k`;
-  -- the proof that `⊤` lies over `⊤` has to be generalized before rewriting it.
-  generalize_proofs e
-  revert e
-  rw [ιFinite_over]
-  intro e
-  rw [show Scheme.Hom.appLE _ ⊤ ⊤ e = Scheme.Hom.appTop _ from Scheme.Hom.appLE_eq_app _,
-    Scheme.ΓSpecIso_naturality, Iso.inv_hom_id_assoc]
+      algebraMap k _ ((Scheme.ΓSpecIso (.of k)).hom a) :=
+  Scheme.ΓSpecIso_appIso_hom_appLE _ _ _ (ιFinite_over hF hx) a
 
 /-- The canonical morphism from the spectrum of the sections of the finite chart is `Spec` of the
 identification of these sections with `𝒪_x`, followed by the chart inclusion. -/
