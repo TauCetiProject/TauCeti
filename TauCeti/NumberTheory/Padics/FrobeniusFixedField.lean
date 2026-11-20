@@ -88,7 +88,7 @@ field fixed by a continuous ring endomorphism: `K^σ` is a discretely valued fie
 instance isDiscreteValuationRing_integer_padicFixedField [IsDiscreteValuationRing 𝒪[K]] :
     IsDiscreteValuationRing 𝒪[σ.padicFixedField p hσ] :=
   (σ.padicFixedField p hσ).val.toRingHom.isDiscreteValuationRing_integer_of_norm_map_eq
-    (K := K) fun _ ↦ rfl
+    (K := K) fun x ↦ (AddSubgroupClass.coe_norm (σ.padicFixedField p hσ) x).symm
 
 variable {q : ℕ} (hq : 1 < q) (hσq : ∀ a : K, ‖a‖ ≤ 1 → ‖σ a - a ^ q‖ < 1)
 include hq hσq
