@@ -32,7 +32,9 @@ so does every elliptic classical symbol
 `Op(a)` cannot remove singularities: `Op(a) T` is singular wherever `T` is. The `H^(s + m)`
 singular support of `T` lies in the `H^s` singular support of `Op(a) T`, and the singular support
 of `T` lies in that of `Op(a) T`. In particular every distributional solution of `Op(a) T = 0`, or
-more generally of `Op(a) T = f` with `f` smooth, is a smooth function.
+more generally of `Op(a) T = f` with `f` smooth, has empty singular support
+(`Distribution.singularSupport_zero`, `Distribution.singularSupport_ofFun_eq_empty`): it is smooth
+near every point.
 
 Conversely, `Op(a)` maps `H^(s + m)_loc` to `H^s_loc`: if `T` is `H^(s + m)` near every point of
 the closed `R`-neighbourhood of the support of a test function `ψ`, then `ψ Op(a) T ∈ H^s`
@@ -270,7 +272,7 @@ theorem sobolevSingularSupport_subset_sobolevSingularSupport_quantizeDistributio
 /-- **Elliptic regularity for smoothness.** If `Op(a)` has kernel supported within distance `R` of
 the diagonal and a formal left parametrix, then `T` is smooth wherever `Op(a) T` is: the singular
 support of `T` lies in that of `Op(a) T`. In particular every distributional solution of
-`Op(a) T = 0` is a smooth function. -/
+`Op(a) T = 0` has empty singular support: it is smooth near every point. -/
 theorem singularSupport_subset_singularSupport_quantizeDistribution
     (ha : a.HasNearDiagonalKernel R) {b : Symbol n ℂ ℂ (-m)}
     (hab : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k)

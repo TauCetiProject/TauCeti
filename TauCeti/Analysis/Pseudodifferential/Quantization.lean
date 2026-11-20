@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
+public import TauCeti.Analysis.Pseudodifferential.Symbol.SmulLeft
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.ParametricIntegral
@@ -76,8 +77,9 @@ frequency derivative of its Fourier transform.
   `TauCeti.Symbol.HasCompactSpatialSupport.memLp_quantizeSchwartzValue`: for a symbol
   `a : TauCeti.Symbol n V W m`, `Op(a) u` is continuous, and if `a` has compact spatial support
   then so does `Op(a) u`, which therefore lies in every `Lᵖ`.
-* `TauCeti.Symbol.quantizeSchwartzValue_ofSpatial_smul_id_comp`: multiplying a symbol by a real
-  function `f` of the position multiplies its quantization by `f`.
+* `TauCeti.Symbol.quantizeSchwartzValue_ofSpatial_smul_id_comp` and
+  `TauCeti.Symbol.quantizeSchwartzValue_smulLeft`: multiplying a symbol by a real or complex
+  function `f` of the position multiplies its quantization by `f`, `Op(f a) u = f Op(a) u`.
 * `TauCeti.differentiable_quantizeSchwartzValue` and
   `TauCeti.fderiv_quantizeSchwartzValue_apply`: `Op(a) u` is differentiable for a `C¹`
   coefficient whose values and position derivatives have growth bounds locally uniform in `x`,
@@ -936,6 +938,16 @@ theorem quantizeSchwartzValue_ofSpatial_smul_id_comp (a : Symbol n V W m)
       rw [coefficient_comp, coefficient_ofSpatial, ContinuousLinearMap.smul_comp,
         ContinuousLinearMap.id_comp, Pi.smul_apply, Complex.coe_smul]),
     quantizeSchwartzValue_smul_left]
+
+open scoped ContDiff in
+/-- **Multiplication by a smooth function of the position.** The quantization of the symbol
+`ψ(x) a(x, ξ)` is `ψ Op(a)`: `Op(ψ a) u (x) = ψ(x) Op(a) u (x)`. -/
+theorem quantizeSchwartzValue_smulLeft {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff ℝ ∞ ψ)
+    (a : Symbol n V W m) (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (smulLeft hψ a).coefficient u x =
+      ψ x • quantizeSchwartzValue a.coefficient u x := by
+  rw [quantizeSchwartzValue_congr_left (b := ψ x • a.coefficient)
+    (fun ξ ↦ coefficient_smulLeft hψ a (x, ξ)), quantizeSchwartzValue_smul_left]
 
 /-- **Multiplication by a coordinate of the displacement.** Multiplying the input by
 `(x - y)_j` and evaluating the quantization at `x` replaces the symbol by `i ∂_{ξ_j} a`. -/

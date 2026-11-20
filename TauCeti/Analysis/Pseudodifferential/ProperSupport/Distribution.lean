@@ -72,14 +72,6 @@ section Cutoff
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W]
 
-private theorem quantizeSchwartzValue_smulLeft {ψ : CoordinateSpace n → ℂ}
-    (hψ : ContDiff ℝ ∞ ψ) (a : Symbol n V W m) (u : 𝓢(CoordinateSpace n, V))
-    (x : CoordinateSpace n) :
-    quantizeSchwartzValue (smulLeft hψ a).coefficient u x =
-      ψ x • quantizeSchwartzValue a.coefficient u x := by
-  rw [quantizeSchwartzValue_congr_left (b := ψ x • a.coefficient)
-    (fun ξ ↦ coefficient_smulLeft hψ a (x, ξ)), quantizeSchwartzValue_smul_left]
-
 /-- If `ψ = 1` on the closed `R`-neighbourhood of the support of `u`, cutting the symbol off by `ψ`
 does not change `Op(a) u`. -/
 private theorem HasNearDiagonalKernel.quantizeSchwartzValue_smulLeft_eq {a : Symbol n V W m}
