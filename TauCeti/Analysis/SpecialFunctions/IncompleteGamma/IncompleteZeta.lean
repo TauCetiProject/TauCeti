@@ -10,7 +10,6 @@ public import Mathlib.NumberTheory.LSeries.RiemannZeta
 import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 import TauCeti.Analysis.SpecialFunctions.Exp.LatticeSum
 import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # The incomplete Riemann zeta function
@@ -22,26 +21,31 @@ left side tends to `Γ(s)⁻¹ ∫₀^∞ t^{s−1}/(e^t − 1) dt = ζ(s)` (DLM
 
 ## Main results
 
-* `Complex.hasSum_setIntegral_cpow_mul_exp_neg_mul`: termwise integration of
+* `TauCeti.hasSum_setIntegral_cpow_mul_exp_neg_mul`: termwise integration of
   `t^{s−1}/(e^t − 1) = ∑_{k ≥ 1} t^{s−1} e^{−kt}` over any subset of `(0, ∞)`;
-* `Complex.intervalIntegral_cpow_mul_exp_neg_mul`: `∫₀ˣ t^{a−1} e^{−rt} dt = r^{−a} γ(a, rx)`;
-* `Complex.integral_cpow_div_exp_sub_one_eq_Gamma_mul_riemannZeta`: DLMF 25.5.1,
+* `TauCeti.integral_cpow_div_exp_sub_one_eq_Gamma_mul_riemannZeta`: DLMF 25.5.1,
   `∫₀^∞ t^{s−1}/(e^t − 1) dt = Γ(s) ζ(s)` for `1 < Re s`;
-* `Complex.hasSum_cpow_neg_mul_regularizedGamma` and
-  `Complex.inv_Gamma_mul_intervalIntegral_cpow_div_exp_sub_one_eq_tsum`: DLMF 8.22.2;
-* `Complex.tendsto_tsum_cpow_neg_mul_regularizedGamma_atTop`: DLMF 8.22.3, the limit
+* `TauCeti.hasSum_cpow_neg_mul_regularizedGamma` and
+  `TauCeti.inv_Gamma_mul_intervalIntegral_cpow_div_exp_sub_one_eq_tsum`: DLMF 8.22.2;
+* `TauCeti.tendsto_tsum_cpow_neg_mul_regularizedGamma_atTop`: DLMF 8.22.3, the limit
   `∑_{k ≥ 1} k^{−s} P(s, kx) → ζ(s)` as `x → ∞`;
-* `Real.integral_Ioi_div_exp_sub_one_eq_pi_sq_div_six`: `∫₀^∞ t/(e^t − 1) dt = π²/6`.
+* `TauCeti.integral_Ioi_div_exp_sub_one_eq_pi_sq_div_six`: `∫₀^∞ t/(e^t − 1) dt = π²/6`.
 
 ## Implementation notes
 
 The series are indexed by `k : ℕ`. In the statements of DLMF 8.22.2–8.22.3 the term `k = 0`
 vanishes because `0^{−s} = 0` for `s ≠ 0`, so they match `zeta_eq_tsum_one_div_nat_cpow`.
+Each finite integral is rescaled to a lower incomplete Gamma function by
+`TauCeti.intervalIntegral_cpow_mul_exp_neg_mul`.
 
 ## References
 
 * NIST Digital Library of Mathematical Functions, §8.22 and §25.5,
   <https://dlmf.nist.gov/8.22>, <https://dlmf.nist.gov/25.5>.
+
+The proofs are new. For DLMF 25.5.1, the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file `DLMF/Zeta/IntegralReps/ElementaryKernels.lean`,
+was consulted for orientation; no proof is copied from it.
 -/
 
 public section
@@ -51,7 +55,9 @@ noncomputable section
 open Filter MeasureTheory Set
 open scoped Real Topology
 
-namespace Complex
+namespace TauCeti
+
+open Complex
 
 /-- Expansion of `1/(e^t − 1)` under the integral: for `1 < Re s` and every set
 `A ⊆ (0, ∞)`, `∫_A t^{s−1}/(e^t − 1) dt = ∑_{k ≥ 0} ∫_A t^{s−1} e^{−(k+1)t} dt`. -/
@@ -82,31 +88,6 @@ theorem hasSum_setIntegral_cpow_mul_exp_neg_mul {s : ℂ} (hs : 1 < s.re) {A : S
     with t ht0
   rw [((hasSum_exp_neg_natCast_add_one_mul (z := t) (by simpa using ht0)).mul_left
     ((t : ℂ) ^ (s - 1))).tsum_eq, div_eq_mul_one_div]
-
-/-- DLMF 8.2.1 rescaled: `∫₀ˣ t^{a−1} e^{−rt} dt = r^{−a} γ(a, rx)` for `0 < Re a`, `r ≠ 0` and
-`0 ≤ x`. -/
-theorem intervalIntegral_cpow_mul_exp_neg_mul {a r : ℂ} (ha : 0 < a.re) (hr : r ≠ 0) {x : ℝ}
-    (hx : 0 ≤ x) :
-    ∫ t in (0 : ℝ)..x, (t : ℂ) ^ (a - 1) * cexp (-(r * t)) =
-      r ^ (-a) * lowerIncompleteGamma a (r * x) := by
-  rcases hx.eq_or_lt with rfl | hx
-  · simp
-  have hx0 : (x : ℂ) ≠ 0 := ofReal_ne_zero.mpr hx.ne'
-  have hra : r ^ a ≠ 0 := (cpow_ne_zero_iff_of_exponent_ne_zero
-    (fun h => by simp [h] at ha)).mpr hr
-  have hrx : (r * x) ^ a = r ^ a * (x : ℂ) ^ a := by
-    rw [mul_comm, TauCeti.ofReal_mul_cpow hx.le, mul_comm]
-  rw [lowerIncompleteGamma_eq_integral ha, hrx, ← mul_assoc, ← mul_assoc, cpow_neg,
-    inv_mul_cancel₀ hra, one_mul]
-  have h := intervalIntegral.smul_integral_comp_mul_left (a := 0) (b := 1)
-    (f := fun t : ℝ => (t : ℂ) ^ (a - 1) * cexp (-(r * t))) x
-  rw [mul_zero, mul_one] at h
-  rw [← h, real_smul, ← intervalIntegral.integral_const_mul,
-    ← intervalIntegral.integral_const_mul]
-  refine intervalIntegral.integral_congr fun u hu => ?_
-  rw [uIcc_of_le zero_le_one] at hu
-  rw [ofReal_mul, mul_cpow_ofReal_nonneg hx.le hu.1, cpow_sub _ _ hx0, cpow_one]
-  field_simp
 
 /-- For `1 < Re s`, `t ↦ t^{s−1}/(e^t − 1)` is integrable on `(0, ∞)`. -/
 theorem integrableOn_cpow_div_exp_sub_one {s : ℂ} (hs : 1 < s.re) :
@@ -190,12 +171,10 @@ theorem tendsto_tsum_cpow_neg_mul_regularizedGamma_atTop {s : ℂ} (hs : 1 < s.r
   filter_upwards [eventually_ge_atTop 0] with x hx
   exact inv_Gamma_mul_intervalIntegral_cpow_div_exp_sub_one_eq_tsum hs hx
 
-end Complex
-
 /-- DLMF 8.22.3 at `s = 2`: `∫₀^∞ t/(e^t − 1) dt = π²/6`. -/
-theorem Real.integral_Ioi_div_exp_sub_one_eq_pi_sq_div_six :
+theorem integral_Ioi_div_exp_sub_one_eq_pi_sq_div_six :
     ∫ t in Ioi (0 : ℝ), t / (Real.exp t - 1) = π ^ 2 / 6 := by
-  have h := Complex.integral_cpow_div_exp_sub_one_eq_Gamma_mul_riemannZeta (s := 2) (by norm_num)
+  have h := integral_cpow_div_exp_sub_one_eq_Gamma_mul_riemannZeta (s := 2) (by norm_num)
   rw [Complex.Gamma_ofNat_eq_factorial, riemannZeta_two, Nat.factorial_one,
     Nat.cast_one, one_mul] at h
   apply Complex.ofReal_injective
@@ -204,3 +183,5 @@ theorem Real.integral_Ioi_div_exp_sub_one_eq_pi_sq_div_six :
   rw [← h]
   refine setIntegral_congr_fun measurableSet_Ioi fun t _ => ?_
   norm_num
+
+end TauCeti

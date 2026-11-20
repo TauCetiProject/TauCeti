@@ -18,7 +18,7 @@ For a positive decay rate `a`, the two-sided exponential is summable over the
 integers, and its sum equals `(1 + exp (-a)) / (1 - exp (-a))`.
 The analogous one-sided positive tail is an ordinary geometric series; for a complex
 exponential with `0 < Re z` it sums to `∑_{k ≥ 0} e^{−(k+1)z} = 1/(e^z − 1)`
-(`Complex.hasSum_exp_neg_natCast_add_one_mul`).
+(`TauCeti.hasSum_exp_neg_natCast_add_one_mul`).
 
 ## Provenance
 
@@ -105,7 +105,9 @@ end
 
 end TauCeti
 
-namespace Complex
+namespace TauCeti
+
+open Complex
 
 /-- The one-sided geometric series of a complex exponential: for `0 < Re z`,
 `∑_{k ≥ 0} e^{−(k+1)z} = 1/(e^z − 1)`. -/
@@ -131,4 +133,4 @@ theorem hasSum_exp_neg_natCast_add_one_mul {z : ℂ} (hz : 0 < z.re) :
     have := exp_ne_zero z
     field_simp
 
-end Complex
+end TauCeti
