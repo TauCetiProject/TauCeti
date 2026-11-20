@@ -58,12 +58,12 @@ theorem coeffMonoidHom_surjective (h : Function.Surjective fun x : M ↦ x ^ p) 
   rw [zero_add] at hf
   exact hf.trans (coeffMonoidHom_mk _ _ 0)
 
-/-- A compatible root system is a unit as soon as its zeroth coordinate is a unit.
-The later coordinates are units because their powers give the zeroth one. -/
+/-- A compatible root system is a unit as soon as its zeroth coordinate is a unit. -/
 theorem isUnit_of_isUnit_coeff_zero
     {M : Type*} [CommMonoid M] {p : ℕ}
     (x : Perfection M p) (hx : IsUnit (Perfection.coeffMonoidHom M p 0 x)) :
     IsUnit x := by
+  -- The later coordinates are units because their powers give the zeroth one.
   by_cases hp : p = 0
   · subst p
     have hx1 : x = 1 := by

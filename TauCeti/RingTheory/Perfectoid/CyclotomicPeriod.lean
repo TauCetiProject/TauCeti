@@ -14,7 +14,6 @@ public import Mathlib.Topology.Algebra.Valued.ValuedField
 
 import TauCeti.RingTheory.Perfectoid.IsAlgClosed
 import TauCeti.RingTheory.WittVector.Frobenius
-import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 
 /-!
 # Cyclotomic periods
@@ -30,44 +29,6 @@ are defined in Witt vectors without division. When the sharp of `ε^(1/p)` is a 
 -/
 
 public section
-
-namespace WittVector
-
-/-- If `a ^ p = 1` in characteristic `p`, its Teichmüller geometric sum is distinguished. -/
-theorem isDistinguished_sum_teichmuller_pow_of_pow_eq_one
-    {p : ℕ} [Fact p.Prime] {S : Type*} [CommRing S] [CharP S p]
-    (a : S) (ha : a ^ p = 1) :
-    (∑ j ∈ Finset.range p, teichmuller p a ^ j : WittVector p S).IsDistinguished := by
-  let : Nontrivial S := CharP.nontrivial_of_char_ne_one (R := S) (Fact.out : p.Prime).ne_one
-  let I : Ideal S := Ideal.span {a - 1}
-  have hI : IsNilpotent I := by
-    refine ⟨p, ?_⟩
-    dsimp only [I]
-    rw [Ideal.zero_eq_bot, Ideal.span_singleton_pow, Ideal.span_singleton_eq_bot,
-      sub_pow_char, ha, one_pow, sub_self]
-  have haI : Ideal.Quotient.mk I a = 1 := by
-    rw [← map_one (Ideal.Quotient.mk I), Ideal.Quotient.eq]
-    exact Ideal.mem_span_singleton_self _
-  have hproper : I ≠ ⊤ := by
-    intro h
-    obtain ⟨n, hn⟩ := hI
-    rw [h, ← Ideal.one_eq_top, one_pow] at hn
-    exact one_ne_zero hn
-  let : Nontrivial (S ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr hproper
-  let : CharP (S ⧸ I) p := (CharP.charP_iff_prime_eq_zero (Fact.out : p.Prime)).mpr
-    (by simpa only [map_natCast, map_zero] using
-      congrArg (Ideal.Quotient.mk I) (CharP.cast_eq_zero S p))
-  have hmap : WittVector.map (Ideal.Quotient.mk I)
-      (∑ j ∈ Finset.range p, teichmuller p a ^ j) = (p : WittVector p (S ⧸ I)) := by
-    simp [map_sum, map_pow, map_teichmuller, haI]
-  rw [WittVector.isDistinguished_iff]
-  apply hI.isUnit_quotient_mk_iff.mp
-  have hcoeff := congrArg (fun x : WittVector p (S ⧸ I) ↦ x.coeff 1) hmap
-  rw [WittVector.map_coeff, WittVector.coeff_p_one] at hcoeff
-  rw [hcoeff]
-  exact isUnit_one
-
-end WittVector
 
 namespace TauCeti.Perfectoid
 
@@ -126,6 +87,12 @@ omit [CharP S p] [PerfectRing S p] in
 theorem mu_one : mu p (1 : S) = 0 := by simp [mu_eq]
 
 end Periods
+
+end TauCeti.Perfectoid
+
+namespace PreTilt
+
+open TauCeti.Perfectoid _root_.WittVector
 
 section FontaineValues
 
@@ -187,12 +154,12 @@ section Distinguished
 variable {p : ℕ} [Fact p.Prime] {A : Type*} [CommRing A] [Fact ¬IsUnit (p : A)]
   [IsAdicComplete (Ideal.span {(p : A)}) A]
 
-/-- The cyclotomic sum is distinguished whenever the sharp of its root has `p`-th power one.
-The reduction of that root differs from one by a nilpotent, so the first Witt coordinate of
-the sum reduces to the first coordinate of `p`, namely one. -/
+/-- The cyclotomic sum is distinguished whenever the sharp of its root has `p`-th power one. -/
 theorem isDistinguished_xi (ε : PreTilt A p)
     (hε : PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε) ^ p = 1) :
     (xi p ε).IsDistinguished := by
+  -- The reduction of that root differs from one by a nilpotent, so the first Witt coordinate of
+  -- the sum reduces to the first coordinate of `p`, namely one.
   let a := (_root_.frobeniusEquiv (PreTilt A p) p).symm ε
   have ha : (PreTilt.coeff 0 a) ^ p = 1 := by
     simpa only [map_pow, PreTilt.mk_untilt_eq_coeff_zero, map_one] using
@@ -209,6 +176,12 @@ theorem isDistinguished_xi (ε : PreTilt A p)
 
 end Distinguished
 
+end PreTilt
+
+namespace TauCeti.Perfectoid
+
+open _root_.WittVector
+
 section Kernels
 
 variable {p : ℕ} [Fact p.Prime] {R : Type*} [CommRing R] [UniformSpace R]
@@ -224,11 +197,16 @@ theorem ker_fontaineTheta_eq_span_xi_of_isRingOfIntegralElements
       (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt Rplus p) p).symm ε)) p) :
     RingHom.ker (fontaineTheta Rplus p) = Ideal.span {xi p ε} := by
   apply (hplus.ker_fontaineTheta_eq_span_iff_isDistinguished
-    (RingHom.mem_ker.mpr (fontaineTheta_xi_eq_zero ε hε))).mpr
-  exact isDistinguished_xi ε hε.pow_eq_one
+    (RingHom.mem_ker.mpr (ε.fontaineTheta_xi_eq_zero hε))).mpr
+  exact ε.isDistinguished_xi hε.pow_eq_one
 
 end Kernels
 
+end TauCeti.Perfectoid
+
+namespace PreTilt
+
+open TauCeti TauCeti.Perfectoid _root_.WittVector
 open scoped _root_.NormedField Valued
 
 section AlgebraicallyClosed
@@ -271,4 +249,4 @@ theorem ker_fontaineThetaShifted_eq_span_xiTilde (ε : PreTilt (𝒪[C]) p)
 
 end AlgebraicallyClosed
 
-end TauCeti.Perfectoid
+end PreTilt
