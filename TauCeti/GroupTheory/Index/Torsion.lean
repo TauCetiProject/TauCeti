@@ -45,7 +45,7 @@ theorem natCard_dvd_index_of_forall_conj_mem (H K : Subgroup G)
           QuotientGroup.eq.mp hq
         rw [mul_inv_rev, mul_assoc, ← mul_assoc (k₁ : G)⁻¹] at hmem
         have hk : ((k₁⁻¹ * k₂ : K) : G) = 1 :=
-          h g _ (k₁⁻¹ * k₂).2 (by simpa [mul_assoc] using hmem)
+          h g _ (k₁⁻¹ * k₂).property (by simpa [mul_assoc] using hmem)
         exact inv_mul_eq_one.mp (Subtype.ext hk) }
   exact MulAction.natCard_dvd_natCard_of_isCancelSMul (G := K) (X := G ⧸ H)
 

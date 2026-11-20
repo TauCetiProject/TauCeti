@@ -59,11 +59,11 @@ variable [CommRing R] (i₀ : n)
 /-- The diagonal place `(k, k)`, for `k ≠ i₀`, as one of the free coordinates of a trace-zero
 matrix. -/
 private def diagIdx (k : {k : n // k ≠ i₀}) : {p : n × n // p ≠ (i₀, i₀)} :=
-  ⟨(k.1, k.1), fun hk => k.2 (congrArg Prod.fst hk)⟩
+  ⟨(k.val, k.val), fun hk => k.property (congrArg Prod.fst hk)⟩
 
 /-- A trace-zero matrix is determined by its entries away from `(i₀, i₀)`. -/
 def specialLinearEntryEquiv : SpecialLinear.sl n R ≃ₗ[R] ({p : n × n // p ≠ (i₀, i₀)} → R) where
-  toFun A p := A.val p.1.1 p.1.2
+  toFun A p := A.val p.val.1 p.val.2
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   invFun g := ⟨Matrix.of fun i j =>
@@ -116,15 +116,15 @@ theorem specialLinearEntryEquiv_symm_apply_self
     (g : {p : n × n // p ≠ (i₀, i₀)} → R) :
     ((specialLinearEntryEquiv (R := R) i₀).symm g).val i₀ i₀ =
       -∑ k : {k : n // k ≠ i₀},
-        g ⟨(k.1, k.1), fun h => k.2 (congrArg Prod.fst h)⟩ := by
+        g ⟨(k.val, k.val), fun h => k.property (congrArg Prod.fst h)⟩ := by
   have htrace := SpecialLinear.mem_sl_iff.mp
     ((specialLinearEntryEquiv (R := R) i₀).symm g).property
   simp only [Matrix.trace, Matrix.diag_apply] at htrace
   rw [Fintype.sum_eq_add_sum_subtype_ne _ i₀] at htrace
   have hdiag (k : {k : n // k ≠ i₀}) :
-      ((specialLinearEntryEquiv (R := R) i₀).symm g).val k.1 k.1 =
-        g ⟨(k.1, k.1), fun h => k.2 (congrArg Prod.fst h)⟩ :=
-    specialLinearEntryEquiv_symm_apply_of_ne i₀ g fun h => k.2 (congrArg Prod.fst h)
+      ((specialLinearEntryEquiv (R := R) i₀).symm g).val k.val k.val =
+        g ⟨(k.val, k.val), fun h => k.property (congrArg Prod.fst h)⟩ :=
+    specialLinearEntryEquiv_symm_apply_of_ne i₀ g fun h => k.property (congrArg Prod.fst h)
   simp only [hdiag] at htrace
   exact (neg_eq_of_add_eq_zero_left htrace).symm
 
@@ -206,7 +206,7 @@ theorem finrank_ker_ad_sl_add_one (hn : (Fintype.card n : K) ≠ 0) (x : Special
       LieSubalgebra.coe_incl, Submodule.mem_inf, LieSubalgebra.mem_toSubmodule]
     constructor
     · rintro ⟨y, hy, rfl⟩
-      exact ⟨by simpa using congrArg Subtype.val hy, y.2⟩
+      exact ⟨by simpa using congrArg Subtype.val hy, y.property⟩
     · rintro ⟨hY, hYsl⟩
       exact ⟨⟨Y, hYsl⟩, Subtype.ext (by simpa using hY), rfl⟩
   have h1 : (1 : Matrix n n K) ∈ LinearMap.ker (ad K (Matrix n n K) (x : Matrix n n K)) := by

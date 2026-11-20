@@ -146,14 +146,14 @@ def alternatingFormSubbundleRiemannianMetric
   letI := hW.contMDiffVectorBundle
   let g (x : M) :=
     IsBilinearMap.toContinuousBilinearMap (𝕜 := ℝ) (E := W x) (F := W x) (G := ℝ)
-      (f := fun v w : W x ↦ alternatingFormInner (V x) k v.1 w.1)
+      (f := fun v w : W x ↦ alternatingFormInner (V x) k v.val w.val)
       { add_left := fun _ _ _ ↦ by simp
         smul_left := fun _ _ _ ↦ by simp
         add_right := fun _ _ _ ↦ by simp
         smul_right := fun _ _ _ ↦ by simp }
   ContMDiffRiemannianMetric.ofPositiveDefiniteSection
     (⟨g, by
-      have hg (x : M) (v w : W x) : g x v w = alternatingFormInner (V x) k v.1 w.1 := rfl
+      have hg (x : M) (v w : W x) : g x v w = alternatingFormInner (V x) k v.val w.val := rfl
       intro x
       let eW := trivializationAt (ι → ℝ) (fun y ↦ W y) x
       have hx : x ∈ eW.baseSet := FiberBundle.mem_baseSet_trivializationAt (ι → ℝ) (fun y ↦ W y) x
@@ -177,8 +177,8 @@ def alternatingFormSubbundleRiemannianMetric
       Manifold.BilinearSection I (ι → ℝ) (fun x ↦ W x) ℝ n)
     ((Manifold.mem_positiveDefiniteBilinearSections _).2
       ⟨(Manifold.mem_symmetricBilinearSections _).2
-        fun _ v w ↦ alternatingFormInner_comm v.1 w.1,
-        fun _ v hv ↦ (alternatingFormInner_self_nonneg v.1).lt_of_ne'
+        fun _ v w ↦ alternatingFormInner_comm v.val w.val,
+        fun _ v hv ↦ (alternatingFormInner_self_nonneg v.val).lt_of_ne'
           (mt (fun h0 ↦ Subtype.ext (alternatingFormInner_self_eq_zero.mp h0)) hv)⟩)
 
 /-- `TauCeti.alternatingFormSubbundleRiemannianMetric` evaluates on `v, w ∈ W x` as the ambient

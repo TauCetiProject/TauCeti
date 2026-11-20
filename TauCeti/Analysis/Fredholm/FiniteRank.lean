@@ -50,7 +50,7 @@ theorem index_add_of_hasFiniteRange
   have hιF : IsFredholm ι := K.ker.isFredholm_subtypeL K.isClosed_ker
   have hcomp : (T + K).comp ι = T.comp ι := by
     ext x
-    have hx : K (x : E) = 0 := LinearMap.mem_ker.mp x.2
+    have hx : K (x : E) = 0 := LinearMap.mem_ker.mp x.property
     simp [hι, hx]
   have h₁ : index ((T + K).comp ι) =
       index (T + K) + index ι := by

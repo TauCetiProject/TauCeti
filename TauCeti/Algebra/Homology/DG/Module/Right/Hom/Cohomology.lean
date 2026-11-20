@@ -62,7 +62,7 @@ variable {M : Type uM} {N : Type uN} {P : Type uP}
 
 /-- A DG module map restricts to a right-linear map over the algebra of cycles. -/
 def cyclesMap (f : DGRightModuleHom hM hN) : hM.cycles →ₗ[(h.cycles)ᵐᵒᵖ] hN.cycles where
-  toFun z := ⟨f z, by simp [hN.mem_cycles, f.map_d, hM.mem_cycles.mp z.2]⟩
+  toFun z := ⟨f z, by simp [hN.mem_cycles, f.map_d, hM.mem_cycles.mp z.property]⟩
   map_add' _ _ := Subtype.ext (map_add f _ _)
   map_smul' a z := Subtype.ext (f.toLinearMap.map_smul (op (a.unop : A)) z)
 
@@ -168,12 +168,12 @@ theorem cohomologyMap_eq_iff (f g : DGRightModuleHom hM hN) :
 /-- Homotopic DG module maps induce equal right `H(A)`-linear maps on cohomology. -/
 theorem cohomologyMap_eq_of_homotopy (f g : DGRightModuleHom hM hN)
     (s : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := 𝒩) (-1))
-    (hs : ∀ x : M, f x - g x = dN (s.1 x) + s.1 (dM x)) :
+    (hs : ∀ x : M, f x - g x = dN (s.val x) + s.val (dM x)) :
     f.cohomologyMap = g.cohomologyMap := by
   apply (cohomologyMap_eq_iff f g).mpr
   intro z
-  refine ⟨s.1 z, ?_⟩
-  simp [hs, hM.mem_cycles.mp z.2]
+  refine ⟨s.val z, ?_⟩
+  simp [hs, hM.mem_cycles.mp z.property]
 
 end DGRightModuleHom
 

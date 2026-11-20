@@ -76,7 +76,7 @@ theorem subsingleton_fundamentalGroup_of_isEmpty_cell_one (h₁ : IsEmpty (cell 
   refine subsingleton_fundamentalGroup_iff.2 fun γ ↦ ?_
   -- Compress the loop into the `1`-skeleton.
   obtain ⟨γ', hγ'⟩ := exists_path_homotopic_skeletonLT one_pos rfl hAC γ
-  have hγ'₁ (t : I) : ((γ' t : A) : X) ∈ skeletonLT C 1 := hA₁ (γ' t).2
+  have hγ'₁ (t : I) : ((γ' t : A) : X) ∈ skeletonLT C 1 := hA₁ (γ' t).property
   let γ'X : C(I, X) := ⟨fun t ↦ γ' t, by fun_prop⟩
   -- `γ'X` is the compressed loop read in `X`, pointwise the loop `γ'` pushed into `C`.
   have hγ'X (t : I) : ((γ'.map (continuous_inclusion hAC) t : C) : X) = γ'X t := rfl
@@ -96,7 +96,7 @@ theorem subsingleton_fundamentalGroup_of_isEmpty_cell_one (h₁ : IsEmpty (cell 
     have hD' : ((skeletonLT C 1 : Set X) \ {↑a}) ∩ D = D :=
       inter_eq_right.2 fun y hy ↦ ⟨hD₁ hy, fun h ↦ haD (h ▸ hy)⟩
     have hmem := forall_mem_of_subset_skeletonLT_one (B := {↑a})
-      (singleton_subset_iff.2 (hA₁ a.2)) (by simp [haD]) (by rw [hD']; exact isClosedBase C)
+      (singleton_subset_iff.2 (hA₁ a.property)) (by simp [haD]) (by rw [hD']; exact isClosedBase C)
       γ'X hγ'₁ (y₀ := 0) (by simp [γ'X])
     have hconst : γ'.map (continuous_inclusion hAC) = Path.refl _ := by
       ext t

@@ -151,7 +151,7 @@ private theorem continuousOn_log_chart {ρ d : ℂ}
     |>.continuousOn_iff).2 fun z hz ↦ ?_
   exact (continuousAt_const.mul (ContinuousAt.comp
     (f := fun x : closedAnnulus r₁ r₂ ↦ (x : ℂ) / ρ) (continuousAt_clog (hs z hz))
-    (continuous_subtype_val.div_const _).continuousAt)).continuousWithinAt
+    (continuous_subtypeVal.div_const _).continuousAt)).continuousWithinAt
 
 /-- The inverse of a logarithmic chart, with `im w` capped at `L`, is continuous. -/
 private theorem continuous_exp_chart {ρ c : ℂ} {L : ℝ}
@@ -160,7 +160,7 @@ private theorem continuous_exp_chart {ρ c : ℂ} {L : ℝ}
       (fun w : ClosedUpperHalfPlane ↦ (⟨ρ * exp (c * capIm L w), h w⟩ : closedAnnulus r₁ r₂)) :=
   Topology.IsInducing.subtypeVal.continuous_iff.2
     (continuous_const.mul (continuous_const.mul ((continuous_capIm _).comp
-      continuous_subtype_val)).cexp)
+      continuous_subtypeVal)).cexp)
 
 /-! ### The logarithmic charts -/
 
@@ -202,8 +202,8 @@ theorem mem_chartTarget_iff {w : ClosedUpperHalfPlane} :
 
 omit hr₁ hr₁₂ in
 private theorem isOpen_chartTarget : IsOpen (chartTarget r₁ r₂) :=
-  ((continuous_abs.comp (continuous_re.comp continuous_subtype_val)).isOpen_preimage _
-    isOpen_Iio).inter ((continuous_im.comp continuous_subtype_val).isOpen_preimage _ isOpen_Iio)
+  ((continuous_abs.comp (continuous_re.comp continuous_subtypeVal)).isOpen_preimage _
+    isOpen_Iio).inter ((continuous_im.comp continuous_subtypeVal).isOpen_preimage _ isOpen_Iio)
 
 omit hr₁ hr₁₂ in
 private theorem abs_im_neg_I_mul_lt {w : ClosedUpperHalfPlane} (hw : w ∈ chartTarget r₁ r₂) :
@@ -223,7 +223,7 @@ private theorem mem_closedAnnulus_inner {ζ : ℂ} (hζ : ‖ζ‖ = 1) (w : Clo
     simp [im_capIm]
   rw [mem_closedAnnulus, norm_ofReal_mul_mul_exp hr₁.out.le hζ, him]
   constructor
-  · exact le_mul_of_one_le_right hr₁.out.le (Real.one_le_exp (le_min w.2 hL))
+  · exact le_mul_of_one_le_right hr₁.out.le (Real.one_le_exp (le_min w.property hL))
   · calc r₁ * Real.exp (min (w : ℂ).im (Real.log (r₂ / r₁)))
         ≤ r₁ * Real.exp (Real.log (r₂ / r₁)) :=
           mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 (min_le_right _ _)) hr₁.out.le
@@ -242,7 +242,7 @@ private theorem mem_closedAnnulus_outer {ζ : ℂ} (hζ : ‖ζ‖ = 1) (w : Clo
       _ ≤ r₂ * Real.exp (-min (w : ℂ).im (Real.log (r₂ / r₁))) :=
           mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 (neg_le_neg (min_le_right _ _))) hr₂.le
   · exact mul_le_of_le_one_right hr₂.le
-      (Real.exp_le_one_iff.2 (neg_nonpos.2 (le_min w.2 hL)))
+      (Real.exp_le_one_iff.2 (neg_nonpos.2 (le_min w.property hL)))
 
 omit hr₁₂ in
 /-- The inner chart has nonnegative imaginary part on the closed annulus. -/
@@ -298,8 +298,8 @@ def innerChart (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
     rw [capIm_of_im_le hw.2.le]
     exact mul_log_mul_exp_div (ofReal_mul_ne_zero hr₁.out hζ)
       (by rw [neg_mul, I_mul_I, neg_neg]) (abs_im_neg_I_mul_lt hw)
-  open_source := (isOpen_lt (continuous_norm.comp continuous_subtype_val) continuous_const).inter
-    (isOpen_slitPlane.preimage (continuous_subtype_val.div_const _))
+  open_source := (isOpen_lt (continuous_norm.comp continuous_subtypeVal) continuous_const).inter
+    (isOpen_slitPlane.preimage (continuous_subtypeVal.div_const _))
   open_target := isOpen_chartTarget
   continuousOn_toFun := by exact continuousOn_log_chart _ fun _ hz ↦ hz.2
   continuousOn_invFun := (continuous_exp_chart _).continuousOn
@@ -345,8 +345,8 @@ def outerChart (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
     rw [capIm_of_im_le hw.2.le]
     exact mul_log_mul_exp_div (ofReal_mul_ne_zero (zero_lt_r₂ r₁ r₂) hζ)
       (by rw [mul_neg, I_mul_I, neg_neg]) (abs_im_I_mul_lt hw)
-  open_source := (isOpen_lt continuous_const (continuous_norm.comp continuous_subtype_val)).inter
-    (isOpen_slitPlane.preimage (continuous_subtype_val.div_const _))
+  open_source := (isOpen_lt continuous_const (continuous_norm.comp continuous_subtypeVal)).inter
+    (isOpen_slitPlane.preimage (continuous_subtypeVal.div_const _))
   open_target := isOpen_chartTarget
   continuousOn_toFun := by exact continuousOn_log_chart _ fun _ hz ↦ hz.2
   continuousOn_invFun := (continuous_exp_chart _).continuousOn
@@ -590,7 +590,7 @@ theorem contMDiff_coe_borderedInterior :
     ContMDiff 𝓘(ℂ) 𝓘(ℂ) ω
       (fun z : borderedInterior (closedAnnulus r₁ r₂) ↦ ((z : closedAnnulus r₁ r₂) : ℂ)) := by
   intro x
-  refine contMDiffAt_iff.2 ⟨(continuous_subtype_val.comp continuous_subtype_val).continuousAt, ?_⟩
+  refine contMDiffAt_iff.2 ⟨(continuous_subtypeVal.comp continuous_subtypeVal).continuousAt, ?_⟩
   simp only [mfld_simps]
   refine ContDiffAt.contDiffWithinAt ?_
   obtain ⟨ρ, c, -, hsymm, -⟩ :=
