@@ -238,30 +238,22 @@ theorem not_differentiableAt_deriv_preciseRepresentative_of_neg_ite_mul_iterated
   set d := deriv (preciseRepresentative volume (Wkp.value 2 u))
   have h0 : (0 : ℝ) ∈ Ioo (-1 : ℝ) 1 := by norm_num
   have hu' := (ae_restrict_iff' measurableSet_Ioo).1 hu
-  -- On `(-1, 0]` the weak second derivative is `-1`, on `(0, 1)` it is `-1/2`.
-  have hl (y : ℝ) (hy : y ∈ Ioc (-1 : ℝ) 0) : d y = d 0 - y := by
-    have hyI : y ∈ Ioo (-1 : ℝ) 1 := ⟨hy.1, by linarith [hy.2]⟩
-    have h := Wkp.deriv_preciseRepresentative_sub_deriv_eq_integral u h0 hyI
-    rw [intervalIntegral.integral_congr_ae (g := fun _ => -1) ?_] at h
-    · simp only [intervalIntegral.integral_const, smul_eq_mul, mul_neg, mul_one, sub_zero] at h
-      linarith
+  -- On `(-1, 0]` the weak second derivative is `-1`, on `(0, 1)` it is `-1/2`, so `d` is affine
+  -- on each side of `0`.
+  have hconst (y : ℝ) (hy : y ∈ Ioo (-1 : ℝ) 1) (c : ℝ)
+      (hc : ∀ t ∈ uIoc 0 y, (if 0 < t then 2 else 1) * c = -1) : d y = d 0 + c * (y - 0) := by
+    refine Wkp.deriv_preciseRepresentative_eq_add_mul_of_iteratedGradient_eq u h0 hy ?_
     filter_upwards [hu'] with t ht htI
-    rw [uIoc_of_ge hy.2] at htI
-    have htI' : t ∈ Ioo (-1 : ℝ) 1 := ⟨by linarith [hy.1, htI.1], by linarith [htI.2]⟩
-    have := ht htI'
-    simp only [show ¬(0 < t) from not_lt.2 htI.2, ↓reduceIte, one_mul] at this
+    have hs : (if 0 < t then 2 else 1 : ℝ) ≠ 0 := by split_ifs <;> norm_num
+    refine mul_left_cancel₀ hs ((neg_eq_iff_eq_neg.1 (ht ?_)).trans (hc t htI).symm)
+    exact ordConnected_Ioo.uIcc_subset h0 hy (uIoc_subset_uIcc htI)
+  have hl (y : ℝ) (hy : y ∈ Ioc (-1 : ℝ) 0) : d y = d 0 - y := by
+    have := hconst y ⟨hy.1, by linarith [hy.2]⟩ (-1) fun t ht => by
+      simp [not_lt.2 (uIoc_of_ge hy.2 ▸ ht).2]
     linarith
   have hr (y : ℝ) (hy : y ∈ Ico 0 1) : d y = d 0 - y / 2 := by
-    have hyI : y ∈ Ioo (-1 : ℝ) 1 := ⟨by linarith [hy.1], hy.2⟩
-    have h := Wkp.deriv_preciseRepresentative_sub_deriv_eq_integral u h0 hyI
-    rw [intervalIntegral.integral_congr_ae (g := fun _ => -1 / 2) ?_] at h
-    · simp only [intervalIntegral.integral_const, smul_eq_mul, sub_zero] at h
-      linarith
-    filter_upwards [hu'] with t ht htI
-    rw [uIoc_of_le hy.1] at htI
-    have htI' : t ∈ Ioo (-1 : ℝ) 1 := ⟨by linarith [htI.1], by linarith [htI.2, hy.2]⟩
-    have := ht htI'
-    simp only [htI.1, ↓reduceIte] at this
+    have := hconst y ⟨by linarith [hy.1], hy.2⟩ (-1 / 2) fun t ht => by
+      norm_num [(uIoc_of_le hy.1 ▸ ht).1]
     linarith
   -- A derivative at `0` would equal both one-sided derivatives.
   intro hd

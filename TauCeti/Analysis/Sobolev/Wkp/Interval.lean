@@ -56,7 +56,9 @@ every order `k` whenever `a < b`.
   `TauCeti.Wkp.deriv_preciseRepresentative_ae_eq_gradient_lowerOrder`,
   `TauCeti.Wkp.deriv_preciseRepresentative_sub_deriv_eq_integral`: the precise
   representative of `u ∈ W^{2,p}(a, b)` is `C¹` on `(a, b)`, its derivative is the weak
-  derivative, and the increments of the derivative are the integrals of `u''`.
+  derivative, and the increments of the derivative are the integrals of `u''`; in particular
+  the derivative is affine where `u''` is constant
+  (`TauCeti.Wkp.deriv_preciseRepresentative_eq_add_mul_of_iteratedGradient_eq`).
 * `TauCeti.Wkp.lineDerivL_one_surjective_Ioo`: weak differentiation
   `W^{k+1,p}(a, b) → W^{k,p}(a, b)` is surjective for `1 ≤ p ≤ ∞`.
 * `TauCeti.Wkp.not_dense_contDiff_representatives_Ioo_top`,
@@ -354,6 +356,19 @@ theorem deriv_preciseRepresentative_sub_deriv_eq_integral
   obtain ⟨k, -, -, h⟩ := exists_hasDerivAt_preciseRepresentative_Ioo hab u
   rw [(h y hy).deriv, (h x hx).deriv, add_sub_add_left_eq_sub,
     integral_interval_sub_left (hD y hy) (hD x hx)]
+
+/-- If the weak second derivative of `u ∈ W^{2,p}(a, b)` equals a constant `c` almost everywhere
+between two points `x, y ∈ (a, b)`, then the derivative of the precise representative `ū` of `u`
+is affine there: `ū'(y) = ū'(x) + c (y - x)`. -/
+theorem deriv_preciseRepresentative_eq_add_mul_of_iteratedGradient_eq
+    (u : Wkp volume ⟨Ioo a b, isOpen_Ioo⟩ p 2) {x y c : ℝ} (hx : x ∈ Ioo a b) (hy : y ∈ Ioo a b)
+    (h : ∀ᵐ t, t ∈ uIoc x y → iteratedGradient 1 u t 1 = c) :
+    deriv (preciseRepresentative volume (value 2 u)) y =
+      deriv (preciseRepresentative volume (value 2 u)) x + c * (y - x) := by
+  have hFTC := deriv_preciseRepresentative_sub_deriv_eq_integral u hx hy
+  rw [integral_congr_ae (g := fun _ => c) h, intervalIntegral.integral_const, smul_eq_mul,
+    mul_comm] at hFTC
+  linarith
 
 /-- **`W^{2,p}` functions are `C¹` on an open interval.** The precise representative of
 `u ∈ W^{2,p}(a, b)` is continuously differentiable on `(a, b)`. -/
