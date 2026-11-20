@@ -31,6 +31,11 @@ facts about these coproducts which are used to compare homology of tensor produc
   objects indexed by `ℕ`.  Tensoring with an identity is the map of coproducts induced by the
   whiskerings (`CategoryTheory.GradedObject.Monoidal.id_tensorHom_eq_mapMap`), so these facts
   apply to it.
+* The inclusion of a summand `X i ⊗ Y j` into the tensor product is a split monomorphism in a
+  category with zero morphisms (`CategoryTheory.GradedObject.Monoidal.isSplitMono_ιTensorObj`).
+  It is an isomorphism when one factor vanishes outside a single degree
+  (`CategoryTheory.GradedObject.Monoidal.isIso_ιTensorObj_of_isZero_right`,
+  `CategoryTheory.GradedObject.Monoidal.isIso_ιTensorObj_of_isZero_left`).
 * For graded objects indexed by `ℕ`, if `Y 0 = 0` then the summands of `X ⊗ Y` in degree
   `m + 1` are those of `X` tensored with `Y` shifted down by one, in degree `m`
   (`CategoryTheory.GradedObject.Monoidal.tensorObjSuccIso`).  This identifies the degree shift of
@@ -51,12 +56,12 @@ variable {I J C : Type*} [Category* C]
 objects is the map of colimits of the corresponding discrete diagrams. -/
 lemma mapMap_eq_colimMap {X Y : GradedObject I C} (φ : X ⟶ Y) (p : I → J) [X.HasMap p]
     [Y.HasMap p] (j : J) :
-    mapMap φ p j = colimMap (Discrete.natTrans fun i ↦ φ i.as.1 :
+    mapMap φ p j = colimMap (Discrete.natTrans fun i ↦ φ i.as.val :
       Discrete.functor (X.mapObjFun p j) ⟶ Discrete.functor (Y.mapObjFun p j)) := by
   refine mapObj_ext _ _ _ _ fun i hi ↦ ?_
   rw [ι_mapMap]
   -- `ιMapObj` is the colimit inclusion `Sigma.ι` of the discrete diagram `mapObjFun`
-  exact (ι_colimMap (Discrete.natTrans fun i ↦ φ i.as.1 :
+  exact (ι_colimMap (Discrete.natTrans fun i ↦ φ i.as.val :
     Discrete.functor (X.mapObjFun p j) ⟶ Discrete.functor (Y.mapObjFun p j)) ⟨⟨i, hi⟩⟩).symm
 
 /-- A morphism of graded objects which is a monomorphism in each degree induces a monomorphism on
@@ -67,8 +72,8 @@ lemma mono_mapMap {X Y : GradedObject I C} (φ : X ⟶ Y) (p : I → J) [X.HasMa
     [(colim : (Discrete (p ⁻¹' {j}) ⥤ C) ⥤ C).PreservesMonomorphisms]
     [hφ : ∀ i, Mono (φ i)] : Mono (mapMap φ p j) := by
   let α : Discrete.functor (X.mapObjFun p j) ⟶ Discrete.functor (Y.mapObjFun p j) :=
-    Discrete.natTrans fun i ↦ φ i.as.1
-  have : ∀ i, Mono (α.app i) := fun i ↦ inferInstanceAs (Mono (φ i.as.1))
+    Discrete.natTrans fun i ↦ φ i.as.val
+  have : ∀ i, Mono (α.app i) := fun i ↦ inferInstanceAs (Mono (φ i.as.val))
   have : Mono α := NatTrans.mono_of_mono_app _
   rw [mapMap_eq_colimMap, ← colim_map]
   exact CategoryTheory.Functor.map_mono colim α
@@ -94,16 +99,17 @@ lemma exact_mapMap [Abelian C] (S : ShortComplex (GradedObject I C)) (p : I → 
   let T : ShortComplex (Discrete (p ⁻¹' {j}) ⥤ C) :=
     ShortComplex.mk (X₁ := Discrete.functor (S.X₁.mapObjFun p j))
       (X₂ := Discrete.functor (S.X₂.mapObjFun p j)) (X₃ := Discrete.functor (S.X₃.mapObjFun p j))
-      (Discrete.natTrans fun i ↦ S.f i.as.1) (Discrete.natTrans fun i ↦ S.g i.as.1)
-      (by ext i; exact congr_fun S.zero i.as.1)
+      (Discrete.natTrans fun i ↦ S.f i.as.val) (Discrete.natTrans fun i ↦ S.g i.as.val)
+      (by ext i; exact congr_fun S.zero i.as.val)
   have hT : T.Exact := by
     have hP : JointlyReflectIsomorphisms fun i : Discrete (p ⁻¹' {j}) ↦ (evaluation _ C).obj i :=
       ⟨fun f h ↦ have : ∀ i, IsIso (f.app i) := h; NatIso.isIso_of_isIso_app f⟩
     rw [hP.exact_iff]
-    exact fun i ↦ hS i.as.1
+    exact fun i ↦ hS i.as.val
   exact colim.exact_mapShortComplex hT (colimit.isColimit _) (colimit.isColimit _)
     (colimit.isColimit _) (mapMap S.f p j) (mapMap S.g p j)
-    (fun i ↦ ι_mapMap S.f p i.as.1 j i.as.2) (fun i ↦ ι_mapMap S.g p i.as.1 j i.as.2)
+    (fun i ↦ ι_mapMap S.f p i.as.val j i.as.property) (fun i ↦ ι_mapMap S.g p i.as.val j
+        i.as.property)
 
 /-- A short complex of graded objects which is short exact in each degree induces a short exact
 sequence on the coproducts over the fibre of `p : I → J` over `j`, when coproducts of that shape
@@ -148,7 +154,47 @@ lemma id_tensorHom_eq_mapMap [AddMonoid I] [MonoidalCategory C] (X : GradedObjec
       mapMap (((mapBifunctor (curriedTensor C) I I).obj X).map g) (fun x ↦ x.1 + x.2) n := by
   dsimp [tensorHom, mapBifunctorMapMap]
   simp only [CategoryTheory.Functor.map_id, NatTrans.id_app, Category.id_comp]
-  rfl
+
+/-- The inclusion of the summand `X₁ i₁ ⊗ X₂ i₂` into the tensor product of graded objects in
+degree `i₁ + i₂` is a split monomorphism in a category with zero morphisms, being a coprojection
+into a coproduct. -/
+instance isSplitMono_ιTensorObj [AddMonoid I] [MonoidalCategory C] [HasZeroMorphisms C]
+    (X₁ X₂ : GradedObject I C) [HasTensor X₁ X₂] (i₁ i₂ i₁₂ : I) (h : i₁ + i₂ = i₁₂) :
+    IsSplitMono (ιTensorObj X₁ X₂ i₁ i₂ i₁₂ h) := by
+  unfold ιTensorObj ιMapBifunctorMapObj GradedObject.ιMapObj
+  exact isSplitMono_sigma_ι _ _
+
+/-- If `Y` vanishes outside degree `j`, the summand `X i ⊗ Y j` is all of the tensor product of
+graded objects in degree `i + j`. -/
+lemma isIso_ιTensorObj_of_isZero_right [AddMonoid I] [IsRightCancelAdd I] [MonoidalCategory C]
+    [HasZeroMorphisms C] (X Y : GradedObject I C) [HasTensor X Y]
+    [∀ i, (tensorLeft (X i)).PreservesZeroMorphisms] {j : I} (hY : ∀ j' ≠ j, IsZero (Y j'))
+    (i n : I) (h : i + j = n) : IsIso (ιTensorObj X Y i j n h) := by
+  classical
+  refine ⟨tensorObjDesc fun i' j' h' ↦ if hj : j' = j then
+      eqToHom (by subst hj; rw [add_right_cancel (h'.trans h.symm)]) else 0,
+    by simp, tensorObj_ext _ _ fun i' j' h' ↦ ?_⟩
+  by_cases hj : j' = j
+  · subst hj
+    obtain rfl : i' = i := add_right_cancel (h'.trans h.symm)
+    simp
+  · exact ((tensorLeft _).map_isZero (hY j' hj)).eq_of_src _ _
+
+/-- If `X` vanishes outside degree `i`, the summand `X i ⊗ Y j` is all of the tensor product of
+graded objects in degree `i + j`. -/
+lemma isIso_ιTensorObj_of_isZero_left [AddMonoid I] [IsLeftCancelAdd I] [MonoidalCategory C]
+    [HasZeroMorphisms C] (X Y : GradedObject I C) [HasTensor X Y]
+    [∀ j, (tensorRight (Y j)).PreservesZeroMorphisms] {i : I} (hX : ∀ i' ≠ i, IsZero (X i'))
+    (j n : I) (h : i + j = n) : IsIso (ιTensorObj X Y i j n h) := by
+  classical
+  refine ⟨tensorObjDesc fun i' j' h' ↦ if hi : i' = i then
+      eqToHom (by subst hi; rw [add_left_cancel (h'.trans h.symm)]) else 0,
+    by simp, tensorObj_ext _ _ fun i' j' h' ↦ ?_⟩
+  by_cases hi : i' = i
+  · subst hi
+    obtain rfl : j' = j := add_left_cancel (h'.trans h.symm)
+    simp
+  · exact ((tensorRight _).map_isZero (hX i' hi)).eq_of_src _ _
 
 variable [HasZeroMorphisms C] [MonoidalCategory C] (X Y : GradedObject ℕ C)
   [∀ p, (tensorLeft (X p)).PreservesZeroMorphisms] (hY : IsZero (Y 0))

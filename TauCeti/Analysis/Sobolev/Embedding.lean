@@ -448,7 +448,7 @@ theorem W1p0.memLp_value (hpstar : pstar ≠ ∞)
     (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) (u : W1p0 mu Omega p) :
     MemLp (W1p.value (u : W1p mu Omega p) : E → ℝ) pstar (mu.restrict Omega) :=
   W1p.memLp_value_of_mem_w1p0Submodule hpstar hexp
-    ((ClosedSubmodule.mem_toSubmodule_iff _ _).1 u.2)
+    ((ClosedSubmodule.mem_toSubmodule_iff _ _).1 u.property)
 
 /-- The **Sobolev embedding** `W^{1,p}_0(Ω) → L^{p⋆}(Ω)` as a linear map, before recording its
 boundedness.  It sends a Sobolev function to its own `L^{p⋆}` class, so the underlying function is
@@ -488,7 +488,7 @@ private theorem W1p0.norm_sobolevEmbeddingₗ_le (hpstar : pstar ≠ ∞)
   rw [W1p0.sobolevEmbeddingₗ, LinearMap.coe_mk, AddHom.coe_mk, Lp.norm_toLp]
   refine ENNReal.toReal_le_of_le_ofReal (by positivity) ?_
   refine (W1p.eLpNorm_value_le_mul_enorm_gradient hpstar hexp
-    ((ClosedSubmodule.mem_toSubmodule_iff _ _).1 u.2)).trans_eq ?_
+    ((ClosedSubmodule.mem_toSubmodule_iff _ _).1 u.property)).trans_eq ?_
   rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_coe_nnreal, ofReal_norm]
 
 /-- **The Sobolev embedding `W^{1,p}_0(Ω) ↪ L^{p⋆}(Ω)`.** For `1 ≤ p` and `1/p⋆ + 1/n = 1/p`,
