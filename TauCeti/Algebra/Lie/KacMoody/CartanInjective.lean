@@ -11,6 +11,7 @@ import Mathlib.Algebra.FreeMonoid.Basic
 import Mathlib.Algebra.MonoidAlgebra.Module
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Algebra.Lie.AdjointAction.Basic
+import TauCeti.Algebra.Lie.OfAssociative
 import TauCeti.Algebra.Lie.Sl2.WeightString
 
 /-!
@@ -123,16 +124,6 @@ theorem lie_ad_pow_lie_eq_zero (hdiag : ∀ i, A i i = 2)
   · rw [hFE j k hkj.symm, map_zero]
 
 end SerreElement
-
-/-- The bracket of two operators, applied to a vector. -/
-private theorem lie_end_apply {M : Type*} [AddCommGroup M] [Module K M] (X Y : Module.End K M)
-    (m : M) : ⁅X, Y⁆ m = X (Y m) - Y (X m) := by
-  rw [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp]
-
-/-- A ring homomorphism into a commutative ring kills commutators. -/
-private theorem map_lie_eq_zero {B C F : Type*} [Ring B] [CommRing C] [FunLike F B C]
-    [RingHomClass F B C] (ε : F) (a b : B) : ε ⁅a, b⁆ = 0 := by
-  rw [Ring.lie_def, map_sub, map_mul, map_mul, mul_comm, sub_self]
 
 /-! ## Kac's representation on the tensor algebra -/
 
@@ -322,7 +313,7 @@ private theorem ad_pow_lie_raising_raising (i j : I) :
     induction n with
     | zero => simp [Ring.lie_def, raising_single_one, raisingWord_one]
     | succ n ih =>
-      rw [pow_succ', mul_apply_eq_comp, ad_apply, lie_end_apply, ih]
+      rw [pow_succ', mul_apply_eq_comp, ad_apply, Module.End.commutator_apply, ih]
       simp [raising_single_one, raisingWord_one]
   refine (MonoidAlgebra.basis (FreeMonoid I) K).ext fun w => ?_
   rw [basis_apply, LinearMap.zero_apply]
@@ -330,7 +321,7 @@ private theorem ad_pow_lie_raising_raising (i j : I) :
   | one => exact hone _
   | of_mul k w ih =>
     have h := LinearMap.congr_fun (hcomm k) (single w 1)
-    simpa [lie_end_apply, ih, lowering_single] using h
+    simpa [ih, lowering_single] using h
 
 variable (K A) in
 /-- The lowering Serre element `(ad i) ^ (-Aᵢⱼ) ⁅i, j⁆` of the tensor algebra. -/
@@ -452,7 +443,7 @@ private theorem raising_mem_serreIdeal (k : I) {t : K[FreeMonoid I]} (ht : t ∈
     induction w using FreeMonoid.inductionOn' with
     | one =>
       have h := LinearMap.congr_fun (hcomm i j) c
-      rw [lie_end_apply, LinearMap.zero_apply, sub_eq_zero, Algebra.coe_lmul_eq_mul,
+      rw [Module.End.commutator_apply, LinearMap.zero_apply, sub_eq_zero, Algebra.coe_lmul_eq_mul,
         LinearMap.mul_apply', LinearMap.mul_apply'] at h
       rw [← MonoidAlgebra.one_def, one_mul, h, ← one_mul (serreElement K A i j)]
       exact mul_serreElement_mul_mem _ _ _ _
