@@ -17,6 +17,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 
 /-!
@@ -42,6 +43,8 @@ bounds.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
 * `MeasureTheory.MemLp.norm_toLp_sq`: the same for the class of a square-integrable function.
+* `MeasureTheory.integral_norm_sq_eq_toReal_eLpNorm_sq`: the integral of the squared pointwise
+  norm of any a.e. strongly measurable function is its squared `L²` seminorm, as a real number.
 * `MeasureTheory.MemLp.eLpNorm_two_eq_ofReal_sqrt_integral`: the `L²` seminorm of a
   square-integrable function is the square root of the integral of its squared norm.
 * `MeasureTheory.tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub`: L² convergence implies
@@ -392,6 +395,18 @@ theorem MemLp.norm_toLp_sq {alpha F : Type*} [MeasurableSpace alpha] {m : Measur
   filter_upwards [hf.coeFn_toLp] with x hx
   rw [hx]
 
+/-- The integral of the squared pointwise norm of an a.e. strongly measurable function is the
+square of the real part of its `L²` seminorm. Both sides vanish when the function is not square
+integrable. -/
+theorem integral_norm_sq_eq_toReal_eLpNorm_sq {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] {f : alpha → F} (hf : AEStronglyMeasurable f m) :
+    ∫ x, ‖f x‖ ^ 2 ∂m = (eLpNorm f 2 m).toReal ^ 2 := by
+  rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun _ ↦ sq_nonneg _) (hf.norm.pow 2),
+    ← ENNReal.toReal_pow, TauCeti.eLpNorm_two_sq_eq_lintegral hf]
+  congr 1
+  refine lintegral_congr fun x ↦ ?_
+  rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+
 /-- L² convergence implies convergence of the integral of the squared norm, for any measure
 and any normed additive group of values. -/
 theorem tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub {α F ι : Type*}
@@ -537,7 +552,6 @@ theorem MemLp.setIntegral_norm_sq_le_eLpNorm_sq_mul_measureReal_rpow {q : ℝ≥
       (eLpNorm g q (μ.restrict t)).toReal ^ 2 * μ.real s ^ (1 - 2 / q.toReal) := by
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
   have hgs : MemLp g q (μ.restrict s) := hg.mono_measure (Measure.restrict_mono hst le_rfl)
-  have hg2 : MemLp g 2 (μ.restrict s) := hgs.mono_exponent hq
   have hexp : 0 ≤ 1 / 2 - 1 / q.toReal := by
     rcases eq_or_ne q ∞ with rfl | hq'
     · simp
@@ -555,9 +569,7 @@ theorem MemLp.setIntegral_norm_sq_le_eLpNorm_sq_mul_measureReal_rpow {q : ℝ≥
       (ENNReal.rpow_ne_top_of_nonneg hexp hs)) (h.trans (mul_le_mul_left hmono _))).trans_eq ?_
     rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, measureReal_def]
   -- `∫_s ‖g‖² = ‖g‖²_{L²(s)}`.
-  have hI : ∫ x in s, ‖g x‖ ^ 2 ∂μ = (eLpNorm g 2 (μ.restrict s)).toReal ^ 2 := by
-    rw [← hg2.norm_toLp_sq, Lp.norm_toLp]
-  rw [hI]
+  rw [integral_norm_sq_eq_toReal_eLpNorm_sq hgs.aestronglyMeasurable]
   calc _ ≤ ((eLpNorm g q (μ.restrict t)).toReal * μ.real s ^ (1 / 2 - 1 / q.toReal)) ^ 2 :=
         pow_le_pow_left₀ ENNReal.toReal_nonneg hH 2
     _ = _ := by
