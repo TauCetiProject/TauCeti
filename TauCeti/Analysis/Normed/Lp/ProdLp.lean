@@ -29,7 +29,8 @@ It also records that taking a component of `WithLp p (α × β)` commutes with `
 Mathlib's `norm_indicator_eq_indicator_norm` does for the norm, that an indexed family of pairs in
 `WithLp p (α × β)` has bounded range if and only if each coordinate family does, and that a graph
 map `x ↦ (f x, u x)` into `WithLp p (E × V)` is the sum of `f` and `u` followed by the inclusions
-of the two factors.
+of the two factors. The dimension of `WithLp p (M × M')` is the sum of the dimensions of the
+factors.
 
 Finally, it bundles the componentwise action of two continuous linear maps `f` and `g` on
 `WithLp p (α × β)` as a continuous linear map `f.withLpProdMap p g`, the continuous counterpart of
@@ -59,6 +60,7 @@ coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
 * `TauCeti.toLp_prodMk_eq_add` — `x ↦ (f x, u x)` is `x ↦ ι₁ (f x) + ι₂ (u x)`.
 * `ContinuousLinearMap.withLpProdMap` — the block sum `f ⊕ g` on `WithLp p (α × β)`.
 * `LinearMap.rank_withLpMap` — lifting a linear map to `WithLp` preserves its rank.
+* `WithLp.finrank_prod` — `WithLp p (M × M')` has dimension `finrank M + finrank M'`.
 * `ContinuousLinearMap.rank_withLpProdMap` — `rank (f ⊕ g) = rank f + rank g`.
 * `ContinuousLinearMap.finrank_range_withLpProdMap`,
   `ContinuousLinearMap.finiteDimensional_range_withLpProdMap_iff` — the same for finite ranks.
@@ -256,6 +258,14 @@ theorem rank_withLpMap {p : ℝ≥0∞} {K V V' : Type*} [Semiring K] [AddCommGr
   exact LinearEquiv.rank_map_eq _ _
 
 end LinearMap
+
+/-- The `L^p` product of two finite free modules has the sum of their dimensions. -/
+@[simp]
+theorem WithLp.finrank_prod {p : ℝ≥0∞} {R M M' : Type*} [Ring R] [StrongRankCondition R]
+    [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M]
+    [AddCommGroup M'] [Module R M'] [Module.Free R M'] [Module.Finite R M'] :
+    Module.finrank R (WithLp p (M × M')) = Module.finrank R M + Module.finrank R M' := by
+  rw [(WithLp.linearEquiv p R (M × M')).finrank_eq, Module.finrank_prod]
 
 namespace ContinuousLinearMap
 
