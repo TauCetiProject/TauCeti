@@ -32,11 +32,12 @@ diagonal operator
 in the product basis. When `A ≤ b.diagonalPMap λ` and `B ≤ c.diagonalPMap μ`, for instance for
 symmetric `A` and `B` (`LinearPMap.IsFormalAdjoint.le_diagonalPMap`), it acts on pure tensors of
 vectors of the domains by the Leibniz rule `x ⊗ y ↦ A x ⊗ y + x ⊗ B y`
-(`HilbertBasis.coe_tmul_mem_graph_diagonalPMap_tensorProduct`). Every closed operator that acts on
-these pure tensors by the Leibniz rule contains it
-(`LinearPMap.IsClosed.diagonalPMap_tensorProduct_le`), and every closed symmetric one equals it
-(`LinearPMap.IsFormalAdjoint.eq_diagonalPMap_tensorProduct`). For real eigenvalues it is
-self-adjoint (`HilbertBasis.isSelfAdjoint_diagonalPMap`).
+(`HilbertBasis.coe_tmul_mem_graph_diagonalPMap_tensorProduct`). When moreover each `b i` lies in
+the domain of `A` with `A (b i) = λ i • b i`, and each `c j` in the domain of `B` with
+`B (c j) = μ j • c j`, every closed operator that acts on pure tensors of domain vectors by the
+Leibniz rule contains it (`LinearPMap.IsClosed.diagonalPMap_tensorProduct_le`), and every closed
+symmetric one equals it (`LinearPMap.IsFormalAdjoint.eq_diagonalPMap_tensorProduct`). For real
+eigenvalues it is self-adjoint (`HilbertBasis.isSelfAdjoint_diagonalPMap`).
 
 For nonnegative eigenvalues, `λ i + μ j = 0` exactly when `λ i = 0` and `μ j = 0`, so the kernel of
 the tensor sum is spanned by the products of the eigenvectors in the two kernels
@@ -65,8 +66,10 @@ of two elliptic operators.
   `B ≤ c.diagonalPMap μ`, the diagonal operator with coefficients `λ i + μ j` extends
   `A ⊗ 1 + 1 ⊗ B` on pure tensors of domain vectors.
 * `LinearPMap.IsClosed.diagonalPMap_tensorProduct_le` and
-  `LinearPMap.IsFormalAdjoint.eq_diagonalPMap_tensorProduct`: every closed operator acting on these
-  pure tensors by the Leibniz rule contains it, and every closed symmetric one equals it.
+  `LinearPMap.IsFormalAdjoint.eq_diagonalPMap_tensorProduct`: when the `b i` and `c j` are
+  eigenvectors in the domains of `A` and `B` with eigenvalues `λ i` and `μ j`, every closed
+  operator acting on pure tensors of domain vectors by the Leibniz rule contains it, and every
+  closed symmetric one equals it.
 * `HilbertBasis.ker_diagonalPMap_tensorProduct` and
   `HilbertBasis.finrank_ker_diagonalPMap_tensorProduct`: the kernel of a tensor sum with
   nonnegative coefficients and its dimension.
