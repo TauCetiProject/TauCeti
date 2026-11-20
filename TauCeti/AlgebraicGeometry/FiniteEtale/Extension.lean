@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Sections
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.NonZeroDivisors
 import TauCeti.RingTheory.Etale.PuncturedFiniteness
 
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.RamificationLocus
 
 /-!

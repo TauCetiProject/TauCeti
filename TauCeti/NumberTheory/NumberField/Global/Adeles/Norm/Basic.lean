@@ -12,7 +12,8 @@ public import TauCeti.RingTheory.Ideal.PrimesOver
 
 import TauCeti.NumberTheory.NumberField.Global.Places.Semilocal
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Tower
-import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Norm.Trace
+import TauCeti.NumberTheory.NumberField.LocalGlobal.Completion
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.Semilocal
 import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 import Mathlib.RingTheory.Norm.Transitivity
 
@@ -55,7 +56,7 @@ over a fixed place `v` add up to `[L : K]`. The induced maps on ideles and idele
 
 ## References
 
-* [J. Neukirch, *Algebraic Number Theory*][Neukirch1992], Chapter II, (8.4), and Chapter VI, §2.
+* J. Neukirch, *Algebraic Number Theory*, Chapter II, (8.4), and Chapter VI, §2.
 -/
 
 public section
@@ -133,7 +134,7 @@ theorem finiteAdeleNorm_algebraMap (x : L) :
   rw [finiteAdeleNorm_apply, finprod_eq_prod_of_fintype]
   -- The diagonal components `algebraMap L _ x w` and `algebraMap K _ y v` are the images of `x`
   -- and `y` in the completions, as in the semilocal norm formula.
-  exact (TauCeti.algebraMap_norm_eq_prod_norm L v x).symm
+  exact (v.algebraMap_norm_eq_prod_norm_adicCompletion (B := 𝓞 L) x).symm
 
 attribute [local instance] Fintype.ofFinite in
 /-- The norm of a finite adele extended from `K` is its `[L : K]`-th power. -/
@@ -149,7 +150,7 @@ theorem finiteAdeleNorm_finiteAdeleExtension (a : FiniteAdeleRing (𝓞 K) K) :
     rw [finiteAdeleExtension_apply, ← HeightOneSpectrum.algebraMap_adicCompletionExtensionAlgebra,
       Algebra.norm_algebraMap]
   rw [finiteAdeleNorm_apply, finprod_eq_prod_of_fintype, Finset.prod_congr rfl fun w _ ↦ h w,
-    Finset.prod_pow_eq_pow_sum, TauCeti.sum_finrank_adicCompletion_eq_finrank]
+    Finset.prod_pow_eq_pow_sum, v.sum_finrank_adicCompletion_of_finite]
   exact (RestrictedProduct.pow_apply (x := a) (i := v) ..).symm
 
 /-- Norm maps of finite adeles compose in a tower `K ⊆ L ⊆ M`. -/

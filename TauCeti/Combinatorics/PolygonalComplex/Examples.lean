@@ -18,7 +18,8 @@ This file builds the standard surface models from the single-face complexes of
 projective plane `a a`, each a one-vertex polygon `PolygonalComplex.polygon w`. The sphere is the
 digon `a a⁻¹` on the segment, with two vertices. For each model the file checks the surface links
 and the Euler characteristic. It also separates the disc from the closed models by their boundary
-darts, and the torus from the projective plane by orientability.
+darts, and the torus from the projective plane by orientability. Every boundary circuit of the
+disc traverses a single dart.
 
 It also records how the surface-link condition fails at a pinched vertex. On the one-petal rose,
 any family of faces `a a⁻¹` (`PolygonalComplex.digons`) has a disconnected vertex link: every
@@ -48,6 +49,8 @@ For infinitely many faces the link is moreover infinite, and every germ then has
   `TauCeti.SurfaceModel.isEmpty_boundaryComponent_projectivePlane`,
   `TauCeti.SurfaceModel.isEmpty_boundaryComponent_sphere`: the disc has one boundary component
   and the closed models have none.
+* `TauCeti.SurfaceModel.length_path_boundaryCircuit_disc`: every boundary circuit of the disc
+  traverses a single dart.
 * `TauCeti.PolygonalComplex.not_hasSurfaceLink_digons`: the vertex of any family of faces `a a⁻¹` on
   the one-petal rose has no surface link (for example, the sphere with two points identified).
 
@@ -176,6 +179,12 @@ instance : Subsingleton disc.boundary.V :=
 /-- The disc has a single boundary component: its boundary graph is one loop at its vertex. -/
 theorem card_boundaryComponent_disc : Nat.card disc.BoundaryComponent = 1 :=
   Nat.card_eq_one_iff_unique.2 ⟨inferInstance, inferInstance⟩
+
+/-- Every boundary circuit of the disc traverses a single dart. -/
+theorem length_path_boundaryCircuit_disc {b : disc.BoundaryComponent} (c : disc.BoundaryCircuit b) :
+    c.path.length = 1 := by
+  rw [c.length_eq_card, Nat.card_congr (Equiv.subtypeUnivEquiv fun x => Subsingleton.elim _ b)]
+  exact Nat.card_eq_one_iff_unique.2 ⟨inferInstance, inferInstance⟩
 
 /-! ### The torus -/
 

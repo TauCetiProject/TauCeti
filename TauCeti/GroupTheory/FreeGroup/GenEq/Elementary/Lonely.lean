@@ -426,24 +426,22 @@ variable (Ω) in
 private def prefixVal (v : Fin Ω.numItems → H) (i : ℕ) : H :=
   evalWord ι v (Ω.segment 0 i true)
 
-private theorem evalWord_segment_true (v : Fin Ω.numItems → H) {i j : ℕ} (hij : i ≤ j)
-    (hj : j ≤ Ω.numItems) :
+private theorem evalWord_segment_true (v : Fin Ω.numItems → H) {i j : ℕ} (hij : i ≤ j) :
     evalWord ι v (Ω.segment i j true) = (prefixVal Ω ι v i)⁻¹ * prefixVal Ω ι v j := by
-  rw [prefixVal, prefixVal, ← Ω.segment_append (Nat.zero_le i) hij hj, evalWord_append,
-    inv_mul_cancel_left]
+  rw [prefixVal, prefixVal, evalWord, evalWord, evalWord,
+    Ω.lift_mk_segment_eq_mul _ (Nat.zero_le i) hij, inv_mul_cancel_left]
 
-private theorem evalWord_segment (v : Fin Ω.numItems → H) {i j : ℕ} (hij : i ≤ j)
-    (hj : j ≤ Ω.numItems) (s : Bool) :
+private theorem evalWord_segment (v : Fin Ω.numItems → H) {i j : ℕ} (hij : i ≤ j) (s : Bool) :
     evalWord ι v (Ω.segment i j s) = cond s ((prefixVal Ω ι v i)⁻¹ * prefixVal Ω ι v j)
       ((prefixVal Ω ι v i)⁻¹ * prefixVal Ω ι v j)⁻¹ := by
-  rw [← evalWord_segment_true ι v hij hj]
+  rw [← evalWord_segment_true ι v hij]
   exact Ω.lift_mk_segment _ i j s
 
 /-- The value of an item is the quotient of the values of the prefixes ending at its two
 end-points. -/
 private theorem apply_eq_prefixVal (v : Fin Ω.numItems → H) (k : Fin Ω.numItems) :
     v k = (prefixVal Ω ι v k)⁻¹ * prefixVal Ω ι v (k + 1) := by
-  rw [← evalWord_segment_true ι v (Nat.le_succ _) k.is_lt, Ω.segment_succ, evalWord,
+  rw [← evalWord_segment_true ι v (Nat.le_succ _), Ω.segment_succ, evalWord,
     FreeGroup.lift_mk_singleton]
   rfl
 
@@ -464,10 +462,10 @@ private theorem evalWord_tiedSegment (v : Fin Ω.numItems → H) {k : Fin Ω.num
   rw [tiedSegment]
   by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
   · have hlt := Fin.lt_def.1 (hΩ.lt_of_isTiedTo_of_sign_eq hs h₁ h₂ k.castSucc_lt_succ)
-    rw [min_eq_left hlt.le, max_eq_right hlt.le, evalWord_segment ι v hlt.le (Fin.is_le _)]
+    rw [min_eq_left hlt.le, max_eq_right hlt.le, evalWord_segment ι v hlt.le]
     simp [hs]
   · have hlt := Fin.lt_def.1 (hΩ.lt_of_isTiedTo_of_sign_ne hs h₁ h₂ k.castSucc_lt_succ)
-    rw [min_eq_right hlt.le, max_eq_left hlt.le, evalWord_segment ι v hlt.le (Fin.is_le _)]
+    rw [min_eq_right hlt.le, max_eq_left hlt.le, evalWord_segment ι v hlt.le]
     simp [hs]
 
 include h hΩ in
@@ -517,8 +515,8 @@ private theorem basicEquation_iff (v : Fin Ω.numItems → H) :
     evalWord ι v (Ω.basicEquation μ).1 = evalWord ι v (Ω.basicEquation μ).2 ↔
       tiedDefect Ω μ ι v (Ω.right μ) = tiedDefect Ω μ ι v (Ω.left μ) := by
   rw [basicEquation_fst, basicEquation_snd,
-    evalWord_segment ι v (Fin.le_def.1 (Ω.left_lt_right μ).le) (Fin.is_le _),
-    evalWord_segment ι v (Fin.le_def.1 (Ω.left_lt_right (Ω.dual μ)).le) (Fin.is_le _),
+    evalWord_segment ι v (Fin.le_def.1 (Ω.left_lt_right μ).le),
+    evalWord_segment ι v (Fin.le_def.1 (Ω.left_lt_right (Ω.dual μ)).le),
     tiedDefect, tiedDefect, tiedBoundary_left, tiedBoundary_right]
   cases Ω.sign μ <;> cases Ω.sign (Ω.dual μ) <;>
     simp [inv_mul_eq_inv_mul_iff_mul_inv_eq_mul_inv, eq_comm]
@@ -532,13 +530,13 @@ private theorem boundaryEquation_iff (v : Fin Ω.numItems → H) {p q : Fin (Ω.
       tiedDefect Ω μ ι v p = tiedDefect Ω μ ι v (Ω.left μ) := by
   obtain ⟨hp₁, -, hq₁, hq₂⟩ := Ω.bounds_of_mem_connections _ hc
   have hq := hΩ.tiedBoundary_eq (isTiedTo_of_mem_connections hc)
-  rw [boundaryEquation_fst, evalWord_segment ι v (Fin.le_def.1 hp₁.le) (Fin.is_le _)]
+  rw [boundaryEquation_fst, evalWord_segment ι v (Fin.le_def.1 hp₁.le)]
   by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
   · rw [boundaryEquation_snd_of_sign_eq (c := (p, μ, q)) Ω hs,
-      evalWord_segment ι v (Fin.le_def.1 hq₁.le) (Fin.is_le _)]
+      evalWord_segment ι v (Fin.le_def.1 hq₁.le)]
     simp [tiedDefect, hq, hs, inv_mul_eq_inv_mul_iff_mul_inv_eq_mul_inv]
   · rw [boundaryEquation_snd_of_sign_ne (c := (p, μ, q)) Ω hs,
-      evalWord_segment ι v (Fin.le_def.1 hq₂.le) (Fin.is_le _)]
+      evalWord_segment ι v (Fin.le_def.1 hq₂.le)]
     simp [tiedDefect, hq, hs, inv_mul_eq_inv_mul_iff_mul_inv_eq_mul_inv]
 
 include hΩ in
@@ -551,15 +549,15 @@ private theorem boundaryEquation_dual_eq (v : Fin Ω.numItems → H) {p q : Fin 
       evalWord ι v (Ω.boundaryEquation (q, Ω.dual μ, p)).2 := by
   obtain ⟨hp₁, hp₂, hq₁, -⟩ := Ω.bounds_of_mem_connections _ hc
   have hq := hΩ.tiedBoundary_eq (isTiedTo_of_mem_connections hc)
-  rw [eq_comm, boundaryEquation_fst, evalWord_segment ι v (Fin.le_def.1 hq₁.le) (Fin.is_le _)]
+  rw [eq_comm, boundaryEquation_fst, evalWord_segment ι v (Fin.le_def.1 hq₁.le)]
   by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
   · rw [boundaryEquation_snd_of_sign_eq (c := (q, Ω.dual μ, p)) Ω
       (by rw [Ω.dual_involutive μ]; exact hs.symm), Ω.dual_involutive μ,
-      evalWord_segment ι v (Fin.le_def.1 hp₁.le) (Fin.is_le _)]
+      evalWord_segment ι v (Fin.le_def.1 hp₁.le)]
     simpa [tiedDefect, hq, hs, inv_mul_eq_inv_mul_iff_mul_inv_eq_mul_inv] using hp
   · rw [boundaryEquation_snd_of_sign_ne (c := (q, Ω.dual μ, p)) Ω
       (by rw [Ω.dual_involutive μ]; exact Ne.symm hs), Ω.dual_involutive μ,
-      evalWord_segment ι v (Fin.le_def.1 hp₂.le) (Fin.is_le _)]
+      evalWord_segment ι v (Fin.le_def.1 hp₂.le)]
     simpa [tiedDefect, hq, hs, inv_mul_eq_inv_mul_iff_mul_inv_eq_mul_inv] using hp.trans hr.symm
 
 /-- If the defect of the tie is constant on the boundaries of `μ`, the basic equations of `μ` and
