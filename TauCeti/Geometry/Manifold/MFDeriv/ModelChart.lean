@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
@@ -54,6 +55,9 @@ open set.
   `y` if and only if the Fréchet derivative of `h` vanishes at `e y`.
 * `TauCeti.isOpen_setOf_mfderiv_ne_zero`: the points where the differential of a `C^1` map is
   nonzero form an open set.
+* `TauCeti.tangentCoordChange_eq_fderiv`: the tangent change of coordinates is the derivative of
+  the change of chart, and `TauCeti.mfderiv_chartAt_symm`: the differential of the inverse of a
+  preferred chart is the derivative of a change of chart.
 -/
 
 public section
@@ -342,6 +346,27 @@ theorem isOpen_setOf_mfderiv_ne_zero (hf : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F)
     (hca.comp (c.continuousAt hmem)).eventually_ne h0
   filter_upwards [hev, c.open_source.mem_nhds hmem] with y hy hys
   exact fun h ↦ hy ((hiff y hys).1 h)
+
+/-- The tangent change of coordinates from the chart at `x` to the chart at `y`, at `z`, is the
+derivative of the change of chart `chartAt E y ∘ (chartAt E x).symm` at the coordinate of `z`. -/
+theorem tangentCoordChange_eq_fderiv {x y z : M} :
+    tangentCoordChange 𝓘(𝕜, E) x y z =
+      fderiv 𝕜 (chartAt E y ∘ (chartAt E x).symm) (chartAt E x z) := by
+  rw [tangentCoordChange_def]
+  simp
+
+/-- The differential of the inverse of the chart at `x` at a point `z` of its target is the
+derivative at `z` of the change of chart from the chart at `x` to the chart at
+`(chartAt E x).symm z`. -/
+theorem mfderiv_chartAt_symm {x : M} {z : E} (hz : z ∈ (chartAt E x).target) :
+    mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) (chartAt E x).symm z =
+      (fderiv 𝕜 (chartAt E ((chartAt E x).symm z) ∘ (chartAt E x).symm) z : E →L[𝕜] E) := by
+  rw [(mdifferentiableAt_atlas_symm (chart_mem_atlas E x) hz).mfderiv]
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, modelWithCornersSelf_coe, range_id,
+    fderivWithin_univ]
+  -- The casts `tangentSpaceCastModel` between the tangent spaces and the model space are
+  -- identities.
+  rfl
 
 end Preferred
 
