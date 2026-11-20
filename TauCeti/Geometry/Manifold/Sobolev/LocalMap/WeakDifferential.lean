@@ -186,18 +186,21 @@ theorem chartDifferential_eq_comp {φ φ' : OpenPartialHomeomorph X ℂ}
   -- Both sides are the same composite, associated differently.
   rfl
 
-/-- **Change of chart for weak derivatives of coordinate expressions.** If `G` is a weak derivative
-of the coordinate expression of `u` in charts `(φ', ψ')` on an open set `W'`, then on every open
-set `W` where both pairs of charts are defined along `u` and which `φ' ∘ φ⁻¹` maps into `W'`, the
-coordinate expression in `(φ, ψ)` has the weak derivative obtained from `G` by composing with the
-derivatives of the changes of chart. -/
-private theorem HasWeakFDerivOn.comp_chartChange {φ φ' : OpenPartialHomeomorph X ℂ}
+/-- **Change of chart for weak derivatives of coordinate expressions.** Let `u` be continuous on
+an open set `s`, and let `G` be a weak derivative of the coordinate expression of `u` in charts
+`(φ', ψ')` on the interior of its coordinate domain over `s`. Then on every open set `W` lying
+over `s` where both pairs of charts are defined along `u`, the coordinate expression in `(φ, ψ)`
+has the weak derivative obtained from `G` by composing with the derivatives of the changes of
+chart. -/
+private theorem HasWeakFDerivOn.comp_chartChange (hs : IsOpen s) (hcu : ContinuousOn u s)
+    {φ φ' : OpenPartialHomeomorph X ℂ}
     (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X) (hφ' : φ' ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
     {ψ ψ' : OpenPartialHomeomorph M H} (hψ : ψ ∈ IsManifold.maximalAtlas I ∞ M)
-    (hψ' : ψ' ∈ IsManifold.maximalAtlas I ∞ M) {W W' : Opens ℂ}
-    (hW : (W : Set ℂ) ⊆ φ.target ∩ φ.symm ⁻¹' (φ'.source ∩ u ⁻¹' (ψ.source ∩ ψ'.source)))
-    (hWW' : MapsTo (φ' ∘ φ.symm) W W') (hc : ContinuousOn (ψ'.extend I ∘ u ∘ φ'.symm) W')
-    {G : ℂ → ℂ →L[ℝ] F} (hG : HasWeakFDerivOn volume W' (ψ'.extend I ∘ u ∘ φ'.symm) G) :
+    (hψ' : ψ' ∈ IsManifold.maximalAtlas I ∞ M) {W : Opens ℂ}
+    (hW : (W : Set ℂ) ⊆ φ.target ∩ φ.symm ⁻¹' (φ'.source ∩ (s ∩ u ⁻¹' (ψ.source ∩ ψ'.source))))
+    {G : ℂ → ℂ →L[ℝ] F} (hG : HasWeakFDerivOn volume
+      (Opens.interior (φ'.target ∩ φ'.symm ⁻¹' (s ∩ u ⁻¹' ψ'.source)))
+      (ψ'.extend I ∘ u ∘ φ'.symm) G) :
     HasWeakFDerivOn volume W (ψ.extend I ∘ u ∘ φ.symm) fun z ↦
       fderiv ℝ (I.extendCoordChange ψ' ψ) (ψ'.extend I (u (φ.symm z))) ∘L
         G (φ' (φ.symm z)) ∘L fderiv ℝ (φ' ∘ φ.symm) z := by
@@ -206,6 +209,17 @@ private theorem HasWeakFDerivOn.comp_chartChange {φ φ' : OpenPartialHomeomorph
   have hφ'R := IsManifold.maximalAtlas_subset_restrictScalars ℝ (M := X) hφ'
   have hΘ := I.contDiffOn_extendCoordChange hψ' hψ
   have hWs : (W : Set ℂ) ⊆ (φ.symm.trans φ').source := fun z hz ↦ ⟨(hW hz).1, (hW hz).2.1⟩
+  have hU' := φ'.isOpen_inter_preimage_symm_inter_preimage hcu hs ψ'.open_source
+  have hWW' : MapsTo (φ' ∘ φ.symm) W
+      (Opens.interior (φ'.target ∩ φ'.symm ⁻¹' (s ∩ u ⁻¹' ψ'.source))) := fun w hw ↦ by
+    obtain ⟨-, hwφ', hws, -, hwψ'⟩ := hW hw
+    rw [Opens.coe_interior, hU'.interior_eq]
+    refine ⟨φ'.map_source hwφ', ?_⟩
+    simpa [φ'.left_inv hwφ'] using And.intro hws hwψ'
+  have hc : ContinuousOn (ψ'.extend I ∘ u ∘ φ'.symm)
+      (Opens.interior (φ'.target ∩ φ'.symm ⁻¹' (s ∩ u ⁻¹' ψ'.source))) := by
+    rw [Opens.coe_interior, hU'.interior_eq]
+    exact φ'.continuousOn_comp_comp_symm (ψ'.continuousOn_extend.mono ψ'.extend_source.ge) hcu
   have hτ : ContDiffOn ℝ 1 (φ' ∘ φ.symm) W := by
     simpa only [OpenPartialHomeomorph.coe_trans] using
       (contDiffOn_symm_trans_of_mem_maximalAtlas hφR hφ'R).mono hWs
@@ -216,7 +230,7 @@ private theorem HasWeakFDerivOn.comp_chartChange {φ φ' : OpenPartialHomeomorph
       det_fderiv_symm_trans_ne_zero one_ne_zero hφR hφ'R (hWs hz)
   have hmaps : MapsTo ((ψ'.extend I ∘ u ∘ φ'.symm) ∘ (φ' ∘ φ.symm)) W
       (I.extendCoordChange ψ' ψ).source := fun z hz ↦ by
-    obtain ⟨-, hzφ', hzψ, hzψ'⟩ := hW hz
+    obtain ⟨-, hzφ', -, hzψ, hzψ'⟩ := hW hz
     simp only [Function.comp_apply, φ'.left_inv hzφ']
     exact ⟨(ψ'.extend I).map_source (by simpa using hzψ'), by simpa [ψ'.left_inv hzψ'] using hzψ⟩
   have h := (hG.comp_contDiffOn_diffeo hτ hinj hdet hWW').contDiffOn_comp
@@ -224,18 +238,10 @@ private theorem HasWeakFDerivOn.comp_chartChange {φ φ' : OpenPartialHomeomorph
     hmaps
   refine (h.congr_ae (ae_restrict_of_forall_mem W.isOpen.measurableSet fun z hz ↦ ?_))
     |>.congr_ae_deriv (ae_restrict_of_forall_mem W.isOpen.measurableSet fun z hz ↦ ?_)
-  · obtain ⟨-, hzφ', -, hzψ'⟩ := hW hz
+  · obtain ⟨-, hzφ', -, -, hzψ'⟩ := hW hz
     simp [φ'.left_inv hzφ', ψ'.left_inv hzψ']
-  · obtain ⟨-, hzφ', -, -⟩ := hW hz
+  · obtain ⟨-, hzφ', -⟩ := hW hz
     simp only [Function.comp_apply, φ'.left_inv hzφ']
-
-omit [ChartedSpace ℂ X] in
-/-- The part of the target of a chart `φ` over `s` where `u` maps into the source of `ψ` is open,
-for `u` continuous on an open set `s`. -/
-private theorem isOpen_chartDomain (hs : IsOpen s) (hc : ContinuousOn u s)
-    (φ : OpenPartialHomeomorph X ℂ) {t : Set M} (ht : IsOpen t) :
-    IsOpen (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' t)) :=
-  φ.isOpen_inter_preimage_symm (hc.isOpen_inter_preimage hs ht)
 
 /-- **Chart independence of weak differentials.** For `u` continuous on an open set `s`, it
 suffices to test the coordinate expressions in the charts of a family `A` of holomorphic charts
@@ -260,19 +266,8 @@ theorem hasWeakMFDerivOn_iff_of_subset_maximalAtlas [CompleteSpace F] (hs : IsOp
     φ.isOpen_inter_preimage_symm ((hc.isOpen_inter_preimage hs
       (ψ.open_source.inter ψ'.open_source)).inter φ'.open_source)⟩
   refine ⟨W, ⟨hz'.1, ⟨hz'.2.1, hz'.2.2, hxψ'⟩, hxφ'⟩, ?_⟩
-  have hU' := isOpen_chartDomain hs hc φ' ψ'.open_source
-  have hWW' : MapsTo (φ' ∘ φ.symm) W
-      (Opens.interior (φ'.target ∩ φ'.symm ⁻¹' (s ∩ u ⁻¹' ψ'.source))) := fun w hw ↦ by
-    obtain ⟨-, ⟨hws, -, hwψ'⟩, hwφ'⟩ := hw
-    rw [Opens.coe_interior, hU'.interior_eq]
-    refine ⟨φ'.map_source hwφ', ?_⟩
-    simpa [φ'.left_inv hwφ'] using And.intro hws hwψ'
-  have hcW' : ContinuousOn (ψ'.extend I ∘ u ∘ φ'.symm)
-      (Opens.interior (φ'.target ∩ φ'.symm ⁻¹' (s ∩ u ⁻¹' ψ'.source))) := by
-    rw [Opens.coe_interior, hU'.interior_eq]
-    exact φ'.continuousOn_comp_comp_symm (ψ'.continuousOn_extend.mono ψ'.extend_source.ge) hc
-  refine ((h φ' hφ'A ψ' hψ'B).comp_chartChange hφ (hA hφ'A) hψ (hB hψ'B) (W := W)
-    (fun w hw ↦ ⟨hw.1, hw.2.2, hw.2.1.2⟩) hWW' hcW').congr_ae_deriv
+  refine ((h φ' hφ'A ψ' hψ'B).comp_chartChange hs hc hφ (hA hφ'A) hψ (hB hψ'B) (W := W)
+    fun w hw ↦ ⟨hw.1, hw.2.2, hw.2.1⟩).congr_ae_deriv
     (ae_restrict_of_forall_mem W.isOpen.measurableSet fun w hw ↦ ?_)
   exact (chartDifferential_eq_comp hφ (hA hφ'A) hψ (hB hψ'B) du hw.1 hw.2.2 hw.2.1.2.1
     hw.2.1.2.2).symm
@@ -331,8 +326,8 @@ theorem HasWeakMFDerivOn.memLpLoc_chartDifferential
     MemLpLoc p (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) (chartDifferential I φ ψ u du) := by
   obtain ⟨D, hD, hDp⟩ := (hu.memWkpLoc_chart hφ hψ).exists_weakFDeriv
   have hae := hD.ae_eq (hdu φ hφ ψ hψ)
-  rw [Opens.coe_interior, (isOpen_chartDomain hs hu.continuousOn φ ψ.open_source).interior_eq]
-    at hae
+  rw [Opens.coe_interior, (φ.isOpen_inter_preimage_symm_inter_preimage hu.continuousOn hs
+    ψ.open_source).interior_eq] at hae
   exact (memWkpLoc_zero_iff.1 hDp).congr_ae hae
 
 section Existence
@@ -383,26 +378,13 @@ private theorem ae_eq_chartDifferential_of_chartAt (hs : IsOpen s) (hc : Continu
       P (φ.symm z) → D z = chartDifferential I φ ψ u du z := by
   have hφt := IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℂ)) (n := 1) t
   have hψt := IsManifold.chart_mem_maximalAtlas (I := I) (n := ∞) (u t)
-  have hU := isOpen_chartDomain hs hc φ ψ.open_source
-  have hUt := isOpen_chartDomain hs hc (chartAt ℂ t) (chartAt H (u t)).open_source
+  have hU := φ.isOpen_inter_preimage_symm_inter_preimage hc hs ψ.open_source
   let W : Opens ℂ := ⟨_, φ.isOpen_inter_preimage_symm
     ((hc.isOpen_inter_preimage hs ψ.open_source).inter ((chartAt ℂ t).open_source.inter
       (hc.isOpen_inter_preimage hs (chartAt H (u t)).open_source)))⟩
-  have hWW' : MapsTo (chartAt ℂ t ∘ φ.symm) W (Opens.interior ((chartAt ℂ t).target ∩
-      (chartAt ℂ t).symm ⁻¹' (s ∩ u ⁻¹' (chartAt H (u t)).source))) := fun w hw ↦ by
-    obtain ⟨-, -, hwt, hws, hwψt⟩ := hw
-    rw [Opens.coe_interior, hUt.interior_eq]
-    refine ⟨(chartAt ℂ t).map_source hwt, ?_⟩
-    simpa [(chartAt ℂ t).left_inv hwt] using And.intro hws hwψt
-  have hcW' : ContinuousOn ((chartAt H (u t)).extend I ∘ u ∘ (chartAt ℂ t).symm)
-      (Opens.interior ((chartAt ℂ t).target ∩
-        (chartAt ℂ t).symm ⁻¹' (s ∩ u ⁻¹' (chartAt H (u t)).source))) := by
-    rw [Opens.coe_interior, hUt.interior_eq]
-    exact (chartAt ℂ t).continuousOn_comp_comp_symm
-      ((chartAt H (u t)).continuousOn_extend.mono (chartAt H (u t)).extend_source.ge) hc
   -- On `W`, `D` and the weak derivative transported from `Dₜ` agree almost everywhere.
-  have hT := hDₜ.comp_chartChange hφ hφt hψ hψt (W := W)
-    (fun w hw ↦ ⟨hw.1, hw.2.2.1, hw.2.1.2, hw.2.2.2.2⟩) hWW' hcW'
+  have hT := hDₜ.comp_chartChange hs hc hφ hφt hψ hψt (W := W)
+    fun w hw ↦ ⟨hw.1, hw.2.2.1, hw.2.1.1, hw.2.1.2, hw.2.2.2.2⟩
   have hDW := hD.mono (Ω' := W) fun w hw ↦ by
     rw [← SetLike.mem_coe, Opens.coe_interior, hU.interior_eq]
     exact ⟨hw.1, hw.2.1⟩
@@ -449,7 +431,8 @@ theorem MemWkpLocMapOn.exists_hasWeakMFDerivOn [SecondCountableTopology X]
       fun x (hx : τ x = t) ↦ by rw [hx]; rfl
   rw [Filter.EventuallyEq, ae_restrict_iff' (Opens.interior _).isOpen.measurableSet]
   filter_upwards [(ae_ball_iff hTc).2 hloc] with z hz hzU
-  rw [Opens.coe_interior, (isOpen_chartDomain hs hc φ ψ.open_source).interior_eq] at hzU
+  rw [Opens.coe_interior,
+    (φ.isOpen_inter_preimage_symm_inter_preimage hc hs ψ.open_source).interior_eq] at hzU
   exact hz _ (hτT _ hzU.2.1) ⟨hzU.1, hzU.2, hτV _ hzU.2.1⟩ rfl
 
 /-- **Local Sobolev maps of order one through their weak differentials.** On an open subset `s`
@@ -482,7 +465,7 @@ theorem ContMDiffOn.hasWeakMFDerivOn_mfderiv (hs : IsOpen s) (hu : ContMDiffOn �
     HasWeakMFDerivOn I u (mfderiv 𝓘(ℝ, ℂ) I u) s := by
   intro φ hφ ψ hψ
   have hφR := IsManifold.maximalAtlas_subset_restrictScalars ℝ (M := X) hφ
-  have hU := isOpen_chartDomain hs hu.continuousOn φ ψ.open_source
+  have hU := φ.isOpen_inter_preimage_symm_inter_preimage hu.continuousOn hs ψ.open_source
   have hg : ContMDiffOn 𝓘(ℝ, ℂ) I 1 (u ∘ φ.symm) (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) :=
     hu.comp ((contMDiffOn_symm_of_mem_maximalAtlas hφR).mono inter_subset_left)
       fun _ hz ↦ hz.2.1
