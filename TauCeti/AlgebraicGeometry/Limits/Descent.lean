@@ -6,7 +6,7 @@ Authors: Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import TauCeti.AlgebraicGeometry.Limits.Affine.FinitePresentation
-public import TauCeti.AlgebraicGeometry.Limits.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Limits.Finite.Presentation
 public import TauCeti.AlgebraicGeometry.Gluing.Pushout
 public import TauCeti.AlgebraicGeometry.Gluing.Separated
 public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation
