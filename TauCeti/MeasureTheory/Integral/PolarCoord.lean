@@ -59,11 +59,6 @@ theorem add_polarCoord_symm_mem_annulus (z₀ : ℂ) {a b : ℝ} (ha : 0 ≤ a)
   simpa only [mem_Icc, mem_ofPred_eq, add_sub_cancel_left, Complex.norm_polarCoord_symm,
     abs_of_nonneg (ha.trans hp.1)] using hp
 
-/-- The imaginary part of the translated inverse polar map. -/
-theorem add_polarCoord_symm_im (z₀ : ℂ) (p : ℝ × ℝ) :
-    (z₀ + Complex.polarCoord.symm p).im = z₀.im + p.1 * Real.sin p.2 := by
-  simp [Complex.polarCoord_symm_apply, -ofReal_sin]
-
 /-- A constant-radius slice of the translated polar map is the circle parametrization. -/
 theorem add_polarCoord_symm_eq_circleMap (z₀ : ℂ) (p : ℝ × ℝ) :
     z₀ + Complex.polarCoord.symm p = circleMap z₀ p.1 p.2 := by
@@ -85,8 +80,8 @@ theorem add_polarCoord_symm_interior_upperHalfAnnulus (z₀ : ℂ) {a b : ℝ} (
       ‖z₀ + Complex.polarCoord.symm p - z₀‖ < b := by
   obtain ⟨⟨hr₁, hr₂⟩, hθ₁, hθ₂⟩ := hp
   have hr : 0 < p.1 := ha.trans_lt hr₁
-  rw [add_polarCoord_symm_im, add_sub_cancel_left, Complex.norm_polarCoord_symm, abs_of_pos hr,
-    lt_add_iff_pos_right]
+  rw [add_sub_cancel_left, Complex.norm_polarCoord_symm, abs_of_pos hr,
+    add_polarCoord_symm_eq_circleMap, circleMap_im, lt_add_iff_pos_right]
   exact ⟨mul_pos hr (Real.sin_pos_of_pos_of_lt_pi hθ₁ hθ₂), hr₁, hr₂⟩
 
 /-- The derivative of the translated inverse complex polar-coordinate map at any `(r, θ)`.
@@ -251,7 +246,8 @@ theorem integral_comp_polarCoord_symm_Icc_zero_pi (f : ℂ → W) (z₀ : ℂ) {
   refine integral_comp_polarCoord_symm_prod f z₀ ha measurableSet_Icc hang hS
     fun r θ hr hθ ↦ ?_
   have him : z₀.im ≤ (z₀ + Complex.polarCoord.symm (r, θ)).im ↔ θ ∈ Icc 0 π := by
-    rw [TauCeti.add_polarCoord_symm_im, le_add_iff_nonneg_right, mul_nonneg_iff_of_pos_left hr]
+    rw [TauCeti.add_polarCoord_symm_eq_circleMap, TauCeti.circleMap_im, le_add_iff_nonneg_right,
+      mul_nonneg_iff_of_pos_left hr]
     refine ⟨fun h ↦ ⟨not_lt.1 fun hneg ↦ ?_, hθ.2.le⟩, fun h ↦
       Real.sin_nonneg_of_nonneg_of_le_pi h.1 h.2⟩
     exact (Real.sin_neg_of_neg_of_neg_pi_lt hneg hθ.1).not_ge h
