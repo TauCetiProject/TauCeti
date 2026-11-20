@@ -9,11 +9,8 @@ public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Isotypic
 public import TauCeti.Algebra.Coalgebra.Star
 public import TauCeti.Algebra.HopfAlgebra.Integral.Haar
 import Mathlib.LinearAlgebra.Dual.Lemmas
-import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Decomposition
-import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.PositiveIntegral
-import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Finite
-import TauCeti.Algebra.Coalgebra.Comodule.Unitary.Orthogonality
-import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
+import TauCeti.Algebra.Coalgebra.Comodule.Conjugate
+import TauCeti.Algebra.HopfAlgebra.Integral.CompactType
 
 /-!
 # The modular automorphism of an algebraic Haar functional
@@ -35,10 +32,13 @@ So both maps are bijective, and every `h (a * ·)` is some `h (· * c)` with `c`
 In particular `θ` preserves every simple coefficient space
 (`TauCeti.AlgebraicHaar.modularAut_mem_of_mem_simpleCoefficientSubmodules`).
 
+The construction of `θ` as an algebra automorphism adapts that of the Nakayama automorphism of a
+Frobenius functional (`LinearMap.IsFrobeniusFunctional.nakayamaAut`): a linear map characterized by
+the pairing identity, made unital and multiplicative by faithfulness. In infinite dimension there
+is no perfect pairing, and the block-dimension argument above takes its place.
+
 ## Main declarations
 
-* `TauCeti.AlgebraicHaar.map_star_mul_eq_zero_of_mem_simpleCoefficientSubmodules`: Haar
-  orthogonality of distinct simple coefficient spaces.
 * `TauCeti.AlgebraicHaar.modularAut`: the modular automorphism `θ` of an algebraic Haar
   functional, characterized by `TauCeti.AlgebraicHaar.apply_mul_modularAut` and
   `TauCeti.AlgebraicHaar.coe_modularAut_eq`.
@@ -70,65 +70,6 @@ variable {A : Type u} [Ring A] [StarRing A] [HopfAlgebra ℂ A] [StarModule ℂ 
 namespace AlgebraicHaar
 
 variable (h : AlgebraicHaar A)
-
-/-- **Haar orthogonality of simple coefficient spaces.** If `P` and `Q` are distinct coefficient
-spaces of simple comodules, then `h (star x * y) = 0` for `x ∈ P` and `y ∈ Q`. -/
-theorem map_star_mul_eq_zero_of_mem_simpleCoefficientSubmodules {P Q : Submodule ℂ A}
-    (hP : P ∈ simpleCoefficientSubmodules ℂ A) (hQ : Q ∈ simpleCoefficientSubmodules ℂ A)
-    (hPQ : P ≠ Q) {x y : A} (hx : x ∈ P) (hy : y ∈ Q) : h (star x * y) = 0 := by
-  obtain ⟨M, hM, rfl⟩ := mem_simpleCoefficientSubmodules.mp hP
-  obtain ⟨N, hN, rfl⟩ := mem_simpleCoefficientSubmodules.mp hQ
-  have := hM
-  have := hN
-  have : Module.Finite ℂ M := finite_of_isSimpleOrder (C := A)
-  have : Module.Finite ℂ N := finite_of_isSimpleOrder (C := A)
-  obtain ⟨b, hb⟩ := exists_basis_coefficientMatrix_mem_unitary h.isRightInvariantIntegral
-    h.toLinearMap_ne_zero h.map_star_mul_self_nonneg (Module.finBasis ℂ M)
-  exact h.isRightInvariantIntegral.map_star_mul_eq_zero_of_mem_matrixCoefficientSubmodule b
-    (Module.finBasis ℂ N) (Matrix.mem_unitary_iff_conjTranspose.mp hb).2
-    (fun g ↦ by_contra fun hg ↦ hPQ (matrixCoefficientSubmodule_eq_of_ne_zero hg).symm) hx hy
-
-/-- The conjugate of a simple coefficient space: its `star`-preimage is again a simple coefficient
-space. -/
-private theorem exists_mem_simpleCoefficientSubmodules_star {P : Submodule ℂ A}
-    (hP : P ∈ simpleCoefficientSubmodules ℂ A) :
-    ∃ P' ∈ simpleCoefficientSubmodules ℂ A, ∀ x, x ∈ P' ↔ star x ∈ P := by
-  obtain ⟨M, hM, rfl⟩ := mem_simpleCoefficientSubmodules.mp hP
-  have := hM
-  have : Module.Finite ℂ M := finite_of_isSimpleOrder (C := A)
-  let b := Module.finBasis ℂ M
-  let _ : Comodule ℂ A (Fin (finrank ℂ M) → ℂ) := b.conjugateMatrixComodule (A := A)
-  have := b.isSimpleOrder_conjugateMatrixComodule (A := A)
-  exact ⟨_, matrixCoefficientSubmodule_mem_simpleCoefficientSubmodules,
-    fun _ ↦ b.mem_matrixCoefficientSubmodule_conjugateMatrixComodule_iff⟩
-
-omit [StarRing A] [StarModule ℂ A] [StarCoalgebra ℂ A] in
-private theorem finite_of_mem_simpleCoefficientSubmodules {P : Submodule ℂ A}
-    (hP : P ∈ simpleCoefficientSubmodules ℂ A) : Module.Finite ℂ P := by
-  obtain ⟨M, hM, rfl⟩ := mem_simpleCoefficientSubmodules.mp hP
-  have := hM
-  have : Module.Finite ℂ M := finite_of_isSimpleOrder (C := A)
-  infer_instance
-
-include h in
-/-- The simple coefficient spaces of a Hopf star algebra with an algebraic Haar functional span
-it. -/
-private theorem sSup_simpleCoefficientSubmodules_eq_top :
-    sSup (simpleCoefficientSubmodules ℂ A) = ⊤ :=
-  (h.isRightInvariantIntegral.isLinearlyReductive h.toLinearMap_ne_zero
-    h.map_star_mul_self_nonneg).sSup_simpleCoefficientSubmodules_eq_top
-
-include h in
-/-- A property preserved by addition and holding on every simple coefficient space holds on
-`A`. -/
-@[elab_as_elim]
-private theorem induction_simpleCoefficientSubmodules {motive : A → Prop} (x : A)
-    (mem : ∀ P ∈ simpleCoefficientSubmodules ℂ A, ∀ x ∈ P, motive x) (zero : motive 0)
-    (add : ∀ x y, motive x → motive y → motive (x + y)) : motive x := by
-  have hx : x ∈ ⨆ P : simpleCoefficientSubmodules ℂ A, P.1 := by
-    rw [← sSup_eq_iSup', h.sSup_simpleCoefficientSubmodules_eq_top]
-    exact Submodule.mem_top
-  exact Submodule.iSup_induction (motive := motive) _ hx (fun P x hx ↦ mem P.1 P.2 x hx) zero add
 
 /-- An identity `h (a * y) = h (y * c)` holding on every simple coefficient space holds on `A`. -/
 private theorem apply_mul_eq_apply_mul_of_forall_mem {a c : A}
@@ -331,6 +272,11 @@ theorem apply_modularAut_symm_mul (a b : A) : h (h.modularAut.symm a * b) = h (b
 @[simp]
 theorem apply_modularAut (a : A) : h (h.modularAut a) = h a := by
   simpa using h.apply_mul_modularAut a 1
+
+/-- An algebraic Haar functional is invariant under the inverse of its modular automorphism. -/
+@[simp]
+theorem apply_modularAut_symm (a : A) : h (h.modularAut.symm a) = h a := by
+  simpa using (h.apply_modularAut (h.modularAut.symm a)).symm
 
 /-- **Uniqueness of the modular automorphism.** Any map `σ` with `h (b * σ a) = h (a * b)` is the
 modular automorphism. -/
