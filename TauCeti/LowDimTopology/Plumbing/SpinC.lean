@@ -24,7 +24,8 @@ comparison between representatives of one class.
 
 ## Main definitions
 
-* `TauCeti.PlumbingGraph.IsSpinCEquivalent`: characteristic covectors differing by `2 * A x`.
+* `TauCeti.PlumbingGraph.IsSpinCEquivalent`: characteristic covectors differing by `2 * A x`,
+  characterized by `TauCeti.PlumbingGraph.isSpinCEquivalent_iff`.
 * `TauCeti.PlumbingGraph.characteristicOrbits`: characteristic covectors modulo this relation.
 * `TauCeti.PlumbingGraph.characteristicOrbit`: the orbit of a characteristic covector.
 
@@ -48,6 +49,13 @@ variable {V : Type*} [DecidableEq V] [Fintype V] (P : PlumbingGraph V)
 an integral covector in the image of the plumbing intersection matrix. -/
 def IsSpinCEquivalent (k l : P.characteristicVectors) : Prop :=
   ∃ x : V → ℤ, l.val = fun v => k.val v + 2 * (P.intersectionMatrix.mulVec x) v
+
+/-- Two characteristic covectors are spin^c equivalent exactly when the second is obtained from
+the first by adding twice the image of an integral vector under the intersection matrix. -/
+theorem isSpinCEquivalent_iff (k l : P.characteristicVectors) :
+    P.IsSpinCEquivalent k l ↔
+      ∃ x : V → ℤ, l.val = fun v => k.val v + 2 * (P.intersectionMatrix.mulVec x) v :=
+  Iff.rfl
 
 /-- Every characteristic covector lies in its own lattice orbit. -/
 @[refl]
