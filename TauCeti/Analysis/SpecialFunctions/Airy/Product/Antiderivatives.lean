@@ -10,17 +10,19 @@ public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Pow
-import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.ODE.Wronskian
 
 /-!
 # Antiderivatives of products of solutions of Airy's equation
 
 Let `f` and `g` be entire solutions of Airy's equation `w'' = z w`, and let
 `𝒲 = f g' - f' g` be their Wronskian, which is constant. Then closed-form antiderivatives exist
-for the products `f g`, `f g'`, `f' g'`, `z f g`, `z f g'` and `z f' g'`, and for every function
-of the quotient `g / f` multiplied by `1 / f²` (DLMF 9.11.5–9.11.11). In the statements the
-Wronskian is written out at the origin as `f 0 * deriv g 0 - deriv f 0 * g 0`.
+for the products `f g`, `f g'`, `f' g'`, `z f g`, `z f g'` and `z f' g'` (DLMF 9.11.5–9.11.10).
+For the quotient `g / f` there is a substitution formula (DLMF 9.11.11): if `𝒲 ≠ 0`, `f(z) ≠ 0`
+and `F` has derivative `F'` at `g(z) / f(z)`, then `F(g / f) / 𝒲` has derivative `F' / f(z)²` at
+`z`. In the statements the Wronskian is written out at the origin as
+`f 0 * deriv g 0 - deriv f 0 * g 0`; its constancy is `TauCeti.wronskian_eq_of_hasDerivAt`.
 
 ## Main results
 
@@ -68,10 +70,10 @@ private theorem wronskian_eq_wronskian_zero_of_airy_ode (hf : Differentiable ℂ
     (hg : Differentiable ℂ g) (hf' : ∀ z, deriv^[2] f z = z * f z)
     (hg' : ∀ z, deriv^[2] g z = z * g z) (z : ℂ) :
     f z * deriv g z - deriv f z * g z = f 0 * deriv g 0 - deriv f 0 * g 0 := by
-  have h (t : ℂ) : HasDerivAt (fun s => f s * deriv g s - deriv f s * g s) 0 t :=
-    (((hf t).hasDerivAt.mul (hasDerivAt_deriv_of_airy_ode hg hg' t)).sub
-      ((hasDerivAt_deriv_of_airy_ode hf hf' t).mul (hg t).hasDerivAt)).congr_deriv (by ring)
-  exact is_const_of_deriv_eq_zero (fun t => (h t).differentiableAt) (fun t => (h t).deriv) z 0
+  have h := wronskian_eq_of_hasDerivAt (q := fun t => t) (fun t => (hg t).hasDerivAt)
+    (hasDerivAt_deriv_of_airy_ode hg hg') (fun t => (hf t).hasDerivAt)
+    (hasDerivAt_deriv_of_airy_ode hf hf') z 0
+  linear_combination h
 
 /-- For entire solutions `f`, `g` of Airy's equation, `-f' g' + z f g` is an antiderivative of
 `f g` (DLMF 9.11.5). -/
