@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.Matrix
-public import Mathlib.Probability.Distributions.Gaussian.Multivariate
-public import Mathlib.Probability.Moments.SubGaussian
+public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Probability.Moments.SubGaussian.Basic
 import Mathlib.Analysis.InnerProductSpace.Dual
-import TauCeti.Probability.Distributions.Gaussian.Transforms
-import TauCeti.Probability.Moments.SubGaussian
 
 /-!
 # Sub-Gaussian random vectors
@@ -23,14 +20,17 @@ whose variance is `2`.
 
 ## Main definitions and results
 
-* `ProbabilityTheory.IsSubgaussianVector x c μ`: every linear form `⟪u, x⟫` has variance proxy
+* `TauCeti.IsSubgaussianVector x c μ`: every linear form `⟪u, x⟫` has variance proxy
   `c * ‖u‖₊ ^ 2`.
-* `ProbabilityTheory.iIndepFun.isSubgaussianVector`: a vector of `EuclideanSpace ℝ ι` with
-  independent coordinates of proxy `c` is a sub-Gaussian vector with proxy `c`.
-* `ProbabilityTheory.HasLaw.isSubgaussianVector`: a centred Gaussian vector
-  with covariance matrix `S` is a sub-Gaussian vector with proxy the operator norm `‖S‖₊`.
-* `ProbabilityTheory.IsSubgaussianVector.continuousLinearMap_comp`: the image under a continuous
-  linear map `A` of a sub-Gaussian vector with proxy `c` has proxy `‖A‖₊ ^ 2 * c`.
+* `TauCeti.isSubgaussianVector_iff_forall_norm_eq_one`: for a probability measure it suffices to
+  test unit directions, with proxy `c`.
+* `TauCeti.IsSubgaussianVector.continuousLinearMap_comp`: the image under a continuous linear map
+  `A` of a sub-Gaussian vector with proxy `c` has proxy `‖A‖₊ ^ 2 * c`.
+
+Vectors with independent sub-Gaussian coordinates are treated in
+`TauCeti.Probability.Moments.SubGaussian` (`ProbabilityTheory.iIndepFun.isSubgaussianVector`) and
+centred Gaussian vectors in `TauCeti.Probability.Moments.SubGaussian.Gaussian`
+(`ProbabilityTheory.HasLaw.isSubgaussianVector`).
 
 ## References
 
@@ -39,10 +39,10 @@ whose variance is `2`.
 
 public section
 
-open MeasureTheory Real
-open scoped NNReal RealInnerProductSpace Matrix.Norms.L2Operator
+open MeasureTheory ProbabilityTheory
+open scoped NNReal RealInnerProductSpace
 
-namespace ProbabilityTheory
+namespace TauCeti
 
 variable {Ω E : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
   [NormedAddCommGroup E] [InnerProductSpace ℝ E]
@@ -57,6 +57,23 @@ def IsSubgaussianVector (x : Ω → E) (c : ℝ≥0) (μ : Measure Ω) : Prop :=
 theorem isSubgaussianVector_def {x : Ω → E} {c : ℝ≥0} :
     IsSubgaussianVector x c μ ↔
       ∀ u : E, HasSubgaussianMGF (fun ω ↦ ⟪u, x ω⟫) (c * ‖u‖₊ ^ 2) μ := Iff.rfl
+
+/-- Under a probability measure (or the zero measure), a random vector is sub-Gaussian with
+variance proxy `c` if and only if its linear form along every unit vector has proxy `c`. -/
+theorem isSubgaussianVector_iff_forall_norm_eq_one [IsZeroOrProbabilityMeasure μ] {x : Ω → E}
+    {c : ℝ≥0} :
+    IsSubgaussianVector x c μ ↔
+      ∀ u : E, ‖u‖ = 1 → HasSubgaussianMGF (fun ω ↦ ⟪u, x ω⟫) c μ := by
+  refine ⟨fun h u hu ↦ ?_, fun h u ↦ ?_⟩
+  · have hu' : ‖u‖₊ = 1 := NNReal.eq hu
+    simpa [hu'] using h u
+  rcases eq_or_ne u 0 with rfl | hu
+  · simp
+  refine (((h _ (norm_smul_inv_norm (𝕜 := ℝ) hu)).const_mul ‖u‖).congr
+    (ae_of_all _ fun ω ↦ ?_)).mono (le_of_eq ?_)
+  · simp [real_inner_smul_left, hu]
+  · rw [mul_comm]
+    congr 1
 
 namespace IsSubgaussianVector
 
@@ -73,15 +90,22 @@ theorem mono (h : IsSubgaussianVector x c μ) {c' : ℝ≥0} (hc : c ≤ c') :
     IsSubgaussianVector x c' μ :=
   fun u ↦ (h u).mono (mul_le_mul_left hc _)
 
+/-- `IsSubgaussianVector` is invariant under almost-everywhere equality of the random vector. -/
+theorem congr (h : IsSubgaussianVector x c μ) {y : Ω → E} (hxy : x =ᵐ[μ] y) :
+    IsSubgaussianVector y c μ :=
+  fun u ↦ (h u).congr (hxy.mono fun ω hω ↦ by simp [hω])
+
 /-- Each coordinate of a sub-Gaussian vector of `EuclideanSpace ℝ ι` with proxy `c` has proxy
 `c`. -/
-theorem hasSubgaussianMGF_apply {ι : Type*} [Fintype ι] {x : Ω → EuclideanSpace ℝ ι}
+theorem hasSubgaussianMGF_eval {ι : Type*} [Fintype ι] {x : Ω → EuclideanSpace ℝ ι}
     (h : IsSubgaussianVector x c μ) (i : ι) : HasSubgaussianMGF (fun ω ↦ x ω i) c μ := by
   classical
   simpa [EuclideanSpace.inner_single_left] using h (EuclideanSpace.single i 1)
 
 /-- The image of a sub-Gaussian vector with proxy `c` under a continuous linear map `A` is a
-sub-Gaussian vector with proxy `‖A‖₊ ^ 2 * c`. -/
+sub-Gaussian vector with proxy `‖A‖₊ ^ 2 * c`. For each `v`, the functional `⟪v, A ·⟫` is
+represented, through the Fréchet–Riesz equivalence `InnerProductSpace.toDual`, by the vector
+`w = (InnerProductSpace.toDual ℝ E).symm ((innerSL ℝ v).comp A)`, with `‖w‖ ≤ ‖A‖ * ‖v‖`. -/
 theorem continuousLinearMap_comp [CompleteSpace E] {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] (h : IsSubgaussianVector x c μ) (A : E →L[ℝ] F) :
     IsSubgaussianVector (fun ω ↦ A (x ω)) (‖A‖₊ ^ 2 * c) μ := by
@@ -89,10 +113,9 @@ theorem continuousLinearMap_comp [CompleteSpace E] {F : Type*} [NormedAddCommGro
   set w := (InnerProductSpace.toDual ℝ E).symm ((innerSL ℝ v).comp A)
   have hw : ‖w‖₊ ≤ ‖A‖₊ * ‖v‖₊ := by
     rw [LinearIsometryEquiv.nnNorm_map, mul_comm]
-    refine (ContinuousLinearMap.opNNNorm_comp_le _ _).trans ?_
-    gcongr
-    exact (innerSL ℝ v).opNNNorm_le_bound _ fun y ↦ by
-      simpa using nnNorm_inner_le_nnNorm (𝕜 := ℝ) v y
+    refine (ContinuousLinearMap.opNNNorm_comp_le _ _).trans_eq ?_
+    rw [← NNReal.coe_inj, NNReal.coe_mul, NNReal.coe_mul, coe_nnNorm, coe_nnNorm, coe_nnNorm,
+      innerSL_apply_norm]
   refine ((h w).congr (ae_of_all _ fun ω ↦ ?_)).mono ?_
   · simp [w, InnerProductSpace.toDual_symm_apply]
   · calc c * ‖w‖₊ ^ 2 ≤ c * (‖A‖₊ * ‖v‖₊) ^ 2 := by gcongr
@@ -100,41 +123,4 @@ theorem continuousLinearMap_comp [CompleteSpace E] {F : Type*} [NormedAddCommGro
 
 end IsSubgaussianVector
 
-/-- A random vector of `EuclideanSpace ℝ ι` with independent coordinates, each with variance
-proxy `c`, is a sub-Gaussian vector with proxy `c`. -/
-theorem iIndepFun.isSubgaussianVector {ι : Type*} [Fintype ι] {x : Ω → EuclideanSpace ℝ ι}
-    {c : ℝ≥0} (hindep : iIndepFun (fun i ω ↦ x ω i) μ)
-    (hx : ∀ i, HasSubgaussianMGF (fun ω ↦ x ω i) c μ) : IsSubgaussianVector x c μ := by
-  intro u
-  have hproxy : ∑ i, ‖u i‖₊ ^ 2 * c = c * ‖u‖₊ ^ 2 := by
-    rw [← Finset.sum_mul, mul_comm, EuclideanSpace.nnNorm_eq, NNReal.sq_sqrt]
-  rw [← hproxy]
-  refine (hindep.hasSubgaussianMGF_dotProduct hx u).congr (ae_of_all _ fun ω ↦ ?_)
-  simp [dotProduct, PiLp.inner_apply, mul_comm]
-
-/-- A centred Gaussian vector with covariance matrix `S` is a sub-Gaussian vector whose variance
-proxy is the Euclidean operator norm `‖S‖₊`. If `S` is not positive semidefinite, Mathlib's
-`multivariateGaussian 0 S` is the Dirac mass at `0` and the statement holds trivially. -/
-theorem HasLaw.isSubgaussianVector {ι : Type*} [Fintype ι] [DecidableEq ι]
-    {x : Ω → EuclideanSpace ℝ ι} {S : Matrix ι ι ℝ}
-    (hx : HasLaw x (multivariateGaussian 0 S) μ) : IsSubgaussianVector x ‖S‖₊ μ := by
-  intro u
-  by_cases hS : S.PosSemidef
-  · set q := ⟪u, S.toEuclideanLin u⟫
-    have hlaw : HasLaw (fun y : EuclideanSpace ℝ ι ↦ ⟪u, y⟫) (gaussianReal 0 q.toNNReal)
-        (multivariateGaussian 0 S) :=
-      ⟨by fun_prop, by simpa using TauCeti.Probability.map_inner_multivariateGaussian 0 u hS⟩
-    refine (hlaw.comp hx).hasSubgaussianMGF.mono ?_
-    rw [Real.toNNReal_le_iff_le_coe, NNReal.coe_mul, NNReal.coe_pow, coe_nnNorm, coe_nnNorm]
-    calc q ≤ ‖u‖ * ‖S.toEuclideanLin u‖ := real_inner_le_norm _ _
-      _ ≤ ‖u‖ * (‖S‖ * ‖u‖) := by
-        gcongr
-        exact S.l2_opNorm_mulVec u
-      _ = ‖S‖ * ‖u‖ ^ 2 := by ring
-  · rw [multivariateGaussian_of_not_posSemidef 0 hS] at hx
-    have := hx.isProbabilityMeasure
-    refine (HasSubgaussianMGF.zero.congr ?_).mono (by positivity)
-    filter_upwards [hx.ae_eq_of_dirac] with ω hω
-    simp [hω]
-
-end ProbabilityTheory
+end TauCeti
