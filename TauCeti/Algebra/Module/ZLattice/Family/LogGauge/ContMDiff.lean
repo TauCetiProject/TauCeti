@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Module.ZLattice.Family.LogGauge.Basic
 public import TauCeti.Analysis.Complex.RootsOfUnity.Manifold
 public import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
-import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import Mathlib.Geometry.Manifold.Algebra.Structures
 
 /-!
@@ -23,6 +23,10 @@ regularity of the upstairs map `TauCeti.torusFamilyLogGauge` from
 (`z ≠ 0`), hence holomorphy there when `n ≠ 0`. Although its formula uses the principal
 logarithm, near any nonzero point it agrees modulo periods with a formula using a holomorphic
 branch. No constancy of the period family is needed.
+
+When the normalized pure translation action is free, the cyclic quotient `Q = X / C_m` carries the
+quotient atlas `TauCeti.logTranslationQuotientChartedSpace`, for which it is a `C^n` manifold
+(`TauCeti.isManifold_logTranslationQuotient`).
 
 Both discs carry their inherited open-subset complex atlases. This is the upstairs regularity
 step for descent to the punctured cyclic quotient; the downstairs diffeomorphism
@@ -106,18 +110,14 @@ theorem contMDiffAt_torusFamilyLogGauge (l : Λ)
   rw [← (isLocalDiffeomorph_torusFamily_mk (powPullbackPeriod m r P)
     (fun z ↦ powPullbackPeriod_injective P z (hinj _))
     (fun l ↦ contMDiff_powPullbackPeriod P (hP l)) (z₀, e₀)).contMDiffAt_comp_iff le_rfl]
-  -- A branch centred at `z₀` is holomorphic even if `z₀` lies on the principal branch cut.
-  let L : ℂ → ℂ := fun z ↦ log z₀ + log (z / z₀)
-  have hL {z : ℂ} (hz : z ≠ 0) : exp (L z) = z := by
-    simp only [L]
-    rw [Complex.exp_add, exp_log hz₀, exp_log (div_ne_zero hz hz₀), mul_div_cancel₀ _ hz₀]
+  -- A logarithm `L` centred at `z₀` is holomorphic even if `z₀` lies on the principal branch cut.
+  obtain ⟨f, L, -, hL, -, hf, hfL⟩ :=
+    exists_contDiffAt_pow_eq_and_exp_eq (n := n) one_ne_zero hz₀ (pow_one (z₀ : ℂ))
   have hLc : ContMDiffAt (𝓘(ℂ).prod 𝓘(ℂ, E)) 𝓘(ℂ) n
-      (fun p : rootsOfUnityBall m r × E ↦ L p.1) (z₀, e₀) := by
-    apply contMDiffAt_const.add
-    exact (Complex.contDiffAt_log (x := 1) one_mem_slitPlane).contMDiffAt.comp_of_eq
-      ((contDiff_id.div_const (z₀ : ℂ)).contMDiff.comp
-        (rootsOfUnityBall.contMDiff_val.comp contMDiff_fst)).contMDiffAt
-      (by simp [hz₀])
+      (fun p : rootsOfUnityBall m r × E ↦ L p.1) (z₀, e₀) :=
+    hL.contMDiffAt.comp_of_eq
+      (rootsOfUnityBall.contMDiff_val.comp contMDiff_fst).contMDiffAt rfl
+  have hL {z : ℂ} (hz : z ≠ 0) : exp (L z) = z := by rw [hfL z hz, ← pow_one (f z), hf]
   have hpow : ContMDiff 𝓘(ℂ) 𝓘(ℂ) n (rootsOfUnityBall.powMap m r) :=
     rootsOfUnityBall.contMDiff_powMap
   have hq := (isLocalDiffeomorph_torusFamily_mk P hinj hP).contMDiff
@@ -126,10 +126,57 @@ theorem contMDiffAt_torusFamilyLogGauge (l : Λ)
       (contMDiffAt_snd.sub ((hLc.div_const (2 * π * I)).smul
         ((contMDiff_powPullbackPeriod P (hP l)).comp contMDiff_fst).contMDiffAt)))
   apply hs.congr_of_eventuallyEq
-  have hopen : IsOpen {p : rootsOfUnityBall m r × E | (p.1 : ℂ) ≠ 0} :=
-    isOpen_ne_fun (continuous_subtypeVal.comp continuous_fst) continuous_const
-  filter_upwards [hopen.mem_nhds hz₀] with p hp
+  filter_upwards [(continuous_subtypeVal.comp continuous_fst).continuousAt.eventually_ne hz₀]
+    with p hp
   simpa [Function.comp_def, powPullbackPeriod_apply] using
     (torusFamilyLogGauge_mk_of_exp_eq P l (hL hp) p.2)
+
+/-! ### The atlas of the cyclic quotient -/
+
+section CyclicQuotient
+
+variable (l : Λ)
+  (hfree : letI := periodAddAction (powPullbackPeriod m r P)
+    letI := logTranslationMulAction P l
+    IsCancelSMul (rootsOfUnity m ℂ) (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))
+
+/-- **The atlas of the cyclic quotient.** For continuous periods and a free normalized pure
+translation action `TauCeti.logTranslationMulAction`, this is the quotient atlas
+`TauCeti.torusFamilyAffineQuotientChartedSpace` on the cyclic quotient `Q = X / C_m`. -/
+noncomputable abbrev logTranslationQuotientChartedSpace
+    (hcont : ∀ l, Continuous fun t ↦ P t l) :
+    letI := periodAddAction (powPullbackPeriod m r P)
+    letI := logTranslationMulAction P l
+    ChartedSpace (ModelProd ℂ E) (MulAction.orbitRel.Quotient (rootsOfUnity m ℂ)
+      (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :=
+  letI := periodAddAction (powPullbackPeriod m r P)
+  letI := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
+    (fun l ↦ continuous_powPullbackPeriod P (hcont l))
+    (fun z ↦ powPullbackPeriod_injective P z (hinj _))
+  torusFamilyAffineQuotientChartedSpace (H := ℂ) (powPullbackPeriod m r P)
+    (fun z ↦ powPullbackPeriod_injective P z (hinj _)) (fun _ _ ↦ AddMonoidHom.id E)
+    (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
+    (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
+    (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
+    (fun l ↦ continuous_powPullbackPeriod P (hcont l)) (fun _ ↦ continuous_snd)
+    (continuous_logTranslationSection P l (hcont l)) hfree
+
+/-- For `C^n` periods and a free normalized pure translation action, the cyclic quotient
+is a `C^n` manifold for `logTranslationQuotientChartedSpace`. -/
+theorem isManifold_logTranslationQuotient :
+    letI := periodAddAction (powPullbackPeriod m r P)
+    letI := logTranslationMulAction P l
+    letI := logTranslationQuotientChartedSpace P hinj l hfree (fun l ↦ (hP l).continuous)
+    IsManifold (𝓘(ℂ).prod 𝓘(ℂ, E)) n (MulAction.orbitRel.Quotient (rootsOfUnity m ℂ)
+      (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :=
+  isManifold_torusFamilyAffineQuotient (powPullbackPeriod m r P)
+    (fun z ↦ powPullbackPeriod_injective P z (hinj _))
+    (fun l ↦ contMDiff_powPullbackPeriod P (hP l)) (fun _ _ ↦ AddMonoidHom.id E)
+    (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
+    (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
+    (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
+    (fun _ ↦ contMDiff_snd) (contMDiff_logTranslationSection P hP hinj l) hfree
+
+end CyclicQuotient
 
 end TauCeti

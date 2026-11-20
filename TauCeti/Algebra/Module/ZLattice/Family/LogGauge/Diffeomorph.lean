@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.Family.LogGauge.ContMDiff
 import Mathlib.Geometry.Manifold.Algebra.Structures
+import TauCeti.Analysis.Complex.RootsOfUnity.LocalRoot
 
 /-!
 # The logarithmic gauge is a diffeomorphism
@@ -15,8 +16,9 @@ Let `P : D_t → (Λ →ₗ[ℤ] E)` be a `C^n` family of full lattices over the
 `r ^ m`, with family of tori `Y = (D_t × E)/Λ`, and let `X = (D_z × E)/Λ` be its pullback along
 `z ↦ z ^ m` from the disc `D_z` of radius `r`. Fix `l : Λ` and suppose that the normalized pure
 translation action `TauCeti.logTranslationMulAction` of the `m`-th roots of unity on `X` is free,
-so that the cyclic quotient `Q = X / C_m` carries its quotient atlas and is a `C^n` manifold
-(`TauCeti.isManifold_torusFamilyAffineQuotient`). When `0 < r`, freeness is a condition on the
+so that the cyclic quotient `Q = X / C_m` carries its quotient atlas
+`TauCeti.logTranslationQuotientChartedSpace` and is a `C^n` manifold
+(`TauCeti.isManifold_logTranslationQuotient`). When `0 < r`, freeness is a condition on the
 central torus only: it holds exactly when the class of `l` in `Λ ⧸ mΛ` has exact order `m`
 (`TauCeti.isCancelSMul_torusFamilyAffineMulAction_rootsOfUnityBall_iff_addOrderOf_mk_eq`).
 
@@ -39,11 +41,9 @@ and with this choice the formula is `C^n`.
 
 ## Main definitions
 
-* `TauCeti.logTranslationQuotientChartedSpace`: the quotient atlas of `Q`.
-* `TauCeti.logTranslationQuotientPunctured`, `TauCeti.torusFamilyPunctured`: the open subsets
-  `Q*` and `Y*`.
 * `TauCeti.torusFamilyLogGaugeDiffeomorph`: the logarithmic gauge `Q* ≃ Y*` as a `C^n`
-  diffeomorphism, a biholomorphism for holomorphic data.
+  diffeomorphism, a biholomorphism for holomorphic data. Its underlying equivalence and
+  homeomorphism are `TauCeti.torusFamilyLogGaugeEquiv` and `TauCeti.torusFamilyLogGaugeHomeomorph`.
 
 ## References
 
@@ -73,43 +73,6 @@ variable [FiniteDimensional ℂ E]
     letI := logTranslationMulAction P l
     IsCancelSMul (rootsOfUnity m ℂ) (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))
 
-/-- **The atlas of the cyclic quotient.** For continuous periods and a free normalized pure
-translation action `TauCeti.logTranslationMulAction`, this is the quotient atlas
-`TauCeti.torusFamilyAffineQuotientChartedSpace` on the cyclic quotient `Q = X / C_m`. -/
-noncomputable abbrev logTranslationQuotientChartedSpace
-    (hcont : ∀ l, Continuous fun t ↦ P t l) :
-    letI := periodAddAction (powPullbackPeriod m r P)
-    letI := logTranslationMulAction P l
-    ChartedSpace (ModelProd ℂ E) (orbitRel.Quotient (rootsOfUnity m ℂ)
-      (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :=
-  letI := periodAddAction (powPullbackPeriod m r P)
-  letI := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
-    (fun l ↦ continuous_powPullbackPeriod P (hcont l))
-    (fun z ↦ powPullbackPeriod_injective P z (hinj _))
-  torusFamilyAffineQuotientChartedSpace (H := ℂ) (powPullbackPeriod m r P)
-    (fun z ↦ powPullbackPeriod_injective P z (hinj _)) (fun _ _ ↦ AddMonoidHom.id E)
-    (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
-    (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
-    (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
-    (fun l ↦ continuous_powPullbackPeriod P (hcont l)) (fun _ ↦ continuous_snd)
-    (continuous_logTranslationSection P l (hcont l)) hfree
-
-/-- For `C^n` periods and a free normalized pure translation action, the cyclic quotient
-is a `C^n` manifold for `logTranslationQuotientChartedSpace`. -/
-theorem isManifold_logTranslationQuotient :
-    letI := periodAddAction (powPullbackPeriod m r P)
-    letI := logTranslationMulAction P l
-    letI := logTranslationQuotientChartedSpace P l hinj hfree (fun l ↦ (hP l).continuous)
-    IsManifold (𝓘(ℂ).prod 𝓘(ℂ, E)) n (orbitRel.Quotient (rootsOfUnity m ℂ)
-      (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :=
-  isManifold_torusFamilyAffineQuotient (powPullbackPeriod m r P)
-    (fun z ↦ powPullbackPeriod_injective P z (hinj _))
-    (fun l ↦ contMDiff_powPullbackPeriod P (hP l)) (fun _ _ ↦ AddMonoidHom.id E)
-    (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
-    (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
-    (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
-    (fun _ ↦ contMDiff_snd) (contMDiff_logTranslationSection P hP hinj l) hfree
-
 /-- The orbit map `X → Q` is a `C^n` local diffeomorphism for the quotient atlas. -/
 private theorem isLocalDiffeomorph_logTranslationQuotient_mk :
     letI := periodAddAction (powPullbackPeriod m r P)
@@ -117,7 +80,7 @@ private theorem isLocalDiffeomorph_logTranslationQuotient_mk :
       (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous)
       (fun z ↦ powPullbackPeriod_injective P z (hinj _))
     letI := logTranslationMulAction P l
-    letI := logTranslationQuotientChartedSpace P l hinj hfree (fun l ↦ (hP l).continuous)
+    letI := logTranslationQuotientChartedSpace P hinj l hfree (fun l ↦ (hP l).continuous)
     IsLocalDiffeomorph (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n
       (Quotient.mk (orbitRel (rootsOfUnity m ℂ)
         (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))) :=
@@ -151,26 +114,22 @@ private theorem contMDiffAt_of_eq_torusFamilyLogGaugeEquiv
     letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
     letI := periodAddAction (powPullbackPeriod m r P)
     letI := logTranslationMulAction P l
-    letI := logTranslationQuotientChartedSpace P l hinj hfree (fun l ↦ (hP l).continuous)
+    letI := logTranslationQuotientChartedSpace P hinj l hfree (fun l ↦ (hP l).continuous)
     ContMDiffAt (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n F (Quotient.mk _ x₀) := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
   let _ := periodAddAction (powPullbackPeriod m r P)
   let _ := logTranslationMulAction P l
-  let _ := logTranslationQuotientChartedSpace P l hinj hfree (fun l ↦ (hP l).continuous)
+  let _ := logTranslationQuotientChartedSpace P hinj l hfree (fun l ↦ (hP l).continuous)
   let _ := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
     (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous)
     (fun z ↦ powPullbackPeriod_injective P z (hinj _))
   rw [← (isLocalDiffeomorph_logTranslationQuotient_mk P l hP hinj hfree x₀).contMDiffAt_comp_iff
     le_rfl]
-  have hopen : IsOpen {x : AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E) |
-      ((torusFamilyProjection (powPullbackPeriod m r P) x : rootsOfUnityBall m r) : ℂ) ≠ 0} :=
-    isOpen_ne_fun (continuous_subtypeVal.comp (continuous_torusFamilyProjection _))
-      continuous_const
   refine (contMDiffAt_torusFamilyLogGauge P hP hinj l hx₀).congr_of_eventuallyEq ?_
-  filter_upwards [hopen.mem_nhds hx₀] with x hx
-  rw [Function.comp_apply, hF _ ((mem_logTranslationQuotientPuncturedSet P l _).2
-    ((torusFamilyCyclicQuotientProjection_eq_zero_iff _ _ _ _ _ _ _ _ _ x).not.mpr hx)),
+  filter_upwards [(continuous_subtypeVal.comp
+    (continuous_torusFamilyProjection _)).continuousAt.eventually_ne hx₀] with x hx
+  rw [Function.comp_apply, hF _ ((mk_mem_logTranslationQuotientPuncturedSet P l x).2 hx),
     torusFamilyLogGaugeEquiv_mk]
 
 /-- A map out of the family `Y` which agrees with the inverse of the logarithmic gauge on the
@@ -191,13 +150,13 @@ private theorem contMDiffAt_of_eq_torusFamilyLogGaugeEquiv_symm
     letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
     letI := periodAddAction (powPullbackPeriod m r P)
     letI := logTranslationMulAction P l
-    letI := logTranslationQuotientChartedSpace P l hinj hfree (fun l ↦ (hP l).continuous)
+    letI := logTranslationQuotientChartedSpace P hinj l hfree (fun l ↦ (hP l).continuous)
     ContMDiffAt (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n F (Quotient.mk _ (t₀, e₀)) := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
   let _ := periodAddAction (powPullbackPeriod m r P)
   let _ := logTranslationMulAction P l
-  let _ := logTranslationQuotientChartedSpace P l hinj hfree (fun l ↦ (hP l).continuous)
+  let _ := logTranslationQuotientChartedSpace P hinj l hfree (fun l ↦ (hP l).continuous)
   let _ := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
     (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous)
     (fun z ↦ powPullbackPeriod_injective P z (hinj _))
@@ -212,9 +171,8 @@ private theorem contMDiffAt_of_eq_torusFamilyLogGaugeEquiv_symm
   refine (hπ.contMDiffAt.comp (t₀, e₀) ((hw.comp (t₀, e₀) contMDiffAt_fst).prodMk
     (contMDiffAt_snd.add (((hL.comp (t₀, e₀) contMDiffAt_fst).div_const (2 * π * I)).smul
       ((hP l).comp contMDiff_fst).contMDiffAt)))).congr_of_eventuallyEq ?_
-  have hopen : IsOpen {p : Metric.ball (0 : ℂ) (r ^ m) × E | (p.1 : ℂ) ≠ 0} :=
-    isOpen_ne_fun (continuous_subtypeVal.comp continuous_fst) continuous_const
-  filter_upwards [hopen.mem_nhds ht₀] with p hp
+  filter_upwards [(continuous_subtypeVal.comp continuous_fst).continuousAt.eventually_ne ht₀]
+    with p hp
   obtain ⟨t, e⟩ := p
   have hy : ((torusFamilyProjection P (Quotient.mk _ (t, e)) :
       Metric.ball (0 : ℂ) (r ^ m)) : ℂ) ≠ 0 := by
@@ -229,14 +187,14 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv :
     letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
     letI := periodAddAction (powPullbackPeriod m r P)
     letI := logTranslationMulAction P l
-    letI := logTranslationQuotientChartedSpace P l hinj hfree (fun l ↦ (hP l).continuous)
+    letI := logTranslationQuotientChartedSpace P hinj l hfree (fun l ↦ (hP l).continuous)
     ContMDiff (M := logTranslationQuotientPunctured P l) (M' := torusFamilyPunctured P)
       (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n (torusFamilyLogGaugeEquiv P l hr) := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
   let _ := periodAddAction (powPullbackPeriod m r P)
   let _ := logTranslationMulAction P l
-  let _ := logTranslationQuotientChartedSpace P l hinj hfree (fun l ↦ (hP l).continuous)
+  let _ := logTranslationQuotientChartedSpace P hinj l hfree (fun l ↦ (hP l).continuous)
   intro q
   -- Pass to the ambient manifolds, through the inclusions of the open subsets.
   refine (TauCeti.ContMDiffAt.subtypeVal_comp_iff (torusFamilyPunctured P) _ q).1 ?_
@@ -246,8 +204,7 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv :
   obtain ⟨x, rfl⟩ := Quotient.exists_rep q
   exact contMDiffAt_of_eq_torusFamilyLogGaugeEquiv P l hr hP hinj hfree _
     (fun q hq ↦ Subtype.val_injective.extend_apply _ _ ⟨q, hq⟩)
-    ((torusFamilyCyclicQuotientProjection_eq_zero_iff _ _ _ _ _ _ _ _ _ x).not.mp
-      ((mem_logTranslationQuotientPuncturedSet P l _).1 hq))
+    ((mk_mem_logTranslationQuotientPuncturedSet P l x).1 hq)
 
 /-- The inverse of the logarithmic gauge is `C^n` from the punctured family to the punctured cyclic
 quotient. -/
@@ -256,14 +213,14 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv_symm :
     letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
     letI := periodAddAction (powPullbackPeriod m r P)
     letI := logTranslationMulAction P l
-    letI := logTranslationQuotientChartedSpace P l hinj hfree (fun l ↦ (hP l).continuous)
+    letI := logTranslationQuotientChartedSpace P hinj l hfree (fun l ↦ (hP l).continuous)
     ContMDiff (M := torusFamilyPunctured P) (M' := logTranslationQuotientPunctured P l)
       (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n (torusFamilyLogGaugeEquiv P l hr).symm := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
   let _ := periodAddAction (powPullbackPeriod m r P)
   let _ := logTranslationMulAction P l
-  let _ := logTranslationQuotientChartedSpace P l hinj hfree (fun l ↦ (hP l).continuous)
+  let _ := logTranslationQuotientChartedSpace P hinj l hfree (fun l ↦ (hP l).continuous)
   intro y
   refine (TauCeti.ContMDiffAt.subtypeVal_comp_iff (logTranslationQuotientPunctured P l) _ y).1 ?_
   refine (contMDiffAt_extend_subtypeVal_iff (U := torusFamilyPunctured P)
@@ -290,14 +247,14 @@ noncomputable def torusFamilyLogGaugeDiffeomorph :
     letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
     letI := periodAddAction (powPullbackPeriod m r P)
     letI := logTranslationMulAction P l
-    letI := logTranslationQuotientChartedSpace P l hinj hfree (fun l ↦ (hP l).continuous)
+    letI := logTranslationQuotientChartedSpace P hinj l hfree (fun l ↦ (hP l).continuous)
     Diffeomorph (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E))
       (logTranslationQuotientPunctured P l) (torusFamilyPunctured P) n :=
   letI := periodAddAction P
   letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
   letI := periodAddAction (powPullbackPeriod m r P)
   letI := logTranslationMulAction P l
-  letI := logTranslationQuotientChartedSpace P l hinj hfree (fun l ↦ (hP l).continuous)
+  letI := logTranslationQuotientChartedSpace P hinj l hfree (fun l ↦ (hP l).continuous)
   { toEquiv := torusFamilyLogGaugeEquiv P l hr
     contMDiff_toFun := contMDiff_torusFamilyLogGaugeEquiv P l hr hP hinj hfree
     contMDiff_invFun := contMDiff_torusFamilyLogGaugeEquiv_symm P l hr hP hinj hfree }
@@ -309,7 +266,7 @@ underlying map. -/
     letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
     letI := periodAddAction (powPullbackPeriod m r P)
     letI := logTranslationMulAction P l
-    letI := logTranslationQuotientChartedSpace P l hinj hfree (fun l ↦ (hP l).continuous)
+    letI := logTranslationQuotientChartedSpace P hinj l hfree (fun l ↦ (hP l).continuous)
     ⇑(torusFamilyLogGaugeDiffeomorph P l hr hP hinj hfree) = torusFamilyLogGaugeEquiv P l hr :=
   (rfl)
 
@@ -320,9 +277,38 @@ underlying map. -/
     letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
     letI := periodAddAction (powPullbackPeriod m r P)
     letI := logTranslationMulAction P l
-    letI := logTranslationQuotientChartedSpace P l hinj hfree (fun l ↦ (hP l).continuous)
+    letI := logTranslationQuotientChartedSpace P hinj l hfree (fun l ↦ (hP l).continuous)
     ⇑(torusFamilyLogGaugeDiffeomorph P l hr hP hinj hfree).symm =
       (torusFamilyLogGaugeEquiv P l hr).symm :=
   (rfl)
+
+/-- The diffeomorphism has the underlying equivalence `TauCeti.torusFamilyLogGaugeEquiv`. -/
+@[simp] theorem torusFamilyLogGaugeDiffeomorph_toEquiv :
+    letI := periodAddAction P
+    letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
+    letI := periodAddAction (powPullbackPeriod m r P)
+    letI := logTranslationMulAction P l
+    letI := logTranslationQuotientChartedSpace P hinj l hfree (fun l ↦ (hP l).continuous)
+    (torusFamilyLogGaugeDiffeomorph P l hr hP hinj hfree).toEquiv =
+      torusFamilyLogGaugeEquiv P l hr :=
+  (rfl)
+
+/-- The diffeomorphism has the underlying homeomorphism `TauCeti.torusFamilyLogGaugeHomeomorph`. -/
+@[simp] theorem torusFamilyLogGaugeDiffeomorph_toHomeomorph :
+    letI := periodAddAction P
+    letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
+    letI := periodAddAction (powPullbackPeriod m r P)
+    letI := logTranslationMulAction P l
+    letI := logTranslationQuotientChartedSpace P hinj l hfree (fun l ↦ (hP l).continuous)
+    (torusFamilyLogGaugeDiffeomorph P l hr hP hinj hfree).toHomeomorph =
+      torusFamilyLogGaugeHomeomorph P l hr (fun l ↦ (hP l).continuous) :=
+  letI := periodAddAction P
+  letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
+  letI := periodAddAction (powPullbackPeriod m r P)
+  letI := logTranslationMulAction P l
+  letI := logTranslationQuotientChartedSpace P hinj l hfree (fun l ↦ (hP l).continuous)
+  Homeomorph.ext fun _ ↦ by
+    rw [Diffeomorph.coe_toHomeomorph, coe_torusFamilyLogGaugeDiffeomorph,
+      coe_torusFamilyLogGaugeHomeomorph]
 
 end TauCeti

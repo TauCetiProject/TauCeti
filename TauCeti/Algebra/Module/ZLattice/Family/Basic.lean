@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
-public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.Topology.Sets.Opens
 public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.Covering.Quotient
 
@@ -318,36 +316,6 @@ theorem continuous_torusFamilyProjection [TopologicalSpace Y] [TopologicalSpace 
     Continuous (torusFamilyProjection P) :=
   let _ := periodAddAction P
   continuous_fst.quotient_lift _
-
-section Punctured
-
-variable {s : ℝ} (P : Metric.ball (0 : ℂ) s → Λ →ₗ[ℤ] E)
-
-/-- The locus of the torus family over the disc where the base coordinate is nonzero. -/
-def torusFamilyPuncturedSet :
-    letI := periodAddAction P
-    Set (AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) s × E)) :=
-  {y | ((torusFamilyProjection P y : Metric.ball (0 : ℂ) s) : ℂ) ≠ 0}
-
-/-- Membership in the punctured carrier means that the base coordinate is nonzero. -/
-@[simp] theorem mem_torusFamilyPuncturedSet
-    (y : letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) s × E)) :
-    y ∈ torusFamilyPuncturedSet P ↔
-      ((torusFamilyProjection P y : Metric.ball (0 : ℂ) s) : ℂ) ≠ 0 :=
-  Iff.rfl
-
-/-- The punctured part `Y* = {t ≠ 0}` of the family of tori over the disc, as an open subset
-with carrier `torusFamilyPuncturedSet`. -/
-abbrev torusFamilyPunctured [TopologicalSpace E] :
-    letI := periodAddAction P
-    TopologicalSpace.Opens (AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) s × E)) :=
-  letI := periodAddAction P
-  ⟨torusFamilyPuncturedSet P, by
-    simp only [torusFamilyPuncturedSet]
-    exact isOpen_ne_fun (continuous_subtypeVal.comp (continuous_torusFamilyProjection P))
-      continuous_const⟩
-
-end Punctured
 
 /-- The projection of the family of tori is open, since it is descended from the open map
 `Prod.fst` along the quotient map. -/

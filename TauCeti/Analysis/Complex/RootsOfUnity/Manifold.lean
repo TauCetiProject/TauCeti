@@ -13,7 +13,6 @@ public import TauCeti.Geometry.Manifold.Instances.OpenBall.Basic
 
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Analysis.Complex.RootsOfUnity.Quotient
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # The rotated disc as a complex manifold
@@ -38,9 +37,6 @@ on which the rotations lift.
   of `ℂ` on its target.
 * `TauCeti.rootsOfUnityBall.instContMDiffConstSMul`: the rotations act on the disc by `C^n` maps,
   that is, by biholomorphisms.
-* `TauCeti.rootsOfUnityBall.exists_contMDiffAt_powMap_eq_and_exp_eq`: near a nonzero point, the
-  power map `u ↦ u ^ m` between the discs has a `C^n` local section together with a `C^n`
-  logarithm of it (holomorphic for `n ≠ 0`).
 -/
 
 public section
@@ -123,31 +119,5 @@ theorem isLocalDiffeomorphAt_coe_pow_rootsOfUnityBall {n : ℕ∞ω} (hn : 1 ≤
     IsLocalDiffeomorphAt 𝓘(ℂ) 𝓘(ℂ) n (fun u : rootsOfUnityBall m r ↦ (u : ℂ) ^ m) u :=
   IsLocalDiffeomorphAt.comp (K := 𝓘(ℂ)) (P := ℂ) (isLocalDiffeomorph_coe_rootsOfUnityBall u)
     (isLocalDiffeomorphAt_pow hn (NeZero.ne m) hu)
-
-/-- **Holomorphic local roots and their logarithms.** For `0 ≤ r` and `t₀ ≠ 0` in the disc of
-radius `r ^ m`, there are maps `w` to the disc of radius `r` and `L` to `ℂ`, both `C^n` at `t₀`
-(holomorphic for `n ≠ 0`), such that every `t ≠ 0` has `w t ^ m = t` and `exp (L t) = w t`. -/
-theorem rootsOfUnityBall.exists_contMDiffAt_powMap_eq_and_exp_eq (hr : 0 ≤ r)
-    {t₀ : Metric.ball (0 : ℂ) (r ^ m)} (ht₀ : (t₀ : ℂ) ≠ 0) :
-    ∃ (w : Metric.ball (0 : ℂ) (r ^ m) → rootsOfUnityBall m r)
-      (L : Metric.ball (0 : ℂ) (r ^ m) → ℂ),
-      ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) n w t₀ ∧ ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) n L t₀ ∧
-        ∀ t : Metric.ball (0 : ℂ) (r ^ m), (t : ℂ) ≠ 0 →
-          rootsOfUnityBall.powMap m r (w t) = t ∧ Complex.exp (L t) = w t := by
-  obtain ⟨f, L, hf, hL, -, hfm, hLf⟩ := exists_contDiffAt_pow_eq_and_exp_eq (n := n)
-    (NeZero.ne m) ht₀ (c := rootsOfUnityBall.rootMap hr t₀)
-    (by rw [← rootsOfUnityBall.coe_powMap, rootsOfUnityBall.powMap_rootMap])
-  have hmem (t : Metric.ball (0 : ℂ) (r ^ m)) : f t ∈ rootsOfUnityBall m r := by
-    rw [mem_rootsOfUnityBall, ← pow_lt_pow_iff_left₀ (norm_nonneg _) hr (NeZero.ne m),
-      ← norm_pow, hfm, ← mem_ball_zero_iff]
-    exact t.property
-  have hval := (contMDiff_subtypeVal_ball (I := 𝓘(ℂ)) (n := n) (c := (0 : ℂ))
-    (r := r ^ m)).contMDiffAt (x := t₀)
-  refine ⟨fun t ↦ ⟨f t, hmem t⟩, fun t ↦ L t, ?_, hL.contMDiffAt.comp t₀ hval,
-    fun t ht ↦ ⟨Subtype.ext ?_, hLf t ht⟩⟩
-  · exact (TauCeti.ContMDiffAt.subtypeVal_comp_iff (rootsOfUnityBall.opens m r) _ t₀).1
-      (hf.contMDiffAt.comp t₀ hval)
-  · rw [rootsOfUnityBall.coe_powMap]
-    exact hfm t
 
 end TauCeti
