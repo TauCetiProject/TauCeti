@@ -111,6 +111,12 @@ theorem hamiltonianVectorField_const_mul (ω : SymplecticForm V) (c : ℝ) (H : 
   rw [hamiltonianVectorField, hamiltonianVectorField, h, fderiv_const_smul_field, Pi.smul_apply,
     map_smul]
 
+/-- The Hamiltonian vector field is homogeneous, as an identity of vector fields:
+`X_{c H} = c X_H`. -/
+theorem hamiltonianVectorField_const_mul' (ω : SymplecticForm V) (c : ℝ) (H : V → ℝ) :
+    ω.hamiltonianVectorField (fun y ↦ c * H y) = c • ω.hamiltonianVectorField H :=
+  funext fun x ↦ ω.hamiltonianVectorField_const_mul c H x
+
 /-- The Hamiltonian has zero derivative in its own Hamiltonian direction. -/
 @[simp]
 theorem fderiv_apply_hamiltonianVectorField (ω : SymplecticForm V) (H : V → ℝ) (x : V) :

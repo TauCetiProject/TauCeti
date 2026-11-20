@@ -42,10 +42,13 @@ each critical point lies on exactly one of them
 (`TauCeti.IsMorseBottFamily.existsUnique_mem_range`), only finitely many of them meet a compact set
 (by `LocallyFinite.finite_nonempty_inter_compact`), and on a compact manifold there are finitely
 many (`TauCeti.IsMorseBottFamily.finite`). Each piece is closed
-(`TauCeti.IsMorseBottFamily.isClosed_range`). The function takes a single value on each piece
-(`TauCeti.IsMorseBottFamily.subsingleton_image_range`), so a critical point on a level lies on a
-piece on that level (`TauCeti.IsMorseBottFamily.mem_iUnion_range_of_apply_eq`), and on a compact
-manifold `f` has finitely many critical values
+(`TauCeti.IsMorseBottFamily.isClosed_range`), so a piece lying in a compact set is compact
+(`TauCeti.IsMorseBottFamily.compactSpace_of_range_subset`). The function takes a single value on
+each piece (`TauCeti.IsMorseBottFamily.subsingleton_image_range`), so a critical point on a level
+lies on a piece on that level (`TauCeti.IsMorseBottFamily.mem_iUnion_range_of_apply_eq`), it takes
+finitely many critical values on a compact set
+(`TauCeti.IsMorseBottFamily.finite_image_criticalPoints_inter`), and on a compact manifold it has
+finitely many critical values
 (`TauCeti.IsMorseBottFamily.finite_image_criticalPoints`). The same family
 exhibits `-f` as a Morse–Bott function (`TauCeti.IsMorseBottFamily.neg`). The conditions only
 involve the underlying maps of the embeddings, so a family with the same maps and possibly another
@@ -183,6 +186,13 @@ theorem isClosed_range [IsManifold I 1 M] (a : ι) : IsClosed (range (i a)) := b
   rw [h.range_eq_connectedComponentIn a s]
   exact (isClosed_criticalPoints (h.contMDiff.of_le (by simp))).connectedComponentIn
 
+/-- A piece lying in a compact set is compact, since its image is closed. -/
+theorem compactSpace_of_range_subset [IsManifold I 1 M] {K : Set M} (hK : IsCompact K) {a : ι}
+    (ha : range (i a) ⊆ K) : CompactSpace (S a) :=
+  isCompact_univ_iff.1 <| (i a).isEmbedding.isInducing.isCompact_iff.2 <| by
+    rw [image_univ]
+    exact hK.of_isClosed_subset (h.isClosed_range a) ha
+
 /-- **A Morse–Bott function takes a single value on each piece**, its critical value: `f ∘ i a` is
 locally constant, and the piece is connected because its image is a connected component of the
 critical set. -/
@@ -207,13 +217,21 @@ theorem mem_iUnion_range_of_apply_eq [∀ a, IsManifold (J a) 1 (S a)] (hn : n �
   exact mem_iUnion.2 ⟨⟨a, fun s' ↦ (h.subsingleton_image_range hn a (mem_image_of_mem f
     (mem_range_self s')) (mem_image_of_mem f (mem_range_self s))).trans hfx⟩, s, rfl⟩
 
+/-- **A Morse–Bott function takes finitely many critical values on a compact set**: only finitely
+many pieces meet the set, and the function takes a single value on each. -/
+theorem finite_image_criticalPoints_inter [∀ a, IsManifold (J a) 1 (S a)] (hn : n ≠ 0)
+    {K : Set M} (hK : IsCompact K) : (f '' (criticalPoints I f ∩ K)).Finite := by
+  refine ((h.locallyFinite_range.finite_nonempty_inter_compact hK).biUnion
+    fun a _ ↦ (h.subsingleton_image_range hn a).finite).subset ?_
+  rintro _ ⟨x, ⟨hx, hxK⟩, rfl⟩
+  obtain ⟨a, hxa⟩ := h.mem_criticalPoints_iff.1 hx
+  exact mem_biUnion ⟨x, hxa, hxK⟩ (mem_image_of_mem f hxa)
+
 /-- **A Morse–Bott function on a compact manifold has finitely many critical values**: it has
 finitely many pieces and takes a single value on each. -/
 theorem finite_image_criticalPoints [CompactSpace M] [∀ a, IsManifold (J a) 1 (S a)]
     (hn : n ≠ 0) : (f '' criticalPoints I f).Finite := by
-  have := h.finite
-  rw [← h.iUnion_range, image_iUnion]
-  exact finite_iUnion fun a ↦ (h.subsingleton_image_range hn a).finite
+  simpa using h.finite_image_criticalPoints_inter hn isCompact_univ
 
 /-- A Morse–Bott family of `f` is also a Morse–Bott family of `-f`. -/
 theorem neg : IsMorseBottFamily i (-f) where

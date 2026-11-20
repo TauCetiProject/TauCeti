@@ -54,7 +54,7 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.IdealSheafData
 
-variable {X : Scheme.{u}}
+variable {U X : Scheme.{u}}
 
 /-- The reduced induced closed subscheme structure on a closed subset is reduced. -/
 instance isReduced_subscheme_vanishingIdeal (Z : Closeds X) :
@@ -196,5 +196,20 @@ theorem comap_vanishingIdeal_closure_singleton_eq_top_of_notMem_range {U : Schem
   simp only [Closeds.coe_mk, Set.mem_preimage]
   rw [j.isOpenEmbedding.isInducing.closure_eq_preimage_closure_image, Set.image_singleton,
     Set.mem_preimage]
+
+/-- Along an open immersion `j : U ⟶ X`, the vanishing ideal sheaf of `closure {j u}` pulls back to
+the vanishing ideal sheaf of `closure {u}`. -/
+theorem comap_vanishingIdeal_closure_singleton_of_isOpenImmersion (j : U ⟶ X) [IsOpenImmersion j]
+    (u : U) :
+    (vanishingIdeal ⟨closure {j u}, isClosed_closure⟩).comap j =
+      vanishingIdeal ⟨closure {u}, isClosed_closure⟩ := by
+  rw [comap_vanishingIdeal_of_isOpenImmersion]
+  congr 1
+  ext1
+  simp only [Closeds.coe_mk]
+  rw [j.isOpenEmbedding.isOpenMap.preimage_closure_eq_closure_preimage j.continuous]
+  congr 1
+  ext w
+  simp [j.isOpenEmbedding.injective.eq_iff]
 
 end AlgebraicGeometry.Scheme.IdealSheafData

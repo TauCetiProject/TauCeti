@@ -54,8 +54,7 @@ theorem surjective_tensorRestriction_of_subsingleton_cohomology_one (E : X.Modul
     (hvan : Subsingleton (TauCeti.AlgebraicGeometry.Scheme.Modules.Cohomology
       (E ⊗ I.sheaf) 1)) :
     Function.Surjective (Scheme.Modules.Hom.app
-      ((ρ_ E).inv ≫ E ◁
-        SheafOfModules.unitToPushforwardObjUnit I.subschemeι.toRingCatSheafHom) ⊤) := by
+      ((ρ_ E).inv ≫ E ◁ I.toPushforwardSubscheme) ⊤) := by
   have hsurj := TauCeti.AlgebraicGeometry.Scheme.Modules.sections_surjective
     (I.shortExact_tensor_toPushforwardSubscheme E) hvan
   have hunitor : Function.Surjective (Scheme.Modules.Hom.app (ρ_ E).inv ⊤) :=

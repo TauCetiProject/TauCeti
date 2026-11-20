@@ -172,6 +172,11 @@ def criticalPoints (f : M → ℝ) : Set M :=
 theorem mem_criticalPoints : x ∈ criticalPoints I f ↔ mvfderiv I f x = 0 :=
   Iff.rfl
 
+/-- Whether `x` is a critical point of `f` depends only on the germ of `f` at `x`. -/
+theorem _root_.Filter.EventuallyEq.mem_criticalPoints_iff {f₁ f₂ : M → ℝ}
+    (h : f₁ =ᶠ[𝓝 x] f₂) : x ∈ criticalPoints I f₁ ↔ x ∈ criticalPoints I f₂ := by
+  rw [mem_criticalPoints, mem_criticalPoints, h.mvfderiv_eq]
+
 /-- A point is critical exactly when the manifold derivative `mfderiv I 𝓘(ℝ) f` vanishes there. -/
 theorem mem_criticalPoints_iff_mfderiv_eq_zero :
     x ∈ criticalPoints I f ↔ mfderiv I 𝓘(ℝ) f x = 0 :=
@@ -657,6 +662,15 @@ theorem finite_sigma_criticalPoints_inter {S : Set M} (hS : (criticalPoints I f 
       cases Subtype.ext_iff.1 hxy
       cases hx.2.symm.trans hy.2
       rfl
+
+omit [IsManifold I 1 M] in
+/-- If `f` has only finitely many critical points, then only finitely many pairs of an index `m`
+and a critical point of index `m` exist. -/
+theorem finite_sigma_criticalPoints (h : (criticalPoints I f).Finite) :
+    Finite (Σ m, ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m}) :=
+  have := finite_sigma_criticalPoints_inter (I := I) (f := f) (S := univ) (by simpa using h)
+  .of_equiv (Σ m, ↥{x ∈ criticalPoints I f ∩ univ | manifoldMorseIndex I f x = m})
+    (Equiv.sigmaCongrRight fun _ ↦ Set.equivOfEq (by simp))
 
 /-- **The critical points of a Morse function are isolated.** Near any point `x` there is no
 critical point of a Morse function other than `x` itself. -/

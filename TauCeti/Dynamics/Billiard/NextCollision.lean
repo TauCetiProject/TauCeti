@@ -103,6 +103,10 @@ variable {o : Orientation ℝ E (Fin 2)} (χ : StrictConvexBilliardTable o)
 instance : CoeFun (StrictConvexBilliardTable o) fun _ ↦ ℝ → E :=
   ⟨toFun⟩
 
+/-- The length of the boundary of a billiard table is positive. -/
+instance instFactPeriodPos : Fact (0 < χ.period) :=
+  ⟨χ.period_pos⟩
+
 theorem differentiableAt (s : ℝ) : DifferentiableAt ℝ χ s :=
   differentiableAt_of_deriv_ne_zero fun h ↦ by simpa [h] using χ.norm_deriv s
 
