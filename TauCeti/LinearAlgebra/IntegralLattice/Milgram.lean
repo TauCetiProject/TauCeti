@@ -179,11 +179,11 @@ private theorem splitCarrier_le : splitCarrier L x ≤ L.carrier :=
 /-- If `x` has nonzero norm `d`, then `ℤx + (x^⊥ ∩ L)` contains `dL`: every `y ∈ L` satisfies
 `d • y = (x, y) • x + (d • y - (x, y) • x)` with the second summand orthogonal to `x`. Hence it
 is a full sublattice. -/
-private theorem isLattice_splitCarrier (hx : L.integralNorm x ≠ 0) :
-    (splitCarrier L x).IsLattice ℚ := by
+private theorem isFullLattice_splitCarrier (hx : L.integralNorm x ≠ 0) :
+    (splitCarrier L x).IsFullLattice ℚ := by
   have hd : ((L.integralNorm x : ℤ) : ℚ) ≠ 0 := Int.cast_ne_zero.mpr hx
-  refine Submodule.IsLattice.of_le_of_isLattice_of_fg ℚ (M := Units.mk0 _ hd • L.carrier) ?_
-    (Submodule.FG.of_le Submodule.IsLattice.fg (splitCarrier_le L x))
+  refine Submodule.IsFullLattice.of_le_of_fg ℚ (M := Units.mk0 _ hd • L.carrier) ?_
+    (Submodule.FG.of_le (Submodule.IsLattice.fg ℚ L.carrier) (splitCarrier_le L x))
   intro z hz
   obtain ⟨y, hy, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hz
   set c : ℤ := L.integralForm x ⟨y, hy⟩
@@ -201,17 +201,17 @@ private theorem isLattice_splitCarrier (hx : L.integralNorm x ≠ 0) :
 
 /-- The full sublattice `ℤx + (x^⊥ ∩ L)` of `L`, for a vector `x` of nonzero norm. -/
 private noncomputable def splitLattice (hx : L.integralNorm x ≠ 0) : IntegralLattice V :=
-  haveI := isLattice_splitCarrier L x hx
+  haveI := isFullLattice_splitCarrier L x hx
   L.restrictFull (splitCarrier L x) (splitCarrier_le L x)
 
 variable (hx : L.integralNorm x ≠ 0)
 
 private theorem splitLattice_carrier : (splitLattice L x hx).carrier = splitCarrier L x :=
-  haveI := isLattice_splitCarrier L x hx
+  haveI := isFullLattice_splitCarrier L x hx
   restrictFull_carrier ..
 
 private theorem splitLattice_form : (splitLattice L x hx).form = L.form :=
-  haveI := isLattice_splitCarrier L x hx
+  haveI := isFullLattice_splitCarrier L x hx
   restrictFull_form ..
 
 private instance [L.IsNondegenerate] : (splitLattice L x hx).IsNondegenerate :=
@@ -271,13 +271,13 @@ private theorem isCompl_splitLattice :
     simp [splitVector, htx]
 
 private theorem isEven_splitLattice (hL : L.IsEven) : (splitLattice L x hx).IsEven :=
-  haveI := isLattice_splitCarrier L x hx
+  haveI := isFullLattice_splitCarrier L x hx
   isEven_restrictFull hL _ _
 
 private theorem gaussSign_splitLattice [L.IsNondegenerate] (hL : L.IsEven) :
     ((splitLattice L x hx).discriminantQuadraticModule
       (isEven_splitLattice L x hx hL)).gaussSign = (L.discriminantQuadraticModule hL).gaussSign :=
-  haveI := isLattice_splitCarrier L x hx
+  haveI := isFullLattice_splitCarrier L x hx
   gaussSign_discriminantQuadraticModule_restrictFull L hL _ _
 
 /-- The orthogonal complement of `x` in `ℤx + (x^⊥ ∩ L)`, as a lattice in its own rational
