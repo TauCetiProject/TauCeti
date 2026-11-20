@@ -284,10 +284,16 @@ theorem frobenius_apply_of_delta_eq_zero {x : A} (hx : delta p x = 0) :
     frobenius p A x = x ^ p := by
   rw [frobenius_apply, hx, mul_zero, add_zero]
 
+/-- A ring homomorphism commuting with `δ` commutes with the Frobenius lifts. -/
+theorem map_frobenius {B F : Type*} [CommRing B] [DeltaRing p B] [FunLike F A B]
+    [RingHomClass F A B] (f : F) (hf : ∀ x, f (delta p x) = delta p (f x)) (x : A) :
+    f (frobenius p A x) = frobenius p B (f x) := by
+  simp [frobenius_apply, hf]
+
 /-- A `δ`-map commutes with the Frobenius lifts. -/
 theorem IsDeltaMap.map_frobenius {B : Type*} [CommRing B] [DeltaRing p B] {f : A →+* B}
-    (hf : IsDeltaMap p f) (x : A) : f (frobenius p A x) = frobenius p B (f x) := by
-  rw [frobenius_apply, frobenius_apply, map_add, map_mul, map_pow, map_natCast, hf.map_delta]
+    (hf : IsDeltaMap p f) (x : A) : f (frobenius p A x) = frobenius p B (f x) :=
+  DeltaRing.map_frobenius f hf.map_delta x
 
 /-- A `δ`-map intertwines the Frobenius lifts. -/
 theorem IsDeltaMap.comp_frobenius {B : Type*} [CommRing B] [DeltaRing p B] {f : A →+* B}
