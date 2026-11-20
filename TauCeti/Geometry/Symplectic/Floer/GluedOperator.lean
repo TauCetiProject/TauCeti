@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Pregluing
 public import TauCeti.Geometry.Symplectic.Floer.Splicing
 import Mathlib.Topology.UniformSpace.HeineCantor
+import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.ODE.Regularity
 
 /-!
@@ -90,9 +92,9 @@ private noncomputable def adjointJet (ω : SymplecticForm V) (J : ℝ → V → 
 private theorem adjointCoeffs_eq (hJ : Differentiable ℝ (uncurry J)) {m : ℝ × ℝ → V}
     {z : ℝ × ℝ} (hm : DifferentiableAt ℝ m z) :
     adjointCoeffs ω J H m z = adjointJet ω J H (z.2, m z, fderiv ℝ m z stdComplexLineImag) := by
-  have hc := (hJ (z.2, m z)).hasFDerivAt.comp z (hasFDerivAt_snd.prodMk hm.hasFDerivAt)
-  rw [adjointCoeffs, adjointJet,
-    show (fun w : ℝ × ℝ ↦ J w.2 (m w)) = uncurry J ∘ fun w ↦ (w.2, m w) from rfl, hc.fderiv]
+  have hc : HasFDerivAt (fun w : ℝ × ℝ ↦ J w.2 (m w)) _ z :=
+    ((hJ (z.2, m z)).hasFDerivAt.comp z (hasFDerivAt_snd.prodMk hm.hasFDerivAt) :)
+  rw [adjointCoeffs, adjointJet, hc.fderiv]
   ext1
   · rfl
   · ext y
@@ -108,6 +110,18 @@ private theorem adjointCoeffs_congr {m₁ m₂ : ℝ × ℝ → V} {z : ℝ × �
     ext y
     simp only [floerLinearizationCoeff_apply, h.eq_of_nhds, h.fderiv_eq]
   simp only [adjointCoeffs, hC, h.eq_of_nhds, hJm.fderiv_eq]
+
+/-- Adjoint coefficients within `ε` of each other bound the differences of both coefficients, in
+the form taken by the splicing estimate. -/
+private theorem norm_sub_le_of_dist_adjointCoeffs_le {m₁ m₂ : ℝ × ℝ → V} {z : ℝ × ℝ} {ε : ℝ}
+    (h : dist (adjointCoeffs ω J H m₁ z) (adjointCoeffs ω J H m₂ z) ≤ ε) :
+    ‖J z.2 (m₁ z) - J z.2 (m₂ z)‖ ≤ ε ∧
+      ‖(fderiv ℝ (fun w ↦ J w.2 (m₁ w)) z stdComplexLineImag -
+          ω.floerLinearizationCoeff (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) m₁ z) -
+        (fderiv ℝ (fun w ↦ J w.2 (m₂ w)) z stdComplexLineImag -
+          ω.floerLinearizationCoeff (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) m₂ z)‖ ≤ ε := by
+  rw [dist_eq_norm] at h
+  exact ⟨(norm_fst_le _).trans h, (norm_snd_le _).trans h⟩
 
 /-- The adjoint jet of `C¹` almost complex data and a `C²` Hamiltonian is continuous. -/
 private theorem continuous_adjointJet (hJ : ContDiff ℝ 1 (uncurry J))
@@ -138,11 +152,10 @@ private theorem adjointJet_sub_intCast (hJp : Periodic J 1) (hHp : Periodic H 1)
     (q : ℝ × V × V) : adjointJet ω J H (q.1 - n, q.2) = adjointJet ω J H q := by
   have hJn : J (q.1 - n) = J q.1 := by simpa using hJp.sub_int_mul_eq (x := q.1) n
   have hHn : H (q.1 - n) = H q.1 := by simpa using hHp.sub_int_mul_eq (x := q.1) n
-  have hJs : (fun p : ℝ × V ↦ uncurry J (p + (-(n : ℝ), 0))) = uncurry J := funext fun p ↦ by
-    simpa [uncurry, ← sub_eq_add_neg] using congrFun (hJp.sub_int_mul_eq (x := p.1) n) p.2
+  have hpJ : Periodic (uncurry J) ((1 : ℝ), (0 : V)) := fun p ↦ by
+    simpa [uncurry] using congrFun (hJp p.1) p.2
   have hdJ : fderiv ℝ (uncurry J) (q.1 - n, q.2.1) = fderiv ℝ (uncurry J) (q.1, q.2.1) := by
-    rw [show ((q.1 - n, q.2.1) : ℝ × V) = (q.1, q.2.1) + (-(n : ℝ), 0) by
-      ext <;> simp [sub_eq_add_neg], ← fderiv_comp_add_right, hJs]
+    simpa using hpJ.fderiv.sub_zsmul_eq (x := (q.1, q.2.1)) n
   simp only [adjointJet, hJn, hHn, hdJ]
 
 /-- **Uniform continuity of the adjoint jet near the orbit.** For data of period one and a loop
@@ -167,8 +180,8 @@ private theorem exists_pos_forall_dist_adjointJet_lt (hJ : ContDiff ℝ 1 (uncur
   -- Reduce `t` to `t₀ = t - ⌊t⌋ ∈ [0, 1)` by periodicity.
   set t₀ := Int.fract t
   have ht₀ : t₀ ∈ Icc (0 : ℝ) 1 := ⟨Int.fract_nonneg t, (Int.fract_lt_one t).le⟩
-  have hx₀ : x t₀ = x t := by simpa using hxp.sub_int_mul_eq (x := t) ⌊t⌋
-  have hH₀ : H t₀ = H t := by simpa using hHp.sub_int_mul_eq (x := t) ⌊t⌋
+  have hx₀ : x t₀ = x t := hxp.apply_fract t
+  have hH₀ : H t₀ = H t := hHp.apply_fract t
   have hj (y' η' : V) : adjointJet ω J H (t₀, y', η') = adjointJet ω J H (t, y', η') :=
     adjointJet_sub_intCast hJp hHp ⌊t⌋ (t, y', η')
   have hd : dist (p t₀) (t₀, y, η) < δ := by
@@ -362,14 +375,10 @@ theorem eventually_setIntegral_sobolev_le_mul_setIntegral_floerLinearizationAdjo
     hC (by linarith) (by nlinarith) hε₁ (fun z hz ↦ ?_) (fun z hz ↦ ?_) (fun z hz ↦ ?_)
     (fun z hz ↦ ?_) (fun η' hη' hper' a' b' hab' h₀' ↦ ?_) (fun η' hη' hper' a' b' hab' h₀' ↦ ?_)
     hη hper hab hη₀
-  · simpa [adjointCoeffs] using
-      (norm_fst_le _).trans ((dist_eq_norm _ _).symm.trans_le (hR₁ z hz).le)
-  · simpa [adjointCoeffs] using
-      (norm_snd_le _).trans ((dist_eq_norm _ _).symm.trans_le (hR₁ z hz).le)
-  · simpa [adjointCoeffs] using
-      (norm_fst_le _).trans ((dist_eq_norm _ _).symm.trans_le (hR₂ z hz).le)
-  · simpa [adjointCoeffs] using
-      (norm_snd_le _).trans ((dist_eq_norm _ _).symm.trans_le (hR₂ z hz).le)
+  · exact (norm_sub_le_of_dist_adjointCoeffs_le (hR₁ z hz).le).1
+  · exact (norm_sub_le_of_dist_adjointCoeffs_le (hR₁ z hz).le).2
+  · exact (norm_sub_le_of_dist_adjointCoeffs_le (hR₂ z hz).le).1
+  · exact (norm_sub_le_of_dist_adjointCoeffs_le (hR₂ z hz).le).2
   · simpa only [Prod.snd_add, add_zero] using
       setIntegral_sobolev_le_mul_setIntegral_floerLinearizationAdjoint_comp_add_right ω R hestu hη'
         hper' hab' h₀'
