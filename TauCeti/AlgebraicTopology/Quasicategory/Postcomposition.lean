@@ -52,8 +52,10 @@ of a quasicategory with a fixed morphism.
 ## Main results
 
 * `SSet.rightMappingSpace.postcompSpace.obj₀Equiv`: the vertices of `Hom^R_X(x, g)` are the
-  composition triangles with last edge `g`, and `src` and `tgt` send them to their first and long
-  edges (`SSet.rightMappingSpace.postcompSpace.obj₀Equiv_src_app`,
+  composition triangles with last edge `g`, whose `2`-simplex is the cone itself
+  (`SSet.rightMappingSpace.postcompSpace.obj₀Equiv_apply_simplex`,
+  `SSet.rightMappingSpace.postcompSpace.objEquiv_obj₀Equiv_symm_coe`), and `src` and `tgt` send
+  them to their first and long edges (`SSet.rightMappingSpace.postcompSpace.obj₀Equiv_src_app`,
   `SSet.rightMappingSpace.postcompSpace.obj₀Equiv_tgt_app`).
 * `SSet.rightMappingSpace.postcompSpace.rlp_src`: for a quasicategory, `src` is a trivial
   fibration.
@@ -251,6 +253,19 @@ noncomputable def obj₀Equiv :
     dsimp only
     rw [compStruct_simplex, simplex, Equiv.apply_symm_apply, Iso.inv_hom_id_assoc,
       Equiv.apply_symm_apply])
+
+/-- The `2`-simplex of the composition triangle of a vertex of `Hom^R_X(x, g)` is its cone
+`Δ[0] ⋆ Δ[1] ⟶ X` over `g`, through `Δ[0] ⋆ Δ[1] ≅ Δ[2]`. -/
+theorem obj₀Equiv_apply_simplex (v : (postcompSpace x g : SSet.{u}) _⦋0⦌) :
+    (obj₀Equiv x g v).2.2.simplex = yonedaEquiv ((join.coneIso 1).inv ≫ (slice.objEquiv v.1).1) :=
+  (rfl)
+
+/-- The cone `Δ[0] ⋆ Δ[1] ⟶ X` over `g` of the vertex of `Hom^R_X(x, g)` given by a composition
+triangle is its `2`-simplex, through `Δ[0] ⋆ Δ[1] ≅ Δ[2]`. -/
+theorem objEquiv_obj₀Equiv_symm_coe (c : Σ (f : Edge x y) (h : Edge x z), Edge.CompStruct f g h) :
+    (slice.objEquiv ((obj₀Equiv x g).symm c).1).1 =
+      (join.coneIso 1).hom ≫ yonedaEquiv.symm c.2.2.simplex :=
+  congrArg Subtype.val (slice.objEquiv.apply_symm_apply _)
 
 /-- The image under `src` of a vertex of `Hom^R_X(x, g)` is the first edge of its composition
 triangle. -/
