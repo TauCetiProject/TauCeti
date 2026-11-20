@@ -50,6 +50,11 @@ direction combine into one condition on the whole frequency space.
   `ζ₀`, provided `‖ζ‖ ≤ ‖a ζ‖ + ‖b ζ‖`.
 * `TauCeti.exists_finset_compl_singleton_subset_biUnion`: if every unit vector lies in an open
   cone, finitely many of these cones cover the nonzero vectors.
+* `TauCeti.exists_finset_subset_biUnion_interior_and_isOpen_cone`: finitely many of given
+  neighbourhoods of the points of a compact set cover it, and the corresponding open cones
+  intersect in an open cone.
+* `TauCeti.forall_smul_mem_neg`: the negative of a set closed under multiplication by positive
+  reals is closed under multiplication by positive reals.
 
 ## References
 
@@ -296,5 +301,31 @@ theorem exists_finset_compl_singleton_subset_biUnion [NormedSpace ℝ E] [Proper
     simp [norm_smul, inv_mul_cancel₀ hη'.ne']))
   exact mem_iUnion₂.2 ⟨ξ, hξt, by
     simpa [smul_smul, mul_inv_cancel₀ hη'.ne'] using hcone ξ ‖η‖ hη' _ hηξ⟩
+
+/-- **Finitely many neighbourhoods and cones over a compact set.** Given at each point `x` of a
+compact set `K` a neighbourhood `U x` and an open set `Γ x` containing `ξ` and closed under
+multiplication by positive reals, finitely many of the interiors of the `U x` cover `K`, and the
+intersection of the corresponding sets `Γ x` is again open, contains `ξ` and is closed under
+multiplication by positive reals. -/
+theorem exists_finset_subset_biUnion_interior_and_isOpen_cone [Module ℝ E] {K : Set E} {ξ : E}
+    (hK : IsCompact K) {U Γ : K → Set E} (hU : ∀ x : K, U x ∈ nhds (x : E))
+    (hΓ : ∀ x, IsOpen (Γ x)) (hξΓ : ∀ x, ξ ∈ Γ x)
+    (hcone : ∀ x, ∀ t : ℝ, 0 < t → ∀ η ∈ Γ x, t • η ∈ Γ x) :
+    ∃ t : Finset K, K ⊆ ⋃ x ∈ t, interior (U x) ∧ IsOpen (⋂ x ∈ t, Γ x) ∧ ξ ∈ ⋂ x ∈ t, Γ x ∧
+      ∀ c : ℝ, 0 < c → ∀ η ∈ ⋂ x ∈ t, Γ x, c • η ∈ ⋂ x ∈ t, Γ x := by
+  obtain ⟨t, ht⟩ := hK.elim_finite_subcover (fun x : K ↦ interior (U x))
+    (fun _ ↦ isOpen_interior) fun x hx ↦
+      mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx⟩)⟩
+  exact ⟨t, ht, isOpen_biInter_finset fun x _ ↦ hΓ x, mem_iInter₂.2 fun x _ ↦ hξΓ x,
+    fun c hc η hη ↦ mem_iInter₂.2 fun x hx ↦ hcone x c hc η (mem_iInter₂.1 hη x hx)⟩
+
+open Pointwise in
+/-- The negative `-Γ` of a set closed under multiplication by positive reals is again closed under
+multiplication by positive reals. -/
+theorem forall_smul_mem_neg [Module ℝ E] {Γ : Set E}
+    (hcone : ∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) :
+    ∀ t : ℝ, 0 < t → ∀ η ∈ -Γ, t • η ∈ -Γ := fun t ht η hη ↦ by
+  rw [Set.mem_neg, ← smul_neg]
+  exact hcone t ht _ (Set.mem_neg.1 hη)
 
 end TauCeti
