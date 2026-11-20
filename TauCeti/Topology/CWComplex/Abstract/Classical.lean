@@ -141,10 +141,10 @@ private lemma continuousOn_cellPartialEquiv_symm (γ : c.Cells) :
   let g : e.target → Metric.ball (0 : Fin γ.j → ℝ) 1 := fun y ↦
     ⟨e.symm y, e.map_target y.property⟩
   have hg : Continuous g := (c.isEmbedding_cellMap γ).continuous_iff.2 (by
-    convert continuous_subtype_val using 1
+    convert continuous_subtypeVal using 1
     funext y
     exact e.right_inv y.property)
-  exact continuousOn_iff_continuous_domRestrict.2 (continuous_subtype_val.comp hg)
+  exact continuousOn_iff_continuous_domRestrict.2 (continuous_subtypeVal.comp hg)
 
 private lemma cellMap_boundary_finite (γ : c.Cells) :
     ∃ I : ∀ n, Finset (c.attachCells n (not_isMax n)).ι,

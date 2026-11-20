@@ -380,8 +380,8 @@ noncomputable def fiberEquivOfIsAlgClosed (y' : Y') (hy : IsClosed {gY y'})
   have HX : IsPullback gX (X' ↘ Spec (.of L)) (X ↘ Spec (.of k))
       (Spec.map (CommRingCat.ofHom (algebraMap k L))) := by
     simpa only [comp_over] using Hf.paste_vert HY
-  refine Equiv.ofBijective (fun x' ↦ ⟨gX x'.1, by
-      rw [← Scheme.Hom.comp_apply, Hf.w, Scheme.Hom.comp_apply, x'.2]⟩) ⟨?_, ?_⟩
+  refine Equiv.ofBijective (fun x' ↦ ⟨gX x'.val, by
+      rw [← Scheme.Hom.comp_apply, Hf.w, Scheme.Hom.comp_apply, x'.property]⟩) ⟨?_, ?_⟩
   · rintro ⟨x'₁, hx'₁⟩ ⟨x'₂, hx'₂⟩ h
     have hxcl : IsClosed {gX x'₁} :=
       hfib (gX x'₁) (by rw [← Scheme.Hom.comp_apply, Hf.w, Scheme.Hom.comp_apply, hx'₁])
@@ -398,17 +398,17 @@ noncomputable def fiberEquivOfIsAlgClosed (y' : Y') (hy : IsClosed {gY y'})
 @[simp]
 theorem fiberEquivOfIsAlgClosed_coe (y' : Y') (hy : IsClosed {gY y'})
     (hfib : ∀ x : X, f x = gY y' → IsClosed {x}) (x' : {x' : X' // f' x' = y'}) :
-    (fiberEquivOfIsAlgClosed Hf HY y' hy hfib x').1 = gX x'.1 := by
+    (fiberEquivOfIsAlgClosed Hf HY y' hy hfib x').val = gX x'.val := by
   unfold fiberEquivOfIsAlgClosed; rfl
 
 /-- `fiberEquivOfIsAlgClosed` preserves `ramificationIdxAt` in arbitrary characteristic. -/
 theorem ramificationIdxAt_fiberEquivOfIsAlgClosed (y' : Y') (hy : IsClosed {gY y'})
     (hfib : ∀ x : X, f x = gY y' → IsClosed {x}) (x' : {x' : X' // f' x' = y'}) :
-    f'.ramificationIdxAt x'.1 =
-      f.ramificationIdxAt (fiberEquivOfIsAlgClosed Hf HY y' hy hfib x').1 :=
-  have hfgx : f (gX x'.1) = gY y' := by
-    rw [← Scheme.Hom.comp_apply, Hf.w, Scheme.Hom.comp_apply, x'.2]
-  ramificationIdxAt_eq_of_isPullback_of_isClosed Hf HY (hfib (gX x'.1) hfgx) (hfgx ▸ hy)
+    f'.ramificationIdxAt x'.val =
+      f.ramificationIdxAt (fiberEquivOfIsAlgClosed Hf HY y' hy hfib x').val :=
+  have hfgx : f (gX x'.val) = gY y' := by
+    rw [← Scheme.Hom.comp_apply, Hf.w, Scheme.Hom.comp_apply, x'.property]
+  ramificationIdxAt_eq_of_isPullback_of_isClosed Hf HY (hfib (gX x'.val) hfgx) (hfgx ▸ hy)
 
 /-- Specialization of `fiberEquivOfIsAlgClosed` to locally quasi-finite morphisms. -/
 noncomputable def fiberEquivOfIsAlgClosedOfLocallyQuasiFinite [LocallyQuasiFinite f]

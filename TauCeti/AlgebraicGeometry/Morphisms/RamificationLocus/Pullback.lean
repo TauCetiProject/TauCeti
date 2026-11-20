@@ -101,10 +101,10 @@ private theorem exists_isPushout_stalkMap_iff_of_isPullback
     Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f (gX x'))) isOpen_univ
   obtain ⟨_, ⟨U', hU' : IsAffineOpen U', rfl⟩, hx'U', hU'U⟩ :=
     Y'.isBasis_affineOpens.exists_subset_of_mem_open
-      (show gY (f' x') ∈ U from hcomm ▸ hxU) (U.2.preimage gY.continuous)
+      (show gY (f' x') ∈ U from hcomm ▸ hxU) (U.is_open'.preimage gY.continuous)
   obtain ⟨_, ⟨V, hV : IsAffineOpen V, rfl⟩, hxV, hVU⟩ :=
     X.isBasis_affineOpens.exists_subset_of_mem_open
-      (show f (gX x') ∈ U from hxU) (U.2.preimage f.continuous)
+      (show f (gX x') ∈ U from hxU) (U.is_open'.preimage f.continuous)
   algebraize [(gY.appLE U U' hU'U).hom, (f.appLE U V hVU).hom]
   let _ : Algebra Γ(X, V) (Γ(Y', U') ⊗[Γ(Y, U)] Γ(X, V)) := Algebra.TensorProduct.rightAlgebra
   have := hU.isOpenImmersion_fromSpec

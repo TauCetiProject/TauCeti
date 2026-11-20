@@ -109,27 +109,6 @@ theorem IsDominant.of_isPullback_of_flat {X Y X' Y' : Scheme.{u}} [IrreducibleSp
   exact hz'.mem_closed isClosed_closure
     (subset_closure ⟨H.isoPullback.inv w, by simp [← Scheme.Hom.comp_apply, hw]⟩)
 
-/-- A dominant open immersion between irreducible schemes induces an isomorphism on generic
-stalks (function fields). -/
-instance Scheme.Hom.isIso_functionFieldMap_of_isOpenImmersion {X Y : Scheme.{u}}
-    [IrreducibleSpace X] [IrreducibleSpace Y] (f : X ⟶ Y) [IsOpenImmersion f] [IsDominant f] :
-    IsIso f.functionFieldMap := by
-  let ψ : X.functionField ⟶ Y.functionField :=
-    inv (f.stalkMap (genericPoint X)) ≫
-      Y.presheaf.stalkSpecializes (specializes_of_eq f.genericPoint_eq_of_isDominant.symm)
-  have hψ : Spec.map ψ ≫ X.fromSpecStalk (genericPoint X) ≫ f =
-      Y.fromSpecStalk (genericPoint Y) := by
-    rw [Spec.map_comp_assoc, ← Scheme.SpecMap_stalkMap_fromSpecStalk, Spec.map_inv,
-      IsIso.inv_hom_id_assoc, Scheme.SpecMap_stalkSpecializes_fromSpecStalk]
-  refine ⟨⟨ψ, ?_, ?_⟩⟩
-  · refine ((Scheme.Hom.eq_functionFieldMap_iff (𝟙 Y) _).mpr ?_).trans
-      (Scheme.Hom.functionFieldMap_id (X := Y))
-    rw [Category.comp_id, Spec.map_comp_assoc, f.SpecMap_functionFieldMap_fromSpecStalk, hψ]
-  · refine ((Scheme.Hom.eq_functionFieldMap_iff (𝟙 X) _).mpr ?_).trans
-      (Scheme.Hom.functionFieldMap_id (X := X))
-    rw [Category.comp_id, ← cancel_mono f, Category.assoc, Spec.map_comp_assoc, hψ,
-      f.SpecMap_functionFieldMap_fromSpecStalk]
-
 end AlgebraicGeometry
 
 namespace TauCeti

@@ -130,7 +130,7 @@ theorem exists_isSimplexImmersion_isClosedEmbedding_range_mem_nhds [FiniteDimens
   rw [← hb] at hbx hbt
   -- The simplex in `E` spanned by `b`, read in barycentric coordinates.
   let L : (σ → ℝ) →ₗ[ℝ] E := Fintype.linearCombination ℝ b
-  let p : StandardSimplex σ → E := fun y => L fun a => y.1 a
+  let p : StandardSimplex σ → E := fun y => L fun a => y.val a
   have hL (v : σ → ℝ) (hv : ∑ a, v a = 0) (hv0 : L v = 0) : v = 0 :=
     funext fun a => b.ind.eq_zero_of_sum_eq_zero (s := Finset.univ) hv
       (by simpa [L, Fintype.linearCombination_apply] using hv0) a (Finset.mem_univ a)
@@ -169,16 +169,17 @@ theorem exists_finite_isSimplexImmersion_cover [FiniteDimensional ℝ E] [T2Spac
     (U : M → Set M) (hU : ∀ x ∈ K, U x ∈ 𝓝 x) :
     ∃ t : Finset K, ∃ g : t → StandardSimplex σ → M,
       (∀ x, TauCeti.IsSimplexImmersion I n (g x) ∧ IsClosedEmbedding (g x) ∧
-        range (g x) ∈ 𝓝 (x.1 : K).1 ∧ range (g x) ⊆ U (x.1 : K).1) ∧
+        range (g x) ∈ 𝓝 (x.val : K).val ∧ range (g x) ⊆ U (x.val : K).val) ∧
       K ⊆ ⋃ x, interior (range (g x)) := by
   classical
-  have hlocal (x : K) := (hI x x.2).exists_isSimplexImmersion_isClosedEmbedding_range_mem_nhds
-    (n := n) hσ (hU x x.2)
+  have hlocal (x : K) :=
+      (hI x x.property).exists_isSimplexImmersion_isClosedEmbedding_range_mem_nhds
+    (n := n) hσ (hU x x.property)
   choose f hf hc hn hs using hlocal
   obtain ⟨t, ht⟩ := hK.elim_finite_subcover (fun x : K => interior (range (f x)))
     (fun _ => isOpen_interior) (fun x hx =>
       mem_iUnion.mpr ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.mpr (hn ⟨x, hx⟩)⟩)
-  refine ⟨t, fun x => f x.1, fun x => ⟨hf _, hc _, hn _, hs _⟩, ?_⟩
+  refine ⟨t, fun x => f x.val, fun x => ⟨hf _, hc _, hn _, hs _⟩, ?_⟩
   intro x hx
   obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.mp (ht hx)
   exact mem_iUnion.mpr ⟨⟨y, hy⟩, hxy⟩

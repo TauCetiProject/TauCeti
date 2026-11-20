@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.AbsolutelySumming.Basic
 public import TauCeti.Analysis.Normed.Module.WeakDual.Basic
-public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Measure.Regular
 import Mathlib.Analysis.LocallyConvex.Separation
+import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 import TauCeti.Algebra.Order.Module.Field
 import TauCeti.Analysis.Normed.Module.RCLike.Rpow
 import TauCeti.Analysis.Normed.Module.WeakDual.Integral
@@ -75,7 +77,7 @@ private abbrev dualBall : Set (WeakDual 𝕜 E) :=
 
 private theorem norm_le_one_of_mem_dualBall (f : dualBall 𝕜 E) :
     ‖WeakDual.toStrongDual (f : WeakDual 𝕜 E)‖ ≤ 1 :=
-  mem_closedBall_zero_iff.mp f.2
+  mem_closedBall_zero_iff.mp f.property
 
 /-- **Pietsch domination**, the easy direction: if `‖T x‖ ≤ C (∫ |f x|ᵖ dν(f))^(1/p)` for a
 probability measure `ν` on the dual unit ball, then `πₚ(T) ≤ C`. -/

@@ -13,8 +13,10 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 For a complex number `s` separated in argument from the negative real axis and a nonnegative
 real `t`, the norm of the translate `s + t` is bounded below by a fixed multiple of `‖s‖ + t`:
 `c * (‖s‖ + t) ≤ ‖s + t‖`, where `0 ≤ c ≤ 1` depends only on the angular separation. On the
-sector `|arg s| ≤ π - δ` one may take `c = (1 - cos δ) / 2`. These inequalities control
-reciprocal kernels in sectorial integrals. A nonzero point of such a sector, with `0 < δ`, lies in
+sector `|arg s| ≤ π - δ` one may take `c = (1 - cos δ) / 2`, and for `z` in the sector
+`Re z ≤ c ‖z‖`, `c < 1`, around the negative real axis,
+`(1 - max c (-1)) / 2 * (t + ‖z‖) ≤ ‖t - z‖`. These inequalities control reciprocal kernels in
+sectorial integrals and resolvent symbols. A nonzero point of such a sector, with `0 < δ`, lies in
 the slit plane.
 -/
 
@@ -56,6 +58,21 @@ theorem mul_norm_add_le_norm_add_ofReal_of_abs_arg_le {s : ℂ} {δ t : ℝ}
     have h := mul_le_mul_of_nonneg_left hcos (norm_nonneg s)
     rw [norm_mul_cos_arg] at h
     nlinarith
+
+/-- On the sector `Re z ≤ c ‖z‖`, the difference `t - z` with a nonnegative real `t` satisfies
+`(1 - max c (-1)) / 2 * (t + ‖z‖) ≤ ‖t - z‖`. For `c < 1` this keeps `t - z` away from `0`; for
+`c ≥ 1` the left side is nonpositive. -/
+theorem mul_add_norm_le_norm_ofReal_sub {z : ℂ} {c t : ℝ} (ht : 0 ≤ t) (hz : z.re ≤ c * ‖z‖) :
+    (1 - max c (-1)) / 2 * (t + ‖z‖) ≤ ‖(t : ℂ) - z‖ := by
+  rcases le_or_gt 1 c with hc | hc
+  · have : (1 - max c (-1)) / 2 ≤ 0 := by linarith [le_max_left c (-1)]
+    nlinarith [norm_nonneg ((t : ℂ) - z), norm_nonneg z]
+  have h := mul_norm_add_le_norm_add_ofReal (s := -z) (c := (1 - max c (-1)) / 2)
+    (by linarith [max_lt hc (show (-1 : ℝ) < 1 by norm_num)]) (by linarith [le_max_right c (-1)])
+    ht (by
+      rw [norm_neg, neg_re]
+      nlinarith [mul_le_mul_of_nonneg_right (le_max_left c (-1)) (norm_nonneg z)])
+  rwa [norm_neg, neg_add_eq_sub, add_comm ‖z‖ t] at h
 
 /-- A nonzero complex number with `|arg s| < π` lies in the slit plane. -/
 theorem mem_slitPlane_of_abs_arg_lt {s : ℂ} (hs : |s.arg| < Real.pi) (hs0 : s ≠ 0) :

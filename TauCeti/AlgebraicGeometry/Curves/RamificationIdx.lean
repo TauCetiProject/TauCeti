@@ -183,14 +183,14 @@ noncomputable def curveFiberEquivOfIsAlgClosed (y' : Y') (hy : gY y' ≠ generic
 @[simp]
 theorem curveFiberEquivOfIsAlgClosed_coe (y' : Y') (hy : gY y' ≠ genericPoint Y)
     (x' : {x' : X' // f' x' = y'}) :
-    (curveFiberEquivOfIsAlgClosed Hf HY y' hy x').1 = gX x'.1 :=
+    (curveFiberEquivOfIsAlgClosed Hf HY y' hy x').val = gX x'.val :=
   fiberEquivOfIsAlgClosed_coe Hf HY y' _ _ x'
 
 /-- `curveFiberEquivOfIsAlgClosed` preserves `ramificationIdxAt` in arbitrary characteristic. -/
 theorem ramificationIdxAt_curveFiberEquivOfIsAlgClosed (y' : Y') (hy : gY y' ≠ genericPoint Y)
     (x' : {x' : X' // f' x' = y'}) :
-    f'.ramificationIdxAt x'.1 =
-      f.ramificationIdxAt (curveFiberEquivOfIsAlgClosed Hf HY y' hy x').1 :=
+    f'.ramificationIdxAt x'.val =
+      f.ramificationIdxAt (curveFiberEquivOfIsAlgClosed Hf HY y' hy x').val :=
   ramificationIdxAt_fiberEquivOfIsAlgClosed Hf HY y' _ _ x'
 
 end AlgClosed

@@ -242,19 +242,19 @@ theorem itemKind_eq_of_closedSectionOfItem_eq {k k' : Fin Ω.numItems}
 
 /-- The kind of a closed section: the kind of its items. -/
 def sectionKind (s : Ω.closedSections) : SectionKind :=
-  P.itemKind ⟨s.1.1, (Ω.mem_closedSections.1 s.2).left_lt_numItems⟩
+  P.itemKind ⟨s.val.1, (Ω.mem_closedSections.1 s.property).left_lt_numItems⟩
 
 theorem sectionKind_def (s : Ω.closedSections) :
-    P.sectionKind s = P.itemKind ⟨s.1.1, (Ω.mem_closedSections.1 s.2).left_lt_numItems⟩ :=
+    P.sectionKind s = P.itemKind ⟨s.val.1, (Ω.mem_closedSections.1 s.property).left_lt_numItems⟩ :=
   (rfl)
 
 /-- Every item of a closed section has the kind of that section. -/
 theorem itemKind_eq_sectionKind {s : Ω.closedSections} {k : Fin Ω.numItems}
-    (hk : k ∈ Ω.sectionItems s.1.1 s.1.2) : P.itemKind k = P.sectionKind s := by
+    (hk : k ∈ Ω.sectionItems s.val.1 s.val.2) : P.itemKind k = P.sectionKind s := by
   rw [sectionKind_def]
   refine P.itemKind_eq_of_closedSectionOfItem_eq ?_
-  rw [Ω.closedSectionOfItem_eq_of_mem s.2 hk, Ω.closedSectionOfItem_eq_of_mem s.2]
-  exact Ω.mem_sectionItems.2 ⟨le_rfl, (Ω.mem_closedSections.1 s.2).lt⟩
+  rw [Ω.closedSectionOfItem_eq_of_mem s.property hk, Ω.closedSectionOfItem_eq_of_mem s.property]
+  exact Ω.mem_sectionItems.2 ⟨le_rfl, (Ω.mem_closedSections.1 s.property).lt⟩
 
 /-- The kind of an item is the kind of its closed section. -/
 @[simp]
@@ -279,7 +279,7 @@ theorem itemKind_eq_baseKind {μ : Fin Ω.numBases} {k : Fin Ω.numItems} (hk : 
 
 /-- A variable base contained in a closed section has the kind of that section. -/
 theorem baseKind_eq_sectionKind {μ : Fin Ω.numBases} {s : Ω.closedSections}
-    (hμ : Ω.baseItems μ ⊆ Ω.sectionItems s.1.1 s.1.2) : P.baseKind μ = P.sectionKind s :=
+    (hμ : Ω.baseItems μ ⊆ Ω.sectionItems s.val.1 s.val.2) : P.baseKind μ = P.sectionKind s :=
   P.itemKind_eq_sectionKind (hμ (Ω.left_mem_baseItems μ))
 
 /-- The kind of a variable base is the kind of its closed section. -/
@@ -304,8 +304,8 @@ def sectionPartitionEquiv : Ω.SectionPartition ≃ (Ω.closedSections → Secti
           (Fin.le_def.2 (by omega))).2 fun l hl₁ hl₂ ↦ ?_).symm)
         rwa [show l = k.succ from Fin.ext (by grind)] }
   left_inv P := SectionPartition.ext (funext P.sectionKind_closedSectionOfItem)
-  right_inv f := funext fun s ↦ congrArg f (Subtype.ext (Ω.closedSectionOfItem_eq_of_mem s.2
-    (Ω.mem_sectionItems.2 ⟨le_rfl, (Ω.mem_closedSections.1 s.2).lt⟩)))
+  right_inv f := funext fun s ↦ congrArg f (Subtype.ext (Ω.closedSectionOfItem_eq_of_mem s.property
+    (Ω.mem_sectionItems.2 ⟨le_rfl, (Ω.mem_closedSections.1 s.property).lt⟩)))
 
 @[simp]
 theorem sectionPartitionEquiv_apply (P : Ω.SectionPartition) :

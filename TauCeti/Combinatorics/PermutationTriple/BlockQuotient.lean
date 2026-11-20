@@ -235,7 +235,7 @@ theorem mem_symm_blockIndex (x : Fin n) :
 /-- Every sheet of the quotient is hit: translates of a nonempty set are nonempty. -/
 theorem blockIndex_surjective : Function.Surjective (blockIndex ht hB hBne e) := by
   intro i
-  obtain ⟨g, hg⟩ := mem_orbit_iff.1 (e.symm i).2
+  obtain ⟨g, hg⟩ := mem_orbit_iff.1 (e.symm i).property
   have ⟨x, hx⟩ := hBne
   exact ⟨g • x, (blockIndex_eq_iff e ht hB hBne).2 (hg ▸ Set.smul_mem_smul_set hx)⟩
 
@@ -295,7 +295,7 @@ and the quotient by them is the double cover `(0 1)`, `(0 1)`, `1`. -/
 theorem exists_blockQuotient_eq_ofTwo_swap (hcard : B.ncard * 2 = n) (h0 : t.σ0 '' B ≠ B)
     (h1 : t.σ1 '' B ≠ B) :
     ∃ e : orbit t.monodromyGroup B ≃ Fin 2, t.blockQuotient B e = ofTwo (swap 0 1) (swap 0 1) := by
-  have hBne : B.Nonempty := Set.nonempty_iff_ne_empty.2 fun h ↦ h0 (by simp [h])
+  have hBne : B.Nonempty := Set.ne_empty_iff_nonempty.1 fun h ↦ h0 (by simp [h])
   have h := ncard_mul_eq_of_isBlock ht hB hBne (Finite.equivFin (orbit t.monodromyGroup B))
   exact ⟨Finite.equivFinOfCardEq (Nat.eq_of_mul_eq_mul_left
     ((Set.ncard_pos B.toFinite).mpr hBne) (h.trans hcard.symm)),
@@ -315,7 +315,7 @@ of an element of the monodromy group of `t`. -/
 private theorem exists_blockActionHom_eq (h : (t.blockQuotient B e).monodromyGroup) :
     ∃ g, t.blockActionHom B e g = h := by
   have hh : (h : Perm (Fin m)) ∈ (t.blockActionHom B e).range :=
-    monodromyGroup_blockQuotient t B e ▸ h.2
+    monodromyGroup_blockQuotient t B e ▸ h.property
   exact MonoidHom.mem_range.1 hh
 
 /-- Pulling back along the quotient map turns the translate of a set of sheets of the quotient
@@ -353,7 +353,7 @@ theorem preimage_image_blockIndex {D : Set (Fin n)} (hD : IsBlock t.monodromyGro
     (hBD : B ⊆ D) : blockIndex ht hB hBne e ⁻¹' (blockIndex ht hB hBne e '' D) = D := by
   refine (Set.subset_preimage_image _ _).antisymm' ?_
   rintro x ⟨y, hy, hxy⟩
-  obtain ⟨g, hg⟩ := mem_orbit_iff.1 (e.symm (blockIndex ht hB hBne e y)).2
+  obtain ⟨g, hg⟩ := mem_orbit_iff.1 (e.symm (blockIndex ht hB hBne e y)).property
   have hx := mem_symm_blockIndex e ht hB hBne x
   have hy' := mem_symm_blockIndex e ht hB hBne y
   rw [← hxy, ← hg] at hx
@@ -369,20 +369,21 @@ noncomputable def preimageBlockIndexOrderIso :
     {C : Set (Fin m) //
         IsBlock (t.blockQuotient B e).monodromyGroup C ∧ e ⟨B, mem_orbit_self B⟩ ∈ C} ≃o
       {D : Set (Fin n) // IsBlock t.monodromyGroup D ∧ B ⊆ D} where
-  toFun C := ⟨blockIndex ht hB hBne e ⁻¹' C, (isBlock_preimage_blockIndex_iff e ht hB hBne).2 C.2.1,
+  toFun C := ⟨blockIndex ht hB hBne e ⁻¹' C, (isBlock_preimage_blockIndex_iff e ht hB hBne).2
+      C.property.1,
     fun x hx ↦ by
       rw [Set.mem_preimage, (blockIndex_eq_iff e ht hB hBne (i := e ⟨B, mem_orbit_self B⟩)).2
         (by simpa using hx)]
-      exact C.2.2⟩
+      exact C.property.2⟩
   invFun D := ⟨blockIndex ht hB hBne e '' D, by
     rw [← isBlock_preimage_blockIndex_iff e ht hB hBne,
-      preimage_image_blockIndex e ht hB hBne D.2.1 D.2.2]
-    exact D.2.1, by
+      preimage_image_blockIndex e ht hB hBne D.property.1 D.property.2]
+    exact D.property.1, by
     have ⟨x, hx⟩ := hBne
-    exact ⟨x, D.2.2 hx,
+    exact ⟨x, D.property.2 hx,
       (blockIndex_eq_iff e ht hB hBne (i := e ⟨B, mem_orbit_self B⟩)).2 (by simpa using hx)⟩⟩
   left_inv C := Subtype.ext (Set.image_preimage_eq _ (blockIndex_surjective e ht hB hBne))
-  right_inv D := Subtype.ext (preimage_image_blockIndex e ht hB hBne D.2.1 D.2.2)
+  right_inv D := Subtype.ext (preimage_image_blockIndex e ht hB hBne D.property.1 D.property.2)
   map_rel_iff' := (blockIndex_surjective e ht hB hBne).preimage_subset_preimage_iff
 
 /-- The block of `t` corresponding to a block of the quotient is its preimage. -/
@@ -406,18 +407,18 @@ noncomputable def blockIndexOrbitEquiv (C : Set (Fin m)) :
     orbit (t.blockQuotient B e).monodromyGroup C ≃
       orbit t.monodromyGroup (blockIndex ht hB hBne e ⁻¹' C) where
   toFun S := ⟨blockIndex ht hB hBne e ⁻¹' S, by
-    obtain ⟨h, hS⟩ := mem_orbit_iff.1 S.2
+    obtain ⟨h, hS⟩ := mem_orbit_iff.1 S.property
     obtain ⟨g, hg⟩ := exists_blockActionHom_eq e h
     exact mem_orbit_iff.2 ⟨g, by rw [← hS, preimage_blockIndex_smul e ht hB hBne hg]⟩⟩
   invFun T := ⟨blockIndex ht hB hBne e '' T, by
-    obtain ⟨g, hT⟩ := mem_orbit_iff.1 T.2
+    obtain ⟨g, hT⟩ := mem_orbit_iff.1 T.property
     refine mem_orbit_iff.2 ⟨⟨_, blockActionHom_mem_monodromyGroup e g⟩, ?_⟩
     rw [← hT, ← preimage_blockIndex_smul e ht hB hBne
         (h := ⟨_, blockActionHom_mem_monodromyGroup e g⟩) rfl,
       Set.image_preimage_eq _ (blockIndex_surjective e ht hB hBne)]⟩
   left_inv S := Subtype.ext (Set.image_preimage_eq _ (blockIndex_surjective e ht hB hBne))
   right_inv T := by
-    obtain ⟨g, hT⟩ := mem_orbit_iff.1 T.2
+    obtain ⟨g, hT⟩ := mem_orbit_iff.1 T.property
     refine Subtype.ext ?_
     dsimp only
     rw [← hT, ← preimage_blockIndex_smul e ht hB hBne
@@ -570,7 +571,7 @@ theorem semiconj_blockIndex (g : t.monodromyGroup) :
 /-- Each fibre of the quotient map is a translate of `B`, so it has as many sheets as `B`. -/
 @[simp] theorem ncard_preimage_blockIndex (i : Fin m) :
     (blockIndex ht hB hBne e ⁻¹' {i}).ncard = B.ncard := by
-  obtain ⟨g, hg⟩ := mem_orbit_iff.1 (e.symm i).2
+  obtain ⟨g, hg⟩ := mem_orbit_iff.1 (e.symm i).property
   have hfib : blockIndex ht hB hBne e ⁻¹' {i} = g • B := by
     ext x
     rw [Set.mem_preimage, Set.mem_singleton_iff, blockIndex_eq_iff, hg]

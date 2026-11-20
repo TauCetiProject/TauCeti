@@ -66,7 +66,7 @@ lemma relativeEffectiveCartier_map_mul {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T')
       (relativeEffectiveCartierSubfunctor f).toFunctor.map φ D *
         (relativeEffectiveCartierSubfunctor f).toFunctor.map φ E := by
   apply Subtype.ext
-  exact Scheme.IdealSheafData.comap_mul D.1 E.1 _
+  exact Scheme.IdealSheafData.comap_mul D.val E.val _
 
 end
 

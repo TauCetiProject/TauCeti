@@ -19,6 +19,8 @@ encoding or a `Primcodable` instance for finite sets.
 
 The certificates are uniform in their numerical inputs and, for bounded filtering, in the
 primitive recursive predicate, so they can be used in computable finite-stage constructions.
+For finite sets over any primitive-codable type, membership is a primitive recursive predicate
+(`Set.Finite.primrecPred`).
 
 ## References
 
@@ -85,3 +87,14 @@ theorem nat_leastBitIndex : Primrec Nat.leastBitIndex :=
   (list_head?.comp nat_bitIndices).of_eq fun n => (Nat.leastBitIndex_def n).symm
 
 end Primrec
+
+namespace Set
+
+/-- Membership in a finite subset of a primitive-codable type is primitive recursive. -/
+theorem Finite.primrecPred {α : Type*} [Primcodable α] {A : Set α} (hA : A.Finite) :
+    PrimrecPred (· ∈ A) := by
+  classical
+  exact (Primrec.eq.exists_mem_list.comp (Primrec.const (Set.Finite.toFinset hA).toList)
+    Primrec.id).of_eq fun x => by simp
+
+end Set
