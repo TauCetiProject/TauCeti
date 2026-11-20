@@ -66,14 +66,16 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 private def contDiffOnSMulAux (hU : UniqueDiffOn ℝ U) (hΩ : IsCompact (closure (Omega : Set E)))
     (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ) (hpsi : ContDiffOn ℝ ∞ psi U)
     (u : Wkp mu Omega p k) : Wkp mu Omega p k :=
-  (exists_value_ae_eq_mul_of_contDiffOn hU hΩ hΩU k hpsi u).choose
+  (exists_value_ae_eq_mul_of_contDiffOn hU hΩ hΩU k (hpsi.of_le (by exact_mod_cast le_top))
+    u).choose
 
 private theorem value_contDiffOnSMulAux (hU : UniqueDiffOn ℝ U)
     (hΩ : IsCompact (closure (Omega : Set E))) (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ)
     (hpsi : ContDiffOn ℝ ∞ psi U) (u : Wkp mu Omega p k) :
     (value k (contDiffOnSMulAux hU hΩ hΩU k hpsi u) : E → ℝ) =ᵐ[mu.restrict Omega]
       fun x => psi x * value k u x :=
-  (exists_value_ae_eq_mul_of_contDiffOn hU hΩ hΩU k hpsi u).choose_spec
+  (exists_value_ae_eq_mul_of_contDiffOn hU hΩ hΩU k (hpsi.of_le (by exact_mod_cast le_top))
+    u).choose_spec
 
 /-- An element of `W^{k,p}(Ω)` is determined by having value `ψ u` almost everywhere. -/
 private theorem eq_of_value_ae_eq_mul {k : ℕ} {u w w' : Wkp mu Omega p k}
