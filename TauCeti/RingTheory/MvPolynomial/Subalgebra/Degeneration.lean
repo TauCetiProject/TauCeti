@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.UnitFiber
 public import TauCeti.RingTheory.MvPolynomial.Initial.Weight
 public import TauCeti.RingTheory.MvPolynomial.Subalgebra.WeightFiltration
 import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Subsemiring
-import TauCeti.RingTheory.TensorProduct.Polynomial
+import TauCeti.RingTheory.TensorProduct.BaseChangeEval
 
 /-!
 # The weight-initial algebra and fibres of the subalgebra weight Rees algebra
@@ -183,19 +183,19 @@ private theorem range_weightReesSymbol_le_span (A : Subalgebra R (MvPolynomial �
   obtain ⟨g, rfl⟩ := (A.weightReesSymbol w).mem_range.mp hx
   have hg : g = ∑ n ∈ (g : A[X]).support,
       coeffSubalgebra.monomial (A.weightFiltration w) n ((g : A[X]).coeff n)
-        (TauCeti.mem_coeffSubalgebra_iff.mp g.2 n) :=
+        (TauCeti.mem_coeffSubalgebra_iff.mp g.property n) :=
     Subtype.ext (by simpa using (g : A[X]).as_sum_support)
   rw [hg, map_sum]
   refine Submodule.sum_mem _ fun n _ ↦ ?_
   rw [weightReesSymbol_monomial]
   set f : MvPolynomial σ R := (((g : A[X]).coeff n : A) : MvPolynomial σ R)
   have hfn : f ∈ TauCeti.MvPolynomial.weightFiltration R w n :=
-    (A.mem_weightFiltration_iff w).mp (TauCeti.mem_coeffSubalgebra_iff.mp g.2 n)
+    (A.mem_weightFiltration_iff w).mp (TauCeti.mem_coeffSubalgebra_iff.mp g.property n)
   rcases (mem_weightFiltration_iff_weightedTotalDegree_le.mp hfn).lt_or_eq with hlt | heq
   · rw [weightedHomogeneousComponent_eq_zero _ _ hlt]
     exact zero_mem _
   · rw [← heq, ← weightInitialForm_def]
-    exact Submodule.subset_span ⟨f, ((g : A[X]).coeff n).2, rfl⟩
+    exact Submodule.subset_span ⟨f, ((g : A[X]).coeff n).property, rfl⟩
 
 /-- The image of the subalgebra symbol map is the weight-initial algebra. -/
 @[simp]
@@ -308,7 +308,7 @@ theorem ker_weightReesSymbol (A : Subalgebra R (MvPolynomial σ R)) (w : σ → 
           (q : (MvPolynomial σ R)[X]).coeff n := by
         simpa [Polynomial.coeff_X_mul] using hn
       rw [hqn]
-      exact TauCeti.mem_coeffSubalgebra_iff.mp q.2 n
+      exact TauCeti.mem_coeffSubalgebra_iff.mp q.property n
     refine Ideal.mem_span_singleton.mpr ⟨⟨(g : A[X]).divX, hdiv⟩, Subtype.ext ?_⟩
     simpa [hc0] using (Polynomial.X_mul_divX_add (g : A[X])).symm
   · rintro _ rfl

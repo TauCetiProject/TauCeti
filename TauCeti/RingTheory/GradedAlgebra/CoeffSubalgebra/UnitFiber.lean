@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.Ideal.Operations
 public import TauCeti.Algebra.Polynomial.LinearFactor
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.TensorProduct.Maps
-import TauCeti.RingTheory.TensorProduct.Polynomial
+import TauCeti.RingTheory.TensorProduct.BaseChangeEval
 
 /-!
 # The fibres at units of a filtered coefficient algebra
@@ -65,7 +65,7 @@ private theorem exists_mul_X_sub_algebraMap_eq (hM : Monotone M) {a : R} (ha : I
   have hmem : q ∈ coeffSubalgebra M := by
     rw [mem_coeffSubalgebra_iff]
     intro n
-    have hp' := mem_coeffSubalgebra_iff.mp p.2
+    have hp' := mem_coeffSubalgebra_iff.mp p.property
     have hsmul {n : ℕ} {b : B} (hb : a • b ∈ M n) : b ∈ M n := by
       simpa [smul_smul] using Submodule.smul_mem _ ha.unit⁻¹.val hb
     induction n with

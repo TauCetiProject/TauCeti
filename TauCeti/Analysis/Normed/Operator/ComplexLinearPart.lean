@@ -442,7 +442,7 @@ complex antilinear. -/
 theorem complexAntilinearPartL_eq_self_iff {Ψ : E →L[ℝ] F} :
     complexAntilinearPartL Ψ = Ψ ↔ ∀ v, Ψ (Complex.I • v) = -(Complex.I • Ψ v) := by
   rw [← coe_inj, toLinearMap_complexAntilinearPartL]
-  refine ⟨fun h ↦ (h ▸ TauCeti.complexAntilinearPart_isComplexAntilinear
+  refine ⟨fun h ↦ (h ▸ TauCeti.isComplexAntilinear_complexAntilinearPart
     Complex.toLinearMap_I_comp_toLinearMap_I Complex.toLinearMap_I_comp_toLinearMap_I _).apply,
     fun h ↦ (TauCeti.isComplexAntilinear_of_apply h).complexAntilinearPart_eq
       Complex.toLinearMap_I_comp_toLinearMap_I⟩
@@ -450,7 +450,7 @@ theorem complexAntilinearPartL_eq_self_iff {Ψ : E →L[ℝ] F} :
 /-- The image of `ContinuousLinearMap.complexAntilinearPartL` is complex antilinear. -/
 theorem complexAntilinearPartL_apply_I_smul (Ψ : E →L[ℝ] F) (v : E) :
     complexAntilinearPartL Ψ (Complex.I • v) = -(Complex.I • complexAntilinearPartL Ψ v) :=
-  (toLinearMap_complexAntilinearPartL Ψ ▸ TauCeti.complexAntilinearPart_isComplexAntilinear
+  (toLinearMap_complexAntilinearPartL Ψ ▸ TauCeti.isComplexAntilinear_complexAntilinearPart
     Complex.toLinearMap_I_comp_toLinearMap_I Complex.toLinearMap_I_comp_toLinearMap_I _).apply v
 
 /-- `ContinuousLinearMap.complexAntilinearPartL` is idempotent. -/

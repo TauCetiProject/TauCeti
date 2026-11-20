@@ -129,7 +129,7 @@ theorem weightReesAevalLift_surjective {A : Subalgebra R (MvPolynomial σ R)}
       (weightReesAeval c d).range := by
     rw [← A.map_weightReesAlgebra_eq_range_weightReesAeval w hAeq hc hg hJ hr hQ hQc]
     exact Subalgebra.mem_map.mpr
-      ⟨y, y.2, by rw [Polynomial.coe_mapAlgHom, A.coe_weightReesInclusion]⟩
+      ⟨y, y.property, by rw [Polynomial.coe_mapAlgHom, A.coe_weightReesInclusion]⟩
   obtain ⟨f, hf⟩ := (weightReesAeval c d).mem_range.mp hy
   refine ⟨f, A.weightReesInclusion_injective w (Subtype.ext ?_)⟩
   rwa [A.coe_weightReesInclusion, map_val_coe_weightReesAevalLift]
@@ -511,10 +511,10 @@ be a finite family of nonzero polynomials over a field `k` forming a SAGBI basis
 toric binomial exponent pairs, monic subduction certificates `Q : B → MvPolynomial ι k`, and
 strictly positive integral weights `w : σ → ℕ` such that, for the generator weights
 `d i = Finsupp.weight w (m.degree (b i))`:
-1. the binomials `Y^(j.1.1) - Y^(j.1.2)` for `j : B` generate the toric ideal of `m.degree ∘ b`,
+1. the binomials `Y^(j.val.1) - Y^(j.val.2)` for `j : B` generate the toric ideal of `m.degree ∘ b`,
    and each `Q j` satisfies `aeval (m.monicNormalize ∘ b) (Q j) =
-   aeval (m.monicNormalize ∘ b) (Y^(j.1.1) - Y^(j.1.2))` with strict monomial-order and `d`-weight
-   bounds below `j.1.1`;
+   aeval (m.monicNormalize ∘ b) (Y^(j.val.1) - Y^(j.val.2))` with strict monomial-order and
+   `d`-weight bounds below `j.val.1`;
 2. each `b i` has weight at most `d i` with top component `m.leadingTerm (b i)`, and
    `m.monicNormalize (b i)` has top component `X^(m.degree (b i))`;
 3. `A.weightInitialAlgebra w = m.initialAlgebra A`;
@@ -528,14 +528,14 @@ theorem IsSAGBIBasis.exists_pos_weight_ker_weightReesAeval [Finite ι]
     ∃ (B : Finset ((ι →₀ ℕ) × (ι →₀ ℕ))) (Q : B → MvPolynomial ι k) (w : σ → ℕ),
       (∀ s, 0 < w s) ∧
       TauCeti.toricIdeal k (fun i ↦ m.degree (b i)) =
-        Ideal.span (Set.range fun j : B ↦ monomial j.1.1 (1 : k) - monomial j.1.2 1) ∧
+        Ideal.span (Set.range fun j : B ↦ monomial j.val.1 (1 : k) - monomial j.val.2 1) ∧
       (∀ j : B, aeval (fun i ↦ m.monicNormalize (b i)) (Q j) =
-        aeval (fun i ↦ m.monicNormalize (b i)) (monomial j.1.1 (1 : k) - monomial j.1.2 1)) ∧
+        aeval (fun i ↦ m.monicNormalize (b i)) (monomial j.val.1 (1 : k) - monomial j.val.2 1)) ∧
       (∀ j : B, ∀ x ∈ (Q j).support,
         Finsupp.linearCombination ℕ (fun i ↦ m.degree (b i)) x ≺[m]
-          Finsupp.linearCombination ℕ (fun i ↦ m.degree (b i)) j.1.1) ∧
+          Finsupp.linearCombination ℕ (fun i ↦ m.degree (b i)) j.val.1) ∧
       (∀ j : B, Q j ∈ weightFiltrationLT k (fun i ↦ Finsupp.weight w (m.degree (b i)))
-        (Finsupp.weight (fun i ↦ Finsupp.weight w (m.degree (b i))) j.1.1)) ∧
+        (Finsupp.weight (fun i ↦ Finsupp.weight w (m.degree (b i))) j.val.1)) ∧
       (∀ i, b i ∈ weightFiltration k w (Finsupp.weight w (m.degree (b i))) ∧
         weightedHomogeneousComponent w (Finsupp.weight w (m.degree (b i))) (b i) =
           m.leadingTerm (b i) ∧
@@ -548,9 +548,9 @@ theorem IsSAGBIBasis.exists_pos_weight_ker_weightReesAeval [Finite ι]
       RingHom.ker (weightReesAeval b fun i ↦ Finsupp.weight w (m.degree (b i))) =
         Ideal.span (Set.range fun j : B ↦
           weightHomogenization k (fun i ↦ Finsupp.weight w (m.degree (b i)))
-            (Finsupp.weight (fun i ↦ Finsupp.weight w (m.degree (b i))) j.1.1)
+            (Finsupp.weight (fun i ↦ Finsupp.weight w (m.degree (b i))) j.val.1)
             (rescale (fun i ↦ (m.leadingCoeff (b i))⁻¹)
-              (monomial j.1.1 1 - monomial j.1.2 1 - Q j))) ∧
+              (monomial j.val.1 1 - monomial j.val.2 1 - Q j))) ∧
       (A.weightReesAlgebra w).map (Polynomial.mapAlgHom A.val) =
         (weightReesAeval b fun i ↦ Finsupp.weight w (m.degree (b i))).range := by
   classical
@@ -564,13 +564,13 @@ theorem IsSAGBIBasis.exists_pos_weight_ker_weightReesAeval [Finite ι]
     rwa [hadj, hrc, m.isSAGBIBasis_image_monicNormalize_iff]
   obtain ⟨B, hB, hspan⟩ := TauCeti.exists_finset_toricIdeal_eq_span fun i ↦ m.degree (b i)
   have hJ : TauCeti.toricIdeal k (fun i ↦ m.degree (b i)) =
-      Ideal.span (Set.range fun j : B ↦ monomial j.1.1 (1 : k) - monomial j.1.2 1) := by
+      Ideal.span (Set.range fun j : B ↦ monomial j.val.1 (1 : k) - monomial j.val.2 1) := by
     rw [hspan k, Set.image_eq_range]
     rfl
   have hB' (j : B) :
-      Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) j.1.1 =
-        Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) j.1.2 := by
-    simpa [c] using hB j.1 j.2
+      Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) j.val.1 =
+        Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) j.val.2 := by
+    simpa [c] using hB j.val j.property
   choose Q hQc hQ using fun j : B ↦ hsagbi.exists_aeval_eq_aeval_sub hc_monic (hB' j)
   obtain ⟨w, hw, hcw, hgw, hQw⟩ := exists_pos_weight_forall_mem_weightFiltrationLT hc_monic hQ
   simp only [c, m.degree_monicNormalize] at hcw hgw hQw hQ

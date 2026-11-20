@@ -41,8 +41,8 @@ vertices leaving their matched cell is bounded by the surplus above the floor me
 theorem exists_equipartition_sum_card_sdiff_le (P : Finpartition (univ : Finset V)) :
     ∃ (Q : Finpartition (univ : Finset V)) (e : P.parts ≃ Q.parts),
       Q.IsEquipartition ∧
-      ∑ A : P.parts, #(A.1 \ (e A).1) ≤
-        ∑ A : P.parts, (#A.1 - Fintype.card V / #P.parts) := by
+      ∑ A : P.parts, #(A.val \ (e A).val) ≤
+        ∑ A : P.parts, (#A.val - Fintype.card V / #P.parts) := by
   classical
   by_cases hV : IsEmpty V
   · have := hV
@@ -61,30 +61,30 @@ theorem exists_equipartition_sum_card_sdiff_le (P : Finpartition (univ : Finset 
   let Q := (Q₀.copy (image_univ_equiv σ).symm).comap σ
   let e := e₀.trans (Q₀.partsComapEquiv σ)
   refine ⟨Q, e, (isEquipartition_comap_equiv_iff Q₀ σ).2 hQ₀, ?_⟩
-  have hf (A : P.parts) : occCount f A = #A.1 := by
+  have hf (A : P.parts) : occCount f A = #A.val := by
     rw [occCount_eq_card_filter]
     congr 1
     ext x
-    simp [f, Subtype.ext_iff, P.part_eq_iff_mem A.2]
+    simp [f, Subtype.ext_iff, P.part_eq_iff_mem A.property]
   have hg (A : P.parts) : Fintype.card V / #P.parts ≤ occCount g A := by
-    have hcount : occCount g A = #(e₀ A).1 := by
+    have hcount : occCount g A = #(e₀ A).val := by
       rw [occCount_eq_card_filter]
       congr 1
       ext x
-      simp [g, e₀.symm_apply_eq, Subtype.ext_iff, Q₀.part_eq_iff_mem (e₀ A).2]
+      simp [g, e₀.symm_apply_eq, Subtype.ext_iff, Q₀.part_eq_iff_mem (e₀ A).property]
     rw [hcount, ← hcard, ← card_univ]
-    exact hQ₀.average_le_card_part (e₀ A).2
-  have hcost : ∑ A : P.parts, #(A.1 \ (e A).1) = #{x | f x ≠ g (σ x)} := by
+    exact hQ₀.average_le_card_part (e₀ A).property
+  have hcost : ∑ A : P.parts, #(A.val \ (e A).val) = #{x | f x ≠ g (σ x)} := by
     rw [card_eq_sum_card_fiberwise (f := f) (t := univ) (fun _ _ ↦ mem_univ _)]
     refine sum_congr rfl fun A _ ↦ ?_
     congr 1
     ext x
     simp only [mem_sdiff, e, Equiv.trans_apply, partsComapEquiv_apply_coe,
       mem_map_equiv, Equiv.symm_symm, mem_filter, mem_univ, true_and]
-    have hfx : f x = A ↔ x ∈ A.1 := by
-      simp [f, Subtype.ext_iff, P.part_eq_iff_mem A.2]
-    have hgx : g (σ x) = A ↔ σ x ∈ (e₀ A).1 := by
-      simp [g, e₀.symm_apply_eq, Subtype.ext_iff, Q₀.part_eq_iff_mem (e₀ A).2]
+    have hfx : f x = A ↔ x ∈ A.val := by
+      simp [f, Subtype.ext_iff, P.part_eq_iff_mem A.property]
+    have hgx : g (σ x) = A ↔ σ x ∈ (e₀ A).val := by
+      simp [g, e₀.symm_apply_eq, Subtype.ext_iff, Q₀.part_eq_iff_mem (e₀ A).property]
     grind
   rw [hcost]
   exact hσ.trans (sum_le_sum fun A _ ↦ by rw [hf]; exact Nat.sub_le_sub_left (hg A) _)
@@ -96,16 +96,16 @@ theorem exists_equipartition_sum_card_sdiff_le_of_card_le
     (P : Finpartition (univ : Finset V)) {m : ℕ} (hm : ∀ A ∈ P.parts, #A ≤ m) :
     ∃ (Q : Finpartition (univ : Finset V)) (e : P.parts ≃ Q.parts),
       Q.IsEquipartition ∧
-      ∑ A : P.parts, #(A.1 \ (e A).1) ≤
+      ∑ A : P.parts, #(A.val \ (e A).val) ≤
         #P.parts * m - Fintype.card V + Fintype.card V % #P.parts := by
   obtain ⟨Q, e, hQ, hcost⟩ := P.exists_equipartition_sum_card_sdiff_le
   refine ⟨Q, e, hQ, hcost.trans ?_⟩
   have htotal : Fintype.card V ≤ #P.parts * m := by
     rw [← card_univ, ← P.sum_card_parts]
     exact (sum_le_sum hm).trans_eq (by simp)
-  calc ∑ A : P.parts, (#A.1 - Fintype.card V / #P.parts)
+  calc ∑ A : P.parts, (#A.val - Fintype.card V / #P.parts)
       ≤ ∑ _A : P.parts, (m - Fintype.card V / #P.parts) :=
-        sum_le_sum fun A _ ↦ Nat.sub_le_sub_right (hm A.1 A.2) _
+        sum_le_sum fun A _ ↦ Nat.sub_le_sub_right (hm A.val A.property) _
     _ = #P.parts * m - Fintype.card V + Fintype.card V % #P.parts := by
       simp only [sum_const, nsmul_eq_mul, card_univ, Fintype.card_coe, Nat.cast_id, Nat.mul_sub]
       have hdiv := Nat.mod_add_div (Fintype.card V) #P.parts
