@@ -25,7 +25,8 @@ subspaces of every dimension up to half that of `V`, this says that the isotropi
 dimension `r` form a single nonempty orbit of the symplectic group when `2 * r ≤ dim V`, and that
 there are none otherwise.
 
-The argument is Witt's. An isotropic `U` lies in a maximal isotropic subspace `L`, and `L` is
+The argument is the standard one for the totally isotropic case of Witt's extension theorem.
+An isotropic `U` lies in a maximal isotropic subspace `L`, and `L` is
 self-orthogonal: a vector of the orthogonal complement of `L` outside `L` could be added to it,
 since an alternating form pairs every vector trivially with itself. A basis of `U` extends to a
 basis of `L`, which extends to a symplectic basis of `V` with the basis of `L` as its isotropic
@@ -137,9 +138,10 @@ theorem IsAlt.exists_basis_toMatrix_eq_J_inl_inl_eq (hB : B.IsAlt) (hnd : B.Nond
   refine ⟨b, hbJ, fun i ↦ ?_⟩
   simp [hb, bL, eU', ← comapSubtypeEquivOfLe_apply_coe hUL]
 
-/-- **Witt's theorem for alternating forms.** For a nondegenerate alternating form on a
-finite-dimensional space, any two isotropic subspaces of the same dimension are related by an
-isometry of the form. This holds in every characteristic, including two. -/
+/-- **Isometries act transitively on isotropic subspaces of each dimension.** For a nondegenerate
+alternating form on a finite-dimensional space, any two isotropic subspaces of the same dimension
+are related by an isometry of the form. This is the totally isotropic case of Witt's extension
+theorem; it holds in every characteristic, including two. -/
 theorem IsAlt.exists_isometryEquiv_map_eq (hB : B.IsAlt) (hnd : B.Nondegenerate)
     {U₁ U₂ : Submodule K V} (h₁ : U₁ ≤ B.orthogonal U₁) (h₂ : U₂ ≤ B.orthogonal U₂)
     (h : finrank K U₁ = finrank K U₂) : ∃ g : B.IsometryEquiv B, U₁.map (g : V →ₗ[K] V) = U₂ := by

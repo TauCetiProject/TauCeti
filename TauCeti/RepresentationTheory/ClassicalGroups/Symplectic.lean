@@ -16,7 +16,8 @@ import TauCeti.LinearAlgebra.BilinearForm.Isotropic
 
 This file restricts the standard representation of the general linear group to the symplectic
 group. It defines the standard alternating form from `Matrix.J`, proves that the standard action
-preserves it, and packages the resulting equivariant self-duality.
+preserves it, and packages the resulting equivariant self-duality. It also shows that the
+symplectic group acts transitively on the isotropic subspaces of each dimension.
 
 ## Main definitions
 
@@ -30,7 +31,7 @@ preserves it, and packages the resulting equivariant self-duality.
 ## Main results
 
 * `TauCeti.exists_map_stdSymplecticRep_eq`: `Sp₂ₙ(k)` acts transitively on the isotropic subspaces
-  of each dimension. It follows from Witt's theorem for alternating forms,
+  of each dimension. It follows from the transitivity of isometries on isotropic subspaces,
   `LinearMap.BilinForm.IsAlt.exists_isometryEquiv_map_eq`.
 
 ## References
