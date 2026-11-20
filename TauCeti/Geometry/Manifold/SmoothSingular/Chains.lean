@@ -193,6 +193,7 @@ theorem integrationCochain_zero :
 
 /-- The integration cochain is homogeneous in the form, for any coefficient ring whose action
 commutes with the real scalars. -/
+@[simp]
 theorem integrationCochain_smul_apply [SMulCommClass R ℝ F] (a : ℝ) (φ : RoughForm I M F p)
     (c : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of R R)).X p) :
     (integrationCochain (a • φ)).hom c = a • (integrationCochain φ).hom c := by

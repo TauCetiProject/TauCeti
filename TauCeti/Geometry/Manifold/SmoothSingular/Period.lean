@@ -53,8 +53,9 @@ compare the two constructions.
 
 * `TauCeti.closedFormHomologyPeriod_homologyMap_ι_homologyπ`: the period on the class of a smooth
   cycle is the integral over the cycle.
-* `TauCeti.closedFormHomologyPeriod_add`, `TauCeti.closedFormHomologyPeriod_smul`: linearity in the
-  form.
+* `TauCeti.closedFormHomologyPeriod_add`, `TauCeti.closedFormHomologyPeriod_smul`,
+  `TauCeti.closedFormHomologyPeriod_zero`, `TauCeti.closedFormHomologyPeriod_neg`,
+  `TauCeti.closedFormHomologyPeriod_sub`: linearity in the form.
 * `TauCeti.closedFormHomologyPeriod_eq_zero_of_mem_exactForms`: exact forms have zero periods.
 * `TauCeti.closedFormHomologyPeriod_mpullback`: naturality under smooth maps.
 * `TauCeti.closedFormHomologyPeriod_mpullback_snd_singularHomologyCrossBilinear_eq_zero`: a closed
@@ -166,16 +167,6 @@ end Smooth
 
 /-! ### Periods on singular homology -/
 
-/-- The map induced on singular homology by a continuous map is the map induced on the homology of
-the singular simplicial sets: `singularChains k` is by definition the simplicial chain complex of
-`TopCat.toSSet`. This identifies the smoothing isomorphism, stated for `TopCat.toSSet`, with
-singular homology. -/
-theorem _root_.ContinuousMap.singularHomologyMap_eq_homologyMap_toSSet_map {R : Type} [Ring R]
-    {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y] (g : C(X, Y)) :
-    ContinuousMap.singularHomologyMap R k g =
-      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g)) (ModuleCat.of R R) k).hom :=
-  rfl
-
 section Singular
 
 variable [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M]
@@ -243,6 +234,25 @@ theorem closedFormHomologyPeriod_eq_zero_of_mem_exactForms (φ : closedForms I M
     (hφ : φ.1 ∈ exactForms I M k) : closedFormHomologyPeriod φ = 0 := by
   ext c
   simp [closedFormHomologyPeriod_apply, smoothHomologyPeriod_eq_zero_of_mem_exactForms φ hφ]
+
+/-- The zero form has zero periods. -/
+@[simp]
+theorem closedFormHomologyPeriod_zero :
+    closedFormHomologyPeriod (0 : closedForms I M k) = 0 :=
+  closedFormHomologyPeriod_eq_zero_of_mem_exactForms 0 (zero_mem _)
+
+/-- The periods of the negative of a closed form are the negatives of its periods. -/
+@[simp]
+theorem closedFormHomologyPeriod_neg (φ : closedForms I M k) :
+    closedFormHomologyPeriod (-φ) = -closedFormHomologyPeriod φ := by
+  rw [← neg_one_smul ℝ φ, closedFormHomologyPeriod_smul, neg_one_smul]
+
+/-- The periods of a difference of closed forms are the differences of their periods. -/
+@[simp]
+theorem closedFormHomologyPeriod_sub (φ ψ : closedForms I M k) :
+    closedFormHomologyPeriod (φ - ψ) = closedFormHomologyPeriod φ - closedFormHomologyPeriod ψ := by
+  rw [sub_eq_add_neg φ ψ, closedFormHomologyPeriod_add, closedFormHomologyPeriod_neg,
+    sub_eq_add_neg]
 
 variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
   [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} {N : Type} [TopologicalSpace N]
