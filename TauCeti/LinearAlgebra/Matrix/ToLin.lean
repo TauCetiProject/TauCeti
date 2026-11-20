@@ -46,6 +46,8 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   `LinearMap.exists_toMatrixRight'_comp_eq_fromBlocks`: a direct summand of `m → R` is presented
   by an idempotent matrix, and a split short exact sequence of such summands presents its middle
   term by the block-diagonal sum of the idempotent matrices of its outer terms.
+* `LinearMap.apply_eq_sum_apply_single_one_mul`: over a possibly noncommutative semiring, maps of
+  free right modules of coordinate vectors are matrices acting on column vectors.
 * `LinearMap.toMatrix_mulVec_eq_repr`: the coordinate vector of `φ (∑ j, x j • v j)` is the
   matrix of `φ` applied to `x`.
 * `LinearMap.isUnit_toMatrix_iff_bijective`, `LinearMap.isUnit_det_toMatrix_iff_bijective`,
@@ -198,6 +200,16 @@ theorem exists_toMatrixRight'_comp_eq_fromBlocks [Fintype n] [DecidableEq n]
     refine LinearMap.ext fun x ↦ funext fun q ↦ ?_
     rcases q with b | d <;>
       simp [e, Matrix.vecMul_fromBlocks, hl', hr', hrf, hgσ, hgf, hrσ]
+
+/-- A linear map of coordinate vectors over `Rᵐᵒᵖ`, that is, a map of free right `R`-modules,
+is left multiplication of column vectors by the matrix with entries `f (Pi.single j 1) i`. -/
+theorem apply_eq_sum_apply_single_one_mul (f : (m → R) →ₗ[Rᵐᵒᵖ] n → R) (x : m → R) (i : n) :
+    f x i = ∑ j, f (Pi.single j 1) i * x j := by
+  have hx : x = ∑ j, MulOpposite.op (x j) • (Pi.single j 1 : m → R) := by
+    ext l
+    simp [Finset.sum_apply, Pi.single_apply]
+  conv_lhs => rw [hx]
+  simp [map_sum, Finset.sum_apply]
 
 end LinearMap
 
