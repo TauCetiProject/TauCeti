@@ -422,8 +422,9 @@ private theorem exists_norm_sum_toLp_symbol_smul_le :
     ae_all_iff.2 fun j ↦
       (φ.inhomogeneousLittlewoodPaleySchwartz j).coeFn_toLp ∞ (volume : Measure V)]
     with ξ h₁ h₂ h₃
-  rw [h₁]
-  simp only [h₂]
+  -- Rewrite with `h₂` before `simp`: otherwise `smul_eq_mul` turns the `L^∞` product `•` into `*`
+  -- first, and `h₂` no longer matches.
+  rw [h₁, Finset.sum_congr rfl fun j _ ↦ h₂ j]
   simp only [Pi.smul_apply', h₃, φ.inhomogeneousLittlewoodPaleySchwartz_apply, smul_eq_mul,
     ← Complex.ofReal_mul,
     ← Complex.ofReal_sum, Complex.norm_real, Real.norm_eq_abs]
@@ -866,8 +867,7 @@ theorem tendsto_sum_fourierMultiplierCLM_littlewoodPaley [Nontrivial V]
       with ξ h₁ h₂
     rw [h₁, Finset.sum_congr rfl fun j _ ↦ h₂ j, ← Complex.ofReal_sum,
       φ.sum_littlewoodPaley_Ioc (by omega)]
-  have hne : ∀ᵐ ξ ∂(volume : Measure V), ξ ≠ 0 :=
-    ae_iff.2 (by simpa only [not_not, Set.ofPred_eq_eq_singleton] using measure_singleton 0)
+  have hne : ∀ᵐ ξ ∂(volume : Measure V), ξ ≠ 0 := volume.ae_ne 0
   have h := Lp.tendsto_fourierMultiplierCLM_apply_self (F := F) (l := atTop)
     (m := fun N : ℕ ↦ ∑ j ∈ Finset.Ioc (-(N : ℤ)) N, m j) (C := 1) ?_ ?_ f
   · simpa only [Lp.fourierMultiplierCLM_sum, FunLike.coe_sum, Finset.sum_apply] using h
