@@ -296,8 +296,9 @@ theorem coe_orthogonalProjectionOnto_hyperplane (y : E) :
 
 /-- A point of the hyperplane is its own foot. -/
 theorem coe_orthogonalProjectionOnto_hyperplane_of_apply_eq_zero {y : E} (hy : y 0 = 0) :
-    (orthogonalProjectionOnto V y : E) = y :=
-  coe_orthogonalProjectionOnto_single_one_of_apply_eq_zero hy
+    (orthogonalProjectionOnto V y : E) = y := by
+  rw [Submodule.coe_orthogonalProjectionOnto_apply]
+  exact Submodule.starProjection_eq_self_iff.2 ((mem_hyperplane_iff y).2 hy)
 
 /-- The corrector `halfSq · P[g]`: it vanishes on the hyperplane together with its first
 derivatives, while its second derivative tends to `g e₀* ⊗ e₀*` at the hyperplane from the

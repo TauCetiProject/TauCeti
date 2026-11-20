@@ -89,11 +89,4 @@ theorem coe_orthogonalProjectionOnto_single_one_apply (i : ι) (y : EuclideanSpa
     Submodule.starProjection_unit_singleton ℝ (by simp), real_inner_comm,
     EuclideanSpace.real_inner_single_one_right]
 
-/-- A point of the coordinate hyperplane `{y | y i = 0}` is its own orthogonal projection. -/
-theorem coe_orthogonalProjectionOnto_single_one_of_apply_eq_zero {i : ι}
-    {y : EuclideanSpace ℝ ι} (hy : y i = 0) :
-    ((ℝ ∙ EuclideanSpace.single i (1 : ℝ))ᗮ.orthogonalProjectionOnto y : EuclideanSpace ℝ ι) =
-      y := by
-  rw [coe_orthogonalProjectionOnto_single_one_apply, hy, zero_smul, sub_zero]
-
 end TauCeti
