@@ -26,7 +26,7 @@ Let `f : A →+* B` be a ring map, and let `I` and `J` be two-sided ideals of `A
 commutes, so `a ↦ (f a, [a])` is a ring map `RingHom.toQuotientPullback f J hIJ` from `A` to the
 fibre product `B ×_{B/J} A/I`, realised as Mathlib's `RingHom.pullback`, the carrier of
 `CommRingCat.pullbackCone`. No finiteness, injectivity or Noetherian hypothesis is needed to
-define it. This file computes its kernel and its image.
+define it. This file computes its kernel and characterises when it is surjective.
 
 * Its kernel is `ker f ⊓ I`.
 * It is surjective exactly when `J ⊆ f '' I`. Since `f '' I ⊆ I.map f ⊆ J` always holds, this
