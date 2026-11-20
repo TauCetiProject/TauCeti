@@ -16,12 +16,12 @@ import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
-import TauCeti.Analysis.SpecialFunctions.Hermite.LaplaceSeries
+import TauCeti.Analysis.SpecialFunctions.Hermite.Laplace.Series
 
 /-!
 # Entire continuation of the normalized Laplace–Hermite series
 
-The rotational Gaussian–Laplace identity in `Hermite.LaplaceSeries` initially holds for positive
+The rotational Gaussian–Laplace identity in `Hermite.Laplace.Series` initially holds for positive
 real part of the order. This file shows that its reciprocal-Gamma normalization commutes with
 entire continuation of the order. The coefficients become rising factorials, and shifted integral
 tails provide absolute convergence and holomorphy even at nonpositive integer orders.
@@ -40,7 +40,7 @@ ratio is `r = -tan t`. The radial limit at `|r| = 1` follows by continuity of th
   complex order for entire continuations of the two normalized Gaussian–Laplace integrals.
 * `TauCeti.tendsto_tsum_ascPochhammer_mul_hermite_nhdsLT_one`: the radial limit on `|r| ≤ 1`.
 * `TauCeti.hasSum_ascPochhammer_mul_hermite_of_abs_le_one`: evaluation on the closed interval
-  in the convergent boundary regimes, including terminating orders.
+  throughout the interior and in the convergent boundary regimes, including terminating orders.
 
 ## References
 
@@ -192,11 +192,11 @@ theorem hasSum_ascPochhammer_mul_hermite_of_eqOn_integral
   have hR : Differentiable ℂ fun z : ℂ =>
       (Real.sqrt (1 + r ^ 2) : ℂ) ^ (-z) * G z :=
     (differentiable_id.neg.const_cpow (Or.inl hc)).mul hGd
+  have hpos : (0 : ℝ) < (1 : ℂ).re := by norm_num
   have heq := AnalyticOnNhd.eq_of_eventuallyEq
     (fun z _ => hS.analyticAt z) (fun z _ => hR.analyticAt z) (z₀ := (1 : ℂ))
-    (show _ =ᶠ[𝓝 (1 : ℂ)] _ from by
-      filter_upwards [(isOpen_lt continuous_const Complex.continuous_re).mem_nhds
-        (show (0 : ℝ) < (1 : ℂ).re by norm_num)] with z hz
+    (by
+      filter_upwards [(isOpen_lt continuous_const Complex.continuous_re).mem_nhds hpos] with z hz
       exact (hasSum_ascPochhammer_mul_hermite_of_re_pos hz x y hF hG hr).tsum_eq)
   rw [← congrFun heq s]
   exact (summable_norm_iff.mp (summable_norm_ascPochhammer_mul_hermite_of_eqOn_integral y hF
@@ -245,6 +245,7 @@ theorem tendsto_tsum_ascPochhammer_mul_hermite_nhdsLT_one
   ring
 
 /-- The normalized rotational Laplace–Hermite identity on the closed ratio interval.
+The series converges throughout the interior without restrictions on the order or Laplace parameter.
 Endpoint convergence holds for `0 < x.re`, for `0 ≤ x.re` with `s.re < 0`, and at every
 nonpositive integer order, where the rising factorial makes the series terminate. -/
 theorem hasSum_ascPochhammer_mul_hermite_of_abs_le_one
@@ -254,11 +255,14 @@ theorem hasSum_ascPochhammer_mul_hermite_of_abs_le_one
     (hLaplace : ∀ w, 0 < w.re → ∀ z, F w z = (Gamma w)⁻¹ * ∫ u in Ioi (0 : ℝ),
       (u : ℂ) ^ (w - 1) * cexp (-(u : ℂ) ^ 2 / 2 - z * u))
     (hr : |r| ≤ 1)
-    (hconv : (0 < x.re ∨ (0 ≤ x.re ∧ s.re < 0)) ∨ ∃ n : ℕ, s = -(n : ℂ)) :
+    (hconv : |r| < 1 ∨ (0 < x.re ∨ (0 ≤ x.re ∧ s.re < 0)) ∨ ∃ n : ℕ, s = -(n : ℂ)) :
     HasSum
       (fun m : ℕ ↦ (r : ℂ) ^ m / (m ! : ℂ) * aeval (y : ℂ) (hermite m) *
         (ascPochhammer ℂ m).eval s * F (s + m) x)
       ((Real.sqrt (1 + r ^ 2) : ℂ) ^ (-s) * F s ((x - r * y) / Real.sqrt (1 + r ^ 2))) := by
+  rcases hconv with hrlt | hconv
+  · exact hasSum_ascPochhammer_mul_hermite_of_eqOn_integral s x y
+      (hF x) (hF _) (fun w hw ↦ hLaplace w hw x) (fun w hw ↦ hLaplace w hw _) (Or.inl hrlt)
   have hsum : Summable (fun m : ℕ ↦ (r : ℂ) ^ m / (m ! : ℂ) * aeval (y : ℂ) (hermite m) *
       (ascPochhammer ℂ m).eval s * F (s + m) x) := by
     rcases hconv with hx | ⟨n, rfl⟩
