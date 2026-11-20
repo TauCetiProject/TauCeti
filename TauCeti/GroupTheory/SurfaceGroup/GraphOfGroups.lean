@@ -111,77 +111,26 @@ abbrev separatingSegment : GraphOfGroups.{0, 0, 0, 0} SerreGraph.segment :=
 
 variable {T : Set SerreGraph.segment.E}
 
-/-- The map from the amalgam `S⁺(g₁, m₁ + 1) ∗_ℤ S⁺(g₂, m₂ + 1)` of `equivPushoutI` to the
-fundamental group of `separatingSegment`, the identity on the two factors. -/
-private noncomputable def toπ₁Tree (hT : T.Nonempty) :
-    Monoid.PushoutI (gluingMaps g₁ m₁ g₂ m₂) →* π₁Tree (separatingSegment g₁ m₁ g₂ m₂ h₁ h₂) T :=
-  -- The factors `GluingFactor g₁ m₁ g₂ m₂ b` and the vertex groups of the segment are the same
-  -- `Bool`-indexed family of groups, by definition.
-  Monoid.PushoutI.lift (fun b ↦ (π₁Tree.of (𝔸 := separatingSegment g₁ m₁ g₂ m₂ h₁ h₂) T b :
-      GluingFactor g₁ m₁ g₂ m₂ b →* _))
-    (MonoidHom.comp (N := Orientable g₁ (m₁ + 1))
-      (π₁Tree.of (𝔸 := separatingSegment g₁ m₁ g₂ m₂ h₁ h₂) T false)
-      (zpowersHom _ (peripheral g₁ (m₁ + 1) (Fin.last m₁)))) fun b ↦ by
-    cases b
-    · rw [gluingMaps_false]
-    · rw [gluingMaps_true]
-      exact MonoidHom.ext (π₁Tree.of_true_eq_of_false hT)
-
-/-- The map from the fundamental group of `separatingSegment` to the amalgam
-`S⁺(g₁, m₁ + 1) ∗_ℤ S⁺(g₂, m₂ + 1)` of `equivPushoutI`, the identity on the two vertex groups and
-trivial on the darts. -/
-private noncomputable def ofπ₁Tree :
-    π₁Tree (separatingSegment g₁ m₁ g₂ m₂ h₁ h₂) T →* Monoid.PushoutI (gluingMaps g₁ m₁ g₂ m₂) :=
-  π₁Tree.lift (fun b ↦ (Monoid.PushoutI.of (φ := gluingMaps g₁ m₁ g₂ m₂) b :
-      (separatingSegment g₁ m₁ g₂ m₂ h₁ h₂).vertexGroup b →* _)) 1
-    (fun _ _ ↦ rfl) (fun _ ↦ by simp) fun e c ↦ by
-      simp only [Pi.one_apply, one_mul, inv_one, mul_one]
-      have hfst := Monoid.PushoutI.of_apply_eq_base (gluingMaps g₁ m₁ g₂ m₂) false c
-      have hsnd := Monoid.PushoutI.of_apply_eq_base (gluingMaps g₁ m₁ g₂ m₂) true c
-      rw [gluingMaps_false] at hfst
-      rw [gluingMaps_true] at hsnd
-      cases e
-      · simp only [segment_ω_false, segment_α_false]
-        exact hsnd.trans hfst.symm
-      · simp only [segment_ω_true, segment_α_true]
-        exact hfst.trans hsnd.symm
-
-private theorem toπ₁Tree_of (hT : T.Nonempty) (b : Bool) (x : GluingFactor g₁ m₁ g₂ m₂ b) :
-    toπ₁Tree g₁ m₁ g₂ m₂ h₁ h₂ hT (Monoid.PushoutI.of b x) =
-      π₁Tree.of (𝔸 := separatingSegment g₁ m₁ g₂ m₂ h₁ h₂) T b x :=
-  Monoid.PushoutI.lift_of ..
-
-private theorem ofπ₁Tree_of (b : SerreGraph.segment.V)
-    (x : (separatingSegment g₁ m₁ g₂ m₂ h₁ h₂).vertexGroup b) :
-    ofπ₁Tree g₁ m₁ g₂ m₂ h₁ h₂ (π₁Tree.of (T := T) b x) =
-      Monoid.PushoutI.of (φ := gluingMaps g₁ m₁ g₂ m₂) b x :=
-  π₁Tree.lift_of ..
-
-@[simp]
-private theorem toπ₁Tree_of_false (hT : T.Nonempty) (x : Orientable g₁ (m₁ + 1)) :
-    toπ₁Tree g₁ m₁ g₂ m₂ h₁ h₂ hT (Monoid.PushoutI.of (φ := gluingMaps g₁ m₁ g₂ m₂) false x) =
-      π₁Tree.of (𝔸 := separatingSegment g₁ m₁ g₂ m₂ h₁ h₂) T false x :=
-  toπ₁Tree_of _ _ _ _ _ _ hT false x
-
-@[simp]
-private theorem toπ₁Tree_of_true (hT : T.Nonempty) (x : Orientable g₂ (m₂ + 1)) :
-    toπ₁Tree g₁ m₁ g₂ m₂ h₁ h₂ hT (Monoid.PushoutI.of (φ := gluingMaps g₁ m₁ g₂ m₂) true x) =
-      π₁Tree.of (𝔸 := separatingSegment g₁ m₁ g₂ m₂ h₁ h₂) T true x :=
-  toπ₁Tree_of _ _ _ _ _ _ hT true x
-
 /-- **Cutting along a separating curve, as a graph of groups.** The orientable surface group
 `S⁺(g₁ + g₂, m₁ + m₂)` is the fundamental group of the segment of groups `separatingSegment`,
-relative to any nonempty set of darts. It is `equivPushoutI` followed by the identification of
-the amalgam `S⁺(g₁, m₁ + 1) ∗_ℤ S⁺(g₂, m₂ + 1)` with the fundamental group of the segment. -/
+relative to any nonempty set of darts. It is `equivPushoutI` followed by the identification
+`TauCeti.GraphOfGroups.π₁Tree.equivPushoutI` of the amalgam `S⁺(g₁, m₁ + 1) ∗_ℤ S⁺(g₂, m₂ + 1)`
+with the fundamental group of the segment. -/
 noncomputable def equivπ₁TreeSeparatingSegment (hT : T.Nonempty) :
     Orientable (g₁ + g₂) (m₁ + m₂) ≃* π₁Tree (separatingSegment g₁ m₁ g₂ m₂ h₁ h₂) T :=
-  (equivPushoutI g₁ m₁ g₂ m₂).trans <|
-    MonoidHom.toMulEquiv (toπ₁Tree g₁ m₁ g₂ m₂ h₁ h₂ hT) (ofπ₁Tree g₁ m₁ g₂ m₂ h₁ h₂)
-      (Monoid.PushoutI.hom_ext_nonempty fun b ↦ MonoidHom.ext fun x ↦
-        (congrArg _ (toπ₁Tree_of _ _ _ _ _ _ hT b x)).trans (ofπ₁Tree_of _ _ _ _ _ _ b x))
-      (π₁Tree.hom_ext (fun b ↦ MonoidHom.ext fun x ↦
-          (congrArg _ (ofπ₁Tree_of _ _ _ _ _ _ b x)).trans (toπ₁Tree_of _ _ _ _ _ _ hT b x))
-        fun e ↦ by simp [ofπ₁Tree, π₁Tree.edge_segment_eq_one hT])
+  -- `gluingMaps g₁ m₁ g₂ m₂` is the family `segmentMaps` of `separatingSegment` by definition.
+  -- Applying `MulEquiv.symm` (rather than `.symm`) gives it the domain of the type expected here,
+  -- the amalgam of `equivPushoutI`, so that `simp` composes the two isomorphisms.
+  (equivPushoutI g₁ m₁ g₂ m₂).trans (MulEquiv.symm (π₁Tree.equivPushoutI _ _ _ _ hT))
+
+/-- `TauCeti.GraphOfGroups.π₁Tree.equivPushoutI_symm_of` on the amalgam of `equivPushoutI`. -/
+@[simp]
+private theorem π₁Tree_equivPushoutI_symm_of (hT : T.Nonempty) (b : Bool)
+    (x : GluingFactor g₁ m₁ g₂ m₂ b) :
+    (MulEquiv.symm (π₁Tree.equivPushoutI _ _ _ _ hT) :
+        Monoid.PushoutI (gluingMaps g₁ m₁ g₂ m₂) ≃* π₁Tree (separatingSegment g₁ m₁ g₂ m₂ h₁ h₂) T)
+      (Monoid.PushoutI.of b x) = π₁Tree.of T b x :=
+  π₁Tree.equivPushoutI_symm_of hT b x
 
 variable {g₁ m₁ g₂ m₂ h₁ h₂} {hT : T.Nonempty}
 
@@ -318,9 +267,9 @@ theorem π₁Tree_of_false_inv_a_mul_inv_b_mul_a_mul_b_genusTwo (hT : T.Nonempty
     π₁Tree.of (𝔸 := separatingSegment 1 0 1 0 (.inl one_ne_zero) (.inl one_ne_zero)) T false
         ((a 1 1 0)⁻¹ * (b 1 1 0)⁻¹ * a 1 1 0 * b 1 1 0) =
       π₁Tree.of T true ((b 1 1 0)⁻¹ * (a 1 1 0)⁻¹ * b 1 1 0 * a 1 1 0) := by
-  have h := congrArg (toπ₁Tree 1 0 1 0 (.inl one_ne_zero) (.inl one_ne_zero) hT)
-    pushoutI_of_false_inv_a_mul_inv_b_mul_a_mul_b_genusTwo
-  rwa [toπ₁Tree_of_false, toπ₁Tree_of_true] at h
+  refine (equivπ₁TreeSeparatingSegment 1 0 1 0 _ _ hT).symm.injective ?_
+  rw [equivπ₁TreeSeparatingSegment_symm_of_false, equivπ₁TreeSeparatingSegment_symm_of_true]
+  exact congrArg _ pushoutI_of_false_inv_a_mul_inv_b_mul_a_mul_b_genusTwo
 
 /-! ### A non-separating curve: a loop of groups -/
 

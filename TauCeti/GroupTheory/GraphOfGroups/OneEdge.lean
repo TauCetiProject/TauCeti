@@ -72,9 +72,11 @@ section segment
 variable {A B : Type w} {C : Type x} [Group A] [Group B] [Group C] (f : C →* A) (g : C →* B)
   (hf : Function.Injective f) (hg : Function.Injective g)
 
+-- Exposed so that a family given by the same two maps (for instance the gluing maps of two
+-- surfaces) amalgamates to the same group by definition, and `equivPushoutI` applies to it.
 /-- The monomorphisms `f : C →* A` and `g : C →* B` of the segment, as the family of maps into its
 vertex groups, indexed by its two vertices, that `Monoid.PushoutI` amalgamates. -/
-def segmentMaps : ∀ b : SerreGraph.segment.V, C →* (segment f g hf hg).vertexGroup b
+@[expose] def segmentMaps : ∀ b : SerreGraph.segment.V, C →* (segment f g hf hg).vertexGroup b
   | false => f
   | true => g
 

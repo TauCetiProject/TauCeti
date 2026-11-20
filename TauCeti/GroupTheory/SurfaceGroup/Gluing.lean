@@ -86,10 +86,12 @@ instance (b : Bool) : Group (GluingFactor g₁ m₁ g₂ m₂ b) :=
     (inferInstance : Group (Orientable g₁ (m₁ + 1)))
     (inferInstance : Group (Orientable g₂ (m₂ + 1))) b
 
+-- Exposed so that the amalgam is by definition that of the segment of groups of the two pieces,
+-- `TauCeti.GraphOfGroups.segmentMaps`.
 /-- The maps from the edge group `ℤ` into the two pieces: the generator goes to the last
 peripheral element of `S⁺(g₁, m₁ + 1)` and to the inverse of the last peripheral element of
 `S⁺(g₂, m₂ + 1)`, the two sides of the separating curve. -/
-def gluingMaps : ∀ b, Multiplicative ℤ →* GluingFactor g₁ m₁ g₂ m₂ b
+@[expose] def gluingMaps : ∀ b, Multiplicative ℤ →* GluingFactor g₁ m₁ g₂ m₂ b
   | false => zpowersHom _ (peripheral g₁ (m₁ + 1) (Fin.last m₁))
   | true => zpowersHom _ (peripheral g₂ (m₂ + 1) (Fin.last m₂))⁻¹
 
