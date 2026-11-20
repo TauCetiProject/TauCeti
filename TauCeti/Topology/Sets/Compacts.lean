@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Maps.Proper.Basic
 public import Mathlib.Topology.Sets.Compacts
+public import Mathlib.Topology.Compactness.LocallyCompact
 
 /-!
 # Images and preimages of compact sets
@@ -17,11 +18,14 @@ The preimage of a compact set under a proper map is compact
 monotone and functorial in `f`. It is the operation through which the cohomology with compact
 supports of a space, a colimit over its compact subsets, is contravariant in proper maps. It also
 records that Mathlib's image `TopologicalSpace.Compacts.map` is monotone, which makes cohomology
-with compact supports covariant in open embeddings. Finally, a compact set lies in one member of a
+with compact supports covariant in open embeddings. A compact set lies in one member of a
 directed open cover (`TopologicalSpace.Compacts.exists_subset_of_iSup_eq_top`). A compact set
 whose interior contains `K` is a compact neighbourhood of `K`
 (`TopologicalSpace.Compacts.compactNhdsOfSubsetInterior`), and open sets containing two compact sets
-together contain their union (`TopologicalSpace.Compacts.coe_sup_subset_coe_sup`).
+together contain their union (`TopologicalSpace.Compacts.coe_sup_subset_coe_sup`). Finally, in a
+locally compact space, a closed set disjoint from a compact set `K` misses some compact
+neighbourhood of `K` (`TopologicalSpace.Compacts.exists_mem_compactNhds_disjoint`), so the compact
+neighbourhoods of `K` form a nonempty family; local homology along `K` is the colimit over them.
 -/
 
 public section
@@ -86,5 +90,25 @@ lemma coe_sup_subset_coe_sup {K L : Compacts α} {U V : Opens α} (hK : (K : Set
     (hL : (L : Set α) ⊆ V) : ((K ⊔ L : Compacts α) : Set α) ⊆ (U ⊔ V : Opens α) := by
   rw [coe_sup, Opens.coe_sup]
   exact union_subset_union hK hL
+
+section CompactNhds
+
+variable [LocallyCompactSpace α]
+
+/-- In a locally compact space, a closed set disjoint from a compact set `K` misses some compact
+neighbourhood of `K`. -/
+lemma exists_mem_compactNhds_disjoint (K : Compacts α) {T : Set α} (hT : IsClosed T)
+    (hKT : Disjoint (K : Set α) T) : ∃ L ∈ K.compactNhds, Disjoint (L : Set α) T := by
+  obtain ⟨L, hL, hKL, hLT⟩ := exists_compact_between K.isCompact hT.isOpen_compl
+    hKT.subset_compl_right
+  exact ⟨⟨L, hL⟩, fun x ↦ mem_interior_iff_mem_nhds.1 (hKL x.property),
+    disjoint_compl_left.mono_left hLT⟩
+
+/-- In a locally compact space, every compact set has a compact neighbourhood. -/
+instance (K : Compacts α) : Nonempty K.compactNhds :=
+  let ⟨L, hL, _⟩ := K.exists_mem_compactNhds_disjoint isClosed_empty (disjoint_empty _)
+  ⟨⟨L, hL⟩⟩
+
+end CompactNhds
 
 end TopologicalSpace.Compacts
