@@ -118,7 +118,7 @@ instance : (finiteEtaleSchemeProperty S).IsClosedUnderColimitsOfShape (Discrete 
     -- finite, and étaleness is local on the source.
     have hfin : ObjectProperty.IsClosedUnderColimitsOfShape
         (MorphismProperty.overObj @IsFinite (X := S)) (Discrete WalkingPair) :=
-      IsFinite.isClosedUnderColimitsOfShape_walkingPair (𝟭 Scheme.{u}) S
+      IsFinite.isClosedUnderColimitsOfShape_discrete (𝟭 Scheme.{u}) S
     have het : ObjectProperty.IsClosedUnderColimitsOfShape
         (MorphismProperty.overObj @Etale (X := S)) (Discrete WalkingPair) :=
       have : IsZariskiLocalAtSource @Etale.{u} := HasRingHomProperty.instIsZariskiLocalAtSource
