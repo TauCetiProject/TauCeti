@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Sphere.Abundant.Basic
 public import TauCeti.Topology.MappingSpace.Action
+import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 import TauCeti.Algebra.Group.ZMultiples
 import TauCeti.AlgebraicTopology.Singular.Fibration.LocalHomology
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
@@ -383,7 +384,8 @@ private def actionClass (x₀ : M)
     ((TopCat.toSSet.obj (TopCat.of C(Sphere2, M))).homology (ModuleCat.of ℤ (ULift.{0} ℤ))
       (d + k) : ModuleCat.{0} ℤ) :=
   (HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
-      uliftIntTensorIso.hom).app (TopCat.toSSet.obj (TopCat.of C(Sphere2, M)))) (d + k)).hom
+      (ModuleCat.uliftTensorSelfIso ℤ).hom).app (TopCat.toSSet.obj (TopCat.of C(Sphere2, M))))
+        (d + k)).hom
     ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
       (BasedMap.actionMap (G := G) Sphere2.north x₀)))
         (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) (d + k)).hom
@@ -436,11 +438,11 @@ private theorem homologyMap_const'_comp_mappingSpaceEval_actionClass (x₀ : M)
     ModuleCat.id_apply] at hcross
   -- Identify the coefficients before the maps, then commute the square `ρ ∘ Φ = Φ ∘ γ`.
   rw [actionClass, actionClass, ← hcross]
-  exact (congrArg _ (homologyMap_chainComplexFunctor_map_apply uliftIntTensorIso.hom Φ _)).trans
-    ((homologyMap_homologyMap_apply_of_comp_eq R hΦ _).trans
-      ((congrArg _
-        (homologyMap_chainComplexFunctor_map_apply uliftIntTensorIso.hom γ _)).symm.trans
-        (homologyMap_chainComplexFunctor_map_apply uliftIntTensorIso.hom Φ _).symm))
+  let e := (ModuleCat.uliftTensorSelfIso ℤ).hom
+  exact (congrArg _ (homologyMap_chainComplexFunctor_map_apply e Φ _)).trans
+    ((ConcreteCategory.congr_hom (homologyMap_toSSet_ofHom_comp_comm R _ hΦ) _).trans
+      ((congrArg _ (homologyMap_chainComplexFunctor_map_apply e γ _)).symm.trans
+        (homologyMap_chainComplexFunctor_map_apply e Φ _).symm))
 
 include o hd in
 /-- `Φ_*(A × α)`, with its coefficients identified with `ℤ`, lives over the fundamental class at
@@ -458,7 +460,7 @@ private theorem livesOverFundamentalClass_actionClass {x₀ : M} (π : C(G, M))
       (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)} (hα : ℓ • α ≠ 0) :
     LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ)) (mappingSpaceEval Sphere2.north) x₀
       (actionClass G x₀ A α) :=
-  (livesOverFundamentalClass_homologyMap_coefficient_iff _ uliftIntTensorIso).2
+  (livesOverFundamentalClass_homologyMap_coefficient_iff _ (ModuleCat.uliftTensorSelfIso ℤ)).2
     (o.livesOverFundamentalClass_actionMap_singularHomologyCross hd Sphere2.north π hπ hloc hstab
       hA hα)
 

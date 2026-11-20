@@ -54,8 +54,6 @@ The fundamental class is what cohomology classes are evaluated on, through the K
   manifold, the isomorphism `ℤ ≃ₗ[ℤ] Hₙ(M; ℤ)` sending `1` to the fundamental class.
 * `TauCeti.HomologicalOrientation.mapFundamentalClass`: the image `f_*[M] ∈ Hₙ(X; ℤ)` of the
   fundamental class under a continuous map `f : M → X`.
-* `TauCeti.uliftIntTensorIso`: `ℤ ⊗ ℤ ≅ ℤ`, for the coefficients `ULift ℤ`, which multiplies the
-  integers (`TauCeti.uliftIntTensorIso_hom_tmul`).
 * `TauCeti.uliftIntHomologyIso`: singular homology with coefficients in `ULift ℤ`, where
   fundamental classes live, is singular homology with coefficients in `ℤ`.
 
@@ -693,32 +691,6 @@ theorem uliftIntIso_hom_apply (x : ULift.{0} ℤ) : uliftIntIso.hom.hom x = x.do
 @[simp]
 theorem uliftIntIso_inv_apply (x : ℤ) : uliftIntIso.inv.hom x = ULift.up x :=
   (rfl)
-
-section Tensor
-
-open MonoidalCategory
-open scoped TensorProduct
-
-/-- The identification of the coefficients `ℤ ⊗ ℤ` of a cross product of integral classes with
-`ℤ`, both written `ULift ℤ` as for fundamental classes. -/
-def uliftIntTensorIso :
-    ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ) ≅ ModuleCat.of ℤ (ULift.{0} ℤ) :=
-  -- `ModuleCat.of ℤ ℤ`, the target of `uliftIntIso`, is the tensor unit `𝟙_ (ModuleCat ℤ)`.
-  tensorIso uliftIntIso uliftIntIso ≪≫ λ_ (𝟙_ _) ≪≫ uliftIntIso.symm
-
-/-- `TauCeti.uliftIntTensorIso` multiplies the integers. -/
-@[simp]
-theorem uliftIntTensorIso_hom_tmul (a b : ℤ) :
-    uliftIntTensorIso.hom.hom (ULift.up a ⊗ₜ[ℤ] ULift.up b) = ULift.up (a * b) := by
-  simp only [uliftIntTensorIso, Iso.trans_hom, Iso.symm_hom, tensorIso_hom, ModuleCat.hom_comp,
-    LinearMap.comp_apply, ModuleCat.hom_tensorHom]
-  -- `ModuleCat.of ℤ ℤ` is the tensor unit, on which the left unitor multiplies. The tensor product
-  -- and the unit of `ModuleCat` are not syntactically `TensorProduct` and `ℤ`, so `simp` does not
-  -- apply the remaining steps.
-  rw [TensorProduct.map_tmul, ModuleCat.MonoidalCategory.leftUnitor_hom_apply,
-    uliftIntIso_hom_apply, uliftIntIso_hom_apply, uliftIntIso_inv_apply, smul_eq_mul]
-
-end Tensor
 
 /-- Singular homology with coefficients in `ULift ℤ` is singular homology with coefficients in
 `ℤ`, naturally in the space. -/

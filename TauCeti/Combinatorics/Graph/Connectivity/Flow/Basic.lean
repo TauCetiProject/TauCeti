@@ -37,6 +37,8 @@ acyclic flow of the same value that is arrowwise no larger.
 ## Main definitions
 
 * `Graph.bidirectedCapacity`: the capacities of the bidirected network of a weighted multigraph.
+* `Graph.bidirectedNetwork`: the bundled `TauCeti.Network` of a weighted multigraph with
+  nonnegative edge capacities.
 
 ## Main results
 
@@ -88,6 +90,28 @@ theorem bidirectedCapacity_apply (c : E(G) → K) {x y : V(G)} (a : G.Bidirected
 theorem bidirectedCapacity_nonneg [Zero K] [LE K] {c : E(G) → K} (hc : 0 ≤ c) :
     0 ≤ G.bidirectedCapacity c :=
   fun _ _ a ↦ hc ⟨a.1, a.2.edge_mem⟩
+
+/-- The bundled bidirected network of a weighted multigraph with nonnegative edge capacities:
+zero lower bounds and `G.bidirectedCapacity c` as upper bounds on `G.BidirectedHom`.
+
+This definition is exposed and reducible so that its arrow family reduces to `G.BidirectedHom`,
+inheriting `Network.ofCapacity`'s projection lemmas and the finiteness instances on
+`G.BidirectedHom`. -/
+@[expose, reducible]
+def bidirectedNetwork [Zero K] [LE K] (G : Graph α β) (c : E(G) → K) (hc : 0 ≤ c) :
+    Network K V(G) :=
+  Network.ofCapacity G.BidirectedHom (G.bidirectedCapacity c)
+    (fun {x y} e ↦ G.bidirectedCapacity_nonneg hc x y e)
+
+@[simp]
+theorem bidirectedNetwork_lower [Zero K] [LE K] (G : Graph α β) (c : E(G) → K) (hc : 0 ≤ c) :
+    (G.bidirectedNetwork c hc).lower = 0 :=
+  (rfl)
+
+@[simp]
+theorem bidirectedNetwork_upper [Zero K] [LE K] (G : Graph α β) (c : E(G) → K) (hc : 0 ≤ c) :
+    (G.bidirectedNetwork c hc).upper = G.bidirectedCapacity c :=
+  (rfl)
 
 variable [Fintype V(G)] [DecidableEq V(G)] [Fintype E(G)] [∀ x y, Fintype (G.BidirectedHom x y)]
 

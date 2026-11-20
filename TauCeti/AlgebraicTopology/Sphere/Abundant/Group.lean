@@ -11,6 +11,7 @@ public import TauCeti.Topology.MappingSpace.Group
 public import TauCeti.Topology.MappingSpace.Sphere.Basic
 public import Mathlib.Analysis.Quaternion
 import Mathlib.Geometry.Manifold.Instances.Sphere
+import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 import TauCeti.AlgebraicTopology.Singular.ModuleChains.HomologyCross
@@ -125,7 +126,7 @@ private def sphereClass {k : ℕ}
       C(G × BasedMap Sphere2 G Sphere2.north 1, C(Sphere2, G))))) (ModuleCat.of ℤ (ULift.{0} ℤ))
         (n + k)).hom
     ((HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
-      uliftIntTensorIso.hom).app
+      (ModuleCat.uliftTensorSelfIso ℤ).hom).app
         (TopCat.toSSet.obj (TopCat.of (G × BasedMap Sphere2 G Sphere2.north 1)))) (n + k)).hom
       (o.crossFundamentalClass hn α))
 
@@ -150,7 +151,7 @@ private theorem livesOverFundamentalClass_sphereClass_iff (b : G) {k : ℕ}
       α ≠ 0 :=
     o.livesOverFundamentalClass_singularHomologyCross_fundamentalClass_iff hn b rfl
   have hy := livesOverFundamentalClass_homologyMap_coefficient_iff
-    (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) uliftIntTensorIso
+    (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.uliftTensorSelfIso ℤ)
     (p := id ∘ Prod.fst) (b := b) (α := o.crossFundamentalClass hn α)
   refine (livesOverFundamentalClass_homologyMap_iff_of_comp_eq_id (ModuleCat.of ℤ (ULift.{0} ℤ))
     (Ψ : C(G × BasedMap Sphere2 G Sphere2.north 1, C(Sphere2, G)))
@@ -204,7 +205,7 @@ private theorem homologyMap_const'_comp_mappingSpaceEval_sphereClass {k : ℕ}
     exact h
   -- Identify the coefficients before the maps, then commute the square `hΨ`.
   rw [sphereClass, sphereClass, ← hcross, homologyMap_chainComplexFunctor_map_apply]
-  exact homologyMap_homologyMap_apply_of_comp_eq R hΨ _
+  exact ConcreteCategory.congr_hom (homologyMap_toSSet_ofHom_comp_comm R _ hΨ) _
 
 include o hn in
 /-- **A topological group with a nonzero class of positive degree in its double loop space is

@@ -108,7 +108,6 @@ theorem unit_comp_forget_map_pushforwardExteriorPowerComparison_app (n : ℕ)
 /-- On sections over `U`, the pushforward comparison sends the sheafified wedge `m₁ ∧ ⋯ ∧ mₙ` of
 sections of `φ_* M` to the sheafified wedge of the same sections of `M` over `F U`, balanced over
 the target coefficient ring. -/
-@[simp]
 theorem pushforwardExteriorPowerComparison_app_val_app_mk (n : ℕ)
     (M : SheafOfModules.{u} (ringCatSheaf R)) (U : Cᵒᵖ)
     (m : Fin n → PresheafOfModulesOfCommRing.obj (R := S.obj) ((pushforward φ).obj M).val U) :
@@ -202,7 +201,6 @@ theorem unit_comp_pushforward_pullbackExteriorPowerComparison (n : ℕ)
 
 /-- On a sheafified wedge in the image of the adjunction unit, the pullback comparison takes the
 sheafified wedge of the images of its factors under the unit. -/
-@[simp]
 theorem pullbackExteriorPowerComparison_app_val_app_unit_mk (n : ℕ)
     (M : SheafOfModules.{u} (ringCatSheaf S)) (U : Cᵒᵖ)
     (m : Fin n → PresheafOfModulesOfCommRing.obj (R := S.obj) M.val U) :
