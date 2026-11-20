@@ -20,8 +20,8 @@ need not be invertible in `A`, so `Aᴳ` is in general not the image of an avera
 
 The pseudouniformiser of `Aᴳ` is the orbit product `∏ g, g • ϖ` of a pseudouniformiser `ϖ` of
 `A`. Since `Aᴳ` contains a pseudouniformiser of `A`, it has the same bounded subsets and the same
-power-bounded elements as `A`, so `(Aᴳ)° = A° ∩ Aᴳ`. When `G` also preserves `A⁺`, the ring `A`
-is integral over `Aᴳ` and `A⁺` is the integral closure of `A^{+G}` in `A`. If `A` is Hausdorff,
+power-bounded elements as `A`, so `(Aᴳ)° = A° ∩ Aᴳ`. The ring `A` is integral over `Aᴳ`; when
+`G` also preserves `A⁺`, `A⁺` is the integral closure of `A^{+G}` in `A`. If `A` is Hausdorff,
 `Aᴳ` is closed in `A`, so it is complete whenever `A` is.
 
 The invariant pair is the base of the quotient `|Spa(A, A⁺)| / G ≅ |Spa(Aᴳ, A^{+G})|` of the adic
@@ -49,8 +49,8 @@ spectrum by `G`, and of finite quotients of affinoid perfectoid spaces.
 ## References
 
 * D. Hansen, *Quotients of adic spaces by finite groups*, Math. Res. Lett. 28 (2021),
-  §2 (p. 3) and the proof of Theorem 3.1, Steps 1 and 3 (pp. 4–6): the invariant
-  pseudouniformiser, the invariant Tate ring and the integral closure of `A^{+G}`.
+  §2 and the proof of Theorem 3.1, Steps 1 and 3: the invariant pseudouniformiser, the
+  invariant Tate ring and the integral closure of `A^{+G}`.
 -/
 
 public section
@@ -85,13 +85,9 @@ theorem IsPseudoUniformizer.orbitProd {R : Type*} [CommSemiring R] [TopologicalS
     [ContinuousMul R] [MulSemiringAction G R] [Fintype G] [ContinuousConstSMul G R] {ϖ : R}
     (hϖ : IsPseudoUniformizer ϖ) : IsPseudoUniformizer (TauCeti.orbitProd G ϖ) := by
   rw [TauCeti.orbitProd_def]
-  refine Finset.prod_induction_nonempty _ IsPseudoUniformizer (fun a b ha hb ↦ ?_)
+  exact Finset.prod_induction_nonempty _ IsPseudoUniformizer (fun _ _ ↦ .mul)
     Finset.univ_nonempty fun g _ ↦
       hϖ.map (φ := MulSemiringAction.toRingHom G R g) (continuous_const_smul g)
-  -- A product of a power-bounded and a topologically nilpotent element is topologically nilpotent.
-  exact isPseudoUniformizer_iff.mpr ⟨ha.isUnit.mul hb.isUnit,
-    (IsPowerBounded.of_isTopologicallyNilpotent
-      ha.isTopologicallyNilpotent).isTopologicallyNilpotent_mul hb.isTopologicallyNilpotent⟩
 
 variable [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A] [Finite G]
   [ContinuousConstSMul G A]
@@ -113,8 +109,7 @@ instance isTateRing_fixedPoints : IsTateRing (FixedPoints.subring A G) := by
   obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
   have hN := hϖ.orbitProd G
   have hinv : (↑(hN.isUnit.unit⁻¹) : A) = TauCeti.orbitProd G (↑(hϖ.isUnit.unit⁻¹) : A) :=
-    Units.inv_eq_of_mul_eq_one_right <| by
-      rw [IsUnit.unit_spec, ← TauCeti.orbitProd_mul, IsUnit.mul_val_inv, TauCeti.orbitProd_one]
+    Units.inv_eq_of_mul_eq_one_right (TauCeti.orbitProd_units_mul_inv G hϖ.isUnit.unit)
   refine (FixedPoints.subring A G).isTateRing_of_isPseudoUniformizer hN.isUnit.unit hN
     (fun g ↦ TauCeti.smul_orbitProd G g ϖ) ?_
   rw [hinv]
@@ -130,7 +125,8 @@ theorem powerBoundedSubring_fixedPoints :
 
 /-- **The invariant Huber pair** `(Aᴳ, A^{+G})` of a finite group acting by continuous ring
 automorphisms on a Tate ring, where `A^{+G} = A⁺ ∩ Aᴳ`. Neither the order of `G` nor stability of
-`A⁺` under `G` is assumed; the theorems relating it to `(A, A⁺)` assume the latter. -/
+`A⁺` under `G` is assumed; only `integralClosure_map_invariantPair_plus` assumes that `G`
+preserves `A⁺`. -/
 def invariantPair (P : Pair A) : Pair (FixedPoints.subring A G) where
   plus := P.plus.comap (FixedPoints.subring A G).subtype
   isRingOfIntegralElements := P.isRingOfIntegralElements.comap_subtype _
@@ -163,7 +159,7 @@ theorem integralClosure_map_invariantPair_plus (P : Pair A)
   have : IsInvariantSubring G P.plus := ⟨fun g _ ha ↦ hP g _ ha⟩
   have := P.isRingOfIntegralElements.isIntegrallyClosedIn
   rw [map_subtype_invariantPair_plus]
-  exact TauCeti.integralClosure_inf_fixedPoints P.plus
+  exact P.plus.integralClosure_inf_fixedPoints
 
 section Functoriality
 
@@ -205,7 +201,7 @@ theorem invariantPair.map_comp {C : Type*} [CommRing C] [TopologicalSpace C] [Is
   Pair.Hom.ext (RingHom.ext fun _ ↦ Subtype.ext (by simp))
 
 /-- Restriction to invariants preserves injectivity. -/
-theorem invariantPair.injective_map {P : Pair A} {Q : Pair B} (f : P.Hom Q)
+theorem invariantPair.map_injective {P : Pair A} {Q : Pair B} (f : P.Hom Q)
     (hf : ∀ (g : G) (a : A), f.toRingHom (g • a) = g • f.toRingHom a)
     (hinj : Function.Injective f.toRingHom) :
     Function.Injective (invariantPair.map G f hf).toRingHom :=
@@ -232,14 +228,14 @@ theorem invariantPair.coe_subgroup_apply (H : Subgroup G) (P : Pair A)
   (rfl)
 
 /-- The inclusion of invariant pairs for a subgroup is injective. -/
-theorem invariantPair.injective_subgroup (H : Subgroup G) (P : Pair A) :
+theorem invariantPair.subgroup_injective (H : Subgroup G) (P : Pair A) :
     Function.Injective (invariantPair.subgroup G H P).toRingHom :=
   fun _ _ h ↦ Subtype.ext (by simpa using congr_arg Subtype.val h)
 
 /-- For the whole group, the inclusion of invariant pairs is bijective. -/
-theorem invariantPair.bijective_subgroup_top (P : Pair A) :
+theorem invariantPair.subgroup_top_bijective (P : Pair A) :
     Function.Bijective (invariantPair.subgroup G ⊤ P).toRingHom :=
-  ⟨invariantPair.injective_subgroup ⊤ P, fun y ↦
+  ⟨invariantPair.subgroup_injective ⊤ P, fun y ↦
     ⟨⟨y, fun g ↦ y.2 ⟨g, Subgroup.mem_top g⟩⟩, Subtype.ext (by simp)⟩⟩
 
 end Subgroup

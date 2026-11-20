@@ -122,6 +122,6 @@ theorem IsRingOfIntegralElements.comap_subtype {A : Type*} [CommRing A] [Topolog
     refine mem_powerBoundedSubring.mpr <| isPowerBounded_iff.mpr <|
       (S.isBounded_preimage_subtype (isPowerBounded_iff.mp (h.isPowerBounded_of_mem hx))).subset ?_
     rintro _ ⟨n, rfl⟩
-    exact ⟨n, rfl⟩
+    exact ⟨n, (SubmonoidClass.coe_pow x n).symm⟩
 
 end TauCeti.Huber
