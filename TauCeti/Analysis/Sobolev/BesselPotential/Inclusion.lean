@@ -74,6 +74,8 @@ common compact support, are statements about this map.
   (`BesselPotentialSpace.toBesselPotentialSpace_memSobolev_toLp_inclusion`).
 * `BesselPotentialSpace.toLp_inclusion_toBesselPotentialSpace`: for `s ≥ 0`, the `Lᵖ` function of
   the element of `H^{s,p}(E, G)` defined by an `Lᵖ` function `g` is `g`.
+* `BesselPotentialSpace.toLp_ae_eq_of_toDistr_eq`: elements of `H^{s,p}` and `H^{s,q}` with the
+  same tempered distribution have almost everywhere equal `toLp`.
 * `BesselPotentialSpace.norm_inclusion_le`, `BesselPotentialSpace.norm_inclusionLp_le`: for `p = 2`
   the operator norms of `inclusion` and `inclusionLp` are at most `1`, and
   `BesselPotentialSpace.norm_le_of_toDistr_eq`: an element of `H^r` with the tempered distribution
@@ -296,6 +298,15 @@ theorem toLp_inclusion_toBesselPotentialSpace (h : 0 ≤ s) {f : 𝓢'(E, G)} (h
     {g : Lp G p (volume : Measure E)} (hg : (g : 𝓢'(E, G)) = f) :
     (inclusion h hf.toBesselPotentialSpace).toLp = g := by
   rw [toLp_inclusion, inclusionLp_eq_iff, hg, MemSobolev.toBesselPotentialSpace_toDistr]
+
+/-- Elements of `H^{s,p}` and `H^{s,q}` with the same tempered distribution have almost
+everywhere equal Bessel potentials `J^s u`, the `Lᵖ` and `L^q` functions `toLp`. -/
+theorem toLp_ae_eq_of_toDistr_eq {q : ℝ≥0∞} [Fact (1 ≤ q)] {u : H^{s, p}(E, G)}
+    {v : H^{s, q}(E, G)} (h : u.toDistr = v.toDistr) : ⇑u.toLp =ᵐ[volume] ⇑v.toLp :=
+  Lp.ae_eq_of_toTemperedDistribution_apply_eq u.toLp
+    ((Lp.memLp v.toLp).locallyIntegrable Fact.out) fun φ ↦ by
+      rw [← u.bessel_toDistr_eq_toLp, h, v.bessel_toDistr_eq_toLp,
+        Lp.toTemperedDistribution_apply]
 
 section Hilbert
 
