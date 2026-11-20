@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 public import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Cpow
 import Mathlib.Tactic.Module
 import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.Fourier.MihlinHormander
 
 /-!
 # Bessel potentials of complex order on Schwartz space
@@ -24,6 +25,15 @@ For Schwartz functions with values in a complex Hilbert space, the `H^r` norm of
 holomorphic with values in every `H^r = H^{r,2}`. These are the analytic families of weights used in
 Stein's interpolation argument.
 
+For `1 < p < ∞` and `p ≠ 2` the imaginary orders are no longer isometries of `Lᵖ`, but they are
+bounded with norm growing polynomially in the order: the symbol `⟨ξ⟩ ^ (i τ)` satisfies Mihlin's
+condition of order `N = ⌊dim E / 2⌋ + 1` with constant `O((1 + |τ|) ^ N)`
+(`TauCeti.exists_norm_iteratedFDeriv_japaneseBracketCpow_le_div_pow`), so the Mihlin–Hörmander
+multiplier theorem gives `‖J^(i τ) u‖_p ≤ C (1 + |τ|) ^ N ‖u‖_p`. Composing with the real orders,
+`J^z` maps `H^{r + re z, p}` to `H^{r,p}` with norm `O((1 + |im z|) ^ N)`. Such polynomial growth on
+vertical lines is admissible in Stein's interpolation theorem, which is how the Bessel-potential
+spaces with `p ≠ 2` are interpolated (Bergh–Löfström, §6.4, proof of Theorem 6.4.5 (7)).
+
 ## Main declarations
 
 * `SchwartzMap.besselPotentialCLM z`: the Bessel potential `J^z` of complex order on Schwartz
@@ -35,6 +45,16 @@ Stein's interpolation argument.
   `‖J^z u‖_{H^r} = ‖u‖_{H^{r + re z}}`.
 * `SchwartzMap.hasDerivAt_toBesselPotentialSpaceCLM_besselPotentialCLM`: `z ↦ J^z u` is holomorphic
   with values in `H^r`.
+* `SchwartzMap.exists_eLpNorm_besselPotentialCLM_le`: for `1 < p < ∞` and `re z ≤ 0`,
+  `‖J^z u‖_p ≤ C (1 + ‖z‖) ^ N ‖u‖_p`.
+* `SchwartzMap.exists_norm_toBesselPotentialSpaceCLM_besselPotentialCLM_le`: for `1 < p < ∞`,
+  `‖J^z u‖_{H^{r,p}} ≤ C (1 + |im z|) ^ N ‖u‖_{H^{r + re z, p}}`.
+
+## References
+
+* J. Bergh, J. Löfström, *Interpolation Spaces: An Introduction*, Springer, 1976, §6.1 (the
+  Mihlin multiplier theorem) and §6.4 (the Bessel-potential spaces and their complex
+  interpolation).
 -/
 
 public section
@@ -207,5 +227,102 @@ theorem hasDerivAt_toBesselPotentialSpaceCLM_besselPotentialCLM (r : ℝ) (u : �
     _ = _ := by rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)]
 
 end Hilbert
+
+section Lp
+
+open scoped NNReal
+
+variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+  {p : ℝ≥0∞}
+
+/-- **Bessel potentials of order with nonpositive real part on `Lᵖ`.** For `1 < p < ∞` there is a
+constant `C` such that, for every complex order `z` with `re z ≤ 0` and every Schwartz function
+`u`, `‖J^z u‖_p ≤ C (1 + ‖z‖) ^ N ‖u‖_p`, where `N = ⌊dim E / 2⌋ + 1`. The symbol `⟨ξ⟩ ^ z`
+satisfies Mihlin's condition of order `N` with a constant `O((1 + ‖z‖) ^ N)`, so this is the
+Mihlin–Hörmander multiplier theorem. For imaginary orders `z = i τ` it bounds `J^(i τ)` on `Lᵖ`
+with polynomial growth in `τ`; for `p = 2` these operators are isometries. -/
+theorem exists_eLpNorm_besselPotentialCLM_le (hp : 1 < p) (hp_top : p ≠ ∞) :
+    ∃ C : ℝ≥0, ∀ z : ℂ, z.re ≤ 0 → ∀ u : 𝓢(E, H),
+      eLpNorm (besselPotentialCLM z u) p volume ≤
+        C * (1 + ‖z‖ₑ) ^ (Module.finrank ℝ E / 2 + 1) * eLpNorm u p volume := by
+  set N := Module.finrank ℝ E / 2 + 1
+  have hpow (z : ℂ) : (1 : ℝ≥0∞) ≤ (1 + ‖z‖ₑ) ^ N := one_le_pow₀ le_self_add
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- On the zero space the symbol is the constant `⟨0⟩ ^ z = 1`.
+    refine ⟨1, fun z _ u ↦ ?_⟩
+    have hsymb : TauCeti.japaneseBracketCpow z = fun _ : E ↦ (1 : ℂ) := funext fun ξ ↦ by
+      rw [Subsingleton.elim ξ 0, TauCeti.japaneseBracketCpow_zero_right]
+    rw [besselPotentialCLM_def, hsymb, fourierMultiplierCLM_const, one_smul,
+      ContinuousLinearMap.id_apply, ENNReal.coe_one, one_mul]
+    exact le_mul_of_one_le_left (by positivity) (hpow z)
+  have hN : Module.finrank ℝ E < 2 * N := by omega
+  obtain ⟨C, hC⟩ :=
+    exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le (F := H) hN hp hp_top
+  choose D hD using fun k ↦
+    TauCeti.exists_norm_iteratedFDeriv_japaneseBracketCpow_le_div_pow (H := E) k
+  set D' : ℝ≥0 := ∑ k ∈ Finset.range (N + 1), ‖D k‖₊
+  refine ⟨C * D', fun z hz u ↦ ?_⟩
+  -- Mihlin's condition of order `N` with constant `D' (1 + ‖z‖) ^ N`.
+  have hmihlin : ∀ k ≤ N, ∀ ξ : E, ξ ≠ 0 →
+      ‖iteratedFDeriv ℝ k (TauCeti.japaneseBracketCpow z) ξ‖ ≤
+        ((D' * (1 + ‖z‖₊) ^ N : ℝ≥0) : ℝ) / ‖ξ‖ ^ k := fun k hk ξ hξ ↦ by
+    have hDk : D k ≤ D' := by
+      refine (Real.le_norm_self _).trans ?_
+      exact_mod_cast Finset.single_le_sum (f := fun k ↦ ‖D k‖₊) (fun i _ ↦ by positivity)
+        (Finset.mem_range.2 (Nat.lt_succ_of_le hk))
+    have hz1 : (1 : ℝ) ≤ 1 + ‖z‖ := le_add_of_nonneg_right (norm_nonneg z)
+    push_cast
+    exact (hD k z hz ξ hξ).trans (div_le_div_of_nonneg_right
+      (mul_le_mul hDk (pow_le_pow_right₀ hz1 hk) (by positivity) D'.coe_nonneg) (by positivity))
+  refine (hC (TauCeti.hasTemperateGrowth_japaneseBracketCpow z) hmihlin u).trans_eq ?_
+  push_cast [eNorm_eq_nnNorm]
+  ring
+
+/-- **Bessel potentials of complex order on `H^{r,p}`.** For `1 < p < ∞` there is a constant `C`
+such that, for every real `r`, every complex order `z` and every Schwartz function `u`,
+
+`‖J^z u‖_{H^{r,p}} ≤ C (1 + |im z|) ^ N ‖u‖_{H^{r + re z, p}}`,  `N = ⌊dim E / 2⌋ + 1`.
+
+So `J^z` maps `H^{r + re z, p}` to `H^{r,p}`, with norm growing at most polynomially in `im z`.
+For `p = 2` it is an isometry (`SchwartzMap.norm_toBesselPotentialSpaceCLM_besselPotentialCLM`).
+These are the bounds on the analytic family `z ↦ J^z` that Stein's interpolation theorem needs to
+interpolate between Bessel-potential spaces with `p ≠ 2`. -/
+theorem exists_norm_toBesselPotentialSpaceCLM_besselPotentialCLM_le [Fact (1 ≤ p)] (hp : 1 < p)
+    (hp_top : p ≠ ∞) :
+    ∃ C : ℝ, ∀ (r : ℝ) (z : ℂ) (u : 𝓢(E, H)),
+      ‖toBesselPotentialSpaceCLM r p (besselPotentialCLM z u)‖ ≤
+        C * (1 + |z.im|) ^ (Module.finrank ℝ E / 2 + 1) *
+          ‖toBesselPotentialSpaceCLM (r + z.re) p u‖ := by
+  obtain ⟨C, hC⟩ := exists_eLpNorm_besselPotentialCLM_le (E := E) (H := H) hp hp_top
+  refine ⟨C, fun r z u ↦ ?_⟩
+  -- `J^r J^z u = J^(i im z) (J^(r + re z) u)`, and `J^(i im z)` is bounded on `Lᵖ`.
+  have horder : besselPotentialCLM (r : ℂ) (besselPotentialCLM z u) =
+      besselPotentialCLM ((z.im : ℂ) * I) (besselPotentialCLM ((r + z.re : ℝ) : ℂ) u) := by
+    rw [besselPotentialCLM_besselPotentialCLM_apply, besselPotentialCLM_besselPotentialCLM_apply]
+    congr 2
+    apply Complex.ext <;> simp [add_comm]
+  have hIm : ‖((z.im : ℂ) * I)‖ₑ = ‖z.im‖ₑ := by
+    have h : ‖((z.im : ℂ) * I)‖ = ‖z.im‖ := by simp
+    rw [← ofReal_norm, h, ofReal_norm]
+  have h := hC ((z.im : ℂ) * I) (by simp) (besselPotentialCLM ((r + z.re : ℝ) : ℂ) u)
+  rw [hIm] at h
+  rw [← BesselPotentialSpace.norm_toLp_eq, ← BesselPotentialSpace.norm_toLp_eq,
+    toLp_toBesselPotentialSpaceCLM_eq_besselPotentialCLM,
+    toLp_toBesselPotentialSpaceCLM_eq_besselPotentialCLM, norm_toLp, norm_toLp, horder]
+  have hfin : (C : ℝ≥0∞) * (1 + ‖z.im‖ₑ) ^ (Module.finrank ℝ E / 2 + 1) ≠ ∞ := by
+    exact ENNReal.mul_ne_top ENNReal.coe_ne_top (ENNReal.pow_ne_top (by simp))
+  calc (eLpNorm (besselPotentialCLM ((z.im : ℂ) * I)
+        (besselPotentialCLM ((r + z.re : ℝ) : ℂ) u)) p volume).toReal
+      ≤ ((C : ℝ≥0∞) * (1 + ‖z.im‖ₑ) ^ (Module.finrank ℝ E / 2 + 1) *
+          eLpNorm (besselPotentialCLM ((r + z.re : ℝ) : ℂ) u) p volume).toReal :=
+        ENNReal.toReal_mono (ENNReal.mul_ne_top hfin
+          ((besselPotentialCLM ((r + z.re : ℝ) : ℂ) u).memLp p volume).eLpNorm_ne_top) h
+    _ = C * (1 + |z.im|) ^ (Module.finrank ℝ E / 2 + 1) *
+          (eLpNorm (besselPotentialCLM ((r + z.re : ℝ) : ℂ) u) p volume).toReal := by
+        rw [ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_pow,
+          ENNReal.toReal_add ENNReal.one_ne_top (by simp)]
+        simp
+
+end Lp
 
 end SchwartzMap

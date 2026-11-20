@@ -6,11 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TemperateGrowth
+public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Complex powers of the Japanese bracket
@@ -31,6 +35,13 @@ inner product space it is therefore a Fourier multiplier on Schwartz functions: 
 Bessel potentials of complex order, which depend holomorphically on the order and are used to
 interpolate operators between Bessel-potential spaces.
 
+In `x`, the power `⟨x⟩ ^ z` is a symbol of order `re z`: its `k`-th derivative is
+`O((1 + ‖z‖) ^ k ⟨x⟩ ^ (re z - k))`, with a constant independent of `z`. The derivative
+`D ⟨x⟩ ^ z = z ⟨x⟩ ^ (z - 2) ⟪x, ·⟫` is a power of order `re z - 2` times a linear map, and the
+bound follows by induction on `k` with the Leibniz rule; each derivative costs at most one factor
+`1 + ‖z‖`. For `re z ≤ 0` this is Mihlin's condition with a constant polynomial in `z`, which is
+what makes the imaginary powers `⟨ξ⟩ ^ (i τ)` multipliers on `Lᵖ` with norm polynomial in `τ`.
+
 ## Main declarations
 
 * `TauCeti.japaneseBracketCpow z x`: the complex power `⟨x⟩ ^ z`, with its exponential form
@@ -43,6 +54,14 @@ interpolate operators between Bessel-potential spaces.
   second-order remainder bound `TauCeti.norm_japaneseBracketCpow_add_sub_sub_le`.
 * `TauCeti.hasTemperateGrowth_japaneseBracketCpow`: on a real inner product space,
   `x ↦ ⟨x⟩ ^ z` has temperate growth.
+* `TauCeti.contDiff_japaneseBracketCpow` and `TauCeti.hasFDerivAt_japaneseBracketCpow`:
+  `x ↦ ⟨x⟩ ^ z` is smooth, with derivative `z ⟨x⟩ ^ (z - 2) ⟪x, ·⟫`.
+* `TauCeti.exists_norm_iteratedFDeriv_japaneseBracketCpow_le`: the symbol estimates
+  `‖D^k ⟨x⟩ ^ z‖ ≤ C (1 + ‖z‖) ^ k (1 + ‖x‖ ^ 2) ^ ((re z - k) / 2)`, uniformly in `z`.
+* `TauCeti.exists_norm_iteratedFDeriv_japaneseBracketCpow_le_div_pow`: for `re z ≤ 0`, Mihlin's
+  condition `‖D^k ⟨ξ⟩ ^ z‖ ≤ C (1 + ‖z‖) ^ k / ‖ξ‖ ^ k`.
+* `TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le`: the real-order case,
+  symbol estimates of order `s` for the complex Bessel weight `(1 + ‖x‖ ^ 2) ^ (s / 2)`.
 -/
 
 public section
@@ -203,5 +222,162 @@ theorem hasTemperateGrowth_japaneseBracketCpow (z : ℂ) :
   rw [h]
   refine Function.HasTemperateGrowth.mul (by fun_prop) ?_
   exact Complex.hasTemperateGrowth_exp_mul_I.comp (by fun_prop)
+
+/-- The complex power `x ↦ ⟨x⟩ ^ z` of the Japanese bracket is smooth. -/
+@[fun_prop]
+theorem contDiff_japaneseBracketCpow (z : ℂ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (japaneseBracketCpow z : H → ℂ) := by
+  have hbase : ContDiff ℝ n fun x : H ↦ 1 + ‖x‖ ^ 2 := contDiff_const.add (contDiff_norm_sq ℝ)
+  have hlog : ContDiff ℝ n fun x : H ↦ Real.log (1 + ‖x‖ ^ 2) / 2 :=
+    (hbase.log fun x ↦ by positivity).div_const 2
+  rw [funext (japaneseBracketCpow_eq_exp z)]
+  exact (contDiff_const.mul (ofRealCLM.contDiff.comp hlog)).cexp
+
+/-- The derivative of `x ↦ ⟨x⟩ ^ z` is `z ⟨x⟩ ^ (z - 2) ⟪x, ·⟫`. -/
+theorem hasFDerivAt_japaneseBracketCpow (z : ℂ) (x : H) :
+    HasFDerivAt (japaneseBracketCpow z)
+      ((z * japaneseBracketCpow (z - 2) x) • (ofRealCLM ∘L innerSL ℝ x)) x := by
+  have hbase : HasFDerivAt (fun x : H ↦ ((1 + ‖x‖ ^ 2 : ℝ) : ℂ))
+      (ofRealCLM ∘L (2 • innerSL ℝ x)) x :=
+    ofRealCLM.hasFDerivAt.comp x ((hasStrictFDerivAt_norm_sq x).hasFDerivAt.const_add 1)
+  have hpow := (Complex.hasStrictDerivAt_cpow_const (c := z / 2)
+    (ofReal_mem_slitPlane.2 (by positivity : (0 : ℝ) < 1 + ‖x‖ ^ 2))).hasDerivAt
+  refine (hpow.comp_hasFDerivAt x hbase).congr_fderiv ?_
+  ext v
+  simp only [japaneseBracketCpow]
+  rw [show (z - 2) / 2 = z / 2 - 1 by ring]
+  simp only [ofReal_add, ofReal_one, ofReal_pow, ContinuousLinearMap.comp_smul, smul_apply,
+    ContinuousLinearMap.comp_apply, coe_innerSL_apply, ofRealCLM_apply, nsmul_eq_mul,
+    Nat.cast_ofNat, smul_eq_mul]
+  ring
+
+/-- The real-bilinear map `(x, v) ↦ z ⟪x, v⟫`, with complex values. -/
+private def innerSLSmul (z : ℂ) : H →L[ℝ] H →L[ℝ] ℂ :=
+  ContinuousLinearMap.compL ℝ H ℝ ℂ (z • ofRealCLM) ∘L innerSL ℝ
+
+private theorem innerSLSmul_apply_apply (z : ℂ) (x v : H) :
+    innerSLSmul z x v = z * (inner ℝ x v : ℝ) := by
+  have h : innerSL ℝ x v = inner ℝ x v := innerSL_apply_apply ℝ x v
+  simp [innerSLSmul, h]
+
+private theorem norm_innerSLSmul_le (z : ℂ) : ‖innerSLSmul (H := H) z‖ ≤ 1 + ‖z‖ := by
+  refine (ContinuousLinearMap.opNorm_le_bound₂ _ (norm_nonneg z) fun x y ↦ ?_).trans
+    (by linarith [norm_nonneg z])
+  rw [innerSLSmul_apply_apply, norm_mul, Complex.norm_real, Real.norm_eq_abs, mul_assoc]
+  exact mul_le_mul_of_nonneg_left (abs_real_inner_le_norm x y) (norm_nonneg z)
+
+/-- The derivative of `x ↦ ⟨x⟩ ^ z` is `⟨x⟩ ^ (z - 2)` times the linear map `v ↦ z ⟪x, v⟫`. -/
+private theorem fderiv_japaneseBracketCpow (z : ℂ) :
+    fderiv ℝ (japaneseBracketCpow z : H → ℂ) =
+      fun x ↦ japaneseBracketCpow (z - 2) x • innerSLSmul z x := by
+  funext x
+  rw [(hasFDerivAt_japaneseBracketCpow z x).fderiv]
+  ext v
+  have h : innerSL ℝ x v = inner ℝ x v := innerSL_apply_apply ℝ x v
+  simp only [smul_apply, ContinuousLinearMap.comp_apply, h, ofRealCLM_apply, smul_eq_mul,
+    innerSLSmul_apply_apply]
+  ring
+
+/-- The orders `z` and `z - 2` have comparable sizes: for `i ≤ k`,
+`(1 + ‖z - 2‖) ^ i (1 + ‖z‖) ≤ 3 ^ i (1 + ‖z‖) ^ (k + 1)`. -/
+private theorem one_add_norm_sub_two_pow_mul_le (z : ℂ) {i k : ℕ} (hik : i ≤ k) :
+    (1 + ‖z - 2‖) ^ i * (1 + ‖z‖) ≤ 3 ^ i * (1 + ‖z‖) ^ (k + 1) := by
+  have hz : ‖z - 2‖ ≤ ‖z‖ + 2 := (norm_sub_le _ _).trans (by simp)
+  calc (1 + ‖z - 2‖) ^ i * (1 + ‖z‖) ≤ (3 * (1 + ‖z‖)) ^ i * (1 + ‖z‖) := by
+        gcongr
+        linarith [norm_nonneg z]
+    _ = 3 ^ i * ((1 + ‖z‖) ^ i * (1 + ‖z‖) ^ 1) := by rw [mul_pow]; ring
+    _ ≤ 3 ^ i * (1 + ‖z‖) ^ (k + 1) := by
+        rw [← pow_add]
+        exact mul_le_mul_of_nonneg_left
+          (pow_le_pow_right₀ (by linarith [norm_nonneg z]) (by omega)) (by positivity)
+
+/-- **Derivative bounds for complex powers of the Japanese bracket.** For every `k` there is a
+constant `C` such that, for every complex order `z`,
+
+`‖D^k ⟨x⟩ ^ z‖ ≤ C (1 + ‖z‖) ^ k (1 + ‖x‖ ^ 2) ^ ((re z - k) / 2)`.
+
+So `⟨x⟩ ^ z` is a symbol of order `re z`, and its symbol seminorms grow at most polynomially in
+the order `z`. For an imaginary order `z = i τ` these are the bounds that make `⟨ξ⟩ ^ (i τ)` a
+Mihlin multiplier with constant `O((1 + |τ|) ^ k)`. -/
+theorem exists_norm_iteratedFDeriv_japaneseBracketCpow_le (k : ℕ) :
+    ∃ C, ∀ (z : ℂ) (x : H), ‖iteratedFDeriv ℝ k (japaneseBracketCpow z) x‖ ≤
+      C * (1 + ‖z‖) ^ k * (1 + ‖x‖ ^ 2) ^ ((z.re - k) / 2) := by
+  induction k using Nat.strong_induction_on with
+  | _ k ih =>
+  rcases k with _ | k
+  · refine ⟨1, fun z x ↦ ?_⟩
+    simp
+  -- The derivative is `⟨x⟩ ^ (z - 2)` times the linear map `v ↦ z ⟪x, v⟫`; apply the Leibniz rule
+  -- to this product and the induction hypothesis to the order `z - 2`.
+  choose! C hC using fun i (hi : i ≤ k) ↦ ih i (Nat.lt_succ_of_le hi)
+  refine ⟨∑ i ∈ Finset.range (k + 1), k.choose i * max (C i) 0 * 3 ^ i, fun z x ↦ ?_⟩
+  have hg (i : ℕ) (hi : i ≤ k) (x : H) :
+      ‖iteratedFDeriv ℝ i (japaneseBracketCpow (z - 2)) x‖ ≤
+        max (C i) 0 * (1 + ‖z - 2‖) ^ i * (1 + ‖x‖ ^ 2) ^ ((z.re - 2) / 2 - i / 2) := by
+    have he : ((z - 2).re - i) / 2 = (z.re - 2) / 2 - i / 2 := by
+      simp only [sub_re, re_ofNat]
+      ring
+    refine (hC i hi (z - 2) x).trans ?_
+    rw [he]
+    gcongr
+    exact le_max_left _ _
+  rw [← norm_iteratedFDeriv_fderiv, fderiv_japaneseBracketCpow]
+  refine ((innerSLSmul z).norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow
+    (contDiff_japaneseBracketCpow (z - 2)) hg x).trans ?_
+  have hexp : (z.re - 2) / 2 + 1 / 2 - k / 2 = (z.re - (k + 1 : ℕ)) / 2 := by
+    push_cast
+    ring
+  rw [hexp]
+  simp only [Finset.sum_mul]
+  refine Finset.sum_le_sum fun i hi ↦ ?_
+  have hik : i ≤ k := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
+  -- Each derivative of `⟨x⟩ ^ (z - 2)` costs `1 + ‖z - 2‖`, and the linear map costs `1 + ‖z‖`.
+  calc (k.choose i : ℝ) * (max (C i) 0 * (1 + ‖z - 2‖) ^ i) * ‖innerSLSmul z‖ *
+        (1 + ‖x‖ ^ 2) ^ ((z.re - (k + 1 : ℕ)) / 2)
+      = k.choose i * max (C i) 0 * ((1 + ‖z - 2‖) ^ i * ‖innerSLSmul z‖) *
+          (1 + ‖x‖ ^ 2) ^ ((z.re - (k + 1 : ℕ)) / 2) := by
+        ring
+    _ ≤ k.choose i * max (C i) 0 * ((1 + ‖z - 2‖) ^ i * (1 + ‖z‖)) *
+          (1 + ‖x‖ ^ 2) ^ ((z.re - (k + 1 : ℕ)) / 2) := by
+        gcongr
+        exact norm_innerSLSmul_le z
+    _ ≤ k.choose i * max (C i) 0 * (3 ^ i * (1 + ‖z‖) ^ (k + 1)) *
+          (1 + ‖x‖ ^ 2) ^ ((z.re - (k + 1 : ℕ)) / 2) := by
+        gcongr _ * ?_ * _
+        exact one_add_norm_sub_two_pow_mul_le z hik
+    _ = _ := by ring
+
+/-- **The complex Bessel weight is a symbol.** The complex-valued bracket power
+`(1 + ‖x‖ ^ 2) ^ (s / 2)` satisfies the symbol estimates of order `s`:
+`‖D^k (1 + ‖x‖ ^ 2) ^ (s / 2)‖ ≤ C (1 + ‖x‖ ^ 2) ^ ((s - k) / 2)`. It is the symbol of the Bessel
+potential of order `s`, the power `⟨x⟩ ^ s` of real order. -/
+theorem exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le (s : ℝ) (k : ℕ) :
+    ∃ C, ∀ x : H, ‖iteratedFDeriv ℝ k (fun x : H ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) x‖ ≤
+      C * (1 + ‖x‖ ^ 2) ^ ((s - k) / 2) := by
+  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_japaneseBracketCpow_le (H := H) k
+  refine ⟨C * (1 + |s|) ^ k, fun x ↦ ?_⟩
+  have h : (fun x : H ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) = japaneseBracketCpow (s : ℂ) :=
+    funext fun x ↦ (japaneseBracketCpow_ofReal s x).symm
+  simpa only [h, norm_real, Real.norm_eq_abs, ofReal_re] using hC s x
+
+/-- **Complex powers of nonpositive real part are Mihlin multipliers.** For every `k` there is a
+constant `C` such that, for every complex order `z` with `re z ≤ 0` and every `ξ ≠ 0`,
+`‖D^k ⟨ξ⟩ ^ z‖ ≤ C (1 + ‖z‖) ^ k / ‖ξ‖ ^ k`. This is Mihlin's condition, with a constant growing
+polynomially in `z`. -/
+theorem exists_norm_iteratedFDeriv_japaneseBracketCpow_le_div_pow (k : ℕ) :
+    ∃ C, ∀ z : ℂ, z.re ≤ 0 → ∀ ξ : H, ξ ≠ 0 →
+      ‖iteratedFDeriv ℝ k (japaneseBracketCpow z) ξ‖ ≤ C * (1 + ‖z‖) ^ k / ‖ξ‖ ^ k := by
+  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_japaneseBracketCpow_le (H := H) k
+  refine ⟨max C 0, fun z hz ξ hξ ↦ (hC z ξ).trans ?_⟩
+  have hξ' : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
+  have hexp : (1 + ‖ξ‖ ^ 2) ^ ((z.re - k) / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) :=
+    Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖ξ‖]) (by linarith)
+  calc C * (1 + ‖z‖) ^ k * (1 + ‖ξ‖ ^ 2) ^ ((z.re - k) / 2)
+      ≤ max C 0 * (1 + ‖z‖) ^ k * (1 / ‖ξ‖ ^ k) := by
+        gcongr
+        · exact le_max_left _ _
+        · exact hexp.trans (Real.one_add_sq_rpow_neg_le hξ' k)
+    _ = _ := by ring
 
 end TauCeti

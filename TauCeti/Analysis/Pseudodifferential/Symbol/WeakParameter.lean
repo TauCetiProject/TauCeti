@@ -14,6 +14,7 @@ import TauCeti.Analysis.Calculus.IteratedDeriv.Indicator
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Reciprocal
 import TauCeti.Analysis.Complex.SectorBounds
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Cpow
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 
 /-!
@@ -449,7 +450,7 @@ private theorem exists_norm_iteratedFDeriv_weight_le (i : ℕ) : ∃ C, ∀ ξ :
     ‖iteratedFDeriv ℝ i (fun ξ : CoordinateSpace n => ((1 + ‖ξ‖ ^ 2 : ℝ) : ℂ)) ξ‖ ≤
       C * (1 + ‖ξ‖ ^ 2) ^ ((2 - i : ℝ) / 2) := by
   obtain ⟨C, hC⟩ :=
-    exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le (E := CoordinateSpace n) 2 i
+    exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le (H := CoordinateSpace n) 2 i
   refine ⟨C, fun ξ => ?_⟩
   have h : (fun ξ : CoordinateSpace n => (((1 + ‖ξ‖ ^ 2) ^ ((2 : ℝ) / 2) : ℝ) : ℂ)) =
       fun ξ : CoordinateSpace n => ((1 + ‖ξ‖ ^ 2 : ℝ) : ℂ) := by
