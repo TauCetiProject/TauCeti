@@ -164,8 +164,8 @@ theorem leftTranslation_hom_orbitMap (g : 𝟙_ C ⟶ G) (x : 𝟙_ C ⟶ X) :
 /-- Moving the base point of an orbit morphism amounts to right multiplication on the group.
 The order of multiplication matters for a noncommutative group. -/
 theorem orbitMap_smul (g : 𝟙_ C ⟶ G) (x : 𝟙_ C ⟶ X) :
-    orbitMap G (g • x) = (TauCeti.rightTranslation g).hom ≫ orbitMap G x := by
-  simp [orbitMap, TauCeti.rightTranslation_hom, comp_smul, SemigroupAction.mul_smul]
+    orbitMap G (g • x) = (GrpObj.mulRight g).hom ≫ orbitMap G x := by
+  simp [orbitMap, ← Hom.mul_def, comp_smul, SemigroupAction.mul_smul]
 
 end TauCeti
 
