@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
 public import Mathlib.CategoryTheory.Limits.Types.Pushouts
 public import Mathlib.Topology.Category.TopCat.Limits.Basic
 public import Mathlib.Topology.Compactness.Lindelof
@@ -40,11 +41,9 @@ theorem lindelofSpace_of_isPushout {A B X P : TopCat.{u}} {g : A ⟶ X} {m : A �
 /-- The colimit of a countable diagram of Lindelöf spaces in `TopCat` is Lindelöf. -/
 theorem lindelofSpace_of_isColimit {J : Type w} [Category.{v} J] [Countable J]
     {F : J ⥤ TopCat.{u}} {c : Cocone F} (hc : IsColimit c) [∀ j, LindelofSpace (F.obj j)] :
-    LindelofSpace c.pt := by
-  refine LindelofSpace.of_continuous_surjective (f := fun p : Σ j, F.obj j ↦ c.ι.app p.1 p.2)
-    (continuous_sigma fun j ↦ (c.ι.app j).hom.continuous) fun p ↦ ?_
-  obtain ⟨j, x, rfl⟩ :=
-    Types.jointly_surjective_of_isColimit (isColimitOfPreserves (forget TopCat) hc) p
-  exact ⟨⟨j, x⟩, rfl⟩
+    LindelofSpace c.pt :=
+  LindelofSpace.of_continuous_surjective (f := fun p : Σ j, F.obj j ↦ c.ι.app p.1 p.2)
+    (continuous_sigma fun j ↦ (c.ι.app j).hom.continuous)
+    (Concrete.from_union_surjective_of_isColimit F hc)
 
 end TauCeti.TopCat
