@@ -35,6 +35,7 @@ cofinite filter: as `y → -∞` because `b_y → 0` and `a` is bounded, and as 
 
 * `TauCeti.amiceCoeff`: the `R`-module of bounded families tending to zero at `-∞`.
 * `TauCeti.AmiceRing`: the Amice ring, with its `Ring`, `CommRing` and `Algebra` instances.
+* `TauCeti.AmiceRing.monomial`: the Laurent monomial `c tⁿ`.
 * `TauCeti.AmiceRing.integral`: the integral subring `O_E`.
 * `TauCeti.RobbaRing.boundedToAmice`: the embedding of the bounded Robba ring into `E`.
 
@@ -92,22 +93,16 @@ theorem mem_amiceCoeff {a : ℤ → R} :
   (Iff.rfl)
 
 theorem single_mem_amiceCoeff (n : ℤ) (c : R) : Pi.single n c ∈ amiceCoeff R := by
-  refine ⟨⟨‖c‖, Set.forall_mem_range.2 fun m ↦ ?_⟩, tendsto_const_nhds.congr' ?_⟩
-  · rcases eq_or_ne m n with rfl | hm
-    · simp
-    · simp [Pi.single_eq_of_ne hm]
-  · filter_upwards [eventually_lt_atBot n] with m hm
-    simp [Pi.single_eq_of_ne hm.ne]
+  refine ⟨⟨‖c‖, Set.forall_mem_range.2 (norm_single_apply_le n · c)⟩,
+    tendsto_const_nhds.congr' ?_⟩
+  filter_upwards [eventually_lt_atBot n] with m hm
+  simp [Pi.single_eq_of_ne hm.ne]
 
 /-- The family equal to `1` in every negative degree and to `0` elsewhere is bounded but does not
 tend to zero at `-∞`, so it is not an Amice family. -/
 theorem indicator_Iio_one_notMem_amiceCoeff [NormOneClass R] :
-    (Set.Iio 0).indicator 1 ∉ amiceCoeff R := fun h ↦ by
-  have h₁ : Tendsto (fun n ↦ ‖(Set.Iio (0 : ℤ)).indicator (1 : ℤ → R) n‖) atBot (𝓝 1) :=
-    tendsto_const_nhds.congr' <| (eventually_lt_atBot 0).mono fun n hn ↦ by
-      beta_reduce
-      rw [Set.indicator_of_mem (Set.mem_Iio.2 hn), Pi.one_apply, norm_one]
-  exact one_ne_zero <| tendsto_nhds_unique h₁ (by simpa using Tendsto.norm h.2)
+    (Set.Iio 0).indicator 1 ∉ amiceCoeff R := fun h ↦
+  not_tendsto_indicator_Iio_one_atBot h.2
 
 /-- A family in `amiceCoeff R` has a nonnegative bound on its coefficient norms. -/
 private theorem exists_norm_le_of_mem_amiceCoeff {a : ℤ → R} (ha : a ∈ amiceCoeff R) :
@@ -155,24 +150,13 @@ private theorem tendsto_mul_mul_sub_of_mem_amiceCoeff (ha : a ∈ amiceCoeff R)
   simp only [Set.mem_ofPred_eq, dist_zero_right, not_lt] at hp
   have hle : ‖a p.1 * b p.2 * c (n - p.1 - p.2)‖ ≤ ‖a p.1‖ * ‖b p.2‖ * ‖c (n - p.1 - p.2)‖ :=
     (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (norm_mul_le _ _) (norm_nonneg _))
-  have h₁ : N < p.1 := by
-    refine not_le.1 fun h ↦ (hN p.1 h).1.1.not_ge (hp.trans (hle.trans ?_))
-    calc ‖a p.1‖ * ‖b p.2‖ * ‖c (n - p.1 - p.2)‖ = ‖a p.1‖ * (‖b p.2‖ * ‖c (n - p.1 - p.2)‖) := by
-          ring
-      _ ≤ ‖a p.1‖ * (B * C) := mul_le_mul_of_nonneg_left
-          (mul_le_mul (hB _) (hC _) (norm_nonneg _) hB₀) (norm_nonneg _)
-  have h₂ : N < p.2 := by
-    refine not_le.1 fun h ↦ (hN p.2 h).1.2.not_ge (hp.trans (hle.trans ?_))
-    calc ‖a p.1‖ * ‖b p.2‖ * ‖c (n - p.1 - p.2)‖ = ‖b p.2‖ * (‖a p.1‖ * ‖c (n - p.1 - p.2)‖) := by
-          ring
-      _ ≤ ‖b p.2‖ * (A * C) := mul_le_mul_of_nonneg_left
-          (mul_le_mul (hA _) (hC _) (norm_nonneg _) hA₀) (norm_nonneg _)
-  have h₃ : N < n - p.1 - p.2 := by
-    refine not_le.1 fun h ↦ (hN _ h).2.not_ge (hp.trans (hle.trans ?_))
-    calc ‖a p.1‖ * ‖b p.2‖ * ‖c (n - p.1 - p.2)‖ = ‖c (n - p.1 - p.2)‖ * (‖a p.1‖ * ‖b p.2‖) := by
-          ring
-      _ ≤ ‖c (n - p.1 - p.2)‖ * (A * B) := mul_le_mul_of_nonneg_left
-          (mul_le_mul (hA _) (hB _) (norm_nonneg _) hA₀) (norm_nonneg _)
+  -- bound the product by one factor times the bounds of the other two, with that factor first
+  have h₁ : N < p.1 := not_le.1 fun h ↦ (hN p.1 h).1.1.not_ge <| hp.trans <| hle.trans <| by
+    rw [mul_assoc]; gcongr; exacts [hB _, hC _]
+  have h₂ : N < p.2 := not_le.1 fun h ↦ (hN p.2 h).1.2.not_ge <| hp.trans <| hle.trans <| by
+    rw [mul_comm ‖a p.1‖, mul_assoc]; gcongr; exacts [hA _, hC _]
+  have h₃ : N < n - p.1 - p.2 := not_le.1 fun h ↦ (hN _ h).2.not_ge <| hp.trans <| hle.trans <| by
+    rw [mul_comm]; gcongr; exacts [hA _, hB _]
   exact ⟨⟨h₁, by omega⟩, ⟨h₂, by omega⟩⟩
 
 variable [IsUltrametricDist R]
@@ -181,13 +165,11 @@ variable [IsUltrametricDist R]
 by the product of the bounds, and it tends to zero at `-∞`. -/
 theorem addRingConvolution_mem_amiceCoeff (ha : a ∈ amiceCoeff R) (hb : b ∈ amiceCoeff R) :
     a ⋆ᵣ₊ b ∈ amiceCoeff R := by
-  obtain ⟨A, hA₀, hA⟩ := exists_norm_le_of_mem_amiceCoeff ha
-  obtain ⟨B, hB₀, hB⟩ := exists_norm_le_of_mem_amiceCoeff hb
-  -- every coefficient is a sum of terms of norm at most `A B`
-  refine ⟨⟨A * B, Set.forall_mem_range.2 fun n ↦ ?_⟩, Metric.tendsto_nhds.2 fun ε hε ↦ ?_⟩
-  · rw [DiscreteConvolution.addRingConvolution_eq_tsum_sub]
-    exact IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (mul_nonneg hA₀ hB₀) fun y ↦
-      (norm_mul_le _ _).trans (mul_le_mul (hA _) (hB _) (norm_nonneg _) hA₀)
+  obtain ⟨A, -, hA⟩ := exists_norm_le_of_mem_amiceCoeff ha
+  obtain ⟨B, -, hB⟩ := exists_norm_le_of_mem_amiceCoeff hb
+  -- every coefficient has norm at most `A B`
+  refine ⟨⟨A * B, Set.forall_mem_range.2 (norm_addRingConvolution_apply_le hA hB)⟩,
+    Metric.tendsto_nhds.2 fun ε hε ↦ ?_⟩
   -- below `N` both families are small against the other's bound, and a coefficient of degree
   -- `n ≤ N + N` has in each term `a (n - y) * b y` a factor of degree at most `N`
   have hsmall (x : ℤ → R) (hx : Tendsto x atBot (𝓝 0)) (C : ℝ) :
@@ -262,6 +244,18 @@ instance instOne : One (AmiceRing R) where
 theorem coe_one : ((1 : AmiceRing R) : ℤ → R) = Pi.single 0 1 :=
   (rfl)
 
+/-- **The Laurent monomial `c tⁿ`** of the Amice ring. -/
+def monomial (n : ℤ) (c : R) : AmiceRing R :=
+  ⟨Pi.single n c, single_mem_amiceCoeff n c⟩
+
+@[simp, norm_cast]
+theorem coe_monomial (n : ℤ) (c : R) : (monomial n c : ℤ → R) = Pi.single n c :=
+  (rfl)
+
+@[simp]
+theorem monomial_zero_one : monomial 0 (1 : R) = 1 :=
+  (rfl)
+
 end One
 
 section Ring
@@ -275,6 +269,12 @@ noncomputable instance instMul : Mul (AmiceRing R) where
 @[simp, norm_cast]
 theorem coe_mul (f g : AmiceRing R) : ((f * g : AmiceRing R) : ℤ → R) = ↑f ⋆ᵣ₊ ↑g :=
   (rfl)
+
+/-- **Laurent monomials multiply by adding degrees**: `(a tᵐ)(b tⁿ) = ab tᵐ⁺ⁿ`. -/
+@[simp]
+theorem monomial_mul_monomial (m n : ℤ) (a b : R) :
+    monomial m a * monomial n b = monomial (m + n) (a * b) :=
+  Subtype.ext <| DiscreteConvolution.single_addRingConvolution_single m n a b
 
 variable [CompleteSpace R]
 
@@ -312,6 +312,12 @@ noncomputable instance instRing : Ring (AmiceRing R) where
       (addConvolutionExists_of_mem_amiceCoeff f.2 h.2)
       (addConvolutionExists_of_mem_amiceCoeff g.2 h.2)
 
+/-- **A monomial with a unit coefficient is a unit**: the inverse of `a tⁿ` is `a⁻¹ t⁻ⁿ`. In
+particular the variable `t = monomial 1 1` is a unit of the Amice ring. -/
+theorem isUnit_monomial (n : ℤ) {a : R} (ha : IsUnit a) : IsUnit (monomial n a) := by
+  obtain ⟨u, rfl⟩ := ha
+  exact isUnit_iff_exists.2 ⟨monomial (-n) ↑u⁻¹, by simp, by simp⟩
+
 section Integral
 
 variable [NormOneClass R]
@@ -321,15 +327,8 @@ variable (R) in
 unit ball. -/
 def integral : Subring (AmiceRing R) where
   carrier := {f | ∀ n, ‖(f : ℤ → R) n‖ ≤ 1}
-  mul_mem' {f g} hf hg n := by
-    rw [coe_mul, DiscreteConvolution.addRingConvolution_eq_tsum_sub]
-    exact IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg zero_le_one fun y ↦
-      (norm_mul_le _ _).trans ((mul_le_mul (hf _) (hg _) (norm_nonneg _) zero_le_one).trans_eq
-        (one_mul 1))
-  one_mem' n := by
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · simp [Pi.single_eq_of_ne hn]
+  mul_mem' hf hg n := (norm_addRingConvolution_apply_le hf hg n).trans_eq (one_mul 1)
+  one_mem' n := (norm_single_apply_le 0 n (1 : R)).trans_eq norm_one
   add_mem' hf hg n := (IsUltrametricDist.norm_add_le_max _ _).trans (max_le (hf n) (hg n))
   zero_mem' n := by simp
   neg_mem' hf n := by simpa using hf n
@@ -337,6 +336,10 @@ def integral : Subring (AmiceRing R) where
 @[simp]
 theorem mem_integral {f : AmiceRing R} : f ∈ integral R ↔ ∀ n, ‖(f : ℤ → R) n‖ ≤ 1 :=
   (Iff.rfl)
+
+/-- A monomial `c tⁿ` with `‖c‖ ≤ 1` is integral. -/
+theorem monomial_mem_integral (n : ℤ) {c : R} (hc : ‖c‖ ≤ 1) : monomial n c ∈ integral R :=
+  fun m ↦ (norm_single_apply_le n m c).trans hc
 
 end Integral
 
@@ -399,9 +402,17 @@ theorem coe_boundedToAmice (f : bounded R) :
     (boundedToAmice R f : ℤ → R) = ((f : RobbaRing R) : ℤ → R) :=
   (rfl)
 
+/-- The embedding of the bounded Robba ring into the Amice ring is injective. -/
 theorem boundedToAmice_injective : Function.Injective (boundedToAmice R) :=
   fun _ _ h ↦ Subtype.ext <| Subtype.ext <| by
     simpa using congr_arg (fun g : AmiceRing R ↦ (g : ℤ → R)) h
+
+/-- The embedding of the bounded Robba ring into the Amice ring sends each monomial `c tⁿ` to the
+monomial `c tⁿ`. -/
+@[simp]
+theorem boundedToAmice_monomial (n : ℤ) (c : R) :
+    boundedToAmice R ⟨monomial n c, monomial_mem_bounded n c⟩ = AmiceRing.monomial n c :=
+  Subtype.ext <| by simp
 
 /-- **`R^bd = R ∩ E`**: an element of the Amice ring comes from the bounded Robba ring exactly when
 its coefficients converge on some annulus `r < |t| < 1`. -/

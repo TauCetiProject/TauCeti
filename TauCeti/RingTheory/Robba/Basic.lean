@@ -98,8 +98,8 @@ theorem laurentConvergesAt_iff {ρ : ℝ} {a : ℤ → R} :
 
 /-- The Gauss norm `|a|_ρ = sup_n ‖aₙ‖ ρⁿ` of a coefficient family at the radius `ρ`. It is the
 Gauss norm of the Laurent series `∑ aₙ tⁿ` on the circle `|t| = ρ` when the series converges
-there (`TauCeti.LaurentConvergesAt`); otherwise the supremum is unbounded and the value carries no
-meaning. -/
+there (`TauCeti.LaurentConvergesAt`). Without convergence the value need not be the Gauss norm of
+a convergent series; it is the junk value `0` when the weighted norms are unbounded. -/
 noncomputable def laurentGaussNorm (ρ : ℝ) (a : ℤ → R) : ℝ :=
   ⨆ n, ‖a n‖ * ρ ^ n
 
@@ -133,12 +133,24 @@ section SeminormedAddGroup
 
 variable [SeminormedAddGroup R]
 
-/-- The Gauss norm is nonnegative at every radius, including where the series diverges and the
-supremum takes the junk value `0`. -/
+/-- The Gauss norm is nonnegative at every radius, including where the weighted norms are unbounded
+and the supremum takes the junk value `0`. -/
 theorem laurentGaussNorm_nonneg (ρ : ℝ) (a : ℤ → R) : 0 ≤ laurentGaussNorm ρ a := by
   by_cases h : BddAbove (Set.range fun n ↦ ‖a n‖ * ρ ^ n)
   · exact le_ciSup_of_le h 0 (by simp)
   · rw [laurentGaussNorm, Real.iSup_of_not_bddAbove h]
+
+/-- A coefficient of `Pi.single i c` has norm at most `‖c‖`. -/
+theorem norm_single_apply_le {ι : Type*} [DecidableEq ι] (i j : ι) (c : R) :
+    ‖(Pi.single i c : ι → R) j‖ ≤ ‖c‖ := by
+  rcases eq_or_ne j i with rfl | h
+  · simp
+  · simp [Pi.single_eq_of_ne h]
+
+@[simp]
+theorem laurentGaussNorm_neg (ρ : ℝ) (a : ℤ → R) :
+    laurentGaussNorm ρ (-a) = laurentGaussNorm ρ a := by
+  simp [laurentGaussNorm]
 
 @[simp]
 theorem laurentConvergesAt_zero (ρ : ℝ) : LaurentConvergesAt ρ (0 : ℤ → R) := by
@@ -176,6 +188,10 @@ theorem LaurentConvergesAt.neg {ρ : ℝ} {a : ℤ → R} (ha : LaurentConverges
     LaurentConvergesAt ρ (-a) := by
   simpa [LaurentConvergesAt] using ha
 
+theorem LaurentConvergesAt.sub {ρ : ℝ} {a b : ℤ → R} (ha : LaurentConvergesAt ρ a)
+    (hb : LaurentConvergesAt ρ b) : LaurentConvergesAt ρ (a - b) := by
+  simpa [sub_eq_add_neg] using ha.add hb.neg
+
 /-- In an ultrametric group the Gauss norm of a sum is at most the larger Gauss norm. -/
 theorem LaurentConvergesAt.laurentGaussNorm_add_le [IsUltrametricDist R] {ρ : ℝ} (hρ : 0 ≤ ρ)
     {a b : ℤ → R} (ha : LaurentConvergesAt ρ a) (hb : LaurentConvergesAt ρ b) :
@@ -203,6 +219,17 @@ theorem LaurentConvergesAt.smul [SeminormedRing R] {ρ : ℝ} {a : ℤ → R}
   refine squeeze_zero_norm (f := fun n ↦ ‖(c • a) n‖ * ρ ^ n) (fun n ↦ ?_) h
   simp only [Pi.smul_apply, smul_eq_mul, Real.norm_eq_abs, abs_mul, abs_norm, ← mul_assoc]
   exact mul_le_mul_of_nonneg_right (norm_mul_le c (a n)) (abs_nonneg (ρ ^ n))
+
+/-- The Gauss norm of `c • a` at a radius `ρ ≥ 0` is at most `‖c‖ |a|_ρ`. -/
+theorem LaurentConvergesAt.laurentGaussNorm_smul_le [SeminormedRing R] {ρ : ℝ} (hρ : 0 ≤ ρ)
+    {a : ℤ → R} (ha : LaurentConvergesAt ρ a) (c : R) :
+    laurentGaussNorm ρ (c • a) ≤ ‖c‖ * laurentGaussNorm ρ a :=
+  laurentGaussNorm_le fun n ↦ by
+    calc ‖(c • a) n‖ * ρ ^ n ≤ ‖c‖ * (‖a n‖ * ρ ^ n) := by
+          rw [← mul_assoc]
+          exact mul_le_mul_of_nonneg_right (norm_mul_le c (a n)) (zpow_nonneg hρ n)
+      _ ≤ ‖c‖ * laurentGaussNorm ρ a :=
+          mul_le_mul_of_nonneg_left (ha.le_laurentGaussNorm n) (norm_nonneg c)
 
 /-! ### Convolution at one radius -/
 
@@ -235,6 +262,16 @@ private theorem LaurentConvergesAt.tendsto_mul_sub (hρ : 0 < ρ) (ha : LaurentC
   simpa using norm_mul_mul_zpow_le hρ a b (n - y) y
 
 variable [IsUltrametricDist R]
+
+/-- In an ultrametric ring, if the coefficient norms of `a` and `b` are bounded by `A` and `B`,
+those of `a ⋆ᵣ₊ b` are bounded by `A B`. -/
+theorem norm_addRingConvolution_apply_le {A B : ℝ} (ha : ∀ n, ‖a n‖ ≤ A) (hb : ∀ n, ‖b n‖ ≤ B)
+    (n : ℤ) : ‖(a ⋆ᵣ₊ b) n‖ ≤ A * B := by
+  have hA : 0 ≤ A := (norm_nonneg _).trans (ha 0)
+  rw [DiscreteConvolution.addRingConvolution_eq_tsum_sub]
+  exact IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
+    (mul_nonneg hA ((norm_nonneg _).trans (hb 0))) fun y ↦
+      (norm_mul_le _ _).trans (mul_le_mul (ha _) (hb _) (norm_nonneg _) hA)
 
 /-- Over a complete ultrametric ring, every convolution coefficient of two families converging at a
 radius `ρ > 0` is a convergent series. -/
@@ -386,16 +423,21 @@ theorem tendsto_atBot_of_mem_robbaCoeff {a : ℤ → R} (ha : a ∈ robbaCoeff R
     (mem_robbaCoeff_iff_eventually.1 ha).and self_mem_nhdsWithin
   exact ha.tendsto_atBot h₀ (le_of_lt h₁)
 
-/-- The family equal to `1` in every negative degree and to `0` elsewhere converges on no annulus:
-its coefficients do not tend to zero at `-∞`. -/
-theorem indicator_Iio_one_notMem_robbaCoeff [NormOneClass R] :
-    (Set.Iio 0).indicator 1 ∉ robbaCoeff R := fun h ↦ by
+/-- The family equal to `1` in every negative degree and to `0` elsewhere does not tend to zero at
+`-∞`. -/
+theorem not_tendsto_indicator_Iio_one_atBot [NormOneClass R] :
+    ¬ Tendsto ((Set.Iio (0 : ℤ)).indicator (1 : ℤ → R)) atBot (𝓝 0) := fun h ↦ by
   have h₁ : Tendsto (fun n ↦ ‖(Set.Iio (0 : ℤ)).indicator (1 : ℤ → R) n‖) atBot (𝓝 1) :=
     tendsto_const_nhds.congr' <| (eventually_lt_atBot 0).mono fun n hn ↦ by
       beta_reduce
       rw [Set.indicator_of_mem (Set.mem_Iio.2 hn), Pi.one_apply, norm_one]
-  exact one_ne_zero <| tendsto_nhds_unique h₁ <| by
-    simpa using Tendsto.norm (tendsto_atBot_of_mem_robbaCoeff h)
+  exact one_ne_zero <| tendsto_nhds_unique h₁ (by simpa using Tendsto.norm h)
+
+/-- The family equal to `1` in every negative degree and to `0` elsewhere converges on no annulus:
+its coefficients do not tend to zero at `-∞`. -/
+theorem indicator_Iio_one_notMem_robbaCoeff [NormOneClass R] :
+    (Set.Iio 0).indicator 1 ∉ robbaCoeff R := fun h ↦
+  not_tendsto_indicator_Iio_one_atBot (tendsto_atBot_of_mem_robbaCoeff h)
 
 end Coeff
 
@@ -497,15 +539,6 @@ theorem monomial_mul_monomial (m n : ℤ) (a b : R) :
     monomial m a * monomial n b = monomial (m + n) (a * b) :=
   Subtype.ext <| DiscreteConvolution.single_addRingConvolution_single m n a b
 
-/-- The product of two series with coefficient norms bounded by `A` and `B` has coefficient norms
-bounded by `A B`. -/
-theorem norm_coeff_mul_le {f g : RobbaRing R} {A B : ℝ} (hA : 0 ≤ A) (hB : 0 ≤ B)
-    (hf : ∀ n, ‖(f : ℤ → R) n‖ ≤ A) (hg : ∀ n, ‖(g : ℤ → R) n‖ ≤ B) (n : ℤ) :
-    ‖((f * g : RobbaRing R) : ℤ → R) n‖ ≤ A * B := by
-  rw [coe_mul, DiscreteConvolution.addRingConvolution_eq_tsum_sub]
-  exact IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (mul_nonneg hA hB) fun y ↦
-    (norm_mul_le _ _).trans (mul_le_mul (hf _) (hg _) (norm_nonneg _) hA)
-
 variable [CompleteSpace R]
 
 /-- **The coefficients of a product are convergent convolution sums**: the `n`-th coefficient of
@@ -560,11 +593,8 @@ variable (R) in
 unit ball. -/
 def integral : Subring (RobbaRing R) where
   carrier := {f | ∀ n, ‖(f : ℤ → R) n‖ ≤ 1}
-  mul_mem' hf hg n := (norm_coeff_mul_le zero_le_one zero_le_one hf hg n).trans_eq (one_mul 1)
-  one_mem' n := by
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · simp [Pi.single_eq_of_ne hn]
+  mul_mem' hf hg n := (norm_addRingConvolution_apply_le hf hg n).trans_eq (one_mul 1)
+  one_mem' n := (norm_single_apply_le 0 n (1 : R)).trans_eq norm_one
   add_mem' hf hg n := (IsUltrametricDist.norm_add_le_max _ _).trans (max_le (hf n) (hg n))
   zero_mem' n := by simp
   neg_mem' hf n := by simpa using hf n
@@ -572,6 +602,10 @@ def integral : Subring (RobbaRing R) where
 @[simp]
 theorem mem_integral {f : RobbaRing R} : f ∈ integral R ↔ ∀ n, ‖(f : ℤ → R) n‖ ≤ 1 :=
   (Iff.rfl)
+
+/-- A monomial `c tⁿ` with `‖c‖ ≤ 1` is integral. -/
+theorem monomial_mem_integral (n : ℤ) {c : R} (hc : ‖c‖ ≤ 1) : monomial n c ∈ integral R :=
+  fun m ↦ (norm_single_apply_le n m c).trans hc
 
 end Integral
 
@@ -625,6 +659,10 @@ theorem mem_annulus {r : ℝ} {f : RobbaRing R} : f ∈ annulus R r ↔ (f : ℤ
 theorem annulus_mono {r s : ℝ} (h : r ≤ s) : annulus R r ≤ annulus R s :=
   fun _ hf ↦ annularCoeff_mono h hf
 
+/-- Every monomial `c tⁿ` converges on every annulus. -/
+theorem monomial_mem_annulus (r : ℝ) (n : ℤ) (c : R) : monomial n c ∈ annulus R r :=
+  single_mem_annularCoeff r n c
+
 /-- **The Robba ring is the directed union of its annular subalgebras** over the inner radii
 `r < 1`. -/
 theorem iSup_annulus : ⨆ r : Set.Iio (1 : ℝ), annulus R r = ⊤ :=
@@ -639,24 +677,32 @@ def bounded : Subalgebra R (RobbaRing R) where
   carrier := {f | BddAbove (Set.range fun n ↦ ‖(f : ℤ → R) n‖)}
   mul_mem' := by
     rintro f g ⟨A, hA⟩ ⟨B, hB⟩
-    have hA' : ∀ n, ‖(f : ℤ → R) n‖ ≤ max A 0 := fun n ↦ (hA ⟨n, rfl⟩).trans (le_max_left _ _)
-    have hB' : ∀ n, ‖(g : ℤ → R) n‖ ≤ max B 0 := fun n ↦ (hB ⟨n, rfl⟩).trans (le_max_left _ _)
-    exact ⟨_, Set.forall_mem_range.2 <|
-      norm_coeff_mul_le (le_max_right A 0) (le_max_right B 0) hA' hB'⟩
+    exact ⟨A * B, Set.forall_mem_range.2 <|
+      norm_addRingConvolution_apply_le (fun n ↦ hA ⟨n, rfl⟩) (fun n ↦ hB ⟨n, rfl⟩)⟩
   add_mem' := by
     rintro f g ⟨A, hA⟩ ⟨B, hB⟩
     refine ⟨max A B, Set.forall_mem_range.2 fun n ↦ ?_⟩
     exact (IsUltrametricDist.norm_add_le_max _ _).trans
       (max_le_max (hA ⟨n, rfl⟩) (hB ⟨n, rfl⟩))
   algebraMap_mem' c := ⟨‖c‖, Set.forall_mem_range.2 fun n ↦ by
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · simp [Pi.single_eq_of_ne hn]⟩
+    simpa using norm_single_apply_le 0 n c⟩
 
 @[simp]
 theorem mem_bounded {f : RobbaRing R} :
     f ∈ bounded R ↔ BddAbove (Set.range fun n ↦ ‖(f : ℤ → R) n‖) :=
   (Iff.rfl)
+
+/-- Every monomial `c tⁿ` has bounded coefficients. -/
+theorem monomial_mem_bounded (n : ℤ) (c : R) : monomial n c ∈ bounded R :=
+  ⟨‖c‖, Set.forall_mem_range.2 (norm_single_apply_le n · c)⟩
+
+/-- A monomial `a tⁿ` with a unit coefficient is a unit of the bounded Robba ring: its inverse
+`a⁻¹ t⁻ⁿ` is bounded too. In particular `t` is a unit of `R^bd`. -/
+theorem isUnit_monomial_bounded (n : ℤ) {a : R} (ha : IsUnit a) :
+    IsUnit (⟨monomial n a, monomial_mem_bounded n a⟩ : bounded R) := by
+  obtain ⟨u, rfl⟩ := ha
+  exact isUnit_iff_exists.2 ⟨⟨monomial (-n) ↑u⁻¹, monomial_mem_bounded _ _⟩,
+    Subtype.ext (by simp), Subtype.ext (by simp)⟩
 
 variable [NormOneClass R]
 
