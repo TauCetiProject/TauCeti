@@ -134,12 +134,29 @@ theorem coe_infinityChartRestriction (x : infinityChart R u) :
     (infinityChartRestriction R u x : B) = x :=
   (rfl)
 
+/-- `A₀∞` is the localization of `A₀` away from `u`, as an `A₀`-algebra through
+`finiteChartRestriction`. -/
+theorem isLocalization_away_finiteChartRestriction :
+    letI := (finiteChartRestriction R u).toRingHom.toAlgebra
+    IsLocalization.Away (u.integralClosureAdjoinGen R) (overlapChart R u) := by
+  let := (finiteChartRestriction R u).toRingHom.toAlgebra
+  have : IsScalarTower (finiteChart R u) (overlapChart R u) B := .of_algebraMap_eq fun _ ↦ rfl
+  exact u.isLocalization_away_integralClosure_adjoin_insert_inv
+
+/-- `A₀∞` is the localization of `A∞` away from `u⁻¹`, as an `A∞`-algebra through
+`infinityChartRestriction`. -/
+theorem isLocalization_away_infinityChartRestriction :
+    letI := (infinityChartRestriction R u).toRingHom.toAlgebra
+    IsLocalization.Away (u⁻¹.integralClosureAdjoinGen R) (overlapChart R u) := by
+  let := (infinityChartRestriction R u).toRingHom.toAlgebra
+  have : IsScalarTower (infinityChart R u) (overlapChart R u) B := .of_algebraMap_eq fun _ ↦ rfl
+  exact u.isLocalization_away_inv_integralClosure_adjoin_insert_inv
+
 /-- `Spec A₀∞ → Spec A₀` is an open immersion: `A₀∞` is the localization of `A₀` away from `u`. -/
 theorem isOpenImmersion_specMap_finiteChartRestriction :
     IsOpenImmersion (Spec.map (CommRingCat.ofHom (finiteChartRestriction R u).toRingHom)) := by
   let := (finiteChartRestriction R u).toRingHom.toAlgebra
-  have : IsScalarTower (finiteChart R u) (overlapChart R u) B := .of_algebraMap_eq fun _ ↦ rfl
-  have := u.isLocalization_away_integralClosure_adjoin_insert_inv (R := R)
+  have := isLocalization_away_finiteChartRestriction R u
   exact IsOpenImmersion.of_isLocalization (S := overlapChart R u) (u.integralClosureAdjoinGen R)
 
 /-- `Spec A₀∞ → Spec A∞` is an open immersion: `A₀∞` is the localization of `A∞` away from
@@ -147,8 +164,7 @@ theorem isOpenImmersion_specMap_finiteChartRestriction :
 theorem isOpenImmersion_specMap_infinityChartRestriction :
     IsOpenImmersion (Spec.map (CommRingCat.ofHom (infinityChartRestriction R u).toRingHom)) := by
   let := (infinityChartRestriction R u).toRingHom.toAlgebra
-  have : IsScalarTower (infinityChart R u) (overlapChart R u) B := .of_algebraMap_eq fun _ ↦ rfl
-  have := u.isLocalization_away_inv_integralClosure_adjoin_insert_inv (R := R)
+  have := isLocalization_away_infinityChartRestriction R u
   exact IsOpenImmersion.of_isLocalization (S := overlapChart R u)
     (u⁻¹.integralClosureAdjoinGen R)
 
@@ -236,7 +252,7 @@ spectra of subrings of `B`, glued along the nonempty spectrum of `A₀∞`. -/
 instance [IsDomain B] : IsIntegral (projectiveLineNormalization R u) := by
   have := isOpenImmersion_specMap_finiteChartRestriction R u
   have := isOpenImmersion_specMap_infinityChartRestriction R u
-  have : Nonempty (Spec (.of (overlapChart R u))) := inferInstanceAs (Nonempty (PrimeSpectrum _))
+  have : Nonempty (Spec (.of (overlapChart R u))) := inferInstance
   exact inferInstanceAs (IsIntegral (pushout _ _))
 
 /-! ### The structure morphism to `Spec R` -/
@@ -271,8 +287,7 @@ theorem isAffineOpen_image_ιFinite_top : IsAffineOpen (ιFinite R u ''ᵁ ⊤) 
   exact isAffineOpen_opensRange _
 
 instance [Nontrivial B] : Nonempty (ιFinite R u ''ᵁ ⊤) := by
-  obtain ⟨p⟩ : Nonempty (Spec (.of (finiteChart R u))) :=
-    inferInstanceAs (Nonempty (PrimeSpectrum _))
+  obtain ⟨p⟩ : Nonempty (Spec (.of (finiteChart R u))) := inferInstance
   exact ⟨⟨ιFinite R u p, p, trivial, rfl⟩⟩
 
 /-- The functions on the finite chart are the elements of `A₀`. -/
@@ -302,8 +317,7 @@ theorem isAffineOpen_image_ιInfinity_top : IsAffineOpen (ιInfinity R u ''ᵁ �
   exact isAffineOpen_opensRange _
 
 instance [Nontrivial B] : Nonempty (ιInfinity R u ''ᵁ ⊤) := by
-  obtain ⟨p⟩ : Nonempty (Spec (.of (infinityChart R u))) :=
-    inferInstanceAs (Nonempty (PrimeSpectrum _))
+  obtain ⟨p⟩ : Nonempty (Spec (.of (infinityChart R u))) := inferInstance
   exact ⟨⟨ιInfinity R u p, p, trivial, rfl⟩⟩
 
 /-- The functions on the chart at infinity are the elements of `A∞`. -/
@@ -344,8 +358,7 @@ theorem image_specMap_infinityChartRestriction_comp_ιInfinity_top :
 instance [Nontrivial B] : Nonempty (ιFinite R u ''ᵁ ⊤ ⊓ ιInfinity R u ''ᵁ ⊤ :) := by
   have := isOpenImmersion_specMap_infinityChartRestriction R u
   rw [← image_specMap_infinityChartRestriction_comp_ιInfinity_top]
-  obtain ⟨p⟩ : Nonempty (Spec (.of (overlapChart R u))) :=
-    inferInstanceAs (Nonempty (PrimeSpectrum _))
+  obtain ⟨p⟩ : Nonempty (Spec (.of (overlapChart R u))) := inferInstance
   exact ⟨⟨_, p, trivial, rfl⟩⟩
 
 /-- The functions on the intersection of the two charts are the elements of `A₀∞`. It is
@@ -437,8 +450,7 @@ theorem functionFieldEquiv_germToFunctionField_overlap
     functionFieldEquiv R u ((projectiveLineNormalization R u).germToFunctionField _ a) =
       overlapChartSectionsEquiv R u a := by
   let := (finiteChartRestriction R u).toRingHom.toAlgebra
-  have : IsScalarTower (finiteChart R u) (overlapChart R u) B := .of_algebraMap_eq fun _ ↦ rfl
-  have := u.isLocalization_away_integralClosure_adjoin_insert_inv (R := R)
+  have := isLocalization_away_finiteChartRestriction R u
   -- Both sides are ring maps out of `A₀∞`, the localization of `A₀` away from `u`, and they agree
   -- on `A₀` by `functionFieldEquiv_germToFunctionField`.
   have key := IsLocalization.ringHom_ext (Submonoid.powers (u.integralClosureAdjoinGen R))

@@ -143,14 +143,19 @@ def integralClosureAdjoinGen : integralClosure (adjoin R {(u : B)}) B :=
 theorem coe_integralClosureAdjoinGen : (u.integralClosureAdjoinGen R : B) = u :=
   (rfl)
 
+/-- `R[u, u⁻¹]` as an algebra over `R[u]` through the inclusion, for the proofs below. -/
+private local instance : Algebra (adjoin R {(u : B)}) (adjoin R {(u : B), ((u⁻¹ : Bˣ) : B)}) :=
+  (Subalgebra.inclusion (adjoin_singleton_le_adjoin_insert_inv u)).toAlgebra
+
+private local instance :
+    IsScalarTower (adjoin R {(u : B)}) (adjoin R {(u : B), ((u⁻¹ : Bˣ) : B)}) B :=
+  .of_algebraMap_eq fun _ ↦ rfl
+
 /-- **An element integral over `R[u, u⁻¹]` becomes integral over `R[u]` after multiplying by a
 power of `u`.** -/
 theorem exists_isIntegral_adjoin_pow_mul {x : B}
     (hx : IsIntegral (adjoin R {(u : B), ((u⁻¹ : Bˣ) : B)}) x) :
     ∃ n : ℕ, IsIntegral (adjoin R {(u : B)}) ((u : B) ^ n * x) := by
-  let := (Subalgebra.inclusion (adjoin_singleton_le_adjoin_insert_inv (R := R) u)).toAlgebra
-  have : IsScalarTower (adjoin R {(u : B)}) (adjoin R {(u : B), ((u⁻¹ : Bˣ) : B)}) B :=
-    .of_algebraMap_eq fun _ ↦ rfl
   have := isLocalization_away_adjoin_insert_inv (R := R) u
   obtain ⟨⟨_, n, rfl⟩, hn⟩ := IsIntegral.exists_multiple_integral_of_isLocalization
     (Submonoid.powers (⟨u, self_mem_adjoin_singleton R _⟩ : adjoin R {(u : B)})) _ hx
@@ -162,9 +167,6 @@ theorem isIntegral_adjoin_insert_inv_iff {x : B} :
     IsIntegral (adjoin R {(u : B), ((u⁻¹ : Bˣ) : B)}) x ↔
       ∃ n : ℕ, IsIntegral (adjoin R {(u : B)}) ((u : B) ^ n * x) := by
   refine ⟨exists_isIntegral_adjoin_pow_mul u, fun ⟨n, hn⟩ ↦ ?_⟩
-  let := (Subalgebra.inclusion (adjoin_singleton_le_adjoin_insert_inv (R := R) u)).toAlgebra
-  have : IsScalarTower (adjoin R {(u : B)}) (adjoin R {(u : B), ((u⁻¹ : Bˣ) : B)}) B :=
-    .of_algebraMap_eq fun _ ↦ rfl
   have hinv : IsIntegral (adjoin R {(u : B), ((u⁻¹ : Bˣ) : B)}) (((u⁻¹ : Bˣ) : B) ^ n) :=
     (isIntegral_algebraMap (x := (⟨_, subset_adjoin (Set.mem_insert_of_mem _ rfl)⟩ :
       adjoin R {(u : B), ((u⁻¹ : Bˣ) : B)}))).pow n
@@ -181,9 +183,6 @@ theorem isLocalization_away_integralClosure_adjoin_insert_inv
       (integralClosure (adjoin R {(u : B), ((u⁻¹ : Bˣ) : B)}) B) B] :
     IsLocalization.Away (u.integralClosureAdjoinGen R)
       (integralClosure (adjoin R {(u : B), ((u⁻¹ : Bˣ) : B)}) B) := by
-  let := (Subalgebra.inclusion (adjoin_singleton_le_adjoin_insert_inv (R := R) u)).toAlgebra
-  have : IsScalarTower (adjoin R {(u : B)}) (adjoin R {(u : B), ((u⁻¹ : Bˣ) : B)}) B :=
-    .of_algebraMap_eq fun _ ↦ rfl
   have : IsScalarTower (adjoin R {(u : B)}) (integralClosure (adjoin R {(u : B)}) B)
       (integralClosure (adjoin R {(u : B), ((u⁻¹ : Bˣ) : B)}) B) :=
     .of_algebraMap_eq fun y ↦ Subtype.ext <|

@@ -268,8 +268,7 @@ theorem Scheme.ΓSpecIso_appIso_hom_map_eq_restrict {X : Scheme.{u}} {A A' : Com
       (Scheme.ΓSpecIso A').hom ((j.appIso ⊤).hom
         (X.presheaf.map (eqToHom hV).op (X.presheaf.map (homOfLE hle).op a))) := by
   subst h hV
-  rw [← CommRingCat.comp_apply, ← CommRingCat.comp_apply, ← CommRingCat.comp_apply,
-    ← CommRingCat.comp_apply, ← CommRingCat.comp_apply]
+  simp only [← CommRingCat.comp_apply, Category.assoc]
   congr 2
   rw [← Scheme.ΓSpecIso_naturality, Scheme.Hom.comp_appIso]
   simp only [Iso.trans_hom, Functor.mapIso_hom, Iso.op_hom, eqToIso.hom, Category.assoc,
@@ -281,6 +280,9 @@ theorem Scheme.ΓSpecIso_appIso_hom_map_eq_restrict {X : Scheme.{u}} {A A' : Com
   rw [Quiver.Hom.unop_op] at this
   rw [reassoc_of% this]
   congr 1
+  -- `appTop` abbreviates `app ⊤`, which is `appLE ⊤ (Spec.map φ ⁻¹ᵁ ⊤)` by `app_eq_appLE`;
+  -- rewriting that preimage to `⊤` with `preimage_top` matches the right-hand side, the two `appLE`
+  -- terms then differing only in their (irrelevant) proofs.
   rw [Scheme.Hom.appIso_hom', ← Category.assoc, Scheme.Hom.map_appLE, Scheme.Hom.appTop,
     Scheme.Hom.app_eq_appLE]
   simp only [Scheme.Hom.preimage_top]

@@ -263,7 +263,7 @@ instance : IsIntegral (twoChartModel hF hx) := by
   have := isOpenImmersion_specMap_infinityChartRestriction hF hx
   have : Nonempty (Spec (.of (holomorphyRing
       ({P : Place k F | x ∈ P.integers} ∩ {P : Place k F | x⁻¹ ∈ P.integers})))) :=
-    inferInstanceAs (Nonempty (PrimeSpectrum _))
+    inferInstance
   exact inferInstanceAs (IsIntegral (pushout
     (Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) x).toRingHom))
     (Spec.map (CommRingCat.ofHom (infinityChartRestriction (k := k) x).toRingHom))))
