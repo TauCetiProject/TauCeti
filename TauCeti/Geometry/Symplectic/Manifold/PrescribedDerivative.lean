@@ -11,16 +11,16 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.LocalDiffeomorph
 import TauCeti.Geometry.Symplectic.Manifold.Opens
 
 /-!
-# Symplectomorphisms of neighbourhoods with prescribed derivative
+# Correcting a partial diffeomorphism to pull back a two-form, keeping its derivative
 
 Let `θ` and `σ` be closed two-forms on manifolds `M` and `N`, with `M` boundaryless, let
 `f : Q → M` be a compact embedded submanifold along which `θ` is nondegenerate, and let `Ψ` be a
 partial diffeomorphism from `M` to `N`, defined near `f(Q)`, whose differential at every point of
 `f(Q)` is a linear symplectic map: `σ(dΨ v, dΨ w) = θ(v, w)` for all tangent vectors `v`, `w` of
-`M` at that point. Then `Ψ` can be corrected to a symplectomorphism of neighbourhoods without
-changing it to first order along `f(Q)`: there are open neighbourhoods `U₀` of `f(Q)` and `U₁` of
-`Ψ(f(Q))` and a diffeomorphism `φ : U₀ → U₁` pulling `σ` back to `θ` which agrees with `Ψ` at
-every point of `f(Q)` and has the same differential there
+`M` at that point. Then `Ψ` can be corrected to a diffeomorphism of neighbourhoods pulling `σ`
+back to `θ` without changing it to first order along `f(Q)`: there are open neighbourhoods `U₀`
+of `f(Q)` and `U₁` of `Ψ(f(Q))` and a diffeomorphism `φ : U₀ → U₁` pulling `σ` back to `θ` which
+agrees with `Ψ` at every point of `f(Q)` and has the same differential there
 (`TauCeti.SmoothTwoForm.exists_diffeomorph_opens_mfderiv_eq_of_eval₂_eq`).
 
 The hypothesis says that `Ψ^* σ` and `θ` agree as bilinear forms on the full ambient tangent spaces
@@ -33,14 +33,15 @@ gives `dφ = dΨ ∘ dΘ = dΨ` along `f(Q)`.
 This is the last step in the construction of a symplectomorphism of neighbourhoods of two compact
 submanifolds with a prescribed symplectic bundle isomorphism `A` between the ambient tangent
 bundles along them: once `A` is realized as the differential along the submanifold of some
-diffeomorphism of neighbourhoods, this theorem makes that diffeomorphism symplectic without
-changing its differential.
+diffeomorphism of neighbourhoods, this theorem corrects that diffeomorphism to one pulling the
+second form back to the first, without changing its differential along the submanifold.
 
 ## Main results
 
 * `TauCeti.SmoothTwoForm.exists_diffeomorph_opens_mfderiv_eq_of_eval₂_eq`: a partial
-  diffeomorphism which is symplectic to first order along a compact embedded submanifold is, to
-  first order along it, a symplectomorphism of neighbourhoods.
+  diffeomorphism whose differential carries `σ` to `θ` along a compact embedded submanifold
+  `f(Q)` agrees to first order along `f(Q)` with a diffeomorphism of neighbourhoods pulling `σ`
+  back to `θ`.
 
 ## References
 
@@ -111,7 +112,8 @@ private theorem exists_diffeomorph_source_eventually_mpullback_eq (f : SmoothEmb
   rw [hfU] at hΘf hΘ hΘ1
   exact ⟨Θ, hΘf, hΘ1, hΘ⟩
 
-/-- **A symplectomorphism of neighbourhoods with prescribed derivative.** Let `θ` and `σ` be
+/-- **Correcting a partial diffeomorphism to pull `σ` back to `θ` near `f(Q)`, keeping its
+differential along `f(Q)`.** Let `θ` and `σ` be
 closed two-forms on `M` and `N`, with `M` boundaryless, Hausdorff and second countable, let
 `f : Q → M` be a compact embedded submanifold along which `θ` is nondegenerate, and let `Ψ` be a
 partial diffeomorphism from `M` to `N` whose source contains `f(Q)` and whose differential at each
@@ -174,6 +176,7 @@ theorem exists_diffeomorph_opens_mfderiv_eq_of_eval₂_eq (f : SmoothEmbedding J
     rw [SmoothForm.mpullback_apply _ hι, hAΘ hzA, SmoothForm.coe_mpullback_subtype_val_apply,
       SmoothForm.coe_mpullback_subtype_val_apply]
     simp only [Manifold.mfderiv_inclusion_apply]
-    rfl
+    -- The base point `ι z` of `U` is `z` in `M`, by `hιval`.
+    exact congrArg (fun x : M ↦ θ.1 x v) (congrFun hιval z)
 
 end TauCeti.SmoothTwoForm

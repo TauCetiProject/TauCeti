@@ -431,7 +431,12 @@ theorem exists_diffeomorph_opens_comp_eq (Ψ : PartialDiffeomorph I J M N n)
   have hι : IsLocalDiffeomorph I I n ι := fun z ↦ by
     let e := (subtypeVal I n U₀ ⟨z⟩).trans (subtypeVal I n _ ⟨ι z⟩).symm
     have he : ⇑e = ι := funext fun y ↦ subtypeVal_symm_apply (I := I) (n := n) _ _ (hU₀ y.2)
-    exact he ▸ e.isLocalDiffeomorphAt I I n (by simpa [e] using hU₀ z.2)
+    have hz : z ∈ e.source := by
+      simp only [e, trans_source, symm_toPartialEquiv, PartialEquiv.symm_source,
+        subtypeVal_source, subtypeVal_target, coe_subtypeVal, mem_inter_iff, mem_univ,
+        mem_preimage, SetLike.mem_coe, true_and]
+      exact hU₀ z.2
+    exact he ▸ e.isLocalDiffeomorphAt I I n hz
   -- `Φ` is a composite of local diffeomorphisms.
   have hloc : IsLocalDiffeomorph I J n Φ := fun z ↦
     (hι z).comp (hg := (Θ.isLocalDiffeomorph _).comp
