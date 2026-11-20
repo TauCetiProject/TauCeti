@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.LaxMilgram
-public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
+public import TauCeti.Analysis.PDE.EnergyForm.Poincare
 public import TauCeti.Analysis.Sobolev.FiniteMeasure
 
 /-!
