@@ -47,8 +47,8 @@ on the whole space.
   `u ∘ y_i`, where `u` is continuous on a set containing the values of the `y_i`.
 * `TauCeti.tendsto_intervalIntegral_comp_of_tendstoUniformlyOn`: the integrals
   `∫_{t₁}^{t₂} Φ i t (y i t) dt` tend to `∫_{t₁}^{t₂} Φ₀ t x dt` when the `Φ i` converge uniformly
-  to `Φ₀`, continuous along `uIcc t₁ t₂ ×ˢ {x}`, and the `y i` converge uniformly to the constant
-  `x`.
+  near `x` to `Φ₀`, continuous along `uIcc t₁ t₂ ×ˢ {x}`, and the `y i` converge uniformly to the
+  constant `x`.
 * `TauCeti.continuousOn_parametric_intervalIntegral_of_continuousOn`: an interval integral of a
   function continuous on `s ×ˢ uIcc a b` is continuous in the parameter on `s`.
 * `TauCeti.tendsto_setIntegral_preimage_Ioo_zero`: integrals of an integrable function over the
@@ -259,17 +259,18 @@ theorem tendsto_intervalIntegral_comp_of_tendsto {ι V E : Type*} {l : Filter ι
     fun t ht ↦ hyx t (uIoc_subset_uIcc ht)
 
 /-- **Integrals along maps converging to a point, for uniformly converging integrands.** Let the
-functions `Φ i : ℝ → V → E` converge uniformly on `uIcc t₁ t₂ ×ˢ univ` to `Φ₀`, which is jointly
-continuous at the points `(t, x)` with `t ∈ uIcc t₁ t₂`. If the maps `y i : ℝ → V` converge
-uniformly on `uIcc t₁ t₂` to the constant map at `x`, in the sense that they eventually take values
-in any given neighbourhood of `x` there, then `∫_{t₁}^{t₂} Φ i t (y i t) dt` tends to
-`∫_{t₁}^{t₂} Φ₀ t x dt`, provided the integrands are eventually integrable. No continuity of the
-`Φ i` or the `y i` is assumed, and the filter need not be countably generated. -/
+functions `Φ i : ℝ → V → E` converge uniformly on `uIcc t₁ t₂ ×ˢ U` to `Φ₀` for some
+neighbourhood `U` of `x`, where `Φ₀` is jointly continuous at the points `(t, x)` with
+`t ∈ uIcc t₁ t₂`. If the maps `y i : ℝ → V` converge uniformly on `uIcc t₁ t₂` to the constant
+map at `x`, in the sense that they eventually take values in any given neighbourhood of `x` there,
+then `∫_{t₁}^{t₂} Φ i t (y i t) dt` tends to `∫_{t₁}^{t₂} Φ₀ t x dt`, provided the integrands are
+eventually integrable. No continuity of the `Φ i` or the `y i` is assumed, and the filter need not
+be countably generated. -/
 theorem tendsto_intervalIntegral_comp_of_tendstoUniformlyOn {ι V E : Type*} [TopologicalSpace V]
     [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure ℝ} [IsLocallyFiniteMeasure μ]
     {l : Filter ι} {Φ : ι → ℝ → V → E} {Φ₀ : ℝ → V → E} {y : ι → ℝ → V} {x : V} {t₁ t₂ : ℝ}
-    (hcont : ∀ t ∈ uIcc t₁ t₂, ContinuousAt (uncurry Φ₀) (t, x))
-    (hunif : TendstoUniformlyOn (fun i ↦ uncurry (Φ i)) (uncurry Φ₀) l (uIcc t₁ t₂ ×ˢ univ))
+    {U : Set V} (hU : U ∈ 𝓝 x) (hcont : ∀ t ∈ uIcc t₁ t₂, ContinuousAt (uncurry Φ₀) (t, x))
+    (hunif : TendstoUniformlyOn (fun i ↦ uncurry (Φ i)) (uncurry Φ₀) l (uIcc t₁ t₂ ×ˢ U))
     (hint : ∀ᶠ i in l, IntervalIntegrable (fun t ↦ Φ i t (y i t)) μ t₁ t₂)
     (hy : ∀ U ∈ 𝓝 x, ∀ᶠ i in l, ∀ t ∈ uIcc t₁ t₂, y i t ∈ U) :
     Tendsto (fun i ↦ ∫ t in t₁..t₂, Φ i t (y i t) ∂μ) l (𝓝 (∫ t in t₁..t₂, Φ₀ t x ∂μ)) := by
@@ -293,9 +294,9 @@ theorem tendsto_intervalIntegral_comp_of_tendstoUniformlyOn {ι V E : Type*} [To
         filter_upwards [h.eventually (Metric.ball_mem_nhds _ (by positivity : 0 < ε / 2))]
           with z hz
         simpa [dist_eq_norm, sub_self] using hz
-    filter_upwards [hy _ hnear, Metric.tendstoUniformlyOn_iff.1 hunif (ε / 2) (by positivity)]
-      with i hi hu t ht
-    have h1 := hu (t, y i t) ⟨ht, mem_univ _⟩
+    filter_upwards [hy _ hnear, hy _ hU,
+      Metric.tendstoUniformlyOn_iff.1 hunif (ε / 2) (by positivity)] with i hi hiU hu t ht
+    have h1 := hu (t, y i t) ⟨ht, hiU t ht⟩
     have h2 := hi t ht t ht
     simp only [uncurry_apply_pair] at h1
     rw [Pi.zero_apply, dist_zero_left, ← dist_eq_norm]
