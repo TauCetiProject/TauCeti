@@ -6,18 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
+public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 
 /-!
-# Commuting squares of continuous linear maps
+# Composition of continuous linear maps
 
 A commutative square of continuous (semi)linear maps between topological modules is also a
 commutative square of the underlying (semi)linear maps. This lets results about commuting squares
 of linear maps, such as the module snake lemma, be applied to continuous linear maps.
 
+Precomposing with a continuous linear equivalence does not change whether a continuous linear map
+vanishes.
+
 ## Main results
 
 * `ContinuousLinearMap.toLinearMap_comp_eq`: a commutative square of continuous semilinear maps
   commutes after coercion to semilinear maps.
+* `ContinuousLinearMap.comp_continuousLinearEquiv_eq_zero_iff`: `L ∘ e = 0` exactly when `L = 0`,
+  for a continuous semilinear equivalence `e`.
 -/
 
 public section
@@ -40,5 +46,13 @@ theorem toLinearMap_comp_eq {f : M₁ →SL[σ₁₂] M₂} {g : M₃ →SL[σ�
     (g : M₃ →ₛₗ[σ₃₄] M₄) ∘ₛₗ (i : M₁ →ₛₗ[σ₁₃] M₃) =
       (i' : M₂ →ₛₗ[σ₂₄] M₄) ∘ₛₗ (f : M₁ →ₛₗ[σ₁₂] M₂) := by
   rw [← toLinearMap_comp, h, toLinearMap_comp]
+
+/-- Precomposing with a continuous semilinear equivalence gives the zero map exactly when the
+original map is zero. -/
+theorem comp_continuousLinearEquiv_eq_zero_iff {σ₂₁ : R₂ →+* R₁} [RingHomInvPair σ₁₂ σ₂₁]
+    [RingHomInvPair σ₂₁ σ₁₂] (L : M₂ →SL[σ₂₄] M₄)
+    (e : M₁ ≃SL[σ₁₂] M₂) : L.comp (e : M₁ →SL[σ₁₂] M₂) = 0 ↔ L = 0 := by
+  refine ⟨fun h ↦ ext fun v ↦ ?_, fun h ↦ by rw [h, zero_comp]⟩
+  simpa using congr($h (e.symm v))
 
 end ContinuousLinearMap

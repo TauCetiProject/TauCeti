@@ -9,6 +9,8 @@ public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
+
 /-!
 # Invertible manifold derivatives of composites
 
@@ -70,9 +72,7 @@ theorem mvfderiv_comp_eq_zero_iff_of_isInvertible {F : Type*} [NormedAddCommGrou
   rw [mvfderiv_comp x hg (mdifferentiableAt_of_isInvertible_mfderiv hf)]
   obtain ⟨e, he⟩ := hf
   rw [← he]
-  refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_,
-    fun h ↦ by rw [h, ContinuousLinearMap.zero_comp]⟩
-  simpa using congr($h (e.symm v))
+  exact ContinuousLinearMap.comp_continuousLinearEquiv_eq_zero_iff _ e
 
 /-- Between manifolds modelled on finite-dimensional spaces of the same dimension over a complete
 field, an injective manifold derivative is invertible. -/

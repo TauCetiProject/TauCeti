@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.NondegenerateRankZero
 public import TauCeti.Geometry.Symplectic.LinearReduction
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
 /-!
 # Nondegenerate points of positive rank
@@ -214,9 +215,8 @@ theorem isTransversallyNondegenerate_comp_iff {ω₁ : SymplecticForm V}
       IsTransversallyNondegenerate ω₂ T Q := by
   -- A functional kills the image of `T ∘ e` exactly when it kills the image of `T`.
   have hℓ (ℓ : G →L[ℝ] ℝ) : ℓ.comp (T.comp (e : V →L[ℝ] V')) = 0 ↔ ℓ.comp T = 0 := by
-    refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_, fun h ↦ by
-      rw [← ContinuousLinearMap.comp_assoc, h, ContinuousLinearMap.zero_comp]⟩
-    simpa using congr($h (e.symm v))
+    rw [← ContinuousLinearMap.comp_assoc]
+    exact ContinuousLinearMap.comp_continuousLinearEquiv_eq_zero_iff _ e
   -- `e` carries `ker (T ∘ e)` onto `ker T`.
   have hU : (T.comp (e : V →L[ℝ] V')).ker.map (e.toLinearEquiv : V →ₗ[ℝ] V') = T.ker := by
     ext v'
