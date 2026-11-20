@@ -283,23 +283,8 @@ theorem image_val_flowClosedOrbitOfFixedPt_preimage (hN : 0 < N) (x : {x // IsPe
 Both are zero exactly when `x` is not a periodic point of `φ`. -/
 @[simp]
 theorem minimalPeriod_flow_mk (t : ℝ) (x : M) :
-    (flow φ).minimalPeriod (mk φ t x) = minimalPeriod φ x := by
-  have hT := (flow φ).apply_minimalPeriod (mk φ t x)
-  rw [← Flow.mem_periods, periods_flow_mk] at hT
-  rcases (minimalPeriod φ x).eq_zero_or_pos with hm | hm
-  · rw [hm, Nat.cast_zero, AddSubgroup.zmultiples_zero_eq_bot, AddSubgroup.mem_bot] at hT
-    rw [hT, hm, Nat.cast_zero]
-  · -- The least positive integer multiple of `m > 0` is `m` itself.
-    have hm' : (0 : ℝ) < minimalPeriod φ x := by exact_mod_cast hm
-    refine (flow φ).minimalPeriod_eq_of_isLeast ⟨?_, ?_⟩
-    · rw [mem_ofPred_eq, periods_flow_mk]
-      exact ⟨AddSubgroup.mem_zmultiples _, hm'⟩
-    rintro _ ⟨hs, hs₀⟩
-    rw [periods_flow_mk] at hs
-    obtain ⟨k, rfl⟩ := AddSubgroup.mem_zmultiples_iff.1 hs
-    rw [zsmul_eq_mul] at hs₀ ⊢
-    have hk : (1 : ℝ) ≤ k := by exact_mod_cast (pos_of_mul_pos_left hs₀ hm'.le : (0 : ℝ) < k)
-    nlinarith
+    (flow φ).minimalPeriod (mk φ t x) = minimalPeriod φ x :=
+  (flow φ).minimalPeriod_eq_of_periods_eq_zmultiples (periods_flow_mk t x) (Nat.cast_nonneg _)
 
 /-- The minimal period of the closed orbit through `x` is the least period of `x` under `φ`. -/
 @[simp]

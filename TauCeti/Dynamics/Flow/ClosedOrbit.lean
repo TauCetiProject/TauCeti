@@ -17,6 +17,7 @@ public import Mathlib.Topology.Separation.Basic
 public import TauCeti.Dynamics.Flow.Basic
 public import TauCeti.Topology.Instances.AddCircle.Cover
 import Mathlib.GroupTheory.Archimedean
+import Mathlib.GroupTheory.ArchimedeanDensely
 import Mathlib.Topology.Algebra.Order.Archimedean
 
 /-!
@@ -187,11 +188,6 @@ theorem minimalPeriod_nonneg (x : α) : 0 ≤ ϕ.minimalPeriod x :=
 theorem minimalPeriod_le (ht : ϕ t x = x) (ht₀ : 0 < t) : ϕ.minimalPeriod x ≤ t :=
   csInf_le ⟨0, fun _ hs ↦ hs.2.le⟩ ⟨ht, ht₀⟩
 
-/-- A least positive period of `x` is its minimal period. -/
-theorem minimalPeriod_eq_of_isLeast (h : IsLeast {t | t ∈ ϕ.periods x ∧ 0 < t} t) :
-    ϕ.minimalPeriod x = t :=
-  h.csInf_eq
-
 theorem minimalPeriod_eq_zero_of_forall_apply_eq (hx : ∀ t, ϕ t x = x) : ϕ.minimalPeriod x = 0 := by
   simp only [minimalPeriod, mem_periods, hx, true_and]
   exact csInf_Ioi
@@ -249,6 +245,16 @@ theorem apply_minimalPeriod (x : α) : ϕ (ϕ.minimalPeriod x) x = x := by
     exact (ϕ.minimalPeriod_le (ϕ.mem_periods.1 ht) ht₀).trans (by linarith)
   rw [h0]
   exact ϕ.mem_periods.1 (zero_mem _)
+
+/-- If the periods of `x` are the integer multiples of `t ≥ 0`, then `t` is the minimal period of
+`x`. No separation assumption on the space is needed. -/
+theorem minimalPeriod_eq_of_periods_eq_zmultiples (h : ϕ.periods x = AddSubgroup.zmultiples t)
+    (ht : 0 ≤ t) : ϕ.minimalPeriod x = t := by
+  rcases ht.eq_or_lt with rfl | ht
+  · have hT := ϕ.apply_minimalPeriod x
+    rwa [← mem_periods, h, AddSubgroup.zmultiples_zero_eq_bot, AddSubgroup.mem_bot] at hT
+  rw [minimalPeriod, h]
+  exact (AddSubgroup.isLeast_of_closure_iff_eq_abs.2 ⟨(abs_of_pos ht).symm, ht⟩).csInf_eq
 
 /-- The minimal period is positive exactly at periodic points which are not rest points. -/
 theorem minimalPeriod_pos_iff [T1Space α] :
