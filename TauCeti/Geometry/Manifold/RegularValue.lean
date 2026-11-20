@@ -57,7 +57,8 @@ to manifolds, including manifolds with boundary or corners.
 * `TauCeti.isRegularPoint_iff_isInvertible_mfderiv`: between models of the same finite dimension
   over a complete field, regularity is invertibility of the manifold derivative.
 * `TauCeti.isRegularPoint_comp_iff`: a composite of differentiable maps is regular exactly when
-  the derivative of the outer map sends the tangent image of the inner map onto the target.
+  the derivative of the outer map sends the tangent image of the inner map onto the target; in
+  particular the outer map is then regular (`TauCeti.IsRegularPoint.of_comp`).
 * `IsLocalDiffeomorphAt.isRegularPoint_comp_iff`, `IsLocalDiffeomorph.isRegularValue_comp_iff`,
   `Diffeomorph.isRegularPoint_comp_iff`, `Diffeomorph.isRegularValue_comp_iff`: precomposing
   with a `C^n` local diffeomorphism (surjective, for regular values) or diffeomorphism (`n ≠ 0`)
@@ -125,6 +126,13 @@ theorem isRegularValue_iff : IsRegularValue I J f y ↔ ∀ x, f x = y → IsReg
 theorem IsRegularValue.isRegularPoint (hy : IsRegularValue I J f y) (hx : f x = y) :
     IsRegularPoint I J f x :=
   hy x hx
+
+/-- Regularity at a point depends only on the germ of the map there. -/
+theorem IsRegularPoint.congr_of_eventuallyEq {g : M → N} (hf : IsRegularPoint I J f x)
+    (hgf : g =ᶠ[𝓝 x] f) : IsRegularPoint I J g x := by
+  rw [isRegularPoint_iff, hgf.mfderiv_eq, ContinuousLinearMap.coe_comp,
+    ContinuousLinearEquiv.coe_coe, EquivLike.comp_surjective]
+  exact hf
 
 /-- A value is regular exactly when it is not the image of a non-regular point. -/
 theorem isRegularValue_iff_notMem_image :
@@ -303,6 +311,14 @@ theorem isRegularPoint_comp_iff (hfd : MDifferentiableAt I J f (g p))
       (mfderiv K I g p).range.map (mfderiv I J f (g p)).toLinearMap = ⊤ := by
   rw [isRegularPoint_iff, mfderiv_comp p hfd hgd, ← LinearMap.range_comp, LinearMap.range_eq_top,
     ← ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.coe_coe]
+
+/-- If a composite `f ∘ g` of differentiable maps is regular at `p`, then `f` is regular at
+`g p`. -/
+theorem IsRegularPoint.of_comp (h : IsRegularPoint K J (f ∘ g) p)
+    (hfd : MDifferentiableAt I J f (g p)) (hgd : MDifferentiableAt K I g p) :
+    IsRegularPoint I J f (g p) := by
+  rw [isRegularPoint_iff, mfderiv_comp p hfd hgd, ContinuousLinearMap.coe_comp] at h
+  exact isRegularPoint_iff.2 h.of_comp
 
 /-- A composite `f ∘ g` has `y` as a regular value if `y` is a regular value of `f` and `g` is
 regular at every point of the fibre `(f ∘ g) ⁻¹' {y}`. -/
