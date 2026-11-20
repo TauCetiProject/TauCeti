@@ -19,7 +19,7 @@ controlled by products of row bounds. This file turns that hypothesis into tail 
 
 * `TauCeti.exists_geometric_bound_of_tendsto_cofinite`: after rescaling by any real `ρ`, a null
   family is bounded by some `B ≥ 1`, and by any prescribed `q ∈ (0, 1)` off a finite set `T`.
-* `TauCeti.mul_pow_le_of_forall_prod_le`: if `ρ * r i ≤ q` off a finite set `T`, with `ρ > 0`,
+* `TauCeti.mul_pow_le_of_forall_prod_le`: if `ρ * r i ≤ q` off a finite set `T`, with `0 ≤ ρ`,
   `0 ≤ q` and `1 ≤ B`, and `ρ * r i ≤ B` everywhere, then `x * ρ ^ n ≤ B ^ #T * q ^ (n - #T)`.
 * `TauCeti.tendsto_mul_pow_of_forall_prod_le`: if `r` tends to zero along the cofinite filter,
   then `x n * |ρ| ^ n` tends to zero for every real `ρ`.
@@ -57,22 +57,25 @@ theorem exists_geometric_bound_of_tendsto_cofinite {ι : Type*}
 
 /-- **Tail bound from product majorants.** Let `r` be nonnegative, and let `x` be bounded by
 every nonnegative bound for the products `∏ i ∈ s, r i` over the `n`-element sets `s`. If
-`ρ > 0`, `0 ≤ q`, `1 ≤ B`, and `T` is a finite set of indices with `ρ * r i ≤ q` off `T` and
+`0 ≤ ρ`, `0 ≤ q`, `1 ≤ B`, and `T` is a finite set of indices with `ρ * r i ≤ q` off `T` and
 `ρ * r i ≤ B` everywhere, then `x * ρ ^ n ≤ B ^ #T * q ^ (n - #T)`, with truncated subtraction in
 the exponent. This is the estimate behind the entirety of Fredholm determinants and resolvents. -/
 theorem mul_pow_le_of_forall_prod_le {ι : Type*} {r : ι → ℝ} (hr : ∀ i, 0 ≤ r i) {n : ℕ}
     {x : ℝ} (hx : ∀ c, 0 ≤ c → (∀ s : Finset ι, s.card = n → ∏ i ∈ s, r i ≤ c) → x ≤ c)
-    {ρ q B : ℝ} (hρ : 0 < ρ) (hq₀ : 0 ≤ q) (hB : 1 ≤ B) (T : Finset ι)
+    {ρ q B : ℝ} (hρ : 0 ≤ ρ) (hq₀ : 0 ≤ q) (hB : 1 ≤ B) (T : Finset ι)
     (hT : ∀ i ∉ T, ρ * r i ≤ q) (hrB : ∀ i, ρ * r i ≤ B) :
     x * ρ ^ n ≤ B ^ T.card * q ^ (n - T.card) := by
   classical
-  have hρn : 0 < ρ ^ n := pow_pos hρ n
+  -- If `ρ ^ n = 0` the left side vanishes; otherwise divide by `ρ ^ n > 0`.
+  rcases (pow_nonneg hρ n).eq_or_lt with hρn | hρn
+  · rw [← hρn, mul_zero]
+    positivity
   rw [mul_comm x, ← le_div_iff₀' hρn]
   refine hx _ (by positivity) fun s hs ↦ ?_
   rw [le_div_iff₀' hρn, ← hs, ← prod_const ρ, ← prod_mul_distrib]
   -- Each factor is at most `B` on `T`, and at most `min q B` off `T`.
   have hprod : ∏ i ∈ s, ρ * r i ≤ ∏ i ∈ s, if i ∈ T then B else min q B :=
-    prod_le_prod₀ (fun i _ ↦ mul_nonneg hρ.le (hr i)) fun i _ ↦ by
+    prod_le_prod₀ (fun i _ ↦ mul_nonneg hρ (hr i)) fun i _ ↦ by
       split_ifs with hi
       exacts [hrB i, le_min (hT i hi) (hrB i)]
   rw [prod_ite, prod_const, prod_const] at hprod
