@@ -254,7 +254,7 @@ theorem exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul (hzeta : C
 `u ∈ W^{k,p}(Ω)`, then `ψ u` lies in `W^{k,p}(Ω)`: some element of `W^{k,p}(Ω)` has value `ψ u`
 almost everywhere on `Ω`.
 
-The factor needs exactly as many derivatives as the Sobolev order. No bound on `ψ` or its
+The hypothesis asks for as many derivatives of `ψ` as the Sobolev order. No bound on `ψ` or its
 derivatives is assumed: they are bounded on the compact set `closure Ω`, which is all the proof
 uses. The set `U` need not be open, so `ψ` may be `Cᵏ` only up to the
 boundary of `Ω`, as for the chart reading of a smooth function on a manifold with boundary. On
