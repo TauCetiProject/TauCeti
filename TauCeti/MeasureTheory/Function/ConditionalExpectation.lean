@@ -40,6 +40,8 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
   most `‖f‖₁ + ‖a‖ₑ · μ univ`, uniformly in the σ-algebra `m`.
 - `integral_mul_le_of_condExp_le`: if `Z ≥ 0` is a.e. `m`-measurable and the conditional mean of
   `W` is at most `K`, then `∫ Z * W ≤ K * ∫ Z`.
+- `integral_mul_sub_condExp`: the residual `g - μ[g | m]` of an integrable `g` is orthogonal to
+  every a.e. `m`-measurable `f`, `∫ f * (g - μ[g | m]) = 0`.
 - `condExpLp`: for a finite measure and `1 ≤ p ≤ ∞`, conditional expectation as a contractive
   continuous linear operator on `Lᵖ`.
 
@@ -333,6 +335,30 @@ theorem integral_mul_le_of_condExp_le {Ω : Type*} {mΩ : MeasurableSpace Ω} {�
       filter_upwards [hW, hZ0] with ω hω hω0
       simpa [mul_comm] using mul_le_mul_of_nonneg_left hω hω0
     _ = K * ∫ ω, Z ω ∂μ := integral_const_mul _ _
+
+/-- **Orthogonality of the conditional-expectation residual.** If `f` is a.e. `m`-measurable and
+`g` is integrable, then the residual `g - μ[g | m]` is orthogonal to `f`:
+`∫ f * (g - μ[g | m]) = 0`. No integrability of the product is assumed: without it the integral
+is `0` by convention. -/
+theorem integral_mul_sub_condExp {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    {m : MeasurableSpace Ω} (hm : m ≤ mΩ) [SigmaFinite (μ.trim hm)] {f g : Ω → ℝ}
+    (hf : AEStronglyMeasurable[m] f μ) (hg : Integrable g μ) :
+    ∫ ω, f ω * (g ω - μ[g | m] ω) ∂μ = 0 := by
+  by_cases hfg : Integrable (fun ω ↦ f ω * (g ω - μ[g | m] ω)) μ
+  swap
+  · exact integral_undef hfg
+  -- The residual has conditional expectation `0`.
+  have hres : μ[g - μ[g | m] | m] =ᵐ[μ] 0 := by
+    refine (condExp_sub hg integrable_condExp m).trans ?_
+    rw [condExp_of_stronglyMeasurable hm stronglyMeasurable_condExp integrable_condExp, sub_self]
+  have hpull : μ[f * (g - μ[g | m]) | m] =ᵐ[μ] f * μ[g - μ[g | m] | m] :=
+    condExp_mul_of_aestronglyMeasurable_left hf hfg (hg.sub integrable_condExp)
+  have hzero : μ[f * (g - μ[g | m]) | m] =ᵐ[μ] 0 := by
+    filter_upwards [hpull, hres] with ω h1 h2
+    simp [h1, h2]
+  calc ∫ ω, f ω * (g ω - μ[g | m] ω) ∂μ = ∫ ω, μ[f * (g - μ[g | m]) | m] ω ∂μ :=
+        (integral_condExp hm).symm
+    _ = 0 := by simp [integral_congr_ae hzero]
 
 section Lp
 
