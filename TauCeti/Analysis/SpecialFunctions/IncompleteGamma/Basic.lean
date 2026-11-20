@@ -51,6 +51,8 @@ the parameter range.
 * `TauCeti.regularizedGamma_one` — `P(1, x) = 1 - e ^ (-x)` for `0 ≤ x`, the exponential cdf;
 * `TauCeti.regularizedGamma_natCast` — the Erlang form
   `P(n, x) = 1 - exp (-x) * ∑ j < n, x ^ j / j!` at a positive integer shape `n`, for `0 ≤ x`;
+* `TauCeti.integral_pow_mul_exp_neg_div_factorial` — the same closed form for the truncated
+  integral `∫ x in 0..t, x ^ n * exp (-x) / n!` at every real `t`, negative `t` included;
 * `TauCeti.Real.erf_eq_regularizedGamma_half_sq` — the error function is the regularized
   incomplete gamma function of shape `1 / 2` after squaring, on the nonnegative half-line;
 * `TauCeti.strictMonoOn_regularizedGamma`, `TauCeti.regularizedGamma_pos_iff`,
@@ -418,6 +420,39 @@ theorem regularizedGamma_natCast {n : ℕ} (hn : n ≠ 0) (hx : 0 ≤ x) :
     rw [Nat.cast_succ, regularizedGamma_add_one (Nat.cast_pos.2 (Nat.pos_of_ne_zero hn')) hx,
       ih hn', Real.rpow_natCast, Real.Gamma_nat_eq_factorial, Finset.sum_range_succ]
     ring
+
+/-- **The Erlang integral on the whole line.** For every natural `n` and every real `t`,
+`∫ x in 0..t, x ^ n * exp (-x) / n! = 1 - exp (-t) * ∑ j < n + 1, t ^ j / j!`.
+
+For `0 ≤ t` the left side is `TauCeti.regularizedGamma (n + 1) t`, and this is the Erlang form
+`TauCeti.regularizedGamma_natCast`; the identity of polynomial-exponential functions also holds
+for negative `t`, where the clamped `TauCeti.regularizedGamma` vanishes instead. -/
+theorem integral_pow_mul_exp_neg_div_factorial (n : ℕ) (t : ℝ) :
+    ∫ x in (0 : ℝ)..t, x ^ n * Real.exp (-x) / (n.factorial : ℝ) =
+      1 - Real.exp (-t) * ∑ j ∈ Finset.range (n + 1), t ^ j / (j.factorial : ℝ) := by
+  -- `-exp (-x) * ∑ j < n + 1, x ^ j / j!` is an antiderivative of the integrand, by induction.
+  have key : ∀ x : ℝ, HasDerivAt
+      (fun y : ℝ => -(Real.exp (-y) * ∑ j ∈ Finset.range (n + 1), y ^ j / (j.factorial : ℝ)))
+      (x ^ n * Real.exp (-x) / (n.factorial : ℝ)) x := by
+    intro x
+    induction n with
+    | zero => simpa using (hasDerivAt_neg x).exp.fun_neg
+    | succ n ih =>
+      have h := ((hasDerivAt_neg x).exp.fun_mul
+        ((hasDerivAt_pow (n + 1) x).div_const ((n + 1).factorial : ℝ))).fun_neg
+      convert ih.fun_add h using 1
+      · ext y
+        rw [Finset.sum_range_succ]
+        ring
+      · rw [Nat.factorial_succ]
+        push_cast
+        field_simp
+        ring
+  have hcont : Continuous fun x : ℝ => x ^ n * Real.exp (-x) / (n.factorial : ℝ) := by fun_prop
+  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun x _ => key x)
+    (hcont.intervalIntegrable _ _)]
+  simp [Finset.sum_range_succ']
+  ring
 
 /-! ### Relation with the error function -/
 
