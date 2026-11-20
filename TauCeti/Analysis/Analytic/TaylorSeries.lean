@@ -215,11 +215,7 @@ theorem taylorSeries_zero : taylorSeries (0 : 𝕜 → A) a = 0 := by
 series. -/
 @[simp]
 theorem taylorSeries_neg (hf : AnalyticAt 𝕜 f a) : taylorSeries (-f) a = -taylorSeries f a := by
-  obtain ⟨p, hp⟩ := hf
-  ext n
-  rw [map_neg, hp.neg.coeff_taylorSeries, hp.coeff_taylorSeries, FormalMultilinearSeries.coeff,
-    FormalMultilinearSeries.neg_apply, neg_apply,
-    FormalMultilinearSeries.coeff]
+  rw [eq_neg_iff_add_eq_zero, ← taylorSeries_add hf.neg hf, neg_add_cancel, taylorSeries_zero]
 
 /-- The Taylor series of a difference of functions analytic at `a` is the difference of their
 Taylor series. -/
@@ -311,10 +307,10 @@ theorem taylorSeries_comp {F φ : 𝕜 → 𝕜} (hF : AnalyticAt 𝕜 F (φ a))
     simp [map_sum, Finset.mem_range.2 hk, c]
   have hR : (taylorSeries F b).subst ψ =
       ∑ j ∈ range (n + 1), PowerSeries.C (c j) * ψ ^ j + ψ ^ (n + 1) * Q.subst ψ := by
-    have hC (r : 𝕜) : PowerSeries.substAlgHom hψ (PowerSeries.C r) = PowerSeries.C r := by
-      simpa [PowerSeries.algebraMap_apply] using (PowerSeries.substAlgHom hψ).commutes r
     rw [eq_add_of_sub_eq hQ, ← PowerSeries.coe_substAlgHom hψ]
-    simp [map_sum, PowerSeries.substAlgHom_X, hC, add_comm]
+    simp only [map_add, map_sum, map_mul, map_pow, PowerSeries.substAlgHom_X,
+      PowerSeries.coe_substAlgHom, PowerSeries.subst_C]
+    exact add_comm _ _
   rw [hL, hR, map_add, map_add, hcoeff, hcoeff]
 
 end TauCeti

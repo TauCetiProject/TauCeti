@@ -20,7 +20,7 @@ whose Taylor series at `0` is the image of `f` and such that `g` and `F ∘ φ` 
 whereas `φ` and `g` are typically holomorphic on a whole closed disc, so `g` is the analytic
 continuation of `f ∘ φ` along `φ`. When `φ` is continuous at `0` with `φ 0 = 0`, `f` and `φ`
 determine `g` near `0`; if moreover `φ` does not vanish identically near `0`, `g` and `φ` determine
-`f`.
+the image of `f` in `𝕜⟦X⟧`, hence `f` itself when `K → 𝕜` is injective.
 
 Uniformizations by functions holomorphic on a closed disc are the analytic hypotheses of the
 arithmetic algebraicity criterion of Calegari, Dimitrov and Tang, which bounds the rank of families
@@ -35,13 +35,14 @@ of series with integral coefficients uniformized along a common map `φ` with `|
 * `TauCeti.Uniformizes.apply_zero`: `g 0` is the constant coefficient of `f` when `φ 0 = 0`.
 * `TauCeti.Uniformizes.eventuallyEq`, `TauCeti.Uniformizes.eqOn`: uniqueness of the uniformizing
   germ, and of an analytic uniformizing function on a preconnected set containing `0`.
-* `TauCeti.Uniformizes.eq_powerSeries`: the germs of `g` and of a map `φ` with `φ 0 = 0` that does
-  not vanish identically near `0` determine `f`.
+* `TauCeti.Uniformizes.map_eq_map`, `TauCeti.Uniformizes.eq_powerSeries`: the germs of `g` and of
+  a map `φ` with `φ z → 0` as `z → 0` that does not vanish identically near `0` determine the image
+  of `f` in `𝕜⟦X⟧`, and `f` itself when `K → 𝕜` is injective.
 * `TauCeti.Uniformizes.add`, `TauCeti.Uniformizes.mul`, `TauCeti.Uniformizes.neg`,
   `TauCeti.uniformizes_C`,
   `TauCeti.uniformizes_X`, `TauCeti.uniformizes_coe_polynomial`: uniformizations along a fixed `φ`
   respect the ring operations.
-* `TauCeti.Uniformizes.comp`, `TauCeti.Uniformizes.comp_const_mul`: reparametrization of the
+* `TauCeti.Uniformizes.comp`, `TauCeti.Uniformizes.comp_mul_left`: reparametrization of the
   source, for instance replacing `φ z` and `g z` by `φ (r * z)` and `g (r * z)`.
 * `TauCeti.Uniformizes.taylorSeries_eq`: the Taylor series of `g` at `0` is the formal
   substitution of the Taylor series of `φ` into `f`.
@@ -107,9 +108,8 @@ theorem Uniformizes.congr (h : Uniformizes φ f g) (hφ : φ =ᶠ[𝓝 0] φ') (
 theorem Uniformizes.apply_zero (h : Uniformizes φ f g) (hφ : φ 0 = 0) :
     g 0 = algebraMap K 𝕜 (PowerSeries.constantCoeff f) := by
   obtain ⟨F, -, hFf, hgF⟩ := h
-  rw [hgF.eq_of_nhds, comp_apply, hφ, ← constantCoeff_taylorSeries (f := F), hFf,
-    ← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_map,
-    PowerSeries.coeff_zero_eq_constantCoeff_apply]
+  rw [hgF.eq_of_nhds, comp_apply, hφ, ← constantCoeff_taylorSeries (f := F), hFf]
+  simp [← PowerSeries.coeff_zero_eq_constantCoeff_apply, -PowerSeries.coeff_zero_eq_constantCoeff]
 
 /-- A uniformization along a map `φ` analytic at `0` with `φ 0 = 0` is analytic at `0`. -/
 theorem Uniformizes.analyticAt (h : Uniformizes φ f g) (hφ : AnalyticAt 𝕜 φ 0) (hφ0 : φ 0 = 0) :
@@ -221,7 +221,7 @@ theorem Uniformizes.comp (h : Uniformizes φ f g) {ψ : 𝕜 → 𝕜} (hψ : Te
 
 /-- **Rescaling the source.** Replacing `φ z` and `g z` by `φ (r * z)` and `g (r * z)` preserves
 uniformization. -/
-theorem Uniformizes.comp_const_mul (h : Uniformizes φ f g) (r : 𝕜) :
+theorem Uniformizes.comp_mul_left (h : Uniformizes φ f g) (r : 𝕜) :
     Uniformizes (fun z ↦ φ (r * z)) f (fun z ↦ g (r * z)) :=
   h.comp (ψ := (r * ·)) ((continuous_const.mul continuous_id).tendsto' 0 0 (mul_zero r))
 
