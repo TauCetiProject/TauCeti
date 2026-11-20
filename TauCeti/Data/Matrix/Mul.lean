@@ -43,6 +43,12 @@ open scoped Matrix
 
 namespace Matrix
 
+/-- The outer product of constant vectors is the constant matrix of their product. -/
+theorem vecMulVec_const_const {α m n : Type*} [Mul α] (a b : α) :
+    vecMulVec (fun _ : m ↦ a) (fun _ : n ↦ b) = of (fun _ _ ↦ a * b) := by
+  ext
+  simp [vecMulVec_apply]
+
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
 section StrictOrderedSemiring
