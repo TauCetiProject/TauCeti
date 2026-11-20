@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Elementary bounds for the real exponential
@@ -22,6 +23,8 @@ is bounded on `x ≥ 0`.
 
 ## Main results
 
+* `TauCeti.mul_exp_one_sub_lt_one`: `x exp (1 - x) < 1` for `x ≠ 1`.
+* `Real.one_add_le_exp_sub_sq_div_four`: `1 + v ≤ exp (v - v² / 4)` for `0 ≤ v ≤ 1 / 8`.
 * `TauCeti.eventually_mul_add_lt_exp_mul`: `A x + B < exp (a x)` eventually, for `0 < a`.
 * `TauCeti.tendsto_mul_add_mul_exp_neg_mul_atTop_nhds_zero`: `(A x + B) exp (-(a x)) → 0` as
   `x → ∞`, for `0 < a`.
@@ -48,6 +51,29 @@ open Filter Real
 open scoped Topology
 
 namespace TauCeti
+
+/-- `x exp (1 - x) < 1` for `x ≠ 1`, a rescaling of `x + 1 < exp x` for `x ≠ 0`. -/
+theorem mul_exp_one_sub_lt_one {x : ℝ} (hx : x ≠ 1) : x * exp (1 - x) < 1 := by
+  have h := add_one_lt_exp (sub_ne_zero.2 hx)
+  rw [sub_add_cancel] at h
+  calc x * exp (1 - x) < exp (x - 1) * exp (1 - x) := by gcongr
+    _ = 1 := by rw [← exp_add, sub_add_sub_cancel, sub_self, exp_zero]
+
+/-- For `0 ≤ v ≤ 1 / 8`, `1 + v ≤ exp (v - v² / 4)`, from the alternating series of
+`log (1 + v)` (`Real.abs_log_sub_add_sum_range_le`). -/
+theorem _root_.Real.one_add_le_exp_sub_sq_div_four {v : ℝ} (hv0 : 0 ≤ v) (hv : v ≤ 1 / 8) :
+    1 + v ≤ Real.exp (v - v ^ 2 / 4) := by
+  have h := Real.abs_log_sub_add_sum_range_le (x := -v)
+    (by rw [abs_neg, abs_of_nonneg hv0]; linarith) 2
+  rw [abs_neg, abs_of_nonneg hv0, sub_neg_eq_add] at h
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero] at h
+  norm_num at h
+  have h' := (abs_le.1 h).2
+  have h3 : v ^ 3 / (1 - v) ≤ v ^ 2 / 4 := by
+    rw [div_le_iff₀ (by linarith)]
+    nlinarith [mul_nonneg (sq_nonneg v) (show 0 ≤ 1 - 5 * v by linarith)]
+  rw [← Real.exp_log (by linarith : (0 : ℝ) < 1 + v)]
+  exact Real.exp_le_exp.2 (by nlinarith)
 
 /-- An affine function of `x` is eventually smaller than `exp (a x)` when `0 < a`. -/
 theorem eventually_mul_add_lt_exp_mul {a : ℝ} (ha : 0 < a) (A B : ℝ) :
