@@ -41,6 +41,8 @@ from the structure's laws.
   `range_proj_mono`, `proj_eq_zero_iff_range_eq_bot`, `proj_union`, `proj_compl`,
   `norm_proj_apply_le`:
   the classical PVM laws, recovered from the structure.
+* `instCompleteSpaceRangeProj`, `starProjection_range_proj`: the range of `P(B)` is complete, and
+  `P(B)` is the orthogonal projection onto it.
 * `hasSum_proj_of_pairwise_disjoint`: unconditional strong countable additivity
   (`HasSum`) on a pairwise-disjoint measurable family; `tendsto_sum_proj_of_pairwise_disjoint`
   gives convergence of the natural-order partial sums.
@@ -175,6 +177,19 @@ theorem isStarProjection_proj (P : ProjValMeasure X H) (B : Set X)
     (hB : MeasurableSet B) : IsStarProjection (P.proj B hB) := by
   exact (isStarProjection_iff' (p := P.proj B hB)).2
     ⟨P.proj_idem B hB, (P.isSelfAdjoint_proj B hB).star_eq⟩
+
+/-- The range of a measurable-set projection is complete, being the range of an idempotent
+operator and hence closed. In particular it admits an orthogonal projection. -/
+instance instCompleteSpaceRangeProj (P : ProjValMeasure X H) (B : Set X)
+    (hB : MeasurableSet B) : CompleteSpace (P.proj B hB).range :=
+  (ContinuousLinearMap.IsIdempotentElem.isClosed_range (P.proj_idem B hB)).completeSpace_coe
+
+/-- The orthogonal projection onto the range of a measurable-set projection is that
+projection. -/
+@[simp]
+theorem starProjection_range_proj (P : ProjValMeasure X H) (B : Set X)
+    (hB : MeasurableSet B) : (P.proj B hB).range.starProjection = P.proj B hB :=
+  (isStarProjection_iff_eq_starProjection_range.mp (P.isStarProjection_proj B hB)).2.symm
 
 /-- For each measurable set `B`, the operator `P(B)` is positive. -/
 theorem isPositive_proj (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSet B) :
