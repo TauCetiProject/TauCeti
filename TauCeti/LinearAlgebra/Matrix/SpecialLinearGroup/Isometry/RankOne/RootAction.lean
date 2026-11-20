@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.RankOne.Points
-public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Unitary
+public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Unitary.Basic
 
 /-!
 # The upper root group on the rank-one unitary points
