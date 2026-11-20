@@ -100,7 +100,7 @@ subspace, such as fundamental chains of a manifold with boundary.
 
 public section
 
-open CategoryTheory
+open CategoryTheory Limits
 
 namespace HomologicalComplex
 
@@ -752,6 +752,30 @@ theorem iSup_wordKer_homologyMap_eq_top {κ : Type*} (φ : κ → (K ⟶ K))
   exact Module.End.iSup_wordKer_eq_top_of_injective
     (fun i ↦ by rw [← ModuleCat.hom_comp, cyclesMap_i, ModuleCat.hom_comp])
     (K.moduleCat_iCycles_injective n) h
+
+/-- Components of a biproduct cochain lift have the prescribed coboundaries and difference. -/
+lemma moduleCat_exists_components_of_biprod_lift {R : Type*} [Ring R]
+    {A B C D : CochainComplex (ModuleCat R) ℕ}
+    (r : A ⟶ C) (b : A ⟶ D) (t : C ⟶ B) (l : D ⟶ B)
+    (p : ℕ) (x : (C ⊞ D).X p) (z : A.X (p + 1)) (a : B.X p)
+    (hx : ((C ⊞ D).d p (p + 1)).hom x = ((biprod.lift r b).f (p + 1)).hom z)
+    (ha : ((biprod.desc t (-l)).f p).hom x = a) :
+    ∃ (u : C.X p) (v : D.X p),
+      (C.d p (p + 1)).hom u = (r.f (p + 1)).hom z ∧
+      (D.d p (p + 1)).hom v = (b.f (p + 1)).hom z ∧
+      (t.f p).hom u - (l.f p).hom v = a := by
+  refine ⟨((biprod.fst : C ⊞ D ⟶ C).f p).hom x,
+    ((biprod.snd : C ⊞ D ⟶ D).f p).hom x, ?_, ?_, ?_⟩
+  · have h := congrArg (((biprod.fst : C ⊞ D ⟶ C).f (p + 1)).hom) hx
+    simpa only [← ConcreteCategory.comp_apply, ← HomologicalComplex.Hom.comm,
+      ← HomologicalComplex.comp_f, biprod.lift_fst] using h
+  · have h := congrArg (((biprod.snd : C ⊞ D ⟶ D).f (p + 1)).hom) hx
+    simpa only [← ConcreteCategory.comp_apply, ← HomologicalComplex.Hom.comm,
+      ← HomologicalComplex.comp_f, biprod.lift_snd] using h
+  · simpa only [biprod.desc_eq, Preadditive.comp_neg, ← sub_eq_add_neg,
+      HomologicalComplex.sub_f_apply, ModuleCat.hom_sub, LinearMap.sub_apply,
+      HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply] using ha
+
 
 end HomologicalComplex
 
