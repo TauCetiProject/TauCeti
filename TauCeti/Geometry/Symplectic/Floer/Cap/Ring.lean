@@ -25,7 +25,7 @@ the cochain degree `n - μ`, take
 
 The files `Cap/Product.lean` and `Cap/Unit.lean` derive the laws of `⋆` up to coboundaries from
 the identities given by the ends of one-dimensional moduli spaces, for products between possibly
-different complexes. This file specializes them to a single complex, with each homotopy only
+different complexes. This file applies them to a single complex, with each homotopy only
 required to exist as a family of counts of the right index:
 
 * associativity, from the family of four-punctured spheres between the two broken triple products
@@ -156,62 +156,6 @@ theorem kernelProduct_sub_negOnePowCast_smul_kernelProduct_coefficientComparison
     novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix_mem_coboundaries r r r q
       hq hF hF hF hμ hμ Q Q K D D D n hμ hK hC hδ hδ hδ ha hb
 
-variable [DecidableEq ι] (E : ι → NovikovSeries R G ωG)
-
-/-- **The unit of class-indexed counts on a complex is a left unit on cocycles.** Let `⋆` be the
-ground-ring bilinear map of the counts `Q` of rigid pairs of pants with all three ends in the same
-complex, and `e` the combination of the counts `E` of rigid PSS planes. If some family `K` of
-counts, which lowers the cochain degree by one, satisfies the unit identity
-`∑ᵢ Eᵢ Qᵢⱼₗ - [j = l] = ∑ₘ Kⱼₘ Dₘₗ + ∑ₘ Dⱼₘ Kₘₗ` of gluing a plane into the first input, then
-`e ⋆ a - a` is a coboundary of the cylinder differential for every cocycle `a`. -/
-theorem kernelProduct_coordinates_symm_sub_mem_coboundaries_right
-    (hunit : ∃ K : ι → ι → NovikovSeries R G ωG,
-      (∀ j l, ∀ A ∈ (K j l).support, μ ⟨l, r l⟩ - degree ω c (q A) = μ ⟨j, r j⟩ + 1) ∧
-      ∀ j l, ∑ i, E i * Q i j l - (1 : Matrix ι ι (NovikovSeries R G ωG)) j l =
-        ∑ m, K j m * D m l + ∑ m, D j m * K m l)
-    {i : ℤ} {a : NovikovModule R F}
-    (ha : a ∈ (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cocycles
-      (gradeBy R F fun p => n - μ p) i) :
-    kernelProduct hnQ (kernelOfMatrix_mem hF r r r _)
-          ((coordinates hF r).symm fun i => coefficientComparison q hq (E i)) a - a ∈
-      (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).coboundaries
-        (gradeBy R F fun p => n - μ p) i := by
-  obtain ⟨K, hK, hunit⟩ := hunit
-  have h :=
-    novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_coboundaries_right
-      r r r q hq hF hF hF Q D E (1 : Matrix ι ι (NovikovSeries R G ωG)) K D hunit hμ hμ hK hδ hδ ha
-  -- The Novikov module structure, for the identity map of the identity matrix of counts.
-  let := module (R := R) hF
-  rwa [novikovMapOfMatrix_coefficientComparison_one_apply,
-    novikovProductOfMatrix_eq_kernelProduct hF hF hF r r r _ hnQ] at h
-
-/-- **The unit of class-indexed counts on a complex is a right unit on cocycles.** Let `⋆` be the
-ground-ring bilinear map of the counts `Q` of rigid pairs of pants with all three ends in the same
-complex, and `e` the combination of the counts `E` of rigid PSS planes. If some family `K` of
-counts, which lowers the cochain degree by one, satisfies the unit identity
-`∑ⱼ Eⱼ Qᵢⱼₗ - [i = l] = ∑ₘ Kᵢₘ Dₘₗ + ∑ₘ Dᵢₘ Kₘₗ` of gluing a plane into the second input, then
-`a ⋆ e - a` is a coboundary of the cylinder differential for every cocycle `a`. -/
-theorem kernelProduct_coordinates_symm_sub_mem_coboundaries_left
-    (hunit : ∃ K : ι → ι → NovikovSeries R G ωG,
-      (∀ i l, ∀ A ∈ (K i l).support, μ ⟨l, r l⟩ - degree ω c (q A) = μ ⟨i, r i⟩ + 1) ∧
-      ∀ i l, ∑ j, E j * Q i j l - (1 : Matrix ι ι (NovikovSeries R G ωG)) i l =
-        ∑ m, K i m * D m l + ∑ m, D i m * K m l)
-    {i : ℤ} {a : NovikovModule R F}
-    (ha : a ∈ (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cocycles
-      (gradeBy R F fun p => n - μ p) i) :
-    kernelProduct hnQ (kernelOfMatrix_mem hF r r r _) a
-          ((coordinates hF r).symm fun i => coefficientComparison q hq (E i)) - a ∈
-      (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).coboundaries
-        (gradeBy R F fun p => n - μ p) i := by
-  obtain ⟨K, hK, hunit⟩ := hunit
-  have h :=
-    novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_coboundaries_left
-      r r r q hq hF hF hF Q D E (1 : Matrix ι ι (NovikovSeries R G ωG)) K D hunit hμ hμ hK hδ hδ ha
-  -- The Novikov module structure, for the identity map of the identity matrix of counts.
-  let := module (R := R) hF
-  rwa [novikovMapOfMatrix_coefficientComparison_one_apply,
-    novikovProductOfMatrix_eq_kernelProduct hF hF hF r r r _ hnQ] at h
-
 end Laws
 
 section CohomologyRing
@@ -299,8 +243,10 @@ abbrev cohomologyGRingOfCounts :
     (kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r hF hμ n Q hnQ hQ)
     (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r hF hμ n D hδ Q hnQ hL)
     _ (coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E hE hED)
-    (kernelProduct_coordinates_symm_sub_mem_coboundaries_right q hq r hF hμ n D hδ Q hnQ E hone_mul)
-    (kernelProduct_coordinates_symm_sub_mem_coboundaries_left q hq r hF hμ n D hδ Q hnQ E hmul_one)
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_right r q hq hF r hF hμ D hδ Q hnQ E
+      hone_mul)
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_left r q hq hF r hF hμ D hδ Q hnQ E
+      hmul_one)
     (kernelProduct_kernelProduct_coefficientComparison_sub_mem_coboundaries q hq r hF hμ n D hδ Q
       hnQ hassoc)
 
@@ -355,8 +301,10 @@ abbrev cohomologyGAlgebraOfCounts :
     (kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r hF hμ n Q hnQ hQ)
     (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r hF hμ n D hδ Q hnQ hL)
     _ (coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E hE hED)
-    (kernelProduct_coordinates_symm_sub_mem_coboundaries_right q hq r hF hμ n D hδ Q hnQ E hone_mul)
-    (kernelProduct_coordinates_symm_sub_mem_coboundaries_left q hq r hF hμ n D hδ Q hnQ E hmul_one)
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_right r q hq hF r hF hμ D hδ Q hnQ E
+      hone_mul)
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_left r q hq hF r hF hμ D hδ Q hnQ E
+      hmul_one)
     (kernelProduct_kernelProduct_coefficientComparison_sub_mem_coboundaries q hq r hF hμ n D hδ Q
       hnQ hassoc)
 
@@ -396,8 +344,10 @@ theorem cohomologyGRingOfCounts_of_mul_of_comm
     (kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r hF hμ n Q hnQ hQ)
     (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r hF hμ n D hδ Q hnQ hL)
     _ (coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E hE hED)
-    (kernelProduct_coordinates_symm_sub_mem_coboundaries_right q hq r hF hμ n D hδ Q hnQ E hone_mul)
-    (kernelProduct_coordinates_symm_sub_mem_coboundaries_left q hq r hF hμ n D hδ Q hnQ E hmul_one)
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_right r q hq hF r hF hμ D hδ Q hnQ E
+      hone_mul)
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_left r q hq hF r hF hμ D hδ Q hnQ E
+      hmul_one)
     (kernelProduct_kernelProduct_coefficientComparison_sub_mem_coboundaries q hq r hF hμ n D hδ Q
       hnQ hassoc)
     (kernelProduct_sub_negOnePowCast_smul_kernelProduct_coefficientComparison_mem_coboundaries q hq
