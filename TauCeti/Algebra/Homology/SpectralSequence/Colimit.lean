@@ -60,15 +60,6 @@ open Limits
 variable {C : Type*} [Category* C] [Abelian C] {κ : Type*} {c : ℤ → ComplexShape κ} {r₀ : ℤ}
   {J : Type*} [Category* J] {F : J ⥤ SpectralSequence C c r₀}
 
-/-- The commutation `Hom.comm` of a morphism of spectral sequences with the identifications of
-the homology of a page with the next page, stated with their inverses. -/
-@[reassoc]
-private lemma Hom.iso_inv_comp_homologyMap {E E' : SpectralSequence C c r₀} (f : E ⟶ E')
-    (r r' : ℤ) (pq : κ) (hrr' : r + 1 = r') (hr : r₀ ≤ r) :
-    (E.iso r r' pq).inv ≫ HomologicalComplex.homologyMap (f.hom r) pq =
-      (f.hom r' (by lia)).f pq ≫ (E'.iso r r' pq).inv := by
-  rw [Iso.inv_comp_eq, ← f.comm_assoc r r' pq, Iso.hom_inv_id, Category.comp_id]
-
 section IsColimit
 
 variable [HasColimitsOfShape J C]
@@ -89,11 +80,14 @@ private lemma comm_of_isColimit {s t : Cocone F}
   -- `Functor.mapCocone`; the ascription states the goal with them so that `hD` applies.
   refine (isColimitOfPreserves (HomologicalComplex.eval C (c r') pq) hs).hom_ext
     (fun j ↦ (?_ : ((s.ι.app j).hom r' (by lia)).f pq ≫ _ = ((s.ι.app j).hom r' (by lia)).f pq ≫ _))
-  -- The legs have codomain `((Functor.const J).obj _).obj j`; naming the cocone points as `E'`
-  -- lets the rewrites match their identifications `s.pt.iso` and `t.pt.iso`.
-  rw [← Hom.iso_inv_comp_homologyMap_assoc (E' := s.pt) _ r r' pq hrr' hr,
+  -- After precomposing with `((F.obj j).iso r r' pq).hom`, `Hom.comm` for the legs of `s` and of
+  -- `t` reduces both sides to the leg of `t`. The legs have
+  -- codomain `((Functor.const J).obj _).obj j`; naming the cocone points as `E'` lets the rewrites
+  -- match their identifications `s.pt.iso` and `t.pt.iso`.
+  rw [← cancel_epi ((F.obj j).iso r r' pq).hom,
+    ← Hom.comm_assoc (E' := s.pt) (s.ι.app j) r r' pq hrr' hr, Iso.hom_inv_id_assoc,
     ← HomologicalComplex.homologyMap_comp_assoc, hD,
-    Hom.iso_inv_comp_homologyMap_assoc (E' := t.pt) _ r r' pq hrr' hr]
+    Hom.comm (E' := t.pt) (t.ι.app j) r r' pq hrr' hr]
   simp [← HomologicalComplex.comp_f, hD]
 
 /-- **A cocone of spectral sequences is a colimit if its cocones of pages are.** The descended
@@ -119,14 +113,6 @@ end IsColimit
 
 section Exact
 
-/-- The identifications of the homology of the `r`th pages of the spectral sequences `F.obj j`
-with their `r'`th pages, as an isomorphism of diagrams in `C`. -/
-private noncomputable def pageHomologyDiagramIso (F : J ⥤ SpectralSequence C c r₀) (r r' : ℤ)
-    (pq : κ) (hrr' : r + 1 = r') (hr : r₀ ≤ r) :
-    (F ⋙ pageFunctor C c r₀ r hr) ⋙ HomologicalComplex.homologyFunctor C (c r) pq ≅
-      (F ⋙ pageFunctor C c r₀ r' (by lia)) ⋙ HomologicalComplex.eval C (c r') pq :=
-  NatIso.ofComponents (fun j ↦ (F.obj j).iso r r' pq) fun f ↦ (F.map f).comm r r' pq
-
 variable [HasColimitsOfShape J C] [HasExactColimitsOfShape J C]
 
 /-- The cocone of `r'`th pages of a cocone `s` of spectral sequences is a colimit if its cocone
@@ -137,16 +123,17 @@ private noncomputable def isColimitPageOfSucc (s : Cocone F) (r r' : ℤ) (hrr' 
     (hr : r₀ ≤ r) (hs : IsColimit ((pageFunctor C c r₀ r hr).mapCocone s)) :
     IsColimit ((pageFunctor C c r₀ r' (by lia)).mapCocone s) :=
   HomologicalComplex.isColimitOfEval _ _ fun pq ↦
-    (IsColimit.equivOfNatIsoOfIso (pageHomologyDiagramIso F r r' pq hrr' hr)
+    (IsColimit.equivOfNatIsoOfIso
+        (Functor.isoWhiskerLeft F (pageHomologyNatIso C c r₀ r r' pq hrr' hr))
         ((HomologicalComplex.homologyFunctor C (c r) pq).mapCocone
           ((pageFunctor C c r₀ r hr).mapCocone s))
         ((HomologicalComplex.eval C (c r') pq).mapCocone
           ((pageFunctor C c r₀ r' (by lia)).mapCocone s))
-        -- The components of `pageHomologyDiagramIso` are the isomorphisms `(F.obj j).iso`, by
-        -- `NatIso.ofComponents`, and the legs are those of `s` evaluated at `pq`.
+        -- The components of `pageHomologyNatIso` are the isomorphisms `(F.obj j).iso`, by
+        -- `NatIso.ofComponents`, and the legs are those of `s` evaluated at `pq`, so the
+        -- compatibility is `Hom.comm` for the leg at `j`.
         (Cocone.ext (s.pt.iso r r' pq) fun j ↦ (Category.assoc _ _ _).trans
-          ((Hom.iso_inv_comp_homologyMap_assoc (E' := s.pt) _ r r' pq hrr' hr
-            (s.pt.iso r r' pq).hom).trans (by simp [HomologicalComplex.eval]))))
+          ((Iso.inv_comp_eq _).2 ((s.ι.app j).comm r r' pq hrr' hr))))
       (isColimitOfPreserves (HomologicalComplex.homologyFunctor C (c r) pq) hs)
 
 /-- **Later pages of a colimit.** When colimits of shape `J` are exact, if the cocone of `r`th
@@ -175,13 +162,15 @@ private noncomputable def colimitPageHomologyIso (F : J ⥤ SpectralSequence C c
     (colimit (F ⋙ pageFunctor C c r₀ r)).homology pq ≅
       (colimit (F ⋙ pageFunctor C c r₀ r' (by lia))).X pq :=
   IsColimit.coconePointsIsoOfNatIso
-    (isColimitOfPreserves (HomologicalComplex.homologyFunctor C (c r) pq) (colimit.isColimit _))
-    (isColimitOfPreserves (HomologicalComplex.eval C (c r') pq) (colimit.isColimit _))
-    (pageHomologyDiagramIso F r r' pq hrr' hr)
+    (isColimitOfPreserves (HomologicalComplex.homologyFunctor C (c r) pq)
+      (colimit.isColimit (F ⋙ pageFunctor C c r₀ r hr)))
+    (isColimitOfPreserves (HomologicalComplex.eval C (c r') pq)
+      (colimit.isColimit (F ⋙ pageFunctor C c r₀ r' (by lia))))
+    (Functor.isoWhiskerLeft F (pageHomologyNatIso C c r₀ r r' pq hrr' hr))
 
 /-- The legs of the colimit of the `r`th pages and of the `r'`th pages are compatible with
 `colimitPageHomologyIso` and the identifications for the `F.obj j`. The statement is that of
-`IsColimit.comp_coconePointsIsoOfNatIso_hom` with the components of `pageHomologyDiagramIso`
+`IsColimit.comp_coconePointsIsoOfNatIso_hom` with the components of `pageHomologyNatIso`
 and the legs of the evaluated colimit cocones unfolded. -/
 private lemma homologyMap_ι_colimitPageHomologyIso_hom (F : J ⥤ SpectralSequence C c r₀)
     (r r' : ℤ) (pq : κ) (hrr' : r + 1 = r') (hr : r₀ ≤ r) (j : J) :
@@ -189,9 +178,11 @@ private lemma homologyMap_ι_colimitPageHomologyIso_hom (F : J ⥤ SpectralSeque
         (colimitPageHomologyIso F r r' pq hrr' hr).hom =
       ((F.obj j).iso r r' pq).hom ≫ (colimit.ι (F ⋙ pageFunctor C c r₀ r' (by lia)) j).f pq :=
   IsColimit.comp_coconePointsIsoOfNatIso_hom
-    (isColimitOfPreserves (HomologicalComplex.homologyFunctor C (c r) pq) (colimit.isColimit _))
-    (isColimitOfPreserves (HomologicalComplex.eval C (c r') pq) (colimit.isColimit _))
-    (pageHomologyDiagramIso F r r' pq hrr' hr) j
+    (isColimitOfPreserves (HomologicalComplex.homologyFunctor C (c r) pq)
+      (colimit.isColimit (F ⋙ pageFunctor C c r₀ r hr)))
+    (isColimitOfPreserves (HomologicalComplex.eval C (c r') pq)
+      (colimit.isColimit (F ⋙ pageFunctor C c r₀ r' (by lia))))
+    (Functor.isoWhiskerLeft F (pageHomologyNatIso C c r₀ r r' pq hrr' hr)) j
 
 variable (F) in
 /-- The pagewise colimit of a diagram `F` of spectral sequences, when colimits of shape `J`
