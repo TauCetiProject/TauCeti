@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Excision
+public import TauCeti.AlgebraicTopology.Singular.Twisted.ConstantNaturality
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Functoriality
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Small.Relative
 public import TauCeti.Algebra.Homology.ModuleCat.QuasiIso
@@ -34,6 +35,14 @@ homology modulo the complement of a set `K` in an open neighbourhood `U` of its 
 `quasiIso_twistedChainComplexMap_` counterpart. The last form is what
 compares relative groups `H_*(U, U ∖ K; L)` of an open subset with those of the ambient space, as
 needed for restriction of locally finite homology to open subsets and for compact pairs.
+
+So relative homology modulo the complement of a set `K` only sees the coefficients near `K`: if
+the restriction of `L` to an open neighbourhood `U` of the closure of `K` is identified with the
+constant system at a module `M`, then `Hₘ(X, X ∖ K; L) ≅ Hₘ(X, X ∖ K; M)`
+(`TopPair.twistedHomologyComplIso`). When the identification comes from one of `L` with the
+constant system on all of `X`, this is the change of coefficients followed by the comparison of
+twisted homology with constant coefficients and ordinary homology
+(`TopPair.twistedHomologyComplIso_hom_of_iso`).
 
 The proof uses two facts about the relative twisted chains of an arbitrary pair, from
 `TauCeti.AlgebraicTopology.Singular.Twisted.Small.Relative`. An ambient chain vanishes in relative
@@ -278,5 +287,85 @@ theorem isIso_twistedHomologyMap_excisionMap_of_isClosed_subset {U K : Set X} (h
   isIso_twistedHomologyMap_excisionMap_of_closure_subset L hU (hK.closure_eq.symm ▸ hKU) n
 
 end Subsets
+
+section TrivialNear
+
+variable {X : TopCat.{v}} {U K : Set X} (L : LocalCoefficientSystem.{u, v, max v w} R X)
+  (M : ModuleCat.{max v w} R)
+
+/-- The ambient map of the excision inclusion `(U, U ∖ K) ⟶ (X, X ∖ K)` is the inclusion of `U`. -/
+private lemma hom_fst_excisionMap :
+    (Hom.fst (excisionMap U Kᶜ)).hom = ⟨Subtype.val, continuous_subtype_val⟩ :=
+  ContinuousMap.ext (excisionMap_fst_apply U Kᶜ)
+
+/-- An identification of the restriction of `L` to `U` with a constant system, read as an
+identification of the coefficients of the excised pair `(U, U ∖ K)`. -/
+private def excisedCoefficientIso
+    (e : (pullback (R := R) (⟨Subtype.val, continuous_subtype_val⟩ : C(TopCat.of U, X))).obj L ≅
+      (constantFunctor (TopCat.of U)).obj M) :
+    (pullback (R := R) (Hom.fst (excisionMap U Kᶜ)).hom).obj L ≅
+      (constantFunctor (interPair U Kᶜ).fst).obj M :=
+  eqToIso (congrArg (fun f ↦ (pullback (R := R) f).obj L) hom_fst_excisionMap) ≪≫ e
+
+/-- **Local homology with coefficients trivialized near the excised set.** Let `K` be a subset of
+`X` whose closure lies in an open set `U`, and let `e` identify the restriction of `L` to `U` with
+the constant system at `M`. Then `Hₘ(X, X ∖ K; L) ≅ Hₘ(X, X ∖ K; M)`: excise onto `U`, change the
+coefficients along `e`, compare with ordinary homology with coefficients in `M`, and undo the
+excision. -/
+def twistedHomologyComplIso (hU : IsOpen U) (hKU : closure K ⊆ U)
+    (e : (pullback (R := R) (⟨Subtype.val, continuous_subtype_val⟩ : C(TopCat.of U, X))).obj L ≅
+      (constantFunctor (TopCat.of U)).obj M) (m : ℕ) :
+    (ofSubset Kᶜ).twistedHomology L m ≅ (ofSubset Kᶜ).singularHomology M m :=
+  haveI := isIso_twistedHomologyMap_excisionMap_of_closure_subset L hU hKU m
+  haveI := isIso_singularHomologyMap_excisionMap_of_closure_subset M hU hKU m
+  (asIso (twistedHomologyMap (excisionMap U Kᶜ) L m)).symm ≪≫
+    (HomologicalComplex.homologyFunctor _ _ m).mapIso
+      ((interPair U Kᶜ).twistedChainComplexCoefficientIso (excisedCoefficientIso L M e)) ≪≫
+    (interPair U Kᶜ).twistedHomologyConstantIso M m ≪≫
+    asIso (TopPair.singularHomologyMap (excisionMap U Kᶜ) M m)
+
+/-- The defining square of `TopPair.twistedHomologyComplIso`: after the excision inclusion of
+`(U, U ∖ K)` it is the change of coefficients along `e`, the comparison with ordinary homology and
+the excision inclusion for ordinary homology. -/
+private lemma twistedHomologyMap_excisionMap_comp_twistedHomologyComplIso_hom (hU : IsOpen U)
+    (hKU : closure K ⊆ U)
+    (e : (pullback (R := R) (⟨Subtype.val, continuous_subtype_val⟩ : C(TopCat.of U, X))).obj L ≅
+      (constantFunctor (TopCat.of U)).obj M) (m : ℕ) :
+    twistedHomologyMap (excisionMap U Kᶜ) L m ≫ (twistedHomologyComplIso L M hU hKU e m).hom =
+      (interPair U Kᶜ).twistedHomologyCoefficientMap (excisedCoefficientIso L M e).hom m ≫
+        ((interPair U Kᶜ).twistedHomologyConstantIso M m).hom ≫
+          TopPair.singularHomologyMap (excisionMap U Kᶜ) M m := by
+  simp [twistedHomologyComplIso, twistedChainComplexCoefficientIso_hom]
+
+/-- **Compatibility with a global trivialization.** If `φ` identifies `L` with the constant system
+at `M` on all of `X`, then `TopPair.twistedHomologyComplIso`, for the restriction of `φ` to `U`, is
+the change of coefficients along `φ` followed by the comparison of relative twisted homology with
+constant coefficients and ordinary relative homology. -/
+lemma twistedHomologyComplIso_hom_of_iso (hU : IsOpen U) (hKU : closure K ⊆ U)
+    (φ : L ≅ (constantFunctor X).obj M) (m : ℕ) :
+    (twistedHomologyComplIso L M hU hKU
+        ((pullback _).mapIso φ ≪≫ pullbackConstantIso _ M) m).hom =
+      (ofSubset Kᶜ).twistedHomologyCoefficientMap φ.hom m ≫
+        ((ofSubset Kᶜ).twistedHomologyConstantIso M m).hom := by
+  have := isIso_twistedHomologyMap_excisionMap_of_closure_subset L hU hKU m
+  rw [← cancel_epi (twistedHomologyMap (excisionMap U Kᶜ) L m),
+    twistedHomologyMap_excisionMap_comp_twistedHomologyComplIso_hom]
+  -- The ambient space of `(X, X ∖ K)` is `X`, and that of the excised pair is `TopCat.of U`, only
+  -- up to unfolding `TopPair.ofSubset` and `TopPair.interPair`, so these steps need `erw`.
+  erw [twistedHomologyMap_naturality_assoc (excisionMap U Kᶜ) L φ.hom m,
+    twistedHomologyConstantIso_hom_pair_naturality M (excisionMap U Kᶜ) m]
+  erw [← twistedHomologyCoefficientMap_comp_assoc]
+  congr 2
+  -- The excised coefficient identification transports along `hom_fst_excisionMap`; generalize
+  -- that equation to discharge the transport.
+  have key : ∀ {f g : C(TopCat.of U, X)} (h : f = g),
+      eqToHom (congrArg (fun f ↦ (pullback (R := R) f).obj L) h) ≫
+          (pullback g).map φ.hom ≫ (pullbackConstantIso g M).hom =
+        (pullback f).map φ.hom ≫ (pullbackConstantIso f M).hom := by
+    rintro f g rfl
+    simp
+  exact key hom_fst_excisionMap
+
+end TrivialNear
 
 end TopPair
