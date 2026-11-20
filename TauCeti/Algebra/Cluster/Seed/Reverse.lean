@@ -45,11 +45,12 @@ private theorem latticeMutation_apply (s : Seed c row u B) (k : K) (a : I →₀
   ext i
   have h := congrFun (Matrix.repr_toLin Finsupp.basisSingleOne Finsupp.basisSingleOne
     (matrixMutationLeft row s.state.exchange.matrix k 1) a) i
-  simp only [Finsupp.basisSingleOne_repr] at h
-  change latticeMutation s k a i =
-    (matrixMutationLeft row s.state.exchange.matrix k 1 *
-      Matrix.replicateCol Unit (a : I → ℤ)) i () at h
-  rw [h, matrixMutationLeft_mul_apply]
+  simp only [Finsupp.basisSingleOne_repr, LinearEquiv.refl_apply] at h
+  have hcol := congrArg (fun M : Matrix I Unit ℤ ↦ M i ())
+    (Matrix.replicateCol_mulVec (ι := Unit)
+      (matrixMutationLeft row s.state.exchange.matrix k 1) (a : I → ℤ))
+  simp only [Matrix.replicateCol_apply] at hcol
+  rw [latticeMutation, h, hcol, matrixMutationLeft_mul_apply]
   by_cases hi : i = row k
   · subst i
     simp [s.state.exchange.matrix_row_self k]

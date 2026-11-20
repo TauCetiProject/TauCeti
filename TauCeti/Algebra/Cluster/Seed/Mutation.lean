@@ -8,8 +8,6 @@ module
 public import TauCeti.Algebra.Cluster.Seed.Basic
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.FormMutation
 
-import TauCeti.Algebra.Cluster.ExchangeMatrix.Divisibility
-
 /-!
 # Seed mutation and admissibility
 
