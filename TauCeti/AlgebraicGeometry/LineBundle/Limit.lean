@@ -58,64 +58,6 @@ open MonoidalCategory
 
 variable {X Z : Scheme.{u}}
 
-/-- A trivialization over `V` restricts to one over any smaller open `U`. -/
-private lemma nonempty_unitIsoRestrict_of_le {P : X.Modules} {U V : X.Opens} (hUV : U ≤ V)
-    (e : _root_.SheafOfModules.unit V.toScheme.ringCatSheaf ≅ P.restrict V.ι) :
-    Nonempty ((𝟙_ U.toScheme.Modules) ≅ P.restrict U.ι) :=
-  ⟨unitIsoRestrictPullback (𝟙 X) hUV e ≪≫
-    (restrictFunctor U.ι).mapIso ((Scheme.Modules.pullbackId X).app P)⟩
-
-/-- Every point has an affine neighbourhood on which two invertible sheaves are both trivial. -/
-private lemma exists_isAffineOpen_trivializations (M N : X.Modules)
-    [hM : SheafOfModules.isInvertible X M] [hN : SheafOfModules.isInvertible X N] (x : X) :
-    ∃ U : X.Opens, IsAffineOpen U ∧ x ∈ U ∧
-      Nonempty ((𝟙_ U.toScheme.Modules) ≅ M.restrict U.ι) ∧
-      Nonempty ((𝟙_ U.toScheme.Modules) ≅ N.restrict U.ι) := by
-  obtain ⟨ιM, VM, hVM, eM⟩ := SheafOfModules.isInvertible_iff_exists_isOpenCover.mp hM
-  obtain ⟨ιN, VN, hVN, eN⟩ := SheafOfModules.isInvertible_iff_exists_isOpenCover.mp hN
-  obtain ⟨k, hk⟩ := Opens.mem_iSup.mp (hVM.iSup_eq_top.ge (Set.mem_univ x))
-  obtain ⟨l, hl⟩ := Opens.mem_iSup.mp (hVN.iSup_eq_top.ge (Set.mem_univ x))
-  obtain ⟨_, ⟨U, hU, rfl⟩, hxU, hUle⟩ := X.isBasis_affineOpens.exists_subset_of_mem_open
-    (show x ∈ VM k ⊓ VN l from ⟨hk, hl⟩) (VM k ⊓ VN l).isOpen
-  exact ⟨U, hU, hxU, nonempty_unitIsoRestrict_of_le (fun _ hy ↦ (hUle hy).1) (eM k).some,
-    nonempty_unitIsoRestrict_of_le (fun _ hy ↦ (hUle hy).2) (eN l).some⟩
-
-/-- Through trivializations over `U`, every morphism of the trivialized sheaves is
-multiplication by a function on `U`. -/
-private lemma exists_restrictFunctor_map_eq {M N : X.Modules} {U : X.Opens}
-    (eM : (𝟙_ U.toScheme.Modules) ≅ M.restrict U.ι)
-    (eN : (𝟙_ U.toScheme.Modules) ≅ N.restrict U.ι) (φ : M ⟶ N) :
-    ∃ r : Γ(U, ⊤), (restrictFunctor U.ι).map φ =
-      eM.inv ≫ globalSectionsSmul _ r ≫ eN.hom := by
-  obtain ⟨r, hr, -⟩ :=
-    existsUnique_globalSectionsSmul_eq _ (eM.hom ≫ (restrictFunctor U.ι).map φ ≫ eN.inv)
-  exact ⟨r, by rw [hr]; simp⟩
-
-/-- If trivializations over `U` identify `a` and `b` with multiplication by `ra` and `rb`, then the
-pullbacks of `a` and `b` along `g` agree over `g⁻¹ U` exactly when `g` identifies `ra` and `rb`. -/
-private lemma restrictFunctor_map_pullback_map_eq_iff (g : Z ⟶ X) {M N : X.Modules}
-    {U : X.Opens} (eM : (𝟙_ U.toScheme.Modules) ≅ M.restrict U.ι)
-    (eN : (𝟙_ U.toScheme.Modules) ≅ N.restrict U.ι) {a b : M ⟶ N} {ra rb : Γ(U, ⊤)}
-    (ha : (restrictFunctor U.ι).map a = eM.inv ≫ globalSectionsSmul _ ra ≫ eN.hom)
-    (hb : (restrictFunctor U.ι).map b = eM.inv ≫ globalSectionsSmul _ rb ≫ eN.hom) :
-    (restrictFunctor (g ⁻¹ᵁ U).ι).map ((Scheme.Modules.pullback g).map a) =
-        (restrictFunctor (g ⁻¹ᵁ U).ι).map ((Scheme.Modules.pullback g).map b) ↔
-      g.app U (U.topIso.hom ra) = g.app U (U.topIso.hom rb) := by
-  let α := restrictPullbackIso g U (g ⁻¹ᵁ U) le_rfl
-  have key (φ : M ⟶ N) : (restrictFunctor (g ⁻¹ᵁ U).ι).map ((Scheme.Modules.pullback g).map φ) =
-      α.hom.app M ≫ (Scheme.Modules.pullback (g.resLE U (g ⁻¹ᵁ U) le_rfl)).map
-        ((restrictFunctor U.ι).map φ) ≫ α.inv.app N :=
-    (NatIso.naturality_2 α φ).symm
-  rw [key, key, ha, hb]
-  simp only [Functor.map_comp, cancel_epi, cancel_mono, pullback_map_globalSectionsSmul]
-  have hinj : Function.Injective (globalSectionsSmul
-      ((Scheme.Modules.pullback (g.resLE U (g ⁻¹ᵁ U) le_rfl)).obj (𝟙_ U.toScheme.Modules))) :=
-    fun r s h ↦ globalSectionsAction_injective _ (by rw [globalSectionsAction_apply,
-      globalSectionsAction_apply, h])
-  rw [hinj.eq_iff, Scheme.Hom.appTop, Scheme.Hom.resLE_app_top, ← Scheme.Hom.app_eq_appLE]
-  simp only [CommRingCat.comp_apply]
-  exact (ConcreteCategory.bijective_of_isIso (g ⁻¹ᵁ U).topIso.inv).injective.eq_iff
-
 /-- Two morphisms of line bundles have equal pullbacks exactly when the underlying morphisms of
 sheaves of modules do. -/
 private lemma pullback_map_eq_iff (g : Z ⟶ X) {M N : InvertibleSheaf X} {a b : M ⟶ N} :
@@ -137,7 +79,6 @@ theorem exists_pullback_map_eq_of_isLimit {i : I} [CompactSpace (F.obj i)]
     {M N : InvertibleSheaf (F.obj i)} {a b : M ⟶ N}
     (hab : (pullback (c.π.app i)).map a = (pullback (c.π.app i)).map b) :
     ∃ (j : I) (f : j ⟶ i), (pullback (F.map f)).map a = (pullback (F.map f)).map b := by
-  classical
   rw [pullback_map_eq_iff] at hab
   -- Around every point, trivialize `M` and `N` on an affine open `U`, so that `a` and `b` become
   -- multiplication by functions on `U`; these agree at the limit, hence at some stage.
@@ -148,9 +89,11 @@ theorem exists_pullback_map_eq_of_isLimit {i : I} [CompactSpace (F.obj i)]
       (_ : (restrictFunctor U.ι).map b.hom = eM.inv ≫ globalSectionsSmul _ rb ≫ eN.hom)
       (j : I) (f : j ⟶ i),
         (F.map f).app U (U.topIso.hom ra) = (F.map f).app U (U.topIso.hom rb) := by
-    obtain ⟨U, hU, hxU, ⟨eM⟩, ⟨eN⟩⟩ := exists_isAffineOpen_trivializations M.obj N.obj x
-    obtain ⟨ra, ha⟩ := exists_restrictFunctor_map_eq eM eN a.hom
-    obtain ⟨rb, hb⟩ := exists_restrictFunctor_map_eq eM eN b.hom
+    obtain ⟨U, hU, hxU, ⟨eM⟩, ⟨eN⟩⟩ := exists_isAffineOpen_mem_trivializations M.obj N.obj x
+    obtain ⟨ra, ha, -⟩ :=
+      existsUnique_eq_inv_comp_globalSectionsSmul_comp_hom eM eN ((restrictFunctor U.ι).map a.hom)
+    obtain ⟨rb, hb, -⟩ :=
+      existsUnique_eq_inv_comp_globalSectionsSmul_comp_hom eM eN ((restrictFunctor U.ι).map b.hom)
     obtain ⟨j, f, hf⟩ := exists_app_map_eq_map_of_isLimit F c hc hU.isCompact _ _
       ((restrictFunctor_map_pullback_map_eq_iff (c.π.app i) eM eN ha hb).mp (by rw [hab]))
     exact ⟨U, hxU, eM, eN, ra, rb, ha, hb, j, f, hf⟩
@@ -162,15 +105,11 @@ theorem exists_pullback_map_eq_of_isLimit {i : I} [CompactSpace (F.obj i)]
     refine top_unique fun y _ ↦ ?_
     obtain ⟨x, hx, hy⟩ := Set.mem_iUnion₂.mp (ht.ge (Set.mem_univ y))
     exact Opens.mem_iSup.mpr ⟨⟨x, hx⟩, hy⟩
-  obtain ⟨k, fk, hk⟩ := IsCofiltered.inf_exists (insert i (t.image j))
-    (t.attach.image fun x : t ↦ (⟨j x.1, i, Finset.mem_insert_of_mem
-      (Finset.mem_image_of_mem _ x.2), Finset.mem_insert_self _ _, f x.1⟩ : Σ' (Y Y' : I)
-        (_ : Y ∈ insert i (t.image j)) (_ : Y' ∈ insert i (t.image j)), Y ⟶ Y'))
-  refine ⟨k, fk (Finset.mem_insert_self _ _), (pullback_map_eq_iff _).mpr ?_⟩
-  refine hom_ext_of_iSup_eq_top (fun x : t ↦ F.map (fk (Finset.mem_insert_self _ _)) ⁻¹ᵁ U x)
+  obtain ⟨k, fk, g, hg⟩ := IsCofiltered.wideCospan fun x : t ↦ f x.1
+  refine ⟨k, fk, (pullback_map_eq_iff _).mpr ?_⟩
+  refine hom_ext_of_iSup_eq_top (fun x : t ↦ F.map fk ⁻¹ᵁ U x)
     (by rw [← Scheme.Hom.preimage_iSup, hcov, Scheme.Hom.preimage_top]) fun x ↦ ?_
-  rw [restrictFunctor_map_pullback_map_eq_iff _ (eM x) (eN x) (ha x) (hb x),
-    ← hk _ _ (Finset.mem_image.mpr ⟨⟨x, x.2⟩, Finset.mem_attach _ _, rfl⟩), F.map_comp,
+  rw [restrictFunctor_map_pullback_map_eq_iff _ (eM x) (eN x) (ha x) (hb x), ← hg x, F.map_comp,
     Scheme.Hom.comp_app]
   -- The composite acts on functions on `U x` by `F.map (f x)` followed by a further pullback.
   exact congrArg (fun s ↦ (F.map _).app _ s) (hf x)
@@ -186,16 +125,10 @@ theorem exists_forall_pullback_map_eq_of_isLimit {i : I} [CompactSpace (F.obj i)
     (hab : ∀ k, (pullback (c.π.app i)).map (a k) = (pullback (c.π.app i)).map (b k)) :
     ∃ (j : I) (f : j ⟶ i),
       ∀ k, (pullback (F.map f)).map (a k) = (pullback (F.map f)).map (b k) := by
-  classical
-  have := Fintype.ofFinite ι
   choose j f hf using fun k ↦ exists_pullback_map_eq_of_isLimit hc (hab k)
-  obtain ⟨l, fl, hl⟩ := IsCofiltered.inf_exists (insert i (Finset.univ.image j))
-    (Finset.univ.image fun k ↦ (⟨j k, i, Finset.mem_insert_of_mem
-      (Finset.mem_image_of_mem _ (Finset.mem_univ k)), Finset.mem_insert_self _ _, f k⟩ :
-        Σ' (Y Y' : I) (_ : Y ∈ insert i (Finset.univ.image j))
-          (_ : Y' ∈ insert i (Finset.univ.image j)), Y ⟶ Y'))
-  refine ⟨l, fl (Finset.mem_insert_self _ _), fun k ↦ ?_⟩
-  rw [← hl _ _ (Finset.mem_image_of_mem _ (Finset.mem_univ k)), F.map_comp,
+  obtain ⟨l, fl, g, hg⟩ := IsCofiltered.wideCospan f
+  refine ⟨l, fl, fun k ↦ ?_⟩
+  rw [← hg k, F.map_comp,
     ← NatIso.naturality_1 (pullbackComp _ _) (a k),
     ← NatIso.naturality_1 (pullbackComp _ _) (b k),
     Functor.comp_map, Functor.comp_map, hf k]

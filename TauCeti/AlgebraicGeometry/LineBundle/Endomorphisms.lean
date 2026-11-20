@@ -42,6 +42,8 @@ still act on the rigidified bundle.
   domain;
 * `Scheme.Modules.globalSectionsAction_bijective`: for an invertible sheaf, the action of global
   functions on the sheaf is a bijection onto its endomorphisms;
+* `Scheme.Modules.existsUnique_eq_inv_comp_globalSectionsSmul_comp_hom`: through trivializations,
+  every morphism between trivial sheaves is multiplication by a unique global function;
 * `Scheme.Modules.globalSectionsActionRingEquiv`: the ring isomorphism `Γ(X, 𝒪_X) ≃+* End M`;
 * `Scheme.Modules.unitsGlobalSectionsMulEquivAut`: the group isomorphism `Γ(X, 𝒪_X)ˣ ≃* Aut M`.
 
@@ -200,6 +202,16 @@ theorem existsUnique_globalSectionsSmul_eq (φ : M ⟶ M) :
     ∃! r : Γ(X, ⊤), M.globalSectionsSmul r = φ := by
   simpa only [globalSectionsAction_apply, End.ext_iff] using
     (globalSectionsAction_bijective M).existsUnique (End.of φ)
+
+open MonoidalCategory in
+/-- Through trivializations `e : 𝒪_X ≅ P` and `e' : 𝒪_X ≅ Q`, every morphism `P ⟶ Q` is
+multiplication by a unique global function. -/
+theorem existsUnique_eq_inv_comp_globalSectionsSmul_comp_hom {P Q : X.Modules}
+    (e : 𝟙_ X.Modules ≅ P) (e' : 𝟙_ X.Modules ≅ Q) (φ : P ⟶ Q) :
+    ∃! r : Γ(X, ⊤), φ = e.inv ≫ (𝟙_ X.Modules).globalSectionsSmul r ≫ e'.hom := by
+  refine (existsUnique_congr fun r ↦ ?_).mp
+    (existsUnique_globalSectionsSmul_eq _ (e.hom ≫ φ ≫ e'.inv))
+  rw [Iso.eq_inv_comp, ← Iso.comp_inv_eq, Category.assoc, eq_comm]
 
 /-- **Endomorphisms of a line bundle are global functions.** For an invertible sheaf `M` on a
 scheme `X`, the action of global functions is a ring isomorphism `Γ(X, 𝒪_X) ≃+* End M`. -/
