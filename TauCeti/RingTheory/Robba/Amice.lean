@@ -94,6 +94,13 @@ theorem mem_amiceCoeff {a : ℤ → R} :
     a ∈ amiceCoeff R ↔ BddAbove (Set.range fun n ↦ ‖a n‖) ∧ Tendsto a atBot (𝓝 0) :=
   (Iff.rfl)
 
+/-- The weighted coefficient norms at radius `1` of an Amice family are bounded above, so the
+Gauss-norm lemmas such as `TauCeti.le_laurentGaussNorm` and
+`TauCeti.laurentGaussNorm_addRingConvolution_le` apply to it at `ρ = 1`. -/
+theorem bddAbove_of_mem_amiceCoeff {a : ℤ → R} (ha : a ∈ amiceCoeff R) :
+    BddAbove (Set.range fun n ↦ ‖a n‖ * (1 : ℝ) ^ n) := by
+  simpa using ha.1
+
 theorem single_mem_amiceCoeff (n : ℤ) (c : R) : Pi.single n c ∈ amiceCoeff R := by
   refine ⟨⟨‖c‖, Set.forall_mem_range.2 (Pi.norm_single_apply_le (E := fun _ ↦ R) n · c)⟩,
     tendsto_const_nhds.congr' ?_⟩
@@ -237,11 +244,6 @@ coefficients tending to zero as `n → -∞`, with the convolution product. Its 
 `R` complete and ultrametric (`TauCeti.instIsConvolutionRingAmiceCoeff`). -/
 abbrev AmiceRing [SeminormedRing R] : Type _ :=
   amiceCoeff R
-
-@[ext]
-theorem AmiceRing.ext [SeminormedRing R] {f g : AmiceRing R}
-    (h : ∀ n, (f : ℤ → R) n = (g : ℤ → R) n) : f = g :=
-  Subtype.ext <| funext h
 
 /-! ### The bounded Robba ring inside the Amice ring -/
 

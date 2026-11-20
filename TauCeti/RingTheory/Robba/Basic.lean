@@ -41,7 +41,9 @@ Each coefficient of a product is an infinite series: for `ρ` in the convergence
 factors, its terms satisfy `‖aᵢ bₙ₋ᵢ‖ ρⁿ ≤ (‖aᵢ‖ ρⁱ)(‖bₙ₋ᵢ‖ ρⁿ⁻ⁱ)`, and the right side tends to
 zero along the cofinite filter of `ℤ × ℤ`. Hence, over a complete ultrametric ring, the product
 coefficients converge, the product converges at `ρ` again, and the Gauss norm is submultiplicative
-(`TauCeti.LaurentConvergesAt.laurentGaussNorm_addRingConvolution_le`). The radius-wise Fréchet and
+(`TauCeti.laurentGaussNorm_addRingConvolution_le`). The Gauss-norm lemmas only ask the weighted
+norms to be bounded above, so they also apply at radius `1` to series whose coefficients are only
+bounded at `+∞`, such as those of the Amice ring. The radius-wise Fréchet and
 inductive-limit topologies are not constructed here.
 
 ## Main definitions
@@ -109,21 +111,25 @@ theorem LaurentConvergesAt.bddAbove {ρ : ℝ} {a : ℤ → R} (ha : LaurentConv
     BddAbove (Set.range fun n ↦ ‖a n‖ * ρ ^ n) :=
   ha.isBoundedUnder_le.bddAbove_range_of_cofinite
 
-/-- Every weighted coefficient norm of a family converging at `ρ` is at most its Gauss norm. -/
-theorem LaurentConvergesAt.le_laurentGaussNorm {ρ : ℝ} {a : ℤ → R} (ha : LaurentConvergesAt ρ a)
-    (n : ℤ) : ‖a n‖ * ρ ^ n ≤ laurentGaussNorm ρ a :=
-  le_ciSup ha.bddAbove n
+/-- Every weighted coefficient norm of a family whose weighted norms are bounded above is at most
+its Gauss norm. A family converging at `ρ` has such a bound by
+`TauCeti.LaurentConvergesAt.bddAbove`. -/
+theorem le_laurentGaussNorm {ρ : ℝ} {a : ℤ → R}
+    (ha : BddAbove (Set.range fun n ↦ ‖a n‖ * ρ ^ n)) (n : ℤ) :
+    ‖a n‖ * ρ ^ n ≤ laurentGaussNorm ρ a :=
+  le_ciSup ha n
 
 /-- The Gauss norm is at most every common bound of the weighted coefficient norms. -/
 theorem laurentGaussNorm_le {ρ C : ℝ} {a : ℤ → R} (h : ∀ n, ‖a n‖ * ρ ^ n ≤ C) :
     laurentGaussNorm ρ a ≤ C :=
   ciSup_le h
 
-/-- For a family converging at `ρ`, the Gauss norm is the least common bound of the weighted
-coefficient norms. -/
-theorem LaurentConvergesAt.laurentGaussNorm_le_iff {ρ C : ℝ} {a : ℤ → R}
-    (ha : LaurentConvergesAt ρ a) : laurentGaussNorm ρ a ≤ C ↔ ∀ n, ‖a n‖ * ρ ^ n ≤ C :=
-  ⟨fun h n ↦ (ha.le_laurentGaussNorm n).trans h, laurentGaussNorm_le⟩
+/-- For a family whose weighted norms are bounded above, the Gauss norm is the least common bound
+of the weighted coefficient norms. -/
+theorem laurentGaussNorm_le_iff {ρ C : ℝ} {a : ℤ → R}
+    (ha : BddAbove (Set.range fun n ↦ ‖a n‖ * ρ ^ n)) :
+    laurentGaussNorm ρ a ≤ C ↔ ∀ n, ‖a n‖ * ρ ^ n ≤ C :=
+  ⟨fun h n ↦ (le_laurentGaussNorm ha n).trans h, laurentGaussNorm_le⟩
 
 end Norm
 
@@ -165,7 +171,7 @@ theorem laurentGaussNorm_single {ρ : ℝ} (hρ : 0 ≤ ρ) (n : ℤ) (c : R) :
   · rcases eq_or_ne m n with rfl | hm
     · simp
     · simpa [Pi.single_eq_of_ne hm] using mul_nonneg (norm_nonneg c) (zpow_nonneg hρ n)
-  · simpa using (laurentConvergesAt_single ρ n c).le_laurentGaussNorm n
+  · simpa using le_laurentGaussNorm (laurentConvergesAt_single ρ n c).bddAbove n
 
 theorem LaurentConvergesAt.add {ρ : ℝ} {a b : ℤ → R} (ha : LaurentConvergesAt ρ a)
     (hb : LaurentConvergesAt ρ b) : LaurentConvergesAt ρ (a + b) := by
@@ -184,13 +190,14 @@ theorem LaurentConvergesAt.sub {ρ : ℝ} {a b : ℤ → R} (ha : LaurentConverg
   simpa [sub_eq_add_neg] using ha.add hb.neg
 
 /-- In an ultrametric group the Gauss norm of a sum is at most the larger Gauss norm. -/
-theorem LaurentConvergesAt.laurentGaussNorm_add_le [IsUltrametricDist R] {ρ : ℝ} (hρ : 0 ≤ ρ)
-    {a b : ℤ → R} (ha : LaurentConvergesAt ρ a) (hb : LaurentConvergesAt ρ b) :
+theorem laurentGaussNorm_add_le [IsUltrametricDist R] {ρ : ℝ} (hρ : 0 ≤ ρ) {a b : ℤ → R}
+    (ha : BddAbove (Set.range fun n ↦ ‖a n‖ * ρ ^ n))
+    (hb : BddAbove (Set.range fun n ↦ ‖b n‖ * ρ ^ n)) :
     laurentGaussNorm ρ (a + b) ≤ max (laurentGaussNorm ρ a) (laurentGaussNorm ρ b) :=
   laurentGaussNorm_le fun n ↦
     (mul_le_mul_of_nonneg_right (IsUltrametricDist.norm_add_le_max _ _) (zpow_nonneg hρ n)).trans <|
       by rw [max_mul_of_nonneg _ _ (zpow_nonneg hρ n)]
-         exact max_le_max (ha.le_laurentGaussNorm n) (hb.le_laurentGaussNorm n)
+         exact max_le_max (le_laurentGaussNorm ha n) (le_laurentGaussNorm hb n)
 
 /-- The coefficients of a Laurent series converging on a circle of radius `0 < ρ ≤ 1` tend to zero
 at `-∞`: for `n ≤ 0` they satisfy `‖aₙ‖ ≤ ‖aₙ‖ ρⁿ`. -/
@@ -212,15 +219,15 @@ theorem LaurentConvergesAt.smul [SeminormedRing R] {ρ : ℝ} {a : ℤ → R}
   exact mul_le_mul_of_nonneg_right (norm_mul_le c (a n)) (abs_nonneg (ρ ^ n))
 
 /-- The Gauss norm of `c • a` at a radius `ρ ≥ 0` is at most `‖c‖ |a|_ρ`. -/
-theorem LaurentConvergesAt.laurentGaussNorm_smul_le [SeminormedRing R] {ρ : ℝ} (hρ : 0 ≤ ρ)
-    {a : ℤ → R} (ha : LaurentConvergesAt ρ a) (c : R) :
+theorem laurentGaussNorm_smul_le [SeminormedRing R] {ρ : ℝ} (hρ : 0 ≤ ρ) {a : ℤ → R}
+    (ha : BddAbove (Set.range fun n ↦ ‖a n‖ * ρ ^ n)) (c : R) :
     laurentGaussNorm ρ (c • a) ≤ ‖c‖ * laurentGaussNorm ρ a :=
   laurentGaussNorm_le fun n ↦ by
     calc ‖(c • a) n‖ * ρ ^ n ≤ ‖c‖ * (‖a n‖ * ρ ^ n) := by
           rw [← mul_assoc]
           exact mul_le_mul_of_nonneg_right (norm_mul_le c (a n)) (zpow_nonneg hρ n)
       _ ≤ ‖c‖ * laurentGaussNorm ρ a :=
-          mul_le_mul_of_nonneg_left (ha.le_laurentGaussNorm n) (norm_nonneg c)
+          mul_le_mul_of_nonneg_left (le_laurentGaussNorm ha n) (norm_nonneg c)
 
 /-! ### Convolution at one radius -/
 
@@ -287,10 +294,11 @@ theorem LaurentConvergesAt.addRingConvolution (hρ : 0 < ρ) (ha : LaurentConver
   rw [Real.dist_eq, sub_zero, abs_of_nonneg (mul_nonneg (norm_nonneg _) (zpow_pos hρ n).le)]
   linarith
 
-/-- **The Gauss norm is submultiplicative**: `|a ⋆ b|_ρ ≤ |a|_ρ |b|_ρ` for families converging at a
-radius `ρ > 0`. -/
-theorem LaurentConvergesAt.laurentGaussNorm_addRingConvolution_le (hρ : 0 < ρ)
-    (ha : LaurentConvergesAt ρ a) (hb : LaurentConvergesAt ρ b) :
+/-- **The Gauss norm is submultiplicative**: `|a ⋆ b|_ρ ≤ |a|_ρ |b|_ρ` at a radius `ρ > 0` for
+families whose weighted norms are bounded above, in particular for families converging at `ρ`. -/
+theorem laurentGaussNorm_addRingConvolution_le (hρ : 0 < ρ)
+    (ha : BddAbove (Set.range fun n ↦ ‖a n‖ * ρ ^ n))
+    (hb : BddAbove (Set.range fun n ↦ ‖b n‖ * ρ ^ n)) :
     laurentGaussNorm ρ (a ⋆ᵣ₊ b) ≤ laurentGaussNorm ρ a * laurentGaussNorm ρ b := by
   refine laurentGaussNorm_le fun n ↦ (le_div_iff₀ (zpow_pos hρ n)).1 ?_
   rw [DiscreteConvolution.addRingConvolution_eq_tsum_sub]
@@ -299,7 +307,7 @@ theorem LaurentConvergesAt.laurentGaussNorm_addRingConvolution_le (hρ : 0 < ρ)
       (zpow_pos hρ n).le) fun y ↦ (le_div_iff₀ (zpow_pos hρ n)).2 ?_
   have h := norm_mul_mul_zpow_le hρ a b (n - y) y
   rw [sub_add_cancel] at h
-  exact h.trans (mul_le_mul (ha.le_laurentGaussNorm _) (hb.le_laurentGaussNorm _)
+  exact h.trans (mul_le_mul (le_laurentGaussNorm ha _) (le_laurentGaussNorm hb _)
     (mul_nonneg (norm_nonneg _) (zpow_pos hρ _).le) (laurentGaussNorm_nonneg ρ a))
 
 open DiscreteConvolution in
@@ -470,11 +478,6 @@ abbrev RobbaRing [SeminormedRing R] : Type _ :=
   robbaCoeff R
 
 namespace RobbaRing
-
-@[ext]
-theorem ext [SeminormedRing R] {f g : RobbaRing R} (h : ∀ n, (f : ℤ → R) n = (g : ℤ → R) n) :
-    f = g :=
-  Subtype.ext <| funext h
 
 open IsConvolutionRing
 

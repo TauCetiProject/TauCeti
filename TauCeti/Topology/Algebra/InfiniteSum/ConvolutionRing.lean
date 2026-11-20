@@ -71,6 +71,13 @@ class IsConvolutionRing [Semiring R] [TopologicalSpace R] (S : Submodule R (ℤ 
 
 namespace IsConvolutionRing
 
+/-- **Coefficientwise extensionality**: two members of a submodule of `ℤ → R` that agree in every
+degree are equal. -/
+@[ext]
+theorem ext [Semiring R] {S : Submodule R (ℤ → R)} {f g : S}
+    (h : ∀ n, (f : ℤ → R) n = (g : ℤ → R) n) : f = g :=
+  Subtype.ext <| funext h
+
 section Semiring
 
 variable [Semiring R] [TopologicalSpace R] {S : Submodule R (ℤ → R)} [IsConvolutionRing S]
@@ -131,6 +138,12 @@ theorem hasSum_coeff_mul (f g : S) (n : ℤ) :
   (addConvolutionExists f.2 g.2 n).hasSum_sub
 
 end Semiring
+
+/-- The monomial `a tⁿ` commutes with negating its coefficient. -/
+@[simp]
+theorem monomial_neg [Ring R] [TopologicalSpace R] {S : Submodule R (ℤ → R)}
+    [IsConvolutionRing S] (n : ℤ) (a : R) : (monomial n (-a) : S) = -monomial n a :=
+  Subtype.ext <| by simp [Pi.single_neg]
 
 section Ring
 
