@@ -28,6 +28,7 @@ is the strongly continuous unitary Schrödinger group. The dispersive estimate
 ## Main declarations
 
 * `TauCeti.schrodingerPropagator`: the propagator `S(t)` on `L²(E, F)`.
+* `TauCeti.adjoint_schrodingerPropagator`: the adjoint of `S(t)` is `S(-t)`.
 * `TauCeti.hasTemperateGrowth_phaseSymbol_laplacianSymbol`: its symbol has temperate growth.
 
 ## References
@@ -58,6 +59,12 @@ abbrev schrodingerPropagator (t : ℝ) :
 theorem schrodingerPropagator_def (t : ℝ) :
     schrodingerPropagator F t = phasePropagator (E := E) F laplacianSymbol t :=
   (rfl)
+
+/-- The adjoint of `S(t)` is `S(-t)`. -/
+theorem adjoint_schrodingerPropagator (t : ℝ) :
+    ContinuousLinearMap.adjoint (schrodingerPropagator (E := E) F t) =
+      schrodingerPropagator F (-t) := by
+  rw [schrodingerPropagator_def, schrodingerPropagator_def, adjoint_phasePropagator]
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The Schrödinger symbol `exp(-4π² i t ‖ξ‖²)` has temperate growth. -/

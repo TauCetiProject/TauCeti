@@ -125,11 +125,11 @@ theorem transpose_toTableau {μ : YoungDiagram} (T : StandardYoungTableau μ) :
 @[simp]
 theorem transpose_apply_val {μ : YoungDiagram} (T : StandardYoungTableau μ)
     (c : ↥μ.transpose.cells) : (T.transpose c).val =
-      (T ⟨c.1.swap, YoungDiagram.mem_transpose.mp c.2⟩).val :=
+      (T ⟨c.val.swap, YoungDiagram.mem_transpose.mp c.property⟩).val :=
   calc
     (T.transpose c).val = (T.transpose.toTableau c).val :=
       congrArg Fin.val (toTableau_apply T.transpose c).symm
-    _ = (T ⟨c.1.swap, YoungDiagram.mem_transpose.mp c.2⟩).val := by
+    _ = (T ⟨c.val.swap, YoungDiagram.mem_transpose.mp c.property⟩).val := by
       simp only [transpose, YoungTableau.transpose_apply, YoungDiagram.transposeCellsEquiv_apply,
         Fin.val_cast, toTableau_apply]
 
@@ -149,11 +149,11 @@ private def untranspose {μ : YoungDiagram} (T : StandardYoungTableau μ.transpo
 
 private theorem untranspose_apply_val {μ : YoungDiagram}
     (T : StandardYoungTableau μ.transpose) (c : ↥μ.cells) : (untranspose T c).val =
-      (T ⟨c.1.swap, YoungDiagram.mem_transpose.mpr c.2⟩).val :=
+      (T ⟨c.val.swap, YoungDiagram.mem_transpose.mpr c.property⟩).val :=
   calc
     (untranspose T c).val = ((untranspose T).toTableau c).val :=
       congrArg Fin.val (toTableau_apply (untranspose T) c).symm
-    _ = (T ⟨c.1.swap, YoungDiagram.mem_transpose.mpr c.2⟩).val := by
+    _ = (T ⟨c.val.swap, YoungDiagram.mem_transpose.mpr c.property⟩).val := by
       simp only [untranspose, Equiv.trans_apply, YoungDiagram.transposeCellsEquiv_symm_apply,
         finCongr_apply, Fin.val_cast, toTableau_apply]
 
@@ -183,7 +183,7 @@ theorem transposeEquiv_apply {μ : YoungDiagram} (T : StandardYoungTableau μ) :
 @[simp]
 theorem transposeEquiv_symm_apply_val {μ : YoungDiagram}
     (T : StandardYoungTableau μ.transpose) (c : ↥μ.cells) : (((transposeEquiv μ).symm T) c).val =
-      (T ⟨c.1.swap, YoungDiagram.mem_transpose.mpr c.2⟩).val :=
+      (T ⟨c.val.swap, YoungDiagram.mem_transpose.mpr c.property⟩).val :=
   untranspose_apply_val T c
 
 /-- Standard Young tableaux of a fixed shape form a finite type. -/

@@ -12,6 +12,8 @@ public import Mathlib.Topology.Algebra.Module.Alternating.Basic
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
+-- Private: `Subspace.dual_finrank_eq` is used only inside proofs.
+import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.Multilinear.Basis
 
 /-!
@@ -23,6 +25,10 @@ source. `LinearMap.toContinuousLinearMap_comp` needs finite dimension on the sou
 intermediate space; the target may be any topological vector space.
 `Module.End.toContinuousLinearMap_apply` identifies the values of an endomorphism and its
 continuous version.
+
+Since every linear functional on a finite-dimensional Hausdorff topological vector space is
+continuous, the continuous dual `E →L[𝕜] 𝕜` has the same dimension as `E`:
+`ContinuousLinearMap.dual_finrank_eq`.
 
 A multilinear map `f : MultilinearMap (RingHom.id
 𝕜) M N` on finitely many finite-dimensional Hausdorff
@@ -103,6 +109,22 @@ theorem toContinuousLinearMap_comp (g : F →ₗ[𝕜] G) (f : E →ₗ[𝕜] F)
   ContinuousLinearMap.ext fun _ ↦ rfl
 
 end LinearMap
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+  [Module 𝕜 E] [ContinuousSMul 𝕜 E] [T2Space E] [FiniteDimensional 𝕜 E]
+
+/-- In finite dimensions the continuous dual `E →L[𝕜] 𝕜` has the same dimension as `E`: every
+linear functional on a finite-dimensional Hausdorff topological vector space is continuous, so
+the continuous dual coincides with the algebraic one. -/
+theorem dual_finrank_eq : Module.finrank 𝕜 (E →L[𝕜] 𝕜) = Module.finrank 𝕜 E := by
+  rw [← LinearEquiv.finrank_eq
+    (LinearMap.toContinuousLinearMap : (E →ₗ[𝕜] 𝕜) ≃ₗ[𝕜] E →L[𝕜] 𝕜)]
+  exact Subspace.dual_finrank_eq
+
+end ContinuousLinearMap
 
 namespace Module.End
 

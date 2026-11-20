@@ -38,13 +38,13 @@ private def principalPartsMapApp (h : D ≤ E) (U : X.Opens) :
     Γ(principalParts D, U) →+ Γ(principalParts E, U) :=
   (principalPartsSectionsEquiv E U).symm.toAddMonoidHom.comp <|
     (DFinsupp.mapRange.addMonoidHom fun (x : {x : CodimensionOnePoint X // (x : X) ∈ U}) ↦
-      (principalPartMapOfLE h x.1).toAddMonoidHom).comp
+      (principalPartMapOfLE h x.val).toAddMonoidHom).comp
       (principalPartsSectionsEquiv D U).toAddMonoidHom
 
 private lemma principalPartsMapApp_apply (h : D ≤ E) (U : X.Opens)
     (s : Γ(principalParts D, U)) (x : {x : CodimensionOnePoint X // (x : X) ∈ U}) :
     principalPartsSectionsEquiv E U (principalPartsMapApp h U s) x =
-      principalPartMapOfLE h x.1 (principalPartsSectionsEquiv D U s x) := by
+      principalPartMapOfLE h x.val (principalPartsSectionsEquiv D U s x) := by
   simp only [principalPartsMapApp, AddMonoidHom.comp_apply,
     AddEquiv.toAddMonoidHom_eq_coe]
   -- Reduce the additive-hom wrappers, then cancel the public section equivalence.
@@ -88,7 +88,7 @@ def principalPartsHomOfLE (h : D ≤ E) : principalParts D ⟶ principalParts E 
 lemma principalPartsHomOfLE_app_apply (h : D ≤ E) (U : X.Opens)
     (s : Γ(principalParts D, U)) (x : {x : CodimensionOnePoint X // (x : X) ∈ U}) :
     principalPartsSectionsEquiv E U ((principalPartsHomOfLE h).app U s) x =
-      principalPartMapOfLE h x.1 (principalPartsSectionsEquiv D U s x) :=
+      principalPartMapOfLE h x.val (principalPartsSectionsEquiv D U s x) :=
   principalPartsMapApp_apply h U s x
 
 /-- The principal-parts map for an equality inclusion is the identity. -/
@@ -115,7 +115,7 @@ lemma principalPartsHomOfLE_comp {F : SchemeWeilDivisor X} (h : D ≤ E) (h' : E
   intro x
   simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply,
     principalPartsHomOfLE_app_apply]
-  exact principalPartMapOfLE_comp_apply h h' x.1 _
+  exact principalPartMapOfLE_comp_apply h h' x.val _
 
 /-- Taking principal parts commutes with enlargement of the divisor. -/
 @[reassoc (attr := simp)]
@@ -126,7 +126,7 @@ lemma toPrincipalParts_principalPartsHomOfLE (h : D ≤ E) :
   apply (principalPartsSectionsEquiv E U).injective
   apply DFinsupp.ext
   intro x
-  have : Nonempty U := ⟨⟨x.1, x.2⟩⟩
+  have : Nonempty U := ⟨⟨x.val, x.property⟩⟩
   simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply,
     principalPartsHomOfLE_app_apply, toPrincipalParts_app_apply, principalPartAt_eq,
     principalPartMapOfLE_mk]

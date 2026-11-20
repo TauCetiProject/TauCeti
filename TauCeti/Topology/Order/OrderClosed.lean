@@ -23,6 +23,8 @@ establishes.
 
 * `Filter.Tendsto.le_of_eventually_le_add`: if `v ≤ K + e i` eventually along `l` and `e` tends to
   `0` along `l`, then `v ≤ K`.
+* `ContinuousWithinAt.le_of_forall_gt_le`: a lower bound `X ≤ g ζ` holding for every `ζ > a`
+  passes to `ζ = a` when `g` is continuous from the right at `a`.
 * `Filter.Tendsto.exists_forall_le_of_le`: a function tending to `b` along `cofinite` that is at
   least `b` somewhere attains its supremum.
 -/
@@ -41,6 +43,14 @@ theorem Filter.Tendsto.le_of_eventually_le_add {ι α : Type*} [TopologicalSpace
     {e : ι → α}
     (he : Tendsto e l (𝓝 0)) {v K : α} (h : ∀ᶠ i in l, v ≤ K + e i) : v ≤ K :=
   ge_of_tendsto (by simpa using he.const_add K) h
+
+/-- A lower bound `X ≤ g ζ` holding for every `ζ > a` passes to `ζ = a` when `g` is continuous
+from the right at `a` and `a` is approached from the right. -/
+theorem ContinuousWithinAt.le_of_forall_gt_le {α β : Type*} [TopologicalSpace α] [Preorder α]
+    [ClosedIciTopology α] [TopologicalSpace β] [Preorder β] {a : β} [(𝓝[>] a).NeBot] {X : α}
+    {g : β → α} (hg : ContinuousWithinAt g (Set.Ioi a) a) (h : ∀ ζ, a < ζ → X ≤ g ζ) :
+    X ≤ g a :=
+  ge_of_tendsto hg (eventually_nhdsWithin_of_forall h)
 
 /-- A function to a linearly ordered topological space that tends to `b` along `cofinite` and
 is at least `b` somewhere attains its supremum. -/
