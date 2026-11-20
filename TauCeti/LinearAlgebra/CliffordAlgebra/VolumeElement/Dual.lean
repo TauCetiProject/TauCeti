@@ -9,8 +9,8 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Dual
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.LinearAlgebra.Dual.Annihilator
 import TauCeti.Algebra.Ring.Parity
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 import TauCeti.LinearAlgebra.Eigenspace.Dual
-import TauCeti.LinearAlgebra.Eigenspace.Separation
 
 /-!
 # The chirality of the reverse-dual Clifford module
@@ -83,16 +83,10 @@ section Form
 variable (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 include hQ
 
-/-- For `Q v = -‖v‖²`, the element `Γ` acts on every module as an involution. -/
-private theorem involutive_complexVolume :
-    Function.Involutive (ρ (complexVolume Q o)) := fun s ↦ by
-  rw [← mul_apply_eq_comp, ← map_mul, complexVolume_mul_self o hQ, map_one, one_apply_eq_self]
-
 /-- The `±1`-eigenspaces of `Γ` on a module are complementary. -/
 private theorem isCompl_eigenspace_complexVolume_neg {μ : ℂ} (hμ : μ = 1 ∨ μ = -1) :
     IsCompl ((ρ (complexVolume Q o)).eigenspace μ) ((ρ (complexVolume Q o)).eigenspace (-μ)) := by
-  have h := TauCeti.isCompl_eigenspace_one_neg_one two_ne_zero.isUnit
-    (involutive_complexVolume ρ o hQ)
+  have h := ρ.isCompl_eigenspace_complexVolume o hQ
   rcases hμ with rfl | rfl
   · exact h
   · rw [neg_neg]

@@ -64,13 +64,13 @@ theorem dividedPower_normalizedRoot_mul_of_add_mem (hB : B.PosDef)
   let _ := lieRing hB hev
   intro ρ m n
   have hS := hB.isHermitian.isSymm
-  have hp : (a : I → ℤ) ⬝ᵥ B *ᵥ b = -1 := (hS.add_mem_normTwoShell_iff a.2 b.2).mp hab
+  have hp : (a : I → ℤ) ⬝ᵥ B *ᵥ b = -1 := (hS.add_mem_normTwoShell_iff a.property b.property).mp hab
   have hpa : 0 ≤ (a : I → ℤ) ⬝ᵥ B *ᵥ ((a : I → ℤ) + b) := by
-    rw [mulVec_add, dotProduct_add, mem_normTwoShell.mp a.2, hp]
+    rw [mulVec_add, dotProduct_add, mem_normTwoShell.mp a.property, hp]
     norm_num
   have hpb : 0 ≤ (b : I → ℤ) ⬝ᵥ B *ᵥ ((a : I → ℤ) + b) := by
     rw [mulVec_add, dotProduct_add, hS.dotProduct_mulVec_comm (x := (b : I → ℤ)) (y := a),
-      mem_normTwoShell.mp b.2, hp]
+      mem_normTwoShell.mp b.property, hp]
     norm_num
   -- The sum root commutes with both original roots, before applying the representation.
   have hc (r : B.normTwoShell) (hr : 0 ≤ (r : I → ℤ) ⬝ᵥ B *ᵥ ((a : I → ℤ) + b)) :

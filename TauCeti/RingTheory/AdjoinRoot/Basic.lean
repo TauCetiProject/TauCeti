@@ -29,6 +29,8 @@ of `AdjoinRoot g`.
   this only in the specialised form `WeierstrassCurve.Affine.CoordinateRing.map_mk`. Marked
   `@[simp]`, like its neighbours `AdjoinRoot.map_of` and `AdjoinRoot.map_root`.
 * `AdjoinRoot.map_surjective`: the map is surjective when `f` is.
+* `AdjoinRoot.algHomOfDvd_mk`: for `g ∣ f`, the reduction `AdjoinRoot f →ₐ[R] AdjoinRoot g` sends
+  the class of `p` to the class of `p`.
 * `AdjoinRoot.algHom_mk`: an algebra map out of `AdjoinRoot g` sends the class of `p` to the
   evaluation of `p` at the image of the root.
 * `AdjoinRoot.algHomEquiv`: over any commutative ring, the algebra maps out of `AdjoinRoot f`
@@ -67,8 +69,8 @@ of `AdjoinRoot g`.
   `M_j` by the image of `x ^ m`, which has rank `min j m`.
 * `Polynomial.quotientSpanEquivAdjoinRoot`: the cyclic polynomial quotient as an `R`-module
   is `AdjoinRoot f`; polynomial scalar multiplication becomes multiplication by its image.
-  This connects cyclic module structure theorems with `AdjoinRoot.mkₐ` through
-  `LinearMap.quotKerEquivOfSurjective`.
+  The two modules agree definitionally, so this connects cyclic module structure theorems with
+  `AdjoinRoot` directly.
 
 Stated over arbitrary commutative rings.
 
@@ -86,9 +88,9 @@ Michael Stoll's `EllipticCurves` project (`github.com/MichaelStollBayreuth/Ellip
 Apache-2.0, at commit `66889eada51a`),
 `EllipticCurves/Mathlib/Basic.lean`. There the reduction step the first one uses is a separate
 lemma; here that step is `AdjoinRoot.mk_modByMonic`. The source proves the second from a
-named helper `eq_zero_of_monic_dvd_of_degree_lt`; that helper is a one-line composition of
-Mathlib's `Polynomial.modByMonic_eq_self_iff` and `Polynomial.modByMonic_eq_zero_iff_dvd`, so it is
-inlined here rather than re-declared. They are harvested here rather than in the file that consumes
+named helper `eq_zero_of_monic_dvd_of_degree_lt`; here it follows directly from Mathlib's
+`AdjoinRoot.mk_ne_zero_of_degree_lt`, so the helper is not re-declared, and `R` need not be
+nontrivial. They are harvested here rather than in the file that consumes
 them because nothing about elliptic curves enters either statement.
 -/
 
@@ -119,6 +121,13 @@ lemma map_surjective {f : R →+* S} (hf : Function.Surjective f) {p : R[X]} {q 
   obtain ⟨u, rfl⟩ := Polynomial.map_surjective f hf t
   exact ⟨mk p u, map_mk h u⟩
 
+/-- The reduction map `AdjoinRoot.algHomOfDvd` to the quotient by a divisor `g ∣ f` sends the class
+of `p` modulo `f` to its class modulo `g`. -/
+@[simp]
+lemma algHomOfDvd_mk [Algebra R S] {f g : S[X]} (h : g ∣ f) (p : S[X]) :
+    algHomOfDvd R f g h (mk f p) = mk g p := by
+  simp [algHomOfDvd]
+
 end Map
 
 /-- An algebra map out of `AdjoinRoot g` sends the class of `p` to the evaluation of `p` at the
@@ -143,9 +152,9 @@ noncomputable def algHomEquiv (f : R[X]) :
   toFun φ := ⟨φ (root f), by rw [← algHom_mk, mk_self, map_zero]⟩
   -- `AdjoinRoot.liftAlgHom` asks for a commutative target, so the inverse uses
   -- `Ideal.Quotient.liftₐ` instead.
-  invFun x := Ideal.Quotient.liftₐ _ (aeval x.1) fun p hp ↦ by
+  invFun x := Ideal.Quotient.liftₐ _ (aeval x.val) fun p hp ↦ by
     obtain ⟨q, rfl⟩ := Ideal.mem_span_singleton'.mp hp
-    rw [map_mul, x.2, mul_zero]
+    rw [map_mul, x.property, mul_zero]
   left_inv φ := algHom_ext <| (Ideal.Quotient.lift_mk _ _ _).trans (aeval_X _)
   right_inv x := Subtype.ext <| (Ideal.Quotient.lift_mk _ _ _).trans (aeval_X _)
 
@@ -196,11 +205,11 @@ lemma exists_degree_lt_mk_eq [Nontrivial R] {g : R[X]} (hg : g.Monic) (a : Adjoi
 /-- **Two polynomials of degree less than that of a monic relator have the same class in
 `AdjoinRoot` only if they are equal.** Together with `AdjoinRoot.exists_degree_lt_mk_eq` this says
 that the polynomials of degree `< deg g` are a set of unique representatives. -/
-lemma mk_eq_mk_iff_of_degree_lt [Nontrivial R] {g : R[X]} (hg : g.Monic) {p q : R[X]}
+lemma mk_eq_mk_iff_of_degree_lt {g : R[X]} (hg : g.Monic) {p q : R[X]}
     (hp : p.degree < g.degree) (hq : q.degree < g.degree) : mk g p = mk g q ↔ p = q :=
-  ⟨fun h ↦ sub_eq_zero.mp <|
-    ((modByMonic_eq_self_iff hg).mpr <| (degree_sub_le p q).trans_lt (max_lt hp hq)).symm.trans <|
-      (modByMonic_eq_zero_iff_dvd hg).mpr (mk_eq_mk.mp h), fun h ↦ h ▸ rfl⟩
+  ⟨fun h ↦ by_contra fun hne ↦ mk_ne_zero_of_degree_lt hg (sub_ne_zero.mpr hne)
+      ((degree_sub_le p q).trans_lt (max_lt hp hq)) (by rw [map_sub, h, sub_self]),
+    fun h ↦ h ▸ rfl⟩
 
 /-- **An `R`-linear endomorphism of `AdjoinRoot g` commuting with multiplication by the root is
 multiplication by its value at `1`.** It commutes with multiplication by every power of the root,
@@ -354,19 +363,11 @@ namespace Polynomial
 variable {R : Type*} [CommRing R]
 
 /-- The cyclic polynomial quotient, as an `R`-module, is `AdjoinRoot f`. -/
--- Use the kernel of mkₐ to identify the quotients explicitly, including their module structures.
+-- `AdjoinRoot f` is defined as `R[X] ⧸ Ideal.span {f}`, and `R[X] ∙ f` is that ideal, so the two
+-- `R`-modules agree definitionally.
 noncomputable def quotientSpanEquivAdjoinRoot (f : R[X]) :
     (R[X] ⧸ R[X] ∙ f) ≃ₗ[R] AdjoinRoot f :=
-  (Submodule.Quotient.restrictScalarsEquiv R (R[X] ∙ f)).symm.trans
-    ((Submodule.quotEquivOfEq _ _ (by
-        ext g
-        simp only [Submodule.restrictScalars_mem, Submodule.mem_span_singleton, smul_eq_mul,
-          LinearMap.mem_ker, AlgHom.toLinearMap_apply, AdjoinRoot.coe_mkₐ,
-          AdjoinRoot.mk_eq_zero, dvd_iff_exists_eq_mul_left]
-        exact exists_congr fun _ => eq_comm)).trans
-      ((AdjoinRoot.mkₐ f).toLinearMap.quotKerEquivOfSurjective (by
-        rw [AlgHom.coe_toLinearMap, AdjoinRoot.coe_mkₐ]
-        exact AdjoinRoot.mk_surjective)))
+  LinearEquiv.refl R _
 
 /-- The equivalence sends the class of a polynomial to its image in `AdjoinRoot`. -/
 @[simp]
@@ -381,9 +382,8 @@ theorem quotientSpanEquivAdjoinRoot_smul (f g : R[X]) (y : R[X] ⧸ R[X] ∙ f) 
       AdjoinRoot.mk f g * quotientSpanEquivAdjoinRoot f y := by
   induction y using Submodule.Quotient.induction_on with
   | H h =>
-    rw [← Submodule.Quotient.mk_smul]
-    simp only [smul_eq_mul, Ideal.Quotient.mk_eq_mk, quotientSpanEquivAdjoinRoot_mk]
-    exact map_mul _ _ _
+    rw [← Submodule.Quotient.mk_smul, smul_eq_mul, Ideal.Quotient.mk_eq_mk, Ideal.Quotient.mk_eq_mk,
+      quotientSpanEquivAdjoinRoot_mk, quotientSpanEquivAdjoinRoot_mk, map_mul]
 
 end Polynomial
 

@@ -58,5 +58,5 @@ theorem IsSigmaCompact.sigmaFinite_comap_subtype [IsFiniteMeasureOnCompacts μ] 
     (hs : IsSigmaCompact s) (hsm : MeasurableSet s) :
     SigmaFinite (μ.comap ((↑) : s → α)) := by
   have hσ : SigmaFinite (μ.restrict s) := hs.sigmaFinite_restrict
-  rw [← map_comap_subtype_coe hsm] at hσ
-  exact SigmaFinite.of_map _ measurable_subtype_coe.aemeasurable hσ
+  rw [← map_comap_subtypeVal hsm] at hσ
+  exact SigmaFinite.of_map _ measurable_subtypeVal.aemeasurable hσ

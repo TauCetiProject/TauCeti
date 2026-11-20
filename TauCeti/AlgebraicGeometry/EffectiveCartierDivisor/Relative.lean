@@ -98,7 +98,7 @@ base change `B ⊗[Γ(S, W)] Γ(X, U)` along any `Γ(S, W)`-algebra `B`, because
 flat over `Γ(S, W)`. -/
 private theorem isSMulRegular_one_tmul_of_flat_appLE (I : X.IdealSheafData) (f : X ⟶ S)
     [Flat (I.subschemeι ≫ f)] {W : S.Opens} (hW : IsAffineOpen W) (U : X.affineOpens)
-    (hUW : U.1 ≤ f ⁻¹ᵁ W) {a : Γ(X, U)} (ha : IsSMulRegular Γ(X, U) a)
+    (hUW : U.val ≤ f ⁻¹ᵁ W) {a : Γ(X, U)} (ha : IsSMulRegular Γ(X, U) a)
     (hUa : I.ideal U = Ideal.span {a}) (B : Type u) [CommRing B] [Algebra Γ(S, W) B] :
     letI : Algebra Γ(S, W) Γ(X, U) := (f.appLE W U hUW).hom.toAlgebra
     IsSMulRegular (B ⊗[Γ(S, W)] Γ(X, U)) ((1 : B) ⊗ₜ[Γ(S, W)] a) := by
@@ -132,7 +132,7 @@ theorem IsRelativeEffectiveCartier.comap {I : X.IdealSheafData}
   replace hW : IsAffineOpen W := hW
   obtain ⟨U, hUW, hzU, a, ha, hUa⟩ :=
     hI.isEffectiveCartier.exists_eq_span_singleton_le (f ⁻¹ᵁ W) hzW
-  have hU : IsAffineOpen U.1 := U.2
+  have hU : IsAffineOpen U.val := U.property
   have hzW' : g (pullback.snd f g z) ∈ W := by
     rwa [← Scheme.Hom.comp_apply, ← pullback.condition, Scheme.Hom.comp_apply]
   obtain ⟨_, ⟨V, hV, rfl⟩, hzV, hVW⟩ :=

@@ -125,7 +125,7 @@ theorem exists_mem_spa_le_supp_iff_closure_ne_top (Aplus : Subring A)
     have hmapmem : ∀ a ∈ Aplus, Ideal.Quotient.mk J a ∈ Aplus.map (Ideal.Quotient.mk J) :=
       fun a ha ↦ (Subring.mem_map (f := Ideal.Quotient.mk J)).mpr ⟨a, ha, rfl⟩
     have hne : (spa (Aplus.map (Ideal.Quotient.mk J))).Nonempty := by
-      rw [Set.nonempty_iff_ne_empty]
+      rw [← Set.ne_empty_iff_nonempty]
       intro hempty
       refine hJ ((Ideal.eq_top_iff_one _).mpr ?_)
       rw [← SetLike.mem_coe, Ideal.coe_closure, ← Ideal.Quotient.mk_mem_closure_zero_iff, map_one]
@@ -136,7 +136,7 @@ theorem exists_mem_spa_le_supp_iff_closure_ne_top (Aplus : Subring A)
     set v := spaComap (Ideal.Quotient.mk J) continuous_quotient_mk' Aplus _ hmapmem ⟨w, hw⟩
     have hsupp : v ∈ Subtype.val ⁻¹' {u : Spv A | J ≤ u.supp} :=
       range_spaComap_quotientMk J Aplus ▸ Set.mem_range_self (⟨w, hw⟩ : spa _)
-    exact ⟨v.1, v.2, hsupp⟩
+    exact ⟨v.val, v.property, hsupp⟩
 
 /-- A maximal ideal of a Huber pair is the support of a point of `Spa (A, A⁺)` exactly when it is
 closed. -/
@@ -250,7 +250,7 @@ theorem faithfullyFlat_of_surjective_spaComap {f : Hom S T} (hflat : f.toRingHom
   refine (faithfullyFlat_iff_flat_and_forall_mem_spa_supp_mem_range_comap S.plus
     S.isRingOfIntegralElements _).mpr ⟨hflat, fun v hv ↦ ?_⟩
   obtain ⟨w, hw⟩ := hf ⟨v, hv⟩
-  exact ⟨suppFun w.1, by rw [← suppFun_comap, ← spaComap_val, hw]⟩
+  exact ⟨suppFun w.val, by rw [← suppFun_comap, ← spaComap_val, hw]⟩
 
 end TauCeti.Huber.Pair.Hom
 
