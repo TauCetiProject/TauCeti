@@ -69,39 +69,6 @@ acts on the factor indexed by `a` through `Q` applied to the comparison isomorph
 `G(U (a 0) × ⋯ × U (a n)) ≅ G (U (a 0)) × ⋯ × G (U (a n))` (`prodIso`); it commutes with the
 differentials by the naturality of the product comparison maps. -/
 
-/-- The degree `n` term of the Čech complex is, up to unfolding, the product of the values of `P`
-on the `(n + 1)`-fold products of members. -/
-private def cechXIso (U : ι → C) (P : Cᵒᵖ ⥤ A) (n : ℕ) :
-    ((cechComplexFunctor U).obj P).X n ≅
-      ∏ᶜ fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j))) :=
-  Iso.refl _
-
-/-- `cechXIso` is the identity. -/
-private lemma cechXIso_hom_π (U : ι → C) (P : Cᵒᵖ ⥤ A) (n : ℕ) (a : Fin (n + 1) → ι) :
-    (cechXIso U P n).hom ≫ Pi.π _ a = (Pi.π _ a : ((cechComplexFunctor U).obj P).X n ⟶ _) :=
-  Category.id_comp _
-
-/-- `cechComplexFunctor_obj_d_comp_π`, stated through `cechXIso`. -/
-@[reassoc]
-private lemma cechComplexFunctor_obj_d_comp_cechXIso_hom_π (U : ι → C) (P : Cᵒᵖ ⥤ A) (n : ℕ)
-    (k : Fin (n + 2) → ι) :
-    ((cechComplexFunctor U).obj P).d n (n + 1) ≫ (cechXIso U P (n + 1)).hom ≫ Pi.π _ k =
-      ∑ m : Fin (n + 2), (-1 : ℤ) ^ (m : ℕ) • ((cechXIso U P n).hom ≫ Pi.π _ (k ∘ m.succAbove) ≫
-        P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (m.succAbove x)).op) :=
-  -- `cechXIso` is the identity
-  (_ ≫= Category.id_comp _).trans <| (cechComplexFunctor_obj_d_comp_π U P n k).trans <|
-    Finset.sum_congr rfl fun _ _ ↦ congrArg _ (Category.id_comp _).symm
-
-/-- `cechComplexFunctor_map_f_π`, stated through `cechXIso`. -/
-@[reassoc]
-private lemma cechComplexFunctor_map_f_comp_cechXIso_hom_π (V : ι → C) {P P' : Cᵒᵖ ⥤ A}
-    (α : P ⟶ P') (n : ℕ) (a : Fin (n + 1) → ι) :
-    ((cechComplexFunctor V).map α).f n ≫ (cechXIso V P' n).hom ≫ Pi.π _ a =
-      (cechXIso V P n).hom ≫ Pi.π _ a ≫ α.app (op (∏ᶜ fun j ↦ V (a j))) :=
-  -- `cechXIso` is the identity
-  (_ ≫= Category.id_comp _).trans <|
-    (cechComplexFunctor_map_f_π V P α n a).trans (Category.id_comp _).symm
-
 variable {D : Type u''} [Category.{v''} D] [HasFiniteProducts D]
   (G : C ⥤ D) (U : ι → C) (Q : Dᵒᵖ ⥤ A)
   (hG : ∀ (n : ℕ) (a : Fin (n + 1) → ι),
@@ -160,14 +127,28 @@ def cechComplexCompIso :
     obtain rfl : n + 1 = _ := h
     exact compXIso_hom_comp_d G U Q hG n
 
+/-- In native product coordinates the comparison uses the images of the product projections. -/
+@[reassoc]
+theorem cechComplexCompIso_hom_f_comp_cechXIso_hom_π (n : ℕ)
+    (a : Fin (n + 1) → ι) :
+    (cechComplexCompIso G U Q hG).hom.f n ≫
+        (cechXIso U (G.op ⋙ Q) n).hom ≫ Pi.π _ a =
+      (cechXIso (fun i ↦ G.obj (U i)) Q n).hom ≫ Pi.π _ a ≫
+        Q.map (Pi.lift fun j ↦ G.map (Pi.π (fun j ↦ U (a j)) j)).op := by
+  simpa only [cechComplexCompIso, HomologicalComplex.Hom.isoOfComponents_hom_f,
+    prodIso, asIso_hom, piComparison] using compXIso_hom_π G U Q hG n a
+
 /-- The factor of `(cechComplexCompIso G U Q hG).hom.f n` indexed by `a` is `Q` applied to the
 canonical map `G(U (a 0) × ⋯ × U (a n)) ⟶ G (U (a 0)) × ⋯ × G (U (a n))`. -/
 @[reassoc]
 theorem cechComplexCompIso_hom_f_π (n : ℕ) (a : Fin (n + 1) → ι) :
     (cechComplexCompIso G U Q hG).hom.f n ≫ Pi.π _ a =
-      Pi.π _ a ≫ Q.map (Pi.lift fun j ↦ G.map (Pi.π (fun j ↦ U (a j)) j)).op :=
-  -- `cechXIso` is the identity
-  (_ ≫= (Category.id_comp _).symm).trans <| (compXIso_hom_π G U Q hG n a).trans (Category.id_comp _)
+      Pi.π _ a ≫ Q.map (Pi.lift fun j ↦ G.map (Pi.π (fun j ↦ U (a j)) j)).op := by
+  have hr := cechComplexCompIso_hom_f_comp_cechXIso_hom_π G U Q hG n a
+  simp only [cechXIso_hom_π, cechXIso_hom_π_assoc] at hr
+  -- The native rightOp Čech object and the explicit finite product have the same
+  -- underlying object; convert only this dependent codomain, without unfolding the iso.
+  convert hr using 1; rfl
 
 /-- The isomorphism of Čech complexes `cechComplexCompIso` is natural in the presheaf `Q`. -/
 @[reassoc]
@@ -232,16 +213,6 @@ section ThinHomotopy
 
 variable [Quiver.IsThin D]
 
-omit [Preadditive A] in
-/-- In the thin category `D`, the restrictions to the same object from two factors of a Čech term
-indexed by equal tuples agree. -/
-private lemma π_comp_map_eq_of_eq {κ : Type w} {W : κ → D} {m : ℕ} {b b' : Fin (m + 1) → κ}
-    (h : b = b') {X : D} (f : X ⟶ ∏ᶜ fun j ↦ W (b j)) (f' : X ⟶ ∏ᶜ fun j ↦ W (b' j)) :
-    Pi.π (fun c : Fin (m + 1) → κ ↦ Q.obj (op (∏ᶜ fun j ↦ W (c j)))) b ≫ Q.map f.op =
-      Pi.π (fun c : Fin (m + 1) → κ ↦ Q.obj (op (∏ᶜ fun j ↦ W (c j)))) b' ≫ Q.map f'.op := by
-  subst h
-  rw [Subsingleton.elim f f']
-
 omit [HasProducts A] in
 /-- An identity between composites with negated alternating sums, as in the prism formula
 (`cechComplexMapHomotopy_hom_π`), follows from the identities between the summands. -/
@@ -288,7 +259,7 @@ theorem cechComplexMapHomotopy_hom_comp_cechComplexCompIso_hom {κ : Type w} {V 
     (cechComplexCompIso_hom_f_π G V Q hV (j + 1) _ =≫ _)).symm
   refine Eq.trans ?_ (Category.assoc _ _ _).symm
   refine Eq.trans ?_ (_ ≫= (Q.map_comp _ _))
-  exact π_comp_map_eq_of_eq Q (funext fun l ↦ by split_ifs <;> rfl) _ _
+  exact cechProjection_comp_map_eq_of_tuple_eq Q (funext fun l ↦ by split_ifs <;> rfl) _ _
 
 end ThinHomotopy
 

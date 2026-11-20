@@ -20,6 +20,9 @@ invariance under common restrictions, and inverse comparisons allow one to compa
 inverse limits with different cutoff functions. In particular, enlarging a cutoff
 and precomposing the component map with the transition map leaves the map unchanged.
 
+The canonical colimit isomorphisms induced by an indexing equivalence also commute with
+natural transformations of the diagrams.
+
 Adapted from `Mei/CategoryTheory/Limits/Reindex.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
 `97304cc1bd51a202db1a705709fb4763f61e190a` (Apache 2.0).
@@ -173,3 +176,36 @@ theorem reindexLimitIso_inv
 end Inverse
 
 end CategoryTheory.NatTrans
+
+namespace CategoryTheory.Limits
+
+variable {A : Type*} [Category* A]
+
+/-- A commuting square of diagram maps remains commuting under the canonical colimit
+isomorphisms induced by an equivalence of indexing categories. -/
+@[reassoc]
+theorem HasColimit.colimMap_comp_isoOfEquivalence_hom
+    {J K : Type*} [Category* J] [Category* K] (e : J ≌ K)
+    {D₁ D₂ : J ⥤ A} {E₁ E₂ : K ⥤ A}
+    [HasColimit D₁] [HasColimit D₂] [HasColimit E₁] [HasColimit E₂]
+    (a : D₁ ⟶ D₂) (b : E₁ ⟶ E₂)
+    (i₁ : e.functor ⋙ E₁ ≅ D₁) (i₂ : e.functor ⋙ E₂ ≅ D₂)
+    (hc : ∀ j, a.app j ≫ i₂.inv.app j = i₁.inv.app j ≫ b.app (e.functor.obj j)) :
+    colimMap a ≫ (HasColimit.isoOfEquivalence e i₂).hom =
+      (HasColimit.isoOfEquivalence e i₁).hom ≫ colimMap b := by
+  apply colimit.hom_ext
+  intro j
+  calc
+    _ = a.app j ≫ colimit.ι D₂ j ≫ (HasColimit.isoOfEquivalence e i₂).hom := by
+      rw [← Category.assoc, ι_colimMap, Category.assoc]
+    _ = a.app j ≫ i₂.inv.app j ≫ colimit.ι E₂ (e.functor.obj j) := by
+      rw [HasColimit.ι_isoOfEquivalence_hom]
+    _ = i₁.inv.app j ≫ b.app (e.functor.obj j) ≫
+        colimit.ι E₂ (e.functor.obj j) := by rw [← Category.assoc, hc, Category.assoc]
+    _ = i₁.inv.app j ≫ colimit.ι E₁ (e.functor.obj j) ≫ colimMap b := by
+      rw [← ι_colimMap]
+    _ = _ := (Category.assoc _ _ _).symm.trans
+      (((HasColimit.ι_isoOfEquivalence_hom e i₁ j).symm =≫ _).trans
+        (Category.assoc _ _ _))
+
+end CategoryTheory.Limits

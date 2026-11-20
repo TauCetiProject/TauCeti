@@ -120,7 +120,7 @@ theorem cechCohomologyZeroIso_hom_naturality {G : Sheaf (Opens.grothendieckTopol
 
 section GlobalSections
 
-variable [HasSheafify (Opens.grothendieckTopology X) A]
+variable [HasWeakSheafify (Opens.grothendieckTopology X) A]
 
 /-- Global sections are degree-zero native Čech cohomology, in the original coefficient
 category and without a relation between the base and coefficient universes. -/

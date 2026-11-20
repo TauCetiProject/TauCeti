@@ -55,21 +55,27 @@ def sheafCongr (A : Type a) [Category.{b} A] :
     (Opens.grothendieckTopology X) (Opens.grothendieckTopology Y) A
 
 /-- The sheaf equivalence acts on sections by the existing inverse equivalence on opens. -/
-def sheafCongrForgetIso (A : Type a) [Category.{b} A] :
+def sheafCongrSheafToPresheafIso (A : Type a) [Category.{b} A] :
     (h.sheafCongr A).functor ⋙ sheafToPresheaf (Opens.grothendieckTopology Y) A ≅
       sheafToPresheaf (Opens.grothendieckTopology X) A ⋙
         (Functor.whiskeringLeft (Opens Y)ᵒᵖ (Opens X)ᵒᵖ A).obj
           h.opensCongr.symm.equivalence.functor.op :=
+  -- Mathlib sheafCongr is inverse precomposition on the identical presheaf;
+  -- sheafToPresheaf only forgets the sheaf-condition proof.
   Iso.refl _
 
 /-- Transporting sheaves through a homeomorphism preserves addition of morphisms. -/
 instance sheafCongr_additive (A : Type a) [Category.{b} A] [Preadditive A] :
     (h.sheafCongr A).functor.Additive where
-  map_add := by intros; ext U; rfl
+  map_add := by
+    intros
+    -- Precomposition evaluates the original natural transformation at the inverse open.
+    ext U
+    rfl
 
 variable (A : Type a) [Category.{b} A]
-  [HasSheafify (Opens.grothendieckTopology X) A]
-  [HasSheafify (Opens.grothendieckTopology Y) A]
+  [HasWeakSheafify (Opens.grothendieckTopology X) A]
+  [HasWeakSheafify (Opens.grothendieckTopology Y) A]
 
 private def sectionsHomeomorphIso :
     (sheafSections (Opens.grothendieckTopology X) A).obj (op ⊤) ≅
@@ -86,10 +92,24 @@ def globalSectionsIso :
       (h.sheafCongr A).functor ⋙ Sheaf.Γ (Opens.grothendieckTopology Y) A :=
   Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop ≪≫
     sectionsHomeomorphIso h A ≪≫
-    isoWhiskerRight (h.sheafCongrForgetIso A).symm ((evaluation _ A).obj (op ⊤)) ≪≫
+    isoWhiskerRight (h.sheafCongrSheafToPresheafIso A).symm ((evaluation _ A).obj (op ⊤)) ≪≫
     Functor.associator _ _ _ ≪≫
     isoWhiskerLeft (h.sheafCongr A).functor
       (Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop).symm
+
+/-- The global-section comparison is the native top-open map, conjugated by the section
+identifications on both spaces. -/
+@[reassoc]
+theorem globalSectionsIso_hom_app (F : Sheaf (Opens.grothendieckTopology X) A) :
+    (h.globalSectionsIso A).hom.app F =
+      (Sheaf.ΓNatIsoSheafSections (Opens.grothendieckTopology X) A isTerminalTop).hom.app F ≫
+        F.obj.map (eqToHom h.opensCongr.symm.map_top).op ≫
+        ((h.sheafCongrSheafToPresheafIso A).inv.app F).app (op ⊤) ≫
+        (Sheaf.ΓNatIsoSheafSections (Opens.grothendieckTopology Y) A isTerminalTop).inv.app
+          ((h.sheafCongr A).functor.obj F) := by
+  simp [globalSectionsIso, sectionsHomeomorphIso]
+  -- mapIso, opposite and symmetric isomorphisms have these native hom fields.
+  rfl
 
 /-- The homeomorphism comparison preserves the section over the whole space, with the native
 map of the top open and the underlying-presheaf comparison. -/
@@ -101,17 +121,11 @@ theorem globalSectionsIso_hom_app_comp_ΓNatIsoSheafSections_hom
           ((h.sheafCongr A).functor.obj F) =
       (Sheaf.ΓNatIsoSheafSections (Opens.grothendieckTopology X) A isTerminalTop).hom.app F ≫
         F.obj.map (eqToHom h.opensCongr.symm.map_top).op ≫
-        ((h.sheafCongrForgetIso A).inv.app F).app (op ⊤) := by
-  simp only [flip_obj_obj, ObjectProperty.ι_obj, comp_obj, globalSectionsIso, opensCongr_symm,
-    sectionsHomeomorphIso, op_obj, Iso.trans_hom, isoWhiskerRight_hom, isoWhiskerLeft_hom,
-    Iso.symm_hom, NatTrans.comp_app, whiskeringLeft_obj_obj, evaluation_obj_obj,
-    NatIso.ofComponents_hom_app, whiskerRight_app, evaluation_obj_map, associator_hom_app,
-    whiskerLeft_app, Category.id_comp, Category.assoc, Iso.inv_hom_id_app, Category.comp_id,
-    NatIso.cancel_natIso_hom_left]
-  exact congrArg₂ (fun f g ↦ f ≫ g)
-    ((Functor.mapIso_hom F.obj (eqToIso h.opensCongr.symm.map_top).op).trans
-      (congrArg F.obj.map ((Iso.op_hom (eqToIso h.opensCongr.symm.map_top)).trans
-        (congrArg Quiver.Hom.op (eqToIso.hom h.opensCongr.symm.map_top)))))
-    (congrArg (fun η ↦ (η.app F).app (op ⊤)) (Iso.symm_hom (h.sheafCongrForgetIso A)))
+        ((h.sheafCongrSheafToPresheafIso A).inv.app F).app (op ⊤) := by
+  apply (Iso.eq_comp_inv
+    ((Sheaf.ΓNatIsoSheafSections (Opens.grothendieckTopology Y) A isTerminalTop).app
+      ((h.sheafCongr A).functor.obj F))).mp
+  exact (globalSectionsIso_hom_app h A F).trans
+    ((_ ≫= (Category.assoc _ _ _).symm).trans (Category.assoc _ _ _).symm)
 
 end Homeomorph

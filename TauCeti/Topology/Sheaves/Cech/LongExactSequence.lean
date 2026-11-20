@@ -196,20 +196,20 @@ theorem cechCohomologyδ_naturality_of_presheaf (hS : S.ShortExact)
 
 /-- The native sheaf connecting map is preserved by transport through a homeomorphism. -/
 @[reassoc]
-theorem cechCohomologyδ_comp_homeomorphIso
+theorem cechCohomologyδ_comp_cechCohomologyHomeomorphIso
     {Y : TopCat.{u}} [CompactSpace Y] [NormalSpace Y]
     (h : X ≃ₜ Y) (hS : S.ShortExact) (n : ℕ) :
     hS.cechCohomologyδ n ≫
         (cechCohomologyHomeomorphIso (A := ModuleCat.{u} R) h (n + 1)).hom.app S.X₁.obj ≫
         (cechCohomology Y (ModuleCat.{u} R) (n + 1)).map
-          ((h.sheafCongrForgetIso (ModuleCat.{u} R)).inv.app S.X₁) =
+          ((h.sheafCongrSheafToPresheafIso (ModuleCat.{u} R)).inv.app S.X₁) =
       (cechCohomologyHomeomorphIso (A := ModuleCat.{u} R) h n).hom.app S.X₃.obj ≫
         (cechCohomology Y (ModuleCat.{u} R) n).map
-          ((h.sheafCongrForgetIso (ModuleCat.{u} R)).inv.app S.X₃) ≫
+          ((h.sheafCongrSheafToPresheafIso (ModuleCat.{u} R)).inv.app S.X₃) ≫
         (hS.map_of_exact (h.sheafCongr (ModuleCat.{u} R)).functor).cechCohomologyδ n := by
   let W := (Functor.whiskeringLeft (Opens Y)ᵒᵖ (Opens X)ᵒᵖ (ModuleCat.{u} R)).obj
     h.opensCongr.symm.equivalence.functor.op
-  let α := h.sheafCongrForgetIso (ModuleCat.{u} R)
+  let α := h.sheafCongrSheafToPresheafIso (ModuleCat.{u} R)
   let T := presheafCokernelSequence S
   let hT := presheafCokernelSequence_shortExact hS
   let S' := S.map (h.sheafCongr (ModuleCat.{u} R)).functor
@@ -224,7 +224,7 @@ theorem cechCohomologyδ_comp_homeomorphIso
           ((congrArg W.map (cokernel_π_cokernelToX₃ S)) =≫ α.inv.app S.X₃)).symm.trans
             (Category.assoc _ _ _)) }
   have ht := hS'.cechCohomologyδ_naturality_of_presheaf (hT.map_of_exact W) φ n
-  have hd := cechCohomologyHomeomorphIso_hom_app_δ h hT n
+  have hd := cechCohomologyδ_comp_cechCohomologyHomeomorphIso_hom_app h hT n
   have hc := (cechCohomologyHomeomorphIso (A := ModuleCat.{u} R) h n).hom.naturality
     (cokernelToX₃ S)
   dsimp only [Functor.comp_map] at hc
@@ -233,11 +233,12 @@ theorem cechCohomologyδ_comp_homeomorphIso
   rw [← Category.assoc, cechCohomology_map_cokernelToX₃_comp_δ]
   have hm := (cechCohomology Y (ModuleCat.{u} R) n).map_comp
     (W.map (cokernelToX₃ S)) (α.inv.app S.X₃)
-  exact (Category.assoc _ _ _).symm.trans ((hd =≫ _).trans
-    ((Category.assoc _ _ _).trans ((_ ≫= ht).trans
-      ((_ ≫= (hm =≫ _)).trans ((_ ≫= Category.assoc _ _ _).trans
-        ((Category.assoc _ _ _).symm.trans
-          ((hc.symm =≫ _).trans (Category.assoc _ _ _))))))))
+  calc
+    _ = _ := (Category.assoc _ _ _).symm.trans (hd =≫ _)
+    _ = _ := (Category.assoc _ _ _).trans (_ ≫= ht)
+    _ = _ := _ ≫= (hm =≫ _)
+    _ = _ := (_ ≫= Category.assoc _ _ _).trans
+      ((Category.assoc _ _ _).symm.trans ((hc.symm =≫ _).trans (Category.assoc _ _ _)))
 
 /-- **Naturality of the connecting map** in morphisms of short exact sequences of sheaves. -/
 @[reassoc]

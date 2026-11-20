@@ -25,72 +25,42 @@ namespace TauCeti.CategoryTheory
 variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
   {A : Type u'} [Category.{v'} A] [Preadditive A]
 
-section Term
-
-universe z
-variable {τ : Type z} [HasProducts.{z} A] (P : Cᵒᵖ ⥤ A)
-
-/-- The actual Čech term, expressed as the product of its tuple readings. -/
-private def cechTermIso (V : τ → C) (n : ℕ) :
-    ((cechComplexFunctor V).obj P).X n ≅
-      ∏ᶜ fun a : Fin (n + 1) → τ ↦ P.obj (op (∏ᶜ fun j ↦ V (a j))) :=
-  Iso.refl _
-
-@[reassoc]
-private lemma cech_d_comp_term_π (V : τ → C)
-    (n : ℕ) (a : Fin (n + 2) → τ) :
-    ((cechComplexFunctor V).obj P).d n (n + 1) ≫
-        (cechTermIso P V (n + 1)).hom ≫ Pi.π _ a =
-      ∑ m : Fin (n + 2), (-1 : ℤ) ^ (m : ℕ) •
-        ((cechTermIso P V n).hom ≫ Pi.π _ (a ∘ m.succAbove) ≫
-          P.map (Pi.lift fun j ↦ Pi.π (fun l ↦ V (a l)) (m.succAbove j)).op) :=
-  (_ ≫= Category.id_comp _).trans <| (cechComplexFunctor_obj_d_comp_π V P n a).trans <|
-    Finset.sum_congr rfl fun _ _ ↦ congrArg _ (Category.id_comp _).symm
-
-@[reassoc]
-private lemma cech_map_f_comp_term_π (V : τ → C) {Q : Cᵒᵖ ⥤ A}
-    (φ : P ⟶ Q) (n : ℕ) (a : Fin (n + 1) → τ) :
-    ((cechComplexFunctor V).map φ).f n ≫ (cechTermIso Q V n).hom ≫ Pi.π _ a =
-      (cechTermIso P V n).hom ≫ Pi.π _ a ≫ φ.app (op (∏ᶜ fun j ↦ V (a j))) :=
-  (_ ≫= Category.id_comp _).trans <| (cechComplexFunctor_map_f_π V P φ n a).trans <|
-    (Category.id_comp _).symm
-
-end Term
-
 variable [HasProducts.{w₁} A] [HasProducts.{w₂} A]
   {ι : Type w₁} {κ : Type w₂} (e : ι ≃ κ) (U : κ → C) (P : Cᵒᵖ ⥤ A)
 
 /-- Reindex the product of sections indexed by tuples of members of a family. -/
 private def cechReindexXIso (n : ℕ) :
     ((cechComplexFunctor (U ∘ e)).obj P).X n ≅ ((cechComplexFunctor U).obj P).X n :=
-  cechTermIso P (U ∘ e) n ≪≫
+  cechXIso (U ∘ e) P n ≪≫
     Pi.reindex (Equiv.piCongrRight fun _ : Fin (n + 1) ↦ e)
     (fun a : Fin (n + 1) → κ ↦ P.obj (op (∏ᶜ fun j ↦ U (a j))))
-    ≪≫ (cechTermIso P U n).symm
+    ≪≫ (cechXIso U P n).symm
 
 @[reassoc]
 private lemma cechReindexXIso_hom_π (n : ℕ) (a : Fin (n + 1) → ι) :
-    (cechReindexXIso e U P n).hom ≫ (cechTermIso P U n).hom ≫ Pi.π _ (e ∘ a) =
-      (cechTermIso P (U ∘ e) n).hom ≫ Pi.π _ a := by
-  change ((cechTermIso P (U ∘ e) n).hom ≫
+    (cechReindexXIso e U P n).hom ≫ (cechXIso U P n).hom ≫ Pi.π _ (e ∘ a) =
+      (cechXIso (U ∘ e) P n).hom ≫ Pi.π _ a := by
+  -- Normalize the three defining iso components before applying the public product API.
+  change ((cechXIso (U ∘ e) P n).hom ≫
       (Pi.reindex (Equiv.piCongrRight fun _ : Fin (n + 1) ↦ e)
         (fun b : Fin (n + 1) → κ ↦ P.obj (op (∏ᶜ fun j ↦ U (b j))))).hom ≫
-      (cechTermIso P U n).inv) ≫ (cechTermIso P U n).hom ≫ Pi.π _ (e ∘ a) = _
+      (cechXIso U P n).inv) ≫ (cechXIso U P n).hom ≫ Pi.π _ (e ∘ a) = _
   refine (Category.assoc _ _ _).trans ?_
-  refine congrArg ((cechTermIso P (U ∘ e) n).hom ≫ ·) ?_
+  refine congrArg ((cechXIso (U ∘ e) P n).hom ≫ ·) ?_
   refine (Category.assoc _ _ _).trans ?_
-  exact ((Pi.reindex _ _).hom ≫= (cechTermIso P U n).inv_hom_id_assoc _).trans
+  exact ((Pi.reindex _ _).hom ≫= (cechXIso U P n).inv_hom_id_assoc _).trans
     (Pi.reindex_hom_π _ _ a)
 
 private lemma cechReindexXIso_hom_comp_d (n : ℕ) :
     (cechReindexXIso e U P n).hom ≫ ((cechComplexFunctor U).obj P).d n (n + 1) =
       ((cechComplexFunctor (U ∘ e)).obj P).d n (n + 1) ≫
         (cechReindexXIso e U P (n + 1)).hom := by
-  apply (cancel_mono (cechTermIso P U (n + 1)).hom).mp
+  apply (cancel_mono (cechXIso U P (n + 1)).hom).mp
   refine Pi.hom_ext _ _ fun b ↦ ?_
   obtain ⟨a, rfl⟩ := (Equiv.piCongrRight fun _ : Fin (n + 2) ↦ e).surjective b
+  -- FormalCoproduct.cech/rightOp hides this dependent tuple index at implicit transparency.
   change _ ≫ Pi.π _ (e ∘ a) = _ ≫ Pi.π _ (e ∘ a)
-  simp only [Category.assoc, cech_d_comp_term_π, Preadditive.comp_sum,
+  simp only [Category.assoc, cechComplexFunctor_obj_d_comp_cechXIso_hom_π, Preadditive.comp_sum,
     Preadditive.comp_zsmul, cechReindexXIso_hom_π]
   refine Finset.sum_congr rfl fun m _ ↦ congrArg ((-1 : ℤ) ^ (m : ℕ) • ·) ?_
   exact cechReindexXIso_hom_π_assoc e U P n (a ∘ m.succAbove) _
@@ -110,10 +80,10 @@ private theorem cechReindexObjIso_hom_f_π (n : ℕ) (a : Fin (n + 1) → ι) :
     (cechReindexObjIso e U P).hom.f n ≫ Pi.π _ (e ∘ a) = Pi.π _ a :=
   by
     dsimp only [cechReindexObjIso, HomologicalComplex.Hom.isoOfComponents_hom_f]
-    have h := cechReindexXIso_hom_π e U P n a
-    dsimp only [cechTermIso, Iso.refl_hom] at h
-    exact ((cechReindexXIso e U P n).hom ≫= Category.id_comp _).symm.trans <|
-      h.trans (Category.id_comp _)
+    have hr := cechReindexXIso_hom_π e U P n a
+    simp only [cechXIso_hom_π] at hr
+    -- The explicit tuple product and the native rightOp term have this same codomain.
+    convert hr using 1; rfl
 
 private lemma cechReindexObjIso_hom_naturality {Q : Cᵒᵖ ⥤ A} (φ : P ⟶ Q) :
     (cechComplexFunctor (U ∘ e)).map φ ≫ (cechReindexObjIso e U Q).hom =
@@ -121,12 +91,13 @@ private lemma cechReindexObjIso_hom_naturality {Q : Cᵒᵖ ⥤ A} (φ : P ⟶ Q
   ext n : 2
   simp only [HomologicalComplex.comp_f]
   dsimp only [cechReindexObjIso, HomologicalComplex.Hom.isoOfComponents_hom_f]
-  apply (cancel_mono (cechTermIso Q U n).hom).mp
+  apply (cancel_mono (cechXIso U Q n).hom).mp
   refine Pi.hom_ext _ _ fun b ↦ ?_
   obtain ⟨a, rfl⟩ := (Equiv.piCongrRight fun _ : Fin (n + 1) ↦ e).surjective b
+  -- Normalize the dependent native Čech tuple index before rewriting product readings.
   change _ ≫ Pi.π (fun b : Fin (n + 1) → κ ↦ Q.obj (op (∏ᶜ fun j ↦ U (b j))))
     (e ∘ a) = _
-  simp only [Category.assoc, cechReindexXIso_hom_π, cech_map_f_comp_term_π]
+  simp only [Category.assoc, cechReindexXIso_hom_π, cechComplexFunctor_map_f_comp_cechXIso_hom_π]
   exact (cechReindexXIso_hom_π_assoc e U P n a _).symm
 
 /-- Reindexing a family identifies its Čech complex functor, naturally in the presheaf. -/
@@ -149,6 +120,18 @@ theorem cechComplexReindexIso_inv_app_f_π (n : ℕ) (a : Fin (n + 1) → ι) :
     ((cechComplexReindexIso e U).app P)
   have h := j.inv ≫= cechComplexReindexIso_hom_app_f_π e U P n a
   exact h.symm.trans (j.inv_hom_id_assoc _)
+
+/-- The inverse reindexing preserves each reading in canonical product coordinates. -/
+@[reassoc]
+theorem cechComplexReindexIso_inv_app_f_comp_cechXIso_hom_π
+    (n : ℕ) (a : Fin (n + 1) → ι) :
+    ((cechComplexReindexIso e U).inv.app P).f n ≫
+        (cechXIso (U ∘ e) P n).hom ≫ Pi.π _ a =
+      (cechXIso U P n).hom ≫ Pi.π _ (e ∘ a) := by
+  have hr := cechComplexReindexIso_inv_app_f_π e U P n a
+  simp only [cechXIso_hom_π]
+  -- Only the dependent codomain changes from the native term to its explicit product.
+  convert hr using 1; rfl
 
 /-- Reindexing preserves the native augmentation from sections on a terminal object. -/
 @[reassoc]
@@ -189,11 +172,12 @@ theorem cechComplexReindexIso_trans (f : ι ≃ κ) (g : κ ≃ τ) (V : τ → 
   simp only [cechComplexReindexIso, NatIso.ofComponents_hom_app, Iso.trans_hom,
     NatTrans.comp_app, HomologicalComplex.comp_f, cechReindexObjIso,
     HomologicalComplex.Hom.isoOfComponents_hom_f]
-  apply (cancel_mono (cechTermIso Q V n).hom).mp
+  apply (cancel_mono (cechXIso V Q n).hom).mp
   refine Pi.hom_ext _ _ fun b ↦ ?_
   obtain ⟨a, rfl⟩ := (Equiv.piCongrRight fun _ : Fin (n + 1) ↦ f.trans g).surjective b
   simp only [Category.assoc]
-  change _ ≫ (cechTermIso Q V n).hom ≫ Pi.π _ (g ∘ f ∘ a) = _
+  -- The composite equivalence and tuple composition have the same dependent native index.
+  change _ ≫ (cechXIso V Q n).hom ≫ Pi.π _ (g ∘ f ∘ a) = _
   have hleft := cechReindexXIso_hom_π (f.trans g) V Q n a
   have hright := ((cechReindexXIso f (V ∘ g) Q n).hom ≫=
     cechReindexXIso_hom_π g V Q n (f ∘ a)).trans

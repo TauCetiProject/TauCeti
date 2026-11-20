@@ -89,7 +89,7 @@ abbrev liftedSheaf :
 def sectionIso : pointSheaf.{max u v}.obj.obj (op ⊤) ≅ liftedSheaf.{u,v}.obj.obj (op ⊤) :=
   pointSheaf.{max u v}.obj.mapIso (eqToIso liftHomeomorph.{u}.opensCongr.symm.map_top).op ≪≫
     ((evaluation _ (ModuleCat.{max (u + 1) (v + 1)} ℂ)).obj (op ⊤)).mapIso
-      ((liftHomeomorph.{u}.sheafCongrForgetIso
+      ((liftHomeomorph.{u}.sheafCongrSheafToPresheafIso
         (ModuleCat.{max (u + 1) (v + 1)} ℂ)).symm.app pointSheaf.{max u v})
 
 /-- The native section on the lifted sphere. -/
@@ -107,7 +107,7 @@ def liftedClass := by
     ModuleCat.hasLimitsOfSize.{u + 1,u + 1,max (u + 1) (v + 1),0}
   exact (cechCohomology (TopCat.of (ULift.{u + 1} (OnePoint ℂ)))
     (ModuleCat.{max (u + 1) (v + 1)} ℂ) 0).map
-      ((liftHomeomorph.{u}.sheafCongrForgetIso
+      ((liftHomeomorph.{u}.sheafCongrSheafToPresheafIso
         (ModuleCat.{max (u + 1) (v + 1)} ℂ)).inv.app pointSheaf.{max u v})
     ((cechCohomologyHomeomorphIso
       (X := TopCat.of (OnePoint ℂ)) (Y := TopCat.of (ULift.{u + 1} (OnePoint ℂ)))
@@ -126,7 +126,7 @@ theorem liftedClass_eq : liftedClass.{u,v} = liftedSectionClass.{u,v} := by
   let : HasLimitsOfSize.{u + 1,u + 1} (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
     ModuleCat.hasLimitsOfSize.{u + 1,u + 1,max (u + 1) (v + 1),0}
   exact congrArg (fun f ↦ f.hom oneSection.{max u v})
-    (Topology.cechCohomologyZeroIso_hom_comp_homeomorphIso
+    (Topology.cechCohomologyZeroIso_hom_comp_cechCohomologyHomeomorphIso
       (X := TopCat.of (OnePoint ℂ)) (Y := TopCat.of (ULift.{u + 1} (OnePoint ℂ)))
       (A := ModuleCat.{max (u + 1) (v + 1)} ℂ) liftHomeomorph.{u} pointSheaf.{max u v})
 
@@ -173,7 +173,7 @@ theorem gammaTransportClass_eq : gammaTransportClass.{u,v} = liftedClass.{u,v} :
   let : HasSheafify (Opens.grothendieckTopology
       (TopCat.of (ULift.{u + 1} (OnePoint ℂ)))) (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
     TauCeti.hasSheafify_moduleCat.{0,u + 1,v + 1} ℂ _
-  have h := sectionsIsoCechZero_hom_comp_homeomorphIso
+  have h := sectionsIsoCechZero_hom_comp_cechCohomologyHomeomorphIso
     (X := TopCat.of (OnePoint ℂ)) (Y := TopCat.of (ULift.{u + 1} (OnePoint ℂ)))
     (A := ModuleCat.{max (u + 1) (v + 1)} ℂ) liftHomeomorph.{u} pointSheaf.{max u v}
   simpa only [gammaTransportClass, liftedClass, globalOne, oneClass,
@@ -303,7 +303,6 @@ theorem twiceSheafMap_oneSection_read :
       congrArg (fun f ↦ f.hom oneSection.{v}) twiceSheafMap_pointRead.{v}
     _ = ULift.up 2 := by
       rw [oneSection_read]
-      change (((2 : ℕ) • 𝟙 coefficient.{v}).hom (ULift.up 1)) = ULift.up 2
       simp only [two_nsmul, ModuleCat.hom_add, LinearMap.add_apply, ModuleCat.hom_id]
       exact congrArg ULift.up (one_add_one_eq_two : (1 : ℂ) + 1 = 2)
 
@@ -404,7 +403,8 @@ theorem disconnectedSection_right_zero :
     disconnectedSheaf.obj.map (homOfLE (show rightOpen ≤ ⊤ from le_top)).op
       disconnectedSection = 0 := by
   have ht : IsTerminal (disconnectedSheaf.obj.obj (op rightOpen)) := by
-    exact (ite_eq_right (by simp [rightOpen])).symm.ndrec terminalIsTerminal
+    rw [skyscraperSheaf_obj_obj, ite_eq_right (by simp [rightOpen])]
+    exact terminalIsTerminal
   have := ModuleCat.subsingleton_of_isZero ht.isZero
   exact Subsingleton.elim _ _
 
@@ -438,7 +438,7 @@ def swappedCechIso :
     (Y := TopCat.of disconnectedBase) (A := ModuleCat.{0} ℂ)
     (Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ)) 0).app disconnectedSheaf.obj ≪≫
       (cechCohomology (TopCat.of disconnectedBase) (ModuleCat.{0} ℂ) 0).mapIso
-        (((Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ)).sheafCongrForgetIso
+        (((Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ)).sheafCongrSheafToPresheafIso
           (ModuleCat.{0} ℂ)).symm.app disconnectedSheaf)
 
 /-- The actual swapped cohomology class remains nonzero. -/
@@ -450,7 +450,7 @@ theorem swappedClass_ne_zero : swappedCechIso.hom disconnectedClass ≠ 0 := by
 /-- The target sheaf has the original complex coefficient object on the right component. -/
 def swappedRightIso : swappedSheaf.obj.obj (op rightOpen) ≅ ModuleCat.of ℂ ℂ :=
   ((evaluation _ (ModuleCat.{0} ℂ)).obj (op rightOpen)).mapIso
-      (((Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ)).sheafCongrForgetIso
+      (((Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ)).sheafCongrSheafToPresheafIso
         (ModuleCat.{0} ℂ)).app disconnectedSheaf) ≪≫
     eqToIso ((skyscraperSheaf_obj_obj _ _ _).trans
       (ite_eq_left (by simp [rightOpen, Homeomorph.opensCongr])))
@@ -489,7 +489,7 @@ private theorem source_swapped_right_read :
 
 /-- The actual global section transported by the native underlying-presheaf comparison. -/
 def swappedSection : swappedSheaf.obj.obj (op ⊤) :=
-  (((Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ)).sheafCongrForgetIso
+  (((Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ)).sheafCongrSheafToPresheafIso
     (ModuleCat.{0} ℂ)).inv.app disconnectedSheaf).app (op ⊤)
       (disconnectedSheaf.obj.map
         (eqToHom (Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ)).opensCongr.symm.map_top).op
@@ -501,7 +501,7 @@ theorem swappedSection_right_read :
       (swappedSheaf.obj.map (homOfLE (show rightOpen ≤ ⊤ from le_top)).op swappedSection) =
         1 := by
   let h := Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ)
-  let ψ := (h.sheafCongrForgetIso (ModuleCat.{0} ℂ)).symm.app disconnectedSheaf
+  let ψ := (h.sheafCongrSheafToPresheafIso (ModuleCat.{0} ℂ)).symm.app disconnectedSheaf
   let i := (homOfLE (show rightOpen ≤ ⊤ from le_top)).op
   let q : op (⊤ : Opens disconnectedBase) ⟶
       h.opensCongr.symm.equivalence.functor.op.obj (op ⊤) :=
@@ -536,7 +536,8 @@ def disconnectedSplit :
   ShortComplex.mk (biprod.inl : disconnectedSheaf ⟶ disconnectedSheaf ⊞ disconnectedSheaf)
     biprod.snd (by simp)
 
-/-- Native biproduct splitting proves actual short exactness. -/
+/-- The sequence `0 → F → F ⊞ F → F → 0`, with first inclusion and second projection,
+is short exact. -/
 theorem disconnectedSplit_shortExact : disconnectedSplit.ShortExact :=
   (ShortComplex.Splitting.ofHasBinaryBiproduct disconnectedSheaf disconnectedSheaf).shortExact
 
@@ -560,18 +561,18 @@ theorem disconnectedSplit_delta_transport (n : ℕ) :
           (Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ)) (n + 1)).hom.app
             disconnectedSplit.X₁.obj ≫
         (cechCohomology (TopCat.of disconnectedBase) (ModuleCat.{0} ℂ) (n + 1)).map
-          (((Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ)).sheafCongrForgetIso
+          (((Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ)).sheafCongrSheafToPresheafIso
             (ModuleCat.{0} ℂ)).inv.app disconnectedSplit.X₁) =
       (cechCohomologyHomeomorphIso (X := TopCat.of disconnectedBase)
         (Y := TopCat.of disconnectedBase) (A := ModuleCat.{0} ℂ)
         (Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ)) n).hom.app disconnectedSplit.X₃.obj ≫
         (cechCohomology (TopCat.of disconnectedBase) (ModuleCat.{0} ℂ) n).map
-          (((Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ)).sheafCongrForgetIso
+          (((Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ)).sheafCongrSheafToPresheafIso
             (ModuleCat.{0} ℂ)).inv.app disconnectedSplit.X₃) ≫
           (disconnectedSplit_shortExact.map_of_exact
             ((Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ)).sheafCongr
               (ModuleCat.{0} ℂ)).functor).cechCohomologyδ n :=
-  disconnectedSplit_shortExact.cechCohomologyδ_comp_homeomorphIso
+  disconnectedSplit_shortExact.cechCohomologyδ_comp_cechCohomologyHomeomorphIso
     (X := TopCat.of disconnectedBase) (Y := TopCat.of disconnectedBase)
     (Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ)) n
 
@@ -604,7 +605,7 @@ theorem disconnectedCover_delta_transport (n : ℕ) :
         (cechComplexHomeomorphIso_shortExact (X := TopCat.of disconnectedBase)
           (Y := TopCat.of disconnectedBase) (Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ))
           default disconnectedCover_shortExact).δ n (n + 1) rfl :=
-  cechComplexHomeomorphIso_hom_app_δ (X := TopCat.of disconnectedBase)
+  δ_comp_homologyMap_cechComplexHomeomorphIso_hom_app (X := TopCat.of disconnectedBase)
     (Y := TopCat.of disconnectedBase) (Homeomorph.sumComm (OnePoint ℂ) (OnePoint ℂ))
     default disconnectedCover_shortExact n
 
