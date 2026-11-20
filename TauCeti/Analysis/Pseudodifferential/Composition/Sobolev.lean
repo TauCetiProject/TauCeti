@@ -25,7 +25,7 @@ Combined with the locality of the composition symbol
 the positions where the symbol `c` does not vanish, up to a smoothing operator: if `c` has compact
 spatial support and vanishes outside `K`, and `χ` is a compactly supported Schwartz function equal
 to `1` on a neighbourhood of `K`, then `Op(c) v = Op(c) (χ v) + Op(e) v` for a smoothing symbol `e`
-(`TauCeti.Symbol.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_quantizeSobolev_smulLeftCLM_add`),
+(`TauCeti.Symbol.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_quantizeSobolev_smulLeftCLM_add`)
 and hence `‖Op(c) v‖_{H^{t - m}} ≤ C (‖χ v‖_{H^t} + ‖v‖_{H^r})` for every `r ≤ t`
 (`TauCeti.Symbol.exists_norm_quantizeSobolev_le_smulLeftCLM`). Estimates of this form localize the
 lower order terms in elliptic estimates. In the same situation `Op(c) v - Op(c) (χ v)` lies in every
