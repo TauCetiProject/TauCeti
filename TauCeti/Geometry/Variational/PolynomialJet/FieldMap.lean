@@ -49,6 +49,8 @@ jets it fixes are exactly the complexifications of real polynomial jets
 
 * I. M. Anderson, *The Variational Bicomplex* (1989), Chapter 1, §A, for jet coordinates and
   total derivatives.
+* R. E. Borcherds, *Quantum Field Theory*, lecture notes (2001), p.35, the source model for real
+  fields versus conjugate-paired fields (a complex field together with its conjugate field).
 -/
 
 public section
@@ -132,8 +134,9 @@ theorem fieldMap_fieldJet (f : (α →₀ R) →ₛₗ[σ] (β →₀ S)) (I : �
   | zero => simp
   | add v w hv hw => simp [hv, hw]
   | single a r =>
-    rw [fieldJet_single, map_mul, fieldMap_C, fieldMap_X_field, ← Finsupp.smul_single_one a r,
-      map_smulₛₗ, map_smul, smul_eq_C_mul]
+    -- Pull the scalar `r` out of both sides; the unit generator case is then `simp`.
+    rw [← Finsupp.smul_single_one a r, map_smul, fieldMap_smul, map_smulₛₗ]
+    simp
 
 /-- The extensions commute with every total derivative. -/
 theorem totalDeriv_fieldMap (f : (α →₀ R) →ₛₗ[σ] (β →₀ S)) (i : ι) (p : PolynomialJet R ι α) :
@@ -185,6 +188,7 @@ theorem fieldMap_comp [RingHomCompTriple σ τ ρ] (g : (β →₀ S) →ₛₗ[
   · rintro (j | ⟨a, I⟩) <;> simp
 
 /-- The extension of a composite is the composite of the extensions, applied to an element. -/
+@[simp]
 theorem fieldMap_fieldMap [RingHomCompTriple σ τ ρ] (g : (β →₀ S) →ₛₗ[τ] (γ →₀ T))
     (f : (α →₀ R) →ₛₗ[σ] (β →₀ S)) (p : PolynomialJet R ι α) :
     fieldMap g (fieldMap f p) = fieldMap (g.comp f) p := by
@@ -224,12 +228,11 @@ variable {A B : Type*} [CommSemiring A] [Algebra R A] [CommSemiring B] [Algebra 
 
 omit [CommSemiring S] in
 @[simp]
-theorem aeval_fieldJet (x : ι → A) (u : α → (ι →₀ ℕ) → A) (I : ι →₀ ℕ) (v : α →₀ R) :
-    aeval (Sum.elim x fun aI ↦ u aI.1 aI.2) (fieldJet I v) =
-      Finsupp.linearCombination R (fun a ↦ u a I) v := by
+theorem aeval_fieldJet (w : ι ⊕ α × (ι →₀ ℕ) → A) (I : ι →₀ ℕ) (v : α →₀ R) :
+    aeval w (fieldJet I v) = Finsupp.linearCombination R (fun a ↦ w (Sum.inr (a, I))) v := by
   induction v using Finsupp.induction_linear with
   | zero => simp
-  | add v w hv hw => simp [hv, hw]
+  | add v₁ v₂ h₁ h₂ => simp [h₁, h₂]
   | single a r => simp [Algebra.smul_def]
 
 /-- Evaluating the image of an expression under the extension of `f` on a field configuration

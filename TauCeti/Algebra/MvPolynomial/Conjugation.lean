@@ -16,8 +16,7 @@ Complex polynomials are the complexification of real polynomials:
 the conjugation `TauCeti.tmulConj` of the complexification is the coefficientwise conjugation
 `MvPolynomial.map (starRingEnd ℂ)` (`MvPolynomial.algebraTensorAlgEquiv_tmulConj`). Consequently
 a complex polynomial is fixed by coefficientwise conjugation exactly when it has real
-coefficients (`MvPolynomial.map_starRingEnd_eq_self_iff`), and real descent
-(`TauCeti.realPointsEquiv`) for coefficientwise conjugation recovers the real polynomials.
+coefficients (`MvPolynomial.map_starRingEnd_eq_self_iff`).
 -/
 
 public section
