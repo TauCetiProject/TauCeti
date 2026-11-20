@@ -29,8 +29,7 @@ namespace TauCeti.Examples.ResidueFieldCompletion
 
 variable (p : ℕ) [Fact p.Prime]
 
-/-- The rank-two point above the boundary gives a Tate residue field with its original
-valuation. -/
+/-- The completed residue field at the rank-two point above the boundary is a Tate ring. -/
 example :
     IsTateRing (residueFieldValuation (gaussPointAboveOne ℚ_[p])).Completion :=
   (isAnalyticPoint_of_isTateRing _).isTateRing_residueFieldCompletion
