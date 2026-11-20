@@ -133,8 +133,8 @@ theorem card_torsion_cohomology_two_eq_card_quotient_span_det
   let e := extOneHomologySuccEquiv φ 0 (ModuleCat.of k k)
   have htors : Module.IsTorsion k (Ext.{w} ((((singularChainComplexFunctor (ModuleCat.{w} k)).obj
       (ModuleCat.of k k)).obj (TopCat.of (MappingTorus φ))).homology 1) (ModuleCat.of k k) 1) :=
-    (LinearMap.isTorsion_ext_one_quotient_range hdet).of_injective (f := e.toLinearMap)
-      e.injective
+    (LinearMap.isTorsion_ext_quotient_range (mem_nonZeroDivisors_of_ne_zero hdet)).of_injective
+      (f := e.toLinearMap) e.injective
   exact ((TopCat.card_torsion_singularCohomology_eq_card_ext (n := 1) htors).trans
     (Nat.card_congr e.toEquiv)).trans
     (LinearMap.card_ext_one_quotient_range_eq_card_quotient_span_det hdet)

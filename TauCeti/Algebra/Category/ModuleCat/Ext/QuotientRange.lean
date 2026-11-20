@@ -34,7 +34,7 @@ For an endomorphism `f` of a finite free module over a principal ideal domain wi
 `LinearMap.card_ext_one_quotient_range_eq_card_quotient_range`). It is a torsion module, killed by
 `det f`, which by Cramer's rule kills the cokernel `P ⧸ range f` and hence every
 `Extⁿ(P ⧸ range f, M)` (`LinearMap.det_smul_ext_quotient_range_eq_zero`,
-`LinearMap.isTorsion_ext_one_quotient_range`). Over `ℤ` the order of the finite group
+`LinearMap.isTorsion_ext_quotient_range`). Over `ℤ` the order of the finite group
 `Ext¹(P ⧸ range f, ℤ)` is `|det f|`. Through the universal coefficient theorem, this computes the
 torsion of a cohomology group from a presentation of the torsion of the homology one degree below.
 
@@ -49,8 +49,8 @@ torsion of a cohomology group from a presentation of the torsion of the homology
   the same `Nat.card` as `R ⧸ (det f)`.
 * `LinearMap.det_smul_ext_quotient_range_eq_zero`: for an endomorphism `f` of a finite free
   module, `det f` kills `Extⁿ(P ⧸ range f, M)`.
-* `LinearMap.isTorsion_ext_one_quotient_range`: over a domain with `det f ≠ 0`,
-  `Ext¹(P ⧸ range f, R)` is a torsion module.
+* `LinearMap.isTorsion_ext_quotient_range`: when `det f` is a non-zero-divisor,
+  `Extⁿ(P ⧸ range f, M)` is a torsion module.
 
 ## References
 
@@ -141,7 +141,8 @@ theorem card_ext_one_quotient_range_eq_card_quotient_span_det [IsPrincipalIdealR
     (hf : f.det ≠ 0) :
     Nat.card (Ext.{w} (ModuleCat.of R (P ⧸ range f)) (ModuleCat.of R R) 1) =
       Nat.card (R ⧸ Ideal.span {f.det}) := by
-  rw [Nat.card_congr (extOneQuotientRangeEquiv (injective_of_det_ne_zero hf)).toEquiv,
+  rw [Nat.card_congr (extOneQuotientRangeEquiv
+      (injective_of_det_mem_nonZeroDivisors (mem_nonZeroDivisors_of_ne_zero hf))).toEquiv,
     card_quotient_range_eq_card_quotient_span_det (by rwa [det_dualMap]), det_dualMap]
 
 /-- For an endomorphism `f` of a finite free module over a principal ideal domain with
@@ -163,13 +164,13 @@ theorem det_smul_ext_quotient_range_eq_zero {M : ModuleCat.{w} R} {n : ℕ}
     rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero]
     exact det_smul_mem_range f y) x
 
-/-- For an endomorphism `f` of a finite free module over a domain with `det f ≠ 0`,
-`Ext¹(P ⧸ range f, R)` is a torsion module: it is killed by `det f`
+omit [IsDomain R] in
+/-- For an endomorphism `f` of a finite free module whose determinant is a non-zero-divisor,
+`Extⁿ(P ⧸ range f, M)` is a torsion module for every module `M`: it is killed by `det f`
 (`LinearMap.det_smul_ext_quotient_range_eq_zero`). -/
-theorem isTorsion_ext_one_quotient_range (hf : f.det ≠ 0) :
-    Module.IsTorsion R (Ext.{w} (ModuleCat.of R (P ⧸ range f)) (ModuleCat.of R R) 1) :=
-  fun x ↦ ⟨⟨f.det, mem_nonZeroDivisors_of_ne_zero hf⟩,
-    det_smul_ext_quotient_range_eq_zero x⟩
+theorem isTorsion_ext_quotient_range (hf : f.det ∈ nonZeroDivisors R) {M : ModuleCat.{w} R}
+    {n : ℕ} : Module.IsTorsion R (Ext.{w} (ModuleCat.of R (P ⧸ range f)) M n) :=
+  fun x ↦ ⟨⟨f.det, hf⟩, det_smul_ext_quotient_range_eq_zero x⟩
 
 end LinearMap
 
