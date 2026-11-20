@@ -18,6 +18,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.Topology.Algebra.Module.Star
+public import TauCeti.LinearAlgebra.Matrix.Hermitian
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 
@@ -36,10 +37,9 @@ differentiability of the induced continuous-linear-map family `x ↦ (M x).mulVe
 (`Matrix.differentiableWithinAt_mulVecCLM`, `Matrix.differentiableAt_mulVecCLM`,
 `Matrix.differentiableOn_mulVecCLM`, `Matrix.differentiable_mulVecCLM`). Over `RCLike 𝕜`, the
 real entrywise derivative of a family of Hermitian matrices is Hermitian in every direction
-(`Matrix.isHermitian_fderiv_apply`). The self-adjoint part `(X + Xᴴ) / 2` of a matrix is Hermitian
-(`Matrix.isHermitian_selfAdjointPart`), and for the elementwise norm its entries are smooth
-real-linear functions of `X` (`Matrix.contDiff_selfAdjointPart_apply`,
-`Matrix.fderiv_selfAdjointPart_apply`).
+(`Matrix.isHermitian_fderiv_apply`). For the elementwise norm, the entries of the self-adjoint
+part `(X + Xᴴ) / 2` of a matrix are smooth real-linear functions of `X`
+(`Matrix.contDiff_selfAdjointPart_apply`, `Matrix.fderiv_selfAdjointPart_apply`).
 
 For a constant matrix `M`, a map that agrees near `x` with `M *ᵥ f + b` has derivative `M f'(x)`
 at `x` (`HasFDerivAt.of_eventuallyEq_mulVec_add`). Conversely, if the derivatives of two `C¹`
@@ -149,11 +149,6 @@ theorem isHermitian_fderiv_apply {M : E → Matrix n n 𝕜} (hM : ∀ x, (M x).
       rw [Function.comp_apply, RCLike.conjCLE_apply, ← RCLike.star_def, (hM x).apply]
   rw [of_apply, of_apply, h, ContinuousLinearEquiv.comp_fderiv]
   simp [RCLike.star_def]
-
-/-- The self-adjoint part `(X + Xᴴ) / 2` of a matrix is Hermitian. -/
-theorem isHermitian_selfAdjointPart (X : Matrix n n 𝕜) :
-    (selfAdjointPart ℝ X : Matrix n n 𝕜).IsHermitian :=
-  (selfAdjoint.isSelfAdjoint (x := selfAdjointPart ℝ X)).isHermitian
 
 section SelfAdjointPart
 
