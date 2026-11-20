@@ -454,6 +454,12 @@ theorem ofLoop_trunc_sub_mem_orderSubmodule (N : ℤ) (u : currentAlgebra R L) :
     ofLoop R L (trunc R L N u) - u ∈ orderSubmodule R L N :=
   rTensor_toLaurentSeries_trunc_sub_mem_orderSubmodule R L N u
 
+/-- A current minus its truncation has order at least the cutoff. -/
+theorem sub_ofLoop_trunc_mem_orderSubmodule (N : ℤ) (u : currentAlgebra R L) :
+    u - ofLoop R L (trunc R L N u) ∈ orderSubmodule R L N := by
+  rw [← neg_sub]
+  exact neg_mem (ofLoop_trunc_sub_mem_orderSubmodule R L N u)
+
 /-- Truncating a current preserves every lower order bound, including when the cutoff lies
 below that bound. No freeness of the coefficient module is needed. -/
 theorem ofLoop_trunc_mem_orderSubmodule (P : ℤ) {M : ℤ} {u : currentAlgebra R L}
@@ -531,9 +537,8 @@ theorem isCompl_truncSubmodule_orderSubmodule (N : ℤ) :
       map_zero]
   · refine eq_top_iff.mpr fun u _ ↦ ?_
     rw [← add_sub_cancel (ofLoop R L (trunc R L N u)) u]
-    refine Submodule.add_mem_sup (ofLoop_trunc_mem_truncSubmodule R L N u) ?_
-    rw [← neg_sub]
-    exact neg_mem (ofLoop_trunc_sub_mem_orderSubmodule R L N u)
+    exact Submodule.add_mem_sup (ofLoop_trunc_mem_truncSubmodule R L N u)
+      (sub_ofLoop_trunc_mem_orderSubmodule R L N u)
 
 /-- **The polynomial currents with orders in a window.** A polynomial current of order below `N`
 and at least `P` is a combination of the modes `t^m ⊗ x` with `P ≤ m < N`. -/

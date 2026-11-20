@@ -77,8 +77,7 @@ noncomputable section
 
 open scoped TensorProduct LaurentSeries
 open LieAlgebra TauCeti.UniversalEnvelopingAlgebra
-open LieAlgebra.ofTwoCocycle (centralElement envelopingι envelopingι_mul_sub_mul
-  adjoin_range_envelopingι)
+open LieAlgebra.ofTwoCocycle (centralElement envelopingι adjoin_range_envelopingι)
 
 -- Match the coefficientwise algebra structure used by formal currents.
 attribute [local instance 1100] HahnSeries.instAlgebra
@@ -201,9 +200,9 @@ private theorem envelopingι_smul_mk_list_prod_mem {M : ℤ} (hM : 0 ≤ M) (l :
       single_tmul_mem_orderSubmodule R L le_rfl 1 x
     have huy := lie_mem_orderSubmodule R L hu hy
     -- Commute `u` past the first letter `y = x_m`: `u y = y u + ⁅u, y⁆ + a Res(u dy)`.
-    have hcomm := envelopingι_mul_sub_mul c a u (HahnSeries.single m 1 ⊗ₜ x)
-    rw [twoCocycleOfBilinear_coe, twoCochainOfBilinear_apply_apply,
-      LinearEquiv.apply_symm_apply, sub_eq_iff_eq_add'] at hcomm
+    have hcomm :=
+      envelopingι_mul_sub_mul_residuePairing Φ hΦ hΦs a u (HahnSeries.single m 1 ⊗ₜ x)
+    rw [sub_eq_iff_eq_add'] at hcomm
     rw [List.map_cons, List.prod_cons, ← smul_eq_mul, Submodule.Quotient.mk_smul, ← mul_smul,
       hcomm, add_smul, add_smul, mul_smul, algebraMap_smul]
     refine add_mem ?_ (add_mem ?_ ?_)
@@ -296,11 +295,8 @@ theorem exists_forall_envelopingι_smul_mem_depthSubmodule {M : ℤ} (hM : 0 ≤
   rw [← add_sub_cancel (ofLoop R L (trunc R L M u)) u, map_add, add_smul]
   refine add_mem (envelopingι_smul_mem_depthSubmodule_add (ofLoop_trunc_mem_truncSubmodule R L M u)
     (ofLoop_trunc_mem_orderSubmodule R L M hP') hq) ?_
-  have hr : u - ofLoop R L (trunc R L M u) ∈ orderSubmodule R L M := by
-    rw [← neg_sub]
-    exact neg_mem (ofLoop_trunc_sub_mem_orderSubmodule R L M u)
   exact depthSubmodule_mono Φ hΦ hΦs a M (by omega)
-    (envelopingι_smul_mem_depthSubmodule hM hr hq)
+    (envelopingι_smul_mem_depthSubmodule hM (sub_ofLoop_trunc_mem_orderSubmodule R L M u) hq)
 
 /-- **The depth submodules exhaust the congruence quotient** `U / I_M` when `M ≥ 0`. -/
 theorem exists_mem_depthSubmodule {M : ℤ} (hM : 0 ≤ M) (q : U ⧸ orderLeftIdeal Φ hΦ hΦs a M) :
@@ -366,10 +362,13 @@ private theorem depthSubmodule_eq_sup_iSup {M n : ℤ} (hn : 0 ≤ n) :
           envelopingι c a ∘ₗ TensorProduct.mk R R⸨X⸩ L (HahnSeries.single m 1))
         (Submodule.mem_top (x := x))
         (mk_list_prod_mem_depthSubmodule (n := n - (M - m)) hl' (by omega))
-      simpa [← Submodule.Quotient.mk_smul] using h
+      simpa only [List.map_cons, List.prod_cons, LinearMap.coe_comp, AlgHom.coe_toLinearMap,
+        Function.comp_apply, TensorProduct.mk_apply, Algebra.lsmul_coe,
+        ← Submodule.Quotient.mk_smul, smul_eq_mul] using h
   · have hm := Finset.mem_Ico.mp hm
-    simpa using depthSubmodule_mono Φ hΦ hΦs a M (by omega)
-      (envelopingι_single_smul_mem_depthSubmodule hm.2 x hq)
+    simpa only [LinearMap.coe_comp, AlgHom.coe_toLinearMap, Function.comp_apply,
+      TensorProduct.mk_apply, Algebra.lsmul_coe] using depthSubmodule_mono Φ hΦ hΦs a M (by omega)
+        (envelopingι_single_smul_mem_depthSubmodule hm.2 x hq)
 
 variable (Φ hΦ hΦs a) in
 /-- **The depth submodules are finitely generated** when `L` is a finite `R`-module; over a field,
