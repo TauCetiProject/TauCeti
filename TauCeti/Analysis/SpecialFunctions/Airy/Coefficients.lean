@@ -19,10 +19,10 @@ argument, and the Gamma-function multiplier `χ` of their error bounds (DLMF 9.7
   recurrence `u_{k+1} = (6k + 1)(6k + 3)(6k + 5) / ((2k + 1) · 216 · (k + 1)) · u_k`
   (`TauCeti.airyU_succ`);
 * `TauCeti.airyV`: `v_k = −(6k + 1)/(6k − 1) · u_k`, with `v₀ = 1` and `v_k < 0` for `k ≥ 1`;
-* `TauCeti.Real.airyChi`: `χ(x) = π^{1/2} Γ(x/2 + 1) / Γ(x/2 + ½)`, with `χ(0) = 1`,
+* `Real.airyChi`: `χ(x) = π^{1/2} Γ(x/2 + 1) / Γ(x/2 + ½)`, with `χ(0) = 1`,
   `χ(1) = π/2`, `χ(2) = 2`, strictly increasing on `(-1, ∞)`
-  (`TauCeti.Real.strictMonoOn_airyChi`) and `χ(x) ∼ (πx/2)^{1/2}` as `x → ∞`
-  (`TauCeti.Real.isEquivalent_airyChi`, DLMF 9.7.4).
+  (`Real.strictMonoOn_airyChi`) and `χ(x) ∼ (πx/2)^{1/2}` as `x → ∞`
+  (`Real.isEquivalent_airyChi`, DLMF 9.7.4).
 
 The asymptotic form of `χ` and its monotonicity come from Wendel's inequalities and the strict
 monotonicity of `Γ(x + c)/Γ(x)`, both consequences of the log-convexity of `Γ`.
@@ -76,8 +76,9 @@ private theorem airyU_numerator_succ (k : ℕ) :
     convert h using 2
     · exact prod_congr rfl fun j _ => by ring
     · ring
-  rw [show 2 * (k + 1) = 2 * k + 1 + 1 by ring, prod_range_succ, prod_range_succ,
-    show 2 * k + 1 + 1 = 2 * (k + 1) by ring]
+  -- Peel off the last two factors of the product over `range (2 * (k + 1))`.
+  have h2 : 2 * (k + 1) = 2 * k + 1 + 1 := by ring
+  rw [h2, prod_range_succ, prod_range_succ, ← h2]
   linear_combination ((2 * (k + 1) + 1 + 2 * (2 * k)) * (2 * (k + 1) + 1 + 2 * (2 * k + 1))) *
     hshift
 
@@ -114,6 +115,8 @@ theorem airyV_neg {k : ℕ} (hk : 1 ≤ k) : airyV k < 0 := by
   rw [airyV_def, neg_mul, neg_neg_iff_pos]
   exact mul_pos (div_pos (by linarith) (by linarith)) (airyU_pos k)
 
+end TauCeti
+
 namespace Real
 
 /-- The multiplier `χ(x) = π^{1/2} Γ(x/2 + 1) / Γ(x/2 + ½)` (DLMF 9.7.3). -/
@@ -133,28 +136,31 @@ theorem airyChi_zero : airyChi 0 = 1 := by
 /-- `χ(1) = π/2`. -/
 @[simp]
 theorem airyChi_one : airyChi 1 = π / 2 := by
-  rw [airyChi_def, show (1 : ℝ) / 2 + 1 = 1 / 2 + 1 by ring,
-    Real.Gamma_add_one (by norm_num), Real.Gamma_one_half_eq,
-    show (1 : ℝ) / 2 + 1 / 2 = 1 by ring, Real.Gamma_one, div_one, ← mul_assoc,
-    mul_comm √π, mul_assoc, Real.mul_self_sqrt Real.pi_pos.le]
+  have h₁ : Real.Gamma ((1 : ℝ) / 2 + 1) = 1 / 2 * √π := by
+    rw [Real.Gamma_add_one (by norm_num), Real.Gamma_one_half_eq]
+  have h₂ : Real.Gamma ((1 : ℝ) / 2 + 1 / 2) = 1 := by norm_num
+  rw [airyChi_def, h₁, h₂, div_one, mul_left_comm, Real.mul_self_sqrt Real.pi_pos.le]
   ring
 
 /-- `χ(2) = 2`. -/
 @[simp]
 theorem airyChi_two : airyChi 2 = 2 := by
   have hπ : √π ≠ 0 := (Real.sqrt_pos.2 Real.pi_pos).ne'
-  rw [airyChi_def, show (2 : ℝ) / 2 + 1 = 2 by norm_num, Real.Gamma_two,
-    show (2 : ℝ) / 2 + 1 / 2 = 1 / 2 + 1 by norm_num, Real.Gamma_add_one (by norm_num),
-    Real.Gamma_one_half_eq]
+  have h₁ : Real.Gamma ((2 : ℝ) / 2 + 1) = 1 := by norm_num
+  have h₂ : Real.Gamma ((2 : ℝ) / 2 + 1 / 2) = 1 / 2 * √π := by
+    rw [← Real.Gamma_one_half_eq, ← Real.Gamma_add_one (by norm_num)]
+    norm_num
+  rw [airyChi_def, h₁, h₂]
   field_simp
 
 /-- `χ` is strictly increasing on `(-1, ∞)`, in particular on `(0, ∞)`. -/
 theorem strictMonoOn_airyChi : StrictMonoOn airyChi (Set.Ioi (-1)) := by
   intro x hx y hy hxy
   rw [Set.mem_Ioi] at hx hy
-  have h := Real.strictMonoOn_Gamma_add_div_Gamma (c := 1 / 2) (by norm_num)
-    (show x / 2 + 1 / 2 ∈ Set.Ioi 0 by simp only [Set.mem_Ioi]; linarith)
-    (show y / 2 + 1 / 2 ∈ Set.Ioi 0 by simp only [Set.mem_Ioi]; linarith) (by linarith)
+  have hx' : x / 2 + 1 / 2 ∈ Set.Ioi 0 := by rw [Set.mem_Ioi]; linarith
+  have hy' : y / 2 + 1 / 2 ∈ Set.Ioi 0 := by rw [Set.mem_Ioi]; linarith
+  have h := Real.strictMonoOn_Gamma_add_div_Gamma (c := 1 / 2) (by norm_num) hx' hy'
+    (by linarith)
   simp only [add_assoc, add_halves] at h
   rw [airyChi_def, airyChi_def, mul_div_assoc, mul_div_assoc]
   exact mul_lt_mul_of_pos_left h (Real.sqrt_pos.2 Real.pi_pos)
@@ -168,10 +174,8 @@ theorem isEquivalent_airyChi : airyChi ~[atTop] fun x => √(π * x / 2) := by
       simp [airyChi_def, mul_div_assoc]
   · refine Eventually.of_forall fun x => ?_
     simp only [Pi.mul_apply, Function.comp_apply, id]
-    rw [show π * x / 2 = π * (x / 2) by ring, Real.sqrt_mul Real.pi_pos.le,
-      Real.sqrt_eq_rpow (x / 2)]
+    have hx : π * x / 2 = π * (x / 2) := by ring
+    rw [hx, Real.sqrt_mul Real.pi_pos.le, Real.sqrt_eq_rpow (x / 2)]
     norm_num
 
 end Real
-
-end TauCeti
