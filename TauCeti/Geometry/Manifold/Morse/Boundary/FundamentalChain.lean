@@ -231,8 +231,6 @@ theorem map_unstableFrame_eq_orientationAt_iff (hf : IsMorse 𝓘(ℝ, E) f) {p 
       Orientation.map _ (LinearEquiv.ofBijective (hX.unstableFrame φ p).toLinearMap hbp) op =
         oM.orientationAt p := by
   obtain ⟨T, hT⟩ := (hX.eventually_mem_linearBackwardTimes hφ hf hy).exists
-  have h0 : (0 : ℝ) ∈ hX.linearBackwardTimes φ p := mem_linearBackwardTimes_self hp 0
-  have hfl0 : (φ.toChart ∘ hX.flow (-0) : M → E) = φ.toChart := funext fun z ↦ by simp
   obtain ⟨eDy, heDy⟩ := isInvertible_mfderiv_toChart_comp_flow (hX := hX) (φ := φ)
     ((hX.mem_linearBackwardTimes φ).1 hT).1
   obtain ⟨eDp, heDp⟩ := isInvertible_mfderiv_chart
@@ -253,13 +251,11 @@ theorem map_unstableFrame_eq_orientationAt_iff (hf : IsMorse 𝓘(ℝ, E) f) {p 
       ((LinearEquiv.smulOfNeZero ℝ _ (Real.exp (-T)) (Real.exp_pos _).ne').trans
         (LinearEquiv.ofBijective (hX.unstableFrame φ p).toLinearMap hbp)).trans Lp := by
     ext c
-    have hy' := mfderiv_unstableFrame hφ hT c
-    have hp' := mfderiv_unstableFrame hφ h0 c
-    rw [← heDy, ContinuousLinearEquiv.coe_coe] at hy'
-    rw [hfl0, ← heDp, ContinuousLinearEquiv.coe_coe, neg_zero, Real.exp_zero, one_smul] at hp'
+    have h := mfderiv_unstableFrame_eq_exp_smul_self hφ hp hT c
+    rw [← heDy, ← heDp, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe] at h
     rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
       LinearEquiv.smulOfNeZero_apply, map_smul, map_smul]
-    exact hy'.trans (congrArg (Real.exp (-T) • ·) hp').symm
+    exact h
   rw [← Orientation.map_trans, hL, Orientation.map_trans, Orientation.map_trans,
     Orientation.map_smulOfNeZero_of_pos _ (Real.exp_pos _)]
 

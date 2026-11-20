@@ -286,8 +286,8 @@ private theorem reindex_unstableFrameOrientation_eq_orientationAt_iff_self
       Orientation.reindex ℝ _ e (unstableFrameOrientation hφ hf hx op op' hxu) =
         o.orientationAt x := by
   rw [unstableFrameOrientation_def, unstableFrameOrientation_def]
-  have h0 : (0 : ℝ) ∈ hX.linearBackwardTimes φ x :=
-    mem_linearBackwardTimes_self (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.mem_criticalPoints) 0
+  have hx0 := mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.mem_criticalPoints
+  have h0 : (0 : ℝ) ∈ hX.linearBackwardTimes φ x := mem_linearBackwardTimes_self hx0 0
   have hfl0 : (φ.toChart ∘ hX.flow (-0) : M → E) = φ.toChart := funext fun z ↦ by simp
   obtain ⟨T, hT⟩ := (hX.eventually_mem_linearBackwardTimes hφ hf hy).exists
   obtain ⟨eDy, heDy⟩ := isInvertible_mfderiv_toChart_comp_flow (hX := hX) (φ := φ)
@@ -304,23 +304,19 @@ private theorem reindex_unstableFrameOrientation_eq_orientationAt_iff_self
       (tendsto_neg_atTop_atBot.comp (tendsto_atTop_add_const_left _ T tendsto_id)))
     eDy heDy eDx heDx e _ _ _ _ _ _ op op' _ _ (Real.exp_pos (-T)) (Real.exp_pos T)
     (fun c ↦ ?_) (fun w ↦ ?_)
-  · have hy' := mfderiv_unstableFrame hφ hT c
-    have hx' := mfderiv_unstableFrame hφ h0 c
-    rw [← heDy, ContinuousLinearEquiv.coe_coe] at hy'
-    rw [hfl0, ← heDx, ContinuousLinearEquiv.coe_coe, neg_zero, Real.exp_zero, one_smul] at hx'
+  · have h := mfderiv_unstableFrame_eq_exp_smul_self hφ hx0 hT c
+    rw [← heDy, ← heDx, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe] at h
     simp only [ContinuousLinearMap.coe_coe]
-    exact hy'.trans (congrArg (Real.exp (-T) • ·) hx').symm
-  · have hq (t : ℝ) : ((φ.neg hx).toChart ∘ (hX.neg hf).flow t : M → E) =
-        φ.toChart ∘ hX.flow (-t) := by
-      funext z
-      simp [hX.neg_flow hf]
-    have hT' : T ∈ (hX.neg hf).linearForwardTimes (φ.neg hx) y := by
+    exact h
+  · have hT' : T ∈ (hX.neg hf).linearForwardTimes (φ.neg hx) y := by
       rwa [neg_linearForwardTimes (hX := hX) (φ := φ) hf hx]
     have h0' : (0 : ℝ) ∈ (hX.neg hf).linearForwardTimes (φ.neg hx) x := by
       rwa [neg_linearForwardTimes (hX := hX) (φ := φ) hf hx]
     simp only [ContinuousLinearMap.coe_coe]
     rw [stableNormal_apply (φ.coord_mfderiv_neg hφ hx) hT',
-      stableNormal_apply (φ.coord_mfderiv_neg hφ hx) h0', hq, hq, hfl0, ← heDy, ← heDx]
+      stableNormal_apply (φ.coord_mfderiv_neg hφ hx) h0',
+      neg_toChart_comp_neg_flow (hX := hX) hf hx, neg_toChart_comp_neg_flow (hX := hX) hf hx, hfl0,
+      ← heDy, ← heDx]
     simp only [smul_smul, ← Real.exp_add, add_neg_cancel, neg_zero, Real.exp_zero, one_smul]
     exact congrArg _ (eDx.apply_symm_apply (eDy w))
 
@@ -346,10 +342,6 @@ private theorem reindex_stableNormalOrientation_eq_orientationAt_iff_self
     ((hX.mem_linearForwardTimes φ).1 hT).1
   obtain ⟨eDx, heDx⟩ := isInvertible_mfderiv_chart
     (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.mem_source
-  have hq (t : ℝ) : ((φ.neg hx).toChart ∘ (hX.neg hf).flow (-t) : M → E) =
-      φ.toChart ∘ hX.flow t := by
-    funext z
-    simp [hX.neg_flow hf]
   -- Read both tangent spaces in the model space `E`, through `φ ∘ Φ_T` and `φ`. There the frame
   -- and the normal coordinates at `y` are positive multiples of those at `x`.
   refine reindex_ofExact_eq_orientationAt_iff_of_tendsto o
@@ -361,15 +353,12 @@ private theorem reindex_stableNormalOrientation_eq_orientationAt_iff_self
     (fun c ↦ ?_) (fun w ↦ ?_)
   · have hT' : T ∈ (hX.neg hf).linearBackwardTimes (φ.neg hx) y := by
       rwa [neg_linearBackwardTimes (hX := hX) (φ := φ) hf hx]
-    have h0' : (0 : ℝ) ∈ (hX.neg hf).linearBackwardTimes (φ.neg hx) x := by
-      rwa [neg_linearBackwardTimes (hX := hX) (φ := φ) hf hx]
-    have hy' := mfderiv_unstableFrame (φ.coord_mfderiv_neg hφ hx) hT' c
-    have hx' := mfderiv_unstableFrame (φ.coord_mfderiv_neg hφ hx) h0' c
-    rw [hq, ← heDy, ContinuousLinearEquiv.coe_coe] at hy'
-    rw [hq, hfl0, ← heDx, ContinuousLinearEquiv.coe_coe, neg_zero, Real.exp_zero,
-      one_smul] at hx'
+    have h := mfderiv_unstableFrame_eq_exp_smul_self (φ.coord_mfderiv_neg hφ hx)
+      (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.neg.mem_criticalPoints) hT' c
+    rw [neg_toChart_comp_neg_flow (hX := hX) hf hx, neg_neg, MorseChart.neg_toChart, ← heDy,
+      ← heDx, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe] at h
     simp only [ContinuousLinearMap.coe_coe]
-    exact hy'.trans (congrArg (Real.exp (-T) • ·) hx').symm
+    exact h
   · simp only [ContinuousLinearMap.coe_coe]
     rw [stableNormal_apply hφ hT, stableNormal_apply hφ h0, hfl0, ← heDy, ← heDx]
     simp only [smul_smul, ← Real.exp_add, add_neg_cancel, neg_zero, Real.exp_zero, one_smul]
