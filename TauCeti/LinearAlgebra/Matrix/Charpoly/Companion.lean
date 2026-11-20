@@ -36,8 +36,9 @@ with `cᵢ = p.coeff i` and `n = d`.
 For monic `p` it is the matrix of multiplication by `X` on `R[X] ⧸ (p)` in the basis
 `1, X, …, X ^ (d - 1)`, that is, of multiplication by the root of `AdjoinRoot p` in the power basis
 `AdjoinRoot.powerBasis'` (`Polynomial.leftMulMatrix_root_eq_companion`). This identification gives
-the characteristic polynomial, the determinant, the minimal polynomial and the eigenvalues of the
-companion matrix of a monic polynomial, over any commutative ring and without extending scalars.
+the characteristic polynomial, the determinant, the minimal polynomial and the spectrum of the
+companion matrix of a monic polynomial, over any commutative ring and without extending scalars,
+and its eigenvalues over a domain.
 The companion matrix of `1` is the empty matrix.
 
 The orientation is the one of `TauCeti.companionFinTwo` in size two: ones below the diagonal and
