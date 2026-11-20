@@ -74,6 +74,20 @@ namespace SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J : AlmostComplexStructure V} {a b : ℝ}
 
+/-- When the inner product of `V` is the metric `ω(·, J ·)`, the continuous bilinear map of `ω`
+has operator norm at most one, so a bound `‖∫ B (f x) (f' x)‖ ≤ ‖B‖ * C` for it gives
+`|∫ ω (f x) (f' x)| ≤ C`. -/
+private theorem abs_integral_apply_le_of_norm_le (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    {f f' : ℝ → V} {C : ℝ} (hC : 0 ≤ C)
+    (h : ‖∫ x in a..b, ω.toBilinForm.toContinuousBilinearMap (f x) (f' x)‖ ≤
+      ‖ω.toBilinForm.toContinuousBilinearMap‖ * C) :
+    |∫ x in a..b, ω (f x) (f' x)| ≤ C := by
+  have hB : ‖ω.toBilinForm.toContinuousBilinearMap‖ ≤ 1 :=
+    ContinuousLinearMap.opNorm_le_bound₂ _ zero_le_one fun v w ↦ by
+      simpa [Real.norm_eq_abs] using abs_apply_le_norm_mul_norm hg v w
+  simp only [LinearMap.toContinuousBilinearMap_apply, Real.norm_eq_abs] at h
+  exact h.trans (mul_le_of_le_one_left hC hB)
+
 /-- **The isoperimetric inequality.** If the inner product of `V` is the metric `ω(·, J ·)`, then
 for a loop `γ` on `[a, b]` with square-integrable derivative, twice the symplectic area
 `∫ ω(γ, γ')` it encloses is bounded by `(b - a) / (2π)` times its energy `∫ ‖γ'‖²`. -/
@@ -81,18 +95,12 @@ theorem abs_integral_apply_le (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hab : a <
     (hγ : ∀ x ∈ [[a, b]], HasDerivAt γ (γ' x) x) (hγab : γ a = γ b)
     (hγ' : MemLp γ' 2 (volume.restrict (Ioc a b))) :
     |∫ x in a..b, ω (γ x) (γ' x)| ≤ (b - a) / (2 * π) * ∫ x in a..b, ‖γ' x‖ ^ 2 := by
-  let B : V →L[ℝ] V →L[ℝ] ℝ := LinearMap.mkContinuous₂ ω.toBilinForm 1 fun v w => by
-    rw [one_mul, Real.norm_eq_abs]
-    exact abs_apply_le_norm_mul_norm hg v w
-  have hB : ‖B‖ ≤ 1 := LinearMap.mkContinuous₂_norm_le _ zero_le_one _
   have hE : 0 ≤ ∫ x in a..b, ‖γ' x‖ ^ 2 :=
     intervalIntegral.integral_nonneg hab.le fun x _ => by positivity
-  calc |∫ x in a..b, ω (γ x) (γ' x)| = ‖∫ x in a..b, B (γ x) (γ' x)‖ := by
-        simp [B, Real.norm_eq_abs]
-    _ ≤ ‖B‖ * ((b - a) / (2 * π)) * ∫ x in a..b, ‖γ' x‖ ^ 2 :=
-      B.norm_integral_apply_apply_le hab hγ hγab hγ'
-    _ ≤ 1 * ((b - a) / (2 * π)) * ∫ x in a..b, ‖γ' x‖ ^ 2 := by gcongr
-    _ = (b - a) / (2 * π) * ∫ x in a..b, ‖γ' x‖ ^ 2 := by rw [one_mul]
+  refine abs_integral_apply_le_of_norm_le hg
+    (mul_nonneg (div_nonneg (sub_nonneg.2 hab.le) (by positivity)) hE) ?_
+  simpa only [mul_assoc] using
+    ω.toBilinForm.toContinuousBilinearMap.norm_integral_apply_apply_le hab hγ hγab hγ'
 
 /-- The absolute symplectic area of a `C²` map on an annulus is at most half the sum of the
 energies of its boundary loops parametrized on `[-π, π]`. The map need not extend over the
@@ -105,10 +113,6 @@ theorem abs_integral_fderiv_apply_annulus_le {u : ℂ → V} (z₀ : ℂ)
       (1 / 2 : ℝ) * ((∫ θ in -π..π,
         ‖deriv (fun θ ↦ u (circleMap z₀ b θ)) θ‖ ^ 2) +
         ∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap z₀ a θ)) θ‖ ^ 2) := by
-  let B : V →L[ℝ] V →L[ℝ] ℝ := LinearMap.mkContinuous₂ ω.toBilinForm 1 fun v w ↦ by
-    rw [one_mul, Real.norm_eq_abs]
-    exact abs_apply_le_norm_mul_norm hg v w
-  have hB : ‖B‖ ≤ 1 := LinearMap.mkContinuous₂_norm_le _ zero_le_one _
   have hloop (r : ℝ) (hr : r ∈ Icc a b) :
       |∫ θ in -π..π, ω (u (circleMap z₀ r θ))
         (deriv (fun θ ↦ u (circleMap z₀ r θ)) θ)| ≤
@@ -118,10 +122,8 @@ theorem abs_integral_fderiv_apply_annulus_le {u : ℂ → V} (z₀ : ℂ)
       circleMap_mem_setOf_le_norm_sub_le ha hr θ
     have hE : 0 ≤ ∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap z₀ r θ)) θ‖ ^ 2 :=
       intervalIntegral.integral_nonneg (by linarith [Real.pi_pos]) fun θ _ ↦ sq_nonneg _
-    have h := norm_integral_apply_apply_circleMap_le u (B := B) z₀ r
-      (fun θ ↦ (hu _ (hmem θ)).of_le one_le_two)
-    simpa only [B, LinearMap.mkContinuous₂_apply, Real.norm_eq_abs, one_mul] using
-      h.trans (mul_le_mul_of_nonneg_right hB hE)
+    exact abs_integral_apply_le_of_norm_le hg hE <|
+      norm_integral_apply_apply_circleMap_le u z₀ r fun θ ↦ (hu _ (hmem θ)).of_le one_le_two
   rw [ω.integral_fderiv_apply_annulus z₀ ha hab hu, abs_mul,
     abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 1 / 2)]
   gcongr
@@ -137,19 +139,13 @@ theorem abs_integral_apply_le_of_mem (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (ha
     (hγc : ContinuousOn γ (Icc a b)) (hγ : ∀ x ∈ Ioo a b, HasDerivAt γ (γ' x) x)
     (hγ' : MemLp γ' 2 (volume.restrict (Ioc a b))) (ha : γ a ∈ L) (hb : γ b ∈ L) :
     |∫ x in a..b, ω (γ x) (γ' x)| ≤ (b - a) / π * ∫ x in a..b, ‖γ' x‖ ^ 2 := by
-  let B : V →L[ℝ] V →L[ℝ] ℝ := LinearMap.mkContinuous₂ ω.toBilinForm 1 fun v w => by
-    rw [one_mul, Real.norm_eq_abs]
-    exact abs_apply_le_norm_mul_norm hg v w
-  have hB : ‖B‖ ≤ 1 := LinearMap.mkContinuous₂_norm_le _ zero_le_one _
   have hE : 0 ≤ ∫ x in a..b, ‖γ' x‖ ^ 2 :=
     intervalIntegral.integral_nonneg hab.le fun x _ => by positivity
-  calc |∫ x in a..b, ω (γ x) (γ' x)| = ‖∫ x in a..b, B (γ x) (γ' x)‖ := by
-        simp [B, Real.norm_eq_abs]
-    _ ≤ ‖B‖ * ((b - a) / π) * ∫ x in a..b, ‖γ' x‖ ^ 2 :=
-      B.norm_integral_apply_apply_le_of_mem (fun v hv w hw ↦ by simpa [B] using hL v hv w hw)
-        hab hγc hγ hγ' ha hb
-    _ ≤ 1 * ((b - a) / π) * ∫ x in a..b, ‖γ' x‖ ^ 2 := by gcongr
-    _ = (b - a) / π * ∫ x in a..b, ‖γ' x‖ ^ 2 := by rw [one_mul]
+  refine abs_integral_apply_le_of_norm_le hg
+    (mul_nonneg (div_nonneg (sub_nonneg.2 hab.le) Real.pi_pos.le) hE) ?_
+  simpa only [mul_assoc] using
+    ω.toBilinForm.toContinuousBilinearMap.norm_integral_apply_apply_le_of_mem
+      (fun v hv w hw ↦ by simpa using hL v hv w hw) hab hγc hγ hγ' ha hb
 
 /-- The action of a boundary half-circle `θ ↦ u (z₀ + r e^{iθ})`, `0 ≤ θ ≤ π`, of a map that is
 `C²` up to the line `z.im = z₀.im` and sends it into a subspace `L` on which `ω` vanishes,

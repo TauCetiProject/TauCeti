@@ -137,6 +137,16 @@ theorem integrableOn_fderiv_apply_of_contDiffAt [FiniteDimensional ℝ V] (ω : 
   exact (ω.continuousOn_apply_comp (hcont.clm_apply continuousOn_const)
     (hcont.clm_apply continuousOn_const)).integrableOn_compact hK
 
+/-- The continuous bilinear map of `ω` minus its transpose is `2 ω`; this is the integrand of the
+Green formulas for the pullback area. -/
+private theorem toContinuousBilinearMap_sub_swap [FiniteDimensional ℝ V] (ω : SymplecticForm V)
+    (x y : V) :
+    ω.toBilinForm.toContinuousBilinearMap x y - ω.toBilinForm.toContinuousBilinearMap y x =
+      2 * ω x y := by
+  rw [LinearMap.toContinuousBilinearMap_apply, LinearMap.toContinuousBilinearMap_apply,
+    ← ω.isAlt.neg_eq x y]
+  ring
+
 /-- **Stokes' formula for symplectic area on a rectangle.** If `u` is `C²` at every point of the
 rectangle `Icc a b ⊆ ℝ × ℝ`, its symplectic area over the rectangle is the integral of the
 primitive `λₓ(v) = ½ ω(x, v)` along the positively oriented boundary: the right side minus the
@@ -150,13 +160,9 @@ theorem integral_fderiv_apply_prod_Icc [FiniteDimensional ℝ V] (ω : Symplecti
         ((∫ s in a.1..b.1, ω (u (s, b.2)) (fderiv ℝ u (s, b.2) (1, 0))) -
           ∫ s in a.1..b.1, ω (u (s, a.2)) (fderiv ℝ u (s, a.2) (1, 0)))) := by
   let B := ω.toBilinForm.toContinuousBilinearMap
-  have hB (x y : V) : B x y = ω x y := by simp [B]
-  have hskew (x y : V) : B x y - B y x = 2 * ω x y := by
-    rw [hB, hB, ← ω.neg_eq]
-    ring
   have hgreen := B.integral_bilinear_fderiv_sub_prod_Icc hle hu
-  simp only [hskew, integral_const_mul] at hgreen
-  simp only [hB] at hgreen
+  simp only [B, toContinuousBilinearMap_sub_swap, integral_const_mul] at hgreen
+  simp only [LinearMap.toContinuousBilinearMap_apply] at hgreen
   linarith
 
 section LoopArea
@@ -394,12 +400,7 @@ theorem integral_fderiv_apply_annulus [FiniteDimensional ℝ V]
         (deriv (fun θ ↦ u (circleMap z₀ b θ)) θ)) -
       ∫ θ in -π..π, ω (u (circleMap z₀ a θ))
         (deriv (fun θ ↦ u (circleMap z₀ a θ)) θ)) := by
-  let B : V →L[ℝ] V →L[ℝ] ℝ := LinearMap.toContinuousLinearMap
-    (LinearMap.toContinuousLinearMap.toLinearMap.comp ω.toBilinForm)
-  have hB (x y : V) : B x y = ω x y := by simp [B]
-  have hskew (x y : V) : B x y - B y x = 2 * ω x y := by
-    rw [hB, hB, ← ω.neg_eq]
-    ring
+  let B := ω.toBilinForm.toContinuousBilinearMap
   have hcircle (r : ℝ) (hr : r ∈ Icc a b) (θ : ℝ) :
       deriv (fun θ ↦ u (circleMap z₀ r θ)) θ =
         fderiv ℝ u (circleMap z₀ r θ) (circleMap 0 r θ * I) := by
@@ -408,8 +409,9 @@ theorem integral_fderiv_apply_annulus [FiniteDimensional ℝ V]
     exact (((hu _ hm).differentiableAt (by norm_num)).hasFDerivAt.comp_hasDerivAt θ
       (hasDerivAt_circleMap z₀ r θ)).deriv
   have hgreen := B.integral_bilinear_fderiv_sub_annulus z₀ ha hab hu
-  simp only [hskew, integral_const_mul] at hgreen
-  simp only [hB, ← hcircle b ⟨hab, le_rfl⟩, ← hcircle a ⟨le_rfl, hab⟩] at hgreen
+  simp only [B, toContinuousBilinearMap_sub_swap, integral_const_mul] at hgreen
+  simp only [LinearMap.toContinuousBilinearMap_apply, ← hcircle b ⟨hab, le_rfl⟩,
+    ← hcircle a ⟨le_rfl, hab⟩] at hgreen
   linarith
 
 /-- **Stokes' formula for symplectic area on an upper half-annulus with isotropic diameter.** Let
@@ -433,12 +435,7 @@ theorem integral_fderivWithin_apply_upperHalfAnnulus [FiniteDimensional ℝ V]
         ∫ θ in 0..π, ω (u (circleMap z₀ a θ))
           (fderivWithin ℝ u {z | z₀.im ≤ z.im} (circleMap z₀ a θ) (circleMap 0 a θ * I))) := by
   set H : Set ℂ := {z | z₀.im ≤ z.im}
-  let B : V →L[ℝ] V →L[ℝ] ℝ := LinearMap.toContinuousLinearMap
-    (LinearMap.toContinuousLinearMap.toLinearMap.comp ω.toBilinForm)
-  have hB (x y : V) : B x y = ω x y := by simp [B]
-  have hskew (x y : V) : B x y - B y x = 2 * ω x y := by
-    rw [hB, hB, ← ω.neg_eq]
-    ring
+  let B := ω.toBilinForm.toContinuousBilinearMap
   -- Along the diameter `u` and its derivative lie in `L`, so the diameter terms vanish.
   have hseg (z : ℂ) (hzO : z ∈ O) (hz : z.im = z₀.im) : B (u z) (fderivWithin ℝ u H z 1) = 0 := by
     have hzHO : z ∈ H ∩ O := ⟨hz.ge, hzO⟩
@@ -449,7 +446,7 @@ theorem integral_fderivWithin_apply_upperHalfAnnulus [FiniteDimensional ℝ V]
       |>.apply_mem_of_eventually_add_smul_sub_mem L.isClosed_of_finiteDimensional
         (hline.mono fun t ht ↦ ⟨(him t).ge, ht⟩)
         (hline.mono fun t ht ↦ L.sub_mem (huL _ ht (him t)) (huL z hzO hz))
-    rw [hB, ← fderivWithin_inter (hO.mem_nhds hzO)]
+    rw [LinearMap.toContinuousBilinearMap_apply, ← fderivWithin_inter (hO.mem_nhds hzO)]
     exact hLω _ (huL z hzO hz) _ hmem
   have hdiam (ε : ℝ) (hε : |ε| = 1) :
       ∫ r in a..b, B (u (z₀ + ε * r)) (fderivWithin ℝ u H (z₀ + ε * r) 1) = 0 := by
@@ -465,8 +462,8 @@ theorem integral_fderivWithin_apply_upperHalfAnnulus [FiniteDimensional ℝ V]
     simpa only [ofReal_neg, ofReal_one, neg_one_mul, ← sub_eq_add_neg] using hdiam (-1) (by simp)
   have hgreen := B.integral_bilinear_fderivWithin_sub_upperHalfAnnulus z₀ hO ha hab hSO hu
   rw [hright, hleft, add_zero, add_zero] at hgreen
-  simp only [hskew, integral_const_mul] at hgreen
-  simp only [hB] at hgreen
+  simp only [B, toContinuousBilinearMap_sub_swap, integral_const_mul] at hgreen
+  simp only [LinearMap.toContinuousBilinearMap_apply] at hgreen
   linarith
 
 end SymplecticForm
