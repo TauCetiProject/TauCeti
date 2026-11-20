@@ -191,22 +191,6 @@ section Smooth
 
 variable [IsManifold I 2 M] [IsManifold J 2 N]
 
-omit [IsManifold I 2 M] [IsManifold J 2 N] in
-/-- On the source of a partial diffeomorphism `Φ` agreeing with `f`, the inverse differentials of
-`f` are the differentials of `Φ⁻¹`. -/
-private theorem symm_mfderivToContinuousLinearEquiv_apply {Φ : PartialDiffeomorph I J M N ∞}
-    (hfΦ : EqOn f Φ Φ.source) {x : M} (hx : x ∈ Φ.source) (w : TangentSpace J (f x)) :
-    ((hf x).mfderivToContinuousLinearEquiv (by simp)).symm w = mfderiv J I Φ.symm (f x) w := by
-  set u := ((hf x).mfderivToContinuousLinearEquiv (by simp)).symm w
-  have hw : mfderiv I J f x u = w :=
-    (hf x).mfderiv_mfderivToContinuousLinearEquiv_symm_apply (by simp) w
-  -- Near `x` the map `f` is `Φ`, so `df_x = dΦ_x`, and `dΦ⁻¹_(Φ x) ∘ dΦ_x` is the identity.
-  have hd : mfderiv I J f x = mfderiv I J Φ x :=
-    (Filter.eventuallyEq_of_mem (Φ.open_source.mem_nhds hx) hfΦ).mfderiv_eq
-  rw [← hw, hd]
-  exact (Φ.mfderiv_symm_apply_mfderiv_apply (by simp) hx u).symm.trans
-    (congrArg (fun y : N ↦ (mfderiv J I Φ.symm y (mfderiv I J Φ x u) : E)) (hfΦ hx).symm)
-
 /-- **The cotangent map of a local diffeomorphism is smooth.** -/
 theorem contMDiff_cotangent :
     ContMDiff (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (J.prod 𝓘(𝕜, F →L[𝕜] 𝕜)) ∞ hf.cotangent := by
@@ -228,7 +212,7 @@ theorem contMDiff_cotangent :
     (by simp)).congr_of_eventuallyEq ?_
   filter_upwards [hU] with z hz
   exact CotangentBundle.ext rfl fun w ↦
-    congrArg z.2 (symm_mfderivToContinuousLinearEquiv_apply hf hfΦ hz w)
+    congrArg z.2 ((hf z.proj).mfderivToContinuousLinearEquiv_symm_apply (by simp) hfΦ hz w)
 
 /-- Near the covectors over the source of a partial diffeomorphism `Φ` agreeing with `f`, the
 cotangent map of `f` is a partial diffeomorphism. Its inverse pulls a covector at `y` back along
@@ -242,8 +226,8 @@ private def cotangentPartialDiffeomorph {Φ : PartialDiffeomorph I J M N ∞}
   source := TotalSpace.proj ⁻¹' Φ.source
   target := TotalSpace.proj ⁻¹' Φ.target
   map_source' z hz := by
-    have h : f z.proj ∈ Φ.target := (hfΦ hz).symm ▸ Φ.map_source hz
-    exact h
+    rw [mem_preimage, proj_cotangent, hfΦ hz]
+    exact Φ.map_source hz
   map_target' _ hw := Φ.map_target hw
   left_inv' z hz := by
     have hx : Φ.symm (f z.proj) = z.proj := (hfΦ hz).symm ▸ Φ.left_inv hz

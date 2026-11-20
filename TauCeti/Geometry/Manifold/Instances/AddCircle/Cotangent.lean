@@ -70,24 +70,21 @@ theorem cotangentRel_coe_iff (z : CotangentBundle 𝓘(ℝ) ℝ)
 /-- The cotangent map of `ℝ → ℝ / pℤ` sends a covector `a` at `t` to the same linear form `a` at
 the class of `t`. -/
 @[simp]
-theorem cotangent_coe_apply (hf : IsLocalDiffeomorph 𝓘(ℝ) 𝓘(ℝ) ∞ ((↑) : ℝ → AddCircle p))
-    (z : CotangentBundle 𝓘(ℝ) ℝ) :
-    hf.cotangent z = TotalSpace.mk' (ℝ →L[ℝ] ℝ)
+theorem cotangent_coe_apply (z : CotangentBundle 𝓘(ℝ) ℝ) :
+    (isLocalDiffeomorph_coe p ∞).cotangent z = TotalSpace.mk' (ℝ →L[ℝ] ℝ)
       (E := fun θ : AddCircle p ↦ TangentSpace 𝓘(ℝ) θ →L[ℝ] ℝ) (z.proj : AddCircle p) z.2 :=
-  ((cotangentRel_iff_of_isLocalDiffeomorph hf z _).1 ((cotangentRel_coe_iff z _).2 ⟨rfl, rfl⟩))
+  ((cotangentRel_iff_of_isLocalDiffeomorph _ z _).1 ((cotangentRel_coe_iff z _).2 ⟨rfl, rfl⟩))
 
 /-- The cotangent map of `ℝ → ℝ / pℤ` is surjective. -/
-theorem cotangent_coe_surjective
-    (hf : IsLocalDiffeomorph 𝓘(ℝ) 𝓘(ℝ) ∞ ((↑) : ℝ → AddCircle p)) :
-    Surjective hf.cotangent :=
-  hf.cotangent_surjective_iff.2 (QuotientAddGroup.mk_surjective (s := AddSubgroup.zmultiples p))
+theorem cotangent_coe_surjective : Surjective (isLocalDiffeomorph_coe p ∞).cotangent :=
+  (isLocalDiffeomorph_coe p ∞).cotangent_surjective_iff.2
+    (QuotientAddGroup.mk_surjective (s := AddSubgroup.zmultiples p))
 
 /-- The cotangent map of `ℝ → ℝ / pℤ` is not injective: it identifies a covector at `t` with the
 same covector at `t + p`. -/
-theorem not_injective_cotangent_coe
-    (hf : IsLocalDiffeomorph 𝓘(ℝ) 𝓘(ℝ) ∞ ((↑) : ℝ → AddCircle p)) :
-    ¬ Injective hf.cotangent := fun h ↦
-  (Fact.out : 0 < p).ne' (hf.cotangent_injective_iff.1 h (by simp))
+theorem not_injective_cotangent_coe : ¬ Injective (isLocalDiffeomorph_coe p ∞).cotangent :=
+  fun h ↦ (Fact.out : 0 < p).ne'
+    ((isLocalDiffeomorph_coe p ∞).cotangent_injective_iff.1 h (by simp))
 
 /-- **The transposed cotangent relation of `ℝ → ℝ / pℤ` is not the graph of a map.** No map `g`
 from covectors of the circle to covectors of `ℝ` has the cotangent relation as its transposed

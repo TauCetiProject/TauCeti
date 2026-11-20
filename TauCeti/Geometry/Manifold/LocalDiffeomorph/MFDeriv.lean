@@ -195,3 +195,18 @@ theorem fderiv_comp_symm_eq_comp (ψ : PartialDiffeomorph I 𝓘(𝕜, G'') M G'
 end Transition
 
 end PartialDiffeomorph
+
+/-- On the source of a partial diffeomorphism `Φ` agreeing with a local diffeomorphism `f`, the
+inverse of the differential of `f` is the differential of `Φ⁻¹`: `(df_x)⁻¹ = dΦ⁻¹_(f x)`. -/
+theorem IsLocalDiffeomorphAt.mfderivToContinuousLinearEquiv_symm_apply {f : M → N} {x : M}
+    (hf : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0) {Φ : PartialDiffeomorph I J M N n}
+    (hfΦ : Set.EqOn f Φ Φ.source) (hx : x ∈ Φ.source) (w : TangentSpace J (f x)) :
+    (hf.mfderivToContinuousLinearEquiv hn).symm w = mfderiv J I Φ.symm (f x) w := by
+  set u := (hf.mfderivToContinuousLinearEquiv hn).symm w
+  have hw : mfderiv I J f x u = w := hf.mfderiv_mfderivToContinuousLinearEquiv_symm_apply hn w
+  -- Near `x` the map `f` is `Φ`, so `df_x = dΦ_x`, and `dΦ⁻¹_(Φ x) ∘ dΦ_x` is the identity.
+  have hd : mfderiv I J f x = mfderiv I J Φ x :=
+    (eventuallyEq_of_mem (Φ.open_source.mem_nhds hx) hfΦ).mfderiv_eq
+  rw [← hw, hd]
+  exact (Φ.mfderiv_symm_apply_mfderiv_apply hn hx u).symm.trans
+    (congrArg (fun y : N ↦ (mfderiv J I Φ.symm y (mfderiv I J Φ x u) : E)) (hfΦ hx).symm)

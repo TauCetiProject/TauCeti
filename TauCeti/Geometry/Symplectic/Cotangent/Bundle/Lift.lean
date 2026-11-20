@@ -128,8 +128,9 @@ canonical symplectic form of `T*N` back to the canonical symplectic form of `T*M
 theorem mpullback_cotangent_symplecticForm (h : M ≃ₘ⟮I, J⟯ N) :
     SmoothForm.mpullback h.cotangent h.cotangent.contMDiff (symplecticForm J N) =
       symplecticForm I M := by
-  rw [symplecticForm_eq_neg_mextDerivₗ, symplecticForm_eq_neg_mextDerivₗ, map_neg,
-    ← SmoothForm.mextDerivₗ_mpullback, mpullback_cotangent_liouvilleForm]
+  -- The cotangent lift is the cotangent map of `h` as a local diffeomorphism.
+  convert h.isLocalDiffeomorph.mpullback_cotangent_symplecticForm using 3
+  exact h.coe_cotangent
 
 /-- **Cotangent lifts preserve exact Lagrangian maps.** For a smooth diffeomorphism `h : M → N`
 and a map `f` into `T*M`, the composite `T*h ∘ f` is an exact Lagrangian map for
