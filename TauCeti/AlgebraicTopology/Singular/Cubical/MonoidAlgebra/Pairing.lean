@@ -673,8 +673,8 @@ theorem cubicalChainPairing_lof_point_left (f : C(X × Y, Z)) (x : X)
       crossProduct_point_left, cubicalChainModuleLinearMap_lof, NormalizedCubicalChain.map_comp,
       LinearMap.comp_apply]
 
-/-- **Pairing with a point on the right**: pairing with the `0`-cube at `y` is the push-forward
-along `x ↦ f (x, y)`. -/
+/-- **Pairing with a point on the right**: pairing with the `0`-cube at `z` on the right is the
+push-forward along `y ↦ f (y, z)`. -/
 theorem cubicalChainPairing_lof_point_right (f : C(Y × Z, X)) (z : Z)
     (m : cubicalChainModule Y H R) :
     cubicalChainPairing H K R f m
