@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Bases
-import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 
 /-!
 # Root systems whose automorphisms are all Weyl
@@ -71,14 +70,14 @@ theorem _root_.RootPairing.Base.mem_support_map_iff (b : P.Base) (e : P.Aut) (j 
 /-- **An automorphism carrying the simple roots of a base onto themselves induces a symmetry of the
 Cartan matrix**: its index bijection, restricted to the simple roots, preserves the Cartan
 matrix. -/
-theorem _root_.RootPairing.Base.subtypePerm_mem_matrixSymmetryGroup [CharZero R]
-    [P.IsCrystallographic] (b : P.Base) (u : P.Aut)
-    (hu : ∀ i, u.indexEquiv i ∈ b.support ↔ i ∈ b.support) :
+theorem _root_.RootPairing.Base.subtypePerm_mem_matrixSymmetryGroup [P.IsCrystallographic]
+    (b : P.Base) (u : P.Aut) (hu : ∀ i, u.indexEquiv i ∈ b.support ↔ i ∈ b.support) :
     Equiv.Perm.subtypePerm u.indexEquiv hu ∈ matrixSymmetryGroup b.cartanMatrix := by
   refine mem_matrixSymmetryGroup_iff.mpr (Matrix.ext fun i j ↦ ?_)
+  -- `pairingIn ℤ` is chosen from the pairing alone, which `u` preserves, so no injectivity of
+  -- `ℤ → R` is needed.
   simp only [Matrix.submatrix_apply, Equiv.Perm.subtypePerm_apply, RootPairing.Base.cartanMatrix,
-    RootPairing.Base.cartanMatrixIn_def]
-  exact RootPairing.Hom.pairingIn_indexEquiv _ ℤ (i : ι) j
+    RootPairing.Base.cartanMatrixIn_def, RootPairing.pairingIn, RootPairing.Hom.pairing]
 
 variable [Finite ι] [IsDomain R] [CharZero R] [P.IsCrystallographic] [P.IsReduced]
 
@@ -113,7 +112,7 @@ theorem HasCartanType.weylGroup_eq_top [P.IsRootSystem] {b : P.Base} {t : Dynkin
   have hτ := DynkinType.mem_diagramSymmetry_of_mem_matrixSymmetryGroup he hσ
   ext i
   have hi := Equiv.ext_iff.mp (Subgroup.mem_bot.mp (ht.le hτ)) (e i)
-  simp only [Equiv.trans_apply, Equiv.symm_apply_apply, Equiv.Perm.coe_one, id_eq] at hi
+  simp only [Equiv.permCongr_apply, Equiv.symm_apply_apply, Equiv.Perm.coe_one, id_eq] at hi
   simp [e.injective hi]
 
 /-- **Every automorphism of a root system of type `E₈` lies in its Weyl group.** -/

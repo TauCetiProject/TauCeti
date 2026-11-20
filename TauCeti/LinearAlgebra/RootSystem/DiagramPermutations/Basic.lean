@@ -413,11 +413,11 @@ symmetries.** If `e` numbers the indices of `A` so that `A i j` is the entry of 
 diagram of `t`. -/
 theorem mem_diagramSymmetry_of_mem_matrixSymmetryGroup {κ : Type*} {A : Matrix κ κ ℤ}
     {e : κ ≃ Fin t.rank} (he : ∀ i j, A i j = t.cartanMatrix (e i) (e j)) {φ : Equiv.Perm κ}
-    (hφ : φ ∈ matrixSymmetryGroup A) : e.symm.trans (φ.trans e) ∈ t.diagramSymmetry :=
+    (hφ : φ ∈ matrixSymmetryGroup A) : e.permCongr φ ∈ t.diagramSymmetry :=
   mem_diagramSymmetry_iff.mpr fun i j ↦ by
     have hij := congrFun₂ (mem_matrixSymmetryGroup_iff.mp hφ) (e.symm i) (e.symm j)
     rw [Matrix.submatrix_apply, he, he, Equiv.apply_symm_apply, Equiv.apply_symm_apply] at hij
-    simpa only [Equiv.trans_apply] using hij
+    simpa only [Equiv.permCongr_apply] using hij
 
 /-- Chain reversal lies in the diagram symmetry group of `Aₙ`. -/
 @[simp]
