@@ -26,7 +26,7 @@ scheme-theoretic fiber `Spec B ×_{Spec A} Spec k` (`AlgHom.fiberPointsEquiv`).
 When `f` is finite the fiber is a finite `k`-scheme, and points over `y` are algebraic:
 
 * every value of a point over `y` is integral over `k`, already when `f` is only integral;
-* the image of a point over `y` is a finite `k`-algebra, so for a field `Ω` it is a finite
+* the image of a point over `y` is a finite `k`-algebra, so for fields `k` and `Ω` it is a finite
   field extension of `k` (a residue field of the fiber) embedded in `Ω`;
 * over a field `k` and for a domain `Ω`, there are finitely many points over `y`, at most the
   `k`-dimension of the fiber algebra.
@@ -77,13 +77,10 @@ theorem comp_eq_ofId_comp_iff_map_ker_le {f : A →ₐ[k] B} {y : A →ₐ[k] k}
     x.comp f = (Algebra.ofId k Ω).comp y ↔ (RingHom.ker y).map f ≤ RingHom.ker x := by
   rw [Ideal.map_le_iff_le_comap]
   refine ⟨fun h a ha ↦ ?_, fun h ↦ AlgHom.ext fun a ↦ ?_⟩
-  · rw [Ideal.mem_comap, RingHom.mem_ker, ← AlgHom.comp_apply, h, AlgHom.comp_apply,
-      RingHom.mem_ker.mp ha, map_zero]
+  · simpa [RingHom.mem_ker.mp ha] using DFunLike.congr_fun h a
   · have hmem : a - algebraMap k A (y a) ∈ RingHom.ker y := by
       simp [RingHom.mem_ker]
-    have hx := RingHom.mem_ker.mp (h hmem)
-    rw [map_sub, map_sub, AlgHom.commutes, AlgHom.commutes, sub_eq_zero] at hx
-    simpa using hx
+    simpa [sub_eq_zero] using RingHom.mem_ker.mp (h hmem)
 
 /-- The points of `B` lying over the `k`-point `y` of `A` along `f` are the points of the fiber
 algebra `B ⧸ (ker y) B`, the coordinate ring of the scheme-theoretic fiber of `Spec B → Spec A`
@@ -106,7 +103,7 @@ theorem fiberPointsEquiv_apply_mk (f : A →ₐ[k] B) (y : A →ₐ[k] k)
   exact Ideal.Quotient.lift_mk _ _ _
 
 @[simp]
-theorem coe_fiberPointsEquiv_symm (f : A →ₐ[k] B) (y : A →ₐ[k] k)
+theorem coe_fiberPointsEquiv_symm_apply (f : A →ₐ[k] B) (y : A →ₐ[k] k)
     (g : B ⧸ (RingHom.ker y).map f →ₐ[k] Ω) :
     ((fiberPointsEquiv f y).symm g : B →ₐ[k] Ω) = g.comp (Ideal.Quotient.mkₐ k _) :=
   (rfl)
@@ -120,7 +117,7 @@ theorem isIntegral_apply_of_comp_eq {f : A →ₐ[k] B} {y : A →ₐ[k] k} (x :
     RingHom.ext fun a ↦ DFunLike.congr_fun h a
   have hb := (hf b).map x.toRingHom
   rw [hcomp] at hb
-  exact RingHom.isIntegralElem.of_comp y.toRingHom (algebraMap k Ω) hb
+  simpa [IsIntegral] using RingHom.isIntegralElem.of_comp y.toRingHom (algebraMap k Ω) hb
 
 namespace Finite
 
@@ -131,7 +128,9 @@ theorem finite_of_surjective_of_comp_eq {f : A →ₐ[k] B} {y : A →ₐ[k] k} 
     Module.Finite k Ω := by
   have hxf : (x.comp f).Finite := (AlgHom.Finite.of_surjective x hx).comp hf
   rw [h] at hxf
-  exact RingHom.finite_algebraMap.mp (AlgHom.Finite.of_comp_finite hxf)
+  have hofId := AlgHom.Finite.of_comp_finite hxf
+  rw [AlgHom.Finite, AlgHom.toRingHom_eq_coe, Algebra.toRingHom_ofId] at hofId
+  exact RingHom.finite_algebraMap.mp hofId
 
 /-- The fiber algebra `B ⧸ (ker y) B` of a finite map `f` over a `k`-point `y` is a finite
 `k`-module: the fiber is a finite `k`-scheme. -/
@@ -141,8 +140,8 @@ theorem finite_quotient_map_ker {f : A →ₐ[k] B} (hf : f.Finite) (y : A →�
     (comp_eq_ofId_comp_iff_map_ker_le.mpr (Ideal.Quotient.mkₐ_ker k _).ge)
 
 /-- If `f` is finite, the image of a point lying over a `k`-point of `A` along `f` is a finite
-`k`-module. For a field `Ω` it is a finite field extension of `k`, a residue field of the fiber,
-through which the point factors. -/
+`k`-module. For fields `k` and `Ω` it is a finite field extension of `k`, a residue field of the
+fiber, through which the point factors. -/
 theorem finite_range_of_comp_eq {f : A →ₐ[k] B} {y : A →ₐ[k] k} {x : B →ₐ[k] Ω}
     (hf : f.Finite) (h : x.comp f = (Algebra.ofId k Ω).comp y) : Module.Finite k x.range :=
   hf.finite_of_surjective_of_comp_eq x.rangeRestrict_surjective <| AlgHom.ext fun a ↦
