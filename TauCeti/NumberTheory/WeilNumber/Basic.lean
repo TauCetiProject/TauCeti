@@ -61,7 +61,7 @@ in `K`. Algebraicity is part of the definition: a transcendental element has min
   one of weight `-n`.
 * `TauCeti.IsWeilNumber.conj_apply`: the complex conjugate of `σ α` is `q ^ n / σ α`.
 * `TauCeti.isWeilNumber_pow_iff`: `α` is a Weil `q`-number of weight `n` if and only if `α ^ r`
-  is a Weil `q ^ r`-number of weight `n`, for `r ≠ 0`.
+  is a Weil `q ^ r`-number of weight `n`, for `r ≠ 0` and `0 ≤ q`.
 
 The file closes with the basic examples: the roots of `X² - X + 2` are Weil `2`-numbers of
 weight `1`, roots of unity have weight `0`, `1 + √2` is a Weil number for no `q` and no weight
