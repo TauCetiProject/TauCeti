@@ -96,7 +96,7 @@ theorem locallyConvexSpace_compactlySupportedTopology :
   infer_instance
 
 /-- Every fixed-compact support inclusion is continuous. -/
-theorem continuous_ofSupportedIn (K : Compacts M) :
+theorem continuous_ofSupportedIn_compactlySupportedTopology (K : Compacts M) :
     letI := frameTopology (I := I) (n := n) e U hU
     letI := compactlySupportedTopology (I := I) (n := n) e U hU
     Continuous (ofSupportedIn (I := I) (F := F) (V := V) (n := n) K) := by
@@ -136,13 +136,14 @@ theorem continuous_val_compactlySupportedTopology :
 /-- Each fixed-compact stage retains exactly its compact derivative topology inside the
 test space; the final locally convex construction does not collapse a stage. Its
 `Topology.IsEmbedding.tendsto_nhds_iff` characterizes convergence within a fixed stage. -/
-theorem isEmbedding_ofSupportedIn (K : Compacts M) :
+theorem isEmbedding_ofSupportedIn_compactlySupportedTopology (K : Compacts M) :
     letI := frameTopology (I := I) (n := n) e U hU
     letI := compactlySupportedTopology (I := I) (n := n) e U hU
     Topology.IsEmbedding (ofSupportedIn (I := I) (F := F) (V := V) (n := n) K) := by
   let := frameTopology (I := I) (n := n) e U hU
   let := compactlySupportedTopology (I := I) (n := n) e U hU
-  exact Topology.IsEmbedding.of_comp (continuous_ofSupportedIn e U hU K)
+  exact Topology.IsEmbedding.of_comp
+    (continuous_ofSupportedIn_compactlySupportedTopology e U hU K)
     (continuous_val_compactlySupportedTopology e U hU) (by
       simpa only [val_comp_ofSupportedIn]
         using (Topology.IsEmbedding.subtypeVal :
@@ -312,8 +313,8 @@ theorem continuous_chartTestSection :
     ⟨_, t.chartTestSection_mem_supportedIn c hc hct (TestFunction.ofSupportedIn hK φ) (by
       rw [TestFunction.coe_ofSupportedIn]
       exact φ.tsupport_subset)⟩
-  refine ((continuous_ofSupportedIn e U hU K').comp (hval.subtype_mk _ : Continuous g)).congr
-    fun φ ↦ ?_
+  refine ((continuous_ofSupportedIn_compactlySupportedTopology e U hU K').comp
+    (hval.subtype_mk _ : Continuous g)).congr fun φ ↦ ?_
   exact Subtype.ext (ofSupportedIn_apply K' (g φ))
 
 end Bundle.Trivialization

@@ -47,7 +47,9 @@ frames, so we make it the canonical topology on compactly supported sections
 (`ContMDiffSection.instTopologicalSpaceCompactlySupported`). On a boundaryless Hausdorff
 `σ`-compact manifold with finite-dimensional model it is the topology
 `ContMDiffSection.compactlySupportedTopology` of every covering frame system
-(`ContMDiffSection.topologicalSpace_compactlySupported_eq_compactlySupportedTopology`).
+(`ContMDiffSection.topologicalSpace_compactlySupported_eq_compactlySupportedTopology`), so the
+fixed-compact continuity, embedding and universal-property lemmas of that topology transfer to the
+canonical one.
 
 ## Main declarations
 
@@ -67,6 +69,10 @@ frames, so we make it the canonical topology on compactly supported sections
 * `ContMDiffSection.instTopologicalSpaceCompactlySupported`: the frame-free test topology on
   compactly supported sections.
 * `ContMDiffSection.continuous_iff_continuous_comp_chartTestSection`: its universal property.
+* `ContMDiffSection.continuous_iff_continuous_comp_ofSupportedIn`,
+  `ContMDiffSection.isEmbedding_ofSupportedIn`: its fixed-compact universal property, and the
+  embedding of each fixed-compact stage, for the compact derivative topology of a covering frame
+  system.
 
 The fixed-support part rests on
 `ContDiffMapSupportedIn.continuous_iff_continuous_toContMDiffMap`: on a fixed compact support, the
@@ -594,6 +600,48 @@ instance instT2SpaceCompactlySupported : T2Space (compactlySupported I F n V) :=
   rw [topologicalSpace_compactlySupported_eq_compactlySupportedTopology
     (fun x ↦ trivializationAt F V x) U (fun _ ↦ subset_rfl) hcover]
   exact t2Space_compactlySupportedTopology _ U (fun _ ↦ subset_rfl) hcover
+
+variable {ι : Type*} (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
+  (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet) (hcover : ∀ x : M, ∃ i, x ∈ U i)
+
+include hcover in
+/-- Every fixed-compact support inclusion is continuous into the bundle tests, for the compact
+derivative topology of any covering frame system. -/
+theorem continuous_ofSupportedIn (K : Compacts M) :
+    letI := frameTopology (I := I) (n := n) e U hU
+    Continuous (ofSupportedIn (I := I) (F := F) (V := V) (n := n) K) := by
+  rw [topologicalSpace_compactlySupported_eq_compactlySupportedTopology e U hU hcover]
+  exact continuous_ofSupportedIn_compactlySupportedTopology e U hU K
+
+include hcover in
+/-- Forgetting compact support is continuous from the bundle tests into the compact derivative
+topology of any covering frame system. -/
+theorem continuous_val_compactlySupported :
+    letI := frameTopology (I := I) (n := n) e U hU
+    Continuous (Subtype.val : compactlySupported I F n V → Cₛ^n⟮I; F, V⟯) := by
+  rw [topologicalSpace_compactlySupported_eq_compactlySupportedTopology e U hU hcover]
+  exact continuous_val_compactlySupportedTopology e U hU
+
+include hcover in
+/-- Each fixed-compact stage, with the compact derivative topology of any covering frame system,
+is embedded in the bundle tests. -/
+theorem isEmbedding_ofSupportedIn (K : Compacts M) :
+    letI := frameTopology (I := I) (n := n) e U hU
+    IsEmbedding (ofSupportedIn (I := I) (F := F) (V := V) (n := n) K) := by
+  rw [topologicalSpace_compactlySupported_eq_compactlySupportedTopology e U hU hcover]
+  exact isEmbedding_ofSupportedIn_compactlySupportedTopology e U hU K
+
+include hcover in
+/-- **The fixed-compact universal property of bundle tests.** A linear map from the bundle tests
+into a locally convex space is continuous exactly when its restriction to every fixed-compact
+stage is continuous for the compact derivative topology of a covering frame system. -/
+theorem continuous_iff_continuous_comp_ofSupportedIn {G : Type*} [AddCommGroup G] [Module ℝ G]
+    [TopologicalSpace G] [IsTopologicalAddGroup G] [ContinuousSMul ℝ G] [LocallyConvexSpace ℝ G]
+    (g : compactlySupported I F n V →ₗ[ℝ] G) :
+    letI := frameTopology (I := I) (n := n) e U hU
+    Continuous g ↔ ∀ K : Compacts M, Continuous (g ∘ ofSupportedIn K) := by
+  rw [topologicalSpace_compactlySupported_eq_compactlySupportedTopology e U hU hcover]
+  exact continuous_compactlySupportedTopology_iff e U hU g
 
 end Manifold
 
