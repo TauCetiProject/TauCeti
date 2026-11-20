@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Unramified.Locus
 public import TauCeti.NumberTheory.NumberField.Frobenius.FixedField.Inertia
 import Mathlib.NumberTheory.RamificationInertia.Unramified
 import TauCeti.NumberTheory.RamificationInertia.Splitting
+import TauCeti.RingTheory.Unramified.AlgEquiv
 
 /-!
 # Complete splitting and unramifiedness in composita and Galois closures
@@ -30,6 +31,12 @@ decomposition and inertia groups over `𝔭` are permuted among themselves by th
 so neither property changes. As the normal closure of `E` in `M` is the join of the conjugates of
 `E`, the prime `𝔭` splits completely (or is unramified) in `E` exactly when it does in the normal
 closure. When `M` is itself the normal closure of `E`, this compares `E` with `M` directly.
+
+The normal closure of a finite extension `X / K` inside an arbitrary normal extension `Ω / K`
+(for instance a separable closure of `K`) is a finite Galois extension of `K` that need not be
+given in advance. Within it, the normal closure of `X` is the whole field, the compositum of the
+images of the `K`-embeddings of `X`, and each image is `K`-isomorphic to `X`. So a prime is
+unramified in `X` exactly when it is unramified in the normal closure of `X` in `Ω`.
 
 The decomposition-group criterion rests on the local degree formula
 `e(Q ∩ E / 𝔭) f(Q ∩ E / 𝔭) = [D(Q) : D(Q) ∩ Gal(M/E)]`, together with the non-Galois count
@@ -54,6 +61,8 @@ criterion rests likewise on `e(Q ∩ E / 𝔭) = [I(Q) : I(Q) ∩ Gal(M/E)]`.
 * `Ideal.isUnramifiedIn_sup_iff`, `Ideal.isUnramifiedIn_iSup_iff`,
   `Ideal.isUnramifiedIn_map_iff`, `Ideal.isUnramifiedIn_normalClosure_iff`: the same four
   consequences for unramifiedness.
+* `Ideal.isUnramifiedIn_normalClosure_iff_of_normal`: `𝔭` is unramified in a finite extension
+  `X` of `K` iff it is unramified in the normal closure of `X` in a normal extension of `K`.
 
 ## References
 
@@ -249,5 +258,38 @@ theorem isUnramifiedIn_normalClosure_iff (p : Ideal (𝓞 K)) (E : IntermediateF
     Algebra.IsUnramifiedIn (𝓞 (normalClosure K E M)) p ↔ Algebra.IsUnramifiedIn (𝓞 E) p := by
   rw [normalClosure_def'' E, isUnramifiedIn_iSup_iff]
   simp only [isUnramifiedIn_map_iff, forall_const]
+
+/-! ### Normal closures in a normal extension -/
+
+section NormalAmbient
+
+variable {X Ω : Type*} [Field X] [Algebra K X] [FiniteDimensional K X] [Field Ω] [Algebra K Ω]
+  [Normal K Ω]
+
+/-- **Unramifiedness in a normal closure inside a normal extension.** Let `X` be a finite
+extension of `K` admitting a `K`-embedding into a normal extension `Ω` of `K`. An ideal `p` of
+`𝓞 K` is unramified in `X` exactly when it is unramified in the normal closure of `X` in `Ω`.
+Unlike `Ideal.isUnramifiedIn_normalClosure_iff`, neither `X` nor its normal closure is assumed to
+lie in a given finite Galois extension of `K`. -/
+theorem isUnramifiedIn_normalClosure_iff_of_normal [Nonempty (X →ₐ[K] Ω)] (p : Ideal (𝓞 K)) :
+    Algebra.IsUnramifiedIn (𝓞 (normalClosure K X Ω)) p ↔ Algebra.IsUnramifiedIn (𝓞 X) p := by
+  -- The normal closure `M` is finite Galois over `K`, and the normal closure of `X` inside `M`
+  -- is `M` itself: the compositum of the images of the `K`-embeddings `X →ₐ[K] M`.
+  let M := normalClosure K X Ω
+  have : NumberField M := NumberField.of_module_finite K M
+  have : IsGalois K M := ⟨⟩
+  have : Nonempty (X →ₐ[K] M) :=
+    ⟨(normalClosure.algHomEquiv K X Ω).symm (Classical.arbitrary _)⟩
+  have htop : normalClosure K X M = ⊤ :=
+    (Algebra.IsAlgebraic.isNormalClosure_iff.1 (isNormalClosure_normalClosure K X Ω)).2
+  have hM := (NumberField.RingOfIntegers.mapAlgEquiv (k := K)
+    (topEquiv : (⊤ : IntermediateField K M) ≃ₐ[K] M)).isUnramifiedIn_iff p
+  rw [← hM, ← htop, normalClosure_def, isUnramifiedIn_iSup_iff]
+  -- Each image of `X` is `K`-isomorphic to `X`.
+  have hX (f : X →ₐ[K] M) :=
+    (NumberField.RingOfIntegers.mapAlgEquiv (k := K) f.equivFieldRange).isUnramifiedIn_iff p
+  exact ⟨fun h ↦ (hX (Classical.arbitrary _)).2 (h _), fun h f ↦ (hX f).1 h⟩
+
+end NormalAmbient
 
 end Ideal
