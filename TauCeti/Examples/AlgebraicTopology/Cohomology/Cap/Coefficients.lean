@@ -31,6 +31,23 @@ open CategoryTheory Limits MonoidalCategory HomologicalComplex TauCeti
 
 universe u
 
+namespace TauCeti
+
+private theorem negUnit_action_square (R : Type u) [CommRing R] :
+    ((-𝟙 (𝟙_ (ModuleCat.{u} R))) ▷ (𝟙_ (ModuleCat.{u} R))) ≫
+        (λ_ (𝟙_ (ModuleCat.{u} R))).hom =
+      ((𝟙_ (ModuleCat.{u} R)) ◁ 𝟙 (𝟙_ (ModuleCat.{u} R))) ≫
+        (λ_ (𝟙_ (ModuleCat.{u} R))).hom ≫ (-𝟙 (𝟙_ (ModuleCat.{u} R))) := by
+  simp
+
+private theorem idUnit_diagonal_square (R : Type u) [CommRing R] :
+    (𝟙 (𝟙_ (ModuleCat.{u} R))) ≫ (λ_ (𝟙_ (ModuleCat.{u} R))).inv =
+      (λ_ (𝟙_ (ModuleCat.{u} R))).inv ≫
+        ((𝟙 (𝟙_ (ModuleCat.{u} R))) ⊗ₘ (𝟙 (𝟙_ (ModuleCat.{u} R)))) := by
+  rw [Category.id_comp, id_tensorHom_id, Category.comp_id]
+
+end TauCeti
+
 namespace TauCeti.CapCoefficientClients
 
 /-- The topological point. -/
@@ -79,30 +96,21 @@ theorem cap_negativeClass :
         -𝟙 (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) 0).obj
           (𝟙_ (ModuleCat.{u} R))).obj point) := by
   let U : ModuleCat.{u} R := 𝟙_ (ModuleCat.{u} R)
-  have hμ : ((-𝟙 U) ▷ U) ≫ (λ_ U).hom =
-      (U ◁ 𝟙 U) ≫ (λ_ U).hom ≫ (-𝟙 U) := by simp
   have hh := TopCat.singularCap_coefficient_naturality point R
     (λ_ U).inv (λ_ U).inv (λ_ U).hom (λ_ U).hom
     (𝟙 U) (𝟙 U) (𝟙 U) (-𝟙 U) (-𝟙 U)
-    (by rw [Category.id_comp, id_tensorHom_id, Category.comp_id]) hμ 0 0 0 rfl (unitClass R)
+    (idUnit_diagonal_square R) (negUnit_action_square R) 0 0 0 rfl (unitClass R)
   have hunit : point.singularCap R (λ_ U).inv (λ_ U).hom 0 0 0 rfl (unitClass R) = 𝟙 _ :=
     TauCeti.singularCap_unit R U 0
   rw [hunit] at hh
-  have hid : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) 0).map
-      (𝟙 U)).app point = 𝟙 _ :=
-    congrArg (fun z ↦ z.app point)
-      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) 0).map_id U)
-  rw [hid, Category.id_comp, Category.id_comp] at hh
+  rw [CategoryTheory.Functor.map_id, CategoryTheory.NatTrans.id_app,
+    Category.id_comp, Category.id_comp] at hh
   have hcap : point.singularCap R (λ_ U).inv (λ_ U).hom 0 0 0 rfl (negativeClass R) =
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) 0).map (-𝟙 U)).app point := hh
   refine hcap.trans ?_
-  let : (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) 0).Additive := by
-    dsimp only [AlgebraicTopology.singularHomologyFunctor]
-    infer_instance
   rw [CategoryTheory.Functor.map_neg, CategoryTheory.Functor.map_id,
     CategoryTheory.NatTrans.app_neg]
-  -- The remaining identity natural transformation evaluates to the identity homology morphism.
-  rfl
+  rw [CategoryTheory.NatTrans.id_app]
 
 /-- The negative coefficient acts on the point class by negation. -/
 theorem cap_negativeClass_pointClass :
@@ -136,14 +144,22 @@ theorem negative_point_boundary_sign
           ((X.chainComplex U).d 2 1 ≫ φ) ≫ e.f 1) := by
   dsimp only
   let U : ModuleCat.{u} R := 𝟙_ (ModuleCat.{u} R)
-  have hu : (𝟙 U) ≫ (λ_ U).inv = (λ_ U).inv ≫ ((𝟙 U) ⊗ₘ (𝟙 U)) := by
-    rw [Category.id_comp, id_tensorHom_id, Category.comp_id]
-  have hμ : ((-𝟙 U) ▷ U) ≫ (λ_ U).hom = (U ◁ 𝟙 U) ≫ (λ_ U).hom ≫ (-𝟙 U) := by
-    simp
   have hD := TopCat.alexanderWhitneyDiagonal_coefficient_naturality point
-    (λ_ U).inv (λ_ U).inv (𝟙 U) (𝟙 U) (𝟙 U) hu
-  have ha := (TopCat.toSSet.obj point).chainComplexPairing_coefficient_naturality
-    (λ_ U).hom (λ_ U).hom (𝟙 U) (-𝟙 U) (-𝟙 U) hμ
+    (λ_ U).inv (λ_ U).inv (𝟙 U) (𝟙 U) (𝟙 U) (idUnit_diagonal_square R)
+  have ha :
+      (NatTrans.mapHomologicalComplex ((tensoringLeft (ModuleCat.{u} R)).map (-𝟙 U)) _).app
+          ((TopCat.toSSet.obj point).chainComplex U) ≫
+        (TopCat.toSSet.obj point).chainComplexPairing (λ_ U).hom =
+      ((tensorLeft U).mapHomologicalComplex _).map
+          (((SSet.chainComplexFunctor (ModuleCat.{u} R)).map (𝟙 U)).app
+            (TopCat.toSSet.obj point)) ≫
+        (TopCat.toSSet.obj point).chainComplexPairing (λ_ U).hom ≫
+          ((SSet.chainComplexFunctor (ModuleCat.{u} R)).map (-𝟙 U)).app
+            (TopCat.toSSet.obj point) := by
+    rw [SSet.whiskerRight_comp_chainComplexPairing,
+      SSet.chainComplexPairing_comp_chainComplexFunctor_map_app,
+      SSet.whiskerLeft_chainComplexFunctor_map_app_comp_chainComplexPairing]
+    exact congrArg ((TopCat.toSSet.obj point).chainComplexPairing) (negUnit_action_square R)
   have hh := TauCeti.ChainComplex.capChain_coefficient_naturality_comp_d (k := R)
     (point.alexanderWhitneyDiagonal (λ_ U).inv)
     ((TopCat.toSSet.obj point).chainComplexPairing (λ_ U).hom)
@@ -198,7 +214,7 @@ theorem indicatorClass_restrict_left :
       singularCohomologyZeroEval (0 : twoPoints) (indicatorClass k) :=
     congrArg (fun z : twoPoints ↦ singularCohomologyZeroEval z (indicatorClass k)) x.property
   have hzero : singularCohomologyZeroEval (0 : twoPoints) (indicatorClass k) = 0 :=
-    (indicatorClass_eval k (0 : twoPoints)).trans (by rfl)
+    by rw [indicatorClass_eval, ite_eq_right (by decide : (0 : twoPoints) ≠ 1)]
   exact hn.trans (he.trans (hzero.trans (map_zero _).symm))
 
 /-- Exactness produces the relative indicator class on this proper pair. -/
@@ -225,6 +241,11 @@ theorem relativeIndicatorClass_image :
 def rightPointMap : CapCoefficientClients.point ⟶ twoPoints :=
   TopCat.ofHom (ContinuousMap.const _ 1)
 
+/-- The right-point map has constant value one. -/
+@[simp]
+theorem rightPointMap_apply (x : CapCoefficientClients.point) : rightPointMap x = 1 := by
+  simp only [rightPointMap, ConcreteCategory.hom_ofHom, ContinuousMap.const_apply]
+
 /-- Restriction of the indicator to the right point is the unit. -/
 theorem indicatorClass_restrict_right :
     TopCat.singularCohomologyMap rightPointMap 0 (indicatorClass k) =
@@ -236,7 +257,7 @@ theorem indicatorClass_restrict_right :
       (CapCoefficientClients.point.singularCohomologyZeroOne (k := k)) = 1 :=
     singularCohomologyZeroEval_singularCohomologyZeroOne x
   have hv : singularCohomologyZeroEval (rightPointMap x) (indicatorClass k) = (1 : k) :=
-    (indicatorClass_eval k (rightPointMap x)).trans (by rfl)
+    by rw [indicatorClass_eval, rightPointMap_apply, ite_eq_left rfl]
   exact hn.trans (hv.trans hu.symm)
 
 /-- The ambient right-point generator uses the singular pushforward. -/
@@ -285,7 +306,7 @@ def relativeRightPointClass :
     properPair.singularHomology (C := ModuleCat k) (𝟙_ (ModuleCat k)) 0 :=
   properPair.singularHomologyπ (𝟙_ (ModuleCat k)) 0 (rightPointClass k)
 
-/-- The relative cap is nonzero on this proper pair, by its ambient image. -/
+/-- The relative cap equals the ambient right-point class on this proper pair. -/
 theorem cap_relativeIndicatorClass_relativeRightPointClass :
     properPair.singularCap k (λ_ (𝟙_ (ModuleCat k))).inv
       (λ_ (𝟙_ (ModuleCat k))).hom 0 0 0 rfl
@@ -375,10 +396,6 @@ theorem cap_doubledRelativeIndicatorClass_relativeRightPointClass :
     (2 • 𝟙 U) (𝟙 U) (2 • 𝟙 U) (𝟙 U) (𝟙 U)
     (doubleUnitCoefficient_square k) hμ
     0 0 0 rfl (relativeIndicatorClass k)
-  have hid : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat k) 0).map
-      (𝟙 U)).app properPair.fst = 𝟙 _ :=
-    congrArg (fun η ↦ η.app properPair.fst)
-      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat k) 0).map_id U)
   have hcap : properPair.singularCap k (λ_ U).inv (λ_ U).hom 0 0 0 rfl
       (doubledRelativeIndicatorClass k) =
         homologyMap (((SSetPair.chainComplexFunctor (ModuleCat k)).map
@@ -394,7 +411,8 @@ theorem cap_doubledRelativeIndicatorClass_relativeRightPointClass :
       (doubledRelativeIndicatorClass k) =
         2 • properPair.singularCap k (λ_ U).inv (λ_ U).hom 0 0 0 rfl
           (relativeIndicatorClass k) := hcap.trans (by
-    rw [relativeChainCoefficient_two, hm, hid, Category.comp_id,
+    rw [relativeChainCoefficient_two, hm, CategoryTheory.Functor.map_id,
+      CategoryTheory.NatTrans.id_app, Category.comp_id,
       Preadditive.nsmul_comp, Category.id_comp])
   exact (ConcreteCategory.congr_hom hc (relativeRightPointClass k)).trans
     (congrArg (fun z ↦ (2 : ℕ) • z) (cap_relativeIndicatorClass_relativeRightPointClass k))
@@ -432,10 +450,8 @@ theorem integral_doubled_cap_ne_zero : doubledRelativeCapValue ℤ ≠ 0 := by
 
 /-- In characteristic two, the transported proper-pair cap vanishes. -/
 theorem mod_two_doubled_cap_eq_zero : doubledRelativeCapValue (ZMod 2) = 0 := by
-  have hc : (2 : ZMod 2) = 0 := by decide
-  exact ((doubledRelativeCapValue_eq (ZMod 2)).trans
-    (Nat.cast_smul_eq_nsmul (ZMod 2) 2 (rightPointClass (ZMod 2))).symm).trans
-      ((congrArg (· • rightPointClass (ZMod 2)) hc).trans (zero_smul _ _))
+  rw [doubledRelativeCapValue_eq, ← Nat.cast_smul_eq_nsmul (ZMod 2)]
+  simp [show (2 : ZMod 2) = 0 from by decide]
 
 /-- Modulo four, the same nonidentity coefficient transport has nonzero output. -/
 theorem mod_four_doubled_cap_ne_zero : doubledRelativeCapValue (ZMod 4) ≠ 0 := by
@@ -449,18 +465,13 @@ theorem mod_four_doubled_cap_ne_zero : doubledRelativeCapValue (ZMod 4) ≠ 0 :=
 /-- Its modulo-four output is killed by another multiplication by two. -/
 theorem two_smul_mod_four_doubled_cap :
     (2 : ZMod 4) • doubledRelativeCapValue (ZMod 4) = 0 := by
-  have hc : (2 : ZMod 4) * 2 = 0 := by decide
-  have hv := (doubledRelativeCapValue_eq (ZMod 4)).trans
-    (Nat.cast_smul_eq_nsmul (ZMod 4) 2 (rightPointClass (ZMod 4))).symm
-  exact (congrArg ((2 : ZMod 4) • ·) hv).trans ((smul_smul _ _ _).trans
-    ((congrArg (· • rightPointClass (ZMod 4)) hc).trans (zero_smul _ _)))
+  rw [doubledRelativeCapValue_eq, ← Nat.cast_smul_eq_nsmul (ZMod 4), smul_smul]
+  simp [show (2 : ZMod 4) * 2 = 0 from by decide]
 
 /-- The same proper-pair expression imposes no nontriviality assumption on coefficients. -/
 theorem zero_ring_doubled_cap_eq_zero : doubledRelativeCapValue (ZMod 1) = 0 := by
-  have hc : (2 : ZMod 1) = 0 := by decide
-  exact ((doubledRelativeCapValue_eq (ZMod 1)).trans
-    (Nat.cast_smul_eq_nsmul (ZMod 1) 2 (rightPointClass (ZMod 1))).symm).trans
-      ((congrArg (· • rightPointClass (ZMod 1)) hc).trans (zero_smul _ _))
+  rw [doubledRelativeCapValue_eq, ← Nat.cast_smul_eq_nsmul (ZMod 1)]
+  simp [show (2 : ZMod 1) = 0 from by decide]
 
 /-- Inclusion of the right point, from the point with empty subspace into the proper pair. -/
 def rightPointPairMap : CapCoefficientClients.emptyBoundaryPair ⟶ properPair :=
@@ -497,11 +508,10 @@ theorem negative_indicator_space_square :
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat k) 0).map
           (-𝟙 (𝟙_ (ModuleCat k)))).app twoPoints := by
   let U : ModuleCat k := 𝟙_ (ModuleCat k)
-  have hμ : ((-𝟙 U) ▷ U) ≫ (λ_ U).hom = (U ◁ 𝟙 U) ≫ (λ_ U).hom ≫ (-𝟙 U) := by simp
   exact TopCat.singularCap_coefficient_naturality_map rightPointMap k
     (λ_ U).inv (λ_ U).inv (λ_ U).hom (λ_ U).hom
-    (𝟙 U) (𝟙 U) (𝟙 U) (-𝟙 U) (-𝟙 U) (by rw [Category.id_comp, id_tensorHom_id, Category.comp_id])
-    hμ
+    (𝟙 U) (𝟙 U) (𝟙 U) (-𝟙 U) (-𝟙 U) (idUnit_diagonal_square k)
+    (negUnit_action_square k)
     0 0 0 rfl (indicatorClass k)
 
 /-- The cap value after negative coefficient transport and the right-point inclusion. -/
@@ -517,25 +527,15 @@ def negativeIndicatorSpaceValue :
 /-- Evaluating the combined square gives the negative right-point generator. -/
 theorem negativeIndicatorSpaceValue_eq : negativeIndicatorSpaceValue k = -rightPointClass k := by
   let U : ModuleCat k := 𝟙_ (ModuleCat k)
-  let F := AlgebraicTopology.singularHomologyFunctor (ModuleCat k) 0
-  have hid : (F.map (𝟙 U)).app twoPoints = 𝟙 _ :=
-    congrArg (fun η ↦ η.app twoPoints) (F.map_id U)
-  have hneg : (F.map (-𝟙 U)).app twoPoints = -𝟙 _ := by
-    let : F.Additive := by
-      dsimp only [F, AlgebraicTopology.singularHomologyFunctor]
-      infer_instance
-    rw [CategoryTheory.Functor.map_neg, CategoryTheory.NatTrans.app_neg, hid]
   have hs := negative_indicator_space_square k
-  rw [hid, hneg, Category.id_comp] at hs
+  simp only [CategoryTheory.Functor.map_neg, CategoryTheory.Functor.map_id,
+    CategoryTheory.NatTrans.app_neg, CategoryTheory.NatTrans.id_app, Category.id_comp] at hs
   have hv := ConcreteCategory.congr_hom hs (CapCoefficientClients.pointClass k)
-  -- Type the homology identity before evaluating its underlying linear map.
-  have hidentity : ModuleCat.Hom.hom (𝟙 ((F.obj U).obj twoPoints)) = LinearMap.id :=
-    ModuleCat.hom_id
   have heval : negativeIndicatorSpaceValue k =
       -(twoPoints.singularCap k (λ_ U).inv (λ_ U).hom 0 0 0 rfl
         (indicatorClass k) (rightPointClass k)) := by
     simpa only [negativeIndicatorSpaceValue, rightPointClass, ConcreteCategory.comp_apply,
-      ModuleCat.hom_neg, LinearMap.neg_apply, hidentity, LinearMap.id_apply] using hv
+      ModuleCat.hom_neg, LinearMap.neg_apply, ModuleCat.hom_id, LinearMap.id_apply] using hv
   exact heval.trans (congrArg (- ·) (cap_indicatorClass_rightPointClass k))
 
 /-- Augmentation detects the minus sign of the transported cap output. -/
@@ -582,11 +582,10 @@ theorem negative_indicator_pair_square :
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat k) 0).map
           (-𝟙 (𝟙_ (ModuleCat k)))).app properPair.fst := by
   let U : ModuleCat k := 𝟙_ (ModuleCat k)
-  have hμ : ((-𝟙 U) ▷ U) ≫ (λ_ U).hom = (U ◁ 𝟙 U) ≫ (λ_ U).hom ≫ (-𝟙 U) := by simp
   exact TopPair.singularCap_coefficient_naturality_map rightPointPairMap k
     (λ_ U).inv (λ_ U).inv (λ_ U).hom (λ_ U).hom
-    (𝟙 U) (𝟙 U) (𝟙 U) (-𝟙 U) (-𝟙 U) (by rw [Category.id_comp, id_tensorHom_id, Category.comp_id])
-    hμ
+    (𝟙 U) (𝟙 U) (𝟙 U) (-𝟙 U) (-𝟙 U) (idUnit_diagonal_square k)
+    (negUnit_action_square k)
     0 0 0 rfl (relativeIndicatorClass k)
 
 end TauCeti.CapCoefficientProperPair
@@ -615,10 +614,9 @@ theorem coefficient_square_empty (p q n : ℕ) (h : p + q = n)
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).map
           (-𝟙 (𝟙_ (ModuleCat.{u} R)))).app emptySpace := by
   let U : ModuleCat.{u} R := 𝟙_ (ModuleCat.{u} R)
-  have hμ : ((-𝟙 U) ▷ U) ≫ (λ_ U).hom = (U ◁ 𝟙 U) ≫ (λ_ U).hom ≫ (-𝟙 U) := by simp
   exact TopCat.singularCap_coefficient_naturality emptySpace R
     (λ_ U).inv (λ_ U).inv (λ_ U).hom (λ_ U).hom
-    (𝟙 U) (𝟙 U) (𝟙 U) (-𝟙 U) (-𝟙 U) (by rw [Category.id_comp, id_tensorHom_id, Category.comp_id])
-    hμ p q n h α
+    (𝟙 U) (𝟙 U) (𝟙 U) (-𝟙 U) (-𝟙 U) (idUnit_diagonal_square R)
+    (negUnit_action_square R) p q n h α
 
 end TauCeti.CapCoefficientEdges

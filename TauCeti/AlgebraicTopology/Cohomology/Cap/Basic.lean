@@ -167,7 +167,17 @@ theorem singularCap_coefficient_naturality (X : TopCat.{w}) (k : Type*) [Ring k]
         X.singularCap k u μ p q n h α ≫
           ((AlgebraicTopology.singularHomologyFunctor C q).map e).app X := by
   rw [singularCap_def, singularCap_def]
-  have ha := (toSSet.obj X).chainComplexPairing_coefficient_naturality μ μ' b v e hμ
+  have ha :
+      (NatTrans.mapHomologicalComplex ((tensoringLeft C).map v) _).app
+          ((toSSet.obj X).chainComplex S') ≫ (toSSet.obj X).chainComplexPairing μ' =
+        ((tensorLeft M).mapHomologicalComplex _).map
+            (((SSet.chainComplexFunctor C).map b).app (toSSet.obj X)) ≫
+          (toSSet.obj X).chainComplexPairing μ ≫
+            ((SSet.chainComplexFunctor C).map e).app (toSSet.obj X) := by
+    rw [SSet.whiskerRight_comp_chainComplexPairing,
+      SSet.chainComplexPairing_comp_chainComplexFunctor_map_app,
+      SSet.whiskerLeft_chainComplexFunctor_map_app_comp_chainComplexPairing]
+    exact congrArg ((toSSet.obj X).chainComplexPairing) hμ
   let f := (TauCeti.ChainComplex.linearYonedaFunctor k M).map
     (((SSet.chainComplexFunctor C).map a).app (toSSet.obj X)).op
   let g := ((toSSet.obj X).chainComplex R').linearYonedaObjMap k v

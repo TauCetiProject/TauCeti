@@ -217,7 +217,18 @@ theorem singularCap_coefficient_naturality (P : TopPair.{w}) (k : Type*) [Ring k
         P.singularCap k u μ p q n h α ≫
           ((AlgebraicTopology.singularHomologyFunctor C q).map e).app P.fst := by
   rw [singularCap_def, singularCap_def]
-  have ha := (TopCat.toSSet.obj P.fst).chainComplexPairing_coefficient_naturality μ μ' b v e hμ
+  have ha :
+      (NatTrans.mapHomologicalComplex ((tensoringLeft C).map v) _).app
+          ((TopCat.toSSet.obj P.fst).chainComplex S') ≫
+        (TopCat.toSSet.obj P.fst).chainComplexPairing μ' =
+        ((tensorLeft M).mapHomologicalComplex _).map
+            (((SSet.chainComplexFunctor C).map b).app (TopCat.toSSet.obj P.fst)) ≫
+          (TopCat.toSSet.obj P.fst).chainComplexPairing μ ≫
+            ((SSet.chainComplexFunctor C).map e).app (TopCat.toSSet.obj P.fst) := by
+    rw [SSet.whiskerRight_comp_chainComplexPairing,
+      SSet.chainComplexPairing_comp_chainComplexFunctor_map_app,
+      SSet.whiskerLeft_chainComplexFunctor_map_app_comp_chainComplexPairing]
+    exact congrArg ((TopCat.toSSet.obj P.fst).chainComplexPairing) hμ
   exact TauCeti.ChainComplex.cap_coefficient_naturality
     (P.alexanderWhitneyDiagonal u) ((TopCat.toSSet.obj P.fst).chainComplexPairing μ)
     (P.alexanderWhitneyDiagonal u') ((TopCat.toSSet.obj P.fst).chainComplexPairing μ')
