@@ -88,11 +88,7 @@ private theorem piTensorProduct_aux (ι : Type u) [Finite ι] {G : ι → Type v
     -- Split off the factor at `none` and use the binary tensor product of torsors.
     have := ih (G := fun i ↦ G (some i)) (B := fun i ↦ B (some i))
     let φ : (∀ i, G i) ≃* (∀ i, G (some i)) × G none :=
-      { toFun g := (fun i ↦ g (some i), g none)
-        invFun k i := Option.rec k.2 k.1 i
-        left_inv g := funext fun i ↦ by cases i <;> rfl
-        right_inv _ := rfl
-        map_mul' _ _ := rfl }
+      MulEquiv.piOptionEquivProd.trans MulEquiv.prodComm
     refine of_mulEquiv_algEquiv φ (optionAlgEquiv B) fun g x ↦ ?_
     induction x using PiTensorProduct.induction_on with
     | smul_tprod r a => simp [φ, smul_comm _ r]
@@ -111,6 +107,18 @@ instance piTensorProduct {ι : Type u} [Finite ι] {G : ι → Type v} {B : ι �
     IsFiniteEtaleTorsor (∀ i, G i) A (⨂[A] i, B i) :=
   piTensorProduct_aux ι
 
+/-- Restriction `g ↦ g ∘ f` of a product of groups along an injective map is surjective: extend
+by `1` off the range of `f`. -/
+private theorem surjective_restrict {σ τ : Type*} {G : τ → Type*} [∀ j, Group (G j)]
+    {f : σ → τ} (hf : Function.Injective f) :
+    Function.Surjective (MonoidHom.pi fun i ↦ Pi.evalMonoidHom G (f i)) := fun k ↦ by
+  classical
+  let e := Equiv.ofInjective f hf
+  refine ⟨fun j ↦ if hj : j ∈ Set.range f then
+    Equiv.piCongrLeft (fun j : Set.range f ↦ G j) e k ⟨j, hj⟩ else 1, funext fun i ↦ ?_⟩
+  simp only [MonoidHom.pi_apply, Pi.evalMonoidHom_apply, Set.mem_range_self, ↓reduceDIte]
+  exact Equiv.piCongrLeft_apply_apply (fun j : Set.range f ↦ G j) e k i
+
 section FiberwiseMul
 
 variable {σ τ : Type*} [Fintype σ] [Finite τ] [DecidableEq τ] {G : τ → Type*} {B : τ → Type*}
@@ -125,8 +133,6 @@ finite étale torsor over `⨂[A] i, B (f i)` under the kernel of the restrictio
 range of `f`. In particular `fiberwiseMul f` is injective and faithfully flat. -/
 theorem fiberwiseMul {f : σ → τ} (hf : Function.Injective f) :
     letI := (PiTensorProduct.fiberwiseMul (R := A) (A := B) f).toAlgebra
-    haveI : IsScalarTower A (⨂[A] i, B (f i)) (⨂[A] j, B j) :=
-      .of_algebraMap_eq' (PiTensorProduct.fiberwiseMul f).comp_algebraMap.symm
     haveI := smulCommClass_ker (B := ⨂[A] i, B (f i)) (B' := ⨂[A] j, B j)
       (π := MonoidHom.pi fun i ↦ Pi.evalMonoidHom G (f i))
       fun g x ↦ (fiberwiseMul_piMulSemiringAction_smul f g x).symm
@@ -135,15 +141,8 @@ theorem fiberwiseMul {f : σ → τ} (hf : Function.Injective f) :
   let := (PiTensorProduct.fiberwiseMul (R := A) (A := B) f).toAlgebra
   have : IsScalarTower A (⨂[A] i, B (f i)) (⨂[A] j, B j) :=
     .of_algebraMap_eq' (PiTensorProduct.fiberwiseMul f).comp_algebraMap.symm
-  refine of_surjective (G := ∀ i, G (f i)) (A := A) (fun k ↦ ?_)
+  exact of_surjective (A := A) (surjective_restrict hf)
     fun g x ↦ (fiberwiseMul_piMulSemiringAction_smul f g x).symm
-  -- Extend `k` by `1` off the range of `f`.
-  classical
-  have key (i i' : σ) (h : f i' = f i) : (h ▸ k i' : G (f i)) = k i := by
-    obtain rfl := hf h
-    rfl
-  exact ⟨fun j ↦ if hj : ∃ i, f i = j then hj.choose_spec ▸ k hj.choose else 1,
-    funext fun i ↦ by simp [key]⟩
 
 variable (G) in
 include G in
@@ -151,13 +150,10 @@ include G in
 `fiberwiseMul f : ⨂[A] i, B (f i) → ⨂[A] j, B j` between finite tensor products of torsors is
 injective. -/
 theorem injective_fiberwiseMul {f : σ → τ} (hf : Function.Injective f) :
-    Function.Injective (PiTensorProduct.fiberwiseMul (R := A) (A := B) f) := by
-  let := (PiTensorProduct.fiberwiseMul (R := A) (A := B) f).toAlgebra
-  have := smulCommClass_ker (B := ⨂[A] i, B (f i)) (B' := ⨂[A] j, B j)
-    (π := MonoidHom.pi fun i ↦ Pi.evalMonoidHom G (f i))
-    fun g x ↦ (fiberwiseMul_piMulSemiringAction_smul f g x).symm
-  have := (isFiniteEtaleTorsor_iff.mp (fiberwiseMul (A := A) (G := G) (B := B) hf)).1
-  exact FaithfulSMul.algebraMap_injective (⨂[A] i, B (f i)) (⨂[A] j, B j)
+    Function.Injective (PiTensorProduct.fiberwiseMul (R := A) (A := B) f) :=
+  letI := (PiTensorProduct.fiberwiseMul (R := A) (A := B) f).toAlgebra
+  haveI := (fiberwiseMul (A := A) (G := G) (B := B) hf).faithfullyFlat
+  FaithfulSMul.algebraMap_injective (⨂[A] i, B (f i)) (⨂[A] j, B j)
 
 end FiberwiseMul
 
