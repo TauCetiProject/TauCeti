@@ -11,16 +11,18 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
+public import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Chart
 import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
 
 /-!
 # Restricting the scalars of manifold derivatives
 
 Let `𝕜'` be a normed algebra over `𝕜`, and let `E` and `E'` be normed spaces over both fields,
-compatibly. A manifold charted by `E` carries the trivial models `𝓘(𝕜', E)` and `𝓘(𝕜, E)` with the
-same charts. This file shows that a map between such manifolds which is differentiable for the
-models over `𝕜'` is differentiable for the models over `𝕜`, and that its derivative over `𝕜` is the
-derivative over `𝕜'` with scalars restricted to `𝕜`.
+compatibly. A boundaryless model `I` over `𝕜'` and its scalar restriction `I.restrictScalars 𝕜` have
+the same coordinate maps and use the same charted space. This file shows that a map which is
+differentiable for boundaryless models over `𝕜'` is differentiable for their scalar restrictions
+over `𝕜`. For the trivial models `𝓘(𝕜', E)` and `𝓘(𝕜, E)` of a manifold charted by `E`, it also
+shows that the derivative over `𝕜` is the derivative over `𝕜'` with scalars restricted to `𝕜`.
 
 The tangent spaces `TangentSpace 𝓘(𝕜', E) x` and `TangentSpace 𝓘(𝕜, E) x` are both the model space
 `E`, but they are distinct types carrying module structures over different fields. The comparison of
@@ -44,8 +46,8 @@ fields and intertwines their manifold and vector-valued derivatives.
   `MDifferentiableAt.mvfderiv_restrictScalarsSelf_apply`: derivative comparison through this
   fibre equivalence.
 * `MDifferentiableWithinAt.restrictScalars`, `MDifferentiableAt.restrictScalars`,
-  `MDifferentiableOn.restrictScalars`, `MDifferentiable.restrictScalars`: differentiability over
-  `𝕜'` implies differentiability over `𝕜`.
+  `MDifferentiableOn.restrictScalars`, `MDifferentiable.restrictScalars`: differentiability for
+  boundaryless models over `𝕜'` implies differentiability for their scalar restrictions to `𝕜`.
 * `HasMFDerivWithinAt.restrictScalars`, `HasMFDerivAt.restrictScalars`: a derivative over `𝕜'`,
   with scalars restricted to `𝕜`, is a derivative over `𝕜`.
 * `HasMFDerivWithinAt.of_restrictScalars`: conversely, a `𝕜'`-linear map whose scalar restriction
@@ -71,37 +73,50 @@ open scoped Manifold
 variable {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
   [NormedAlgebra 𝕜 𝕜'] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace 𝕜' E]
   [IsScalarTower 𝕜 𝕜' E] {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
-  [NormedSpace 𝕜' E'] [IsScalarTower 𝕜 𝕜' E'] {M : Type*} [TopologicalSpace M]
-  [ChartedSpace E M] {N : Type*} [TopologicalSpace N] [ChartedSpace E' N]
-  {f : M → N} {s : Set M} {x : M}
+  [NormedSpace 𝕜' E'] [IsScalarTower 𝕜 𝕜' E']
+
+section Boundaryless
+
+variable {H H' : Type*} [TopologicalSpace H] [TopologicalSpace H']
+  {I : ModelWithCorners 𝕜' E H} {I' : ModelWithCorners 𝕜' E' H'} [I.Boundaryless] [I'.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {N : Type*} [TopologicalSpace N]
+  [ChartedSpace H' N] {f : M → N} {s : Set M} {x : M}
 
 variable (𝕜)
 
-/-- A map which is differentiable within a set at a point for the models over `𝕜'` is
-differentiable within that set at that point for the models over the smaller field `𝕜`. -/
-theorem MDifferentiableWithinAt.restrictScalars
-    (h : MDifferentiableWithinAt 𝓘(𝕜', E) 𝓘(𝕜', E') f s x) :
-    MDifferentiableWithinAt 𝓘(𝕜, E) 𝓘(𝕜, E') f s x := by
-  simp only [mdifferentiableWithinAt_iff, mfld_simps] at h ⊢
+/-- A map which is differentiable within a set at a point for boundaryless models over `𝕜'` is
+differentiable within that set at that point for their scalar restrictions to `𝕜`. -/
+theorem MDifferentiableWithinAt.restrictScalars (h : MDifferentiableWithinAt I I' f s x) :
+    MDifferentiableWithinAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f s x := by
+  simp only [mdifferentiableWithinAt_iff, ModelWithCorners.extChartAt_restrictScalars,
+    ModelWithCorners.range_eq_univ, inter_univ] at h ⊢
   exact ⟨h.1, h.2.restrictScalars 𝕜⟩
 
-/-- A map which is differentiable at a point for the models over `𝕜'` is differentiable at that
-point for the models over the smaller field `𝕜`. -/
-theorem MDifferentiableAt.restrictScalars (h : MDifferentiableAt 𝓘(𝕜', E) 𝓘(𝕜', E') f x) :
-    MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, E') f x :=
+/-- A map which is differentiable at a point for boundaryless models over `𝕜'` is differentiable at
+that point for their scalar restrictions to `𝕜`. -/
+theorem MDifferentiableAt.restrictScalars (h : MDifferentiableAt I I' f x) :
+    MDifferentiableAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f x :=
   mdifferentiableWithinAt_univ.mp (h.mdifferentiableWithinAt.restrictScalars 𝕜)
 
-/-- A map which is differentiable on a set for the models over `𝕜'` is differentiable on that set
-for the models over the smaller field `𝕜`. -/
-theorem MDifferentiableOn.restrictScalars (h : MDifferentiableOn 𝓘(𝕜', E) 𝓘(𝕜', E') f s) :
-    MDifferentiableOn 𝓘(𝕜, E) 𝓘(𝕜, E') f s :=
+/-- A map which is differentiable on a set for boundaryless models over `𝕜'` is differentiable on
+that set for their scalar restrictions to `𝕜`. -/
+theorem MDifferentiableOn.restrictScalars (h : MDifferentiableOn I I' f s) :
+    MDifferentiableOn (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f s :=
   fun x hx ↦ (h x hx).restrictScalars 𝕜
 
-/-- A map which is differentiable for the models over `𝕜'` is differentiable for the models over
-the smaller field `𝕜`. -/
-theorem MDifferentiable.restrictScalars (h : MDifferentiable 𝓘(𝕜', E) 𝓘(𝕜', E') f) :
-    MDifferentiable 𝓘(𝕜, E) 𝓘(𝕜, E') f :=
+/-- A map which is differentiable for boundaryless models over `𝕜'` is differentiable for their
+scalar restrictions to `𝕜`. For instance, a holomorphic map between complex manifolds is real
+differentiable. -/
+theorem MDifferentiable.restrictScalars (h : MDifferentiable I I' f) :
+    MDifferentiable (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f :=
   fun x ↦ (h x).restrictScalars 𝕜
+
+end Boundaryless
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace E M] {N : Type*} [TopologicalSpace N]
+  [ChartedSpace E' N] {f : M → N} {s : Set M} {x : M}
+
+variable (𝕜)
 
 /-- If `f'` is a derivative of `f` within a set at a point for the models over `𝕜'`, and `g'` is a
 `𝕜`-linear map between the tangent spaces over `𝕜` which agrees with `f'` once both are read in the
@@ -181,7 +196,9 @@ theorem MDifferentiableWithinAt.restrictScalars_mfderivWithin
         mfderivWithin 𝓘(𝕜, E) 𝓘(𝕜, E') f s x ∘L
         ((tangentSpaceCastModel 𝓘(𝕜, E) x).symm : E →L[𝕜] _) := by
   have h₁ := h.hasMFDerivWithinAt.2.restrictScalars 𝕜
-  have h₂ := (h.restrictScalars 𝕜).hasMFDerivWithinAt.2
+  have h𝕜 : MDifferentiableWithinAt 𝓘(𝕜, E) 𝓘(𝕜, E') f s x := by
+    simpa only [modelWithCornersSelf_restrictScalars] using h.restrictScalars 𝕜
+  have h₂ := h𝕜.hasMFDerivWithinAt.2
   simp only [UniqueMDiffWithinAt, mfld_simps] at h₁ h₂ hs
   exact hs.eq h₁ h₂
 
