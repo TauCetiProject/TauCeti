@@ -790,6 +790,21 @@ theorem gaugeDirection_smul (x : ℂ → EuclideanSpace ℝ (Fin 4)) (f : ℂ �
   ext i
   fin_cases i <;> simp [fderiv_const_smul_field] <;> ring
 
+/-- The infinitesimal gauge action of a `C^(n+1)` phase at a `Cⁿ` field is `Cⁿ`. -/
+theorem contDiff_gaugeDirection {x : ℂ → EuclideanSpace ℝ (Fin 4)} {f : ℂ → ℝ}
+    {n : WithTop ℕ∞} (hx : ContDiff ℝ n x) (hf : ContDiff ℝ (n + 1) f) :
+    ContDiff ℝ n (gaugeDirection x f) := by
+  have hdf (v : ℂ) : ContDiff ℝ n fun z ↦ fderiv ℝ f z v :=
+    (hf.fderiv_right le_rfl).clm_apply contDiff_const
+  have hf' : ContDiff ℝ n f := hf.of_le le_self_add
+  have hx' (i : Fin 4) : ContDiff ℝ n fun z ↦ x z i := contDiff_euclidean.1 hx i
+  refine contDiff_euclidean.2 fun i ↦ ?_
+  fin_cases i
+  · simpa using (hdf 1).neg
+  · simpa using (hdf I).neg
+  · simpa using (hf'.mul (hx' 3)).neg
+  · simpa using hf'.mul (hx' 2)
+
 /-- The zero phase has zero infinitesimal gauge action. -/
 @[simp]
 theorem gaugeDirection_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) : gaugeDirection x 0 = 0 := by
