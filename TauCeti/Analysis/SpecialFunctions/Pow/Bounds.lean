@@ -47,24 +47,20 @@ If `1 ≤ C`, `D < n` and `C ^ (D / (n - D)) < B + 1`, then `(⌊C B⌋₊ + 1) 
 is the counting step of Siegel's lemma: it compares the integer points of a box with the cells
 of a partition of the image of that box under `D` linear forms.
 
-For every real `C` and every large natural number `r`, `C ^ r r ^ ((1 - r) / 2) < 1`: the power
-`r ^ (r / 2)` outgrows every geometric sequence. This is the final contradiction of Gelfond's
-proof of the Gelfond–Schneider theorem.
-
 For `t > 0` and every natural `k`, `(1 + t ^ 2) ^ (-k / 2) ≤ 1 / t ^ k`: the Japanese bracket
 decays at least as fast as `t ^ (-1)`. This converts symbol estimates of order `0` into Mihlin's
 condition.
 
 For `t ≥ 1` and an exponent `r` of either sign, `t ^ r` and `(1 + t ^ 2) ^ (r / 2)` are
 comparable: each is at most `2 ^ (|r| / 2)` times the other. For `|t| ≤ R`, the Japanese bracket
-power `(1 + t ^ 2) ^ (r / 2)` is at least `(1 + R ^ 2) ^ (-|r| / 2)`; for `R = 2` this reads
-`1 ≤ 5 ^ (|r| / 2) (1 + t ^ 2) ^ (r / 2)`. Applied to `t = ‖ξ‖`, these compare homogeneous growth
-`‖ξ‖ ^ r` with symbol growth `⟨ξ⟩ ^ r` away from the origin, and bound `⟨ξ⟩ ^ r` below on balls;
-they turn homogeneous estimates at large frequencies, and bounds on compact sets, into symbol
-estimates.
+power `(1 + t ^ 2) ^ (r / 2)` is at least `(1 + R ^ 2) ^ (-|r| / 2)`. Applied to `t = ‖ξ‖`, these
+compare homogeneous growth `‖ξ‖ ^ r` with symbol growth `⟨ξ⟩ ^ r` away from the origin, and bound
+`⟨ξ⟩ ^ r` below on balls; they turn homogeneous estimates at large frequencies, and bounds on
+compact sets, into symbol estimates.
 
-If `2 ≤ d ^ (p - 2)`, then `d ^ (-p) ≤ 1 / (2 d ^ 2)`: an approximation of quality
-`d ^ (-p)` meets the hypothesis of Legendre's theorem `Real.exists_rat_eq_convergent`.
+If `2 ≤ d ^ (p - 2)`, then `d ^ (-p) ≤ 1 / (2 d ^ 2)`. So when `d` is the reduced denominator of
+a rational `q`, an error `|ξ - q|` strictly below `d ^ (-p)` is strictly below `1 / (2 d ^ 2)`,
+which is the hypothesis of Legendre's theorem `Real.exists_rat_eq_convergent`.
 
 For `0 ≤ p ≤ 1`, a nonnegative quantity `r ≤ 2 h` has `r ^ p ≤ 2 h ^ p`. This is how, in a
 temporal Hölder estimate with exponent `p`, a time at most twice the time step `h` is bounded by
@@ -88,9 +84,10 @@ say `u ≤ (2 - δ) * s` with `0 ≤ t ≤ s`. Strict convexity of `t ↦ t ^ q`
 for each ratio `t / s`, and compactness of `[0, 1]` makes it uniform. This is the scalar step in
 showing that `q`-th powers of norms on a uniformly convex space are uniformly convex.
 
-If `u : ℝ → F` is constant equal to `c` on `(-∞, 0]` and `‖u r - c‖ ≤ K r ^ β` for `r ≥ 0`, with
-`0 ≤ β ≤ 1`, then its increments satisfy `‖u b - u a‖ ≲ |b - a| |a| ^ (β - 1)` whenever `a < 0`, or
-`a > 0` and `b < a / 2`. This is the part of a time-Lipschitz estimate for a Hölder-in-time
+If `u : ℝ → X` into a pseudometric space is constant equal to `c` on `(-∞, 0]` and
+`dist (u r) c ≤ K r ^ β` for `r ≥ 0`, then its increments satisfy
+`dist (u b) (u a) ≲ |b - a| |a| ^ (β - 1)` whenever `a < 0` and `0 ≤ β ≤ 1`, or `a > 0`,
+`b ≤ a / 2` and `0 ≤ β`. This is the part of a time-Lipschitz estimate for a Hölder-in-time
 function that does not need a derivative.
 
 ## Main results
@@ -109,34 +106,33 @@ function that does not need a derivative.
 * `Real.one_sub_rpow_add_rpow_pos`: `0 < (1 - t) ^ r + t ^ r` for `t ∈ [0, 1]`.
 * `Real.floor_mul_add_one_pow_lt`: `(⌊C B⌋₊ + 1) ^ D < (B + 1) ^ n` for `1 ≤ C`, `D < n` and
   `C ^ (D / (n - D)) < B + 1`.
-* `Real.exists_pow_mul_rpow_lt_one`: `C ^ r r ^ ((1 - r) / 2) < 1` for every `C` and all large `r`.
 * `Real.one_add_sq_rpow_neg_le`: `(1 + t ^ 2) ^ (-k / 2) ≤ 1 / t ^ k` for `0 < t`.
 * `Real.rpow_le_two_rpow_mul_one_add_sq_rpow` and `Real.one_add_sq_rpow_le_two_rpow_mul_rpow`:
   `t ^ r ≤ 2 ^ (|r| / 2) (1 + t ^ 2) ^ (r / 2)` and `(1 + t ^ 2) ^ (r / 2) ≤ 2 ^ (|r| / 2) t ^ r`
   for `1 ≤ t`.
 * `Real.one_add_sq_rpow_neg_abs_le_one_add_sq_rpow`:
   `(1 + R ^ 2) ^ (-|r| / 2) ≤ (1 + t ^ 2) ^ (r / 2)` for `|t| ≤ R`.
-* `Real.one_le_five_rpow_mul_one_add_sq_rpow`: `1 ≤ 5 ^ (|r| / 2) (1 + t ^ 2) ^ (r / 2)` for
-  `|t| ≤ 2`.
 * `Real.rpow_neg_le_one_div_two_mul_sq`: `d ^ (-p) ≤ 1 / (2 d ^ 2)` for `2 ≤ d ^ (p - 2)`.
 * `Real.rpow_le_two_mul_rpow_of_le_two_mul`: `r ^ p ≤ 2 h ^ p` for `0 ≤ r ≤ 2 h` and
   `0 ≤ p ≤ 1`.
 * `Real.lt_log_div_log_of_rpow_lt`: `t < log q' / log q` for `2 ≤ q ≤ q'`,
   `q ^ p < q (q + q')` and `log 2 < (p - 1 - t) log q`.
-* `Real.min_rpow_lt_two_rpow_sub_one_mul`: `min (1 + r) (2 - δ) ^ q < 2 ^ (q - 1) * (1 + r ^ q)`
-  for `1 < q`, `0 < δ ≤ 2` and `0 ≤ r`.
-* `Real.exists_rpow_le_of_le_add_of_le_two_sub_mul`: the uniform strict power mean inequality.
+* `Real.exists_rpow_le_of_le_add_of_le_two_sub_mul`: the uniform strict power mean inequality
+  `u ^ q ≤ (1 - κ) * 2 ^ (q - 1) * (s ^ q + t ^ q)` for `0 ≤ t ≤ s`, `0 ≤ u ≤ s + t` and
+  `u ≤ (2 - δ) * s`.
 * `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
   for `0 ≤ s`.
 * `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
 * `TauCeti.one_add_norm_rpow_le_two_rpow_mul_of_norm_sub_le_one`:
   `(1 + ‖x‖) ^ p ≤ 2 ^ (-p) (1 + ‖y‖) ^ p` for `p ≤ 0` and `‖y - x‖ ≤ 1`.
-* `TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_neg_left` and
-  `TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_lt_half`: increment bounds
-  `‖u b - u a‖ ≲ |b - a| |a| ^ (β - 1)` for a function constant on `(-∞, 0]` with
-  `‖u r - c‖ ≤ K r ^ β` for `r ≥ 0`, when `a < 0`, respectively when `0 < a` and `b < a / 2`.
-* `TauCeti.norm_sub_le_three_mul_rpow_of_le_sub`: `‖x - y‖ ≤ 3 c (t - t') ^ β` from
-  `‖x‖ ≤ c t ^ β`, `‖y‖ ≤ c t' ^ β` and `t' ≤ t - t'`, for `0 ≤ β ≤ 1`.
+* `TauCeti.dist_le_mul_abs_sub_mul_rpow_of_neg_left` and
+  `TauCeti.dist_le_mul_abs_sub_mul_rpow_of_le_half`: increment bounds
+  `dist (u b) (u a) ≲ |b - a| |a| ^ (β - 1)` for a function constant on `(-∞, 0]` with
+  `dist (u r) c ≤ K r ^ β` for `r ≥ 0`: when `a < 0` and `0 ≤ β ≤ 1`, respectively when `0 < a`,
+  `b ≤ a / 2` and `0 ≤ β`.
+* `TauCeti.dist_le_three_mul_rpow_of_le_sub`: `dist x y ≤ 3 c (t - t') ^ β` from
+  `dist x z ≤ c t ^ β`, `dist y z ≤ c t' ^ β`, `0 ≤ t'` and `t' ≤ t - t'`, for `0 ≤ c` and
+  `0 ≤ β ≤ 1`.
 * `TauCeti.rpow_mul_rpow_le_max`, `Prod.norm_fst_rpow_mul_norm_snd_rpow_le`, and
   `TauCeti.le_rpow_mul_rpow_mul_of_forall_pos`: `a ^ (1 - x) * b ^ x ≤ max a b` on `[0, 1]`, its
   product-seminorm corollary `‖p.1‖ ^ (1 - x) * ‖p.2‖ ^ x ≤ ‖p‖`, and right-continuity at `ε = 0`
@@ -275,38 +271,6 @@ theorem floor_mul_add_one_pow_lt {C : ℝ} (hC : 1 ≤ C) {D n B : ℕ} (hDn : D
     _ = (B + 1) ^ n := by
         rw [← rpow_natCast _ D, ← rpow_add (by positivity), sub_add_cancel, rpow_natCast]
 
-/-- For every real `C` and every large natural number `r`, `C ^ r r ^ ((1 - r) / 2) < 1`: writing
-`s = √r`, the left side is at most `s (|C| / s) ^ r ≤ s 2 ^ (-r)` as soon as `s ≥ 2 |C|`. -/
-theorem exists_pow_mul_rpow_lt_one (C : ℝ) :
-    ∃ N : ℕ, ∀ r : ℕ, N ≤ r → C ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) < 1 := by
-  refine ⟨⌈4 * C ^ 2⌉₊ + 1, fun r hr ↦ ?_⟩
-  have hr₁ : (1 : ℝ) ≤ r := by exact_mod_cast (Nat.le_add_left 1 _).trans hr
-  have hr₀ : (0 : ℝ) < r := zero_lt_one.trans_le hr₁
-  have hCr : 4 * C ^ 2 ≤ r :=
-    (Nat.le_ceil _).trans (by exact_mod_cast (Nat.le_succ _).trans hr)
-  set s := √(r : ℝ)
-  have hs₀ : 0 < s := sqrt_pos.2 hr₀
-  have hsr : s ≤ r := sqrt_le_self_iff.2 (Or.inr hr₁)
-  -- `2 |C| ≤ s`, since `(2 |C|) ^ 2 = 4 C ^ 2 ≤ r`.
-  have hCs : 2 * |C| ≤ s := le_sqrt_of_sq_le (by rw [mul_pow, sq_abs]; linarith)
-  -- `r ^ ((1 - r) / 2) = s / s ^ r`.
-  have hrs : (r : ℝ) ^ ((1 - (r : ℝ)) / 2) = s / s ^ r := by
-    rw [show (1 - (r : ℝ)) / 2 = 1 / 2 * (1 - r) by ring, rpow_mul hr₀.le, ← sqrt_eq_rpow,
-      rpow_sub hs₀, rpow_one, rpow_natCast]
-  have hCs' : |C| / s ≤ 1 / 2 := by
-    rw [div_le_div_iff₀ hs₀ two_pos]
-    linarith
-  calc C ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) ≤ |C| ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) :=
-        mul_le_mul_of_nonneg_right ((le_abs_self _).trans_eq (abs_pow C r)) (by positivity)
-    _ = s * (|C| / s) ^ r := by
-        rw [hrs, div_pow]
-        field_simp
-    _ ≤ s * (1 / 2) ^ r := by gcongr
-    _ = s / 2 ^ r := by rw [one_div, inv_pow, div_eq_mul_inv]
-    _ < 1 := by
-        rw [div_lt_one (by positivity)]
-        exact hsr.trans_lt (by exact_mod_cast Nat.lt_two_pow_self)
-
 /-- For `t > 0`, `(1 + t ^ 2) ^ (-k / 2) ≤ 1 / t ^ k`. -/
 theorem one_add_sq_rpow_neg_le {t : ℝ} (ht : 0 < t) (k : ℕ) :
     (1 + t ^ 2) ^ (-(k : ℝ) / 2) ≤ 1 / t ^ k := by
@@ -355,7 +319,7 @@ theorem one_add_sq_rpow_le_two_rpow_mul_rpow {t : ℝ} (ht : 1 ≤ t) (r : ℝ) 
 
 /-- For `|t| ≤ R` and an exponent `r` of either sign, the Japanese bracket power
 `(1 + t ^ 2) ^ (r / 2)` is at least `(1 + R ^ 2) ^ (-|r| / 2)`. -/
-theorem one_add_sq_rpow_neg_abs_le_one_add_sq_rpow {t R : ℝ} (ht : |t| ≤ R) (r : ℝ) :
+theorem one_add_sq_rpow_neg_abs_le_one_add_sq_rpow (t : ℝ) {R : ℝ} (ht : |t| ≤ R) (r : ℝ) :
     (1 + R ^ 2) ^ (-|r| / 2) ≤ (1 + t ^ 2) ^ (r / 2) := by
   have hR : 1 + t ^ 2 ≤ 1 + R ^ 2 := by
     have := sq_le_sq' (abs_le.1 ht).1 (abs_le.1 ht).2
@@ -365,15 +329,6 @@ theorem one_add_sq_rpow_neg_abs_le_one_add_sq_rpow {t R : ℝ} (ht : |t| ≤ R) 
       (one_le_rpow (by nlinarith) (by linarith))
   · rw [abs_of_neg hr, neg_neg]
     exact rpow_le_rpow_of_nonpos (by positivity) hR (by linarith)
-
-/-- For `|t| ≤ 2` and an exponent `r` of either sign, `(1 + t²) ^ (r / 2)` is at least
-`5 ^ (-|r| / 2)`: the case `R = 2` of `one_add_sq_rpow_neg_abs_le_one_add_sq_rpow`. -/
-theorem one_le_five_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : |t| ≤ 2) (r : ℝ) :
-    1 ≤ 5 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
-  have h := one_add_sq_rpow_neg_abs_le_one_add_sq_rpow ht r
-  rw [neg_div, rpow_neg (by positivity), inv_le_iff_one_le_mul₀' (by positivity)] at h
-  norm_num at h
-  exact h
 
 /-- If `2 ≤ d ^ (p - 2)`, then `d ^ (-p) ≤ 1 / (2 d ^ 2)`. (For `d = 0` the hypothesis fails, as
 `0 ^ x ≤ 1`.) -/
@@ -423,9 +378,8 @@ theorem lt_log_div_log_of_rpow_lt {q q' p t : ℝ} (hq : 2 ≤ q) (hqq' : q ≤ 
   nlinarith
 
 /-- For `1 < q`, `0 < δ ≤ 2` and `0 ≤ r`,
-`min (1 + r) (2 - δ) ^ q < 2 ^ (q - 1) * (1 + r ^ q)`: for `r < 1` by strict convexity of
-`t ↦ t ^ q`, and for `1 ≤ r` because `0 ≤ 2 - δ < 2`. -/
-theorem min_rpow_lt_two_rpow_sub_one_mul {q δ r : ℝ} (hq : 1 < q) (hδ : 0 < δ)
+`(min (1 + r) (2 - δ)) ^ q < 2 ^ (q - 1) * (1 + r ^ q)`. -/
+private theorem min_rpow_lt_two_rpow_sub_one_mul {q δ r : ℝ} (hq : 1 < q) (hδ : 0 < δ)
     (hδ2 : δ ≤ 2) (hr0 : 0 ≤ r) :
     min (1 + r) (2 - δ) ^ q < 2 ^ (q - 1) * (1 + r ^ q) := by
   have hq0 : 0 < q := by linarith
@@ -470,8 +424,8 @@ theorem exists_rpow_le_of_le_add_of_le_two_sub_mul {q δ : ℝ} (hq : 1 < q) (h�
     fun_prop
   obtain ⟨r₀, hr₀, hmin⟩ :=
     isCompact_Icc.exists_isMinOn (Set.nonempty_Icc.2 zero_le_one) hφc.continuousOn
-  have hm : 0 < φ r₀ :=
-    sub_pos.2 (min_rpow_lt_two_rpow_sub_one_mul hq hδ (by linarith) hr₀.1)
+  have hm : 0 < φ r₀ := by
+    simpa only [hφ] using sub_pos.2 (min_rpow_lt_two_rpow_sub_one_mul hq hδ (by linarith) hr₀.1)
   refine ⟨φ r₀ / 2 ^ q, by positivity, fun s t u ht hts hu hus hu2 ↦ ?_⟩
   rcases (ht.trans hts).eq_or_lt with rfl | hs
   · obtain rfl : t = 0 := le_antisymm hts ht
@@ -552,17 +506,17 @@ theorem one_add_norm_rpow_le_two_rpow_mul_of_norm_sub_le_one {E : Type*} [Semino
       ring
 
 open Real in
-/-- If `u` is constant equal to `c` on `(-∞, 0]` and `‖u r - c‖ ≤ K r^β` for `r ≥ 0`, then for
-`a < 0` and every `b`, `‖u b - u a‖ ≤ K |b - a| (-a)^(β - 1)`, where `0 ≤ β ≤ 1`. -/
-theorem norm_sub_le_mul_abs_sub_mul_rpow_of_neg_left {F : Type*} [SeminormedAddGroup F]
-    {u : ℝ → F} {c : F} {β K : ℝ} (hβ₀ : 0 ≤ β) (hβ₁ : β - 1 ≤ 0)
-    (hneg : ∀ r ≤ 0, u r = c) (hrate : ∀ r, 0 ≤ r → ‖u r - c‖ ≤ K * r ^ β)
-    {a : ℝ} (ha : a < 0) (b : ℝ) : ‖u b - u a‖ ≤ K * (|b - a| * (-a) ^ (β - 1)) := by
-  have hK : 0 ≤ K := by simpa using (norm_nonneg _).trans (hrate 1 zero_le_one)
+/-- If `u` is constant equal to `c` on `(-∞, 0]` and `dist (u r) c ≤ K r ^ β` for `r ≥ 0`, where
+`0 ≤ β ≤ 1`, then for `a < 0` and every `b`, `dist (u b) (u a) ≤ K |b - a| (-a) ^ (β - 1)`. -/
+theorem dist_le_mul_abs_sub_mul_rpow_of_neg_left {X : Type*} [PseudoMetricSpace X]
+    {u : ℝ → X} {c : X} {β K : ℝ} (hβ₀ : 0 ≤ β) (hβ₁ : β - 1 ≤ 0)
+    (hneg : ∀ r ≤ 0, u r = c) (hrate : ∀ r, 0 ≤ r → dist (u r) c ≤ K * r ^ β)
+    {a : ℝ} (ha : a < 0) (b : ℝ) : dist (u b) (u a) ≤ K * (|b - a| * (-a) ^ (β - 1)) := by
+  have hK : 0 ≤ K := by simpa using dist_nonneg.trans (hrate 1 zero_le_one)
   rw [hneg a ha.le]
   have hd : 0 < -a := neg_pos.2 ha
   rcases le_or_gt b 0 with hb | hb
-  · rw [hneg b hb, sub_self, norm_zero]
+  · rw [hneg b hb, dist_self]
     positivity
   have key : b ^ β ≤ |b - a| * (-a) ^ (β - 1) := by
     rw [abs_of_pos (by linarith : 0 < b - a)]
@@ -580,19 +534,18 @@ theorem norm_sub_le_mul_abs_sub_mul_rpow_of_neg_left {F : Type*} [SeminormedAddG
   exact (hrate b hb.le).trans (by gcongr)
 
 open Real in
-/-- If `u` is constant equal to `c` on `(-∞, 0]` and `‖u r - c‖ ≤ K r^β` for `r ≥ 0`, then for
-`a > 0` and `b < a / 2`, `‖u b - u a‖ ≤ 4 K |b - a| a^(β - 1)`. -/
-theorem norm_sub_le_mul_abs_sub_mul_rpow_of_lt_half {F : Type*} [SeminormedAddGroup F]
-    {u : ℝ → F} {c : F} {β K : ℝ} (hβ₀ : 0 ≤ β)
-    (hneg : ∀ r ≤ 0, u r = c) (hrate : ∀ r, 0 ≤ r → ‖u r - c‖ ≤ K * r ^ β)
-    {a b : ℝ} (ha : 0 < a) (hb : b < a / 2) :
-    ‖u b - u a‖ ≤ 4 * K * (|b - a| * a ^ (β - 1)) := by
-  have hK : 0 ≤ K := by
-    have := (norm_nonneg _).trans (hrate a ha.le)
-    exact nonneg_of_mul_nonneg_left this (Real.rpow_pos_of_pos ha β)
-  have h1 : ‖u b - c‖ ≤ K * a ^ β := by
+/-- If `u` is constant equal to `c` on `(-∞, 0]` and `dist (u r) c ≤ K r ^ β` for `r ≥ 0`, where
+`0 ≤ β`, then for `a > 0` and `b ≤ a / 2`, `dist (u b) (u a) ≤ 4 K |b - a| a ^ (β - 1)`. -/
+theorem dist_le_mul_abs_sub_mul_rpow_of_le_half {X : Type*} [PseudoMetricSpace X]
+    {u : ℝ → X} {c : X} {β K : ℝ} (hβ₀ : 0 ≤ β)
+    (hneg : ∀ r ≤ 0, u r = c) (hrate : ∀ r, 0 ≤ r → dist (u r) c ≤ K * r ^ β)
+    {a b : ℝ} (ha : 0 < a) (hb : b ≤ a / 2) :
+    dist (u b) (u a) ≤ 4 * K * (|b - a| * a ^ (β - 1)) := by
+  have hK : 0 ≤ K :=
+    nonneg_of_mul_nonneg_left (dist_nonneg.trans (hrate a ha.le)) (Real.rpow_pos_of_pos ha β)
+  have h1 : dist (u b) c ≤ K * a ^ β := by
     rcases le_or_gt b 0 with hb0 | hb0
-    · rw [hneg b hb0, sub_self, norm_zero]
+    · rw [hneg b hb0, dist_self]
       positivity
     · exact (hrate b hb0.le).trans (by gcongr; linarith)
   have h3 : a ^ β ≤ 2 * (|b - a| * a ^ (β - 1)) := by
@@ -601,23 +554,22 @@ theorem norm_sub_le_mul_abs_sub_mul_rpow_of_lt_half {F : Type*} [SeminormedAddGr
     rw [hpow, abs_of_neg (by linarith : b - a < 0)]
     have : 0 ≤ a ^ (β - 1) := by positivity
     nlinarith
-  calc ‖u b - u a‖ = ‖(u b - c) - (u a - c)‖ := by rw [sub_sub_sub_cancel_right]
-    _ ≤ ‖u b - c‖ + ‖u a - c‖ := norm_sub_le _ _
+  calc dist (u b) (u a) ≤ dist (u b) c + dist (u a) c := dist_triangle_right _ _ _
     _ ≤ 2 * (K * a ^ β) := by linarith [hrate a ha.le]
     _ ≤ 2 * (K * (2 * (|b - a| * a ^ (β - 1)))) := by gcongr
     _ = _ := by ring
 
 open Real in
-/-- If `‖x‖ ≤ c t ^ β` and `‖y‖ ≤ c t' ^ β` with `t' ≤ t - t'`, then `‖x - y‖ ≤ 3 c (t - t') ^ β`,
-since then `t ≤ 2 (t - t')`. -/
-theorem norm_sub_le_three_mul_rpow_of_le_sub {V : Type*} [SeminormedAddGroup V] {x y : V}
+/-- If `dist x z ≤ c t ^ β` and `dist y z ≤ c t' ^ β` with `0 ≤ c`, `0 ≤ β ≤ 1`, `0 ≤ t'` and
+`t' ≤ t - t'`, then `dist x y ≤ 3 c (t - t') ^ β`, since then `t ≤ 2 (t - t')`. -/
+theorem dist_le_three_mul_rpow_of_le_sub {X : Type*} [PseudoMetricSpace X] {x y z : X}
     {c β t t' : ℝ} (hc : 0 ≤ c) (hβ₀ : 0 ≤ β) (hβ₁ : β ≤ 1) (ht' : 0 ≤ t')
-    (hsmall : t' ≤ t - t') (h₁ : ‖x‖ ≤ c * t ^ β) (h₂ : ‖y‖ ≤ c * t' ^ β) :
-    ‖x - y‖ ≤ 3 * c * (t - t') ^ β := by
+    (hsmall : t' ≤ t - t') (h₁ : dist x z ≤ c * t ^ β) (h₂ : dist y z ≤ c * t' ^ β) :
+    dist x y ≤ 3 * c * (t - t') ^ β := by
   have h₃ : t ^ β ≤ 2 * (t - t') ^ β :=
     rpow_le_two_mul_rpow_of_le_two_mul (by linarith) (by linarith) hβ₀ hβ₁
   have h₄ : t' ^ β ≤ (t - t') ^ β := rpow_le_rpow ht' hsmall hβ₀
-  calc ‖x - y‖ ≤ ‖x‖ + ‖y‖ := norm_sub_le _ _
+  calc dist x y ≤ dist x z + dist y z := dist_triangle_right _ _ _
     _ ≤ c * t ^ β + c * t' ^ β := add_le_add h₁ h₂
     _ ≤ c * (2 * (t - t') ^ β) + c * (t - t') ^ β := by gcongr
     _ = 3 * c * (t - t') ^ β := by ring

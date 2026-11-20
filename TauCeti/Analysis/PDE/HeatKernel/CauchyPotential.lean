@@ -519,13 +519,14 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul
   -- `set` does not fold the applications `heatCauchyPotential g r x` into `u r`.
   change ‖u b - u a‖ ≤ _
   have hneg : ∀ r ≤ 0, u r = g x := fun r hr => heatCauchyPotential_of_nonpos g hr x
-  have hrate : ∀ r, 0 ≤ r → ‖u r - g x‖ ≤ H * Mα * r ^ β := fun r hr =>
-    norm_heatCauchyPotential_sub_le hg hgc hr x
+  have hrate : ∀ r, 0 ≤ r → dist (u r) (g x) ≤ H * Mα * r ^ β := fun r hr =>
+    (dist_eq_norm _ _).trans_le (norm_heatCauchyPotential_sub_le hg hgc hr x)
   rcases lt_or_gt_of_ne ha with ha | ha
   · rw [abs_of_neg ha]
     have hd : 0 < -a := neg_pos.2 ha
-    calc ‖u b - u a‖ ≤ H * Mα * (|b - a| * (-a) ^ (β - 1)) :=
-          norm_sub_le_mul_abs_sub_mul_rpow_of_neg_left hβ₀ hβ₁ hneg hrate ha b
+    calc ‖u b - u a‖ = dist (u b) (u a) := (dist_eq_norm _ _).symm
+      _ ≤ H * Mα * (|b - a| * (-a) ^ (β - 1)) :=
+          dist_le_mul_abs_sub_mul_rpow_of_neg_left hβ₀ hβ₁ hneg hrate ha b
       _ = Mα * (H * (|b - a| * (-a) ^ (β - 1))) := by ring
       _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * (-a) ^ (β - 1))) := by
         gcongr
@@ -545,8 +546,9 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul
         gcongr
         linarith
       _ = _ := by ring
-  · calc ‖u b - u a‖ ≤ 4 * (H * Mα) * (|b - a| * a ^ (β - 1)) :=
-          norm_sub_le_mul_abs_sub_mul_rpow_of_lt_half hβ₀ hneg hrate ha hb
+  · calc ‖u b - u a‖ = dist (u b) (u a) := (dist_eq_norm _ _).symm
+      _ ≤ 4 * (H * Mα) * (|b - a| * a ^ (β - 1)) :=
+          dist_le_mul_abs_sub_mul_rpow_of_le_half hβ₀ hneg hrate ha hb.le
       _ = 4 * Mα * (H * (|b - a| * a ^ (β - 1))) := by ring
       _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * a ^ (β - 1))) := by
         gcongr

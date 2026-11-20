@@ -244,7 +244,7 @@ theorem ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le {
     _ = max C 0 / (1 + R ^ 2) ^ (-|r| / 2) * (1 + R ^ 2) ^ (-|r| / 2) := by field_simp
     _ ≤ max C 0 / (1 + R ^ 2) ^ (-|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
         mul_le_mul_of_nonneg_left
-          (Real.one_add_sq_rpow_neg_abs_le_one_add_sq_rpow ((abs_norm ξ).trans_le hξ) r)
+          (Real.one_add_sq_rpow_neg_abs_le_one_add_sq_rpow ‖ξ‖ ((abs_norm ξ).trans_le hξ) r)
           (by positivity)
 
 /-- A `C^n` map which agrees outside a ball with a map whose order-`n` derivative is bounded

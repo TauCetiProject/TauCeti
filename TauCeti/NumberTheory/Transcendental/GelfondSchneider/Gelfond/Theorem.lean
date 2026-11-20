@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.RingTheory.Algebraic.Basic
 
 import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.NumberTheory.Transcendental.GelfondSchneider.Gelfond.AnalyticBound
 import TauCeti.NumberTheory.Transcendental.GelfondSchneider.Gelfond.Value
 

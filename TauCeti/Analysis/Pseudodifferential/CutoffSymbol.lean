@@ -88,9 +88,14 @@ private theorem exists_bound_smul_coefficient (χ : FrequencyCutoff (CoordinateS
   rcases le_or_gt ‖ξ‖ 2 with hξ | hξ
   · have h := hB (x, ξ) (Set.mk_mem_prod hx (mem_closedBall_zero_iff.2 hξ))
     calc _ ≤ max B 0 := h.trans (le_max_left _ _)
-      _ ≤ max B 0 * (5 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2)) :=
-          le_mul_of_one_le_right (le_max_right _ _)
-            (Real.one_le_five_rpow_mul_one_add_sq_rpow (by rwa [abs_norm]) r)
+      _ ≤ max B 0 * (5 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2)) := by
+          refine le_mul_of_one_le_right (le_max_right _ _) ?_
+          have hw := Real.one_add_sq_rpow_neg_abs_le_one_add_sq_rpow ‖ξ‖ (R := 2)
+            (by rwa [abs_norm]) r
+          rw [neg_div, Real.rpow_neg (by positivity),
+            inv_le_iff_one_le_mul₀' (by positivity)] at hw
+          norm_num at hw
+          exact hw
       _ ≤ _ := by rw [add_mul, ← mul_assoc]; exact le_add_of_nonneg_left (by positivity)
   · rw [mixedDeriv_smul_coefficient_of_two_lt_norm χ a α β x hξ]
     have hξ0 : ξ ≠ 0 := norm_pos_iff.1 (by linarith)
