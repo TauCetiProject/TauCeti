@@ -22,12 +22,12 @@ every `k` and every `n` there is `n' ≥ n` such that `t^{1/p^k}` kills the imag
 need not be the zero pro-object of almost modules, which would ask one `n'` to serve every `k`.
 
 Being almost-pro-zero is weaker than being pro-zero (`CategoryTheory.Functor.IsProZero`), with
-which it agrees for the classical setup `m = V`. Over a cofiltered index category, idempotence of
-`m` makes almost-pro-zero diagrams a Serre class of the functor category, so the
-*almost-pro-isomorphisms*, the morphisms of diagrams with almost-pro-zero kernel and cokernel,
-are stable under composition and satisfy two-out-of-three. These are the error terms of Bhatt's
-quantitative Riemann extension theorem, which compares a perfectoid ring modulo `tᵐ` with the
-tower of its bounded functions on the rational annuli `{|tⁿ| ≤ |g|}`.
+which it agrees when `m = V`, for instance for the classical setup or when `t` is a unit. Over a
+cofiltered index category, idempotence of `m` makes almost-pro-zero diagrams a Serre class of the
+functor category, so the *almost-pro-isomorphisms*, the morphisms of diagrams with almost-pro-zero
+kernel and cokernel, are stable under composition and satisfy two-out-of-three. These are the error
+terms of Bhatt's quantitative Riemann extension theorem, which compares a perfectoid ring modulo
+`tᵐ` with the tower of its bounded functions on the rational annuli `{|tⁿ| ≤ |g|}`.
 
 ## Main declarations
 
@@ -40,9 +40,11 @@ tower of its bounded functions on the rational annuli `{|tⁿ| ≤ |g|}`.
   `TauCeti.Almost.BasicSetup.ofCompatibleRoots_isAlmostProZero_iff_transitionOfLE`: for the root
   setup it suffices to test the roots, elementwise on the transitions of a tower.
 * `TauCeti.Almost.BasicSetup.isAlmostProZero_of_isProZero` and
-  `TauCeti.Almost.BasicSetup.isAlmostProZero_classical_iff`: pro-zero diagrams are almost-pro-zero,
-  and conversely for the classical setup; for the zero setup every diagram is almost-pro-zero
-  (`TauCeti.Almost.BasicSetup.isAlmostProZero_zero`).
+  `TauCeti.Almost.BasicSetup.isAlmostProZero_iff_isProZero_of_ideal_eq_top`: pro-zero diagrams are
+  almost-pro-zero, and conversely when `m = V`, for instance for the classical setup
+  (`TauCeti.Almost.BasicSetup.isAlmostProZero_classical_iff`) or for the root setup of a unit
+  (`TauCeti.Almost.BasicSetup.ofCompatibleRoots_isAlmostProZero_iff_isProZero`); for the zero setup
+  every diagram is almost-pro-zero (`TauCeti.Almost.BasicSetup.isAlmostProZero_zero`).
 * `TauCeti.Almost.BasicSetup.isAlmostProZero_of_forall_isAlmostZero` and
   `TauCeti.Almost.BasicSetup.isAlmostProZero_const_iff`: diagrams of almost zero modules are
   almost-pro-zero, and a constant diagram is almost-pro-zero iff its value is almost zero.
@@ -110,13 +112,18 @@ theorem IsAlmostProZero.mono {T : BasicSetup V} {F : J ⥤ C} (hF : T.IsAlmostPr
 theorem isAlmostProZero_of_isProZero {F : J ⥤ C} (hF : F.IsProZero) : S.IsAlmostProZero F :=
   fun ε _ ↦ hF.isProTorsionBy ε
 
+/-- If `m = V`, almost-pro-zero means pro-zero. -/
+theorem isAlmostProZero_iff_isProZero_of_ideal_eq_top (h : S.ideal = ⊤) {F : J ⥤ C} :
+    S.IsAlmostProZero F ↔ F.IsProZero :=
+  ⟨fun hF ↦ Functor.isProTorsionBy_one_iff.mp
+    ((isAlmostProZero_iff_forall_isProTorsionBy F).mp hF 1 (h ▸ Submodule.mem_top)),
+    isAlmostProZero_of_isProZero⟩
+
 /-- For the classical setup `m = V`, almost-pro-zero means pro-zero. -/
 @[simp]
 theorem isAlmostProZero_classical_iff {F : J ⥤ C} :
     (classical V).IsAlmostProZero F ↔ F.IsProZero :=
-  ⟨fun hF ↦ Functor.isProTorsionBy_one_iff.mp
-    ((isAlmostProZero_iff_forall_isProTorsionBy F).mp hF 1 (by simp [classical_ideal])),
-    isAlmostProZero_of_isProZero⟩
+  isAlmostProZero_iff_isProZero_of_ideal_eq_top classical_ideal
 
 /-- For the zero setup `m = 0`, every diagram is almost-pro-zero. -/
 @[simp]
@@ -150,6 +157,12 @@ theorem ofCompatibleRoots_isAlmostProZero_iff_transitionOfLE (F : ModuleTower.{v
     ((F.isProTorsionBy_iff (ϖ k)).symm.trans (F.isProTorsionBy_iff_forall_exists_le (ϖ k))).trans ?_
   simp only [ModuleCat.hom_ext_iff, ModuleCat.hom_smul, ModuleCat.hom_zero, LinearMap.ext_iff,
     LinearMap.smul_apply, LinearMap.zero_apply, ModuleTower.transitionOfLE_def]
+
+/-- For the root setup of `ϖ`, if `ϖ 0` is a unit then almost-pro-zero means pro-zero. -/
+theorem ofCompatibleRoots_isAlmostProZero_iff_isProZero (ht : IsUnit (ϖ 0)) (F : J ⥤ C) :
+    (ofCompatibleRoots hp hϖ).IsAlmostProZero F ↔ F.IsProZero :=
+  isAlmostProZero_iff_isProZero_of_ideal_eq_top
+    (Ideal.eq_top_of_isUnit_mem _ (root_mem_ofCompatibleRoots_ideal hp hϖ 0) ht)
 
 end RootSetup
 
