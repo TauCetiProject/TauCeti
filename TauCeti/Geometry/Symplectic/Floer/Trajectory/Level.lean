@@ -10,7 +10,7 @@ import TauCeti.Algebra.Order.BigOperators.Sum.SubSumBound
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
-import TauCeti.Geometry.Symplectic.Floer.Breaking
+import TauCeti.Geometry.Symplectic.Floer.Breaking.Basic
 import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
