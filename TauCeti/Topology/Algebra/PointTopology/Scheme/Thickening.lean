@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.PointTopology.Scheme.ClosedImmersion
+public import TauCeti.Topology.Algebra.PointTopology.Scheme.Reduction
 public import TauCeti.AlgebraicGeometry.Morphisms.Thickening
 
 /-!
@@ -13,10 +13,12 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Thickening
 
 A thickening `i : Z ⟶ X` over `Spec k`, that is, a surjective closed immersion, is bijective
 on `R`-points when the coefficient ring `R` is reduced: a point `Spec R ⟶ X` kills the
-nilpotent sections of `X`, hence the ideal sheaf of `i`, and so lifts uniquely along `i`. Since
-a closed immersion induces a closed embedding on points, a thickening induces a homeomorphism
-of point spaces over a reduced local T1 coefficient ring with continuous multiplication, open
-units and continuous inversion on its units, such as `ℂ`.
+nilpotent sections of `X`, hence the ideal sheaf of `i`, and so lifts uniquely along `i`. A
+thickening induces a homeomorphism of point spaces over a reduced local coefficient ring with
+continuous multiplication, open units and continuous inversion on its units, such as `ℂ`.
+Indeed, the lift of points along `i` is the lift to the reduction `X.nilradical.subscheme`,
+which is continuous, followed by the map induced by the lift of `X.nilradical.subschemeι`
+along `i`.
 
 This generalises the reduction `X.nilradical.subscheme ⟶ X`, a thickening, for which
 `TauCeti.SchemePointTopology.reductionHomeomorph` gives the homeomorphism of points directly.
@@ -82,22 +84,47 @@ theorem map_bijective_of_isThickening (i : Z ⟶ X) (hi : i ≫ fX = fZ) [IsThic
     Function.Bijective (map (R := R) i hi) :=
   ⟨map_injective i hi, fun x ↦ ⟨liftOfIsThickening i hi x, map_liftOfIsThickening i hi x⟩⟩
 
-variable [TopologicalSpace R] [T1Space R] [ContinuousMul R] [IsLocalRing R] [IsOpenUnits R]
+/-- The lift along a thickening factors as the lift to the reduction of the target followed by
+the map induced by the lift of the reduction along the thickening. -/
+private theorem liftOfIsThickening_eq_comp (i : Z ⟶ X) (hi : i ≫ fX = fZ) [IsThickening i] :
+    ∃ (j : X.nilradical.subscheme ⟶ Z) (hj : j ≫ fZ = X.nilradical.subschemeι ≫ fX),
+      liftOfIsThickening (R := R) i hi = map j hj ∘ reductionLift fX := by
+  let j := IsClosedImmersion.lift i X.nilradical.subschemeι
+    (IsThickening.ker_le_ker i X.nilradical.subschemeι)
+  have hj : j ≫ i = X.nilradical.subschemeι := IsClosedImmersion.lift_fac _ _ _
+  refine ⟨j, by rw [← hi, ← Category.assoc, hj], funext fun x ↦ map_injective i hi ?_⟩
+  refine Subtype.ext ?_
+  rw [map_liftOfIsThickening, Function.comp_apply, map_val, map_val, Category.assoc, hj,
+    reductionLift_val_subschemeι]
 
-/-- A thickening over the base is a homeomorphism on points over a reduced local T1
-coefficient ring with continuous multiplication, open units and continuous inversion on its
-units. -/
-theorem isHomeomorph_map_of_isThickening (i : Z ⟶ X) (hi : i ≫ fX = fZ) [IsThickening i] :
-    IsHomeomorph (map (R := R) i hi) :=
-  isHomeomorph_iff_continuous_isClosedMap_bijective.2
-    ⟨continuous_map i hi, isClosedMap_of_isClosedImmersion i hi, map_bijective_of_isThickening i hi⟩
+variable [TopologicalSpace R] [ContinuousMul R] [IsLocalRing R] [IsOpenUnits R]
+
+/-- Over a reduced local topological ring with open units and continuous inversion on its
+units, the lift of points along a thickening over the base is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_liftOfIsThickening (i : Z ⟶ X) (hi : i ≫ fX = fZ) [IsThickening i] :
+    Continuous (liftOfIsThickening (R := R) i hi) := by
+  obtain ⟨j, hj, h⟩ := liftOfIsThickening_eq_comp (R := R) i hi
+  rw [h]
+  exact (continuous_map j hj).comp (continuous_reductionLift fX)
 
 /-- The homeomorphism of point spaces induced by a thickening over the base, with inverse the
-lift of points along the thickening. -/
+lift of points along the thickening, over a reduced local topological ring with open units and
+continuous inversion on its units. -/
 noncomputable def homeomorphOfIsThickening (i : Z ⟶ X) (hi : i ≫ fX = fZ) [IsThickening i] :
-    Points (R := R) fZ ≃ₜ Points (R := R) fX :=
-  (isHomeomorph_map_of_isThickening i hi).homeomorph.changeInv (liftOfIsThickening i hi)
-    (map_liftOfIsThickening i hi)
+    Points (R := R) fZ ≃ₜ Points (R := R) fX where
+  toFun := map i hi
+  invFun := liftOfIsThickening i hi
+  left_inv := liftOfIsThickening_map i hi
+  right_inv := map_liftOfIsThickening i hi
+  continuous_toFun := continuous_map i hi
+  continuous_invFun := continuous_liftOfIsThickening i hi
+
+/-- A thickening over the base is a homeomorphism on points over a reduced local topological
+ring with open units and continuous inversion on its units. -/
+theorem isHomeomorph_map_of_isThickening (i : Z ⟶ X) (hi : i ≫ fX = fZ) [IsThickening i] :
+    IsHomeomorph (map (R := R) i hi) :=
+  (homeomorphOfIsThickening i hi).isHomeomorph
 
 /-- The homeomorphism induced by a thickening is the induced map on points. -/
 @[simp]
