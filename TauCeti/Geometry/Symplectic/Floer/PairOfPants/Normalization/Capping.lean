@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.CappedCylinder
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.LeftCapping
-import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Symplectic.Complex.Line
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Normalization
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 
 /-!
@@ -37,10 +37,12 @@ target-independent Hamiltonians `d_q`, which has no Hamiltonian vector field
   unchanged (`TauCeti.SmoothTwoForm.perturbedMFDeriv_cappedCylinderComponent_add_const`,
   `TauCeti.SmoothTwoForm.floerEnergyDensity_cappedExchangePerturbation_add_const` and their
   companions);
-* the curvature changes pointwise by the curvature of the datum of the `d_q`, which does not
-  depend on the target point
+* the curvature changes pointwise by the curvature of the datum of the `d_q`
   (`TauCeti.SmoothTwoForm.hamiltonianCurvature_cappedCylinderComponent_add_const`,
-  `TauCeti.SmoothTwoForm.hamiltonianCurvature_cappedExchangePerturbation_add_const`);
+  `TauCeti.SmoothTwoForm.hamiltonianCurvature_cappedExchangePerturbation_add_const`), which does
+  not depend on the target point
+  (`TauCeti.SmoothTwoForm.hamiltonianCurvature_cappedCylinderComponent_const_target`,
+  `TauCeti.SmoothTwoForm.hamiltonianCurvature_cappedExchangePerturbation_const_target`);
 * the curvature of the datum of the `d_q` integrates to `∫₀¹ d_in - ∫₀¹ d_∞` over the domain,
   for the remaining input `in` (`0` on the capped cylinder, `1` on the family capped at `0`): over
   every rectangle `[a, b] × [0, 1]` with `a ≤ -3` and `2 ≤ b` and over the whole strip of the
@@ -100,14 +102,6 @@ private theorem single_inf_const_target (e : ℝ → ℝ) :
     simp
   · simp [hq]
 
-/-- The plumbed perturbation of target-independent Hamiltonians does not depend on the target:
-its values at points of `M` and of `N` agree. -/
-private theorem plumbedPerturbation_const_target (a b : Puncture → ℝ → ℝ) (q : Puncture) (L : ℝ)
-    (w : ℂ) (x : M) (y : N) :
-    plumbedPerturbation (fun r t (_ : M) ↦ a r t) (fun r t (_ : M) ↦ b r t) q L w x =
-      plumbedPerturbation (fun r t (_ : N) ↦ a r t) (fun r t (_ : N) ↦ b r t) q L w y := by
-  simp only [plumbedPerturbation_def, pairOfPantsPerturbation_def]
-
 /-- **Normalizing the Hamiltonians of the capped cylinder.** Adding functions `d_r` of time to the
 Hamiltonians `Hb r` adds the capped datum of the target-independent Hamiltonians `d_r`. -/
 theorem cappedCylinderComponent_add_const (Hb : Puncture → ℝ → M → ℝ) (d : Puncture → ℝ → ℝ)
@@ -115,17 +109,11 @@ theorem cappedCylinderComponent_add_const (Hb : Puncture → ℝ → M → ℝ) 
     cappedCylinderComponent (fun r t y ↦ Hb r t y + d r t) L v z x =
       cappedCylinderComponent Hb L v z x +
         cappedCylinderComponent (fun r t (_ : M) ↦ d r t) L v z x := by
-  have h : (fun r t y ↦ Hb r t y + d r t) = Hb + fun r t (_ : M) ↦ d r t := rfl
-  have h₁ : (Pi.single inf fun t (y : M) ↦ Hb one t y + d one t : Puncture → ℝ → M → ℝ) =
-      Pi.single inf (Hb one) + Pi.single inf fun t (_ : M) ↦ d one t := by
-    funext q
-    by_cases hq : q = inf
-    · subst hq
-      simp only [Pi.single_eq_same, Pi.add_apply]
-      rfl
-    · simp [hq]
-  rw [cappedCylinderComponent_def, h, h₁, plumbedPerturbation_add, Pi.add_apply, Pi.add_apply,
-    add_apply, cappedCylinderComponent_def, cappedCylinderComponent_def]
+  have h : (fun r t y ↦ Hb r t y + d r t) = Hb + fun r t (_ : M) ↦ d r t := by
+    funext r t y
+    simp
+  rw [h, cappedCylinderComponent_def, Pi.add_apply Hb _ one, Pi.single_add, plumbedPerturbation_add,
+    Pi.add_apply, Pi.add_apply, add_apply, cappedCylinderComponent_def, cappedCylinderComponent_def]
 
 /-- The capped datum on the cylinder of target-independent Hamiltonians does not depend on the
 target: its values at points of `M` and of `N` agree. -/
@@ -174,23 +162,11 @@ theorem cappedExchangePerturbation_add_const (H : Puncture → ℝ → M → ℝ
     cappedExchangePerturbation (fun q t y ↦ H q t y + d q t) L c w x =
       cappedExchangePerturbation H L c w x +
         cappedExchangePerturbation (fun q t (_ : M) ↦ d q t) L c w x := by
-  have h₁ : (Pi.single inf fun t (y : M) ↦ H zero t y + d zero t : Puncture → ℝ → M → ℝ) =
-      Pi.single inf (H zero) + Pi.single inf fun t (_ : M) ↦ d zero t := by
-    funext q
-    by_cases hq : q = inf
-    · subst hq
-      simp only [Pi.single_eq_same, Pi.add_apply]
-      rfl
-    · simp [hq]
-  have h₂ : (update (fun q t y ↦ H q t y + d q t) inf 0 : Puncture → ℝ → M → ℝ) =
-      update H inf 0 + update (fun q t (_ : M) ↦ d q t) inf 0 := by
-    funext q
-    by_cases hq : q = inf
-    · subst hq
-      simp only [update_self, Pi.add_apply, add_zero]
-    · simp only [update_of_ne hq, Pi.add_apply]
-      rfl
-  rw [cappedExchangePerturbation_def, h₁, h₂, plumbedPerturbation_add]
+  have h : (fun q t y ↦ H q t y + d q t) = H + fun q t (_ : M) ↦ d q t := by
+    funext q t y
+    simp
+  rw [h, cappedExchangePerturbation_def, Pi.add_apply H _ zero, Pi.single_add,
+    ← add_zero (0 : ℝ → M → ℝ), update_add, plumbedPerturbation_add]
   simp only [Pi.add_apply, cappedExchangePerturbation_def, negativePlanePerturbation_def, mul_add,
     add_smul]
   abel
@@ -228,16 +204,6 @@ private theorem cappedExchangePerturbation_const_target_fun (d : Puncture → �
   funext z x
   rw [cappedExchangePerturbation_const_target d L c _ x y]
 
-/-- Continuous periodic normalizations `d_r` are bounded. -/
-private theorem exists_forall_abs_le {d : Puncture → ℝ → ℝ} (hd : ∀ r, Periodic (d r) 1)
-    (hds : ∀ r, Continuous (d r)) : ∃ B : Puncture → ℝ, ∀ r t, |d r t| ≤ B r := by
-  have hb (r : Puncture) : ∃ B, ∀ t, |d r t| ≤ B := by
-    obtain ⟨B, hB⟩ := isBounded_iff_forall_norm_le.1
-      ((hd r).isBounded_of_continuous one_ne_zero (hds r))
-    exact ⟨B, fun t ↦ hB _ (mem_range_self t)⟩
-  choose B hB using hb
-  exact ⟨B, hB⟩
-
 end Floer
 
 /-! ### The capped cylinder: symplectic vector spaces -/
@@ -251,7 +217,7 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 
 /-- The curvature of the capped datum of target-independent Hamiltonians does not depend on the
 target point. -/
-private theorem hamiltonianCurvature_cappedCylinderComponent_const_target (ω : SymplecticForm V)
+theorem hamiltonianCurvature_cappedCylinderComponent_const_target (ω : SymplecticForm V)
     (d : Puncture → ℝ → ℝ) (L : ℝ) (z : ℝ × ℝ) (x y : V) :
     ω.hamiltonianCurvature (cappedCylinderComponent (fun r t (_ : V) ↦ d r t) L 1)
         (cappedCylinderComponent (fun r t (_ : V) ↦ d r t) L Complex.I) z x =
@@ -283,8 +249,8 @@ theorem setIntegral_hamiltonianCurvature_cappedCylinderComponent_const (ω : Sym
     simp
   -- The energy identity for the constant map `0` leaves only the curvature and the end terms.
   have h := ω.integral_floerEnergyDensity_cappedCylinderComponent
-    (Hb := fun r t (_ : V) ↦ d r t) (fun r t ↦ funext fun _ ↦ hd r t)
-    (fun r ↦ (hds r).comp contDiff_fst) hL isOpen_univ (u := fun _ ↦ (0 : V)) contDiffOn_const ha
+    (Hb := fun r t (_ : V) ↦ d r t) (periodic_const_target hd)
+    (contDiff_uncurry_const_target hds) hL isOpen_univ (u := fun _ ↦ (0 : V)) contDiffOn_const ha
     hb (subset_univ _) fun _ _ ↦ rfl
   rw [hE] at h
   simp only [Pi.zero_apply, integral_zero, hamiltonianAction_const] at h
@@ -307,10 +273,10 @@ private theorem integrableOn_hamiltonianCurvature_cappedCylinderComponent_const
         (cappedCylinderComponent (fun r t (_ : V) ↦ d r t) L 1)
         (cappedCylinderComponent (fun r t (_ : V) ↦ d r t) L Complex.I) z (u z))
       (univ ×ˢ Icc 0 1) := by
-  obtain ⟨B, hB⟩ := exists_forall_abs_le hd fun r ↦ (hds r).continuous
-  have hd' : ∀ r, Periodic (fun t (_ : V) ↦ d r t) 1 := fun r t ↦ funext fun _ ↦ hd r t
-  have hds' : ∀ r, ContDiff ℝ 1 (uncurry fun t (_ : V) ↦ d r t) :=
-    fun r ↦ (hds r).comp contDiff_fst
+  choose B hB using fun r ↦ isBounded_iff_forall_norm_le.1
+    ((hd r).isBounded_of_continuous one_ne_zero (hds r).continuous)
+  have hd' := periodic_const_target (M := V) hd
+  have hds' := contDiff_uncurry_const_target (V := V) hds
   -- Along the constant map `0`, the curvature is a continuous function of the cylinder point.
   have hk (v : ℂ) : ContDiff ℝ 1
       fun z ↦ cappedCylinderComponent (fun r t (_ : V) ↦ d r t) L v z 0 :=
@@ -335,7 +301,7 @@ private theorem integrableOn_hamiltonianCurvature_cappedCylinderComponent_const
       (((hk 1).continuous_fderiv one_ne_zero).clm_apply continuous_const)
   -- Its integral over one period is finite by the uniform curvature bound.
   have hfin := ω.lintegral_enorm_hamiltonianCurvature_cappedCylinderComponent_le hd' hds' hL
-    (Bb := B) (fun r t _ ↦ hB r t) 0 fun _ ↦ 0
+    (Bb := B) (fun r t _ ↦ hB r _ (mem_range_self t)) 0 fun _ ↦ 0
   have hsets : ((univ : Set ℝ) ×ˢ Ico (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] univ ×ˢ Icc 0 1 := by
     rw [Measure.volume_eq_prod]
     exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ico_ae_eq_Icc
@@ -408,6 +374,18 @@ theorem floerEnergyDensity_cappedCylinderComponent_add_const (ω : SmoothTwoForm
   rw [cappedCylinderComponent_add_const_fun Hb d L 1 (u 0),
     cappedCylinderComponent_add_const_fun Hb d L Complex.I (u 0), floerEnergyDensity_add_const]
 
+/-- The curvature of the capped datum of target-independent Hamiltonians does not depend on the
+target point, for a manifold target. -/
+theorem hamiltonianCurvature_cappedCylinderComponent_const_target (ω : SmoothTwoForm I M)
+    (d : Puncture → ℝ → ℝ) (L : ℝ) (z : ℝ × ℝ) (x y : M) :
+    ω.hamiltonianCurvature (cappedCylinderComponent (fun r t (_ : M) ↦ d r t) L 1)
+        (cappedCylinderComponent (fun r t (_ : M) ↦ d r t) L Complex.I) z x =
+      ω.hamiltonianCurvature (cappedCylinderComponent (fun r t (_ : M) ↦ d r t) L 1)
+        (cappedCylinderComponent (fun r t (_ : M) ↦ d r t) L Complex.I) z y := by
+  rw [cappedCylinderComponent_const_target_fun d L 1 x,
+    cappedCylinderComponent_const_target_fun d L Complex.I x, hamiltonianCurvature_const,
+    hamiltonianCurvature_const]
+
 omit [IsManifold I ⊤ M] in
 /-- The components of the capped datum are differentiable in the cylinder point. -/
 private theorem differentiableAt_cappedCylinderComponent (hHb : ∀ r, Periodic (Hb r) 1)
@@ -434,9 +412,8 @@ theorem hamiltonianCurvature_cappedCylinderComponent_add_const (ω : SmoothTwoFo
           (cappedCylinderComponent Hb L Complex.I) z x +
         ω.hamiltonianCurvature (cappedCylinderComponent (fun r t (_ : M) ↦ d r t) L 1)
           (cappedCylinderComponent (fun r t (_ : M) ↦ d r t) L Complex.I) z x := by
-  have hd' : ∀ r, Periodic (fun t (_ : M) ↦ d r t) 1 := fun r t ↦ funext fun _ ↦ hd r t
-  have hds' : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry fun t (_ : M) ↦ d r t) :=
-    fun r ↦ (hds r).contMDiff.comp contMDiff_fst
+  have hd' := periodic_const_target (M := M) hd
+  have hds' := contMDiff_uncurry_const_target (I := I) (M := M) hds
   rw [cappedCylinderComponent_add_const_fun Hb d L 1 x,
     cappedCylinderComponent_add_const_fun Hb d L Complex.I x,
     hamiltonianCurvature_add_const ω (differentiableAt_cappedCylinderComponent hHb hHbs hL 1 z x)
@@ -595,6 +572,24 @@ theorem floerEnergyDensity_cappedExchangePerturbation_add_const (ω : SmoothTwoF
   rw [cappedExchangePerturbation_add_const_fun H d L c 1 (u 0),
     cappedExchangePerturbation_add_const_fun H d L c Complex.I (u 0), floerEnergyDensity_add_const]
 
+/-- The curvature of the input-exchange family capped at `0` of target-independent Hamiltonians
+does not depend on the target point, for a manifold target. -/
+theorem hamiltonianCurvature_cappedExchangePerturbation_const_target (ω : SmoothTwoForm I M)
+    (d : Puncture → ℝ → ℝ) (L c : ℝ) (z : ℝ × ℝ) (x y : M) :
+    ω.hamiltonianCurvature
+        (fun z x ↦ cappedExchangePerturbation (fun q t (_ : M) ↦ d q t) L c
+          (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedExchangePerturbation (fun q t (_ : M) ↦ d q t) L c
+          (Complex.equivRealProdCLM.symm z) x Complex.I) z x =
+      ω.hamiltonianCurvature
+        (fun z x ↦ cappedExchangePerturbation (fun q t (_ : M) ↦ d q t) L c
+          (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedExchangePerturbation (fun q t (_ : M) ↦ d q t) L c
+          (Complex.equivRealProdCLM.symm z) x Complex.I) z y := by
+  rw [cappedExchangePerturbation_const_target_fun d L c 1 x,
+    cappedExchangePerturbation_const_target_fun d L c Complex.I x, hamiltonianCurvature_const,
+    hamiltonianCurvature_const]
+
 omit [IsManifold I ⊤ M] in
 /-- The components of the capped family are differentiable at the points of `S`. -/
 private theorem differentiableAt_cappedExchangePerturbation (hH : ∀ q, Periodic (H q) 1)
@@ -634,9 +629,8 @@ theorem hamiltonianCurvature_cappedExchangePerturbation_add_const (ω : SmoothTw
             (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ cappedExchangePerturbation (fun q t (_ : M) ↦ d q t) L c
             (Complex.equivRealProdCLM.symm z) x Complex.I) z x := by
-  have hd' : ∀ q, Periodic (fun t (_ : M) ↦ d q t) 1 := fun q t ↦ funext fun _ ↦ hd q t
-  have hds' : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry fun t (_ : M) ↦ d q t) :=
-    fun q ↦ (hds q).contMDiff.comp contMDiff_fst
+  have hd' := periodic_const_target (M := M) hd
+  have hds' := contMDiff_uncurry_const_target (I := I) (M := M) hds
   rw [cappedExchangePerturbation_add_const_fun H d L c 1 x,
     cappedExchangePerturbation_add_const_fun H d L c Complex.I x,
     hamiltonianCurvature_add_const ω
@@ -684,7 +678,8 @@ theorem setIntegral_hamiltonianCurvature_cappedExchangePerturbation_const (ω : 
           (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) =
       (∫ t in (0 : ℝ)..1, d one t) - ∫ t in (0 : ℝ)..1, d inf t := by
   simp only [ω.hamiltonianCurvature_cappedExchangePerturbation_const_eq]
-  obtain ⟨B, hB⟩ := exists_forall_abs_le hd fun q ↦ (hds q).continuous
+  choose B hB using fun q ↦ isBounded_iff_forall_norm_le.1
+    ((hd q).isBounded_of_continuous one_ne_zero (hds q).continuous)
   -- Along the constant map `0` into `ℂ`, the energy density and the area density vanish.
   have hE : stdComplexSymplecticForm.constSmooth.floerEnergyDensity
       (fun z x ↦ cappedExchangePerturbation (fun q t (_ : ℂ) ↦ d q t) L c
@@ -707,8 +702,9 @@ theorem setIntegral_hamiltonianCurvature_cappedExchangePerturbation_const (ω : 
   -- The energy identity for the constant map `0` leaves only the curvature and the end terms.
   have h := (SymplecticForm.isNondegenerate_constSmooth stdComplexSymplecticForm
     ).integral_floerEnergyDensity_cappedExchangePerturbation (H := fun q t (_ : ℂ) ↦ d q t)
-    (fun q t ↦ funext fun _ ↦ hd q t) (fun q ↦ (hds q).contMDiff.comp contMDiff_fst)
-    (B := B) (fun q t _ ↦ hB q t) hL hc₀ hc₁ (u := fun _ ↦ (0 : ℂ)) contMDiffOn_const
+    (periodic_const_target hd) (contMDiff_uncurry_const_target hds)
+    (B := B) (fun q t _ ↦ hB q _ (mem_range_self t)) hL hc₀ hc₁ (u := fun _ ↦ (0 : ℂ))
+    contMDiffOn_const
     (x₁ := fun _ ↦ 0) (xinf := fun _ ↦ 0) (fun _ ↦ tendsto_const_nhds)
     (fun _ ↦ tendsto_const_nhds) (by rw [hE]; exact integrableOn_zero)
     (by rw [hA]; exact integrableOn_zero)
@@ -749,11 +745,12 @@ theorem setIntegral_hamiltonianCurvature_cappedExchangePerturbation_add_const
       (fun z x ↦ cappedExchangePerturbation (fun q t (_ : M) ↦ d q t) L c
         (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)) thricePuncturedSphereReal := by
     simp only [ω.hamiltonianCurvature_cappedExchangePerturbation_const_eq]
-    obtain ⟨B, hB⟩ := exists_forall_abs_le hd fun q ↦ (hds q).continuous
+    choose B hB using fun q ↦ isBounded_iff_forall_norm_le.1
+      ((hd q).isBounded_of_continuous one_ne_zero (hds q).continuous)
     exact ((SymplecticForm.isNondegenerate_constSmooth stdComplexSymplecticForm
       ).integrable_hamiltonianCurvature_cappedExchangePerturbation (H := fun q t (_ : ℂ) ↦ d q t)
-      (fun q t ↦ funext fun _ ↦ hd q t) (fun q ↦ (hds q).contMDiff.comp contMDiff_fst)
-      (B := B) (fun q t _ ↦ hB q t) hL hc₀ hc₁ (u := fun _ ↦ (0 : ℂ))
+      (periodic_const_target hd) (contMDiff_uncurry_const_target hds)
+      (B := B) (fun q t _ ↦ hB q _ (mem_range_self t)) hL hc₀ hc₁ (u := fun _ ↦ (0 : ℂ))
       continuousOn_const).integrableOn
   rw [← ω.setIntegral_hamiltonianCurvature_cappedExchangePerturbation_const hd hds hL hc₀ hc₁ u,
     ← integral_add hu hk]
