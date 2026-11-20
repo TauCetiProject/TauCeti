@@ -38,9 +38,13 @@ do not form a `u`-small type is not.
 * `SSet.IsLocallySmall.{u} X`: every right mapping space of `X` has a Kan model in universe `u`.
 * `SSet.smallMappingSpaceModel X x y`: a chosen small model of `Hom^R_X(x, y)` with its
   comparison maps and homotopies, and `SSet.smallMappingSpace X x y`, its underlying Kan complex.
+* `SSet.uliftRightMappingSpaceSmallModel X x y`: the explicit `u`-small Kan model `Hom^R_X(x, y)`
+  of `Hom^R_{ulift X}(↑x, ↑y)` for a `u`-small quasicategory `X`.
 
 ## Main results
 
+* Every `u`-small quasicategory `X : SSet.{u}` is locally `u`-small, as is its universe lift
+  `SSet.uliftFunctor.{v, u}.obj X`.
 * `SSet.isLocallySmall_iff_of_isStrictSegal`: a strict Segal simplicial set is locally `u`-small
   exactly when its sets of edges are `u`-small.
 * `CategoryTheory.nerve.isLocallySmall_iff`: the nerve of a category is locally `u`-small exactly
@@ -81,6 +85,36 @@ noncomputable def smallMappingSpaceModel [IsLocallySmall.{u} X] (x y : X _⦋0�
 `u` underlying the chosen small model of `Hom^R_X(x, y)`. -/
 noncomputable abbrev smallMappingSpace [IsLocallySmall.{u} X] (x y : X _⦋0⦌) : SSet.{u} :=
   (X.smallMappingSpaceModel x y).model
+
+/-- Every `u`-small quasicategory is locally `u`-small: its right mapping spaces are already
+`u`-small Kan complexes. -/
+instance (Y : SSet.{u}) [Y.Quasicategory] : IsLocallySmall.{u} Y where
+  hasSmallSpaceModel x y := TauCeti.hasSmallSpaceModel_self (Y.rightMappingSpace x y : SSet.{u})
+
+/-- Explicit `u`-small Kan model `Hom^R_Y(x, y)` for the right mapping space between lifted
+vertices in `uliftFunctor.obj Y`. -/
+noncomputable def uliftRightMappingSpaceSmallModel (Y : SSet.{u}) [Y.Quasicategory]
+    (x y : Y _⦋0⦌) :
+    TauCeti.SmallSpaceModel.{u, max u v}
+      (((uliftFunctor.{v, u}.obj Y).rightMappingSpace (ULift.up x) (ULift.up y)) :
+        SSet.{max u v}) :=
+  (smallSpaceModelUlift.{u, v} (Y.rightMappingSpace x y : SSet.{u})).transport
+    (rightMappingSpace.uliftIso.{u, v} x y).symm
+
+/-- The chosen small model for the right mapping space in `uliftFunctor.obj Y` is
+`Hom^R_Y(x, y)`. -/
+@[simp]
+lemma uliftRightMappingSpaceSmallModel_model (Y : SSet.{u}) [Y.Quasicategory] (x y : Y _⦋0⦌) :
+    (uliftRightMappingSpaceSmallModel.{u, v} Y x y).model =
+      (Y.rightMappingSpace x y : SSet.{u}) :=
+  (rfl)
+
+/-- **The universe lift of a `u`-small quasicategory is locally `u`-small**. -/
+instance (Y : SSet.{u}) [Y.Quasicategory] :
+    IsLocallySmall.{u} (uliftFunctor.{v, u}.obj Y) where
+  hasSmallSpaceModel x y :=
+    (TauCeti.hasSmallSpaceModel_iff_nonempty _).2
+      ⟨uliftRightMappingSpaceSmallModel.{u, v} Y x.down y.down⟩
 
 /-- A strict Segal simplicial set, such as the nerve of a category, is locally `u`-small exactly
 when the edges between any two of its vertices form a `u`-small type: its right mapping spaces

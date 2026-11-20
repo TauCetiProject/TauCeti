@@ -68,7 +68,7 @@ theorem _root_.Units.isNormMulUnit_iff_norm_inv (u : Rˣ) :
   have hu0' : 0 < ‖(u : R)‖ := lt_of_le_of_ne (norm_nonneg _) hu0.symm
   constructor
   · intro hu
-    exact NormedRing.norm_units_inv_of_norm_mul hu0 hu.norm_mul
+    exact NormedRing.norm_units_inv_of_norm_mul hu.norm_mul
   · intro h
     refine (isNormMulUnit_iff _).mpr ⟨u.isUnit, fun x ↦ le_antisymm (norm_mul_le _ _) ?_⟩
     have hx : ‖x‖ ≤ ‖(u : R)‖⁻¹ * ‖(u : R) * x‖ := by
@@ -85,6 +85,18 @@ theorem map {u : R} (hu : IsNormMulUnit u) (φ : R →* S)
   have hv := (Units.isNormMulUnit_iff_norm_inv v).mp hu
   apply (Units.isNormMulUnit_iff_norm_inv (Units.map φ v)).mpr
   exact (hφ _).trans (hv.trans (congrArg (·⁻¹) (hφ _).symm))
+
+/-- If `u : Rˣ` is a multiplicative unit with `‖(u : R)‖ * S₀ = R₀` and `‖a‖ < R₀`, then
+`‖((u⁻¹ : Rˣ) : R) * a‖ < S₀`. -/
+theorem norm_units_inv_mul_lt {u : Rˣ} (hu : IsNormMulUnit (u : R)) {a : R} {S₀ R₀ : ℝ}
+    (ha : ‖a‖ < R₀) (huS : ‖(u : R)‖ * S₀ = R₀) :
+    ‖((u⁻¹ : Rˣ) : R) * a‖ < S₀ := by
+  have hR₀ : 0 < R₀ := (norm_nonneg a).trans_lt ha
+  have hS₀ : 0 < S₀ := pos_of_mul_pos_right (hR₀.trans_eq huS.symm) (norm_nonneg _)
+  have hinv : 0 < ‖((u⁻¹ : Rˣ) : R)‖ :=
+    pos_of_mul_pos_left (hS₀.trans_eq (hu.norm_units_inv_mul_eq hR₀.ne' huS).symm) hR₀.le
+  exact (norm_mul_le _ _).trans_lt <|
+    (mul_lt_mul_of_pos_left ha hinv).trans_eq (hu.norm_units_inv_mul_eq hR₀.ne' huS)
 
 end IsNormMulUnit
 

@@ -32,8 +32,13 @@ groups.
   underlying submodule.
 * `TauCeti.Subcomodule.finite`: subcomodules of noetherian modules are finite.
 * `TauCeti.Subcomodule.instModuleFinite`: the same finiteness for the subtype of a subcomodule.
+* `TauCeti.Subcomodule.ext` and `TauCeti.Subcomodule.coact_mem`: subcomodules are determined by
+  their elements, and the coaction of an element lies in the tensor product of the subcomodule
+  with the coalgebra.
 * `TauCeti.Subcomodule.rid_lTensor_coact_mem`: a subcomodule is stable under contracting the
   coaction against a linear functional on the coalgebra.
+* `TauCeti.Subcomodule.ofSubmodule`: build a subcomodule from a submodule and the tensor-product
+  stability condition.
 * `⊤` and `⊥`: the full and zero subcomodules, which bound the order of subcomodules.
 * `TauCeti.Subcomodule.toSubmodule_eq_top` and `TauCeti.Subcomodule.toSubmodule_eq_bot`: the
   underlying submodule detects the extreme subcomodules.
@@ -41,11 +46,22 @@ groups.
   vector.
 * `TauCeti.Subcomodule.isSimpleOrder_of_transitive`: a family of maps that preserves every
   subcomodule and acts transitively on nonzero vectors makes the subcomodule lattice simple.
+* `TauCeti.Comodule.nontrivial_of_isSimpleOrder` and
+  `Module.Basis.index_nonempty_of_isSimpleOrder`: every simple comodule is nontrivial, and every
+  basis of a simple comodule has a nonempty index type.
 * `TauCeti.Subcomodule.map`: the image of a subcomodule under a comodule morphism.
+* `TauCeti.Subcomodule.mem_map`, `TauCeti.Subcomodule.map_le_iff`, `TauCeti.Subcomodule.map_mono`,
+  `TauCeti.Subcomodule.map_bot`, `TauCeti.Subcomodule.map_id` and `TauCeti.Subcomodule.map_map`:
+  membership in an image, and the order and functoriality properties of `map`.
 * `TauCeti.Subcomodule.map_finite`: images preserve finite generation of the underlying
   submodule.
 * `TauCeti.Comodule.Hom.range`: the image subcomodule of a comodule morphism.
+* `TauCeti.Comodule.Hom.range_toSubmodule`, `TauCeti.Comodule.Hom.mem_range` and
+  `TauCeti.Comodule.Hom.range_le_iff`: the underlying submodule, membership and order
+  characterisation of the range.
 * `TauCeti.Comodule.Hom.range_finite`: ranges of morphisms out of finite modules are finite.
+* The instance `AddSubgroupClass (Subcomodule R C M) M` over a commutative ring and an additive
+  group `M`: the subtype of a subcomodule is an additive group.
 
 ## References
 
@@ -123,8 +139,8 @@ theorem toSubmodule_carrier (N : Subcomodule R C M) : N.toSubmodule = N.carrier 
 /-- The tautological linear equivalence between a subcomodule and the subtype of its underlying
 submodule. -/
 def toSubmoduleEquiv (N : Subcomodule R C M) : N ≃ₗ[R] N.toSubmodule where
-  toFun x := ⟨x, x.2⟩
-  invFun x := ⟨x, x.2⟩
+  toFun x := ⟨x, x.property⟩
+  invFun x := ⟨x, x.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl
@@ -183,7 +199,7 @@ theorem rid_lTensor_coact_mem (N : Subcomodule R C M) (f : C →ₗ[R] R) {m : M
   rw [← hx]
   clear hx hm
   induction x with
-  | tmul y c => simpa using N.carrier.smul_mem (f c) y.2
+  | tmul y c => simpa using N.carrier.smul_mem (f c) y.property
   | add a b ha hb => simpa only [map_add] using add_mem ha hb
 
 /-- Constructor from a submodule and the tensor-product stability condition. -/
@@ -303,6 +319,25 @@ theorem isSimpleOrder_of_transitive {G : Type x} (v₀ : M) (hv₀ : v₀ ≠ 0)
       · obtain ⟨g, hg⟩ := htrans hv hw
         exact hg ▸ hmem N g hwN
 
+end Subcomodule
+
+/-- Every simple right comodule is nontrivial. -/
+theorem Comodule.nontrivial_of_isSimpleOrder [IsSimpleOrder (Subcomodule R C M)] :
+    Nontrivial M := by
+  obtain ⟨m, -, hm⟩ := Subcomodule.ne_bot_iff.mp (top_ne_bot (α := Subcomodule R C M))
+  exact nontrivial_of_ne m 0 hm
+
+/-- Any basis of a simple right comodule has a nonempty index type. -/
+theorem _root_.Module.Basis.index_nonempty_of_isSimpleOrder {R M ι : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] (b : Module.Basis ι R M) (C : Type*)
+    [AddCommMonoid C] [Module R C] [Coalgebra R C] [Comodule R C M]
+    [IsSimpleOrder (Subcomodule R C M)] : Nonempty ι :=
+  have := Comodule.nontrivial_of_isSimpleOrder R C M
+  b.index_nonempty
+
+namespace Subcomodule
+
+variable {R C M}
 variable {N : Type x} [AddCommMonoid N] [Module R N] [Comodule R C N]
 
 /-- The image of a subcomodule under a comodule morphism. -/

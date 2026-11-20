@@ -33,7 +33,7 @@ namespace TauCeti.Green
 /-- The winding weights of the affine normalizations of the generators of a cycle add up, almost
 everywhere, to the winding weight of the cycle. -/
 private theorem sum_windingWeight_comp_lineMap_ae (C : Contour.Cycle) :
-    (fun z ↦ ∑ γ ∈ FreeAbelianGroup.support C, (FreeAbelianGroup.coeff γ C : ℝ) *
+    (fun z ↦ ∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℝ) *
       windingWeight (γ ∘ AffineMap.lineMap γ.a γ.b) 0 1 z) =ᵐ[volume] C.windingWeight := by
   have hnot : ∀ᵐ z ∂volume, z ∉ Contour.Cycle.trace C := by
     rw [ae_iff]
@@ -49,20 +49,6 @@ private theorem sum_windingWeight_comp_lineMap_ae (C : Contour.Cycle) :
     (γ.isPiecewiseC1On.absolutelyContinuousOnInterval).windingNumber_comp_lineMap hzγ]
   simp
 
-/-- The boundary integrals of the affine normalizations of the generators of a cycle, weighted by
-the cycle coefficients, equal the circulation of the cycle. -/
-private theorem sum_integral_circulationFun_comp_lineMap (C : Contour.Cycle) {U : Set ℂ}
-    {P Q : ℂ → ℝ} (hP : ContinuousOn P U) (hQ : ContinuousOn Q U)
-    (htr : ∀ γ ∈ FreeAbelianGroup.support C, γ '' uIcc γ.a γ.b ⊆ U) :
-    (∑ γ ∈ FreeAbelianGroup.support C, (FreeAbelianGroup.coeff γ C : ℝ) *
-        ∫ t in (0 : ℝ)..1, circulationFun P Q (γ ∘ AffineMap.lineMap γ.a γ.b) t) =
-      ∑ γ ∈ FreeAbelianGroup.support C, (FreeAbelianGroup.coeff γ C : ℝ) *
-        ∫ t in γ.a..γ.b, circulationFun P Q γ t := by
-  apply Finset.sum_congr rfl
-  intro γ hγ
-  rw [(γ.isPiecewiseC1On.absolutelyContinuousOnInterval).integral_circulationFun_comp_lineMap
-    (hP.mono (htr γ hγ)) (hQ.mono (htr γ hγ))]
-
 /-- Green's theorem for an existing contour cycle, with its actual total winding number.
 The circulation uses the cycle's canonical support and coefficients. Only the total index must
 vanish outside the field domain. -/
@@ -70,12 +56,12 @@ theorem _root_.TauCeti.Contour.Cycle.green_winding (C : Contour.Cycle) {U : Set 
     (hU : IsOpen U) (htrace : Contour.Cycle.IsIn C U)
     (hP : ContDiffOn ℝ 1 P U) (hQ : ContDiffOn ℝ 1 Q U)
     (hindex : Contour.Cycle.IsNullHomologous C U) :
-    (∀ γ ∈ FreeAbelianGroup.support C,
+    (∀ γ ∈ FreeAddCommGroup.support C,
       IntervalIntegrable (circulationFun P Q γ) volume γ.a γ.b) ∧
       IntegrableOn (fun z ↦
         C.windingWeight z *
           curl P Q z) U ∧
-      (∑ γ ∈ FreeAbelianGroup.support C, (FreeAbelianGroup.coeff γ C : ℝ) *
+      (∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℝ) *
         ∫ t in γ.a..γ.b, circulationFun P Q γ t) =
         ∫ z in U,
           C.windingWeight z *
@@ -88,13 +74,13 @@ theorem _root_.TauCeti.Contour.Cycle.green_winding (C : Contour.Cycle) {U : Set 
   have himage (γ : Contour.PiecewiseC1ClosedCurve) :
       η γ '' uIcc (0 : ℝ) 1 = γ '' uIcc γ.a γ.b :=
     Set.image_comp_lineMap_uIcc_zero_one γ γ.a γ.b
-  have htr (γ : Contour.PiecewiseC1ClosedCurve) (hγ : γ ∈ FreeAbelianGroup.support C) :
+  have htr (γ : Contour.PiecewiseC1ClosedCurve) (hγ : γ ∈ FreeAddCommGroup.support C) :
       γ '' uIcc γ.a γ.b ⊆ U := by
     intro z hz
     exact (Contour.Cycle.isIn_iff.mp htrace)
       (Contour.Cycle.mem_trace_iff.mpr ⟨γ, hγ, hz⟩)
-  have hidx : ∀ z ∉ U, ∑ γ ∈ FreeAbelianGroup.support C,
-      (FreeAbelianGroup.coeff γ C : ℂ) * Contour.windingNumber (η γ) 0 1 z = 0 := by
+  have hidx : ∀ z ∉ U, ∑ γ ∈ FreeAddCommGroup.support C,
+      (FreeAddCommGroup.coeff γ C : ℂ) * Contour.windingNumber (η γ) 0 1 z = 0 := by
     intro z hz
     have hh := Contour.Cycle.isNullHomologous_iff.mp hindex z hz
     rw [Contour.Cycle.windingNumber_eq_sum_support] at hh
@@ -106,19 +92,19 @@ theorem _root_.TauCeti.Contour.Cycle.green_winding (C : Contour.Cycle) {U : Set 
     simpa only [η, Function.comp_apply, AffineMap.lineMap_apply_zero,
       AffineMap.lineMap_apply_one] using
       γ.source_eq_target
-  obtain ⟨_, hi, heq⟩ := green_ac_winding_sum (s := FreeAbelianGroup.support C)
-    (γ := η) (a := fun _ ↦ 0) (b := fun _ ↦ 1) (w := fun γ ↦ FreeAbelianGroup.coeff γ C)
+  obtain ⟨_, hi, heq⟩ := green_ac_winding_sum (s := FreeAddCommGroup.support C)
+    (γ := η) (a := fun _ ↦ 0) (b := fun _ ↦ 1) (w := fun γ ↦ FreeAddCommGroup.coeff γ C)
     (fun _ _ ↦ zero_lt_one) (fun γ _ ↦ absolutelyContinuousOnInterval_comp_lineMap_iff.2 (hac γ))
     (fun γ _ ↦ hcl γ)
     hU (fun γ hγ ↦ by rw [himage]; exact htr γ hγ) hP hQ hidx
-  have haeU : (fun z ↦ ∑ γ ∈ FreeAbelianGroup.support C,
-      (FreeAbelianGroup.coeff γ C : ℝ) * windingWeight (η γ) 0 1 z) =ᵐ[volume.restrict U]
+  have haeU : (fun z ↦ ∑ γ ∈ FreeAddCommGroup.support C,
+      (FreeAddCommGroup.coeff γ C : ℝ) * windingWeight (η γ) 0 1 z) =ᵐ[volume.restrict U]
       C.windingWeight :=
     (sum_windingWeight_comp_lineMap_ae C).filter_mono ae_restrict_le
   refine ⟨fun γ hγ ↦ AbsolutelyContinuousOnInterval.intervalIntegrable_circulationFun (hac γ)
     (hP.continuousOn.mono (htr γ hγ)) (hQ.continuousOn.mono (htr γ hγ)), ?_, ?_⟩
   · exact hi.congr (haeU.mono fun z hz ↦ congrArg (· * curl P Q z) hz)
-  · rw [sum_integral_circulationFun_comp_lineMap C hP.continuousOn hQ.continuousOn htr] at heq
+  · simp only [η, integral_circulationFun_comp_lineMap] at heq
     exact heq.trans (integral_congr_ae (haeU.mono fun z hz ↦ congrArg (· * curl P Q z) hz))
 
 end TauCeti.Green

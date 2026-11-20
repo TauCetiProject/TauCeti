@@ -101,7 +101,7 @@ theorem coefficientMatrix_natAdd_castAdd_of_castAdd_eq
     simp only [Fin.val_castAdd, Fin.val_natAdd] at hval
     omega
   rw [coefficientMatrix_apply, hb]
-  exact N.carrier.matrixCoefficient_eq_zero_of_mem_dualAnnihilator (N.coact_mem (bN j).2)
+  exact N.carrier.matrixCoefficient_eq_zero_of_mem_dualAnnihilator (N.coact_mem (bN j).property)
     ((Submodule.mem_dualAnnihilator _).2 fun w hw ↦
       LinearMap.congr_fun hcoord ⟨w, Subcomodule.mem_carrier.1 hw⟩)
 

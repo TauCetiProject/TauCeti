@@ -69,7 +69,7 @@ the morphism `Spec 𝒪_{X,x} ⟶ U` precomposed with `Spec` of the specializati
 theorem Opens.SpecMap_stalkSpecializes_fromSpecStalkOfMem (U : X.Opens) {x y : X} (h : y ⤳ x)
     (hx : x ∈ U) :
     Spec.map (X.presheaf.stalkSpecializes h) ≫ U.fromSpecStalkOfMem x hx =
-      U.fromSpecStalkOfMem y (h.mem_open U.2 hx) := by
+      U.fromSpecStalkOfMem y (h.mem_open U.is_open' hx) := by
   rw [← cancel_mono U.ι]
   simp [SpecMap_stalkSpecializes_fromSpecStalk]
 
@@ -163,12 +163,12 @@ schemes are defined everywhere**: let `X` be an integral `S`-scheme whose local 
 rings (for instance a normal curve) and `Y` an `S`-scheme universally closed and locally of finite
 type over `S`. Then every `S`-rational map `X ⤏ Y` is defined at every point of `X`. -/
 theorem RationalMap.domain_eq_top_of_valuationRing
-    (hX : ∀ x : X, ValuationRing (X.presheaf.stalk x)) (f : X ⤏ Y) [f.IsOver S] :
+    (hX : ∀ x : X, ValuationRing (X.presheaf.stalk x)) (f : X ⤏ Y) [f.IsOver (X ↘ S) (Y ↘ S)] :
     f.domain = ⊤ := by
-  obtain ⟨g, hg, rfl⟩ := f.exists_partialMap_over S
+  obtain ⟨g, hg, rfl⟩ := f.exists_partialMap_over (X ↘ S) (Y ↘ S)
   have hφ : g.fromFunctionField ≫ Y ↘ S = X.fromSpecStalk _ ≫ X ↘ S := by
-    rw [PartialMap.fromFunctionField, PartialMap.fromSpecStalkOfMem, Category.assoc, comp_over,
-      ← Opens.ι_comp_over, Opens.fromSpecStalkOfMem_ι_assoc]
+    rw [PartialMap.fromFunctionField, PartialMap.fromSpecStalkOfMem, Category.assoc,
+      g.over (X ↘ S) (Y ↘ S), Opens.fromSpecStalkOfMem_ι_assoc]
   rw [← domain_ofFunctionField_eq_top hX _ hφ]
   congr 1
   exact eq_of_fromFunctionField_eq _ _ (fromFunctionField_ofFunctionField _ _ _ _).symm

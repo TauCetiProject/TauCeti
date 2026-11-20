@@ -111,7 +111,7 @@ def torsionMulEquiv (hT : IsAddTorsion T) (e : A ≃* Multiplicative (M × T)) :
   invFun t := ⟨e.symm (ofAdd (0, t.toAdd)), (mem_torsion_iff_of_mulEquiv hT e).2 (by simp)⟩
   left_inv x :=
     Subtype.ext (e.symm_apply_eq.2 (Multiplicative.ext
-      (Prod.ext ((mem_torsion_iff_of_mulEquiv hT e).1 x.2).symm rfl)))
+      (Prod.ext ((mem_torsion_iff_of_mulEquiv hT e).1 x.property).symm rfl)))
   right_inv t := by simp
   map_mul' x y := by simp
 
@@ -174,7 +174,7 @@ theorem isCyclic_torsion_of_mulEquiv [IsAddCyclic T] (e : A ≃* Multiplicative 
       map_one' := by simp
       map_mul' := fun x y ↦ by simp } fun x y hxy ↦ ?_
   have hfst (z : torsion A) : (e z).toAdd.1 = 0 := by
-    have h := e.toMonoidHom.isOfFinOrder ((CommGroup.mem_torsion _).1 z.2)
+    have h := e.toMonoidHom.isOfFinOrder ((CommGroup.mem_torsion _).1 z.property)
     rw [MulEquiv.coe_toMonoidHom, ← ofAdd_toAdd (e z), isOfFinOrder_ofAdd_iff] at h
     exact (isOfFinAddOrder_iff_eq_zero _).1 (by simpa using h.fst)
   refine Subtype.ext (e.injective (Multiplicative.ext (Prod.ext ?_ ?_)))

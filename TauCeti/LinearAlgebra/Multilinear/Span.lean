@@ -96,7 +96,7 @@ theorem map_eq_zero_of_mem_span [Finite ι] (f : M [⋀^ι]→ₗ[R] N) {v : ι 
     f.toMultilinearMap.map_mem_span_image_pi s hs
   rintro _ ⟨w, hw, rfl⟩
   -- Each expanded family takes more than `k` values in `range c` on `t`, so two coincide.
-  have hwc (i : t) : w i ∈ Set.range c := by simpa [s, i.2] using hw i trivial
+  have hwc (i : t) : w i ∈ Set.range c := by simpa [s, i.property] using hw i trivial
   choose g hg using hwc
   obtain ⟨i, j, hij, hgij⟩ := Fintype.exists_ne_map_eq_of_card_lt g (by simpa using ht)
   simpa using f.map_eq_zero_of_eq w (by rw [← hg i, ← hg j, hgij]) (Subtype.coe_ne_coe.2 hij)

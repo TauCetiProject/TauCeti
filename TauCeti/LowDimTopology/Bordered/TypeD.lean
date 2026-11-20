@@ -68,7 +68,7 @@ on matrices entrywise.
   (`TauCeti.TypeDStructure.not_isBounded_of_coeff_eq_zero_of_coeff_ne_zero`). The tensor power over
   the ring of idempotents is a quotient of the one over `R`, so this boundedness implies the
   vanishing of the iterates over the idempotents. The iterates enter the box tensor product with
-  type `A` modules in `TauCeti.LowDimTopology.Bordered.TypeA`.
+  type `A` modules in `TauCeti.LowDimTopology.Bordered.TypeA.Basic`.
 
 Over a ring of characteristic two the type `D` structure equation, the box tensor product and the
 morphism complex need no signs; this is the setting of bordered Heegaard Floer homology over `𝔽₂`.
@@ -181,6 +181,9 @@ variable (N) in
 /-- The **identity morphism**: the diagonal matrix of the idempotents of the generators. -/
 def idMorphism [DecidableEq X] : Matrix X X A :=
   Matrix.diagonal fun x => ι (N.idem x)
+
+theorem idMorphism_def [DecidableEq X] : N.idMorphism = Matrix.diagonal fun x => ι (N.idem x) :=
+  (rfl)
 
 @[simp]
 theorem idMorphism_apply [DecidableEq X] (x y : X) :

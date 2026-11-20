@@ -61,7 +61,7 @@ finite-dimensional real normed spaces which is locally Lipschitz on a set is dif
 within that set at almost every point of it. -/
 theorem ae_differentiableWithinAt_of_mem (hf : LocallyLipschitzOn s f) :
     ∀ᵐ x ∂μ, x ∈ s → DifferentiableWithinAt ℝ f s x := by
-  obtain ⟨U, K, hU, hcov, hK⟩ := hf.exists_open_cover_lipschitzOnWith
+  obtain ⟨U, K, hU, hcov, hK⟩ := hf.exists_open_cover_lipschitzOnWith (.of_separableSpace s)
   filter_upwards [ae_all_iff.2 fun n =>
     (hK n).ae_differentiableWithinAt_of_mem (μ := μ)] with x hx hxs
   obtain ⟨n, hn⟩ := mem_iUnion.1 (hcov hxs)

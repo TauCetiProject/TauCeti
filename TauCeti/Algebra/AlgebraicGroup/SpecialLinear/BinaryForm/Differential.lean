@@ -208,7 +208,7 @@ private theorem differential_slFinTwoBasis_two_signedBasis (d : ℕ) (i : Fin (d
       ((d : R) - 2 * (i : ℕ)) • binaryFormsSignedBasis R d i := by
   let _ := polynomialComoduleAlgebra R 2; apply Subtype.ext
   have hjd : (d : R) = ((d - (i : ℕ) : ℕ) : R) + (i : ℕ) := by
-    rw [← Nat.cast_add, Nat.sub_add_cancel (Nat.lt_succ_iff.mp i.2)]
+    rw [← Nat.cast_add, Nat.sub_add_cancel (Nat.lt_succ_iff.mp i.isLt)]
   rw [coe_differential_binaryForms, coe_binaryFormsSignedBasis_apply, map_smul,
     ComoduleAlgebra.differential_mul, ComoduleAlgebra.differential_pow,
     ComoduleAlgebra.differential_pow, differential_polynomialComodule_X_zero,
@@ -228,7 +228,7 @@ private theorem binaryFormsEquivSl2Std_differential_basis (d : ℕ) (k : Fin 3) 
       binaryFormsEquivSl2Std_signedBasis, Sl2Std.lie_slFinTwoBasis_zero, Sl2Std.raise_basis]
   | 1 =>
     rw [Sl2Std.lie_slFinTwoBasis_one]
-    rcases lt_or_eq_of_le (Nat.lt_succ_iff.mp i.2) with hi | hi
+    rcases lt_or_eq_of_le (Nat.lt_succ_iff.mp i.isLt) with hi | hi
     · rw [differential_slFinTwoBasis_one_signedBasis d hi, (binaryFormsEquivSl2Std R d).map_smul,
         binaryFormsEquivSl2Std_signedBasis, Sl2Std.lower_basis i hi]
     · obtain rfl : i = Fin.last d := Fin.ext hi

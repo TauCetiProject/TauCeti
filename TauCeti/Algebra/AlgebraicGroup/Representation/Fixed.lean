@@ -63,7 +63,7 @@ theorem map_coact_iff_map_differential_of_geometricallyConnected
   let : Comodule k H (M × N) := Comodule.Prod
   let q : M × N →ₗ[k] N := LinearMap.snd k M N - f.comp (LinearMap.fst k M N)
   have hq : q.comp f.graph.subtype = 0 := LinearMap.ext fun z ↦
-    sub_eq_zero.mpr ((mem_graph_iff f z).mp z.2)
+    sub_eq_zero.mpr ((mem_graph_iff f z).mp z.property)
   ext m
   obtain ⟨t, ht⟩ := f.graph.coact_mem_range_of_forall_differential_mem_of_geometricallyConnected hH
     (fun d _ hz ↦ f.differential_mem_graph d (hf d) hz) ((mem_graph_iff f (m, f m)).mpr rfl)
