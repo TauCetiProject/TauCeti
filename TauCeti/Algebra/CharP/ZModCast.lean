@@ -12,10 +12,11 @@ import TauCeti.FieldTheory.Finite.ProdXSubC
 /-!
 # The residues of `ZMod p` in a ring of characteristic `p`
 
-Ring homomorphisms commute with `ZMod.cast`. In a commutative ring of prime characteristic `p`,
-the image of every residue `i ∈ ZMod p` is fixed by the `p`-power map, and so is its translate
-`x - i` whenever `x` is. The polynomial identity `∏ i ∈ 𝔽_p, (X - i) = X ^ p - X` specializes to
-`∏ i : ZMod p, (x - i) = x ^ p - x` for every element `x`.
+Ring homomorphisms commute with `ZMod.cast`. In a ring of prime characteristic `p`, the
+image of every residue `i ∈ ZMod p` is fixed by the `p`-power map; in a commutative such
+ring, so is its translate `x - i` whenever `x` is. The polynomial identity
+`∏ i ∈ 𝔽_p, (X - i) = X ^ p - X` specializes to `∏ i : ZMod p, (x - i) = x ^ p - x` for every
+element `x`.
 
 ## Main results
 
@@ -38,12 +39,13 @@ theorem map_zmodCast {R S F : Type*} [Ring R] [Ring S] [FunLike F R S] [RingHomC
     (f : F) {n : ℕ} (i : ZMod n) : f (i.cast : R) = (i.cast : S) := by
   rw [← ZMod.intCast_cast, map_intCast, ZMod.intCast_cast]
 
-variable {R : Type*} [CommRing R] {p : ℕ} [hp : Fact p.Prime] [CharP R p]
-
 /-- In characteristic `p`, the image of a residue `i ∈ ZMod p` is fixed by the `p`-power map. -/
 @[simp]
-theorem zmodCast_pow_char (i : ZMod p) : (i.cast : R) ^ p = i.cast := by
+theorem zmodCast_pow_char {R : Type*} [Ring R] {p : ℕ} [Fact p.Prime] [CharP R p] (i : ZMod p) :
+    (i.cast : R) ^ p = i.cast := by
   rw [← ZMod.cast_pow', ZMod.pow_card]
+
+variable {R : Type*} [CommRing R] {p : ℕ} [hp : Fact p.Prime] [CharP R p]
 
 /-- In characteristic `p`, elements fixed by the `p`-power map stay fixed after translation by a
 residue of `ZMod p`. -/
