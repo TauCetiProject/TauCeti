@@ -360,6 +360,23 @@ theorem surjective_coprod_of_coprod_comp_eq
   simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply, coe_coe] at this
   rw [this, hx, LinearEquiv.apply_symm_apply]
 
+/-- In a commuting square of stabilized operators with parameter component `eΛ`, the isomorphism
+of cokernels induced by `e₂` sends the class of `D₂ l` to that of `D₂' (eΛ l)`: the two differ by
+`D₁' (Ψ (0, l)).1`. -/
+theorem quotientEquiv_mkQ_of_coprod_comp_eq
+    (hΨ : (D₁'.coprod D₂' : E' × Λ' →ₗ[𝕜] F') ∘ₗ Ψ.toLinearMap =
+      e₂.toLinearMap ∘ₗ (D₁.coprod D₂ : E × Λ →ₗ[𝕜] F))
+    (hΨ₂ : ∀ y, (Ψ y).2 = eΛ y.2)
+    (hr : (D₁ : E →ₗ[𝕜] F).range.map (e₂ : F →ₗ[𝕜] F') = (D₁' : E' →ₗ[𝕜] F').range) (l : Λ) :
+    Submodule.Quotient.equiv _ _ e₂ hr ((D₁ : E →ₗ[𝕜] F).range.mkQ (D₂ l)) =
+      (D₁' : E' →ₗ[𝕜] F').range.mkQ (D₂' (eΛ l)) := by
+  have hl := LinearMap.congr_fun hΨ (0, l)
+  simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply, coe_coe,
+    coprod_apply, map_zero, zero_add, hΨ₂] at hl
+  rw [Submodule.Quotient.equiv_apply, Submodule.mkQ_apply, Submodule.mkQ_apply,
+    Submodule.mapQ_apply, LinearEquiv.coe_coe, ← hl, Submodule.Quotient.eq]
+  exact ⟨(Ψ (0, l)).1, by simp⟩
+
 variable [FiniteDimensional 𝕜 D₁.ker] [FiniteDimensional 𝕜 Λ] [FiniteDimensional 𝕜 D₁'.ker]
   [FiniteDimensional 𝕜 Λ']
 
@@ -417,16 +434,10 @@ theorem detLineStabilizationEquiv_congr
         (detLineStabilizationEquiv D₁ D₂ h t) := by
   rw [LinearMap.detLineCongr_eq_detLineCongrKerCoker]
   refine detLineStabilizationEquiv_congrKerCoker _ _ _ (fun x ↦ Subtype.ext (by simp [hΨ₁]))
-    (fun y ↦ by simp [hΨ₂]) (fun l ↦ ?_) h _ t
-  have hl := LinearMap.congr_fun hΨ (0, l)
-  have h2 := hΨ₂ (0, l)
-  simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply, coe_coe,
-    coprod_apply, map_zero, zero_add] at hl h2
-  simp only [parameterToCoker_apply, Submodule.Quotient.equiv_apply, Submodule.mkQ_apply,
-    Submodule.mapQ_apply, Submodule.Quotient.eq, ← h2]
-  refine ⟨-(Ψ (0, l)).1, ?_⟩
-  rw [coe_coe, map_neg, LinearEquiv.coe_coe, ← hl]
-  abel
+    (fun y ↦ by simp [hΨ₂])
+    (fun l ↦ by
+      rw [parameterToCoker_apply, parameterToCoker_apply]
+      exact (quotientEquiv_mkQ_of_coprod_comp_eq hΨ hΨ₂ _ l).symm) h _ t
 
 end Congr
 

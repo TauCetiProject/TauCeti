@@ -370,14 +370,7 @@ theorem detLineChartEquiv_detLineCongr
   refine detLineChartEquiv_detLineCongrKerCoker (Φ := Ψ.toLinearMap)
     (fun z hz ↦ (LinearMap.congr_fun hΨ z).trans (by
       rw [LinearMap.comp_apply, coe_coe, hz, map_zero])) (fun u ↦ by simp [hΨ₁])
-    (fun z _ ↦ hΨ₂ z) (fun l ↦ ?_) eG hq hinv hinv' y
-  -- The class of `e₂ (D₂ l)` is that of `D₂' (eΛ l)`, since they differ by `D₁' (Ψ (0, l)).1`.
-  have hl := LinearMap.congr_fun hΨ (0, l)
-  simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply, coe_coe,
-    coprod_apply, map_zero, zero_add, hΨ₂] at hl
-  rw [Submodule.Quotient.equiv_apply, Submodule.mkQ_apply, Submodule.mkQ_apply,
-    Submodule.mapQ_apply, LinearEquiv.coe_coe, ← hl, Submodule.Quotient.eq]
-  exact ⟨(Ψ (0, l)).1, by simp⟩
+    (fun z _ ↦ hΨ₂ z) (quotientEquiv_mkQ_of_coprod_comp_eq hΨ hΨ₂ _) eG hq hinv hinv' y
 
 /-- **Changing the data of a kernel chart.** Let `(D₂, q)` and `(D₃, q₁)` be kernel charts of the
 same operator `D₁`, related by an automorphism `Ψ₁` of `E × Λ` which fixes `E × 0`, acts on the
