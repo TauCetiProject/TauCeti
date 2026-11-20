@@ -165,7 +165,8 @@ theorem finiteDimensional_weakGaugeFixedKernel (hx : Continuous x)
   have := finiteDimensional_gaugeFixedKernel (hxs.of_le (by simp)) hhol
     (tendsto_sectionValue_mul_inv_pow one_lt_two (by exact_mod_cast hmem 2) hx)
   rw [← range_gaugeFixedKernelToLp hxs
-    fun i n ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2))]
+    fun i n ↦ exists_norm_iteratedFDeriv_apply_le_of_mem_framedFieldSpace
+      (by push_cast; linarith) (hmem (n + 2)) hx i]
   infer_instance
 
 /-- **The weak kernel at a plane vortex has dimension `2m`** (Taubes). Let `x` be a continuous
@@ -179,7 +180,8 @@ theorem finrank_weakGaugeFixedKernel_eq_two_mul (hx : Continuous x)
     finrank ℝ (weakGaugeFixedKernel x) = 2 * m := by
   have hxs := contDiff_of_forall_mem_framedFieldSpace hx hmem
   rw [finrank_weakGaugeFixedKernel_eq_finrank_gaugeFixedKernel hxs
-      fun i n ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2)),
+      fun i n ↦ exists_norm_iteratedFDeriv_apply_le_of_mem_framedFieldSpace
+      (by push_cast; linarith) (hmem (n + 2)) hx i,
     finrank_gaugeFixedKernel_eq_two_mul hxs hhol
       (tendsto_sectionValue_mul_inv_pow one_lt_two (by exact_mod_cast hmem 2) hx)]
 
