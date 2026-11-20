@@ -28,10 +28,16 @@ The action restricted to `G × Map_*(B, X)` (`TauCeti.BasedMap.actionMap`) lies 
 (`TauCeti.mappingSpaceEval_actionMap`), a commuting square. On the fibre over `x` of the orbit map,
 the stabilizer, it is the action of the stabilizer on the based mapping space: `actionMap` is
 `(g, γ) ↦ g • γ` (`TauCeti.BasedMap.actionMap_apply`), which for `g` in the stabilizer is the
-stabilizer action (`TauCeti.BasedMap.coe_stabilizer_smul`). For a homogeneous space `X = G ⧸ H`
-and `B = S²` these are the actions `Φ : G × Map(S², G ⧸ H) → Map(S², G ⧸ H)` and
-`Φ_H : H × Ω²(G ⧸ H) → Ω²(G ⧸ H)` of Barraud–Damian–Humilière–Oancea, Proposition 6.36: the
-stabilizer of the coset `eH` is `H` (`MulAction.stabilizer_quotient`).
+stabilizer action (`TauCeti.BasedMap.coe_stabilizer_smul`). As a map of sets, it induces a
+bijection from the balanced product `G ×_H Map_*(B, X)`, the quotient of `G × Map_*(B, X)` by the
+stabilizer `H`, onto the maps sending `b₀` into the orbit of `x`: it is `H`-balanced
+(`TauCeti.BasedMap.actionMap_mul_stabilizer`), two pairs have the same image exactly when they
+differ by an element of `H` (`TauCeti.BasedMap.actionMap_eq_actionMap_iff`), and its image consists
+of the maps sending `b₀` into the orbit of `x` (`TauCeti.BasedMap.mem_range_actionMap_iff`). For
+a homogeneous space `X = G ⧸ H` and `B = S²` these are the actions
+`Φ : G × Map(S², G ⧸ H) → Map(S², G ⧸ H)` and `Φ_H : H × Ω²(G ⧸ H) → Ω²(G ⧸ H)` of
+Barraud–Damian–Humilière–Oancea, Proposition 6.36: the stabilizer of the coset `eH` is `H`
+(`MulAction.stabilizer_quotient`).
 
 A continuous local section `s` of the orbit map over an open set `U`, `s y • x = y` for `y ∈ U`,
 translates every map with `f(b₀) ∈ U` to a based map: `f ↦ (f(b₀), s(f(b₀))⁻¹ • f)` is a local
@@ -40,7 +46,10 @@ trivialization of evaluation over `U` with fibre `Map_*(B, X)`, with inverse
 `TauCeti.equivariantLocalSectionTrivialization` of an equivariant map, which adapts the chart of
 `Subgroup.localSectionTrivializationOfCosetFibers` to an action. It generalizes the global
 product decomposition `G × Map_*(B, G) ≃ₜ Map(B, G)` of maps into a group
-(`TauCeti.mappingSpaceGroupHomeomorph`), where the section is the identity. So if the orbit map
+(`TauCeti.mappingSpaceGroupHomeomorph`), where the section is the identity. In these charts and
+the charts `TauCeti.orbitMapTrivialization` of the orbit map given by the same section, the action
+map is the action of the stabilizer on the fibre
+(`TauCeti.mappingSpaceEvalTrivialization_actionMap`). So if the orbit map
 has continuous local sections around every point, then evaluation is locally trivial with fibre
 `Map_*(B, X)`. It is then a Serre fibration (`TauCeti.mappingSpaceEval_mem_serreFibrations`),
 and a Hurewicz fibration over a normal paracompact space
@@ -60,6 +69,11 @@ No compactness or separation assumption is made on `B`.
 ## Main results
 
 * `TauCeti.mappingSpaceEval_actionMap`: the action map lies over the orbit map.
+* `TauCeti.BasedMap.actionMap_eq_actionMap_iff`, `TauCeti.BasedMap.mem_range_actionMap_iff`: the
+  fibres of the action map are the orbits of the stabilizer, and its image is the set of maps
+  sending `b₀` into the orbit of `x`.
+* `TauCeti.mappingSpaceEvalTrivialization_actionMap`: in local charts the action map is the action
+  of the stabilizer on the fibre.
 * `TauCeti.exists_trivialization_mappingSpaceEval`: evaluation is locally trivial when the orbit
   map has local sections.
 * `TauCeti.mappingSpaceEval_mem_serreFibrations`,
@@ -69,7 +83,7 @@ No compactness or separation assumption is made on `B`.
 ## References
 
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
-  Applications to cotangent bundles*, arXiv:2404.07953, §6.4, Proposition 6.36.
+  Applications to cotangent bundles*, arXiv:2404.07953, §6.4, Propositions 6.29 and 6.36.
 * N. Steenrod, *The Topology of Fibre Bundles*, Princeton University Press, 1951, §7.
 -/
 
@@ -157,6 +171,60 @@ theorem mappingSpaceEval_actionMap {b₀ : B} {x : X}
     mappingSpaceEval b₀ (BasedMap.actionMap b₀ x p) = p.1 • x := by
   rw [BasedMap.actionMap_apply, mappingSpaceEval_apply, ContinuousMap.smul_apply, p.2.2]
 
+namespace BasedMap
+
+variable {b₀ : B} {x : X}
+
+/-- The action map at the identity is the inclusion of the based maps. -/
+theorem actionMap_one (γ : BasedMap B X b₀ x) : actionMap b₀ x ((1 : G), γ) = γ.1 := by
+  simp
+
+/-- The action map is equivariant for left multiplication on `G`. -/
+theorem actionMap_mul (g g' : G) (γ : BasedMap B X b₀ x) :
+    actionMap b₀ x (g * g', γ) = g • actionMap b₀ x (g', γ) := by
+  simp [mul_smul]
+
+/-- **The action map is balanced** over the stabilizer `H` of `x`: `(g h) • γ = g • (h • γ)`, so
+it factors through the balanced product `G ×_H Map_*(B, X)`. -/
+theorem actionMap_mul_stabilizer (g : G) (h : stabilizer G x) (γ : BasedMap B X b₀ x) :
+    actionMap b₀ x (g * h, γ) = actionMap b₀ x (g, h • γ) := by
+  simp [mul_smul]
+
+/-- The action map sends `(g, γ)` to a map sending `b₀` to `x` exactly when `g` lies in the
+stabilizer of `x`. -/
+theorem actionMap_apply_eq_iff (g : G) (γ : BasedMap B X b₀ x) :
+    actionMap b₀ x (g, γ) b₀ = x ↔ g ∈ stabilizer G x := by
+  rw [mem_stabilizer_iff, ← mappingSpaceEval_actionMap (g, γ), mappingSpaceEval_apply]
+
+/-- **The fibres of the action map are the orbits of the stabilizer**: `g • γ = g' • γ'` exactly
+when `g' = g h` and `γ = h • γ'` for some `h` in the stabilizer of `x`. -/
+theorem actionMap_eq_actionMap_iff {g g' : G} {γ γ' : BasedMap B X b₀ x} :
+    actionMap b₀ x (g, γ) = actionMap b₀ x (g', γ') ↔
+      ∃ h : stabilizer G x, g' = g * h ∧ γ = h • γ' := by
+  constructor
+  · intro hgγ
+    have hx : g • x = g' • x := by
+      simpa [γ.2, γ'.2] using congrArg (mappingSpaceEval b₀) hgγ
+    refine ⟨⟨g⁻¹ * g', mem_stabilizer_iff.2 ?_⟩, by simp, Subtype.ext ?_⟩
+    · rw [mul_smul, ← hx, inv_smul_smul]
+    · rw [coe_stabilizer_smul, mul_smul, ← actionMap_apply (b₀ := b₀) (x := x) (g', γ'), ← hgγ,
+        actionMap_apply, inv_smul_smul]
+  · rintro ⟨h, rfl, rfl⟩
+    exact (actionMap_mul_stabilizer g h γ').symm
+
+/-- **The image of the action map** consists of the maps sending `b₀` into the orbit of `x`. -/
+theorem mem_range_actionMap_iff (f : C(B, X)) :
+    f ∈ range (actionMap b₀ x (G := G)) ↔ f b₀ ∈ orbit G x := by
+  constructor
+  · rintro ⟨p, rfl⟩
+    exact ⟨p.1, by rw [← mappingSpaceEval_apply b₀, mappingSpaceEval_actionMap]⟩
+  · rintro ⟨g, hg⟩
+    refine ⟨(g, ⟨g⁻¹ • f, ?_⟩), ?_⟩
+    · rw [ContinuousMap.smul_apply, ← hg, inv_smul_smul]
+    · simp
+
+end BasedMap
+
 /-! ### Local triviality of evaluation -/
 
 section Trivialization
@@ -203,6 +271,30 @@ theorem mappingSpaceEvalTrivialization_symm_apply (p : X × BasedMap B X b₀ x)
     (mappingSpaceEvalTrivialization b₀ x U hU s hs hsec).toOpenPartialHomeomorph.symm p =
       s p.1 • p.2.1 :=
   equivariantLocalSectionTrivialization_symm_apply p
+
+/-- **In local charts the action map is the action of the stabilizer on the fibre.** If
+`g • x ∈ U`, the charts of evaluation and of the orbit map determined by the same section `s`
+send `g • γ` and `g` to `(g • x, h • γ)` and `(g • x, h)` with the same `h` in the stabilizer. -/
+theorem mappingSpaceEvalTrivialization_actionMap [ContinuousMul G]
+    {hx : Continuous fun g : G ↦ g • x} {g : G} (hg : g • x ∈ U) (γ : BasedMap B X b₀ x) :
+    mappingSpaceEvalTrivialization b₀ x U hU s hs hsec (BasedMap.actionMap b₀ x (g, γ)) =
+      ((orbitMapTrivialization x hx U hU s hs hsec g).1,
+        (orbitMapTrivialization x hx U hU s hs hsec g).2 • γ) := by
+  have hsrc : g ∈ (orbitMapTrivialization x hx U hU s hs hsec).source := by
+    rw [Bundle.Trivialization.mem_source, orbitMapTrivialization_baseSet]
+    exact hg
+  have hgγ : BasedMap.actionMap b₀ x (g, γ) b₀ ∈ U := by
+    rwa [BasedMap.actionMap_apply, ContinuousMap.smul_apply, γ.2]
+  have hsrc' : BasedMap.actionMap b₀ x (g, γ) ∈
+      (mappingSpaceEvalTrivialization b₀ x U hU s hs hsec).source := by
+    rwa [Bundle.Trivialization.mem_source, mappingSpaceEvalTrivialization_baseSet,
+      mappingSpaceEval_apply]
+  refine Prod.ext ?_ (Subtype.ext ?_)
+  · rw [(mappingSpaceEvalTrivialization b₀ x U hU s hs hsec).coe_fst hsrc',
+      (orbitMapTrivialization x hx U hU s hs hsec).coe_fst hsrc, mappingSpaceEval_actionMap]
+  · rw [mappingSpaceEvalTrivialization_fiberCoordinate hgγ, BasedMap.coe_stabilizer_smul,
+      orbitMapTrivialization_fiberCoordinate hg]
+    simp [γ.2, mul_smul]
 
 variable (b₀ x)
 

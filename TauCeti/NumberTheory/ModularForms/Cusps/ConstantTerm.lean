@@ -501,7 +501,7 @@ theorem constantTermAt_eq_of_vecMul_inv_eq {N : ℕ} (hΓ : (Γ(N) : Subgroup (G
       (((γ₁⁻¹ : SL(2, ℤ)) 1 j : ℤ) : ZMod N) = (((γ₂⁻¹ : SL(2, ℤ)) 1 j : ℤ) : ZMod N) := by
     have := congrFun h j
     simp only [vecMul, dotProduct, Fin.sum_univ_two, cons_val_zero, cons_val_one, zero_mul,
-      one_mul, zero_add, Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
+      one_mul, zero_add, Matrix.SpecialLinearGroup.map_apply_coe,
       Matrix.map_apply, eq_intCast] at this
     exact this
   have hentry (g : SL(2, ℤ)) (j : Fin 2) : (g⁻¹ * γ₁ : SL(2, ℤ)) 1 j =

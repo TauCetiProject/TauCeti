@@ -789,13 +789,11 @@ end Vanishing
 
 section Weights
 
-variable [DecidableEq V]
-
 omit [Finite V] in
 /-- A matrix with a single nonzero entry, on a pair of darts with a common head, vanishes on the
 pairs of darts with distinct heads. -/
-private theorem single_apply_eq_zero_of_snd_ne {x y : G.Dart} (h : x.snd = y.snd) (r : k)
-    {d e : G.Dart} (hde : d.snd ≠ e.snd) : Matrix.single x y r d e = 0 :=
+private theorem single_apply_eq_zero_of_snd_ne [DecidableEq V] {x y : G.Dart} (h : x.snd = y.snd)
+    (r : k) {d e : G.Dart} (hde : d.snd ≠ e.snd) : Matrix.single x y r d e = 0 :=
   Matrix.single_apply_of_ne _ _ _ _ _ fun ⟨hx, hy⟩ ↦ hde (by rw [← hx, ← hy, h])
 
 variable [Fintype G.Dart]
@@ -813,13 +811,13 @@ private def balanceDefect : Matrix G.Dart G.Dart k →ₗ[k] G.Dart → k where
     simp only [Matrix.smul_apply, smul_eq_mul, ← Finset.mul_sum, RingHom.id_apply, Pi.smul_apply]
     ring
 
-omit [Finite V] [DecidableEq V] in
+omit [Finite V] in
 private theorem balanceDefect_apply (a : Matrix G.Dart G.Dart k) (e : G.Dart) :
     balanceDefect a e = ∑ d, a d e - a e.symm e.symm :=
   rfl
 
 omit [Finite V] in
-private theorem balanceDefect_single_of_ne {x y : G.Dart} (h : x ≠ y) (r : k) :
+private theorem balanceDefect_single_of_ne [DecidableEq V] {x y : G.Dart} (h : x ≠ y) (r : k) :
     balanceDefect (Matrix.single x y r) = Pi.single y r := by
   ext e
   rw [balanceDefect_apply,
@@ -827,7 +825,7 @@ private theorem balanceDefect_single_of_ne {x y : G.Dart} (h : x ≠ y) (r : k) 
   simp [Matrix.single_apply, ite_and, Pi.single_apply, eq_comm]
 
 omit [Finite V] in
-private theorem balanceDefect_single_self (x : G.Dart) (r : k) :
+private theorem balanceDefect_single_self [DecidableEq V] (x : G.Dart) (r : k) :
     balanceDefect (Matrix.single x x r) = Pi.single x r - Pi.single x.symm r := by
   ext e
   have h : x = e.symm ↔ e = x.symm := by

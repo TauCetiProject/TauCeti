@@ -183,7 +183,7 @@ theorem W1p0.eLpNorm_value_extendByZeroL_comp_add_sub_le_mul_enorm_gradient {Ome
     (W1p0.extendByZeroL le_top u).2).trans_eq ?_
   congr 1
   rw [W1p0.gradient_extendByZeroL]
-  exact eNorm_eq_iff_norm_eq.2 ((extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet
+  exact eNorm_eq_iff_norm_eq.2 ((extendByZeroLpₗᵢ ℝ mu Omega.isOpen.nullMeasurableSet
     (SetLike.coe_subset_coe.mpr (le_top : Omega ≤ ⊤))).norm_map _)
 
 /-- **Uniform smallness of translation increments for a gradient-bounded Sobolev family.** If

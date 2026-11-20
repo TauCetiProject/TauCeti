@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.ODE.TrajectoryOperator
+import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
@@ -37,11 +39,16 @@ difference of dimensions of spaces of square-integrable solutions is
   `v' + A(s) v = 0`.
 * `TauCeti.squareIntegrableSolutions_neg_smul_id_eq_bot`: a scalar equation `v' = b v` has no
   nonzero square-integrable solution when its scalar solution `g` is not square integrable.
+* `TauCeti.mem_squareIntegrableSolutions_iff_of_apply_eq_toLp`: for a block-diagonal coefficient
+  on an `L²` product the equation decouples, and the square-integrable solutions are the pairs of
+  square-integrable solutions of the two blocks.
 * `TauCeti.hasDerivAt_exp_smul_sub_smul_id`: multiplication by `exp w` turns solutions of
   `v' + A v = 0` into solutions of `u' + (A - w') u = 0`.
 * `TauCeti.squareIntegrableSolutions_sub_smul_id_le`: for a bounded-below weight `w`, the
   square-integrable solutions of `u' + (A - w') u = 0` have initial values among those of
   `v' + A v = 0`.
+* `TauCeti.forall_hasDerivAt_iff_forall_hasDerivAt_exp_neg_smul_add`: the change of unknown
+  `u = exp (-w) • ξ + S` turns the weighted equation for `ξ` into `u' + A u = 0`.
 * `TauCeti.WeakDerivStep.exists_hasDerivAt_of_trajectoryOperator_eq_zero`: an element of the
   kernel of `D_A` has a classical solution of `v' = -A v` as representative.
 * `TauCeti.WeakDerivStep.exists_trajectoryOperator_ae_eq_of_hasDerivAt`: an `Lᵖ` classical
@@ -119,6 +126,44 @@ theorem squareIntegrableSolutions_neg_smul_id_eq_bot {b g : ℝ → ℝ} (hb : C
   rw [congrFun heq s, norm_smul, mul_comm, mul_inv_cancel_right₀ (norm_ne_zero_iff.2 h0),
     norm_norm]
 
+section Prod
+
+variable {F₁ F₂ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+  [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+
+/-- **Square-integrable solutions of a block-diagonal equation.** If the coefficient `A(s)` acts on
+the `L²` product `F₁ × F₂` as `A₁(s)` on the first factor and `A₂(s)` on the second, then a vector
+is the initial value of a square-integrable solution of `v' + A v = 0` exactly when its two
+components are initial values of square-integrable solutions of `v₁' + A₁ v₁ = 0` and
+`v₂' + A₂ v₂ = 0`. -/
+theorem mem_squareIntegrableSolutions_iff_of_apply_eq_toLp
+    {A : ℝ → WithLp 2 (F₁ × F₂) →L[ℝ] WithLp 2 (F₁ × F₂)} {A₁ : ℝ → F₁ →L[ℝ] F₁}
+    {A₂ : ℝ → F₂ →L[ℝ] F₂} (hA : ∀ s x, A s x = WithLp.toLp 2 (A₁ s x.fst, A₂ s x.snd))
+    {x : WithLp 2 (F₁ × F₂)} :
+    x ∈ squareIntegrableSolutions A ↔
+      x.fst ∈ squareIntegrableSolutions A₁ ∧ x.snd ∈ squareIntegrableSolutions A₂ := by
+  constructor
+  · rintro ⟨v, rfl, hv, hv2⟩
+    refine ⟨⟨fun s ↦ (v s).fst, rfl, fun s ↦ ?_,
+        hv2.continuousLinearMap_comp (WithLp.fstL 2 ℝ _ _)⟩,
+      ⟨fun s ↦ (v s).snd, rfl, fun s ↦ ?_, hv2.continuousLinearMap_comp (WithLp.sndL 2 ℝ _ _)⟩⟩
+    · simpa [hA, Function.comp_def] using
+        (WithLp.fstL 2 ℝ F₁ F₂).hasFDerivAt.comp_hasDerivAt s (hv s)
+    · simpa [hA, Function.comp_def] using
+        (WithLp.sndL 2 ℝ F₁ F₂).hasFDerivAt.comp_hasDerivAt s (hv s)
+  · rintro ⟨⟨v₁, hv₁0, hv₁, hv₁2⟩, ⟨v₂, hv₂0, hv₂, hv₂2⟩⟩
+    let e : F₁ × F₂ →L[ℝ] WithLp 2 (F₁ × F₂) := (WithLp.prodContinuousLinearEquiv 2 ℝ F₁ F₂).symm
+    refine ⟨fun s ↦ WithLp.toLp 2 (v₁ s, v₂ s),
+      (WithLp.ext_iff 2).2 (Prod.ext (by simp [hv₁0]) (by simp [hv₂0])), fun s ↦ ?_, ?_⟩
+    · simpa [e, hA, Function.comp_def, ← WithLp.toLp_neg] using
+        e.hasFDerivAt.comp_hasDerivAt s ((hv₁ s).prodMk (hv₂ s))
+    · -- The pair is the sum of its two components embedded in the product.
+      convert (hv₁2.continuousLinearMap_comp (e.comp (ContinuousLinearMap.inl ℝ F₁ F₂))).add
+        (hv₂2.continuousLinearMap_comp (e.comp (ContinuousLinearMap.inr ℝ F₁ F₂))) using 1
+      ext s
+      simp [e, ← WithLp.toLp_add]
+
+end Prod
 /-- **Conjugation by an exponential weight.** If `u' = -T u` at `s` and `w` has derivative `w'`
 at `s`, then `exp w • u` solves the shifted equation `(exp w • u)' = -(T - w' • id) (exp w • u)` at
 `s`. -/
@@ -156,6 +201,39 @@ theorem squareIntegrableSolutions_sub_smul_id_le {A : ℝ → F →L[ℝ] F} {w 
       Real.norm_of_nonneg (Real.exp_pos _).le]
     gcongr
     exact hm ⟨s, rfl⟩
+
+/-- **Change of unknown in the weighted equation.** Write a path as `ξ = exp w • (u - S)`, where
+`S` has derivative `S'`. Then `ξ` solves the weighted equation
+`ξ' = w' ξ - A ξ - exp w • (S' + A S)` exactly when `u = exp (-w) • ξ + S` solves
+`u' + A u = 0`. -/
+theorem forall_hasDerivAt_iff_forall_hasDerivAt_exp_neg_smul_add {A : ℝ → F →L[ℝ] F}
+    {w w' : ℝ → ℝ} (hw : ∀ s, HasDerivAt w (w' s) s) {S S' ξ : ℝ → F}
+    (hS : ∀ s, HasDerivAt S (S' s) s) :
+    (∀ s, HasDerivAt ξ
+      (w' s • ξ s - A s (ξ s) - Real.exp (w s) • (S' s + A s (S s))) s) ↔
+      ∀ s, HasDerivAt (fun s ↦ Real.exp (-w s) • ξ s + S s)
+        (-A s (Real.exp (-w s) • ξ s + S s)) s := by
+  have hexp (s : ℝ) : Real.exp (-w s) * Real.exp (w s) = 1 := by
+    rw [← Real.exp_add, neg_add_cancel, Real.exp_zero]
+  have hexp' (s : ℝ) : Real.exp (w s) * Real.exp (-w s) = 1 := by
+    rw [mul_comm, hexp]
+  constructor
+  · intro h s
+    refine (((hw s).neg.exp.smul (h s)).add (hS s)).congr_deriv ?_
+    simp only [Pi.neg_apply, map_add, map_smul, smul_add, smul_sub, smul_smul, hexp, one_smul]
+    module
+  · intro h s
+    convert (hw s).exp.smul ((h s).sub (hS s)) using 1
+    · ext s
+      simp only [Pi.smul_apply', Pi.sub_apply, add_sub_cancel_right, smul_smul, hexp', one_smul]
+    simp only [Pi.sub_apply, map_add, map_smul]
+    -- The scalar identities only use `exp w * exp (-w) = 1`.
+    match_scalars
+    · linear_combination -w' s * hexp' s
+    · linear_combination hexp' s
+    · ring
+    · ring
+    · ring
 
 end TauCeti
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Khovanov.Computational
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
-public import Mathlib.LinearAlgebra.Finsupp.VectorSpace
+public import TauCeti.LinearAlgebra.Finsupp.VectorSpace
 
 /-!
 # Forgetting the quantum grading of the Khovanov complex
@@ -114,11 +114,8 @@ theorem quantumComplexDirectSumXIso_hom_ι_basis (i j : ℤ) (e : D.EnhancedStat
   change (Finsupp.lcongr (D.totalEnhancedStateAtEquiv i) (LinearEquiv.refl R R))
     ((DFinsupp.basis fun j ↦ D.khovanovEnhancedBasis hD R j i).repr
       (DFinsupp.single j (D.khovanovEnhancedBasis hD R j i e))) = _
-  have hb : (DFinsupp.basis fun j ↦ D.khovanovEnhancedBasis hD R j i) ⟨j, e⟩ =
-      DFinsupp.single j (D.khovanovEnhancedBasis hD R j i e) := by
-    simp [DFinsupp.basis, Module.Basis.coe_ofRepr,
-      DFinsupp.mapRange.linearEquiv_apply, -khovanovEnhancedBasis_apply]
-  rw [← hb, Module.Basis.repr_self]
+  rw [← DFinsupp.basis_apply (fun j ↦ D.khovanovEnhancedBasis hD R j i) ⟨j, e⟩,
+    Module.Basis.repr_self]
   simp
 
 /-- Reconstructing a coefficient basis vector includes the corresponding homogeneous

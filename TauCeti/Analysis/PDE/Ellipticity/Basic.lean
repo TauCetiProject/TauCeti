@@ -11,10 +11,13 @@ public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
+public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.Analysis.Calculus.Gradient
+public import TauCeti.Analysis.Matrix.Contraction
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Topology.MetricSpace.Lipschitz
 import TauCeti.Analysis.Matrix.PosSemidef.Determinant
 import TauCeti.Analysis.Normed.Field.Lipschitz
@@ -63,12 +66,19 @@ constants are parameters, not hidden existential data.
   Lipschitz bilinear forms on a set agrees there with one that is Lipschitz on the whole space.
 * `TauCeti.PDE.matrixBilinearFormLinear`: the coefficient matrix-to-bilinear-form map as a
   continuous linear map.
+* `TauCeti.PDE.aestronglyMeasurable_norm_matrixBilinearForm_sub`: the deviation
+  `x ↦ ‖a(x) - A‖` of a measurable coefficient field from a constant matrix is measurable.
+* `Matrix.abs_contraction_le_mul_norm_matrixBilinearForm_mul_norm`: the contraction
+  `∑ᵢⱼ Mᵢⱼ ⟪H eᵢ, eⱼ⟫` is at most `n ‖M‖ ‖H‖`, with `‖M‖` the operator norm of the attached
+  bilinear form.
 * `TauCeti.PDE.matrixBilinearForm_opNorm_le_of_upper_bound`: a pointwise bilinear upper
   bound controls the operator norm of the attached matrix bilinear form.
 * `TauCeti.PDE.norm_matrixBilinearForm_le_sum_abs`: the operator norm of the attached bilinear
   form is at most the sum of the absolute values of the entries.
 * `TauCeti.PDE.norm_toEuclideanCLM_apply_le`: the operator norm of the attached bilinear form
   bounds the action of the matrix on Euclidean space.
+* `TauCeti.PDE.abs_sum_mul_apply_single_mul_apply_single_le`: a bilinear upper bound controls
+  the pairing of the matrix with the coordinates of two continuous linear functionals.
 * `TauCeti.PDE.mul_sq_mul_norm_sq_le_matrixBilinearForm_add`: the pointwise absorption
   estimate used in Caccioppoli inequalities.
 * `TauCeti.PDE.UniformlyEllipticOn.isCoercive_matrixBilinearForm`: pointwise coercivity of
@@ -238,6 +248,19 @@ lemma continuous_matrixBilinearForm :
   (matrixBilinearFormLinear (n := n)).continuous.congr fun A =>
     matrixBilinearFormLinear_apply A
 
+/-- The deviation `x ↦ ‖a(x) - A‖` of an a.e. strongly measurable coefficient field from a constant
+matrix, in the operator norm of the attached bilinear forms, is a.e. strongly measurable. -/
+theorem aestronglyMeasurable_norm_matrixBilinearForm_sub {X : Type*} [MeasurableSpace X]
+    {μ : MeasureTheory.Measure X} {a : X → Matrix n n ℝ}
+    (ha : MeasureTheory.AEStronglyMeasurable a μ) (A : Matrix n n ℝ) :
+    MeasureTheory.AEStronglyMeasurable
+      (fun x => ‖matrixBilinearForm (a x) - matrixBilinearForm A‖) μ := by
+  have h : Continuous fun M : Matrix n n ℝ => matrixBilinearForm (M - A) :=
+    continuous_matrixBilinearForm.comp (continuous_sub_right A)
+  simpa only [matrixBilinearForm_sub] using
+    (Continuous.norm (E := EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n →L[ℝ] ℝ)
+      h).comp_aestronglyMeasurable ha
+
 section Continuity
 
 variable {X : Type*} [TopologicalSpace X]
@@ -283,6 +306,22 @@ lemma matrixBilinearForm_opNorm_le_of_upper_bound (A : Matrix n n ℝ) {Lam : �
   refine (matrixBilinearForm A).opNorm_le_bound₂ hLam_nonneg ?_
   intro η ξ
   exact norm_matrixBilinearForm_le_of_upper_bound A hA η ξ
+
+/-- Young's inequality for a matrix bilinear form: for `C > 0`,
+`ηᵀ A ξ ≤ C ‖η‖² / 2 + ‖A‖² ‖ξ‖² / (2 C)`, where `‖A‖` is the operator norm of the attached
+bilinear form. -/
+lemma matrixBilinearForm_apply_le_young (A : Matrix n n ℝ) {C : ℝ} (hC : 0 < C)
+    (η ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm A η ξ ≤
+      C / 2 * ‖η‖ ^ 2 + ‖matrixBilinearForm A‖ ^ 2 * ‖ξ‖ ^ 2 / (2 * C) := by
+  have h := (le_abs_self _).trans ((matrixBilinearForm A).le_opNorm₂ η ξ)
+  have key : 2 * C * matrixBilinearForm A η ξ ≤
+      C ^ 2 * ‖η‖ ^ 2 + ‖matrixBilinearForm A‖ ^ 2 * ‖ξ‖ ^ 2 := by
+    nlinarith [sq_nonneg (C * ‖η‖ - ‖matrixBilinearForm A‖ * ‖ξ‖)]
+  rw [show C / 2 * ‖η‖ ^ 2 + ‖matrixBilinearForm A‖ ^ 2 * ‖ξ‖ ^ 2 / (2 * C) =
+      (C ^ 2 * ‖η‖ ^ 2 + ‖matrixBilinearForm A‖ ^ 2 * ‖ξ‖ ^ 2) / (2 * C) by
+    field_simp, le_div_iff₀ (by positivity)]
+  linarith
 
 /-- The operator norm of a matrix bilinear form is at most the sum of the absolute values of the
 entries of the matrix. -/
@@ -358,6 +397,28 @@ lemma abs_dotProduct_coefficientSymmetricPart_mulVec_le {A : Matrix n n ℝ} {La
   rw [abs_of_pos (a := (2 : ℝ)) two_pos]
   exact (div_le_iff₀' two_pos).2 (by
     simpa [Real.norm_eq_abs] using hsum)
+
+/-- If the bilinear form of `A` is bounded, `|ηᵀ A ξ| ≤ Λ ‖η‖ ‖ξ‖`, then so is its pairing with
+the coordinates of two linear functionals: `|∑ᵢⱼ Aᵢⱼ L₁(eᵢ) L₂(eⱼ)| ≤ Λ ‖L₁‖ ‖L₂‖`. This bounds
+the first-order cross term `∑ᵢⱼ Aᵢⱼ ∂ᵢη ∂ⱼu` of the principal part of a product. -/
+lemma abs_sum_mul_apply_single_mul_apply_single_le [DecidableEq n] {A : Matrix n n ℝ} {Lam : ℝ}
+    (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
+    (L₁ L₂ : EuclideanSpace ℝ n →L[ℝ] ℝ) :
+    |∑ i, ∑ j, A i j * (L₁ (EuclideanSpace.single i 1) * L₂ (EuclideanSpace.single j 1))| ≤
+      Lam * ‖L₁‖ * ‖L₂‖ := by
+  set X := (InnerProductSpace.toDual ℝ (EuclideanSpace ℝ n)).symm L₁
+  set Y := (InnerProductSpace.toDual ℝ (EuclideanSpace ℝ n)).symm L₂
+  have hX (i : n) : L₁ (EuclideanSpace.single i 1) = X i := by
+    rw [← InnerProductSpace.toDual_symm_apply, EuclideanSpace.inner_single_right]
+    simp [X]
+  have hY (i : n) : L₂ (EuclideanSpace.single i 1) = Y i := by
+    rw [← InnerProductSpace.toDual_symm_apply, EuclideanSpace.inner_single_right]
+    simp [Y]
+  have h := hA X Y
+  rw [LinearIsometryEquiv.norm_map, LinearIsometryEquiv.norm_map] at h
+  convert h using 2
+  simp only [hX, hY, dotProduct, mulVec, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
 
 end BilinearForm
 
@@ -619,6 +680,18 @@ lemma mono_constants (h : UniformlyEllipticOn Ω a lam Lam) (hlam' : 0 < lam')
       (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hLam_le (norm_nonneg _))
         (norm_nonneg _))
 
+/-- Multiplying the coefficient field by `c > 0` multiplies both ellipticity constants by `c`, so
+the ratio `Λ / λ` is unchanged. -/
+lemma const_smul (h : UniformlyEllipticOn Ω a lam Lam) {c : ℝ} (hc : 0 < c) :
+    UniformlyEllipticOn Ω (c • a) (c * lam) (c * Lam) := by
+  refine ⟨mul_pos hc h.pos, mul_le_mul_of_nonneg_left h.le hc.le, fun {x} hx => ⟨fun ξ => ?_,
+    fun η ξ => ?_⟩⟩
+  · rw [Pi.smul_apply, toQuadraticForm'_smul, _root_.smul_apply, smul_eq_mul, mul_assoc]
+    exact mul_le_mul_of_nonneg_left (h.lower_bound hx ξ) hc.le
+  · rw [Pi.smul_apply, smul_mulVec, dotProduct_smul, smul_eq_mul, abs_mul, abs_of_pos hc,
+      mul_assoc, mul_assoc]
+    exact mul_le_mul_of_nonneg_left (by simpa only [mul_assoc] using h.upper_bound hx η ξ) hc.le
+
 /-- A constructor when the side conditions and pointwise quadratic-form bounds are already
 available separately. -/
 lemma of_bounds (hlam : 0 < lam) (hlamLam : lam ≤ Lam)
@@ -638,6 +711,16 @@ lemma congr (h : UniformlyEllipticOn Ω a lam Lam) (hab : Set.EqOn b a Ω) :
     exact h.lower_bound hx ξ
   · rw [hab hx]
     exact h.upper_bound hx η ξ
+
+/-- Freezing the parameter of a family of uniformly elliptic coefficients keeps uniform
+ellipticity: if every `a(·, s)` is uniformly elliptic on `Ω` with the constants `λ, Λ`, then so
+is `x ↦ a(x, v x)` for every `v : X → S`. This is the frozen coefficient of a quasilinear
+equation `-div (a(x, u) ∇u) = ℓ`. -/
+lemma apply_of_forall {S : Type*} [Nonempty S] {a : X → S → Matrix n n ℝ}
+    (h : ∀ s, UniformlyEllipticOn Ω (fun x => a x s) lam Lam) (v : X → S) :
+    UniformlyEllipticOn Ω (fun x => a x (v x)) lam Lam :=
+  of_bounds (h (Classical.arbitrary S)).pos (h (Classical.arbitrary S)).le
+    (fun _ hx ξ => (h _).lower_bound hx ξ) (fun _ hx η ξ => (h _).upper_bound hx η ξ)
 
 /-- At every point of the domain, uniform ellipticity gives a norm bound for the attached
 matrix bilinear form. -/
@@ -1066,6 +1149,29 @@ theorem tsupport_matrixBilinearForm_gradient_subset {a : EuclideanSpace ℝ n �
     simp [gradient_of_notMem_tsupport hxψ])) (isClosed_tsupport ψ)
 
 end Calculus
+
+/-- The contraction `∑ᵢⱼ Mᵢⱼ ⟪H eᵢ, eⱼ⟫` of an endomorphism `H` of `ℝᵐ` with a matrix `M` is at
+most `m ‖M‖ ‖H‖` in absolute value, where `‖M‖` is the operator norm of the bilinear form
+`(η, ξ) ↦ ηᵀ M ξ` and `‖H‖` that of `H`. -/
+theorem _root_.Matrix.abs_contraction_le_mul_norm_matrixBilinearForm_mul_norm {m : ℕ}
+    (M : Matrix (Fin m) (Fin m) ℝ)
+    (H : EuclideanSpace ℝ (Fin m) →L[ℝ] EuclideanSpace ℝ (Fin m)) :
+    |Matrix.contraction M H| ≤ m * ‖matrixBilinearForm M‖ * ‖H‖ := by
+  have h : Matrix.contraction M H = ∑ i, matrixBilinearForm M (EuclideanSpace.single i 1)
+      (H (EuclideanSpace.single i 1)) := by
+    simp [Matrix.mulVec, dotProduct, EuclideanSpace.inner_single_right]
+  rw [h]
+  refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
+  calc ∑ i, |matrixBilinearForm M (EuclideanSpace.single i 1) (H (EuclideanSpace.single i 1))|
+      ≤ ∑ _i : Fin m, ‖matrixBilinearForm M‖ * ‖H‖ := by
+        refine Finset.sum_le_sum fun i _ => ?_
+        refine ((matrixBilinearForm M).le_opNorm₂ _ _).trans ?_
+        simp only [PiLp.norm_single, norm_one, mul_one]
+        refine mul_le_mul_of_nonneg_left ((H.le_opNorm _).trans ?_) (by positivity)
+        simp
+    _ = m * ‖matrixBilinearForm M‖ * ‖H‖ := by
+        simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+        ring
 
 end PDE
 

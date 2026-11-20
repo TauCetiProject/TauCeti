@@ -115,6 +115,12 @@ theorem coe_sphereRotationFamily (p : sphere (0 : E) 1)
       (x.2 : ℂ).re • (p : E) + (x.2 : ℂ).im • ((x.1 : (ℝ ∙ (p : E))ᗮ) : E) :=
   (rfl)
 
+/-- The rotation family is continuous, in any dimension. -/
+@[fun_prop]
+theorem continuous_sphereRotationFamily (p : sphere (0 : E) 1) :
+    Continuous (sphereRotationFamily p) :=
+  continuous_induced_rng.2 <| by simp only [Function.comp_def, coe_sphereRotationFamily]; fun_prop
+
 /-- The rotation family is smooth. -/
 theorem contMDiff_sphereRotationFamily (p : sphere (0 : E) 1) :
     ContMDiff ((𝓡 m).prod (𝓡 1)) (𝓡 (m + 1)) ∞ (sphereRotationFamily p) := by

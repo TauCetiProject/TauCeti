@@ -87,9 +87,13 @@ open scoped commutatorElement
 
 universe u
 
-variable {p : ℕ} {X : Type u} [Fact p.Prime] [Finite X] [LinearOrder X]
+variable {p : ℕ} {X : Type u} [Fact p.Prime] [LinearOrder X]
 
 /-! ### The map `δ⁰` -/
+
+section
+
+variable [Finite X]
 
 variable (p X) in
 /-- **The level-zero basis-modification map `δ⁰`**: for a family `ω : X → gr_0(F)` of degree-zero
@@ -140,6 +144,8 @@ theorem basisModificationDeltaZero_degreeOneBasis_inr (ω : X → gradedPiece p 
         gradedBracket p (freeProP p X) 0 0 (ω ij.1.1) (ω ij.1.2) := by
   rw [basisModificationDeltaZero, Module.Basis.constr_basis, Sum.elim_inr]
 
+end
+
 /-- **The value of `δ⁰`**: with `ρ = Σ_i c_i π ξ_i + Σ_{i<k} a_{ik} [ξ_i, ξ_k]`,
 `δ⁰_ρ(ω) = Σ_i c_i (π ω_i + (p choose 2) • [ω_i, ξ_i])
   + Σ_{i<k} a_{ik} ([ω_i, ξ_k] - [ω_k, ξ_i] + [ω_i, ω_k])`. -/
@@ -161,6 +167,10 @@ theorem basisModificationDeltaZero_apply [Fintype X] (ω : X → gradedPiece p (
     basisModificationDeltaZero_degreeOneBasis_inl, basisModificationDeltaZero_degreeOneBasis_inr]
 
 /-! ### The class of the moved relator -/
+
+section
+
+variable [Finite X]
 
 /-- **The class of the moved relator is `δ⁰_ρ(ω)`.** For `w : X → λ_0(F) = F` and `ρ ∈ gr_1(F)`,
 the graded deviation of the basis modification `θ_w` on `ρ` is `δ⁰_ρ(ω)`, where `ω_i ∈ gr_0(F)` is
@@ -218,6 +228,8 @@ theorem gradedMap_one_eq_add_basisModificationDeltaZero (φ : freeProP p X →�
   simp only [gradedMkZero_mul, gradedMkZero_inv, neg_add_eq_sub] at h
   exact (congrArg (fun ψ : freeProP p X →ₜ* freeProP p X ↦
     gradedMap p ψ.toMonoidHom ψ.continuous 1 ρ) (eq_basisModification φ)).trans h
+
+end
 
 /-! ### The formula through the partial derivatives -/
 

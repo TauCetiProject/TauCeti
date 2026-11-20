@@ -352,9 +352,9 @@ theorem isInvertible_euclideanBackwardParabolicOperatorL_prod_spatialTraceL (hα
       (spatialTraceL (F := ℝ) (hab := hT) ⟨T, right_mem_Icc.2 hT.le⟩)) := by
     rw [euclideanBackwardParabolicOperatorL_def,
       bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff (T := T) (ha := h₀) (hb := h₁),
-      parabolicOperatorL_compLipschitzL_euclidean hα₁.le hT a b c]
+      initialDataL_def, parabolicOperatorL_compLipschitzL_euclidean hα₁.le hT a b c]
     exact bijective_euclideanParabolicOperatorL_prod_spatialTraceL hα₀ hα₁ hT _ _ hlam
-      fun p ξ ↦ by simpa only [HolderSpace.compLipschitzL_apply] using ha _ ξ
+      (mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ ha)
   -- A bijective bounded operator between Banach spaces is an isomorphism (open mapping).
   exact ⟨ContinuousLinearEquiv.ofBijective _ (LinearMap.ker_eq_bot_of_injective h.1)
     (LinearMap.range_eq_top_of_surjective _ h.2), ContinuousLinearEquiv.coe_ofBijective _ _ _⟩

@@ -33,8 +33,8 @@ The forward direction uses Mathlib's `IsGδ.isCompletelyMetrizableSpace` and
 `IsGδ.polishSpace`. This file supplies the converse and combines it with those
 upstream results to obtain the iff characterizations.
 
-For the converse, the sets `U n` of points having a neighbourhood whose trace on `s` has
-diameter less than `1 / (n + 1)` for a complete metric on `s` are open and contain `s`, and
+For the converse, the sets `U n` of points having a neighbourhood any two of whose points in `s`
+are at distance less than `1 / (n + 1)` for a complete metric on `s` are open and contain `s`, and
 `s = closure s ∩ ⋂ n, U n`: at a point of the right-hand side, the trace on `s` of its
 neighbourhood filter is a Cauchy filter, whose limit in `s` must be the point itself.
 
@@ -58,7 +58,7 @@ hypothesis. -/
 theorem isGδ_of_isCompletelyMetrizableSpace [T2Space X] {s : Set X}
     [IsCompletelyMetrizableSpace s] (hclosure : IsGδ (closure s)) : IsGδ s := by
   let := upgradeIsCompletelyMetrizable s
-  -- `U n` consists of the points with an open neighbourhood whose trace on `s` has small diameter.
+  -- `U n` consists of the points with an open neighbourhood whose points of `s` are pairwise close.
   let U : ℕ → Set X := fun n ↦
     ⋃₀ {V | IsOpen V ∧ ∀ a b : s, (a : X) ∈ V → (b : X) ∈ V → dist a b < 1 / (n + 1)}
   have hUo (n : ℕ) : IsOpen (U n) := isOpen_sUnion fun V hV ↦ hV.1
@@ -67,13 +67,11 @@ theorem isGδ_of_isCompletelyMetrizableSpace [T2Space X] {s : Set X}
     obtain ⟨V, hVo, hV⟩ :=
       isOpen_induced_iff.1 (isOpen_ball (x := (⟨x, hx⟩ : s)) (ε := 1 / (n + 1) / 2))
     refine ⟨V, ⟨hVo, fun a b ha hb ↦ ?_⟩, ?_⟩
-    · have ha' : a ∈ ball ⟨x, hx⟩ (1 / (n + 1) / 2) := hV ▸ mem_preimage.2 ha
-      have hb' : b ∈ ball ⟨x, hx⟩ (1 / (n + 1) / 2) := hV ▸ mem_preimage.2 hb
-      calc dist a b ≤ dist a ⟨x, hx⟩ + dist b ⟨x, hx⟩ := dist_triangle_right _ _ _
-        _ < 1 / (n + 1) / 2 + 1 / (n + 1) / 2 := add_lt_add ha' hb'
+    · calc dist a b ≤ dist a ⟨x, hx⟩ + dist b ⟨x, hx⟩ := dist_triangle_right _ _ _
+        _ < 1 / (n + 1) / 2 + 1 / (n + 1) / 2 :=
+          add_lt_add (mem_ball.1 (hV ▸ mem_preimage.2 ha)) (mem_ball.1 (hV ▸ mem_preimage.2 hb))
         _ = 1 / (n + 1) := add_halves _
-    · have : (⟨x, hx⟩ : s) ∈ ball ⟨x, hx⟩ (1 / (n + 1) / 2) := mem_ball_self (by positivity)
-      exact mem_preimage.1 (hV ▸ this)
+    · exact mem_preimage.1 (hV ▸ mem_ball_self (by positivity))
   suffices closure s ∩ ⋂ n, U n = s from
     this ▸ hclosure.inter (.iInter_of_isOpen hUo)
   refine Subset.antisymm (fun x ⟨hxc, hxU⟩ ↦ ?_) (subset_inter subset_closure (subset_iInter hsU))

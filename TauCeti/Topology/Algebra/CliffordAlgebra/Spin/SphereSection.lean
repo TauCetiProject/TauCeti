@@ -243,19 +243,14 @@ theorem realCliffordSpinLastLocalSection_action {n : ℕ}
   have hreflection : QuadraticMap.reflection (compactForm n)
       (realCliffordSpinLastLocalSectionDirection x.1) =
         QuadraticMap.reflection (compactForm n) (lastUnitVector n - -x.1) := by
-    have hscale :
-        (Real.sqrt (compactForm n (lastUnitVector n - -x.1)))⁻¹ ≠ 0 :=
-      inv_ne_zero (Real.sqrt_ne_zero'.mpr hpos)
-    let _ : Invertible
-        ((Real.sqrt (compactForm n (lastUnitVector n - -x.1)))⁻¹) :=
-      (isUnit_iff_ne_zero.mpr hscale).invertible
-    convert QuadraticMap.reflection_smul_eq (compactForm n)
-      (lastUnitVector n - -x.1)
-      (Real.sqrt (compactForm n (lastUnitVector n - -x.1)))⁻¹ using 1
-    -- The direction is definitionally this normalized vector; only its proof-irrelevant norm
-    -- instance differs from the one constructed for the generic rescaling theorem.
-    congr 1
-    exact Subsingleton.elim _ _
+    have key (y : Fin (n + 1) → ℝ)
+        (hy : y = (Real.sqrt (compactForm n (lastUnitVector n - -x.1)))⁻¹ •
+          (lastUnitVector n - -x.1)) [Invertible (compactForm n y)] :
+        QuadraticMap.reflection (compactForm n) y =
+          QuadraticMap.reflection (compactForm n) (lastUnitVector n - -x.1) := by
+      subst hy
+      exact QuadraticMap.reflection_smul_eq (compactForm n) (lastUnitVector n - -x.1) _
+    exact key _ (realCliffordSpinLastLocalSectionDirection_def x.1)
   rw [hreflection, hreflect, neg_neg]
 
 end

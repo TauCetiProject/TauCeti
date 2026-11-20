@@ -559,11 +559,11 @@ private theorem eqvGen_deltaMove_of_mem_midpoints
       midpoint ℝ (poly i) c, midpoint ℝ c (poly (finRotate n i))} : Set P))
     (hz : z ∈ ({poly i, poly (finRotate n i), c, midpoint ℝ (poly i) (poly (finRotate n i)),
       midpoint ℝ (poly i) c, midpoint ℝ c (poly (finRotate n i))} : Set P))
-    (hδ : 0 ≤ δ) (hxy : dist x y ≤ δ) (hxz : dist x z ≤ δ) (hyz : dist y z ≤ δ) :
+    (hxy : dist x y ≤ δ) (hxz : dist x z ≤ δ) (hyz : dist y z ≤ δ) :
     Relation.EqvGen r ⟨m, q, hq⟩ ⟨m + 1, q', hq'⟩ := by
   rw [← deltaMove_mk_eq hq h' hq' e]
   exact hΔ ⟨m, q, hq⟩ j w h' (h.closedInterior_subset ht hx hy hz)
-    (Affine.Triangle.dist_points_le ht hδ hxy hxz hyz)
+    (Affine.Triangle.dist_points_le ht hxy hxz hyz)
 
 /-- One subdivision of the midpoint subdivision of the triangle of `h`: subdividing an edge at the
 image `x` under the chart of one of the six points of the standard subdivision is in the
@@ -607,7 +607,6 @@ private theorem exists_eqvGen_midpointSubdivision
   have hab : dist (poly i) (poly (finRotate n i)) ≤ 2 * δ := by simpa [hpts] using hδ 0 1
   have hac : dist (poly i) c ≤ 2 * δ := by simpa [hpts] using hδ 0 2
   have hcb : dist c (poly (finRotate n i)) ≤ 2 * δ := by simpa [hpts, dist_comm] using hδ 1 2
-  have hδ₀ : 0 ≤ δ := by linarith [dist_nonneg (x := poly i) (y := c)]
   have hac_cb : dist (midpoint ℝ (poly i) c) (midpoint ℝ c (poly (finRotate n i))) ≤ δ := by
     rw [midpoint_comm (poly i) c, dist_midpoint_midpoint_same_left]
     exact half_mul_le hab
@@ -627,13 +626,13 @@ private theorem exists_eqvGen_midpointSubdivision
   -- The Δ-move across `a m_ab m_ac`.
   have c₂ : Relation.EqvGen r ⟨_, _, hs₁⟩ ⟨_, _, hs₂⟩ :=
     eqvGen_deltaMove_of_mem_midpoints h hΔ hs₁ h₁ hs₂ rfl h.isDeltaMove_corner_a_triangle_points
-      (by simp) (by simp) (by simp) hδ₀ ((dist_left_midpoint _ _).trans_le (half_mul_le hab))
+      (by simp) (by simp) (by simp) ((dist_left_midpoint _ _).trans_le (half_mul_le hab))
       ((dist_left_midpoint _ _).trans_le (half_mul_le hac))
       ((dist_midpoint_midpoint_same_left _ _ _).trans_le (half_mul_le (by rwa [dist_comm])))
   -- The Δ-move across `m_ac m_ab m_cb`.
   have c₃ : Relation.EqvGen r ⟨_, _, hs₂⟩ ⟨_, _, hs₃⟩ :=
     eqvGen_deltaMove_of_mem_midpoints h hΔ hs₂ h₂ hs₃ rfl h.isDeltaMove_middle_triangle_points
-      (by simp) (by simp) (by simp) hδ₀
+      (by simp) (by simp) (by simp)
       ((dist_midpoint_midpoint_same_left _ _ _).trans_le (half_mul_le hcb)) hac_cb
       ((dist_midpoint_midpoint_same_right _ _ _).trans_le (half_mul_le hac))
   -- The Δ-move across `m_cb b m_ab`, read backwards from `⋯ a m_ac m_cb m_ab b ⋯`.
@@ -643,13 +642,13 @@ private theorem exists_eqvGen_midpointSubdivision
       rw [dist_midpoint_midpoint_same_right]
       exact half_mul_le (by rwa [dist_comm])
     exact eqvGen_deltaMove_of_mem_midpoints h hΔ hs₄ h₃ hs₃ e₃.symm
-      h.isDeltaMove_corner_b_triangle_points (by simp) (by simp) (by simp) hδ₀
+      h.isDeltaMove_corner_b_triangle_points (by simp) (by simp) (by simp)
       ((dist_midpoint_right _ _).trans_le (half_mul_le hcb)) hmid
       ((dist_right_midpoint _ _).trans_le (half_mul_le hab))
   -- The Δ-move across `m_ac m_cb c`.
   have c₅ : Relation.EqvGen r ⟨_, _, hs₄⟩ ⟨_, _, hs₅⟩ :=
     eqvGen_deltaMove_of_mem_midpoints h hΔ hs₄ h₄ hs₅ rfl h.isDeltaMove_corner_c_triangle_points
-      (by simp) (by simp) (by simp) hδ₀ hac_cb
+      (by simp) (by simp) (by simp) hac_cb
       ((dist_midpoint_right _ _).trans_le (half_mul_le hac))
       ((dist_midpoint_left _ _).trans_le (half_mul_le hcb))
   exact ⟨hs₅, E.trans c₂ (E.trans c₃ (E.trans (E.symm c₄) c₅))⟩

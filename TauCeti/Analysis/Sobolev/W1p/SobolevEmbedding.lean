@@ -390,7 +390,7 @@ theorem W1p.exists_lpInftyEmbeddingL_of_isCompact_closure
   let H := (W1p.morreyEmbedding (mu := μ) hq).comp Z
   have hH (u : W1p μ Ω (q : ℝ≥0∞)) :
       H u =ᵐ[μ.restrict V] W1p.value u := by
-    have hz := coeFn_extendByZeroLpₗᵢ ℝ U.isOpen.measurableSet
+    have hz := coeFn_extendByZeroLpₗᵢ ℝ U.isOpen.nullMeasurableSet
       (show (U : Set E) ⊆ ((⊤ : Opens E) : Set E) from subset_univ _)
       (W1p.value (T u).1)
     rw [← W1p0.value_extendByZeroL (le_top : U ≤ ⊤)] at hz

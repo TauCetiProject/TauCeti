@@ -59,7 +59,10 @@ embedding whose image consists of the partitions coarser than the partition of `
 of `f`, each of which is the pullback of its pushforward `Finpartition.pushforward`, a left inverse
 of the pullback; pulling a partition of `univ` back along an equivalence moves its parts along the
 inverse equivalence; and the partition of `α × β` into the fibres of the first coordinate
-(`Finpartition.ofSetoid_ker_fst_parts`).
+(`Finpartition.ofSetoid_ker_fst_parts`). For a finite partition of a set `u`, the parts are
+nonempty and cover `u` (`Finpartition.sUnion_parts`), every point of `u` lies in exactly one part
+(`Finpartition.existsUnique_mem_set`), and under refinement each coarse part is the union of the
+fine parts inside it (`Finpartition.eq_sUnion_of_le`).
 -/
 
 public section
@@ -280,6 +283,47 @@ theorem inter_part_eq_self_or_eq_empty_of_le {P Q : Finpartition u} (href : Q �
   · refine Or.inr (Set.eq_empty_of_subset_empty fun x hx => ?_)
     exact absurd hx.2 (Set.disjoint_left.mp (P.disjoint hp' hp h) (hrp' hx.1))
 
+section SetPartition
+
+variable (P : Finpartition u)
+
+/-- The parts of a finite partition of a set `u` cover `u`. -/
+@[simp]
+theorem sUnion_parts : ⋃₀ (P.parts : Set (Set Ω)) = u := by
+  rw [← Finset.sup_id_set_eq_sUnion, P.sup_parts]
+
+/-- A part of a finite partition of a set is nonempty. -/
+theorem nonempty_of_mem_parts_set {s : Set Ω} (hs : s ∈ P.parts) : s.Nonempty :=
+  Set.nonempty_iff_ne_empty.2 (P.ne_bot hs)
+
+/-- Every point of a set lies in some part of a finite partition of it. -/
+theorem exists_mem_set {x : Ω} (hx : x ∈ u) : ∃ s ∈ P.parts, x ∈ s := by
+  rw [← P.sUnion_parts] at hx
+  exact Set.mem_sUnion.1 hx
+
+/-- Two parts of a finite partition of a set that contain a common point are equal. -/
+theorem eq_of_mem_parts_set {s t : Set Ω} (hs : s ∈ P.parts) (ht : t ∈ P.parts) {x : Ω}
+    (hxs : x ∈ s) (hxt : x ∈ t) : s = t :=
+  P.disjoint.elim_set hs ht x hxs hxt
+
+/-- Every point of a set lies in exactly one part of a finite partition of it. -/
+theorem existsUnique_mem_set {x : Ω} (hx : x ∈ u) : ∃! s, s ∈ P.parts ∧ x ∈ s := by
+  obtain ⟨s, hs, hxs⟩ := P.exists_mem_set hx
+  exact ⟨s, ⟨hs, hxs⟩, fun t ⟨ht, hxt⟩ ↦ P.eq_of_mem_parts_set ht hs hxt hxs⟩
+
+variable {P} {Q : Finpartition u}
+
+/-- If `P` refines `Q`, each part of `Q` is the union of the parts of `P` inside it. -/
+theorem eq_sUnion_of_le (hPQ : P ≤ Q) {t : Set Ω} (ht : t ∈ Q.parts) :
+    t = ⋃₀ {s ∈ (P.parts : Set (Set Ω)) | s ⊆ t} := by
+  refine Set.Subset.antisymm (fun x hxt ↦ ?_) (Set.sUnion_subset fun s hs ↦ hs.2)
+  obtain ⟨s, hs, hxs⟩ := P.exists_mem_set (Q.le ht hxt)
+  obtain ⟨t', ht', hst'⟩ := hPQ hs
+  obtain rfl := Q.eq_of_mem_parts_set ht ht' hxt (hst' hxs)
+  exact ⟨s, ⟨hs, hst'⟩, hxs⟩
+
+end SetPartition
+
 section Refinement
 
 variable {α : Type*} [Lattice α] [OrderBot α] {a : α} {P Q : Finpartition a}
@@ -363,6 +407,19 @@ theorem sum_apply_part {M : Type*} [AddCommMonoid M] (P : Finpartition s) (f : F
   rw [P.sum_apply_part_of_subset subset_rfl]
   exact Finset.sum_congr rfl fun A hA => by rw [Finset.inter_eq_right.2 (P.le hA)]
 
+/-- For a partition `P` of `univ`, summing a function on `P.parts` evaluated at the part containing
+each point of `t` groups the points by part: each part `A` is counted with multiplicity
+`#(t ∩ A.1)`. -/
+theorem sum_apply_part_subtype [Fintype α] {M : Type*} [AddCommMonoid M]
+    (P : Finpartition (univ : Finset α)) (t : Finset α) (g : P.parts → M) :
+    ∑ x ∈ t, g ⟨P.part x, P.part_mem.2 (mem_univ x)⟩ =
+      ∑ A : P.parts, #(t ∩ A.1) • g A := by
+  let f : Finset α → M := fun A => if h : A ∈ P.parts then g ⟨A, h⟩ else 0
+  have h1 := P.sum_apply_part_of_subset (subset_univ t) f
+  simp only [f, P.part_mem.2 (mem_univ _), ↓reduceDIte] at h1
+  rw [h1, ← Finset.sum_coe_sort P.parts]
+  exact Finset.sum_congr rfl fun A _ => by simp [A.2]
+
 /-- Refining a partition shrinks the part containing each point. -/
 @[gcongr]
 theorem part_mono (h : P ≤ Q) (a : α) : P.part a ⊆ Q.part a := by
@@ -388,6 +445,12 @@ theorem part_eq_part_of_le (h : P ≤ Q) {a b : α} (hab : P.part a = P.part b) 
     exact (Q.part_eq_of_mem (Q.part_mem.2 ha) (part_mono h a hb)).symm
   · have hb : b ∉ s := P.part_eq_empty.1 (hab ▸ P.part_eq_empty.2 ha)
     rw [Q.part_eq_empty.2 ha, Q.part_eq_empty.2 hb]
+
+/-- A point lies in the union of the parts through two points of `s` exactly when its part is one
+of the two. -/
+theorem mem_part_union_part_iff {i j x : α} (hi : i ∈ s) (hj : j ∈ s) :
+    x ∈ P.part i ∪ P.part j ↔ P.part x = P.part i ∨ P.part x = P.part j := by
+  rw [mem_union, ← P.part_eq_iff_mem (P.part_mem.2 hi), ← P.part_eq_iff_mem (P.part_mem.2 hj)]
 
 /-- Membership in a union of parts is constant on each part. -/
 theorem mem_iff_mem_of_part_eq_part {X : Finset α} (hX : ∀ C ∈ P.parts, C ⊆ X ∨ Disjoint C X)
@@ -891,6 +954,20 @@ theorem parts_comap_copy_equiv [Fintype α] [Fintype β] (P : Finpartition (univ
   refine image_congr fun B _ => ?_
   ext x
   simp [mem_map_equiv]
+
+/-- Pulling back a finite partition `P` of `univ` along an equivalence `g`, after identifying
+`univ` with its image under `g`, sends the part through `x` to the image under `g.symm` of the
+part of `P` through `g x`. -/
+@[simp]
+theorem part_comap_copy_equiv [Fintype α] [Fintype β] (P : Finpartition (univ : Finset β))
+    (g : α ≃ β) (x : α) :
+    ((P.copy (image_univ_equiv g).symm).comap g).part x =
+      (P.part (g x)).map g.symm.toEmbedding := by
+  have hcopy : (P.copy (image_univ_equiv g).symm).part (g x) = P.part (g x) :=
+    part_eq_of_mem _ (by simp) (P.mem_part (mem_univ (g x)))
+  ext y
+  rw [part_comap (mem_univ _), mem_filter, hcopy, mem_map_equiv]
+  simp
 
 /-- Pulling back along `f` reflects and preserves refinement. -/
 @[simp]

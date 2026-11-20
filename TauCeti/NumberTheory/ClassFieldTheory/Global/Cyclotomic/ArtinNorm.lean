@@ -40,7 +40,8 @@ sum of the local invariants of a global Brauer class is shown to vanish.
 At a finite place `v` the identity is the local norm functoriality
 `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_artinMap_norm` at each
 `w ∣ v`, combined with the factorization `N_{L/K}(x) = ∏_{w ∣ v} N_{L_w/K_v}(x)` in `K_v`
-(`TauCeti.algebraMap_norm_eq_prod_norm`); at an infinite place it is the archimedean norm
+(`IsDedekindDomain.HeightOneSpectrum.algebraMap_norm_eq_prod_norm_adicCompletion`); at an
+infinite place it is the archimedean norm
 functoriality `TauCeti.ClassFieldTheory.infiniteArtinAt_norm` with the archimedean
 factorization `TauCeti.GlobalNumberFields.algebraMap_norm_eq_prod_norm_infiniteCompletion`.
 The global finite identity regroups the places of `L` by the place below. This needs the
@@ -118,7 +119,7 @@ theorem abelianizedLocalCyclotomicCharacter_artinMap_normUnits_eq_finprod
   congr 2
   refine Units.ext ?_
   simp only [Units.coe_prod, Algebra.coe_normUnits, Units.coe_map, MonoidHom.coe_ofClass]
-  exact algebraMap_norm_eq_prod_norm L v (x : L)
+  exact v.algebraMap_norm_eq_prod_norm_adicCompletion (B := 𝓞 L) (x : L)
 
 omit [NumberField K] in
 /-- **Norm functoriality at an infinite place.** For `x ∈ Lˣ` and an infinite place `v` of `K`,

@@ -60,7 +60,7 @@ noncomputable section
 
 namespace TauCeti.CurrentAlgebra
 
-open _root_.LieModule.Cohomology TauCeti.LieModule.Cohomology TauCeti.LieModule
+open TauCeti.LieModule.Cohomology TauCeti.LieModule
 
 section CommRing
 

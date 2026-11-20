@@ -47,8 +47,9 @@ every matrix unit of `𝔰𝔩₃` up to the factor `-3` from the bracket of an 
 derivation; this is where `2` and `3` must be invertible.
 
 Since `Der 𝕆` has rank `14`, the surjection shows that `LieAlgebra.g₂` has rank at least `14`
-(`TauCeti.Octonion.fourteen_le_rank_g₂`). Its injectivity, which would identify `Der 𝕆` with
-`LieAlgebra.g₂`, is not proved here.
+(`TauCeti.Octonion.fourteen_le_rank_g₂`). Its injectivity in characteristic zero, which
+identifies `Der 𝕆` with `LieAlgebra.g₂`, is `TauCeti.Octonion.g₂ToDerivationLieAlgebra_injective`
+in `TauCeti/Algebra/Octonion/G2.lean`.
 
 ## Main definitions
 

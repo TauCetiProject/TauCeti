@@ -50,8 +50,8 @@ open scoped ContDiff Manifold
 
 namespace TauCeti.Manifold.OrientationCover
 
-variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   {k : ℕ}
 
 /-- The two points of the orientation cover over a point of `M` are related by the deck
@@ -87,6 +87,8 @@ theorem exists_mpullback_proj_eq_invariantPart [IsTopologicalAddGroup F]
     VectorBundleOrientationCover.deck_deck (contMDiff_deck.mdifferentiable one_ne_zero) φ
 
 end Rough
+
+variable [FiniteDimensional ℝ E]
 
 /-- **Descent of smooth forms along the orientation cover.** A smooth form on the orientation
 double cover of `M` is the pullback of a smooth form on `M` if and only if it is invariant under

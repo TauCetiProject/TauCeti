@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.LinearAlgebra.Matrix.NormTwoShell.Basic
 public import TauCeti.LinearAlgebra.Matrix.OrderedSignCover
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A
 import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classical

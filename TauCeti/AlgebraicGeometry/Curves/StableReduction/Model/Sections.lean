@@ -7,6 +7,11 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import Mathlib.AlgebraicGeometry.ValuativeCriterion
+public import Mathlib.RingTheory.RegularLocalRing.Defs
+public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
+import TauCeti.AlgebraicGeometry.IdealSheaf.Section
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Section
+import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 
 /-!
 # Extending markings to proper models
@@ -17,11 +22,16 @@ identification, and is compatible with morphisms of proper models. Equivalently,
 model are in bijection with rational points of that generic fibre.
 
 This extends each marking separately. Distinct generic markings can meet on the special fibre,
-and their extensions need not pass through the relative smooth locus.
+and their extensions need not pass through the relative smooth locus: on the node `xy = π²` the
+section `x = y = π` passes through the singular point. On a model whose total space is regular,
+however, every extended marking lies in the smooth locus of the structure morphism
+(`TauCeti.Model.range_extendSection_subset_smoothLocus`), so the special fibre is smooth along it.
 
 ## References
 
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Chapter 10.
+* Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Section 9.1 (sections of regular fibred
+  surfaces).
 * R. Hartshorne, *Algebraic Geometry*, Theorem II.4.7 (the valuative criterion of properness).
 -/
 
@@ -84,6 +94,20 @@ theorem specMap_extendSection (M : Model R K C toK) [M.IsProper]
     (p : Spec (.of K) ⟶ C) (hp : p ≫ toK = 𝟙 _) :
     Spec.map (CommRingCat.ofHom (algebraMap R K)) ≫ M.extendSection p hp = p ≫ M.genericι :=
   (M.existsUnique_section p hp).choose_spec.1.2
+
+/-- At the image in `Spec R` of a point `x` of `Spec K`, the extension takes the value of the
+rational point at `x`, viewed in the total space through `genericι`. -/
+@[simp]
+theorem extendSection_specMap_apply (M : Model R K C toK) [M.IsProper]
+    (p : Spec (.of K) ⟶ C) (hp : p ≫ toK = 𝟙 _) (x : Spec (.of K)) :
+    M.extendSection p hp (Spec.map (CommRingCat.ofHom (algebraMap R K)) x) = M.genericι (p x) := by
+  simpa only [Scheme.Hom.comp_apply] using
+    congrArg (fun φ : Spec (.of K) ⟶ M.total ↦ φ x) (M.specMap_extendSection p hp)
+
+/-- The extension is a closed immersion, as a section of a separated morphism. -/
+instance isClosedImmersion_extendSection (M : Model R K C toK) [M.IsProper]
+    (p : Spec (.of K) ⟶ C) (hp : p ≫ toK = 𝟙 _) : IsClosedImmersion (M.extendSection p hp) :=
+  (M.extendSection p hp).isClosedImmersion_of_comp_eq_id (M.extendSection_toBase p hp)
 
 /-- Any section with the prescribed generic value is the extension. -/
 theorem eq_extendSection (M : Model R K C toK) [M.IsProper]
@@ -164,5 +188,22 @@ theorem extendSection_hom {M N : Model R K C toK} [M.IsProper] [N.IsProper]
     (f : M ⟶ N) (p : Spec (.of K) ⟶ C) (hp : p ≫ toK = 𝟙 _) :
     M.extendSection p hp ≫ f.hom = N.extendSection p hp := by
   apply N.eq_extendSection p hp <;> simp
+
+/-- A morphism between proper models carries each value of an extended marking to the
+corresponding value of the same extended marking. -/
+@[simp]
+theorem extendSection_hom_apply {M N : Model R K C toK} [M.IsProper] [N.IsProper]
+    (f : M ⟶ N) (p : Spec (.of K) ⟶ C) (hp : p ≫ toK = 𝟙 _) (x : Spec (.of R)) :
+    f.hom (M.extendSection p hp x) = N.extendSection p hp x := by
+  rw [← Scheme.Hom.comp_apply, extendSection_hom]
+
+/-- **Extended markings of a regular model are smooth points.** If the total space of a proper
+model is regular, then the extension of every rational point of the generic fibre lies in the
+smooth locus of the structure morphism. -/
+theorem range_extendSection_subset_smoothLocus (M : Model R K C toK) [M.IsProper]
+    [∀ x : M.total, IsRegularLocalRing (M.total.presheaf.stalk x)]
+    (p : Spec (.of K) ⟶ C) (hp : p ≫ toK = 𝟙 _) :
+    Set.range (M.extendSection p hp) ⊆ M.toBase.smoothLocus :=
+  M.toBase.range_subset_smoothLocus_of_isRegularLocalRing (M.extendSection_toBase p hp)
 
 end TauCeti.Model

@@ -188,22 +188,25 @@ private theorem sum_smul_mulInvariantVectorField_apply {ι : Type*} (s : Finset 
   simp only [Finset.sum_apply, Pi.smul_apply', mulInvariantVectorField, map_sum, map_smul]
   rfl
 
-section Involutive
-
-variable [LieGroup I (minSmoothness 𝕜 3) G]
-
 /-- If the left-invariant distribution of `S` is involutive, then `S` is closed under the bracket:
 the bracket of two elements of `S` is the value at the identity of the bracket of the invariant
-vector fields they generate. -/
-theorem lie_mem_of_isInvolutiveDistribution_mulInvariantDistribution
+vector fields they generate. Only `C^2` multiplication is needed, so that the invariant fields are
+`C^1`. -/
+theorem lie_mem_of_isInvolutiveDistribution_mulInvariantDistribution [ContMDiffMul I 2 G]
     (hD : IsInvolutiveDistribution I (mulInvariantDistribution S)) {v w : GroupLieAlgebra I G}
     (hv : v ∈ S) (hw : w ∈ S) : ⁅v, w⁆ ∈ S := by
-  have h := hD.mlieBracket_mem isOpen_univ
-    (mdifferentiable_mulInvariantVectorField v).mdifferentiableOn
-    (mdifferentiable_mulInvariantVectorField w).mdifferentiableOn
+  have hd (u : GroupLieAlgebra I G) :
+      MDiff (fun g ↦ (mulInvariantVectorField u g : TangentBundle I G)) :=
+    ((contMDiff_mulInvariantVectorField_modelSpace (I := I) (G := G) (m := 1) (n := 2)
+      (by norm_num)).comp (contMDiff_const.prodMk contMDiff_id)).mdifferentiable one_ne_zero
+  have h := hD.mlieBracket_mem isOpen_univ (hd v).mdifferentiableOn (hd w).mdifferentiableOn
     (fun g _ ↦ mulInvariantVectorField_mem_mulInvariantDistribution hv g)
     (fun g _ ↦ mulInvariantVectorField_mem_mulInvariantDistribution hw g) (mem_univ 1)
   rwa [mulInvariantDistribution_one] at h
+
+section Involutive
+
+variable [LieGroup I (minSmoothness 𝕜 3) G]
 
 /-- **The left-invariant distribution of a Lie subalgebra is involutive.** If a subspace `S` of the
 Lie algebra of `G` is closed under the bracket, then its left-invariant distribution is
@@ -257,6 +260,9 @@ theorem isInvolutiveDistribution_mulInvariantDistribution [CompleteSpace 𝕜]
 theorem isInvolutiveDistribution_mulInvariantDistribution_iff [CompleteSpace 𝕜]
     [FiniteDimensional 𝕜 E] :
     IsInvolutiveDistribution I (mulInvariantDistribution S) ↔ ∀ v ∈ S, ∀ w ∈ S, ⁅v, w⁆ ∈ S :=
+  have : ContMDiffMul I 2 G :=
+    ContMDiffMul.of_le (n := minSmoothness 𝕜 3)
+      ((by norm_num : (2 : ℕ∞ω) ≤ 3).trans le_minSmoothness)
   ⟨fun hD _ hv _ hw ↦ lie_mem_of_isInvolutiveDistribution_mulInvariantDistribution hD hv hw,
     isInvolutiveDistribution_mulInvariantDistribution⟩
 

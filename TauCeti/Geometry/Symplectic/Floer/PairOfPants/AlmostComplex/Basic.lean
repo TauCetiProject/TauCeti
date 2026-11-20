@@ -158,11 +158,8 @@ theorem cayley_endWeightedAlmostComplex_cylindricalEndLift_of_pos (h₀ : ω.Com
     (x : M) :
     J₀.cayley (endWeightedAlmostComplex h₀ J hJ c hc hc₀ (q.cylindricalEndLift z) x) =
       c q (q.cylindricalEndLift z) • J₀.cayley (J q z.im x) := by
-  obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift z
   rw [cayley_endWeightedAlmostComplex, Finset.sum_eq_single q]
-  · have him : (q.endCoord (q.cylindricalEndLift z)).im = z.im + k := by simp [hk]
-    have hp : J q (z.im + k) = J q z.im := by simpa using hJp.int_mul k z.im
-    rw [him, hp]
+  · rw [apply_im_endCoord_cylindricalEndLift hJp]
   · -- The weights of the other ends vanish, since distinct ends are disjoint.
     intro r _ hr
     by_contra h

@@ -14,6 +14,8 @@ public import TauCeti.ModelTheory.BackAndForth.Karp
 public import TauCeti.ModelTheory.Scott.ExtensionPair
 public import TauCeti.ModelTheory.Scott.PotentialIso
 
+import TauCeti.ModelTheory.BackAndForth.Countable
+
 /-!
 # Scott analysis of equivalence relations
 

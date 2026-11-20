@@ -18,6 +18,8 @@ An endomorphism and its adjoint have the same real quadratic form
 (`ContinuousLinearMap.re_inner_star_apply_self`).
 For bounded operators between complete inner product spaces, the adjoint takes values in the
 orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`).
+The Gram operator of an operator with finite-dimensional source is invertible exactly when the
+operator is injective (`ContinuousLinearMap.isUnit_adjoint_comp_self_iff`).
 An operator on a Hilbert space is invertible exactly when its adjoint is
 (`ContinuousLinearMap.isUnit_adjoint_iff`), and inversion commutes with the adjoint
 (`ContinuousLinearMap.ringInverse_adjoint`). Likewise an operator between two Hilbert spaces is
@@ -106,6 +108,14 @@ theorem adjoint_apply_mem_orthogonal_ker [CompleteSpace E] [CompleteSpace F]
     (u : E →L[𝕜] F) (y : F) : (u†) y ∈ u.kerᗮ := by
   rw [orthogonal_ker]
   exact Submodule.le_topologicalClosure _ (LinearMap.mem_range_self _ y)
+
+/-- The Gram operator `B† B` of an operator out of a finite-dimensional space is invertible
+exactly when `B` is injective. -/
+theorem isUnit_adjoint_comp_self_iff [CompleteSpace E] [CompleteSpace F] [FiniteDimensional 𝕜 E]
+    (B : E →L[𝕜] F) :
+    IsUnit (adjoint B ∘L B) ↔ Function.Injective B := by
+  simp only [isUnit_iff_isUnit_toLinearMap, LinearMap.isUnit_iff_ker_eq_bot,
+    ker_adjoint_comp_self, LinearMap.ker_eq_bot, coe_coe]
 
 section Inverse
 

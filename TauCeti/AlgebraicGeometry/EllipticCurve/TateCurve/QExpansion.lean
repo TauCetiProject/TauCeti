@@ -245,7 +245,8 @@ theorem _root_.ModularForm.exists_isIntegralModularForm_specialize_tateCurve_eq 
   push Not at hzero
   -- Otherwise subtracting `a₀ g`, with `g = 1 + ⋯`, from `F` leaves a cusp form `F'`.
   obtain ⟨g, hgA, hg, hg₀⟩ :=
-    exists_isIntegralModularForm_constantCoeff_specialize_eq_one hzero.1 hzero.2
+    exists_isIntegralModularForm_constantCoeff_specialize_eq_one
+      (Nat.not_odd_iff_even.2 hzero.1) hzero.2
   obtain ⟨G, hG⟩ := hg.exists_qExpansion_eq_map_specialize_tateCurve
   set a₀ := constantCoeff P
   set F' := F - a₀ • G
@@ -494,11 +495,14 @@ theorem coe_integralModularFormEquivIntegralAtCusps (k : ℕ)
       integralModularFormToModularForm k f :=
   (rfl)
 
+/-- The images `E₄`, `-E₆` and `Δ` of `c₄`, `c₆` and `Δ` in the graded ring of level-one
+modular forms. -/
+private noncomputable abbrev c₄c₆ΔImage : Fin 3 → DirectSum ℤ (ModularForm 𝒮ℒ) :=
+  ![DirectSum.of (ModularForm 𝒮ℒ) 4 E₄, DirectSum.of (ModularForm 𝒮ℒ) 6 (-E₆),
+    DirectSum.of (ModularForm 𝒮ℒ) 12 (CuspForm.discriminant : ModularForm 𝒮ℒ 12)]
+
 private theorem aeval_E₄_neg_E₆_discriminant_relation :
-    MvPolynomial.aeval (R := ℤ)
-      ![DirectSum.of (ModularForm 𝒮ℒ) 4 E₄,
-        DirectSum.of (ModularForm 𝒮ℒ) 6 (-E₆),
-        DirectSum.of (ModularForm 𝒮ℒ) 12 (CuspForm.discriminant : ModularForm 𝒮ℒ 12)]
+    MvPolynomial.aeval (R := ℤ) c₄c₆ΔImage
       (MvPolynomial.X 0 ^ 3 - MvPolynomial.X 1 ^ 2 - 1728 * MvPolynomial.X 2) = 0 := by
   have hΔ := (eq_inv_smul_iff₀ (by norm_num : (1728 : ℂ) ≠ 0)).mp
     (by simpa using discriminant_eq_E₄_cube_sub_E₆_sq_graded)
@@ -511,10 +515,7 @@ the presentation `c₄³ - c₆² = 1728Δ` (`WeierstrassCurve.adjoinC₄C₆ΔE
 noncomputable def adjoinC₄C₆ΔToModularForms :
     Algebra.adjoin ℤ {Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ} →ₐ[ℤ]
       DirectSum ℤ (ModularForm 𝒮ℒ) :=
-  let evalHom := MvPolynomial.aeval (R := ℤ)
-    ![DirectSum.of (ModularForm 𝒮ℒ) 4 E₄,
-      DirectSum.of (ModularForm 𝒮ℒ) 6 (-E₆),
-      DirectSum.of (ModularForm 𝒮ℒ) 12 (CuspForm.discriminant : ModularForm 𝒮ℒ 12)]
+  let evalHom := MvPolynomial.aeval (R := ℤ) c₄c₆ΔImage
   (Ideal.Quotient.liftₐ
     (Ideal.span {(MvPolynomial.X 0 ^ 3 - MvPolynomial.X 1 ^ 2 - 1728 * MvPolynomial.X 2 :
       MvPolynomial (Fin 3) ℤ)})
@@ -527,10 +528,7 @@ private theorem adjoinC₄C₆ΔToModularForms_aeval (P : MvPolynomial (Fin 3) �
     adjoinC₄C₆ΔToModularForms
       (Universal.curve.adjoinC₄C₆ΔEquiv Universal.algebraicIndependent_c₄_c₆
         (Ideal.Quotient.mk _ P)) =
-      MvPolynomial.aeval (R := ℤ)
-        ![DirectSum.of (ModularForm 𝒮ℒ) 4 E₄,
-          DirectSum.of (ModularForm 𝒮ℒ) 6 (-E₆),
-          DirectSum.of (ModularForm 𝒮ℒ) 12 (CuspForm.discriminant : ModularForm 𝒮ℒ 12)] P := by
+      MvPolynomial.aeval (R := ℤ) c₄c₆ΔImage P := by
   rw [adjoinC₄C₆ΔToModularForms, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
     AlgEquiv.symm_apply_apply]
   rfl
@@ -558,10 +556,7 @@ private theorem mk_eq_adjoinGen (i : Fin 3)
 @[simp]
 private theorem adjoinC₄C₆ΔToModularForms_adjoinGen (i : Fin 3) :
     adjoinC₄C₆ΔToModularForms (adjoinGen i) =
-      ![DirectSum.of (ModularForm 𝒮ℒ) 4 E₄,
-        DirectSum.of (ModularForm 𝒮ℒ) 6 (-E₆),
-        DirectSum.of (ModularForm 𝒮ℒ) 12
-          (CuspForm.discriminant : ModularForm 𝒮ℒ 12)] i := by
+      c₄c₆ΔImage i := by
   rw [adjoinGen, adjoinC₄C₆ΔToModularForms_aeval, MvPolynomial.aeval_X]
 
 @[simp]
@@ -599,10 +594,7 @@ theorem qExpansionRingHom_adjoinC₄C₆ΔToModularForms
   obtain ⟨P, rfl⟩ := Ideal.Quotient.mk_surjective q
   rw [adjoinC₄C₆ΔToModularForms_aeval, WeierstrassCurve.adjoinC₄C₆ΔEquiv_mk]
   have hhom : (ModularForm.qExpansionRingHom 1 one_pos one_mem_strictPeriods_SL).comp
-      (MvPolynomial.aeval (R := ℤ)
-        ![DirectSum.of (ModularForm 𝒮ℒ) 4 E₄,
-          DirectSum.of (ModularForm 𝒮ℒ) 6 (-E₆),
-          DirectSum.of (ModularForm 𝒮ℒ) 12 (CuspForm.discriminant : ModularForm 𝒮ℒ 12)]).toRingHom =
+      (MvPolynomial.aeval (R := ℤ) c₄c₆ΔImage).toRingHom =
       ((PowerSeries.map (Int.castRingHom ℂ)).comp tateCurve.specialize).comp
         (MvPolynomial.aeval (R := ℤ)
           ![Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ]).toRingHom := by
@@ -721,11 +713,7 @@ private theorem modularFormsToComplexAdjoin_adjoinC₄C₆ΔToModularForms
   obtain ⟨P, rfl⟩ := Ideal.Quotient.mk_surjective q
   rw [adjoinC₄C₆ΔToModularForms_aeval]
   have hhom : modularFormsToComplexAdjoin.toRingHom.comp
-      (MvPolynomial.aeval (R := ℤ)
-        ![DirectSum.of (ModularForm 𝒮ℒ) 4 E₄,
-          DirectSum.of (ModularForm 𝒮ℒ) 6 (-E₆),
-          DirectSum.of (ModularForm 𝒮ℒ) 12
-            (CuspForm.discriminant : ModularForm 𝒮ℒ 12)]).toRingHom =
+      (MvPolynomial.aeval (R := ℤ) c₄c₆ΔImage).toRingHom =
       Algebra.TensorProduct.includeRight.toRingHom.comp
         ((Universal.curve.adjoinC₄C₆ΔEquiv
           Universal.algebraicIndependent_c₄_c₆).toAlgHom.toRingHom.comp (Ideal.Quotient.mk _)) := by

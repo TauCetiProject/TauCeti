@@ -91,7 +91,7 @@ lemma homologyMap_cechDoubleComplexι_cechColumnHomologyIso_hom (p q : ℕ)
 
 /-- Composing a coproduct inclusion with the inverse column-homology comparison recovers the
 homology map of the corresponding summand inclusion. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 lemma ι_cechColumnHomologyIso_inv (p q : ℕ)
     [HasExactColimitsOfShape (Discrete {s : Finset ι // #s = p + 1}) C]
     (s : {s : Finset ι // #s = p + 1}) :

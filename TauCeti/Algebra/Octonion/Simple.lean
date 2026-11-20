@@ -26,8 +26,8 @@ nondegenerate Killing form. Through `LieAlgebra.Basis.cartanMatrix_base_eq`, the
 Lie algebra is Killing-simple of type `G₂`.
 
 The identification of `Der 𝕆` with the split Lie algebra `LieAlgebra.g₂` presented by Serre's
-relations, that is the injectivity of `TauCeti.Octonion.g₂ToDerivationLieAlgebra`, is not proved
-here.
+relations, that is the injectivity of `TauCeti.Octonion.g₂ToDerivationLieAlgebra`, is deduced from
+this basis by Serre's theorem in `TauCeti/Algebra/Octonion/G2.lean`.
 
 ## Main definitions
 

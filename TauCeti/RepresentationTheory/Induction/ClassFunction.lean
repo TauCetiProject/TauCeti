@@ -8,9 +8,11 @@ module
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 -- The translation action `g • (x : G ⧸ S)` occurs in the statements about which summands vanish.
 public import Mathlib.GroupTheory.GroupAction.Quotient
+-- `Subgroup.mk_mulEquiv_out_bijective` gives the finite index in the statement of
+-- `Subgroup.indClassFun_mulEquiv`.
+public import TauCeti.GroupTheory.Coset.Basic
 -- Non-public: `TauCeti.smul_quotientGroup_mk_eq_self_iff` is used only inside a proof.
 import TauCeti.GroupTheory.QuotientGroup.Basic
-import TauCeti.GroupTheory.Coset.Basic
 
 /-!
 # The induced class function
@@ -58,6 +60,8 @@ and to deduce `TauCeti.character_ind` from `Subgroup.indClassFun_eq_natCard_inv_
 * `Subgroup.indClassFun_top` and `Subgroup.indClassFun_indClassFun_subgroupOf`: for
   conjugation-invariant inducing functions, induction from `⊤` is the identity, and induction is
   transitive along `L ≤ T ≤ G`.
+* `Subgroup.indClassFun_mulEquiv`: induction of conjugation-invariant functions is natural under a
+  group isomorphism carrying one finite-index subgroup onto another.
 * `Subgroup.natCard_nsmul_indClassFun`: for a conjugation-invariant function `f`, the additive
   group-sum form `|S| • (Ind f)(g) = ∑_{x ∈ G} f(x⁻¹gx)`, and its averaged corollary
   `Subgroup.indClassFun_eq_natCard_inv_mul_sum`.
@@ -402,6 +406,31 @@ theorem indClassFun_indClassFun_subgroupOf (L : Subgroup G) {T : Subgroup G}
           (fun q : G ⧸ L => Function.indTerm f g q.out), Fintype.sum_prod_type]
         refine Finset.sum_congr rfl fun t _ => Finset.sum_congr rfl fun s _ => ?_
         exact Function.indTerm_eq_of_mk_eq_of_conj f hf _ _ _ (Quotient.out_eq' _).symm
+
+/-- **Induction is natural under group isomorphisms.** If `φ : G ≃* G'` carries the
+finite-index subgroup `S` onto `S'`, then inducing a conjugation-invariant function `f'` of `S'`
+and reading the result along `φ` is inducing the pullback of `f'` along `φ`. The subgroup `S'`
+then has finite index too. Only an additive commutative monoid of coefficients is needed. -/
+theorem indClassFun_mulEquiv (S : Subgroup G) [S.FiniteIndex] {G' : Type*} [Group G']
+    {S' : Subgroup G'} (φ : G ≃* G') (hφ : ∀ g, φ g ∈ S' ↔ g ∈ S) {f' : S' → k}
+    (hf' : ∀ y s, f' (s * y * s⁻¹) = f' y) (g : G) :
+    haveI : S'.FiniteIndex := @Subgroup.finiteIndex_of_finite_quotient _ _ S'
+      (Finite.of_surjective _ (Subgroup.mk_mulEquiv_out_bijective φ hφ).surjective)
+    Subgroup.indClassFun S' f' (φ g) =
+      Subgroup.indClassFun S (fun s => f' ⟨φ s, (hφ s).2 s.2⟩) g := by
+  classical
+  have hb := Subgroup.mk_mulEquiv_out_bijective φ hφ
+  have : S'.FiniteIndex :=
+    @Subgroup.finiteIndex_of_finite_quotient _ _ S' (Finite.of_surjective _ hb.surjective)
+  let := Fintype.ofFinite (G ⧸ S)
+  let := Fintype.ofFinite (G' ⧸ S')
+  -- Reindex the coset sum over `G' ⧸ S'` along the transversal `q ↦ φ q.out`.
+  simp only [Subgroup.indClassFun]
+  rw [← hb.sum_comp]
+  refine Finset.sum_congr rfl fun q _ => ?_
+  rw [Function.indTerm_eq_of_mk_eq_of_conj f' hf' _ _ _ (QuotientGroup.out_eq' _)]
+  have hconj : (φ q.out)⁻¹ * φ g * φ q.out = φ (q.out⁻¹ * g * q.out) := by simp
+  simp only [Function.indTerm_apply, hconj, hφ]
 
 /-! ### The group-sum form -/
 
