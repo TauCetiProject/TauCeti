@@ -10,6 +10,8 @@ public import Mathlib.CategoryTheory.ComposableArrows.Basic
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Map
 public import TauCeti.Order.Fin.Induction
 
+import TauCeti.Data.Fin.Basic
+
 /-!
 # Strings of composable arrows of an action category
 
@@ -131,17 +133,17 @@ theorem vertexLabel_two (g : Fin (n + 2) → G) : vertexLabel g 2 = g 1 * g 0 :=
 @[simp]
 theorem vertexLabel_snoc_castSucc (g : Fin n → G) (h : G) (i : Fin (n + 1)) :
     vertexLabel (Fin.snoc g h : Fin (n + 1) → G) i.castSucc = vertexLabel g i := by
-  induction i using Fin.induction with
-  | zero => simp
-  | succ i ih => simp [ih]
+  rw [vertexLabel, vertexLabel, ← Fin.partialProd_init]
+  congr
+  ext k
+  simp [Fin.init]
 
 /-- Applying a monoid homomorphism to the consecutive labels applies it to the labels of the
 points. -/
+@[simp]
 theorem vertexLabel_comp {H : Type*} [Monoid H] (φ : G →* H) (g : Fin n → G) (i : Fin (n + 1)) :
-    vertexLabel (φ ∘ g) i = φ (vertexLabel g i) := by
-  induction i using Fin.induction with
-  | zero => simp
-  | succ i ih => simp [ih]
+    vertexLabel (φ ∘ g) i = φ (vertexLabel g i) :=
+  congrArg MulOpposite.unop (Fin.map_partialProd φ.op (fun k ↦ MulOpposite.op (g k)) i).symm
 
 variable (G X n) in
 /-- The `n`-simplices of the nerve of an action category correspond to `X × Gⁿ`, by recording the
@@ -258,6 +260,7 @@ theorem nerveMap_id (x : X × (Fin n → G)) : nerveMap id x = x := by
 
 /-- Restriction is contravariantly functorial: restricting along `θ` and then along `ψ` is
 restricting along `θ ∘ ψ`. -/
+@[simp]
 theorem nerveMap_nerveMap {l m : ℕ} (θ : Fin (m + 1) → Fin (n + 1))
     (ψ : Fin (l + 1) → Fin (m + 1)) (x : X × (Fin n → G)) :
     nerveMap ψ (nerveMap θ x) = nerveMap (θ ∘ ψ) x := by
@@ -271,8 +274,8 @@ theorem nerveMap_map {m : ℕ} {H Y : Type*} [Group H] [MulAction H Y]
     (hf : ∀ (g : G) (x : X), f (g • x) = φ g • f x) (x : X × (Fin n → G)) :
     nerveMap θ (f x.1, φ ∘ x.2) = (f (nerveMap θ x).1, φ ∘ (nerveMap θ x).2) := by
   refine Prod.ext ?_ (funext fun j ↦ ?_)
-  · simp [vertexLabel_comp, hf]
-  · simp [vertexLabel_comp]
+  · simp [hf]
+  · simp
 
 /-- For a monotone `θ`, `nerveMap θ` is the simplicial operator of the nerve: precomposing a
 string of composable arrows with `θ`. -/

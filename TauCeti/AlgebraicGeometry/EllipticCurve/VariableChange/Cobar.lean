@@ -231,13 +231,24 @@ theorem cobarMap_id (n : ℕ) : cobarMap (id : Fin (n + 1) → Fin (n + 1)) = Ri
 theorem cobarMap_comp {l m n : ℕ} (θ : Fin (m + 1) → Fin (n + 1))
     (ψ : Fin (l + 1) → Fin (m + 1)) :
     (cobarMap θ).comp (cobarMap ψ) = cobarMap (θ ∘ ψ) :=
-  (simplexEquiv _ l).injective (by simp [nerveMap_nerveMap])
+  (simplexEquiv _ l).injective (by simp)
 
 /-- Functoriality of `cobarMap`, evaluated at an element. -/
+@[simp]
 theorem cobarMap_cobarMap {l m n : ℕ} (θ : Fin (m + 1) → Fin (n + 1))
     (ψ : Fin (l + 1) → Fin (m + 1)) (f : CobarRing l) :
     cobarMap θ (cobarMap ψ f) = cobarMap (θ ∘ ψ) f :=
   RingHom.congr_fun (cobarMap_comp θ ψ) f
+
+/-- The last coface `δⁿ⁺¹ : Γ^{⊗n} →+* Γ^{⊗(n+1)}`, forgetting the last arrow of a chain, is the
+inclusion `includeLeft n` of the first `n` tensor factors. -/
+theorem cobarMap_succAbove_last_eq_includeLeft (n : ℕ) :
+    cobarMap (Fin.last (n + 1)).succAbove = includeLeft n := by
+  refine (simplexEquiv _ n).injective ?_
+  rw [simplexEquiv_cobarMap, universalSimplex, simplexEquiv_succ_apply, RingHom.id_comp]
+  refine Prod.ext ?_ (funext fun j ↦ ?_)
+  · simp
+  · simp [Fin.succAbove_last]
 
 /-! ### The weight-`k` cosimplicial abelian group and the cobar complex -/
 
@@ -255,11 +266,9 @@ theorem map_cobarWeight_mul_cobarWeight {l m n : ℕ} (θ : Fin (m + 1) → Fin 
   have h := congrArg (fun x ↦ (vertexLabel x.2 (ψ 0)).u)
     ((simplexEquiv_eq (cobarMap θ)).symm.trans (simplexEquiv_cobarMap θ))
   simp only [vertexLabel_comp, vertexLabel_nerveMap, VariableChange.mul_inv_u] at h
-  -- The scaling factor of `C.map f` is `Units.map f C.u`.
-  have h' : Units.map (cobarMap θ).toMonoidHom (vertexLabel (universalSimplex m).2 (ψ 0)).u =
-      (vertexLabel (universalSimplex n).2 (θ (ψ 0))).u *
-        (vertexLabel (universalSimplex n).2 (θ 0)).u⁻¹ := h
-  rw [cobarWeight, cobarWeight, cobarWeight, h', inv_mul_cancel_right, Function.comp_apply]
+  simp only [VariableChange.mapHom, MonoidHom.coe_mk, OneHom.coe_mk, VariableChange.map_u] at h
+  rw [cobarWeight, cobarWeight, cobarWeight, RingHom.toMonoidHom_eq_coe, h, inv_mul_cancel_right,
+    Function.comp_apply]
 
 /-- A map `θ` keeping the initial vertex has trivial weight. -/
 theorem cobarWeight_eq_one_of_apply_zero_eq_zero {m n : ℕ} {θ : Fin (m + 1) → Fin (n + 1)}
@@ -456,14 +465,9 @@ theorem cobarMap_succAbove_one_eq_coproduct :
 /-- The coface `δ² : Γ →+* Γ ⊗_A Γ`, keeping the first arrow of a composable pair, is the
 inclusion `id ⊗ 1 = algebraMap` of the left factor. -/
 theorem cobarMap_succAbove_two_eq_algebraMap :
-    cobarMap (m := 1) (n := 2) (Fin.succAbove 2) = algebraMap ArrowRing (ChangeRing ArrowRing) := by
-  refine (simplexEquiv _ 1).injective ?_
-  rw [simplexEquiv_cobarMap, universalSimplex_two, simplexEquiv_one_apply, arrowEquiv_apply]
-  refine Prod.ext ?_ (funext fun j ↦ ?_)
-  · simp
-  · fin_cases j
-    have h : (2 : Fin 3).succAbove 1 = 1 := by decide
-    simp [h]
+    cobarMap (m := 1) (n := 2) (Fin.succAbove 2) = algebraMap ArrowRing (ChangeRing ArrowRing) :=
+  -- `2 : Fin 3` is `Fin.last 2`, and `includeLeft 1` is `algebraMap` of `Γ = Γ^{⊗1}`.
+  cobarMap_succAbove_last_eq_includeLeft 1
 
 end LowDegree
 
