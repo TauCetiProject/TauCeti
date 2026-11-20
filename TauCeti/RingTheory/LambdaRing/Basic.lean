@@ -40,9 +40,11 @@ rather than a class.
 * `TauCeti.PreLambdaStructure.IsLine`: line elements, those with `λ_t l = 1 + l t`.
 * `TauCeti.PreLambdaHom`: ring homomorphisms commuting with every `λⁿ`.
 * `TauCeti.PreLambdaStructure.IsLambdaIdeal`: ideals stable under the positive operations, and
-  `TauCeti.PreLambdaStructure.quotient`, the induced structure on the quotient ring.
+  `TauCeti.PreLambdaStructure.quotient`, the induced structure on the quotient ring, with
+  `TauCeti.PreLambdaStructure.quotientLift`, its universal property.
 * `TauCeti.PreLambdaStructure.IsLambdaSubring`: subrings stable under every operation, and
-  `TauCeti.PreLambdaStructure.restrict`, the induced structure on such a subring.
+  `TauCeti.PreLambdaStructure.restrict`, the induced structure on such a subring, with
+  `TauCeti.PreLambdaHom.codRestrict`, its universal property.
 
 ## Main results
 
@@ -118,6 +120,7 @@ theorem totalSeries_zero : Λ.totalSeries 0 = 1 := by
   exact (Λ.isUnit_totalSeries 0).mul_left_cancel (h.symm.trans (mul_one _).symm)
 
 /-- The zero formula: `λ⁰ 0 = 1` and `λⁿ 0 = 0` for `n ≠ 0`. -/
+@[simp]
 theorem lambda_apply_zero (n : ℕ) : Λ.lambda n 0 = if n = 0 then 1 else 0 := by
   rw [← coeff_totalSeries, totalSeries_zero, coeff_one]
 
@@ -508,6 +511,26 @@ theorem coe_quotientMk (I : Ideal R) (hI : Λ.IsLambdaIdeal I) :
     ⇑(Λ.quotientMk I hI) = Ideal.Quotient.mk I :=
   (rfl)
 
+/-- A morphism vanishing on a λ-ideal factors through the quotient structure. -/
+def quotientLift (I : Ideal R) (hI : Λ.IsLambdaIdeal I) (f : PreLambdaHom Λ Λ')
+    (hf : ∀ x ∈ I, f x = 0) : PreLambdaHom (Λ.quotient I hI) Λ' where
+  __ := Ideal.Quotient.lift I f.toRingHom hf
+  map_lambda' n z := by
+    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective z
+    exact f.map_lambda n x
+
+@[simp]
+theorem quotientLift_mk (I : Ideal R) (hI : Λ.IsLambdaIdeal I) (f : PreLambdaHom Λ Λ')
+    (hf : ∀ x ∈ I, f x = 0) (x : R) :
+    Λ.quotientLift I hI f hf (Ideal.Quotient.mk I x) = f x :=
+  (rfl)
+
+@[simp]
+theorem quotientLift_comp_quotientMk (I : Ideal R) (hI : Λ.IsLambdaIdeal I)
+    (f : PreLambdaHom Λ Λ') (hf : ∀ x ∈ I, f x = 0) :
+    (Λ.quotientLift I hI f hf).comp (Λ.quotientMk I hI) = f :=
+  (rfl)
+
 /-- The quotient structure is the only pre-λ structure on `R ⧸ I` for which the quotient map
 commutes with every `λⁿ`. -/
 theorem eq_quotient {I : Ideal R} (hI : Λ.IsLambdaIdeal I) {Λ' : PreLambdaStructure (R ⧸ I)}
@@ -577,6 +600,26 @@ def subtype (A : Subring R) (hA : Λ.IsLambdaSubring A) : PreLambdaHom (Λ.restr
 @[simp]
 theorem coe_subtype (A : Subring R) (hA : Λ.IsLambdaSubring A) :
     ⇑(Λ.subtype A hA) = ((↑) : A → R) :=
+  (rfl)
+
+variable {Λ} in
+/-- A morphism with values in a λ-subring, as a morphism into the restricted structure. -/
+def _root_.TauCeti.PreLambdaHom.codRestrict (f : PreLambdaHom Λ' Λ) (A : Subring R)
+    (hA : Λ.IsLambdaSubring A) (hf : ∀ x, f x ∈ A) : PreLambdaHom Λ' (Λ.restrict A hA) where
+  __ := f.toRingHom.codRestrict A hf
+  map_lambda' n x := Subtype.ext (f.map_lambda n x)
+
+variable {Λ} in
+@[simp]
+theorem _root_.TauCeti.PreLambdaHom.coe_codRestrict_apply (f : PreLambdaHom Λ' Λ)
+    (A : Subring R) (hA : Λ.IsLambdaSubring A) (hf : ∀ x, f x ∈ A) (x : S) :
+    (f.codRestrict A hA hf x : R) = f x :=
+  (rfl)
+
+@[simp]
+theorem subtype_comp_codRestrict (f : PreLambdaHom Λ' Λ) (A : Subring R)
+    (hA : Λ.IsLambdaSubring A) (hf : ∀ x, f x ∈ A) :
+    (Λ.subtype A hA).comp (f.codRestrict A hA hf) = f :=
   (rfl)
 
 /-- The restricted structure is the only pre-λ structure on a λ-subring for which the inclusion

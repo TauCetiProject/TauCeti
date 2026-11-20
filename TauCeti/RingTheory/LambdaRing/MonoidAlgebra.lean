@@ -144,8 +144,7 @@ def lineMonomialMapDomain (f : M →* N) : PreLambdaHom (lineMonomial M) (lineMo
   PreLambdaHom.ofClosure (mapDomainRingHom ℤ f) addSubgroupClosure_range_of <| by
     rintro _ ⟨m, rfl⟩
     have hf : mapDomainRingHom ℤ f (of ℤ M m) = of ℤ N (f m) := by simp [of_apply]
-    rw [totalSeries_lineMonomial_of, hf, totalSeries_lineMonomial_of, map_add, map_one, map_mul,
-      map_C, map_X, hf]
+    simp [-of_apply, totalSeries_lineMonomial_of, hf]
 
 @[simp]
 theorem coe_lineMonomialMapDomain (f : M →* N) :

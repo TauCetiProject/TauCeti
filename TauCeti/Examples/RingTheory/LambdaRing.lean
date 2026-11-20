@@ -58,10 +58,13 @@ def oneAddXAddXSq : (ℤ⟦X⟧)ˣ :=
 theorem coe_oneAddXAddXSq : (oneAddXAddXSq : ℤ⟦X⟧) = 1 + X + X ^ 2 :=
   IsUnit.unit_spec _
 
+theorem constantCoeff_oneAddXAddXSq : constantCoeff (oneAddXAddXSq : ℤ⟦X⟧) = 1 := by
+  simp [coe_oneAddXAddXSq]
+
 theorem constantCoeff_zpow_oneAddXAddXSq (m : ℤ) :
     constantCoeff (↑(oneAddXAddXSq ^ m) : ℤ⟦X⟧) = 1 := by
   have h : Units.map (constantCoeff (R := ℤ)).toMonoidHom oneAddXAddXSq = 1 :=
-    Units.ext (by simp [coe_oneAddXAddXSq])
+    Units.ext constantCoeff_oneAddXAddXSq
   have hm := congrArg Units.val (map_zpow (Units.map (constantCoeff (R := ℤ)).toMonoidHom)
     oneAddXAddXSq m)
   rw [h, one_zpow, Units.val_one, Units.coe_map] at hm
@@ -74,7 +77,7 @@ theorem coeff_one_zpow_oneAddXAddXSq (m : ℤ) :
   have hstep (k : ℤ) : PowerSeries.coeff 1 (↑(oneAddXAddXSq ^ (k + 1)) : ℤ⟦X⟧) =
       PowerSeries.coeff 1 (↑(oneAddXAddXSq ^ k) : ℤ⟦X⟧) + 1 := by
     rw [zpow_add_one, Units.val_mul, coeff_one_mul, hu, constantCoeff_zpow_oneAddXAddXSq,
-      ← zpow_one oneAddXAddXSq, constantCoeff_zpow_oneAddXAddXSq]
+      constantCoeff_oneAddXAddXSq]
     ring
   induction m using Int.induction_on with
   | zero => simp
@@ -125,12 +128,9 @@ example :
     (lineMonomial (Multiplicative ℤ)).lambda 2
         (MonoidAlgebra.of ℤ _ (Multiplicative.ofAdd 1) +
           MonoidAlgebra.of ℤ _ (Multiplicative.ofAdd (-1))) = 1 := by
-  have hu := (isLine_lineMonomial_of (Multiplicative.ofAdd (1 : ℤ))).lambda_eq_zero le_rfl
-  have hv := (isLine_lineMonomial_of (Multiplicative.ofAdd (-1 : ℤ))).lambda_eq_zero le_rfl
-  rw [lambda_add, Finset.Nat.sum_antidiagonal_succ, Finset.Nat.sum_antidiagonal_succ,
-    Finset.Nat.antidiagonal_zero, Finset.sum_singleton]
-  simp only [hu, hv, lambda_zero, lambda_one, mul_zero, mul_one, zero_add, add_zero]
-  rw [← map_mul, ← ofAdd_add, add_neg_cancel, ofAdd_zero, map_one]
+  have h : Ring.choose (1 : ℤ) 2 = 0 := by
+    simpa [binomial_lambda] using (isLine_binomial_one (R := ℤ)).lambda_eq_zero le_rfl
+  simp [lambda_add, Finset.Nat.sum_antidiagonal_succ, h, MonoidAlgebra.one_def]
 
 /-- For the trivial monoid, the line-monomial structure is the binomial structure on `ℤ`. -/
 example (n : ℕ) (c : ℤ) :
