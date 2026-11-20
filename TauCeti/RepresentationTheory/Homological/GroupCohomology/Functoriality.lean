@@ -31,9 +31,11 @@ if `c` is a biproduct bicone of `A` and `B`, for instance the concrete product
 
 * `TauCeti.groupCohomology.mapCocycles₁_apply`: the value of a pulled-back `1`-cocycle.
 * `TauCeti.groupCohomology.mapCocycles₂_apply`: the value of a pulled-back `2`-cocycle.
-* `TauCeti.groupCohomology.map_id_add` and `TauCeti.groupCohomology.map_id_smul`: the map induced
-  on cohomology is `k`-linear in the morphism of representations.
-* `groupCohomology.smul_eq_zero_of_forall_smul_eq_zero` and
+* `TauCeti.groupCohomology.map_id_add`, `TauCeti.groupCohomology.map_id_smul`, and
+  `TauCeti.groupCohomology.map_id_nsmul`: the map induced on cohomology is `k`-linear in the
+  morphism of representations.
+* `groupCohomology.smul_eq_zero_of_forall_smul_eq_zero`,
+  `groupCohomology.nsmul_eq_zero_of_forall_nsmul_eq_zero`, and
   `groupCohomology.natCard_V_nsmul_eq_zero`: scalars annihilating `A` (in particular `Nat.card A`)
   annihilate `Hⁿ(G, A)` in every degree.
 * `TauCeti.groupCohomology.smul_bijective` and `TauCeti.groupCohomology.nsmul_bijective`: a
@@ -103,7 +105,8 @@ theorem map_id_smul {A B : Rep k G} (c : k) (φ : A ⟶ B) (n : ℕ) :
     map (MonoidHom.id G) (c • φ) n = c • map (MonoidHom.id G) φ n :=
   (functor k G n).map_smul c φ
 
-/-- The map induced on `Hⁿ(G, -)` by `m • φ` (`m : ℕ`) is `m` times the map induced by `φ`. -/
+/-- The map induced on `Hⁿ(G, -)` by a natural-number multiple `m • φ` of a morphism of
+representations is `m` times the map induced by `φ`. -/
 @[simp]
 theorem map_id_nsmul {A B : Rep k G} (m : ℕ) (φ : A ⟶ B) (n : ℕ) :
     map (MonoidHom.id G) (m • φ) n = m • map (MonoidHom.id G) φ n :=
@@ -126,9 +129,9 @@ theorem smul_bijective (c : k) (A : Rep k G)
     funext fun x ↦ by simp
   exact hfun ▸ ConcreteCategory.bijective_of_isIso (c • 𝟙 (groupCohomology A n))
 
-/-- Multiplication by `m : ℕ`, if bijective on `A`, is bijective on `Hⁿ(G, A)` in every degree
-`n`. -/
-theorem nsmul_bijective (m : ℕ) (A : Rep k G)
+/-- If multiplication by `m : ℕ` is bijective on `A`, then it is bijective on `Hⁿ(G, A)` in every
+degree `n`. -/
+theorem nsmul_bijective {A : Rep k G} {m : ℕ}
     (hA : Function.Bijective fun a : A ↦ m • a) (n : ℕ) :
     Function.Bijective fun x : groupCohomology A n ↦ m • x := by
   simpa only [Nat.cast_smul_eq_nsmul] using
@@ -151,10 +154,10 @@ theorem smul_eq_zero_of_forall_smul_eq_zero {A : Rep k G} {c : k} {n : ℕ}
     simp [Rep.smul_hom, hA a]
   simpa [hc] using congrArg (fun f ↦ f.hom x) (map_id_smul c (𝟙 A) n).symm
 
-/-- A natural number `m` that annihilates every element of `A` annihilates `Hⁿ(G, A)` in every
-degree `n`. -/
-theorem nsmul_eq_zero_of_forall_nsmul_eq_zero {A : Rep k G} {m n : ℕ}
-    (hA : ∀ a : A, m • a = 0) (x : groupCohomology A n) : m • x = 0 := by
+/-- If `m : ℕ` annihilates every element of the representation `A`, then `m` annihilates
+`Hⁿ(G, A)` in every degree `n`. -/
+theorem nsmul_eq_zero_of_forall_nsmul_eq_zero {A : Rep k G} {m : ℕ}
+    (hA : ∀ a : A, m • a = 0) {n : ℕ} (x : groupCohomology A n) : m • x = 0 := by
   rw [← Nat.cast_smul_eq_nsmul k]
   exact smul_eq_zero_of_forall_smul_eq_zero
     (fun a ↦ by rw [Nat.cast_smul_eq_nsmul, hA a]) x

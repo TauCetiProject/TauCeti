@@ -172,9 +172,9 @@ private theorem exists_openEmbedding_isMorse_affineChartInvOneAddDistSq
       (MeasureTheory.volume : MeasureTheory.Measure (EuclideanSpace ℂ (Fin n)))
       hιR hinj_mfR).exists
   let ρ : (Projectivization.affineChart i).symm ⁻¹' X → ℝ := fun z ↦ ‖ι z - c‖ ^ 2
-  let F : X → ℝ := fun x ↦ Projectivization.affineChartInvOneAddDistSq i c x.1
+  let F : X → ℝ := fun x ↦ Projectivization.affineChartInvOneAddDistSq i c x.val
   have hF_cont : Continuous F :=
-    (Projectivization.continuous_affineChartInvOneAddDistSq i c).comp continuous_subtype_val
+    (Projectivization.continuous_affineChartInvOneAddDistSq i c).comp continuous_subtypeVal
   have hFj : F ∘ j = fun z ↦ (1 + ρ z)⁻¹ := by
     ext z
     simp [F, j, ι, ρ, eL]
@@ -183,7 +183,7 @@ private theorem exists_openEmbedding_isMorse_affineChartInvOneAddDistSq
   have hf_morse : IsMorse 𝓘(ℝ, E) (F ∘ j) := hFj ▸ hc_morse.inv_one_add hρ_denom
   -- Step 4: verify the sign, compactness, and plurisubharmonic Morse-index lower bound of `F`.
   refine ⟨j, F, hj, hF_cont, hf_morse,
-    ⟨1, forall_mem_range.2 fun x ↦ Projectivization.affineChartInvOneAddDistSq_le_one i c x.1⟩,
+    ⟨1, forall_mem_range.2 fun x ↦ Projectivization.affineChartInvOneAddDistSq_le_one i c x.val⟩,
     fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_,
     fun _ _ _ _ ↦ (isClosed_Icc.preimage hF_cont).isCompact, fun p hp ↦ ?_⟩
   · rw [Set.range_restrictPreimage, ← image_univ, ← Projectivization.affineChart_target i,

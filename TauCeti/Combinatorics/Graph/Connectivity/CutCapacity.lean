@@ -50,20 +50,20 @@ open Classical in
 noncomputable def edgeCutCapacity [Fintype G.edgeSet] [AddCommMonoid K]
     (c : G.edgeSet → K) (S : Finset G.vertexSet) : K :=
   ∑ e : G.edgeSet,
-    if e.1 ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet)) then c e else 0
+    if e.val ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet)) then c e else 0
 
 /-- The defining finite-sum formula for `edgeCutCapacity`. -/
 theorem edgeCutCapacity_def [Fintype G.edgeSet] [AddCommMonoid K]
     (c : G.edgeSet → K) (S : Finset G.vertexSet)
     [DecidablePred fun e : G.edgeSet ↦
-      e.1 ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet))] :
+      e.val ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet))] :
     G.edgeCutCapacity c S =
       ∑ e : G.edgeSet,
-        if e.1 ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet)) then c e else 0 := by
+        if e.val ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet)) then c e else 0 := by
   classical
   apply sum_congr rfl
   intro e _
-  by_cases he : e.1 ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet)) <;>
+  by_cases he : e.val ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet)) <;>
     simp [he]
 
 /-- Giving every actual edge capacity one makes the capacity of a cut equal to the number of
@@ -78,9 +78,9 @@ theorem edgeCutCapacity_one [Fintype G.edgeSet] (S : Finset G.vertexSet) :
     Subtype.val ⁻¹' G.edgeCut (Subtype.val '' (S : Set G.vertexSet))
   calc
     (∑ e : G.edgeSet,
-        if e.1 ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet)) then 1 else 0) =
+        if e.val ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet)) then 1 else 0) =
         #(univ.filter fun e : G.edgeSet ↦
-          e.1 ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet))) := by
+          e.val ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet))) := by
       rw [card_filter]
     _ = C.ncard := by
       rw [Set.ncard_eq_toFinset_card C]
@@ -113,9 +113,9 @@ theorem pairCapacity_def [Fintype G.edgeSet] [AddCommMonoid K]
 those vertices. -/
 theorem pairCapacity_mk_of_ne [Fintype G.edgeSet] [AddCommMonoid K]
     (c : G.edgeSet → K) {x y : G.vertexSet} (hxy : x ≠ y)
-    [DecidablePred fun e : G.edgeSet ↦ G.IsLink e.1 x.1 y.1] :
+    [DecidablePred fun e : G.edgeSet ↦ G.IsLink e.val x.val y.val] :
     G.pairCapacity c s(x, y) =
-      ∑ e : G.edgeSet, if G.IsLink e.1 x.1 y.1 then c e else 0 := by
+      ∑ e : G.edgeSet, if G.IsLink e.val x.val y.val then c e else 0 := by
   classical
   simp [pairCapacity_def, hxy, G.edgeEnds_eq_iff_isLink]
 
@@ -172,7 +172,7 @@ theorem pairCutCapacity_pairCapacity [Fintype G.vertexSet] [Fintype G.edgeSet]
       Finset.sum_fiberwise univ G.edgeEnds
         (fun e ↦ if (G.edgeEnds e).Crosses (S : Set G.vertexSet) then c e else 0)
     _ = ∑ e : G.edgeSet,
-          if e.1 ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet)) then c e else 0 := by
+          if e.val ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet)) then c e else 0 := by
       apply sum_congr rfl
       intro e _
       simp only [G.edgeEnds_crosses_iff_mem_edgeCut e S]
@@ -236,19 +236,28 @@ noncomputable instance instFintypeOfSimpleGraphEdgeSet [Fintype V] :
 /-- Restrict capacities on unordered vertex pairs to the actual edges of
 `Graph.ofSimpleGraph G`. -/
 def ofSimpleGraphCapacity (c : Sym2 V → K) : (Graph.ofSimpleGraph G).edgeSet → K :=
-  fun e ↦ c e.1
+  fun e ↦ c e.val
 
 @[simp]
 theorem ofSimpleGraphCapacity_apply (c : Sym2 V → K)
-    (e : (Graph.ofSimpleGraph G).edgeSet) : G.ofSimpleGraphCapacity c e = c e.1 :=
+    (e : (Graph.ofSimpleGraph G).edgeSet) : G.ofSimpleGraphCapacity c e = c e.val :=
   (rfl)
+
+/-- Restricting pair capacities that are nonnegative on the edges of `G` produces nonnegative edge
+capacities on `Graph.ofSimpleGraph G`. Diagonal and non-edge values play no role. -/
+theorem ofSimpleGraphCapacity_nonneg [Zero K] [LE K] {c : Sym2 V → K}
+    (hc : ∀ p ∈ G.edgeSet, 0 ≤ c p) :
+    0 ≤ G.ofSimpleGraphCapacity c := by
+  intro e
+  rw [Pi.zero_apply, ofSimpleGraphCapacity_apply]
+  exact hc e.val (by simpa using e.property)
 
 /-- Include a vertex of a simple graph in the full vertex set of `Graph.ofSimpleGraph G`. -/
 def toOfSimpleGraphVertex (x : V) : (Graph.ofSimpleGraph G).vertexSet :=
   ⟨x, by rw [Graph.vertexSet_ofSimpleGraph]; exact Set.mem_univ x⟩
 
 @[simp]
-theorem toOfSimpleGraphVertex_val (x : V) : (G.toOfSimpleGraphVertex x).1 = x :=
+theorem toOfSimpleGraphVertex_val (x : V) : (G.toOfSimpleGraphVertex x).val = x :=
   (rfl)
 
 /-- Include a finite vertex set in the full vertex set of `Graph.ofSimpleGraph G`. -/
@@ -301,7 +310,7 @@ theorem edgeCutCapacity_eq_pairCutCapacity [Fintype V] [AddCommMonoid K]
   rw [image_val_toOfSimpleGraphFinset]
   calc
     (∑ e : (Graph.ofSimpleGraph G).edgeSet,
-        if e.1 ∈ (Graph.ofSimpleGraph G).edgeCut (S : Set V) then
+        if e.val ∈ (Graph.ofSimpleGraph G).edgeCut (S : Set V) then
           G.ofSimpleGraphCapacity c e else 0) =
         ∑ p ∈ Finset.univ.filter (· ∈ G.edgeSet), if p.Crosses (S : Set V) then c p else 0 := by
       simp only [ofSimpleGraphCapacity]

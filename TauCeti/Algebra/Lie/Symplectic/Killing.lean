@@ -284,7 +284,7 @@ private theorem two_mul_killingForm_apply (X Y : sp l K) :
     ext1 W
     have hW : jConj (L W) = L W := by
       rw [jConj_apply, ← mem_sp_iff_J_mul_transpose_mul_J_eq]
-      exact (sp l K).lie_mem X.2 ((sp l K).lie_mem Y.2 W.2)
+      exact (sp l K).lie_mem X.property ((sp l K).lie_mem Y.property W.property)
     apply Subtype.ext
     simp only [LinearMap.comp_apply, coe_symmetrize_apply, LinearMap.smul_apply,
       LieHom.coe_toLinearMap, LieSubalgebra.coe_incl, hW]
@@ -298,7 +298,8 @@ private theorem two_mul_killingForm_apply (X Y : sp l K) :
       LinearMap.add_comp, map_add, LinearMap.id_comp]
   rw [h1, map_smul, smul_eq_mul, ← killingForm_apply_apply] at htrace
   rw [htrace, hL, ← killingForm_apply_apply, Matrix.killingForm_apply,
-    trace_eq_zero_of_mem_sp X.2, Fintype.card_sum, trace_jConj_comp_ad_comp_ad X.2 Y.2]
+    trace_eq_zero_of_mem_sp X.property, Fintype.card_sum, trace_jConj_comp_ad_comp_ad X.property
+        Y.property]
   push_cast
   ring
 
