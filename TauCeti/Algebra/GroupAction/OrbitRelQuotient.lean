@@ -27,6 +27,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 * `TauCeti.MulAction.transversalEquivOrbitRelQuotient`: a set meeting every orbit, such that a
   group element carrying one of its points into it fixes that point, is a set of orbit
   representatives.
+* `TauCeti.MulAction.mk_eq_iff_mem_orbit_out`: a point lies in an orbit exactly when it lies in
+  the orbit of the chosen representative `Quotient.out`.
 * `TauCeti.MulAction.exists_smul_out_eq`: every point of an orbit is a translate of the chosen
   representative `Quotient.out` of that orbit.
 * `TauCeti.MulAction.injOn_quotientMk_slice`: if the slice map `(g, s) ↦ g • σ s` is injective
@@ -81,6 +83,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   exactly when they lie in the same `G`-orbit (`SubMulAction.orbitRel_iff`). If the stabilizer in
   `G` of a point of `S` lies in `H`, its stabilizer in `H` is trivial exactly when its stabilizer in
   `G` is (`SubMulAction.stabilizer_eq_bot_iff`).
+* `TauCeti.MulAction.stabilizer_smul_le_iff_of_normal`: whether a point stabilizer lies in a
+  normal subgroup depends only on the orbit of the point.
 * `TauCeti.MulAction.stabilizer_sigma_mk`: the stabilizer of a sigma point is its fibre
   stabilizer.
 * `TauCeti.MulAction.orbitRelQuotientSigmaEquiv`: the orbit space of a componentwise sigma
@@ -200,12 +204,24 @@ theorem _root_.Subgroup.orbitRel_smul_smul_of_inv_mul_mem (H : Subgroup G) [H.No
     simpa [mul_assoc] using hk
   · simp [MulAction.subgroup_smul_def, smul_smul, mul_assoc]
 
+/-- **A point lies in an orbit exactly when it lies in the orbit of the chosen representative.**
+This combines Mathlib's `MulAction.orbitRel.Quotient.mem_orbit` and
+`MulAction.orbitRel.Quotient.orbit_eq_orbit_out`. -/
+@[to_additive AddAction.mk_eq_iff_mem_orbit_out
+  /-- **A point lies in an orbit exactly when it lies in the orbit of the chosen representative.**
+This combines Mathlib's `AddAction.orbitRel.Quotient.mem_orbit` and
+`AddAction.orbitRel.Quotient.orbit_eq_orbit_out`. -/]
+theorem MulAction.mk_eq_iff_mem_orbit_out {y : X} {ω : MulAction.orbitRel.Quotient G X} :
+    (Quotient.mk'' y : MulAction.orbitRel.Quotient G X) = ω ↔
+      y ∈ _root_.MulAction.orbit G ω.out := by
+  rw [← MulAction.orbitRel.Quotient.mem_orbit,
+    MulAction.orbitRel.Quotient.orbit_eq_orbit_out ω Quotient.out_eq']
+
 /-- **Every point of an orbit is a translate of its chosen representative.** This is Mathlib's
 `MulAction.orbitRel.Quotient.orbit_eq_orbit_out` in existential form. -/
 lemma MulAction.exists_smul_out_eq {y : X} {ω : MulAction.orbitRel.Quotient G X}
     (h : (Quotient.mk'' y : MulAction.orbitRel.Quotient G X) = ω) : ∃ g : G, g • ω.out = y :=
-  MulAction.mem_orbit_iff.1 <| MulAction.orbitRel.Quotient.orbit_eq_orbit_out ω Quotient.out_eq' ▸
-    MulAction.orbitRel.Quotient.mem_orbit.2 h
+  MulAction.mem_orbit_iff.1 <| MulAction.mk_eq_iff_mem_orbit_out.1 h
 
 /-- **Slices meet each orbit at most once.** If the slice map `(g, s) ↦ g • σ s` is injective on
 `G × U`, then distinct points of `U` lie in distinct orbits. -/
@@ -721,6 +737,18 @@ theorem MulAction.orbitRelQuotientCongr_symm_mk (φ : G ≃* H) (e : X ≃ Y)
   (rfl)
 
 end Congr
+
+/-- **Containment of stabilizers in a normal subgroup is an orbit property.** The stabilizers
+along an orbit are conjugate, so one of them lies in a normal subgroup `N` exactly when the other
+does. -/
+@[to_additive /-- **Containment of stabilizers in a normal subgroup is an orbit property.** The
+stabilizers along an orbit are conjugate, so one of them lies in a normal subgroup `N` exactly when
+the other does. -/]
+theorem MulAction.stabilizer_smul_le_iff_of_normal {N : Subgroup G} [N.Normal] {g : G} {x : X} :
+    _root_.MulAction.stabilizer G (g • x) ≤ N ↔ _root_.MulAction.stabilizer G x ≤ N := by
+  conv_lhs => rw [_root_.MulAction.stabilizer_smul_eq_stabilizer_map_conj,
+    ← Subgroup.Normal.map_conj_eq N g]
+  exact Subgroup.map_le_map_iff_of_injective (MulAut.conj g).injective
 
 section Sum
 
