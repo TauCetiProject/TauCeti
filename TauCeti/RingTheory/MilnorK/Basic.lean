@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Internal
-public import Mathlib.LinearAlgebra.TensorAlgebra.Basic
+public import Mathlib.LinearAlgebra.TensorAlgebra.Grading
 public import Mathlib.RingTheory.Congruence.Basic
 public import Mathlib.RingTheory.Congruence.Hom
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-!
 # Milnor K-theory
@@ -54,9 +56,10 @@ the Milnor ring is not an exterior algebra.
 * `TauCeti.MilnorK.symbol_append_cons_mul`: symbols are additive in every entry.
 * `TauCeti.MilnorK.ringHom_ext`: ring homomorphisms out of `MilnorK R` agreeing on degree-one
   classes are equal.
-* `TauCeti.MilnorK.lift_mem_of_mem_degree`: `lift` is a map of graded rings when the additive map
-  lands in degree one of a graded target.
-* `TauCeti.MilnorK.mem_degree_iff`: the degree-`n` group is the image of the degree-`n` tensors.
+* `TauCeti.MilnorK.lift_mem_of_mem_degree`: `lift` sends `degree R n` into the `n`-th piece of a
+  graded target when the additive map lands in its degree-one piece.
+* `TauCeti.MilnorK.degree_eq_span`, `TauCeti.MilnorK.mem_degree_iff`: the degree-`n` group is
+  spanned by the symbols of length `n`, and is the image of the degree-`n` tensors.
 * `TauCeti.MilnorK.iSup_degree_eq_top`, `TauCeti.MilnorK.span_range_symbol`: the degree
   submodules exhaust `MilnorK R`, and the symbols span it.
 * `TauCeti.MilnorK.instGradedMonoidDegree`: the degree submodules make `MilnorK R` a graded monoid.
@@ -234,7 +237,7 @@ theorem lift_mk (f : Additive Rˣ →+ A)
     (hf : ∀ a b : Rˣ, (a : R) + b = 1 → f (.ofMul a) * f (.ofMul b) = 0)
     (t : TensorAlgebra ℤ (Additive Rˣ)) :
     lift f hf (mk t) = TensorAlgebra.lift ℤ f.toIntLinearMap t :=
-  (rfl)
+  RingCon.lift_mk' _ t
 
 @[simp]
 theorem lift_ofUnit (f : Additive Rˣ →+ A)
@@ -242,6 +245,7 @@ theorem lift_ofUnit (f : Additive Rˣ →+ A)
     lift f hf (ofUnit a) = f (.ofMul a) := by
   rw [ofUnit, lift_mk, TensorAlgebra.lift_ι_apply, AddMonoidHom.coe_toIntLinearMap]
 
+@[simp]
 theorem lift_symbol (f : Additive Rˣ →+ A)
     (hf : ∀ a b : Rˣ, (a : R) + b = 1 → f (.ofMul a) * f (.ofMul b) = 0) (l : List Rˣ) :
     lift f hf (symbol l) = (l.map fun a ↦ f (.ofMul a)).prod := by
@@ -300,7 +304,7 @@ theorem map_id : map (RingHom.id R) = RingHom.id (MilnorK R) :=
 theorem map_comp (g : S →+* T) (f : R →+* S) : map (g.comp f) = (map g).comp (map f) :=
   ringHom_ext fun a ↦ by
     simp only [map_ofUnit, RingHom.comp_apply]
-    congr 1
+    exact congrArg ofUnit <| Units.ext <| by simp
 
 theorem map_map (g : S →+* T) (f : R →+* S) (x : MilnorK R) :
     map g (map f x) = map (g.comp f) x := by
@@ -316,6 +320,11 @@ variable (R) in
 (`TauCeti.MilnorK.mem_degree_iff`). -/
 def degree (n : ℕ) : Submodule ℤ (MilnorK R) :=
   Submodule.span ℤ (symbol '' {l : List Rˣ | l.length = n})
+
+/-- The degree-`n` Milnor K-group is spanned by the symbols of length `n`. -/
+theorem degree_eq_span (n : ℕ) :
+    degree R n = Submodule.span ℤ (symbol '' {l : List Rˣ | l.length = n}) :=
+  (rfl)
 
 theorem symbol_mem_degree (l : List Rˣ) : symbol l ∈ degree R l.length :=
   Submodule.subset_span ⟨l, rfl, rfl⟩
@@ -382,26 +391,13 @@ theorem mem_degree_iff {n : ℕ} {x : MilnorK R} :
 
 /-- Every element of the Milnor K-ring is a sum of elements of the degree submodules. -/
 theorem iSup_degree_eq_top : ⨆ n, degree R n = ⊤ := by
-  have hmul {x y : MilnorK R} (hx : x ∈ ⨆ n, degree R n) (hy : y ∈ ⨆ n, degree R n) :
-      x * y ∈ ⨆ n, degree R n := by
-    induction hx using Submodule.iSup_induction' with
-    | mem i x hx =>
-      induction hy using Submodule.iSup_induction' with
-      | mem j y hy => exact Submodule.mem_iSup_of_mem (i + j) (mul_mem_degree hx hy)
-      | zero => simp
-      | add y z _ _ hy hz => simpa [mul_add] using add_mem hy hz
-    | zero => simp
-    | add x z _ _ hx hz => simpa [add_mul] using add_mem hx hz
-  rw [eq_top_iff]
-  rintro x -
-  obtain ⟨t, rfl⟩ := mk_surjective x
-  induction t using TensorAlgebra.induction with
-  | algebraMap r =>
-    rw [eq_intCast (algebraMap ℤ (TensorAlgebra ℤ (Additive Rˣ))) r, map_intCast]
-    exact Submodule.mem_iSup_of_mem 0 (SetLike.intCast_mem_graded (degree R) r)
-  | ι x => exact Submodule.mem_iSup_of_mem 1 (by simpa using ofUnit_mem_degree_one x.toMul)
-  | mul a b ha hb => simpa using hmul ha hb
-  | add a b ha hb => simpa using add_mem ha hb
+  have hdeg (n : ℕ) : degree R n =
+      (LinearMap.range (ι ℤ : Additive Rˣ →ₗ[ℤ] _) ^ n).map (mk (R := R)).toIntAlgHom.toLinearMap :=
+    Submodule.ext fun _ ↦ mem_degree_iff
+  simp_rw [hdeg, ← Submodule.map_iSup, (DirectSum.Decomposition.isInternal
+    (fun n : ℕ ↦ LinearMap.range (ι ℤ : Additive Rˣ →ₗ[ℤ] _) ^ n)).submodule_iSup_eq_top,
+    Submodule.map_top]
+  exact LinearMap.range_eq_top.2 mk_surjective
 
 /-- The Milnor symbols span the Milnor K-ring. -/
 theorem span_range_symbol : Submodule.span ℤ (Set.range (symbol (R := R))) = ⊤ := by
@@ -447,7 +443,8 @@ attribute [local instance] intOppositeModule
 private instance : IsCentralScalar ℤ (Additive Rˣ) := ⟨fun _ _ ↦ rfl⟩
 
 /-- The truncation `K_*ᴹ(R) → ℤ ⊕ Additive Rˣ` to degrees at most one, a ring homomorphism to the
-trivial square-zero extension. -/
+trivial square-zero extension. Adapted from Mathlib's `TensorAlgebra.toTrivSqZeroExt` and
+`TensorAlgebra.ιInv`, which detect degrees zero and one of a tensor algebra in the same way. -/
 private def truncation : MilnorK R →+* TrivSqZeroExt ℤ (Additive Rˣ) :=
   lift (TrivSqZeroExt.inrHom ℤ (Additive Rˣ)).toAddMonoidHom fun a b _ ↦ by simp
 
@@ -458,14 +455,19 @@ private theorem snd_truncation_ofUnit (a : Rˣ) :
     (truncation (ofUnit a)).snd = Additive.ofMul a := by
   simp [truncation]
 
+/-- `ℤ` embeds into the Milnor K-ring as degree zero (detected by truncation to degrees at most
+one). -/
 theorem intCast_injective : Function.Injective (Int.cast : ℤ → MilnorK R) := fun m n h ↦ by
   simpa [fst_truncation_intCast] using congrArg (fun x : MilnorK R ↦ (truncation x).fst) h
 
+/-- The degree-one class map `Rˣ → K_1ᴹ(R)` is injective (detected by truncation to degrees at
+most one). -/
 theorem ofUnit_injective : Function.Injective (ofUnit (R := R)) := fun a b h ↦ by
   simpa [snd_truncation_ofUnit] using congrArg (fun x : MilnorK R ↦ (truncation x).snd) h
 
 end Truncation
 
+/-- The Milnor K-ring has characteristic zero: the natural numbers embed through degree zero. -/
 instance instCharZero : CharZero (MilnorK R) where
   cast_injective m n h := Int.ofNat_inj.1 (intCast_injective (R := R) (by simpa using h))
 
@@ -538,6 +540,7 @@ section Field
 variable {F : Type*} [Field F]
 
 /-- Over a field, `{a, -a} = 0` for every unit `a`. -/
+@[simp]
 theorem ofUnit_mul_ofUnit_neg_self (a : Fˣ) : ofUnit a * ofUnit (-a) = 0 := by
   by_cases ha : a = 1
   · simp [ha]
@@ -548,8 +551,9 @@ theorem ofUnit_mul_ofUnit_neg_self (a : Fˣ) : ofUnit a * ofUnit (-a) = 0 := by
   have hneg : -a = Units.mk0 _ h₁ / Units.mk0 _ h₂ := by
     ext
     simp only [Units.val_neg, Units.val_div_eq_div_val, Units.val_mk0]
-    rw [eq_div_iff h₂, mul_sub, mul_one, neg_mul, mul_inv_cancel₀ a.ne_zero, sub_neg_eq_add,
-      neg_add_eq_sub]
+    rw [eq_div_iff h₂]
+    field_simp
+    ring
   have hv : ofUnit a⁻¹ * ofUnit (Units.mk0 _ h₂) = 0 :=
     ofUnit_mul_ofUnit_of_add_eq_one (by simp)
   rw [hneg, ofUnit_div, mul_sub, ofUnit_mul_ofUnit_of_add_eq_one (by simp), zero_sub, neg_eq_zero]
@@ -577,9 +581,8 @@ theorem ofUnit_mul_ofUnit_self (a : Fˣ) : ofUnit a * ofUnit a = ofUnit a * ofUn
 /-- Over a field, interchanging two neighbouring entries negates a Milnor symbol. -/
 theorem symbol_append_cons_cons_swap (l₁ l₂ : List Fˣ) (a b : Fˣ) :
     symbol (l₁ ++ b :: a :: l₂) = -symbol (l₁ ++ a :: b :: l₂) := by
-  rw [symbol_append, symbol_append, symbol_cons, symbol_cons, symbol_cons, symbol_cons,
-    ← mul_assoc (ofUnit b), ofUnit_mul_ofUnit_comm b a]
-  simp only [neg_mul, mul_neg, mul_assoc]
+  simp only [symbol_append, symbol_cons, ← mul_assoc, ofUnit_mul_ofUnit_comm b a, neg_mul,
+    mul_neg]
 
 end Field
 
