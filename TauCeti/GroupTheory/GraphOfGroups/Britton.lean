@@ -132,7 +132,9 @@ private theorem subset_darts_segment (T : SerreGraph.segment.SpanningTree)
 /-- The dart of the segment leaving the vertex `b`: the dart with the same Boolean label. -/
 private def segmentDart (b : SerreGraph.segment.V) : SerreGraph.segment.E := b
 
-/-- The dart leaving `b`, as an arrow from `b` to the other vertex. -/
+/-- The dart leaving `b`, as an arrow from `b` to the other vertex. Its source is `b` itself, not
+`SerreGraph.segment.src (segmentDart b)` as for `SerreGraph.dart`, so that it extends alternating
+paths ending at `b` without a cast. -/
 private def segmentArrow (b : SerreGraph.segment.V) : b ⟶ SerreGraph.segment.tgt (segmentDart b) :=
   ⟨segmentDart b, rfl, rfl⟩
 
@@ -482,10 +484,6 @@ private theorem equivHNNExtension_edge_loopArrow (u : ℤˣ) :
   · exact (π₁Tree.equivHNNExtension_edge_false f g hf hg).trans (zpow_one _).symm
   · exact (π₁Tree.equivHNNExtension_edge_true f g hf hg).trans (zpow_neg_one _).symm
 
-private theorem equivHNNExtension_of_loopVertexEquiv (y : G) :
-    π₁Tree.equivHNNExtension f g hf hg (π₁Tree.of ∅ v (loopVertexEquiv y)) = HNNExtension.of y :=
-  π₁Tree.equivHNNExtension_of f g hf hg y
-
 private theorem toπ₁Tree_foldl_loopArrow (p : (loop f g hf hg).AlternatingPath v v)
     (l : List (ℤˣ × G)) :
     (l.foldl (fun p x => p.cons (loopArrow x.1) (loopVertexEquiv x.2)) p).toPath.toπ₁Tree ∅ =
@@ -505,8 +503,12 @@ private theorem toπ₁Tree_foldl_loopArrow (p : (loop f g hf hg).AlternatingPat
       HNNExtension.of h *
         (l.map fun x => HNNExtension.t ^ (x.1 : ℤ) * HNNExtension.of x.2).prod := by
   rw [loopPath, toπ₁Tree_foldl_loopArrow]
-  simp [map_list_prod, Function.comp_def, equivHNNExtension_edge_loopArrow,
-    equivHNNExtension_of_loopVertexEquiv]
+  simp only [AlternatingPath.toPath_single, Path.toπ₁Tree_ofVertex, map_mul, map_list_prod,
+    List.map_map, Function.comp_def, equivHNNExtension_edge_loopArrow]
+  -- `π₁Tree.equivHNNExtension_of` is stated at the vertex `()` for elements of `G`, which are `v`
+  -- and the elements of the vertex group at `v` only up to unfolding: it is applied as a term.
+  exact congr_arg₂ (· * ·) (π₁Tree.equivHNNExtension_of f g hf hg h) <| congrArg List.prod <|
+    List.map_congr_left fun x _ => congrArg (_ * ·) (π₁Tree.equivHNNExtension_of f g hf hg x.2)
 
 private theorem loopVertexEquiv_mem_range_αArrow_loopArrow_iff (u : ℤˣ) (y : G) :
     loopVertexEquiv y ∈ ((loop f g hf hg).αArrow (loopArrow (v := v) u)).range ↔
@@ -578,10 +580,10 @@ theorem AlternatingPath.IsReduced.equivHNNExtension_toπ₁Tree_toPath_mem_range
   constructor
   · rintro ⟨y, hy⟩
     exact ⟨loopVertexEquiv y, (π₁Tree.equivHNNExtension f g hf hg).injective
-      ((equivHNNExtension_of_loopVertexEquiv y).trans hy)⟩
+      ((π₁Tree.equivHNNExtension_of f g hf hg y).trans hy)⟩
   · rintro ⟨y, hy⟩
-    exact ⟨loopVertexEquiv.symm y, by
-      rw [← hy, ← equivHNNExtension_of_loopVertexEquiv, MulEquiv.apply_symm_apply]⟩
+    exact ⟨loopVertexEquiv.symm y,
+      (π₁Tree.equivHNNExtension_of f g hf hg _).symm.trans (congrArg _ hy)⟩
 
 /-- **Britton's lemma for HNN extensions, recovered for the loop**: a reduced word of the HNN
 extension of the loop whose product lies in `G` has no letter `t^{±1}`. This is
