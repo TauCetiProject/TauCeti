@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.BilinearForm.End
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 public import Mathlib.Analysis.InnerProductSpace.Trace
 
@@ -15,9 +16,10 @@ For an orthonormal basis `b`, the wedges `b i ∧ b j` indexed by all ordered pa
 redundant family: each increasing pair occurs twice, with opposite signs, and diagonal wedges
 vanish. Consequently their rank-one operators sum to twice the identity on `Λ² E`.
 
-This gives a trace formula using all ordered pairs instead of the increasing pairs indexing
-Mathlib's `OrthonormalBasis.exteriorPower`. It applies to arbitrary endomorphisms, without a
-self-adjointness assumption, and fixes the factor of two in curvature contractions.
+This gives trace formulas using all ordered pairs instead of the increasing pairs indexing
+Mathlib's `OrthonormalBasis.exteriorPower`, both for arbitrary endomorphisms (`LinearMap.trace`)
+and for bilinear forms (`TauCeti.bilinFormTrace`), fixing the factor of two in curvature
+contractions.
 -/
 
 public section
@@ -74,5 +76,14 @@ theorem sum_inner_ιMulti_two_eq_two_mul_trace (b : OrthonormalBasis ι ℝ E)
   simpa only [map_sum, InnerProductSpace.trace_rankOne,
     LinearMap.comp_smul, LinearMap.comp_id, map_smul, smul_eq_mul,
     real_inner_comm] using h
+
+/-- The sum of the diagonal values of a bilinear form on `⋀² E` against all ordered basis wedges
+is twice its metric trace. -/
+theorem sum_bilinForm_ιMulti_two (b : OrthonormalBasis ι ℝ E)
+    (B : LinearMap.BilinForm ℝ (⋀[ℝ]^2 E)) :
+    (∑ i, ∑ j, B (ιMulti ℝ 2 ![b i, b j]) (ιMulti ℝ 2 ![b i, b j])) =
+      2 * TauCeti.bilinFormTrace B := by
+  simp_rw [← B.inner_bilinFormToEnd_left]
+  rw [b.sum_inner_ιMulti_two_eq_two_mul_trace, B.trace_bilinFormToEnd]
 
 end OrthonormalBasis
