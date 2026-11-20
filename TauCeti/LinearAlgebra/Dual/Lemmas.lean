@@ -15,9 +15,10 @@ import TauCeti.LinearAlgebra.LinearIndependent.Extend
 # Linear functionals and hyperplanes
 
 A functional `f` with `f x = 1` splits a module into the line through `x` and the kernel of `f`.
-This file records the projection `id - f(·) • x` that this splitting defines, and the dimension
-count for the trace of `ker f` on a subspace on which `f` does not vanish. A basis `X` with
-`f (X j) ≠ 0` yields a basis of `ker f` by moving each other `X i` into `ker f` along `X j`.
+This file records the projection `id - f(·) • x` that this splitting defines, the factorization
+of `r • id` through `f` when `r` annihilates `ker f`, and the dimension count for the trace of
+`ker f` on a subspace on which `f` does not vanish. A basis `X` with `f (X j) ≠ 0` yields a basis
+of `ker f` by moving each other `X i` into `ker f` along `X j`.
 A codimension-one subspace, even in an infinite-dimensional ambient space, is the kernel
 of a nonzero functional. Since functionals separate points, a vector space whose endomorphism
 algebra is finite-dimensional is itself finite-dimensional.
@@ -31,6 +32,8 @@ space contains such a family, which gives coordinates on the space.
 
 * `Module.Dual.ker_id_sub_smulRight`: if `f x = 1`, the kernel of `id - f(·) • x` is the line
   through `x`.
+* `Module.Dual.smulRight_smul_eq_smul_id`: if `f x = 1` and `r` annihilates `ker f`, then
+  `r • id` factors through `f` as `y ↦ (r • f) y • x`.
 * `Module.Dual.linearIndependent_proj` and `Module.Dual.span_range_proj_eq_top`: the coordinate
   projections on `ι → R` are linearly independent in the dual space, and span it when `ι` is
   finite.
@@ -100,6 +103,22 @@ theorem ker_id_sub_smulRight (f : Dual K V) {x : V} (hfx : f x = 1) :
   exact ⟨fun h => ⟨f y, h.symm⟩, by rintro ⟨c, rfl⟩; simp [hfx]⟩
 
 end Semiring
+
+section CommRing
+
+variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
+
+/-- If `f x = 1` and `r` annihilates the kernel of `f`, then multiplication by `r` factors through
+`f`: `r • y = (r • f) y • x`, since `y - f y • x` lies in the kernel of `f`. -/
+theorem smulRight_smul_eq_smul_id (f : Dual R V) {x : V} (hfx : f x = 1) {r : R}
+    (hr : ∀ y ∈ LinearMap.ker f, r • y = 0) :
+    LinearMap.smulRight (r • f) x = r • LinearMap.id := by
+  ext y
+  have h := hr (y - f y • x) (by simp [hfx])
+  rw [smul_sub, sub_eq_zero] at h
+  simp [h, smul_smul]
+
+end CommRing
 
 section CommSemiring
 
