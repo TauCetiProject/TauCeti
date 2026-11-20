@@ -8,8 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Stable.Manifold
 import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Existence
 import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local.Basic
-import TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice
-import TauCeti.Geometry.Manifold.Morse.Stable.OneDimensional
+import TauCeti.Geometry.Manifold.Morse.Stable.Embedding
 
 /-!
 # Trajectories into a critical point of index `n - 1` from every critical point of index `n`
