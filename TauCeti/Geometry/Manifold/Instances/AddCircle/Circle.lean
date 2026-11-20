@@ -1,0 +1,165 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Manifold.Instances.AddCircle
+public import Mathlib.Geometry.Manifold.Instances.Sphere
+public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import TauCeti.Analysis.Complex.Circle
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+
+/-!
+# The circle `AddCircle p` as the unit circle of `ℂ`
+
+For a positive real `p`, Mathlib's map `AddCircle.toCircle : AddCircle p → Circle` sends the class
+of `t` to `exp (2π i t / p)` on the unit circle `S¹ ⊆ ℂ`, and is a homeomorphism
+(`AddCircle.homeomorphCircle`). Here `AddCircle p` carries the smooth structure whose charts
+are local real lifts (`AddCircle.instIsManifold`), and `Circle` carries Mathlib's smooth
+structure as the unit sphere of `ℂ`, modelled on `EuclideanSpace ℝ (Fin 1)`. This file shows that
+the two smooth structures agree: `toCircle` is an analytic diffeomorphism
+(`AddCircle.diffeomorphCircle p n : AddCircle p ≃ₘ^n⟮𝓘(ℝ), 𝓡 1⟯ Circle`, for every smoothness
+exponent `n`).
+
+Composed with the quotient map `ℝ → AddCircle p`, the map `toCircle` is the rescaled standard
+parametrization `t ↦ exp (2π i t / p)` of the circle (`AddCircle.toCircle_apply_mk`). This
+parametrization is analytic and its differential never vanishes, because its velocity
+`(2π / p) i exp (2π i t / p)` in `ℂ` is nonzero. By the inverse function theorem it is therefore a
+local diffeomorphism, and since the quotient map is a local diffeomorphism, so is `toCircle`.
+Being bijective, it is a diffeomorphism.
+
+This identification lets the time form `dt_p` of `AddCircle p` and the angular form `dθ` of the unit
+circle be compared, which is done in `TauCeti.Geometry.Manifold.DeRham.Circle`.
+
+## Main declarations
+
+* `AddCircle.contMDiff_toCircle`: `toCircle` is `C^n` for every `n`.
+* `AddCircle.diffeomorphCircle p n`: `toCircle` as a `C^n` diffeomorphism
+  `AddCircle p ≃ₘ^n⟮𝓘(ℝ), 𝓡 1⟯ Circle`.
+
+## References
+
+* John M. Lee, *Introduction to Smooth Manifolds*, second edition, Graduate Texts in
+  Mathematics 218, Springer, 2013, Chapter 4 (the inverse function theorem for manifolds and
+  local diffeomorphisms) and Chapter 21 (smooth covering maps).
+-/
+
+public section
+
+noncomputable section
+
+open Set Function TauCeti
+open scoped Manifold ContDiff Real
+
+namespace AddCircle
+
+attribute [local instance] finrank_real_complex_fact'
+
+variable (p : ℝ) [Fact (0 < p)]
+
+omit [Fact (0 < p)] in
+/-- The rescaled standard parametrization `t ↦ exp (2π i t / p)` of the unit circle is
+analytic. -/
+private theorem contMDiff_circleExp_const_mul (n : ℕ∞ω) :
+    ContMDiff 𝓘(ℝ) (𝓡 1) n fun t : ℝ ↦ Circle.exp (2 * π / p * t) :=
+  contMDiff_circleExp.comp (contDiff_const.mul contDiff_id).contMDiff
+
+/-- The rescaled standard parametrization `t ↦ exp (2π i t / p)` of the unit circle has injective
+differential at every point: its velocity in `ℂ` is `(2π / p) i exp (2π i t / p) ≠ 0`. -/
+private theorem injective_mfderiv_circleExp_const_mul (t : ℝ) :
+    Injective (mfderiv 𝓘(ℝ) (𝓡 1) (fun s : ℝ ↦ Circle.exp (2 * π / p * s)) t) := by
+  set c : ℝ := 2 * π / p
+  have hc : c ≠ 0 := div_ne_zero (by positivity) (Fact.out : 0 < p).ne'
+  have hκ : MDifferentiableAt 𝓘(ℝ) (𝓡 1) (fun s : ℝ ↦ Circle.exp (c * s)) t :=
+    (contMDiff_circleExp_const_mul p 1).mdifferentiableAt one_ne_zero
+  have hcoe : MDifferentiableAt (𝓡 1) 𝓘(ℝ, ℂ) (fun z : Circle ↦ (z : ℂ)) (Circle.exp (c * t)) :=
+    (contMDiff_coe_sphere (m := 1)).mdifferentiableAt one_ne_zero
+  -- In `ℂ`, the parametrization has the nonzero velocity `z = c i exp (c i t)`.
+  set z : ℂ := c • (Complex.I * ((Circle.exp (c * t) : Circle) : ℂ)) with hz
+  have hne : z ≠ 0 := smul_ne_zero hc (mul_ne_zero Complex.I_ne_zero (Circle.coe_ne_zero _))
+  have hd : HasFDerivAt (fun s : ℝ ↦ ((Circle.exp (c * s) : Circle) : ℂ))
+      ((1 : ℝ →L[ℝ] ℝ).smulRight z) t :=
+    ((hasDerivAt_coe_circleExp (c * t)).scomp t ((hasDerivAt_id t).const_mul c)).hasFDerivAt
+      |>.congr_fderiv (by ext; simp [hz])
+  -- A real number killed by the derivative `w ↦ w • z` of the parametrization in `ℂ` is zero.
+  have key (w : ℝ) (hw : ((1 : ℝ →L[ℝ] ℝ).smulRight z) w = 0) : w = 0 := by
+    rw [ContinuousLinearMap.smulRight_apply, one_apply_eq_self] at hw
+    exact (smul_eq_zero.mp hw).resolve_right hne
+  refine (injective_iff_map_eq_zero _).mpr fun v hv ↦ ?_
+  have h0 : mfderiv 𝓘(ℝ) 𝓘(ℝ, ℂ) ((fun z : Circle ↦ (z : ℂ)) ∘ fun s : ℝ ↦ Circle.exp (c * s)) t
+      v = 0 := by
+    rw [mfderiv_comp t hcoe hκ, ContinuousLinearMap.comp_apply, hv, map_zero]
+  rw [Function.comp_def, hd.hasMFDerivAt.mfderiv] at h0
+  -- Tangent vectors of `ℝ` are real numbers.
+  exact key v h0
+
+/-- The map `toCircle : AddCircle p → Circle` is `C^n` for every `n`. -/
+theorem contMDiff_toCircle (n : ℕ∞ω) :
+    ContMDiff 𝓘(ℝ) (𝓡 1) n (toCircle : AddCircle p → Circle) := by
+  rw [← (isLocalDiffeomorph_coe p n).contMDiff_comp_iff QuotientAddGroup.mk_surjective le_rfl]
+  -- Read on `ℝ`, `toCircle` is the rescaled parametrization `t ↦ exp (2π i t / p)`.
+  exact (contMDiff_circleExp_const_mul p n).congr toCircle_apply_mk
+
+/-- The map `toCircle : AddCircle p → Circle` is a `C^n` local diffeomorphism for every `n ≥ 1`:
+its lift `t ↦ exp (2π i t / p)` has nowhere vanishing differential. -/
+private theorem isLocalDiffeomorph_toCircle {n : ℕ∞ω} (hn : 1 ≤ n) :
+    IsLocalDiffeomorph 𝓘(ℝ) (𝓡 1) n (toCircle : AddCircle p → Circle) := by
+  intro x
+  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective x
+  exact isLocalDiffeomorphAt_of_eqOn_comp (s := univ) isOpen_univ (mem_univ t)
+    (ModelWithCorners.isInteriorPoint_iff.mpr (by simp)) hn
+    (fun s _ ↦ toCircle_apply_mk s) (contMDiff_circleExp_const_mul p n).contMDiffOn
+    (injective_mfderiv_circleExp_const_mul p t) (by simp) (isLocalDiffeomorph_coe p n t)
+
+/-- The inverse of the homeomorphism `toCircle : AddCircle p ≃ₜ Circle` is `C^n` for every `n`: it
+is the inverse of the analytic diffeomorphism built from the bijective local diffeomorphism
+`toCircle`. -/
+private theorem contMDiff_homeomorphCircle_symm (n : ℕ∞ω) :
+    ContMDiff (𝓡 1) 𝓘(ℝ) n (homeomorphCircle (Fact.out : 0 < p).ne').symm := by
+  have hbij : Bijective (toCircle : AddCircle p → Circle) :=
+    funext (homeomorphCircle_apply (Fact.out : 0 < p).ne') ▸ (homeomorphCircle _).bijective
+  have hf := isLocalDiffeomorph_toCircle p (n := ω) le_top
+  have hD : ⇑(homeomorphCircle (Fact.out : 0 < p).ne').symm =
+      (hf.diffeomorphOfBijective hbij).symm := by
+    funext y
+    refine hbij.injective ?_
+    rw [← homeomorphCircle_apply (Fact.out : 0 < p).ne', Homeomorph.apply_symm_apply]
+    exact ((congrFun (hf.coe_diffeomorphOfBijective hbij) _).symm.trans
+      ((hf.diffeomorphOfBijective hbij).apply_symm_apply y)).symm
+  rw [hD]
+  exact (hf.diffeomorphOfBijective hbij).symm.contMDiff.of_le le_top
+
+/-- The **identification of `AddCircle p` with the unit circle** `S¹ ⊆ ℂ`, as a `C^n`
+diffeomorphism: the map `toCircle`, sending the class of `t` to `exp (2π i t / p)`. Its underlying
+homeomorphism is Mathlib's `AddCircle.homeomorphCircle`. -/
+def diffeomorphCircle (n : ℕ∞ω) : AddCircle p ≃ₘ^n⟮𝓘(ℝ), 𝓡 1⟯ Circle where
+  toEquiv := (homeomorphCircle (Fact.out : 0 < p).ne').toEquiv
+  contMDiff_toFun := by
+    rw [Homeomorph.coe_toEquiv, funext (homeomorphCircle_apply _)]
+    exact contMDiff_toCircle p n
+  contMDiff_invFun := contMDiff_homeomorphCircle_symm p n
+
+/-- The underlying map of `diffeomorphCircle p n` is `AddCircle.toCircle`. -/
+@[simp]
+theorem coe_diffeomorphCircle (n : ℕ∞ω) : ⇑(diffeomorphCircle p n) = toCircle :=
+  funext (homeomorphCircle_apply _)
+
+/-- The inverse of `diffeomorphCircle p n` is the inverse of the homeomorphism
+`AddCircle.homeomorphCircle`. In particular it does not depend on `n`. -/
+@[simp]
+theorem coe_diffeomorphCircle_symm (n : ℕ∞ω) :
+    ⇑(diffeomorphCircle p n).symm = (homeomorphCircle (Fact.out : 0 < p).ne').symm := (rfl)
+
+/-- The diffeomorphism `diffeomorphCircle p n` sends the class of `t` to `exp (2π i t / p)`. -/
+theorem diffeomorphCircle_apply_mk (n : ℕ∞ω) (t : ℝ) :
+    diffeomorphCircle p n t = Circle.exp (2 * π / p * t) := by
+  rw [coe_diffeomorphCircle, toCircle_apply_mk]
+
+/-- The underlying homeomorphism of `diffeomorphCircle p n` is `AddCircle.homeomorphCircle`. -/
+@[simp]
+theorem toHomeomorph_diffeomorphCircle (n : ℕ∞ω) :
+    (diffeomorphCircle p n).toHomeomorph = homeomorphCircle (Fact.out : 0 < p).ne' := (rfl)
+
+end AddCircle
