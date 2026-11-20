@@ -101,7 +101,9 @@ instance : IsPretransitive McL (Fin 275) :=
 @[simp] theorem ncard_orbit_zero : (orbit McL (0 : Fin 275)).ncard = 275 := by
   simp [orbit_eq_univ]
 
-private def relationRows : Fin 275 → ℕ := fun i ↦
+/-- Row `x` of the adjacency relation of the McLaughlin graph, as a bit mask: bit `y` is set
+exactly when `y` is adjacent to `x`. Its row at `0` is the orbit `orbit_stabilizer_zero_one`. -/
+@[expose] def relationRows : Fin 275 → ℕ := fun i ↦
   (#[
     #[57347658333748854904318151527101342462346717087454097495025530293495526549434338550,
       13053170163122056358265266860887890170159322678193842677809735629054851099332243729,
@@ -382,7 +384,9 @@ private def relationRows : Fin 275 → ℕ := fun i ↦
     |>.getD (i.val / 25) #[]
     |>.getD (i.val % 25) 0
 
-private def related (x y : Fin 275) : Bool := (relationRows x).testBit y.val
+/-- Adjacency in the McLaughlin graph on the 275 points of the ATLAS model, read off the bit
+rows `relationRows`. Every element of `McL` preserves it (`related_apply`). -/
+@[expose] def related (x y : Fin 275) : Bool := (relationRows x).testBit y.val
 
 private theorem related_a : ∀ x y : Fin 275, related (a x) (a y) = related x y := by
   decide +kernel
@@ -390,7 +394,8 @@ private theorem related_a : ∀ x y : Fin 275, related (a x) (a y) = related x y
 private theorem related_b : ∀ x y : Fin 275, related (b x) (b y) = related x y := by
   decide +kernel
 
-private theorem related_apply {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL) :
+/-- Every element of the McLaughlin model preserves the adjacency relation `related`. -/
+theorem related_apply {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL) :
     ∀ x y, related (g x) (g y) = related x y := by
   rw [McL_def] at hg
   induction hg using Subgroup.closure_induction with
@@ -406,7 +411,8 @@ private theorem related_apply {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL) :
     intro x y
     simpa using (hg (g⁻¹ x) (g⁻¹ y)).symm
 
-private theorem related_fixed {g : Equiv.Perm (Fin 275)} {s : Fin 275}
+/-- An element of the McLaughlin model fixing `s` preserves adjacency to `s`. -/
+theorem related_fixed {g : Equiv.Perm (Fin 275)} {s : Fin 275}
     (hg : g ∈ McL) (hs : g s = s) (x : Fin 275) :
     related s (g x) = related s x := by
   simpa only [hs] using related_apply hg s x

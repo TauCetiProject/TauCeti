@@ -30,10 +30,9 @@ adjacent to `p` does not change when an element of `McL` fixing `p` moves the se
 other than `0, 1, 2, 3, 4, 37, 40, 102, 119` lies on a set of the family whose four adjacency
 counts occur on no set through `4`, so no element of `McL` fixing `0, 1, 2, 3` sends `4` there.
 
-Adjacency to `p` is read off the explicit orbit `orbit_stabilizer_zero_one` of the stabilizer of
-`0`, which consists of the neighbours of `0`, transported to `p` by a word sending `0` to `p`. The
-words, tables and witnesses were found by computer search; only their kernel-checked evaluations
-enter the proofs.
+Adjacency is the relation `related` of `McLaughlin.Orbits`, whose invariance under `McL` is
+proved there. The words, tables and witnesses were found by computer search; only their
+kernel-checked evaluations enter the proofs.
 
 ## References
 
@@ -597,66 +596,15 @@ private theorem le_stabilizer_cocliques :
 
 /-! ### Adjacency counts -/
 
-/- The neighbours of `0`: the orbit of `1` under the stabilizer of `0`, as a bit mask. -/
-private def neighbourMask : ℕ :=
-  57347658333748854904318151527101342462346717087454097495025530293495526549434338550
-
-private theorem neighbourMask_testBit (x : Fin 275) :
-    neighbourMask.testBit x.val = true ↔
-      x ∈ orbit ↥(McL ⊓ stabilizer (Equiv.Perm (Fin 275)) (0 : Fin 275)) (1 : Fin 275) := by
-  rw [orbit_stabilizer_zero_one, Finset.mem_coe]
-  revert x
-  decide +kernel
-
-private theorem neighbourMask_apply {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL) (h0 : g 0 = 0)
-    (x : Fin 275) : neighbourMask.testBit (g x).val = neighbourMask.testBit x.val := by
-  let k : ↥(McL ⊓ stabilizer (Equiv.Perm (Fin 275)) (0 : Fin 275)) := ⟨g, hg, h0⟩
-  have hk : g x = k • x := rfl
-  rw [Bool.eq_iff_iff, neighbourMask_testBit, neighbourMask_testBit, hk, mem_orbit_symm,
-    orbit_smul, mem_orbit_symm]
-
-/- Words carrying `0` to `p` for `p < 4`. -/
-private def pointWord (p : ℕ) : ℕ :=
-  [1, 415, 73801, 3089].getD p 1
-
-private theorem pointWord_zero : (List.range 4).all (fun p ↦ wordN 32 (pointWord p) 0 == p) =
-    true := by
-  decide +kernel
-
-/- `adjacent p y` says that `y` is a neighbour of the point `p`. -/
-private def adjacent (p : ℕ) (y : Fin 275) : Bool :=
-  neighbourMask.testBit ((wordPerm 32 (pointWord p))⁻¹ y).val
-
-private theorem adjacent_apply {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL) {p : ℕ} (hp : p < 4)
-    (hgp : g (Fin.ofNat 275 p) = Fin.ofNat 275 p) (y : Fin 275) :
-    adjacent p (g y) = adjacent p y := by
-  rw [adjacent, adjacent]
-  set h := wordPerm 32 (pointWord p)
-  have h0 : h 0 = Fin.ofNat 275 p := by
-    apply Fin.ext
-    have := List.all_eq_true.mp pointWord_zero p (List.mem_range.mpr hp)
-    rw [beq_iff_eq] at this
-    rw [wordPerm_apply, Fin.val_ofNat, Nat.mod_eq_of_lt (by omega)]
-    exact this
-  have hk : h⁻¹ * g * h ∈ McL :=
-    McL.mul_mem (McL.mul_mem (McL.inv_mem (wordPerm_mem _ _)) hg) (wordPerm_mem _ _)
-  have hk0 : (h⁻¹ * g * h) 0 = 0 := by
-    rw [Equiv.Perm.mul_apply, Equiv.Perm.mul_apply, h0, hgp, ← h0]
-    exact h.symm_apply_apply 0
-  have := neighbourMask_apply hk hk0 (h⁻¹ y)
-  rwa [Equiv.Perm.mul_apply, Equiv.Perm.mul_apply, show h (h⁻¹ y) = y from h.apply_symm_apply y]
-    at this
-
 private def adjacencyCount (p : ℕ) (T : Finset (Fin 275)) : ℕ :=
-  (T.filter fun y ↦ adjacent p y).card
+  (T.filter fun y ↦ related (Fin.ofNat 275 p) y).card
 
 private theorem adjacencyCount_smul {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL) {p : ℕ}
-    (hp : p < 4)
     (hgp : g (Fin.ofNat 275 p) = Fin.ofNat 275 p) (T : Finset (Fin 275)) :
     adjacencyCount p (g • T) = adjacencyCount p T := by
   rw [adjacencyCount, adjacencyCount, Finset.smul_finset_def, Finset.filter_image,
     Finset.card_image_of_injective _ (MulAction.injective g)]
-  simp only [Equiv.Perm.smul_def, adjacent_apply hg hp hgp]
+  simp only [Equiv.Perm.smul_def, related_fixed hg hgp]
 
 /- The four adjacency counts of a coclique, as one number. -/
 private def countCode (T : Finset (Fin 275)) : ℕ :=
@@ -666,49 +614,28 @@ private def countCode (T : Finset (Fin 275)) : ℕ :=
 private theorem countCode_smul {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL)
     (hfix : ∀ p : ℕ, p < 4 → g (Fin.ofNat 275 p) = Fin.ofNat 275 p) (T : Finset (Fin 275)) :
     countCode (g • T) = countCode T := by
-  simp only [countCode, adjacencyCount_smul hg (by norm_num : 0 < 4) (hfix 0 (by norm_num)),
-    adjacencyCount_smul hg (by norm_num : 1 < 4) (hfix 1 (by norm_num)),
-    adjacencyCount_smul hg (by norm_num : 2 < 4) (hfix 2 (by norm_num)),
-    adjacencyCount_smul hg (by norm_num : 3 < 4) (hfix 3 (by norm_num))]
-
-/- The neighbourhoods of `0, 1, 2, 3` as bit masks. -/
-private def adjacencyMask (p : ℕ) : ℕ :=
-  [57347658333748854904318151527101342462346717087454097495025530293495526549434338550,
-    13053170163122056358265266860887890170159322678193842677809735629054851099332243729,
-    17083713599571819159991497920725894931202505014878734925285468597681145185876079625,
-    9323724771726929419733022375154787650332750974833760522443995496575624650340020692].getD p 0
-
-private theorem adjacencyMask_spec : (List.range 4).all (fun p ↦ (List.range 275).all fun y ↦
-    neighbourMask.testBit (wordInvN 32 (pointWord p) y) == (adjacencyMask p).testBit y) = true := by
-  decide +kernel
-
-private theorem adjacent_eq_testBit {p : ℕ} (hp : p < 4) (y : Fin 275) :
-    adjacent p y = (adjacencyMask p).testBit y.val := by
-  have h := List.all_eq_true.mp (List.all_eq_true.mp adjacencyMask_spec p
-    (List.mem_range.mpr hp)) y.val (List.mem_range.mpr y.isLt)
-  rw [beq_iff_eq] at h
-  rw [adjacent, wordPerm_inv_apply, h]
+  simp only [countCode, adjacencyCount_smul hg (hfix 0 (by norm_num)),
+    adjacencyCount_smul hg (hfix 1 (by norm_num)), adjacencyCount_smul hg (hfix 2 (by norm_num)),
+    adjacencyCount_smul hg (hfix 3 (by norm_num))]
 
 private def adjacencyCountN (p w : ℕ) : ℕ :=
-  (seedList.filter fun x ↦ (adjacencyMask p).testBit (wordN 32 w x.val)).length
+  (seedList.filter fun x ↦ (relationRows (Fin.ofNat 275 p)).testBit (wordN 32 w x.val)).length
 
 private def countCodeN (w : ℕ) : ℕ :=
   adjacencyCountN 0 w + 32 * adjacencyCountN 1 w + 1024 * adjacencyCountN 2 w +
     32768 * adjacencyCountN 3 w
 
-private theorem adjacencyCount_coclique {p : ℕ} (hp : p < 4) (i : ℕ) :
+private theorem adjacencyCount_coclique (p i : ℕ) :
     adjacencyCount p (coclique i) = adjacencyCountN p (cocliqueWord i) := by
   rw [adjacencyCount, coclique, Finset.smul_finset_def, Finset.filter_image,
     Finset.card_image_of_injective _ (MulAction.injective _), ← List.toFinset_filter,
     List.toFinset_card_of_nodup (seedList_nodup.filter _), adjacencyCountN]
   exact congrArg List.length (List.filter_congr fun x _ ↦ by
-    rw [adjacent_eq_testBit hp, Equiv.Perm.smul_def, wordPerm_apply])
+    rw [related, Equiv.Perm.smul_def, wordPerm_apply])
 
 private theorem countCode_coclique (i : ℕ) :
     countCode (coclique i) = countCodeN (cocliqueWord i) := by
-  simp only [countCode, countCodeN, adjacencyCount_coclique (by norm_num : 0 < 4),
-    adjacencyCount_coclique (by norm_num : 1 < 4), adjacencyCount_coclique (by norm_num : 2 < 4),
-    adjacencyCount_coclique (by norm_num : 3 < 4)]
+  simp only [countCode, countCodeN, adjacencyCount_coclique]
 
 /-! ### The fifth basic orbit -/
 
@@ -788,7 +715,7 @@ private theorem apply_four_mem_of_mem_fixing {g : Equiv.Perm (Fin 275)}
   have hcheck := List.all_eq_true.mp countCode_of_four_mem i (Finset.mem_range.mp hi |>
     List.mem_range.mpr)
   have h4' := mem_coclique.mp h4
-  rw [show ((4 : Fin 275) : ℕ) = 4 from rfl] at h4'
+  simp only [Fin.coe_ofNat_eq_mod, Nat.reduceMod] at h4'
   simp only [h4', Bool.not_true, Bool.false_or, decide_eq_true_eq] at hcheck
   rw [countCode_coclique, countCode_coclique] at hcode
   exact hwcode (hcode ▸ hcheck)
