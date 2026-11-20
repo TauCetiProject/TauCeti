@@ -19,7 +19,6 @@ subspaces `zeroOneSobolevSections`; the complex bundle is smooth as a real vecto
 ## Main results
 
 * `TauCeti.isCompactOperator_zeroOneLowerOrdersL`: compactness for every positive loss of order.
-* `TauCeti.isCompactOperator_zeroOneLowerOrderL`: compactness of the existing one-step inclusion.
 -/
 
 public section
@@ -52,28 +51,10 @@ variable (A μ p k)
 exponent `p`. -/
 theorem isCompactOperator_zeroOneLowerOrdersL (hp : p ≠ ⊤) (d : ℕ) :
     IsCompactOperator (zeroOneLowerOrdersL A μ p k (d + 1)) := by
-  have hmem (w : zeroOneSobolevSections A μ p (k + (d + 1))) :
-      A.tangentHom.sectionChartData.lowerOrdersL μ p k (d + 1) w ∈
-        zeroOneSobolevSections A μ p k :=
-    lowerOrdersL_mem_zeroOneSobolevSections (d + 1) w.2
-  have h : IsCompactOperator (fun w : zeroOneSobolevSections A μ p (k + (d + 1)) ↦
-      (⟨A.tangentHom.sectionChartData.lowerOrdersL μ p k (d + 1) w, hmem w⟩ :
-        zeroOneSobolevSections A μ p k)) :=
-    ((SobolevSection.isCompactOperator_lowerOrdersL A.tangentHom μ p k hp d).comp_clm
-      (zeroOneSobolevSections A μ p (k + (d + 1))).subtypeL).codRestrict hmem
-        isClosed_zeroOneSobolevSections
-  have heq : (fun w : zeroOneSobolevSections A μ p (k + (d + 1)) ↦
-      (⟨A.tangentHom.sectionChartData.lowerOrdersL μ p k (d + 1) w, hmem w⟩ :
-        zeroOneSobolevSections A μ p k)) = ⇑(zeroOneLowerOrdersL A μ p k (d + 1)) := by
-    funext w
-    apply Subtype.ext
-    exact (coe_zeroOneLowerOrdersL (d + 1) w).symm
-  rwa [heq] at h
-
-/-- The native one-step inclusion of Sobolev `(0,1)`-forms is compact for finite exponent `p`. -/
-theorem isCompactOperator_zeroOneLowerOrderL (hp : p ≠ ⊤) :
-    IsCompactOperator (zeroOneLowerOrderL A μ p k) := by
-  rw [← zeroOneLowerOrdersL_one]
-  exact isCompactOperator_zeroOneLowerOrdersL A μ p k hp 0
+  rw [zeroOneLowerOrdersL_eq_codRestrict]
+  exact ((SobolevSection.isCompactOperator_lowerOrdersL A.tangentHom μ p k hp d).comp_clm
+    (zeroOneSobolevSections A μ p (k + (d + 1))).subtypeL).codRestrict
+      (fun w ↦ lowerOrdersL_mem_zeroOneSobolevSections (d + 1) w.2)
+      isClosed_zeroOneSobolevSections
 
 end TauCeti

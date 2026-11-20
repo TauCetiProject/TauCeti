@@ -98,7 +98,7 @@ def emptyAtlas (F : Type*) [NormedAddCommGroup F] :
     (V := Trivial Empty F))
 
 /-- An actual finite atlas of a trivial complex bundle with zero-dimensional fibre. -/
-def zeroFibreAtlas (M : Type*) [TopologicalSpace M] [ChartedSpace ℂ M] [CompactSpace M]
+def zeroFiberAtlas (M : Type*) [TopologicalSpace M] [ChartedSpace ℂ M] [CompactSpace M]
     [T2Space M] : FiniteBundleAtlas ℂ M (Fin 0 → ℂ) (Trivial M (Fin 0 → ℂ)) :=
   Classical.choice (FiniteBundleAtlas.nonempty (E := ℂ) (M := M) (F := Fin 0 → ℂ)
     (V := Trivial M (Fin 0 → ℂ)))
@@ -130,12 +130,50 @@ example :
   let : Fact (1 ≤ (∞ : ℝ≥0∞)) := ⟨le_top⟩
   exact fun w ↦ zeroOneLowerOrdersL_zeroOnePartSobolevL d w
 
+-- At loss one, the inclusion forgets the highest derivative.
+example (p : ℝ≥0∞) [Fact (1 ≤ p)]
+    (w : zeroOneSobolevSections A μ p (k + 1)) :
+    (zeroOneLowerOrdersL A μ p k 1 w : SobolevSection A.tangentHom μ p k) =
+      A.tangentHom.sectionChartData.lowerOrderL μ p k w := by
+  rw [coe_zeroOneLowerOrdersL, A.tangentHom.sectionChartData.lowerOrdersL_one μ p k]
+
+-- Both orders of one-step composition are instances of native transitivity.
+example (p : ℝ≥0∞) [Fact (1 ≤ p)]
+    (w : zeroOneSobolevSections A μ p ((k + d) + 1)) :
+    zeroOneLowerOrdersL A μ p k d (zeroOneLowerOrdersL A μ p (k + d) 1 w) =
+      zeroOneLowerOrdersL A μ p k (d + 1) ((Nat.add_assoc k d 1) ▸ w) :=
+  zeroOneLowerOrdersL_zeroOneLowerOrdersL d 1 w
+
+example (p : ℝ≥0∞) [Fact (1 ≤ p)]
+    (w : zeroOneSobolevSections A μ p ((k + 1) + d)) :
+    zeroOneLowerOrdersL A μ p k 1 (zeroOneLowerOrdersL A μ p (k + 1) d w) =
+      zeroOneLowerOrdersL A μ p k (d + 1)
+        ((by omega : (k + 1) + d = k + (d + 1)) ▸ w) := by
+  apply Subtype.ext
+  simpa only [coe_zeroOneLowerOrdersL, coe_zeroOneSobolevSections_eqRec,
+    A.tangentHom.sectionChartData.lowerOrdersL_one μ p k] using
+    A.tangentHom.sectionChartData.lowerOrderL_lowerOrdersL μ p k d
+      (w : SobolevSection A.tangentHom μ p ((k + 1) + d))
+
+-- The same one-step inclusion commutes with the actual native projection.
+example (p : ℝ≥0∞) [Fact (1 ≤ p)]
+    (w : SobolevSection A.tangentHom μ p (k + 1)) :
+    zeroOneLowerOrdersL A μ p k 1 (zeroOnePartSobolevL A μ p (k + 1) w) =
+      zeroOnePartSobolevL A μ p k (A.tangentHom.sectionChartData.lowerOrderL μ p k w) := by
+  simpa only [A.tangentHom.sectionChartData.lowerOrdersL_one μ p k] using
+    zeroOneLowerOrdersL_zeroOnePartSobolevL (A := A) (μ := μ) (p := p) (k := k) 1 w
+
+example (p : ℝ≥0∞) [Fact (1 ≤ p)] [T2Space M]
+    [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] (hp : p ≠ ⊤) :
+    IsCompactOperator (zeroOneLowerOrdersL A μ p k 1) :=
+  isCompactOperator_zeroOneLowerOrdersL A μ p k hp 0
+
 end NativeZeroOne
 
 example {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℂ) ∞ M]
     [CompactSpace M] [T2Space M] (μ : Measure ℂ) [μ.IsAddHaarMeasure]
     (p : ℝ≥0∞) [Fact (1 ≤ p)] (k d : ℕ) :
-    Function.Injective (zeroOneLowerOrdersL (zeroFibreAtlas M) μ p k d) :=
+    Function.Injective (zeroOneLowerOrdersL (zeroFiberAtlas M) μ p k d) :=
   zeroOneLowerOrdersL_injective d
 
 example (p : ℝ≥0∞) [Fact (1 ≤ p)] (k d : ℕ)
