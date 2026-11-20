@@ -30,6 +30,13 @@ on `X (p - 1)`.
 * **First page.** The object at `(p, q)` on the first page is the relative singular cohomology
   `Hⁿ(X p, X (p - 1))` with `p + q = n`
   (`TauCeti.filteredSpaceCohomologySpectralSequenceFirstPageXIso`); it vanishes when `p + q < 0`.
+* **First differential.** The differential from `(p - 1, q)` to `(p, q)` on the first page is the
+  connecting map `Hⁿ(X (p - 1), X (p - 2)) ⟶ Hⁿ⁺¹(X p, X (p - 1))` of the triple
+  `(X p, X (p - 1), X (p - 2))` (`TauCeti.TopTriple.singularCohomologyδ`)
+  (`TauCeti.filteredSpaceCohomologySpectralSequence_first_page_d_eq`). This holds because the
+  sequence of graded pieces `F^{p+1}/F^{p+2} ⟶ F^p/F^{p+2} ⟶ F^p/F^{p+1}`, whose connecting map is
+  the first differential (`CochainComplex.decreasingFiltrationSpectralSequence_first_page_d_eq`),
+  is the extended relative cochain sequence of that triple.
 * **Convergence.** The abutment in degree `n` is `Hⁿ(Y)`
   (`TauCeti.filteredSpaceCohomologyAbutmentIso`). When `X a = ∅` and `X b = Y`, the filtration is
   finite and the spectral sequence converges strongly: on late pages the object at `(p, q)` is the
@@ -41,9 +48,7 @@ Filtering the total space of a fibration by the preimages of the skeleta of the 
 cohomology Serre spectral sequence, with `E₁^{p,q} = H^{p+q}(Eₚ, Eₚ₋₁)`. Over an
 infinite-dimensional base that filtration is not finite in any degree. Its convergence, through
 the completeness of the cochain filtration
-(`TauCeti.Algebra.Homology.SpectralSequence.Filtered.Complete`), is not treated here; neither is
-the identification of the first differential with the connecting map of the triple
-`(X (p + 1), X p, X (p - 1))` (`TauCeti.TopTriple.singularCohomologyδ`).
+(`TauCeti.Algebra.Homology.SpectralSequence.Filtered.Complete`), is not treated here.
 
 This is the cohomological counterpart of `TauCeti.filteredSpaceSpectralSequence`
 (`TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic`), whose construction it dualises.
@@ -294,5 +299,178 @@ def filteredSpaceCohomologySpectralSequencePageXIsoGradedOfFinite {a b : ℤ} (h
     (by lia)
 
 end SpectralSequence
+
+/-! ### The first differential -/
+
+section FirstDifferential
+
+/-- For `S ⊆ T ⊆ U`, the relative cochains of `(Y, T)` restricted to `(U, T)` and regarded as
+relative cochains of `(U, S)` are those regarded as relative cochains of `(Y, S)` and then
+restricted to `(U, S)`. -/
+private lemma extendMap_g_comp_extendMap_f_ofInclusions {S T U : Set Y} (hST : S ⊆ T)
+    (hTU : T ⊆ U) :
+    extendMap ((TopTriple.ofSubset hTU).singularCochainComplexShortComplex R k M).g
+        ComplexShape.embeddingUpNat ≫
+      extendMap ((TopTriple.ofInclusions hST hTU).singularCochainComplexShortComplex R k M).f
+        ComplexShape.embeddingUpNat =
+    extendMap ((TopTriple.ofSubset hST).singularCochainComplexShortComplex R k M).f
+        ComplexShape.embeddingUpNat ≫
+      extendMap ((TopTriple.ofSubset (hST.trans hTU)).singularCochainComplexShortComplex R k
+        M).g ComplexShape.embeddingUpNat :=
+  (extendMap_comp _ _ _).symm.trans ((congrArg (extendMap · ComplexShape.embeddingUpNat)
+    ((TopPair.singularCochainComplexMap_comp _ _).symm.trans
+      ((congrArg (TopPair.singularCochainComplexMap (R := R) (k := k) (M := M))
+        (show TopTriple.totalToOuter.app (TopTriple.ofInclusions hST hTU) ≫
+            TopTriple.innerToTotal.app (TopTriple.ofSubset hTU) =
+          TopTriple.innerToTotal.app (TopTriple.ofSubset (hST.trans hTU)) ≫
+            TopTriple.totalToOuter.app (TopTriple.ofSubset hST) by ext : 2 <;> rfl)).trans
+        (TopPair.singularCochainComplexMap_comp _ _)))).trans (extendMap_comp _ _ _))
+
+/-- For `S ⊆ T ⊆ U`, the relative cochains of `(Y, S)` restricted to `(U, S)` and then to `(T, S)`
+are those restricted to `(T, S)`. -/
+private lemma extendMap_g_comp_extendMap_g_ofInclusions {S T U : Set Y} (hST : S ⊆ T)
+    (hTU : T ⊆ U) :
+    extendMap ((TopTriple.ofSubset (hST.trans hTU)).singularCochainComplexShortComplex R k M).g
+        ComplexShape.embeddingUpNat ≫
+      extendMap ((TopTriple.ofInclusions hST hTU).singularCochainComplexShortComplex R k M).g
+        ComplexShape.embeddingUpNat =
+    extendMap ((TopTriple.ofSubset hST).singularCochainComplexShortComplex R k M).g
+      ComplexShape.embeddingUpNat :=
+  (extendMap_comp _ _ _).symm.trans (congrArg (extendMap · ComplexShape.embeddingUpNat)
+    ((TopPair.singularCochainComplexMap_comp _ _).symm.trans
+      (congrArg (TopPair.singularCochainComplexMap (R := R) (k := k) (M := M))
+        (show TopTriple.innerToTotal.app (TopTriple.ofInclusions hST hTU) ≫
+            TopTriple.innerToTotal.app (TopTriple.ofSubset (hST.trans hTU)) =
+          TopTriple.innerToTotal.app (TopTriple.ofSubset hST) by ext : 2 <;> rfl))))
+
+variable {R k M} in
+/-- For `X a ⊆ X b ⊆ X c`, the sequence of graded pieces of the filtration of singular cochains at
+`c`, `b` and `a` is the extended relative cochain sequence of the triple `(X c, X b, X a)`. -/
+private def singularCochainFiltrationGradedShortComplexHom {a b c : ℤ} (hab : X a ⊆ X b)
+    (hbc : X b ⊆ X c) :
+    (kernelCokernelCompSequence.snakeInput
+        (Subobject.ofLE _ _ (singularCochainFiltration_anti R k M hbc))
+        (Subobject.ofLE _ _ (singularCochainFiltration_anti R k M hab))).L₃ ⟶
+      ((TopTriple.ofInclusions hab hbc).singularCochainComplexShortComplex R k M).map
+        (ComplexShape.embeddingUpNat.extendFunctor _) where
+  τ₁ := (singularCochainFiltrationCokernelIso R k M hbc).hom
+  τ₂ := (cokernelIsoOfEq (Subobject.ofLE_comp_ofLE _ _ _ _ _) ≪≫
+    singularCochainFiltrationCokernelIso R k M (hab.trans hbc)).hom
+  τ₃ := (singularCochainFiltrationCokernelIso R k M hab).hom
+  -- The objects of the two sequences agree only up to unfolding the triples and the snake input,
+  -- so the squares are checked with explicit composites rather than by rewriting.
+  comm₁₂ := by
+    unfold kernelCokernelCompSequence.snakeInput
+    exact (cancel_epi (cokernel.π (Subobject.ofLE _ _
+        (singularCochainFiltration_anti R k M hbc)))).1 <|
+      (π_singularCochainFiltrationCokernelIso_hom_assoc R k M hbc
+        (extendMap ((TopTriple.ofInclusions hab hbc).singularCochainComplexShortComplex R k M).f
+          ComplexShape.embeddingUpNat)).trans <|
+      (congrArg ((singularCochainFiltrationIso R k M X b).hom ≫ ·)
+        (extendMap_g_comp_extendMap_f_ofInclusions R k M hab hbc)).trans <|
+      (ofLE_comp_singularCochainFiltrationIso_hom_assoc R k M hab
+        (extendMap ((TopTriple.ofSubset (hab.trans hbc)).singularCochainComplexShortComplex R k
+          M).g ComplexShape.embeddingUpNat)).symm.trans <|
+      (congrArg (Subobject.ofLE _ _ (singularCochainFiltration_anti R k M hab) ≫ ·)
+        ((π_singularCochainFiltrationCokernelIso_hom R k M (hab.trans hbc)).symm.trans
+          (π_comp_cokernelIsoOfEq_hom_assoc (Subobject.ofLE_comp_ofLE _ _ _
+            (singularCochainFiltration_anti R k M hbc)
+            (singularCochainFiltration_anti R k M hab))
+            (singularCochainFiltrationCokernelIso R k M (hab.trans hbc)).hom).symm)).trans <|
+      (Category.assoc _ _ _).symm.trans (cokernel.π_desc_assoc _ _ _ _).symm
+  comm₂₃ := by
+    unfold kernelCokernelCompSequence.snakeInput
+    exact (cancel_epi (cokernel.π (Subobject.ofLE _ _
+        (singularCochainFiltration_anti R k M hbc) ≫
+          Subobject.ofLE _ _ (singularCochainFiltration_anti R k M hab)))).1 <|
+      (congrArg (_ ≫ ·) (Category.assoc _ _ _)).trans <|
+      (π_comp_cokernelIsoOfEq_hom_assoc (Subobject.ofLE_comp_ofLE _ _ _
+        (singularCochainFiltration_anti R k M hbc) (singularCochainFiltration_anti R k M hab))
+        ((singularCochainFiltrationCokernelIso R k M (hab.trans hbc)).hom ≫
+          extendMap ((TopTriple.ofInclusions hab hbc).singularCochainComplexShortComplex R k
+            M).g ComplexShape.embeddingUpNat)).trans <|
+      (π_singularCochainFiltrationCokernelIso_hom_assoc R k M (hab.trans hbc)
+        (extendMap ((TopTriple.ofInclusions hab hbc).singularCochainComplexShortComplex R k M).g
+          ComplexShape.embeddingUpNat)).trans <|
+      (congrArg ((singularCochainFiltrationIso R k M X a).hom ≫ ·)
+        (extendMap_g_comp_extendMap_g_ofInclusions R k M hab hbc)).trans <|
+      (π_singularCochainFiltrationCokernelIso_hom R k M hab).symm.trans <|
+      (congrArg (· ≫ (singularCochainFiltrationCokernelIso R k M hab).hom)
+        (Category.id_comp _).symm).trans (cokernel.π_desc_assoc _ _ _ _).symm
+
+variable {R k M} in
+/-- For `X a ⊆ X b ⊆ X c`, the connecting map of the sequence of graded pieces of the filtration
+of singular cochains at `c`, `b` and `a` is the connecting map of the triple `(X c, X b, X a)`. -/
+private lemma δ_comp_singularCochainFiltrationCokernelIso_hom {a b c : ℤ} (hab : X a ⊆ X b)
+    (hbc : X b ⊆ X c) (n : ℕ) (n₀ n₁ : ℤ) (h₀ : (n : ℤ) = n₀)
+    (h₁ : ((n + 1 : ℕ) : ℤ) = n₁) :
+    (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact
+        (Subobject.ofLE _ _ (singularCochainFiltration_anti R k M hbc))
+        (Subobject.ofLE _ _ (singularCochainFiltration_anti R k M hab))).δ n₀ n₁
+          (show n₀ + 1 = n₁ by lia) ≫
+      (homologyMapIso (singularCochainFiltrationCokernelIso R k M hbc) n₁ ≪≫
+        extendHomologyIso _ ComplexShape.embeddingUpNat h₁).hom =
+    (homologyMapIso (singularCochainFiltrationCokernelIso R k M hab) n₀ ≪≫
+        extendHomologyIso _ ComplexShape.embeddingUpNat h₀).hom ≫
+      (TopTriple.ofInclusions hab hbc).singularCohomologyδ R k M n (n + 1) :=
+  (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _)
+    (HomologicalComplex.HomologySequence.δ_naturality
+      (singularCochainFiltrationGradedShortComplexHom hab hbc) _
+      (((TopTriple.ofInclusions hab hbc).shortExact_singularCochainComplexShortComplex R k
+        M).extend ComplexShape.embeddingUpNat) n₀ n₁ _)).trans
+    ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·)
+      (ShortComplex.ShortExact.extend_δ_comp_extendHomologyIso_hom
+        ((TopTriple.ofInclusions hab hbc).shortExact_singularCochainComplexShortComplex R k M)
+        ComplexShape.embeddingUpNat rfl h₀ h₁ _)).trans (Category.assoc _ _ _).symm)))
+
+variable (hX : Monotone X)
+
+/-- **The first differential of the cohomology spectral sequence of a filtered space.** Under the
+identifications of the first page with relative singular cohomology, the differential from
+`(p - 1, q)` to `(p, q)` is the connecting map `Hⁿ(X (p - 1), X (p - 2)) ⟶ Hⁿ⁺¹(X p, X (p - 1))`
+of the triple `(X p, X (p - 1), X (p - 2))`, where `p - 1 + q = n`. -/
+theorem filteredSpaceCohomologySpectralSequence_first_page_d_eq (p q : ℤ) (n : ℕ)
+    (hn : p - 1 + q = n) :
+    ((filteredSpaceCohomologySpectralSequence R k M hX).page 1).d (p - 1, q) (p, q) =
+      (filteredSpaceCohomologySpectralSequenceFirstPageXIso R k M hX (p - 1) q (p - 1 - 1)
+          (p - 1) rfl rfl n hn).hom ≫
+        (TopTriple.ofInclusions (hX (by lia : p - 1 - 1 ≤ p - 1))
+          (hX (by lia : p - 1 ≤ p))).singularCohomologyδ R k M n (n + 1) ≫
+        (filteredSpaceCohomologySpectralSequenceFirstPageXIso R k M hX p q (p - 1) p rfl rfl
+          (n + 1) (by lia)).inv := by
+  have hS (r : ℤ) (m : ℕ) (hm : r + q = m) :
+      (filteredSpaceCohomologySpectralSequenceFirstPageXIso R k M hX r q (r - 1) r rfl rfl m
+          hm).hom =
+        (CochainComplex.decreasingFiltrationSpectralSequenceFirstPageXIso _
+            (antitone_singularCochainFiltration_sub_one R k M hX) r q ≪≫
+          homologyMapIso (Subobject.cokernelOfLEIsoOfEq
+            (congrArg (singularCochainFiltration R k M X) (add_sub_cancel_right r 1)) rfl
+            (antitone_singularCochainFiltration_sub_one R k M hX (by lia))
+            (singularCochainFiltration_anti R k M (hX (by lia : r - 1 ≤ r)))) _).hom ≫
+        (homologyMapIso (singularCochainFiltrationCokernelIso R k M
+            (hX (by lia : r - 1 ≤ r))) _ ≪≫
+          extendHomologyIso _ ComplexShape.embeddingUpNat hm.symm).hom := by
+    rw [filteredSpaceCohomologySpectralSequenceFirstPageXIso, firstPageXIsoExtend,
+      Functor.mapIso_trans]
+    simp only [Iso.trans_hom, Category.assoc]
+    rfl
+  have hd := (Iso.eq_comp_inv _).1
+    ((CochainComplex.decreasingFiltrationSpectralSequence_first_page_d_eq _
+      (antitone_singularCochainFiltration_sub_one R k M hX) (p - 1) p q (by lia)
+      (S₁ := singularCochainFiltration R k M X p)
+      (S₂ := singularCochainFiltration R k M X (p - 1))
+      (S₃ := singularCochainFiltration R k M X (p - 1 - 1))
+      (congrArg (singularCochainFiltration R k M X) (add_sub_cancel_right p 1)) rfl
+      (congrArg (singularCochainFiltration R k M X) (add_sub_cancel_right (p - 1) 1)) rfl
+      (singularCochainFiltration_anti R k M (hX (by lia)))
+      (singularCochainFiltration_anti R k M (hX (by lia)))).trans (Category.assoc _ _ _).symm)
+  refine ((Iso.eq_comp_inv _).2 ?_).trans (Category.assoc _ _ _)
+  rw [hS, hS]
+  exact (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) hd).trans
+    ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·)
+      (δ_comp_singularCochainFiltrationCokernelIso_hom _ _ n _ _ hn.symm
+        (by push_cast; lia))).trans (Category.assoc _ _ _).symm)))
+
+end FirstDifferential
 
 end TauCeti
