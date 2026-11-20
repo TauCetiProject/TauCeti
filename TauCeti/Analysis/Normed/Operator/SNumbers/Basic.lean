@@ -184,6 +184,15 @@ theorem comp_le_right (T : X →L[𝕜] Y) (A : W →L[𝕜] X) (n : ℕ) :
       simpa using hs.comp_le (ContinuousLinearMap.id 𝕜 Y) T A n
     _ ≤ s T n * ‖A‖₊ := by gcongr; exact mul_le_of_le_one_left' hid
 
+/-- Two-sided compression by contractions does not increase s-numbers. -/
+theorem comp_comp_le_of_norm_le_one {B : Y →L[𝕜] Z} {A : W →L[𝕜] X} (hB : ‖B‖ ≤ 1)
+    (hA : ‖A‖ ≤ 1) (T : X →L[𝕜] Y) (n : ℕ) : s (B ∘L T ∘L A) n ≤ s T n := by
+  have hB' : ‖B‖₊ ≤ 1 := mod_cast hB
+  have hA' : ‖A‖₊ ≤ 1 := mod_cast hA
+  calc s (B ∘L T ∘L A) n ≤ ‖B‖₊ * s T n * ‖A‖₊ := hs.comp_le B T A n
+    _ ≤ 1 * s T n * 1 := by gcongr
+    _ = s T n := by rw [one_mul, mul_one]
+
 private theorem smul_le (c : 𝕜) (T : X →L[𝕜] Y) (n : ℕ) :
     s (c • T) n ≤ ‖c‖₊ * s T n := by
   have hid : ‖ContinuousLinearMap.id 𝕜 Y‖₊ ≤ 1 := by
