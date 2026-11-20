@@ -137,8 +137,8 @@ theorem ofReal_mul_perimeter_steinerSymmetrization_add_le_perimeter
   have : Nonempty Φ := ⟨⟨0, by simp⟩⟩
   let V : Φ → ℝ≥0∞ := fun p =>
     2 * (∫⁻ y in {y : (ℝ ∙ e)ᗮ | 0 < volume {t : ℝ | (y : E) + t • e ∈ s}},
-      ENNReal.ofReal √(1 - ‖p.1 y‖ ^ 2)) +
-    ENNReal.ofReal (∫ y : (ℝ ∙ e)ᗮ, divergenceCLM p.1 y *
+      ENNReal.ofReal √(1 - ‖p.val y‖ ^ 2)) +
+    ENNReal.ofReal (∫ y : (ℝ ∙ e)ᗮ, divergenceCLM p.val y *
       volume.real {t : ℝ | (y : E) + t • e ∈ s})
   have hsup : perimeter volume ⊤ (steinerSymmetrization e he s) = ⨆ p : Φ, V p := by
     rw [perimeter_steinerSymmetrization_eq_iSup e he hs hfin, iSup_subtype]
@@ -148,7 +148,7 @@ theorem ofReal_mul_perimeter_steinerSymmetrization_add_le_perimeter
   rw [hsup, ENNReal.mul_iSup, ENNReal.iSup_add]
   exact iSup_le fun p => mul_variational_add_excess_le_perimeter e he hs hfin
     (nullMeasurableSet_noninterval_lineSection hs hfin e he) (.of_forall fun _ => id)
-    hδ0 hδ1 p.1 p.2
+    hδ0 hδ1 p.val p.property
 
 /-- **Pythagorean noninterval excess in Steiner's perimeter inequality.** For any null-measurable
 set `s` of finite volume, a unit vector `e`, and any family `A ⊆ (ℝ ∙ e)ᗮ` of line sections of `s`

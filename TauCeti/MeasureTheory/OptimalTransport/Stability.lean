@@ -214,7 +214,8 @@ theorem transportCost_le_liminf_transportCost (hcs : IsCostLiminfStable l cs μs
     by_cases hi : transportCost (cs i) (μs i).toMeasure (νs i).toMeasure < a
     · obtain ⟨σ, hσ, hσa⟩ := transportCost_lt_iff.mp hi
       exact ⟨⟨σ, hσ.isProbabilityMeasure⟩, hσ, fun _ ↦ hσa⟩
-    · exact ⟨(Coupling.prod (μs i) (νs i)).1, (Coupling.prod (μs i) (νs i)).2, fun h ↦ absurd h hi⟩
+    · exact ⟨(Coupling.prod (μs i) (νs i)).val, (Coupling.prod (μs i) (νs i)).property,
+        fun h ↦ absurd h hi⟩
   choose πs hπs hπsa using hchoice
   set lb : Filter ι :=
     l ⊓ 𝓟 {i | transportCost (cs i) (μs i).toMeasure (νs i).toMeasure < a}

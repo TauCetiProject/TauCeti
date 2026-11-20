@@ -160,7 +160,7 @@ theorem nonempty_singularHomology_sublevelPair_sphereHeight_iso (v : sphere (0 :
   have : Unique {p : ↥(criticalPoints (𝓡 n) (sphereHeight v) ∩ sphereHeight v ⁻¹' {1}) //
       manifoldMorseIndex (𝓡 n) (sphereHeight v) p = n} :=
     { default := p
-      uniq q := Subtype.ext <| Subtype.ext <| sphereHeight_eq_one_iff.1 q.1.2.2 }
+      uniq q := Subtype.ext <| Subtype.ext <| sphereHeight_eq_one_iff.1 q.val.property.2 }
   exact ⟨e ≪≫ coproductUniqueIso _⟩
 
 /-- For `-1 < a < 1 < b`, the relative homology `Hₖ({h ≤ b}, {h ≤ a})` of the sublevel pair of the
@@ -172,8 +172,8 @@ theorem isZero_singularHomology_sublevelPair_sphereHeight (v : sphere (0 : E) 1)
     nonempty_singularHomology_sublevelPair_sphereHeight_iso_sigma (n := n) R v ha ha' hb k
   have : IsEmpty {p : ↥(criticalPoints (𝓡 n) (sphereHeight v) ∩ sphereHeight v ⁻¹' {1}) //
       manifoldMorseIndex (𝓡 n) (sphereHeight v) p = k} := ⟨fun q ↦ by
-    have hq := q.2
-    rw [sphereHeight_eq_one_iff.1 q.1.2.2, manifoldMorseIndex_sphereHeight_self] at hq
+    have hq := q.property
+    rw [sphereHeight_eq_one_iff.1 q.val.property.2, manifoldMorseIndex_sphereHeight_self] at hq
     exact hk hq.symm⟩
   exact ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ fun q ↦ isEmptyElim q)).of_iso e
 

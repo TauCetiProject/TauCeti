@@ -56,11 +56,11 @@ private noncomputable def structureCocone : Cocone Φ.affineToricDiagram where
         intro τ σ h
         -- Pin the affine and constant-functor carriers before using the categorical unit law.
         change faceAffineToricSchemeMap Φ.lattice
-          (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom h)) ≫ Spec.map _ = Spec.map _ ≫ 𝟙 _
+          (Φ.isFaceOf_of_le σ.property τ.property (leOfHom h)) ≫ Spec.map _ = Spec.map _ ≫ 𝟙 _
         rw [Category.comp_id, faceAffineToricSchemeMap_def]
         exact comp_over (Spec.map (CommRingCat.ofHom
           (faceAffineCoordinateRingMap Φ.lattice
-            (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom h))).toRingHom)) (Spec (.of ℂ)) }
+            (Φ.isFaceOf_of_le σ.property τ.property (leOfHom h))).toRingHom)) (Spec (.of ℂ)) }
 
 /-- The structure morphism to `Spec ℂ` of the scheme of a finite fan. -/
 noncomputable def algebraicRealizationStructureMap :
@@ -96,7 +96,7 @@ structure morphism of the affine chart. -/
 @[reassoc]
 theorem affineToricChartι_comp_algebraicRealizationStructureMap (σ : Φ.cones) :
     Φ.affineToricChartι σ ≫ Φ.algebraicRealizationStructureMap =
-      Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Φ.lattice σ.1))) := by
+      Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing Φ.lattice σ.val))) := by
   rw [← algebraicRealization_over, ← specOverSpec_over]
   exact comp_over (Φ.affineToricChartι σ) (Spec (.of ℂ))
 

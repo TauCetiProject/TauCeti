@@ -227,7 +227,7 @@ def Linked : ℚ → List (P.weylGroup × ℚ) → Prop
   | _, [] => True
   | _, [_] => True
   | t, p :: q :: l => (∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam),
-      C.head.1 = p.1 ∧ C.last.1 = q.1 ∧ IsAChain (t + p.2) lam C) ∧ Linked (t + p.2) (q :: l)
+      C.head.val = p.1 ∧ C.last.val = q.1 ∧ IsAChain (t + p.2) lam C) ∧ Linked (t + p.2) (q :: l)
 
 @[simp]
 theorem linked_nil (t : ℚ) : Linked P b lam t [] :=
@@ -241,7 +241,7 @@ theorem linked_singleton (t : ℚ) (p : P.weylGroup × ℚ) : Linked P b lam t [
 theorem linked_cons_cons {t : ℚ} {p q : P.weylGroup × ℚ} {l : List (P.weylGroup × ℚ)} :
     Linked P b lam t (p :: q :: l) ↔
       (∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam),
-        C.head.1 = p.1 ∧ C.last.1 = q.1 ∧ IsAChain (t + p.2) lam C) ∧
+        C.head.val = p.1 ∧ C.last.val = q.1 ∧ IsAChain (t + p.2) lam C) ∧
       Linked P b lam (t + p.2) (q :: l) :=
   Iff.rfl
 
@@ -250,7 +250,7 @@ the end of `p`. -/
 theorem linked_cons_iff {t : ℚ} {p : P.weylGroup × ℚ} {l : List (P.weylGroup × ℚ)} :
     Linked P b lam t (p :: l) ↔
       (∀ q ∈ l.head?, ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam),
-        C.head.1 = p.1 ∧ C.last.1 = q.1 ∧ IsAChain (t + p.2) lam C) ∧
+        C.head.val = p.1 ∧ C.last.val = q.1 ∧ IsAChain (t + p.2) lam C) ∧
       Linked P b lam (t + p.2) l := by
   cases l <;> simp
 
@@ -259,7 +259,7 @@ theorem linked_cons_iff {t : ℚ} {p : P.weylGroup × ℚ} {l : List (P.weylGrou
 theorem linked_iff_getElem {t : ℚ} {l : List (P.weylGroup × ℚ)} :
     Linked P b lam t l ↔ ∀ k (hk : k + 1 < l.length),
       ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam),
-        C.head.1 = l[k].1 ∧ C.last.1 = l[k + 1].1 ∧
+        C.head.val = l[k].1 ∧ C.last.val = l[k + 1].1 ∧
           IsAChain (t + ((l.take (k + 1)).map Prod.snd).sum) lam C := by
   induction l generalizing t with
   | nil => simp
@@ -342,9 +342,9 @@ concatenated. -/
 private theorem exists_isAChain_head?_mergeDirs {T : ℚ} {l : List (P.weylGroup × ℚ)}
     (hl : Linked P b lam T l) {x : P.weylGroup}
     (hx : ∀ p ∈ l.head?, ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam),
-      C.head.1 = x ∧ C.last.1 = p.1 ∧ IsAChain T lam C) :
+      C.head.val = x ∧ C.last.val = p.1 ∧ IsAChain T lam C) :
     ∀ q ∈ (mergeDirs l).head?, ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain
-      (P.wallIndices b lam), C.head.1 = x ∧ C.last.1 = q.1 ∧ IsAChain T lam C := by
+      (P.wallIndices b lam), C.head.val = x ∧ C.last.val = q.1 ∧ IsAChain T lam C := by
   induction l with
   | nil => simp [mergeDirs]
   | cons p l ih =>
@@ -391,7 +391,7 @@ private theorem Linked.mergeDirs {t : ℚ} {l : List (P.weylGroup × ℚ)} (hl :
 /-- The directions of an LS path with the durations of their segments,
 `[(τ₀, a₁ - a₀), …, (τ_l, a_{l+1} - a_l)]`. -/
 def dirDurations (π : LSPath P b lam) : List (P.weylGroup × ℚ) :=
-  List.ofFn fun j ↦ ((π.dir j).1, π.duration j)
+  List.ofFn fun j ↦ ((π.dir j).val, π.duration j)
 
 @[simp]
 theorem length_dirDurations (π : LSPath P b lam) : π.dirDurations.length = π.length + 1 := by
@@ -399,7 +399,8 @@ theorem length_dirDurations (π : LSPath P b lam) : π.dirDurations.length = π.
 
 @[simp]
 theorem getElem_dirDurations (π : LSPath P b lam) (k : ℕ) (hk : k < π.dirDurations.length) :
-    π.dirDurations[k] = ((π.dir ⟨k, by simpa using hk⟩).1, π.duration ⟨k, by simpa using hk⟩) := by
+    π.dirDurations[k] = ((π.dir ⟨k, by simpa using hk⟩).val, π.duration ⟨k, by simpa using hk⟩)
+        := by
   simp only [dirDurations, List.getElem_ofFn]
 
 /-- The directions of an LS path are minimal coset representatives. -/
@@ -407,7 +408,7 @@ theorem isMinimalCosetRep_of_mem_dirDurations (π : LSPath P b lam) {p : P.weylG
     (hp : p ∈ π.dirDurations) :
     (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) p.1 := by
   obtain ⟨j, rfl⟩ := List.mem_ofFn.mp hp
-  exact (π.dir j).2
+  exact (π.dir j).property
 
 /-- The segments of an LS path have positive durations. -/
 theorem pos_of_mem_dirDurations (π : LSPath P b lam) {p : P.weylGroup × ℚ}
@@ -461,7 +462,7 @@ noncomputable def ofLinked (l : List (P.weylGroup × ℚ))
     LSPath P b lam :=
   have hpos := length_mergeDirs_pos hsum
   { length := (mergeDirs l).length - 1
-    dir j := ⟨((mergeDirs l)[j.1]'(by omega)).1, by
+    dir j := ⟨((mergeDirs l)[j.val]'(by omega)).1, by
       obtain ⟨p, hp, hpq⟩ := exists_mem_of_mem_mergeDirs
         (List.getElem_mem (l := mergeDirs l) (n := j) (by omega))
       rw [← hpq]
@@ -498,8 +499,8 @@ private theorem dir_ofLinked (l : List (P.weylGroup × ℚ))
     (hmin : ∀ p ∈ l, (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) p.1)
     (hnonneg : ∀ p ∈ l, 0 ≤ p.2) (hsum : (l.map Prod.snd).sum = 1) (hl : Linked P b lam 0 l)
     (j : Fin ((ofLinked l hmin hnonneg hsum hl).length + 1)) :
-    ((ofLinked l hmin hnonneg hsum hl).dir j).1 =
-      ((mergeDirs l)[j.1]'(by rw [← length_ofLinked l hmin hnonneg hsum hl]; exact j.2)).1 :=
+    ((ofLinked l hmin hnonneg hsum hl).dir j).val =
+      ((mergeDirs l)[j.val]'(by rw [← length_ofLinked l hmin hnonneg hsum hl]; exact j.isLt)).1 :=
   rfl
 
 /-- The directions and durations of `TauCeti.LSPath.ofLinked l` are those of `l` after merging. -/

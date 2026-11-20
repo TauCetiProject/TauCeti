@@ -74,9 +74,9 @@ theorem exists_rename_eq_of_vars_subset_range' {τ : Type*} (p : MvPolynomial σ
     (hf : ↑p.vars ⊆ Set.range f) : ∃ q : MvPolynomial τ R, rename f q = p := by
   rw [coe_vars_subset_iff, AlgHom.mem_range] at hf
   obtain ⟨q, hq⟩ := hf
-  refine ⟨rename (fun x : Set.range f ↦ x.2.choose) q, ?_⟩
+  refine ⟨rename (fun x : Set.range f ↦ x.property.choose) q, ?_⟩
   rw [rename_rename, ← hq]
-  exact congrArg (fun f ↦ rename f q) (funext fun x ↦ x.2.choose_spec)
+  exact congrArg (fun f ↦ rename f q) (funext fun x ↦ x.property.choose_spec)
 
 end MvPolynomial
 
