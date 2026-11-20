@@ -21,16 +21,17 @@ For an open set `Ω` of a real normed space `E`, this file constructs the space
 whose closure is compact and contained in `Ω`) lies in the Banach space `C^{k,α}(U, F)` of
 `TauCeti.CkHolderSpaceOn`. Its topology is the compact-exhaustion topology: the coarsest one
 making every restriction map `C^{k,α}_loc(Ω) → C^{k,α}(U)` continuous, given by the seminorms
-`f ↦ ‖f|_U‖_{C^{k,α}(U)}`. It is a complete locally convex space, and when `E` is proper (for
-instance `ℝⁿ`) countably many of these seminorms, along any compact exhaustion of `Ω`, already
-define the topology, so for complete `F` the space is a Fréchet space.
+`f ↦ ‖f|_U‖_{C^{k,α}(U)}`. It is a locally convex space, complete when `E` is locally compact and
+`F` is complete, and when `E` is proper (for instance `ℝⁿ`) countably many of these seminorms,
+along any compact exhaustion of `Ω`, already define the topology, so for complete `F` the space is
+a Fréchet space.
 
 `C^{k,α}_loc(Ω)` is not the Banach space `C^{k,α}(Ω)` of `TauCeti.CkHolderSpaceOn`, which it
 contains through the continuous linear map `TauCeti.CkHolderSpaceOn.toCkHolderSpaceLocCLM`. Its
 elements need not be bounded (`1/x` on `(0, 1)`), and its Hölder condition is local: on
-`Ω = (-1, 0) ∪ (0, 1)` the sign function is in `C^{k,α}_loc(Ω)` for every `k` but has unbounded
-Hölder quotients across the gap. No single seminorm controls the others, and the space is not
-normable in general.
+`Ω = (-1, 0) ∪ (0, 1)` and for `α > 0`, the function `x ↦ xᵏ · sign x` is in `C^{k,α}_loc(Ω)`, but
+its `k`-th derivative `k! · sign x` has unbounded `α`-Hölder quotients across the gap. No single
+seminorm controls the others, and the space is not normable in general.
 
 The space is meant for locally compact `E`, such as `ℝⁿ`, and every result beyond the algebraic
 and topological structure assumes this. Without local compactness the definition degenerates:
@@ -57,6 +58,9 @@ and its `k`-th iterated derivative is `α`-Hölder on each compact subset of `Ω
 * `TauCeti.CkHolderSpaceLoc.ofContDiffOn`, `TauCeti.CkHolderSpaceLoc.contDiffOn` and
   `TauCeti.CkHolderSpaceLoc.exists_holderOnWith_iteratedFDeriv`: introduction and elimination
   through `C^k` regularity on `Ω` and Hölder bounds on compact subsets.
+* `TauCeti.CkHolderSpaceLoc.exists_restrictL_eq`: gluing, for locally compact `E`, a compatible
+  family of elements of `C^{k,α}(U)`, one for each open `U ⋐ Ω`, into an element of
+  `C^{k,α}_loc(Ω)`.
 * `TauCeti.CkHolderSpaceLoc.instCompleteSpace`: completeness, for locally compact `E` and complete
   `F`; `TauCeti.CkHolderSpaceLoc.instFirstCountableTopology` and
   `TauCeti.CkHolderSpaceLoc.instMetrizableSpace`: first countability and metrizability for proper
@@ -160,7 +164,8 @@ instance instNeg : Neg (CkHolderSpaceLoc k α Ω F) where
   neg f := ⟨-⇑f, fun U hU hUΩ ↦ by
     obtain ⟨f', hf'⟩ := f.exists_eq U hU hUΩ
     exact ⟨(-1 : ℝ) • f', fun x ↦ by
-      rw [CkHolderSpaceOn.coe_smul, Pi.smul_apply, hf', neg_one_smul, Pi.neg_apply]⟩⟩
+      rw [CkHolderSpaceOn.coe_smul]
+      simp [hf']⟩⟩
 
 instance : IsNegApply (CkHolderSpaceLoc k α Ω F) where
 
@@ -169,8 +174,8 @@ instance instSub : Sub (CkHolderSpaceLoc k α Ω F) where
     obtain ⟨f', hf'⟩ := f.exists_eq U hU hUΩ
     obtain ⟨g', hg'⟩ := g.exists_eq U hU hUΩ
     exact ⟨f' + (-1 : ℝ) • g', fun x ↦ by
-      rw [CkHolderSpaceOn.coe_add, CkHolderSpaceOn.coe_smul, Pi.add_apply, Pi.smul_apply, hf', hg',
-        neg_one_smul, Pi.sub_apply, sub_eq_add_neg]⟩⟩
+      rw [CkHolderSpaceOn.coe_add, CkHolderSpaceOn.coe_smul]
+      simp [hf', hg', sub_eq_add_neg]⟩⟩
 
 instance : IsSubApply (CkHolderSpaceLoc k α Ω F) where
 
@@ -246,16 +251,16 @@ def restrictL : CkHolderSpaceLoc k α Ω F →L[ℝ] CkHolderSpaceOn k α U F wh
 
 /-- The restriction to `U ⋐ Ω` has the same values on `U`. -/
 @[simp]
-theorem restrictL_apply_apply (f : CkHolderSpaceLoc k α Ω F) (x : U) :
+theorem restrictL_apply (f : CkHolderSpaceLoc k α Ω F) (x : U) :
     restrictL U hU hUΩ f x = f ⟨x, hUΩ (subset_closure x.2)⟩ :=
   restrictLM_apply (hU := hU) f x
 
 /-- The restriction to `U ⋐ Ω` is the unique element of `C^{k,α}(U)` with the right values. -/
-theorem restrictL_apply_eq_iff {f : CkHolderSpaceLoc k α Ω F} {g : CkHolderSpaceOn k α U F} :
+theorem restrictL_eq_iff {f : CkHolderSpaceLoc k α Ω F} {g : CkHolderSpaceOn k α U F} :
     restrictL U hU hUΩ f = g ↔ ∀ x : U, g x = f ⟨x, hUΩ (subset_closure x.2)⟩ := by
-  refine ⟨fun h x ↦ by rw [← h, restrictL_apply_apply], fun h ↦ ?_⟩
+  refine ⟨fun h x ↦ by rw [← h, restrictL_apply], fun h ↦ ?_⟩
   ext x
-  rw [restrictL_apply_apply, h]
+  rw [restrictL_apply, h]
 
 /-- Restricting from `U ⋐ Ω` to a smaller open `V ⋐ Ω` is restriction from `Ω` to `V`. -/
 theorem restrictL_restrictL {V : Opens E} {hV : IsCompact (closure (V : Set E))}
@@ -375,7 +380,7 @@ theorem contDiffOn (f : CkHolderSpaceLoc k α Ω F) {g : E → F} (hg : ∀ x : 
     (isCompact_singleton (x := x)) (singleton_subset_iff.2 hx)
   refine ⟨U, U.isOpen, hxU rfl, ((restrictL U hU hUΩ f).contDiffOn fun y ↦ ?_).mono
     inter_subset_right⟩
-  rw [restrictL_apply_apply]
+  rw [restrictL_apply]
   exact hg ⟨y, hUΩ (subset_closure y.2)⟩
 
 /-- The `k`-th iterated derivative of a function agreeing with an element of `C^{k,α}_loc(Ω)` on
@@ -385,7 +390,7 @@ theorem exists_holderOnWith_iteratedFDeriv (f : CkHolderSpaceLoc k α Ω F) {g :
     ∃ C, HolderOnWith C α (iteratedFDeriv ℝ k g) K := by
   obtain ⟨U, hKU, hUΩ, hU⟩ := Opens.exists_between_and_isCompact_closure hK hKΩ
   exact ⟨_, ((restrictL U hU hUΩ f).holderOnWith_iteratedFDeriv fun y ↦ by
-    rw [restrictL_apply_apply]
+    rw [restrictL_apply]
     exact hg ⟨y, hUΩ (subset_closure y.2)⟩).mono hKU⟩
 
 /-- **Intrinsic description.** On a locally compact space, a function `g` agrees on `Ω` with an
@@ -417,9 +422,10 @@ instance instContinuousEvalConst : ContinuousEvalConst (CkHolderSpaceLoc k α Ω
 instance instT2Space : T2Space (CkHolderSpaceLoc k α Ω F) :=
   .of_injective_continuous DFunLike.coe_injective (continuous_pi continuous_eval_const)
 
-/-- An element of `C^{k,α}_loc(Ω)` glued from a compatible family of elements of `C^{k,α}(U)`,
-one for each open `U ⋐ Ω`. -/
-private theorem exists_restrictL_eq
+/-- **Gluing.** A family of elements of `C^{k,α}(U)`, one for each open `U ⋐ Ω`, that is
+compatible with restriction to smaller open sets is the family of restrictions of an element of
+`C^{k,α}_loc(Ω)`. -/
+theorem exists_restrictL_eq
     (g : ∀ (U : Opens E), IsCompact (closure (U : Set E)) → closure (U : Set E) ⊆ Ω →
       CkHolderSpaceOn k α U F)
     (hg : ∀ (U : Opens E) (hU : IsCompact (closure (U : Set E)))
@@ -448,13 +454,14 @@ private theorem exists_restrictL_eq
     exact h1.trans h2.symm
   refine ⟨⟨fun x ↦ g (W x) (hW x) (hWΩ x) ⟨x, hxW x rfl⟩, fun U hU hUΩ ↦
     ⟨g U hU hUΩ, hval U hU hUΩ⟩⟩, fun U hU hUΩ ↦ ?_⟩
-  rw [restrictL_apply_eq_iff]
+  rw [restrictL_eq_iff]
   exact hval U hU hUΩ
 
 /-- On a locally compact space, `C^{k,α}_loc(Ω)` with values in a Banach space is complete. -/
 instance instCompleteSpace [CompleteSpace F] : CompleteSpace (CkHolderSpaceLoc k α Ω F) := by
   refine ⟨fun {l} hl ↦ ?_⟩
-  have hl' := hl.1
+  -- Provides the instance needed by `tendsto_nhds_unique` below.
+  have : l.NeBot := hl.1
   choose g hg using fun (U : Opens E) (hU : IsCompact (closure (U : Set E)))
     (hUΩ : closure (U : Set E) ⊆ Ω) ↦
       CompleteSpace.complete (hl.map (restrictL U hU hUΩ).uniformContinuous)
@@ -517,7 +524,7 @@ def toCkHolderSpaceLocCLM : CkHolderSpaceOn k α Ω F →L[ℝ] CkHolderSpaceLoc
   map_smul' c f := by ext; simp
   cont := CkHolderSpaceLoc.continuous_iff.2 fun U hU hUΩ ↦
     (restrictL (fun _ hx ↦ hUΩ (subset_closure hx))).continuous.congr fun f ↦ by
-      rw [eq_comm, CkHolderSpaceLoc.restrictL_apply_eq_iff]
+      rw [eq_comm, CkHolderSpaceLoc.restrictL_eq_iff]
       intro x
       simp
 
@@ -534,7 +541,7 @@ theorem restrictL_toCkHolderSpaceLocCLM (U : Opens E) (hU : IsCompact (closure (
     (hUΩ : closure (U : Set E) ⊆ Ω) (f : CkHolderSpaceOn k α Ω F) :
     CkHolderSpaceLoc.restrictL U hU hUΩ (toCkHolderSpaceLocCLM f) =
       restrictL (fun _ hx ↦ hUΩ (subset_closure hx)) f := by
-  rw [CkHolderSpaceLoc.restrictL_apply_eq_iff]
+  rw [CkHolderSpaceLoc.restrictL_eq_iff]
   simp
 
 /-- The inclusion `C^{k,α}(Ω) → C^{k,α}_loc(Ω)` is injective. -/
