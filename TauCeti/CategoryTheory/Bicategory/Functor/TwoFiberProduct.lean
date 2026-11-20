@@ -576,6 +576,13 @@ lemma lift_app_toFunctor (X : LocallyDiscrete Cᵒᵖ) :
 def liftCompFst : lift α β a b e ≫ fst α β ≅ a :=
   Pseudofunctor.StrongTrans.isoMk (fun X ↦ Iso.refl (a.app X)) (fun f ↦ by
     ext k
+    -- The components `Iso.refl (a.app X)` have source `(lift a b e ≫ fst).app X`, which is
+    -- `a.app X` only definitionally (`liftApp ⋙ π₁` reduces to `a.app X`). The whiskered
+    -- components in the goal are therefore not type-correct at the transparency used by `rw` and
+    -- `simp`: after `Cat.Hom₂.comp_app`, `comp_naturality_hom_app` and `Iso.refl_hom`, the rewrite
+    -- `Cat.whiskerLeft_app` finds no instance. So `change` states the goal with the components
+    -- evaluated. These are the naturality of `a` at `k` (`liftNaturality_hom_app_fst`) and
+    -- identities: the naturality of `fst`, the associators of `Cat` and the `Iso.refl`s.
     change 𝟙 _ ≫ (a.naturality f).hom.toNatTrans.app k =
       (𝟙 _ ≫ (a.naturality f).hom.toNatTrans.app k ≫ 𝟙 _ ≫ 𝟙 _ ≫ 𝟙 _) ≫
         (F.map f).toFunctor.map (𝟙 _)
@@ -585,6 +592,7 @@ def liftCompFst : lift α β a b e ≫ fst α β ≅ a :=
 def liftCompSnd : lift α β a b e ≫ snd α β ≅ b :=
   Pseudofunctor.StrongTrans.isoMk (fun X ↦ Iso.refl (b.app X)) (fun f ↦ by
     ext k
+    -- As for `liftCompFst`, with `snd`, `b` and `liftNaturality_hom_app_snd`.
     change 𝟙 _ ≫ (b.naturality f).hom.toNatTrans.app k =
       (𝟙 _ ≫ (b.naturality f).hom.toNatTrans.app k ≫ 𝟙 _ ≫ 𝟙 _ ≫ 𝟙 _) ≫
         (G.map f).toFunctor.map (𝟙 _)
@@ -597,6 +605,13 @@ lemma whiskerLeft_lift_iso_hom :
       (α_ _ _ _).inv ≫ (liftCompFst α β a b e).hom ▷ α ≫ e.hom ≫
         (liftCompSnd α β a b e).inv ▷ β ≫ (α_ _ _ _).hom := by
   ext X k
+  -- As in `liftCompFst`, the components of `liftCompFst` and `liftCompSnd` are identities between
+  -- `1`-morphisms that agree only definitionally. `simp only` with `whiskerLeft_as_app`,
+  -- `homCategory_comp_as_app`, `whiskerRight_as_app`, `associator_hom_as_app`, `Cat.Hom₂.comp_app`
+  -- and `iso_hom_as_app_toNatTrans_app` stops at `(isoMk _ _).hom.as.app X ▷ α.app X`, which
+  -- `isoMk_hom_as_app` does not rewrite. So `change` states the goal with the components
+  -- evaluated. The left side is the structure isomorphism `liftIso` of `lift a b e` at `k`. The
+  -- right side is `e` at `k` between the images of identities and the associators of `Cat`.
   change (liftIso α β a b e X k).hom = 𝟙 _ ≫ (α.app X).toFunctor.map (𝟙 _) ≫
     (liftIso α β a b e X k).hom ≫ (β.app X).toFunctor.map (𝟙 _) ≫ 𝟙 _
   simp
