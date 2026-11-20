@@ -54,7 +54,7 @@ multiplicative group it is the same substitution on units. For instance the homo
 * `TauCeti.FormalCoordinate.smul_mem_congruenceSubgroup_span_X_pow_iff` and
   `TauCeti.FormalCoordinate.smul_congruenceSubgroup_span_X_pow`: the action maps each
   congruence subgroup `K_N(R)` onto itself.
-* `TauCeti.FormalCoordinate.smul_mapValue_algebraMap`: constant arcs are fixed.
+* `TauCeti.FormalCoordinate.smul_toConv_toAlgHom_comp`: constant arcs are fixed.
 * `TauCeti.FormalCoordinate.toAdd_gaPointsMulEquiv_smul` and
   `TauCeti.FormalCoordinate.pointsMulEquiv_smul`: the action for `𝔾ₐ` and `𝔾ₘ`.
 
@@ -128,14 +128,17 @@ theorem mapDomain_smul {H' : Type*} [Semiring H'] [Bialgebra k H'] (ψ : H' →�
   rw [smul_def, smul_def, ← MonoidHom.comp_apply, BialgHom.mapValue_mapDomain,
     MonoidHom.comp_apply]
 
-/-- Coordinate changes fix the constant arcs, the images of the points `G(R)` under the inclusion
-`R → R⟦X⟧` of constant series. -/
-theorem smul_mapValue_algebraMap (φ : FormalCoordinate R) (x : WithConv (H →ₐ[k] R)) :
-    φ • AlgHom.mapValue (IsScalarTower.toAlgHom k R R⟦X⟧) x =
-      AlgHom.mapValue (IsScalarTower.toAlgHom k R R⟦X⟧) x := by
+/-- Coordinate changes fix the constant arcs, the images `R → R⟦X⟧ ∘ x` of the points
+`x ∈ G(R)` under the inclusion of constant series. The constant arc is written as
+`toConv ((IsScalarTower.toAlgHom k R R⟦X⟧).comp x)`, the simp-normal form of
+`AlgHom.mapValue (IsScalarTower.toAlgHom k R R⟦X⟧) (toConv x)`. -/
+@[simp]
+theorem smul_toConv_toAlgHom_comp (φ : FormalCoordinate R) (x : H →ₐ[k] R) :
+    φ • toConv ((IsScalarTower.toAlgHom k R R⟦X⟧).comp x) =
+      toConv ((IsScalarTower.toAlgHom k R R⟦X⟧).comp x) := by
   refine ofConv_injective <| _root_.AlgHom.ext fun h ↦ ?_
-  simp only [ofConv_smul_apply, AlgHom.mapValue_apply, ofConv_toConv, _root_.AlgHom.comp_apply,
-    IsScalarTower.coe_toAlgHom', ← substAlgEquiv_apply, AlgEquiv.commutes]
+  simp only [ofConv_smul_apply, _root_.AlgHom.comp_apply, IsScalarTower.coe_toAlgHom',
+    ← substAlgEquiv_apply, AlgEquiv.commutes]
 
 end Bialgebra
 
