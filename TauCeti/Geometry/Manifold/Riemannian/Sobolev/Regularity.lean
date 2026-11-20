@@ -747,13 +747,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [T2Space M] [MeasurableSpace M] [BorelSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
-omit [I.Boundaryless] [T2Space M] in
-/-- A continuous function on the compact manifold `M` is integrable for the Riemannian volume. -/
-private theorem integrable_riemannianVolume_of_continuous
-    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] {g : M → ℝ}
-    (hg : Continuous g) : Integrable g (riemannianVolume I M) :=
-  hg.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
-
 section C1
 
 variable [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]

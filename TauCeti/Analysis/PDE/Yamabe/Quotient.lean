@@ -172,12 +172,6 @@ section FirstVariation
 
 variable [CompactSpace M]
 
-omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- A continuous function on a compact Riemannian manifold is integrable. -/
-private theorem integrable_of_continuous {f : M → ℝ} (hf : Continuous f) :
-    Integrable f (riemannianVolume I M) :=
-  hf.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace f)
-
 /-- The energy `∫ (aₙ |grad (u + t v)|² + Scal_g (u + t v)²) dV` of `u + t v` is a quadratic
 polynomial in `t`, with derivative `2 ∫ (aₙ ⟪grad v, grad u⟫ + Scal_g v u) dV` at `t = 0`. -/
 private theorem hasDerivAt_integral_energy_add_smul {u v : M → ℝ} (hu : ContMDiff I 𝓘(ℝ) 1 u)
@@ -204,12 +198,12 @@ private theorem hasDerivAt_integral_energy_add_smul {u v : M → ℝ} (hu : Cont
       (hv.mdifferentiable one_ne_zero)]
     simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, eu, b, ev]
     ring
-  have heu : Integrable eu μ := integrable_of_continuous
+  have heu : Integrable eu μ := integrable_riemannianVolume_of_continuous
     ((continuous_const.mul (continuous_norm_sq_mgradient hu)).add (hS.mul (hu.continuous.pow 2)))
-  have hb : Integrable b μ := integrable_of_continuous
+  have hb : Integrable b μ := integrable_riemannianVolume_of_continuous
     ((continuous_const.mul (continuous_inner_mgradient hv hu)).add
       (hS.mul (hv.continuous.mul hu.continuous)))
-  have hev : Integrable ev μ := integrable_of_continuous
+  have hev : Integrable ev μ := integrable_riemannianVolume_of_continuous
     ((continuous_const.mul (continuous_norm_sq_mgradient hv)).add (hS.mul (hv.continuous.pow 2)))
   have hEt (t : ℝ) : ∫ x, (a * ‖mgradient I (u + t • v) x‖ ^ 2 + S x * (u + t • v) x ^ 2) ∂μ =
       (∫ x, eu x ∂μ) + 2 * t * (∫ x, b x ∂μ) + t ^ 2 * ∫ x, ev x ∂μ := by
@@ -351,11 +345,12 @@ private theorem hasDerivAt_yamabeQuotient_add_smul_eq_integral (hn : 2 < finrank
   set N := ∫ x, |u x| ^ p ∂riemannianVolume I M
   have hN0 : 0 < N := integral_abs_rpow_pos hu.continuous hu0 (by linarith)
   have hL : Integrable (fun x ↦ v x * conformalLaplacian I u x) (riemannianVolume I M) :=
-    integrable_of_continuous (hv.continuous.mul
+    integrable_riemannianVolume_of_continuous (hv.continuous.mul
       (contMDiff_conformalLaplacian (k := 0) (by simp) (by simpa using hu)).continuous)
   have hJ : Integrable (fun x ↦ |u x| ^ (p - 2) * u x * v x) (riemannianVolume I M) :=
-    integrable_of_continuous (((hu.continuous.abs.rpow_const fun _ ↦ Or.inr (by linarith)).mul
-      hu.continuous).mul hv.continuous)
+    integrable_riemannianVolume_of_continuous
+      (((hu.continuous.abs.rpow_const fun _ ↦ Or.inr (by linarith)).mul
+        hu.continuous).mul hv.continuous)
   have hsplit : (fun x ↦ v x * (conformalLaplacian I u x -
       yamabeQuotient I u * N ^ (2 / p) / N * (|u x| ^ (p - 2) * u x))) =
       fun x ↦ v x * conformalLaplacian I u x -

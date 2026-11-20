@@ -52,6 +52,8 @@ GTM 176 (2018), Proposition 2.44 and the discussion of the Riemannian density fo
   nonnegative integrable function from a coordinate lower bound supported in a subset of the chart
   target.
 * `TauCeti.isLocallyFiniteMeasure_riemannianVolume`: the Riemannian volume is locally finite.
+* `TauCeti.integrable_riemannianVolume_of_continuous`: on a compact manifold every continuous
+  function is integrable for the Riemannian volume.
 -/
 
 public section
@@ -272,5 +274,10 @@ instance isLocallyFiniteMeasure_riemannianVolume :
   refine ⟨s ∩ (chartAt H x).source, Filter.inter_mem hs (chart_source_mem_nhds H x), ?_⟩
   rw [riemannianVolume_apply_of_subset inter_subset_right]
   exact (measure_mono inter_subset_left).trans_lt hfin
+
+/-- On a compact manifold, a continuous function is integrable for the Riemannian volume. -/
+theorem integrable_riemannianVolume_of_continuous [CompactSpace M] {g : M → ℝ}
+    (hg : Continuous g) : Integrable g (riemannianVolume I M) :=
+  hg.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
 
 end TauCeti
