@@ -197,6 +197,23 @@ theorem dist_apply_le_of_ball_subset (f : boundedHolomorphicFunctions E U) {x z 
     (mapsTo_closedBall_of_forall_norm_le (fun y _ => norm_extend_apply_le f y) hx)
     (mem_ball.mpr hz)
 
+/-- A family of bounded holomorphic maps on `U` with a common bound on the supremum norm is
+equicontinuous on `U`, by the Cauchy estimate `dist_apply_le_of_ball_subset`. -/
+theorem equicontinuous_of_forall_norm_le {ι : Type*} {f : ι → boundedHolomorphicFunctions E U}
+    {C : ℝ} (hf : ∀ i, ‖f i‖ ≤ C) : Equicontinuous fun i => ((f i : U →ᵇ E) : U → E) := by
+  -- On a ball of radius `R` around `x` inside `U`, the Cauchy estimate gives the common
+  -- modulus `2 * C / R * dist z x`.
+  intro x
+  obtain ⟨R, hR, hRU⟩ := Metric.isOpen_iff.mp U.isOpen x x.property
+  refine equicontinuousAt_of_continuity_modulus (fun z : U => 2 * C / R * dist z x) ?_ _ ?_
+  · have hc : Continuous fun z : U => 2 * C / R * dist z x := by fun_prop
+    simpa using hc.tendsto x
+  · filter_upwards [ball_mem_nhds x hR] with z hz i
+    rw [dist_comm]
+    refine (dist_apply_le_of_ball_subset (f i) hRU hz).trans ?_
+    gcongr
+    exact hf i
+
 /-- Restriction of bounded holomorphic maps to a smaller open set. -/
 noncomputable def restrict (h : U' ≤ U) :
     boundedHolomorphicFunctions E U →L[ℂ] boundedHolomorphicFunctions E U' :=
@@ -241,32 +258,24 @@ theorem restrict_comp_restrict (h : U' ≤ U) (h' : U'' ≤ U') :
 theorem isCompactOperator_restrict [ProperSpace E] {K : Set V} (hK : IsCompact K)
     (hU'K : (U' : Set V) ⊆ K) (hKU : K ⊆ U) :
     IsCompactOperator (restrict (E := E) (hU'K.trans hKU)) := by
-  -- The unit ball of `H^∞(U, E)` is equicontinuous by the Cauchy estimate
-  -- `dist_apply_le_of_ball_subset`, so the Arzelà–Ascoli theorem applies on the compact set `K`.
+  -- The unit ball of `H^∞(U, E)` is equicontinuous by `equicontinuous_of_forall_norm_le`, so the
+  -- Arzelà–Ascoli theorem applies on the compact set `K`.
   refine (IsCompact.isCompactOperator_of_equicontinuousOn
     (U.isOpenEmbedding'.isInducing.isCompact_preimage' hK (by simpa using hKU))
     (ContinuousMap.inclusion (hU'K.trans hKU)) (fun z => hU'K z.property)
     (Φ := fun f : boundedHolomorphicFunctions E U => (f : U →ᵇ E))
     (T := fun f => (restrict (hU'K.trans hKU) f : U' →ᵇ E)) (closedBall_mem_nhds 0 one_pos)
-    (fun f _ => restrict_apply _ f) (fun x _ => ⟨closedBall 0 1, isCompact_closedBall 0 1,
+    (fun f _ z => by
+      have hz : ContinuousMap.inclusion (hU'K.trans hKU) z = ⟨z, hKU (hU'K z.property)⟩ :=
+        Subtype.ext (ContinuousMap.inclusion_apply_coe _ z)
+      rw [hz]
+      exact restrict_apply _ f z)
+    (fun x _ => ⟨closedBall 0 1, isCompact_closedBall 0 1,
       fun f hf => mem_closedBall_zero_iff.mpr
         ((norm_coe_le_norm (f : U →ᵇ E) x).trans (mem_closedBall_zero_iff.mp hf))⟩)
-    (Equicontinuous.equicontinuousOn ?_ _)).codRestrict (fun f => (restrict _ f).property)
-    (isClosed_boundedHolomorphicFunctions U')
-  -- On a ball of radius `R` around `x` inside `U`, the Cauchy estimate gives the common
-  -- modulus `2 / R * dist z x`.
-  intro x
-  obtain ⟨R, hR, hRU⟩ := Metric.isOpen_iff.mp U.isOpen x x.property
-  refine equicontinuousAt_of_continuity_modulus (fun z : U => 2 / R * dist z x) ?_ _ ?_
-  · have hc : Continuous fun z : U => 2 / R * dist z x := by fun_prop
-    simpa using hc.tendsto x
-  · filter_upwards [ball_mem_nhds x hR] with z hz
-    rintro ⟨f, hf⟩
-    rw [mem_closedBall_zero_iff] at hf
-    rw [dist_comm]
-    refine (dist_apply_le_of_ball_subset f hRU hz).trans ?_
-    gcongr
-    linarith
+    ((equicontinuous_of_forall_norm_le (f := Subtype.val) fun f =>
+      mem_closedBall_zero_iff.mp f.property).equicontinuousOn _)).codRestrict
+    (fun f => (restrict _ f).property) (isClosed_boundedHolomorphicFunctions U')
 
 /-- If `E` is proper, restriction to an open set with compact closure inside `U` is a compact
 operator. -/

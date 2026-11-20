@@ -35,27 +35,6 @@ open scoped Topology
 variable {E α β F : Type*} [TopologicalSpace E] [Zero E] [TopologicalSpace α]
   [TopologicalSpace β] [PseudoMetricSpace F]
 
-namespace TauCeti
-
-/-- **Arzelà–Ascoli for operators.** Let `α` be compact. If an operator `T : E → α →ᵇ F` maps
-a neighborhood `V` of `0` to an equicontinuous family whose values at each point lie in a
-compact set, then `T` is a compact operator. -/
-theorem isCompactOperator_of_equicontinuous [CompactSpace α] {T : E → α →ᵇ F} {V : Set E}
-    (hV : V ∈ 𝓝 0) (hTV : ∀ x, ∃ Q : Set F, IsCompact Q ∧ ∀ f ∈ V, T f x ∈ Q)
-    (hT : Equicontinuous fun f : V => (T f : α → F)) :
-    IsCompactOperator T := by
-  let e := ContinuousMap.isometryEquivBoundedOfCompact α F
-  have he (g : α →ᵇ F) : ⇑(e.symm g) = g := by
-    simp only [e, ContinuousMap.isometryEquivBoundedOfCompact_symm_apply, coe_toContinuousMap]
-  have h := ArzelaAscoli.isCompact_closure_range_of_equicontinuous (f := fun f : V => e.symm (T f))
-    (by simpa only [he] using hT) fun x => by
-      obtain ⟨Q, hQ, hTQ⟩ := hTV x
-      exact ⟨Q, hQ, fun f => by simpa only [he] using hTQ f f.property⟩
-  refine ⟨_, h.image e.continuous, Filter.mem_of_superset hV fun f hf => ?_⟩
-  exact ⟨_, subset_closure ⟨⟨f, hf⟩, rfl⟩, e.apply_symm_apply _⟩
-
-end TauCeti
-
 /-- **Arzelà–Ascoli for restriction operators.** Let `j : β → α` be a continuous map with
 values in a compact set `K`, and let `T` send each `f` in a neighborhood `V` of `0` in `E` to the
 function `Φ f ∘ j` in `β →ᵇ F`. If the family `Φ f` for `f ∈ V` is equicontinuous on `K` and its
@@ -84,3 +63,18 @@ theorem IsCompact.isCompactOperator_of_equicontinuousOn {K : Set α} (hK : IsCom
   ext z
   simp only [G, e, compContinuous_apply, ContinuousMap.isometryEquivBoundedOfCompact_apply,
     mkOfCompact_apply, hR, Set.domRestrict_apply, σ, ContinuousMap.coe_mk, hT f hf z]
+
+namespace TauCeti
+
+/-- **Arzelà–Ascoli for operators.** Let `α` be compact. If an operator `T : E → α →ᵇ F` maps
+a neighborhood `V` of `0` to an equicontinuous family whose values at each point lie in a
+compact set, then `T` is a compact operator. -/
+theorem isCompactOperator_of_equicontinuous [CompactSpace α] {T : E → α →ᵇ F} {V : Set E}
+    (hV : V ∈ 𝓝 0) (hTV : ∀ x, ∃ Q : Set F, IsCompact Q ∧ ∀ f ∈ V, T f x ∈ Q)
+    (hT : Equicontinuous fun f : V => (T f : α → F)) :
+    IsCompactOperator T :=
+  isCompact_univ.isCompactOperator_of_equicontinuousOn (ContinuousMap.id α)
+    (fun _ => mem_univ _) (Φ := fun f => T f) hV (fun _ _ _ => rfl) (fun x _ => hTV x)
+    (hT.equicontinuousOn _)
+
+end TauCeti
