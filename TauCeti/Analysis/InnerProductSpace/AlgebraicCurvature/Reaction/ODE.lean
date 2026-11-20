@@ -47,6 +47,8 @@ at time `a + 1 / (2 (n - 1) κ₀)`, the lifetime of the round sphere of curvatu
   algebraic curvature tensor remain algebraic curvature tensors.
 * `TauCeti.FourTensor.IsReactionInvariant.smul`: invariance is preserved by nonnegative scaling.
 * `TauCeti.FourTensor.eqOn_Icc_of_hasDerivWithinAt_reactionTensor`: uniqueness of solutions.
+* `TauCeti.FourTensor.continuousOn_and_hasDerivWithinAt_smul_comp_mul_reactionTensor`: for
+  `c > 0` the rescaling `τ ↦ c R(c τ)` of a solution on `[a, b]` is a solution on `[a / c, b / c]`.
 * `TauCeti.FourTensor.mul_sub_lt_one_of_hasDerivWithinAt_reactionTensor` and
   `TauCeti.FourTensor.eqOn_smul_constantCurvature_of_hasDerivWithinAt_reactionTensor`: a solution
   from `κ₀ I` is the explicit round solution, and exists on `[a, b]` only if
@@ -107,6 +109,22 @@ theorem hasDerivWithinAt_smul_comp_mul_reactionTensor {R : ℝ → FourTensor V}
     simpa using ((hasDerivAt_id t).const_mul c).hasDerivWithinAt
   rw [reactionTensor_smul, sq, mul_smul]
   exact (h.scomp t hlin (mapsTo_preimage _ _)).const_smul c
+
+/-- **Parabolic rescaling of a solution.** For `c > 0`, if `R` solves `R' = Q(R)` on `[a, b]`,
+then `τ ↦ c • R (c τ)` solves it on `[a / c, b / c]`. -/
+theorem continuousOn_and_hasDerivWithinAt_smul_comp_mul_reactionTensor {R : ℝ → FourTensor V}
+    {a b c : ℝ} (hc : 0 < c) (hR : ContinuousOn R (Icc a b))
+    (hR' : ∀ t ∈ Ico a b, HasDerivWithinAt R (reactionTensor (R t)) (Ici t) t) :
+    ContinuousOn (fun τ ↦ c • R (c * τ)) (Icc (a / c) (b / c)) ∧
+      ∀ τ ∈ Ico (a / c) (b / c),
+        HasDerivWithinAt (fun τ ↦ c • R (c * τ)) (reactionTensor (c • R (c * τ))) (Ici τ) τ := by
+  refine ⟨(hR.comp (by fun_prop) ?_).const_smul c, fun τ hτ ↦ ?_⟩
+  · rw [← preimage_const_mul_Icc₀ a b hc]
+    exact mapsTo_preimage _ _
+  · rw [← preimage_const_mul_Ico₀ a b hc] at hτ
+    -- The pointwise rescaling holds within `(c * ·) ⁻¹' Ici (c τ) = Ici τ`.
+    simpa [preimage_const_mul_Ici₀ _ hc, mul_div_cancel_left₀ _ hc.ne'] using
+      hasDerivWithinAt_smul_comp_mul_reactionTensor (hR' _ hτ)
 
 /-- **The round solution.** With `n = dim V`, the curve
 `τ ↦ κ₀ / (1 - 2 (n - 1) κ₀ (τ - a)) • I` through `κ₀ I` at time `a`, where `I` is the
@@ -319,23 +337,16 @@ theorem IsReactionInvariant.smul {K : Set (FourTensor V)} (hK : IsReactionInvari
         (fun t _ ↦ by simpa using hasDerivWithinAt_const t (Ici t) (0 : FourTensor V))
         (by simp [← hka])
     exact fun t ht ↦ ⟨k, hk, by simp [h0 ht]⟩
-  -- The rescaled solution `τ ↦ c⁻¹ • R (c⁻¹ τ)` lives on `[a c, b c]`.
+  -- The rescaled solution `τ ↦ c⁻¹ • R (c⁻¹ τ)` lives on `[a / c⁻¹, b / c⁻¹]` and starts in `K`.
   have hc' : 0 < c⁻¹ := inv_pos.2 hc
-  have hinv (τ : ℝ) : c⁻¹ * (c * τ) = τ := inv_mul_cancel_left₀ hc.ne' τ
-  have hIcc : (c⁻¹ * ·) ⁻¹' Icc a b = Icc (a * c) (b * c) := by
-    rw [preimage_const_mul_Icc₀ a b hc', div_inv_eq_mul, div_inv_eq_mul]
-  have hIco : (c⁻¹ * ·) ⁻¹' Ico a b = Ico (a * c) (b * c) := by
-    rw [preimage_const_mul_Ico₀ a b hc', div_inv_eq_mul, div_inv_eq_mul]
-  have hS := hK.mapsTo (R := fun τ ↦ c⁻¹ • R (c⁻¹ * τ)) (a := a * c) (b := b * c)
-    ((hR.comp (by fun_prop) (hIcc ▸ mapsTo_preimage _ _)).const_smul c⁻¹)
-    (fun τ hτ ↦ by
-      have := hasDerivWithinAt_smul_comp_mul_reactionTensor
-        (hR' _ (show τ ∈ (c⁻¹ * ·) ⁻¹' Ico a b from hIco ▸ hτ))
-      rwa [preimage_const_mul_Ici₀ _ hc', mul_div_cancel_left₀ _ hc'.ne'] at this)
-    (by simpa [← hka, mul_comm a c, hinv, smul_smul, inv_mul_cancel₀ hc.ne'] using hk)
-  rw [← hIcc] at hS
-  refine fun t ht ↦ ⟨c⁻¹ • R (c⁻¹ * (c * t)), hS (show c⁻¹ * (c * t) ∈ Icc a b by rwa [hinv]), ?_⟩
-  simp only [smul_smul, mul_inv_cancel₀ hc.ne', one_smul, hinv]
+  have hinv (τ : ℝ) : c⁻¹ * (τ * c) = τ := by rw [mul_comm τ, inv_mul_cancel_left₀ hc.ne']
+  obtain ⟨hS, hS'⟩ := continuousOn_and_hasDerivWithinAt_smul_comp_mul_reactionTensor hc' hR hR'
+  have hmaps := hK.mapsTo hS hS'
+    (by simpa [hinv, ← hka, smul_smul, inv_mul_cancel₀ hc.ne'] using hk)
+  -- So `R t = c • (c⁻¹ • R (c⁻¹ (t / c⁻¹)))` lies in `c • K`.
+  refine fun t ht ↦ ⟨_, hmaps (x := t / c⁻¹) ⟨div_le_div_of_nonneg_right ht.1 hc'.le,
+    div_le_div_of_nonneg_right ht.2 hc'.le⟩, ?_⟩
+  simp [hinv, smul_smul, mul_inv_cancel₀ hc.ne']
 
 /-- **The nonnegative round ray is invariant.** The set of the tensors `κ I` with `κ ≥ 0`, where
 `I` is the constant-curvature tensor of curvature one, is invariant under the reaction ODE. -/
