@@ -52,6 +52,8 @@ injective, and kills a monomial whose exponent is not in the range of `φ`.
 * `TauCeti.NovikovSeries.finite_setOf_map_add_eq`: only finitely many pairs of support exponents
   of two Novikov series have images under a period-rescaling homomorphism adding up to a given
   exponent.
+* `TauCeti.NovikovSeries.finite_setOf_map_le`: a period-rescaling homomorphism keeps finitely many
+  indexed exponents below each cutoff.
 * `TauCeti.NovikovSeries.exists_period_rescale_id` and
   `TauCeti.NovikovSeries.exists_period_rescale_comp`: the identity rescales periods by `1`, and
   composites rescale them by the product of the factors.
@@ -127,6 +129,16 @@ theorem finite_setOf_map_add_eq [Zero R] [Zero S] (a : NovikovSeries R H N)
   refine (finite_setOf_period_add_lt a b (N' h' / c + 1)).subset fun p hp => ⟨?_, hp.2⟩
   rw [← hp.1, ← map_add, hcφ, mul_div_cancel_left₀ _ hc.ne']
   exact lt_add_one _
+
+/-- If `φ` rescales periods by a positive constant and only finitely many `i ∈ s` have
+`N (f i) ≤ C` for each cutoff `C`, then only finitely many have `N' (φ (f i)) ≤ C`. -/
+theorem finite_setOf_map_le {ι : Type*} {s : Set ι} {f : ι → H} {φ : H →+ H'}
+    (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) (hfin : ∀ C : ℝ, {i ∈ s | N (f i) ≤ C}.Finite)
+    (C : ℝ) : {i ∈ s | N' (φ (f i)) ≤ C}.Finite := by
+  obtain ⟨c, hc, hcφ⟩ := hφ
+  refine (hfin (C / c)).subset fun i hi => ⟨hi.1, (le_div_iff₀' hc).2 ?_⟩
+  rw [← hcφ]
+  exact hi.2
 
 /-- The identity rescales periods by `1`. -/
 theorem exists_period_rescale_id : ∃ c > 0, ∀ h, N (AddMonoidHom.id H h) = c * N h :=
