@@ -75,7 +75,7 @@ sums `∑_N (1 / N) ∑_{φ^[N] x = x} ε(x) e^[γ_x]` of the iterates of its re
 * `TauCeti.SmoothMappingTorus.flowClosedOrbit_eq_flowClosedOrbit_iff`: when two of these closed
   orbits agree.
 * `TauCeti.SmoothMappingTorus.flowClosedOrbitOfFixedPt_surjective`,
-  `TauCeti.SmoothMappingTorus.image_flowClosedOrbitOfFixedPt_preimage`: every closed orbit of
+  `TauCeti.SmoothMappingTorus.image_val_flowClosedOrbitOfFixedPt_preimage`: every closed orbit of
   period `N` passes through a fixed point of `φ^[N]`, and the fixed points on it form one
   `φ`-orbit.
 * `TauCeti.SmoothMappingTorus.card_flowClosedOrbitOfFixedPt_preimage`,
@@ -105,18 +105,6 @@ namespace SmoothMappingTorus
 variable {φ : M ≃ₘ^n⟮I, I⟯ M} {d e N : ℕ} {x y : M}
 
 /-! ### Periods of points under the suspension flow -/
-
-/-- No point of the mapping torus is a rest point of the suspension flow: the time-`1 / 2` map
-moves the projection to the base circle by `1 / 2`. -/
-theorem exists_flow_ne (z : SmoothMappingTorus φ) : ∃ s, flow φ s z ≠ z := by
-  refine ⟨1 / 2, fun h ↦ ?_⟩
-  have hproj := congrArg (proj φ) h
-  rw [proj_flow, add_eq_left, AddCircle.coe_eq_zero_iff] at hproj
-  obtain ⟨k, hk⟩ := hproj
-  rw [zsmul_eq_mul, mul_one] at hk
-  have h2 : ((2 * k : ℤ) : ℝ) = 1 := by push_cast; rw [hk]; norm_num
-  have h2' : 2 * k = 1 := by exact_mod_cast h2
-  omega
 
 /-- The periods of `[t, x]` under the suspension flow are the integer multiples of the least period
 of `x` under `φ`. -/
@@ -273,7 +261,7 @@ theorem flowClosedOrbitOfFixedPt_eq_iff (hN : 0 < N) {x y : {x // IsPeriodicPt �
 
 /-- The fixed points of `φ^[N]` whose closed orbit of period `N` is the one through `x` are the
 points of the `φ`-orbit of `x`. -/
-theorem image_flowClosedOrbitOfFixedPt_preimage (hN : 0 < N) (x : {x // IsPeriodicPt φ N x}) :
+theorem image_val_flowClosedOrbitOfFixedPt_preimage (hN : 0 < N) (x : {x // IsPeriodicPt φ N x}) :
     (↑) '' (flowClosedOrbitOfFixedPt φ hN ⁻¹' {flowClosedOrbitOfFixedPt φ hN x}) =
       range fun k : ℤ ↦ (φ ^ k) (x : M) := by
   ext y
@@ -355,7 +343,7 @@ theorem card_flowClosedOrbitOfFixedPt_preimage (hN : 0 < N)
   obtain ⟨x, rfl⟩ := flowClosedOrbitOfFixedPt_surjective hN γ
   rw [coe_flowClosedOrbitOfFixedPt, multiplicity_flowClosedOrbit,
     Nat.div_div_self x.2.minimalPeriod_dvd hN.ne', Nat.card_coe_set_eq,
-    ← ncard_image_of_injective _ Subtype.val_injective, image_flowClosedOrbitOfFixedPt_preimage,
+    ← ncard_image_of_injective _ Subtype.val_injective, image_val_flowClosedOrbitOfFixedPt_preimage,
     ← mk_preimage_range_closedOrbit_eq_range_zpow x.2 0, ncard_mk_preimage_range_closedOrbit]
 
 /-- **Fixed points of `φ^[N]` and closed orbits of period `N`.** If `φ^[N]` has finitely many fixed
