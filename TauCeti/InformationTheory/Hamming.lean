@@ -41,6 +41,15 @@ coordinate type along an equivalence, and evaluates a product over the coordinat
 only depends on which coordinates vanish; this is how weight monomials `X^(n - wt x) Y^(wt x)`
 factor over the coordinates. For set indicators, weight is cardinality and distance is the
 cardinality of the symmetric difference.
+
+Finally, for a binary word `c : ι → Bool` and any `x` in a commutative semiring,
+`∑ y, x ^ hammingDist y c = (1 + x) ^ card ι` (`TauCeti.sum_pow_hammingDist_eq`), and for every
+radius `D` and word `a` a greedy code through `a` has distinct words at distance more than `D` and
+meets every closed ball of radius `D`
+(`TauCeti.exists_finset_pairwise_lt_hammingDist_forall_exists`). Both are adapted from the
+lean-CKSD project (<https://github.com/bjbraams/lean-CKSD>), file
+`CKSD/Nonparametric/LowerBounds/Testing.lean` (`CKSD.sum_pow_hammingDist_eq`,
+`CKSD.exists_hamming_packing`).
 -/
 
 public section
@@ -277,6 +286,53 @@ Hamming weight. -/
   have h := Finset.card_filter_add_card_filter_not (s := Finset.univ) (fun i ↦ x i = 0)
   rw [Finset.card_univ] at h
   rw [Finset.prod_ite, Finset.prod_const, Finset.prod_const, hammingNorm, ← h, Nat.add_sub_cancel]
+
+/-! ### Binary words and greedy codes -/
+
+section Codes
+
+open Finset
+
+/-- The exponential moment of the Hamming distance to a fixed binary word:
+`∑ y, x ^ hammingDist y c = (1 + x) ^ n` over the words `y : ι → Bool`, with `n = card ι`. -/
+theorem sum_pow_hammingDist_eq {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommSemiring R]
+    (c : ι → Bool) (x : R) : ∑ y : ι → Bool, x ^ hammingDist y c = (1 + x) ^ Fintype.card ι := by
+  have h (y : ι → Bool) : x ^ hammingDist y c = ∏ i, if y i ≠ c i then x else 1 := by
+    rw [prod_ite, prod_const, prod_const_one, mul_one, hammingDist]
+  have hb (i : ι) : ∑ b : Bool, (if b ≠ c i then x else 1) = 1 + x := by
+    cases c i <;> simp [add_comm]
+  calc ∑ y : ι → Bool, x ^ hammingDist y c
+      = ∏ i, ∑ b : Bool, (if b ≠ c i then x else 1) := by
+        simp only [h]
+        exact (Fintype.prod_sum fun i (b : Bool) ↦ if b ≠ c i then x else 1).symm
+    _ = (1 + x) ^ Fintype.card ι := by simp only [hb, prod_const, card_univ]
+
+/-- A greedy code: for every radius `D` and word `a`, some finite code containing `a` has distinct
+words at distance more than `D` and meets the closed ball of radius `D` about every word. -/
+theorem exists_finset_pairwise_lt_hammingDist_forall_exists {ι : Type*} {β : ι → Type*}
+    [Fintype ι] [∀ i, Finite (β i)] [∀ i, DecidableEq (β i)] (D : ℕ) (a : ∀ i, β i) :
+    ∃ C : Finset (∀ i, β i), a ∈ C ∧
+      (C : Set (∀ i, β i)).Pairwise (fun x y ↦ D < hammingDist x y) ∧
+      ∀ y, ∃ x ∈ C, hammingDist y x ≤ D := by
+  classical
+  have (i : ι) : Fintype (β i) := Fintype.ofFinite _
+  let valid : Finset (∀ i, β i) → Prop := fun C ↦
+    a ∈ C ∧ (C : Set (∀ i, β i)).Pairwise fun x y ↦ D < hammingDist x y
+  obtain ⟨C, hC, hmax⟩ := exists_max_image (univ.filter valid) card
+    ⟨{a}, mem_filter.mpr ⟨mem_univ _, mem_singleton_self a, by simp⟩⟩
+  obtain ⟨ha, hsep⟩ := (mem_filter.mp hC).2
+  refine ⟨C, ha, hsep, fun y ↦ ?_⟩
+  by_contra! hy
+  have hyC : y ∉ C := fun h ↦ by simpa using hy y h
+  have hval : valid (insert y C) := by
+    refine ⟨mem_insert_of_mem ha, ?_⟩
+    rw [coe_insert, Set.pairwise_insert]
+    exact ⟨hsep, fun x hx _ ↦ ⟨hy x hx, hammingDist_comm y x ▸ hy x hx⟩⟩
+  have := hmax _ (mem_filter.mpr ⟨mem_univ _, hval⟩)
+  rw [card_insert_of_notMem hyC] at this
+  omega
+
+end Codes
 
 end TauCeti
 
