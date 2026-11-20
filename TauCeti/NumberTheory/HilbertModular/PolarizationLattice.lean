@@ -266,10 +266,9 @@ theorem integralTraceWedgeForm_smul_left (b : 𝓞 K) (a : (c : Submodule (𝓞 
     (x y : polarizationLattice c) :
     integralTraceWedgeForm c (b • a) x y = integralTraceWedgeForm c a (b • x) y :=
   Int.cast_injective (α := ℚ) <| by
-    simp only [intCast_integralTraceWedgeForm_apply, Submodule.coe_smul,
-      traceWedgeForm_apply, Pi.smul_apply, Algebra.smul_def]
-    congr 1
-    ring
+    rw [intCast_integralTraceWedgeForm_apply, intCast_integralTraceWedgeForm_apply,
+      Submodule.coe_smul, Submodule.coe_smul, Algebra.smul_def, ← algebraMap_smul K b]
+    exact traceWedgeForm_mul_smul_left _ _ _ _
 
 /-- The parameter of `ψ_c` can be moved into the second argument:
 `ψ_{c, b a}(x, y) = ψ_{c, a}(x, b y)` for `b ∈ 𝓞 K`. -/
@@ -277,10 +276,9 @@ theorem integralTraceWedgeForm_smul_right (b : 𝓞 K) (a : (c : Submodule (𝓞
     (x y : polarizationLattice c) :
     integralTraceWedgeForm c (b • a) x y = integralTraceWedgeForm c a x (b • y) :=
   Int.cast_injective (α := ℚ) <| by
-    simp only [intCast_integralTraceWedgeForm_apply, Submodule.coe_smul,
-      traceWedgeForm_apply, Pi.smul_apply, Algebra.smul_def]
-    congr 1
-    ring
+    rw [intCast_integralTraceWedgeForm_apply, intCast_integralTraceWedgeForm_apply,
+      Submodule.coe_smul, Submodule.coe_smul, Algebra.smul_def, ← algebraMap_smul K b]
+    exact traceWedgeForm_mul_smul_right _ _ _ _
 
 /-- For `c ≠ 0`, the `ℤ`-dual of the polarization lattice `L_c = 𝓞_K ⊕ c⁻¹𝔡⁻¹` for the trace
 symplectic form `ψ₁` is `c ⊕ 𝔡⁻¹`. -/

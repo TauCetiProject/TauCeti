@@ -41,7 +41,6 @@ instance projective {K : Type*} [Field K] [Algebra R K] [IsDedekindDomain R] [Is
   · have : Subsingleton (0 : FractionalIdeal R⁰ K) :=
       ⟨fun x y ↦ Subtype.ext <| by rw [(mem_zero_iff _).1 x.2, (mem_zero_iff _).1 y.2]⟩
     infer_instance
-  · exact inferInstanceAs (Module.Projective R ((Units.mk0 I hI : (FractionalIdeal R⁰ K)ˣ) :
-      FractionalIdeal R⁰ K))
+  · exact Units.val_mk0 hI ▸ projective_units (Units.mk0 I hI)
 
 end FractionalIdeal

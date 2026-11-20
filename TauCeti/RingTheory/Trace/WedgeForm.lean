@@ -102,19 +102,22 @@ theorem isAlt_traceWedgeForm (a : S) : (traceWedgeForm R a).IsAlt :=
 theorem traceWedgeForm_swap (a : S) (x y : Fin 2 → S) :
     traceWedgeForm R a y x = -traceWedgeForm R a x y := by
   simp only [traceWedgeForm_apply, ← map_neg]
-  ring_nf
+  congr 1
+  ring
 
 /-- The parameter of `ψ` can be moved into the first argument: `ψ_{b a}(x, y) = ψ_a(b x, y)`. -/
 theorem traceWedgeForm_mul_smul_left (a b : S) (x y : Fin 2 → S) :
     traceWedgeForm R (b * a) x y = traceWedgeForm R a (b • x) y := by
   simp only [traceWedgeForm_apply, Pi.smul_apply, smul_eq_mul]
-  ring_nf
+  congr 1
+  ring
 
 /-- The parameter of `ψ` can be moved into the second argument: `ψ_{b a}(x, y) = ψ_a(x, b y)`. -/
 theorem traceWedgeForm_mul_smul_right (a b : S) (x y : Fin 2 → S) :
     traceWedgeForm R (b * a) x y = traceWedgeForm R a x (b • y) := by
   simp only [traceWedgeForm_apply, Pi.smul_apply, smul_eq_mul]
-  ring_nf
+  congr 1
+  ring
 
 /-- A matrix acting on row vectors multiplies the parameter of `ψ` by its determinant:
 `ψ_a(x γ, y γ) = ψ_{a det γ}(x, y)`. -/
