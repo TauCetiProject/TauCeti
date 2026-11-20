@@ -13,6 +13,7 @@ import Mathlib.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Data.Fin.StrictMono
 import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.Data.Matrix.Update
 import TauCeti.LinearAlgebra.Multilinear.CompSplit
 import TauCeti.LinearAlgebra.Multilinear.ContractNth
 
@@ -200,6 +201,14 @@ theorem ungradedStasheffMul_zero (a : Fin 0 → A) : ungradedStasheffMul act 0 a
 theorem ungradedStasheffMul_succ (n : ℕ) (a : Fin (n + 1) → A) :
     ungradedStasheffMul act (n + 1) a = ∑ l : Fin n, act n (Fin.contractNth l.castSucc (· * ·) a) :=
   (rfl)
+
+/-- The product terms of two tuples of equal lengths with equal entries agree. -/
+theorem ungradedStasheffMul_congr {m n : ℕ} (h : m = n) {b : Fin m → A} {a : Fin n → A}
+    (hab : ∀ l, b l = a (Fin.cast h l)) :
+    ungradedStasheffMul act m b = ungradedStasheffMul act n a := by
+  subst h
+  congr 1
+  exact funext hab
 
 end StasheffTerms
 
@@ -621,6 +630,17 @@ theorem matrixAct_apply (n : ℕ) (F : Fin n → Matrix X X A) (φ : X → M) (z
     Function.comp_apply, LinearMap.lcomp_apply, LinearMap.llcomp_apply, LinearMap.coe_single,
     LinearMap.coe_proj, Function.eval, Matrix.entryLinearMap_apply, Pi.single_apply, eq_comm]
 
+/-- The `z`-component of `m_{n+1}(φ, F₁, …, Fₙ)` in the matrix module, for a row vector `φ`
+concentrated at `x₀`, is the sum over the paths `x₀ → ⋯ → xₙ = z` of
+`m_{n+1}(φ x₀, F₁ x₀ x₁, …, Fₙ xₙ₋₁ xₙ)`. -/
+theorem matrixAct_single_apply (n : ℕ) (F : Fin n → Matrix X X A) (x₀ : X) (φ : M) (z : X) :
+    Mm.matrixAct X n F (Pi.single x₀ φ) z = ∑ x : Fin (n + 1) → X,
+      if x 0 = x₀ ∧ x (Fin.last n) = z then Mm.act n (fun l => F l (x l.castSucc) (x l.succ)) φ
+      else 0 := by
+  rw [matrixAct_apply]
+  refine Finset.sum_congr rfl fun x _ => ?_
+  by_cases hx0 : x 0 = x₀ <;> simp [hx0]
+
 /-- If the operation `m_{n+1}` of `M` vanishes, so does that of the matrix module. -/
 theorem matrixAct_eq_zero_of_act_eq_zero {n : ℕ} (h : Mm.act n = 0) : Mm.matrixAct X n = 0 := by
   refine MultilinearMap.ext fun F => LinearMap.ext fun φ => funext fun z => ?_
@@ -681,13 +701,8 @@ private theorem stasheffDiff_matrixAct (n : ℕ) (F : Fin n → Matrix X X A) (�
       ∑ x : Fin (n + 1) → X, if x (Fin.last n) = z then
         ungradedStasheffDiff Mm.act d n (fun l => F l (x l.castSucc) (x l.succ)) (φ (x 0))
       else 0 := by
-  -- Updating one matrix of a tuple updates one entry along every path.
-  have hupd (x : Fin (n + 1) → X) (l : Fin n) (G : Matrix X X A) :
-      (fun t => Function.update F l G t (x t.castSucc) (x t.succ)) =
-        Function.update (fun t => F t (x t.castSucc) (x t.succ)) l (G (x l.castSucc) (x l.succ)) :=
-    funext (Function.apply_update (fun t (G : Matrix X X A) => G (x t.castSucc) (x t.succ)) F l G)
-  simp only [ungradedStasheffDiff_apply, Finset.sum_apply, matrixAct_apply, hupd,
-    LinearMap.mapMatrix_apply, Matrix.map_apply]
+  simp only [ungradedStasheffDiff_apply, Finset.sum_apply, matrixAct_apply,
+    Matrix.update_apply_path, LinearMap.mapMatrix_apply, Matrix.map_apply]
   rw [sum_comm]
   refine sum_congr rfl fun x _ => ?_
   split_ifs <;> simp
@@ -756,6 +771,13 @@ noncomputable def matrix :
 @[simp]
 theorem matrix_act : (Mm.matrix X).act = Mm.matrixAct X :=
   (rfl)
+
+/-- The operation `m₁` of the matrix module acts componentwise. -/
+theorem matrixAct_zero_apply (F : Fin 0 → Matrix X X A) (φ : X → M) (z : X) :
+    Mm.matrixAct X 0 F φ z = Mm.act 0 (fun l => l.elim0) (φ z) := by
+  rw [matrixAct_apply, Fintype.sum_eq_single (fun _ => z) fun x hx => ite_eq_right fun h =>
+    hx (funext fun t => by rw [Fin.fin_one_eq_zero t]; exact h), ite_eq_left rfl]
+  exact congrArg (fun t => Mm.act 0 t (φ z)) (Subsingleton.elim _ _)
 
 /-- The `z`-component of the operation `m₂(φ, F)` of the matrix module is
 `∑ x, m₂(φ x, F x z)`. -/
@@ -938,13 +960,7 @@ theorem sum_matrixAct_update_fromBlocks_apply_inr {n : ℕ} (δ : Matrix X X A) 
       Mm.matrixAct (X ⊕ Y) n (fun _ => Matrix.fromBlocks δ G 0 δ') (Sum.elim φ 0) (Sum.inr z) := by
   set C : Matrix (X ⊕ Y) (X ⊕ Y) A := Matrix.fromBlocks δ F 0 δ'
   set E : Matrix (X ⊕ Y) (X ⊕ Y) A := Matrix.fromBlocks 0 G 0 0
-  -- Updating one matrix of a tuple updates one entry along every path.
-  have hupd (x : Fin (n + 1) → X ⊕ Y) (l : Fin n) :
-      (fun t => Function.update (fun _ => C) l E t (x t.castSucc) (x t.succ)) =
-        Function.update (fun t => C (x t.castSucc) (x t.succ)) l (E (x l.castSucc) (x l.succ)) :=
-    funext (Function.apply_update (fun t (P : Matrix (X ⊕ Y) (X ⊕ Y) A) =>
-      P (x t.castSucc) (x t.succ)) (fun _ => C) l E)
-  simp only [matrixAct_apply, hupd]
+  simp only [matrixAct_apply, Matrix.update_apply_path]
   rw [sum_comm]
   refine sum_congr rfl fun x _ => ?_
   split_ifs with hz
@@ -1091,14 +1107,21 @@ theorem toUngradedAInfinityRightModule_act_add_two [CharP R 2]
     hM.toUngradedAInfinityRightModule.act (n + 2) = 0 :=
   (rfl)
 
+/-- The operations `m_{k+1}` of a differential module viewed as an `A∞` module vanish from arity
+`k = 2` on. -/
+theorem toUngradedAInfinityRightModule_act_eq_zero_of_two_le [CharP R 2]
+    (hM : IsUngradedDGRightModule d dM) {k : ℕ} (hk : 2 ≤ k) :
+    hM.toUngradedAInfinityRightModule.act k = 0 := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hk
+  exact hM.toUngradedAInfinityRightModule_act_add_two n
+
 /-- A differential module viewed as an `A∞` module is strictly unital for every family of
 elements: its operations `m_{n+1}`, `n ≥ 2`, vanish. -/
 theorem isStrictlyUnital_toUngradedAInfinityRightModule [CharP R 2]
     (hM : IsUngradedDGRightModule d dM) {S : Type*} (ι : S → A) :
     hM.toUngradedAInfinityRightModule.IsStrictlyUnital ι := by
   refine (UngradedAInfinityRightModule.isStrictlyUnital_iff _).2 fun n hn a _ _ _ => ?_
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
-  rw [hM.toUngradedAInfinityRightModule_act_add_two n, zero_apply]
+  rw [hM.toUngradedAInfinityRightModule_act_eq_zero_of_two_le hn, zero_apply]
 
 end IsUngradedDGRightModule
 
