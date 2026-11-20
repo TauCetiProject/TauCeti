@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Spec
+public import Mathlib.AlgebraicGeometry.ValuativeCriterion
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Valuation.ValuationSubring
+public import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 public import TauCeti.AlgebraicGeometry.Stack.StackInGroupoids
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.LiftingProblem
 
@@ -32,7 +33,11 @@ The ring `R'` need not be a discrete valuation ring and the extension `K'/K` nee
 A morphism has this property as soon as every such lifting problem has a lift over `R` itself
 (`StackInGroupoids.Hom.DVRLiftingAfterExtension.of_nonempty_lift`); for instance every morphism
 which is an equivalence over every scheme has it
-(`StackInGroupoids.Hom.IsFiberwiseEquiv.dvrLiftingAfterExtension`).
+(`StackInGroupoids.Hom.IsFiberwiseEquiv.dvrLiftingAfterExtension`). So does the morphism of stacks
+in setoids induced by a morphism of schemes satisfying the existence part of Mathlib's valuative
+criterion, for instance a universally closed or proper one such as a closed immersion
+(`StackInGroupoids.Hom.dvrLiftingAfterExtension_ofSheafHom_yoneda_map`): there a lifting problem
+is a commutative square of schemes and a lift is a dotted arrow.
 
 ## Main declarations
 
@@ -41,6 +46,9 @@ which is an equivalence over every scheme has it
   extending `K` and replacing `R` by a dominating valuation ring.
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.Hom.DVRLiftingAfterExtension.of_nonempty_lift`:
   lifts without extension suffice.
+* `TauCeti.AlgebraicGeometry.StackInGroupoids.Hom.dvrLiftingAfterExtension_ofSheafHom_yoneda_map`:
+  a morphism of schemes satisfying the existence part of the valuative criterion induces a
+  morphism of stacks with DVR lifting after extension.
 
 ## References
 
@@ -58,16 +66,6 @@ namespace TauCeti.AlgebraicGeometry
 open _root_.AlgebraicGeometry
 
 universe u
-
-/-- A commutative square of commutative rings `b ∘ a = d ∘ c` gives a commutative square of their
-spectra, `Spec b ≫ Spec a = Spec d ≫ Spec c`. -/
-lemma commSq_SpecMap_ofHom {R S T U : Type u} [CommRing R] [CommRing S] [CommRing T]
-    [CommRing U] {a : R →+* S} {b : S →+* T} {c : R →+* U} {d : U →+* T}
-    (h : b.comp a = d.comp c) :
-    CommSq (Spec.map (CommRingCat.ofHom b)) (Spec.map (CommRingCat.ofHom d))
-      (Spec.map (CommRingCat.ofHom a)) (Spec.map (CommRingCat.ofHom c)) :=
-  ⟨by rw [← Spec.map_comp, ← Spec.map_comp, ← CommRingCat.ofHom_comp, ← CommRingCat.ofHom_comp,
-    h]⟩
 
 namespace StackInGroupoids.Hom
 
@@ -106,18 +104,11 @@ lemma DVRLiftingAfterExtension.of_nonempty_lift {f : X.Hom Y}
       (P : f.LiftingProblem (Spec.map (CommRingCat.ofHom (algebraMap R K)))), Nonempty P.Lift) :
     f.DVRLiftingAfterExtension := by
   intro R _ _ _ K _ _ _ P
-  let R' := (ValuationRing.valuation R K).valuationSubring
-  have hmem (r : R) : algebraMap R K r ∈ R' := (ValuationRing.mem_integer_iff R K _).2 ⟨r, rfl⟩
-  let φ : R →+* R' := (algebraMap R K).codRestrict R' hmem
-  have hφ : Function.Bijective φ := by
-    refine ⟨fun r s hrs ↦ IsFractionRing.injective R K (congrArg Subtype.val hrs), ?_⟩
-    rintro ⟨x, hx⟩
-    obtain ⟨r, rfl⟩ := (ValuationRing.mem_integer_iff R K x).1 hx
-    exact ⟨r, rfl⟩
-  have : IsLocalHom φ := ⟨(isLocalHom_equiv (RingEquiv.ofBijective φ hφ)).map_nonunit⟩
+  let φ := (ValuationRing.equivInteger R K).toRingHom
   have := h R K P
-  exact ⟨K, inferInstance, inferInstance, R', φ, by ext; simp [φ], inferInstance,
-    P.nonempty_lift_pullback _⟩
+  exact ⟨K, inferInstance, inferInstance, (ValuationRing.valuation R K).valuationSubring, φ,
+    by ext; simp [φ, ValuationRing.coe_equivInteger_apply],
+    isLocalHom_toRingHom (ValuationRing.equivInteger R K), P.nonempty_lift_pullback _⟩
 
 /-- A morphism of stacks in groupoids which is an equivalence over every scheme has DVR lifting
 after extension, without needing to extend. -/
@@ -132,6 +123,32 @@ lemma IsFiberwiseEquiv.dvrLiftingAfterExtension {f : X.Hom Y} (hf : f.IsFiberwis
 lemma dvrLiftingAfterExtension_id (X : StackInGroupoids.{u}) :
     DVRLiftingAfterExtension (StrongTrans.id X.toSchPseudofunctor) :=
   (isFiberwiseEquiv_id X).dvrLiftingAfterExtension
+
+attribute [local instance] uliftCategory in
+/-- A morphism of schemes `f : X ⟶ Y` satisfying the existence part of the valuative criterion
+induces a morphism of the stacks in setoids of their functors of points with DVR lifting after
+extension, without needing to extend: a lifting problem is a commutative square
+`Spec K ⟶ X`, `Spec R ⟶ Y`, and a lift of it is a dotted arrow `Spec R ⟶ X`. -/
+lemma dvrLiftingAfterExtension_ofSheafHom_yoneda_map {X Y : Scheme.{u}} {f : X ⟶ Y}
+    (hf : ValuativeCriterion.Existence f) :
+    (ofSheafHom (Scheme.fppfTopology.yoneda.map f)).DVRLiftingAfterExtension := by
+  refine DVRLiftingAfterExtension.of_nonempty_lift fun R _ _ _ K _ _ _ P ↦ ?_
+  have hP := Discrete.eq_of_hom P.iso.hom
+  simp only [ofSheafHom_app_obj] at hP
+  obtain ⟨l⟩ := (hf ⟨R, K, P.top.down.as, P.bottom.down.as, ⟨hP.symm⟩⟩).exists_lift
+  exact ⟨{ obj := ⟨⟨l.l⟩⟩
+           isoTop := eqToIso (ULift.ext (Discrete.ext l.fac_left))
+           isoBottom := eqToIso ((ULift.ext (Discrete.ext l.fac_right.symm)).trans
+             (ofSheafHom_app_obj _ _ _).symm)
+           comm := Subsingleton.elim _ _ }⟩
+
+/-- A universally closed (for instance, a proper) morphism of schemes induces a morphism of the
+stacks in setoids of their functors of points with DVR lifting after extension. -/
+lemma dvrLiftingAfterExtension_ofSheafHom_yoneda_map_of_universallyClosed {X Y : Scheme.{u}}
+    (f : X ⟶ Y) [UniversallyClosed f] :
+    (ofSheafHom (Scheme.fppfTopology.yoneda.map f)).DVRLiftingAfterExtension :=
+  dvrLiftingAfterExtension_ofSheafHom_yoneda_map
+    (UniversallyClosed.eq_valuativeCriterion ▸ ‹UniversallyClosed f›).1
 
 end StackInGroupoids.Hom
 
