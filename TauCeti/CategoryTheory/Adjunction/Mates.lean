@@ -6,9 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Adjunction.Mates
--- Non-public: the component equations for the unitors and associators of functors are used only
--- to simplify the mate computation of the declaration below.
-import Mathlib.CategoryTheory.Monoidal.CoherenceLemmas
 
 /-!
 # Mates and conjugates
@@ -17,8 +14,7 @@ import Mathlib.CategoryTheory.Monoidal.CoherenceLemmas
 `CategoryTheory.mateEquiv` in which both adjunctions are identity adjunctions: a two-square
 between the identity functors of the source and target category is its own mate.  Use it to
 normalize a mate that has been routed through the identity functors, so a computation about
-such a square can be read back on the square itself.  It is the two-square counterpart of
-Mathlib's `CategoryTheory.conjugateEquiv_id`.
+such a square can be read back on the square itself.
 
 The internal-Hom comparison of a monoidal functor is one such computation: at the tensor unit
 the left unitor identifies the unit with left tensoring by the unit, and the mate that remains
@@ -73,12 +69,7 @@ theorem mateEquiv_adjunction_id {G H : C ⥤ D} (α : TwoSquare G (𝟭 C) (𝟭
   -- component of the square; the unit and the counit of an identity adjunction are the identity
   -- maps, so every whiskered unit and counit is the identity and only the square survives.
   ext X
-  rw [mateEquiv_apply]
-  simp only [comp_obj, id_obj, NatTrans.comp_app,
-    Functor.id_obj, Functor.id_map, Functor.whiskerRight_app, Functor.whiskerLeft_app,
-    rightUnitor_inv_app, associator_hom_app, associator_inv_app, leftUnitor_hom_app,
-    Adjunction.id_unit, Adjunction.id_counit, Category.comp_id, Category.id_comp,
-    Functor.comp_map, Functor.map_id, NatTrans.id_app]
+  simp
 
 section Conjugate
 
@@ -110,35 +101,23 @@ theorem app_comp_map_hom_app_of_mateEquiv {P Q : C ⥤ C} (adj : P ⊣ Q)
     {W : C ⥤ C} (c : TwoSquare W P P W) (q : TwoSquare Q W W Q) (hcq : mateEquiv adj adj c = q)
     (hq : ∀ M, q.app M ≫ b.hom.app (W.obj M) = W.map (b.hom.app M)) (M : C) :
     c.app M ≫ W.map (a.hom.app M) = a.hom.app (W.obj M) := by
-  have hu (N : C) : adj.unit.app N ≫ Q.map (a.hom.app N) = b.inv.app N := by
-    simpa only [hab, Adjunction.id_unit, NatTrans.id_app, id_comp, Functor.id_obj] using
-      (unit_conjugateEquiv Adjunction.id adj a.hom N).symm
-  have hc : adj.unit.app (W.obj M) ≫ Q.map (c.app M) =
-      W.map (adj.unit.app M) ≫ q.app (P.obj M) := by
-    rw [← hcq]
-    exact (unit_mateEquiv adj adj c M).symm
-  have hn := q.naturality (a.hom.app M)
-  dsimp only [Functor.comp_map] at hn
-  apply (adj.homEquiv _ _).injective
-  simp only [Adjunction.homEquiv_unit]
-  -- Take the adjoint transpose, use naturality, then cancel the identity comparison.
-  calc
-    _ = (W.map (adj.unit.app M) ≫ q.app (P.obj M)) ≫
-        Q.map (W.map (a.hom.app M)) := by
-      simpa only [Functor.map_comp, Category.assoc] using
-        congrArg (fun k ↦ k ≫ Q.map (W.map (a.hom.app M))) hc
-    _ = W.map (adj.unit.app M) ≫ W.map (Q.map (a.hom.app M)) ≫ q.app M := by
-      rw [Category.assoc, ← hn]
-      simp only [Functor.id_obj]
-    _ = W.map (b.inv.app M) ≫ q.app M := by
-      rw [← W.map_comp_assoc, hu M]
-    _ = W.map (b.inv.app M) ≫ W.map (b.hom.app M) ≫ b.inv.app (W.obj M) := by
-      rw [(Iso.eq_comp_inv (b.app (W.obj M))).mpr (hq M)]
-      simp only [Iso.app_inv]
-    _ = b.inv.app (W.obj M) := by
-      simp only [← W.map_comp_assoc, Iso.inv_hom_id_app, Functor.id_obj, W.map_id,
-        Category.id_comp]
-    _ = _ := (hu (W.obj M)).symm
+  -- Across the mate bijection, `hab` and `hcq` turn whiskering `c` by `a.hom` into whiskering `q`
+  -- by `b.inv`, and `mateEquiv_adjunction_id` fixes the identity square of `W`.
+  have h : c.whiskerLeft a.hom = (TwoSquare.vId W).whiskerRight a.hom := by
+    apply (mateEquiv Adjunction.id adj).injective
+    rw [conjugateEquiv_mateEquiv_vcomp, mateEquiv_conjugateEquiv_vcomp, mateEquiv_adjunction_id,
+      hcq, hab]
+    ext N
+    simp only [Functor.comp_obj, Functor.id_obj, TwoSquare.whiskerTop_app,
+      TwoSquare.whiskerBottom_app, TwoSquare.vId, NatTrans.comp_app, Functor.rightUnitor_hom_app,
+      Functor.leftUnitor_inv_app, Category.comp_id, Category.id_comp]
+    -- What is left is `hq` with `b.hom` replaced by `b.inv`.
+    rw [← cancel_mono (b.hom.app _)]
+    simp only [Functor.id_obj, Category.assoc, hq, ← W.map_comp, Iso.inv_hom_id_app, W.map_id]
+  -- Components of the whiskered squares are the two sides of the asserted equation.
+  simpa only [Functor.comp_obj, Functor.id_obj, TwoSquare.whiskerLeft_app, TwoSquare.vId,
+    TwoSquare.whiskerRight_app, NatTrans.comp_app, Functor.rightUnitor_hom_app,
+    Functor.leftUnitor_inv_app, Category.comp_id] using congr_app h M
 
 /-- Let `A : P₁ ⊣ Q₁`, `B : P₂ ⊣ Q₂` and `C : P₃ ⊣ Q₃` be adjunctions, with `e : P₁ ⋙ P₂ ≅ P₃`
 and `d : Q₂ ⋙ Q₁ ≅ Q₃` conjugate. If the mates `qᵢ` of squares `cᵢ : Wᵢ ⋙ Pᵢ ⟶ Pᵢ ⋙ Wᵢ₊₁`
