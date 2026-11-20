@@ -336,6 +336,12 @@ theorem sobolevSingularSupport_subset_dsupport (s : ℝ) (T : 𝓓'(Ω, ℂ)) :
     T.sobolevSingularSupport s ⊆ dsupport T :=
   (sobolevSingularSupport_subset_singularSupport s T).trans (singularSupport_subset_dsupport T)
 
+/-- A distribution is `H^s` near every point of `Ω` outside its support. -/
+theorem isLocallySobolevAt_of_notMem_dsupport {T : 𝓓'(Ω, ℂ)} {x : E} (hx : x ∈ Ω)
+    (hxT : x ∉ dsupport T) (s : ℝ) : T.IsLocallySobolevAt s x :=
+  (notMem_sobolevSingularSupport_iff hx).1 fun h ↦
+    hxT (sobolevSingularSupport_subset_dsupport s T h)
+
 /-- A function smooth on `Ω` has empty `H^s` singular support. -/
 theorem sobolevSingularSupport_ofFun_eq_empty (s : ℝ) {f : E → ℂ} (hf : ContDiffOn ℝ ∞ f Ω) :
     (ofFun Ω f volume ⊤).sobolevSingularSupport s = ∅ :=
