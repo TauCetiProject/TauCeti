@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.PowerSeries.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.BigOperators.Intervals
 
 /-!
 # Coefficients of finite products of power series
@@ -36,8 +37,9 @@ Factors congruent to `1` modulo `X ^ (n + 1)` do not change the coefficient of d
 This also gives a finite-cutoff formula for products with many such factors.
 
 Substituting `t = 1 - X` into `(1 - t ^ d) / (1 - t) = ∑_{j < d} t ^ j` gives a series with constant
-coefficient `d` and linear coefficient `-d (d - 1) / 2`, which computes the linear coefficient of a
-product of such factors.
+coefficient `d` and twice its linear coefficient `-d (d - 1)`, which computes twice the linear
+coefficient of a product of such factors. Doubling avoids dividing by `2`, so this holds over any
+commutative ring.
 
 ## Main results
 
@@ -153,18 +155,13 @@ theorem coeff_one_prod_sum_one_sub_X_pow_mul_two (s : Finset ι) (d : ι → ℕ
       -((∏ i ∈ s, (d i : R)) * ∑ i ∈ s, ((d i : R) - 1)) := by
   classical
   have hc (k : ℕ) : constantCoeff (∑ j ∈ range k, (1 - X : R⟦X⟧) ^ j) = k := by simp
-  -- Gauss's formula `(∑_{j < k} j) * 2 = k (k - 1)`, cast from `ℕ` to `R`.
-  have hgauss (k : ℕ) : (∑ j ∈ range k, (j : R)) * 2 = k * (k - 1) := by
-    rcases k with _ | k
-    · simp
-    · simpa using congr(($(sum_range_id_mul_two (k + 1)) : R))
   rw [coeff_one_prod, sum_mul, mul_sum, ← sum_neg_distrib]
   refine sum_congr rfl fun i hi ↦ ?_
   simp only [hc, map_sum, coeff_one_pow, map_sub, coeff_one, coeff_one_X, map_one,
     constantCoeff_X, sub_zero, one_pow, one_ne_zero, ite_false, zero_sub, mul_neg, mul_one,
     sum_neg_distrib]
   rw [← mul_prod_erase s (fun j ↦ (d j : R)) hi]
-  linear_combination (-(∏ j ∈ s.erase i, (d j : R))) * hgauss (d i)
+  linear_combination (-(∏ j ∈ s.erase i, (d j : R))) * sum_range_natCast_mul_two (R := R) (d i)
 
 end CommRing
 
