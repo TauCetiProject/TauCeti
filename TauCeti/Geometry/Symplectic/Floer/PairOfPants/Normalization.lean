@@ -106,11 +106,6 @@ open Floer
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
   {c : Puncture → ℝ → ℝ}
 
-/-- `C¹` normalizations `c_q` give `C¹` target-independent Hamiltonians. -/
-private theorem contDiff_uncurry_const_target (hcs : ∀ q, ContDiff ℝ 1 (c q)) (q : Puncture) :
-    ContDiff ℝ 1 (uncurry fun t (_ : V) ↦ c q t) :=
-  (hcs q).comp contDiff_fst
-
 variable [FiniteDimensional ℝ V]
 
 /-- **Normalizing the end Hamiltonians does not change the Floer equation.** The perturbed
@@ -192,8 +187,8 @@ theorem setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_const (ω : Sym
     simp
   -- The energy identity for the constant map `0` leaves only the curvature and the end terms.
   have h := ω.integral_floerEnergyDensity_pairOfPantsPerturbation
-    (fun q ↦ periodic_const_target (hc q))
-    (contDiff_uncurry_const_target hcs) (B := B) (fun q t _ ↦ hB q t) (u := fun _ ↦ (0 : V))
+    (H := fun q t (_ : V) ↦ c q t) (fun q ↦ (hc q).comp (Function.const V))
+    (fun q ↦ (hcs q).comp contDiff_fst) (B := B) (fun q t _ ↦ hB q t) (u := fun _ ↦ (0 : V))
     contDiffOn_const (x := fun _ _ ↦ 0) (fun _ _ ↦ tendsto_const_nhds)
     (by rw [hE]; exact integrableOn_zero) (by rw [hA]; exact integrableOn_zero)
   rw [hE, hA] at h
@@ -298,8 +293,9 @@ theorem hamiltonianCurvature_pairOfPantsPerturbation_add_const (ω : SmoothTwoFo
             (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t)
             (Complex.equivRealProdCLM.symm z) x Complex.I) z x := by
-  have hc' q := periodic_const_target (M := M) (hc q)
-  have hcs' q := contMDiff_uncurry_const_target (I := I) (M := M) (hcs q)
+  have hc' q : Periodic (fun t (_ : M) ↦ c q t) 1 := (hc q).comp (Function.const M)
+  have hcs' q : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry fun t (_ : M) ↦ c q t) :=
+    (hcs q).contMDiff.comp contMDiff_fst
   rw [pairOfPantsPerturbation_add_const_fun H c x, pairOfPantsPerturbation_add_const_fun H c x,
     hamiltonianCurvature_add_const ω (differentiableAt_pairOfPantsPerturbation_domain hH hHs hz x 1)
       (differentiableAt_pairOfPantsPerturbation_domain hH hHs hz x Complex.I)
@@ -370,7 +366,8 @@ theorem setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_add_const (ω :
   -- The curvature of the normalization does not depend on the target point, so it is integrable
   -- along `u` because it is along a constant map.
   have hk := (ω.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation
-    (fun q ↦ periodic_const_target (hc q)) (fun q ↦ contMDiff_uncurry_const_target (hcs q))
+    (H := fun q t _ ↦ c q t) (fun q ↦ (hc q).comp (Function.const _))
+    (fun q ↦ (hcs q).contMDiff.comp contMDiff_fst)
     (u := fun _ ↦ u 0) continuousOn_const).congr_fun
     (fun z _ ↦ ω.hamiltonianCurvature_pairOfPantsPerturbation_const_target c z (u 0) (u z))
     isOpen_thricePuncturedSphereReal.measurableSet

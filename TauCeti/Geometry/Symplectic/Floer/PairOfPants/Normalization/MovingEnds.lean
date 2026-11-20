@@ -207,10 +207,10 @@ theorem hamiltonianCurvature_puncturedSpherePerturbation_add_const
             (fun t (_ : M) ↦ kout t) (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ puncturedSpherePerturbation c a (fun i t (_ : M) ↦ k i t)
             (fun t (_ : M) ↦ kout t) (Complex.equivRealProdCLM.symm z) x Complex.I) z x := by
-  have hdk (v : ℂ) := differentiableAt_puncturedSpherePerturbation_domain
-    (fun i ↦ periodic_const_target (hk i))
-    (fun i ↦ contMDiff_uncurry_const_target (I := I) (hks i)) (periodic_const_target hkout)
-    (contMDiff_uncurry_const_target hkouts) ha hz x v
+  have hdk (v : ℂ) := differentiableAt_puncturedSpherePerturbation_domain (I := I)
+    (H := fun i t (_ : M) ↦ k i t) (Hout := fun t _ ↦ kout t)
+    (fun i ↦ (hk i).comp (Function.const M)) (fun i ↦ (hks i).contMDiff.comp contMDiff_fst)
+    (hkout.comp (Function.const M)) (hkouts.contMDiff.comp contMDiff_fst) ha hz x v
   rw [puncturedSpherePerturbation_add_const_fun c a H Hout k kout x,
     puncturedSpherePerturbation_add_const_fun c a H Hout k kout x,
     hamiltonianCurvature_add_const ω
@@ -286,8 +286,9 @@ theorem setIntegral_hamiltonianCurvature_puncturedSpherePerturbation_const (ω :
   -- The energy identity for the constant map `0` leaves only the curvature and the end terms.
   have hid := IsNondegenerate.integral_floerEnergyDensity_puncturedSpherePerturbation
     (SymplecticForm.isNondegenerate_constSmooth stdComplexSymplecticForm)
-    (fun i ↦ periodic_const_target (hk i)) (fun i ↦ contMDiff_uncurry_const_target (hks i))
-    (periodic_const_target hkout) (contMDiff_uncurry_const_target hkouts)
+    (H := fun i t (_ : ℂ) ↦ k i t) (Hout := fun t _ ↦ kout t)
+    (fun i ↦ (hk i).comp (Function.const _)) (fun i ↦ (hks i).contMDiff.comp contMDiff_fst)
+    (hkout.comp (Function.const _)) (hkouts.contMDiff.comp contMDiff_fst)
     ha hsep hout (B := B) (fun i t _ ↦ hB i t) (fun t _ ↦ hBout t) (u := fun _ ↦ (0 : ℂ))
     contMDiffOn_const (x := fun _ _ ↦ 0) (xout := fun _ ↦ 0) (fun _ _ ↦ tendsto_const_nhds)
     (fun _ ↦ tendsto_const_nhds) (by rw [hE]; exact integrableOn_zero)
@@ -328,15 +329,14 @@ theorem setIntegral_hamiltonianCurvature_puncturedSpherePerturbation_add_const
         ((∑ i, ∫ t in (0 : ℝ)..1, k i t) - ∫ t in (0 : ℝ)..1, kout t) := by
   choose B hB using fun i ↦ (hk i).exists_bound_of_continuous one_ne_zero (hks i).continuous
   obtain ⟨Bout, hBout⟩ := hkout.exists_bound_of_continuous one_ne_zero hkouts.continuous
-  have hS : IsOpen {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} := by
-    simp only [ofPred_forall]
-    exact isOpen_iInter_of_finite fun i ↦
-      isOpen_ne_fun (by fun_prop) continuous_const
+  have hS : IsOpen {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} :=
+    isOpen_setOf_forall_equivRealProdCLM_symm_ne
   -- The curvature of the normalization does not depend on the target point, so it is integrable
   -- along `u` because it is along a constant map.
   have hκ := (ω.integrableOn_hamiltonianCurvature_puncturedSpherePerturbation
-    (fun i ↦ periodic_const_target (hk i)) (fun i ↦ contMDiff_uncurry_const_target (hks i))
-    (periodic_const_target hkout) (contMDiff_uncurry_const_target hkouts)
+    (H := fun i t _ ↦ k i t) (Hout := fun t _ ↦ kout t)
+    (fun i ↦ (hk i).comp (Function.const _)) (fun i ↦ (hks i).contMDiff.comp contMDiff_fst)
+    (hkout.comp (Function.const _)) (hkouts.contMDiff.comp contMDiff_fst)
     ha hsep hout (B := B) (fun i t _ ↦ hB i t) (fun t _ ↦ hBout t) (u := fun _ ↦ u 0)
     continuousOn_const).congr_fun
     (fun z _ ↦ ω.hamiltonianCurvature_puncturedSpherePerturbation_const_target c a k kout z (u 0)
