@@ -220,8 +220,7 @@ correspondence recovers it from its fixed field. -/
 @[simp]
 theorem fixingSubgroup_cocharacterFieldOfDefinition (μ : cocharacterLattice T) :
     (cocharacterFieldOfDefinition T μ).fixingSubgroup = cocharacterStabilizer T μ :=
-  InfiniteGalois.fixingSubgroup_fixedField
-    ⟨_, Subgroup.isClosed_of_isOpen _ (isOpen_cocharacterStabilizer μ)⟩
+  IntermediateField.fixingSubgroup_fixedField_of_isOpen (isOpen_cocharacterStabilizer μ)
 
 /-- **A cocharacter is defined over `F` exactly when `F` contains its field of definition**: every
 automorphism of the algebraic closure fixing `F` pointwise fixes `μ` if and only if
@@ -241,8 +240,11 @@ cocharacter. -/
 theorem finrank_cocharacterFieldOfDefinition (μ : cocharacterLattice T) :
     Module.finrank k (cocharacterFieldOfDefinition T μ) =
       Nat.card (MulAction.orbit (Field.absoluteGaloisGroup k) μ) := by
-  rw [IntermediateField.finrank_eq_fixingSubgroup_index,
-    fixingSubgroup_cocharacterFieldOfDefinition]
+  rw [cocharacterFieldOfDefinition_def,
+    IntermediateField.finrank_fixedField_of_isOpen (isOpen_cocharacterStabilizer μ)]
+  -- `cocharacterStabilizer T μ` is by definition the stabilizer of `μ` in
+  -- `Field.absoluteGaloisGroup k`, Mathlib's named copy of `Gal(AlgebraicClosure k/k)` with no
+  -- bridge lemma, so Mathlib's index formula for that stabilizer is this goal.
   exact MulAction.index_stabilizer (Field.absoluteGaloisGroup k) μ
 
 /-- The field of definition is the base field exactly when the cocharacter is Galois-invariant,
