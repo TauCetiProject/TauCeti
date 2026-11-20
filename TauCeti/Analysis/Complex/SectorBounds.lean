@@ -12,8 +12,12 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 
 For a complex number `s` separated in argument from the negative real axis and a nonnegative
 real `t`, the norm of the translate `s + t` is bounded below by a fixed multiple of `‖s‖ + t`:
-`c * (‖s‖ + t) ≤ ‖s + t‖`, where `0 ≤ c ≤ 1` depends only on the angular separation. On the
-sector `|arg s| ≤ π - δ` one may take `c = (1 - cos δ) / 2`. These inequalities control
+`√c * (‖s‖ + t) ≤ ‖s + t‖` whenever `(2c - 1) ‖s‖ ≤ re s` and `0 ≤ c ≤ 1`
+(`Complex.sqrt_mul_norm_add_le_norm_add_ofReal`), which sharpens `c * (‖s‖ + t) ≤ ‖s + t‖`
+(`Complex.mul_norm_add_le_norm_add_ofReal`). On the sector `|arg s| ≤ π - δ` (`0 ≤ δ`), the sharp
+constant is `sin (δ / 2)` (`Complex.sin_half_mul_norm_add_le_norm_add_ofReal_of_abs_arg_le`),
+strengthening the squared constant `(1 - cos δ) / 2 = sin (δ / 2) ^ 2`
+(`Complex.mul_norm_add_le_norm_add_ofReal_of_abs_arg_le`). These inequalities control
 reciprocal kernels in sectorial integrals. A nonzero point of such a sector, with `0 < δ`, lies in
 the slit plane.
 -/
@@ -24,22 +28,58 @@ open Complex Real
 
 namespace Complex
 
-/-- If `(2c - 1) ‖s‖ ≤ re s` with `0 ≤ c ≤ 1`, then `c * (‖s‖ + t) ≤ ‖s + t‖` for every
-nonnegative real `t`. -/
-theorem mul_norm_add_le_norm_add_ofReal {s : ℂ} {c t : ℝ}
+/-- If `(2c - 1) ‖s‖ ≤ re s` with `0 ≤ c ≤ 1`, then `√c * (‖s‖ + t) ≤ ‖s + t‖` for every
+nonnegative real `t`. This sharpens `Complex.mul_norm_add_le_norm_add_ofReal`. -/
+theorem sqrt_mul_norm_add_le_norm_add_ofReal {s : ℂ} {c t : ℝ}
     (hc : 0 ≤ c) (hc1 : c ≤ 1) (ht : 0 ≤ t)
     (hs : (2 * c - 1) * ‖s‖ ≤ s.re) :
-    c * (‖s‖ + t) ≤ ‖s + t‖ := by
+    Real.sqrt c * (‖s‖ + t) ≤ ‖s + t‖ := by
   have hsq : ‖s + t‖ ^ 2 = ‖s‖ ^ 2 + 2 * t * s.re + t ^ 2 := by
     simp only [Complex.sq_norm, normSq_apply, add_re, ofReal_re, add_im, ofReal_im, add_zero]
     ring
   have h : c * (‖s‖ + t) ^ 2 ≤ ‖s + t‖ ^ 2 := by
     nlinarith [mul_nonneg (sub_nonneg.mpr hc1) (sq_nonneg (‖s‖ - t)),
       mul_le_mul_of_nonneg_left hs (by positivity : 0 ≤ 2 * t)]
-  have hc2 : c ^ 2 ≤ c := by nlinarith
-  have h2 : (c * (‖s‖ + t)) ^ 2 ≤ ‖s + t‖ ^ 2 := by
-    nlinarith [mul_le_mul_of_nonneg_right hc2 (sq_nonneg (‖s‖ + t))]
-  nlinarith [norm_nonneg (s + t)]
+  have h2 : (Real.sqrt c * (‖s‖ + t)) ^ 2 ≤ ‖s + t‖ ^ 2 := by
+    rw [mul_pow, Real.sq_sqrt hc]
+    exact h
+  nlinarith [norm_nonneg (s + t), Real.sqrt_nonneg c, norm_nonneg s]
+
+/-- If `(2c - 1) ‖s‖ ≤ re s` with `0 ≤ c ≤ 1`, then `c * (‖s‖ + t) ≤ ‖s + t‖` for every
+nonnegative real `t`. -/
+theorem mul_norm_add_le_norm_add_ofReal {s : ℂ} {c t : ℝ}
+    (hc : 0 ≤ c) (hc1 : c ≤ 1) (ht : 0 ≤ t)
+    (hs : (2 * c - 1) * ‖s‖ ≤ s.re) :
+    c * (‖s‖ + t) ≤ ‖s + t‖ := by
+  refine le_trans ?_ (sqrt_mul_norm_add_le_norm_add_ofReal hc hc1 ht hs)
+  have hle : c ≤ Real.sqrt c := by
+    rw [Real.le_sqrt hc hc]
+    nlinarith
+  exact mul_le_mul_of_nonneg_right hle (by positivity)
+
+/-- On the closed sector `|arg s| ≤ π - δ` (`0 ≤ δ`), translation by a nonnegative real `t`
+satisfies `sin (δ / 2) * (‖s‖ + t) ≤ ‖s + t‖`. This sharpens
+`Complex.mul_norm_add_le_norm_add_ofReal_of_abs_arg_le`. -/
+theorem sin_half_mul_norm_add_le_norm_add_ofReal_of_abs_arg_le {s : ℂ} {δ t : ℝ}
+    (hδ : 0 ≤ δ) (hs : |s.arg| ≤ Real.pi - δ) (ht : 0 ≤ t) :
+    Real.sin (δ / 2) * (‖s‖ + t) ≤ ‖s + t‖ := by
+  have hδπ : δ ≤ Real.pi := by linarith [abs_nonneg s.arg]
+  have hsin : 0 ≤ Real.sin (δ / 2) :=
+    Real.sin_nonneg_of_nonneg_of_le_pi (by linarith) (by linarith)
+  rw [← Real.sqrt_sq hsin]
+  apply sqrt_mul_norm_add_le_norm_add_ofReal (sq_nonneg _)
+  · nlinarith [Real.sin_sq_add_cos_sq (δ / 2)]
+  · exact ht
+  · have hcos := Real.cos_le_cos_of_nonneg_of_le_pi (abs_nonneg s.arg)
+      (by linarith : Real.pi - δ ≤ Real.pi) hs
+    rw [Real.cos_abs, Real.cos_pi_sub] at hcos
+    have h2 : Real.cos δ = 1 - 2 * Real.sin (δ / 2) ^ 2 := by
+      have hdouble := Real.cos_two_mul (δ / 2)
+      rw [mul_div_cancel₀ δ two_ne_zero] at hdouble
+      linarith [Real.sin_sq_add_cos_sq (δ / 2)]
+    have h := mul_le_mul_of_nonneg_left hcos (norm_nonneg s)
+    rw [norm_mul_cos_arg, h2] at h
+    linarith
 
 /-- On the closed sector `|arg s| ≤ π - δ`, translation by a nonnegative real `t` satisfies
 `((1 - cos δ) / 2) * (‖s‖ + t) ≤ ‖s + t‖`. -/
