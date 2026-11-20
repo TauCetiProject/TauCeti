@@ -283,14 +283,14 @@ theorem exists_basis_eq_iff {n : ℕ} (b : Basis (Fin n) ℤ M) (i : Fin n) (v :
       b.linearIndependent.isCompl_span_image b.span_eq (isCompl_compl (x := s))
   have hPf : P ≤ LinearMap.ker f := Submodule.span_le.2 <| by
     rintro _ ⟨j, rfl⟩
-    exact hf j j.2
+    exact hf j j.property
   have : Module.Free ℤ N := Module.Free.of_basis bN
   have : Module.Finite ℤ N := Module.Finite.of_basis bN
   -- Split `v` into its components in `P` and `N`; the component in `N` is primitive there.
   set w := (Submodule.prodEquivOfIsCompl P N hPN).symm v
   have hvw : v = (w.1 : M) + w.2 := by
     rw [← Submodule.coe_prodEquivOfIsCompl' (h := hPN), LinearEquiv.apply_symm_apply]
-  have hw1 : f w.1 = 0 := hPf w.1.2
+  have hw1 : f w.1 = 0 := hPf w.1.property
   have hw2 : f w.2 = 1 := by rw [← hv, hvw, map_add, hw1, zero_add]
   obtain ⟨m, c, k, hck⟩ := TauCeti.IsPrimitive.exists_basis (M := N) ⟨f.comp N.subtype, hw2⟩
   -- Combine `b 0, …, b (i - 1)` with `c`, placing `c k` at position `i`.

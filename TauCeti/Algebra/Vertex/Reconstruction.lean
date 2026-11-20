@@ -98,7 +98,7 @@ private theorem genDepth_step_isLocalOfOrder {F : ι → VertexOperator R V} {d 
   | derivative hA₀ => obtain ⟨_, h⟩ := hCA hA₀; exact ⟨_, h.derivative_left⟩
   | nthProduct n hA₁ hA₂ =>
     obtain ⟨_, h₁⟩ := ih hA₁ hA₂; obtain ⟨_, h₂⟩ := hCA hA₂; obtain ⟨_, h₃⟩ := hCA hA₁
-    exact ⟨_, h₁.nthProduct_left h₂ h₃ n⟩
+    exact ⟨_, h₁.nthProduct_left h₃ h₂ n⟩
 
 private theorem genDepth_isLocalOfOrder {F : ι → VertexOperator R V}
     (hloc : ∀ i j, ∃ N : ℕ, (F i).IsLocalOfOrder (F j) N) (d : ℕ) :
@@ -131,7 +131,7 @@ private theorem generatedFields_isLocalOfOrder {F : ι → VertexOperator R V}
     (genDepth_mono_le (le_max_left _ _) h₁) (genDepth_mono_le (le_max_right _ _) h₂)
 
 private def evalVacLinearMap (vac : V) (F : ι → VertexOperator R V) : generatedFields F →ₗ[R] V :=
-  { toFun B := (B.1[[-1]]) vac, map_add' _ _ := by simp, map_smul' _ _ := by simp }
+  { toFun B := (B.val[[-1]]) vac, map_add' _ _ := by simp, map_smul' _ _ := by simp }
 
 end GeneratedFields
 
@@ -154,7 +154,8 @@ private theorem eq_zero_of_mem_generatedFields {B : VertexOperator R V} (hB : B 
     · exact ncoeff_apply_eq_zero_of_lie_of_nonneg hT hcovB hm
     · obtain ⟨k, rfl⟩ : ∃ k : ℕ, m = -(k : ℤ) - 1 := ⟨(-m - 1).toNat, by omega⟩
       exact (nsmul_right_inj k.factorial_ne_zero).mp <| by
-        rw [factorial_smul_ncoeff_neg_succ_apply_of_lie hT hcovB k, hker, map_zero, smul_zero]
+        rw [show -(k : ℤ) - 1 = (-k - 1 : ℤ) by omega,
+          factorial_smul_ncoeff_apply hT hcovB k, hker, map_zero, smul_zero]
   have hW : (⨅ m : ℤ, LinearMap.ker (B[[m]])) = ⊤ :=
     hgen _ ((Submodule.mem_iInf _).mpr fun m ↦ LinearMap.mem_ker.mpr (hvac m)) fun i n v hv ↦
       (Submodule.mem_iInf _).mpr fun m ↦ LinearMap.mem_ker.mpr <|
@@ -165,7 +166,7 @@ private theorem eq_zero_of_mem_generatedFields {B : VertexOperator R V} (hB : B 
 
 private theorem evalVacLinearMap_bijective : Function.Bijective (evalVacLinearMap vac F) := by
   refine ⟨fun x y hxy ↦ Subtype.ext <| sub_eq_zero.mp <|
-      eq_zero_of_mem_generatedFields vac T F hT hcov hloc hgen (sub_mem x.2 y.2)
+      eq_zero_of_mem_generatedFields vac T F hT hcov hloc hgen (sub_mem x.property y.property)
         (by simpa [evalVacLinearMap, sub_eq_zero] using hxy), ?_⟩
   rw [← LinearMap.range_eq_top]
   refine hgen _ ⟨⟨VertexOperator.id R V, ⟨0, .id 0⟩⟩, by simp [evalVacLinearMap]⟩
@@ -187,10 +188,10 @@ unique `TauCeti.FormalVertexAxioms R V` with vacuum `vac`, translation `T`, and
 def ofGeneratingFields : FormalVertexAxioms R V :=
   let e := evalVacEquiv vac T F hT hcov hloc hgen
   let Y : V →ₗ[R] VertexOperator R V := (generatedFields F).subtype.comp e.symm.toLinearMap
-  have he (B : generatedFields F) : e B = (B.1[[-1]]) vac := rfl
-  have hY_mem (a : V) : Y a ∈ generatedFields F := (e.symm a).2
+  have he (B : generatedFields F) : e B = (B.val[[-1]]) vac := rfl
+  have hY_mem (a : V) : Y a ∈ generatedFields F := (e.symm a).property
   have hY_cov (a : V) := let ⟨_, hd⟩ := hY_mem a; genDepth_lie_translation hcov hd
-  have hY_eval (B : generatedFields F) : Y ((B.1[[-1]]) vac) = B.1 := by
+  have hY_eval (B : generatedFields F) : Y ((B.val[[-1]]) vac) = B.val := by
     rw [← he B]; exact congrArg Subtype.val (e.symm_apply_apply B)
   have heval_Y (a : V) : ((Y a)[[-1]]) vac = a := by
     simpa only [Y, LinearMap.comp_apply, Submodule.coe_subtype, LinearEquiv.coe_toLinearMap,

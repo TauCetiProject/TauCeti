@@ -348,7 +348,7 @@ theorem inv_mul_mem_quotientPointsSubgroup_iff_comp_val_eq [Module.Flat R H]
     g₁⁻¹ * g₂ ∈ CommHopfAlgCat.quotientPointsSubgroup H I A ↔
       g₁.ofConv.comp I.coinvariants.val = g₂.ofConv.comp I.coinvariants.val := by
   refine ⟨fun hn ↦ AlgHom.ext fun x ↦ ?_, fun hg ↦ ?_⟩
-  · have := ofConv_mul_apply_of_mem_coinvariants x.2 g₁ hn
+  · have := ofConv_mul_apply_of_mem_coinvariants x.property g₁ hn
     rw [mul_inv_cancel_left] at this
     exact this.symm
   · rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff]

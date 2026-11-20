@@ -211,7 +211,7 @@ theorem toSymmetricAlgebra_symmetricPower_apply {κ : Type w} (b : Module.Basis 
   rw [map_prod, TauCeti.SymmetricAlgebra.equivMvPolynomial_symmetricAlgebraHomogeneous_apply]
   simp only [SymmetricAlgebra.equivMvPolynomial_ι_apply]
   rw [← List.prod_ofFn]
-  have hexp : (_root_.Sym.equivFinsuppDegree κ n (Sym.ofFn f)).1 =
+  have hexp : (_root_.Sym.equivFinsuppDegree κ n (Sym.ofFn f)).val =
       (List.ofFn f : Multiset κ).toFinsupp := by
     rw [_root_.Sym.coe_equivFinsuppDegree_apply, Sym.coe_ofFn]
   rw [hexp]

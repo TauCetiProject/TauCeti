@@ -122,7 +122,7 @@ theorem interSnd_apply (x : C.inter) : C.interSnd x = (x : X₀ × X₁).2 :=
   (rfl)
 
 theorem embed₀_interFst (x : C.inter) : C.embed₀ (C.interFst x) = C.embed₁ (C.interSnd x) :=
-  C.mem_inter_iff.1 x.2
+  C.mem_inter_iff.1 x.property
 
 theorem interFst_injective : Function.Injective C.interFst := by
   rintro ⟨⟨a₀, a₁⟩, ha⟩ ⟨⟨b₀, b₁⟩, hb⟩ h
@@ -560,7 +560,7 @@ theorem refl_sndToSum_sumSpaceEmbed (u : (refl 𝕜 X).SumSpace) :
 
 /-- For the couple `(X, X)` the intersection norm is the norm of `X`. -/
 theorem norm_refl_inter (x : (refl 𝕜 X).inter) : ‖x‖ = ‖(refl 𝕜 X).interFst x‖ := by
-  have h := (refl 𝕜 X).mem_inter_iff.1 x.2
+  have h := (refl 𝕜 X).mem_inter_iff.1 x.property
   simp only [refl_embed₀, refl_embed₁, ContinuousLinearMap.id_apply] at h
   rw [norm_inter, interFst_apply, h, max_self]
 

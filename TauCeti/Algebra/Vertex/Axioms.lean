@@ -40,9 +40,8 @@ uses divided powers of `T` instead, so the definition is meant for `ℚ`-algebra
 * `TauCeti.FormalVertexAxioms.translation_apply`: `T a = a₍₋₂₎|0⟩`.
 * `TauCeti.FormalVertexAxioms.translation_ncoeff_apply`:
   `T (a₍ₙ₎ b) = (T a)₍ₙ₎ b + a₍ₙ₎ (T b)`.
-* `TauCeti.FormalVertexAxioms.field_pow_translation` and
-  `TauCeti.FormalVertexAxioms.factorial_smul_hasseDeriv_field`: iterated translation intertwines
-  with iterated derivatives and Hasse derivatives of fields.
+* `TauCeti.FormalVertexAxioms.field_pow_translation`: iterated translation intertwines with iterated
+  formal differentiation of fields.
 * `TauCeti.FormalVertexAxioms.factorial_smul_ncoeff_field_apply_vacuum`:
   `k! • a₍₋ₖ₋₁₎|0⟩ = Tᵏ a`, and `TauCeti.FormalVertexAxioms.ncoeff_field_apply_vacuum_neg` /
   `ncoeff_field_neg_succ_apply_vacuum` its forms `a₍₋ₖ₋₁₎|0⟩ = Tᵏ a / k!` over `ℚ`, the creation
@@ -53,8 +52,7 @@ uses divided powers of `T` instead, so the definition is meant for `ℚ`-algebra
   local to every `Y(a,z)` is determined by its values on the vacuum.
 * `TauCeti.FormalVertexAxioms.eq_field_of_ncoeff_apply_vacuum_eq`,
   `TauCeti.FormalVertexAxioms.eq_field_of_lie_translation_ncoeff`: uniqueness characterizations of
-  `Y(b,z)`, and `TauCeti.FormalVertexAxioms.field_ncoeff_neg_succ_apply_vacuum`:
-  `Y(a₍₋ₖ₋₁₎|0⟩, z) = ∂_z^{(k)} Y(a, z)`.
+  `Y(b,z)`.
 
 ## References
 
@@ -146,11 +144,6 @@ theorem field_pow_translation (a : V) (k : ℕ) :
   rw [FunLike.coe_pow_eq_iterate]
   exact Function.Semiconj.iterate_right A.field_translation k a
 
-/-- Without division, `k!` times the `k`-th Hasse derivative of `Y(a, z)` is `Y(Tᵏ a, z)`. -/
-theorem factorial_smul_hasseDeriv_field (a : V) (k : ℕ) :
-    k.factorial • hasseDeriv k (A.field a) = A.field ((A.translation ^ k) a) := by
-  rw [factorial_smul_hasseDeriv, A.field_pow_translation]
-
 /-- Translation is a derivation of each mode: `T (a₍ₙ₎ b) = (T a)₍ₙ₎ b + a₍ₙ₎ (T b)`. -/
 theorem translation_ncoeff_apply (a b : V) (n : ℤ) :
     A.translation (((A.field a)[[n]]) b) =
@@ -172,15 +165,7 @@ theorem translation_apply (a : V) : A.translation a = ((A.field a)[[-2]]) A.vacu
 /-- The creation identity without division: `k! • a₍₋ₖ₋₁₎|0⟩ = Tᵏ a`. -/
 theorem factorial_smul_ncoeff_field_apply_vacuum (a : V) (k : ℕ) :
     k.factorial • ((A.field a)[[-k - 1]]) A.vacuum = (A.translation ^ k) a := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    have h := A.translation_ncoeff_apply_vacuum a (-k - 1)
-    have h₁ : -(-(k : ℤ) - 1) = ((k + 1 : ℕ) : ℤ) := by push_cast; ring
-    have h₂ : -(k : ℤ) - 1 - 1 = -((k + 1 : ℕ) : ℤ) - 1 := by push_cast; ring
-    rw [h₁, h₂, natCast_zsmul] at h
-    rw [pow_succ', mul_apply_eq_comp, ← ih, map_nsmul, h, Nat.factorial_succ, mul_nsmul,
-      smul_comm]
+  simpa using factorial_smul_ncoeff_apply A.translation_vacuum (A.lie_translation_ncoeff a) k
 
 /-- The creation identity `Y(a,z)|0⟩ = e^{zT} a`, in modes: `a₍₋ₖ₋₁₎|0⟩ = Tᵏ a / k!`. -/
 theorem ncoeff_field_apply_vacuum_neg [Module ℚ V] (a : V) (k : ℕ) :
@@ -269,16 +254,9 @@ theorem eq_field_of_lie_translation_ncoeff [HasUniqueDiv V] {B : VertexOperator 
       A.ncoeff_field_apply_vacuum_of_nonneg b n hn]
   · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = -(k : ℤ) - 1 := ⟨(-n - 1).toNat, by omega⟩
     exact (nsmul_right_inj k.factorial_ne_zero).mp <| by
-      rw [factorial_smul_ncoeff_neg_succ_apply_of_lie A.translation_vacuum hcov k, hb,
+      rw [show -(k : ℤ) - 1 = (-k - 1 : ℤ) by omega,
+        factorial_smul_ncoeff_apply A.translation_vacuum hcov k, hb,
         A.factorial_smul_ncoeff_field_apply_vacuum b k]
-
-/-- The field of `a₍₋ₖ₋₁₎|0⟩` is the `k`-th Hasse derivative of `Y(a, z)`. -/
-@[simp] theorem field_ncoeff_neg_succ_apply_vacuum [HasUniqueDiv V] (a : V) (k : ℕ) :
-    A.field (((A.field a)[[-(k : ℤ) - 1]]) A.vacuum) = hasseDeriv k (A.field a) :=
-  (A.eq_field_of_lie_translation_ncoeff
-    (fun c ↦ let ⟨N, hN⟩ := A.exists_isLocalOfOrder a c; ⟨N + k, hN.hasseDeriv_left k⟩)
-    (lie_ncoeff_hasseDeriv (A.lie_translation_ncoeff a) k)
-    (ncoeff_neg_one_hasseDeriv k (A.field a) ▸ rfl)).symm
 
 end FormalVertexAxioms
 

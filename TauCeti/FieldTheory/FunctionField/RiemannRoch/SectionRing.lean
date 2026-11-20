@@ -156,7 +156,7 @@ noncomputable def sectionRingGradeOneEquiv (D : Divisor k F) :
 
 @[simp]
 theorem coe_sectionRingGradeOneEquiv_apply (D : Divisor k F) (s : riemannRochSpace D) :
-    ((sectionRingGradeOneEquiv D s : sectionRing D)) = monomialDegreeOne s.2 := by
+    ((sectionRingGradeOneEquiv D s : sectionRing D)) = monomialDegreeOne s.property := by
   ext1
   simp [sectionRingGradeOneEquiv]
 
@@ -311,7 +311,7 @@ private theorem map_evalOne_sectionRingGrade (D : Divisor k F) (n : ℕ) :
   constructor
   · rintro ⟨f, hf, rfl⟩
     rw [AlgHom.toLinearMap_apply, evalOne_of_mem hf]
-    exact mem_coeffSubalgebra_iff.mp f.2 n
+    exact mem_coeffSubalgebra_iff.mp f.property n
   · intro hz
     let f := coeffSubalgebra.monomial (fun i : ℕ ↦ riemannRochSpace (i • D)) n z hz
     have hf : f ∈ sectionRingGrade D n := coeffSubalgebra.monomial_mem_grade _ _ _
@@ -381,7 +381,8 @@ private theorem range_awayLift :
     (awayLift hf hf0).range =
       holomorphyRing {P : Place k F | P.valuation ((f : F[X]).coeff n) =
         WithZero.exp (n * D.coeff P)} := by
-  have hfn : (f : F[X]).coeff n ∈ riemannRochSpace (n • D) := mem_coeffSubalgebra_iff.mp f.2 n
+  have hfn : (f : F[X]).coeff n ∈ riemannRochSpace (n • D) := mem_coeffSubalgebra_iff.mp f.property
+      n
   have ha0 := (coeffSubalgebra.coeff_eq_zero_iff_of_mem_grade hf).not.mpr hf0
   ext z
   rw [AlgHom.mem_range, mem_holomorphyRing_iff_exists_mul_pow_mem_riemannRochSpace hF hfn]
@@ -391,7 +392,7 @@ private theorem range_awayLift :
     refine ⟨r, ?_⟩
     rw [awayLift_mk, inv_mul_cancel_right₀ (pow_ne_zero r ha0)]
     have hg' : (g : F[X]).coeff (r • n) ∈ riemannRochSpace ((r • n) • D) :=
-      mem_coeffSubalgebra_iff.mp g.2 (r • n)
+      mem_coeffSubalgebra_iff.mp g.property (r • n)
     rw [smul_eq_mul, mul_comm r n] at hg' ⊢
     exact hg'
   · rintro ⟨r, hr⟩
@@ -494,7 +495,7 @@ private theorem pow_mem_span_monomialDegreeOne (hF : IsFunctionField k F) {D : D
     ∃ r : ℕ, y ^ r ∈ Ideal.span (Set.range fun i ↦ monomialDegreeOne (hs i)) := by
   classical
   set a := (y : F[X]).coeff m
-  have ha : a ∈ riemannRochSpace (m • D) := mem_coeffSubalgebra_iff.mp y.2 m
+  have ha : a ∈ riemannRochSpace (m • D) := mem_coeffSubalgebra_iff.mp y.property m
   have hy_eq : (y : F[X]) = Polynomial.monomial m a :=
     (coeffSubalgebra.mem_grade_iff_monomial_coeff.mp hy).symm
   rcases eq_or_ne a 0 with ha0 | ha0
@@ -507,7 +508,7 @@ private theorem pow_mem_span_monomialDegreeOne (hF : IsFunctionField k F) {D : D
     refine mem_holomorphyRing_iff.mpr fun P hP ↦ ?_
     rw [Set.mem_ofPred_eq] at hP
     have hsi := mem_riemannRochSpace_iff.mp (hs i) P
-    rw [Place.mem_integers_iff, map_div₀, map_pow, hP, div_le_one₀ (zero_lt_iff.mpr
+    rw [Place.mem_integers_iff, map_div₀, map_pow, hP, div_le_one₀ (pos_iff_ne_zero.mpr
       WithZero.exp_ne_zero), ← nsmul_eq_mul, WithZero.exp_nsmul]
     exact pow_le_pow_left₀ zero_le hsi m
   set I : Ideal O.toSubring := Ideal.span (Set.range fun i ↦ (⟨_, hgen i⟩ : O.toSubring))
@@ -518,7 +519,7 @@ private theorem pow_mem_span_monomialDegreeOne (hF : IsFunctionField k F) {D : D
   have hc' : ∑ i ∈ c.support, (c i : F) * (s i ^ m / a) = 1 := by
     simpa [Finsupp.sum] using congr_arg Subtype.val hc
   have hr (i : ι) : ∃ r : ℕ, (c i : F) * a ^ r ∈ riemannRochSpace ((m * r) • D) :=
-    (mem_holomorphyRing_iff_exists_mul_pow_mem_riemannRochSpace hF ha).mp (c i).2
+    (mem_holomorphyRing_iff_exists_mul_pow_mem_riemannRochSpace hF ha).mp (c i).property
   choose r hr using hr
   set R := c.support.sup r
   have hR (i : ι) : (c i : F) * a ^ R ∈ riemannRochSpace ((m * R) • D) := by
@@ -622,8 +623,8 @@ noncomputable def sectionRingAwayOneEquiv (hF : IsFunctionField k F) (z : Fˣ) :
   rw [Nat.cast_one, one_mul, map_one, ← WithZero.exp_zero, WithZero.exp_inj, eq_comm]
   exact coeff_poles_eq_zero_iff hF z P
 
-/-- Under `TauCeti.Divisor.sectionRingAwayOneEquiv`, the fraction `g Xʳ / Xʳ` is sent to
-the degree-`r` coefficient of `g`. -/
+/-- Under `TauCeti.Divisor.sectionRingAwayOneEquiv`, the fraction `g / Xʳ`, for `g` a section
+of degree `r`, is sent to the degree-`r` coefficient of `g`. -/
 @[simp]
 theorem sectionRingAwayOneEquiv_mk (hF : IsFunctionField k F) (z : Fˣ) (r : ℕ)
     (g : sectionRing (poles hF z)) (hg : g ∈ sectionRingGrade (poles hF z) r) :

@@ -36,15 +36,11 @@ The partial-sum complement identity partitions subsets according to the position
 element. Its recurrence follows from Pascal's identity, and the initial value is Mathlib's
 `Nat.add_choose_eq`.
 
-Weighting a binomial antidiagonal sum by its first or second index lowers its order by one. These
-identities apply to sums in any additive commutative monoid, including coefficient sums for formal
-fields.
+Weighting a binomial antidiagonal sum by its first index lowers its order by one. This identity
+applies to sums in any additive commutative monoid, including coefficient sums for formal fields.
 
 ## Main results
 
-* `Finset.sum_antidiagonal_choose_succ_nsmul_nsmul`,
-  `Finset.sum_antidiagonal_choose_succ_nsmul_snd_nsmul`: weighting a binomial antidiagonal sum by
-  its first or second index lowers its order by one.
 * `Nat.sum_antidiagonal_choose_add_mul_choose_add`: the upper-index Vandermonde convolution.
 * `Nat.sum_antidiagonal_snd_add_choose`: summing `(r + m).choose (k + m)` over the second
   coordinate of the antidiagonal of `N` gives `(N + (m + 1)).choose (k + (m + 1))`.
@@ -52,6 +48,8 @@ fields.
   `∑_{k ≤ N - K} (k + r)⁽ᵐ⁾ * C(k + r - 1, k) * C(N - r - k, K - r) = r⁽ᵐ⁾ * C(N + m, K + m)`.
 * `Nat.sum_range_choose_mul_choose_add_sum_range_choose_mul_choose`: the complementary partial
   sums, distinguished by whether the `r`th element lies among the first `k + r` positions.
+* `Nat.one_add_mul_sum_range_add_choose_le`: the hockey-stick majorant bound
+  `1 + m * ∑ k ∈ range (n + 1), (k + m).choose m ≤ (n + 1) * (n + 1 + m).choose m`.
 
 ## References
 
@@ -74,22 +72,6 @@ theorem sum_antidiagonal_choose_succ_nsmul_nsmul {M : Type*} [AddCommMonoid M]
   simp only [zero_smul, smul_zero, zero_add]
   simp_rw [← mul_smul, ← Nat.add_one_mul_choose_eq, mul_smul]
   rw [smul_sum]
-
-/-- Weighting a binomial antidiagonal sum by its second index lowers its order by one. -/
-theorem sum_antidiagonal_choose_succ_nsmul_snd_nsmul {M : Type*} [AddCommMonoid M]
-    (f : ℕ → ℕ → M) (N : ℕ) :
-    ∑ ij ∈ antidiagonal (N + 1), (N + 1).choose ij.1 • ij.2 • f ij.1 ij.2 =
-      (N + 1) • ∑ ij ∈ antidiagonal N, N.choose ij.1 • f ij.1 (ij.2 + 1) := by
-  rw [← Nat.sum_antidiagonal_swap]
-  have e₁ : ∀ ij ∈ antidiagonal (N + 1),
-      (N + 1).choose ij.swap.1 • ij.swap.2 • f ij.swap.1 ij.swap.2 =
-        (N + 1).choose ij.1 • ij.1 • f ij.2 ij.1 := fun ij hij ↦ by
-    rw [Prod.fst_swap, Prod.snd_swap, Nat.choose_symm_of_eq_add (mem_antidiagonal.mp hij).symm]
-  rw [sum_congr rfl e₁, sum_antidiagonal_choose_succ_nsmul_nsmul (fun i j ↦ f j i) N,
-    ← Nat.sum_antidiagonal_swap (n := N)]
-  congr 1
-  exact sum_congr rfl fun ij hij ↦ by
-    rw [Prod.fst_swap, Prod.snd_swap, Nat.choose_symm_of_eq_add (mem_antidiagonal.mp hij).symm]
 
 end Finset
 
@@ -242,5 +224,23 @@ theorem sum_antidiagonal_snd_add_choose (N k m : ℕ) :
       omega
     _ = (N + (m + 1)).choose (k + (m + 1)) := by
       simpa only [add_assoc] using sum_Icc_choose (N + m) (k + m)
+
+/-- Majorant bound from the hockey-stick identity `Nat.sum_range_add_choose` and absorption
+`Nat.choose_succ_right_eq`:
+`1 + m * ∑ k ∈ range (n + 1), (k + m).choose m ≤ (n + 1) * (n + 1 + m).choose m`. -/
+theorem one_add_mul_sum_range_add_choose_le (n m : ℕ) :
+    1 + m * ∑ k ∈ range (n + 1), (k + m).choose m ≤
+      (n + 1) * (n + 1 + m).choose m := by
+  rw [sum_range_add_choose n m]
+  have h1 : 1 ≤ (n + m + 1).choose (m + 1) := choose_pos (by omega)
+  have h2 : (n + m + 1).choose (m + 1) * (m + 1) = (n + 1) * (n + 1 + m).choose m := by
+    rw [choose_succ_right_eq (n + m + 1) m, Nat.add_right_comm n m 1,
+      Nat.add_sub_cancel, Nat.mul_comm]
+  calc
+    1 + m * (n + m + 1).choose (m + 1)
+        ≤ (n + m + 1).choose (m + 1) + m * (n + m + 1).choose (m + 1) :=
+          Nat.add_le_add_right h1 _
+    _ = (n + m + 1).choose (m + 1) * (m + 1) := by ring
+    _ = (n + 1) * (n + 1 + m).choose m := h2
 
 end Nat
