@@ -54,10 +54,10 @@ theorem fullCycleType_toPerm_eq_map_card_orbit {G X : Type*} [Group G] [MulActio
   simp only [mem_orbit_iff, Subgroup.smul_def]
   constructor
   · rintro ⟨h, hh⟩
-    obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp h.2
+    obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp h.property
     exact ⟨⟨g ^ n, Subgroup.zpow_mem_zpowers g n⟩, by simpa [← hn, hpow] using hh⟩
   · rintro ⟨h, hh⟩
-    obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp h.2
+    obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp h.property
     exact ⟨⟨(toPerm g : Equiv.Perm X) ^ n, Subgroup.zpow_mem_zpowers _ n⟩,
       by simpa [← hn, hpow] using hh⟩
 

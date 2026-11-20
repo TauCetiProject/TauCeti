@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.RingTheory.DualNumber
-import TauCeti.RingTheory.Ideal.Marked
+import TauCeti.RingTheory.MarkedIdeal.Closed
 
 /-!
 # Examples of affine ideal order and marked ideals
@@ -18,7 +18,7 @@ These examples exercise `Ideal.orderAt`, `TauCeti.MarkedIdeal`, rescaling, and m
 * over the dual numbers `k[ε] / (ε²)` of a field `k`, the maximal ideal `𝔪` has order `1` whereas
   `𝔪² = ⊥` has order `⊤`; hence `(𝔪, 2)` has empty cosupport while its rescaling `(𝔪², 4)` has
   full nonempty cosupport, showing that the regularity hypothesis in `Ideal.localOrder_pow` and
-  `TauCeti.MarkedIdeal.cosupport_rescale` cannot be omitted;
+  `TauCeti.MarkedIdeal.cosupport_pow` cannot be omitted;
 * summing `(⟨y²⟩, 2)` and `(⟨x³⟩, 2)` gives `(⟨y⁴, x⁶⟩, 4)`;
 * a unit summand produces the unit ideal and empty cosupport;
 * two zero summands produce the zero ideal and full cosupport with the positive product mark.
@@ -75,7 +75,7 @@ example :
       Ideal.mem_bot] at h2
     have : (1 : k) = 0 := by simpa using congrArg TrivSqZeroExt.snd h2
     exact one_ne_zero this
-  · rw [← Nat.cast_one, Ideal.natCast_le_localOrder_iff, pow_one]
+  · rw [← Nat.cast_one, Ideal.natCast_le_localOrder_iff, _root_.pow_one]
   · rw [hsq, Ideal.localOrder_bot]
 
 -- On `k[ε] / (ε²)`, `(𝔪, 2)` has empty cosupport, whereas rescaling by `2` gives `(𝔪², 4)` with
@@ -83,14 +83,14 @@ example :
 example :
     let M : MarkedIdeal (DualNumber k) := ⟨maximalIdeal (DualNumber k), 2, Nat.two_pos⟩
     M.cosupport = ∅ ∧
-      (M.rescale 2 Nat.two_pos).cosupport = Set.univ ∧
-      (M.rescale 2 Nat.two_pos).cosupport ≠ M.cosupport := by
+      (M.pow 2).cosupport = Set.univ ∧
+      (M.pow 2).cosupport ≠ M.cosupport := by
   intro M
   have hsq : maximalIdeal (DualNumber k) ^ 2 = ⊥ := by
     rw [DualNumber.maximalIdeal_eq_span_singleton_eps, Ideal.span_singleton_pow, sq,
       DualNumber.eps_mul_eps, Ideal.span_singleton_zero]
   have hprime (p : PrimeSpectrum (DualNumber k)) :
-      p = ⟨maximalIdeal (DualNumber k), (maximalIdeal.isMaximal _).isPrime⟩ := by
+      p = IsLocalRing.closedPoint (DualNumber k) := by
     ext1
     rcases DualNumber.ideal_trichotomy p.asIdeal with h | h | h
     · exfalso
@@ -106,7 +106,7 @@ example :
     · exact absurd h p.isPrime.ne_top
   have h1 : M.cosupport = ∅ := by
     ext p
-    rw [mem_cosupport_iff, hprime p, Ideal.orderAt_maximalIdeal]
+    rw [mem_cosupport_iff, hprime p, Ideal.orderAt_closedPoint]
     simp only [M, Set.mem_empty_iff_false, iff_false]
     intro h2
     rw [Ideal.natCast_le_localOrder_iff, hsq,
@@ -114,12 +114,11 @@ example :
       Ideal.mem_bot] at h2
     have : (1 : k) = 0 := by simpa using congrArg TrivSqZeroExt.snd h2
     exact one_ne_zero this
-  have h2 : (M.rescale 2 Nat.two_pos).cosupport = Set.univ :=
-    cosupport_eq_univ_of_ideal_eq_bot (by rw [rescale_ideal]; exact hsq)
+  have h2 : (M.pow 2).cosupport = Set.univ :=
+    cosupport_eq_univ_of_ideal_eq_bot (by rw [pow_ideal]; exact hsq)
   refine ⟨h1, h2, ?_⟩
   rw [h1, h2]
-  exact Set.Nonempty.ne_empty ⟨⟨maximalIdeal (DualNumber k), (maximalIdeal.isMaximal _).isPrime⟩,
-    trivial⟩
+  exact Set.Nonempty.ne_empty ⟨IsLocalRing.closedPoint (DualNumber k), trivial⟩
 
 end DualNumbers
 
