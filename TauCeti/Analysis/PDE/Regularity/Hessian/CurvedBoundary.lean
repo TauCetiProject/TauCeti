@@ -9,6 +9,8 @@ public import TauCeti.Analysis.PDE.Regularity.Hessian.ChangeOfVariables
 public import TauCeti.Analysis.PDE.Regularity.Hessian.HalfSpace.ContinuousCoefficient
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Flattening
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.Analysis.InnerProductSpace.Coercive
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 
@@ -137,41 +139,6 @@ private theorem ae_traceCLM_comp_iteratedGradient_compL_restrictL_eq {ι : Type*
     value_restrictL_ae inf_le_left 2 u] with y h1 h2 h3 h4
   rw [lowerOrder_restrictL, h2, h3, h4]
   exact h1
-
-/-- **The lower-order terms along a straightening chart.** For a change of variables `Φ` of order
-two from `Ω'` into `Ω ∩ U` with constants `L ≥ 0` and `c`, the weak gradient and the value of
-`u ∘ Φ` have `Lᵖ(Ω')` norms at most `L c^(-1/p) ‖∇u‖` and `c^(-1/p) ‖u‖`. -/
-private theorem norm_gradient_compL_restrictL_le_and_norm_value_le (hL : 0 ≤ L)
-    (hΦ : IsChangeOfVariables 2 Ω' (Omega ⊓ U) Φ L c) (hp : p ≠ ⊤) (u : Wkp mu Omega p 2) :
-    ‖iteratedGradient 0 (lowerOrder 1 (compL hΦ hp (restrictL inf_le_left 2 u)))‖ ≤
-        L * (c⁻¹ ^ (1 / p).toReal * ‖iteratedGradient 0 (lowerOrder 1 u)‖) ∧
-      ‖value 2 (compL hΦ hp (restrictL inf_le_left 2 u))‖ ≤
-        c⁻¹ ^ (1 / p).toReal * ‖value 2 u‖ := by
-  have hΩ'm : MeasurableSet (Ω' : Set F) := Ω'.isOpen.measurableSet
-  have hmaps : MapsTo Φ Ω' Omega := fun x hx => (hΦ.mapsTo hx).1
-  constructor
-  · have hgr : ∀ᵐ x ∂mu.restrict Ω',
-        ‖iteratedGradient 0 (lowerOrder 1 (compL hΦ hp (restrictL inf_le_left 2 u))) x‖ ≤
-          L * ‖iteratedGradient 0 (lowerOrder 1 u) (Φ x)‖ := by
-      filter_upwards [gradient_firstOrder_compL_ae hΦ hp (restrictL inf_le_left 2 u),
-        hΦ.ae_comp (iteratedGradient_restrictL_ae inf_le_left 0 (lowerOrder 1 u)),
-        ae_restrict_mem hΩ'm] with x h1 h2 hx
-      rw [← gradient_firstOrder_one, h1, gradient_firstOrder_one, lowerOrder_restrictL, h2]
-      refine ((fderiv ℝ Φ x).adjoint.le_opNorm _).trans ?_
-      rw [LinearIsometryEquiv.norm_map]
-      gcongr
-      exact hΦ.norm_fderiv_le x hx
-    rw [Lp.norm_def, toReal_eLpNorm, Lp.norm_def, toReal_eLpNorm]
-    exact hΦ.lpNorm_le_of_ae_le_mul_comp hΩ'm subset_rfl hmaps hL (Lp.aestronglyMeasurable _)
-      (Lp.memLp _) hgr
-  · have hval : ∀ᵐ x ∂mu.restrict Ω',
-        ‖value 2 (compL hΦ hp (restrictL inf_le_left 2 u)) x‖ ≤ 1 * ‖value 2 u (Φ x)‖ := by
-      filter_upwards [value_compL_ae hΦ hp (restrictL inf_le_left 2 u),
-        hΦ.ae_comp (value_restrictL_ae inf_le_left 2 u)] with x h1 h2
-      rw [h1, h2, one_mul]
-    rw [Lp.norm_def, toReal_eLpNorm, Lp.norm_def, toReal_eLpNorm, ← one_mul (_ * _)]
-    exact hΦ.lpNorm_le_of_ae_le_mul_comp hΩ'm subset_rfl hmaps zero_le_one
-      (Lp.aestronglyMeasurable _) (Lp.memLp _) hval
 
 /-- **The Hessian back along a straightening chart.** Let `Ψ` be a change of variables of order two
 from `Ω ∩ U` into `Ω'` with constants `L' ≥ 0` and `c'`, and let `u` restrict on `Ω ∩ U` to
@@ -314,7 +281,7 @@ private theorem exists_lpNorm_iteratedGradient_le_of_pullback (hp : 1 < p) (hp_t
       exact closure_mono (hΦmaps.image_subset.trans hD) h
     obtain ⟨lam, hlam, hA₀⟩ := hell y hy hyΩ
     refine ⟨lam / (‖fderiv ℝ Φ (Ψ y)‖ + 1) ^ 2, by positivity, fun ξ => ?_⟩
-    have h := PDE.mul_norm_sq_le_inner_comp_comp_adjoint
+    have h := ContinuousLinearMap.mul_norm_sq_le_inner_comp_comp_adjoint
       (IsChangeOfVariables.fderiv_comp_fderiv_eq_id hΦ hΨ hΨΦ hΦΨ (hΨ.mapsTo (hKU hy))) hlam.le
       (A₀ := A y) hA₀ ξ
     rw [hyx] at h ⊢
@@ -407,14 +374,27 @@ private theorem exists_lpNorm_iteratedGradient_le_of_norm_le (hp : 1 < p) (hp_to
       filter_upwards [ae_traceCLM_comp_iteratedGradient_compL_restrictL_eq
         (stdOrthonormalBasis ℝ (WithLp 2 (ℝ × E))) hΦ' hΨ'
         (hΦΨ.mono fun y hy => hy.2) hp_top heq, hfΦ.coeFn_toLp] with x h1 h2
-      rw [h2]
-      exact h1)
+      rwa [h2])
   -- The three terms on the right of the flat estimate, in terms of `u` and `f`.
   have hF : ‖hfΦ.toLp _‖ ≤ c⁻¹ ^ (1 / p).toReal * ‖f‖ := by
     rw [Lp.norm_toLp, toReal_eLpNorm, Lp.norm_def, toReal_eLpNorm]
     exact hΦ'.lpNorm_comp_le (normalHalfSpace (E := E) a ⊓ U').isOpen.measurableSet subset_rfl
       hΦΩ (Lp.memLp f)
-  obtain ⟨hG, hV⟩ := norm_gradient_compL_restrictL_le_and_norm_value_le hL hΦ' hp_top u
+  -- The lower-order terms of `u ∘ Φ`, bounded on `Ω ∩ U` and then on `Ω`.
+  have hD : volume.restrict ((Omega ⊓ U : Opens (WithLp 2 (ℝ × E))) : Set (WithLp 2 (ℝ × E))) ≤
+      volume.restrict Omega := Measure.restrict_mono_set _ (SetLike.coe_subset_coe.2 inf_le_left)
+  have hG : ‖iteratedGradient 0 (lowerOrder 1 (compL hΦ' hp_top (restrictL inf_le_left 2 u)))‖ ≤
+      L * (c⁻¹ ^ (1 / p).toReal * ‖iteratedGradient 0 (lowerOrder 1 u)‖) := by
+    have h := norm_gradient_firstOrder_compL_le hΦ' hL hp_top (restrictL inf_le_left 2 u)
+    rw [gradient_firstOrder_one, gradient_firstOrder_one, lowerOrder_restrictL] at h
+    refine h.trans (mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left ?_ hκ) hL)
+    exact (Lp.norm_eq_lpNorm_of_ae_eq EventuallyEq.rfl).trans_le (lpNorm_le_norm_of_ae_eq_of_le hD
+      (iteratedGradient_restrictL_ae inf_le_left 0 (lowerOrder 1 u)))
+  have hV : ‖value 2 (compL hΦ' hp_top (restrictL inf_le_left 2 u))‖ ≤
+      c⁻¹ ^ (1 / p).toReal * ‖value 2 u‖ := by
+    refine (norm_value_compL_le hΦ' hp_top _).trans (mul_le_mul_of_nonneg_left ?_ hκ)
+    exact (Lp.norm_eq_lpNorm_of_ae_eq EventuallyEq.rfl).trans_le (lpNorm_le_norm_of_ae_eq_of_le hD
+      (value_restrictL_ae inf_le_left 2 u))
   -- Back to `Ω`, along `Ψ`.
   have hlhs := lpNorm_iteratedGradient_inter_le hL' hΨ' hp_top hK hKU u _
     (compL_compL_of_rightInvOn hΦ' hΨ' (hΦΨ.mono fun y hy => hy.2) hp_top _)

@@ -33,7 +33,8 @@ boundary of a domain of class `C²` by such a change of variables turns an equat
 boundary portion into one near a flat boundary portion, where the half-space estimates apply.
 
 The new coefficients keep the properties those estimates ask of the old ones: `A'` is elliptic
-where `A` is (`TauCeti.PDE.mul_norm_sq_le_inner_comp_comp_adjoint`) and continuous where `A` is
+where `A` is (`ContinuousLinearMap.mul_norm_sq_le_inner_comp_comp_adjoint`, with `M = DΨ(Φ x)` and
+its right inverse `N = DΦ(x)`) and continuous where `A` is
 (`TauCeti.PDE.continuousWithinAt_comp_comp_adjoint`), `A'` is measurable when `A` is
 (`TauCeti.PDE.aestronglyMeasurable_comp_comp_adjoint`), and `b'` is measurable when `A` and `b`
 are (`TauCeti.PDE.aestronglyMeasurable_fderiv_apply_add_sum`) and bounded when they are
@@ -71,36 +72,6 @@ section Coefficients
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
   {U U' : Opens F} {Φ Ψ : F → F} {L L' c c' : ℝ}
-
-/-- Conjugating an elliptic operator `A₀` by a map `M` with a right inverse `N` gives an elliptic
-operator: if `λ ‖ξ‖² ≤ ⟪A₀ ξ, ξ⟫`, then `λ / (‖N‖ + 1)² ‖ξ‖² ≤ ⟪M A₀ M† ξ, ξ⟫`. For mutually
-inverse changes of variables `Φ` and `Ψ`, take `M = DΨ(Φ x)` and `N = DΦ(x)`
-(`TauCeti.Wkp.IsChangeOfVariables.fderiv_comp_fderiv_eq_id`). -/
-theorem mul_norm_sq_le_inner_comp_comp_adjoint {M N : F →L[ℝ] F}
-    (hMN : M ∘L N = ContinuousLinearMap.id ℝ F) {A₀ : F →L[ℝ] F} {lam : ℝ} (hlam : 0 ≤ lam)
-    (hA₀ : ∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A₀ ξ, ξ⟫_ℝ) (ξ : F) :
-    lam / (‖N‖ + 1) ^ 2 * ‖ξ‖ ^ 2 ≤ ⟪(M ∘L A₀ ∘L M.adjoint) ξ, ξ⟫_ℝ := by
-  -- `ξ = N† (M† ξ)`, so `‖ξ‖ ≤ (‖N‖ + 1) ‖M† ξ‖`.
-  have hξ : N.adjoint (M.adjoint ξ) = ξ := by
-    rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp, hMN,
-      ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
-  have hnorm : ‖ξ‖ ≤ (‖N‖ + 1) * ‖M.adjoint ξ‖ :=
-    calc ‖ξ‖ = ‖N.adjoint (M.adjoint ξ)‖ := by rw [hξ]
-      _ ≤ ‖N.adjoint‖ * ‖M.adjoint ξ‖ := N.adjoint.le_opNorm _
-      _ ≤ (‖N‖ + 1) * ‖M.adjoint ξ‖ := by
-        rw [LinearIsometryEquiv.norm_map]
-        gcongr
-        linarith
-  have hinner : ⟪(M ∘L A₀ ∘L M.adjoint) ξ, ξ⟫_ℝ = ⟪A₀ (M.adjoint ξ), M.adjoint ξ⟫_ℝ := by
-    rw [ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_inner_right,
-      ContinuousLinearMap.comp_apply]
-  rw [hinner]
-  refine le_trans ?_ (hA₀ _)
-  have hsq : ‖ξ‖ ^ 2 ≤ (‖N‖ + 1) ^ 2 * ‖M.adjoint ξ‖ ^ 2 := by
-    rw [← mul_pow]
-    exact pow_le_pow_left₀ (norm_nonneg ξ) hnorm 2
-  rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
-  nlinarith
 
 /-- Conjugating coefficients continuous within `Ω` at `Φ x` by `DΨ ∘ Φ`, for a change of
 variables `Ψ` of order at least one on `U ∋ Φ x` and `Φ` continuous at `x` mapping `Ω'` into `Ω`,
