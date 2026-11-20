@@ -125,15 +125,15 @@ private theorem ofReal_kFunctional_lpToLebesgueSum_le [Fact (1 ≤ p)] (h₀ : p
   have hS₁ : MeasurableSet {x | ‖f x‖ₑ ≤ h} :=
     measurableSet_le (Lp.stronglyMeasurable f).eNorm measurable_const
   have e₀ := eLpNorm_indicator_eq_setLIntegral_rpow (Lp.aestronglyMeasurable f)
-    (zero_lt_one.trans_le Fact.out).ne' hp₀ hS₀
+    (zero_lt_one.trans_le Fact.out).ne' hp₀ hS₀.nullMeasurableSet
   have e₁ := eLpNorm_indicator_eq_setLIntegral_rpow (Lp.aestronglyMeasurable f)
-    (zero_lt_one.trans_le Fact.out).ne' hp₁ hS₁
+    (zero_lt_one.trans_le Fact.out).ne' hp₁ hS₁.nullMeasurableSet
   have m₀ := memLp_indicator_of_setLIntegral_rpow_ne_top (Lp.aestronglyMeasurable f)
-    (zero_lt_one.trans_le Fact.out).ne' hp₀ hS₀
+    (zero_lt_one.trans_le Fact.out).ne' hp₀ hS₀.nullMeasurableSet
     (ne_top_of_le_ne_top (hC _) (setLIntegral_lt_enorm_rpow_le (Lp.aestronglyMeasurable f) ha
       (ENNReal.toReal_mono (ne_top_of_lt h₁) h₀.le) h))
   have m₁ := memLp_indicator_of_setLIntegral_rpow_ne_top (Lp.aestronglyMeasurable f)
-    (zero_lt_one.trans_le Fact.out).ne' hp₁ hS₁
+    (zero_lt_one.trans_le Fact.out).ne' hp₁ hS₁.nullMeasurableSet
     (ne_top_of_le_ne_top (hC _) (setLIntegral_enorm_le_rpow_le (Lp.aestronglyMeasurable f) hb
       (ENNReal.toReal_mono hp₁ h₁.le) h))
   -- They decompose `f`.

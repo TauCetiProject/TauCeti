@@ -46,7 +46,7 @@ and `MeasureTheory.Lp.exists_add_ae_eq_of_le_of_le` for elements of `Lᵖ`). The
 intermediate space of the couple `(L^{p₀}, L^{p₁})`. For a split at an arbitrary height `h`,
 `∫_{‖f‖ > h} ‖f‖ ^ s` and `∫_{‖f‖ ≤ h} ‖f‖ ^ s` are bounded by `h ^ (s - r) ∫ ‖f‖ ^ r` for
 `s ≤ r` and `s ≥ r` respectively (`MeasureTheory.setLIntegral_lt_enorm_rpow_le`,
-`MeasureTheory.setLIntegral_enorm_le_rpow_le`), and the part of `f` on a measurable set `S` has
+`MeasureTheory.setLIntegral_enorm_le_rpow_le`), and the part of `f` on a null-measurable set `S` has
 `Lˢ` norm `(∫_S ‖f‖ ^ s) ^ (1 / s)` (`MeasureTheory.eLpNorm_indicator_eq_setLIntegral_rpow`), so it
 lies in `Lˢ` when that integral is finite
 (`MeasureTheory.memLp_indicator_of_setLIntegral_rpow_ne_top`).
@@ -202,18 +202,18 @@ theorem setLIntegral_enorm_le_rpow_le {f : α → E} (hf : AEStronglyMeasurable 
   exact ENNReal.rpow_le_rpow_sub_mul_rpow hs eNorm_ne_top
     (ENNReal.rpow_le_rpow hx (sub_nonneg.2 hrs))
 
-/-- The part of `f` on a measurable set `S` has `Lˢ` norm `(∫_S ‖f‖ ^ s) ^ (1 / s)` for
+/-- The part of `f` on a null-measurable set `S` has `Lˢ` norm `(∫_S ‖f‖ ^ s) ^ (1 / s)` for
 `0 < s < ∞`. -/
 theorem eLpNorm_indicator_eq_setLIntegral_rpow {f : α → E} (hf : AEStronglyMeasurable f μ)
-    {s : ℝ≥0∞} (hs0 : s ≠ 0) (hs : s ≠ ∞) {S : Set α} (hS : MeasurableSet S) :
+    {s : ℝ≥0∞} (hs0 : s ≠ 0) (hs : s ≠ ∞) {S : Set α} (hS : NullMeasurableSet S μ) :
     eLpNorm (S.indicator f) s μ = (∫⁻ x in S, ‖f x‖ₑ ^ s.toReal ∂μ) ^ (1 / s.toReal) := by
-  rw [eLpNorm_indicator_eq_eLpNorm_restrict hS.nullMeasurableSet,
+  rw [eLpNorm_indicator_eq_eLpNorm_restrict hS,
     eLpNorm_eq_lintegral_rpow_eNorm_toReal hs0 hs hf.restrict]
 
-/-- The part of `f` on a measurable set `S` lies in `Lˢ` for `0 < s < ∞` when `∫_S ‖f‖ ^ s` is
+/-- The part of `f` on a null-measurable set `S` lies in `Lˢ` for `0 < s < ∞` when `∫_S ‖f‖ ^ s` is
 finite. -/
 theorem memLp_indicator_of_setLIntegral_rpow_ne_top {f : α → E} (hf : AEStronglyMeasurable f μ)
-    {s : ℝ≥0∞} (hs0 : s ≠ 0) (hs : s ≠ ∞) {S : Set α} (hS : MeasurableSet S)
+    {s : ℝ≥0∞} (hs0 : s ≠ 0) (hs : s ≠ ∞) {S : Set α} (hS : NullMeasurableSet S μ)
     (hfin : ∫⁻ x in S, ‖f x‖ₑ ^ s.toReal ∂μ ≠ ∞) : MemLp (S.indicator f) s μ := by
   rw [MemLp, eLpNorm_indicator_eq_setLIntegral_rpow hf hs0 hs hS]
   exact ENNReal.rpow_lt_top_of_nonneg (by positivity) hfin
