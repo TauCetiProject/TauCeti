@@ -296,17 +296,14 @@ theorem abs_inner_div_two_sub_le (hr : 1 ≤ r) {K : ℝ}
     have hKr2 : K / r ^ 2 ≤ K / r := div_le_div_of_nonneg_left hK hr0 (by nlinarith)
     have hb := sq_nonneg ‖β‖
     have hrb : r * (K / r) = K := mul_div_cancel₀ K hr0.ne'
+    have h1 : r * ‖β‖ ^ 2 ≤ 2 * K :=
+      mul_le_two_mul_of_le_div_mul_add_div (sq_nonneg _) (sq_nonneg _) hr hβK
     rw [abs_le]
     rcases le_total (‖φ‖ ^ 2) 1 with h | h
     · rw [max_eq_left (by linarith)] at hβK ⊢
-      have h1 : r * ‖β‖ ^ 2 ≤ 2 * K := by
-        have : r * ‖β‖ ^ 2 ≤ r * (K / r * (1 - ‖φ‖ ^ 2) + K / r ^ 2) := by gcongr
-        have h2 : r * (K / r ^ 2) = K / r := by field_simp
-        nlinarith [sq_nonneg ‖φ‖]
       constructor <;> nlinarith
     · rw [max_eq_right (by linarith)] at hβK ⊢
-      have h1 : r * (‖φ‖ ^ 2 - 1 - ‖β‖ ^ 2) ≤ K := by nlinarith
-      have h2 : r * ‖β‖ ^ 2 ≤ K := by nlinarith
+      have h2 : r * (‖φ‖ ^ 2 - 1 - ‖β‖ ^ 2) ≤ K := by nlinarith
       constructor <;> nlinarith
   calc |r / 8 * (1 - ‖φ‖ ^ 2 + ‖β‖ ^ 2) - ⟪ω, η⟫ / 4 - r / 8 * max (1 - ‖φ‖ ^ 2) 0|
       ≤ |r / 8 * (1 - ‖φ‖ ^ 2 + ‖β‖ ^ 2) - r / 8 * max (1 - ‖φ‖ ^ 2) 0| + |⟪ω, η⟫| / 4 := by
