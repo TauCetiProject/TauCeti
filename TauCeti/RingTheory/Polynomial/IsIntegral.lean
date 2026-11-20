@@ -78,7 +78,8 @@ theorem IsIntegral.of_sq_add_mul_add_eq_zero {R A : Type*} [CommRing R] [Ring A]
       Subtype.ext (by simpa [← add_assoc] using h)
     rw [hroot]
     exact isIntegral_zero
-  · -- The polynomial is integral over `R[X]`, hence so are its coefficients over `R`.
+  · -- The polynomial is integral over `R[X]`, hence so are its coefficients over `R`, by
+    -- Mathlib's `IsIntegral.coeff`.
     have hC {a : S} (ha : IsIntegral R (a : A)) : IsIntegral R[X] (C a) :=
       (((hS a).2 ha).map (CAlgHom (R := R))).tower_top
     have hX : IsIntegral R[X] (X : S[X]) := by
