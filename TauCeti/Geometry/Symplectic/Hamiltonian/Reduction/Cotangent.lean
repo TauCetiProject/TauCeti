@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.GroupAction.Quotient
 public import TauCeti.Geometry.Manifold.Submersion.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Relation
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.MomentMap
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.ReducedSpace
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
 # Cotangent reduction at zero
@@ -18,12 +20,12 @@ Let a Lie group `G` act smoothly, freely and properly on a manifold `Q`, so that
 projection `Q → Q ⧸ G` is a smooth submersion whose vertical tangent vectors are the orbit
 directions `𝔤 · q` (`ProperSMul.isSubmersion_quotientMk`, `ProperSMul.ker_mfderiv_quotientMk`). The
 cotangent-lifted action of `G` on `T*Q` has the moment map `⟨μ(q, p), ξ⟩ = p(ξ_Q(q))`
-(`TauCeti.CotangentBundle.momentMap`). This file proves the ingredients of the model case
-`T*Q //₀ G ≅ T*(Q ⧸ G)` of cotangent bundle reduction: a reduction map `Ψ` from the zero level
-`μ⁻¹(0)` onto `T*(Q ⧸ G)` whose fibres are exactly the `G`-orbits, and which pulls the canonical
-symplectic form of `T*(Q ⧸ G)` back to that of `T*Q` along smooth families in `μ⁻¹(0)`. It does
-not construct `μ⁻¹(0) ⧸ G` as a manifold, nor a map out of it, so the symplectomorphism itself is
-not stated here.
+(`TauCeti.CotangentBundle.momentMap`). This file proves the model case
+`T*Q //₀ G ≅ T*(Q ⧸ G)` of cotangent bundle reduction: the Marsden–Weinstein–Meyer reduced space
+`μ⁻¹(0) ⧸ G` is symplectomorphic to the cotangent bundle of `Q ⧸ G` with its canonical form. The
+map is induced by a reduction map `Ψ` from the zero level `μ⁻¹(0)` onto `T*(Q ⧸ G)` whose fibres
+are exactly the `G`-orbits, and which pulls the canonical symplectic form of `T*(Q ⧸ G)` back to
+that of `T*Q` along smooth families in `μ⁻¹(0)`.
 
 Most statements are made for a map `ρ : Q → B` with the properties of the orbit projection that
 they use, and the final section applies them to the orbit projection itself. Write `Ψ` for the
@@ -61,6 +63,26 @@ For the orbit projection of a free proper action, all these hypotheses hold
 `ProperSMul.exists_momentMap_eq_zero_and_reductionMap_eq_quotientMk`,
 `ProperSMul.mpullback_reductionMap_comp_symplecticForm_quotientMk`). The model space of
 `T*(Q ⧸ G)` has dimension `2 (dim Q - dim G)`.
+
+**The symplectomorphism.** The cotangent lift of a free proper action is free
+(`TauCeti.CotangentBundle.instIsCancelSMul`) and proper
+(`TauCeti.CotangentBundle.properSMul`), so the cotangent moment map is a submersion
+(`TauCeti.CotangentBundle.differential_surjective_momentMap`) and the Marsden–Weinstein–Meyer
+theorem applies at the value `0`, whose coadjoint stabilizer is all of `G`. It makes `μ⁻¹(0) ⧸ G`
+a smooth manifold (`ProperSMul.isManifold_cotangentReduced`), for a choice `d` of Lie group
+structure on `G_0 = G`, carrying a unique symplectic form `η` with `π^* η = i^* ω` for the orbit
+projection `π` and the inclusion `i : μ⁻¹(0) → T*Q`. It has dimension `2 (dim Q - dim G)`
+(`ProperSMul.finrank_quotientModelSpace_cotangentReduced`).
+Since `Ψ` is `G`-invariant on the zero level, it descends to the reduced cotangent map
+`ProperSMul.cotangentReducedMap : μ⁻¹(0) ⧸ G → T*(Q ⧸ G)`, which is a smooth bijection pulling the
+canonical form back to `η`. A smooth map pulling a symplectic form back to a nondegenerate form has
+injective differential, so between manifolds of equal dimension it is a local diffeomorphism by the
+inverse function theorem. Hence the reduced cotangent map is a diffeomorphism
+`ProperSMul.cotangentReducedDiffeomorph`, and a symplectomorphism
+(`ProperSMul.mpullback_cotangentReducedDiffeomorph_symplecticForm`). No compactness is needed.
+These statements take a proof `h` that `μ` is an equivariant moment map, as supplied by
+`TauCeti.CotangentBundle.isEquivariantMomentMap_momentMap`, because the zero level `μ⁻¹(0)` as a
+`G`-space (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelSubMulAction`) is defined from it.
 
 ## References
 
@@ -470,5 +492,338 @@ theorem mpullback_reductionMap_comp_symplecticForm_quotientMk {f : X → Cotange
   let _ := orbitRelQuotientChartedSpace IG G I Q
   exact CotangentBundle.mpullback_reductionMap_comp_symplecticForm isSubmersion_quotientMk hf
     fun x ↦ (momentMap_eq_zero_iff_of_ker_eq (ker_mfderiv_quotientMk _)).1 (hz x)
+
+/-! ### The reduced space `μ⁻¹(0) ⧸ G` is the cotangent bundle of `Q ⧸ G` -/
+
+section ReducedSpace
+
+variable (h : (symplecticForm I Q).IsEquivariantMomentMap (momentMap IG G)) {n : ℕ}
+  (hn : finrank ℝ (E × (E →L[ℝ] ℝ)) - finrank ℝ (GroupLieAlgebra IG G) = n)
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  (d : Lie.EmbeddedLieSubgroupData IG ((Lie.coadjointRepresentation ℝ IG G).stabilizer 0) F)
+
+/-- For a free proper action, `0` is a regular value of the cotangent moment map. -/
+private theorem differential_surjective_of_momentMap_eq_zero (z : CotangentBundle I Q)
+    (_ : momentMap IG G z = 0) : Function.Surjective (h.differential z) :=
+  have : T2Space G := IG.t2Space_of_lieGroup ∞
+  have : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
+  CotangentBundle.differential_surjective_momentMap z
+
+include hn in
+/-- **The atlas of the zero level `μ⁻¹(0)`** of the cotangent moment map of a free proper action, as
+a `G`-space: the regular-level atlas
+`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelSubMulActionChartedSpace` for the regular value
+`0`. -/
+@[instance_reducible]
+def cotangentLevelChartedSpace : ChartedSpace (Fin n → ℝ) (h.levelSubMulAction 0) :=
+  h.levelSubMulActionChartedSpace 0 (differential_surjective_of_momentMap_eq_zero h) hn
+
+/-- **The zero level `μ⁻¹(0)` is a smooth manifold.** -/
+theorem isManifold_cotangentLevel :
+    letI := cotangentLevelChartedSpace h hn
+    IsManifold 𝓘(ℝ, Fin n → ℝ) ∞ (h.levelSubMulAction 0) :=
+  h.isManifold_levelSubMulAction (differential_surjective_of_momentMap_eq_zero h) hn
+
+/-- **The zero level `μ⁻¹(0)` is an embedded submanifold of `T*Q`.** -/
+theorem isSmoothEmbedding_coe_cotangentLevel :
+    letI := cotangentLevelChartedSpace h hn
+    IsSmoothEmbedding 𝓘(ℝ, Fin n → ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞
+      (Subtype.val : h.levelSubMulAction 0 → CotangentBundle I Q) :=
+  h.isSmoothEmbedding_coe_levelSubMulAction (differential_surjective_of_momentMap_eq_zero h) hn
+
+omit [ProperSMul G Q] [I.Boundaryless] in
+/-- The coadjoint stabilizer `G_0 = G` acts freely on the zero level of the cotangent moment map of
+a free action. -/
+theorem isCancelSMul_levelSubMulAction_momentMap :
+    IsCancelSMul ((Lie.coadjointRepresentation ℝ IG G).stabilizer 0) (h.levelSubMulAction 0) :=
+  h.isCancelSMul_levelSubMulAction fun z _ ↦ IsCancelSMul.stabilizer_eq_bot z
+
+omit [FiniteDimensional ℝ F] in
+include hn d in
+/-- **The atlas of the reduced space `μ⁻¹(0) ⧸ G`** of the cotangent-lifted action: the atlas
+`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitRelQuotientChartedSpace` of the
+Marsden–Weinstein–Meyer reduced space, for the regular value `0` and the free proper action of
+`G_0 = G` with the Lie group structure `d`. -/
+@[instance_reducible]
+def cotangentReducedChartedSpace :
+    ChartedSpace (QuotientModelSpace F (Fin n → ℝ))
+      (MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ IG G).stabilizer 0)
+        (h.levelSubMulAction 0)) :=
+  haveI := CotangentBundle.properSMul (G := G) (I := I) (M := Q) IG
+  haveI := isCancelSMul_levelSubMulAction_momentMap h
+  h.orbitRelQuotientChartedSpace 0 (differential_surjective_of_momentMap_eq_zero h) hn d
+
+/-- **The reduced space `μ⁻¹(0) ⧸ G` is a smooth manifold.** -/
+theorem isManifold_cotangentReduced :
+    letI := cotangentReducedChartedSpace h hn d
+    IsManifold 𝓘(ℝ, QuotientModelSpace F (Fin n → ℝ)) ∞
+      (MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ IG G).stabilizer 0)
+        (h.levelSubMulAction 0)) :=
+  haveI := CotangentBundle.properSMul (G := G) (I := I) (M := Q) IG
+  haveI := isCancelSMul_levelSubMulAction_momentMap h
+  h.isManifold_orbitRelQuotient (differential_surjective_of_momentMap_eq_zero h) hn d
+
+/-- **The orbit projection `μ⁻¹(0) → μ⁻¹(0) ⧸ G` is a smooth submersion.** -/
+theorem isSubmersion_quotientMk_levelSubMulAction_momentMap :
+    letI := cotangentLevelChartedSpace h hn
+    letI := cotangentReducedChartedSpace h hn d
+    IsSubmersion 𝓘(ℝ, Fin n → ℝ) 𝓘(ℝ, QuotientModelSpace F (Fin n → ℝ)) ∞
+      (Quotient.mk (MulAction.orbitRel ((Lie.coadjointRepresentation ℝ IG G).stabilizer 0)
+        (h.levelSubMulAction 0))) :=
+  haveI := CotangentBundle.properSMul (G := G) (I := I) (M := Q) IG
+  haveI := isCancelSMul_levelSubMulAction_momentMap h
+  h.isSubmersion_quotientMk_levelSubMulAction (differential_surjective_of_momentMap_eq_zero h) hn d
+
+/-- **The reduced symplectic form of `T*Q` at zero.** The Marsden–Weinstein–Meyer theorem for the
+cotangent-lifted action: the reduced space `μ⁻¹(0) ⧸ G` carries a unique symplectic form `η` with
+`π^* η = i^* ω` for the orbit projection `π` and the inclusion `i` of the zero level into `T*Q`. -/
+theorem existsUnique_isSymplectic_mpullback_quotientMk_eq_mpullback_symplecticForm :
+    letI := cotangentLevelChartedSpace h hn
+    letI := cotangentReducedChartedSpace h hn d
+    haveI := isManifold_cotangentLevel h hn
+    haveI := isManifold_cotangentReduced h hn d
+    ∃! η : SmoothTwoForm 𝓘(ℝ, QuotientModelSpace F (Fin n → ℝ))
+        (MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ IG G).stabilizer 0)
+          (h.levelSubMulAction 0)),
+      η.IsSymplectic ∧
+        SmoothForm.mpullback _
+            (isSubmersion_quotientMk_levelSubMulAction_momentMap h hn d).contMDiff η =
+          SmoothForm.mpullback Subtype.val (isSmoothEmbedding_coe_cotangentLevel h hn).contMDiff
+          (symplecticForm I Q) :=
+  haveI := CotangentBundle.properSMul (G := G) (I := I) (M := Q) IG
+  haveI := isCancelSMul_levelSubMulAction_momentMap h
+  h.existsUnique_isSymplectic_mpullback_quotientMk_eq_mpullback
+    (differential_surjective_of_momentMap_eq_zero h) hn d isSymplectic_symplecticForm
+    mpullback_smul_symplecticForm
+
+/-- In the Lie algebra `𝔤` of `G`, the annihilator of the zero covector is all of `𝔤`, so it has
+the dimension of `𝔤`. -/
+private theorem finrank_lieAnnihilator_zero :
+    finrank ℝ (lieAnnihilator ℝ (GroupLieAlgebra IG G) (0 : Module.Dual ℝ (GroupLieAlgebra IG G))) =
+      finrank ℝ (GroupLieAlgebra IG G) := by
+  rw [lieAnnihilator_zero]
+  exact LieSubalgebra.topEquiv.toLinearEquiv.finrank_eq
+
+include h hn d in
+/-- **The dimension of the reduced space.** For nonempty `Q`, the reduced space `μ⁻¹(0) ⧸ G` of the
+cotangent-lifted action has dimension `2 (dim Q - dim G)`, that of `T*(Q ⧸ G)`. -/
+theorem finrank_quotientModelSpace_cotangentReduced [Nonempty Q] :
+    finrank ℝ (QuotientModelSpace F (Fin n → ℝ)) = 2 * (finrank ℝ E - finrank ℝ EG) := by
+  have := CotangentBundle.properSMul (G := G) (I := I) (M := Q) IG
+  have := isCancelSMul_levelSubMulAction_momentMap h
+  -- The zero covector at any point lies in the zero level.
+  let z : h.levelSubMulAction 0 := ⟨zeroSection (E →L[ℝ] ℝ) _ (Classical.arbitrary Q),
+    h.mem_levelSubMulAction.2 (LinearMap.ext fun ξ ↦ by
+      simp only [momentMap_apply, zeroSection_snd, LinearMap.zero_apply]
+      exact zero_apply _)⟩
+  have hdim := h.finrank_quotientModelSpace_add_finrank_add_finrank_lieAnnihilator
+    (differential_surjective_of_momentMap_eq_zero h) hn d
+    isSymplectic_symplecticForm.isNondegenerate z
+  -- The Lie algebra `GroupLieAlgebra IG G` is the tangent space at `1`, the model space `EG`.
+  have hG : finrank ℝ (GroupLieAlgebra IG G) = finrank ℝ EG := (rfl)
+  rw [finrank_lieAnnihilator_zero, hG, Module.finrank_prod,
+    ContinuousLinearMap.dual_finrank_eq] at hdim
+  omega
+
+/-- **The reduced cotangent map** `μ⁻¹(0) ⧸ G → T*(Q ⧸ G)`: the reduction map
+`TauCeti.CotangentBundle.reductionMap`, which sends a covector `p` at `q` vanishing on the orbit
+directions to the covector `p'` at `[q]` with `p = p' ∘ dπ_q`, descended to the orbit space of
+the zero level. It is well defined because the reduction map is `G`-invariant on the zero level. -/
+def cotangentReducedMap :
+    letI := orbitRelQuotientChartedSpace IG G I Q
+    MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ IG G).stabilizer 0)
+        (h.levelSubMulAction 0) →
+      CotangentBundle 𝓘(ℝ, QuotientModelSpace EG E) (MulAction.orbitRel.Quotient G Q) :=
+  letI := orbitRelQuotientChartedSpace IG G I Q
+  Quotient.lift (fun z ↦ reductionMap I 𝓘(ℝ, QuotientModelSpace EG E)
+      (Quotient.mk (MulAction.orbitRel G Q)) (z : CotangentBundle I Q))
+    fun z z' hzz' ↦ by
+      obtain ⟨k, rfl⟩ := MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 hzz')
+      exact ((reductionMap_eq_reductionMap_iff_quotientMk (h.mem_levelSubMulAction.1 z'.property)
+        (h.mem_levelSubMulAction.1 (k • z').property)).2 ⟨k, rfl⟩).symm
+
+/-- The reduced cotangent map sends the orbit of a covector `p` of the zero level to its reduced
+covector. -/
+@[simp]
+theorem cotangentReducedMap_mk (z : h.levelSubMulAction 0) :
+    letI := orbitRelQuotientChartedSpace IG G I Q
+    cotangentReducedMap h (Quotient.mk _ z) = reductionMap I 𝓘(ℝ, QuotientModelSpace EG E)
+      (Quotient.mk (MulAction.orbitRel G Q)) (z : CotangentBundle I Q) :=
+  (rfl)
+
+/-- **The reduced cotangent map is a bijection** from `μ⁻¹(0) ⧸ G` onto `T*(Q ⧸ G)`: two covectors
+of the zero level have the same reduced covector exactly when they lie in one `G`-orbit, and every
+covector of `Q ⧸ G` is the reduced covector of a horizontal covector. -/
+theorem bijective_cotangentReducedMap : Function.Bijective (cotangentReducedMap h) := by
+  let _ := orbitRelQuotientChartedSpace IG G I Q
+  refine ⟨fun x x' hxx' ↦ ?_, fun w ↦ ?_⟩
+  · induction x using Quotient.inductionOn with | h z => ?_
+    induction x' using Quotient.inductionOn with | h z' => ?_
+    obtain ⟨g, hg⟩ := (reductionMap_eq_reductionMap_iff_quotientMk
+      (h.mem_levelSubMulAction.1 z.property) (h.mem_levelSubMulAction.1 z'.property)).1 hxx'
+    -- An element of `G` carrying one covector of the zero level to another lies in `G_0`.
+    have hg0 : g ∈ (Lie.coadjointRepresentation ℝ IG G).stabilizer 0 :=
+      h.mem_stabilizer_coadjointRepresentation_of_apply_eq (h.mem_levelSubMulAction.1 z.property)
+        (hg ▸ h.mem_levelSubMulAction.1 z'.property)
+    exact (Quotient.sound (MulAction.orbitRel_apply.2 ⟨⟨g, hg0⟩, Subtype.ext hg⟩)).symm
+  · obtain ⟨z, hz, rfl⟩ := exists_momentMap_eq_zero_and_reductionMap_eq_quotientMk w
+    exact ⟨Quotient.mk _ ⟨z, h.mem_levelSubMulAction.2 hz⟩, rfl⟩
+
+/-- The reduction map is smooth along the inclusion of the zero level, whose covectors vanish on
+the orbit directions. -/
+private theorem contMDiff_reductionMap_comp_coe_levelSubMulAction :
+    letI := orbitRelQuotientChartedSpace IG G I Q
+    letI := cotangentLevelChartedSpace h hn
+    ContMDiff 𝓘(ℝ, Fin n → ℝ)
+      (𝓘(ℝ, QuotientModelSpace EG E).prod 𝓘(ℝ, QuotientModelSpace EG E →L[ℝ] ℝ)) ∞
+      (reductionMap I 𝓘(ℝ, QuotientModelSpace EG E) (Quotient.mk (MulAction.orbitRel G Q)) ∘
+        (Subtype.val : h.levelSubMulAction 0 → CotangentBundle I Q)) :=
+  let _ := orbitRelQuotientChartedSpace IG G I Q
+  let _ := cotangentLevelChartedSpace h hn
+  have := isManifold_cotangentLevel h hn
+  contMDiff_reductionMap_comp isSubmersion_quotientMk
+    (isSmoothEmbedding_coe_cotangentLevel h hn).contMDiff
+    (fun z ↦ (momentMap_eq_zero_iff_of_ker_eq (ker_mfderiv_quotientMk _)).1
+      (h.mem_levelSubMulAction.1 z.property)) le_rfl
+
+/-- **The reduced cotangent map is smooth.** -/
+theorem contMDiff_cotangentReducedMap :
+    letI := orbitRelQuotientChartedSpace IG G I Q
+    letI := cotangentReducedChartedSpace h hn d
+    ContMDiff 𝓘(ℝ, QuotientModelSpace F (Fin n → ℝ))
+      (𝓘(ℝ, QuotientModelSpace EG E).prod 𝓘(ℝ, QuotientModelSpace EG E →L[ℝ] ℝ)) ∞
+      (cotangentReducedMap h) :=
+  let _ := orbitRelQuotientChartedSpace IG G I Q
+  let _ := cotangentLevelChartedSpace h hn
+  let _ := cotangentReducedChartedSpace h hn d
+  ((isSubmersion_quotientMk_levelSubMulAction_momentMap h hn d).contMDiff_comp_iff
+    Quotient.mk_surjective le_rfl).1 (contMDiff_reductionMap_comp_coe_levelSubMulAction h hn)
+
+/-- **The reduced cotangent map pulls the canonical form back to the reduced form.** If a two-form
+`η` on `μ⁻¹(0) ⧸ G` satisfies `π^* η = i^* ω` for the orbit projection `π` and the inclusion `i`
+of the zero level into `T*Q`, as the Marsden–Weinstein–Meyer reduced symplectic form does, then the
+reduced cotangent map pulls the canonical symplectic form of `T*(Q ⧸ G)` back to `η`. -/
+theorem mpullback_cotangentReducedMap_symplecticForm
+    {η : letI := cotangentReducedChartedSpace h hn d
+      haveI := isManifold_cotangentReduced h hn d
+      SmoothTwoForm 𝓘(ℝ, QuotientModelSpace F (Fin n → ℝ))
+        (MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ IG G).stabilizer 0)
+          (h.levelSubMulAction 0))}
+    (hη :
+      letI := cotangentLevelChartedSpace h hn
+      letI := cotangentReducedChartedSpace h hn d
+      haveI := isManifold_cotangentLevel h hn
+      haveI := isManifold_cotangentReduced h hn d
+      SmoothForm.mpullback _ (isSubmersion_quotientMk_levelSubMulAction_momentMap h hn d).contMDiff
+          η =
+        SmoothForm.mpullback Subtype.val (isSmoothEmbedding_coe_cotangentLevel h hn).contMDiff
+          (symplecticForm I Q)) :
+    letI := orbitRelQuotientChartedSpace IG G I Q
+    letI := cotangentReducedChartedSpace h hn d
+    haveI := isManifold_cotangentReduced h hn d
+    SmoothForm.mpullback _ (contMDiff_cotangentReducedMap h hn d)
+        (symplecticForm 𝓘(ℝ, QuotientModelSpace EG E) (MulAction.orbitRel.Quotient G Q)) =
+      η := by
+  let _ := orbitRelQuotientChartedSpace IG G I Q
+  let _ := cotangentLevelChartedSpace h hn
+  let _ := cotangentReducedChartedSpace h hn d
+  have := isManifold_cotangentLevel h hn
+  have := isManifold_cotangentReduced h hn d
+  have hπ := isSubmersion_quotientMk_levelSubMulAction_momentMap h hn d
+  -- Pulled back to the zero level, both sides are the restriction of the canonical form of `T*Q`.
+  refine SmoothForm.mpullback_injective_of_surjective hπ.contMDiff Quotient.mk_surjective
+    (hπ.surjective_mfderiv (by simp)) ?_
+  refine Eq.trans ?_ hη.symm
+  refine (SmoothForm.mpullback_mpullback _ _ _ _ _).trans <| Eq.trans ?_
+    (mpullback_reductionMap_comp_symplecticForm_quotientMk
+      (isSmoothEmbedding_coe_cotangentLevel h hn).contMDiff
+      fun z ↦ h.mem_levelSubMulAction.1 z.property)
+  -- The reduced cotangent map composed with the orbit projection is the reduction map on the level.
+  have hcomp : cotangentReducedMap h ∘ Quotient.mk _ = reductionMap I 𝓘(ℝ, QuotientModelSpace EG E)
+      (Quotient.mk (MulAction.orbitRel G Q)) ∘ Subtype.val := funext fun _ ↦ rfl
+  simp only [hcomp]
+
+/-- **The reduced cotangent map is a local diffeomorphism** from `μ⁻¹(0) ⧸ G` to
+`T*(Q ⧸ G)`. -/
+theorem isLocalDiffeomorph_cotangentReducedMap :
+    letI := orbitRelQuotientChartedSpace IG G I Q
+    letI := cotangentReducedChartedSpace h hn d
+    IsLocalDiffeomorph 𝓘(ℝ, QuotientModelSpace F (Fin n → ℝ))
+      (𝓘(ℝ, QuotientModelSpace EG E).prod 𝓘(ℝ, QuotientModelSpace EG E →L[ℝ] ℝ)) ∞
+      (cotangentReducedMap h) := by
+  let _ := orbitRelQuotientChartedSpace IG G I Q
+  let _ := cotangentReducedChartedSpace h hn d
+  have := isManifold_cotangentReduced h hn d
+  obtain ⟨η, ⟨hηs, hη⟩, -⟩ :=
+    existsUnique_isSymplectic_mpullback_quotientMk_eq_mpullback_symplecticForm h hn d
+  have hΦη := mpullback_cotangentReducedMap_symplecticForm h hn d hη
+  intro x
+  have : Nonempty Q := ⟨(x.out : CotangentBundle I Q).proj⟩
+  refine isLocalDiffeomorphAt_of_injective_mfderiv
+    (contMDiff_cotangentReducedMap h hn d).contMDiffOn isOpen_univ (Set.mem_univ x)
+    BoundarylessManifold.isInteriorPoint (by simp) ?_ ?_
+  · -- A vector killed by the differential lies in the kernel of the reduced form.
+    refine (injective_iff_map_eq_zero _).2 fun v hv ↦
+      SmoothTwoForm.isNondegenerate_iff_separatingLeft.1 hηs.isNondegenerate x v fun w ↦ ?_
+    rw [← hΦη, SmoothForm.eval₂_mpullback, hv, SmoothBundleForm.eval₂_zero_left]
+  · rw [finrank_quotientModelSpace_cotangentReduced h hn d, finrank_quotientModelSpace_prod_dual]
+
+/-- **Cotangent reduction at zero**: the reduced space `μ⁻¹(0) ⧸ G` of the cotangent-lifted action
+of a free proper action is diffeomorphic to `T*(Q ⧸ G)`, by the reduced cotangent map
+`TauCeti.CotangentBundle.reductionMap` descended to the orbit space. -/
+def cotangentReducedDiffeomorph :
+    letI := orbitRelQuotientChartedSpace IG G I Q
+    letI := cotangentReducedChartedSpace h hn d
+    MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ IG G).stabilizer 0)
+        (h.levelSubMulAction 0) ≃ₘ⟮𝓘(ℝ, QuotientModelSpace F (Fin n → ℝ)),
+          𝓘(ℝ, QuotientModelSpace EG E).prod 𝓘(ℝ, QuotientModelSpace EG E →L[ℝ] ℝ)⟯
+      CotangentBundle 𝓘(ℝ, QuotientModelSpace EG E) (MulAction.orbitRel.Quotient G Q) :=
+  let _ := orbitRelQuotientChartedSpace IG G I Q
+  let _ := cotangentReducedChartedSpace h hn d
+  (isLocalDiffeomorph_cotangentReducedMap h hn d).diffeomorphOfBijective
+    (bijective_cotangentReducedMap h)
+
+/-- The diffeomorphism `μ⁻¹(0) ⧸ G ≃ T*(Q ⧸ G)` is the reduced cotangent map. -/
+@[simp]
+theorem coe_cotangentReducedDiffeomorph :
+    letI := orbitRelQuotientChartedSpace IG G I Q
+    letI := cotangentReducedChartedSpace h hn d
+    ⇑(cotangentReducedDiffeomorph h hn d) = cotangentReducedMap h :=
+  let _ := orbitRelQuotientChartedSpace IG G I Q
+  let _ := cotangentReducedChartedSpace h hn d
+  IsLocalDiffeomorph.coe_diffeomorphOfBijective (isLocalDiffeomorph_cotangentReducedMap h hn d)
+    (bijective_cotangentReducedMap h)
+
+/-- **Cotangent reduction at zero is symplectic**: the diffeomorphism `μ⁻¹(0) ⧸ G ≃ T*(Q ⧸ G)`
+pulls the canonical symplectic form of `T*(Q ⧸ G)` back to the reduced symplectic form, the form
+`η` on `μ⁻¹(0) ⧸ G` with `π^* η = i^* ω`. -/
+theorem mpullback_cotangentReducedDiffeomorph_symplecticForm
+    {η : letI := cotangentReducedChartedSpace h hn d
+      haveI := isManifold_cotangentReduced h hn d
+      SmoothTwoForm 𝓘(ℝ, QuotientModelSpace F (Fin n → ℝ))
+        (MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ IG G).stabilizer 0)
+          (h.levelSubMulAction 0))}
+    (hη :
+      letI := cotangentLevelChartedSpace h hn
+      letI := cotangentReducedChartedSpace h hn d
+      haveI := isManifold_cotangentLevel h hn
+      haveI := isManifold_cotangentReduced h hn d
+      SmoothForm.mpullback _ (isSubmersion_quotientMk_levelSubMulAction_momentMap h hn d).contMDiff
+          η =
+        SmoothForm.mpullback Subtype.val (isSmoothEmbedding_coe_cotangentLevel h hn).contMDiff
+          (symplecticForm I Q)) :
+    letI := orbitRelQuotientChartedSpace IG G I Q
+    letI := cotangentReducedChartedSpace h hn d
+    haveI := isManifold_cotangentReduced h hn d
+    SmoothForm.mpullback _ (cotangentReducedDiffeomorph h hn d).contMDiff
+        (symplecticForm 𝓘(ℝ, QuotientModelSpace EG E) (MulAction.orbitRel.Quotient G Q)) =
+      η := by
+  let _ := orbitRelQuotientChartedSpace IG G I Q
+  let _ := cotangentReducedChartedSpace h hn d
+  have := isManifold_cotangentReduced h hn d
+  simp only [coe_cotangentReducedDiffeomorph]
+  exact mpullback_cotangentReducedMap_symplecticForm h hn d hη
+
+end ReducedSpace
 
 end ProperSMul
