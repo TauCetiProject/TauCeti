@@ -318,7 +318,7 @@ theorem uInvariant_eq_one_iff : uInvariant K = 1 ↔ ∀ a : K, IsSquare a := by
     congr 1
     ext i
     fin_cases i <;> rfl
-  rw [h11, anisotropic_binary_one_one_iff] at hani
+  rw [h11, anisotropic_binary_iff (1 : K) 1, mul_one] at hani
   exact hani (hsq (-1))
 
 /-- Every separably closed field in which `2` is invertible has `u(K) = 1`. -/

@@ -287,11 +287,6 @@ theorem anisotropic_binary_one_neg_iff {F : Type*} [Field F] (d : F) :
     (weightedSumSquares F ![(1 : F), -d]).Anisotropic ↔ ¬ IsSquare d := by
   simpa using anisotropic_binary_iff (1 : F) (-d)
 
-/-- The binary form `⟨1, 1⟩` is anisotropic exactly when `-1` is not a square. -/
-theorem anisotropic_binary_one_one_iff {F : Type*} [Field F] :
-    (weightedSumSquares F ![(1 : F), 1]).Anisotropic ↔ ¬ IsSquare (-1 : F) := by
-  simpa using anisotropic_binary_iff (1 : F) 1
-
 /-- **Worked example.** Over `ℚ` the binary forms `⟨1, 1⟩` and `⟨2, 2⟩` are isometric: their
 discriminants `1` and `4` agree modulo squares, and both represent `2`, once as `1² + 1²` and once
 as `2 · 1² + 2 · 0²`. Concretely `x² + y²` becomes `2 s² + 2 t²` under `(s, t) ↦ (s - t, s + t)`. -/
