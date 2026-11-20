@@ -5,7 +5,8 @@ Authors: Giada Franz, The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+public import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
+public import TauCeti.Analysis.Normed.Operator.Compact.Pi
 public import Mathlib.Analysis.Normed.Group.Constructions
 
 /-!
@@ -30,65 +31,18 @@ public section
 
 open Metric Set
 
-variable {ι : Type*} [Fintype ι] {X Y : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
-  [NormedAddCommGroup Y] [NormedSpace ℝ Y] [CompleteSpace Y]
-  {Z : ι → Type*} [∀ i, NormedAddCommGroup (Z i)] [∀ i, NormedSpace ℝ (Z i)]
-
-private theorem IsCompactOperator.of_norm_le_of_totallyBounded_image_ball
-    {W : Type*} [NormedAddCommGroup W] (T : X →L[ℝ] Y) (P : X → W)
-    (hP : TotallyBounded (P '' ball 0 1)) (hPsub : ∀ x y, P (x - y) = P x - P y)
-    {D : ℝ} (hD : 0 ≤ D) (hdom : ∀ x, ‖T x‖ ≤ D * ‖P x‖) :
-    IsCompactOperator T := by
-  classical
-  refine (isCompactOperator_iff_isCompact_closure_image_ball (T : X →ₗ[ℝ] Y) one_pos).mpr ?_
-  rw [isCompact_iff_totallyBounded_isComplete]
-  refine ⟨TotallyBounded.closure ?_, isClosed_closure.isComplete⟩
-  rw [Metric.totallyBounded_iff]
-  intro ε hε
-  set E := D + 1
-  have hE : 0 < E := by positivity
-  obtain ⟨t, ht, hcover⟩ := Metric.totallyBounded_iff.mp hP (ε / E / 2) (by positivity)
-  let good : Set W := {y ∈ t | ∃ x ∈ ball (0 : X) 1, dist (P x) y < ε / E / 2}
-  have hgood : good.Finite := ht.subset fun y hy ↦ hy.1
-  let pick : W → X := fun y ↦
-    if hy : ∃ x ∈ ball (0 : X) 1, dist (P x) y < ε / E / 2 then hy.choose else 0
-  refine ⟨(fun y ↦ T (pick y)) '' good, hgood.image _, ?_⟩
-  rintro _ ⟨x, hx, rfl⟩
-  obtain ⟨y, hyt, hy⟩ := mem_iUnion₂.mp (hcover ⟨x, hx, rfl⟩)
-  have hex : ∃ x ∈ ball (0 : X) 1, dist (P x) y < ε / E / 2 := ⟨x, hx, hy⟩
-  have hpick : dist (P (pick y)) y < ε / E / 2 := by
-    simp only [pick, hex, ↓reduceDIte]
-    exact hex.choose_spec.2
-  refine mem_iUnion₂.mpr ⟨T (pick y), ⟨y, ⟨hyt, hex⟩, rfl⟩, ?_⟩
-  have hPx : ‖P x - P (pick y)‖ < ε / E := by
-    rw [← dist_eq_norm]
-    calc dist (P x) (P (pick y)) ≤ dist (P x) y + dist (P (pick y)) y :=
-          dist_triangle_right _ _ _
-      _ < ε / E / 2 + ε / E / 2 := add_lt_add hy hpick
-      _ = ε / E := by ring
-  rw [mem_ball, dist_eq_norm]
-  change ‖T x - T (pick y)‖ < ε
-  rw [← map_sub]
-  calc ‖T (x - pick y)‖ ≤ D * ‖P (x - pick y)‖ := hdom _
-    _ ≤ D * (ε / E) := by
-        rw [hPsub]
-        exact mul_le_mul_of_nonneg_left hPx.le hD
-    _ < ε := by
-        rw [mul_div_assoc', div_lt_iff₀ hE]
-        nlinarith
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {ι : Type*} [Fintype ι] {X Y : Type*}
+  [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+  [CompleteSpace Y]
+  {Z : ι → Type*} [∀ i, NormedAddCommGroup (Z i)] [∀ i, NormedSpace 𝕜 (Z i)]
 
 /-- **Domination by compact operators.** A continuous linear map into a Banach space whose norm is
 bounded by a multiple of the sum of the norms of finitely many compact operators is compact. -/
-theorem IsCompactOperator.of_norm_le_mul_sum (T : X →L[ℝ] Y) (K : ∀ i, X →L[ℝ] Z i)
+theorem IsCompactOperator.of_norm_le_mul_sum (T : X →L[𝕜] Y) (K : ∀ i, X →L[𝕜] Z i)
     (hK : ∀ i, IsCompactOperator (K i)) {C : ℝ} (h : ∀ x, ‖T x‖ ≤ C * ∑ i, ‖K i x‖) :
     IsCompactOperator T := by
   classical
-  let P : X → ∀ i, Z i := fun x i ↦ K i x
-  have hP : TotallyBounded (P '' ball 0 1) := by
-    refine (isCompact_univ_pi fun i ↦ (hK i).isCompact_closure_image_ball 1).totallyBounded.subset
-      ?_
-    rintro _ ⟨x, hx, rfl⟩ i -
-    exact subset_closure ⟨x, hx, rfl⟩
+  let P : X →L[𝕜] ∀ i, Z i := ContinuousLinearMap.pi K
   set C' := max C 0
   have hdom (x : X) : ‖T x‖ ≤ (C' * Fintype.card ι) * ‖P x‖ := by
     refine (h x).trans ?_
@@ -100,17 +54,17 @@ theorem IsCompactOperator.of_norm_le_mul_sum (T : X →L[ℝ] Y) (K : ∀ i, X �
                 Finset.sum_le_sum fun i _ ↦ norm_le_pi_norm (P x) i
             _ = Fintype.card ι * ‖P x‖ := by simp
       _ = C' * Fintype.card ι * ‖P x‖ := by ring
-  refine IsCompactOperator.of_norm_le_of_totallyBounded_image_ball T P hP ?_
-    (by positivity) hdom
-  intro x y
-  change (fun i ↦ K i (x - y)) = (fun i ↦ K i x) - (fun i ↦ K i y)
-  funext i
-  simp
+  refine IsCompactOperator.of_norm_le_mul_rpow_mul_rpow
+    (T₀ := P.toLinearMap) (IsCompactOperator.pi hK) (ContinuousLinearMap.id 𝕜 X)
+    (T := T.toLinearMap) (C := C' * Fintype.card ι) (θ := 0) (by norm_num) (by norm_num)
+    fun x ↦ ?_
+  simpa only [sub_zero, Real.rpow_one, Real.rpow_zero, mul_one, ContinuousLinearMap.coe_coe]
+    using hdom x
 
 /-- **Domination by compact operators, extended-norm form.** A continuous linear map into a Banach
 space whose extended norm is bounded by a finite multiple of the sum of the extended norms of
 finitely many compact operators is compact. -/
-theorem IsCompactOperator.of_enorm_le_mul_sum (T : X →L[ℝ] Y) (K : ∀ i, X →L[ℝ] Z i)
+theorem IsCompactOperator.of_enorm_le_mul_sum (T : X →L[𝕜] Y) (K : ∀ i, X →L[𝕜] Z i)
     (hK : ∀ i, IsCompactOperator (K i)) {C : ENNReal} (hC : C ≠ ⊤)
     (h : ∀ x, ‖T x‖ₑ ≤ C * ∑ i, ‖K i x‖ₑ) : IsCompactOperator T := by
   refine IsCompactOperator.of_norm_le_mul_sum T K hK (C := C.toReal) fun x ↦ ?_
