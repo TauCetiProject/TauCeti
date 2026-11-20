@@ -15,8 +15,8 @@ import TauCeti.Analysis.Complex.SlitPlane
 # Recurrences of the complex incomplete Gamma functions
 
 The recurrence relations in the parameter of the incomplete Gamma functions (DLMF §8.8). For the
-lower functions `γ(a, z)`, `P(a, z)`, `Q(a, z)` and Tricomi's `γ*(a, z)` they follow from the
-recurrence `γ*(a, z) = z γ*(a + 1, z) + e^{−z} / Γ(a + 1)` of Tricomi's function. For the upper
+lower functions `γ(a, z)`, `P(a, z)` and `Q(a, z)` they follow from the recurrence
+`γ*(a, z) = z γ*(a + 1, z) + e^{−z} / Γ(a + 1)` of Tricomi's function. For the upper
 function `Γ(a, z)`, defined by the integral along the horizontal ray from `z`, the one-step
 recurrence is an integration by parts along that ray, which stays in the slit plane.
 
@@ -27,8 +27,6 @@ recurrence is an integration by parts along that ray, which stays in the slit pl
   `Γ(a + 1, z) = a Γ(a, z) + z^a e^{−z}` on the slit plane for every `a` (DLMF 8.8.2);
 * `Complex.lowerIncompleteGamma_add_two`, `Complex.upperIncompleteGamma_add_two`: the three-term
   recurrence `w(a + 2, z) = (a + z + 1) w(a + 1, z) − a z w(a, z)` (DLMF 8.8.3);
-* `Complex.tricomiIncompleteGamma_sub_one`: `γ*(a − 1, z) = z γ*(a, z) + e^{−z} / Γ(a)`
-  (DLMF 8.8.4);
 * `Complex.regularizedGamma_add_one`, `Complex.regularizedGammaQ_add_one`: the one-step
   recurrences of `P` and `Q` (DLMF 8.8.5–8.8.6), for `z ≠ 0` and every `a`;
 * `Complex.lowerIncompleteGamma_add_natCast`,
@@ -39,6 +37,9 @@ recurrence is an integration by parts along that ray, which stays in the slit pl
   recurrences (DLMF 8.8.7–8.8.12).
 
 ## Implementation notes
+
+DLMF 8.8.4, `γ*(a − 1, z) = z γ*(a, z) + e^{−z} / Γ(a)`, is
+`Complex.tricomiIncompleteGamma_eq_mul_tricomiIncompleteGamma_add_one` at `a − 1`.
 
 The quotients of Gamma values in DLMF 8.8.7–8.8.10 are written as Pochhammer symbols:
 `Γ(a + n) / Γ(a) = (a)ₙ`, `Γ(a + n) / Γ(a + k + 1) = (a + k + 1)_{n−k−1}`,
@@ -65,12 +66,7 @@ open scoped Topology
 
 namespace Complex
 
-/-! ### Tricomi's function, `P` and `Q` -/
-
-/-- **DLMF 8.8.4**: `γ*(a − 1, z) = z γ*(a, z) + e^{−z} / Γ(a)`. -/
-theorem tricomiIncompleteGamma_sub_one (a z : ℂ) :
-    tricomiIncompleteGamma (a - 1) z = z * tricomiIncompleteGamma a z + cexp (-z) / Gamma a := by
-  simpa using tricomiIncompleteGamma_eq_mul_tricomiIncompleteGamma_add_one (a - 1) z
+/-! ### The regularized functions `P` and `Q` -/
 
 /-- **DLMF 8.8.5**: `P(a + 1, z) = P(a, z) − z^a e^{−z} / Γ(a + 1)` for `z ≠ 0`. -/
 theorem regularizedGamma_add_one (a : ℂ) {z : ℂ} (hz : z ≠ 0) :
