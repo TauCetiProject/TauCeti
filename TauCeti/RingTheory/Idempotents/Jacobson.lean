@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Jacobson.Ideal
 public import Mathlib.RingTheory.Nakayama
 import Mathlib.Tactic.LinearCombination
+import TauCeti.RingTheory.Ideal.Extended
 
 /-!
 # Idempotents modulo an ideal in the Jacobson radical
@@ -25,18 +26,19 @@ lies in the Jacobson radical.
 
 ## Main results
 
-* `IsIdempotentElem.eq_zero_of_mem_jacobson_bot`: an idempotent in the Jacobson radical
-  `Ideal.jacobson ⊥` of a not necessarily commutative ring is zero.
+* `IsIdempotentElem.eq_zero_of_mem_jacobson`: an idempotent in the Jacobson radical
+  `Ring.jacobson R` of a not necessarily commutative ring is zero.
 * `IsIdempotentElem.mem_jacobson_iff`: an idempotent lies in `Ring.jacobson R` if and only if it is
   zero.
 * `Ideal.Quotient.isIdempotentElem_mk_iff`: `a` is idempotent modulo `I` if and only if
   `a * a - a ∈ I`.
-* `IsIdempotentElem.eq_of_sub_mem_of_le_jacobson_bot`: idempotents congruent modulo an ideal in
+* `IsIdempotentElem.eq_of_sub_mem_of_le_jacobson`: idempotents congruent modulo an ideal in
   the Jacobson radical are equal.
 * `Ideal.injOn_quotient_mk_isIdempotentElem`: modulo an ideal in the Jacobson radical, the quotient
   map is injective on idempotents.
-* `IsIdempotentElem.exists_smul_eq_mul_of_mul_sub_smul_mem`: in a module-finite `S`-algebra `T`, an
-  idempotent `e` with `e T ⊆ S e + JT`, for `J` in the Jacobson radical of `S`, has `e T = S e`.
+* `IsIdempotentElem.exists_smul_eq_mul_of_mul_sub_smul_mem`: in a module-finite, not necessarily
+  commutative `S`-algebra `T`, an idempotent `e` with `e T ⊆ S e + JT`, for `J` in the Jacobson
+  radical of `S`, has `e T = S e`.
 
 ## References
 
@@ -45,8 +47,8 @@ lies in the Jacobson radical.
 * Ported from T. Dupuy, T. Tucker and Z. Wang,
   [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
   `a39c3781b9850b9f3d5cbc9920322a3b8e365ef2` (Apache-2.0),
-  `lean/Pcf/Stacks/Purity/HenselianIdempotents.lean`: `eq_zero_of_mem_jacobson_bot` and
-  `eq_of_sub_mem_of_le_jacobson_bot` are its `Pcf.Stacks.isIdempotentElem_eq_zero_of_mem_jacobson`
+  `lean/Pcf/Stacks/Purity/HenselianIdempotents.lean`: `eq_zero_of_mem_jacobson` and
+  `eq_of_sub_mem_of_le_jacobson` are its `Pcf.Stacks.isIdempotentElem_eq_zero_of_mem_jacobson`
   and `Pcf.Stacks.eq_of_isIdempotentElem_of_sub_mem_of_le_jacobson`, and
   `injOn_quotient_mk_isIdempotentElem` restates as `Set.InjOn` the injectivity step of its
   `Pcf.Stacks.bijective_idempotentQuotientMap_of_henselian`.
@@ -54,10 +56,11 @@ lies in the Jacobson radical.
 
 public section
 
-/-- An idempotent in the Jacobson radical `Ideal.jacobson ⊥` of a (not necessarily commutative)
+/-- An idempotent in the Jacobson radical `Ring.jacobson R` of a (not necessarily commutative)
 ring is zero. -/
-theorem IsIdempotentElem.eq_zero_of_mem_jacobson_bot {R : Type*} [Ring R] {e : R}
-    (he : IsIdempotentElem e) (hJ : e ∈ Ideal.jacobson (⊥ : Ideal R)) : e = 0 := by
+theorem IsIdempotentElem.eq_zero_of_mem_jacobson {R : Type*} [Ring R] {e : R}
+    (he : IsIdempotentElem e) (hJ : e ∈ Ring.jacobson R) : e = 0 := by
+  rw [← Ideal.jacobson_bot] at hJ
   obtain ⟨z, hz⟩ := Ideal.exists_mul_add_sub_mem_of_mem_jacobson (-e) (neg_mem hJ)
   have hz' : z * (1 - e) = 1 := by
     rw [← neg_add_eq_sub]
@@ -68,8 +71,7 @@ theorem IsIdempotentElem.eq_zero_of_mem_jacobson_bot {R : Type*} [Ring R] {e : R
 /-- An idempotent lies in the Jacobson radical `Ring.jacobson R` if and only if it is zero. -/
 theorem IsIdempotentElem.mem_jacobson_iff {R : Type*} [Ring R] {e : R}
     (he : IsIdempotentElem e) : e ∈ Ring.jacobson R ↔ e = 0 :=
-  ⟨fun h ↦ he.eq_zero_of_mem_jacobson_bot (Ideal.jacobson_bot (R := R) ▸ h),
-    fun h ↦ h ▸ zero_mem _⟩
+  ⟨he.eq_zero_of_mem_jacobson, fun h ↦ h ▸ zero_mem _⟩
 
 /-- An element is idempotent modulo a two-sided ideal `I` if and only if `a * a - a ∈ I`. -/
 theorem Ideal.Quotient.isIdempotentElem_mk_iff {R : Type*} [Ring R] {I : Ideal R} [I.IsTwoSided]
@@ -80,30 +82,30 @@ variable {R : Type*} [CommRing R]
 
 /-- **Idempotent lifts are unique modulo the Jacobson radical.** Idempotents that are congruent
 modulo an ideal contained in the Jacobson radical are equal. -/
-theorem IsIdempotentElem.eq_of_sub_mem_of_le_jacobson_bot {I : Ideal R}
-    (hI : I ≤ Ideal.jacobson ⊥) {e e' : R} (he : IsIdempotentElem e)
+theorem IsIdempotentElem.eq_of_sub_mem_of_le_jacobson {I : Ideal R}
+    (hI : I ≤ Ring.jacobson R) {e e' : R} (he : IsIdempotentElem e)
     (he' : IsIdempotentElem e') (h : e - e' ∈ I) : e = e' := by
   -- Both `e (1 - e')` and `(1 - e) e'` are multiples of `e - e'`, using `e² = e` and `e'² = e'`.
   have hleft : e * (1 - e') = e * (e - e') := by linear_combination -he.eq
   have hright : (1 - e) * e' = -((e - e') * e') := by linear_combination -he'.eq
-  have h₁ : e * (1 - e') = 0 := (he.mul he'.one_sub).eq_zero_of_mem_jacobson_bot <| hI <| by
+  have h₁ : e * (1 - e') = 0 := (he.mul he'.one_sub).eq_zero_of_mem_jacobson <| hI <| by
     rw [hleft]
     exact I.mul_mem_left e h
-  have h₂ : (1 - e) * e' = 0 := (he.one_sub.mul he').eq_zero_of_mem_jacobson_bot <| hI <| by
+  have h₂ : (1 - e) * e' = 0 := (he.one_sub.mul he').eq_zero_of_mem_jacobson <| hI <| by
     rw [hright]
     exact I.neg_mem (I.mul_mem_right e' h)
   linear_combination h₁ - h₂
 
 /-- Modulo an ideal in the Jacobson radical, the quotient map is injective on idempotents. -/
-theorem Ideal.injOn_quotient_mk_isIdempotentElem {I : Ideal R} (hI : I ≤ Ideal.jacobson ⊥) :
+theorem Ideal.injOn_quotient_mk_isIdempotentElem {I : Ideal R} (hI : I ≤ Ring.jacobson R) :
     Set.InjOn (Ideal.Quotient.mk I) {e | IsIdempotentElem e} :=
-  fun _ he _ he' h ↦ he.eq_of_sub_mem_of_le_jacobson_bot hI he' (Ideal.Quotient.eq.mp h)
+  fun _ he _ he' h ↦ he.eq_of_sub_mem_of_le_jacobson hI he' (Ideal.Quotient.eq.mp h)
 
-/-- **Nakayama's lemma for an idempotent.** Let `T` be a module-finite `S`-algebra and `J` an
-ideal of `S` in the Jacobson radical. If an idempotent `e` of `T` satisfies `e T ⊆ S e + JT`, then
-`e T = S e`. -/
+/-- **Nakayama's lemma for an idempotent.** Let `T` be a module-finite, not necessarily commutative
+`S`-algebra and `J` an ideal of `S` in the Jacobson radical. If an idempotent `e` of `T` satisfies
+`e T ⊆ S e + JT`, then `e T = S e`. -/
 theorem IsIdempotentElem.exists_smul_eq_mul_of_mul_sub_smul_mem {S T : Type*} [CommRing S]
-    [CommRing T] [Algebra S T] [Module.Finite S T] {J : Ideal S} (hJ : J ≤ Ideal.jacobson ⊥)
+    [Ring T] [Algebra S T] [Module.Finite S T] {J : Ideal S} (hJ : J ≤ Ring.jacobson S)
     {e : T} (he : IsIdempotentElem e)
     (h : ∀ x : T, ∃ s : S, e * x - s • e ∈ J.map (algebraMap S T)) (x : T) :
     ∃ s : S, s • e = e * x := by
@@ -112,13 +114,14 @@ theorem IsIdempotentElem.exists_smul_eq_mul_of_mul_sub_smul_mem {S T : Type*} [C
     rw [LinearMap.range_eq_map]
     exact Module.Finite.fg_top.map f
   have hle : LinearMap.range f ≤ S ∙ e := by
-    refine Submodule.le_of_le_smul_of_le_jacobson hfg
-      (by simpa only [Ideal.jacobson_bot] using hJ) ?_
+    refine Submodule.le_of_le_smul_of_le_jacobson hfg hJ ?_
     rintro _ ⟨y, rfl⟩
     obtain ⟨s, hs⟩ := h y
     have hmem : e * (e * y - s • e) ∈ J • LinearMap.range f := by
       rw [LinearMap.range_eq_map, ← Submodule.map_smul'']
-      exact ⟨_, by simpa using hs, rfl⟩
+      -- Read `hs` in the `S`-submodule `J • ⊤` of `T`, which is the extended ideal `J T`.
+      exact ⟨_, by simpa only [SetLike.mem_coe, Ideal.smul_top_eq_restrictScalars_map,
+        Submodule.restrictScalars_mem] using hs, rfl⟩
     have hy : f y = s • e + e * (e * y - s • e) := by
       simp only [f, LinearMap.mulLeft_apply, mul_sub, ← mul_assoc, he.eq, mul_smul_comm]
       abel
