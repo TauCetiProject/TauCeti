@@ -13,7 +13,6 @@ import Mathlib.MeasureTheory.Integral.MeanInequalities
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
-import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Minkowski's integral inequality
