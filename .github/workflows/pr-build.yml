@@ -96,6 +96,7 @@ jobs:
       contents: read  # immutable fleet selector checkout
     secrets:
       FLEET_READ_TOKEN: ${{ secrets.FLEET_READ_TOKEN }}
+      FLEET_INVENTORY_APP_PRIVATE_KEY: ${{ secrets.FLEET_INVENTORY_APP_PRIVATE_KEY }}
       TAUCETI_GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_TOKEN }}
 
   # Name kept distinct from `build` on purpose — see the header note. The required merge check is the
