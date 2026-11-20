@@ -334,7 +334,7 @@ def twoCochainEquiv : (L [⋀^Fin 2]→ₗ[R] M) ≃ₗ[R] twoCochain R L M wher
     simpa using ω.map_eq_zero_of_eq ![x, x] (i := 0) (j := 1) rfl (by decide)⟩
   map_add' _ _ := by ext; simp
   map_smul' _ _ := by ext; simp
-  invFun c := uncurryLeft ((oneCochainEquiv R L M).symm.toLinearMap ∘ₗ c.1) fun x ↦ by
+  invFun c := uncurryLeft ((oneCochainEquiv R L M).symm.toLinearMap ∘ₗ c.val) fun x ↦ by
     ext r
     simp
   left_inv ω := by

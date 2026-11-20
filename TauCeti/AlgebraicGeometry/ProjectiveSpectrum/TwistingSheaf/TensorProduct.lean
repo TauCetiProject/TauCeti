@@ -203,11 +203,10 @@ elements cover `Proj A`, the monoidal tensor product `𝒪(m) ⊗ 𝒪(n)` in `(
 isomorphic to `𝒪(m + n)`. -/
 def tensorIso :
     twistingSheaf 𝒜 m ⊗ twistingSheaf 𝒜 n ≅ twistingSheaf 𝒜 (m + n) :=
-  Scheme.Modules.isoOfSheafIso (Proj 𝒜)
-    ((twistingSheaf 𝒜 m).tensorUnderlyingIso (twistingSheaf 𝒜 n) ≪≫
-      (TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf
-        (twistingSheaf 𝒜 m) (twistingSheaf 𝒜 n)).symm ≪≫
-      tensorProductIso f hf hcover m n)
+  (twistingSheaf 𝒜 m).tensorUnderlyingIso (twistingSheaf 𝒜 n) ≪≫
+    (TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf
+      (twistingSheaf 𝒜 m) (twistingSheaf 𝒜 n)).symm ≪≫
+    tensorProductIso f hf hcover m n
 
 /-- The forward isomorphism is sheafified multiplication of sections. -/
 private theorem tensorProductIso_hom :
@@ -220,16 +219,17 @@ private theorem tensorProductIso_hom :
 
 /-- On a pure tensor `s ⊗ t` of sections over `U`, sent into `𝒪(m) ⊗ 𝒪(n)` by the unit of
 sheafification, the isomorphism `𝒪(m) ⊗ 𝒪(n) ≅ 𝒪(m + n)` is multiplication of sections. -/
-@[simp]
 theorem tensorProductIso_hom_tmul (U : (Proj 𝒜).Opens) (s : Γ(twistingSheaf 𝒜 m, U))
     (t : Γ(twistingSheaf 𝒜 n, U)) :
-    Scheme.Modules.Hom.app
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj,
+      Functor.id_obj]
+    (Scheme.Modules.Hom.app
       ((TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf (twistingSheaf 𝒜 m)
         (twistingSheaf 𝒜 n)).inv ≫ (tensorProductIso f hf hcover m n).hom) U
       (((PresheafOfModules.sheafificationAdjunction (𝟙 (Proj 𝒜).ringCatSheaf.obj)).unit.app
         (PresheafOfModulesOfCommRing.Monoidal.tensorObj (R := (Proj 𝒜).sheaf.obj)
           (twistingSheaf 𝒜 m).val (twistingSheaf 𝒜 n).val)).app (op U) (s ⊗ₜ t)) =
-      mul 𝒜 U m n s t := by
+      mul 𝒜 U m n s t) := by
   let P := PresheafOfModulesOfCommRing.Monoidal.tensorObj (R := (Proj 𝒜).sheaf.obj)
     (twistingSheaf 𝒜 m).val (twistingSheaf 𝒜 n).val
   let F := PresheafOfModules.sheafification (R := (Proj 𝒜).ringCatSheaf)
@@ -286,7 +286,7 @@ lemma forget_μ_comp_map_tensorIso_hom :
   let φ : M.val ⊗ N.val ⟶ P.val := tensorPresheafHom 𝒜 m n
   have hp : p = (M.tensorUnderlyingIso N).hom ≫
       (TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf M N).inv ≫ q :=
-    SheafOfModules.Hom.ext (Scheme.Modules.isoOfSheafIso_hom_val (Proj 𝒜) _)
+    rfl
   have hq : q = (TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf M N).hom ≫
       (PresheafOfModules.sheafification
         (R := TauCeti.SheafOfModules.ringCatSheaf (Proj 𝒜).sheaf)

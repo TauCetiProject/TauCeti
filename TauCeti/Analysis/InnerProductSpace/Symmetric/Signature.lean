@@ -42,6 +42,8 @@ In the namespace `LinearMap.IsSymmetric`:
   negative point-spectral subspace of `T`.
 * `sigPos_eq_finrank_pointSpectralSubspace`: the positive index of `Q` is the dimension of the
   positive point-spectral subspace of `T`.
+* `sign_det_eq_neg_one_pow_sigNeg`: when `T` is injective, the sign of its determinant is
+  `(-1) ^ sigNeg Q`, since the determinant is the product of the eigenvalues.
 * `isSymm_toBilinForm_innerSL_comp`, `sigNeg_toBilinForm_innerSL_comp`,
   `sigPos_toBilinForm_innerSL_comp`: the continuous bilinear form `⟪T ·, ·⟫` is symmetric, and its
   negative and positive indices count the negative and positive eigenvalues of `T`.
@@ -133,6 +135,23 @@ theorem sigPos_eq_finrank_pointSpectralSubspace (hT : T.IsSymmetric)
   rw [hT.finrank_pointSpectralSubspace rfl, hT.sigPos_eq_ncard_eigenvalues_pos rfl hQ]
   simp only [Set.mem_Ioi]
 
+/-- **The sign of the determinant of a symmetric operator.** If `T` is an injective symmetric
+operator, the sign of its determinant is `(-1)` to the negative index of the quadratic form
+`x ↦ ⟪T x, x⟫`: the determinant is the product of the eigenvalues, none of which vanishes, and
+exactly `sigNeg Q` of them are negative. -/
+theorem sign_det_eq_neg_one_pow_sigNeg (hT : T.IsSymmetric) (hker : LinearMap.ker T = ⊥)
+    (hQ : ∀ x, Q x = ⟪T x, x⟫_ℝ) :
+    SignType.sign (LinearMap.det T) = (-1) ^ sigNeg Q := by
+  classical
+  rw [hT.det_eq_prod_eigenvalues rfl, hT.sigNeg_eq_ncard_eigenvalues_neg rfl hQ,
+    Set.ncard_eq_toFinset_card', Set.toFinset_ofPred]
+  simp only [RCLike.ofReal_real_eq_id, id_eq]
+  rw [← signHom_apply, map_prod, Finset.card_filter, ← Finset.prod_pow_eq_pow_sum]
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  rcases (hT.eigenvalues_ne_zero_of_ker_eq_bot rfl hker i).lt_or_gt with h | h
+  · simp [h, sign_neg h]
+  · simp [h.not_gt, sign_pos h]
+
 /-! ### The bilinear form of an operator -/
 
 omit [FiniteDimensional ℝ E] in
@@ -191,9 +210,9 @@ theorem eventually_ker_eq_bot_and_sigNeg_eq_of_tendsto {ι : Type*} {A : ι → 
   -- The negative index is locally constant on the space of symmetric operators at `L`.
   let S := {B : E →L[ℝ] E // (B : E →ₗ[ℝ] E).IsSymmetric}
   have hV : Continuous fun B : S ↦ (innerSL ℝ).comp (B : E →L[ℝ] E) :=
-    continuous_const.clm_comp continuous_subtype_val
+    continuous_const.clm_comp continuous_subtypeVal
   have hconst := eventually_sigNeg_toBilinForm_eq_of_continuousAt (x := (⟨L, hLsym⟩ : S))
-    (.of_forall fun B ↦ B.2.isSymm_toBilinForm_innerSL_comp) hV.continuousAt hLnd
+    (.of_forall fun B ↦ B.property.isSymm_toBilinForm_innerSL_comp) hV.continuousAt hLnd
   have hlimS : Tendsto (fun s ↦ (⟨A s, hsym s⟩ : S)) l (𝓝 ⟨L, hLsym⟩) :=
     tendsto_subtype_rng.2 hlim
   filter_upwards [hlimS hconst, hlimS (hV.continuousAt.eventually_toBilinForm_nondegenerate hLnd)]

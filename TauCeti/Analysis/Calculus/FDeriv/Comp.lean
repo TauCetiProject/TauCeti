@@ -29,6 +29,8 @@ precomposition with the derivative of that map.
   of its derivative.
 * `HasFDerivAt.injective_of_eventuallyEq_id`: a map with a differentiable local left inverse has
   injective derivative.
+* `TauCeti.differentiableAt_iterate`: an iterate is differentiable at a point where the map is
+  differentiable along its orbit.
 * `TauCeti.fderiv_comp_eq_zero_iff_of_isInvertible`: `b` is a critical point of `f ∘ φ` exactly
   when `φ b` is a critical point of `f`, if the differential of `φ` at `b` is invertible.
 * `ContinuousLinearMap.fderiv_comp_right_of_rightInverse`,
@@ -63,6 +65,16 @@ theorem _root_.HasFDerivAt.injective_of_eventuallyEq_id {f : E → F} {g : F →
   have hcomp := ((hg.comp x hf).congr_of_eventuallyEq hgf.symm).unique (hasFDerivAt_id x)
   exact Function.LeftInverse.injective fun a => by
     simpa using congrArg (fun L : E →L[𝕜] E => L a) hcomp
+
+/-- **Iterates are differentiable along differentiable orbits.** If `f` is differentiable at the
+first `n` points `f^[j] x`, `j < n`, of the orbit of `x`, then `f^[n]` is differentiable at `x`.
+Unlike `DifferentiableAt.iterate`, the point `x` need not be fixed. -/
+theorem differentiableAt_iterate {f : E → E} {x : E} :
+    ∀ {n : ℕ}, (∀ j < n, DifferentiableAt 𝕜 f (f^[j] x)) → DifferentiableAt 𝕜 f^[n] x
+  | 0, _ => differentiableAt_id
+  | n + 1, h => by
+    rw [Function.iterate_succ']
+    exact (h n (by omega)).comp x (differentiableAt_iterate fun j hj ↦ h j (by omega))
 
 /-- **Criticality does not depend on the coordinates.** If `f` is differentiable at `φ b` and
 the differential of `φ` at `b` is invertible, then `b` is a critical

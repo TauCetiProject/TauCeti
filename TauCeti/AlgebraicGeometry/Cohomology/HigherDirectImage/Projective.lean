@@ -65,7 +65,7 @@ theorem isFinitePresentation_higherDirectImage_of_isProjectiveOver (R : Type u) 
   have : Module.FinitePresentation (CommRingCat.of R) M :=
     Module.finitePresentation_of_finite (CommRingCat.of R) M
   exact (SheafOfModules.isFinitePresentation (Spec (.of R)).ringCatSheaf).prop_of_iso
-    (sheafIsoOfIso (Spec (.of R)) (tildeCohomologyIsoHigherDirectImage R F q))
+    (tildeCohomologyIsoHigherDirectImage R F q)
     (isFinitePresentation_tilde M)
 
 /-- **Serre vanishing for higher direct images.** Let `R` be a Noetherian commutative ring, `M` a

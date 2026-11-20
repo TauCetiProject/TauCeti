@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.LineBundle.Power
 public import TauCeti.AlgebraicGeometry.Modules.Biprod
 import Mathlib.CategoryTheory.Monoidal.Preadditive
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.FinitePresentation
+import TauCeti.AlgebraicGeometry.LineBundle.Monoidal
 import TauCeti.AlgebraicGeometry.LineBundle.TwistedSections
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.FiniteType
 import TauCeti.AlgebraicGeometry.Modules.Sheaf
@@ -107,26 +108,26 @@ theorem LineBundleClass.IsAmple.exists_pos_finite_affine_cover {L : InvertibleSh
   have hd : 0 < d := Finset.prod_pos fun x _ ↦ hn x
   have hlift (x : S) : ∃ s : Γ(TauCeti.tensorPow L.obj d, ⊤),
       (TauCeti.tensorPow L.obj d).nonvanishingLocus s =
-        (TauCeti.tensorPow L.obj (n x.1)).nonvanishingLocus (t x.1) := by
-    have hdvd : n x.1 ∣ d := Finset.dvd_prod_of_mem n x.2
-    let k : ℕ := d / n x.1
-    have hnk : n x.1 * k = d := Nat.mul_div_cancel' hdvd
+        (TauCeti.tensorPow L.obj (n x.val)).nonvanishingLocus (t x.val) := by
+    have hdvd : n x.val ∣ d := Finset.dvd_prod_of_mem n x.property
+    let k : ℕ := d / n x.val
+    have hnk : n x.val * k = d := Nat.mul_div_cancel' hdvd
     have hk : 0 < k := Nat.pos_of_ne_zero fun h0 ↦ by simp [h0] at hnk; omega
     have hclass :
         LineBundleClass.mk
-            ⟨TauCeti.tensorPow (TauCeti.tensorPow L.obj (n x.1)) k, inferInstance⟩ =
+            ⟨TauCeti.tensorPow (TauCeti.tensorPow L.obj (n x.val)) k, inferInstance⟩ =
           LineBundleClass.mk ⟨TauCeti.tensorPow L.obj d, inferInstance⟩ := by
-      rw [mk_tensorPow_obj ⟨TauCeti.tensorPow L.obj (n x.1), inferInstance⟩ k,
+      rw [mk_tensorPow_obj ⟨TauCeti.tensorPow L.obj (n x.val), inferInstance⟩ k,
         mk_tensorPow_obj, mk_tensorPow_obj, ← pow_mul, hnk]
     obtain ⟨e⟩ := LineBundleClass.mk_eq_mk_iff.mp hclass
-    refine ⟨e.hom.app ⊤ (Scheme.Modules.tensorPowSection (t x.1) k), ?_⟩
+    refine ⟨e.hom.app ⊤ (Scheme.Modules.tensorPowSection (t x.val) k), ?_⟩
     rw [Scheme.Modules.nonvanishingLocus_hom_app,
-      Scheme.Modules.nonvanishingLocus_tensorPowSection (t x.1) hk]
+      Scheme.Modules.nonvanishingLocus_tensorPowSection (t x.val) hk]
   choose s hs using hlift
   let eS : Fin S.card ≃ S := (Fintype.equivFinOfCardEq (Fintype.card_coe S)).symm
   refine ⟨d, hd, S.card, fun i ↦ s (eS i), fun i ↦ ?_, top_unique fun x _ ↦ ?_⟩
   · rw [hs (eS i)]
-    exact haff (eS i).1
+    exact haff (eS i).val
   · obtain ⟨y, hyS, hxy⟩ := Set.mem_iUnion₂.mp (hS (Set.mem_univ x))
     refine Opens.mem_iSup.mpr ⟨eS.symm ⟨y, hyS⟩, ?_⟩
     dsimp only
@@ -249,17 +250,18 @@ theorem exists_generatingSections_tensorPow_of_affineOpenCover
   have : Fintype I := inferInstance
   -- Extend each local generator `t` after tensoring with a power of `s i`.
   have hext (p : I) : ∃ (k : ℕ) (g : Γ(F ⊗ tensorPow M k, ⊤)),
-      (F ⊗ tensorPow M k).presheaf.map (U p.1.down).leTop.op g =
-        tmulRight F (tensorPowSection (M.presheaf.map (U p.1.down).leTop.op (s p.1.down)) k)
-          p.2.1 := by
+      (F ⊗ tensorPow M k).presheaf.map (U p.fst.down).leTop.op g =
+        tmulRight F (tensorPowSection (M.presheaf.map (U p.fst.down).leTop.op (s p.fst.down)) k)
+          p.snd.val := by
     obtain ⟨k, g, hg⟩ := exists_map_eq_tmulRight_tensorPowSection F (U := ⊤)
-      (by simpa using isCompact_univ) (by simpa using isQuasiSeparated_univ) (s p.1.down) p.2.1
+      (by simpa using isCompact_univ) (by simpa using isQuasiSeparated_univ) (s p.fst.down)
+      p.snd.val
     exact ⟨k, g, hg⟩
   choose k g hg using hext
   let n₀ : ℕ := Finset.univ.sup k
   refine ⟨n₀, fun n hn ↦ ?_⟩
   have hkn (p : I) : k p ≤ n := (Finset.le_sup (f := k) (Finset.mem_univ p)).trans hn
-  let sec (p : I) : Γ(F ⊗ tensorPow M n, ⊤) := raiseSection F M (s p.1.down) (hkn p) (g p)
+  let sec (p : I) : Γ(F ⊗ tensorPow M n, ⊤) := raiseSection F M (s p.fst.down) (hkn p) (g p)
   have : (tensorPow M n).IsQuasicoherent :=
     InvertibleSheaf.isQuasicoherent_obj ⟨tensorPow M n, inferInstance⟩
   have hqc : (F ⊗ tensorPow M n).IsQuasicoherent :=
@@ -275,7 +277,7 @@ theorem exists_generatingSections_tensorPow_of_affineOpenCover
           fun t ht ↦ ⟨⟨⟨i⟩, ⟨t, ht⟩⟩,
             (sectionsEquivTop_symm_val (F ⊗ tensorPow M n) (sec ⟨⟨i⟩, ⟨t, ht⟩⟩) (U i)).trans
               (map_raiseSection F M (s i) (hkn ⟨⟨i⟩, ⟨t, ht⟩⟩) (g _) t (hg _))⟩
-  exact ⟨{ I := I, s := sFam, epi := (epi_iff_sheafOfModules φ).mp hφ }, ⟨inferInstance⟩⟩
+  exact ⟨{ I := I, s := sFam, epi := hφ }, ⟨inferInstance⟩⟩
 
 /-- **Serre's twisting-generation theorem (for monoidal tensor powers).** Let `X` be a
 quasi-separated scheme, `L` an ample invertible sheaf on `X`, and `F` a quasi-coherent
@@ -293,14 +295,14 @@ theorem exists_generatingSections_tensorPow_of_isAmple
     isInvertible_tensorPow L.obj d
   -- Apply the affine-cover theorem to each remainder twist `F ⊗ L^{⊗ r}` (`r < d`).
   have hrem (r : Fin d) : ∃ N : ℕ, ∀ q ≥ N,
-      ∃ σ : ((F ⊗ tensorPow L.obj r.1) ⊗ tensorPow M q).GeneratingSections, σ.IsFiniteType := by
-    have : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) (tensorPow L.obj r.1) :=
-      isInvertible_tensorPow L.obj r.1
-    have : (tensorPow L.obj r.1).IsFinitePresentation :=
+      ∃ σ : ((F ⊗ tensorPow L.obj r.val) ⊗ tensorPow M q).GeneratingSections, σ.IsFiniteType := by
+    have : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) (tensorPow L.obj r.val) :=
+      isInvertible_tensorPow L.obj r.val
+    have : (tensorPow L.obj r.val).IsFinitePresentation :=
       TauCeti.SheafOfModules.IsInvertible.isFinitePresentation (R := X.ringCatSheaf)
-        (M := tensorPow L.obj r.1)
+        (M := tensorPow L.obj r.val)
     exact @exists_generatingSections_tensorPow_of_affineOpenCover X
-      (F ⊗ tensorPow L.obj r.1) _ _ _ _ M hM_inv m s haff hcover
+      (F ⊗ tensorPow L.obj r.val) _ _ _ _ M hM_inv m s haff hcover
   choose N hN using hrem
   let Q : ℕ := Finset.univ.sup N
   refine ⟨d * Q, fun n hn ↦ ?_⟩
@@ -311,11 +313,9 @@ theorem exists_generatingSections_tensorPow_of_isAmple
     simpa only [mul_comm] using hn
   obtain ⟨σ, hσ⟩ := hN r q ((Finset.le_sup (f := N) (Finset.mem_univ r)).trans hq)
   -- Identify `(F ⊗ L^{⊗ r}) ⊗ (L^{⊗ d})^{⊗ q}` with `F ⊗ L^{⊗ n}` via Picard-group classes.
-  let Ar : InvertibleSheaf X := ⟨tensorPow L.obj r.1, isInvertible_tensorPow L.obj r.1⟩
+  let Ar : InvertibleSheaf X := ⟨tensorPow L.obj r.val, isInvertible_tensorPow L.obj r.val⟩
   let Mq : InvertibleSheaf X := ⟨tensorPow M q, @isInvertible_tensorPow X M hM_inv q⟩
-  let A : InvertibleSheaf X :=
-    ⟨tensorPow L.obj r.1 ⊗ tensorPow M q,
-      @isInvertible_tensorObj X _ _ Ar.property Mq.property⟩
+  let A : InvertibleSheaf X := Ar ⊗ Mq
   let B : InvertibleSheaf X := ⟨tensorPow L.obj n, isInvertible_tensorPow L.obj n⟩
   have hAB : LineBundleClass.mk A = LineBundleClass.mk B := by
     have hM : LineBundleClass.mk Mq = LineBundleClass.mk L ^ (d * q) := by
@@ -324,9 +324,9 @@ theorem exists_generatingSections_tensorPow_of_isAmple
     rw [LineBundleClass.mk_tensorObj Ar Mq, LineBundleClass.mk_tensorPow_obj, hM,
       LineBundleClass.mk_tensorPow_obj, ← pow_add, add_comm, Nat.div_add_mod]
   obtain ⟨eL⟩ := LineBundleClass.mk_eq_mk_iff.mp hAB
-  let e : (F ⊗ tensorPow L.obj r.1) ⊗ tensorPow M q ≅ F ⊗ tensorPow L.obj n :=
-    α_ F (tensorPow L.obj r.1) (tensorPow M q) ≪≫ whiskerLeftIso F eL
-  exact ⟨SheafOfModules.GeneratingSections.equivOfIso (sheafIsoOfIso X e) σ, ⟨hσ.finite⟩⟩
+  let e : (F ⊗ tensorPow L.obj r.val) ⊗ tensorPow M q ≅ F ⊗ tensorPow L.obj n :=
+    α_ F (tensorPow L.obj r.val) (tensorPow M q) ≪≫ whiskerLeftIso F eL
+  exact ⟨SheafOfModules.GeneratingSections.equivOfIso e σ, ⟨hσ.finite⟩⟩
 
 /-- **Serre's twisting-generation theorem (for any representative of `L^{⊗ n}`).** Let `X` be a
 quasi-separated scheme, `L` an ample invertible sheaf on `X`, and `F` a quasi-coherent
@@ -346,7 +346,7 @@ theorem exists_generatingSections_tensor_of_isAmple
     rw [LineBundleClass.mk_tensorPow_obj, hK]
   obtain ⟨eK⟩ := LineBundleClass.mk_eq_mk_iff.mp hclass
   let e : F ⊗ tensorPow L.obj n ≅ F ⊗ K.obj := whiskerLeftIso F eK
-  exact ⟨SheafOfModules.GeneratingSections.equivOfIso (sheafIsoOfIso X e) σ, ⟨hσ.finite⟩⟩
+  exact ⟨SheafOfModules.GeneratingSections.equivOfIso e σ, ⟨hσ.finite⟩⟩
 
 /-- **Finite negative-twist presentation.** Let `X` be a quasi-separated scheme, `L` an ample
 invertible sheaf on `X`, and `F` a quasi-coherent `𝒪_X`-module of finite type. Then there exists
@@ -370,11 +370,11 @@ theorem exists_epi_biproduct_of_isAmple
   have : MonoidalPreadditive X.Modules := TauCeti.SheafOfModules.monoidalPreadditive X.sheaf
   -- Tensor the epimorphism `free σ.I ⟶ F ⊗ K^∨` on the left by `K`.
   let π : (SheafOfModules.free (R := X.ringCatSheaf) σ.I : X.Modules) ⟶ F ⊗ K.dual.obj := σ.π
-  have hπ : Epi (C := X.Modules) π := (epi_iff_sheafOfModules π).mpr σ.epi
+  have hπ : Epi (C := X.Modules) π := σ.epi
   have : (tensorLeft K.obj).IsLeftAdjoint := ⟨ihom K.obj, ⟨ihom.adjunction K.obj⟩⟩
   have : Epi (K.obj ◁ π) := TauCeti.epi_whiskerLeft K.obj π
   -- Identify `K ⊗ (F ⊗ K^∨) ≅ F`.
-  have hKK : LineBundleClass.mk ⟨K.obj ⊗ K.dual.obj, inferInstance⟩ = 1 := by
+  have hKK : LineBundleClass.mk (K ⊗ K.dual) = 1 := by
     rw [LineBundleClass.mk_tensorObj, ← LineBundleClass.inv_mk, mul_inv_cancel]
   obtain ⟨eUnit⟩ := LineBundleClass.mk_eq_one_iff.mp hKK
   let eF : K.obj ⊗ (F ⊗ K.dual.obj) ≅ F :=
@@ -390,8 +390,7 @@ theorem exists_epi_biproduct_of_isAmple
       whiskerLeftIso K.obj
         (biproduct.whiskerEquiv (f := fun _ : Fin k ↦ 𝟙_ X.Modules)
             (g := fun _ : σ.I ↦ 𝟙_ X.Modules) eI (fun _ ↦ Iso.refl _) ≪≫
-          Scheme.Modules.isoOfSheafIso X
-            (TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) σ.I))
+          TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) σ.I)
   exact ⟨k, (eFree.hom ≫ (K.obj ◁ π)) ≫ eF.hom, inferInstance⟩
 
 end AlgebraicGeometry.Scheme.Modules

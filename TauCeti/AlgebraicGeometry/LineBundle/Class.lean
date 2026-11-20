@@ -24,10 +24,9 @@ and evaluation against the dual give the commutative group laws.
 * `LineBundleClass.lift` descends an isomorphism-invariant function to line-bundle classes;
 * `LineBundleClass.mk_eq_mk_iff` characterizes equality by an isomorphism of the underlying
   sheaves;
-* multiplication is induced by `InvertibleSheaf.tensorProduct` (and agrees with the monoidal tensor
-  product via `LineBundleClass.mk_tensorObj`), and `1` is the class of the trivial line bundle, so
-  that `LineBundleClass.mk_eq_one_iff` characterizes the classes of line bundles isomorphic to the
-  structure sheaf;
+* multiplication is induced by `InvertibleSheaf.tensorProduct`, and `1` is the class of the
+  trivial line bundle, so that `LineBundleClass.mk_eq_one_iff` characterizes the classes of
+  line bundles isomorphic to the structure sheaf;
 * inversion is induced by `InvertibleSheaf.dual`;
 * tensor product makes `LineBundleClass X` a commutative group.
 
@@ -120,13 +119,6 @@ noncomputable instance : Mul (LineBundleClass X) where
 lemma mk_tensorProduct (L K : InvertibleSheaf X) :
     mk (InvertibleSheaf.tensorProduct L K) = mk L * mk K :=
   (rfl)
-
-/-- The class of the monoidal tensor product `L.obj ⊗ K.obj` is the product of the two classes. -/
-@[simp]
-lemma mk_tensorObj (L K : InvertibleSheaf X) :
-    mk ⟨L.obj ⊗ K.obj, inferInstance⟩ = mk L * mk K := by
-  rw [← mk_tensorProduct, mk_eq_mk_iff]
-  exact ⟨(InvertibleSheaf.tensorProductObjIso L K).symm⟩
 
 /-- The unit for tensor product is the class of the trivial line bundle. -/
 noncomputable instance : One (LineBundleClass X) where

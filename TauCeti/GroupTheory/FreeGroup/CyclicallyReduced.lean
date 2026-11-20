@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 public import TauCeti.GroupTheory.FreeGroup.Reduce
+import TauCeti.Data.List.Infix
 
 /-!
 # Cyclic reduction and word length in a free group
@@ -14,6 +15,12 @@ public import TauCeti.GroupTheory.FreeGroup.Reduce
 These lemmas bound the length of a cyclic reduction, relate cyclic reduction to the identity
 and give the length of a positive power. Words of constant sign are cyclically reduced, and being
 cyclically reduced is decidable.
+
+If the reduced word of `x ≠ 1` is `c ++ v ++ c⁻¹` with `v` cyclically reduced, then the reduced
+word of `x ^ m` is `c ++ vᵐ ++ c⁻¹` for `m ≥ 1`. Its first `L` letters therefore do not depend on
+`m ≥ L` (`FreeGroup.take_toWord_pow_of_le`): they are the first `L` letters of the attracting ray
+`c ++ v ++ v ++ ⋯` of `x`. In particular, the reduced word of `x ^ m` has at least `m` letters
+(`FreeGroup.length_take_toWord_pow`).
 -/
 
 public section
@@ -73,5 +80,50 @@ theorem norm_pow_eq (x : FreeGroup α) {n : ℕ} (hn : 0 < n) :
     reduceCyclically.reduce_flatten_replicate isReduced_toWord, hn0,
     List.length_flatten, List.map_replicate]
   omega
+
+section Prefix
+
+open reduceCyclically
+
+/-- The word `c ++ vᵐ`, where `c ++ v ++ c⁻¹` is the reduced word of `x` with `v` cyclically
+reduced. Its prefixes are the prefixes of the attracting ray of `x`. -/
+private def ray (x : FreeGroup α) (m : ℕ) : List (α × Bool) :=
+  conjugator x.toWord ++ (List.replicate m (reduceCyclically x.toWord)).flatten
+
+private theorem le_length_ray {x : FreeGroup α} (hx : x ≠ 1) (m : ℕ) : m ≤ (ray x m).length := by
+  simp only [ray, List.length_append, List.length_flatten, List.map_replicate,
+    List.sum_replicate, smul_eq_mul]
+  exact (Nat.le_mul_of_pos_right m (length_reduceCyclically_toWord_pos_iff.2 hx)).trans
+    (Nat.le_add_left _ _)
+
+/-- For `m ≥ L` and `m ≠ 0`, the reduced word of `x ^ m` begins with the first `L` letters of
+`c ++ vᴸ`. -/
+private theorem take_toWord_pow {x : FreeGroup α} (hx : x ≠ 1) {L m : ℕ} (hL : L ≤ m)
+    (hm : m ≠ 0) : (x ^ m).toWord.take L = (ray x L).take L := by
+  have hw : (x ^ m).toWord = ray x m ++ invRev (conjugator x.toWord) := by
+    simp [ray, toWord_pow, reduce_flatten_replicate isReduced_toWord, hm]
+  have hp : ray x L <+: ray x m :=
+    (List.prefix_append_right_inj _).2 (List.flatten_replicate_prefix_flatten_replicate _ hL)
+  rw [hw, List.take_append_of_le_length (hL.trans (le_length_ray hx m)), eq_comm,
+    List.prefix_iff_eq_take.1 hp, List.take_take, Nat.min_eq_left (le_length_ray hx L)]
+
+/-- The first `L` letters of the reduced word of `x ^ m` are the same for every `m ≥ L`: they are
+the first `L` letters of the attracting ray of `x`. -/
+theorem take_toWord_pow_of_le (x : FreeGroup α) {L m : ℕ} (h : L ≤ m) :
+    (x ^ m).toWord.take L = (x ^ L).toWord.take L := by
+  rcases eq_or_ne x 1 with rfl | hx
+  · simp
+  rcases Nat.eq_zero_or_pos L with rfl | hL
+  · simp
+  rw [take_toWord_pow hx h (by omega), take_toWord_pow hx le_rfl (by omega)]
+
+/-- For `x ≠ 1` and `L ≤ m`, the reduced word of `x ^ m` has at least `L` letters. -/
+theorem length_take_toWord_pow {x : FreeGroup α} (hx : x ≠ 1) {L m : ℕ} (h : L ≤ m) :
+    ((x ^ m).toWord.take L).length = L := by
+  rcases Nat.eq_zero_or_pos L with rfl | hL
+  · simp
+  rw [take_toWord_pow hx h (by omega), List.length_take, Nat.min_eq_left (le_length_ray hx L)]
+
+end Prefix
 
 end FreeGroup

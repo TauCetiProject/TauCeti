@@ -218,11 +218,12 @@ private theorem exists_subsingleton_cohomology_tensor_twistingSheaf_of_basis
   let s : Finset ℕ := Finset.Ico 1 (Fintype.card κ)
   have hs : s.attach.Nonempty :=
     ⟨⟨1, Finset.mem_Ico.mpr ⟨le_rfl, Fintype.one_lt_card⟩⟩, Finset.mem_attach _ _⟩
-  refine ⟨s.attach.sup' hs (fun q ↦ N q.1 (Finset.mem_Ico.mp q.2).1), fun n hn q hq ↦ ?_⟩
+  refine ⟨s.attach.sup' hs (fun q ↦ N q.val (Finset.mem_Ico.mp q.property).left),
+    fun n hn q hq ↦ ?_⟩
   by_cases hlt : q < Fintype.card κ
   · have hqmem : q ∈ s := Finset.mem_Ico.mpr ⟨hq, hlt⟩
     have hle : N q hq ≤ n :=
-      (Finset.le_sup' (f := fun x : {x // x ∈ s} ↦ N x.1 (Finset.mem_Ico.mp x.2).1)
+      (Finset.le_sup' (f := fun x : {x // x ∈ s} ↦ N x.val (Finset.mem_Ico.mp x.property).left)
         (Finset.mem_attach s ⟨q, hqmem⟩)).trans hn
     exact hN q hq n hle
   · have : (Proj.twistingSheaf (homogeneousSubmodule R M) n ⊗ F).IsQuasicoherent :=
