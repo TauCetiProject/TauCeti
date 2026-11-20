@@ -66,6 +66,17 @@ noncomputable section
 
 namespace IsQuotientCoveringMap
 
+/-- If `U` is disjoint from its nontrivial translates, then `q` is injective on every translate
+of `U`. -/
+private theorem injOn_smul_of_disjoint {M N G : Type*} [TopologicalSpace M] [TopologicalSpace N]
+    [Group G] [MulAction G M] {q : M → N} (hq : IsQuotientCoveringMap q G) {U : Set M}
+    (hU : ∀ g : G, ((g • ·) '' U ∩ U).Nonempty → g = 1) (h : G) : InjOn q (h • U) := by
+  rintro _ ⟨a, ha, rfl⟩ _ ⟨b, hb, rfl⟩ hab
+  simp only [hq.map_smul] at hab
+  obtain ⟨k, rfl⟩ := hq.apply_eq_iff_mem_orbit.1 hab
+  obtain rfl := hU k ⟨_, ⟨b, hb, rfl⟩, ha⟩
+  simp
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
@@ -134,10 +145,7 @@ theorem map_riemannianVolume (hq : IsQuotientCoveringMap q G)
   -- open sets `q '' interior (U x)` cover `N`; compare the two measures on each of them.
   choose U hU hUdisj using hq.disjoint
   have hinj (x : M) : InjOn q (U x) := by
-    intro a ha b hb hab
-    obtain ⟨g, rfl⟩ := hq.apply_eq_iff_mem_orbit.1 hab.symm
-    obtain rfl := hUdisj x g ⟨_, ⟨a, ha, rfl⟩, hb⟩
-    simp
+    simpa using hq.injOn_smul_of_disjoint (hUdisj x) 1
   obtain ⟨T, hTc, hcover⟩ := LindelofSpace.elim_nhds_subcover (fun x ↦ interior (U x))
     fun x ↦ interior_mem_nhds.2 (hU x)
   have hopen := hq.isOpenQuotientMap.isOpenMap
@@ -209,12 +217,7 @@ theorem measurePreserving_smul_riemannianVolume (hq : IsQuotientCoveringMap q G)
   refine ⟨hmeas, ?_⟩
   -- `q` is injective on every translate of a neighbourhood `U x` disjoint from its translates.
   choose U hU hUdisj using hq.disjoint
-  have hinj (x : M) (h : G) : InjOn q (h • U x) := by
-    rintro _ ⟨a, ha, rfl⟩ _ ⟨b, hb, rfl⟩ hab
-    simp only [hq.map_smul] at hab
-    obtain ⟨k, rfl⟩ := hq.apply_eq_iff_mem_orbit.1 hab
-    obtain rfl := hUdisj x k ⟨_, ⟨b, hb, rfl⟩, ha⟩
-    simp
+  have hinj (x : M) (h : G) : InjOn q (h • U x) := hq.injOn_smul_of_disjoint (hUdisj x) h
   -- On a measurable set where `q` is injective, its volume is that of its image under `q`.
   have hvol {S : Set M} (hS : MeasurableSet S) (hSinj : InjOn q S) :
       riemannianVolume I M S = riemannianVolume I' N (q '' S) :=
