@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.Normed.Module.Normalize
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import TauCeti.Analysis.Complex.SlitPlane
 
 /-!
 # The argument of a quotient, and rotations onto the nonpositive real axis
@@ -24,7 +26,8 @@ complex number is rotated onto the nonpositive real axis by the square of a unit
 and computes the argument of `-e^{2iφ}` when `φ` is not a multiple of `π`.
 A sector `{|arg ((z - v) / b)| < α}` of half-opening `α`, cut off by a punctured ball about its
 vertex, is the image of an open rectangle in polar coordinates. On the slit plane `|arg z| < π`,
-and the exponential maps the horizontal strip `|im x| < π` into the slit plane. Finally, the
+rotating `z` by `-arg z / 2` lands in the open right half-plane, and the exponential maps the
+horizontal strip `|im x| < π` into the slit plane. Finally, the
 argument is smooth on the slit plane, where its derivative is the imaginary part of that of the
 logarithm, and although it jumps across the negative real axis, a smooth `2π`-periodic function of
 the argument is smooth on the whole punctured plane: near the negative real axis it is computed
@@ -51,7 +54,21 @@ Since the argument is continuous on the slit plane and blind to positive real sc
 * `Complex.arg_neg_exp_of_div_pi_ne`: if `φ / π` is not an integer, then
   `arg (-e^{2iφ}) = 2φ - π - 2π⌊φ / π⌋`.
 * `Complex.inv_exp_arg_mul_le_exp_pi_mul_abs`: `(exp (arg u * r))⁻¹ ≤ exp (π * |r|)`.
-* `Complex.abs_arg_lt_pi_of_mem_slitPlane`: on the slit plane, `|arg z| < π`.
+* `Complex.abs_arg_lt_pi_of_mem_slitPlane`, `Complex.abs_arg_div_two_le_pi_div_two`,
+  `Complex.abs_arg_div_two_lt_pi_div_two`: `|arg z / 2| ≤ π / 2` for every `z`, with strict
+  inequality when `arg z ≠ π` and `|arg z| < π` on `slitPlane`.
+* `Complex.one_add_mul_cos_div_two_le_norm_one_add_ofReal_mul_exp_mul_I`,
+  `Complex.norm_one_add_ofReal_mul_exp_mul_I_le`,
+  `Complex.one_add_ofReal_mul_exp_mul_I_mem_slitPlane`: along polar rays `1 + r e^{iθ}`,
+  the norm lies between `(1 + r) cos (θ / 2)` and `1 + |r|`, and `1 + r e^{iθ} ∈ slitPlane`
+  when `|θ| < π` and `0 ≤ r`.
+* `Complex.re_mul_exp_ofReal_mul_I_eq_norm_mul_cos`,
+  `Complex.re_mul_exp_neg_arg_div_two_mul_I_pos`,
+  `Complex.abs_arg_add_lt_pi_div_two_of_abs_le_of_re_mul_exp_mul_I_pos`,
+  `Complex.mem_slitPlane_of_abs_le_of_re_mul_exp_mul_I_pos`,
+  `Complex.re_mul_exp_mul_I_pos_of_mem_uIcc`: polar formula `(z * e^{iy}).re = ‖z‖ cos (arg z + y)`,
+  bisecting-ray positivity on `slitPlane`, and angular convexity of `{θ | 0 < (z * e^{iθ}).re}`
+  on intervals of length at most `π`.
 * `Complex.exp_mem_slitPlane_of_abs_im_lt`: `exp x` lies in the slit plane when `|im x| < π`.
 * `Complex.contDiffAt_arg`: the argument is smooth on the slit plane.
 * `Complex.tendsto_arg_of_tendsto_ofReal_mul`: if `c x * f x → Q ∈ slitPlane` with `c x > 0`
@@ -137,7 +154,7 @@ theorem exists_norm_eq_one_mul_sq_eq_neg_norm (c : ℂ) :
     ring
   calc c * exp (((π - arg c) / 2 : ℝ) * I) ^ 2
       = ‖c‖ * exp ((arg c : ℂ) * I + 2 * (((π - arg c) / 2 : ℝ) * I)) := by
-        rw [exp_add, ← mul_assoc, norm_mul_exp_arg_mul_I, ← exp_nat_mul]
+        rw [exp_add, ← mul_assoc, norm_mul_exp_arg_mul_I, ← exp_natCast_mul]
         norm_num
     _ = -‖c‖ := by
         rw [h, exp_pi_mul_I]
@@ -181,6 +198,12 @@ theorem exp_arg_mul_I {z : ℂ} (hz : z ≠ 0) : exp (arg z * I) = z / (‖z‖ 
   rw [eq_div_iff (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)), mul_comm]
   exact norm_mul_exp_arg_mul_I z
 
+/-- The unit direction `z / |z|` is homogeneous of degree `0` under positive dilations. -/
+theorem smul_div_norm_smul {t : ℝ} (ht : 0 < t) (z : ℂ) :
+    t • z / (‖t • z‖ : ℂ) = z / (‖z‖ : ℂ) := by
+  simpa [NormedSpace.normalize, real_smul, div_eq_inv_mul] using
+    NormedSpace.normalize_smul_of_pos ht z
+
 /-- The power `(z / |z|)^m` of the unit direction is smooth away from the origin. -/
 theorem contDiffOn_div_norm_pow (m : ℕ) {N : WithTop ℕ∞} :
     ContDiffOn ℝ N (fun z : ℂ ↦ (z / (‖z‖ : ℂ)) ^ m) {0}ᶜ := by
@@ -217,7 +240,109 @@ theorem tendsto_arg_of_tendsto_ofReal_mul {α : Type*} {l : Filter α} {c : α �
     {Q : ℂ} (hQ : Q ∈ slitPlane) (hc : ∀ᶠ x in l, 0 < c x)
     (h : Tendsto (fun x ↦ (c x : ℂ) * f x) l (𝓝 Q)) :
     Tendsto (fun x ↦ arg (f x)) l (𝓝 (arg Q)) :=
-  ((continuousAt_arg hQ).tendsto.comp h).congr' (hc.mono fun _ hx ↦ arg_real_mul _ hx)
+  ((continuousAt_arg hQ).tendsto.comp h).congr' (hc.mono fun _ hx ↦ arg_ofReal_mul hx _)
+
+/-- Rotating `1 + r * exp (θ * I)` by `exp (-(θ / 2) * I)` projects onto the bisecting direction,
+giving `(1 + r) * cos (θ / 2) ≤ ‖1 + r * exp (θ * I)‖` for all real `θ` and `r`. -/
+theorem one_add_mul_cos_div_two_le_norm_one_add_ofReal_mul_exp_mul_I (θ r : ℝ) :
+    (1 + r) * Real.cos (θ / 2) ≤ ‖1 + (r : ℂ) * exp ((θ : ℂ) * I)‖ := by
+  have hrot : (1 + (r : ℂ) * exp ((θ : ℂ) * I)) * exp ((-(θ / 2) : ℝ) * I) =
+      exp ((-(θ / 2) : ℝ) * I) + (r : ℂ) * exp (((θ / 2) : ℝ) * I) := by
+    rw [add_mul, one_mul, mul_assoc, ← exp_add, ← add_mul, ← ofReal_add, ← sub_eq_add_neg, sub_half]
+  have hre : (exp ((-(θ / 2) : ℝ) * I) + (r : ℂ) * exp (((θ / 2) : ℝ) * I)).re =
+      (1 + r) * Real.cos (θ / 2) := by
+    rw [add_re, re_ofReal_mul, exp_ofReal_mul_I_re, exp_ofReal_mul_I_re, Real.cos_neg]; ring
+  exact (hre ▸ re_le_norm _).trans_eq <| by
+    rw [← hrot, norm_mul, norm_exp_ofReal_mul_I, mul_one]
+
+/-- For any real angle `θ` and real scalar `r`, `‖1 + r * exp (θ * I)‖ ≤ 1 + |r|`. -/
+theorem norm_one_add_ofReal_mul_exp_mul_I_le (θ r : ℝ) :
+    ‖1 + (r : ℂ) * exp ((θ : ℂ) * I)‖ ≤ 1 + |r| :=
+  (norm_add_le _ _).trans_eq (by simp [norm_exp_ofReal_mul_I])
+
+/-- Along any ray avoiding the negative real axis (`|θ| < π`, `0 ≤ r`), `1 + r * exp (θ * I)` lies
+in the slit plane. -/
+theorem one_add_ofReal_mul_exp_mul_I_mem_slitPlane {θ r : ℝ} (hθ : |θ| < π) (hr : 0 ≤ r) :
+    1 + (r : ℂ) * exp ((θ : ℂ) * I) ∈ slitPlane := by
+  rcases hr.eq_or_lt with rfl | hr
+  · simp [slitPlane]
+  · simpa using TauCeti.ofReal_add_mem_slitPlane
+      (TauCeti.ofReal_mul_mem_slitPlane hr (exp_mem_slitPlane_of_abs_im_lt (by simpa using hθ)))
+      zero_le_one
+
+/-- Half the principal argument of any complex number lies in `[-π / 2, π / 2]`. -/
+theorem abs_arg_div_two_le_pi_div_two (z : ℂ) : |arg z / 2| ≤ π / 2 := by
+  rw [abs_div, abs_two]
+  exact div_le_div_of_nonneg_right (abs_arg_le_pi z) two_pos.le
+
+/-- Away from the negative real axis (`arg z ≠ π`), half the principal argument lies strictly
+between `-π / 2` and `π / 2`. -/
+theorem abs_arg_div_two_lt_pi_div_two {z : ℂ} (hz : arg z ≠ π) : |arg z / 2| < π / 2 := by
+  rw [abs_div, abs_two, div_lt_div_iff_of_pos_right two_pos]
+  exact abs_lt.2 ⟨neg_pi_lt_arg z, (arg_le_pi z).lt_of_ne hz⟩
+
+/-- In polar coordinates, the real part of `z * exp (y * I)` is `‖z‖ * cos (arg z + y)`. -/
+theorem re_mul_exp_ofReal_mul_I_eq_norm_mul_cos (z : ℂ) (y : ℝ) :
+    (z * exp ((y : ℂ) * I)).re = ‖z‖ * Real.cos (arg z + y) := by
+  nth_rw 1 [(norm_mul_exp_arg_mul_I z).symm]
+  rw [mul_assoc, ← exp_add, ← add_mul, ← ofReal_add, re_ofReal_mul, exp_ofReal_mul_I_re]
+
+/-- Rotating a point `z` of the slit plane by `-arg z / 2` lands in the open right half-plane,
+with real part `‖z‖ * cos (arg z / 2) > 0`. -/
+theorem re_mul_exp_neg_arg_div_two_mul_I_pos {z : ℂ} (hz : z ∈ slitPlane) :
+    0 < (z * exp ((-(arg z / 2) : ℝ) * I)).re := by
+  rw [re_mul_exp_ofReal_mul_I_eq_norm_mul_cos, ← sub_eq_add_neg, sub_half]
+  exact mul_pos (norm_pos_iff.2 (slitPlane_ne_zero hz))
+    (Real.cos_pos_of_mem_Ioo (abs_lt.1 (abs_arg_div_two_lt_pi_div_two (slitPlane_arg_ne_pi hz))))
+
+/-- If `z * exp (θ * I)` has positive real part for some angle `|θ| ≤ π / 2`, then
+`|arg z + θ| < π / 2`. -/
+theorem abs_arg_add_lt_pi_div_two_of_abs_le_of_re_mul_exp_mul_I_pos {z : ℂ} {θ : ℝ}
+    (hθ : |θ| ≤ π / 2) (hre : 0 < (z * exp ((θ : ℂ) * I)).re) :
+    |arg z + θ| < π / 2 := by
+  have hz0 : z ≠ 0 := fun hz => by simp [hz] at hre
+  rw [re_mul_exp_ofReal_mul_I_eq_norm_mul_cos, mul_pos_iff_of_pos_left (norm_pos_iff.2 hz0)]
+    at hre
+  by_contra! hge
+  have hub : |arg z + θ| ≤ 3 * π / 2 :=
+    (abs_add_le _ _).trans (by linarith [abs_arg_le_pi z])
+  have hsin : 0 ≤ Real.sin (|arg z + θ| - π / 2) :=
+    Real.sin_nonneg_of_nonneg_of_le_pi (by linarith) (by linarith)
+  rw [Real.sin_sub_pi_div_two, Real.cos_abs] at hsin
+  linarith
+
+/-- If `z * exp (θ * I)` has positive real part for some angle `|θ| ≤ π / 2`, then `z` lies in the
+slit plane. -/
+theorem mem_slitPlane_of_abs_le_of_re_mul_exp_mul_I_pos {z : ℂ} {θ : ℝ}
+    (hθ : |θ| ≤ π / 2) (hre : 0 < (z * exp ((θ : ℂ) * I)).re) : z ∈ slitPlane := by
+  have hz0 : z ≠ 0 := fun hz => by simp [hz] at hre
+  have hlt := (abs_lt.1 (abs_arg_add_lt_pi_div_two_of_abs_le_of_re_mul_exp_mul_I_pos hθ hre)).2
+  exact mem_slitPlane_iff_arg.2 ⟨by linarith [(abs_le.1 hθ).1], hz0⟩
+
+/-- If `z * exp (θ₁ * I)` and `z * exp (θ₂ * I)` both have positive real part at two angles
+separated by `|θ₁ - θ₂| ≤ π`, then `z * exp (θ * I)` stays in the open right half-plane at every
+intermediate angle `θ ∈ Set.uIcc θ₁ θ₂`. -/
+theorem re_mul_exp_mul_I_pos_of_mem_uIcc {z : ℂ} {θ₁ θ₂ θ : ℝ}
+    (hθ₁₂ : |θ₁ - θ₂| ≤ π) (hre₁ : 0 < (z * exp ((θ₁ : ℂ) * I)).re)
+    (hre₂ : 0 < (z * exp ((θ₂ : ℂ) * I)).re) (hθ : θ ∈ Set.uIcc θ₁ θ₂) :
+    0 < (z * exp ((θ : ℂ) * I)).re := by
+  set m : ℝ := (θ₁ + θ₂) / 2
+  set w : ℂ := z * exp ((m : ℂ) * I)
+  have hshift (y : ℝ) : (w * exp (((y - m : ℝ) : ℂ) * I)).re = (z * exp ((y : ℂ) * I)).re := by
+    dsimp only [w]
+    rw [mul_assoc, ← exp_add, ← add_mul, ← ofReal_add, add_sub_cancel]
+  obtain ⟨h12l, h12r⟩ := abs_le.1 hθ₁₂
+  have hδ₁ : |θ₁ - m| ≤ π / 2 := by rw [abs_le]; dsimp only [m]; constructor <;> linarith
+  have hδ₂ : |θ₂ - m| ≤ π / 2 := by rw [abs_le]; dsimp only [m]; constructor <;> linarith
+  have hre₁' : 0 < (w * exp (((θ₁ - m : ℝ) : ℂ) * I)).re := (hshift θ₁).symm ▸ hre₁
+  have hw0 : w ≠ 0 := fun hw => by simp [hw] at hre₁'
+  obtain ⟨h₁l, h₁r⟩ := abs_lt.1
+    (abs_arg_add_lt_pi_div_two_of_abs_le_of_re_mul_exp_mul_I_pos hδ₁ hre₁')
+  obtain ⟨h₂l, h₂r⟩ := abs_lt.1
+    (abs_arg_add_lt_pi_div_two_of_abs_le_of_re_mul_exp_mul_I_pos hδ₂ ((hshift θ₂).symm ▸ hre₂))
+  rw [← hshift θ, re_mul_exp_ofReal_mul_I_eq_norm_mul_cos]
+  rcases Set.mem_uIcc.1 hθ with ⟨hl, hr⟩ | ⟨hl, hr⟩ <;>
+    exact mul_pos (norm_pos_iff.2 hw0) (Real.cos_pos_of_mem_Ioo ⟨by linarith, by linarith⟩)
 
 end Complex
 

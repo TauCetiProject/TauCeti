@@ -76,7 +76,7 @@ private theorem splittingLift_diagonal (s : (groupExtension A).Splitting) (n : N
   · simp only [splittingLiftHom, MonoidHom.coe_mk, OneHom.coe_mk]
     rw [(splittingLift_spec A s _).2]
     have hn : (QuotientGroup.mk (Subgroup.inclusion (le_inertia A) n) : Quotient A) = 1 :=
-      (QuotientGroup.eq_one_iff _).mpr n.2
+      (QuotientGroup.eq_one_iff _).mpr n.property
     have hd : (QuotientGroup.mk (diagonal A n) : Carrier A) = 1 :=
       (QuotientGroup.eq_one_iff _).mpr ⟨n, rfl⟩
     rw [hn, map_one, hd]
@@ -94,7 +94,7 @@ theorem representationOfSplitting_comp (s : (groupExtension A).Splitting) :
     (representationOfSplitting A s).comp (Subgroup.inclusion (le_inertia A)) = A.ρ := by
   ext n x
   simpa [representationOfSplitting] using
-    congrArg (fun p : implementers A => p.1.2 x) (splittingLift_diagonal A s n)
+    congrArg (fun p : implementers A => p.val.2 x) (splittingLift_diagonal A s n)
 
 private noncomputable def implementerHom (σ : Representation k (inertia A) A)
     (hσ : σ.comp (Subgroup.inclusion (le_inertia A)) = A.ρ) :
@@ -156,19 +156,19 @@ The quotient-class hypothesis pins the pair over the specified inertia element. 
 theorem representationOfSplitting_apply (s : (groupExtension A).Splitting)
     (p : implementers A)
     (hp : (QuotientGroup.mk p : Carrier A) = s (QuotientGroup.mk (projection A p)))
-    (x : A) : representationOfSplitting A s (projection A p) x = p.1.2 x := by
+    (x : A) : representationOfSplitting A s (projection A p) x = p.val.2 x := by
   have he : splittingLiftHom A s (projection A p) = p :=
     implementer_ext A (splittingLift_spec A s _).1
       ((splittingLift_spec A s _).2.trans hp.symm)
-  simpa [representationOfSplitting] using congrArg (fun q : implementers A => q.1.2 x) he
+  simpa [representationOfSplitting] using congrArg (fun q : implementers A => q.val.2 x) he
 
 /-- The splitting associated to an extended action has exactly its operators as representatives. -/
 @[simp]
 theorem mk_eq_splittingOfRepresentation_iff (σ : Representation k (inertia A) A)
     (hσ : σ.comp (Subgroup.inclusion (le_inertia A)) = A.ρ) (p : implementers A) :
     (QuotientGroup.mk p : Carrier A) =
-        splittingOfRepresentation A σ hσ (QuotientGroup.mk p.1.1) ↔
-      ∀ x, p.1.2 x = σ p.1.1 x := by
+        splittingOfRepresentation A σ hσ (QuotientGroup.mk p.val.1) ↔
+      ∀ x, p.val.2 x = σ p.val.1 x := by
   rw [← projection_apply A p]
   have hs : splittingOfRepresentation A σ hσ (QuotientGroup.mk (projection A p)) =
       QuotientGroup.mk (implementerHom A σ hσ (projection A p)) :=
@@ -178,7 +178,7 @@ theorem mk_eq_splittingOfRepresentation_iff (σ : Representation k (inertia A) A
   · intro hc x
     have he : p = implementerHom A σ hσ (projection A p) :=
       implementer_ext A (by simp [implementerHom]) hc
-    simpa [implementerHom] using congrArg (fun q : implementers A => q.1.2 x) he
+    simpa [implementerHom] using congrArg (fun q : implementers A => q.val.2 x) he
   · intro h
     congr 1
     apply Subtype.ext
@@ -228,16 +228,16 @@ its canonical Clifford extension. The underlying vector space and the `N`-action
 noncomputable def extensionSplittingEquiv :
     {σ : Representation k (inertia A) A //
       σ.comp (Subgroup.inclusion (le_inertia A)) = A.ρ} ≃ (groupExtension A).Splitting where
-  toFun σ := splittingOfRepresentation A σ.1 σ.2
+  toFun σ := splittingOfRepresentation A σ.val σ.property
   invFun s := ⟨representationOfSplitting A s, representationOfSplitting_comp A s⟩
-  left_inv σ := Subtype.ext (representationOfSplitting_splittingOfRepresentation A σ.1 σ.2)
+  left_inv σ := Subtype.ext (representationOfSplitting_splittingOfRepresentation A σ.val σ.property)
   right_inv := splittingOfRepresentation_representationOfSplitting A
 
 @[simp]
 theorem extensionSplittingEquiv_apply
     (σ : {σ : Representation k (inertia A) A //
       σ.comp (Subgroup.inclusion (le_inertia A)) = A.ρ}) :
-    extensionSplittingEquiv A σ = splittingOfRepresentation A σ.1 σ.2 := (rfl)
+    extensionSplittingEquiv A σ = splittingOfRepresentation A σ.val σ.property := (rfl)
 
 @[simp]
 theorem extensionSplittingEquiv_symm_apply (s : (groupExtension A).Splitting) :

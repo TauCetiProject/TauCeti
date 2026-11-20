@@ -228,10 +228,9 @@ private def kerCoprodHomToKer :
 /-- The continuous linear identification of `ker D₁` with the kernel of the projection. -/
 def kerEquivKerParameterProj :
     D₁.ker ≃L[𝕜] (parameterProj D₁ D₂).ker :=
-  ContinuousLinearEquiv.equivOfInverse (kerCoprodHomToKer D₁ D₂)
+  ContinuousLinearEquiv.ofContinuousLinearMap (kerCoprodHomToKer D₁ D₂)
     (kerParameterProjInverse D₁ D₂)
-    (fun x => by ext; simp [kerCoprodHomToKer, kerParameterProjInverse])
-    (fun v => by
+    (ContinuousLinearMap.ext fun v => by
       apply Subtype.ext
       apply Subtype.ext
       apply Prod.ext
@@ -240,6 +239,7 @@ def kerEquivKerParameterProj :
           have hv' : parameterProj D₁ D₂ (v : (D₁.coprod D₂).ker) = 0 := v.property
           simpa only [parameterProj_apply] using hv'
         simpa [kerCoprodHomToKer, kerParameterProjInverse] using hv.symm)
+    (ContinuousLinearMap.ext fun x => by ext; simp [kerCoprodHomToKer, kerParameterProjInverse])
 
 /-- The identification of `ker D₁` with the kernel of the projection is `x ↦ (x, 0)`. -/
 @[simp]

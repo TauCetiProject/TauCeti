@@ -108,11 +108,13 @@ the second. -/
 theorem exists_realPlaces_pos_neg (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
     ∃ w₁ w₂ : {w : InfinitePlace K // w.IsReal}, w₁ ≠ w₂ ∧ Finset.univ = {w₁, w₂} ∧
-      0 < embedding_of_isReal w₁.2 (θ : K) ∧ embedding_of_isReal w₂.2 (θ : K) < 0 := by
+      0 < embedding_of_isReal w₁.property (θ : K) ∧ embedding_of_isReal w₂.property (θ : K) < 0
+          := by
   obtain ⟨a, b, hab, hw⟩ := Finset.card_eq_two.mp (nrRealPlaces_eq_two hmin hgen)
-  have hsign := embedding_of_isReal_mul_embedding_of_isReal_eq_neg_one hmin hgen a.2 b.2
+  have hsign := embedding_of_isReal_mul_embedding_of_isReal_eq_neg_one hmin hgen a.property
+      b.property
     (Subtype.coe_injective.ne hab)
-  have ha : embedding_of_isReal a.2 (θ : K) ≠ 0 := fun h => by simp [h] at hsign
+  have ha : embedding_of_isReal a.property (θ : K) ≠ 0 := fun h => by simp [h] at hsign
   rcases lt_or_gt_of_ne ha with ha | ha
   · exact ⟨b, a, hab.symm, by rw [hw, Finset.pair_comm], by nlinarith, ha⟩
   · exact ⟨a, b, hab, hw, ha, by nlinarith⟩

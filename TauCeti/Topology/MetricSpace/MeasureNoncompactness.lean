@@ -20,15 +20,18 @@ infimum; the strict-radius characterization also identifies it with the infimum
 using positive radii and open balls.
 
 The measure vanishes precisely on totally bounded sets, hence on relatively compact
-sets in a complete metric space. Lipschitz maps decrease it by at most their
-Lipschitz constant. For normed groups it is subadditive under set addition and
+sets in a complete metric space. The measure of an image under a Lipschitz map is
+bounded above by the Lipschitz constant times the original measure.
+For normed groups it is subadditive under set addition and
 unchanged by addition of a nonempty totally bounded set. Scalar multiplication
 scales it by the norm of the scalar. These are the set-level
 estimates used in essential spectral radius arguments.
 
 The definition uses Mathlib's `Metric.externalCoveringNumber` and `Metric.IsCover`.
-For the ball-cover convention see H. Hennion, *Quasi-compacité. Cas des noyaux
-lipschitziens et des noyaux markoviens* (1995), §5, Définition 5.1.
+The ball-cover convention and set-level estimates follow H. Hennion, *Quasi-compacité.
+Cas des noyaux lipschitziens et des noyaux markoviens*, Publications mathématiques et
+informatiques de Rennes (1995), fascicule 2, pp. 1–50, §5, Définition 5.1 and Proposition 5.1,
+pp. 19–20. <https://www.numdam.org/item/PSMIR_1995___2_A6_0.pdf>
 -/
 
 public section
@@ -56,15 +59,24 @@ theorem ballMeasureNoncompactness_lt_iff :
 /-- Every finite cover bounds the measure by its radius. -/
 theorem ballMeasureNoncompactness_le_of_isCover {N : Set X} (hN : N.Finite)
     (hs : IsCover r s N) : s.ballMeasureNoncompactness ≤ r :=
-  iInf₂_le r (ne_top_of_le_ne_top (encard_ne_top_iff.mpr hN) hs.externalCoveringNumber_le_encard)
+  iInf₂_le r (externalCoveringNumber_ne_top_iff.mpr ⟨N, hN, hs⟩)
+
+/-- A lower bound on the measure is a lower bound on the radius of every finite external cover. -/
+theorem le_ballMeasureNoncompactness_iff :
+    a ≤ s.ballMeasureNoncompactness ↔
+      ∀ (r : ℝ≥0) (N : Set X), N.Finite → IsCover r s N → a ≤ r := by
+  rw [← not_lt, ballMeasureNoncompactness_lt_iff]
+  constructor
+  · intro h r N hN hc
+    exact not_lt.mp fun hr ↦ h ⟨r, hr, N, hN, hc⟩
+  · rintro h ⟨r, hr, N, hN, hc⟩
+    exact hr.not_ge (h r N hN hc)
 
 /-- The measure is monotone under inclusion. -/
 theorem ballMeasureNoncompactness_mono (hst : s ⊆ t) :
-    s.ballMeasureNoncompactness ≤ t.ballMeasureNoncompactness := by
-  unfold ballMeasureNoncompactness
-  refine le_iInf fun r ↦ le_iInf fun hr ↦ ?_
-  exact iInf₂_le r
-    (ne_top_of_le_ne_top hr (externalCoveringNumber_mono_set hst))
+    s.ballMeasureNoncompactness ≤ t.ballMeasureNoncompactness :=
+  le_ballMeasureNoncompactness_iff.mpr fun _ _ hN hc ↦
+    ballMeasureNoncompactness_le_of_isCover hN (hc.anti hst)
 
 /-- A finite set has zero measure of noncompactness. -/
 @[simp] theorem Finite.ballMeasureNoncompactness_eq_zero (hs : s.Finite) :
@@ -121,14 +133,12 @@ theorem ballMeasureNoncompactness_lt_iff_exists_eball_cover :
 @[simp] theorem ballMeasureNoncompactness_closure :
     (closure s).ballMeasureNoncompactness = s.ballMeasureNoncompactness := by
   refine le_antisymm ?_ (ballMeasureNoncompactness_mono subset_closure)
-  unfold ballMeasureNoncompactness
-  refine le_iInf fun r ↦ le_iInf fun hr ↦ ?_
-  obtain ⟨N, hN, hc⟩ := externalCoveringNumber_ne_top_iff.mp hr
+  refine le_ballMeasureNoncompactness_iff.mpr fun r N hN hc ↦ ?_
   apply ballMeasureNoncompactness_le_of_isCover hN
   rw [isCover_iff_subset_iUnion_closedEBall] at hc ⊢
   exact closure_minimal hc (hN.isClosed_biUnion fun _ _ ↦ isClosed_closedEBall)
 
-/-- A Lipschitz map decreases the measure by at most its Lipschitz constant. -/
+/-- The image under a `K`-Lipschitz map has measure at most `K` times the original measure. -/
 theorem _root_.LipschitzWith.ballMeasureNoncompactness_image_le {K : ℝ≥0} {f : X → Y}
     (hf : LipschitzWith K f) (s : Set X) :
     (f '' s).ballMeasureNoncompactness ≤ K * s.ballMeasureNoncompactness := by
@@ -140,13 +150,11 @@ theorem _root_.LipschitzWith.ballMeasureNoncompactness_image_le {K : ℝ≥0} {f
     apply ballMeasureNoncompactness_le_of_isCover (r := 0) (finite_singleton (f x))
     rintro _ ⟨y, _, rfl⟩
     exact ⟨f x, mem_singleton _, by simpa using hf y x⟩
-  · unfold ballMeasureNoncompactness
-    simp only [ENNReal.mul_iInf_of_ne (by exact_mod_cast hK) ENNReal.coe_ne_top,
-      le_iInf_iff]
-    intro r hr
-    obtain ⟨N, hN, hc⟩ := externalCoveringNumber_ne_top_iff.mp hr
-    simpa only [ballMeasureNoncompactness, ENNReal.coe_mul] using
-      ballMeasureNoncompactness_le_of_isCover (hN.image f) (hc.image_lipschitz hf)
+  · have hK₀ : (K : ℝ≥0∞) ≠ 0 := by exact_mod_cast hK
+    rw [← ENNReal.div_le_iff' hK₀ ENNReal.coe_ne_top, le_ballMeasureNoncompactness_iff]
+    intro r N hN hc
+    rw [ENNReal.div_le_iff' hK₀ ENNReal.coe_ne_top, ← ENNReal.coe_mul]
+    exact ballMeasureNoncompactness_le_of_isCover (hN.image f) (hc.image_lipschitz hf)
 
 /-- Surjective isometries preserve the external ball-cover measure. -/
 @[simp] theorem _root_.IsometryEquiv.ballMeasureNoncompactness_image (e : X ≃ᵢ Y) (s : Set X) :
@@ -182,11 +190,11 @@ variable {E : Type*} [SeminormedAddCommGroup E] {s t : Set E}
 theorem ballMeasureNoncompactness_add_le (s t : Set E) :
     (s + t).ballMeasureNoncompactness ≤
       s.ballMeasureNoncompactness + t.ballMeasureNoncompactness := by
-  simp only [ballMeasureNoncompactness, ENNReal.iInf_add, ENNReal.add_iInf, le_iInf_iff]
-  intro R hR r hr
-  obtain ⟨N, hN, hc⟩ := externalCoveringNumber_ne_top_iff.mp hr
-  obtain ⟨M, hM, hd⟩ := externalCoveringNumber_ne_top_iff.mp hR
-  rw [← ENNReal.coe_add]
+  rw [← tsub_le_iff_right, le_ballMeasureNoncompactness_iff]
+  intro r N hN hc
+  rw [tsub_le_iff_right, ← tsub_le_iff_left, le_ballMeasureNoncompactness_iff]
+  intro R M hM hd
+  rw [tsub_le_iff_left, ← ENNReal.coe_add]
   apply ballMeasureNoncompactness_le_of_isCover (hN.add hM)
   rintro _ ⟨x, hx, y, hy, rfl⟩
   obtain ⟨u, hu, hxu⟩ := hc hx
@@ -195,23 +203,16 @@ theorem ballMeasureNoncompactness_add_le (s t : Set E) :
   exact_mod_cast (dist_add_add_le x y u v).trans
     (add_le_add (by exact_mod_cast hxu) (by exact_mod_cast hyv))
 
-/-- Translation does not affect the measure. -/
-theorem ballMeasureNoncompactness_image_add_right (s : Set E) (x : E) :
-    ((fun y ↦ y + x) '' s).ballMeasureNoncompactness = s.ballMeasureNoncompactness := by
-  apply le_antisymm
-  · simpa using (isometry_add_right x).lipschitzWith.ballMeasureNoncompactness_image_le s
-  · simpa only [image_image, add_neg_cancel_right, image_id', ENNReal.coe_one, one_mul] using
-      (isometry_add_right (-x)).lipschitzWith.ballMeasureNoncompactness_image_le
-        ((fun y ↦ y + x) '' s)
-
-/-- Adding a nonempty totally bounded set leaves the measure unchanged. -/
+/-- Adding a nonempty totally bounded set leaves the measure unchanged.
+In Hennion's Proposition 5.1(v), the proof uses nonemptiness of the added set, though the
+printed statement omits it. -/
 theorem ballMeasureNoncompactness_add_eq_of_totallyBounded (s : Set E)
     (ht : TotallyBounded t) (hne : t.Nonempty) :
     (s + t).ballMeasureNoncompactness = s.ballMeasureNoncompactness := by
   refine le_antisymm ?_ ?_
   · simpa [ht.ballMeasureNoncompactness_eq_zero] using ballMeasureNoncompactness_add_le s t
   · obtain ⟨x, hx⟩ := hne
-    rw [← ballMeasureNoncompactness_image_add_right s x]
+    rw [← (IsometryEquiv.addRight x).ballMeasureNoncompactness_image s]
     exact ballMeasureNoncompactness_mono (by rintro _ ⟨y, hy, rfl⟩; exact add_mem_add hy hx)
 
 /-- Scalar multiplication scales the measure by the norm of the scalar, including at zero. -/
