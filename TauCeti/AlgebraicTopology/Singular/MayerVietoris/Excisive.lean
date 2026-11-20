@@ -105,15 +105,7 @@ theorem quasiIso_chainComplexMap_smallSingularSubcomplex_ι_of_nhds {A B U V : S
   -- terms, hence on the third.
   let sqAB := TopCat.isPushout_toSSet_inter_smallSingularSubcomplex A B
   let sqUV := TopCat.isPushout_toSSet_inter_smallSingularSubcomplex U V
-  let ψ := SSet.mayerVietorisShortComplexMap R sqAB sqUV ht hl hr hb
-  have h₂ : QuasiIso ψ.τ₂ := by
-    rw [SSet.mayerVietorisShortComplexMap_τ₂]
-    exact HomologicalComplex.quasiIso_biprod_map _ _
-  have h₃ : QuasiIso ψ.τ₃ := HomologicalComplex.HomologySequence.quasiIso_τ₃ ψ
-    (SSet.shortExact_mayerVietorisShortComplex R sqAB)
-    (SSet.shortExact_mayerVietorisShortComplex R sqUV)
-    (by rwa [SSet.mayerVietorisShortComplexMap_τ₁]) h₂
-  rw [SSet.mayerVietorisShortComplexMap_τ₃] at h₃
+  have h₃ := SSet.quasiIso_chainComplexMap_of_isPushout R sqAB sqUV ht hl hr hb hAB hA hB
   -- Compose with the small-chain theorem for the open cover by `U` and `V`.
   have hUV' := quasiIso_chainComplexMap_smallSingularSubcomplex_ι R ![U, V] (hU.vecCons hV)
     ((U.iUnion_vecCons_pair V).trans hUV)

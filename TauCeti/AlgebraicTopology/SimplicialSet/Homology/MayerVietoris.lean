@@ -52,6 +52,8 @@ of singular homology for an open cover by two sets is obtained from such a squar
 * `SSet.mayerVietorisShortComplexMap`: the map of Mayer–Vietoris short exact sequences induced by
   a map of pushout squares.
 * `SSet.mayerVietorisδ_naturality`: the connecting morphism is natural in maps of pushout squares.
+* `SSet.quasiIso_chainComplexMap_of_isPushout`: the five lemma for maps of pushout squares; a
+  quasi-isomorphism on chains at three corners is one at the fourth.
 
 ## References
 
@@ -280,5 +282,22 @@ lemma mayerVietorisδ_naturality (sq' : IsPushout t' l' r' b') [Mono t']
       SSet.homologyMap φ₄ R n ≫ mayerVietorisδ R sq' n m h :=
   HomologicalComplex.HomologySequence.δ_naturality
     (mayerVietorisShortComplexMap R sq sq' ht hl hr hb) _ _ n m h
+
+variable {φ₁ φ₂ φ₃ φ₄} in
+include sq in
+/-- **The five lemma for Mayer–Vietoris sequences.** A map of pushout squares of simplicial sets
+whose top maps are monomorphisms, and which is a quasi-isomorphism on chains at the three corners
+other than the pushout, is a quasi-isomorphism on chains at the pushout. -/
+lemma quasiIso_chainComplexMap_of_isPushout (sq' : IsPushout t' l' r' b') [Mono t']
+    (ht : t ≫ φ₂ = φ₁ ≫ t') (hl : l ≫ φ₃ = φ₁ ≫ l') (hr : r ≫ φ₄ = φ₂ ≫ r')
+    (hb : b ≫ φ₄ = φ₃ ≫ b') (h₁ : QuasiIso (chainComplexMap φ₁ R))
+    (h₂ : QuasiIso (chainComplexMap φ₂ R)) (h₃ : QuasiIso (chainComplexMap φ₃ R)) :
+    QuasiIso (chainComplexMap φ₄ R) := by
+  have h := HomologicalComplex.HomologySequence.quasiIso_τ₃
+    (mayerVietorisShortComplexMap R sq sq' ht hl hr hb)
+    (shortExact_mayerVietorisShortComplex R sq) (shortExact_mayerVietorisShortComplex R sq')
+    (by rwa [mayerVietorisShortComplexMap_τ₁])
+    (by rw [mayerVietorisShortComplexMap_τ₂]; exact HomologicalComplex.quasiIso_biprod_map _ _)
+  rwa [mayerVietorisShortComplexMap_τ₃] at h
 
 end SSet
