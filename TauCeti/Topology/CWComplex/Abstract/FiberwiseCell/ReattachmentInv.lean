@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Disk.LinearIsometry
 public import TauCeti.Topology.CWComplex.Abstract.FiberwiseCell.Attachment
+public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
 import TauCeti.Topology.MetricSpace.Isometry.Group
 
 /-!
@@ -26,6 +28,13 @@ The inverse is natural in the parameter space
 (`TauCeti.fiberwiseCellReattachmentInv_comp_fiberwiseCellAttachmentMap`), and, like `E`, it is
 compatible with the comparison maps up to a homotopy over `P` relative to `P × A`
 (`TauCeti.fiberwiseCellReattachmentInvHomotopy`, from `Φ₁ ∘ E⁻¹` to `Φ₀`).
+
+So `E` is a fibre homotopy equivalence over `P`
+(`TauCeti.fiberwiseCellReattachmentFiberHomotopyEquiv`). In particular, two families of cell
+attachments whose characteristic families are homotopic as maps of pairs up to a family of linear
+isometries of the discs, continuous in the operator norm, are fibre homotopy equivalent relative to
+`P × A`, compatibly with their comparison maps
+(`TauCeti.exists_fiberHomotopyEquiv_fiberwiseCellAttachment_of_homotopy`).
 
 ## References
 
@@ -645,6 +654,41 @@ theorem fst_fiberwiseCellReattachmentInvHomotopy (t : I) (y : fiberwiseCellAttac
       fiberwiseCellAttachmentProj α₀ y :=
   fst_fiberwiseCellReattachmentHomotopy _ _ _ _ _ _ _ _ _ _ t y
 
+/-- **The fiberwise reattachment map as a fibre homotopy equivalence over `P`.** When the self-maps
+`h i (p, ·)` of the discs are the linear isometries `e i p`, the fiberwise reattachment map along
+`K` is a fibre homotopy equivalence over `P`, with inverse
+`TauCeti.fiberwiseCellReattachmentInv`. -/
+def fiberwiseCellReattachmentFiberHomotopyEquiv :
+    FiberHomotopyEquiv (fiberwiseCellAttachmentProj α₁).hom
+      (fiberwiseCellAttachmentProj α₀).hom where
+  toFun := (fiberwiseCellReattachment α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K hK).hom
+  invFun := (fiberwiseCellReattachmentInv α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h K hK e he).hom
+  comp_toFun := ContinuousMap.ext fun _ ↦ fiberwiseCellAttachmentProj_fiberwiseCellReattachment ..
+  comp_invFun :=
+    ContinuousMap.ext fun _ ↦ fiberwiseCellAttachmentProj_fiberwiseCellReattachmentInv ..
+  left_inv := by
+    obtain ⟨G, hG⟩ :=
+      exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachmentInv
+        α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K hK e he
+    exact ⟨{ toHomotopy := G.toHomotopy, prop' := fun t ↦ ContinuousMap.ext (hG t) }⟩
+  right_inv := by
+    obtain ⟨G, hG⟩ :=
+      exists_homotopyRel_fiberwiseCellReattachmentInv_comp_fiberwiseCellReattachment
+        α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K hK e he
+    exact ⟨{ toHomotopy := G.toHomotopy, prop' := fun t ↦ ContinuousMap.ext (hG t) }⟩
+
+@[simp]
+theorem fiberwiseCellReattachmentFiberHomotopyEquiv_toFun :
+    (fiberwiseCellReattachmentFiberHomotopyEquiv α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K hK e he).toFun =
+      (fiberwiseCellReattachment α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K hK).hom :=
+  (rfl)
+
+@[simp]
+theorem fiberwiseCellReattachmentFiberHomotopyEquiv_invFun :
+    (fiberwiseCellReattachmentFiberHomotopyEquiv α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K hK e he).invFun =
+      (fiberwiseCellReattachmentInv α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h K hK e he).hom :=
+  (rfl)
+
 section BaseChange
 
 variable {P' : Type u} [TopologicalSpace P'] (g : C(P', P))
@@ -707,5 +751,57 @@ theorem fiberwiseCellReattachmentInvHomotopy_fiberwiseCellAttachmentMap
 end BaseChange
 
 end Inv
+
+section IsometryFamily
+
+variable (α₀ α₁ : ∀ i, C(P × TopCat.diskBoundary.{u} (k i), A))
+  (χ₀ χ₁ : ∀ i, C(P × TopCat.disk.{u} (k i), Y))
+  (hχ₀ : ∀ i p s, χ₀ i (p, TopCat.diskBoundaryInclusion (k i) s) = α₀ i (p, s))
+  (hχ₁ : ∀ i p s, χ₁ i (p, TopCat.diskBoundaryInclusion (k i) s) = α₁ i (p, s))
+  (g : ∀ i, P → EuclideanSpace ℝ (Fin (k i)) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (k i)))
+  (hg : ∀ i, Continuous fun p ↦
+    (g i p : EuclideanSpace ℝ (Fin (k i)) →L[ℝ] EuclideanSpace ℝ (Fin (k i))))
+  (K : ∀ i, (χ₁ i).Homotopy
+    ((χ₀ i).comp (ContinuousMap.fst.prodMk (diskMapFamily (g i) (hg i)))))
+  (hK : ∀ i t p s, K i (t, (p, TopCat.diskBoundaryInclusion (k i) s)) ∈ A)
+
+include hK in
+/-- **Cell attachments with characteristic maps homotopic up to isometries are fibre homotopy
+equivalent.** Let `g i p` be linear isometries of `ℝ^{k i}`, continuous in `p` in the operator
+norm, and let `K i : χ₁ i ≃ χ₀ i ∘ (p, g i p)` be homotopies of families of characteristic maps
+keeping the boundary spheres in `A`. Then there is a fibre homotopy equivalence over `P` from the
+attachment along `α₁` to the attachment along `α₀` which is the identity on `P × A` in both
+directions, whose composite with the comparison map `Φ₀` is homotopic to `Φ₁`, and whose two
+composites are homotopic to the identities, all by homotopies relative to `P × A` which stay over
+`P`. It is the fiberwise reattachment map along `K`, with inverse
+`TauCeti.fiberwiseCellReattachmentInv`. -/
+theorem exists_fiberHomotopyEquiv_fiberwiseCellAttachment_of_homotopy :
+    ∃ Ψ : FiberHomotopyEquiv (fiberwiseCellAttachmentProj α₁).hom
+        (fiberwiseCellAttachmentProj α₀).hom,
+      (∀ x, Ψ.toFun (fiberwiseCellAttachmentIncl α₁ x) = fiberwiseCellAttachmentIncl α₀ x) ∧
+      (∀ x, Ψ.invFun (fiberwiseCellAttachmentIncl α₀ x) = fiberwiseCellAttachmentIncl α₁ x) ∧
+      (∃ G : ((fiberwiseCellComparison α₀ χ₀ hχ₀).hom.comp Ψ.toFun).HomotopyRel
+          (fiberwiseCellComparison α₁ χ₁ hχ₁).hom (range (fiberwiseCellAttachmentIncl α₁)),
+        ∀ t y, (G (t, y)).1 = fiberwiseCellAttachmentProj α₁ y) ∧
+      (∃ G : (Ψ.invFun.comp Ψ.toFun).HomotopyRel (ContinuousMap.id _)
+          (range (fiberwiseCellAttachmentIncl α₁)),
+        ∀ t y, fiberwiseCellAttachmentProj α₁ (G (t, y)) = fiberwiseCellAttachmentProj α₁ y) ∧
+      ∃ G : (Ψ.toFun.comp Ψ.invFun).HomotopyRel (ContinuousMap.id _)
+          (range (fiberwiseCellAttachmentIncl α₀)),
+        ∀ t y, fiberwiseCellAttachmentProj α₀ (G (t, y)) = fiberwiseCellAttachmentProj α₀ y := by
+  have hh (i : ι) := mapsTo_diskMapFamily_range_diskBoundaryInclusion (g i) (hg i)
+  have he (i : ι) (p : P) (w : TopCat.disk.{u} (k i)) :
+      ((diskMapFamily (g i) (hg i) (p, w)).down : EuclideanSpace ℝ (Fin (k i))) = g i p w.down := by
+    rw [diskMapFamily_apply, LinearIsometryEquiv.coe_diskMap_apply_down]
+  -- The forward and backward maps of the equivalence are, by definition, the reattachment map
+  -- along `K` and its inverse.
+  exact ⟨fiberwiseCellReattachmentFiberHomotopyEquiv α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ _ hh K hK g he,
+    fun _ ↦ fiberwiseCellReattachment_fiberwiseCellAttachmentIncl ..,
+    fun _ ↦ fiberwiseCellReattachmentInv_fiberwiseCellAttachmentIncl ..,
+    ⟨fiberwiseCellReattachmentHomotopy .., fun _ _ ↦ fst_fiberwiseCellReattachmentHomotopy ..⟩,
+    exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachmentInv ..,
+    exists_homotopyRel_fiberwiseCellReattachmentInv_comp_fiberwiseCellReattachment ..⟩
+
+end IsometryFamily
 
 end TauCeti

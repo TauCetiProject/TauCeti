@@ -434,7 +434,7 @@ theorem contMDiff_selfDualBundleProj (o : Manifold.Orientation I M (Fin (k + k))
   let := hsd.fiberBundle
   let := hsd.vectorBundle
   intro p
-  refine (hsd.contMDiffAt_totalSpace_mk (contMDiff_selfDualProj_totalSpace o p)
+  refine (hsd.contMDiffAt_totalSpace_mk le_rfl (contMDiff_selfDualProj_totalSpace o p)
     fun q ↦ selfDualProjCLM_mem_selfDualSubspace o hk q.proj q.2).congr_of_eventuallyEq ?_
   exact Eventually.of_forall fun q ↦
     congrArg (TotalSpace.mk q.proj) (Subtype.ext (coe_selfDualProj_apply o hk q.proj q.2))
@@ -452,7 +452,7 @@ theorem contMDiff_antiSelfDualBundleProj (o : Manifold.Orientation I M (Fin (k +
   let := hasd.fiberBundle
   let := hasd.vectorBundle
   intro p
-  refine (hasd.contMDiffAt_totalSpace_mk (contMDiff_antiSelfDualProj_totalSpace o p)
+  refine (hasd.contMDiffAt_totalSpace_mk le_rfl (contMDiff_antiSelfDualProj_totalSpace o p)
     fun q ↦ antiSelfDualProjCLM_mem_antiSelfDualSubspace o hk q.proj q.2).congr_of_eventuallyEq ?_
   exact Eventually.of_forall fun q ↦
     congrArg (TotalSpace.mk q.proj) (Subtype.ext (coe_antiSelfDualProj_apply o hk q.proj q.2))
@@ -689,7 +689,7 @@ theorem contMDiff_section_selfDualSubspace_iff {n : WithTop ℕ∞} [IsManifold 
   let := hsd.vectorBundle
   rw [isSmoothForm_def]
   exact ⟨fun hs ↦ (contMDiff_selfDualSubspace_inclusion o hsd).comp hs,
-    fun hφ x ↦ hsd.contMDiffAt_totalSpace_mk (hφ x) fun y ↦ (s y).2⟩
+    fun hφ x ↦ hsd.contMDiffAt_totalSpace_mk le_rfl (hφ x) fun y ↦ (s y).2⟩
 
 /-- A section `s : ∀ x, antiSelfDualSubspace o x` is `C^n` into the subbundle total space of `Λ⁻`
 if and only if the underlying rough `k`-form `x ↦ (s x : Λᵏ T*_x M)` satisfies
@@ -709,7 +709,7 @@ theorem contMDiff_section_antiSelfDualSubspace_iff {n : WithTop ℕ∞} [IsManif
   let := hasd.vectorBundle
   rw [isSmoothForm_def]
   exact ⟨fun hs ↦ (contMDiff_antiSelfDualSubspace_inclusion o hasd).comp hs,
-    fun hφ x ↦ hasd.contMDiffAt_totalSpace_mk (hφ x) fun y ↦ (s y).2⟩
+    fun hφ x ↦ hasd.contMDiffAt_totalSpace_mk le_rfl (hφ x) fun y ↦ (s y).2⟩
 
 section SmoothInfty
 

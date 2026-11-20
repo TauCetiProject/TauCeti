@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import Mathlib.Probability.IdentDistrib
+public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 public import TauCeti.Probability.Distributions.Poisson.Basic
 
 import TauCeti.Probability.Independence.Basic
@@ -21,9 +22,9 @@ on measurable sets of infinite intensity are almost surely infinite. The sample 
 probability measure remain explicit, and the state space needs only a measurable structure.
 In particular, atomic intensities and multiple occurrences at one location are permitted.
 
-This file provides the defining count API, transfer through equality in distribution, and
-preservation by measurable mapping and restriction. These operations are the elementary ingredients
-of thinning and displacement constructions.
+This file provides the defining count API, transfer through equality in distribution and Markov
+sample-space extensions, and preservation by measurable mapping and restriction. These operations
+are the elementary ingredients of thinning and displacement constructions.
 
 The definition and the mapping and restriction results follow Chapters 3 and 5 of G. Last and
 M. Penrose, *Lectures on the Poisson Process*, Cambridge University Press, 2018.
@@ -118,6 +119,29 @@ theorem IsPoissonRandomMeasure.ae_eq_zero (h : IsPoissonRandomMeasure P N Λ)
   filter_upwards [hz'.ae_eq_of_dirac] with ω hω
   exact measure_mono_null hAB hω
 
+/-- A Poisson random measure with zero intensity is almost surely the zero measure. -/
+theorem IsPoissonRandomMeasure.ae_eq_zero_measure (h : IsPoissonRandomMeasure P N (0 : Measure X)) :
+    ∀ᵐ ω ∂P, N ω = 0 := by
+  filter_upwards [h.ae_eq_zero (A := Set.univ) (by simp)] with ω hω
+  exact Measure.measure_univ_eq_zero.mp hω
+
+/-- A random measure on a probability space has zero Poisson intensity if and only if it is
+measurable and almost surely the zero measure, on an arbitrary measurable state space. -/
+theorem isPoissonRandomMeasure_zero_iff [IsProbabilityMeasure P] :
+    IsPoissonRandomMeasure P N (0 : Measure X) ↔ Measurable N ∧ ∀ᵐ ω ∂P, N ω = 0 := by
+  refine ⟨fun h => ⟨h.measurable, h.ae_eq_zero_measure⟩, ?_⟩
+  rintro ⟨hN, h0⟩
+  refine isPoissonRandomMeasure_iff.mpr ⟨hN, ?_, ?_⟩
+  · intro n A _ _
+    have hzero (i : Fin n) : (fun ω => N ω (A i)) =ᵐ[P] fun _ => (0 : ℝ≥0∞) :=
+      h0.mono fun ω hω => by simp [hω]
+    refine ⟨iIndepFun_of_ae_eq_const_outside_subsingleton (s := ∅) Set.subsingleton_empty
+      (fun i _ => ⟨0, hzero i⟩), fun i => ?_⟩
+    simpa only [FunLike.coe_zero, Pi.zero_apply, ENNReal.toNNReal_zero, poissonMeasure_zero,
+      Measure.map_dirac, Nat.cast_zero] using hasLaw_dirac_of_ae_eq (hzero i)
+  · intro A _ hΛ
+    simp at hΛ
+
 /-- Flooring a finite-intensity count and casting back recovers the count almost surely. -/
 theorem IsPoissonRandomMeasure.ae_natCast_natFloor_eq (h : IsPoissonRandomMeasure P N Λ)
     {A : Set X} (hA : MeasurableSet A) (hfin : Λ A < ∞) :
@@ -203,6 +227,17 @@ theorem IsPoissonRandomMeasure.congr (h : IsPoissonRandomMeasure P N Λ)
     {M : Ω → Measure X} (hM : Measurable M) (hNM : N =ᵐ[P] M) :
     IsPoissonRandomMeasure P M Λ :=
   h.of_identDistrib hM (.of_ae_eq h.measurable.aemeasurable hNM)
+
+/-- Extending the sample space along a Markov kernel `η : Kernel Ω β` preserves the Poisson
+random-measure property of the ground realization `z ↦ N z.1` with the same intensity `Λ`. -/
+theorem IsPoissonRandomMeasure.compProd_fst {β : Type*} [MeasurableSpace β]
+    (h : IsPoissonRandomMeasure P N Λ) (η : Kernel Ω β) [IsMarkovKernel η] :
+    IsPoissonRandomMeasure (P ⊗ₘ η) (fun z ↦ N z.1) Λ := by
+  let := h.isProbabilityMeasure
+  refine h.of_identDistrib (h.measurable.comp measurable_fst)
+    ⟨h.measurable.aemeasurable, (h.measurable.comp measurable_fst).aemeasurable, ?_⟩
+  rw [← Function.comp_def N Prod.fst, ← Measure.map_map h.measurable measurable_fst,
+    ← Measure.fst, Measure.fst_compProd]
 
 /-- Measurable maps send Poisson random measures to Poisson random measures with pushed-forward
 intensity. No finiteness assumption on the preimages beyond the tested count sets is needed. -/

@@ -119,7 +119,7 @@ theorem exists_T_zpow_smul_mk_mem_upperTriangularReps (hn : n ≠ 0) {A : TraceF
     by_cases ha : 0 < A.1 0 0
     · exact ⟨_, by rw [FixedDetMatrices.reduce_of_pos hA ha, smul_mk]⟩
     · exact ⟨_, by rw [FixedDetMatrices.reduce_of_not_pos hA ha, ← smul_mk, ← smul_mk,
-        ← smul_mk, ← mul_smul S S, show S * S = -1 from Subtype.ext S_mul_S_eq, neg_one_smul]⟩
+        ← smul_mk, ← mul_smul S S, S_mul_S_eq, neg_one_smul]⟩
   exact ⟨m, _, FixedDetMatrices.reduce_mem_reps hn A, hm.symm⟩
 
 /-- **Uniqueness of upper-triangular representatives**: if `g : SL(2, ℤ)` moves an element of

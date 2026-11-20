@@ -74,7 +74,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 /-- The integrand of the flux form of the flow of a symplectic vector field `X`, at time `s` of the
 flow: `σ(a X, dψ_s ·)` at `ψ_s x` is `a ι_X σ` at `x`, because the flow preserves the closed form
 `ι_X σ`, whose contraction `σ(X, X)` with `X` vanishes. -/
-private theorem apply_vecCons_smul_mfderiv_flowOf {σ : SmoothTwoForm I M}
+theorem apply_vecCons_smul_mfderiv_flowOf {σ : SmoothTwoForm I M}
     (hX : X ∈ σ.symplecticVectorFields) (hc : IsCompleteVectorField X) (a s : ℝ) (x : M)
     (v : Fin 1 → TangentSpace I x) :
     σ.1 (flowOf X s x) (Matrix.vecCons (a • X (flowOf X s x))

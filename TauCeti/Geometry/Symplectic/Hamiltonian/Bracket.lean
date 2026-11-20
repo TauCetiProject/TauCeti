@@ -38,7 +38,10 @@ For a nondegenerate closed form on a finite-dimensional manifold, where the Pois
 `{f, {g, k}} = {{f, g}, k} - {{f, k}, g}` and the **Jacobi identity**
 `{f, {g, k}} + {g, {k, f}} + {k, {f, g}} = 0` for `C²` functions
 (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_poissonBracket` and
-`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_jacobi`).
+`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_jacobi`). The same identity shows that
+the Hamiltonian vector fields of two functions commute at every point near which the functions
+Poisson-commute
+(`TauCeti.SmoothTwoForm.IsNondegenerate.mlieBracket_hamiltonianVectorField_eq_zero`).
 
 ## References
 
@@ -53,7 +56,7 @@ public section
 noncomputable section
 
 open Bundle VectorField
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -191,6 +194,15 @@ theorem hamiltonianVectorField_poissonBracket (hσ : σ.IsClosed) (hf : ContMDif
     (h.isHamiltonianVectorField_hamiltonianVectorField g) (hf x) (hg x)
     (h.mdifferentiable_hamiltonianVectorField hf x) (h.mdifferentiable_hamiltonianVectorField hg x),
     Pi.neg_apply, SmoothBundleForm.eval₂_neg_left]
+
+/-- **Locally Poisson-commuting functions have commuting Hamiltonian vector fields.** For a
+nondegenerate closed form on a finite-dimensional manifold and `C²` functions `f` and `g` whose
+Poisson bracket vanishes near `x`, the Lie bracket `[X_f, X_g]` vanishes at `x`. -/
+theorem mlieBracket_hamiltonianVectorField_eq_zero (hσ : σ.IsClosed) (hf : ContMDiff I 𝓘(ℝ) 2 f)
+    (hg : ContMDiff I 𝓘(ℝ) 2 g) (hfg : σ.poissonBracket f g =ᶠ[𝓝 x] fun _ ↦ 0) :
+    mlieBracket I (σ.hamiltonianVectorField f) (σ.hamiltonianVectorField g) x = 0 := by
+  have h0 := hamiltonianVectorField_eq_zero_of_eventuallyEq (σ := σ) hfg
+  rwa [h.hamiltonianVectorField_poissonBracket hσ hf hg, Pi.neg_apply, neg_eq_zero] at h0
 
 /-- For a nondegenerate closed form on a finite-dimensional manifold, the Poisson bracket of `C²`
 functions satisfies `{f, {g, k}} = {{f, g}, k} - {{f, k}, g}`. -/

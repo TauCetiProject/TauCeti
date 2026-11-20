@@ -742,6 +742,17 @@ theorem IsLagrangian.isIsotropic {H : AddSubgroup A} (hH : A.IsLagrangian H) :
     A.IsIsotropic H := by
   rw [A.isIsotropic_iff_le_orthogonalComplement, ← hH]
 
+variable {A} in
+/-- A morphism whose image of `H` contains `K` carries every element of `H^⊥` into `K^⊥`. -/
+theorem Hom.map_mem_orthogonalComplement_of_le_map {B : FiniteBilinearModule}
+    (f : Hom A B) {H : AddSubgroup A} {K : AddSubgroup B}
+    (h : K ≤ H.map f.toAddMonoidHom) {x : A} (hx : x ∈ A.orthogonalComplement H) :
+    f x ∈ B.orthogonalComplement K := by
+  rw [B.mem_orthogonalComplement_iff]
+  intro y hy
+  obtain ⟨z, hz, rfl⟩ := h hy
+  exact (f.map_pairing x z).trans ((A.mem_orthogonalComplement_iff H x).mp hx z hz)
+
 /-- An isometry carries orthogonal complements to orthogonal complements. -/
 @[simp]
 theorem Isometry.map_orthogonalComplement {B : FiniteBilinearModule} (f : Isometry A B)
@@ -749,12 +760,14 @@ theorem Isometry.map_orthogonalComplement {B : FiniteBilinearModule} (f : Isomet
     (A.orthogonalComplement H).map f.toAddEquiv =
       B.orthogonalComplement (H.map f.toAddEquiv) := by
   ext y
-  rw [AddSubgroup.mem_map, B.mem_orthogonalComplement_iff]
+  rw [AddSubgroup.mem_map]
   constructor
-  · rintro ⟨x, hx, rfl⟩ w hw
-    obtain ⟨z, hz, rfl⟩ := AddSubgroup.mem_map.mp hw
-    exact (f.map_pairing x z).trans ((A.mem_orthogonalComplement_iff H x).mp hx z hz)
+  · rintro ⟨x, hx, rfl⟩
+    have := f.toHom.map_mem_orthogonalComplement_of_le_map (K := H.map f.toAddEquiv)
+      (by rw [toHom_toAddMonoidHom]) hx
+    rwa [toHom_apply] at this
   · intro hy
+    rw [B.mem_orthogonalComplement_iff] at hy
     refine ⟨f.symm y, ?_, f.apply_symm_apply y⟩
     rw [A.mem_orthogonalComplement_iff]
     intro z hz
@@ -816,8 +829,8 @@ theorem Isometry.map_mem_orthogonalComplement_of_map_eq {B : FiniteBilinearModul
     (f : Isometry A B) {H : AddSubgroup A} {K : AddSubgroup B}
     (h : H.map f.toAddEquiv = K) {x : A} (hx : x ∈ A.orthogonalComplement H) :
     f x ∈ B.orthogonalComplement K := by
-  rw [← h, ← f.map_orthogonalComplement (H := H)]
-  exact AddSubgroup.mem_map_of_mem _ hx
+  rw [← toHom_apply]
+  exact f.toHom.map_mem_orthogonalComplement_of_le_map (by rw [toHom_toAddMonoidHom]; exact h.ge) hx
 
 /-- The image of a subgroup under a morphism of finite bilinear modules is isotropic exactly
 when the subgroup is. -/

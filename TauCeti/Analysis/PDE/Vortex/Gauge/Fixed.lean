@@ -41,7 +41,8 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
 * `gaugeFixedOperator_fun_smul` and `gaugeFixedAdjoint_fun_smul`: the Leibniz rules of `L_x` and
   `L_x*` for a real weight, whose commutators are the principal symbols
   `gaugeFixedOperatorSymbol` and `gaugeFixedAdjointSymbol`; both symbols scale norms by the norm
-  of the covector (`norm_sq_gaugeFixedOperatorSymbol`, `norm_sq_gaugeFixedAdjointSymbol`).
+  of the covector (`norm_sq_gaugeFixedOperatorSymbol`, `norm_sq_gaugeFixedAdjointSymbol`), and the
+  adjoint symbol is minus the transpose of the operator symbol (`inner_gaugeFixedOperatorSymbol`).
 * `gaugeFixedOperator_gaugeFixedAdjoint`: the pointwise Weitzenböck formula for `L_x L_x*` at
   every field, with the vortex defects `equation x` appearing explicitly. In complex notation,
   with `φ = α / 2`, `η = (ξ, ζ)`, `∇ = d + a` and the complex defect `E = ∂bar_a α`, it reads
@@ -190,6 +191,16 @@ theorem gaugeAdjoint_add (x : ℂ → EuclideanSpace ℝ (Fin 4)) {y v : ℂ →
   simp [fderiv_fun_add, hyi, hvi]
   ring
 
+/-- `d₀*` preserves differences of variations whose connection coordinates are differentiable at
+the point; these are the only coordinates it differentiates. -/
+theorem gaugeAdjoint_sub (x : ℂ → EuclideanSpace ℝ (Fin 4)) {y v : ℂ → EuclideanSpace ℝ (Fin 4)}
+    {z : ℂ} (hy₀ : DifferentiableAt ℝ (fun w ↦ y w 0) z)
+    (hy₁ : DifferentiableAt ℝ (fun w ↦ y w 1) z) (hv₀ : DifferentiableAt ℝ (fun w ↦ v w 0) z)
+    (hv₁ : DifferentiableAt ℝ (fun w ↦ v w 1) z) :
+    gaugeAdjoint x (y - v) z = gaugeAdjoint x y z - gaugeAdjoint x v z := by
+  simp [fderiv_fun_sub hy₀ hv₀, fderiv_fun_sub hy₁ hv₁]
+  ring
+
 /-- `d₀*` commutes with real scalar multiplication of variations. -/
 theorem gaugeAdjoint_smul (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (t : ℝ) (z : ℂ) :
     gaugeAdjoint x (t • y) z = t * gaugeAdjoint x y z := by
@@ -232,6 +243,14 @@ theorem gaugeFixedOperator_smul (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (t : 
   fin_cases i
   · simp [-gaugeAdjoint_def, gaugeAdjoint_smul x y t z]
   all_goals simp [hL]
+
+/-- `L_x` preserves differences of variations differentiable at the point. -/
+theorem gaugeFixedOperator_sub (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    {y v : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (hy : DifferentiableAt ℝ y z)
+    (hv : DifferentiableAt ℝ v z) :
+    gaugeFixedOperator x (y - v) z = gaugeFixedOperator x y z - gaugeFixedOperator x v z := by
+  rw [sub_eq_add_neg, ← neg_one_smul ℝ v, gaugeFixedOperator_add x hy (hv.const_smul _),
+    gaugeFixedOperator_smul, neg_one_smul, sub_eq_add_neg]
 
 /-- `L_x` sends the zero variation to zero. -/
 @[simp]
@@ -369,6 +388,13 @@ theorem norm_sq_gaugeFixedAdjointSymbol (d : ℂ →L[ℝ] ℝ)
     Fin.sum_univ_two, coe_orthonormalBasisOneI]
   ring
 
+/-- The adjoint symbol is jointly continuous in the covector and the field value. -/
+theorem continuous_gaugeFixedAdjointSymbol :
+    Continuous fun p : (ℂ →L[ℝ] ℝ) × EuclideanSpace ℝ (Fin 4) ↦
+      gaugeFixedAdjointSymbol p.1 p.2 := by
+  simp_rw [gaugeFixedAdjointSymbol_def]
+  exact (PiLp.continuous_toLp 2 _).comp (by fun_prop)
+
 /-- The adjoint symbol commutes with real scaling of the covector. -/
 @[simp]
 theorem gaugeFixedAdjointSymbol_smul_left (r : ℝ) (d : ℂ →L[ℝ] ℝ)
@@ -465,6 +491,14 @@ theorem gaugeFixedOperatorSymbol_smul_right (d : ℂ →L[ℝ] ℝ) (r : ℝ)
   ext i
   fin_cases i <;> simp <;> ring
 
+/-- The adjoint symbol is minus the transpose of the operator symbol, as the principal symbols of
+a first-order operator and of its formal adjoint are. -/
+theorem inner_gaugeFixedOperatorSymbol (d : ℂ →L[ℝ] ℝ) (v u : EuclideanSpace ℝ (Fin 4)) :
+    ⟪gaugeFixedOperatorSymbol d v, u⟫ = -⟪v, gaugeFixedAdjointSymbol d u⟫ := by
+  simp [gaugeFixedOperatorSymbol_def, gaugeFixedAdjointSymbol_def, PiLp.inner_apply,
+    Fin.sum_univ_four]
+  ring
+
 /-- The Leibniz rule of the gauge-fixed operator for a real weight, with its exact symbol
 commutator. -/
 theorem gaugeFixedOperator_fun_smul (x : ℂ → EuclideanSpace ℝ (Fin 4))
@@ -485,6 +519,23 @@ theorem gaugeFixedOperator_fun_smul (x : ℂ → EuclideanSpace ℝ (Fin 4))
     simp [gaugeFixedOperatorSymbol_def, gaugeFixedOperator_apply_zero,
       gaugeFixedOperator_apply_one, gaugeFixedOperator_apply_two, gaugeFixedOperator_apply_three,
       hd] <;> ring
+
+/-- The infinitesimal gauge action `d₀ f` is differentiable at a point where the phase `f` is
+`C²` and the section coordinates of the field are differentiable. -/
+theorem differentiableAt_gaugeDirection {x : ℂ → EuclideanSpace ℝ (Fin 4)} {f : ℂ → ℝ} {z : ℂ}
+    (hf : ContDiffAt ℝ 2 f z) (hx₂ : DifferentiableAt ℝ (fun w ↦ x w 2) z)
+    (hx₃ : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
+    DifferentiableAt ℝ (gaugeDirection x f) z := by
+  have hdf (v : ℂ) : DifferentiableAt ℝ (fun w ↦ fderiv ℝ f w v) z :=
+    ((hf.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero).clm_apply
+      (differentiableAt_const v)
+  have hf' : DifferentiableAt ℝ f z := hf.differentiableAt two_ne_zero
+  refine differentiableAt_euclidean.2 fun i ↦ ?_
+  fin_cases i
+  · simpa using (hdf 1).neg
+  · simpa using (hdf I).neg
+  · simpa using (hf'.fun_mul hx₃).neg
+  · simpa using hf'.fun_mul hx₂
 
 /-- **The gauge Laplacian**: at every field, `d₀* d₀ f = -Δ f + (|α|² / 4) f`, where
 `|α|² / 4 = p² + q²`. No regularity of the field is needed. -/

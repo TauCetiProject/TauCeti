@@ -194,7 +194,7 @@ theorem mul_smulPath (φ ψ : Γ.Aut) {a b : Γ.V} (p : Γ.Path a b) :
 /-- The translate of a path is reduced exactly when the path is. -/
 @[simp] theorem isReduced_smulPath (φ : Γ.Aut) {a b : Γ.V} (p : Γ.Path a b) :
     Path.IsReduced Γ (φ.smulPath p) ↔ Path.IsReduced Γ p :=
-  Hom.isReduced_mapPath_iff Γ φ.toHom φ.toHom_mapE_injective p
+  Hom.isReduced_mapPath_iff Γ φ.toHom (fun _ _ _ h => φ.toHom_mapE_injective h) p
 
 /-- The translate of a path has the same length as the path. -/
 @[simp] theorem length_smulPath (φ : Γ.Aut) {a b : Γ.V} (p : Γ.Path a b) :

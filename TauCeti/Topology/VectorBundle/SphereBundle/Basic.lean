@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.EulerClass
+public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Basic
 import TauCeti.Topology.Homotopy.DeformationRetract
 import TauCeti.Topology.VectorBundle.Smul
 
@@ -25,8 +26,17 @@ fibres and positive off the zero section (`TauCeti.isFiberGauge_sqrt`), such as 
 a continuous family of positive definite quadratic forms `Q_b`. Its disc bundle `{q ≤ 1}` need not
 be the unit disc bundle of any norm already carried by the fibres: for instance the negative disc
 bundle `{-½ Hess(v, v) ≤ ε}` of a Morse–Bott critical submanifold, where `q v = -Hess(v, v) / (2ε)`
-on the negative normal bundle. The unit sphere bundle projects continuously onto the base
-(`TauCeti.sphereBundleProj`).
+on the negative normal bundle. Each point of `S(E)` gives a unit vector in its fibre
+(`TauCeti.unitSphereOfSphereBundle`), and the unit sphere bundle projects continuously onto the
+base (`TauCeti.sphereBundleProj`).
+
+The unit disc and sphere bundles are closed in the total space (`TauCeti.isClosed_discBundle`,
+`TauCeti.isClosed_sphereBundle`). For a finite-rank bundle whose fibres carry inner products, the
+projection of the disc bundle onto the base is proper (`TauCeti.isProperMap_discBundle_proj`):
+every vector of norm at most one is an orthonormal frame applied to a vector of the unit ball, and
+the orthonormal frame bundle is proper over the base. So the projection to the base of a closed
+part of the disc bundle is closed (`TauCeti.isClosed_image_proj_of_subset_discBundle`), and the
+unit disc of each fibre is compact (`TauCeti.isCompact_discBundle_inter_proj_preimage_singleton`).
 
 Radial rescaling compares a gauge disc-sphere pair with the Thom pair `(E, E₀)` of the bundle,
 where `E₀` is the complement of the zero section:
@@ -48,7 +58,12 @@ every degree (`TauCeti.isIso_singularHomologyMap_gaugeDiscSpherePairMap` and
 So Thom classes may be read on any gauge disc-sphere pair, and the cohomology of the deleted total
 space `E₀` in the long exact sequence of the Thom pair is that of the sphere bundle, as in the
 Gysin sequence. No orientation, finite-dimensionality, norm on the fibres or condition on the base
-is needed. The rank zero case is included: there `S_ρ(E)` and `E₀` are empty and `D_ρ(E) = E`.
+is needed. The rank zero case is included: there `S_ρ(E)` (and in particular `S(E)`, via
+`TauCeti.isEmpty_sphereBundle_of_subsingleton`) and `E₀` are empty and `D_ρ(E) = E`.
+
+The disc bundle of a fibre gauge also contracts radially onto the zero section, so its projection
+to the base is a homotopy equivalence with homotopy inverse the zero section
+(`TauCeti.gaugeDiscBundleProjHomotopyEquiv`).
 
 ## References
 
@@ -62,7 +77,7 @@ public section
 
 noncomputable section
 
-open Bundle CategoryTheory Limits Set
+open Bundle CategoryTheory Limits Metric Set
 open scoped unitInterval ContinuousMap
 
 universe w v u
@@ -119,7 +134,7 @@ def discBundle : Set (TotalSpace F E) :=
 
 /-- The unit sphere bundle `S(E)` of a bundle with normed fibres: the vectors of norm one, the
 sphere bundle of the fibre norm. -/
-def sphereBundle : Set (TotalSpace F E) :=
+@[expose] def sphereBundle : Set (TotalSpace F E) :=
   gaugeSphereBundle fun v : TotalSpace F E ↦ ‖v.2‖
 
 variable {F E} in
@@ -141,6 +156,17 @@ variable {F E} in
 @[simp]
 theorem mem_sphereBundle {v : TotalSpace F E} : v ∈ sphereBundle F E ↔ ‖v.2‖ = 1 :=
   Iff.rfl
+
+variable {F E} in
+/-- The vectors of norm less than one miss the sphere bundle. -/
+theorem disjoint_norm_lt_one_sphereBundle :
+    Disjoint {v : TotalSpace F E | ‖v.2‖ < 1} (sphereBundle F E) :=
+  Set.disjoint_left.2 fun _ hv hv' ↦ (mem_ofPred_eq ▸ hv).ne (mem_sphereBundle.1 hv')
+
+variable {F E} in
+/-- A point `q : S(E)` viewed as a unit vector in the fibre `E q.1.proj`. -/
+abbrev unitSphereOfSphereBundle (q : sphereBundle F E) : sphere (0 : E q.1.proj) 1 :=
+  ⟨q.1.2, mem_sphere_zero_iff_norm.2 (mem_sphereBundle.1 q.2)⟩
 
 variable {F E} [TopologicalSpace (TotalSpace F E)]
 
@@ -241,6 +267,28 @@ theorem isFiberGauge_norm {B : Type w} {F : Type*} {E : B → Type w}
   smul_of_nonneg ht v := by simp [norm_smul, Real.norm_eq_abs, abs_of_nonneg ht]
   pos hv := norm_pos_iff.2 hv
 
+section Subsingleton
+
+variable {B : Type w} [TopologicalSpace B] {F : Type*} [TopologicalSpace F] [Subsingleton F]
+  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, NormedAddCommGroup (E b)]
+  [FiberBundle F E]
+
+/-- When the model fibre is a subsingleton, the unit sphere bundle is empty: every fibre is
+homeomorphic to `F` and hence a subsingleton, so no vector has norm `1`. -/
+theorem sphereBundle_eq_empty_of_subsingleton : sphereBundle F E = ∅ :=
+  eq_empty_iff_forall_notMem.2 fun v hv ↦ by
+    have : Subsingleton (E v.proj) :=
+      (FiberBundle.homeomorphAt F E v.proj).toEquiv.subsingleton
+    exact one_ne_zero ((mem_sphereBundle.1 hv).symm.trans
+      (by rw [Subsingleton.elim v.2 0, norm_zero]))
+
+/-- When the model fibre is a subsingleton, the unit sphere bundle is empty. -/
+instance isEmpty_sphereBundle_of_subsingleton : IsEmpty (sphereBundle F E) := by
+  rw [sphereBundle_eq_empty_of_subsingleton]
+  infer_instance
+
+end Subsingleton
+
 section Proj
 
 variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F]
@@ -256,7 +304,116 @@ theorem sphereBundleProj_apply (v : sphereBundle F E) :
     sphereBundleProj F E v = (v : TotalSpace F E).proj :=
   (rfl)
 
+/-- The inclusion `S(E_b) → S(E)` of the unit sphere of the fibre over `b` into the unit sphere
+bundle. -/
+def sphereBundleFiberIncl (b : B) : C(Metric.sphere (0 : E b) 1, sphereBundle F E) where
+  toFun x := ⟨⟨b, x⟩, mem_sphereBundle.2 (mem_sphere_zero_iff_norm.1 x.2)⟩
+  continuous_toFun :=
+    ((FiberBundle.continuous_totalSpaceMk F E b).comp continuous_subtype_val).subtype_mk _
+
+@[simp]
+theorem coe_sphereBundleFiberIncl_apply (b : B) (x : Metric.sphere (0 : E b) 1) :
+    (sphereBundleFiberIncl F E b x : TotalSpace F E) = ⟨b, x⟩ :=
+  (rfl)
+
+/-- The sphere of the fibre over `b` lies over `b`. -/
+theorem sphereBundleProj_sphereBundleFiberIncl (b : B) (x : Metric.sphere (0 : E b) 1) :
+    sphereBundleProj F E (sphereBundleFiberIncl F E b x) = b :=
+  (rfl)
+
+/-- The sphere of the fibre over `b` is exactly the fibre over `b` of the sphere bundle. -/
+theorem range_sphereBundleFiberIncl (b : B) :
+    range (sphereBundleFiberIncl F E b) = sphereBundleProj F E ⁻¹' {b} := by
+  refine Subset.antisymm (range_subset_iff.2 fun x ↦ rfl) fun v hv ↦ ?_
+  obtain ⟨⟨b', x⟩, hx⟩ := v
+  obtain rfl : b' = b := hv
+  exact ⟨⟨x, mem_sphere_zero_iff_norm.2 hx⟩, rfl⟩
+
+/-- The inclusion of the sphere of the fibre over `b` into the sphere bundle is an embedding. -/
+theorem isEmbedding_sphereBundleFiberIncl (b : B) :
+    Topology.IsEmbedding (sphereBundleFiberIncl F E b) :=
+  ⟨.of_comp (sphereBundleFiberIncl F E b).continuous continuous_subtype_val
+      ((FiberBundle.totalSpaceMk_isInducing F E b).comp .subtypeVal),
+    fun _ _ h ↦ Subtype.ext (TotalSpace.mk_inj.1 (congrArg Subtype.val h))⟩
+
 end Proj
+
+section Closed
+
+variable {B : Type w} (F : Type*) (E : B → Type w)
+  [∀ b, NormedAddCommGroup (E b)] [TopologicalSpace (TotalSpace F E)] [ContinuousFiberNorm F E]
+
+/-- The unit disc bundle is closed in the total space when the fibre norm is continuous. -/
+theorem isClosed_discBundle : IsClosed (discBundle F E) :=
+  isClosed_le ContinuousFiberNorm.continuous_norm continuous_const
+
+/-- The unit sphere bundle is closed in the total space when the fibre norm is continuous. -/
+theorem isClosed_sphereBundle : IsClosed (sphereBundle F E) :=
+  isClosed_eq ContinuousFiberNorm.continuous_norm continuous_const
+
+end Closed
+
+section Proper
+
+variable (𝕜 : Type*) [RCLike 𝕜] {B : Type w} [TopologicalSpace B] (F : Type*)
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F] (E : B → Type w)
+  [∀ b, NormedAddCommGroup (E b)] [∀ b, InnerProductSpace 𝕜 (E b)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle 𝕜 F E]
+  [ContinuousFiberNorm F E]
+
+include 𝕜
+
+/-- **The disc bundle is proper over the base.** For a finite-rank real or complex vector bundle
+whose fibres carry inner products with norm continuous on the total space, the projection of the
+unit disc bundle `D(E)` onto the base is a proper map. In particular it is a closed map, and the
+unit disc of each fibre is compact. -/
+theorem isProperMap_discBundle_proj :
+    IsProperMap fun v : discBundle F E ↦ (v : TotalSpace F E).proj := by
+  let V := EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 F))
+  have hV : Module.finrank 𝕜 V = Module.finrank 𝕜 F := finrank_euclideanSpace_fin
+  have : CompactSpace (Metric.closedBall (0 : V) 1) :=
+    isCompact_iff_compactSpace.1 (isCompact_closedBall 0 1)
+  -- The disc bundle is the image of the orthonormal frames paired with the unit ball of `V`, over
+  -- which the projection is proper.
+  let ev : OrthonormalFrameBundle 𝕜 F E V × Metric.closedBall (0 : V) 1 → discBundle F E :=
+    fun q ↦ ⟨⟨q.1.proj, q.1.frame q.2⟩,
+      mem_discBundle.2 ((q.1.frame.norm_map _).trans_le (mem_closedBall_zero_iff.1 q.2.2))⟩
+  refine isProperMap_of_comp_of_surj (f := ev)
+    ((OrthonormalFrameBundle.continuous_totalSpaceMk_frame_apply.comp
+      (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).subtype_mk _)
+    ((FiberBundle.continuous_proj F E).comp continuous_subtype_val)
+    (OrthonormalFrameBundle.isProperMap_proj.comp isProperMap_fst_of_compactSpace) ?_
+  -- Every vector of norm at most one is an orthonormal frame applied to a vector of norm at most
+  -- one.
+  rintro ⟨⟨b, v⟩, hv⟩
+  let φ := (trivializationAt F E b).orthonormalFrame (Module.finBasisOfFinrankEq 𝕜 F hV.symm)
+    (stdOrthonormalBasis 𝕜 V) ⟨b, mem_baseSet_trivializationAt F E b⟩
+  exact ⟨(⟨b, φ⟩, ⟨φ.symm v, by simpa using hv⟩), by simp [ev]⟩
+
+variable {F E} in
+/-- The projection to the base of a closed subset of the disc bundle is closed. -/
+theorem isClosed_image_proj_of_subset_discBundle {S : Set (TotalSpace F E)}
+    (hS : IsClosed S) (hSD : S ⊆ discBundle F E) : IsClosed (TotalSpace.proj '' S) := by
+  have h := (isProperMap_discBundle_proj 𝕜 F E).isClosedMap _ (hS.preimage continuous_subtype_val)
+  convert h using 1
+  ext b
+  simp only [mem_image, mem_preimage, Subtype.exists, exists_and_left, exists_prop]
+  exact ⟨fun ⟨v, hv, hvb⟩ ↦ ⟨v, hv, hSD hv, hvb⟩, fun ⟨v, hv, _, hvb⟩ ↦ ⟨v, hv, hvb⟩⟩
+
+/-- The unit disc of each fibre is compact. -/
+theorem isCompact_discBundle_inter_proj_preimage_singleton (b : B) :
+    IsCompact (discBundle F E ∩ TotalSpace.proj ⁻¹' {b}) := by
+  have h := ((isProperMap_discBundle_proj 𝕜 F E).isCompact_preimage
+    (isCompact_singleton (x := b))).image continuous_subtype_val
+  convert h using 1
+  ext v
+  simp only [mem_inter_iff, mem_preimage, mem_image, Subtype.exists, exists_and_right,
+    exists_eq_right]
+  exact ⟨fun ⟨hv, hvb⟩ ↦ ⟨hv, hvb⟩, fun ⟨hv, hvb⟩ ↦ ⟨hv, hvb⟩⟩
+
+end Proper
+
+section GaugePair
 
 variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type w} [∀ b, AddCommGroup (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)]
@@ -388,5 +545,75 @@ theorem isIso_singularHomologyMap_gaugeDiscSpherePairMap
     IsIso (TopPair.singularHomologyMap (gaugeDiscSpherePairMap hρ) R n) :=
   TopPair.isIso_singularHomologyMap_of_homotopyEquiv _ _ _ (gaugeDiscSpherePairMap_fst hρ)
     (gaugeDiscSpherePairMap_snd hρ) R n
+
+/-! ### The disc bundle and the base -/
+
+/-- The zero section, as a map into the disc bundle of a fibre gauge. -/
+private def zeroSectionGaugeDisc : C(B, gaugeDiscBundle ρ) :=
+  ⟨fun b ↦ ⟨zeroSection F E b, (hρ.eq_zero_of_snd_eq_zero rfl).trans_le zero_le_one⟩,
+    (Trivialization.continuous_zeroSection ℝ).subtype_mk _⟩
+
+/-- The projection of the disc bundle of a fibre gauge. -/
+private def gaugeDiscProjMap : C(gaugeDiscBundle ρ, B) :=
+  ⟨fun v ↦ (v : TotalSpace F E).proj, (FiberBundle.continuous_proj F E).comp continuous_subtype_val⟩
+
+/-- The radial contraction `(t, v) ↦ t • v` of the disc bundle of a fibre gauge onto the zero
+section. -/
+private def gaugeDiscBundleContraction :
+    ContinuousMap.Homotopy ((zeroSectionGaugeDisc hρ).comp gaugeDiscProjMap)
+      (ContinuousMap.id (gaugeDiscBundle ρ)) where
+  toFun p := ⟨TotalSpace.mk' F (p.2 : TotalSpace F E).proj ((p.1 : ℝ) • (p.2 : TotalSpace F E).2),
+    by
+      rw [mem_gaugeDiscBundle, hρ.smul_of_nonneg p.1.2.1]
+      exact (mul_le_of_le_one_left (hρ.nonneg _) p.1.2.2).trans (mem_gaugeDiscBundle.1 p.2.2)⟩
+  continuous_toFun := by
+    refine Continuous.subtype_mk ?_ _
+    exact (continuous_subtype_val.comp continuous_fst).smul_totalSpace
+      (continuous_subtype_val.comp continuous_snd)
+  map_zero_left v := by
+    ext : 1
+    simp [zeroSectionGaugeDisc, gaugeDiscProjMap, zeroSection]
+  map_one_left v := by
+    ext : 1
+    simp
+
+/-- **The disc bundle of a fibre gauge is homotopy equivalent to the base**: its projection is a
+homotopy equivalence, with homotopy inverse the zero section. -/
+def gaugeDiscBundleProjHomotopyEquiv : gaugeDiscBundle ρ ≃ₕ B where
+  toFun := gaugeDiscProjMap
+  invFun := zeroSectionGaugeDisc hρ
+  left_inv := ⟨gaugeDiscBundleContraction hρ⟩
+  right_inv := by
+    have h : gaugeDiscProjMap.comp (zeroSectionGaugeDisc hρ) = ContinuousMap.id B := by
+      ext
+      rfl
+    rw [h]
+
+@[simp]
+theorem gaugeDiscBundleProjHomotopyEquiv_apply (v : gaugeDiscBundle ρ) :
+    gaugeDiscBundleProjHomotopyEquiv hρ v = (v : TotalSpace F E).proj :=
+  (rfl)
+
+/-- The homotopy inverse of `D_ρ(E) ≃ₕ B` is the zero section. -/
+@[simp]
+theorem coe_gaugeDiscBundleProjHomotopyEquiv_symm_apply (b : B) :
+    ((gaugeDiscBundleProjHomotopyEquiv hρ).symm b : TotalSpace F E) = zeroSection F E b :=
+  (rfl)
+
+end GaugePair
+
+/-- For the fibre norm, the projection `D(E) → B` restricts on `S(E)` to the projection of the
+sphere bundle. -/
+@[reassoc]
+theorem gaugeDiscSpherePair_map_comp_gaugeDiscBundleProjHomotopyEquiv_norm {B : Type w}
+    [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {E : B → Type w}
+    [∀ b, NormedAddCommGroup (E b)] [∀ b, NormedSpace ℝ (E b)] [TopologicalSpace (TotalSpace F E)]
+    [FiberBundle F E] [VectorBundle ℝ F E] (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
+    (gaugeDiscSpherePair fun v : TotalSpace F E ↦ ‖v.2‖).map ≫
+        TopCat.ofHom (gaugeDiscBundleProjHomotopyEquiv (isFiberGauge_norm hnorm)).toFun =
+      TopCat.ofHom (sphereBundleProj F E) := by
+  ext v
+  exact (gaugeDiscBundleProjHomotopyEquiv_apply (isFiberGauge_norm hnorm) _).trans
+    (sphereBundleProj_apply F E v).symm
 
 end TauCeti

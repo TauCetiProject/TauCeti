@@ -182,17 +182,8 @@ private lemma isZero_singularHomology_cylinderBottom (n : ℕ) :
     intro τ p hp
     rw [mem_cylinderBottom] at hp ⊢
     exact (congrArg (σ τ * ·) hp).trans (mul_zero _)
-  let g : TopCat.of (X × I) ⟶
-      (TopPair.ofSubset (X := TopCat.of (X × I)) (cylinderBottom X)).snd :=
-    TopCat.ofHom ⟨fun p ↦ ⟨(p.1, 0), (mem_cylinderBottom X).2 rfl⟩, by fun_prop⟩
-  have hc : Set.MapsTo c (cylinderBottom X) (cylinderBottom X) := fun p _ ↦
-    (mem_cylinderBottom X).2 rfl
-  have H : TopPair.Homotopy (𝟙 _) (TopPair.ofSubsetMap c hc) := by
-    rw [← TopPair.ofSubsetMap_id (X := TopCat.of (X × I)) (B := cylinderBottom X) fun _ hx ↦ hx]
-    exact TopPair.ofSubsetHomotopy F hF
-  -- By construction, `g` followed by the inclusion of the bottom end is the collapse `c`.
-  exact TopPair.isZero_singularHomology_of_homotopy H g
-    ((rfl : g ≫ _ = c).trans (TopPair.ofSubsetMap_fst _ _).symm) R n
+  exact TopPair.isZero_singularHomology_ofSubset_of_homotopy F hF
+    (fun _ ↦ (mem_cylinderBottom X).2 rfl) R n
 
 /-- The pair `(X × I, X × {0})` as a subset pair maps isomorphically onto the total pair of
 `cylinderTriple X`. -/

@@ -511,6 +511,45 @@ private theorem taylor_comp_apply (ℋ : AInfinityFunctor 𝒟 𝒦)
     rw [AInfinityHom.taylor_comp, taylor_inducedHom, 𝒢.toAInfinityHom.barMap_eq_coalgHom]
   exact LinearMap.congr_fun h x
 
+/-- The two ways of computing the Taylor map of a composite along `F` agree after applying
+`totalHomMap` on composable words. -/
+private theorem totalHomMap_comp_inducedTaylor {B : Type u₀} (F : B → C)
+    (ℋ : AInfinityFunctor 𝒟 𝒦) (X Y : InducedQuiver C F)
+    (w : ReducedTensorWords R (TotalHom R (InducedQuiver C F)))
+    (hw : w ∈ composableWords R X Y) :
+    totalHomMap R (ℋ.obj ∘ (𝒢.obj ∘ F))
+        ((inducedTaylor ℋ (𝒢.obj ∘ F) ∘ₗ coalgHom R (inducedTaylor 𝒢 F)) w) =
+      totalHomMap R (ℋ.comp 𝒢).obj ((ℋ.comp 𝒢).toAInfinityHom.taylor
+        (ReducedTensorWords.map (R := R) (totalHomMap R F) w)) := by
+  have hφw : ReducedTensorWords.map (R := R) (totalHomMap R F) w ∈
+      composableWords R (F X.obj) (F Y.obj) :=
+    map_mem_composableWords
+      (fun X Y f ↦ by rw [totalHomMap_homInclusion]; exact LinearMap.mem_range_self _ _) hw
+  have e₁ : totalHomMap R (ℋ.obj ∘ (𝒢.obj ∘ F))
+        ((inducedTaylor ℋ (𝒢.obj ∘ F) ∘ₗ coalgHom R (inducedTaylor 𝒢 F)) w) =
+      (totalHomMap R ℋ.obj ∘ₗ ℋ.toAInfinityHom.taylor) (coalgHom R
+        (totalHomMap R 𝒢.obj ∘ₗ 𝒢.toAInfinityHom.taylor)
+          (ReducedTensorWords.map (R := R) (totalHomMap R F) w)) := by
+    rw [LinearMap.comp_apply, ℋ.totalHomMap_inducedTaylor (𝒢.obj ∘ F)
+        ((𝒢.isWordPathCompatible_inducedTaylor F).coalgHom_mem_composableWords hw),
+      map_coalgHom_of_mem_composableWords (fun X Y v hv ↦ 𝒢.totalHomMap_inducedTaylor F hv) hw]
+  have e₂ : totalHomMap R (ℋ.obj ∘ 𝒢.obj) (inducedTaylor ℋ 𝒢.obj
+        (coalgHom R 𝒢.toAInfinityHom.taylor
+          (ReducedTensorWords.map (R := R) (totalHomMap R F) w))) =
+      (totalHomMap R ℋ.obj ∘ₗ ℋ.toAInfinityHom.taylor) (coalgHom R
+        (totalHomMap R 𝒢.obj ∘ₗ 𝒢.toAInfinityHom.taylor)
+          (ReducedTensorWords.map (R := R) (totalHomMap R F) w)) := by
+    rw [ℋ.totalHomMap_inducedTaylor 𝒢.obj
+        (𝒢.isWordPathCompatible_taylor.coalgHom_mem_composableWords hφw),
+      ← LinearMap.comp_apply (ReducedTensorWords.map (R := R) _), map_comp_coalgHom]
+  have e₃ : totalHomMap R (ℋ.comp 𝒢).obj ((ℋ.comp 𝒢).toAInfinityHom.taylor
+        (ReducedTensorWords.map (R := R) (totalHomMap R F) w)) =
+      totalHomMap R (ℋ.obj ∘ 𝒢.obj) (inducedTaylor ℋ 𝒢.obj
+        (coalgHom R 𝒢.toAInfinityHom.taylor
+          (ReducedTensorWords.map (R := R) (totalHomMap R F) w))) :=
+    congrArg (totalHomMap R (ℋ.comp 𝒢).obj) (taylor_comp_apply 𝒢 ℋ _)
+  exact e₁.trans (e₂.symm.trans e₃.symm)
+
 /-- **The morphism induced by a composite of `A∞` functors** `ℋ ∘ 𝒢` along `F` is the morphism
 induced by `𝒢` along `F` followed by the morphism induced by `ℋ` along `𝒢.obj ∘ F`. -/
 theorem inducedHom_comp {B : Type u₀} (F : B → C) (ℋ : AInfinityFunctor 𝒟 𝒦) :
@@ -521,40 +560,7 @@ theorem inducedHom_comp {B : Type u₀} (F : B → C) (ℋ : AInfinityFunctor �
     (ℋ.isWordPathCompatible_inducedTaylor (𝒢.obj ∘ F)).comp_coalgHom
       (𝒢.isWordPathCompatible_inducedTaylor F)
       fun X Y h ↦ InducedQuiver.ext (congrArg (fun Z : InducedQuiver D (𝒢.obj ∘ F) ↦ Z.obj) h)
-  have h (X Y : InducedQuiver C F) (w : ReducedTensorWords R (TotalHom R (InducedQuiver C F)))
-      (hw : w ∈ composableWords R X Y) :
-      totalHomMap R (ℋ.obj ∘ (𝒢.obj ∘ F))
-          ((inducedTaylor ℋ (𝒢.obj ∘ F) ∘ₗ coalgHom R (inducedTaylor 𝒢 F)) w) =
-        totalHomMap R (ℋ.comp 𝒢).obj ((ℋ.comp 𝒢).toAInfinityHom.taylor
-          (ReducedTensorWords.map (R := R) (totalHomMap R F) w)) := by
-    have hφw : ReducedTensorWords.map (R := R) (totalHomMap R F) w ∈
-        composableWords R (F X.obj) (F Y.obj) :=
-      map_mem_composableWords
-        (fun X Y f ↦ by rw [totalHomMap_homInclusion]; exact LinearMap.mem_range_self _ _) hw
-    have e₁ : totalHomMap R (ℋ.obj ∘ (𝒢.obj ∘ F))
-          ((inducedTaylor ℋ (𝒢.obj ∘ F) ∘ₗ coalgHom R (inducedTaylor 𝒢 F)) w) =
-        (totalHomMap R ℋ.obj ∘ₗ ℋ.toAInfinityHom.taylor) (coalgHom R
-          (totalHomMap R 𝒢.obj ∘ₗ 𝒢.toAInfinityHom.taylor)
-            (ReducedTensorWords.map (R := R) (totalHomMap R F) w)) := by
-      rw [LinearMap.comp_apply, ℋ.totalHomMap_inducedTaylor (𝒢.obj ∘ F)
-          ((𝒢.isWordPathCompatible_inducedTaylor F).coalgHom_mem_composableWords hw),
-        map_coalgHom_of_mem_composableWords (fun X Y v hv ↦ 𝒢.totalHomMap_inducedTaylor F hv) hw]
-    have e₂ : totalHomMap R (ℋ.obj ∘ 𝒢.obj) (inducedTaylor ℋ 𝒢.obj
-          (coalgHom R 𝒢.toAInfinityHom.taylor
-            (ReducedTensorWords.map (R := R) (totalHomMap R F) w))) =
-        (totalHomMap R ℋ.obj ∘ₗ ℋ.toAInfinityHom.taylor) (coalgHom R
-          (totalHomMap R 𝒢.obj ∘ₗ 𝒢.toAInfinityHom.taylor)
-            (ReducedTensorWords.map (R := R) (totalHomMap R F) w)) := by
-      rw [ℋ.totalHomMap_inducedTaylor 𝒢.obj
-          (𝒢.isWordPathCompatible_taylor.coalgHom_mem_composableWords hφw),
-        ← LinearMap.comp_apply (ReducedTensorWords.map (R := R) _), map_comp_coalgHom]
-    have e₃ : totalHomMap R (ℋ.comp 𝒢).obj ((ℋ.comp 𝒢).toAInfinityHom.taylor
-          (ReducedTensorWords.map (R := R) (totalHomMap R F) w)) =
-        totalHomMap R (ℋ.obj ∘ 𝒢.obj) (inducedTaylor ℋ 𝒢.obj
-          (coalgHom R 𝒢.toAInfinityHom.taylor
-            (ReducedTensorWords.map (R := R) (totalHomMap R F) w))) :=
-      congrArg (totalHomMap R (ℋ.comp 𝒢).obj) (taylor_comp_apply 𝒢 ℋ _)
-    exact e₁.trans (e₂.symm.trans e₃.symm)
+  have h := totalHomMap_comp_inducedTaylor 𝒢 F ℋ
   have hR : ((ℋ.inducedHom (𝒢.obj ∘ F)).comp (𝒢.inducedHom F)).taylor =
       inducedTaylor ℋ (𝒢.obj ∘ F) ∘ₗ coalgHom R (inducedTaylor 𝒢 F) := by
     rw [AInfinityHom.taylor_comp, (𝒢.inducedHom F).barMap_eq_coalgHom, taylor_inducedHom,
