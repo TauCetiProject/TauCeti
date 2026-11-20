@@ -43,7 +43,7 @@ shows that the two kernels agree.
   with bounded derivatives the two notions agree
   (`TauCeti.Vortex.isGaugeFixedWeakSolution_zero_iff_mem_weakGaugeFixedKernel`). There the
   minimal weak solutions of `L_x y = f` are the weak solutions orthogonal to the weak kernel
-  (`TauCeti.Vortex.isMinimalGaugeFixedWeakSolution_iff`).
+  (`TauCeti.Vortex.isMinimalGaugeFixedWeakSolution_iff_mem_orthogonal`).
 
 A continuous field lying in the affine field space `A_m^k` for every `k` is such a field, with the
 degree-`m` end framing. If its section also satisfies the holomorphicity rows `∂bar_a α = 0`, as
@@ -64,8 +64,8 @@ satisfying the full vortex equation, the cokernel of that operator also vanishes
   of the weak solutions of `L_x u = 0`.
 * `TauCeti.Vortex.range_gaugeFixedKernelToLp`: at a smooth field with bounded derivatives, the
   weak kernel is the space of `L²` classes of the classical kernel.
-* `TauCeti.Vortex.isMinimalGaugeFixedWeakSolution_iff`: at such a field, minimal weak solutions
-  are the weak solutions orthogonal to the weak kernel.
+* `TauCeti.Vortex.isMinimalGaugeFixedWeakSolution_iff_mem_orthogonal`: at such a field, minimal
+  weak solutions are the weak solutions orthogonal to the weak kernel.
 * `TauCeti.Vortex.finrank_weakGaugeFixedKernel_eq_two_mul`: at a continuous field lying in every
   `A_m^k` and satisfying the holomorphicity rows, for instance a plane vortex, the weak kernel has
   real dimension `2m`.
@@ -195,7 +195,7 @@ theorem isGaugeFixedWeakSolution_zero_iff_mem_weakGaugeFixedKernel (hx : ContDif
 /-- **Minimal weak solutions are the weak solutions orthogonal to the weak kernel.** At a smooth
 field whose coordinates have bounded derivatives of every order, a minimal weak solution of
 `L_x y = f` is a weak solution lying in the orthogonal complement of `weakGaugeFixedKernel x`. -/
-theorem isMinimalGaugeFixedWeakSolution_iff (hx : ContDiff ℝ ∞ x)
+theorem isMinimalGaugeFixedWeakSolution_iff_mem_orthogonal (hx : ContDiff ℝ ∞ x)
     (hbound : ∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
     {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)} :
     IsMinimalGaugeFixedWeakSolution volume x f y ↔

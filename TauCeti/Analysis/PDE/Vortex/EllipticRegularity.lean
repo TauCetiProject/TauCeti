@@ -56,7 +56,7 @@ multiplication by the transposed matrix.
   continuous field of `A_m^s`, `s > 1`, is bounded (`exists_norm_le_of_mem_framedFieldSpace`), so
   there weak `L²` solutions of `L_x y = f` with `f ∈ L²`, in particular the weak `L²` kernel of
   `L_x`, lie in `H¹`.
-* `exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_sobolevFields`: at a
+* `exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_and_mem_sobolevFields`: at a
   `C¹` vortex of `A_m^s`, `s > 1`, the weak right inverse `Q` takes values in `H¹`.
 * `mem_sobolevFields_add_one_of_integral_inner_gaugeFixedOperator_vacuumField_eq`,
   `mem_sobolevFields_one_of_integral_inner_gaugeFixedOperator_eq` and
@@ -513,23 +513,19 @@ theorem mem_sobolevFields_one_of_mem_framedFieldSpace_of_integral_inner_gaugeFix
 /-- **The weak right inverse at a plane vortex takes values in `H¹`.** Let `x` be a `C¹` solution
 of the plane vortex equation in the affine space `A_m^s`, `s > 1`. Then there is a bounded
 operator `Q` on `L²(ℂ; ℝ⁴)` such that, for every `g ∈ L²`, `Q g` is a weak solution of
-`L_x y = g`, orthogonal to the weak kernel of `L_x`, and lies in `H¹`. -/
-theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_sobolevFields
+`L_x y = g`, orthogonal to the weak kernel of `L_x` (`IsMinimalGaugeFixedWeakSolution`), and lies
+in `H¹`. -/
+theorem exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_and_mem_sobolevFields
     {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ} (hs : 1 < s) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hx : x ∈ framedFieldSpace f m s) (hx₁ : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0) :
     ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ) →L[ℝ]
         Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ),
-      (∀ g η, ContDiff ℝ 2 η → HasCompactSupport η →
-        ∫ z, ⟪Q g z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪g z, η z⟫) ∧
-      (∀ g u : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ),
-        (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
-          ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ = 0) →
-        ∫ z, ⟪Q g z, u z⟫ = 0) ∧
-      ∀ g, (Q g : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields 1 := by
+      ∀ g, IsMinimalGaugeFixedWeakSolution volume x g (Q g) ∧
+        (Q g : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields 1 := by
   obtain ⟨Q, hQ⟩ := exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution
     (μ := volume) hx₁ hsol (tendsto_normSq_of_mem_framedFieldSpace hs hx hx₁.continuous)
-  exact ⟨Q, fun g ↦ (hQ g).1, fun g ↦ (hQ g).2, fun g ↦
+  exact ⟨Q, fun g ↦ ⟨hQ g,
     mem_sobolevFields_one_of_mem_framedFieldSpace_of_integral_inner_gaugeFixedAdjoint_eq hs hx
-      hx₁.continuous (Lp.memLp _) (Lp.memLp g) fun η hη hc ↦ (hQ g).1 η (hη.of_le (by simp)) hc⟩
+      hx₁.continuous (Lp.memLp _) (Lp.memLp g) fun η hη hc ↦ (hQ g).1 η (hη.of_le (by simp)) hc⟩⟩
 
 end TauCeti.Vortex
