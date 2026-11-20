@@ -587,7 +587,7 @@ theorem isHilbertSum_euclideanSpace_peterWeylBlock [IsAlgClosed 𝕜] (h : IsIrr
       intro i
       refine le_antisymm ?_ ?_
       · rintro - ⟨v, rfl⟩
-        exact ((peterWeylBlockOrthonormalBasis (models i)).repr.symm v).2
+        exact ((peterWeylBlockOrthonormalBasis (models i)).repr.symm v).property
       · intro x hx
         exact ⟨(peterWeylBlockOrthonormalBasis (models i)).repr ⟨x, hx⟩, by simp⟩
     simp only [hrange]

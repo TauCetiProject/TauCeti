@@ -71,7 +71,7 @@ theorem homologyMap_coefficient_mk_one_bijective (φ : Module.Dual R M)
     refine (Ideal.primaryComponent_mem _ _ _).mpr ⟨1, ?_⟩
     rw [pow_one, Submodule.mem_torsionBySet_iff]
     intro a
-    exact Module.mem_annihilator.mp (range_le_annihilator_cohomology φ N n a.2) z
+    exact Module.mem_annihilator.mp (range_le_annihilator_cohomology φ N n a.property) z
   have hη := tensorProduct_mk_bijective_of_primaryComponent_eq_top (S := S) hI hH
   let e := (koszulComplex φ).tensorLinearYonedaHomologyIso (ModuleCat.of R S) N n
   have he : Function.Bijective e.hom := ConcreteCategory.bijective_of_isIso e.hom

@@ -68,6 +68,13 @@ theorem edgeBasis_repr (hx : IsSmoothVertex i u c x) (hi : IsIntegralLattice i)
     hi.isBaseChange.basis_apply, AddMonoidHom.coe_toIntLinearMap,
     Classical.choose_spec (isSmoothVertex_def.1 hx) j, ContinuousLinearMap.coe_coe]
 
+/-- The covector with prescribed edge coordinates takes the prescribed values on the active
+normals. -/
+theorem edgeBasis_equivFun_symm_apply (hx : IsSmoothVertex i u c x) (hi : IsIntegralLattice i)
+    (f : activeSet (facetPairing i u) c x → ℝ) (j : activeSet (facetPairing i u) c x) :
+    (hx.edgeBasis hi).equivFun.symm f (i (u j)) = f j := by
+  rw [← hx.edgeBasis_repr hi, ← Module.Basis.equivFun_apply, LinearEquiv.apply_symm_apply]
+
 /-- Edges and active normals pair as dual bases. -/
 @[simp]
 theorem edgeBasis_apply (hx : IsSmoothVertex i u c x) (hi : IsIntegralLattice i)

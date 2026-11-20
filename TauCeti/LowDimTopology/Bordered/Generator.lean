@@ -565,8 +565,8 @@ noncomputable def glueGeneratorEquiv :
     (glue_alpha_comp_gluePoint_bijective_iff e _ _).1 (by
       rw [gluePoint_glueLeft_glueRight]
       exact (glue H₁ H₂ e).alpha_comp_betaPoint_bijective x)⟩
-  invFun x := (glue H₁ H₂ e).generatorOfBetaPoint (gluePoint x.1.1 x.1.2)
-    (glue_beta_gluePoint e _ _) ((glue_alpha_comp_gluePoint_bijective_iff e _ _).2 x.2)
+  invFun x := (glue H₁ H₂ e).generatorOfBetaPoint (gluePoint x.val.1 x.val.2)
+    (glue_beta_gluePoint e _ _) ((glue_alpha_comp_gluePoint_bijective_iff e _ _).2 x.property)
   left_inv x := (glue H₁ H₂ e).betaPoint_injective (by simp [gluePoint_glueLeft_glueRight])
   right_inv x := Subtype.ext (Prod.ext (glueLeft_generatorOfBetaPoint e _ _ _)
     (glueRight_generatorOfBetaPoint e _ _ _))
@@ -580,7 +580,7 @@ theorem coe_glueGeneratorEquiv (x : (glue H₁ H₂ e).Generator) :
 @[simp]
 theorem betaPoint_glueGeneratorEquiv_symm
     (x : {x : H₁.Generator × H₂.Generator // H₁.occupied x.1 = (H₂.occupied x.2)ᶜ}) :
-    (glue H₁ H₂ e).betaPoint ((glueGeneratorEquiv e).symm x) = gluePoint x.1.1 x.1.2 :=
+    (glue H₁ H₂ e).betaPoint ((glueGeneratorEquiv e).symm x) = gluePoint x.val.1 x.val.2 :=
   (glue H₁ H₂ e).betaPoint_generatorOfBetaPoint _ _ _
 
 /-- **The generators of a glued diagram are those of the box tensor product.** When every arc has
@@ -610,7 +610,7 @@ theorem betaPoint_glueGeneratorEquivTypeAIdem_symm (R : Type*) [CommSemiring R] 
     {α : Type*} [LinearOrder α] [Fintype α] {M : α → Arc} (hM : Function.Surjective M)
     (x : {x : H₁.Generator × H₂.Generator // H₁.typeAIdem R M x.1 * H₂.typeDIdem R M x.2 ≠ 0}) :
     (glue H₁ H₂ e).betaPoint ((glueGeneratorEquivTypeAIdem e R hM).symm x) =
-      gluePoint x.1.1 x.1.2 :=
+      gluePoint x.val.1 x.val.2 :=
   (glue H₁ H₂ e).betaPoint_generatorOfBetaPoint _ _ _
 
 end Glue
