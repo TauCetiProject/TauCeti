@@ -135,7 +135,6 @@ lemma comp_hom {a b c : P.Lift} (φ : a ⟶ b) (ψ : b ⟶ c) : (φ ≫ ψ).hom 
 
 /-- An isomorphism of lifts from an isomorphism of the underlying objects compatible with both
 identifications. -/
-@[expose, simps]
 def isoMk {a b : P.Lift} (e : a.obj ≅ b.obj)
     (h₁ : (F.map j.op.toLoc).toFunctor.map e.hom ≫ b.isoTop.hom = a.isoTop.hom := by cat_disch)
     (h₂ : a.isoBottom.hom ≫ (f.app (.mk (op B))).toFunctor.map e.hom = b.isoBottom.hom := by
@@ -148,6 +147,20 @@ def isoMk {a b : P.Lift} (e : a.obj ≅ b.obj)
         Category.id_comp]
       comm_bottom := by rw [← h₂, Category.assoc, ← Functor.map_comp, e.hom_inv_id,
         Functor.map_id, Category.comp_id] }
+
+@[simp]
+lemma isoMk_hom_hom {a b : P.Lift} (e : a.obj ≅ b.obj)
+    (h₁ : (F.map j.op.toLoc).toFunctor.map e.hom ≫ b.isoTop.hom = a.isoTop.hom)
+    (h₂ : a.isoBottom.hom ≫ (f.app (.mk (op B))).toFunctor.map e.hom = b.isoBottom.hom) :
+    (isoMk e h₁ h₂).hom.hom = e.hom :=
+  (rfl)
+
+@[simp]
+lemma isoMk_inv_hom {a b : P.Lift} (e : a.obj ≅ b.obj)
+    (h₁ : (F.map j.op.toLoc).toFunctor.map e.hom ≫ b.isoTop.hom = a.isoTop.hom)
+    (h₂ : a.isoBottom.hom ≫ (f.app (.mk (op B))).toFunctor.map e.hom = b.isoBottom.hom) :
+    (isoMk e h₁ h₂).inv.hom = e.inv :=
+  (rfl)
 
 /-- A morphism of lifts is an isomorphism as soon as its underlying morphism is. -/
 lemma isIso_of_isIso_hom {a b : P.Lift} (φ : a ⟶ b) [IsIso φ.hom] : IsIso φ :=
@@ -204,16 +217,21 @@ abbrev reidentifyInverse : (P.reidentify e).Lift ⥤ P.Lift where
 
 /-- Reidentifying the top object of a lifting problem along an isomorphism does not change its
 category of lifts. -/
-@[expose, simps functor inverse]
 def reidentifyEquiv : P.Lift ≌ (P.reidentify e).Lift where
   functor := P.reidentifyFunctor e
   inverse := P.reidentifyInverse e
   unitIso := NatIso.ofComponents (fun a ↦ Lift.isoMk (Iso.refl a.obj))
   counitIso := NatIso.ofComponents (fun a ↦ Lift.isoMk (Iso.refl a.obj))
 
+@[simp]
+lemma reidentifyEquiv_functor : (P.reidentifyEquiv e).functor = P.reidentifyFunctor e :=
+  (rfl)
+
+@[simp]
+lemma reidentifyEquiv_inverse : (P.reidentifyEquiv e).inverse = P.reidentifyInverse e :=
+  (rfl)
+
 end Reidentify
-
-
 
 section Pullback
 
