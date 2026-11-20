@@ -115,7 +115,7 @@ variable [IsManifold I ∞ M] {φ : M ≃ₘ⟮I, I⟯ M}
 `φ` be a diffeomorphism of a surface preserving a two-form `σ`, and let `K` be a vertical family
 satisfying the seam identity. Let `x` be a periodic point of period `d > 0`, with return map
 `P = dφ^d_x`, and suppose that along the orbit, at the circle coordinate `s₀`, the structures
-`K(t) = K_((s₀, t), x)` depend `C²` on `t`, preserve `σ_x`, and that `σ_x` tames `K(0)`. If `φ`
+`K(t) = K_((s₀, t), x)` depend `C²` on `t` and that `σ_x` tames `K(0)`. If `φ`
 is nondegenerate up to period `2 N`, then for `n > 0` with `d n ≤ N`, `k > 0` and `a ∈ ℤ`, the
 vertical operator `∂s + K(t) ∂t`, twisted by any signs `ε₁` along `(k, 0)` and `ε₂` along
 `(a, n d)` through `P`, has no nonzero `C²` kernel element. -/
@@ -126,8 +126,6 @@ theorem forall_eq_zero_of_orbitTorusVerticalOperator_eq_zero_of_isNondegenerateU
       mfderiv I I φ.symm p.2 (K p v) = K (p.1 + (0, 1), φ.symm p.2) (mfderiv I I φ.symm p.2 v))
     {x : M} (s₀ : ℝ)
     (hK2 : ContDiff ℝ 2 (verticalFamilyAt K s₀ x))
-    (hKσ : ∀ (t : ℝ) (v w : TangentSpace I x),
-      σ.eval₂ x (K ((s₀, t), x) v) (K ((s₀, t), x) w) = σ.eval₂ x v w)
     (htame : ∀ v : TangentSpace I x, v ≠ 0 → 0 < σ.eval₂ x v (K ((s₀, 0), x) v))
     {N d n k : ℕ} (hφ : IsNondegenerateUpToPeriod I φ (2 * N)) (hx : IsPeriodicPt φ d x)
     (hd : 0 < d) (hn : 0 < n) (hdn : d * n ≤ N) (hk : 0 < k) {P : E →L[ℝ] E}
@@ -151,10 +149,14 @@ theorem forall_eq_zero_of_orbitTorusVerticalOperator_eq_zero_of_isNondegenerateU
       verticalFamilyAt K s₀ x t (verticalFamilyAt K s₀ x t w) = -w := by
     rw [verticalFamilyAt_apply, verticalFamilyAt_apply]
     exact (K ((s₀, t), x)).apply_apply w
+  -- On a surface every almost complex structure preserves the alternating form `σ_x`.
+  have hσJ (J : AlmostComplexStructure E) (v w : E) : σx (J v) (J w) = σx v w :=
+    J.bilin_apply_apply_eq_of_finrank_le_two hE.le (B := ContinuousLinearMap.toLinearMap₁₂ σx)
+      (fun u ↦ by simpa using CharZero.eq_neg_self_iff.1 (hσanti u u)) v w
   have hσK (t : ℝ) (v w : E) :
       σx (verticalFamilyAt K s₀ x t v) (verticalFamilyAt K s₀ x t w) = σx v w := by
     rw [verticalFamilyAt_apply, verticalFamilyAt_apply]
-    exact (hσx _ _).trans ((hKσ t v w).trans (hσx v w).symm)
+    exact hσJ (K ((s₀, t), x)) v w
   have hσtame (v : E) (hv : v ≠ 0) : 0 < σx v (verticalFamilyAt K s₀ x 0 v) := by
     rw [verticalFamilyAt_apply]
     exact (htame v hv).trans_eq (hσx _ _).symm
