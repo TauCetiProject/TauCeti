@@ -240,7 +240,7 @@ private theorem visitedSuccessorArray_reindexWord_cell (hu : u ∈ HorizonWords 
   rcases Nat.eq_zero_or_pos (visitCount (wordSeq u) (p : α × ℕ).1 m) with h0 | hpos
   · -- A row not visited before the last letter holds no consumed cell of `F`, so it is unvisited.
     have hunv : visitCount (wordSeq u) (p : α × ℕ).1 (m + 1) = 0 := by
-      refine (hu (p : α × ℕ) (Or.inr p.2)).resolve_right fun h ↦ ?_
+      refine (hu (p : α × ℕ) (Or.inr p.property)).resolve_right fun h ↦ ?_
       omega
     have hne : ∀ v : Fin (m + 1) → α, visitCount (wordSeq v) (p : α × ℕ).1 (m + 1) = 0 →
         ∀ n, wordSeq v n ≠ (p : α × ℕ).1 := fun v hv n hn ↦ by
@@ -252,7 +252,7 @@ private theorem visitedSuccessorArray_reindexWord_cell (hu : u ∈ HorizonWords 
         (fun hmem ↦ (Set.mem_range.1 hmem).elim
           (hne _ ((visitCount_succ_wordSeq_reindexWord hadm _).trans hunv)))]
   · exact visitedSuccessorArray_wordSeq_reindexWord hadm
-      (by have := (lt_visitCount_of_mem_horizonWords hu (Or.inr p.2) hpos).1; omega)
+      (by have := (lt_visitCount_of_mem_horizonWords hu (Or.inr p.property) hpos).1; omega)
 
 private theorem reindexWord_reindexWord_symm (hu : u ∈ HorizonWords π F m) :
     reindexWord π m (reindexWord (fun a ↦ (π a).symm) m u) = u := by
@@ -265,20 +265,21 @@ realizing the original ones.** -/
 private def reindexEquiv (π : α → Equiv.Perm ℕ) (F : Finset (α × ℕ)) (m : ℕ) (g : F → α) :
     (HorizonWords π F m ∩ CellWords (fun a k ↦ π a k) F m g : Set (Fin (m + 1) → α)) ≃
       (HorizonWords π F m ∩ CellWords (fun _ k ↦ k) F m g : Set (Fin (m + 1) → α)) where
-  toFun u := ⟨reindexWord π m u.1,
-    reindexWord_mem_horizonWords u.2.1 (lastExitAdmissible_of_mem_horizonWords u.2.1),
-    fun p ↦ (visitedSuccessorArray_reindexWord_cell u.2.1 p).trans (u.2.2 p)⟩
-  invFun v := ⟨reindexWord (fun a ↦ (π a).symm) m v.1,
-    reindexWord_mem_horizonWords v.2.1 (lastExitAdmissible_symm_of_mem_horizonWords v.2.1),
+  toFun u := ⟨reindexWord π m u.val,
+    reindexWord_mem_horizonWords u.property.1 (lastExitAdmissible_of_mem_horizonWords u.property.1),
+    fun p ↦ (visitedSuccessorArray_reindexWord_cell u.property.1 p).trans (u.property.2 p)⟩
+  invFun v := ⟨reindexWord (fun a ↦ (π a).symm) m v.val,
+    reindexWord_mem_horizonWords v.property.1 (lastExitAdmissible_symm_of_mem_horizonWords
+        v.property.1),
     fun p ↦ by
-      have hmem := reindexWord_mem_horizonWords (ρ := fun a ↦ (π a).symm) v.2.1
-        (lastExitAdmissible_symm_of_mem_horizonWords v.2.1)
+      have hmem := reindexWord_mem_horizonWords (ρ := fun a ↦ (π a).symm) v.property.1
+        (lastExitAdmissible_symm_of_mem_horizonWords v.property.1)
       have hcell := visitedSuccessorArray_reindexWord_cell hmem p
-      rw [reindexWord_reindexWord_symm v.2.1] at hcell
-      exact hcell.symm.trans (v.2.2 p)⟩
+      rw [reindexWord_reindexWord_symm v.property.1] at hcell
+      exact hcell.symm.trans (v.property.2 p)⟩
   left_inv u :=
-    Subtype.ext (reindexWord_symm_reindexWord (lastExitAdmissible_of_mem_horizonWords u.2.1))
-  right_inv v := Subtype.ext (reindexWord_reindexWord_symm v.2.1)
+    Subtype.ext (reindexWord_symm_reindexWord (lastExitAdmissible_of_mem_horizonWords u.property.1))
+  right_inv v := Subtype.ext (reindexWord_reindexWord_symm v.property.1)
 
 /-- **Along a recurrent sequence, each row of a finite set of cells is eventually either never
 visited or visited often enough.** For a finite set `S` of cells of the successor array, every long
@@ -327,7 +328,7 @@ private theorem eventually_prefix_mem_iff {x : ℕ → α} (hio : ∀ k, {n | x 
       visitedSuccessorArray (wordSeq u) (p : α × ℕ).1 (ρ (p : α × ℕ).1 (p : α × ℕ).2) =
         visitedSuccessorArray x (p : α × ℕ).1 (ρ (p : α × ℕ).1 (p : α × ℕ).2) := by
     intro p
-    rcases hm (p : α × ℕ) (Or.inr p.2) with ha | ha
+    rcases hm (p : α × ℕ) (Or.inr p.property) with ha | ha
     · rw [visitedSuccessorArray_eq_self_of_not_mem_range
           (fun hmem ↦ (Set.mem_range.1 hmem).elim ha),
         visitedSuccessorArray_eq_self_of_not_mem_range
@@ -388,8 +389,8 @@ private theorem prefixLaw_horizonWords_inter_cellWords (h : MarkovExchangeable �
     prefixLaw μ X (m + 1) (HorizonWords π F m ∩ CellWords (fun a k ↦ π a k) F m g)
       = prefixLaw μ X (m + 1) (HorizonWords π F m ∩ CellWords (fun _ k ↦ k) F m g) :=
   h.prefixLaw_apply_eq_of_equiv m (reindexEquiv π F m g)
-    (fun w ↦ reindexWord_zero π w.1)
-    (fun w ↦ transitionCount_reindexWord (lastExitAdmissible_of_mem_horizonWords w.2.1))
+    (fun w ↦ reindexWord_zero π w.val)
+    (fun w ↦ transitionCount_reindexWord (lastExitAdmissible_of_mem_horizonWords w.property.1))
 
 /-- **The mass of an event of the visited successor array is the limit of the masses of its
 horizon prefix events**, because along almost every path of a recurrent process those events

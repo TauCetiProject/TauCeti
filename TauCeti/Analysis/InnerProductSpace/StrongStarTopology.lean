@@ -426,10 +426,10 @@ theorem isInducing_restrict_toPointwiseConvergenceCLM_of_isStarNormal
     IsInducing (s.domRestrict fun A : ContinuousLinearMapStrongStar 𝕜 E E ↦
       ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E E A.toCLM) := by
   refine isInducing_iff_nhds.2 fun A ↦ le_antisymm
-    ((continuous_toPointwiseConvergenceCLM.comp continuous_subtype_val).tendsto A).le_comap ?_
+    ((continuous_toPointwiseConvergenceCLM.comp continuous_subtypeVal).tendsto A).le_comap ?_
   rw [nhds_subtype, ← tendsto_iff_comap]
   exact (tendsto_iff_tendsto_toPointwiseConvergenceCLM_of_isStarNormal
-    (Eventually.of_forall fun B : s ↦ hs B B.2) (hs A A.2)).2 tendsto_comap
+    (Eventually.of_forall fun B : s ↦ hs B B.property) (hs A A.property)).2 tendsto_comap
 
 /-- **Agreement of closures on normal operators.** A normal operator lies in the strong-star
 closure of a set of normal operators exactly when it lies in its strong operator closure. -/

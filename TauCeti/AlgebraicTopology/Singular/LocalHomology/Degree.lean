@@ -57,7 +57,15 @@ that are not surjective and is invariant under proper homotopies, that is homoto
   `TauCeti.HomologicalOrientation.degree_eq_iff` for nonempty `K`.
 * `TauCeti.HomologicalOrientation.degree_id`, `TauCeti.HomologicalOrientation.degree_neg_left`,
   `TauCeti.HomologicalOrientation.degree_neg_right`, `TauCeti.HomologicalOrientation.degree_comp`:
-  normalization, orientation reversal and multiplicativity.
+  normalization, orientation reversal and multiplicativity. Local degrees are multiplicative
+  as well, `localDegree (g ∘ f) z = deg f * localDegree g z`, as soon as `f` is proper onto a
+  preconnected `N` and the fibre of `g` over `z` is compact
+  (`TauCeti.HomologicalOrientation.localDegree_comp`).
+* `TauCeti.HomologicalOrientation.localDegree_comap`: the local degree is natural under open
+  embeddings of the source whose range contains the fibre, and so only depends on the map near
+  the fibre (`TauCeti.HomologicalOrientation.localDegree_congr`).
+* `TauCeti.HomologicalOrientation.localDegree_eq_sum`: the local degree is additive over finitely
+  many pairwise disjoint open sets covering the fibre.
 * `TauCeti.HomologicalOrientation.surjective_of_degree_ne_zero`: a proper map of nonzero degree
   onto a preconnected manifold is surjective.
 * `TauCeti.HomologicalOrientation.degree_eq_of_homotopy`: the degree is invariant under proper
@@ -324,13 +332,12 @@ theorem degree_neg_right (hF : finrank ℝ F = n) (f : C(M, N)) :
   · rw [degree_eq_localDegree_some _ _ hE f h, degree_eq_localDegree_some o o' hE f h,
       localDegree_neg_right o o' hE hF]
 
-/-- **Local degrees multiply under composition**: for proper maps `f : M → N` and `g : N → P` with
-`N` preconnected, the local degree of `g ∘ f` at `z` is `deg f` times the local degree of `g` at
-`z`. -/
+/-- **Local degrees multiply under composition**: for a proper map `f : M → N` with `N`
+preconnected and a map `g : N → P` whose fibre over `z` is compact, the local degree of `g ∘ f` at
+`z` is `deg f` times the local degree of `g` at `z`. -/
 theorem localDegree_comp (hF : finrank ℝ F = n) (hG : finrank ℝ G = n) [PreconnectedSpace N]
-    {g : C(N, P)} {f : C(M, N)} (hg : IsProperMap g) (hf : IsProperMap f) (z : P) :
+    {g : C(N, P)} {f : C(M, N)} {z : P} (hz : IsCompact (g ⁻¹' {z})) (hf : IsProperMap f) :
     o.localDegree o'' hE (g.comp f) z = o.degree o' hE f * o'.localDegree o'' hF g z := by
-  have hz : IsCompact (g ⁻¹' {z}) := hg.isCompact_preimage isCompact_singleton
   rw [localDegree_eq_iff o o'' hE hG _ (hf.isCompact_preimage hz), mul_zsmul,
     ← localHomologyMap_fundamentalClassOn_preimage_singleton o' o'' hF g hz, ← map_zsmul,
     ← o.localHomologyMap_fundamentalClassOn_preimage o' hE hF hf hz,
@@ -344,7 +351,71 @@ theorem degree_comp (hF : finrank ℝ F = n) (hG : finrank ℝ G = n) [Preconnec
   rcases isEmpty_or_nonempty P with h | h
   · rw [degree_of_isEmpty, degree_of_isEmpty, zero_mul]
   · rw [degree_eq_localDegree_some _ _ hE _ h, degree_eq_localDegree_some _ _ hF _ h,
-      localDegree_comp o o' o'' hE hF hG hg hf, mul_comm]
+      localDegree_comp o o' o'' hE hF hG (hg.isCompact_preimage isCompact_singleton) hf, mul_comm]
+
+/-- **The local degree is natural under open embeddings of the source.** Let `j : U → M` be an open
+embedding, with `U` oriented by `o.comap hj`. If the fibre of `f` over `y` lies in the range of
+`j`, then `f ∘ j` has the same local degree at `y` as `f`. -/
+theorem localDegree_comap (hF : finrank ℝ F = n) {U : Type} [TopologicalSpace U] [T2Space U]
+    [ChartedSpace E U] {j : C(U, M)} (hj : IsOpenEmbedding j) (f : C(M, N)) {y : N}
+    (hyj : f ⁻¹' {y} ⊆ range j) :
+    (o.comap hj).localDegree o' hE (f.comp j) y = o.localDegree o' hE f y := by
+  -- `j` maps the fibre of `f ∘ j` onto the fibre of `f`, so both are compact or neither is.
+  by_cases hy : IsCompact (f ⁻¹' {y})
+  swap
+  · rw [localDegree_of_not_isCompact o o' hE f hy, localDegree_of_not_isCompact _ o' hE _
+      fun hK ↦ hy (image_preimage_eq_of_subset hyj ▸ hK.image j.continuous)]
+  have hK : IsCompact ((f.comp j) ⁻¹' {y}) := hj.isInducing.isCompact_preimage' hy hyj
+  -- `j` carries the fundamental class of `U` along the fibre of `f ∘ j` to that of `M` along the
+  -- fibre of `f`.
+  have hj' (T : Set M) (hT : j '' ((f.comp j) ⁻¹' {y}) = T) (hTc : IsCompact T)
+      (h : j ⁻¹' T ⊆ (f.comp j) ⁻¹' {y}) :
+      localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) j h n
+        ((o.comap hj).fundamentalClassOn hE hK) = o.fundamentalClassOn hE hTc := by
+    subst hT
+    exact o.localHomologyMap_fundamentalClassOn_comap hE hj hK
+  rw [localDegree_eq_iff (o.comap hj) o' hE hF _ hK, ← localHomologyMap_comp
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) j f (subset_refl (j ⁻¹' (f ⁻¹' {y}))) (subset_refl _),
+    ModuleCat.comp_apply, hj' _ (image_preimage_eq_of_subset hyj) hy,
+    localHomologyMap_fundamentalClassOn_preimage_singleton o o' hE f hy]
+
+/-- **The local degree only depends on the map near the fibre**: if `g` agrees with `f` on a
+neighbourhood of the fibre of `f` over `y` and has no further points over `y`, then `f` and `g`
+have the same local degree at `y`. -/
+theorem localDegree_congr (hF : finrank ℝ F = n) {f g : C(M, N)} {y : N}
+    (hfg : f =ᶠ[𝓝ˢ (f ⁻¹' {y})] g) (hgf : g ⁻¹' {y} ⊆ f ⁻¹' {y}) :
+    o.localDegree o' hE f y = o.localDegree o' hE g y := by
+  obtain ⟨W, hWo, hAW, hW⟩ := eventually_nhdsSet_iff_exists.1 hfg
+  have hfib : g ⁻¹' {y} = f ⁻¹' {y} :=
+    hgf.antisymm fun x hx ↦ ((hW x (hAW hx)).symm.trans hx :)
+  let V : TopologicalSpace.Opens M := ⟨W, hWo⟩
+  have hrange (A : Set M) (hA : A ⊆ W) : A ⊆ range (Subtype.val : V → M) :=
+    fun x hx ↦ ⟨⟨x, hA hx⟩, rfl⟩
+  have hcomp : f.comp ⟨Subtype.val, continuous_subtypeVal⟩ =
+      g.comp (⟨Subtype.val, continuous_subtypeVal⟩ : C(V, M)) :=
+    ContinuousMap.ext fun x ↦ hW x x.property
+  let j : C(V, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+  rw [← o.localDegree_comap o' hE hF (j := j) V.isOpenEmbedding' f (hrange _ hAW), hcomp,
+    o.localDegree_comap o' hE hF (j := j) V.isOpenEmbedding' g (hfib ▸ hrange _ hAW)]
+
+/-- **The local degree is additive over disjoint open sets.** Let the fibre of `f` over `y` be
+compact and covered by finitely many pairwise disjoint open sets `U i`, oriented by restricting `o`.
+Then the local degree of `f` at `y` is the sum of the local degrees at `y` of the restrictions of
+`f` to the `U i`. For an empty family this says that a map with empty fibre has local degree
+zero. -/
+theorem localDegree_eq_sum (hF : finrank ℝ F = n) (f : C(M, N)) {y : N}
+    (hy : IsCompact (f ⁻¹' {y})) {ι : Type*} [Fintype ι] {U : ι → TopologicalSpace.Opens M}
+    (hU : Pairwise fun i k ↦ Disjoint (U i : Set M) (U k))
+    (hyU : f ⁻¹' {y} ⊆ ⋃ i, (U i : Set M)) :
+    o.localDegree o' hE f y = ∑ i, (o.comap (U i).isOpenEmbedding').localDegree o' hE
+      (f.comp ⟨Subtype.val, continuous_subtypeVal⟩) y := by
+  rw [localDegree_eq_iff o o' hE hF f hy, o.fundamentalClassOn_eq_sum_localHomologyMap hE hy hU hyU,
+    map_sum]
+  refine (Finset.sum_congr rfl fun i _ ↦ ?_).trans
+    (map_sum (zmultiplesHom _ (o' y).val) _ _).symm
+  rw [← ModuleCat.comp_apply, localHomologyMap_comp]
+  exact localHomologyMap_fundamentalClassOn_preimage_singleton (o.comap (U i).isOpenEmbedding') o'
+    hE (f.comp ⟨Subtype.val, continuous_subtypeVal⟩) _
 
 /-- **Invariance of the local degree under homotopies with compact fibre**: if `H` is a homotopy
 from `f₀` to `f₁` whose fibre `H⁻¹(y) ⊆ [0, 1] × M` over `y` is compact, then `f₀` and `f₁` have
@@ -402,12 +473,7 @@ variable (hF : finrank ℝ F = n) [CompactSpace M] [CompactSpace N] [Preconnecte
 compact oriented `n`-manifolds with `N` preconnected, `f_*[M] = deg f • [N]` in `Hₙ(N; ℤ)`. -/
 theorem mapFundamentalClass_eq_degree_smul (f : C(M, N)) :
     o.mapFundamentalClass hE f = o.degree o' hE f • o'.fundamentalClass hF := by
-  have : IsEmpty (TopPair.ofSubset ((univ : Set (TopCat.of N))ᶜ)).snd := by
-    simp only [compl_univ]
-    exact inferInstanceAs (IsEmpty (∅ : Set N))
-  have hπ : IsIso ((TopPair.ofSubset ((univ : Set (TopCat.of N))ᶜ)).singularHomologyπ
-      (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) n) := inferInstance
-  refine ((ConcreteCategory.isIso_iff_bijective _).1 hπ).1 ?_
+  refine (singularHomologyπ_compl_univ_bijective N (ModuleCat.of ℤ (ULift.{0} ℤ)) n).1 ?_
   have h := o.localHomologyMap_fundamentalClassOn_preimage o' hE hF f.continuous.isProperMap
     isCompact_univ
   rw [← o.localHomologyRestriction_fundamentalClassOn_of_subset hE isCompact_univ _

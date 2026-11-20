@@ -59,7 +59,9 @@ homomorphism whose prime values are the global Artin symbols of the prime idele 
   abelian, an automorphism representing the Artin symbol of the class of the idele with any
   uniformizer at an unramified `v` and `1` elsewhere is an arithmetic Frobenius at every prime of
   `L` above `v`.
-* `TauCeti.ClassFieldTheory.globalArtinMap_isArithFrobAt`: the same for the prime idele class.
+* `TauCeti.ClassFieldTheory.globalArtinMap_isArithFrobAt` and
+  `TauCeti.ClassFieldTheory.ideleClassArtinMap_isArithFrobAt`: the same for the prime idele class
+  and for `ideleClassArtinMap`.
 * `TauCeti.ClassFieldTheory.addOrderOf_globalArtinMap_primeIdeleClass` and
   `globalArtinMap_primeIdeleClass_eq_zero_iff_inertiaDeg_eq_one`: for `L/K` abelian and `v`
   unramified, the Artin symbol of the prime idele class has order the residue degree, and is
@@ -165,6 +167,15 @@ theorem globalArtinMap_isArithFrobAt [IsMulCommutative Gal(L/K)] {σ : Gal(L/K)}
   obtain ⟨π, hπ, h⟩ := exists_isUniformizer_primeIdeleClass_eq K v
   exact isArithFrobAt_of_globalArtinMap_ofAdicCompletion_eq L ι v Q hπ (h ▸ hσ)
 
+omit [IsGalois K L] in
+/-- **Arithmetic Frobenius normalization of `ideleClassArtinMap` at a prime.** For a finite abelian
+extension `L/K` of number fields and a finite place `v` of `K` unramified at a prime `Q` of `L`
+above it, `ideleClassArtinMap K L (primeIdeleClass K v)` is an arithmetic Frobenius at `Q`. -/
+theorem ideleClassArtinMap_isArithFrobAt [IsAbelianGalois K L] :
+    IsArithFrobAt (𝓞 K) (ideleClassArtinMap K L (primeIdeleClass K v)) Q :=
+  globalArtinMap_isArithFrobAt L IsSepClosed.lift v Q
+    (globalArtinMap_eq_ofMul_ideleClassArtinMap K L IsSepClosed.lift (primeIdeleClass K v))
+
 /-- **The order of the Artin symbol of a prime is its residue degree.** For a finite abelian
 extension `L/K` of number fields and a finite place `v` of `K` unramified at a prime `Q` of `L`
 above it, the global Artin symbol of the prime idele class at `v` has order the residue degree
@@ -230,7 +241,7 @@ theorem globalArtinMap_ideal (v : HeightOneSpectrum (𝓞 K))
       .ofMul (Group.Abelianization.of
         (NumberFieldArithmetic.artinHomAway algEquiv_commute_of_isAbelianGalois S hur I)) := by
   -- `I` is prime to `S` and has multiplicity one at `v`, so `v ∉ S`.
-  have hv : v ∉ S := NumberFieldArithmetic.notMem_of_coe_eq_asIdeal I.2 hI
+  have hv : v ∉ S := NumberFieldArithmetic.notMem_of_coe_eq_asIdeal I.property hI
   obtain ⟨Q, _, _⟩ := (inferInstance : Nonempty (v.asIdeal.primesOver (𝓞 L)))
   have := hur v hv Q
   obtain ⟨σ, hσ⟩ := NumberField.exists_isArithFrobAt K Q

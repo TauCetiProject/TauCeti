@@ -78,8 +78,9 @@ bounded below by `Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le`.
   `TauCeti.aedisjoint_subgradientImage` — almost no point is a subgradient at two distinct points,
   so subgradient images of disjoint sets are almost disjoint;
 * `TauCeti.mongeAmpereMeasure_apply` — `MA_f(s) = μ(∂f(s ∩ D))` for measurable `s`;
-* `TauCeti.mongeAmpereMeasure_add` — `MA_f` is additive in the reference measure, among measures
-  absolutely continuous with respect to an additive Haar measure;
+* `TauCeti.mongeAmpereMeasure_add` and `TauCeti.mongeAmpereMeasure_mono` — `MA_f` is additive and
+  monotone in the reference measure, among measures absolutely continuous with respect to an
+  additive Haar measure;
 * `TauCeti.mongeAmpereMeasure_compl_interior` — `MA_f` is concentrated on `D`;
 * `TauCeti.mongeAmpereMeasure_lt_top` and `TauCeti.isLocallyFiniteMeasure_comap_mongeAmpereMeasure`
   — when `μ` is finite on compact sets, `MA_f` is finite on compact subsets of `D`, so it is a
@@ -92,7 +93,8 @@ bounded below by `Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le`.
   any set has zero Monge–Ampère measure;
 * `TauCeti.mongeAmpereMeasure_ite_of_subsingleton` — in dimension zero, the Monge–Ampère measure
   of a function extended by `⊤` off `Ω` is `μ` restricted to `Ω`;
-* `TauCeti.mongeAmpereMeasure_ite_eq_restrict` — the measure is local: restricting a convex
+* `TauCeti.mongeAmpereMeasure_ite_eq_restrict` and
+  `TauCeti.mongeAmpereMeasure_ite_toReal_eq_restrict` — the measure is local: restricting a convex
   function to an open convex subset restricts its Monge–Ampère measure;
 * `TauCeti.withDensity_restrict_le_mongeAmpereMeasure` and
   `TauCeti.mongeAmpereMeasure_le_withDensity_restrict` — comparison of a density with the
@@ -299,6 +301,21 @@ theorem mongeAmpereMeasure_add {μ₁ μ₂ : Measure E} (hμ₁ : μ₁ ≪ ν)
       simp only [mongeAmpereMeasure_eq_zero_of_eq_bot _ hx, add_zero]
   · simp only [mongeAmpereMeasure_eq_zero_of_not_convex _ hf, add_zero]
 
+omit μ in
+/-- The Aleksandrov Monge–Ampère measure is monotone in the reference measure, provided the larger
+measure is absolutely continuous with respect to an additive Haar measure. -/
+theorem mongeAmpereMeasure_mono {μ₁ μ₂ : Measure E} (h : μ₁ ≤ μ₂) (hμ₂ : μ₂ ≪ ν) :
+    mongeAmpereMeasure μ₁ f ≤ mongeAmpereMeasure μ₂ f := by
+  by_cases hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}
+  · by_cases hbot : ∀ x, f x ≠ ⊥
+    · refine Measure.le_iff.2 fun s hs => ?_
+      rw [mongeAmpereMeasure_apply _ hf hbot ((absolutelyContinuous_of_le h).trans hμ₂) hs,
+        mongeAmpereMeasure_apply _ hf hbot hμ₂ hs]
+      exact h _
+    · obtain ⟨x, hx⟩ := not_forall_not.1 hbot
+      simp only [mongeAmpereMeasure_eq_zero_of_eq_bot _ hx, le_rfl]
+  · simp only [mongeAmpereMeasure_eq_zero_of_not_convex _ hf, le_rfl]
+
 /-- The Aleksandrov Monge–Ampère measure is concentrated on the interior of the effective
 domain. -/
 @[simp]
@@ -330,9 +347,9 @@ theorem isLocallyFiniteMeasure_comap_mongeAmpereMeasure [IsFiniteMeasureOnCompac
   have : IsFiniteMeasureOnCompacts
       ((mongeAmpereMeasure μ f).comap ((↑) : interior {x | f x ≠ ⊤} → E)) := by
     refine ⟨fun K hK => ?_⟩
-    rw [comap_subtype_coe_apply measurableSet_interior]
-    exact mongeAmpereMeasure_lt_top μ hf hbot hμ (hK.image continuous_subtype_val)
-      (image_subset_iff.2 fun x _ => x.2)
+    rw [comap_subtypeVal_apply measurableSet_interior]
+    exact mongeAmpereMeasure_lt_top μ hf hbot hμ (hK.image continuous_subtypeVal)
+      (image_subset_iff.2 fun x _ => x.property)
   infer_instance
 
 /-- The Aleksandrov Monge–Ampère measure with respect to a measure that is finite on compact sets
@@ -494,6 +511,24 @@ theorem mongeAmpereMeasure_le_withDensity_restrict {U : Set E} [DecidablePred (�
           ENNReal.ofReal_le_ofReal (hg x hx))
 
 end Ite
+
+/-- **Localising an extended-real convex function to an open convex subset.** Let `f : E → EReal`
+be convex and never `⊥`, and let `U ⊆ {x | f x ≠ ⊤}` be open and convex. Truncating `f` to `U` by
+extending its real representative `(f ·).toReal` by `⊤` off `U` restricts its Monge–Ampère measure
+to `U`. -/
+theorem mongeAmpereMeasure_ite_toReal_eq_restrict {U : Set E} [DecidablePred (· ∈ U)]
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) (hU : IsOpen U)
+    (hUc : Convex ℝ U) (hUf : U ⊆ {x | f x ≠ ⊤}) :
+    mongeAmpereMeasure μ (fun x => if x ∈ U then ((f x).toReal : EReal) else ⊤) =
+      (mongeAmpereMeasure μ f).restrict U := by
+  let _ := Classical.decPred (· ∈ {x' | f x' ≠ ⊤})
+  have hf_eq : (fun x => if x ∈ {x' | f x' ≠ ⊤} then ((f x).toReal : EReal) else ⊤) = f := by
+    ext x
+    split_ifs with hx
+    · exact EReal.coe_toReal hx (hbot x)
+    · exact (not_ne_iff.1 hx).symm
+  simpa only [hf_eq] using
+    mongeAmpereMeasure_ite_eq_restrict μ hU hUc hUf (convexOn_toReal hf hbot)
 
 /-! ### Change of variables along the gradient -/
 

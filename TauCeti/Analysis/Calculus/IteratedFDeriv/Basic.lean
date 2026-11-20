@@ -24,9 +24,13 @@ curried bilinear maps, with the left currying of the one- and two-variable inver
 (`TauCeti.curryLeft_continuousMultilinearCurryFin1_symm`,
 `TauCeti.curryLeft_continuousMultilinearCurryFin2_symm`), and the corresponding exact comparison
 for differences of second derivatives, which transfers Hölder bounds between the two forms of the
-second derivative.
+second derivative (`TauCeti.holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two`). The same holds
+for the second iterated derivative of the `k`-th iterated derivative and the `(k + 2)`-th iterated
+derivative (`TauCeti.holderOnWith_iteratedFDeriv_two_iteratedFDeriv_iff`).
 Where a function `ζ` equals one on a neighbourhood of a point, every iterated derivative of
-`ζ * u` there is that of `u` (`Filter.EventuallyEq.iteratedFDeriv_mul_eq`). Bounded derivatives up
+`ζ * u` there is that of `u` (`Filter.EventuallyEq.iteratedFDeriv_mul_eq`), and at a point of
+which `s` is a neighbourhood every iterated derivative of `s.indicator g` is that of `g`
+(`TauCeti.iteratedFDeriv_indicator_of_mem_nhds`). Bounded derivatives up
 to a finite order have a common bound
 (`TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_exists`, and for derivatives of positive
 order `TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_one_le`), and such a
@@ -35,7 +39,8 @@ common bound is nonnegative and bounds the function itself
 change its iterated derivatives of positive order (`TauCeti.iteratedFDeriv_succ_add_const`). The
 iterated derivatives of a constant `c` have norm at most `‖c‖`
 (`TauCeti.norm_iteratedFDeriv_const_le`), and those of positive order of the identity have norm at
-most one (`TauCeti.norm_iteratedFDeriv_id_le_one`).
+most one (`TauCeti.norm_iteratedFDeriv_id_le_one`), as have those of right translations
+(`TauCeti.norm_iteratedFDeriv_addRight_le`).
 -/
 
 public section
@@ -136,6 +141,43 @@ theorem holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two {C r : ℝ≥0} {s : S
   simp only [HolderOnWith, ← continuousMultilinearCurryFin2_iteratedFDeriv_two,
     LinearIsometryEquiv.edist_map]
 
+/-- Differences of the second iterated derivative of the `k`-th iterated derivative of `f` have
+the same norm as differences of the `(k + 2)`-th iterated derivative of `f`, without
+differentiability assumptions: the two differ by a pair of currying isometries. -/
+theorem norm_iteratedFDeriv_two_iteratedFDeriv_sub (f : E → F) (k : ℕ) (x y : E) :
+    ‖iteratedFDeriv 𝕜 2 (iteratedFDeriv 𝕜 k f) x - iteratedFDeriv 𝕜 2 (iteratedFDeriv 𝕜 k f) y‖ =
+      ‖iteratedFDeriv 𝕜 (k + 2) f x - iteratedFDeriv 𝕜 (k + 2) f y‖ := by
+  -- The spaces are given explicitly: unifying them against the instances carried by the currying
+  -- isometries otherwise fails.
+  set e₁ : (E [×k + 1]→L[𝕜] F) ≃ₗᵢ[𝕜] E →L[𝕜] E [×k]→L[𝕜] F :=
+    continuousMultilinearCurryLeftEquiv 𝕜 (fun _ : Fin (k + 1) => E) F
+  set e₂ : (E [×k + 2]→L[𝕜] F) ≃ₗᵢ[𝕜] E →L[𝕜] E [×k + 1]→L[𝕜] F :=
+    continuousMultilinearCurryLeftEquiv 𝕜 (fun _ : Fin (k + 2) => E) F
+  have h₁ : fderiv 𝕜 (iteratedFDeriv 𝕜 k f) = e₁ ∘ iteratedFDeriv 𝕜 (k + 1) f := by
+    funext z
+    simp [iteratedFDeriv_succ_eq_comp_left, e₁]
+  have h₂ (z : E) :
+      fderiv 𝕜 (iteratedFDeriv 𝕜 (k + 1) f) z = e₂ (iteratedFDeriv 𝕜 (k + 2) f z) := by
+    simp [iteratedFDeriv_succ_eq_comp_left (n := k + 1), e₂]
+  have h₃ (z : E) : fderiv 𝕜 (e₁ ∘ iteratedFDeriv 𝕜 (k + 1) f) z =
+      e₁.toLinearIsometry.toContinuousLinearMap.comp (fderiv 𝕜 (iteratedFDeriv 𝕜 (k + 1) f) z) :=
+    LinearIsometryEquiv.comp_fderiv (𝕜 := 𝕜) (E := E [×k + 1]→L[𝕜] F)
+      (F := E →L[𝕜] E [×k]→L[𝕜] F) (G := E) (iso := e₁) (f := iteratedFDeriv 𝕜 (k + 1) f) (x := z)
+  rw [← norm_fderiv_fderiv_sub, h₁, h₃, h₃, h₂, h₂, ← ContinuousLinearMap.comp_sub,
+    ← LinearIsometryEquiv.map_sub]
+  refine (ContinuousLinearMap.opNorm_ext _
+    (e₂ (iteratedFDeriv 𝕜 (k + 2) f x - iteratedFDeriv 𝕜 (k + 2) f y)) fun v =>
+      e₁.norm_map _).trans ?_
+  exact e₂.norm_map _
+
+/-- The second iterated derivative of the `k`-th iterated derivative of `f` is `r`-Hölder with
+constant `C` on a set exactly when the `(k + 2)`-th iterated derivative of `f` is. -/
+theorem holderOnWith_iteratedFDeriv_two_iteratedFDeriv_iff {C r : ℝ≥0} {s : Set E} (f : E → F)
+    (k : ℕ) :
+    HolderOnWith C r (iteratedFDeriv 𝕜 2 (iteratedFDeriv 𝕜 k f)) s ↔
+      HolderOnWith C r (iteratedFDeriv 𝕜 (k + 2) f) s := by
+  simp only [HolderOnWith, edist_dist, dist_eq_norm, norm_iteratedFDeriv_two_iteratedFDeriv_sub]
+
 /-- The `i`-th iterated derivative of the `m`-th iterated derivative of `f` has the same norm as
 the `(i + m)`-th iterated derivative of `f`. -/
 theorem norm_iteratedFDeriv_iteratedFDeriv (f : E → F) (i m : ℕ) (x : E) :
@@ -183,6 +225,15 @@ theorem norm_iteratedFDeriv_id_le_one {n : ℕ} (hn : 1 ≤ n) (x : E) :
   · simpa using ContinuousLinearMap.norm_id_le
   · simp [iteratedFDeriv_const_of_ne (Nat.succ_ne_zero n)]
 
+/-- Right translation `Equiv.addRight a` has iterated derivatives of every positive order of norm
+at most one. -/
+theorem norm_iteratedFDeriv_addRight_le (a : E) {n : ℕ} (hn : 1 ≤ n) (x : E) :
+    ‖iteratedFDeriv 𝕜 n (Equiv.addRight a) x‖ ≤ 1 := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  have hfn : (Equiv.addRight a : E → E) = fun y ↦ (id : E → E) y + a := rfl
+  rw [hfn, iteratedFDeriv_succ_add_const]
+  exact norm_iteratedFDeriv_id_le_one (by omega) x
+
 /-- Bounded derivatives up to order `N` have a common bound. -/
 theorem exists_forall_norm_iteratedFDeriv_le_of_forall_exists {f : E → F} {N : ℕ}
     (hbd : ∀ n ≤ N, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ C) :
@@ -222,5 +273,14 @@ theorem _root_.Filter.EventuallyEq.iteratedFDeriv_mul_eq {𝕜 F A : Type*} [Non
     filter_upwards [hζ] with y hy
     simp only [Pi.mul_apply, hy, Pi.one_apply, one_mul]
   exact (hev.iteratedFDeriv 𝕜 k).eq_of_nhds
+
+/-- At a point of which `s` is a neighbourhood, every iterated derivative of `s.indicator g` is
+that of `g`. -/
+theorem iteratedFDeriv_indicator_of_mem_nhds {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {s : Set E} {g : E → F} {x : E} (hs : s ∈ 𝓝 x) (k : ℕ) :
+    iteratedFDeriv 𝕜 k (s.indicator g) x = iteratedFDeriv 𝕜 k g x :=
+  (Filter.EventuallyEq.iteratedFDeriv 𝕜 (Filter.eventually_of_mem hs
+    fun _ hy ↦ Set.indicator_of_mem hy g) k).eq_of_nhds
 
 end TauCeti

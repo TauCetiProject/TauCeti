@@ -436,7 +436,7 @@ the transformation sending `g : Y ⟶ X` to `F(g)(x)` (`TauCeti.dgApp_dgYonedaEq
 noncomputable def dgYonedaEquiv :
     DGNatTrans (dgRepresentable R X) F ≃ LinearMap.ker ((F.obj (op X)).d 0 1).hom where
   toFun α := ⟨_, dgApp_v_dgId_mem_ker X F α⟩
-  invFun x := yonedaNatTrans X F (LinearMap.mem_ker.1 x.2)
+  invFun x := yonedaNatTrans X F (LinearMap.mem_ker.1 x.property)
   left_inv α := by
     refine DGNatTrans.ext_dgApp fun Y ↦ ?_
     cases Y with | op Y => ?_
@@ -464,7 +464,7 @@ theorem dgYonedaEquiv_apply_coe (α : DGNatTrans (dgRepresentable R X) F) :
   (rfl)
 
 private theorem dgYonedaEquiv_symm_apply (x : LinearMap.ker ((F.obj (op X)).d 0 1).hom) :
-    (dgYonedaEquiv X F).symm x = yonedaNatTrans X F (LinearMap.mem_ker.1 x.2) :=
+    (dgYonedaEquiv X F).symm x = yonedaNatTrans X F (LinearMap.mem_ker.1 x.property) :=
   (rfl)
 
 /-- The transformation given by a closed element `x` of degree zero sends `g : Y ⟶ X` of degree
@@ -509,9 +509,9 @@ theorem dgApp_dgRepresentableNatTransEquiv_symm_v (X X' : C) (u : dgCycles R X X
         Cochain (dgHomComplex R Y X) (dgHomComplex R Y X') 0).v p p (add_zero p)).hom g =
       dgComp R g (u : DGHom R 0 X X') (add_zero p) := by
   refine (dgApp_dgYonedaEquiv_symm_v X (dgRepresentable R X')
-    ⟨u.1, LinearMap.mem_ker.2 ((mem_dgCycles R).1 u.2)⟩ g).trans ?_
+    ⟨u.val, LinearMap.mem_ker.2 ((mem_dgCycles R).1 u.property)⟩ g).trans ?_
   rw [dgRepresentable_dgMap]
-  exact dgPrecomp_v R X' g 0 p (zero_add p) u.1
+  exact dgPrecomp_v R X' g 0 p (zero_add p) u.val
 
 end Yoneda
 

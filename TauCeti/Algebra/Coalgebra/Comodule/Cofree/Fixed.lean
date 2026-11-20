@@ -1,0 +1,95 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.RingTheory.Bialgebra.Basic
+public import TauCeti.Algebra.Coalgebra.Comodule.Cofree.Basic
+public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
+
+/-!
+# Coinvariants of cofree comodules over a bialgebra
+
+For a bialgebra `H` over a commutative semiring `R` and an `R`-module `N`, the fixed subcomodule
+`TauCeti.Comodule.fixedSubcomodule R H (N ⊗[R] H)` of the cofree right `H`-comodule
+`TauCeti.Comodule.cofree R H N` consists of those tensors recovered from their counit contraction by
+tensoring with `1 : H`. Sending `n : N` to `n ⊗ 1` therefore gives a canonical `R`-linear
+equivalence `N ≃ₗ[R] Comodule.fixedSubcomodule R H (N ⊗[R] H)`.
+
+## Main declarations
+
+* `TauCeti.Comodule.mem_fixedSubcomodule_cofree_iff`: characterization of coinvariant tensors in
+  `N ⊗[R] H` via `Coalgebra.counit`.
+* `TauCeti.Comodule.cofreeFixedEquiv`: the canonical `R`-linear isomorphism
+  `N ≃ₗ[R] Comodule.fixedSubcomodule R H (N ⊗[R] H)` sending `n` to `n ⊗ 1`, with inverse given by
+  contracting the `H` factor against `Coalgebra.counit`.
+
+## References
+
+* M. E. Sweedler, *Hopf Algebras*, W. A. Benjamin, 1969, Chapter 2 and Theorem 4.1.1.
+* S. Montgomery, *Hopf Algebras and Their Actions on Rings*, CBMS Regional Conference Series in
+  Mathematics 82, 1993, Section 1.9.
+-/
+
+public noncomputable section
+
+open scoped TensorProduct
+
+namespace TauCeti.Comodule
+
+universe u v w
+
+variable (R : Type u) (H : Type v) (N : Type w)
+variable [CommSemiring R] [Semiring H] [Bialgebra R H] [AddCommMonoid N] [Module R N]
+
+attribute [local instance] cofree
+
+variable {R H N} in
+/-- Membership in the fixed subcomodule of the cofree comodule `N ⊗[R] H`: a tensor is coinvariant
+if and only if it is obtained from its counit contraction by tensoring with `1`. -/
+theorem mem_fixedSubcomodule_cofree_iff (z : N ⊗[R] H) :
+    z ∈ fixedSubcomodule R H (N ⊗[R] H) ↔
+      (TensorProduct.rid R N (LinearMap.lTensor N (Coalgebra.counit (R := R)) z)) ⊗ₜ[R] (1 : H) =
+        z := by
+  rw [mem_fixedSubcomodule]
+  constructor
+  · intro hz
+    have h := congrArg
+      (((TensorProduct.rid R N).toLinearMap ∘ₗ
+        (Coalgebra.counit (R := R) (A := H)).lTensor N).rTensor H) hz
+    have hid := LinearMap.congr_fun
+      (rTensor_rid_comp_lTensor_counit_comp_cofreeCoact (R := R) (C := H) (M := N)) z
+    simpa only [cofree_coact, ← cofreeCoact_def, LinearMap.comp_apply, LinearMap.rTensor_tmul,
+      LinearMap.id_apply, LinearEquiv.coe_coe] using (hid.symm.trans h).symm
+  · intro hz
+    rw [← hz, cofree_coact_tmul, Bialgebra.comul_one, Algebra.TensorProduct.one_def,
+      TensorProduct.assoc_symm_tmul]
+
+/-- The fixed subcomodule of the cofree right `H`-comodule `N ⊗[R] H` is canonically `N`, via
+`n ↦ n ⊗ 1`. -/
+def cofreeFixedEquiv : N ≃ₗ[R] fixedSubcomodule R H (N ⊗[R] H) where
+  toFun n := ⟨n ⊗ₜ[R] (1 : H), (mem_fixedSubcomodule_cofree_iff _).mpr (by simp)⟩
+  map_add' n₁ n₂ := Subtype.ext (TensorProduct.add_tmul n₁ n₂ 1)
+  map_smul' r n := Subtype.ext (TensorProduct.smul_tmul' r n 1)
+  invFun z :=
+    TensorProduct.rid R N (LinearMap.lTensor N (Coalgebra.counit (R := R)) (z : N ⊗[R] H))
+  left_inv n := by simp
+  right_inv z := Subtype.ext ((mem_fixedSubcomodule_cofree_iff z.val).mp z.property)
+
+variable {R H N}
+
+/-- `cofreeFixedEquiv` embeds `n : N` as `n ⊗ 1`. -/
+@[simp]
+theorem cofreeFixedEquiv_apply (n : N) :
+    (cofreeFixedEquiv R H N n : N ⊗[R] H) = n ⊗ₜ[R] (1 : H) := (rfl)
+
+/-- The inverse of `cofreeFixedEquiv` applies the counit to the `H` factor. -/
+@[simp]
+theorem cofreeFixedEquiv_symm_apply (z : fixedSubcomodule R H (N ⊗[R] H)) :
+    (cofreeFixedEquiv R H N).symm z =
+      TensorProduct.rid R N (LinearMap.lTensor N (Coalgebra.counit (R := R)) (z : N ⊗[R] H)) :=
+  (rfl)
+
+end TauCeti.Comodule
