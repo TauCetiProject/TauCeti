@@ -23,8 +23,9 @@ The linear case, `‖L‖ ≤ ∑ i, ‖L (b i)‖`, is
 `ContinuousLinearMap.opNorm_le_sum_norm_apply_orthonormalBasis`; for a first derivative it bounds
 the norm of the gradient by the sum of the absolute values of the partial derivatives. Its square
 form `‖L‖² ≤ ∑ i, ‖L (b i)‖²`
-(`ContinuousLinearMap.opNorm_sq_le_sum_norm_apply_sq_orthonormalBasis`) bounds the operator norm by
-the Hilbert–Schmidt norm, and hence the norm of a matrix by its columns in square mean,
+(`ContinuousLinearMap.opNorm_sq_le_sum_norm_apply_sq_orthonormalBasis`) bounds the squared operator
+norm by the sum of the squared norms of the values on the basis (the squared Hilbert–Schmidt norm
+when `G` is an inner product space), and hence the norm of a matrix by its columns in square mean,
 `‖L‖² ≤ (card ι) ∑ i, ‖L (b i)‖²`
 (`ContinuousLinearMap.opNorm_sq_le_card_mul_sum_norm_apply_sq_orthonormalBasis`).
 
@@ -59,8 +60,8 @@ theorem opNorm_le_sum_norm_apply_orthonormalBasis (L : E →L[𝕜] G) (b : Orth
   exact (PiLp.norm_apply_le (b.repr x) i).trans_eq (b.repr.norm_map x)
 
 /-- The squared operator norm of a continuous linear map on an inner product space is at most the
-sum of the squared norms of its values on the vectors of an orthonormal basis: the operator norm
-is at most the Hilbert–Schmidt norm. -/
+sum of the squared norms of its values on the vectors of an orthonormal basis. When the codomain
+is an inner product space, this sum is the squared Hilbert–Schmidt norm. -/
 theorem opNorm_sq_le_sum_norm_apply_sq_orthonormalBasis (L : E →L[𝕜] G)
     (b : OrthonormalBasis ι 𝕜 E) : ‖L‖ ^ 2 ≤ ∑ i, ‖L (b i)‖ ^ 2 := by
   have hS : 0 ≤ ∑ i, ‖L (b i)‖ ^ 2 := Finset.sum_nonneg fun _ _ => sq_nonneg _
