@@ -357,6 +357,23 @@ theorem cobarAddMap_cobarAddMap (k : ℤ) {l m n : ℕ} (θ : Fin (m + 1) → Fi
       OrderHom.comp_coe]
     exact (cobarAddMap_cobarAddMap k ψ.toOrderHom θ.toOrderHom f).symm
 
+/-- The object of `cobarObject k` at `[n]` is `Γ^{⊗n}`. -/
+@[simp]
+theorem cobarObject_obj (k : ℤ) (n : SimplexCategory) :
+    (cobarObject k).obj n = AddCommGrpCat.of (CobarRing n.len) :=
+  (rfl)
+
+/-- The map of `cobarObject k` along `θ` is the weight-`k` coface map of `θ`. -/
+@[simp]
+theorem cobarObject_map (k : ℤ) {m n : SimplexCategory} (θ : m ⟶ n) :
+    (cobarObject k).map θ = AddCommGrpCat.ofHom (cobarAddMap k θ.toOrderHom) :=
+  (rfl)
+
+/-- The `i`-th coface of `cobarObject k` is the weight-`k` coface map of `i.succAbove`. -/
+theorem cobarObject_δ (k : ℤ) {n : ℕ} (i : Fin (n + 2)) :
+    (cobarObject k).δ i = AddCommGrpCat.ofHom (cobarAddMap k i.succAbove) := by
+  rw [CosimplicialObject.δ, cobarObject_map, ← SimplexCategory.coe_δ]
+
 /-- **The cobar complex of weight `k`** of the Weierstrass Hopf algebroid, the alternating coface
 complex of `cobarObject k`. Its cohomology is the cohomology of `(A, Γ)` with coefficients in the
 `k`-th power `ω^k` of the Hodge line. -/
@@ -380,23 +397,29 @@ theorem cobarDifferential_apply (k : ℤ) (n : ℕ) (f : CobarRing n) :
       ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • cobarAddMap k i.succAbove f := by
   simp [cobarDifferential]
 
-/-- The differential of the cobar complex acts by the cobar differential. -/
-theorem cobarComplex_d_apply (k : ℤ) (n : ℕ) (f : CobarRing n) :
-    (cobarComplex k).d n (n + 1) f = cobarDifferential k n f := by
+/-- The differential of the cobar complex is the cobar differential. -/
+theorem cobarComplex_d (k : ℤ) (n : ℕ) :
+    (cobarComplex k).d n (n + 1) = AddCommGrpCat.ofHom (cobarDifferential k n) := by
+  -- `AddCommGrpCat.ofHom` carries the alternating sum `cobarDifferential` to the alternating sum
+  -- of the morphisms `ofHom (cobarAddMap k i.succAbove)`.
+  have h : ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • AddCommGrpCat.ofHom (cobarAddMap k i.succAbove) =
+      AddCommGrpCat.ofHom (cobarDifferential k n) := by
+    apply AddCommGrpCat.homAddEquiv.injective
+    rw [map_sum, AddCommGrpCat.homAddEquiv_apply, ConcreteCategory.hom_ofHom, cobarDifferential]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [map_zsmul, AddCommGrpCat.homAddEquiv_apply, ConcreteCategory.hom_ofHom]
   -- The complex is `CochainComplex.of` applied to Mathlib's alternating sum of the cofaces of
   -- `cobarObject k`, whose coface `δ i` acts by `cobarAddMap k i.succAbove`.
   dsimp only [cobarComplex, AlgebraicTopology.alternatingCofaceMapComplex,
     AlgebraicTopology.AlternatingCofaceMapComplex.obj]
-  rw [CochainComplex.of_d, AlgebraicTopology.AlternatingCofaceMapComplex.objD,
-    ← AddCommGrpCat.homAddEquiv_apply, map_sum]
-  -- Both sides are the same sum of additive maps: the coface `δ i` of `cobarObject k` is
-  -- `cobarAddMap k` of the order embedding `i.succAbove`.
-  rfl
+  rw [CochainComplex.of_d, AlgebraicTopology.AlternatingCofaceMapComplex.objD, ← h]
+  exact Finset.sum_congr rfl fun i _ ↦ congrArg ((-1 : ℤ) ^ (i : ℕ) • ·) (cobarObject_δ k i)
 
-/-- The differential of the cobar complex is the cobar differential. -/
-theorem cobarComplex_d (k : ℤ) (n : ℕ) :
-    (cobarComplex k).d n (n + 1) = AddCommGrpCat.ofHom (cobarDifferential k n) :=
-  AddCommGrpCat.hom_ext (AddMonoidHom.ext (cobarComplex_d_apply k n))
+/-- The differential of the cobar complex acts by the cobar differential. -/
+theorem cobarComplex_d_apply (k : ℤ) (n : ℕ) (f : CobarRing n) :
+    (cobarComplex k).d n (n + 1) f = cobarDifferential k n f := by
+  rw [cobarComplex_d]
+  exact AddCommGrpCat.ofHom_apply (cobarDifferential k n) f
 
 /-- The cobar differential squares to zero. -/
 theorem cobarDifferential_comp_cobarDifferential (k : ℤ) (n : ℕ) :

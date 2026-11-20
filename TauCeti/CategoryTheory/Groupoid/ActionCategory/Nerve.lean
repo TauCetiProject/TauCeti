@@ -292,8 +292,10 @@ theorem nerveEquiv_whiskerLeft {m : ℕ} {θ : Fin (m + 1) → Fin (n + 1)} (hθ
   -- The points and arrows of `F.whiskerLeft hθ.functor` are those of `F` at `θ 0, …, θ m`.
   refine Prod.ext ?_ (funext fun j ↦ ?_)
   · rw [nerveMap_fst, ← hom_map_homOfLE_zero_le F]
+    simp only [nerveEquiv_apply, ComposableArrows.whiskerLeft_obj, Monotone.functor_obj]
     exact F.back_obj_eq_smul (θ 0)
-  · exact hlabel _
+  · rw [nerveMap_snd, ← hlabel (hθ j.castSucc_le_succ)]
+    simp only [nerveEquiv_apply, ComposableArrows.whiskerLeft_map, Monotone.functor_map_homOfLE]
 
 end TauCeti.ActionGroupoid
 
