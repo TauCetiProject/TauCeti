@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.OrthonormalBasis
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Neg
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Basic
@@ -30,6 +31,13 @@ The isomorphism `CliffordAlgebra.realCliffordSpinGroupEquivNeg p q` is
 bivector `ι a * ι b` to minus the corresponding bivector of the negated signature. It intertwines
 the two vector actions through the coordinate isometry, and it sends `-1` to `-1`.
 
+On even parts it is the real algebra isomorphism
+`CliffordAlgebra.realCliffordEvenEquivNeg p q : even (realCliffordForm p q) ≃ₐ[ℝ]
+even (realCliffordForm q p)`, the composite of `CliffordAlgebra.evenEquivEvenNeg` with the
+even-algebra map of `realCliffordFormNegIsometry p q`. It sends a bivector `ι a * ι b` to minus
+the bivector of the transported vectors, and commutes with Clifford reversal; grade involution is
+the identity on both even algebras, so it commutes with that too.
+
 The same construction compares `Spin(n)` with the Spin group of a form `Q v = -‖v‖²` on a real inner
 product space `V`, along an orthonormal basis `b` of `V`: the coordinate isometry is replaced by the
 coordinates `OrthonormalBasis.negRealCliffordFormIsometryEquiv b hQ` of `b`. This gives the frame
@@ -40,6 +48,8 @@ frame.
 
 ## Main definitions
 
+* `CliffordAlgebra.realCliffordEvenEquivNeg p q`: the comparison of the even Clifford algebras of
+  signatures `(p, q)` and `(q, p)`.
 * `OrthonormalBasis.realSpinGroupEquiv b hQ`: the comparison of the compact Spin group
   `spinGroup (realCliffordForm n 0)` with `spinGroup Q` along `b`.
 
@@ -52,6 +62,11 @@ frame.
 * `CliffordAlgebra.spinVectorAction_realCliffordSpinGroupEquivNeg`: the vector actions agree
   under the coordinate isometry.
 * `CliffordAlgebra.realCliffordSpinGroupEquivNeg_negOne`: the central element `-1` goes to `-1`.
+* `CliffordAlgebra.realCliffordEvenEquivNeg_ι` and
+  `CliffordAlgebra.realCliffordEvenEquivNeg_reverseEven`: the bivector sign of the even comparison,
+  and its compatibility with reversal.
+* `CliffordAlgebra.spinGroupToEven_realCliffordSpinGroupEquivNeg`: on even parts, the Spin
+  comparison is the even comparison.
 * `OrthonormalBasis.spinVectorAction_realSpinGroupEquiv`: the frame comparison intertwines the
   vector actions through the coordinates of `b`.
 * `OrthonormalBasis.spinGroupToEven_realSpinGroupEquiv`: on even parts, the Spin frame comparison
@@ -126,6 +141,63 @@ theorem realCliffordSpinGroupEquivNeg_negOne [NeZero (p + q)] :
         (nondegenerate_realCliffordForm q p).ne_zero) := by
   rw [realCliffordSpinGroupEquivNeg, MulEquiv.trans_apply, spinGroupEquivNeg_negOne,
     QuadraticMap.IsometryEquiv.spinGroupEquiv_apply, QuadraticMap.Isometry.spinGroupMap_negOne]
+
+/-! ### The even Clifford algebras of the two signatures -/
+
+/-- The even Clifford algebras of signatures `(p, q)` and `(q, p)` are isomorphic: apply Mathlib's
+`CliffordAlgebra.evenEquivEvenNeg` and then the even-algebra map of the coordinate isometry
+`realCliffordFormNegIsometry p q`. A bivector `ι a * ι b` goes to minus the bivector of the
+transported vectors (`CliffordAlgebra.realCliffordEvenEquivNeg_ι`). -/
+noncomputable def realCliffordEvenEquivNeg :
+    even (realCliffordForm p q) ≃ₐ[ℝ] even (realCliffordForm q p) :=
+  (evenEquivEvenNeg (realCliffordForm p q)).trans
+    (evenEquivOfIsometry (realCliffordFormNegIsometry p q))
+
+/-- The Clifford value of `realCliffordEvenEquivNeg p q x` is the even comparison
+`TauCeti.CliffordAlgebra.realCliffordEvenToNeg p q x`. -/
+theorem coe_realCliffordEvenEquivNeg_apply (x : even (realCliffordForm p q)) :
+    (realCliffordEvenEquivNeg p q x : CliffordAlgebra (realCliffordForm q p)) =
+      realCliffordEvenToNeg p q x := by
+  rw [realCliffordEvenEquivNeg, AlgEquiv.trans_apply, coe_evenEquivOfIsometry_apply,
+    equivOfIsometry_apply, realCliffordEvenToNeg_apply]
+
+/-- `realCliffordEvenEquivNeg` sends a bivector `ι a * ι b` to minus the bivector of the vectors
+transported by `realCliffordFormNegIsometry p q`. -/
+@[simp]
+theorem realCliffordEvenEquivNeg_ι (a b : Fin (p + q) → ℝ) :
+    realCliffordEvenEquivNeg p q ((even.ι (realCliffordForm p q)).bilin a b) =
+      -(even.ι (realCliffordForm q p)).bilin (realCliffordFormNegIsometry p q a)
+        (realCliffordFormNegIsometry p q b) := by
+  rw [realCliffordEvenEquivNeg, AlgEquiv.trans_apply, evenEquivEvenNeg_apply, evenToNeg_ι,
+    map_neg, evenEquivOfIsometry_ι]
+
+/-- `realCliffordEvenEquivNeg` commutes with Clifford reversal. Grade involution is the identity
+on both even algebras (`CliffordAlgebra.involute_eq_of_mem_even`), so the comparison also commutes
+with it, and hence with Clifford conjugation `star`. -/
+theorem realCliffordEvenEquivNeg_reverseEven (x : even (realCliffordForm p q)) :
+    realCliffordEvenEquivNeg p q (reverseEven (realCliffordForm p q) x) =
+      reverseEven (realCliffordForm q p) (realCliffordEvenEquivNeg p q x) := by
+  rw [realCliffordEvenEquivNeg, AlgEquiv.trans_apply, AlgEquiv.trans_apply,
+    evenEquivEvenNeg_reverseEven, evenEquivOfIsometry_reverseEven]
+
+/-- On even parts, the Spin comparison `realCliffordSpinGroupEquivNeg p q` is the even-algebra
+comparison `realCliffordEvenEquivNeg p q`. -/
+@[simp]
+theorem spinGroupToEven_realCliffordSpinGroupEquivNeg (x : realCliffordSpinGroup p q) :
+    spinGroupToEven (realCliffordForm q p) (realCliffordSpinGroupEquivNeg p q x) =
+      realCliffordEvenEquivNeg p q (spinGroupToEven (realCliffordForm p q) x) :=
+  Subtype.ext (by
+    rw [coe_spinGroupToEven_apply, coe_realCliffordSpinGroupEquivNeg_apply,
+      coe_realCliffordEvenEquivNeg_apply])
+
+/-- On even parts, the inverse of `realCliffordSpinGroupEquivNeg p q` is the inverse of the
+even-algebra comparison `realCliffordEvenEquivNeg p q`. -/
+@[simp]
+theorem spinGroupToEven_realCliffordSpinGroupEquivNeg_symm (y : realCliffordSpinGroup q p) :
+    spinGroupToEven (realCliffordForm p q) ((realCliffordSpinGroupEquivNeg p q).symm y) =
+      (realCliffordEvenEquivNeg p q).symm (spinGroupToEven (realCliffordForm q p) y) := by
+  rw [AlgEquiv.eq_symm_apply, ← spinGroupToEven_realCliffordSpinGroupEquivNeg,
+    MulEquiv.apply_symm_apply]
 
 end CliffordAlgebra
 
