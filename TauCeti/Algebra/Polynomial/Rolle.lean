@@ -137,7 +137,7 @@ number of roots of its derivative counted with multiplicity. -/
 theorem PolynomialRolle.card_roots_le_derivative (h : PolynomialRolle R) (p : R[X]) :
     Multiset.card p.roots ≤ Multiset.card p.derivative.roots + 1 := by
   have := h.charZero
-  -- A root of multiplicity `m` of `p` is a root of multiplicity at least `m - 1` of `p'`; the
+  -- At a root of `p` of multiplicity `m`, `p'` has root multiplicity at least `m - 1`; the
   -- remaining one per distinct root is paid for by the roots of `p'` that are not roots of `p`.
   -- Taking cardinalities, combine with the bound on distinct roots.
   have hcard := Multiset.card_le_card

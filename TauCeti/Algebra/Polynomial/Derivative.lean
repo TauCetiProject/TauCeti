@@ -21,10 +21,11 @@ of derivatives under coefficient maps.
 The derivative of a cubic `a (X - e₁)(X - e₂)(X - e₃)` at the root `e₁` is
 `a (e₁ - e₂)(e₁ - e₃)`.
 The roots of all nonzero iterated derivatives of a polynomial form a finite set.
-If `p.derivative ≠ 0` (always the case for nonconstant `p` in characteristic zero), a root of
-multiplicity `m` of `p` is a root of multiplicity at least `m - 1` of `p.derivative`; together
-with the roots of `p.derivative` that are not roots of `p`, this bounds `p.roots` as a multiset in
-terms of `p.derivative.roots` and the distinct roots of `p`.
+If `p.derivative ≠ 0` (always the case for nonconstant `p` in characteristic zero), then at a
+root of `p` of multiplicity `m` the root multiplicity of `p.derivative` is at least `m - 1`, so a
+simple root of `p` need not be a root of `p.derivative`; together with the roots of
+`p.derivative` that are not roots of `p`, this bounds `p.roots` as a multiset in terms of
+`p.derivative.roots` and the distinct roots of `p`.
 
 The derivation `Polynomial.derivative'` has `Polynomial.derivative` as its underlying function,
 and every scalar multiple of it is locally nilpotent.
@@ -71,11 +72,12 @@ theorem finite_setOfPred_isRoot_iterate_derivative (p : R[X]) :
   exact (hk.biUnion fun k hk ↦ finite_setOfPred_isRoot hk).subset
     fun z ⟨k, hk, hz⟩ ↦ mem_biUnion hk hz
 
-/-- If `p.derivative ≠ 0`, each root of `p` of multiplicity `m` is a root of `p.derivative` of
-multiplicity at least `m - 1`, in any characteristic; the distinct roots of `p.derivative` that
-are not roots of `p` come on top. Counted with multiplicity, `p.roots` together with those extra
-roots is therefore bounded by `p.derivative.roots` together with one copy of each distinct root
-of `p`. The hypothesis is needed: over `ZMod 2`, `X ^ 2` has roots `{0, 0}` and derivative `0`. -/
+/-- If `p.derivative ≠ 0`, then at each root of `p` of multiplicity `m` the root multiplicity of
+`p.derivative` is at least `m - 1`, in any characteristic (so a simple root of `p` need not be a
+root of `p.derivative`); the distinct roots of `p.derivative` that are not roots of `p` come on
+top. Counted with multiplicity, `p.roots` together with those extra roots is therefore bounded
+by `p.derivative.roots` together with one copy of each distinct root of `p`. The hypothesis is
+needed: over `ZMod 2`, `X ^ 2` has roots `{0, 0}` and derivative `0`. -/
 theorem roots_add_roots_derivative_sdiff_roots_le_roots_derivative_add_roots_toFinset_of_ne_zero
     [DecidableEq R] {p : R[X]} (hp : p.derivative ≠ 0) :
     p.roots + (p.derivative.roots.toFinset \ p.roots.toFinset).val ≤
