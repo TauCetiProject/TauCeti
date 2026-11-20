@@ -70,14 +70,14 @@ namespace TauCeti
 
 namespace PDE
 
-variable {μ : ℝ}
+variable {n : ℕ} {μ : ℝ}
 
 /-- **Meyers' solution leaves the origin superlinearly.** For `μ > 1` the difference quotients
 `u(t e₀) / t = t ^ (μ - 1)` of Meyers' solution at the origin in the direction `e₀` tend to `0`
 as `t → 0⁺`. -/
 theorem tendsto_meyersSolution_smul_single_zero_div (hμ : 1 < μ) :
-    Tendsto (fun t : ℝ => meyersSolution μ (t • EuclideanSpace.single 0 1) / t) (𝓝[>] 0)
-      (𝓝 0) := by
+    Tendsto (fun t : ℝ => meyersSolution μ (t • EuclideanSpace.single (0 : Fin (n + 2)) 1) / t)
+      (𝓝[>] 0) (𝓝 0) := by
   have h : Tendsto (fun t : ℝ => t ^ (μ - 1)) (𝓝[>] 0) (𝓝 0) := by
     simpa [Real.zero_rpow (by linarith : μ - 1 ≠ 0)] using
       ((continuous_id.rpow_const fun _ => Or.inr (by linarith : 0 ≤ μ - 1)).tendsto
@@ -115,7 +115,7 @@ theorem exists_uniformlyEllipticOn_energyFormH1_eq_zero_tendsto_div {Λ : ℝ} (
     hu, energyFormH1_meyersCoefficient_eq_zero hs0 u hu, continuous_meyersSolution hs0,
     meyersSolution_zero, fun x hx => meyersSolution_pos (hΩ hx),
     tendsto_meyersSolution_smul_single_zero_div hs⟩
-  simpa [Real.sq_sqrt (zero_le_one.trans hΛ.le)] using
+  simpa [Real.mul_self_sqrt (zero_le_one.trans hΛ.le)] using
     uniformlyEllipticOn_meyersCoefficient_of_one_le hs.le (Ω : Set (EuclideanSpace ℝ (Fin 2)))
 
 end PDE
