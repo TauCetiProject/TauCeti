@@ -102,17 +102,20 @@ theorem suffixConj_last (w : Fin (n + 1) → c.carrier) :
     suffixConj w (Fin.last n) = w (Fin.last n) :=
   Subtype.ext <| by simp [coe_suffixConj]
 
+/-- Taking values in `G` commutes with deleting an entry, since `Fin.removeNth` only reindexes. -/
+private theorem coe_removeNth (p : Fin (n + 1)) (w : Fin (n + 1) → c.carrier) :
+    (fun l ↦ ((p.removeNth w l : c.carrier) : G)) = p.removeNth fun l ↦ (w l : G) :=
+  funext fun l ↦ by rw [Fin.removeNth_apply, Fin.removeNth_apply]
+
 /-- Deleting an entry at or before position `i` leaves the entries after the following one, and
 hence the conjugate at that position, unchanged. -/
 private theorem suffixConj_removeNth_castSucc (w : Fin (n + 2) → c.carrier) {i j : Fin (n + 1)}
     (hij : i ≤ j) : suffixConj (i.castSucc.removeNth w) j = suffixConj w j.succ := by
   apply Subtype.ext
-  have hcoe : (fun l ↦ ((i.castSucc.removeNth w l : c.carrier) : G)) =
-      i.castSucc.removeNth fun l ↦ (w l : G) := rfl
   have hlast : i.castSucc ≤ Fin.last (n + 1) := Fin.le_last _
   have hsucc : i.castSucc ≤ j.succ := (Fin.castSucc_lt_succ_iff.2 hij).le
   have hcast : i.castSucc ≤ j.castSucc := Fin.castSucc_le_castSucc_iff.2 hij
-  rw [coe_suffixConj_eq_partialProd, coe_suffixConj_eq_partialProd, hcoe,
+  rw [coe_suffixConj_eq_partialProd, coe_suffixConj_eq_partialProd, coe_removeNth,
     Fin.partialProd_removeNth_of_ge _ hlast, Fin.partialProd_removeNth_of_ge _ hsucc,
     Fin.partialProd_removeNth_of_ge _ hcast]
   simp only [Fin.succ_last, Fin.succ_castSucc]
@@ -124,14 +127,12 @@ private theorem suffixConj_removeNth_succ (w : Fin (n + 2) → c.carrier) {i j :
     (hij : i ≤ j) :
     (suffixConj (j.succ.removeNth w) i : G) =
       suffixConj w j.succ * suffixConj w i.castSucc * (suffixConj w j.succ : G)⁻¹ := by
-  have hcoe : (fun l ↦ ((j.succ.removeNth w l : c.carrier) : G)) =
-      j.succ.removeNth fun l ↦ (w l : G) := rfl
   have hlast : j.succ ≤ Fin.last (n + 1) := Fin.le_last _
   have hsucc : i.succ ≤ j.succ := Fin.succ_le_succ_iff.2 hij
   have hcast : i.castSucc ≤ j.succ := (Fin.castSucc_lt_succ_iff.2 hij).le
   simp only [coe_suffixConj_eq_partialProd]
-  rw [hcoe, Fin.partialProd_removeNth_of_ge _ hlast, Fin.partialProd_removeNth_of_le _ hsucc,
-    Fin.partialProd_removeNth_of_le _ hcast]
+  rw [coe_removeNth, Fin.partialProd_removeNth_of_ge _ hlast,
+    Fin.partialProd_removeNth_of_le _ hsucc, Fin.partialProd_removeNth_of_le _ hcast]
   simp only [Fin.succ_last, Fin.succ_castSucc]
   group
 
@@ -314,16 +315,13 @@ theorem kComplexMap_f (f : M →ₗ[A] N) (q : ℕ) :
 theorem kComplexMap_id : kComplexMap (k := k) (r := r) (hr := hr) (LinearMap.id : M →ₗ[A] M) =
     𝟙 (kComplex k r hr M) := by
   ext q : 1
-  rw [kComplexMap_f, LinearMap.restrictScalars_id, Finsupp.mapRange.linearMap_id]
-  exact ModuleCat.ofHom_id
+  simp [LinearMap.restrictScalars_id, Finsupp.mapRange.linearMap_id, ModuleCat.ofHom_id]
 
 @[reassoc, simp]
 theorem kComplexMap_comp (f : M →ₗ[A] N) (g : N →ₗ[A] P) :
     kComplexMap (k := k) (r := r) (hr := hr) (g ∘ₗ f) =
       kComplexMap (k := k) (r := r) (hr := hr) f ≫ kComplexMap g := by
   ext q : 1
-  rw [HomologicalComplex.comp_f, kComplexMap_f, kComplexMap_f, kComplexMap_f,
-    LinearMap.restrictScalars_comp, Finsupp.mapRange.linearMap_comp]
-  exact ModuleCat.ofHom_comp _ _
+  simp [LinearMap.restrictScalars_comp, Finsupp.mapRange.linearMap_comp, ModuleCat.ofHom_comp]
 
 end TauCeti
