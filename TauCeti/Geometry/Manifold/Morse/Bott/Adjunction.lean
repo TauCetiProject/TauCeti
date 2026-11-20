@@ -485,8 +485,10 @@ private theorem exists_homotopyEquiv_pushout_of_deformation [T2Space S] [Compact
       sq.inr_isoPushout_inv, TopCat.ofHom_apply, ContinuousMap.inclusion_apply_coe]
   refine ⟨α, hα, ((TopCat.homeoOfIso sq.isoPushout.symm).trans
     (Homeomorph.setCongr (inter_eq_right.2 hU).symm)).toHomotopyEquiv.trans
-    (ContinuousMap.HomotopyEquiv.ofRetraction _ ρ hρ R.toHomotopy), fun z ↦ ?_⟩
-  rw [ContinuousMap.HomotopyEquiv.trans_apply, ContinuousMap.HomotopyEquiv.coe_ofRetraction_apply]
+    (ContinuousMap.HomotopyEquiv.ofDeformationRetraction (.inclusion _) ρ hρ
+      (ContinuousMap.HomotopicRel.homotopic ⟨R⟩)), fun z ↦ ?_⟩
+  rw [ContinuousMap.HomotopyEquiv.trans_apply,
+    ContinuousMap.HomotopyEquiv.ofDeformationRetraction_apply, ContinuousMap.inclusion_apply_coe]
   exact hinr z
 
 /-- **Crossing a Morse–Bott level between regular levels attaches the negative disc bundle.** Let
@@ -698,11 +700,13 @@ theorem exists_isPushout_iUnion_negativeDiscBundle_homotopyEquiv [T2Space M]
   have hρ' : (ContinuousMap.inclusion hX).comp ρ =
       (ContinuousMap.inclusion inter_subset_left).comp r :=
     ContinuousMap.ext fun _ ↦ rfl
-  set e := ContinuousMap.HomotopyEquiv.ofRetraction hX ρ hρ (G.toHomotopy.cast hρ'.symm rfl)
-  have he₁ (x) : (e x : M) = x := ContinuousMap.HomotopyEquiv.coe_ofRetraction_apply _ _ _ _ x
-  have he : e.toFun = ContinuousMap.inclusion hX := ContinuousMap.ext fun x ↦ Subtype.ext (he₁ x)
-  have he' : e.invFun = ρ :=
-    ContinuousMap.ext (ContinuousMap.HomotopyEquiv.coe_ofRetraction_symm_apply _ _ _ _)
+  set e := ContinuousMap.HomotopyEquiv.ofDeformationRetraction (.inclusion hX) ρ hρ
+    ⟨G.toHomotopy.cast hρ'.symm rfl⟩
+  have he₁ (x) : (e x : M) = x :=
+    congrArg Subtype.val (ContinuousMap.HomotopyEquiv.ofDeformationRetraction_apply _ _ _ _ x)
+  have he : e.toFun = ContinuousMap.inclusion hX :=
+    ContinuousMap.HomotopyEquiv.ofDeformationRetraction_toFun ..
+  have he' : e.invFun = ρ := ContinuousMap.HomotopyEquiv.ofDeformationRetraction_invFun ..
   refine ⟨e, he₁, fun x ↦ ?_, ?_⟩
   · simpa only [← he, ← he'] using hρ x
   · rw [he, he', hρ']; exact ContinuousMap.HomotopicRel.mono ⟨G⟩ fun y hy ↦ Or.inl hy
