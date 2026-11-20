@@ -85,7 +85,9 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `TauCeti.laplacian_eq_traceL_iteratedFDeriv`: the same trace, as a continuous linear functional
   of the second iterated Fréchet derivative.
 * `TauCeti.norm_laplacian_le`, `TauCeti.norm_laplacian_sub_laplacian_le`: the Laplacian and its
-  differences are bounded by `dim E` times the second derivative and its differences.
+  differences are bounded by `dim E` times the second derivative and its differences;
+  `TauCeti.norm_laplacian_le_norm_iteratedFDeriv_two` states the first bound with the second
+  iterated derivative.
 * `ContDiffOn.continuousOn_laplacian`: the Laplacian of a `C²` function on an open set is
   continuous there, and `ContDiff.continuous_laplacian` its global form.
 * `TauCeti.laplacian_eq_sum_fderiv_fderiv_apply`: the Laplacian as the sum of the second
@@ -173,6 +175,13 @@ theorem norm_laplacian_le (f : E → F) (x : E) :
     ‖Δ f x‖ ≤ Module.finrank ℝ E * ‖fderiv ℝ (fderiv ℝ f) x‖ := by
   simpa [laplacian_eq_traceL, traceL_apply] using (fderiv ℝ (fderiv ℝ f) x).norm_sum_apply_apply_le
     Finset.univ fun i _ ↦ ((stdOrthonormalBasis ℝ E).norm_eq_one i).le
+
+/-- The Laplacian is bounded by the dimension times the second iterated Fréchet derivative:
+`‖Δ f x‖ ≤ dim E * ‖iteratedFDeriv ℝ 2 f x‖`. -/
+theorem norm_laplacian_le_norm_iteratedFDeriv_two (f : E → F) (x : E) :
+    ‖Δ f x‖ ≤ Module.finrank ℝ E * ‖iteratedFDeriv ℝ 2 f x‖ := by
+  rw [← norm_iteratedFDeriv_fderiv, norm_iteratedFDeriv_one]
+  exact norm_laplacian_le f x
 
 /-- Differences of the Laplacian are bounded by the dimension times the differences of the second
 Fréchet derivative: `‖Δ f x - Δ f y‖ ≤ dim E * ‖D²f x - D²f y‖`. -/
