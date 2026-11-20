@@ -47,6 +47,9 @@ on the quotient.
 * `TauCeti.Wkp.ker_iteratedGradientL`: on a preconnected domain, the kernel of the top weak
   derivative on `W^{m+1,p}(Ω)` is `polynomialClasses m (m + 1)`.
 * `TauCeti.Wkp.ofPolynomialL`: the Sobolev class of a polynomial on a bounded domain.
+* `TauCeti.Wkp.seminorm_ofPolynomialL`, `TauCeti.Wkp.seminorm_sub_ofPolynomialL`: seminorms of
+  order exceeding the degree vanish on, and are unchanged by subtracting, Sobolev classes of
+  polynomials.
 * `TauCeti.Wkp.range_ofPolynomialL`, `TauCeti.Wkp.ofPolynomialL_injective`,
   `TauCeti.Wkp.finrank_polynomialClasses`, `TauCeti.Wkp.isClosed_polynomialClasses`.
 * `TauCeti.Wkp.quotientIteratedGradientL`, `TauCeti.Wkp.quotientSeminorm`: the top weak derivative
@@ -232,6 +235,26 @@ theorem lowerOrder_ofPolynomialL {m k : ℕ} (q : polynomialsDegLE ι m) :
   rw [eq_comm, ofPolynomialL_eq_iff, ← value_succ]
   exact value_ofPolynomialL_ae hOmega m (k + 1) q
 
+/-- The Sobolev class of a polynomial of degree at most `m` is a polynomial class of degree at
+most `m`. -/
+@[simp]
+theorem ofPolynomialL_mem_polynomialClasses {m k : ℕ} (q : polynomialsDegLE ι m) :
+    ofPolynomialL (mu := mu) (p := p) hOmega m k q ∈ polynomialClasses m k :=
+  ⟨q, q.2, value_ofPolynomialL_ae hOmega m k q⟩
+
+/-- Every Sobolev seminorm of order exceeding `m` vanishes on the Sobolev class of a polynomial of
+degree at most `m`. -/
+theorem seminorm_ofPolynomialL {m j k : ℕ} (hmj : m < j) (hj : j ≤ k) (q : polynomialsDegLE ι m) :
+    seminorm k j hj (ofPolynomialL (mu := mu) (p := p) hOmega m k q) = 0 :=
+  seminorm_eq_zero_of_mem_polynomialClasses hmj hj (ofPolynomialL_mem_polynomialClasses hOmega q)
+
+/-- Subtracting the Sobolev class of a polynomial of degree at most `m` does not change any Sobolev
+seminorm of order exceeding `m`. -/
+theorem seminorm_sub_ofPolynomialL {m j k : ℕ} (hmj : m < j) (hj : j ≤ k)
+    (u : Wkp mu Omega p k) (q : polynomialsDegLE ι m) :
+    seminorm k j hj (u - ofPolynomialL hOmega m k q) = seminorm k j hj u :=
+  seminorm_sub_of_mem_polynomialClasses hmj hj u (ofPolynomialL_mem_polynomialClasses hOmega q)
+
 /-- The Sobolev classes of polynomials of degree at most `m` are exactly the polynomial classes of
 degree at most `m`. -/
 theorem range_ofPolynomialL (m k : ℕ) :
@@ -239,7 +262,7 @@ theorem range_ofPolynomialL (m k : ℕ) :
   ext u
   refine ⟨?_, fun ⟨q, hq, hu⟩ ↦ ⟨⟨q, hq⟩, (ofPolynomialL_eq_iff hOmega).2 hu⟩⟩
   rintro ⟨q, rfl⟩
-  exact ⟨q, q.2, value_ofPolynomialL_ae hOmega m k q⟩
+  exact ofPolynomialL_mem_polynomialClasses hOmega q
 
 /-- On a nonempty bounded domain, distinct polynomials have distinct Sobolev classes. -/
 theorem ofPolynomialL_injective (hne : (Omega : Set (EuclideanSpace ℝ ι)).Nonempty) (m k : ℕ) :
