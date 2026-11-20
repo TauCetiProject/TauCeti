@@ -85,10 +85,10 @@ attribute [local instance] ContMDiffMul.boundarylessManifold
 
 variable {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG] [FiniteDimensional ℝ EG]
   [TopologicalSpace HG] {IG : ModelWithCorners ℝ EG HG} {G : Type*} [TopologicalSpace G]
-  [ChartedSpace HG G] [Group G] [LieGroup IG ∞ G] [T2Space G]
+  [ChartedSpace HG G] [Group G] [LieGroup IG ∞ G]
   {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] {Q : Type*}
-  [TopologicalSpace Q] [ChartedSpace H Q] [T2Space Q] [IsManifold I ∞ Q] [MulAction G Q]
+  [TopologicalSpace Q] [ChartedSpace H Q] [IsManifold I ∞ Q] [MulAction G Q]
   [ContMDiffSMul IG I ∞ G Q] [ContMDiffConstSMul I ∞ G Q]
 
 namespace TauCeti.CotangentBundle
@@ -96,9 +96,12 @@ namespace TauCeti.CotangentBundle
 /-- **For a free action, every value of the cotangent moment map is regular.** The cotangent lift
 of a free action is free, so the differential `dμ_z` of the cotangent moment map is surjective at
 every covector `z`. -/
-theorem differential_momentMap_surjective [IsCancelSMul G Q] (z : CotangentBundle I Q) :
+theorem differential_momentMap_surjective [T2Space Q] [IsCancelSMul G Q]
+    (z : CotangentBundle I Q) :
+    haveI : T2Space G := IG.t2Space_of_lieGroup ∞
     Surjective
       ((isEquivariantMomentMap_momentMap (IG := IG) (G := G) (I := I) (M := Q)).differential z) :=
+  haveI : T2Space G := IG.t2Space_of_lieGroup ∞
   isEquivariantMomentMap_momentMap.forall_differential_surjective_of_stabilizer_eq_bot
     isSymplectic_symplecticForm.isNondegenerate (fun z _ ↦ IsCancelSMul.stabilizer_eq_bot z) z rfl
 
@@ -155,21 +158,26 @@ variable (IG G I Q) in
 /-- The reduction map `(q, p) ↦ ([q], p')` on the orbit space of the zero level, where `p'` is the
 reduced covector of `p`. -/
 private def cotangentReductionMap :
+    haveI : T2Space G := IG.t2Space_of_lieGroup ∞
+    haveI : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
     letI := orbitRelQuotientChartedSpace IG G I Q
     R₀ → CotangentBundle IB₀ B₀ :=
+  haveI : T2Space G := IG.t2Space_of_lieGroup ∞
+  haveI : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
   letI := orbitRelQuotientChartedSpace IG G I Q
   Quotient.lift (fun z ↦ reductionMap I IB₀ (Quotient.mk (MulAction.orbitRel G Q)) z.1)
     fun z z' hzz' ↦ by
       obtain ⟨g, hg⟩ := MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 hzz')
       refine ((reductionMap_eq_reductionMap_iff_quotientMk
         ((hμ₀).mem_levelSubMulAction.1 z'.2) ((hμ₀).mem_levelSubMulAction.1 z.2)).2 ⟨g, ?_⟩).symm
-      -- The action of `G_0` on the level is the restriction of the action of `G` on `T*Q`.
+      -- The action of `G_0` on the level is by definition the restriction of the action of `G` on
+      -- `T*Q`. `SubMulAction.val_smul` does not apply: it would infer the cotangent lift of the
+      -- restricted action of `G_0` on `Q`, a different (though defeq) `SMul` instance.
       rw [← hg]
       rfl
 
 /-! ### The dimension of the reduced space -/
 
-omit [T2Space G] in
 include d hn in
 /-- **The dimension of `T*Q //₀ G`.** The model space of the reduced space `μ⁻¹(0) / G`, of
 dimension `dim T*Q - dim 𝔤 - dim G`, has dimension `2 (dim Q - dim G)`, like that of `T*(Q ⧸ G)`
@@ -188,6 +196,7 @@ theorem finrank_quotientModelSpace_eq_two_mul :
     exact LieSubalgebra.topEquiv.toLinearEquiv.finrank_eq
   have hE : finrank ℝ (E × (E →L[ℝ] ℝ)) = 2 * finrank ℝ E := by
     rw [finrank_prod, ContinuousLinearMap.dual_finrank_eq, two_mul]
+  -- The Lie algebra `𝔤` is by definition the tangent space of `G` at `1`, which is the model `EG`.
   have hG : finrank ℝ (GroupLieAlgebra IG G) = finrank ℝ EG := rfl
   rw [finrank_quotientModelSpace, finrank_pi, Fintype.card_fin, hF, ← hn, hE, hG]
   omega
@@ -198,11 +207,15 @@ include d hn in
 /-- The reduction map is smooth on the reduced space, since its composite with the orbit
 projection is the reduction map along the smooth inclusion of the level. -/
 private theorem contMDiff_cotangentReductionMap :
+    haveI : T2Space G := IG.t2Space_of_lieGroup ∞
+    haveI : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
     letI := orbitRelQuotientChartedSpace IG G I Q
     haveI := CotangentBundle.properSMul IG (I := I) (M := Q) (G := G)
     letI := (hμ₀).levelSubMulActionChartedSpace 0 hreg₀ hn
     letI := (hμ₀).orbitRelQuotientChartedSpace 0 hreg₀ hn d
     ContMDiff IR₀ IT₀ ∞ (cotangentReductionMap IG G I Q) := by
+  have : T2Space G := IG.t2Space_of_lieGroup ∞
+  have : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
   let _ := orbitRelQuotientChartedSpace IG G I Q
   have := CotangentBundle.properSMul IG (I := I) (M := Q) (G := G)
   let _ := (hμ₀).levelSubMulActionChartedSpace 0 hreg₀ hn
@@ -220,6 +233,8 @@ include d hn in
 /-- The reduction map pulls the canonical symplectic form of `T*(Q ⧸ G)` back to the descent of
 the canonical symplectic form of `T*Q`. -/
 private theorem mpullback_quotientMk_mpullback_cotangentReductionMap_symplecticForm :
+    haveI : T2Space G := IG.t2Space_of_lieGroup ∞
+    haveI : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
     letI := orbitRelQuotientChartedSpace IG G I Q
     haveI := CotangentBundle.properSMul IG (I := I) (M := Q) (G := G)
     letI := (hμ₀).levelSubMulActionChartedSpace 0 hreg₀ hn
@@ -233,6 +248,8 @@ private theorem mpullback_quotientMk_mpullback_cotangentReductionMap_symplecticF
           (symplecticForm IB₀ B₀)) =
       SmoothForm.mpullback (Subtype.val : Z₀ → CotangentBundle I Q)
         (hi₀).contMDiff (symplecticForm I Q) := by
+  have : T2Space G := IG.t2Space_of_lieGroup ∞
+  have : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
   let _ := orbitRelQuotientChartedSpace IG G I Q
   have := CotangentBundle.properSMul IG (I := I) (M := Q) (G := G)
   let _ := (hμ₀).levelSubMulActionChartedSpace 0 hreg₀ hn
@@ -251,6 +268,8 @@ include d hn in
 /-- The reduction map pulls the Liouville form of `T*(Q ⧸ G)` back to the descent of the
 Liouville form of `T*Q`. -/
 private theorem mpullback_quotientMk_mpullback_cotangentReductionMap_liouvilleForm :
+    haveI : T2Space G := IG.t2Space_of_lieGroup ∞
+    haveI : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
     letI := orbitRelQuotientChartedSpace IG G I Q
     haveI := CotangentBundle.properSMul IG (I := I) (M := Q) (G := G)
     letI := (hμ₀).levelSubMulActionChartedSpace 0 hreg₀ hn
@@ -264,6 +283,8 @@ private theorem mpullback_quotientMk_mpullback_cotangentReductionMap_liouvilleFo
           (liouvilleForm IB₀ B₀)) =
       SmoothForm.mpullback (Subtype.val : Z₀ → CotangentBundle I Q)
         (hi₀).contMDiff (liouvilleForm I Q) := by
+  have : T2Space G := IG.t2Space_of_lieGroup ∞
+  have : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
   let _ := orbitRelQuotientChartedSpace IG G I Q
   have := CotangentBundle.properSMul IG (I := I) (M := Q) (G := G)
   let _ := (hμ₀).levelSubMulActionChartedSpace 0 hreg₀ hn
@@ -282,6 +303,8 @@ private theorem mpullback_quotientMk_mpullback_cotangentReductionMap_liouvilleFo
 include d hn in
 /-- The Marsden–Weinstein–Meyer reduced symplectic form of `T*Q //₀ G`. -/
 private theorem exists_isSymplectic_mpullback_quotientMk_eq_mpullback :
+    haveI : T2Space G := IG.t2Space_of_lieGroup ∞
+    haveI : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
     letI := orbitRelQuotientChartedSpace IG G I Q
     haveI := CotangentBundle.properSMul IG (I := I) (M := Q) (G := G)
     letI := (hμ₀).levelSubMulActionChartedSpace 0 hreg₀ hn
@@ -294,6 +317,8 @@ private theorem exists_isSymplectic_mpullback_quotientMk_eq_mpullback :
         SmoothForm.mpullback (Subtype.val : Z₀ → CotangentBundle I Q)
           (hi₀).contMDiff
           (symplecticForm I Q) := by
+  have : T2Space G := IG.t2Space_of_lieGroup ∞
+  have : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
   let _ := orbitRelQuotientChartedSpace IG G I Q
   have := CotangentBundle.properSMul IG (I := I) (M := Q) (G := G)
   exact ((hμ₀).existsUnique_isSymplectic_mpullback_quotientMk_eq_mpullback (c := 0) hreg₀ hn d
@@ -302,6 +327,8 @@ private theorem exists_isSymplectic_mpullback_quotientMk_eq_mpullback :
 include d hn in
 /-- Two-forms on the reduced space are determined by their pullbacks to the level. -/
 private theorem injective_mpullback_quotientMk :
+    haveI : T2Space G := IG.t2Space_of_lieGroup ∞
+    haveI : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
     letI := orbitRelQuotientChartedSpace IG G I Q
     haveI := CotangentBundle.properSMul IG (I := I) (M := Q) (G := G)
     letI := (hμ₀).levelSubMulActionChartedSpace 0 hreg₀ hn
@@ -310,6 +337,8 @@ private theorem injective_mpullback_quotientMk :
     haveI := (hμ₀).isManifold_orbitRelQuotient (c := 0) hreg₀ hn d
     Injective (SmoothForm.mpullback (F := ℝ) (k := 2) (Quotient.mk (MulAction.orbitRel G₀ Z₀))
       (hπ₀).contMDiff) := by
+  have : T2Space G := IG.t2Space_of_lieGroup ∞
+  have : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
   let _ := orbitRelQuotientChartedSpace IG G I Q
   have := CotangentBundle.properSMul IG (I := I) (M := Q) (G := G)
   let _ := (hμ₀).levelSubMulActionChartedSpace 0 hreg₀ hn
@@ -324,6 +353,8 @@ include d hn in
 /-- The reduction map pulls the canonical symplectic form of `T*(Q ⧸ G)` back to the reduced
 symplectic form, which is symplectic. -/
 private theorem isSymplectic_mpullback_cotangentReductionMap_symplecticForm :
+    haveI : T2Space G := IG.t2Space_of_lieGroup ∞
+    haveI : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
     letI := orbitRelQuotientChartedSpace IG G I Q
     haveI := CotangentBundle.properSMul IG (I := I) (M := Q) (G := G)
     letI := (hμ₀).levelSubMulActionChartedSpace 0 hreg₀ hn
@@ -343,11 +374,15 @@ include d hn in
 /-- The reduction map is a local diffeomorphism: it pulls a symplectic form back to a symplectic
 form, so its differentials are injective, between spaces of the same dimension. -/
 private theorem isLocalDiffeomorph_cotangentReductionMap :
+    haveI : T2Space G := IG.t2Space_of_lieGroup ∞
+    haveI : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
     letI := orbitRelQuotientChartedSpace IG G I Q
     haveI := CotangentBundle.properSMul IG (I := I) (M := Q) (G := G)
     letI := (hμ₀).levelSubMulActionChartedSpace 0 hreg₀ hn
     letI := (hμ₀).orbitRelQuotientChartedSpace 0 hreg₀ hn d
     IsLocalDiffeomorph IR₀ IT₀ ∞ (cotangentReductionMap IG G I Q) := by
+  have : T2Space G := IG.t2Space_of_lieGroup ∞
+  have : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
   let _ := orbitRelQuotientChartedSpace IG G I Q
   have := CotangentBundle.properSMul IG (I := I) (M := Q) (G := G)
   let _ := (hμ₀).levelSubMulActionChartedSpace 0 hreg₀ hn
@@ -366,8 +401,12 @@ variable (IG G I Q) in
 /-- The reduction map is bijective: its fibres are the orbits of the zero level, and every covector
 on `Q ⧸ G` is a reduced covector. -/
 private theorem bijective_cotangentReductionMap :
+    haveI : T2Space G := IG.t2Space_of_lieGroup ∞
+    haveI : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
     letI := orbitRelQuotientChartedSpace IG G I Q
     Bijective (cotangentReductionMap IG G I Q) := by
+  have : T2Space G := IG.t2Space_of_lieGroup ∞
+  have : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
   let _ := orbitRelQuotientChartedSpace IG G I Q
   refine ⟨fun x y hxy ↦ ?_, fun w ↦ ?_⟩
   · induction x using Quotient.inductionOn with | h z => ?_
@@ -376,7 +415,9 @@ private theorem bijective_cotangentReductionMap :
       ((hμ₀).mem_levelSubMulAction.1 z.2) ((hμ₀).mem_levelSubMulAction.1 z'.2)).1 hxy
     -- `g` lies in `G_0 = G`, since the coadjoint action fixes `0`.
     have hg0 : g ∈ G₀ := by rw [Representation.mem_stabilizer, map_zero]
-    exact (Quotient.sound (MulAction.orbitRel_apply.2 ⟨⟨g, hg0⟩, Subtype.ext hg⟩)).symm
+    -- As in `cotangentReductionMap`, `⟨g, hg0⟩` acts on the level by definition as `g` on `T*Q`.
+    exact (Quotient.sound (MulAction.orbitRel_apply.2
+      ⟨⟨g, hg0⟩, Subtype.ext hg⟩)).symm
   · obtain ⟨z, hz, rfl⟩ := exists_momentMap_eq_zero_and_reductionMap_eq_quotientMk w
     exact ⟨Quotient.mk _ ⟨z, (hμ₀).mem_levelSubMulAction.2 hz⟩, rfl⟩
 
@@ -392,11 +433,15 @@ orbit of a covector `p` at `q` with `μ(q, p) = 0` to the covector `p'` at `[q]`
 form of `T*(Q ⧸ G)` back to the reduced symplectic form
 (`ProperSMul.mpullback_quotientMk_mpullback_cotangentReductionDiffeomorph_symplecticForm`). -/
 def cotangentReductionDiffeomorph :
+    haveI : T2Space G := IG.t2Space_of_lieGroup ∞
+    haveI : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
     letI := orbitRelQuotientChartedSpace IG G I Q
     haveI := CotangentBundle.properSMul IG (I := I) (M := Q) (G := G)
     letI := (hμ₀).levelSubMulActionChartedSpace 0 hreg₀ hn
     letI := (hμ₀).orbitRelQuotientChartedSpace 0 hreg₀ hn d
     R₀ ≃ₘ⟮IR₀, IT₀⟯ CotangentBundle IB₀ B₀ :=
+  haveI : T2Space G := IG.t2Space_of_lieGroup ∞
+  haveI : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
   letI := orbitRelQuotientChartedSpace IG G I Q
   haveI := CotangentBundle.properSMul IG (I := I) (M := Q) (G := G)
   letI := (hμ₀).levelSubMulActionChartedSpace 0 hreg₀ hn
@@ -407,11 +452,15 @@ def cotangentReductionDiffeomorph :
 include d hn in
 /-- The cotangent reduction diffeomorphism is the reduction map. -/
 private theorem coe_cotangentReductionDiffeomorph :
+    haveI : T2Space G := IG.t2Space_of_lieGroup ∞
+    haveI : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
     letI := orbitRelQuotientChartedSpace IG G I Q
     haveI := CotangentBundle.properSMul IG (I := I) (M := Q) (G := G)
     letI := (hμ₀).levelSubMulActionChartedSpace 0 hreg₀ hn
     letI := (hμ₀).orbitRelQuotientChartedSpace 0 hreg₀ hn d
     ⇑(cotangentReductionDiffeomorph d hn) = cotangentReductionMap IG G I Q := by
+  have : T2Space G := IG.t2Space_of_lieGroup ∞
+  have : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
   let _ := orbitRelQuotientChartedSpace IG G I Q
   have := CotangentBundle.properSMul IG (I := I) (M := Q) (G := G)
   let _ := (hμ₀).levelSubMulActionChartedSpace 0 hreg₀ hn
@@ -422,13 +471,16 @@ private theorem coe_cotangentReductionDiffeomorph :
 covector.** The orbit of a covector `p` at `q` with `μ(q, p) = 0` goes to the covector `p'` at
 `[q]` with `p = p' ∘ dπ_q` (`TauCeti.CotangentBundle.cotangentRel_reductionMap`). -/
 @[simp]
-theorem cotangentReductionDiffeomorph_mk (z : Z₀) :
+theorem cotangentReductionDiffeomorph_mk :
+    haveI : T2Space G := IG.t2Space_of_lieGroup ∞
+    haveI : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
     letI := orbitRelQuotientChartedSpace IG G I Q
     haveI := CotangentBundle.properSMul IG (I := I) (M := Q) (G := G)
     letI := (hμ₀).levelSubMulActionChartedSpace 0 hreg₀ hn
     letI := (hμ₀).orbitRelQuotientChartedSpace 0 hreg₀ hn d
-    cotangentReductionDiffeomorph d hn (Quotient.mk _ z) =
+    ∀ z : Z₀, cotangentReductionDiffeomorph d hn (Quotient.mk _ z) =
       reductionMap I IB₀ (Quotient.mk (MulAction.orbitRel G Q)) z.1 := by
+  intro z
   rw [coe_cotangentReductionDiffeomorph]
   rfl
 
@@ -437,6 +489,8 @@ symplectic form `ω` of `T*(Q ⧸ G)` back to the reduced symplectic form, the u
 `μ⁻¹(0) / G` whose pullback along the orbit projection `π` is the restriction of `ω_Q` to
 `μ⁻¹(0)`. -/
 theorem mpullback_quotientMk_mpullback_cotangentReductionDiffeomorph_symplecticForm :
+    haveI : T2Space G := IG.t2Space_of_lieGroup ∞
+    haveI : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
     letI := orbitRelQuotientChartedSpace IG G I Q
     haveI := CotangentBundle.properSMul IG (I := I) (M := Q) (G := G)
     letI := (hμ₀).levelSubMulActionChartedSpace 0 hreg₀ hn
@@ -456,6 +510,8 @@ theorem mpullback_quotientMk_mpullback_cotangentReductionDiffeomorph_symplecticF
 /-- The pullback of the canonical symplectic form of `T*(Q ⧸ G)` along the cotangent reduction
 diffeomorphism is symplectic; it is the reduced symplectic form of `T*Q //₀ G`. -/
 theorem isSymplectic_mpullback_cotangentReductionDiffeomorph_symplecticForm :
+    haveI : T2Space G := IG.t2Space_of_lieGroup ∞
+    haveI : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
     letI := orbitRelQuotientChartedSpace IG G I Q
     haveI := CotangentBundle.properSMul IG (I := I) (M := Q) (G := G)
     letI := (hμ₀).levelSubMulActionChartedSpace 0 hreg₀ hn
@@ -472,6 +528,8 @@ theorem isSymplectic_mpullback_cotangentReductionDiffeomorph_symplecticForm :
 form `λ` of `T*(Q ⧸ G)` back to the descent of the Liouville form of `T*Q`: its pullback along the
 orbit projection `π` is the restriction of `λ_Q` to `μ⁻¹(0)`. -/
 theorem mpullback_quotientMk_mpullback_cotangentReductionDiffeomorph_liouvilleForm :
+    haveI : T2Space G := IG.t2Space_of_lieGroup ∞
+    haveI : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
     letI := orbitRelQuotientChartedSpace IG G I Q
     haveI := CotangentBundle.properSMul IG (I := I) (M := Q) (G := G)
     letI := (hμ₀).levelSubMulActionChartedSpace 0 hreg₀ hn

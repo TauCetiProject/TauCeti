@@ -323,12 +323,15 @@ instance instIsCancelSMul [IsCancelSMul G M] : IsCancelSMul G (CotangentBundle I
 variable {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace 𝕜 EG] [TopologicalSpace HG]
   (IG : ModelWithCorners 𝕜 EG HG) in
 /-- **The cotangent lift of a proper action is proper.** If a Lie group `G` acts smoothly and
-properly on a Hausdorff manifold `M`, then the cotangent-lifted action on `T*M` is proper, since the
-bundle projection is continuous and equivariant. This is not an instance, since the model `IG` of
-`G` cannot be inferred from the conclusion. -/
+properly on a manifold `M`, then the cotangent-lifted action on `T*M` is proper, since the bundle
+projection is continuous and equivariant. This is not an instance, since the model `IG` of `G`
+cannot be inferred from the conclusion. -/
 theorem properSMul [TopologicalSpace G] [ChartedSpace HG G] [LieGroup IG ∞ G]
-    [ContMDiffSMul IG I ∞ G M] [ProperSMul G M] [T2Space M] :
+    [ContMDiffSMul IG I ∞ G M] [ProperSMul G M] :
     ProperSMul G (CotangentBundle I M) :=
+  -- A space with a proper action of a `T₁` group, such as a Lie group, is Hausdorff.
+  have := IG.t1Space G
+  have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
   have : ContinuousSMul G (CotangentBundle I M) :=
     ContMDiffSMul.continuousSMul (I := IG) (I' := I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) ∞
   (FiberBundle.continuous_proj (E →L[𝕜] 𝕜) _).properSMul proj_smul
