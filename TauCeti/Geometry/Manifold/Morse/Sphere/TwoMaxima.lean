@@ -14,12 +14,14 @@ import TauCeti.Geometry.Manifold.Morse.Stable.OneDimensional
 # The Morse complex of the sphere with two maxima
 
 Let `u` and `v` be orthogonal unit vectors of a real inner product space of dimension `n + 1`, and
-`0 < t < 2`. On the sphere `Sⁿ` the function `f = hᵤ² + t hᵥ`
-(`TauCeti.isMorse_sphereHeight_sq_add_smul_sphereHeight`) has a minimum `-v` of index `0`, a
-saddle `v` of index `n - 1` and two maxima `m₁, m₂ = ±√(1 - t² / 4) u + (t / 2) v` of index `n`.
-This file computes its Morse complex, over `ℤ` and modulo two, for every adapted pseudo-gradient
-`X` and every choice of orientations of the unstable manifolds. On `S²` it is the complex
-`ℤ² → ℤ → ℤ` of a sphere with two maxima, one saddle and one minimum.
+`0 < t < 2`. Write `hᵤ = sphereHeight u` for the height function `x ↦ ⟪x, u⟫` on the sphere `Sⁿ`.
+On `Sⁿ` the function `f = hᵤ² + t hᵥ` (`TauCeti.isMorse_sphereHeight_sq_add_smul_sphereHeight`)
+has a minimum `-v` of index `0`, a saddle `v` of index `n - 1` and two maxima
+`m₁, m₂ = ±√(1 - t² / 4) u + (t / 2) v` of index `n`. For `n ≥ 2`, this file computes its Morse
+complex, over `ℤ` and modulo two, for every adapted pseudo-gradient `X` and every choice of
+orientations of the unstable manifolds. (For `n = 1` the saddle and the minimum both have index
+`0`.) On `S²` it is the complex `ℤ² → ℤ → ℤ` of a sphere with two maxima, one saddle and one
+minimum.
 
 * `X` is Morse–Smale whatever its choice, since the saddle is the only critical point of index
   neither `0` nor `n`.
@@ -35,12 +37,15 @@ This file computes its Morse complex, over `ℤ` and modulo two, for every adapt
   critical point has index `n - 2`.
 
 Hence the integral Morse boundary sends a chain `c` to `(ε₁ c(m₁) + ε₂ c(m₂)) v`. Its boundaries
-are the multiples of `v`, and the cycles of top degree are the multiples of `ε₂ m₁ - ε₁ m₂`.
+are the multiples of `v`, and a chain is a cycle exactly when `ε₁ c(m₁) + ε₂ c(m₂) = 0`.
 Reversing the orientations of the maxima where needed makes `ε₁ = ε₂ = 1`, and then the signed sum
-`m₁ - m₂` of the maxima spans the cycles of top degree. For `n = 2` the integral Morse homology is
-therefore `ℤ`, `0`, `ℤ` in degrees `2`, `1`, `0`, that of `S²`. Forgetting the signs would give
-`∂ m₁ = ∂ m₂ = v` but `∂ v = 2 (-v)`, and `H₀ = ℤ / 2`. Modulo two the boundary sends `c` to
-`(c(m₁) + c(m₂)) v`, unlike that of the torus or of `ℝℙ²`, which vanishes.
+`m₁ - m₂` of the maxima is a cycle. Modulo two the boundary sends `c` to `(c(m₁) + c(m₂)) v`,
+unlike that of the torus or of `ℝℙ²`, which vanishes.
+
+The file does not formalise the resulting homology. From these formulas, for `n = 2` the integral
+Morse homology is `ℤ`, `0`, `ℤ` in degrees `2`, `1`, `0`, that of `S²`, with `m₁ - m₂`
+generating `H₂`. Forgetting the signs would give `∂ m₁ = ∂ m₂ = v` but `∂ v = 2 (-v)`, and
+`H₀ = ℤ / 2`.
 
 ## Main results
 
@@ -90,6 +95,11 @@ private theorem apply_le_of_sphereHeight_eq_zero (ht : 0 ≤ t) {x : sphere (0 :
     (hx : sphereHeight u x = 0) : (sphereHeight u ^ 2 + t • sphereHeight v) x ≤ t := by
   simp only [Pi.add_apply, Pi.pow_apply, Pi.smul_apply, smul_eq_mul, hx]
   nlinarith [sphereHeight_le_one v x]
+
+omit [Fact (finrank ℝ E = n + 1)] in
+private theorem sphereHeight_eq_zero_of_inner (huv : ⟪(u : E), (v : E)⟫ = 0) :
+    sphereHeight u v = 0 := by
+  rw [sphereHeight_apply, real_inner_comm, huv]
 
 omit [Fact (finrank ℝ E = n + 1)] in
 private theorem apply_self (huv : ⟪(u : E), (v : E)⟫ = 0) :
@@ -252,7 +262,7 @@ private theorem isMax_and_pos_of_mem_unstableSet_inter_stableSet
   have hle := apply_le_of_sphereHeight_eq_zero (v := v) ht₀.le hus
   have hge : (sphereHeight u ^ 2 + t • sphereHeight v) y ≤
       (sphereHeight u ^ 2 + t • sphereHeight v) (hX.flow s y) := by
-    simpa using hX.antitone_flow y (show s ≤ 0 from hs)
+    simpa using hX.antitone_flow y (Set.mem_Iic.1 hs)
   linarith [hval.1]
 
 /-- **The stable manifold of the saddle reaches both sides of `hᵤ = 0`.** Near the saddle `v`, the
@@ -301,7 +311,7 @@ private theorem exists_mem_stableSet_sphereHeight_neg_and_pos
     nlinarith [sphereHeight_le_one v (γ r)]
   have h0 : sphereHeight u (γ 0) = 0 := by
     simp only [γ, zero_smul]
-    rw [← φ.apply_self, φ.toChart.left_inv φ.mem_source, sphereHeight_apply, real_inner_comm, huv]
+    rw [← φ.apply_self, φ.toChart.left_inv φ.mem_source, sphereHeight_eq_zero_of_inner huv]
   have hdiff := differentiableAt_sphereHeight_symm_smul (u := u) φ.mem_maximalAtlas
     (by simpa using hT 0 (by rwa [abs_zero])) a
   -- So `hᵤ` grows at least linearly along the line, and takes both signs near `v`.
@@ -309,7 +319,7 @@ private theorem exists_mem_stableSet_sphereHeight_neg_and_pos
     Asymptotics.IsBigO.of_bound 2 (hsq.mono fun r hr ↦ by
       rw [h0, sub_zero, sub_zero, Real.norm_eq_abs, Real.norm_eq_abs, ← abs_two, ← abs_mul]
       exact sq_le_sq.1 (by nlinarith [sq_nonneg (sphereHeight u (γ r))]))
-  obtain ⟨hl, hp⟩ := frequently_lt_and_frequently_gt_of_isBigO_sub hdiff hO
+  obtain ⟨hl, hp⟩ := frequently_lt_and_frequently_gt_of_isBigO_sub_rev hdiff hO
   obtain ⟨r, hr, hrs⟩ := (hl.and_eventually hmem).exists
   obtain ⟨r', hr', hrs'⟩ := (hp.and_eventually hmem).exists
   exact ⟨⟨γ r, hrs, hr.trans_eq h0⟩, ⟨γ r', hrs', h0.symm.trans_lt hr'⟩⟩
@@ -326,13 +336,10 @@ theorem mem_unstableSet_iff_sphereHeight_mul_sphereHeight_pos
     y ∈ hX.flow.unstableSet m ↔ 0 < sphereHeight u y * sphereHeight u m := by
   -- The saddle is on neither side: `hᵤ v = 0`, and the rest point `v` lies only in `W^u(v)`.
   rcases eq_or_ne y v with rfl | hyv
-  · have hu : sphereHeight u y = 0 := by rw [sphereHeight_apply, real_inner_comm, huv]
-    rw [hu, zero_mul, lt_self_iff_false, iff_false]
+  · rw [sphereHeight_eq_zero_of_inner huv, zero_mul, lt_self_iff_false, iff_false]
     intro hym
-    have hlim := Flow.mem_unstableSet.1 hym
-    simp only [hX.flow_apply_of_mfderiv_eq_zero
-      (mfderiv_sphereHeight_sq_add_smul_sphereHeight_self huv ht₀.ne')] at hlim
-    obtain rfl := tendsto_nhds_unique tendsto_const_nhds hlim
+    obtain rfl := hX.eq_of_mem_unstableSet_of_mfderiv_eq_zero
+      (mfderiv_sphereHeight_sq_add_smul_sphereHeight_self huv ht₀.ne') hym
     rw [sphereHeight_self] at h1
     linarith
   have hcrit (x : sphere (0 : E) 1) (h1 : sphereHeight v x = t / 2)
@@ -382,7 +389,7 @@ theorem exists_unstableSet_inter_stableSet_eq_orbit_sphereHeight_sq_add_smul_sph
   -- The saddle `v` is not `z`, since `hᵤ v = 0`.
   have hzv : z ≠ v := by
     rintro rfl
-    rw [sphereHeight_apply, real_inner_comm, huv, zero_mul] at hneg
+    rw [sphereHeight_eq_zero_of_inner huv, zero_mul] at hneg
     exact hneg.false
   exact ⟨y, hX.unstableSet_inter_stableSet_eq_orbit
     (mfderiv_sphereHeight_sq_add_smul_sphereHeight_self huv ht₀.ne')
@@ -524,8 +531,7 @@ theorem signedMorseBoundary_sphereHeight_sq_add_smul_sphereHeight (hn : 2 ≤ n)
       fun _ hq ↦ hsq (Subtype.ext (hs.trans hq.symm)), Int.cast_zero, mul_zero]
 
 /-- **The integral cycles of the sphere with two maxima.** A chain is a cycle exactly when the
-signed combination `ε₁ c(m₁) + ε₂ c(m₂)` of its coefficients at the two maxima vanishes. With
-integral coefficients the cycles of top degree are the multiples of `ε₂ m₁ - ε₁ m₂`. -/
+signed combination `ε₁ c(m₁) + ε₂ c(m₂)` of its coefficients at the two maxima vanishes. -/
 theorem signedMorseBoundary_sphereHeight_sq_add_smul_sphereHeight_eq_zero_iff (hn : 2 ≤ n)
     (hm₁ : sphereHeight v m₁ = t / 2) (hm₂ : sphereHeight v m₂ = t / 2) (hm : m₁ ≠ m₂)
     (hs : (s : sphere (0 : E) 1) = v)
@@ -561,7 +567,7 @@ open scoped Classical in
 /-- **The signed sum of the maxima.** The orientations of the unstable manifolds of the maxima can
 be reversed so that both trajectories into the saddle count positively. For these orientations the
 Morse boundary sends `c` to `(c(m₁) + c(m₂)) s`, so the difference `m₁ - m₂` of the maxima is a
-cycle, and with integral coefficients it spans the cycles of top degree. -/
+cycle. -/
 theorem exists_signedMorseBoundary_reverse_sphereHeight_sq_add_smul_sphereHeight_eq (hn : 2 ≤ n)
     (hm₁ : sphereHeight v m₁ = t / 2) (hm₂ : sphereHeight v m₂ = t / 2) (hm : m₁ ≠ m₂)
     (hs : (s : sphere (0 : E) 1) = v) :

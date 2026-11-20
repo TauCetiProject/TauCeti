@@ -159,20 +159,15 @@ theorem unstableSet_inter_stableSet_eq_orbit (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ
     · exact hzp ((horbit h).2 h₂)
   refine Subset.antisymm (fun w hw ↦ ?_) fun w ⟨s, hs⟩ ↦
     hs ▸ Flow.isInvariant_unstableSet_inter_stableSet _ p x s hy
-  -- The rest point `x` lies in `W^u(p)` only if `x = p`.
-  have hxp (h : x ∈ hX.flow.unstableSet p) : x = p := by
-    have hlim := Flow.mem_unstableSet.1 h
-    simp only [hX.flow_apply_of_mfderiv_eq_zero hx] at hlim
-    exact tendsto_nhds_unique tendsto_const_nhds hlim
   -- If `y = x`, then `p = x` and `w ∈ W^u(x) ∩ W^s(x)` is `x`.
   rcases eq_or_ne y x with rfl | hyx
-  · obtain rfl := hxp hy.1
+  · obtain rfl := hX.eq_of_mem_unstableSet_of_mfderiv_eq_zero hx hy.1
     rw [hX.eq_of_mem_unstableSet_inter_stableSet hw]
     exact Flow.mem_orbit_self _ _
   -- Otherwise `x ∉ W^u(p)`, since `y ∈ W^u(x) ∩ W^s(x)` would be `x`.
   have hwx : w ≠ x := by
     rintro rfl
-    obtain rfl := hxp hw.1
+    obtain rfl := hX.eq_of_mem_unstableSet_of_mfderiv_eq_zero hx hw.1
     exact hyx (hX.eq_of_mem_unstableSet_inter_stableSet hy)
   obtain ⟨b, hwb, hyb⟩ : ∃ b, w ∈ hX.flow.orbit b ∧ y ∈ hX.flow.orbit b := by
     rcases hside hw.2 hwx with hw' | hw' <;> rcases hside hy.2 hyx with hy' | hy'
@@ -221,10 +216,8 @@ private theorem notMem_orbit_toChart_symm_negativeExtend_neg (hf : IsMorse 𝓘(
   -- So `y₂` is a rest point on the unstable manifold of `x`, hence `x` itself, which is not on
   -- the axis away from `0`.
   have hcrit := hX.eq_zero_iff.1 hX0
-  refine φ.toChart_symm_negativeExtend_ne (neg_ne_zero.2 hc) h₂.1 ?_
-  have hlim := Flow.mem_unstableSet.1 h₂.2.1
-  simp only [hX.flow_apply_of_mfderiv_eq_zero hcrit] at hlim
-  exact tendsto_nhds_unique tendsto_const_nhds hlim
+  exact φ.toChart_symm_negativeExtend_ne (neg_ne_zero.2 hc) h₂.1
+    (hX.eq_of_mem_unstableSet_of_mfderiv_eq_zero hcrit h₂.2.1)
 
 /-- **The two trajectories leaving a critical point of index one.** Let `X` be linear in the Morse
 chart `φ` at a critical point `x` of index `1`. For every small `c ≠ 0` in the space of coordinates
