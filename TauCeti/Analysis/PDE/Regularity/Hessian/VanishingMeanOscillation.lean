@@ -11,6 +11,7 @@ import TauCeti.MeasureTheory.Function.BoundedMeanOscillation.Cutoff
 import Mathlib.Analysis.Convex.Integral
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Matrix.Contraction.LpNorm
+import TauCeti.Analysis.Matrix.EuclideanLin.Measurable
 import TauCeti.Analysis.SpecificLimits.Absorption
 import TauCeti.Analysis.Sobolev.Wkp.Interpolation
 import TauCeti.Analysis.PDE.Regularity.Hessian.Interior
@@ -123,7 +124,7 @@ private theorem exists_eqOn_ball_and_forall_setAverage_matrixBilinearForm_sub_le
   have he (M : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) : e (e.symm M) = M :=
     e.apply_symm_apply M
   refine ⟨fun x => e.symm (β x),
-    aestronglyMeasurable_toEuclideanCLM_iff.1
+    Matrix.aestronglyMeasurable_toEuclideanCLM_iff.1
       (hβloc.aestronglyMeasurable.congr (ae_of_all _ fun x => (he (β x)).symm)),
     uniformlyEllipticOn_of_forall_toEuclideanCLM_mem hell.pos hell.le fun x _ => by
       rw [he]
@@ -138,8 +139,8 @@ private theorem exists_eqOn_ball_and_forall_setAverage_matrixBilinearForm_sub_le
     (ae_of_all _ hβK) hβB
   refine ⟨e.symm κ, uniformlyEllipticOn_of_forall_toEuclideanCLM_mem hell.pos hell.le
     fun _ _ => by rwa [he], ?_⟩
-  have hint : IntegrableOn (fun x => ‖β x - κ‖) (ball c r) volume :=
-    (hβB.sub (integrableOn_const measure_ball_lt_top.ne)).norm
+  have hint : IntegrableOn (fun x => β x - κ) (ball c r) volume :=
+    hβB.sub (integrableOn_const measure_ball_lt_top.ne)
   -- The mean oscillation of `β` on the ball is at most its BMO seminorm.
   have hle := (setLAverage_enorm_sub_setAverage_le_bmoSeminorm β volume c r).trans
     (hbmo.trans (mul_le_mul_of_nonneg_left hη zero_le))
@@ -147,21 +148,12 @@ private theorem exists_eqOn_ball_and_forall_setAverage_matrixBilinearForm_sub_le
       ENNReal.ofReal ((2 + 20 * 8 ^ finrank ℝ (EuclideanSpace ℝ ι)) * δ) := by
     rw [ENNReal.ofReal_mul (by positivity)]
     norm_cast
-  rw [hD] at hle
-  have hmeas : AEMeasurable (fun y => ‖β y - κ‖ₑ) (volume.restrict (ball c r)) :=
-    (hβB.aestronglyMeasurable.sub aestronglyMeasurable_const).eNorm
-  rw [← ENNReal.toReal_le_toReal (ne_top_of_le_ne_top ENNReal.ofReal_ne_top hle)
-    ENNReal.ofReal_ne_top, toReal_setLAverage hmeas (ae_of_all _ fun _ => eNorm_ne_top),
-    ENNReal.toReal_ofReal (by positivity)] at hle
-  simp only [toReal_eNorm] at hle
-  refine le_trans ?_ hle
-  simp only [setAverage_eq, smul_eq_mul]
-  refine mul_le_mul_of_nonneg_left (integral_mono_of_nonneg (ae_of_all _ fun x => norm_nonneg
-    (matrixBilinearForm (e.symm (β x)) - matrixBilinearForm (e.symm κ))) hint
-    (ae_of_all _ fun x => ?_)) (by positivity)
-  dsimp only
-  rw [← matrixBilinearForm_sub]
-  rw [norm_matrixBilinearForm_eq_norm_toEuclideanCLM, map_sub, he, he]
+  rw [setLAverage_enorm_eq_ofReal_setAverage_norm hint, hD,
+    ENNReal.ofReal_le_ofReal_iff (by positivity)] at hle
+  have heq (x : EuclideanSpace ℝ ι) :
+      ‖matrixBilinearForm (e.symm (β x)) - matrixBilinearForm (e.symm κ)‖ = ‖β x - κ‖ := by
+    rw [← matrixBilinearForm_sub, norm_matrixBilinearForm_eq_norm_toEuclideanCLM, map_sub, he, he]
+  simpa only [heq] using hle
 
 end Coefficient
 
@@ -217,11 +209,12 @@ private theorem exists_lpNorm_iteratedGradient_le_of_mem_wkp0Submodule (hp : 2 <
   have hWeq : ∀ᵐ x, ∑ i, ∑ j, a x i j *
       ⟪Wkp.iteratedGradient 1 W x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ =
         (U : Set _).indicator F x := by
-    filter_upwards [hW, (ae_restrict_iff' hUm).1 heq] with x h1 h2
-    rw [← Matrix.contraction_apply, h1]
-    by_cases hx : x ∈ (U : Set (EuclideanSpace ℝ (Fin (n + 1))))
-    · rw [indicator_of_mem hx, indicator_of_mem hx, h2 hx]
-    · rw [indicator_of_notMem hx, indicator_of_notMem hx, map_zero]
+    filter_upwards [ae_contraction_iteratedGradient_extendByZeroₗᵢ_eq_indicator (w := ⟨w, hw0⟩)
+      heq] with x hx
+    -- The two sides differ only by unfolding the instances of `IteratedGradient` to those of
+    -- `ContinuousLinearMap` used by `Matrix.contraction_apply`.
+    rw [← Matrix.contraction_apply]
+    exact hx
   have hkey := hCZ ha (fun x => haΛ.opNorm_matrixBilinearForm_le (mem_univ x)) hosc W _ hWeq
     (((integrable_indicator_iff hUm).2 (hwp.integrable Fact.out)).congr
       (hW.mono fun _ h => h.symm))
@@ -460,7 +453,7 @@ theorem exists_mul_lpNorm_iteratedGradient_ball_le_of_vmoModulus_le (hp : 2 < p)
     Measure.restrict_mono hR le_rfl
   have hf : MemLp f p (volume.restrict (ball x₀ R)) := memLp_of_ae_sum_mul_inner_eq
     measurableSet_ball hR u
-    (aestronglyMeasurable_toEuclideanCLM_iff.1 hloc.aestronglyMeasurable).restrict
+    (Matrix.aestronglyMeasurable_toEuclideanCLM_iff.1 hloc.aestronglyMeasurable).restrict
     (ae_of_all _ fun x hx i j => hell.abs_apply_le (ball_subset_ball (by linarith) hx) i j) heq
   have hmono : ∀ {E' : Type} [NormedAddCommGroup E']
       (w : Lp E' p (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))) {σ : ℝ},

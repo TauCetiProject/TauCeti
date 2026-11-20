@@ -19,7 +19,6 @@ public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Topology.MetricSpace.Lipschitz
-import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Analysis.Matrix.PosSemidef.Determinant
 import TauCeti.Analysis.Normed.Field.Lipschitz
 
@@ -80,8 +79,6 @@ constants are parameters, not hidden existential data.
   bilinear form is the operator norm of the matrix on Euclidean space.
 * `TauCeti.PDE.norm_toEuclideanCLM_apply_le`: the operator norm of the attached bilinear form
   bounds the action of the matrix on Euclidean space.
-* `TauCeti.PDE.aestronglyMeasurable_toEuclideanCLM_iff`: a field of matrices is measurable exactly
-  when the field of their operators on Euclidean space is.
 * `TauCeti.PDE.abs_sum_mul_apply_single_mul_apply_single_le`: a bilinear upper bound controls
   the pairing of the matrix with the coordinates of two continuous linear functionals.
 * `TauCeti.PDE.mul_sq_mul_norm_sq_le_matrixBilinearForm_add`: the pointwise absorption
@@ -374,17 +371,6 @@ lemma norm_matrixBilinearForm_eq_norm_toEuclideanCLM [DecidableEq n] (A : Matrix
   exact (abs_real_inner_le_norm _ _).trans
     (mul_le_mul_of_nonneg_left ((toEuclideanCLM (n := n) (𝕜 := ℝ) A).le_opNorm ξ) (norm_nonneg _))
 
-/-- A field of matrices is a.e. strongly measurable exactly when the field of the operators they
-define on Euclidean space is. -/
-theorem aestronglyMeasurable_toEuclideanCLM_iff [DecidableEq n] {X : Type*} [MeasurableSpace X]
-    {μ : MeasureTheory.Measure X} {a : X → Matrix n n ℝ} :
-    MeasureTheory.AEStronglyMeasurable (fun x => toEuclideanCLM (n := n) (𝕜 := ℝ) (a x)) μ ↔
-      MeasureTheory.AEStronglyMeasurable a μ :=
-  ⟨fun h => by
-    simpa only [StarAlgEquiv.symm_apply_apply] using
-      Matrix.continuous_toEuclideanCLM_symm.comp_aestronglyMeasurable h,
-    fun h => Matrix.continuous_toEuclideanCLM.comp_aestronglyMeasurable h⟩
-
 /-- A pointwise bilinear upper bound gives a radius-restricted estimate for the bundled
 matrix bilinear form. -/
 lemma matrixBilinearForm_apply_norm_le_of_upper_bound {A : Matrix n n ℝ} {Lam R S : ℝ}
@@ -660,25 +646,14 @@ omit [DecidableEq n] in
 /-- The elliptic operators with constants `λ, Λ` form a convex set. -/
 theorem convex_ellipticCLMSet (lam Lam : ℝ) :
     Convex ℝ (ellipticCLMSet (n := n) lam Lam) := by
-  intro M₁ h₁ M₂ h₂ s t hs ht hst
-  rw [mem_ellipticCLMSet_iff] at h₁ h₂ ⊢
-  refine ⟨fun ξ => ?_, fun η ξ => ?_⟩
-  · have e₁ := mul_le_mul_of_nonneg_left (h₁.1 ξ) hs
-    have e₂ := mul_le_mul_of_nonneg_left (h₂.1 ξ) ht
-    have : lam * ‖ξ‖ ^ 2 = s * (lam * ‖ξ‖ ^ 2) + t * (lam * ‖ξ‖ ^ 2) := by
-      rw [← add_mul, hst, one_mul]
-    simp only [_root_.add_apply, _root_.smul_apply, inner_add_right,
-      real_inner_smul_right]
-    linarith
-  · have e₁ := mul_le_mul_of_nonneg_left (h₁.2 η ξ) hs
-    have e₂ := mul_le_mul_of_nonneg_left (h₂.2 η ξ) ht
-    simp only [_root_.add_apply, _root_.smul_apply, inner_add_right,
-      real_inner_smul_right]
-    calc |s * ⟪η, M₁ ξ⟫_ℝ + t * ⟪η, M₂ ξ⟫_ℝ| ≤ s * |⟪η, M₁ ξ⟫_ℝ| + t * |⟪η, M₂ ξ⟫_ℝ| := by
-          refine (abs_add_le _ _).trans ?_
-          rw [abs_mul, abs_mul, abs_of_nonneg hs, abs_of_nonneg ht]
-      _ ≤ (s + t) * (Lam * ‖η‖ * ‖ξ‖) := by linarith
-      _ = Lam * ‖η‖ * ‖ξ‖ := by rw [hst, one_mul]
+  -- It is an intersection of half-spaces cut out by the linear maps `M ↦ ⟪η, M ξ⟫`.
+  have hL (η ξ : EuclideanSpace ℝ n) :
+      IsLinearMap ℝ fun M : EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n => ⟪η, M ξ⟫_ℝ :=
+    ((innerₛₗ ℝ η).comp (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ n) ξ).toLinearMap).isLinear
+  simp only [ellipticCLMSet, abs_le, Set.ofPred_and, Set.ofPred_forall]
+  exact (convex_iInter fun ξ => convex_halfSpace_ge (hL ξ ξ) _).inter
+    (convex_iInter₂ fun η ξ => (convex_halfSpace_ge (hL η ξ) _).inter
+      (convex_halfSpace_le (hL η ξ) _))
 
 omit [DecidableEq n] in
 /-- The elliptic operators with constants `λ, Λ` form a closed set. -/
