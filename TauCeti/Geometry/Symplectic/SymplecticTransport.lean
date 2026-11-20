@@ -31,8 +31,8 @@ transport. The underlying form transport reuses Mathlib's `LinearMap.BilinForm.c
   `transport_transport_symm`: functoriality of transport in the linear equivalence.
 * `TauCeti.SymplecticForm.transport_apply_apply`: `e` is a symplectomorphism onto the transported
   form, `(ω.transport e)(e v, e w) = ω(v, w)`.
-* `TauCeti.SymplecticForm.injective_of_forall_apply_eq`: a linear map intertwining two
-  symplectic forms is injective.
+* `TauCeti.SymplecticForm.injective_of_forall_apply_eq`: a linear map pulling a bilinear form
+  back to a symplectic form is injective.
 * `TauCeti.SymplecticForm.IsSymplectomorphism`: a linear equivalence `e` with
   `ω₂(e v, e w) = ω₁(v, w)`, together with its pointwise and transport characterizations.
 * `TauCeti.SymplecticForm.IsSymplectomorphism.exists_iff_of_forall_apply_eq`: endomorphisms
@@ -114,10 +114,10 @@ lemma transport_apply_apply (ω : SymplecticForm V) (e : V ≃ₗ[ℝ] W) (v w :
 
 variable {ω₁ : SymplecticForm V} {ω₂ : SymplecticForm W} {ω₃ : SymplecticForm X}
 
-/-- A real-linear map intertwining two symplectic forms, `ω₂(f v, f w) = ω₁(v, w)`, is injective,
-because `ω₁` is nondegenerate. -/
-theorem injective_of_forall_apply_eq {f : V →ₗ[ℝ] W} (hf : ∀ v w, ω₂ (f v) (f w) = ω₁ v w) :
-    Function.Injective f :=
+/-- A real-linear map pulling a bilinear form `ω₂` back to a symplectic form,
+`ω₂(f v, f w) = ω₁(v, w)`, is injective, because `ω₁` is nondegenerate. -/
+theorem injective_of_forall_apply_eq {ω₂ : LinearMap.BilinForm ℝ W} {f : V →ₗ[ℝ] W}
+    (hf : ∀ v w, ω₂ (f v) (f w) = ω₁ v w) : Function.Injective f :=
   (injective_iff_map_eq_zero f).2 fun v hv ↦ ω₁.nondegenerate.1 v fun w ↦ by
     simpa [hv] using (hf v w).symm
 
