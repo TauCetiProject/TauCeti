@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Existen
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor.Basic
 import TauCeti.Analysis.InnerProductSpace.Dual
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Dual
 import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
