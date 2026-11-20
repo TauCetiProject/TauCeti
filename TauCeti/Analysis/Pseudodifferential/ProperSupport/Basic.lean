@@ -682,6 +682,13 @@ theorem HasPropagationLE.hasCompactSupport_quantizeSchwartzValue (ha : a.HasProp
 theorem hasPropagationLE_zero (ε : ℝ) : (0 : Symbol n V W m).HasPropagationLE ε :=
   fun u x _ ↦ by rw [coefficient_zero, quantizeSchwartzValue_zero_left]
 
+/-- The quantization of a constant symbol, multiplication by a fixed continuous linear map `T`, has
+propagation at most every `ε > 0`. -/
+theorem hasPropagationLE_const [CompleteSpace V] [CompleteSpace W] (T : V →L[ℂ] W) (hε : 0 < ε) :
+    (const T : Symbol n V W 0).HasPropagationLE ε := fun u x hu ↦ by
+  rw [funext (coefficient_const (n := n) T), quantizeSchwartzValue_comp_fst (fun _ ↦ T),
+    hu x (Metric.mem_ball_self hε), map_zero]
+
 theorem HasPropagationLE.add (ha : a.HasPropagationLE ε) (hb : b.HasPropagationLE ε) :
     (a + b).HasPropagationLE ε := fun u x hu ↦ by
   rw [coefficient_add, quantizeSchwartzValue_coefficient_add, ha u x hu, hb u x hu, add_zero]
