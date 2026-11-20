@@ -36,7 +36,7 @@ function. The Wronskian is written out as `f z * deriv g z - deriv f z * g z`.
 * [DLMF] *NIST Digital Library of Mathematical Functions*, §15.10, <https://dlmf.nist.gov/15.10>.
 -/
 
-@[expose] public section
+public section
 
 open Complex Filter Set
 open scoped Topology
@@ -44,13 +44,6 @@ open scoped Topology
 namespace TauCeti
 
 variable {a b c : ℂ} {U : Set ℂ}
-
-/-- A function holomorphic on an open set has a holomorphic derivative there. -/
-private theorem hasDerivAt_deriv_of_differentiableOn {f : ℂ → ℂ} (hU : IsOpen U)
-    (hf : DifferentiableOn ℂ f U) {z : ℂ} (hz : z ∈ U) :
-    HasDerivAt f (deriv f z) z ∧ HasDerivAt (deriv f) (deriv (deriv f) z) z := by
-  have ha := hf.analyticAt (hU.mem_nhds hz)
-  exact ⟨ha.differentiableAt.hasDerivAt, ha.deriv.differentiableAt.hasDerivAt⟩
 
 /-- **Abel's identity** for the hypergeometric equation (DLMF 15.10.1): if `f` and `g` solve
 15.10.1 on an open set `U`, then at every `z ∈ U` with `z ≠ 0, 1` the Wronskian
@@ -64,9 +57,11 @@ theorem hasDerivAt_wronskian_of_hypergeometricEquation {f g : ℂ → ℂ} (hU :
     {z : ℂ} (hz : z ∈ U) (hz₀ : z ≠ 0) (hz₁ : z ≠ 1) :
     HasDerivAt (fun ζ => f ζ * deriv g ζ - deriv f ζ * g ζ)
       (-((c - (a + b + 1) * z) / (z * (1 - z))) * (f z * deriv g z - deriv f z * g z)) z := by
-  obtain ⟨hf₁, hf₂⟩ := hasDerivAt_deriv_of_differentiableOn hU hf hz
-  obtain ⟨hg₁, hg₂⟩ := hasDerivAt_deriv_of_differentiableOn hU hg hz
-  refine ((hf₁.mul hg₂).sub (hf₂.mul hg₁)).congr_deriv ?_
+  -- Holomorphic on an open set, `f` and `g` are analytic at `z`, and so are their derivatives.
+  have hfa := hf.analyticAt (hU.mem_nhds hz)
+  have hga := hg.analyticAt (hU.mem_nhds hz)
+  refine ((hfa.differentiableAt.hasDerivAt.mul hga.deriv.differentiableAt.hasDerivAt).sub
+    (hfa.deriv.differentiableAt.hasDerivAt.mul hga.differentiableAt.hasDerivAt)).congr_deriv ?_
   have h1 : 1 - z ≠ 0 := sub_ne_zero.mpr hz₁.symm
   have ef : deriv (deriv f) z =
       (a * b * f z - (c - (a + b + 1) * z) * deriv f z) / (z * (1 - z)) := by
