@@ -34,7 +34,6 @@ permissions:
   pull-requests: read  # workflow-pinned lint-policy GraphQL reads branches and labels
   statuses: write
   actions: read  # fence status publication against obsolete run attempts
-  issues: write  # runner picker
   id-token: write  # telemetry-only OIDC audience, outside the candidate sandbox
 
 jobs:
