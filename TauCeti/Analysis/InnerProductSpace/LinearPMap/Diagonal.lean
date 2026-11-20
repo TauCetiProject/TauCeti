@@ -29,7 +29,9 @@ every basis vector and is dense, and its adjoint is the diagonal operator of the
 Composition multiplies the families (`HilbertBasis.diagonalPMap_apply_diagonalPMap_apply`) and
 addition adds them on the common domain (`HilbertBasis.diagonalPMap_add_diagonalPMap_le`). Its
 kernel is the closed span of the basis vectors `b i` with `c i = 0`
-(`HilbertBasis.ker_diagonalPMap`), of dimension the number of these indices.
+(`HilbertBasis.ker_diagonalPMap`), and its `finrank` is the number `Nat.card {i | c i = 0}` of
+these indices, which is `0` when infinitely many coefficients vanish
+(`HilbertBasis.finrank_ker_diagonalPMap`).
 
 Diagonal operators are the functional calculus of operators with a Hilbert basis of eigenvectors.
 If a closed symmetric operator `A`, for instance a self-adjoint one, has a Hilbert basis `b` of

@@ -40,14 +40,17 @@ self-adjoint (`HilbertBasis.isSelfAdjoint_diagonalPMap`).
 
 For nonnegative eigenvalues, `λ i + μ j = 0` exactly when `λ i = 0` and `μ j = 0`, so the kernel of
 the tensor sum is spanned by the products of the eigenvectors in the two kernels
-(`HilbertBasis.ker_diagonalPMap_tensorProduct`), and
+(`HilbertBasis.ker_diagonalPMap_tensorProduct`), and its `finrank` is the product of the
+`finrank`s of the kernels of `b.diagonalPMap λ` and `c.diagonalPMap μ`
+(`HilbertBasis.finrank_ker_diagonalPMap_tensorProduct`). For closed symmetric `A` and `B` these
+diagonal operators are `A` and `B` (`LinearPMap.IsFormalAdjoint.eq_diagonalPMap`), so then
 
-`dim ker (A ⊗ 1 + 1 ⊗ B) = dim ker A * dim ker B`
+`dim ker (A ⊗ 1 + 1 ⊗ B) = dim ker A * dim ker B`.
 
-(`HilbertBasis.finrank_ker_diagonalPMap_tensorProduct`). Nonnegativity is needed: for `λ = 1` and
-`μ = -1` on one-dimensional spaces the tensor sum is zero, while both kernels are trivial. Applied
-to `D_P² ⊗ 1 + 1 ⊗ D_Q²`, whose kernel is that of the graded product operator, this is the
-dimension count behind the product formula for the index of two elliptic operators.
+Nonnegativity is needed: for `λ = 1` and `μ = -1` on one-dimensional spaces the tensor sum is
+zero, while both kernels are trivial. Applied to `D_P² ⊗ 1 + 1 ⊗ D_Q²`, whose kernel is that of
+the graded product operator, this is the dimension count behind the product formula for the index
+of two elliptic operators.
 
 ## Main definitions
 
