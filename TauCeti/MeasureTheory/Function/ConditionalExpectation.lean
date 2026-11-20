@@ -45,6 +45,8 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 - `integral_mul_eq_of_forall_setIntegral_eq`: if `g` is a.e. `m`-measurable with the same set
   integrals as `f` over `m`-measurable sets, then `∫ h f = ∫ h g` for every a.e. `m`-measurable
   `h` with `h f` integrable.
+- `integrable_comp_of_forall_setIntegral_preimage_eq`: a version `g(X)` of `E[Y | X]`, given by
+  its set integrals over the events `{X ∈ A}`, is integrable when `Y` is.
 - `integral_comp_mul_eq_of_forall_setIntegral_preimage_eq`: the regression identity
   `E[f(X) Y] = E[f(X) g(X)]` when `g(X)` is a version of `E[Y | X]`, given by its set integrals
   over the events `{X ∈ A}`.
@@ -420,6 +422,19 @@ theorem integral_mul_eq_of_forall_setIntegral_eq {Ω : Type*} {m mΩ : Measurabl
   refine integral_congr_ae ?_
   filter_upwards [hpull, hce] with x h1 h2
   exact h1.trans (by rw [Pi.mul_apply, h2])
+
+/-- **Integrability of a regression function.** If `g(X)` is a version of `E[Y | X]`, given by
+its set integrals over the events `{X ∈ A}`, and `Y` is integrable, then `g(X)` is integrable. -/
+theorem integrable_comp_of_forall_setIntegral_preimage_eq {Ω α : Type*}
+    {mΩ : MeasurableSpace Ω} [MeasurableSpace α] {μ : Measure Ω}
+    {X : Ω → α} (hX : Measurable X) [SigmaFinite (μ.trim hX.comap_le)] {Y : Ω → ℝ} {g : α → ℝ}
+    (hY : Integrable Y μ) (hg : Measurable g)
+    (hreg : ∀ A : Set α, MeasurableSet A → ∫ ω in X ⁻¹' A, Y ω ∂μ = ∫ ω in X ⁻¹' A, g (X ω) ∂μ) :
+    Integrable (fun ω ↦ g (X ω)) μ := by
+  refine integrable_of_forall_setIntegral_eq hX.comap_le hY
+    (hg.comp (comap_measurable X)).aestronglyMeasurable ?_
+  rintro _ ⟨A, hA, rfl⟩
+  exact (hreg A hA).symm
 
 /-- **The regression identity.** If `g(X)` is a version of `E[Y | X]`, given by its set integrals
 over the events `{X ∈ A}`, then `E[f(X) Y] = E[f(X) g(X)]` for every measurable `f` with

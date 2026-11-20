@@ -27,6 +27,7 @@ Cauchy–Schwarz inequality the bias is at most `δ⁻¹ ‖π - π₀‖₂ ‖
 
 ## Main results
 
+* `TauCeti.integrable_aipwScore_observe`: integrability of the augmented estimating function.
 * `TauCeti.integral_aipwScore_sub`: the mixed-bias identity.
 * `TauCeti.integral_aipwScore_eq`: double robustness.
 * `TauCeti.abs_integral_aipwScore_sub_le`: the product bound on the bias.
@@ -83,16 +84,17 @@ theorem aipwScore_observe (m π : X → ℝ) (w : Bool × X × ℝ) :
 
 variable [MeasurableSpace X]
 
-/-- The inverse-probability-weighted residual `1{R = 1} (Y - m(X)) / π(X)` is integrable when
-`Y` and `m(X)` are and `π ≥ δ > 0`. -/
-private theorem integrable_ite_div {Q : Measure (Bool × X × ℝ)} {m π : X → ℝ}
+/-- The augmented estimating function of the observed part, `m(X) + 1{R = 1} (Y - m(X)) / π(X)`,
+is integrable when `Y` and `m(X)` are and `π ≥ δ > 0`. -/
+theorem integrable_aipwScore_observe {Q : Measure (Bool × X × ℝ)} {m π : X → ℝ}
     (hY : Integrable (fun w : Bool × X × ℝ ↦ w.2.2) Q)
     (hm : Integrable (fun w : Bool × X × ℝ ↦ m w.2.1) Q) (hmm : Measurable m)
     (hπm : Measurable π) {δ : ℝ} (hδ : 0 < δ) (hπ : ∀ x, δ ≤ π x) :
-    Integrable (fun w : Bool × X × ℝ ↦ if w.1 then (w.2.2 - m w.2.1) / π w.2.1 else 0) Q := by
-  refine ((hY.sub hm).norm.const_mul δ⁻¹).mono' (Measurable.ite
+    Integrable (fun w ↦ aipwScore m π (observe w)) Q := by
+  simp_rw [aipwScore_observe]
+  refine hm.add (((hY.sub hm).norm.const_mul δ⁻¹).mono' (Measurable.ite
     (measurable_fst (measurableSet_singleton true)) (by fun_prop)
-      measurable_const).aestronglyMeasurable (ae_of_all _ fun w ↦ ?_)
+      measurable_const).aestronglyMeasurable (ae_of_all _ fun w ↦ ?_))
   have hπ0 : 0 < π w.2.1 := hδ.trans_le (hπ _)
   have hb : ‖(w.2.2 - m w.2.1) / π w.2.1‖ ≤ δ⁻¹ * ‖w.2.2 - m w.2.1‖ := by
     rw [norm_div, Real.norm_eq_abs (π _), abs_of_pos hπ0, div_eq_inv_mul]
@@ -116,19 +118,6 @@ private theorem integrable_div_mul {Q : Measure (Bool × X × ℝ)} {π₀ π : 
     _ = δ⁻¹ * δ := (inv_mul_cancel₀ hδ.ne').symm
     _ ≤ δ⁻¹ * π w.2.1 := by gcongr; exact hπ _
 
-/-- A version `m₀(X)` of `E[Y | X]`, given by its set integrals over the events `{X ∈ A}`, is
-integrable when `Y` is. -/
-private theorem integrable_regression {Q : Measure (Bool × X × ℝ)} [IsFiniteMeasure Q]
-    {m₀ : X → ℝ} (hY : Integrable (fun w : Bool × X × ℝ ↦ w.2.2) Q) (hm₀ : Measurable m₀)
-    (hreg : ∀ A : Set X, MeasurableSet A →
-      ∫ w in {w | w.2.1 ∈ A}, w.2.2 ∂Q = ∫ w in {w | w.2.1 ∈ A}, m₀ w.2.1 ∂Q) :
-    Integrable (fun w : Bool × X × ℝ ↦ m₀ w.2.1) Q := by
-  have hX : Measurable fun w : Bool × X × ℝ ↦ w.2.1 := by fun_prop
-  refine MeasureTheory.integrable_of_forall_setIntegral_eq hX.comap_le hY
-    (hm₀.comp (comap_measurable _)).aestronglyMeasurable ?_
-  rintro _ ⟨A, hA, rfl⟩
-  exact (hreg A hA).symm
-
 /-- **The mixed-bias identity.** Let `Q` be missing at random with propensity `π₀`, let `Y` be
 integrable, and let `m₀(X)` be a version of `E[Y | X]` (it is then integrable). For every
 measurable `m` with `m(X)` integrable and every measurable `π ≥ δ > 0`,
@@ -145,8 +134,11 @@ theorem integral_aipwScore_sub (Q : Measure (Bool × X × ℝ)) [IsFiniteMeasure
   have hπ0 : ∀ x, 0 < π x := fun x ↦ hδ.trans_le (hπ x)
   have hkb : ∀ {f : Bool × X × ℝ → ℝ}, Integrable f Q →
       Integrable (fun w ↦ π₀ w.2.1 / π w.2.1 * f w) Q := integrable_div_mul hmar hπm hδ hπ
-  have hitei := integrable_ite_div hY hm hmm hπm hδ hπ
-  have hm₀i := integrable_regression hY hm₀ hreg
+  have hitei : Integrable (fun w ↦ if w.1 then (w.2.2 - m w.2.1) / π w.2.1 else 0) Q :=
+    ((integrable_aipwScore_observe hY hm hmm hπm hδ hπ).sub hm).congr
+      (ae_of_all _ fun w ↦ by simp [aipwScore_observe])
+  have hX : Measurable fun w : Bool × X × ℝ ↦ w.2.1 := by fun_prop
+  have hm₀i := MeasureTheory.integrable_comp_of_forall_setIntegral_preimage_eq hX hY hm₀ hreg
   -- Missingness at random: `E[1{R = 1} (Y - m(X)) / π(X)] = E[π₀(X) (Y - m(X)) / π(X)]`.
   have h1 : ∫ w, (if w.1 then (w.2.2 - m w.2.1) / π w.2.1 else 0) ∂Q =
       ∫ w, π₀ w.2.1 / π w.2.1 * w.2.2 ∂Q - ∫ w, π₀ w.2.1 / π w.2.1 * m w.2.1 ∂Q := by
@@ -155,7 +147,6 @@ theorem integral_aipwScore_sub (Q : Measure (Bool × X × ℝ)) [IsFiniteMeasure
     refine integral_congr_ae (ae_of_all _ fun w ↦ ?_)
     field_simp [(hπ0 w.2.1).ne']
   -- The regression identities: `E[π₀(X) Y / π(X)] = E[π₀(X) m₀(X) / π(X)]` and `E Y = E m₀(X)`.
-  have hX : Measurable fun w : Bool × X × ℝ ↦ w.2.1 := by fun_prop
   have h2 := MeasureTheory.integral_comp_mul_eq_of_forall_setIntegral_preimage_eq hX hY hm₀ hreg
     (f := fun x ↦ π₀ x / π x) (hmar.measurable.div hπm) (hkb hY)
   have h3 : ∫ w, w.2.2 ∂Q = ∫ w, m₀ w.2.1 ∂Q := by
@@ -198,7 +189,8 @@ theorem integral_aipwScore_eq (Q : Measure (Bool × X × ℝ)) [IsFiniteMeasure 
   · have := integral_aipwScore_sub Q π₀ m₀ m π₀ hmar hY hm₀ hreg hm hmm hmar.measurable δ hδ hπ₀
     simpa [sub_eq_zero] using this
   · have := integral_aipwScore_sub Q π₀ m₀ m₀ π hmar hY hm₀ hreg
-      (integrable_regression hY hm₀ hreg) hm₀ hπm δ' hδ' hπ
+      (MeasureTheory.integrable_comp_of_forall_setIntegral_preimage_eq (by fun_prop) hY hm₀ hreg)
+      hm₀ hπm δ' hδ' hπ
     simpa [sub_eq_zero] using this
 
 /-- **The product bound on the bias.** Under the hypotheses of the mixed-bias identity,

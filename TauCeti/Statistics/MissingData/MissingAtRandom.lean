@@ -27,6 +27,7 @@ form): the probability of observing the response depends on the covariate only.
 
 ## Main results
 
+* `TauCeti.observe_observe`: `observe` is idempotent.
 * `TauCeti.measurable_observe`: `observe` is measurable.
 * `TauCeti.isMissingAtRandom_iff`: the defining conditions of missingness at random.
 * `TauCeti.IsMissingAtRandom.integral_ite_eq`: under missingness at random,
@@ -69,6 +70,12 @@ theorem observe_true (x : X) (y : ℝ) : observe (true, x, y) = (true, x, y) := 
 @[simp]
 theorem observe_false (x : X) (y : ℝ) : observe (false, x, y) = (false, x, 0) := by
   simp [observe_def]
+
+/-- Observing is idempotent: the observed part of an observed part is itself. -/
+@[simp]
+theorem observe_observe (w : Bool × X × ℝ) : observe (observe w) = observe w := by
+  obtain ⟨r, x, y⟩ := w
+  cases r <;> simp
 
 variable [MeasurableSpace X]
 
