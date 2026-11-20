@@ -8,34 +8,32 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 public import TauCeti.MeasureTheory.Function.LpSection.Basic
 import Mathlib.MeasureTheory.Function.ContinuousMapDense
-import Mathlib.MeasureTheory.Measure.SeparableMeasure
 import Mathlib.Topology.Metrizable.Urysohn
 import TauCeti.Geometry.Manifold.SmoothApprox.Lp
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
+import TauCeti.MeasureTheory.Function.LpSection.Chart
 
 /-!
-# Density and separability of `Lᵖ` sections
+# Density of compactly supported smooth sections in `Lᵖ` sections
 
 Let `E → B` be a smooth vector bundle over `𝕜 = ℝ` or `ℂ` with finite-dimensional model fibre
 `F` and continuous fibre norms, over a finite-dimensional, Hausdorff, second-countable real
 manifold `B`, and let `μ` be a measure on the Borel sets of `B` that is finite on compact sets. A
-compactly supported smooth section has continuous, compactly supported fibre norm, so it defines a
+compactly supported `C^n` section has continuous, compactly supported fibre norm, so it defines a
 class in `Lᵖ(E, μ)` (`TauCeti.LpSection.ofCompactlySupported`) for every `p`. This file proves
-that for `p < ∞` these classes are dense (`TauCeti.LpSection.denseRange_ofCompactlySupported`),
-and that the map is injective as soon as `μ` charges every nonempty open set
-(`TauCeti.LpSection.injective_ofCompactlySupported`): two continuous sections that agree almost
-everywhere then agree everywhere. Without that hypothesis the map has a kernel, the sections
-vanishing almost everywhere (`TauCeti.LpSection.ofCompactlySupported_eq_zero_iff`); for the zero
-measure every section is in it.
+that for `p < ∞` the classes of smooth ones are dense
+(`TauCeti.LpSection.denseRange_ofCompactlySupported`), and that the map is injective as soon as `μ`
+charges every nonempty open set (`TauCeti.LpSection.ofCompactlySupported_injective`): two
+continuous sections that agree almost everywhere then agree everywhere. Without that hypothesis
+the map has a kernel, the sections vanishing almost everywhere
+(`TauCeti.LpSection.ofCompactlySupported_eq_zero_iff`); for the zero measure every section is in
+it.
 
-Since `Lᵖ(E, μ)` is complete in finite rank (`TauCeti.LpSection.instCompleteSpace`), it is the
-completion of the compactly supported smooth sections for the `Lᵖ` norm. The restriction `p < ∞`
-is needed: on `ℝ` with Lebesgue measure, the indicator function of `[0, 1]` has `L^∞` distance at
-least `1 / 2` from every continuous function.
-
-For `p < ∞` and fibre metrics, `Lᵖ(E, μ)` is moreover separable for every s-finite `μ`
-(`TauCeti.LpSection.instSecondCountableTopology`), being isometric to `Lᵖ(μ; 𝕜ʳ)` through a
-measurable isometric frame.
+When the fibres carry inner products (fibre metrics), `Lᵖ(E, μ)` is complete in finite rank
+(`TauCeti.LpSection.instCompleteSpace`), so it is then the completion of the compactly supported
+smooth sections for the `Lᵖ` norm. The restriction `p < ∞` is needed: on `ℝ` with Lebesgue
+measure, the indicator function of `[0, 1]` has `L^∞` distance at least `1 / 2` from every
+continuous function.
 
 ## The approximation
 
@@ -47,7 +45,8 @@ many compact sets, each inside the base set of an atlas chart `e`, and `s` on `K
 its restrictions to measurable pieces of these sets. On a piece `A`, inside a compact `L` in the
 base set of `e`, the coordinates `g = 1_A (e s)` of the piece lie in `Lᵖ(μ; F)`, as fibre norms
 and the norm of `F` are uniformly comparable on compact subsets of the base set
-(`Bundle.Trivialization.exists_norm_symm_le_and_norm_le_of_isCompact`). They are approximated in
+(`Bundle.Trivialization.exists_norm_symm_le_and_norm_le_of_isCompact`,
+`Bundle.Trivialization.memLp_coord_of_bound`). They are approximated in
 `Lᵖ` by a smooth `g'` with topological support in an open `V ⊇ L` whose closure is compact and
 contained in the base set (`MeasureTheory.MemLp.exists_contMDiff_tsupport_subset_eLpNorm_sub_le`).
 The section `x ↦ e.symm x (g' x)`, extended by zero off the base set, is smooth
@@ -56,11 +55,11 @@ piece is at most a constant times the distance from `g` to `g'`.
 
 ## Main declarations
 
-* `TauCeti.LpSection.ofCompactlySupported`: the classes of compactly supported smooth sections.
-* `TauCeti.LpSection.denseRange_ofCompactlySupported`: they are dense in `Lᵖ(E, μ)` for `p < ∞`.
-* `TauCeti.LpSection.injective_ofCompactlySupported`: the map is injective when `μ` is positive
+* `TauCeti.LpSection.ofCompactlySupported`: the classes of compactly supported `C^n` sections.
+* `TauCeti.LpSection.denseRange_ofCompactlySupported`: those of smooth sections are dense in
+  `Lᵖ(E, μ)` for `p < ∞`.
+* `TauCeti.LpSection.ofCompactlySupported_injective`: the map is injective when `μ` is positive
   on nonempty open sets.
-* `TauCeti.LpSection.instSecondCountableTopology`: `Lᵖ(E, μ)` is separable for `p < ∞`.
 
 ## References
 
@@ -76,25 +75,6 @@ open Bundle MeasureTheory Set Filter
 open scoped Topology ENNReal NNReal Manifold ContDiff
 
 namespace TauCeti
-
-section Separable
-
-variable {𝕜 B F : Type*} [RCLike 𝕜] [TopologicalSpace B] [MeasurableSpace B] [BorelSpace B]
-  [SecondCountableTopology B] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : B → Type*}
-  [TopologicalSpace (TotalSpace F E)] [∀ x, NormedAddCommGroup (E x)]
-  [∀ x, InnerProductSpace 𝕜 (E x)] [FiberBundle F E] [VectorBundle 𝕜 F E]
-  [ContinuousFiberNorm F E] {p : ℝ≥0∞} {μ : Measure B}
-
-/-- **Separability.** For a finite-rank bundle with continuous fibre metric over a second-countable
-base and finite `p`, `Lᵖ(E, μ)` is second countable for every s-finite measure `μ` on the Borel
-sets of the base: a measurable isometric frame identifies it with `Lᵖ(μ; 𝕜ʳ)`. -/
-instance LpSection.instSecondCountableTopology [FiniteDimensional 𝕜 F] [Fact (1 ≤ p)]
-    [Fact (p ≠ ⊤)] [SFinite μ] : SecondCountableTopology (LpSection 𝕜 F E p μ) := by
-  obtain ⟨Φ, hΦ⟩ := exists_isMeasurableIsometricFrame F E
-    (EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 F))) finrank_euclideanSpace_fin
-  exact ((hΦ μ).lpSectionEquiv p).toHomeomorph.secondCountableTopology
-
-end Separable
 
 variable {𝕜 B F EB HB : Type*} [RCLike 𝕜] [NormedAddCommGroup EB] [NormedSpace ℝ EB]
   [TopologicalSpace HB] {I : ModelWithCorners ℝ EB HB} [TopologicalSpace B]
@@ -123,27 +103,40 @@ theorem _root_.ContMDiffSection.memLp_norm_of_mem_compactlySupported {n : ℕ∞
 
 namespace LpSection
 
+variable {n : ℕ∞ω}
+
 variable (𝕜 I p μ) in
-/-- The class in `Lᵖ(E, μ)` of a compactly supported smooth section. Its fibre norm is continuous
+/-- The class in `Lᵖ(E, μ)` of a compactly supported `C^n` section. Its fibre norm is continuous
 with compact support, hence `p`-integrable for a measure that is finite on compact sets. -/
 def ofCompactlySupported :
-    ContMDiffSection.compactlySupported I F ∞ E →+ LpSection 𝕜 F E p μ where
+    ContMDiffSection.compactlySupported I F n E →+ LpSection 𝕜 F E p μ where
   toFun s := mk (s : ∀ x, E x) s.1.contMDiff.continuous.aestronglyMeasurableSection
     (ContMDiffSection.memLp_norm_of_mem_compactlySupported s.2)
   map_zero' := by
     rw [← mk_zero]
-    exact (mk_eq_mk_iff (F := F)).2 (.of_forall fun x ↦ rfl)
+    exact (mk_eq_mk_iff (F := F)).2 (.of_forall fun x ↦ by
+      rw [Submodule.coe_zero, ContMDiffSection.coe_zero])
   map_add' s t := by
     rw [mk_add]
-    exact (mk_eq_mk_iff (F := F)).2 (.of_forall fun x ↦ rfl)
+    exact (mk_eq_mk_iff (F := F)).2 (.of_forall fun x ↦ by
+      rw [Submodule.coe_add, ContMDiffSection.coe_add, Pi.add_apply])
 
-/-- The class of a compactly supported smooth section is represented by the section. -/
-theorem coeFn_ofCompactlySupported (s : ContMDiffSection.compactlySupported I F ∞ E) :
+/-- The class of a compactly supported `C^n` section is represented by the section. -/
+theorem coeFn_ofCompactlySupported (s : ContMDiffSection.compactlySupported I F n E) :
     ∀ᵐ x ∂μ, ofCompactlySupported 𝕜 I p μ s x = s.1 x :=
   coeFn_mk _ _
 
+/-- `ofCompactlySupported` is compatible with multiplication by real scalars. -/
+theorem ofCompactlySupported_smul [∀ x, IsScalarTower ℝ 𝕜 (E x)] (c : ℝ)
+    (s : ContMDiffSection.compactlySupported I F n E) :
+    ofCompactlySupported 𝕜 I p μ (c • s) = (c : 𝕜) • ofCompactlySupported 𝕜 I p μ s := by
+  rw [ofCompactlySupported, AddMonoidHom.coe_mk, ZeroHom.coe_mk, mk_smul]
+  exact (mk_eq_mk_iff (F := F)).2 (.of_forall fun x ↦ by
+    rw [Submodule.coe_smul, ContMDiffSection.coe_smul, Pi.smul_apply,
+      RCLike.real_smul_eq_coe_smul (K := 𝕜)])
+
 /-- The kernel of `ofCompactlySupported` consists of the sections vanishing almost everywhere. -/
-theorem ofCompactlySupported_eq_zero_iff {s : ContMDiffSection.compactlySupported I F ∞ E} :
+theorem ofCompactlySupported_eq_zero_iff {s : ContMDiffSection.compactlySupported I F n E} :
     ofCompactlySupported 𝕜 I p μ s = 0 ↔ ∀ᵐ x ∂μ, s.1 x = 0 := by
   rw [ext_iff]
   constructor <;> intro h <;>
@@ -152,21 +145,18 @@ theorem ofCompactlySupported_eq_zero_iff {s : ContMDiffSection.compactlySupporte
   · rwa [← h1, ← h0]
   · rw [h1, h0, hx]
 
-/-- **Injectivity.** For a measure positive on nonempty open sets, a compactly supported smooth
+/-- **Injectivity.** For a measure positive on nonempty open sets, a compactly supported `C^n`
 section is determined by its class in `Lᵖ(E, μ)`. -/
-theorem injective_ofCompactlySupported [μ.IsOpenPosMeasure] :
-    Function.Injective (ofCompactlySupported 𝕜 I p μ (F := F) (E := E)) := by
+theorem ofCompactlySupported_injective [μ.IsOpenPosMeasure] :
+    Function.Injective (ofCompactlySupported 𝕜 I p μ (n := n) (F := F) (E := E)) := by
   refine (injective_iff_map_eq_zero _).2 fun s hs ↦ ?_
   rw [ofCompactlySupported_eq_zero_iff] at hs
-  -- The set where `s` does not vanish is open, since the fibre norm of `s` is continuous.
-  have hopen : IsOpen {x | ‖(s : Cₛ^∞⟮I; F, E⟯) x‖ ≠ 0} :=
-    isOpen_ne_fun ((s : Cₛ^∞⟮I; F, E⟯).contMDiff.continuous.norm_bundle_of_continuousFiberNorm
-      (F := F)) continuous_const
-  have hnull : μ {x | ‖(s : Cₛ^∞⟮I; F, E⟯) x‖ ≠ 0} = 0 :=
-    measure_mono_null (fun x hx ↦ by simpa using hx) (ae_iff.1 hs)
-  rw [hopen.measure_eq_zero_iff μ] at hnull
+  -- A continuous function vanishing almost everywhere vanishes everywhere.
+  have h : (fun x ↦ ‖(s : Cₛ^n⟮I; F, E⟯) x‖) = fun _ ↦ 0 := (Continuous.ae_eq_iff_eq μ
+    (s : Cₛ^n⟮I; F, E⟯).contMDiff.continuous.norm_bundle_of_continuousFiberNorm
+    continuous_const).1 (hs.mono fun x hx ↦ by simp [hx])
   ext x
-  simpa using Set.eq_empty_iff_forall_notMem.1 hnull x
+  simpa using congrFun h x
 
 end LpSection
 
@@ -179,27 +169,6 @@ section Approximation
 variable [BorelSpace B] [FiniteDimensional ℝ EB] [IsManifold I ∞ B] [T2Space B]
   [ContMDiffVectorBundle ∞ F E I] [FiniteDimensional 𝕜 F] [Fact (1 ≤ p)]
 
-omit [SecondCountableTopology B] [NormedSpace ℝ F] [∀ x, Module ℝ (E x)] [VectorBundle ℝ F E]
-  [IsFiniteMeasureOnCompacts μ] [T2Space B] [Fact (1 ≤ p)] in
-/-- On a compact subset `L` of the base set of an atlas chart `e`, the coordinates in `e` of a
-measurable section with `p`-integrable fibre norm, restricted to a measurable `A ⊆ L`, are
-`p`-integrable: the fibre norms and the norm of `F` are uniformly comparable on `L`. -/
-private theorem memLp_indicator_coord (e : Trivialization F (π F E)) [MemTrivializationAtlas e]
-    {L A : Set B} (hL : IsCompact L) (hLe : L ⊆ e.baseSet) (hA : MeasurableSet A) (hAL : A ⊆ L)
-    {s : ∀ x, E x} (hs : AEStronglyMeasurableSection 𝕜 F μ s)
-    (hsp : MemLp (fun x ↦ ‖s x‖) p μ) :
-    MemLp (A.indicator fun x ↦ (e ⟨x, s x⟩).2) p μ := by
-  obtain ⟨_, C', hC'⟩ := e.exists_norm_symm_le_and_norm_le_of_isCompact 𝕜 hL hLe
-  refine hsp.of_le_mul (c := C') ((aestronglyMeasurable_indicator_iff hA).2 <|
-    (hs.aestronglyMeasurable_coord e).mono_measure (Measure.restrict_mono (hAL.trans hLe) le_rfl))
-    (.of_forall fun x ↦ ?_)
-  by_cases hx : x ∈ A
-  · have := (hC' x (hAL hx) (e ⟨x, s x⟩).2).2
-    rw [e.symm_apply_apply_mk (hLe (hAL hx))] at this
-    rwa [indicator_of_mem hx, norm_norm]
-  · rw [indicator_of_notMem hx, norm_zero, norm_norm]
-    positivity
-
 /-- **Approximation in a chart.** Let `A` be a measurable subset of a compact set `L` inside the
 base set of an atlas chart `e`. The restriction to `A` of a measurable section `s` with
 `p`-integrable fibre norm is approximated in `Lᵖ` by compactly supported smooth sections. -/
@@ -211,20 +180,22 @@ private theorem exists_eLpNorm_piecewise_sub_le (hp : p ≠ ⊤) (e : Trivializa
     ∃ t ∈ ContMDiffSection.compactlySupported I F ∞ E,
       eLpNorm (fun x ↦ ‖A.piecewise s 0 x - t x‖) p μ ≤ ε := by
   have := Manifold.locallyCompact_of_finiteDimensional (M := B) I
-  -- An open `V ⊇ L` with compact closure inside the base set, on which `‖e.symm x v‖ ≤ C ‖v‖`.
+  -- An open `V ⊇ L` with compact closure in the base set, on which fibre norms compare to `‖·‖_F`.
   obtain ⟨V, hV, hLV, hVe, hVc⟩ := exists_open_between_and_isCompact_closure hL e.open_baseSet hLe
-  obtain ⟨C, _, hC⟩ := e.exists_norm_symm_le_and_norm_le_of_isCompact 𝕜 hVc hVe
+  obtain ⟨C, C', hC⟩ := e.exists_norm_symm_le_and_norm_le_of_isCompact 𝕜 hVc hVe
   -- The coordinates `g` of the piece of `s` over `A`, approximated by a smooth `g'` supported
   -- in `V`; then `x ↦ e.symm x (g' x)` approximates the piece.
   set g : B → F := A.indicator fun x ↦ (e ⟨x, s x⟩).2 with hgdef
   obtain ⟨η, hη, hηε⟩ := ENNReal.exists_nnreal_pos_mul_lt (a := C) ENNReal.coe_ne_top hε
   obtain ⟨g', -, hg'V, hg'⟩ := MemLp.exists_contMDiff_tsupport_subset_eLpNorm_sub_le I hp Fact.out
-    (memLp_indicator_coord e hL hLe hA hAL hs hsp) hL.isClosed (hV.mem_nhdsSet.2 hLV)
+    ((memLp_indicator_iff_restrict hA.nullMeasurableSet).2 <| e.memLp_coord_of_bound hA
+      (hAL.trans hLe) C' (fun x hx v ↦ (hC x (subset_closure (hLV (hAL hx))) v).2)
+      (hs.restrict A) (hsp.restrict A)) hL.isClosed (hV.mem_nhdsSet.2 hLV)
     (.of_forall fun x hx ↦ indicator_of_notMem (fun h ↦ hx (hAL h)) _)
     (ENNReal.coe_ne_zero.2 hη.ne')
   have hg'K : tsupport g' ⊆ closure V := hg'V.trans subset_closure
   set t : Cₛ^∞⟮I; F, E⟯ := ⟨_, e.contMDiff_section_symmL g'.contMDiff (hg'K.trans hVe)⟩
-  have ht_apply (x : B) : t x = e.symmL ℝ x (g' x) := rfl
+  have ht_apply (x : B) : t x = e.symmL ℝ x (g' x) := by rw [ContMDiffSection.coeFn_mk]
   have htK : t.tsupport ⊆ closure V := by
     rw [ContMDiffSection.tsupport_def]
     have hsub : {x | t x ≠ 0} ⊆ Function.support g' := fun x hx ↦
@@ -311,7 +282,7 @@ second-countable manifold, with a measure on its Borel sets that is finite on co
 classes of compactly supported smooth sections are dense in `Lᵖ(E, μ)` for `p < ∞`, when the model
 fibre is finite-dimensional and the fibre norms are continuous. -/
 theorem denseRange_ofCompactlySupported (hp : p ≠ ⊤) :
-    DenseRange (ofCompactlySupported 𝕜 I p μ (F := F) (E := E)) := by
+    DenseRange (ofCompactlySupported 𝕜 I p μ (n := ∞) (F := F) (E := E)) := by
   classical
   have := Manifold.locallyCompact_of_finiteDimensional (M := B) I
   refine Metric.denseRange_iff.2 fun f r hr ↦ ?_
@@ -331,9 +302,8 @@ theorem denseRange_ofCompactlySupported (hp : p ≠ ⊤) :
     by_cases hx : x ∈ tsupport h
     · rw [piecewise_eq_of_mem _ _ _ hx]
       exact le_add_of_nonneg_left (norm_nonneg _)
-    · rw [piecewise_eq_of_notMem _ _ _ hx, Pi.zero_apply, zero_sub, norm_neg, Pi.sub_apply,
-        image_eq_zero_of_notMem_tsupport hx, sub_zero, norm_norm]
-      exact norm_sub_le _ _
+    · simpa [piecewise_eq_of_notMem _ _ _ hx, image_eq_zero_of_notMem_tsupport hx] using
+        norm_sub_le (f x) (t x)
   have hle : eLpNorm (fun x ↦ ‖f x - t x‖) p μ ≤ ENNReal.ofReal (r / 2) :=
     calc _ ≤ eLpNorm ((fun x ↦ ‖((fun y ↦ ‖f y‖) - h) x‖) +
             fun x ↦ ‖(tsupport h).piecewise f 0 x - t x‖) p μ :=

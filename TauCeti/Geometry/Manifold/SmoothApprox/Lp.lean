@@ -19,8 +19,9 @@ Borel sets that is finite on compact sets, a function in `Lᵖ`, `1 ≤ p < ∞`
 everywhere off a closed set `s` is the `Lᵖ` limit of smooth compactly supported functions whose
 topological support lies in any prescribed neighbourhood `t` of `s`
 (`MeasureTheory.MemLp.exists_contMDiff_tsupport_subset_eLpNorm_sub_le`). This is the manifold
-counterpart of `TauCeti.exist_contDiff_tsupport_subset_eLpNorm_sub_le` on normed spaces. Support
-control is what lets the approximants of a function supported in a chart be read in that chart.
+counterpart of `MeasureTheory.MemLp.exist_contDiff_tsupport_subset_eLpNorm_sub_le` on normed
+spaces. Support control is what lets the approximants of a function supported in a chart be read
+in that chart.
 
 The approximation goes through continuous functions: Mathlib's
 `MeasureTheory.MemLp.exists_hasCompactSupport_eLpNorm_sub_le` gives a continuous compactly
@@ -69,12 +70,8 @@ theorem exists_contMDiff_tsupport_subset_eLpNorm_sub_le (hp : p ≠ ⊤) (hp₁ 
   have hf₁ : Continuous f₁ := χ.continuous.smul hh
   obtain ⟨g, hgδ, hgf₁⟩ := hf₁.exists_contMDiff_approx I ⊤ (ε := fun _ ↦ (δ : ℝ))
     continuous_const fun _ ↦ NNReal.coe_pos.2 hδ
-  have hsupp : Function.support (f₁ - ⇑g) ⊆ tsupport h := fun x hx ↦ by
-    by_contra hx'
-    have hhx : h x = 0 := image_eq_zero_of_notMem_tsupport hx'
-    have hgx : g x = 0 := by_contra fun h' ↦
-      hx' (subset_tsupport _ (Function.support_smul_subset_right (⇑χ) h (hgf₁ h')))
-    exact hx (by simp [f₁, hhx, hgx])
+  have hf₁h : Function.support f₁ ⊆ tsupport h :=
+    (Function.support_smul_subset_right _ _).trans (subset_tsupport h)
   refine ⟨g, hhc.mono' ((hgf₁.trans (Function.support_smul_subset_right _ _)).trans subset_closure),
     (closure_mono (hgf₁.trans (Function.support_smul_subset_left (⇑χ) h))).trans hχt, ?_⟩
   have hgm : AEStronglyMeasurable (g : M → F) μ := g.contMDiff.continuous.aestronglyMeasurable
@@ -89,13 +86,11 @@ theorem exists_contMDiff_tsupport_subset_eLpNorm_sub_le (hp : p ≠ ⊤) (hp₁ 
       simpa [f₁, hx hxs, norm_smul] using mul_le_of_le_one_left (norm_nonneg _) hχx
   -- `χ h - g` is uniformly smaller than `δ` and vanishes off the support of `h`.
   have h₂ : eLpNorm (f₁ - ⇑g) p μ ≤ ε / 2 := by
-    rw [← eLpNorm_restrict_eq_of_support_subset (hf₁m.sub hgm) hsupp]
-    refine (eLpNorm_le_of_ae_bound (C := δ) (hf₁m.sub hgm).restrict
-      (.of_forall fun x ↦ ?_)).trans ?_
-    · rw [Pi.sub_apply, ← dist_eq_norm, dist_comm]
-      exact (hgδ x).le
-    · rw [Measure.restrict_apply_univ, ENNReal.ofReal_coe_nnreal, mul_comm]
-      exact hδε.le
+    refine (eLpNorm_sub_le_of_dist_bdd μ hp hhc.isCompact.measurableSet.nullMeasurableSet
+      δ.coe_nonneg (hf₁m.sub hgm) (fun x ↦ by rw [dist_comm]; exact (hgδ x).le) hf₁h
+      (hgf₁.trans hf₁h)).trans ?_
+    rw [one_div, ENNReal.ofReal_coe_nnreal]
+    exact hδε.le
   calc eLpNorm (f - ⇑g) p μ = eLpNorm ((f - f₁) + (f₁ - ⇑g)) p μ := by
         rw [sub_add_sub_cancel]
     _ ≤ eLpNorm (f - f₁) p μ + eLpNorm (f₁ - ⇑g) p μ := eLpNorm_add_le hp₁

@@ -150,10 +150,9 @@ theorem exists_norm_symm_le_and_norm_le_of_isCompact (e : Trivialization F (π F
     intro x hx v hv
     have hv' : ‖v‖ ≠ 0 := norm_ne_zero_iff.2 hv
     refine ⟨?_, ?_⟩
-    · rw [mem_sphere_zero_iff_norm, norm_smul, RCLike.norm_ofReal, abs_inv, abs_norm,
-        inv_mul_cancel₀ hv']
-    rw [← e.symmL_apply (R := 𝕜) (hKe hx), ← e.symmL_apply (R := 𝕜) (hKe hx), map_smul,
-      norm_smul, RCLike.norm_ofReal, abs_inv, abs_norm, mul_inv_cancel_left₀ hv']
+    · simp [norm_smul, hv']
+    rw [← e.symmL_apply (R := 𝕜) (hKe hx), ← e.symmL_apply (R := 𝕜) (hKe hx), map_smul]
+    simp [norm_smul, hv']
   obtain ⟨C, hC⟩ := hS.exists_bound_of_continuousOn hφ
   -- The minimum of `‖e.symm x u‖` on `S` is positive, as `e.symm x` is injective on the base set.
   obtain ⟨m, hm, hmS⟩ : ∃ m : ℝ, 0 < m ∧ ∀ z ∈ S, m ≤ ‖e.symm z.1 z.2‖ := by
