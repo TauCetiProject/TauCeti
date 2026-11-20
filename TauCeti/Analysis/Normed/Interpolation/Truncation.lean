@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Interpolation.RealMethod
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Data.ENNReal.InterpolatedExponent
+import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.MinkowskiIntegral
 import TauCeti.MeasureTheory.Integral.Prod
@@ -91,38 +92,13 @@ section Split
 
 variable (f : Lp E p μ)
 
-/-- Above a height `h`, the power `‖f‖ ^ s` with `0 < s ≤ p` is at most `h ^ (s - p) ‖f‖ ^ p`. -/
-private theorem setLIntegral_lt_enorm_rpow_le {s : ℝ} (hs : 0 < s) (hsp : s ≤ p.toReal)
-    (h : ℝ≥0∞) :
-    ∫⁻ x in {x | h < ‖f x‖ₑ}, ‖f x‖ₑ ^ s ∂μ ≤
-      h ^ (s - p.toReal) * ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ := by
-  rw [← lintegral_const_mul _ (((Lp.stronglyMeasurable f).eNorm).pow_const _)]
-  refine (setLIntegral_mono' (measurableSet_lt measurable_const ((Lp.stronglyMeasurable f).eNorm))
-    fun x hx => ?_).trans (setLIntegral_le_lintegral _ _)
-  exact ENNReal.rpow_le_rpow_sub_mul_rpow hs eNorm_ne_top
-    (ENNReal.rpow_le_rpow_of_nonpos (le_of_lt hx) (sub_nonpos.2 hsp))
-
-/-- Up to a height `h`, the power `‖f‖ ^ s` with `p ≤ s` is at most `h ^ (s - p) ‖f‖ ^ p`. -/
-private theorem setLIntegral_enorm_le_rpow_le {s : ℝ} (hs : 0 < s) (hsp : p.toReal ≤ s)
-    (h : ℝ≥0∞) :
-    ∫⁻ x in {x | ‖f x‖ₑ ≤ h}, ‖f x‖ₑ ^ s ∂μ ≤
-      h ^ (s - p.toReal) * ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ := by
-  rw [← lintegral_const_mul _ (((Lp.stronglyMeasurable f).eNorm).pow_const _)]
-  refine (setLIntegral_mono' (measurableSet_le ((Lp.stronglyMeasurable f).eNorm) measurable_const)
-    fun x hx => ?_).trans (setLIntegral_le_lintegral _ _)
-  exact ENNReal.rpow_le_rpow_sub_mul_rpow hs eNorm_ne_top
-    (ENNReal.rpow_le_rpow hx (sub_nonneg.2 hsp))
-
-/-- The part of `f` on a measurable set `S` has `L^s` norm `(∫_S ‖f‖ ^ s) ^ (1 / s)` for
-`0 < s < ∞`, and lies in `Lˢ` when that integral is finite. -/
-private theorem eLpNorm_indicator_eq_and_memLp {s : ℝ≥0∞} (hs0 : s ≠ 0) (hs : s ≠ ∞) {S : Set α}
-    (hS : MeasurableSet S) (hfin : ∫⁻ x in S, ‖f x‖ₑ ^ s.toReal ∂μ ≠ ∞) :
-    eLpNorm (S.indicator f) s μ = (∫⁻ x in S, ‖f x‖ₑ ^ s.toReal ∂μ) ^ (1 / s.toReal) ∧
-      MemLp (S.indicator f) s μ := by
-  have e : eLpNorm (S.indicator f) s μ = (∫⁻ x in S, ‖f x‖ₑ ^ s.toReal ∂μ) ^ (1 / s.toReal) := by
-    rw [eLpNorm_indicator_eq_eLpNorm_restrict hS.nullMeasurableSet,
-      eLpNorm_eq_lintegral_rpow_eNorm_toReal hs0 hs (Lp.aestronglyMeasurable f).restrict]
-  exact ⟨e, by rw [MemLp, e]; exact ENNReal.rpow_lt_top_of_nonneg (by positivity) hfin⟩
+/-- For `f ∈ Lᵖ` with `1 ≤ p < ∞`, `∫ ‖f‖ ^ p = ‖f‖_p ^ p`, with `‖f‖_p` written as `ofReal` of
+its real value. -/
+private theorem lintegral_enorm_rpow_eq_ofReal [Fact (1 ≤ p)] (hp : p ≠ ∞) :
+    ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ = ENNReal.ofReal (eLpNorm f p μ).toReal ^ p.toReal := by
+  rw [ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top f)]
+  exact lintegral_rpow_enorm_eq_eLpNorm_rpow (zero_lt_one.trans_le Fact.out).ne' hp
+    (Lp.aestronglyMeasurable f)
 
 /-- **The `K`-functional of a split.** For `p₀ < p < p₁ < ∞` and a height `0 < h < ∞`, splitting
 `f ∈ Lᵖ` into its parts above and below `h` bounds the `K`-functional of `f` in
@@ -138,22 +114,20 @@ private theorem ofReal_kFunctional_lpToLebesgueSum_le [Fact (1 ≤ p)] (h₀ : p
   have hp₀ : p₀ ≠ ∞ := ne_top_of_lt h₀
   have ha : 0 < p₀.toReal := ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hp₀
   have hb : 0 < p₁.toReal := ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hp₁
-  have hC : h ^ (p₀.toReal - p.toReal) * ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ ≠ ∞ ∧
-      h ^ (p₁.toReal - p.toReal) * ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ ≠ ∞ := by
-    rw [lintegral_rpow_enorm_eq_eLpNorm_rpow (zero_lt_one.trans_le Fact.out).ne'
-      (ne_top_of_lt h₁) (Lp.aestronglyMeasurable f)]
-    exact ⟨ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_ne_zero hh hh')
-        (ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg (Lp.eLpNorm_ne_top f)),
-      ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_ne_zero hh hh')
-        (ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg (Lp.eLpNorm_ne_top f))⟩
+  have hC (e : ℝ) : h ^ e * ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ ≠ ∞ := by
+    rw [lintegral_enorm_rpow_eq_ofReal f (ne_top_of_lt h₁)]
+    exact ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_ne_zero hh hh')
+      (ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg ENNReal.ofReal_ne_top)
   -- The two parts, with their norms.
-  obtain ⟨e₀, m₀⟩ := eLpNorm_indicator_eq_and_memLp f (zero_lt_one.trans_le Fact.out).ne' hp₀
+  obtain ⟨e₀, m₀⟩ := eLpNorm_indicator_eq_and_memLp (Lp.aestronglyMeasurable f)
+    (zero_lt_one.trans_le Fact.out).ne' hp₀
     (measurableSet_lt measurable_const (Lp.stronglyMeasurable f).eNorm)
-    (ne_top_of_le_ne_top hC.1 (setLIntegral_lt_enorm_rpow_le f ha
+    (ne_top_of_le_ne_top (hC _) (setLIntegral_lt_enorm_rpow_le (Lp.aestronglyMeasurable f) ha
       (ENNReal.toReal_mono (ne_top_of_lt h₁) h₀.le) h))
-  obtain ⟨e₁, m₁⟩ := eLpNorm_indicator_eq_and_memLp f (zero_lt_one.trans_le Fact.out).ne' hp₁
+  obtain ⟨e₁, m₁⟩ := eLpNorm_indicator_eq_and_memLp (Lp.aestronglyMeasurable f)
+    (zero_lt_one.trans_le Fact.out).ne' hp₁
     (measurableSet_le (Lp.stronglyMeasurable f).eNorm measurable_const)
-    (ne_top_of_le_ne_top hC.2 (setLIntegral_enorm_le_rpow_le f hb
+    (ne_top_of_le_ne_top (hC _) (setLIntegral_enorm_le_rpow_le (Lp.aestronglyMeasurable f) hb
       (ENNReal.toReal_mono hp₁ h₁.le) h))
   -- They decompose `f`.
   have hsplit : lpToLebesgueSum h₀.le h₁.le f =
@@ -203,6 +177,17 @@ private theorem ofReal_inv_mul_enorm_rpow_le [Fact (1 ≤ p)] (f : Lp E p μ) (h
   have hone : ENNReal.ofReal t = ENNReal.ofReal (t ^ (1 : ℝ)) := by rw [Real.rpow_one]
   have hroot : ∀ (I : ℝ≥0∞) (e : ℝ), (I ^ (1 / e)) ^ Q = I ^ (Q / e) := fun I e => by
     rw [← ENNReal.rpow_mul, one_div_mul_eq_div]
+  -- The powers of `t` in front of each summand combine into a single power.
+  have e₀ : ENNReal.ofReal t⁻¹ * ENNReal.ofReal (t ^ (-θ)) ^ Q =
+      ENNReal.ofReal (t ^ (-(Q * θ) - 1)) := by
+    rw [hinv, hpow, hmul]
+    congr 2
+    ring
+  have e₁ : ENNReal.ofReal t⁻¹ * (ENNReal.ofReal (t ^ (-θ)) ^ Q * ENNReal.ofReal t ^ Q) =
+      ENNReal.ofReal (t ^ (Q - Q * θ - 1)) := by
+    rw [hinv, hone, hpow, hpow, hmul, hmul]
+    congr 2
+    ring
   calc ENNReal.ofReal t⁻¹ * ‖t ^ (-θ) * K‖ₑ ^ Q
       ≤ ENNReal.ofReal t⁻¹ * (ENNReal.ofReal (t ^ (-θ)) * A ^ (1 / p₀.toReal) +
           ENNReal.ofReal (t ^ (-θ)) * ENNReal.ofReal t * B ^ (1 / p₁.toReal)) ^ Q := by
@@ -217,11 +202,12 @@ private theorem ofReal_inv_mul_enorm_rpow_le [Fact (1 ≤ p)] (f : Lp E p μ) (h
           (ENNReal.ofReal (t ^ (-θ)) * ENNReal.ofReal t * B ^ (1 / p₁.toReal)) ^ Q)) := by
         gcongr
         exact ENNReal.rpow_add_le_mul_rpow_add_rpow _ _ hQ
-    _ = _ := by
+    _ = 2 ^ (Q - 1) * (ENNReal.ofReal t⁻¹ * ENNReal.ofReal (t ^ (-θ)) ^ Q * A ^ (Q / p₀.toReal) +
+          ENNReal.ofReal t⁻¹ * (ENNReal.ofReal (t ^ (-θ)) ^ Q * ENNReal.ofReal t ^ Q) *
+            B ^ (Q / p₁.toReal)) := by
         simp only [ENNReal.mul_rpow_of_nonneg _ _ hQ0, hroot]
-        rw [hone, hpow, hpow, hinv, mul_left_comm, mul_add, ← mul_assoc, ← mul_assoc, hmul,
-          hmul, hmul]
-        congr 4 <;> ring_nf
+        ring
+    _ = _ := by rw [e₀, e₁]
 
 /-! ### The exponents -/
 
@@ -231,18 +217,6 @@ private theorem toReal_exponents (h₀ : p₀ < p) (h₁ : p < p₁) (hp₁ : p�
     0 < p₀.toReal ∧ p₀.toReal < p.toReal ∧ p.toReal < p₁.toReal :=
   ⟨ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' (ne_top_of_lt h₀),
     ENNReal.toReal_strict_mono (ne_top_of_lt h₁) h₀, ENNReal.toReal_strict_mono hp₁ h₁⟩
-
-/-- The interpolation relation `1 / p = (1 - θ) / p₀ + θ / p₁` between the real exponents. -/
-private theorem inv_toReal_eq (hθ : θ ∈ Ioo 0 1)
-    (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹) :
-    p.toReal⁻¹ = (1 - θ) * p₀.toReal⁻¹ + θ * p₁.toReal⁻¹ := by
-  have h := congrArg ENNReal.toReal (inv_eq_ofReal_of_inv_eq
-    (zero_lt_one.trans_le (Fact.out : 1 ≤ p₀)).ne' (zero_lt_one.trans_le (Fact.out : 1 ≤ p₁)).ne'
-    (Ioo_subset_Icc_self hθ) hp)
-  have h1 : 0 ≤ 1 - θ := sub_nonneg.2 hθ.2.le
-  have h2 : 0 ≤ θ := hθ.1.le
-  rwa [ENNReal.toReal_ofReal (by positivity), ENNReal.toReal_inv, ENNReal.toReal_inv,
-    ENNReal.toReal_inv] at h
 
 /-- The height exponent `γ = -θ a / (r - a)` satisfies `γ (a - r) / a = θ` and, by the
 interpolation relation `1 / r = (1 - θ) / a + θ / b`, also `γ (b - r) / b = θ - 1`. -/
@@ -263,6 +237,18 @@ private theorem height_exponent_spec {a r b : ℝ} (ha : 0 < a) (har : a < r) (h
 
 /-! ### The estimate -/
 
+/-- The region above the graph of the height `c t ^ γ` is measurable. -/
+private theorem measurableSet_ofReal_mul_rpow_lt {g : α → ℝ≥0∞} (hg : Measurable g) (c γ : ℝ) :
+    MeasurableSet {z : ℝ × α | ENNReal.ofReal (c * z.1 ^ γ) < g z.2} :=
+  measurableSet_lt ((measurable_fst.pow_const γ).const_mul c).ennreal_ofReal
+    (hg.comp measurable_snd)
+
+/-- The region up to the graph of the height `c t ^ γ` is measurable. -/
+private theorem measurableSet_le_ofReal_mul_rpow {g : α → ℝ≥0∞} (hg : Measurable g) (c γ : ℝ) :
+    MeasurableSet {z : ℝ × α | g z.2 ≤ ENNReal.ofReal (c * z.1 ^ γ)} :=
+  measurableSet_le (hg.comp measurable_snd)
+    ((measurable_fst.pow_const γ).const_mul c).ennreal_ofReal
+
 /-- One endpoint of the `K`-method integral: Minkowski's integral inequality and the elementary
 integral in `t` for the part of `g` above the height `c t ^ γ`. -/
 private theorem setLIntegral_Ioi_upper_le {ν : Measure α} [SFinite ν] {g : α → ℝ≥0∞}
@@ -277,10 +263,8 @@ private theorem setLIntegral_Ioi_upper_le {ν : Measure α} [SFinite ν] {g : α
     rw [sub_add_cancel, ← hγ]
     field_simp
     ring
-  have hR : MeasurableSet {z : ℝ × α | ENNReal.ofReal (c * z.1 ^ γ) < g z.2} :=
-    measurableSet_lt ((measurable_fst.pow_const γ).const_mul c).ennreal_ofReal
-      (hg.comp measurable_snd)
-  refine lintegral_mul_setLIntegral_rpow_le_of_le hR hg.aemeasurable ha haQ fun x => ?_
+  refine lintegral_mul_setLIntegral_rpow_le_of_le (measurableSet_ofReal_mul_rpow_lt hg c γ)
+    hg.aemeasurable ha haQ fun x => ?_
   have hin := lintegral_indicator_ofReal_mul_rpow_lt_le hc
     (hγ' ▸ div_pos (mul_pos hQ (sub_pos.2 har)) ha) (g x)
   rwa [hγ', sub_add_cancel, abs_neg, abs_of_pos (mul_pos hQ hθ)] at hin
@@ -300,10 +284,8 @@ private theorem setLIntegral_Ioi_lower_le {ν : Measure α} [SFinite ν] {g : α
     rw [sub_add_cancel, show Q - Q * θ = -Q * (θ - 1) by ring, ← hγ]
     field_simp
     ring
-  have hR : MeasurableSet {z : ℝ × α | g z.2 ≤ ENNReal.ofReal (c * z.1 ^ γ)} :=
-    measurableSet_le (hg.comp measurable_snd)
-      ((measurable_fst.pow_const γ).const_mul c).ennreal_ofReal
-  refine lintegral_mul_setLIntegral_rpow_le_of_le hR hg.aemeasurable hb hbQ fun x => ?_
+  refine lintegral_mul_setLIntegral_rpow_le_of_le (measurableSet_le_ofReal_mul_rpow hg c γ)
+    hg.aemeasurable hb hbQ fun x => ?_
   have hin := lintegral_indicator_le_ofReal_mul_rpow_le hc
     (hγ' ▸ div_neg_of_neg_of_pos (mul_neg_of_pos_of_neg hQ (sub_neg.2 hrb)) hb) (g x)
   have hQθ : 0 < Q - Q * θ := by nlinarith
@@ -356,13 +338,11 @@ private theorem setLIntegral_Ioi_two_mul_add_le {ν : Measure α} [SFinite ν] {
       ENNReal.ofReal (2 ^ (Q - 1) / (Q * θ * (1 - θ))) * ENNReal.ofReal c ^ Q := by
   have hb : 0 < b := (ha.trans har).trans hrb
   have hQ : 0 < Q := hb.trans_le hbQ
-  have hR₀ : MeasurableSet {z : ℝ × α | ENNReal.ofReal (c * z.1 ^ γ) < g z.2} :=
-    measurableSet_lt ((measurable_fst.pow_const γ).const_mul c).ennreal_ofReal
-      (hg.comp measurable_snd)
   have hm₀ : Measurable fun t : ℝ => ENNReal.ofReal (t ^ (-(Q * θ) - 1)) *
       (∫⁻ x in {x | ENNReal.ofReal (c * t ^ γ) < g x}, g x ^ a ∂ν) ^ (Q / a) :=
     (measurable_id.pow_const _).ennreal_ofReal.mul ((measurable_setLIntegral_of_measurableSet
-      (R := fun t x => ENNReal.ofReal (c * t ^ γ) < g x) hR₀
+      (R := fun t x => ENNReal.ofReal (c * t ^ γ) < g x)
+      (measurableSet_ofReal_mul_rpow_lt hg c γ)
       (hg.pow_const a).aemeasurable).pow_const _)
   have hb₀ := setLIntegral_Ioi_upper_le hg ha har (har.le.trans (hrb.le.trans hbQ)) hθ.1 hγa hc
     (ν := ν) (Q := Q)
@@ -383,7 +363,9 @@ private theorem lintegral_multHaar_enorm_rpow_le [Fact (1 ≤ p)] (hθ : θ ∈ 
         (lebesgue 𝕜 E μ p₀ p₁).kFunctional t (lpToLebesgueSum h₀.le h₁.le f)‖ₑ ^ Q ∂multHaar ≤
       ENNReal.ofReal (2 ^ (Q - 1) / (Q * θ * (1 - θ))) * eLpNorm f p μ ^ Q := by
   obtain ⟨ha, har, hrb⟩ := toReal_exponents h₀ h₁ hp₁
-  obtain ⟨hγa, hγb⟩ := height_exponent_spec ha har hrb (inv_toReal_eq hθ hp)
+  obtain ⟨hγa, hγb⟩ := height_exponent_spec ha har hrb
+    (inv_toReal_eq_of_inv_eq (zero_lt_one.trans_le Fact.out).ne'
+      (zero_lt_one.trans_le Fact.out).ne' (Ioo_subset_Icc_self hθ) hp)
   have hQ1 : 1 ≤ Q := le_trans (by simpa using ENNReal.toReal_mono hp₁ (Fact.out : 1 ≤ p₁)) hbQ
   set c := (eLpNorm f p μ).toReal
   have hc : 0 < c := ENNReal.toReal_pos hN (Lp.eLpNorm_ne_top f)
@@ -392,10 +374,8 @@ private theorem lintegral_multHaar_enorm_rpow_le [Fact (1 ≤ p)] (hθ : θ ∈ 
   set g : α → ℝ≥0∞ := fun x => ‖f x‖ₑ
   have hg : Measurable g := (Lp.stronglyMeasurable f).eNorm
   have hr : 0 < p.toReal := ha.trans har
-  have hI : ∫⁻ x, g x ^ p.toReal ∂μ = ENNReal.ofReal c ^ p.toReal := by
-    rw [← hNc]
-    exact lintegral_rpow_enorm_eq_eLpNorm_rpow (zero_lt_one.trans_le Fact.out).ne'
-      (ne_top_of_lt h₁) (Lp.aestronglyMeasurable f)
+  have hI : ∫⁻ x, g x ^ p.toReal ∂μ = ENNReal.ofReal c ^ p.toReal :=
+    lintegral_enorm_rpow_eq_ofReal f (ne_top_of_lt h₁)
   have : SigmaFinite (μ.restrict {x | 0 < g x}) :=
     sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top hg.aemeasurable hr
       (hI ▸ ENNReal.rpow_ne_top_of_nonneg hr.le ENNReal.ofReal_ne_top)
@@ -440,20 +420,22 @@ private theorem rpow_neg_mul_kFunctional_le [Fact (1 ≤ p)] (hθ : θ ∈ Ioo 0
     t ^ (-θ) * (lebesgue 𝕜 E μ p₀ p₁).kFunctional t (lpToLebesgueSum h₀.le h₁.le f) ≤
       2 * (eLpNorm f p μ).toReal := by
   obtain ⟨ha, har, hrb⟩ := toReal_exponents h₀ h₁ hp₁
-  obtain ⟨hγa, hγb⟩ := height_exponent_spec ha har hrb (inv_toReal_eq hθ hp)
+  obtain ⟨hγa, hγb⟩ := height_exponent_spec ha har hrb
+    (inv_toReal_eq_of_inv_eq (zero_lt_one.trans_le Fact.out).ne'
+      (zero_lt_one.trans_le Fact.out).ne' (Ioo_subset_Icc_self hθ) hp)
   set γ := -(θ * p₀.toReal) / (p.toReal - p₀.toReal)
   set c := (eLpNorm f p μ).toReal
   have hc : 0 < c := ENNReal.toReal_pos hN (Lp.eLpNorm_ne_top f)
   have hh : 0 < c * t ^ γ := mul_pos hc (Real.rpow_pos_of_pos ht _)
-  have hI : ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ = ENNReal.ofReal c ^ p.toReal := by
-    rw [ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top f)]
-    exact lintegral_rpow_enorm_eq_eLpNorm_rpow (zero_lt_one.trans_le Fact.out).ne'
-      (ne_top_of_lt h₁) (Lp.aestronglyMeasurable f)
+  have hI : ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ = ENNReal.ofReal c ^ p.toReal :=
+    lintegral_enorm_rpow_eq_ofReal f (ne_top_of_lt h₁)
   -- Each part of the split at the height `c t ^ γ` contributes at most `c t ^ θ`.
   have hA := setLIntegral_rpow_rpow_le (γ := γ) hc ht ha
-    ((setLIntegral_lt_enorm_rpow_le f ha har.le _).trans_eq (by rw [hI]))
+    ((setLIntegral_lt_enorm_rpow_le (Lp.aestronglyMeasurable f) ha har.le _).trans_eq
+      (by rw [hI]))
   have hB := setLIntegral_rpow_rpow_le (γ := γ) hc ht ((ha.trans har).trans hrb)
-    ((setLIntegral_enorm_le_rpow_le f ((ha.trans har).trans hrb) hrb.le _).trans_eq (by rw [hI]))
+    ((setLIntegral_enorm_le_rpow_le (Lp.aestronglyMeasurable f)
+      ((ha.trans har).trans hrb) hrb.le _).trans_eq (by rw [hI]))
   rw [hγa] at hA
   rw [hγb] at hB
   have hK := (ofReal_kFunctional_lpToLebesgueSum_le (𝕜 := 𝕜) f h₀ h₁ hp₁ ht.le
