@@ -27,11 +27,34 @@ simplex or cube used to define chains with local coefficients. The heterogeneous
 `ContinuousMap.pathClass_heq`, `ContinuousMap.fromPath_heq_pathClass` and
 `ContinuousMap.comp_heq_pathClass` identify such path classes when their end points are only
 propositionally equal, as happens for the vertices of faces and of swept cubes.
+
+The file also records `Directed.isSimplyConnected_iUnion`: the union of a nonempty directed family
+of open simply connected sets is simply connected.
 -/
 
 public section
 
 open CategoryTheory
+
+/-- The union of a nonempty directed family of open simply connected subsets of a topological space
+is simply connected. -/
+theorem Directed.isSimplyConnected_iUnion {X ι : Type*} [TopologicalSpace X] [Nonempty ι]
+    {U : ι → Set X} (hdir : Directed (· ⊆ ·) U) (hUo : ∀ i, IsOpen (U i))
+    (hUc : ∀ i, IsSimplyConnected (U i)) : IsSimplyConnected (⋃ i, U i) := by
+  rw [isSimplyConnected_iff_exists_homotopy_refl_forall_mem]
+  refine ⟨?_, fun x p hp => ?_⟩
+  · obtain ⟨i₀⟩ := ‹Nonempty ι›
+    obtain ⟨x₀, hx₀⟩ := (hUc i₀).nonempty
+    refine ⟨x₀, Set.mem_iUnion.mpr ⟨i₀, hx₀⟩, fun y hy => ?_⟩
+    obtain ⟨i, hi⟩ := Set.mem_iUnion.mp hy
+    obtain ⟨k, hi₀k, hik⟩ := hdir i₀ i
+    exact ((hUc k).isPathConnected.joinedIn x₀ (hi₀k hx₀) y (hik hi)).mono
+      (Set.subset_iUnion U k)
+  · obtain ⟨k, hk⟩ := (isCompact_range p.continuous).elim_directed_cover U hUo
+      (Set.range_subset_iff.mpr hp) hdir
+    obtain ⟨H, hH⟩ := (isSimplyConnected_iff_exists_homotopy_refl_forall_mem.mp (hUc k)).2 x p
+      fun t => hk (Set.mem_range_self t)
+    exact ⟨H, fun t => Set.subset_iUnion U k (hH t)⟩
 
 variable {X : Type*} [TopologicalSpace X] [SimplyConnectedSpace X]
 
