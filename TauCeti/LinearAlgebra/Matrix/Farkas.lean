@@ -226,11 +226,6 @@ theorem exists_vecMul_add_vecMul_eq_iff (A : Matrix m ι K) (E : Matrix p ι K) 
   rw [← exists_vecMul_add_vecMul_eq_and_le_iff ⟨0, by simp, by simp⟩ c 0]
   simp
 
-omit [IsStrictOrderedRing K] [IsStrictOrderedRing L] [Fintype m] [Fintype p] [Fintype ι] in
-private theorem map_dotProduct_orderRingHom (f : K →+*o L) {κ : Type*} [Fintype κ]
-    (v w : κ → K) : f (v ⬝ᵥ w) = (f ∘ v) ⬝ᵥ (f ∘ w) := by
-  simpa using RingHom.map_dotProduct (f : K →+* L) v w
-
 omit [Fintype m] [Fintype p] in
 /-- A finite system of linear inequalities and equations with coefficients in `K` is solvable
 over an ordered field extension `f : K →+*o L` iff it is solvable over `K`. -/
@@ -245,17 +240,15 @@ theorem exists_mulVec_le_and_mulVec_eq_map_iff [Finite m] [Finite p] (f : K →+
   refine ⟨fun hL => ?_, fun ⟨x, hA, hE⟩ => ⟨f ∘ x, fun i => ?_, funext fun j => ?_⟩⟩
   · rw [exists_mulVec_le_and_mulVec_eq_iff] at hL ⊢
     intro y z hy hyz
-    have hyz' : (f ∘ y) ᵥ* A.map f + (f ∘ z) ᵥ* E.map f = 0 := by
-      ext k
-      simpa [vecMul, map_dotProduct_orderRingHom, Function.comp_def] using
-        congrArg f (congrFun hyz k)
+    have hyz' : (f ∘ y) ᵥ* A.map f + (f ∘ z) ᵥ* E.map f = 0 := funext fun k => by
+      have := congrArg (f : K →+* L) (congrFun hyz k)
+      rwa [Pi.add_apply, map_add, RingHom.map_vecMul, RingHom.map_vecMul, Pi.zero_apply,
+        map_zero] at this
     have := hL (f ∘ y) (f ∘ z) (fun i => by simpa using OrderHomClass.mono f (hy i)) hyz'
-    rw [← hmono.le_iff_le, map_zero, map_add, map_dotProduct_orderRingHom,
-      map_dotProduct_orderRingHom]
-    exact this
-  · simpa [mulVec, map_dotProduct_orderRingHom, Function.comp_def] using
-      OrderHomClass.mono f (hA i)
-  · simpa [mulVec, map_dotProduct_orderRingHom, Function.comp_def] using
-      congrArg f (congrFun hE j)
+    rw [← hmono.le_iff_le, map_zero, map_add]
+    exact (RingHom.map_dotProduct (f : K →+* L) y b ▸
+      RingHom.map_dotProduct (f : K →+* L) z d ▸ this)
+  · exact RingHom.map_mulVec (f : K →+* L) A x i ▸ OrderHomClass.mono f (hA i)
+  · exact RingHom.map_mulVec (f : K →+* L) E x j ▸ congrArg f (congrFun hE j)
 
 end Matrix
