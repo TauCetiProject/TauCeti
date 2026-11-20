@@ -36,7 +36,8 @@ bounds every solution of the deformed equation, uniformly in `θ ∈ [0, 1]`: fo
 
 (`TauCeti.PDE.norm_le_of_eq_smul_value_frozenSolution`), so the solutions of the deformed equations
 form a bounded subset of `L²(Ω)` (`TauCeti.PDE.isBounded_setOf_eq_smul_value_frozenSolution`). This
-is the a priori bound in the form Schaefer's theorem takes as hypothesis. The solution `u = θ S v`
+bound over `0 ≤ θ ≤ 1` implies the a priori hypothesis of Schaefer's theorem, which ranges over
+`0 < θ < 1`. The solution `u = θ S v`
 of the deformed problem is the frozen solution with data `θ g` and `θ ℓ`.
 
 ## Main declarations
@@ -127,11 +128,9 @@ theorem norm_le_of_eq_smul_value_frozenSolution
     (hv : v = θ • W1p.value (frozenSolution A g ℓ v)) :
     ‖v‖ ≤ |θ| * (‖g‖ + 2 * ((2 * R) ^ 2 + 1) * (‖ℓ‖ + Lam * ‖g‖) / lam) := by
   have hS := norm_frozenSolution_sub_le hA hAm hAc hball g ℓ (Lp.aestronglyMeasurable v)
-  have hgS : ‖frozenSolution A g ℓ v‖ ≤ ‖g‖ + ‖frozenSolution A g ℓ v - g‖ := by
-    simpa using norm_add_le g (frozenSolution A g ℓ v - g)
   have hvS : ‖W1p.value (frozenSolution A g ℓ v)‖ ≤
       ‖g‖ + 2 * ((2 * R) ^ 2 + 1) * (‖ℓ‖ + Lam * ‖g‖) / lam :=
-    (W1p.norm_value_le _).trans (hgS.trans (by linarith))
+    (W1p.norm_value_le _).trans ((norm_le_norm_add_norm_sub' _ g).trans (by linarith))
   calc ‖v‖ = ‖θ • W1p.value (frozenSolution A g ℓ v)‖ := congrArg norm hv
     _ = |θ| * ‖W1p.value (frozenSolution A g ℓ v)‖ := by rw [norm_smul, Real.norm_eq_abs]
     _ ≤ |θ| * (‖g‖ + 2 * ((2 * R) ^ 2 + 1) * (‖ℓ‖ + Lam * ‖g‖) / lam) :=
@@ -139,8 +138,8 @@ theorem norm_le_of_eq_smul_value_frozenSolution
 
 /-- **Boundedness of the Leray–Schauder family.** The solutions `v ∈ L²(Ω)` of the deformed
 equations `v = θ T v`, `0 ≤ θ ≤ 1`, where `T v` is the value of the frozen solution `S v` of
-`-div (A(x, v) ∇u) = ℓ`, `u - g ∈ H¹₀(Ω)`, form a bounded set. This is the a priori bound that
-Schaefer's fixed-point theorem `TauCeti.schaeferFixedPoint` asks for. -/
+`-div (A(x, v) ∇u) = ℓ`, `u - g ∈ H¹₀(Ω)`, form a bounded set. It implies the a priori hypothesis
+of Schaefer's fixed-point theorem `TauCeti.schaeferFixedPoint`, which ranges over `0 < θ < 1`. -/
 theorem isBounded_setOf_eq_smul_value_frozenSolution
     (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
       (fun x => A x s) lam Lam)
