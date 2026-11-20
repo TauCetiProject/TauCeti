@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Limit
 public import TauCeti.Geometry.Symplectic.Floer.Chart
-import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
@@ -164,27 +163,9 @@ theorem inChartAt_apply_almostComplexInChartAt (ω : SmoothTwoForm I M) {y : E}
       SmoothBundleForm.eval₂ ω ((extChartAt I α).symm y)
         ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) a)
         (J z ((extChartAt I α).symm y)
-          ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) a)) := by
-  set e := extChartAt I α with he
-  set T := trivializationAt E (TangentSpace I) α with hT
-  have hbase : e.symm y ∈ T.baseSet := by
-    simpa only [hT, TangentBundle.trivializationAt_baseSet, ← extChartAt_source I] using
-      e.map_target hy
-  -- The coordinate expression of `ω` feeds it the vectors with the given tangent coordinates.
-  have hS := TangentBundle.symmL_trivializationAt (I := I) (𝕜 := ℝ) (x₀ := α)
-    (by simpa only [he, extChartAt_source] using e.map_target hy)
-  rw [(extChartAt I α).right_inv hy] at hS
-  rw [RoughForm.inChartAt_apply, SmoothBundleForm.eval₂_apply, ← hS]
-  congr 1
-  funext i
-  fin_cases i
-  · simp only [Fin.zero_eta, Matrix.cons_val_zero]
-    rw [he, extChartAt_coe_symm, Function.comp_apply]
-    -- `T` abbreviates `trivializationAt E (TangentSpace I) α`, which an instance argument of
-    -- `symmL` also mentions, so it cannot be rewritten; `rfl` unfolds the local definition.
-    rfl
-  · exact (congrArg (T.symmL ℝ (e.symm y)) (Floer.almostComplexInChartAt_apply z y a)).trans
-      (Trivialization.symmL_continuousLinearMapAt _ hbase _)
+          ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) a)) :=
+  (ω.associatedBilinFormInChartAt_apply_eq_inChartAt J (z, y) a a).symm.trans
+    (ω.associatedBilinFormInChartAt_apply J z hy a a)
 
 /-- **The Floer energy density in a chart.** Let `u` be differentiable at `z`, with `u z` in the
 source of the chart at `α`, and solve the Floer equation for `J(z, u z)` at `z`. Then its energy
@@ -201,9 +182,9 @@ theorem floerEnergyDensity_eq_inChartAt (ω : SmoothTwoForm I M)
           Floer.almostComplexInChartAt I α J (z, extChartAt I α (u z))
             (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal -
               ω.hamiltonianVectorFieldInChartAt α Ks (z, extChartAt I α (u z)))] := by
-  set T := trivializationAt E (TangentSpace I) α with hT
-  have hub : u z ∈ T.baseSet := by
-    simpa only [hT, TangentBundle.trivializationAt_baseSet, ← extChartAt_source I] using hus
+  set T := trivializationAt E (TangentSpace I) α
+  have hub : u z ∈ T.baseSet :=
+    TangentBundle.mem_trivializationAt_baseSet_of_mem_extChartAt_source hus
   -- The chart coordinate of `∂ₛu - X_{K_s}`.
   have hPs : T.symmL ℝ (u z) (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal -
       ω.hamiltonianVectorFieldInChartAt α Ks (z, extChartAt I α (u z))) =
@@ -284,31 +265,17 @@ theorem IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq
             ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) ξ)) ≤
           C * ‖ξ‖ ^ 2 := by
   set e := extChartAt I α
-  set T := trivializationAt E (TangentSpace I) α with hT
-  set Jc := Floer.almostComplexInChartAt I α J
+  set T := trivializationAt E (TangentSpace I) α
   have hDK : IsCompact (D ×ˢ K) := hD.prod hK
-  have hbase {y : E} (hy : y ∈ e.target) : e.symm y ∈ T.baseSet := by
-    simpa only [hT, TangentBundle.trivializationAt_baseSet, ← extChartAt_source I] using
-      e.map_target hy
+  have hbase {y : E} (hy : y ∈ e.target) : e.symm y ∈ T.baseSet :=
+    TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hy
   -- In the chart, `ω(·, J ·)` is the bilinear form `b`, continuous and positive on `D × K`.
-  set b : (ℝ × ℝ) × E → E →L[ℝ] E →L[ℝ] ℝ := fun p ↦
-    ((compL ℝ E E ℝ).flip (Jc p)).comp
-      (ContinuousAlternatingMap.flatL ℝ E ℝ (RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α p.2))
-    with hb_def
-  have hb_apply (p : (ℝ × ℝ) × E) (a : E) : b p a a = RoughForm.inChartAt (ω : RoughForm I M ℝ 2)
-      α p.2 ![a, Jc p a] := by
-    simp only [hb_def, comp_apply, flip_apply, compL_apply,
-      ContinuousAlternatingMap.flatL_apply_apply]
+  set b := ω.associatedBilinFormInChartAt α J
   have hb : ∀ p ∈ D ×ˢ K, ∀ a, b p a a = SmoothBundleForm.eval₂ ω (e.symm p.2)
-      (T.symmL ℝ (e.symm p.2) a) (J p.1 (e.symm p.2) (T.symmL ℝ (e.symm p.2) a)) := by
-    rintro ⟨z, y⟩ hp a
-    rw [hb_apply]
-    exact ω.inChartAt_apply_almostComplexInChartAt (hKα hp.2) z a
+      (T.symmL ℝ (e.symm p.2) a) (J p.1 (e.symm p.2) (T.symmL ℝ (e.symm p.2) a)) :=
+    fun p hp a ↦ ω.associatedBilinFormInChartAt_apply J p.1 (hKα hp.2) a a
   have hbc : ContinuousOn b (D ×ˢ K) :=
-    ((compL ℝ E E ℝ).flip.continuous.comp_continuousOn hJ).clm_comp
-      ((ContinuousAlternatingMap.flatL ℝ E ℝ).continuous.comp_continuousOn
-        ((ω.isSmoothForm.continuousOn_inChartAt α).comp continuousOn_snd
-          fun p hp ↦ hKα hp.2))
+    continuousOn_associatedBilinFormInChartAt (fun p hp ↦ hKα hp.2) hJ
   obtain ⟨c, hc, hcb⟩ := hDK.exists_pos_forall_mul_norm_sq_le hbc fun p hp a ha ↦ by
     rw [hb p hp]
     have hy : p.2 ∈ e.target := hKα hp.2
