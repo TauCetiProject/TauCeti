@@ -179,7 +179,7 @@ private theorem shortExact_sphereBundle_signPermutationShortComplex [Nontrivial 
     (fun b ↦ (finite_preimage_sphereBundleProj hF b).to_subtype)
     (sphereBundleNeg_ne_self F E)
     (fun _ _ h ↦ eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq hF h)
-    (surjective_sphereBundleProj F E)
+    (sphereBundleProj_surjective F E)
 
 /-- **The Thom isomorphism of a line bundle with orientation coefficients.** Let `E → B` be a real
 vector bundle of rank one whose fibre norm is continuous on the total space, and `o(E)` its

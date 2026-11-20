@@ -30,7 +30,7 @@ bundle `{-½ Hess(v, v) ≤ ε}` of a Morse–Bott critical submanifold, where `
 on the negative normal bundle. Each point of `S(E)` gives a unit vector in its fibre
 (`TauCeti.unitSphereOfSphereBundle`), and the unit sphere bundle projects continuously onto the
 base (`TauCeti.sphereBundleProj`), onto every point when the model fibre is nonzero
-(`TauCeti.surjective_sphereBundleProj`). Fibrewise negation `v ↦ -v` is a fixed-point-free
+(`TauCeti.sphereBundleProj_surjective`). Fibrewise negation `v ↦ -v` is a fixed-point-free
 involution of it over the base (`TauCeti.sphereBundleNeg`); for a line bundle it exchanges the two
 unit vectors of each fibre (`TauCeti.eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq`).
 
@@ -396,7 +396,7 @@ theorem sphereBundleNeg_ne_self (v : sphereBundle F E) : sphereBundleNeg F E v �
   exact snd_ne_zero_of_mem_sphereBundle hx (neg_eq_self.1 h₂)
 
 /-- If the model fibre is nonzero, the unit sphere bundle has a unit vector over every point. -/
-theorem surjective_sphereBundleProj [Nontrivial F] : Function.Surjective (sphereBundleProj F E) :=
+theorem sphereBundleProj_surjective [Nontrivial F] : Function.Surjective (sphereBundleProj F E) :=
   fun b ↦ by
     have : Nontrivial (E b) := ((trivializationAt F E b).continuousLinearEquivAt ℝ b
       (FiberBundle.mem_baseSet_trivializationAt' b)).toEquiv.nontrivial
@@ -425,7 +425,7 @@ theorem eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq (hF : Module.finrank ℝ
 theorem finite_preimage_sphereBundleProj (hF : Module.finrank ℝ F = 1) (b : B) :
     (sphereBundleProj F E ⁻¹' {b}).Finite := by
   have : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
-  obtain ⟨v, rfl⟩ := surjective_sphereBundleProj F E b
+  obtain ⟨v, rfl⟩ := sphereBundleProj_surjective F E b
   refine (Set.toFinite {v, sphereBundleNeg F E v}).subset fun w hw ↦ ?_
   rcases eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq hF hw with h | h <;> simp [h]
 

@@ -127,7 +127,7 @@ def signLocalSystemIsoSphereBundle :
       (fun _ _ h ↦ eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq hF h)
       (fun _ _ h ↦
         VectorBundleOrientationCover.eq_or_eq_deck ((Fintype.card_fin 1).trans hF.symm) h)
-      (surjective_sphereBundleProj F E)
+      (sphereBundleProj_surjective F E)
 
 /-- The identification of the orientation local system of a line bundle with the sign local system
 of its unit sphere bundle is precomposition with the orientation map. -/
