@@ -10,7 +10,8 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 /-!
 # Elementary inequalities in seminormed rings
 
-This file records elementary consequences of the submultiplicativity of the norm, exact
+This file records elementary consequences of the submultiplicativity of the norm, including its
+form `‖a * b‖ₑ ≤ ‖a‖ₑ * ‖b‖ₑ` for the extended norm (`TauCeti.eNorm_mul_le`), exact
 positive-power norms without `NormOneClass`, an estimate for `‖w - 1‖` with `‖w‖ = 1` when the
 norm is multiplicative, and convergence to `0` of finite partial products when factors tend to `0`
 cofinitely (`TauCeti.tendsto_finsetProd_cofinite_zero`).
@@ -32,6 +33,11 @@ theorem norm_mul_lt_one {K : Type*} [NonUnitalSeminormedRing K] (u v : K) (hu : 
     _ ≤ ‖u‖ := by
       simpa only [mul_one] using mul_le_mul_of_nonneg_left hv.le (norm_nonneg u)
     _ < 1 := hu
+
+/-- The extended norm is submultiplicative: `‖a * b‖ₑ ≤ ‖a‖ₑ * ‖b‖ₑ`. -/
+theorem eNorm_mul_le {R : Type*} [NonUnitalSeminormedRing R] (a b : R) :
+    ‖a * b‖ₑ ≤ ‖a‖ₑ * ‖b‖ₑ := by
+  simpa only [eNorm_eq_nnNorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe] using nnNorm_mul_le a b
 
 /-- The distance from `e * a` to `c` exceeds the distance from `e * b` to `c` by at most
 `‖e‖ ‖a - b‖`: `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + ‖e * b - c‖`. -/

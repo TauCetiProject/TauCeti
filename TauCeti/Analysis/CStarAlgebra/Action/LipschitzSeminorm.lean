@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Group.Integral
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import Mathlib.Topology.Semicontinuity.Basic
 public import TauCeti.Analysis.CStarAlgebra.Action.Basic
+import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
 # The Lipschitz seminorm of an action on a C⋆-algebra
@@ -174,14 +175,12 @@ theorem actionLip_add_of_forall_apply_eq {b : A} (hb : ∀ g, α g b = b) (a : A
 /-- The Leibniz inequality `L(ab) ≤ L(a) ‖b‖ + ‖a‖ L(b)` for the action seminorm `L`. -/
 theorem actionLip_mul_le (a b : A) :
     α.actionLip ℓ (a * b) ≤ α.actionLip ℓ a * ‖b‖ₑ + ‖a‖ₑ * α.actionLip ℓ b := by
-  have hmul (x y : A) : ‖x * y‖ₑ ≤ ‖x‖ₑ * ‖y‖ₑ := by
-    simpa only [eNorm_eq_nnNorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe] using nnNorm_mul_le x y
   refine (α.actionLip_le_iff ℓ).2 fun g ↦ ?_
   calc ‖α g (a * b) - a * b‖ₑ = ‖(α g a - a) * α g b + a * (α g b - b)‖ₑ := by
         rw [map_mul, sub_mul, mul_sub, sub_add_sub_cancel]
     _ ≤ ‖α g a - a‖ₑ * ‖b‖ₑ + ‖a‖ₑ * ‖α g b - b‖ₑ := by
-        refine (eNorm_add_le _ _).trans (add_le_add ?_ (hmul _ _))
-        simpa only [eNorm_eq_nnNorm, StarAlgEquiv.nnNorm_map] using hmul (α g a - a) (α g b)
+        refine (eNorm_add_le _ _).trans (add_le_add ?_ (eNorm_mul_le _ _))
+        simpa only [eNorm_eq_nnNorm, StarAlgEquiv.nnNorm_map] using eNorm_mul_le (α g a - a) (α g b)
     _ ≤ α.actionLip ℓ a * ENNReal.ofReal (ℓ g) * ‖b‖ₑ +
           ‖a‖ₑ * (α.actionLip ℓ b * ENNReal.ofReal (ℓ g)) := by
         gcongr <;> exact α.eNorm_apply_sub_le_actionLip_mul ℓ g _
@@ -263,8 +262,7 @@ theorem norm_integral_smul_sub_le [OpensMeasurableSpace G] {f : G → ℝ} (hf :
 end Measure
 
 /-- For a compact group with a continuous length function, the elements of finite action
-seminorm are norm dense. The approximants are averages of orbits against the normalized bumps
-`g ↦ max (δ - ℓ g) 0`, whose left translates move by at most a multiple of `ℓ`. -/
+seminorm are norm dense. -/
 theorem dense_setOf_actionLip_ne_top [IsTopologicalGroup G] (hℓ : Continuous ℓ) :
     Dense {a : A | α.actionLip ℓ a ≠ ∞} := by
   borelize G
@@ -331,14 +329,12 @@ theorem actionLip_one : α.actionLip ℓ 1 = 0 :=
 /-- The inverse estimate `L(u⁻¹) ≤ ‖u⁻¹‖² L(u)` for a unit `u` of the algebra. -/
 theorem actionLip_inv_le (u : Aˣ) :
     α.actionLip ℓ ↑u⁻¹ ≤ ‖(↑u⁻¹ : A)‖ₑ ^ 2 * α.actionLip ℓ u := by
-  have hmul (x y : A) : ‖x * y‖ₑ ≤ ‖x‖ₑ * ‖y‖ₑ := by
-    simpa only [eNorm_eq_nnNorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe] using nnNorm_mul_le x y
   refine (α.actionLip_le_iff ℓ).2 fun g ↦ ?_
   have key : α g ↑u⁻¹ - ↑u⁻¹ = α g ↑u⁻¹ * (u - α g u) * ↑u⁻¹ := by
     simp [mul_sub, sub_mul, mul_assoc, ← map_mul]
   calc ‖α g ↑u⁻¹ - ↑u⁻¹‖ₑ = ‖α g ↑u⁻¹ * (u - α g u) * ↑u⁻¹‖ₑ := by rw [key]
     _ ≤ ‖α g ↑u⁻¹‖ₑ * ‖(u - α g u : A)‖ₑ * ‖(↑u⁻¹ : A)‖ₑ :=
-        (hmul _ _).trans (by gcongr; exact hmul _ _)
+        (eNorm_mul_le _ _).trans (by gcongr; exact eNorm_mul_le _ _)
     _ = ‖(↑u⁻¹ : A)‖ₑ * ‖α g u - u‖ₑ * ‖(↑u⁻¹ : A)‖ₑ := by
         rw [← eNorm_neg (u - α g u : A), neg_sub]
         simp only [eNorm_eq_nnNorm, StarAlgEquiv.nnNorm_map]
