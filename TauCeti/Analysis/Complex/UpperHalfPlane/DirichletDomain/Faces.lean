@@ -142,9 +142,9 @@ variable [ProperlyDiscontinuousSMul G ℍ]
 
 /-- The boundary is exactly the union of the faces indexed by elements moving the centre. -/
 theorem frontier_dirichletDomain_eq_iUnion_dirichletFace {p : ℍ} :
-    frontier (dirichletDomain G p) = ⋃ g : {g : G // g • p ≠ p}, dirichletFace p g.1 := by
+    frontier (dirichletDomain G p) = ⋃ g : {g : G // g • p ≠ p}, dirichletFace p g.val := by
   apply subset_antisymm (frontier_dirichletDomain_subset_iUnion_dirichletFace p)
-  exact iUnion_subset fun g ↦ dirichletFace_subset_frontier g.2
+  exact iUnion_subset fun g ↦ dirichletFace_subset_frontier g.property
 
 /-- A point is in the interior exactly when all constraints from indices moving the centre
 are strict. Local finiteness of the constraints is essential for the reverse implication. -/

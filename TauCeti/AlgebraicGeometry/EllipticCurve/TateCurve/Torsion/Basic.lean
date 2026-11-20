@@ -197,7 +197,7 @@ theorem tateRootsOfUnityHom_injective (hn : n ≠ 0) :
   obtain ⟨a, ha⟩ := (exact_torsionByMap (r := (n : ℤ))
     (exact_tatePeriodHom_tateUnitHom L q hq) (tatePeriodHom_injective L q hq) _).mp hζ
   have ha0 : a = 0 := Subtype.ext <|
-    (mul_eq_zero.mp ((Submodule.mem_torsionBy_iff _ _).mp a.2)).resolve_left
+    (mul_eq_zero.mp ((Submodule.mem_torsionBy_iff _ _).mp a.property)).resolve_left
       (Int.natCast_ne_zero.mpr hn)
   apply (torsionByUnitsEquivRootsOfUnity n).symm.injective
   simpa [ha0] using ha.symm

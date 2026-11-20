@@ -256,7 +256,7 @@ private lemma zetaValue_smul (γ : SL(2, ℤ)) (b : Fin 2 → ℤ) (z : ℍ) :
   have hb := intCast_mul_smul_add_intCast γ z b
   -- the quasi-periods of `γ z` at `b₀ γz + b₁`, which is `l / (c z + d)`
   have hη := (γ • z).periodPair.quasiPeriod_eq_intCast_mul_add
-    ⟨_, (div_denom_mem_lattice_periodPair_smul_iff γ z l).mpr l.2⟩ (m := b 0) (n := b 1)
+    ⟨_, (div_denom_mem_lattice_periodPair_smul_iff γ z l).mpr l.property⟩ (m := b 0) (n := b 1)
     (by simpa [l] using hb)
   rw [quasiPeriod_periodPair_smul,
     z.periodPair.quasiPeriod_eq_intCast_mul_add l (m := b' 0) (n := b' 1) (by simp [l])] at hη

@@ -82,13 +82,13 @@ variable (P : TopPair.{v}) (L : LocalCoefficientSystem.{u, v, max v w} R P.fst) 
 locally finite chain on the finitely many simplices meeting `X \ B`. -/
 private def toRelativeFun (c : locallyFiniteChains L k) : (P.twistedChainComplex L).X k :=
   ((P.twistedChainComplexπ L).f k).hom <|
-    ∑ σ ∈ ((mem_locallyFiniteChains.1 c.2).finite_setOf_inter_nonempty hP).toFinset,
+    ∑ σ ∈ ((mem_locallyFiniteChains.1 c.property).finite_setOf_inter_nonempty hP).toFinset,
       (ιTwistedChainComplex L k σ).hom ((c : ∀ τ : (TopCat.toSSet.obj P.fst) _⦋k⦌,
         L.obj (initialVertex τ)) σ)
 
 private lemma toRelativeFun_eq (c : locallyFiniteChains L k) :
     toRelativeFun P L hP c = ((P.twistedChainComplexπ L).f k).hom
-      (∑ σ ∈ ((mem_locallyFiniteChains.1 c.2).finite_setOf_inter_nonempty hP).toFinset,
+      (∑ σ ∈ ((mem_locallyFiniteChains.1 c.property).finite_setOf_inter_nonempty hP).toFinset,
         (ιTwistedChainComplex L k σ).hom ((c : ∀ τ : (TopCat.toSSet.obj P.fst) _⦋k⦌,
           L.obj (initialVertex τ)) σ)) :=
   (rfl)
@@ -134,7 +134,7 @@ lemma locallyFiniteChainsToRelative_locallyFiniteBoundary (c : locallyFiniteChai
     P.locallyFiniteChainsToRelative L hP (locallyFiniteBoundary L k c) =
       ((P.twistedChainComplex L).d (k + 1) k).hom (P.locallyFiniteChainsToRelative L hP c) := by
   refine P.twistedChainComplex_ext_coeff L fun ρ hρ ↦ ?_
-  set S := ((mem_locallyFiniteChains.1 c.2).finite_setOf_inter_nonempty hP).toFinset
+  set S := ((mem_locallyFiniteChains.1 c.property).finite_setOf_inter_nonempty hP).toFinset
   have hd (a : L.twistedChainComplex.X (k + 1)) : ((P.twistedChainComplex L).d (k + 1) k).hom
       (((P.twistedChainComplexπ L).f (k + 1)).hom a) =
         ((P.twistedChainComplexπ L).f k).hom ((L.twistedChainComplex.d (k + 1) k).hom a) :=

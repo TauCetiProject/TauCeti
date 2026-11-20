@@ -167,8 +167,9 @@ theorem chartCkSeminorm_eq_zero_of_eventuallyEq_zero (x : M)
   refine le_antisymm ((chartCkSeminorm_le_iff x K k hk f le_rfl).mpr fun m hm z hz ↦ ?_)
     (apply_nonneg _ _)
   have hz : f ∘ (extChartAt I x).symm =ᶠ[𝓝[(extChartAt I x).target] (z : E)] fun _ ↦ 0 :=
-    (hf z hz).comp_tendsto (continuousOn_extChartAt_symm x (z : E) z.2)
-  rw [chartIteratedFDeriv_self_target_apply, hz.iteratedFDerivWithin_eq (hz.eq_of_nhdsWithin z.2),
+    (hf z hz).comp_tendsto (continuousOn_extChartAt_symm x (z : E) z.property)
+  rw [chartIteratedFDeriv_self_target_apply, hz.iteratedFDerivWithin_eq
+      (hz.eq_of_nhdsWithin z.property),
     iteratedFDerivWithin_fun_zero, Pi.zero_apply, norm_zero]
 
 /-- Positive strict `C^k` control is equivalent to pointwise strict control of every coordinate

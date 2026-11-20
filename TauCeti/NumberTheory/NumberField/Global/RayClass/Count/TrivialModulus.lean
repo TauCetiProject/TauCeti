@@ -40,26 +40,6 @@ namespace TauCeti.GlobalNumberFields
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- At the trivial modulus the ideals prime to the modulus are the nonzero ideals. -/
-noncomputable def integralIdealsPrimeToOneEquiv :
-    integralIdealsPrimeTo (Modulus.one K) ≃ (Ideal (𝓞 K))⁰ :=
-  Equiv.subtypeEquiv (Equiv.refl _) fun I => by
-    rw [Equiv.refl_apply, Modulus.mem_integralIdealsPrimeTo, Modulus.isCoprimeTo_iff,
-      Modulus.support_one, mem_nonZeroDivisors_iff_ne_zero]
-    simp
-
-/-- The equivalence keeps the ideal. -/
-@[simp] theorem integralIdealsPrimeToOneEquiv_apply_coe
-    (I : integralIdealsPrimeTo (Modulus.one K)) :
-    ((integralIdealsPrimeToOneEquiv I : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) = I := by
-  rfl
-
-/-- The inverse equivalence keeps the ideal. -/
-@[simp] theorem integralIdealsPrimeToOneEquiv_symm_apply_coe (I : (Ideal (𝓞 K))⁰) :
-    ((integralIdealsPrimeToOneEquiv.symm I : integralIdealsPrimeTo (Modulus.one K)) :
-      Ideal (𝓞 K)) = I := by
-  rfl
-
 /-- **The class counts at the trivial modulus sum to the classical ideal count.** -/
 @[simp]
 theorem sum_rayClassIdealCountingFunction_one [Fintype (RayClassGroup (Modulus.one K))] (x : ℝ) :
