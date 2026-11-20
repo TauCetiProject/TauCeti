@@ -143,8 +143,7 @@ theorem generalLevel_dvd_iff_normalClosure_le {m : ℕ} :
     generalLevel Γ' e ∣ m ↔ Subgroup.normalClosure {T ^ m} ≤ Γ'.liftSL := by
   rw [← Subgroup.normal_le_normalCore, generalLevel_eq_strictLevel_liftSL,
     Subgroup.strictLevel_dvd_iff_T_pow_mem_normalCore]
-  exact ⟨fun h ↦ Subgroup.normalClosure_le_normal (Set.singleton_subset_iff.mpr h),
-    fun h ↦ h (Subgroup.subset_normalClosure rfl)⟩
+  exact Set.singleton_subset_iff.symm.trans Subgroup.normalClosure_subset_iff
 
 /-- **The general level is the least positive `N` such that the normal closure of `T ^ N` in
 `SL(2, ℤ)` lies in the full preimage of `Γ'`.** -/
