@@ -26,7 +26,8 @@ structure `J_t` at their *regular points*: the points `(s, t)` with
 `u(s, t)` at time `t` is then felt by the trajectory only near `(s, t)`.
 `TauCeti.SymplecticForm.eq_zero_of_integral_apply_deriv_floerOperator_eq_zero` is the related
 statement detecting cokernel elements of the linearized operator by variations of a
-time-independent `J` at points near which `u` itself is injective.
+time-independent `J` at injective points `z₀` of `u` (where `u z` near `u z₀` forces `z` near
+`z₀`) with `∂ₜu - X_{K_t}(u) ≠ 0`.
 
 This file proves two parts of the theorem of Floer, Hofer and Salamon that the regular points of
 a nonstationary trajectory form an open dense set.
