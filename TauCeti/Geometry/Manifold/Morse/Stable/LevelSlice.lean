@@ -43,7 +43,7 @@ vector space.
   to a critical point `b`, possibly equal to `a`, whose value is not `f a` have values strictly
   between `f b` and `f a`.
 * `TauCeti.IsAdaptedPseudoGradient.FlowsTo`: a trajectory runs from one point to another.
-* `TauCeti.IsAdaptedPseudoGradient.lt_of_reflTransGen` and
+* `TauCeti.IsAdaptedPseudoGradient.apply_lt_apply_of_reflTransGen` and
   `TauCeti.IsAdaptedPseudoGradient.eq_of_reflTransGen_of_reflTransGen`: `f` strictly decreases
   along chains of trajectories, which therefore form a partial order.
 * `TauCeti.IsAdaptedPseudoGradient.eq_or_mfderiv_eq_zero_of_reflTransGen` and
@@ -223,7 +223,7 @@ theorem finite_setOf_reflTransGen {hX : IsAdaptedPseudoGradient f X} (hf : IsMor
 omit hX in
 /-- **The function strictly decreases along chains of trajectories.** If a chain of trajectories
 runs from `p` to a different point `q`, then `f q < f p`. -/
-theorem lt_of_reflTransGen {hX : IsAdaptedPseudoGradient f X} {p q : M}
+theorem apply_lt_apply_of_reflTransGen {hX : IsAdaptedPseudoGradient f X} {p q : M}
     (hpq : Relation.ReflTransGen hX.FlowsTo p q) (hqp : q ≠ p) :
     f q < f p := by
   suffices q = p ∨ f q < f p from this.resolve_left hqp
@@ -252,7 +252,8 @@ theorem eq_of_reflTransGen_of_reflTransGen {hX : IsAdaptedPseudoGradient f X} {p
     (hqp : Relation.ReflTransGen hX.FlowsTo q p) :
     p = q := by
   by_contra hne
-  exact (lt_of_reflTransGen hpq (Ne.symm hne)).asymm (lt_of_reflTransGen hqp hne)
+  exact (apply_lt_apply_of_reflTransGen hpq (Ne.symm hne)).asymm
+    (apply_lt_apply_of_reflTransGen hqp hne)
 
 omit hX in
 /-- **The Morse index strictly decreases along chains of trajectories.** Under the Morse–Smale

@@ -26,8 +26,8 @@ an unstable manifold is the union of the unstable manifolds of the critical poin
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.closure_stableSet`).
 
 The relation `⇝*` is a partial order, in which `f` strictly decreases
-(`TauCeti.IsAdaptedPseudoGradient.lt_of_reflTransGen`) and, under the Morse–Smale condition, so
-does the Morse index
+(`TauCeti.IsAdaptedPseudoGradient.apply_lt_apply_of_reflTransGen`) and, under the Morse–Smale
+condition, so does the Morse index
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.manifoldMorseIndex_lt_of_reflTransGen`). Only
 finitely many points lie below a given one
 (`TauCeti.IsAdaptedPseudoGradient.finite_setOf_reflTransGen`), all of them critical except
