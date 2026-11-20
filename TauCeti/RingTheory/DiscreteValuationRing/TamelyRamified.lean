@@ -12,8 +12,8 @@ public import TauCeti.RingTheory.RamificationInertia.Unramified
 
 import Mathlib.FieldTheory.SeparableDegree
 import Mathlib.RingTheory.DedekindDomain.IntegralClosure
-import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Smooth.Fiber
+import TauCeti.RingTheory.DedekindDomain.IntegralClosure
 import TauCeti.RingTheory.Ideal.LiesOver
 import TauCeti.RingTheory.Localization.Integral
 import TauCeti.RingTheory.RamificationInertia.Bijective
@@ -57,9 +57,12 @@ extensions of nonarchimedean local fields, the valuation-theoretic counterparts 
   `A_M`, then `L` is tamely ramified (resp. unramified) with respect to `A`.
 * `TauCeti.Algebra.IsTamelyRamifiedWRT.tower_bot` and
   `TauCeti.Algebra.IsUnramifiedWRT.tower_bot`: both properties pass from an extension `L` of `M`
-  to `M`, for `M` finite and separable over `K`.
+  to `M`, for `M` finite over `K`.
 * `TauCeti.Algebra.isTamelyRamifiedWRT_of_charZero`: if the residue field of `A` has
   characteristic zero, every finite extension of `K` is tamely ramified with respect to `A`.
+* `TauCeti.Algebra.IsTamelyRamifiedWRT.exists_isUnit_forall_ramificationIdx_dvd`: when `L` is
+  tamely ramified with respect to `A`, the ramification indices of the maximal ideals of the
+  integral closure have a common multiple invertible in the residue field of `A`.
 * `TauCeti.Algebra.isUnramifiedWRT_iff_forall_isUnramifiedAt`: `L` is unramified with respect
   to `A` iff the integral closure of `A` in `L` is unramified over `A` at every prime.
 * `TauCeti.Algebra.isUnramifiedWRT_iff_etale`: `L` is unramified with respect to `A` iff the
@@ -242,6 +245,31 @@ theorem isTamelyRamifiedWRT_of_charZero [CharZero (A ⧸ maximalIdeal A)] :
   let := Ideal.Quotient.field P
   refine ⟨Algebra.IsAlgebraic.isSeparable_of_perfectField, ?_⟩
   exact isUnit_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr (Ideal.ramificationIdx_pos A P).ne')
+
+include K in
+variable {A L} in
+/-- For a finite extension `L` of the fraction field `K` of a discrete valuation ring `A` that is
+tamely ramified with respect to `A`, there is a natural number invertible in the residue field of
+`A` that is divisible by the ramification index over `A` of every maximal ideal of the integral
+closure of `A` in `L`. -/
+theorem IsTamelyRamifiedWRT.exists_isUnit_forall_ramificationIdx_dvd
+    (h : IsTamelyRamifiedWRT A L) :
+    ∃ e : ℕ, IsUnit (e : A ⧸ maximalIdeal A) ∧
+      ∀ (P : Ideal (integralClosure A L)) [P.IsMaximal], P.ramificationIdx A ∣ e := by
+  have : IsDedekindDomain (integralClosure A L) :=
+    TauCeti.integralClosure.isDedekindDomain A K L
+  have : Module.IsTorsionFree A L := .trans_faithfulSMul A K L
+  refine ⟨∏ Q : (maximalIdeal A).primesOver (integralClosure A L), Q.1.ramificationIdx A, ?_, ?_⟩
+  · rw [Nat.cast_prod]
+    refine Finset.prod_induction _ IsUnit (fun _ _ ↦ IsUnit.mul) isUnit_one fun Q _ ↦ ?_
+    have := Q.2.1
+    have := Q.2.2
+    have : Q.1.IsMaximal := .of_liesOver_isMaximal Q.1 (maximalIdeal A)
+    exact (isTamelyRamifiedWRT_def.mp h Q.1).2
+  · intro P _
+    have hP : P ∈ (maximalIdeal A).primesOver (integralClosure A L) :=
+      ⟨inferInstance, ⟨(IsLocalRing.eq_maximalIdeal (Ideal.IsMaximal.under A P)).symm⟩⟩
+    exact Finset.dvd_prod_of_mem _ (Finset.mem_univ (⟨P, hP⟩ : (maximalIdeal A).primesOver _))
 
 variable [Algebra.IsSeparable K L]
 
@@ -427,11 +455,10 @@ section TowerBot
 
 variable (K : Type*) [Field K] [IsDomain A] [IsDiscreteValuationRing A] [Algebra A K]
   [IsFractionRing A K] [Algebra K M] [IsScalarTower A K M] [FiniteDimensional K M]
-  [Algebra.IsSeparable K M]
 
 include K in
-/-- Let `M` be a finite separable extension of the fraction field `K` of a discrete valuation ring
-`A`, and `L` any extension of `M`. If `L` is tamely ramified with respect to `A`, then so is `M`. -/
+/-- Let `M` be a finite extension of the fraction field `K` of a discrete valuation ring `A`, and
+`L` any extension of `M`. If `L` is tamely ramified with respect to `A`, then so is `M`. -/
 theorem IsTamelyRamifiedWRT.tower_bot (h : IsTamelyRamifiedWRT A L) : IsTamelyRamifiedWRT A M := by
   intro Q _ _
   have : IsDedekindDomain (integralClosure A M) := integralClosure.isDedekindDomain A K M
@@ -451,8 +478,8 @@ theorem IsTamelyRamifiedWRT.tower_bot (h : IsTamelyRamifiedWRT A L) : IsTamelyRa
     isUnit_of_dvd_unit (Nat.cast_dvd_cast hdvd) he⟩
 
 include K in
-/-- Let `M` be a finite separable extension of the fraction field `K` of a discrete valuation ring
-`A`, and `L` any extension of `M`. If `L` is unramified with respect to `A`, then so is `M`. -/
+/-- Let `M` be a finite extension of the fraction field `K` of a discrete valuation ring `A`, and
+`L` any extension of `M`. If `L` is unramified with respect to `A`, then so is `M`. -/
 theorem IsUnramifiedWRT.tower_bot (h : IsUnramifiedWRT A L) : IsUnramifiedWRT A M := by
   intro Q _ _
   have : IsDedekindDomain (integralClosure A M) := integralClosure.isDedekindDomain A K M

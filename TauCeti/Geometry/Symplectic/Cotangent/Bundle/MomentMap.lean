@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.GroupAction.InvariantForm
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Lift
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Torus
 
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 import TauCeti.Topology.FiberBundle.Separation
 
 /-!
@@ -52,6 +53,8 @@ reduced.
 
 * `TauCeti.CotangentBundle.liouvilleForm_apply_fundamentalVectorField`: `⟨μ, ξ⟩ = λ(ξ_{T*M})`.
 * `TauCeti.CotangentBundle.momentMap_smul`: coadjoint equivariance.
+* `TauCeti.CotangentBundle.momentMap_eq_zero_iff`: a covector lies in the zero level `μ⁻¹(0)`
+  exactly when it vanishes on the orbit directions `𝔤 · x`.
 * `TauCeti.CotangentBundle.momentMap_comp_groupLieAlgebraMap`: for an action through a
   homomorphism, the cotangent moment map is the restriction of the cotangent moment map of the
   larger group.
@@ -142,14 +145,11 @@ theorem liouvilleForm_apply_fundamentalVectorField (ξ : GroupLieAlgebra IG G)
 theorem contMDiff_momentMap_apply (ξ : GroupLieAlgebra IG G) :
     ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) ∞ fun z : CotangentBundle I M ↦ momentMap IG G z ξ := by
   -- Apply the Liouville form, a smooth section of `T*(T*M)`, to the smooth field `ξ_{T*M}`.
-  have h := ContMDiff.clm_bundle_apply (E₂ := Trivial (CotangentBundle I M) ℝ)
-    (SmoothForm.degreeOneEquiv (liouvilleForm I M)).contMDiff
-    (contMDiff_fundamentalVectorField (I' := I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (m := ∞) (n := ∞)
-      (by simp) ξ)
-  refine fun z ↦ (contMDiffAt_totalSpace_iff.1 (h z)).2.congr_of_eventuallyEq
+  refine fun z ↦ ((SmoothForm.degreeOneEquiv (liouvilleForm I M)).contMDiff z
+    |>.clm_bundle_apply_scalar (contMDiff_fundamentalVectorField
+      (I' := I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (m := ∞) (n := ∞) (by simp) ξ z)).congr_of_eventuallyEq
     (Filter.Eventually.of_forall fun y ↦ ?_)
-  simp only [Trivial.eq_trivialization _ ℝ, Trivial.trivialization_apply,
-    SmoothForm.degreeOneEquiv_apply_apply, ← Matrix.vec_single_eq_const,
+  simp only [SmoothForm.degreeOneEquiv_apply_apply, ← Matrix.vec_single_eq_const,
     liouvilleForm_apply_fundamentalVectorField]
 
 /-- **Coadjoint equivariance of the cotangent moment map**: `μ(g • z) = Ad*_g μ(z)`. -/
@@ -165,6 +165,28 @@ theorem momentMap_smul (g : G) (z : CotangentBundle I M) :
       (congrArg (fun x : M ↦ z.2 (fundamentalVectorField I η x)) (inv_smul_smul g z.proj))))
 
 end Smooth
+
+section ZeroLevel
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
+variable [CompleteSpace EG] [CompleteSpace E] [LieGroup IG ∞ G] [IsManifold I ∞ M]
+  [ContMDiffSMul IG I ∞ G M]
+
+/-- **The zero level.** A covector at `x` lies in the zero level of the moment map exactly when it
+vanishes on the orbit directions `𝔤 · x`. -/
+theorem momentMap_eq_zero_iff {z : CotangentBundle I M} :
+    momentMap IG G z = 0 ↔
+      ∀ v ∈ (InfinitesimalAction.fundamental IG G I M).orbitTangent z.proj, z.2 v = 0 := by
+  refine ⟨fun h v hv ↦ ?_, fun h ↦ LinearMap.ext fun ξ ↦ ?_⟩
+  · obtain ⟨ξ, rfl⟩ := (InfinitesimalAction.mem_orbitTangent_iff _ _).1 hv
+    rw [InfinitesimalAction.fundamental_apply]
+    have hξ := LinearMap.congr_fun h ξ
+    rwa [momentMap_apply, LinearMap.zero_apply] at hξ
+  · rw [momentMap_apply, LinearMap.zero_apply, ← InfinitesimalAction.fundamental_apply]
+    exact h _ (InfinitesimalAction.mem_orbitTangent _ _ ξ)
+
+end ZeroLevel
 
 section Equivariant
 
