@@ -28,10 +28,10 @@ with `ModelWithCorners.extChartAt_restrictScalars` and restrict the scalars of t
 charts.
 
 The tangent spaces `TangentSpace I x` and `TangentSpace (I.restrictScalars 𝕜) x` are both the model
-space `E`, but they are distinct types carrying module structures over different fields. The
-comparison of derivatives is therefore stated after reading both derivatives in the model spaces
-through the identifications `tangentSpaceCastModel`, which is also how `HasMFDerivWithinAt` reads a
-derivative in charts.
+space `E`, but they are distinct types carrying module structures over different fields.
+`ContinuousLinearMap.restrictScalarsTangent` turns a `𝕜'`-linear map between tangent spaces for `I`
+and `I'` into the same map, `𝕜`-linear between the tangent spaces for their scalar restrictions; the
+derivative comparisons are stated with it.
 
 The main example is a holomorphic map between complex manifolds modelled on `𝓘(ℂ, E)` and
 `𝓘(ℂ, E')`: its real derivative is its complex derivative regarded as an `ℝ`-linear map.
@@ -51,19 +51,21 @@ fields and intertwines their manifold and vector-valued derivatives.
 * `MDifferentiableWithinAt.restrictScalars`, `MDifferentiableAt.restrictScalars`,
   `MDifferentiableOn.restrictScalars`, `MDifferentiable.restrictScalars`: differentiability for
   boundaryless models over `𝕜'` implies differentiability for their scalar restrictions to `𝕜`.
-* `HasMFDerivWithinAt.restrictScalars`, `HasMFDerivAt.restrictScalars`: a derivative for
-  boundaryless models over `𝕜'`, with scalars restricted to `𝕜`, is a derivative for their scalar
-  restrictions.
+* `ContinuousLinearMap.restrictScalarsTangent`: the scalar restriction of a map between tangent
+  spaces, as a map between the tangent spaces for the scalar restrictions of the models.
+* `HasMFDerivWithinAt.restrictScalars`, `HasMFDerivAt.restrictScalars`: the scalar restriction of a
+  derivative for boundaryless models over `𝕜'` is a derivative for their scalar restrictions.
 * `HasMFDerivWithinAt.of_restrictScalars`, `HasMFDerivAt.of_restrictScalars`: conversely, a
   `𝕜'`-linear map whose scalar restriction is a derivative for the scalar restrictions is a
   derivative for the models over `𝕜'`.
 * `MDifferentiableWithinAt.restrictScalars_mfderivWithin`,
   `MDifferentiableAt.mfderiv_restrictScalars`: the derivative for the scalar restrictions is the
-  derivative for the models over `𝕜'` with scalars restricted to `𝕜`.
+  scalar restriction of the derivative for the models over `𝕜'`.
 * `TauCeti.injective_mfderiv_restrictScalars`,
-  `MDifferentiableAt.injective_mvfderiv_restrictScalars_iff`: an immersion for the models over
-  `𝕜'` is an immersion for the models over `𝕜`, and for a differentiable vector-valued map
-  injectivity of `mvfderiv` over `𝕜` and over `𝕜'` are equivalent.
+  `MDifferentiableAt.injective_mfderiv_restrictScalars_iff`,
+  `MDifferentiableAt.injective_mvfderiv_restrictScalars_iff`: an immersion for boundaryless models
+  over `𝕜'` is an immersion for their scalar restrictions, and at a point of differentiability
+  injectivity of the derivatives over `𝕜` and over `𝕜'` are equivalent.
 * `TauCeti.tangentCoordChange_restrictScalars`: the tangent coordinate changes over `𝕜` are those
   over `𝕜'` with scalars restricted to `𝕜`; in particular they are `𝕜'`-linear
   (`TauCeti.tangentCoordChange_smul`), and so is the derivative of the inverse of a chart
@@ -116,106 +118,133 @@ theorem MDifferentiable.restrictScalars (h : MDifferentiable I I' f) :
     MDifferentiable (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f :=
   fun x ↦ (h x).restrictScalars 𝕜
 
-/-- If `f'` is a derivative of `f` within a set at a point for boundaryless models over `𝕜'`, and
-`g'` is a `𝕜`-linear map between the tangent spaces for their scalar restrictions which agrees with
-`f'` once both are read in the model spaces, then `g'` is a derivative of `f` within that set at
-that point for the scalar restrictions. -/
-theorem HasMFDerivWithinAt.restrictScalars
-    {f' : TangentSpace I x →L[𝕜'] TangentSpace I' (f x)}
-    {g' : TangentSpace (I.restrictScalars 𝕜) x →L[𝕜] TangentSpace (I'.restrictScalars 𝕜) (f x)}
-    (h : HasMFDerivWithinAt I I' f s x f')
-    (hg : ((tangentSpaceCastModel I' (f x) : _ →L[𝕜'] E') ∘L f' ∘L
-        ((tangentSpaceCastModel I x).symm : E →L[𝕜'] _)).restrictScalars 𝕜 =
-      (tangentSpaceCastModel (I'.restrictScalars 𝕜) (f x) : _ →L[𝕜] E') ∘L g' ∘L
-        ((tangentSpaceCastModel (I.restrictScalars 𝕜) x).symm : E →L[𝕜] _)) :
-    HasMFDerivWithinAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f s x g' := by
-  have hf := h.2.restrictScalars 𝕜
-  rw [hg] at hf
+/-- The scalar restriction to `𝕜` of a `𝕜'`-linear map between tangent spaces for boundaryless
+models over `𝕜'`, as a `𝕜`-linear map between the tangent spaces for their scalar restrictions.
+The tangent spaces for a model and for its scalar restriction are both the model space, and
+`f'.restrictScalarsTangent 𝕜` is `f'` with scalars restricted to `𝕜`
+(`ContinuousLinearMap.restrictScalarsTangent_apply`). -/
+noncomputable def ContinuousLinearMap.restrictScalarsTangent {y : N}
+    (f' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
+    TangentSpace (I.restrictScalars 𝕜) x →L[𝕜] TangentSpace (I'.restrictScalars 𝕜) y :=
+  ((tangentSpaceCastModel (I'.restrictScalars 𝕜) y).symm : E' →L[𝕜] _) ∘L
+    ((tangentSpaceCastModel I' y : _ →L[𝕜'] E') ∘L f' ∘L
+      ((tangentSpaceCastModel I x).symm : E →L[𝕜'] _)).restrictScalars 𝕜 ∘L
+    (tangentSpaceCastModel (I.restrictScalars 𝕜) x : _ →L[𝕜] E)
+
+variable {𝕜} in
+/-- The scalar restriction of a map between tangent spaces acts as the map: both tangent spaces
+are the model space. -/
+@[simp]
+theorem ContinuousLinearMap.restrictScalarsTangent_apply {y : N}
+    (f' : TangentSpace I x →L[𝕜'] TangentSpace I' y) (v : TangentSpace (I.restrictScalars 𝕜) x) :
+    f'.restrictScalarsTangent 𝕜 v = f' v :=
+  (rfl)
+
+variable {𝕜} in
+/-- The scalar restriction of a map between tangent spaces is injective if and only if the map is
+injective. -/
+theorem ContinuousLinearMap.injective_restrictScalarsTangent_iff {y : N}
+    (f' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
+    Function.Injective (f'.restrictScalarsTangent 𝕜) ↔ Function.Injective f' :=
+  Iff.rfl
+
+/-- If `f'` is a derivative of `f` within a set at a point for boundaryless models over `𝕜'`, then
+its scalar restriction `f'.restrictScalarsTangent 𝕜` is a derivative of `f` within that set at that
+point for their scalar restrictions to `𝕜`. -/
+theorem HasMFDerivWithinAt.restrictScalars {f' : TangentSpace I x →L[𝕜'] TangentSpace I' (f x)}
+    (h : HasMFDerivWithinAt I I' f s x f') :
+    HasMFDerivWithinAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f s x
+      (f'.restrictScalarsTangent 𝕜) := by
   simp only [HasMFDerivWithinAt, writtenInExtChartAt, ModelWithCorners.extChartAt_restrictScalars,
     ModelWithCorners.coe_restrictScalars]
-  exact ⟨h.1, hf⟩
+  exact ⟨h.1, h.2.restrictScalars 𝕜⟩
 
-/-- If `f'` is a derivative of `f` at a point for boundaryless models over `𝕜'`, and `g'` is a
-`𝕜`-linear map between the tangent spaces for their scalar restrictions which agrees with `f'` once
-both are read in the model spaces, then `g'` is a derivative of `f` at that point for the scalar
-restrictions. -/
-theorem HasMFDerivAt.restrictScalars
-    {f' : TangentSpace I x →L[𝕜'] TangentSpace I' (f x)}
-    {g' : TangentSpace (I.restrictScalars 𝕜) x →L[𝕜] TangentSpace (I'.restrictScalars 𝕜) (f x)}
-    (h : HasMFDerivAt I I' f x f')
-    (hg : ((tangentSpaceCastModel I' (f x) : _ →L[𝕜'] E') ∘L f' ∘L
-        ((tangentSpaceCastModel I x).symm : E →L[𝕜'] _)).restrictScalars 𝕜 =
-      (tangentSpaceCastModel (I'.restrictScalars 𝕜) (f x) : _ →L[𝕜] E') ∘L g' ∘L
-        ((tangentSpaceCastModel (I.restrictScalars 𝕜) x).symm : E →L[𝕜] _)) :
-    HasMFDerivAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f x g' :=
-  hasMFDerivWithinAt_univ.mp (h.hasMFDerivWithinAt.restrictScalars 𝕜 hg)
+/-- If `f'` is a derivative of `f` at a point for boundaryless models over `𝕜'`, then its scalar
+restriction `f'.restrictScalarsTangent 𝕜` is a derivative of `f` at that point for their scalar
+restrictions to `𝕜`. -/
+theorem HasMFDerivAt.restrictScalars {f' : TangentSpace I x →L[𝕜'] TangentSpace I' (f x)}
+    (h : HasMFDerivAt I I' f x f') :
+    HasMFDerivAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f x (f'.restrictScalarsTangent 𝕜) :=
+  hasMFDerivWithinAt_univ.mp (h.hasMFDerivWithinAt.restrictScalars 𝕜)
 
-/-- If `g'` is a derivative of `f` within a set at a point for the scalar restrictions to `𝕜` of
-boundaryless models over `𝕜'`, and `f'` is a `𝕜'`-linear map between the tangent spaces for those
-models which agrees with `g'` once both are read in the model spaces, then `f'` is a derivative of
-`f` within that set at that point for the models over `𝕜'`. This is the converse of
-`HasMFDerivWithinAt.restrictScalars`. -/
+/-- If the scalar restriction `f'.restrictScalarsTangent 𝕜` of a `𝕜'`-linear map `f'` is a
+derivative of `f` within a set at a point for the scalar restrictions to `𝕜` of boundaryless models
+over `𝕜'`, then `f'` is a derivative of `f` within that set at that point for the models over `𝕜'`.
+This is the converse of `HasMFDerivWithinAt.restrictScalars`. -/
 theorem HasMFDerivWithinAt.of_restrictScalars
     {f' : TangentSpace I x →L[𝕜'] TangentSpace I' (f x)}
-    {g' : TangentSpace (I.restrictScalars 𝕜) x →L[𝕜] TangentSpace (I'.restrictScalars 𝕜) (f x)}
-    (h : HasMFDerivWithinAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f s x g')
-    (hg : ((tangentSpaceCastModel I' (f x) : _ →L[𝕜'] E') ∘L f' ∘L
-        ((tangentSpaceCastModel I x).symm : E →L[𝕜'] _)).restrictScalars 𝕜 =
-      (tangentSpaceCastModel (I'.restrictScalars 𝕜) (f x) : _ →L[𝕜] E') ∘L g' ∘L
-        ((tangentSpaceCastModel (I.restrictScalars 𝕜) x).symm : E →L[𝕜] _)) :
+    (h : HasMFDerivWithinAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f s x
+      (f'.restrictScalarsTangent 𝕜)) :
     HasMFDerivWithinAt I I' f s x f' := by
   have hf := h.2
   simp only [writtenInExtChartAt, ModelWithCorners.extChartAt_restrictScalars,
     ModelWithCorners.coe_restrictScalars] at hf
-  exact ⟨h.1, hf.of_restrictScalars 𝕜 hg⟩
+  exact ⟨h.1, hf.of_restrictScalars 𝕜 rfl⟩
 
-/-- If `g'` is a derivative of `f` at a point for the scalar restrictions to `𝕜` of boundaryless
-models over `𝕜'`, and `f'` is a `𝕜'`-linear map between the tangent spaces for those models which
-agrees with `g'` once both are read in the model spaces, then `f'` is a derivative of `f` at that
-point for the models over `𝕜'`. This is the converse of `HasMFDerivAt.restrictScalars`. -/
-theorem HasMFDerivAt.of_restrictScalars
-    {f' : TangentSpace I x →L[𝕜'] TangentSpace I' (f x)}
-    {g' : TangentSpace (I.restrictScalars 𝕜) x →L[𝕜] TangentSpace (I'.restrictScalars 𝕜) (f x)}
-    (h : HasMFDerivAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f x g')
-    (hg : ((tangentSpaceCastModel I' (f x) : _ →L[𝕜'] E') ∘L f' ∘L
-        ((tangentSpaceCastModel I x).symm : E →L[𝕜'] _)).restrictScalars 𝕜 =
-      (tangentSpaceCastModel (I'.restrictScalars 𝕜) (f x) : _ →L[𝕜] E') ∘L g' ∘L
-        ((tangentSpaceCastModel (I.restrictScalars 𝕜) x).symm : E →L[𝕜] _)) :
+/-- If the scalar restriction `f'.restrictScalarsTangent 𝕜` of a `𝕜'`-linear map `f'` is a
+derivative of `f` at a point for the scalar restrictions to `𝕜` of boundaryless models over `𝕜'`,
+then `f'` is a derivative of `f` at that point for the models over `𝕜'`. This is the converse of
+`HasMFDerivAt.restrictScalars`. -/
+theorem HasMFDerivAt.of_restrictScalars {f' : TangentSpace I x →L[𝕜'] TangentSpace I' (f x)}
+    (h : HasMFDerivAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f x
+      (f'.restrictScalarsTangent 𝕜)) :
     HasMFDerivAt I I' f x f' :=
-  hasMFDerivWithinAt_univ.mp (h.hasMFDerivWithinAt.of_restrictScalars 𝕜 hg)
+  hasMFDerivWithinAt_univ.mp (h.hasMFDerivWithinAt.of_restrictScalars 𝕜)
 
 /-- At a point where `f` is differentiable within a set for boundaryless models over `𝕜'`, and
 where the set has unique derivatives for their scalar restrictions to `𝕜`, the derivative of `f`
-within the set for the scalar restrictions is its derivative for the models over `𝕜'` with scalars
-restricted to `𝕜`, both read in the model spaces. -/
+within the set for the scalar restrictions is the scalar restriction of its derivative for the
+models over `𝕜'`. -/
 theorem MDifferentiableWithinAt.restrictScalars_mfderivWithin
     (h : MDifferentiableWithinAt I I' f s x)
     (hs : UniqueMDiffWithinAt (I.restrictScalars 𝕜) s x) :
-    ((tangentSpaceCastModel I' (f x) : _ →L[𝕜'] E') ∘L mfderivWithin I I' f s x ∘L
-        ((tangentSpaceCastModel I x).symm : E →L[𝕜'] _)).restrictScalars 𝕜 =
-      (tangentSpaceCastModel (I'.restrictScalars 𝕜) (f x) : _ →L[𝕜] E') ∘L
-        mfderivWithin (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f s x ∘L
-        ((tangentSpaceCastModel (I.restrictScalars 𝕜) x).symm : E →L[𝕜] _) := by
-  -- The tangent spaces of the scalar restrictions are the model spaces, so the restricted
-  -- derivative read in the model spaces is a derivative for the scalar restrictions.
-  have hD := h.hasMFDerivWithinAt.restrictScalars 𝕜 (g' :=
-    ((tangentSpaceCastModel I' (f x) : _ →L[𝕜'] E') ∘L mfderivWithin I I' f s x ∘L
-      ((tangentSpaceCastModel I x).symm : E →L[𝕜'] _)).restrictScalars 𝕜) rfl
-  rw [hD.mfderivWithin hs]
-  rfl
+    (mfderivWithin I I' f s x).restrictScalarsTangent 𝕜 =
+      mfderivWithin (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f s x :=
+  ((h.hasMFDerivWithinAt.restrictScalars 𝕜).mfderivWithin hs).symm
 
 /-- At a point where `f` is differentiable for boundaryless models over `𝕜'`, the derivative of `f`
-for their scalar restrictions to `𝕜` is its derivative for the models over `𝕜'` with scalars
-restricted to `𝕜`, both read in the model spaces. For instance, the real derivative of a
-holomorphic map is its complex derivative. -/
+for their scalar restrictions to `𝕜` is the scalar restriction of its derivative for the models
+over `𝕜'`. For instance, the real derivative of a holomorphic map is its complex derivative. -/
 theorem MDifferentiableAt.mfderiv_restrictScalars (h : MDifferentiableAt I I' f x) :
-    (tangentSpaceCastModel (I'.restrictScalars 𝕜) (f x) : _ →L[𝕜] E') ∘L
-        mfderiv (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f x ∘L
-        ((tangentSpaceCastModel (I.restrictScalars 𝕜) x).symm : E →L[𝕜] _) =
-      ((tangentSpaceCastModel I' (f x) : _ →L[𝕜'] E') ∘L mfderiv I I' f x ∘L
-        ((tangentSpaceCastModel I x).symm : E →L[𝕜'] _)).restrictScalars 𝕜 := by
-  simpa only [mfderivWithin_univ] using
-    (h.mdifferentiableWithinAt.restrictScalars_mfderivWithin 𝕜 (uniqueMDiffWithinAt_univ _)).symm
+    mfderiv (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f x =
+      (mfderiv I I' f x).restrictScalarsTangent 𝕜 :=
+  (h.hasMFDerivAt.restrictScalars 𝕜).mfderiv
+
+/-- At a point where `f` is differentiable for boundaryless models over `𝕜'`, its derivative for
+their scalar restrictions to `𝕜` is injective if and only if its derivative for the models over
+`𝕜'` is injective. -/
+theorem MDifferentiableAt.injective_mfderiv_restrictScalars_iff (h : MDifferentiableAt I I' f x) :
+    Function.Injective (mfderiv (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f x) ↔
+      Function.Injective (mfderiv I I' f x) := by
+  rw [h.mfderiv_restrictScalars 𝕜, ContinuousLinearMap.injective_restrictScalarsTangent_iff]
+
+/-- If the derivative of `f` at `x` for boundaryless models over `𝕜'` is injective, then so is its
+derivative for their scalar restrictions to `𝕜`. For instance, a holomorphic immersion between
+complex manifolds is a real immersion. Where `f` is not differentiable over `𝕜'` its derivative
+over `𝕜'` is `0`, and injectivity of that derivative forces the tangent space to be trivial. -/
+theorem TauCeti.injective_mfderiv_restrictScalars
+    (hinj : Function.Injective (mfderiv I I' f x)) :
+    Function.Injective (mfderiv (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f x) := by
+  by_cases h : MDifferentiableAt I I' f x
+  · exact (h.injective_mfderiv_restrictScalars_iff 𝕜).2 hinj
+  · rw [mfderiv_zero_of_not_mdifferentiableAt h] at hinj
+    intro v w _
+    exact hinj (a₁ := v) (a₂ := w) rfl
+
+/-- At a point where a vector-valued map `g : M → E'` is differentiable for a boundaryless model
+`I` over `𝕜'`, its vector-valued derivative for the scalar restriction of `I` to `𝕜` is injective if
+and only if its vector-valued derivative for `I` is injective. For instance, a holomorphic map into
+a complex normed space is a real immersion at `x` exactly when it is a complex immersion there. -/
+theorem MDifferentiableAt.injective_mvfderiv_restrictScalars_iff {g : M → E'}
+    (h : MDifferentiableAt I 𝓘(𝕜', E') g x) :
+    Function.Injective (mvfderiv (I.restrictScalars 𝕜) g x) ↔
+      Function.Injective (mvfderiv I g x) := by
+  have H := h.injective_mfderiv_restrictScalars_iff 𝕜
+  rw [modelWithCornersSelf_restrictScalars] at H
+  rwa [mvfderiv, mvfderiv, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe,
+    (NormedSpace.fromTangentSpace (𝕜 := 𝕜) (g x)).injective.of_comp_iff,
+    (NormedSpace.fromTangentSpace (𝕜 := 𝕜') (g x)).injective.of_comp_iff]
 
 end Boundaryless
 
@@ -225,46 +254,6 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace E M] {N : Type*} [Topolo
 variable (𝕜)
 
 namespace TauCeti
-
-/-- If the derivative of `f` at `x` over `𝕜'` is injective, then so is its derivative over the
-smaller field `𝕜`. For instance, a holomorphic immersion between complex manifolds is a real
-immersion. Where `f` is not differentiable over `𝕜'` its derivative over `𝕜'` is `0`, and
-injectivity of that derivative forces the tangent space to be trivial. -/
-theorem injective_mfderiv_restrictScalars
-    (hinj : Function.Injective (mfderiv 𝓘(𝕜', E) 𝓘(𝕜', E') f x)) :
-    Function.Injective (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E') f x) := by
-  by_cases h : MDifferentiableAt 𝓘(𝕜', E) 𝓘(𝕜', E') f x
-  · have H := h.mfderiv_restrictScalars 𝕜
-    rw [modelWithCornersSelf_restrictScalars, modelWithCornersSelf_restrictScalars] at H
-    intro v w hvw
-    have hv := DFunLike.congr_fun H v
-    have hw := DFunLike.congr_fun H w
-    -- The identifications `tangentSpaceCastModel` are the identity of the model spaces, so `hv`
-    -- and `hw` compare the two derivatives on the same vectors `v` and `w` of `E`.
-    exact hinj (hv.symm.trans (hvw ▸ hw))
-  · rw [mfderiv_zero_of_not_mdifferentiableAt h] at hinj
-    intro v w _
-    exact hinj (a₁ := v) (a₂ := w) rfl
-
-/-- At a point where a vector-valued map `g : M → E'` is differentiable for the models over `𝕜'`,
-its vector-valued derivative over the smaller field `𝕜` is injective if and only if its
-vector-valued derivative over `𝕜'` is injective. For instance, a holomorphic map into a complex
-normed space is a real immersion at `x` exactly when it is a complex immersion there. -/
-theorem _root_.MDifferentiableAt.injective_mvfderiv_restrictScalars_iff {g : M → E'}
-    (h : MDifferentiableAt 𝓘(𝕜', E) 𝓘(𝕜', E') g x) :
-    Function.Injective (mvfderiv 𝓘(𝕜, E) g x) ↔ Function.Injective (mvfderiv 𝓘(𝕜', E) g x) := by
-  rw [mvfderiv, mvfderiv, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp,
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe,
-    (NormedSpace.fromTangentSpace (𝕜 := 𝕜) (g x)).injective.of_comp_iff,
-    (NormedSpace.fromTangentSpace (𝕜 := 𝕜') (g x)).injective.of_comp_iff]
-  refine ⟨fun hinj v w hvw ↦ ?_, injective_mfderiv_restrictScalars 𝕜⟩
-  have H := h.mfderiv_restrictScalars 𝕜
-  rw [modelWithCornersSelf_restrictScalars, modelWithCornersSelf_restrictScalars] at H
-  have hv := DFunLike.congr_fun H v
-  have hw := DFunLike.congr_fun H w
-  -- The identifications `tangentSpaceCastModel` are the identity of the model spaces, so `hv`
-  -- and `hw` compare the two derivatives on the same vectors `v` and `w` of `E`.
-  exact hinj (hv.trans (hvw ▸ hw.symm))
 
 /-- On the overlap of the charts at `x` and `y`, the tangent coordinate change for the model over
 `𝕜` is the tangent coordinate change for the model over `𝕜'`, with scalars restricted to `𝕜`: both
@@ -367,15 +356,12 @@ theorem mfderiv_restrictScalarsSelf_apply {f : M → N} {x : M}
           (mfderiv 𝓘(A, E) 𝓘(A, F) f x (RestrictScalars.addEquiv R A _ v))) =
       mfderiv 𝓘(R, E) 𝓘(R, F) f x
         (TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv R x v) := by
-  have H := hf.mfderiv_restrictScalars R
+  have H := DFunLike.congr_fun (hf.mfderiv_restrictScalars R)
+    (TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv R x v)
   rw [modelWithCornersSelf_restrictScalars, modelWithCornersSelf_restrictScalars] at H
-  have h := DFunLike.congr_fun H
-    (tangentSpaceCastModel 𝓘(A, E) x (RestrictScalars.addEquiv R A _ v))
-  apply (tangentSpaceCastModel 𝓘(R, F) (f x)).injective
+  rw [H]
   simp only [TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv_apply, AddEquiv.apply_symm_apply]
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply] at h
-  exact h.symm
+  rfl
 
 /-- Vector-valued derivatives agree through the native self-model fibre comparison. -/
 theorem mvfderiv_restrictScalarsSelf_apply {f : M → F} {x : M}
