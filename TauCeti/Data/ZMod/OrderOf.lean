@@ -15,8 +15,9 @@ public import TauCeti.GroupTheory.OrderOfElement.NegOne
 
 Let `ℓ` and `a ≠ 1` be natural numbers. For every `j`, the power `ℓ ^ j` divides the
 multiplicative order of `a` modulo `ℓ ^ r` for all large `r`
-(`ZMod.eventually_pow_dvd_orderOf_natCast`); for a prime `ℓ`, this order has unbounded `ℓ`-adic
-valuation as `r` grows.
+(`ZMod.eventually_pow_dvd_orderOf_natCast`). For a prime `ℓ` not dividing `a`, this order is
+positive, so its `ℓ`-adic valuation is unbounded as `r` grows; for a prime `ℓ` dividing `a`, the
+order is instead eventually `0`.
 
 When `a` and `ℓ` are not coprime, the residue of `a` is not a unit and its order is `0` from
 `r = 1` on. Otherwise it suffices to treat the prime factors of `ℓ`, so let `ℓ` be a prime not
@@ -147,8 +148,10 @@ private theorem eventually_pow_dvd_orderOf_natCast_of_prime {ℓ : ℕ} (hℓ : 
   omega
 
 /-- For natural numbers `ℓ` and `a ≠ 1`, every power `ℓ ^ j` divides the multiplicative order of
-`a` modulo `ℓ ^ r` for all large `r`; for a prime `ℓ`, the `ℓ`-adic valuation of this order is
-unbounded as `r` grows. The hypothesis `a ≠ 1` is needed, since `1` has order `1`. -/
+`a` modulo `ℓ ^ r` for all large `r`. For a prime `ℓ` not dividing `a`, this order is positive, so
+its `ℓ`-adic valuation is unbounded as `r` grows. When `a` and `ℓ` are not coprime (for a prime `ℓ`:
+when `ℓ ∣ a`), the order is instead `0` from `r = 1` on. The hypothesis `a ≠ 1` is needed, since
+`1` has order `1`. -/
 theorem eventually_pow_dvd_orderOf_natCast (ℓ : ℕ) {a : ℕ} (ha : a ≠ 1) (j : ℕ) :
     ∀ᶠ r in Filter.atTop, ℓ ^ j ∣ orderOf (a : ZMod (ℓ ^ r)) := by
   by_cases hcop : a.Coprime ℓ
