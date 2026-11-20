@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.SpecialFunctions.OrdinaryHypergeometric
+public import Mathlib.RingTheory.Binomial
 public import TauCeti.Analysis.Analytic.OfScalars
 import Mathlib.Analysis.Analytic.ChangeOrigin
 
@@ -33,6 +34,10 @@ is equivalent to the recurrence `(n + 1) (c + n) cₙ₊₁ = (a + n) (b + n) c�
 * `TauCeti.one_le_radius_ordinaryHypergeometricSeries`: the radius of convergence of
   `ordinaryHypergeometricSeries 𝔸 a b c` is at least `1`.
 * `TauCeti.analyticOnNhd_ordinaryHypergeometric`: `₂F₁ a b c` is analytic on the open unit ball.
+* `TauCeti.hasSum_ordinaryHypergeometric`: on the open unit ball, `₂F₁ a b c` is the sum of its
+  series.
+* `TauCeti.hasSum_multichoose_mul_multichoose_mul_pow`: with lower parameter `1`, the coefficients
+  are products of generalized multichoose numbers, so `∑ (a)ₙ (b)ₙ / (n!)² xⁿ = ₂F₁(a, b; 1; x)`.
 * `TauCeti.ordinaryHypergeometric_neg_nat_eq_sum`: a terminating `₂F₁(−n, b; c; z)` is the sum of
   its first `n + 1` terms.
 * `TauCeti.ordinaryHypergeometricCoefficient_add_one`: the coefficient recurrence.
@@ -70,6 +75,18 @@ theorem ordinaryHypergeometricCoefficient_add_one {K : Type*} [Field K] (a b c :
     Nat.cast_one, ascPochhammer_succ_eval, div_eq_mul_inv, mul_inv]
   ring
 
+/-- With lower parameter `1`, the hypergeometric coefficient `(a)ₙ (b)ₙ / ((1)ₙ n!)` is the product
+of the generalized multichoose numbers `(a)ₙ / n!` and `(b)ₙ / n!`. -/
+theorem ordinaryHypergeometricCoefficient_one_eq_multichoose_mul {K : Type*} [Field K] [CharZero K]
+    (a b : K) (n : ℕ) :
+    ordinaryHypergeometricCoefficient a b 1 n = Ring.multichoose a n * Ring.multichoose b n := by
+  have hmc (r : K) : Ring.multichoose r n = (ascPochhammer K n).eval r / n.factorial := by
+    have h := Ring.factorial_nsmul_multichoose_eq_ascPochhammer r n
+    rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at h
+    rw [← h, mul_div_cancel_left₀ _ (by exact_mod_cast n.factorial_ne_zero)]
+  rw [ordinaryHypergeometricCoefficient, hmc, hmc, ascPochhammer_eval_one]
+  ring
+
 variable {𝕂 : Type*} (𝔸 : Type*) [RCLike 𝕂] [NormedDivisionRing 𝔸] [NormedAlgebra 𝕂 𝔸]
 
 /-- The radius of convergence of the hypergeometric series `₂F₁(a, b; c; ·)` is at least `1`, for
@@ -102,6 +119,29 @@ theorem analyticOnNhd_ordinaryHypergeometric [CompleteSpace 𝔸] (a b c : 𝕂)
     (zero_lt_one.trans_le h1)).analyticAt_of_mem
       (Metric.eball_subset_eball h1 (by
         simpa only [Metric.mem_eball, edist_dist, ENNReal.ofReal_lt_one, Metric.mem_ball] using hx))
+
+variable {𝔸} in
+/-- Inside the open unit ball, `₂F₁(a, b; c; x)` is the sum of its hypergeometric series
+`∑ (a)ₙ (b)ₙ / ((c)ₙ n!) xⁿ`, for all parameters. -/
+theorem hasSum_ordinaryHypergeometric [CompleteSpace 𝔸] (a b c : 𝕂) {x : 𝔸} (hx : ‖x‖ < 1) :
+    HasSum (fun n ↦ ordinaryHypergeometricCoefficient a b c n • x ^ n) (₂F₁ a b c x) := by
+  have hmem : x ∈ Metric.eball (0 : 𝔸) (ordinaryHypergeometricSeries 𝔸 a b c).radius :=
+    Metric.eball_subset_eball (one_le_radius_ordinaryHypergeometricSeries 𝔸 a b c) (by
+      simpa only [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]
+        using hx)
+  have h := (ordinaryHypergeometricSeries 𝔸 a b c).hasSum hmem
+  rw [ordinaryHypergeometricSeries_apply_eq'] at h
+  exact h
+
+variable {𝔸} in
+/-- Inside the open unit ball, the series `∑ (a)ₙ (b)ₙ / (n!)² xⁿ` of products of generalized
+multichoose numbers sums to `₂F₁(a, b; 1; x)`. For `a = b` this is the series of squared
+coefficients of `(1 - x)⁻ᵃ`. -/
+theorem hasSum_multichoose_mul_multichoose_mul_pow [CompleteSpace 𝔸] (a b : 𝕂) {x : 𝔸}
+    (hx : ‖x‖ < 1) :
+    HasSum (fun n ↦ (Ring.multichoose a n * Ring.multichoose b n) • x ^ n) (₂F₁ a b 1 x) := by
+  simpa only [ordinaryHypergeometricCoefficient_one_eq_multichoose_mul] using
+    hasSum_ordinaryHypergeometric a b 1 hx
 
 section Terminating
 
