@@ -117,11 +117,11 @@ lemma isIso_of_mem_sieveOfSection [M.IsQuasicoherent] (hJ : J ≤ fpqcTopology) 
   let R := Sieve.overEquiv T ((frameSubfunctor M).sieveOfSection e)
   refine Hom.isIso_of_fpqc (M := (pullback T.hom).obj (𝟙_ S.Modules))
     (N := (pullback T.hom).obj M) e (X := fun i : Σ Y : Scheme.{u}, {g : Y ⟶ T.left // R g} ↦ i.1)
-    (fun i ↦ i.2.1) (fpqcTopology.superset_covering (fun Y g hg ↦ ?_) (hJ _ he)) fun i ↦ ?_
+    (fun i ↦ i.2.val) (fpqcTopology.superset_covering (fun Y g hg ↦ ?_) (hJ _ he)) fun i ↦ ?_
   · exact Sieve.ofArrows_mk _ _ (⟨Y, ⟨g, hg⟩⟩ : Σ Y : Scheme.{u}, {g : Y ⟶ T.left // R g})
-  · have hi : IsIso (pullHom (F := modulesPseudofunctor) e i.2.1 (i.2.1 ≫ T.hom) (i.2.1 ≫ T.hom)
-        rfl rfl) := (Sieve.overEquiv_iff _ i.2.1).mp i.2.2
-    exact (isIso_pullHom_iff e i.2.1 _ _ rfl rfl).mp hi
+  · have hi : IsIso (pullHom (F := modulesPseudofunctor) e i.2.val (i.2.val ≫ T.hom)
+        (i.2.val ≫ T.hom) rfl rfl) := (Sieve.overEquiv_iff _ i.2.val).mp i.2.property
+    exact (isIso_pullHom_iff e i.2.val _ _ rfl rfl).mp hi
 
 /-- **The frames of a quasi-coherent module form a sheaf.** For a quasi-coherent `𝒪_S`-module `M`,
 the presheaf of isomorphisms `h^* 𝒪_S ≅ h^* M` is a sheaf for every topology coarser than the fpqc
@@ -150,7 +150,7 @@ noncomputable def frameSheafObjEquiv (T : Over S) :
     (frameSheaf M hJ).obj.obj (op T) ≃
       ((pullback T.hom).obj (𝟙_ S.Modules) ≅ (pullback T.hom).obj M) where
   toFun e := @asIso T.left.Modules _ ((pullback T.hom).obj (𝟙_ S.Modules)) ((pullback T.hom).obj M)
-    e.1 e.2
+    e.val e.property
   invFun i := ⟨i.hom, i.isIso_hom⟩
   left_inv _ := rfl
   right_inv _ := by ext1; rfl
@@ -298,7 +298,7 @@ variable {hJ : J ≤ fpqcTopology} [isInvertible S M]
 the `S`-schemes carrying a frame of `M` cover the big site. -/
 lemma coversTop_frameSheaf (hZ : zariskiTopology ≤ J) :
     (J.over S).CoversTop
-      fun T : {T : Over S // Nonempty ((frameSheaf M hJ).obj.obj (op T))} ↦ T.1 := by
+      fun T : {T : Over S // Nonempty ((frameSheaf M hJ).obj.obj (op T))} ↦ T.val := by
   obtain ⟨ι, W, hW, e⟩ := isInvertible_iff_exists_isOpenCover.mp ‹isInvertible S M›
   rw [GrothendieckTopology.coversTop_iff_of_isTerminal _ _ Over.mkIdTerminal,
     GrothendieckTopology.mem_over_iff]
@@ -377,7 +377,7 @@ theorem exists_pullback_map_eq_of_frameTorsor_hom
         (frameSheafObjEquiv M T e).inv ≫
           (frameSheafObjEquiv (hJ := hJ) N T (α.hom.hom.app (op T) e)).hom := by
   let R := Sieve.ofObjects
-    (fun T : {T : Over S // Nonempty ((frameSheaf M hJ).obj.obj (op T))} ↦ T.1) (Over.mk (𝟙 S))
+    (fun T : {T : Over S // Nonempty ((frameSheaf M hJ).obj.obj (op T))} ↦ T.val) (Over.mk (𝟙 S))
   have hR : R ∈ (fpqcTopology.over S) (Over.mk (𝟙 S)) :=
     hJ _ ((frameTorsor M hJ hZ).coversTop (Over.mk (𝟙 S)))
   have frame {Z : Over S} (g : Z ⟶ Over.mk (𝟙 S)) (hg : R g) :
