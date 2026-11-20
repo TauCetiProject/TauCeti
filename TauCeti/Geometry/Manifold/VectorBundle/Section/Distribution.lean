@@ -23,8 +23,8 @@ A **bundle distribution** with values in `G` is a continuous linear map from the
 the real test functions on an open set `Ω` of a normed space.
 
 The bundle `V` is the bundle of *tests*, so `BundleDistribution I F V n G` is dual to `V`. Taking
-for `V` the bundle `E* ⊗ |Λ|` of `E*`-valued densities and `G = ℝ` or `ℂ` gives the distributional
-sections of a bundle `E`; taking for `V` the density bundle gives the `G`-valued distributions
+for `V` the bundle `E* ⊗ |Λ|` of `E*`-valued densities and `G = ℝ` gives the distributional
+sections of a real bundle `E`; taking for `V` the density bundle gives the `G`-valued distributions
 on `M`.
 
 A bundle distribution is read in a chart through its **chart localization**: for chart data `p`
