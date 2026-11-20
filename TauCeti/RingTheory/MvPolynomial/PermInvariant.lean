@@ -14,18 +14,18 @@ public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 
 Let `G` be a subgroup of the permutation group of the variables `σ`. A polynomial is
 `G`-invariant when renaming its variables by every `g ∈ G` leaves it unchanged. The invariant
-polynomials form the subalgebra `MvPolynomial.permInvariants R G`; for `G = ⊤` it is Mathlib's
-`MvPolynomial.symmetricSubalgebra`.
+polynomials form the subalgebra `TauCeti.MvPolynomial.permInvariants R G`; for `G = ⊤` it is
+Mathlib's `MvPolynomial.symmetricSubalgebra`.
 
 Renaming by `g` carries the monomial `X^e` to `X^(e.mapDomain g)`, so `G` permutes the exponent
 vectors `e : σ →₀ ℕ`, and a polynomial is invariant exactly when its coefficients are constant on
 the `G`-orbits of exponents. Mathlib registers no action of permutations on `σ →₀ ℕ`
 (`Finsupp.comapMulAction` is a definition, not an instance), so the orbit relation is the explicit
-setoid `MvPolynomial.permOrbitRel G`. When `G` is finite, for instance when `σ` is finite, every
-orbit is finite, and the *orbit sum* `MvPolynomial.orbitSum R G e`, the sum of the monomials `X^f`
-with coefficient `1` over the orbit of `e`, is invariant. The orbit sums of the distinct orbits form
-a basis of the invariant subalgebra over any commutative semiring
-(`MvPolynomial.permInvariantsBasis`).
+setoid `TauCeti.MvPolynomial.permOrbitRel G`. When `G` is finite, for instance when `σ` is
+finite, every orbit is finite, and the *orbit sum* `TauCeti.MvPolynomial.orbitSum R G e`, the sum
+of the monomials `X^f` with coefficient `1` over the orbit of `e`, is invariant. The orbit sums of
+the distinct orbits form a basis of the invariant subalgebra over any commutative semiring
+(`TauCeti.MvPolynomial.permInvariantsBasis`).
 
 This basis is the input to the SAGBI theory of permutation invariants: for a monomial order the
 leading term of an orbit sum is the monomial of the largest exponent in its orbit, which describes
@@ -34,21 +34,22 @@ the leading-exponent monoid of the invariant subalgebra
 
 ## Main definitions
 
-* `MvPolynomial.permInvariants R G`: the subalgebra of `G`-invariant polynomials.
-* `MvPolynomial.permOrbitRel G`: the orbit relation of `G` on exponent vectors.
-* `MvPolynomial.orbitSum R G e`: the sum of the monomials over the `G`-orbit of `e`.
-* `MvPolynomial.permInvariantsBasis R G`: the orbit-sum basis of the invariant subalgebra, indexed
-  by the `G`-orbits of exponent vectors.
+* `TauCeti.MvPolynomial.permInvariants R G`: the subalgebra of `G`-invariant polynomials.
+* `TauCeti.MvPolynomial.permOrbitRel G`: the orbit relation of `G` on exponent vectors.
+* `TauCeti.MvPolynomial.orbitSum R G e`: the sum of the monomials over the `G`-orbit of `e`.
+* `TauCeti.MvPolynomial.permInvariantsBasis R G`: the orbit-sum basis of the invariant
+  subalgebra, indexed by the `G`-orbits of exponent vectors.
 
 ## Main results
 
-* `MvPolynomial.mem_permInvariants_iff_coeff`: a polynomial is invariant if and only if its
+* `TauCeti.MvPolynomial.mem_permInvariants_iff_coeff`: a polynomial is invariant if and only if its
   coefficients are constant on `G`-orbits of exponents.
-* `MvPolynomial.permInvariants_top`: the invariants of the full permutation group are the
+* `TauCeti.MvPolynomial.permInvariants_top`: the invariants of the full permutation group are the
   symmetric polynomials.
-* `MvPolynomial.span_range_orbitSum`: the orbit sums span the invariant subalgebra.
-* `MvPolynomial.permInvariantsBasis_repr_apply`: the coordinate of an invariant polynomial along
-  the orbit sum of an orbit is the common coefficient of the monomials of that orbit.
+* `TauCeti.MvPolynomial.span_range_orbitSum`: the orbit sums span the invariant subalgebra.
+* `TauCeti.MvPolynomial.permInvariantsBasis_repr_apply`: the coordinate of an invariant
+  polynomial along the orbit sum of an orbit is the common coefficient of the monomials of that
+  orbit.
 
 ## References
 
@@ -59,7 +60,9 @@ the leading-exponent monoid of the invariant subalgebra
 
 public section
 
-namespace MvPolynomial
+namespace TauCeti.MvPolynomial
+
+open _root_.MvPolynomial
 
 variable {σ : Type*} {R : Type*} [CommSemiring R]
 
@@ -338,4 +341,4 @@ theorem coe_permInvariantsBasis_mk (e : σ →₀ ℕ) :
 
 end Orbit
 
-end MvPolynomial
+end TauCeti.MvPolynomial

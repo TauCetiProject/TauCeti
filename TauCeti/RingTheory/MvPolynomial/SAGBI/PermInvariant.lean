@@ -16,10 +16,10 @@ permutation group of finitely many variables), and let `m` be a
 monomial order. The coefficients of a `G`-invariant polynomial are constant on the `G`-orbits of
 exponents, so its leading exponent `e` is the largest exponent of its orbit: renaming by any
 `g ∈ G` gives `m.toSyn (e.mapDomain g) ≤ m.toSyn e`. Conversely, if `e` is the largest exponent of
-its orbit, the orbit sum `MvPolynomial.orbitSum R G e` is monic with leading exponent `e`.
+its orbit, the orbit sum `TauCeti.MvPolynomial.orbitSum R G e` is monic with leading exponent `e`.
 
 Hence, over coefficients without zero divisors, the leading exponents of the invariant subalgebra
-`MvPolynomial.permInvariants R G` are exactly the exponents that are largest in their orbits
+`TauCeti.MvPolynomial.permInvariants R G` are exactly the exponents that are largest in their orbits
 (`MonomialOrder.mem_leadingExponents_permInvariants_iff`), and the orbit sums form a SAGBI basis of
 the invariant subalgebra for every monomial order (`MonomialOrder.isSAGBIBasis_range_orbitSum`).
 This orbit-sum SAGBI basis is infinite. Over a field, the invariant subalgebra has a finite SAGBI
@@ -52,7 +52,7 @@ public section
 
 namespace MonomialOrder
 
-open MvPolynomial
+open MvPolynomial TauCeti.MvPolynomial
 
 variable {σ R : Type*} [CommSemiring R] (m : MonomialOrder σ) {G : Subgroup (Equiv.Perm σ)}
   {e : σ →₀ ℕ} {p : MvPolynomial σ R}
