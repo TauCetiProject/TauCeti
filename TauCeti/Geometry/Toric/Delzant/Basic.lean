@@ -89,6 +89,8 @@ the labelled presentation is Delzant exactly when `(u, c)` is Delzant and every 
 * `TauCeti.Toric.IsSmoothVertex.ncard_activeSet`: exactly `rank N` facets meet at a smooth vertex.
 * `TauCeti.Toric.isSmoothVertex_iff_span_eq_top`: a smooth vertex is a point whose active normals
   generate the lattice and number at most `rank N`.
+* `TauCeti.Toric.isSmoothVertex_of_forall_apply_eq`: when the normals form a lattice basis, a
+  point at which every constraint is active is a smooth vertex.
 * `TauCeti.Toric.IsDelzant.isPrimitive`: the facet normals of a Delzant polytope are primitive.
 * `TauCeti.Toric.IsDelzant.facetPairing_ne_zero`: for an injective lattice map, the facet
   pairings of a Delzant polytope are nonzero.
@@ -281,6 +283,13 @@ theorem isSmoothVertex_iff_span_eq_top [Finite ι] {x : StrongDual ℝ V} :
   refine linearIndependent_of_top_le_span_of_card_le_finrank ?_ ?_
   · rw [← Set.image_eq_range, hspan]
   · rwa [Fintype.card_eq_nat_card, Nat.card_coe_set_eq]
+
+/-- A point at which every constraint is active is a smooth vertex when the normals form a basis
+of the lattice. This is the apex of the moment cone of the local model of a symplectic toric
+manifold at a fixed point. -/
+theorem isSmoothVertex_of_forall_apply_eq (b : Module.Basis ι ℤ N) (hb : ∀ j, b j = u j)
+    {x : StrongDual ℝ V} (hx : ∀ j, x (i (u j)) = c j) : IsSmoothVertex i u c x :=
+  ⟨b.reindex (Equiv.subtypeUnivEquiv fun j ↦ mem_activeSet.2 (hx j)).symm, fun j ↦ by simp [hb]⟩
 
 /-- A bounded facet polyhedron is compact. -/
 theorem isCompact_facetPolyhedron_of_isBounded [FiniteDimensional ℝ V]
