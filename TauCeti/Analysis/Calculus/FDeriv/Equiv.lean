@@ -57,9 +57,9 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   reciprocity of the Jacobian determinants of `e` and `e.symm`.
 * `OpenPartialHomeomorph.adjoint_fderiv_apply_adjoint_fderiv_symm_apply`,
   `OpenPartialHomeomorph.adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_contDiffOn`: between
-  real inner product spaces, the transposes of the derivatives of an open partial homeomorphism at
-  a point of its source and of its inverse at the image point are inverse, when both are
-  differentiable there, in particular when both are `C^n`.
+  real inner product spaces, the transpose of the derivative of an open partial homeomorphism at
+  a point of its source is a left inverse of the transpose of the derivative of its inverse at the
+  image point, when both are differentiable there, in particular when both are `C^n`.
 * `OpenPartialHomeomorph.hasFDerivAt_transHomeomorph_iff`: postcomposing charts with continuous
   linear equivalences conjugates the Fréchet derivative of a map read in those charts.
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
@@ -247,7 +247,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Complet
 
 open scoped InnerProduct in
 /-- For an open partial homeomorphism differentiable at a point `x` of its source, with inverse
-differentiable at `e x`, the transposes of `De(x)` and `De⁻¹(e x)` are inverse there:
+differentiable at `e x`, `De(x)ᵀ` is a left inverse of `De⁻¹(e x)ᵀ`:
 `De(x)ᵀ (De⁻¹(e x)ᵀ ξ) = ξ`. -/
 theorem adjoint_fderiv_apply_adjoint_fderiv_symm_apply (e : OpenPartialHomeomorph E F) {x : E}
     (hx : x ∈ e.source) (hd : DifferentiableAt ℝ e x) (hds : DifferentiableAt ℝ e.symm (e x))
@@ -258,7 +258,7 @@ theorem adjoint_fderiv_apply_adjoint_fderiv_symm_apply (e : OpenPartialHomeomorp
 
 open scoped InnerProduct in
 /-- For an open partial homeomorphism that is `C^n`, `n ≠ 0`, on its source, with inverse `C^n` on
-its target, the transposes of `De(x)` and `De⁻¹(e x)` are inverse at a point `x` of the source:
+its target, `De(x)ᵀ` is a left inverse of `De⁻¹(e x)ᵀ` at a point `x` of the source:
 `De(x)ᵀ (De⁻¹(e x)ᵀ ξ) = ξ`. -/
 theorem adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_contDiffOn
     (e : OpenPartialHomeomorph E F) {n : WithTop ℕ∞} (he : ContDiffOn ℝ n e e.source)
