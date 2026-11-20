@@ -392,12 +392,8 @@ theorem sphereBundleNeg_sphereBundleNeg (v : sphereBundle F E) :
 theorem sphereBundleNeg_ne_self (v : sphereBundle F E) : sphereBundleNeg F E v ≠ v := fun h ↦ by
   obtain ⟨⟨b, x⟩, hx⟩ := v
   have h₂ : -x = x := TotalSpace.mk_inj.1 (congrArg Subtype.val h)
-  have hx₀ : x ≠ 0 := snd_ne_zero_of_mem_sphereBundle hx
-  -- `-x = x` gives `2 • x = 0`, so `x = 0`.
-  refine hx₀ ((smul_eq_zero.1 (?_ : (2 : ℝ) • x = 0)).resolve_left two_ne_zero)
-  rw [two_smul]
-  nth_rewrite 1 [← h₂]
-  exact neg_add_cancel x
+  have := HasUniqueDiv.of_isTorsionFree ℝ (E b)
+  exact snd_ne_zero_of_mem_sphereBundle hx (neg_eq_self.1 h₂)
 
 /-- If the model fibre is nonzero, the unit sphere bundle has a unit vector over every point. -/
 theorem surjective_sphereBundleProj [Nontrivial F] : Function.Surjective (sphereBundleProj F E) :=
