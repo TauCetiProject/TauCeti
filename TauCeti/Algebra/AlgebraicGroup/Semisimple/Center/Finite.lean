@@ -49,22 +49,9 @@ private theorem reducedCenter_identityComponent_eq_augmentation
         (CommHopfAlgCat.reducedCenterCoordinateHopfAlgebra
           (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H).obj) := by
   let G := FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H
-  let Z := CommHopfAlgCat.reducedCenterDefiningIdeal G.obj
-  let e := CommHopfAlgCat.quotientReducedCenterIso G.obj
-  have hI : connectedCenterDefiningIdeal G = HopfIdeal.augmentation (AlgebraicClosure k) G :=
-    hH.eq_augmentation_of_isCentral _ (isCentral_connectedCenterDefiningIdeal G)
-      (geometricallyConnected_connectedCenter G) (smooth_connectedCenter G)
-  -- Compare the connected center, cut out in `G`, with the identity component of the
-  -- iterated quotient model of the reduced center.
-  ext y
-  obtain ⟨x, rfl⟩ := (ConcreteCategory.bijective_of_isIso e.hom).2.comp
-    (CommHopfAlgCat.mkQuotient_surjective G.obj Z) y
-  rw [Function.comp_apply]
-  refine (HopfAlgebra.apply_mem_identityComponentHopfIdeal_iff
-    (_root_.CommHopfAlgCat.ofIso e)).trans ?_
-  rw [← HopfIdeal.mem_identityComponent, ← connectedCenterDefiningIdeal_eq_identityComponent, hI,
-    HopfIdeal.mem_augmentation, HopfIdeal.mem_augmentation, CoalgHomClass.counit_comp_apply,
-    CoalgHomClass.counit_comp_apply]
+  exact (identityComponentHopfIdeal_reducedCenterCoordinateHopfAlgebra_eq_augmentation_iff G).mpr
+    (hH.eq_augmentation_of_isCentral _ (isCentral_reducedConnectedCenterDefiningIdeal G)
+      (geometricallyConnected_reducedConnectedCenter G) (smooth_reducedConnectedCenter G))
 
 /-- The scheme-theoretic center of a semisimple affine group is finite over its ground field.
 No restriction on the characteristic or reducedness of the center is needed. -/
