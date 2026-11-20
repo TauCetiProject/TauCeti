@@ -294,7 +294,7 @@ include h in
 /-- The two sheet maps of `DoubleAlong B`, composed with a homeomorphism carrying `A` onto `B`,
 agree on `A`. -/
 private theorem inl_comp_eq_inr_comp (x : A) : inl B (e x) = inr B (e x) :=
-  inl_coe_eq_inr B ⟨e x, h ▸ mem_image_of_mem e x.2⟩
+  inl_coe_eq_inr B ⟨e x, h ▸ mem_image_of_mem e x.property⟩
 
 /-- Two copies of a homeomorphism that carries `A` onto `B` glue to a homeomorphism of the
 doubles. -/
@@ -302,7 +302,7 @@ noncomputable def congr : DoubleAlong A ≃ₜ DoubleAlong B where
   toFun := desc A ((inl B).comp e) ((inr B).comp e) (inl_comp_eq_inr_comp e h)
   invFun := desc B ((inl A).comp e.symm) ((inr A).comp e.symm)
     fun y ↦ inl_coe_eq_inr A ⟨e.symm y, by
-      have hy : (y : Y) ∈ e '' A := by rw [h]; exact y.2
+      have hy : (y : Y) ∈ e '' A := by rw [h]; exact y.property
       obtain ⟨x, hx, hxy⟩ := hy
       rwa [← hxy, e.symm_apply_apply]⟩
   left_inv p := by

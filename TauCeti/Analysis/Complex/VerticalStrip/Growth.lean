@@ -16,11 +16,12 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 The height threshold depends on the strip: in particular, poles at nonzero heights
 need not obstruct this property. No regularity of `f` is required.
 
-The property is stable under addition, finite sums and multiplication, and every function
-bounded on each closed vertical strip has it. Bounds extend to degenerate strips, and real
-exponential functions and powers `n ^ (c s)` of positive integers provide nonconstant examples of
-vertical-strip growth.
-These facts allow growth estimates for completed L-functions to be assembled from their factors.
+The property is stable under addition, finite sums, multiplication and affine pullbacks
+`s ↦ a * s + b` with a real dilation `a : ℝ` (whereas a non-real dilation rotates vertical strips
+into horizontal ones, so `exp (-I * s)` fails to have vertical-strip growth). Every function
+bounded on each closed vertical strip has it, as does the identity function. Bounds extend to
+degenerate strips, and real exponential functions provide nonconstant examples. These facts allow
+growth estimates for completed and pole-cleared L-functions to be assembled from their factors.
 -/
 
 public section
@@ -185,5 +186,102 @@ theorem hasVerticalStripGrowth_natCast_cpow_ofReal_mul {n : ℕ} (hn : n ≠ 0) 
     HasVerticalStripGrowth fun s : ℂ ↦ (n : ℂ) ^ ((c : ℂ) * s) :=
   (hasVerticalStripGrowth_congr fun s ↦ (natCast_cpow_ofReal_mul hn c s).symm).mp
     hasVerticalStripGrowth_cexp_ofReal_mul
+
+/-- The identity function has vertical-strip growth. -/
+@[to_fun (attr := simp) hasVerticalStripGrowth_fun_id]
+theorem hasVerticalStripGrowth_id : HasVerticalStripGrowth id := by
+  intro a b _
+  refine ⟨max |a| |b| + 1, by positivity, 1, zero_le_one, 0, le_rfl, fun s hs _ ↦ ?_⟩
+  have hre : |s.re| ≤ max |a| |b| := abs_le_max_abs_abs hs.1 hs.2
+  have hnorm : ‖s‖ ≤ |s.re| + |s.im| := Complex.norm_le_abs_re_add_abs_im s
+  dsimp only [id_eq]
+  rw [Real.rpow_one]
+  nlinarith [abs_nonneg s.im, (abs_nonneg s.re).trans hre]
+
+/-- Pulling back along `s ↦ a * s + b` with a real dilation `a : ℝ` and complex shift `b : ℂ`
+preserves vertical-strip growth, including when `a = 0`. -/
+theorem HasVerticalStripGrowth.comp_ofReal_mul_add {f : ℂ → ℂ} (hf : HasVerticalStripGrowth f)
+    (a : ℝ) (b : ℂ) : HasVerticalStripGrowth (fun s ↦ f ((a : ℂ) * s + b)) := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp
+  intro x y _
+  let u := min (a * x) (a * y) + b.re
+  let v := max (a * x) (a * y) + b.re
+  obtain ⟨C, hC, A, hA, T₀, hT₀, hbound⟩ :=
+    hf.exists_bound (a := u) (b := v) (add_le_add_left min_le_max _)
+  let K := 1 + |a| + |b.im|
+  have hK : 0 < K := by dsimp [K]; positivity
+  refine ⟨C * K ^ A, by positivity, A, hA, (T₀ + |b.im|) / |a|, by positivity, fun s hs ht ↦ ?_⟩
+  have hre : ((a : ℂ) * s + b).re ∈ Set.Icc u v := by
+    simp only [Complex.add_re, Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul,
+      sub_zero, Set.mem_Icc, u, v]
+    rcases le_total 0 a with ha0 | ha0
+    · exact ⟨add_le_add_left ((min_le_left _ _).trans (mul_le_mul_of_nonneg_left hs.1 ha0)) _,
+        add_le_add_left ((mul_le_mul_of_nonneg_left hs.2 ha0).trans (le_max_right _ _)) _⟩
+    · exact ⟨add_le_add_left ((min_le_right _ _).trans (mul_le_mul_of_nonpos_left hs.2 ha0)) _,
+        add_le_add_left ((mul_le_mul_of_nonpos_left hs.1 ha0).trans (le_max_left _ _)) _⟩
+  have him_eq : ((a : ℂ) * s + b).im = a * s.im + b.im := by simp
+  have him_low : T₀ ≤ |((a : ℂ) * s + b).im| := by
+    have hmul : T₀ + |b.im| ≤ |s.im| * |a| := (div_le_iff₀ (abs_pos.mpr ha)).mp ht
+    have htri : |a * s.im| ≤ |a * s.im + b.im| + |-b.im| := by
+      simpa [sub_eq_add_neg] using abs_add_le (a * s.im + b.im) (-b.im)
+    rw [abs_mul, abs_neg] at htri
+    rw [him_eq]
+    nlinarith [abs_nonneg a, abs_nonneg s.im]
+  have him_up : 1 + |((a : ℂ) * s + b).im| ≤ K * (1 + |s.im|) := by
+    have htri : |a * s.im + b.im| ≤ |a| * |s.im| + |b.im| :=
+      (abs_add_le _ _).trans (by rw [abs_mul])
+    rw [him_eq]
+    dsimp [K]
+    nlinarith [abs_nonneg a, abs_nonneg s.im, abs_nonneg b.im]
+  calc ‖f ((a : ℂ) * s + b)‖
+      ≤ C * (1 + |((a : ℂ) * s + b).im|) ^ A := hbound _ hre him_low
+    _ ≤ C * (K * (1 + |s.im|)) ^ A := by gcongr
+    _ = C * K ^ A * (1 + |s.im|) ^ A := by
+        rw [Real.mul_rpow hK.le (by positivity), mul_assoc]
+
+/-- A nonzero real dilation with complex shift preserves vertical-strip growth in both
+directions. -/
+@[simp]
+theorem hasVerticalStripGrowth_comp_ofReal_mul_add_iff {f : ℂ → ℂ} {a : ℝ} (ha : a ≠ 0) (b : ℂ) :
+    HasVerticalStripGrowth (fun s ↦ f ((a : ℂ) * s + b)) ↔ HasVerticalStripGrowth f := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp_ofReal_mul_add a b⟩
+  have hi := h.comp_ofReal_mul_add a⁻¹ (-(a⁻¹ : ℂ) * b)
+  refine (hasVerticalStripGrowth_congr fun s ↦ ?_).mp hi
+  have ha' : (a : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr ha
+  congr 1
+  push_cast
+  field_simp
+  ring
+
+/-- Non-real dilations need not preserve vertical-strip growth: `exp (-I * s)` grows as `exp t`
+along the imaginary axis `s = I * t`. -/
+theorem not_hasVerticalStripGrowth_cexp_neg_I_mul :
+    ¬ HasVerticalStripGrowth (fun s : ℂ ↦ Complex.exp (-Complex.I * s)) := by
+  intro h
+  obtain ⟨C, hC, A, _, T₀, _, hbound⟩ := h 0 1 zero_lt_one
+  have ho := (((isLittleO_rpow_exp_atTop A).comp_tendsto
+    (Filter.tendsto_atTop_add_const_left Filter.atTop 1 Filter.tendsto_id)).const_mul_left
+    (2 * Real.exp 1 * C)).eventuallyLE
+  obtain ⟨t, ht0, htT, ht⟩ :=
+    ((Filter.eventually_gt_atTop (0 : ℝ)).and
+      ((Filter.eventually_ge_atTop T₀).and ho)).exists
+  have h1t : 0 < 1 + t := by linarith
+  have hpos : 0 < C * (1 + t) ^ A := mul_pos hC (Real.rpow_pos_of_pos h1t A)
+  simp only [Function.comp_apply, id_eq] at ht
+  rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (Real.exp_pos _).le,
+    Real.exp_add] at ht
+  have hlt : C * (1 + t) ^ A < Real.exp t := by
+    have he := Real.exp_pos 1
+    nlinarith
+  have hs := hbound (Complex.I * t) (by simp) (by simpa [abs_of_pos ht0] using htT)
+  have hval : ‖Complex.exp (-Complex.I * (Complex.I * (t : ℂ)))‖ = Real.exp t := by
+    have hmul : -Complex.I * (Complex.I * (t : ℂ)) = (t : ℂ) := by
+      rw [← mul_assoc, neg_mul, Complex.I_mul_I, neg_neg, one_mul]
+    rw [hmul, Complex.norm_exp, Complex.ofReal_re]
+  rw [hval] at hs
+  simp only [Complex.mul_im, Complex.I_re, Complex.ofReal_im, mul_zero, Complex.I_im,
+    Complex.ofReal_re, one_mul, zero_add, abs_of_pos ht0] at hs
+  linarith
 
 end TauCeti

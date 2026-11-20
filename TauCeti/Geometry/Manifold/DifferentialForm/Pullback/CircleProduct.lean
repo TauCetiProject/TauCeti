@@ -203,9 +203,9 @@ vanishing Lie derivative along the unit field `∂ₛ = (1, 0)` of the circle fa
 pullback along the projection to `Y` of its restriction to any slice `{c} × Y`. -/
 theorem mpullback_snd_mpullback_prodMk_of_mlieDerivForm_eq_zero
     {α : SmoothForm (𝓘(ℝ).prod I) (AddCircle p × Y) F (k + 1)}
-    (hL : mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1 = 0)
+    (hL : mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.val = 0)
     (hι : RoughForm.interior (I := 𝓘(ℝ).prod I) (M := AddCircle p × Y) (F := F)
-      (fun _ ↦ ((1 : ℝ), (0 : E))) α.1 = 0)
+      (fun _ ↦ ((1 : ℝ), (0 : E))) α.val = 0)
     (c : AddCircle p) :
     mpullback Prod.snd contMDiff_snd
       (mpullback (Prod.mk c) (contMDiff_const.prodMk contMDiff_id) α) = α := by
@@ -220,14 +220,14 @@ derivative along the unit field `∂ₛ = (1, 0)` of the circle factor vanish. -
 theorem exists_mpullback_snd_eq_iff {α : SmoothForm (𝓘(ℝ).prod I) (AddCircle p × Y) F (k + 1)} :
     (∃ β : SmoothForm I Y F (k + 1), mpullback Prod.snd contMDiff_snd β = α) ↔
       RoughForm.interior (I := 𝓘(ℝ).prod I) (M := AddCircle p × Y) (F := F)
-          (fun _ ↦ ((1 : ℝ), (0 : E))) α.1 = 0 ∧
-        mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1 = 0 := by
+          (fun _ ↦ ((1 : ℝ), (0 : E))) α.val = 0 ∧
+        mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.val = 0 := by
   refine ⟨?_, fun ⟨hι, hL⟩ ↦
     ⟨_, mpullback_snd_mpullback_prodMk_of_mlieDerivForm_eq_zero hL hι 0⟩⟩
   rintro ⟨β, rfl⟩
   refine ⟨?_, ?_⟩
   · rw [coe_mpullback]
-    exact interior_mpullback_snd_eq_zero β.1
+    exact interior_mpullback_snd_eq_zero β.val
   · -- Pullbacks along the projection are invariant under the rotations of the circle factor.
     refine (forall_mpullback_prodMap_add_right_eq_iff_mlieDerivForm_eq_zero
       (mpullback Prod.snd contMDiff_snd β).mdifferentiable).1 fun c ↦ ?_
@@ -243,7 +243,7 @@ the pullback along the second projection of its restriction to any slice `{θ} �
 theorem mpullback_snd_mpullback_prodMk_of_interior_eq_zero
     {α : SmoothForm (𝓘(ℝ).prod I) (AddCircle p × Y) F (k + 1)} (hα : α.IsClosed)
     (hι : RoughForm.interior (I := 𝓘(ℝ).prod I) (M := AddCircle p × Y) (F := F)
-      (fun _ ↦ ((1 : ℝ), (0 : E))) α.1 = 0) (θ : AddCircle p) :
+      (fun _ ↦ ((1 : ℝ), (0 : E))) α.val = 0) (θ : AddCircle p) :
     mpullback Prod.snd contMDiff_snd
       (mpullback (Prod.mk θ) (contMDiff_const.prodMk contMDiff_id) α) = α := by
   -- `∂ₛ` is the Eulerian velocity field of the rotations, so it is differentiable.
@@ -269,12 +269,12 @@ theorem exists_isClosed_and_mpullback_snd_eq_iff_interior_eq_zero
     {α : SmoothForm (𝓘(ℝ).prod I) (AddCircle p × Y) F (k + 1)} (hα : α.IsClosed) :
     (∃ β : SmoothForm I Y F (k + 1), β.IsClosed ∧ mpullback Prod.snd contMDiff_snd β = α) ↔
       RoughForm.interior (I := 𝓘(ℝ).prod I) (M := AddCircle p × Y) (F := F)
-        (fun _ ↦ ((1 : ℝ), (0 : E))) α.1 = 0 := by
+        (fun _ ↦ ((1 : ℝ), (0 : E))) α.val = 0 := by
   refine ⟨?_, fun hι ↦
     ⟨_, hα.mpullback _ _, mpullback_snd_mpullback_prodMk_of_interior_eq_zero hα hι 0⟩⟩
   rintro ⟨β, -, rfl⟩
   rw [coe_mpullback]
-  exact interior_mpullback_snd_eq_zero β.1
+  exact interior_mpullback_snd_eq_zero β.val
 
 end SmoothForm
 

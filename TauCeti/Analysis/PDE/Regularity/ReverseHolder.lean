@@ -525,7 +525,7 @@ private theorem exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm_of_ball_subset [Nonemp
       eLpNorm (W1p.value v) q (mu.restrict U) ≤ S * ‖W1p.gradient v‖ₑ := fun v hv => by
     rw [← ENNReal.ofReal_coe_nnreal (p := S), hSK]
     have := W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball (mu := mu)
-      ENNReal.ofNat_ne_top hR TopologicalSpace.Opens.coe_mk hq2 (δ := δ)
+      TopologicalSpace.Opens.coe_mk hq2 (δ := δ)
       (by rw [ENNReal.toReal_ofNat, hq]; simp only [δ]; field_simp)
       (by rwa [finrank_euclideanSpace]) hv
     rwa [finrank_euclideanSpace] at this
@@ -1032,8 +1032,7 @@ theorem exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv [Nonempt
     -- `0 ≤ u^s ≤ (u + δ)^s`, and `(u + δ)^s` is integrable on `B(x₀, R/2)`, hence so is `u^s`.
     have hint' : IntegrableOn (fun y => (W1p.value u y + δ) ^ s) (Metric.ball x₀ (R / 2)) mu :=
       hHi.congr (hwvh.mono fun y hy => congrArg (· ^ s) hy)
-    obtain ⟨hint, hmono⟩ := integrable_and_average_rpow_le hs hδ0.le
-      (hmemR.aestronglyMeasurable.mono_measure (Measure.restrict_mono hhalf le_rfl)) hu0h hint'
+    obtain ⟨hint, hmono⟩ := integrable_and_average_rpow_le hs.le hδ0.le hu0h hint'
     exact ⟨hint, (Real.rpow_le_rpow
       (average_nonneg_of_ae (hu0h.mono fun y hy => Real.rpow_nonneg hy _))
       hmono (inv_nonneg.2 hs.le)).trans hH⟩

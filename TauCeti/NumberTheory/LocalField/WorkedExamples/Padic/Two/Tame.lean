@@ -37,7 +37,7 @@ theorem exists_marked_tameQuotient_padic_two :
   have ht := (topologicalClosure_zpowers_toTameQuotient_eq_iff (τ := t)).1 hτ
   refine ⟨σ, t, hσ, hτ, ?_, tameQuotientEquiv hσ t ht, ?_, ?_⟩
   · simpa only [Padic.natCard_residueField] using
-      hσ.toTameQuotient_mul_toTameQuotient_mul_inv t.2
+      hσ.toTameQuotient_mul_toTameQuotient_mul_inv t.property
   · exact tameQuotientEquiv_toTameQuotient_frobenius hσ ht
   · exact tameQuotientEquiv_toTameQuotient_tameGenerator hσ ht
 

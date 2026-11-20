@@ -252,7 +252,7 @@ theorem isIso_singularCohomologyMap_ofInclusionMap_inclusion_of_homotopyRel {X :
   · rw [← ofInclusionMap_comp, ← ofInclusionMap_id]
     have hid : r.comp (ContinuousMap.inclusion hct) = ContinuousMap.id c := by
       ext x
-      exact hrc _ x.2
+      exact hrc _ x.property
     simp only [hid]
     exact Homotopy.refl _
   · rw [← ofInclusionMap_comp, ← ofInclusionMap_id]

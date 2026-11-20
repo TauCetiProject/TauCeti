@@ -256,13 +256,13 @@ theorem exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero (I : Ideal R)
   let _ : LinearOrder (l ⊕ l) := (Fintype.equivFin (l ⊕ l)).linearOrder
   have hQ : (-E)ᵀ = -(-E) := by rw [transpose_neg, hE_transpose]
   have hQd : ∀ i, (-E) i i = 0 := fun i => by simp [hE_diag]
-  let Y : Matrix (l ⊕ l) (l ⊕ l) R := ((subTransposeEqEquiv hQ hQd).symm 0).1
+  let Y : Matrix (l ⊕ l) (l ⊕ l) R := ((subTransposeEqEquiv hQ hQd).symm 0).val
   have hY_mem : ∀ i j, Y i j ∈ I := fun i j => by
     simp only [Y, coe_subTransposeEqEquiv_symm_apply, Pi.zero_apply, zero_add]
     split_ifs
     · exact I.neg_mem (hE_mem i j)
     · exact I.zero_mem
-  have hY_sub : Y - Yᵀ = -E := ((subTransposeEqEquiv hQ hQd).symm 0).2
+  have hY_sub : Y - Yᵀ = -E := ((subTransposeEqEquiv hQ hQd).symm 0).property
   have hX_mul_J : -(Y * J l R) * J l R = Y := by
     rw [Matrix.neg_mul, Matrix.mul_assoc, J_squared]
     simp

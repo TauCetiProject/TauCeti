@@ -221,7 +221,7 @@ private theorem isUnit_det_stiefelNormalCons (v : stiefel E 2)
     IsUnit (e.det (stiefelNormalCons (v : Fin 2 → E) fun i ↦
       mfderiv 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) 𝓘(ℝ, Fin 2 → E)
         ((↑) : stiefel E 2 → Fin 2 → E) v (b i))) := by
-  have hli := linearIndependent_stiefelNormalCons v.2
+  have hli := linearIndependent_stiefelNormalCons v.property
     (b.linearIndependent.map' _ (LinearMap.ker_eq_bot_of_injective
       (injective_mfderiv_coe_stiefel v)))
     fun i ↦ gramSym2Deriv_mfderiv_coe_stiefel v (b i)
@@ -299,7 +299,7 @@ theorem _root_.Orientation.orientation_eq_neg_orientationAt_stiefelTwoOrientatio
           mfderiv 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) 𝓘(ℝ, Fin 2 → E)
             ((↑) : stiefel E 2 → Fin 2 → E) v (b i)))) < 0 := by
   rw [← _root_.Orientation.ne_iff_eq_neg _ _
-      ((O.stiefelTwoOrientation.finrank_tangentSpace_eq v).symm),
+      (Nat.card_eq_fintype_card.trans (O.stiefelTwoOrientation.finrank_tangentSpace_eq v).symm),
     Ne, O.orientation_eq_orientationAt_stiefelTwoOrientation_iff b e he, not_lt]
   exact (isUnit_det_stiefelNormalCons v b e).ne_zero.le_iff_lt
 
@@ -310,7 +310,8 @@ theorem _root_.Orientation.stiefelTwoOrientation_neg
     (O : _root_.Orientation ℝ (Fin 2 → E) (Fin (2 * n + 4))) :
     (-O).stiefelTwoOrientation = -O.stiefelTwoOrientation := by
   ext v
-  have hcard := ((-O).stiefelTwoOrientation.finrank_tangentSpace_eq v).symm
+  have hcard :=
+    Nat.card_eq_fintype_card.trans ((-O).stiefelTwoOrientation.finrank_tangentSpace_eq v).symm
   let b := Module.finBasisOfFinrankEq ℝ
     (TangentSpace 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) v)
     (by exact finrank_stiefelTwoModel (E := E) (n := n))

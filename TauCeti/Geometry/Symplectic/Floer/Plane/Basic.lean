@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
+public import TauCeti.Analysis.Complex.ThricePuncturedSphere.End.Coordinate
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
@@ -294,7 +294,7 @@ theorem im_endCoord_eq_neg_endSign_mul (p : PSSPlane) (w : ℂ) :
     (p.endCoord w).im =
       -p.endSign * (ThricePuncturedSphere.Puncture.zero.endCoord w).im := by
   simp [im_endCoord, ThricePuncturedSphere.Puncture.im_endCoord, ← Complex.ofReal_ofNat,
-    Complex.arg_mul_real]
+    Complex.arg_mul_ofReal]
   ring
 
 /-- The angular coordinate of the negative plane is the negative of that of the positive plane. -/

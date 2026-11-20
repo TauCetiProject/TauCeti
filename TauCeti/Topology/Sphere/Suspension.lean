@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.UnitInterval
 
+import TauCeti.Analysis.InnerProductSpace.PiL2
+
 /-!
 # The two-sphere as the suspension of the circle
 
@@ -164,9 +166,7 @@ theorem eq_or_of_suspensionToSphere_eq {p p' : I × Circle}
 /-- The suspension map is surjective. -/
 theorem suspensionToSphere_surjective : Function.Surjective suspensionToSphere := by
   rintro ⟨v, hv⟩
-  have hn : v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2 = 1 := by
-    rw [mem_sphere_zero_iff_norm, EuclideanSpace.norm_eq, Real.sqrt_eq_one] at hv
-    simpa [Fin.sum_univ_three] using hv
+  have hn := EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere hv
   have ha : v 0 ∈ Set.Icc (-1 : ℝ) 1 := by
     constructor <;> nlinarith [sq_nonneg (v 1), sq_nonneg (v 2)]
   set θ := arccos (v 0)
