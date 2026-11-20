@@ -13,6 +13,7 @@ public import TauCeti.Analysis.InnerProductSpace.TwoDim
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Surface
+import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
 # The Fubini–Study form of the Riemann sphere
@@ -146,11 +147,10 @@ only the point `∞`. This is the normalization of the Fubini–Study form to to
 theorem integral_fubiniStudyDensity : ∫ z : ℂ, fubiniStudyDensity z = 1 := by
   have h := integral_fun_norm_addHaar (volume : Measure ℂ)
     (fun r : ℝ ↦ (Real.pi * (1 + r ^ 2) ^ 2)⁻¹)
-  simp only [Complex.finrank_real_complex, Measure.real, Complex.volume_ball] at h
+  simp only [Complex.finrank_real_complex, Complex.volume_real_ball 0 zero_le_one] at h
   simp only [fubiniStudyDensity_def]
   rw [h]
   simp only [Nat.add_one_sub_one, pow_one, smul_eq_mul, integral_Ioi_mul_fubiniStudyDensity]
-  simp only [ENNReal.ofReal_one, one_pow, one_mul, ENNReal.coe_toReal, NNReal.coe_real_pi]
   field_simp
   norm_num
 
