@@ -275,16 +275,14 @@ private theorem exists_opens_isOpenEmbedding_conj {V : Opens E} {f : C(U, E)} {g
   have hWV (z : W) : h z ∈ V := (ht _ (hWt z)).1.1.2
   have hk_cont : Continuous fun z : W ↦ h z := by
     rw [← he]; exact e.continuousOn.comp_continuous continuous_subtype_val hWsrc
-  -- `h` is injective and open on the source of `e`, which contains `W`.
   let k : C(W, V) := ⟨fun z ↦ ⟨h z, hWV z⟩, hk_cont.subtype_mk _⟩
+  -- Read in `E`, `k` is `e` restricted to its source, composed with the inclusion of `W`.
   have hk : IsOpenEmbedding k := by
-    refine (IsOpenEmbedding.of_comp_iff k V.isOpenEmbedding').1
-      (.of_continuous_injective_isOpenMap hk_cont (fun a b hab ↦ Subtype.ext
-        (e.injOn (hWsrc a) (hWsrc b) (by rwa [he]))) fun s hs ↦ ?_)
-    -- `Subtype.val ∘ k` is `h ∘ Subtype.val` by construction of `k`.
-    rw [show (Subtype.val ∘ k) '' s = e '' (Subtype.val '' s) by rw [image_image, he]; rfl]
-    exact e.isOpen_image_of_subset_source (W.isOpenEmbedding'.isOpenMap s hs)
-      (by rintro _ ⟨z, -, rfl⟩; exact hWsrc z)
+    refine (IsOpenEmbedding.of_comp_iff k V.isOpenEmbedding').1 ?_
+    convert e.isOpenEmbedding_restrict.comp (IsOpenEmbedding.inclusion (fun z hz ↦ hWsrc ⟨z, hz⟩)
+      (W.isOpen.preimage continuous_subtype_val)) using 1
+    funext z
+    simp [k, he]
   refine ⟨W, hWU, k, ⟨x, hxt, rfl⟩, hk, fun z ↦ ?_⟩
   obtain ⟨⟨-, hzconj⟩, hzest⟩ := ht _ (hWt z)
   exact ⟨rfl, hzconj _, hzest⟩
@@ -293,16 +291,9 @@ private theorem exists_opens_isOpenEmbedding_conj {V : Opens E} {f : C(U, E)} {g
 `f : U → E` and `g : V → E` be continuous maps of open subsets of `E`, and let `x` be a fixed point
 of `f`. If a map `h : E → E` with invertible strict derivative at `x` conjugates `f` to `g` near
 `x`, that is `g (h z) = h (f z)` for `z` near `x`, then the local fixed-point index of `g` at `h x`
-is that of `f` at `x`. This holds whether or not `h` preserves orientation.
-
-Reading the displacement of `g` through `h` gives `z ↦ h z - h (f z)`, whose local index at `x`
-is, by the chain rule for local indices, `sign det A` times the local fixed-point index of `g` at
-`h x`, for the derivative `A` of `h`. Likewise the chain rule gives `z ↦ A (z - f z)` the local
-index `sign det A` times the local fixed-point index of `f` at `x`. Near `x` the first map differs
-from the second by at most half the norm of the second, so Rouché's principle gives the two maps
-the same local index, and `sign det A = ±1` cancels. In particular, the local fixed-point index of
-a self-map of a smooth manifold at an isolated fixed point does not depend on the chart in which it
-is computed. -/
+is that of `f` at `x`. This holds whether or not `h` preserves orientation. In particular, the
+local fixed-point index of a self-map of a smooth manifold at an isolated fixed point does not
+depend on the chart in which it is computed. -/
 theorem localFixedPointIndex_eq_of_hasStrictFDerivAt {V : Opens E} {f : C(U, E)} {g : C(V, E)}
     {x : U} (hx : f x = x) {h : E → E} {A : E ≃L[ℝ] E}
     (hh : HasStrictFDerivAt h (A : E →L[ℝ] E) x) (hxV : h x ∈ V)

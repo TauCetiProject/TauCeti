@@ -359,10 +359,8 @@ theorem localIndex_comap {M' N' : Type} [TopologicalSpace M'] [T2Space M'] [Char
 
 /-- **The chain rule for local indices.** If `f x` is isolated in its fibre under `g`, the local
 index of `g ∘ f` at `x` is the product of the local index of `g` at `f x` and that of `f` at `x`.
-In an open neighbourhood `U` of `x` isolating it in the fibre of `f`, with `f '' U` inside an open
-neighbourhood `V` isolating `f x` in the fibre of `g`, the restriction `U → V` of `f` carries the
-local orientation at `x` to the local index of `f` times the local orientation at `f x`. When `x` is
-not isolated in its fibre under `f`, neither is it under `g ∘ f`, and both sides vanish. -/
+When `x` is not isolated in its fibre under `f`, neither is it under `g ∘ f`, and both sides
+vanish. -/
 theorem localIndex_comp {P G : Type} [TopologicalSpace P] [T2Space P] [NormedAddCommGroup G]
     [NormedSpace ℝ G] [FiniteDimensional ℝ G] [ChartedSpace G P]
     (o'' : HomologicalOrientation P G n) (hG : finrank ℝ G = n) {f : C(M, N)} {g : C(N, P)}
@@ -645,9 +643,7 @@ variable {M E F : Type} [TopologicalSpace M] [T2Space M] [NormedAddCommGroup E] 
 include hE hF in
 /-- **Rouché's principle for the local index.** If `f` and `g` agree at `x` and, on a punctured
 neighbourhood of `x`, `g` is closer to `f` than `f` is to its value `f x`, then `f` and `g` have
-the same local index at `x`. Along the straight-line homotopy from `f` to `g` the value `f x` is
-then only taken at `x` near `x`, so the local degrees of the two maps on such a neighbourhood
-agree. -/
+the same local index at `x`. -/
 theorem localIndex_eq_of_norm_sub_lt {f g : C(M, F)} {x : M} (hfg : f x = g x)
     (h : ∀ᶠ z in 𝓝[≠] x, ‖g z - f z‖ < ‖f z - f x‖) :
     o.localIndex o' f x = o.localIndex o' g x := by
