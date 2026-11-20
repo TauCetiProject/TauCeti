@@ -47,9 +47,9 @@ converse holds on every nonzero coefficient
 unit that is constant along paths is an automorphism (`TauCeti.singularHomology₀UnitsSmul`,
 `TauCeti.isIso_singularHomology₀UnitsSmul`). On a path-connected space the class of a
 point does not depend on the point. With module coefficients, augmentation returns the coefficient
-of a point section (`TauCeti.singularHomology₀ε_section_apply`), so a nonzero coefficient gives
-a nonzero class (`TauCeti.singularHomology₀Section_apply_ne_zero`). With coefficients in a ring
-the class of a point spans zeroth homology
+of a point section (`TauCeti.singularHomology₀Section_singularHomology₀ε_apply`), so a nonzero
+coefficient gives a nonzero class (`TauCeti.singularHomology₀Section_apply_ne_zero`).
+With coefficients in a ring the class of a point spans zeroth homology
 (`TauCeti.singularHomology₀_eq_smul_singularHomology₀Section`). Since its augmentation is an
 isomorphism, every map out of a path-connected space is injective on zeroth homology
 (`TauCeti.mono_singularHomologyMap_zero_of_pathConnectedSpace`).
@@ -105,7 +105,7 @@ lemma singularHomology₀Section_singularHomology₀ε {X : TopCat.{w}} (x : X) 
 
 /-- With module coefficients, augmentation returns the coefficient of a point section. -/
 @[simp]
-theorem singularHomology₀ε_section_apply (k : Type v) [Ring k]
+theorem singularHomology₀Section_singularHomology₀ε_apply (k : Type v) [Ring k]
     [HasCoproducts.{w} (ModuleCat.{u} k)]
     (X : TopCat.{w}) (U : ModuleCat.{u} k) (x : X) (r : U) :
     X.singularHomology₀ε U (singularHomology₀Section U x r) = r := by
@@ -119,7 +119,7 @@ theorem singularHomology₀Section_apply_ne_zero (k : Type v) [Ring k]
     singularHomology₀Section U x r ≠ 0 := by
   intro h
   have hh := congrArg (X.singularHomology₀ε U) h
-  rw [singularHomology₀ε_section_apply, map_zero] at hh
+  rw [singularHomology₀Section_singularHomology₀ε_apply, map_zero] at hh
   exact hr hh
 
 /-- On a path-connected space the class of any point is also a left inverse to the augmentation,

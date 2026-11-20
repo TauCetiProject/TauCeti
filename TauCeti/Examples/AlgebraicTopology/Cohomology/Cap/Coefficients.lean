@@ -128,7 +128,7 @@ theorem negative_pointClass_ne_pointClass : -(singularHomology₀Section (X :=
     CapCoefficientClients.point) (1 : (ZMod 3))) := by
   intro h
   have hh := congrArg (point.singularHomology₀ε (𝟙_ (ModuleCat (ZMod 3)))) h
-  simp only [map_neg, singularHomology₀ε_section_apply] at hh
+  simp only [map_neg, singularHomology₀Section_singularHomology₀ε_apply] at hh
   exact (by decide : (-1 : ZMod 3) ≠ 1) hh
 
 /-- On the point's singular chains, negative coefficient transport keeps the odd-degree minus. -/
@@ -423,7 +423,7 @@ theorem augmentation_cap_doubledRelativeIndicatorClass :
   rw [cap_doubledRelativeIndicatorClass_relativeRightPointClass]
   exact (map_nsmul (twoPoints.singularHomology₀ε (𝟙_ (ModuleCat k))).hom
     2 (singularHomology₀Section (X := twoPoints) (𝟙_ (ModuleCat k)) (1 : twoPoints)
-      (1 : k))).trans (by rw [singularHomology₀ε_section_apply]; simp)
+      (1 : k))).trans (by rw [singularHomology₀Section_singularHomology₀ε_apply]; simp)
 
 /-- The doubled relative cap value with the coefficient action selected by `k`. -/
 def doubledRelativeCapValue :
@@ -573,8 +573,8 @@ theorem augmentation_negativeIndicatorSpaceValue :
   exact (map_neg (twoPoints.singularHomology₀ε (𝟙_ (ModuleCat k))).hom
     (singularHomology₀Section (X := twoPoints) (𝟙_ (ModuleCat k)) (1 : twoPoints)
       (1 : k))).trans (congrArg (- ·)
-        (singularHomology₀ε_section_apply k twoPoints (𝟙_ (ModuleCat k)) (1 : twoPoints)
-          (1 : k)))
+        (singularHomology₀Section_singularHomology₀ε_apply k twoPoints
+          (𝟙_ (ModuleCat k)) (1 : twoPoints) (1 : k)))
 
 /-- Modulo three this evaluated cap is nonzero, so its sign is observable. -/
 theorem negativeIndicatorSpaceValue_mod_three_ne_zero :
@@ -590,7 +590,7 @@ theorem negativeIndicatorSpaceValue_mod_three_ne_rightPointClass :
         (ModuleCat (ZMod 3))) (1 : twoPoints) (1 : (ZMod 3))) := by
   intro h
   have hh := congrArg (twoPoints.singularHomology₀ε (𝟙_ (ModuleCat (ZMod 3)))) h
-  have hε := singularHomology₀ε_section_apply (ZMod 3) twoPoints
+  have hε := singularHomology₀Section_singularHomology₀ε_apply (ZMod 3) twoPoints
     (𝟙_ (ModuleCat (ZMod 3))) (1 : twoPoints) (1 : ZMod 3)
   exact (by decide : (-1 : ZMod 3) ≠ 1)
     ((augmentation_negativeIndicatorSpaceValue (ZMod 3)).symm.trans (hh.trans hε))
