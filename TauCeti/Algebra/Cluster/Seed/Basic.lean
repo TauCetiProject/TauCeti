@@ -161,7 +161,8 @@ theorem exchangeElement_ne_zero_of_matrix_ne_zero [Nontrivial R] (s : Seed c row
       (Nat.zero_le _) hl0
     simp [hne]
 
-/-- A zero column collapses the exchange element to the polynomial value at one. -/
+/-- For a zero column, the exchange element is the realized polynomial value at one
+acting by scalars on the inverse coordinate monomial. -/
 theorem exchangeElement_of_column_eq_zero (s : Seed c row u B) {k : K}
     (h0 : ∀ i, s.state.exchange.matrix i k = 0) :
     s.exchangeElement k = s.state.valueAtOne c k •

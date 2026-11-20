@@ -42,24 +42,19 @@ private theorem latticeMutation_apply (s : Seed c row u B) (k : K) (a : I →₀
       (Finsupp.equivFunOnFinite.symm (fun i ↦ (-s.state.exchange.matrix i k)⁺) -
         (2 : ℤ) • Finsupp.single (row k) 1) := by
   classical
-  rw [latticeMutation, Matrix.toLin_apply]
   ext i
-  simp only [Finsupp.coe_basisSingleOne, Finsupp.basisSingleOne_repr,
-    Finsupp.finsetSum_apply, Finsupp.smul_apply, smul_eq_mul]
-  rw [Finset.sum_eq_single i]
-  · by_cases hi : i = row k
-    · subst i
-      simp +contextual [Matrix.mulVec, dotProduct, matrixMutationLeft_apply,
-        eq_comm, ite_mul]
-      ring
-    · have hcard : ({x : I | x = row k} : Finset I) = {row k} := by
-        ext x
-        simp
-      simp +contextual [Matrix.mulVec, dotProduct, matrixMutationLeft_apply, Matrix.one_apply, hi,
-        Finsupp.coe_equivFunOnFinite_symm, ite_mul, Finset.sum_ite, mul_comm, hcard, add_comm]
-  · intro j _ hji
-    simp [hji]
-  · simp
+  have h := congrFun (Matrix.repr_toLin Finsupp.basisSingleOne Finsupp.basisSingleOne
+    (matrixMutationLeft row s.state.exchange.matrix k 1) a) i
+  simp only [Finsupp.basisSingleOne_repr] at h
+  change latticeMutation s k a i =
+    (matrixMutationLeft row s.state.exchange.matrix k 1 *
+      Matrix.replicateCol Unit (a : I → ℤ)) i () at h
+  rw [h, matrixMutationLeft_mul_apply]
+  by_cases hi : i = row k
+  · subst i
+    simp [s.state.exchange.matrix_row_self k]
+    ring
+  · simp [hi, Finsupp.single_eq_of_ne hi, mul_comm]
 
 private theorem mutation_form (h : s.IsMutation k t) :
     t.form = s.form.comp (latticeMutation s k) (latticeMutation s k) := by
