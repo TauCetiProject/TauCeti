@@ -123,9 +123,8 @@ theorem hasNearDiagonalKernel_leftSymbol_ofRightCutoff {χ : CoordinateSpace n �
     funext y
     by_cases hy : y ∈ Metric.ball x R
     · simp [hu y hy]
-    · have hχy : χ (x - y) = 0 := Function.notMem_support.1 fun h ↦ hy <| by
-        have := hχR h
-        rwa [Metric.mem_ball, dist_zero_right, ← dist_eq_norm, dist_comm, ← Metric.mem_ball] at this
+    · have hχy : χ (x - y) = 0 := Function.notMem_support.1 fun h ↦
+        hy (mem_ball_iff_norm'.2 (mem_ball_zero_iff.1 (hχR h)))
       simp [hχy]
   refine (integral_congr_ae (.of_forall fun ζ ↦ ?_)).trans (integral_zero _ _)
   simp [h ζ, Real.fourier_eq]
@@ -140,50 +139,30 @@ variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V
 
 section Auxiliary
 
-/-- Symbols, possibly of different orders, whose quantizations agree on test functions have the same
-coefficients. -/
-private theorem coefficient_eq_of_forall_testFunction {W' V' : Type*} [NormedAddCommGroup W']
-    [NormedSpace ℂ W'] [CompleteSpace W'] [NormedAddCommGroup V'] [NormedSpace ℂ V']
-    [CompleteSpace V'] {μ μ' : ℝ} {c : Symbol n W' V' μ} {c' : Symbol n W' V' μ'}
-    (h : ∀ φ : 𝓓((⊤ : Opens (CoordinateSpace n)), W'),
-      quantizeSchwartzValue c.coefficient (φ.hasCompactSupport.toSchwartzMap φ.contDiff) =
-        quantizeSchwartzValue c'.coefficient (φ.hasCompactSupport.toSchwartzMap φ.contDiff)) :
-    c.coefficient = c'.coefficient :=
-  coefficient_eq_of_forall_quantizeSchwartzValue_eq fun u hu ↦
-    h ⟨u, u.smooth ⊤, hu, subset_univ _⟩
-
-/-- A kernel supported within a nonpositive distance of the diagonal is zero: the balls of
-nonpositive radius are empty, so `Op(a)` vanishes. -/
-private theorem HasNearDiagonalKernel.eq_zero_of_nonpos {V' W' : Type*} [NormedAddCommGroup V']
-    [NormedSpace ℂ V'] [CompleteSpace V'] [NormedAddCommGroup W'] [NormedSpace ℂ W']
-    [CompleteSpace W'] {b : Symbol n V' W' m} (hb : b.HasNearDiagonalKernel R) (hR : R ≤ 0) :
-    b = 0 :=
-  Symbol.ext <| coefficient_eq_of_forall_quantizeSchwartzValue_eq (b := (0 : Symbol n V' W' m))
-    fun u _ ↦ funext fun x ↦ by
-      rw [hasNearDiagonalKernel_iff.1 hb u x fun y hy ↦ by
-          rw [Metric.ball_eq_empty.2 hR] at hy; exact hy.elim,
-        coefficient_zero, quantizeSchwartzValue_zero_left]
-
-/-- For `0 < r < r'`, a smooth complex cutoff equal to `1` on the closed ball of radius `r` about
+/-- For `0 ≤ r < r'`, a smooth complex cutoff equal to `1` near the closed ball of radius `r` about
 the origin and vanishing outside the ball of radius `r'`. -/
-private theorem exists_cutoff_ball {r r' : ℝ} (hr : 0 < r) (hrr' : r < r') :
+private theorem exists_cutoff_ball {r r' : ℝ} (hr : 0 ≤ r) (hrr' : r < r') :
     ∃ χ : CoordinateSpace n → ℂ, ContDiff ℝ ∞ χ ∧ HasCompactSupport χ ∧
-      (∀ z ∈ Metric.closedBall 0 r, χ z = 1) ∧ Function.support χ ⊆ Metric.ball 0 r' := by
-  let b : ContDiffBump (0 : CoordinateSpace n) := ⟨r, r', hr, hrr'⟩
+      χ =ᶠ[𝓝ˢ (Metric.closedBall 0 r)] 1 ∧ Function.support χ ⊆ Metric.ball 0 r' := by
+  -- A bump equal to `1` on the closed ball of radius `(r + r') / 2`.
+  let b : ContDiffBump (0 : CoordinateSpace n) := ⟨(r + r') / 2, r', by linarith, by linarith⟩
   refine ⟨fun z ↦ (b z : ℂ), Complex.ofRealCLM.contDiff.comp b.contDiff,
     b.hasCompactSupport.comp_left Complex.ofReal_zero,
-    fun z hz ↦ by simp [b.one_of_mem_closedBall hz], fun z hz ↦ ?_⟩
+    eventually_of_mem (Metric.isOpen_ball.mem_nhdsSet.2
+      (Metric.closedBall_subset_ball (by linarith : r < (r + r') / 2))) fun z hz ↦ by
+        simp [b.one_of_mem_closedBall (Metric.ball_subset_closedBall hz)],
+    fun z hz ↦ ?_⟩
   rw [← b.support_eq]
   exact Function.support_comp_subset Complex.ofReal_zero _ hz
 
-/-- For a cutoff `χ` equal to `1` on the ball of radius `R' > R`, the right quantization of the
-pointwise adjoint `a(y, ξ)†` cut off by `χ(x - y)` is the formal adjoint of `Op(a)`: the part of
-the kernel removed by the cutoff vanishes, since the kernel of the formal adjoint lies within
-distance `R` of the diagonal. -/
+/-- For a cutoff `χ` equal to `1` near the closed ball of radius `r ≥ max R 0`, the right
+quantization of the pointwise adjoint `a(y, ξ)†` cut off by `χ(x - y)` is the formal adjoint of
+`Op(a)`: the part of the kernel removed by the cutoff vanishes, since the kernel of the formal
+adjoint lies within distance `R` of the diagonal. -/
 private theorem quantizeSchwartzValue_leftSymbol_ofRightCutoff_eq
     (ha : a.HasNearDiagonalKernel R) {χ : CoordinateSpace n → ℂ} (hχ : ContDiff ℝ ∞ χ)
-    (hχs : HasCompactSupport χ) {R' : ℝ} (hR : R < R') (hR' : 0 < R')
-    (hχ₁ : ∀ z ∈ Metric.ball (0 : CoordinateSpace n) R', χ z = 1)
+    (hχs : HasCompactSupport χ) {r : ℝ} (hRr : R ≤ r) (hr : 0 ≤ r)
+    (hχ₁ : χ =ᶠ[𝓝ˢ (Metric.closedBall 0 r)] 1)
     (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), W)) (x : CoordinateSpace n) :
     quantizeSchwartzValue ((Amplitude.ofRightCutoff χ hχ (a.map adjointRealCLM)).leftSymbol
         (Amplitude.hasProperInputSupport_ofRightCutoff hχ hχs _)).coefficient
@@ -198,15 +177,21 @@ private theorem quantizeSchwartzValue_leftSymbol_ofRightCutoff_eq
     rw [Amplitude.quantizeSchwartzValue_leftSymbol_ofRightCutoff hχ hχs,
       adjointTestFunctionCLM_apply]
     simp [ψ, adjointRealCLM_apply]
+  -- `χ = 1` on a ball of radius `R' > R`.
+  obtain ⟨U, hU, hrU, hUχ⟩ := mem_nhdsSet_iff_exists.1 hχ₁
+  obtain ⟨δ, hδ, hδU⟩ := (isCompact_closedBall 0 r).exists_thickening_subset_open hU hrU
+  rw [thickening_closedBall hδ hr] at hδU
+  set R' := δ + r
+  have hR : R < R' := by linarith
+  have hR' : 0 < R' := by linarith
   -- `φ - ψ` vanishes on the ball of radius `R'` about `x`, so the formal adjoint kills it at `x`.
   have hsupp : tsupport (φ - ψ) ⊆ {y | R' ≤ dist x y} := by
     refine closure_minimal (fun y hy ↦ ?_) (isClosed_le continuous_const
       (continuous_const.dist continuous_id))
     by_contra hlt
     refine hy ?_
-    have hχy : χ (x - y) = 1 := hχ₁ _ <| by
-      rw [Metric.mem_ball, dist_zero_right, ← dist_eq_norm]
-      exact lt_of_not_ge hlt
+    have hχy : χ (x - y) = 1 :=
+      hUχ (hδU (mem_ball_zero_iff.2 ((dist_eq_norm x y).symm.trans_lt (lt_of_not_ge hlt))))
     simp [ψ, hχy]
   have hx : x ∉ tsupport (adjointTestFunctionCLM ha (φ - ψ)) := fun hx ↦ by
     obtain ⟨y, hy, hxy⟩ := Metric.mem_thickening_iff.1
@@ -224,11 +209,9 @@ private theorem HasNearDiagonalKernel.exists_quantizeSchwartzValue_eq
     ∃ c : Symbol n W V m, ∀ (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), W)) (x : CoordinateSpace n),
       quantizeSchwartzValue c.coefficient (φ.hasCompactSupport.toSchwartzMap φ.contDiff) x =
         adjointTestFunctionCLM ha φ x := by
-  have hr : 0 < max R 0 + 1 := by positivity
-  obtain ⟨χ, hχ, hχs, hχ₁, -⟩ := exists_cutoff_ball hr (lt_add_one _)
-  exact ⟨_, quantizeSchwartzValue_leftSymbol_ofRightCutoff_eq ha hχ hχs
-    ((le_max_left R 0).trans_lt (lt_add_one _)) hr fun z hz ↦
-      hχ₁ z (Metric.ball_subset_closedBall hz)⟩
+  obtain ⟨χ, hχ, hχs, hχ₁, -⟩ := exists_cutoff_ball (le_max_right R 0) (lt_add_one _)
+  exact ⟨_, quantizeSchwartzValue_leftSymbol_ofRightCutoff_eq ha hχ hχs (le_max_left R 0)
+    (le_max_right R 0) hχ₁⟩
 
 end Auxiliary
 
@@ -278,8 +261,8 @@ theorem eq_properAdjoint_iff (ha : a.HasNearDiagonalKernel R) {c : Symbol n W V 
         ∫ x, inner ℂ (u x) (quantizeSchwartzValue c.coefficient
           (φ.hasCompactSupport.toSchwartzMap φ.contDiff) x) := by
   refine ⟨fun h ↦ h ▸ integral_inner_quantizeTestFunctionCLM_properAdjoint ha, fun h ↦ ?_⟩
-  refine Symbol.ext <| coefficient_eq_of_forall_testFunction fun φ ↦ ?_
-  refine eq_of_forall_integral_inner_eq_of_continuous (μ := volume)
+  refine Symbol.ext <| coefficient_eq_of_forall_testFunction_quantizeSchwartzValue_eq fun φ ↦ ?_
+  refine eq_of_forall_integral_inner_eq_of_continuous (𝕜 := ℂ) (μ := volume)
     (c.contDiff_quantizeSchwartzValue _).continuous
     ((properAdjoint a ha).contDiff_quantizeSchwartzValue _).continuous fun u ↦ ?_
   rw [← h, integral_inner_quantizeTestFunctionCLM_properAdjoint]
@@ -287,9 +270,10 @@ theorem eq_properAdjoint_iff (ha : a.HasNearDiagonalKernel R) {c : Symbol n W V 
 /-- The adjoint symbol does not depend on the radius of the kernel used to define it. -/
 theorem properAdjoint_congr {R' : ℝ} (ha : a.HasNearDiagonalKernel R)
     (ha' : a.HasNearDiagonalKernel R') : properAdjoint a ha = properAdjoint a ha' :=
-  Symbol.ext <| coefficient_eq_of_forall_testFunction fun φ ↦ funext fun x ↦ by
-    rw [quantizeSchwartzValue_properAdjoint, quantizeSchwartzValue_properAdjoint,
-      adjointTestFunctionCLM_apply, adjointTestFunctionCLM_apply]
+  Symbol.ext <| coefficient_eq_of_forall_testFunction_quantizeSchwartzValue_eq fun φ ↦
+    funext fun x ↦ by
+      rw [quantizeSchwartzValue_properAdjoint, quantizeSchwartzValue_properAdjoint,
+        adjointTestFunctionCLM_apply, adjointTestFunctionCLM_apply]
 
 /-- **The formula for the adjoint symbol.** For a smooth compactly supported cutoff `χ` equal to
 `1` near the closed ball of radius `R`, the adjoint symbol `a*` is the left symbol of the amplitude
@@ -300,7 +284,8 @@ theorem properAdjoint_eq_leftSymbol_ofRightCutoff (ha : a.HasNearDiagonalKernel 
     (hχ₁ : χ =ᶠ[𝓝ˢ (Metric.closedBall 0 R)] 1) :
     properAdjoint a ha = (Amplitude.ofRightCutoff χ hχ (a.map adjointRealCLM)).leftSymbol
       (Amplitude.hasProperInputSupport_ofRightCutoff hχ hχs _) := by
-  refine Symbol.ext <| coefficient_eq_of_forall_testFunction fun φ ↦ funext fun x ↦ ?_
+  refine Symbol.ext <| coefficient_eq_of_forall_testFunction_quantizeSchwartzValue_eq fun φ ↦
+    funext fun x ↦ ?_
   rw [quantizeSchwartzValue_properAdjoint]
   rcases lt_or_ge R 0 with hR | hR
   · -- Over a negative radius `a` vanishes, and so do both sides.
@@ -308,12 +293,16 @@ theorem properAdjoint_eq_leftSymbol_ofRightCutoff (ha : a.HasNearDiagonalKernel 
     rw [adjointTestFunctionCLM_apply,
       Amplitude.quantizeSchwartzValue_leftSymbol_ofRightCutoff hχ hχs]
     simp
-  · -- `χ = 1` on a ball of radius `R' > R`.
-    obtain ⟨U, hU, hRU, hUχ⟩ := mem_nhdsSet_iff_exists.1 hχ₁
-    obtain ⟨δ, hδ, hδU⟩ := (isCompact_closedBall 0 R).exists_thickening_subset_open hU hRU
-    rw [thickening_closedBall hδ hR] at hδU
-    refine (quantizeSchwartzValue_leftSymbol_ofRightCutoff_eq ha hχ hχs (R' := δ + R)
-      (by linarith) (by linarith) (fun z hz ↦ hUχ (hδU hz)) φ x).symm
+  · exact (quantizeSchwartzValue_leftSymbol_ofRightCutoff_eq ha hχ hχs le_rfl hR hχ₁ φ x).symm
+
+/-- The adjoint symbol of the zero symbol is zero. -/
+@[simp]
+theorem properAdjoint_zero (ha : (0 : Symbol n V W m).HasNearDiagonalKernel R) :
+    properAdjoint 0 ha = 0 :=
+  Symbol.ext <| coefficient_eq_of_forall_testFunction_quantizeSchwartzValue_eq fun φ ↦
+    funext fun x ↦ by
+      rw [quantizeSchwartzValue_properAdjoint, adjointTestFunctionCLM_apply]
+      simp [quantizeSchwartzValue_zero_left, Real.fourier_eq]
 
 /-- **The adjoint symbol is properly supported**: its kernel is supported within every distance
 `R' > R` of the diagonal. -/
@@ -322,23 +311,14 @@ theorem HasNearDiagonalKernel.properAdjoint (ha : a.HasNearDiagonalKernel R) {R'
   rcases le_or_gt R' 0 with hR' | hR'
   · -- Over a negative radius `a` vanishes, and so does `a*`.
     obtain rfl := ha.eq_zero_of_nonpos (hR.trans_le hR').le
-    have h0 : Symbol.properAdjoint (0 : Symbol n V W m) ha = 0 :=
-      Symbol.ext <| coefficient_eq_of_forall_testFunction fun φ ↦ funext fun x ↦ by
-        rw [quantizeSchwartzValue_properAdjoint, adjointTestFunctionCLM_apply]
-        simp [quantizeSchwartzValue_zero_left, Real.fourier_eq]
-    rw [h0]
+    rw [properAdjoint_zero]
     exact hasNearDiagonalKernel_iff.2 fun u x _ ↦ by
       rw [coefficient_zero, quantizeSchwartzValue_zero_left]
   · -- A cutoff equal to `1` near the closed ball of radius `max R 0 < R'` and supported in the
     -- ball of radius `R'`.
-    set r := (max R 0 + R') / 2 with hr_def
-    have hmax := max_lt hR hR'
-    have hr : 0 < r := by linarith [le_max_right R 0]
-    have hRr : R < r := by linarith [le_max_left R 0]
-    obtain ⟨χ, hχ, hχs, hχ₁, hχR⟩ := exists_cutoff_ball hr (by linarith : r < R')
-    rw [properAdjoint_eq_leftSymbol_ofRightCutoff ha hχ hχs
-      (eventually_of_mem (Metric.isOpen_ball.mem_nhdsSet.2 (Metric.closedBall_subset_ball hRr))
-        fun z hz ↦ hχ₁ z (Metric.ball_subset_closedBall hz))]
+    obtain ⟨χ, hχ, hχs, hχ₁, hχR⟩ := exists_cutoff_ball (le_max_right R 0) (max_lt hR hR')
+    rw [properAdjoint_congr ha (ha.mono (le_max_left R 0)),
+      properAdjoint_eq_leftSymbol_ofRightCutoff _ hχ hχs hχ₁]
     exact hasNearDiagonalKernel_leftSymbol_ofRightCutoff hχ hχs hχR _
 
 /-- **The adjoint symbol quantizes to the formal adjoint**: as operators on test functions,
@@ -375,13 +355,7 @@ theorem properAdjoint_eq_adjoint (ha : a.HasNearDiagonalKernel R)
 theorem isAsymptoticSum_properAdjoint (ha : a.HasNearDiagonalKernel R) :
     (inclusion (by simp) (properAdjoint a ha) :
       Symbol n W V (m - ((0 : ℕ) : ℝ))).IsAsymptoticSum a.adjointTerm := by
-  have hr : 0 < max R 0 + 1 := by positivity
-  obtain ⟨χ, hχ, hχs, hχ₁, -⟩ := exists_cutoff_ball hr (lt_add_one _)
-  -- The cutoff is `1` on the ball of radius `max R 0 + 1`, a neighbourhood of `closedBall 0 R`.
-  have hU : χ =ᶠ[𝓝ˢ (Metric.closedBall (0 : CoordinateSpace n) (max R 0))] 1 :=
-    eventually_of_mem (Metric.isOpen_ball.mem_nhdsSet.2
-      (Metric.closedBall_subset_ball (lt_add_one _))) fun z hz ↦
-        hχ₁ z (Metric.ball_subset_closedBall hz)
+  obtain ⟨χ, hχ, hχs, hU, -⟩ := exists_cutoff_ball (le_max_right R 0) (lt_add_one _)
   have h0 : χ =ᶠ[𝓝 0] 1 :=
     nhds_le_nhdsSet (Metric.mem_closedBall_self (le_max_right R 0)) hU
   rw [properAdjoint_congr ha (ha.mono (le_max_left R 0)),

@@ -31,9 +31,11 @@ integrable field is determined almost everywhere on `Ω` by its pairings with `�
   pairings against every `φ ∈ 𝓓(Ω, V)` agree almost everywhere on `Ω`. The target `V` need only
   be complete; the proof tests against `ψ • c` for scalar test functions `ψ` and a constant
   vector `c`.
-* `TauCeti.eq_of_forall_integral_inner_eq_of_continuous`: two continuous fields valued in a complex
-  inner product space with the same pairings `∫ ⟪φ, ·⟫` against every test function on `E` are
-  equal, for a measure charging every nonempty open set.
+* `TauCeti.ae_eq_of_forall_integral_inner_eq_rclike`: the same for fields valued in an inner
+  product space over `𝕜 = ℝ` or `ℂ`, paired through the `𝕜`-valued inner product.
+* `TauCeti.eq_of_forall_integral_inner_eq_of_continuous`: two continuous fields with the same
+  pairings `∫ ⟪φ, ·⟫_𝕜` against every test function on `E` are equal, for a measure finite on
+  compact sets and charging every nonempty open set.
 -/
 
 public section
@@ -95,27 +97,45 @@ theorem ae_eq_of_forall_integral_inner_eq {g h : E → V} (hg : LocallyIntegrabl
   filter_upwards [key] with x hx hxΩ
   exact sub_eq_zero.1 (hx hxΩ)
 
-/-- The **fundamental lemma** for continuous fields valued in a complex inner product space `F`:
-continuous `g, h : E → F` with `∫ ⟪φ, g⟫ = ∫ ⟪φ, h⟫` for the complex inner product and every
-`φ ∈ 𝓓(E, F)` are equal, for a measure finite on compact sets and charging every nonempty open
-set. -/
-theorem eq_of_forall_integral_inner_eq_of_continuous {F : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℂ F] [CompleteSpace F] [IsFiniteMeasureOnCompacts μ] [μ.IsOpenPosMeasure]
-    {g h : E → F} (hg : Continuous g) (hh : Continuous h)
+/-- The **fundamental lemma** for fields valued in an inner product space `F` over `𝕜 = ℝ` or `ℂ`:
+locally integrable `g, h` on the open set `Ω` with `∫ ⟪φ, g⟫_𝕜 = ∫ ⟪φ, h⟫_𝕜` for every
+`φ ∈ 𝓓(Ω, F)` agree almost everywhere on `Ω`. -/
+theorem ae_eq_of_forall_integral_inner_eq_rclike {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] [NormedSpace ℝ F] [IsScalarTower ℝ 𝕜 F] [CompleteSpace F]
+    {g h : E → F} (hg : LocallyIntegrableOn g Ω μ) (hh : LocallyIntegrableOn h Ω μ)
+    (H : ∀ φ : 𝓓(Ω, F), ∫ x, ⟪(φ : E → F) x, g x⟫_𝕜 ∂μ = ∫ x, ⟪(φ : E → F) x, h x⟫_𝕜 ∂μ) :
+    g =ᵐ[μ.restrict Ω] h := by
+  have hsmul (r : ℝ) (a b : F) : ⟪r • a, b⟫_𝕜 = r • ⟪a, b⟫_𝕜 := by
+    rw [← algebraMap_smul 𝕜 r a, RCLike.algebraMap_eq_ofReal, inner_smul_real_left]
+  -- The real parts of the pairings form the underlying real inner product.
+  let _ : InnerProductSpace ℝ F :=
+    { inner a b := RCLike.re ⟪a, b⟫_𝕜
+      norm_sq_eq_re_inner a := by simp [sq]
+      conj_inner_symm a b := by simp [inner_re_symm]
+      add_left a b c := by simp [inner_add_left]
+      smul_left a b r := by simp [hsmul, RCLike.smul_re] }
+  -- The pairing `⟪·, ·⟫_𝕜` is real bilinear, so it is integrable against test functions.
+  let B : F →L[ℝ] F →L[ℝ] 𝕜 := LinearMap.mkContinuous₂
+    (LinearMap.mk₂ ℝ (fun a b ↦ ⟪a, b⟫_𝕜) inner_add_left hsmul inner_add_right
+      fun r a b ↦ by rw [← inner_conj_symm, hsmul, RCLike.conj_smul, inner_conj_symm]) 1
+    fun a b ↦ by simpa using norm_inner_le_norm (𝕜 := 𝕜) a b
+  refine ae_eq_of_forall_integral_inner_eq hg hh fun φ ↦ ?_
+  change ∫ x, RCLike.re (B (φ x) (g x)) ∂μ = ∫ x, RCLike.re (B (φ x) (h x)) ∂μ
+  rw [integral_re (φ.integrable_bilin B hg), integral_re (φ.integrable_bilin B hh)]
+  exact congrArg _ (H φ)
+
+/-- The **fundamental lemma** for continuous fields valued in an inner product space `F` over
+`𝕜 = ℝ` or `ℂ`: continuous `g, h : E → F` with `∫ ⟪φ, g⟫_𝕜 = ∫ ⟪φ, h⟫_𝕜` for every `φ ∈ 𝓓(E, F)`
+are equal, for a measure finite on compact sets and charging every nonempty open set. -/
+theorem eq_of_forall_integral_inner_eq_of_continuous {𝕜 F : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [NormedSpace ℝ F] [IsScalarTower ℝ 𝕜 F]
+    [CompleteSpace F] [IsFiniteMeasureOnCompacts μ] [μ.IsOpenPosMeasure] {g h : E → F}
+    (hg : Continuous g) (hh : Continuous h)
     (H : ∀ φ : 𝓓((⊤ : Opens E), F),
-      ∫ x, ⟪(φ : E → F) x, g x⟫_ℂ ∂μ = ∫ x, ⟪(φ : E → F) x, h x⟫_ℂ ∂μ) :
+      ∫ x, ⟪(φ : E → F) x, g x⟫_𝕜 ∂μ = ∫ x, ⟪(φ : E → F) x, h x⟫_𝕜 ∂μ) :
     g = h := by
-  -- The real parts of the complex pairings are the pairings for the underlying real inner product.
-  let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  have hae := ae_eq_of_forall_integral_inner_eq (μ := μ) (Ω := ⊤)
-    (hg.locallyIntegrable.locallyIntegrableOn _) (hh.locallyIntegrable.locallyIntegrableOn _)
-    fun φ ↦ by
-      have hint (f : E → F) (hf : Continuous f) :
-          Integrable (fun x ↦ ⟪(φ : E → F) x, f x⟫_ℂ) μ :=
-        (φ.continuous.inner hf).integrable_of_hasCompactSupport
-          (φ.hasCompactSupport.mono fun x hx h0 ↦ hx (by simp [h0]))
-      simp only [real_inner_eq_re_inner ℂ]
-      rw [integral_re (hint g hg), integral_re (hint h hh), H φ]
+  have hae := ae_eq_of_forall_integral_inner_eq_rclike
+    (hg.locallyIntegrable.locallyIntegrableOn _) (hh.locallyIntegrable.locallyIntegrableOn _) H
   rw [Opens.coe_top, Measure.restrict_univ] at hae
   exact (hg.ae_eq_iff_eq μ hh).1 hae
 
