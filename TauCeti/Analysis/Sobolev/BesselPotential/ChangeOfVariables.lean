@@ -55,7 +55,7 @@ theorem comp_mem_realSobolevFunctions_natCast (hp : 1 < p) (hp_top : p ≠ ∞) 
   have hvolume : (volume : Measure E) = volume.restrict ((⊤ : Opens E) : Set E) := by simp
   -- Pass to `W^{k,p}`, precompose there with `Φ`, and return to `H^{k,p}`.
   obtain ⟨w, hw⟩ := (Lp.memSobolev_natCast_iff_exists_wkp_value_eq hp hp_top k u).1 hu
-  set w' := Wkp.compL (mu := volume) hΦ hp_top w
+  set w' := Wkp.compL (mu := volume) hΦ w
   set u' : Lp ℝ p (volume : Measure E) := castLpₗᵢ (𝕜 := ℝ) hvolume.symm (Wkp.value k w')
   have hu' : (u' : E → ℝ) = Wkp.value k w' := funext (coeFn_castLpₗᵢ hvolume.symm _)
   refine mem_realSobolevFunctions.2 ⟨u', ?_,
@@ -63,7 +63,7 @@ theorem comp_mem_realSobolevFunctions_natCast (hp : 1 < p) (hp_top : p ≠ ∞) 
       ⟨w', .of_forall fun x ↦ by rw [hu']⟩⟩
   have hae : ae (volume.restrict ((⊤ : Opens E) : Set E)) = ae (volume : Measure E) := by
     rw [← hvolume]
-  have hcomp := Wkp.value_compL_ae (mu := volume) hΦ hp_top w
+  have hcomp := Wkp.value_compL_ae (mu := volume) hΦ w
   have hpull := hΦ.ae_comp (mu := volume) (P := fun y ↦ Wkp.value k w y = f y) <| by
     rw [hae]
     filter_upwards [hw, huf] with y h₁ h₂

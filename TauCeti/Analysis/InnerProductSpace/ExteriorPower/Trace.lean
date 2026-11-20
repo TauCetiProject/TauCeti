@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.BilinearForm.End
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
-public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import Mathlib.Analysis.InnerProductSpace.Trace
-import Mathlib.Analysis.InnerProductSpace.Dual
 
 /-!
 # Ordered-pair contractions on the exterior square
@@ -84,15 +83,7 @@ theorem sum_bilinForm_ιMulti_two (b : OrthonormalBasis ι ℝ E)
     (B : LinearMap.BilinForm ℝ (⋀[ℝ]^2 E)) :
     (∑ i, ∑ j, B (ιMulti ℝ 2 ![b i, b j]) (ιMulti ℝ 2 ![b i, b j])) =
       2 * TauCeti.bilinFormTrace B := by
-  let T : Module.End ℝ (⋀[ℝ]^2 E) :=
-    (InnerProductSpace.toDual ℝ (⋀[ℝ]^2 E)).symm.toLinearEquiv.toLinearMap ∘ₗ
-      (LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ B)
-  have hT (x y : ⋀[ℝ]^2 E) : ⟪T x, y⟫ = B x y := by
-    simp [T]
-  rw [TauCeti.bilinFormTrace_eq_sum B (stdOrthonormalBasis ℝ (⋀[ℝ]^2 E))]
-  simp_rw [← hT]
-  rw [b.sum_inner_ιMulti_two_eq_two_mul_trace T,
-    LinearMap.trace_eq_sum_inner T (stdOrthonormalBasis ℝ (⋀[ℝ]^2 E))]
-  simp only [real_inner_comm (T _)]
+  simp_rw [← B.inner_bilinFormToEnd_left]
+  rw [b.sum_inner_ιMulti_two_eq_two_mul_trace, B.trace_bilinFormToEnd]
 
 end OrthonormalBasis

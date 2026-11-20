@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Operator
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Reaction
+public import TauCeti.Analysis.InnerProductSpace.BilinearForm.End
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
-import Mathlib.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Trace
 import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Square
@@ -26,12 +26,13 @@ Hamilton's symmetric bilinear Lie-algebraic product `TauCeti.FourTensor.sharpBil
 ```
 We prove that `sharpBilin` and `sharp` preserve symmetry, evaluate `sharp 1 = (dim V - 2) • 1`,
 and establish the polarized and quadratic bivector-operator identities
-`Q(ofExteriorEnd A) = ofExteriorEnd (2 • (A * A + sharp A))` and
-`toExteriorEnd (Q(r)) = 2 • (R² + R#)` for every symmetric endomorphism `A` of `⋀[ℝ]^2 V` and
-every algebraic curvature tensor `r`. As immediate checks,
-`Q(constantCurvature V) = 2 (dim V - 1) • constantCurvature V` and
-`Q(bivectorSq e₁ e₂) = 2 • bivectorSq e₁ e₂` for an orthonormal pair `e₁, e₂` (the curvature
-tensor of `S² × ℝ^(n - 2)`).
+`reactionBilinear V (ofExteriorEnd A) (ofExteriorEnd B) =`
+`ofExteriorEnd (A ∘ₗ B + B ∘ₗ A + 2 • sharpBilin A B)`,
+`Q(ofExteriorEnd A) = ofExteriorEnd (2 • (A * A + sharp A))`, and
+`curvatureEndomorphism (Q(r)) = 2 • (R² + R#)` for every symmetric endomorphism `A` of `⋀[ℝ]^2 V`
+and every algebraic curvature tensor `r`. As an immediate check on rank-one bivector curvature
+tensors `bivectorSq e₁ e₂`, `Q(bivectorSq e₁ e₂) = 2 • bivectorSq e₁ e₂` for an orthonormal pair
+`e₁, e₂` (the curvature tensor of `S² × ℝ^(n - 2)`).
 
 ## Main definitions
 
@@ -45,13 +46,12 @@ tensor of `S² × ℝ^(n - 2)`).
 * `TauCeti.FourTensor.isSymmetric_sharpBilin` and `TauCeti.FourTensor.isSymmetric_sharp`:
   preservation of symmetry.
 * `TauCeti.FourTensor.sharp_one`: `sharp (1 : Module.End ℝ (⋀[ℝ]^2 V)) = (dim V - 2) • 1`.
-* `TauCeti.FourTensor.ofExteriorEnd_reactionBilin`, `TauCeti.FourTensor.ofExteriorEnd_reaction`,
-  `TauCeti.FourTensor.toExteriorEnd_reactionTensor`, and
-  `TauCeti.FourTensor.IsAlgebraicCurvature.toExteriorEnd_reactionTensor`: the operator identity
-  `Q(R) = 2 (R² + R#)`.
-* `TauCeti.FourTensor.reactionTensor_constantCurvature` and
-  `TauCeti.FourTensor.reactionTensor_bivectorSq_of_orthonormal`: the round-sphere and
-  `S² × ℝ^(n - 2)` checks.
+* `TauCeti.FourTensor.ofExteriorEnd_reactionBilinear`, `TauCeti.FourTensor.ofExteriorEnd_reaction`,
+  `TauCeti.FourTensor.curvatureEndomorphism_reactionTensor`, and
+  `TauCeti.FourTensor.IsAlgebraicCurvature.curvatureEndomorphism_reactionTensor`: the operator
+  identity `Q(R) = 2 (R² + R#)`.
+* `TauCeti.FourTensor.reactionTensor_bivectorSq` and
+  `TauCeti.FourTensor.reactionTensor_bivectorSq_of_orthonormal`: the `S² × ℝ^(n - 2)` check.
 
 ## References
 
@@ -162,33 +162,26 @@ characterized in any orthonormal basis `e` of `⋀[ℝ]^2 V` by
 def sharpBilin :
     Module.End ℝ (⋀[ℝ]^2 V) →ₗ[ℝ] Module.End ℝ (⋀[ℝ]^2 V) →ₗ[ℝ] Module.End ℝ (⋀[ℝ]^2 V) where
   toFun A :=
-    { toFun := fun B ↦
-        (InnerProductSpace.toDual ℝ (⋀[ℝ]^2 V)).symm.toLinearEquiv.toLinearMap ∘ₗ
-          (LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ sharpForm A B)
+    { toFun := fun B ↦ bilinFormToEnd (sharpForm A B)
       map_add' := fun _ _ ↦ LinearMap.ext fun _ ↦ ext_inner_right ℝ fun _ ↦ by
-        simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv,
-          LinearMap.coe_toContinuousLinearMap', InnerProductSpace.toDual_symm_apply,
-          LinearMap.add_apply, inner_add_left, sharpForm, LinearMap.mk₂_apply,
+        simp only [LinearMap.BilinForm.inner_bilinFormToEnd_left, LinearMap.add_apply,
+          inner_add_left, sharpForm, LinearMap.mk₂_apply,
           sharpVal_eq_sum (stdOrthonormalBasis ℝ (⋀[ℝ]^2 V)), map_add, add_mul,
           Finset.sum_add_distrib]; ring
       map_smul' := fun _ _ ↦ LinearMap.ext fun _ ↦ ext_inner_right ℝ fun _ ↦ by
-        simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv,
-          LinearMap.coe_toContinuousLinearMap', InnerProductSpace.toDual_symm_apply,
-          LinearMap.smul_apply, RingHom.id_apply, real_inner_smul_left, sharpForm,
-          LinearMap.mk₂_apply, sharpVal_eq_sum (stdOrthonormalBasis ℝ (⋀[ℝ]^2 V)), map_smul,
-          mul_assoc, ← Finset.mul_sum]; ring }
+        simp only [LinearMap.BilinForm.inner_bilinFormToEnd_left, LinearMap.smul_apply,
+          RingHom.id_apply, real_inner_smul_left, sharpForm, LinearMap.mk₂_apply,
+          sharpVal_eq_sum (stdOrthonormalBasis ℝ (⋀[ℝ]^2 V)), map_smul, mul_assoc,
+          ← Finset.mul_sum]; ring }
   map_add' _ _ := LinearMap.ext fun _ ↦ LinearMap.ext fun _ ↦ ext_inner_right ℝ fun _ ↦ by
-    simp only [LinearMap.coe_mk, AddHom.coe_mk, LinearMap.add_apply, LinearMap.comp_apply,
-      LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv,
-      LinearMap.coe_toContinuousLinearMap', InnerProductSpace.toDual_symm_apply, inner_add_left,
-      sharpForm, LinearMap.mk₂_apply, sharpVal_eq_sum (stdOrthonormalBasis ℝ (⋀[ℝ]^2 V)),
-      map_add, add_mul, Finset.sum_add_distrib]; ring
+    simp only [LinearMap.coe_mk, AddHom.coe_mk, LinearMap.add_apply,
+      LinearMap.BilinForm.inner_bilinFormToEnd_left, inner_add_left, sharpForm,
+      LinearMap.mk₂_apply, sharpVal_eq_sum (stdOrthonormalBasis ℝ (⋀[ℝ]^2 V)), map_add, add_mul,
+      Finset.sum_add_distrib]; ring
   map_smul' _ _ := LinearMap.ext fun _ ↦ LinearMap.ext fun _ ↦ ext_inner_right ℝ fun _ ↦ by
     simp only [LinearMap.coe_mk, AddHom.coe_mk, LinearMap.smul_apply, RingHom.id_apply,
-      LinearMap.comp_apply, LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv,
-      LinearMap.coe_toContinuousLinearMap', InnerProductSpace.toDual_symm_apply,
-      real_inner_smul_left, sharpForm, LinearMap.mk₂_apply,
-      sharpVal_eq_sum (stdOrthonormalBasis ℝ (⋀[ℝ]^2 V)), map_smul, mul_assoc,
+      LinearMap.BilinForm.inner_bilinFormToEnd_left, real_inner_smul_left, sharpForm,
+      LinearMap.mk₂_apply, sharpVal_eq_sum (stdOrthonormalBasis ℝ (⋀[ℝ]^2 V)), map_smul, mul_assoc,
       ← Finset.mul_sum]; ring
 
 /-- Hamilton's quadratic `#` operator `A# = sharpBilin A A` on `Module.End ℝ (⋀[ℝ]^2 V)`. -/
@@ -238,8 +231,7 @@ theorem sharp_smul (c : ℝ) (A : Module.End ℝ (⋀[ℝ]^2 V)) :
     sharp (c • A) = (c ^ 2) • sharp A := by
   simp only [sharp, map_smul, LinearMap.smul_apply, smul_smul, sq]
 
-/-- Every rank-one self-adjoint operator on `⋀[ℝ]^2 V` has vanishing `#`-square, since its image
-is at most one-dimensional and hence abelian under `twoVectorBracket`. -/
+/-- Every rank-one operator `ξ ↦ ⟪α, ξ⟫ • α` on `⋀[ℝ]^2 V` has vanishing `#`-square. -/
 theorem sharp_rankOne_self (α : ⋀[ℝ]^2 V) :
     sharp (InnerProductSpace.rankOne ℝ α α).toLinearMap = 0 := by
   refine LinearMap.ext fun ξ ↦ ext_inner_right ℝ fun η ↦ ?_
@@ -368,7 +360,7 @@ private theorem two_mul_inner_sharpBilin_ιMulti {ι : Type*} [Fintype ι]
   have hB' (x y s t : V) :
       ⟪B (ιMulti ℝ 2 ![y, x]), ιMulti ℝ 2 ![t, s]⟫ =
         ⟪B (ιMulti ℝ 2 ![s, t]), ιMulti ℝ 2 ![x, y]⟫ := by
-    rw [ιMulti_two_swap y x, ιMulti_two_swap t s, map_neg, inner_neg_left, inner_neg_right,
+    rw [ιMulti_two_swap x y, ιMulti_two_swap s t, map_neg, inner_neg_left, inner_neg_right,
       neg_neg, hB, real_inner_comm]
   simp_rw [hA' w (b _), hA' z (b _), hB' z (b _), hB' w (b _)]
   conv_lhs => simp only [← Finset.sum_sub_distrib]; rw [Finset.sum_comm]
@@ -376,11 +368,11 @@ private theorem two_mul_inner_sharpBilin_ιMulti {ι : Type*} [Fintype ι]
   exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
 
 /-- **Polarized bivector-operator identity**: for symmetric endomorphisms `A, B` of `⋀[ℝ]^2 V`,
-`reactionBilin V (ofExteriorEnd A) (ofExteriorEnd B)` equals
+`reactionBilinear V (ofExteriorEnd A) (ofExteriorEnd B)` equals
 `ofExteriorEnd (A ∘ₗ B + B ∘ₗ A + 2 • sharpBilin A B)`. -/
-theorem ofExteriorEnd_reactionBilin {A B : Module.End ℝ (⋀[ℝ]^2 V)} (hA : A.IsSymmetric)
+theorem ofExteriorEnd_reactionBilinear {A B : Module.End ℝ (⋀[ℝ]^2 V)} (hA : A.IsSymmetric)
     (hB : B.IsSymmetric) :
-    reactionBilin V (ofExteriorEnd A) (ofExteriorEnd B) =
+    reactionBilinear V (ofExteriorEnd A) (ofExteriorEnd B) =
       ofExteriorEnd (A ∘ₗ B + B ∘ₗ A + (2 : ℝ) • sharpBilin A B) := by
   let b := stdOrthonormalBasis ℝ V
   have hcomp (S T : Module.End ℝ (⋀[ℝ]^2 V)) (hS : S.IsSymmetric) (u v z w : V) :
@@ -396,43 +388,54 @@ theorem ofExteriorEnd_reactionBilin {A B : Module.End ℝ (⋀[ℝ]^2 V)} (hA : 
     simp only [sum_inner, real_inner_smul_left, ofExteriorEnd_apply]
     exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by
       rw [real_inner_comm (T _), real_inner_comm (S _)]
-  ext m
-  have hm : m = ![m 0, m 1, m 2, m 3] := by funext i; fin_cases i <;> rfl
-  rw [hm, reactionBilin_apply_orthonormalBasis b, ofExteriorEnd_apply]
+  refine ext_vec fun u v z w ↦ ?_
+  rw [reactionBilinear_apply_orthonormalBasis b, ofExteriorEnd_apply]
   simp only [LinearMap.add_apply, LinearMap.smul_apply, inner_add_left, real_inner_smul_left]
-  have h1 := hcomp A B hA (m 0) (m 1) (m 2) (m 3)
-  have h2 := hcomp B A hB (m 0) (m 1) (m 2) (m 3)
-  have h3 := two_mul_inner_sharpBilin_ιMulti b hA hB (m 0) (m 1) (m 2) (m 3)
+  have h1 := hcomp A B hA u v z w
+  have h2 := hcomp B A hB u v z w
+  have h3 := two_mul_inner_sharpBilin_ιMulti b hA hB u v z w
   linarith
 
 /-- **Bivector-operator identity** `Q(ofExteriorEnd A) = ofExteriorEnd (2 • (A * A + sharp A))`
 for any symmetric endomorphism `A` of `⋀[ℝ]^2 V`. -/
 theorem ofExteriorEnd_reaction {A : Module.End ℝ (⋀[ℝ]^2 V)} (hA : A.IsSymmetric) :
     reactionTensor (ofExteriorEnd A) = ofExteriorEnd ((2 : ℝ) • (A * A + sharp A)) := by
-  rw [← reactionBilin_self, ofExteriorEnd_reactionBilin hA hA]
+  rw [← reactionBilinear_self, ofExteriorEnd_reactionBilinear hA hA]
   congr 1; ext _; simp [two_smul, smul_add]
 
 /-- On any four-tensor antisymmetric in its first pair and symmetric under pair interchange,
-`toExteriorEnd (Q(r)) = 2 • (R² + R#)` with `R = toExteriorEnd r`. -/
-theorem toExteriorEnd_reactionTensor {r : FourTensor V}
+`curvatureEndomorphism (Q(r)) = 2 • (R² + R#)` with `R = curvatureEndomorphism r`. -/
+theorem curvatureEndomorphism_reactionTensor {r : FourTensor V}
     (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
     (hswap : ∀ u v z w, r ![u, v, z, w] = r ![z, w, u, v]) :
-    toExteriorEnd (reactionTensor r) =
-      (2 : ℝ) • (toExteriorEnd r * toExteriorEnd r + sharp (toExteriorEnd r)) := by
+    curvatureEndomorphism (reactionTensor r) =
+      (2 : ℝ) • (curvatureEndomorphism r * curvatureEndomorphism r +
+        sharp (curvatureEndomorphism r)) := by
   have h₂ (u v z w : V) : r ![u, v, z, w] = -r ![u, v, w, z] := by
     rw [hswap u v z w, h₁ z w u v, hswap w z u v]
-  conv_lhs => rw [← ofExteriorEnd_toExteriorEnd_of_antisymm h₁ h₂]
-  rw [ofExteriorEnd_reaction (isSymmetric_toExteriorEnd hswap), toExteriorEnd_ofExteriorEnd]
+  conv_lhs => rw [← ofExteriorEnd_curvatureEndomorphism_of_antisymm h₁ h₂]
+  rw [ofExteriorEnd_reaction (isSymmetric_curvatureEndomorphism_of_swap_pairs hswap),
+    curvatureEndomorphism_ofExteriorEnd]
 
-/-- For every algebraic curvature tensor `r`, `toExteriorEnd (Q(r)) = 2 • (R² + R#)` with
-`R = toExteriorEnd r`. -/
-theorem IsAlgebraicCurvature.toExteriorEnd_reactionTensor {r : FourTensor V}
+/-- On any bivector-symmetric four-tensor `r`, `curvatureEndomorphism (Q(r)) = 2 • (R² + R#)` with
+`R = curvatureEndomorphism r`. -/
+theorem IsBivectorSymmetric.curvatureEndomorphism_reactionTensor {r : FourTensor V}
+    (hr : IsBivectorSymmetric r) :
+    curvatureEndomorphism (FourTensor.reactionTensor r) =
+      (2 : ℝ) • (curvatureEndomorphism r * curvatureEndomorphism r +
+        sharp (curvatureEndomorphism r)) :=
+  FourTensor.curvatureEndomorphism_reactionTensor hr.antisymm_first hr.swap_pairs
+
+/-- For every algebraic curvature tensor `r`, `curvatureEndomorphism (Q(r)) = 2 • (R² + R#)` with
+`R = curvatureEndomorphism r`. -/
+theorem IsAlgebraicCurvature.curvatureEndomorphism_reactionTensor {r : FourTensor V}
     (hr : IsAlgebraicCurvature r) :
-    toExteriorEnd (FourTensor.reactionTensor r) =
-      (2 : ℝ) • (toExteriorEnd r * toExteriorEnd r + sharp (toExteriorEnd r)) :=
-  FourTensor.toExteriorEnd_reactionTensor hr.antisymm_first hr.swap_pairs
+    curvatureEndomorphism (FourTensor.reactionTensor r) =
+      (2 : ℝ) • (curvatureEndomorphism r * curvatureEndomorphism r +
+        sharp (curvatureEndomorphism r)) :=
+  hr.isBivectorSymmetric.curvatureEndomorphism_reactionTensor
 
-/-! ### Explicit evaluations: identity, constant curvature, and rank-one bivectors -/
+/-! ### Explicit evaluations: identity and rank-one bivectors -/
 
 private theorem sum_constantCurvature_even {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ V) (u v z w : V) :
@@ -482,21 +485,6 @@ theorem sharp_one :
     sum_constantCurvature_even b u v w z, real_inner_comm w z] at h2
   simp only [LinearMap.smul_apply, one_apply_eq_self, real_inner_smul_left, inner_ιMulti_two]
   linarith
-
-/-- On the constant-curvature tensor, `Q(I) = 2 (dim V - 1) • I`. -/
-theorem reactionTensor_constantCurvature :
-    reactionTensor (constantCurvature V) =
-      (2 * ((Module.finrank ℝ V : ℝ) - 1)) • constantCurvature V := by
-  rw [← ofExteriorEnd_one, ofExteriorEnd_reaction LinearMap.IsSymmetric.one, sharp_one, mul_one,
-    ← map_smul]
-  congr 1; refine LinearMap.ext fun _ ↦ ?_
-  simp only [LinearMap.smul_apply, LinearMap.add_apply, one_apply_eq_self]; module
-
-/-- Scaling of `reactionTensor` on a constant-curvature tensor of sectional curvature `κ`. -/
-theorem reactionTensor_smul_constantCurvature (κ : ℝ) :
-    reactionTensor (κ • constantCurvature V) =
-      (2 * ((Module.finrank ℝ V : ℝ) - 1) * κ ^ 2) • constantCurvature V := by
-  rw [reactionTensor_smul, reactionTensor_constantCurvature, smul_smul]; ring_nf
 
 /-- The rank-one algebraic curvature tensor `(e₁ ∧ e₂) ⊗ (e₁ ∧ e₂)` associated to a pair of vectors
 `e₁, e₂ : V`. For an orthonormal pair `e₁, e₂`, this is the curvature four-tensor of the product

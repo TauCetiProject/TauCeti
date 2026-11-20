@@ -214,7 +214,7 @@ private def evenUnitaryGroupMatrixLift
       inv := reverseEven Q y
       val_inv := congrArg Subtype.val hy'
       inv_val := congrArg Subtype.val hy }
-  refine ⟨v, (evenUnitaryGroup.mem_iff_reverse_mul_self_eq_one Q).mpr ⟨y.2, ?_⟩⟩
+  refine ⟨v, (evenUnitaryGroup.mem_iff_reverse_mul_self_eq_one Q).mpr ⟨y.property, ?_⟩⟩
   simpa only [v, coe_reverseEven_apply, Subalgebra.coe_mul, Subalgebra.coe_one] using
     congrArg Subtype.val hy
 

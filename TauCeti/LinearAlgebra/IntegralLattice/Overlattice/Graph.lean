@@ -119,7 +119,7 @@ theorem isUnimodular_glueAlongDiscriminant :
 /-- Membership of a pair of dual vectors is exactly the equality of their glue classes. -/
 @[simp]
 theorem mem_glueAlongDiscriminant_iff (x : L.dualCarrier) (y : M.dualCarrier) :
-    (x.1, y.1) ∈ (L.glueAlongDiscriminant M hL hM e).carrier ↔
+    (x.val, y.val) ∈ (L.glueAlongDiscriminant M hL hM e).carrier ↔
       e (Submodule.Quotient.mk x) = Submodule.Quotient.mk y := by
   rw [glueAlongDiscriminant, ofIsotropicSubgroup_carrier]
   have h := (L.orthogonalSum M).coe_mem_intermediateCarrierOfDiscriminantSubgroup_iff
@@ -131,7 +131,7 @@ theorem mem_glueAlongDiscriminant_iff (x : L.dualCarrier) (y : M.dualCarrier) :
 theorem orthogonalSum_carrier_le_glueAlongDiscriminant :
     (L.orthogonalSum M).carrier ≤ (L.glueAlongDiscriminant M hL hM e).carrier := by
   rw [glueAlongDiscriminant, ofIsotropicSubgroup_carrier]
-  exact ((L.orthogonalSum M).intermediateCarrierOfDiscriminantSubgroup _).2.1
+  exact ((L.orthogonalSum M).intermediateCarrierOfDiscriminantSubgroup _).property.1
 
 /-- An arbitrary pair belongs to the glued carrier precisely when both coordinates are dual
 vectors and their discriminant classes correspond. -/
@@ -145,7 +145,7 @@ theorem mem_glueAlongDiscriminant_iff_exists (x : V × W) :
   · intro hx
     have hd : x ∈ (L.orthogonalSum M).dualCarrier := by
       rw [glueAlongDiscriminant, ofIsotropicSubgroup_carrier] at hx
-      exact ((L.orthogonalSum M).intermediateCarrierOfDiscriminantSubgroup _).2.2 hx
+      exact ((L.orthogonalSum M).intermediateCarrierOfDiscriminantSubgroup _).property.2 hx
     obtain ⟨hx', hy'⟩ := (L.mem_dualCarrier_orthogonalSum M x).mp hd
     exact ⟨hx', hy', (L.mem_glueAlongDiscriminant_iff M hL hM e _ _).mp hx⟩
   · rintro ⟨hx, hy, h⟩
@@ -186,12 +186,12 @@ theorem mem_glueAlongDiscriminant_right_iff (y : W) :
 /-- The first lattice's integral inclusion into the graph-glued overlattice. -/
 noncomputable def glueLeft : L →ₗ[ℤ] L.glueAlongDiscriminant M hL hM e :=
   ((LinearMap.inl ℤ V W).comp L.carrier.subtype).codRestrict _
-    (fun x ↦ (L.mem_glueAlongDiscriminant_left_iff M hL hM e x).mpr x.2)
+    (fun x ↦ (L.mem_glueAlongDiscriminant_left_iff M hL hM e x).mpr x.property)
 
 /-- The second lattice's integral inclusion into the graph-glued overlattice. -/
 noncomputable def glueRight : M →ₗ[ℤ] L.glueAlongDiscriminant M hL hM e :=
   ((LinearMap.inr ℤ V W).comp M.carrier.subtype).codRestrict _
-    (fun y ↦ (L.mem_glueAlongDiscriminant_right_iff M hL hM e y).mpr y.2)
+    (fun y ↦ (L.mem_glueAlongDiscriminant_right_iff M hL hM e y).mpr y.property)
 
 @[simp]
 theorem coe_glueLeft_apply (x : L) :
@@ -257,10 +257,10 @@ theorem range_glueLeft :
   · rintro ⟨y, rfl⟩
     rfl
   · intro hx
-    have hmem : x.1.1 ∈ L.carrier :=
+    have hmem : x.val.1 ∈ L.carrier :=
       (L.mem_glueAlongDiscriminant_left_iff M hL hM e _).mp
-        ((Prod.ext rfl hx.symm : (x.1.1, 0) = x.1).symm ▸ x.2)
-    exact ⟨⟨x.1.1, hmem⟩, Subtype.ext (Prod.ext rfl hx.symm)⟩
+        ((Prod.ext rfl hx.symm : (x.val.1, 0) = x.val).symm ▸ x.property)
+    exact ⟨⟨x.val.1, hmem⟩, Subtype.ext (Prod.ext rfl hx.symm)⟩
 
 /-- The second lattice is the kernel of the first-coordinate projection on the glued carrier. -/
 theorem range_glueRight :
@@ -274,10 +274,10 @@ theorem range_glueRight :
   · rintro ⟨y, rfl⟩
     rfl
   · intro hx
-    have hmem : x.1.2 ∈ M.carrier :=
+    have hmem : x.val.2 ∈ M.carrier :=
       (L.mem_glueAlongDiscriminant_right_iff M hL hM e _).mp
-        ((Prod.ext hx.symm rfl : (0, x.1.2) = x.1).symm ▸ x.2)
-    exact ⟨⟨x.1.2, hmem⟩, Subtype.ext (Prod.ext hx.symm rfl)⟩
+        ((Prod.ext hx.symm rfl : (0, x.val.2) = x.val).symm ▸ x.property)
+    exact ⟨⟨x.val.2, hmem⟩, Subtype.ext (Prod.ext hx.symm rfl)⟩
 
 /-- The first inclusion is primitive: its integral cokernel is torsion-free. -/
 theorem isTorsionFree_quotient_range_glueLeft :
@@ -317,7 +317,7 @@ private theorem mk_mem_map_discriminantSubgroup_iff (N : (L.orthogonalSum M).Int
         L.DiscriminantGroup × M.DiscriminantGroup) ∈
         ((L.orthogonalSum M).discriminantSubgroup N).map
           (L.discriminantGroupOrthogonalSumEquiv M).toAddEquiv.toAddMonoidHom ↔
-      ((x : V), (y : W)) ∈ N.1 := by
+      ((x : V), (y : W)) ∈ N.val := by
   set z := (L.orthogonalSumDualCarrierEquiv M).symm (x, y)
   have hz : (L.discriminantGroupOrthogonalSumEquiv M).toAddEquiv.toAddMonoidHom
       (Submodule.Quotient.mk z) = (Submodule.Quotient.mk x, Submodule.Quotient.mk y) := by
@@ -343,8 +343,8 @@ theorem exists_eq_glueAlongDiscriminant (N : IntegralLattice (V × W))
   have hS : S.IsEven := (L.isEven_orthogonalSum_iff M).mpr ⟨hL, hM⟩
   -- `N` is an intermediate carrier of `L ⊥ M`, even and with unimodular underlying lattice.
   set P := N.toIntermediateCarrier hform hle
-  have hPc : P.1 = N.carrier := N.coe_toIntermediateCarrier hform hle
-  have hdual : N.carrier ≤ S.dualCarrier := hPc ▸ P.2.2
+  have hPc : P.val = N.carrier := N.coe_toIntermediateCarrier hform hle
+  have hdual : N.carrier ≤ S.dualCarrier := hPc ▸ P.property.2
   -- Its subgroup of the discriminant group is a quadratic Lagrangian.
   have hlag : (S.discriminantQuadraticModule hS).IsLagrangian (S.discriminantSubgroup P) :=
     (S.isLagrangian_discriminantSubgroup_toIntermediateCarrier_iff hS N hform hle).mpr ⟨hNe, hNu⟩
@@ -372,5 +372,30 @@ theorem exists_eq_glueAlongDiscriminant (N : IntegralLattice (V × W))
     exact ⟨hx, hy, (hf _ _).mp ((hmem ⟨z.1, hx⟩ ⟨z.2, hy⟩).mpr hz)⟩
   · rintro ⟨hx, hy, h⟩
     exact (hmem ⟨z.1, hx⟩ ⟨z.2, hy⟩).mp ((hf _ _).mpr h)
+
+/-- **The gluing is injective in the isometry.** An even unimodular overlattice of `L ⊥ M` obtained
+by gluing determines the isometry of discriminant forms used to build it. Together with
+`TauCeti.IntegralLattice.exists_eq_glueAlongDiscriminant` this is the uniqueness half of
+Nikulin's correspondence. -/
+theorem glueAlongDiscriminant_injective :
+    Function.Injective (L.glueAlongDiscriminant M hL hM) := by
+  intro e e' h
+  apply DFunLike.coe_injective
+  funext a
+  induction a using Submodule.Quotient.induction_on with
+  | _ x =>
+    obtain ⟨y, hy⟩ := Submodule.Quotient.mk_surjective _ (e (Submodule.Quotient.mk x))
+    have hmem := (L.mem_glueAlongDiscriminant_iff M hL hM e x y).mpr hy.symm
+    rw [h] at hmem
+    exact (((L.mem_glueAlongDiscriminant_iff M hL hM e' x y).mp hmem).trans hy).symm
+
+/-- Two gluings of `L ⊥ M` are equal if and only if they use the same isometry of discriminant
+forms. -/
+@[simp]
+theorem glueAlongDiscriminant_inj
+    {e e' : FiniteQuadraticModule.Isometry (L.discriminantQuadraticModule hL)
+      (M.discriminantQuadraticModule hM).neg} :
+    L.glueAlongDiscriminant M hL hM e = L.glueAlongDiscriminant M hL hM e' ↔ e = e' :=
+  (L.glueAlongDiscriminant_injective M hL hM).eq_iff
 
 end TauCeti.IntegralLattice

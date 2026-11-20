@@ -58,7 +58,7 @@ theorem isClopen_of_mem_irreducibleComponents_of_pairwiseDisjoint [NoetherianSpa
   have : Finite (irreducibleComponents X) :=
     NoetherianSpace.finite_irreducibleComponents.to_subtype
   exact isClopen_of_finite_pairwiseDisjoint_closed_cover
-    (fun D : irreducibleComponents X ↦ isClosed_of_mem_irreducibleComponents D.1 D.2)
+    (fun D : irreducibleComponents X ↦ isClosed_of_mem_irreducibleComponents D.val D.property)
     hdisj.subtype (sUnion_eq_iUnion ▸ sUnion_irreducibleComponents (X := X)) ⟨C, hC⟩
 
 variable [NoetherianSpace X] [JacobsonSpace X] {ι : Type*}
@@ -106,7 +106,7 @@ theorem pairwiseDisjoint_irreducibleComponents_of_closedPoints_transitive
   intro C hC D hD hne
   rw [Function.onFun, disjoint_iff_inter_eq_empty]
   by_contra hbad
-  obtain ⟨y, hyCD, hyc⟩ := nonempty_inter_closedPoints (nonempty_iff_ne_empty.mpr hbad)
+  obtain ⟨y, hyCD, hyc⟩ := nonempty_inter_closedPoints (ne_empty_iff_nonempty.mp hbad)
     ((isClosed_of_mem_irreducibleComponents C hC).inter
       (isClosed_of_mem_irreducibleComponents D hD)).isLocallyClosed
   exact hne (heq hC hD hyc hyCD.1 hyCD.2)
