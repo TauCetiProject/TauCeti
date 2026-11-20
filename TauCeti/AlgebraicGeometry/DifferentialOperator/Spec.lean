@@ -40,17 +40,6 @@ attribute [local instance] Scheme.algebraOfOver
 
 variable {k : Type u} [CommRing k] {R : CommRingCat.{u}} [Algebra k R]
 
-/-- For `Spec R` over `Spec k`, the `k`-algebra structure on sections factors through the
-`R`-algebra structure. -/
-theorem Scheme.algebraMap_spec_eq (U : (Spec R).Opens) :
-    algebraMap k Γ(Spec R, U) = (algebraMap R Γ(Spec R, U)).comp (algebraMap k R) :=
-  RingHom.ext fun c ↦ by
-    rw [Scheme.algebraMap_eq]
-    exact TauCeti.AlgebraicGeometry.Scheme.baseRingToStructurePresheaf_Spec_app_apply k R (op U) c
-
-instance (U : (Spec R).Opens) : IsScalarTower k R Γ(Spec R, U) :=
-  .of_algebraMap_eq fun c ↦ by rw [Scheme.algebraMap_spec_eq]; rfl
-
 variable (δ : Derivation k R R)
 
 /-- The extension of `δ` to the localization of `R` at the prime `x`. -/
@@ -92,12 +81,6 @@ private theorem specSectionsFun_apply (V : (Spec R).Opens) (s : Γ(Spec R, V)) (
     (specSectionsFun δ V s).1 x = stalkDerivation δ x.1 (s.1 x) :=
   rfl
 
-private theorem sections_smul_apply (V : (Spec R).Opens) (c : k) (s : Γ(Spec R, V)) (x : V) :
-    (c • s).1 x = c • s.1 x := by
-  rw [Algebra.smul_def, Algebra.smul_def, Scheme.algebraMap_spec_eq,
-    IsScalarTower.algebraMap_apply k R (Localizations R x.1)]
-  rfl
-
 /-- The derivation of the sections of the structure sheaf of `Spec R` over `V` induced by a
 `k`-derivation `δ` of `R`: on the germ of a section at a prime `x` it is the extension of `δ` to
 the localization of `R` at `x`. -/
@@ -106,9 +89,9 @@ noncomputable def _root_.Derivation.specSections (V : (Spec R).Opens) :
   toFun := specSectionsFun δ V
   map_add' _ _ := Subtype.ext (funext fun x ↦ map_add (stalkDerivation δ x.1) _ _)
   map_smul' c s := Subtype.ext (funext fun x ↦
-    (congrArg (stalkDerivation δ x.1) (sections_smul_apply V c s x)).trans
+    (congrArg (stalkDerivation δ x.1) (Scheme.spec_sections_smul_apply V c s x)).trans
       (((stalkDerivation δ x.1).map_smul c _).trans
-        (sections_smul_apply V c (specSectionsFun δ V s) x).symm))
+        (Scheme.spec_sections_smul_apply V c (specSectionsFun δ V s) x).symm))
   map_one_eq_zero' := Subtype.ext (funext fun x ↦ (stalkDerivation δ x.1).map_one_eq_zero)
   leibniz' _ _ := Subtype.ext (funext fun x ↦ (stalkDerivation δ x.1).leibniz _ _)
 

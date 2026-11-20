@@ -43,9 +43,8 @@ the endomorphisms that are locally of order at most some `m`; it is a sheaf of r
 * `Scheme.sheafOfDifferentialOperators`: the sheaf of rings `D_X`, with the ring map
   `Scheme.toPresheafOfDifferentialOperators` from `O_X`.
 
-The `k`-algebra structure on sections is a definition rather than a global instance: for an
-affine scheme over `Spec k`, or for `Spec k` over itself, Mathlib already provides other
-`k`-algebra structures on (global) sections, which are only propositionally equal to it.
+The `k`-algebra structure on sections is a definition rather than a global instance (see
+`TauCeti.AlgebraicGeometry.Modules.GlobalSections`), activated locally in this file.
 
 ## References
 
@@ -62,48 +61,7 @@ namespace AlgebraicGeometry.Scheme
 
 variable (X : Scheme.{u}) (k : Type u) [CommRing k] [X.Over (Spec (.of k))]
 
-/-- The `k`-algebra structure on the sections of a scheme `X` over `Spec k`, through the base
-ring map `X.baseRingToStructurePresheaf k`. -/
-@[instance_reducible]
-noncomputable def algebraOfOver (U : X.Opens) : Algebra k Γ(X, U) :=
-  ((X.baseRingToStructurePresheaf k).app (op U)).hom.toAlgebra
-
 attribute [local instance] algebraOfOver
-
-variable {X k}
-
-theorem algebraMap_eq (U : X.Opens) :
-    algebraMap k Γ(X, U) = ((X.baseRingToStructurePresheaf k).app (op U)).hom :=
-  (rfl)
-
-/-- Restriction of sections is `k`-linear. -/
-@[simp]
-theorem presheaf_map_algebraMap {U V : X.Opens} (i : V ⟶ U) (c : k) :
-    X.presheaf.map i.op (algebraMap k Γ(X, U) c) = algebraMap k Γ(X, V) c :=
-  (ConcreteCategory.congr_hom ((X.baseRingToStructurePresheaf k).naturality i.op) c).symm
-
-variable (X k)
-
-/-- The structure sheaf of a scheme over `Spec k`, as a presheaf of `k`-modules. -/
-noncomputable def presheafInModuleCat : X.Opensᵒᵖ ⥤ ModuleCat.{u} k where
-  obj U := ModuleCat.of k Γ(X, U.unop)
-  map {U V} i := ModuleCat.ofHom
-    { toFun := X.presheaf.map i
-      map_add' := map_add _
-      map_smul' c f := by
-        rw [Algebra.smul_def, Algebra.smul_def, map_mul, RingHom.id_apply,
-          ← presheaf_map_algebraMap i.unop c]
-        rfl }
-  map_id U := by ext; simp
-  map_comp f g := by ext; simp
-
-/-- The structure sheaf is a sheaf of `k`-modules. -/
-theorem isSheaf_presheafInModuleCat :
-    Presheaf.IsSheaf (Opens.grothendieckTopology X) (X.presheafInModuleCat k) := by
-  rw [Presheaf.isSheaf_iff_isSheaf_forget (s := CategoryTheory.forget (ModuleCat k))]
-  exact (Presheaf.isSheaf_of_iso_iff (NatIso.ofComponents fun _ ↦ Iso.refl _)).2
-    ((TopCat.Presheaf.isSheaf_iff_isSheaf_comp (CategoryTheory.forget CommRingCat)
-      X.presheaf).1 X.IsSheaf)
 
 /-- The ring of `k`-linear endomorphisms of the structure sheaf restricted to an open `U`: a
 family of `k`-linear maps `Γ(X, V) → Γ(X, V)` for the opens `V ⊆ U`, compatible with restriction.
@@ -182,27 +140,16 @@ variable (X k) in
 the endomorphisms of `O_X` restricted to `U`, and restriction restricts the family of components.
 It is the internal hom `presheafHom` of `X.presheafInModuleCat k` with itself, with sections
 viewed as elements of the ring `X.StructureEnd k U`. -/
-noncomputable abbrev endPresheaf : X.Opensᵒᵖ ⥤ Type u where
-  obj U := X.StructureEnd k U.unop
-  map i := ↾fun D ↦ End.of (Functor.whiskerLeft (Over.map i.unop).op D.asHom)
-  map_id := by
-    rintro ⟨U⟩
-    ext D : 3
-    refine End.ext (NatTrans.ext (funext fun V ↦ ?_))
-    simpa [Over.mapId] using D.asHom.naturality ((Over.mapId U).hom.app V.unop).op
-  map_comp := by
-    rintro ⟨U⟩ ⟨U'⟩ ⟨U''⟩ ⟨f : U' ⟶ U⟩ ⟨g : U'' ⟶ U'⟩
-    ext D : 3
-    refine End.ext (NatTrans.ext (funext fun V ↦ ?_))
-    simpa [Over.mapComp] using D.asHom.naturality ((Over.mapComp g f).hom.app V.unop).op
+noncomputable abbrev endPresheaf : X.Opensᵒᵖ ⥤ Type u :=
+  (presheafHom (X.presheafInModuleCat k) (X.presheafInModuleCat k)).copyObj
+    (fun U ↦ X.StructureEnd k U.unop) fun _ ↦ Equiv.toIso End.homEquiv.symm
 
 variable (X k) in
 /-- The endomorphisms of the structure sheaf form a sheaf: they glue, since `O_X` does. -/
 theorem isSheaf_endPresheaf :
     Presieve.IsSheaf (Opens.grothendieckTopology X) (X.endPresheaf k) :=
-  Presieve.isSheaf_iso _ (NatIso.ofComponents (fun _ ↦ Equiv.toIso End.homEquiv.symm)
-    fun _ ↦ rfl) ((isSheaf_iff_isSheaf_of_type _ _).1
-      (Presheaf.IsSheaf.hom _ _ (X.isSheaf_presheafInModuleCat k)))
+  Presieve.isSheaf_iso _ (Functor.isoCopyObj _ _ _) ((isSheaf_iff_isSheaf_of_type _ _).1
+    (Presheaf.IsSheaf.hom _ _ (X.isSheaf_presheafInModuleCat k)))
 
 variable (k) in
 /-- Restriction of endomorphisms of the structure sheaf from `U` to an open subset `U'`. -/
@@ -396,6 +343,25 @@ noncomputable def differentialOperatorsZeroIso :
       ext f
       exact Subtype.ext (restrictEnd_toStructureEnd i.unop f).symm
 
+/-- The operator of order zero corresponding to a section of `O_X` is multiplication by it. -/
+@[simp]
+theorem coe_differentialOperatorsZeroIso_hom_app_apply (U : X.Opensᵒᵖ) (f : Γ(X, U.unop)) :
+    ((X.differentialOperatorsZeroIso k).hom.app U f).1 = X.toStructureEnd k U.unop f :=
+  (rfl)
+
+/-- The section of `O_X` corresponding to an operator of order zero is its value on `1`. -/
+@[simp]
+theorem differentialOperatorsZeroIso_inv_app_apply (U : X.Opensᵒᵖ)
+    (D : (X.differentialOperators k 0).toFunctor.obj U) :
+    (X.differentialOperatorsZeroIso k).inv.app U D = endApp D.1 (Over.mk (𝟙 U.unop)) 1 := by
+  obtain ⟨f, hf⟩ := mem_differentialOperators_zero_iff.1 D.2
+  have hD : D = (X.differentialOperatorsZeroIso k).hom.app U f := Subtype.ext hf.symm
+  subst hD
+  rw [← types_comp_apply ((X.differentialOperatorsZeroIso k).hom.app U)
+    ((X.differentialOperatorsZeroIso k).inv.app U), Iso.hom_inv_id_app,
+    coe_differentialOperatorsZeroIso_hom_app_apply, endApp_toStructureEnd]
+  simp
+
 /-! ### The sheaf of rings of differential operators -/
 
 /-- If `D` restricts to an operator of order at most `m` on `V ⊆ U`, it does so on every open
@@ -464,7 +430,7 @@ variable (X k) in
 /-- The sheaf of differential operators `D_X` as a presheaf of types, the subpresheaf of
 `X.endPresheaf k` cut out by `differentialOperatorsSubring`. -/
 private noncomputable def differentialOperatorsSubfunctor : Subfunctor (X.endPresheaf k) where
-  obj U := X.differentialOperatorsSubring k U.unop
+  obj U := (X.differentialOperatorsSubring k U.unop : Set (X.StructureEnd k U.unop))
   map i _ hD := restrictEnd_mem_differentialOperatorsSubring i.unop hD
 
 private theorem isSheaf_differentialOperatorsSubfunctor :
