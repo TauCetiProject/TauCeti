@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Homotopy.Equiv
 public import Mathlib.Topology.VectorBundle.Basic
 
 /-!
@@ -22,6 +23,11 @@ Conversely, the scalar function is recovered continuously from the two maps: if 
 total space is a scalar multiple of another, nonzero at a point, and both are continuous there,
 then so is the scalar (`TauCeti.VectorBundle.continuousAt_of_eventually_eq_smul`). This is how a
 reparametrization factor between two vector fields along a curve is shown to be continuous.
+
+For a real vector bundle the fibrewise contraction `(t, v) ↦ t • v`, `t ∈ [0, 1]`, deforms the
+identity of the total space into the zero section composed with the projection, so the projection
+`E → B` is a homotopy equivalence with homotopy inverse the zero section
+(`TauCeti.VectorBundle.totalSpaceHomotopyEquiv`).
 -/
 
 public section
@@ -134,3 +140,39 @@ theorem Continuous.smul_totalSpace_of_norm_le {c : X → 𝕜} {φ : X → Total
   have hxb : (φ x).proj ∈ e.baseSet := e.mem_source.1 hx
   rw [TotalSpace.mk', e.apply_eq_prod_continuousLinearEquivAt 𝕜 _ hxb (c x • (φ x).2), map_smul,
     e.apply_eq_prod_continuousLinearEquivAt 𝕜 _ hxb (φ x).2]
+
+namespace TauCeti.VectorBundle
+
+open scoped unitInterval ContinuousMap
+
+variable {B F : Type*} [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+
+variable (F E) in
+/-- **The total space of a real vector bundle deformation retracts onto the zero section**: the
+projection `E → B` is a homotopy equivalence, with homotopy inverse the zero section. The homotopy
+from the zero section composed with the projection to the identity is the fibrewise contraction
+`(t, v) ↦ t • v`. -/
+noncomputable def totalSpaceHomotopyEquiv : TotalSpace F E ≃ₕ B where
+  toFun := ⟨TotalSpace.proj, FiberBundle.continuous_proj F E⟩
+  invFun := ⟨zeroSection F E, Trivialization.continuous_zeroSection ℝ⟩
+  left_inv := ⟨{
+    toFun q := TotalSpace.mk' F q.2.proj ((q.1 : ℝ) • q.2.2)
+    continuous_toFun := Continuous.smul_totalSpace (continuous_subtype_val.comp continuous_fst)
+      continuous_snd
+    map_zero_left v := by simp [zeroSection]
+    map_one_left v := by simp }⟩
+  right_inv := ContinuousMap.Homotopic.refl _
+
+@[simp]
+theorem totalSpaceHomotopyEquiv_apply (v : TotalSpace F E) :
+    totalSpaceHomotopyEquiv F E v = v.proj :=
+  (rfl)
+
+@[simp]
+theorem totalSpaceHomotopyEquiv_symm_apply (b : B) :
+    (totalSpaceHomotopyEquiv F E).symm b = zeroSection F E b :=
+  (rfl)
+
+end TauCeti.VectorBundle
