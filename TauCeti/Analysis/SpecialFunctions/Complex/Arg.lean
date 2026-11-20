@@ -39,6 +39,8 @@ Since the argument is continuous on the slit plane and blind to positive real sc
 
 * `Complex.arg_div_eq_sub_arg_iff`: `arg (x / y) = arg x - arg y` exactly when
   `arg x - arg y ∈ (-π, π]`.
+* `Complex.exists_arg_div_add_arg_eq`: in general `arg (x / y) + arg y` is `arg x` up to a multiple
+  of `2π`.
 * `Complex.arg_div_of_im_pos`: if `0 < x.im` and `0 < y.im`, then `arg (x / y) = arg x - arg y`.
 * `Complex.arg_div_of_im_neg`: if `x.im < 0` and `y.im < 0`, then `arg (x / y) = arg x - arg y`.
 * `Complex.arg_div_of_re_pos`: if `0 < x.re` and `0 < y.re`, then `arg (x / y) = arg x - arg y`.
@@ -91,6 +93,15 @@ theorem arg_div_eq_sub_arg_iff {x y : ℂ} (hx₀ : x ≠ 0) (hy₀ : y ≠ 0) :
     arg (x / y) = arg x - arg y ↔ arg x - arg y ∈ Set.Ioc (-π) π := by
   rw [← arg_coe_angle_toReal_eq_arg, arg_div_coe_angle hx₀ hy₀, ← Real.Angle.coe_sub,
     Real.Angle.toReal_coe_eq_self_iff_mem_Ioc]
+
+/-- The argument of a quotient plus that of the denominator is the argument of the numerator up
+to a multiple of `2π`. -/
+theorem exists_arg_div_add_arg_eq {x y : ℂ} (hx₀ : x ≠ 0) (hy₀ : y ≠ 0) :
+    ∃ m : ℤ, arg (x / y) + arg y = arg x + 2 * π * m := by
+  have h := arg_div_coe_angle hx₀ hy₀
+  rw [← Real.Angle.coe_sub, Real.Angle.angle_eq_iff_two_pi_dvd_sub] at h
+  obtain ⟨m, hm⟩ := h
+  exact ⟨m, by linarith⟩
 
 /-- The argument of the quotient of two points of the open upper half-plane is the difference of
 their arguments. -/
