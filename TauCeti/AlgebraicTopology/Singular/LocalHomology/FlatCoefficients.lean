@@ -17,7 +17,7 @@ The integral fundamental class generates `Hₙ(M; ℤ) ≅ ℤ`, and flat base c
 `k ⊗[ℤ] Hₙ(M; ℤ) ≅ Hₙ(M; k)` (`TauCeti.singularHomologyTensorIso`) carries this to the
 coefficients `k`. Hence:
 
-* over a field `k` flat over `ℤ`, the top homology `Hₙ(M; k)` is a line
+* if `k` is moreover nontrivial, the top homology `Hₙ(M; k)` has rank one
   (`TauCeti.HomologicalOrientation.finrank_singularChains_homology_eq_one`);
 * a self-map `f` of `M` acts on `Hₙ(M; k)` by multiplication by its degree
   (`TauCeti.HomologicalOrientation.singularHomologyMap_eq_degree_smul_id`), the base change of
@@ -45,15 +45,25 @@ variable {M E : Type} [TopologicalSpace M] [T2Space M] [CompactSpace M] [Connect
   {n : ℕ} (o : HomologicalOrientation M E n) (hE : finrank ℝ E = n)
 
 include o hE in
-/-- **The top homology of a closed oriented manifold is a line.** Over a field `k` flat over `ℤ`,
-such as a field of characteristic zero, `Hₙ(M; k)` has dimension one. -/
-theorem finrank_singularChains_homology_eq_one (k : Type) [Field k] [Module.Flat ℤ k] :
+/-- **The top homology of a closed oriented manifold has rank one.** Over a commutative ring `k`
+with the strong rank condition that is flat over `ℤ`, such as a field of characteristic zero,
+`Hₙ(M; k)` has rank one. -/
+theorem finrank_singularChains_homology_eq_one (k : Type) [CommRing k] [StrongRankCondition k]
+    [Module.Flat ℤ k] :
     finrank k (((singularChains k).obj (TopCat.of M)).homology n) = 1 := by
   let e : ℤ ≃ₗ[ℤ] ((singularChains ℤ).obj (TopCat.of M)).homology n :=
     (o.fundamentalClassEquiv hE).trans (uliftIntHomologyIso (TopCat.of M) n).toLinearEquiv
   have : Module.Free ℤ (((singularChains ℤ).obj (TopCat.of M)).homology n) := .of_equiv e
   rw [← (singularHomologyTensorIso ℤ k (TopCat.of M) n).toLinearEquiv.finrank_eq,
     Module.finrank_baseChange, ← e.finrank_eq, finrank_self]
+
+/-- An endomorphism that an isomorphism conjugates to multiplication by an integer `d` is itself
+multiplication by `d`. -/
+private theorem eq_zsmul_id_of_zsmul_id_comp_hom {C : Type*} [Category C] [Preadditive C]
+    {X Y : C} (e : X ≅ Y) (d : ℤ) {g : Y ⟶ Y} (h : (d • 𝟙 X) ≫ e.hom = e.hom ≫ g) :
+    g = d • 𝟙 Y := by
+  rw [← cancel_epi e.hom, ← h, Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.id_comp,
+    Category.comp_id]
 
 /-- **A self-map acts on top homology by its degree, with flat coefficients.** For a self-map `f`
 of a compact connected oriented `n`-manifold and a commutative ring `k` flat over `ℤ`, the action
@@ -69,9 +79,8 @@ theorem singularHomologyMap_eq_degree_smul_id (k : Type) [CommRing k] [Module.Fl
         (ModuleCat.of ℤ (ULift.{0} ℤ)) n = o.degree o hE f • 𝟙 _ := by
       ext γ
       exact o.singularHomologyMap_eq_degree_smul hE f γ
-    rw [hd, Preadditive.zsmul_comp, Category.id_comp,
-      ← Category.comp_id (uliftIntHomologyIso _ n).hom, ← Preadditive.comp_zsmul] at h
-    exact congrArg ModuleCat.Hom.hom ((cancel_epi (uliftIntHomologyIso _ n).hom).1 h).symm
+    rw [hd] at h
+    exact congrArg ModuleCat.Hom.hom (eq_zsmul_id_of_zsmul_id_comp_hom _ _ h)
   -- Then flat base change along `ℤ → k`, which sends `d • id` to `d • id`.
   have h := singularHomologyTensorIso_hom_naturality ℤ k (TopCat.ofHom f) n
   have hb : (o.degree o hE f • LinearMap.id :
@@ -82,12 +91,10 @@ theorem singularHomologyMap_eq_degree_smul_id (k : Type) [CommRing k] [Module.Fl
   have hd : ModuleCat.ofHom (o.degree o hE f • LinearMap.id) =
       o.degree o hE f •
         𝟙 (ModuleCat.of k (k ⊗[ℤ] ((singularChains ℤ).obj (TopCat.of M)).homology n)) :=
-    rfl
-  rw [hℤ, hb, hd, Preadditive.zsmul_comp, Category.id_comp,
-    ← Category.comp_id (singularHomologyTensorIso ℤ k (TopCat.of M) n).hom,
-    ← Preadditive.comp_zsmul] at h
-  have h' := (cancel_epi (singularHomologyTensorIso ℤ k (TopCat.of M) n).hom).1 h
+    ModuleCat.hom_ext (by simp)
+  rw [hℤ, hb, hd] at h
+  have h' := eq_zsmul_id_of_zsmul_id_comp_hom _ _ h
   rw [← Int.cast_smul_eq_zsmul k] at h'
-  exact congrArg ModuleCat.Hom.hom h'.symm
+  exact congrArg ModuleCat.Hom.hom h'
 
 end TauCeti.HomologicalOrientation

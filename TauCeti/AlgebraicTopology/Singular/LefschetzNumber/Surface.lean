@@ -80,21 +80,29 @@ private theorem subsingleton_singularChains_homology_of_notMem_range_three :
   fun _ hi ↦ ModuleCat.isZero_iff_subsingleton.1 (isZero_singularHomology_of_compactSpace
     (M := M) (ModuleCat.of k k) hE (by simp at hi; omega))
 
+/-- A `ℚ`-algebra is flat over `ℤ`, because `ℚ` is a localization of `ℤ`. -/
+private theorem flat_int_of_algebra_rat [Algebra ℚ k] : Module.Flat ℤ k :=
+  (Module.flat_iff_of_isLocalization ℚ (nonZeroDivisors ℤ) k).1 inferInstance
+
+omit [T2Space M] [CompactSpace M] [FiniteDimensional ℝ E] in
+include E in
+/-- `M` is path-connected, so `H₀(M; k) = k`, on which a self-map acts by the identity. -/
+private theorem finrank_homology_zero_and_singularHomologyMap_zero (f : C(M, M)) :
+    finrank k (((singularChains k).obj (TopCat.of M)).homology 0) = 1 ∧
+      ContinuousMap.singularHomologyMap k 0 f = LinearMap.id := by
+  have := ChartedSpace.locallyPathConnectedSpace E M
+  have : PathConnectedSpace M := pathConnectedSpace_iff_connectedSpace.mpr inferInstance
+  exact ⟨finrank_singularHomology₀_eq_one (TopCat.of M), congrArg ModuleCat.Hom.hom
+    (singularHomology₀_map_eq_id_of_pathConnectedSpace (ModuleCat.of k k) (TopCat.ofHom f))⟩
+
 /-- **The Lefschetz number of a self-map of a closed oriented surface.** For a self-map `f` of a
 compact connected homologically oriented surface and a field `k` of characteristic zero,
 `L(f) = 1 - tr (f_* | H₁(M; k)) + deg f`. -/
 theorem lefschetzNumber_eq_one_sub_trace_add_degree [Algebra ℚ k] (f : C(M, M)) :
     f.lefschetzNumber k =
       1 - LinearMap.trace k _ (ContinuousMap.singularHomologyMap k 1 f) + o.degree o hE f := by
-  have : Module.Flat ℤ k :=
-    (Module.flat_iff_of_isLocalization ℚ (nonZeroDivisors ℤ) k).1 inferInstance
-  have := ChartedSpace.locallyPathConnectedSpace E M
-  have : PathConnectedSpace M := pathConnectedSpace_iff_connectedSpace.mpr inferInstance
-  -- `M` is path-connected, so `H₀(M; k) = k`, on which `f` acts by the identity.
-  have h₀ : finrank k (((singularChains k).obj (TopCat.of M)).homology 0) = 1 :=
-    finrank_singularHomology₀_eq_one (TopCat.of M)
-  have hf₀ : ContinuousMap.singularHomologyMap k 0 f = LinearMap.id := congrArg ModuleCat.Hom.hom
-    (singularHomology₀_map_eq_id_of_pathConnectedSpace (ModuleCat.of k k) (TopCat.ofHom f))
+  have := flat_int_of_algebra_rat k
+  obtain ⟨h₀, hf₀⟩ := finrank_homology_zero_and_singularHomologyMap_zero (E := E) k f
   have h₂ := o.finrank_singularChains_homology_eq_one hE k
   have := Module.finite_of_finrank_eq_succ h₀
   have := Module.finite_of_finrank_eq_succ h₂
@@ -113,15 +121,8 @@ theorem lefschetzZeta_mul_eq_reverse_charpoly [Algebra ℚ k] [FiniteCWType M] (
     f.lefschetzZeta k * ((1 - PowerSeries.X) *
       (1 - PowerSeries.C (o.degree o hE f : k) * PowerSeries.X)) =
       ((ContinuousMap.singularHomologyMap k 1 f).charpoly.reverse : k⟦X⟧) := by
-  have : Module.Flat ℤ k :=
-    (Module.flat_iff_of_isLocalization ℚ (nonZeroDivisors ℤ) k).1 inferInstance
-  have := ChartedSpace.locallyPathConnectedSpace E M
-  have : PathConnectedSpace M := pathConnectedSpace_iff_connectedSpace.mpr inferInstance
-  -- `M` is path-connected, so `H₀(M; k) = k`, on which `f` acts by the identity.
-  have h₀ : finrank k (((singularChains k).obj (TopCat.of M)).homology 0) = 1 :=
-    finrank_singularHomology₀_eq_one (TopCat.of M)
-  have hf₀ : ContinuousMap.singularHomologyMap k 0 f = LinearMap.id := congrArg ModuleCat.Hom.hom
-    (singularHomology₀_map_eq_id_of_pathConnectedSpace (ModuleCat.of k k) (TopCat.ofHom f))
+  have := flat_int_of_algebra_rat k
+  obtain ⟨h₀, hf₀⟩ := finrank_homology_zero_and_singularHomologyMap_zero (E := E) k f
   have h := ContinuousMap.lefschetzZeta_mul_prod_even_eq_prod_odd
     (subsingleton_singularChains_homology_of_notMem_range_three hE k) f
   rw [show {i ∈ Finset.range 3 | Even i} = {0, 2} by decide,
