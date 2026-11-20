@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Fourier.RieszTransform.Kernel
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 import TauCeti.Analysis.SpecialFunctions.Log.DivSub
-import TauCeti.MeasureTheory.Function.Lp.Integral.BoundedSmul
 public import Mathlib.Basic.Real.Sign
 
 /-!
@@ -244,21 +243,8 @@ theorem ae_smul_rieszTransform_sub_rieszTransform_eq_smul_integral (v : ℝ)
   filter_upwards [ae_rieszTransform_eq_integral v f hs hf,
     ae_rieszTransform_eq_integral v g hs hg0] with x hRf hRg hxs
   rw [hRf hxs, hRg hxs]
-  -- `x` lies at a positive distance `δ` from `s`, so the kernel is bounded by `|v| / (π δ)` on `s`.
-  obtain ⟨δ, hδ, hball⟩ := Metric.isOpen_iff.1 hs.isClosed.isOpen_compl x hxs
-  have hsep (y : ℝ) (hy : y ∈ s) : δ ≤ |x - y| := by
-    by_contra h
-    exact hball (by rw [Metric.mem_ball, Real.dist_eq, abs_sub_comm]; exact not_le.1 h) hy
   have hKf : Integrable fun y ↦ rieszKernel v (x - y) • f y :=
-    (integrable_smul_and_norm_integral_smul_le hs.measure_lt_top.ne (B := |v| / (π * δ))
-      (by positivity)
-      ((measurable_rieszKernel v).comp (measurable_const.sub measurable_id)).aestronglyMeasurable
-      (ae_restrict_of_forall_mem hs.measurableSet fun y hy ↦ by
-        rw [Function.comp_apply, rieszKernel_real, Real.norm_eq_abs, abs_div, abs_mul,
-          abs_of_pos Real.pi_pos]
-        gcongr
-        exact hsep y hy)
-      one_le_two (Lp.memLp f) hf).1
+    integrable_rieszKernel_sub_smul_of_notMem v one_le_two (Lp.memLp f) hs hf hxs
   -- Almost everywhere `K(x - y) • g y = x • (K(x - y) • f y) - (v / π) • f y`.
   have hpt : (fun y ↦ rieszKernel v (x - y) • g y) =ᵐ[volume]
       fun y ↦ x • (rieszKernel v (x - y) • f y) - (v / π) • f y := by
