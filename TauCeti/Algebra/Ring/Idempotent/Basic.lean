@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Conj
 public import Mathlib.Algebra.Ring.Idempotent
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.LinearCombination
@@ -23,6 +24,9 @@ self-adjoint unitary `IsStarProjection.two_mul_sub_one_mem_unitary`. Conversely,
 (`u * v + v * u = 0`), the sandwich `(1 + u) * (1 + v) * (1 + u)` also reduces to
 `(1 + u) + (1 + u)`.
 
+Two elements `p` and `e` of any ring with `e * p = p` and `p * e = e` are idempotents generating
+the same right ideal, and they are similar: the unit `1 - (e - p)` conjugates `p` to `e`.
+
 ## Main results
 
 * `IsIdempotentElem.mul_add_one_sub_mul`: elements of the form `e x + (1 - e) y` multiply
@@ -32,6 +36,7 @@ self-adjoint unitary `IsStarProjection.two_mul_sub_one_mem_unitary`. Conversely,
   `(1 + u) * (1 + u) = (1 + u) + (1 + u)`.
 * `TauCeti.one_add_mul_one_add_mul_one_add_of_mul_self_eq_one`: if `u * u = 1` and
   `u * v + v * u = 0`, then `(1 + u) * (1 + v) * (1 + u) = (1 + u) + (1 + u)`.
+* `TauCeti.isConj_of_mul_eq`: if `e * p = p` and `p * e = e`, then `p` and `e` are conjugate.
 -/
 
 public section
@@ -90,5 +95,24 @@ theorem one_add_mul_one_add_mul_one_add_of_mul_self_eq_one {R : Type*} [Semiring
           ac_rfl
     _ = (1 + u) + (1 + u) := by
           rw [hu, huv, hv, add_zero, add_zero, add_comm u 1]
+
+/-- **Similar idempotents**: elements `p` and `e` of a ring with `e * p = p` and `p * e = e` are
+idempotent (generating the same right ideal) and conjugate. The unit `u = 1 - (e - p)`, with
+inverse `1 + (e - p)`, satisfies `u * p = e * u`. -/
+theorem isConj_of_mul_eq {R : Type*} [Ring R] {p e : R} (hep : e * p = p) (hpe : p * e = e) :
+    IsConj p e := by
+  have hp : p * p = p :=
+    calc p * p = p * (e * p) := by rw [hep]
+      _ = p := by rw [← mul_assoc, hpe, hep]
+  have he : e * e = e :=
+    calc e * e = e * (p * e) := by rw [hpe]
+      _ = e := by rw [← mul_assoc, hep, hpe]
+  have hd : (e - p) * (e - p) = 0 := by
+    simp only [sub_mul, mul_sub, he, hp, hep, hpe, sub_self]
+  refine ⟨⟨1 - (e - p), 1 + (e - p), ?_, ?_⟩, ?_⟩
+  · rw [sub_mul, one_mul, mul_add, mul_one, hd, add_zero, add_sub_cancel_right]
+  · rw [add_mul, one_mul, mul_sub, mul_one, hd, sub_zero, sub_add_cancel]
+  · simp only [SemiconjBy, sub_mul, mul_sub, one_mul, mul_one, he, hp, hep]
+    abel
 
 end TauCeti
