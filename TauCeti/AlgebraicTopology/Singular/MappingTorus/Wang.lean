@@ -347,8 +347,10 @@ cokernel of `𝟙 - φ_*`, followed by the Wang connecting morphism. Its objects
   g := wangδ φ (ModuleCat.of k k) n
   zero := by
     ext x
-    simpa [-homologyMap_fibreInclusionChainMap_comp_wangδ] using
-      congr($(homologyMap_fibreInclusionChainMap_comp_wangδ φ (ModuleCat.of k k) n).hom x)
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, ModuleCat.hom_zero, LinearMap.zero_apply,
+      Submodule.mkQ_apply, ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom,
+      Submodule.liftQ_apply, ← LinearMap.comp_apply, ← ModuleCat.hom_comp,
+      homologyMap_fibreInclusionChainMap_comp_wangδ, ModuleCat.hom_zero, LinearMap.zero_apply]
 
 /-- The first map of the Wang short complex sends the class of `x` to the image of `x` under the
 fibre inclusion. -/
