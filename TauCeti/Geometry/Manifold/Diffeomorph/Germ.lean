@@ -156,7 +156,7 @@ private theorem exists_pos_forall_exists_diffeomorph_eqOn :
   intro n hn c h r hr hhc hcd hδ
   have hn' : (n : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (zero_lt_one.trans_le hn).ne'
   set δ : ℝ := (2 * (1 + 2 * C))⁻¹ with hδdef
-  obtain ⟨ρ, ρ', hρcd, hρ01, hρ1, hρ0, hρd, hρ'le⟩ := hρ c r hr
+  obtain ⟨ρ, ρ', hρcd, hρ01, hρ1, hρ0, hρd, hρ'le, -, -⟩ := hρ c r hr
   have hsupport : tsupport ρ ⊆ closedBall c (2 * r) :=
     closure_minimal (fun x hx ↦ by
       by_contra h
