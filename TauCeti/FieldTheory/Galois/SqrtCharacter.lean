@@ -133,7 +133,7 @@ theorem sqrtCharacter_eq_one_iff [Normal K L] (h2 : (2 : K) ≠ 0) :
   · by_cases hc : c = 0
     · exact ⟨0, by rw [map_zero, eq_comm, ← pow_eq_zero_iff two_ne_zero, ha, hc, map_zero]⟩
     have hfix : ∀ g : Gal(L/K), g a = a := fun g ↦
-      (sqrtCharacter_apply_eq_one_iff ha).mp (by rw [h]; rfl)
+      (sqrtCharacter_apply_eq_one_iff ha).mp (by rw [h, ContinuousMonoidHom.coe_one, Pi.one_apply])
     have hsep : IsSeparable K a := by
       refine (Polynomial.separable_X_pow_sub_C c (by exact_mod_cast h2) hc).of_dvd
         (minpoly.dvd K a ?_)

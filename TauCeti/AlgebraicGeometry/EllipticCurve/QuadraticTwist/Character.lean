@@ -83,6 +83,16 @@ def IsQuadraticTwistBy (E W : WeierstrassCurve K) (η : Field.absoluteGaloisGrou
 
 variable {E W : WeierstrassCurve K} {η η' : Field.absoluteGaloisGroup K →ₜ* ℤˣ}
 
+/-- Unfolding `IsQuadraticTwistBy`: `E` is the twist of `W` by `η` exactly when, for some unit `d`
+of `K` and square root `a` of `d` in `Kᵃˡᵍ` on which `Gal(Kᵃˡᵍ/K)` acts through `η`, a change of
+variables over `K` carries the twist of `W` by `(0, -d)` to `E`. -/
+theorem isQuadraticTwistBy_iff : E.IsQuadraticTwistBy W η ↔
+    ∃ (d : Kˣ) (a : AlgebraicClosure K), a ^ 2 = algebraMap K (AlgebraicClosure K) d ∧
+      (∀ g : Field.absoluteGaloisGroup K,
+        DFunLike.coe (F := Gal(AlgebraicClosure K/K)) g a = (η g : ℤ) • a) ∧
+      ∃ C : VariableChange K, C • W.quadraticTwistOf 0 (-d) = E :=
+  Iff.rfl
+
 /-- **The Galois action on the isomorphism of a quadratic twist.** If `E` is the twist of `W` by
 `η`, there is a change of variables `ρ` over `Kᵃˡᵍ` carrying `W` to `E` whose scaling factor `u` is
 a square root of an element of `K` and is multiplied by `η(g)` under every `g ∈ Gal(Kᵃˡᵍ/K)`. -/
@@ -100,8 +110,7 @@ theorem IsQuadraticTwistBy.exists_smul_baseChange_eq (h2 : (2 : K) ≠ 0)
     exact (map_ne_zero _).mpr h2
   have ha₀ : a ≠ 0 := by
     rintro rfl
-    rw [zero_pow two_ne_zero, eq_comm, map_eq_zero] at ha
-    exact d.ne_zero ha
+    simpa using ha.symm
   have hv : -2 * a ≠ 0 := mul_ne_zero (neg_ne_zero.mpr h2Ω) ha₀
   -- the twist by `(0, -d)` is the split twist by the roots `±a` over `Kᵃˡᵍ`
   set V := (W.baseChange (AlgebraicClosure K)).quadraticTwistOfVariableChange 1 0
@@ -122,13 +131,13 @@ theorem IsQuadraticTwistBy.exists_smul_baseChange_eq (h2 : (2 : K) ≠ 0)
     simp [V, VariableChange.baseChange]
   refine ⟨C.baseChange (AlgebraicClosure K) * V⁻¹, ?_, ⟨C.u ^ 2 / (4 * d), ?_⟩, fun g ↦ ?_⟩
   · rw [mul_smul, ← hV, inv_smul_smul, baseChange_smul_baseChange, hC]
-  · rw [hu, mul_pow, inv_pow, neg_mul, neg_sq, mul_pow, ha]
-    simp only [map_div₀, map_mul, map_pow, map_ofNat]
+  · rw [hu]
+    simp [mul_pow, ha, map_ofNat]
     ring
   · -- work with `g` as an automorphism of `Kᵃˡᵍ`, so that the ring-hom lemmas apply to it
     obtain ⟨σ, rfl⟩ : ∃ σ : Gal(AlgebraicClosure K/K), σ = g := ⟨g, rfl⟩
-    rw [hu, map_mul, map_inv₀, AlgEquiv.commutes, map_mul, map_neg, map_ofNat, hg σ]
-    rcases Int.units_eq_one_or (η σ) with h₁ | h₁ <;> simp [h₁, mul_neg]
+    rw [hu]
+    rcases Int.units_eq_one_or (η σ) with h₁ | h₁ <;> simp [hg σ, h₁, mul_neg, map_ofNat]
 
 /-- **The twisting character is unique** when `j(W) ∉ {0, 1728}`. Two isomorphisms `W_Kᵃˡᵍ ≅ E_Kᵃˡᵍ`
 differ by an automorphism of `W_Kᵃˡᵍ`, which is `±1` and defined over `K`, so the Galois group acts
@@ -219,8 +228,7 @@ theorem isQuadraticTwistBy_one_iff (h2 : (2 : K) ≠ 0) :
   refine ⟨fun ⟨d, a, ha, hg, C, hC⟩ ↦ ?_, fun ⟨C, hC⟩ ↦ ?_⟩
   · have ha₀ : a ≠ 0 := by
       rintro rfl
-      rw [zero_pow two_ne_zero, eq_comm, map_eq_zero] at ha
-      exact d.ne_zero ha
+      simpa using ha.symm
     have h1 : (1 : Field.absoluteGaloisGroup K →ₜ* ℤˣ) = sqrtCharacter ha :=
       eq_sqrtCharacter ha h2 ha₀ hg
     obtain ⟨x, rfl⟩ := ((sqrtCharacter_eq_one_iff ha h2).mp h1.symm)
