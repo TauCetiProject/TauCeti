@@ -24,8 +24,11 @@ as a complex-linear operator for the complex vector space structures in which `i
 by `J'` (`TauCeti.Vortex.sobolevGaugeFixedComplexOperator`), depending continuously on `a`. The two
 complex structures are `TauCeti.Vortex.sobolevVariationComplexModule` and
 `TauCeti.Vortex.sobolevTargetComplexModule`. They are not global instances, because neither space
-has a canonical complex structure; a user activates them with `attribute [local instance]`, as
-this file does.
+has a canonical complex structure; a user activates them, together with the scalar tower and
+continuity facts `TauCeti.Vortex.sobolevVariationComplexModule_isScalarTower`,
+`TauCeti.Vortex.sobolevTargetComplexModule_isScalarTower` and
+`TauCeti.Vortex.sobolevVariationComplexModule_continuousConstSMul` needed to state the results
+below, with `attribute [local instance high]`, as this file does.
 
 The determinant line `det (ker L_a) ⊗ (det (coker L_a))^*` of a vortex deformation operator is
 therefore oriented by its complex orientation (`LinearMap.IsComplexPositiveDetLine`). At a plane
@@ -46,7 +49,9 @@ coefficient.
 All in the namespace `TauCeti.Vortex`:
 
 * `sobolevVariationComplexModule`, `sobolevTargetComplexModule`: the complex structures of
-  `H¹(ℂ)⁴` and `L²(ℂ; ℝ⁴)` in which `i` acts by `J` and by `J'`.
+  `H¹(ℂ)⁴` and `L²(ℂ; ℝ⁴)` in which `i` acts by `J` and by `J'`, with
+  `sobolevVariationComplexModule_isScalarTower`, `sobolevTargetComplexModule_isScalarTower` and
+  `sobolevVariationComplexModule_continuousConstSMul`.
 * `sobolevGaugeFixedComplexOperator`: `L_a` as a complex-linear operator, with
   `restrictScalars_sobolevGaugeFixedComplexOperator` and
   `continuous_restrictScalars_sobolevGaugeFixedComplexOperator`.
@@ -88,16 +93,25 @@ def sobolevTargetComplexModule : Module ℂ (Lp (EuclideanSpace ℝ (Fin 4)) 2 �
 
 attribute [local instance high] sobolevVariationComplexModule sobolevTargetComplexModule
 
-local instance (priority := high) : IsScalarTower ℝ ℂ (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :=
+/-- `ℝ`, `ℂ` and `H¹(ℂ)⁴` form a scalar tower for `TauCeti.Vortex.sobolevVariationComplexModule`. -/
+theorem sobolevVariationComplexModule_isScalarTower :
+    IsScalarTower ℝ ℂ (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :=
   sobolevVariationAlmostComplexStructure.complexModule_isScalarTower
 
-local instance (priority := high) : IsScalarTower ℝ ℂ (Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :=
+/-- `ℝ`, `ℂ` and `L²(ℂ; ℝ⁴)` form a scalar tower for `TauCeti.Vortex.sobolevTargetComplexModule`. -/
+theorem sobolevTargetComplexModule_isScalarTower :
+    IsScalarTower ℝ ℂ (Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :=
   sobolevTargetAlmostComplexStructure.complexModule_isScalarTower
 
-local instance (priority := high) :
+/-- Multiplication by each complex scalar is continuous on `H¹(ℂ)⁴` for
+`TauCeti.Vortex.sobolevVariationComplexModule`. -/
+theorem sobolevVariationComplexModule_continuousConstSMul :
     ContinuousConstSMul ℂ (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :=
   sobolevVariationAlmostComplexStructure.complexModule_continuousConstSMul
     continuous_sobolevVariationAlmostComplexStructure
+
+attribute [local instance high] sobolevVariationComplexModule_isScalarTower
+  sobolevTargetComplexModule_isScalarTower sobolevVariationComplexModule_continuousConstSMul
 
 /-- The Sobolev realization of `L_a`, as a complex-linear operator for the complex structures in
 which `i` acts by `J` on `H¹(ℂ)⁴` and by `J'` on `L²(ℂ; ℝ⁴)`. Its underlying real operator is
