@@ -18,9 +18,9 @@ inclusion and projection form an exact sequence, and the quotient of the origina
 by this intersection is isomorphic to its image.
 
 The restriction requires a Noetherian coefficient ring with the given total ring of fractions.
-The quotient construction and the exactness statement require only `ContinuousAdd V` for
-the ambient topology: the quotient map is then open, so the quotient action is jointly
-continuous. The quotient image is a lattice without a Noetherian or fraction-field hypothesis.
+The quotient construction requires the scalar field to be the fraction field of the coefficient
+ring, but no Noetherian hypothesis, and only `ContinuousAdd V` for the ambient topology: the
+quotient map is then open, so the quotient action is jointly continuous.
 These constructions apply in particular to discrete valuation rings and do not require
 compactness of the acting group.
 
@@ -57,7 +57,7 @@ variable {E : Type*} [CommRing E] [Algebra O E]
 def submodel [IsFractionRing O E] [IsNoetherianRing O] :
     IntegralModel O (ρ.subrepresentation W hW) where
   lattice := Λ.lattice.comap (W.subtype.restrictScalars O)
-  isLattice := Λ.lattice.isLattice_comap W.subtype W.injective_subtype
+  isFullLattice := Λ.lattice.isFullLattice_comap W.subtype W.injective_subtype
   stable g x hx := by
     simp only [Submodule.mem_comap, LinearMap.restrictScalars_apply,
       Submodule.subtype_apply, ContinuousRep.coe_subrepresentation_apply] at hx ⊢
@@ -114,7 +114,7 @@ end Subspace
 
 section Quotient
 
-variable {E : Type*} [CommRing E] [Algebra O E]
+variable {E : Type*} [Field E] [Algebra O E] [IsFractionRing O E]
   {V : Type*} [AddCommGroup V] [Module E V] [Module O V] [IsScalarTower O E V]
   [TopologicalSpace V] [ContinuousAdd V] {ρ : ContinuousRep Γ E V}
   (Λ : IntegralModel O ρ) (W : Submodule E V) (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W)
@@ -122,7 +122,7 @@ variable {E : Type*} [CommRing E] [Algebra O E]
 /-- The image of `Λ` in the quotient by an invariant vector subspace. -/
 def quotientModel : IntegralModel O (ρ.quotient W hW) where
   lattice := Λ.lattice.map (W.mkQ.restrictScalars O)
-  isLattice := Λ.lattice.isLattice_map W.mkQ W.mkQ_surjective
+  isFullLattice := Λ.lattice.isFullLattice_map W.mkQ W.mkQ_surjective
   stable g x hx := by
     obtain ⟨y, hy, rfl⟩ := hx
     exact ⟨ρ g y, Λ.stable g y hy, by simp⟩
@@ -185,7 +185,7 @@ end Quotient
 
 section Exactness
 
-variable {E : Type*} [CommRing E] [Algebra O E]
+variable {E : Type*} [Field E] [Algebra O E]
   {V : Type*} [AddCommGroup V] [Module E V] [Module O V] [IsScalarTower O E V]
   [TopologicalSpace V] [ContinuousAdd V] {ρ : ContinuousRep Γ E V}
   (Λ : IntegralModel O ρ) (W : Submodule E V) (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W)

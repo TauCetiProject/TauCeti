@@ -207,6 +207,15 @@ theorem tsupport_codifferential_subset (o : Manifold.Orientation I M (Fin m))
   refine (RoughForm.tsupport_mextDeriv_subset _).trans ?_
   exact RoughForm.tsupport_hodgeStar_subset o hkl β.1
 
+/-- The Hodge star of a compactly supported form is compactly supported. -/
+theorem hodgeStar_mem_compactlySupportedForms (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + l = m) {β : SmoothForm I M ℝ k} (hβ : β ∈ compactlySupportedForms I M k) :
+    hodgeStar o hkl β ∈ compactlySupportedForms I M l :=
+  (mem_compactlySupportedForms I).2 (((mem_compactlySupportedForms I).1 hβ).of_isClosed_subset
+    (_root_.isClosed_tsupport _) (by
+      rw [coe_hodgeStar]
+      exact RoughForm.tsupport_hodgeStar_subset o hkl β.1))
+
 /-- The codifferential of a compactly supported form is compactly supported. -/
 theorem codifferential_mem_compactlySupportedForms (o : Manifold.Orientation I M (Fin m))
     (hkl : k + 1 + l = m) {β : SmoothForm I M ℝ (k + 1)}
@@ -564,9 +573,10 @@ private theorem mextDerivₗ_funSMulₗ_eq_gradWedge (f : C^∞⟮I, M; ℝ⟯) 
     ext w
     rw [innerSL_apply_apply, Manifold.inner_mgradient]
   ext v
-  rw [mextDerivₗ_funSMulₗ_apply, RoughForm.wedge_def, RoughForm.wedgeWith_apply',
-    ← ContinuousAlternatingMap.wedge_def, mextDeriv_ofFunction, hdf, add_comm]
-  simp only [gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
+  rw [mextDerivₗ_funSMulₗ, Submodule.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
+    cast_apply, coe_wedge_apply, mextDerivₗ_apply, coe_ofFunction, mextDeriv_ofFunction, hdf,
+    add_comm]
+  simp only [coe_funSMulₗ, gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
     alternatingFormEquiv_wedgeLeft_apply, LinearEquiv.apply_symm_apply,
     ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
 

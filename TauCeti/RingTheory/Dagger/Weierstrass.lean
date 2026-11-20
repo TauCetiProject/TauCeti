@@ -13,6 +13,8 @@ public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
 import Mathlib.FieldTheory.Minpoly.Basic
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 import TauCeti.Algebra.GroupWithZero.Irreducible
+import TauCeti.RingTheory.Ideal.KrullIntersection
+import TauCeti.RingTheory.Ideal.Quotient.Integral
 import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
@@ -51,7 +53,9 @@ coefficients and hence distinguished at unit radius, shows that every quotient o
 finitely many variables which is integral over `K` is spanned by the images of polynomials
 (`TauCeti.Dagger.washnitzerAlgebra.surjective_mkₐ_comp_ofMvPolynomial`). Consequently two
 algebra homomorphisms from `K⟨X⟩†` into an algebra integral over `K` that agree on the variables
-are equal (`TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isIntegral`).
+are equal (`TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isIntegral`). By Krull intersection,
+the same holds for any noetherian `K`-algebra whose residue fields at maximal ideals are integral
+over `K` (`TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_forall_isMaximal_isIntegral`).
 
 ## Main results
 
@@ -429,22 +433,35 @@ private abbrev PolynomialsSurject (σ : Type*) : Prop :=
     Function.Surjective ((Ideal.Quotient.mkₐ K I).comp (ofMvPolynomial σ K))
 
 omit [CompleteSpace K] in
-private theorem polynomialsSurject_of_equiv {σ τ : Type*} (e : σ ≃ τ)
-    (h : PolynomialsSurject (K := K) σ) : PolynomialsSurject (K := K) τ := by
-  intro I _
-  let φ := renameAlgEquiv (R := K) e
-  let J := I.comap φ.toAlgHom
+/-- If polynomials surject onto integral quotients in the variables `σ`, and the `K`-algebra map
+`φ : K⟨X_σ⟩† → K⟨X_τ⟩†` renames polynomials along `g : σ → τ`, then the image under `φ` of every
+`a ∈ K⟨X_σ⟩†` in an integral quotient of `K⟨X_τ⟩†` is the class of a polynomial. -/
+private theorem mk_apply_mem_range_of_polynomialsSurject {σ τ : Type*}
+    (h : PolynomialsSurject (K := K) σ)
+    (φ : washnitzerAlgebra σ K →ₐ[K] washnitzerAlgebra τ K) (g : σ → τ)
+    (hφ : ∀ p, φ (ofMvPolynomial σ K p) = ofMvPolynomial τ K (MvPolynomial.rename g p))
+    (I : Ideal (washnitzerAlgebra τ K)) [Algebra.IsIntegral K (washnitzerAlgebra τ K ⧸ I)]
+    (a : washnitzerAlgebra σ K) :
+    Ideal.Quotient.mk I (φ a) ∈ ((Ideal.Quotient.mkₐ K I).comp (ofMvPolynomial τ K)).range := by
+  let J := I.comap φ
   have : Algebra.IsIntegral K (washnitzerAlgebra σ K ⧸ J) :=
-    Algebra.IsIntegral.of_injective (Ideal.quotientMapₐ I φ.toAlgHom le_rfl)
-      Ideal.quotientMap_injective
-  intro x
-  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
-  obtain ⟨p, hp⟩ := h J (Ideal.Quotient.mk J (φ.symm f))
-  refine ⟨MvPolynomial.rename e p, ?_⟩
+    Algebra.IsIntegral.of_injective (Ideal.quotientMapₐ I φ le_rfl) Ideal.quotientMap_injective
+  obtain ⟨p, hp⟩ := h J (Ideal.Quotient.mk J a)
+  refine ⟨MvPolynomial.rename g p, ?_⟩
   simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq, J,
     Ideal.mem_comap] at hp
   refine Ideal.Quotient.eq.mpr ?_
-  simpa [φ] using hp
+  rwa [map_sub, hφ] at hp
+
+omit [CompleteSpace K] in
+private theorem polynomialsSurject_of_equiv {σ τ : Type*} (e : σ ≃ τ)
+    (h : PolynomialsSurject (K := K) σ) : PolynomialsSurject (K := K) τ := by
+  intro I _ x
+  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
+  obtain ⟨p, hp⟩ := mk_apply_mem_range_of_polynomialsSurject h
+    (renameAlgEquiv (R := K) e).toAlgHom e (renameAlgEquiv_ofMvPolynomial e) I
+    ((renameAlgEquiv e).symm f)
+  exact ⟨p, by simpa using hp⟩
 
 omit [CompleteSpace K] in
 private theorem polynomialsSurject_of_isEmpty {σ : Type*} [IsEmpty σ] :
@@ -478,6 +495,14 @@ private theorem exists_isDistinguished_polynomialToOption_map {Q : Polynomial K}
   rw [PowerSeries.coeff_map]
   exact (isUnit_iff_ne_zero.mpr hs.coeff_ne_zero).map _
 
+omit [CompleteSpace K] in
+/-- The minimal polynomial of `Y` modulo `I`, evaluated at `Y`, lies in `I`. -/
+private theorem polynomialToOption_map_minpoly_mem (I : Ideal W') :
+    polynomialToOption
+      ((minpoly K (Ideal.Quotient.mk I (X (Option σ) K none))).map (algebraMap K W)) ∈ I := by
+  rw [← Ideal.Quotient.eq_zero_iff_mem, mk_polynomialToOption, Polynomial.eval₂_map,
+    AlgHom.comp_algebraMap, ← Polynomial.aeval_def, minpoly.aeval]
+
 /-- The inductive step: Weierstrass division by the minimal polynomial of `Y = X none`. -/
 private theorem polynomialsSurject_option (ih : PolynomialsSurject (K := K) σ) :
     PolynomialsSurject (K := K) (Option σ) := by
@@ -486,28 +511,12 @@ private theorem polynomialsSurject_option (ih : PolynomialsSurject (K := K) σ) 
   set Q := minpoly K (Ideal.Quotient.mk I (X (Option σ) K none))
   have hQ0 : Q ≠ 0 := minpoly.ne_zero (Algebra.IsIntegral.isIntegral _)
   set ω : Polynomial W := Q.map (algebraMap K W)
-  have hωI : polynomialToOption ω ∈ I := by
-    have h : polynomialToOption ω = Polynomial.aeval (X (Option σ) K none) Q := by
-      have h' : polynomialToOption.comp (Polynomial.mapRingHom (algebraMap K W)) =
-          (Polynomial.aeval (X (Option σ) K none) : Polynomial K →ₐ[K] W').toRingHom :=
-        Polynomial.ringHom_ext (fun a ↦ by simp) (by simp)
-      exact RingHom.congr_fun h' Q
-    rw [← Ideal.Quotient.eq_zero_iff_mem, h, ← Ideal.Quotient.mkₐ_eq_mk K,
-      ← Polynomial.aeval_algHom_apply, Ideal.Quotient.mkₐ_eq_mk, minpoly.aeval]
+  have hωI : polynomialToOption ω ∈ I := polynomialToOption_map_minpoly_mem I
   obtain ⟨s, hg, hu⟩ := exists_isDistinguished_polynomialToOption_map (σ := σ) hQ0
   -- The coefficients of a remainder have polynomial representatives modulo `I ∩ W`.
-  let J : Ideal W := I.comap (optionC (σ := σ) (R := K))
-  have : Algebra.IsIntegral K (W ⧸ J) :=
-    Algebra.IsIntegral.of_injective (Ideal.quotientMapₐ I optionC le_rfl)
-      Ideal.quotientMap_injective
   let S := ((Ideal.Quotient.mkₐ K I).comp (ofMvPolynomial (Option σ) K)).range
-  have hC (a : W) : Ideal.Quotient.mk I (optionC a) ∈ S := by
-    obtain ⟨p, hp⟩ := ih J (Ideal.Quotient.mk J a)
-    refine ⟨MvPolynomial.rename some p, ?_⟩
-    simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq, J,
-      Ideal.mem_comap] at hp
-    refine Ideal.Quotient.eq.mpr ?_
-    rwa [map_sub, optionC_ofMvPolynomial] at hp
+  have hC (a : W) : Ideal.Quotient.mk I (optionC a) ∈ S :=
+    mk_apply_mem_range_of_polynomialsSurject ih optionC some optionC_ofMvPolynomial I a
   have hY : Ideal.Quotient.mk I (X (Option σ) K none) ∈ S := ⟨MvPolynomial.X none, by simp⟩
   let ψ : Polynomial W →+* W' ⧸ I :=
     (Ideal.Quotient.mk I).comp polynomialToOption
@@ -557,6 +566,31 @@ theorem algHom_ext_of_isIntegral {σ : Type*} [Finite σ] {B : Type*} [CommRing 
   simp only [map_sub, AlgHom.prod_apply, Prod.mk_sub_mk, Prod.mk_eq_zero, sub_eq_zero] at hfp
   rw [hfp.1, hfp.2]
   exact AlgHom.congr_fun hpoly p
+
+/-- **Homomorphisms separated by integral maximal quotients are determined by the variables.** If
+`R` is a noetherian `K`-algebra whose residue fields `R ⧸ m` at maximal ideals are integral over
+`K`, then two `K`-algebra homomorphisms from the Monsky–Washnitzer algebra in finitely many
+variables into `R` agreeing on every coordinate variable are equal. No continuity or norm on `R` is
+assumed. -/
+theorem algHom_ext_of_forall_isMaximal_isIntegral {σ : Type*} [Finite σ]
+    {R : Type*} [CommRing R] [Algebra K R] [IsNoetherianRing R]
+    (hint : ∀ (m : Ideal R) [m.IsMaximal], Algebra.IsIntegral K (R ⧸ m))
+    {φ ψ : washnitzerAlgebra σ K →ₐ[K] R} (h : ∀ i, φ (X σ K i) = ψ (X σ K i)) :
+    φ = ψ := by
+  ext f
+  suffices φ f - ψ f ∈ (⊥ : Ideal R) from sub_eq_zero.mp this
+  rw [← Ideal.iInf_isMaximal_pow_eq_bot]
+  simp only [Ideal.mem_iInf]
+  intro m hm k _
+  have : Algebra.IsIntegral K (R ⧸ m) := @hint m hm
+  have : Algebra.IsIntegral K (R ⧸ m ^ k) :=
+    ⟨fun y ↦ by
+      obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
+      exact isIntegral_quotient_pow_of_isIntegral_quotient (Algebra.IsIntegral.isIntegral _) k⟩
+  let q := Ideal.Quotient.mkₐ K (m ^ k)
+  have hq : q.comp φ = q.comp ψ := algHom_ext_of_isIntegral fun i ↦ by simp [h i]
+  exact Ideal.Quotient.eq_zero_iff_mem.mp
+    (by simpa [q, map_sub] using sub_eq_zero.mpr (AlgHom.congr_fun hq f))
 
 end IntegralQuotient
 

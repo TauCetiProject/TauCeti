@@ -13,7 +13,7 @@ public import Mathlib.Topology.Irreducible
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Topology.PathComponent
 public import Mathlib.Topology.Order.OrderClosed
-public import Mathlib.Topology.Sets.Opens
+public import Mathlib.Topology.Sets.Closeds
 import Mathlib.Topology.DiscreteSubset
 import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.Order.IntermediateValue
@@ -34,12 +34,25 @@ space by them.
   to connected components.
 * `ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq`: points of a set lie in the same
   connected component of the subspace exactly when they have the same component in the set.
+* `IsClopen.preimage_image_connectedComponentsMk`, `IsClopen.image_connectedComponentsMk`: a clopen
+  set is saturated for the connected-components equivalence relation and has clopen image in
+  `ConnectedComponents X`.
+* `ConnectedComponents.clopensEquiv`: the clopen subsets of the space of connected components
+  correspond to the clopen subsets of the space, by taking preimages.
 * `ConnectedComponents.opens`: in a locally connected space, the connected component indexed by a
   point of the quotient, as an open set; these open sets partition the space.
 * `Homeomorph.image_connectedComponent`: a homeomorphism maps a connected component onto
   the connected component of the image point.
-* `TauCeti.frontier_connectedComponentIn_subset_compl`: in a locally connected space, a connected
-  component of an open set has its frontier in the complement of that set.
+* `TauCeti.frontier_connectedComponentIn_subset_compl_interior` and
+  `TauCeti.frontier_connectedComponentIn_subset_compl`: in a locally connected space, a connected
+  component of a set has its frontier outside the interior of that set (hence in the complement of
+  an open set).
+* `TauCeti.frontier_connectedComponentIn_sdiff_subset_compl_interior_union_closure`,
+  `TauCeti.frontier_connectedComponentIn_sdiff_subset_closure`,
+  `IsOpen.frontier_connectedComponentIn_sdiff_subset_closure`, and
+  `IsClosed.frontier_connectedComponentIn_sdiff_subset`: a connected component of `Ω \ K` has its
+  frontier in `(interior Ω)ᶜ ∪ closure K` (hence in `closure K`, or in `K` for closed `K`, when
+  its frontier lies in `interior Ω`).
 * `IsOpen.joinedIn_of_mem_connectedComponentIn`: in a locally path-connected space, a point of an
   open set is joined to each point of its component by a path inside that component.
 * `IsPreconnected.subset_connectedComponentIn_of_inter_closure_subset`: a preconnected set through
@@ -47,6 +60,9 @@ space by them.
   closure of that component only inside `U`.
 * `IsPreconnected.exists_mem_inter_closure_connectedComponentIn_sdiff`: a component of `U \ S`
   that is not all of a preconnected `U` has closure meeting `S ∩ U`.
+* `Set.closure_connectedComponentIn_inter_self`: a component is closed relative to its set.
+* `TauCeti.connectedComponent_eq_or_eq_of_forall_isClopen`: two points meeting every nonempty
+  clopen set represent all connected components.
 * `IsClosed.connectedComponentIn`: a connected component of a closed set is closed.
 * `TauCeti.exists_isClopen_between_connectedComponent`: in a compact Hausdorff space, a clopen set
   sits between the connected component of a point and any open set containing it.
@@ -244,6 +260,55 @@ theorem iUnion_carrierIn : (⋃ c : ConnectedComponents s, c.carrierIn) = s := b
 
 end Carrier
 
+/-- A clopen subset is saturated for the connected-components equivalence relation: pulling its
+image in `ConnectedComponents X` back along `ConnectedComponents.mk` recovers `s`. -/
+theorem _root_.IsClopen.preimage_image_connectedComponentsMk {s : Set X} (hs : IsClopen s) :
+    mk ⁻¹' (mk '' s) = s :=
+  (connectedComponents_preimage_image s).trans hs.biUnion_connectedComponent_eq
+
+/-- The image of a clopen subset under `ConnectedComponents.mk` is clopen in
+`ConnectedComponents X`. -/
+theorem _root_.IsClopen.image_connectedComponentsMk {s : Set X} (hs : IsClopen s) :
+    IsClopen (mk '' s) :=
+  isQuotientMap_coe.isClopen_preimage.mp (hs.preimage_image_connectedComponentsMk.symm ▸ hs)
+
+open TopologicalSpace in
+/-- The clopen subsets of `ConnectedComponents X` are in order-preserving bijection with the clopen
+subsets of `X`, by taking preimages under the quotient map `ConnectedComponents.mk`. Its inverse
+sends a clopen set to its image, a clopen set being a union of connected components. -/
+def clopensEquiv : Clopens (ConnectedComponents X) ≃o Clopens X where
+  toFun U := ⟨mk ⁻¹' U, U.isClopen.preimage continuous_coe⟩
+  invFun V := ⟨mk '' V, V.isClopen.image_connectedComponentsMk⟩
+  left_inv _ := Clopens.ext <| image_preimage_eq _ surjective_coe
+  right_inv V := Clopens.ext V.isClopen.preimage_image_connectedComponentsMk
+  map_rel_iff' := surjective_coe.preimage_subset_preimage_iff
+
+open TopologicalSpace in
+@[simp]
+theorem coe_clopensEquiv (U : Clopens (ConnectedComponents X)) :
+    (clopensEquiv U : Set X) = mk ⁻¹' U :=
+  (rfl)
+
+open TopologicalSpace in
+@[simp]
+theorem coe_clopensEquiv_symm (V : Clopens X) :
+    (clopensEquiv.symm V : Set (ConnectedComponents X)) = mk '' V :=
+  (rfl)
+
+open TopologicalSpace in
+@[simp]
+theorem mem_clopensEquiv {U : Clopens (ConnectedComponents X)} {x : X} :
+    x ∈ clopensEquiv U ↔ mk x ∈ U :=
+  Iff.rfl
+
+open TopologicalSpace in
+/-- A point lies in a clopen set exactly when its connected component lies in the corresponding
+clopen set of components. -/
+@[simp]
+theorem mk_mem_clopensEquiv_symm {V : Clopens X} {x : X} :
+    mk x ∈ clopensEquiv.symm V ↔ x ∈ V := by
+  rw [← mem_clopensEquiv, OrderIso.apply_symm_apply]
+
 section Opens
 
 open TopologicalSpace
@@ -345,18 +410,56 @@ theorem _root_.Set.Finite.image_connectedComponentIn_sUnion {s : Set X} {𝒞 : 
   have hts : t ⊆ s := (subset_sUnion_of_mem ht).trans hsub
   exact connectedComponentIn_eq ((hc t ht).subset_connectedComponentIn hx hts hy)
 
+/-- **The frontier of a connected component of a set misses its interior.** In a locally connected
+space, no frontier point of `connectedComponentIn F x` lies in `interior F`. -/
+theorem frontier_connectedComponentIn_subset_compl_interior [LocallyConnectedSpace X] {F : Set X}
+    (x : X) : frontier (connectedComponentIn F x) ⊆ (interior F)ᶜ := by
+  intro y hy hyF
+  obtain ⟨V, ⟨hVo, hyV, hVc⟩, hVF⟩ :=
+    (LocallyConnectedSpace.open_connected_basis y).mem_iff.mp (isOpen_interior.mem_nhds hyF)
+  obtain ⟨z, hzV, hzC⟩ := mem_closure_iff.mp hy.1 V hVo hyV
+  have hVsub : V ⊆ connectedComponentIn F x := by
+    rw [connectedComponentIn_eq hzC]
+    exact hVc.isPreconnected.subset_connectedComponentIn hzV (hVF.trans interior_subset)
+  exact hy.2 (hVo.subset_interior_iff.mpr hVsub hyV)
+
 /-- **The frontier of a connected component of an open set misses the set.** Equivalently,
 `frontier (connectedComponentIn F x) ∩ F = ∅`: the component is clopen in `F`. -/
 theorem frontier_connectedComponentIn_subset_compl [LocallyConnectedSpace X] {F : Set X}
     (hF : IsOpen F) (x : X) : frontier (connectedComponentIn F x) ⊆ Fᶜ := by
-  intro y hy hyF
-  have hC : IsOpen (connectedComponentIn F x) := hF.connectedComponentIn
-  obtain ⟨z, hzy, hzx⟩ :=
-    mem_closure_iff.mp hy.1 _ hF.connectedComponentIn (mem_connectedComponentIn hyF)
-  have hyC : y ∈ connectedComponentIn F x := by
-    rw [connectedComponentIn_eq hzx, ← connectedComponentIn_eq hzy]
-    exact mem_connectedComponentIn hyF
-  exact hy.2 (by rwa [hC.interior_eq])
+  simpa only [hF.interior_eq] using frontier_connectedComponentIn_subset_compl_interior (F := F) x
+
+/-- In a locally connected space, the frontier of a connected component of `Ω \ K` lies in
+`(interior Ω)ᶜ ∪ closure K`. -/
+theorem frontier_connectedComponentIn_sdiff_subset_compl_interior_union_closure
+    [LocallyConnectedSpace X] {Ω K : Set X} (x : X) :
+    frontier (connectedComponentIn (Ω \ K) x) ⊆ (interior Ω)ᶜ ∪ closure K := by
+  have h := frontier_connectedComponentIn_subset_compl_interior (F := Ω \ K) x
+  rwa [sdiff_eq, interior_inter, interior_compl, compl_inter, compl_compl] at h
+
+/-- In a locally connected space, if the frontier of a connected component of `Ω \ K` lies in
+`interior Ω`, then it lies in `closure K`. -/
+theorem frontier_connectedComponentIn_sdiff_subset_closure [LocallyConnectedSpace X] {Ω K : Set X}
+    {x : X} (hfr : frontier (connectedComponentIn (Ω \ K) x) ⊆ interior Ω) :
+    frontier (connectedComponentIn (Ω \ K) x) ⊆ closure K := fun _ hy ↦
+  (frontier_connectedComponentIn_sdiff_subset_compl_interior_union_closure x hy).resolve_left
+    (not_not.mpr (hfr hy))
+
+/-- If the connected component of `x` in `Ω \ K` has closure contained in an open set `Ω` of a
+locally connected space, then its frontier lies in `closure K`. -/
+theorem _root_.IsOpen.frontier_connectedComponentIn_sdiff_subset_closure [LocallyConnectedSpace X]
+    {Ω K : Set X} (hΩ : IsOpen Ω) {x : X} (hcl : closure (connectedComponentIn (Ω \ K) x) ⊆ Ω) :
+    frontier (connectedComponentIn (Ω \ K) x) ⊆ closure K :=
+  TauCeti.frontier_connectedComponentIn_sdiff_subset_closure
+    (frontier_subset_closure.trans (hΩ.interior_eq.symm ▸ hcl))
+
+/-- For a closed set `K` in a locally connected space, if the frontier of a connected component of
+`Ω \ K` lies in `interior Ω`, then it lies in `K`. -/
+theorem _root_.IsClosed.frontier_connectedComponentIn_sdiff_subset [LocallyConnectedSpace X]
+    {Ω K : Set X} (hK : IsClosed K) {x : X}
+    (hfr : frontier (connectedComponentIn (Ω \ K) x) ⊆ interior Ω) :
+    frontier (connectedComponentIn (Ω \ K) x) ⊆ K :=
+  (frontier_connectedComponentIn_sdiff_subset_closure hfr).trans hK.closure_subset
 
 /-- **Points of a component of an open set are joined inside it.** In a locally path-connected
 space, the connected component of `x` in an open set `U` is open and connected, hence path
@@ -396,6 +499,51 @@ theorem _root_.IsPreconnected.exists_mem_inter_closure_connectedComponentIn_sdif
   by_contra! h
   exact huz (hU.subset_connectedComponentIn_of_inter_closure_subset hUS hz.1 hz
     (fun p hp => ⟨hp.1, fun hpS => h p ⟨hpS, hp.1⟩ hp.2⟩) hu)
+
+/-- The closure of a connected component in a set meets that set exactly in the component. -/
+@[simp]
+theorem _root_.Set.closure_connectedComponentIn_inter_self (s : Set X) (x : X) :
+    closure (connectedComponentIn s x) ∩ s = connectedComponentIn s x := by
+  by_cases hx : x ∈ s
+  · refine Subset.antisymm (fun y hy ↦ ?_)
+      (subset_inter subset_closure (connectedComponentIn_subset s x))
+    have hcc : (⟨y, hy.2⟩ : s) ∈ closure (connectedComponent (⟨x, hx⟩ : s)) := by
+      rw [closure_subtype, ← connectedComponentIn_eq_image hx]
+      exact hy.1
+    rw [connectedComponentIn_eq_image hx]
+    exact ⟨⟨y, hy.2⟩, isClosed_connectedComponent.closure_subset hcc, rfl⟩
+  · simp [connectedComponentIn_eq_empty hx]
+
+/-- If every nonempty clopen set contains one of two fixed points, every connected component
+is the component of one of those points. -/
+theorem connectedComponent_eq_or_eq_of_forall_isClopen (a b x : X)
+    (h : ∀ s : Set X, IsClopen s → s.Nonempty → a ∈ s ∨ b ∈ s) :
+    connectedComponent x = connectedComponent a ∨ connectedComponent x = connectedComponent b := by
+  by_cases hc : IsPreconnected (univ : Set X)
+  · let : PreconnectedSpace X := ⟨hc⟩
+    simp
+  obtain ⟨s, t, hs, ht, hsn, htn, hst, hstU⟩ := isClopen_univ.not_isPreconnected_iff.mp hc
+  have hconn {s t : Set X} (hs : IsClopen s) (ht : IsClopen t) (htn : t.Nonempty)
+      (hst : Disjoint s t) : IsPreconnected s := by
+    refine hs.isPreconnected_iff.mpr fun u v hu hv hun hvn huv heq ↦ ?_
+    have h₁ := h u hu hun
+    have h₂ := h v hv hvn
+    have h₃ := h t ht htn
+    simp only [disjoint_left] at hst huv
+    grind
+  have hsC {y : X} (hy : y ∈ s) : connectedComponent y = s :=
+    (hs.connectedComponent_subset hy).antisymm ((hconn hs ht htn hst).subset_connectedComponent hy)
+  have htC {y : X} (hy : y ∈ t) : connectedComponent y = t :=
+    (ht.connectedComponent_subset hy).antisymm
+      ((hconn ht hs hsn hst.symm).subset_connectedComponent hy)
+  have hx : x ∈ s ∪ t := hstU ▸ mem_univ x
+  rcases hx with hx | hx
+  · rcases h s hs hsn with ha | hb
+    · exact .inl ((hsC hx).trans (hsC ha).symm)
+    · exact .inr ((hsC hx).trans (hsC hb).symm)
+  · rcases h t ht htn with ha | hb
+    · exact .inl ((htC hx).trans (htC ha).symm)
+    · exact .inr ((htC hx).trans (htC hb).symm)
 
 /-- A connected component of a closed set is closed. -/
 protected theorem _root_.IsClosed.connectedComponentIn {F : Set X} {x : X} (hF : IsClosed F) :
