@@ -273,8 +273,11 @@ theorem Scheme.ΓSpecIso_appIso_hom_map_eq_restrict {X : Scheme.{u}} {A A' : Com
   rw [← Scheme.ΓSpecIso_naturality, Scheme.Hom.comp_appIso]
   simp only [Iso.trans_hom, Functor.mapIso_hom, Iso.op_hom, eqToIso.hom, Category.assoc,
     ← Functor.map_comp_assoc]
-  rw [show (homOfLE hle).op ≫ (eqToHom rfl).op ≫ (eqToHom _).op =
-    (ι.opensFunctor.map (homOfLE le_top)).op from Subsingleton.elim _ _]
+  -- The opens of `X` form a thin category, so whatever composite of restrictions `subst` and
+  -- `comp_appIso` leave here is the restriction along `ι ''ᵁ (Spec.map φ ''ᵁ ⊤) ≤ ι ''ᵁ ⊤`.
+  rw [show ∀ g : Opposite.op (ι ''ᵁ ⊤) ⟶ Opposite.op (ι ''ᵁ (Spec.map φ ''ᵁ ⊤)),
+      X.presheaf.map g = X.presheaf.map (ι.opensFunctor.map (homOfLE le_top)).op from
+    fun _ ↦ congrArg _ (Subsingleton.elim _ _)]
   -- Restricting along `ι` commutes with the inclusion of the image of `Spec A'` into `⊤`.
   have := Scheme.Hom.appIso_hom_naturality ι (homOfLE (le_top : Spec.map φ ''ᵁ ⊤ ≤ ⊤)).op
   rw [Quiver.Hom.unop_op] at this
