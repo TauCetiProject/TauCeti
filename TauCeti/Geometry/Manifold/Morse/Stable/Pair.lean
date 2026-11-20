@@ -53,8 +53,8 @@ For a Morse–Smale pair the following hold, for critical points `a` of `f₀` a
   (`IsMorseSmalePair.closure_unstableSet_inter_stableSet_subset`). These are the two kinds of
   broken trajectories that pair up in the proof that a continuation map is a chain map.
 
-Reversing both fields exchanges their roles: `(X₀, X₁)` is Morse–Smale exactly when
-`(-X₁, -X₀)` is (`IsMorseSmalePair.neg`), as for the continuation along the reversed path.
+Reversing both fields exchanges their roles: if `(X₀, X₁)` is Morse–Smale then so is
+`(-X₁, -X₀)` (`IsMorseSmalePair.neg`), as for the continuation along the reversed path.
 
 ## Main declarations
 
