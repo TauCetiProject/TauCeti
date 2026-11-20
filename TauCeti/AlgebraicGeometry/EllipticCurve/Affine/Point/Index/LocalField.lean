@@ -35,9 +35,9 @@ The last factor is the inverse of the normalized absolute value of `n`
 (`WeierstrassCurve.index_range_nsmul_eq_natCard_torsionBy_mul`). A nonarchimedean local field is
 such a completion of itself, at the maximal ideal of `𝒪[K]`
 (`TauCeti.bijective_algebraMap_adicCompletion_maximalPrime`), and the points of `E` move along
-that identification (`WeierstrassCurve.Affine.Point.mapAlong`). This puts the local factors of
-Cassels' comparison of the Selmer groups of an isogeny and of its dual in the setting of local
-Tate duality, which is stated over nonarchimedean local fields.
+that identification (`WeierstrassCurve.Affine.Point.mapAlongAddEquiv`). This puts the local
+factors of Cassels' comparison of the Selmer groups of an isogeny and of its dual in the setting of
+local Tate duality, which is stated over nonarchimedean local fields.
 
 ## Main results
 
@@ -78,13 +78,8 @@ theorem index_range_nsmul_eq_natCard_torsionBy_mul_of_localField (hn : (n : K) �
   have : Finite ((valuation K).valuationSubring ⧸ u.asIdeal) := inferInstanceAs (Finite 𝓀[K])
   let i := algebraMap K (u.adicCompletion K)
   -- `K` is its own completion at `u`, so `E(K)` is the group of points of `E` over `K_u`
-  let eqv : W.toAffine.Point ≃+ (W.map i).toAffine.Point :=
-    AddEquiv.ofBijective
-      (AddMonoidHom.mk' (Affine.Point.mapAlong i i.injective)
-        (Affine.Point.mapAlong_add i i.injective))
-      ⟨Affine.Point.mapAlong_injective i i.injective,
-        Affine.Point.mapAlong_surjective i i.injective
-          (TauCeti.bijective_algebraMap_adicCompletion_maximalPrime K).2⟩
+  let eqv := Affine.Point.mapAlongAddEquiv (W := W) i
+    (TauCeti.bijective_algebraMap_adicCompletion_maximalPrime K)
   have hn' : (n : (valuation K).valuationSubring) ≠ 0 := fun h ↦ hn (by
     simpa using congrArg (fun x : (valuation K).valuationSubring ↦ (x : K)) h)
   -- and `𝒪[K]` is the ring of integers of `K_u`

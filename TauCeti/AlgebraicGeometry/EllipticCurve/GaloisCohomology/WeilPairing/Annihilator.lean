@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Separability
 public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 import TauCeti.Algebra.Module.ZMod.Annihilator
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.LocalField
+import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Finiteness
 import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Cardinality
 import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Orthogonality
 
@@ -107,24 +108,20 @@ theorem natCard_ker_explicitCoeff1_kerCoeffIncl_mul_dual_eq_natCard_H1 :
 finite extension `K` of `ℚ_p`, a class in `H¹(K, E₁[φ])` lies in the local condition of `φ`, the
 kernel of the map to `H¹(K, E₁)`, exactly when its local Tate pairing with every class in the local
 condition of `φ̂` vanishes. The residue characteristic `p` may divide `deg φ`. -/
-theorem ker_explicitCoeff1_kerCoeffIncl_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype
-    (hn : IsUnit (φ.degree : K)) :
+theorem ker_explicitCoeff1_kerCoeffIncl_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype :
+    haveI := FinitePadicExtension.charZero K p
     (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology).ker =
-      ((φ.localTateKerWeilPairing hn).compl₂
+      ((φ.localTateKerWeilPairing (Nat.cast_ne_zero.mpr φ.degree_ne_zero).isUnit).compl₂
         (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
           continuous_of_discreteTopology).ker.subtype).ker := by
   classical
+  have := FinitePadicExtension.charZero K p
+  have hn : IsUnit (φ.degree : K) := (Nat.cast_ne_zero.mpr φ.degree_ne_zero).isUnit
   have := hn.neZero_natCast
   obtain ⟨_, _⟩ := φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero
   have hcard := φ.natCard_ker_explicitCoeff1_kerCoeffIncl_mul_dual_eq_natCard_H1 p
-  -- `H¹(K, E₂[φ̂])` is finite, as its order, computed by the Euler characteristic, is nonzero
-  have : Finite (H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) := by
-    have := (ofIsogeny φ.dual).finite_ker_pointMapHom (ofIsogeny_ne_zero φ.dual)
-    have := (ofIsogeny φ.dual.dual).finite_ker_pointMapHom (ofIsogeny_ne_zero φ.dual.dual)
-    refine Nat.finite_of_card_ne_zero ?_
-    rw [φ.dual.natCard_H1_kerCoeff p]
-    exact mul_ne_zero (mul_ne_zero Nat.card_pos.ne' Nat.card_pos.ne')
-      (pow_ne_zero _ (Fact.out : p.Prime).ne_zero)
+  have := (ofIsogeny φ.dual).finite_H1_kerCoeff_of_isTopologicallyFinitelyGenerated
+    (ofIsogeny_ne_zero φ.dual) (isTopologicallyFinitelyGenerated_absoluteGaloisGroup p K)
   have hkill (Q : (ofIsogeny φ.dual).KerCoeff) : φ.degree • Q = 0 := by
     simpa only [degree_dual] using φ.dual.degree_nsmul_kerCoeff_eq_zero Q
   refine ((φ.localTateKerWeilPairing hn
@@ -139,14 +136,16 @@ theorem ker_explicitCoeff1_kerCoeffIncl_eq_ker_compl₂_localTateKerWeilPairing_
 extension `K` of `ℚ_p`, the image of `E₂(K)` in `H¹(K, E₁[φ])` consists of the classes whose local
 Tate pairing with the image of `E₁(K)` in `H¹(K, E₂[φ̂])` vanishes. The residue characteristic `p`
 may divide `deg φ`. -/
-theorem range_kummerMap_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype [DecidableEq K]
-    (hn : IsUnit (φ.degree : K)) :
-    letI := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).2
-    letI := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).1
+theorem range_kummerMap_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype [DecidableEq K] :
+    haveI := FinitePadicExtension.charZero K p
+    letI := (φ.isSeparable_dual_and_self_iff.mpr (Nat.cast_ne_zero.mpr φ.degree_ne_zero)).2
+    letI := (φ.isSeparable_dual_and_self_iff.mpr (Nat.cast_ne_zero.mpr φ.degree_ne_zero)).1
     φ.kummerMap.range =
-      ((φ.localTateKerWeilPairing hn).compl₂ φ.dual.kummerMap.range.subtype).ker := by
-  obtain ⟨_, _⟩ := φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero
+      ((φ.localTateKerWeilPairing (Nat.cast_ne_zero.mpr φ.degree_ne_zero).isUnit).compl₂
+        φ.dual.kummerMap.range.subtype).ker := by
+  have := FinitePadicExtension.charZero K p
+  obtain ⟨_, _⟩ := φ.isSeparable_dual_and_self_iff.mpr (Nat.cast_ne_zero.mpr φ.degree_ne_zero)
   rw [φ.range_kummerMap, φ.dual.range_kummerMap]
-  exact φ.ker_explicitCoeff1_kerCoeffIncl_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype p hn
+  exact φ.ker_explicitCoeff1_kerCoeffIncl_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype p
 
 end TauCeti.Isogeny
