@@ -34,6 +34,11 @@ to `z / (1 - z)²`, `z² / (1 - z)³` and `z / (1 - z)³`, whose coefficients ar
 
 The geometric weights `(1 - q) qᵏ` sum to `1` and have mean `q / (1 - q)`, so over a normed
 field they average an affine function `c k + B` of `k` to `c q / (1 - q) + B`.
+
+Dirichlet's test `Filter.Tendsto.cauchySeq_series_smul_of_summable_norm_sub` is adapted from the
+lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/Hypergeometric/AnalyticProperties.lean`, where it is
+`exists_tendsto_sum_mul_of_bdd_variation`.
 -/
 
 public section

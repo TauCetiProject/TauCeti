@@ -11,15 +11,18 @@ public import Mathlib.Analysis.SpecialFunctions.OrdinaryHypergeometric
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import TauCeti.Analysis.SpecialFunctions.Gamma.PochhammerLimit
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.OrdinaryHypergeometric
 import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
 # The Gauss series on its circle of convergence
 
-The Gauss hypergeometric series `∑ (a)ₛ (b)ₛ / ((c)ₛ s!) zˢ` has radius of convergence `1`. Its
-behaviour on the circle `|z| = 1` is governed by the real part of `c − a − b` (DLMF §15.2(i)):
+When none of `a`, `b`, `c` is a nonpositive integer, the Gauss hypergeometric series
+`∑ (a)ₛ (b)ₛ / ((c)ₛ s!) zˢ` has radius of convergence `1`. If `a` or `b` is a nonpositive integer
+the coefficients are eventually zero and the series is a polynomial; if `c` is one, Mathlib's
+convention `x / 0 = 0` makes the coefficients eventually zero as well. The behaviour of the series
+on the circle `|z| = 1` is governed by the real part of `c − a − b` (DLMF §15.2(i)):
 
 * the series converges absolutely if `Re(c − a − b) > 0`;
 * it converges for `z ≠ 1` if `Re(c − a − b) > −1`, but not absolutely if `Re(c − a − b) ≤ 0`
@@ -77,8 +80,11 @@ theorem tendsto_ordinaryHypergeometricCoefficient_div_natCast_cpow (a b c : ℂ)
   have h := ((tendsto_ascPochhammer_eval_div_natCast_cpow_mul_factorial a).mul
     (tendsto_ascPochhammer_eval_div_natCast_cpow_mul_factorial b)).mul
     (tendsto_natCast_cpow_mul_factorial_div_ascPochhammer_eval c)
-  rw [show (Gamma a)⁻¹ * (Gamma b)⁻¹ * Gamma c = Gamma c / (Gamma a * Gamma b) by
-    rw [div_eq_mul_inv, mul_inv]; ring] at h
+  -- Regroup the product of the three limits as the quotient `Γ(c) / (Γ(a) Γ(b))`.
+  have hΓ : (Gamma a)⁻¹ * (Gamma b)⁻¹ * Gamma c = Gamma c / (Gamma a * Gamma b) := by
+    rw [div_eq_mul_inv, mul_inv]
+    ring
+  rw [hΓ] at h
   refine h.congr' ?_
   filter_upwards [eventually_ne_atTop 0] with n hn
   have hn' : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hn
@@ -110,19 +116,13 @@ theorem isTheta_ordinaryHypergeometricCoefficient {a b c : ℂ} (ha : ∀ k : �
     (hb : ∀ k : ℕ, b ≠ -k) (hc : ∀ k : ℕ, c ≠ -k) :
     ordinaryHypergeometricCoefficient a b c =Θ[atTop]
       fun n : ℕ => (n : ℝ) ^ (a + b - c - 1).re := by
-  refine ⟨isBigO_ordinaryHypergeometricCoefficient a b c, ?_⟩
   have hL : Gamma c / (Gamma a * Gamma b) ≠ 0 :=
     div_ne_zero (Gamma_ne_zero hc) (mul_ne_zero (Gamma_ne_zero ha) (Gamma_ne_zero hb))
-  have hlim := tendsto_ordinaryHypergeometricCoefficient_div_natCast_cpow a b c
-  have hne : ∀ᶠ n : ℕ in atTop, ordinaryHypergeometricCoefficient a b c n ≠ 0 := by
-    filter_upwards [hlim.eventually_ne hL] with n hn h0
-    exact hn (by rw [h0, zero_div])
-  have h := isBigO_of_div_tendsto_nhds (f := fun n : ℕ => (n : ℂ) ^ (a + b - c - 1))
-    (hne.mono fun n hn h0 => absurd h0 hn) _
-    ((hlim.inv₀ hL).congr fun n => by rw [Pi.div_apply, inv_div])
-  refine (IsBigO.of_bound 1 ?_).trans h
+  refine (isTheta_norm_right.mpr (isTheta_of_div_tendsto_nhds_ne_zero
+    (tendsto_ordinaryHypergeometricCoefficient_div_natCast_cpow a b c) hL).symm).trans_eventuallyEq
+      ?_
   filter_upwards [eventually_gt_atTop 0] with n hn
-  rw [norm_natCast_cpow_of_pos hn, Real.norm_of_nonneg (by positivity), one_mul]
+  exact norm_natCast_cpow_of_pos hn _
 
 /-- The ratio `cₛ₊₁ / cₛ − 1` of consecutive Gauss coefficients is `O(1 / s)`. -/
 private theorem isBigO_coefficientRatio_sub_one (a b c : ℂ) :
@@ -151,8 +151,10 @@ private theorem isBigO_coefficientRatio_sub_one (a b c : ℂ) :
       rw [eq_neg_of_add_eq_zero_right h, norm_neg, norm_natCast] at hcn
       exact lt_irrefl _ hcn
     have hcn'' : c + n ≠ 0 := by rwa [add_comm]
-    rw [show (1 : ℂ) + 1 / n = (n + 1) / n by rw [add_div, div_self hn'],
-      show (1 : ℂ) + c / n = (n + c) / n by rw [add_div, div_self hn']]
+    -- Clear the inner denominators `n` of `1 + 1 / n` and `1 + c / n`.
+    have h1 : (1 : ℂ) + 1 / n = (n + 1) / n := by rw [add_div, div_self hn']
+    have h2 : (1 : ℂ) + c / n = (n + c) / n := by rw [add_div, div_self hn']
+    rw [h1, h2]
     field_simp
     ring
 
