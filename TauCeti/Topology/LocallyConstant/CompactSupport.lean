@@ -5,15 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Finsupp.SMul
 public import Mathlib.LinearAlgebra.Span.Defs
-public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
-public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.Algebra.Support
 public import Mathlib.Topology.LocallyConstant.Algebra
 public import Mathlib.Topology.Sets.Compacts
-import TauCeti.Topology.Algebra.Group.LocallyConstant
-import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
 
 /-!
 # Locally constant functions with compact support
@@ -36,19 +31,14 @@ span `C_c^∞(X, M)` (`LocallyConstant.compactlySupported_eq_span`). Two such ex
 refinement by `Finpartition.exists_forall_le_or_disjoint`, applied in the Boolean algebra of
 compact open sets of `X`.
 
-On a topological group `G`, a test function is uniformly locally constant: it is invariant under
-left and right translation by an open subgroup, which can be taken compact when `G` is locally
-profinite (`LocallyConstant.exists_isCompact_openSubgroup_forall_mul_eq`). For a compact open
-subgroup `U`, the test functions invariant under right translation by `U` are the finitely
-supported functions on `G ⧸ U` (`LocallyConstant.compactlySupportedRightInvariantEquiv`).
+The test functions on a topological group, and their invariance under compact open subgroups,
+are treated in `TauCeti.Topology.Algebra.Group.LocallyConstant.CompactSupport`.
 
 ## Main definitions
 
 * `LocallyConstant.compactlySupported R X M`: the `R`-module `C_c^∞(X, M)`.
-* `LocallyConstant.compactlySupportedRightInvariant R M U`: the right `U`-invariant elements of
-  `C_c^∞(G, M)`.
-* `LocallyConstant.compactlySupportedRightInvariantEquiv`: for `U` compact open, the
-  identification of the right `U`-invariant test functions with `G ⧸ U →₀ M`.
+* `LocallyConstant.compactOpenIndicator K m`: in a Hausdorff space, the indicator `1_K • m` of a
+  compact open set `K`, a locally constant function with compact support.
 
 ## Main results
 
@@ -59,8 +49,6 @@ supported functions on `G ⧸ U` (`LocallyConstant.compactlySupportedRightInvari
 * `LocallyConstant.compactlySupported_eq_top`, `LocallyConstant.compactlySupported_eq_bot`: every
   locally constant function on a compact space is a test function, and on a preconnected
   noncompact space, such as `ℝ`, the only test function is `0`.
-* `LocallyConstant.exists_isCompact_openSubgroup_forall_mul_eq`: on a locally profinite group, every
-  test function is left and right invariant under some compact open subgroup.
 
 ## References
 
@@ -73,11 +61,10 @@ supported functions on `G ⧸ U` (`LocallyConstant.compactlySupportedRightInvari
 public section
 
 open Function Set TopologicalSpace
-open scoped Pointwise
 
 namespace LocallyConstant
 
-variable {R X G M : Type*}
+variable {R X M : Type*}
 
 section Space
 
@@ -113,6 +100,36 @@ theorem finite_range_of_hasCompactSupport {f : LocallyConstant X M} (hf : HasCom
   · exact mem_insert_of_mem _ ⟨⟨x, hx⟩, rfl⟩
   · exact .inl (image_eq_zero_of_notMem_tsupport hx)
 
+section Indicator
+
+variable [T2Space X]
+
+/-- The indicator `1_K • m` of a compact open set `K` of a Hausdorff space, which is clopen: the
+locally constant function taking the value `m` on `K` and `0` off `K`. -/
+noncomputable def compactOpenIndicator (K : CompactOpens X) (m : M) : LocallyConstant X M :=
+  (const X m).indicator K.toClopens.isClopen
+
+@[simp]
+theorem compactOpenIndicator_of_mem {K : CompactOpens X} {x : X} (hx : x ∈ K) (m : M) :
+    compactOpenIndicator K m x = m :=
+  indicator_of_mem _ _ hx
+
+@[simp]
+theorem compactOpenIndicator_of_notMem {K : CompactOpens X} {x : X} (hx : x ∉ K) (m : M) :
+    compactOpenIndicator K m x = 0 :=
+  indicator_of_notMem _ _ hx
+
+@[simp]
+theorem compactOpenIndicator_zero (K : CompactOpens X) :
+    compactOpenIndicator K (0 : M) = 0 :=
+  ext fun x => by by_cases hx : x ∈ K <;> simp [hx]
+
+@[simp]
+theorem compactOpenIndicator_bot (m : M) : compactOpenIndicator (⊥ : CompactOpens X) m = 0 :=
+  ext fun x => compactOpenIndicator_of_notMem (by simp [← SetLike.mem_coe]) m
+
+end Indicator
+
 end Zero
 
 section Module
@@ -133,11 +150,27 @@ theorem mem_compactlySupported {f : LocallyConstant X M} :
     f ∈ compactlySupported R X M ↔ HasCompactSupport f :=
   Iff.rfl
 
+/-- Elements of `C_c^∞(X, M)` are determined by their values. -/
+theorem compactlySupported.coeFn_injective :
+    Injective fun f : compactlySupported R X M => ((f : LocallyConstant X M) : X → M) :=
+  coe_injective.comp Subtype.val_injective
+
+/-- Two elements of `C_c^∞(X, M)` are equal when they agree at every point. -/
+@[ext]
+theorem compactlySupported.ext {f g : compactlySupported R X M}
+    (h : ∀ x, (f : LocallyConstant X M) x = (g : LocallyConstant X M) x) : f = g :=
+  compactlySupported.coeFn_injective (funext h)
+
 /-- The indicator of a compact clopen set `K`, for instance `1_K • m` when `f = const X m`, has
 compact support. -/
 theorem indicator_mem_compactlySupported (f : LocallyConstant X M) {K : Set X} (hK : IsClopen K)
     (hKc : IsCompact K) : f.indicator hK ∈ compactlySupported R X M :=
   HasCompactSupport.intro' hKc hK.isClosed fun _ hx => indicator_of_notMem f hK hx
+
+/-- The indicator `1_K • m` of a compact open set has compact support. -/
+theorem compactOpenIndicator_mem_compactlySupported [T2Space X] (K : CompactOpens X) (m : M) :
+    compactOpenIndicator K m ∈ compactlySupported R X M :=
+  indicator_mem_compactlySupported _ _ K.isCompact
 
 /-- **Disjoint compact-open expansion.** A locally constant function `f` with compact support is
 the finite sum `∑ m ∈ s, 1_{K m} • m` over finitely many nonzero values `m`, where the sets
@@ -169,16 +202,16 @@ theorem exists_pairwiseDisjoint_sum_indicator {f : LocallyConstant X M}
 sets `K`, which are clopen. -/
 theorem compactlySupported_eq_span [T2Space X] :
     compactlySupported R X M = Submodule.span R
-      (range fun p : CompactOpens X × M => (const X p.2).indicator p.1.toClopens.isClopen) := by
+      (range fun p : CompactOpens X × M => compactOpenIndicator p.1 p.2) := by
   refine le_antisymm (fun f hf => ?_) (Submodule.span_le.2 ?_)
   · obtain ⟨s, K, -, -, hfs⟩ := exists_pairwiseDisjoint_sum_indicator hf
-    have hf' : f = ∑ m ∈ s, (const X m).indicator (K m).toClopens.isClopen :=
+    have hf' : f = ∑ m ∈ s, compactOpenIndicator (K m) m :=
       coe_injective (by rw [hfs]; exact (map_sum (coeFnAddMonoidHom (X := X) (Y := M))
-        (fun m => (const X m).indicator (K m).toClopens.isClopen) s).symm)
+        (fun m => compactOpenIndicator (K m) m) s).symm)
     rw [hf']
     exact Submodule.sum_mem _ fun m _ => Submodule.subset_span ⟨(K m, m), rfl⟩
   · rintro _ ⟨⟨K, m⟩, rfl⟩
-    exact indicator_mem_compactlySupported _ _ K.isCompact
+    exact compactOpenIndicator_mem_compactlySupported K m
 
 variable (R X M) in
 /-- On a compact space every locally constant function has compact support. -/
@@ -199,116 +232,5 @@ theorem compactlySupported_eq_bot [PreconnectedSpace X] [NoncompactSpace X] :
 end Module
 
 end Space
-
-section Group
-
-variable [Group G] [TopologicalSpace G]
-
-/-- **Two-sided uniform local constancy.** A locally constant function with compact support on a
-locally profinite group (a weakly locally compact nonarchimedean group) is invariant under left
-and right translation by some compact open subgroup. -/
-theorem exists_isCompact_openSubgroup_forall_mul_eq [NonarchimedeanGroup G]
-    [WeaklyLocallyCompactSpace G] [Zero M] {f : LocallyConstant G M} (hf : HasCompactSupport f) :
-    ∃ U : OpenSubgroup G, IsCompact (U : Set G) ∧
-      ∀ u ∈ U, ∀ x, f (u * x) = f x ∧ f (x * u) = f x := by
-  -- Left translation invariance of `f` is right translation invariance of `x ↦ f x⁻¹`.
-  have hl := TauCeti.isOpen_rightTranslationStabilizer_of_hasCompactSupport
-    (f.isLocallyConstant.comp_continuous continuous_inv) (hf.comp_homeomorph (Homeomorph.inv G))
-  have hr := TauCeti.isOpen_rightTranslationStabilizer_of_hasCompactSupport f.isLocallyConstant hf
-  obtain ⟨U, hUc, hUS⟩ := NonarchimedeanGroup.isCoinitial_isCompact_openSubgroup
-    (⟨TauCeti.rightTranslationStabilizer (fun x => f x⁻¹) ⊓
-      TauCeti.rightTranslationStabilizer f, hl.inter hr⟩ : OpenSubgroup G)
-  refine ⟨U, hUc, fun u hu x => ⟨?_,
-    TauCeti.mem_rightTranslationStabilizer.1 (Subgroup.mem_inf.1 (hUS hu)).2 x⟩⟩
-  simpa using TauCeti.mem_rightTranslationStabilizer.1 (Subgroup.mem_inf.1 (hUS (inv_mem hu))).1 x⁻¹
-
-variable [Semiring R] [AddCommMonoid M] [Module R M]
-
-variable (R M) in
-/-- The `R`-module `C_c^∞(G, M)^U` of locally constant functions with compact support that are
-invariant under right translation by a subgroup `U`, that is, constant on each left coset
-`g U`. -/
-def compactlySupportedRightInvariant (U : Subgroup G) : Submodule R (LocallyConstant G M) where
-  carrier := {f | HasCompactSupport f ∧ ∀ u ∈ U, ∀ x, f (x * u) = f x}
-  add_mem' hf hg := ⟨hf.1.add hg.1, fun u hu x => by simp [hf.2 u hu x, hg.2 u hu x]⟩
-  zero_mem' := ⟨HasCompactSupport.zero, fun _ _ _ => rfl⟩
-  smul_mem' c f hf := ⟨hf.1.mono (support_const_smul_subset c f), fun u hu x => by
-    simp [hf.2 u hu x]⟩
-
-@[simp]
-theorem mem_compactlySupportedRightInvariant {U : Subgroup G} {f : LocallyConstant G M} :
-    f ∈ compactlySupportedRightInvariant R M U ↔
-      HasCompactSupport f ∧ ∀ u ∈ U, ∀ x, f (x * u) = f x :=
-  Iff.rfl
-
-/-- Right `U`-invariant test functions are test functions. -/
-theorem compactlySupportedRightInvariant_le_compactlySupported (U : Subgroup G) :
-    compactlySupportedRightInvariant R M U ≤ compactlySupported R G M :=
-  fun _ hf => hf.1
-
-variable [IsTopologicalGroup G]
-
-/-- The function on `G ⧸ U` through which a right `U`-invariant test function factors. -/
-private def quotientLift {U : Subgroup G} (f : compactlySupportedRightInvariant R M U) :
-    G ⧸ U → M :=
-  Quotient.lift (f : G → M) fun x y hxy => by
-    simpa using ((mem_compactlySupportedRightInvariant.1 f.2).2 _
-      (QuotientGroup.leftRel_apply.1 hxy) x).symm
-
-/-- **Right-invariant test functions are finitely supported functions on `G ⧸ U`.** For a compact
-open subgroup `U` of `G`, factoring through the quotient map identifies the right
-`U`-invariant elements of `C_c^∞(G, M)` with the finitely supported functions on `G ⧸ U`. -/
-noncomputable def compactlySupportedRightInvariantEquiv (U : OpenSubgroup G)
-    (hU : IsCompact (U : Set G)) :
-    compactlySupportedRightInvariant R M (U : Subgroup G) ≃ₗ[R] G ⧸ (U : Subgroup G) →₀ M where
-  toFun f := Finsupp.ofSupportFinite (quotientLift f) <| by
-    -- The support lies in the image of the compact support, which is finite in `G ⧸ U`.
-    refine ((f.2.1.isCompact.image QuotientGroup.continuous_mk).finite_of_discrete).subset ?_
-    rintro q hq
-    obtain ⟨x, rfl⟩ := QuotientGroup.mk_surjective q
-    exact ⟨x, subset_tsupport _ hq, rfl⟩
-  invFun φ := ⟨⟨fun x => φ x,
-      (IsLocallyConstant.of_discrete _).comp_continuous QuotientGroup.continuous_mk⟩,
-    hasCompactSupport_iff_isCompact_support.2 <| by
-      -- The support is `S * U` for the finite set `S` of representatives of the support of `φ`.
-      have hS : support (fun x : G => φ x) =
-          Quotient.out '' (φ.support : Set (G ⧸ (U : Subgroup G))) *
-            ((U : Subgroup G) : Set G) := by
-        rw [← QuotientGroup.preimage_image_mk_eq_mul, image_image]
-        ext x
-        simp
-      exact hS ▸ (φ.support.finite_toSet.image _).isCompact.mul hU,
-    fun u hu x => by simp [QuotientGroup.mk_mul_of_mem x hu]⟩
-  -- At a coset `x U`, both maps evaluate the lifted function at its representative `x`, which
-  -- `Quotient.lift` does by definition.
-  map_add' f g := Finsupp.ext fun q => by
-    obtain ⟨x, rfl⟩ := QuotientGroup.mk_surjective q
-    rfl
-  map_smul' c f := Finsupp.ext fun q => by
-    obtain ⟨x, rfl⟩ := QuotientGroup.mk_surjective q
-    rfl
-  left_inv f := rfl
-  right_inv φ := Finsupp.ext fun q => by
-    obtain ⟨x, rfl⟩ := QuotientGroup.mk_surjective q
-    rfl
-
-/-- The finitely supported function attached to a right `U`-invariant test function `f` takes the
-value `f x` at the coset `x U`. -/
-@[simp]
-theorem compactlySupportedRightInvariantEquiv_apply_mk {U : OpenSubgroup G}
-    (hU : IsCompact (U : Set G)) (f : compactlySupportedRightInvariant R M (U : Subgroup G))
-    (x : G) : compactlySupportedRightInvariantEquiv U hU f x = (f : LocallyConstant G M) x :=
-  (rfl)
-
-/-- The test function attached to a finitely supported function `φ` on `G ⧸ U` takes the value
-`φ (x U)` at `x`. -/
-@[simp]
-theorem compactlySupportedRightInvariantEquiv_symm_apply {U : OpenSubgroup G}
-    (hU : IsCompact (U : Set G)) (φ : G ⧸ (U : Subgroup G) →₀ M) (x : G) :
-    ((compactlySupportedRightInvariantEquiv (R := R) U hU).symm φ : LocallyConstant G M) x =
-      φ x :=
-  (rfl)
-
-end Group
 
 end LocallyConstant

@@ -20,6 +20,7 @@ This file tests `LocallyConstant.compactlySupported`, the module `C_c^∞(X, M)`
 * on `ℝ` with its usual topology, every locally constant compactly supported `f : ℝ → ℤ` is `0`;
 * the indicator `1_K • a` of a compact open set takes the value `a` on `K` and `0` off `K`, and it
   vanishes for the coefficient `0` and for `K = ∅`;
+* elements of `C_c^∞(X, ℤ)` are equal when they agree at every point;
 * two compact-open expansions of a test function, given by finite families of compact open sets,
   have a common refinement by a finite partition into compact open sets.
 -/
@@ -36,7 +37,8 @@ example : compactlySupported ℤ (Fin 3) ℤ ≃ₗ[ℤ] (Fin 3 → ℤ) :=
       invFun := fun g => ⟨g, IsLocallyConstant.of_discrete g⟩
       map_add' := fun _ _ => rfl
       map_smul' := fun _ _ => rfl
-      left_inv := fun _ => rfl
+      left_inv := fun _ => LocallyConstant.ext fun _ => rfl
+      -- The underlying function of `⟨g, _⟩` is `g` by projection.
       right_inv := fun _ => rfl }
 
 /-! ### 2. The empty space -/
@@ -57,21 +59,26 @@ section Indicator
 
 variable {X : Type*} [TopologicalSpace X] [T2Space X] (K : CompactOpens X)
 
-example (a : ℤ) {x : X} (hx : x ∈ K) : (const X a).indicator K.toClopens.isClopen x = a :=
-  indicator_of_mem _ _ hx
+example (a : ℤ) {x : X} (hx : x ∈ K) : compactOpenIndicator K a x = a := by
+  simp [hx]
 
-example (a : ℤ) {x : X} (hx : x ∉ K) : (const X a).indicator K.toClopens.isClopen x = 0 :=
-  indicator_of_notMem _ _ hx
+example (a : ℤ) {x : X} (hx : x ∉ K) : compactOpenIndicator K a x = 0 := by
+  simp [hx]
 
-example : (const X (0 : ℤ)).indicator K.toClopens.isClopen = 0 :=
-  ext fun x => by simp
+example : compactOpenIndicator K (0 : ℤ) = 0 := by
+  simp
 
-example (a : ℤ) : (const X a).indicator (⊥ : CompactOpens X).toClopens.isClopen = 0 :=
-  ext fun x => by simp
+example (a : ℤ) : compactOpenIndicator (⊥ : CompactOpens X) a = 0 := by
+  simp
 
-example (a : ℤ) :
-    (const X a).indicator K.toClopens.isClopen ∈ compactlySupported ℤ X ℤ :=
-  indicator_mem_compactlySupported _ _ K.isCompact
+example (a : ℤ) : compactOpenIndicator K a ∈ compactlySupported ℤ X ℤ :=
+  compactOpenIndicator_mem_compactlySupported K a
+
+/-- Elements of `C_c^∞(X, ℤ)` are compared pointwise with the `ext` tactic. -/
+example (f g : compactlySupported ℤ X ℤ)
+    (h : ∀ x, (f : LocallyConstant X ℤ) x = (g : LocallyConstant X ℤ) x) : f = g := by
+  ext x
+  exact h x
 
 end Indicator
 
