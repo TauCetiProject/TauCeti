@@ -208,6 +208,20 @@ theorem smul_sub_apply_resolvent (h : lambda ∈ resolventSet A) (y : X) :
     A ⟨resolvent A lambda y, resolvent_mem_domain h y⟩ = lambda • resolvent A lambda y - y :=
   (isResolventAt_resolvent h).apply_eq_smul_sub y
 
+/-- The composite `y ↦ V (R(lambda, A) y)` of the resolvent with a partial semilinear map `V`
+whose domain contains that of `A`, as a semilinear map. -/
+def compResolvent {𝕜₂ G : Type*} [Ring 𝕜₂] {σ : 𝕜 →+* 𝕜₂} [AddCommGroup G] [Module 𝕜₂ G]
+    {V : X →ₛₗ.[σ] G} (hV : A.domain ≤ V.domain) (h : lambda ∈ resolventSet A) : X →ₛₗ[σ] G :=
+  V.toFun.comp ((Submodule.inclusion hV).comp
+    ((resolvent A lambda : X →ₗ[𝕜] X).codRestrict A.domain (resolvent_mem_domain h)))
+
+/-- `compResolvent` evaluates `V` at the resolvent. -/
+@[simp]
+theorem compResolvent_apply {𝕜₂ G : Type*} [Ring 𝕜₂] {σ : 𝕜 →+* 𝕜₂} [AddCommGroup G]
+    [Module 𝕜₂ G] {V : X →ₛₗ.[σ] G} (hV : A.domain ≤ V.domain) (h : lambda ∈ resolventSet A)
+    (y : X) : compResolvent hV h y = V ⟨resolvent A lambda y, hV (resolvent_mem_domain h y)⟩ :=
+  (rfl)
+
 /-- At a point of the resolvent set, `lambda • I - A : D(A) → X` is a bijection. -/
 theorem smul_sub_bijective (h : lambda ∈ resolventSet A) :
     Function.Bijective fun x : A.domain => lambda • (x : X) - A x :=
