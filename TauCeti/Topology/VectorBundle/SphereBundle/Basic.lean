@@ -27,9 +27,10 @@ fibres and positive off the zero section (`TauCeti.isFiberGauge_sqrt`), such as 
 a continuous family of positive definite quadratic forms `Q_b`. Its disc bundle `{q ≤ 1}` need not
 be the unit disc bundle of any norm already carried by the fibres: for instance the negative disc
 bundle `{-½ Hess(v, v) ≤ ε}` of a Morse–Bott critical submanifold, where `q v = -Hess(v, v) / (2ε)`
-on the negative normal bundle. The unit sphere bundle projects continuously onto the base
-(`TauCeti.sphereBundleProj`), onto every point when the model fibre is nonzero
-(`TauCeti.surjective_sphereBundleProj`), and fibrewise negation `v ↦ -v` is a fixed-point-free
+on the negative normal bundle. Each point of `S(E)` gives a unit vector in its fibre
+(`TauCeti.unitSphereOfSphereBundle`), and the unit sphere bundle projects continuously onto the
+base (`TauCeti.sphereBundleProj`), onto every point when the model fibre is nonzero
+(`TauCeti.surjective_sphereBundleProj`). Fibrewise negation `v ↦ -v` is a fixed-point-free
 involution of it over the base (`TauCeti.sphereBundleNeg`); for a line bundle it exchanges the two
 unit vectors of each fibre (`TauCeti.eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq`).
 
@@ -61,7 +62,8 @@ every degree (`TauCeti.isIso_singularHomologyMap_gaugeDiscSpherePairMap` and
 So Thom classes may be read on any gauge disc-sphere pair, and the cohomology of the deleted total
 space `E₀` in the long exact sequence of the Thom pair is that of the sphere bundle, as in the
 Gysin sequence. No orientation, finite-dimensionality, norm on the fibres or condition on the base
-is needed. The rank zero case is included: there `S_ρ(E)` and `E₀` are empty and `D_ρ(E) = E`.
+is needed. The rank zero case is included: there `S_ρ(E)` (and in particular `S(E)`, via
+`TauCeti.isEmpty_sphereBundle_of_subsingleton`) and `E₀` are empty and `D_ρ(E) = E`.
 
 The disc bundle of a fibre gauge also contracts radially onto the zero section, so its projection
 to the base is a homotopy equivalence with homotopy inverse the zero section
@@ -79,7 +81,7 @@ public section
 
 noncomputable section
 
-open Bundle CategoryTheory Limits Set
+open Bundle CategoryTheory Limits Metric Set
 open scoped unitInterval ContinuousMap
 
 universe w v u
@@ -170,6 +172,11 @@ variable {F E} in
 theorem disjoint_norm_lt_one_sphereBundle :
     Disjoint {v : TotalSpace F E | ‖v.2‖ < 1} (sphereBundle F E) :=
   Set.disjoint_left.2 fun _ hv hv' ↦ (mem_ofPred_eq ▸ hv).ne (mem_sphereBundle.1 hv')
+
+variable {F E} in
+/-- A point `q : S(E)` viewed as a unit vector in the fibre `E q.1.proj`. -/
+abbrev unitSphereOfSphereBundle (q : sphereBundle F E) : sphere (0 : E q.1.proj) 1 :=
+  ⟨q.1.2, mem_sphere_zero_iff_norm.2 (mem_sphereBundle.1 q.2)⟩
 
 variable {F E} [TopologicalSpace (TotalSpace F E)]
 
@@ -269,6 +276,28 @@ theorem isFiberGauge_norm {B : Type w} {F : Type*} {E : B → Type w}
   continuous := hnorm
   smul_of_nonneg ht v := by simp [norm_smul, Real.norm_eq_abs, abs_of_nonneg ht]
   pos hv := norm_pos_iff.2 hv
+
+section Subsingleton
+
+variable {B : Type w} [TopologicalSpace B] {F : Type*} [TopologicalSpace F] [Subsingleton F]
+  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, NormedAddCommGroup (E b)]
+  [FiberBundle F E]
+
+/-- When the model fibre is a subsingleton, the unit sphere bundle is empty: every fibre is
+homeomorphic to `F` and hence a subsingleton, so no vector has norm `1`. -/
+theorem sphereBundle_eq_empty_of_subsingleton : sphereBundle F E = ∅ :=
+  eq_empty_iff_forall_notMem.2 fun v hv ↦ by
+    have : Subsingleton (E v.proj) :=
+      (FiberBundle.homeomorphAt F E v.proj).toEquiv.subsingleton
+    exact one_ne_zero ((mem_sphereBundle.1 hv).symm.trans
+      (by rw [Subsingleton.elim v.2 0, norm_zero]))
+
+/-- When the model fibre is a subsingleton, the unit sphere bundle is empty. -/
+instance isEmpty_sphereBundle_of_subsingleton : IsEmpty (sphereBundle F E) := by
+  rw [sphereBundle_eq_empty_of_subsingleton]
+  infer_instance
+
+end Subsingleton
 
 section Proj
 
