@@ -6,22 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Weak
-import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.Calculus.ContDiff.Adjoint
+import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Complex.Wirtinger.DivergenceLaplace
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.Local.Approximation
 import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
+import TauCeti.MeasureTheory.Integral.Bochner.Holder
 
 /-!
 # Order-zero regularity for real Cauchy–Riemann equations with Sobolev coefficients
 
 Write `z = s + i t` on `ℂ`, let `V` be a finite-dimensional real inner product space and consider
 the real Cauchy–Riemann operator `D ξ = ∂_s ξ + J ∂_t ξ + S ξ` on an open set `Ω`, with
-`J ∈ W^{1,p}_loc(Ω)`, `J² = -1` almost everywhere and `S ∈ Lᵖ_loc(Ω)`, for `2 < p < ∞`
-(`TauCeti.IsSobolevCRCoefficients`). This file proves the order-zero step of interior
+`J`, its weak derivative `DJ` and `S` locally `Lᵖ` on `Ω` (`TauCeti.IsSobolevCRCoefficients`).
+The theorem assumes in addition, as separate hypotheses, that `2 < p < ∞` and that `J² = -1`
+almost everywhere on `Ω`. This file proves the order-zero step of interior
 regularity (McDuff–Salamon, Lemma B.4.6): if `1/p + 1/q = 1/r` with `r > 1`, a weak solution
 `ξ ∈ L^q_loc(Ω)` of `D ξ = η` (`TauCeti.IsWeakCRSolution`) with `η ∈ Lʳ_loc(Ω)` lies in
 `W^{1,r}_loc(Ω)` (`TauCeti.IsWeakCRSolution.memWkpLoc_one`).
@@ -83,7 +85,7 @@ private abbrev dt (z : ℂ) : ℝ := fderiv ℝ ψ z I
 /-- The derivative `∂_s ψ` of a real function on the plane. -/
 private abbrev ds (z : ℂ) : ℝ := fderiv ℝ ψ z 1
 
-/-- The coefficient field paired with the zeroth-order coefficient in the error term. -/
+/-- The field paired with the coefficient `A` itself (not its derivative) in the error term. -/
 private def fieldX (z : ℂ) : V :=
   -(fderiv ℝ (dt ψ) z 1) • ξ z - fderiv ℝ (dt ψ) z I • J z (ξ z) - dt ψ z • DJ z I (ξ z) +
     dt ψ z • S z (ξ z) - dt ψ z • η z
@@ -166,33 +168,10 @@ variable {ψ : ℂ → ℝ} {z : ℂ}
 private theorem fderiv_apply_eq_zero (hz : z ∉ tsupport ψ) (e : ℂ) : fderiv ℝ ψ z e = 0 := by
   simp [fderiv_of_notMem_tsupport ℝ hz]
 
-/-- Off the support of `ψ`, every second derivative of `ψ` vanishes. -/
-private theorem fderiv_fderiv_apply_eq_zero (hz : z ∉ tsupport ψ) (e e' : ℂ) :
-    fderiv ℝ (fun w => fderiv ℝ ψ w e) z e' = 0 := by
-  have hsub : tsupport (fun w => fderiv ℝ ψ w e) ⊆ tsupport ψ :=
-    (tsupport_comp_subset (g := fun L : ℂ →L[ℝ] ℝ => L e) rfl (fderiv ℝ ψ)).trans
-      (tsupport_fderiv_subset ℝ)
-  simp [fderiv_of_notMem_tsupport ℝ fun h => hz (hsub h)]
-
 /-- A first derivative of a smooth function is smooth. -/
 private theorem contDiff_fderiv_apply (hψ : ContDiff ℝ ∞ ψ) (e : ℂ) :
     ContDiff ℝ ∞ (fun w => fderiv ℝ ψ w e) :=
   (hψ.fderiv_right (m := ∞) (by simp)).clm_apply contDiff_const
-
-/-- The second derivative of `ψ` in the directions `e`, `e'`, in the order of
-`fun w => fderiv ℝ ψ w e`. -/
-private theorem fderiv_fderiv_apply (hψ : ContDiff ℝ ∞ ψ) (e e' : ℂ) :
-    fderiv ℝ (fun w => fderiv ℝ ψ w e) z e' = fderiv ℝ (fderiv ℝ ψ) z e' e := by
-  have hd : DifferentiableAt ℝ (fderiv ℝ ψ) z :=
-    ((hψ.fderiv_right (m := ∞) (by simp)).differentiable (by simp)) z
-  rw [fderiv_clm_apply hd (differentiableAt_const e)]
-  simp
-
-/-- The mixed second derivatives of a smooth function agree. -/
-private theorem fderiv_ds_I (hψ : ContDiff ℝ ∞ ψ) :
-    fderiv ℝ (ds ψ) z I = fderiv ℝ (dt ψ) z 1 := by
-  rw [fderiv_fderiv_apply hψ, fderiv_fderiv_apply hψ]
-  exact ContDiffAt.isSymmSndFDerivAt (n := ∞) (hψ.contDiffAt (x := z)) (by simp) I 1
 
 variable [CompleteSpace V] (v₀ : V)
 
@@ -243,27 +222,6 @@ end Derivatives
 /-! ### Estimates for the error term -/
 
 section Estimates
-
-/-- Hölder's inequality on a finite measure, in the form used for the error term: for
-`1/p + 1/q = 1/r` with `r ≥ 1`, `∫ ‖f‖ ‖w‖ ≤ ‖f‖_p ‖w‖_q μ(univ)^(1 - 1/r)`. -/
-private theorem lintegral_enorm_mul_le {E : Type*} [NormedAddCommGroup E] {μ : Measure ℂ}
-    {p q r : ℝ≥0∞} [ENNReal.HolderTriple p q r] (hr : 1 ≤ r) {f : ℂ → E} {w : ℂ → ℝ}
-    (hf : AEStronglyMeasurable f μ) (hw : AEStronglyMeasurable w μ) :
-    ∫⁻ z, ‖f z‖ₑ * ‖w z‖ₑ ∂μ ≤
-      eLpNorm f p μ * eLpNorm w q μ * μ univ ^ (1 / (1 : ℝ≥0∞).toReal - 1 / r.toReal) := by
-  have hm : AEStronglyMeasurable (fun z => ‖f z‖ * w z) μ := hf.norm.mul hw
-  have hH := eLpNorm_le_eLpNorm_mul_eLpNorm_of_norm (μ := μ) (p := p) (q := q) (r := r)
-    (fun (L : E) (t : ℝ) => ‖L‖ * t) (1 : ℝ≥0)
-    ((continuous_norm.comp continuous_fst).mul continuous_snd) hf hw
-    (Eventually.of_forall fun z => by simp [norm_mul])
-  simp only [ENNReal.coe_one, one_mul] at hH
-  calc ∫⁻ z, ‖f z‖ₑ * ‖w z‖ₑ ∂μ = eLpNorm (fun z => ‖f z‖ * w z) 1 μ := by
-        rw [eLpNorm_one_eq_lintegral_eNorm hm]
-        refine lintegral_congr fun z => ?_
-        simp [eNorm_mul]
-    _ ≤ eLpNorm (fun z => ‖f z‖ * w z) r μ * μ univ ^ (1 / (1 : ℝ≥0∞).toReal - 1 / r.toReal) :=
-        eLpNorm_le_eLpNorm_mul_rpow_measure_univ hr hm
-    _ ≤ _ := by gcongr
 
 variable {ψ : ℂ → ℝ} {v₀ : V} {J : ℂ → V →L[ℝ] V} {DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V}
   {S : ℂ → V →L[ℝ] V} {ξ η : ℂ → V}
@@ -343,11 +301,11 @@ private theorem inner_ae_eq_constTerm_add_coeffTerm
     (((hψ.fderiv_right (m := ∞) (by simp)).differentiable (by simp)) z)]
   by_cases hzK : z ∈ tsupport (ψ : ℂ → ℝ)
   · rw [constTerm_add_coeffTerm_self (by rw [← mul_apply_eq_comp, hz (ψ.tsupport_subset hzK)]; simp)
-      (fderiv_ds_I hψ)]
+      (fderiv_fderiv_apply_comm hψ.contDiffAt (by simp) 1 I)]
     simp only [inner_add_right, real_inner_smul_right]
     ring
   · simp [constTerm, coeffTerm, fieldX, fieldY, fieldZ, fderiv_apply_eq_zero hzK,
-      fderiv_fderiv_apply_eq_zero hzK]
+      fderiv_of_notMem_tsupport ℝ fun h => hzK (tsupport_fderiv_apply_subset ℝ _ h)]
 
 /-- The fields of the error term are locally integrable, and those paired with the derivative of
 the coefficient are locally `L^q`. -/
@@ -360,8 +318,6 @@ private theorem memLpLoc_fieldX_and_fieldYZ [ENNReal.HolderTriple p q r] (hr : 1
   have hc1 (e : ℂ) : ContinuousOn (fun z => fderiv ℝ (dt ψ) z e) Ω :=
     (contDiff_fderiv_apply (contDiff_fderiv_apply hψ I) e).continuous.continuousOn
   have hct : ContinuousOn (dt ψ) Ω := (contDiff_fderiv_apply hψ I).continuous.continuousOn
-  have hDJI : MemLpLoc p Ω (fun z => DJ z I) :=
-    hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I)
   have hη1 : MemLpLoc 1 Ω η :=
     (memLpLoc_one_iff_locallyIntegrableOn Ω.isOpen.isLocallyClosed).2 hξ.locallyIntegrableOn
   have hJξ : MemLpLoc q Ω (fun z => J z (ξ z)) := hξ.memLpLoc.continuousOn_clm_apply hJc
@@ -370,7 +326,8 @@ private theorem memLpLoc_fieldX_and_fieldYZ [ENNReal.HolderTriple p q r] (hr : 1
       (memLpLoc_iff.1 (hJξ.continuousOn_smul hct.neg) K hK hKc).norm⟩
   exact (((((hξ.memLpLoc.mono_exponent hq).continuousOn_smul (hc1 1).neg).sub
     ((hJξ.mono_exponent hq).continuousOn_smul (hc1 I))).sub
-    (((hDJI.clm_apply hξ.memLpLoc).mono_exponent hr).continuousOn_smul hct)).add
+    ((((hc.memLpLoc_deriv_apply I).clm_apply hξ.memLpLoc).mono_exponent hr).continuousOn_smul
+      hct)).add
     (((hc.memLpLoc_zeroth.clm_apply hξ.memLpLoc).mono_exponent hr).continuousOn_smul hct)).sub
     (hη1.continuousOn_smul hct)
 
@@ -388,7 +345,7 @@ private theorem lintegral_enorm_coeffTerm_le [ENNReal.HolderTriple p q r] (hr : 
     ∫⁻ z, ‖coeffTerm ψ v₀ J DJ S ξ η (J - A) (DJ - fderiv ℝ A) z‖ₑ ≤
       ENNReal.ofReal δ * (‖v₀‖ₑ * ((∫⁻ z in tsupport ψ, ‖fieldX ψ J DJ S ξ η z‖ₑ) +
         eLpNorm (fun z => ‖fieldY ψ ξ z‖ + ‖fieldZ ψ J ξ z‖) q (volume.restrict (tsupport ψ)) *
-          (volume.restrict (tsupport ψ)) univ ^ (1 / (1 : ℝ≥0∞).toReal - 1 / r.toReal))) := by
+          (volume.restrict (tsupport ψ)) univ ^ (1 - 1 / r.toReal))) := by
   set K := tsupport (ψ : ℂ → ℝ)
   have hK : IsCompact K := ψ.hasCompactSupport.isCompact
   have hKΩ : K ⊆ Ω := ψ.tsupport_subset
@@ -401,7 +358,7 @@ private theorem lintegral_enorm_coeffTerm_le [ENNReal.HolderTriple p q r] (hr : 
     intro z hz
     by_contra hzK
     exact hz (by simp [coeffTerm, fieldX, fieldY, fieldZ, fderiv_apply_eq_zero hzK,
-      fderiv_fderiv_apply_eq_zero hzK])
+      fderiv_of_notMem_tsupport ℝ fun h => hzK (tsupport_fderiv_apply_subset ℝ _ h)])
   -- Hölder's inequality for the term with the derivative of the coefficient.
   have hDBm : AEStronglyMeasurable (DJ - fderiv ℝ A) (volume.restrict K) :=
     (memLpLoc_iff.1 hc.memLpLoc_deriv K hKΩ hK).aestronglyMeasurable.sub
@@ -409,9 +366,10 @@ private theorem lintegral_enorm_coeffTerm_le [ENNReal.HolderTriple p q r] (hr : 
   have hneg : (fun z => fderiv ℝ A z - DJ z) = -(DJ - fderiv ℝ A) := by
     funext z
     simp
-  have hHolder := (lintegral_enorm_mul_le (E := ℂ →L[ℝ] V →L[ℝ] V) (p := p) (q := q) hr hDBm
-    hWK.aestronglyMeasurable).trans (mul_le_mul_left (mul_le_mul_left
-      ((eLpNorm_neg (DJ - fderiv ℝ A) p _).symm.trans_le (hneg ▸ hAD)) _) _)
+  have hHolder :=
+    (MeasureTheory.lintegral_enorm_mul_enorm_le_eLpNorm_mul_eLpNorm_mul_rpow_measure_univ (p := p)
+      (q := q) hr hDBm hWK.aestronglyMeasurable).trans (mul_le_mul_left (mul_le_mul_left
+        ((eLpNorm_neg (DJ - fderiv ℝ A) p _).symm.trans_le (hneg ▸ hAD)) _) _)
   rw [← setLIntegral_eq_of_support_subset hsupp]
   refine (setLIntegral_coeffTerm_le hδ hK.measurableSet (fun z hz => ?_)
     hXK.aestronglyMeasurable.eNorm).trans ?_
@@ -419,40 +377,42 @@ private theorem lintegral_enorm_coeffTerm_le [ENNReal.HolderTriple p q r] (hr : 
     exact hAK z hz
   · calc _ ≤ ‖v₀‖ₑ * (ENNReal.ofReal δ * (∫⁻ z in K, ‖fieldX ψ J DJ S ξ η z‖ₑ) +
           ENNReal.ofReal δ * eLpNorm (fun z => ‖fieldY ψ ξ z‖ + ‖fieldZ ψ J ξ z‖) q
-            (volume.restrict K) * (volume.restrict K) univ ^
-              (1 / (1 : ℝ≥0∞).toReal - 1 / r.toReal)) := by gcongr
+            (volume.restrict K) * (volume.restrict K) univ ^ (1 - 1 / r.toReal)) := by gcongr
       _ = _ := by ring
 
-/-- The divergence-form integrand `⟪v₀, Δψ ξ + ∂_s ψ f + ∂_t ψ g⟫` is integrable: `ξ` is locally
-`L^q` and `f`, `g` are locally integrable by Hölder's inequality. -/
-private theorem integrable_inner_divergenceIntegrand [ENNReal.HolderTriple p q r] (hr : 1 ≤ r)
-    (hc : IsSobolevCRCoefficients p Ω J DJ S) (hJc : ContinuousOn J Ω)
-    (hξ : IsWeakCRSolution q Ω J DJ S ξ η) (ψ : 𝓓(Ω, ℝ)) (v₀ : V) :
-    Integrable (fun z => ⟪v₀, Δ (ψ : ℂ → ℝ) z • ξ z +
-      (ds ψ z • divS DJ S ξ η z + dt ψ z • divT J DJ S ξ η z)⟫_ℝ) := by
-  have hq : 1 ≤ q := hr.trans (ENNReal.HolderTriple.le q p r)
+/-- The first divergence-form datum `f = η + (∂_t J) ξ - S ξ` is locally `Lʳ`, by Hölder's
+inequality. -/
+private theorem memLpLoc_divS [ENNReal.HolderTriple p q r] (hc : IsSobolevCRCoefficients p Ω J DJ S)
+    (hξ : IsWeakCRSolution q Ω J DJ S ξ η) (hη : MemLpLoc r Ω η) :
+    MemLpLoc r Ω (divS DJ S ξ η) :=
+  (hη.add ((hc.memLpLoc_deriv_apply I).clm_apply hξ.memLpLoc)).sub
+    (hc.memLpLoc_zeroth.clm_apply hξ.memLpLoc)
+
+/-- The second divergence-form datum
+`g = -J η - (∂_s J) ξ - (∂_t J) (J ξ) - J ((∂_t J) ξ) + J (S ξ)` is locally `Lʳ` for `J`
+continuous on `Ω`, by Hölder's inequality. -/
+private theorem memLpLoc_divT [ENNReal.HolderTriple p q r] (hc : IsSobolevCRCoefficients p Ω J DJ S)
+    (hJc : ContinuousOn J Ω) (hξ : IsWeakCRSolution q Ω J DJ S ξ η) (hη : MemLpLoc r Ω η) :
+    MemLpLoc r Ω (divT J DJ S ξ η) :=
+  ((((hη.continuousOn_clm_apply hJc).neg.sub
+    ((hc.memLpLoc_deriv_apply 1).clm_apply hξ.memLpLoc)).sub
+    ((hc.memLpLoc_deriv_apply I).clm_apply (hξ.memLpLoc.continuousOn_clm_apply hJc))).sub
+    (((hc.memLpLoc_deriv_apply I).clm_apply hξ.memLpLoc).continuousOn_clm_apply hJc)).add
+    ((hc.memLpLoc_zeroth.clm_apply hξ.memLpLoc).continuousOn_clm_apply hJc)
+
+omit [CompleteSpace V] in
+/-- The two parts `Δψ ξ` and `∂_s ψ f + ∂_t ψ g` of the divergence-form integrand are integrable
+for `ξ` locally `L^q` and `f`, `g` locally `Lʳ`. -/
+private theorem integrable_laplacian_smul_and_divergence (hq : 1 ≤ q) (hr : 1 ≤ r)
+    (hξ : MemLpLoc q Ω ξ) {f g : ℂ → V} (hf : MemLpLoc r Ω f) (hg : MemLpLoc r Ω g)
+    (ψ : 𝓓(Ω, ℝ)) :
+    Integrable (fun z => Δ (ψ : ℂ → ℝ) z • ξ z) ∧
+      Integrable (fun z => ds ψ z • f z + dt ψ z • g z) := by
   have hΩ := Ω.isOpen.isLocallyClosed
-  have hξq : MemLpLoc q Ω ξ := hξ.memLpLoc
-  have hη1 : MemLpLoc 1 Ω η := (memLpLoc_one_iff_locallyIntegrableOn hΩ).2 hξ.locallyIntegrableOn
-  have hDJ (e : ℂ) : MemLpLoc p Ω (fun z => DJ z e) :=
-    hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) e)
-  have hDJIξ : MemLpLoc r Ω (fun z => DJ z I (ξ z)) := (hDJ I).clm_apply hξq
-  have hSξ : MemLpLoc r Ω (fun z => S z (ξ z)) := hc.memLpLoc_zeroth.clm_apply hξq
-  have hdivS : LocallyIntegrableOn (divS DJ S ξ η) Ω :=
-    (memLpLoc_one_iff_locallyIntegrableOn hΩ).1
-      ((hη1.add (hDJIξ.mono_exponent hr)).sub (hSξ.mono_exponent hr))
-  have hdivT : LocallyIntegrableOn (divT J DJ S ξ η) Ω :=
-    (memLpLoc_one_iff_locallyIntegrableOn hΩ).1
-      ((((((hη1.continuousOn_clm_apply hJc).neg).sub
-        (((hDJ 1).clm_apply hξq).mono_exponent hr)).sub
-        (((hDJ I).clm_apply (hξq.continuousOn_clm_apply hJc)).mono_exponent hr)).sub
-        ((hDJIξ.mono_exponent hr).continuousOn_clm_apply hJc)).add
-        ((hSξ.mono_exponent hr).continuousOn_clm_apply hJc))
-  refine Integrable.const_inner v₀ (Integrable.add ?_
-    ((integrable_fderiv_smul_of_locallyIntegrableOn hdivS ψ 1).add
-      (integrable_fderiv_smul_of_locallyIntegrableOn hdivT ψ I)))
-  simpa only [TestFunction.laplacianCLM_apply] using
-    (laplacianCLM ℝ ℂ 𝓓(Ω, ℝ) ψ).integrable_smul (hξq.locallyIntegrableOn hq hΩ)
+  refine ⟨?_, (integrable_fderiv_smul_of_locallyIntegrableOn (hf.locallyIntegrableOn hr hΩ) ψ 1).add
+    (integrable_fderiv_smul_of_locallyIntegrableOn (hg.locallyIntegrableOn hr hΩ) ψ I)⟩
+  simpa only [TestFunction.laplacianCLM_apply] using (laplacianCLM ℝ ℂ 𝓓(Ω, ℝ) ψ).integrable_smul
+    (hξ.locallyIntegrableOn hq hΩ)
 
 /-- **The divergence-form equation of a weak solution, tested in one direction.** For a
 coefficient `J` continuous on `Ω` with `J² = -1` almost everywhere, a weak solution `ξ` of
@@ -461,14 +421,19 @@ test function `ψ` and every `v₀ ∈ V`. -/
 private theorem integral_inner_eq_zero (hp_top : p ≠ ⊤) [ENNReal.HolderTriple p q r]
     (hr : 1 ≤ r) (hc : IsSobolevCRCoefficients p Ω J DJ S) (hJc : ContinuousOn J Ω)
     (hJJ : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1) (hξ : IsWeakCRSolution q Ω J DJ S ξ η)
-    (ψ : 𝓓(Ω, ℝ)) (v₀ : V) :
+    (hη : MemLpLoc r Ω η) (ψ : 𝓓(Ω, ℝ)) (v₀ : V) :
     ∫ z, ⟪v₀, Δ (ψ : ℂ → ℝ) z • ξ z +
       (ds ψ z • divS DJ S ξ η z + dt ψ z • divT J DJ S ξ η z)⟫_ℝ = 0 := by
   set K := tsupport (ψ : ℂ → ℝ)
   have hK : IsCompact K := ψ.hasCompactSupport.isCompact
   have hKΩ : K ⊆ Ω := ψ.tsupport_subset
   have hp : 1 ≤ p := hr.trans (ENNReal.HolderTriple.le p q r)
-  have hint := integrable_inner_divergenceIntegrand hr hc hJc hξ ψ v₀
+  have hint : Integrable (fun z => ⟪v₀, Δ (ψ : ℂ → ℝ) z • ξ z +
+      (ds ψ z • divS DJ S ξ η z + dt ψ z • divT J DJ S ξ η z)⟫_ℝ) := by
+    obtain ⟨h₁, h₂⟩ := integrable_laplacian_smul_and_divergence
+      (hr.trans (ENNReal.HolderTriple.le q p r)) hr hξ.memLpLoc
+      (memLpLoc_divS hc hξ hη) (memLpLoc_divT hc hJc hξ hη) ψ
+    exact (h₁.add h₂).const_inner v₀
   -- Smooth approximations `A n` of `J` on `K`, at distance `1 / (n + 1)`.
   choose A hAc hAK hAD using fun n : ℕ => exists_contDiff_dist_le_and_eLpNorm_fderiv_sub_le hp
     hp_top hJc hc.hasWeakFDerivOn hc.memLpLoc_deriv hK hKΩ
@@ -477,12 +442,12 @@ private theorem integral_inner_eq_zero (hp_top : p ≠ ⊤) [ENNReal.HolderTripl
   obtain ⟨hX, hW⟩ := memLpLoc_fieldX_and_fieldYZ hr hc hJc hξ ψ.contDiff
   set M := ‖v₀‖ₑ * ((∫⁻ z in K, ‖fieldX ψ J DJ S ξ η z‖ₑ) +
     eLpNorm (fun z => ‖fieldY ψ ξ z‖ + ‖fieldZ ψ J ξ z‖) q (volume.restrict K) *
-      (volume.restrict K) univ ^ (1 / (1 : ℝ≥0∞).toReal - 1 / r.toReal))
+      (volume.restrict K) univ ^ (1 - 1 / r.toReal))
   have hM : M ≠ ⊤ := by
-    have hexp : 0 ≤ 1 / (1 : ℝ≥0∞).toReal - 1 / r.toReal := by
+    have hexp : 0 ≤ 1 - 1 / r.toReal := by
       rcases eq_or_ne r ⊤ with rfl | hrt
       · simp
-      · simp only [ENNReal.toReal_one, div_one, sub_nonneg]
+      · rw [sub_nonneg]
         exact div_le_one_of_le₀ (by simpa using ENNReal.toReal_mono hrt hr) (by positivity)
     have hXK := memLpLoc_iff.1 hX K hKΩ hK
     refine ENNReal.mul_ne_top eNorm_ne_top (ENNReal.add_ne_top.2 ⟨?_,
@@ -543,34 +508,17 @@ theorem IsWeakCRSolution.memWkpLoc_one [FiniteDimensional ℝ V] {p q r : ℝ≥
     filter_upwards [hJJ, hJJ'] with z h₁ h₂
     rwa [← h₂]
   -- The data `f` and `g` of the divergence-form equation lie in `Lʳ_loc`.
-  have hξq : MemLpLoc q Ω ξ := hξ'.memLpLoc
-  have hJξ : MemLpLoc q Ω (fun z => J' z (ξ z)) := hξq.continuousOn_clm_apply hJ'c
-  have hDJ1 : MemLpLoc p Ω (fun z => DJ z 1) :=
-    hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) 1)
-  have hDJI : MemLpLoc p Ω (fun z => DJ z I) :=
-    hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I)
-  have hDJIξ : MemLpLoc r Ω (fun z => DJ z I (ξ z)) := hDJI.clm_apply hξq
-  have hSξ : MemLpLoc r Ω (fun z => S z (ξ z)) := hc.memLpLoc_zeroth.clm_apply hξq
-  have hf : MemLpLoc r Ω (divS DJ S ξ η) := (hη.add hDJIξ).sub hSξ
-  have hg : MemLpLoc r Ω (divT J' DJ S ξ η) :=
-    ((((hη.continuousOn_clm_apply hJ'c).neg.sub (hDJ1.clm_apply hξq)).sub
-      (hDJI.clm_apply hJξ)).sub (hDJIξ.continuousOn_clm_apply hJ'c)).add
-      (hSξ.continuousOn_clm_apply hJ'c)
+  have hf := memLpLoc_divS hc' hξ' hη
+  have hg := memLpLoc_divT hc' hJ'c hξ' hη
   refine memWkpLoc_one_of_forall_integral_laplacian_smul_eq hr hr_top
-    (hξq.locallyIntegrableOn hq hΩ) hf hg fun ψ => ?_
+    (hξ'.memLpLoc.locallyIntegrableOn hq hΩ) hf hg fun ψ => ?_
   -- `Δξ = ∂_s f + ∂_t g` weakly, tested against every vector `v₀`.
-  have h₁ : Integrable fun z => Δ (ψ : ℂ → ℝ) z • ξ z := by
-    simpa only [TestFunction.laplacianCLM_apply] using
-      (laplacianCLM ℝ ℂ 𝓓(Ω, ℝ) ψ).integrable_smul (hξq.locallyIntegrableOn hq hΩ)
-  have h₂ : Integrable fun z => fderiv ℝ (ψ : ℂ → ℝ) z 1 • divS DJ S ξ η z +
-      fderiv ℝ (ψ : ℂ → ℝ) z I • divT J' DJ S ξ η z :=
-    (integrable_fderiv_smul_of_locallyIntegrableOn (hf.locallyIntegrableOn hr.le hΩ) ψ 1).add
-      (integrable_fderiv_smul_of_locallyIntegrableOn (hg.locallyIntegrableOn hr.le hΩ) ψ I)
-  have h₃ : Integrable fun z => Δ (ψ : ℂ → ℝ) z • ξ z + (fderiv ℝ (ψ : ℂ → ℝ) z 1 •
-      divS DJ S ξ η z + fderiv ℝ (ψ : ℂ → ℝ) z I • divT J' DJ S ξ η z) := h₁.add h₂
+  obtain ⟨h₁, h₂⟩ := integrable_laplacian_smul_and_divergence hq hr.le hξ'.memLpLoc hf hg ψ
+  have h₃ : Integrable fun z => Δ (ψ : ℂ → ℝ) z • ξ z +
+      (ds ψ z • divS DJ S ξ η z + dt ψ z • divT J' DJ S ξ η z) := h₁.add h₂
   rw [eq_neg_iff_add_eq_zero, ← integral_add h₁ h₂]
   refine ext_inner_left ℝ fun v₀ => ?_
   rw [inner_zero_right, ← integral_inner h₃]
-  exact integral_inner_eq_zero hp_top hr.le hc' hJ'c hJJ'' hξ' ψ v₀
+  exact integral_inner_eq_zero hp_top hr.le hc' hJ'c hJJ'' hξ' hη ψ v₀
 
 end TauCeti
