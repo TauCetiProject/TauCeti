@@ -137,7 +137,7 @@ instance : SemilatticeInf Φ.cones :=
 
 /-- Coercing the intersection of two fan cones gives their intersection as pointed cones. -/
 @[simp, norm_cast] theorem coe_inf (σ τ : Φ.cones) :
-    ((σ ⊓ τ : Φ.cones) : PointedCone ℝ V) = σ.1 ⊓ τ.1 := rfl
+    ((σ ⊓ τ : Φ.cones) : PointedCone ℝ V) = σ.val ⊓ τ.val := rfl
 
 /-- A fan has finitely many cones. -/
 instance : Finite Φ.cones := Φ.finite_cones.to_subtype
@@ -560,12 +560,12 @@ theorem subfanInclusion_realMap :
 /-- The least ambient cone containing a cone of a subfan is that cone itself. -/
 @[simp]
 theorem subfanInclusion_leastCone (σ : (Φ.subfan S hS hface).cones) :
-    (Φ.subfanInclusion S hS hface).leastCone σ.2 = σ.1 := by
+    (Φ.subfanInclusion S hS hface).leastCone σ.property = σ.val := by
   apply le_antisymm
-  · apply FanHom.leastCone_le _ σ.2 (hS (by simpa only [subfan_cones] using σ.2))
+  · apply FanHom.leastCone_le _ σ.property (hS (by simpa only [subfan_cones] using σ.property))
     simp [subfanInclusion_realMap]
   · simpa only [subfanInclusion_realMap, PointedCone.map_id] using
-      (Φ.subfanInclusion S hS hface).map_le_leastCone σ.2
+      (Φ.subfanInclusion S hS hface).map_le_leastCone σ.property
 
 /-- The inclusion of a fan in itself, as the subfan on all of its cones, is the identity. -/
 @[simp]

@@ -165,14 +165,15 @@ noncomputable def discriminantGroupEquivQuotientSup (L : Submodule ℤ E) :
       Submodule.Quotient.equiv _ _ (LinearEquiv.ofEq _ _ (sup_comm (dual L) L)) <| by
         ext y
         simp only [Submodule.mem_map, submoduleOf, Submodule.mem_comap, subtype_apply]
-        exact ⟨fun ⟨_, hx, hxy⟩ ↦ hxy ▸ hx, fun hy ↦ ⟨⟨y, (sup_comm (dual L) L).ge y.2⟩, hy, rfl⟩⟩
+        exact ⟨fun ⟨_, hx, hxy⟩ ↦ hxy ▸ hx, fun hy ↦ ⟨⟨y, (sup_comm (dual L) L).ge y.property⟩, hy,
+            rfl⟩⟩
 
 /-- `discriminantGroupEquivQuotientSup L` sends the class of `x ∈ L^∨` to the class of `x` in
 `(L ⊔ L^∨) ⧸ L`. -/
 @[simp]
 theorem discriminantGroupEquivQuotientSup_mk (L : Submodule ℤ E) (x : dual L) :
     discriminantGroupEquivQuotientSup L (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk ⟨x, mem_sup_right x.2⟩ :=
+      Submodule.Quotient.mk ⟨x, mem_sup_right x.property⟩ :=
   (rfl)
 
 /-- The index of `L` in `L ⊔ L^∨` equals the order of the discriminant group. -/
@@ -450,7 +451,7 @@ theorem IsEven.neg_one_pow_mul_card_discriminantGroup_modEq_zero_or_one (h : IsE
   -- determinant is the order of the discriminant group.
   let b := Free.chooseBasis ℤ L
   have hGeven (i) : Even (LinearMap.BilinForm.toMatrix b h.isIntegral.integralForm i i) := by
-    obtain ⟨m, hm⟩ := isEven_iff.1 h _ (b i).2
+    obtain ⟨m, hm⟩ := isEven_iff.1 h _ (b i).property
     refine ⟨m, Int.cast_injective (α := ℝ) ?_⟩
     rw [LinearMap.BilinForm.toMatrix_apply, IsIntegral.integralForm_cast,
       real_inner_self_eq_norm_sq, hm]
@@ -538,7 +539,7 @@ theorem infinite_quotient_smul_dual_inf_of_irrational_sq {c : ℝ} (hc : Irratio
     rw [eq_bot_iff]
     intro x hx
     rw [submoduleOf, Submodule.mem_comap, subtype_apply, Submodule.mem_inf] at hx
-    have hx0 : (x : ℝ) ∈ (span ℤ {c} : Submodule ℤ ℝ) ⊓ dual (span ℤ {c}) := ⟨hx.2, x.2⟩
+    have hx0 : (x : ℝ) ∈ (span ℤ {c} : Submodule ℤ ℝ) ⊓ dual (span ℤ {c}) := ⟨hx.2, x.property⟩
     rw [inf_dual_span_singleton_eq_bot_of_irrational_sq hc, mem_bot] at hx0
     exact Subtype.ext hx0
   have : Infinite (dual (span ℤ {c} : Submodule ℤ ℝ)) := by

@@ -51,7 +51,7 @@ def primeDivisorClass {X : Scheme.{u}} [IsLocallyNoetherian X]
     [∀ x : X, IsDomain (X.presheaf.stalk x)]
     [∀ x : X, UniqueFactorizationMonoid (X.presheaf.stalk x)]
     (η : CodimensionOnePoint X) : LineBundleClass X :=
-  (mk (isEffectiveCartier_vanishingIdeal_closure_singleton η.2).toInvertibleSheaf)⁻¹
+  (mk (isEffectiveCartier_vanishingIdeal_closure_singleton η.property).toInvertibleSheaf)⁻¹
 
 /-- `primeDivisorClass η` unfolds to `[ℐ_{closure {η}}]⁻¹`. -/
 lemma primeDivisorClass_def {X : Scheme.{u}} [IsLocallyNoetherian X]
@@ -59,7 +59,7 @@ lemma primeDivisorClass_def {X : Scheme.{u}} [IsLocallyNoetherian X]
     [∀ x : X, UniqueFactorizationMonoid (X.presheaf.stalk x)]
     (η : CodimensionOnePoint X) :
     primeDivisorClass η =
-      (mk (isEffectiveCartier_vanishingIdeal_closure_singleton η.2).toInvertibleSheaf)⁻¹ :=
+      (mk (isEffectiveCartier_vanishingIdeal_closure_singleton η.property).toInvertibleSheaf)⁻¹ :=
   (rfl)
 
 section PullbackPrime
@@ -71,7 +71,7 @@ variable {U X : Scheme.{u}} [IsLocallyNoetherian X] [∀ x : X, IsDomain (X.pres
 `η ∉ Set.range j`. -/
 theorem pullback_primeDivisorClass_eq_one_of_notMem_range {η : CodimensionOnePoint X}
     (hη : (η : X) ∉ Set.range j) : pullback j (primeDivisorClass η) = 1 := by
-  have hI := isEffectiveCartier_vanishingIdeal_closure_singleton η.2
+  have hI := isEffectiveCartier_vanishingIdeal_closure_singleton η.property
   rw [primeDivisorClass_def, pullback_inv, hI.pullback_mk_toInvertibleSheaf (hI.comap j),
     mk_toInvertibleSheaf_congr _ (Scheme.IdealSheafData.isEffectiveCartier_top U)
       (Scheme.IdealSheafData.comap_vanishingIdeal_closure_singleton_eq_top_of_notMem_range j hη),
@@ -90,11 +90,11 @@ theorem pullback_primeDivisorClass_mapOfIsOpenImmersion (y : CodimensionOnePoint
   have := j.isDomain_stalk_of_isOpenImmersion
   have := j.uniqueFactorizationMonoid_stalk_of_isOpenImmersion
   have hI := isEffectiveCartier_vanishingIdeal_closure_singleton
-    (CodimensionOnePoint.mapOfIsOpenImmersion j y).2
+    (CodimensionOnePoint.mapOfIsOpenImmersion j y).property
   rw [primeDivisorClass_def, primeDivisorClass_def, pullback_inv,
     hI.pullback_mk_toInvertibleSheaf (hI.comap j)]
   refine congrArg Inv.inv (mk_toInvertibleSheaf_congr (hI.comap j)
-    (isEffectiveCartier_vanishingIdeal_closure_singleton y.2) ?_)
+    (isEffectiveCartier_vanishingIdeal_closure_singleton y.property) ?_)
   rw [CodimensionOnePoint.coe_mapOfIsOpenImmersion]
   exact Scheme.IdealSheafData.comap_vanishingIdeal_closure_singleton_apply j y
 
@@ -225,9 +225,9 @@ a product `∏ i : s, primeDivisorClass i.1 ^ v i` for some `v : s → ℤ`. -/
 theorem pullback_eq_one_iff_exists_prod_of_isOpenImmersion
     {s : Finset (CodimensionOnePoint X)}
     (hs : ∀ η : CodimensionOnePoint X, η ∈ s ↔ (η : X) ∉ Set.range j) {a : LineBundleClass X} :
-    pullback j a = 1 ↔ ∃ v : s → ℤ, a = ∏ i : s, primeDivisorClass i.1 ^ v i := by
+    pullback j a = 1 ↔ ∃ v : s → ℤ, a = ∏ i : s, primeDivisorClass i.val ^ v i := by
   have hset : {primeDivisorClass η | (η : CodimensionOnePoint X) (_ : (η : X) ∉ Set.range j)} =
-      Set.range (fun i : s ↦ primeDivisorClass i.1) := by
+      Set.range (fun i : s ↦ primeDivisorClass i.val) := by
     ext b; simp [hs]
   rw [pullback_eq_one_iff_mem_closure_of_isOpenImmersion j, hset]
   exact Subgroup.mem_closure_range_iff_of_fintype
@@ -251,7 +251,7 @@ theorem pullback_eq_one_iff_exists_prod_of_isOpenImmersion_of_isRegular
     (hs : ∀ η : CodimensionOnePoint X, η ∈ s ↔ (η : X) ∉ Set.range j) {a : LineBundleClass X} :
     pullback j a = 1 ↔ ∃ v : s → ℤ, a = ∏ i : s,
       (mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX
-        i.1.2).toInvertibleSheaf)⁻¹ ^ v i := by
+        i.val.property).toInvertibleSheaf)⁻¹ ^ v i := by
   have := fun x ↦ IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
   simpa only [primeDivisorClass_def] using
     pullback_eq_one_iff_exists_prod_of_isOpenImmersion (X := X) j hs (a := a)

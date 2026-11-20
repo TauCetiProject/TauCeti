@@ -87,7 +87,7 @@ theorem relDensityOn_sub_mul_card_eq_sum_inter_support [Fintype κ₂] (H : Colo
       ∑ P : Polyad3 S, ((H.relDensityOn c (s ∩ P.support) : ℝ) - a) * #(s ∩ P.support) := by
   have hcount (t : Finset {x : Fin 3 → V // Function.Injective x}) :
       (H.relDensityOn c t : ℝ) * #t =
-        #{x ∈ t | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} := by
+        #{x ∈ t | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} := by
     exact_mod_cast H.relDensityOn_mul_card c t
   simp_rw [sub_mul, hcount, ← filter_inter]
   rw [sum_sub_distrib, ← mul_sum, ← Nat.cast_sum, ← Nat.cast_sum, Polyad3.sum_card_inter_support,

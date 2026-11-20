@@ -401,9 +401,9 @@ theorem quotientHeightIdealEquiv_mk_generator {p : ℕ} (hp : p.Prime) {n : ℕ}
 theorem quotientHeightIdealEquiv_symm_X {p : ℕ} (hp : p.Prime) {n : ℕ} (hn : 1 ≤ n)
     (k : {k : ℕ+ // ∀ j, 1 ≤ j → j < n → (k : ℕ) + 1 ≠ p ^ j}) :
     (quotientHeightIdealEquiv hp hn).symm (MvPolynomial.X k) =
-      Ideal.Quotient.mk _ (generator k.1) := by
+      Ideal.Quotient.mk _ (generator k.val) := by
   apply (quotientHeightIdealEquiv hp hn).injective
-  rw [RingEquiv.apply_symm_apply, quotientHeightIdealEquiv_mk_generator hp hn k.2]
+  rw [RingEquiv.apply_symm_apply, quotientHeightIdealEquiv_mk_generator hp hn k.property]
 
 /-- **Polynomial presentation of `L ⧸ I_∞`.** For a prime `p`, the quotient of the Lazard ring by
 `I_∞ = ⨆ n, I_n` is isomorphic to the polynomial ring over `ZMod p` on the Lazard generators `x_k`
@@ -452,9 +452,9 @@ theorem quotientISupHeightIdealEquiv_mk_generator {p : ℕ} (hp : p.Prime)
 theorem quotientISupHeightIdealEquiv_symm_X {p : ℕ} (hp : p.Prime)
     (k : {k : ℕ+ // ∀ j ≠ 0, (k : ℕ) + 1 ≠ p ^ j}) :
     (quotientISupHeightIdealEquiv hp).symm (MvPolynomial.X k) =
-      Ideal.Quotient.mk _ (generator k.1) := by
+      Ideal.Quotient.mk _ (generator k.val) := by
   apply (quotientISupHeightIdealEquiv hp).injective
-  rw [RingEquiv.apply_symm_apply, quotientISupHeightIdealEquiv_mk_generator hp k.2]
+  rw [RingEquiv.apply_symm_apply, quotientISupHeightIdealEquiv_mk_generator hp k.property]
 
 /-! ### Primality, strict monotonicity, and non-finite generation -/
 

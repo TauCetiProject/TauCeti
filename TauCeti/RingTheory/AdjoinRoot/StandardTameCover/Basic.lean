@@ -394,7 +394,7 @@ private noncomputable def standardTameCoverMulAlgHom (ζ : rootsOfUnity e A) :
     standardTameCover A f e →ₐ[A] standardTameCover A f e :=
   (AdjoinRoot.algHomEquiv _ _).symm ⟨algebraMap A _ (ζ : Aˣ) * AdjoinRoot.root _, by
     have hζ : ((ζ : Aˣ) : A) ^ e = 1 := by
-      rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity e _).mp ζ.2, Units.val_one]
+      rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity e _).mp ζ.property, Units.val_one]
     simp [mul_pow, ← map_pow (AdjoinRoot.of _), hζ]⟩
 
 private theorem standardTameCoverMulAlgHom_root (ζ : rootsOfUnity e A) :

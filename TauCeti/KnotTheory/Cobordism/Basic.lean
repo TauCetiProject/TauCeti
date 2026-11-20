@@ -629,16 +629,16 @@ private theorem isEmbedding_glueFun_comp_subtypeVal_upper (hc : 0 < c)
       (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier)) := by
   have heq : glueFun C S hc ∘ (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier) =
       rescale C hc ∘ (collarParam S ∘ Subtype.val) :=
-    funext fun y ↦ glueFun_of_le_snd C hc hS (le_of_lt y.2)
+    funext fun y ↦ glueFun_of_le_snd C hc hS (le_of_lt y.property)
   have hP : Continuous (collarParam S ∘
       (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier)) :=
     continuous_iff_continuousAt.2 fun y ↦
-      (contMDiffAt_collarParam hS y.2).continuousAt.comp continuous_subtype_val.continuousAt
+      (contMDiffAt_collarParam hS y.property).continuousAt.comp continuous_subtypeVal.continuousAt
   have hK : Continuous (Prod.map K₁ (id : ℝ → ℝ)) :=
     K₁.isEmbedding.continuous.prodMap continuous_id
   have hPK : Prod.map K₁ id ∘ (collarParam S ∘
       (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier)) = S.toFun ∘ Subtype.val :=
-    funext fun y ↦ prodMap_collarParam (fst_mem_range_of_le hS (le_of_lt y.2))
+    funext fun y ↦ prodMap_collarParam (fst_mem_range_of_le hS (le_of_lt y.property))
   rw [heq]
   refine (rescale C hc).isEmbedding.comp (IsEmbedding.of_comp hP hK ?_)
   rw [hPK]
@@ -667,7 +667,7 @@ private theorem isEmbedding_glueFun (hc : 0 < c)
   let W : Bool → Set S.carrier := fun b ↦ bif b
     then {y | 1 - 2 * c < (S.toFun y).2} else {y | (S.toFun y).2 < 1 - c}
   refine isEmbedding_of_iSup_eq_top_of_preimage_subset_range (glueFun C S hc) hglue U ?_
-    (fun b ↦ W b) (fun b ↦ Subtype.val) (fun b ↦ continuous_subtype_val) ?_ ?_
+    (fun b ↦ W b) (fun b ↦ Subtype.val) (fun b ↦ continuous_subtypeVal) ?_ ?_
   -- The two slabs cover the image.
   · rintro _ ⟨y, rfl⟩
     rw [SetLike.mem_coe, TopologicalSpace.Opens.mem_iSup]
@@ -686,7 +686,7 @@ private theorem isEmbedding_glueFun (hc : 0 < c)
   · rintro (_ | _)
     · have heq : glueFun C S hc ∘ (Subtype.val : W false → S.carrier) =
           S.toFun ∘ Subtype.val :=
-        funext fun y ↦ glueFun_of_le C hc (le_of_lt y.2)
+        funext fun y ↦ glueFun_of_le C hc (le_of_lt y.property)
       rw [heq]
       exact S.isSmoothEmbedding.isEmbedding.comp IsEmbedding.subtypeVal
     · exact isEmbedding_glueFun_comp_subtypeVal_upper C hc hS

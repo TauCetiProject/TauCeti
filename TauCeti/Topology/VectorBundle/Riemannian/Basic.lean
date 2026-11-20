@@ -74,8 +74,8 @@ namespace TauCeti
 variable (F E) in
 /-- In a continuous Riemannian bundle, the fiber norm is a continuous function on the total
 space. -/
-theorem continuous_norm_bundle : Continuous fun z : TotalSpace F E ↦ ‖z.2‖ :=
-  Continuous.norm_bundle (b := TotalSpace.proj) (v := fun z ↦ z.2)
+theorem continuous_norm_bundle : Continuous fun z : TotalSpace F E ↦ ‖z.snd‖ :=
+  Continuous.norm_bundle (b := TotalSpace.proj) (v := fun z ↦ z.snd)
     (continuous_id.congr fun z ↦ (TotalSpace.eta z).symm)
 
 end TauCeti
@@ -83,7 +83,7 @@ end TauCeti
 /-- In a continuous Riemannian bundle, the vectors of norm less than `r` lying over an open subset
 of the base form an open subset of the total space. -/
 theorem IsOpen.norm_lt_bundle {U : Set B} (hU : IsOpen U) (r : ℝ) :
-    IsOpen {z : TotalSpace F E | z.proj ∈ U ∧ ‖z.2‖ < r} :=
+    IsOpen {z : TotalSpace F E | z.proj ∈ U ∧ ‖z.snd‖ < r} :=
   (hU.preimage (FiberBundle.continuous_proj F E)).inter
     (isOpen_lt (TauCeti.continuous_norm_bundle F E) continuous_const)
 
@@ -103,11 +103,11 @@ norm is continuous on the total space and each trivialization is bounded in norm
 point. Then the vectors of norm at most `r` lying over a compact subset of the base form a compact
 subset of the total space. -/
 theorem IsCompact.norm_le_bundle_of_continuous
-    (hnorm : Continuous fun z : TotalSpace F E ↦ ‖z.2‖)
+    (hnorm : Continuous fun z : TotalSpace F E ↦ ‖z.snd‖)
     (hloc : ∀ x, ∃ C, ∀ᶠ y in 𝓝 x, ∀ w : E y,
       ‖(trivializationAt F E x).continuousLinearMapAt ℝ y w‖ ≤ C * ‖w‖)
     {K : Set B} (hK : IsCompact K) (r : ℝ) :
-    IsCompact {z : TotalSpace F E | z.proj ∈ K ∧ ‖z.2‖ ≤ r} := by
+    IsCompact {z : TotalSpace F E | z.proj ∈ K ∧ ‖z.snd‖ ≤ r} := by
   refine isCompact_iff_ultrafilter_le_nhds'.2 fun 𝒰 hS ↦ ?_
   -- The base points converge to some `x ∈ K`.
   obtain ⟨x, hxK, hx⟩ := hK.ultrafilter_le_nhds' (𝒰.map TotalSpace.proj)
@@ -123,7 +123,7 @@ theorem IsCompact.norm_le_bundle_of_continuous
   obtain ⟨v, -, hv⟩ := (isCompact_closedBall (0 : F) (|C| * r)).ultrafilter_le_nhds'
     (𝒰.map fun z ↦ (e z).2) <| Ultrafilter.mem_map.2 <| mem_of_superset (inter_mem hS hU)
       fun z ⟨⟨_, hzr⟩, hzb, hzC⟩ ↦ by
-        have h := hzC z.2
+        have h := hzC z.snd
         rw [Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) e hzb] at h
         exact mem_closedBall_zero_iff.2 <| h.trans <|
           (mul_le_mul_of_nonneg_right (le_abs_self C) (norm_nonneg _)).trans
@@ -151,7 +151,7 @@ variable [∀ x, InnerProductSpace ℝ (E x)] [FiberBundle F E] [VectorBundle �
 continuous Riemannian vector bundle with finite-dimensional model fiber, the vectors of norm at
 most `r` lying over a compact subset of the base form a compact subset of the total space. -/
 theorem IsCompact.norm_le_bundle {K : Set B} (hK : IsCompact K) (r : ℝ) :
-    IsCompact {z : TotalSpace F E | z.proj ∈ K ∧ ‖z.2‖ ≤ r} :=
+    IsCompact {z : TotalSpace F E | z.proj ∈ K ∧ ‖z.snd‖ ≤ r} :=
   hK.norm_le_bundle_of_continuous (TauCeti.continuous_norm_bundle F E)
     (fun x ↦ (eventually_norm_trivializationAt_lt F E x).imp fun _ h ↦
       h.2.mono fun _ hy ↦ (ContinuousLinearMap.le_of_opNorm_le _ hy.le)) r

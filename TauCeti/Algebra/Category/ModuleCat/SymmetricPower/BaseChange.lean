@@ -72,7 +72,7 @@ theorem coe_extendScalarsSymmetricPowerIso_hom_tmul (n : ℕ)
     ((f.extendScalarsSymmetricPowerIso n M).hom.hom (s ⊗ₜ[R,f] x) :
         SymmetricAlgebra S ((ModuleCat.extendScalars f).obj M)) =
       (letI := f.toAlgebra
-       SymmetricAlgebra.scalarTensorBialgEquiv (k := R) (K := S) (s ⊗ₜ[R] x.1)) := by
+       SymmetricAlgebra.scalarTensorBialgEquiv (k := R) (K := S) (s ⊗ₜ[R] x.val)) := by
   let _ := f.toAlgebra
   -- Compute through the degreewise linear equivalence, avoiding the categorical scalar wrappers.
   change ((TauCeti.SymmetricAlgebra.homogeneousSubmoduleEquivBaseChange
@@ -107,7 +107,7 @@ theorem subtype_baseChange_extendScalarsSymmetricPowerIso_inv_apply (n : ℕ)
     letI := f.toAlgebra
     (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n).subtype.baseChange S
         ((f.extendScalarsSymmetricPowerIso n M).inv.hom x) =
-      (SymmetricAlgebra.scalarTensorBialgEquiv (k := R) (K := S)).symm x.1 := by
+      (SymmetricAlgebra.scalarTensorBialgEquiv (k := R) (K := S)).symm x.val := by
   let _ := f.toAlgebra
   -- Unwrap the inverse categorical comparison to use the degreewise inclusion formula.
   change (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n).subtype.baseChange S
@@ -135,7 +135,7 @@ theorem extendScalarsSymmetricPowerIso_hom_naturality (n : ℕ)
     coe_extendScalarsSymmetricPowerIso_hom_tmul.{u₁, u₂, v},
     ModuleCat.symmetricPower.coe_map_apply]
   have h := AlgHom.congr_fun (g.hom.scalarTensorBialgEquiv_comp_map (S := S))
-    ((1 : S) ⊗ₜ[R] x.1)
+    ((1 : S) ⊗ₜ[R] x.val)
   -- Identify the underlying map by the named pure-tensor formulas, rather than
   -- unfolding the restriction-of-scalars module structure used by the functor.
   have hg : ((ModuleCat.extendScalars f).map g).hom = g.hom.baseChange S := by
@@ -234,8 +234,8 @@ theorem extendScalarsSymmetricPowerNatIso_id (n : ℕ) :
   simp only [extendScalarsSymmetricPowerNatIso_hom_app]
   erw [ModuleCat.symmetricPower.coe_map_apply,
     coe_extendScalarsSymmetricPowerIso_hom_tmul.{u, u, v}]
-  have hx : (SymmetricAlgebra.map R a) (e ((1 : R) ⊗ₜ[R] x.1)) = x.1 :=
-    RingHom.congr_fun h x.1
+  have hx : (SymmetricAlgebra.map R a) (e ((1 : R) ⊗ₜ[R] x.val)) = x.val :=
+    RingHom.congr_fun h x.val
   erw [ModuleCat.comp_apply, ModuleCat.id_apply,
     ModuleCat.extendScalarsId_hom_app_one_tmul]
   exact hx

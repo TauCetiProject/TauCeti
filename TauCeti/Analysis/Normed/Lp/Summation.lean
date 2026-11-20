@@ -159,7 +159,8 @@ noncomputable def unitBallSummation (𝕜 E : Type*) [NontriviallyNormedField �
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E] :
     lp (fun _ : Metric.closedBall (0 : E) 1 ↦ 𝕜) 1 →L[𝕜] E :=
   lpOneSummation 𝕜 (Subtype.val : Metric.closedBall (0 : E) 1 → E)
-    ⟨1, mem_upperBounds.mpr (Set.forall_mem_range.mpr fun x ↦ mem_closedBall_zero_iff.mp x.2)⟩
+    ⟨1, mem_upperBounds.mpr (Set.forall_mem_range.mpr fun x ↦ mem_closedBall_zero_iff.mp
+        x.property)⟩
 
 section NontriviallyNormedField
 
@@ -193,7 +194,7 @@ variable (𝕜 E) in
 /-- `unitBallSummation 𝕜 E` has operator norm at most `1` over every nontrivially normed field. -/
 theorem norm_unitBallSummation_le : ‖unitBallSummation 𝕜 E‖ ≤ 1 :=
   norm_lpOneSummation_le 𝕜 (Subtype.val : Metric.closedBall (0 : E) 1 → E) _ zero_le_one
-    fun x ↦ mem_closedBall_zero_iff.mp x.2
+    fun x ↦ mem_closedBall_zero_iff.mp x.property
 
 variable (𝕜 E) in
 /-- `unitBallSummation 𝕜 E` is surjective over every nontrivially normed field. -/

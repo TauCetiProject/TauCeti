@@ -347,16 +347,16 @@ exponential is an isomorphism from the additive group of `I` onto its principal 
 inverse the logarithm. -/
 def expMulEquiv : Multiplicative I ≃* I.principalUnitGroup where
   toFun a := ⟨⟨NormedSpace.exp (a.toAdd : S), NormedSpace.exp (-a.toAdd : S),
-      by rw [← (hI _ a.toAdd.2).exp_add (hI _ (neg_mem a.toAdd.2)), add_neg_cancel,
+      by rw [← (hI _ a.toAdd.property).exp_add (hI _ (neg_mem a.toAdd.property)), add_neg_cancel,
         NormedSpace.exp_zero],
-      by rw [← (hI _ (neg_mem a.toAdd.2)).exp_add (hI _ a.toAdd.2), neg_add_cancel,
+      by rw [← (hI _ (neg_mem a.toAdd.property)).exp_add (hI _ a.toAdd.property), neg_add_cancel,
         NormedSpace.exp_zero]⟩,
-    mem_principalUnitGroup.2 ((hI _ a.toAdd.2).exp_sub_one_mem a.toAdd.2)⟩
+    mem_principalUnitGroup.2 ((hI _ a.toAdd.property).exp_sub_one_mem a.toAdd.property)⟩
   invFun u := .ofAdd ⟨NormedSpace.log ((u : Sˣ) : S),
-    (hI _ (mem_principalUnitGroup.1 u.2)).log_mem (mem_principalUnitGroup.1 u.2)⟩
-  left_inv a := Subtype.ext (hI _ a.toAdd.2).log_exp
-  right_inv u := Subtype.ext (Units.ext (hI _ (mem_principalUnitGroup.1 u.2)).exp_log)
-  map_mul' a b := Subtype.ext (Units.ext ((hI _ a.toAdd.2).exp_add (hI _ b.toAdd.2)))
+    (hI _ (mem_principalUnitGroup.1 u.property)).log_mem (mem_principalUnitGroup.1 u.property)⟩
+  left_inv a := Subtype.ext (hI _ a.toAdd.property).log_exp
+  right_inv u := Subtype.ext (Units.ext (hI _ (mem_principalUnitGroup.1 u.property)).exp_log)
+  map_mul' a b := Subtype.ext (Units.ext ((hI _ a.toAdd.property).exp_add (hI _ b.toAdd.property)))
 
 /-- `Ideal.expMulEquiv` sends `a` to the unit `exp a`. -/
 @[simp]

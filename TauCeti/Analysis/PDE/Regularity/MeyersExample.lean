@@ -538,7 +538,7 @@ theorem energyFormH1_meyersCoefficient_eq_zero (hμ0 : 0 < μ)
   have hclosed : IsClosed {w : W1p volume Ω 2 | energyFormH1L hcoeff u w = 0} :=
     isClosed_eq (energyFormH1L hcoeff u).continuous continuous_const
   refine (energyFormH1L_apply hcoeff u _).symm.trans
-    (w1p0Submodule_subset_of_isClosed hclosed (fun φ => ?_) v.2)
+    (w1p0Submodule_subset_of_isClosed hclosed (fun φ => ?_) v.property)
   rw [Set.mem_ofPred_eq, energyFormH1L_apply]
   exact energyFormH1_meyersCoefficient_ofTestFunctionₗ_eq_zero hμ0 u hu φ
 

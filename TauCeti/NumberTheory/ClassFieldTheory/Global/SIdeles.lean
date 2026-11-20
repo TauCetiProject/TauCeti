@@ -118,7 +118,7 @@ private theorem infiniteIdelesToSIdelesHom_smul (σ : L ≃ₐ[K] L) (x : (Infin
 /-- The finite part of an `S`-idele, a finite `S`-idele. -/
 private def sIdelesToFiniteSIdelesHom : sIdeles (K := K) L S →* finiteSIdeles L S :=
   ((IdeleGroup.toFiniteIdele (𝓞 L) L).comp (sIdeles L _).subtype).codRestrict _ fun x ↦
-    toFiniteIdele_mem_finiteSIdeles_iff.2 x.2
+    toFiniteIdele_mem_finiteSIdeles_iff.2 x.property
 
 omit [NumberField K] in
 private theorem coe_sIdelesToFiniteSIdelesHom (x : sIdeles (K := K) L S) :
@@ -191,7 +191,8 @@ def sIdelesToFiniteSIdeles : sIdelesRep (K := K) L S ⟶ finiteSIdelesRep L S :=
 @[simp]
 theorem sIdelesToFiniteSIdeles_hom_apply (x : Additive (sIdeles (K := K) L S)) :
     (sIdelesToFiniteSIdeles L S).hom x = Additive.ofMul
-      ⟨IdeleGroup.toFiniteIdele (𝓞 L) L x.toMul, toFiniteIdele_mem_finiteSIdeles_iff.2 x.toMul.2⟩ :=
+      ⟨IdeleGroup.toFiniteIdele (𝓞 L) L x.toMul, toFiniteIdele_mem_finiteSIdeles_iff.2
+          x.toMul.property⟩ :=
   (rfl)
 
 /-- **The sequence `L_∞ˣ → I_{L,S} → I_{L,S}^f`** of representations of `Aut(L/K)`, given by the
@@ -252,7 +253,7 @@ def finiteSIdelesToSIdeles : finiteSIdelesRep L S ⟶ sIdelesRep (K := K) L S :=
     (((IdeleGroup.ofFiniteIdele (𝓞 L) L).comp (finiteSIdeles L S).subtype).codRestrict _
       fun a ↦ toFiniteIdele_mem_finiteSIdeles_iff.1 (by simp)).toAdditive.toIntLinearMap
     fun σ a ↦ congrArg Additive.ofMul <| Subtype.ext <|
-      ofFiniteIdele_map_finiteAdeleGaloisAction σ a.toMul.1
+      ofFiniteIdele_map_finiteAdeleGaloisAction σ a.toMul.val
 
 /-- `finiteSIdelesToSIdeles` sends a finite `S`-idele `a` to the idele `(1, a)`. -/
 @[simp]
@@ -275,27 +276,27 @@ theorem sIdeles_hom_decomp :
       ((idelesToInfiniteIdeles K L).hom
         ((sIdelesToIdeles L (S : Set (HeightOneSpectrum (𝓞 K)))).hom x)) =
       Additive.ofMul ⟨IdeleGroup.ofInfiniteIdele (𝓞 L) L
-        (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) a.1),
+        (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) a.val),
         ofInfiniteIdele_mem_sIdeles _ _⟩ :=
     (congrArg (fun z ↦ (infiniteIdelesToSIdeles L S).hom ((idelesToInfiniteIdeles K L).hom z))
       (sIdelesToIdeles_hom_apply L (S : Set (HeightOneSpectrum (𝓞 K))) x)).trans <|
         (congrArg _ (idelesToInfiniteIdeles_hom_apply L _)).trans
           (infiniteIdelesToSIdeles_hom_apply L S _)
   have hb : IdeleGroup.toFiniteIdele (𝓞 L) L
-      (IdeleGroup.ofFiniteIdele (𝓞 L) L (IdeleGroup.toFiniteIdele (𝓞 L) L a.1)) ∈
+      (IdeleGroup.ofFiniteIdele (𝓞 L) L (IdeleGroup.toFiniteIdele (𝓞 L) L a.val)) ∈
         finiteSIdeles L S := by
     rw [IdeleGroup.toFiniteIdele_ofFiniteIdele]
-    exact toFiniteIdele_mem_finiteSIdeles_iff.2 a.2
+    exact toFiniteIdele_mem_finiteSIdeles_iff.2 a.property
   have h₂ : (finiteSIdelesToSIdeles L S).hom ((sIdelesToFiniteSIdeles L S).hom x) =
-      Additive.ofMul ⟨IdeleGroup.ofFiniteIdele (𝓞 L) L (IdeleGroup.toFiniteIdele (𝓞 L) L a.1),
+      Additive.ofMul ⟨IdeleGroup.ofFiniteIdele (𝓞 L) L (IdeleGroup.toFiniteIdele (𝓞 L) L a.val),
         toFiniteIdele_mem_finiteSIdeles_iff.1 hb⟩ :=
     (congrArg _ (sIdelesToFiniteSIdeles_hom_apply L S x)).trans
       (finiteSIdelesToSIdeles_hom_apply L S _)
   -- multiplicatively, `a = (a_∞, 1) * (1, a_f)`
   have ha : a = ⟨IdeleGroup.ofInfiniteIdele (𝓞 L) L
-        (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) a.1),
+        (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) a.val),
         ofInfiniteIdele_mem_sIdeles _ _⟩ *
-      ⟨IdeleGroup.ofFiniteIdele (𝓞 L) L (IdeleGroup.toFiniteIdele (𝓞 L) L a.1),
+      ⟨IdeleGroup.ofFiniteIdele (𝓞 L) L (IdeleGroup.toFiniteIdele (𝓞 L) L a.val),
         toFiniteIdele_mem_finiteSIdeles_iff.1 hb⟩ := by
     refine Subtype.ext (Units.ext (Prod.ext ?_ ?_))
     -- the product of adeles is computed componentwise, and the infinite part of `a` has
@@ -377,10 +378,10 @@ theorem herbrandQuotient_sIdelesRep
     (hS : ∀ w : HeightOneSpectrum (𝓞 L), w.under (𝓞 K) ∉ S →
       Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal)
     (wInf : ∀ v : InfinitePlace K, {w : InfinitePlace L // w.LiesOver v})
-    (w : ∀ v : S, {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.1.asIdeal}) :
+    (w : ∀ v : S, {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.val.asIdeal}) :
     TateCohomology.herbrandQuotient (sIdelesRep (K := K) L S) =
-      (∏ v, (finrank v.Completion (wInf v).1.Completion : ℚ)) *
-        ∏ v : S, (finrank (v.1.adicCompletion K) ((w v).1.adicCompletion L) : ℚ) := by
+      (∏ v, (finrank v.Completion (wInf v).val.Completion : ℚ)) *
+        ∏ v : S, (finrank (v.val.adicCompletion K) ((w v).val.adicCompletion L) : ℚ) := by
   rw [herbrandQuotient_sIdelesRep_eq_mul hS, herbrandQuotient_infiniteIdelesRep wInf,
     herbrandQuotient_finiteSIdelesRep S hS w]
 

@@ -603,15 +603,15 @@ theorem exists_mem_neighborhood_cylindricalEndLift (q : Puncture) {z : ℂ}
     ∃ p ∈ q.neighborhood, (p : ℂ) = q.cylindricalEndLift z := by
   cases q
   · refine ⟨_, (zero.cylindricalEnd
-      (⟨z.re, by simpa using hz⟩, (z.im : AddCircle (1 : ℝ)))).2, ?_⟩
+      (⟨z.re, by simpa using hz⟩, (z.im : AddCircle (1 : ℝ)))).property, ?_⟩
     rw [coe_cylindricalEnd_apply_mk zero (by decide)]
     simp [Complex.re_add_im]
   · refine ⟨_, (one.cylindricalEnd
-      (⟨z.re, by simpa using hz⟩, (z.im : AddCircle (1 : ℝ)))).2, ?_⟩
+      (⟨z.re, by simpa using hz⟩, (z.im : AddCircle (1 : ℝ)))).property, ?_⟩
     rw [coe_cylindricalEnd_apply_mk one (by decide)]
     simp [Complex.re_add_im]
   · refine ⟨_, (negativeEnd
-      (⟨z.re, by simpa using hz⟩, (z.im : AddCircle (1 : ℝ)))).2, ?_⟩
+      (⟨z.re, by simpa using hz⟩, (z.im : AddCircle (1 : ℝ)))).property, ?_⟩
     rw [coe_negativeEnd_apply_mk]
     simp [Complex.re_add_im]
 
@@ -622,7 +622,7 @@ theorem cylindricalEndLift_ne_zero_and_ne_one (q : Puncture) {z : ℂ}
     q.cylindricalEndLift z ≠ 0 ∧ q.cylindricalEndLift z ≠ 1 := by
   obtain ⟨p, -, hp⟩ := q.exists_mem_neighborhood_cylindricalEndLift hz
   rw [← hp]
-  exact p.2
+  exact p.property
 
 /-- A point with positive signed longitudinal coordinate on an end lies in the thrice-punctured
 sphere: it is neither `0` nor `1`. -/

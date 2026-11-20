@@ -184,8 +184,9 @@ theorem IsPreconnected.rank_range_cfc_indicator_eq {X : Type*} [TopologicalSpace
     intro z
     have hz : Tendsto (fun w : s ↦ A w) (𝓝 z) (𝓝[{S | IsSelfAdjoint S}] (A z)) :=
       tendsto_nhdsWithin_iff.2 ⟨(continuousOn_iff_continuous_domRestrict.1 hA).tendsto z,
-        Eventually.of_forall fun w ↦ hsa w w.2⟩
-    exact hz.eventually ((hsa z z.2).eventually_rank_range_cfc_indicator_eq (hΩ z z.2))
+        Eventually.of_forall fun w ↦ hsa w w.property⟩
+    exact hz.eventually ((hsa z z.property).eventually_rank_range_cfc_indicator_eq
+        (hΩ z z.property))
   exact hg.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
 
 /-- The finite rank of the spectral projection for a set `Ω` is constant along a continuous path of
