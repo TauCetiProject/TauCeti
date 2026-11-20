@@ -41,6 +41,8 @@ sequence of a filtered space.
 * `TauCeti.TopTriple.isIso_biprod_lift_singularCohomology`: when retractions out of `Hⁿ(X, B)` and
   `Hⁿ⁺¹(X, B)` split the outer maps `H*(X, A) ⟶ H*(X, B)` up to isomorphism, the connecting
   morphism vanishes and `Hⁿ(X, B)` splits as a binary biproduct.
+* `TauCeti.TopTriple.isIso_singularCohomologyMap_totalToOuter_of_isZero`: if `Hⁿ(A, B)` vanishes,
+  and so does `Hⁿ⁻¹(A, B)` when `n > 0`, restriction `Hⁿ(X, A) ⟶ Hⁿ(X, B)` is an isomorphism.
 
 ## References
 
@@ -143,6 +145,27 @@ theorem isIso_biprod_lift_singularCohomology (n : ℕ) {B₀ B₁ : ModuleCat.{v
     biprod.hom_ext _ _ (by simp [r', biprod.lift_fst_assoc]) (by simp)
   rw [← hfac]
   infer_instance
+
+/-- **Removing an acyclic inner pair**: if `Hⁿ(A, B)` vanishes, and so does `Hᵐ(A, B)` for
+`m + 1 = n`, then restriction `Hⁿ(X, A) ⟶ Hⁿ(X, B)` is an isomorphism. -/
+theorem isIso_singularCohomologyMap_totalToOuter_of_isZero (n : ℕ)
+    (hn : IsZero ((innerPair.obj T).singularCohomology R k M n))
+    (hm : ∀ m, m + 1 = n → IsZero ((innerPair.obj T).singularCohomology R k M m)) :
+    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (totalToOuter.app T) n) := by
+  have : Epi (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (totalToOuter.app T) n) :=
+    (T.singularCohomology_exact_total R k M n).epi_f (hn.eq_of_tgt _ _)
+  have :
+      Mono (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (totalToOuter.app T) n) := by
+    cases n with
+    | zero =>
+      -- In degree `0` there is no earlier term: the cochain map is injective in degree `0`.
+      have := (T.shortExact_singularCochainComplexShortComplex R k M).mono_f
+      have : Mono ((T.singularCochainComplexShortComplex R k M).f.f 0) := inferInstance
+      exact HomologicalComplex.mono_homologyMap_of_mono_of_not_rel
+        (T.singularCochainComplexShortComplex R k M).f 0 (by simp)
+    | succ m =>
+      exact (T.singularCohomology_exact_outer R k M m (m + 1)).mono_g ((hm m rfl).eq_of_src _ _)
+  exact isIso_of_mono_of_epi _
 
 end TopTriple
 
