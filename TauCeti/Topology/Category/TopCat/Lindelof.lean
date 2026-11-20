@@ -23,7 +23,7 @@ public section
 
 open CategoryTheory Limits
 
-universe w u
+universe w v u
 
 namespace TauCeti.TopCat
 
@@ -38,7 +38,7 @@ theorem lindelofSpace_of_isPushout {A B X P : TopCat.{u}} {g : A ⟶ X} {m : A �
   exacts [⟨.inl x, rfl⟩, ⟨.inr b, rfl⟩]
 
 /-- The colimit of a countable diagram of Lindelöf spaces in `TopCat` is Lindelöf. -/
-theorem lindelofSpace_of_isColimit {J : Type w} [SmallCategory J] [Countable J]
+theorem lindelofSpace_of_isColimit {J : Type w} [Category.{v} J] [Countable J]
     {F : J ⥤ TopCat.{u}} {c : Cocone F} (hc : IsColimit c) [∀ j, LindelofSpace (F.obj j)] :
     LindelofSpace c.pt := by
   refine LindelofSpace.of_continuous_surjective (f := fun p : Σ j, F.obj j ↦ c.ι.app p.1 p.2)
