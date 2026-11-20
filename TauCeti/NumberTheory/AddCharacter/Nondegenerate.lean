@@ -234,9 +234,11 @@ ideal is nontrivial. -/
 theorem isNondegenerate_iff_forall_isMaximal :
     ψ.IsNondegenerate ↔
       ∀ m : Ideal Λ, m.IsMaximal → (Ideal.Quotient.mk m).toMonoidHom.compAddChar ψ ≠ 1 := by
-  simp_rw [zmod_char_ne_one_iff, MonoidHom.compAddChar_apply, Function.comp_apply,
-    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, ne_eq, ← map_one (Ideal.Quotient.mk _),
-    Ideal.Quotient.eq]
+  -- the reduction of `ψ` modulo `m` is nontrivial exactly when `ψ 1 - 1 ∉ m`
+  have hred (m : Ideal Λ) :
+      (Ideal.Quotient.mk m).toMonoidHom.compAddChar ψ ≠ 1 ↔ ψ 1 - 1 ∉ m := by
+    simp [zmod_char_ne_one_iff, ← Ideal.Quotient.eq_zero_iff_mem, sub_eq_zero]
+  simp only [hred]
   refine ⟨fun hψ m hm hmem ↦ hm.ne_top (m.eq_top_of_isUnit_mem hmem (isNondegenerate_iff.1 hψ)),
     fun h ↦ ?_⟩
   by_contra hψ
