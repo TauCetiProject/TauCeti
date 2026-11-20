@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Kernel.Composition.MeasureComp
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
+public import TauCeti.MeasureTheory.Integral.Lebesgue.Dist
 
 /-!
 # Reduction of estimation to testing
@@ -19,15 +20,21 @@ parameters are pairwise disjoint, so sending a point of `Y` to the index of the 
 Composing `κ` with it gives a test `ψ : Kernel X ι` whose error under `P i` is at most the
 probability that the estimate is at distance at least `s` from `θ i`:
 `(ψ ∘ₘ P i) {i}ᶜ ≤ (κ ∘ₘ P i) {y | s ≤ d y (θ i)}`.
-Together with Markov's inequality for a monotone loss of the distance, this turns lower bounds
-for the error of tests into lower bounds for the risk of estimators.
+Together with Markov's inequality for a monotone loss of the distance
+(`TauCeti.mul_measure_le_lintegral_edist`, in `TauCeti.MeasureTheory.Integral.Lebesgue.Dist`),
+this turns lower bounds for the error of tests into lower bounds for the risk of estimators.
 
 No finiteness or countability of the index set is needed: a union of open balls is open, so every
 preimage under `ballIndex` is the union of an open set and a closed set.
 
+For a finite, nonempty, linearly ordered index set and parameters that need not be separated,
+`nearestIndex θ y` is the least index of a nearest parameter to `y`; it is measurable and
+`dist (θ (nearestIndex θ y)) (θ j) ≤ 2 * dist y (θ j)` for every `j`.
+
 ## Main definitions
 
 * `TauCeti.ballIndex θ s i₀`: the index of the ball of radius `s` containing a point, or `i₀`.
+* `TauCeti.nearestIndex θ`: the least index of a nearest parameter.
 
 ## Main results
 
@@ -36,8 +43,9 @@ preimage under `ballIndex` is the union of an open set and a closed set.
 * `TauCeti.measurable_ballIndex`: `ballIndex θ s i₀` is measurable.
 * `TauCeti.comp_map_ballIndex_compl_le`: the error of the test `κ.map (ballIndex θ s i₀)`.
 * `TauCeti.le_max_measure_dist_ge_of_test`: every estimator is dominated by a test.
-* `TauCeti.mul_measure_le_lintegral_edist`: Markov's inequality for a monotone loss of the
-  distance, with no measurability of the loss.
+* `TauCeti.measurable_nearestIndex`, `TauCeti.dist_nearestIndex_le` and
+  `TauCeti.dist_nearestIndex_le_two_mul`: the nearest-parameter map is measurable, minimizes the
+  distance, and lands within twice the distance to any parameter.
 
 ## References
 
@@ -79,6 +87,7 @@ private theorem eq_of_mem_ball_of_mem_ball {θ : ι → Y} {s : ℝ}
   exact (ball_disjoint_ball (by linarith [hθ i j hij])).ne_of_mem hi hj rfl
 
 /-- A point in the ball around `θ i` has index `i`. -/
+@[simp]
 theorem ballIndex_eq_of_mem_ball {θ : ι → Y} {s : ℝ}
     (hθ : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j)) (i₀ : ι) {y : Y} {i : ι}
     (hy : y ∈ ball (θ i) s) : ballIndex θ s i₀ y = i := by
@@ -87,6 +96,7 @@ theorem ballIndex_eq_of_mem_ball {θ : ι → Y} {s : ℝ}
   exact eq_of_mem_ball_of_mem_ball hθ h.choose_spec hy
 
 /-- A point in no ball has the default index. -/
+@[simp]
 theorem ballIndex_eq_of_forall_notMem {θ : ι → Y} {s : ℝ} (i₀ : ι) {y : Y}
     (hy : ∀ i, y ∉ ball (θ i) s) : ballIndex θ s i₀ y = i₀ := by
   rw [ballIndex, dite_eq_right (by simpa using hy)]
@@ -114,7 +124,7 @@ theorem ballIndex_preimage {θ : ι → Y} {s : ℝ} (hθ : ∀ i j, i ≠ j →
     · rwa [eq_of_mem_ball_of_mem_ball hθ hi hyj]
     · exact (hy i hi).elim
   · push Not at hy
-    simp [ballIndex_eq_of_forall_notMem i₀ hy, hy]
+    simp [hy]
 
 /-- For `2 s`-separated parameters, `ballIndex θ s i₀` is measurable, for every σ-algebra on the
 index set. -/
@@ -126,6 +136,66 @@ theorem measurable_ballIndex [MeasurableSpace Y] [OpensMeasurableSpace Y] [Measu
   exact (isOpen_biUnion fun i _ ↦ isOpen_ball).measurableSet.union
     ((MeasurableSet.const _).inter
       (isClosed_iInter fun i ↦ isOpen_ball.isClosed_compl).measurableSet)
+
+section NearestIndex
+
+variable [Fintype ι] [Nonempty ι] [LinearOrder ι]
+
+open scoped Classical in
+/-- The index of a nearest parameter to `y`: the least `i`, for the linear order of `ι`, such that
+`dist y (θ i) ≤ dist y (θ j)` for every `j`. -/
+def nearestIndex (θ : ι → Y) (y : Y) : ι :=
+  (Finset.univ.filter fun i ↦ ∀ j, dist y (θ i) ≤ dist y (θ j)).min' <| by
+    obtain ⟨i, -, hi⟩ :=
+      Finset.univ.exists_min_image (fun i ↦ dist y (θ i)) Finset.univ_nonempty
+    exact ⟨i, by simpa using hi⟩
+
+open scoped Classical in
+theorem nearestIndex_def (θ : ι → Y) (y : Y) :
+    nearestIndex θ y = (Finset.univ.filter fun i ↦ ∀ j, dist y (θ i) ≤ dist y (θ j)).min' (by
+      obtain ⟨i, -, hi⟩ :=
+        Finset.univ.exists_min_image (fun i ↦ dist y (θ i)) Finset.univ_nonempty
+      exact ⟨i, by simpa using hi⟩) := (rfl)
+
+/-- `nearestIndex θ y = i` exactly when `θ i` is a nearest parameter to `y` and every index of a
+nearest parameter is at least `i`. -/
+theorem nearestIndex_eq_iff {θ : ι → Y} {y : Y} {i : ι} :
+    nearestIndex θ y = i ↔ (∀ j, dist y (θ i) ≤ dist y (θ j)) ∧
+      ∀ j, (∀ k, dist y (θ j) ≤ dist y (θ k)) → i ≤ j := by
+  simp [nearestIndex_def, Finset.min'_eq_iff]
+
+/-- `θ (nearestIndex θ y)` is a nearest parameter to `y`. -/
+theorem dist_nearestIndex_le (θ : ι → Y) (y : Y) (j : ι) :
+    dist y (θ (nearestIndex θ y)) ≤ dist y (θ j) :=
+  (nearestIndex_eq_iff.1 rfl).1 j
+
+/-- The nearest parameter to `y` is within twice the distance from `y` to `θ j` of `θ j`. -/
+theorem dist_nearestIndex_le_two_mul (θ : ι → Y) (y : Y) (j : ι) :
+    dist (θ (nearestIndex θ y)) (θ j) ≤ 2 * dist y (θ j) := by
+  calc dist (θ (nearestIndex θ y)) (θ j) ≤ dist y (θ (nearestIndex θ y)) + dist y (θ j) :=
+        dist_triangle_left _ _ _
+    _ ≤ 2 * dist y (θ j) := by linarith [dist_nearestIndex_le θ y j]
+
+/-- `nearestIndex θ` is measurable, for every σ-algebra on the index set: each fibre is a finite
+Boolean combination of the closed sets `{y | dist y (θ j) ≤ dist y (θ k)}`. -/
+@[fun_prop]
+theorem measurable_nearestIndex [MeasurableSpace Y] [OpensMeasurableSpace Y] [MeasurableSpace ι]
+    (θ : ι → Y) : Measurable (nearestIndex θ) := by
+  have hmin (j : ι) : MeasurableSet {y | ∀ k, dist y (θ j) ≤ dist y (θ k)} := by
+    simp only [ofPred_forall]
+    exact MeasurableSet.iInter fun k ↦ measurableSet_le
+      (continuous_id.dist continuous_const).measurable
+      (continuous_id.dist continuous_const).measurable
+  refine measurable_to_countable' fun i ↦ ?_
+  have hpre : nearestIndex θ ⁻¹' {i} = {y | ∀ k, dist y (θ i) ≤ dist y (θ k)} ∩
+      ⋂ j, ({y | ∀ k, dist y (θ j) ≤ dist y (θ k)}ᶜ ∪ {_y | i ≤ j}) := by
+    ext y
+    simp only [mem_preimage, mem_singleton_iff, nearestIndex_eq_iff, mem_inter_iff,
+      mem_ofPred_eq, mem_iInter, mem_union, mem_compl_iff, imp_iff_not_or]
+  rw [hpre]
+  exact (hmin i).inter (MeasurableSet.iInter fun j ↦ (hmin j).compl.union (.const _))
+
+end NearestIndex
 
 variable [MeasurableSpace X] [MeasurableSpace Y] [OpensMeasurableSpace Y] [MeasurableSpace ι]
   [MeasurableSingletonClass ι]
@@ -149,20 +219,5 @@ theorem le_max_measure_dist_ge_of_test [Nonempty ι] (P : ι → Measure X) (θ 
   ⟨κ.map (ballIndex θ s (Classical.arbitrary ι)),
     Kernel.IsMarkovKernel.map κ (measurable_ballIndex hs _),
     fun i ↦ comp_map_ballIndex_compl_le hs _ κ (P i) i⟩
-
-/-- **Markov's inequality for a monotone loss of the distance.** For every measure `μ`, point
-`θ`, real `s` and monotone `ℓ`, `ℓ s · μ {y | s ≤ dist y θ} ≤ ∫⁻ y, ℓ (edist y θ) ∂μ`. The loss
-need not be measurable. -/
-theorem mul_measure_le_lintegral_edist {μ : Measure Y} (θ : Y) (s : ℝ) {ℓ : ℝ≥0∞ → ℝ≥0∞}
-    (hℓ : Monotone ℓ) :
-    ℓ (ENNReal.ofReal s) * μ {y | s ≤ dist y θ} ≤ ∫⁻ y, ℓ (edist y θ) ∂μ := by
-  have hm : MeasurableSet {y | s ≤ dist y θ} :=
-    (isClosed_le continuous_const (continuous_id.dist continuous_const)).measurableSet
-  rw [← lintegral_indicator_const hm]
-  refine lintegral_mono fun y ↦ ?_
-  by_cases hy : y ∈ {y | s ≤ dist y θ}
-  · rw [indicator_of_mem hy, edist_dist]
-    exact hℓ (ENNReal.ofReal_le_ofReal hy)
-  · simp [indicator_of_notMem hy]
 
 end TauCeti
