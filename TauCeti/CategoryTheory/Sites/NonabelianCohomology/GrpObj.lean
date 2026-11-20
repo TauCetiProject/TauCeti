@@ -298,16 +298,22 @@ lemma mk_toTorsor_isTorsor_self (G : Grp C) :
     Sheaf.NonabelianH1.mk (IsTorsor.toTorsor.{w} (J.isTorsor_self G)) = 1 :=
   (IsTorsor.mk_toTorsor_eq_one_iff _).2 ⟨η⟩
 
+omit [J.Subcanonical] in
 /-- A torsor `X` under `G` is isomorphic to `G` acting on itself by a `G`-equivariant
-isomorphism if and only if `X` has a global section. -/
+isomorphism if and only if `X` has a global section `x`; the isomorphism is then the orbit
+morphism `g ↦ g • x`. This holds for every topology `J`. -/
 lemma IsTorsor.exists_iso_isModHom_iff {G : Grp C} {X : C} [ModObj G.X X]
     (h : J.IsTorsor G X) :
     (∃ e : G.X ≅ X, IsModHom G.X e.hom) ↔ Nonempty (𝟙_ C ⟶ X) := by
-  rw [← IsTorsor.mk_toTorsor_eq_one_iff.{0} h, ← mk_toTorsor_isTorsor_self.{0} (J := J) G,
-    eq_comm, IsTorsor.mk_toTorsor_eq_mk_toTorsor_iff]
-  refine ⟨fun ⟨e, he⟩ ↦ ⟨e.hom, he⟩, fun ⟨f, hf⟩ ↦ ?_⟩
-  have := (J.isTorsor_self G).isIso_of_isModHom h f
-  exact ⟨asIso f, hf⟩
+  refine ⟨fun ⟨e, _⟩ ↦ ⟨η ≫ e.hom⟩, fun ⟨x⟩ ↦ ?_⟩
+  have : IsIso (TauCeti.orbitMap G.X x) := by
+    rw [isIso_iff_yoneda_map_bijective]
+    refine fun T ↦ ⟨fun g g' hg ↦ ?_, fun y ↦ ?_⟩
+    · simp only [TauCeti.comp_orbitMap] at hg
+      exact (h.existsUnique_smul_eq (toUnit T ≫ x) _).unique hg rfl
+    · obtain ⟨g, hg, -⟩ := h.existsUnique_smul_eq (toUnit T ≫ x) y
+      exact ⟨g, by simpa using hg⟩
+  exact ⟨asIso (TauCeti.orbitMap G.X x), ⟨TauCeti.mul_orbitMap G.X x⟩⟩
 
 end Self
 
