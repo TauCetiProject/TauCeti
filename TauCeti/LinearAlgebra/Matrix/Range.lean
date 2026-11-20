@@ -152,7 +152,7 @@ coordinate. For an idempotent `e` this is the map `Aⁿ e → Bⁿ f(e)`. -/
 def rangeVecMulLinearMap {B : Type*} [Semiring B] (e : Matrix ι ι' A) (f : A →+* B) :
     range e.vecMulLinear →ₛₗ[f] range (e.map f).vecMulLinear where
   toFun v := ⟨f ∘ v, by
-    obtain ⟨u, hu⟩ := v.2
+    obtain ⟨u, hu⟩ := v.property
     exact ⟨f ∘ u, funext fun i ↦ by simp [← hu, RingHom.map_vecMul]⟩⟩
   map_add' v w := Subtype.ext <| funext fun i ↦ by simp
   map_smul' r v := Subtype.ext <| funext fun i ↦ by simp
@@ -187,9 +187,11 @@ theorem mem_range_vecMulLinear_fromBlocks_iff {e : Matrix ι ι' A} {f : Matrix 
 def rangeVecMulLinearFromBlocksEquiv (e : Matrix ι ι' A) (f : Matrix κ κ' A) :
     range (fromBlocks e 0 0 f).vecMulLinear ≃ₗ[A]
       range e.vecMulLinear × range f.vecMulLinear where
-  toFun v := (⟨(v : ι' ⊕ κ' → A) ∘ Sum.inl, (mem_range_vecMulLinear_fromBlocks_iff.1 v.2).1⟩,
-    ⟨(v : ι' ⊕ κ' → A) ∘ Sum.inr, (mem_range_vecMulLinear_fromBlocks_iff.1 v.2).2⟩)
-  invFun p := ⟨Sum.elim p.1 p.2, mem_range_vecMulLinear_fromBlocks_iff.2 ⟨p.1.2, p.2.2⟩⟩
+  toFun v :=
+    (⟨(v : ι' ⊕ κ' → A) ∘ Sum.inl, (mem_range_vecMulLinear_fromBlocks_iff.1 v.property).1⟩,
+      ⟨(v : ι' ⊕ κ' → A) ∘ Sum.inr, (mem_range_vecMulLinear_fromBlocks_iff.1 v.property).2⟩)
+  invFun p :=
+    ⟨Sum.elim p.1 p.2, mem_range_vecMulLinear_fromBlocks_iff.2 ⟨p.1.property, p.2.property⟩⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := Subtype.ext (Sum.elim_comp_inl_inr _)
@@ -240,10 +242,10 @@ left-module row range of `Mᵀ.map op` over `Rᵐᵒᵖ`. -/
 def rangeMulVecBilinEquivRangeVecMulLinear (M : Matrix ι' ι R) :
     range (M.mulVecBilin R Rᵐᵒᵖ) ≃ₗ[Rᵐᵒᵖ] range (M.transpose.map op).vecMulLinear where
   toFun v := ⟨op ∘ v, by
-    obtain ⟨u, hu⟩ := v.2
+    obtain ⟨u, hu⟩ := v.property
     exact ⟨op ∘ u, by rw [vecMulLinear_apply, ← M.op_comp_mulVec u, ← hu]; rfl⟩⟩
   invFun w := ⟨unop ∘ w, by
-    obtain ⟨u, hu⟩ := w.2
+    obtain ⟨u, hu⟩ := w.property
     refine ⟨unop ∘ u, ?_⟩
     rw [mulVecBilin_apply]
     apply MulOpposite.op_injective.comp_left
@@ -271,8 +273,8 @@ theorem coe_rangeMulVecBilinEquivRangeVecMulLinear_symm_apply (M : Matrix ι' ι
 range of `Mᵀ.map op`. -/
 theorem mem_range_mulVecBilin_iff_op_comp {M : Matrix ι' ι R} {v : ι' → R} :
     v ∈ range (M.mulVecBilin R Rᵐᵒᵖ) ↔ op ∘ v ∈ range (M.transpose.map op).vecMulLinear :=
-  ⟨fun hv ↦ (M.rangeMulVecBilinEquivRangeVecMulLinear ⟨v, hv⟩).2,
-    fun hw ↦ (M.rangeMulVecBilinEquivRangeVecMulLinear.symm ⟨op ∘ v, hw⟩).2⟩
+  ⟨fun hv ↦ (M.rangeMulVecBilinEquivRangeVecMulLinear ⟨v, hv⟩).property,
+    fun hw ↦ (M.rangeMulVecBilinEquivRangeVecMulLinear.symm ⟨op ∘ v, hw⟩).property⟩
 
 /-- The column range of any matrix with finitely many columns is a finitely generated right
 `R`-module. -/
@@ -285,7 +287,7 @@ semilinear map between the column ranges of `M` and `M.map f`. -/
 def rangeMulVecBilinMap {S : Type*} [Semiring S] (M : Matrix ι' ι R) (f : R →+* S) :
     range (M.mulVecBilin R Rᵐᵒᵖ) →ₛₗ[RingHom.op f] range ((M.map f).mulVecBilin S Sᵐᵒᵖ) where
   toFun v := ⟨f ∘ v, by
-    obtain ⟨u, hu⟩ := v.2
+    obtain ⟨u, hu⟩ := v.property
     exact ⟨f ∘ u, funext fun i ↦ by simp [← hu, RingHom.map_mulVec]⟩⟩
   map_add' _ _ := Subtype.ext <| funext fun _ ↦ by simp
   map_smul' r v := Subtype.ext <| funext fun i ↦ by
@@ -323,9 +325,11 @@ theorem mem_range_mulVecBilin_fromBlocks_iff {e : Matrix ι ι' R} {f : Matrix �
 def rangeMulVecBilinFromBlocksEquiv (e : Matrix ι ι' R) (f : Matrix κ κ' R) :
     range ((fromBlocks e 0 0 f).mulVecBilin R Rᵐᵒᵖ) ≃ₗ[Rᵐᵒᵖ]
       range (e.mulVecBilin R Rᵐᵒᵖ) × range (f.mulVecBilin R Rᵐᵒᵖ) where
-  toFun v := (⟨(v : ι ⊕ κ → R) ∘ Sum.inl, (mem_range_mulVecBilin_fromBlocks_iff.mp v.2).1⟩,
-    ⟨(v : ι ⊕ κ → R) ∘ Sum.inr, (mem_range_mulVecBilin_fromBlocks_iff.mp v.2).2⟩)
-  invFun p := ⟨Sum.elim p.1 p.2, mem_range_mulVecBilin_fromBlocks_iff.mpr ⟨p.1.2, p.2.2⟩⟩
+  toFun v :=
+    (⟨(v : ι ⊕ κ → R) ∘ Sum.inl, (mem_range_mulVecBilin_fromBlocks_iff.mp v.property).1⟩,
+      ⟨(v : ι ⊕ κ → R) ∘ Sum.inr, (mem_range_mulVecBilin_fromBlocks_iff.mp v.property).2⟩)
+  invFun p :=
+    ⟨Sum.elim p.1 p.2, mem_range_mulVecBilin_fromBlocks_iff.mpr ⟨p.1.property, p.2.property⟩⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := Subtype.ext (Sum.elim_comp_inl_inr _)

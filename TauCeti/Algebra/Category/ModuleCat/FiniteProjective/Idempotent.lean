@@ -89,8 +89,8 @@ variable {R S : Type*} [Ring R] [Ring S] (f : R →+* S) {ι : Type*} [Fintype �
 private def rangeVecMulLinearMapOpEquiv :
     range ((e.transpose.map op).map (RingHom.op f)).vecMulLinear ≃ₗ[Sᵐᵒᵖ]
       range ((e.map f).transpose.map op).vecMulLinear where
-  toFun w := ⟨w, by obtain ⟨u, hu⟩ := w.2; exact ⟨u, hu⟩⟩
-  invFun w := ⟨w, by obtain ⟨u, hu⟩ := w.2; exact ⟨u, hu⟩⟩
+  toFun w := ⟨w, by obtain ⟨u, hu⟩ := w.property; exact ⟨u, hu⟩⟩
+  invFun w := ⟨w, by obtain ⟨u, hu⟩ := w.property; exact ⟨u, hu⟩⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl

@@ -39,4 +39,4 @@ theorem IsIdempotentElem.projective_range {R M : Type*} [Semiring R] [AddCommMon
     [Module R M] [Module.Projective R M] {f : M →ₗ[R] M} (hf : IsIdempotentElem f) :
     Module.Projective R (LinearMap.range f) :=
   Module.Projective.of_split (LinearMap.range f).subtype f.rangeRestrict <|
-    LinearMap.ext fun v ↦ Subtype.ext ((LinearMap.IsIdempotentElem.mem_range_iff hf).mp v.2)
+    LinearMap.ext fun v ↦ Subtype.ext ((LinearMap.IsIdempotentElem.mem_range_iff hf).mp v.property)

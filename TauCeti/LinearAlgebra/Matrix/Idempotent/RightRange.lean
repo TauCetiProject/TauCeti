@@ -93,7 +93,7 @@ theorem IsIdempotentElem.eq_sum_smul_col {e : Matrix ι ι R} (he : IsIdempotent
   rw [Submodule.coe_sum]
   ext i
   simp only [Finset.sum_apply, Submodule.coe_smul, Pi.smul_apply, col_apply, op_smul_eq_mul]
-  exact congrFun (he.mem_range_mulVecBilin_iff.mp v.2).symm i
+  exact congrFun (he.mem_range_mulVecBilin_iff.mp v.property).symm i
 
 end ColumnRange
 

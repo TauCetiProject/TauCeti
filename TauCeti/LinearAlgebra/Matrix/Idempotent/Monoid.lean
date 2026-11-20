@@ -105,9 +105,9 @@ abbrev IdempotentPresentation (R : Type u) [NonUnitalSemiring R] : Type u :=
 /-- Rectangular algebraic equivalence as a setoid on `IdempotentPresentation R`. -/
 instance idempotentPresentationSetoid (R : Type u) [NonUnitalSemiring R] :
     Setoid (IdempotentPresentation R) where
-  r a b := a.2.1.IsAlgebraicEquivalent b.2.1
+  r a b := a.2.val.IsAlgebraicEquivalent b.2.val
   iseqv :=
-    { refl := fun a ↦ a.2.2.isAlgebraicEquivalent_self
+    { refl := fun a ↦ a.2.property.isAlgebraicEquivalent_self
       symm := Matrix.IsAlgebraicEquivalent.symm
       trans := Matrix.IsAlgebraicEquivalent.trans }
 
@@ -137,7 +137,7 @@ theorem of_congr_matrix {ι : Type*} [Fintype ι] {e₁ e₂ : Matrix ι ι R}
   rfl
 
 private theorem setoid_r_iff (a b : IdempotentPresentation R) :
-    (idempotentPresentationSetoid R).r a b ↔ a.2.1.IsAlgebraicEquivalent b.2.1 :=
+    (idempotentPresentationSetoid R).r a b ↔ a.2.val.IsAlgebraicEquivalent b.2.val :=
   Iff.rfl
 
 /-- Two idempotent matrices define the same class in `IdempotentMonoid R` if and only if they are
@@ -154,8 +154,8 @@ theorem of_eq_of_iff {ι κ : Type*} [Fintype ι] [Fintype κ] {e : Matrix ι ι
       (h.trans (hf.isAlgebraicEquivalent_reindex τ).symm)⟩
 
 private theorem mk_eq_of (a : IdempotentPresentation R) :
-    Quotient.mk (idempotentPresentationSetoid R) a = of a.2.1 a.2.2 :=
-  Quotient.sound (a.2.2.isAlgebraicEquivalent_reindex (Fintype.equivFin (Fin a.1))).symm
+    Quotient.mk (idempotentPresentationSetoid R) a = of a.2.val a.2.property :=
+  Quotient.sound (a.2.property.isAlgebraicEquivalent_reindex (Fintype.equivFin (Fin a.1))).symm
 
 /-- Induction principle for `IdempotentMonoid R` using `Fin n`-indexed idempotent matrices. -/
 @[elab_as_elim]
@@ -165,7 +165,7 @@ theorem induction_on {motive : IdempotentMonoid R → Prop} (x : IdempotentMonoi
     motive x := by
   refine Quotient.inductionOn x fun a ↦ ?_
   rw [mk_eq_of]
-  exact of a.1 a.2.1 a.2.2
+  exact of a.1 a.2.val a.2.property
 
 /-- Descend a function on `Fin n`-indexed idempotent matrices that is invariant under rectangular
 algebraic equivalence to `IdempotentMonoid R`. -/
@@ -175,7 +175,7 @@ def lift {α : Sort*}
       (he : IsIdempotentElem e) (hg : IsIdempotentElem g),
       e.IsAlgebraicEquivalent g → f e he = f g hg) :
     IdempotentMonoid R → α :=
-  Quotient.lift (fun a ↦ f a.2.1 a.2.2) fun a b h ↦ hf a.2.2 b.2.2 h
+  Quotient.lift (fun a ↦ f a.2.val a.2.property) fun a b h ↦ hf a.2.property b.2.property h
 
 @[simp]
 theorem lift_of_fin {α : Sort*}
@@ -238,13 +238,15 @@ theorem of_fromBlocks_zero_left {ι κ : Type*} [Fintype ι] [Fintype κ] (e : M
 
 noncomputable instance : Add (IdempotentMonoid R) where
   add := Quotient.lift₂
-    (fun a b ↦ of (fromBlocks a.2.1 0 0 b.2.1) (a.2.2.fromBlocks_zero₁₂_zero₂₁ b.2.2))
+    (fun a b ↦ of (fromBlocks a.2.val 0 0 b.2.val)
+      (a.2.property.fromBlocks_zero₁₂_zero₂₁ b.2.property))
     fun _ _ _ _ h₁ h₂ ↦ of_eq_of_iff.mpr (h₁.fromBlocks_zero₁₂_zero₂₁ h₂)
 
 private theorem mk_add_mk (a b : IdempotentPresentation R) :
     Quotient.mk (idempotentPresentationSetoid R) a +
         Quotient.mk (idempotentPresentationSetoid R) b =
-      of (fromBlocks a.2.1 0 0 b.2.1) (a.2.2.fromBlocks_zero₁₂_zero₂₁ b.2.2) :=
+      of (fromBlocks a.2.val 0 0 b.2.val)
+        (a.2.property.fromBlocks_zero₁₂_zero₂₁ b.2.property) :=
   rfl
 
 /-- Addition in `IdempotentMonoid R` is given by the block direct sum

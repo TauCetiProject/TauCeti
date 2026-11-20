@@ -404,9 +404,9 @@ def linearEquivRangeMulVecBilinOfMulEq [Fintype m] [Fintype n]
     map_add' u v := Subtype.ext (mulVec_add x u v)
     map_smul' r v := Subtype.ext (mulVec_smul x r v)
     left_inv v := Subtype.ext <| by
-      simp [mulVec_mulVec, hyx, hff.mem_range_mulVecBilin_iff.mp v.2]
+      simp [mulVec_mulVec, hyx, hff.mem_range_mulVecBilin_iff.mp v.property]
     right_inv w := Subtype.ext <| by
-      simp [mulVec_mulVec, hxy, hee.mem_range_mulVecBilin_iff.mp w.2] }
+      simp [mulVec_mulVec, hxy, hee.mem_range_mulVecBilin_iff.mp w.property] }
 
 @[simp]
 theorem coe_linearEquivRangeMulVecBilinOfMulEq_apply [Fintype m] [Fintype n]
