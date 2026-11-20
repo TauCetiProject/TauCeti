@@ -148,6 +148,11 @@ theorem localDegree_eq_zero_of_notMem_range (hF : finrank ℝ F = n) (f : C(M, N
     eq_zero_of_forall_localHomologyRestriction_eq_zero _ hE hc (o.fundamentalClassOn hE hc)
       fun x hx ↦ (h.subset hx).elim, map_zero]
 
+/-- A point at which `f` has nonzero local degree lies in the range of `f`. -/
+theorem mem_range_of_localDegree_ne_zero (hF : finrank ℝ F = n) {f : C(M, N)} {y : N}
+    (h : o.localDegree o' hE f y ≠ 0) : y ∈ range f :=
+  by_contra fun hy ↦ h (o.localDegree_eq_zero_of_notMem_range o' hE hF f hy)
+
 /-- **Excision for the local degree**: if `j : M' → M` is an open embedding whose image contains
 the fibre of `f : M → N` over `y`, then `f ∘ j` has the same local degree at `y` as `f`, for the
 orientation `o` pulled back along `j`. -/
