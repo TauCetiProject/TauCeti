@@ -232,12 +232,13 @@ theorem deltaLog_ofDeltaEqZero (h : ∀ m, delta p (α m) = 0) (m : M) :
   (rfl)
 
 theorem isRankOne_ofDeltaEqZero (h : ∀ m, delta p (α m) = 0) : (ofDeltaEqZero h).IsRankOne :=
-  (isRankOne_iff _).mpr fun _ => rfl
+  (isRankOne_iff _).mpr (deltaLog_ofDeltaEqZero h)
 
 /-- A `δ_log`-structure is of rank one if and only if it is `ofDeltaEqZero`. -/
 theorem isRankOne_iff_eq_ofDeltaEqZero (D : DeltaLogStructure p α) :
     D.IsRankOne ↔ ∃ h, D = ofDeltaEqZero h :=
-  ⟨fun hD => ⟨hD.delta_eq_zero, DeltaLogStructure.ext hD⟩,
+  ⟨fun hD => ⟨hD.delta_eq_zero, DeltaLogStructure.ext (funext fun m => by
+    rw [D.isRankOne_iff.mp hD m, deltaLog_ofDeltaEqZero])⟩,
     fun ⟨_, hD⟩ => hD ▸ isRankOne_ofDeltaEqZero _⟩
 
 /-- On a subsingleton monoid there is exactly one `δ_log`-structure, the rank-one one. -/
@@ -399,7 +400,7 @@ def toMap (D : DeltaLogStructure p α) (f : A →+* B)
   monoidHom := MonoidHom.id M
   map_delta := hf
   apply_monoidHom m := by rw [MonoidHom.id_apply, MonoidHom.comp_apply, MonoidHom.coe_ofClass]
-  deltaLog_monoidHom _ := rfl
+  deltaLog_monoidHom m := by rw [MonoidHom.id_apply, deltaLog_map]
 
 @[simp]
 theorem toMap_ringHom (D : DeltaLogStructure p α) (f : A →+* B)
