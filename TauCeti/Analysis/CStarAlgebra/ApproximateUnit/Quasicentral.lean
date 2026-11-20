@@ -262,10 +262,10 @@ theorem isIncreasingApproximateUnit_comap_coe [IsClosed (I : Set A)]
   neBot := hl.neBot.comap_of_range_mem (hl.eventually_mem.mono fun e he => ⟨⟨e, he⟩, rfl⟩)
   tendsto_mul_left x := by
     rw [IsInducing.subtypeVal.tendsto_nhds_iff]
-    exact (hl.tendsto_mul_left x.2).comp tendsto_comap
+    exact (hl.tendsto_mul_left x.property).comp tendsto_comap
   tendsto_mul_right x := by
     rw [IsInducing.subtypeVal.tendsto_nhds_iff]
-    exact (hl.tendsto_mul_right x.2).comp tendsto_comap
+    exact (hl.tendsto_mul_right x.property).comp tendsto_comap
   eventually_nonneg := hl.eventually_nonneg.comap _
   eventually_norm := hl.eventually_norm.comap _
 
@@ -346,11 +346,11 @@ theorem isQuasicentralApproximateUnit_map_coe_iff {I : TwoSidedIdeal A} [IsClose
   · simpa only [comap_map Subtype.coe_injective] using hl.isIncreasingApproximateUnit_comap_coe
   · have := hl.neBot
     exact .of_tendsto_mul_right
-      (eventually_map.mpr (Eventually.of_forall fun e => e.2))
+      (eventually_map.mpr (Eventually.of_forall fun e => e.property))
       (eventually_map.mpr hl.eventually_nonneg)
       (eventually_map.mpr hl.eventually_norm)
       (fun x hx => tendsto_map'_iff.mpr <|
-        (continuous_subtype_val.tendsto ⟨x, hx⟩).comp (hl.tendsto_mul_right ⟨x, hx⟩))
+        (continuous_subtypeVal.tendsto ⟨x, hx⟩).comp (hl.tendsto_mul_right ⟨x, hx⟩))
       (fun a => tendsto_map'_iff.mpr (hc a))
 
 end Basic
@@ -506,8 +506,8 @@ theorem le_quasicentralApproximateUnit_iff {I : TwoSidedIdeal A} {l : Filter A} 
   · rintro ⟨hmem, hmr, hml, hc⟩ ⟨G, F, ε⟩ (hε : 0 < ε)
     have hG : ∀ᶠ e in l, ∀ x ∈ G, ‖e * (x : A) - x‖ < ε ∧ ‖(x : A) * e - x‖ < ε :=
       G.eventually_all.mpr fun x _ =>
-        ((Metric.tendsto_nhds.mp (hmr x x.2) ε hε).and
-          (Metric.tendsto_nhds.mp (hml x x.2) ε hε)).mono fun _ ⟨h1, h2⟩ => by
+        ((Metric.tendsto_nhds.mp (hmr x x.property) ε hε).and
+          (Metric.tendsto_nhds.mp (hml x x.property) ε hε)).mono fun _ ⟨h1, h2⟩ => by
           simpa only [dist_eq_norm] using And.intro h1 h2
     have hF : ∀ᶠ e in l, ∀ a ∈ F, ‖e * a - a * e‖ < ε :=
       F.eventually_all.mpr fun a _ =>
@@ -583,14 +583,14 @@ private theorem exists_next_quasicentral_step (I : TwoSidedIdeal A) [IsClosed (I
   have hl₀ : l₀.IsIncreasingApproximateUnit := CStarAlgebra.increasingApproximateUnit I
   have := hl₀.neBot
   have hmul_l {y : A} (hy : y ∈ I) : Tendsto (fun v : I => y * (v : A)) l₀ (𝓝 y) :=
-    (continuous_subtype_val.tendsto ⟨y, hy⟩).comp (hl₀.tendsto_mul_left ⟨y, hy⟩)
+    (continuous_subtypeVal.tendsto ⟨y, hy⟩).comp (hl₀.tendsto_mul_left ⟨y, hy⟩)
   have hmul_r {y : A} (hy : y ∈ I) : Tendsto (fun v : I => (v : A) * y) l₀ (𝓝 y) :=
-    (continuous_subtype_val.tendsto ⟨y, hy⟩).comp (hl₀.tendsto_mul_right ⟨y, hy⟩)
+    (continuous_subtypeVal.tendsto ⟨y, hy⟩).comp (hl₀.tendsto_mul_right ⟨y, hy⟩)
   have hG : ∀ᶠ v : I in l₀, ∀ x ∈ G,
       ‖(v : A) * (x : A) - x‖ < ε ∧ ‖(x : A) * (v : A) - x‖ < ε :=
     G.eventually_all.mpr fun x _ =>
-      ((Metric.tendsto_nhds.mp (hmul_r x.2) ε hε).and
-        (Metric.tendsto_nhds.mp (hmul_l x.2) ε hε)).mono fun v ⟨hr, hl⟩ =>
+      ((Metric.tendsto_nhds.mp (hmul_r x.property) ε hε).and
+        (Metric.tendsto_nhds.mp (hmul_l x.property) ε hε)).mono fun v ⟨hr, hl⟩ =>
         ⟨by simpa only [dist_eq_norm] using hr, by simpa only [dist_eq_norm] using hl⟩
   have hF : ∀ᶠ v : I in l₀, ∀ i ∈ Finset.range n, ∀ a ∈ F,
       ‖star (u i * a - a * u i) * ((v : A) * a - a * (v : A))‖ ≤ δ * (‖a‖ + 1) := by
@@ -616,7 +616,7 @@ private theorem exists_next_quasicentral_step (I : TwoSidedIdeal A) [IsClosed (I
       _ = δ * (‖a‖ + 1) := by ring
   obtain ⟨v, ⟨hv₀, hv₁⟩, hvG, hvF⟩ :=
     ((hl₀.eventually_nonneg.and hl₀.eventually_norm).and (hG.and hF)).exists
-  exact ⟨v.1, v.2, Subtype.coe_le_coe.mpr hv₀,
+  exact ⟨v.val, v.property, Subtype.coe_le_coe.mpr hv₀,
     by rwa [AddSubgroupClass.coe_norm] at hv₁, hvG,
     fun i hi a ha => hvF i (Finset.mem_range.mpr hi) a ha⟩
 
@@ -801,7 +801,7 @@ theorem exists_isQuasicentralApproximateUnit_iff_exists_seq (I : TwoSidedIdeal A
     intro x hx
     have hx' : (⟨x, hx⟩ : I) ∈ closure (Set.range dI) :=
       TopologicalSpace.denseRange_denseSeq I ⟨x, hx⟩
-    have himg := image_closure_subset_closure_image continuous_subtype_val ⟨⟨x, hx⟩, hx', rfl⟩
+    have himg := image_closure_subset_closure_image continuous_subtypeVal ⟨⟨x, hx⟩, hx', rfl⟩
     rwa [← Set.range_comp] at himg
   refine ⟨u, fun n => ⟨huI n, hu₀ n, hu₁ n⟩, ?_⟩
   have : (atTop.map u).NeBot := atTop_neBot.map u

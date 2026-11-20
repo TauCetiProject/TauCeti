@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Images
+public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.CategoryTheory.Abelian.SerreClass.Localization
 public import Mathlib.CategoryTheory.Localization.Linear
 public import TauCeti.RingTheory.Almost.Firm
+import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
 /-!
 # Almost modules over a basic setup
@@ -52,6 +54,9 @@ All almost vanishing statements about almost modules, such as the almost acyclic
 * `TauCeti.Almost.Module.isIso_toAlmost_map_iff`: `f^a` is an isomorphism iff `f` is an almost
   isomorphism; `mono_toAlmost_map_iff` and `epi_toAlmost_map_iff` treat monomorphisms and
   epimorphisms, and `toAlmost_map_eq_zero_iff` zero morphisms.
+* `TauCeti.Almost.Module.exact_map_toAlmost_iff` and
+  `TauCeti.Almost.Module.exactAt_mapHomologicalComplex_toAlmost_iff`: a short complex or homological
+  complex of `V`-modules becomes exact in `Almost.Module S` iff its homology is almost zero.
 * `TauCeti.Almost.Module.isZero_of_ideal_eq_bot`: for the zero setup `(V, 0)` every almost module is
   zero.
 
@@ -160,6 +165,24 @@ theorem toAlmost_map_eq_zero_iff {M N : ModuleCat.{u} V} (f : M ⟶ N) :
   rw [ObjectProperty.SerreClassLocalization.map_eq_zero_iff (toAlmost S) S.almostZero,
     S.almostZero.prop_iff_of_iso (Abelian.imageIsoImage f ≪≫ ModuleCat.imageIsoRange f),
     S.almostZero_iff]
+
+/-- A short complex of `V`-modules becomes exact in `Almost.Module S` if and only if its homology is
+almost zero. -/
+@[simp]
+theorem exact_map_toAlmost_iff (C : ShortComplex (ModuleCat.{u} V)) :
+    (C.map (toAlmost S)).Exact ↔ S.IsAlmostZero C.homology := by
+  rw [ShortComplex.exact_iff_isZero_homology,
+    (C.mapHomologyIso (toAlmost S)).isZero_iff, isZero_toAlmost_obj_iff]
+
+/-- A homological complex `K` of `V`-modules becomes exact at `i` in `Almost.Module S` if and only
+if `K.homology i` is almost zero. -/
+@[simp]
+theorem exactAt_mapHomologicalComplex_toAlmost_iff {ι : Type*} {c : ComplexShape ι}
+    (K : HomologicalComplex (ModuleCat.{u} V) c) (i : ι) :
+    (((toAlmost S).mapHomologicalComplex c).obj K).ExactAt i ↔
+      S.IsAlmostZero (K.homology i) := by
+  rw [Functor.mapHomologicalComplex_obj_exactAt_iff, exact_map_toAlmost_iff]
+  rfl
 
 /-- The inclusion `m ⊆ V` becomes an isomorphism of almost modules. -/
 instance isIso_toAlmost_map_subtype :

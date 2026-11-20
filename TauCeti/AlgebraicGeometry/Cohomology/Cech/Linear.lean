@@ -22,7 +22,7 @@ restriction maps are `S`-linear; this is the presheaf of `S`-modules
 `TauCeti.AlgebraicGeometry.Modules.Sections`. Its Čech complex for a family of opens is
 therefore a complex of `S`-modules, and so is its cohomology.
 
-Let `X` be a scheme, `M` quasi-coherent and `U` a finite family of opens covering `X` whose
+Let `X` be a scheme, `M` quasi-coherent and `U` a family of opens covering `X` whose
 nonempty finite intersections are affine. Leray's theorem identifies the Čech cohomology of
 `M` for `U` with the cohomology `Hⁿ(X, M)` as abelian groups
 (`Scheme.Modules.homologyCechComplexIsoCohomology`). This file shows that the identification is
@@ -40,7 +40,7 @@ Leray's comparison is natural in the coefficient sheaf.
 ## Main definitions
 
 * `AlgebraicGeometry.Scheme.Modules.homologyCechComplexLinearEquiv`: the `S`-linear equivalence
-  between the Čech cohomology of this presheaf for a finite cover with affine intersections and
+  between the Čech cohomology of this presheaf for a cover with affine intersections and
   `Hⁿ(X, M)`.
 
 ## Main statements
@@ -67,7 +67,7 @@ universe u
 namespace AlgebraicGeometry.Scheme.Modules
 
 variable {S : Type u} [CommRing S] {X : Scheme.{u}} [X.Over (Spec (.of S))] {ι : Type u}
-  [Finite ι] (U : ι → X.Opens)
+  (U : ι → X.Opens)
   (hU : ∀ s : Finset ι, s.Nonempty → IsAffineOpen (s.inf U)) (hcover : ⨆ i, U i = ⊤)
 
 /-- Forgetting the module structure commutes with taking cohomology. -/
@@ -88,7 +88,6 @@ private def homologyCechIso₂ (M : X.Modules) (n : ℕ) :
     ((cechComplexFunctorMapIso U (forget₂ (ModuleCat.{u} S) Ab)).app _ ≪≫
       (cechComplexFunctor U).mapIso (sectionsBasePresheafCompForget₂Iso S M)) n
 
-omit [Finite ι] in
 /-- `homologyCechIso₁` is natural. -/
 @[reassoc]
 private lemma homologyCechIso₁_hom_naturality {M N : X.Modules} (f : M ⟶ N) (n : ℕ) :
@@ -163,7 +162,7 @@ private lemma homologyCechComplexAddIso_hom_naturality {M N : X.Modules} [M.IsQu
     ((congrArg (_ ≫ ·) (Category.assoc _ _ _).symm).trans (Category.assoc _ _ _).symm)
 
 /-- **Čech cohomology computes cohomology, linearly over the base ring.** Let `X` be a scheme over
-`S`, `M` a quasi-coherent sheaf of modules on `X` and `U` a finite family of opens covering `X`
+`S`, `M` a quasi-coherent sheaf of modules on `X` and `U` a family of opens covering `X`
 whose nonempty finite intersections are affine. Then the cohomology of the Čech
 complex of the presheaf of `S`-modules of sections of `M` for `U` is `S`-linearly equivalent to
 `Hⁿ(X, M)`, for every `n`. The underlying additive equivalence is Leray's comparison

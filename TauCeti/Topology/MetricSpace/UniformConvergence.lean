@@ -45,9 +45,10 @@ theorem tendsto_of_mem_closure_of_lipschitzWith {l : Filter ι} {F : ι → X �
   let S : Set ι := {i | LipschitzWith K (F i)}
   have hmap : (l.comap ((↑) : S → ι)).map ((↑) : S → ι) = l :=
     map_comap_of_mem (hF.mono fun i hi => ⟨⟨i, hi⟩, rfl⟩)
-  have heq : EquicontinuousAt (fun j : S => F j.1) x :=
-    (LipschitzWith.uniformEquicontinuous (fun j : S => F j.1) K fun j => j.2).equicontinuous x
-  have hmem : Tendsto (fun j : S => F j.1 x) (l.comap (↑)) (𝓝 z) :=
+  have heq : EquicontinuousAt (fun j : S => F j.val) x :=
+    (LipschitzWith.uniformEquicontinuous (fun j : S => F j.val) K
+      fun j => j.property).equicontinuous x
+  have hmem : Tendsto (fun j : S => F j.val x) (l.comap (↑)) (𝓝 z) :=
     heq.tendsto_of_mem_closure hf (fun y hy => (hs y hy).comp tendsto_comap) hx
   rwa [← hmap, tendsto_map'_iff]
 
@@ -60,9 +61,10 @@ theorem tendstoUniformlyOn_of_lipschitzOnWith {l : Filter ι} {F : ι → X → 
   let S : Set ι := {i | LipschitzOnWith K (F i) s}
   have hmap : (l.comap ((↑) : S → ι)).map ((↑) : S → ι) = l :=
     map_comap_of_mem (hF.mono fun i hi => ⟨⟨i, hi⟩, rfl⟩)
-  have heq : EquicontinuousOn (fun j : S => F j.1) s :=
-    (LipschitzOnWith.uniformEquicontinuousOn (fun j : S => F j.1) K fun j => j.2).equicontinuousOn
-  have hunif : TendstoUniformlyOn (fun j : S => F j.1) f (l.comap (↑)) s :=
+  have heq : EquicontinuousOn (fun j : S => F j.val) s :=
+    (LipschitzOnWith.uniformEquicontinuousOn (fun j : S => F j.val) K
+      fun j => j.property).equicontinuousOn
+  have hunif : TendstoUniformlyOn (fun j : S => F j.val) f (l.comap (↑)) s :=
     heq.tendstoUniformlyOn_of_tendsto hs fun x hx => (hpt x hx).comp tendsto_comap
   exact fun u hu => by rw [← hmap, eventually_map]; exact hunif u hu
 

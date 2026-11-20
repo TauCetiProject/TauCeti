@@ -341,7 +341,7 @@ theorem exists_laplacian_normSq_mul_eq {p : MvPolynomial σ K} {e : ℕ} (hp : p
     refine (injective_iff_map_eq_zero T).2 fun q hq ↦ Subtype.ext ?_
     exact eq_zero_of_laplacian_normSq_mul_eq_zero (congrArg Subtype.val hq)
   obtain ⟨q, hq⟩ := LinearMap.injective_iff_surjective.1 hT ⟨p, hp⟩
-  exact ⟨q, q.2, congrArg Subtype.val hq⟩
+  exact ⟨q, q.property, congrArg Subtype.val hq⟩
 
 omit [Nonempty σ] in
 /-- **The Fischer decomposition**: every homogeneous polynomial of degree `e + 2` is the sum of a
