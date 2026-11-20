@@ -390,8 +390,7 @@ def ofContDiffOn [LocallyCompactSpace E] (g : E → F) (hg : ContDiffOn ℝ k g 
       ⟨C, (hC.mono subset_closure).holderWith⟩,
       fun x ↦ CkHolderSpaceOn.ofContDiffOn_apply _ _ _ _ x⟩
     have hcont : ContinuousOn (iteratedFDeriv ℝ i g) Ω :=
-      (hg.continuousOn_iteratedFDerivWithin (by exact_mod_cast hi) Ω.isOpen.uniqueDiffOn).congr
-        fun x hx ↦ (iteratedFDerivWithin_of_isOpen i Ω.isOpen hx).symm
+      ContinuousOn.continuousOn_iteratedFDeriv hg Ω.isOpen (by exact_mod_cast hi)
     obtain ⟨M, hM⟩ := hUc.exists_bound_of_continuousOn (hcont.mono hUΩ)
     exact ⟨M, fun x ↦ hM x (subset_closure x.2)⟩
 
@@ -451,8 +450,7 @@ private theorem range_pi_res [LocallyCompactSpace E] :
   constructor
   · rintro ⟨f, rfl⟩ i j h
     ext x
-    dsimp only
-    rw [CkHolderSpaceOn.restrictL_apply, restrictLM_apply, restrictLM_apply]
+    simp [restrictLM_apply]
   · intro hG
     have key : ∀ (i j : Idx Ω) (x : E) (hi : x ∈ i.1) (hj : x ∈ j.1),
         G i ⟨x, hi⟩ = G j ⟨x, hj⟩ := fun i j x hi hj ↦ by
@@ -576,9 +574,9 @@ private theorem exists_res_eq_zero_apply_eq [LocallyCompactSpace E] (hα : α �
       ).exists_holderWith_and_norm_le_of_hasCompactSupport (hφc.iteratedFDeriv k) hα
     exact ⟨C, hC.holderOnWith _⟩
   · ext y
-    rw [restrictLM_apply, ofContDiffOn_apply, CkHolderSpaceOn.coe_zero, Pi.zero_apply,
-      b.zero_of_le_dist (not_lt.1 fun h ↦ (hball (Metric.mem_ball.2 h)).2 (subset_closure y.2)),
-      zero_smul]
+    have hby : b y = 0 :=
+      b.zero_of_le_dist (not_lt.1 fun h ↦ (hball (Metric.mem_ball.2 h)).2 (subset_closure y.2))
+    simp [restrictLM_apply, hby]
   · rw [ofContDiffOn_apply,
       b.one_of_mem_closedBall (Metric.mem_closedBall_self (half_pos hr).le), one_smul]
 
@@ -586,9 +584,9 @@ private theorem exists_res_eq_zero_apply_eq [LocallyCompactSpace E] (hα : α �
 Kolmogorov's criterion rules out any norm inducing its topology.
 
 Each hypothesis is necessary: for `α > 1` and connected `Ω` the space consists of polynomials of
-degree at most `k` and is finite dimensional; for `E` not locally compact the topology is
-indiscrete, so every set is bounded; for `E` trivial `Ω` is a point and the space is `F`; for `F`
-trivial or `Ω` empty the space is zero. -/
+degree at most `k` and is normable (a finite product of spaces of symmetric multilinear maps into
+`F`); for `E` not locally compact the topology is indiscrete, so every set is bounded; for `E`
+trivial `Ω` is a point and the space is `F`; for `F` trivial or `Ω` empty the space is zero. -/
 theorem not_exists_isVonNBounded_mem_nhds_zero [LocallyCompactSpace E] [Nontrivial E]
     [Nontrivial F] (hα : α ≤ 1) (hΩ : (Ω : Set E).Nonempty) :
     ¬ ∃ s ∈ 𝓝 (0 : CkHolderSpaceLoc k α Ω F), Bornology.IsVonNBounded ℝ s := by
