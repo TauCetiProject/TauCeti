@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Coalgebra.Hom
 public import TauCeti.Algebra.Coalgebra.Comodule.Cat
+public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 
 /-!
 # Cofree comodules
@@ -38,6 +39,8 @@ explicitly. This follows the convention already used for `Comodule.trivial` and
   map `P → M`.
 * `TauCeti.Comodule.Hom.cofreeEquiv`: the linear cofree adjunction,
   `Hom R C P (M ⊗[R] C) ≃ₗ[R] (P →ₗ[R] M)`.
+* `TauCeti.Comodule.Hom.cofreeLTensor`: for a coalgebra morphism `φ : C → D`, the morphism of
+  right `D`-comodules `id ⊗ φ` from the corestricted cofree comodule `M ⊗[R] C` to `M ⊗[R] D`.
 * `TauCeti.ComoduleCat.cofree`: the cofree comodule, bundled as an object of `ComoduleCat`.
 
 ## References
@@ -423,6 +426,37 @@ theorem eq_zero_iff_counit {P : Type*} [AddCommMonoid P] [Module R P] [Comodule 
         (Coalgebra.counit (R := R) (A := C)).lTensor M ∘ₗ f.toLinearMap = 0 := by
   simpa only [cofreeEquiv_apply] using
     ((cofreeEquiv (R := R) (C := C) (M := M) (P := P)).map_eq_zero_iff (x := f)).symm
+
+variable (M) in
+/-- A coalgebra morphism `φ : C → D` induces the morphism of right `D`-comodules
+`id ⊗ φ : M ⊗[R] C → M ⊗[R] D`, from the cofree `C`-comodule corestricted along `φ` to the
+cofree `D`-comodule. -/
+noncomputable def cofreeLTensor {D : Type*} [AddCommMonoid D] [Module R D] [Coalgebra R D]
+    (φ : C →ₗc[R] D) :
+    letI : Comodule R D (M ⊗[R] C) := Corestrict φ
+    Hom R D (M ⊗[R] C) (M ⊗[R] D) :=
+  letI : Comodule R D (M ⊗[R] C) := Corestrict φ
+  { toLinearMap := (φ : C →ₗ[R] D).lTensor M
+    map_coact := by
+      rw [corestrict_coact, corestrictCoact, ← LinearMap.comp_assoc, ← TensorProduct.map_comp,
+        coact_comp_lTensor_coalgHom, LinearMap.comp_id, LinearMap.id_comp]
+      rfl }
+
+/-- The underlying linear map of `cofreeLTensor M φ` is `id ⊗ φ`. -/
+@[simp]
+theorem cofreeLTensor_toLinearMap {D : Type*} [AddCommMonoid D] [Module R D] [Coalgebra R D]
+    (φ : C →ₗc[R] D) :
+    letI : Comodule R D (M ⊗[R] C) := Corestrict φ
+    (cofreeLTensor M φ).toLinearMap = (φ : C →ₗ[R] D).lTensor M :=
+  (rfl)
+
+/-- `cofreeLTensor M φ` acts as `id ⊗ φ`. -/
+@[simp]
+theorem cofreeLTensor_apply {D : Type*} [AddCommMonoid D] [Module R D] [Coalgebra R D]
+    (φ : C →ₗc[R] D) (x : M ⊗[R] C) :
+    letI : Comodule R D (M ⊗[R] C) := Corestrict φ
+    cofreeLTensor M φ x = (φ : C →ₗ[R] D).lTensor M x :=
+  (rfl)
 
 end Hom
 
