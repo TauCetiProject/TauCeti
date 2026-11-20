@@ -116,13 +116,13 @@ Its admissible lattice and basis are the existing integral coordinate lattice an
 @[expose] def chevalleyDatum : ChevalleyDatum E6 valid_E6 :=
   weightTable.chevalleyDatum (t := E6) valid_E6
     (by simpa only [cartanMatrix_E6, rank] using weightTable_cartanMatrix)
-    (by rw [weightTable_weight]; exact span_range_e6MinusculeWeight_eq_top)
+    (by rw [weightTable_weight]; exact span_range_e6MinusculeWeight_eq_top) (Equiv.refl _)
 
 /-- The minuscule datum specializes the general full-weight table datum. -/
 theorem chevalleyDatum_def :
     chevalleyDatum = weightTable.chevalleyDatum (t := E6) valid_E6
       (weightTable_cartanMatrix.trans (congrArg Matrix.transpose cartanMatrix_E6.symm))
-      (weightTable_weight ▸ span_range_e6MinusculeWeight_eq_top) := (rfl)
+      (weightTable_weight ▸ span_range_e6MinusculeWeight_eq_top) (Equiv.refl _) := (rfl)
 
 /-- The datum has dimension twenty-seven. -/
 @[simp] theorem chevalleyDatum_dim : chevalleyDatum.dim = 27 := rfl
@@ -130,7 +130,7 @@ theorem chevalleyDatum_def :
 /-- The datum uses the pinned minuscule enveloping-algebra representation. -/
 @[simp]
 theorem chevalleyDatum_representation : chevalleyDatum.representation = pinnedRepresentation :=
-  weightTable.chevalleyDatum_representation (t := E6) valid_E6 _ _
+  weightTable.chevalleyDatum_representation (t := E6) valid_E6 _ _ (Equiv.refl _)
 
 /-- The datum's lattice is the integral coordinate lattice of the minuscule module. -/
 @[simp]
@@ -139,12 +139,14 @@ theorem chevalleyDatum_lattice :
 
 /-- The datum uses the standard integral coordinate basis. -/
 @[simp]
-theorem chevalleyDatum_basis : chevalleyDatum.basis = 𝓑 := rfl
+theorem chevalleyDatum_basis : chevalleyDatum.basis = 𝓑 :=
+  (weightTable.chevalleyDatum_basis (t := E6) valid_E6 _ _ (Equiv.refl _)).trans
+    (Module.Basis.reindex_refl _)
 
 /-- The datum retains the native minuscule weights in fundamental-weight coordinates. -/
 @[simp]
 theorem chevalleyDatum_weight : chevalleyDatum.weight = e6MinusculeWeight :=
-  (weightTable.chevalleyDatum_weight (t := E6) valid_E6 _ _).trans weightTable_weight
+  (weightTable.chevalleyDatum_weight (t := E6) valid_E6 _ _ (Equiv.refl _)).trans weightTable_weight
 
 /-- Evaluating a datum weight uses the table's rank-six index. -/
 -- Match the native-rank application before the unapplied weight equation is simplified.
@@ -157,18 +159,19 @@ theorem chevalleyDatum_weight_apply (a : Fin 27) (i : Fin E6.rank) :
 /-- The minuscule E₆ datum has the full weight lattice, not merely the root lattice. -/
 @[simp]
 theorem chevalleyDatum_weightLattice : chevalleyDatum.weightLattice = ⊤ :=
-  weightTable.chevalleyDatum_weightLattice (t := E6) valid_E6 _ _
+  weightTable.chevalleyDatum_weightLattice (t := E6) valid_E6 _ _ (Equiv.refl _)
 
 /-- The chosen basis of the weight lattice is the basis of fundamental weights. -/
 @[simp↓]
 theorem coe_chevalleyDatum_weightLatticeBasis (i : Fin E6.rank) :
     (chevalleyDatum.weightLatticeBasis i : Fin E6.rank → ℤ) = Pi.single i 1 :=
-  weightTable.coe_chevalleyDatum_weightLatticeBasis (t := E6) valid_E6 _ _ i
+  weightTable.coe_chevalleyDatum_weightLatticeBasis (t := E6) valid_E6 _ _ (Equiv.refl _) i
 
 /-- The actual weight-torus coordinates are the native fundamental-weight coordinates. -/
 @[simp]
 theorem chevalleyDatum_coordinateWeight : chevalleyDatum.coordinateWeight = e6MinusculeWeight :=
-  (weightTable.chevalleyDatum_coordinateWeight (t := E6) valid_E6 _ _).trans weightTable_weight
+  (weightTable.chevalleyDatum_coordinateWeight (t := E6) valid_E6 _ _ (Equiv.refl _)).trans
+    weightTable_weight
 
 /-- Evaluating a coordinate weight uses the table's rank-six index. -/
 @[simp↓]

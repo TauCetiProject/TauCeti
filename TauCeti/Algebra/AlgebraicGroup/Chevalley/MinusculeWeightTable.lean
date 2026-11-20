@@ -15,7 +15,8 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgeb
 A minuscule weight table for the transposed Cartan matrix of a valid Dynkin type gives a
 representation of its pinned rational Lie algebra through `DynkinType.serreLiftEquiv`.
 The coordinate lattice is admissible. If the weights span the full weight lattice, this
-representation is faithful and defines a full-weight Chevalley datum.
+representation is faithful. A numbering of the coordinate basis then gives a full-weight
+Chevalley datum.
 
 ## References
 
@@ -121,67 +122,76 @@ theorem pinnedRepresentation_ι_injective_of_span_int
 
 end Transport
 
-variable {t : DynkinType} {d : ℕ} (T : MinusculeWeightTable (Fin t.rank) (Fin d))
+variable {t : DynkinType} {ι : Type} [Fintype ι] [DecidableEq ι] {d : ℕ}
+  (T : MinusculeWeightTable (Fin t.rank) ι)
   (ht : t.Valid) (hCM : T.cartanMatrix = t.cartanMatrixᵀ)
   (hspan : Submodule.span ℤ (Set.range T.weight) = ⊤)
 
 /-- A minuscule table whose weights span the full weight lattice defines a full-weight
-Chevalley datum with its integral coordinate lattice and basis. -/
+Chevalley datum with its integral coordinate lattice and basis numbered by `e`. -/
 -- The carrier, dimension and lattice must compute in the types of the projection equations.
-@[expose] def chevalleyDatum : ChevalleyDatum t ht where
-  carrier := Fin d → ℚ
+@[expose] def chevalleyDatum (e : ι ≃ Fin d) : ChevalleyDatum t ht where
+  carrier := ι → ℚ
   representation := T.pinnedRepresentation ht hCM
   injective_representation_ι := T.pinnedRepresentation_ι_injective_of_span_int ht hCM hspan
-  lattice := (coordinateLattice (Fin d)).toAddSubgroup
+  lattice := (coordinateLattice ι).toAddSubgroup
   representation_mem_lattice := T.pinnedRepresentation_kostantForm_mem_coordinateLattice ht hCM
   span_lattice_eq_top := Submodule.IsFullLattice.span_eq_top (R := ℤ) (A := ℚ)
   dim := d
-  basis := coordinateLatticeBasis (Fin d)
-  weight := T.weight
-  isCartanWeightVector_basis :=
-    T.isCartanWeightVector_pinnedRepresentation_coordinateLatticeBasis ht hCM
-  weightLatticeBasis := (Pi.basisFun ℤ (Fin t.rank)).map (LinearEquiv.ofTop _ hspan).symm
+  basis := (coordinateLatticeBasis ι).reindex e
+  weight := T.weight ∘ e.symm
+  isCartanWeightVector_basis a := by
+    rw [Module.Basis.reindex_apply]
+    exact T.isCartanWeightVector_pinnedRepresentation_coordinateLatticeBasis ht hCM (e.symm a)
+  weightLatticeBasis := (Pi.basisFun ℤ (Fin t.rank)).map
+    (LinearEquiv.ofTop _ (by simpa only [EquivLike.range_comp] using hspan)).symm
+
+variable (e : ι ≃ Fin d)
 
 /-- The table datum has the table's dimension. -/
-@[simp] theorem chevalleyDatum_dim : (T.chevalleyDatum ht hCM hspan).dim = d := rfl
+@[simp] theorem chevalleyDatum_dim : (T.chevalleyDatum ht hCM hspan e).dim = d := rfl
 
 /-- The datum's representation is the pinned table representation. -/
 @[simp] theorem chevalleyDatum_representation :
-    (T.chevalleyDatum ht hCM hspan).representation = T.pinnedRepresentation ht hCM := rfl
+    (T.chevalleyDatum ht hCM hspan e).representation = T.pinnedRepresentation ht hCM := rfl
 
 /-- The datum's lattice is the integral coordinate lattice. -/
 @[simp] theorem chevalleyDatum_lattice :
-    (T.chevalleyDatum ht hCM hspan).lattice = (coordinateLattice (Fin d)).toAddSubgroup := rfl
+    (T.chevalleyDatum ht hCM hspan e).lattice = (coordinateLattice ι).toAddSubgroup := rfl
 
-/-- The datum uses the standard integral coordinate basis. -/
+/-- The datum uses the integral coordinate basis numbered by `e`. -/
 @[simp] theorem chevalleyDatum_basis :
-    (T.chevalleyDatum ht hCM hspan).basis = coordinateLatticeBasis (Fin d) := rfl
+    (T.chevalleyDatum ht hCM hspan e).basis = (coordinateLatticeBasis ι).reindex e := rfl
 
-/-- The datum retains the table's weights. -/
-@[simp] theorem chevalleyDatum_weight : (T.chevalleyDatum ht hCM hspan).weight = T.weight := rfl
+/-- The datum retains the table's weights in the specified numbering. -/
+@[simp] theorem chevalleyDatum_weight :
+    (T.chevalleyDatum ht hCM hspan e).weight = T.weight ∘ e.symm := rfl
 
 /-- The table datum has the full weight lattice. -/
 @[simp] theorem chevalleyDatum_weightLattice :
-    (T.chevalleyDatum ht hCM hspan).weightLattice = ⊤ := hspan
+    (T.chevalleyDatum ht hCM hspan e).weightLattice = ⊤ := by
+  -- Make the dependent dimension explicit before rewriting the numbered weight range.
+  change Submodule.span ℤ (Set.range (T.weight ∘ e.symm)) = ⊤
+  simpa only [EquivLike.range_comp] using hspan
 
 /-- The chosen weight-lattice basis is the fundamental-weight basis. -/
 @[simp↓] theorem coe_chevalleyDatum_weightLatticeBasis (i : Fin t.rank) :
-    ((T.chevalleyDatum ht hCM hspan).weightLatticeBasis i : Fin t.rank → ℤ) =
+    ((T.chevalleyDatum ht hCM hspan e).weightLatticeBasis i : Fin t.rank → ℤ) =
       Pi.single i 1 := by
   rw [chevalleyDatum, Module.Basis.map_apply, LinearEquiv.coe_ofTop_symm_apply,
     Pi.basisFun_apply]
 
-/-- The coordinate weights are the table's fundamental-weight coordinates. -/
+/-- The coordinate weights are the table's numbered fundamental-weight coordinates. -/
 @[simp] theorem chevalleyDatum_coordinateWeight :
-    (T.chevalleyDatum ht hCM hspan).coordinateWeight = T.weight :=
-  (T.chevalleyDatum ht hCM hspan).coordinateWeight_eq_of_coe_weightLatticeBasis
-    (T.coe_chevalleyDatum_weightLatticeBasis ht hCM hspan)
+    (T.chevalleyDatum ht hCM hspan e).coordinateWeight = T.weight ∘ e.symm :=
+  (T.chevalleyDatum ht hCM hspan e).coordinateWeight_eq_of_coe_weightLatticeBasis
+    (T.coe_chevalleyDatum_weightLatticeBasis ht hCM hspan e)
 
 /-- The coordinate roots are the pinned fundamental-weight coordinates of the roots. -/
 @[simp] theorem chevalleyDatum_coordinateRoot :
-    (T.chevalleyDatum ht hCM hspan).coordinateRoot = (t.simplyConnectedRootDatum ht).root :=
-  funext ((T.chevalleyDatum ht hCM hspan).coordinateRoot_eq_of_coe_weightLatticeBasis
-    (T.coe_chevalleyDatum_weightLatticeBasis ht hCM hspan))
+    (T.chevalleyDatum ht hCM hspan e).coordinateRoot = (t.simplyConnectedRootDatum ht).root :=
+  funext ((T.chevalleyDatum ht hCM hspan e).coordinateRoot_eq_of_coe_weightLatticeBasis
+    (T.coe_chevalleyDatum_weightLatticeBasis ht hCM hspan e))
 
 end
 
