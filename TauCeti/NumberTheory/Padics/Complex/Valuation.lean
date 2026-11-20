@@ -26,13 +26,14 @@ field a sufficiently close approximation of a nonzero element has the same norm.
 `PadicComplex.realValuation p` (with values in `WithTop ℝ`), both normalised by `v(p) = 1` and
 recovering the norm through `‖x‖ = p ^ (-v(x))`.
 
-`PadicComplex.realValuation p` agrees with `PadicComplex.addValuation p` cast to `ℝ`, equals
-`AddValuation.ofNorm (p : ℝ) _` on `ℂ_[p]`, restricts on `ℚ_[p]` to `TauCeti.padicRealValuation p`,
-and restricts on `PadicAlgCl p` to `TauCeti.spectralAddValuation ℚ_[p] (PadicAlgCl p) p _`.
-Changing from base `p` to base `Real.exp 1` scales finite values by `Real.log p`.
-Since `ℂ_[p]` is algebraically closed, every rational number is a value: a root `x` of
-`x ^ n = p ^ m` with `n > 0` has `v(x) = m / n`. For example a cube root of `p` has valuation
-`1 / 3`.
+On `ℚ_[p]` it restricts to Mathlib's `Padic.addValuation`. `PadicComplex.realValuation p` agrees
+with `PadicComplex.addValuation p` cast to `ℝ`, equals `AddValuation.ofNorm (p : ℝ) _` on `ℂ_[p]`,
+restricts on `ℚ_[p]` to `TauCeti.padicRealValuation p`, and restricts on `PadicAlgCl p` to
+`TauCeti.spectralAddValuation ℚ_[p] (PadicAlgCl p) p _`. Changing from base `p` to base
+`Real.exp 1` scales finite values by `Real.log p`. Since `ℂ_[p]` is algebraically closed, every
+rational number is a value: a root `x` of `x ^ n = p ^ m` with `n > 0` has `v(x) = m / n`. For
+example a cube root of `p` has valuation `1 / 3`. Consequently every rational power of `p` is
+attained as a norm on `ℂ_[p]`.
 
 ## Main definitions
 
@@ -49,14 +50,16 @@ Since `ℂ_[p]` is algebraically closed, every rational number is a value: a roo
 * `PadicComplex.addValuation_eq_coe_iff` and `PadicComplex.realValuation_eq_coe_iff`: norm
   recovery, `v(x) = t ↔ ‖x‖ = p ^ (-t)`, together with uniqueness
   (`PadicComplex.eq_addValuation`, `PadicComplex.eq_realValuation`).
+* `PadicComplex.addValuation_algebraMap`: on `ℚ_[p]` the valuation is `Padic.addValuation`.
 * `PadicComplex.realValuation_eq_map_addValuation`, `PadicComplex.realValuation_eq_ofNorm`,
   `PadicComplex.realValuation_algebraMap`, and `PadicComplex.realValuation_coe`: compatibility
   between rational, real, `ℚ_[p]`, and `PadicAlgCl p` valuations.
 * `PadicComplex.addValuation_eq_of_pow_eq_zpow`,
   `PadicComplex.addValuation_eq_of_mem_roots_X_pow_sub_C_zpow_p`,
-  `PadicComplex.realValuation_eq_of_pow_eq_zpow`, `PadicComplex.addValuation_surjective`, and
-  `PadicComplex.exists_rat_realValuation`: values at roots of `x ^ n = p ^ m` and rationality of
-  finite values.
+  `PadicComplex.realValuation_eq_of_pow_eq_zpow`, `PadicComplex.addValuation_surjective`,
+  `PadicComplex.exists_rat_realValuation`, and `PadicComplex.exists_norm_eq_rpow`: values at
+  roots of `x ^ n = p ^ m`, rationality of finite values, and attainment of every rational power
+  of `p` as a norm on `ℂ_[p]`.
 * `PadicComplex.ofNorm_exp_one_eq_map_realValuation`: base change from `p` to `Real.exp 1` scales
   values by `Real.log p`.
 
@@ -309,4 +312,10 @@ theorem ofNorm_exp_one_eq_map_realValuation (x : ℂ_[p]) :
     AddValuation.ofNorm_eq_map_ofNorm hp (Real.one_lt_exp_iff.2 zero_lt_one)]
   simp [Real.log_exp]
 
+/-- Every rational power of `p` is attained as a norm on `ℂ_[p]`. -/
+theorem exists_norm_eq_rpow (q : ℚ) : ∃ x : ℂ_[p], ‖x‖ = (p : ℝ) ^ (q : ℝ) := by
+  obtain ⟨x, hx⟩ := addValuation_surjective (p := p) (-q : ℚ)
+  exact ⟨x, by simpa using addValuation_eq_coe_iff.mp hx⟩
+
 end PadicComplex
+

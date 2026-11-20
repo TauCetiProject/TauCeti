@@ -360,9 +360,9 @@ theorem acyclic_mappingCone {K L : CochainComplex C ℤ} (φ : K ⟶ L) (hK : E.
     rw [Category.assoc, Category.assoc, B.fac, φ.comm, ← A.fac, Category.assoc,
       reassoc_of% (A.zero n), zero_comp]
   let g (n : ℤ) : A.Z n ⟶ B.Z n :=
-    (KernelFork.IsLimit.lift' (hB n).fIsKernel (A.i n ≫ φ.f n) (hz n)).1
+    (KernelFork.IsLimit.lift' (hB n).fIsKernel (A.i n ≫ φ.f n) (hz n)).val
   have hg (n : ℤ) : g n ≫ B.i n = A.i n ≫ φ.f n :=
-    (KernelFork.IsLimit.lift' (hB n).fIsKernel (A.i n ≫ φ.f n) (hz n)).2
+    (KernelFork.IsLimit.lift' (hB n).fIsKernel (A.i n ≫ φ.f n) (hz n)).property
   have hpg (n : ℤ) : A.p n ≫ g (n + 1) = φ.f n ≫ B.p n := by
     have := (hB (n + 1)).mono_f
     rw [← cancel_mono (B.i (n + 1)), Category.assoc, hg, ← Category.assoc, A.fac, Category.assoc,
@@ -402,7 +402,7 @@ theorem acyclic_mappingCone {K L : CochainComplex C ℤ} (φ : K ⟶ L) (hK : E.
   refine ⟨{
     Z := W
     i m := -(e m ≫ A.i (m + 1)) ≫ (inl φ).v (m + 1) m (by lia) + v m ≫ (inr φ).f m
-    p m := (fst φ).1.v m (m + 1) rfl ≫ pushout.inl (A.i (m + 1)) (g (m + 1)) +
+    p m := (fst φ).val.v m (m + 1) rfl ≫ pushout.inl (A.i (m + 1)) (g (m + 1)) +
       (snd φ).v m m (add_zero m) ≫ B.p m ≫ pushout.inr (A.i (m + 1)) (g (m + 1))
     zero m := ?_
     conflation m := ?_
@@ -417,7 +417,7 @@ theorem acyclic_mappingCone {K L : CochainComplex C ℤ} (φ : K ⟶ L) (hK : E.
     exact ShortComplex.isoMk (Iso.refl _)
       (show K.X (m + 1) ⊞ L.X m ≅ (CochainComplex.mappingCone φ).X m from
       { hom := biprod.desc (-(inl φ).v (m + 1) m (by lia)) ((inr φ).f m)
-        inv := biprod.lift (-(fst φ).1.v m (m + 1) rfl) ((snd φ).v m m (add_zero m))
+        inv := biprod.lift (-(fst φ).val.v m (m + 1) rfl) ((snd φ).v m m (add_zero m))
         hom_inv_id := by apply biprod.hom_ext' <;> apply biprod.hom_ext <;> simp
         inv_hom_id := by simp [biprod.lift_desc, id_X φ m (m + 1) rfl] })
       (show W (m + 1) ≅ W (m + 1) from
@@ -460,7 +460,7 @@ theorem acyclic_mappingCone_of_isPushout {K L : CochainComplex C ℤ} (φ : K �
   refine ⟨{
     Z := B
     i m := j m ≫ (inr φ).f m - q m ≫ (inl φ).v (m + 1) m (by lia)
-    p m := (fst φ).1.v m (m + 1) rfl ≫ v (m + 1) + (snd φ).v m m (add_zero m) ≫ u m
+    p m := (fst φ).val.v m (m + 1) rfl ≫ v (m + 1) + (snd φ).v m m (add_zero m) ≫ u m
     zero m := by simp [(sq m).w]
     conflation m := ?_
     fac m := ?_ }⟩

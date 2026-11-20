@@ -211,7 +211,7 @@ theorem vonMangoldt_primeIdealPow (P : HeightOneSpectrum (𝓞 K)) (e : ℕ) :
     simp
   | succ k =>
     rw [← HeightOneSpectrum.coe_idealPrimePowerOf_eq_primeIdealPow, vonMangoldt,
-      dite_eq_left (P.idealPrimePowerOf k).2]
+      dite_eq_left (P.idealPrimePowerOf k).property]
     simp
 
 /-- For completely multiplicative data, `Λ_D` is the von Mangoldt transform `A ↦ χ(A) Λ(A)` of

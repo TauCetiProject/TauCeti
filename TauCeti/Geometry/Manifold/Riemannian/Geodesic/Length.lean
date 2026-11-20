@@ -89,7 +89,7 @@ theorem norm_curveVelocityWithin_maximalGeodesic {t : ℝ} (ht : t ∈ geodesicI
   have h := isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v
   rw [h.isGeodesicCurveOn.norm_curveVelocityWithin_eq isPreconnected_geodesicInterval ht
     zero_mem_geodesicInterval]
-  exact congrArg (fun z : TangentBundle I M ↦ ‖z.2‖) h.initial_eq
+  exact congrArg (fun z : TangentBundle I M ↦ ‖z.snd‖) h.initial_eq
 
 /-- The directed length from `s` to `t` of the maximal geodesic from `p` with initial velocity `v`
 is `‖v‖ * ENNReal.ofReal (t - s)`, and hence is zero when `t < s`. -/

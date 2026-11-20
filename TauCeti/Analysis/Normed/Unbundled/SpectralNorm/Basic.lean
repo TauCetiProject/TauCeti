@@ -387,7 +387,6 @@ noncomputable def spectralNormedField : NormedField L :=
     edist_dist x y := by rw [ENNReal.ofReal_eq_coe_nnreal] }
 
 /-- The norm of `TauCeti.spectralNormedField K L` is `spectralNorm K L`. -/
-@[simp]
 theorem norm_spectralNormedField (x : L) :
     @Norm.norm L (spectralNormedField K L).toNorm x = spectralNorm K L x :=
   (rfl)

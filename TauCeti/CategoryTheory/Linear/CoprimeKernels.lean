@@ -60,20 +60,20 @@ noncomputable abbrev BinaryBicone.ofCoprimeKernelForks (hab : a * m + b * n = 1)
   pt := X
   fst := (KernelFork.IsLimit.lift' hc₁ ((b * n) • 𝟙 X) (by
     rw [Linear.smul_comp, Category.id_comp, smul_smul, mul_assoc, mul_comm n, mul_smul, hX,
-      smul_zero])).1
+      smul_zero])).val
   snd := (KernelFork.IsLimit.lift' hc₂ ((a * m) • 𝟙 X) (by
-    rw [Linear.smul_comp, Category.id_comp, smul_smul, mul_assoc, mul_smul, hX, smul_zero])).1
+    rw [Linear.smul_comp, Category.id_comp, smul_smul, mul_assoc, mul_smul, hX, smul_zero])).val
   inl := c₁.ι
   inr := c₂.ι
   inl_fst := Fork.IsLimit.hom_ext hc₁ <| by
-    simpa [(KernelFork.IsLimit.lift' hc₁ _ _).2, add_smul, mul_smul] using
+    simpa [(KernelFork.IsLimit.lift' hc₁ _ _).property, add_smul, mul_smul] using
       congrArg (· • c₁.ι) hab
   inl_snd := Fork.IsLimit.hom_ext hc₂ <| by
-    simp [(KernelFork.IsLimit.lift' hc₂ _ _).2, mul_smul]
+    simp [(KernelFork.IsLimit.lift' hc₂ _ _).property, mul_smul]
   inr_fst := Fork.IsLimit.hom_ext hc₁ <| by
-    simp [(KernelFork.IsLimit.lift' hc₁ _ _).2, mul_smul]
+    simp [(KernelFork.IsLimit.lift' hc₁ _ _).property, mul_smul]
   inr_snd := Fork.IsLimit.hom_ext hc₂ <| by
-    simpa [(KernelFork.IsLimit.lift' hc₂ _ _).2, add_smul, mul_smul] using
+    simpa [(KernelFork.IsLimit.lift' hc₂ _ _).property, add_smul, mul_smul] using
       congrArg (· • c₂.ι) hab
 
 variable (hab : a * m + b * n = 1) (hX : (m * n) • 𝟙 X = 0) {c₁ : KernelFork (m • 𝟙 X)}
@@ -84,14 +84,14 @@ kernel of `m • 𝟙 X`, is multiplication by `b * n`. -/
 @[simp, reassoc]
 theorem BinaryBicone.ofCoprimeKernelForks_fst_ι :
     (ofCoprimeKernelForks hab hX hc₁ hc₂).fst ≫ c₁.ι = (b * n) • 𝟙 X :=
-  (KernelFork.IsLimit.lift' hc₁ _ _).2
+  (KernelFork.IsLimit.lift' hc₁ _ _).property
 
 /-- The second projection of `BinaryBicone.ofCoprimeKernelForks`, followed by the inclusion of the
 kernel of `n • 𝟙 X`, is multiplication by `a * m`. -/
 @[simp, reassoc]
 theorem BinaryBicone.ofCoprimeKernelForks_snd_ι :
     (ofCoprimeKernelForks hab hX hc₁ hc₂).snd ≫ c₂.ι = (a * m) • 𝟙 X :=
-  (KernelFork.IsLimit.lift' hc₂ _ _).2
+  (KernelFork.IsLimit.lift' hc₂ _ _).property
 
 /-- **An object killed by a product of coprime scalars is the biproduct of the two kernels.** If
 `(m * n) • 𝟙 X = 0` and `a * m + b * n = 1`, then `X`, with the kernel inclusions of `m • 𝟙 X` and
