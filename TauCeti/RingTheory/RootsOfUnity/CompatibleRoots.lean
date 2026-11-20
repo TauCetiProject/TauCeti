@@ -33,7 +33,7 @@ orders are in general not compatible.
 
 ## References
 
-* S. Rodrigues Jacinto and C. Williams, *An introduction to p-adic L-functions*, Essential Number
+* J. Rodrigues Jacinto and C. Williams, *An introduction to p-adic L-functions*, Essential Number
   Theory 4 (2025), §9.
 -/
 

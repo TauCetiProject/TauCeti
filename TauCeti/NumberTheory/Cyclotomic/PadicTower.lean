@@ -52,7 +52,7 @@ norm-compatible systems of cyclotomic units and their Coleman power series are b
 
 ## References
 
-* S. Rodrigues Jacinto and C. Williams, *An introduction to p-adic L-functions*, Essential Number
+* J. Rodrigues Jacinto and C. Williams, *An introduction to p-adic L-functions*, Essential Number
   Theory 4 (2025), §9 and Lemma 10.9.
 * R. Coleman, *Division values in local fields*, Invent. Math. 53 (1979).
 -/

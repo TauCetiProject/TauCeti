@@ -26,6 +26,8 @@ along `x ^ 0 = 1` is an `R`-linear map `S → R` sending `1` to `1`. So `R · 1`
 * `PowerBasis.charpoly_lmul_gen`: multiplication by the generator of a power basis has
   characteristic polynomial the minimal polynomial of the generator. This is the endomorphism form
   of Mathlib's `charpoly_leftMulMatrix`.
+* `PowerBasis.norm_gen_sub_algebraMap`: the norm of `pb.gen - a` for a scalar `a` is
+  `(-1) ^ pb.dim` times the minimal polynomial of the generator evaluated at `a`.
 * `PowerBasis.roots_map_minpoly_eq_map_algHom`: in a domain `E`, the roots of the minimal
   polynomial of the generator are the images of the generator under the `R`-algebra embeddings
   `S →ₐ[R] E`, each counted once.
