@@ -362,9 +362,8 @@ theorem Icc_subset_and_isCompact_preimage_Icc (hf : Continuous f)
 /-- **Narrowing a band around an isolated critical value.** Let `a < c < b`, with the band
 `f⁻¹[a, b]` compact and every critical point of `f` in it on the level `c`. For
 `0 < ε ≤ min (c - a) (b - c)`, `Hₙ({f ≤ b}, {f ≤ a})` is identified with
-`Hₙ({f ≤ c + ε}, {f ≤ c - ε})` by `TauCeti.singularHomologySublevelPairIsoOfCriticalValue`, so
-after unfolding its naturality lemma
-`TauCeti.singularHomologyMap_comp_singularHomologySublevelPairIsoOfCriticalValue_hom` applies. -/
+`Hₙ({f ≤ c + ε}, {f ≤ c - ε})` by `TauCeti.singularHomologySublevelPairIsoOfCriticalValue`
+(`TauCeti.singularHomologySublevelPairIsoSymmetricBand_eq`). -/
 def singularHomologySublevelPairIsoSymmetricBand (hf : ContMDiff I 𝓘(ℝ) ∞ f) {c ε : ℝ}
     (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
     (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c)
@@ -374,6 +373,22 @@ def singularHomologySublevelPairIsoSymmetricBand (hf : ContMDiff I 𝓘(ℝ) ∞
   have hband := Icc_subset_and_isCompact_preimage_Icc hf.continuous hcompact hεδ
   singularHomologySublevelPairIsoOfCriticalValue hf hac hcb (by linarith : c - ε < c)
     (by linarith : c < c + ε) hcompact hband.2 hcrit (fun x hx hfx ↦ hcrit x hx (hband.1 hfx)) R n
+
+/-- The narrowed-band identification `TauCeti.singularHomologySublevelPairIsoSymmetricBand` is
+`TauCeti.singularHomologySublevelPairIsoOfCriticalValue` for the bands `f⁻¹[a, b]` and
+`f⁻¹[c - ε, c + ε]`, so its naturality lemma
+`TauCeti.singularHomologyMap_comp_singularHomologySublevelPairIsoOfCriticalValue_hom` applies. -/
+lemma singularHomologySublevelPairIsoSymmetricBand_eq (hf : ContMDiff I 𝓘(ℝ) ∞ f) {c ε : ℝ}
+    (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c)
+    (hε : 0 < ε) (hεδ : ε ≤ min (c - a) (b - c)) (R : A) (n : ℕ) :
+    singularHomologySublevelPairIsoSymmetricBand hf hac hcb hcompact hcrit hε hεδ R n =
+      singularHomologySublevelPairIsoOfCriticalValue hf hac hcb (by linarith : c - ε < c)
+        (by linarith : c < c + ε) hcompact
+        (Icc_subset_and_isCompact_preimage_Icc hf.continuous hcompact hεδ).2 hcrit
+        (fun x hx hfx ↦ hcrit x hx
+          ((Icc_subset_and_isCompact_preimage_Icc hf.continuous hcompact hεδ).1 hfx)) R n :=
+  (rfl)
 
 /-- The identification `TauCeti.singularHomologySublevelPairIsoOfCollars` of
 `Hₙ({f ≤ b}, {f ≤ a})` with `Hₙ({f ≤ t}, {f ≤ s})`, precomposed with the map induced by the
