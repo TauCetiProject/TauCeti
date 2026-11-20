@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.EulerCharacteristic
 public import TauCeti.Algebra.Category.ModuleCat.Finrank
 public import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
+import TauCeti.Algebra.Homology.ModuleCat.Finrank
 
 /-!
 # Euler--Poincaré for chain complexes of vector spaces indexed by `ℕ`
@@ -88,17 +89,11 @@ variable {k : Type u} [DivisionRing k] (K : ChainComplex (ModuleCat.{v} k) ℕ)
 /-- In degree `0`, every element is a cycle, so `dim K₀ = dim H₀(K) + dim im (K₁ ⟶ K₀)`. -/
 theorem finrank_X_zero [Module.Finite k (K.X 0)] :
     finrank k (K.X 0) = finrank k (K.homology 0) + finrank k (LinearMap.range (K.d 1 0).hom) := by
-  have : Module.Finite k (K.sc' 1 0 0).X₂ := ‹Module.Finite k (K.X 0)›
-  -- The maps of `K.sc' i j k` are `K.d i j` and `K.d j k` by construction.
-  have h : finrank k (K.sc' 1 0 0).homology + finrank k (LinearMap.range (K.d 1 0).hom) =
-      finrank k (LinearMap.ker (K.d 0 0).hom) :=
-    (K.sc' 1 0 0).finrank_homology_add_finrank_range_f
-  -- `K.homology j` is by definition the homology of `K.sc j`.
-  have e : K.homology 0 ≅ (K.sc' 1 0 0).homology :=
-    ShortComplex.homologyMapIso (K.isoSc' 1 0 0 (by simp) (by simp))
-  rw [K.shape 0 0 (by simp), ModuleCat.hom_zero, LinearMap.ker_zero, finrank_top,
-    ← e.toLinearEquiv.finrank_eq] at h
-  exact h.symm
+  have h := K.finrank_X_eq_finrank_range_add_finrank_homology_add (i := 1) (ChainComplex.prev ℕ 0)
+    ChainComplex.next_nat_zero
+  -- `simp` cannot rewrite the submodule inside `finrank`, as the instances depend on it.
+  rw [K.shape 0 0 (by simp), ModuleCat.hom_zero, LinearMap.range_zero, finrank_bot] at h
+  omega
 
 /-- In degree `n + 1`, rank--nullity for `Kₙ₊₁ ⟶ Kₙ` gives
 `dim Kₙ₊₁ = dim Hₙ₊₁(K) + dim im (Kₙ₊₂ ⟶ Kₙ₊₁) + dim im (Kₙ₊₁ ⟶ Kₙ)`. -/
@@ -106,18 +101,8 @@ theorem finrank_X_succ (n : ℕ) [Module.Finite k (K.X (n + 1))] :
     finrank k (K.X (n + 1)) = finrank k (K.homology (n + 1)) +
       finrank k (LinearMap.range (K.d (n + 2) (n + 1)).hom) +
         finrank k (LinearMap.range (K.d (n + 1) n).hom) := by
-  have : Module.Finite k (K.sc' (n + 2) (n + 1) n).X₂ := ‹Module.Finite k (K.X (n + 1))›
-  -- The maps of `K.sc' i j k` are `K.d i j` and `K.d j k` by construction.
-  have h : finrank k (K.sc' (n + 2) (n + 1) n).homology +
-      finrank k (LinearMap.range (K.d (n + 2) (n + 1)).hom) =
-        finrank k (LinearMap.ker (K.d (n + 1) n).hom) :=
-    (K.sc' (n + 2) (n + 1) n).finrank_homology_add_finrank_range_f
-  -- `K.homology j` is by definition the homology of `K.sc j`.
-  have e : K.homology (n + 1) ≅ (K.sc' (n + 2) (n + 1) n).homology :=
-    ShortComplex.homologyMapIso (K.isoSc' (n + 2) (n + 1) n (by simp) (by simp))
-  rw [← e.toLinearEquiv.finrank_eq] at h
-  rw [← LinearMap.finrank_range_add_finrank_ker (K.d (n + 1) n).hom, ← h]
-  ring
+  rw [K.finrank_X_eq_finrank_range_add_finrank_homology_add (i := n + 2) (ChainComplex.prev ℕ _)
+    (ChainComplex.next_nat_succ n), add_comm (finrank k (LinearMap.range _))]
 
 /-- In every degree `n`, rank--nullity gives
 `dim Kₙ = dim Hₙ(K) + dim im (Kₙ₊₁ ⟶ Kₙ) + dim im (Kₙ ⟶ Kₙ₋₁)`, where in degree `0` the last
