@@ -122,6 +122,18 @@ theorem comp_add_right (d : ℕ) : IsCompleteFiltration fun n ↦ F (n + d) wher
       · simpa [Nat.sub_add_comm hn, Nat.sub_add_cancel hn] using hx (n - d)
     exact ⟨L, fun n ↦ by simpa using hL (n + d)⟩
 
+/-- **Complete filtrations pull back along linear equivalences.** If `F` is a complete separated
+filtration of `M` and `e : N ≃ₗ[R] M`, the preimages of the `F n` form a complete separated
+filtration of `N`. -/
+theorem comap_linearEquiv {N : Type*} [AddCommGroup N] [Module R N] (e : N ≃ₗ[R] M) :
+    IsCompleteFiltration fun n ↦ (F n).comap (e : N →ₗ[R] M) where
+  antitone _ _ h := Submodule.comap_mono (hF.antitone h)
+  eq_zero_of_forall_mem x hx :=
+    e.injective ((hF.eq_zero_of_forall_mem (e x) hx).trans e.map_zero.symm)
+  exists_limit x hx := by
+    obtain ⟨L, hL⟩ := hF.exists_limit (fun n ↦ e (x n)) fun n ↦ by simpa using hx n
+    exact ⟨e.symm L, fun n ↦ by simpa using hL n⟩
+
 /-- **Successive approximation.** Let `f` map a complete filtration `F` into a separated
 filtration `G`, with `f (F n) ⊆ G n`. If `f` is surjective on the associated graded modules, in
 the sense that every element of `G n` is the image of an element of `F n` up to an element of
