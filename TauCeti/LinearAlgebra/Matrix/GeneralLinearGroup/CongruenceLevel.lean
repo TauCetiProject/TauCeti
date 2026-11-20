@@ -396,15 +396,6 @@ theorem GL2K0.index_eq_card :
 
 /-! ### The indices over a local ring with finite quotient -/
 
-open _root_.IsLocalRing in
-/-- The quotient `A ⧸ I` of a local ring by a proper ideal is local, with the residue field of
-`A`. -/
-private theorem isLocalRing_quotient_and_card_residueField (hI : I ≠ ⊤) :
-    ∃ _ : IsLocalRing (A ⧸ I),
-      Nat.card (ResidueField (A ⧸ I)) = Nat.card (ResidueField A) := by
-  have : IsLocalRing (A ⧸ I) := isLocalRing_quotient hI
-  exact ⟨this, card_residueField_of_surjective Ideal.Quotient.mk_surjective⟩
-
 open _root_.IsLocalRing
 
 variable [Finite (A ⧸ I)] {I}
@@ -414,7 +405,8 @@ variable [Finite (A ⧸ I)] {I}
 theorem GL2K1.card_residueField_sq_mul_index (hI : I ≠ ⊤) :
     Nat.card (ResidueField A) ^ 2 * (GL2K1 I).index =
       Nat.card (A ⧸ I) ^ 2 * (Nat.card (ResidueField A) ^ 2 - 1) := by
-  obtain ⟨_, hq⟩ := isLocalRing_quotient_and_card_residueField I hI
+  have := isLocalRing_quotient hI
+  have hq := card_residueField_of_surjective (Ideal.Quotient.mk_surjective (I := I))
   simpa [← hq, GL2K1.index_eq_card] using
     TauCeti.IsLocalRing.card_residueField_pow_mul_card_isUnimodular (A ⧸ I) (Fin 2)
 
@@ -423,7 +415,8 @@ theorem GL2K1.card_residueField_sq_mul_index (hI : I ≠ ⊤) :
 theorem GL2K1.card_residueField_mul_relIndex (hI : I ≠ ⊤) :
     Nat.card (ResidueField A) * (GL2K1 I).relIndex (GL2K0 I) =
       Nat.card (A ⧸ I) * (Nat.card (ResidueField A) - 1) := by
-  obtain ⟨_, hq⟩ := isLocalRing_quotient_and_card_residueField I hI
+  have := isLocalRing_quotient hI
+  have hq := card_residueField_of_surjective (Ideal.Quotient.mk_surjective (I := I))
   rw [GL2K1.relIndex_GL2K0_eq_card_units, ← hq]
   exact TauCeti.IsLocalRing.card_residueField_mul_card_units (A ⧸ I)
 
@@ -432,7 +425,8 @@ theorem GL2K1.card_residueField_mul_relIndex (hI : I ≠ ⊤) :
 theorem GL2K0.card_residueField_mul_index (hI : I ≠ ⊤) :
     Nat.card (ResidueField A) * (GL2K0 I).index =
       Nat.card (A ⧸ I) * (Nat.card (ResidueField A) + 1) := by
-  obtain ⟨_, hq⟩ := isLocalRing_quotient_and_card_residueField I hI
+  have := isLocalRing_quotient hI
+  have hq := card_residueField_of_surjective (Ideal.Quotient.mk_surjective (I := I))
   have : Finite (ResidueField (A ⧸ I)) := Finite.of_surjective _ residue_surjective
   have hq2 : 2 ≤ Nat.card (ResidueField A) := hq ▸ Finite.one_lt_card
   have hR : 0 < Nat.card (A ⧸ I) := Nat.card_pos

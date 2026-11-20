@@ -11,7 +11,7 @@ import Mathlib.GroupTheory.Index
 import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 -- Non-public: the finite case is the unit count
 -- `TauCeti.IsLocalRing.card_residueField_mul_card_units` of the local ring `R ⧸ P ^ e`, whose
--- residue field is identified with `R ⧸ P` through `TauCeti.quotientEquivResidueField`.
+-- residue field is identified with `R ⧸ P` through `TauCeti.residueFieldAlgEquivOfSurjective`.
 import TauCeti.RingTheory.LocalRing.Card
 import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
@@ -64,13 +64,10 @@ theorem card_units_quotient_pow_mul_card_quotient (P : Ideal R) [P.IsMaximal] {e
     -- with residue field `R ⧸ P`, and its units are counted by the general local-ring count.
     have : IsLocalRing (R ⧸ P ^ e) := .of_nonunits_add fun a b ha hb ↦ by
       simp_all [mem_nonunits_iff]
-    have hker : IsLocalRing.maximalIdeal (R ⧸ P ^ e) = RingHom.ker f := by
-      ext x; simp [hunit]
+    let := Quotient.field P
     have hq : Nat.card (IsLocalRing.ResidueField (R ⧸ P ^ e)) = Nat.card (R ⧸ P) :=
-      Nat.card_congr ((TauCeti.quotientEquivResidueField
-        (IsLocalRing.maximalIdeal.isMaximal _)).toEquiv.symm.trans
-          ((quotEquivOfEq hker).trans (RingHom.quotientKerEquivOfSurjective
-            (Quotient.factor_surjective (pow_le_self he)))).toEquiv)
+      Nat.card_congr (TauCeti.residueFieldAlgEquivOfSurjective (ψ := f.toIntAlgHom)
+        (Quotient.factor_surjective (pow_le_self he))).toEquiv
     rw [mul_comm, ← hq]
     exact TauCeti.IsLocalRing.card_residueField_mul_card_units _
   -- If `R ⧸ P ^ e` is infinite, then so is `R ⧸ P` or the kernel `P / P ^ e`, and in the latter
