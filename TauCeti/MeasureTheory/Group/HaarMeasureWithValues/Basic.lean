@@ -43,6 +43,8 @@ multiplied by its volume of `U₀`.
   compact open subgroup `W`, then `μ K` is the number of those cosets times `μ W`.
 * `TauCeti.HaarMeasureWithValues.apply_toCompactOpens_eq_relIndex_smul`: `μ U = [U : W] • μ W` for
   compact open subgroups `W ≤ U`.
+* `TauCeti.HaarMeasureWithValues.apply_toCompactOpens_eq_inverse_mul`: `μ W = [U₀ : W]⁻¹ * μ U₀`
+  for an open subgroup `W ≤ U₀` when `U₀` has invertible pro-order.
 * `TauCeti.HaarMeasureWithValues.hasUnitProOrder_of_isUnit`: a compact open subgroup whose volume
   is a unit has invertible pro-order. In particular no `𝔽_p`-valued Haar measure gives volume `1`
   to a compact open subgroup having a finite continuous quotient of order divisible by `p`.
@@ -111,6 +113,11 @@ variable (μ : HaarMeasureWithValues A G)
 theorem toFun_eq_coe : μ.toFun = μ :=
   (rfl)
 
+@[simp]
+theorem coe_mk (f : CompactOpens G → A) (h₁ h₂ h₃) :
+    ⇑(⟨f, h₁, h₂, h₃⟩ : HaarMeasureWithValues A G) = f :=
+  (rfl)
+
 /-- Haar measures with values in `A` are equal when they give every compact open set the same
 volume. -/
 @[ext]
@@ -177,12 +184,6 @@ section Cosets
 
 variable [IsTopologicalGroup G]
 
-/-- A compact set meets only finitely many left cosets of an open subgroup. -/
-private theorem finite_image_mk {K : Set G} (hK : IsCompact K) (W : OpenSubgroup G) :
-    (((↑) : G → G ⧸ (W : Subgroup G)) '' K).Finite := by
-  have hc : Continuous ((↑) : G → G ⧸ (W : Subgroup G)) := continuous_quotient_mk'
-  exact (hK.image hc).finite_of_discrete
-
 omit [IsTopologicalGroup G] in
 /-- A compact open subgroup `U` is a union of left cosets of each open subgroup `W ≤ U`. -/
 private theorem forall_mul_mem_toCompactOpens {U W : OpenSubgroup G} (hU : IsCompact (U : Set G))
@@ -198,7 +199,7 @@ theorem apply_eq_ncard_smul (K : CompactOpens G) (W : OpenSubgroup G) (hW : IsCo
     (hKW : ∀ k ∈ K, ∀ w ∈ W, k * w ∈ K) :
     μ K = (((↑) : G → G ⧸ (W : Subgroup G)) '' K).ncard • μ (W.toCompactOpens hW) := by
   classical
-  have hT := finite_image_mk K.isCompact W
+  have hT := K.isCompact.finite_image_mk W
   -- `x ∈ q.out • W` exactly when `x` lies in the coset `q`.
   have hmem (q : G ⧸ (W : Subgroup G)) (x : G) :
       x ∈ q.out • W.toCompactOpens hW ↔ (x : G ⧸ (W : Subgroup G)) = q := by
@@ -224,8 +225,7 @@ theorem apply_toCompactOpens_eq_relIndex_smul {U W : OpenSubgroup G} (hU : IsCom
     (hW : IsCompact (W : Set G)) (h : W ≤ U) :
     μ (U.toCompactOpens hU) = (W : Subgroup G).relIndex U • μ (W.toCompactOpens hW) := by
   rw [μ.apply_eq_ncard_smul _ W hW (forall_mul_mem_toCompactOpens hU h),
-    OpenSubgroup.coe_toCompactOpens, ← OpenSubgroup.coe_toSubgroup,
-    Subgroup.ncard_image_mk_eq_relIndex (W := (W : Subgroup G)) (U := (U : Subgroup G)) h]
+    OpenSubgroup.ncard_image_mk_toCompactOpens hU h]
 
 end Cosets
 
@@ -263,7 +263,7 @@ variable {U₀ : OpenSubgroup G} (hU₀ : IsCompact (U₀ : Set G))
 
 /-- The volume of a compact open subgroup `W ≤ U₀` is `[U₀ : W]⁻¹` times the volume of `U₀`, when
 `U₀` has invertible pro-order. -/
-private theorem apply_toCompactOpens_eq_inverse_mul (h : HasUnitProOrder A U₀)
+theorem apply_toCompactOpens_eq_inverse_mul (h : HasUnitProOrder A U₀)
     {W : OpenSubgroup G} (hW : W ≤ U₀) :
     μ (W.toCompactOpens (hU₀.of_isClosed_subset W.isClosed hW)) =
       Ring.inverse ((W : Subgroup G).relIndex U₀ : A) * μ (U₀.toCompactOpens hU₀) := by
@@ -303,15 +303,12 @@ private theorem levelVolume_eq (hU₀ : IsCompact (U₀ : Set G)) (h : HasUnitPr
     simpa [Subgroup.inf_relIndex_right, inf_eq_left.2 hV'V] using
       (h.mono_openSubgroup hU₀ hV).isUnit_relIndex_openSubgroup hVc V'
   simp only [levelVolume]
+  -- `#(K / V') * [U₀ : V']⁻¹ = (#(K / V) * [V : V']) * ([U₀ : V] * [V : V'])⁻¹`, and the unit
+  -- `[V : V']` cancels.
   rw [Subgroup.ncard_image_mk_of_le hKV (W' := V') hV'V,
-    ← Subgroup.relIndex_mul_relIndex (V' : Subgroup G) V U₀ hV'V hV]
-  set n := (((↑) : G → G ⧸ (V : Subgroup G)) '' K).ncard
-  set r := (V' : Subgroup G).relIndex V
-  set s := (V : Subgroup G).relIndex U₀
-  -- `n * r * (r * s)⁻¹ = n * s⁻¹`, using that natural numbers are central and `r` is a unit.
-  rw [Nat.cast_mul, Nat.cast_mul, Ring.mul_inverse_rev' (Nat.cast_commute _ _), mul_assoc,
-    ← mul_assoc (r : A), (Nat.cast_commute r _).eq, mul_assoc (Ring.inverse (s : A)),
-    Ring.mul_inverse_cancel _ hunit, mul_one]
+    ← Subgroup.relIndex_mul_relIndex (V' : Subgroup G) V U₀ hV'V hV,
+    Nat.mul_comm ((V' : Subgroup G).relIndex V), Nat.cast_mul, Nat.cast_mul,
+    Ring.mul_inverse_rev' (Nat.cast_commute _ _), mul_assoc, Ring.mul_inverse_cancel_left _ _ hunit]
 
 omit [IsTopologicalGroup G] in
 /-- Level volumes are invariant under left translation. -/
@@ -330,7 +327,7 @@ private theorem levelVolume_union {K L : Set G} (hK : IsCompact K) (hL : IsCompa
     Set.disjoint_left.2 fun _ ⟨k, hk, hkq⟩ hqL ↦ Set.disjoint_left.1 hKL hk
       ((Subgroup.mk_mem_image_iff_of_forall_mul_mem hLW).1 (hkq ▸ hqL))
   rw [levelVolume, Set.image_union,
-    ncard_union_eq hdisj (finite_image_mk hK W) (finite_image_mk hL W), Nat.cast_add, add_mul,
+    ncard_union_eq hdisj (hK.finite_image_mk W) (hL.finite_image_mk W), Nat.cast_add, add_mul,
     ← levelVolume, ← levelVolume]
 
 /-- The normalised volume of a compact open set: its level volume at a chosen open subgroup
@@ -384,8 +381,7 @@ theorem normalized_apply (K : CompactOpens G) {W : OpenSubgroup G} (hW : W ≤ U
 @[simp]
 theorem normalized_apply_self : normalized A U₀ hU₀ h (U₀.toCompactOpens hU₀) = 1 := by
   rw [normalized_apply hU₀ h _ le_rfl (forall_mul_mem_toCompactOpens hU₀ le_rfl),
-    OpenSubgroup.coe_toCompactOpens, ← OpenSubgroup.coe_toSubgroup,
-    Subgroup.ncard_image_mk_eq_relIndex le_rfl, Subgroup.relIndex_self, Nat.cast_one,
+    OpenSubgroup.ncard_image_mk_toCompactOpens hU₀ le_rfl, Subgroup.relIndex_self, Nat.cast_one,
     Ring.inverse_one, mul_one]
 
 /-- **Uniqueness of `A`-valued Haar measures.** Every `A`-valued Haar measure is the normalised
@@ -425,8 +421,7 @@ theorem normalized_apply_toCompactOpens (U : OpenSubgroup G) (hU : IsCompact (U 
       ((U₀ : Subgroup G).relIndex U : A) * Ring.inverse ((U : Subgroup G).relIndex U₀ : A) := by
   rw [normalized_apply hU₀ h _ (W := U ⊓ U₀) inf_le_right
       (forall_mul_mem_toCompactOpens hU inf_le_left),
-    OpenSubgroup.coe_toCompactOpens, ← OpenSubgroup.coe_toSubgroup,
-    Subgroup.ncard_image_mk_eq_relIndex (U := (U : Subgroup G)) inf_le_left]
+    OpenSubgroup.ncard_image_mk_toCompactOpens hU inf_le_left]
   simp [Subgroup.inf_relIndex_left, Subgroup.inf_relIndex_right]
 
 /-- **Unit criterion.** Under the measure normalised on `U₀`, a compact open subgroup `U` has unit

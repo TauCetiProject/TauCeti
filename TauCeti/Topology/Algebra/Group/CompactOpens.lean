@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Set.Card
+public import Mathlib.GroupTheory.Index
 public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.Sets.Compacts
+import TauCeti.GroupTheory.Coset.Card
 import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
 
 /-!
@@ -29,14 +32,25 @@ locally profinite group are computed.
 
 ## Main results
 
+* `IsCompact.finite_image_mk`: a compact set meets only finitely many left cosets of an open
+  subgroup.
 * `TopologicalSpace.CompactOpens.exists_openSubgroup_le_forall_mul_mem`: a compact open set is a
   union of left cosets of an open subgroup contained in a given open subgroup.
+* `OpenSubgroup.ncard_image_mk_toCompactOpens`: a compact open subgroup `U` meets `[U : W]` left
+  cosets of an open subgroup `W ≤ U`.
 -/
 
 public section
 
 open Set
 open scoped Pointwise
+
+/-- A compact set meets only finitely many left cosets of an open subgroup. -/
+theorem IsCompact.finite_image_mk {G : Type*} [Group G] [TopologicalSpace G]
+    [SeparatelyContinuousMul G] {K : Set G} (hK : IsCompact K) (W : OpenSubgroup G) :
+    (((↑) : G → G ⧸ (W : Subgroup G)) '' K).Finite := by
+  have := QuotientGroup.discreteTopology W.isOpen
+  exact (hK.image continuous_quotient_mk').finite_of_discrete
 
 namespace TopologicalSpace.CompactOpens
 
@@ -97,5 +111,12 @@ theorem coe_toCompactOpens (U : OpenSubgroup G) (hU : IsCompact (U : Set G)) :
 theorem mem_toCompactOpens {U : OpenSubgroup G} {hU : IsCompact (U : Set G)} {g : G} :
     g ∈ U.toCompactOpens hU ↔ g ∈ U :=
   Iff.rfl
+
+/-- A compact open subgroup `U` meets exactly `[U : W]` left cosets of an open subgroup `W ≤ U`. -/
+theorem ncard_image_mk_toCompactOpens {U W : OpenSubgroup G} (hU : IsCompact (U : Set G))
+    (h : W ≤ U) :
+    (((↑) : G → G ⧸ (W : Subgroup G)) '' (U.toCompactOpens hU)).ncard =
+      (W : Subgroup G).relIndex U :=
+  Subgroup.ncard_image_mk_eq_relIndex (U := (U : Subgroup G)) h
 
 end OpenSubgroup

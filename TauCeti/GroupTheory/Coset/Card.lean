@@ -52,7 +52,8 @@ theorem ncard_image_mk_of_le (hKW : ∀ k ∈ K, ∀ w ∈ W, k * w ∈ K) {W' :
     (((↑) : G → G ⧸ W') '' K).ncard = (((↑) : G → G ⧸ W) '' K).ncard * W'.relIndex W := by
   let e := quotientEquivProdOfLE h
   -- The first coordinate of the tower equivalence is the projection `G ⧸ W' → G ⧸ W`.
-  have he (g : G) : (e (g : G ⧸ W')).1 = (g : G ⧸ W) := rfl
+  have he (g : G) : (e (g : G ⧸ W')).1 = (g : G ⧸ W) := by
+    simp [e, quotientEquivProdOfLE_apply]
   have himage : e '' (((↑) : G → G ⧸ W') '' K) = (((↑) : G → G ⧸ W) '' K) ×ˢ univ := by
     ext ⟨q, r⟩
     constructor
