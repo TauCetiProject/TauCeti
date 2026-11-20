@@ -120,6 +120,7 @@ theorem exists_flow_ne (z : SmoothMappingTorus φ) : ∃ s, flow φ s z ≠ z :=
 
 /-- The periods of `[t, x]` under the suspension flow are the integer multiples of the least period
 of `x` under `φ`. -/
+@[simp]
 theorem periods_flow_mk (t : ℝ) (x : M) :
     (flow φ).periods (mk φ t x) = AddSubgroup.zmultiples (minimalPeriod φ x : ℝ) := by
   ext s
@@ -177,6 +178,7 @@ theorem support_flowClosedOrbit (h : IsPeriodicPt φ d x) (hd : 0 < d) :
 
 /-- The `k`-fold iterate of the closed orbit through `x` with period `d` is the closed orbit
 through `x` with period `k d`. -/
+@[simp]
 theorem iterate_flowClosedOrbit (h : IsPeriodicPt φ d x) (hd : 0 < d) (k : ℕ+) :
     (flowClosedOrbit φ h hd).iterate k = flowClosedOrbit φ (h.const_mul k) (by positivity) := by
   ext
@@ -280,13 +282,11 @@ theorem image_flowClosedOrbitOfFixedPt_preimage (hN : 0 < N) (x : {x // IsPeriod
   refine ⟨fun hy ↦ hy.2, ?_⟩
   rintro ⟨k, rfl⟩
   refine ⟨?_, k, rfl⟩
-  -- Every point of the `φ`-orbit of a fixed point of `φ^[N]` is again fixed by `φ^[N]`.
-  have hfix : IsFixedPt (φ ^ (N : ℤ)) x.1 := by
-    rw [Diffeomorph.isFixedPt_zpow_iff_minimalPeriod_dvd]
-    exact Int.natCast_dvd_natCast.2 x.2.minimalPeriod_dvd
-  have hcomm : (φ ^ (N : ℤ)) ((φ ^ k) x.1) = (φ ^ k) x.1 := by
-    rw [← Diffeomorph.mul_apply, ← zpow_add, add_comm, zpow_add, Diffeomorph.mul_apply, hfix]
-  rwa [zpow_natCast, Diffeomorph.coe_pow] at hcomm
+  -- Every point of the `φ`-orbit of a fixed point of `φ^[N]` is a forward iterate of it, hence
+  -- again fixed by `φ^[N]`.
+  obtain ⟨j, -, hj⟩ := (Diffeomorph.exists_zpow_apply_eq_iff ⟨N, hN, x.2⟩).1 ⟨k, rfl⟩
+  rw [← hj]
+  exact x.2.apply_iterate j
 
 /-! ### Minimal periods and multiplicities -/
 
@@ -321,6 +321,7 @@ theorem minimalPeriod_flowClosedOrbit (h : IsPeriodicPt φ d x) (hd : 0 < d) :
 
 /-- The closed orbit through `x` with period `d` is primitive exactly when `d` is the least period
 of `x`. -/
+@[simp]
 theorem isPrimitive_flowClosedOrbit_iff (h : IsPeriodicPt φ d x) (hd : 0 < d) :
     (flowClosedOrbit φ h hd).IsPrimitive ↔ minimalPeriod φ x = d := by
   rw [Flow.ClosedOrbit.isPrimitive_iff, period_flowClosedOrbit, minimalPeriod_flowClosedOrbit,
@@ -336,6 +337,7 @@ theorem multiplicity_mul_minimalPeriod_flowClosedOrbit (h : IsPeriodicPt φ d x)
 
 /-- The multiplicity of the closed orbit through `x` with period `d` is `d` divided by the least
 period of `x`. -/
+@[simp]
 theorem multiplicity_flowClosedOrbit (h : IsPeriodicPt φ d x) (hd : 0 < d) :
     ((flowClosedOrbit φ h hd).multiplicity : ℕ) = d / minimalPeriod φ x :=
   (Nat.div_eq_of_eq_mul_left (h.minimalPeriod_pos hd)
