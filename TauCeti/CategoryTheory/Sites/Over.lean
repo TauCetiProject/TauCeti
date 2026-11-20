@@ -36,6 +36,9 @@ presheaves on the category of all schemes.
   with respect to the corresponding sieve on `Y.left`.
 * `CategoryTheory.Over.isSheaf_over_iff_isSheaf_sigmaPresheaf`: `P` is a sheaf for `J.over S`
   if and only if `sigmaPresheaf P` is a sheaf for `J`, when `S` is a sheaf for `J`.
+* `CategoryTheory.Presieve.IsSheaf.isSheafFor_ofArrows_over`: a sheaf for `J.over S` satisfies
+  the sheaf condition for a family of morphisms over `S` whose underlying morphisms in `C`
+  generate a covering sieve for `J`.
 * `CategoryTheory.GrothendieckTopology.isLeftAdjoint_overPullback`: pullback of sheaves to the
   over site `J.over U` is a left adjoint whenever pointwise right Kan extensions along
   `(Over.forget U).op` exist.
@@ -206,6 +209,21 @@ theorem isSheaf_over_iff_isSheaf_sigmaPresheaf (J : GrothendieckTopology C)
     fun hP _ R hR ↦ isSheafFor_of_isSheafFor_sigmaPresheaf R (hS _ hR).isSeparatedFor (hP _ hR)⟩
 
 end CategoryTheory.Over
+
+namespace CategoryTheory.Presieve.IsSheaf
+
+/-- A sheaf for the induced topology `J.over S` satisfies the sheaf condition for a family of
+morphisms over `S` whose underlying morphisms in `C` generate a covering sieve for `J`. -/
+theorem isSheafFor_ofArrows_over {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
+    {S : C} {P : (Over S)ᵒᵖ ⥤ Type w} (hP : Presieve.IsSheaf (J.over S) P) {T : Over S}
+    {ι : Type*} {Z : ι → Over S} (g : ∀ k, Z k ⟶ T)
+    (hg : Sieve.ofArrows (fun k ↦ (Z k).left) (fun k ↦ (g k).left) ∈ J T.left) :
+    Presieve.IsSheafFor P (Presieve.ofArrows Z g) := by
+  rw [Presieve.isSheafFor_iff_generate]
+  exact hP _ (by
+    rwa [GrothendieckTopology.mem_over_iff, ← Sieve.ofArrows, Sieve.overEquiv_ofArrows])
+
+end CategoryTheory.Presieve.IsSheaf
 
 namespace CategoryTheory.GrothendieckTopology
 
