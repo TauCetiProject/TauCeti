@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Pregluing
 public import TauCeti.Geometry.Symplectic.Floer.Splicing
+import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Topology.UniformSpace.HeineCantor
 
 /-!
@@ -74,16 +75,6 @@ private theorem floerLinearizationCoeff_eq_cylCoeff (ω : SymplecticForm V)
       cylCoeff ω J H z.2 (w z) (fderiv ℝ w z stdComplexLineImag) := by
   ext y
   simp [floerLinearizationCoeff_apply, cylCoeff]
-
-omit [FiniteDimensional ℝ V] in
-/-- Applying a map `A : ℝ × ℝ →L[ℝ] V` to `(0, 1)` and subtracting `X` costs at most the distance of
-`A` from `(σ, τ) ↦ τ X`. -/
-private theorem norm_apply_stdComplexLineImag_sub_le (A : ℝ × ℝ →L[ℝ] V) (X : V) :
-    ‖A stdComplexLineImag - X‖ ≤ ‖A - (snd ℝ ℝ ℝ).smulRight X‖ := by
-  have h : A stdComplexLineImag - X = (A - (snd ℝ ℝ ℝ).smulRight X) stdComplexLineImag := by
-    simp [stdComplexLineImag_eq]
-  rw [h]
-  exact (le_opNorm _ _).trans_eq (by simp [stdComplexLineImag_eq])
 
 /-- **The coefficients near an orbit.** For a continuous loop `x` and a compact set `T` of times,
 the coefficients `J_t(y)` and `C(t, y, η)` of the linearized operator are uniformly close to their
@@ -343,13 +334,9 @@ theorem eventually_setIntegral_sobolev_le_mul_setIntegral_floerLinearization_pre
     (Eventually.of_forall fun _ _ ↦ hu.differentiable one_ne_zero _) hux hdux
     (Eventually.of_forall fun _ _ ↦ hv.differentiable one_ne_zero _) hvx hdvx hε
   -- Regularity of the data and of the three maps.
-  have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
-  have hx₁ : ContDiff ℝ 1 x := by
-    refine contDiff_one_iff_deriv.2 ⟨fun t ↦ (hx t).differentiableAt, ?_⟩
-    rw [show deriv x = fun t ↦ ω.hamiltonianVectorField (H t) (x t) from
-      funext fun t ↦ (hx t).deriv]
-    exact (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous.comp
-      (continuous_id.prodMk hxc)
+  have hx₁ : ContDiff ℝ 1 x := contDiff_one_of_hasDerivAt
+    (X := fun t ↦ ω.hamiltonianVectorField (H t))
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous hx
   have hJ' : ContDiff ℝ 1 (uncurry fun (p : ℝ × ℝ) ↦ J p.2) :=
     hJ.comp (contDiff_fst.snd.prodMk contDiff_snd)
   have hKs : ContDiff ℝ 2 (uncurry fun (_ : ℝ × ℝ) (_ : V) ↦ (0 : ℝ)) := contDiff_const
