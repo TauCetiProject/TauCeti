@@ -245,7 +245,7 @@ theorem mem_iff_bottomRowMod {g : GL (Fin 2) A} :
 theorem rightRel_iff {g g' : GL (Fin 2) A} :
     QuotientGroup.rightRel (GL2K1 I) g g' ↔ bottomRowMod I g = bottomRowMod I g' := by
   rw [QuotientGroup.rightRel_apply, mem_iff_bottomRowMod, bottomRowMod_mul, map_inv,
-    Matrix.GeneralLinearGroup.vecMul_inv_eq_iff, single_one_vecMul_map, eq_comm]
+    Matrix.GeneralLinearGroup.vecMul_eq_iff_eq_vecMul_inv, inv_inv, single_one_vecMul_map, eq_comm]
 
 end GL2K1
 
@@ -276,8 +276,8 @@ theorem rightRel_iff {g g' : GL (Fin 2) A} :
       ∃ u : (A ⧸ I)ˣ, u • bottomRowMod I g = bottomRowMod I g' := by
   rw [QuotientGroup.rightRel_apply, mem_iff_bottomRowMod]
   refine exists_congr fun u ↦ ?_
-  rw [bottomRowMod_mul, map_inv, Matrix.GeneralLinearGroup.vecMul_inv_eq_iff, Units.smul_def,
-    Matrix.smul_vecMul, single_one_vecMul_map, ← Units.smul_def, eq_comm]
+  rw [bottomRowMod_mul, map_inv, Matrix.GeneralLinearGroup.vecMul_eq_iff_eq_vecMul_inv, inv_inv,
+    Units.smul_def, Matrix.smul_vecMul, single_one_vecMul_map, ← Units.smul_def, eq_comm]
 
 end GL2K0
 
