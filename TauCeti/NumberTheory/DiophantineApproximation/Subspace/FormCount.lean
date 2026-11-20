@@ -154,11 +154,12 @@ theorem formCount_mono [Finite ι] {S₀ S₁ : Finset (FinitePlace K)} (h : S�
     (L : AbsoluteValue K ℝ → ι → M) : formCount S₀ L ≤ formCount S₁ L :=
   ncard_le_ncard (formSet_mono h L) (finite_formSet S₁ L)
 
-/-- **Distinct wedge forms**: the wedges of degree `p` of a system of forms on `ι → R` have at
-most `formCount S₀ L ^ p` distinct members, since each is the wedge of a `p`-tuple of forms of the
-system. -/
+/-- **Distinct wedge forms**: the wedges of degree `p` of a system of forms on `ι → R`, indexed
+by a finite type `κ`, have at most `formCount S₀ L ^ p` distinct members, since each is the wedge
+of a `p`-tuple of forms of the system. -/
 theorem formCount_wedgeForms_le {R : Type*} [CommRing R] [Fintype ι] [LinearOrder ι]
-    (S₀ : Finset (FinitePlace K)) (L : AbsoluteValue K ℝ → ι → Module.Dual R (ι → R)) (p : ℕ) :
+    {κ : Type*} [Finite κ] [LinearOrder κ] (S₀ : Finset (FinitePlace K))
+    (L : AbsoluteValue K ℝ → κ → Module.Dual R (ι → R)) (p : ℕ) :
     formCount S₀ (fun v ↦ wedgeForms (L v) p) ≤ formCount S₀ L ^ p := by
   have hfin := finite_formSet S₀ L
   have : Finite (formSet S₀ L) := hfin.to_subtype
