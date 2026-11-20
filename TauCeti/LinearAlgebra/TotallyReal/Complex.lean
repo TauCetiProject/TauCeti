@@ -288,9 +288,9 @@ theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_natural
     g.conjugationOfMaximalTotallyReal hg hmax' (A v) =
       A (f.conjugationOfMaximalTotallyReal hf hmax v) := by
   unfold LinearMap.conjugationOfMaximalTotallyReal
-  apply LinearEquiv.conjugationOfComplexification_natural _ _ A b
+  apply LinearEquiv.conjugationOfComplexification_natural _ _ A
   intro w
-  simpa only [IsBaseChange.equiv_tmul, one_smul] using hreal w
+  exact ⟨b w, by simpa only [IsBaseChange.equiv_tmul, one_smul] using hreal w⟩
 
 namespace IsMaximalTotallyReal
 
