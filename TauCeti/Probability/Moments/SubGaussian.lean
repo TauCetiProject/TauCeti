@@ -10,6 +10,7 @@ public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.Probability.Independence.Basic
 public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Probability.Moments.SubGaussian.Basic
+public import TauCeti.Probability.Moments.SubGaussian.Vector
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Integral.Prod
 import TauCeti.Probability.Distributions.Gaussian.Moments
@@ -27,8 +28,10 @@ used in the operator-norm tail bound for random matrices.
 We also develop squared-variable exponential moment bounds for
 `ProbabilityTheory.HasSubgaussianMGF` (`integrable_exp_mul_sq`, `integral_exp_mul_sq_le`,
 `mgf_sq_sub_integral_le`), complex directional sub-Gaussianity, dot-product sub-Gaussian bounds for
-independent real and complex vectors, and Gaussianization and decoupled bilinear MGF bounds for
-jointly sub-Gaussian vectors (`TauCeti.integral_exp_half_mul_sum_mulVec_sq_le`,
+independent real and complex vectors (with `ProbabilityTheory.iIndepFun.isSubgaussianVector`:
+independent coordinates of proxy `c` form a sub-Gaussian vector with proxy `c`), and
+Gaussianization and decoupled bilinear MGF bounds for jointly sub-Gaussian vectors
+(`TauCeti.integral_exp_half_mul_sum_mulVec_sq_le`,
 `TauCeti.mgf_dotProduct_mulVec_prod_le`; Vershynin 2018, §2.5–2.7, §6.2; Rudelson–Vershynin 2013).
 -/
 
@@ -329,6 +332,20 @@ theorem hasSubgaussianMGF_dotProduct {X : ι → Ω → ℝ} (hindep : iIndepFun
       (hindep.comp (fun i x ↦ w i * x) fun i ↦ measurable_const_mul (w i))
       fun i _ ↦ hproxy i ▸ (hX i).const_mul (w i)
   simpa only [dotProduct, mul_comm] using hsum
+
+/-- A random vector of `EuclideanSpace ℝ ι` with independent coordinates, each with variance
+proxy `c`, is a sub-Gaussian vector (`TauCeti.IsSubgaussianVector`) with proxy `c`: the form
+`⟪u, x⟫` has proxy `∑ i, ‖u i‖₊ ^ 2 * c = c * ‖u‖₊ ^ 2` by `hasSubgaussianMGF_dotProduct`. -/
+theorem isSubgaussianVector {x : Ω → EuclideanSpace ℝ ι} {c : ℝ≥0}
+    (hindep : iIndepFun (fun i ω ↦ x ω i) P) (hx : ∀ i, HasSubgaussianMGF (fun ω ↦ x ω i) c P) :
+    TauCeti.IsSubgaussianVector x c P := by
+  refine TauCeti.isSubgaussianVector_def.2 fun u ↦ ?_
+  have hproxy : ∑ i, ‖u i‖₊ ^ 2 * c = c * ‖u‖₊ ^ 2 := by
+    rw [← Finset.sum_mul, EuclideanSpace.nnNorm_eq]
+    simp [mul_comm]
+  rw [← hproxy]
+  refine (hindep.hasSubgaussianMGF_dotProduct hx u).congr (ae_of_all _ fun ω ↦ ?_)
+  simp [dotProduct, PiLp.inner_apply, mul_comm]
 
 /-- Exponential moment bound for the dot product of independent `K`-sub-Gaussian random variables
 with a deterministic vector `w`. -/
