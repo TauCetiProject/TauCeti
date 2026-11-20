@@ -30,6 +30,8 @@ roofs `M ← P → N` are Mathlib's right fractions for it.
 
 * `TauCeti.DGRightModuleHom.IsQuasiIso`, `TauCeti.DGRightModuleCat.IsQuasiIso`: quasi-isomorphisms.
 * `TauCeti.DGRightModuleCat.quasiIsos h`: the quasi-isomorphisms, as a `MorphismProperty`.
+  The cohomology functor inverts them
+  (`TauCeti.DGRightModuleCat.quasiIsos_isInvertedBy_cohomologyFunctor`).
 
 ## Main results
 
@@ -292,6 +294,12 @@ theorem quasiIsos_iff {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N) :
 theorem isQuasiIso_iff_isIso_cohomologyFunctor_map {M N : DGRightModuleCat.{uR, uA, uM} h}
     (f : M ⟶ N) : IsQuasiIso f ↔ IsIso (cohomologyFunctor.map f) :=
   (quasiIsos_iff f).symm
+
+variable (h) in
+/-- The cohomology functor inverts the quasi-isomorphisms. -/
+theorem quasiIsos_isInvertedBy_cohomologyFunctor :
+    (quasiIsos h).IsInvertedBy cohomologyFunctor := fun _ _ f hf ↦ by
+  rwa [quasiIsos, MorphismProperty.inverseImage_iff, MorphismProperty.isomorphisms.iff] at hf
 
 end DGRightModuleCat
 
