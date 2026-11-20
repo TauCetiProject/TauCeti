@@ -242,13 +242,12 @@ theorem isIso_serreSpectralSequenceMapOver_hom_f (hf : f ≫ p' = p)
       k q _ (fun j x ↦ f.coe_preimageMap_apply hf _ x)
     rw [← Iso.eq_comp_inv] at e
     rw [e]
-    have : IsIso (Limits.Sigma.map fun j : cell C k ↦ ((AlgebraicTopology.singularHomologyFunctor
+    -- The fibre over the centre of each cell is a fibre over a point of `C`; the sum of these
+    -- isomorphisms is then an isomorphism by `Sigma.map_isIso`.
+    have : ∀ j : cell C k, IsIso (((AlgebraicTopology.singularHomologyFunctor
         (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).map (f.preimageMap hf {map k j 0})) :=
-      (Sigma.mapIso fun j : cell C k ↦
-        haveI := hfib _ (closedCell_subset_complex k j
-          ⟨0, Metric.mem_closedBall_self zero_le_one, rfl⟩) q
-        asIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
-          (ModuleCat.of R R)).map (f.preimageMap hf {map k j 0}))).isIso_hom
+      fun j ↦ hfib _ (closedCell_subset_complex k j
+        ⟨0, Metric.mem_closedBall_self zero_le_one, rfl⟩) q
     infer_instance
   have e := singularHomologyMap_preimagePairMap_comp_eqToHom (C := C) hf R k _ rfl (q + k)
   rw [(IsIso.eq_inv_comp _).2 e.symm]
