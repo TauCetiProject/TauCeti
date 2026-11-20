@@ -609,8 +609,6 @@ private theorem integral_mul_sq_add_two_mul_inner_nonneg
   set g := W1p.gradient v
   set t : ℕ → ℝ := fun n ↦ 1 / ((n : ℝ) + 1)
   have ht0 : ∀ n, 0 < t n := fun n ↦ by positivity
-  have ht1 : ∀ n, t n ≤ 1 := fun n ↦
-    (div_le_one (by positivity)).2 (le_add_of_nonneg_left (Nat.cast_nonneg n))
   have hden : ∀ n s, 1 ≤ 1 + t n * s ^ 2 := fun n s ↦
     le_add_of_nonneg_right (mul_nonneg (ht0 n).le (sq_nonneg s))
   -- The sign condition at the truncated squares `v² / (1 + t n v²)`, and `n → ∞`.
@@ -618,7 +616,7 @@ private theorem integral_mul_sq_add_two_mul_inner_nonneg
     2 * f x / (1 + t n * f x ^ 2) ^ 2 * ⟪e x, g x⟫_ℝ
   have hI : ∀ n, AEStronglyMeasurable (I n) μ ∧ 0 ≤ ∫ x, I n x ∂μ := fun n ↦ by
     obtain ⟨φ, hφ, hval, hgrad⟩ :=
-      W1p.exists_mem_w1p0Submodule_value_eq_sq_div (by norm_num) (ht0 n) (ht1 n) hv hv0
+      W1p.exists_mem_w1p0Submodule_value_eq_sq_div (by norm_num) (ht0 n) hv hv0
     have heq : (fun x ↦ c x * W1p.value φ x + ⟪e x, W1p.gradient φ x⟫_ℝ) =ᵐ[μ] I n := by
       filter_upwards [hval, hgrad] with x hx hgx
       rw [hx, hgx, real_inner_smul_right]
@@ -716,18 +714,14 @@ private theorem energyFormH1_sub_zero_posPartAbove_self_le
   have hlin : 0 ≤ ∫ x, c x * W1p.value v x + ⟪e x, W1p.gradient v x⟫_ℝ ∂μ :=
     hsign ⟨v, hmem⟩ hv0
   -- Integrability of the pieces; `Ω` has finite measure, so `L²` functions are integrable.
-  have hcf : ∀ {F : EuclideanSpace ℝ ι → ℝ}, Integrable F μ → AEStronglyMeasurable F μ →
-      Integrable (fun x ↦ c x * F x) μ := fun {F} hF hFm ↦
-    (hF.norm.const_mul gamma).mono' (hc.mul hFm) (by
-      filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
-      rw [norm_mul]
-      exact mul_le_mul_of_nonneg_right (hc_bound x hx) (norm_nonneg _))
+  have hcb : ∀ᵐ x ∂μ, ‖c x‖ ≤ gamma := by
+    filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx using hc_bound x hx
   have i₄ : Integrable (fun x ↦ c x * W1p.value v x ^ 2 +
       2 * (W1p.value v x * ⟪e x, W1p.gradient v x⟫_ℝ)) μ :=
-    (hcf (Lp.memLp (W1p.value v)).integrable_sq ((Lp.aestronglyMeasurable _).pow 2)).add
+    ((Lp.memLp (W1p.value v)).integrable_sq.bdd_mul hc hcb).add
       ((integrable_value_mul_inner_gradient he he_bound v v).const_mul 2)
   have i₅ : Integrable (fun x ↦ c x * W1p.value v x + ⟪e x, W1p.gradient v x⟫_ℝ) μ :=
-    (hcf ((Lp.memLp (W1p.value v)).integrable one_le_two) (Lp.aestronglyMeasurable _)).add
+    (((Lp.memLp (W1p.value v)).integrable one_le_two).bdd_mul hc hcb).add
       (((Lp.memLp (W1p.gradient v)).integrable one_le_two).norm.const_mul sigma |>.mono'
         (he.inner (Lp.aestronglyMeasurable _)) (by
           filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
