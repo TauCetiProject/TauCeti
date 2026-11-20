@@ -112,6 +112,14 @@ theorem metricChangeTransport_mul_mul_self (hH : IsStrictlyPositive h♯) :
     norm_num
   rw [hTH, metricChangeTransport_def, CFC.rpow_mul_rpow_neg]
 
+/-- The square of the metric change transport `T` is a left inverse of the Riesz operator `H` of
+`h`: `T * T * H = 1`. -/
+theorem metricChangeTransport_mul_self_mul (hH : IsStrictlyPositive h♯) :
+    h.metricChangeTransport * h.metricChangeTransport * h♯ = 1 := by
+  conv_lhs => rhs; rw [← CFC.rpow_one h♯ hH.nonneg]
+  rw [metricChangeTransport_def, ← CFC.rpow_add hH.isUnit, ← CFC.rpow_add hH.isUnit]
+  norm_num [CFC.rpow_zero h♯ hH.nonneg]
+
 /-- The metric change transport is the unique positive operator `S` with `S * H * S = 1`, for the
 Riesz operator `H` of `h`. -/
 theorem metricChangeTransport_eq_iff (hH : IsStrictlyPositive h♯) {S : E →L[ℝ] E} :
@@ -121,13 +129,10 @@ theorem metricChangeTransport_eq_iff (hH : IsStrictlyPositive h♯) {S : E →L[
   -- `S * h♯` is a left and `h♯ * S` a right inverse of `S`, so they agree, and then `S * S` is
   -- a right inverse of `h♯`; the square of the transport is its left inverse `h♯ ^ (-1)`.
   have hcomm : S * h♯ = h♯ * S := left_inv_eq_right_inv hSHS (by rw [← mul_assoc, hSHS])
-  have hTT : h.metricChangeTransport * h.metricChangeTransport * h♯ = 1 := by
-    conv_lhs => rhs; rw [← CFC.rpow_one h♯ hH.nonneg]
-    rw [metricChangeTransport_def, ← CFC.rpow_add hH.isUnit, ← CFC.rpow_add hH.isUnit]
-    norm_num [CFC.rpow_zero h♯ hH.nonneg]
   refine (CFC.mul_self_eq_mul_self_iff _ _
     (isStrictlyPositive_metricChangeTransport hH).nonneg hS).mp ?_
-  exact left_inv_eq_right_inv hTT (by rw [← mul_assoc, ← hcomm, hSHS])
+  exact left_inv_eq_right_inv (metricChangeTransport_mul_self_mul hH)
+    (by rw [← mul_assoc, ← hcomm, hSHS])
 
 /-- The metric change transport is an isometry from the original inner product to `h`. -/
 @[simp]

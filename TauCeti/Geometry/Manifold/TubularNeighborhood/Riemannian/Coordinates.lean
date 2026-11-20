@@ -184,10 +184,10 @@ private theorem exists_diffeomorph_normalBundle_of_partialDiffeomorph
     rintro _ ⟨w, hw, rfl⟩
     simpa [Ψ.left_inv (hW₀src w hw)] using hw
   let Φ : TotalSpace P (fun x ↦ f.NormalSpace x hn) ≃ₘ^∞⟮I.prod 𝓘(ℝ, P), J⟯ W :=
-    { toFun := fun p => ⟨Ψ (Φ₀ p), Φ₀ p, (Φ₀ p).2, rfl⟩
-      invFun := fun y => Φ₀.symm ⟨Ψ.symm y, hsymm y y.2⟩
+    { toFun := fun p => ⟨Ψ (Φ₀ p), Φ₀ p, (Φ₀ p).property, rfl⟩
+      invFun := fun y => Φ₀.symm ⟨Ψ.symm y, hsymm y y.property⟩
       left_inv := fun p => by
-        have := Ψ.left_inv (hW₀src _ (Φ₀ p).2)
+        have := Ψ.left_inv (hW₀src _ (Φ₀ p).property)
         simp [this]
       right_inv := fun y => by
         obtain ⟨y, w, hw, rfl⟩ := y
@@ -195,12 +195,12 @@ private theorem exists_diffeomorph_normalBundle_of_partialDiffeomorph
         simp only [Φ₀.apply_symm_apply]
         exact Ψ.right_inv (hWt _ ⟨w, hw, rfl⟩)
       contMDiff_toFun := (TauCeti.ContMDiff.subtypeVal_comp_iff W _).mp
-        (Ψ.contMDiffOn.comp_contMDiff (contMDiff_subtype_val.comp Φ₀.contMDiff)
-          fun p => hW₀src _ (Φ₀ p).2)
+        (Ψ.contMDiffOn.comp_contMDiff (contMDiff_subtypeVal.comp Φ₀.contMDiff)
+          fun p => hW₀src _ (Φ₀ p).property)
       contMDiff_invFun := Φ₀.contMDiff_invFun.comp
         ((TauCeti.ContMDiff.subtypeVal_comp_iff W₀ _).mp
-          (Ψ.symm.contMDiffOn.comp_contMDiff contMDiff_subtype_val
-            fun y => hWt y y.2)) }
+          (Ψ.symm.contMDiffOn.comp_contMDiff contMDiff_subtypeVal
+            fun y => hWt y y.property)) }
   refine ⟨W, fun y hy => htarget (hWt y hy), Φ, fun x => ?_⟩
   -- the value of `Φ` is the `toFun` field above, so this holds by `rfl`
   have hΦ : ((Φ (zeroSection P (fun x ↦ f.NormalSpace x hn) x) : W) : N) =

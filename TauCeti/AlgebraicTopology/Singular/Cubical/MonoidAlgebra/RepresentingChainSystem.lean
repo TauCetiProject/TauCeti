@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.ContinuationChainSystem
-public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Relative
+public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Relative.Basic
 
 /-!
 # Existence of representing chain systems
