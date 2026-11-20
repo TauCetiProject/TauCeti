@@ -37,7 +37,8 @@ These are the comparisons behind the order of growth of an entire function.
 As `h → 0⁺`, a positive power `h ^ θ` tends to zero, so every function `f = O(h ^ θ)`, in
 particular every multiple `A * h ^ θ`, falls below any positive constant. This is how polynomial
 rates in a small scale `h` become inequalities for all small `h`. Power laws multiply: if
-`f = O(h ^ a)` and `g = O(h ^ b)` as `h → 0⁺`, then `f * g = O(h ^ (a + b))`.
+`f = O(h ^ a)` and `g = O(h ^ b)` as `h → 0⁺`, then `f * g = O(h ^ (a + b))`, and a bound
+`f = O(h ^ a)` weakens to `f = O(h ^ c)` for every `c ≤ a`.
 
 ## Families bounded by integer powers
 
@@ -220,6 +221,15 @@ theorem IsBigO.mul_nhdsGT_zero_rpow_of_isBigO_rpow {R : Type*} [SeminormedRing R
   refine (hf.mul hg).trans (Eventually.isBigO ?_)
   filter_upwards [Ioo_mem_nhdsGT one_pos] with t ht
   rw [← Real.rpow_add ht.1, Real.norm_of_nonneg (Real.rpow_nonneg ht.1.le (a + b))]
+  exact Real.rpow_le_rpow_of_exponent_ge ht.1 ht.2.le h
+
+/-- Power laws weaken near `0⁺`: if `f = O(h ^ a)` as `h → 0⁺`, then `f = O(h ^ c)` for every
+`c ≤ a`. -/
+theorem IsBigO.nhdsGT_zero_rpow_of_le {R : Type*} [Norm R] {f : ℝ → R} {a c : ℝ}
+    (hf : f =O[𝓝[>] 0] fun h ↦ h ^ a) (h : c ≤ a) : f =O[𝓝[>] 0] fun h ↦ h ^ c := by
+  refine hf.trans (Eventually.isBigO ?_)
+  filter_upwards [Ioo_mem_nhdsGT one_pos] with t ht
+  rw [Real.norm_of_nonneg (Real.rpow_nonneg ht.1.le a)]
   exact Real.rpow_le_rpow_of_exponent_ge ht.1 ht.2.le h
 
 end Asymptotics
