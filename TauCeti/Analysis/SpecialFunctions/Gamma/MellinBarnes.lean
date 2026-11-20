@@ -125,7 +125,7 @@ product `Γ(s) Γ(a - s)` is integrable. -/
 theorem verticalIntegrable_Gamma_mul_Gamma_sub {a : ℂ} {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n)
     (haσ : ∀ n : ℕ, a.re - σ ≠ -n) :
     VerticalIntegrable (fun s ↦ Gamma s * Gamma (a - s)) σ :=
-  VerticalIntegrable.mul_Gamma_comp (verticalIntegrable_Gamma hσ) haσ (by fun_prop) fun y ↦ by simp
+  (verticalIntegrable_Gamma hσ).mul_Gamma_comp haσ (by fun_prop) fun y ↦ by simp
 
 /-- **The Mellin–Barnes integral of `(1 + u)^{-a}`.** On every vertical line `Re s = σ` with
 `0 < σ < Re a`, Mellin inversion of `Γ(s) Γ(a - s)` gives `Γ(a) (1 + u)^{-a}` for `u > 0`:

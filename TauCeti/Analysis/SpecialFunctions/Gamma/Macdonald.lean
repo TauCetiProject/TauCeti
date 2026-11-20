@@ -162,7 +162,7 @@ product `Γ(t) Γ(t + a)` is integrable. -/
 theorem verticalIntegrable_Gamma_mul_Gamma_add {a : ℂ} {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n)
     (hσa : ∀ n : ℕ, σ + a.re ≠ -n) :
     VerticalIntegrable (fun t ↦ Gamma t * Gamma (t + a)) σ :=
-  VerticalIntegrable.mul_Gamma_comp (verticalIntegrable_Gamma hσ) hσa (by fun_prop) fun y ↦ by simp
+  (verticalIntegrable_Gamma hσ).mul_Gamma_comp hσa (by fun_prop) fun y ↦ by simp
 
 /-- **The Mellin–Barnes integral of Macdonald's integral.** On every vertical line `Re t = σ` with
 `σ > 0` and `σ + Re a > 0`, Mellin inversion of `Γ(t) Γ(t + a)` gives, for `x > 0`,

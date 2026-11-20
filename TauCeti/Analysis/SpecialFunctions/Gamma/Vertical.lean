@@ -51,7 +51,7 @@ its coefficients.
 * `Complex.verticalIntegrable_Gamma_smul_of_norm_le`: `w ↦ Γ(w) • g(w)` is integrable on
   `Re w = σ` (`σ ≠ -n`) whenever `g` is measurable and almost everywhere polynomially bounded on
   that line.
-* `VerticalIntegrable.mul_Gamma_comp`: multiplying a function integrable on `Re s = σ` by
+* `Complex.VerticalIntegrable.mul_Gamma_comp`: multiplying a function integrable on `Re s = σ` by
   `Γ(w(s))`, where `w` maps that line continuously into a vertical line avoiding the poles of `Γ`,
   keeps it integrable.
 * `Complex.mellinInv_Gamma`: Mellin inversion of `Γ` on `Re s = σ > 0` gives `e⁻ˣ`.
@@ -254,24 +254,20 @@ theorem verticalIntegrable_Gamma_smul_of_norm_le {E : Type*} [NormedAddCommGroup
         mul_le_mul (hA t) hgt (norm_nonneg _) (mul_nonneg hA0 (by positivity))
     _ = A * C * (1 + t ^ 2)⁻¹ := by rw [pow_succ]; field_simp
 
-end Complex
-
 /-- If `f` is integrable on the vertical line `Re s = σ` and `w` maps that line continuously into
 the vertical line `Re s = τ`, with `τ` not a nonpositive integer, then `s ↦ f s Γ(w s)` is
 integrable on `Re s = σ`, since `Γ` is continuous and bounded on `Re s = τ`. -/
 theorem VerticalIntegrable.mul_Gamma_comp {f w : ℂ → ℂ} {σ τ : ℝ} (hf : VerticalIntegrable f σ)
     (hτ : ∀ n : ℕ, τ ≠ -n) (hw : Continuous w) (hwτ : ∀ y : ℝ, (w (σ + y * I)).re = τ) :
-    VerticalIntegrable (fun s ↦ f s * Complex.Gamma (w s)) σ := by
+    VerticalIntegrable (fun s ↦ f s * Gamma (w s)) σ := by
   have hline (y : ℝ) : w (σ + y * I) = ↑τ + ↑(w (σ + y * I)).im * I := by
     apply Complex.ext <;> simp [hwτ]
-  obtain ⟨C, hC⟩ := Complex.exists_norm_Gamma_le_mul_inv_one_add_sq_pow hτ 0
+  obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hτ 0
   refine hf.mul_bdd (c := C) ?_
     (Eventually.of_forall fun y ↦ by simpa [← hline] using hC (w (σ + y * I)).im)
   refine Continuous.aestronglyMeasurable (continuous_iff_continuousAt.mpr fun y ↦ ?_)
-  refine (Complex.differentiableAt_Gamma _ fun m h ↦ hτ m ?_).continuousAt.comp (by fun_prop)
+  refine (differentiableAt_Gamma _ fun m h ↦ hτ m ?_).continuousAt.comp (by fun_prop)
   simpa [hwτ] using congrArg re h
-
-namespace Complex
 
 /-- Mellin inversion for the Gamma function: on every vertical line `Re s = σ > 0`,
 `(1 / 2π) ∫ x^{-(σ + i t)} Γ(σ + i t) dt = e⁻ˣ` for `x > 0`. -/
