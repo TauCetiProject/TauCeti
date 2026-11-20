@@ -102,8 +102,8 @@ theorem map_disjUnion {α β : Type*} {m n : ℕ} (f : α ↪ β)
 
 /-- Every `r`-element subset of a finite type `α` satisfies `r ≤ Fintype.card α`. -/
 theorem le_card {α : Type*} [Fintype α] {r : ℕ} (T : powersetCard α r) :
-    r ≤ Fintype.card α :=
-  nonempty_iff.mp ⟨T⟩
+    r ≤ Fintype.card α := by
+  simpa [ENat.card_eq_coe_fintype_card] using nonempty_iff.mp ⟨T⟩
 
 /-- The complementary cardinality `Fintype.card α - r` and `r` sum to `Fintype.card α`. -/
 theorem sub_add_eq_card {α : Type*} [Fintype α] {r : ℕ} (T : powersetCard α r) :
@@ -154,17 +154,17 @@ into `t`. -/
 def ofFinEmbFiberEquiv (t : Set.powersetCard β r) :
     {f : Fin r ↪ β // ofFinEmb r β f = t} ≃ (Fin r ↪ t.val) where
   toFun f :=
-    ⟨fun i ↦ ⟨f.1 i, by
-        have h := congrArg Subtype.val f.2
+    ⟨fun i ↦ ⟨f.val i, by
+        have h := congrArg Subtype.val f.property
         rw [val_ofFinEmb] at h
-        exact h ▸ Finset.mem_map_of_mem f.1 (Finset.mem_univ i)⟩,
-      fun _ _ h ↦ f.1.injective (congrArg Subtype.val h)⟩
+        exact h ▸ Finset.mem_map_of_mem f.val (Finset.mem_univ i)⟩,
+      fun _ _ h ↦ f.val.injective (congrArg Subtype.val h)⟩
   invFun g :=
     ⟨g.trans (Function.Embedding.subtype _), Subtype.ext <| by
       rw [val_ofFinEmb]
       refine Finset.eq_of_subset_of_card_le (fun b hb ↦ ?_) (by simp [card_eq])
       obtain ⟨i, -, rfl⟩ := Finset.mem_map.1 hb
-      exact (g i).2⟩
+      exact (g i).property⟩
   left_inv _ := Subtype.ext (Function.Embedding.ext fun _ ↦ rfl)
   right_inv _ := Function.Embedding.ext fun _ ↦ Subtype.ext rfl
 
@@ -172,14 +172,14 @@ def ofFinEmbFiberEquiv (t : Set.powersetCard β r) :
 @[simp]
 theorem ofFinEmbFiberEquiv_apply_coe (t : Set.powersetCard β r)
     (f : {f : Fin r ↪ β // ofFinEmb r β f = t}) (i : Fin r) :
-    (ofFinEmbFiberEquiv t f i : β) = f.1 i :=
+    (ofFinEmbFiberEquiv t f i : β) = f.val i :=
   (rfl)
 
 /-- Applying `(ofFinEmbFiberEquiv t).symm` preserves vertex values. -/
 @[simp]
 theorem ofFinEmbFiberEquiv_symm_apply_coe (t : Set.powersetCard β r)
     (g : Fin r ↪ t.val) (i : Fin r) :
-    ((ofFinEmbFiberEquiv t).symm g).1 i = (g i : β) :=
+    ((ofFinEmbFiberEquiv t).symm g).val i = (g i : β) :=
   (rfl)
 
 /-- Exactly `r!` embeddings `Fin r ↪ β` have a prescribed `r`-element subset `t` as unordered

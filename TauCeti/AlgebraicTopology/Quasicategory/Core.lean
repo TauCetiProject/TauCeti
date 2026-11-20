@@ -318,7 +318,7 @@ lemma mem_core_obj_zero (x : X _⦋0⦌) : x ∈ X.core.obj (op ⦋0⦌) :=
 /-- An edge lies in the core exactly when it is an equivalence. -/
 @[simp]
 lemma Edge.edge_mem_core_iff {x₀ x₁ : X _⦋0⦌} (e : Edge x₀ x₁) :
-    e.edge ∈ X.core.obj (op ⦋1⦌) ↔ e.IsEquivalence := by
+    e.edge ∈ X.core.obj (Opposite.op ⦋1⦌) ↔ e.IsEquivalence := by
   refine ⟨fun h ↦ (isEquivalence_iff_of_edge_eq (by simp)).1 (h (𝟙 _)), fun h f ↦ ?_⟩
   obtain ⟨a, rfl⟩ | rfl := SimplexCategory.eq_of_one_to_one f
   · exact isEquivalence_mk'_map_of_eq _ _ rfl
@@ -427,7 +427,7 @@ edges, and an edge is an equivalence if and only if its opposite is. -/
 @[simp]
 lemma op_core : X.core.op = X.op.core := by
   ext n s
-  simp only [Subcomplex.mem_op_obj_iff, mem_core_iff, op_map, unop_op]
+  simp only [Subcomplex.mem_op_obj_iff, mem_core_iff, op_map, Opposite.unop_op]
   exact ⟨fun h f ↦ (isEquivalence_mk'_opObjEquiv_symm_iff _).2 (h (SimplexCategory.rev.map f)),
     fun h f ↦ SimplexCategory.rev_map_rev_map f ▸
       (isEquivalence_mk'_opObjEquiv_symm_iff _).1 (h (SimplexCategory.rev.map f))⟩
@@ -483,7 +483,7 @@ private lemma isEquivalence_of_horn₂₁ [Quasicategory X] {a : (Λ[2, 1] : SSe
       rw [← stdSimplex.δ_comp_yonedaEquiv_symm, ← horn.ι_ι 1 j hj, Category.assoc, sq.w]
     rw [← edge_mem_core_iff, mk'_edge, ← yonedaEquiv.apply_symm_apply (X.δ j s), h,
       yonedaEquiv_comp]
-    exact (a.app _ _).2
+    exact (a.app _ _).property
   -- The only edge of `Δ[2]` outside `Λ[2, 1]` is the long edge `δ 1`; constant edges are
   -- degenerate.
   obtain ⟨f, rfl⟩ : ∃ f : ⦋1⦌ ⟶ ⦋2⦌, stdSimplex.objEquiv.symm f = y :=
@@ -505,8 +505,8 @@ lemma hasLiftingProperty_horn_ι_core_ι [Quasicategory X] {n : ℕ} (i : Fin (n
       rw [range_le_core_iff]
       intro y
       by_cases hy : y ∈ Λ[_, i].obj (op ⦋1⦌)
-      · have : b.app _ y = (a.app _ ⟨y, hy⟩).1 := congr($(sq.w).app _ ⟨y, hy⟩).symm
-        exact (edge_mem_core_iff (mk' _)).1 (this ▸ (a.app _ ⟨y, hy⟩).2)
+      · have : b.app _ y = (a.app _ ⟨y, hy⟩).val := congr($(sq.w).app _ ⟨y, hy⟩).symm
+        exact (edge_mem_core_iff (mk' _)).1 (this ▸ (a.app _ ⟨y, hy⟩).property)
       obtain _ | n := n
       · obtain rfl : i = 1 := by
           rw [Fin.lt_def] at h0 hn
@@ -550,10 +550,11 @@ lemma stdSimplex.mem_core_obj_one_iff {n : ℕ} (s : Δ[n] _⦋1⦌) :
 /-- The connected components of the core of `Δ[n]` are the `n + 1` vertices of `Δ[n]`: every edge
 in `(Δ[n]).core` has equal endpoints. -/
 def stdSimplex.π₀CoreEquiv (n : ℕ) : π₀ ((Δ[n] : SSet.{u}).core : SSet.{u}) ≃ Fin (n + 1) where
-  toFun := π₀.lift (fun x ↦ stdSimplex.obj₀Equiv x.1) fun x y e ↦ by
-    have he : e.edge.1 0 = e.edge.1 1 := (stdSimplex.mem_core_obj_one_iff e.edge.1).1 e.edge.2
-    have hx : e.edge.1 0 = x.1 0 := stdSimplex.edge_edge_apply_zero (e.map (Δ[n]).core.ι)
-    have hy : e.edge.1 1 = y.1 0 := stdSimplex.edge_edge_apply_one (e.map (Δ[n]).core.ι)
+  toFun := π₀.lift (fun x ↦ stdSimplex.obj₀Equiv x.val) fun x y e ↦ by
+    have he : e.edge.val 0 = e.edge.val 1 := (stdSimplex.mem_core_obj_one_iff e.edge.val).1
+        e.edge.property
+    have hx : e.edge.val 0 = x.val 0 := stdSimplex.edge_edge_apply_zero (e.map (Δ[n]).core.ι)
+    have hy : e.edge.val 1 = y.val 0 := stdSimplex.edge_edge_apply_one (e.map (Δ[n]).core.ι)
     exact congrArg stdSimplex.obj₀Equiv
       (stdSimplex.ext _ _ fun k ↦ by fin_cases k; exact hx.symm.trans (he.trans hy))
   invFun i :=
@@ -561,12 +562,12 @@ def stdSimplex.π₀CoreEquiv (n : ℕ) : π₀ ((Δ[n] : SSet.{u}).core : SSet.
       ⟨stdSimplex.obj₀Equiv.symm i, mem_core_obj_zero _⟩
   left_inv c := by
     induction c using π₀.rec with | mk x =>
-    exact congrArg π₀.mk (Subtype.ext (stdSimplex.obj₀Equiv.symm_apply_apply x.1))
+    exact congrArg π₀.mk (Subtype.ext (stdSimplex.obj₀Equiv.symm_apply_apply x.val))
   right_inv i := stdSimplex.obj₀Equiv.{u}.apply_symm_apply i
 
 @[simp]
 lemma stdSimplex.π₀CoreEquiv_mk {n : ℕ} (x : ((Δ[n] : SSet.{u}).core : SSet.{u}) _⦋0⦌) :
-    stdSimplex.π₀CoreEquiv n (π₀.mk x) = stdSimplex.obj₀Equiv x.1 :=
+    stdSimplex.π₀CoreEquiv n (π₀.mk x) = stdSimplex.obj₀Equiv x.val :=
   (rfl)
 
 @[simp]
@@ -632,10 +633,10 @@ noncomputable def nerveIso : nerve (Core C) ≅ ((nerve C).core : SSet) where
     rw [nerve.isEquivalence_mk'_iff]
     exact (ComposableArrows.hom y).iso.isIso_hom
   inv :=
-    { app _ := ↾fun s ↦ functorToCoreOfIsIso s.1 ((nerve.mem_core_iff s.1).1 s.2)
+    { app _ := ↾fun s ↦ functorToCoreOfIsIso s.val ((nerve.mem_core_iff s.val).1 s.property)
       naturality _ _ g := by
         ext s
-        exact functorToCoreOfIsIso_comp_left (SimplexCategory.toCat.map g.unop).toFunctor s.1 _ }
+        exact functorToCoreOfIsIso_comp_left (SimplexCategory.toCat.map g.unop).toFunctor s.val _ }
   hom_inv_id := by
     ext n y
     exact functorToCoreOfIsIso_comp_inclusion_self y

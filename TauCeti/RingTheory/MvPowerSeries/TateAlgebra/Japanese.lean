@@ -136,7 +136,7 @@ private theorem exists_frobeniusRoot_integralClosure_map [Finite σ]
       algebraMap T' F' (Ψ t) :=
     Ψ.gaussFractionFieldMap_algebraMap hΨ_inj t
   choose aOf haOf using fun y : integralClosure T M ↦
-    IsIntegral.exists_algebraMap_eq_iterateFrobenius (A := T) (K := F) p he y.2
+    IsIntegral.exists_algebraMap_eq_iterateFrobenius (A := T) (K := F) p he y.property
   let ζ (y : integralClosure T M) : T' := frobeniusRootRestrictedEquiv p e hr_def (aOf y)
   have hζ_alg (y : integralClosure T M) : algebraMap T' F' (ζ y) = ι₀ (y : M) :=
     iterateFrobenius_inj F' p e <| by
@@ -186,7 +186,7 @@ private theorem coeff_mem_of_algebraMap_eq_apply
       exact b.map_sum_mul_eq_map_mul_apply (algebraMap _ _) ι (hι_alg s)
         (fun j ↦ by rw [← Algebra.smul_def, ← ha j, hι_alg]) hι_b
   have hexp_ne : _root_.MvPowerSeries.expand (p ^ e) hq ((s : T) : _root_.MvPowerSeries σ K) ≠ 0 :=
-    fun h0 ↦ hΨ_inj.ne (nonZeroDivisors.ne_zero s.2) <| by
+    fun h0 ↦ hΨ_inj.ne (nonZeroDivisors.ne_zero s.property) <| by
       rw [Ψ.map_zero]
       exact Subtype.ext (by rw [coe_frobeniusRootRestrictedHom p e hr (s : T), h0, map_zero,
         ZeroMemClass.coe_zero])

@@ -122,17 +122,17 @@ correspond bijectively to `ι`-tuples of pairwise commuting elements of `K`, via
 standard generators `Pi.mulSingle i (ofAdd 1)`. -/
 def zpowersPiHomEquiv [DecidableEq ι] :
     {τ : ι → K // ∀ i j, Commute (τ i) (τ j)} ≃ ((ι → Multiplicative ℤ) →* K) where
-  toFun τ := zpowersPiHom τ.1 τ.2
+  toFun τ := zpowersPiHom τ.val τ.property
   invFun f := ⟨fun i => f (Pi.mulSingle i (ofAdd 1)), fun i j => by
     rw [Commute, SemiconjBy, ← map_mul, ← map_mul, (Commute.all _ _).eq]⟩
-  left_inv τ := Subtype.ext <| funext fun i => zpowersPiHom_mulSingle τ.1 τ.2 i
+  left_inv τ := Subtype.ext <| funext fun i => zpowersPiHom_mulSingle τ.val τ.property i
   right_inv f := MonoidHom.pi_ext_mint fun i => zpowersPiHom_mulSingle _ _ i
 
 /-- Forward evaluation of `zpowersPiHomEquiv`. -/
 @[simp]
 theorem zpowersPiHomEquiv_apply [DecidableEq ι]
     (τ : {τ : ι → K // ∀ i j, Commute (τ i) (τ j)}) :
-    zpowersPiHomEquiv τ = zpowersPiHom τ.1 τ.2 :=
+    zpowersPiHomEquiv τ = zpowersPiHom τ.val τ.property :=
   (rfl)
 
 /-- Inverse evaluation of `zpowersPiHomEquiv` evaluates at the `i`-th standard generator. -/
@@ -219,17 +219,17 @@ bijectively to `ι`-tuples of pairwise commuting elements of `A`, via evaluation
 generators `Pi.single i 1`. -/
 def zmultiplesPiHomEquiv [DecidableEq ι] :
     {τ : ι → A // ∀ i j, AddCommute (τ i) (τ j)} ≃ ((ι → ℤ) →+ A) where
-  toFun τ := zmultiplesPiHom τ.1 τ.2
+  toFun τ := zmultiplesPiHom τ.val τ.property
   invFun f := ⟨fun i => f (Pi.single i 1), fun i j => by
     rw [AddCommute, AddSemiconjBy, ← map_add, ← map_add, (AddCommute.all _ _).eq]⟩
-  left_inv τ := Subtype.ext <| funext fun i => zmultiplesPiHom_single τ.1 τ.2 i
+  left_inv τ := Subtype.ext <| funext fun i => zmultiplesPiHom_single τ.val τ.property i
   right_inv f := AddMonoidHom.pi_ext_int fun i => zmultiplesPiHom_single _ _ i
 
 /-- Forward evaluation of `zmultiplesPiHomEquiv`. -/
 @[simp]
 theorem zmultiplesPiHomEquiv_apply [DecidableEq ι]
     (τ : {τ : ι → A // ∀ i j, AddCommute (τ i) (τ j)}) :
-    zmultiplesPiHomEquiv τ = zmultiplesPiHom τ.1 τ.2 :=
+    zmultiplesPiHomEquiv τ = zmultiplesPiHom τ.val τ.property :=
   (rfl)
 
 /-- Inverse evaluation of `zmultiplesPiHomEquiv` evaluates at the `i`-th standard generator. -/

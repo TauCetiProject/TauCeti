@@ -159,12 +159,12 @@ positive size `n`, the weights `q ^ (-d(ρ))` are `(n - 1)!` times the sum of `q
 the subextensions `L` of `SeparableClosure K` of degree `n`. -/
 theorem tsum_isTransitive_one_div_natCard_residueField_pow_discriminantExponent (hn : 0 < n) :
     ∑' ρ : {ρ : GaloisSet K n // ρ.IsTransitive},
-        1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent =
+        1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.val.discriminantExponent =
       ((n - 1).factorial : ℝ≥0∞) *
         ∑' L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = n},
-          1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent := by
+          1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.discriminantExponent := by
   refine (tsum_congr fun ρ ↦ ?_).trans (GaloisSet.tsum_isTransitive ⟨0, hn⟩
     fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.discriminantExponent)
-  rw [ρ.1.discriminantExponent_of_isTransitive ρ.2 ⟨0, hn⟩]
+  rw [ρ.val.discriminantExponent_of_isTransitive ρ.property ⟨0, hn⟩]
 
 end TauCeti

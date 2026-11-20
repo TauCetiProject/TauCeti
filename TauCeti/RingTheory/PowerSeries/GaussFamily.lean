@@ -105,7 +105,7 @@ theorem range_restrictFamily :
     have heq (i) : (g i : R⟦X⟧) = (g i₀ : R⟦X⟧) := PowerSeries.ext (hg i i₀)
     refine ⟨⟨(g i₀ : R⟦X⟧), (hT _).mpr fun i ↦ ?_⟩, ?_⟩
     · rw [← heq i]
-      exact (g i).2
+      exact (g i).property
     · funext i
       exact Subtype.ext (heq i).symm
 

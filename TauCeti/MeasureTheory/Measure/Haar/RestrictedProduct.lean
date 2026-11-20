@@ -128,28 +128,29 @@ private theorem comap_levelMonoidHom_eq (B : ∀ i, K i)
     (hpos : 0 < ∏ i ∈ T, μ i (C i)) (hlt : (∏ i ∈ T, μ i (C i)) < ⊤)
     (hνC : ν (box C) = ∏ i ∈ T, μ i (C i)) :
     ν.comap (levelMonoidHom B T) =
-      (Measure.pi fun i : T ↦ μ i.1).prod
-        (Measure.infinitePi fun i : {i // i ∉ T} ↦ (μ i.1).comap Subtype.val) := by
+      (Measure.pi fun i : T ↦ μ i.val).prod
+        (Measure.infinitePi fun i : {i // i ∉ T} ↦ (μ i.val).comap Subtype.val) := by
   have _ : LocallyCompactSpace (Πʳ i, [G i, B i]) := locallyCompactSpace_of_group G hBcompact
-  have _ (i : {i // i ∉ T}) : ((μ i.1).comap (Subtype.val : B i.1 → G i.1)).IsHaarMeasure :=
-    IsHaarMeasure.comap (mH := inferInstance) (μ i.1) (f := SubmonoidClass.subtype (B i.1))
-      (hBopen.out i.1).isOpenEmbedding_subtypeVal
+  have _ (i : {i // i ∉ T}) : ((μ i.val).comap (Subtype.val : B i.val → G i.val)).IsHaarMeasure :=
+    IsHaarMeasure.comap (mH := inferInstance) (μ i.val) (f := SubmonoidClass.subtype (B i.val))
+      (hBopen.out i.val).isOpenEmbedding_subtypeVal
   have _ (i : {i // i ∉ T}) :
-      IsProbabilityMeasure ((μ i.1).comap (Subtype.val : B i.1 → G i.1)) :=
-    isProbabilityMeasure_comap_subtype (hBopen.out i.1).measurableSet (μ i.1) (hT i.1 i.2)
-  have _ (i : {i // i ∉ T}) : CompactSpace (B i.1) := by
-    have _ : LocallyCompactSpace (B i.1) :=
-      (hBopen.out i.1).isOpenEmbedding_subtypeVal.locallyCompactSpace
+      IsProbabilityMeasure ((μ i.val).comap (Subtype.val : B i.val → G i.val)) :=
+    isProbabilityMeasure_comap_subtype (hBopen.out i.val).measurableSet (μ i.val)
+        (hT i.val i.property)
+  have _ (i : {i // i ∉ T}) : CompactSpace (B i.val) := by
+    have _ : LocallyCompactSpace (B i.val) :=
+      (hBopen.out i.val).isOpenEmbedding_subtypeVal.locallyCompactSpace
     by_contra hnc
-    have _ : NoncompactSpace (B i.1) := not_compactSpace_iff.mp hnc
-    exact measure_ne_top ((μ i.1).comap (Subtype.val : B i.1 → G i.1)) univ
+    have _ : NoncompactSpace (B i.val) := not_compactSpace_iff.mp hnc
+    exact measure_ne_top ((μ i.val).comap (Subtype.val : B i.val → G i.val)) univ
       (measure_univ_of_isMulLeftInvariant _)
   have _ : (ν.comap (levelMonoidHom B T)).IsHaarMeasure :=
     IsHaarMeasure.comap (mH := inferInstance) ν (isOpenEmbedding_levelMonoidHom B T)
-  let E : Set ((Π i : T, G i) × (Π i : {i // i ∉ T}, B i.1)) :=
-    (univ.pi fun i : T ↦ C i.1) ×ˢ univ
-  have hprod_E : ((Measure.pi fun i : T ↦ μ i.1).prod
-      (Measure.infinitePi fun i : {i // i ∉ T} ↦ (μ i.1).comap Subtype.val)) E =
+  let E : Set ((Π i : T, G i) × (Π i : {i // i ∉ T}, B i.val)) :=
+    (univ.pi fun i : T ↦ C i.val) ×ˢ univ
+  have hprod_E : ((Measure.pi fun i : T ↦ μ i.val).prod
+      (Measure.infinitePi fun i : {i // i ∉ T} ↦ (μ i.val).comap Subtype.val)) E =
         ∏ i ∈ T, μ i (C i) := by
     rw [Measure.prod_prod, Measure.pi_pi, measure_univ, mul_one,
       Finset.prod_coe_sort T fun i ↦ μ i (C i)]
@@ -241,8 +242,9 @@ theorem exists_unique_restrictedHaar :
     have hKref_prodT : ∏ i ∈ T, μ i (Kref i) = ∏ i ∈ S₀, μ i (Kref i) :=
       (Finset.prod_subset hS₀T fun i _ hiS₀ ↦ by rw [hKref_eq i hiS₀, (hS₀ i hiS₀).2]).symm
     have _ (i : {i // i ∉ T}) :
-        IsProbabilityMeasure ((μ i.1).comap (Subtype.val : B i.1 → G i.1)) :=
-      isProbabilityMeasure_comap_subtype (hBopen.out i.1).measurableSet (μ i.1) (hT_one i.1 i.2)
+        IsProbabilityMeasure ((μ i.val).comap (Subtype.val : B i.val → G i.val)) :=
+      isProbabilityMeasure_comap_subtype (hBopen.out i.val).measurableSet (μ i.val)
+          (hT_one i.val i.property)
     rw [← image_levelMonoidHom_pi_prod_univ B T hCBT,
       ← (isOpenEmbedding_levelMonoidHom B T).measurableEmbedding.comap_apply,
       comap_levelMonoidHom_eq B hBcompact μ ν hT_one
@@ -296,8 +298,8 @@ on `Π i : T, G i` with Kolmogorov's infinite product probability additive Haar 
 `Π i : {i // i ∉ T}, B i`. -/]
 theorem comap_levelMonoidHom_restrictedHaar {T : Finset ι} (hT : ∀ i ∉ T, μ i (B i) = 1) :
     (restrictedHaar B hBcompact μ hμB).comap (levelMonoidHom B T) =
-      (Measure.pi fun i : T ↦ μ i.1).prod
-        (Measure.infinitePi fun i : {i // i ∉ T} ↦ (μ i.1).comap Subtype.val) := by
+      (Measure.pi fun i : T ↦ μ i.val).prod
+        (Measure.infinitePi fun i : {i // i ∉ T} ↦ (μ i.val).comap Subtype.val) := by
   classical
   obtain ⟨C, -, hCmeas, hCB, -, hpos, hlt⟩ := exists_compact_measurable_one_mem_interior B T μ
   refine comap_levelMonoidHom_eq B hBcompact μ (restrictedHaar B hBcompact μ hμB) hT hCB hpos hlt ?_
@@ -316,8 +318,9 @@ theorem restrictedHaar_box {T : Finset ι} (hT : ∀ i ∉ T, μ i (B i) = 1)
     {C : ∀ i, Set (G i)} (hCB : ∀ i ∉ T, C i = B i) :
     restrictedHaar B hBcompact μ hμB (box C) = ∏ i ∈ T, μ i (C i) := by
   have _ (i : {i // i ∉ T}) :
-      IsProbabilityMeasure ((μ i.1).comap (Subtype.val : B i.1 → G i.1)) :=
-    isProbabilityMeasure_comap_subtype (hBopen.out i.1).measurableSet (μ i.1) (hT i.1 i.2)
+      IsProbabilityMeasure ((μ i.val).comap (Subtype.val : B i.val → G i.val)) :=
+    isProbabilityMeasure_comap_subtype (hBopen.out i.val).measurableSet (μ i.val)
+        (hT i.val i.property)
   rw [← image_levelMonoidHom_pi_prod_univ B T hCB,
     ← (isOpenEmbedding_levelMonoidHom B T).measurableEmbedding.comap_apply,
     comap_levelMonoidHom_restrictedHaar B hBcompact μ hμB hT,
@@ -440,7 +443,7 @@ private theorem exists_normalized_localHaar :
       hμ'B_out i (Finset.mem_coe.not.mp hi)⟩
 
 section
-variable (hconv : Summable fun i : {i // i ∉ S} ↦ |(μ i.1 (B i.1)).toReal - 1|)
+variable (hconv : Summable fun i : {i // i ∉ S} ↦ |(μ i.val (B i.val)).toReal - 1|)
 include hconv
 
 /-- Evaluate the rescaled `restrictedHaar` measure on any coordinate box `box C` agreeing with `B`
@@ -451,9 +454,9 @@ private theorem smul_restrictedHaar_box (hBcompact' : ∀ᶠ i in cofinite, IsCo
     (hμ'_mem : ∀ i ∈ S, μ' i = μ i) (hμ'_notMem : ∀ i ∉ S, μ' i = ((μ i (B i)).toNNReal)⁻¹ • μ i)
     (hμ'B : ∀ᶠ i in cofinite, μ' i (B i) = 1)
     {T : Finset ι} (hST : S ⊆ T) {C : ∀ i, Set (G i)} (hCB : ∀ i ∉ T, C i = B i) :
-    (Real.toNNReal (∏' i : {i // i ∉ S}, (μ i.1 (B i.1)).toReal) •
+    (Real.toNNReal (∏' i : {i // i ∉ S}, (μ i.val (B i.val)).toReal) •
       restrictedHaar B hBcompact' μ' hμ'B) (box C) =
-      (∏ i ∈ T, μ i (C i)) * ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.1 (B i.1)).toReal) := by
+      (∏ i ∈ T, μ i (C i)) * ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.val (B i.val)).toReal) := by
   classical
   have hB_pos (i : ι) : 0 < μ i (B i) := (hBopen.out i).measure_pos (μ i) ⟨1, one_mem (B i)⟩
   have hB_lt_top {i : ι} (hi : i ∉ S) : μ i (B i) < ⊤ := (hBcompact i hi).measure_lt_top
@@ -467,9 +470,9 @@ private theorem smul_restrictedHaar_box (hBcompact' : ∀ᶠ i in cofinite, IsCo
     have hiS : i ∉ S := fun h ↦ hi (hST h)
     rw [hμ'_apply hiS, ENNReal.inv_mul_cancel (hB_pos i).ne' (hB_lt_top hiS).ne]
   -- Split the Euler factor outside `S` across `T \ S` and the tail outside `T`.
-  have hcS : (Real.toNNReal (∏' i : {i // i ∉ S}, (μ i.1 (B i.1)).toReal) : ℝ≥0∞) =
+  have hcS : (Real.toNNReal (∏' i : {i // i ∉ S}, (μ i.val (B i.val)).toReal) : ℝ≥0∞) =
       (∏ i ∈ T \ S, μ i (B i)) *
-        ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.1 (B i.1)).toReal) := by
+        ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.val (B i.val)).toReal) := by
     rw [ENNReal.ofNNReal_toNNReal,
       tprod_split_finset hST (fun i ↦ (μ i (B i)).toReal) (fun _ hi ↦ hB_toReal_pos hi) hconv,
       ENNReal.ofReal_mul
@@ -494,11 +497,11 @@ private theorem smul_restrictedHaar_box (hBcompact' : ∀ᶠ i in cofinite, IsCo
       hS, hTS, ← Finset.prod_union Finset.disjoint_sdiff, Finset.union_sdiff_of_subset hST]
   rw [coe_nnreal_smul_apply, restrictedHaar_box B hBcompact' μ' hμ'B hT_one hCB, hcS]
   calc ((∏ i ∈ T \ S, μ i (B i)) *
-          ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.1 (B i.1)).toReal)) * (∏ i ∈ T, μ' i (C i))
+          ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.val (B i.val)).toReal)) * (∏ i ∈ T, μ' i (C i))
       = ((∏ i ∈ T \ S, μ i (B i)) * (∏ i ∈ T, μ' i (C i))) *
-          ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.1 (B i.1)).toReal) := by ac_rfl
+          ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.val (B i.val)).toReal) := by ac_rfl
     _ = (∏ i ∈ T, μ i (C i)) *
-          ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.1 (B i.1)).toReal) := by rw [hprod]
+          ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.val (B i.val)).toReal) := by rw [hprod]
 
 /-- **Convergent restricted product of local Haar measures.**
 Given a finite exceptional set `S : Finset ι`, open subgroups `B i` that are compact outside `S`,
@@ -523,24 +526,24 @@ theorem exists_unique_convergentHaarProduct :
       ∀ (T : Finset ι), S ⊆ T → ∀ C : ∀ i, Set (G i),
         (∀ i, MeasurableSet (C i)) → (∀ i ∉ T, C i = B i) →
         ν (box C) = (∏ i ∈ T, μ i (C i)) *
-          ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.1 (B i.1)).toReal) := by
+          ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.val (B i.val)).toReal) := by
   classical
   obtain ⟨μ', _, -, hμ'_mem, hμ'_notMem, -, hBcompact', hμ'B⟩ :=
     exists_normalized_localHaar B S hBcompact μ
   have _ : LocallyCompactSpace (Πʳ i, [G i, B i]) := locallyCompactSpace_of_group G hBcompact'
-  have hcS_pos : 0 < ∏' i : {i // i ∉ S}, (μ i.1 (B i.1)).toReal :=
+  have hcS_pos : 0 < ∏' i : {i // i ∉ S}, (μ i.val (B i.val)).toReal :=
     tprod_pos_of_summable_abs_sub_one
       (fun i ↦ ENNReal.toReal_pos
-        ((hBopen.out i.1).measure_pos (μ i.1) ⟨1, one_mem (B i.1)⟩).ne'
-        (hBcompact i.1 i.2).measure_lt_top.ne) hconv
+        ((hBopen.out i.val).measure_pos (μ i.val) ⟨1, one_mem (B i.val)⟩).ne'
+        (hBcompact i.val i.property).measure_lt_top.ne) hconv
   let ν : Measure (Πʳ i, [G i, B i]) :=
-    Real.toNNReal (∏' i : {i // i ∉ S}, (μ i.1 (B i.1)).toReal) •
+    Real.toNNReal (∏' i : {i // i ∉ S}, (μ i.val (B i.val)).toReal) •
       restrictedHaar B hBcompact' μ' hμ'B
   have _ : ν.IsHaarMeasure := IsHaarMeasure.nnreal_smul _ (Real.toNNReal_pos.mpr hcS_pos).ne'
   have hν_box (T : Finset ι) (hST : S ⊆ T) (C : ∀ i, Set (G i))
       (_ : ∀ i, MeasurableSet (C i)) (hCB : ∀ i ∉ T, C i = B i) :
       ν (box C) = (∏ i ∈ T, μ i (C i)) *
-        ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.1 (B i.1)).toReal) :=
+        ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.val (B i.val)).toReal) :=
     smul_restrictedHaar_box B S hBcompact μ hconv hBcompact' μ' hμ'_mem hμ'_notMem hμ'B hST hCB
   refine ⟨ν, ⟨inferInstance, hν_box⟩, fun ν' ⟨_, hν'_box⟩ ↦ ?_⟩
   obtain ⟨C, -, hCmeas, hCB, -, hpos, hlt⟩ := exists_compact_measurable_one_mem_interior B S μ
@@ -573,7 +576,7 @@ theorem convergentHaarProduct_unique {ν : Measure (Πʳ i, [G i, B i])} [ν.IsH
     (hν : ∀ (T : Finset ι), S ⊆ T → ∀ C : ∀ i, Set (G i),
       (∀ i, MeasurableSet (C i)) → (∀ i ∉ T, C i = B i) →
       ν (box C) = (∏ i ∈ T, μ i (C i)) *
-        ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.1 (B i.1)).toReal)) :
+        ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.val (B i.val)).toReal)) :
     ν = convergentHaarProduct B S hBcompact μ hconv :=
   (exists_unique_convergentHaarProduct B S hBcompact μ hconv).choose_spec.2 ν ⟨inferInstance, hν⟩
 
@@ -590,14 +593,14 @@ theorem convergentHaarProduct_eq_smul_restrictedHaar
     (hμ'_mem : ∀ i ∈ S, μ' i = μ i) (hμ'_notMem : ∀ i ∉ S, μ' i = ((μ i (B i)).toNNReal)⁻¹ • μ i)
     (hμ'B : ∀ᶠ i in cofinite, μ' i (B i) = 1) :
     convergentHaarProduct B S hBcompact μ hconv =
-      Real.toNNReal (∏' i : {i // i ∉ S}, (μ i.1 (B i.1)).toReal) •
+      Real.toNNReal (∏' i : {i // i ∉ S}, (μ i.val (B i.val)).toReal) •
         restrictedHaar B hBcompact' μ' hμ'B := by
-  have hcS_pos : 0 < ∏' i : {i // i ∉ S}, (μ i.1 (B i.1)).toReal :=
+  have hcS_pos : 0 < ∏' i : {i // i ∉ S}, (μ i.val (B i.val)).toReal :=
     tprod_pos_of_summable_abs_sub_one
       (fun i ↦ ENNReal.toReal_pos
-        ((hBopen.out i.1).measure_pos (μ i.1) ⟨1, one_mem (B i.1)⟩).ne'
-        (hBcompact i.1 i.2).measure_lt_top.ne) hconv
-  have _ : (Real.toNNReal (∏' i : {i // i ∉ S}, (μ i.1 (B i.1)).toReal) •
+        ((hBopen.out i.val).measure_pos (μ i.val) ⟨1, one_mem (B i.val)⟩).ne'
+        (hBcompact i.val i.property).measure_lt_top.ne) hconv
+  have _ : (Real.toNNReal (∏' i : {i // i ∉ S}, (μ i.val (B i.val)).toReal) •
       restrictedHaar B hBcompact' μ' hμ'B).IsHaarMeasure :=
     IsHaarMeasure.nnreal_smul _ (Real.toNNReal_pos.mpr hcS_pos).ne'
   exact (convergentHaarProduct_unique B S hBcompact μ hconv fun _ hST _ _ hCB ↦
@@ -611,7 +614,7 @@ finite set `T ⊇ S`. No measurability assumption on `C i` is needed. -/
 theorem convergentHaarProduct_box {T : Finset ι} (hST : S ⊆ T) {C : ∀ i, Set (G i)}
     (hCB : ∀ i ∉ T, C i = B i) :
     convergentHaarProduct B S hBcompact μ hconv (box C) =
-      (∏ i ∈ T, μ i (C i)) * ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.1 (B i.1)).toReal) := by
+      (∏ i ∈ T, μ i (C i)) * ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.val (B i.val)).toReal) := by
   obtain ⟨μ', _, -, hμ'_mem, hμ'_notMem, -, hBcompact', hμ'B⟩ :=
     exists_normalized_localHaar B S hBcompact μ
   rw [convergentHaarProduct_eq_smul_restrictedHaar B S hBcompact μ hconv hBcompact' μ' hμ'_mem
@@ -643,8 +646,8 @@ theorem convergentHaarProduct_eq_of_subset (B : ∀ i, K i) [Fact (∀ i, IsOpen
     (hBcompact : ∀ i ∉ S, IsCompact (B i : Set (G i)))
     (hBcompact' : ∀ i ∉ S', IsCompact (B i : Set (G i)))
     (μ : ∀ i, Measure (G i)) [∀ i, (μ i).IsHaarMeasure]
-    (hconv : Summable fun i : {i // i ∉ S} ↦ |(μ i.1 (B i.1)).toReal - 1|)
-    (hconv' : Summable fun i : {i // i ∉ S'} ↦ |(μ i.1 (B i.1)).toReal - 1|) :
+    (hconv : Summable fun i : {i // i ∉ S} ↦ |(μ i.val (B i.val)).toReal - 1|)
+    (hconv' : Summable fun i : {i // i ∉ S'} ↦ |(μ i.val (B i.val)).toReal - 1|) :
     convergentHaarProduct B S hBcompact μ hconv =
       convergentHaarProduct B S' hBcompact' μ hconv' :=
   convergentHaarProduct_unique B S' hBcompact' μ hconv' fun _ hS'T _ _ hCB ↦
@@ -661,8 +664,8 @@ theorem convergentHaarProduct_congr_finset (B : ∀ i, K i) [Fact (∀ i, IsOpen
     (hBcompact : ∀ i ∉ S, IsCompact (B i : Set (G i)))
     (hBcompact' : ∀ i ∉ S', IsCompact (B i : Set (G i)))
     (μ : ∀ i, Measure (G i)) [∀ i, (μ i).IsHaarMeasure]
-    (hconv : Summable fun i : {i // i ∉ S} ↦ |(μ i.1 (B i.1)).toReal - 1|)
-    (hconv' : Summable fun i : {i // i ∉ S'} ↦ |(μ i.1 (B i.1)).toReal - 1|) :
+    (hconv : Summable fun i : {i // i ∉ S} ↦ |(μ i.val (B i.val)).toReal - 1|)
+    (hconv' : Summable fun i : {i // i ∉ S'} ↦ |(μ i.val (B i.val)).toReal - 1|) :
     convergentHaarProduct B S hBcompact μ hconv =
       convergentHaarProduct B S' hBcompact' μ hconv' := by
   classical
@@ -684,7 +687,7 @@ theorem convergentHaarProduct_eq_restrictedHaar (B : ∀ i, K i)
     (hBcompact' : ∀ᶠ i in cofinite, IsCompact (B i : Set (G i)))
     (μ : ∀ i, Measure (G i)) [∀ i, (μ i).IsHaarMeasure]
     (hμB : ∀ᶠ i in cofinite, μ i (B i) = 1)
-    (hconv : Summable fun i : {i // i ∉ S} ↦ |(μ i.1 (B i.1)).toReal - 1|) :
+    (hconv : Summable fun i : {i // i ∉ S} ↦ |(μ i.val (B i.val)).toReal - 1|) :
     convergentHaarProduct B S hBcompact μ hconv = restrictedHaar B hBcompact' μ hμB := by
   classical
   let S₁ : Finset ι := S ∪ (mem_cofinite.mp hμB).toFinset
@@ -697,8 +700,8 @@ theorem convergentHaarProduct_eq_restrictedHaar (B : ∀ i, K i)
   rw [convergentHaarProduct_eq_of_subset B hSS₁ hBcompact hBcompact₁ μ hconv hconv₁]
   refine (convergentHaarProduct_unique B S₁ hBcompact₁ μ hconv₁ fun T hS₁T C _ hCB ↦ ?_).symm
   rw [restrictedHaar_box B hBcompact' μ hμB (fun i hiT ↦ hμB₁ i fun h ↦ hiT (hS₁T h)) hCB]
-  have htail : (∏' i : {i // i ∉ T}, (μ i.1 (B i.1)).toReal) = 1 := by
-    simp [fun i : {i // i ∉ T} ↦ hμB₁ i.1 fun h ↦ i.2 (hS₁T h)]
+  have htail : (∏' i : {i // i ∉ T}, (μ i.val (B i.val)).toReal) = 1 := by
+    simp [fun i : {i // i ∉ T} ↦ hμB₁ i.val fun h ↦ i.property (hS₁T h)]
   simp [htail]
 
 /-- Pulling `convergentHaarProduct` back along `levelMonoidHom B T` for any finite set `T ⊇ S`
@@ -714,13 +717,13 @@ theorem comap_levelMonoidHom_convergentHaarProduct (B : ∀ i, K i)
     [hBopen : Fact (∀ i, IsOpen (B i : Set (G i)))]
     (S : Finset ι) (hBcompact : ∀ i ∉ S, IsCompact (B i : Set (G i)))
     (μ : ∀ i, Measure (G i)) [∀ i, (μ i).IsHaarMeasure]
-    (hconv : Summable fun i : {i // i ∉ S} ↦ |(μ i.1 (B i.1)).toReal - 1|)
+    (hconv : Summable fun i : {i // i ∉ S} ↦ |(μ i.val (B i.val)).toReal - 1|)
     {T : Finset ι} (hST : S ⊆ T) :
     (convergentHaarProduct B S hBcompact μ hconv).comap (levelMonoidHom B T) =
-      ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.1 (B i.1)).toReal) •
-        (Measure.pi fun i : T ↦ μ i.1).prod
+      ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.val (B i.val)).toReal) •
+        (Measure.pi fun i : T ↦ μ i.val).prod
           (Measure.infinitePi fun i : {i // i ∉ T} ↦
-            (μ i.1 (B i.1))⁻¹ • (μ i.1).comap Subtype.val) := by
+            (μ i.val (B i.val))⁻¹ • (μ i.val).comap Subtype.val) := by
   have hBcompactT (i : ι) (hi : i ∉ T) : IsCompact (B i : Set (G i)) :=
     hBcompact i fun h ↦ hi (hST h)
   have hconvT := summable_notMem_of_subset hST (fun i ↦ |(μ i (B i)).toReal - 1|) hconv
@@ -732,11 +735,11 @@ theorem comap_levelMonoidHom_convergentHaarProduct (B : ∀ i, K i)
     ← Measure.coe_nnreal_smul, ENNReal.ofNNReal_toNNReal, Measure.comap_smul,
     comap_levelMonoidHom_restrictedHaar B hBcompact' μ' hμ'B hμ'B_out]
   congr 2
-  · exact congrArg Measure.pi (funext fun i ↦ hμ'_mem i.1 i.2)
+  · exact congrArg Measure.pi (funext fun i ↦ hμ'_mem i.val i.property)
   · refine congrArg Measure.infinitePi (funext fun i ↦ ?_)
-    have hpos := (hBopen.out i.1).measure_pos (μ i.1) ⟨1, one_mem (B i.1)⟩
-    have hlt : μ i.1 (B i.1) < ⊤ := (hBcompactT i.1 i.2).measure_lt_top
-    rw [hμ'_notMem i.1 i.2, ← Measure.coe_nnreal_smul,
+    have hpos := (hBopen.out i.val).measure_pos (μ i.val) ⟨1, one_mem (B i.val)⟩
+    have hlt : μ i.val (B i.val) < ⊤ := (hBcompactT i.val i.property).measure_lt_top
+    rw [hμ'_notMem i.val i.property, ← Measure.coe_nnreal_smul,
       ENNReal.coe_inv (ENNReal.toNNReal_pos hpos.ne' hlt.ne).ne',
       ENNReal.coe_toNNReal hlt.ne, Measure.comap_smul]
 
@@ -753,8 +756,8 @@ theorem map_restrictedProductCongr_convergentHaarProduct (U U' : ∀ i, Subgroup
     (hUcompact : ∀ i ∉ S, IsCompact (U i : Set (G i)))
     (hU'compact : ∀ i ∉ S', IsCompact (U' i : Set (G i)))
     (μ : ∀ i, Measure (G i)) [∀ i, (μ i).IsHaarMeasure]
-    (hconv : Summable fun i : {i // i ∉ S} ↦ |(μ i.1 (U i.1)).toReal - 1|)
-    (hconv' : Summable fun i : {i // i ∉ S'} ↦ |(μ i.1 (U' i.1)).toReal - 1|) :
+    (hconv : Summable fun i : {i // i ∉ S} ↦ |(μ i.val (U i.val)).toReal - 1|)
+    (hconv' : Summable fun i : {i // i ∉ S'} ↦ |(μ i.val (U' i.val)).toReal - 1|) :
     (convergentHaarProduct U S hUcompact μ hconv).map (restrictedProductCongr U U' h) =
       convergentHaarProduct U' S' hU'compact μ hconv' := by
   classical
@@ -785,7 +788,8 @@ theorem map_restrictedProductCongr_convergentHaarProduct (U U' : ∀ i, Subgroup
       hμ'_mem (fun i hi ↦ hUU' i hi ▸ hμ'_notMem i hi) hμ'U',
     Measure.map_smul _ (continuous_restrictedProductCongr U U' h).measurable.aemeasurable,
     map_restrictedProductCongr_restrictedHaar U U' h hUcompact_cof hU'compact_cof μ' hμ'U hμ'U']
-  exact congrArg (· • _) (congrArg Real.toNNReal (tprod_congr fun i ↦ by rw [hUU' i.1 i.2]))
+  exact congrArg (· • _) (congrArg Real.toNNReal
+      (tprod_congr fun i ↦ by rw [hUU' i.val i.property]))
 
 end ConvergentHaarProduct
 

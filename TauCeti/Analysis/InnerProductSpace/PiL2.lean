@@ -418,7 +418,7 @@ theorem snd_sumComplEquivProd_eq_zero_iff {x : EuclideanSpace 𝕜 ι} :
   refine ⟨fun h i hi ↦ ?_, fun h ↦ ?_⟩
   · simpa using congr($h ⟨i, hi⟩)
   · ext i
-    simpa using h i i.2
+    simpa using h i i.property
 
 /-- The cell condition `‖u‖² ≤ ε`, `v = 0` on the components `(u, v)` of the splitting along `p`
 says that `‖x‖² ≤ ε` and that the coordinates not satisfying `p` vanish. -/
@@ -444,8 +444,8 @@ theorem inner_fst_sumComplEquivProd (x : EuclideanSpace 𝕜 ι) (u : EuclideanS
     inner 𝕜 (sumComplEquivProd 𝕜 p x).1 u = inner 𝕜 x ((sumComplEquivProd 𝕜 p).symm (u, 0)) := by
   simp only [PiLp.inner_apply, sumComplEquivProd_apply_fst, sumComplEquivProd_symm_apply]
   rw [← Fintype.sum_subtype_add_sum_subtype p]
-  have hpos (i : {i // p i}) : p i := i.2
-  have hneg (i : {i // ¬p i}) : ¬p i := i.2
+  have hpos (i : {i // p i}) : p i := i.property
+  have hneg (i : {i // ¬p i}) : ¬p i := i.property
   simp [hpos, hneg]
 
 end sumCompl
@@ -464,7 +464,7 @@ def finCastLEEquiv (hm : m ≤ n) :
 
 @[simp]
 theorem finCastLEEquiv_apply (hm : m ≤ n) (w : EuclideanSpace 𝕜 (Fin m))
-    (j : {j : Fin n // j.val < m}) : finCastLEEquiv 𝕜 hm w j = w ⟨j.1, j.2⟩ := by
+    (j : {j : Fin n // j.val < m}) : finCastLEEquiv 𝕜 hm w j = w ⟨j.val, j.property⟩ := by
   simp only [finCastLEEquiv, LinearIsometryEquiv.piLpCongrLeft_apply, Equiv.piCongrLeft'_apply,
     OrderIso.coe_symm_toEquiv]
   -- `Fin.castLEOrderIso_symm_apply` is stated with `RelIso.symm`, so `simp` cannot rewrite with it.
@@ -472,7 +472,7 @@ theorem finCastLEEquiv_apply (hm : m ≤ n) (w : EuclideanSpace 𝕜 (Fin m))
 
 @[simp]
 theorem finCastLEEquiv_symm_apply (hm : m ≤ n) (v : EuclideanSpace 𝕜 {j : Fin n // j.val < m})
-    (i : Fin m) : (finCastLEEquiv 𝕜 hm).symm v i = v ⟨Fin.castLE hm i, i.2⟩ := by
+    (i : Fin m) : (finCastLEEquiv 𝕜 hm).symm v i = v ⟨Fin.castLE hm i, i.isLt⟩ := by
   simp [finCastLEEquiv, Equiv.piCongrLeft'_apply]
 
 /-- Inserting `w : 𝕜ᵐ` as the first factor of the splitting along `j < m`, with zero second
@@ -614,7 +614,7 @@ orthogonal projection onto each `N i`. -/
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [e.apply_coe_submodulePiLp_symm M N hMN, PiLp.toLp_apply,
     Submodule.coe_orthogonalProjectionOnto_apply, ← (N j).inner_starProjection_left_eq_right,
-    (N j).starProjection_eq_self_iff.mpr ((hMN w.1).mp w.2 j)]
+    (N j).starProjection_eq_self_iff.mpr ((hMN w.val).mp w.property j)]
 
 /-- If `e : X ≃ₗᵢ[𝕜] PiLp 2 F` characterizes `M` coordinatewise by `N`, then `M.starProjection`
 acts coordinatewise as `(N i).starProjection`. -/

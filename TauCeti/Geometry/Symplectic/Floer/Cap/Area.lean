@@ -162,7 +162,7 @@ private theorem coe_concatReparamI (s : unitInterval) :
   (rfl)
 
 private theorem continuous_concatReparamI : Continuous concatReparamI :=
-  (continuous_concatReparam.comp continuous_subtype_val).subtype_mk _
+  (continuous_concatReparam.comp continuous_subtypeVal).subtype_mk _
 
 private theorem concatReparamI_zero : concatReparamI 0 = 0 :=
   Subtype.ext <| by

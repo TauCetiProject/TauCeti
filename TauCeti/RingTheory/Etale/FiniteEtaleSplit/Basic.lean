@@ -261,11 +261,11 @@ theorem isFiniteSplit [PreconnectedSpace (PrimeSpectrum R)] (h : IsTotallySplit 
   -- The factors with `e j ≠ 1` have `e j = 0`, so they are zero rings.
   have (j : {j // ¬e j = 1}) : Subsingleton (Q j) :=
     Ideal.Quotient.subsingleton_iff.mpr <| by
-      simp [(he j).eq_zero_or_eq_one_of_preconnectedSpace.resolve_right j.2]
+      simp [(he j).eq_zero_or_eq_one_of_preconnectedSpace.resolve_right j.property]
   let : Unique ((j : {j // ¬e j = 1}) → Q j) := uniqueOfSubsingleton 0
   -- The factors with `e j = 1` are copies of `R`.
   let ψ (j : {j // e j = 1}) : Q j ≃ₐ[R] R :=
-    (Ideal.quotientEquivAlgOfEq R (by simp [j.2])).trans (AlgEquiv.quotientBot R R)
+    (Ideal.quotientEquivAlgOfEq R (by simp [j.property])).trans (AlgEquiv.quotientBot R R)
   -- Split the product along `e j = 1`; `algebraMap` into a product is componentwise, so the
   -- splitting `RingEquiv` commutes with it by `rfl`.
   exact .of_algEquiv <| (φ.trans <|

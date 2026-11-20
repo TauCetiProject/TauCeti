@@ -191,7 +191,7 @@ theorem eventually_curvatureTensor_rescale_eq_zero_iff_of_eventuallyEq_opens
         curvatureTensor_leviCivitaConnection_eq_of_eventually_inner_eq hy]
   constructor
   · intro hflat
-    filter_upwards [(continuous_subtype_val.tendsto xW).eventually hflat, hpt] with y hy hyiff
+    filter_upwards [(continuous_subtypeVal.tendsto xW).eventually hflat, hpt] with y hy hyiff
     exact hyiff.1 hy
   · intro hflat
     have hWflat : ∀ᶠ y : W in 𝓝 xW,
@@ -239,13 +239,13 @@ theorem isLocallyConformallyFlatAt_iff_exists_opens_curvatureTensor_rescale_eq_z
     obtain ⟨U, hUflat, hUopen, hxU⟩ := eventually_nhds_iff.1 hflat
     let W : Opens M := ⟨U, hUopen⟩
     have hEq := g.restrictOpenTangentSpace_rescale W f hf hf_pos
-    refine ⟨W, hxU, f ∘ Subtype.val, hf.comp contMDiff_subtype_val, fun y ↦ hf_pos y.1, fun y ↦ ?_⟩
+    refine ⟨W, hxU, f ∘ Subtype.val, hf.comp contMDiff_subtypeVal, fun y ↦ hf_pos y.val, fun y ↦ ?_⟩
     let _ : RiemannianBundle (fun z : W ↦ TangentSpace I z) :=
       ⟨((g.rescale f hf hf_pos).restrictOpenTangentSpace W).toRiemannianMetric⟩
     rw [curvatureTensor_leviCivitaConnection_eq_of_riemannianBundle_eq
       (congrArg ContMDiffRiemannianMetric.toRiemannianMetric hEq) y]
     exact (curvatureTensor_leviCivitaConnection_restrictOpenTangentSpace_eq_zero_iff
-      (g.rescale f hf hf_pos) W y).2 (hUflat y.1 y.2)
+      (g.rescale f hf hf_pos) W y).2 (hUflat y.val y.property)
   · rintro ⟨W, hxW, φ, hφ, hφ_pos, hflat⟩
     exact g.isLocallyConformallyFlatAt_of_opens hxW hφ hφ_pos (Eventually.of_forall hflat)
 
@@ -272,9 +272,9 @@ theorem IsLocallyConformallyFlatAt.restrictOpenTangentSpace
     (g.restrictOpenTangentSpace U).IsLocallyConformallyFlatAt x := by
   obtain ⟨f, hf, hf_pos, hflat⟩ := g.isLocallyConformallyFlatAt_iff.1 hg
   exact (g.restrictOpenTangentSpace U).isLocallyConformallyFlatAt_iff.2
-    ⟨f ∘ Subtype.val, hf.comp contMDiff_subtype_val, fun y ↦ hf_pos y.1,
+    ⟨f ∘ Subtype.val, hf.comp contMDiff_subtypeVal, fun y ↦ hf_pos y.val,
       (g.eventually_curvatureTensor_rescale_eq_zero_iff_of_eventuallyEq_opens x hf hf_pos
-        (hf.comp contMDiff_subtype_val) (fun y ↦ hf_pos y.1) EventuallyEq.rfl).1 hflat⟩
+        (hf.comp contMDiff_subtypeVal) (fun y ↦ hf_pos y.val) EventuallyEq.rfl).1 hflat⟩
 
 /-- Restricting a locally conformally flat metric to an open submanifold yields a locally
 conformally flat metric. -/
@@ -283,7 +283,7 @@ theorem IsLocallyConformallyFlat.restrictOpenTangentSpace
     (hg : g.IsLocallyConformallyFlat) (U : Opens M) :
     (g.restrictOpenTangentSpace U).IsLocallyConformallyFlat :=
   (g.restrictOpenTangentSpace U).isLocallyConformallyFlat_iff_forall_isLocallyConformallyFlatAt.2
-    fun x ↦ (hg.isLocallyConformallyFlatAt x.1).restrictOpenTangentSpace
+    fun x ↦ (hg.isLocallyConformallyFlatAt x.val).restrictOpenTangentSpace
 
 /-- **Locality of `IsLocallyConformallyFlat`.** A smooth metric `g` is locally conformally flat if
 and only if every point has an open neighbourhood on which the restricted metric is locally
@@ -369,7 +369,7 @@ theorem isLocallyConformallyFlatAt_iff_exists_riemannianIsometry_ball_of_isInter
         (g.rescale f hf hf_pos) hx₀).1 hflat
     have hEq := congrArg ContMDiffRiemannianMetric.toRiemannianMetric
       (g.restrictOpenTangentSpace_rescale W f hf hf_pos)
-    exact ⟨W, hx₀W, r, hr, f ∘ Subtype.val, hf.comp contMDiff_subtype_val, fun y ↦ hf_pos y.1,
+    exact ⟨W, hx₀W, r, hr, f ∘ Subtype.val, hf.comp contMDiff_subtypeVal, fun y ↦ hf_pos y.val,
       hEq ▸ ⟨Ψ, hΨ₀⟩⟩
   · rintro ⟨W, hx₀W, r, -, φ, hφ, hφ_pos, Ψ, -⟩
     let _ : RiemannianBundle (fun z : W ↦ TangentSpace I z) :=

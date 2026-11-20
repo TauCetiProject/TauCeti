@@ -277,11 +277,11 @@ theorem isQuotient_iff_image_ball {f : NormedAddGroupHom M N} :
 /-- A normed quotient map expresses the seminorm of every `y` as the infimum of the seminorms of
 its preimages. -/
 theorem IsQuotient.norm_eq_iInf {f : NormedAddGroupHom M N} (hf : f.IsQuotient) (y : N) :
-    ‖y‖ = ⨅ x : {x : M // f x = y}, ‖x.1‖ := by
+    ‖y‖ = ⨅ x : {x : M // f x = y}, ‖x.val‖ := by
   have : Nonempty {x : M // f x = y} := nonempty_subtype.mpr (hf.surjective y)
-  have hbdd : BddBelow (Set.range fun x : {x : M // f x = y} ↦ ‖x.1‖) :=
-    ⟨0, Set.forall_mem_range.mpr fun x ↦ norm_nonneg x.1⟩
-  refine le_antisymm (le_ciInf fun x ↦ by simpa [x.2] using hf.norm_le x.1) ?_
+  have hbdd : BddBelow (Set.range fun x : {x : M // f x = y} ↦ ‖x.val‖) :=
+    ⟨0, Set.forall_mem_range.mpr fun x ↦ norm_nonneg x.val⟩
+  refine le_antisymm (le_ciInf fun x ↦ by simpa [x.property] using hf.norm_le x.val) ?_
   refine le_of_forall_pos_lt_add fun ε hε ↦ ?_
   obtain ⟨x, hx, hlt⟩ := hf.norm_lift hε y
   exact (ciInf_le hbdd ⟨x, hx⟩).trans_lt hlt
@@ -291,12 +291,12 @@ if and only if it has norm at most one, is surjective, and expresses every targe
 infimum over preimages. -/
 theorem isQuotient_iff_iInf {f : NormedAddGroupHom M N} :
     f.IsQuotient ↔
-      ‖f‖ ≤ 1 ∧ Function.Surjective f ∧ ∀ y : N, ‖y‖ = ⨅ x : {x : M // f x = y}, ‖x.1‖ := by
+      ‖f‖ ≤ 1 ∧ Function.Surjective f ∧ ∀ y : N, ‖y‖ = ⨅ x : {x : M // f x = y}, ‖x.val‖ := by
   refine ⟨fun hf ↦ ⟨hf.norm_le_one, hf.surjective, hf.norm_eq_iInf⟩, ?_⟩
   rintro ⟨h₁, hsurj, hiInf⟩
   refine .of_norm_lift h₁ fun {ε} hε y ↦ ?_
   have : Nonempty {x : M // f x = y} := nonempty_subtype.mpr (hsurj y)
-  have hlt : (⨅ x : {x : M // f x = y}, ‖x.1‖) < ‖y‖ + ε := by
+  have hlt : (⨅ x : {x : M // f x = y}, ‖x.val‖) < ‖y‖ + ε := by
     rw [← hiInf y]
     exact lt_add_of_pos_right ‖y‖ hε
   obtain ⟨⟨x, hx⟩, hxlt⟩ := exists_lt_of_ciInf_lt hlt

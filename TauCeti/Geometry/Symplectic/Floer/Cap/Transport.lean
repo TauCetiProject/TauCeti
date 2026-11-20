@@ -148,7 +148,7 @@ def transport (p : Path x y) :
     ⟨⟨Additive.ofMul (homotopyGroupTransport p (k : Additive (π_ 2 X x)).toMul), by
       rw [AddMonoidHom.mem_ker, SphericalPeriodGroup.ofHomotopyGroup_homotopyGroupTransport,
         ofMul_toMul]
-      exact k.2⟩, by
+      exact k.property⟩, by
       rw [← hk]
       exact (RawCap.transport_vadd p _ D').symm⟩
 

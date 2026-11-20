@@ -212,15 +212,15 @@ pants. -/
 private theorem src_src_eq_src_tgt {x : (pantsGraph centre hole).V}
     (d : ((pantsPolygon centre hole).vertexLink x).E) :
     (pantsGraph (none : Option (Fin 3)) some).src
-        (((pantsPolygon centre hole).vertexLink x).src d).1 =
+        (((pantsPolygon centre hole).vertexLink x).src d).val =
       (pantsGraph (none : Option (Fin 3)) some).src
-        (((pantsPolygon centre hole).vertexLink x).tgt d).1 := by
+        (((pantsPolygon centre hole).vertexLink x).tgt d).val := by
   obtain ⟨c, _ | _⟩ := d
   · exact (congrArg (pantsGraph (none : Option (Fin 3)) some).src (vertexLink_src_false _ c)).trans
-      ((src_outgoing_pantsPolygon centre hole c.1).symm.trans
+      ((src_outgoing_pantsPolygon centre hole c.val).symm.trans
         (congrArg (pantsGraph (none : Option (Fin 3)) some).src (vertexLink_src_true _ c)).symm)
   · exact (congrArg (pantsGraph (none : Option (Fin 3)) some).src (vertexLink_src_true _ c)).trans
-      ((src_outgoing_pantsPolygon centre hole c.1).trans
+      ((src_outgoing_pantsPolygon centre hole c.val).trans
         (congrArg (pantsGraph (none : Option (Fin 3)) some).src (vertexLink_src_false _ c)).symm)
 
 /-- Germs joined by a path in a vertex link of the pants polygon start at the same vertex of the
@@ -228,14 +228,14 @@ pair of pants. -/
 private theorem src_eq_of_path {x : (pantsGraph centre hole).V}
     {a b : ((pantsPolygon centre hole).vertexLink x).V}
     (p : ((pantsPolygon centre hole).vertexLink x).Path a b) :
-    (pantsGraph (none : Option (Fin 3)) some).src a.1 =
-      (pantsGraph (none : Option (Fin 3)) some).src b.1 := by
+    (pantsGraph (none : Option (Fin 3)) some).src a.val =
+      (pantsGraph (none : Option (Fin 3)) some).src b.val := by
   induction p with
   | nil => rfl
   | cons _ d ih =>
-    exact ih.trans ((congrArg (fun y => (pantsGraph (none : Option (Fin 3)) some).src y.1)
-      d.2.1).symm.trans ((src_src_eq_src_tgt centre hole d.1).trans
-        (congrArg (fun y => (pantsGraph (none : Option (Fin 3)) some).src y.1) d.2.2)))
+    exact ih.trans ((congrArg (fun y => (pantsGraph (none : Option (Fin 3)) some).src y.val)
+      d.property.1).symm.trans ((src_src_eq_src_tgt centre hole d.val).trans
+        (congrArg (fun y => (pantsGraph (none : Option (Fin 3)) some).src y.val) d.property.2)))
 
 variable {centre hole}
 

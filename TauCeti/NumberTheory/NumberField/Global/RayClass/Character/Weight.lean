@@ -105,7 +105,7 @@ noncomputable def toUnitaryIdealWeight (χ : RayClassCharacter 𝔪) :
 /-- The underlying multiplicative weight of the unitary extension. -/
 @[simp]
 theorem val_toUnitaryIdealWeight (χ : RayClassCharacter 𝔪) :
-    χ.toUnitaryIdealWeight.1 = χ.toMultiplicativeIdealWeight := by
+    χ.toUnitaryIdealWeight.val = χ.toMultiplicativeIdealWeight := by
   simp [toUnitaryIdealWeight]
 
 /-- The unitary extension respects pointwise multiplication of characters. -/

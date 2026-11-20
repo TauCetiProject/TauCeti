@@ -58,18 +58,18 @@ its base set, as a linear map to native vector-valued smooth maps. -/
 def frameCoordinates : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] C^n⟮I, U; 𝓘(𝕜, F), F⟯ where
   toFun s := ⟨fun x => (e ⟨(x : M), s x⟩).2, fun x =>
     (contMDiffAt_subtype_iff (f := fun y => (e ⟨y, s y⟩).2)).mpr
-      ((e.contMDiffAt_section_iff (hU x.2)).mp (s.contMDiff x))⟩
+      ((e.contMDiffAt_section_iff (hU x.property)).mp (s.contMDiff x))⟩
   map_add' s t := by
     ext x
     -- Unpack the bundled maps before applying fibrewise linearity.
     change (e ⟨(x : M), s x + t x⟩).2 = (e ⟨(x : M), s x⟩).2 +
       (e ⟨(x : M), t x⟩).2
-    simp only [← e.continuousLinearMapAt_apply_of_mem 𝕜 (hU x.2), map_add]
+    simp only [← e.continuousLinearMapAt_apply_of_mem 𝕜 (hU x.property), map_add]
   map_smul' c s := by
     ext x
     -- Unpack the bundled maps before applying fibrewise linearity.
     change (e ⟨(x : M), c • s x⟩).2 = c • (e ⟨(x : M), s x⟩).2
-    simp only [← e.continuousLinearMapAt_apply_of_mem 𝕜 (hU x.2), map_smul]
+    simp only [← e.continuousLinearMapAt_apply_of_mem 𝕜 (hU x.property), map_smul]
 
 /-- Frame coordinates are the fibre component of the given trivialization. -/
 @[simp]
@@ -83,7 +83,7 @@ theorem frameCoordinates_eq_iff (s t : Cₛ^n⟮I; F, V⟯) (x : U) :
   constructor
   · intro h
     rw [frameCoordinates_apply, frameCoordinates_apply] at h
-    simpa only [e.symm_apply_apply_mk (hU x.2)] using congrArg (e.symm x) h
+    simpa only [e.symm_apply_apply_mk (hU x.property)] using congrArg (e.symm x) h
   · intro h
     simp only [frameCoordinates_apply, h]
 
@@ -92,8 +92,8 @@ theorem frameCoordinates_coordChange (e' : Trivialization F (π F V))
     [MemTrivializationAtlas e'] (hU' : (U : Set M) ⊆ e'.baseSet)
     (s : Cₛ^n⟮I; F, V⟯) (x : U) :
     e.coordChangeL 𝕜 e' x (frameCoordinates e hU s x) = frameCoordinates e' hU' s x := by
-  simp only [frameCoordinates_apply, e.coordChangeL_apply e' ⟨hU x.2, hU' x.2⟩,
-    e.symm_apply_apply_mk (hU x.2)]
+  simp only [frameCoordinates_apply, e.coordChangeL_apply e' ⟨hU x.property, hU' x.property⟩,
+    e.symm_apply_apply_mk (hU x.property)]
 
 /-- Coefficients in a second frame are obtained by the smooth transition multiplier. -/
 theorem frameCoordinates_eq_clmApply (e' : Trivialization F (π F V))
@@ -160,7 +160,7 @@ theorem chartDerivativeSeminorm_eq_zero_of_eventuallyEq_zero (x : U)
     have hz' : (((extChartAt I x).symm z : U) : M) ∈ Subtype.val '' ((extChartAt I x).symm ''
         (Subtype.val '' (K : Set (extChartAt I x).target))) :=
       ⟨_, ⟨z, ⟨z, hz, rfl⟩, rfl⟩, rfl⟩
-    have hnhds := (continuous_subtype_val.continuousAt
+    have hnhds := (continuous_subtypeVal.continuousAt
       (x := (extChartAt I x).symm z)).eventually (hs.filter_mono (nhds_le_nhdsSet hz'))
     filter_upwards [hnhds] with y hy
     exact (frameCoordinates_eq_iff e hU s 0 y).mpr (by simpa using hy) |>.trans (by simp)
@@ -302,7 +302,7 @@ private theorem eqOn_frameCoordinates_comp_symm
   simp only [Function.comp_apply, frameCoordinates_apply, ContinuousLinearEquiv.coe_coe]
   rw [hpt, ← hcoe₁]
   exact ((e₂.coordChangeL_apply e₁ ⟨hU₂ (by rw [hcoe₁]; exact (hmemS w hw).1),
-    hU₁ ((extChartAt I x₁).symm w).2⟩ _).trans
+    hU₁ ((extChartAt I x₁).symm w).property⟩ _).trans
     (congrArg (fun v ↦ (e₁ ⟨((extChartAt I x₁).symm w : M), v⟩).2)
       (e₂.symm_apply_apply_mk (hU₂ (by rw [hcoe₁]; exact (hmemS w hw).1)) _))).symm
 
@@ -333,7 +333,7 @@ theorem exists_chartCkSeminorm_le_coordChange
       (inter_subset_left.trans (U₁.extChartAt_target_subset x₁)) fun z hz ↦
         ⟨hU₂ (hmemS z hz).1, hU₁ (by
           rw [← U₁.coe_extChartAt_symm_apply x₁ hz.1]
-          exact ((extChartAt I x₁).symm z).2)⟩).of_le hk
+          exact ((extChartAt I x₁).symm z).property)⟩).of_le hk
   have hτ : ContDiffOn 𝕜 k τ S :=
     ((I.contDiffOn_extendCoordChange (StructureGroupoid.chart_mem_maximalAtlas _ (x₁ : M))
       (StructureGroupoid.chart_mem_maximalAtlas _ (x₂ : M))).mono hSτ).of_le hk
@@ -342,7 +342,7 @@ theorem exists_chartCkSeminorm_le_coordChange
       (hL.of_le (Nat.cast_le.mpr (Nat.le_of_lt_succ i.isLt)))
       (hτ.of_le (Nat.cast_le.mpr (Nat.le_of_lt_succ i.isLt)))
       ((uniqueDiffOn_extChartAt_target x₁).inter hW) (uniqueDiffOn_extChartAt_target x₂) hST
-      (P.isCompact.image continuous_subtype_val) hPS
+      (P.isCompact.image continuous_subtypeVal) hPS
   refine ⟨∑ i, |C i| + 1, by positivity, fun s ↦ ?_⟩
   set φ := (e₂.frameCoordinates hU₂ s) ∘ (extChartAt I x₂).symm
   have hφ : ContDiffOn 𝕜 k φ (extChartAt I x₂).target :=
@@ -363,7 +363,7 @@ theorem exists_chartCkSeminorm_le_coordChange
     have hτeq : (⟨extChartAt I x₂ ⟨((extChartAt I x₁).symm w : M), hy₂⟩,
         (extChartAt I x₂).map_source hy⟩ : (extChartAt I x₂).target) =
         ⟨τ w, hST (hPS ⟨w, hwP, rfl⟩)⟩ :=
-      Subtype.ext (Opens.extendCoordChange_chartAt_coe_apply x₁ x₂ w.2).symm
+      Subtype.ext (Opens.extendCoordChange_chartAt_coe_apply x₁ x₂ w.property).symm
     have hQj := (e₂.chartCkSeminorm_le_iff hU₂ x₂ Q k hk s hδ).mp le_rfl j (hj.trans hm) _ hQ
     rwa [hτeq, ContMDiffMap.chartIteratedFDeriv_self_target_apply] at hQj
   · exact mul_le_mul_of_nonneg_right ((le_abs_self _).trans <|

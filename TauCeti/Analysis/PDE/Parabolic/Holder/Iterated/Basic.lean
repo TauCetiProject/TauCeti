@@ -230,9 +230,9 @@ uniform bounded temporal Hölder norms of those one order below (`ParabolicCkHol
           · rfl
           · rw [smul_zero] } : Submodule ℝ V))
     (PiLp 1 fun i : parabolicDerivPairs k ↦ WithLp 1
-      ((slab (E := E) a b →ᵇ (E [×i.1.2]→L[ℝ] F)) ×
-        WithLp 1 (lp (fun _ : E ↦ HolderSpace ((1 + α) / 2) (Icc a b) (E [×i.1.2]→L[ℝ] F)) ∞ ×
-          HolderSpace α (slab (E := E) a b) (E [×i.1.2]→L[ℝ] F))))
+      ((slab (E := E) a b →ᵇ (E [×i.val.2]→L[ℝ] F)) ×
+        WithLp 1 (lp (fun _ : E ↦ HolderSpace ((1 + α) / 2) (Icc a b) (E [×i.val.2]→L[ℝ] F)) ∞ ×
+          HolderSpace α (slab (E := E) a b) (E [×i.val.2]→L[ℝ] F))))
     (fun r m ↦ if h : (r, m) ∈ parabolicDerivPairs k then
       (WithLp.fstL 1 ℝ _ _).comp (PiLp.proj 1 _ (⟨(r, m), h⟩ : parabolicDerivPairs k))
       else 0)
@@ -255,9 +255,9 @@ variable (k α E F a b) in
 /-- The ambient jet space: for each pair `(r, m)` of parabolic order at most `k`, a bounded
 continuous field, a family of Hölder time slices and a bounded Hölder field, with the `ℓ¹` norm. -/
 private abbrev Jet := PiLp 1 fun i : parabolicDerivPairs k ↦ WithLp 1
-  ((slab (E := E) a b →ᵇ (E [×i.1.2]→L[ℝ] F)) ×
-    WithLp 1 (lp (fun _ : E ↦ HolderSpace ((1 + α) / 2) (Icc a b) (E [×i.1.2]→L[ℝ] F)) ∞ ×
-      HolderSpace α (slab (E := E) a b) (E [×i.1.2]→L[ℝ] F)))
+  ((slab (E := E) a b →ᵇ (E [×i.val.2]→L[ℝ] F)) ×
+    WithLp 1 (lp (fun _ : E ↦ HolderSpace ((1 + α) / 2) (Icc a b) (E [×i.val.2]→L[ℝ] F)) ∞ ×
+      HolderSpace α (slab (E := E) a b) (E [×i.val.2]→L[ℝ] F)))
 
 variable (k α E F a b) in
 /-- Shortcut instance for the jet space, keeping instance search on it shallow. -/
@@ -315,20 +315,20 @@ private theorem holderL_of_notMem {r m : ℕ} (h : (r, m) ∉ parabolicDerivPair
   dite_eq_right h
 
 private theorem fieldL_apply (J : Jet k α E F a b) (i : parabolicDerivPairs k) :
-    fieldL i.1.1 i.1.2 J = (J i).ofLp.1 := by
-  rw [fieldL, dite_eq_left i.2]
+    fieldL i.val.1 i.val.2 J = (J i).ofLp.1 := by
+  rw [fieldL, dite_eq_left i.property]
   -- The pair `(i.1.1, i.1.2)` is `i.1` by eta for structures.
   rfl
 
 private theorem slicesL_apply (J : Jet k α E F a b) (i : parabolicDerivPairs k) :
-    slicesL i.1.1 i.1.2 J = (J i).ofLp.2.ofLp.1 := by
-  rw [slicesL, dite_eq_left i.2]
+    slicesL i.val.1 i.val.2 J = (J i).ofLp.2.ofLp.1 := by
+  rw [slicesL, dite_eq_left i.property]
   -- The pair `(i.1.1, i.1.2)` is `i.1` by eta for structures.
   rfl
 
 private theorem holderL_apply (J : Jet k α E F a b) (i : parabolicDerivPairs k) :
-    holderL i.1.1 i.1.2 J = (J i).ofLp.2.ofLp.2 := by
-  rw [holderL, dite_eq_left i.2]
+    holderL i.val.1 i.val.2 J = (J i).ofLp.2.ofLp.2 := by
+  rw [holderL, dite_eq_left i.property]
   -- The pair `(i.1.1, i.1.2)` is `i.1` by eta for structures.
   rfl
 
@@ -339,9 +339,9 @@ private theorem jet_ext {J K : Jet k α E F a b} (hf : ∀ r m, fieldL r m J = f
   ext1 i
   apply WithLp.ofLp_injective 1
   refine Prod.ext ?_ (WithLp.ofLp_injective 1 (Prod.ext ?_ ?_))
-  · simpa only [fieldL_apply] using hf i.1.1 i.1.2
-  · simpa only [slicesL_apply] using hs i.1.1 i.1.2
-  · simpa only [holderL_apply] using hh i.1.1 i.1.2
+  · simpa only [fieldL_apply] using hf i.val.1 i.val.2
+  · simpa only [slicesL_apply] using hs i.val.1 i.val.2
+  · simpa only [holderL_apply] using hh i.val.1 i.val.2
 
 /-- The derivative identities of a jet: the membership condition of `ParabolicCkHolderSpace`. -/
 private def IsJetGraph (hab : a < b) (J : Jet k α E F a b) : Prop :=
@@ -375,7 +375,7 @@ private theorem isJetGraph_toJetL (f : ParabolicCkHolderSpace k α E F hab) :
     IsJetGraph hab (toJetL f) :=
   -- `toJetL` is the submodule inclusion, so its value is the underlying jet of `f`, and
   -- membership in the derivative graph is `IsJetGraph` after beta reduction.
-  f.2
+  f.property
 
 private theorem toJetL_injective :
     Function.Injective (toJetL (k := k) (α := α) (E := E) (F := F) (hab := hab)) :=
@@ -571,7 +571,7 @@ private theorem mixedDerivL_slabMk_toFun (f : ParabolicCkHolderSpace k α E F ha
   rw [← iteratedFDeriv_mixedDerivL_zero f h x t]
   congr 1
   funext y
-  rw [iteratedDerivWithin_toFun f (by omega) y t.2]
+  rw [iteratedDerivWithin_toFun f (by omega) y t.property]
   simp only [ParabolicC2HolderSpace.timeExtension_of_mem]
 
 /-- An element is determined by its underlying map. -/
@@ -654,7 +654,7 @@ theorem curry0_mixedDerivL_slabMk (f : ParabolicCkHolderSpace k α E F hab) {r :
     (h : 2 * r ≤ k) (x : E) (t : Icc a b) :
     (mixedDerivL r 0 f (slabMk x t)).curry0 = iteratedDerivWithin r
       (ParabolicC2HolderSpace.timeExtension hab.le f x) (Icc a b) t := by
-  have hd := iteratedDerivWithin_toFun f h x t.2
+  have hd := iteratedDerivWithin_toFun f h x t.property
   simp only [toFun_eq_coe] at hd
   rw [hd, ParabolicC2HolderSpace.timeExtension_of_mem]
 
@@ -713,7 +713,8 @@ private def mkJet (hs : ∀ r m, 2 * r + m + 1 = k → ∃ C, ∀ x : E,
     (hh : ∀ r m, 2 * r + m = k → MemHolder α (D r m : slab (E := E) a b → E [×m]→L[ℝ] F)) :
     Jet k α E F a b :=
   WithLp.toLp 1 fun i ↦ WithLp.toLp 1
-    (D i.1.1 i.1.2, WithLp.toLp 1 (mkSlices D hs i.1.1 i.1.2, mkHolder D hh i.1.1 i.1.2))
+    (D i.val.1 i.val.2, WithLp.toLp 1 (mkSlices D hs i.val.1 i.val.2,
+        mkHolder D hh i.val.1 i.val.2))
 
 variable {D}
 variable {hs : ∀ r m, 2 * r + m + 1 = k → ∃ C, ∀ x : E,
@@ -800,8 +801,8 @@ end Mk
 
 /-- The norm of a jet is the sum of the norms of its fields, slices and Hölder fields. -/
 private theorem norm_jet (J : Jet k α E F a b) :
-    ‖J‖ = ∑ i : parabolicDerivPairs k, (‖fieldL i.1.1 i.1.2 J‖ +
-      (‖slicesL i.1.1 i.1.2 J‖ + ‖holderL i.1.1 i.1.2 J‖)) := by
+    ‖J‖ = ∑ i : parabolicDerivPairs k, (‖fieldL i.val.1 i.val.2 J‖ +
+      (‖slicesL i.val.1 i.val.2 J‖ + ‖holderL i.val.1 i.val.2 J‖)) := by
   rw [PiLp.norm_eq_of_L1]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [WithLp.prod_norm_eq_of_L1, WithLp.prod_norm_eq_of_L1, fieldL_apply, slicesL_apply,

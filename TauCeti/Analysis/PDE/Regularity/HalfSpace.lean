@@ -489,7 +489,7 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_isWeakSolutionDirichle
   obtain ⟨d, hd⟩ := hder τ
   -- The tangential derivative has zero boundary values.
   have hmem : d ∈ w1p0Submodule mu Omega 2 :=
-    W1p.mem_w1p0Submodule_of_hasWeakLineDerivOn (by simp) hΩc (hΩ τ hτ) b u.2 hD hd
+    W1p.mem_w1p0Submodule_of_hasWeakLineDerivOn (by simp) hΩc (hΩ τ hτ) b u.property hD hd
   -- The forcing term of the differentiated equation lies in `L²(Ω)`.
   set Fn : EuclideanSpace ℝ ι → ℝ := fun x => g x + ∑ i, ∑ j,
     (fderiv ℝ (fun y => fderiv ℝ (fun z => a z i j) y τ) x (b i) *

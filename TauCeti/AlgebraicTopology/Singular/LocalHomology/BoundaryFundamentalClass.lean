@@ -93,7 +93,7 @@ private def segment : Set (B × Ico (0 : ℝ) 1) := {q | q.1 = b ∧ (q.2 : ℝ)
 
 private lemma isClosed_segment [T1Space B] : IsClosed (segment b) :=
   (isClosed_singleton.preimage continuous_fst).inter
-    (isClosed_le (continuous_subtype_val.comp continuous_snd) continuous_const)
+    (isClosed_le (continuous_subtypeVal.comp continuous_snd) continuous_const)
 
 private lemma isCompact_segment : IsCompact (segment b) := by
   have hI : IsCompact {t : Ico (0 : ℝ) 1 | (t : ℝ) ≤ 1 / 2} := by
@@ -102,13 +102,13 @@ private lemma isCompact_segment : IsCompact (segment b) := by
     ext t
     refine ⟨?_, fun ht ↦ ⟨⟨t, ht.1, by linarith [ht.2]⟩, ht.2, rfl⟩⟩
     rintro ⟨t, ht, rfl⟩
-    exact ⟨t.2.1, ht⟩
+    exact ⟨t.property.1, ht⟩
   exact isCompact_singleton.prod hI
 
 /-- Pushing the depth coordinate up to at least `3τ / 4` at time `τ`. -/
 private def pushUp (τ : unitInterval) (q : B × Ico (0 : ℝ) 1) : B × Ico (0 : ℝ) 1 :=
-  (q.1, ⟨max q.2 (τ * (3 / 4)), le_max_of_le_left q.2.2.1,
-    max_lt q.2.2.2 (by nlinarith [τ.2.1, τ.2.2])⟩)
+  (q.1, ⟨max q.2 (τ * (3 / 4)), le_max_of_le_left q.2.property.1,
+    max_lt q.2.property.2 (by nlinarith [τ.property.1, τ.property.2])⟩)
 
 private lemma continuous_pushUp : Continuous fun x : unitInterval × (B × Ico (0 : ℝ) 1) ↦
     pushUp x.1 x.2 := by
@@ -116,7 +116,7 @@ private lemma continuous_pushUp : Continuous fun x : unitInterval × (B × Ico (
 
 omit [TopologicalSpace B] in
 private lemma pushUp_zero (q : B × Ico (0 : ℝ) 1) : pushUp 0 q = q :=
-  Prod.ext rfl (Subtype.ext (by simp [pushUp, q.2.2.1]))
+  Prod.ext rfl (Subtype.ext (by simp [pushUp, q.2.property.1]))
 
 omit [TopologicalSpace B] in
 private lemma pushUp_one_notMem (q : B × Ico (0 : ℝ) 1) : pushUp 1 q ∉ segment b := fun h ↦ by
@@ -201,16 +201,16 @@ private lemma isIso_singularHomologyMap_lowerPairMap [T1Space B] (k : ℕ) :
   · rintro (x : lower B) ⟨(y : ((segment b)ᶜ : Set (B × Ico (0 : ℝ) 1))), hy⟩
     rw [lowerPairMap_fst] at hy
     have hyx : (y : B × Ico (0 : ℝ) 1) = x := congrArg Subtype.val hy
-    exact ⟨⟨x, x.2, hyx ▸ y.2⟩, rfl⟩
+    exact ⟨⟨x, x.property, hyx ▸ y.property⟩, rfl⟩
   · rintro (_ | _)
-    · exact (isClosed_segment b).isOpen_compl.preimage continuous_subtype_val
-    · exact (isOpen_lt (continuous_subtype_val.comp continuous_snd) continuous_const).preimage
-        continuous_subtype_val
+    · exact (isClosed_segment b).isOpen_compl.preimage continuous_subtypeVal
+    · exact (isOpen_lt (continuous_subtypeVal.comp continuous_snd) continuous_const).preimage
+        continuous_subtypeVal
   · refine eq_univ_of_forall fun (w : ({(b, half)}ᶜ : Set (B × Ico (0 : ℝ) 1))) ↦
       mem_iUnion.2 ?_
     by_cases hw : ((w : B × Ico (0 : ℝ) 1).2 : ℝ) < 1 / 2
     · exact ⟨true, hw⟩
-    · refine ⟨false, fun hs ↦ w.2 (Prod.ext hs.1 (Subtype.ext ?_))⟩
+    · refine ⟨false, fun hs ↦ w.property (Prod.ext hs.1 (Subtype.ext ?_))⟩
       exact le_antisymm hs.2 (not_lt.1 hw)
   · rintro (_ | _)
     · exact Or.inl fun (w : ({(b, half)}ᶜ : Set (B × Ico (0 : ℝ) 1))) hw ↦ ⟨⟨w, hw⟩, rfl⟩
@@ -229,16 +229,16 @@ private def toLower : TopPair.ofSubset ({b}ᶜ : Set (TopCat.of B)) ⟶ lowerPai
   TopPair.ofHom
     (TopCat.ofHom ⟨fun m ↦ ⟨(m, bottom), bottom_lt_half⟩,
       (continuous_id.prodMk continuous_const).subtype_mk _⟩)
-    (TopCat.ofHom ⟨fun m ↦ ⟨(m.1, bottom), bottom_lt_half, fun h ↦ m.2 h.1⟩,
-      (continuous_subtype_val.prodMk continuous_const).subtype_mk _⟩) rfl
+    (TopCat.ofHom ⟨fun m ↦ ⟨(m.val, bottom), bottom_lt_half, fun h ↦ m.property h.1⟩,
+      (continuous_subtypeVal.prodMk continuous_const).subtype_mk _⟩) rfl
 
 /-- The projection `(m, t) ↦ m` of `lowerPair b` onto `(B, B ∖ {b})`. -/
 private def fromLower : lowerPair b ⟶ TopPair.ofSubset ({b}ᶜ : Set (TopCat.of B)) :=
   TopPair.ofHom
     (TopCat.ofHom ⟨fun q : lower B ↦ (q : B × Ico (0 : ℝ) 1).1, by fun_prop⟩)
     (TopCat.ofHom ⟨fun q : ↥(lower B ∩ (segment b)ᶜ) ↦
-      ⟨(q : B × Ico (0 : ℝ) 1).1, fun h ↦ q.2.2 ⟨h, q.2.1.le⟩⟩,
-      (continuous_fst.comp continuous_subtype_val).subtype_mk _⟩) rfl
+      ⟨(q : B × Ico (0 : ℝ) 1).1, fun h ↦ q.property.2 ⟨h, q.property.1.le⟩⟩,
+      (continuous_fst.comp continuous_subtypeVal).subtype_mk _⟩) rfl
 
 private lemma toLower_comp_fromLower : toLower b ≫ fromLower b = 𝟙 _ :=
   TopPair.hom_ext_of_fst _ rfl
@@ -247,17 +247,18 @@ variable (B) in
 /-- Contracting the depth coordinate of `B × [0, 1 / 2)` to `0`. -/
 private def lowerContraction : C(lower B, lower B) :=
   ⟨fun q ↦ ⟨((q : B × Ico (0 : ℝ) 1).1, bottom), bottom_lt_half⟩,
-    ((continuous_fst.comp continuous_subtype_val).prodMk continuous_const).subtype_mk _⟩
+    ((continuous_fst.comp continuous_subtypeVal).prodMk continuous_const).subtype_mk _⟩
 
 variable (B) in
 /-- Scaling the depth coordinate deforms `lowerContraction B` into the identity of `lower B`. -/
 private def lowerHomotopy :
     (lowerContraction B).Homotopy (ContinuousMap.id (lower B)) where
   toFun x := ⟨((x.2 : B × Ico (0 : ℝ) 1).1, ⟨x.1 * ((x.2 : B × Ico (0 : ℝ) 1).2 : ℝ),
-      mul_nonneg x.1.2.1 (x.2 : B × Ico (0 : ℝ) 1).2.2.1,
-      (mul_le_of_le_one_left (x.2 : B × Ico (0 : ℝ) 1).2.2.1 x.1.2.2).trans_lt
-        (x.2 : B × Ico (0 : ℝ) 1).2.2.2⟩),
-    (mul_le_of_le_one_left (x.2 : B × Ico (0 : ℝ) 1).2.2.1 x.1.2.2).trans_lt x.2.2⟩
+      mul_nonneg x.1.property.1 (x.2 : B × Ico (0 : ℝ) 1).2.property.1,
+      (mul_le_of_le_one_left (x.2 : B × Ico (0 : ℝ) 1).2.property.1 x.1.property.2).trans_lt
+        (x.2 : B × Ico (0 : ℝ) 1).2.property.2⟩),
+    (mul_le_of_le_one_left (x.2 : B × Ico (0 : ℝ) 1).2.property.1 x.1.property.2).trans_lt
+        x.2.property⟩
   continuous_toFun := by fun_prop
   map_zero_left q := by
     refine Subtype.ext (Prod.ext rfl (Subtype.ext ?_))
@@ -273,7 +274,7 @@ private lemma fromLower_comp_toLower :
         -- first coordinate is that of `q`.
         fun q (hq : (q : B × Ico (0 : ℝ) 1) ∈ lower B ∩ (segment b)ᶜ) ↦
           show ((lowerContraction B q : lower B) : B × Ico (0 : ℝ) 1) ∈ lower B ∩ (segment b)ᶜ
-            from ⟨(lowerContraction B q).2, fun h ↦ hq.2 ⟨h.1, hq.1.le⟩⟩ :=
+            from ⟨(lowerContraction B q).property, fun h ↦ hq.2 ⟨h.1, hq.1.le⟩⟩ :=
   TopPair.hom_ext_of_fst _ (by rw [TopPair.ofInclusionMap_fst]; rfl)
 
 /-- `(B, B ∖ {b}) ⟶ lowerPair b` induces isomorphisms on relative homology: the projection is a
@@ -286,7 +287,7 @@ private lemma isIso_singularHomologyMap_toLower (k : ℕ) :
   exact TopPair.ofInclusionHomotopy (hst := inter_subset_left) (hst' := inter_subset_left)
     -- As in `fromLower_comp_toLower`, the ascription unfolds the point to its underlying pair.
     (lowerHomotopy B) fun τ q (hq : (q : B × Ico (0 : ℝ) 1) ∈ lower B ∩ (segment b)ᶜ) ↦
-      (⟨(lowerHomotopy B (τ, q)).2, fun h ↦ hq.2 ⟨h.1, hq.1.le⟩⟩ :
+      (⟨(lowerHomotopy B (τ, q)).property, fun h ↦ hq.2 ⟨h.1, hq.1.le⟩⟩ :
         ((lowerHomotopy B (τ, q) : lower B) : B × Ico (0 : ℝ) 1) ∈ lower B ∩ (segment b)ᶜ)
 
 /-- The inclusion `m ↦ (m, 0)` of `(B, B ∖ {b})` into the inner pair of the model triple. -/
@@ -342,7 +343,7 @@ include hc in
 omit [T2Space X] in
 private lemma notMem_image_segment {w : D} (hw : w ≠ z) : (w : X) ∉ c '' segment z := by
   rintro ⟨q, hq, hqw⟩
-  have h0 := (apply_mem_iff hc q).1 (hqw ▸ w.2)
+  have h0 := (apply_mem_iff hc q).1 (hqw ▸ w.property)
   refine hw (Subtype.ext ?_)
   rw [← hqw, ← hc.apply_zero z, ← hq.1, ← h0]
 
@@ -368,26 +369,26 @@ private abbrev spaceTriple : TopTriple.{w} :=
 private def collarTripleMap : triple z ⟶ spaceTriple (c := c) z :=
   ⟨ComposableArrows.homMk₂
     (TopCat.ofHom ⟨fun q : ↥(segment z)ᶜ ↦ ⟨c q, fun h ↦
-      q.2 (hc.isOpenEmbedding.injective.mem_set_image.1 h)⟩, by
+      q.property (hc.isOpenEmbedding.injective.mem_set_image.1 h)⟩, by
         have := hc.isOpenEmbedding.continuous; fun_prop⟩)
     (TopCat.ofHom ⟨fun q : ↥({(z, half)}ᶜ : Set (D × Ico (0 : ℝ) 1)) ↦ ⟨c q, fun h ↦
-      q.2 (hc.isOpenEmbedding.injective h)⟩, by
+      q.property (hc.isOpenEmbedding.injective h)⟩, by
         have := hc.isOpenEmbedding.continuous; fun_prop⟩)
     (TopCat.ofHom ⟨c, hc.isOpenEmbedding.continuous⟩) rfl rfl⟩
 
 /-- The triple `(X, D, D ∖ {z})`. -/
 private abbrev boundaryTriple : TopTriple.{w} :=
-  TopTriple.of (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :
+  TopTriple.of (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ :
       TopCat.of ↥({z}ᶜ : Set D) ⟶ TopCat.of D)
-    (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ : TopCat.of D ⟶ TopCat.of X)
+    (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ : TopCat.of D ⟶ TopCat.of X)
     IsEmbedding.subtypeVal IsEmbedding.subtypeVal
 
 /-- The identity of `X` as a map of triples `(X, D, D ∖ {z}) ⟶ (X, X ∖ {p}, X ∖ σ)`. -/
 private def boundaryTripleMap : boundaryTriple z ⟶ spaceTriple (c := c) z :=
   ⟨ComposableArrows.homMk₂
-    (TopCat.ofHom ⟨fun w : ↥({z}ᶜ : Set D) ↦ ⟨(w : D), notMem_image_segment hc z w.2⟩, by
+    (TopCat.ofHom ⟨fun w : ↥({z}ᶜ : Set D) ↦ ⟨(w : D), notMem_image_segment hc z w.property⟩, by
       fun_prop⟩)
-    (TopCat.ofHom ⟨fun w : D ↦ ⟨w, fun h ↦ apply_half_notMem hc z (h ▸ w.2)⟩, by fun_prop⟩)
+    (TopCat.ofHom ⟨fun w : D ↦ ⟨w, fun h ↦ apply_half_notMem hc z (h ▸ w.property)⟩, by fun_prop⟩)
     (𝟙 _) rfl rfl⟩
 
 /-- The inclusion `m ↦ (m, 0)` of the model, as a map out of the inner pair of
@@ -517,7 +518,7 @@ theorem isFundamentalClass_singularHomologyδ_fundamentalClassRel :
         (n + 1) γ) := by
     obtain ⟨x, rfl⟩ := hy
     rw [o.localHomologyRestriction_fundamentalClassRel hn hι hιf hf x]
-    exact (o x).2.map (localHomologyIsoOfIsOpenEmbedding _ hι x (n + 1))
+    exact (o x).property.map (localHomologyIsoOfIsOpenEmbedding _ hι x (n + 1))
   -- The interior point `p = c (z, 1 / 2)` of the collar.
   have hp : c (z, CollarModel.half) ∈ range ι := by
     simpa using CollarModel.apply_half_notMem hc z
