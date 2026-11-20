@@ -43,6 +43,8 @@ behind the pushforward of principal divisors along finite maps (Fulton, Proposit
 `ℤᵐ⁰`, with the orders taken in arbitrary localizations `R m` of `B` at its maximal ideals (such as
 the local rings of a scheme at the points of a fibre) and the residue degree read as the `A`-length
 of `B ⧸ m`. The orders are transported from `B_m` to `R m` by `TauCeti.Ring.ord_ringEquiv`.
+`TauCeti.ordFrac_norm_eq_finprod_of_isLocalization` is the same identity when `B` is a localization
+of a ring `B₀` and the orders are taken in localizations of `B₀` at the primes `m ∩ B₀`.
 -/
 
 public section
@@ -168,5 +170,44 @@ theorem ordFrac_norm_eq_finprod {r : L} (hr : r ≠ 0) :
   exact (hfin c hc0).inv
 
 end Fraction
+
+section BaseRing
+
+variable {A K B L B₀ : Type*} [CommRing A] [IsNoetherianRing A] [Ring.KrullDimLE 1 A]
+  [IsLocalRing A] [Field K] [Algebra A K] [IsFractionRing A K] [CommRing B]
+  [Algebra A B] [Module.Finite A B] [Field L] [Algebra B L] [IsFractionRing B L] [Algebra K L]
+  [Algebra A L] [IsScalarTower A K L] [IsScalarTower A B L] [CommRing B₀] [Algebra B₀ B]
+  (S : Submonoid B₀) [IsLocalization S B] [Algebra B₀ L] [IsScalarTower B₀ B L]
+  (R : MaximalSpectrum B → Type*) [∀ m, CommRing (R m)] [∀ m, Nontrivial (R m)]
+  [∀ m, IsNoetherianRing (R m)] [∀ m, Ring.KrullDimLE 1 (R m)] [∀ m, Algebra B₀ (R m)]
+  [∀ m, IsLocalization.AtPrime (R m) (m.asIdeal.comap (algebraMap B₀ B))] [∀ m, Algebra (R m) L]
+  [∀ m, IsScalarTower B₀ (R m) L] [∀ m, IsFractionRing (R m) L]
+
+include S in
+/-- **The order of a norm, over a base ring** (Fulton, *Intersection Theory*, Appendix A.3).
+`TauCeti.ordFrac_norm_eq_finprod` when `B` is a localization of a ring `B₀` and the orders are
+taken in localizations `R m` of `B₀` at the primes `m ∩ B₀`. This is the form met on a scheme
+finite over an affine neighbourhood of a point: `B₀` is the ring of the affine preimage, `B` its
+semilocalization over the point, and `R m` the local rings of the points of the fibre. -/
+theorem ordFrac_norm_eq_finprod_of_isLocalization {r : L} (hr : r ≠ 0) :
+    Ring.ordFrac A (Algebra.norm K r) =
+      ∏ᶠ m, Ring.ordFrac (R m) r ^ (Module.length A (B ⧸ m.asIdeal)).toNat := by
+  -- Each `R m` is a localization of `B` at `m`, through `B_m ≃ₐ[B₀] R m`.
+  have (m : MaximalSpectrum B) : IsLocalization.AtPrime (Localization.AtPrime m.asIdeal)
+      (m.asIdeal.comap (algebraMap B₀ B)) :=
+    IsLocalization.isLocalization_isLocalization_atPrime_isLocalization S _ m.asIdeal
+  let e (m : MaximalSpectrum B) : Localization.AtPrime m.asIdeal ≃ₐ[B₀] R m :=
+    IsLocalization.algEquiv (m.asIdeal.comap (algebraMap B₀ B)).primeCompl _ _
+  let (m : MaximalSpectrum B) : Algebra B (R m) :=
+    ((e m).toRingHom.comp (algebraMap B (Localization.AtPrime m.asIdeal))).toAlgebra
+  have (m : MaximalSpectrum B) : IsLocalization.AtPrime (R m) m.asIdeal :=
+    IsLocalization.isLocalization_of_algEquiv m.asIdeal.primeCompl
+      (AlgEquiv.ofRingEquiv (f := (e m).toRingEquiv) fun _ ↦ rfl)
+  have (m : MaximalSpectrum B) : IsScalarTower B (R m) L := .of_algebraMap_eq' <|
+    IsLocalization.ringHom_ext S <| RingHom.ext fun x ↦ by
+      simp +zetaDelta [RingHom.algebraMap_toAlgebra, ← IsScalarTower.algebraMap_apply]
+  exact ordFrac_norm_eq_finprod R hr
+
+end BaseRing
 
 end TauCeti
