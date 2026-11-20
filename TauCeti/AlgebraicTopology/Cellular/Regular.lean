@@ -142,9 +142,8 @@ theorem isUnit_cellularIncidence_of_isEmbedding {n : ℕ} {i : cell C (n + 1)}
       TopPair.ofSubsetMap _ hfU := by
     refine TopPair.hom_ext_of_fst _ ?_
     rw [TopPair.Hom.fst_comp, TopPair.ofSubsetMap_fst, TopPair.ofSubsetMap_fst]
-    congr 1
     ext u
-    exact TopPair.excisionMap_fst_apply U {y}ᶜ u
+    exact congrArg (cellAttachingMap j) (TopPair.excisionMap_fst_apply U {y}ᶜ u)
   have : IsIso (TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hfP) (ModuleCat.of R R)
       (n + 1)) := by
     rw [← hfac, TopPair.singularHomologyMap_comp] at hloc
