@@ -17,8 +17,8 @@ This module collects operator identities independent of projection-valued measur
 * `ContinuousLinearMap.inner_polarization` recovers `⟪ψ, T ξ⟫` from four diagonal values.
 * `ContinuousLinearMap.eq_of_diagonal` uses complex polarization to identify operators from
   their diagonal inner products.
-* `ContinuousLinearMap.norm_sub_sq_of_selfAdjoint_idempotent_absorption` computes the squared
-  distance between `S x` and `T x` when `S` is a self-adjoint idempotent absorbed by `T`.
+* `ContinuousLinearMap.norm_sub_sq_of_isSymmetric_idempotent_absorption` computes the squared
+  distance between `S x` and `T x` when `S` is a symmetric idempotent absorbed by `T`.
 * `ContinuousLinearMap.adjoint_ofReal_smul`: the adjoint commutes with real scalars.
 * `ContinuousLinearMap.norm_apply_sq_of_adjoint_comp_eq_smul`: if `T† T = c` for a real scalar
   `c`, then `‖T x‖² = c ‖x‖²`.
@@ -28,10 +28,10 @@ This module collects operator identities independent of projection-valued measur
 
 Use `eq_of_diagonal` to identify bounded complex-linear operators when
 their diagonal inner products agree on every vector. Use
-`norm_sub_sq_of_selfAdjoint_idempotent_absorption` to compare two operators
-when the first is a self-adjoint projection absorbed by the second.
-The latter identity applies over real or complex scalars and does not
-require the second operator to be self-adjoint.
+`norm_sub_sq_of_isSymmetric_idempotent_absorption` to compare two operators
+when the first is an orthogonal projection absorbed by the second.
+The latter identity applies over real or complex scalars, needs no completeness,
+and does not require the second operator to be symmetric.
 -/
 
 public section
@@ -40,16 +40,13 @@ open scoped InnerProduct InnerProductSpace
 
 namespace ContinuousLinearMap
 
-variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
+section Complex
 
-/-- Complex polarization: equality of all diagonal inner products determines a continuous
-linear operator. This specializes Mathlib's `ext_inner_map` to continuous linear maps. -/
-theorem eq_of_diagonal (S T : H →L[ℂ] H)
-    (h : ∀ x : H, ⟪x, S x⟫_ℂ = ⟪x, T x⟫_ℂ) : S = T := by
-  refine ContinuousLinearMap.coe_injective ((ext_inner_map _ _).mp fun x => ?_)
-  -- `ext_inner_map` compares linear maps; applying a continuous linear map is the same.
-  change ⟪S x, x⟫_ℂ = ⟪T x, x⟫_ℂ
-  rw [← inner_conj_symm (S x) x, ← inner_conj_symm (T x) x, h x]
+variable {H : Type*}
+
+section Seminormed
+
+variable [SeminormedAddCommGroup H] [InnerProductSpace ℂ H]
 
 /-- The complex polarization identity for the sesquilinear form of a bounded
 operator, recovered from its diagonal quadratic form. -/
@@ -66,28 +63,47 @@ theorem inner_polarization (T : H →L[ℂ] H) (ψ ξ : H) :
   rw [Complex.I_sq]
   ring
 
+end Seminormed
+
+variable [NormedAddCommGroup H] [InnerProductSpace ℂ H]
+
+/-- Complex polarization: equality of all diagonal inner products determines a continuous
+linear operator. This specializes Mathlib's `ext_inner_map` to continuous linear maps. -/
+theorem eq_of_diagonal (S T : H →L[ℂ] H)
+    (h : ∀ x : H, ⟪x, S x⟫_ℂ = ⟪x, T x⟫_ℂ) : S = T :=
+  coe_injective <| (ext_inner_map _ _).mp fun x => by
+    simpa only [coe_coe, inner_conj_symm] using congrArg (starRingEnd ℂ) (h x)
+
+end Complex
+
 section RCLike
 
-variable {𝕜 E : Type*} [RCLike 𝕜]
-variable [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+variable {𝕜 : Type*} [RCLike 𝕜]
 
-/-- Over either the real or complex scalars, if `S` is self-adjoint, idempotent,
+section Seminormed
+
+variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- Over either the real or complex scalars, if `S` is symmetric, idempotent,
 and satisfies `S * T = S`, then the squared norm of `(S - T) x` is the difference
-of the squared norms. The operator `T` need not be self-adjoint. -/
-theorem norm_sub_sq_of_selfAdjoint_idempotent_absorption
-    (S T : E →L[𝕜] E) (hS : IsSelfAdjoint S)
+of the squared norms. The operator `T` need not be symmetric. -/
+theorem norm_sub_sq_of_isSymmetric_idempotent_absorption
+    (S T : E →L[𝕜] E) (hS : (S : E →ₗ[𝕜] E).IsSymmetric)
     (hSS : S * S = S) (hST : S * T = S) (x : E) :
     ‖S x - T x‖ ^ 2 = ‖T x‖ ^ 2 - ‖S x‖ ^ 2 := by
   have hcross : ⟪S x, T x⟫_𝕜 = ⟪S x, S x⟫_𝕜 := by
     calc
-      ⟪S x, T x⟫_𝕜 = ⟪x, S (T x)⟫_𝕜 := hS.isSymmetric x (T x)
+      ⟪S x, T x⟫_𝕜 = ⟪x, S (T x)⟫_𝕜 := hS.apply_clm x (T x)
       _ = ⟪x, S x⟫_𝕜 := by rw [← mul_apply_eq_comp, hST]
       _ = ⟪x, S (S x)⟫_𝕜 := by rw [← mul_apply_eq_comp, hSS]
-      _ = ⟪S x, S x⟫_𝕜 := (hS.isSymmetric x (S x)).symm
+      _ = ⟪S x, S x⟫_𝕜 := (hS.apply_clm x (S x)).symm
   rw [norm_sub_sq (𝕜 := 𝕜), hcross, ← norm_sq_eq_re_inner (𝕜 := 𝕜)]
   ring
 
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+end Seminormed
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
 
 /-- The adjoint commutes with multiplication by a real scalar. -/
 theorem adjoint_ofReal_smul (r : ℝ) (T : E →L[𝕜] F) :
@@ -97,27 +113,20 @@ theorem adjoint_ofReal_smul (r : ℝ) (T : E →L[𝕜] F) :
 /-- An operator `T` with `T† T = c` for a real scalar `c` multiplies norms squared by `c`. -/
 theorem norm_apply_sq_of_adjoint_comp_eq_smul {T : E →L[𝕜] F} {c : ℝ}
     (hT : T.adjoint ∘L T = (c : 𝕜) • 1) (x : E) : ‖T x‖ ^ 2 = c * ‖x‖ ^ 2 := by
-  rw [apply_norm_sq_eq_inner_adjoint_left, hT, smul_apply, one_apply_eq_self, inner_smul_left,
-    RCLike.conj_ofReal, inner_self_eq_norm_sq_to_K, ← RCLike.ofReal_pow, ← RCLike.ofReal_mul,
-    RCLike.ofReal_re]
+  rw [apply_norm_sq_eq_inner_adjoint_left, hT]
+  simp [inner_smul_left, inner_self_eq_norm_sq_to_K]
 
 /-- If `T† T = s` for a real scalar `s`, then `(c T)† (c T) = c² s` for real `c`. -/
 theorem adjoint_ofReal_smul_comp_ofReal_smul {T : E →L[𝕜] F} {s : ℝ}
     (hT : T.adjoint ∘L T = (s : 𝕜) • 1) (c : ℝ) :
     ((c : 𝕜) • T).adjoint ∘L ((c : 𝕜) • T) = ((c ^ 2 * s : ℝ) : 𝕜) • 1 := by
-  rw [adjoint_ofReal_smul, comp_smul, smul_comp, hT, smul_smul, smul_smul]
-  congr 1
-  push_cast
-  ring
+  simp [adjoint_ofReal_smul, hT, smul_smul, sq, mul_assoc]
 
 /-- If `T T† = s` for a real scalar `s`, then `(c T) (c T)† = c² s` for real `c`. -/
 theorem ofReal_smul_comp_adjoint_ofReal_smul {T : E →L[𝕜] F} {s : ℝ}
     (hT : T ∘L T.adjoint = (s : 𝕜) • 1) (c : ℝ) :
     ((c : 𝕜) • T) ∘L ((c : 𝕜) • T).adjoint = ((c ^ 2 * s : ℝ) : 𝕜) • 1 := by
-  rw [adjoint_ofReal_smul, comp_smul, smul_comp, hT, smul_smul, smul_smul]
-  congr 1
-  push_cast
-  ring
+  simp [adjoint_ofReal_smul, hT, smul_smul, sq, mul_assoc]
 
 end RCLike
 
