@@ -293,13 +293,12 @@ theorem HasFunctionalEquation.meromorphicOrderAt_entireCompletion_one_sub
     (hfe : d.HasFunctionalEquation) (s : ℂ) :
     meromorphicOrderAt d.entireCompletion (1 - s) =
       meromorphicOrderAt d.dual.entireCompletion s := by
-  have hε : d.rootNumber ≠ 0 := norm_ne_zero_iff.mp (by simp [hfe.norm_rootNumber])
   have hc : meromorphicOrderAt d.completed (1 - s) = meromorphicOrderAt d.dual.completed s := by
     rw [meromorphicOrderAt_congr (hfe.eventuallyEq (1 - s)),
       show (fun z ↦ d.rootNumber * d.dual.completed (1 - z)) =
         d.rootNumber • (d.dual.completed ∘ fun z ↦ 1 - z) by
           funext z; simp [Function.comp_def, smul_eq_mul],
-      meromorphicOrderAt_const_smul_eq_meromorphicOrderAt hε,
+      meromorphicOrderAt_const_smul_eq_meromorphicOrderAt hfe.rootNumber_ne_zero,
       meromorphicOrderAt_comp_of_deriv_ne_zero (by fun_prop) (by simp), sub_sub_cancel]
   rw [h.meromorphicOrderAt_entireCompletion, h.dual.meromorphicOrderAt_entireCompletion, hc,
     dual_polarOrder_apply, ← hfe.polarOrder_one_sub_conj (conj s), Complex.conj_conj]
@@ -431,8 +430,7 @@ theorem HasFunctionalEquation.logDeriv_entireCompletion_one_sub
     (hfe : d.HasFunctionalEquation) (s : ℂ) :
     logDeriv d.entireCompletion (1 - s) = -logDeriv d.dual.entireCompletion s := by
   have hc : (-1 : ℂ) ^ d.polarPolynomial.natDegree * d.rootNumber ≠ 0 :=
-    mul_ne_zero (pow_ne_zero _ (by norm_num))
-      (norm_ne_zero_iff.mp (by simp [hfe.norm_rootNumber]))
+    mul_ne_zero (pow_ne_zero _ (by norm_num)) hfe.rootNumber_ne_zero
   have hfun : (fun z ↦ d.entireCompletion (1 - z)) =
       fun z ↦ ((-1 : ℂ) ^ d.polarPolynomial.natDegree * d.rootNumber) *
         d.dual.entireCompletion z :=
@@ -456,8 +454,7 @@ theorem HasFunctionalEquation.entireCompletion_eq_zero_iff_one_sub_conj
     (hfe : d.HasFunctionalEquation) (s : ℂ) :
     d.entireCompletion (1 - conj s) = 0 ↔ d.entireCompletion s = 0 := by
   have hc : (-1 : ℂ) ^ d.polarPolynomial.natDegree * d.rootNumber ≠ 0 :=
-    mul_ne_zero (pow_ne_zero _ (by norm_num))
-      (norm_ne_zero_iff.mp (by simp [hfe.norm_rootNumber]))
+    mul_ne_zero (pow_ne_zero _ (by norm_num)) hfe.rootNumber_ne_zero
   rw [hfe.entireCompletion_one_sub_eq_mul_conj_conj h (conj s), Complex.conj_conj,
     mul_eq_zero, or_iff_right hc, map_eq_zero]
 
