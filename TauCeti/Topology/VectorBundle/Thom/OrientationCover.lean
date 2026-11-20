@@ -152,6 +152,18 @@ theorem deckThomPairMap_fst_proj
   rw [deckThomPairMap, thomPairMapOfFiberwise_fst_apply, deck_apply]
   rfl
 
+/-- The lifted deck involution sends a vector `v` over `p` to the same vector of `E_{π p}`, now
+over the point `⟨π p, -p.orientation⟩`, which is `deck p` (`deck_apply`). -/
+-- Not `@[simp]`: simp rewrites the coercion of the continuous map on the left-hand side, so the
+-- statement is not in simp normal form.
+theorem deckThomPairMap_fst_apply
+    (v : TotalSpace F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)) :
+    TopPair.Hom.fst (deckThomPairMap F E ι) v =
+      TotalSpace.mk' F (⟨v.proj.proj, -v.proj.orientation⟩ : VectorBundleOrientationCover F E ι)
+        v.snd := by
+  rw [deckThomPairMap, thomPairMapOfFiberwise_fst_apply]
+  rfl
+
 variable (F E ι) in
 /-- The lift of the deck involution is an involution. -/
 @[reassoc (attr := simp)]
