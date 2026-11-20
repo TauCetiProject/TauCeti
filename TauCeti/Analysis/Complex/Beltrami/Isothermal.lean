@@ -346,7 +346,7 @@ private theorem exists_isothermal_chart_of_transport_conj {α K : ℝ≥0}
       ContDiffOn ℝ 1 e e.source ∧ (∃ K : ℝ≥0, HolderOnWith K α (fderiv ℝ e) e.source) ∧
       (∀ z ∈ e.source, (fderiv ℝ e z).IsInvertible) ∧
       ∀ z ∈ e.source, ∀ v, fderiv ℝ e z (J z v) = I * fderiv ℝ e z v := by
-  set σ : ℂ ≃L[ℝ] ℂ := conjCLE
+  set σ : ℂ ≃L[ℝ] ℂ := conjCLE with hσdef
   have hσ (z : ℂ) : σ z = conj z := conjCLE_apply z
   set e := σ.toHomeomorph.toOpenPartialHomeomorph.trans e'
   have hes (z : ℂ) : z ∈ e.source ↔ σ z ∈ e'.source := by simp [e]
@@ -363,7 +363,8 @@ private theorem exists_isothermal_chart_of_transport_conj {α K : ℝ≥0}
     calc edist ((fderiv ℝ e' (σ z)).comp (σ : ℂ →L[ℝ] ℂ))
           ((fderiv ℝ e' (σ w)).comp (σ : ℂ →L[ℝ] ℂ))
         = edist (fderiv ℝ e' (σ z)) (fderiv ℝ e' (σ w)) := by
-          rw [edist_dist, edist_dist, dist_eq_norm, dist_eq_norm, ← ContinuousLinearMap.sub_comp]
+          rw [edist_dist, edist_dist, dist_eq_norm, dist_eq_norm, ← ContinuousLinearMap.sub_comp,
+            hσdef, ← conjLIE_toCLE]
           exact congrArg ENNReal.ofReal
             (ContinuousLinearMap.opNorm_comp_linearIsometryEquiv _ conjLIE)
       _ ≤ K * edist (σ z) (σ w) ^ (α : ℝ) := hK.edist_le ((hes z).1 hz) ((hes w).1 hw)
