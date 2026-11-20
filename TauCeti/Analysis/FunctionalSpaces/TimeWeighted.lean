@@ -66,8 +66,9 @@ namespace TauCeti
 
 /-- The space `C_η((0, T]; X)` of continuous maps `u : (0, T] → X` with finite weighted norm
 `sup_{0 < t ≤ T} t^η ‖u t‖`. An element is stored as its weighted function `t ↦ t^η • u t`, a
-bounded continuous function on `(0, T]` (`TauCeti.TimeWeighted.toWeighted`), and is coerced to the
-function `ℝ → X` given by `u t` on `(0, T]` and by `0` elsewhere. -/
+bounded continuous function on `(0, T]` (`TauCeti.TimeWeighted.toWeighted`), and, when `X` is a
+real normed space, is coerced to the function `ℝ → X` given by `u t` on `(0, T]` and by `0`
+elsewhere. -/
 def TimeWeighted (T _η : ℝ) (X : Type*) [NormedAddCommGroup X] : Type _ :=
   Ioc (0 : ℝ) T →ᵇ X
 
