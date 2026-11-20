@@ -58,9 +58,10 @@ and its `k`-th iterated derivative is `α`-Hölder on each compact subset of `Ω
 * `TauCeti.CkHolderSpaceLoc.ofContDiffOn`, `TauCeti.CkHolderSpaceLoc.contDiffOn` and
   `TauCeti.CkHolderSpaceLoc.exists_holderOnWith_iteratedFDeriv`: introduction and elimination
   through `C^k` regularity on `Ω` and Hölder bounds on compact subsets.
-* `TauCeti.CkHolderSpaceLoc.exists_restrictL_eq`: gluing, for locally compact `E`, a compatible
-  family of elements of `C^{k,α}(U)`, one for each open `U ⋐ Ω`, into an element of
-  `C^{k,α}_loc(Ω)`.
+* `TauCeti.CkHolderSpaceLoc.ext_restrictL` and `TauCeti.CkHolderSpaceLoc.existsUnique_restrictL_eq`:
+  for locally compact `E`, an element of `C^{k,α}_loc(Ω)` is determined by its restrictions, and a
+  compatible family of elements of `C^{k,α}(U)`, one for each open `U ⋐ Ω`, glues to a unique
+  element of `C^{k,α}_loc(Ω)`.
 * `TauCeti.CkHolderSpaceLoc.instCompleteSpace`: completeness, for locally compact `E` and complete
   `F`; `TauCeti.CkHolderSpaceLoc.instFirstCountableTopology` and
   `TauCeti.CkHolderSpaceLoc.instMetrizableSpace`: first countability and metrizability for proper
@@ -216,12 +217,15 @@ private theorem restrictLM_apply (f : CkHolderSpaceLoc k α Ω F) (x : U) :
 /-- The compact-exhaustion topology of `C^{k,α}_loc(Ω)`: the coarsest topology making restriction
 to every open `U ⋐ Ω` continuous into `C^{k,α}(U)`. -/
 instance instTopologicalSpace : TopologicalSpace (CkHolderSpaceLoc k α Ω F) :=
+  -- The private `restrictLM` cannot occur in this exposed instance body. Its coercion is this map
+  -- by `rfl`, and the structure proofs below, stated with `restrictLM`, rely on that equality.
   ⨅ U : {U : Opens E // IsCompact (closure (U : Set E)) ∧ closure (U : Set E) ⊆ Ω},
     induced (fun f ↦ (f.exists_eq U.1 U.2.1 U.2.2).choose) inferInstance
 
 /-- The uniform structure of `C^{k,α}_loc(Ω)`: uniform convergence of every restriction to an
 open `U ⋐ Ω` in `C^{k,α}(U)`. Its topology is `CkHolderSpaceLoc.instTopologicalSpace`. -/
 instance instUniformSpace : UniformSpace (CkHolderSpaceLoc k α Ω F) := .replaceTopology
+  -- As in `instTopologicalSpace`, this map is the coercion of `restrictLM` by `rfl`.
   (⨅ U : {U : Opens E // IsCompact (closure (U : Set E)) ∧ closure (U : Set E) ⊆ Ω},
     UniformSpace.comap (fun f ↦ (f.exists_eq U.1 U.2.1 U.2.2).choose) inferInstance)
   UniformSpace.toTopologicalSpace_iInf.symm
@@ -374,20 +378,12 @@ theorem ofContDiffOn_apply (g : E → F) (hg : ContDiffOn ℝ k g Ω)
 
 variable [LocallyCompactSpace E]
 
-omit [NormedSpace ℝ E] in
-/-- Every point of `Ω` lies in an open set `U ⋐ Ω`. -/
-private theorem exists_mem_isCompact_closure (x : Ω) :
-    ∃ U : Opens E, (x : E) ∈ U ∧ closure (U : Set E) ⊆ Ω ∧ IsCompact (closure (U : Set E)) := by
-  obtain ⟨U, hxU, hUΩ, hU⟩ := Opens.exists_between_and_isCompact_closure
-    (isCompact_singleton (x := (x : E))) (singleton_subset_iff.2 x.2)
-  exact ⟨U, hxU rfl, hUΩ, hU⟩
-
 /-- A function on the whole space that agrees with an element of `C^{k,α}_loc(Ω)` on `Ω` is `C^k`
 on `Ω`. -/
 theorem contDiffOn (f : CkHolderSpaceLoc k α Ω F) {g : E → F} (hg : ∀ x : Ω, g x = f x) :
     ContDiffOn ℝ k g Ω := by
   refine contDiffOn_of_locally_contDiffOn fun x hx ↦ ?_
-  obtain ⟨U, hxU, hUΩ, hU⟩ := exists_mem_isCompact_closure ⟨x, hx⟩
+  obtain ⟨U, hxU, hUΩ, hU⟩ := Opens.exists_mem_and_isCompact_closure hx
   refine ⟨U, U.isOpen, hxU, ((restrictL U hU hUΩ f).contDiffOn fun y ↦ ?_).mono
     inter_subset_right⟩
   rw [restrictL_apply]
@@ -422,7 +418,7 @@ variable [LocallyCompactSpace E]
 /-- Evaluation at a point of `Ω` is continuous on `C^{k,α}_loc(Ω)`. -/
 instance instContinuousEvalConst : ContinuousEvalConst (CkHolderSpaceLoc k α Ω F) Ω F where
   continuous_eval_const x := by
-    obtain ⟨U, hxU, hUΩ, hU⟩ := exists_mem_isCompact_closure x
+    obtain ⟨U, hxU, hUΩ, hU⟩ := Opens.exists_mem_and_isCompact_closure x.2
     refine ((continuous_eval_const ⟨(x : E), hxU⟩).comp
       (CkHolderSpaceOn.toBoundedContinuousFunctionCLM.continuous.comp
         (restrictL U hU hUΩ).continuous)).congr fun f ↦ ?_
@@ -431,19 +427,28 @@ instance instContinuousEvalConst : ContinuousEvalConst (CkHolderSpaceLoc k α Ω
 instance instT2Space : T2Space (CkHolderSpaceLoc k α Ω F) :=
   .of_injective_continuous DFunLike.coe_injective (continuous_pi continuous_eval_const)
 
+/-- On a locally compact space, two elements of `C^{k,α}_loc(Ω)` are equal when their restrictions
+to every open `U ⋐ Ω` are. -/
+theorem ext_restrictL {f g : CkHolderSpaceLoc k α Ω F}
+    (h : ∀ (U : Opens E) (hU : IsCompact (closure (U : Set E))) (hUΩ : closure (U : Set E) ⊆ Ω),
+      restrictL U hU hUΩ f = restrictL U hU hUΩ g) : f = g := by
+  ext x
+  obtain ⟨U, hxU, hUΩ, hU⟩ := Opens.exists_mem_and_isCompact_closure x.2
+  simpa using DFunLike.congr_fun (h U hU hUΩ) ⟨x, hxU⟩
+
 /-- **Gluing.** A family of elements of `C^{k,α}(U)`, one for each open `U ⋐ Ω`, that is
-compatible with restriction to smaller open sets is the family of restrictions of an element of
-`C^{k,α}_loc(Ω)`. -/
-theorem exists_restrictL_eq
+compatible with restriction to smaller open sets is the family of restrictions of a unique element
+of `C^{k,α}_loc(Ω)`. -/
+theorem existsUnique_restrictL_eq
     (g : ∀ (U : Opens E), IsCompact (closure (U : Set E)) → closure (U : Set E) ⊆ Ω →
       CkHolderSpaceOn k α U F)
     (hg : ∀ (U : Opens E) (hU : IsCompact (closure (U : Set E)))
       (hUΩ : closure (U : Set E) ⊆ Ω) (V : Opens E) (hV : IsCompact (closure (V : Set E)))
       (hVΩ : closure (V : Set E) ⊆ Ω) (hVU : V ≤ U),
         CkHolderSpaceOn.restrictL hVU (g U hU hUΩ) = g V hV hVΩ) :
-    ∃ f : CkHolderSpaceLoc k α Ω F, ∀ (U : Opens E) (hU : IsCompact (closure (U : Set E)))
+    ∃! f : CkHolderSpaceLoc k α Ω F, ∀ (U : Opens E) (hU : IsCompact (closure (U : Set E)))
       (hUΩ : closure (U : Set E) ⊆ Ω), restrictL U hU hUΩ f = g U hU hUΩ := by
-  choose W hxW hWΩ hW using exists_mem_isCompact_closure (Ω := Ω)
+  choose W hxW hWΩ hW using fun x : Ω ↦ Opens.exists_mem_and_isCompact_closure x.2
   -- On `U ⊓ W x`, both `g U` and `g (W x)` restrict to the element attached to the intersection.
   have hval : ∀ (U : Opens E) (hU : IsCompact (closure (U : Set E)))
       (hUΩ : closure (U : Set E) ⊆ Ω) (y : U),
@@ -461,9 +466,11 @@ theorem exists_restrictL_eq
     rw [CkHolderSpaceOn.restrictL_apply] at h1 h2
     exact h1.trans h2.symm
   refine ⟨⟨fun x ↦ g (W x) (hW x) (hWΩ x) ⟨x, hxW x⟩, fun U hU hUΩ ↦
-    ⟨g U hU hUΩ, hval U hU hUΩ⟩⟩, fun U hU hUΩ ↦ ?_⟩
-  rw [restrictL_eq_iff]
-  exact hval U hU hUΩ
+    ⟨g U hU hUΩ, hval U hU hUΩ⟩⟩, fun U hU hUΩ ↦ ?_, fun f hf ↦ ext_restrictL fun U hU hUΩ ↦ ?_⟩
+  · rw [restrictL_eq_iff]
+    exact hval U hU hUΩ
+  · rw [hf]
+    exact (restrictL_eq_iff.2 (hval U hU hUΩ)).symm
 
 /-- On a locally compact space, `C^{k,α}_loc(Ω)` with values in a Banach space is complete. -/
 instance instCompleteSpace [CompleteSpace F] : CompleteSpace (CkHolderSpaceLoc k α Ω F) := by
@@ -474,7 +481,7 @@ instance instCompleteSpace [CompleteSpace F] : CompleteSpace (CkHolderSpaceLoc k
     (hUΩ : closure (U : Set E) ⊆ Ω) ↦
       CompleteSpace.complete (hl.map (restrictL U hU hUΩ).uniformContinuous)
   -- The limits on nested open sets are compatible, since restriction is continuous.
-  obtain ⟨f, hf⟩ := exists_restrictL_eq g fun U hU hUΩ V hV hVΩ hVU ↦ by
+  obtain ⟨f, hf, -⟩ := existsUnique_restrictL_eq g fun U hU hUΩ V hV hVΩ hVU ↦ by
     have h := ((CkHolderSpaceOn.restrictL hVU).continuous.tendsto _).comp (hg U hU hUΩ)
     rw [show (CkHolderSpaceOn.restrictL hVU ∘ restrictL U hU hUΩ) = restrictL V hV hVΩ from
       funext (restrictL_restrictL hVU)] at h
