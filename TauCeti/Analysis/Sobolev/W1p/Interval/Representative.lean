@@ -268,6 +268,18 @@ theorem intervalRepresentativeL_sub_le_mul_of_gradient_le (hab : a < b)
   rwa [intervalIntegral.integral_const, smul_eq_mul,
     integral_gradient_eq_intervalRepresentativeL_sub hab u s t] at h
 
+/-- **Constant gradient.** If the weak gradient equals `σ` almost everywhere on `(s, t)`, then the
+representative increases by exactly `(t - s) σ` from `s` to `t`. -/
+theorem intervalRepresentativeL_sub_eq_mul_of_gradient_eq (hab : a < b)
+    (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) {s t : Icc a b} (hst : (s : ℝ) ≤ t) {σ : ℝ}
+    (hσ : ∀ᵐ r, r ∈ Ioo (s : ℝ) t → gradient u r = σ) :
+    intervalRepresentativeL hab u t - intervalRepresentativeL hab u s = ((t : ℝ) - s) * σ :=
+  le_antisymm
+    (intervalRepresentativeL_sub_le_mul_of_gradient_le hab u hst
+      (hσ.mono fun _ hr hrI ↦ (hr hrI).le))
+    (mul_le_intervalRepresentativeL_sub_of_le_gradient hab u hst
+      (hσ.mono fun _ hr hrI ↦ (hr hrI).ge))
+
 /-- In the open interval the classical derivative of the representative agrees almost
 everywhere with the recorded weak gradient. -/
 theorem ae_hasDerivAt_intervalRepresentativeL (hab : a < b)
