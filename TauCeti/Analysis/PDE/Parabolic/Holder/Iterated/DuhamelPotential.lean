@@ -351,6 +351,11 @@ private def forcingField (m i a : ℕ) : slab (E := E) 0 T →ᵇ (E [×m]→L[�
 private def field (r m : ℕ) : slab (E := E) 0 T →ᵇ (E [×m]→L[ℝ] F) :=
   heatField hα₀ hα₁ f r m + ∑ i ∈ Finset.range r, forcingField f m i (r - 1 - i)
 
+private theorem field_apply (r m : ℕ) (p : slab (E := E) 0 T) :
+    field hα₀ hα₁ f r m p =
+      heatField hα₀ hα₁ f r m p + ∑ i ∈ Finset.range r, forcingField f m i (r - 1 - i) p := by
+  simp only [field, FunLike.coe_add, FunLike.coe_sum, Pi.add_apply, Finset.sum_apply]
+
 private theorem heatField_slabMk {r m : ℕ} (h : m + 2 * r ≤ k + 2) (x : E)
     (t : Icc (0 : ℝ) T) :
     heatField hα₀ hα₁ f r m (slabMk x t) = iteratedFDeriv ℝ m (Δ^[r] (slice hα₀ hα₁ f t)) x := by
@@ -393,8 +398,7 @@ private theorem hasFDerivAt_forcingField {m i a : ℕ} (h : 2 * i + (m + 2 * a) 
 private theorem hasFDerivAt_field {r m : ℕ} (h : 2 * r + m + 1 ≤ k + 2) (t : Icc (0 : ℝ) T)
     (x : E) : HasFDerivAt (fun y ↦ field hα₀ hα₁ f r m (slabMk y t))
       (field hα₀ hα₁ f r (m + 1) (slabMk x t)).curryLeft x := by
-  simp only [field, FunLike.coe_add, FunLike.coe_sum,
-    Pi.add_apply, Finset.sum_apply]
+  simp only [field_apply]
   have hcurry : (heatField hα₀ hα₁ f r (m + 1) (slabMk x t) +
       ∑ i ∈ Finset.range r, forcingField f (m + 1) i (r - 1 - i) (slabMk x t)).curryLeft =
       (heatField hα₀ hα₁ f r (m + 1) (slabMk x t)).curryLeft +
@@ -474,8 +478,7 @@ private theorem hasDerivWithinAt_field {r m : ℕ} (h : 2 * r + m + 2 ≤ k + 2)
   have hsum : field hα₀ hα₁ f (r + 1) m (slabMk x t) =
       heatField hα₀ hα₁ f (r + 1) m (slabMk x t) + forcingField f m 0 r (slabMk x t) +
         ∑ i ∈ Finset.range r, forcingField f m (i + 1) (r - 1 - i) (slabMk x t) := by
-    simp only [field, FunLike.coe_add, FunLike.coe_sum,
-      Pi.add_apply, Finset.sum_apply, Finset.sum_range_succ', add_assoc]
+    simp only [field_apply, Finset.sum_range_succ', add_assoc]
     rw [add_comm (∑ i ∈ Finset.range r, _)]
     congr 2
     refine Finset.sum_congr rfl fun i _ ↦ ?_
@@ -485,8 +488,8 @@ private theorem hasDerivWithinAt_field {r m : ℕ} (h : 2 * r + m + 2 ≤ k + 2)
         ∑ i ∈ Finset.range r,
           ParabolicC2HolderSpace.timeExtension hT.le (forcingField f m i (r - 1 - i)) x := by
     funext s
-    simp only [ParabolicC2HolderSpace.timeExtension_def, field, FunLike.coe_add,
-      FunLike.coe_sum, Pi.add_apply, Finset.sum_apply]
+    simp only [ParabolicC2HolderSpace.timeExtension_def, field_apply, Pi.add_apply,
+      Finset.sum_apply]
   rw [hext, hsum]
   refine (hasDerivWithinAt_heatField hα₀ hα₁ f (r := r) (m := m) (by omega) x t).add
     (HasDerivWithinAt.sum fun i hi ↦
@@ -550,8 +553,8 @@ private theorem exists_holderWith_field {r m : ℕ} (h : 2 * r + m + 1 = k + 2) 
   refine ⟨‖iteratedTraceLastTwoL E F r m‖₊ * C + ∑ i ∈ Finset.range r,
     ‖iteratedTraceLastTwoL E F (r - 1 - i) m‖₊ * ‖timeSliceL i (m + 2 * (r - 1 - i)) f‖₊,
     fun x ↦ ?_⟩
-  simp only [field, heatField, forcingField, FunLike.coe_add, FunLike.coe_sum, Pi.add_apply,
-    Finset.sum_apply, ContinuousLinearMap.compLeftContinuousBounded_apply]
+  simp only [field_apply, heatField, forcingField,
+    ContinuousLinearMap.compLeftContinuousBounded_apply]
   refine HolderWith.add (holderWith_continuousLinearMap_comp _ (hC x))
     (HolderWith.sum fun i hi ↦ ?_)
   have := Finset.mem_range.1 hi
@@ -572,8 +575,8 @@ private theorem memHolder_field {r m : ℕ} (h : 2 * r + m = k + 2) :
         fun p ↦ ∑ i ∈ Finset.range r,
           iteratedTraceLastTwoL E F (r - 1 - i) m (mixedDerivL i (m + 2 * (r - 1 - i)) f p) := by
     funext p
-    simp only [field, heatField, forcingField, FunLike.coe_add, FunLike.coe_sum, Pi.add_apply,
-      Finset.sum_apply, ContinuousLinearMap.compLeftContinuousBounded_apply]
+    simp only [field_apply, heatField, forcingField, Pi.add_apply,
+      ContinuousLinearMap.compLeftContinuousBounded_apply]
   rw [hfun]
   have hheat' : HolderWith (‖iteratedTraceLastTwoL E F r m‖₊ *
       nnHolderNorm α (derivFieldBCF hα₀ hα₁ f (m + 2 * r) : slab (E := E) 0 T → _)) α
@@ -592,11 +595,8 @@ private def potentialK : ParabolicCkHolderSpace (k + 2) α E F hT :=
 
 private theorem potentialK_apply (p : slab (E := E) 0 T) :
     potentialK hα₀ hα₁ f p = (potential hα₀ hα₁ f 0 p).curry0 := by
-  rw [potentialK, mk_apply, field, Finset.range_zero, Finset.sum_empty, add_zero, heatField,
-    ContinuousLinearMap.compLeftContinuousBounded_apply, iteratedTraceLastTwoL_zero,
-    ContinuousLinearMap.id_apply, derivFieldBCF_apply hα₀ hα₁ f (by omega), derivField,
-    ContinuousMultilinearMap.curry0_apply, iteratedFDeriv_zero_apply, slice,
-    slabMk_space_slabTime]
+  simp [potentialK, field_apply, heatField, derivFieldBCF_apply hα₀ hα₁ f (by omega : 0 ≤ k + 2),
+    derivField, slice]
 
 private theorem potentialK_apply_eq_heatDuhamelPotential (p : slab (E := E) 0 T) :
     potentialK hα₀ hα₁ f p = heatDuhamelPotential
@@ -638,15 +638,11 @@ private def potentialLinear (hα₀ : 0 < α) (hα₁ : α < 1) :
     ParabolicCkHolderSpace k α E F hT →ₗ[ℝ] ParabolicCkHolderSpace (k + 2) α E F hT where
   toFun := potentialK hα₀ hα₁
   map_add' f g := ext fun p ↦ by
-    rw [coe_add, Pi.add_apply, potentialK_apply, potentialK_apply, potentialK_apply, potential,
-      potential, potential, forcing_add, map_add, ParabolicC2HolderSpace.add_apply,
-      ContinuousMultilinearMap.curry0_apply, ContinuousMultilinearMap.curry0_apply,
+    simp only [coe_add, Pi.add_apply, potentialK_apply, potential, forcing_add, map_add,
       ContinuousMultilinearMap.curry0_apply, add_apply]
   map_smul' c f := ext fun p ↦ by
-    rw [coe_smul, Pi.smul_apply, potentialK_apply, potentialK_apply, potential, potential,
-      forcing_smul, map_smul, ParabolicC2HolderSpace.smul_apply, RingHom.id_apply,
-      ContinuousMultilinearMap.curry0_apply, ContinuousMultilinearMap.curry0_apply,
-      smul_apply]
+    simp only [coe_smul, Pi.smul_apply, potentialK_apply, potential, forcing_smul, map_smul,
+      RingHom.id_apply, ContinuousMultilinearMap.curry0_apply, smul_apply]
 
 /-- The value of the potential at time `t` is at most `t` times the supremum of the forcing. -/
 private theorem norm_potentialK_apply_le (hα₀ : 0 < α) (hα₁ : α < 1)
@@ -699,8 +695,9 @@ def heatDuhamelPotentialL (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ) < 
 variable {hα₀ : 0 < α} {hα₁ : α < 1}
 
 private theorem heatDuhamelPotentialL_eq_potentialK (f : ParabolicCkHolderSpace k α E F hT) :
-    heatDuhamelPotentialL hα₀ hα₁ hT f = potentialK hα₀ hα₁ f :=
-  (rfl)
+    heatDuhamelPotentialL hα₀ hα₁ hT f = potentialK hα₀ hα₁ f := by
+  simp only [heatDuhamelPotentialL, ContinuousLinearMap.coeFn_ofSeqClosedGraph, potentialLinear,
+    LinearMap.coe_mk, AddHom.coe_mk]
 
 /-- The value of the Duhamel potential at a point of the slab. -/
 @[simp]
@@ -730,8 +727,7 @@ theorem mixedDerivL_heatDuhamelPotentialL (f : ParabolicCkHolderSpace k α E F h
           x := by
   have hw : (fun y ↦ heatDuhamelPotentialL hα₀ hα₁ hT f (slabMk y t)) = slice hα₀ hα₁ f t :=
     funext fun y ↦ by rw [heatDuhamelPotentialL_eq_potentialK, potentialK_apply, slice]
-  rw [hw, heatDuhamelPotentialL_eq_potentialK, potentialK, mixedDerivL_mk _ _ _ _ h, field,
-    add_apply, FunLike.coe_sum, Finset.sum_apply,
+  rw [hw, heatDuhamelPotentialL_eq_potentialK, potentialK, mixedDerivL_mk _ _ _ _ h, field_apply,
     heatField_slabMk hα₀ hα₁ f (by omega)]
   congr 1
   refine Finset.sum_congr rfl fun i hi ↦ ?_
