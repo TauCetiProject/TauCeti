@@ -527,11 +527,6 @@ theorem conjWirtingerDeriv_eq_zero_iff_apply_one_eq_zero {f : ℂ → W} {x : �
     ext v
     rw [conjWirtingerDeriv_apply_eq_conj_smul_apply_one, h, smul_zero, zero_apply]
 
-/-- The imaginary part, as a map `ℂ → ℂ`, is `ℝ`-linear, so it is its own derivative. -/
-theorem fderiv_ofReal_im (z : ℂ) :
-    fderiv ℝ (fun w : ℂ ↦ (w.im : ℂ)) z = ofRealCLM.comp imCLM :=
-  (ofRealCLM.comp imCLM).hasFDerivAt.fderiv
-
 /-- The Wirtinger derivative of the imaginary part: `∂ Im = -i/2`. -/
 theorem wirtingerDeriv_apply_one_ofReal_im (z : ℂ) :
     wirtingerDeriv (fun w : ℂ ↦ (w.im : ℂ)) z 1 = -I / 2 := by
