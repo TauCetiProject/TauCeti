@@ -20,7 +20,9 @@ action is carried along a morphism of schemes `f : X ⟶ Y`: pushing forward mul
 action to the base ring for a scheme over a commutative ring, and the morphism
 `Scheme.baseRingToStructurePresheaf` from the constant presheaf of the base ring to the structure
 presheaf, which on the whole scheme is the base-ring map to global functions
-(`AlgebraicGeometry.Scheme.baseRingToStructurePresheaf_app_top`). The sections of the structure
+(`AlgebraicGeometry.Scheme.baseRingToStructurePresheaf_app_top`). When that map is bijective, every
+morphism to an affine scheme factors through the structure morphism
+(`AlgebraicGeometry.Scheme.exists_over_comp_specMap_eq`). The sections of the structure
 sheaf over the whole scheme are identified base-linearly with global functions by
 `Scheme.Modules.structureSheafSectionsBaseLinearEquiv`. Pullback of local functions by a morphism
 over the base preserves these images
@@ -276,6 +278,24 @@ lemma baseRingToStructurePresheaf_app_top :
   rw [baseRingToStructurePresheaf_app, Subsingleton.elim (unop (op (⊤ : X.Opens))).leTop.op (𝟙 _),
     X.presheaf.map_id]
   exact Category.comp_id _
+
+variable {R X} in
+/-- **Morphisms to an affine scheme from a scheme whose global functions are constants.** If the
+global functions on a scheme `X` over `R` are exactly the constants, that is, the map
+`R → Γ(X, 𝒪_X)` is bijective, then every morphism `f : X ⟶ Spec S` is the structure morphism
+`X ⟶ Spec R` followed by `Spec` of a ring map `S → R`. -/
+theorem exists_over_comp_specMap_eq {S : Type u} [CommRing S]
+    (hX : Function.Bijective (Modules.baseRingToGlobalSections R X)) (f : X ⟶ Spec (.of S)) :
+    ∃ φ : S →+* R, (X ↘ Spec (.of R)) ≫ Spec.map (CommRingCat.ofHom φ) = f := by
+  let β := RingEquiv.ofBijective _ hX
+  refine ⟨β.symm.toRingHom.comp ((Scheme.ΓSpecIso (.of S)).inv ≫ f.appTop).hom, ?_⟩
+  refine ext_of_isAffine ?_
+  rw [Scheme.Hom.comp_appTop, ← cancel_epi (Scheme.ΓSpecIso (.of S)).inv,
+    ← Scheme.ΓSpecIso_inv_naturality_assoc]
+  ext s
+  simp only [CommRingCat.hom_comp, RingHom.comp_apply, CommRingCat.hom_ofHom]
+  rw [← Modules.baseRingToGlobalSections_apply]
+  exact β.apply_symm_apply _
 
 variable {R} in
 /-- Compatible structure morphisms make the actions of the two base rings on sections
