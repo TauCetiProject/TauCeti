@@ -178,7 +178,7 @@ theorem Rad_conjugacy_eq_normalClosure_self [Subsingleton X] (hBP : IsBP G) (hG 
   rintro _ ⟨_, hh, rfl⟩
   obtain ⟨k, rfl⟩ := hC hh
   -- The generic point of `G_S` solves `S`, so there `z b⁻¹` commutes with `c`, hence with `c ^ k`.
-  have hv := (mem_V_conjugacy_iff hb).1 (SystemGroup.homEquiv _ {S} (GHom.id _)).2
+  have hv := (mem_V_conjugacy_iff hb).1 (SystemGroup.homEquiv _ {S} (GHom.id _)).property
   simp only [SystemGroup.homEquiv_apply_coe, GHom.coe_id, id_eq, SystemGroup.coeff_apply,
     mem_centralizer_singleton_iff] at hv
   simp only [SetLike.mem_coe]

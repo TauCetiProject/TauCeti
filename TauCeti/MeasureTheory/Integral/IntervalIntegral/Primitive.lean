@@ -182,9 +182,9 @@ theorem continuous_of_forall_eq_add_integral [TopologicalSpace X] {d : X → ℝ
   refine squeeze_zero (fun _ ↦ dist_nonneg) (fun v ↦ ?_) (by simpa using (hdc v₀).tendsto v₀)
   refine (ContinuousMap.dist_le (integral_nonneg fun _ ↦ norm_nonneg _)).2 fun t ↦ ?_
   rw [hT, hT, dist_eq_norm, add_sub_add_left_eq_sub, ← _root_.intervalIntegral.integral_sub
-    ((hdi v).intervalIntegrable_of_mem_Icc ht₀ t.2)
-    ((hdi v₀).intervalIntegrable_of_mem_Icc ht₀ t.2)]
-  exact norm_integral_le_setIntegral_norm ((hdi v).sub (hdi v₀)) ht₀ t.2
+    ((hdi v).intervalIntegrable_of_mem_Icc ht₀ t.property)
+    ((hdi v₀).intervalIntegrable_of_mem_Icc ht₀ t.property)]
+  exact norm_integral_le_setIntegral_norm ((hdi v).sub (hdi v₀)) ht₀ t.property
 
 /-- A primitive `g = c + ∫_{t₀}^· d ∂μ` on `[a, b]`, based at a point `t₀` of `[a, b]`, with
 `‖d‖ ≤ B` almost everywhere on `(a, b)`, is bounded by `‖c‖ + ∫ B`. -/
@@ -198,7 +198,7 @@ theorem norm_le_of_forall_eq_add_integral {d : ℝ → E} {B : ℝ → ℝ} {g :
     ((integral_nonneg fun _ ↦ norm_nonneg _).trans hB))).2 fun t ↦ ?_
   rw [hg]
   exact (norm_add_le _ _).trans
-    (add_le_add le_rfl ((norm_integral_le_setIntegral_norm hdi ht₀ t.2).trans hB))
+    (add_le_add le_rfl ((norm_integral_le_setIntegral_norm hdi ht₀ t.property).trans hB))
 
 /-- **Arzelà–Ascoli for primitives.** A family of primitives `T v = c + ∫_{t₀}^· d v ∂μ` on
 `[a, b]`, based at a point `t₀` of `[a, b]`, whose integrands are dominated almost everywhere on
@@ -214,9 +214,9 @@ theorem isCompact_closure_range_of_forall_eq_add_integral [ProperSpace E] {d : X
     fun v y z ↦ by
       rw [hT, hT, dist_eq_norm, add_sub_add_left_eq_sub, norm_sub_rev,
         _root_.intervalIntegral.integral_interval_sub_left
-          ((hdi v).intervalIntegrable_of_mem_Icc ht₀ z.2)
-          ((hdi v).intervalIntegrable_of_mem_Icc ht₀ y.2)]
-      exact norm_integral_le_abs_of_ae_norm_le hBi (hdB v) y.2 z.2
+          ((hdi v).intervalIntegrable_of_mem_Icc ht₀ z.property)
+          ((hdi v).intervalIntegrable_of_mem_Icc ht₀ y.property)]
+      exact norm_integral_le_abs_of_ae_norm_le hBi (hdB v) y.property z.property
   set R := ‖c‖ + ∫ t in Ioo a b, B t ∂μ
   refine ArzelaAscoli.isCompact_closure_range_of_equicontinuous (fun y ↦ ?_)
     fun _ ↦ ⟨Metric.closedBall 0 R, isCompact_closedBall 0 R, fun v ↦ ?_⟩
@@ -224,8 +224,8 @@ theorem isCompact_closure_range_of_forall_eq_add_integral [ProperSpace E] {d : X
       (fun z : Icc a b ↦ |∫ s in y..z, B s ∂μ|) ?_ _
       (Eventually.of_forall fun z v ↦ hTinc v y z)
     have hBc : Continuous fun z : Icc a b ↦ ∫ s in y..z, B s ∂μ :=
-      (continuousOn_primitive_interval_of_integrableOn_Ioo hBi y.2).comp_continuous
-        continuous_subtype_val Subtype.prop
+      (continuousOn_primitive_interval_of_integrableOn_Ioo hBi y.property).comp_continuous
+        continuous_subtypeVal Subtype.prop
     simpa using hBc.abs.tendsto y
   · exact mem_closedBall_zero_iff.2 (((T v).norm_coe_le_norm _).trans
       (norm_le_of_forall_eq_add_integral ht₀ (hdi v) hBi (hdB v) (hT v)))

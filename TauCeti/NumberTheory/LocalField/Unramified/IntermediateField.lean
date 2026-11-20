@@ -205,7 +205,7 @@ theorem unramifiedExtension_inertiaDegree_le (L : IntermediateField K (Separable
   obtain ⟨ζ, hζ⟩ := exists_isPrimitiveRoot_natCard_pow_inertiaDegree_sub_one K L
   rw [unramifiedExtension_eq_adjoin_simple TauCeti.inertiaDegree_pos.ne'
     (hζ.map_of_injective L.val.injective), adjoin_simple_le_iff]
-  exact ζ.2
+  exact ζ.property
 
 /-- The unramified part of a finite subextension is the canonical unramified extension of
 its residue degree. No normality hypothesis on `L/K` is required. -/

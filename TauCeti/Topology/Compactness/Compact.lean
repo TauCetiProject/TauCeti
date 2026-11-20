@@ -54,7 +54,7 @@ protected theorem _root_.IsCompact.connectedComponentIn {K : Set X} (hK : IsComp
   by_cases hx : x ∈ K
   · have : CompactSpace K := isCompact_iff_compactSpace.1 hK
     rw [connectedComponentIn_eq_image hx]
-    exact isClosed_connectedComponent.isCompact.image continuous_subtype_val
+    exact isClosed_connectedComponent.isCompact.image continuous_subtypeVal
   · rw [connectedComponentIn_eq_empty hx]
     exact isCompact_empty
 
@@ -99,7 +99,7 @@ theorem _root_.IsCompact.exists_mem_nhds_inter_preimage_subset {Y : Type*} [Topo
     (hinj : InjOn f K) {x : X} (hx : x ∈ K) {s : Set X} (hs : s ∈ 𝓝 x) :
     ∃ t ∈ 𝓝 (f x), K ∩ f ⁻¹' t ⊆ s := by
   -- Inside `K`, the neighbourhoods of `x` are read through `f`.
-  have hs' := continuous_subtype_val.continuousAt (x := (⟨x, hx⟩ : K)).preimage_mem_nhds hs
+  have hs' := continuous_subtypeVal.continuousAt (x := (⟨x, hx⟩ : K)).preimage_mem_nhds hs
   rw [(hK.isClosedEmbedding_domRestrict hf hinj).isInducing.nhds_eq_comap, mem_comap] at hs'
   obtain ⟨t, ht, hts⟩ := hs'
   refine ⟨t, ht, fun p ⟨hpK, hpt⟩ ↦ hts (a := ⟨p, hpK⟩) ?_⟩
@@ -186,13 +186,13 @@ theorem _root_.IsCompact.prod_inter_setOf_eq {Y Z : Type*} [TopologicalSpace Y]
     (ht : IsCompact t) {f : X → Z} {g : Y → Z} (hf : ContinuousOn f s) (hg : ContinuousOn g t) :
     IsCompact (s ×ˢ t ∩ {z | f z.1 = g z.2}) := by
   have : CompactSpace (s ×ˢ t) := isCompact_iff_compactSpace.1 (hs.prod ht)
-  have hf' : Continuous fun z : s ×ˢ t ↦ f z.1.1 :=
+  have hf' : Continuous fun z : s ×ˢ t ↦ f z.val.1 :=
     (hf.comp continuousOn_fst fun _ hz ↦ (mem_prod.1 hz).1).domRestrict
-  have hg' : Continuous fun z : s ×ˢ t ↦ g z.1.2 :=
+  have hg' : Continuous fun z : s ×ˢ t ↦ g z.val.2 :=
     (hg.comp continuousOn_snd fun _ hz ↦ (mem_prod.1 hz).2).domRestrict
-  convert (isClosed_eq hf' hg').isCompact.image continuous_subtype_val using 1
+  convert (isClosed_eq hf' hg').isCompact.image continuous_subtypeVal using 1
   ext z
-  exact ⟨fun hz ↦ ⟨⟨z, hz.1⟩, hz.2, rfl⟩, by rintro ⟨z, hz, rfl⟩; exact ⟨z.2, hz⟩⟩
+  exact ⟨fun hz ↦ ⟨⟨z, hz.1⟩, hz.2, rfl⟩, by rintro ⟨z, hz, rfl⟩; exact ⟨z.property, hz⟩⟩
 
 /-- The points of a compact set `C` that a map continuous on `C` sends into a closed set `K` form
 a compact set. -/
@@ -201,7 +201,7 @@ theorem _root_.IsCompact.inter_preimage {Y : Type*} [TopologicalSpace Y] {C : Se
     IsCompact (C ∩ Φ ⁻¹' K) := by
   have : CompactSpace C := isCompact_iff_compactSpace.1 hC
   rw [← Subtype.image_preimage_coe]
-  exact (hK.preimage hΦ.domRestrict).isCompact.image continuous_subtype_val
+  exact (hK.preimage hΦ.domRestrict).isCompact.image continuous_subtypeVal
 
 /-- A compact set contains no infinite subset all of whose subsets are closed: such a subset would
 be closed, hence compact, and discrete. -/
@@ -220,7 +220,7 @@ theorem compactSpace_complSingleton_iff_isOpen_singleton [CompactSpace X] [T2Spa
   rw [← isClosed_compl_iff]
   have hrange : range (Subtype.val : {x : X // x ≠ x₀} → X) = {x₀}ᶜ := by ext; simp
   rw [← hrange]
-  exact (isCompact_range continuous_subtype_val).isClosed
+  exact (isCompact_range continuous_subtypeVal).isClosed
 
 /-- In a compact space `X`, the inclusion of `{x : X // x ≠ x₀}` into `X` tends to `x₀` along the
 cocompact filter. -/
@@ -244,7 +244,7 @@ theorem _root_.IsCompact.subset_of_isClosed_of_forall_isClosed_singleton [T0Spac
   by_contra hzU
   have : CompactSpace S := isCompact_iff_compactSpace.1 hSc
   obtain ⟨⟨w, hwS⟩, hwU, hwcl⟩ :=
-    (hU.preimage continuous_subtype_val).isClosed_compl.exists_closed_singleton ⟨⟨z, hzS⟩, hzU⟩
+    (hU.preimage continuous_subtypeVal).isClosed_compl.exists_closed_singleton ⟨⟨z, hzS⟩, hzU⟩
   exact hwU (h w hwS (by simpa [image_singleton] using
     hS.isClosedEmbedding_subtypeVal.isClosedMap _ hwcl))
 

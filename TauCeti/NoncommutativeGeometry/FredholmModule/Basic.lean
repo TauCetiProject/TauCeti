@@ -126,7 +126,7 @@ def ofRealPart (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H) (F : H →L[ℂ] H)
     (hskew : ∀ a, IsCompactOperator ⇑((F - star F) * π a)) : FredholmModule A H where
   rep := π
   operator := ℜ F
-  isSelfAdjoint_operator := (ℜ F).2
+  isSelfAdjoint_operator := (ℜ F).property
   isCompactOperator_commutator a := by
     rw [realPart_eq_add_half_star_sub]
     refine ContinuousLinearMap.isCompactOperator_add_commutator (hc a) ?_ ?_

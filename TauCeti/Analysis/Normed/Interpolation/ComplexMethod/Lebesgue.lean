@@ -155,7 +155,7 @@ private theorem isBoundedAnalyticFamily_sumFamily (hφ : ∀ i, Differentiable �
   have hF : Differentiable ℂ fun z => ∑ i ∈ S, φ i z • C.fstToSum (C.interFst (x i)) :=
     Differentiable.fun_sum fun i _ => (hφ i).smul_const _
   have hdiff : Differentiable ℂ (sumFamily C S φ x) := by
-    have h := (ContinuousLinearMap.smulRightL ℂ (refl ℂ ℂ).SumSpace C.SumSpace
+    have h := (ContinuousLinearMap.smulRightL ℂ ℂ ℂ (refl ℂ ℂ).SumSpace C.SumSpace
       (refl ℂ ℂ).sumSpaceEmbed).differentiable.comp hF
     convert h using 1
     funext z

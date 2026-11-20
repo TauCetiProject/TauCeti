@@ -69,7 +69,7 @@ theorem equicontinuousOn_of_forall_isCompact_norm_fderiv_le
     EquicontinuousOn u Ω := by
   rw [← equicontinuous_restrict_iff]
   intro x
-  obtain ⟨r, hr, hrΩ⟩ := Metric.isOpen_iff.mp hΩ x x.2
+  obtain ⟨r, hr, hrΩ⟩ := Metric.isOpen_iff.mp hΩ x x.property
   have hball : closedBall (x : E) (r / 2) ⊆ Ω :=
     (closedBall_subset_ball (by linarith : r / 2 < r)).trans hrΩ
   obtain ⟨M, hM⟩ := hb _ (isCompact_closedBall (x : E) (r / 2)) hball
@@ -82,12 +82,12 @@ theorem equicontinuousOn_of_forall_isCompact_norm_fderiv_le
     · intro y hy
       exact_mod_cast (hM i y hy).trans (le_max_left M 0)
   have hmod : Continuous (fun y : Ω ↦ (L : ℝ) * dist (x : E) (y : E)) :=
-    continuous_const.mul (continuous_const.dist continuous_subtype_val)
+    continuous_const.mul (continuous_const.dist continuous_subtypeVal)
   apply Metric.equicontinuousAt_of_continuity_modulus
     (fun y : Ω ↦ (L : ℝ) * dist (x : E) (y : E))
     (by simpa using (hmod.continuousAt (x := x)).tendsto) _
   have hnear : ∀ᶠ y : Ω in 𝓝 x, (y : E) ∈ ball (x : E) (r / 2) :=
-    continuous_subtype_val.continuousAt (ball_mem_nhds (x : E) (by positivity))
+    continuous_subtypeVal.continuousAt (ball_mem_nhds (x : E) (by positivity))
   filter_upwards [hnear] with y hy i
   exact (hLip i).dist_le_mul _ (mem_closedBall_self (by positivity)) _
     (ball_subset_closedBall hy)

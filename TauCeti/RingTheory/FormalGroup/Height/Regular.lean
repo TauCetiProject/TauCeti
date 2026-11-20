@@ -200,11 +200,11 @@ theorem isWeaklyRegular_ofFn_iff_of_sub_mem (hp : p.Prime) (M : Type*) [AddCommG
   rw [isWeaklyRegular_iff]
   simp only [List.length_ofFn]
   refine forall_congr' fun i ↦ forall_congr' fun hi ↦ ?_
-  have htake : (List.ofFn w).take i = List.ofFn fun j : Fin i ↦ w ⟨j, j.2.trans hi⟩ :=
+  have htake : (List.ofFn w).take i = List.ofFn fun j : Fin i ↦ w ⟨j, j.isLt.trans hi⟩ :=
     List.ext_getElem (by simp; omega) fun k _ _ ↦ by simp
   have hId : Ideal.ofList ((List.ofFn w).take i) = F.heightIdeal p i := by
     rw [htake]
-    exact F.ofList_ofFn_eq_heightIdeal_of_sub_mem hp fun j ↦ hw ⟨j, j.2.trans hi⟩
+    exact F.ofList_ofFn_eq_heightIdeal_of_sub_mem hp fun j ↦ hw ⟨j, j.isLt.trans hi⟩
   have hget : (List.ofFn w)[i]'(by simpa using hi) = w ⟨i, hi⟩ := by simp
   rw [hget, (Submodule.quotEquivOfEq _ _
     (congrArg (· • (⊤ : Submodule R M)) hId)).isSMulRegular_congr,
