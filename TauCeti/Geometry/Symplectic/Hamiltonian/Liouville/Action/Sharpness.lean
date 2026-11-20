@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Oscillator.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 import TauCeti.Topology.Order.IntermediateValue
 
 /-!
@@ -36,11 +37,11 @@ continuous map into that level (`TauCeti.exists_continuous_mem_eq_actionAngleCov
   cannot contain a circle, so the conclusion fails there
   (`TauCeti.not_exists_actionAngle_oscillatorHamiltonian_zero`).
 * **Compactness.** For the momentum `f(q, p) = p` on `ℝ²`, every point is regular
-  (`TauCeti.isRegularPoint_snd`), and the level through `x` is the whole line `p = x.2`
-  (`TauCeti.connectedComponentIn_preimage_snd`), which is not compact
-  (`TauCeti.not_isCompact_connectedComponentIn_preimage_snd`). The conclusion fails at every point
-  (`TauCeti.not_exists_actionAngle_snd`): it would embed a circle continuously in a line, which is
-  impossible (`ContinuousOn.not_injOn_Ico_of_apply_eq`).
+  (`TauCeti.isRegularPoint_momentum`), and the level through `x` is the whole line `p = x.2`
+  (`TauCeti.connectedComponentIn_preimage_momentum`), which is not compact
+  (`TauCeti.not_isCompact_connectedComponentIn_preimage_momentum`). The conclusion fails at every
+  point (`TauCeti.not_exists_actionAngle_momentum`): it would embed a circle continuously in a
+  line, which is impossible (`ContinuousOn.not_injOn_Ico_of_apply_eq`).
 
 In both examples the other hypotheses hold: the integrals are smooth, a single function commutes
 with itself (`TauCeti.SmoothTwoForm.poissonBracket_self`) and the plane has dimension `2 · 1`. The
@@ -57,7 +58,7 @@ two-form, so they also refute the full conclusion of `exists_actionAngle`.
   continuously by its angles.
 * `TauCeti.not_exists_actionAngle_oscillatorHamiltonian_zero`: no action–angle chart at the
   critical equilibrium of the oscillator.
-* `TauCeti.not_exists_actionAngle_snd`: no action–angle chart around the noncompact levels of
+* `TauCeti.not_exists_actionAngle_momentum`: no action–angle chart around the noncompact levels of
   `f(q, p) = p`.
 
 ## References
@@ -172,27 +173,18 @@ theorem exists_continuous_mem_eq_actionAngleCover_of_image_eq (hU : IsOpen U) (h
   have hκ : Continuous κ :=
     (CotangentBundle.contMDiff_actionAngleCover (ι := ι) p).continuous.comp
       (continuous_id.prodMk continuous_const)
-  choose G hGU hGF hGΦ using exists_mem_eq_actionAngleCover_of_image_eq hΦ hF hy
-  refine ⟨G, continuous_iff_continuousAt.2 fun θ₀ ↦ ?_, fun θ ↦ ⟨hGU θ, hGF θ, hGΦ θ⟩⟩
-  replace hGΦ : ∀ θ, Φ (G θ) = κ θ := hGΦ
-  -- Near `θ₀`, `G` agrees with the local inverse `ψ` of `Φ` at `G θ₀` composed with `κ`, since
-  -- both take values in `U`, where `Φ` is injective.
-  have hloc₀ := hloc _ (hGU θ₀)
-  set ψ := hloc₀.localInverse
-  have hψ : ContinuousAt (ψ ∘ κ) θ₀ :=
-    ContinuousAt.comp (hGΦ θ₀ ▸ hloc₀.continuousAt_localInverse) hκ.continuousAt
-  have hψ₀ : ψ (κ θ₀) = G θ₀ := by
-    rw [← hGΦ θ₀]
-    exact hloc₀.localInverse_left_inv hloc₀.localInverse_mem_target
-  have hsrc : ∀ᶠ θ in 𝓝 θ₀, κ θ ∈ ψ.source :=
-    hκ.continuousAt.preimage_mem_nhds (hloc₀.localInverse_open_source.mem_nhds
-      (hGΦ θ₀ ▸ hloc₀.localInverse_mem_source))
-  have hmemU : ∀ᶠ θ in 𝓝 θ₀, ψ (κ θ) ∈ U :=
-    hψ.preimage_mem_nhds (hU.mem_nhds (by rw [comp_apply, hψ₀]; exact hGU θ₀))
-  refine hψ.congr ?_
-  filter_upwards [hsrc, hmemU] with θ hθ hθU
-  refine hinj hθU (hGU θ) ?_
-  rw [hloc₀.localInverse_right_inv hθ, hGΦ θ]
+  have hmem (θ : ι → ℝ) : κ θ ∈ Φ '' U := by
+    obtain ⟨y', hy', -, hΦy'⟩ := exists_mem_eq_actionAngleCover_of_image_eq hΦ hF hy θ
+    exact ⟨y', hy', hΦy'⟩
+  have : Nonempty M := ⟨y⟩
+  -- The inverse of `Φ` on `U` is continuous on `Φ '' U`, which contains the image of `κ`.
+  refine ⟨invFunOn Φ U ∘ κ, ((IsLocalDiffeomorphOn.contMDiffOn_invFunOn (fun x ↦ hloc x x.2) hU
+    hinj).continuousOn).comp_continuous hκ hmem, fun θ ↦ ?_⟩
+  have hGU : invFunOn Φ U (κ θ) ∈ U := invFunOn_mem (hmem θ)
+  have hGΦ : Φ (invFunOn Φ U (κ θ)) = κ θ := invFunOn_eq (hmem θ)
+  refine ⟨hGU, ?_, hGΦ⟩
+  obtain ⟨y', hy', hFy', hΦy'⟩ := exists_mem_eq_actionAngleCover_of_image_eq hΦ hF hy θ
+  rw [comp_apply, hinj hGU hy' (hGΦ.trans hΦy'.symm), hFy']
 
 end Continuous
 
@@ -230,7 +222,7 @@ theorem not_isRegularPoint_oscillatorHamiltonian_zero :
   have hns : ¬Surjective (0 : ℝ × ℝ →L[ℝ] Fin 1 → ℝ) := fun hsurj ↦ by
     obtain ⟨v, hv⟩ := hsurj fun _ ↦ 1
     simpa using congrFun hv 0
-  rw [isRegularPoint_iff, mfderiv_eq_fderiv, hF.fderiv]
+  rw [isRegularPoint_iff_surjective_fderiv, hF.fderiv]
   exact hns
 
 /-- **No action–angle chart at the critical equilibrium of the oscillator.** For nonzero mass and
@@ -259,19 +251,19 @@ end Oscillator
 section Momentum
 
 /-- Every point of the plane is a regular point of the momentum `(q, p) ↦ p`. -/
-theorem isRegularPoint_snd (x : ℝ × ℝ) :
+theorem isRegularPoint_momentum (x : ℝ × ℝ) :
     IsRegularPoint 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, Fin 1 → ℝ) (fun x : ℝ × ℝ ↦ fun _ : Fin 1 ↦ x.2) x := by
   have hF : HasFDerivAt (fun x : ℝ × ℝ ↦ fun _ : Fin 1 ↦ x.2)
       (ContinuousLinearMap.pi fun _ : Fin 1 ↦ ContinuousLinearMap.snd ℝ ℝ ℝ) x :=
     hasFDerivAt_pi.2 fun _ ↦ hasFDerivAt_snd
   have hsurj : Surjective (ContinuousLinearMap.pi fun _ : Fin 1 ↦ ContinuousLinearMap.snd ℝ ℝ ℝ) :=
     fun w ↦ ⟨(0, w 0), funext fun i ↦ by rw [Subsingleton.elim i 0]; simp⟩
-  rw [isRegularPoint_iff, mfderiv_eq_fderiv, hF.fderiv]
+  rw [isRegularPoint_iff_surjective_fderiv, hF.fderiv]
   exact hsurj
 
 /-- The level of the momentum `(q, p) ↦ p` through `x` is connected: it is the whole line
 `p = x.2`. -/
-theorem connectedComponentIn_preimage_snd (x : ℝ × ℝ) :
+theorem connectedComponentIn_preimage_momentum (x : ℝ × ℝ) :
     connectedComponentIn ((fun x : ℝ × ℝ ↦ fun _ : Fin 1 ↦ x.2) ⁻¹' {fun _ ↦ x.2}) x =
       {y | y.2 = x.2} := by
   have hlevel : (fun x : ℝ × ℝ ↦ fun _ : Fin 1 ↦ x.2) ⁻¹' {fun _ ↦ x.2} =
@@ -284,10 +276,10 @@ theorem connectedComponentIn_preimage_snd (x : ℝ × ℝ) :
   exact ⟨fun ⟨q, hq⟩ ↦ hq ▸ rfl, fun hy ↦ ⟨y.1, Prod.ext rfl hy.symm⟩⟩
 
 /-- The level of the momentum `(q, p) ↦ p` through any point is not compact. -/
-theorem not_isCompact_connectedComponentIn_preimage_snd (x : ℝ × ℝ) :
+theorem not_isCompact_connectedComponentIn_preimage_momentum (x : ℝ × ℝ) :
     ¬IsCompact
       (connectedComponentIn ((fun x : ℝ × ℝ ↦ fun _ : Fin 1 ↦ x.2) ⁻¹' {fun _ ↦ x.2}) x) := by
-  rw [connectedComponentIn_preimage_snd]
+  rw [connectedComponentIn_preimage_momentum]
   intro hK
   have himage : Prod.fst '' {y : ℝ × ℝ | y.2 = x.2} = univ :=
     eq_univ_of_forall fun q ↦ ⟨(q, x.2), rfl, rfl⟩
@@ -297,11 +289,12 @@ theorem not_isCompact_connectedComponentIn_preimage_snd (x : ℝ × ℝ) :
 `f(q, p) = p` on `ℝ²` and any `x`, there are no open `U ∋ x`, `D`, `Φ` into `T*(AddCircle p)`
 injective on `U` and a local diffeomorphism at its points, and `h` such that `Φ` maps `U` onto the
 covectors whose actions lie in `D` and `f` is `h` of the actions on `U`: such a chart would embed a
-circle continuously in the line `p = x.2`. Every point is regular (`TauCeti.isRegularPoint_snd`),
-but the level through `x` is not compact
-(`TauCeti.not_isCompact_connectedComponentIn_preimage_snd`), so this shows that the compactness
-hypothesis of `TauCeti.SmoothTwoForm.IsSymplectic.exists_actionAngle` cannot be dropped. -/
-theorem not_exists_actionAngle_snd (x : ℝ × ℝ) (p : ℝ) [Fact (0 < p)] :
+circle continuously in the line `p = x.2`. Every point is regular
+(`TauCeti.isRegularPoint_momentum`), but the level through `x` is not compact
+(`TauCeti.not_isCompact_connectedComponentIn_preimage_momentum`), so this shows that the
+compactness hypothesis of `TauCeti.SmoothTwoForm.IsSymplectic.exists_actionAngle` cannot be
+dropped. -/
+theorem not_exists_actionAngle_momentum (x : ℝ × ℝ) (p : ℝ) [Fact (0 < p)] :
     ¬∃ (U : Set (ℝ × ℝ)) (D : Set (Fin 1 → ℝ))
       (Φ : ℝ × ℝ → CotangentBundle (ModelWithCorners.pi fun _ : Fin 1 ↦ 𝓘(ℝ))
         (Fin 1 → AddCircle p)) (h : (Fin 1 → ℝ) → Fin 1 → ℝ),
