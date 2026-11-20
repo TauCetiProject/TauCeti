@@ -79,8 +79,8 @@ theorem exists_contMDiffWithinAt_alongCurveWithin_eq {γ : 𝕜 → M} {s : Set 
       (hBp.mdifferentiableWithinAt (by simp))
       (mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
     have hcoordMul : DifferentiableWithinAt 𝕜
-        (sectionCoord (F := E) γ (fun r ↦ (r - t) • B (γ r)) (γ t)) s t := by
-      rw [sectionCoord_smul]
+        (sectionCoord 𝕜 (F := E) γ (fun r ↦ (r - t) • B (γ r)) (γ t)) s t := by
+      rw [sectionCoord_fun_smul]
       exact (differentiableWithinAt_id.sub_const t).smul hcoordB
     have hdt : derivWithin (fun r : 𝕜 ↦ r - t) s t = 1 := by
       simpa only [id_eq] using ((hasDerivWithinAt_id t s).sub_const t).derivWithin hs
@@ -101,7 +101,7 @@ theorem exists_contMDiffAt_tangentCurve_initialData [I.Boundaryless]
     ∃ σ : 𝕜 → TangentBundle I M,
       σ t = TotalSpace.mk' E p v ∧ ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent ∞ σ t ∧
       curveVelocity I (fun r ↦ (σ r).proj) t = u ∧
-      cov.alongCurve (fun r ↦ (σ r).proj) (fun r ↦ (σ r).2) t = w := by
+      cov.alongCurve (fun r ↦ (σ r).proj) (fun r ↦ (σ r).snd) t = w := by
   obtain ⟨γ, hγt, hγ, hvel⟩ :=
     exists_contMDiffAt_curveVelocity_eq (I := I) (n := ∞) (by simp) p u t
   obtain ⟨V, hV, hVt, hDV⟩ := cov.exists_contMDiffWithinAt_alongCurveWithin_eq

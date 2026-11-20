@@ -102,7 +102,7 @@ private theorem alongCurve_alongCurve_eq_symmL
   have hw : ContDiffAt ℝ 2 w (u, v) :=
     hwdef ▸ hW.contDiffAt_continuousLinearMapAt_trivializationAt
   -- Near `u`, the inner covariant derivatives read in the chart by the coordinate formula.
-  have hinner : sectionCoord (F := E) (fun q ↦ f q v)
+  have hinner : sectionCoord ℝ (F := E) (fun q ↦ f q v)
       (fun q ↦ alongCurve cov (f q) (W q) v) (f u v) =ᶠ[𝓝 u]
       fun q ↦ deriv (fun r ↦ w (q, r)) v + Γ (f q v) (w (q, v)) (deriv (fun r ↦ φ (q, r)) v) := by
     simpa only [hφdef, hwdef] using

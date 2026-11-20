@@ -18,8 +18,10 @@ jobs:
     # admit only comments with an allowlisted label (or -label) at the start of some line.
     # Prepending a newline to the body turns "start of body" into "after a newline".
     # contains() is case-insensitive, so this is a superset of the exact parser below.
+    # Automated AI review scoreboards are never commands, so they never allocate a runner.
     if: >-
-      github.repository == 'TauCetiProject/TauCeti' && (
+      github.repository == 'TauCetiProject/TauCeti' &&
+      !startsWith(github.event.comment.body, '<!--tauceti-scoreboard-->') && (
         contains(format('{0}{1}', fromJSON('"\n"'), github.event.comment.body), format('{0}dont-repair-in-queue', fromJSON('"\n"'))) ||
         contains(format('{0}{1}', fromJSON('"\n"'), github.event.comment.body), format('{0}-dont-repair-in-queue', fromJSON('"\n"'))) ||
         contains(format('{0}{1}', fromJSON('"\n"'), github.event.comment.body), format('{0}hold', fromJSON('"\n"'))) ||

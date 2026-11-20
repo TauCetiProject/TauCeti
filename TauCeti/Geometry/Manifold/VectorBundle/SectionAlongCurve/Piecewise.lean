@@ -149,7 +149,7 @@ partition vertices and both endpoints. -/
 theorem continuous (W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ) :
     Continuous (fun t : Icc a b ↦ TotalSpace.mk' F (γ t) (W.val t)) := by
   obtain ⟨U, hU, hUW⟩ := W.exists_extension
-  have h := hU.continuousOn.comp_continuous continuous_subtype_val (fun t ↦ t.property)
+  have h := hU.continuousOn.comp_continuous continuous_subtypeVal (fun t ↦ t.property)
   exact h.congr fun t ↦ congrArg (TotalSpace.mk' F (γ t)) (hUW t)
 
 /-- Evaluation at an interval parameter is a real linear map into its fibre. -/

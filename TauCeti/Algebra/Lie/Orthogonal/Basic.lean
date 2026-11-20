@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Basic.Real.Star
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import Mathlib.Algebra.Group.Pi.Units
 
 /-!
@@ -23,8 +24,10 @@ and consumed by the exponential and Lie-subgroup files that compare `so` with st
 statements about the unitary — that is, orthogonal — group of `Matrix n n ℝ`.
 
 The file also records invertibility of the indefinite Gram matrix
-`LieAlgebra.Orthogonal.indefiniteDiagonal p q R`, and symmetry and invertibility of the split
-odd orthogonal Gram matrix `LieAlgebra.Orthogonal.JB ι R`.
+`LieAlgebra.Orthogonal.indefiniteDiagonal p q R`, symmetry of the split even orthogonal Gram
+matrix `LieAlgebra.Orthogonal.JD ι R` and the invariance of its bilinear form under renaming the
+hyperbolic pairs, and symmetry and invertibility of the split odd orthogonal Gram matrix
+`LieAlgebra.Orthogonal.JB ι R`.
 
 ## Main results
 
@@ -32,6 +35,9 @@ odd orthogonal Gram matrix `LieAlgebra.Orthogonal.JB ι R`.
   skew-adjoint matrices.
 * `LieAlgebra.Orthogonal.isUnit_indefiniteDiagonal`: the Gram matrix of the indefinite form is
   invertible.
+* `LieAlgebra.Orthogonal.isSymm_JD`: the split even orthogonal Gram matrix is symmetric.
+* `LieAlgebra.Orthogonal.toBilin'_JD_comp_sumMap`: the split even orthogonal form is unchanged by
+  renaming its hyperbolic pairs along an equivalence.
 * `LieAlgebra.Orthogonal.isSymm_JB` and `LieAlgebra.Orthogonal.isUnit_JB`: the split odd
   orthogonal Gram matrix is symmetric and is invertible when two is a unit.
 -/
@@ -64,6 +70,23 @@ theorem isUnit_indefiniteDiagonal : IsUnit (indefiniteDiagonal p q R) :=
   isUnit_diagonal.mpr (Pi.isUnit_iff.mpr fun i ↦ by cases i <;> simp)
 
 variable {ι : Type*} [DecidableEq ι]
+
+/-- The Gram matrix of the split even orthogonal form is symmetric. -/
+@[simp]
+theorem isSymm_JD : (JD ι R).IsSymm := by
+  simp [Matrix.IsSymm, JD, Matrix.fromBlocks_transpose]
+
+/-- The split even orthogonal form does not depend on the names of the hyperbolic pairs:
+renaming both isotropic blocks along an equivalence preserves its values. -/
+theorem toBilin'_JD_comp_sumMap {κ : Type*} [DecidableEq κ] [Fintype ι] [Fintype κ] (e : ι ≃ κ)
+    (v w : κ ⊕ κ → R) :
+    (JD ι R).toBilin' (fun s => v (Sum.map e e s)) (fun s => w (Sum.map e e s)) =
+      (JD κ R).toBilin' v w := by
+  simp only [Matrix.toBilin'_apply', JD, Matrix.fromBlocks_mulVec, Matrix.zero_mulVec,
+    Matrix.one_mulVec, zero_add, add_zero, dotProduct, Fintype.sum_sum_type, Sum.elim_inl,
+    Sum.elim_inr, Function.comp_apply, Sum.map_inl, Sum.map_inr]
+  exact congrArg₂ (· + ·) (Equiv.sum_comp e fun j => v (.inl j) * w (.inr j))
+    (Equiv.sum_comp e fun j => v (.inr j) * w (.inl j))
 
 /-- The Gram matrix of the split odd orthogonal form is symmetric. -/
 @[simp]

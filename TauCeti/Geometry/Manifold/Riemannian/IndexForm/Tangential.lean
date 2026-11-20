@@ -69,8 +69,8 @@ integrand `I_t(V^⊥, W^⊥)` of the normal components
 theorem IsGeodesicCurveOn.indexFormIntegrand_sub_starProjection_singleton
     {γ : ℝ → M} {V W : ∀ t, TangentSpace I (γ t)} {s : Set ℝ} {t : ℝ}
     (hγ : IsGeodesicCurveOn I γ s) (hs : s ∈ 𝓝 t)
-    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
-    (hW : DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t) :
+    (hV : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t)
+    (hW : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) t) :
     indexFormIntegrand I γ
         (fun r ↦ V r - (ℝ ∙ curveVelocity I γ r).starProjection (V r))
         (fun r ↦ W r - (ℝ ∙ curveVelocity I γ r).starProjection (W r)) t =
@@ -87,7 +87,7 @@ theorem IsGeodesicCurveOn.indexFormIntegrand_sub_starProjection_singleton
   have hconn : IsPreconnected (Metric.ball t r) := (convex_ball t r).isPreconnected
   -- Covariant differentiation commutes with the normal projection on `Metric.ball t r`.
   have hDN (U : ∀ q, TangentSpace I (γ q))
-      (hU : DifferentiableAt ℝ (sectionCoord (F := E) γ U (γ t)) t) :
+      (hU : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ U (γ t)) t) :
       alongCurve cov γ (fun q ↦ U q - (ℝ ∙ curveVelocity I γ q).starProjection (U q)) t =
         alongCurve cov γ U t -
           (ℝ ∙ curveVelocity I γ t).starProjection (alongCurve cov γ U t) := by
@@ -199,8 +199,8 @@ for every `t ∈ uIoo a b`, and `W` is orthogonal to `γ'` everywhere on `uIoo a
 theorem IsGeodesicCurveOn.indexForm_eq_zero_of_mem_span_curveVelocity_of_orthogonal
     {γ : ℝ → M} {V W : ∀ t, TangentSpace I (γ t)} {a b : ℝ}
     (hγ : IsGeodesicCurveOn I γ (uIoo a b))
-    (hV : ∀ t ∈ uIoo a b, DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
-    (hW : ∀ t ∈ uIoo a b, DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t)
+    (hV : ∀ t ∈ uIoo a b, DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t)
+    (hW : ∀ t ∈ uIoo a b, DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) t)
     (htan : ∀ t ∈ uIoo a b, V t ∈ ℝ ∙ curveVelocity I γ t)
     (horth : ∀ t ∈ uIoo a b, ⟪W t, curveVelocity I γ t⟫_ℝ = 0) :
     indexForm I γ V W a b = 0 := by
@@ -250,7 +250,7 @@ theorem IsGeodesicCurveOn.indexForm_smul_curveVelocity_eq_zero_of_orthogonal
     {γ : ℝ → M} {f : ℝ → ℝ} {W : ∀ t, TangentSpace I (γ t)} {a b : ℝ}
     (hγ : IsGeodesicCurveOn I γ (uIoo a b))
     (hf : ∀ t ∈ uIoo a b, DifferentiableAt ℝ f t)
-    (hW : ∀ t ∈ uIoo a b, DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t)
+    (hW : ∀ t ∈ uIoo a b, DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) t)
     (horth : ∀ t ∈ uIoo a b, ⟪W t, curveVelocity I γ t⟫_ℝ = 0) :
     indexForm I γ (fun t ↦ f t • curveVelocity I γ t) W a b = 0 := by
   refine hγ.indexForm_eq_zero_of_mem_span_curveVelocity_of_orthogonal
@@ -258,7 +258,7 @@ theorem IsGeodesicCurveOn.indexForm_smul_curveVelocity_eq_zero_of_orthogonal
     (fun t _ ↦ Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)) horth
   have hmem : uIoo a b ∈ 𝓝 t := (isOpen_Ioo : IsOpen (uIoo a b)).mem_nhds ht
   have hvel_coord : DifferentiableAt ℝ
-      (sectionCoord (F := E) γ (curveVelocityWithin I γ (uIoo a b)) (γ t)) t :=
+      (sectionCoord ℝ (F := E) γ (curveVelocityWithin I γ (uIoo a b)) (γ t)) t :=
     (differentiableWithinAt_sectionCoord_curveVelocityWithin γ hγ.uniqueDiffOn hγ.contMDiffOn ht
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))).differentiableAt hmem
   refine ((hf t ht).smul hvel_coord).congr_of_eventuallyEq ?_

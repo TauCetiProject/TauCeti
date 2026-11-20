@@ -169,7 +169,7 @@ theorem hasDerivAt_inner_acceleration_fst_curveVelocity {u t : ℝ}
     hf.contMDiffAt_acceleration_leviCivitaConnection_fst_slice (n := 1) (m := 3) (k := 2)
       (by norm_num) (by norm_num) (by norm_num)
   have hAcoord : DifferentiableAt ℝ
-      (sectionCoord (F := E) (F u)
+      (sectionCoord ℝ (F := E) (F u)
         (fun r ↦ acceleration (leviCivitaConnection I M) (fun s ↦ F s r) u) (F u t)) t :=
     differentiableAt_sectionCoord (F u) _ (hA.mdifferentiableAt one_ne_zero)
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (F u t))
@@ -318,10 +318,10 @@ theorem hasDerivAt_deriv_norm_sq_curveVelocity {t : ℝ}
   have hσ : ∀ᶠ s in 𝓝 (0 : ℝ), MDifferentiableAt 𝓘(ℝ, ℝ) I σ s :=
     hPnear.mono fun s hs ↦
       ((contMDiff_proj (TangentSpace I)).contMDiffAt.comp s hs).mdifferentiableAt one_ne_zero
-  have hPcoord : ∀ᶠ s in 𝓝 (0 : ℝ), DifferentiableAt ℝ (sectionCoord (F := E) σ P (σ s)) s :=
+  have hPcoord : ∀ᶠ s in 𝓝 (0 : ℝ), DifferentiableAt ℝ (sectionCoord ℝ (F := E) σ P (σ s)) s :=
     hPnear.mono fun s hs ↦ differentiableAt_sectionCoord σ P (hs.mdifferentiableAt one_ne_zero)
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (σ s))
-  have hDPcoord : DifferentiableAt ℝ (sectionCoord (F := E) σ (alongCurve cov σ P) (σ 0)) 0 :=
+  have hDPcoord : DifferentiableAt ℝ (sectionCoord ℝ (F := E) σ (alongCurve cov σ P) (σ 0)) 0 :=
     differentiableAt_sectionCoord_alongCurve_leviCivitaConnection hP
   have hd₂ := hm.hasDerivAt_deriv_norm_sq_alongCurve hσ hPcoord hDPcoord
   -- Use curvature skew-symmetry and torsion-free symmetry `D_s γ' = D_t V` to match `I_t(V, V)`.

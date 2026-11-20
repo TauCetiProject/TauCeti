@@ -133,7 +133,7 @@ theorem hasDerivAt_deriv_norm_curveVelocity {t : ℝ}
     filter_upwards [hPnear, hvel_cont.eventually_ne (norm_ne_zero_iff.mpr hγ)] with s hs hns
     have hσs : MDifferentiableAt 𝓘(ℝ, ℝ) I σ s :=
       ((contMDiff_proj (TangentSpace I)).contMDiffAt.comp s hs).mdifferentiableAt one_ne_zero
-    have hPs : DifferentiableAt ℝ (sectionCoord (F := E) σ P (σ s)) s :=
+    have hPs : DifferentiableAt ℝ (sectionCoord ℝ (F := E) σ P (σ s)) s :=
       differentiableAt_sectionCoord σ P (hs.mdifferentiableAt one_ne_zero)
         (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (σ s))
     have hqs : DifferentiableAt ℝ q s :=

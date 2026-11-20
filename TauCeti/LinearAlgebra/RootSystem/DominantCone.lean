@@ -130,7 +130,7 @@ theorem finite_setOf_dominant_sub_mem_posRootCone (lam : M) :
   · rw [hempty]
     exact Set.finite_empty
   -- The right-hand side of the Cartan inequality is read off a chosen member of the set.
-  choose n₀ hn₀ using fun i : b.support ↦ hmu₀.2 i i.2
+  choose n₀ hn₀ using fun i : b.support ↦ hmu₀.2 i i.property
   obtain ⟨f₀, hf₀⟩ := (mem_posRootCone P b).mp hmu₀.1
   set y : b.support → ℤ :=
     fun i ↦ (n₀ i : ℤ) + ∑ j : b.support, P.pairingIn ℤ j i * (f₀ j : ℤ) with hydef
@@ -152,7 +152,7 @@ theorem finite_setOf_dominant_sub_mem_posRootCone (lam : M) :
       fun c : b.support → ℕ ↦ lam - ∑ j : b.support, c j • P.root j) ?_
   rintro mu ⟨hcone, hdom⟩
   obtain ⟨f, hf⟩ := (mem_posRootCone P b).mp hcone
-  choose n hn using fun i : b.support ↦ hdom i i.2
+  choose n hn using fun i : b.support ↦ hdom i i.property
   refine ⟨fun j : b.support ↦ f j, fun i ↦ ?_, ?_⟩
   · have h := coroot'_sum_nsmul_root b f i
     rw [← hf, map_sub, hlam i, hn i] at h

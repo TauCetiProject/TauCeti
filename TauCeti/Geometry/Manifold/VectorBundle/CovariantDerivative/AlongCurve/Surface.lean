@@ -92,7 +92,7 @@ read in that chart. -/
 private theorem sectionCoord_curveVelocity_fst_eventuallyEq
     (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I 1 (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v))
     (hx : f u v ∈ (trivializationAt E (TangentSpace I) x).baseSet) :
-    sectionCoord (F := E) (f u) (fun r ↦ curveVelocity I (fun q ↦ f q r) u) x =ᶠ[𝓝 v]
+    sectionCoord 𝕜 (F := E) (f u) (fun r ↦ curveVelocity I (fun q ↦ f q r) u) x =ᶠ[𝓝 v]
       fun r ↦ deriv (fun q ↦ extChartAt I x (f q r)) u := by
   obtain ⟨w, hw, hfw⟩ := (contMDiffAt_iff_contMDiffOn_nhds (by simp)).mp hf
   obtain ⟨w', hw'w, hw'open, hw'mem⟩ := mem_nhds_iff.mp hw
@@ -219,7 +219,7 @@ theorem sectionCoord_alongCurve_snd_eventuallyEq
       (fun z : 𝕜 × 𝕜 ↦ TotalSpace.mk' E (f z.1 z.2) (W z.1 z.2)) (u, v)) :
     letI e := trivializationAt E (TangentSpace I) (f u v)
     letI Γ := christoffelMap (finBasis 𝕜 E) (cov.isCovariantDerivativeOn (s := e.baseSet))
-    sectionCoord (F := E) (fun q ↦ f q v) (fun q ↦ alongCurve cov (f q) (W q) v) (f u v) =ᶠ[𝓝 u]
+    sectionCoord 𝕜 (F := E) (fun q ↦ f q v) (fun q ↦ alongCurve cov (f q) (W q) v) (f u v) =ᶠ[𝓝 u]
       fun q ↦
         deriv (fun r ↦ e.continuousLinearMapAt 𝕜 (f q r) (W q r)) v +
           Γ (f q v) (e.continuousLinearMapAt 𝕜 (f q v) (W q v))
@@ -239,10 +239,10 @@ theorem sectionCoord_alongCurve_snd_eventuallyEq
     hq.comp v (contMDiff_iff_contDiff.mpr (contDiff_prodMk_right (n := 1) q)).contMDiffAt
   have hfq : MDifferentiableAt 𝓘(𝕜, 𝕜) I (f q) v :=
     ((contMDiff_proj (TangentSpace I)).contMDiffAt.comp v hcurve).mdifferentiableAt one_ne_zero
-  have hV : DifferentiableAt 𝕜 (sectionCoord (F := E) (f q) (W q) (f q v)) v :=
+  have hV : DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := E) (f q) (W q) (f q v)) v :=
     differentiableAt_sectionCoord (f q) (W q) (hcurve.mdifferentiableAt one_ne_zero)
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) _)
-  have hcoord : sectionCoord (F := E) (f q) (W q) (f u v) =
+  have hcoord : sectionCoord 𝕜 (F := E) (f q) (W q) (f u v) =
       fun r ↦ e.continuousLinearMapAt 𝕜 (f q r) (W q r) :=
     funext fun r ↦ sectionCoord_apply (f q) (W q) (f u v) r
   rw [sectionCoord_apply, ← alongCurveWithin_univ,
@@ -261,7 +261,7 @@ theorem sectionCoord_alongCurve_fst_eventuallyEq
       (fun z : 𝕜 × 𝕜 ↦ TotalSpace.mk' E (f z.1 z.2) (W z.1 z.2)) (u, v)) :
     letI e := trivializationAt E (TangentSpace I) (f u v)
     letI Γ := christoffelMap (finBasis 𝕜 E) (cov.isCovariantDerivativeOn (s := e.baseSet))
-    sectionCoord (F := E) (f u)
+    sectionCoord 𝕜 (F := E) (f u)
         (fun r ↦ alongCurve cov (fun q ↦ f q r) (fun q ↦ W q r) u) (f u v) =ᶠ[𝓝 v]
       fun r ↦
         deriv (fun q ↦ e.continuousLinearMapAt 𝕜 (f q r) (W q r)) u +
@@ -356,7 +356,7 @@ theorem differentiableAt_sectionCoord_curveVelocity_fst [IsManifold I 2 M]
     (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I 2 (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v))
     (hx : f u v ∈ (trivializationAt E (TangentSpace I) x).baseSet) :
     DifferentiableAt 𝕜
-      (sectionCoord (F := E) (f u) (fun r ↦ curveVelocity I (fun q ↦ f q r) u) x) v := by
+      (sectionCoord 𝕜 (F := E) (f u) (fun r ↦ curveVelocity I (fun q ↦ f q r) u) x) v := by
   have hcoord := sectionCoord_curveVelocity_fst_eventuallyEq (hf.of_le (by norm_num)) hx
   have hchart := contDiffAt_extChartAt_comp_surface hf hx
   have hDf : DifferentiableAt 𝕜 (fderiv 𝕜
@@ -379,7 +379,7 @@ is differentiable along the first-parameter curve. -/
 theorem differentiableAt_sectionCoord_curveVelocity_snd [IsManifold I 2 M]
     (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I 2 (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v))
     (hx : f u v ∈ (trivializationAt E (TangentSpace I) x).baseSet) :
-    DifferentiableAt 𝕜 (sectionCoord (F := E) (fun q ↦ f q v)
+    DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := E) (fun q ↦ f q v)
       (fun q ↦ curveVelocity I (f q) v) x) u :=
   (hf.comp (v, u) (contMDiff_iff_contDiff.mpr
     (by fun_prop : ContDiff 𝕜 2 fun z : 𝕜 × 𝕜 ↦ (z.2, z.1))).contMDiffAt)
