@@ -99,11 +99,8 @@ theorem sectionIndex_toHomologicalOrientation_eq_one {z : M} (hz : s z = 0)
   have := FiniteDimensional.of_finrank_eq_succ hF
   set e := trivializationAt F E z
   have hze : z ∈ e.baseSet := mem_baseSet_trivializationAt F E z
-  -- The fibre coordinate of `s` in the preferred trivialization is differentiable at `z`.
   have hg : MDifferentiableAt 𝓘(ℝ, X) 𝓘(ℝ, F) (fun y ↦ (e ⟨y, s y⟩).2) z :=
     ((mdifferentiableAt_totalSpace 𝓘(ℝ, X) (fun x ↦ TotalSpace.mk' F x (s x))).1 hsd).2
-  -- The chart `φ = Λ ∘ chartAt X z`, where `Λ = e_z ∘ D`, in which the section has derivative the
-  -- identity at `φ z`.
   let Λ : X ≃L[ℝ] F := D.trans (e.continuousLinearEquivAt ℝ z hze)
   let φ : OpenPartialHomeomorph M F := (chartAt X z).transHomeomorph Λ.toHomeomorph
   have hzφ : z ∈ φ.source := mem_chart_source X z
@@ -114,29 +111,24 @@ theorem sectionIndex_toHomologicalOrientation_eq_one {z : M} (hz : s z = 0)
     exact D.trans_apply _ v
   obtain ⟨U, hUo, hzU, hUz, hUe, hUφ, ho'⟩ := exists_isolating_nhds_of_hasFDerivAt o hF e φ hze hzφ
     hz hA ⟨1, by simpa using AntilipschitzWith.id⟩
-  -- The chart carries the manifold orientation to the fibre orientation read in `e`.
   have hmap : (oM.orientationAt z).map _ Λ.toLinearEquiv =
       e.mapOrientation (Fin (n + 1)) hze (o z) := by
     have hΛ : Λ.toLinearEquiv = D.toLinearEquiv.trans (e.linearEquivAt ℝ z hze) := by
       rw [ContinuousLinearEquiv.trans_toLinearEquiv]
-      -- `continuousLinearEquivAt.toLinearEquiv` is the same trivialization's `linearEquivAt`;
-      -- the former adds continuity fields to the latter, with no change to the linear map.
+      -- The trivialization's continuousLinearEquivAt only adds continuity to linearEquivAt.
       rfl
     rw [hΛ]
     refine (Orientation.map_trans D.toLinearEquiv (e.linearEquivAt ℝ z hze)
       (oM.orientationAt z)).trans ?_
     rw [ho, Trivialization.mapOrientation_apply]
-  -- The index formula centers after `Λ`; linearity identifies it with the canonical chart map.
   have hσ : (⟨fun x : φ.source ↦ φ x - φ z,
       φ.continuousOn.domRestrict.sub continuous_const⟩ : C(φ.source, F)) =
       ((Λ : X →L[ℝ] F) : C(X, F)).comp
         ((⟨fun y ↦ y - (chartAt X z) z, by fun_prop⟩ : C(X, X)).comp
           (chartAt X z).sourceRestrict) :=
     ContinuousMap.ext fun x ↦ by
-      -- The source subtype is written as `φ.source` on the left and `(chartAt X z).source`
-      -- on the right. Their induced topologies become identical after unfolding the composite
-      -- chart, so `erw` is needed for the composition and source-restriction application
-      -- lemmas to match. The final equality uses the same source identification as `hσ`.
+      -- Unfolding φ identifies its source subtype and topology with those of chartAt X z.
+      -- `erw` matches composition and source-restriction application lemmas across this source.
       erw [ContinuousMap.comp_apply, ContinuousMap.comp_apply]
       simp only [ContinuousMap.coe_mk, ContinuousMap.coe_apply, ContinuousLinearEquiv.coe_coe,
         φ, OpenPartialHomeomorph.transHomeomorph_apply, Function.comp_apply,
