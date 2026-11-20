@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator.DenseRange
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator.Estimate
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Sobolev.Circle.LinearODE.DeterminantLine
 
 /-!
@@ -170,29 +171,6 @@ theorem stationarySobolevOperator_jetₗ_ae_eq
 
 variable {ω : SymplecticForm V}
 
-omit [FiniteDimensional ℝ V] in
-/-- The pointwise comparison behind `exists_hasSemiFredholmEstimate_stationaryJetCoeff`: if
-`a ‖v‖² ≤ g v` for every `v`, with `a > 0`, and `‖T‖ ≤ σ`, then
-`‖p‖² + ‖d‖² + ‖x‖² ≤ a⁻¹ (2 + 2 σ²) (g p + g (d - T x) + g x)`. -/
-private theorem sq_norm_add_sq_norm_add_sq_norm_le {a σ : ℝ} {g : V → ℝ} (ha : 0 < a)
-    (hg : ∀ v, a * ‖v‖ ^ 2 ≤ g v) {T : V →L[ℝ] V} (hT : ‖T‖ ≤ σ) (p d x : V) :
-    ‖p‖ ^ 2 + ‖d‖ ^ 2 + ‖x‖ ^ 2 ≤ a⁻¹ * (2 + 2 * σ ^ 2) * ((g p + g (d - T x)) + g x) := by
-  have hd : ‖d‖ ≤ ‖d - T x‖ + σ * ‖x‖ :=
-    calc ‖d‖ = ‖(d - T x) + T x‖ := by rw [sub_add_cancel]
-      _ ≤ ‖d - T x‖ + ‖T‖ * ‖x‖ := (norm_add_le _ _).trans (by gcongr; exact le_opNorm _ _)
-      _ ≤ ‖d - T x‖ + σ * ‖x‖ := by gcongr
-  have h₁ : ‖d‖ ^ 2 ≤ 2 * ‖d - T x‖ ^ 2 + 2 * σ ^ 2 * ‖x‖ ^ 2 := by
-    nlinarith [pow_le_pow_left₀ (norm_nonneg _) hd 2, sq_nonneg (‖d - T x‖ - σ * ‖x‖)]
-  have h₂ : ‖p‖ ^ 2 + ‖d - T x‖ ^ 2 + ‖x‖ ^ 2 ≤ a⁻¹ * ((g p + g (d - T x)) + g x) := by
-    rw [le_inv_mul_iff₀ ha]
-    linarith [hg p, hg (d - T x), hg x]
-  calc ‖p‖ ^ 2 + ‖d‖ ^ 2 + ‖x‖ ^ 2
-      ≤ (2 + 2 * σ ^ 2) * (‖p‖ ^ 2 + ‖d - T x‖ ^ 2 + ‖x‖ ^ 2) := by
-        nlinarith [sq_nonneg ‖p‖, sq_nonneg ‖x‖, mul_nonneg (sq_nonneg σ) (sq_nonneg ‖p‖),
-          mul_nonneg (sq_nonneg σ) (sq_nonneg ‖d - T x‖)]
-    _ ≤ (2 + 2 * σ ^ 2) * (a⁻¹ * ((g p + g (d - T x)) + g x)) := by gcongr
-    _ = a⁻¹ * (2 + 2 * σ ^ 2) * ((g p + g (d - T x)) + g x) := by ring
-
 /-- **The semi-Fredholm estimate of the stationary cylinder operator.** Let each `J_t` be
 `ω`-compatible and depend continuously on `t`, let each `S_t` be infinitesimally symplectic and
 `S` continuous, and suppose that `det (1 - Ψ(1)) ≠ 0` for the return map `Ψ(1)` of `ζ' = S_t ζ`.
@@ -213,7 +191,7 @@ theorem exists_hasSemiFredholmEstimate_stationaryJetCoeff (hJ : ∀ t, ω.Compat
   obtain ⟨a, ha, b, hb, hab⟩ := ω.exists_pos_forall_mul_norm_sq_le_associatedBilinForm
     isCompact_Icc hJc.continuousOn fun t _ ↦ (hJ t).tames
   obtain ⟨σ, hσ⟩ := isCompact_Icc.exists_bound_of_continuousOn (hSc.continuousOn (s := Icc 0 1))
-  refine ⟨a⁻¹ * (2 + 2 * σ ^ 2) * C * b,
+  refine ⟨(2 + 2 * σ ^ 2) / a * C * b,
     hasSemiFredholmEstimate_iff.2 fun ξ hξ hper s₁ s₂ hs hξ0 ↦ ?_⟩
   set R : Set (ℝ × ℝ) := Icc s₁ s₂ ×ˢ Icc 0 1
   have hint {f : ℝ × ℝ → ℝ} (hf : Continuous f) : IntegrableOn f R :=
@@ -231,16 +209,16 @@ theorem exists_hasSemiFredholmEstimate_stationaryJetCoeff (hJ : ∀ t, ω.Compat
       hξ.continuous)))).add (continuous_associatedBilinForm_apply_self hJc' hξ.continuous)
   -- On `R`, the `W^{1,2}` density is controlled by `G`, and `g (D ξ)` by `‖D ξ‖²`.
   calc ∫ z in R, (‖fderiv ℝ ξ z (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 + ‖ξ z‖ ^ 2)
-      ≤ ∫ z in R, a⁻¹ * (2 + 2 * σ ^ 2) * G z :=
+      ≤ ∫ z in R, (2 + 2 * σ ^ 2) / a * G z :=
         setIntegral_mono_on (hint (by fun_prop)) (hint (continuous_const.mul hG)) hRm fun z hz ↦ by
           rw [← stdComplexLineReal_eq, ← stdComplexLineImag_eq]
-          exact sq_norm_add_sq_norm_add_sq_norm_le ha (fun v ↦ (hab _ hz.2 v).1) (hσ _ hz.2) _ _ _
-    _ ≤ a⁻¹ * (2 + 2 * σ ^ 2) * (C * ∫ z in R, g z (stationaryCylinderOperator J S ξ z)) := by
+          exact norm_sq_add_norm_sq_add_norm_sq_le ha (fun v ↦ (hab _ hz.2 v).1) (hσ _ hz.2) _ _ _
+    _ ≤ (2 + 2 * σ ^ 2) / a * (C * ∫ z in R, g z (stationaryCylinderOperator J S ξ z)) := by
         rw [integral_const_mul]
         gcongr
         exact hest hξ hper hs (fun t ↦ hξ0 s₁ t fun h ↦ lt_irrefl _ h.1)
           (fun t ↦ hξ0 s₂ t fun h ↦ lt_irrefl _ h.2)
-    _ ≤ a⁻¹ * (2 + 2 * σ ^ 2) *
+    _ ≤ (2 + 2 * σ ^ 2) / a *
           (C * (b * ∫ z in R, ‖stationaryJetCoeff J S z (jet ξ z)‖ ^ 2)) := by
         gcongr
         rw [← integral_const_mul]
@@ -250,9 +228,9 @@ theorem exists_hasSemiFredholmEstimate_stationaryJetCoeff (hJ : ∀ t, ω.Compat
           exact hD.norm.pow 2
         · rw [stationaryJetCoeff_jet]
           exact (hab _ hz.2 _).2
-    _ ≤ a⁻¹ * (2 + 2 * σ ^ 2) * C * b * ((∫ z in R, ‖stationaryJetCoeff J S z (jet ξ z)‖ ^ 2) +
+    _ ≤ (2 + 2 * σ ^ 2) / a * C * b * ((∫ z in R, ‖stationaryJetCoeff J S z (jet ξ z)‖ ^ 2) +
           ∫ z in Icc (-0 : ℝ) 0 ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2) := by
-        have : 0 ≤ a⁻¹ * (2 + 2 * σ ^ 2) * C * b := by positivity
+        have : 0 ≤ (2 + 2 * σ ^ 2) / a * C * b := by positivity
         nlinarith [mul_nonneg this (integral_nonneg fun z ↦ by positivity :
           0 ≤ ∫ z in Icc (-0 : ℝ) 0 ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2)]
 
