@@ -9,6 +9,7 @@ public import TauCeti.Topology.MetricSpace.CyclicDistanceCut
 public import TauCeti.Topology.MetricSpace.DiscreteEnergy.Insertion
 import TauCeti.Data.Fin.Basic
 import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.Topology.Constructions.Pi
 
 /-!
 # Discrete energy of closed metric chains

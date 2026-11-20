@@ -9,6 +9,7 @@ public import Mathlib.Topology.ContinuousMap.Basic
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 
 import TauCeti.Data.Fin.Basic
+import TauCeti.Topology.Constructions.Pi
 
 /-!
 # Cyclic tuples with bounded consecutive distances
@@ -46,7 +47,6 @@ The sampling of compact families of free Moore loops into these cuts is in
   and compact in a compact space.
 * `TauCeti.dist_cons_self_zero_sub_one`, `TauCeti.dist_cons_self_one_sub_one`,
   `TauCeti.dist_cons_self_succ_succ_sub_one`: the edge lengths after repeating the first vertex.
-* `TauCeti.isEmbedding_cons_apply_zero`: repeating the first vertex is an embedding of tuples.
 * `TauCeti.cons_mem_cyclicDistanceCut`: repeating the first vertex maps one cut into another.
 * `TauCeti.isEmbedding_cyclicDistanceCutRepeatFirst`,
   `TauCeti.isClosedEmbedding_cyclicDistanceCutRepeatFirst`: it is an embedding, closed when the
@@ -125,13 +125,6 @@ theorem dist_cons_self_succ_succ_sub_one (q : Fin (n + 1) → X) (k : Fin n) :
       dist (q k.succ) (q (k.succ - 1)) := by
   rw [Fin.succ_sub_one_eq_castSucc, Fin.succ_sub_one_eq_castSucc, ← Fin.succ_castSucc,
     Fin.cons_succ, Fin.cons_succ]
-
-/-- Repeating the first vertex, `(q₀, …, qₙ) ↦ (q₀, q₀, q₁, …, qₙ)`, is an embedding of tuples:
-forgetting the first vertex is a continuous left inverse. -/
-theorem isEmbedding_cons_apply_zero {Y : Type*} [TopologicalSpace Y] :
-    IsEmbedding fun q : Fin (n + 1) → Y ↦ (Fin.cons (q 0) q : Fin (n + 2) → Y) :=
-  IsEmbedding.of_comp ((continuous_apply 0).finCons (A := fun _ ↦ Y) continuous_id)
-    continuous_id.finTail IsEmbedding.id
 
 /-- **Repeating the first vertex maps one distance cut into another.** The tuple
 `(q₀, q₀, q₁, …, qₙ)` has the closing edge `(q₀, qₙ)` of `q` at the vertex `0`, a new edge of
