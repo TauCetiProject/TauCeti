@@ -84,6 +84,8 @@ All in the namespace `TauCeti.PDE`.
 * `exists_holderOnWith_preciseRepresentative_of_forall_exists_ae_abs_sub_le`: the same for a
   function within `K₀ ρ^γ N(B(x, ρ)) / λ` of a homogeneous solution, as supplied by a splitting
   lemma for a datum with norm `N`.
+* `exists_forall_energyFormH1_eq_ae_abs_le_divergence`: the Dirichlet problem with datum `∂ᵢFⁱ`
+  on an open set of finite measure has a weak solution in `H¹₀` bounded by Stampacchia's estimate.
 * `exists_forall_energyFormH1_eq_zero_ae_abs_sub_le` and
   `exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_divergence`: on a ball, a weak solution with
   right-hand side `f` (or `∂ᵢFⁱ`) is a weak solution of the homogeneous equation up to an error
@@ -720,6 +722,51 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp [Nonempty ι] {lam La
     ENNReal.toReal_nonneg hR hRK
 
 /-! ### A right-hand side in divergence form -/
+
+/-- **Solving the Dirichlet problem with a divergence datum, with Stampacchia's bound.** Let
+`n ≥ 1` be the dimension and let `q > 2` with `q > n`. There is `C > 0`, depending only on `n`,
+`q` and the normalization of `mu`, such that the following holds. Let `a` be measurable and
+uniformly elliptic on an open set `D` of finite measure with constants `λ, Λ`, and let
+`F ∈ L^q(D; ℝⁿ)`. Then `-∂ᵢ(aⁱʲ ∂ⱼw) = ∂ᵢFⁱ` has a weak solution `w ∈ H¹₀(D)`, that is
+`a(w, v) = -∫_D ⟪F, ∇v⟫` for every `v ∈ H¹₀(D)`, with
+
+`|w| ≤ C ‖F‖_{L^q(D)} / λ · |D|^(1/n - 1/q)` almost everywhere on `D`.
+
+The solution is given by Lax–Milgram,
+`TauCeti.PDE.UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_of_measure_ne_top`, applied to
+the functional `TauCeti.PDE.divergenceForcing F`, and the bound is
+`TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow_divergence`. -/
+theorem exists_forall_energyFormH1_eq_ae_abs_le_divergence [Nonempty ι] {q : ℝ≥0}
+    (hq : 2 < (q : ℝ)) (hqn : (Fintype.card ι : ℝ) < q) :
+    ∃ C : ℝ, 0 < C ∧ ∀ {D : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+      {lam Lam : ℝ} {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}, mu D ≠ ∞ →
+      UniformlyEllipticOn (D : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict D) → MemLp F q (mu.restrict D) →
+      ∃ w : W1p0 mu D 2, (∀ v : W1p0 mu D 2,
+        energyFormH1 a 0 0 (w : W1p mu D 2) (v : W1p mu D 2) =
+          -∫ x in D, ⟪F x, W1p.gradient (v : W1p mu D 2) x⟫ ∂mu) ∧
+        ∀ᵐ x ∂mu.restrict D, |W1p.value (w : W1p mu D 2) x| ≤
+          C * (eLpNorm F q (mu.restrict D)).toReal / lam *
+            mu.real D ^ ((Fintype.card ι : ℝ)⁻¹ - (q : ℝ)⁻¹) := by
+  obtain ⟨C, hC, hstamp⟩ := exists_ae_abs_value_le_mul_div_mul_rpow_divergence (mu := mu) hq hqn
+  refine ⟨C, hC, fun {D a lam Lam F} hD h ha hF => ?_⟩
+  have : IsFiniteMeasure (mu.restrict (D : Set (EuclideanSpace ℝ ι))) :=
+    isFiniteMeasure_restrict.2 hD
+  -- The datum `v ↦ -∫_D ⟪F, ∇v⟫` is the functional `divergenceForcing F`, since `F ∈ L²(D)`.
+  have hF2 : MemLp F 2 (mu.restrict D) :=
+    hF.mono_exponent (by exact_mod_cast (show ((2 : ℝ≥0) : ℝ) ≤ q by exact_mod_cast hq.le))
+  have hℓ : ∀ v : W1p0 mu D 2, divergenceForcing (hF2.toLp F) v =
+      -∫ x in D, ⟪F x, W1p.gradient (v : W1p mu D 2) x⟫ ∂mu := fun v => by
+    rw [divergenceForcing_apply_eq_neg_setIntegral, neg_inj]
+    refine integral_congr_ae ?_
+    filter_upwards [hF2.coeFn_toLp] with x hx
+    rw [hx]
+  obtain ⟨w, hw, -⟩ := h.existsUnique_forall_energyFormH1_eq_of_measure_ne_top (c := 0)
+    (gamma := 0) ha aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hD
+    (divergenceForcing (hF2.toLp F))
+  exact ⟨w, fun v => (hw v).trans (hℓ v), hstamp (c := 0) (gamma := 0) hD h ha
+    aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hF
+    (fun v => (hw v).trans (hℓ v))⟩
 
 /-- **Splitting off a right-hand side in divergence form on a ball.** Let `n ≥ 1` be the
 dimension and let `q > 2` with `q > n`. There is `K > 0`, depending only on `n`, `q` and the

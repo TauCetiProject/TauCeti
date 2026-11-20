@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Regularity.Partition.Energy
-public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.Energy
+public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.Finpartition
 public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.FiniteGraph.Basic
-public import TauCeti.MeasureTheory.Constructions.UnitInterval.CellPartition
 
 /-!
 # Finite partition energy as graphon partition energy
@@ -18,8 +17,9 @@ value of `G` on the products of the `m` equal cells of the unit interval. A part
 vertices lifts to the partition `P.cellPartition` of the unit interval whose parts are the unions
 of the cells over each part of `P`. Over the cells of two vertex sets `A` and `B`, the graphon
 averages to the edge density `d_G(A, B)`, so the block-average step graphon of `G` over
-`P.cellPartition` takes the value `d_G(P.part i, P.part j)` on the cells of `i` and `j`. Its
-`L²` norm squared is therefore the size-weighted finite energy, diagonal blocks included.
+`P.cellPartition` is `stepGraphonOfFinpartition P` at `G.edgeDensityIcc`, taking the value
+`d_G(P.part i, P.part j)` on the cells of `i` and `j`. Its `L²` norm squared is therefore the
+size-weighted finite energy, diagonal blocks included.
 
 This module depends on both the finite regularity energy and the graphon energy; neither theory
 imports the other.
@@ -29,8 +29,14 @@ infrastructure, in `TauCeti.MeasureTheory.Constructions.UnitInterval.CellPartiti
 
 ## Main results
 
-* `SimpleGraph.setAverage_finiteGraphGraphon_preimage`: block averages of the graphon of a finite
-  graph are edge densities.
+* `SimpleGraph.setAverage_finiteGraphGraphon_preimage` and
+  `SimpleGraph.blockAverage_cellPartition_finiteGraphGraphon`: block averages of the graphon of a
+  finite graph are edge densities.
+* `SimpleGraph.stepGraphonAvg_finiteGraphGraphon_eq_stepGraphonOfFinpartition`: the block-average
+  step graphon over `P.cellPartition` is `stepGraphonOfFinpartition P` with block matrix
+  `G.edgeDensityIcc`.
+* `SimpleGraph.stepGraphonOfFinpartition_bot_edgeDensityIcc`: over the singleton partition `⊥`,
+  `stepGraphonOfFinpartition` at `G.edgeDensityIcc` recovers `finiteGraphGraphon G`.
 * `SimpleGraph.stepGraphonAvg_finiteGraphGraphon_cellPartition_apply`: the block-average step
   graphon over `P.cellPartition` takes the value `d_G(P.part i, P.part j)` on the cells of `i`
   and `j`.
@@ -86,6 +92,47 @@ theorem setAverage_finiteGraphGraphon_preimage (G : SimpleGraph (Fin m)) [Decida
   push_cast
   field_simp
 
+/-- The bundled rectangle average of `finiteGraphGraphon G` over the lifted parts corresponding to
+`A` and `B` is the bundled edge density `G.edgeDensityIcc A.1 B.1`. -/
+@[simp]
+theorem blockAverage_cellPartition_finiteGraphGraphon (G : SimpleGraph (Fin m))
+    [DecidableRel G.Adj] (P : Finpartition (univ : Finset (Fin m))) (A B : P.parts) :
+    blockAverage P.cellPartition (finiteGraphGraphon G)
+        (P.partsCellPartitionEquiv A) (P.partsCellPartitionEquiv B) =
+      G.edgeDensityIcc A.1 B.1 := by
+  apply Subtype.ext
+  rw [coe_blockAverage, coe_edgeDensityIcc, P.partsCellPartitionEquiv_apply_coe,
+    P.partsCellPartitionEquiv_apply_coe]
+  exact G.setAverage_finiteGraphGraphon_preimage A.1 B.1
+
+/-- **Compatibility of `stepGraphonAvg` and `stepGraphonOfFinpartition` on finite graphs.** Over
+`P.cellPartition`, the block-average step graphon of `finiteGraphGraphon G` is
+`stepGraphonOfFinpartition P` with block matrix `G.edgeDensityIcc`. -/
+theorem stepGraphonAvg_finiteGraphGraphon_eq_stepGraphonOfFinpartition (G : SimpleGraph (Fin m))
+    [DecidableRel G.Adj] (P : Finpartition (univ : Finset (Fin m)))
+    {hP : ∀ p ∈ P.cellPartition.parts, MeasurableSet p} :
+    stepGraphonAvg (μ := volume) P.cellPartition hP (finiteGraphGraphon G) =
+      stepGraphonOfFinpartition P (fun A B => G.edgeDensityIcc A.1 B.1)
+        (fun A B => G.edgeDensityIcc_comm A.1 B.1) := by
+  rw [stepGraphonAvg_cellPartition_eq_stepGraphonOfFinpartition]
+  exact (stepGraphonOfFinpartition_inj P _ _ _ _).2
+    (funext fun A => funext fun B => G.blockAverage_cellPartition_finiteGraphGraphon P A B)
+
+/-- Over the singleton partition `⊥` of `Fin m`, `stepGraphonOfFinpartition` at `G.edgeDensityIcc`
+recovers `finiteGraphGraphon G`. -/
+theorem stepGraphonOfFinpartition_bot_edgeDensityIcc (G : SimpleGraph (Fin m))
+    [DecidableRel G.Adj] :
+    stepGraphonOfFinpartition (⊥ : Finpartition (univ : Finset (Fin m)))
+        (fun A B => G.edgeDensityIcc A.1 B.1) (fun A B => G.edgeDensityIcc_comm A.1 B.1) =
+      finiteGraphGraphon G := by
+  ext x y
+  have hcell (z : I) : (⟨cellIdx m z, cellIdx_lt (NeZero.pos m) z⟩ : Fin m) = cellFin m z :=
+    Fin.ext (coe_cellFin z).symm
+  simp only [stepGraphonOfFinpartition_apply_part, coe_edgeDensityIcc]
+  rw [Finpartition.part_bot (mem_univ _), Finpartition.part_bot (mem_univ _),
+    G.edgeDensity_singleton, finiteGraphGraphon_apply_fin G (NeZero.pos m), hcell, hcell]
+  split_ifs <;> simp
+
 /-- **The block averages of the graphon of a finite graph.** Over the lifted partition
 `P.cellPartition`, the block-average step graphon of `G` takes at `(x, y)` the edge density between
 the parts of `P` containing the cells of `x` and `y`. -/
@@ -94,10 +141,8 @@ theorem stepGraphonAvg_finiteGraphGraphon_cellPartition_apply (G : SimpleGraph (
     stepGraphonAvg (μ := volume) P.cellPartition P.measurableSet_of_mem_cellPartition
         (finiteGraphGraphon G) x y =
       (G.edgeDensity (P.part (cellFin m x)) (P.part (cellFin m y)) : ℝ) := by
-  rw [stepGraphonAvg_apply P.cellPartition P.measurableSet_of_mem_cellPartition _
-    (p := ⟨_, P.preimage_part_cellFin_mem x⟩) (q := ⟨_, P.preimage_part_cellFin_mem y⟩)
-    (P.mem_part (mem_univ _)) (P.mem_part (mem_univ _))]
-  exact G.setAverage_finiteGraphGraphon_preimage _ _
+  rw [G.stepGraphonAvg_finiteGraphGraphon_eq_stepGraphonOfFinpartition P]
+  simp
 
 /-- **Finite partition energy is graphon partition energy.** For a graph `G` on `Fin m` with
 `0 < m` and a partition `P` of its vertices, the size-weighted energy of `P` is the partition
@@ -107,27 +152,12 @@ theorem graphonPartitionEnergy_finiteGraphGraphon (G : SimpleGraph (Fin m)) [Dec
     (P : Finpartition (univ : Finset (Fin m))) :
     graphonPartitionEnergy volume P.cellPartition P.measurableSet_of_mem_cellPartition
       (finiteGraphGraphon G) = G.weightedEnergy P := by
-  -- The block average at `(x, y)` is the edge density between the parts of their cells.
-  have hpt := G.stepGraphonAvg_finiteGraphGraphon_cellPartition_apply P
-  -- Its mean square over `I × I` is the mean square over pairs of vertices.
-  let h : Fin m × Fin m → ℝ := fun ij => (G.edgeDensity (P.part ij.1) (P.part ij.2) : ℝ) ^ 2
-  have hmp := (measurePreserving_cellFin (m := m)).prod (measurePreserving_cellFin (m := m))
-  have hfun : (fun z : I × I => (stepGraphonAvg (μ := volume) P.cellPartition
-      P.measurableSet_of_mem_cellPartition (finiteGraphGraphon G)).toSymmKernel z.1 z.2 ^ 2) =
-        fun z => h (Prod.map (cellFin m) (cellFin m) z) := by
-    funext z
-    simp only [Graphon.coe_toSymmKernel, hpt, h, Prod.map_fst, Prod.map_snd]
-  rw [graphonPartitionEnergy_eq, l2sq_def, hfun,
-    ← integral_map hmp.measurable.aemeasurable (measurable_of_countable h).aestronglyMeasurable,
-    hmp.map_eq, integral_fintype (Integrable.of_finite), SimpleGraph.weightedEnergy_eq_sum_part,
-    Fintype.sum_prod_type, sum_div]
-  refine sum_congr rfl fun i _ => ?_
-  rw [sum_div]
-  refine sum_congr rfl fun j _ => ?_
-  -- each pair of vertices carries the uniform weight `1 / m²`
-  rw [← Set.singleton_prod_singleton, measureReal_prod_prod]
-  simp [h, measureReal_def, ProbabilityTheory.uniformOn_univ]
-  ring
+  rw [graphonPartitionEnergy_eq,
+    G.stepGraphonAvg_finiteGraphGraphon_eq_stepGraphonOfFinpartition P,
+    l2sq_stepGraphonOfFinpartition, G.weightedEnergy_def, ← sum_coe_sort P.parts]
+  exact sum_congr rfl fun A _ => by
+    rw [← sum_coe_sort P.parts]
+    simp
 
 /-- **Finite partition energy as graphon partition energy, on any finite vertex type.** Relabel
 the vertices of `G` along an equivalence `e : V ≃ Fin m` with `0 < m`. The size-weighted energy

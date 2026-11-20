@@ -694,6 +694,21 @@ theorem toOrderL_toOrderL {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) (u : Wkp
     toOrderL hij (toOrderL hjk u) = toOrderL (hij.trans hjk) u := by
   rw [← ContinuousLinearMap.comp_apply, toOrderL_comp_toOrderL]
 
+/-- Order truncation does not increase the norm. -/
+theorem norm_toOrderL_apply_le {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega p k) :
+    ‖toOrderL h u‖ ≤ ‖u‖ := by
+  induction k, h using Nat.le_induction with
+  | base => rw [toOrderL_self, ContinuousLinearMap.id_apply]
+  | succ k h ih =>
+    rw [toOrderL_succ h (Nat.le_succ_of_le h), ContinuousLinearMap.comp_apply]
+    exact (ih _).trans (norm_lowerOrder_le k u)
+
+/-- The truncation operator has norm at most one. -/
+theorem opNorm_toOrderL_le {j k : ℕ} (h : j ≤ k) :
+    ‖(toOrderL h : Wkp mu Omega p k →L[ℝ] Wkp mu Omega p j)‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u => by
+    simpa only [one_mul] using norm_toOrderL_apply_le h u
+
 /-- Precomposing truncation with `lowerOrderL` increases the source order by one. -/
 theorem toOrderL_comp_lowerOrderL {j k : ℕ} (h : j ≤ k) :
     (toOrderL (mu := mu) (Omega := Omega) (p := p) h).comp (lowerOrderL k) =

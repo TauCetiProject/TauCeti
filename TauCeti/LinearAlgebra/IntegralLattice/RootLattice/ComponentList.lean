@@ -261,8 +261,21 @@ namespace TauCeti.DynkinType
 noncomputable def componentGlueAlphabetIsometry {c d : Component}
     (f : IntegralLattice.Isometry c.rootLattice d.rootLattice) :
     FiniteQuadraticModule.Isometry c.glueAlphabet d.glueAlphabet :=
-  c.glueAlphabetIsometry.trans
-    ((f.discriminantQuadraticIsometry c.isEven_rootLattice).trans d.glueAlphabetIsometry.symm)
+  glueAlphabetIsometryOfIsometry c.2.1 d.2.1 f
+
+/-- `componentGlueAlphabetIsometry` is `glueAlphabetIsometryOfIsometry` on the underlying Dynkin
+types of the two components. -/
+theorem componentGlueAlphabetIsometry_def {c d : Component}
+    (f : IntegralLattice.Isometry c.rootLattice d.rootLattice) :
+    componentGlueAlphabetIsometry f = glueAlphabetIsometryOfIsometry c.2.1 d.2.1 f :=
+  (rfl)
+
+/-- The identity root-lattice isometry of a component induces the identity on its glue alphabet. -/
+@[simp]
+theorem componentGlueAlphabetIsometry_refl (c : Component) :
+    componentGlueAlphabetIsometry (IntegralLattice.Isometry.refl c.rootLattice) =
+      QuadraticMap.IsometryEquiv.refl c.glueAlphabet.quadratic :=
+  glueAlphabetIsometryOfIsometry_refl c.1 c.2.1 c.2.2
 
 /-- An isometry of component root lattices is compatible with the component glue isometries: the
 component glue isometry of the target component carries the transported label to the transport of
@@ -270,10 +283,8 @@ the source label. -/
 theorem glueAlphabetIsometry_componentGlueAlphabetIsometry {c d : Component}
     (f : IntegralLattice.Isometry c.rootLattice d.rootLattice) (x : c.glueAlphabet) :
     d.glueAlphabetIsometry (componentGlueAlphabetIsometry f x) =
-      f.discriminantQuadraticIsometry c.isEven_rootLattice (c.glueAlphabetIsometry x) := by
-  rw [componentGlueAlphabetIsometry, FiniteQuadraticModule.Isometry.trans_apply,
-    FiniteQuadraticModule.Isometry.trans_apply]
-  exact QuadraticMap.IsometryEquiv.apply_symm_apply _ _
+      f.discriminantQuadraticIsometry c.isEven_rootLattice (c.glueAlphabetIsometry x) :=
+  glueAlphabetIsometry_glueAlphabetIsometryOfIsometry c.2.1 d.2.1 f x
 
 /-- A componentwise isometry of two ordered component lists: an isometry of the root lattice of each
 component of the first list onto the root lattice of the corresponding component of the second.
