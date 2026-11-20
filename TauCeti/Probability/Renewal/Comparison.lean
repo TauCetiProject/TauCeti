@@ -96,7 +96,7 @@ theorem ae_renewalCountNat_le_thresholdIncrements
   filter_upwards [ae_tendsto_arrival_atTop_of_bernoulliMeasure
     (hindep.thresholdIncrements a) (hasLaw_thresholdIncrements hid a) ha hqreal]
     with ω hω t
-  exact renewalCountNat_antitone (fun n ↦ thresholdIncrements_le T a n ω) hω t
+  exact renewalCountNat_anti_of_tendsto (fun n ↦ thresholdIncrements_le T a n ω) hω t
 
 /-- The cdf of any i.i.d. renewal count is bounded below by the upper binomial tail associated
 with a positive threshold. The formula includes time zero and success probability one. -/
