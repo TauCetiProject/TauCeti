@@ -73,7 +73,7 @@ theorem hasLaw_ncard_setOf_succ_eq_geometricMeasure (hp : p ≠ 0)
       {x | k ≤ {n | x (n + 1) = y}.ncard} := rfl
   rw [hpre, htail]
   apply (ENNReal.toReal_eq_toReal_iff' (by finiteness) (measure_ne_top _ _)).mp
-  rw [ENNReal.toReal_pow, ENNReal.toReal_ofReal (sub_nonneg.mpr p.2.2)]
+  rw [ENNReal.toReal_pow, ENNReal.toReal_ofReal (sub_nonneg.mpr p.property.2)]
   exact (geometricMeasure_real_Ici hp k).symm
 
 /-- The probability of exactly `k` positive-time visits to a transient starting state. -/

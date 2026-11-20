@@ -8,6 +8,7 @@ module
 public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
 public import TauCeti.ModelTheory.Infinitary.LanguageMap
 public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
+public import TauCeti.ModelTheory.Sublanguage
 
 /-!
 # Relational configurations along language maps
@@ -28,6 +29,11 @@ formula of `L` exactly onto those satisfying its translation. These are the fact
 counting the models of a sentence up to isomorphism, or finding perfect sets of non-isomorphic
 ones, independent of the presentation of the language; with `smallPresentationEquiv`, every
 countable relational language can be presented in universe `0`.
+
+For symbol sublanguages `symbSublang F R`, the reduct map along `symbSublangIncl F R` is
+surjective on configurations (`reductConfiguration_symbSublang_surjective`), and every measurable
+set in the product σ-algebra on `RelationalConfiguration L V` is the preimage of a measurable set
+in some countable relational symbol sublanguage (`exists_countable_sublanguage_of_measurableSet`).
 
 ## Main definitions
 
@@ -53,11 +59,14 @@ countable relational language can be presented in universe `0`.
   `FirstOrder.Language.LEquiv.realize_sentenceInf_onConfiguration`: the transported
   configuration realizes the translation of a formula exactly when the original realizes the
   formula.
-* `FirstOrder.Language.LEquiv.preimage_onConfiguration_modelsOf`,
-  `FirstOrder.Language.LEquiv.image_onConfiguration_modelsOf`,
-  `FirstOrder.Language.LEquiv.preimage_onConfiguration_modelsOfTheory`, and
-  `FirstOrder.Language.LEquiv.image_onConfiguration_modelsOfTheory`: transport carries the model
-  class of a sentence or first-order theory onto the model class of its translation.
+* `FirstOrder.Language.LEquiv.preimage_onConfiguration_modelsOf` and
+  `FirstOrder.Language.LEquiv.image_onConfiguration_modelsOf`: transport carries the model class
+  of a sentence exactly onto the model class of its translation.
+* `TauCeti.RelationalConfiguration.reductConfiguration_symbSublang_surjective`: the reduct map
+  along a symbol-sublanguage inclusion is surjective on configurations.
+* `TauCeti.RelationalConfiguration.exists_countable_sublanguage_of_measurableSet`: every measurable
+  set of configurations is the preimage of a measurable set in a countable relational symbol
+  sublanguage.
 -/
 
 public section
@@ -173,24 +182,6 @@ theorem realize_sentenceInf_reductConfiguration {ι : Type uι} (c : RelationalC
   simp only [SentenceInf.realize_def, FormulaInf.realize_def]
   exact g.realize_reductConfiguration c φ _ _
 
-/-- **First-order modelhood in a reduct.** A configuration is a model of `g.onTheory T` if and
-only if its reduct along `g` is a model of `T`. -/
-theorem model_reductConfiguration (c : RelationalConfiguration L' V) (T : L.Theory) :
-    @Theory.Model L' V c.toStructure (g.onTheory T) ↔
-      @Theory.Model L V (g.reductConfiguration c).toStructure T := by
-  rw [toStructure_reductConfiguration]
-  let := c.toStructure
-  let := g.reduct V
-  exact g.onTheory_model T
-
-/-- Pulling back the model class of a first-order theory `T` along `g.reductConfiguration` yields
-the model class of `g.onTheory T`. -/
-@[simp]
-theorem preimage_reductConfiguration_modelsOfTheory (T : L.Theory) :
-    g.reductConfiguration ⁻¹' modelsOfTheory (V := V) T = modelsOfTheory (g.onTheory T) :=
-  Set.ext fun c => by
-    rw [Set.mem_preimage, mem_modelsOfTheory, mem_modelsOfTheory, g.model_reductConfiguration]
-
 end LHom
 
 namespace LEquiv
@@ -299,31 +290,81 @@ theorem image_onConfiguration_modelsOf {ι : Type uι} (φ : L.SentenceInf ι) :
   rw [← e.preimage_onConfiguration_modelsOf φ,
     Set.image_preimage_eq _ e.onConfiguration.surjective]
 
-/-- **First-order modelhood along transport.** The transported configuration is a model of the
-image of a first-order theory `T` along `e` if and only if the original configuration is a model
-of `T`. -/
-@[simp]
-theorem model_onConfiguration (c : RelationalConfiguration L V) (T : L.Theory) :
-    @Theory.Model L' V (e.onConfiguration c).toStructure (e.toLHom.onTheory T) ↔
-      @Theory.Model L V c.toStructure T := by
-  rw [e.toLHom.model_reductConfiguration, toLHom_reductConfiguration_onConfiguration]
-
-/-- The configurations whose transport along `e` is a model of `e.toLHom.onTheory T` form the
-model class of `T`. -/
-@[simp]
-theorem preimage_onConfiguration_modelsOfTheory (T : L.Theory) :
-    e.onConfiguration ⁻¹' modelsOfTheory (V := V) (e.toLHom.onTheory T) = modelsOfTheory T :=
-  Set.ext fun c => by
-    rw [Set.mem_preimage, mem_modelsOfTheory, mem_modelsOfTheory, e.model_onConfiguration]
-
-/-- Transport along `e` carries the model class of a first-order theory `T` onto the model class
-of `e.toLHom.onTheory T`. -/
-@[simp]
-theorem image_onConfiguration_modelsOfTheory (T : L.Theory) :
-    e.onConfiguration '' modelsOfTheory (V := V) T = modelsOfTheory (e.toLHom.onTheory T) := by
-  rw [← e.preimage_onConfiguration_modelsOfTheory T,
-    Set.image_preimage_eq _ e.onConfiguration.surjective]
-
 end LEquiv
 
 end FirstOrder.Language
+
+namespace TauCeti.RelationalConfiguration
+
+open FirstOrder FirstOrder.Language MeasureTheory Set
+
+variable {L : Language.{u, v}} {V : Type w}
+
+/-! ### Symbol-sublanguage reducts -/
+
+/-- Every symbol-sublanguage reduct map on relational configurations is surjective. -/
+theorem reductConfiguration_symbSublang_surjective
+    (F : Set (Σ n, L.Functions n)) (R : Set (Σ n, L.Relations n)) :
+    Function.Surjective ((symbSublangIncl F R).reductConfiguration (V := V)) := by
+  classical
+  intro c₀
+  let S : L.Structure (Option V) :=
+    { funMap := fun _ _ => none
+      RelMap := fun {n} r x =>
+        ∃ (y : Fin n → V) (hr : (⟨n, r⟩ : Σ k, L.Relations k) ∈ R),
+          Option.some ∘ y = x ∧ c₀.eval (atom ⟨r, hr⟩ y) = true }
+  refine ⟨(@ofStructure L (Option V) S).restrict Option.some, ext fun a => ?_⟩
+  induction a using Atom.induction_atom with
+  | h r x =>
+    have hiff : @Structure.RelMap L (Option V) S _ r.val (Option.some ∘ x) ↔
+        c₀.eval (atom r x) = true :=
+      ⟨fun ⟨y, _, hy, hc⟩ => by cases (Option.some_injective V).comp_left hy; exact hc,
+        fun hc => ⟨x, r.property, rfl, hc⟩⟩
+    simp [LHom.eval_reductConfiguration, @eval_ofStructure L (Option V) S, hiff]
+
+/-- Every set in the product σ-algebra on `RelationalConfiguration L V` is the preimage of a
+measurable set in a countable relational symbol sublanguage. -/
+theorem exists_countable_sublanguage_of_measurableSet
+    {D : Set (RelationalConfiguration L V)} (hD : MeasurableSet D) :
+    ∃ (R₀ : Set (Σ n, L.Relations n)), R₀.Countable ∧
+      ∃ D₀ : Set (RelationalConfiguration (symbSublang ∅ R₀) V),
+        MeasurableSet D₀ ∧ D = (symbSublangIncl ∅ R₀).reductConfiguration ⁻¹' D₀ := by
+  let m : MeasurableSpace (RelationalConfiguration L V) :=
+    { MeasurableSet' E :=
+        ∃ (R₀ : Set (Σ n, L.Relations n)), R₀.Countable ∧
+          ∃ E₀ : Set (RelationalConfiguration (symbSublang ∅ R₀) V),
+            MeasurableSet E₀ ∧ E = (symbSublangIncl ∅ R₀).reductConfiguration ⁻¹' E₀
+      measurableSet_empty := ⟨∅, countable_empty, ∅, .empty, rfl⟩
+      measurableSet_compl := fun E ⟨R₀, hR₀, E₀, hE₀, hEq⟩ =>
+        ⟨R₀, hR₀, E₀ᶜ, hE₀.compl, congrArg compl hEq⟩
+      measurableSet_iUnion := fun f hf => by
+        choose Rᵢ hRᵢ Eᵢ hEᵢ hEq using hf
+        let R₀ : Set (Σ n, L.Relations n) := ⋃ i : ℕ, Rᵢ i
+        let incl (i : ℕ) : symbSublang (L := L) ∅ (Rᵢ i) →ᴸ symbSublang ∅ R₀ :=
+          { onFunction := fun _ fn => ⟨fn.val, fn.property⟩
+            onRelation := fun _ r => ⟨r.val, mem_iUnion_of_mem i r.property⟩ }
+        have hcomp (i : ℕ) :
+            (symbSublangIncl (L := L) ∅ R₀).comp (incl i) = symbSublangIncl ∅ (Rᵢ i) :=
+          LHom.funext (funext fun _ => funext fun _ => by simp [incl])
+            (funext fun _ => funext fun _ => by simp [incl])
+        refine ⟨R₀, countable_iUnion hRᵢ,
+          ⋃ i : ℕ, (incl i).reductConfiguration ⁻¹' Eᵢ i,
+          .iUnion fun i => (incl i).measurable_reductConfiguration (hEᵢ i), ?_⟩
+        ext c
+        simp only [mem_iUnion, mem_preimage, hEq, ← hcomp, LHom.comp_reductConfiguration] }
+  have hmeas :
+      @Measurable (RelationalConfiguration L V) (RelationalConfiguration L V) m
+        instMeasurableSpace id := by
+    refine (@measurable_iff L V _ m id).2 fun a => ?_
+    induction a using Atom.induction_atom with
+    | h R x =>
+      intro s hs
+      let R₀ : Set (Σ n, L.Relations n) := {⟨_, R⟩}
+      let a₀ : Atom (symbSublang (L := L) ∅ R₀) V := atom ⟨R, rfl⟩ x
+      refine ⟨R₀, countable_singleton _,
+        {c₀ | c₀.eval a₀ ∈ s}, (measurable_eval a₀) hs, ?_⟩
+      ext c
+      simp [a₀]
+  exact hmeas hD
+
+end TauCeti.RelationalConfiguration

@@ -33,6 +33,8 @@ Sobolev functions and density results comparing different domains are not proved
 * `TauCeti.iteratedGradientTestFunction`: the recursively bundled classical derivatives of a
   test function.
 * `TauCeti.Wkp.ofTestFunctionₗ`: the injective linear embedding `C_c^∞(Ω) → W^{k,p}(Ω)`.
+* `TauCeti.Wkp.value_ofTestFunctionₗ_ae`, `TauCeti.Wkp.value_ofTestFunctionₗ_top_ae`: an embedded
+  test function is represented by the test function itself.
 * `TauCeti.Wkp.enorm_value_ofTestFunctionₗ`, `TauCeti.Wkp.enorm_iteratedGradient_ofTestFunctionₗ`:
   the Sobolev components of an embedded test function have the `Lᵖ` norms of its classical
   derivatives on the whole space.
@@ -289,6 +291,20 @@ theorem Wkp.value_ofTestFunctionₗ (k : ℕ) (phi : 𝓓(Omega, ℝ)) :
   rw [Wkp.ofTestFunctionₗ_apply]
   exact Wkp.value_ofTestFunction k phi
 
+/-- The value of an embedded test function agrees almost everywhere on `Ω` with the test
+function itself. -/
+theorem Wkp.value_ofTestFunctionₗ_ae (k : ℕ) (phi : 𝓓(Omega, ℝ)) :
+    Wkp.value k (Wkp.ofTestFunctionₗ (mu := mu) (p := p) k phi) =ᵐ[mu.restrict Omega] phi := by
+  rw [Wkp.value_ofTestFunctionₗ]
+  exact testFunctionLp_apply_ae p phi
+
+/-- On the whole space, the value of an embedded test function agrees `μ`-almost everywhere with
+the test function itself. -/
+theorem Wkp.value_ofTestFunctionₗ_top_ae (k : ℕ) (phi : 𝓓((⊤ : Opens E), ℝ)) :
+    Wkp.value k (Wkp.ofTestFunctionₗ (mu := mu) (Omega := ⊤) (p := p) k phi) =ᵐ[mu] phi := by
+  simpa only [Opens.coe_top, Measure.restrict_univ] using
+    Wkp.value_ofTestFunctionₗ_ae (mu := mu) (Omega := ⊤) (p := p) k phi
+
 /-- The highest iterated-gradient component of an embedded test function is its classical
 iterated gradient as an `Lᵖ` class. -/
 theorem Wkp.iteratedGradient_ofTestFunctionₗ (k : ℕ) (phi : 𝓓(Omega, ℝ)) :
@@ -407,7 +423,7 @@ theorem Wkp0.denseRange_ofTestFunctionₗ (k : ℕ) :
   intro u
   rw [closure_subtype, ← Set.range_comp]
   have hu : (u : Wkp mu Omega p k) ∈
-      (wkp0Submodule mu Omega p k : Set (Wkp mu Omega p k)) := u.2
+      (wkp0Submodule mu Omega p k : Set (Wkp mu Omega p k)) := u.property
   rw [coe_wkp0Submodule] at hu
   simpa only [Function.comp_def, Wkp0.coe_ofTestFunctionₗ] using hu
 
@@ -428,7 +444,7 @@ def Wkp0.lowerOrderL (k : ℕ) : Wkp0 mu Omega p (k + 1) →L[ℝ] Wkp0 mu Omega
     (wkp0Submodule mu Omega p k).toSubmodule
     (fun u => by
       rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, Wkp.lowerOrderL_apply k]
-      exact Wkp.lowerOrder_mem_wkp0Submodule k u.2)
+      exact Wkp.lowerOrder_mem_wkp0Submodule k u.property)
 
 /-- The zero-boundary lower-order projection is the usual Sobolev projection. -/
 -- The dependent successor index prevents this rule from matching in `simp`.

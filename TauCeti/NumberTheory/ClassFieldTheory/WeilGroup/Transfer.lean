@@ -120,7 +120,7 @@ theorem weilDegree_weilTransfer (w : WeilGroup L) :
 theorem weilTransfer_inertiaToWeil (σ : inertiaSubgroup L) :
     weilTransfer K L ι (inertiaToWeil L σ) =
       inertiaToWeil K ⟨absoluteGaloisGroupExtend K L ι σ,
-        (absoluteGaloisGroupExtend_mem_inertiaSubgroup_iff ι).2 σ.2⟩ :=
+        (absoluteGaloisGroupExtend_mem_inertiaSubgroup_iff ι).2 σ.property⟩ :=
   injective_weilToAbsolute K (by simp)
 
 variable (K L)

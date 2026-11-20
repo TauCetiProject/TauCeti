@@ -155,7 +155,7 @@ coinduced resolution. -/
 theorem coe_cochainsMap_id_f_hom_apply (f : X ⟶ Y) (n : ℕ)
     (v : (TopRep.resolutionX X (n + 1)).ρ.invariants) :
     Subtype.val (((cochainsMap (ContinuousMonoidHom.id G) f).f n).hom v) =
-      (resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom v.1 :=
+      (resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom v.val :=
   (rfl)
 
 /-- **Exactness of homogeneous cochains in the middle.** If `X → Y → Z` is exact and the first map
@@ -168,7 +168,7 @@ theorem cochainsMap_id_f_exact {f : X ⟶ Y} {g : Y ⟶ Z} (hf : IsEmbedding f.h
   intro (v : (TopRep.resolutionX Y (n + 1)).ρ.invariants)
   constructor
   · intro hv
-    have hv' : (resolutionMap (ContinuousMonoidHom.id G) g (n + 1)).hom v.1 = 0 :=
+    have hv' : (resolutionMap (ContinuousMonoidHom.id G) g (n + 1)).hom v.val = 0 :=
       (coe_cochainsMap_id_f_hom_apply g n v).symm.trans (congrArg Subtype.val hv)
     obtain ⟨u, hu⟩ := (resolutionMap_id_exact hf.isInducing hfg (n + 1) _).1 hv'
     have hinv : u ∈ (TopRep.resolutionX X (n + 1)).ρ.invariants := fun k ↦ by
@@ -176,14 +176,14 @@ theorem cochainsMap_id_f_exact {f : X ⟶ Y} {g : Y ⟶ Z} (hf : IsEmbedding f.h
         hf.injective (n + 1)
       refine ((resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom.isIntertwining k u).trans ?_
       rw [hu]
-      exact v.2 k
+      exact v.property k
     refine ⟨⟨u, hinv⟩, Subtype.ext ?_⟩
     exact (coe_cochainsMap_id_f_hom_apply f n ⟨u, hinv⟩).trans hu
   · rintro ⟨u, rfl⟩
     apply Subtype.ext
     refine (coe_cochainsMap_id_f_hom_apply g n _).trans ?_
     exact (resolutionMap_id_exact hf.isInducing hfg (n + 1) _).2
-      ⟨u.1, (coe_cochainsMap_id_f_hom_apply f n u).symm⟩
+      ⟨u.val, (coe_cochainsMap_id_f_hom_apply f n u).symm⟩
 
 end Cochains
 
@@ -251,7 +251,7 @@ theorem cochainsMap_id_f_surjective_of_section (g : Y ⟶ Z) (σ : C(G × Z.V, Y
     (hσ' : ∀ k h z, Y.ρ k (σ (h, z)) = σ (k * h, Z.ρ k z)) (n : ℕ) :
     Function.Surjective ((cochainsMap (ContinuousMonoidHom.id G) g).f n).hom := by
   intro (F : (TopRep.resolutionX Z (n + 1)).ρ.invariants)
-  let F₀ : C(G, (TopRep.resolutionX Z n).V) := F.1
+  let F₀ : C(G, (TopRep.resolutionX Z n).V) := F.val
   let L : C(G, (TopRep.resolutionX Y n).V) :=
     ⟨fun x ↦ levelLift σ n (x, F₀ x), (levelLift σ n).continuous.comp
       (continuous_id.prodMk F₀.continuous)⟩
@@ -267,7 +267,7 @@ theorem cochainsMap_id_f_surjective_of_section (g : Y ⟶ Z) (σ : C(G × Z.V, Y
           (levelLift σ n (k⁻¹ * y, F₀ (k⁻¹ * y))) = levelLift σ n (y, F₀ y)
         rw [ρ_levelLift σ hσ', mul_inv_cancel_left]
         congr 2
-        exact congrArg (fun F' : C(G, (TopRep.resolutionX Z n).V) ↦ F' y) (F.2 k)
+        exact congrArg (fun F' : C(G, (TopRep.resolutionX Z n).V) ↦ F' y) (F.property k)
       _ = L y := rfl
   refine ⟨⟨L, hL⟩, Subtype.ext ((coe_cochainsMap_id_f_hom_apply g n ⟨L, hL⟩).trans ?_)⟩
   exact ContinuousMap.ext fun y ↦ by
