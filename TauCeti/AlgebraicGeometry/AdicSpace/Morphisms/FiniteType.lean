@@ -268,7 +268,7 @@ theorem LocallyOfFiniteType.of_comp {f : X ⟶ Y} {g : Y ⟶ Z}
   obtain ⟨CZ, CX, χ, hχ, c₀, hc₀, hsq_fg⟩ := hfg.exists_complete_openImmersion_chart x
   let OY : Opens Y.obj :=
     ⟨g.hom.base ⁻¹' Set.range CZ.hom.base,
-      CZ.hom.isOpenEmbedding.isOpen_range.preimage g.hom.base.hom.2⟩
+      CZ.hom.isOpenEmbedding.isOpen_range.preimage g.hom.base.hom.continuous_toFun⟩
   have hfxO : f.hom.base x ∈ OY :=
     ⟨(CZ.pairComap CX χ).base c₀, by simpa [hc₀] using congrArg (fun m ↦ m.base c₀) hsq_fg⟩
   obtain ⟨W, hW, hfxW, hWO⟩ :=
@@ -280,7 +280,7 @@ theorem LocallyOfFiniteType.of_comp {f : X ⟶ Y} {g : Y ⟶ Z}
     ofRestrictIso_hom_base T P' hP' hsheafB eW hfxW
   have hrangeY : Set.range (CY.hom ≫ g.hom).base ⊆ Set.range CZ.hom.base := by
     rintro _ ⟨b, rfl⟩
-    exact hWO (eW.inv.base b).2
+    exact hWO (eW.inv.base b).property
   let p := PreAdicSpace.IsOpenImmersion.lift CZ.hom (CY.hom ≫ g.hom) hrangeY
   let ψ := presentationLimitHomPairHom CZ.pairOfDefinition CY.pairOfDefinition CZ.pair CY.pair
     CZ.le_plus CY.le_plus p

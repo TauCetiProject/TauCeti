@@ -486,7 +486,7 @@ theorem exists_ofRationalLocalization_lift {Z : PreAdicSpace.{u}}
   let OA : Opens (presentationLimitPreAdicSpace P S.plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem hP) :=
     ⟨(kY ≫ g).base ⁻¹' Set.range D.hom.base,
-      D.hom.isOpenEmbedding.isOpen_range.preimage (kY ≫ g).base.hom.2⟩
+      D.hom.isOpenEmbedding.isOpen_range.preimage (kY ≫ g).base.hom.continuous_toFun⟩
   have ha₀O : a₀ ∈ OA := ⟨d₀, had.symm⟩
   obtain ⟨RA, hRA, ha₀R, hRAO⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_spaRationalOpens S.plus) ha₀O
   obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hRA
@@ -649,7 +649,7 @@ private theorem exists_away_comp_of_rational_chart_discrete
       (ofRationalLocalization P hP hsheafA (𝟙 _) TA sA hTA).hom =
       CX.hom ≫ presentationLimitPreAdicSpacePairComap P P' hP hP' hsheafB φ) :
     ∃ (TB : Finset B) (sB : B),
-      y.1 ∈ rationalSubset T.plus TB sB ∧
+      y.val ∈ rationalSubset T.plus TB sB ∧
       R ((algebraMap B (Localization.Away sB)).comp φ.toRingHom) := by
   classical
   let _ : UniformSpace A := IsTopologicalAddGroup.rightUniformSpace A
@@ -778,7 +778,7 @@ theorem ringHom_prop_of_forall_rational_chart_discrete
     R φ.toRingHom := by
   classical
   have hpt (y : spa T.plus) : ∃ (TB : Finset B) (sB : B),
-      y.1 ∈ rationalSubset T.plus TB sB ∧
+      y.val ∈ rationalSubset T.plus TB sB ∧
       R ((algebraMap B (Localization.Away sB)).comp φ.toRingHom) := by
     obtain ⟨TA, sA, hTA, CX, _, β, hRβ, c₀, hc₀, hsq⟩ := hchart y
     exact exists_away_comp_of_rational_chart_discrete hcomp hiso hloc P hP hsheafA P' hP' hsheafB

@@ -265,7 +265,7 @@ theorem isTopologicallyFiniteType_iff_isPlusWeaklyFiniteType_of_discreteTopology
       subst ht
       rw [Completion.coe_mul, map_mul, ← algebraMap_completion_weightedRestrictedSubring_apply,
         hπC, map_one, one_mul, hπX_right]
-      exact hEU (eE j).2
+      exact hEU (eE j).property
 
 /-- Over a discrete base `A`, a morphism `f : S → U` of Huber pairs whose plus rings are both the
 entire ring (`S.plus = ⊤`, `U.plus = ⊤`) is topologically of finite type if and only if `B` is
