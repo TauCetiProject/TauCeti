@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LowDimTopology.Heegaard.MaslovIndex
+import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -33,6 +34,20 @@ moves at most two points. If the diagram is also weakly admissible, the only suc
 at most zero is zero, so one of index one moves exactly one point, as a bigon does, or exactly
 two, as a rectangle does.
 
+The index budget then pins down such a domain near the points of `x` and `y`. The Euler measure
+of a domain avoiding the basepoints is half its total multiplicity on the bigons
+(`TauCeti.HeegaardRegionSystem.IsNice.eulerMeasure_eq`). If the domain moves two points, the
+estimate `μ(D) ≥ e(D) + m / 2` is an equality: the domain has multiplicity zero on every bigon,
+it is a convex corner at each of the four moved points, and it vanishes on the four corners at
+every other point of `x`. These are the corners and the emptiness of a rectangle. If the domain
+moves one point, its total multiplicity on the bigons is at most one, and when it meets a bigon
+the estimate is again an equality, with the same consequences at the two moved points and at the
+other points of `x`, which are those of a bigon. The equality case itself is
+`TauCeti.HeegaardRegionSystem.IsDomainBetween.pointMeasure_point_left_eq_inv_four_of_maslovIndex_le`
+and its companions in `TauCeti.LowDimTopology.Heegaard.MaslovIndex`. That such a domain is an
+embedded rectangle or bigon, with multiplicities zero and one, is a statement about the surface
+and is not proved here; neither is the remaining bigon case of a domain made of squares only.
+
 ## Main definitions
 
 * `TauCeti.HeegaardRegionSystem.IsNice`: every region containing no basepoint is a bigon or a
@@ -55,6 +70,17 @@ two, as a rectangle does.
   a weakly admissible nice diagram, such a domain of index one moves exactly one or two points.
 * `TauCeti.HeegaardRegionSystem.IsNice.eq_zero_of_maslovIndex_nonpos`: in a weakly admissible
   nice diagram, such a domain of index at most zero is zero.
+* `TauCeti.HeegaardRegionSystem.IsNice.eulerMeasure_eq`: in a nice diagram, the Euler measure of
+  a domain avoiding the basepoints is half its multiplicity on the bigons.
+* `TauCeti.HeegaardRegionSystem.IsNice.eulerMeasure_eq_zero_iff`: such a nonnegative domain has
+  Euler measure zero exactly when it avoids the bigons.
+* `IsNice.maslovIndex_le_eulerMeasure_add_half_hammingDist_of_hammingDist_eq_two`
+  and `TauCeti.HeegaardRegionSystem.IsNice.eulerMeasure_eq_zero_of_hammingDist_eq_two`: a domain
+  of index at most one moving two points attains the index estimate and avoids the bigons.
+* `TauCeti.HeegaardRegionSystem.IsNice.sum_cornerCount_eq_two_le_one_of_hammingDist_eq_one`: a
+  domain of index at most one moving one point has total multiplicity at most one on the bigons.
+* `IsNice.maslovIndex_le_eulerMeasure_add_half_hammingDist_of_cornerCount_eq_two`:
+  a domain of index at most one meeting a bigon attains the index estimate.
 
 ## References
 
@@ -116,6 +142,31 @@ theorem IsNice.eulerMeasure_nonneg (h : H.IsNice χ) (hD0 : 0 ≤ D)
     · rw [hχ, hk]
       exact mul_nonneg hDr (by norm_num)
 
+/-- In a nice diagram, the Euler measure of a domain avoiding the basepoints is half its total
+multiplicity on the bigons, the regions with two corners: a bigon has Euler measure `1 / 2` and
+a square has Euler measure `0`. -/
+theorem IsNice.eulerMeasure_eq (h : H.IsNice χ) (hz : ∀ z, D (H.basepoint z) = 0) :
+    H.eulerMeasure χ D = (∑ r with H.cornerCount r = 2, (D r : ℚ)) / 2 := by
+  rw [eulerMeasure_apply, sum_filter, sum_div]
+  refine sum_congr rfl fun r _ => ?_
+  by_cases hr : ∃ z, H.basepoint z = r
+  · obtain ⟨z, rfl⟩ := hr
+    simp [hz z]
+  · push Not at hr
+    obtain ⟨hχ, hk | hk⟩ := h r hr
+    · simp [hχ, hk]
+      ring
+    · simp [hχ, hk]
+
+/-- In a nice diagram, a nonnegative domain avoiding the basepoints has Euler measure zero
+exactly when it has multiplicity zero on every bigon. -/
+theorem IsNice.eulerMeasure_eq_zero_iff (h : H.IsNice χ) (hD0 : 0 ≤ D)
+    (hz : ∀ z, D (H.basepoint z) = 0) :
+    H.eulerMeasure χ D = 0 ↔ ∀ r, H.cornerCount r = 2 → D r = 0 := by
+  rw [h.eulerMeasure_eq hz, div_eq_zero_iff, or_iff_left two_ne_zero,
+    sum_eq_zero_iff_of_nonneg fun r _ => by exact_mod_cast hD0 r]
+  simp
+
 /-- In a nice diagram, a nonnegative domain from `x` to `y` avoiding the basepoints has Maslov
 index at least half the number of `α`-curves on which `x` and `y` differ. -/
 theorem IsNice.hammingDist_le_two_mul_maslovIndex [DecidableEq Point] (h : H.IsNice χ)
@@ -173,6 +224,74 @@ theorem IsNice.hammingDist_eq_one_or_eq_two_of_maslovIndex_eq_one [DecidableEq P
     have hD' := weaklyAdmissible_iff.mp hW D (isDomainBetween_self_iff.mp ⟨hD, hz⟩) hD0
     simp [hD'] at hμ
   omega
+
+/-! ### Rectangles and bigons -/
+
+/-- **Rectangles are tight.** In a nice diagram, a nonnegative domain from `x` to `y` avoiding the
+basepoints, with Maslov index at most one, that moves the points of `x` on two `α`-curves has
+`μ(D) ≤ e(D) + m / 2`, the equality case of the index estimate. Hence it has point measure
+`1 / 4` at the four moved points, where it is a convex corner, and point measure zero at the
+other points of `x`
+(`IsDomainBetween.pointMeasure_point_left_eq_inv_four_of_maslovIndex_le`,
+`IsDomainBetween.pointMeasure_point_right_eq_inv_four_of_maslovIndex_le`,
+`TauCeti.HeegaardRegionSystem.IsDomainBetween.pointMeasure_point_eq_zero_of_maslovIndex_le`). -/
+theorem IsNice.maslovIndex_le_eulerMeasure_add_half_hammingDist_of_hammingDist_eq_two
+    [DecidableEq Point] (h : H.IsNice χ) (hD0 : 0 ≤ D) (hz : ∀ z, D (H.basepoint z) = 0)
+    (hm : hammingDist (H.point x) (H.point y) = 2) (hμ : H.maslovIndex χ x y D ≤ 1) :
+    H.maslovIndex χ x y D ≤ H.eulerMeasure χ D + hammingDist (H.point x) (H.point y) / 2 := by
+  rw [hm]
+  linarith [h.eulerMeasure_nonneg hD0 hz]
+
+/-- In a nice diagram, a nonnegative domain from `x` to `y` avoiding the basepoints, with Maslov
+index at most one, that moves the points of `x` on two `α`-curves has Euler measure zero, so
+multiplicity zero on every bigon
+(`TauCeti.HeegaardRegionSystem.IsNice.eulerMeasure_eq_zero_iff`): it is made of squares. -/
+theorem IsNice.eulerMeasure_eq_zero_of_hammingDist_eq_two [DecidableEq Point] (h : H.IsNice χ)
+    (hD : H.IsDomainBetween x y D) (hD0 : 0 ≤ D) (hz : ∀ z, D (H.basepoint z) = 0)
+    (hm : hammingDist (H.point x) (H.point y) = 2) (hμ : H.maslovIndex χ x y D ≤ 1) :
+    H.eulerMeasure χ D = 0 := by
+  have := hD.eulerMeasure_add_half_hammingDist_le_maslovIndex χ hD0
+  rw [hm] at this
+  linarith [h.eulerMeasure_nonneg hD0 hz]
+
+/-- In a nice diagram, a nonnegative domain from `x` to `y` avoiding the basepoints, with Maslov
+index at most one, that moves the point of `x` on a single `α`-curve has total multiplicity at
+most one on the bigons. -/
+theorem IsNice.sum_cornerCount_eq_two_le_one_of_hammingDist_eq_one [DecidableEq Point]
+    (h : H.IsNice χ) (hD : H.IsDomainBetween x y D) (hD0 : 0 ≤ D)
+    (hz : ∀ z, D (H.basepoint z) = 0) (hm : hammingDist (H.point x) (H.point y) = 1)
+    (hμ : H.maslovIndex χ x y D ≤ 1) :
+    ∑ r with H.cornerCount r = 2, D r ≤ 1 := by
+  have := hD.eulerMeasure_add_half_hammingDist_le_maslovIndex χ hD0
+  rw [hm, h.eulerMeasure_eq hz] at this
+  have h1 : ((∑ r with H.cornerCount r = 2, D r : ℤ) : ℚ) ≤ 1 := by
+    push_cast
+    linarith
+  exact_mod_cast h1
+
+/-- **Domains through a bigon are tight.** In a nice diagram, a nonnegative domain from `x` to
+`y ≠ x` avoiding the basepoints, with Maslov index at most one, that has nonzero multiplicity on
+some bigon has `μ(D) ≤ e(D) + m / 2`, the equality case of the index estimate. Hence it has point
+measure `1 / 4` at the moved points, where it is a convex corner, and point measure zero at the
+other points of `x`
+(`IsDomainBetween.pointMeasure_point_left_eq_inv_four_of_maslovIndex_le`,
+`IsDomainBetween.pointMeasure_point_right_eq_inv_four_of_maslovIndex_le`,
+`TauCeti.HeegaardRegionSystem.IsDomainBetween.pointMeasure_point_eq_zero_of_maslovIndex_le`). -/
+theorem IsNice.maslovIndex_le_eulerMeasure_add_half_hammingDist_of_cornerCount_eq_two
+    [DecidableEq Point] (h : H.IsNice χ) (hD0 : 0 ≤ D) (hz : ∀ z, D (H.basepoint z) = 0)
+    (hxy : x ≠ y) (hμ : H.maslovIndex χ x y D ≤ 1) {r : Region} (hr : H.cornerCount r = 2)
+    (hDr : D r ≠ 0) :
+    H.maslovIndex χ x y D ≤ H.eulerMeasure χ D + hammingDist (H.point x) (H.point y) / 2 := by
+  have hm : (1 : ℚ) ≤ hammingDist (H.point x) (H.point y) := by
+    have : hammingDist (H.point x) (H.point y) ≠ 0 := fun h0 =>
+      hxy (H.point_injective (hammingDist_eq_zero.mp h0))
+    exact_mod_cast Nat.one_le_iff_ne_zero.mpr this
+  have hsum : (D r : ℚ) ≤ ∑ r with H.cornerCount r = 2, (D r : ℚ) :=
+    single_le_sum (f := fun r => (D r : ℚ)) (fun r _ => by exact_mod_cast hD0 r)
+      (mem_filter.mpr ⟨mem_univ r, hr⟩)
+  have hDr1 : (1 : ℚ) ≤ D r := by exact_mod_cast lt_of_le_of_ne (hD0 r) (Ne.symm hDr)
+  rw [h.eulerMeasure_eq hz]
+  linarith
 
 end Nice
 
