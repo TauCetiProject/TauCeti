@@ -10,6 +10,7 @@ public import TauCeti.Topology.VectorBundle.HomotopyInvariance
 public import TauCeti.Topology.VectorBundle.OrthonormalTrivialization
 public import TauCeti.Topology.VectorBundle.SphereBundle.Basic
 import TauCeti.Topology.FiberBundle.Pullback
+import TauCeti.Topology.VectorBundle.Hom
 import TauCeti.Topology.VectorBundle.OrthonormalFrame.Pullback
 import TauCeti.Topology.VectorBundle.Pullback
 
@@ -161,6 +162,19 @@ theorem continuous_of_continuous_frame {φ : ∀ y, F ≃L[𝕜] E (f y)}
     (hφ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2)) : Continuous f :=
   (FiberBundle.continuous_proj F E).comp (hφ.comp (Continuous.prodMk_left 0))
 
+/-- Read in a linear trivialization `e`, a continuous frame `χ` along `f` is a continuous family
+`y ↦ e ∘ χ y` of endomorphisms of the model fibre over the preimage of the base set of `e`. -/
+theorem continuousOn_continuousLinearMapAt_comp_of_continuous_frame [CompleteSpace 𝕜]
+    [FiniteDimensional 𝕜 F] {χ : ∀ y, F ≃L[𝕜] E (f y)}
+    (hχ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (χ q.1 q.2))
+    (e : Trivialization F (π F E)) [e.IsLinear 𝕜] :
+    ContinuousOn (fun y ↦ (e.continuousLinearMapAt 𝕜 (f y)).comp (χ y : F →L[𝕜] E (f y)))
+      (f ⁻¹' e.baseSet) := by
+  -- A frame along `f` is a fibrewise linear map to `E` from the trivial bundle `B × F`.
+  simpa using continuousOn_continuousLinearMapAt_comp_symmL (E' := Bundle.Trivial B F) (g := f)
+    (φ := fun y ↦ (χ y : F →L[𝕜] E (f y))) (hχ.comp (Bundle.Trivial.homeomorphProd B F).continuous)
+    e (Bundle.Trivial.trivialization B F)
+
 /-- **Two frames differ by a continuous family of automorphisms.** If `φ` and `ψ` are continuous
 frames of a finite-rank vector bundle `E` along the same map `f`, the transition
 `y ↦ (ψ y)⁻¹ ∘ φ y` is a continuous map into the automorphisms of the model fibre `F`. -/
@@ -176,34 +190,26 @@ theorem continuous_trans_symm_of_continuous_frame [CompleteSpace 𝕜] [FiniteDi
   have hU : f ⁻¹' e.baseSet ∈ nhds y₀ :=
     (continuous_of_continuous_frame hφ).continuousAt.preimage_mem_nhds
       (e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' (f y₀)))
-  have hcoord {χ : ∀ y, F ≃L[𝕜] E (f y)}
-      (hχ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (χ q.1 q.2)) :
-      ContinuousOn (fun y ↦ (e.continuousLinearMapAt 𝕜 (f y)).comp (χ y : F →L[𝕜] E (f y)))
-        (f ⁻¹' e.baseSet) := by
-    refine continuousOn_clm_apply.2 fun v ↦ ?_
-    refine (continuous_snd.comp_continuousOn (e.continuousOn.comp
-      (hχ.comp (Continuous.prodMk_left v)).continuousOn fun y hy ↦ e.mem_source.2 hy)).congr
-        fun y (hy : f y ∈ e.baseSet) ↦ ?_
-    simp [e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hy]
-  -- On the base set the coordinate of `ψ y` is the unit `e ∘ ψ y`.
-  have hcoordψ {y : B} (hy : f y ∈ e.baseSet) :
-      (e.continuousLinearMapAt 𝕜 (f y)).comp (ψ y : F →L[𝕜] E (f y)) =
-        (((ψ y).trans (e.continuousLinearEquivAt 𝕜 (f y) hy)).toUnit : F →L[𝕜] F) := by
-    rw [ContinuousLinearEquiv.toUnit, Units.val_mk, ← ContinuousLinearEquiv.comp_coe,
-      e.coe_continuousLinearEquivAt_eq' (R := 𝕜) hy]
-  -- The coordinate of `ψ` is invertible at `y₀`, so its inverse is continuous there.
+  -- On the base set the coordinate of a frame `χ` is the automorphism `e ∘ χ y`.
+  have hcoord {χ : ∀ y, F ≃L[𝕜] E (f y)} {y : B} (hy : f y ∈ e.baseSet) :
+      (e.continuousLinearMapAt 𝕜 (f y)).comp (χ y : F →L[𝕜] E (f y)) =
+        ((χ y).trans (e.continuousLinearEquivAt 𝕜 (f y) hy) : F →L[𝕜] F) := by
+    rw [← ContinuousLinearEquiv.comp_coe, e.coe_continuousLinearEquivAt_eq' (R := 𝕜) hy]
+  -- The coordinate of `ψ` is invertible at `y₀`, so its inverse is continuous there. The unit
+  -- `toUnit` of an automorphism has that automorphism as its value.
   have hy₀ : f y₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' (f y₀)
   have hinv : ContinuousAt (fun y ↦ Ring.inverse
-      ((e.continuousLinearMapAt 𝕜 (f y)).comp (ψ y : F →L[𝕜] E (f y)))) y₀ :=
-    (NormedRing.inverse_continuousAt _).comp_of_eq ((hcoord hψ).continuousAt hU) (hcoordψ hy₀)
-  refine ((hinv.mul ((hcoord hφ).continuousAt hU))).congr_of_eventuallyEq ?_
+      ((e.continuousLinearMapAt 𝕜 (f y)).comp (ψ y : F →L[𝕜] E (f y)))) y₀ := by
+    refine (NormedRing.inverse_continuousAt ((ψ y₀).trans
+      (e.continuousLinearEquivAt 𝕜 (f y₀) hy₀)).toUnit).comp_of_eq ?_ (hcoord hy₀)
+    exact (continuousOn_continuousLinearMapAt_comp_of_continuous_frame hψ e).continuousAt hU
+  refine (hinv.mul ((continuousOn_continuousLinearMapAt_comp_of_continuous_frame hφ e).continuousAt
+    hU)).congr_of_eventuallyEq ?_
   filter_upwards [hU] with y (hy : f y ∈ e.baseSet)
-  rw [Pi.mul_apply, hcoordψ hy, Ring.inverse_unit, ContinuousLinearEquiv.toUnit, Units.inv_mk,
-    Units.val_mk, ← e.coe_continuousLinearEquivAt_eq' (R := 𝕜) hy]
+  rw [Pi.mul_apply, hcoord hy, hcoord hy, ContinuousLinearMap.ringInverse_equiv,
+    ContinuousLinearMap.inverse_equiv]
   ext v
-  simp only [mul_apply_eq_comp, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_trans_apply,
-    ContinuousLinearEquiv.symm_apply_apply, ContinuousLinearEquiv.trans_apply]
+  simp [e.symm_apply_apply_mk hy]
 
 /-- **Frames over contractible spaces.** Along every continuous map `f` from a contractible
 paracompact R₁ space, for instance a cube, a vector bundle `E` has a frame: linear isomorphisms

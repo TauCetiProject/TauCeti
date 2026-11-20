@@ -175,12 +175,10 @@ theorem continuousOn_clutchingFunction
   let A : B → F ≃L[ℂ] F := fun y ↦ if hy : f y ∈ e.baseSet then
     (φ y).trans (e.continuousLinearEquivAt ℂ (f y) hy) else ContinuousLinearEquiv.refl ℂ F
   have hA : ContinuousOn (fun y ↦ (A y : F →L[ℂ] F)) (f ⁻¹' e.baseSet) := by
-    refine continuousOn_clm_apply.2 fun v ↦ ?_
-    have hc : ContinuousOn (fun y ↦ (e (TotalSpace.mk' F (f y) (φ y v))).2) (f ⁻¹' e.baseSet) :=
-      continuous_snd.comp_continuousOn (e.continuousOn.comp
-        (hφ.comp (Continuous.prodMk_left v)).continuousOn fun y hy ↦ e.mem_source.2 hy)
-    refine hc.congr fun y (hy : f y ∈ e.baseSet) ↦ ?_
-    simp [A, hy]
+    refine (continuousOn_continuousLinearMapAt_comp_of_continuous_frame hφ e).congr
+      fun y (hy : f y ∈ e.baseSet) ↦ ?_
+    simp only [A, hy, dite_true, ← e.coe_continuousLinearEquivAt_eq' (R := ℂ) hy,
+      ContinuousLinearEquiv.comp_coe]
   refine hA.normalizedDet.inv.congr fun y (hy : f y ∈ e.baseSet) ↦ ?_
   simp [A, clutchingFunction_of_mem hy, hy]
 

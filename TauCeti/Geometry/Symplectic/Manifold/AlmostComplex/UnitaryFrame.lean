@@ -106,17 +106,25 @@ theorem Compatible.exists_continuous_unitary_frame [Fact (finrank ℝ E = 2 * fi
     · simp [k, hφ₀J, SmoothBundleForm.eval₂_apply]
   have hTc : Continuous fun y ↦ (k y).metricChangeTransport :=
     ContinuousLinearMap.continuousOn_metricChangeTransport.comp_continuous hkc hk
+  -- Each normalized frame is the unitarization of `φ₀ y`.
+  have hφ (y : Y) (v : G) : ((k y).metricChangeEquiv (hk y)).trans (φ₀ y) v =
+      (hJ.isNondegenerate.symplecticFormAt (f y)).unitarization (J.almostComplexStructureAt (f y))
+        (φ₀ y : G →ₗ[ℝ] TangentSpace I (f y)) v := by
+    simp only [ContinuousLinearEquiv.trans_apply, ContinuousLinearMap.metricChangeEquiv_apply,
+      SymplecticForm.unitarization_apply, LinearEquiv.coe_coe,
+      ContinuousLinearEquiv.coe_toLinearEquiv, k]
   refine ⟨fun y ↦ ((k y).metricChangeEquiv (hk y)).trans (φ₀ y), ?_, fun y v ↦ ?_,
     fun y v w ↦ ?_, fun y v w ↦ ?_⟩
   · exact (hφ₀.comp (continuous_fst.prodMk ((hTc.comp continuous_fst).clm_apply
       continuous_snd))).congr fun q ↦ by
         simp only [Function.comp_apply, ContinuousLinearEquiv.trans_apply,
           ContinuousLinearMap.metricChangeEquiv_apply]
-  · simpa [k, SymplecticForm.unitarization_apply] using
-      (hJ' y).unitarization_I_smul (φ₀ y).injective (hφ₀J' y) v
-  · simpa [k, SymplecticForm.unitarization_apply] using
-      (hJ' y).apply_unitarization_apply_unitarization (φ₀ y).injective v w
-  · simpa [k, SymplecticForm.unitarization_apply] using
-      (hJ' y).apply_unitarization_unitarization (φ₀ y).injective (hφ₀J' y) v w
+  · rw [hφ, hφ, (hJ' y).unitarization_I_smul (φ₀ y).injective (hφ₀J' y),
+      SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
+  · rw [hφ, hφ, ← SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
+      ← IsNondegenerate.symplecticFormAt_apply hJ.isNondegenerate]
+    exact (hJ' y).apply_unitarization_apply_unitarization (φ₀ y).injective v w
+  · rw [hφ, hφ, ← IsNondegenerate.symplecticFormAt_apply hJ.isNondegenerate]
+    exact (hJ' y).apply_unitarization_unitarization (φ₀ y).injective (hφ₀J' y) v w
 
 end TauCeti.SmoothTwoForm
