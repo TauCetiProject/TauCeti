@@ -40,8 +40,8 @@ right-hand side contains `∂ᵢ∂ₑaⁱʲ`, needs them to be `C²`; the Leibn
 ## Main declarations
 
 * `TauCeti.PDE.energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn`: a weak derivative
-  `∂ₑ` moves from the solution onto the test function across the energy form, at the cost of the
-  energy form of the coefficient field `∂ₑa`.
+  `∂ₑ` moves from the solution onto the test function across the energy form of a `C¹`
+  coefficient field, at the cost of the energy form of the coefficient field `∂ₑa`.
 * `TauCeti.PDE.energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_of_hasWeakLineDerivOn`: for `u`
   with second weak derivatives, the energy form of a `C¹` coefficient field against a test
   function is integration against the function `-∂ᵢ(Bⁱʲ ∂ⱼu)`.
