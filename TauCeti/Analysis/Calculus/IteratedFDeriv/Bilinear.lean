@@ -17,11 +17,16 @@ the `k`-th derivative of `y ↦ B (f y) (g y)` by a binomial sum over the deriva
 (`ContinuousLinearMap.norm_iteratedFDeriv_le_of_bilinear_of_forall_le`). The constant
 `‖B‖ * 2 ^ k` depends only on `B` and `k`, which gives one constant serving every function and
 every order at most `k` (`TauCeti.exists_norm_iteratedFDeriv_bilinear_le`).
+
+On an open set, the iterated derivatives of the derivative of `y ↦ B (f y) (g y)` split into those
+of the two Leibniz terms `B.precompR E (f y) (fderiv 𝕜 g y)` and `B.precompL E (fderiv 𝕜 f y) (g y)`
+(`ContinuousLinearMap.iteratedFDeriv_fderiv_of_bilinear`), which reduces estimates for the
+derivatives of a bilinear product to an induction on the order.
 -/
 
 public section
 
-open scoped ContDiff
+open scoped ContDiff Topology
 
 variable {𝕜 E X Y Z : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
@@ -50,6 +55,30 @@ theorem ContinuousLinearMap.norm_iteratedFDeriv_le_of_bilinear_of_forall_le
         rw [← Finset.sum_mul, ← Finset.sum_mul, ← Nat.cast_sum, Nat.sum_range_choose]
         push_cast
         ring
+
+/-- On an open set, the iterated derivatives of the derivative of a bilinear product are the sums
+of those of the two Leibniz terms. -/
+theorem ContinuousLinearMap.iteratedFDeriv_fderiv_of_bilinear (B : X →L[𝕜] Y →L[𝕜] Z) {k : ℕ}
+    {f : E → X} {g : E → Y} {U : Set E} (hf : ContDiffOn 𝕜 (k + 1) f U)
+    (hg : ContDiffOn 𝕜 (k + 1) g U) (hU : IsOpen U) {x : E} (hx : x ∈ U) :
+    iteratedFDeriv 𝕜 k (fderiv 𝕜 (fun y => B (f y) (g y))) x =
+      iteratedFDeriv 𝕜 k (fun y => B.precompR E (f y) (fderiv 𝕜 g y)) x +
+        iteratedFDeriv 𝕜 k (fun y => B.precompL E (fderiv 𝕜 f y) (g y)) x := by
+  have hloc : fderiv 𝕜 (fun y => B (f y) (g y)) =ᶠ[𝓝 x]
+      (fun y => B.precompR E (f y) (fderiv 𝕜 g y)) +
+        (fun y => B.precompL E (fderiv 𝕜 f y) (g y)) := by
+    filter_upwards [hU.mem_nhds hx] with y hy
+    exact B.fderiv_of_bilinear
+      ((hf.differentiableOn (by simp)).differentiableAt (hU.mem_nhds hy))
+      ((hg.differentiableOn (by simp)).differentiableAt (hU.mem_nhds hy))
+  rw [(hloc.iteratedFDeriv 𝕜 k).eq_of_nhds]
+  exact iteratedFDeriv_add_apply
+    (((B.precompR E).isBoundedBilinearMap.contDiff.comp_contDiffOn
+      ((hf.of_le (by simp)).prodMk (hg.fderiv_of_isOpen hU (by simp)))).contDiffAt
+        (hU.mem_nhds hx))
+    (((B.precompL E).isBoundedBilinearMap.contDiff.comp_contDiffOn
+      ((hf.fderiv_of_isOpen hU (by simp)).prodMk (hg.of_le (by simp)))).contDiffAt
+        (hU.mem_nhds hx))
 
 namespace TauCeti
 

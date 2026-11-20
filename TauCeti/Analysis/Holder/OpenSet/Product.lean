@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Holder.OpenSet
 import TauCeti.Analysis.Holder.Leibniz
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 
@@ -21,9 +22,9 @@ norm `∑_{i ≤ k} sup_Ω ‖D^i f‖ + [D^k f]_{α,Ω}`: for the multiplicatio
 says that the norm is submultiplicative up to a constant depending only on `k`, and fixing the
 first argument gives bounded multiplication by a coefficient field in `C^{k,α}(Ω)`.
 
-The supremum terms come from Mathlib's bilinear Leibniz bound
-`ContinuousLinearMap.norm_iteratedFDerivWithin_le_of_bilinear`, and the top Hölder seminorm from
-`ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp₂`. The latter needs Hölder bounds for the
+The supremum terms come from the bilinear Leibniz bound with uniform jet bounds
+`ContinuousLinearMap.norm_iteratedFDeriv_le_of_bilinear_of_forall_le`, and the top Hölder seminorm
+from `ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp₂`. The latter needs Hölder bounds for the
 lower derivatives of both factors, which `CkHolderSpaceOn.holderOnWith_iteratedFDeriv_of_le`
 supplies on a convex set. Some geometric condition on `Ω` is needed for `k ≥ 1`: on
 `Ω = (-1, 0) ∪ (0, 1)` the function that is `0` on `(-1, 0)` and `1` on `(0, 1)` and the identity
@@ -54,23 +55,14 @@ private theorem norm_iteratedFDeriv_ckHolderOnBilinear_le (B : F₁ →L[ℝ] F�
     (x : Ω) :
     ‖iteratedFDeriv ℝ j (fun y ↦ B (f.extend y) (g.extend y)) x‖ ≤
       2 ^ k * ‖B‖ * ‖f‖ * ‖g‖ := by
-  rw [← iteratedFDerivWithin_of_isOpen j Ω.isOpen x.2]
-  refine (B.norm_iteratedFDerivWithin_le_of_bilinear f.contDiffOn_extend g.contDiffOn_extend
-    Ω.isOpen.uniqueDiffOn x.2 (by exact_mod_cast hj)).trans ?_
-  calc
-    _ ≤ ‖B‖ * ∑ i ∈ Finset.range (j + 1), (j.choose i : ℝ) * ‖f‖ * ‖g‖ := by
-      gcongr with i hi
-      · rw [iteratedFDerivWithin_of_isOpen i Ω.isOpen x.2]
-        exact f.norm_iteratedFDeriv_extend_le (by have := Finset.mem_range.mp hi; omega) x
-      · rw [iteratedFDerivWithin_of_isOpen (j - i) Ω.isOpen x.2]
-        exact g.norm_iteratedFDeriv_extend_le ((Nat.sub_le j i).trans hj) x
-    _ = 2 ^ j * ‖B‖ * ‖f‖ * ‖g‖ := by
-      rw [← Finset.sum_mul, ← Finset.sum_mul]
-      have hsum : (∑ i ∈ Finset.range (j + 1), (j.choose i : ℝ)) = 2 ^ j := by
-        exact_mod_cast Nat.sum_range_choose j
-      rw [hsum]
-      ring
-    _ ≤ _ := by gcongr; norm_num
+  have hjk : (j : WithTop ℕ∞) ≤ k := by exact_mod_cast hj
+  refine (B.norm_iteratedFDeriv_le_of_bilinear_of_forall_le Ω.isOpen x.2
+    (f.contDiffOn_extend.of_le hjk) (g.contDiffOn_extend.of_le hjk)
+    (fun i hi ↦ f.norm_iteratedFDeriv_extend_le (hi.trans hj) x)
+    (fun i hi ↦ g.norm_iteratedFDeriv_extend_le (hi.trans hj) x)).trans ?_
+  rw [mul_comm ‖B‖]
+  gcongr
+  norm_num
 
 private theorem holderOnWith_iteratedFDeriv_ckHolderOnBilinear (B : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) (f : CkHolderSpaceOn k α Ω F₁)

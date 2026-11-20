@@ -29,6 +29,10 @@ of `f` at `a • x`, again without any differentiability of `f`
 (`TauCeti.iteratedFDeriv_comp_const_smul_apply`). A Hölder bound on a set `t` for the `i`-th
 derivative of `f` transfers to the rescaled map on any set that rescaling maps into `t`
 (`HolderOnWith.iteratedFDeriv_comp_const_smul`).
+
+Linear isometries on either side preserve differences of iterated derivatives, so a local Hölder
+bound on an iterated derivative holds for `t ∘ v ∘ e` exactly when it holds for `v`
+(`LinearIsometryEquiv.holderOnWith_iteratedFDeriv_comp_iff`).
 -/
 
 public section
@@ -233,5 +237,25 @@ theorem holderOnWith_iteratedFDeriv_comp {E E' T Tu : Type*}
   have hxy := hv (e x) hx (e y) hy
   rw [e.dist_map] at hxy
   simpa only [dist_eq_norm] using hxy
+
+open scoped NNReal in
+/-- Composing with linear isometries neither creates nor destroys a local Hölder bound on an
+actual derivative field: the `j`-th derivative of `t ∘ v ∘ e` is Hölder on `e ⁻¹' S` exactly when
+the `j`-th derivative of `v` is Hölder on `S`, with the same constant and exponent. -/
+theorem holderOnWith_iteratedFDeriv_comp_iff {E E' T Tu : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [NormedAddCommGroup T] [NormedSpace ℝ T] [NormedAddCommGroup Tu] [NormedSpace ℝ Tu]
+    (e : E' ≃ₗᵢ[ℝ] E) (t : T ≃ₗᵢ[ℝ] Tu) {v : E → T} {C α : ℝ≥0} {j : ℕ} {S : Set E} :
+    HolderOnWith C α (iteratedFDeriv ℝ j (t ∘ v ∘ e)) (e ⁻¹' S) ↔
+      HolderOnWith C α (iteratedFDeriv ℝ j v) S := by
+  refine ⟨fun h => ?_, e.holderOnWith_iteratedFDeriv_comp t v j⟩
+  have h' := e.symm.holderOnWith_iteratedFDeriv_comp t.symm _ j h
+  have hv : t.symm ∘ (t ∘ v ∘ e) ∘ e.symm = v := by
+    ext x
+    simp
+  have hS : e.symm ⁻¹' (e ⁻¹' S) = S := by
+    ext x
+    simp
+  rwa [hv, hS] at h'
 
 end LinearIsometryEquiv

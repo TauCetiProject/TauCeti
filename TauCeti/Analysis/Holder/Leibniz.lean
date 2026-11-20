@@ -9,6 +9,9 @@ public import TauCeti.Analysis.Holder.JetBounds
 public import TauCeti.Analysis.Normed.Operator.Holder
 public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
+import TauCeti.Analysis.Normed.Operator.ULift
 
 /-!
 # Higher Hölder bounds for bilinear products
@@ -114,52 +117,6 @@ private theorem holderWith_iteratedFDeriv_bilinear_aux {E A B G : Type u}
         · exact_mod_cast L.norm_precompL_le E
       _ = _ := by ring
 
-/-- A continuous bilinear map transported to `ULift`s of its spaces. The Leibniz inductions in
-this file run with all spaces in a common universe, and this brings a bilinear map there. -/
-private noncomputable def uliftBilinear {A : Type uA} {B : Type uB} {G : Type uG}
-    [NormedAddCommGroup A] [NormedSpace ℝ A] [NormedAddCommGroup B] [NormedSpace ℝ B]
-    [NormedAddCommGroup G] [NormedSpace ℝ G] (L : A →L[ℝ] B →L[ℝ] G) :
-    ULift.{wA} A →L[ℝ] ULift.{wB} B →L[ℝ] ULift.{wG} G :=
-  compL ℝ (ULift.{wA} A) (ULift.{wB} B →L[ℝ] G) (ULift.{wB} B →L[ℝ] ULift.{wG} G)
-    (compL ℝ (ULift.{wB} B) G (ULift.{wG} G)
-      ((LinearIsometryEquiv.ulift ℝ G).symm : G →L[ℝ] ULift.{wG} G))
-    ((L.comp (LinearIsometryEquiv.ulift ℝ A : ULift.{wA} A →L[ℝ] A)).flip.comp
-      (LinearIsometryEquiv.ulift ℝ B : ULift.{wB} B →L[ℝ] B)).flip
-
-private theorem uliftBilinear_apply {A : Type uA} {B : Type uB} {G : Type uG}
-    [NormedAddCommGroup A] [NormedSpace ℝ A] [NormedAddCommGroup B] [NormedSpace ℝ B]
-    [NormedAddCommGroup G] [NormedSpace ℝ G] (L : A →L[ℝ] B →L[ℝ] G) (a : ULift.{wA} A)
-    (b : ULift.{wB} B) :
-    (uliftBilinear L : ULift.{wA} A →L[ℝ] ULift.{wB} B →L[ℝ] ULift.{wG} G) a b =
-      (LinearIsometryEquiv.ulift ℝ G).symm
-        (L (LinearIsometryEquiv.ulift ℝ A a) (LinearIsometryEquiv.ulift ℝ B b)) := by
-  simp [uliftBilinear]
-
-private theorem nnnorm_uliftBilinear_le {A : Type uA} {B : Type uB} {G : Type uG}
-    [NormedAddCommGroup A] [NormedSpace ℝ A] [NormedAddCommGroup B] [NormedSpace ℝ B]
-    [NormedAddCommGroup G] [NormedSpace ℝ G] (L : A →L[ℝ] B →L[ℝ] G) :
-    ‖(uliftBilinear L : ULift.{wA} A →L[ℝ] ULift.{wB} B →L[ℝ] ULift.{wG} G)‖₊ ≤ ‖L‖₊ := by
-  have h : ‖(uliftBilinear L : ULift.{wA} A →L[ℝ] ULift.{wB} B →L[ℝ] ULift.{wG} G)‖ ≤ ‖L‖ := by
-    refine opNorm_le_bound _ (norm_nonneg L) fun v => ?_
-    refine opNorm_le_bound _ (by positivity) fun w => ?_
-    rw [uliftBilinear_apply, LinearIsometryEquiv.norm_map]
-    exact L.le_opNorm₂ _ _
-  exact_mod_cast h
-
-/-- A bilinear product read through `uliftBilinear` and linear isometries of the source is the
-lifted product. -/
-private theorem uliftBilinear_comp {E' : Type*} {E : Type*} {A : Type uA} {B : Type uB}
-    {G : Type uG} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [NormedAddCommGroup A] [NormedSpace ℝ A] [NormedAddCommGroup B]
-    [NormedSpace ℝ B] [NormedAddCommGroup G] [NormedSpace ℝ G] (L : A →L[ℝ] B →L[ℝ] G)
-    (f : E → A) (g : E → B) (e : E' ≃ₗᵢ[ℝ] E) :
-    (fun x => (uliftBilinear L : ULift.{wA} A →L[ℝ] ULift.{wB} B →L[ℝ] ULift.{wG} G)
-        (((LinearIsometryEquiv.ulift ℝ A).symm ∘ f ∘ e) x)
-        (((LinearIsometryEquiv.ulift ℝ B).symm ∘ g ∘ e) x)) =
-      (LinearIsometryEquiv.ulift ℝ G).symm ∘ (fun x => L (f x) (g x)) ∘ e := by
-  funext x
-  simp only [Function.comp_apply, uliftBilinear_apply, LinearIsometryEquiv.apply_symm_apply]
-
 /-- The hypotheses on one factor of a bilinear product transport along linear isometries of the
 source and target: `C^k` regularity on `s`, bounds on `s` for all derivatives through order `k`,
 and `α`-Hölder bounds on `s` for them pass to `a ∘ f ∘ e` on `e ⁻¹' s`. -/
@@ -177,23 +134,6 @@ private theorem comp_linearIsometryEquiv_of_holderOnWith {E' E A A' : Type*}
       rw [a.norm_iteratedFDeriv_comp_left, e.norm_iteratedFDeriv_comp_right]
       exact hfb j hj (e x) hx,
     fun j hj => e.holderOnWith_iteratedFDeriv_comp a f j (hfH j hj)⟩
-
-/-- Conversely, an `α`-Hölder bound on `e ⁻¹' s` for the `k`-th derivative of `c.symm ∘ F ∘ e`
-transports back to the same bound on `s` for the `k`-th derivative of `F`. -/
-private theorem holderOnWith_iteratedFDeriv_of_comp_linearIsometryEquiv {E' E G' G : Type*}
-    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup G'] [NormedSpace ℝ G'] [NormedAddCommGroup G] [NormedSpace ℝ G]
-    (e : E' ≃ₗᵢ[ℝ] E) (c : G' ≃ₗᵢ[ℝ] G) {F : E → G} {s : Set E} {k : ℕ} {C α : ℝ≥0}
-    (h : HolderOnWith C α (iteratedFDeriv ℝ k (c.symm ∘ F ∘ e)) (e ⁻¹' s)) :
-    HolderOnWith C α (iteratedFDeriv ℝ k F) s := by
-  have h' := e.symm.holderOnWith_iteratedFDeriv_comp c _ k h
-  have hF : c ∘ (c.symm ∘ F ∘ e) ∘ e.symm = F := by
-    ext x
-    simp
-  have hs : e.symm ⁻¹' (e ⁻¹' s) = s := by
-    ext x
-    simp
-  rwa [hF, hs] at h'
 
 /-- A supported bilinear product has a global Hölder bound for its order-`k` derivative from
 uniform local bounds on all source jets and global bounds on all supported-factor jets. -/
@@ -240,37 +180,9 @@ theorem holderWith_iteratedFDeriv_of_tsupport_subset_right
     hfuH (fun j hj => holderOnWith_univ.mp (by
       simpa using e.holderOnWith_iteratedFDeriv_comp b.symm g j ((hgH j hj).holderOnWith univ)))
   apply holderOnWith_univ.mp
-  refine holderOnWith_iteratedFDeriv_of_comp_linearIsometryEquiv e c ?_
+  refine (e.holderOnWith_iteratedFDeriv_comp_iff c.symm).mp ?_
   rw [preimage_univ, ← hLu]
   exact (h.mono (by gcongr)).holderOnWith univ
-
-/-- On an open set, the iterated derivatives of the derivative of a bilinear product are the sums
-of those of the two Leibniz terms. -/
-private theorem iteratedFDeriv_fderiv_comp₂_eq_add {E A B G : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup A] [NormedSpace ℝ A] [NormedAddCommGroup B] [NormedSpace ℝ B]
-    [NormedAddCommGroup G] [NormedSpace ℝ G]
-    (L : A →L[ℝ] B →L[ℝ] G) {k : ℕ} {f : E → A} {g : E → B} {s : Set E}
-    (hf : ContDiffOn ℝ (k + 1) f s) (hg : ContDiffOn ℝ (k + 1) g s) (hs : IsOpen s) {x : E}
-    (hx : x ∈ s) :
-    iteratedFDeriv ℝ k (fderiv ℝ (fun y => L (f y) (g y))) x =
-      iteratedFDeriv ℝ k (fun y => L.precompR E (f y) (fderiv ℝ g y)) x +
-        iteratedFDeriv ℝ k (fun y => L.precompL E (fderiv ℝ f y) (g y)) x := by
-  have hloc : fderiv ℝ (fun y => L (f y) (g y)) =ᶠ[𝓝 x]
-      (fun y => L.precompR E (f y) (fderiv ℝ g y)) +
-        (fun y => L.precompL E (fderiv ℝ f y) (g y)) := by
-    filter_upwards [hs.mem_nhds hx] with y hy
-    exact L.fderiv_of_bilinear
-      ((hf.differentiableOn (by simp)).differentiableAt (hs.mem_nhds hy))
-      ((hg.differentiableOn (by simp)).differentiableAt (hs.mem_nhds hy))
-  rw [(hloc.iteratedFDeriv ℝ k).eq_of_nhds]
-  exact iteratedFDeriv_add_apply
-    (((L.precompR E).isBoundedBilinearMap.contDiff.comp_contDiffOn
-      ((hf.of_le (by simp)).prodMk (hg.fderiv_of_isOpen hs (by simp)))).contDiffAt
-        (hs.mem_nhds hx))
-    (((L.precompL E).isBoundedBilinearMap.contDiff.comp_contDiffOn
-      ((hf.fderiv_of_isOpen hs (by simp)).prodMk (hg.of_le (by simp)))).contDiffAt
-        (hs.mem_nhds hx))
 
 /-- The common-universe case of `holderOnWith_iteratedFDeriv_comp₂`, proved by induction on the
 order through the Leibniz rule for the first derivative. -/
@@ -314,7 +226,7 @@ private theorem holderOnWith_iteratedFDeriv_comp₂_aux {E A B G : Type u}
       (fun j hj => hgH j (by omega))
     rw [TauCeti.holderOnWith_iteratedFDeriv_succ_iff]
     refine ((hR.add hL).mono_const ?_).congr fun x hx =>
-      (iteratedFDeriv_fderiv_comp₂_eq_add L hf hg hs hx).symm
+      (L.iteratedFDeriv_fderiv_of_bilinear hf hg hs hx).symm
     calc
       _ ≤ (2 : ℝ≥0) ^ k * ‖L‖₊ * (M * K + N * H) +
           (2 : ℝ≥0) ^ k * ‖L‖₊ * (M * K + N * H) := by
@@ -361,7 +273,7 @@ theorem holderOnWith_iteratedFDeriv_comp₂
   obtain ⟨hgu, hgub, hguH⟩ := comp_linearIsometryEquiv_of_holderOnWith e b.symm hg hgb hgH
   have h := holderOnWith_iteratedFDeriv_comp₂_aux k Lu hfu hgu (hs.preimage e.continuous)
     hfub hgub hfuH hguH
-  refine holderOnWith_iteratedFDeriv_of_comp_linearIsometryEquiv e c ?_
+  refine (e.holderOnWith_iteratedFDeriv_comp_iff c.symm).mp ?_
   rw [← hLu]
   exact h.mono_const (by gcongr; exact nnnorm_uliftBilinear_le L)
 
