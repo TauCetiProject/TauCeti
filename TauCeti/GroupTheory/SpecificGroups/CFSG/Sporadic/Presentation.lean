@@ -225,4 +225,11 @@ to importing modules, so this equation is how they reach it. -/
 theorem SporadicName.presentation_J3 : SporadicName.J3.presentation = Sporadic.j3Presentation :=
   (rfl)
 
+/-- The presentation selected for `J₄` is the transcribed ATLAS presentation
+`TauCeti.Sporadic.j4Presentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
+to importing modules, so this equation is how they reach it. -/
+@[simp]
+theorem SporadicName.presentation_J4 : SporadicName.J4.presentation = Sporadic.j4Presentation :=
+  (rfl)
+
 end TauCeti
