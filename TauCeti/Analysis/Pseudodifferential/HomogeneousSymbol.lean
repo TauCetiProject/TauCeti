@@ -1050,7 +1050,7 @@ theorem exists_norm_iteratedFDeriv_smul_coefficient_le [ProperSpace E] (χ : Fre
     refine mul_le_mul_of_nonneg_right ?_ hprod
     calc C₂ * ‖ξ‖ ^ (m - l) ≤ C₂ * (2 ^ (|m - l| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2)) :=
           mul_le_mul_of_nonneg_left
-            (norm_rpow_le_one_add_norm_sq_rpow (by linarith) (m - l)) hC₂
+            (Real.rpow_le_two_rpow_mul_one_add_sq_rpow (by linarith) (m - l)) hC₂
       _ = C₂ * 2 ^ (|m - l| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2) := by ring
       _ ≤ max C₁ (C₂ * 2 ^ (|m - l| / 2)) * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2) :=
           mul_le_mul_of_nonneg_right (le_max_right _ _) (by positivity)

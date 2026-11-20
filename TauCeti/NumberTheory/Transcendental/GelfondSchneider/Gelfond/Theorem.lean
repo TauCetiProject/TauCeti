@@ -72,9 +72,8 @@ private theorem gelfond_false {K : Type*} [Field K] [NumberField K] (σ : K →+
   have hγ₀ : γ ≠ 0 := fun h ↦ Complex.exp_ne_zero (σ β * l) (by rw [← hγ, h, map_zero])
   obtain ⟨c, -, haux⟩ := exists_gelfond_auxiliary_algebraic α β γ hm
   obtain ⟨c₂, hc₂, hlow⟩ := exists_one_le_pow_mul_norm_gelfond_value α β γ m c
-  obtain ⟨c₃, hc₃, hup⟩ := σ.exists_norm_gelfond_value_le hl hα hγ m c
-  obtain ⟨N, hN⟩ := Real.exists_pow_mul_rpow_lt_one
-    (mul_nonneg (zero_le_one.trans hc₂) (zero_le_one.trans hc₃))
+  obtain ⟨c₃, -, hup⟩ := σ.exists_norm_gelfond_value_le hl hα hγ m c
+  obtain ⟨N, hN⟩ := Real.exists_pow_mul_rpow_lt_one (c₂ * c₃)
   -- Take `n = 2 m (N + 1) ^ 2 ≥ N` and `q = 2 m (N + 1)`, so that `q ^ 2 = 2 m n`.
   set n := 2 * m * (N + 1) ^ 2
   have hNn : N ≤ n := by
