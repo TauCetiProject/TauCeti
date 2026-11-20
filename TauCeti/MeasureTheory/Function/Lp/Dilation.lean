@@ -21,10 +21,13 @@ the factor is `1`. This is the `eLpNorm` counterpart of the lower Lebesgue integ
 
 Normalizing by the inverse factor turns dilation into a linear isometric equivalence
 `f ↦ r ^ (-n / p) • f (r⁻¹ • ·)` of `Lᵖ`, and these equivalences form an action of the positive
-reals. They describe the dilations of scale-invariant problems such as the sharp Sobolev
-inequality: dilating a homogeneous Sobolev function acts by the normalized dilation at exponent `p`
-on its gradient and at the Sobolev-conjugate exponent `p⋆` on the function itself, so both the `Lᵖ`
-norm of the gradient and the critical `L^{p⋆}` norm are invariant.
+reals. They are linear over every normed field `𝕜` of scalars of the codomain that commute with
+the real scalars, for instance `ℂ`-linear on complex-valued functions, and their underlying maps do
+not depend on the choice of `𝕜`. They describe the dilations
+of scale-invariant problems such as the sharp Sobolev inequality: dilating a homogeneous Sobolev
+function acts by the normalized dilation at exponent `p` on its gradient and at the
+Sobolev-conjugate exponent `p⋆` on the function itself, so both the `Lᵖ` norm of the gradient and
+the critical `L^{p⋆}` norm are invariant.
 
 More generally, composing with a linear automorphism `e` multiplies the `Lᵖ` seminorm by
 `|det e|^(-1 / p)`, and the `Lᵖ` seminorm on a preimage `e ⁻¹' s` by the same factor relative to
@@ -87,23 +90,25 @@ theorem eLpNorm_comp_continuousLinearEquiv (u : E → G) (e : E ≃L[ℝ] E) (p 
       eLpNorm u p μ := by
   simpa using eLpNorm_comp_continuousLinearEquiv_restrict_preimage μ u e p (s := Set.univ)
 
-variable {μ} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-  {r s : ℝ}
+variable {μ} {𝕜 F : Type*} [NormedField 𝕜] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] {p : ℝ≥0∞} [Fact (1 ≤ p)] {r s : ℝ}
 
-variable (μ p) in
-/-- **The normalized dilation of `Lᵖ`** by a factor `r > 0`, as a linear isometric equivalence:
-almost everywhere it sends `f` to `r ^ (-n / p) • f (r⁻¹ • ·)`, where `n` is the dimension of `E`
-(`MeasureTheory.Measure.coeFn_dilateLp`), and its inverse is the dilation by `r⁻¹`
-(`MeasureTheory.Measure.dilateLp_symm`). The exponent `n / p` is `n / p.toReal`, which is `0` at
-`p = ∞`, where the dilation is plain precomposition. -/
-noncomputable def dilateLp (r : ℝ) (hr : 0 < r) : Lp F p μ ≃ₗᵢ[ℝ] Lp F p μ :=
-  let P : Lp F p μ ≃L[ℝ] Lp F p μ :=
-    Lp.compEquivOfMapLeSmul ℝ (measurable_const_smul r⁻¹).aemeasurable ENNReal.ofReal_ne_top
+variable (𝕜 μ p) in
+/-- **The normalized dilation of `Lᵖ`** by a factor `r > 0`, as a `𝕜`-linear isometric
+equivalence: almost everywhere it sends `f` to `r ^ (-n / p) • f (r⁻¹ • ·)`, where `n` is the
+dimension of `E` (`MeasureTheory.Measure.coeFn_dilateLp`), and its inverse is the dilation by
+`r⁻¹` (`MeasureTheory.Measure.dilateLp_symm`). The exponent `n / p` is `n / p.toReal`, which is
+`0` at `p = ∞`, where the dilation is plain precomposition. It is `𝕜`-linear because the real
+normalizing factor `r ^ (-n / p)` commutes with the scalars `𝕜`, and its underlying map is the
+same for every `𝕜` (`MeasureTheory.Measure.coe_dilateLp_eq_coe_dilateLp`). -/
+noncomputable def dilateLp (r : ℝ) (hr : 0 < r) : Lp F p μ ≃ₗᵢ[𝕜] Lp F p μ :=
+  let P : Lp F p μ ≃L[𝕜] Lp F p μ :=
+    Lp.compEquivOfMapLeSmul 𝕜 (measurable_const_smul r⁻¹).aemeasurable ENNReal.ofReal_ne_top
       (map_addHaar_smul μ (inv_ne_zero hr.ne')).le (measurable_const_smul r).aemeasurable
       ENNReal.ofReal_ne_top (map_addHaar_smul μ hr.ne').le
       (fun x ↦ smul_inv_smul₀ hr.ne' x) (fun x ↦ inv_smul_smul₀ hr.ne' x)
-  { (P.toLinearEquiv.trans (LinearEquiv.smulOfNeZero ℝ _ _
-      (Real.rpow_pos_of_pos hr (-((finrank ℝ E : ℝ) / p.toReal))).ne')) with
+  { (P.toLinearEquiv.trans (DistribMulAction.toLinearEquiv 𝕜 _
+      (Units.mk0 _ (Real.rpow_pos_of_pos hr (-((finrank ℝ E : ℝ) / p.toReal))).ne'))) with
     norm_map' f := by
       have hae : (P f : E → F) =ᵐ[μ] fun x ↦ f (r⁻¹ • x) := by
         rw [Lp.compEquivOfMapLeSmul_apply]
@@ -112,54 +117,65 @@ noncomputable def dilateLp (r : ℝ) (hr : 0 < r) : Lp F p μ ≃ₗᵢ[ℝ] Lp 
         rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae hae, eLpNorm_comp_inv_smul μ _ hr.ne',
           abs_of_pos hr, ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)]
       simp only [LinearEquiv.trans_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
-        LinearEquiv.smulOfNeZero_apply, norm_smul,
+        DistribMulAction.toLinearEquiv_apply, Units.smul_mk0, norm_smul,
         Real.norm_eq_abs, abs_of_pos (Real.rpow_pos_of_pos hr _), hPf, ← mul_assoc,
         ← Real.rpow_add hr, neg_add_cancel, Real.rpow_zero, one_mul] }
 
 /-- The normalized dilation is almost everywhere `f ↦ r ^ (-n / p) • f (r⁻¹ • ·)`. -/
 theorem coeFn_dilateLp (hr : 0 < r) (f : Lp F p μ) :
-    ⇑(dilateLp μ p r hr f) =ᵐ[μ]
+    ⇑(dilateLp μ 𝕜 p r hr f) =ᵐ[μ]
       fun x ↦ r ^ (-((finrank ℝ E : ℝ) / p.toReal)) • f (r⁻¹ • x) := by
-  -- The dilation is, by construction, the scalar multiple of the precomposition.
-  have h : dilateLp μ p r hr f = r ^ (-((finrank ℝ E : ℝ) / p.toReal)) •
-      Lp.compOfMapLeSmul ℝ (measurable_const_smul r⁻¹).aemeasurable ENNReal.ofReal_ne_top
-        (map_addHaar_smul μ (inv_ne_zero hr.ne')).le f := by
+  -- The dilation is, by construction, the scalar multiple of the precomposition `g`.
+  let g := Lp.compOfMapLeSmul 𝕜 (measurable_const_smul r⁻¹).aemeasurable ENNReal.ofReal_ne_top
+    (map_addHaar_smul μ (inv_ne_zero hr.ne')).le f
+  have h : dilateLp μ 𝕜 p r hr f = r ^ (-((finrank ℝ E : ℝ) / p.toReal)) • g := by
     simp only [dilateLp, LinearIsometryEquiv.coe_mk, LinearEquiv.trans_apply,
       ContinuousLinearEquiv.coe_toLinearEquiv, Lp.compEquivOfMapLeSmul_apply,
-      LinearEquiv.smulOfNeZero_apply]
+      DistribMulAction.toLinearEquiv_apply, Units.smul_mk0, g]
   rw [h]
-  filter_upwards [Lp.coeFn_smul (r ^ (-((finrank ℝ E : ℝ) / p.toReal)))
-      (Lp.compOfMapLeSmul ℝ (measurable_const_smul r⁻¹).aemeasurable ENNReal.ofReal_ne_top
-        (map_addHaar_smul μ (inv_ne_zero hr.ne')).le f),
-    Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) (measurable_const_smul r⁻¹).aemeasurable ENNReal.ofReal_ne_top
+  filter_upwards [Lp.coeFn_smul (r ^ (-((finrank ℝ E : ℝ) / p.toReal))) g,
+    Lp.coeFn_compOfMapLeSmul (𝕜 := 𝕜) (measurable_const_smul r⁻¹).aemeasurable
+      ENNReal.ofReal_ne_top
       (map_addHaar_smul μ (inv_ne_zero hr.ne')).le f] with x hx hy
   rw [hx, Pi.smul_apply, hy, Function.comp_apply]
 
+variable (𝕜) in
+/-- The normalized dilation does not depend on the field of scalars: its `𝕜`-linear and
+`𝕜'`-linear versions have the same underlying map. For instance, the `ℂ`-linear dilation of
+complex-valued functions is the `ℝ`-linear one. -/
+theorem coe_dilateLp_eq_coe_dilateLp (𝕜' : Type*) [NormedField 𝕜'] [NormedSpace 𝕜' F]
+    [SMulCommClass ℝ 𝕜' F] (hr : 0 < r) :
+    ⇑(dilateLp (F := F) μ 𝕜 p r hr) = ⇑(dilateLp μ 𝕜' p r hr) := by
+  ext1 f
+  apply Lp.ext
+  filter_upwards [coeFn_dilateLp (𝕜 := 𝕜) hr f, coeFn_dilateLp (𝕜 := 𝕜') hr f] with x hx hy
+  rw [hx, hy]
+
 /-- The dilation by `1` is the identity. -/
 @[simp]
-theorem dilateLp_one (f : Lp F p μ) : dilateLp μ p 1 one_pos f = f := by
+theorem dilateLp_one (f : Lp F p μ) : dilateLp μ 𝕜 p 1 one_pos f = f := by
   apply Lp.ext
-  filter_upwards [coeFn_dilateLp (μ := μ) one_pos f] with x hx
-  rw [hx, Real.one_rpow, one_smul, inv_one, one_smul]
+  filter_upwards [coeFn_dilateLp (𝕜 := 𝕜) one_pos f] with x hx
+  simp [hx]
 
 /-- Dilating by `r * s` is dilating by `s` and then by `r`. -/
 theorem dilateLp_mul (hr : 0 < r) (hs : 0 < s) :
-    dilateLp (F := F) μ p (r * s) (mul_pos hr hs) =
-      (dilateLp μ p s hs).trans (dilateLp μ p r hr) := by
+    dilateLp (F := F) μ 𝕜 p (r * s) (mul_pos hr hs) =
+      (dilateLp μ 𝕜 p s hs).trans (dilateLp μ 𝕜 p r hr) := by
   refine LinearIsometryEquiv.ext fun f ↦ Lp.ext ?_
-  filter_upwards [coeFn_dilateLp (μ := μ) (mul_pos hr hs) f,
-    coeFn_dilateLp (μ := μ) hr (dilateLp μ p s hs f),
+  filter_upwards [coeFn_dilateLp (𝕜 := 𝕜) (mul_pos hr hs) f,
+    coeFn_dilateLp (𝕜 := 𝕜) hr (dilateLp μ 𝕜 p s hs f),
     (quasiMeasurePreserving_smul μ (inv_ne_zero hr.ne')).ae_eq_comp
-      (coeFn_dilateLp (μ := μ) hs f)] with x hx hy hz
+      (coeFn_dilateLp (𝕜 := 𝕜) hs f)] with x hx hy hz
   simp only [Function.comp_apply] at hz
-  rw [hx, LinearIsometryEquiv.trans_apply, hy, hz, smul_smul, smul_smul,
-    Real.mul_rpow hr.le hs.le, mul_inv, mul_comm s⁻¹ r⁻¹]
+  rw [hx, LinearIsometryEquiv.trans_apply, hy, hz]
+  simp only [smul_smul, Real.mul_rpow hr.le hs.le, mul_inv_rev]
 
 /-- The inverse of the dilation by `r` is the dilation by `r⁻¹`. -/
 @[simp]
 theorem dilateLp_symm (hr : 0 < r) :
-    (dilateLp (F := F) μ p r hr).symm = dilateLp μ p r⁻¹ (inv_pos.2 hr) := by
-  refine LinearIsometryEquiv.ext fun f ↦ (dilateLp μ p r hr).injective ?_
+    (dilateLp (F := F) μ 𝕜 p r hr).symm = dilateLp μ 𝕜 p r⁻¹ (inv_pos.2 hr) := by
+  refine LinearIsometryEquiv.ext fun f ↦ (dilateLp μ 𝕜 p r hr).injective ?_
   rw [LinearIsometryEquiv.apply_symm_apply, ← LinearIsometryEquiv.trans_apply, ← dilateLp_mul]
   simp only [mul_inv_cancel₀ hr.ne', dilateLp_one]
 
