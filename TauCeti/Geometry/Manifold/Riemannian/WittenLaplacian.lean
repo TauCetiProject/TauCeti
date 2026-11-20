@@ -366,14 +366,8 @@ theorem wittenCodifferential_eq_add_smul_gradInteriorₗ (o : Manifold.Orientati
   -- whose gradient is `-t e^{-t f} grad f`; then `d^*(h β) = h d^*β + t e^{-t f} ι_(grad f) β`.
   have hgrad : Manifold.mgradient I (ContMDiffMap.expMul f (-t)) =
       fun x ↦ (-t * Real.exp (-t * f x)) • Manifold.mgradient I f x := by
-    funext x
-    have hd : HasDerivAt (fun s ↦ Real.exp (-t * s)) (Real.exp (-t * f x) * (-t * 1)) (f x) :=
-      ((hasDerivAt_id' (f x)).const_mul (-t)).exp
-    have he : ⇑(ContMDiffMap.expMul f (-t)) = (fun s ↦ Real.exp (-t * s)) ∘ f :=
-      funext fun y ↦ ContMDiffMap.expMul_apply f (-t) y
-    rw [he, Manifold.mgradient_comp_hasDerivAt hd (f.contMDiff.mdifferentiableAt (by simp))]
-    congr 1
-    ring
+    simp_rw [← Manifold.mgradient_exp_const_mul (-t) (f.contMDiff.mdifferentiableAt (by simp)),
+      ← ContMDiffMap.expMul_apply f (-t)]
   ext β : 1
   have h1 := ContMDiffMap.expMul_mul_expMul_neg f t
   simp only [ContMDiffMap.expMul_apply] at h1
