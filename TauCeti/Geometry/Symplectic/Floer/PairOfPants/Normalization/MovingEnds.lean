@@ -330,7 +330,7 @@ theorem setIntegral_hamiltonianCurvature_puncturedSpherePerturbation_add_const
   choose B hB using fun i ↦ (hk i).exists_bound_of_continuous one_ne_zero (hks i).continuous
   obtain ⟨Bout, hBout⟩ := hkout.exists_bound_of_continuous one_ne_zero hkouts.continuous
   have hS : IsOpen {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} :=
-    isOpen_setOf_forall_equivRealProdCLM_symm_ne
+    TauCeti.Complex.isOpen_setOf_forall_equivRealProdCLM_symm_ne
   -- The curvature of the normalization does not depend on the target point, so it is integrable
   -- along `u` because it is along a constant map.
   have hκ := (ω.integrableOn_hamiltonianCurvature_puncturedSpherePerturbation

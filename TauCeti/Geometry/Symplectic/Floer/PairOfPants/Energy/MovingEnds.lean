@@ -268,20 +268,13 @@ private theorem separation_norm_mul_exp_neg_two_pi_div_two (ha : ∀ i, a i ≠ 
 
 end Pieces
 
-/-- The sphere minus its punctures, the points of the plane other than the finitely many centers
-`c i` of the input ends, is open. -/
-theorem isOpen_setOf_forall_equivRealProdCLM_symm_ne {ι : Type*} [Finite ι] {c : ι → ℂ} :
-    IsOpen {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} := by
-  simp only [ofPred_forall]
-  exact isOpen_iInter_of_finite fun i ↦ isOpen_ne_fun (by fun_prop) continuous_const
-
 end TauCeti.Floer
 
 namespace TauCeti.SmoothTwoForm
 
 open Floer
 open TauCeti.Complex (realChart equivRealProdCLM_symm_realChart contDiff_realChart
-  det_fderiv_realChart_nonneg)
+  det_fderiv_realChart_nonneg isOpen_setOf_forall_equivRealProdCLM_symm_ne)
 
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
