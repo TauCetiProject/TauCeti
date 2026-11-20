@@ -71,16 +71,6 @@ variable {R : Type*} [CommRing R] {n : ℤ} {w : ℕ}
 
 /-! ### The binary form of the evaluation at `∞` and `0` -/
 
-/-- The value at `∞` of the monomial `Xⁱ Yʷ⁻ⁱ` is `1` for `i = w` and `0` otherwise. -/
-private theorem evalCusp_infty_binaryFormMonomialBasis (i : Fin (w + 1)) :
-    evalCusp R w ∞ (binaryFormMonomialBasis R w i) = if i = Fin.last w then 1 else 0 := by
-  rw [evalCusp_infty, eval_one_zero_binaryFormMonomialBasis]
-
-/-- The value at `0` of the monomial `Xⁱ Yʷ⁻ⁱ` is `1` for `i = 0` and `0` otherwise. -/
-private theorem evalCusp_zero_binaryFormMonomialBasis (i : Fin (w + 1)) :
-    evalCusp R w (0 : ℚ) (binaryFormMonomialBasis R w i) = if i = 0 then 1 else 0 := by
-  simpa using eval_zero_one_binaryFormMonomialBasis (R := R) i
-
 /-- **The Eisenstein polynomial is the binary form of the evaluation at `∞` and `0`.** For even
 `w`, the binary form attached to `P ↦ P(1, 0) - P(0, 1)` is `Y^w - X^w`. -/
 theorem binaryFormDual_evalCusp_infty_sub_evalCusp_zero (hw : Even w) :
@@ -91,8 +81,9 @@ theorem binaryFormDual_evalCusp_infty_sub_evalCusp_zero (hw : Even w) :
   have hzero : ∀ j : Fin (w + 1), Fin.rev j = 0 ↔ j = Fin.last w := fun j ↦ by
     rw [← Fin.rev_last, Fin.rev_inj]
   rw [binaryFormDual_apply]
-  simp only [LinearMap.sub_apply, evalCusp_infty_binaryFormMonomialBasis,
-    evalCusp_zero_binaryFormMonomialBasis, hlast, hzero, mul_sub, mul_ite, mul_one, mul_zero]
+  simp only [LinearMap.sub_apply, evalCusp_infty, evalCusp_coe, Rat.num_zero, Rat.den_zero,
+    Int.cast_zero, Nat.cast_one, eval_one_zero_binaryFormMonomialBasis,
+    eval_zero_one_binaryFormMonomialBasis, hlast, hzero, mul_sub, mul_ite, mul_one, mul_zero]
   apply Subtype.ext
   simp only [Submodule.coe_sum, Submodule.coe_smul, sub_smul, ite_smul, zero_smul,
     Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]

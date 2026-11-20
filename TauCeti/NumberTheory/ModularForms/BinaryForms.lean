@@ -226,17 +226,19 @@ theorem eval_one_zero_eq_binaryFormMonomialBasis_repr {R : Type*} [CommSemiring 
     (P : homogeneousSubmodule (Fin 2) R w) :
     eval ![1, 0] (P : MvPolynomial (Fin 2) R) =
       (binaryFormMonomialBasis R w).repr P (Fin.last w) := by
-  rw [show (![1, 0] : Fin 2 → R) = Pi.single 0 1 by ext i; fin_cases i <;> simp,
-    binaryFormMonomialBasis_repr_apply, Fin.val_last, Nat.sub_self, Finsupp.single_zero, add_zero,
-    ((mem_homogeneousSubmodule _ _).1 P.property).coeff_single_eq_eval]
+  -- `coeff_single_eq_eval` evaluates at the basis vector `Pi.single 0 1`, which is `![1, 0]`
+  have hv : (![1, 0] : Fin 2 → R) = Pi.single 0 1 := by ext i; fin_cases i <;> simp
+  rw [hv, binaryFormMonomialBasis_repr_apply, Fin.val_last, Nat.sub_self, Finsupp.single_zero,
+    add_zero, ((mem_homogeneousSubmodule _ _).1 P.property).coeff_single_eq_eval]
 
 /-- The value of a binary form at `(0, 1)` is its coefficient of `Yʷ`. -/
 theorem eval_zero_one_eq_binaryFormMonomialBasis_repr {R : Type*} [CommSemiring R] {w : ℕ}
     (P : homogeneousSubmodule (Fin 2) R w) :
     eval ![0, 1] (P : MvPolynomial (Fin 2) R) = (binaryFormMonomialBasis R w).repr P 0 := by
-  rw [show (![0, 1] : Fin 2 → R) = Pi.single 1 1 by ext i; fin_cases i <;> simp,
-    binaryFormMonomialBasis_repr_apply, Fin.val_zero, Nat.sub_zero, Finsupp.single_zero, zero_add,
-    ((mem_homogeneousSubmodule _ _).1 P.property).coeff_single_eq_eval]
+  -- `coeff_single_eq_eval` evaluates at the basis vector `Pi.single 1 1`, which is `![0, 1]`
+  have hv : (![0, 1] : Fin 2 → R) = Pi.single 1 1 := by ext i; fin_cases i <;> simp
+  rw [hv, binaryFormMonomialBasis_repr_apply, Fin.val_zero, Nat.sub_zero, Finsupp.single_zero,
+    zero_add, ((mem_homogeneousSubmodule _ _).1 P.property).coeff_single_eq_eval]
 
 /-- Changing coefficients sends the monomial basis to the monomial basis. -/
 @[simp]
