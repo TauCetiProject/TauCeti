@@ -158,16 +158,18 @@ theorem resolventTransform_semicircleReal_quadratic_eq_zero
   -- A point inside the disc is not real, so it lies in a half-plane meeting the exterior.
   have hR0 : 0 ≤ R := by positivity
   rcases lt_trichotomy z.im 0 with him | him | him
-  · refine quadratic_eq_zero_of_convex (isOpen_lt continuous_im continuous_const)
+  · have hneg : -(R + 1) < 0 := by linarith
+    refine quadratic_eq_zero_of_convex (isOpen_lt continuous_im continuous_const)
       (convex_halfSpace_im_lt 0) (fun _ h ↦ h.ne) (z₀ := ⟨a, -(R + 1)⟩)
-      (show -(R + 1) < (0 : ℝ) by linarith) (lt_norm_mk_sub (lt_abs.2 (.inr (by linarith)))) him
+      hneg (lt_norm_mk_sub (lt_abs.2 (.inr (by linarith)))) him
   · refine absurd ⟨z.re, ?_, Complex.ext rfl (by simp [him])⟩ hz
     have h := abs_le.1 ((abs_re_le_norm (z - a)).trans (not_lt.1 hzR))
     simp only [sub_re, ofReal_re] at h
     constructor <;> linarith [h.1, h.2]
-  · refine quadratic_eq_zero_of_convex (isOpen_lt continuous_const continuous_im)
+  · have hpos : 0 < R + 1 := by linarith
+    refine quadratic_eq_zero_of_convex (isOpen_lt continuous_const continuous_im)
       (convex_halfSpace_im_gt 0) (fun _ h ↦ h.ne') (z₀ := ⟨a, R + 1⟩)
-      (show (0 : ℝ) < R + 1 by linarith) (lt_norm_mk_sub (lt_abs.2 (.inl (by linarith)))) him
+      hpos (lt_norm_mk_sub (lt_abs.2 (.inl (by linarith)))) him
 
 /-- In the upper half-plane, the resolvent transform of `semicircleReal a v` is the unique root of
 `v * (w * w) + (z - a) * w + 1 = 0` with positive imaginary part. -/
@@ -239,8 +241,9 @@ theorem resolventTransform_semicircleReal_mul_I_re_eq_zero_and_im_sq_add_mul_eq_
 theorem resolventTransform_semicircleReal_zero_one_I :
     resolventTransform (semicircleReal 0 1) I = ((√5 - 1) / 2 : ℝ) * I := by
   have h5 : (1 : ℝ) < √5 := (Real.lt_sqrt zero_le_one).2 (by norm_num)
+  have h5nonneg : (0 : ℝ) ≤ 5 := by norm_num
   have h5c : ((√5 : ℝ) : ℂ) ^ 2 = 5 := by
-    exact_mod_cast Real.sq_sqrt (show (0 : ℝ) ≤ 5 by norm_num)
+    exact_mod_cast Real.sq_sqrt h5nonneg
   refine ((resolventTransform_semicircleReal_eq_iff (by simp)).2
     ⟨by rw [mul_I_im, ofReal_re]; linarith, ?_⟩).symm
   push_cast
@@ -257,6 +260,10 @@ private theorem standardSemicircleResolvent_im_pos (hz : 0 < z.im) :
 private def standardSemicircleResolventAt (x ε : ℝ) : ℂ :=
   standardSemicircleResolvent ((x : ℂ) + (ε : ℂ) * Complex.I)
 
+private theorem standardSemicircleResolventAt_im_pos {x ε : ℝ} (hε : 0 < ε) :
+    0 < (standardSemicircleResolventAt x ε).im :=
+  standardSemicircleResolvent_im_pos (by simpa using hε)
+
 private def standardSemicircleResolventNormSq (x ε : ℝ) : ℝ :=
   Complex.normSq (standardSemicircleResolventAt x ε)
 
@@ -271,56 +278,34 @@ private theorem standard_boundary_identities (x ε : ℝ) (hε : 0 < ε) :
         -x * standardSemicircleResolventNormSq x ε ∧
       (standardSemicircleResolventAt x ε).im * (1 - standardSemicircleResolventNormSq x ε) =
         ε * standardSemicircleResolventNormSq x ε := by
-  let z : ℂ := (x : ℂ) + (ε : ℂ) * Complex.I
-  let a : ℝ := (standardSemicircleResolvent z).re
-  let b : ℝ := (standardSemicircleResolvent z).im
-  let q : ℝ := a ^ 2 + b ^ 2
-  have hz : 0 < z.im := by simp [z, hε]
-  have hmval : standardSemicircleResolvent z = (a : ℂ) + (b : ℂ) * Complex.I := by
-    apply Complex.ext
-    · simp [a, b]
-    · simp [a, b]
-  let c : ℂ := star (standardSemicircleResolvent z)
-  have hmc : standardSemicircleResolvent z * c = (q : ℂ) := by
-    dsimp only [c]
-    rw [Complex.star_def, Complex.mul_conj, Complex.normSq_apply]
-    simp [a, b, q]
-    ring
-  have hquad : standardSemicircleResolvent z * standardSemicircleResolvent z +
-      z * standardSemicircleResolvent z + 1 = 0 := by
+  let m := standardSemicircleResolventAt x ε
+  let q := standardSemicircleResolventNormSq x ε
+  have hz : 0 < ((x : ℂ) + (ε : ℂ) * Complex.I).im := by simpa using hε
+  have hmc : m * star m = (q : ℂ) := by
+    rw [Complex.star_def, Complex.mul_conj]
+    rfl
+  have hquad : m * m + ((x : ℂ) + (ε : ℂ) * Complex.I) * m + 1 = 0 := by
     have h := resolventTransform_semicircleReal_quadratic_eq_zero (a := 0) (v := 1)
-      (z := z) (Complex.notMem_image_ofReal_of_im_ne_zero hz.ne')
-    simpa [standardSemicircleResolvent] using h
-  have hmul := congrArg (fun w => w * c) hquad
-  have hrelmul : (q : ℂ) * standardSemicircleResolvent z + z * (q : ℂ) + c =
-      (standardSemicircleResolvent z * standardSemicircleResolvent z +
-        z * standardSemicircleResolvent z + 1) * c := by
+      (z := (x : ℂ) + (ε : ℂ) * Complex.I)
+      (Complex.notMem_image_ofReal_of_im_ne_zero hz.ne')
+    simpa [m, standardSemicircleResolventAt, standardSemicircleResolvent] using h
+  have hmul := congrArg (fun w => w * star m) hquad
+  have hrelmul : (q : ℂ) * m + ((x : ℂ) + (ε : ℂ) * Complex.I) * (q : ℂ) + star m =
+      (m * m + ((x : ℂ) + (ε : ℂ) * Complex.I) * m + 1) * star m := by
     rw [← hmc]
     ring
-  have hrel : (q : ℂ) * standardSemicircleResolvent z + z * (q : ℂ) + c = 0 := by
+  have hrel : (q : ℂ) * m + ((x : ℂ) + (ε : ℂ) * Complex.I) * (q : ℂ) + star m = 0 := by
     rw [hrelmul]
     simpa using hmul
-  rw [hmval] at hrel
-  have hreal : q * a + x * q + a = 0 := by
+  have hreal : q * m.re + x * q + m.re = 0 := by
     have h := congrArg Complex.re hrel
-    simp [z, c, q, hmval, Complex.add_re, Complex.mul_re, Complex.mul_im] at h
-    norm_cast at h
-    nlinarith
-  have himag : q * b + ε * q - b = 0 := by
+    simpa [Complex.star_def] using h
+  have himag : q * m.im + ε * q - m.im = 0 := by
     have h := congrArg Complex.im hrel
-    simp [z, c, q, hmval, Complex.add_im, Complex.mul_re, Complex.mul_im] at h
-    norm_cast at h
-    nlinarith
-  have hq : standardSemicircleResolventNormSq x ε = q := by
-    rw [standardSemicircleResolventNormSq_eq]
-    dsimp [q, a, b, z, standardSemicircleResolventAt, standardSemicircleResolvent]
-  have hresult : a * (q + 1) = -x * q ∧ b * (1 - q) = ε * q := by
+    simpa [Complex.star_def, sub_eq_add_neg] using h
+  have hresult : m.re * (q + 1) = -x * q ∧ m.im * (1 - q) = ε * q := by
     constructor <;> nlinarith [hreal, himag]
-  constructor
-  · simpa [standardSemicircleResolventAt, standardSemicircleResolventNormSq,
-      standardSemicircleResolvent, a, b, z, ← hq] using hresult.1
-  · simpa [standardSemicircleResolventAt, standardSemicircleResolventNormSq,
-      standardSemicircleResolvent, a, b, z, ← hq] using hresult.2
+  simpa only [m, q] using hresult
 
 private theorem standard_boundary_normSq_lt_one {x ε : ℝ} (hε : 0 < ε) :
     standardSemicircleResolventNormSq x ε < 1 := by
@@ -328,9 +313,7 @@ private theorem standard_boundary_normSq_lt_one {x ε : ℝ} (hε : 0 < ε) :
   let q : ℝ := standardSemicircleResolventNormSq x ε
   have hids := standard_boundary_identities x ε hε
   have himag : b * (1 - q) = ε * q := by simpa [b, q] using hids.2
-  have hb : 0 < b := by
-    simpa [b, standardSemicircleResolventAt] using
-      standardSemicircleResolvent_im_pos (by simpa [standardSemicircleResolventAt] using hε)
+  have hb : 0 < b := standardSemicircleResolventAt_im_pos hε
   have hq : 0 < q := by
     dsimp only [q]
     rw [standardSemicircleResolventNormSq_eq]
@@ -343,6 +326,21 @@ private theorem standard_boundary_normSq_lt_one {x ε : ℝ} (hε : 0 < ε) :
   rw [himag] at hnonpos
   linarith
 
+private theorem boundary_scalar_bound {a b q x : ℝ} (hq : 0 ≤ q)
+    (hqdef : q = a ^ 2 + b ^ 2) (hreal : a * (q + 1) = -x * q) (hx2 : x ^ 2 ≤ 4) :
+    q * (1 - q) ^ 2 ≤ b ^ 2 * (q + 1) ^ 2 := by
+  have hreal_sq : a ^ 2 * (q + 1) ^ 2 = x ^ 2 * q ^ 2 := by
+    have h := congrArg (fun t : ℝ ↦ t ^ 2) hreal
+    nlinarith [h]
+  have hfactor :
+      b ^ 2 * (q + 1) ^ 2 = q * ((q + 1) ^ 2 - x ^ 2 * q) := by
+    nlinarith [hreal_sq, hqdef]
+  have hfactor_le : (1 - q) ^ 2 ≤ (q + 1) ^ 2 - x ^ 2 * q := by
+    have h4x : 0 ≤ 4 - x ^ 2 := by linarith
+    nlinarith [mul_nonneg hq h4x]
+  rw [hfactor]
+  exact mul_le_mul_of_nonneg_left hfactor_le hq
+
 private theorem standard_boundary_normSq_bound_of_mem_Icc {x ε : ℝ}
     (hx : x ∈ Icc (-2) 2) (hε : 0 < ε) :
     (1 - standardSemicircleResolventNormSq x ε) ^ 2 ≤ 2 * ε := by
@@ -352,9 +350,7 @@ private theorem standard_boundary_normSq_bound_of_mem_Icc {x ε : ℝ}
   have hids := standard_boundary_identities x ε hε
   have hreal : a * (q + 1) = -x * q := by simpa [a, q] using hids.1
   have himag : b * (1 - q) = ε * q := by simpa [b, q] using hids.2
-  have hb : 0 < b := by
-    simpa [b, standardSemicircleResolventAt] using
-      standardSemicircleResolvent_im_pos (by simpa [standardSemicircleResolventAt] using hε)
+  have hb : 0 < b := standardSemicircleResolventAt_im_pos hε
   have hqdef : q = a ^ 2 + b ^ 2 := by
     dsimp only [q]
     rw [standardSemicircleResolventNormSq_eq]
@@ -366,21 +362,13 @@ private theorem standard_boundary_normSq_bound_of_mem_Icc {x ε : ℝ}
     have hxleft : 0 ≤ 2 + x := by linarith [hx.1]
     have hxright : 0 ≤ 2 - x := by linarith [hx.2]
     nlinarith [mul_nonneg hxleft hxright]
-  have hreal_sq : a ^ 2 * (q + 1) ^ 2 = x ^ 2 * q ^ 2 := by
-    have h := congrArg (fun t : ℝ ↦ t ^ 2) hreal
-    nlinarith [h]
-  have hfactor :
-      b ^ 2 * (q + 1) ^ 2 = q * ((q + 1) ^ 2 - x ^ 2 * q) := by
-    nlinarith [hreal_sq, hqdef]
-  have hfactor_le : (1 - q) ^ 2 ≤ (q + 1) ^ 2 - x ^ 2 * q := by
-    have h4x : 0 ≤ 4 - x ^ 2 := by linarith
-    nlinarith [mul_nonneg (le_of_lt hq) h4x]
   have hbound_b : q * (1 - q) ^ 2 ≤ b ^ 2 * (q + 1) ^ 2 := by
-    rw [hfactor]
-    exact mul_le_mul_of_nonneg_left hfactor_le hq.le
+    exact boundary_scalar_bound hq.le hqdef hreal hx2
   have himag_sq : b ^ 2 * (1 - q) ^ 2 = ε ^ 2 * q ^ 2 := by
     have h := congrArg (fun t : ℝ ↦ t ^ 2) himag
     nlinarith [h]
+  -- Multiplying the scalar bound by `(1 - q)^2` lets the imaginary identity
+  -- replace `b^2 * (1 - q)^2` by `ε^2 * q^2`.
   have hfour : (1 - q) ^ 4 ≤ ε ^ 2 * q * (q + 1) ^ 2 := by
     apply le_of_mul_le_mul_left ?_ hq
     calc
@@ -409,10 +397,10 @@ private theorem tendsto_standard_resolvent_normSq_of_mem_Icc {x : ℝ}
     Tendsto (fun ε : ℝ ↦ standardSemicircleResolventNormSq x ε) (𝓝[>] 0) (𝓝 1) := by
   refine tendsto_order.2 ⟨fun c hc ↦ ?_, fun c hc ↦ ?_⟩
   · have hδ : 0 < 1 - c := sub_pos.mpr hc
+    have hδsq : (0 : ℝ) < (1 - c) ^ 2 / 2 :=
+      div_pos (sq_pos_of_pos hδ) (by norm_num)
     filter_upwards [self_mem_nhdsWithin,
-      mem_nhdsWithin_of_mem_nhds
-        (Iio_mem_nhds (show (0 : ℝ) < (1 - c) ^ 2 / 2 from
-          div_pos (sq_pos_of_pos hδ) (by norm_num)))]
+      mem_nhdsWithin_of_mem_nhds (Iio_mem_nhds hδsq)]
       with ε hε hεsmall
     let q : ℝ := standardSemicircleResolventNormSq x ε
     have hqpos : 0 < 1 - q := by
@@ -493,16 +481,13 @@ private theorem tendsto_standard_resolvent_im_of_mem_Icc {x : ℝ}
     let a : ℝ := (standardSemicircleResolventAt x ε).re
     let b : ℝ := (standardSemicircleResolventAt x ε).im
     let q : ℝ := standardSemicircleResolventNormSq x ε
-    have hb : 0 < b := by
-      simpa [b, standardSemicircleResolventAt] using
-        standardSemicircleResolvent_im_pos
-          (by simpa [standardSemicircleResolventAt] using hε)
+    have hb : 0 < b := standardSemicircleResolventAt_im_pos hε
     have hq : q = a ^ 2 + b ^ 2 := by
       dsimp only [q]
       rw [standardSemicircleResolventNormSq_eq]
+    have hsub : q - a ^ 2 = b ^ 2 := by nlinarith [hq]
     have hEq' : b = Real.sqrt (q - a ^ 2) := by
-      rw [show q - a ^ 2 = b ^ 2 by nlinarith [hq],
-        Real.sqrt_sq_eq_abs, abs_of_pos hb]
+      rw [hsub, Real.sqrt_sq_eq_abs, abs_of_pos hb]
     simpa [A, Q, a, b, q] using hEq'
   exact Filter.Tendsto.congr' (EventuallyEq.symm hEq) hroot
 

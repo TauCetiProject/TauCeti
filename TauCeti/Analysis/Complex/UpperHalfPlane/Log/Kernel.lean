@@ -55,34 +55,23 @@ theorem norm_log_norm_add_mul_I_sub_le_of_ne_of_abs_le (x y ε R : ℝ) (hε : |
       _ ≤ |x - y| + 1 := by linarith
   have hdiff_le : |x - y| ≤ |x| + R := by
     linarith [abs_sub x y]
+  -- The geometric bounds give lower and upper comparisons for the logarithm.
   have hlog_low := Real.log_le_log hdiff hlow
   have hnormpos : 0 < ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ :=
     lt_of_lt_of_le hdiff hlow
   have hlog_high : Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ ≤
       Real.log (|x| + R + 1) :=
     Real.log_le_log hnormpos (by linarith [hhigh, hdiff_le])
-  have hlog_bound :
-      |Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖| ≤
-        ‖Real.log |x - y|‖ + Real.log (|x| + R + 1) := by
-    apply abs_le.mpr
-    constructor
-    · calc
-        -(‖Real.log |x - y|‖ + Real.log (|x| + R + 1)) ≤ Real.log |x - y| := by
-          have hconst : 0 ≤ Real.log (|x| + R + 1) :=
-            Real.log_nonneg (by have := abs_nonneg x; linarith)
-          have hneg : -‖Real.log |x - y|‖ ≤ Real.log |x - y| := by
-            rw [Real.norm_eq_abs]
-            exact neg_abs_le _
-          calc
-            -(‖Real.log |x - y|‖ + Real.log (|x| + R + 1))
-                ≤ -‖Real.log |x - y|‖ := by linarith
-            _ ≤ Real.log |x - y| := hneg
-        _ ≤ Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ := hlog_low
-    · calc
-        Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ ≤ Real.log (|x| + R + 1) :=
-          hlog_high
-        _ ≤ ‖Real.log |x - y|‖ + Real.log (|x| + R + 1) :=
-          le_add_of_nonneg_left (norm_nonneg _)
-  simpa only [Real.norm_eq_abs] using hlog_bound
+  have hconst : 0 ≤ Real.log (|x| + R + 1) :=
+    Real.log_nonneg (by have := abs_nonneg x; linarith)
+  rw [Real.norm_eq_abs]
+  apply abs_le.mpr
+  constructor
+  · have hneg : -‖Real.log |x - y|‖ ≤ Real.log |x - y| := by
+      rw [Real.norm_eq_abs]
+      exact neg_abs_le _
+    linarith
+  · have := norm_nonneg (Real.log |x - y|)
+    linarith
 
 end Real
