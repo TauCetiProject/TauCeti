@@ -42,6 +42,12 @@ The proof has two steps.
   the lemma for elements, the case of subgroups is the lemma for joins of subgroups
   (`GTree.isEllipticSubgroup_iSup`).
 
+Conversely, at a vertex `x` moved by the translation length `ℓ(g)`, the reduced path from `x` to
+`g • x` is followed by its translate under `g` without backtracking: otherwise `g` would either
+invert an edge or move the second vertex of the path by `ℓ(g) - 2`. So `gⁿ` moves `x` by `n ℓ(g)`,
+and an element of finite order is elliptic. A finite group is finitely generated, so Serre's lemma
+shows that finite groups have Serre's property (FA): a finite subgroup fixes a vertex.
+
 ## Main results
 
 * `TauCeti.GTree.isHyperbolic_mul_of_disjoint`: the product of two elliptic elements without a
@@ -55,12 +61,14 @@ The proof has two steps.
   elements whose pairwise products are elliptic fixes a vertex.
 * `TauCeti.GTree.isEllipticSubgroup_iff_forall_isElliptic`: a finitely generated subgroup fixes a
   vertex exactly when each of its elements does.
+* `TauCeti.GTree.isElliptic_of_isOfFinOrder`, `TauCeti.GTree.isEllipticSubgroup_of_finite`: an
+  element of finite order fixes a vertex, and so does a finite subgroup.
 
 ## References
 
 * J.-P. Serre, *Trees*, Chapter I, §6.5, Proposition 26 and Corollaries 1–3.
 * V. Guirardel and G. Levitt, *JSJ decompositions of groups*, Astérisque 395 (2017), §1.2,
-  Serre's lemma (p. 16) and Proposition 1.1.
+  Serre's lemma and property (FA) of finite groups (p. 16) and Proposition 1.1.
 -/
 
 public section
@@ -145,6 +153,34 @@ theorem dist_smul_eq_translationLength_of_isReduced {g : G} {x : T.V} {p : T.Pat
     rw [mul_add, mul_one]
     omega
   exact Nat.lt_succ_iff.mp (Nat.lt_of_mul_lt_mul_left h)
+
+/-- Conversely, at a vertex `x` moved by the translation length, the reduced path from `x` to
+`g • x` is followed by its translate under `g` without backtracking. -/
+theorem smul_ne_rev_of_dist_smul_eq_translationLength {g : G} {x : T.V}
+    (hx : T.dist x (g • x) = T.translationLength g) {p : T.Path x (g • x)}
+    (hp : Path.IsReduced T.toSerreGraph p) :
+    ∀ e ∈ (Path.darts T.toSerreGraph p).getLast?,
+      ∀ f ∈ (Path.darts T.toSerreGraph p).head?, g • f ≠ T.rev e := by
+  intro e he f hf hfe
+  have hlen : p.length = T.translationLength g := by
+    rw [← hx, (IsTree.isAcyclic _ T.isTree).dist_eq_length hp]
+  rcases Nat.lt_or_ge p.length 2 with h | h
+  · -- A path with one dart: `g` would invert it.
+    obtain ⟨a, ha⟩ : ∃ a, Path.darts T.toSerreGraph p = [a] := by
+      rw [← List.length_eq_one_iff, Path.length_darts]
+      have : p.length ≠ 0 := fun h0 => by
+        rw [← Path.length_darts, List.length_eq_zero_iff] at h0
+        simp [h0] at he
+      omega
+    simp only [ha, List.getLast?_singleton, List.head?_cons, Option.mem_def,
+      Option.some.injEq] at he hf
+    subst he hf
+    exact T.smul_ne_rev g _ hfe
+  · -- Otherwise `g` moves the second vertex of the path by two less than the translation length.
+    have h₁ := Path.dist_tgt_src_add_two_le p hf he h
+    have h₂ := translationLength_le g (T.tgt f)
+    rw [← tgt_smul, hfe, tgt_rev] at h₂
+    omega
 
 /-- **A criterion for hyperbolicity.** If `g` moves `x` and a reduced path from `x` to `g • x` is
 followed by its translate under `g` without backtracking, then `g` is hyperbolic. -/
@@ -327,6 +363,25 @@ theorem IsEllipticSubgroup.of_fg {H : Subgroup G} (hH : H.FG) (h : ∀ g ∈ H, 
 theorem isEllipticSubgroup_iff_forall_isElliptic {H : Subgroup G} (hH : H.FG) :
     T.IsEllipticSubgroup H ↔ ∀ g ∈ H, T.IsElliptic g :=
   ⟨fun h _ hg => h.isElliptic hg, IsEllipticSubgroup.of_fg hH⟩
+
+/-! ### Finite groups -/
+
+/-- An element of finite order is elliptic: it fixes a vertex. -/
+theorem isElliptic_of_isOfFinOrder {g : G} (hg : IsOfFinOrder g) : T.IsElliptic g := by
+  -- At a vertex `x` moved by `ℓ(g)`, the power `gⁿ = 1` moves `x` by `n ℓ(g)`.
+  obtain ⟨n, hn, hgn⟩ := hg.exists_pow_eq_one
+  obtain ⟨x, hx⟩ := exists_dist_eq_translationLength (T := T) g
+  obtain ⟨p, hp, -⟩ := T.isTree.existsUnique_isReduced x (g • x)
+  have h := dist_pow_smul_eq_mul hp (smul_ne_rev_of_dist_smul_eq_translationLength hx hp) n
+  rw [hgn, one_smul, dist_self, hx, eq_comm, mul_eq_zero] at h
+  exact translationLength_eq_zero_iff.mp (h.resolve_left hn.ne')
+
+/-- **Finite groups have property (FA).** A finite subgroup of a group acting on a tree without
+inversions fixes a vertex. -/
+theorem isEllipticSubgroup_of_finite (H : Subgroup G) [Finite H] : T.IsEllipticSubgroup H :=
+  (isEllipticSubgroup_iff_forall_isElliptic inferInstance).mpr fun g hg ↦
+    isElliptic_of_isOfFinOrder <|
+      H.subtype_injective.isOfFinOrder_iff.mpr (isOfFinOrder_of_finite (⟨g, hg⟩ : H))
 
 end GTree
 end TauCeti

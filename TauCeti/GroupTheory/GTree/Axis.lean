@@ -56,9 +56,6 @@ nonzero power of a hyperbolic element has the same axis.
 * `TauCeti.GTree.translationLength_zpow`, `TauCeti.GTree.isHyperbolic_zpow_iff`,
   `TauCeti.GTree.IsHyperbolic.axis_zpow`: `ℓ(gⁿ) = |n| ℓ(g)`, `gⁿ` is hyperbolic exactly when `g`
   is and `n ≠ 0`, and `gⁿ` then has the axis of `g`.
-* `TauCeti.GTree.isElliptic_of_isOfFinOrder`, `TauCeti.GTree.isEllipticSubgroup_of_finite`: an
-  element of finite order fixes a vertex, and so does a finite subgroup (finite groups have
-  Serre's property (FA)).
 * `TauCeti.GTree.line_axis`: on the line, every vertex lies on the axis of every translation.
 
 ## References
@@ -170,27 +167,8 @@ followed by its translate under `g` without backtracking. -/
 theorem smul_ne_rev_of_mem_axis {g : G} {x : T.V} (hx : x ∈ T.axis g) {p : T.Path x (g • x)}
     (hp : Path.IsReduced T.toSerreGraph p) :
     ∀ e ∈ (Path.darts T.toSerreGraph p).getLast?,
-      ∀ f ∈ (Path.darts T.toSerreGraph p).head?, g • f ≠ T.rev e := by
-  intro e he f hf hfe
-  have hlen : p.length = T.translationLength g := by
-    rw [← mem_axis_iff.mp hx, (IsTree.isAcyclic _ T.isTree).dist_eq_length hp]
-  rcases Nat.lt_or_ge p.length 2 with h | h
-  · -- A path with one dart: `g` would invert it.
-    obtain ⟨a, ha⟩ : ∃ a, Path.darts T.toSerreGraph p = [a] := by
-      rw [← List.length_eq_one_iff, Path.length_darts]
-      have : p.length ≠ 0 := fun h0 => by
-        rw [← Path.length_darts, List.length_eq_zero_iff] at h0
-        simp [h0] at he
-      omega
-    simp only [ha, List.getLast?_singleton, List.head?_cons, Option.mem_def,
-      Option.some.injEq] at he hf
-    subst he hf
-    exact T.smul_ne_rev g _ hfe
-  · -- Otherwise `g` moves the second vertex of the path by two less than the translation length.
-    have h₁ := Path.dist_tgt_src_add_two_le p hf he h
-    have h₂ := translationLength_le g (T.tgt f)
-    rw [← tgt_smul, hfe, tgt_rev] at h₂
-    omega
+      ∀ f ∈ (Path.darts T.toSerreGraph p).head?, g • f ≠ T.rev e :=
+  smul_ne_rev_of_dist_smul_eq_translationLength hx hp
 
 /-- A vertex `x` moved by the translation length satisfies `d(x, gⁿ x) = n ℓ(g)`. -/
 theorem dist_pow_smul_of_mem_axis {g : G} {x : T.V} (hx : x ∈ T.axis g) (n : ℕ) :
@@ -540,18 +518,6 @@ theorem IsHyperbolic.zpow {g : G} (hg : T.IsHyperbolic g) {n : ℤ} (hn : n ≠ 
 theorem IsHyperbolic.pow {g : G} (hg : T.IsHyperbolic g) {n : ℕ} (hn : n ≠ 0) :
     T.IsHyperbolic (g ^ n) :=
   isHyperbolic_pow_iff.mpr ⟨hg, hn⟩
-
-/-- An element of finite order is elliptic: it fixes a vertex. -/
-theorem isElliptic_of_isOfFinOrder {g : G} (hg : IsOfFinOrder g) : T.IsElliptic g := by
-  obtain ⟨n, hn, hgn⟩ := hg.exists_pow_eq_one
-  exact (isElliptic_pow_iff.mp (hgn ▸ T.isElliptic_one)).resolve_right hn.ne'
-
-/-- **Finite groups have property (FA).** A finite subgroup of a group acting on a tree without
-inversions fixes a vertex. -/
-theorem isEllipticSubgroup_of_finite (H : Subgroup G) [Finite H] : T.IsEllipticSubgroup H :=
-  (isEllipticSubgroup_iff_forall_isElliptic inferInstance).mpr fun g hg ↦
-    isElliptic_of_isOfFinOrder <|
-      H.subtype_injective.isOfFinOrder_iff.mpr (isOfFinOrder_of_finite (⟨g, hg⟩ : H))
 
 variable (T) in
 /-- The characteristic set of `g` is contained in that of every integer power of `g`. -/

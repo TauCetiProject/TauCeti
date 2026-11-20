@@ -7,8 +7,8 @@ module
 
 public import Mathlib.GroupTheory.OrderOfElement
 public import TauCeti.GroupTheory.GraphOfGroups.SpanningTree
-import TauCeti.GroupTheory.GraphOfGroups.BassSerreTree
-import TauCeti.GroupTheory.GTree.Axis
+import TauCeti.GroupTheory.GraphOfGroups.BassSerre.Tree
+import TauCeti.GroupTheory.GTree.FixedPoint
 
 /-!
 # Finite subgroups of the fundamental group of a graph of groups
