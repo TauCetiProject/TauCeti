@@ -451,6 +451,25 @@ private theorem exists_cutoffs {x₀ : CoordinateSpace n} {U : Set (CoordinateSp
       fun y hy ↦ hχ1 y hy, by simp [hχ1 x₀ (mem_ball_self (by positivity))], hχU⟩
 
 omit hb in
+/-- The localized symbol of the microlocality arguments: inside a neighbourhood `U` of `x₀`, a
+compact set `K` and a symbol `b = ψ a` vanishing outside `K`, vanishing wherever `a` does, and
+agreeing with `a` on an open neighbourhood `V₀` of `x₀`, together with a test function `χ`
+supported in `U`, equal to `1` near `K`. -/
+private theorem exists_localized {a : Symbol n ℂ ℂ m} (ha : a.HasCompactSpatialSupport)
+    {x₀ : CoordinateSpace n} {U : Set (CoordinateSpace n)} (hU : U ∈ 𝓝 x₀) :
+    ∃ (K V₀ : Set (CoordinateSpace n)) (b : Symbol n ℂ ℂ m) (hb : b.HasCompactSpatialSupport)
+      (χ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)), K ⊆ U ∧ IsOpen V₀ ∧ x₀ ∈ V₀ ∧
+        (∀ x ∉ K, ∀ ξ, b.coefficient (x, ξ) = 0) ∧
+        (∀ x ξ, a.coefficient (x, ξ) = 0 → b.coefficient (x, ξ) = 0) ∧
+        (∀ x ∈ V₀, ∀ ξ, b.coefficient (x, ξ) = a.coefficient (x, ξ)) ∧
+        (∀ᶠ x in 𝓝ˢ K, χ x = 1) ∧ χ x₀ ≠ 0 ∧ tsupport χ ⊆ U := by
+  obtain ⟨K, V₀, ψ, χ, -, hKU, hV₀, hx₀, hψ, hψK, hψ1, hχK, hχx₀, hχU⟩ := exists_cutoffs hU
+  have hψ' : ContDiff ℝ ∞ fun x ↦ (ψ x : ℂ) := ofRealCLM.contDiff.comp hψ
+  exact ⟨K, V₀, smulLeft hψ' a, ha.smulLeft hψ', χ, hKU, hV₀, hx₀,
+    fun x hx ξ ↦ by simp [hψK x hx], fun x ξ h ↦ by simp [h], fun x hx ξ ↦ by simp [hψ1 x hx],
+    hχK, hχx₀, hχU⟩
+
+omit hb in
 /-- **Microlocality of pseudodifferential operators.** For a scalar symbol `a` with compact spatial
 support and every `v ∈ H^t`, the wave front set of `Op(a) v` is contained in the wave front set of
 `v`: `WF(Op(a) v) ⊆ WF(v)`. -/
@@ -464,15 +483,10 @@ theorem waveFrontSet_toDistribution_quantizeSobolev_subset {a : Symbol n ℂ ℂ
   -- Cones and a neighbourhood `U` of `x₀` on which `v` is microlocally smooth.
   obtain ⟨U, hU, Γ, hΓ, hξΓ, hcone, hdecay⟩ := hv.exists_nhds_cone
   obtain ⟨Γ', hΓ'o, hξΓ', hcone', c, hc, hΓ'⟩ := hΓ.exists_cone_closedBall_subset hcone hξΓ
-  obtain ⟨K, V₀, ψ, χ, -, -, hV₀, hx₀, hψ, hψK, hψ1, hχK, hχx₀, hχU⟩ := exists_cutoffs hU
   -- Split off `b = ψ a`, which agrees with `a` on `V₀`.
-  have hψ' : ContDiff ℝ ∞ fun x ↦ (ψ x : ℂ) := ofRealCLM.contDiff.comp hψ
-  obtain ⟨b, hb, hbψ⟩ : ∃ (b : Symbol n ℂ ℂ m) (_ : b.HasCompactSpatialSupport),
-      ∀ x ξ, b.coefficient (x, ξ) = ψ x • a.coefficient (x, ξ) :=
-    ⟨smulLeft hψ' a, ha.smulLeft hψ', fun x ξ ↦ coefficient_smulLeft hψ' a (x, ξ)⟩
-  have hbK : ∀ x ∉ K, ∀ ξ, b.coefficient (x, ξ) = 0 := fun x hx ξ ↦ by simp [hbψ, hψK x hx]
+  obtain ⟨K, V₀, b, hb, χ, -, hV₀, hx₀, hbK, -, hba, hχK, hχx₀, hχU⟩ := exists_localized ha hU
   exact isMicrolocallySmoothAt_toDistribution_quantizeSobolev_of_smulLeftCLM hb hbK χ ha hV₀ hx₀
-    (fun x hx ξ ↦ by simp [hbψ, hψ1 x hx]) hχK hξ₀ t v
+    hba hχK hξ₀ t v
     (isMicrolocallySmoothAt_toDistribution_quantizeSobolev_smulLeftCLM hb hbK
       (fun x hx ↦ hχK.self_of_nhdsSet x hx) t v hχx₀ hΓ'o hξΓ' hcone' hc hΓ'
       fun N ↦ by simpa only [localFourier_toDistribution] using hdecay χ hχU N)
@@ -491,19 +505,14 @@ theorem notMem_waveFrontSet_toDistribution_quantizeSobolev_of_eq_zero {a : Symbo
     (x₀, ξ₀) ∉ (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).waveFrontSet := by
   intro hp
   obtain ⟨-, hξ0, hnot⟩ := mem_waveFrontSet_iff.1 hp
-  obtain ⟨K, V₀, ψ, χ, -, hKU, hV₀, hx₀, hψ, hψK, hψ1, hχK, hχx₀, -⟩ := exists_cutoffs hU
   -- `b = ψ a` agrees with `a` on `V₀` and vanishes on `Γ` at large frequencies, at every position.
-  have hψ' : ContDiff ℝ ∞ fun x ↦ (ψ x : ℂ) := ofRealCLM.contDiff.comp hψ
-  obtain ⟨b, hb, hbψ⟩ : ∃ (b : Symbol n ℂ ℂ m) (_ : b.HasCompactSpatialSupport),
-      ∀ x ξ, b.coefficient (x, ξ) = ψ x • a.coefficient (x, ξ) :=
-    ⟨smulLeft hψ' a, ha.smulLeft hψ', fun x ξ ↦ coefficient_smulLeft hψ' a (x, ξ)⟩
-  have hbK : ∀ x ∉ K, ∀ ξ, b.coefficient (x, ξ) = 0 := fun x hx ξ ↦ by simp [hbψ, hψK x hx]
+  obtain ⟨K, V₀, b, hb, χ, hKU, hV₀, hx₀, hbK, hb0, hba, hχK, hχx₀, -⟩ := exists_localized ha hU
   have hbΓ : ∀ x, ∀ ξ ∈ Γ, R ≤ ‖ξ‖ → b.coefficient (x, ξ) = 0 := fun x ξ hξ hR ↦ by
     by_cases hx : x ∈ K
-    · simp [hbψ, haΓ x (hKU hx) ξ hξ hR]
+    · exact hb0 x ξ (haΓ x (hKU hx) ξ hξ hR)
     · exact hbK x hx ξ
   exact hnot (isMicrolocallySmoothAt_toDistribution_quantizeSobolev_of_smulLeftCLM hb hbK χ ha hV₀
-    hx₀ (fun x hx ξ ↦ by simp [hbψ, hψ1 x hx]) hχK hξ0 t v
+    hx₀ hba hχK hξ0 t v
     (isMicrolocallySmoothAt_toDistribution_quantizeSobolev_smulLeftCLM_of_eq_zero hb hbK
       (fun x hx ↦ hχK.self_of_nhdsSet x hx) t v hχx₀ hΓ hξ₀ hcone hbΓ))
 
@@ -553,8 +562,7 @@ private theorem exists_isMicrolocallySmoothAt_smulLeftCLM_sub {c : Symbol n ℂ 
   by_contra h
   refine notMem_waveFrontSet_toDistribution_quantizeSobolev_of_eq_zero hd t v hU hΓ hξ₀ hcone
     (R := R) (fun x hx ξ hξ hR ↦ ?_) (mem_waveFrontSet_iff.2 ⟨trivial, hξ0, h⟩)
-  rw [coefficient_sub, Pi.sub_apply, coefficient_inclusion, coefficient_inclusion,
-    coefficient_ofSpatial, coefficient_smulLeft, hcΓ x hx ξ hξ hR, sub_self]
+  simp [hcΓ x hx ξ hξ hR]
 
 omit hb in
 /-- **A pseudodifferential operator is microlocally the identity where its symbol is.** If the
@@ -600,9 +608,7 @@ theorem waveFrontSet_toDistribution_inter_subset_quantizeSobolev {c : Symbol n �
     exact dsupport_sub_smulLeftCLM_subset v.toDistr ψ.hasTemperateGrowth hO hψO h' hx₀O
   have he0 : x₀ ∉ dsupport (toDistribution ⊤ ((b - c).quantizeSobolev he t v).toDistr) :=
     fun h ↦ (dsupport_toDistribution_quantizeSobolev_subset he hO.isClosed_compl
-      (fun x hx ξ ↦ by
-        rw [coefficient_sub, Pi.sub_apply, hbψ, hψO x (not_not.1 hx), one_smul, sub_self])
-      t v h) hx₀O
+      (fun x hx ξ ↦ by simp [hbψ, show χ x = 1 from hOχ (not_not.1 hx)]) t v h) hx₀O
   rw [hsplit]
   exact ((hcv.add (isMicrolocallySmoothAt_of_notMem_dsupport trivial hS ξ₀)).add hD).add
     (isMicrolocallySmoothAt_of_notMem_dsupport trivial he0 ξ₀)

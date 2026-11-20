@@ -91,18 +91,16 @@ private def bump (r : ℝ) (x : CoordinateSpace n) : ContDiffBump x :=
 
 /-- The localization `ψ(y) b(y, ξ)` of `b` by the bump function `ψ = bump r x`. -/
 private def localize (r : ℝ) (x : CoordinateSpace n) (b : Symbol n V W m) : Symbol n V W m :=
-  inclusion (by simp) ((ofSpatial (fun y ↦ bump r x y • ContinuousLinearMap.id ℂ W)
-    ((bump r x).contDiff.smul contDiff_const)).comp b)
+  smulLeft (Complex.ofRealCLM.contDiff.comp (bump r x).contDiff) b
 
 private theorem hasCompactSpatialSupport_localize (r : ℝ) (x : CoordinateSpace n)
     (b : Symbol n V W m) : (localize r x b).HasCompactSpatialSupport :=
-  (((hasCompactSpatialSupport_ofSpatial_iff _).2
-    (bump r x).hasCompactSupport.smul_right).comp_right b).inclusion _
+  hasCompactSpatialSupport_smulLeft _ ((bump r x).hasCompactSupport.comp_left Complex.ofReal_zero) b
 
 private theorem coefficient_localize {r : ℝ} {x y : CoordinateSpace n} (hy : dist y x ≤ max r 1)
     (b : Symbol n V W m) (ξ : CoordinateSpace n) :
     (localize r x b).coefficient (y, ξ) = b.coefficient (y, ξ) := by
-  simp [localize, coefficient_comp, coefficient_ofSpatial, (bump r x).one_of_mem_closedBall hy]
+  simp [localize, (bump r x).one_of_mem_closedBall hy]
 
 private theorem coefficient_localize_of_mem_ball {r : ℝ} {x y : CoordinateSpace n}
     (hy : y ∈ ball x r) (b : Symbol n V W m) (ξ : CoordinateSpace n) :

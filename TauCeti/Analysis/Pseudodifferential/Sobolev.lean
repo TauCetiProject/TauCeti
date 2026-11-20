@@ -125,9 +125,7 @@ families of operators.
 * `TauCeti.Symbol.toDistr_quantizeSobolev_ofSpatial_smul_id`: for a Schwartz function `φ` such
   that the symbol `φ(x) id` has compact spatial support, for instance a compactly supported `φ`
   (`TauCeti.Symbol.hasCompactSpatialSupport_ofSpatial_smul_id`), this symbol quantizes to
-  multiplication by `φ` (`BesselPotentialSpace.smulLeftCLM`). More generally, the product
-  `ψ(x) a(x, ξ)` of a symbol with a smooth function of the position (`TauCeti.Symbol.smulLeft`) is
-  a symbol of the same order, with compact spatial support when `a` or `ψ` has compact support.
+  multiplication by `φ` (`BesselPotentialSpace.smulLeftCLM`).
 * `TauCeti.Symbol.IsSmoothing.exists_continuousLinearMap_toDistr_quantizeSobolev_eq`: a smoothing
   symbol with compact spatial support quantizes, on every `H^t`, to a bounded operator
   `H^r → H^s` for arbitrary orders `r` and `s`.
@@ -728,35 +726,6 @@ theorem hasCompactSpatialSupport_ofSpatial_smul_id {φ : 𝓢(CoordinateSpace n,
     (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
       ((φ.smooth ⊤).smul contDiff_const)).HasCompactSpatialSupport :=
   (hasCompactSpatialSupport_ofSpatial_iff _).2 (hφ.mono fun x hx h ↦ hx (by simp [h]))
-
-/-- The product `ψ(x) a(x, ξ)` of a symbol `a` with a smooth scalar function `ψ` of the position,
-a symbol of the same order as `a`: the composition with the symbol of multiplication by `ψ`. -/
-def smulLeft {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff ℝ ∞ ψ) (a : Symbol n V W m) :
-    Symbol n V W m :=
-  inclusion (zero_add m).le
-    ((ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ W) (hψ.smul contDiff_const)).comp a)
-
-@[simp]
-theorem coefficient_smulLeft {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff ℝ ∞ ψ)
-    (a : Symbol n V W m) (p : CoordinateSpace n × CoordinateSpace n) :
-    (smulLeft hψ a).coefficient p = ψ p.1 • a.coefficient p := by
-  simp [smulLeft, coefficient_inclusion, ContinuousLinearMap.smul_comp]
-
-/-- Multiplying a symbol with compact spatial support by a smooth function of the position keeps
-compact spatial support. -/
-theorem HasCompactSpatialSupport.smulLeft (ha : a.HasCompactSpatialSupport)
-    {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff ℝ ∞ ψ) :
-    (Symbol.smulLeft hψ a).HasCompactSpatialSupport := by
-  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.1 ha
-  exact hasCompactSpatialSupport_iff.2 ⟨K, hK, fun x hx ξ ↦ by simp [hKa x hx ξ]⟩
-
-/-- Multiplying any symbol by a compactly supported smooth function of the position gives a symbol
-with compact spatial support. -/
-theorem hasCompactSpatialSupport_smulLeft {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff ℝ ∞ ψ)
-    (hψc : HasCompactSupport ψ) (a : Symbol n V W m) :
-    (smulLeft hψ a).HasCompactSpatialSupport :=
-  hasCompactSpatialSupport_iff.2
-    ⟨tsupport ψ, hψc, fun x hx ξ ↦ by simp [image_eq_zero_of_notMem_tsupport hx]⟩
 
 end Quantization
 
