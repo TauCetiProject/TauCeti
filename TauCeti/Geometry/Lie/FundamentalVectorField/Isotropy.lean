@@ -35,9 +35,10 @@ Two properties of `A` are inherited from the group `t ↦ d(exp (t ξ))_p`:
   `S`, then `A_ξ u ∈ S`, since `A_ξ u` is a limit of difference quotients in `S`
   (`TauCeti.isotropyLinearization_apply_mem_of_forall_mem`).
 * **Equivariance.** For `g` in the stabilizer of `p`, `g exp (t ξ) g⁻¹ = exp (t Ad_g ξ)`
-  (`TauCeti.Lie.conj_mulInvariantExp`), and `Ad_g ξ` lies in `𝔥` again. Differentiating the
-  conjugated one-parameter group gives `dg_p ∘ A_ξ = A_{Ad_g ξ} ∘ dg_p`
-  (`TauCeti.tangentRepresentation_comp_isotropyLinearization`).
+  (`TauCeti.Lie.conj_mulInvariantExp`). Differentiating the conjugated one-parameter group gives
+  `dg_p ∘ A_ξ = A_η ∘ dg_p` for every `η` in `𝔥` with `η = Ad_g ξ`
+  (`TauCeti.tangentRepresentation_comp_isotropyLinearization`). The element `η` is supplied by
+  the caller; this file does not prove that `Ad_g` preserves `𝔥`.
 
 These are the infinitesimal data of the slice representation in the local normal form of a
 Hamiltonian action, where `𝔥` acts on the symplectic slice through `A`.
@@ -54,8 +55,8 @@ Hamiltonian action, where `𝔥` acts on the symplectic slice through `A`.
   derivative at `t = 0` of `t ↦ d(exp (t ξ))_p`.
 * `TauCeti.isotropyLinearization_apply_mem_of_forall_mem`: `A_ξ` preserves every closed subspace
   preserved by every `d(exp (t ξ))_p`.
-* `TauCeti.tangentRepresentation_comp_isotropyLinearization`: `dg_p ∘ A_ξ = A_{Ad_g ξ} ∘ dg_p` for
-  `g` in the stabilizer of `p`.
+* `TauCeti.tangentRepresentation_comp_isotropyLinearization`: `dg_p ∘ A_ξ = A_η ∘ dg_p` for `g` in
+  the stabilizer of `p` and `η` in the isotropy algebra with `η = Ad_g ξ`.
 
 ## References
 

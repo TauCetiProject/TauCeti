@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.FundamentalVectorField.Isotropy
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Slice
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+import TauCeti.Analysis.Calculus.Bilinear
 
 /-!
 # The isotropy algebra on the symplectic slice and the slice moment map
@@ -50,11 +51,13 @@ of a moment map:
   direction `w` is `ω_V(ξ v, w)`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_symplecticSliceMomentMap_add_smul`). This is
   stated along lines, as `V` carries no preferred norm.
-* **`H`-equivariance** `μ_V(h v) = Ad*_h μ_V(v)`. For `h ∈ H`, `dh_p ∘ A_ξ = A_(Ad_h ξ) ∘ dh_p`
-  (`TauCeti.tangentRepresentation_comp_isotropyLinearization`), so `h` intertwines the actions of
-  `ξ` and `Ad_h ξ` on `V`, and as `h` preserves `ω_V`,
-  `μ_V(h v)(Ad_h ξ) = μ_V(v)(ξ)`
+* **`H`-equivariance.** Let `h ∈ H` and `ξ, η ∈ 𝔥` with `η = Ad_h ξ`. Then
+  `dh_p ∘ A_ξ = A_η ∘ dh_p` (`TauCeti.tangentRepresentation_comp_isotropyLinearization`), so `h`
+  intertwines the actions of `ξ` and `η` on `V`, and as `h` preserves `ω_V`,
+  `μ_V(h v)(η) = μ_V(v)(ξ)`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.symplecticSliceMomentMap_symplecticSliceRepresentation`).
+  The element `η` of `𝔥` is supplied by the caller; this file does not prove that `Ad_h`
+  preserves `𝔥`, nor define a coadjoint action of `H` on `𝔥*`.
 
 No moment map on `M`, no closedness of `σ` and no compactness of `H` is used.
 
@@ -95,6 +98,16 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace
   (hσG : ∀ g ∈ stabilizer G p, SmoothForm.mpullback (fun y : M ↦ g • y)
     (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)
 
+omit [CompleteSpace E] [LieGroup I (minSmoothness ℝ 3) G] [T2Space G] [BoundarylessManifold I G]
+  [FiniteDimensional ℝ E'] [I'.Boundaryless] [IsManifold I' ∞ M] [T2Space M] in
+include I in
+variable (I G I' p) in
+/-- Every element of the stabilizer of `p` acts differentiably at `p`, the differentiability
+hypothesis of `TauCeti.tangentRepresentation`. -/
+private theorem mdifferentiableAt_smul_of_mem_stabilizer :
+    ∀ g ∈ stabilizer G p, MDifferentiableAt I' I' (fun y : M ↦ g • y) p :=
+  fun g _ ↦ ContMDiffSMul.mdifferentiable_const_smul (I := I) (n := ∞) (by simp) g p
+
 include hσG
 
 /-! ### The isotropy algebra on `(T_p M, σ_p)` -/
@@ -108,8 +121,7 @@ theorem symplecticFormAt_isotropyLinearization_apply
     hσ.symplecticFormAt p (isotropyLinearization I' p ξ u) v =
       -hσ.symplecticFormAt p u (isotropyLinearization I' p ξ v) := by
   have : ContMDiffConstSMul I' ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := I)⟩
-  have hd : ∀ g ∈ stabilizer G p, MDifferentiableAt I' I' (fun y : M ↦ g • y) p :=
-    fun g _ ↦ ContMDiffSMul.mdifferentiable_const_smul (I := I) (n := ∞) (by simp) g p
+  have hd := mdifferentiableAt_smul_of_mem_stabilizer I G I' p
   -- The computation takes place in the model space `E'`.
   let B : LinearMap.BilinForm ℝ E' := (hσ.symplecticFormAt p).toBilinForm
   let A : E' →L[ℝ] E' := isotropyLinearization I' p ξ
@@ -131,16 +143,14 @@ theorem symplecticFormAt_isotropyLinearization_apply
     simp only [map_one] at h
     rw [tangentRepresentation_apply] at h
     exact h
-  have hder := ContinuousLinearMap.hasDerivAt_of_bilinear (B := B.toContinuousBilinearMap)
-    (fun _ ↦ hasDerivAt_mfderiv_mulInvariantExp_smul_smul_apply ξ u')
-    (fun _ ↦ hasDerivAt_mfderiv_mulInvariantExp_smul_smul_apply ξ v')
-  have h0 : B.toContinuousBilinearMap (D 0 u') (A v') +
-      B.toContinuousBilinearMap (A u') (D 0 v') = 0 :=
-    hder.unique ((hasDerivAt_const (0 : ℝ) (B u' v')).congr_of_eventuallyEq
-      (Eventually.of_forall hconst))
+  have h0 : B.toContinuousBilinearMap (A u') (D 0 v') +
+      B.toContinuousBilinearMap (D 0 u') (A v') = 0 :=
+    B.toContinuousBilinearMap.apply_add_apply_eq_zero_of_const
+      (hasDerivAt_mfderiv_mulInvariantExp_smul_smul_apply ξ u')
+      (hasDerivAt_mfderiv_mulInvariantExp_smul_smul_apply ξ v') hconst
   rw [hD0, hD0, LinearMap.toContinuousBilinearMap_apply,
     LinearMap.toContinuousBilinearMap_apply] at h0
-  exact eq_neg_of_add_eq_zero_left ((add_comm _ _).trans h0)
+  exact eq_neg_of_add_eq_zero_left h0
 
 /-- **The isotropy algebra preserves the symplectic complement of the orbit.** If the stabilizer of
 `p` preserves a nondegenerate two-form `σ`, then for `ξ` in the isotropy algebra of `p` the
@@ -152,8 +162,7 @@ theorem isotropyLinearization_apply_mem_orthogonal
       ((InfinitesimalAction.fundamental I G I' M).orbitTangent p)) :
     isotropyLinearization I' p ξ u ∈ (hσ.symplecticFormAt p).orthogonal
       ((InfinitesimalAction.fundamental I G I' M).orbitTangent p) := by
-  have hd : ∀ g ∈ stabilizer G p, MDifferentiableAt I' I' (fun y : M ↦ g • y) p :=
-    fun g _ ↦ ContMDiffSMul.mdifferentiable_const_smul (I := I) (n := ∞) (by simp) g p
+  have hd := mdifferentiableAt_smul_of_mem_stabilizer I G I' p
   let S : Submodule ℝ E' := (hσ.symplecticFormAt p).orthogonal
     ((InfinitesimalAction.fundamental I G I' M).orbitTangent p)
   refine isotropyLinearization_apply_mem_of_forall_mem (S := S) ξ
@@ -167,29 +176,18 @@ theorem isotropyLinearization_apply_mem_orthogonal
 `σ_p`. -/
 private def isotropySkewAdjoint :
     (InfinitesimalAction.fundamental I G I' M).isotropy p →ₗ[ℝ]
-      skewAdjointLieSubalgebra (hσ.symplecticFormAt p).toBilinForm where
-  toFun ξ := ⟨(isotropyLinearization I' p ξ : E' →ₗ[ℝ] E'),
-    (LinearMap.mem_skewAdjointSubmodule _).2 fun u v ↦
-      (hσ.symplecticFormAt_isotropyLinearization_apply hσG ξ u v).trans (map_neg _ _).symm⟩
-  -- The subtype and continuous-linear-map coercions only unfold to `A_ξ u`, read in the model
-  -- space `E'` of `T_p M`; `change` exposes this form to `map_add` and `map_smul`.
-  map_add' ξ η := Subtype.ext (LinearMap.ext fun (u : E') ↦ by
-    change isotropyLinearization I' p (ξ + η) u =
-      isotropyLinearization I' p ξ u + isotropyLinearization I' p η u
-    rw [map_add]
-    rfl)
-  map_smul' c ξ := Subtype.ext (LinearMap.ext fun (u : E') ↦ by
-    change isotropyLinearization I' p (c • ξ) u = c • isotropyLinearization I' p ξ u
-    rw [map_smul]
-    rfl)
+      skewAdjointLieSubalgebra (hσ.symplecticFormAt p).toBilinForm :=
+  LinearMap.codRestrict (hσ.symplecticFormAt p).toBilinForm.skewAdjointSubmodule
+    ((ContinuousLinearMap.coeLM ℝ : (E' →L[ℝ] E') →ₗ[ℝ] E' →ₗ[ℝ] E').comp
+      (isotropyLinearization I' p)) fun ξ ↦
+      (LinearMap.mem_skewAdjointSubmodule _).2 fun u v ↦
+        (hσ.symplecticFormAt_isotropyLinearization_apply hσG ξ u v).trans (map_neg _ _).symm
 
 private theorem coe_isotropySkewAdjoint_apply
     (ξ : (InfinitesimalAction.fundamental I G I' M).isotropy p) (u : TangentSpace I' p) :
     (isotropySkewAdjoint hσ hσG ξ : Module.End ℝ (TangentSpace I' p)) u =
-      isotropyLinearization I' p ξ u := by
-  rw [isotropySkewAdjoint, LinearMap.coe_mk, AddHom.coe_mk]
-  -- The remaining coercions of the subtype and of the continuous linear map unfold to `A_ξ u`.
-  rfl
+      isotropyLinearization I' p ξ u :=
+  LinearMap.congr_fun (LinearMap.codRestrict_apply _ _ ξ) u
 
 /-! ### The isotropy algebra on the symplectic slice -/
 
@@ -281,8 +279,8 @@ theorem hasDerivAt_symplecticSliceMomentMap_add_smul
   simp only [symplecticSliceMomentMap, LinearMap.comp_apply]
   exact SymplecticForm.hasDerivAt_linearMomentMap_add_smul _ v w _
 
-/-- **Equivariance of the slice moment map.** For `g` in the stabilizer of `p`,
-`μ_V(g v) = Ad*_g μ_V(v)`: on `η = Ad_g ξ`, `μ_V(g v)(η) = μ_V(v)(ξ)`. -/
+/-- **Equivariance of the slice moment map.** For `g` in the stabilizer of `p` and `ξ, η` in the
+isotropy algebra with `η = Ad_g ξ`, `μ_V(g v)(η) = μ_V(v)(ξ)`. -/
 theorem symplecticSliceMomentMap_symplecticSliceRepresentation (g : stabilizer G p)
     (ξ η : (InfinitesimalAction.fundamental I G I' M).isotropy p)
     (hη : (η : GroupLieAlgebra I G) = Lie.tangentAd (I := I) (g : G) ξ)
