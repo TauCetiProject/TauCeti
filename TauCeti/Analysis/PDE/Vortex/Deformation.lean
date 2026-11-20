@@ -73,6 +73,32 @@ def sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℂ :=
 theorem sectionValue_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     sectionValue x z = 2 * ((x z 2 : ℂ) + (x z 3 : ℂ) * I) := (rfl)
 
+/-- The real part of the section `α = 2 (p + i q)` is `2 p`. -/
+@[simp]
+theorem sectionValue_re (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    (sectionValue x z).re = 2 * x z 2 := by
+  simp [sectionValue_apply]
+
+/-- The imaginary part of the section `α = 2 (p + i q)` is `2 q`. -/
+@[simp]
+theorem sectionValue_im (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    (sectionValue x z).im = 2 * x z 3 := by
+  simp [sectionValue_apply]
+
+/-- The real part of `conj α_x α_y` in the field coordinates: `4 (p_x p_y + q_x q_y)`. -/
+theorem conj_sectionValue_mul_sectionValue_re (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    (starRingEnd ℂ (sectionValue x z) * sectionValue y z).re =
+      4 * (x z 2 * y z 2 + x z 3 * y z 3) := by
+  simp only [mul_re, conj_re, conj_im, sectionValue_re, sectionValue_im]
+  ring
+
+/-- The imaginary part of `conj α_x α_y` in the field coordinates: `4 (p_x q_y - q_x p_y)`. -/
+theorem conj_sectionValue_mul_sectionValue_im (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    (starRingEnd ℂ (sectionValue x z) * sectionValue y z).im =
+      4 * (x z 2 * y z 3 - x z 3 * y z 2) := by
+  simp only [mul_im, conj_re, conj_im, sectionValue_re, sectionValue_im]
+  ring
+
 /-- The section of a sum of fields is the sum of their sections. -/
 @[simp]
 theorem sectionValue_add (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :

@@ -52,6 +52,8 @@ are only real-linear.
   two-form `μ`.
 * `cliffordRestriction_quadraticTwoFormPolar`: `C(i q'(ψ, φ)) = φψ* + ψφ* - Re⟪ψ, φ⟫ Id`.
 * `quadraticTwoForm_add`: `q(ψ + φ) = q(ψ) + q(φ) + q'(ψ, φ)`.
+* `inner_quadraticTwoFormPolar_eq_re_inner`: `⟪q'(ψ, φ), x⟫ = Re⟪φ, C(i x) ψ⟫ / 2` for every
+  two-form `x`.
 * `quadraticTwoFormPolar_smul_self`: `q'(ψ, c ψ) = 2 Re(c) q(ψ)`, so the derivative of `q` kills
   the infinitesimal gauge directions `ξ ψ` with `ξ` imaginary.
 * `norm_quadraticTwoFormPolar_le`: `‖q'(ψ, φ)‖ ≤ ‖ψ‖ ‖φ‖ / √2`.
@@ -308,6 +310,32 @@ theorem quadraticTwoForm_add (ψ φ : positiveHalfSpinors o ρ) :
     quadraticTwoForm o ρ hkl (ψ + φ) = quadraticTwoForm o ρ hkl ψ +
       quadraticTwoForm o ρ hkl φ + quadraticTwoFormPolar o ρ hkl ψ φ := by
   simp [quadraticTwoForm_def, quadraticTwoFormPolar_apply, quadraticEnd_add]
+
+include hQ in
+variable {ρ} in
+/-- **The pairing of the polarization of `q` with a two-form**:
+`⟪q'(ψ, φ), x⟫ = Re⟪φ, C(i x) ψ⟫ / 2`. This polarizes
+`⟪q(ψ), x⟫ = Re⟪ψ, C(i x) ψ⟫ / 4` (`inner_quadraticTwoForm_eq_re_inner`), using that `C(i x)` is
+self-adjoint. -/
+theorem inner_quadraticTwoFormPolar_eq_re_inner
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) (x : ⋀[ℝ]^2 V)
+    (ψ φ : positiveHalfSpinors o ρ) :
+    ⟪(quadraticTwoFormPolar o ρ hkl ψ φ : ⋀[ℝ]^2 V), x⟫ =
+      (⟪φ, cliffordRestriction o ρ x ψ⟫_ℂ).re / 2 := by
+  have hpol : ⟪(quadraticTwoForm o ρ hkl (ψ + φ) : ⋀[ℝ]^2 V), x⟫ =
+      ⟪(quadraticTwoForm o ρ hkl ψ : ⋀[ℝ]^2 V), x⟫ + ⟪(quadraticTwoForm o ρ hkl φ : ⋀[ℝ]^2 V), x⟫ +
+        ⟪(quadraticTwoFormPolar o ρ hkl ψ φ : ⋀[ℝ]^2 V), x⟫ := by
+    rw [quadraticTwoForm_add, Submodule.coe_add, Submodule.coe_add, inner_add_left,
+      inner_add_left]
+  have hsymm := (isSelfAdjoint_cliffordRestriction o hρ x).isSymmetric φ ψ
+  simp only [ContinuousLinearMap.coe_coe] at hsymm
+  rw [inner_quadraticTwoForm_eq_re_inner o ρ hQ hkl, inner_quadraticTwoForm_eq_re_inner o ρ hQ hkl,
+    inner_quadraticTwoForm_eq_re_inner o ρ hQ hkl, map_add, inner_add_left, inner_add_right,
+    inner_add_right] at hpol
+  have hre : (⟪ψ, cliffordRestriction o ρ x φ⟫_ℂ).re = (⟪φ, cliffordRestriction o ρ x ψ⟫_ℂ).re := by
+    rw [← hsymm, ← inner_conj_symm, Complex.conj_re]
+  simp only [Complex.add_re] at hpol
+  linarith
 
 /-- `q'(ψ, c ψ) = 2 Re(c) q(ψ)`. In particular the derivative of `q` vanishes along the
 infinitesimal gauge directions `ξ ψ` with `ξ` imaginary. -/
