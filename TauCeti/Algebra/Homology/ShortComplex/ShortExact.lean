@@ -40,8 +40,8 @@ simultaneously.
   `a ≫ b` by the kernel of `a` is the kernel of `b`.
 * `TauCeti.cokernelKernelSubobjectArrowIso`: for an epimorphism `a`, the quotient by the kernel of
   `a` is the target of `a`.
-* `TauCeti.cokernelSequenceToSnakeInputL₃`: the morphism from `Y ⟶ Z ⟶ cokernel b` to that
-  sequence.
+* `TauCeti.cokernelSequenceToCokernelCompSequence`: the morphism from `Y ⟶ Z ⟶ cokernel b` to
+  that sequence.
 * `TauCeti.cokernelCompSequenceMap`: the morphism between two such sequences induced by a
   commutative ladder between the composable pairs.
 * `CategoryTheory.ShortComplex.shortExact_of_forall_evaluation`: a short complex of functors is
@@ -218,8 +218,8 @@ lemma π_cokernelKernelSubobjectArrowIso_hom [Epi a] {S : Subobject X}
 /-- The morphism of short complexes from `Y ⟶ Z ⟶ cokernel b` to
 `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` given by the cokernel projections of `a` and
 `a ≫ b` and the identity of `cokernel b`. -/
-noncomputable def cokernelSequenceToSnakeInputL₃ :
-    ShortComplex.cokernelSequence b ⟶ (kernelCokernelCompSequence.snakeInput a b).L₃ where
+noncomputable def cokernelSequenceToCokernelCompSequence :
+    ShortComplex.cokernelSequence b ⟶ cokernelCompSequence a b where
   τ₁ := cokernel.π a
   τ₂ := cokernel.π (a ≫ b)
   τ₃ := 𝟙 _
@@ -227,18 +227,19 @@ noncomputable def cokernelSequenceToSnakeInputL₃ :
   comm₂₃ := (cokernel.π_desc _ _ _).trans ((Category.id_comp _).trans (Category.comp_id _).symm)
 
 @[simp]
-lemma cokernelSequenceToSnakeInputL₃_τ₁ :
-    (cokernelSequenceToSnakeInputL₃ a b).τ₁ = cokernel.π a := by
-  rw [cokernelSequenceToSnakeInputL₃]
+lemma cokernelSequenceToCokernelCompSequence_τ₁ :
+    (cokernelSequenceToCokernelCompSequence a b).τ₁ = cokernel.π a := by
+  rw [cokernelSequenceToCokernelCompSequence]
 
 @[simp]
-lemma cokernelSequenceToSnakeInputL₃_τ₂ :
-    (cokernelSequenceToSnakeInputL₃ a b).τ₂ = cokernel.π (a ≫ b) := by
-  rw [cokernelSequenceToSnakeInputL₃]
+lemma cokernelSequenceToCokernelCompSequence_τ₂ :
+    (cokernelSequenceToCokernelCompSequence a b).τ₂ = cokernel.π (a ≫ b) := by
+  rw [cokernelSequenceToCokernelCompSequence]
 
 @[simp]
-lemma cokernelSequenceToSnakeInputL₃_τ₃ : (cokernelSequenceToSnakeInputL₃ a b).τ₃ = 𝟙 _ := by
-  rw [cokernelSequenceToSnakeInputL₃]
+lemma cokernelSequenceToCokernelCompSequence_τ₃ :
+    (cokernelSequenceToCokernelCompSequence a b).τ₃ = 𝟙 _ := by
+  rw [cokernelSequenceToCokernelCompSequence]
 
 variable {a b} {X' Y' Z' : C} {a' : X' ⟶ Y'} {b' : Y' ⟶ Z'} (u₁ : X ⟶ X') (u₂ : Y ⟶ Y')
   (u₃ : Z ⟶ Z') (w₁ : a ≫ u₂ = u₁ ≫ a') (w₂ : b ≫ u₃ = u₂ ≫ b')

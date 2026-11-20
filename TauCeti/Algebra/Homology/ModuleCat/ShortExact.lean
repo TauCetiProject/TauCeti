@@ -38,7 +38,7 @@ equivalent (`CategoryTheory.ShortComplex.ShortExact.homologyMap_g_surjective_iff
 For maps `φ : X ⟶ Y` and `ψ : Y ⟶ Z` of complexes of modules with `ψ` a monomorphism, the short
 exact sequence `cokernel φ ⟶ cokernel (φ ≫ ψ) ⟶ cokernel ψ`
 (`TauCeti.cokernelCompSequence_shortExact`) also has a connecting map on
-homology, computed on classes of elements in `TauCeti.exists_δ_kernelCokernelSequence_L₃_eq`.
+homology, computed on classes of elements in `TauCeti.exists_δ_cokernelCompSequence_eq`.
 
 ## Main declarations
 
@@ -52,7 +52,7 @@ homology, computed on classes of elements in `TauCeti.exists_δ_kernelCokernelSe
   `CategoryTheory.ShortComplex.ShortExact.homologyMap_f_injective_iff_homologyMap_g_surjective`:
   equivalences between surjectivity of `Hᵢ(S.g)`, vanishing of `hS.δ i j hij`, and injectivity of
   `Hⱼ(S.f)`.
-* `TauCeti.exists_δ_kernelCokernelSequence_L₃_eq`: the connecting map of
+* `TauCeti.exists_δ_cokernelCompSequence_eq`: the connecting map of
   `cokernel φ ⟶ cokernel (φ ≫ ψ) ⟶ cokernel ψ` on classes of elements.
 -/
 
@@ -180,7 +180,7 @@ universe w
 `cokernel ψ` is a cycle `x`. Then the image of `t` in `cokernel φ` is a cycle, and it represents
 the image of the class of `x` under the connecting map of
 `cokernel φ ⟶ cokernel (φ ≫ ψ) ⟶ cokernel ψ`. -/
-theorem exists_δ_kernelCokernelSequence_L₃_eq {R : Type*} [Ring R]
+theorem exists_δ_cokernelCompSequence_eq {R : Type*} [Ring R]
     {X Y Z : CochainComplex (ModuleCat.{w} R) ℤ} (φ : X ⟶ Y) (ψ : Y ⟶ Z) [Mono ψ] (n : ℤ)
     (s : Z.X n) (t : Y.X (n + 1)) (hst : (ψ.f (n + 1)).hom t = (Z.d n (n + 1)).hom s)
     (x : (cokernel ψ).X n) (hx : ((cokernel ψ).d n (n + 1)).hom x = 0)

@@ -413,7 +413,7 @@ theorem indexSpectralSequence_page_two_d_apply (a b : ℤ)
       (((m.indexCokernelIsoOfEq hM hm b (b + 1) rfl).inv.f (a + b)).hom f) = 0 := by
     rw [HomologicalComplex.Hom.comm_apply]
     exact (congrArg _ hf).trans (map_zero _)
-  obtain ⟨hc, hδ⟩ := exists_δ_kernelCokernelSequence_L₃_eq
+  obtain ⟨hc, hδ⟩ := exists_δ_cokernelCompSequence_eq
     ((m.indexFiltrationFunctor hM hm).map
         (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (show b - 1 = b - 1 from rfl)
       (show b = b - 1 + 1 by lia))))
