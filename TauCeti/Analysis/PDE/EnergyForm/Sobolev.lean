@@ -889,18 +889,21 @@ private theorem memLp_forcing_principal {b : EuclideanSpace ℝ ι → Euclidean
   ((Lp.memLp f).sub (memLp_inner_gradient hb u)).sub (hc.fun_mul (Lp.memLp _))
 
 open scoped InnerProductSpace in
-/-- With an essentially bounded principal energy density and bounded lower-order coefficients,
-the energy form is its principal part plus the drift integral `∫_Ω ⟪b, ∇u⟫ v` and the mass
-integral `∫_Ω c u v`. -/
-private theorem energyFormH1_eq_principal_add {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+/-- With an essentially bounded principal energy density, bounded lower-order coefficients and
+`f ∈ L²(Ω)`, the residual `B(u, v) - ∫_Ω f v` of the full weak equation equals the residual
+`∫_Ω ⟨∇v, a ∇u⟩ - ∫_Ω (f - ⟪b, ∇u⟫ - c u) v` of the principal equation. -/
+private theorem energyFormH1_sub_setIntegral_eq_principal {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
     (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega))
     (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega))
-    (u v : W1p mu Omega 2) :
-    energyFormH1 a b c u v = energyFormH1 a 0 0 u v +
-      ∫ x in Omega, ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value v x ∂mu +
-      ∫ x in Omega, (c x * W1p.value u x) * W1p.value v x ∂mu := by
+    {f : EuclideanSpace ℝ ι → ℝ} (hf : MemLp f 2 (mu.restrict Omega)) (u v : W1p mu Omega 2) :
+    energyFormH1 a b c u v - ∫ x in Omega, f x * W1p.value v x ∂mu =
+      energyFormH1 a 0 0 u v -
+        ∫ x in Omega, (f x - ⟪b x, W1p.gradient u x⟫_ℝ - c x * W1p.value u x) *
+          W1p.value v x ∂mu := by
   have hv := Lp.memLp (W1p.value v)
+  have hF : Integrable (fun x => f x * W1p.value v x) (mu.restrict Omega) :=
+    hf.integrable_mul hv
   have hBv : Integrable (fun x => ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value v x)
       (mu.restrict Omega) := (memLp_inner_gradient hb u).integrable_mul hv
   have hC : MemLp (fun x => c x * W1p.value u x) 2 (mu.restrict Omega) :=
@@ -931,6 +934,10 @@ private theorem energyFormH1_eq_principal_add {a : EuclideanSpace ℝ ι → Mat
   rw [energyFormIntegral_principal_drift_mass _ _ _ _ _ _
     (integrable_energyIntegrand_jetField ha u _) hdrift hmass, hdrift_eq, hmass_eq,
     Pi.zero_def, Pi.zero_def]
+  -- Split the forcing integral into its source, drift and mass parts.
+  simp only [sub_mul]
+  rw [integral_sub (hF.sub' hBv) hCv, integral_sub hF hBv]
+  ring
 
 open scoped InnerProductSpace in
 /-- **Moving the lower-order terms to the right-hand side.** If `u ∈ H¹(Ω)` is a weak solution of
@@ -954,21 +961,7 @@ theorem energyFormH1_principal_eq_setIntegral_sub {a : EuclideanSpace ℝ ι →
     energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
       ∫ x in Omega, (f x - ⟪b x, W1p.gradient u x⟫_ℝ - c x * W1p.value u x) *
         W1p.value (v : W1p mu Omega 2) x ∂mu := by
-  have hv := Lp.memLp (W1p.value (v : W1p mu Omega 2))
-  have hF : Integrable (fun x => f x * W1p.value (v : W1p mu Omega 2) x)
-      (mu.restrict Omega) := (Lp.memLp f).integrable_mul hv
-  have hBv : Integrable (fun x => ⟪b x, W1p.gradient u x⟫_ℝ *
-      W1p.value (v : W1p mu Omega 2) x) (mu.restrict Omega) :=
-    (memLp_inner_gradient hb u).integrable_mul hv
-  have hC : MemLp (fun x => c x * W1p.value u x) 2 (mu.restrict Omega) :=
-    hc.fun_mul (Lp.memLp _)
-  have hCv : Integrable (fun x => (c x * W1p.value u x) *
-      W1p.value (v : W1p mu Omega 2) x) (mu.restrict Omega) := hC.integrable_mul hv
-  have h := hu v
-  rw [energyFormH1_eq_principal_add ha hb hc] at h
-  simp only [sub_mul]
-  rw [integral_sub (hF.sub' hBv) hCv, integral_sub hF hBv]
-  linarith
+  linarith [energyFormH1_sub_setIntegral_eq_principal ha hb hc (Lp.memLp f) u v, hu v]
 
 open scoped InnerProductSpace in
 /-- **Moving the lower-order terms to the left-hand side.** If `u ∈ H¹(Ω)` is a weak solution of
@@ -988,20 +981,7 @@ theorem energyFormH1_eq_setIntegral_of_principal_eq_sub {a : EuclideanSpace ℝ 
     (v : W1p0 mu Omega 2) :
     energyFormH1 a b c u (v : W1p mu Omega 2) =
       ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
-  have hv := Lp.memLp (W1p.value (v : W1p mu Omega 2))
-  have hF : Integrable (fun x => f x * W1p.value (v : W1p mu Omega 2) x)
-      (mu.restrict Omega) := hf.integrable_mul hv
-  have hBv : Integrable (fun x => ⟪b x, W1p.gradient u x⟫_ℝ *
-      W1p.value (v : W1p mu Omega 2) x) (mu.restrict Omega) :=
-    (memLp_inner_gradient hb u).integrable_mul hv
-  have hC : MemLp (fun x => c x * W1p.value u x) 2 (mu.restrict Omega) :=
-    hc.fun_mul (Lp.memLp _)
-  have hCv : Integrable (fun x => (c x * W1p.value u x) *
-      W1p.value (v : W1p mu Omega 2) x) (mu.restrict Omega) := hC.integrable_mul hv
-  rw [energyFormH1_eq_principal_add ha hb hc, hu v]
-  simp only [sub_mul]
-  rw [integral_sub (hF.sub' hBv) hCv, integral_sub hF hBv]
-  ring
+  linarith [energyFormH1_sub_setIntegral_eq_principal ha hb hc hf u v, hu v]
 
 open scoped InnerProductSpace in
 /-- A weak equation with an essentially bounded principal energy density and bounded
