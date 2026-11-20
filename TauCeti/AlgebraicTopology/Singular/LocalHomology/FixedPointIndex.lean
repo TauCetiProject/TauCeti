@@ -365,25 +365,27 @@ theorem fixedPointIndex_const {c : E} (hc : c ∈ U) : (const U c).fixedPointInd
     (by simp [ContinuousLinearMap.det])]
   simp [ContinuousLinearMap.det]
 
+/-- **The fixed-point index in dimension zero**: every map of a nonempty open subset of a
+zero-dimensional space has fixed-point index `1`. -/
+@[simp]
+theorem fixedPointIndex_of_subsingleton [Subsingleton E] [Nonempty U] (f : C(U, E)) :
+    f.fixedPointIndex = 1 := by
+  obtain ⟨x⟩ := ‹Nonempty U›
+  rw [show f = const U (x : E) from ContinuousMap.ext fun z ↦ Subsingleton.elim _ _]
+  exact fixedPointIndex_const x.2
+
 /-- **The local fixed-point index in dimension zero**: on a zero-dimensional space every point is
 an isolated fixed point, of local index `1`. -/
+@[simp]
 theorem localFixedPointIndex_of_subsingleton [Subsingleton E] (f : C(U, E)) (x : U) :
     f.localFixedPointIndex x = 1 := by
   have hU : ∀ z : U, z = x := fun z ↦ Subtype.ext (Subsingleton.elim _ _)
   have hfix : {z | f z = z} = {x} := by
     ext z
     simp [hU z, Subsingleton.elim (f x) (x : E)]
-  rw [← f.fixedPointIndex_eq_localFixedPointIndex hfix,
-    show f = const U (x : E) from ContinuousMap.ext fun z ↦ Subsingleton.elim _ _]
-  exact fixedPointIndex_const x.2
-
-/-- **The fixed-point index in dimension zero**: every map of a nonempty open subset of a
-zero-dimensional space has fixed-point index `1`. -/
-theorem fixedPointIndex_of_subsingleton [Subsingleton E] [Nonempty U] (f : C(U, E)) :
-    f.fixedPointIndex = 1 := by
-  obtain ⟨x⟩ := ‹Nonempty U›
-  rw [show f = const U (x : E) from ContinuousMap.ext fun z ↦ Subsingleton.elim _ _]
-  exact fixedPointIndex_const x.2
+  rw [← f.fixedPointIndex_eq_localFixedPointIndex hfix]
+  have : Nonempty U := ⟨x⟩
+  exact f.fixedPointIndex_of_subsingleton
 
 section Line
 
@@ -524,11 +526,11 @@ private theorem fixedPointIndex_comp_inclusion_eq_sub_affineInterp {U : Opens �
   rw [hHΦ]
   refine isCompact_setOf_eq_zero_Ioo (by fun_prop) (fun t ↦ ?_) fun t ↦ ?_
   · simp only [Φ, hFeq a (left_mem_Icc.2 hab.le), hℓa]
-    ring_nf
-    exact sub_ne_zero.2 (Ne.symm ha)
+    convert sub_ne_zero.2 (Ne.symm ha) using 1
+    ring
   · simp only [Φ, hFeq b (right_mem_Icc.2 hab.le), hℓb]
-    ring_nf
-    exact sub_ne_zero.2 (Ne.symm hb)
+    convert sub_ne_zero.2 (Ne.symm hb) using 1
+    ring
 
 /-- **The fixed-point index on an interval.** Let `f : U → ℝ` be continuous on an open set
 `U ⊆ ℝ`, and let `a ≤ b` be points of `U` with `[a, b] ⊆ U` such that every fixed point of `f` lies
