@@ -90,10 +90,9 @@ theorem comp (hg : IsPrimitiveEmbedding M N g) (hf : IsPrimitiveEmbedding L M f)
 is its image viewed inside the target carrier. -/
 theorem isTorsionFree_quotient (hf : IsPrimitiveEmbedding L M f) :
     Module.IsTorsionFree ℤ
-      (M ⧸ (L.carrier.map (f.restrictScalars ℤ)).comap M.carrier.subtype) := by
-  apply Submodule.isTorsionFree_quotient_of_smul_mem
-  intro k y hk hy
-  exact hf.saturated y y.property k hk hy
+      (M ⧸ (L.carrier.map (f.restrictScalars ℤ)).comap M.carrier.subtype) :=
+  Submodule.isTorsionFree_quotient_iff.mpr fun k y hk hy ↦
+    hf.saturated y y.property k hk.ne_zero hy
 
 end IsPrimitiveEmbedding
 
@@ -125,10 +124,8 @@ theorem isPrimitiveEmbedding_iff_isTorsionFree_quotient (f : V →ₗ[ℚ] W)
     IsPrimitiveEmbedding L M f ↔ Module.IsTorsionFree ℤ
       (M ⧸ (L.carrier.map (f.restrictScalars ℤ)).comap M.carrier.subtype) := by
   refine ⟨fun hf ↦ hf.isTorsionFree_quotient, fun h ↦ ⟨hi, hB, hL, ?_⟩⟩
-  have := h
   intro y hy k hk hky
-  exact Submodule.mem_of_smul_mem_of_isTorsionFree_quotient
-    ((L.carrier.map (f.restrictScalars ℤ)).comap M.carrier.subtype) (z := ⟨y, hy⟩) hk hky
+  exact Submodule.isTorsionFree_quotient_iff.mp h k ⟨y, hy⟩ (.of_ne_zero hk) hky
 
 /-- The integral image of a form-preserving injection is saturated exactly when it has an
 integral-module complement. This does not assert an orthogonal splitting. -/

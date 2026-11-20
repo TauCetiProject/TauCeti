@@ -139,8 +139,8 @@ theorem exists_isCompl_range_fundamentalRankOneEmbedding (i : Fin t.rank) :
       IsCompl (t.fundamentalRankOneEmbedding ht i).range N := by
   have := Submodule.IsLattice.finite ℚ (t.fundamentalLattice ht i)
   exact (Submodule.exists_isCompl_iff_isTorsionFree_quotient _).mpr
-    ((t.fundamentalRankOneEmbedding ht i).range.isTorsionFree_quotient_of_smul_mem
-      (t.mem_range_fundamentalRankOneEmbedding_of_smul_mem ht i))
+    (Submodule.isTorsionFree_quotient_iff.mpr fun c z hc ↦
+      t.mem_range_fundamentalRankOneEmbedding_of_smul_mem ht i c z hc.ne_zero)
 
 /-- Integral coordinate functionals recover both coefficients of the standard rank-one string.
 In particular the embedding stays injective after extension to every coefficient ring. -/
