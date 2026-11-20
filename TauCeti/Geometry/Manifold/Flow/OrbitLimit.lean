@@ -13,9 +13,9 @@ public import TauCeti.Geometry.Manifold.LocallyEquiconnected
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorField.Regularity
 public import TauCeti.Topology.Compactness.Compact
-public import TauCeti.Topology.ContinuousMap.Ascoli
 public import TauCeti.Topology.Homotopy.Homotopic.With
 public import TauCeti.Topology.Homotopy.LocallyEquiconnected.MappingSpace
+import TauCeti.Topology.Separation.InvFunOn
 
 /-!
 # Limits of periodic orbits of converging vector fields
@@ -48,19 +48,19 @@ by a space of Hamiltonians.
 ## Implementation notes
 
 The pushforward `G (a, t, p) = d e_p (X a t p)` is continuous, hence bounded on the compact sets
-`{a n} ∪ {a₀} × [-T, T] × K`. So the loops `e ∘ γ n` are uniformly Lipschitz, and the Arzelà–Ascoli
-theorem for periodic loops (`TauCeti.exists_tendstoUniformly_subseq_of_periodic_of_modulus`)
-gives a subsequence converging uniformly to a periodic loop `y` in the closed set `e(K)`, so
-`y = e ∘ γ₀` for a continuous loop `γ₀` in `K`. The integral equations
+`{a n} ∪ {a₀} × [-T, T] × K`. So the loops `e ∘ γ n` have uniformly bounded velocities, and the
+Arzelà–Ascoli theorem for periodic loops
+(`TauCeti.exists_strictMono_tendstoUniformly_of_periodic_of_norm_deriv_le`) gives a subsequence
+converging uniformly to a periodic loop `y` in the closed set `e(K)`. The integral equations
 `e (γ n t) - e (γ n 0) = ∫₀ᵗ G (a n, τ, γ n τ) dτ` pass to the limit by dominated convergence,
-since the integrands converge pointwise (`TauCeti.hasDerivAt_of_tendsto_of_norm_le`). So `e ∘ γ₀`
-has derivative `d e (X a₀ t (γ₀ t))`, and
-since `d e` is injective, `γ₀` solves `X a₀`
-(`ContinuousAt.hasMFDerivAt_of_hasDerivAt_comp`).
+since the integrands converge pointwise (`TauCeti.hasDerivAt_of_tendsto_of_norm_le`). So `y` solves
+the pushforward of `X a₀` along `e`, and since `d e` is injective, `y = e ∘ γ₀` for a periodic
+solution `γ₀` of `X a₀` in `K` (`TauCeti.exists_mem_periodicSolutions_comp_eq`).
 
 For contractibility, the loops converge in the mapping space `C(ℝ ⧸ ℤ, M)`, measured through the
-closed embedding `e` of `K`. If `M` is locally equiconnected, so is this mapping space
-(`TauCeti.instLocallyEquiconnectedSpaceContinuousMap`), so the path component of the limit loop is
+closed embedding `e` of `K` (`IsCompact.tendsto_of_tendstoUniformly_comp`). If `M` is locally
+equiconnected, so is this mapping space (`TauCeti.instLocallyEquiconnectedSpaceContinuousMap`), so
+the path component of the limit loop is
 open, and the limit loop is joined to, hence homotopic to (`ContinuousMap.homotopic_iff_joined`),
 the contractible loops `γ n` for large `n`.
 
@@ -99,49 +99,6 @@ section Embedded
 variable [IsManifold I 1 M] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [FiniteDimensional ℝ F] {e : M → F}
 
-omit [IsManifold I 1 M] [FiniteDimensional ℝ F] in
-/-- **The Arzelà–Ascoli step.** Let `γ n` be continuous `1`-periodic loops in a compact set `K`,
-read through a continuous map `e` injective on `K`, such that the velocities `v n` of the loops
-`e ∘ γ n` are bounded on `[0, 1]` uniformly in `n`. Then a subsequence converges to a continuous
-`1`-periodic loop `x` in `K`: uniformly after applying `e`, and pointwise in `M`. -/
-private theorem exists_strictMono_tendstoUniformly_comp (he : Continuous e) {K : Set M}
-    (hK : IsCompact K) (he_inj : InjOn e K) (hper : ∀ n, Periodic (γ n) 1)
-    (hγc : ∀ n, Continuous (γ n)) (hγK : ∀ n t, γ n t ∈ K) {v : ℕ → ℝ → F}
-    (hv : ∀ n t, HasDerivAt (e ∘ γ n) (v n t) t) {B : ℝ}
-    (hB : ∀ n, ∀ t ∈ Icc (0 : ℝ) 1, ‖v n t‖ ≤ B) :
-    ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ ∃ x : ℝ → M, Continuous x ∧ Periodic x 1 ∧ (∀ t, x t ∈ K) ∧
-      TendstoUniformly (fun n t ↦ e (γ (ψ n) t)) (e ∘ x) atTop ∧
-      ∀ t, Tendsto (fun n ↦ γ (ψ n) t) atTop (𝓝 (x t)) := by
-  -- The loops `e ∘ γ n` are uniformly Lipschitz on `[0, 1]`.
-  have hmod : ∀ n, ∀ t₁ ∈ Icc (0 : ℝ) 1, ∀ t₂ ∈ Icc (0 : ℝ) 1, t₁ ≤ t₂ →
-      dist ((e ∘ γ n) t₂) ((e ∘ γ n) t₁) ≤ B * (t₂ - t₁) := by
-    intro n t₁ ht₁ t₂ ht₂ h₁₂
-    rw [dist_eq_norm]
-    exact norm_image_sub_le_of_norm_deriv_le_segment' (fun t _ ↦ (hv n t).hasDerivWithinAt)
-      (fun t ht ↦ hB n t ⟨ht₁.1.trans ht.1, ht.2.le.trans ht₂.2⟩) t₂ ⟨h₁₂, le_rfl⟩
-  have hρ : Tendsto (fun h : ℝ ↦ B * h) (𝓝 0) (𝓝 0) := by
-    have h : Continuous fun h : ℝ ↦ B * h := by fun_prop
-    simpa using h.tendsto 0
-  have hKe : IsCompact (e '' K) := hK.image he
-  obtain ⟨ψ, hψ, y, hyper, hyc, hconv⟩ := exists_tendstoUniformly_subseq_of_periodic_of_modulus hKe
-    (fun n ↦ he.comp (hγc n)) (fun n t ↦ by simp [hper n t])
-    (fun n t ↦ mem_image_of_mem e (hγK n t)) hρ hmod
-  -- The limit lies in the closed set `e(K)`, so it is read through `e` from a loop `x` in `K`.
-  have hyK (t : ℝ) : y t ∈ e '' K := hKe.isClosed.mem_of_tendsto (hconv.tendsto_at t)
-    (Eventually.of_forall fun n ↦ mem_image_of_mem e (hγK _ t))
-  choose x hxK hx using hyK
-  have hex : e ∘ x = y := funext hx
-  -- Inside `K`, convergence and continuity are measured by `e`.
-  have hlim (t : ℝ) : Tendsto (fun n ↦ γ (ψ n) t) atTop (𝓝 (x t)) :=
-    hK.tendsto_nhds_of_tendsto_comp he.continuousOn he_inj
-      (Eventually.of_forall fun n ↦ hγK _ t) (hxK t) (by rw [hx]; exact hconv.tendsto_at t)
-  have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦
-    hK.tendsto_nhds_of_tendsto_comp he.continuousOn he_inj (Eventually.of_forall hxK) (hxK t) <| by
-      rw [hex, hx]
-      exact hyc.continuousAt
-  exact ⟨ψ, hψ, x, hxc, fun t ↦ he_inj (hxK _) (hxK _) (by rw [hx, hx, hyper t]), hxK,
-    hex ▸ hconv, hlim⟩
-
 /-- **Periodic orbits of converging vector fields accumulate at a periodic orbit.** Let `X a` be a
 family of time-dependent vector fields on `M`, continuous in `(a, t, x)` as a map to the tangent
 bundle, let `a n → a₀`, and let `γ n` be `1`-periodic solutions of `X (a n)` with values in a
@@ -172,56 +129,39 @@ theorem exists_strictMono_mem_periodicSolutions_tendstoUniformly
       ((he.comp contMDiff_snd).mdifferentiableAt one_ne_zero)
     rw [deriv_const] at h
     exact h.congr_deriv (zero_add _)
+  -- By Arzelà–Ascoli, a subsequence of the `e ∘ γ n` converges uniformly to a loop `y` in `e(K)`.
   obtain ⟨B₁, hB₁⟩ := hbound 1
-  obtain ⟨ψ, hψ, x, hxc, hxper, hxK, hunif, hlim⟩ := exists_strictMono_tendstoUniformly_comp
-    he.continuous hK he_inj (fun n ↦ (mem_periodicSolutions.1 (hγ n)).2) hγc hγK hy
-    fun n t ht ↦ hB₁ n t ⟨by linarith [ht.1], ht.2⟩ _ (hγK n t)
-  -- The velocities converge pointwise and boundedly along the subsequence, so `e ∘ x` has
-  -- velocity `d e (X a₀ t (x t))`.
-  have hyd (t : ℝ) : HasDerivAt (e ∘ x) (G (a₀, t, x t)) t :=
+  obtain ⟨ψ, hψ, y, hyper, hyc, hconv⟩ :=
+    exists_strictMono_tendstoUniformly_of_periodic_of_norm_deriv_le (hK.image he.continuous)
+      (fun n t ↦ by simp [(mem_periodicSolutions.1 (hγ n)).2 t])
+      (fun n t ↦ mem_image_of_mem e (hγK n t)) hy
+      fun n t ht ↦ hB₁ n t ⟨by linarith [ht.1], ht.2⟩ _ (hγK n t)
+  have hyK (t : ℝ) : y t ∈ e '' K := (hK.image he.continuous).isClosed.mem_of_tendsto
+    (hconv.tendsto_at t) (Eventually.of_forall fun n ↦ mem_image_of_mem e (hγK _ t))
+  -- Read through `e`, the loops converge pointwise to the continuous loop `invFunOn e K ∘ y`.
+  have : Nonempty M := ⟨γ 0 0⟩
+  have hlim (t : ℝ) : Tendsto (fun n ↦ γ (ψ n) t) atTop (𝓝 (invFunOn e K (y t))) :=
+    hK.tendsto_nhds_of_tendsto_comp he.continuous.continuousOn he_inj
+      (Eventually.of_forall fun n ↦ hγK _ t) (invFunOn_mem (hyK t))
+      (by rw [comp_def, invFunOn_eq (hyK t)]; exact hconv.tendsto_at t)
+  have hinv : Continuous (invFunOn e K ∘ y) :=
+    (he.continuous.continuousOn.continuousOn_invFunOn_image_of_isCompact hK subset_rfl
+      he_inj (by simp)).comp_continuous hyc hyK
+  -- The velocities converge pointwise and boundedly, so `y` solves the pushforward `Y` of `X a₀`.
+  let Y : ℝ → F → F := fun t v ↦ G (a₀, t, invFunOn e K v)
+  have hyd (t : ℝ) : HasDerivAt y (Y t (y t)) t :=
     hasDerivAt_of_tendsto_of_norm_le (fun n ↦ hy (ψ n))
       (fun n ↦ hG.comp (continuous_const.prodMk (continuous_id.prodMk (hγc _))))
-      hunif.tendsto_at
+      hconv.tendsto_at
       (fun τ ↦ hG.continuousAt.tendsto.comp ((ha.comp hψ.tendsto_atTop).prodMk_nhds
         (tendsto_const_nhds.prodMk_nhds (hlim τ))))
       (fun T ↦ (hbound T).imp fun _ hB ↦ Eventually.of_forall fun n τ hτ ↦ hB _ τ hτ _ (hγK _ τ))
-      (hG.comp (continuous_const.prodMk (continuous_id.prodMk hxc))) t
-  -- Since `d e` is injective, `x` solves `X a₀`.
-  exact ⟨ψ, hψ, x, mem_periodicSolutions.2 ⟨fun t ↦
-    hxc.continuousAt.hasMFDerivAt_of_hasDerivAt_comp (hde _ (hxK t)) (hyd t), hxper⟩, hxK, hunif,
-    hlim⟩
-
-omit [IsManifold I 1 M] [NormedSpace ℝ F] [FiniteDimensional ℝ F] in
-/-- Loops of the circle `ℝ ⧸ ℤ` in a compact set `K` converge in the compact-open topology as soon
-as they converge uniformly after applying a continuous map `e` injective on `K`. -/
-private theorem tendsto_of_tendstoUniformly_comp (he : Continuous e) {K : Set M} (hK : IsCompact K)
-    (he_inj : InjOn e K) {g : ℕ → C(AddCircle (1 : ℝ), M)} {g₀ : C(AddCircle (1 : ℝ), M)}
-    {δ : ℕ → ℝ → M} {δ₀ : ℝ → M} (hg : ∀ n (t : ℝ), g n t = δ n t) (hg₀ : ∀ t : ℝ, g₀ t = δ₀ t)
-    (hδK : ∀ n t, δ n t ∈ K) (hδ₀K : ∀ t, δ₀ t ∈ K)
-    (hunif : TendstoUniformly (fun n t ↦ e (δ n t)) (e ∘ δ₀) atTop) :
-    Tendsto g atTop (𝓝 g₀) := by
-  have hmemK (c : C(AddCircle (1 : ℝ), M)) {δ : ℝ → M} (hc : ∀ t : ℝ, c t = δ t)
-      (hδ : ∀ t, δ t ∈ K) (z : AddCircle (1 : ℝ)) : c z ∈ K := by
-    obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective z
-    exact hc t ▸ hδ t
-  -- As maps of the circle into `K`, the loops converge, measured by the closed embedding `e` of
-  -- `K`.
-  let k : ℕ → C(AddCircle (1 : ℝ), K) := fun n ↦
-    ⟨fun z ↦ ⟨g n z, hmemK _ (hg n) (hδK n) z⟩, (map_continuous (g n)).codRestrict _⟩
-  let k₀ : C(AddCircle (1 : ℝ), K) :=
-    ⟨fun z ↦ ⟨g₀ z, hmemK _ hg₀ hδ₀K z⟩, (map_continuous g₀).codRestrict _⟩
-  have hemb := hK.isClosedEmbedding_domRestrict he.continuousOn he_inj
-  let eK : C(K, F) := ⟨K.domRestrict e, hemb.continuous⟩
-  have hk : Tendsto k atTop (𝓝 k₀) := by
-    refine (ContinuousMap.isEmbedding_postcomp eK hemb.isEmbedding).tendsto_nhds_iff.2 ?_
-    refine ContinuousMap.tendsto_iff_tendstoUniformly.2 fun u hu ↦ ?_
-    filter_upwards [hunif u hu] with n hn z
-    obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective z
-    convert hn t using 2
-    · exact congrArg e (hg₀ t)
-    · exact congrArg e (hg n t)
-  let val : C(K, M) := ⟨Subtype.val, continuous_subtype_val⟩
-  exact ((ContinuousMap.continuous_postcomp val).tendsto k₀).comp hk
+      (hG.comp (continuous_const.prodMk (continuous_id.prodMk hinv))) t
+  -- Since `d e` is injective, `y` is read through `e` from a periodic solution of `X a₀` in `K`.
+  obtain ⟨x, hx, hxK, rfl⟩ := exists_mem_periodicSolutions_comp_eq (X := X a₀) hK he_inj
+    hde (fun t p hp ↦ congrArg (fun q ↦ G (a₀, t, q)) (he_inj.leftInvOn_invFunOn hp)) hyper hyd hyK
+  refine ⟨ψ, hψ, x, hx, hxK, hconv, fun t ↦ ?_⟩
+  simpa only [comp_apply, he_inj.leftInvOn_invFunOn (hxK t)] using hlim t
 
 /-- **Contractible periodic orbits of converging vector fields accumulate at a contractible
 periodic orbit.** Under the hypotheses of
@@ -250,9 +190,14 @@ theorem exists_strictMono_mem_contractiblePeriodicSolutions_tendstoUniformly
       simpa [comp_def] using continuous_of_mem_periodicSolutions hγ₀⟩
   have hg₀ (t : ℝ) : g₀ t = γ₀ t := hper.lift_coe t
   refine ⟨g₀, ?_, hg₀⟩
+  -- On the circle, the loops lie in `K` and converge uniformly after applying `e`, so they converge
+  -- in the mapping space.
   have hconv : Tendsto (fun n ↦ g (ψ n)) atTop (𝓝 g₀) :=
-    tendsto_of_tendstoUniformly_comp he.continuous hK he_inj (fun n ↦ hgγ (ψ n)) hg₀
-      (fun n ↦ hγK (ψ n)) hγ₀K hunif
+    hK.tendsto_of_tendstoUniformly_comp he.continuous.continuousOn he_inj
+      (fun n ↦ QuotientAddGroup.mk_surjective.forall.2 fun t ↦ by rw [hgγ]; exact hγK _ t)
+      (QuotientAddGroup.mk_surjective.forall.2 fun t ↦ by rw [hg₀]; exact hγ₀K t)
+      fun u hu ↦ (hunif u hu).mono fun n hn ↦
+        QuotientAddGroup.mk_surjective.forall.2 fun t ↦ by simpa [hg₀, hgγ] using hn t
   -- The mapping space is locally path-connected, so the path component of the limit is open and
   -- contains the contractible loops `g (ψ n)` for large `n`.
   obtain ⟨n, hn⟩ := (hconv.eventually
