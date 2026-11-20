@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.DirichletProblem
+import TauCeti.Topology.Algebra.Module.ClosedSubmodule
 import TauCeti.Topology.Instances.Matrix
 
 /-!
@@ -254,8 +255,8 @@ theorem tendsto_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq {α : Type*} 
     simpa only [Submodule.norm_coe] using abs_energyFormH1_sub_energyFormH1_le hcoeff
       (hcoeff' i) (hLam i) (ha i) (hb i) (hc i) (u' i) (w : W1p mu Omega 2)
   have h := norm_sub_le_of_sub_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq hcoeff hC hlower
-    hN0 hN (mul_nonneg hδ (norm_nonneg _)) hD (sub_sub_sub_mem_w1p0Submodule hug (hug' i)) hu
-    (hu' i)
+    hN0 hN (mul_nonneg hδ (norm_nonneg _)) hD (sub_sub_sub_comm u g _ _ ▸ sub_mem hug (hug' i))
+    hu (hu' i)
   rw [← sub_le_iff_le_add', le_div_iff₀ hC] at h
   -- Absorb `δ ‖u' i‖ ≤ δ ‖u‖ + δ ‖u - u' i‖ ≤ δ ‖u‖ + (C / 2) ‖u - u' i‖` into the left side.
   have h₁ := mul_le_mul_of_nonneg_left (norm_le_norm_add_norm_sub u (u' i)) hδ

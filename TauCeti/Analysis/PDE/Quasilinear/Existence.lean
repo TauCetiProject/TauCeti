@@ -14,6 +14,7 @@ import TauCeti.Analysis.Convex.SchauderFixedPoint
 import TauCeti.Analysis.PDE.DirichletProblem.ContinuousDependence
 import TauCeti.Analysis.Sobolev.RellichKondrachov
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
+import TauCeti.Topology.Algebra.Module.ClosedSubmodule
 import TauCeti.Topology.Instances.Matrix
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
@@ -348,7 +349,7 @@ private theorem tendsto_frozenSolution_of_tendsto_ae
     (fun k => (ae_restrict_mem Omega.isOpen.measurableSet).mono fun x hx =>
       abs_dotProduct_sub_mulVec_le (UniformlyEllipticOn.apply_of_forall hA _)
         (UniformlyEllipticOn.apply_of_forall (hAn k) _) hx) ?_ hspec.2 (fun k => (hspec' k).2)
-    fun k => by simpa using sub_sub_sub_mem_w1p0Submodule (hspec' k).1 hspec.1
+    fun k => by simpa using sub_mem (hspec' k).1 hspec.1
   filter_upwards [hlim, hAlim, hAc] with x hx hlu hcx
   exact hlu.tendsto_comp hcx.continuousAt hx
 
@@ -506,7 +507,7 @@ private theorem norm_sub_le_of_forall_energyFormH1_comp_eq_of_forall_energyFormH
         (lam / (2 * ((2 * R) ^ 2 + 1))) :=
       norm_sub_le_of_sub_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq hcoeff (by positivity)
         (mul_norm_sq_le_energyFormH1_comp hA hAm hAc hball hv) (by positivity) hN le_rfl hD
-        (sub_sub_sub_mem_w1p0Submodule hug hug') hu hu'
+        (sub_sub_sub_comm u g _ _ ▸ sub_mem hug hug') hu hu'
     _ = ‖g - g'‖ + 2 * ((2 * R) ^ 2 + 1) * (‖ℓ - ℓ'‖ + Lam * ‖g - g'‖) / lam := by
       simp only [add_zero, div_div_eq_mul_div]
       ring
