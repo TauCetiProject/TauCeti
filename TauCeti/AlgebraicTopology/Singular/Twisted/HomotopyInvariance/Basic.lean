@@ -10,6 +10,7 @@ public import Mathlib.Topology.Homotopy.TopCat.ToSSet
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homotopy
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Basic
 public import TauCeti.CategoryTheory.EqToHom
+import TauCeti.CategoryTheory.EpiMono
 import TauCeti.Topology.UnitInterval.Contractible
 
 /-!
@@ -358,22 +359,18 @@ theorem isIso_twistedHomologyMap (e : X ≃ₕ Y)
     IsIso (twistedHomologyMap (TopCat.ofHom e.toFun) L k) := by
   let f := TopCat.ofHom e.toFun
   let g := TopCat.ofHom e.invFun
-  -- `g ≫ f ≃ 𝟙` makes the map of `g` on `H_k(-; f⁎L)` a split monomorphism, and `f ≫ g ≃ 𝟙` makes
-  -- it a split epimorphism. So it is an isomorphism, and then so is the map of `f`.
+  -- `f ≫ g ≃ 𝟙` and `g ≫ f ≃ 𝟙` make the composites of the map of `g` on `H_k(-; f⁎L)` with the
+  -- maps of `f` on either side isomorphisms. So it is an isomorphism, and then so is the map
+  -- of `f`.
   have h₁ := TopCat.Homotopy.isIso_twistedHomologyMap_comp (a := g) (b := f) e.right_inv.some L k
   have h₂ := TopCat.Homotopy.isIso_twistedHomologyMap_comp (a := f) (b := g) e.left_inv.some
     ((pullback f.hom).obj L) k
-  rw [← Category.assoc] at h₁ h₂
-  have : Mono (twistedHomologyMap g ((pullback f.hom).obj L) k) :=
-    (mono_comp_iff_of_isIso
-      (twistedHomologyCoefficientMap ((pullbackCompIso g.hom f.hom).hom.app L) k) _).1
-        (mono_of_mono _ (twistedHomologyMap f L k))
-  -- The instance arguments are passed explicitly: searching for `Epi` and `IsIso` of these
-  -- composites from the local hypotheses runs out of time.
-  have : Epi (twistedHomologyMap g ((pullback f.hom).obj L) k) :=
-    @epi_of_epi _ _ _ _ _ _ _ (@IsIso.epi_of_iso _ _ _ _ _ h₂)
-  have := isIso_of_mono_of_epi (twistedHomologyMap g ((pullback f.hom).obj L) k)
-  exact @IsIso.of_isIso_comp_left _ _ _ _ _ _ (twistedHomologyMap f L k) (by infer_instance) h₁
+  rw [← Category.assoc] at h₂
+  have h₃ : IsIso (twistedHomologyMap g ((pullback f.hom).obj L) k ≫ twistedHomologyMap f L k) :=
+    IsIso.of_isIso_comp_left
+      (twistedHomologyCoefficientMap ((pullbackCompIso g.hom f.hom).hom.app L) k) _
+  have := IsIso.of_isIso_comp_of_isIso_comp h₂ h₃
+  exact IsIso.of_isIso_comp_left (twistedHomologyMap g ((pullback f.hom).obj L) k) _
 
 /-- The isomorphism `H_k(X; e⁎L) ≅ H_k(Y; L)` on singular homology with local coefficients induced
 by a homotopy equivalence `e : X ≃ₕ Y`. -/
