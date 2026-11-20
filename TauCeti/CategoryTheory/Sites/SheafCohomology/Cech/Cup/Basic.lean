@@ -159,22 +159,38 @@ theorem map_cechFace {l m n : ℕ} (k : Fin (n + 1) → ι) (τ : Fin (m + 1) �
   rw [cechFace_apply, cechFace_apply, ← AlgCat.comp_apply, ← F.map_comp, ← op_comp]
   exact congrArg (fun g ↦ (F.map g.op).hom (cechComponent (k ∘ τ ∘ σ) c)) this
 
-/-- The factors of the Čech differential: the factor of `d c` indexed by `k : Fin (n + 2) → ι` is
-the alternating sum of the restrictions of `c` along the coface maps `m.succAbove`. -/
-theorem cechComponent_d {n : ℕ} (k : Fin (n + 2) → ι) (c : (cechAlgebraComplex U F).X n) :
-    cechComponent k (((cechAlgebraComplex U F).d n (n + 1)).hom c) =
-      ∑ m : Fin (n + 2), (-1 : ℤ) ^ (m : ℕ) • cechFace k m.succAbove c := by
-  have h := congrArg (fun f ↦ f.hom c)
-    (cechComplexFunctor_obj_d_comp_π U (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) n k)
-  -- `h` is stated for a general preadditive category; `erw` reads its composites and sums of
-  -- morphisms as those of `ModuleCat`
+/-- Reading a factor formula of a map of Čech complexes on cochains: if the factor indexed by `k` of
+a map `f` is the combination `∑ i ∈ s, z i • (π_(k ∘ σ i) ≫ F(σ i))` of projections followed by
+restrictions along maps `σ i` of vertices, then the factor indexed by `k` of `f c` is the same
+combination `∑ i ∈ s, z i • cechFace k (σ i) c` of restrictions of `c`. This turns the factor
+formulas of maps of Čech complexes, proved in a general preadditive category, into formulas for
+algebra-valued cochains. -/
+theorem cechComponent_eq_sum_of_comp_π_eq {κ : Type*} {m n : ℕ}
+    {f : (cechAlgebraComplex U F).X m ⟶ (cechAlgebraComplex U F).X n} {k : Fin (n + 1) → ι}
+    {s : Finset κ} {z : κ → ℤ} {σ : κ → Fin (m + 1) → Fin (n + 1)}
+    (h : f ≫ Pi.π _ k = ∑ i ∈ s, z i • (Pi.π _ (k ∘ σ i) ≫
+      (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)).map
+        (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (σ i x)).op))
+    (c : (cechAlgebraComplex U F).X m) :
+    cechComponent k (f.hom c) = ∑ i ∈ s, z i • cechFace k (σ i) c := by
+  have h := congrArg (fun g ↦ g.hom c) h
+  -- `h` is stated for a general preadditive category; `erw` reads its composites, sums and integer
+  -- multiples of morphisms as those of `ModuleCat`
   erw [ModuleCat.hom_comp, ModuleCat.hom_sum, LinearMap.sum_apply] at h
-  refine h.trans (Finset.sum_congr rfl fun m _ ↦ ?_)
+  refine h.trans (Finset.sum_congr rfl fun i _ ↦ ?_)
   erw [ModuleCat.hom_zsmul, LinearMap.smul_apply, ModuleCat.hom_comp]
   rw [Functor.comp_map, AlgCat.forget₂_module_map]
   -- `ModuleCat.ofHom` and `ModuleCat.Hom.hom` cancel, and the factors of the Čech complex are
   -- indexed by the products `∏ᶜ fun j ↦ U (a j)`
   rfl
+
+/-- The factors of the Čech differential: the factor of `d c` indexed by `k : Fin (n + 2) → ι` is
+the alternating sum of the restrictions of `c` along the coface maps `m.succAbove`. -/
+theorem cechComponent_d {n : ℕ} (k : Fin (n + 2) → ι) (c : (cechAlgebraComplex U F).X n) :
+    cechComponent k (((cechAlgebraComplex U F).d n (n + 1)).hom c) =
+      ∑ m : Fin (n + 2), (-1 : ℤ) ^ (m : ℕ) • cechFace k m.succAbove c :=
+  cechComponent_eq_sum_of_comp_π_eq
+    (cechComplexFunctor_obj_d_comp_π U (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) n k) c
 
 /-- The restrictions of the Čech differential of a cochain are alternating sums of restrictions of
 the cochain. -/
@@ -250,7 +266,7 @@ theorem cechFace_cechComplexFunctor_map {G : Cᵒᵖ ⥤ AlgCat.{w} R} (α : F �
 end Maps
 
 /-- Restrictions along maps of vertices with the same values agree. -/
-private lemma cechFace_eq_of_val {m n : ℕ} {k : Fin (n + 1) → ι} {σ σ' : Fin (m + 1) → Fin (n + 1)}
+lemma cechFace_eq_of_val {m n : ℕ} {k : Fin (n + 1) → ι} {σ σ' : Fin (m + 1) → Fin (n + 1)}
     (c : (cechAlgebraComplex U F).X m) (h : ∀ i, (σ i : ℕ) = σ' i) :
     cechFace k σ c = cechFace k σ' c := by
   rw [show σ = σ' from funext fun i ↦ Fin.ext (h i)]
