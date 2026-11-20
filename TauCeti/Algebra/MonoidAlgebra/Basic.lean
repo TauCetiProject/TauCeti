@@ -43,6 +43,8 @@ none of the further theory built on it.
 * `MonoidAlgebra.single_mem_nonZeroDivisors` and `MonoidAlgebra.mrange_of_le_nonZeroDivisors`:
   for a cancellative monoid `M`, monomials with non-zero-divisor coefficients (in particular
   coefficient-one monomials) are non-zero-divisors in `R[M]`.
+* `MonoidAlgebra.addSubgroupClosure_range_of`: the basis monomials generate `ℤ[M]` as an additive
+  group.
 * `MonoidAlgebra.singleOneUnit`: in a group algebra, `single g 1` as a unit with inverse
   `single g⁻¹ 1`, and `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by it
   conjugates the indices of the coefficients.
@@ -279,6 +281,19 @@ omit [CommSemiring R] in
 theorem coeff_single_mul_mul_single_inv [Semiring R] (g h : G) (x : MonoidAlgebra R G) :
     (single g (1 : R) * x * single g⁻¹ 1).coeff h = x.coeff (g⁻¹ * h * g) := by
   simp [mul_assoc]
+
+/-- The basis monomials `of ℤ M m` generate the integral monoid algebra `ℤ[M]` as an additive
+group. -/
+theorem addSubgroupClosure_range_of {M : Type*} [MulOneClass M] :
+    AddSubgroup.closure (Set.range (of ℤ M)) = ⊤ := by
+  refine (AddSubgroup.eq_top_iff' _).2 fun x => ?_
+  induction x using MonoidAlgebra.induction_linear with
+  | zero => exact zero_mem _
+  | add x y hx hy => exact add_mem hx hy
+  | single m c =>
+    have h : single m c = c • of ℤ M m := by rw [of_apply, smul_single, smul_eq_mul, mul_one]
+    rw [h]
+    exact zsmul_mem (AddSubgroup.subset_closure (Set.mem_range_self m)) c
 
 end MonoidAlgebra
 
