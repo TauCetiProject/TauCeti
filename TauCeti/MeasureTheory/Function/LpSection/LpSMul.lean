@@ -85,11 +85,13 @@ variable [∀ x, NormedAddCommGroup (E x)] [∀ x, NormedSpace 𝕜 (E x)] [Fibe
 
 variable (φ ψ : Lp 𝕜 ∞ μ) (f g : LpSection 𝕜 F E p μ)
 
-/-- The pointwise product of an essentially bounded function and an `Lᵖ` section has
-`p`-integrable fibre norm. -/
-theorem memLp_norm_lpSMul : MemLp (fun x ↦ ‖φ x • f x‖) p μ :=
-  (f.memLp_norm.const_mul ‖φ‖).of_le
-    (((Lp.aestronglyMeasurable φ).norm.mul f.aestronglyMeasurable_norm).congr
+omit [TopologicalSpace B] [OpensMeasurableSpace B] [SecondCountableTopology B] in
+/-- The pointwise product of an essentially bounded function and a section with `p`-integrable
+fibre norm has `p`-integrable fibre norm. -/
+theorem memLp_norm_lpSMul {s : ∀ x, E x} (hsp : MemLp (fun x ↦ ‖s x‖) p μ) :
+    MemLp (fun x ↦ ‖φ x • s x‖) p μ :=
+  (hsp.const_mul ‖φ‖).of_le
+    (((Lp.aestronglyMeasurable φ).norm.mul hsp.aestronglyMeasurable).congr
       (.of_forall fun x ↦ (norm_smul _ _).symm))
     ((Lp.ae_norm_le_norm_top φ).mono fun x hx ↦ by
       rw [norm_norm, norm_smul, Real.norm_of_nonneg (by positivity)]
@@ -100,12 +102,15 @@ section `f` pointwise: `(φ • f) x = φ x • f x` almost everywhere
 (`TauCeti.LpSection.coeFn_lpSMul`). -/
 instance : SMul (Lp 𝕜 ∞ μ) (LpSection 𝕜 F E p μ) where
   smul φ f := mk (fun x ↦ φ x • f x)
-    (f.aestronglyMeasurableSection.smul (Lp.aestronglyMeasurable φ)) (memLp_norm_lpSMul φ f)
+    (f.aestronglyMeasurableSection.smul (Lp.aestronglyMeasurable φ))
+    (memLp_norm_lpSMul φ f.memLp_norm)
 
-theorem lpSMul_def :
-    φ • f = mk (fun x ↦ φ x • f x)
-      (f.aestronglyMeasurableSection.smul (Lp.aestronglyMeasurable φ)) (memLp_norm_lpSMul φ f) :=
-  rfl
+@[simp]
+theorem mk_lpSMul {s : ∀ x, E x} (hs : AEStronglyMeasurableSection 𝕜 F μ s)
+    (hsp : MemLp (fun x ↦ ‖s x‖) p μ) :
+    φ • mk s hs hsp =
+      mk (fun x ↦ φ x • s x) (hs.smul (Lp.aestronglyMeasurable φ)) (memLp_norm_lpSMul φ hsp) :=
+  mk_eq_mk_iff.2 ((coeFn_mk hs hsp).mono fun x hx ↦ by rw [hx])
 
 theorem coeFn_lpSMul : ∀ᵐ x ∂μ, (φ • f) x = φ x • f x :=
   coeFn_mk _ _
