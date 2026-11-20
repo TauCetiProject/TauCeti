@@ -175,7 +175,7 @@ private theorem integral_indicator (s : Set X) :
 private theorem integral_nonneg {f : X →ᵇ ℝ} (hf : 0 ≤ f) : 0 ≤ integral ν f := by
   have h₁ : integral ν 1 = ν univ := by
     simpa using integral_indicator hν univ
-  refine LinearMap.apply_nonneg_of_abs_apply_le_mul_norm (integral ν) (fun g => ?_)
+  refine LinearMapClass.apply_nonneg_of_abs_apply_le_mul_norm (integral ν) (fun g => ?_)
     (BoundedContinuousFunction.norm_norm_smul_one_sub_le_of_nonneg hf)
   rw [h₁, ← Real.norm_eq_abs]
   exact norm_integral_apply_le hν g

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Module.PositiveLinearMap
 public import Mathlib.Analysis.Normed.Operator.Basic
+import TauCeti.Algebra.Order.Ring.Abs
 
 /-!
 # Positive linear functionals dominated by a unit
@@ -26,68 +27,58 @@ space of bounded functions, has operator norm one.
 
 The lemmas are stated for any type of positive linear maps, in the sense of `LinearMapClass` and
 `OrderHomClass`, following the convention of `Mathlib.Algebra.Order.Module.PositiveLinearMap`.
-No continuity is assumed. Compare `PositiveLinearMap.exists_norm_apply_le`, the corresponding
+The basic bound `abs_apply_le_mul_norm` takes the order preservation as an explicit hypothesis
+instead, so that it also covers monotone functionals on a preordered space. No continuity is
+assumed. Compare `PositiveLinearMap.exists_norm_apply_le`, the corresponding
 automatic continuity for positive maps between C⋆-algebras.
 
 ## Main results
 
-* `PositiveLinearMap.abs_apply_le_mul_norm`: the bound `|φ f| ≤ φ u * ‖f‖`.
+* `PositiveLinearMap.abs_apply_le_mul_norm`: the bound `|φ f| ≤ φ u * ‖f‖` for an
+  order-preserving linear functional `φ`.
 * `PositiveLinearMap.lipschitzWith_of_forall_le_norm_smul`: `φ` is `φ u`-Lipschitz.
 * `ContinuousLinearMap.opNorm_eq_apply_of_monotone`: a monotone continuous linear functional has
   operator norm `ψ u` when `‖u‖ ≤ 1`.
-* `LinearMap.apply_nonneg_of_abs_apply_le_mul_norm`: conversely, a linear functional with
+* `LinearMapClass.apply_nonneg_of_abs_apply_le_mul_norm`: conversely, a linear functional with
   `|ψ f| ≤ ψ u * ‖f‖` is nonnegative at every `f` with `‖‖f‖ • u - f‖ ≤ ‖f‖`.
 -/
 
 public section
 
 open scoped NNReal
-
-/-- A real number `a` with `|a| ≤ a * b` for some `b ≥ 0` is nonnegative. -/
-private theorem nonneg_of_abs_le_mul {a b : ℝ} (h : |a| ≤ a * b) (hb : 0 ≤ b) : 0 ≤ a := by
-  nlinarith [neg_abs_le a]
+open TauCeti (nonneg_of_abs_le_mul)
 
 namespace PositiveLinearMap
 
 variable {F E : Type*} [SeminormedAddCommGroup E] [Module ℝ E] [LE E]
   [FunLike F E ℝ] [LinearMapClass F ℝ E ℝ] {u : E}
 
-/-- The bound of `abs_apply_le_mul_norm` for a linear functional with an explicit
-order-preservation hypothesis, so that it also applies to monotone maps on a preordered space,
-which do not bundle into `E →ₚ[ℝ] ℝ`. -/
-private theorem abs_apply_le_mul_norm_of_map_rel (φ : F)
-    (hφ : ∀ ⦃f g : E⦄, f ≤ g → φ f ≤ φ g) (hu : ∀ f : E, f ≤ ‖f‖ • u) (f : E) :
-    |φ f| ≤ φ u * ‖f‖ := by
+/-- An order-preserving linear functional is controlled in absolute value by its value at a
+dominating element `u`, scaled by the norm. Order preservation is an explicit hypothesis, so this
+also applies to monotone functionals on a preordered space, which do not bundle into
+`E →ₚ[ℝ] ℝ`; for a positive linear map `φ`, pass `fun _ _ => map_rel φ`. -/
+theorem abs_apply_le_mul_norm (φ : F) (hφ : ∀ ⦃f g : E⦄, f ≤ g → φ f ≤ φ g)
+    (hu : ∀ f : E, f ≤ ‖f‖ • u) (f : E) : |φ f| ≤ φ u * ‖f‖ := by
   have h (f : E) : φ f ≤ φ u * ‖f‖ := by simpa [mul_comm] using hφ (hu f)
   exact abs_le'.2 ⟨h f, by simpa using h (-f)⟩
 
 variable [OrderHomClass F E ℝ] (φ : F)
 
-/-- A positive linear functional is controlled in absolute value by its value at a dominating
-element `u`, scaled by the norm. -/
-theorem abs_apply_le_mul_norm (hu : ∀ f : E, f ≤ ‖f‖ • u) (f : E) : |φ f| ≤ φ u * ‖f‖ :=
-  abs_apply_le_mul_norm_of_map_rel φ (fun _ _ => map_rel φ) hu f
-
-/-- A positive linear functional is bounded above by its value at a dominating element `u`, scaled
-by the norm. -/
-theorem apply_le_mul_norm (hu : ∀ f : E, f ≤ ‖f‖ • u) (f : E) : φ f ≤ φ u * ‖f‖ :=
-  (le_abs_self _).trans (abs_apply_le_mul_norm φ hu f)
-
 /-- A positive linear functional is nonnegative at a dominating element `u`. -/
 theorem apply_nonneg_of_forall_le_norm_smul (hu : ∀ f : E, f ≤ ‖f‖ • u) : 0 ≤ φ u :=
-  nonneg_of_abs_le_mul (abs_apply_le_mul_norm φ hu u) (norm_nonneg u)
+  nonneg_of_abs_le_mul (abs_apply_le_mul_norm φ (fun _ _ => map_rel φ) hu u) (norm_nonneg u)
 
 /-- A positive linear functional is controlled by its value at a dominating element `u`, scaled by
 the norm of the difference of the arguments. -/
 theorem abs_apply_sub_apply_le_mul_norm (hu : ∀ f : E, f ≤ ‖f‖ • u) (f g : E) :
     |φ f - φ g| ≤ φ u * ‖f - g‖ := by
-  simpa using abs_apply_le_mul_norm φ hu (f - g)
+  simpa using abs_apply_le_mul_norm φ (fun _ _ => map_rel φ) hu (f - g)
 
 /-- A positive linear functional is Lipschitz, with constant its value at a dominating
 element `u`. -/
 theorem lipschitzWith_of_forall_le_norm_smul (hu : ∀ f : E, f ≤ ‖f‖ • u) :
     LipschitzWith (φ u).toNNReal φ :=
-  AddMonoidHomClass.lipschitz_of_bound φ _ fun f => abs_apply_le_mul_norm φ hu f
+  AddMonoidHomClass.lipschitz_of_bound φ _ (abs_apply_le_mul_norm φ (fun _ _ => map_rel φ) hu)
 
 /-- A positive linear functional is continuous as soon as some element `u` dominates every `f`
 in the sense `f ≤ ‖f‖ • u`. -/
@@ -104,14 +95,14 @@ variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [Preorder E]
 `u` of norm at most one dominating every `f` in the sense `f ≤ ‖f‖ • u`. -/
 theorem opNorm_eq_apply_of_monotone (ψ : E →L[ℝ] ℝ) (hψ : Monotone ψ)
     (hu : ∀ f : E, f ≤ ‖f‖ • u) (hu₁ : ‖u‖ ≤ 1) : ‖ψ‖ = ψ u := by
-  have h := PositiveLinearMap.abs_apply_le_mul_norm_of_map_rel ψ hψ hu
+  have h := PositiveLinearMap.abs_apply_le_mul_norm ψ hψ hu
   refine le_antisymm (ψ.opNorm_le_bound (nonneg_of_abs_le_mul (h u) (norm_nonneg u)) ?_) ?_
   · simpa only [Real.norm_eq_abs] using h
   · exact (Real.le_norm_self _).trans (ψ.unit_le_opNorm u hu₁)
 
 end ContinuousLinearMap
 
-namespace LinearMap
+namespace LinearMapClass
 
 variable {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E] {u : E}
 
@@ -126,4 +117,4 @@ theorem apply_nonneg_of_abs_apply_le_mul_norm {F : Type*} [FunLike F E ℝ]
   rw [map_sub, map_smul, smul_eq_mul] at this
   nlinarith [mul_le_mul_of_nonneg_left hf hu]
 
-end LinearMap
+end LinearMapClass
