@@ -10,9 +10,12 @@ public import Mathlib.RingTheory.PowerSeries.Basic
 /-!
 # Complements on power series
 
+This file records basic lemmas on univariate formal power series `R⟦X⟧` missing from
+`Mathlib.RingTheory.PowerSeries.Basic`.
+
 Mathlib's `PowerSeries.constantCoeff` is the constant coefficient `S⟦X⟧ → S` as a ring
-homomorphism. This file records it as a homomorphism of `A`-algebras for any commutative semiring
-`A` over which `S` is an algebra: evaluation at `X = 0`.
+homomorphism. This file also records it as a homomorphism of `A`-algebras for any commutative
+semiring `A` over which `S` is an algebra: evaluation at `X = 0`.
 
 ## Main definitions
 
@@ -20,6 +23,8 @@ homomorphism. This file records it as a homomorphism of `A`-algebras for any com
 
 ## Main results
 
+* `PowerSeries.constantCoeff_map`: the constant coefficient of `PowerSeries.map f p` is
+  `f (constantCoeff p)`.
 * `PowerSeries.constantCoeffAlgHom_comp_toAlgHom`: evaluation at `X = 0` is a retraction of the
   inclusion of constants.
 -/
@@ -29,6 +34,18 @@ public section
 open scoped PowerSeries
 
 namespace PowerSeries
+
+section Map
+
+variable {R S : Type*} [Semiring R] [Semiring S]
+
+/-- The constant coefficient of `PowerSeries.map f p` is `f (constantCoeff p)`. -/
+@[simp]
+theorem constantCoeff_map (f : R →+* S) (p : R⟦X⟧) :
+    constantCoeff (map f p) = f (constantCoeff p) :=
+  MvPowerSeries.constantCoeff_map f p
+
+end Map
 
 section ConstantCoeff
 
