@@ -111,11 +111,19 @@ theorem constVectorField_apply (v z : E) :
   (rfl)
 
 omit [FiniteDimensional ℝ E] in
+/-- The section `z ↦ ⟨z, v⟩` of the tangent bundle of the model space with constant value `v` is
+smooth. This is `contMDiff_constVectorField` stated for the bare pair, for use where the body of
+`constVectorField` is not exposed. -/
+theorem contMDiff_tangentBundle_mk_const (v : E) {n : WithTop ℕ∞} :
+    ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent n (fun z ↦ (⟨z, v⟩ : TangentBundle 𝓘(ℝ, E) E)) :=
+  contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
+
+omit [FiniteDimensional ℝ E] in
 /-- The constant vector field is smooth. -/
 theorem contMDiff_constVectorField (v : E) {n : WithTop ℕ∞} :
     ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent n
       (fun z ↦ (⟨z, constVectorField v z⟩ : TangentBundle 𝓘(ℝ, E) E)) :=
-  contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
+  contMDiff_tangentBundle_mk_const v
 
 variable (E) in
 /-- The constant vector field with value `v` in the preferred chart at `p`, pulled back to the

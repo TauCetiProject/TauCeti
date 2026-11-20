@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
+import TauCeti.Geometry.Manifold.VectorField.ModelChart
 import TauCeti.Geometry.Manifold.VectorField.Prod
 import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
@@ -63,13 +64,6 @@ variable {E H M F P : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup P] [NormedSpace ℝ P]
 
-/-- A constant vector field on the parameter space `P` is differentiable. It is stated for the
-bare pair `⟨q, c⟩`, which the frames below use, rather than for `TauCeti.constVectorField`, whose
-body is not exposed and so does not unify with it. -/
-private theorem mdifferentiableAt_const_tangent (c p : P) :
-    MDifferentiableAt 𝓘(ℝ, P) 𝓘(ℝ, P).tangent (fun q ↦ (⟨q, c⟩ : TangentBundle 𝓘(ℝ, P) P)) p :=
-  (contMDiff_vectorSpace_iff_contDiff.2 contDiff_const).mdifferentiableAt one_ne_zero
-
 /-- The coefficients of a smooth form on `P × M` along the slice `q ↦ (q, x)`, against fixed
 tangent vectors of `P × M`, are differentiable in the parameter. -/
 theorem differentiableAt_apply_prodMk [IsManifold I 1 M] {k : ℕ}
@@ -82,7 +76,7 @@ theorem differentiableAt_apply_prodMk [IsManifold I 1 M] {k : ℕ}
   have hW (i : Fin k) : MDifferentiableAt (𝓘(ℝ, P).prod I) (𝓘(ℝ, P).prod I).tangent
       (fun z ↦ (W i z : TangentBundle (𝓘(ℝ, P).prod I) (P × M))) (p, x) := by
     refine Manifold.mdifferentiableAt_prodVectorField (p := (p, x))
-      (mdifferentiableAt_const_tangent _ _) ?_
+      ((contMDiff_tangentBundle_mk_const _).mdifferentiableAt one_ne_zero) ?_
     exact FiberBundle.mdifferentiableAt_extend (V := TangentSpace I) (x := x) I E (w i).2
   have h := (η.mdifferentiableAt_apply_vectorField hW).comp p
     (mdifferentiableAt_id.prodMk mdifferentiableAt_const)
@@ -155,7 +149,7 @@ private theorem mdifferentiableAt_paramFrame
     MDifferentiableAt (𝓘(ℝ, P).prod I) (𝓘(ℝ, P).prod I).tangent
       (fun q ↦ (paramFrame a b W i q : TangentBundle (𝓘(ℝ, P).prod I) (P × M))) (p, x) :=
   Manifold.mdifferentiableAt_prodVectorField (p := (p, x))
-    (mdifferentiableAt_const_tangent _ _)
+    ((contMDiff_tangentBundle_mk_const _).mdifferentiableAt one_ne_zero)
     (mdifferentiableAt_vertical hW i)
 
 /-- Evaluating a smooth two-form on two fields of the frame and differentiating along a third
@@ -190,7 +184,8 @@ private theorem mlieBracket_paramFrame
   have : IsManifold I (minSmoothness ℝ 2) M := by
     rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
   rw [paramFrame, paramFrame, Manifold.mlieBracket_prodVectorField (p := (p, x))
-    (mdifferentiableAt_const_tangent _ _) (mdifferentiableAt_const_tangent _ _)
+    ((contMDiff_tangentBundle_mk_const _).mdifferentiableAt one_ne_zero)
+    ((contMDiff_tangentBundle_mk_const _).mdifferentiableAt one_ne_zero)
     (mdifferentiableAt_vertical hW i) (mdifferentiableAt_vertical hW j)]
   -- The zero of the tangent space of `P × M` is the zero of `P × E` only definitionally.
   refine Prod.ext ?_ ?_
