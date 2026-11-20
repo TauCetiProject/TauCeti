@@ -20,7 +20,9 @@ We also count the root zero: it occurs in `f.roots` with multiplicity the order 
 `f.natTrailingDegree`, so the roots satisfying a predicate that holds at zero number
 `f.natTrailingDegree` plus the nonzero roots satisfying it. Over any integral domain, summing
 `f.rootMultiplicity` over any finite set of points never exceeds `f.natDegree`
-(`Polynomial.sum_rootMultiplicity_le_natDegree`), including for `f = 0`.
+(`Polynomial.sum_rootMultiplicity_le_natDegree`), including for `f = 0`, and summing it over the
+distinct roots gives the number of roots counted with multiplicity
+(`Polynomial.sum_rootMultiplicity_roots_toFinset_eq_card_roots`).
 
 Finally, a nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly when `a`
 occurs at least `k` times in `E` (`Polynomial.X_sub_C_pow_dvd_smul_multiset_prod_iff`).
@@ -73,6 +75,13 @@ theorem card_filter_roots_eq_natTrailingDegree_add [DecidableEq R] (f : R[X]) {q
     congr 1
     exact Multiset.filter_congr fun α _ => ⟨And.left, fun h => ⟨h, h ▸ hq⟩⟩
   rw [hsplit, Multiset.card_add, Multiset.filter_eq', Multiset.card_replicate, count_zero_roots]
+
+/-- Over a domain, the root multiplicities of `f` at its distinct roots add up to the number of
+roots of `f` counted with multiplicity. -/
+theorem sum_rootMultiplicity_roots_toFinset_eq_card_roots [DecidableEq R] (f : R[X]) :
+    ∑ a ∈ f.roots.toFinset, f.rootMultiplicity a = f.roots.card := by
+  rw [← Multiset.toFinset_sum_count_eq]
+  exact Finset.sum_congr rfl fun a _ ↦ (count_roots f).symm
 
 /-- Over a domain, the sum of root multiplicities of a polynomial `f` across any finite set of
 points is at most `f.natDegree` (also when `f = 0`, where every multiplicity vanishes). -/
