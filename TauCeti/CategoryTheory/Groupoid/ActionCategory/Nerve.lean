@@ -24,6 +24,14 @@ For an invariant subset `U`, a string of `G ⋉ X` comes from the full subcatego
 exactly when its first point lies in `U`
 (`TauCeti.ActionGroupoid.range_mapComposableArrows_obj_restrict`).
 
+In these coordinates the label of the arrow from the first point to the `i`-th one is
+`TauCeti.ActionGroupoid.vertexLabel g i = gᵢ₋₁ ⋯ g₀`. For a group action, every map
+`θ : {0, …, m} → {0, …, n}`, monotone or not, acts on strings by restriction to the points
+`x_{θ 0}, …, x_{θ m}` (`TauCeti.ActionGroupoid.nerveMap`, contravariantly functorial by
+`TauCeti.ActionGroupoid.nerveMap_nerveMap`). For monotone `θ` this is the simplicial operator of the
+nerve (`TauCeti.ActionGroupoid.nerveEquiv_whiskerLeft`). Corepresenting these operators gives the
+cobar complex of a Hopf algebroid.
+
 For a group action, all points of a string lie in one orbit
 (`CategoryTheory.ComposableArrows.quotient_mk_back_obj`).
 
@@ -94,20 +102,59 @@ end CategoryTheory.ComposableArrows
 
 namespace TauCeti.ActionGroupoid
 
+/-- The label `gᵢ₋₁ ⋯ g₀` of the arrow from the first to the `i`-th point of the string with
+consecutive labels `g`: the partial product of the labels in the opposite monoid, since later
+labels act last. -/
+def vertexLabel (g : Fin n → G) (i : Fin (n + 1)) : G :=
+  (Fin.partialProd (fun k ↦ MulOpposite.op (g k)) i).unop
+
+@[simp]
+theorem vertexLabel_zero (g : Fin n → G) : vertexLabel g 0 = 1 := by
+  simp [vertexLabel]
+
+@[simp]
+theorem vertexLabel_succ (g : Fin n → G) (k : Fin n) :
+    vertexLabel g k.succ = g k * vertexLabel g k.castSucc := by
+  simp [vertexLabel, Fin.partialProd_succ]
+
+/-- The arrow to the second point of a string is its first arrow. -/
+@[simp]
+theorem vertexLabel_one (g : Fin (n + 1) → G) : vertexLabel g 1 = g 0 := by
+  simpa using vertexLabel_succ g 0
+
+/-- The arrow to the third point of a string is the composite of its first two arrows. -/
+@[simp]
+theorem vertexLabel_two (g : Fin (n + 2) → G) : vertexLabel g 2 = g 1 * g 0 := by
+  simpa using vertexLabel_succ g 1
+
+/-- Appending an arrow to a string does not change the labels of its earlier points. -/
+@[simp]
+theorem vertexLabel_snoc_castSucc (g : Fin n → G) (h : G) (i : Fin (n + 1)) :
+    vertexLabel (Fin.snoc g h : Fin (n + 1) → G) i.castSucc = vertexLabel g i := by
+  induction i using Fin.induction with
+  | zero => simp
+  | succ i ih => simp [ih]
+
+/-- Applying a monoid homomorphism to the consecutive labels applies it to the labels of the
+points. -/
+theorem vertexLabel_comp {H : Type*} [Monoid H] (φ : G →* H) (g : Fin n → G) (i : Fin (n + 1)) :
+    vertexLabel (φ ∘ g) i = φ (vertexLabel g i) := by
+  induction i using Fin.induction with
+  | zero => simp
+  | succ i ih => simp [ih]
+
 variable (G X n) in
 /-- The `n`-simplices of the nerve of an action category correspond to `X × Gⁿ`, by recording the
 first point and the labels of the consecutive arrows of a string. The string with first point `x`
 and labels `g` has `k`-th point `gₖ₋₁ ⋯ g₀ • x`. -/
 def nerveEquiv : ComposableArrows (ActionCategory G X) n ≃ X × (Fin n → G) where
   toFun F := ((F.obj 0).back, fun k ↦ (F.map (homOfLE k.castSucc_le_succ)).hom)
-  invFun p := ComposableArrows.mkOfObjOfMapSucc
-    (fun i ↦ ((Fin.partialProd (fun k ↦ MulOpposite.op (p.2 k)) i).unop • p.1 : X))
+  invFun p := ComposableArrows.mkOfObjOfMapSucc (fun i ↦ (vertexLabel p.2 i • p.1 : X))
     -- The side condition of `homMk` in an action category is `g • x = y` by definition, as in
     -- `ActionCategory.nonempty_hom_iff`.
     fun k ↦ Functor.Elements.homMk (p.2 k)
-      (show p.2 k • ((Fin.partialProd (fun k ↦ MulOpposite.op (p.2 k)) k.castSucc).unop • p.1) =
-          (Fin.partialProd (fun k ↦ MulOpposite.op (p.2 k)) k.succ).unop • p.1 by
-        rw [Fin.partialProd_succ, MulOpposite.unop_mul, MulOpposite.unop_op, mul_smul])
+      (show p.2 k • (vertexLabel p.2 k.castSucc • p.1) = vertexLabel p.2 k.succ • p.1 by
+        rw [vertexLabel_succ, mul_smul])
   left_inv F := ComposableArrows.ext_of_back_obj_zero_of_hom_map
     (by simp [ComposableArrows.mkOfObjOfMapSucc_obj]) fun k ↦ by
       rw [ComposableArrows.hom_map_mkOfObjOfMapSucc]
@@ -124,8 +171,7 @@ theorem nerveEquiv_apply (F : ComposableArrows (ActionCategory G X) n) :
 `gᵢ₋₁ ⋯ g₀ • x`. -/
 @[simp]
 theorem back_obj_nerveEquiv_symm (p : X × (Fin n → G)) (i : Fin (n + 1)) :
-    (((nerveEquiv G X n).symm p).obj i).back =
-      (Fin.partialProd (fun k ↦ MulOpposite.op (p.2 k)) i).unop • p.1 := (rfl)
+    (((nerveEquiv G X n).symm p).obj i).back = vertexLabel p.2 i • p.1 := (rfl)
 
 /-- The `k`-th consecutive label of the string with first point `x` and consecutive labels `g` is
 `gₖ`. -/
@@ -147,6 +193,16 @@ theorem range_mapComposableArrows_obj_restrict (U : SubMulAction G X) (n : ℕ) 
       F.back_obj_eq_smul i ▸ U.smul_mem _ hF
     exact ⟨restrictLift U F hF', restrictLift_comp_restrict U F hF'⟩
 
+/-- In a string of composable arrows, the arrow from the first to the `i`-th point has label
+`vertexLabel` of the consecutive labels. -/
+theorem hom_map_homOfLE_zero_le (F : ComposableArrows (ActionCategory G X) n) (i : Fin (n + 1)) :
+    (F.map (homOfLE (Fin.zero_le i))).hom = vertexLabel (nerveEquiv G X n F).2 i := by
+  induction i using Fin.induction with
+  | zero => exact F.hom_map_homOfLE_refl 0
+  | succ i ih =>
+    rw [vertexLabel_succ, ← ih]
+    exact F.hom_map_homOfLE_succ (Fin.zero_le _)
+
 end TauCeti.ActionGroupoid
 
 end Monoid
@@ -163,5 +219,79 @@ theorem quotient_mk_back_obj (F : ComposableArrows (ActionCategory G X) n) (i : 
   rw [back_obj_eq_smul F i, MulAction.orbitRel.Quotient.quotient_smul_eq]
 
 end CategoryTheory.ComposableArrows
+
+namespace TauCeti.ActionGroupoid
+
+/-- The action of `θ : {0, …, m} → {0, …, n}` on `n`-simplices of the nerve of an action
+groupoid, in the coordinates of `nerveEquiv`: the string with first point `x` and consecutive
+labels `g` is sent to the string of its points `x_{θ 0}, …, x_{θ m}`, whose `j`-th arrow is the
+arrow from `x_{θ j}` to `x_{θ (j + 1)}`. Every arrow is invertible, so `θ` need not be monotone;
+for monotone `θ` this is the simplicial operator of the nerve (`nerveEquiv_whiskerLeft`). -/
+def nerveMap {m : ℕ} (θ : Fin (m + 1) → Fin (n + 1)) (x : X × (Fin n → G)) : X × (Fin m → G) :=
+  (vertexLabel x.2 (θ 0) • x.1,
+    fun j ↦ vertexLabel x.2 (θ j.succ) * (vertexLabel x.2 (θ j.castSucc))⁻¹)
+
+@[simp]
+theorem nerveMap_fst {m : ℕ} (θ : Fin (m + 1) → Fin (n + 1)) (x : X × (Fin n → G)) :
+    (nerveMap θ x).1 = vertexLabel x.2 (θ 0) • x.1 :=
+  (rfl)
+
+@[simp]
+theorem nerveMap_snd {m : ℕ} (θ : Fin (m + 1) → Fin (n + 1)) (x : X × (Fin n → G)) (j : Fin m) :
+    (nerveMap θ x).2 j = vertexLabel x.2 (θ j.succ) * (vertexLabel x.2 (θ j.castSucc))⁻¹ :=
+  (rfl)
+
+/-- The labels of the points of the restricted string, as arrows from its first point
+`x_{θ 0}`. -/
+@[simp]
+theorem vertexLabel_nerveMap {m : ℕ} (θ : Fin (m + 1) → Fin (n + 1)) (x : X × (Fin n → G))
+    (j : Fin (m + 1)) :
+    vertexLabel (nerveMap θ x).2 j = vertexLabel x.2 (θ j) * (vertexLabel x.2 (θ 0))⁻¹ := by
+  induction j using Fin.induction with
+  | zero => simp
+  | succ j ih => simp [ih, mul_assoc]
+
+/-- Restriction along the identity is the identity. -/
+@[simp]
+theorem nerveMap_id (x : X × (Fin n → G)) : nerveMap id x = x := by
+  ext <;> simp
+
+/-- Restriction is contravariantly functorial: restricting along `θ` and then along `ψ` is
+restricting along `θ ∘ ψ`. -/
+theorem nerveMap_nerveMap {l m : ℕ} (θ : Fin (m + 1) → Fin (n + 1))
+    (ψ : Fin (l + 1) → Fin (m + 1)) (x : X × (Fin n → G)) :
+    nerveMap ψ (nerveMap θ x) = nerveMap (θ ∘ ψ) x := by
+  refine Prod.ext ?_ (funext fun j ↦ ?_)
+  · simp [smul_smul]
+  · simp [mul_assoc]
+
+/-- Restriction commutes with equivariant maps of actions. -/
+theorem nerveMap_map {m : ℕ} {H Y : Type*} [Group H] [MulAction H Y]
+    (θ : Fin (m + 1) → Fin (n + 1)) (φ : G →* H) (f : X → Y)
+    (hf : ∀ (g : G) (x : X), f (g • x) = φ g • f x) (x : X × (Fin n → G)) :
+    nerveMap θ (f x.1, φ ∘ x.2) = (f (nerveMap θ x).1, φ ∘ (nerveMap θ x).2) := by
+  refine Prod.ext ?_ (funext fun j ↦ ?_)
+  · simp [vertexLabel_comp, hf]
+  · simp [vertexLabel_comp]
+
+/-- For a monotone `θ`, `nerveMap θ` is the simplicial operator of the nerve: precomposing a
+string of composable arrows with `θ`. -/
+theorem nerveEquiv_whiskerLeft {m : ℕ} {θ : Fin (m + 1) → Fin (n + 1)} (hθ : Monotone θ)
+    (F : ComposableArrows (ActionCategory G X) n) :
+    nerveEquiv G X m (F.whiskerLeft hθ.functor) = nerveMap θ (nerveEquiv G X n F) := by
+  -- Every label in `F` is the label to its target from the first point times the inverse of the
+  -- label to its source.
+  have hlabel {i j : Fin (n + 1)} (hij : i ≤ j) : (F.map (homOfLE hij)).hom =
+      vertexLabel (nerveEquiv G X n F).2 j * (vertexLabel (nerveEquiv G X n F).2 i)⁻¹ := by
+    rw [← hom_map_homOfLE_zero_le F i, ← hom_map_homOfLE_zero_le F j,
+      ← homOfLE_comp (Fin.zero_le i) hij, F.map_comp, ActionCategory.comp_hom,
+      mul_inv_cancel_right]
+  -- The points and arrows of `F.whiskerLeft hθ.functor` are those of `F` at `θ 0, …, θ m`.
+  refine Prod.ext ?_ (funext fun j ↦ ?_)
+  · rw [nerveMap_fst, ← hom_map_homOfLE_zero_le F]
+    exact F.back_obj_eq_smul (θ 0)
+  · exact hlabel _
+
+end TauCeti.ActionGroupoid
 
 end Group
