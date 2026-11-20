@@ -15,6 +15,8 @@ import Mathlib.LinearAlgebra.TensorProduct.Prod
 import Mathlib.RingTheory.Flat.IsBaseChange
 import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 import TauCeti.LinearAlgebra.Exact
+import TauCeti.RingTheory.Flat.IsBaseChange
+import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # Central base change of modules over an algebra
@@ -31,6 +33,10 @@ projectivity of `S ⊗[A] M` over `S ⊗[A] Λ` descends to `M`, both along a si
 `S`, and along a family of flat `A`-algebras that jointly detects the vanishing of finitely
 generated `A`-modules. Such families, for instance the completions of a Dedekind domain at its
 primes, are how lattices over orders are compared with their local completions.
+
+Faithfulness of the action also survives flat base change when `M` is finitely generated over
+`A`, as a consequence of the injectivity of `S ⊗[A] End_A(M) → End_S(S ⊗[A] M)`
+(`LinearMap.tensorProduct_injective`).
 
 The `S ⊗[A] Λ`-module structure on `S ⊗[A] M` is the definition `TauCeti.CentralBaseChange.module`,
 which is not an instance: for `M = Λ` it agrees with the multiplication of `S ⊗[A] Λ` only
@@ -71,6 +77,11 @@ together here as an `S`-algebra map `TauCeti.CentralBaseChange.lsmul` into
 * `TauCeti.CentralBaseChange.projective_of_forall_projective_of_forall_subsingleton`: the same
   along a family that jointly detects the vanishing of all `A`-modules, with no finiteness over
   `A`.
+* `TauCeti.CentralBaseChange.lsmul_injective` and the corresponding `FaithfulSMul` instance:
+  for flat `S`, if `Λ` acts faithfully on `M` and `M` is finitely generated over `A`, then
+  `S ⊗[A] Λ` acts faithfully on `S ⊗[A] M`. For an algebra of operators on a finite free module
+  over a domain, this makes the extended operator algebra act faithfully over the fraction field,
+  so that its characters can be realized on eigenvectors there.
 
 ## Implementation notes
 
@@ -83,6 +94,8 @@ of Mathlib's `Module.FinitePresentation.isBaseChange_map`, the case `Λ = A`, wh
 ## References
 
 * C. A. Weibel, *The K-book*, Chapter I, §2, Locally free modules 2.4 and its proof, pp. 10–11.
+* P. Deligne and J.-P. Serre, *Formes modulaires de poids 1*, Ann. Sci. ENS 7 (1974),
+  Lemme 6.11 and its proof, for the faithfulness of an operator algebra over the fraction field.
 -/
 
 public section
@@ -416,6 +429,36 @@ private theorem surjective_lTensor_compRight [Module.FinitePresentation Λ M]
     Module.projective_lifting_property (map S π) (homEquiv A S Λ M M y) (map_surjective S hπ)
   refine ⟨(homEquiv A S Λ M (Fin n → Λ)).symm χ, (homEquiv A S Λ M M).injective ?_⟩
   rw [homEquiv_lTensor_compRight, LinearEquiv.apply_symm_apply, hχ]
+
+section Faithful
+
+variable [Module.Finite A M] [FaithfulSMul Λ M]
+
+variable (A S Λ M) in
+/-- **Faithfulness survives flat base change.** If `Λ` acts faithfully on a finitely generated
+`A`-module `M` and `S` is a flat `A`-algebra, then `S ⊗[A] Λ` acts faithfully on `S ⊗[A] M`:
+the action map `S ⊗[A] Λ → End_S(S ⊗[A] M)` is injective. -/
+theorem lsmul_injective : Function.Injective (lsmul A S Λ M) := by
+  have hρ : Function.Injective (Algebra.lsmul A A M : Λ →ₐ[A] Module.End A M) := fun _ _ h ↦
+    FaithfulSMul.eq_of_smul_eq_smul fun m ↦ LinearMap.congr_fun h m
+  -- The action map factors as the base change of `Λ → End_A(M)`, injective by flatness, followed
+  -- by the comparison `S ⊗[A] End_A(M) → End_S(S ⊗[A] M)`.
+  have h : ⇑(lsmul A S Λ M) =
+      LinearMap.tensorProduct A S M M ∘ (Algebra.lsmul A A M).toLinearMap.lTensor S := by
+    ext x
+    induction x using TensorProduct.inductionOn with
+    | tmul s l => simp [lsmul_tmul]
+    | add x y hx hy => simp_all
+  rw [h]
+  exact (LinearMap.tensorProduct_injective A S M M).comp
+    (Module.Flat.lTensor_preserves_injective_linearMap _ hρ)
+
+/-- If `Λ` acts faithfully on a finitely generated `A`-module `M` and `S` is flat over `A`, then
+`S ⊗[A] Λ` acts faithfully on `S ⊗[A] M`. -/
+instance : FaithfulSMul (S ⊗[A] Λ) (S ⊗[A] M) where
+  eq_of_smul_eq_smul h := lsmul_injective A S Λ M (LinearMap.ext h)
+
+end Faithful
 
 end Flat
 
