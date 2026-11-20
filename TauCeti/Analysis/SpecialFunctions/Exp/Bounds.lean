@@ -30,6 +30,7 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exp_neg_le_div_exp_sub_one`: `exp (-x) ≤ x / (exp x - 1)` for `0 < x`.
 * `TauCeti.div_exp_sub_one_le_one`: `x / (exp x - 1) ≤ 1` for `0 ≤ x`.
 * `TauCeti.exp_neg_le_rpow_iff`: `exp (-t) ≤ y ^ ε ↔ exp (-(t / ε)) ≤ y` for `0 ≤ y`, `0 < ε`.
+* `TauCeti.exp_neg_le_factorial_div_pow`: `exp (-y) ≤ n! / yⁿ` for `0 < y`.
 * `TauCeti.exists_rpow_mul_exp_neg_mul_le`: `x ^ σ exp (-c x)` is bounded on `x ≥ 0`, for `0 ≤ σ`,
   `0 < c`.
 * `TauCeti.abs_exp_sub_one_le_mul_exp_abs`: `|exp t - 1| ≤ |t| exp |t|` for every real `t`.
@@ -45,6 +46,7 @@ is bounded on `x ≥ 0`.
 public section
 
 open Filter Real
+open scoped Nat
 
 namespace TauCeti
 
@@ -111,6 +113,12 @@ theorem exp_neg_le_rpow_iff {y ε t : ℝ} (hy : 0 ≤ y) (hε : 0 < ε) :
   · simp [zero_rpow hε.ne', (exp_pos _).not_ge]
   rw [← le_log_iff_exp_le hy, ← le_log_iff_exp_le (rpow_pos_of_pos hy ε), log_rpow hy,
     ← neg_div, div_le_iff₀ hε, mul_comm]
+
+/-- For `0 < y`, `exp (-y) ≤ n! / yⁿ`: the exponential decays faster than every power. -/
+theorem exp_neg_le_factorial_div_pow {y : ℝ} (hy : 0 < y) (n : ℕ) :
+    exp (-y) ≤ n ! / y ^ n := by
+  rw [exp_neg, ← inv_div]
+  exact inv_anti₀ (by positivity) (pow_div_factorial_le_exp y hy.le n)
 
 /-- For `0 ≤ σ` and `0 < c`, the function `x ↦ x ^ σ exp (-c x)` is bounded on `x ≥ 0`: it tends
 to `0` at infinity, and on a bounded interval `x ^ σ` is bounded. -/
