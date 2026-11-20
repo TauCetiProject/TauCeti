@@ -96,17 +96,17 @@ variable {lam μ : YoungDiagram}
 /-- Off the `λ`-Yamanouchi tableaux, Stembridge's involution transposes two adjacent letters of
 the alphabet, so it keeps the alphabet. -/
 private theorem exists_stembridgeInvolution (T : BoundedSSYT N μ)
-    (h : ¬ T.1.IsYamanouchi lam) :
-    ∃ k, k + 1 < N ∧ (∀ i c, (i, c) ∈ μ → T.1.stembridgeInvolution lam i c < N) ∧
-      ∀ x, ((lam.rowLen x + (T.1.stembridgeInvolution lam).content x : ℕ) : ℤ) - x =
-        ((lam.rowLen (Equiv.swap k (k + 1) x) + T.1.content (Equiv.swap k (k + 1) x) : ℕ) : ℤ) -
+    (h : ¬ T.val.IsYamanouchi lam) :
+    ∃ k, k + 1 < N ∧ (∀ i c, (i, c) ∈ μ → T.val.stembridgeInvolution lam i c < N) ∧
+      ∀ x, ((lam.rowLen x + (T.val.stembridgeInvolution lam).content x : ℕ) : ℤ) - x =
+        ((lam.rowLen (Equiv.swap k (k + 1) x) + T.val.content (Equiv.swap k (k + 1) x) : ℕ) : ℤ) -
           (Equiv.swap k (k + 1) x : ℕ) := by
   obtain ⟨k, ⟨r, c, hrc, hk⟩, hval, hcont⟩ :=
     SemistandardYoungTableau.exists_intCast_rowLen_add_content_stembridgeInvolution h
-  have hkN : k + 1 < N := hk ▸ T.2 r c hrc
+  have hkN : k + 1 < N := hk ▸ T.property r c hrc
   refine ⟨k, hkN, fun i c hic => ?_, hcont⟩
   rcases hval i c with h' | h' | h' <;> rw [h']
-  · exact T.2 i c hic
+  · exact T.property i c hic
   · omega
   · exact hkN
 
@@ -114,12 +114,12 @@ open scoped Classical in
 /-- **Stembridge's involution on bounded tableaux.** -/
 private noncomputable def stembridge (lam : YoungDiagram) (T : BoundedSSYT N μ) :
     BoundedSSYT N μ :=
-  if h : T.1.IsYamanouchi lam then T
-  else ⟨T.1.stembridgeInvolution lam, (exists_stembridgeInvolution T h).choose_spec.2.1⟩
+  if h : T.val.IsYamanouchi lam then T
+  else ⟨T.val.stembridgeInvolution lam, (exists_stembridgeInvolution T h).choose_spec.2.1⟩
 
 private theorem coe_stembridge (T : BoundedSSYT N μ) :
-    (stembridge lam T).1 = T.1.stembridgeInvolution lam := by
-  by_cases h : T.1.IsYamanouchi lam
+    (stembridge lam T).val = T.val.stembridgeInvolution lam := by
+  by_cases h : T.val.IsYamanouchi lam
   · rw [stembridge, dite_eq_left h,
       SemistandardYoungTableau.stembridgeInvolution_of_isYamanouchi h]
   · rw [stembridge, dite_eq_right h]
@@ -132,7 +132,7 @@ private theorem stembridge_stembridge (T : BoundedSSYT N μ) :
 
 /-- The exponent vector `λ + δ + c(T)` of the alternant contributed by a tableau. -/
 private theorem betaNumber_add_weight_stembridge (T : BoundedSSYT N μ)
-    (h : ¬ T.1.IsYamanouchi lam) :
+    (h : ¬ T.val.IsYamanouchi lam) :
     ∃ a b : Fin N, a ≠ b ∧
       (fun j : Fin N => lam.betaNumber N j + weight (stembridge lam T) j) =
         (fun j : Fin N => lam.betaNumber N j + weight T j) ∘ Equiv.swap a b := by
@@ -167,10 +167,10 @@ alphabet `Fin N`. -/
 theorem diagramSchurPoly_mul_alternant_betaNumber {R : Type*} [CommRing R]
     (lam μ : YoungDiagram) :
     diagramSchurPoly N R μ * alternant (Fin N) R (fun j => lam.betaNumber N j) =
-      ∑ T : BoundedSSYT N μ with T.1.IsYamanouchi lam,
+      ∑ T : BoundedSSYT N μ with T.val.IsYamanouchi lam,
         alternant (Fin N) R fun j => lam.betaNumber N j + weight T j := by
   rw [diagramSchurPoly_mul_alternant_eq_sum, ← sum_filter_add_sum_filter_not univ
-    (fun T : BoundedSSYT N μ => T.1.IsYamanouchi lam), add_eq_left]
+    (fun T : BoundedSSYT N μ => T.val.IsYamanouchi lam), add_eq_left]
   -- The tableaux that are not `λ`-Yamanouchi cancel in pairs.
   refine sum_involution (fun T _ => stembridge lam T) (fun T hT => ?_) (fun T hT hne heq => ?_)
     (fun T hT => ?_) (fun T _ => stembridge_stembridge T)
@@ -193,13 +193,13 @@ variable {lam μ : YoungDiagram}
 /-- **A `λ`-Yamanouchi tableau has a shape**: the partition `ν` of `|λ| + |μ|` whose row lengths
 are `λ + c(T)`. It is unique, as the row lengths determine a partition. -/
 private theorem existsUnique_rowLen_eq (hlam : lam.colLen 0 ≤ N) (T : BoundedSSYT N μ)
-    (hT : T.1.IsYamanouchi lam) :
+    (hT : T.val.IsYamanouchi lam) :
     ∃! ν : (lam.card + μ.card).Partition,
-      ∀ i, lam.rowLen i + T.1.content i = (ofPartition ν).rowLen i := by
-  have hanti : Antitone fun i : Fin N => lam.rowLen i + T.1.content i :=
+      ∀ i, lam.rowLen i + T.val.content i = (ofPartition ν).rowLen i := by
+  have hanti : Antitone fun i : Fin N => lam.rowLen i + T.val.content i :=
     fun i i' hii' => hT.antitone (Fin.val_le_of_le hii')
   set Y := YoungDiagram.ofRowLensFin _ hanti
-  have hY : ∀ i, lam.rowLen i + T.1.content i = Y.rowLen i := fun i => by
+  have hY : ∀ i, lam.rowLen i + T.val.content i = Y.rowLen i := fun i => by
     by_cases hi : i < N
     · exact (YoungDiagram.rowLen_ofRowLensFin _ hanti ⟨i, hi⟩).symm
     · rw [YoungDiagram.rowLen_ofRowLensFin_eq_zero_of_le _ hanti (not_lt.mp hi),
@@ -224,19 +224,19 @@ private theorem diagramSchurPoly_mul_diagramSchurPoly_int {lam μ : YoungDiagram
     (hlam : lam.colLen 0 ≤ N) :
     diagramSchurPoly N ℤ lam * diagramSchurPoly N ℤ μ =
       ∑ ν : (lam.card + μ.card).Partition,
-        #{T : BoundedSSYT N μ | T.1.IsYamanouchi lam ∧
-          ∀ i, lam.rowLen i + T.1.content i = (ofPartition ν).rowLen i} •
+        #{T : BoundedSSYT N μ | T.val.IsYamanouchi lam ∧
+          ∀ i, lam.rowLen i + T.val.content i = (ofPartition ν).rowLen i} •
           diagramSchurPoly N ℤ (ofPartition ν) := by
   refine mul_right_cancel₀ (alternant_ne_zero_of_injective (injective_staircase N)) ?_
   rw [mul_comm (diagramSchurPoly N ℤ lam), mul_assoc, diagramSchurPoly_mul_alternant N lam hlam,
     diagramSchurPoly_mul_alternant_betaNumber, sum_mul]
   -- Group the `λ`-Yamanouchi tableaux by their shape.
   have hfib : ∀ ν : (lam.card + μ.card).Partition,
-      #{T : BoundedSSYT N μ | T.1.IsYamanouchi lam ∧
-          ∀ i, lam.rowLen i + T.1.content i = (ofPartition ν).rowLen i} •
+      #{T : BoundedSSYT N μ | T.val.IsYamanouchi lam ∧
+          ∀ i, lam.rowLen i + T.val.content i = (ofPartition ν).rowLen i} •
           diagramSchurPoly N ℤ (ofPartition ν) * alternant (Fin N) ℤ (fun j => N - 1 - j) =
-        ∑ T : BoundedSSYT N μ, if T.1.IsYamanouchi lam ∧
-            ∀ i, lam.rowLen i + T.1.content i = (ofPartition ν).rowLen i then
+        ∑ T : BoundedSSYT N μ, if T.val.IsYamanouchi lam ∧
+            ∀ i, lam.rowLen i + T.val.content i = (ofPartition ν).rowLen i then
           alternant (Fin N) ℤ (fun j => lam.betaNumber N j + weight T j) else 0 := by
     intro ν
     rw [← sum_filter, smul_mul_assoc, ← sum_const]
@@ -274,16 +274,16 @@ theorem diagramSchurPoly_mul_diagramSchurPoly {R : Type*} [CommSemiring R]
     (lam μ : YoungDiagram) :
     diagramSchurPoly N R lam * diagramSchurPoly N R μ =
       ∑ ν : (lam.card + μ.card).Partition,
-        #{T : BoundedSSYT N μ | T.1.IsYamanouchi lam ∧
-          ∀ i, lam.rowLen i + T.1.content i = (ofPartition ν).rowLen i} •
+        #{T : BoundedSSYT N μ | T.val.IsYamanouchi lam ∧
+          ∀ i, lam.rowLen i + T.val.content i = (ofPartition ν).rowLen i} •
           diagramSchurPoly N R (ofPartition ν) := by
   by_cases hlam : lam.colLen 0 ≤ N
   · -- Both sides have natural-number coefficients, so the identity over `ℤ` descends to `ℕ`,
     -- whence it maps to `R`.
     have hℕ : diagramSchurPoly N ℕ lam * diagramSchurPoly N ℕ μ =
         ∑ ν : (lam.card + μ.card).Partition,
-          #{T : BoundedSSYT N μ | T.1.IsYamanouchi lam ∧
-            ∀ i, lam.rowLen i + T.1.content i = (ofPartition ν).rowLen i} •
+          #{T : BoundedSSYT N μ | T.val.IsYamanouchi lam ∧
+            ∀ i, lam.rowLen i + T.val.content i = (ofPartition ν).rowLen i} •
             diagramSchurPoly N ℕ (ofPartition ν) :=
       MvPolynomial.map_injective (Nat.castRingHom ℤ) Nat.cast_injective <| by
         simpa [map_diagramSchurPoly, map_sum, map_nsmul] using
@@ -294,8 +294,8 @@ theorem diagramSchurPoly_mul_diagramSchurPoly {R : Type*} [CommSemiring R]
     have hlt : N < lam.colLen 0 := Nat.lt_of_not_le hlam
     rw [diagramSchurPoly_eq_zero_of_lt_colLen hlt, zero_mul]
     refine (sum_eq_zero fun ν _ => ?_).symm
-    rcases eq_or_ne (#{T : BoundedSSYT N μ | T.1.IsYamanouchi lam ∧
-        ∀ i, lam.rowLen i + T.1.content i = (ofPartition ν).rowLen i}) 0 with h0 | h0
+    rcases eq_or_ne (#{T : BoundedSSYT N μ | T.val.IsYamanouchi lam ∧
+        ∀ i, lam.rowLen i + T.val.content i = (ofPartition ν).rowLen i}) 0 with h0 | h0
     · rw [h0, zero_smul]
     obtain ⟨T, hT⟩ := card_ne_zero.mp h0
     obtain ⟨-, hν⟩ := (mem_filter.mp hT).2

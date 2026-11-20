@@ -37,7 +37,8 @@ Near `z`, `f` vanishes to every order `k ≤ n z`: `‖f w‖ ≤ C ‖w - z‖ 
 This file proves how zero multiplicities transform:
 
 * under an affine change of variable `w ↦ c w + a` with `c ≠ 0`, the multiplicity is pulled back
-  (`TauCeti.IsZeroMultiplicity.comp_mul_add`);
+  (`TauCeti.IsZeroMultiplicity.comp_mul_add`), and under `w ↦ c w` the divisor `D` becomes
+  `c⁻¹ D` (`TauCeti.IsZeroMultiplicity.comp_const_mul`);
 * under products, multiplicities add (`TauCeti.IsZeroMultiplicity.mul`); the functions with
   multiplicity zero are the continuous functions without zeros
   (`TauCeti.isZeroMultiplicity_zero_iff`), so multiplying by such a function does not change the
@@ -143,6 +144,16 @@ theorem comp_mul_add (h : IsZeroMultiplicity f n) {c : ℂ} (hc : c ≠ 0) (a : 
   filter_upwards [(hφ.tendsto z).eventually hf] with w hw
   rw [hw, show c * w + a - (c * z + a) = c * (w - z) by ring, mul_pow]
   ring
+
+/-- **Linear change of variable on a divisor.** If `f` has the zero multiplicities of the
+multiset `D` and `c ≠ 0`, then `w ↦ f (c w)` has those of `c⁻¹ D`. -/
+theorem comp_const_mul {D : Multiset ℂ} (h : IsZeroMultiplicity f fun z ↦ D.count z) {c : ℂ}
+    (hc : c ≠ 0) : IsZeroMultiplicity (fun w ↦ f (c * w)) fun z ↦ (D.map (c⁻¹ * ·)).count z := by
+  convert h.comp_mul_add hc 0 using 1
+  · simp only [add_zero]
+  · funext z
+    rw [add_zero, ← Multiset.count_map_eq_count' (c⁻¹ * ·) D
+      (mul_right_injective₀ (inv_ne_zero hc)) (c * z), inv_mul_cancel_left₀ hc]
 
 /-- **Multiplicities add under products.** -/
 theorem mul (h : IsZeroMultiplicity f n) (h' : IsZeroMultiplicity g n') :

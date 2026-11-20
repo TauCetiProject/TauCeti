@@ -242,7 +242,7 @@ private theorem continuousOn_extendByZeroFun (g : HolderSpace α s E) :
   rw [continuousOn_iff_continuous_domRestrict]
   convert g.continuous using 1
   funext x
-  exact extendByZeroFun_of_mem g x.2
+  exact extendByZeroFun_of_mem g x.property
 
 /-- Applying `B` to the zero extension of a function on `s` and a function vanishing off `s`
 gives a continuous function: near points where the second factor vanishes the product is small,
@@ -263,7 +263,7 @@ private theorem continuous_comp₂_extendByZeroFun (B : E →L[ℝ] F →L[ℝ] 
   · have hs : s ∈ nhds x := Filter.mem_of_superset
       ((isOpen_ne_fun f'.continuous continuous_const).mem_nhds hx) fun y hy ↦ by
         by_contra hys
-        exact hy (mem_supportedHolderSubmodule_iff.mp f.2 y hys)
+        exact hy (mem_supportedHolderSubmodule_iff.mp f.property y hys)
     exact ((B.continuous.comp_continuousOn (continuousOn_extendByZeroFun g)).clm_apply
       f'.continuous.continuousOn).continuousAt hs
 
@@ -277,7 +277,7 @@ private theorem holderWith_comp₂_extendByZeroFun (B : E →L[ℝ] F →L[ℝ] 
     (f : HolderSpace α X F).holderWith (fun x _ ↦ norm_extendByZeroFun_le g x)
     (fun x _ ↦ by
       simpa using (f : HolderSpace α X F).toBoundedContinuousFunction.norm_coe_le_norm x)
-    (fun x hx ↦ mem_supportedHolderSubmodule_iff.mp f.2 x hx)
+    (fun x hx ↦ mem_supportedHolderSubmodule_iff.mp f.property x hx)
 
 private theorem norm_comp₂_extendByZeroFun_le (B : E →L[ℝ] F →L[ℝ] G)
     (f : supportedHolderSubmodule (Y := F) α s) (g : HolderSpace α s E) (x : X) :
@@ -332,7 +332,7 @@ def compHolder₂ExtendByZero (B : E →L[ℝ] F →L[ℝ] G)
   LinearMap.mkContinuous
     { toFun g := ⟨compHolder₂ExtendByZeroFun B f g,
         mem_supportedHolderSubmodule_iff.mpr fun x hx ↦ by
-          rw [compHolder₂ExtendByZeroFun_apply, mem_supportedHolderSubmodule_iff.mp f.2 x hx,
+          rw [compHolder₂ExtendByZeroFun_apply, mem_supportedHolderSubmodule_iff.mp f.property x hx,
             map_zero]⟩
       map_add' g₁ g₂ := Subtype.ext <| HolderSpace.ext fun x ↦ by
         by_cases hx : x ∈ s <;>
@@ -357,7 +357,7 @@ theorem compHolder₂ExtendByZero_apply_of_mem (B : E →L[ℝ] F →L[ℝ] G)
 theorem compHolder₂ExtendByZero_apply_of_notMem (B : E →L[ℝ] F →L[ℝ] G)
     (f : supportedHolderSubmodule (Y := F) α s) (g : HolderSpace α s E) {x : X} (hx : x ∉ s) :
     (B.compHolder₂ExtendByZero f g : HolderSpace α X G) x = 0 :=
-  mem_supportedHolderSubmodule_iff.mp (B.compHolder₂ExtendByZero f g).2 x hx
+  mem_supportedHolderSubmodule_iff.mp (B.compHolder₂ExtendByZero f g).property x hx
 
 /-- The zero-extended product has operator norm at most `‖B‖ * ‖f‖`. -/
 theorem norm_compHolder₂ExtendByZero_le (B : E →L[ℝ] F →L[ℝ] G)

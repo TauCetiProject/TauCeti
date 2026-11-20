@@ -116,7 +116,7 @@ private theorem norm_stirlingError_real_mul_sub_le {s : ℂ} {δ : ℝ} (hδ : 0
   have hK : 0 ≤ K := stirlingConst_nonneg hδ hδπ
   have hmem {x : ℝ} (hx : 0 < x) : (x : ℂ) * s ∈ slitPlane := by
     refine mem_slitPlane_of_abs_arg_le hδ ?_ (mul_ne_zero (ofReal_ne_zero.mpr hx.ne') hs0)
-    rwa [arg_real_mul s hx]
+    rwa [arg_ofReal_mul hx s]
   have hd {x : ℝ} (hx : 0 < x) : HasDerivAt (fun y : ℝ ↦ stirlingError (y * s) - stirlingError s)
       (s * (digamma (x * s) - Complex.log (x * s) + (2 * (x * s))⁻¹)) x := by
     have hm : HasDerivAt (fun y : ℝ ↦ (y : ℂ) * s) s x := by
@@ -137,7 +137,7 @@ private theorem norm_stirlingError_real_mul_sub_le {s : ℂ} {δ : ℝ} (hδ : 0
     (fun y hy ↦ by
       have hy0 : 0 < y := by linarith [hy.1]
       have hz := (norm_digamma_sub_log_add_inv_two_mul_le_of_abs_arg_le hδ hδπ
-        (show |((y : ℂ) * s).arg| ≤ π - δ by rwa [arg_real_mul s hy0])).trans_eq
+        (show |((y : ℂ) * s).arg| ≤ π - δ by rwa [arg_ofReal_mul hy0 s])).trans_eq
         (div_div _ _ _).symm
       rw [norm_mul, norm_real, Real.norm_of_nonneg hy0.le] at hz
       rw [norm_mul]
@@ -161,7 +161,7 @@ private theorem norm_stirlingError_arc_sub_le {δ : ℝ} (hδ : 0 < δ) (hδπ :
   set K := 2 / (1 - Real.cos δ) ^ 3
   set S : Set ℝ := Icc (-(π - δ)) (π - δ)
   have hargS {φ : ℝ} (hφ : φ ∈ S) : ((r : ℂ) * exp (φ * I)).arg = φ := by
-    rw [arg_real_mul _ hr, arg_exp_mul_I, toIocMod_eq_self]
+    rw [arg_ofReal_mul hr _, arg_exp_mul_I, toIocMod_eq_self]
     constructor <;> linarith [hφ.1, hφ.2]
   have hmemS {φ : ℝ} (hφ : φ ∈ S) : (r : ℂ) * exp (φ * I) ∈ slitPlane := by
     refine mem_slitPlane_of_abs_arg_le hδ ?_ (mul_ne_zero (ofReal_ne_zero.mpr hr.ne')

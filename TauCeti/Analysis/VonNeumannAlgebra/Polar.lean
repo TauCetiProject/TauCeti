@@ -70,8 +70,8 @@ section Unitary
 private theorem coe_mem_inter_unitary {M : VonNeumannAlgebra H} (u : unitary M.toStarSubalgebra) :
     ((u : M.toStarSubalgebra) : H →L[ℂ] H) ∈
       (M : Set (H →L[ℂ] H)) ∩ unitary (H →L[ℂ] H) := by
-  refine ⟨(u : M.toStarSubalgebra).2, Unitary.mem_iff.2 ?_⟩
-  obtain ⟨h₁, h₂⟩ := Unitary.mem_iff.1 u.2
+  refine ⟨(u : M.toStarSubalgebra).property, Unitary.mem_iff.2 ?_⟩
+  obtain ⟨h₁, h₂⟩ := Unitary.mem_iff.1 u.property
   exact ⟨congrArg Subtype.val h₁, congrArg Subtype.val h₂⟩
 
 /-- Every element `x` of a von Neumann algebra `M` is a complex linear combination of four unitary

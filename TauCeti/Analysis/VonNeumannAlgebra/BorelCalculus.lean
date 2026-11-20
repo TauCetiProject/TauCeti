@@ -231,8 +231,8 @@ theorem closure_span_isStarProjection (M : VonNeumannAlgebra H) :
   have him_mem : (ℑ x : H →L[ℂ] H) ∈ M := by
     rw [imaginaryPart_apply_coe, ← Complex.coe_smul, neg_smul]
     exact neg_mem (SMulMemClass.smul_mem _ (SMulMemClass.smul_mem _ (sub_mem hx (star_mem hx))))
-  have : IsStarNormal (ℜ x : H →L[ℂ] H) := (ℜ x).2.isStarNormal
-  have : IsStarNormal (ℑ x : H →L[ℂ] H) := (ℑ x).2.isStarNormal
+  have : IsStarNormal (ℜ x : H →L[ℂ] H) := (ℜ x).property.isStarNormal
+  have : IsStarNormal (ℑ x : H →L[ℂ] H) := (ℑ x).property.isStarNormal
   have hre : (ℜ x : H →L[ℂ] H) ∈ P.topologicalClosure :=
     mem_closure_span_isStarProjection_of_isStarNormal hre_mem
   have him : (ℑ x : H →L[ℂ] H) ∈ P.topologicalClosure :=

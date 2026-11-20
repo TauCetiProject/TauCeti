@@ -81,8 +81,8 @@ along `θ : ⦋m⦌ ⟶ ⦋n⦌` corresponds to precomposing its chain map with 
 `Δ[m] ⟶ Δ[n]`. -/
 lemma homΓObjEquiv_naturality (R : C) (L : ChainComplex C ℕ) {m n : ℕ} (θ : ⦋m⦌ ⟶ ⦋n⦌)
     (x : R ⟶ (Idempotents.DoldKan.Γ.obj L) _⦋n⦌) :
-    (homΓObjEquiv R L m (x ≫ (Idempotents.DoldKan.Γ.obj L).map θ.op)).1 =
-      SSet.chainComplexMap (SSet.stdSimplex.map θ) R ≫ (homΓObjEquiv R L n x).1 := by
+    (homΓObjEquiv R L m (x ≫ (Idempotents.DoldKan.Γ.obj L).map θ.op)).val =
+      SSet.chainComplexMap (SSet.stdSimplex.map θ) R ≫ (homΓObjEquiv R L n x).val := by
   have h : (SSet.yonedaEquiv (X := Idempotents.DoldKan.Γ.obj L ⋙ coyoneda.obj (op R))).symm
       (x ≫ (Idempotents.DoldKan.Γ.obj L).map θ.op) =
         SSet.stdSimplex.map θ ≫ SSet.yonedaEquiv.symm x :=
@@ -92,11 +92,11 @@ lemma homΓObjEquiv_naturality (R : C) (L : ChainComplex C ℕ) {m n : ℕ} (θ 
   -- so the naturality of each step is applied under `congrArg` rather than by rewriting.
   refine (congrArg (fun y ↦ (normalizedMooreComplexHomEquiv _ L
     ((equivalence.toAdjunction.homEquiv _ L).symm
-      ((((sigmaConstAdj R).whiskerRight SimplexCategoryᵒᵖ).homEquiv _ _).symm y))).1) h).trans ?_
+      ((((sigmaConstAdj R).whiskerRight SimplexCategoryᵒᵖ).homEquiv _ _).symm y))).val) h).trans ?_
   refine (congrArg (fun y ↦ (normalizedMooreComplexHomEquiv _ L
-    ((equivalence.toAdjunction.homEquiv _ L).symm y)).1)
+    ((equivalence.toAdjunction.homEquiv _ L).symm y)).val)
       (Adjunction.homEquiv_naturality_left_symm _ _ _)).trans ?_
-  refine (congrArg (fun y ↦ (normalizedMooreComplexHomEquiv _ L y).1)
+  refine (congrArg (fun y ↦ (normalizedMooreComplexHomEquiv _ L y).val)
       (Adjunction.homEquiv_naturality_left_symm _ _ _)).trans ?_
   exact normalizedMooreComplexHomEquiv_naturality _ _
 
@@ -376,7 +376,7 @@ noncomputable def chainComplexHomEquiv :
         DegeneraciesVanish (X := ((SimplicialObject.whiskering _ _).obj
           (sigmaConst.obj (ModuleCat.of R R))).obj Δ[n]) (f.f m)} where
   toFun g := ⟨g.toChainComplexHom, g.degeneraciesVanish_toChainComplexHom⟩
-  invFun f := ofChainComplexHom f.1
+  invFun f := ofChainComplexHom f.val
   left_inv g := by
     ext J d
     by_cases h : d + #J = 1 ∧ J.Nonempty
@@ -396,16 +396,16 @@ noncomputable def chainComplexHomEquiv :
     rw [coeff_toChainComplexHom, simplexVal, map_val, SSet.stdSimplex.coe_asOrderHom]
     by_cases hα : #(univ.image α) = m + 1
     · rw [ite_eq_left (hα.trans (by simp))]
-      exact (ofChainComplexHomVal_of_card f.1 hα).trans
+      exact (ofChainComplexHomVal_of_card f.val hα).trans
         (congrArg _ (SSet.stdSimplex.objMk_orderEmbOfFin_image α hα))
-    · rw [ite_eq_right (fun h ↦ hα (h.trans (by simp))), coeff_eq_zero f.1 f.2 α hα]
+    · rw [ite_eq_right (fun h ↦ hα (h.trans (by simp))), coeff_eq_zero f.val f.property α hα]
 
 /-- The chain map attached to a simplex chain map `g` sends the generator of an `m`-simplex `α`
 of `Δ[n]` to the value of `g` pulled back along `α` on all of `Fin (m + 1)`: the value of `g` on
 the vertices of `α` if `α` is injective, and zero otherwise. -/
 lemma ιChainComplex_chainComplexHomEquiv_f (g : K.SimplexChainMap n) {m : ℕ}
     (α : Δ[n] _⦋m⦌) :
-    Δ[n].ιChainComplex α ≫ (chainComplexHomEquiv g).1.f m ≫ K.truncLE'ToX m =
+    Δ[n].ιChainComplex α ≫ (chainComplexHomEquiv g).val.f m ≫ K.truncLE'ToX m =
       ModuleCat.ofHom (LinearMap.toSpanSingleton R _
         ((g.map (SSet.stdSimplex.asOrderHom α)).val univ (-(m : ℤ)))) := by
   ext
@@ -415,10 +415,10 @@ lemma ιChainComplex_chainComplexHomEquiv_f (g : K.SimplexChainMap n) {m : ℕ}
 back along `θ : ⦋m⦌ ⟶ ⦋n⦌` corresponds to precomposing its chain map with the chain map induced
 by `Δ[m] ⟶ Δ[n]`. -/
 lemma chainComplexHomEquiv_map (g : K.SimplexChainMap n) {m : ℕ} (θ : ⦋m⦌ ⟶ ⦋n⦌) :
-    (chainComplexHomEquiv (g.map θ.toOrderHom)).1 =
-      SSet.chainComplexMap (SSet.stdSimplex.map θ) _ ≫ (chainComplexHomEquiv g).1 :=
+    (chainComplexHomEquiv (g.map θ.toOrderHom)).val =
+      SSet.chainComplexMap (SSet.stdSimplex.map θ) _ ≫ (chainComplexHomEquiv g).val :=
   coeff_injective fun j α ↦ by
-    have h : coeff (SSet.chainComplexMap (SSet.stdSimplex.map θ) _ ≫ g.toChainComplexHom) j α =
+    have h : coeff (SSet.chainComplexMap (SSet.stdSimplex.{u}.map θ) _ ≫ g.toChainComplexHom) j α =
         coeff g.toChainComplexHom j ((SSet.stdSimplex.map θ).app _ α) := by
       simp [coeff]
     refine (coeff_toChainComplexHom _ α).trans (Eq.trans ?_ h.symm)

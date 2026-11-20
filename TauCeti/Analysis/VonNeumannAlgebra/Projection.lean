@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.ClosedSubmodule
 public import TauCeti.Analysis.VonNeumannAlgebra.Lattice
 public import TauCeti.Analysis.VonNeumannAlgebra.Polar
+import Mathlib.Algebra.Order.Star.Projection
 import Mathlib.Analysis.CStarAlgebra.Projection
 import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 import Mathlib.Analysis.InnerProductSpace.StarOrder
@@ -914,7 +915,7 @@ private theorem starProjection_orthogonal_ker_one_sub_mul {M : VonNeumannAlgebra
   set x : H →L[ℂ] H := (1 - (p : H →L[ℂ] H)) * q
   set r : H →L[ℂ] H := (q : H →L[ℂ] H) - (p ⊓ q : M.Projection)
   have hr : IsStarProjection r :=
-    ((p ⊓ q).isStarProjection.le_iff_sub q.isStarProjection).1
+    ((p ⊓ q).isStarProjection.le_iff_isStarProjection_sub q.isStarProjection).1
       (Projection.coe_le_coe.2 inf_le_right)
   have hr_has : r.range.HasOrthogonalProjection :=
     ContinuousLinearMap.IsIdempotentElem.hasOrthogonalProjection_range hr.isIdempotentElem

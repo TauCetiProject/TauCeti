@@ -62,8 +62,9 @@ on, so the two commute (`TauCeti.InfiniteTypeAHeckeAlgebra.commute_shift_of_mem_
 placing an element of the stage `a` on the first `a` strands and an element of the stage `b` on
 the next `b` strands is an algebra map from the tensor product
 (`TauCeti.InfiniteTypeAHeckeAlgebra.blockIncl`). These are the disjoint block maps along which
-Markov traces are multiplicative; that they are injective, so embeddings, needs the basis
-theorem and is not proved here.
+Markov traces are multiplicative; that they are injective, so embeddings, is
+`TauCeti.InfiniteTypeAHeckeAlgebra.blockIncl_injective`, proved in
+`TauCeti.Algebra.TypeAHeckeAlgebra.Block`.
 
 ## Main definitions
 
@@ -141,8 +142,8 @@ them. -/
 instance : Ring (InfiniteTypeAHeckeAlgebra R q) :=
   inferInstanceAs (Ring (RingQuot (InfiniteTypeAHeckeAlgebra.Rel R q)))
 
-/-- The infinite type-A Hecke algebra over `R` is an algebra over every ring that `R` is an
-algebra over. -/
+/-- The infinite type-A Hecke algebra over `R` is an algebra over every commutative semiring that
+`R` is an algebra over. -/
 instance (priority := 900) InfiniteTypeAHeckeAlgebra.instAlgebra' {S : Type*} [CommSemiring S]
     [Algebra S R] : Algebra S (InfiniteTypeAHeckeAlgebra R q) :=
   inferInstanceAs (Algebra S (RingQuot (InfiniteTypeAHeckeAlgebra.Rel R q)))
@@ -192,8 +193,9 @@ theorem T_mul_self (i : ℕ) : T q i * T q i = ((q : R) - ↑q⁻¹) • T q i +
 roots `q` and `-q⁻¹`. -/
 theorem T_sub_algebraMap_mul_T_add_algebraMap_eq_zero (i : ℕ) :
     (T q i - algebraMap R _ (q : R)) * (T q i + algebraMap R _ (↑q⁻¹ : R)) = 0 := by
-  have hq : algebraMap R (InfiniteTypeAHeckeAlgebra R q) (q : R) * algebraMap R _ (↑q⁻¹ : R) = 1 :=
-    by simp [← map_mul]
+  have hq : algebraMap R (InfiniteTypeAHeckeAlgebra R q) (q : R) *
+      algebraMap R _ (↑q⁻¹ : R) = 1 := by
+    simp [← map_mul]
   simp only [sub_mul, mul_add, T_mul_self, ← Algebra.commutes _ (T q i), hq,
     Algebra.smul_def, map_sub]
   abel
@@ -459,6 +461,17 @@ private theorem toSubmodule_stage_add_two_le_stageSplit {n : ℕ}
     rw [mul_assoc]
     exact hx _ (hy m hm)
 
+/-- The braid relation moves `Tₘ₊₁` past `d * Tₘ * e` when `d` and `e` commute with `Tₘ₊₁`. -/
+private theorem T_succ_mul_mul_T_succ (m : ℕ) {d e : InfiniteTypeAHeckeAlgebra R q}
+    (hd : T q (m + 1) * d = d * T q (m + 1)) (he : T q (m + 1) * e = e * T q (m + 1)) :
+    T q (m + 1) * (d * T q m * e) * T q (m + 1) =
+      d * T q m * T q (m + 1) * (T q m * e) := by
+  calc _ = T q (m + 1) * d * T q m * (e * T q (m + 1)) := by simp only [mul_assoc]
+    _ = d * (T q m * T q (m + 1) * T q m) * e := by
+      rw [hd, ← he, T_braid]
+      simp only [mul_assoc]
+    _ = _ := by simp only [mul_assoc]
+
 /-- **The bimodule decomposition of the stages.** As a submodule, the stage of the first `n + 2`
 strands is `Hₙ₊₁ + Hₙ₊₁ Tₙ Hₙ₊₁`: it is spanned by the stage `Hₙ₊₁` of the first `n + 1` strands
 together with the products `a * T n * b` of the last generator with elements `a`, `b` of `Hₙ₊₁`.
@@ -495,16 +508,8 @@ theorem toSubmodule_stage_add_two (n : ℕ) :
       refine add_mem (Submodule.smul_mem _ _ ?_)
         (Submodule.mem_sup_left (stage_mono (by omega) hd))
       simpa only [mul_one] using mul_T_mul_mem_stageSplit (stage_mono (by omega) hd) (one_mem _)
-    · have hd' := (commute_T_of_mem_stage le_rfl hd).eq
-      have he' := (commute_T_of_mem_stage le_rfl he).eq
-      have h : T q (m + 1) * (d * T q m * e) * T q (m + 1) =
-          d * T q m * T q (m + 1) * (T q m * e) := by
-        calc _ = T q (m + 1) * d * T q m * (e * T q (m + 1)) := by simp only [mul_assoc]
-          _ = d * (T q m * T q (m + 1) * T q m) * e := by
-            rw [hd', ← he', T_braid]
-            simp only [mul_assoc]
-          _ = _ := by simp only [mul_assoc]
-      rw [h]
+    · rw [T_succ_mul_mul_T_succ m (commute_T_of_mem_stage le_rfl hd).eq
+        (commute_T_of_mem_stage le_rfl he).eq]
       exact mul_T_mul_mem_stageSplit
         (mul_mem (stage_mono (by omega) hd) (T_mem_stage (by omega)))
         (mul_mem (T_mem_stage (by omega)) (stage_mono (by omega) he))
@@ -538,7 +543,7 @@ theorem stage_linearMap_ext {M : Type*} [AddCommMonoid M] [Module R M] {n : ℕ}
           ⟨T q n, T_mem_stage (by omega)⟩ *
             Subalgebra.inclusion (stage_mono (n + 1).le_succ) ⟨b, hb⟩, h₂ _ _, rfl⟩⟩
   ext x
-  obtain ⟨y, hy, hyx⟩ := hle x.2
+  obtain ⟨y, hy, hyx⟩ := hle x.property
   rw [← Subtype.ext hyx]
   exact hy
 
@@ -586,20 +591,21 @@ theorem braidHom_sigma {n : ℕ} (i : Fin (n - 1)) :
     braidHom R q n (BraidGroup.sigma i) = unitT q i :=
   BraidGroup.lift_sigma _ _ _ i
 
-/-- Conjugation of a braid does not change its Hecke trace for a tracial linear functional. -/
-theorem map_braidHom_conj {τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R}
-    (htr : ∀ x y, τ (x * y) = τ (y * x)) {n : ℕ} (b c : BraidGroup n) :
-    τ (braidHom R q n (c * b * c⁻¹)) = τ (braidHom R q n b) := by
+/-- Conjugation of a braid does not change its Hecke trace for a function that is tracial,
+that is, that satisfies `f (x * y) = f (y * x)`. -/
+theorem map_braidHom_conj {X : Type*} {f : InfiniteTypeAHeckeAlgebra R q → X}
+    (htr : ∀ x y, f (x * y) = f (y * x)) {n : ℕ} (b c : BraidGroup n) :
+    f (braidHom R q n (c * b * c⁻¹)) = f (braidHom R q n b) := by
   simp only [map_mul, map_inv, Units.val_mul]
   rw [htr, ← mul_assoc, Units.inv_mul, one_mul]
 
-/-- The Hecke skein identity holds for every linear functional, without a trace hypothesis,
-and in an arbitrary braid context. -/
-theorem _root_.LinearMap.map_braidHom_skein (τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R)
-    {n : ℕ} (b c : BraidGroup (n + 1)) (i : Fin n) :
-    τ (braidHom R q (n + 1) (b * BraidGroup.sigma (n := n + 1) i * c)) -
-        τ (braidHom R q (n + 1) (b * (BraidGroup.sigma (n := n + 1) i)⁻¹ * c)) =
-      ((q : R) - ↑q⁻¹) * τ (braidHom R q (n + 1) (b * c)) := by
+/-- The Hecke skein identity holds for every linear map to an `R`-module, without a trace
+hypothesis, and in an arbitrary braid context. -/
+theorem _root_.LinearMap.map_braidHom_skein {M : Type*} [AddCommGroup M] [Module R M]
+    (τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] M) {n : ℕ} (b c : BraidGroup n) (i : Fin (n - 1)) :
+    τ (braidHom R q n (b * BraidGroup.sigma i * c)) -
+        τ (braidHom R q n (b * (BraidGroup.sigma i)⁻¹ * c)) =
+      ((q : R) - ↑q⁻¹) • τ (braidHom R q n (b * c)) := by
   simp only [map_mul, map_inv, braidHom_sigma, Units.val_mul, val_unitT]
   rw [← map_sub, ← sub_mul, ← mul_sub, T_sub_val_inv_unitT]
   simp [Algebra.algebraMap_eq_smul_one]
@@ -689,12 +695,8 @@ theorem shift_mem_stage {n : ℕ} (k : ℕ) {x : InfiniteTypeAHeckeAlgebra R q}
 the image under the shift, restricted to an algebra map between the stages. -/
 theorem isUnit_mk_shift {n : ℕ} (k : ℕ) {x : InfiniteTypeAHeckeAlgebra R q}
     {hx : x ∈ stage R q n} (h : IsUnit (⟨x, hx⟩ : stage R q n)) :
-    IsUnit (⟨shift R q k x, shift_mem_stage k hx⟩ : stage R q (n + k)) := by
-  let f : stage R q n →ₐ[R] stage R q (n + k) :=
-    ((shift R q k).comp (stage R q n).val).codRestrict _ fun y ↦ shift_mem_stage k y.2
-  have e : f ⟨x, hx⟩ = ⟨shift R q k x, shift_mem_stage k hx⟩ :=
-    Subtype.ext ((AlgHom.coe_codRestrict _ _ _ _).trans (AlgHom.comp_apply _ _ _))
-  exact e ▸ h.map f
+    IsUnit (⟨shift R q k x, shift_mem_stage k hx⟩ : stage R q (n + k)) :=
+  h.map (((shift R q k).comp (stage R q n).val).codRestrict _ fun y ↦ shift_mem_stage k y.property)
 
 /-- The image of the strand shift by `k` is the subalgebra generated by the generators
 `T (i + k)`. -/
@@ -729,14 +731,14 @@ def blockIncl (a b : ℕ) : stage R q a ⊗[R] stage R q b →ₐ[R] stage R q (
   (Algebra.TensorProduct.lift (stage R q a).val ((shift R q a).comp (stage R q b).val)
     fun x y ↦ by
       rw [AlgHom.comp_apply, Subalgebra.val_apply, Subalgebra.val_apply]
-      exact commute_shift_of_mem_stage x.2 y).codRestrict _ fun z ↦ by
+      exact commute_shift_of_mem_stage x.property y).codRestrict _ fun z ↦ by
     induction z using TensorProduct.inductionOn with
     | tmul x y =>
       rw [Algebra.TensorProduct.lift_tmul, AlgHom.comp_apply, Subalgebra.val_apply,
         Subalgebra.val_apply]
-      refine mul_mem (stage_mono (Nat.le_add_right a b) x.2) ?_
+      refine mul_mem (stage_mono (Nat.le_add_right a b) x.property) ?_
       rw [Nat.add_comm a b]
-      exact shift_mem_stage a y.2
+      exact shift_mem_stage a y.property
     | add z z' hz hz' => simpa only [map_add] using add_mem hz hz'
 
 /-- The disjoint block map multiplies the first factor by the shift of the second. -/

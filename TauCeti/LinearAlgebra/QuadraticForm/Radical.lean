@@ -88,8 +88,9 @@ regular case.
   symmetric bilinear form `B` is `2 • B`.
 * `LinearMap.BilinForm.radical_toQuadraticMap`: the radical of the quadratic form of a symmetric
   bilinear form `B` equals the kernel of `B`.
-* `LinearMap.BilinForm.Nondegenerate.toQuadraticMap`: over a ring in which `2` is invertible, the
-  quadratic form of a nondegenerate symmetric bilinear form is nondegenerate.
+* `LinearMap.BilinForm.nondegenerate_toQuadraticMap_iff`,
+  `LinearMap.BilinForm.Nondegenerate.toQuadraticMap`: over a ring in which `2` is invertible, a
+  symmetric bilinear form is nondegenerate exactly when its quadratic form is.
 * `QuadraticMap.radical_zero_prod`: the radical of the orthogonal sum of a zero form with `Q`.
 * `QuadraticMap.radical_lift_radical`, `QuadraticMap.nondegenerate_lift_radical`: the regular
   part has trivial radical, so it is nondegenerate when `2` is invertible.
@@ -379,7 +380,7 @@ noncomputable def IsometryEquiv.restrictProdRadicalOfIsCompl (Q : QuadraticMap R
     change Q (W.prodEquivOfIsCompl Q.radical hW.symm x) = _
     rw [Submodule.coe_prodEquivOfIsCompl', QuadraticMap.prod_apply,
       QuadraticMap.restrict_apply, add_comm,
-      (QuadraticMap.mem_radical_iff'.mp x.2.2).2]
+      (QuadraticMap.mem_radical_iff'.mp x.2.property).2]
     simp
 
 /-- The direct-sum isometry adds the complement and radical components. -/
@@ -615,7 +616,7 @@ theorem exists_orthogonal_anisotropic [NeZero (2 : K)]
   refine ⟨z, ?_, ?_⟩
   · apply QuadraticMap.isOrtho_polarBilin.mp
     simpa only [B, W, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_comm] using
-      z.2 y (Submodule.mem_span_singleton_self y)
+      z.property y (Submodule.mem_span_singleton_self y)
   · have hz' : B (z : V) (z : V) ≠ 0 := by
       simpa only [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply] using hz
     simpa only [B, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_self, nsmul_eq_mul,
@@ -709,16 +710,23 @@ theorem BilinForm.radical_toQuadraticMap [Invertible (2 : R)] (B : LinearMap.Bil
   rw [QuadraticMap.radical_eq_ker_associated,
     QuadraticMap.associated_left_inverse (S := R) hB.eq]
 
+/-- Over a ring in which `2` is invertible, a symmetric bilinear form is nondegenerate exactly
+when its quadratic form is: the associated bilinear form of the quadratic form is the form itself.
+-/
+theorem BilinForm.nondegenerate_toQuadraticMap_iff [Invertible (2 : R)]
+    {B : LinearMap.BilinForm R M} (hB : B.IsSymm) :
+    B.toQuadraticMap.Nondegenerate ↔ B.Nondegenerate := by
+  rw [← QuadraticMap.nondegenerate_associated_iff,
+    QuadraticMap.associated_left_inverse' R (BilinForm.isSymm_iff_flip.1 hB)]
+
 /-- **Nondegeneracy passes from a symmetric bilinear form to its quadratic form** over a ring in
 which `2` is invertible. Some hypothesis on `2` is needed: a quadratic form is a finer invariant
 than its polar form, and it is the bilinear form, not the polar form `2 • B`, that is assumed
 nondegenerate here. -/
 theorem BilinForm.Nondegenerate.toQuadraticMap [Invertible (2 : R)] {B : LinearMap.BilinForm R M}
     (hB : B.Nondegenerate) (hflip : LinearMap.flip B = B) :
-    (BilinMap.toQuadraticMap B).Nondegenerate := by
-  rw [← QuadraticMap.nondegenerate_associated_iff,
-    QuadraticMap.associated_left_inverse' R hflip]
-  exact hB
+    (BilinMap.toQuadraticMap B).Nondegenerate :=
+  (nondegenerate_toQuadraticMap_iff (BilinForm.isSymm_iff_flip.2 hflip)).2 hB
 
 end LinearMap
 
