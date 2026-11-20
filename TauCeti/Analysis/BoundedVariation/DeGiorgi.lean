@@ -108,31 +108,6 @@ private theorem eventually_mul_volume_le_variationMeasure_closedBall (hn : 2 ≤
   exact ((ENNReal.lt_div_iff_mul_lt (.inl (measure_closedBall_pos _ _ hρ).ne')
     (.inl measure_closedBall_lt_top.ne)).1 h).le
 
-/-- In dimension `n ≥ 2`, a point of the reduced boundary carries no perimeter measure. -/
-private theorem variationMeasure_preimage_singleton_eq_zero (hn : 2 ≤ finrank ℝ E)
-    (hx : x ∈ reducedBoundary volume Ω s) :
-    variationMeasure volume Ω (s.indicator 1) ((↑) ⁻¹' {x}) = 0 := by
-  set k := finrank ℝ E - 1
-  have hk : k ≠ 0 := by omega
-  -- The bound `2 ω_{n-1} ρ ^ (n - 1)` on small closed balls tends to zero.
-  have hlim : Tendsto (fun ρ => 2 * volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) ρ))
-      (𝓝[>] 0) (𝓝 0) := by
-    have h : Tendsto (fun ρ : ℝ => 2 * (ENNReal.ofReal (ρ ^ k) *
-        volume (ball (0 : EuclideanSpace ℝ (Fin k)) 1))) (𝓝[>] 0) (𝓝 0) := by
-      have h0 : Tendsto (fun ρ : ℝ => ENNReal.ofReal (ρ ^ k)) (𝓝[>] 0) (𝓝 0) := by
-        simpa [zero_pow hk] using (ENNReal.tendsto_ofReal
-          ((continuous_pow k).tendsto 0)).mono_left nhdsWithin_le_nhds
-      simpa using ENNReal.Tendsto.const_mul (ENNReal.Tendsto.mul_const h0
-        (.inr measure_ball_lt_top.ne)) (.inr ENNReal.ofNat_ne_top)
-    refine h.congr' (eventually_nhdsWithin_of_forall fun ρ (hρ : 0 < ρ) => ?_)
-    dsimp only
-    rw [Measure.addHaar_closedBall _ _ hρ.le, finrank_euclideanSpace_fin]
-  refine le_antisymm (ge_of_tendsto hlim ?_) bot_le
-  filter_upwards [eventually_variationMeasure_closedBall_le_mul_volume hn hx ENNReal.one_lt_two,
-    self_mem_nhdsWithin] with ρ hρ (hρ0 : 0 < ρ)
-  exact (measure_mono (preimage_mono (singleton_subset_iff.2 (mem_closedBall_self hρ0.le)))).trans
-    hρ
-
 /-! ### Rescaled sets near a point of the reduced boundary -/
 
 /-- At a point `x` of the reduced boundary, let `r > 0` with `ball x (r * R) ⊆ Ω`. For an open set
@@ -376,11 +351,14 @@ private theorem exists_forall_variationMeasure_le_mul_ediam_pow (hn : 2 ≤ finr
   have ht't : ((↑) : Ω → E) ⁻¹' t' = t := Subtype.coe_injective.preimage_image t
   have hdiam : ediam t' = ediam t := isometry_subtype_coe.ediam_image t
   rcases eq_or_ne (ediam t) 0 with h0 | h0
-  · -- A set of diameter zero containing `y` is contained in `{y}`, which is null.
+  · -- A set of diameter zero containing `y` lies in `{y}`, which is `Hⁿ⁻¹`-null as `n ≥ 2`.
     have hty : t ⊆ ((↑) : Ω → E) ⁻¹' {x} := fun z hz =>
       congrArg Subtype.val (ediam_eq_zero_iff.1 h0 hz hyt)
-    rw [measure_mono_null hty (variationMeasure_preimage_singleton_eq_zero hn hy)]
-    exact zero_le
+    have := nullSingletonClass_hausdorff (X := E) (Nat.cast_pos.2 (by omega : 0 < finrank ℝ E - 1))
+    refine (measure_mono_null hty ?_).trans_le zero_le
+    rw [← Measure.map_apply measurable_subtype_coe (measurableSet_singleton x)]
+    exact map_variationMeasure_absolutelyContinuous_euclideanHausdorffMeasure
+      (Measure.euclideanHausdorffMeasure_eq_zero_iff.2 (measure_singleton x))
   have htop : ediam t ≠ ∞ := (ht.trans ENNReal.ofReal_lt_top).ne
   set r := (ediam t).toReal
   have hr : 0 < r := ENNReal.toReal_pos h0 htop
