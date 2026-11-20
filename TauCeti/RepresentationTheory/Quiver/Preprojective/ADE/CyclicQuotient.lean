@@ -13,6 +13,7 @@ public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeE.Charac
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeE.CharacteristicThree
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeE.CyclicQuotient
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Affine
+import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.GraphGrading
 
 /-!
 # Positive-degree cyclic quotients of preprojective algebras
@@ -341,7 +342,7 @@ theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_isBa
       exact ⟨10, by simp,
         (exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_iff_of_iso k e').mpr
           ⟨signlessWord k zigzagE8Graph [3, 2, 3, 4, 3, 4, 3, 4, 3, 4, 3],
-            signlessWord_E8_cyclicWord_mem_grade_ten k,
+            signlessWord_mem_grade k zigzagE8Graph [3, 2, 3, 4, 3, 4, 3, 4, 3, 4, 3],
             signlessWord_E8_cyclicWord_notMem_commutatorSubmodule k hp0⟩⟩
 
 /-- **At a bad prime `p` of a valid Dynkin type `t`, if `(p : k) = 0` in a nontrivial commutative
@@ -357,11 +358,8 @@ theorem exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_isBadPrime
     exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_isBadPrime k ht e hp hp0
   have hb : G.IsBipartite :=
     (e.isAcyclic_iff.mpr t.isAcyclic_diagramGraph_cartanMatrix).isBipartite
-  let C := hb.coloringBool
-  let E := C.signlessPreprojectiveAlgebraEquiv k o
-  refine ⟨d, hd, E z, C.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o hz,
-    fun h => hz0 ?_⟩
-  simpa only [AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule E.symm h
+  exact ⟨d, hd, hb.coloringBool.exists_mem_preprojectiveGrade_notMem_commutatorSubmodule k o
+    ⟨z, hz, hz0⟩⟩
 
 end BadCharacteristic
 
