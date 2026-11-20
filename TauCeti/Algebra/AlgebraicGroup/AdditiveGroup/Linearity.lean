@@ -75,6 +75,7 @@ theorem map_smul_of_naturality
     {A : Type x} [CommRing A] [Algebra R A] (g : H →ₐ[R] A) (a : A) (f : M →ₗ[R] A) :
     act A g (a • f) = a • act A g f := by
   let _ : Algebra ℚ A := ((algebraMap R A).comp (algebraMap ℚ R)).toAlgebra
+  have : HasUniqueDiv A := .of_module_rat A
   -- The constants, the doubling substitution and the evaluations of `A[X]`.
   let ι : A →ₐ[R] A[X] := IsScalarTower.toAlgHom R A A[X]
   let D : A[X] →ₐ[R] A[X] := (aeval (C 2 * X : A[X])).restrictScalars R
@@ -188,14 +189,13 @@ noncomputable def linearAutOfNaturality [Algebra ℚ R]
   map_one' := LinearEquiv.ext fun f => by
     obtain ⟨P, rfl⟩ : ∃ P, Multiplicative.toAdd (pointsMulEquiv P) = f :=
       ⟨pointsMulEquiv.symm (Multiplicative.ofAdd f), by simp⟩
-    rw [AddEquiv.coe_toLinearEquiv, paramAddAut_apply, map_one, MulAut.one_apply,
+    simp only [AddEquiv.coe_toLinearEquiv, paramAddAut_apply, map_one, MulAut.one_apply,
       FunLike.coe_one_eq_id, id_eq]
   map_mul' g g' := LinearEquiv.ext fun f => by
     obtain ⟨P, rfl⟩ : ∃ P, Multiplicative.toAdd (pointsMulEquiv P) = f :=
       ⟨pointsMulEquiv.symm (Multiplicative.ofAdd f), by simp⟩
-    rw [mul_apply_eq_comp, AddEquiv.coe_toLinearEquiv, AddEquiv.coe_toLinearEquiv,
-      AddEquiv.coe_toLinearEquiv, paramAddAut_apply, map_mul, MulAut.mul_apply,
-      paramAddAut_apply, paramAddAut_apply]
+    simp only [AddEquiv.coe_toLinearEquiv, mul_apply_eq_comp, paramAddAut_apply, map_mul,
+      MulAut.mul_apply]
 
 variable [Algebra ℚ R]
   (act_mapValue : ∀ (A B : Type x) [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
