@@ -10,8 +10,8 @@ public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Basic
 
 /-! # The signed support-local cap connecting square
 
-Native relative small cycles cap with a cochain and then map by the singular Mayer–Vietoris
-connecting morphism. This equals the localized cap of its coboundary with sign `(-1)^(p+1)`.
+Capping native relative small cycles with a cocycle `α` and applying the connecting map gives
+`(-1)^(p+1)` times the localized cap with `ζ`, the common coboundary of lifts differing by `α`.
 -/
 
 public noncomputable section
