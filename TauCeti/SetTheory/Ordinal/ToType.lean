@@ -23,7 +23,7 @@ For ordinals `o₁ ≤ o₂`, every ordinal below `o₁` is below `o₂`, which 
   each element.
 -/
 
-@[expose] public section
+public section
 
 universe u
 
