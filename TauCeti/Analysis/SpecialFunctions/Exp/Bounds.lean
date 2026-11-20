@@ -37,6 +37,7 @@ is bounded on `x ≥ 0`.
   `t`.
 * `TauCeti.exp_neg_mul_mul_le`: `x exp (-r x) ≤ (2 / δ) exp (-(δ / 2) x)` for `0 < δ ≤ r`.
 * `TauCeti.fourteen_le_two_mul_exp_two_pi`: the numerical bound `14 ≤ 2 exp (2π)`.
+* `Real.abs_exp_sub_exp_le`: `|exp a - exp b| ≤ exp M * |a - b|` for `a, b ≤ M`.
 -/
 
 public section
@@ -181,5 +182,20 @@ theorem exp_neg_mul_mul_le {r δ : ℝ} (hδ : 0 < δ) (hr : δ ≤ r) (x : ℝ)
 /-- `2 exp (2π)` is at least `14`. -/
 theorem fourteen_le_two_mul_exp_two_pi : 14 ≤ 2 * exp (2 * π) := by
   nlinarith [quadratic_le_exp_of_nonneg (by positivity : 0 ≤ 2 * π), two_le_pi]
+
+/-- On `(-∞, M]`, the real exponential is `exp M`-Lipschitz: for `a ≤ M` and `b ≤ M`,
+`|exp a - exp b| ≤ exp M * |a - b|`. -/
+theorem _root_.Real.abs_exp_sub_exp_le {a b M : ℝ} (ha : a ≤ M) (hb : b ≤ M) :
+    |exp a - exp b| ≤ exp M * |a - b| := by
+  wlog hba : b ≤ a generalizing a b
+  · rw [abs_sub_comm, abs_sub_comm a b]
+    exact this hb ha (le_of_not_ge hba)
+  rw [abs_of_nonneg (sub_nonneg.2 (exp_le_exp.2 hba)), abs_of_nonneg (sub_nonneg.2 hba)]
+  have h1 : 1 - exp (b - a) ≤ a - b := by linarith [add_one_le_exp (b - a)]
+  have h2 : exp a - exp b = exp a * (1 - exp (b - a)) := by
+    rw [mul_sub, mul_one, ← exp_add, add_sub_cancel]
+  rw [h2]
+  exact (mul_le_mul_of_nonneg_left h1 (exp_pos a).le).trans
+    (mul_le_mul_of_nonneg_right (exp_le_exp.2 ha) (sub_nonneg.2 hba))
 
 end TauCeti

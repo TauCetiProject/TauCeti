@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.LaurentSeries.Derivative
 public import TauCeti.RingTheory.LaurentSeries.Rescale
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 public import TauCeti.RingTheory.PowerSeries.Substitution
+import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
 # Substitution into formal Laurent series
@@ -69,6 +70,8 @@ substitution of the image of `φ` into the image of `f`.
 * `TauCeti.LaurentSeries.rescale_toAlgHom`: unit rescaling agrees with substitution `X ↦ a X`.
 * `TauCeti.LaurentSeries.coeff_substAlgHom_C_mul_X`: the substitution `X ↦ a X` multiplies
   the coefficient of `Xⁿ` by `a ^ n`, for every integer `n`.
+* `TauCeti.LaurentSeries.eq_zero_of_subst_X_single_smul_X`: a two-variable power series over a
+  commutative ring `R` whose substitution at `(X, T X)` in `R⸨T⸩⟦X⟧` vanishes is zero.
 -/
 
 public section
@@ -488,5 +491,29 @@ instance (φ : FormalCoordinate K) :
     RingHomInvPair ((substAlgEquiv φ).toRingEquiv.symm : K⸨X⸩ →+* K⸨X⸩)
       ((substAlgEquiv φ).toRingEquiv : K⸨X⸩ →+* K⸨X⸩) :=
   .of_ringEquiv_symm _
+
+/-- A two-variable power series `f ∈ R⟦X₀, X₁⟧` over a commutative ring `R` whose substitution
+along `(X, T X)` in `R⸨T⸩⟦X⟧` (with `T = HahnSeries.single 1 1`) vanishes is zero. -/
+theorem eq_zero_of_subst_X_single_smul_X {R : Type*} [CommRing R] {f : MvPowerSeries (Fin 2) R}
+    (h : MvPowerSeries.subst
+      ![(PowerSeries.X : R⸨X⸩⟦X⟧), (HahnSeries.single 1 (1 : R) : R⸨X⸩) • PowerSeries.X]
+      (f.map (algebraMap R R⸨X⸩)) = 0) :
+    f = 0 := by
+  ext d
+  rw [MvPowerSeries.coeff_zero]
+  have hc := congrArg (fun g : R⸨X⸩⟦X⟧ ↦ (PowerSeries.coeff (d 0 + d 1) g).coeff (d 1)) h
+  rw [MvPowerSeries.coeff_subst_X_smul_X, (PowerSeries.coeff (d 0 + d 1)).map_zero,
+    HahnSeries.coeff_zero, HahnSeries.coeff_sum] at hc
+  rw [Finset.sum_eq_single (d 1)] at hc
+  · have hd : Finsupp.single (0 : Fin 2) (d 0 + d 1 - d 1) + Finsupp.single 1 (d 1) = d := by
+      ext i
+      fin_cases i <;> simp
+    simpa only [hd, MvPowerSeries.coeff_map, HahnSeries.single_pow, nsmul_eq_mul, mul_one,
+      one_pow, coeff_algebraMap_mul, HahnSeries.coeff_single_same] using hc
+  · intro b _ hb_ne
+    rw [MvPowerSeries.coeff_map, HahnSeries.single_pow, nsmul_eq_mul, mul_one, one_pow,
+      coeff_algebraMap_mul, HahnSeries.coeff_single_of_ne (by exact_mod_cast hb_ne.symm),
+      mul_zero]
+  · exact fun hnot ↦ absurd (Finset.mem_range.mpr (by omega)) hnot
 
 end TauCeti.LaurentSeries
