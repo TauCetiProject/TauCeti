@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.GraphOfGroups.Britton
 public import TauCeti.GroupTheory.GraphOfGroups.Cyclic
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 
 /-!
 # Britton's lemma in the Baumslag–Solitar group `⟨a, t ∣ t a² t⁻¹ = a⟩`
@@ -41,15 +42,6 @@ namespace GraphOfGroups
 
 open Multiplicative
 
-/- The generator `a = ofAdd 1` of `Multiplicative ℤ` is not a square, so it does not lie in
-`ω(ℤ) = ⟨a²⟩`. -/
-private theorem ofAdd_one_notMem_range_zpowGroupHom_two :
-    ofAdd (1 : ℤ) ∉ (zpowGroupHom (α := Multiplicative ℤ) 2).range := by
-  rintro ⟨c, hc⟩
-  have := congrArg toAdd hc
-  simp at this
-  omega
-
 /-- In the Baumslag–Solitar group `⟨a, t ∣ t a² t⁻¹ = a⟩` the path `1, t, a, t⁻¹, 1` is reduced,
 because `a ∉ ω(ℤ) = ⟨a²⟩`. -/
 example {v : (SerreGraph.rose Unit).V} :
@@ -58,7 +50,7 @@ example {v : (SerreGraph.rose Unit).V} :
       [(-1, ofAdd 1), (1, 1)] :
         (baumslagSolitar 1 2 one_ne_zero two_ne_zero).AlternatingPath v v).IsReduced :=
   (isReduced_loopPath_iff _ _).2
-    (List.isChain_pair.2 fun h => (ofAdd_one_notMem_range_zpowGroupHom_two h).elim)
+    (List.isChain_pair.2 fun h => absurd (Int.mem_range_zpowGroupHom_iff.1 h) (by decide))
 
 /-- In the Baumslag–Solitar group `⟨a, t ∣ t a² t⁻¹ = a⟩` the conjugate `t a t⁻¹` does not lie in
 `⟨a⟩`: the path `1, t, a, t⁻¹, 1` of the loop is reduced, because `a ∉ ω(ℤ) = ⟨a²⟩`, so this is
@@ -91,7 +83,7 @@ theorem baumslagSolitarRelator_one_two_conj_notMem_zpowers :
   have hP : (loopPath _ _ hf hg 1 [(-1, ofAdd 1), (1, 1)] :
       (loop _ _ hf hg).AlternatingPath v v).IsReduced :=
     (isReduced_loopPath_iff _ _).2
-      (List.isChain_pair.2 fun h => (ofAdd_one_notMem_range_zpowGroupHom_two h).elim)
+      (List.isChain_pair.2 fun h => absurd (Int.mem_range_zpowGroupHom_iff.1 h) (by decide))
   have := hP.equivHNNExtension_toπ₁Tree_toPath_mem_range_of_iff.1 ⟨ofAdd 1 ^ k, ?_⟩
   · simp at this
   · simp [← h]
