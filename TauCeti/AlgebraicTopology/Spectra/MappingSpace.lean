@@ -34,13 +34,9 @@ subsets `S` of `Fin n` of `X_{#S} ∧ (G₀ K)_{#Sᶜ}`, every summand with `S �
 
 * `SymmetricSequence.tensorFreeZeroι X K n`: the isomorphism `X_n ∧ K ⟶ (X ⊗ G₀ K)_n`, natural in
   `X` and `K` and `Σ_n`-equivariant.
-* `SymmetricSpectrum.levelSmash X` and `SymmetricSpectrum.levelSmashFunctor`: smashing spectra with
-  pointed simplicial sets, `X ↦ K ↦ X ∧ K`.
-* `SymmetricSpectrum.mappingSpace X` and `SymmetricSpectrum.mappingSpaceFunctor`: the pointed
-  mapping simplicial sets `(X, Y) ↦ Map(X, Y)`.
-* `SymmetricSpectrum.levelSmashMappingSpaceAdjunction X` and
-  `SymmetricSpectrum.levelSmashMappingSpaceAdjunction₂`: the adjunction `X ∧ - ⊣ Map(X, -)` and its
-  parametrized form in both variables.
+* `SymmetricSpectrum.levelSmash X`: the functor `K ↦ X ∧ K`.
+* `SymmetricSpectrum.mappingSpace X`: the functor `Y ↦ Map(X, Y)`.
+* `SymmetricSpectrum.levelSmashMappingSpaceAdjunction X`: the adjunction `X ∧ - ⊣ Map(X, -)`.
 * `SymmetricSpectrum.levelSmashUnitIso X`: the unit isomorphism `X ∧ S⁰ ≅ X`.
 * `SymmetricSpectrum.mappingSpaceSimplexEquiv`: the `m`-simplices of `Map(X, Y)` are the maps
   `X ∧ Δ[m]₊ ⟶ Y`.
@@ -170,28 +166,15 @@ end SymmetricSequence
 
 namespace SymmetricSpectrum
 
-/-- Smashing a symmetric spectrum with a pointed simplicial set, curried in both variables:
-`X ↦ K ↦ X ∧ K`. -/
-noncomputable abbrev levelSmashFunctor :
-    SymmetricSpectrum ⥤ PointedSSet.{0} ⥤ SymmetricSpectrum :=
-  Mod.curriedTensor ⋙ (Functor.whiskeringLeft _ _ _).obj (SymmetricSequence.free 0)
-
 /-- The symmetric spectrum `X ∧ K` of a symmetric spectrum `X` and a pointed simplicial set `K`,
 as a functor of `K`: the Day convolution `X ⊗ G₀ K` with the free symmetric sequence on `K` in
 level zero, with the sphere acting on `X`. Its levels are `X_n ∧ K`
 (`SymmetricSequence.tensorFreeZeroι`). -/
 -- An abbreviation, so that the levels of `X ∧ K` are those of the Day convolution `X ⊗ G₀ K`
 -- without transports.
-noncomputable abbrev levelSmash (X : SymmetricSpectrum) : PointedSSet.{0} ⥤ SymmetricSpectrum :=
-  levelSmashFunctor.obj X
-
-/-- The pointed mapping simplicial set `(X, Y) ↦ Map(X, Y)` of symmetric spectra, contravariant
-in `X` and covariant in `Y`. -/
-noncomputable abbrev mappingSpaceFunctor :
-    SymmetricSpectrumᵒᵖ ⥤ SymmetricSpectrum ⥤ PointedSSet.{0} :=
-  Mod.ihomFunctor ⋙ (Functor.whiskeringRight _ _ _).obj
-    ((DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor ⋙
-      (CategoryTheory.evaluation FiniteBijection PointedSSet.{0}).obj (FiniteBijection.mk 0))
+noncomputable abbrev levelSmash (X : SymmetricSpectrum) : PointedSSet.{0} ⥤ SymmetricSpectrum where
+  obj K := (Mod.tensorLeft X).obj ((SymmetricSequence.free 0).obj K)
+  map f := (Mod.tensorLeft X).map ((SymmetricSequence.free 0).map f)
 
 /-- The pointed mapping simplicial set `Map(X, Y)` of symmetric spectra, as a functor of `Y`:
 level zero of the object `Hom_S(X, Y)` of `S`-linear maps. Its `m`-simplices are the spectrum maps
@@ -202,13 +185,24 @@ level zero of the object `Hom_S(X, Y)` of `S`-linear maps. Its `m`-simplices are
 -- for the equation lemma `levelSmashMappingSpaceAdjunction.eq_1` (which doc-gen4 asks for).
 noncomputable abbrev mappingSpace (X : SymmetricSpectrum) :
     SymmetricSpectrum ⥤ PointedSSet.{0} :=
-  mappingSpaceFunctor.obj (Opposite.op X)
+  Mod.ihom X ⋙ (DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor ⋙
+    (CategoryTheory.evaluation FiniteBijection PointedSSet.{0}).obj (FiniteBijection.mk 0)
 
 /-- Smashing a symmetric spectrum `X` with pointed simplicial sets is left adjoint to the mapping
 space `Map(X, -)`: spectrum maps `X ∧ K ⟶ Y` are based maps `K ⟶ Map(X, Y)`. -/
 noncomputable def levelSmashMappingSpaceAdjunction (X : SymmetricSpectrum) :
     levelSmash X ⊣ mappingSpace X :=
   (SymmetricSequence.freeEvaluationAdjunction 0).comp (Mod.ihomAdjunction X)
+
+/-- Smashing a fixed symmetric spectrum `X` with pointed simplicial sets is a left adjoint, hence
+preserves colimits of all sizes. -/
+instance (X : SymmetricSpectrum) : (levelSmash X).IsLeftAdjoint :=
+  (levelSmashMappingSpaceAdjunction X).isLeftAdjoint
+
+/-- Taking the pointed mapping space out of a fixed symmetric spectrum `X` is a right adjoint, hence
+preserves limits of all sizes. -/
+instance (X : SymmetricSpectrum) : (mappingSpace X).IsRightAdjoint :=
+  (levelSmashMappingSpaceAdjunction X).isRightAdjoint
 
 /-- The adjunction `X ∧ - ⊣ Map(X, -)` curries a spectrum map `X ∧ K ⟶ Y` into `Hom_S(X, Y)` and
 restricts it to the generator `K ⟶ (G₀ K)₀`. -/
@@ -270,6 +264,14 @@ it is the right unitor `X_n ∧ S⁰ ≅ X_n` (`tensorFreeZeroι_comp_levelSmash
 noncomputable def levelSmashUnitIso (X : SymmetricSpectrum) : (levelSmash X).obj (𝟙_ _) ≅ X :=
   (Mod.tensorLeft X).mapIso SymmetricSequence.freeZeroUnitIso ≪≫ Mod.tensorLeftUnitIso X
 
+/-- The underlying map of the unit isomorphism `X ∧ S⁰ ≅ X`. -/
+lemma levelSmashUnitIso_hom_hom (X : SymmetricSpectrum) :
+    (levelSmashUnitIso X).hom.hom =
+      X.X ◁ SymmetricSequence.freeZeroUnitIso.hom ≫ (ρ_ X.X).hom := by
+  simp only [levelSmashUnitIso, Iso.trans_hom, Functor.mapIso_hom, Mod.comp_hom',
+    Mod.tensorLeftUnitIso_hom_hom]
+  rfl
+
 /-- In level `n`, the unit isomorphism `X ∧ S⁰ ≅ X` is the right unitor `X_n ∧ S⁰ ≅ X_n`. -/
 @[reassoc (attr := simp)]
 lemma tensorFreeZeroι_comp_levelSmashUnitIso_hom (X : SymmetricSpectrum) (n : ℕ) :
@@ -299,120 +301,6 @@ lemma unitHomMappingSpaceEquiv_symm_apply (X Y : SymmetricSpectrum) (f : X ⟶ Y
     (unitHomMappingSpaceEquiv X Y).symm f =
       (levelSmashMappingSpaceAdjunction X).homEquiv _ _ ((levelSmashUnitIso X).hom ≫ f) := by
   simp [unitHomMappingSpaceEquiv]
-
-instance (X : SymmetricSpectrum) : (levelSmashFunctor.obj X).IsLeftAdjoint :=
-  (levelSmashMappingSpaceAdjunction X).isLeftAdjoint
-
-instance (X : SymmetricSpectrumᵒᵖ) : (mappingSpaceFunctor.obj X).IsRightAdjoint :=
-  (levelSmashMappingSpaceAdjunction X.unop).isRightAdjoint
-
-/-- The parametrized adjunction between `(X, K) ↦ X ∧ K` and `(X, Y) ↦ Map(X, Y)`. -/
-noncomputable def levelSmashMappingSpaceAdjunction₂ :
-    levelSmashFunctor ⊣₂ mappingSpaceFunctor :=
-  ParametrizedAdjunction.mk' levelSmashMappingSpaceAdjunction fun {X X'} f {K Y} g ↦ by
-    rw [levelSmashMappingSpaceAdjunction_homEquiv_apply,
-      levelSmashMappingSpaceAdjunction_homEquiv_apply]
-    have h := Mod.ihomAdjunction₂.homEquiv_naturality_one f g
-    rw [ParametrizedAdjunction.homEquiv_eq, ParametrizedAdjunction.homEquiv_eq,
-      Mod.ihomAdjunction₂_adj, Mod.ihomAdjunction₂_adj,
-      Mod.ihomAdjunction_homEquiv, Mod.ihomAdjunction_homEquiv] at h
-    exact (congrArg (SymmetricSequence.freeι 0 K ≫ ·)
-      (congrArg (fun u ↦ u.natTrans.app (FiniteBijection.mk 0)) h)).trans
-      (Category.assoc _ _ _).symm
-
-@[simp]
-lemma levelSmashMappingSpaceAdjunction₂_adj (X : SymmetricSpectrum) :
-    levelSmashMappingSpaceAdjunction₂.adj X = levelSmashMappingSpaceAdjunction X := by
-  simp [levelSmashMappingSpaceAdjunction₂]
-
-/-- The unit isomorphism `X ∧ S⁰ ≅ X` is natural in `X`. -/
-@[reassoc]
-lemma levelSmashFunctor_map_app_comp_levelSmashUnitIso_hom {X X' : SymmetricSpectrum}
-    (f : X ⟶ X') :
-    (levelSmashFunctor.map f).app (𝟙_ _) ≫ (levelSmashUnitIso X').hom =
-      (levelSmashUnitIso X).hom ≫ f := by
-  apply Mod.Hom.ext
-  simp only [levelSmashFunctor, Mod.curriedTensor, Functor.comp_map,
-    Functor.whiskeringLeft_obj_map, Functor.whiskerLeft_app, Mod.Hom.mk'_hom,
-    levelSmashUnitIso, Iso.trans_hom, Functor.mapIso_hom, Mod.comp_hom',
-    Mod.tensorLeftUnitIso_hom_hom, Category.assoc]
-  rw [← whisker_exchange_assoc, rightUnitor_naturality]
-
-/-- Precomposition on mapping spaces is level zero of precomposition on internal function
-spectra. -/
-lemma mappingSpaceFunctor_map_app {X X' : SymmetricSpectrum} (f : X ⟶ X')
-    (Y : SymmetricSpectrum) :
-    (mappingSpaceFunctor.map f.op).app Y = (evaluation 0).map ((MonoidalClosed.pre f).app Y) :=
-  congrArg (fun g ↦ g.natTrans.app (FiniteBijection.mk 0))
-    (Mod.pre_app_hom_eq_ihomPre_app f Y).symm
-
-/-- For any symmetric spectrum `Y`, the contravariant mapping-space functor `X ↦ Map(X, Y)` sends
-colimits of symmetric spectra to limits of pointed simplicial sets, as level zero of the internal
-function spectrum `Hom_S(-, Y)`. -/
-instance (Y : SymmetricSpectrum) (J : Type*) [Category* J] :
-    Limits.PreservesLimitsOfShape J (mappingSpaceFunctor.flip.obj Y) :=
-  have : (evaluation 0).IsRightAdjoint := (freeEvaluationAdjunction 0).isRightAdjoint
-  -- `MonoidalClosed.internalHom` on `SymmetricSpectrum` is `Mod.internalHom`, whose underlying
-  -- symmetric sequence is `Mod.ihom`, so level zero agrees definitionally with
-  -- `mappingSpaceFunctor`.
-  let e : MonoidalClosed.internalHom.flip.obj Y ⋙ evaluation 0 ≅
-      mappingSpaceFunctor.flip.obj Y :=
-    NatIso.ofComponents (fun _ ↦ Iso.refl _) fun {_ _} f ↦
-      (Category.comp_id ((evaluation 0).map ((MonoidalClosed.pre f.unop).app Y))).trans
-        ((mappingSpaceFunctor_map_app f.unop Y).symm.trans
-          (Category.id_comp ((mappingSpaceFunctor.map f).app Y)).symm)
-  Limits.preservesLimitsOfShape_of_natIso e
-
-/-- Postcomposing the vertex classified by `X' ⟶ Y` with `Map(f, Y)` classifies `X ⟶ X' ⟶ Y`. -/
-@[reassoc]
-lemma unitHomMappingSpaceEquiv_symm_comp_mappingSpaceFunctor_map_app {X X' Y : SymmetricSpectrum}
-    (f : X ⟶ X') (g : X' ⟶ Y) :
-    (unitHomMappingSpaceEquiv X' Y).symm g ≫ (mappingSpaceFunctor.map f.op).app Y =
-      (unitHomMappingSpaceEquiv X Y).symm (f ≫ g) := by
-  rw [unitHomMappingSpaceEquiv_symm_apply, unitHomMappingSpaceEquiv_symm_apply]
-  have h := levelSmashMappingSpaceAdjunction₂.homEquiv_naturality_one f
-    ((levelSmashUnitIso X').hom ≫ g)
-  rw [ParametrizedAdjunction.homEquiv_eq, ParametrizedAdjunction.homEquiv_eq,
-    levelSmashMappingSpaceAdjunction₂_adj, levelSmashMappingSpaceAdjunction₂_adj,
-    ← Category.assoc, levelSmashFunctor_map_app_comp_levelSmashUnitIso_hom, Category.assoc] at h
-  exact h.symm
-
-/-- Postcomposing a vertex `S⁰ ⟶ Map(X', Y)` with `Map(f, Y)` precomposes the corresponding
-spectrum map `X' ⟶ Y` with `f : X ⟶ X'`. -/
-lemma unitHomMappingSpaceEquiv_comp_mappingSpaceFunctor_map_app {X X' Y : SymmetricSpectrum}
-    (f : X ⟶ X') (g : 𝟙_ PointedSSet.{0} ⟶ (mappingSpace X').obj Y) :
-    unitHomMappingSpaceEquiv X Y (g ≫ (mappingSpaceFunctor.map f.op).app Y) =
-      f ≫ unitHomMappingSpaceEquiv X' Y g := by
-  apply (unitHomMappingSpaceEquiv X Y).symm.injective
-  rw [Equiv.symm_apply_apply, ← unitHomMappingSpaceEquiv_symm_comp_mappingSpaceFunctor_map_app,
-    Equiv.symm_apply_apply]
-
-/-- Applying `Map(f, Y)` to an `m`-simplex of `Map(X', Y)` precomposes the corresponding
-spectrum map `X' ∧ Δ[m]₊ ⟶ Y` with `f ∧ Δ[m]₊`. -/
-lemma mappingSpaceSimplexEquiv_mappingSpaceFunctor_map_app {X X' Y : SymmetricSpectrum}
-    (f : X ⟶ X') (m : SimplexCategory)
-    (x : ((mappingSpace X').obj Y).right.obj (Opposite.op m)) :
-    mappingSpaceSimplexEquiv X Y m (((mappingSpaceFunctor.map f.op).app Y).right.app _ x) =
-      (levelSmashFunctor.map f).app _ ≫ mappingSpaceSimplexEquiv X' Y m x := by
-  rw [mappingSpaceSimplexEquiv_apply, mappingSpaceSimplexEquiv_apply,
-    ← SSet.yonedaEquiv_symm_comp,
-    ← PointedSSet.addBasepointHomEquiv_symm_comp (X := (mappingSpace X').obj Y)]
-  simpa only [ParametrizedAdjunction.homEquiv_eq, levelSmashMappingSpaceAdjunction₂_adj] using
-    levelSmashMappingSpaceAdjunction₂.homEquiv_symm_naturality_one f
-      ((PointedSSet.addBasepointHomEquiv (SSet.stdSimplex.obj m) ((mappingSpace X').obj Y)).symm
-        (SSet.yonedaEquiv.symm x))
-
-/-- Applying `Map(f, Y)` to the `m`-simplex classified by `X' ∧ Δ[m]₊ ⟶ Y` classifies its
-precomposition with `f ∧ Δ[m]₊`. -/
-lemma mappingSpaceFunctor_map_app_mappingSpaceSimplexEquiv_symm {X X' Y : SymmetricSpectrum}
-    (f : X ⟶ X') (m : SimplexCategory)
-    (g : (levelSmash X').obj (PointedSSet.addBasepoint.obj (SSet.stdSimplex.obj m)) ⟶ Y) :
-    ((mappingSpaceFunctor.map f.op).app Y).right.app _
-        ((mappingSpaceSimplexEquiv X' Y m).symm g) =
-      (mappingSpaceSimplexEquiv X Y m).symm ((levelSmashFunctor.map f).app _ ≫ g) := by
-  apply (mappingSpaceSimplexEquiv X Y m).injective
-  rw [mappingSpaceSimplexEquiv_mappingSpaceFunctor_map_app, Equiv.apply_symm_apply,
-    Equiv.apply_symm_apply]
 
 end SymmetricSpectrum
 

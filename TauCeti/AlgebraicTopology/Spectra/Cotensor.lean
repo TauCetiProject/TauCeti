@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Adjunction.ParametrizedLimits
 public import TauCeti.AlgebraicTopology.Spectra.MappingSpace
 public import TauCeti.CategoryTheory.Monoidal.Mod.Free.Closed
 import Mathlib.CategoryTheory.Adjunction.Whiskering
@@ -15,9 +14,7 @@ import Mathlib.CategoryTheory.Adjunction.Whiskering
 
 The cotensor `E^K` of a symmetric spectrum with a pointed simplicial set has levels
 `Map_*(K, E_n)`. Its sphere action is the existing action on the internal function spectrum
-`Hom_S(F₀ K, E)`, and it is right adjoint to smashing each level with `K`, naturally in both
-variables (`SymmetricSpectrum.cotensorFunctor` and
-`SymmetricSpectrum.levelSmashCotensorAdjunction₂`).
+`Hom_S(F₀ K, E)`, and it is right adjoint to smashing each level with `K`.
 
 The level formula uses the free-module internal-hom comparison and the uniqueness of right
 adjoints. Mathlib's `Adjunction.whiskerRight` gives the adjunction between pointwise smash and
@@ -303,19 +300,13 @@ open scoped DayFunctor
 spectrum coordinate. On objects this is the existing `levelSmash` construction. -/
 noncomputable abbrev levelSmashRight (K : PointedSSet.{0}) :
     SymmetricSpectrum ⥤ SymmetricSpectrum :=
-  levelSmashFunctor.flip.obj K
-
-/-- The point-set cotensor `(K, E) ↦ E^K` as a bifunctor, contravariant in `K` and covariant
-in `E`. -/
-noncomputable abbrev cotensorFunctor :
-    PointedSSet.{0}ᵒᵖ ⥤ SymmetricSpectrum ⥤ SymmetricSpectrum :=
-  (free 0).op ⋙ MonoidalClosed.internalHom
+  Mod.tensorRight ((SymmetricSequence.free 0).obj K)
 
 /-- The point-set cotensor `E^K`: the internal function spectrum from the free spectrum `F₀ K`.
 Its levels are the pointed mapping objects `Map_*(K, E_n)` (`cotensorLevelIso`). -/
 noncomputable abbrev cotensor (K : PointedSSet.{0}) :
     SymmetricSpectrum ⥤ SymmetricSpectrum :=
-  cotensorFunctor.obj (Opposite.op K)
+  Mod.internalHom ((free 0).obj K)
 
 /-- Levelwise smash with `K` is left adjoint to the cotensor by `K`. -/
 noncomputable def levelSmashCotensorAdjunction (K : PointedSSet.{0}) :
@@ -323,6 +314,16 @@ noncomputable def levelSmashCotensorAdjunction (K : PointedSSet.{0}) :
   (Mod.internalHomAdjunction ((free 0).obj K)).ofNatIsoLeft
     (BraidedCategory.tensorLeftIsoTensorRight ((free 0).obj K) ≪≫
       Mod.tensorRightFreeIso ((SymmetricSequence.free 0).obj K))
+
+/-- Smashing symmetric spectra with a fixed pointed simplicial set `K` is a left adjoint, hence
+preserves colimits of all sizes. -/
+instance (K : PointedSSet.{0}) : (levelSmashRight K).IsLeftAdjoint :=
+  (levelSmashCotensorAdjunction K).isLeftAdjoint
+
+/-- Cotensoring symmetric spectra by a fixed pointed simplicial set `K` is a right adjoint, hence
+preserves limits of all sizes. -/
+instance (K : PointedSSet.{0}) : (cotensor K).IsRightAdjoint :=
+  (levelSmashCotensorAdjunction K).isRightAdjoint
 
 /-- The cotensor adjunction curries a map after identifying levelwise smash with balanced smash
 by the free spectrum and exchanging the two factors. -/
@@ -332,10 +333,8 @@ lemma levelSmashCotensorAdjunction_homEquiv_apply (K : PointedSSet.{0})
       Mod.tensorHomEquiv ((free 0).obj K) E F
         ((β_ ((free 0).obj K) E).hom ≫
           (Mod.tensorFreeIso E).hom.app ((SymmetricSequence.free 0).obj K) ≫ f) := by
-  refine (Adjunction.homEquiv_ofNatIsoLeft_apply (Mod.internalHomAdjunction ((free 0).obj K))
-    (BraidedCategory.tensorLeftIsoTensorRight ((free 0).obj K) ≪≫
-      Mod.tensorRightFreeIso ((SymmetricSequence.free 0).obj K)) f).trans ?_
-  rw [Mod.internalHomAdjunction_homEquiv]
+  rw [levelSmashCotensorAdjunction, Adjunction.homEquiv_ofNatIsoLeft_apply,
+    Mod.internalHomAdjunction_homEquiv]
   congr 1
   simp only [Iso.trans_hom, NatTrans.comp_app,
     BraidedCategory.tensorLeftIsoTensorRight_hom_app, Mod.tensorRightFreeIso_hom_app,
@@ -349,10 +348,8 @@ lemma levelSmashCotensorAdjunction_homEquiv_symm_apply (K : PointedSSet.{0})
       (Mod.tensorFreeIso E).inv.app ((SymmetricSequence.free 0).obj K) ≫
         (β_ ((free 0).obj K) E).inv ≫
         (Mod.tensorHomEquiv ((free 0).obj K) E F).symm f := by
-  refine (Adjunction.homEquiv_ofNatIsoLeft_symm_apply (Mod.internalHomAdjunction ((free 0).obj K))
-    (BraidedCategory.tensorLeftIsoTensorRight ((free 0).obj K) ≪≫
-      Mod.tensorRightFreeIso ((SymmetricSequence.free 0).obj K)) f).trans ?_
-  rw [Mod.internalHomAdjunction_homEquiv]
+  rw [levelSmashCotensorAdjunction, Adjunction.homEquiv_ofNatIsoLeft_symm_apply,
+    Mod.internalHomAdjunction_homEquiv]
   simp only [Iso.trans_inv, NatTrans.comp_app,
     BraidedCategory.tensorLeftIsoTensorRight_inv_app, Mod.tensorRightFreeIso_inv_app,
     Category.assoc]
@@ -418,46 +415,5 @@ lemma cotensorLevelIso_hom_naturality_left {K L : PointedSSet.{0}} (f : K ⟶ L)
   simp only at h'
   rw [cotensorLevelIso_hom, cotensorLevelIso_hom]
   exact h'.trans hday
-
-/-- The parametrized adjunction between `(K, E) ↦ E ∧ K` and `(K, F) ↦ F^K`. -/
-noncomputable def levelSmashCotensorAdjunction₂ :
-    levelSmashFunctor.flip ⊣₂ cotensorFunctor :=
-  ParametrizedAdjunction.mk' levelSmashCotensorAdjunction fun {K L} i {E F} g ↦ by
-    have h₁ := levelSmashCotensorAdjunction_homEquiv_apply K ((levelSmash E).map i ≫ g)
-    have h₂ := levelSmashCotensorAdjunction_homEquiv_apply L g
-    rw [← Mod.curry_eq_tensorHomEquiv] at h₁ h₂
-    have hn : (β_ ((free 0).obj K) E).hom ≫
-        (Mod.tensorFreeIso E).hom.app ((SymmetricSequence.free 0).obj K) ≫
-        (levelSmash E).map i ≫ g =
-        (free 0).map i ▷ E ≫ (β_ ((free 0).obj L) E).hom ≫
-        (Mod.tensorFreeIso E).hom.app ((SymmetricSequence.free 0).obj L) ≫ g := by
-      have hnat : (Mod.tensorFreeIso E).hom.app ((SymmetricSequence.free 0).obj K) ≫
-          (levelSmash E).map i =
-          E ◁ (free 0).map i ≫ (Mod.tensorFreeIso E).hom.app ((SymmetricSequence.free 0).obj L) :=
-        ((Mod.tensorFreeIso E).hom.naturality ((SymmetricSequence.free 0).map i)).symm
-      rw [← Category.assoc ((Mod.tensorFreeIso E).hom.app _), hnat, ← Category.assoc,
-        ← Category.assoc, ← BraidedCategory.braiding_naturality_left, Category.assoc,
-        Category.assoc]
-    exact h₁.trans ((congrArg MonoidalClosed.curry hn).trans
-      ((MonoidalClosed.curry_pre_app ((free 0).map i) _).symm.trans
-        (congrArg (· ≫ (MonoidalClosed.pre ((free 0).map i)).app F) h₂.symm)))
-
-@[simp]
-lemma levelSmashCotensorAdjunction₂_adj (K : PointedSSet.{0}) :
-    levelSmashCotensorAdjunction₂.adj K = levelSmashCotensorAdjunction K := (rfl)
-
-instance (K : PointedSSet.{0}) : (levelSmashFunctor.flip.obj K).IsLeftAdjoint :=
-  (levelSmashCotensorAdjunction K).isLeftAdjoint
-
-instance (K : PointedSSet.{0}ᵒᵖ) : (cotensorFunctor.obj K).IsRightAdjoint :=
-  (levelSmashCotensorAdjunction K.unop).isRightAdjoint
-
-/-- For any symmetric spectrum `E`, the contravariant cotensor functor `K ↦ E^K` sends colimits of
-pointed simplicial sets to limits of symmetric spectra. -/
-instance (E : SymmetricSpectrum) (J : Type*) [Category* J] :
-    Limits.PreservesLimitsOfShape J (cotensorFunctor.flip.obj E) :=
-  have (X : SymmetricSpectrum) : (levelSmashFunctor.flip.flip.obj X).IsLeftAdjoint :=
-    (levelSmashMappingSpaceAdjunction X).isLeftAdjoint
-  levelSmashCotensorAdjunction₂.preservesLimitsOfShape_flip_obj J E
 
 end TauCeti.SymmetricSpectrum

@@ -49,7 +49,7 @@ theorem generalizedExtremeValueMap_le_iff_of_shape_pos (hs : 0 < s) (hξ : 0 < �
     (he : 0 < e) :
     generalizedExtremeValueMap m s ξ e ≤ x ↔
       e ^ (-ξ) ≤ 1 + ξ * ((x - m) / s) := by
-  rw [generalizedExtremeValueMap_eq_rpow he, ite_eq_right hξ.ne']
+  rw [generalizedExtremeValueMap_eq_rpow he hξ.ne']
   constructor
   · intro h
     rw [← sub_nonneg, generalizedExtremeValue_support_sub_eq hs.ne' hξ.ne']
@@ -64,7 +64,7 @@ theorem generalizedExtremeValueMap_le_iff_of_shape_neg (hs : 0 < s) (hξ : ξ < 
     (he : 0 < e) :
     generalizedExtremeValueMap m s ξ e ≤ x ↔
       1 + ξ * ((x - m) / s) ≤ e ^ (-ξ) := by
-  rw [generalizedExtremeValueMap_eq_rpow he, ite_eq_right hξ.ne]
+  rw [generalizedExtremeValueMap_eq_rpow he hξ.ne]
   constructor
   · intro h
     rw [← sub_nonpos, generalizedExtremeValue_support_sub_eq hs.ne' hξ.ne]

@@ -89,7 +89,7 @@ private theorem isOpen_supp_of_mem_spaTrivial {Aplus : Subring A} {x : spa Aplus
     (hx : x ∈ spaTrivial Aplus) : IsOpen ((suppFun (x : Spv A)).asIdeal : Set A) := by
   obtain ⟨p, hp⟩ := hx
   rw [← hp, suppFun_trivialSection, ← trivialSection_mem_spa_iff Aplus, hp]
-  exact x.2
+  exact x.property
 
 /-- **Wedhorn's identification `X_triv = Spf A`**: the trivial points of `Spa(A, A⁺)` are, through
 their supports, the open prime ideals of `A`, with the subspace topology of `Spec A`. The map
@@ -97,16 +97,17 @@ sends an open prime to its trivial valuation. -/
 noncomputable def spaTrivialHomeomorph (Aplus : Subring A) :
     FormalScheme.Spf.carrier A ≃ₜ spaTrivial Aplus where
   toFun p := ⟨⟨trivialSection p,
-    (trivialSection_mem_spa_iff Aplus p).mpr (FormalScheme.Spf.mem_carrier.mp p.2)⟩, p, rfl⟩
-  invFun x := ⟨suppFun x, FormalScheme.Spf.mem_carrier.mpr (isOpen_supp_of_mem_spaTrivial x.2)⟩
-  left_inv p := Subtype.ext (suppFun_trivialSection p.1)
+    (trivialSection_mem_spa_iff Aplus p).mpr (FormalScheme.Spf.mem_carrier.mp p.property)⟩, p, rfl⟩
+  invFun x := ⟨suppFun x, FormalScheme.Spf.mem_carrier.mpr (isOpen_supp_of_mem_spaTrivial
+      x.property)⟩
+  left_inv p := Subtype.ext (suppFun_trivialSection p.val)
   right_inv x := by
-    obtain ⟨p, hp⟩ := x.2
+    obtain ⟨p, hp⟩ := x.property
     exact Subtype.ext (Subtype.ext (by simp only [← hp, suppFun_trivialSection]))
   continuous_toFun :=
-    ((continuous_trivialSection.comp continuous_subtype_val).subtype_mk _).subtype_mk _
+    ((continuous_trivialSection.comp continuous_subtypeVal).subtype_mk _).subtype_mk _
   continuous_invFun :=
-    (continuous_suppFun.comp (continuous_subtype_val.comp continuous_subtype_val)).subtype_mk _
+    (continuous_suppFun.comp (continuous_subtypeVal.comp continuous_subtypeVal)).subtype_mk _
 
 /-- `spaTrivialHomeomorph` sends an open prime to its trivial valuation. -/
 @[simp]
@@ -134,13 +135,13 @@ theorem isProConstructible_spaTrivial (Aplus : Subring A) :
     ext x
     simp only [mem_spaTrivial_iff, mem_range_trivialSection_iff, Set.mem_iInter, Set.mem_union,
       Set.mem_compl_iff, Set.mem_preimage, basicOpen_self, Set.mem_ofPred_eq, not_not,
-      mem_laurentPiece_iff, x.2, true_and, Bool.forall_bool, Set.mem_singleton_iff,
+      mem_laurentPiece_iff, x.property, true_and, Bool.forall_bool, Set.mem_singleton_iff,
       Bool.false_eq_true, IsEmpty.forall_iff, not_true_eq_false,
       not_false_eq_true, forall_const, and_true]
     exact forall_congr' fun a ↦ or_congr_right and_comm
   rw [heq]
   refine IsProConstructible.iInter fun a ↦ IsProConstructible.union ?_ ?_
-  · exact ((isOpen_basicOpen a a).preimage continuous_subtype_val).isClosed_compl.isProConstructible
+  · exact ((isOpen_basicOpen a a).preimage continuous_subtypeVal).isClosed_compl.isProConstructible
   · have hmem := val_preimage_laurentPiece_mem_spaRationalFamily Aplus (fun _ : Bool ↦ a) {true}
     exact (isCompact_of_mem_spaRationalFamily hmem).isProConstructible
       ((isTopologicalBasis_spaRationalFamily Aplus).isOpen hmem)
@@ -175,8 +176,8 @@ ideal. On `Spa(A, A)` it is the trivial valuation with support `{a : x(a) < 1}`
 (`vle_spaTrivialRetraction_iff`). -/
 noncomputable def spaTrivialRetraction (x : spa (⊤ : Subring A)) : spaTrivial (⊤ : Subring A) :=
   ⟨⟨restrictToIdeal x ⊤ ⟨⊤, Ideal.fg_top A, rfl⟩,
-    restrictToIdeal_mem_spa x.2 ⊤ ⟨⊤, Ideal.fg_top A, rfl⟩⟩,
-    restrictToIdeal_top_mem_range_trivialSection x.2 ⟨⊤, Ideal.fg_top A, rfl⟩⟩
+    restrictToIdeal_mem_spa x.property ⊤ ⟨⊤, Ideal.fg_top A, rfl⟩⟩,
+    restrictToIdeal_top_mem_range_trivialSection x.property ⟨⊤, Ideal.fg_top A, rfl⟩⟩
 
 /-- `r(x)` is the point `restrictToIdeal x ⊤` of `Spv A`. -/
 theorem coe_spaTrivialRetraction (x : spa (⊤ : Subring A)) :
@@ -209,16 +210,17 @@ theorem vle_spaTrivialRetraction_iff (x : spa (⊤ : Subring A)) (a b : A) :
       ¬ (x : Spv A).toValuativeRel.vle 1 a ∨ (x : Spv A).toValuativeRel.vle 1 b := by
   have ha1 : (x : Spv A).toValuativeRel.vle a 1 := by
     simpa only [← valuation_le_iff, map_one] using
-      valuation_le_one_of_mem_spa x.2 (Subring.mem_top a)
-  rw [coe_spaTrivialRetraction, vle_restrictToIdeal, ne_eq, restrictToIdeal_top_eq_zero_iff x.2,
-    restrictToIdeal_top_eq_zero_iff x.2, not_not]
-  exact or_congr_right ⟨fun h ↦ h.1, fun h ↦ ⟨h, x.1.toValuativeRel.vle_trans ha1 h⟩⟩
+      valuation_le_one_of_mem_spa x.property (Subring.mem_top a)
+  rw [coe_spaTrivialRetraction, vle_restrictToIdeal, ne_eq, restrictToIdeal_top_eq_zero_iff
+      x.property,
+    restrictToIdeal_top_eq_zero_iff x.property, not_not]
+  exact or_congr_right ⟨fun h ↦ h.1, fun h ↦ ⟨h, x.val.toValuativeRel.vle_trans ha1 h⟩⟩
 
 /-- **The support of `r(x)`** is `{a : x(a) < 1}`. -/
 theorem mem_supp_spaTrivialRetraction_iff (x : spa (⊤ : Subring A)) (a : A) :
     a ∈ ((spaTrivialRetraction x : spa (⊤ : Subring A)) : Spv A).supp ↔
       ¬ (x : Spv A).toValuativeRel.vle 1 a := by
-  simp [x.1.toValuativeRel.not_vle_one_zero]
+  simp [x.val.toValuativeRel.not_vle_one_zero]
 
 /-- **`r` is a retraction**: it fixes every trivial point. -/
 @[simp]
@@ -242,8 +244,8 @@ theorem continuous_spaTrivialRetraction :
         Subtype.val ⁻¹' rationalSubset ⊤ {1} s := by
     ext x
     simp only [Set.mem_preimage, mem_basicOpen_iff, vle_spaTrivialRetraction_iff,
-      x.1.toValuativeRel.not_vle_one_zero, or_false, not_not,
-      mem_rationalSubset_singleton_one_iff x.2]
+      x.val.toValuativeRel.not_vle_one_zero, or_false, not_not,
+      mem_rationalSubset_singleton_one_iff x.property]
     exact ⟨And.right, fun h ↦ ⟨Or.inr h, h⟩⟩
   rw [hU]
   convert isOpen_val_preimage_rationalSubset (⊤ : Subring A) {1} s using 1
@@ -269,7 +271,7 @@ theorem isSpectralMap_spaTrivialRetraction [IsTopologicalRing A] [Huber.IsHuberR
     ext x
     simp only [Set.mem_preimage, Function.comp_apply, e, coe_spaTrivialHomeomorph_symm_apply,
       SetLike.mem_coe, PrimeSpectrum.mem_basicOpen, suppFun_asIdeal,
-      mem_supp_spaTrivialRetraction_iff, not_not, mem_rationalSubset_singleton_one_iff x.2]
+      mem_supp_spaTrivialRetraction_iff, not_not, mem_rationalSubset_singleton_one_iff x.property]
   have hopen : IsOpen (Ideal.span ((({1} : Finset A)) : Set A) : Set A) := by
     rw [(Ideal.eq_top_iff_one _).mpr (Ideal.subset_span (by simp))]
     exact isOpen_univ

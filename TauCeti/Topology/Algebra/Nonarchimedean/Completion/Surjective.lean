@@ -54,7 +54,7 @@ private theorem image_closure_image_coe_mem_nhds {f : G →+ H} (hf : Continuous
   have hWcoe : ∀ n, (W n : Set (Completion G))
       = closure (((↑) : G → Completion G) '' (V n : Set G)) := fun n ↦ by
     rw [hW, AddSubgroup.topologicalClosure_coe, AddSubgroup.coe_map,
-      Set.image_congr' toCompl_apply, OpenAddSubgroup.coe_toAddSubgroup]
+      Set.image_congr' rfl toCompl_apply, OpenAddSubgroup.coe_toAddSubgroup]
   have hWbasis : (𝓝 (0 : Completion G)).HasAntitoneBasis fun n ↦ (W n : Set (Completion G)) :=
     ⟨by
       simpa only [hWcoe, coe_zero] using

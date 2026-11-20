@@ -483,7 +483,7 @@ theorem conjNormal_eq_inv_of_notMem_dihedralRotations {s : DihedralGroup n}
     MulAut.conjNormal s x = x⁻¹ :=
   Subtype.ext (by
     rw [MulAut.conjNormal_apply]
-    simpa using conj_eq_inv_of_notMem_dihedralRotations hs x.2)
+    simpa using conj_eq_inv_of_notMem_dihedralRotations hs x.property)
 
 /-- The **rotation index** of a dihedral element: the index `i` of a rotation `r i`, and the junk
 value `0` on a reflection. This is the ambient pattern match only; the interface is
@@ -514,9 +514,9 @@ lets a character of the rotation subgroup be named by a single `n`-th root of un
 def dihedralRotationsMulEquiv (n : ℕ) : dihedralRotations n ≃* Multiplicative (ZMod n) where
   toFun x := Multiplicative.ofAdd (dihedralRotationIndex (x : DihedralGroup n))
   invFun i := ⟨DihedralGroup.r (Multiplicative.toAdd i), r_mem_dihedralRotations _⟩
-  left_inv x := Subtype.ext (r_dihedralRotationIndex x.2)
+  left_inv x := Subtype.ext (r_dihedralRotationIndex x.property)
   right_inv _ := rfl
-  map_mul' x y := congrArg Multiplicative.ofAdd (dihedralRotationIndex_mul x.2 y.2)
+  map_mul' x y := congrArg Multiplicative.ofAdd (dihedralRotationIndex_mul x.property y.property)
 
 @[simp]
 theorem dihedralRotationsMulEquiv_r (i : ZMod n) :
