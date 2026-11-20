@@ -29,11 +29,13 @@ construction behind 2-fibre products of prestacks and stacks over a site, such a
 groupoids over schemes, whose fibre over `T` is the 2-fibre product of the fibre groupoids.
 It comes with the two projections, the invertible 2-cell `fst ≫ f ≅ snd ≫ g`, and its
 2-universal property: strong transformations `a : K ⟶ F` and `c : K ⟶ G` with an invertible
-modification `a ≫ f ≅ c ≫ g` lift to `K ⟶ f.twoFiberProduct g` (`twoFiberProduct.lift`), and
-modifications between strong transformations into the 2-fibre product correspond to compatible
-pairs of modifications after composing with the projections (`twoFiberProduct.homMk`,
-`twoFiberProduct.hom_ext`). The fibres are groupoids when those of `F` and `G` are, and the
-second projection is a fibrewise equivalence when `f` is.
+modification `a ≫ f ≅ c ≫ g` lift to `K ⟶ f.twoFiberProduct g` (`twoFiberProduct.lift`), the
+2-commutativity isomorphism restricting along the lift to the given one
+(`twoFiberProduct.lift_whiskerLeft_iso_hom`), and modifications between strong transformations
+into the 2-fibre product correspond to compatible pairs of modifications after composing with the
+projections (`twoFiberProduct.homMk`, `twoFiberProduct.isoMk`, `twoFiberProduct.hom_ext`).
+The fibres are groupoids when those of `F` and `G` are, and the second projection is a
+fibrewise equivalence when `f` is.
 
 The pseudofunctors take values in `Cat.{v, max u v}`: the objects of a categorical pullback
 carry an isomorphism, so they live in a universe containing the morphisms. For stacks over
@@ -41,7 +43,10 @@ schemes, `Cat.{u, u + 1}`, the universe levels have to be given explicitly.
 
 The objects of the fibres, the projections, the lift and the functors between the fibres are
 reducible, so that the components of the objects of the fibres appear directly to `simp` in the
-coherence conditions; the bodies are exposed for the same reason.
+coherence conditions; the bodies are exposed for the same reason. As plain definitions, the
+objects they produce would only be definitionally, not reducibly, equal to their components, so
+that `simp` lemmas such as `Functor.map_id` no longer apply to the identities in those conditions.
+The `simp` lemmas `fst_app_obj`, `lift_app_obj_fst` and their companions name these values.
 
 ## Main declarations
 
@@ -52,10 +57,12 @@ coherence conditions; the bodies are exposed for the same reason.
   `fst f g ≫ f ≅ snd f g ≫ g`.
 * `CategoryTheory.Pseudofunctor.StrongTrans.twoFiberProduct.lift`, with
   `twoFiberProduct.liftFstIso` and `twoFiberProduct.liftSndIso`: the strong transformation into
-  the 2-fibre product induced by a 2-commutative square.
+  the 2-fibre product induced by a 2-commutative square, and
+  `twoFiberProduct.lift_whiskerLeft_iso_hom`, its compatibility with the 2-cells.
 * `CategoryTheory.Pseudofunctor.StrongTrans.twoFiberProduct.homMk`,
-  `CategoryTheory.Pseudofunctor.StrongTrans.twoFiberProduct.hom_ext`: modifications into the
-  2-fibre product.
+  `CategoryTheory.Pseudofunctor.StrongTrans.twoFiberProduct.isoMk`,
+  `CategoryTheory.Pseudofunctor.StrongTrans.twoFiberProduct.hom_ext`: modifications and
+  invertible modifications into the 2-fibre product.
 
 ## References
 
@@ -111,9 +118,8 @@ def mapNatTrans {b b' : B} {φ ψ : b ⟶ b'} (η : φ ⟶ ψ) : mapFunctor f g 
     { fst := (F.map₂ η).toNatTrans.app x.fst
       snd := (G.map₂ η).toNatTrans.app x.snd
       w := by
-        have h₁ := congr_arg (fun θ ↦ θ.toNatTrans.app x.fst) (f.naturality_naturality η)
-        have h₂ := congr_arg (fun θ ↦ θ.toNatTrans.app x.snd) (g.naturality_naturality η)
-        simp only [Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app] at h₁ h₂
+        have h₁ := naturality_naturality_app f η x.fst
+        have h₂ := naturality_naturality_app g η x.snd
         dsimp only [mapFunctor_obj_iso, Iso.trans_hom, Functor.mapIso_hom, Iso.app_hom,
           Iso.symm_hom]
         simp only [Cat.Hom.toNatIso_hom, Cat.Hom.toNatIso_inv, Category.assoc]
@@ -158,6 +164,16 @@ def mapCompIso {b₀ b₁ b₂ : B} (φ : b₀ ⟶ b₁) (ψ : b₁ ⟶ b₂) :
       · exact (F.mapComp φ ψ).hom.toNatTrans.naturality u.fst
       · exact (G.mapComp φ ψ).hom.toNatTrans.naturality u.snd)
 
+/-- Extensionality for `2`-morphisms of `Cat` with values in the fibre
+`f.app b ⊡ g.app b` of the 2-fibre product: they are determined by their components in the two
+factors. -/
+@[ext]
+lemma hom₂_ext {C : Cat.{v, max u v}} {b : B}
+    {T U : C ⟶ ⟨(f.app b).toFunctor ⊡ (g.app b).toFunctor, inferInstance⟩} {α β : T ⟶ U}
+    (h₁ : ∀ x, (α.toNatTrans.app x).fst = (β.toNatTrans.app x).fst)
+    (h₂ : ∀ x, (α.toNatTrans.app x).snd = (β.toNatTrans.app x).snd) : α = β :=
+  Cat.Hom₂.ext (NatTrans.ext (funext fun x ↦ CategoricalPullback.hom_ext (h₁ x) (h₂ x)))
+
 end twoFiberProduct
 
 open twoFiberProduct in
@@ -171,33 +187,18 @@ abbrev twoFiberProduct : Pseudofunctor B Cat.{v, max u v} where
   mapId b := Cat.Hom.isoMk (mapIdIso f g b)
   mapComp φ ψ := Cat.Hom.isoMk (mapCompIso f g φ ψ)
   map₂_id φ := by
-    refine Cat.Hom₂.ext (NatTrans.ext (funext fun x ↦ CategoricalPullback.hom_ext ?_ ?_))
+    ext x : 1
     · exact congr_arg (fun θ ↦ θ.toNatTrans.app x.fst) (F.map₂_id φ)
     · exact congr_arg (fun θ ↦ θ.toNatTrans.app x.snd) (G.map₂_id φ)
   map₂_comp η θ := by
-    refine Cat.Hom₂.ext (NatTrans.ext (funext fun x ↦ CategoricalPullback.hom_ext ?_ ?_))
+    ext x : 1
     · exact congr_arg (fun θ ↦ θ.toNatTrans.app x.fst) (F.map₂_comp η θ)
     · exact congr_arg (fun θ ↦ θ.toNatTrans.app x.snd) (G.map₂_comp η θ)
-  map₂_whisker_left φ ψ ψ' η := by
-    refine Cat.Hom₂.ext (NatTrans.ext (funext fun x ↦ CategoricalPullback.hom_ext ?_ ?_))
-    · simp
-    · simp
-  map₂_whisker_right η ψ := by
-    refine Cat.Hom₂.ext (NatTrans.ext (funext fun x ↦ CategoricalPullback.hom_ext ?_ ?_))
-    · simp
-    · simp
-  map₂_associator φ ψ χ := by
-    refine Cat.Hom₂.ext (NatTrans.ext (funext fun x ↦ CategoricalPullback.hom_ext ?_ ?_))
-    · simp
-    · simp
-  map₂_left_unitor φ := by
-    refine Cat.Hom₂.ext (NatTrans.ext (funext fun x ↦ CategoricalPullback.hom_ext ?_ ?_))
-    · simp
-    · simp
-  map₂_right_unitor φ := by
-    refine Cat.Hom₂.ext (NatTrans.ext (funext fun x ↦ CategoricalPullback.hom_ext ?_ ?_))
-    · simp
-    · simp
+  map₂_whisker_left φ ψ ψ' η := by ext x : 1 <;> simp
+  map₂_whisker_right η ψ := by ext x : 1 <;> simp
+  map₂_associator φ ψ χ := by ext x : 1 <;> simp
+  map₂_left_unitor φ := by ext x : 1 <;> simp
+  map₂_right_unitor φ := by ext x : 1 <;> simp
 
 namespace twoFiberProduct
 
@@ -233,15 +234,19 @@ lemma fstNaturality_inv_app {b b' : B} (φ : b ⟶ b') (x : (twoFiberProduct f g
 abbrev fst : twoFiberProduct f g ⟶ F where
   app b := ⟨fstFunctor f g b⟩
   naturality := fstNaturality f g
-  naturality_naturality η := by
-    refine Cat.Hom₂.ext (NatTrans.ext (funext fun x ↦ ?_))
-    simp
-  naturality_id b := by
-    refine Cat.Hom₂.ext (NatTrans.ext (funext fun x ↦ ?_))
-    simp
-  naturality_comp φ ψ := by
-    refine Cat.Hom₂.ext (NatTrans.ext (funext fun x ↦ ?_))
-    simp
+  naturality_naturality η := by ext x : 3; simp
+  naturality_id b := by ext x : 3; simp
+  naturality_comp φ ψ := by ext x : 3; simp
+
+@[simp]
+lemma fst_app_obj (b : B) (x : (twoFiberProduct f g).obj b) :
+    ((fst f g).app b).toFunctor.obj x = x.fst :=
+  (rfl)
+
+@[simp]
+lemma fst_app_map (b : B) {x y : (twoFiberProduct f g).obj b} (u : x ⟶ y) :
+    ((fst f g).app b).toFunctor.map u = u.fst :=
+  (rfl)
 
 /-- The second projection `π₂` out of the fibre of the 2-fibre product over `b`. It is written out,
 rather than taken to be `π₂`, so that its values on objects reduce to `x.snd` and `simp` can
@@ -275,16 +280,19 @@ lemma sndNaturality_inv_app {b b' : B} (φ : b ⟶ b') (x : (twoFiberProduct f g
 abbrev snd : twoFiberProduct f g ⟶ G where
   app b := ⟨sndFunctor f g b⟩
   naturality := sndNaturality f g
-  naturality_naturality η := by
-    refine Cat.Hom₂.ext (NatTrans.ext (funext fun x ↦ ?_))
-    simp
-  naturality_id b := by
-    refine Cat.Hom₂.ext (NatTrans.ext (funext fun x ↦ ?_))
-    simp
-  naturality_comp φ ψ := by
-    refine Cat.Hom₂.ext (NatTrans.ext (funext fun x ↦ ?_))
-    simp
+  naturality_naturality η := by ext x : 3; simp
+  naturality_id b := by ext x : 3; simp
+  naturality_comp φ ψ := by ext x : 3; simp
 
+@[simp]
+lemma snd_app_obj (b : B) (x : (twoFiberProduct f g).obj b) :
+    ((snd f g).app b).toFunctor.obj x = x.snd :=
+  (rfl)
+
+@[simp]
+lemma snd_app_map (b : B) {x y : (twoFiberProduct f g).obj b} (u : x ⟶ y) :
+    ((snd f g).app b).toFunctor.map u = u.snd :=
+  (rfl)
 
 /-- The components of the 2-commutativity isomorphism of the 2-fibre product: over `b`, the
 structural isomorphisms `f.app b x.fst ≅ g.app b x.snd` of the objects `x` of the fibre. -/
@@ -307,12 +315,11 @@ lemma isoComponent_inv_app (b : B) (x : (twoFiberProduct f g).obj b) :
 /-- The 2-commutativity isomorphism `fst f g ≫ f ≅ snd f g ≫ g` of the 2-fibre product, given
 over `b` by the structural isomorphisms of the objects of the fibre. -/
 def iso : fst f g ≫ f ≅ snd f g ≫ g :=
-  StrongTrans.isoMk (isoComponent f g) fun φ ↦ by
-    refine Cat.Hom₂.ext (NatTrans.ext (funext fun x ↦ ?_))
-    rw [Cat.Hom₂.comp_app, Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app,
-      isoComponent_hom_app, isoComponent_hom_app, comp_naturality_hom_app,
-      comp_naturality_hom_app]
-    simp
+  StrongTrans.isoMk (isoComponent f g) fun φ ↦
+    (naturality_app_iff φ _ _).2 fun x ↦ by
+      rw [isoComponent_hom_app, isoComponent_hom_app, comp_naturality_hom_app,
+        comp_naturality_hom_app]
+      simp
 
 @[simp]
 lemma iso_hom_as_app_app (b : B) (x : (twoFiberProduct f g).obj b) :
@@ -352,9 +359,8 @@ def liftNaturality {b b' : B} (φ : b ⟶ b') :
   Cat.Hom.isoMk (NatIso.ofComponents
     (fun k ↦ mkIso ((Cat.Hom.toNatIso (a.naturality φ)).app k)
       ((Cat.Hom.toNatIso (c.naturality φ)).app k) (by
-        have h := congr_arg (fun θ ↦ θ.toNatTrans.app k) (e.hom.as.naturality φ)
-        rw [Cat.Hom₂.comp_app, Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app,
-          comp_naturality_hom_app, comp_naturality_hom_app] at h
+        have h := (naturality_app_iff φ _ _).1 (e.hom.as.naturality φ) k
+        rw [comp_naturality_hom_app, comp_naturality_hom_app] at h
         dsimp
         simp only [Cat.Hom.toNatIso_hom, Cat.Hom.toNatIso_inv]
         rw [← cancel_mono ((g.naturality φ).hom.toNatTrans.app ((c.app b).toFunctor.obj k))]
@@ -395,41 +401,56 @@ abbrev lift : K ⟶ twoFiberProduct f g where
   app b := ⟨liftFunctor f g a c e b⟩
   naturality := liftNaturality f g a c e
   naturality_naturality η := by
-    refine Cat.Hom₂.ext (NatTrans.ext (funext fun k ↦ CategoricalPullback.hom_ext ?_ ?_))
-    · have h := congr_arg (fun θ ↦ θ.toNatTrans.app k) (a.naturality_naturality η)
-      simp only [Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app] at h
-      simpa using h
-    · have h := congr_arg (fun θ ↦ θ.toNatTrans.app k) (c.naturality_naturality η)
-      simp only [Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app] at h
-      simpa using h
-  naturality_id b := by
-    refine Cat.Hom₂.ext (NatTrans.ext (funext fun k ↦ CategoricalPullback.hom_ext ?_ ?_)) <;>
-      simp [naturality_id_hom_app]
-  naturality_comp φ ψ := by
-    refine Cat.Hom₂.ext (NatTrans.ext (funext fun k ↦ CategoricalPullback.hom_ext ?_ ?_)) <;>
-      simp [naturality_comp_hom_app]
+    ext k : 1
+    · simpa using naturality_naturality_app a η k
+    · simpa using naturality_naturality_app c η k
+  naturality_id b := by ext k : 1 <;> simp [naturality_id_hom_app]
+  naturality_comp φ ψ := by ext k : 1 <;> simp [naturality_comp_hom_app]
 
 /-- The composite of `lift f g a c e` with the first projection is `a`, with identity
 components. -/
 def liftFstIso : lift f g a c e ≫ fst f g ≅ a :=
-  StrongTrans.isoMk (fun _ ↦ Iso.refl _) fun φ ↦ by
-    refine Cat.Hom₂.ext (NatTrans.ext (funext fun k ↦ ?_))
-    rw [Cat.Hom₂.comp_app, Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app,
-      comp_naturality_hom_app]
-    simp
+  StrongTrans.isoMk (fun _ ↦ Iso.refl _) fun φ ↦
+    (naturality_app_iff φ _ _).2 fun k ↦ by
+      rw [comp_naturality_hom_app]
+      simp
 
 /-- The composite of `lift f g a c e` with the second projection is `c`, with identity
 components. -/
 def liftSndIso : lift f g a c e ≫ snd f g ≅ c :=
-  StrongTrans.isoMk (fun _ ↦ Iso.refl _) fun φ ↦ by
-    refine Cat.Hom₂.ext (NatTrans.ext (funext fun k ↦ ?_))
-    rw [Cat.Hom₂.comp_app, Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app,
-      comp_naturality_hom_app]
-    simp
+  StrongTrans.isoMk (fun _ ↦ Iso.refl _) fun φ ↦
+    (naturality_app_iff φ _ _).2 fun k ↦ by
+      rw [comp_naturality_hom_app]
+      simp
+
+@[simp]
+lemma lift_app_obj_fst (b : B) (k : K.obj b) :
+    (((lift f g a c e).app b).toFunctor.obj k).fst = (a.app b).toFunctor.obj k :=
+  (rfl)
+
+@[simp]
+lemma lift_app_obj_snd (b : B) (k : K.obj b) :
+    (((lift f g a c e).app b).toFunctor.obj k).snd = (c.app b).toFunctor.obj k :=
+  (rfl)
 
 @[simp]
 lemma lift_app_obj_iso_hom (b : B) (k : K.obj b) :
     (((lift f g a c e).app b).toFunctor.obj k).iso.hom = (e.hom.as.app b).toNatTrans.app k :=
+  (rfl)
+
+@[simp]
+lemma lift_app_obj_iso_inv (b : B) (k : K.obj b) :
+    (((lift f g a c e).app b).toFunctor.obj k).iso.inv = (e.inv.as.app b).toNatTrans.app k :=
+  (rfl)
+
+@[simp]
+lemma lift_app_map_fst (b : B) {k k' : K.obj b} (u : k ⟶ k') :
+    (((lift f g a c e).app b).toFunctor.map u).fst = (a.app b).toFunctor.map u :=
+  (rfl)
+
+@[simp]
+lemma lift_app_map_snd (b : B) {k k' : K.obj b} (u : k ⟶ k') :
+    (((lift f g a c e).app b).toFunctor.map u).snd = (c.app b).toFunctor.map u :=
   (rfl)
 
 @[simp]
@@ -451,6 +472,20 @@ lemma liftSndIso_hom_as_app_app (b : B) (k : K.obj b) :
 lemma liftSndIso_inv_as_app_app (b : B) (k : K.obj b) :
     ((liftSndIso f g a c e).inv.as.app b).toNatTrans.app k = 𝟙 ((c.app b).toFunctor.obj k) :=
   (rfl)
+
+/-- The 2-commutativity isomorphism of the 2-fibre product, whiskered by `lift f g a c e`, is `e`
+up to `liftFstIso`, `liftSndIso` and associators. -/
+lemma lift_whiskerLeft_iso_hom :
+    lift f g a c e ◁ (iso f g).hom =
+      (α_ _ _ _).inv ≫ (liftFstIso f g a c e).hom ▷ f ≫ e.hom ≫
+        (liftSndIso f g a c e).inv ▷ g ≫ (α_ _ _ _).hom := by
+  ext b k
+  refine (Cat.whiskerLeft_app _ _ _).trans ?_
+  -- On `k`, the right-hand side is definitionally `e` composed with identities.
+  refine Eq.symm <| (Category.id_comp _).trans <|
+    (congrArg (· ≫ _) ((f.app b).toFunctor.map_id _)).trans <| (Category.id_comp _).trans <|
+      (congrArg (_ ≫ ·) <| (congrArg (· ≫ _) ((g.app b).toFunctor.map_id _)).trans
+        (Category.id_comp _)).trans (Category.comp_id _)
 
 end lift
 
@@ -475,15 +510,9 @@ def homMk (α : l₁ ≫ fst f g ⟶ l₂ ≫ fst f g) (β : l₁ ≫ snd f g �
       · exact (α.as.app b).toNatTrans.naturality u
       · exact (β.as.app b).toNatTrans.naturality u }⟩
   as.naturality φ := by
-    refine Cat.Hom₂.ext (NatTrans.ext (funext fun k ↦ CategoricalPullback.hom_ext ?_ ?_))
-    · have h := congr_arg (fun θ ↦ θ.toNatTrans.app k) (α.as.naturality φ)
-      rw [Cat.Hom₂.comp_app, Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app,
-        comp_naturality_hom_app, comp_naturality_hom_app] at h
-      simpa using h
-    · have h := congr_arg (fun θ ↦ θ.toNatTrans.app k) (β.as.naturality φ)
-      rw [Cat.Hom₂.comp_app, Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app,
-        comp_naturality_hom_app, comp_naturality_hom_app] at h
-      simpa using h
+    ext k : 1
+    · simpa using (comp_naturality_app_iff φ _ _).1 (α.as.naturality φ) k
+    · simpa using (comp_naturality_app_iff φ _ _).1 (β.as.naturality φ) k
 
 @[simp]
 lemma homMk_as_app_app_fst (α : l₁ ≫ fst f g ⟶ l₂ ≫ fst f g) (β : l₁ ≫ snd f g ⟶ l₂ ≫ snd f g)
@@ -500,6 +529,7 @@ lemma homMk_as_app_app_snd (α : l₁ ≫ fst f g ⟶ l₂ ≫ fst f g) (β : l�
 variable {f g} in
 /-- Modifications between strong transformations into the 2-fibre product are determined by
 their composites with the two projections. -/
+@[ext]
 lemma hom_ext {m m' : l₁ ⟶ l₂}
     (h₁ : ∀ (b : B) (k : K.obj b),
       ((m.as.app b).toNatTrans.app k).fst = ((m'.as.app b).toNatTrans.app k).fst)
@@ -508,6 +538,35 @@ lemma hom_ext {m m' : l₁ ⟶ l₂}
     m = m' :=
   homCategory.ext fun b ↦ Cat.Hom₂.ext (NatTrans.ext (funext fun k ↦
     CategoricalPullback.hom_ext (h₁ b k) (h₂ b k)))
+
+/-- An isomorphism `l₁ ≅ l₂` between strong transformations into the 2-fibre product, built from
+isomorphisms between their composites with the two projections that are compatible with the
+structural isomorphisms of the objects of the fibres. -/
+def isoMk (α : l₁ ≫ fst f g ≅ l₂ ≫ fst f g) (β : l₁ ≫ snd f g ≅ l₂ ≫ snd f g)
+    (w : ∀ (b : B) (k : K.obj b),
+      (f.app b).toFunctor.map ((α.hom.as.app b).toNatTrans.app k) ≫
+          ((l₂.app b).toFunctor.obj k).iso.hom =
+        ((l₁.app b).toFunctor.obj k).iso.hom ≫
+          (g.app b).toFunctor.map ((β.hom.as.app b).toNatTrans.app k)) :
+    l₁ ≅ l₂ :=
+  StrongTrans.isoMk (fun b ↦ Cat.Hom.isoMk (NatIso.ofComponents
+    (fun k ↦ mkIso
+      { hom := (α.hom.as.app b).toNatTrans.app k
+        inv := (α.inv.as.app b).toNatTrans.app k
+        hom_inv_id := by simpa using Cat.Hom.hom_inv_id_toNatTrans_app (isoApp α b) k
+        inv_hom_id := by simpa using Cat.Hom.inv_hom_id_toNatTrans_app (isoApp α b) k }
+      { hom := (β.hom.as.app b).toNatTrans.app k
+        inv := (β.inv.as.app b).toNatTrans.app k
+        hom_inv_id := by simpa using Cat.Hom.hom_inv_id_toNatTrans_app (isoApp β b) k
+        inv_hom_id := by simpa using Cat.Hom.inv_hom_id_toNatTrans_app (isoApp β b) k }
+      (w b k))
+    fun u ↦ ((homMk f g α.hom β.hom w).as.app b).toNatTrans.naturality u))
+    fun φ ↦ (homMk f g α.hom β.hom w).as.naturality φ
+
+@[simp]
+lemma isoMk_hom (α : l₁ ≫ fst f g ≅ l₂ ≫ fst f g) (β : l₁ ≫ snd f g ≅ l₂ ≫ snd f g) (w) :
+    (isoMk f g α β w).hom = homMk f g α.hom β.hom w :=
+  (rfl)
 
 end homMk
 
