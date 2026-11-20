@@ -55,7 +55,7 @@ theorem uniformIntegrable_gridExponential (hW : IsFilteredPreBrownianReal ℱ W 
     UniformIntegrable (fun k ↦ gridExponential (τ k) (θ k) W (N k)) 1 P := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   exact uniformIntegrable_of_eLpNorm_bound (by norm_num) (by finiteness)
-    (fun k ↦ hW.eLpNorm_two_gridExponential_le (N k) (hτ k) (hθ k) (hK k) (hT k))
+    (fun k ↦ hW.eLpNorm_two_gridExponential_le (hτ k) (hθ k) (hK k) (hT k))
 
 variable {l : Filter ι} [l.IsCountablyGenerated]
 
@@ -71,8 +71,8 @@ theorem eLpNorm_two_le_of_tendstoInMeasure_gridExponential [NeBot l]
     eLpNorm Z 2 P ≤ ENNReal.ofReal (exp (K ^ 2 * T)) ^ (1 / 2 : ℝ) := by
   exact eLpNorm_le_of_tendstoInMeasure
     (Eventually.of_forall fun k ↦
-      hW.eLpNorm_two_gridExponential_le (N k) (hτ k) (hθ k) (hK k) (hT k)) hZ
-    (fun k ↦ (hW.memLp_two_gridExponential (N k) (hτ k) (hθ k) (hK k)).aestronglyMeasurable)
+      hW.eLpNorm_two_gridExponential_le (hτ k) (hθ k) (hK k) (hT k)) hZ
+    (fun k ↦ (hW.memLp_two_gridExponential (hτ k) (hθ k) (hK k)).aestronglyMeasurable)
 
 /-- A limit in probability of grid likelihoods with common height and time bounds is in `L²`.
 No measurability or integrability hypothesis on the limit is needed. -/
@@ -103,7 +103,7 @@ theorem tendsto_eLpNorm_gridExponential_sub (hW : IsFilteredPreBrownianReal ℱ 
   apply tendsto_of_seq_tendsto
   intro ns hns
   exact tendsto_Lp_finite_of_tendstoInMeasure le_rfl ENNReal.one_ne_top
-    (fun k ↦ (hW.memLp_two_gridExponential (N (ns k))
+    (fun k ↦ (hW.memLp_two_gridExponential
       (hτ (ns k)) (hθ (ns k)) (hK (ns k))).aestronglyMeasurable)
     ((hW.memLp_two_of_tendstoInMeasure_gridExponential hτ hθ hK hT hZ).mono_exponent (by norm_num))
     ((hW.uniformIntegrable_gridExponential hτ hθ hK hT).comp ns).unifIntegrable
@@ -121,8 +121,8 @@ theorem integral_eq_one_of_tendstoInMeasure_gridExponential [NeBot l]
   have hi := hW.tendsto_eLpNorm_gridExponential_sub hτ hθ hK hT hZ
   have ht := tendsto_integral_of_L1' Z
     (Eventually.of_forall fun k ↦
-      hW.integrable_gridExponential (N k) (hτ k) (hθ k) (hK k)) hi
-  have ht' := ht.congr fun k ↦ hW.integral_gridExponential (N k) (hτ k) (hθ k) (hK k)
+      hW.integrable_gridExponential (hτ k) (hθ k)) hi
+  have ht' := ht.congr fun k ↦ hW.integral_gridExponential (hτ k) (hθ k)
   exact tendsto_nhds_unique ht' tendsto_const_nhds
 
 omit [l.IsCountablyGenerated] in
@@ -137,7 +137,7 @@ theorem tendstoInMeasure_gridExponential_of_log (hW : IsFilteredPreBrownianReal 
   have hm k : AEStronglyMeasurable
       (fun ω ↦ log (gridExponential (τ k) (θ k) W (N k) ω)) P :=
     (measurable_log.comp
-      ((hW.adapted.measurable_gridExponential (N k) (hτ k) (hθ k)).mono
+      ((hW.adapted.measurable_gridExponential (hτ k) (hθ k)).mono
         (ℱ.le _) le_rfl)).aestronglyMeasurable
   have h := hL.continuous_comp continuous_exp
     (Eventually.of_forall fun k ↦ continuous_exp.comp_aestronglyMeasurable (hm k))

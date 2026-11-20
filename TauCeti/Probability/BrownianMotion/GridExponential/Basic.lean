@@ -14,7 +14,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 /-!
 # Exponential densities on Brownian grids
 
-For nondecreasing deterministic dates `τ` and bounded heights `θ j` known at `τ j`,
+For nondecreasing deterministic dates `τ` and heights `θ j` known at `τ j`,
 `gridExponential τ θ W n` is the exponential of the first `n` weighted Brownian increments,
 minus half their quadratic energy. These likelihoods are positive, have expectation one,
 and form a martingale on the sampled filtration. Their second moments are bounded by
@@ -90,76 +90,88 @@ theorem gridExponential_pos (τ : ℕ → ℝ≥0) (θ : ℕ → Ω → ℝ)
     (W : ℝ≥0 → Ω → ℝ) (n : ℕ) (ω : Ω) : 0 < gridExponential τ θ W n ω :=
   exp_pos _
 
+/-- Only the dates and integrator values through `n`, and heights before `n`,
+affect a finite grid likelihood. -/
+theorem gridExponential_congr {τ σ : ℕ → ℝ≥0} {θ η : ℕ → Ω → ℝ}
+    {W V : ℝ≥0 → Ω → ℝ} {n : ℕ} {ω : Ω}
+    (hτ : ∀ j ≤ n, τ j = σ j) (hθ : ∀ j < n, θ j ω = η j ω)
+    (hW : ∀ j ≤ n, W (τ j) ω = V (σ j) ω) :
+    gridExponential τ θ W n ω = gridExponential σ η V n ω := by
+  rw [gridExponential_def, gridExponential_def]
+  congr 1
+  apply sum_congr rfl
+  intro j hj
+  have hjn := mem_range.mp hj
+  rw [hθ j hjn, hW j (by omega), hW (j + 1) (by omega),
+    hτ j (by omega), hτ (j + 1) (by omega)]
+
 variable {mΩ : MeasurableSpace Ω} {P : Measure Ω} {ℱ : Filtration ℝ≥0 mΩ}
-  {W : ℝ≥0 → Ω → ℝ} {τ : ℕ → ℝ≥0} {θ : ℕ → Ω → ℝ} {K : ℝ}
+  {W : ℝ≥0 → Ω → ℝ} {τ : ℕ → ℝ≥0} {θ : ℕ → Ω → ℝ} {K : ℝ} {n : ℕ}
 
 /-- Each grid likelihood is known at the last date used in it. -/
-theorem _root_.MeasureTheory.Adapted.measurable_gridExponential (hW : Adapted ℱ W) (n : ℕ)
-    (hτ : MonotoneOn τ (Set.Iic n)) (hθ : ∀ j < n, Measurable[ℱ (τ j)] (θ j)) :
+theorem _root_.MeasureTheory.Adapted.measurable_gridExponential (hW : Adapted ℱ W)
+    (hτ : MonotoneOn τ (Set.Iic n))
+    (hθ : ∀ j < n, Measurable[ℱ (τ j)] (θ j)) :
     Measurable[ℱ (τ n)] (gridExponential τ θ W n) := by
   apply Measurable.exp
   apply Finset.measurable_sum
   intro j hj
   have hjn : j + 1 ≤ n := mem_range.mp hj
-  have hjle : j ≤ n := by omega
   have hθj := (hθ j (mem_range.mp hj)).mono
-    (ℱ.mono (hτ hjle (Set.mem_Iic.mpr le_rfl) hjle)) le_rfl
-  have h₁ := (hW (τ (j + 1))).mono
-    (ℱ.mono (hτ hjn (Set.mem_Iic.mpr le_rfl) hjn)) le_rfl
+    (ℱ.mono (hτ (a := j) (b := n) (by simp; omega) (by simp) (by omega))) le_rfl
+  have h₁ := (hW (τ (j + 1))).mono (ℱ.mono (hτ hjn (by simp) hjn)) le_rfl
   have h₀ := (hW (τ j)).mono
-    (ℱ.mono (hτ hjle (Set.mem_Iic.mpr le_rfl) hjle)) le_rfl
+    (ℱ.mono (hτ (a := j) (b := n) (by simp; omega) (by simp) (by omega))) le_rfl
   exact (hθj.mul (h₁.sub h₀)).sub ((hθj.pow_const 2).mul_const _ |>.div_const 2)
 
+/-- A normalized Brownian exponential increment with a left-measurable height
+preserves integrability of a left-measurable multiplier. No height bound is needed. -/
+theorem IsFilteredPreBrownianReal.integrable_mul_exp_sub
+    (hW : IsFilteredPreBrownianReal ℱ W P) {u v : ℝ≥0} (huv : u ≤ v)
+    {a X : Ω → ℝ} (ha : Measurable[ℱ u] a)
+    (hX : Measurable[ℱ u] X) (hi : Integrable X P) :
+    Integrable (fun ω ↦ X ω *
+      exp (a ω * (W v ω - W u ω) - a ω ^ 2 * ((v : ℝ) - u) / 2)) P := by
+  have hZ : Measurable (fun ω ↦ W v ω - W u ω) :=
+    hW.adapted.measurable.sub hW.adapted.measurable
+  simpa only [zero_mul, zero_add, NNReal.coe_sub huv, mul_comm ((v : ℝ) - u)] using
+    integrable_mul_exp_sub_of_indep_gaussian (ℱ.le u) hX ha hZ
+      (hW.indep_sub huv) (hW.hasLaw_sub_of_le huv) hi
+
+/-- Multiplying an integrable `ℱ u`-measurable variable by a normalized Brownian
+exponential increment with `ℱ u`-measurable height gives conditional expectation
+equal to that variable. -/
+theorem IsFilteredPreBrownianReal.condExp_mul_exp_sub
+    (hW : IsFilteredPreBrownianReal ℱ W P) {u v : ℝ≥0} (huv : u ≤ v)
+    {a X : Ω → ℝ} (ha : Measurable[ℱ u] a)
+    (hX : Measurable[ℱ u] X) (hi : Integrable X P) :
+    P[(fun ω ↦ X ω *
+      exp (a ω * (W v ω - W u ω) - a ω ^ 2 * ((v : ℝ) - u) / 2)) | ℱ u] =ᵐ[P] X := by
+  have hZ : Measurable (fun ω ↦ W v ω - W u ω) :=
+    hW.adapted.measurable.sub hW.adapted.measurable
+  simpa only [zero_mul, zero_add, NNReal.coe_sub huv, mul_comm ((v : ℝ) - u)] using
+    condExp_mul_exp_sub_of_indep_gaussian (ℱ.le u) hX ha hZ
+      (hW.indep_sub huv) (hW.hasLaw_sub_of_le huv) hi
+
 private theorem gridExponential_step (hW : IsFilteredPreBrownianReal ℱ W P)
-    (n : ℕ) (hτ : MonotoneOn τ (Set.Iic (n + 1)))
+    (hτ : MonotoneOn τ (Set.Iic (n + 1)))
     (hθ : ∀ j < n + 1, Measurable[ℱ (τ j)] (θ j))
-    (hK : ∀ j < n + 1, ∀ᵐ ω ∂P, |θ j ω| ≤ K)
     (hi : Integrable (gridExponential τ θ W n) P) :
     Integrable (gridExponential τ θ W (n + 1)) P ∧
       P[gridExponential τ θ W (n + 1) | ℱ (τ n)] =ᵐ[P] gridExponential τ θ W n := by
-  have hτn : τ n ≤ τ (n + 1) := hτ (Nat.le_succ n) (Set.mem_Iic.mpr le_rfl) (Nat.le_succ n)
-  have hτ' : MonotoneOn τ (Set.Iic n) := hτ.mono (Set.Iic_subset_Iic.mpr (Nat.le_succ n))
-  let d : ℝ := (τ (n + 1) : ℝ) - τ n
-  have hd : 0 ≤ d := sub_nonneg.mpr (NNReal.coe_le_coe.mpr hτn)
-  let X := fun ω ↦ gridExponential τ θ W n ω * exp (-(θ n ω ^ 2 * d / 2))
-  have hXm : Measurable[ℱ (τ n)] X :=
-    (hW.adapted.measurable_gridExponential n hτ' (fun j hj ↦ hθ j (by omega))).mul
-      (((hθ n (by omega)).pow_const 2 |>.mul_const d |>.div_const 2).neg.exp)
-  have hθa : Measurable (θ n) := (hθ n (by omega)).mono (ℱ.le _) le_rfl
-  have hXi : Integrable X P := hi.mul_bdd (by fun_prop) (c := 1) (by
-      filter_upwards [] with ω
-      simpa only [norm_eq_abs, abs_exp, exp_le_one_iff] using
-        neg_nonpos.mpr (div_nonneg (mul_nonneg (sq_nonneg _) hd) (by positivity)))
-  have hY : Measurable (fun ω ↦ W (τ (n + 1)) ω - W (τ n) ω) :=
-    hW.adapted.measurable.sub hW.adapted.measurable
-  have hind := hW.indep_sub hτn
-  have hlaw := hW.hasLaw_sub_of_le hτn
-  have heq : (fun ω ↦ X ω * exp (θ n ω * (W (τ (n + 1)) ω - W (τ n) ω))) =
-      gridExponential τ θ W (n + 1) := by
-    funext ω
-    rw [gridExponential_succ]
-    dsimp only [X, d]
-    rw [mul_assoc, ← exp_add]
-    congr 2
-    ring
-  refine ⟨heq ▸ integrable_mul_exp_of_indep_gaussian (ℱ.le _) hXm (hθ n (by omega))
-    hY hind hlaw hXi (hK n (by omega)), ?_⟩
-  have hc := condExp_mul_exp_of_indep_gaussian (ℱ.le _) hXm (hθ n (by omega))
-    hY hind hlaw hXi (hK n (by omega))
-  simp only [zero_mul, zero_add] at hc
-  rw [heq] at hc
-  filter_upwards [hc] with ω hω
-  rw [hω, NNReal.coe_sub hτn]
-  dsimp only [X]
-  rw [mul_assoc, ← exp_add]
-  have hz : -(θ n ω ^ 2 * d / 2) +
-      ((τ (n + 1) : ℝ) - τ n) * θ n ω ^ 2 / 2 = 0 := by dsimp [d]; ring
-  rw [hz, exp_zero, mul_one]
+  have huv := hτ (Nat.le_succ n) (by simp) (Nat.le_succ n)
+  have hm := hW.adapted.measurable_gridExponential
+    (hτ.mono (Set.Iic_subset_Iic.mpr (Nat.le_succ n)))
+    (fun j hj ↦ hθ j (by omega))
+  simpa only [← gridExponential_succ] using
+    And.intro (hW.integrable_mul_exp_sub huv (hθ n (by omega)) hm hi)
+      (hW.condExp_mul_exp_sub huv (hθ n (by omega)) hm hi)
 
 /-- A uniform height bound controls the square by the likelihood with doubled heights,
 with a factor depending only on elapsed time rather than the grid length. -/
-theorem gridExponential_sq_le (n : ℕ) (hτ : MonotoneOn τ (Set.Iic n)) (ω : Ω)
-    (hθK : ∀ j ∈ range n, |θ j ω| ≤ K) :
+theorem gridExponential_sq_le (hτ : MonotoneOn τ (Set.Iic n))
+    (W : ℝ≥0 → Ω → ℝ) (ω : Ω)
+    (hθK : ∀ j < n, |θ j ω| ≤ K) :
     gridExponential τ θ W n ω ^ 2 ≤ gridExponential τ (fun j ω ↦ 2 * θ j ω) W n ω *
       exp (K ^ 2 * ((τ n : ℝ) - τ 0)) := by
   have heq : gridExponential τ θ W n ω ^ 2 =
@@ -179,120 +191,108 @@ theorem gridExponential_sq_le (n : ℕ) (hτ : MonotoneOn τ (Set.Iic n)) (ω : 
       apply sum_le_sum
       intro j hj
       have hs : θ j ω ^ 2 ≤ K ^ 2 :=
-        sq_le_sq.mpr ((hθK j hj).trans (le_abs_self K))
+        sq_le_sq.mpr ((hθK j (mem_range.mp hj)).trans (le_abs_self K))
       exact mul_le_mul_of_nonneg_right hs
         (sub_nonneg.mpr (NNReal.coe_le_coe.mpr
-          (hτ (Set.mem_Iic.mpr (Nat.le_of_lt (mem_range.mp hj)))
+          (hτ (by have := mem_range.mp hj; simp; omega)
             (mem_range.mp hj) (Nat.le_succ j))))
     _ = _ := by rw [← mul_sum, sum_range_sub (fun i ↦ (τ i : ℝ))]
 
 namespace IsFilteredPreBrownianReal
 
-/-- Every finite grid likelihood with bounded predictable heights is integrable. -/
-theorem integrable_gridExponential (hW : IsFilteredPreBrownianReal ℱ W P) (n : ℕ)
-    (hτ : MonotoneOn τ (Set.Iic n)) (hθ : ∀ j < n, Measurable[ℱ (τ j)] (θ j))
-    (hK : ∀ j < n, ∀ᵐ ω ∂P, |θ j ω| ≤ K) :
+/-- Every finite grid likelihood with predictable heights is integrable. -/
+theorem integrable_gridExponential (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hτ : MonotoneOn τ (Set.Iic n))
+    (hθ : ∀ j < n, Measurable[ℱ (τ j)] (θ j)) :
     Integrable (gridExponential τ θ W n) P := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   induction n with
   | zero => exact (integrable_const (μ := P) (1 : ℝ)).congr (ae_of_all _ fun ω ↦ by simp)
   | succ n ih =>
-    exact (gridExponential_step hW n hτ hθ hK
+    exact (gridExponential_step hW hτ hθ
       (ih (hτ.mono (Set.Iic_subset_Iic.mpr (Nat.le_succ n)))
-        (fun j hj ↦ hθ j (by omega)) (fun j hj ↦ hK j (by omega)))).1
+        (fun j hj ↦ hθ j (by omega)))).1
 
 /-- **Grid exponential martingale.** Sample the filtration at the nondecreasing dates `τ`.
 The coefficient on each interval is known at its left endpoint, not its right endpoint. -/
 theorem martingale_gridExponential (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hτ : Monotone τ) (hθ : ∀ j, Measurable[ℱ (τ j)] (θ j))
-    (hK : ∀ j, ∀ᵐ ω ∂P, |θ j ω| ≤ K) :
+    (hτ : Monotone τ) (hθ : ∀ j, Measurable[ℱ (τ j)] (θ j)) :
     Martingale (gridExponential τ θ W) (ℱ.comp hτ) P := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  refine martingale_nat (fun n ↦ ?_)
-    (fun n ↦ hW.integrable_gridExponential n (hτ.monotoneOn _)
-      (fun j _ ↦ hθ j) (fun j _ ↦ hK j)) fun n ↦ ?_
+  have hi (n : ℕ) := hW.integrable_gridExponential (n := n)
+    (hτ.monotoneOn _) (fun j _ ↦ hθ j)
+  refine martingale_nat (fun n ↦ ?_) hi fun n ↦ ?_
   · simpa only [Filtration.stronglyMeasurable_comp_iff] using
-      (hW.adapted.measurable_gridExponential n (hτ.monotoneOn _)
+      (hW.adapted.measurable_gridExponential (n := n) (hτ.monotoneOn _)
         (fun j _ ↦ hθ j)).stronglyMeasurable
   · simpa only [Filtration.comp_apply] using
-      (gridExponential_step hW n (hτ.monotoneOn _) (fun j _ ↦ hθ j) (fun j _ ↦ hK j)
-        (hW.integrable_gridExponential n (hτ.monotoneOn _)
-          (fun j _ ↦ hθ j) (fun j _ ↦ hK j))).2.symm
+      (gridExponential_step hW (hτ.monotoneOn _) (fun j _ ↦ hθ j) (hi n)).2.symm
 
-/-- **Normalization.** Bounded predictable grid heights give a likelihood of expectation one. -/
-theorem integral_gridExponential (hW : IsFilteredPreBrownianReal ℱ W P) (n : ℕ)
-    (hτ : MonotoneOn τ (Set.Iic n)) (hθ : ∀ j < n, Measurable[ℱ (τ j)] (θ j))
-    (hK : ∀ j < n, ∀ᵐ ω ∂P, |θ j ω| ≤ K) :
+/-- **Normalization.** Predictable grid heights give a likelihood of expectation one. -/
+theorem integral_gridExponential (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hτ : MonotoneOn τ (Set.Iic n))
+    (hθ : ∀ j < n, Measurable[ℱ (τ j)] (θ j)) :
     ∫ ω, gridExponential τ θ W n ω ∂P = 1 := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   induction n with
   | zero => simp
   | succ n ih =>
-    have hτ' := hτ.mono (Set.Iic_subset_Iic.mpr (Nat.le_succ n))
-    have hθ' := fun j (hj : j < n) ↦ hθ j (by omega)
-    have hK' := fun j (hj : j < n) ↦ hK j (by omega)
-    have hs := gridExponential_step hW n hτ hθ hK
-      (hW.integrable_gridExponential n hτ' hθ' hK')
-    rw [← integral_condExp (ℱ.le _) (f := gridExponential τ θ W (n + 1)),
-      integral_congr_ae hs.2]
-    exact ih hτ' hθ' hK'
+    have hτn := hτ.mono (Set.Iic_subset_Iic.mpr (Nat.le_succ n))
+    have hθn := fun j (hj : j < n) ↦ hθ j (by omega)
+    have hs := gridExponential_step hW hτ hθ (hW.integrable_gridExponential hτn hθn)
+    rw [← integral_condExp (ℱ.le (τ n)), integral_congr_ae hs.2, ih hτn hθn]
 
-private theorem gridExponential_square_bound (hW : IsFilteredPreBrownianReal ℱ W P) (n : ℕ)
+private theorem gridExponential_square_bound (hW : IsFilteredPreBrownianReal ℱ W P)
     (hτ : MonotoneOn τ (Set.Iic n)) (hθ : ∀ j < n, Measurable[ℱ (τ j)] (θ j))
     (hK : ∀ j < n, ∀ᵐ ω ∂P, |θ j ω| ≤ K) :
     Integrable (fun ω ↦ gridExponential τ θ W n ω ^ 2) P ∧
       ∫ ω, gridExponential τ θ W n ω ^ 2 ∂P ≤ exp (K ^ 2 * ((τ n : ℝ) - τ 0)) := by
   have h2θ : ∀ j < n, Measurable[ℱ (τ j)] (fun ω ↦ 2 * θ j ω) :=
     fun j hj ↦ (hθ j hj).const_mul 2
-  have h2K : ∀ j < n, ∀ᵐ ω ∂P, |2 * θ j ω| ≤ 2 * K := by
-    intro j hj
-    filter_upwards [hK j hj] with ω hω
-    simpa only [abs_mul, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 2)] using
-      mul_le_mul_of_nonneg_left hω (by norm_num : (0 : ℝ) ≤ 2)
-  have hi := (hW.integrable_gridExponential n hτ h2θ h2K).mul_const
+  have hi := (hW.integrable_gridExponential hτ h2θ).mul_const
     (exp (K ^ 2 * ((τ n : ℝ) - τ 0)))
   have hb : ∀ᵐ ω ∂P, gridExponential τ θ W n ω ^ 2 ≤
       gridExponential τ (fun j ω ↦ 2 * θ j ω) W n ω * exp (K ^ 2 * ((τ n : ℝ) - τ 0)) := by
-    filter_upwards [ae_all_iff.mpr fun j ↦ ae_all_iff.mpr (hK j)] with ω hω
-    exact gridExponential_sq_le n hτ ω fun j hj ↦ hω j (mem_range.mp hj)
-  have hm := (hW.adapted.measurable_gridExponential n hτ hθ).mono (ℱ.le _) le_rfl
+    filter_upwards [ae_all_iff.mpr (fun j ↦ ae_all_iff.mpr (hK j))] with ω hω
+    exact gridExponential_sq_le hτ W ω hω
+  have hm := (hW.adapted.measurable_gridExponential hτ hθ).mono (ℱ.le _) le_rfl
   have hs : Integrable (fun ω ↦ gridExponential τ θ W n ω ^ 2) P :=
     hi.mono' (hm.pow_const 2).aestronglyMeasurable (by simpa only [norm_pow,
       Real.norm_eq_abs, sq_abs] using hb)
   refine ⟨hs, (integral_mono_ae hs hi hb).trans_eq ?_⟩
-  rw [integral_mul_const, hW.integral_gridExponential n hτ h2θ h2K, one_mul]
+  rw [integral_mul_const, hW.integral_gridExponential hτ h2θ, one_mul]
 
 /-- **Uniform second-moment bound.** It depends on the height bound and elapsed time,
 not on the number or sizes of the trading intervals. -/
-theorem integral_sq_gridExponential_le (hW : IsFilteredPreBrownianReal ℱ W P) (n : ℕ)
+theorem integral_sq_gridExponential_le (hW : IsFilteredPreBrownianReal ℱ W P)
     (hτ : MonotoneOn τ (Set.Iic n)) (hθ : ∀ j < n, Measurable[ℱ (τ j)] (θ j))
     (hK : ∀ j < n, ∀ᵐ ω ∂P, |θ j ω| ≤ K) :
     ∫ ω, gridExponential τ θ W n ω ^ 2 ∂P ≤ exp (K ^ 2 * ((τ n : ℝ) - τ 0)) :=
-  (gridExponential_square_bound hW n hτ hθ hK).2
+  (gridExponential_square_bound hW hτ hθ hK).2
 
 /-- Finite grid exponential densities with bounded predictable heights belong to `L²`. -/
-theorem memLp_two_gridExponential (hW : IsFilteredPreBrownianReal ℱ W P) (n : ℕ)
+theorem memLp_two_gridExponential (hW : IsFilteredPreBrownianReal ℱ W P)
     (hτ : MonotoneOn τ (Set.Iic n)) (hθ : ∀ j < n, Measurable[ℱ (τ j)] (θ j))
     (hK : ∀ j < n, ∀ᵐ ω ∂P, |θ j ω| ≤ K) :
     MemLp (gridExponential τ θ W n) 2 P := by
-  have hm := (hW.adapted.measurable_gridExponential n hτ hθ).mono (ℱ.le _) le_rfl
+  have hm := (hW.adapted.measurable_gridExponential hτ hθ).mono (ℱ.le _) le_rfl
   exact (memLp_two_iff_integrable_sq hm.aestronglyMeasurable).mpr
-    (gridExponential_square_bound hW n hτ hθ hK).1
+    (gridExponential_square_bound hW hτ hθ hK).1
 
 /-- The `L²` norm of a grid likelihood is controlled by its height bound and elapsed time. -/
-theorem eLpNorm_two_gridExponential_le (hW : IsFilteredPreBrownianReal ℱ W P) (n : ℕ)
+theorem eLpNorm_two_gridExponential_le (hW : IsFilteredPreBrownianReal ℱ W P)
     (hτ : MonotoneOn τ (Set.Iic n)) (hθ : ∀ j < n, Measurable[ℱ (τ j)] (θ j))
     (hK : ∀ j < n, ∀ᵐ ω ∂P, |θ j ω| ≤ K) {T : ℝ}
     (hT : (τ n : ℝ) - τ 0 ≤ T) :
     eLpNorm (gridExponential τ θ W n) 2 P ≤
       ENNReal.ofReal (exp (K ^ 2 * T)) ^ (1 / 2 : ℝ) := by
-  rw [(hW.memLp_two_gridExponential n hτ hθ hK).eLpNorm_eq_integral_rpow_norm
+  rw [(hW.memLp_two_gridExponential hτ hθ hK).eLpNorm_eq_integral_rpow_norm
     two_ne_zero ENNReal.ofNat_ne_top]
   simp only [ENNReal.toReal_ofNat, Real.norm_eq_abs, Real.rpow_two, sq_abs]
   rw [ENNReal.ofReal_rpow_of_nonneg (exp_pos _).le (by positivity : (0 : ℝ) ≤ 1 / 2)]
   simp only [one_div]
   gcongr
-  exact (hW.integral_sq_gridExponential_le n hτ hθ hK).trans
+  exact (hW.integral_sq_gridExponential_le hτ hθ hK).trans
     (exp_le_exp.mpr (mul_le_mul_of_nonneg_left hT (sq_nonneg K)))
 
 end IsFilteredPreBrownianReal

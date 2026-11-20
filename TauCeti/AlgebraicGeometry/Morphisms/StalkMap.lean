@@ -41,9 +41,11 @@ Both stalk conditions descend along flat morphisms: for `g : X' ⟶ X` with flat
 `g ≫ f` locally of finite type), then so is the stalk map of `f` at `g x'`; the flat case is
 `AlgebraicGeometry.Scheme.Hom.flat_stalkMap_of_comp`. Hence if `f` is locally of finite
 presentation, `g` is flat and surjective and `g ≫ f` is étale, then `f` is étale
-(`AlgebraicGeometry.Etale.of_comp_surjective`). For an étale surjective `g` this is the statement
-of Stacks, Lemma 35.31.1 (036W), that étaleness is étale local on the source, for `f` locally of
-finite presentation.
+(`AlgebraicGeometry.Etale.of_comp_surjective`), because a morphism étale on an open
+neighbourhood of every point is étale
+(`AlgebraicGeometry.IsZariskiLocalAtSource.of_forall_exists_ι_comp`). For
+an étale surjective `g` this is the statement of Stacks, Lemma 35.31.1 (036W), that étaleness is
+étale local on the source, for `f` locally of finite presentation.
 Similarly, if `g` is flat and surjective, `f` and `g ≫ f` are locally of finite type and `g ≫ f`
 is formally unramified, then `f` is formally unramified
 (`AlgebraicGeometry.FormallyUnramified.of_comp_surjective`). No quasi-compactness assumption on
@@ -551,14 +553,11 @@ is Stacks, Lemma 35.31.1 (036W) for `f` locally of finite presentation. -/
 @[stacks 036W "for `f` locally of finite presentation, with `g` flat and surjective"]
 theorem Etale.of_comp_surjective {X' : Scheme.{u}} (g : X' ⟶ X) (f : X ⟶ Y) [Flat g]
     [Surjective g] [LocallyOfFinitePresentation f] [Etale (g ≫ f)] : Etale f := by
-  have H (x : X) : ∃ U : X.Opens, x ∈ U ∧ Etale (U.ι ≫ f) := by
-    obtain ⟨x', rfl⟩ := g.surjective x
-    exact g.exists_etale_of_etale_comp f x' (Flat.stalkMap g x')
-  choose U hxU hU using H
   -- Instance search does not derive this from `HasRingHomProperty @Etale RingHom.Etale` by itself.
   have : IsZariskiLocalAtSource @Etale.{u} := HasRingHomProperty.instIsZariskiLocalAtSource
-  exact IsZariskiLocalAtSource.of_iSup_eq_top U
-    (eq_top_iff.mpr fun x _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ⟨x, hxU x⟩) hU
+  refine IsZariskiLocalAtSource.of_forall_exists_ι_comp fun x ↦ ?_
+  obtain ⟨x', rfl⟩ := g.surjective x
+  exact g.exists_etale_of_etale_comp f x' (Flat.stalkMap g x')
 
 /-- Formal unramifiedness of a morphism locally of finite type descends along a flat
 surjection of its source. The composite is also assumed locally of finite type. -/

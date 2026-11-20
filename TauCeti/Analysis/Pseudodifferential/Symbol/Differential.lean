@@ -291,10 +291,8 @@ theorem principal_negLaplacian :
 
 /-- **The Laplacian is elliptic.** -/
 theorem isElliptic_negLaplacian : (negLaplacian n V).IsElliptic := by
-  refine isElliptic_def.2 <| HomogeneousSymbol.isElliptic_iff.2 fun x ξ hξ ↦ ?_
-  rw [principal_negLaplacian, coefficient_normRpow_of_ne_zero _ _ _ hξ, ← Complex.coe_smul,
-    ContinuousLinearMap.isInvertible_smul_iff (by simpa using hξ)]
-  simpa using ContinuousLinearMap.isInvertible_equiv (f := ContinuousLinearEquiv.refl ℂ V)
+  rw [isElliptic_def, principal_negLaplacian]
+  exact HomogeneousSymbol.isElliptic_normRpow _ _ _ _
 
 end ClassicalSymbol
 

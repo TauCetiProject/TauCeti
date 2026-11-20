@@ -12,7 +12,10 @@ public import Mathlib.Topology.VectorBundle.Basic
 # Trivializations over the whole base
 
 A trivialization `e` of a fibre bundle `E` whose base set is the whole base is a homeomorphism
-`E ≃ₜ B × F`. Read through `Bundle.Trivial.homeomorphProd`, it is a homeomorphism of total spaces
+`E ≃ₜ B × F` (`Bundle.Trivialization.toHomeomorphOfBaseSetEqUniv`), which is `e` with inverse
+the partial inverse of `e` (`Bundle.Trivialization.coe_toHomeomorphOfBaseSetEqUniv`,
+`Bundle.Trivialization.coe_toHomeomorphOfBaseSetEqUniv_symm`).
+Read through `Bundle.Trivial.homeomorphProd`, it is a homeomorphism of total spaces
 `E ≃ₜ TotalSpace F (Bundle.Trivial B F)` onto the trivial bundle
 (`Bundle.Trivialization.homeomorphTrivial`). It covers the identity of the base, sends `v` to the
 fibre coordinate of `e v`, and its inverse is the partial inverse of `e`
@@ -66,12 +69,32 @@ namespace Bundle.Trivialization
 variable {B : Type*} [TopologicalSpace B] {F : Type*} [TopologicalSpace F] {E : B → Type*}
   [TopologicalSpace (TotalSpace F E)] (e : Trivialization F (π F E))
 
+/-- A trivialization over the whole base is a homeomorphism `E ≃ₜ B × F` of the total space onto
+the product. -/
+def toHomeomorphOfBaseSetEqUniv (he : e.baseSet = Set.univ) : TotalSpace F E ≃ₜ B × F :=
+  e.toHomeomorphOfSourceEqUnivTargetEqUniv (by simp [e.source_eq, he])
+    (by simp [e.target_eq, he])
+
+/-- The homeomorphism of a trivialization over the whole base is the trivialization. -/
+@[simp]
+theorem coe_toHomeomorphOfBaseSetEqUniv (he : e.baseSet = Set.univ) :
+    ⇑(e.toHomeomorphOfBaseSetEqUniv he) = e := by
+  rw [toHomeomorphOfBaseSetEqUniv,
+    OpenPartialHomeomorph.toHomeomorphOfSourceEqUnivTargetEqUniv_apply, coe_coe]
+
+/-- The inverse of the homeomorphism of a trivialization over the whole base is the partial
+inverse of the trivialization. -/
+@[simp]
+theorem coe_toHomeomorphOfBaseSetEqUniv_symm (he : e.baseSet = Set.univ) :
+    ⇑(e.toHomeomorphOfBaseSetEqUniv he).symm = e.toOpenPartialHomeomorph.symm := by
+  rw [toHomeomorphOfBaseSetEqUniv,
+    OpenPartialHomeomorph.toHomeomorphOfSourceEqUnivTargetEqUniv_symm_apply]
+
 /-- The homeomorphism `E ≃ₜ B × F` of a trivialization over the whole base, read as a
 homeomorphism onto the total space of the trivial bundle. -/
 def homeomorphTrivial (he : e.baseSet = Set.univ) :
     TotalSpace F E ≃ₜ TotalSpace F (Bundle.Trivial B F) :=
-  (e.toHomeomorphOfSourceEqUnivTargetEqUniv (by simp [e.source_eq, he])
-    (by simp [e.target_eq, he])).trans (Bundle.Trivial.homeomorphProd B F).symm
+  (e.toHomeomorphOfBaseSetEqUniv he).trans (Bundle.Trivial.homeomorphProd B F).symm
 
 @[simp]
 theorem homeomorphTrivial_apply (he : e.baseSet = Set.univ) (v : TotalSpace F E) :
