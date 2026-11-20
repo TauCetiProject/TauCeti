@@ -38,6 +38,8 @@ for the curvature tensor (`CovariantDerivative.curvatureTensor_symm_trivializati
 
 * `CovariantDerivative.alongCurve_alongCurve_sub_alongCurve_alongCurve`: the commutator of the two
   covariant derivatives along a `C²` field on a parametrized surface is the curvature tensor.
+* `CovariantDerivative.differentiableAt_sectionCoord_alongCurve_snd`: the covariant derivatives of a
+  `C²` field along the curves of one parameter are differentiable along the other parameter.
 
 ## References
 
@@ -113,10 +115,11 @@ private theorem sectionCoord_alongCurve_eventuallyEq
     e.continuousLinearMapAt_symmL (R := ℝ) hqb, alongCurveInChartWithin_apply,
     derivWithin_univ, derivWithin_univ, Function.comp_def, hcoord q, hφdef]
 
-/-- **The mixed covariant derivative in the chart at the point.** For a `C²` vector field `W`
-along a parametrized surface `f`, the covariant derivative along the first-parameter curve of the
-covariant derivatives along the second-parameter curves, read in the chart at `f u v`. -/
-private theorem alongCurve_alongCurve_eq_symmL
+/-- **The inner covariant derivatives differentiated along the other parameter.** For a `C²`
+vector field `W` along a parametrized surface `f`, the covariant derivatives along the
+second-parameter curves, read in the chart at `f u v` as a function of the first parameter, have
+at `u` the derivative of their coordinate formula. -/
+private theorem hasDerivAt_sectionCoord_alongCurve
     (hW : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I.tangent 2
       (fun z : ℝ × ℝ ↦ TotalSpace.mk' E (f z.1 z.2) (W z.1 z.2)) (u, v))
     {φ w : ℝ × ℝ → E} (hφdef : φ = fun z ↦ extChartAt I (f u v) (f z.1 z.2))
@@ -124,14 +127,13 @@ private theorem alongCurve_alongCurve_eq_symmL
       (f z.1 z.2) (W z.1 z.2)) :
     letI e := trivializationAt E (TangentSpace I) (f u v)
     letI Γ := christoffelMap (finBasis ℝ E) (cov.isCovariantDerivativeOn (s := e.baseSet))
-    alongCurve cov (fun q ↦ f q v) (fun q ↦ alongCurve cov (f q) (W q) v) u =
-      e.symmL ℝ (f u v) (deriv (fun q ↦ deriv (fun r ↦ w (q, r)) v) u +
+    HasDerivAt (sectionCoord ℝ (F := E) (fun q ↦ f q v) (fun q ↦ alongCurve cov (f q) (W q) v)
+        (f u v))
+      (deriv (fun q ↦ deriv (fun r ↦ w (q, r)) v) u +
         (mvfderiv I Γ (f u v) (curveVelocity I (fun q ↦ f q v) u) (w (u, v))
             (deriv (fun r ↦ φ (u, r)) v) +
           Γ (f u v) (deriv (fun q ↦ w (q, v)) u) (deriv (fun r ↦ φ (u, r)) v) +
-          Γ (f u v) (w (u, v)) (deriv (fun q ↦ deriv (fun r ↦ φ (q, r)) v) u)) +
-        Γ (f u v) (deriv (fun r ↦ w (u, r)) v + Γ (f u v) (w (u, v)) (deriv (fun r ↦ φ (u, r)) v))
-          (deriv (fun q ↦ φ (q, v)) u)) := by
+          Γ (f u v) (w (u, v)) (deriv (fun q ↦ deriv (fun r ↦ φ (q, r)) v) u))) u := by
   set e := trivializationAt E (TangentSpace I) (f u v)
   have hcov := cov.isCovariantDerivativeOn (s := e.baseSet)
   set Γ := christoffelMap (finBasis ℝ E) hcov
@@ -151,8 +153,6 @@ private theorem alongCurve_alongCurve_eq_symmL
     ((contMDiffAt_extChartAt' (mem_chart_source H (f u v))).comp (u, v) hf)
   have hw : ContDiffAt ℝ 2 w (u, v) :=
     hwdef ▸ hW.contDiffAt_continuousLinearMapAt_trivializationAt
-  -- Near `u`, the inner covariant derivatives read in the chart by the coordinate formula.
-  have hinner := sectionCoord_alongCurve_eventuallyEq cov hW hφdef hwdef
   -- The derivative in `q` of the coordinate formula, by the product rule.
   have hfu : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun q ↦ f q v) u :=
     (hf.comp u (contMDiff_iff_contDiff.mpr (contDiff_prodMk_left (n := 2) v)).contMDiffAt)
@@ -168,8 +168,45 @@ private theorem alongCurve_alongCurve_eq_symmL
       (fun q ↦ deriv (fun r ↦ w (q, r)) v + Γ (f q v) (w (q, v)) (deriv (fun r ↦ φ (q, r)) v))
       _ u := hw.differentiableAt_deriv_snd.hasDerivAt.add
     ((hΓq.clm_apply hw₁).clm_apply hφ.differentiableAt_deriv_snd.hasDerivAt)
+  -- Near `u`, the inner covariant derivatives read in the chart by the coordinate formula.
+  refine (hA.congr_of_eventuallyEq (sectionCoord_alongCurve_eventuallyEq cov hW hφdef hwdef))
+    |>.congr_deriv ?_
+  rw [add_apply]
+
+/-- **The mixed covariant derivative in the chart at the point.** For a `C²` vector field `W`
+along a parametrized surface `f`, the covariant derivative along the first-parameter curve of the
+covariant derivatives along the second-parameter curves, read in the chart at `f u v`. -/
+private theorem alongCurve_alongCurve_eq_symmL
+    (hW : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I.tangent 2
+      (fun z : ℝ × ℝ ↦ TotalSpace.mk' E (f z.1 z.2) (W z.1 z.2)) (u, v))
+    {φ w : ℝ × ℝ → E} (hφdef : φ = fun z ↦ extChartAt I (f u v) (f z.1 z.2))
+    (hwdef : w = fun z ↦ (trivializationAt E (TangentSpace I) (f u v)).continuousLinearMapAt ℝ
+      (f z.1 z.2) (W z.1 z.2)) :
+    letI e := trivializationAt E (TangentSpace I) (f u v)
+    letI Γ := christoffelMap (finBasis ℝ E) (cov.isCovariantDerivativeOn (s := e.baseSet))
+    alongCurve cov (fun q ↦ f q v) (fun q ↦ alongCurve cov (f q) (W q) v) u =
+      e.symmL ℝ (f u v) (deriv (fun q ↦ deriv (fun r ↦ w (q, r)) v) u +
+        (mvfderiv I Γ (f u v) (curveVelocity I (fun q ↦ f q v) u) (w (u, v))
+            (deriv (fun r ↦ φ (u, r)) v) +
+          Γ (f u v) (deriv (fun q ↦ w (q, v)) u) (deriv (fun r ↦ φ (u, r)) v) +
+          Γ (f u v) (w (u, v)) (deriv (fun q ↦ deriv (fun r ↦ φ (q, r)) v) u)) +
+        Γ (f u v) (deriv (fun r ↦ w (u, r)) v + Γ (f u v) (w (u, v)) (deriv (fun r ↦ φ (u, r)) v))
+          (deriv (fun q ↦ φ (q, v)) u)) := by
   rw [alongCurve_apply, alongCurveInChartWithin_apply, derivWithin_univ, derivWithin_univ,
-    hinner.deriv_eq, hinner.eq_of_nhds, hA.deriv, Function.comp_def, add_apply, hφdef]
+    (hasDerivAt_sectionCoord_alongCurve cov hW hφdef hwdef).deriv,
+    (sectionCoord_alongCurve_eventuallyEq cov hW hφdef hwdef).eq_of_nhds, Function.comp_def,
+    hφdef]
+
+/-- **The inner covariant derivatives are differentiable along the other parameter.** For a `C²`
+vector field `W` along a parametrized surface `f`, the covariant derivatives `D_r W` along the
+second-parameter curves form a field along the first-parameter curve `q ↦ f q v` whose reading in
+the chart at `f u v` is differentiable at `u`. -/
+theorem differentiableAt_sectionCoord_alongCurve_snd
+    (hW : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I.tangent 2
+      (fun z : ℝ × ℝ ↦ TotalSpace.mk' E (f z.1 z.2) (W z.1 z.2)) (u, v)) :
+    DifferentiableAt ℝ (sectionCoord ℝ (F := E) (fun q ↦ f q v)
+      (fun q ↦ alongCurve cov (f q) (W q) v) (f u v)) u :=
+  (hasDerivAt_sectionCoord_alongCurve cov hW rfl rfl).differentiableAt
 
 /-- **Mixed covariant derivatives commute up to curvature.** For a `C²` vector field `W` along a
 parametrized surface `f`, the covariant derivative along the first-parameter curves of the
