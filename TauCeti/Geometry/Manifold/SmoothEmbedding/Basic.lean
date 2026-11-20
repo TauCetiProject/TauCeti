@@ -37,8 +37,9 @@ the inputs of the tubular-neighbourhood and surgery constructions.
 
 ## Main results
 
-* `Manifold.IsSmoothEmbedding.contMDiff_iff_comp`: smoothness can be tested after composition
-  with a smooth embedding, without a separate continuity hypothesis.
+* `Manifold.IsSmoothEmbedding.contMDiff_iff_comp`,
+  `Manifold.IsSmoothEmbedding.contMDiffAt_iff_comp`: smoothness, globally or at a point, can be
+  tested after composition with a smooth embedding, without a separate continuity hypothesis.
 * `TauCeti.isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero`: the slice `x ↦ (x, c)` of a product
   `M × M'` is a smooth embedding when the preferred chart of `M'` at `c` sends `c` to `0`.
 * `Manifold.IsImmersion.isSmoothEmbedding_of_isProperMap`: an injective proper immersion is a
@@ -83,6 +84,14 @@ theorem contMDiff_iff_comp {f : M → N} {φ : N → N'}
     ContMDiff I J n f ↔ ContMDiff I J' n (φ ∘ f) := by
   rw [ContMDiff.iff_comp_isImmersion hφ.isImmersion]
   exact ⟨And.right, fun h ↦ ⟨hφ.isEmbedding.continuous_iff.2 h.continuous, h⟩⟩
+
+/-- A map into a smoothly embedded manifold is smooth at a point if and only if its composite with
+the embedding is smooth there. No separate continuity assumption is needed. -/
+theorem contMDiffAt_iff_comp {f : M → N} {φ : N → N'} {x : M}
+    (hφ : Manifold.IsSmoothEmbedding J J' n φ) :
+    ContMDiffAt I J n f x ↔ ContMDiffAt I J' n (φ ∘ f) x := by
+  rw [ContMDiffAt.iff_comp_isImmersionAt (hφ.isImmersion.isImmersionAt (f x))]
+  exact ⟨And.right, fun h ↦ ⟨hφ.isEmbedding.isInducing.continuousAt_iff.2 h.continuousAt, h⟩⟩
 
 end Manifold.IsSmoothEmbedding
 
