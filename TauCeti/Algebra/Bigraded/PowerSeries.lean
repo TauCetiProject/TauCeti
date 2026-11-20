@@ -327,8 +327,8 @@ theorem eulerPowerSeries_eq_maslovEulerPowerSeries_iff {P : PowerSeries (Laurent
           rw [Finset.mem_range] at hm
           rw [ih m hm n (by omega), mul_zero]),
         zero_add, coeff_maslovEulerPowerSeries, laurentEval_one_eq_sum] at hcoeff
-      exact Finsupp.eq_zero_of_sum_eq_apply_of_nonneg (Finsupp.le_def.2 (hnonneg n))
-        (((IsUnit.neg isUnit_one).pow n).mul_left_cancel hcoeff).symm hna.symm
+      exact (Finsupp.sum_eq_apply_iff_of_nonneg (Finsupp.le_def.2 (hnonneg n))).1
+        (((IsUnit.neg isUnit_one).pow n).mul_left_cancel hcoeff).symm a hna.symm
   · intro hdiag
     ext a
     rw [coeff_eulerPowerSeries_of_lowerTriangular hP hl a,
