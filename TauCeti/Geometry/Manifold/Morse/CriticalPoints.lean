@@ -434,6 +434,51 @@ theorem IsMorse.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints (h : 
     (hx : x ∈ criticalPoints I f) : IsManifoldNondegenerateCriticalPoint I f x :=
   (isMorseOn_univ.2 h).isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints (mem_univ x) hx
 
+section BoundarylessManifold
+
+variable [BoundarylessManifold I M]
+
+/-- **Fermat's theorem on a manifold.** On a boundaryless manifold, a local extremum is a critical
+point. No regularity of `f` is needed. -/
+theorem _root_.IsLocalExtr.mem_criticalPoints (h : IsLocalExtr f x) : x ∈ criticalPoints I f := by
+  by_cases hf : MDifferentiableAt I 𝓘(ℝ) f x
+  · -- At the interior point `x` the range of `I` is a neighbourhood of the chart image of `x`, so
+    -- the coordinate expression of `f` is differentiable there.
+    have hg : DifferentiableAt ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
+      simpa only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
+        Function.id_comp] using ((mdifferentiableAt_iff _ _).1 hf).2.differentiableAt
+          (mem_interior_iff_mem_nhds.mp (BoundarylessManifold.isInteriorPoint (I := I)))
+    rw [mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero_of_differentiableAt hg]
+    refine IsLocalExtr.fderiv_eq_zero
+      (IsLocalExtr.comp_continuous ?_ (continuousAt_extChartAt_symm x))
+    rwa [extChartAt_to_inv]
+  · rw [mem_criticalPoints_iff_mfderiv_eq_zero, mfderiv_zero_of_not_mdifferentiableAt hf]
+
+/-- A local minimum is a critical point. -/
+theorem _root_.IsLocalMin.mem_criticalPoints (h : IsLocalMin f x) : x ∈ criticalPoints I f :=
+  IsLocalExtr.mem_criticalPoints (IsMinFilter.isExtrFilter h)
+
+/-- A local maximum is a critical point. -/
+theorem _root_.IsLocalMax.mem_criticalPoints (h : IsLocalMax f x) : x ∈ criticalPoints I f :=
+  IsLocalExtr.mem_criticalPoints (IsMaxFilter.isExtrFilter h)
+
+/-- An extremum of `f` on a neighbourhood of `x` is a critical point. -/
+theorem _root_.IsExtrOn.mem_criticalPoints {s : Set M} (h : IsExtrOn f s x)
+    (hs : s ∈ 𝓝 x := by simp) : x ∈ criticalPoints I f :=
+  (h.isLocalExtr hs).mem_criticalPoints
+
+/-- A minimum of `f` on a neighbourhood of `x` (by default all of `M`) is a critical point. -/
+theorem _root_.IsMinOn.mem_criticalPoints {s : Set M} (h : IsMinOn f s x)
+    (hs : s ∈ 𝓝 x := by simp) : x ∈ criticalPoints I f :=
+  h.isExtrOn.mem_criticalPoints hs
+
+/-- A maximum of `f` on a neighbourhood of `x` (by default all of `M`) is a critical point. -/
+theorem _root_.IsMaxOn.mem_criticalPoints {s : Set M} (h : IsMaxOn f s x)
+    (hs : s ∈ 𝓝 x := by simp) : x ∈ criticalPoints I f :=
+  h.isExtrOn.mem_criticalPoints hs
+
+end BoundarylessManifold
+
 section Boundaryless
 
 variable [I.Boundaryless]
@@ -460,36 +505,6 @@ theorem isMorseOn_iff_criticalPoints :
       ContMDiffOn I 𝓘(ℝ) ∞ f s ∧
         ∀ x ∈ s, x ∈ criticalPoints I f → IsManifoldNondegenerateCriticalPoint I f x := by
   simp only [isMorseOn_iff, mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero]
-
-/-- **Fermat's theorem on a manifold.** A local extremum is a critical point. -/
-theorem _root_.IsLocalExtr.mem_criticalPoints (h : IsLocalExtr f x) : x ∈ criticalPoints I f := by
-  rw [mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero]
-  refine IsLocalExtr.fderiv_eq_zero
-    (IsLocalExtr.comp_continuous ?_ (continuousAt_extChartAt_symm x))
-  rwa [extChartAt_to_inv]
-
-/-- A local minimum is a critical point. -/
-theorem _root_.IsLocalMin.mem_criticalPoints (h : IsLocalMin f x) : x ∈ criticalPoints I f :=
-  IsLocalExtr.mem_criticalPoints (IsMinFilter.isExtrFilter h)
-
-/-- A local maximum is a critical point. -/
-theorem _root_.IsLocalMax.mem_criticalPoints (h : IsLocalMax f x) : x ∈ criticalPoints I f :=
-  IsLocalExtr.mem_criticalPoints (IsMaxFilter.isExtrFilter h)
-
-/-- An extremum of `f` on a neighbourhood of `x` is a critical point. -/
-theorem _root_.IsExtrOn.mem_criticalPoints {s : Set M} (h : IsExtrOn f s x)
-    (hs : s ∈ 𝓝 x := by simp) : x ∈ criticalPoints I f :=
-  (h.isLocalExtr hs).mem_criticalPoints
-
-/-- A minimum of `f` on a neighbourhood of `x` (by default all of `M`) is a critical point. -/
-theorem _root_.IsMinOn.mem_criticalPoints {s : Set M} (h : IsMinOn f s x)
-    (hs : s ∈ 𝓝 x := by simp) : x ∈ criticalPoints I f :=
-  h.isExtrOn.mem_criticalPoints hs
-
-/-- A maximum of `f` on a neighbourhood of `x` (by default all of `M`) is a critical point. -/
-theorem _root_.IsMaxOn.mem_criticalPoints {s : Set M} (h : IsMaxOn f s x)
-    (hs : s ∈ 𝓝 x := by simp) : x ∈ criticalPoints I f :=
-  h.isExtrOn.mem_criticalPoints hs
 
 /-- If the only critical points of `f` are a global minimum `x₀` and a point `x₁` with a larger
 value, then `x₀` is the only point at which `f` attains its minimum: any other such point would be
