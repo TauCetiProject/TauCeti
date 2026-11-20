@@ -65,6 +65,7 @@ theorem continuous_onePointMap_of_isProperMap
 
 /-- Extension to one-point compactifications preserves and reflects closed embeddings between
 arbitrary topological spaces. -/
+@[simp]
 theorem isClosedEmbedding_onePointMap_iff
     {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {f : X → Y} :
     Topology.IsClosedEmbedding (OnePoint.map f) ↔ Topology.IsClosedEmbedding f := by
