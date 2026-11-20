@@ -6,21 +6,35 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Measure
+public import Mathlib.MeasureTheory.Measure.WithDensity
 
 import Mathlib.Analysis.Normed.Affine.AddTorsorBases
 import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Analysis.Convex.Topology
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Normed.Module.Convex
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Measure of convex sets
+
+In a Hausdorff finite-dimensional real topological vector space carrying a measure positive on
+nonempty open sets, an open set contained almost everywhere in a convex set lies in its interior
+(`IsOpen.subset_interior_of_ae_le`): positivity on open sets puts the open set in the closure of
+the convex set, and in finite dimension `interior (closure s) = interior s`.
 
 The frontier of a convex set in a finite-dimensional real normed space is null for any additive
 Haar measure (`Convex.addHaar_frontier`). Consequently, almost every point of the set is in its
 interior (`Convex.ae_mem_interior`), so a subset of the convex set agrees almost everywhere with
 its intersection with the interior (`Convex.inter_interior_ae_eq`), and the interior meets every
 set that the convex set meets in positive measure
-(`Convex.interior_inter_nonempty_of_addHaar_inter_ne_zero`). A convex set has positive Haar
+(`Convex.interior_inter_nonempty_of_addHaar_inter_ne_zero`). Restricting Haar measure to a convex
+set agrees with restricting to its interior (`Convex.restrict_eq_restrict_interior`), so weighting
+`μ.restrict s` by `g` agrees with weighting `μ` by `(interior s).indicator g`
+(`Convex.withDensity_restrict_eq_withDensity_indicator_interior`), is carried by `interior s`
+(`Convex.ae_withDensity_restrict_mem_interior`), and has `(interior s).indicator g` nonzero almost
+everywhere on `closure s` exactly when `g` is nonzero almost everywhere for `μ.restrict s`
+(`Convex.ae_mem_closure_imp_indicator_interior_ne_zero_iff`). A convex set has positive Haar
 measure exactly when its interior is nonempty, equivalently when its affine span is the whole space
 (`Convex.addHaar_pos_iff_interior_nonempty`, `Convex.addHaar_pos_iff_affineSpan_eq_top`).
 
@@ -53,10 +67,46 @@ Mathlib's `Convex.addHaar_frontier` ensures that taking this closure changes onl
 
 public section
 
-open MeasureTheory MeasureTheory.Measure Set Metric Module
+open MeasureTheory MeasureTheory.Measure Set Metric Module Filter
+open scoped ENNReal
+
+/-- In a Hausdorff finite-dimensional real topological vector space, an open set contained almost
+everywhere in a convex set for a measure positive on nonempty open sets lies in its interior.
+Neither set need be measurable. -/
+theorem IsOpen.subset_interior_of_ae_le {E : Type*} [AddCommGroup E] [Module ℝ E]
+    [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] [T2Space E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] {μ : Measure E} [μ.IsOpenPosMeasure]
+    {U s : Set E} (hU : IsOpen U) (hs : Convex ℝ s) (hUs : U ≤ᵐ[μ] s) :
+    U ⊆ interior s :=
+  hs.interior_closure ▸ interior_maximal (hU.subset_closure_of_ae_le hUs) hU
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [IsAddHaarMeasure μ] {s : Set E}
+  [MeasurableSpace E] [BorelSpace E] {s : Set E}
+
+/-- Restricting an additive Haar measure on a finite-dimensional real normed space to a convex set
+`s` agrees with restricting it to `interior s`. The set `s` need not be Borel measurable. -/
+theorem Convex.restrict_eq_restrict_interior (hs : Convex ℝ s) (μ : Measure E)
+    [IsAddHaarMeasure μ] : μ.restrict s = μ.restrict (interior s) :=
+  Measure.restrict_congr_set (interior_ae_eq_of_null_frontier (hs.addHaar_frontier μ)).symm
+
+/-- Weighting the restriction of an additive Haar measure on a finite-dimensional real normed space
+to a convex set `s` by `g` agrees with weighting the ambient measure by `(interior s).indicator g`.
+Neither `s` nor `g` need be measurable. -/
+theorem Convex.withDensity_restrict_eq_withDensity_indicator_interior (hs : Convex ℝ s)
+    (μ : Measure E) [IsAddHaarMeasure μ] (g : E → ℝ≥0∞) :
+    (μ.restrict s).withDensity g = μ.withDensity ((interior s).indicator g) := by
+  rw [hs.restrict_eq_restrict_interior μ, ← withDensity_indicator isOpen_interior.measurableSet]
+
+/-- Weighting the restriction of an additive Haar measure on a finite-dimensional real normed space
+to a convex set `s` by `g` gives a measure carried by `interior s`. Neither `s` nor `g` need be
+measurable. -/
+theorem Convex.ae_withDensity_restrict_mem_interior (hs : Convex ℝ s) (μ : Measure E)
+    [IsAddHaarMeasure μ] (g : E → ℝ≥0∞) :
+    ∀ᵐ x ∂(μ.restrict s).withDensity g, x ∈ interior s := by
+  rw [hs.restrict_eq_restrict_interior μ]
+  exact (withDensity_absolutelyContinuous _ g).ae_le (ae_restrict_mem isOpen_interior.measurableSet)
+
+variable {μ : Measure E} [IsAddHaarMeasure μ]
 
 /-- Almost every point of a convex set in a finite-dimensional real normed space is an interior
 point, since the frontier of the set is null for every additive Haar measure. -/
@@ -68,8 +118,23 @@ intersection with `interior s` by a null set, since the frontier of `s` is null 
 Haar measure. -/
 theorem Convex.inter_interior_ae_eq (hs : Convex ℝ s) {t : Set E} (ht : t ⊆ s) :
     t ∩ interior s =ᵐ[μ] t := by
-  simpa [inter_eq_left.2 ht] using ae_eq_set_inter (Filter.EventuallyEqSet.rfl : t =ᵐ[μ] t)
+  simpa [inter_eq_left.2 ht] using ae_eq_set_inter (EventuallyEqSet.rfl : t =ᵐ[μ] t)
     (interior_ae_eq_of_null_frontier (hs.addHaar_frontier μ))
+
+/-- For a convex set `s` and an additive Haar measure `μ` on a finite-dimensional real normed space,
+`(interior s).indicator g` is nonzero `μ`-almost everywhere on `closure s` if and only if `g` is
+nonzero almost everywhere for `μ.restrict s`. Neither `s` nor `g` need be measurable. -/
+theorem Convex.ae_mem_closure_imp_indicator_interior_ne_zero_iff {α : Type*} [Zero α]
+    (hs : Convex ℝ s) {g : E → α} :
+    (∀ᵐ x ∂μ, x ∈ closure s → (interior s).indicator g x ≠ 0) ↔
+      ∀ᵐ x ∂μ.restrict s, g x ≠ 0 := by
+  rw [ae_restrict_iff'₀ (hs.nullMeasurableSet μ)]
+  refine eventually_congr ?_
+  filter_upwards [interior_ae_eq_of_null_frontier (hs.addHaar_frontier μ),
+    closure_ae_eq_of_null_frontier (hs.addHaar_frontier μ)] with x hxi hxc
+  by_cases hx : x ∈ s
+  · simp [hx, hxc.mpr hx, hxi.mpr hx]
+  · simp [hx, mt hxc.mp hx]
 
 /-- If a convex set in a finite-dimensional real normed space meets a set `t` in positive additive
 Haar measure, then its interior meets `t`, since almost every point of the convex set is
@@ -93,7 +158,7 @@ theorem Convex.addHaar_eq_zero_iff_interior_eq_empty (hs : Convex ℝ s) :
 exactly when its interior is nonempty. -/
 theorem Convex.addHaar_pos_iff_interior_nonempty (hs : Convex ℝ s) :
     0 < μ s ↔ (interior s).Nonempty := by
-  simpa only [pos_iff_ne_zero, Set.nonempty_iff_ne_empty] using
+  simpa only [pos_iff_ne_zero, ← Set.ne_empty_iff_nonempty] using
     not_congr hs.addHaar_eq_zero_iff_interior_eq_empty
 
 /-- A convex set in a finite-dimensional real normed space has positive additive Haar measure
@@ -210,7 +275,6 @@ theorem Convex.addHaar_iUnion_vadd {K : Set E} (hK : Convex ℝ K) {ι : Type*} 
   simp
 
 open Bornology
-open scoped ENNReal
 
 namespace MeasureTheory.Measure
 

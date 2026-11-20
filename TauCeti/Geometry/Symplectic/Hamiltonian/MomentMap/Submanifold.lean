@@ -268,7 +268,7 @@ theorem ker_bilinFormAt_mpullback_coe_level (z : {x : M // μ x = c})
   let := h.levelChartedSpace hreg hn
   have := h.isManifold_level hreg hn
   rw [h.ker_bilinFormAt_mpullback (h.contMDiff_coe_level hreg hn) hσz hcz
-    (h.range_mfderiv_coe_level hreg hn z), z.2]
+    (h.range_mfderiv_coe_level hreg hn z), z.property]
 
 end IsMomentMap
 

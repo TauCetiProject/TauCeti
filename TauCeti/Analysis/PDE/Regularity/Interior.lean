@@ -744,10 +744,10 @@ theorem exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul_of_mem
   -- The forcing term, extended by zero.
   have hG := memLp_localizedForcing hK hψ hψc f u
   have hg : ∀ᵐ x ∂mu.restrict H,
-      extendByZeroLpₗᵢ ℝ mu hΩ hsub (hG.toLp (localizedForcing a ψ f u)) x =
+      extendByZeroLpₗᵢ ℝ mu hΩ.nullMeasurableSet hsub (hG.toLp (localizedForcing a ψ f u)) x =
         (Omega : Set (EuclideanSpace ℝ ι)).indicator (localizedForcing a ψ f u) x := by
     have h3 := (ae_restrict_iff' hΩ).1 hG.coeFn_toLp
-    filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ (μ := mu) hΩ hsub
+    filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ (μ := mu) hΩ.nullMeasurableSet hsub
       (hG.toLp (localizedForcing a ψ f u)), ae_restrict_of_ae h3] with x hx2 hx3
     by_cases hxΩ : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
     · rw [hx2, indicator_of_mem hxΩ, indicator_of_mem hxΩ, hx3 hxΩ]

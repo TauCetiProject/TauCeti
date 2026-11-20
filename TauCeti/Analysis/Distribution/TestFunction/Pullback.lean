@@ -54,8 +54,9 @@ used to push forward currents whose support is compact, see
 * `TestFunction.cutoffCompCLM`: the composition with a cutoff `f ↦ χ (f ∘ Φ)` of test functions,
   the pullback with a cutoff of `0`-forms, with its values `TestFunction.cutoffCompCLM_apply`,
   its composition law `TestFunction.cutoffCompCLM_cutoffCompCLM` and its commutation
-  `TestFunction.postcompCLM_cutoffCompCLM` with postcomposition. It is used to push forward
-  distributions whose support is compact.
+  `TestFunction.postcompCLM_cutoffCompCLM` with postcomposition, and
+  `TestFunction.cutoffCompCLM_eventuallyEq`: it agrees with `f ∘ Φ` where `χ` is one. It is used
+  to push forward distributions.
 
 ## Implementation notes
 
@@ -544,6 +545,21 @@ theorem cutoffCompCLM_const {y₀ : E'} {hc : ContDiffOn ℝ (⊤ : ℕ∞) (fun
     (f : 𝓓(Ω', ℝ)) : cutoffCompCLM χ (fun _ : E ↦ y₀) hc f = f y₀ • χ := by
   ext x
   simp [mul_comm]
+
+/-- A cutoff `χ` equal to one near `s ∩ Φ⁻¹(supp f)` makes `χ (f ∘ Φ)` agree with `f ∘ Φ` near
+every point of `s ∩ Ω`. -/
+theorem cutoffCompCLM_eventuallyEq {s : Set E} {f : 𝓓(Ω', F)}
+    (hχ : ∀ᶠ x in 𝓝ˢ (s ∩ Φ ⁻¹' tsupport f), χ x = 1) {x : E} (hxΩ : x ∈ Ω) (hxs : x ∈ s) :
+    (cutoffCompCLM χ Φ hΦ f : E → F) =ᶠ[𝓝 x] fun y ↦ f (Φ y) := by
+  by_cases hfx : Φ x ∈ tsupport f
+  · have hx : x ∈ s ∩ Φ ⁻¹' tsupport f := ⟨hxs, hfx⟩
+    filter_upwards [hχ.filter_mono (nhds_le_nhdsSet hx)] with y hy
+    simp [hy]
+  · -- Away from `Φ⁻¹(supp f)`, both sides vanish near `x`.
+    have hcont : ContinuousAt Φ x := hΦ.continuousOn.continuousAt (Ω.isOpen.mem_nhds hxΩ)
+    filter_upwards [hcont.preimage_mem_nhds ((isClosed_tsupport f).isOpen_compl.mem_nhds hfx)]
+      with y hy
+    simp [image_eq_zero_of_notMem_tsupport hy]
 
 end CutoffPullback
 

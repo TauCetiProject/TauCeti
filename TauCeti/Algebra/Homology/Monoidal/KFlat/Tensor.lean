@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Monoidal.KFlat.DerivabilityStructure
 public import TauCeti.Algebra.Homology.Monoidal.KFlat.DerivedTensor
 public import TauCeti.Algebra.Homology.Monoidal.Braiding
+import TauCeti.Algebra.Homology.Bifunctor.TwoTermSupport
 
 /-!
 # Bilateral quasi-isomorphism invariance of K-flat tensor products
@@ -18,7 +19,7 @@ totalized tensor product on `CochainComplex C ℤ`, so tensoring on the right wi
 also preserves quasi-isomorphisms (`CochainComplex.quasiIso_tensorHom_id`,
 `CochainComplex.quasiIso_whiskerRight`).
 
-When in addition `(CochainComplex.kFlatLocalizerMorphism C).HasLeftResolutions` holds, every
+When in addition `(CochainComplex.KFlat.localizerMorphism C).HasLeftResolutions` holds, every
 arbitrary cochain complex admits a left resolution by a K-flat complex, so any quasi-isomorphism
 between K-flat complexes remains a quasi-isomorphism after tensoring on either side with any
 complex (`CochainComplex.quasiIso_tensorHom_id_of_isKFlat`,
@@ -84,7 +85,7 @@ instance quasiIso_whiskerRight (Q : CochainComplex C ℤ) [Q.IsKFlat]
 
 section HasLeftResolutions
 
-variable [(kFlatLocalizerMorphism C).HasLeftResolutions]
+variable [(KFlat.localizerMorphism C).HasLeftResolutions]
 
 /-- A quasi-isomorphism between K-flat complexes stays a quasi-isomorphism after tensoring on the
 right with an arbitrary, possibly unbounded, complex. -/
@@ -92,10 +93,10 @@ instance quasiIso_tensorHom_id_of_isKFlat
     {K L : CochainComplex C ℤ} [K.IsKFlat] [L.IsKFlat]
     (f : K ⟶ L) [QuasiIso f] (A : CochainComplex C ℤ) :
     QuasiIso (tensorHom f (𝟙 A)) := by
-  let res : (kFlatLocalizerMorphism C).LeftResolution A := Nonempty.some inferInstance
+  let res : (KFlat.localizerMorphism C).LeftResolution A := Nonempty.some inferInstance
   let p := res.w
-  have : IsKFlat ((kFlatLocalizerMorphism C).functor.obj res.X₁) := by
-    rw [kFlatLocalizerMorphism_functor]; exact res.X₁.property
+  have : IsKFlat ((KFlat.localizerMorphism C).functor.obj res.X₁) := by
+    rw [KFlat.localizerMorphism_functor]; exact inferInstanceAs res.X₁.obj.IsKFlat
   have : QuasiIso p := (mem_quasiIso_iff _).1 res.hw
   have h : tensorHom (𝟙 K) p ≫ tensorHom f (𝟙 A) =
       tensorHom f (𝟙 _) ≫ tensorHom (𝟙 L) p := by

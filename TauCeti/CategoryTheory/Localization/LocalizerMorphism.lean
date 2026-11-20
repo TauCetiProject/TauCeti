@@ -8,40 +8,66 @@ module
 public import Mathlib.CategoryTheory.Localization.LocalizerMorphism
 
 /-!
-# Localized equivalences via opposite categories
+# Morphisms of localizers: opposites and composites
 
-For a morphism of localizers `Φ : LocalizerMorphism W₁ W₂`, being a localized equivalence is
-equivalent to the opposite morphism `Φ.op` being a localized equivalence
-(`CategoryTheory.LocalizerMorphism.isLocalizedEquivalence_iff_op`).
+A morphism of localizers `Φ : LocalizerMorphism W₁ W₂` induces an equivalence on localized
+categories if and only if its opposite localizer morphism `Φ.op` does
+(`CategoryTheory.LocalizerMorphism.isLocalizedEquivalence_iff_op`). The forward implication is an
+instance in Joël Riou's `Mathlib.CategoryTheory.Localization.LocalizerMorphism`; this file supplies
+the converse and equivalence.
 
-## References
+For morphisms of localizers `Φ : LocalizerMorphism W₁ W₂` and `Ψ : LocalizerMorphism W₂ W₃` and
+localization functors `L₁`, `L₂`, `L₃` for `W₁`, `W₂`, `W₃`, the composite of the induced functors
+`Φ.localizedFunctor L₁ L₂ ⋙ Ψ.localizedFunctor L₂ L₃` lifts `(Φ.functor ⋙ Ψ.functor) ⋙ L₃`
+through `L₁`, by pasting the two commutative squares of the induced functors.
 
-* B. Kahn and G. Maltsiniotis, *Structures de dérivabilité*, Adv. Math. 218 (2008), 1286–1318.
-* J. Riou, `Mathlib.CategoryTheory.Localization.LocalizerMorphism`.
+## Main definitions
+
+* `CategoryTheory.LocalizerMorphism.liftingCompLocalizedFunctor`: the composite of the induced
+  functors lifts the composite of the functors of the morphisms of localizers.
 -/
 
 public section
 
-namespace CategoryTheory
+namespace CategoryTheory.LocalizerMorphism
+
+section Op
 
 variable {C₁ C₂ : Type*} [Category* C₁] [Category* C₂]
   {W₁ : MorphismProperty C₁} {W₂ : MorphismProperty C₂}
+  (Φ : LocalizerMorphism W₁ W₂)
 
-namespace LocalizerMorphism
+/-- A localizer morphism induces an equivalence on localized categories if and only if its opposite
+localizer morphism does. -/
+lemma isLocalizedEquivalence_iff_op :
+    Φ.IsLocalizedEquivalence ↔ Φ.op.IsLocalizedEquivalence := by
+  refine ⟨fun _ ↦ inferInstance, fun _ ↦ ?_⟩
+  let G := Φ.localizedFunctor W₁.Q W₂.Q
+  let : CatCommSq Φ.op.functor W₁.Q.op W₂.Q.op G.op :=
+    ⟨NatIso.op (CatCommSq.iso Φ.functor W₁.Q W₂.Q G).symm⟩
+  have : G.op.IsEquivalence := Φ.op.isEquivalence W₁.Q.op W₂.Q.op G.op
+  exact ⟨G.op.asEquivalence.unop.isEquivalence_functor⟩
 
-/-- A morphism of localizers `Φ : LocalizerMorphism W₁ W₂` is a localized equivalence if and only
-if its opposite `Φ.op : LocalizerMorphism W₁.op W₂.op` is a localized equivalence. -/
-lemma isLocalizedEquivalence_iff_op (Φ : LocalizerMorphism W₁ W₂) :
-    Φ.IsLocalizedEquivalence ↔ Φ.op.IsLocalizedEquivalence where
-  mp _ := inferInstance
-  mpr _ := by
-    have : (Φ.op.functor ⋙ W₂.Q.op).IsLocalization W₁.op :=
-      IsLocalizedEquivalence.isLocalization Φ.op W₂.Q.op
-    have : (Φ.functor ⋙ W₂.Q).IsLocalization W₁ :=
-      (Functor.IsLocalization.op_iff (Φ.functor ⋙ W₂.Q) W₁).1
-        (Functor.IsLocalization.of_iso W₁.op (Functor.opComp Φ.functor W₂.Q).symm)
-    exact IsLocalizedEquivalence.of_isLocalization_of_isLocalization Φ W₂.Q
+end Op
 
-end LocalizerMorphism
+section Comp
 
-end CategoryTheory
+open Localization
+
+variable {C₁ C₂ C₃ D₁ D₂ D₃ : Type*} [Category* C₁] [Category* C₂] [Category* C₃]
+  [Category* D₁] [Category* D₂] [Category* D₃]
+  {W₁ : MorphismProperty C₁} {W₂ : MorphismProperty C₂} {W₃ : MorphismProperty C₃}
+  (Φ : LocalizerMorphism W₁ W₂) (Ψ : LocalizerMorphism W₂ W₃)
+  (L₁ : C₁ ⥤ D₁) [L₁.IsLocalization W₁] (L₂ : C₂ ⥤ D₂) [L₂.IsLocalization W₂]
+  (L₃ : C₃ ⥤ D₃) [L₃.IsLocalization W₃]
+
+/-- The composite of the functors induced on localizations by two morphisms of localizers lifts
+the composite of their functors, followed by the last localization functor. -/
+noncomputable instance liftingCompLocalizedFunctor :
+    Lifting L₁ W₁ ((Φ.functor ⋙ Ψ.functor) ⋙ L₃)
+      (Φ.localizedFunctor L₁ L₂ ⋙ Ψ.localizedFunctor L₂ L₃) :=
+  ⟨(CatCommSq.hComp _ _ L₁ L₂ L₃ _ _).iso.symm⟩
+
+end Comp
+
+end CategoryTheory.LocalizerMorphism

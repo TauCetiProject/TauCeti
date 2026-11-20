@@ -17,6 +17,7 @@ import TauCeti.LinearAlgebra.BilinearForm.Odd.LocalRing
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.BilinearForm.Prod
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.GaussSum
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.Matrix.GaussSum
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.NumberTheory.LegendreSymbol.ZModChar
@@ -198,7 +199,7 @@ theorem sum_stdAddChar_toZModPow_mul_sq_eq_χ₈ {k : ℕ} (hk : 2 ≤ k) {u : �
   -- `e((θ + 4jω) / 8) = e(θ / 8) (-1)^{jω}` and `2 √(2^j) = √2^{j + 2}`, with `((-1)^ω)² = 1`.
   have hexp : exp (2 * pi * I * (((θ + 4 * (j : ℤ) * ω : ℤ) : ℚ) / ((8 : ℕ) : ℚ) : ℚ)) =
       exp (2 * pi * I * θ / ((2 ^ 3 : ℕ) : ℂ)) * (-1 : ℂ) ^ (ω * j) := by
-    rw [← Complex.exp_pi_mul_I, ← exp_int_mul, ← Complex.exp_add]
+    rw [← Complex.exp_pi_mul_I, ← exp_intCast_mul, ← Complex.exp_add]
     congr 1
     push_cast
     ring

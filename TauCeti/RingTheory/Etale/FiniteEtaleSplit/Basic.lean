@@ -63,6 +63,8 @@ there only through sections of faithfully flat covers and roots of separable pol
 * `TauCeti.Algebra.IsTotallySplit.baseChange`: total splitting is stable under base change.
 * `Algebra.IsFiniteSplit.of_surjective`: over a field, a quotient of a totally split algebra is
   totally split.
+* `AlgHom.nonempty_algHom_of_surjective`: if `K' ⊗[K] B` is totally split over a field extension
+  `K' / K`, every nontrivial quotient of `B` admits a `K`-algebra map to `K'`.
 * `TauCeti.IsFiniteEtaleSplit.nonempty_algHom`: a faithfully flat finite étale `R`-algebra maps to
   every `R`-algebra without nonsplit finite étale covers.
 * `TauCeti.IsFiniteEtaleSplit.pi`, `TauCeti.IsFiniteEtaleSplit.prod`: products of rings without
@@ -259,11 +261,11 @@ theorem isFiniteSplit [PreconnectedSpace (PrimeSpectrum R)] (h : IsTotallySplit 
   -- The factors with `e j ≠ 1` have `e j = 0`, so they are zero rings.
   have (j : {j // ¬e j = 1}) : Subsingleton (Q j) :=
     Ideal.Quotient.subsingleton_iff.mpr <| by
-      simp [(he j).eq_zero_or_eq_one_of_preconnectedSpace.resolve_right j.2]
+      simp [(he j).eq_zero_or_eq_one_of_preconnectedSpace.resolve_right j.property]
   let : Unique ((j : {j // ¬e j = 1}) → Q j) := uniqueOfSubsingleton 0
   -- The factors with `e j = 1` are copies of `R`.
   let ψ (j : {j // e j = 1}) : Q j ≃ₐ[R] R :=
-    (Ideal.quotientEquivAlgOfEq R (by simp [j.2])).trans (AlgEquiv.quotientBot R R)
+    (Ideal.quotientEquivAlgOfEq R (by simp [j.property])).trans (AlgEquiv.quotientBot R R)
   -- Split the product along `e j = 1`; `algebraMap` into a product is componentwise, so the
   -- splitting `RingEquiv` commutes with it by `rfl`.
   exact .of_algEquiv <| (φ.trans <|
@@ -311,6 +313,25 @@ theorem _root_.Algebra.IsFiniteSplit.of_surjective {K B C : Type*} [Field K] [Co
       hε).isFiniteSplit
   exact .of_algEquiv ((Ideal.quotientEquivAlgOfEq K hker.symm).trans
     (Ideal.quotientKerAlgEquivOfSurjective hg))
+
+open TensorProduct in
+/-- **A nontrivial quotient of an algebra that splits over a field extension maps into that
+extension.** If `K' ⊗[K] B` is totally split over a field extension `K' / K` and `g : B →ₐ[K] C`
+is surjective with `C` nontrivial, then `C` admits a `K`-algebra map into `K'`: the base-changed
+quotient `K' ⊗[K] C` is nontrivial and totally split over `K'`, so it has a `K'`-point. -/
+theorem _root_.AlgHom.nonempty_algHom_of_surjective {K K' B C : Type*} [Field K]
+    [Field K'] [Algebra K K'] [CommRing B] [CommRing C] [Nontrivial C] [Algebra K B] [Algebra K C]
+    [Algebra.IsFiniteSplit K' (K' ⊗[K] B)] (g : B →ₐ[K] C) (hg : Function.Surjective g) :
+    Nonempty (C →ₐ[K] K') := by
+  have : Algebra.IsFiniteSplit K' (K' ⊗[K] C) := .of_surjective
+    (Algebra.TensorProduct.map (AlgHom.id K' K') g)
+    (Algebra.TensorProduct.map_surjective _ _ Function.surjective_id hg)
+  have hinj : Function.Injective (Algebra.TensorProduct.includeRight : C →ₐ[K] K' ⊗[K] C) :=
+    Algebra.TensorProduct.includeRight_injective (RingHom.injective (algebraMap K K'))
+  have : Nontrivial (K' ⊗[K] C) := hinj.nontrivial
+  obtain ⟨p⟩ := (inferInstance : Nonempty (PrimeSpectrum (K' ⊗[K] C)))
+  exact ⟨(((Algebra.IsFiniteSplit.algHomEquivPrimeSpectrum K' (K' ⊗[K] C)).symm p).restrictScalars
+    K).comp Algebra.TensorProduct.includeRight⟩
 
 /-- A ring `R` *has no nonsplit finite étale covers* if every finite étale `R`-algebra is totally
 split. This is the conclusion of Scholze's Lemma 15.3 for the perfectoid tower `A_∞`. -/

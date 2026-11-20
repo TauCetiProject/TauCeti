@@ -41,6 +41,7 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 
 ## Main declarations
 
+* `ContDiffBump.exists_rOut_lt_two_pow_mul_rIn`: `φ.rOut < 2^N φ.rIn` for some `N`.
 * `ContDiffBump.littlewoodPaley`: the dyadic cutoff `ψⱼ`.
 * `ContDiffBump.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply`: `ψⱼ` is the rescaling
   `ψ₀ (2^{-j} ·)`.
@@ -117,6 +118,13 @@ private lemma norm_two_zpow_inv_smul_le_sub_one (j : ℤ) (ξ : E) :
   exact div_le_div_of_nonneg_left (norm_nonneg _) (zpow_pos two_pos _)
     (zpow_le_zpow_right₀ one_le_two (by omega))
 
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
+/-- Some dyadic dilate `2^N φ.rIn` of the inner radius exceeds the outer radius. -/
+theorem exists_rOut_lt_two_pow_mul_rIn {c : E} (φ : ContDiffBump c) :
+    ∃ N : ℕ, φ.rOut < 2 ^ N * φ.rIn := by
+  obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (φ.rOut / φ.rIn) one_lt_two
+  exact ⟨N, (div_lt_iff₀ φ.rIn_pos).1 hN⟩
+
 section HasContDiffBump
 
 variable [HasContDiffBump E] (φ : ContDiffBump (0 : E))
@@ -155,6 +163,14 @@ theorem littlewoodPaley_eq_zero_of_le_norm {j : ℤ} {ξ : E}
   have h2 := h1.trans (norm_two_zpow_inv_smul_le_sub_one j ξ)
   rw [littlewoodPaley_apply, φ.zero_of_le_dist (by rwa [dist_zero_right]),
     φ.zero_of_le_dist (by rwa [dist_zero_right]), sub_self]
+
+/-- Every cutoff `ψⱼ` takes values in `[-1, 1]`, as a difference of two values of `φ`. -/
+theorem abs_littlewoodPaley_le_one (j : ℤ) (ξ : E) : |φ.littlewoodPaley j ξ| ≤ 1 := by
+  have := φ.nonneg (x := ((2 : ℝ) ^ j)⁻¹ • ξ)
+  have := φ.le_one (x := ((2 : ℝ) ^ j)⁻¹ • ξ)
+  have := φ.nonneg (x := ((2 : ℝ) ^ (j - 1))⁻¹ • ξ)
+  have := φ.le_one (x := ((2 : ℝ) ^ (j - 1))⁻¹ • ξ)
+  exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
 
 /-- On a nontrivial space each cutoff `ψⱼ` takes a positive value: at a point `ξ` with
 `‖ξ‖ = 2^{j-1} φ.rOut`, `ψⱼ ξ = φ (2^{-j} ξ) - φ (2^{1-j} ξ) = φ (2^{-j} ξ) > 0`. -/
@@ -568,12 +584,8 @@ theorem abs_inhomogeneousLittlewoodPaley_le_one (j : ℕ) (ξ : E) :
   rcases j with _ | j
   · rw [inhomogeneousLittlewoodPaley_zero, abs_of_nonneg φ.nonneg]
     exact φ.le_one
-  · rw [inhomogeneousLittlewoodPaley_succ_apply]
-    have := φ.nonneg (x := ((2 : ℝ) ^ (j + 1))⁻¹ • ξ)
-    have := φ.le_one (x := ((2 : ℝ) ^ (j + 1))⁻¹ • ξ)
-    have := φ.nonneg (x := ((2 : ℝ) ^ j)⁻¹ • ξ)
-    have := φ.le_one (x := ((2 : ℝ) ^ j)⁻¹ • ξ)
-    exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
+  · rw [inhomogeneousLittlewoodPaley_succ]
+    exact φ.abs_littlewoodPaley_le_one _ ξ
 
 /-- **Bounded overlap.** There is `L`, depending only on `φ`, such that at every `ξ` at most `L`
 pieces of the partition are nonzero, over any finite set of indices. -/

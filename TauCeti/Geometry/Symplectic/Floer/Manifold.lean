@@ -119,13 +119,17 @@ form they recover the vector-space definitions.
   `SmoothTwoForm.hamiltonianCurvature_perturbationPullback`: naturality of the perturbed
   derivative, and the energy density, the area density and the curvature as two-forms on the
   domain. Consequently holomorphic changes of coordinates preserve the Floer equation
-  (`SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_perturbationPullback`).
+  (`SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_perturbationPullback`); for the exchange
+  `w ↦ 1 - w`, see `TauCeti.Geometry.Symplectic.Floer.Manifold.Exchange`.
 * `SmoothTwoForm.integral_floerEnergyDensity_image`,
   `SmoothTwoForm.integral_eval₂_mfderiv_stdComplexLine_image`,
   `SmoothTwoForm.integral_hamiltonianCurvature_image`,
   `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_image`: invariance of the energy, the
   symplectic area, the integrated curvature and the curvature allowance under changes of domain
   coordinates.
+* `TauCeti.Floer.differentiableAt_domain_of_contMDiffAt`,
+  `TauCeti.Floer.mdifferentiableAt_target_of_contMDiffAt`: a datum on `ℂ` with manifold target
+  that is `Cⁿ`, `n ≠ 0`, jointly in the domain and target points is differentiable in each of them.
 * `SmoothTwoForm.hamiltonianCurvature_eq_deriv_mul_of_eventuallyEq`: a datum which is the
   continuation datum `β(s) H(t) dt` near a point has curvature `β'(s) H(t)` there.
 * `SmoothTwoForm.hamiltonianCurvature_comp_add_right`,
@@ -147,6 +151,42 @@ public noncomputable section
 
 open Function
 open scoped Manifold
+
+namespace TauCeti.Floer
+
+section Differentiable
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  {K : ℂ → M → ℂ →L[ℝ] ℝ} {w : ℝ × ℝ} {x : M} {n : WithTop ℕ∞}
+
+/-- If a datum `K` on `ℂ` with manifold target is `Cⁿ`, `n ≠ 0`, jointly in the domain and target
+points, then, in the real coordinates, its value on a fixed tangent vector is differentiable in
+the domain point. This is the manifold-target version of
+`TauCeti.Floer.differentiableAt_domain_of_differentiableAt`. -/
+theorem differentiableAt_domain_of_contMDiffAt
+    (hK : ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n (fun p : ℂ × M ↦ K p.1 p.2)
+      (Complex.equivRealProdCLM.symm w, x)) (hn : n ≠ 0) (v : ℂ) :
+    DifferentiableAt ℝ (fun z ↦ K (Complex.equivRealProdCLM.symm z) x v) w := by
+  have hK' : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n (fun z ↦ K z x)
+      (Complex.equivRealProdCLM.symm w) :=
+    hK.comp (f := fun z : ℂ ↦ (z, x)) _ (contMDiffAt_id.prodMk contMDiffAt_const)
+  exact ((hK'.contDiffAt.differentiableAt hn).comp w
+    Complex.equivRealProdCLM.symm.differentiableAt).clm_apply (differentiableAt_const v)
+
+/-- If a datum `K` on `ℂ` with manifold target is `Cⁿ`, `n ≠ 0`, jointly in the domain and target
+points, then its value on a fixed tangent vector is differentiable in the target point. This is
+the manifold-target version of `TauCeti.Floer.differentiableAt_target_of_differentiableAt`. -/
+theorem mdifferentiableAt_target_of_contMDiffAt
+    (hK : ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n (fun p : ℂ × M ↦ K p.1 p.2)
+      (Complex.equivRealProdCLM.symm w, x)) (hn : n ≠ 0) (v : ℂ) :
+    MDifferentiableAt I 𝓘(ℝ) (fun y ↦ K (Complex.equivRealProdCLM.symm w) y v) x :=
+  ((hK.comp (f := fun y : M ↦ (Complex.equivRealProdCLM.symm w, y)) x
+    (contMDiffAt_const.prodMk contMDiffAt_id)).clm_apply contMDiffAt_const).mdifferentiableAt hn
+
+end Differentiable
+
+end TauCeti.Floer
 
 namespace TauCeti.SmoothTwoForm
 
@@ -342,7 +382,7 @@ theorem continuousOn_floerEnergyDensity (ω : SmoothTwoForm I M) {Ks Kt : ℝ ×
     (hXt : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
       (⟨p.2, ω.hamiltonianVectorField (Kt p.1) p.2⟩ : TangentBundle I M)) (U ×ˢ univ)) :
     ContinuousOn (ω.floerEnergyDensity Ks Kt u) U := by
-  have hfun : ω.floerEnergyDensity Ks Kt u = fun z ↦ ω.1 (u z)
+  have hfun : ω.floerEnergyDensity Ks Kt u = fun z ↦ ω.val (u z)
       ![ω.perturbedMFDeriv Ks Kt u z stdComplexLineReal,
         ω.perturbedMFDeriv Ks Kt u z stdComplexLineImag] :=
     funext fun z ↦ by rw [floerEnergyDensity_def, SmoothBundleForm.eval₂_apply]
@@ -478,7 +518,7 @@ theorem IsNondegenerate.continuous_floerEnergyDensity_zero_left [FiniteDimension
     (hω : ω.IsNondegenerate) (hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt))
     (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) :
     Continuous (ω.floerEnergyDensity (fun _ _ ↦ 0) Kt u) := by
-  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
+  have hω₀ : IsSmoothForm I 0 ω.val := ω.isSmoothForm.of_le (by simp)
   -- The three terms of the pointwise energy identity are continuous.
   have harea : Continuous fun z ↦ SmoothBundleForm.eval₂ ω (u z)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
