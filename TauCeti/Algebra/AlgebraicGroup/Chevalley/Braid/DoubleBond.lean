@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.Basic
 import TauCeti.Algebra.Lie.Presentation.Serre.DoubleBond
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.Basic
 
 /-!
 # The double-bond braid relation in Chevalley data
@@ -18,9 +18,10 @@ not just in a Weyl quotient. It supplies the double-bond relation needed to iden
 the quotient of the Weyl subgroup by the torus.
 
 The rational operator identity is
-`IsSerreSystem.weylUnit_braid_of_cartan_eq_neg_two`, transferred to `D.points A` by
-`ChevalleyDatum.prod_map_weylElement_eq_of_prod_map_weylUnit_eq`. In particular, no
-division takes place in the value ring, and no restriction on weight multiplicities,
+`IsSerreSystem.weylUnit_braid_of_cartan_eq_neg_two`. Restrict it to the datum's
+Kostant-stable lattice and extend it to the value ring by
+`TauCeti.DynkinType.ChevalleyDatum.weylElement_prod_eq_of_weylUnit_prod_eq`. In particular,
+no division takes place in the value ring, and no restriction on weight multiplicities,
 characteristic or reducedness is needed.
 
 ## References
@@ -30,6 +31,8 @@ characteristic or reducedness is needed.
 -/
 
 public section
+
+open TauCeti.UniversalEnvelopingAlgebra
 
 namespace TauCeti.DynkinType.ChevalleyDatum
 
@@ -48,17 +51,15 @@ theorem weylElement_braid_of_cartanMatrix_eq_neg_two (i j : Fin t.rank)
         D.weylElement (t.simpleIndex ht i) A 1 * D.weylElement (t.simpleIndex ht j) A 1 =
       D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 *
         D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 := by
-  -- The Lie basis uses the transpose of the displayed Cartan matrix: exchange the two nodes
-  -- in the rational operator theorem and take the symmetry of the resulting equality.
-  have hij := t.cartanMatrix_eq_neg_one_of_cartanMatrix_le_neg_two i j (by omega)
-  simpa [mul_assoc] using D.prod_map_weylElement_eq_of_prod_map_weylUnit_eq
-    (l₁ := [i, j, i, j]) (l₂ := [j, i, j, i]) (by
-      simpa [mul_assoc] using
-        (D.isSerreSystem_representation.weylUnit_braid_of_cartan_eq_neg_two
-          (i := j) (j := i) (by simp) (by simp) hij hji
-          (D.isNilpotent_representation_rootGenerator (.inl j))
-          (D.isNilpotent_representation_rootGenerator (.inr j))
-          (D.isNilpotent_representation_rootGenerator (.inl i))
-          (D.isNilpotent_representation_rootGenerator (.inr i))).symm) A
+  -- The Lie basis uses the transpose of the displayed Cartan matrix. Reverse the
+  -- two nodes in the operator theorem and then reverse its equality.
+  simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one, mul_assoc]
+    using D.weylElement_prod_eq_of_weylUnit_prod_eq [i, j, i, j] [j, i, j, i]
+    (fun hE hF => by
+      simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one, mul_assoc]
+        using (D.isSerreSystem_representation.weylUnit_braid_of_cartan_eq_neg_two
+          (i := j) (j := i) (by simp) (by simp)
+          (t.cartanMatrix_eq_neg_one_of_cartanMatrix_le_neg_two i j (by omega)) hji
+          (hE j) (hF j) (hE i) (hF i)).symm) A
 
 end TauCeti.DynkinType.ChevalleyDatum

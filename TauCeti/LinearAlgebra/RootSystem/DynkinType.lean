@@ -362,21 +362,6 @@ theorem cartanMatrix_eq_neg_one_of_cartanMatrix_le_neg_two (t : DynkinType)
       simp only [cartanMatrix_G2, Matrix.transpose_apply] at hji ⊢
       fin_cases i <;> fin_cases j <;> norm_num [CartanMatrix.G₂] at *
 
-/-- At any pair of distinct nodes whose Cartan entries multiply to `c > 0`, one of the two
-directed entries is `-1` and the other is `-c`. -/
-theorem cartanMatrix_offDiag_of_mul_eq (t : DynkinType) {i j : Fin t.rank} (hij : i ≠ j)
-    {c : ℤ} (hc : 0 < c) (hp : t.cartanMatrix i j * t.cartanMatrix j i = c) :
-    t.cartanMatrix i j = -1 ∧ t.cartanMatrix j i = -c ∨
-      t.cartanMatrix j i = -1 ∧ t.cartanMatrix i j = -c := by
-  have ha : t.cartanMatrix i j ≤ 0 := t.cartanMatrix_apply_le_zero_of_ne hij
-  rcases (by omega : t.cartanMatrix i j = 0 ∨ t.cartanMatrix i j = -1 ∨
-      t.cartanMatrix i j ≤ -2) with h | h | h
-  · simp [h] at hp
-    omega
-  · exact Or.inl ⟨h, by rw [h] at hp; omega⟩
-  · have h' := t.cartanMatrix_eq_neg_one_of_cartanMatrix_le_neg_two j i h
-    exact Or.inr ⟨h', by rw [h'] at hp; omega⟩
-
 /-- The double edge of type `Bₙ`: with at least two simple roots, the last two are joined by an
 entry `-2`. -/
 private lemma cartanMatrix_B_apply_eq_neg_two {n : ℕ} (hn : 2 ≤ n) (i j : Fin n)
@@ -430,6 +415,48 @@ theorem isSimplyLaced_cartanMatrix_iff (t : DynkinType) :
         rw [← CartanMatrix.B_transpose, Matrix.isSimplyLaced_transpose]
         exact not_isSimplyLaced_cartanMatrix_B hn
       exact iff_of_false hC (by simp; omega)
+
+/-- Outside type G₂, an off-diagonal Cartan entry is `0`, `-1` or `-2`. -/
+theorem cartanMatrix_mem_of_ne_G2_of_ne {t : DynkinType}
+    (hs : t ≠ .G2) {k l : Fin t.rank} (hkl : k ≠ l) :
+    t.cartanMatrix k l ∈ ({0, -1, -2} : Set ℤ) := by
+  have hB (n : ℕ) (i j : Fin n) (hij : i ≠ j) :
+      CartanMatrix.B n i j ∈ ({0, -1, -2} : Set ℤ) := by
+    simp only [CartanMatrix.B, Matrix.of_apply]
+    split_ifs <;> simp_all
+  by_cases hsl : t.IsSimplyLaced
+  · rcases ((isSimplyLaced_cartanMatrix_iff t).mpr (Or.inl hsl)) hkl with hk | hk <;>
+      simp [hk]
+  · cases t with
+    | B n => simpa only [cartanMatrix_B] using hB n k l hkl
+    | C n =>
+      -- Expose the reduced index type so the transpose entry lemma can match.
+      change Fin n at k l
+      rw [cartanMatrix_C, ← Matrix.transpose_apply (CartanMatrix.C n) l k,
+        CartanMatrix.C_transpose]
+      exact hB n l k (Ne.symm hkl)
+    | F4 =>
+      -- Reduce the dependent indices before checking the fixed finite matrix.
+      change Fin 4 at k l
+      rw [cartanMatrix_F4]
+      fin_cases k <;> fin_cases l <;> first | exact (hkl rfl).elim | decide
+    | G2 => exact (hs rfl).elim
+    | _ => exact (hsl (by simp)).elim
+
+/-- Outside type G₂, the two Cartan entries at distinct nodes form an orthogonal pair,
+a single bond, or one of the two orientations of a double bond. -/
+theorem cartanMatrix_eq_zero_and_eq_zero_or_of_ne_G2_of_ne {t : DynkinType}
+    (hs : t ≠ .G2) {i j : Fin t.rank} (h : i ≠ j) :
+    (t.cartanMatrix i j = 0 ∧ t.cartanMatrix j i = 0) ∨
+    (t.cartanMatrix i j = -1 ∧ t.cartanMatrix j i = -1) ∨
+    (t.cartanMatrix i j = -1 ∧ t.cartanMatrix j i = -2) ∨
+    (t.cartanMatrix i j = -2 ∧ t.cartanMatrix j i = -1) := by
+  have hp := t.cartanMatrix_eq_neg_one_of_cartanMatrix_le_neg_two i j
+  have hz := t.cartanMatrix_apply_eq_zero_iff_symm i j
+  have hi := cartanMatrix_mem_of_ne_G2_of_ne hs h
+  have hj := cartanMatrix_mem_of_ne_G2_of_ne hs (Ne.symm h)
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hi hj
+  rcases hi with hi | hi | hi <;> rcases hj with hj | hj | hj <;> simp_all
 
 /-- **Among valid Dynkin types the simply-laced Cartan matrices are exactly those of types `A`, `D`
 and `E`.** Validity is what rules out `B 1 = A 1`, whose matrix is simply laced. -/

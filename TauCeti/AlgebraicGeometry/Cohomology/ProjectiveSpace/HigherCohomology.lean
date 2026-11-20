@@ -311,19 +311,19 @@ private def chartSectionsHom (S : Finset κ) :
 
 private lemma chartSectionsHom_eq_sum {S : Finset κ}
     (f : Finsupp.supported R R (chartExponents m S)) :
-    chartSectionsHom b m S f = ∑ e ∈ f.1.support, chartSectionHom b m S e (f.1 e) :=
+    chartSectionsHom b m S f = ∑ e ∈ f.val.support, chartSectionHom b m S e (f.val e) :=
   Finsupp.liftAddHom_apply _ _
 
 private lemma chartSectionsHom_eq_const {S : Finset κ}
     (f : Finsupp.supported R R (chartExponents m S))
-    {j : ℕ} (hj : ∀ e ∈ f.1.support, ∀ i ∈ S, 0 ≤ e i + j) (hjm : 0 ≤ (j : ℤ) * S.card + m) :
+    {j : ℕ} (hj : ∀ e ∈ f.val.support, ∀ i ∈ S, 0 ≤ e i + j) (hjm : 0 ≤ (j : ℤ) * S.card + m) :
     chartSectionsHom b m S f =
       Proj.twistingSheaf.const (i := j * S.card) (j := ((j : ℤ) * S.card + m).toNat)
         (by push_cast; omega)
-        (∑ e ∈ f.1.support, f.1 e • b.symmetricAlgebra (numeratorExponent e S j))
+        (∑ e ∈ f.val.support, f.val e • b.symmetricAlgebra (numeratorExponent e S j))
         (coordProd b S ^ j)
         (Submodule.sum_mem _ fun e he ↦ Submodule.smul_mem _ _
-          (degree_numeratorExponent_eq_toNat ((Finsupp.mem_supported R f.1).1 f.2 he)
+          (degree_numeratorExponent_eq_toNat ((Finsupp.mem_supported R f.val).1 f.property he)
             (hj e he) ▸ b.symmetricAlgebra_mem_homogeneousSubmodule _))
         (by simpa [mul_comm] using SetLike.pow_mem_graded j (coordProd_mem b S)) _
         (basicOpen_le_basicOpen_pow b S j) := by
@@ -331,7 +331,8 @@ private lemma chartSectionsHom_eq_const {S : Finset κ}
   rw [chartSectionsHom_eq_sum]
   refine (Proj.twistingSheaf.sum_apply _ _ x).trans <| (Finset.sum_congr rfl fun e he ↦ ?_).trans <|
     (Localization.mk_sum _ _ _).symm.trans (Proj.twistingSheaf.const_apply _ _ _ _ _ _ x).symm
-  rw [chartSectionHom_apply b ((Finsupp.mem_supported R f.1).1 f.2 he) (hj e he), chartSection]
+  rw [chartSectionHom_apply b ((Finsupp.mem_supported R f.val).1 f.property he) (hj e he),
+      chartSection]
   exact Proj.twistingSheaf.const_apply _ _ _ _ _ _ x
 
 /-- On a nonempty chart, distinct Laurent monomials give linearly independent sections: the
@@ -340,10 +341,10 @@ private lemma chartSectionsHom_injective {S : Finset κ} (hS : S.Nonempty) :
     Function.Injective (chartSectionsHom b m S) := by
   refine (injective_iff_map_eq_zero _).2 fun f hf ↦ ?_
   have hcard : 0 < S.card := Finset.card_pos.2 hS
-  set j := (∑ e ∈ f.1.support, exponentBound e) + m.natAbs
-  have hj : ∀ e ∈ f.1.support, ∀ i ∈ S, 0 ≤ e i + j := fun e he i _ ↦ by
+  set j := (∑ e ∈ f.val.support, exponentBound e) + m.natAbs
+  have hj : ∀ e ∈ f.val.support, ∀ i ∈ S, 0 ≤ e i + j := fun e he i _ ↦ by
     have h1 := le_exponentBound e i
-    have h2 : exponentBound e ≤ ∑ e ∈ f.1.support, exponentBound e :=
+    have h2 : exponentBound e ≤ ∑ e ∈ f.val.support, exponentBound e :=
       Finset.single_le_sum (fun _ _ ↦ Nat.zero_le _) he
     omega
   have hjm : 0 ≤ (j : ℤ) * S.card + m := by
@@ -357,14 +358,14 @@ private lemma chartSectionsHom_injective {S : Finset κ} (hS : S.Nonempty) :
   simp only [map_mul, map_pow, map_sum, map_smul, map_zero, coordProd_eq_symmetricAlgebra,
     b.equivMvPolynomial_symmetricAlgebra_apply, MvPolynomial.monomial_pow, one_pow, Finset.mul_sum,
     mul_smul_comm, MvPolynomial.monomial_mul_monomial, mul_one] at hP
-  have hmem : ∀ e ∈ f.1.support, e ∈ chartExponents m S :=
-    fun e he ↦ (Finsupp.mem_supported R f.1).1 f.2 he
+  have hmem : ∀ e ∈ f.val.support, e ∈ chartExponents m S :=
+    fun e he ↦ (Finsupp.mem_supported R f.val).1 f.property he
   refine Subtype.ext (Finsupp.ext fun e₀ ↦ ?_)
-  by_cases he₀ : e₀ ∈ f.1.support
+  by_cases he₀ : e₀ ∈ f.val.support
   · have hc := congrArg (fun q : MvPolynomial κ R ↦
       q.coeff (N • indicatorExponent S + numeratorExponent e₀ S j)) hP
     rw [MvPolynomial.coeff_sum, AddMonoidAlgebra.coeff_zero, Finset.sum_eq_single e₀] at hc
-    · simpa [MvPolynomial.coeff_smul, MvPolynomial.coeff_monomial] using hc
+    · simpa [AddMonoidAlgebra.coeff_smul_apply, MvPolynomial.coeff_monomial] using hc
     · intro e he hne
       have hD : N • indicatorExponent S + numeratorExponent e S j ≠
           N • indicatorExponent S + numeratorExponent e₀ S j := fun h ↦ hne <| funext fun i ↦ by
@@ -678,7 +679,7 @@ private lemma homologyMap_negSupportProj_univ {q : ℕ}
     -- the projection is the filter on the underlying Laurent polynomial
     refine (Finsupp.filterSupported_apply _ _ f).trans ?_
     exact (Finsupp.filter_eq_zero_iff _ _).2 fun e he ↦ Finsupp.notMem_support_iff.1 fun hf ↦
-      hno e ((Finsupp.mem_supported R f.1).1 f.2 hf) he
+      hno e ((Finsupp.mem_supported R f.val).1 f.property hf) he
   rw [hzero]
   exact comp_zero
 
@@ -781,7 +782,7 @@ private lemma negEmb_mem_supported (f : negativeExponents κ m →₀ R) :
     negEmb m f ∈ Finsupp.supported R R (chartExponents m Finset.univ) := by
   refine (Finsupp.mem_supported R _).2 fun e he ↦ ?_
   obtain ⟨x, -, rfl⟩ := Finset.mem_image.1 (Finsupp.mapDomain_support he)
-  exact negativeExponents_subset m x.2
+  exact negativeExponents_subset m x.property
 
 omit [DecidableEq κ] in
 private lemma negPart_eq_zero {S : Finset κ} (hS : S ≠ Finset.univ) {w : (κ → ℤ) →₀ R}
@@ -802,7 +803,8 @@ private lemma negEmb_negPart {S : Finset κ} {w : (κ → ℤ) →₀ R}
       (Finset.eq_univ_iff_forall.2 fun i ↦ mem_negSupport.2 (he.2 i))]
     exact Finsupp.mapDomain_apply_of_injective Subtype.val_injective _
       (⟨e, he⟩ : negativeExponents κ m)
-  · rw [Finsupp.lmapDomain_apply, Finsupp.mapDomain_of_notMem_range _ _ fun ⟨x, hx⟩ ↦ he (hx ▸ x.2)]
+  · rw [Finsupp.lmapDomain_apply, Finsupp.mapDomain_of_notMem_range _ _ fun ⟨x, hx⟩ ↦ he
+      (hx ▸ x.property)]
     by_cases h : negSupport e = Finset.univ
     · rw [Finsupp.filter_apply_pos (fun x ↦ negSupport x = Finset.univ) w h]
       exact (Finsupp.notMem_support_iff.1 fun hs ↦ he ⟨((Finsupp.mem_supported R w).1 hw hs).1,
@@ -819,8 +821,8 @@ private abbrev cechπ {q : ℕ} (a : Fin (q + 1) → κ) :
 the faces, since restriction of Laurent polynomials is an inclusion. -/
 private lemma val_cechπ_d (q : ℕ) (k : Fin (q + 2) → κ)
     (x : (laurentCech (R := R) (κ := κ) m).X q) :
-    (cechπ m k ((laurentCech m).d q (q + 1) x)).1 =
-      ∑ p : Fin (q + 2), (-1 : ℤ) ^ (p : ℕ) • (cechπ m (k ∘ p.succAbove) x).1 := by
+    (cechπ m k ((laurentCech m).d q (q + 1) x)).val =
+      ∑ p : Fin (q + 2), (-1 : ℤ) ^ (p : ℕ) • (cechπ m (k ∘ p.succAbove) x).val := by
   have h := ConcreteCategory.congr_hom (cechComplexFunctor_obj_d_comp_π
     (fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)) (laurentPresheaf (R := R) m) q k) x
   refine (congrArg Subtype.val (h.trans ((DFunLike.congr_fun
@@ -876,7 +878,7 @@ private def topCochain :
   Pi.lift fun a ↦ AddCommGrpCat.ofHom (topCochainComponent m e a)
 
 private lemma val_cechπ_topCochain (a : Fin (n + 2) → κ) (f : negativeExponents κ m →₀ R) :
-    (cechπ m a (topCochain m e f)).1 = e.tupleSign ℤ a • negEmb m f := by
+    (cechπ m a (topCochain m e f)).val = e.tupleSign ℤ a • negEmb m f := by
   exact congrArg Subtype.val (ConcreteCategory.congr_hom
     (Pi.lift_comp_π (fun a ↦ AddCommGrpCat.ofHom (topCochainComponent (R := R) m e a)) a) f)
 
@@ -888,7 +890,7 @@ private def topCoefficient :
     ((negPart m).toAddMonoidHom.comp (Finsupp.supported R R _).subtype.toAddMonoidHom)
 
 private lemma topCoefficient_apply (x : (laurentCech (R := R) (κ := κ) m).X (n + 1)) :
-    topCoefficient m e x = negPart m (cechπ m e.symm x).1 :=
+    topCoefficient m e x = negPart m (cechπ m e.symm x).val :=
   rfl
 
 private lemma topCochain_comp_topCoefficient :
@@ -906,10 +908,10 @@ private lemma topCochain_comp_d :
   refine AddCommGrpCat.ext fun f ↦ Subtype.ext ?_
   -- composites of morphisms of abelian groups act by composition; this exposes the factor at `k`
   -- in the form used by `val_cechπ_d`
-  change (cechπ m k ((laurentCech m).d (n + 1) (n + 2) (topCochain m e f))).1 =
-    (cechπ m k 0).1
+  change (cechπ m k ((laurentCech m).d (n + 1) (n + 2) (topCochain m e f))).val =
+    (cechπ m k 0).val
   rw [map_zero, val_cechπ_d]
-  calc ∑ p : Fin (n + 3), (-1 : ℤ) ^ (p : ℕ) • (cechπ m (k ∘ p.succAbove) (topCochain m e f)).1
+  calc ∑ p : Fin (n + 3), (-1 : ℤ) ^ (p : ℕ) • (cechπ m (k ∘ p.succAbove) (topCochain m e f)).val
       = ∑ p : Fin (n + 3), ((-1 : ℤ) ^ (p : ℕ) * e.tupleSign ℤ (k ∘ p.succAbove)) • negEmb m f :=
         Finset.sum_congr rfl fun p _ ↦ by rw [val_cechπ_topCochain, smul_smul]
     _ = 0 := by rw [← Finset.sum_smul, e.sum_neg_one_pow_mul_tupleSign_comp_succAbove ℤ, zero_smul]
@@ -922,18 +924,18 @@ private lemma d_comp_topCoefficient :
   rw [ConcreteCategory.comp_apply, topCoefficient_apply, val_cechπ_d, map_sum]
   refine Finset.sum_eq_zero fun p _ ↦ ?_
   rw [map_zsmul, negPart_eq_zero m (mt (ofDual_pi_eq_univ_iff _).1
-    (not_surjective_of_card e _)) (cechπ m _ x).2, smul_zero]
+    (not_surjective_of_card e _)) (cechπ m _ x).property, smul_zero]
 
 /-! ### Cocycles of top degree are alternating -/
 
 private lemma negPart_cechπ_eq_zero {c : Fin (n + 2) → κ} (hc : ¬Function.Surjective c)
-    (z : (laurentCech (R := R) (κ := κ) m).X (n + 1)) : negPart m (cechπ m c z).1 = 0 :=
-  negPart_eq_zero m (mt (ofDual_pi_eq_univ_iff c).1 hc) (cechπ m c z).2
+    (z : (laurentCech (R := R) (κ := κ) m).X (n + 1)) : negPart m (cechπ m c z).val = 0 :=
+  negPart_eq_zero m (mt (ofDual_pi_eq_univ_iff c).1 hc) (cechπ m c z).property
 
 private lemma sum_negPart_cechπ {z : (laurentCech (R := R) (κ := κ) m).X (n + 1)}
     (hz : (laurentCech m).d (n + 1) (n + 2) z = 0) (k : Fin (n + 3) → κ) :
-    ∑ p : Fin (n + 3), (-1 : ℤ) ^ (p : ℕ) • negPart m (cechπ m (k ∘ p.succAbove) z).1 = 0 := by
-  have h := congrArg (fun y ↦ negPart m (cechπ m k y).1) hz
+    ∑ p : Fin (n + 3), (-1 : ℤ) ^ (p : ℕ) • negPart m (cechπ m (k ∘ p.succAbove) z).val = 0 := by
+  have h := congrArg (fun y ↦ negPart m (cechπ m k y).val) hz
   simp only [val_cechπ_d, map_sum, map_zsmul] at h
   exact h.trans (by rw [map_zero]; rfl)
 
@@ -943,10 +945,11 @@ change sign when two adjacent entries of the tuple are swapped: this is the cocy
 the tuple obtained by repeating the first of the two entries after the second. -/
 private lemma negPart_cechπ_comp_swap {z : (laurentCech (R := R) (κ := κ) m).X (n + 1)}
     (hz : (laurentCech m).d (n + 1) (n + 2) z = 0) (c : Fin (n + 2) → κ) (i : Fin (n + 1)) :
-    negPart m (cechπ m (c ∘ Equiv.swap i.castSucc i.succ) z).1 = -negPart m (cechπ m c z).1 := by
+    negPart m (cechπ m (c ∘ Equiv.swap i.castSucc i.succ) z).val = -negPart m (cechπ m c z).val
+        := by
   let s : Fin (n + 3) → Fin (n + 2) := fun p ↦
     ⟨if (p : ℕ) = i + 2 then i else if (p : ℕ) < i + 2 then p else p - 1, by
-      have := p.2; have := i.2; split_ifs <;> omega⟩
+      have := p.isLt; have := i.isLt; split_ifs <;> omega⟩
   let p₀ : Fin (n + 3) := ⟨i, by omega⟩
   let p₂ : Fin (n + 3) := ⟨i + 2, by omega⟩
   have h₀ : c ∘ s ∘ p₀.succAbove = c ∘ Equiv.swap i.castSucc i.succ := by
@@ -962,7 +965,7 @@ private lemma negPart_cechπ_comp_swap {z : (laurentCech (R := R) (κ := κ) m).
     simp only [s, p₂, Function.comp_apply, Fin.val_succAbove]
     split_ifs <;> omega
   have hzero (p : Fin (n + 3)) (hp : p ≠ p₀ ∧ p ≠ p₂) :
-      (-1 : ℤ) ^ (p : ℕ) • negPart m (cechπ m ((c ∘ s) ∘ p.succAbove) z).1 = 0 := by
+      (-1 : ℤ) ^ (p : ℕ) • negPart m (cechπ m ((c ∘ s) ∘ p.succAbove) z).val = 0 := by
     obtain ⟨j₀, hj₀⟩ := Fin.exists_succAbove_eq hp.1.symm
     obtain ⟨j₂, hj₂⟩ := Fin.exists_succAbove_eq hp.2.symm
     rw [negPart_cechπ_eq_zero m (fun hsurj ↦ ?_) z, smul_zero]
@@ -984,8 +987,8 @@ alternating in the ordering of the coordinates, since adjacent transpositions ge
 symmetric group. -/
 private lemma negPart_cechπ_comp_perm {z : (laurentCech (R := R) (κ := κ) m).X (n + 1)}
     (hz : (laurentCech m).d (n + 1) (n + 2) z = 0) (σ : Equiv.Perm (Fin (n + 2))) :
-    negPart m (cechπ m (e.symm ∘ σ) z).1 =
-      (Equiv.Perm.sign σ : ℤ) • negPart m (cechπ m e.symm z).1 := by
+    negPart m (cechπ m (e.symm ∘ σ) z).val =
+      (Equiv.Perm.sign σ : ℤ) • negPart m (cechπ m e.symm z).val := by
   induction σ using Submonoid.induction_of_closure_eq_top_right
     (Equiv.Perm.mclosure_swap_castSucc_succ (n + 1)) with
   | one =>
@@ -1002,7 +1005,7 @@ factor at the ordering `e.symm`: the factor at a tuple `c` is this one multiplie
 `c`. -/
 private lemma negPart_cechπ_eq_tupleSign_smul {z : (laurentCech (R := R) (κ := κ) m).X (n + 1)}
     (hz : (laurentCech m).d (n + 1) (n + 2) z = 0) (c : Fin (n + 2) → κ) :
-    negPart m (cechπ m c z).1 = e.tupleSign ℤ c • negPart m (cechπ m e.symm z).1 := by
+    negPart m (cechπ m c z).val = e.tupleSign ℤ c • negPart m (cechπ m e.symm z).val := by
   by_cases hc : Function.Surjective c
   · have hbij : Function.Bijective (e ∘ c) :=
       e.bijective.comp ⟨(Finite.injective_iff_surjective_of_equiv e.symm).2 hc, hc⟩
@@ -1059,10 +1062,10 @@ private lemma iCycles_comp_negSupportProj_univ :
   -- composites of morphisms of abelian groups act by composition; this states both sides in terms
   -- of the factors of the cocycle
   change ((negSupportProj (R := R) m Finset.univ).app _
-      (cechπ m a ((laurentCech m).iCycles (n + 1) x))).1 =
-    (cechπ m a (topCochain m e (topCoefficient m e ((laurentCech m).iCycles (n + 1) x)))).1
+      (cechπ m a ((laurentCech m).iCycles (n + 1) x))).val =
+    (cechπ m a (topCochain m e (topCoefficient m e ((laurentCech m).iCycles (n + 1) x)))).val
   rw [val_cechπ_topCochain, topCoefficient_apply, ← map_zsmul,
-    ← negPart_cechπ_eq_tupleSign_smul m e hz, negEmb_negPart m (cechπ m a _).2]
+    ← negPart_cechπ_eq_tupleSign_smul m e hz, negEmb_negPart m (cechπ m a _).property]
   exact Finsupp.filterSupported_apply _ _ _
 
 private lemma homologyMap_toTop_comp_fromTop :
@@ -1177,9 +1180,9 @@ private lemma chartSectionHom_mul (S : Finset κ) (e : κ → ℤ) (r c : R) :
     refine Proj.twistingSheaf.ext fun x ↦ Eq.trans ?_ (Proj.twistingSheaf.smul_apply _ _ x).symm
     -- restricting a global function keeps its values, and the constant `r` is the fraction `r / 1`
     change Localization.mk _ _ =
-      ((baseRingToGlobalSections R (Proj 𝒜) r).1 ⟨x.1, trivial⟩).val * Localization.mk _ _
+      ((baseRingToGlobalSections R (Proj 𝒜) r).val ⟨x.val, trivial⟩).val * Localization.mk _ _
     refine Eq.trans ?_ (congrArg (· * _)
-      (val_baseRingToGlobalSections_apply (M := M) r ⟨x.1, trivial⟩)).symm
+      (val_baseRingToGlobalSections_apply (M := M) r ⟨x.val, trivial⟩)).symm
     rw [Localization.mk_mul, one_mul, mul_smul, Algebra.smul_def]
   · simp [chartSectionHom, he]
 
@@ -1211,7 +1214,7 @@ private lemma laurentSmul_comp_laurentToSections (r : R) :
 
 omit [Fintype κ] [DecidableEq κ] in
 /-- Leray's comparison for the standard cover commutes with multiplication by `r`. -/
-private lemma homologyCechComplexIsoCohomology_inv_smul [Finite κ] (q : ℕ) (r : R)
+private lemma homologyCechComplexIsoCohomology_inv_smul (q : ℕ) (r : R)
     (y : Cohomology (Proj.twistingSheaf 𝒜 m) q) :
     (homologyCechComplexIsoCohomology (fun i : κ ↦ (chartFunctor b).obj (toDual {i}))
         (isAffineOpen_inf_chartFunctor_obj_singleton b) (iSup_chartFunctor_obj_singleton b)

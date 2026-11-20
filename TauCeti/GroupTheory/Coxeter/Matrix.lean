@@ -73,3 +73,22 @@ theorem coxeterMatrixA_eq_two (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) 
   rw [coxeterMatrixA_eq_coxeterMatrixAInfty, coxeterMatrixAInfty_eq_two h]
 
 end TauCeti
+
+namespace CoxeterMatrix
+
+variable {B B' B'' : Type*}
+
+/-- Reindexing a Coxeter matrix by the identity equivalence leaves it unchanged. -/
+@[simp]
+theorem reindex_refl (M : CoxeterMatrix B) : M.reindex (Equiv.refl B) = M := by
+  ext
+  rfl
+
+/-- Reindexing a Coxeter matrix twice is reindexing by the composite equivalence. -/
+@[simp]
+theorem reindex_reindex (M : CoxeterMatrix B) (e : B ≃ B') (e' : B' ≃ B'') :
+    (M.reindex e).reindex e' = M.reindex (e.trans e') := by
+  ext
+  rfl
+
+end CoxeterMatrix

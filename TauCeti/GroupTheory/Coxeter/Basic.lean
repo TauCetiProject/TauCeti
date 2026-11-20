@@ -14,7 +14,7 @@ This file evaluates Mathlib's alternating words through an arbitrary family, spe
 evaluation to the lengths the braid relations are read off at, computes the reversal of an
 alternating word, and proves that involutions in a monoid satisfying the braid-word equations of a
 Coxeter matrix are liftable (`CoxeterMatrix.isLiftable_of_mul_self_of_braidWord`). It also provides
-elementary transport and rank-zero helpers for Coxeter matrices and Coxeter systems.
+elementary transport and rank-zero helpers for Coxeter systems.
 
 ## Main definitions
 
@@ -30,8 +30,6 @@ elementary transport and rank-zero helpers for Coxeter matrices and Coxeter syst
   themselves. The evaluations at lengths `2` and `3` are special cases.
 * `TauCeti.reverse_alternatingWord`: reversing an alternating word swaps its two letters when
   its length is even, and leaves it unchanged when its length is odd.
-* `CoxeterMatrix.reindex_refl` and `CoxeterMatrix.reindex_reindex`: functoriality of
-  `CoxeterMatrix.reindex`.
 * `CoxeterMatrix.isLiftable_of_mul_self_of_braidWord` and
   `CoxeterMatrix.isLiftable_iff_mul_self_and_braidWord`: `M.IsLiftable f` is equivalent to each
   `f i` squaring to `1` together with the braid-word equations of `M`.
@@ -97,20 +95,7 @@ end TauCeti
 
 namespace CoxeterMatrix
 
-variable {B B' B'' G : Type*}
-
-/-- Reindexing a Coxeter matrix by the identity equivalence leaves it unchanged. -/
-@[simp]
-theorem reindex_refl (M : CoxeterMatrix B) : M.reindex (Equiv.refl B) = M := by
-  ext
-  rfl
-
-/-- Reindexing a Coxeter matrix twice is reindexing by the composite equivalence. -/
-@[simp]
-theorem reindex_reindex (M : CoxeterMatrix B) (e : B ≃ B') (e' : B' ≃ B'') :
-    (M.reindex e).reindex e' = M.reindex (e.trans e') := by
-  ext
-  rfl
+variable {B G : Type*}
 
 /-- **Liftability from involutions and braid words.** A family `f : B → G` into a monoid satisfies
 `M.IsLiftable f` whenever each `f i` squares to `1` and `f` satisfies the Artin--Tits braid-word

@@ -29,17 +29,17 @@ public section
 
 namespace TauCeti.TypeTwistedE6LieIndex
 
-variable (d : TypeTwistedE6LieIndex) (j : Fin 6) (u : Multiplicative d.1.Closure)
+variable (d : TypeTwistedE6LieIndex) (j : Fin 6) (u : Multiplicative d.val.Closure)
 
 /-- The doubled E₆ graph factor sends each lowering subgroup to the selected diagram image,
 with no sign or change of additive parameter. -/
 @[simp]
 theorem graphAut_rootSubgroupPoints_inr :
-    d.graphAut (E6DoubledMinuscule.rootSubgroupPoints (.inr j) d.1.Closure u) =
+    d.graphAut (E6DoubledMinuscule.rootSubgroupPoints (.inr j) d.val.Closure u) =
       E6DoubledMinuscule.rootSubgroupPoints
         (.inr (finCongr d.rank_eq_six
           (d.toGraphTwistedIndex.diagramPerm (finCongr d.rank_eq_six.symm j))))
-        d.1.Closure u := by
+        d.val.Closure u := by
   rw [graphAut_def, E6DoubledMinuscule.graphAutomorphismPoints_rootSubgroupPoints,
     E6DoubledMinuscule.graphRootPerm_inr, diagramPerm_toGraphTwistedIndex]
   simp only [finCongr, Equiv.coe_fn_mk, Fin.cast_cast, Fin.cast_eq_self]
@@ -48,13 +48,13 @@ theorem graphAut_rootSubgroupPoints_inr :
 roots and raises their additive parameters to the small-field order `q`. -/
 @[simp]
 theorem steinberg_rootSubgroupPoints_inr :
-    d.steinberg (E6DoubledMinuscule.rootSubgroupPoints (.inr j) d.1.Closure u) =
+    d.steinberg (E6DoubledMinuscule.rootSubgroupPoints (.inr j) d.val.Closure u) =
       E6DoubledMinuscule.rootSubgroupPoints
         (.inr (finCongr d.rank_eq_six
-          (d.toGraphTwistedIndex.diagramPerm (finCongr d.rank_eq_six.symm j)))) d.1.Closure
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+          (d.toGraphTwistedIndex.diagramPerm (finCongr d.rank_eq_six.symm j)))) d.val.Closure
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
   rw [steinberg_def, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     frobenius_def, E6DoubledMinuscule.frobenius_rootSubgroupPoints,
-    ← d.1.fieldOrder_eq_characteristic_pow, graphAut_rootSubgroupPoints_inr]
+    ← d.val.fieldOrder_eq_characteristic_pow, graphAut_rootSubgroupPoints_inr]
 
 end TauCeti.TypeTwistedE6LieIndex

@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.BigCell.Triangular
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Borel
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.Coxeter
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Blocks
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 import TauCeti.GroupTheory.Coxeter.Basic
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Coxeter
@@ -25,27 +24,26 @@ the pinned simple Weyl representatives `D.weylElement (t.simpleIndex ht i) A 1`,
 The torus `T(A)` is normal in `N(A)` over every commutative ring `A`
 (`ChevalleyDatum.normal_torusPoints_subgroupOf_weylSubgroup`).
 
-This file identifies the quotient `N(A) ⧸ T(A)` with `W` and proves `N(A) ⊓ B(A) = T(A)`:
+This file identifies the quotient `N(A) ⧸ T(A)` with `W` for every valid Dynkin type (including
+type `G₂`) over every nontrivial commutative ring `A`, and proves `N(A) ⊓ B(A) = T(A)` over every
+commutative ring `A`:
 
 1. Over every commutative ring `A`, each pinned simple Weyl representative squares into the
    actual torus (`ChevalleyDatum.weylElement_mul_self`) and satisfies the Artin--Tits braid
-   relations in `D.points A` (`ChevalleyDatum.prod_map_weylElement_braidWord`). By Tits'
-   Coxeter presentation of the Weyl group (`DynkinType.simplyConnectedWeylCoxeterSystem`),
-   the assignment `s_i ↦ [n_i(1)]` extends to a surjective homomorphism `weylQuotientLift`
-   from `W` onto the quotient `N(A) ⧸ T(A)`.
-2. Ordering the distinct representation weights by decreasing height makes `D.positivePoints A`
-   weight-block unitriangular (`ChevalleyDatum.blockUnitriangular_of_mem_positivePoints`) while
-   `T(A)` is diagonal. Over any nontrivial commutative ring `A`, the matrix big-cell test
-   (`ChevalleyDatum.exists_blockLDU_weylWord_iff`) therefore forces any Weyl word lying in
-   `B(A)` to spell `1` in `W`, hence to lie in `T(A)` via `weylQuotientLift`.
+   relations in `D.points A` (`ChevalleyDatum.weylWord_braidWord_eq`). By Tits' Coxeter
+   presentation of the Weyl group (`DynkinType.simplyConnectedWeylCoxeterSystem`), the assignment
+   `s_i ↦ [n_i(1)]` extends to a surjective homomorphism `weylQuotientLift` from `W` onto the
+   quotient `N(A) ⧸ T(A)`.
+2. Over any nontrivial commutative ring `A`, the block `LDU` test
+   (`ChevalleyDatum.geckWeylWordProd_eq_one_of_list_prod_eq_torusPoints_mul_positive`) forces any
+   Weyl word lying in `B(A)` to spell `1` in `W`, hence to lie in `T(A)` via `weylQuotientLift`.
 3. Consequently `D.weylSubgroup A ⊓ D.borelSubgroup A = (D.torusPoints A).range` over every
    commutative ring `A` (the subsingleton ring case being degenerate), and for every
    nontrivial commutative ring `A` (`Nontrivial A` being necessary since every valid Dynkin
    type has positive rank and hence a nontrivial Weyl group), `weylQuotientEquiv` is an
    isomorphism `N(A) ⧸ T(A) ≃* W` sending `[n_i(1)]` to `s_i`.
 4. Over any field `k` (including finite fields and bad characteristic), `weylQuotientEquiv`
-   agrees on cosets with `D.weylProjection k`, identifying `(D.weylProjection k).ker` with
-   the actual torus without an infinite-field assumption.
+   agrees on cosets with `D.weylProjection k`.
 
 No identification of `D.weylSubgroup A` with the full scheme-theoretic normalizer of the torus
 in `D.points A` or Bruhat decomposition of `D.points A` is asserted here.
@@ -59,76 +57,27 @@ in `D.points A` or Bruhat decomposition of `D.points A` is asserted here.
 
 ## Main results
 
-* `TauCeti.DynkinType.ChevalleyDatum.mem_weylSubgroup_iff`: every element of `D.weylSubgroup A`
-  is a torus point times a word in the pinned simple Weyl representatives.
 * `TauCeti.DynkinType.ChevalleyDatum.weylWord_mem_borelSubgroup_iff`: over a nontrivial ring,
   a word in the pinned simple Weyl elements lies in `D.borelSubgroup A` iff it spells `1`.
 * `TauCeti.DynkinType.ChevalleyDatum.weylSubgroup_inf_borelSubgroup`:
   `D.weylSubgroup A ⊓ D.borelSubgroup A = (D.torusPoints A).range` over any commutative ring.
 * `TauCeti.DynkinType.ChevalleyDatum.weylQuotientEquiv_mk_eq_weylProjection` and
-  `TauCeti.DynkinType.ChevalleyDatum.ker_weylProjection`: over any field `k`, the quotient map
-  is `D.weylProjection k` and its kernel is the actual torus.
+  `TauCeti.DynkinType.ChevalleyDatum.weylProjection_eq_one_iff_mem_range_torusPoints`: over any
+  field `k`, the quotient map is `D.weylProjection k` and its kernel is the actual torus.
 
 ## References
 
 * R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 22 and Chapter 5, Theorem 7.
-* R. W. Carter, *Simple Groups of Lie Type*, §7.2 and §8.2.
+* R. W. Carter, *Simple Groups of Lie Type*, §§7.2 and 8.2.
 -/
 
 public noncomputable section
-
-open TauCeti.UniversalEnvelopingAlgebra
 
 namespace TauCeti.DynkinType.ChevalleyDatum
 
 universe v
 
-attribute [local instance high] Algebra.toModule
-
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
-
-/-! ## Normal form in the Weyl subgroup -/
-
-/-- Every element of `D.weylSubgroup A` factors as a point of the actual torus followed by a
-product of pinned simple Weyl representatives, over any commutative ring `A`. -/
-theorem mem_weylSubgroup_iff (A : Type v) [CommRing A] {g : D.points A} :
-    g ∈ D.weylSubgroup A ↔
-      ∃ (s : Fin t.rank → Aˣ) (l : List (Fin t.rank)),
-        g = D.torusPoints A s *
-          (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod := by
-  constructor
-  · intro hg
-    have hmul_weyl (i : Fin t.rank) (s : Fin t.rank → Aˣ) (l : List (Fin t.rank)) :
-        D.weylElement (t.simpleIndex ht i) A 1 *
-          (D.torusPoints A s * (l.map fun j => D.weylElement (t.simpleIndex ht j) A 1).prod) =
-          D.torusPoints A (D.simpleReflectionTorusParameter i A s) *
-            ((i :: l).map fun j => D.weylElement (t.simpleIndex ht j) A 1).prod := by
-      rw [← D.weylElement_conj_torusPoints i A s, List.map_cons, List.prod_cons]
-      group
-    rw [D.weylSubgroup_def] at hg
-    induction hg using Subgroup.closure_induction_left with
-    | one => exact ⟨1, [], by simp⟩
-    | mul_left x hx y _ ih =>
-      obtain ⟨s, l, rfl⟩ := ih
-      rcases hx with ⟨r, rfl⟩ | ⟨i, rfl⟩
-      · exact ⟨r * s, l, by rw [(D.torusPoints A).map_mul, mul_assoc]⟩
-      · exact ⟨D.simpleReflectionTorusParameter i A s, i :: l, hmul_weyl i s l⟩
-    | inv_mul_cancel x hx y _ ih =>
-      obtain ⟨s, l, rfl⟩ := ih
-      rcases hx with ⟨r, rfl⟩ | ⟨i, rfl⟩
-      · exact ⟨r⁻¹ * s, l, by rw [(D.torusPoints A).map_mul, map_inv, mul_assoc]⟩
-      · have hinv : (D.weylElement (t.simpleIndex ht i) A 1)⁻¹ =
-            D.torusPoints A (D.simpleCorootParameter i A (-1))⁻¹ *
-              D.weylElement (t.simpleIndex ht i) A 1 := by
-          apply inv_eq_of_mul_eq_one_left
-          rw [mul_assoc, D.weylElement_mul_self i A, D.simpleCorootPoints_eq_torusPoints,
-            ← (D.torusPoints A).map_mul, inv_mul_cancel, map_one]
-        refine ⟨(D.simpleCorootParameter i A (-1))⁻¹ *
-          D.simpleReflectionTorusParameter i A s, i :: l, ?_⟩
-        rw [hinv, mul_assoc, hmul_weyl i s l, ← mul_assoc, ← (D.torusPoints A).map_mul]
-  · rintro ⟨s, l, rfl⟩
-    exact (D.weylSubgroup A).mul_mem
-      (D.torusPoints_mem_weylSubgroup A s) (D.weylWord_mem_weylSubgroup A l)
 
 /-! ## Lifting the Coxeter presentation to the Weyl quotient -/
 
@@ -154,7 +103,7 @@ private theorem isLiftable_weylQuotient (A : Type v) [CommRing A] :
     have hsub : ((CoxeterSystem.braidWord t.coxeterMatrix i j).map n_sub).prod =
         ((CoxeterSystem.braidWord t.coxeterMatrix j i).map n_sub).prod :=
       Subtype.ext <| (hcoe _).trans <|
-        (D.prod_map_weylElement_braidWord i j A).trans (hcoe _).symm
+        (D.weylWord_braidWord_eq i j A).trans (hcoe _).symm
     simpa only [map_list_prod, List.map_map, Function.comp_def] using congrArg q hsub
 
 /-- **The Coxeter lift from the Weyl group to the Weyl-subgroup quotient.** Over every
@@ -185,7 +134,7 @@ corresponding product of pinned simple Weyl representatives. -/
 theorem weylQuotientLift_geckWeylWordProd (A : Type v) [CommRing A] (l : List (Fin t.rank)) :
     D.weylQuotientLift A (t.geckWeylWordProd ht l) =
       QuotientGroup.mk ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod,
-        D.weylWord_mem_weylSubgroup A l⟩ := by
+        D.list_prod_map_weylElement_mem_weylSubgroup A l⟩ := by
   induction l with
   | nil =>
     rw [geckWeylWordProd_nil, map_one, eq_comm, QuotientGroup.eq_one_iff]
@@ -199,17 +148,17 @@ theorem weylQuotientLift_surjective (A : Type v) [CommRing A] :
     Function.Surjective (D.weylQuotientLift A) := by
   intro x
   obtain ⟨⟨g, hg⟩, rfl⟩ := QuotientGroup.mk_surjective x
-  obtain ⟨s, l, rfl⟩ := (D.mem_weylSubgroup_iff A).mp hg
+  obtain ⟨l, s, rfl⟩ := (D.mem_weylSubgroup_iff_exists_list_prod_mul_torusPoints A).mp hg
   refine ⟨t.geckWeylWordProd ht l, ?_⟩
-  have hfac : (⟨D.torusPoints A s * (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod,
+  have hfac : (⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod * D.torusPoints A s,
       hg⟩ : D.weylSubgroup A) =
-      ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ *
-        ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod,
-          D.weylWord_mem_weylSubgroup A l⟩ := Subtype.ext (by simp)
+      ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod,
+        D.list_prod_map_weylElement_mem_weylSubgroup A l⟩ *
+        ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ := Subtype.ext (by simp)
   have htorus : (QuotientGroup.mk ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ :
       D.weylSubgroup A ⧸ (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A))) = 1 :=
     (QuotientGroup.eq_one_iff _).mpr ⟨s, rfl⟩
-  rw [D.weylQuotientLift_geckWeylWordProd A l, hfac, QuotientGroup.mk_mul, htorus, one_mul]
+  rw [D.weylQuotientLift_geckWeylWordProd A l, hfac, QuotientGroup.mk_mul, htorus, mul_one]
 
 /-- Over every commutative ring `A`, any word in the pinned simple Weyl representatives that
 spells `1` in the Weyl group lies in the actual torus `(D.torusPoints A).range`. -/
@@ -236,21 +185,8 @@ theorem weylWord_mem_borelSubgroup_iff (A : Type v) [CommRing A] [Nontrivial A]
         D.torusPoints A s⁻¹ * u⁻¹ := by
       have hinv := congrArg Inv.inv hs
       rwa [mul_inv_rev, ← map_inv, inv_inv, eq_comm] at hinv
-    have hN : (((D.torusPoints A s⁻¹ : Matrix.GeneralLinearGroup (Fin D.dim) A) :
-        Matrix (Fin D.dim) (Fin D.dim) A)) =
-        Matrix.diagonal fun i => (torusCharacter s⁻¹ (D.coordinateWeight i) : A) := by
-      rw [D.coe_torusPoints A s⁻¹, kostantTorusMatrix_apply, diagGL_coe]
-    refine (D.exists_blockLDU_weylWord_iff l A
-      (orderedWeightBlockEquiv (t.weightDegree ht) D.weight)).mp ?_
-    simp only [orderedWeightBlockEquiv_apply_mk]
-    refine ⟨1, _, ((u⁻¹ : D.points A) : Matrix.GeneralLinearGroup (Fin D.dim) A),
-      Matrix.blockUnitriangular_one,
-      hN ▸ Matrix.blockTriangular_diagonal _,
-      hN ▸ Matrix.blockTriangular_diagonal _,
-      D.blockUnitriangular_of_mem_positivePoints A ((D.positivePoints A).inv_mem hu),
-      (Matrix.GeneralLinearGroup.det
-        (D.torusPoints A s⁻¹ : Matrix.GeneralLinearGroup (Fin D.dim) A)).isUnit, ?_⟩
-    rw [one_mul, hprod, Subgroup.coe_mul, Units.val_mul]
+    exact D.geckWeylWordProd_eq_one_of_list_prod_eq_torusPoints_mul_positive A
+      ((D.positivePoints A).inv_mem hu) hprod
   · intro hl
     exact D.range_torusPoints_le_borelSubgroup A
       (D.weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one A hl)
@@ -265,15 +201,15 @@ theorem weylSubgroup_inf_borelSubgroup (A : Type v) [CommRing A] :
     (D.range_torusPoints_le_borelSubgroup A))
   rintro g ⟨hgW, hgB⟩
   by_cases hA : Nontrivial A
-  · obtain ⟨s, l, rfl⟩ := (D.mem_weylSubgroup_iff A).mp hgW
+  · obtain ⟨l, s, rfl⟩ := (D.mem_weylSubgroup_iff_exists_list_prod_mul_torusPoints A).mp hgW
     have hwordB : (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod ∈
         D.borelSubgroup A := by
       have hsB : (D.torusPoints A s)⁻¹ ∈ D.borelSubgroup A :=
         (D.borelSubgroup A).inv_mem (D.range_torusPoints_le_borelSubgroup A ⟨s, rfl⟩)
-      simpa only [← mul_assoc, inv_mul_cancel, one_mul] using (D.borelSubgroup A).mul_mem hsB hgB
+      simpa only [mul_assoc, mul_inv_cancel, mul_one] using (D.borelSubgroup A).mul_mem hgB hsB
     have hl : t.geckWeylWordProd ht l = 1 := (D.weylWord_mem_borelSubgroup_iff A l).mp hwordB
-    exact (D.torusPoints A).range.mul_mem ⟨s, rfl⟩
-      (D.weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one A hl)
+    exact (D.torusPoints A).range.mul_mem
+      (D.weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one A hl) ⟨s, rfl⟩
   · have : Subsingleton A := not_nontrivial_iff_subsingleton.mp hA
     refine ⟨1, ?_⟩
     apply Subtype.ext
@@ -352,7 +288,7 @@ theorem weylQuotientEquiv_mk_weylWord (A : Type v) [CommRing A] [Nontrivial A]
     (l : List (Fin t.rank)) :
     D.weylQuotientEquiv A
         (QuotientGroup.mk ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod,
-          D.weylWord_mem_weylSubgroup A l⟩) =
+          D.list_prod_map_weylElement_mem_weylSubgroup A l⟩) =
       t.geckWeylWordProd ht l := by
   rw [← D.weylQuotientLift_geckWeylWordProd A l, D.weylQuotientEquiv_weylQuotientLift]
 
@@ -367,6 +303,36 @@ theorem weylQuotientEquiv_mk_torusPoints (A : Type v) [CommRing A] [Nontrivial A
     (QuotientGroup.eq_one_iff _).mpr ⟨s, rfl⟩
   rw [hmk, map_one]
 
+/-- The quotient of a Chevalley datum's Weyl subgroup by its actual torus is the Weyl
+group of the pinned root datum, over every nontrivial commutative ring, outside type G₂.
+This specialization is retained as an alias for `weylQuotientEquiv`. -/
+def weylQuotientEquivOfNeG2 (A : Type v) [CommRing A] [Nontrivial A] (_hs : t ≠ .G2) :
+    D.weylSubgroup A ⧸ (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A)) ≃*
+      (t.simplyConnectedRootDatum ht).weylGroup :=
+  D.weylQuotientEquiv A
+
+/-- The inverse Weyl quotient equivalence sends a pinned simple reflection to the class
+of its pinned Weyl representative. -/
+@[simp↓]
+theorem weylQuotientEquivOfNeG2_symm_ofIdx (A : Type v) [CommRing A] [Nontrivial A]
+    (hs : t ≠ .G2) (i : Fin t.rank) :
+    (D.weylQuotientEquivOfNeG2 A hs).symm
+        (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)) =
+      QuotientGroup.mk
+        ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩ :=
+  D.weylQuotientLift_ofIdx A i
+
+/-- The Weyl quotient equivalence sends the class of a pinned simple Weyl representative
+to its simple reflection. -/
+@[simp↓]
+theorem weylQuotientEquivOfNeG2_mk_weylElement (A : Type v) [CommRing A] [Nontrivial A]
+    (hs : t ≠ .G2) (i : Fin t.rank) :
+    D.weylQuotientEquivOfNeG2 A hs
+        (QuotientGroup.mk
+          ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩) =
+      RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) :=
+  D.weylQuotientEquiv_mk_weylElement A i
+
 /-! ## Comparison with `weylProjection` over a field -/
 
 /-- Over any field `k`, `weylQuotientEquiv` composed with the quotient map agrees with
@@ -374,28 +340,51 @@ theorem weylQuotientEquiv_mk_torusPoints (A : Type v) [CommRing A] [Nontrivial A
 @[simp]
 theorem weylQuotientEquiv_mk_eq_weylProjection (k : Type v) [Field k] (g : D.weylSubgroup k) :
     D.weylQuotientEquiv k (QuotientGroup.mk g) = D.weylProjection k g := by
-  obtain ⟨s, l, hg⟩ := (D.mem_weylSubgroup_iff k).mp g.property
-  have hfac : g = ⟨D.torusPoints k s, D.torusPoints_mem_weylSubgroup k s⟩ *
+  obtain ⟨l, s, hg⟩ := (D.mem_weylSubgroup_iff_exists_list_prod_mul_torusPoints k).mp g.property
+  have hfac : g =
       ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) k 1).prod,
-        D.weylWord_mem_weylSubgroup k l⟩ := Subtype.ext hg
-  rw [hfac, QuotientGroup.mk_mul, map_mul, map_mul, D.weylQuotientEquiv_mk_torusPoints,
-    D.weylQuotientEquiv_mk_weylWord, D.weylProjection_torusPoints, D.weylProjection_weylWord,
-    one_mul]
-
-/-- **The kernel of `D.weylProjection k` is the actual torus**, over every field `k` (including
-finite fields and bad characteristic, without requiring `[Infinite k]`). -/
-@[simp]
-theorem ker_weylProjection (k : Type v) [Field k] :
-    (D.weylProjection k).ker = ((D.torusPoints k).range).subgroupOf (D.weylSubgroup k) := by
-  ext g
-  rw [MonoidHom.mem_ker, ← D.weylQuotientEquiv_mk_eq_weylProjection k g,
-    MulEquiv.map_eq_one_iff, QuotientGroup.eq_one_iff]
+        D.list_prod_map_weylElement_mem_weylSubgroup k l⟩ *
+        ⟨D.torusPoints k s, D.torusPoints_mem_weylSubgroup k s⟩ :=
+    Subtype.ext hg.symm
+  have hproj : D.weylProjection k g = t.geckWeylWordProd ht l := by
+    have hsub : g =
+        ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) k 1).prod * D.torusPoints k s,
+          mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup k l)
+            (D.torusPoints_mem_weylSubgroup k s)⟩ :=
+      Subtype.ext hg.symm
+    rw [hsub, D.weylProjection_list_prod_mul_torusPoints k l s]
+  rw [hproj, hfac, QuotientGroup.mk_mul, map_mul, D.weylQuotientEquiv_mk_weylWord,
+    D.weylQuotientEquiv_mk_torusPoints, mul_one]
 
 /-- A point of `D.weylSubgroup k` has trivial Weyl projection if and only if it belongs to the
 actual character-lattice torus `(D.torusPoints k).range`, over every field `k`. -/
 theorem weylProjection_eq_one_iff_mem_range_torusPoints (k : Type v) [Field k]
     (g : D.weylSubgroup k) :
     D.weylProjection k g = 1 ↔ (g : D.points k) ∈ (D.torusPoints k).range := by
-  rw [← MonoidHom.mem_ker, D.ker_weylProjection k, Subgroup.mem_subgroupOf]
+  rw [← D.weylQuotientEquiv_mk_eq_weylProjection k g, MulEquiv.map_eq_one_iff,
+    QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf]
+
+/-- Outside type G₂, the Weyl projection has kernel exactly the actual torus,
+regarded as a subgroup of the subgroup generated by the torus and Weyl representatives. -/
+theorem ker_weylProjection_of_ne_G2 (K : Type v) [Field K] (_hs : t ≠ .G2) :
+    (D.weylProjection K).ker =
+      Subgroup.subgroupOf (MonoidHom.range (D.torusPoints K)) (D.weylSubgroup K) := by
+  ext g
+  exact D.weylProjection_eq_one_iff_mem_range_torusPoints K g
+
+/-- The inverse Weyl quotient equivalence sends a Weyl projection to its quotient class. -/
+@[simp]
+theorem weylQuotientEquivOfNeG2_symm_weylProjection (K : Type v) [Field K] (hs : t ≠ .G2)
+    (g : D.weylSubgroup K) :
+    (D.weylQuotientEquivOfNeG2 K hs).symm (D.weylProjection K g) = QuotientGroup.mk g := by
+  rw [MulEquiv.symm_apply_eq]
+  exact (D.weylQuotientEquiv_mk_eq_weylProjection K g).symm
+
+/-- The Weyl quotient equivalence is induced by the native Weyl projection. -/
+@[simp]
+theorem weylQuotientEquivOfNeG2_mk (K : Type v) [Field K] (hs : t ≠ .G2)
+    (g : D.weylSubgroup K) :
+    D.weylQuotientEquivOfNeG2 K hs (QuotientGroup.mk g) = D.weylProjection K g :=
+  D.weylQuotientEquiv_mk_eq_weylProjection K g
 
 end TauCeti.DynkinType.ChevalleyDatum

@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Lie.Weights.Killing
 public import TauCeti.Algebra.Lie.AdjointAction.InnerAutomorphismGroup
 public import TauCeti.Algebra.Lie.Sl2.Basic
 public import TauCeti.RingTheory.Nilpotent.Exp.Basic
-import TauCeti.Algebra.Algebra.OuterAut
+import Mathlib.Algebra.Ring.Action.ConjAct
 
 /-!
 # The Weyl automorphism of an `sl₂` triple
@@ -90,16 +90,17 @@ statement above then reads as a relation in the group of units rather than in th
 * `TauCeti.weylAut_mem_rootSpace`, `TauCeti.weylAut_map_rootSpace` and
   `TauCeti.exists_lieEquiv_forall_mem_rootSpace`: in the Killing setting, `weylAut` carries root
   spaces onto reflected root spaces.
-* `Units.conj_weylUnit` and `Units.commute_weylUnit_of_conj_eq`: conjugation functoriality and
-  commutation criterion for `weylUnit`.
-* `TauCeti.weylAut_apply_eq_weylUnit_conj` and `IsSl2Triple.weylUnit_neg_symm_conj`: in an
-  associative algebra the Weyl automorphism is conjugation by the Weyl element, invariant under
-  signed exchange of `E` and `F`.
+* `TauCeti.weylAut_apply_eq_weylUnit_conj`: in an associative algebra the Weyl automorphism is
+  conjugation by the Weyl element.
 * `LieHom.map_weylAut_eq_weylUnit_conj`: a Lie homomorphism into an associative algebra carries
   the Weyl automorphism to conjugation by the Weyl element of the images of `e` and `f`.
 * `TauCeti.weylUnit_conj_h`, `TauCeti.weylUnit_conj_e`, `TauCeti.weylUnit_conj_f`,
   `TauCeti.weylUnit_conj_of_lie_eq_smul`, `TauCeti.inv_weylUnit_conj_of_lie_eq_smul` and
   `TauCeti.lie_weylUnit_conj`: the conjugation form of the statements above.
+* `TauCeti.weylUnit_neg_symm_conj`: the signed exchange of the triple does not change conjugation
+  by the Weyl element.
+* `TauCeti.conj_weylUnit_eq_of_conj_eq`: a unit conjugating `E` and `F` to `E'` and `F'`
+  conjugates their Weyl element to that of `E'` and `F'`.
 
 ## References
 
@@ -534,34 +535,6 @@ theorem coe_inv_weylUnit (hE : IsNilpotent E) (hF : IsNilpotent F) :
       IsNilpotent.exp (-E) * IsNilpotent.exp F * IsNilpotent.exp (-E) := by
   simp [weylUnit, mul_inv_rev, mul_assoc]
 
-/-- When both nilpotent elements vanish, their Weyl element is `1`. -/
-theorem weylUnit_of_eq_zero (hE : IsNilpotent E) (hF : IsNilpotent F) (hE0 : E = 0)
-    (hF0 : F = 0) : weylUnit hE hF = 1 := by
-  ext
-  simp [hE0, hF0]
-
-/-- Conjugating `weylUnit hE hF` by a unit `u` yields the Weyl element of the conjugated pair
-`(u * E * u⁻¹, u * F * u⁻¹)`. -/
-theorem _root_.Units.conj_weylUnit {E' F' : A} (u : Aˣ) (hE : IsNilpotent E) (hF : IsNilpotent F)
-    (hE' : IsNilpotent E') (hF' : IsNilpotent F')
-    (huE : (u : A) * E * (↑u⁻¹ : A) = E') (huF : (u : A) * F * (↑u⁻¹ : A) = F') :
-    u * weylUnit hE hF * u⁻¹ = weylUnit hE' hF' := by
-  let d : A →+* A := (Units.conjAlgEquiv ℚ u).toRingHom
-  have hd (x : A) : d x = (u : A) * x * (↑u⁻¹ : A) := Units.conjAlgEquiv_apply ℚ u x
-  apply Units.ext
-  calc
-    ((u * weylUnit hE hF * u⁻¹ : Aˣ) : A) = d (weylUnit hE hF : A) := by
-      simp [hd, mul_assoc]
-    _ = (weylUnit hE' hF' : A) := by
-      simp only [coe_weylUnit, map_mul, hE.map_exp d, hF.neg.map_exp d, map_neg,
-        hd E, hd F, huE, huF]
-
-/-- If conjugation by a unit `u` fixes `E` and `F`, then `u` commutes with `weylUnit hE hF`. -/
-theorem _root_.Units.commute_weylUnit_of_conj_eq (u : Aˣ) (hE : IsNilpotent E) (hF : IsNilpotent F)
-    (huE : (u : A) * E * (↑u⁻¹ : A) = E) (huF : (u : A) * F * (↑u⁻¹ : A) = F) :
-    Commute u (weylUnit hE hF) :=
-  mul_inv_eq_iff_eq_mul.mp (u.conj_weylUnit hE hF hE hF huE huF)
-
 variable {K : Type*} [CommRing K] [Algebra K A]
 
 /-- **A Lie homomorphism into an associative algebra carries the Weyl automorphism to conjugation
@@ -603,16 +576,6 @@ theorem weylAut_apply_eq_weylUnit_conj (t : IsSl2Triple H E F) (hE : IsNilpotent
     (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hE).exists_pow_apply_eq_zero
     (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hF).exists_pow_apply_eq_zero hE hF y
 
-/-- Negating and exchanging the raising and lowering elements of an `sl₂` triple leaves the
-conjugation action of its Weyl element unchanged. -/
-theorem _root_.IsSl2Triple.weylUnit_neg_symm_conj (t : IsSl2Triple H E F)
-    (hE : IsNilpotent E) (hF : IsNilpotent F) (y : A) :
-    ((weylUnit hF.neg hE.neg : Aˣ) : A) * y * (((weylUnit hF.neg hE.neg)⁻¹ : Aˣ) : A) =
-      ((weylUnit hE hF : Aˣ) : A) * y * (((weylUnit hE hF)⁻¹ : Aˣ) : A) := by
-  rw [← weylAut_apply_eq_weylUnit_conj (K := ℚ) t.neg_symm hF.neg hE.neg,
-    ← weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF]
-  exact t.weylAut_neg_symm _ _ _ _ y
-
 /-- The Weyl element negates the Cartan element of the triple. -/
 @[simp]
 theorem weylUnit_conj_h (t : IsSl2Triple H E F) (hE : IsNilpotent E) (hF : IsNilpotent F) :
@@ -638,6 +601,35 @@ theorem weylUnit_conj_f (t : IsSl2Triple H E F) (hE : IsNilpotent E) (hF : IsNil
   rw [← coe_weylUnit hE hF, ← coe_inv_weylUnit hE hF]
   rw [← weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF]
   exact weylAut_apply_f _ _ t
+
+/-- Negating and exchanging the raising and lowering elements of an `sl₂` triple leaves
+conjugation by its Weyl element unchanged. This is `IsSl2Triple.weylAut_neg_symm` at the group
+level; the two Weyl elements themselves need not be equal. -/
+theorem weylUnit_neg_symm_conj (t : IsSl2Triple H E F) (hE : IsNilpotent E)
+    (hF : IsNilpotent F) (y : A) :
+    ((weylUnit hF.neg hE.neg : Aˣ) : A) * y * (((weylUnit hF.neg hE.neg)⁻¹ : Aˣ) : A) =
+      ((weylUnit hE hF : Aˣ) : A) * y * (((weylUnit hE hF)⁻¹ : Aˣ) : A) := by
+  rw [← weylAut_apply_eq_weylUnit_conj (K := ℚ) t.neg_symm,
+    ← weylAut_apply_eq_weylUnit_conj (K := ℚ) t]
+  exact t.weylAut_neg_symm _ _ _ _ y
+
+/-- Conjugation by a unit carrying the nilpotent elements `E` and `F` to `E'` and `F'` carries
+their Weyl element to the Weyl element of `E'` and `F'`, since conjugation is a ring automorphism
+and so commutes with the nilpotent exponential. This is an equality of units, not only of
+conjugation actions. -/
+theorem conj_weylUnit_eq_of_conj_eq (hE : IsNilpotent E) (hF : IsNilpotent F) {E' F' : A}
+    (hE' : IsNilpotent E') (hF' : IsNilpotent F') {u : Aˣ}
+    (huE : (u : A) * E * ↑u⁻¹ = E') (huF : (u : A) * F * ↑u⁻¹ = F') :
+    u * weylUnit hE hF * u⁻¹ = weylUnit hE' hF' := by
+  let c := MulSemiringAction.toRingHom (ConjAct Aˣ) A (ConjAct.toConjAct u)
+  have hc (x : A) : c x = (u : A) * x * ↑u⁻¹ := by
+    simp only [c, MulSemiringAction.toRingHom_apply, ConjAct.units_smul_def,
+      ConjAct.ofConjAct_toConjAct]
+  have hu : c (weylUnit hE hF : A) = (weylUnit hE' hF' : A) := by
+    rw [coe_weylUnit, coe_weylUnit, map_mul, map_mul, hE.map_exp c, hF.neg.map_exp c, map_neg,
+      hc, hc, huE, huF]
+  apply Units.ext
+  simpa only [hc, Units.val_mul] using hu
 
 /-- **The reflection formula, at the group level.** An element `y` acting on the raising and
 lowering elements by the opposite scalars `c` and `-c` — for a Cartan element and the triple of a

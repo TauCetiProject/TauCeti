@@ -24,8 +24,8 @@ These statements hold over every commutative ring and use `Matrix.BlockUnitriang
 the block `LDU` factorization and its leading-minor criteria apply to these actual weight blocks.
 No faithfulness after reduction or generation of all points is assumed.
 
-The numbering `orderedWeightBlockEquiv` reuses `orderedWeightIndexEquiv`, now on the finite set of
-distinct weights. The exponential calculation reuses the finite divided-power expansion of
+The numbering reuses `orderedWeightIndexEquiv`, now on the finite set of distinct weights.
+The exponential calculation reuses the finite divided-power expansion of
 `kostantRootSubgroupMatrix_eq_sum`.
 
 ## References
@@ -45,27 +45,64 @@ section Blocks
 variable {κ η D : Type*} [Finite η]
 variable [AddCommGroup D] [LinearOrder D]
 
-/-- The equivalence numbering the distinct weights of `wt` by decreasing `degree`. Weights of
-equal degree are ordered by an arbitrary finite numbering. -/
-noncomputable def orderedWeightBlockEquiv (degree : (κ → ℤ) →+ D)
-    (wt : η → κ → ℤ) : Set.range wt ≃ Fin (Set.range wt).ncard := by
+/-- An equivalence numbering the distinct weights in `Set.range wt` by decreasing `degree`. -/
+noncomputable def weightBlockEquiv (degree : (κ → ℤ) →+ D)
+    (wt : η → κ → ℤ) : Set.range wt ≃ Fin (Nat.card (Set.range wt)) := by
   classical
   letI := Fintype.ofFinite (Set.range wt)
   exact (orderedWeightIndexEquiv degree (fun μ : Set.range wt => μ.val)).trans
-    (finCongr ((Nat.card_eq_fintype_card (α := Set.range wt)).symm.trans
-      (Nat.card_coe_set_eq (Set.range wt))))
+    (finCongr (Nat.card_eq_fintype_card (α := Set.range wt)).symm)
+
+/-- The distinct weights, numbered by decreasing degree, with arbitrary tie-breaking among
+weights of the same degree. Its value at a weight is the block number of every basis index
+carrying that weight. -/
+noncomputable def orderedWeightBlockEquiv (degree : (κ → ℤ) →+ D)
+    (wt : η → κ → ℤ) : Set.range wt ≃ Fin (Nat.card (Set.range wt)) := by
+  classical
+  letI := Fintype.ofFinite (Set.range wt)
+  exact (orderedWeightIndexEquiv degree (fun μ : Set.range wt => μ.val)).trans
+    (finCongr (Nat.card_eq_fintype_card (α := Set.range wt)).symm)
 
 /-- The weight-space block containing a basis index, with distinct weights numbered by decreasing
 `degree`. Weights of equal degree are ordered by an arbitrary finite numbering. -/
 noncomputable def orderedWeightBlock (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
-    (x : η) : Fin (Set.range wt).ncard :=
+    (x : η) : Fin (Nat.card (Set.range wt)) :=
   orderedWeightBlockEquiv degree wt ⟨wt x, ⟨x, rfl⟩⟩
 
-/-- Applying `orderedWeightBlockEquiv` to the range element of `wt x` gives `orderedWeightBlock`. -/
-@[simp]
-theorem orderedWeightBlockEquiv_apply_mk (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
-    (x : η) (hx : wt x ∈ Set.range wt) :
-    orderedWeightBlockEquiv degree wt ⟨wt x, hx⟩ = orderedWeightBlock degree wt x :=
+/-- The block number of a basis index is the number assigned to its weight. -/
+theorem orderedWeightBlock_def (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
+    (x : η) :
+    orderedWeightBlock degree wt x =
+      orderedWeightBlockEquiv degree wt ⟨wt x, Set.mem_range_self x⟩ :=
+  (rfl)
+
+/-- Evaluating the block equivalence at a basis weight gives its block number. -/
+-- Rewrite before simp normalizes the cardinality in the equivalence's codomain.
+@[simp↓]
+theorem orderedWeightBlockEquiv_apply (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
+    (x : η) :
+    orderedWeightBlockEquiv degree wt ⟨wt x, Set.mem_range_self x⟩ =
+      orderedWeightBlock degree wt x :=
+  (orderedWeightBlock_def degree wt x).symm
+
+/-- The inverse block equivalence recovers the weight of a basis index. -/
+-- Rewrite before simp descends into the cardinality-indexed equivalence.
+@[simp↓]
+theorem orderedWeightBlockEquiv_symm_orderedWeightBlock (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
+    (x : η) :
+    (orderedWeightBlockEquiv degree wt).symm (orderedWeightBlock degree wt x) =
+      ⟨wt x, Set.mem_range_self x⟩ := by
+  rw [orderedWeightBlock_def, Equiv.symm_apply_apply]
+
+/-- Evaluating `weightBlockEquiv` at the weight of a basis index recovers `orderedWeightBlock`.
+
+Downstream this lemma is not optional: `orderedWeightBlock` is not `@[expose]`d, so outside this
+module the two sides are not definitionally equal and `rfl` does not close the goal. Not a `simp`
+lemma because `Nat.card_coe_set_eq` rewrites `Nat.card (Set.range wt)` inside the dependent
+codomain type `Fin (Nat.card (Set.range wt))`. -/
+theorem weightBlockEquiv_mk (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ) (x : η)
+    (hx : wt x ∈ Set.range wt := ⟨x, rfl⟩) :
+    weightBlockEquiv degree wt ⟨wt x, hx⟩ = orderedWeightBlock degree wt x :=
   (rfl)
 
 /-- Two basis indices belong to the same weight block exactly when their weights are equal. -/
@@ -105,6 +142,15 @@ theorem orderedWeightBlock_lt_of_degree_lt (degree : (κ → ℤ) →+ D) (wt : 
   rw [Fin.lt_def, orderedWeightBlock_val, orderedWeightBlock_val]
   exact Fin.lt_def.mp (orderedWeightIndexEquiv_lt_of_degree_lt degree
     (fun μ : Set.range wt => μ.val) (r := ⟨wt r, r, rfl⟩) (s := ⟨wt s, s, rfl⟩) hrs)
+
+/-- A distinct weight of strictly larger degree receives a strictly smaller block number. -/
+theorem orderedWeightBlockEquiv_lt_of_degree_lt (degree : (κ → ℤ) →+ D)
+    (wt : η → κ → ℤ) {μ ν : Set.range wt} (hμν : degree ν.val < degree μ.val) :
+    orderedWeightBlockEquiv degree wt μ < orderedWeightBlockEquiv degree wt ν := by
+  rcases μ with ⟨_, r, rfl⟩
+  rcases ν with ⟨_, s, rfl⟩
+  simpa only [orderedWeightBlockEquiv_apply] using
+    orderedWeightBlock_lt_of_degree_lt degree wt (r := r) (s := s) hμν
 
 variable [IsOrderedAddMonoid D]
 

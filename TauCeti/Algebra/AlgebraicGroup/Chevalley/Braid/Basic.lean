@@ -11,15 +11,19 @@ import TauCeti.Algebra.Lie.Presentation.Serre.SingleBond
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 
 /-!
-# Word transfer and the single-bond braid relation in Chevalley data
+# Transporting Weyl word relations to Chevalley data, and the single-bond braid relation
 
-Any equality of words in the pinned rational `weylUnit` operators of `D.representation` restricts
-to the datum's Kostant-stable `ℤ`-lattice and extends scalars to every commutative ring `A`,
-giving the same word equality in `D.points A`
-(`prod_map_weylElement_eq_of_prod_map_weylUnit_eq`). Specializing to the single-bond Serre
-identity proves that pinned simple Weyl representatives at a single bond satisfy the length-three
-braid relation in `D.points A` over every commutative ring `A`, including in bad characteristic
-and over nonreduced rings, without any restriction on weight multiplicities.
+A relation between two words in the rational Weyl units of the represented simple root
+generators gives the same relation between the pinned simple Weyl representatives over every
+commutative ring (`TauCeti.DynkinType.ChevalleyDatum.weylElement_prod_eq_of_weylUnit_prod_eq`).
+The rational relation is first restricted to the datum's integral Kostant-stable lattice and
+then extended to the value ring. This avoids imposing any restriction on weight multiplicities
+or choosing a signed permutation weight basis.
+
+Applied to the rational Serre-operator braid relation, it shows that pinned simple Weyl
+representatives at a single bond satisfy the length-three braid relation over every
+commutative ring. The equality holds in the actual point group, including in bad
+characteristic and over nonreduced rings, not just in a Weyl quotient.
 
 ## References
 
@@ -29,7 +33,7 @@ and over nonreduced rings, without any restriction on weight multiplicities.
 
 public section
 
-open Matrix TensorProduct TauCeti.UniversalEnvelopingAlgebra
+open TauCeti.UniversalEnvelopingAlgebra
 
 namespace TauCeti.DynkinType.ChevalleyDatum
 
@@ -38,82 +42,91 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
-/-- The pinned Chevalley generators in `D.representation` form a Serre system over `ℚ` for the
-transposed Cartan matrix `t.cartanMatrixᵀ`. -/
+open scoped _root_.Matrix in
+/-- The represented pinned Chevalley generators form a Serre system for the transposed pinned
+Cartan matrix, as the pinned generators themselves do
+(`TauCeti.DynkinType.isSerreSystem_lieBasis`). The bond corollaries apply the rational
+Serre-operator braid relations to this system. -/
 theorem isSerreSystem_representation :
     IsSerreSystem ℚ t.cartanMatrixᵀ
-      (fun k => D.representation (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).h k)))
       (fun k => D.representation
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inl k))))
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).h k)))
       (fun k => D.representation
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inr k)))) := by
-  simpa only [Function.comp_def, LieHom.comp_apply, AlgHom.toLieHom_apply,
-    LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).e k)))
+      (fun k => D.representation
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).f k))) := by
+  simpa only [Function.comp_def, LieHom.comp_apply, AlgHom.toLieHom_apply] using
     (t.isSerreSystem_lieBasis ht).map
       (D.representation.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ))
 
-/-- **Transfer of rational `weylUnit` word identities to `D.points A`.** Any equality of products
-of words in the pinned rational Weyl units on `D.carrier` restricts to `D.lattice`, extends
-scalars to `A`, and gives the corresponding equality of words in the pinned simple Weyl elements
-`D.weylElement (t.simpleIndex ht k) A 1` inside `D.points A` over every commutative ring `A`. -/
-theorem prod_map_weylElement_eq_of_prod_map_weylUnit_eq {l₁ l₂ : List (Fin t.rank)}
-    (h : (l₁.map fun k => weylUnit (D.isNilpotent_representation_rootGenerator (.inl k))
-            (D.isNilpotent_representation_rootGenerator (.inr k))).prod =
-          (l₂.map fun k => weylUnit (D.isNilpotent_representation_rootGenerator (.inl k))
-            (D.isNilpotent_representation_rootGenerator (.inr k))).prod)
+/-- **Transport of word relations to the points.** If two words in the rational Weyl units of
+the represented simple root generators have equal products, then the same two words in the pinned
+simple Weyl representatives `nₖ(1)` have equal products over every commutative value ring. The
+rational relation is restricted to the Kostant-stable lattice and then extended to `A`, so no
+division takes place in `A`. -/
+theorem weylElement_prod_eq_of_weylUnit_prod_eq (w₁ w₂ : List (Fin t.rank))
+    (h : ∀ (hE : ∀ k, IsNilpotent
+        (D.representation (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).e k))))
+      (hF : ∀ k, IsNilpotent
+        (D.representation (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).f k)))),
+      (w₁.map fun k => weylUnit (hE k) (hF k)).prod = (w₂.map fun k => weylUnit (hE k) (hF k)).prod)
     (A : Type*) [CommRing A] :
-    (l₁.map fun k => D.weylElement (t.simpleIndex ht k) A 1).prod =
-      (l₂.map fun k => D.weylElement (t.simpleIndex ht k) A 1).prod := by
-  let u (k : Fin t.rank) : (Module.End ℚ D.carrier)ˣ :=
-    weylUnit (D.isNilpotent_representation_rootGenerator (.inl k))
-      (D.isNilpotent_representation_rootGenerator (.inr k))
-  let nR (k : Fin t.rank) : D.lattice ≃ₗ[ℤ] D.lattice :=
-    kostantWeylRestrict (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-      D.representation D.lattice D.representation_mem_lattice
-      (D.isNilpotent_representation_rootGenerator (.inl k))
-      (D.isNilpotent_representation_rootGenerator (.inr k))
-  have hnR_apply (l : List (Fin t.rank)) (v : D.lattice) :
-      ((((l.map nR).prod : D.lattice ≃ₗ[ℤ] D.lattice) v : D.lattice) : D.carrier) =
-        (((l.map u).prod : (Module.End ℚ D.carrier)ˣ) : Module.End ℚ D.carrier) v := by
-    induction l with
+    (w₁.map fun k => D.weylElement (t.simpleIndex ht k) A 1).prod =
+      (w₂.map fun k => D.weylElement (t.simpleIndex ht k) A 1).prod := by
+  let u := fun k => weylUnit (D.isNilpotent_representation_rootGenerator (.inl k))
+    (D.isNilpotent_representation_rootGenerator (.inr k))
+  have hu : (w₁.map u).prod = (w₂.map u).prod := by
+    simpa only [u, LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using
+      h (fun k => by
+          simpa only [LieAlgebra.Basis.rootGenerator_inl] using
+            D.isNilpotent_representation_rootGenerator (.inl k))
+        (fun k => by
+          simpa only [LieAlgebra.Basis.rootGenerator_inr] using
+            D.isNilpotent_representation_rootGenerator (.inr k))
+  let n := fun k => kostantWeylRestrict (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+    D.representation D.lattice D.representation_mem_lattice
+    (D.isNilpotent_representation_rootGenerator (.inl k))
+    (D.isNilpotent_representation_rootGenerator (.inr k))
+  -- On the lattice, each word acts by the corresponding word in the rational Weyl units.
+  have hres (w : List (Fin t.rank)) (v : D.lattice) :
+      (((w.map n).prod v : D.lattice) : D.carrier) =
+        ((w.map u).prod : Module.End ℚ D.carrier) v := by
+    induction w generalizing v with
     | nil => rfl
-    | cons k l ih =>
-      simp only [List.map_cons, List.prod_cons, mul_apply_eq_comp, Units.val_mul,
-        nR, coe_kostantWeylRestrict_apply, Module.End.smul_def, u, ih]
-  have hnR : (l₁.map nR).prod = (l₂.map nR).prod := by
+    | cons k w ih =>
+      simp only [List.map_cons, List.prod_cons, mul_apply_eq_comp, Units.val_mul, n, u,
+        coe_kostantWeylRestrict_apply, Module.End.smul_def, ← ih]
+  have hn : (w₁.map n).prod = (w₂.map n).prod := by
     ext v
-    exact (hnR_apply l₁ v).trans
-      ((congrArg (fun x : (Module.End ℚ D.carrier)ˣ => (x : Module.End ℚ D.carrier) v) h).trans
-        (hnR_apply l₂ v).symm)
-  let nGL (k : Fin t.rank) :=
-    kostantWeylGL (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-      D.representation D.lattice D.representation_mem_lattice
-      (D.isNilpotent_representation_rootGenerator (.inl k))
-      (D.isNilpotent_representation_rootGenerator (.inr k)) A
-  let bc : (D.lattice ≃ₗ[ℤ] D.lattice) →* Module.End A (A ⊗[ℤ] D.lattice) :=
-    (Module.End.baseChangeHom ℤ A D.lattice).toMonoidHom.comp
-      LinearEquiv.automorphismGroup.toLinearMapMonoidHom
-  have hbc (l : List (Fin t.rank)) :
-      (((l.map nGL).prod : _) : Module.End A (A ⊗[ℤ] D.lattice)) = bc (l.map nR).prod := by
-    rw [← Units.coeHom_apply, map_list_prod, map_list_prod, List.map_map, List.map_map]
-    exact congrArg List.prod (List.map_congr_left fun k _ => by
-      simp only [Function.comp_apply, Units.coeHom_apply, nGL, kostantWeylGL_val,
-        kostantWeylPoints_toLinearMap, bc, MonoidHom.comp_apply,
-        AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe, AlgHom.toRingHom_toMonoidHom,
-        MonoidHom.coe_ofClass, LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply, nR]
-      rfl)
-  have hnGL : (l₁.map nGL).prod = (l₂.map nGL).prod :=
-    Units.ext ((hbc l₁).trans ((congrArg bc hnR).trans (hbc l₂).symm))
+    rw [hres, hres, hu]
+  -- Scalar extension followed by the matrix realization is multiplicative.
   let f := Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom
-  have hf (k : Fin t.rank) :
+  let g : (D.lattice ≃ₗ[ℤ] D.lattice) →* Matrix.GeneralLinearGroup (Fin D.dim) A :=
+    { toFun e := f (LinearMap.GeneralLinearGroup.ofLinearEquiv (e.baseChange ℤ A))
+      map_one' := by rw [LinearEquiv.baseChange_one]; exact map_one f
+      map_mul' e₁ e₂ := by
+        rw [LinearEquiv.baseChange_mul, LinearMap.GeneralLinearGroup.ofLinearEquiv_mul, map_mul] }
+  have hg (k : Fin t.rank) :
       (D.weylElement (t.simpleIndex ht k) A 1 : Matrix.GeneralLinearGroup (Fin D.dim) A) =
-        f (nGL k) := D.coe_weylElement_simpleIndex_one k A
-  have hcoe (l : List (Fin t.rank)) :
-      (((l.map fun k => D.weylElement (t.simpleIndex ht k) A 1).prod : D.points A) :
-        Matrix.GeneralLinearGroup (Fin D.dim) A) = f (l.map nGL).prod := by
-    rw [SubmonoidClass.coe_list_prod, map_list_prod, List.map_map, List.map_map]
-    exact congrArg List.prod (List.map_congr_left fun k _ => hf k)
-  exact Subtype.ext ((hcoe l₁).trans ((congrArg f hnGL).trans (hcoe l₂).symm))
+        g (n k) := by
+    rw [D.coe_weylElement_simpleIndex_one k A]
+    -- `coe_weylElement_simpleIndex_one` is stated over `CommAlgCat.of ℤ A`, whose carrier is `A`
+    -- by definition, and with the `MulEquiv` form of the matrix realization; up to these
+    -- unfoldings both sides are `f` applied to a general linear group element.
+    change f _ = f _
+    congr 1
+    apply Units.ext
+    rw [kostantWeylGL_val, kostantWeylPoints_toLinearMap]
+    -- The underlying linear map of `LinearMap.GeneralLinearGroup.ofLinearEquiv e` is `e` by
+    -- definition, and `LinearEquiv.coe_baseChange` identifies that of `(n k).baseChange ℤ A`.
+    exact (LinearEquiv.coe_baseChange _ _ _ _ _).symm
+  have hw (w : List (Fin t.rank)) :
+      (((w.map fun k => D.weylElement (t.simpleIndex ht k) A 1).prod :
+        D.points A) : Matrix.GeneralLinearGroup (Fin D.dim) A) = g (w.map n).prod := by
+    rw [map_list_prod, ← (D.points A).subtype_apply, map_list_prod, List.map_map, List.map_map]
+    exact congrArg List.prod (List.map_congr_left fun k _ => hg k)
+  apply Subtype.ext
+  rw [hw, hw, hn]
 
 /-- Pinned simple Weyl representatives at a single bond satisfy the length-three braid
 relation over every commutative value ring. -/
@@ -124,13 +137,11 @@ theorem weylElement_braid_of_cartanMatrix_eq_neg_one (i j : Fin t.rank)
         D.weylElement (t.simpleIndex ht i) A 1 =
       D.weylElement (t.simpleIndex ht j) A 1 * D.weylElement (t.simpleIndex ht i) A 1 *
         D.weylElement (t.simpleIndex ht j) A 1 := by
-  simpa [mul_assoc] using D.prod_map_weylElement_eq_of_prod_map_weylUnit_eq
-    (l₁ := [i, j, i]) (l₂ := [j, i, j]) (by
-      simpa [mul_assoc] using D.isSerreSystem_representation.weylUnit_braid_of_cartan_eq_neg_one
-        (i := i) (j := j) (by simp) (by simp) hji hij
-        (D.isNilpotent_representation_rootGenerator (.inl i))
-        (D.isNilpotent_representation_rootGenerator (.inr i))
-        (D.isNilpotent_representation_rootGenerator (.inl j))
-        (D.isNilpotent_representation_rootGenerator (.inr j))) A
+  simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one, mul_assoc]
+    using D.weylElement_prod_eq_of_weylUnit_prod_eq [i, j, i] [j, i, j]
+    (fun hE hF => by
+      simpa only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one, mul_assoc]
+        using D.isSerreSystem_representation.weylUnit_braid_of_cartan_eq_neg_one
+          (i := i) (j := j) (by simp) (by simp) hji hij (hE i) (hF i) (hE j) (hF j)) A
 
 end TauCeti.DynkinType.ChevalleyDatum
