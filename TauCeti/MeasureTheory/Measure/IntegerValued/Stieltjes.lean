@@ -39,21 +39,10 @@ namespace StieltjesFunction
 integer-valued measure. Its initial value is arbitrary: the measure records increments and has
 no atom at zero. -/
 theorem isIntegerValued_measure (f : StieltjesFunction ℝ≥0)
-    (hf : ∀ t, ∃ n : ℕ, f t - f 0 = n) : f.measure.IsIntegerValued := by
-  have hmass (t : ℝ≥0) : ∃ n : ℕ, f.measure (Iic t) = n := by
+    (hf : ∀ t, ∃ n : ℕ, f t - f 0 = n) : f.measure.IsIntegerValued :=
+  Measure.isIntegerValued_of_Iic fun t => by
     obtain ⟨n, hn⟩ := hf t
     exact ⟨n, by simp [hn]⟩
-  apply Measure.isIntegerValued_of_restrict (s := fun n : ℕ => Iic (n : ℝ≥0))
-  · ext t
-    simp only [mem_iUnion, mem_Iic, mem_univ, iff_true]
-    exact exists_nat_ge t
-  · intro n
-    let μ := f.measure.restrict (Iic (n : ℝ≥0))
-    apply Measure.isIntegerValued_of_isPiSystem (μ := μ)
-      (BorelSpace.measurable_eq.trans (borel_eq_generateFrom_Iic (α := ℝ≥0))) isPiSystem_Iic
-    · rintro _ ⟨t, rfl⟩
-      simpa [μ, Measure.restrict_apply measurableSet_Iic, Iic_inter_Iic] using hmass (min t n)
-    · simpa [μ] using hmass n
 
 end StieltjesFunction
 
@@ -82,7 +71,7 @@ theorem exists_measure_of_countingPath (N : ℝ≥0 → ℕ) (hN : Monotone N)
     f.isIntegerValued_measure (fun t => ⟨N t, by simp [hf, hzero]⟩), ?_, hcumulative, ?_⟩
   · have hIic : Iic (0 : ℝ≥0) = {0} := by
       ext t
-      simp only [mem_Iic, mem_singleton_iff, le_zero_iff]
+      simp only [mem_Iic, mem_singleton_iff, nonpos_iff_eq_zero]
     simpa only [hIic, hzero, Nat.cast_zero] using hcumulative 0
   · intro a b
     rw [f.measure_Ioc, hf, hf]

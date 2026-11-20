@@ -75,21 +75,21 @@ theorem range_ofFreeLocusQuotient :
       · rintro ⟨w, hw⟩
         induction w using Quotient.inductionOn with
         | h w =>
-          exact (mem_freeLocus_iff_of_quotientMk_eq Γ ℍ (ofQuotient_injective hw)).mp w.2
+          exact (mem_freeLocus_iff_of_quotientMk_eq Γ ℍ (ofQuotient_injective hw)).mp w.property
       · exact fun hz ↦ ⟨Quotient.mk _ ⟨z, hz⟩, rfl⟩
 
 variable [DiscreteTopology Γ]
 
 /-- The inclusion of the free-locus quotient is continuous. -/
 theorem continuous_ofFreeLocusQuotient : Continuous (ofFreeLocusQuotient Γ) :=
-  (continuous_ofQuotient.comp (continuous_quotient_mk'.comp continuous_subtype_val)).quotient_lift
+  (continuous_ofQuotient.comp (continuous_quotient_mk'.comp continuous_subtypeVal)).quotient_lift
     _
 
 /-- The inclusion of the free-locus quotient is open: the free locus is open in `ℍ`, and both
 orbit projections and the inclusion of the coarse quotient are open maps. -/
 theorem isOpenMap_ofFreeLocusQuotient : IsOpenMap (ofFreeLocusQuotient Γ) :=
   .of_comp continuous_quotient_mk' Quotient.mk_surjective <| isOpenMap_ofQuotient.comp <|
-    isOpenMap_quotient_mk'_mul.comp (isOpen_freeLocus Γ ℍ).isOpenMap_subtype_val
+    isOpenMap_quotient_mk'_mul.comp (isOpen_freeLocus Γ ℍ).isOpenMap_subtypeVal
 
 /-- The free-locus quotient is an open subspace of the compactified quotient. -/
 theorem isOpenEmbedding_ofFreeLocusQuotient : IsOpenEmbedding (ofFreeLocusQuotient Γ) :=

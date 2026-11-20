@@ -33,7 +33,9 @@ differentials descends to Serre duality.
 
 For `D ≤ E` there is a surjection `PrincipalParts D → PrincipalParts E`
 (`TauCeti.RiemannSurface.PrincipalParts.mapOfLE`), compatible with taking principal parts of
-meromorphic functions.
+meromorphic functions. Its kernel at `x` consists of the principal parts with poles bounded by
+`E` (`TauCeti.RiemannSurface.LocalPrincipalPart.boundedBy`): the classes of germs of order at
+least `-E x`.
 
 ## References
 
@@ -78,6 +80,45 @@ theorem mapOfLE_mk (h : D ≤ E) (x : X) (φ : meromorphicGerms ℂ (chartAt ℂ
 
 theorem mapOfLE_surjective (h : D ≤ E) (x : X) : Function.Surjective (mapOfLE h x) :=
   Submodule.factor_surjective (meromorphicGerms.orderGE_antitone _ (neg_le_neg (h x)))
+
+variable (D E) in
+/-- The **principal parts relative to `D` with poles bounded by `E`** at `x`: the classes of the
+coordinate germs of order at least `-E x`, modulo those of order at least `-D x`. For `D ≤ E` it
+is the kernel of the projection `LocalPrincipalPart D x → LocalPrincipalPart E x`. -/
+def boundedBy (x : X) : Submodule ℂ (LocalPrincipalPart D x) :=
+  (meromorphicGerms.orderGE (chartAt ℂ x x) (-E x)).map
+    (meromorphicGerms.orderGE (chartAt ℂ x x) (-D x)).mkQ
+
+variable {x : X}
+
+/-- A principal part is bounded by `E` exactly when it is the class of a germ satisfying the
+order bound of `E`. -/
+theorem mem_boundedBy_iff {p : LocalPrincipalPart D x} :
+    p ∈ boundedBy D E x ↔
+      ∃ φ ∈ meromorphicGerms.orderGE (chartAt ℂ x x) (-E x), Submodule.Quotient.mk φ = p :=
+  Submodule.mem_map
+
+/-- The class of a germ satisfying the order bound of `E` is bounded by `E`. -/
+theorem mk_mem_boundedBy {φ : meromorphicGerms ℂ (chartAt ℂ x x)}
+    (hφ : φ ∈ meromorphicGerms.orderGE (chartAt ℂ x x) (-E x)) :
+    (Submodule.Quotient.mk φ : LocalPrincipalPart D x) ∈ boundedBy D E x :=
+  Submodule.mem_map_of_mem hφ
+
+/-- Where `E` permits no more poles than `D`, there are no principal parts bounded by `E`. -/
+theorem boundedBy_eq_bot (h : E x ≤ D x) : boundedBy D E x = ⊥ := by
+  rw [eq_bot_iff]
+  rintro _ ⟨φ, hφ, rfl⟩
+  exact (Submodule.mem_bot ℂ).2 ((Submodule.Quotient.mk_eq_zero _).2
+    (meromorphicGerms.orderGE_antitone _ (neg_le_neg h) hφ))
+
+/-- For `D ≤ E`, the principal parts bounded by `E` are those which vanish relative to `E`. -/
+theorem boundedBy_eq_ker_mapOfLE (h : D ≤ E) (x : X) :
+    boundedBy D E x = LinearMap.ker (mapOfLE h x) := by
+  have he :
+      mapOfLE h x = Submodule.factor (meromorphicGerms.orderGE_antitone _ (neg_le_neg (h x))) :=
+    Submodule.linearMap_qext _ (LinearMap.ext (mapOfLE_mk h x))
+  rw [he, Submodule.ker_mapQ, Submodule.comap_id]
+  rfl
 
 end LocalPrincipalPart
 
