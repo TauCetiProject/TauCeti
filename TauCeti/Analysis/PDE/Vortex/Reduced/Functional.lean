@@ -205,6 +205,31 @@ theorem norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul_nonneg (w : ℂ →
     0 ≤ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z) :=
   mul_nonneg (by positivity) (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)
 
+/-- Where `w ≤ M` with `0 ≤ M`, the potential `h (exp (2w) - 1 - 2w)`, where
+`h = ‖P‖² / (1 + ‖P‖²)`, is at most `2 exp (2M) w²`. -/
+theorem norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul_le_mul_sq {M : ℝ} (hM : 0 ≤ M)
+    (w : ℂ → ℝ) {z : ℂ} (hz : w z ≤ M) :
+    ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z) ≤
+      2 * Real.exp (2 * M) * w z ^ 2 := by
+  have h1 : ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ≤ 1 :=
+    (div_le_one (by positivity)).2 (by linarith)
+  calc _ ≤ 1 * (Real.exp (2 * w z) - 1 - 2 * w z) :=
+        mul_le_mul_of_nonneg_right h1 (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)
+    _ ≤ 2 * Real.exp (2 * M) * w z ^ 2 := by
+      rw [one_mul]; exact Real.exp_two_mul_sub_one_sub_two_mul_le_mul_sq hM hz
+
+/-- For `u ∈ H¹(ℂ)` bounded above almost everywhere, the potential `h (exp (2u) - 1 - 2u)`, where
+`h = ‖P‖² / (1 + ‖P‖²)`, is integrable. -/
+theorem integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul
+    {u : W1p (volume : Measure ℂ) ⊤ 2} {M : ℝ} (hM : 0 ≤ M) (hu : ∀ᵐ z, W1p.value u z ≤ M) :
+    Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+      (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) := by
+  refine (((W1p.memLp_value u).integrable_sq).const_mul (2 * Real.exp (2 * M))).mono'
+    (aestronglyMeasurable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul u) ?_
+  filter_upwards [hu] with z hz
+  rw [Real.norm_of_nonneg (norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul_nonneg _ z)]
+  exact norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul_le_mul_sq hM (W1p.value u) hz
+
 /-- The integral of the potential `h (exp (2w) - 1 - 2w)` is nonnegative. -/
 private theorem integral_potential_nonneg (w : ℂ → ℝ) :
     0 ≤ ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z) :=
