@@ -7,28 +7,31 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.CategoryTheory.Limits.MorphismProperty
+public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
+import Mathlib.CategoryTheory.Limits.Over
 import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 
 /-!
 # Finite coproducts of finite morphisms
 
-Schemes with a finite morphism to a fixed scheme `X` are closed under finite coproducts: if
-`ι` is finite and every `f i : Y i ⟶ X` is finite, then so is `Sigma.desc f : ∐ Y ⟶ X`
-(`AlgebraicGeometry.IsFinite.sigmaDesc`). This includes the empty coproduct, and for binary
-coproducts it recovers Mathlib's instance for `coprod.desc f g`, on which the proof rests: finite
-coproduct closure in `Over X` is assembled from the binary and the empty case with Mathlib's
-`CategoryTheory.ObjectProperty.IsClosedUnderFiniteCoproducts.mk'`.
+Schemes with a finite morphism to a fixed scheme `X` are closed under finite coproducts: if `ι`
+is finite and every `f i : Y i ⟶ X` is finite, then so is `Sigma.desc f : ∐ Y ⟶ X`
+(`TauCeti.IsFinite.sigmaDesc`). This includes the empty coproduct, and extends Mathlib's instance
+for binary coproducts, which makes `coprod.desc f g` finite when `f` and `g` are.
 
-`AlgebraicGeometry.IsFinite.isClosedUnderColimitsOfShape_discrete` states this as closure of
-`MorphismProperty.costructuredArrowObj L @IsFinite` under coproducts indexed by a finite type, in
-the shape of Mathlib's
+`TauCeti.IsFinite.isClosedUnderFiniteCoproducts_overObj` states this as closure of
+`MorphismProperty.overObj @IsFinite` under finite coproducts in `Over X`.
+`TauCeti.IsFinite.isClosedUnderColimitsOfShape_discrete` states it as closure of
+`MorphismProperty.costructuredArrowObj L @IsFinite` under coproducts indexed by a finite type
+`ι`, for a functor `L : C ⥤ Scheme` such that `C` has coproducts indexed by `ι` and `L` preserves
+them. It has the shape of Mathlib's
 `AlgebraicGeometry.IsZariskiLocalAtSource.isClosedUnderColimitsOfShape_discrete`.
 -/
 public section
 
-open CategoryTheory Limits
+open CategoryTheory Limits AlgebraicGeometry
 
-namespace AlgebraicGeometry
+namespace TauCeti
 
 universe u
 
@@ -37,13 +40,14 @@ private lemma isClosedUnderBinaryCoproducts_overObj_isFinite (X : Scheme.{u}) :
     (MorphismProperty.overObj @IsFinite (X := X)).IsClosedUnderBinaryCoproducts := by
   refine CostructuredArrow.isClosedUnderColimitsOfShape (fun D _ ↦ colimit.cocone D)
     (fun D _ ↦ colimit.isColimit D) (fun D _ X s hs ↦ ?_) X
+  have := hs ⟨.left⟩
+  have := hs ⟨.right⟩
   have hdesc : (colimit.isColimit D).desc (Cocone.mk X s) =
       (HasColimit.isoOfNatIso (diagramIsoPair D)).hom ≫
         coprod.desc (s.app ⟨.left⟩) (s.app ⟨.right⟩) := by
-    refine colimit.hom_ext fun ⟨j⟩ ↦ ?_
-    cases j <;> simp
-  have := hs ⟨.left⟩
-  have := hs ⟨.right⟩
+    rw [HasColimit.isoOfNatIso_hom_desc]
+    congr
+    ext ⟨_ | _⟩ <;> simp
   rw [hdesc]
   infer_instance
 
@@ -56,26 +60,23 @@ private lemma isClosedUnderColimitsOfShape_pEmpty_overObj_isFinite (X : Scheme.{
     have : IsEmpty Y.left := isInitial_iff_isEmpty.mp ⟨t.isInitialObj (Over.forget X) Y⟩
     exact (inferInstance : IsFinite Y.hom)
 
-/-- A morphism out of a finite coproduct of schemes is finite if each of its components is. -/
-theorem IsFinite.sigmaDesc {X : Scheme.{u}} {ι : Type*} [Finite ι] {Y : ι → Scheme.{u}}
-    {f : ∀ i, Y i ⟶ X} (hf : ∀ i, IsFinite (f i)) : IsFinite (Sigma.desc f) := by
+/-- Schemes finite over a fixed scheme `X` are closed under finite coproducts in `Over X`. -/
+instance IsFinite.isClosedUnderFiniteCoproducts_overObj (X : Scheme.{u}) :
+    (MorphismProperty.overObj @IsFinite (X := X)).IsClosedUnderFiniteCoproducts := by
   have := isClosedUnderBinaryCoproducts_overObj_isFinite X
   have := isClosedUnderColimitsOfShape_pEmpty_overObj_isFinite X
-  have : (MorphismProperty.overObj @IsFinite (X := X)).IsClosedUnderFiniteCoproducts := .mk'
-  -- The cofan of the objects `Over.mk (f i)` with cocone point `Over.mk (Sigma.desc f)` is a
-  -- coproduct in `Over X`, since its image in `Scheme` is the coproduct of the `Y i`.
-  let c : Cofan fun i ↦ Over.mk (f i) := Cofan.mk (Over.mk (Sigma.desc f))
-    fun i ↦ Over.homMk (Sigma.ι Y i)
-  have hc : IsColimit c := Cofan.IsColimit.mk _
-    (fun s ↦ Over.homMk (Sigma.desc fun i ↦ (s.inj i).left)
-      (Sigma.hom_ext _ _ fun i ↦ by simp [c]))
-    (fun s i ↦ by ext; simp [c]) fun s m hm ↦ by
-      ext1
-      exact Sigma.hom_ext _ _ fun i ↦ by simpa [c] using congr_arg CommaMorphism.left (hm i)
-  exact (MorphismProperty.overObj @IsFinite).prop_of_isColimit_cofan hc hf
+  exact .mk'
 
-/-- Objects of `CostructuredArrow L X` whose structure morphism is finite are closed under finite
-coproducts. -/
+/-- A morphism out of a finite coproduct of schemes is finite if each of its components is. -/
+theorem IsFinite.sigmaDesc {X : Scheme.{u}} {ι : Type*} [Finite ι] {Y : ι → Scheme.{u}}
+    {f : ∀ i, Y i ⟶ X} (hf : ∀ i, IsFinite (f i)) : IsFinite (Sigma.desc f) :=
+  (MorphismProperty.overObj @IsFinite).prop_of_isColimit
+    (Over.isColimitLiftCocone _ (Sigma.desc f) (coproductIsCoproduct Y))
+    fun ⟨i⟩ ↦ show IsFinite (Sigma.ι Y i ≫ Sigma.desc f) by simpa using hf i
+
+/-- Objects of `CostructuredArrow L X` whose structure morphism is finite are closed under
+coproducts indexed by a finite type `ι`, provided that `C` has such coproducts and `L` preserves
+them. -/
 instance IsFinite.isClosedUnderColimitsOfShape_discrete {ι : Type*} [Finite ι] {C : Type*}
     [Category* C] [HasColimitsOfShape (Discrete ι) C] (L : C ⥤ Scheme.{u})
     [PreservesColimitsOfShape (Discrete ι) L] (X : Scheme.{u}) :
@@ -84,4 +85,4 @@ instance IsFinite.isClosedUnderColimitsOfShape_discrete {ι : Type*} [Finite ι]
   CostructuredArrow.isClosedUnderColimitsOfShape _ (fun _ ↦ coproductIsCoproduct' _)
     (fun _ _ _ _ h ↦ IsFinite.sigmaDesc (h ⟨·⟩)) _
 
-end AlgebraicGeometry
+end TauCeti
