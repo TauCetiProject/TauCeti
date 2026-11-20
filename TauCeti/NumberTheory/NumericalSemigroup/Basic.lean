@@ -199,39 +199,40 @@ theorem numericalConductor_sub_one_sub_notMem {s : ℕ} (hs : s ∈ S)
   numericalConductor_sub_one_notMem (S := S) (by omega) <| by
     simpa [Nat.sub_add_cancel (show s ≤ S.numericalConductor - 1 by omega)] using S.add_mem h hs
 
-/-- The reflection `s ↦ C - 1 - s` is injective below the conductor `C`. -/
-theorem injOn_numericalConductor_sub_one_sub :
-    Set.InjOn (S.numericalConductor - 1 - ·) (Set.Iio S.numericalConductor) :=
-  fun a ha b hb hab ↦ by
-    simp only [Set.mem_Iio] at ha hb hab
-    omega
-
 /-- The natural numbers below the conductor are the elements of `S` below the conductor
 together with the gaps. -/
-theorem IsNumericalSemigroup.ncard_inter_Iio_add_numericalGenus (h : S.IsNumericalSemigroup) :
+theorem ncard_inter_Iio_add_numericalGenus (S : AddSubmonoid ℕ) :
     ((S : Set ℕ) ∩ Set.Iio S.numericalConductor).ncard + S.numericalGenus =
       S.numericalConductor := by
-  have hgaps : Set.Iio S.numericalConductor \ S = S.numericalGaps := by
-    ext x
-    simp only [Set.mem_sdiff, Set.mem_Iio, SetLike.mem_coe, mem_numericalGaps]
-    exact ⟨And.right, fun hx ↦ ⟨h.lt_numericalConductor_of_notMem hx, hx⟩⟩
-  rw [numericalGenus_def, ← hgaps, Set.inter_comm,
-    Set.ncard_inter_add_ncard_sdiff_eq_ncard _ _ (Set.finite_Iio _), Set.ncard_Iio_nat]
+  by_cases h : S.IsNumericalSemigroup
+  · have hgaps : Set.Iio S.numericalConductor \ S = S.numericalGaps := by
+      ext x
+      simp only [Set.mem_sdiff, Set.mem_Iio, SetLike.mem_coe, mem_numericalGaps]
+      exact ⟨And.right, fun hx ↦ ⟨h.lt_numericalConductor_of_notMem hx, hx⟩⟩
+    rw [numericalGenus_def, ← hgaps, Set.inter_comm,
+      Set.ncard_inter_add_ncard_sdiff_eq_ncard _ _ (Set.finite_Iio _), Set.ncard_Iio_nat]
+  · have hC : S.numericalConductor = 0 :=
+      not_not.mp (mt isNumericalSemigroup_of_numericalConductor_ne_zero h)
+    rw [hC, numericalGenus_def, Set.Infinite.ncard (s := S.numericalGaps) h]
+    simp
 
-/-- A numerical semigroup has at most as many elements below its conductor as it has gaps. -/
-theorem IsNumericalSemigroup.ncard_inter_Iio_le_numericalGenus (h : S.IsNumericalSemigroup) :
+/-- A submonoid of `ℕ` has at most as many elements below its conductor as it has gaps. -/
+theorem ncard_inter_Iio_le_numericalGenus (S : AddSubmonoid ℕ) :
     ((S : Set ℕ) ∩ Set.Iio S.numericalConductor).ncard ≤ S.numericalGenus := by
-  rw [numericalGenus_def]
-  exact Set.ncard_le_ncard_of_injOn (S.numericalConductor - 1 - ·)
-    (fun _ hs ↦ (mem_numericalGaps S).mpr (numericalConductor_sub_one_sub_notMem hs.1 hs.2))
-    (injOn_numericalConductor_sub_one_sub.mono Set.inter_subset_right) h.finite_numericalGaps
+  by_cases h : S.IsNumericalSemigroup
+  · rw [numericalGenus_def]
+    exact Set.ncard_le_ncard_of_injOn (S.numericalConductor - 1 - ·)
+      (fun _ hs ↦ (mem_numericalGaps S).mpr (numericalConductor_sub_one_sub_notMem hs.1 hs.2))
+      (fun a ha b hb ↦ tsub_inj_right (Nat.le_sub_one_of_lt ha.2) (Nat.le_sub_one_of_lt hb.2))
+      h.finite_numericalGaps
+  · simp [not_not.mp (mt isNumericalSemigroup_of_numericalConductor_ne_zero h)]
 
-/-- **The genus is at least half the conductor**: `C(S) ≤ 2 g(S)` for a numerical semigroup
-`S`, that is `F(S) + 1 ≤ 2 g(S)`. -/
-theorem IsNumericalSemigroup.numericalConductor_le_two_mul_numericalGenus
-    (h : S.IsNumericalSemigroup) : S.numericalConductor ≤ 2 * S.numericalGenus := by
-  have := h.ncard_inter_Iio_add_numericalGenus
-  have := h.ncard_inter_Iio_le_numericalGenus
+/-- **The genus is at least half the conductor**: `C(S) ≤ 2 g(S)` for every submonoid `S` of
+`ℕ`; for a numerical semigroup this is `F(S) + 1 ≤ 2 g(S)`. -/
+theorem numericalConductor_le_two_mul_numericalGenus (S : AddSubmonoid ℕ) :
+    S.numericalConductor ≤ 2 * S.numericalGenus := by
+  have := S.ncard_inter_Iio_add_numericalGenus
+  have := S.ncard_inter_Iio_le_numericalGenus
   omega
 
 /-- The Frobenius number of a proper numerical semigroup is itself a gap. -/

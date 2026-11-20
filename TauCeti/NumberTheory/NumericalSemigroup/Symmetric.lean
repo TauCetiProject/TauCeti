@@ -15,8 +15,7 @@ import Mathlib.Tactic.IntervalCases
 Write `C` for the conductor of a numerical semigroup `S`, so that `F = C - 1` is its Frobenius
 number. The reflection `x ↦ C - 1 - x` of `{0, …, C - 1}` sends every element of `S` below `C`
 to a gap, which gives the inequality `C ≤ 2 g` of
-`AddSubmonoid.IsNumericalSemigroup.numericalConductor_le_two_mul_numericalGenus`, where `g` is
-the genus.
+`AddSubmonoid.numericalConductor_le_two_mul_numericalGenus`, where `g` is the genus.
 
 `S` is *symmetric* when the reflection also sends every gap into `S`, that is when for every
 integer `x ∉ S` (negative integers included) one has `F - x ∈ S`. Symmetric semigroups are
@@ -135,8 +134,8 @@ if and only if `2 g(S) = C(S)`, that is `2 g(S) = F(S) + 1`. -/
 theorem IsNumericalSemigroup.isSymmetricNumericalSemigroup_iff_two_mul_numericalGenus_eq
     (h : S.IsNumericalSemigroup) :
     S.IsSymmetricNumericalSemigroup ↔ 2 * S.numericalGenus = S.numericalConductor := by
-  have hsum := h.ncard_inter_Iio_add_numericalGenus
-  have hle := h.ncard_inter_Iio_le_numericalGenus
+  have hsum := S.ncard_inter_Iio_add_numericalGenus
+  have hle := S.ncard_inter_Iio_le_numericalGenus
   have hfin : ((S : Set ℕ) ∩ Set.Iio S.numericalConductor).Finite :=
     (Set.finite_Iio _).inter_of_right _
   constructor
@@ -148,7 +147,8 @@ theorem IsNumericalSemigroup.isSymmetricNumericalSemigroup_iff_two_mul_numerical
         h.lt_numericalConductor_of_notMem ((mem_numericalGaps S).mp hx)
       refine Set.ncard_le_ncard_of_injOn (S.numericalConductor - 1 - ·)
         (fun x hx ↦ ⟨hS.2 x ((mem_numericalGaps S).mp hx), Set.mem_Iio.mpr ?_⟩)
-        (injOn_numericalConductor_sub_one_sub.mono hgaps) hfin
+        (fun a ha b hb ↦ tsub_inj_right (Nat.le_sub_one_of_lt (hgaps ha))
+          (Nat.le_sub_one_of_lt (hgaps hb))) hfin
       have := Set.mem_Iio.mp (hgaps hx)
       omega
     omega
@@ -156,7 +156,7 @@ theorem IsNumericalSemigroup.isSymmetricNumericalSemigroup_iff_two_mul_numerical
     -- Equal cardinalities make the reflection a bijection onto the gaps.
     have hinj : Set.InjOn (S.numericalConductor - 1 - ·)
         ((S : Set ℕ) ∩ Set.Iio S.numericalConductor) :=
-      injOn_numericalConductor_sub_one_sub.mono Set.inter_subset_right
+      fun a ha b hb ↦ tsub_inj_right (Nat.le_sub_one_of_lt ha.2) (Nat.le_sub_one_of_lt hb.2)
     have himage : (S.numericalConductor - 1 - ·) '' ((S : Set ℕ) ∩ Set.Iio S.numericalConductor) =
         S.numericalGaps :=
       Set.eq_of_subset_of_ncard_le
