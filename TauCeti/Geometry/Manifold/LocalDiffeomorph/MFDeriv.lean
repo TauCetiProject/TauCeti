@@ -33,6 +33,9 @@ For partial diffeomorphisms `ψ`, `χ`, `φ` into normed spaces, such as charts,
 
 * `IsLocalDiffeomorphAt.finrank_eq`: a local diffeomorphism of nonzero regularity has source
   and target model spaces of equal dimension.
+* `IsLocalDiffeomorphAt.mfderivToContinuousLinearEquiv_symm_mfderiv_apply`,
+  `IsLocalDiffeomorphAt.mfderiv_mfderivToContinuousLinearEquiv_symm_apply`: the inverse of the
+  differential of a local diffeomorphism, `(df_x)⁻¹`, undoes `df_x` on either side.
 
 * `OpenPartialHomeomorph.mfderiv_symm_apply_mfderiv_apply`,
   `OpenPartialHomeomorph.mfderiv_apply_mfderiv_symm_apply`: where an open partial homeomorphism
@@ -73,6 +76,24 @@ theorem IsLocalDiffeomorphAt.finrank_eq {f : M → N} {x : M}
     Module.finrank 𝕜 E = Module.finrank 𝕜 F := by
   simpa only [TauCeti.finrank_tangentSpace] using
     (hf.mfderivToContinuousLinearEquiv hn).toLinearEquiv.finrank_eq
+
+/-- The inverse of the differential of a local diffeomorphism undoes the differential:
+`(df_x)⁻¹ (df_x v) = v`. -/
+@[simp]
+theorem IsLocalDiffeomorphAt.mfderivToContinuousLinearEquiv_symm_mfderiv_apply {f : M → N}
+    {x : M} (hf : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0) (v : TangentSpace I x) :
+    (hf.mfderivToContinuousLinearEquiv hn).symm (mfderiv I J f x v) = v := by
+  rw [← hf.mfderivToContinuousLinearEquiv_coe hn, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.symm_apply_apply]
+
+/-- The differential of a local diffeomorphism undoes the inverse of the differential:
+`df_x ((df_x)⁻¹ w) = w`. -/
+@[simp]
+theorem IsLocalDiffeomorphAt.mfderiv_mfderivToContinuousLinearEquiv_symm_apply {f : M → N}
+    {x : M} (hf : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0) (w : TangentSpace J (f x)) :
+    mfderiv I J f x ((hf.mfderivToContinuousLinearEquiv hn).symm w) = w := by
+  rw [← hf.mfderivToContinuousLinearEquiv_coe hn, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.apply_symm_apply]
 
 namespace OpenPartialHomeomorph
 
