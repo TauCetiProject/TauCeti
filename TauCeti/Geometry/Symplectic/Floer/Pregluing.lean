@@ -38,7 +38,11 @@ which needs the error `F(w_R)` to be small. This file proves that it is.
   `C¹`-close to the stationary cylinder over `x` is an approximate solution.
 * **The pre-glued map.** It is `Cⁿ` where `x`, `u` and `v` are
   (`TauCeti.Floer.contDiffAt_preglue`), and of period one in `t` when they are
-  (`TauCeti.Floer.periodic_preglue`).
+  (`TauCeti.Floer.periodic_preglue`). Its distance from `x` and the distance of its derivative from
+  that of the stationary cylinder are controlled by those of `u` and `v`
+  (`TauCeti.Floer.norm_preglue_sub_le`, `TauCeti.Floer.norm_fderiv_preglue_sub_le`); for the
+  `t`-derivative no derivative of the cutoff enters
+  (`TauCeti.Floer.norm_fderiv_preglue_apply_sub_le`).
 * **Locality.** For `s < -1` the Floer operator of `w_R` is that of `u` at `(s + R, t)`, and for
   `s > 1` that of `v` at `(s - R, t)`
   (`TauCeti.SymplecticForm.floerOperator_preglue_of_lt_neg_one`,
@@ -314,6 +318,36 @@ theorem norm_fderiv_preglue_sub_le {x' : V} (hx : HasDerivAt x x' z.2)
     (hfst _ _)) (norm_add_le_of_le (norm_pregluingCutoff_smul_le _ _) (hfst _ _))).trans_eq ?_
   simp only [one_mul, neg_mul, abs_neg]
   ring
+
+/-- **The `t`-derivative of the pre-glued map.** Measured against the derivative `x'(t)` of the
+loop, the `t`-derivative of the pre-glued map is bounded by the corresponding distances of the
+`t`-derivatives of `u` at `(s + R, t)` and of `v` at `(s - R, t)`. Unlike the full derivative
+(`norm_fderiv_preglue_sub_le`), it involves no derivative of the cutoff, which depends on `s`
+alone. -/
+theorem norm_fderiv_preglue_apply_sub_le {x' : V} (hx : HasDerivAt x x' z.2)
+    (hu : DifferentiableAt ℝ u (z + (R, 0))) (hv : DifferentiableAt ℝ v (z - (R, 0))) :
+    ‖fderiv ℝ (preglue x u v R) z stdComplexLineImag - x'‖ ≤
+      ‖fderiv ℝ u (z + (R, 0)) stdComplexLineImag - x'‖ +
+        ‖fderiv ℝ v (z - (R, 0)) stdComplexLineImag - x'‖ := by
+  have hzR : z + (-R, 0) = z - (R, 0) := by ext <;> simp [sub_eq_add_neg]
+  have hw := (hx.hasFDerivAt_comp_snd.add ((hasFDerivAt_pregluingCutoff_comp 1).smul
+    (hasFDerivAt_comp_add_sub (c := R) hx hu))).add
+    ((hasFDerivAt_pregluingCutoff_comp (-1)).smul
+      (hasFDerivAt_comp_add_sub (c := -R) hx (hzR ▸ hv)))
+  have hpre : preglue x u v R = (fun p : ℝ × ℝ ↦ x p.2) +
+      (fun p : ℝ × ℝ ↦ pregluingCutoff (1 * p.1)) • (fun p : ℝ × ℝ ↦ u (p + (R, 0)) - x p.2) +
+      (fun p : ℝ × ℝ ↦ pregluingCutoff (-1 * p.1)) •
+        (fun p : ℝ × ℝ ↦ v (p + (-R, 0)) - x p.2) := by
+    funext p
+    simp [preglue, sub_eq_add_neg]
+  rw [hpre, hw.fderiv, hzR]
+  simp only [add_apply, smul_apply, smulRight_apply, sub_apply, coe_snd', coe_fst',
+    stdComplexLineImag_fst, stdComplexLineImag_snd, one_smul, smul_zero, zero_smul,
+    add_zero, one_mul, neg_mul]
+  rw [add_assoc, add_sub_cancel_left]
+  refine norm_add_le_of_le ?_ ?_ <;> rw [norm_smul, Real.norm_of_nonneg (pregluingCutoff_nonneg _)]
+  · exact mul_le_of_le_one_left (norm_nonneg _) (pregluingCutoff_le_one _)
+  · exact mul_le_of_le_one_left (norm_nonneg _) (pregluingCutoff_le_one _)
 
 end Floer
 
