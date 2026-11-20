@@ -70,7 +70,7 @@ private def compLinearIsometry (A : E ≃ₗᵢ[ℝ] E) (u : H^{s, p}(E, F)) : H
   toLp := Lp.compMeasurePreserving A A.measurePreserving u.toLp
   bessel_toDistr_eq_toLp := by
     rw [besselPotential_compCLMOfContinuousLinearEquiv, u.bessel_toDistr_eq_toLp,
-      compCLMOfContinuousLinearEquiv_toTemperedDistribution_Lp]
+      compCLMOfContinuousLinearEquiv_toTemperedDistribution_eq_compMeasurePreserving]
 
 variable (s p) in
 /-- **Composition with a linear isometry is an isometry of `H^{s,p}`.** For a linear isometry `A`
@@ -80,10 +80,14 @@ equivalence of the Bessel-potential space `H^{s,p}(E, F)`, for every real `s` an
 def compLinearIsometryEquiv (A : E ≃ₗᵢ[ℝ] E) : H^{s, p}(E, F) ≃ₗᵢ[ℂ] H^{s, p}(E, F) where
   toFun := compLinearIsometry A
   invFun := compLinearIsometry A.symm
-  left_inv u := ext
-    (compCLMOfContinuousLinearEquiv_symm_apply_apply A.toContinuousLinearEquiv u.toDistr)
-  right_inv u := ext
-    (compCLMOfContinuousLinearEquiv_symm_apply_apply A.symm.toContinuousLinearEquiv u.toDistr)
+  left_inv u := ext (by
+    dsimp only [compLinearIsometry]
+    rw [LinearIsometryEquiv.toContinuousLinearEquiv_symm,
+      compCLMOfContinuousLinearEquiv_symm_apply_apply])
+  right_inv u := ext (by
+    dsimp only [compLinearIsometry]
+    rw [LinearIsometryEquiv.toContinuousLinearEquiv_symm,
+      compCLMOfContinuousLinearEquiv_apply_symm_apply])
   map_add' u v := ext (map_add (compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv) _ _)
   map_smul' c u := ext (map_smul (compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv) _ _)
   norm_map' u := by

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.TemperedDistribution.ChangeOfVariabl
 import Mathlib.Analysis.InnerProductSpace.NormDet
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
+import TauCeti.Topology.Algebra.Module.Equiv.Basic
 
 /-!
 # Tempered distributions under linear changes of variables
@@ -50,7 +51,7 @@ space side.
 * `TemperedDistribution.fourierMultiplierCLM_compCLMOfContinuousLinearEquiv`: so does every
   Fourier multiplier with an `A`-invariant symbol, and in particular
   `TemperedDistribution.besselPotential_compCLMOfContinuousLinearEquiv`: every Bessel potential.
-* `TemperedDistribution.compCLMOfContinuousLinearEquiv_toTemperedDistribution_Lp`: on `Lᵖ`, the
+* `compCLMOfContinuousLinearEquiv_toTemperedDistribution_eq_compMeasurePreserving`: on `Lᵖ`, the
   pullback is precomposition `Lp.compMeasurePreserving`.
 * `TemperedDistribution.MemSobolev.compCLMOfContinuousLinearEquiv`: `A^*` preserves `H^{s,p}`.
 
@@ -83,11 +84,8 @@ Schwartz function `u` it gives that of `u ∘ e`
 (`TemperedDistribution.compCLMOfContinuousLinearEquiv_toTemperedDistributionCLM`). -/
 def compCLMOfContinuousLinearEquiv (e : E ≃L[ℝ] E) : 𝓢'(E, F) →L[ℂ] 𝓢'(E, F) :=
   compCLM F e.toEquiv
-    (by rw [LinearEquiv.coe_toEquiv, ContinuousLinearEquiv.coe_toLinearEquiv]
-        exact e.hasTemperateGrowth)
-    (by rw [← LinearEquiv.toEquiv_symm, ← ContinuousLinearEquiv.toLinearEquiv_symm,
-          LinearEquiv.coe_toEquiv, ContinuousLinearEquiv.coe_toLinearEquiv]
-        exact e.symm.hasTemperateGrowth)
+    (by rw [ContinuousLinearEquiv.coe_toEquiv]; exact e.hasTemperateGrowth)
+    (by rw [ContinuousLinearEquiv.coe_toEquiv_symm]; exact e.symm.hasTemperateGrowth)
 
 /-- The pullback `e^* T` pairs a Schwartz function `f` with `T` through
 `|det e|⁻¹ T (f ∘ e⁻¹)`. -/
@@ -100,8 +98,7 @@ theorem compCLMOfContinuousLinearEquiv_apply_apply (e : E ≃L[ℝ] E) (T : 𝓢
   congr 1
   ext y
   have hd : fderiv ℝ (e.toEquiv.symm : E → E) y = (e.symm : E →L[ℝ] E) := by
-    rw [← LinearEquiv.toEquiv_symm, ← ContinuousLinearEquiv.toLinearEquiv_symm,
-      LinearEquiv.coe_toEquiv, ContinuousLinearEquiv.coe_toLinearEquiv]
+    rw [ContinuousLinearEquiv.coe_toEquiv_symm]
     exact e.symm.fderiv
   have hdet : LinearMap.det ((e.symm : E →L[ℝ] E) : E →ₗ[ℝ] E) =
       (LinearMap.det (e : E →ₗ[ℝ] E))⁻¹ :=
@@ -114,11 +111,12 @@ pullbacks. -/
 theorem compCLMOfContinuousLinearEquiv_trans (e₁ e₂ : E ≃L[ℝ] E) (T : 𝓢'(E, F)) :
     compCLMOfContinuousLinearEquiv F (e₁.trans e₂) T =
       compCLMOfContinuousLinearEquiv F e₁ (compCLMOfContinuousLinearEquiv F e₂ T) := by
-  rw [compCLMOfContinuousLinearEquiv, compCLMOfContinuousLinearEquiv,
-    compCLMOfContinuousLinearEquiv, ← ContinuousLinearMap.comp_apply, ← compCLM_trans]
-  -- The two sides are pullbacks along `(e₁.trans e₂).toEquiv` and `e₁.toEquiv.trans e₂.toEquiv`,
-  -- the same bijection.
-  rfl
+  have h : (e₁.trans e₂).toEquiv = e₁.toEquiv.trans e₂.toEquiv := by
+    ext x
+    simp only [Equiv.trans_apply, ContinuousLinearEquiv.coe_toEquiv,
+      ContinuousLinearEquiv.trans_apply]
+  simp only [compCLMOfContinuousLinearEquiv, h]
+  rw [← ContinuousLinearMap.comp_apply, ← compCLM_trans]
 
 /-- The pullback along the identity is the identity. -/
 @[simp]
@@ -158,7 +156,9 @@ theorem compCLMOfContinuousLinearEquiv_toTemperedDistributionCLM (μ : Measure E
     compCLMOfContinuousLinearEquiv F e (toTemperedDistributionCLM E F μ u) =
       toTemperedDistributionCLM E F μ (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ e u) := by
   rw [compCLMOfContinuousLinearEquiv, compCLM_toTemperedDistributionCLM]
-  congr 1 with x
+  refine congrArg _ (SchwartzMap.ext fun x ↦ ?_)
+  rw [SchwartzMap.compCLM_apply, SchwartzMap.compCLMOfContinuousLinearEquiv_apply,
+    ContinuousLinearEquiv.coe_toEquiv]
 
 end Embedding
 
@@ -227,8 +227,7 @@ theorem fourierMultiplierCLM_compCLMOfContinuousLinearEquiv (A : E ≃ₗᵢ[ℝ
     fourierMultiplierCLM F g (compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv T) =
       compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv (fourierMultiplierCLM F g T) := by
   have hcomp : g ∘ A.toContinuousLinearEquiv.toEquiv = g := by
-    rw [LinearEquiv.coe_toEquiv, ContinuousLinearEquiv.coe_toLinearEquiv,
-      LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+    rw [ContinuousLinearEquiv.coe_toEquiv, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
     exact funext hgA
   have hsmul (S : 𝓢'(E, F)) : smulLeftCLM F g (compCLMOfContinuousLinearEquiv F
       A.toContinuousLinearEquiv S) =
@@ -249,8 +248,8 @@ variable [CompleteSpace F]
 
 /-- On the distribution of an `Lᵖ` function `u`, the pullback along a linear isometry `A` is the
 distribution of the `Lᵖ` function `u ∘ A`. -/
-theorem compCLMOfContinuousLinearEquiv_toTemperedDistribution_Lp {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    (A : E ≃ₗᵢ[ℝ] E) (u : Lp F p (volume : Measure E)) :
+theorem compCLMOfContinuousLinearEquiv_toTemperedDistribution_eq_compMeasurePreserving
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] (A : E ≃ₗᵢ[ℝ] E) (u : Lp F p (volume : Measure E)) :
     compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv (u : 𝓢'(E, F)) =
       (Lp.compMeasurePreserving A A.measurePreserving u : 𝓢'(E, F)) := by
   ext f
@@ -259,9 +258,8 @@ theorem compCLMOfContinuousLinearEquiv_toTemperedDistribution_Lp {p : ℝ≥0∞
   refine integral_congr_ae ((Lp.coeFn_compMeasurePreserving u A.measurePreserving).mono
     fun x hx ↦ ?_)
   dsimp only
-  rw [hx, Function.comp_apply]
-  -- `A.toContinuousLinearEquiv.toEquiv x` is `A x` by definition of the coercions.
-  rfl
+  rw [hx, Function.comp_apply, ContinuousLinearEquiv.coe_toEquiv,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv]
 
 /-- The pullback along a linear isometry preserves the Bessel-potential space `H^{s,p}`. -/
 theorem MemSobolev.compCLMOfContinuousLinearEquiv {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
@@ -270,7 +268,7 @@ theorem MemSobolev.compCLMOfContinuousLinearEquiv {s : ℝ} {p : ℝ≥0∞} [Fa
   obtain ⟨u, hu⟩ := hT
   exact ⟨Lp.compMeasurePreserving A A.measurePreserving u, by
     rw [besselPotential_compCLMOfContinuousLinearEquiv, hu,
-      compCLMOfContinuousLinearEquiv_toTemperedDistribution_Lp]⟩
+      compCLMOfContinuousLinearEquiv_toTemperedDistribution_eq_compMeasurePreserving]⟩
 
 end LinearIsometry
 
