@@ -53,8 +53,8 @@ estimates that describe a Cauchy-type integral far from its data.
 * `TauCeti.isOpen_insert_zero_image_inv_sub`, `TauCeti.closure_insert_zero_image_inv_sub` and
   `TauCeti.frontier_insert_zero_image_inv_sub`: an open set with bounded complement, inverted about
   any point and completed by `0`, is open; the completed inversion of any set has the completed
-  inverted closure as closure; and for a centre outside the closure of such an open set, the
-  inverted frontier as frontier.
+  inverted closure as closure; and for a set with bounded complement and a centre outside its
+  closure, the inverted frontier as frontier.
 * `TauCeti.mapsTo_inv_ball_diff_singleton_compl_closedBall`: the inversion maps the punctured ball
   of radius `R⁻¹` about `0` outside the closed ball of radius `R`.
 * `TauCeti.norm_inv_sub_le_of_mem_closedBall`, `TauCeti.norm_inv_sub_pow_le_of_mem_closedBall`
@@ -272,20 +272,6 @@ theorem closure_image_inv_sub (hUb : ¬IsBounded U) :
   rw [← closure_insert_zero_image_inv_sub, insert_eq, closure_union, closure_singleton,
     ← insert_eq, insert_eq_of_mem h0]
 
-/-- Inverting an open set `U` with bounded complement about a point `q` outside its closure, and
-adding `0`, the image of infinity, the frontier of the resulting open set is the inverted frontier
-of `U`. -/
-theorem frontier_insert_zero_image_inv_sub (hUo : IsOpen U) (hq : q ∉ closure U)
-    (hUc : IsBounded Uᶜ) :
-    frontier (insert 0 ((fun z : 𝕜 => (z - q)⁻¹) '' U)) =
-      (fun z : 𝕜 => (z - q)⁻¹) '' frontier U := by
-  have h0 : (0 : 𝕜) ∉ (fun z : 𝕜 => (z - q)⁻¹) '' closure U := by simpa [sub_eq_zero] using hq
-  rw [(isOpen_insert_zero_image_inv_sub hUo hUc).frontier_eq,
-    closure_insert_zero_image_inv_sub, insert_sdiff_of_mem _ (mem_insert _ _),
-    sdiff_insert_of_notMem h0,
-    ← image_sdiff (f := fun z : 𝕜 => (z - q)⁻¹) (inv_injective.comp (sub_left_injective (b := q))),
-    ← hUo.frontier_eq]
-
 /-- Inverting an open set `U` about a point `q` outside it, the image is open. -/
 theorem isOpen_image_inv_sub (hUo : IsOpen U) (hqU : q ∉ U) :
     IsOpen ((fun z : 𝕜 => (z - q)⁻¹) '' U) := by
@@ -323,6 +309,31 @@ theorem frontier_image_inv_sub (hq : q ∉ U) (hUb : ¬IsBounded U) :
     simpa [sub_eq_zero] using fun h => hq (interior_subset h)
   rw [frontier, closure_image_inv_sub hUb, interior_image_inv_sub hq,
     insert_sdiff_of_notMem _ hU0, frontier, image_sdiff (f := fun z : 𝕜 => (z - q)⁻¹)
+      (inv_injective.comp (sub_left_injective (b := q)))]
+
+/-- Inverting a set `U` with bounded complement about a point `q` outside its closure, and adding
+`0`, the image of infinity, the frontier of the resulting set is the inverted frontier of `U`. -/
+theorem frontier_insert_zero_image_inv_sub (hq : q ∉ closure U) (hUc : IsBounded Uᶜ) :
+    frontier (insert 0 ((fun z : 𝕜 => (z - q)⁻¹) '' U)) =
+      (fun z : 𝕜 => (z - q)⁻¹) '' frontier U := by
+  have h0 : (0 : 𝕜) ∉ (fun z : 𝕜 => (z - q)⁻¹) '' closure U := by simpa [sub_eq_zero] using hq
+  -- the interior of the completed image is the completed image of the interior: the completed
+  -- image of the interior is open, and away from `0` this is `interior_image_inv_sub`
+  have hint : interior (insert 0 ((fun z : 𝕜 => (z - q)⁻¹) '' U)) =
+      insert 0 ((fun z : 𝕜 => (z - q)⁻¹) '' interior U) := by
+    refine Subset.antisymm (fun w hw => ?_) (interior_maximal
+      (insert_subset_insert (image_mono interior_subset))
+      (isOpen_insert_zero_image_inv_sub isOpen_interior (closure_compl (s := U) ▸ hUc.closure)))
+    rcases eq_or_ne w 0 with rfl | hw0
+    · exact mem_insert _ _
+    have hw' : w ∈ interior (insert 0 ((fun z : 𝕜 => (z - q)⁻¹) '' U) ∩ {0}ᶜ) := by
+      rw [interior_inter, isOpen_compl_singleton.interior_eq]
+      exact ⟨hw, hw0⟩
+    rw [← interior_image_inv_sub fun h => hq (subset_closure h)]
+    refine mem_insert_of_mem _ (interior_mono ?_ hw')
+    exact fun x hx => (mem_insert_iff.mp hx.1).resolve_left hx.2
+  rw [frontier, closure_insert_zero_image_inv_sub, hint, insert_sdiff_of_mem _ (mem_insert _ _),
+    sdiff_insert_of_notMem h0, frontier, image_sdiff (f := fun z : 𝕜 => (z - q)⁻¹)
       (inv_injective.comp (sub_left_injective (b := q)))]
 
 end Completion
