@@ -96,7 +96,7 @@ def mappingPathRightHomotopy :
     refine ((by fun_prop : Continuous fun q : I × MappingPathSpace p ↦
       Λ.toContinuousMap q.2 (σ q.1)).prodMk ?_).subtype_mk _
     apply ContinuousMap.continuous_of_continuous_uncurry
-    exact ((continuous_snd.comp continuous_fst).subtype_val.snd).eval
+    exact ((continuous_snd.comp continuous_fst).subtypeVal.snd).eval
       (Set.Icc.continuous_convexComb_prod.comp
         (((continuous_symm.comp (continuous_fst.comp continuous_fst)).prodMk
           (continuous_const.prodMk continuous_snd))))
@@ -163,7 +163,7 @@ theorem fiberHomotopyEquiv_toFun (b : B) :
     (Λ.fiberHomotopyEquiv b).toFun = MappingPathFiber.ofFiber p b := by
   ext e : 1
   exact Subtype.ext <| (Λ.fiberHomotopyEquiv_apply_val b e).trans <|
-    (congrArg (e.val, ContinuousMap.const I ·) e.2).trans
+    (congrArg (e.val, ContinuousMap.const I ·) e.property).trans
       (MappingPathFiber.ofFiber_val p b e).symm
 
 @[simp]

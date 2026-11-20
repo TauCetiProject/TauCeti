@@ -154,7 +154,7 @@ theorem coord_negativeExtend_of_not_weight_neg (c : {i // φ.weight i < 0} → �
     {i : Fin (Module.finrank ℝ E)} (hi : ¬φ.weight i < 0) : φ.coord (φ.negativeExtend c) i = 0 := by
   simp only [negativeExtend, LinearMap.coe_comp, LinearEquiv.coe_coe, comp_apply,
     LinearEquiv.apply_symm_apply]
-  exact Function.ExtendByZero.linearMap_apply_of_notMem_range ℝ c fun ⟨j, hj⟩ ↦ hi (hj ▸ j.2)
+  exact Function.ExtendByZero.linearMap_apply_of_notMem_range ℝ c fun ⟨j, hj⟩ ↦ hi (hj ▸ j.property)
 
 /-- `negativeExtend` is a right inverse of the coordinates of negative weight. -/
 @[simp]
@@ -203,7 +203,7 @@ theorem negativeCoord_eq_exp_smul_of_coord_eq {s : ℝ} {a b : E}
     φ.negativeCoord a = Real.exp s • φ.negativeCoord b := by
   funext i
   have hi : φ.weight i = -1 :=
-    (φ.weight_eq_neg_one_or_eq_one i).resolve_right ((φ.weight_ne_one_iff i).2 i.2)
+    (φ.weight_eq_neg_one_or_eq_one i).resolve_right ((φ.weight_ne_one_iff i).2 i.property)
   rw [Pi.smul_apply, negativeCoord_apply, negativeCoord_apply, h, smul_eq_mul,
     φ.linearFlow_of_weight_eq_neg_one hi]
 
@@ -368,7 +368,7 @@ theorem exists_stableSet_isManifold (hX : IsAdaptedPseudoGradient f X)
     (Submodule.IsCompl.isTopCompl_of_isClosed hN
       φ.stableSubspace.isClosed_of_finiteDimensional N.isClosed_of_finiteDimensional)
     fun y ↦ ?_
-  obtain ⟨q, hyq, hq, hmem⟩ := hX.exists_stableSet_chart φ hφ y.2
+  obtain ⟨q, hyq, hq, hmem⟩ := hX.exists_stableSet_chart φ hφ y.property
   exact ⟨q, hyq, fun z hz ↦ contMDiffAt_of_mem_maximalAtlas hq hz,
     fun z hz ↦ contMDiffAt_symm_of_mem_maximalAtlas hq hz, hmem⟩
 

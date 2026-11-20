@@ -80,21 +80,21 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable (I M) in
 /-- The **unit codisc bundle** `D*M` of a Riemannian manifold: the covectors of norm at most one. -/
 def codiscBundle : Set (CotangentBundle I M) :=
-  {z | ‖z.2‖ ≤ 1}
+  {z | ‖z.snd‖ ≤ 1}
 
 variable (I M) in
 /-- The **unit cosphere bundle** `S*M` of a Riemannian manifold: the covectors of norm one. Its
 body is exposed because the manifold structure on `S*M` is that of the regular level
 `{z // ‖z.2‖ = 1}`, read through this definition. -/
 @[expose] def cosphereBundle : Set (CotangentBundle I M) :=
-  {z | ‖z.2‖ = 1}
+  {z | ‖z.snd‖ = 1}
 
 @[simp]
-theorem mem_codiscBundle {z : CotangentBundle I M} : z ∈ codiscBundle I M ↔ ‖z.2‖ ≤ 1 :=
+theorem mem_codiscBundle {z : CotangentBundle I M} : z ∈ codiscBundle I M ↔ ‖z.snd‖ ≤ 1 :=
   Iff.rfl
 
 @[simp]
-theorem mem_cosphereBundle {z : CotangentBundle I M} : z ∈ cosphereBundle I M ↔ ‖z.2‖ = 1 :=
+theorem mem_cosphereBundle {z : CotangentBundle I M} : z ∈ cosphereBundle I M ↔ ‖z.snd‖ = 1 :=
   Iff.rfl
 
 theorem cosphereBundle_subset_codiscBundle : cosphereBundle I M ⊆ codiscBundle I M :=
@@ -102,7 +102,7 @@ theorem cosphereBundle_subset_codiscBundle : cosphereBundle I M ⊆ codiscBundle
 
 /-- A covector of the unit cosphere bundle is not zero. -/
 theorem snd_ne_zero_of_mem_cosphereBundle {z : CotangentBundle I M}
-    (hz : z ∈ cosphereBundle I M) : z.2 ≠ 0 := fun h ↦ by
+    (hz : z ∈ cosphereBundle I M) : z.snd ≠ 0 := fun h ↦ by
   rw [mem_cosphereBundle, h, (ContinuousLinearMap.opNorm_zero_iff _).2 rfl] at hz
   exact zero_ne_one hz
 
@@ -157,7 +157,7 @@ variable [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M �
 /-- The norm of covectors is smooth at the points of the unit cosphere bundle. -/
 theorem contMDiffAt_norm_snd_of_mem_cosphereBundle (z : CotangentBundle I M)
     (hz : z ∈ cosphereBundle I M) :
-    ContMDiffAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) ∞ (fun z : CotangentBundle I M ↦ ‖z.2‖) z := by
+    ContMDiffAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) ∞ (fun z : CotangentBundle I M ↦ ‖z.snd‖) z := by
   have : IsManifold I (∞ + 1) M := IsManifold.of_le (n := ∞) (by simp)
   exact contMDiffAt_norm_snd (snd_ne_zero_of_mem_cosphereBundle hz)
 
@@ -190,7 +190,7 @@ differential of the norm of covectors there. -/
 theorem range_mfderiv_coe_cosphereBundle (z : cosphereBundle I M) :
     (mfderiv 𝓘(ℝ, Fin (Module.finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
         (Subtype.val : cosphereBundle I M → CotangentBundle I M) z).range =
-      (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) (fun z : CotangentBundle I M ↦ ‖z.2‖) z).ker :=
+      (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) (fun z : CotangentBundle I M ↦ ‖z.snd‖) z).ker :=
   range_mfderiv_coe_regularLevel _ _ (by rw [Module.finrank_self]) z
 
 end Manifold

@@ -125,11 +125,7 @@ theorem peterssonInnerCosets_zero_left (g : CuspForm (Γ.map (mapGL ℝ)) k) :
 
 omit [Γ.FiniteIndex] in
 private theorem out_one_mem_WithCenter :
-    ((QuotientGroup.mk 1 : SL(2, ℤ) ⧸ Γ.withCenter)).out ∈ Γ.withCenter := by
-  have h : (QuotientGroup.mk
-      ((QuotientGroup.mk 1 : SL(2, ℤ) ⧸ Γ.withCenter)).out : SL(2, ℤ) ⧸ Γ.withCenter) =
-      QuotientGroup.mk 1 := Quotient.out_eq _
-  simpa using (Γ.withCenter).inv_mem (QuotientGroup.eq.mp h)
+    ((QuotientGroup.mk 1 : SL(2, ℤ) ⧸ Γ.withCenter)).out ∈ Γ.withCenter := by simp
 
 omit [Γ.FiniteIndex] in
 /-- **Slashing by `Γ·{±I}` scales every form by one and the same unimodular constant**: by `1`
@@ -337,7 +333,7 @@ theorem peterssonInnerCosets_restrict_restrict {Γ' : Subgroup SL(2, ℤ)} [Γ'.
           (QuotientGroup.mk (p.out * (γ : SL(2, ℤ))) : SL(2, ℤ) ⧸ Γ'.withCenter) := rfl
       rw [hsymm, peterssonInner_slash_inv_out, CuspForm.coe_restrict, CuspForm.coe_restrict,
         mul_inv_rev, SlashAction.slash_mul, SlashAction.slash_mul,
-        peterssonInner_slash_slash_of_mem_withCenter f g (Γ.withCenter.inv_mem γ.2)]
+        peterssonInner_slash_slash_of_mem_withCenter f g (Γ.withCenter.inv_mem γ.property)]
   rw [peterssonInnerCosets_def, peterssonInnerCosets_def,
     ← (Subgroup.quotientEquivProdOfLE hwc).symm.sum_comp, Fintype.sum_prod_type]
   simp only [key, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← Finset.mul_sum]

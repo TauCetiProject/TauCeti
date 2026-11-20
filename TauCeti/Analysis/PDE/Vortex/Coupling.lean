@@ -84,9 +84,9 @@ theorem dilateField_mem_framedVortexSubMulAction_iff (ht : 0 < t)
 coupling `c'`, with inverse the pullback by `z ↦ t⁻¹ • z`. -/
 def framedVortexDilate (ht : 0 < t) (h : t ^ 2 * c = c') (m : ℕ) :
     framedVortexSubMulAction c m ≃ framedVortexSubMulAction c' m where
-  toFun x := ⟨dilateField t x, h ▸ dilateField_mem_framedVortexSubMulAction ht x.2⟩
+  toFun x := ⟨dilateField t x, h ▸ dilateField_mem_framedVortexSubMulAction ht x.property⟩
   invFun y := ⟨dilateField t⁻¹ y, by
-    convert dilateField_mem_framedVortexSubMulAction (inv_pos.2 ht) y.2 using 2
+    convert dilateField_mem_framedVortexSubMulAction (inv_pos.2 ht) y.property using 2
     rw [← h]
     field_simp⟩
   left_inv x := by
@@ -189,8 +189,8 @@ private theorem sym_map_sqrt_mul_injective (hc : 0 < c) :
 private theorem framedVortexDivisor_eq_framedVortexDivisor_iff_of_one
     {x y : framedVortexSubMulAction 1 m} :
     framedVortexDivisor x = framedVortexDivisor y ↔ ∃ u : framedGaugeGroup, u • y = x := by
-  obtain ⟨hx, hxsol, hxfr⟩ := mem_framedVortexSubMulAction.1 x.2
-  obtain ⟨hy, hysol, hyfr⟩ := mem_framedVortexSubMulAction.1 y.2
+  obtain ⟨hx, hxsol, hxfr⟩ := mem_framedVortexSubMulAction.1 x.property
+  obtain ⟨hy, hysol, hyfr⟩ := mem_framedVortexSubMulAction.1 y.property
   simp only [coupledEquation_one] at hxsol hysol
   rw [← Sym.coe_inj, ← exists_framedGaugeGroup_smul_eq_iff hx hy hxsol hysol
     (tendsto_norm_inv_phase m) hxfr hyfr (isZeroMultiplicity_sectionValue_framedVortexDivisor x)

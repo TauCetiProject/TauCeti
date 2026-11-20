@@ -162,7 +162,7 @@ theorem blockHomogenize_smul {T : Type*} [SMulZeroClass T R] (c : T) (f : MvPoly
   ext u
   obtain ⟨a, e, rfl⟩ : ∃ a e, u = Finsupp.sumElim a e :=
     ⟨_, _, (comapDomain_sumElim_comapDomain u).symm⟩
-  simp only [coeff_smul, coeff_sumElim_blockHomogenize]
+  simp only [AddMonoidAlgebra.coeff_smul_apply, coeff_sumElim_blockHomogenize]
   split_ifs <;> simp
 
 theorem blockHomogenize_finsetSum {ι : Type*} (s : Finset ι) (f : ι → MvPolynomial S R) :

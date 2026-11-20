@@ -80,16 +80,16 @@ theorem addConvolutionExists_of_memℓp [CompleteSpace F] (L : E →L[𝕜] E' �
   obtain ⟨C, hC⟩ := memℓp_infty_iff.1 hf
   have hg' : Summable fun y ↦ ‖g y‖ := by simpa using (memℓp_gen_iff (by simp)).1 hg
   -- The second coordinate is injective on the fibre at `x`.
-  have hinj : Function.Injective fun ab : addFiber x ↦ ab.1.2 := fun ab ab' h ↦ by
-    have h₁ := mem_addFiber.1 ab.2
-    have h₂ := mem_addFiber.1 ab'.2
-    have h' : ab.1.2 = ab'.1.2 := h
-    refine Subtype.ext <| Prod.ext (add_right_cancel (b := ab.1.2) ?_) h
+  have hinj : Function.Injective fun ab : addFiber x ↦ ab.val.2 := fun ab ab' h ↦ by
+    have h₁ := mem_addFiber.1 ab.property
+    have h₂ := mem_addFiber.1 ab'.property
+    have h' : ab.val.2 = ab'.val.2 := h
+    refine Subtype.ext <| Prod.ext (add_right_cancel (b := ab.val.2) ?_) h
     rw [h₁, h', h₂]
   refine Summable.of_norm_bounded ((hg'.comp_injective hinj).mul_left (‖L‖ * C)) fun ab ↦ ?_
-  calc ‖L.toLinearMap₁₂ (f ab.1.1) (g ab.1.2)‖ ≤ ‖L‖ * ‖f ab.1.1‖ * ‖g ab.1.2‖ :=
+  calc ‖L.toLinearMap₁₂ (f ab.val.1) (g ab.val.2)‖ ≤ ‖L‖ * ‖f ab.val.1‖ * ‖g ab.val.2‖ :=
         L.le_opNorm₂ _ _
-    _ ≤ ‖L‖ * C * ‖g ab.1.2‖ := by
+    _ ≤ ‖L‖ * C * ‖g ab.val.2‖ := by
         gcongr
         exact hC ⟨_, rfl⟩
 
@@ -303,7 +303,7 @@ private theorem addConvolutionExists_of_summable_sq_one_add_abs_rpow_mul_norm [C
   unfold AddConvolutionExistsAt
   refine Summable.of_norm <| tsum_eNorm_ne_top_iff_summable_norm.1 <| ne_top_of_le_ne_top
     (ENNReal.mul_ne_top (eNorm_ne_top (x := L)) (ENNReal.mul_ne_top ha' hb')) ?_
-  calc ∑' ab : addFiber x, ‖L.toLinearMap₁₂ (a ab.1.1) (b ab.1.2)‖ₑ
+  calc ∑' ab : addFiber x, ‖L.toLinearMap₁₂ (a ab.val.1) (b ab.val.2)‖ₑ
       ≤ ∑' p : ℤ × ℤ, ‖L.toLinearMap₁₂ (a p.1) (b p.2)‖ₑ :=
         _root_.tsum_comp_le_tsum_of_injective Subtype.val_injective
           fun p : ℤ × ℤ ↦ ‖L.toLinearMap₁₂ (a p.1) (b p.2)‖ₑ

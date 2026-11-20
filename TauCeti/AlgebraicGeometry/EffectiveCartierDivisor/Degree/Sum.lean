@@ -97,13 +97,13 @@ theorem IsEffectiveCartier.exists_map_ker_inclusion_appTop_eq_span_singleton_and
   -- Choose an affine chart `U` around `z` on which `I = (α)`; its preimage `V` in `Z` is an affine
   -- open with sections `Γ(Y, U) ⧸ (α) J(U)`, and the stalk at `z` is a localization of them.
   obtain ⟨U, hzU, α, hα, hIα⟩ := (isEffectiveCartier_iff I).mp hI ((I * J).subschemeι z)
-  have hV : IsAffineOpen ((I * J).subschemeι ⁻¹ᵁ U.1) := U.2.preimage _
-  let _ : Algebra Γ((I * J).subscheme, (I * J).subschemeι ⁻¹ᵁ U.1)
+  have hV : IsAffineOpen ((I * J).subschemeι ⁻¹ᵁ U.val) := U.property.preimage _
+  let _ : Algebra Γ((I * J).subscheme, (I * J).subschemeι ⁻¹ᵁ U.val)
       ((I * J).subscheme.presheaf.stalk z) :=
     TopCat.Presheaf.algebra_section_stalk _ ⟨z, hzU⟩
   have := hV.isLocalization_stalk ⟨z, hzU⟩
   have hgerm : ((I * J).subscheme.presheaf.germ ⊤ z trivial).hom =
-      (algebraMap Γ((I * J).subscheme, (I * J).subschemeι ⁻¹ᵁ U.1)
+      (algebraMap Γ((I * J).subscheme, (I * J).subschemeι ⁻¹ᵁ U.val)
         ((I * J).subscheme.presheaf.stalk z)).comp
         ((I * J).subscheme.presheaf.map (homOfLE le_top).op).hom :=
     (congrArg CommRingCat.Hom.hom
@@ -112,7 +112,7 @@ theorem IsEffectiveCartier.exists_map_ker_inclusion_appTop_eq_span_singleton_and
   have hres {I' : Y.IdealSheafData} (h : I * J ≤ I') :
       (RingHom.ker (inclusion h).appTop.hom).map
         ((I * J).subscheme.presheaf.map (homOfLE le_top).op).hom =
-      RingHom.ker ((inclusion h).app ((I * J).subschemeι ⁻¹ᵁ U.1)).hom := by
+      RingHom.ker ((inclusion h).app ((I * J).subschemeι ⁻¹ᵁ U.val)).hom := by
     have := (inclusion h).ker.map_ideal' (U := ⟨_, hV⟩)
       (V := ⟨⊤, isAffineOpen_top _⟩) (homOfLE le_top).op
     rwa [Scheme.Hom.ker_apply, Scheme.Hom.ker_apply] at this
@@ -285,8 +285,8 @@ lemma mul_mem_relativeEffectiveCartierDegreeSubfunctor_obj {d e : ℕ} {T : (Ove
     (hD : D ∈ (relativeEffectiveCartierDegreeSubfunctor f d).obj T)
     (hE : E ∈ (relativeEffectiveCartierDegreeSubfunctor f e).obj T) :
     D * E ∈ (relativeEffectiveCartierDegreeSubfunctor f (d + e)).obj T := by
-  have hrelD := (mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp D.2
-  have hrelE := (mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp E.2
+  have hrelD := (mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp D.property
+  have hrelE := (mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp E.property
   have hrel := TauCeti.isRelativeEffectiveCartier_mul hrelD hrelE
   have := hrel.isFinite
   rw [mem_relativeEffectiveCartierDegreeSubfunctor_obj_iff] at hD hE ⊢
@@ -301,7 +301,7 @@ lemma one_mem_relativeEffectiveCartierDegreeSubfunctor_zero_obj (T : (Over S)ᵒ
     (1 : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T) ∈
       (relativeEffectiveCartierDegreeSubfunctor f 0).obj T := by
   have hrel := (mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp
-    (1 : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T).2
+    (1 : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T).property
   have := hrel.flat
   have := hrel.isFinite
   rw [mem_relativeEffectiveCartierDegreeSubfunctor_obj_iff]

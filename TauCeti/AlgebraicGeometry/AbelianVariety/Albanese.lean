@@ -143,7 +143,7 @@ noncomputable def homEquiv (A : AbelianVariety K) :
   Equiv.ofBijective (fun φ ↦ ⟨a ≫ toOverHom φ, comp_toOverHom_eq_one h.comp_eq_one φ⟩)
     ⟨fun _ ψ e ↦ (h.existsUnique_fac A _ (comp_toOverHom_eq_one h.comp_eq_one ψ)).unique
         (congrArg Subtype.val e) rfl,
-      fun f ↦ (h.existsUnique_fac A f.1 f.2).exists.imp fun _ hφ ↦ Subtype.ext hφ⟩
+      fun f ↦ (h.existsUnique_fac A f.val f.property).exists.imp fun _ hφ ↦ Subtype.ext hφ⟩
 
 /-- `homEquiv` sends a homomorphism `φ : J ⟶ A` to the pointed morphism `a ≫ φ`. -/
 @[simp]
@@ -160,7 +160,7 @@ noncomputable def lift {A : AbelianVariety K} (f : X ⟶ A.toOver) (hf : x₀ �
 @[simp]
 lemma homEquiv_symm_apply {A : AbelianVariety K}
     (f : {f : X ⟶ A.toOver // x₀ ≫ f = η[A.toOver]}) :
-    (h.homEquiv A).symm f = h.lift f.1 f.2 :=
+    (h.homEquiv A).symm f = h.lift f.val f.property :=
   (rfl)
 
 /-- The homomorphism `lift f` factors `f` through the Albanese morphism. -/

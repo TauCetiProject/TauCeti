@@ -107,7 +107,7 @@ theorem vanishingIdeal_le_ker_of_range_subset {Y : Scheme.{u}} [IsReduced Y] (f 
   refine le_ofIdeals_iff.mpr fun U s hs ↦ RingHom.mem_ker.mpr (eq_zero_of_basicOpen_eq_bot _ ?_)
   rw [← Scheme.preimage_basicOpen, eq_bot_iff]
   rintro y hy
-  have hZ : f y ∈ X.zeroLocus (U := U.1) ((vanishingIdeal Z).ideal U) :=
+  have hZ : f y ∈ X.zeroLocus (U := U.val) ((vanishingIdeal Z).ideal U) :=
     (mem_support_iff_of_mem (X.basicOpen_le s hy)).mp <| by
       rw [← SetLike.mem_coe, coe_support_vanishingIdeal]
       exact h ⟨y, rfl⟩
@@ -166,7 +166,7 @@ theorem _root_.AlgebraicGeometry.Scheme.isOpenImmersion_of_comp_nilradical_subsc
 `vanishingIdeal (j ⁻¹' Z)`. -/
 theorem comap_vanishingIdeal_of_isOpenImmersion {U : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j]
     (Z : Closeds X) :
-    (vanishingIdeal Z).comap j = vanishingIdeal ⟨j ⁻¹' Z, Z.2.preimage j.continuous⟩ := by
+    (vanishingIdeal Z).comap j = vanishingIdeal ⟨j ⁻¹' Z, Z.isClosed'.preimage j.continuous⟩ := by
   have hrad : ((vanishingIdeal Z).comap j).radical = (vanishingIdeal Z).comap j :=
     IdealSheafData.ext (funext fun W ↦ by
       rw [radical_ideal, ideal_comap_of_isOpenImmersion]

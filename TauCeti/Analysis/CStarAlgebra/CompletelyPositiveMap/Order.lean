@@ -115,7 +115,7 @@ noncomputable instance instSMulNNReal : SMul ℝ≥0 (A₁ →CP A₂) where
   smul c φ := ⟨c • φ.toLinearMap, fun _ M hM => by
     refine CStarMatrix.nonneg_iff_forall_sum_nonneg.mpr fun x => ?_
     simpa [NNReal.smul_def, Finset.smul_sum, mul_smul_comm, smul_mul_assoc] using
-      smul_nonneg c.2 (CStarMatrix.nonneg_iff_forall_sum_nonneg.mp
+      smul_nonneg c.property (CStarMatrix.nonneg_iff_forall_sum_nonneg.mp
         (φ.map_cstarMatrix_nonneg M hM) x)⟩
 
 @[simp] theorem toLinearMap_smul (c : ℝ≥0) (φ : A₁ →CP A₂) :

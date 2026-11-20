@@ -249,7 +249,7 @@ This is Mathlib's `MeasureTheory.measurePreserving_piEquivPiSubtypeProd` for the
 theorem measurePreserving_piSplitAt (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)] (i₀ : ι) :
     MeasurePreserving (Equiv.piSplitAt i₀ α)
       (Measure.pi μ) ((μ i₀).prod (Measure.pi fun j : {i // i ≠ i₀} => μ j)) := by
-  let _ : Unique {i : ι // i = i₀} := ⟨⟨⟨i₀, rfl⟩⟩, fun x => Subtype.ext x.2⟩
+  let _ : Unique {i : ι // i = i₀} := ⟨⟨⟨i₀, rfl⟩⟩, fun x => Subtype.ext x.property⟩
   let _ : Fintype {i : ι // i = i₀} := Subtype.fintype _
   -- Composing the split at `(· = i₀)` with the collapse of its one-element factor evaluates,
   -- coordinate by coordinate, to the pair above.  The application lemmas below reduce both

@@ -83,23 +83,23 @@ lemma IsEffective.mem_idealSheaf_sections_iff (hD : D.IsEffective) (U : X.Opens)
 lemma IsEffective.mem_idealSheaf_ideal_iff (hD : D.IsEffective) (U : X.affineOpens)
     (a : Γ(X, U)) :
     a ∈ hD.idealSheaf.ideal U ↔
-      (Scheme.toRationalFunctions X).app U.1 a ∈ (-D).sections U.1 :=
+      (Scheme.toRationalFunctions X).app U.val a ∈ (-D).sections U.val :=
   (congrArg (a ∈ ·) (hD.idealSheaf.sections_eq_ideal U)).to_iff.symm.trans
-    (hD.mem_idealSheaf_sections_iff U.1 a)
+    (hD.mem_idealSheaf_sections_iff U.val a)
 
 /-- On an affine open carrying a regular equation `a` of `D`, the ideal of the
 closed subscheme is exactly `(a)`. -/
 lemma IsEffective.idealSheaf_ideal_eq_span (hD : D.IsEffective) (U : X.affineOpens)
-    [Nonempty U.1] {f : X.functionFieldˣ}
-    (hf : Scheme.rationalUnitClass X U.1 (Additive.ofMul f) = D |_ U.1)
-    {a : Γ(X, U)} (ha : X.germToFunctionField U.1 a = f) :
+    [Nonempty U.val] {f : X.functionFieldˣ}
+    (hf : Scheme.rationalUnitClass X U.val (Additive.ofMul f) = D |_ U.val)
+    {a : Γ(X, U)} (ha : X.germToFunctionField U.val a = f) :
     hD.idealSheaf.ideal U = Ideal.span {a} := by
   ext s
   rw [hD.mem_idealSheaf_ideal_iff,
     mem_sections_iff_of_rationalUnitClass_eq le_rfl (rationalUnitClass_inv_eq_neg_of_eq hf),
     Scheme.rationalFunctionsEquiv_toRationalFunctions_app, Ideal.mem_span_singleton']
   refine exists_congr fun b ↦ ?_
-  rw [← (X.germToFunctionField_injective U.1).eq_iff, map_mul, ha]
+  rw [← (X.germToFunctionField_injective U.val).eq_iff, map_mul, ha]
   exact ⟨fun h ↦ by rw [h]; simp [mul_comm],
     fun h ↦ by rw [← h]; simp [mul_comm]⟩
 
@@ -112,7 +112,7 @@ lemma IsEffective.idealSheaf_zero (h : (0 : CartierDivisor X).IsEffective) :
   apply eq_top_iff.mpr
   intro a _
   apply (h.mem_idealSheaf_ideal_iff U a).mpr
-  simpa using (isEffective_iff_toRationalFunctions_mem_sections.mp isEffective_zero U.1 a)
+  simpa using (isEffective_iff_toRationalFunctions_mem_sections.mp isEffective_zero U.val a)
 
 /-- The ideal obtained from rational local equations is an effective Cartier ideal sheaf. -/
 theorem IsEffective.isEffectiveCartier_idealSheaf (hD : D.IsEffective) :
@@ -139,20 +139,20 @@ variable {I J : X.IdealSheafData}
 
 /-- Two Cartier divisors that agree on an affine open cover of `X` are equal. -/
 private lemma eq_of_locally_eq_affine {D₁ D₂ : CartierDivisor X}
-    (h : ∀ x : X, ∃ U : X.affineOpens, x ∈ U.1 ∧ D₁ |_ U.1 = D₂ |_ U.1) : D₁ = D₂ := by
+    (h : ∀ x : X, ∃ U : X.affineOpens, x ∈ U.val ∧ D₁ |_ U.val = D₂ |_ U.val) : D₁ = D₂ := by
   choose U hxU hU using h
-  refine (Scheme.cartierDivisorSheaf X).eq_of_locally_eq' (fun x ↦ (U x).1) ⊤
+  refine (Scheme.cartierDivisorSheaf X).eq_of_locally_eq' (fun x ↦ (U x).val) ⊤
     (fun _ ↦ homOfLE le_top) (fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hxU x⟩) _ _ fun x ↦ ?_
   simpa only [TopCat.Presheaf.restrictOpen, TopCat.Presheaf.restrict] using hU x
 
 /-- If `I` is generated on affine opens `U` and `V` by regular sections `a` and `b`, then on any
 nonempty `W ≤ U ⊓ V` their images in the function field have the same Cartier-divisor class. -/
 private lemma rationalUnitClass_eq_of_ideal_eq_span {U V : X.affineOpens} {W : X.Opens}
-    [Nonempty U.1] [Nonempty V.1] [Nonempty W] (hWU : W ≤ U.1) (hWV : W ≤ V.1)
+    [Nonempty U.val] [Nonempty V.val] [Nonempty W] (hWU : W ≤ U.val) (hWV : W ≤ V.val)
     {a : Γ(X, U)} {b : Γ(X, V)} (ha : IsSMulRegular Γ(X, U) a) (hb : IsSMulRegular Γ(X, V) b)
     (hIa : I.ideal U = Ideal.span {a}) (hIb : I.ideal V = Ideal.span {b})
-    (fa fb : X.functionFieldˣ) (hfa : X.germToFunctionField U.1 a = fa)
-    (hfb : X.germToFunctionField V.1 b = fb) :
+    (fa fb : X.functionFieldˣ) (hfa : X.germToFunctionField U.val a = fa)
+    (hfb : X.germToFunctionField V.val b = fb) :
     Scheme.rationalUnitClass X W (Additive.ofMul fa) =
       Scheme.rationalUnitClass X W (Additive.ofMul fb) := by
   obtain ⟨u, hu⟩ := I.exists_mul_eq_of_ideal_eq_span ha hIa hWU
@@ -181,38 +181,38 @@ integral scheme, an effective Cartier ideal sheaf `I` determines a unique Cartie
 restricting on every affine open `U` with `I(U) = (a)` (regular `a`) to the rational class of `a`.
 -/
 theorem existsUnique_ofEffectiveCartier (hI : I.IsEffectiveCartier) :
-    ∃! D : CartierDivisor X, ∀ (U : X.affineOpens) [Nonempty U.1] (a : Γ(X, U))
+    ∃! D : CartierDivisor X, ∀ (U : X.affineOpens) [Nonempty U.val] (a : Γ(X, U))
       (f : X.functionFieldˣ), IsSMulRegular Γ(X, U) a → I.ideal U = Ideal.span {a} →
-        X.germToFunctionField U.1 a = f →
-          D |_ U.1 = Scheme.rationalUnitClass X U.1 (Additive.ofMul f) := by
+        X.germToFunctionField U.val a = f →
+          D |_ U.val = Scheme.rationalUnitClass X U.val (Additive.ofMul f) := by
   choose U hxU a ha hIa using (Scheme.IdealSheafData.isEffectiveCartier_iff I).mp hI
-  have hne (x : X) : Nonempty (U x).1 := ⟨⟨x, hxU x⟩⟩
+  have hne (x : X) : Nonempty (U x).val := ⟨⟨x, hxU x⟩⟩
   let f (x : X) : X.functionFieldˣ := letI := hne x
-    Units.mk0 (X.germToFunctionField (U x).1 (a x))
+    Units.mk0 (X.germToFunctionField (U x).val (a x))
       (Scheme.isSMulRegular_iff_germToFunctionField_ne_zero.mp (ha x))
   have hcompat : TopCat.Presheaf.IsCompatible (Scheme.cartierDivisorSheaf X).obj
-      (fun x ↦ (U x).1) fun x ↦
-        letI := hne x; Scheme.rationalUnitClass X (U x).1 (Additive.ofMul (f x)) := fun x y ↦ by
+      (fun x ↦ (U x).val) fun x ↦
+        letI := hne x; Scheme.rationalUnitClass X (U x).val (Additive.ofMul (f x)) := fun x y ↦ by
     have := hne x; have := hne y
-    have : Nonempty ((U x).1 ⊓ (U y).1 : X.Opens) :=
+    have : Nonempty ((U x).val ⊓ (U y).val : X.Opens) :=
       ⟨⟨genericPoint X, Scheme.genericPoint_mem _, Scheme.genericPoint_mem _⟩⟩
     exact (Scheme.rationalUnitClass_restrict X inf_le_left _).trans
       ((rationalUnitClass_eq_of_ideal_eq_span inf_le_left inf_le_right (ha x) (ha y)
         (hIa x) (hIa y) (f x) (f y) rfl rfl).trans
         (Scheme.rationalUnitClass_restrict X inf_le_right _).symm)
-  obtain ⟨D, hD, -⟩ := (Scheme.cartierDivisorSheaf X).existsUnique_gluing' (fun x ↦ (U x).1) ⊤
+  obtain ⟨D, hD, -⟩ := (Scheme.cartierDivisorSheaf X).existsUnique_gluing' (fun x ↦ (U x).val) ⊤
     (fun _ ↦ homOfLE le_top) (fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hxU x⟩) _ hcompat
   refine ⟨D, fun V hV b g hb hIb hbg ↦ ?_, fun D' hD' ↦ eq_of_locally_eq_affine fun x ↦
       ⟨U x, hxU x, letI := hne x; (hD' (U x) (a x) (f x) (ha x) (hIa x) rfl).trans (hD x).symm⟩⟩
-  refine (Scheme.cartierDivisorSheaf X).eq_of_locally_eq' (fun x : X ↦ (U x).1 ⊓ V.1) V.1
+  refine (Scheme.cartierDivisorSheaf X).eq_of_locally_eq' (fun x : X ↦ (U x).val ⊓ V.val) V.val
     (fun _ ↦ homOfLE inf_le_right) (fun x hx ↦ Opens.mem_iSup.mpr ⟨x, hxU x, hx⟩) _ _ fun x ↦ ?_
   have := hne x
-  let W : X.Opens := (U x).1 ⊓ V.1
+  let W : X.Opens := (U x).val ⊓ V.val
   have : Nonempty W := ⟨⟨genericPoint X, Scheme.genericPoint_mem _, Scheme.genericPoint_mem _⟩⟩
-  have hDx : D |_ (U x).1 = Scheme.rationalUnitClass X (U x).1 (Additive.ofMul (f x)) := hD x
-  have hres : (D |_ V.1) |_ W = (Scheme.rationalUnitClass X V.1 (Additive.ofMul g)) |_ W := by
-    rw [TopCat.Presheaf.restrict_restrict (inf_le_right : W ≤ V.1) le_top D,
-      ← TopCat.Presheaf.restrict_restrict (inf_le_left : W ≤ (U x).1) le_top D, hDx,
+  have hDx : D |_ (U x).val = Scheme.rationalUnitClass X (U x).val (Additive.ofMul (f x)) := hD x
+  have hres : (D |_ V.val) |_ W = (Scheme.rationalUnitClass X V.val (Additive.ofMul g)) |_ W := by
+    rw [TopCat.Presheaf.restrict_restrict (inf_le_right : W ≤ V.val) le_top D,
+      ← TopCat.Presheaf.restrict_restrict (inf_le_left : W ≤ (U x).val) le_top D, hDx,
       Scheme.rationalUnitClass_restrict X inf_le_left,
       Scheme.rationalUnitClass_restrict X inf_le_right]
     exact rationalUnitClass_eq_of_ideal_eq_span inf_le_left inf_le_right (ha x) hb (hIa x) hIb
@@ -225,18 +225,18 @@ def ofEffectiveCartier (hI : I.IsEffectiveCartier) : CartierDivisor X :=
 
 /-- Over an affine open `U` where `I(U) = (a)` with `a` regular, `ofEffectiveCartier hI` restricts
 to the class of `a`. -/
-theorem ofEffectiveCartier_restrict (hI : I.IsEffectiveCartier) (U : X.affineOpens) [Nonempty U.1]
+theorem ofEffectiveCartier_restrict (hI : I.IsEffectiveCartier) (U : X.affineOpens) [Nonempty U.val]
     {a : Γ(X, U)} {f : X.functionFieldˣ} (ha : IsSMulRegular Γ(X, U) a)
-    (hIa : I.ideal U = Ideal.span {a}) (hf : X.germToFunctionField U.1 a = f) :
-    ofEffectiveCartier hI |_ U.1 = Scheme.rationalUnitClass X U.1 (Additive.ofMul f) :=
+    (hIa : I.ideal U = Ideal.span {a}) (hf : X.germToFunctionField U.val a = f) :
+    ofEffectiveCartier hI |_ U.val = Scheme.rationalUnitClass X U.val (Additive.ofMul f) :=
   (existsUnique_ofEffectiveCartier hI).choose_spec.1 U a f ha hIa hf
 
 /-- The Cartier divisor of an effective Cartier ideal sheaf is effective. -/
 theorem isEffective_ofEffectiveCartier (hI : I.IsEffectiveCartier) :
     (ofEffectiveCartier hI).IsEffective := isEffective_iff_exists.mpr fun x ↦ by
   obtain ⟨U, hxU, a, ha, hIa⟩ := (Scheme.IdealSheafData.isEffectiveCartier_iff I).mp hI x
-  have : Nonempty U.1 := ⟨⟨x, hxU⟩⟩
-  let f := Units.mk0 (X.germToFunctionField U.1 a)
+  have : Nonempty U.val := ⟨⟨x, hxU⟩⟩
+  let f := Units.mk0 (X.germToFunctionField U.val a)
     (Scheme.isSMulRegular_iff_germToFunctionField_ne_zero.mp ha)
   refine ⟨f, isLocalEquationAt_of_rationalUnitClass_eq
     (ofEffectiveCartier_restrict hI U ha hIa rfl).symm hxU, ?_⟩
@@ -250,8 +250,8 @@ theorem idealSheaf_isEffective_ofEffectiveCartier (hI : I.IsEffectiveCartier) :
   choose U hxU a ha hIa using (Scheme.IdealSheafData.isEffectiveCartier_iff I).mp hI
   refine Scheme.IdealSheafData.ext_of_iSup_eq_top U
     (eq_top_iff.mpr fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hxU x⟩) fun x ↦ ?_
-  have : Nonempty (U x).1 := ⟨⟨x, hxU x⟩⟩
-  let f := Units.mk0 (X.germToFunctionField (U x).1 (a x))
+  have : Nonempty (U x).val := ⟨⟨x, hxU x⟩⟩
+  let f := Units.mk0 (X.germToFunctionField (U x).val (a x))
     (Scheme.isSMulRegular_iff_germToFunctionField_ne_zero.mp (ha x))
   exact ((isEffective_ofEffectiveCartier hI).idealSheaf_ideal_eq_span (U x)
     (ofEffectiveCartier_restrict hI (U x) (ha x) (hIa x) (f := f) rfl).symm
@@ -309,18 +309,18 @@ theorem ofEffectiveCartier_mul (hI : I.IsEffectiveCartier) (hJ : J.IsEffectiveCa
     ofEffectiveCartier (TauCeti.isEffectiveCartier_mul hI hJ) =
       ofEffectiveCartier hI + ofEffectiveCartier hJ := eq_of_locally_eq_affine fun x ↦ by
   obtain ⟨U, hxU, a, ha, hIa⟩ := (Scheme.IdealSheafData.isEffectiveCartier_iff I).mp hI x
-  obtain ⟨V, hVU, hxV, b, hb, hJb⟩ := hJ.exists_eq_span_singleton_le U.1 hxU
-  have : Nonempty V.1 := ⟨⟨x, hxV⟩⟩
+  obtain ⟨V, hVU, hxV, b, hb, hJb⟩ := hJ.exists_eq_span_singleton_le U.val hxU
+  have : Nonempty V.val := ⟨⟨x, hxV⟩⟩
   set a' : Γ(X, V) := (X.presheaf.map (homOfLE hVU).op).hom a
-  have ha' : IsSMulRegular Γ(X, V) a' := U.2.isSMulRegular_map hVU ha
+  have ha' : IsSMulRegular Γ(X, V) a' := U.property.isSMulRegular_map hVU ha
   have hIa' : I.ideal V = Ideal.span {a'} := by
     rw [← I.map_ideal' (homOfLE hVU).op, hIa, Ideal.map_span, Set.image_singleton]
   have hIJa'b : (I * J).ideal V = Ideal.span {a' * b} := by
     simp only [Scheme.IdealSheafData.ideal_mul, Pi.mul_apply, hIa', hJb,
       Ideal.span_singleton_mul_span_singleton]
-  let fa := Units.mk0 (X.germToFunctionField V.1 a')
+  let fa := Units.mk0 (X.germToFunctionField V.val a')
     (Scheme.isSMulRegular_iff_germToFunctionField_ne_zero.mp ha')
-  let fb := Units.mk0 (X.germToFunctionField V.1 b)
+  let fb := Units.mk0 (X.germToFunctionField V.val b)
     (Scheme.isSMulRegular_iff_germToFunctionField_ne_zero.mp hb)
   refine ⟨V, hxV, ?_⟩
   rw [ofEffectiveCartier_restrict _ V (ha'.mul hb) hIJa'b (f := fa * fb) (by simp [fa, fb]),
@@ -344,7 +344,7 @@ theorem ofEffectiveCartier_pow (hI : I.IsEffectiveCartier) (n : ℕ) :
 theorem ofEffectiveCartier_prod {ι : Type*} (s : Finset ι) {I : ι → X.IdealSheafData}
     (hI : ∀ i ∈ s, (I i).IsEffectiveCartier) :
     ofEffectiveCartier (TauCeti.isEffectiveCartier_prod hI) =
-      ∑ i ∈ s.attach, ofEffectiveCartier (hI i i.2) := by
+      ∑ i ∈ s.attach, ofEffectiveCartier (hI i i.property) := by
   classical
   induction s using Finset.induction_on with
   | empty =>

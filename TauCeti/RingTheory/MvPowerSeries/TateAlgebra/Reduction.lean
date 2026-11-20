@@ -51,7 +51,7 @@ private theorem finite_support_mk_coeff (J : Ideal R) (hJ : IsOpen (J : Set R)) 
     (Function.support fun t ↦ Ideal.Quotient.mk J (coeff t (f : MvPowerSeries σ R))).Finite := by
   obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hJ 0 J.zero_mem
   have hfin : {t | ε ≤ ‖coeff t (f : MvPowerSeries σ R)‖}.Finite := by
-    simpa [eventually_cofinite, not_lt] using f.2.eventually (gt_mem_nhds hε)
+    simpa [eventually_cofinite, not_lt] using f.property.eventually (gt_mem_nhds hε)
   exact hfin.subset fun t ht ↦ not_lt.mp fun hlt ↦
     (Ideal.Quotient.eq_zero_iff_mem.not.mp ht) (hball (by simpa [dist_zero_right] using hlt))
 

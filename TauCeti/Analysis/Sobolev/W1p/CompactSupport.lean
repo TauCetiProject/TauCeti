@@ -345,7 +345,7 @@ theorem W1p.exists_top_value_gradient_ae_eq_on_of_isCompact (hp : p ≠ (∞ : E
   have hval := W1p.value_extendByZeroL_contDiffSMul_ae le_top hchi hM0 hchiM hchigradM u hw0
   have hgrad := W1p.gradient_extendByZeroL_contDiffSMul_ae le_top hchi hM0 hchiM hchigradM u hw0
   simp only [Opens.coe_top, Measure.restrict_univ] at hval hgrad
-  refine ⟨(W1p0.extendByZeroL (p := p) (Omega := Omega) le_top ⟨_, hw0⟩).1, ?_, ?_⟩
+  refine ⟨(W1p0.extendByZeroL (p := p) (Omega := Omega) le_top ⟨_, hw0⟩).val, ?_, ?_⟩
   · filter_upwards [hval] with x hx hxS
     rw [hx, indicator_of_mem (hSO hxS), (hchi_S x hxS).1, one_mul]
   · filter_upwards [hgrad] with x hx hxS

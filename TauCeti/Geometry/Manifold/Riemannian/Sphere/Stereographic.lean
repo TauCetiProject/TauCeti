@@ -150,7 +150,8 @@ theorem inner_mfderiv_stereographic'_symm (v : sphere (0 : E) 1)
       ContinuousLinearEquiv.coe_coe, Submodule.subtypeL_apply]
     rfl
   rw [inner_tangentSpace_sphere, hd a, hd b,
-    inner_fderiv_stereoInvFunAux (norm_eq_of_mem_sphere v) (U.symm y).2 (U.symm a).2 (U.symm b).2,
+    inner_fderiv_stereoInvFunAux (norm_eq_of_mem_sphere v) (U.symm y).property (U.symm a).property
+        (U.symm b).property,
     Submodule.norm_coe, LinearIsometryEquiv.norm_map, ← Submodule.coe_inner,
     LinearIsometryEquiv.inner_map_map]
 

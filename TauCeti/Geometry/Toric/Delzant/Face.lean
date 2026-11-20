@@ -366,8 +366,8 @@ theorem finrank_vectorSpan_facetFace_add_ncard [Finite ι] (hi : IsIntegralLatti
     refine ⟨(hvs.edgeBasis hi).equivFun.symm fun k ↦ if h : (k : ι) ∈ s then f ⟨k, h⟩ else 0,
       funext fun j ↦ ?_⟩
     have := hvs.edgeBasis_equivFun_symm_apply hi
-      (fun k ↦ if h : (k : ι) ∈ s then f ⟨k, h⟩ else 0) ⟨j, hsub (hys j.2)⟩
-    simp only [j.2, dite_true] at this
+      (fun k ↦ if h : (k : ι) ∈ s then f ⟨k, h⟩ else 0) ⟨j, hsub (hys j.property)⟩
+    simp only [j.property, dite_true] at this
     simpa only [Φ, LinearMap.pi_apply, facetPairing_apply] using this
   have hker : LinearMap.ker Φ = vectorSpan ℝ (facetFace i u c s) := by
     rw [hΔ.vectorSpan_facetFace hi ⟨y, hy, hys⟩, LinearMap.ker_pi]

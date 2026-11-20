@@ -69,7 +69,7 @@ variable {C : Type*} [Category* C] [Preadditive C] [HasBinaryBiproducts C]
 /-- The components of the first projection of the mapping cocone are those of the first
 projection of the mapping cone. -/
 lemma fst_f {K L : CochainComplex C ℤ} (φ : K ⟶ L) (p : ℤ) :
-    (fst φ).f p = (mappingCone.fst φ).1.v (p + -1) p (by lia) := by
+    (fst φ).f p = (mappingCone.fst φ).val.v (p + -1) p (by lia) := by
   simp [fst, Cochain.leftShift_v (n := 1) _ _ _ _ _ p _ (p + -1) (by lia)]
   rfl
 
@@ -85,8 +85,8 @@ lemma shiftFunctor_map_mappingCone_map_comp_fst {K₁ L₁ K₂ L₂ : CochainCo
     (fst φ₁).f n ≫ a.f n
   rw [fst_f, fst_f, shiftFunctor_map_f']
   change (mappingCone.map φ₁ φ₂ a b comm).f (n + -1) ≫
-      (mappingCone.fst φ₂).1.v (n + -1) n (by lia) =
-    (mappingCone.fst φ₁).1.v (n + -1) n (by lia) ≫ a.f n
+      (mappingCone.fst φ₂).val.v (n + -1) n (by lia) =
+    (mappingCone.fst φ₁).val.v (n + -1) n (by lia) ≫ a.f n
   apply mappingCone.ext_from φ₁ n (n + -1) (by lia) <;> simp [mappingCone.map]
 
 /-- The components of the second projection of the mapping cocone are those of the second
@@ -185,7 +185,7 @@ private lemma epi_toId_f (p : ℤ) [Epi (φ.f p)] : Epi ((toId φ).f p) := by
   obtain ⟨A', π, hπ, x, hx⟩ :=
     surjective_up_to_refinements_of_epi (φ.f p) (y ≫ (fst (𝟙 L)).f p)
   refine ⟨A', π, hπ, x ≫ (inl φ).v p p (add_zero p) +
-    π ≫ y ≫ (snd (𝟙 L)).v p (p + -1) rfl ≫ (inr φ).1.v (p + -1) p (by lia), ?_⟩
+    π ≫ y ≫ (snd (𝟙 L)).v p (p + -1) rfl ≫ (inr φ).val.v (p + -1) p (by lia), ?_⟩
   apply ext_to (𝟙 L) p (p + -1) rfl
   · simp [toId_f_fst_f, hx]
   · simp [toId_f_snd_v]
