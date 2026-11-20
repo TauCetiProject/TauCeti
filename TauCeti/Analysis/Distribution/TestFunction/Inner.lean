@@ -31,6 +31,9 @@ integrable field is determined almost everywhere on `Ω` by its pairings with `�
   pairings against every `φ ∈ 𝓓(Ω, V)` agree almost everywhere on `Ω`. The target `V` need only
   be complete; the proof tests against `ψ • c` for scalar test functions `ψ` and a constant
   vector `c`.
+* `TauCeti.eq_of_forall_integral_inner_eq_of_continuous`: two continuous fields valued in a complex
+  inner product space with the same pairings `∫ ⟪φ, ·⟫` against every test function on `E` are
+  equal, for a measure charging every nonempty open set.
 -/
 
 public section
@@ -91,5 +94,29 @@ theorem ae_eq_of_forall_integral_inner_eq {g h : E → V} (hg : LocallyIntegrabl
   rw [Filter.EventuallyEq, ae_restrict_iff' Ω.isOpen.measurableSet]
   filter_upwards [key] with x hx hxΩ
   exact sub_eq_zero.1 (hx hxΩ)
+
+/-- The **fundamental lemma** for continuous fields valued in a complex inner product space `F`:
+continuous `g, h : E → F` with `∫ ⟪φ, g⟫ = ∫ ⟪φ, h⟫` for the complex inner product and every
+`φ ∈ 𝓓(E, F)` are equal, for a measure finite on compact sets and charging every nonempty open
+set. -/
+theorem eq_of_forall_integral_inner_eq_of_continuous {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℂ F] [CompleteSpace F] [IsFiniteMeasureOnCompacts μ] [μ.IsOpenPosMeasure]
+    {g h : E → F} (hg : Continuous g) (hh : Continuous h)
+    (H : ∀ φ : 𝓓((⊤ : Opens E), F),
+      ∫ x, ⟪(φ : E → F) x, g x⟫_ℂ ∂μ = ∫ x, ⟪(φ : E → F) x, h x⟫_ℂ ∂μ) :
+    g = h := by
+  -- The real parts of the complex pairings are the pairings for the underlying real inner product.
+  let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+  have hae := ae_eq_of_forall_integral_inner_eq (μ := μ) (Ω := ⊤)
+    (hg.locallyIntegrable.locallyIntegrableOn _) (hh.locallyIntegrable.locallyIntegrableOn _)
+    fun φ ↦ by
+      have hint (f : E → F) (hf : Continuous f) :
+          Integrable (fun x ↦ ⟪(φ : E → F) x, f x⟫_ℂ) μ :=
+        (φ.continuous.inner hf).integrable_of_hasCompactSupport
+          (φ.hasCompactSupport.mono fun x hx h0 ↦ hx (by simp [h0]))
+      simp only [real_inner_eq_re_inner ℂ]
+      rw [integral_re (hint g hg), integral_re (hint h hh), H φ]
+  rw [Opens.coe_top, Measure.restrict_univ] at hae
+  exact (hg.ae_eq_iff_eq μ hh).1 hae
 
 end TauCeti
