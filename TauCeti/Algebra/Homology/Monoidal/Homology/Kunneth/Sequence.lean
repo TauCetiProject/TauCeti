@@ -17,12 +17,10 @@ public import TauCeti.CategoryTheory.Monoidal.Tor
 Let `K` and `L` be chain complexes of modules over a commutative ring `R`, with differentials
 `d : C_{q+1} ⟶ C_q` indexed by an additive cancellative commutative monoid `I` with a `1` which
 carries tensor signs on `ComplexShape.down I`, and suppose that the cycles `Z_q(L)` and the
-quotients `L_q / Z_q(L)` are projective.  The index may be `ℕ`; it may also be a cyclic group
-`ZMod n`, the grading of periodic chain complexes, which carries tensor signs `ε(p) = (-1)ᵖ`
-exactly when `n` is even.  For a cyclic group every degree is of the form `m + 1`, and the sums
-below run over all pairs of residues.  The quotient `L_q / Z_q(L)` is the module of boundaries
-`B_{q-1}(L)`, so the projectivity holds for every complex of projective modules over a principal
-ideal domain
+quotients `L_q / Z_q(L)` are projective.  The index may be `ℕ`, for instance; the sums below
+run over all pairs `(p, q)` in `I` with the given sum.  The quotient `L_q / Z_q(L)` is the module
+of boundaries `B_{q-1}(L)`, so the projectivity holds for every complex of projective modules
+over a principal ideal domain
 (`HomologicalComplex.free_cycles_of_isPrincipalIdealRing` and
 `HomologicalComplex.free_cokernel_iCycles_of_isPrincipalIdealRing`), for instance for singular
 chains with integer coefficients. More generally, both projectivity hypotheses are found by
@@ -230,7 +228,8 @@ private abbrev succIso (m : I) :=
     (fun q ↦ L.cyclesComplexShortComplex.X₃.homology q)
     (fun _ ↦ L.isZero_homology_cyclesComplexShortComplex_X₃_of_forall_add_one_ne) m
 
-/-- Multiplication by the sign `ε(p) = (-1)ᵖ` on the summand `Hₚ(K) ⊗ H_{q+1}(L / Z(L))`. -/
+/-- Multiplication by the sign `ε(p)` of the tensor product of chain complexes (`(-1)ᵖ` for `ℕ`)
+on the summand `Hₚ(K) ⊗ H_{q+1}(L / Z(L))`. -/
 private abbrev signHom (m : I) :=
   GradedObject.Monoidal.tensorHom (homologySign K)
     (𝟙 (fun q ↦ L.cyclesComplexShortComplex.X₃.homology (q + 1))) m
