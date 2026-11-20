@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.RCLike.Basic
 import TauCeti.RepresentationTheory.Invariants
 import TauCeti.Algebra.BigOperators.Finset.Average
 import TauCeti.Topology.MetricSpace.SimultaneousApproximation
+import TauCeti.RepresentationTheory.RelativeNorm
 
 /-!
 # Almost invariant vectors
@@ -212,5 +213,39 @@ theorem hasAlmostInvariantVectors_iff_exists_invariant_ne_zero
     fun ⟨_, hv, hfixed⟩ ↦ hasAlmostInvariantVectors_of_invariant hv hfixed⟩
 
 end Finite
+
+section FiniteIndex
+
+variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+
+/-- Let `v` be fixed by a subgroup `S` of finite index. If each chosen representative of the
+cosets of `S` moves `v` by less than `ε`, then averaging the translates of `v` over these
+representatives produces a vector fixed by the whole group within `ε` of `v`. -/
+theorem exists_invariant_norm_sub_lt_of_finiteIndex (ρ : ContRepresentation 𝕜 G V)
+    {S : Subgroup G} [S.FiniteIndex] {v : V} (hv : v ∈ (ρ.restrict S.subtype).invariants)
+    {ε : ℝ} (hε : ∀ q : G ⧸ S, ‖ρ q.out v - v‖ < ε) :
+    ∃ w : V, w ∈ ρ.invariants ∧ ‖w - v‖ < ε := by
+  classical
+  let := S.fintypeQuotientOfFiniteIndex
+  have hc : 0 < (Fintype.card (G ⧸ S) : ℝ) := Nat.cast_pos.mpr Fintype.card_pos
+  have hc' : (Fintype.card (G ⧸ S) : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  refine ⟨(Fintype.card (G ⧸ S) : 𝕜)⁻¹ • Representation.relNorm ρ.toRepresentation S v,
+    fun g ↦ ?_, ?_⟩
+  · rw [map_smul]
+    congr 1
+    exact Representation.relNorm_apply_eq_self ρ.toRepresentation (H := S) (fun s ↦ hv s) g
+  · -- The difference is the average of the displacements `ρ q.out v - v`.
+    have havg : (Fintype.card (G ⧸ S) : 𝕜)⁻¹ • Representation.relNorm ρ.toRepresentation S v - v =
+        (Fintype.card (G ⧸ S) : 𝕜)⁻¹ • ∑ q : G ⧸ S, (ρ q.out v - v) := by
+      rw [Representation.relNorm_apply, Finset.sum_sub_distrib, smul_sub, Finset.sum_const,
+        Finset.card_univ, ← Nat.cast_smul_eq_nsmul 𝕜, smul_smul, inv_mul_cancel₀ hc', one_smul]
+      -- Forgetting continuity via `toRepresentation` leaves each operator's action unchanged.
+      rfl
+    rw [havg, norm_smul, norm_inv, RCLike.norm_natCast, inv_mul_lt_iff₀ hc]
+    calc ‖∑ q : G ⧸ S, (ρ q.out v - v)‖ ≤ ∑ q : G ⧸ S, ‖ρ q.out v - v‖ := norm_sum_le _ _
+      _ < ∑ _q : G ⧸ S, ε := Finset.sum_lt_sum_of_nonempty Finset.univ_nonempty fun q _ ↦ hε q
+      _ = Fintype.card (G ⧸ S) * ε := by simp
+
+end FiniteIndex
 
 end ContRepresentation
