@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Data.Int.Interval
 public import Mathlib.Data.ZMod.QuotientRing
 public import Mathlib.GroupTheory.Index
+public import Mathlib.NumberTheory.Harmonic.Defs
 
 import Mathlib.NumberTheory.Harmonic.Bounds
 import TauCeti.Data.ZMod.FinEquiv
@@ -33,14 +34,16 @@ counting form. In particular the number of roots modulo `n` of an integer polyno
 of its numbers of roots modulo the prime powers exactly dividing `n`, by `ZMod.equivPi`.
 
 Sums over the residues modulo `n` of a function of the least nonnegative representative are sums
-over `range n`; summed over the representatives that are multiples of `n / m`, for `m ∣ n`, they
-become sums over the residues modulo `m`.
+over `range n`. Summed over the representatives that are multiples of `n / m`, for `m ∣ n`, they
+become sums over the residues modulo `m`. As a special case of the first identity, the reciprocals
+of the representatives sum to the harmonic number `H_{n-1}`.
 
 ## Main results
 
 * `ZMod.mul_card_filter_natCast_val`: counting a condition on the reduction modulo `m ∣ n`.
 * `ZMod.sum_comp_natCast_val`: summing a function of the reduction modulo `m ∣ n`.
 * `ZMod.sum_val_eq_sum_range`: summing a function of the representatives over `range n`.
+* `ZMod.sum_inv_val_eq_harmonic`: the reciprocals of the representatives sum to `H_{n-1}`.
 * `ZMod.sum_inv_val_le_one_add_log`: a logarithmic bound for reciprocal representatives.
 * `ZMod.sum_Ico_mul`: splitting an integer interval into complete residue blocks.
 * `ZMod.sum_ite_dvd_val`: summing over the representatives that are multiples of `n / m`.
@@ -123,6 +126,17 @@ summed over the residues modulo `n` is its sum over `range n`. -/
 theorem sum_val_eq_sum_range {M : Type*} [AddCommMonoid M] [NeZero n] (f : ℕ → M) :
     ∑ x : ZMod n, f x.val = ∑ i ∈ range n, f i := by
   rw [Finset.sum_range, ← (finEquiv n).symm.toEquiv.sum_comp]
+  simp
+
+/-- **Summing the reciprocals of the representatives.** The reciprocals of the least nonnegative
+representatives of the residues modulo `n` sum to the harmonic number `H_{n-1}`; the residue `0`
+contributes `0⁻¹ = 0`. -/
+theorem sum_inv_val_eq_harmonic {K : Type*} [DivisionRing K] [CharZero K] [NeZero n] :
+    ∑ x : ZMod n, ((x.val : ℕ) : K)⁻¹ = harmonic (n - 1) := by
+  rw [sum_val_eq_sum_range (fun i ↦ ((i : ℕ) : K)⁻¹)]
+  obtain ⟨n, rfl⟩ : ∃ m, n = m + 1 := Nat.exists_eq_succ_of_ne_zero (NeZero.ne n)
+  rw [sum_range_succ', harmonic]
+  push_cast
   simp
 
 /-- The sum of reciprocal least nonnegative representatives of the nonzero residues is
