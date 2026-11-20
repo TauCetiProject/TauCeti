@@ -464,7 +464,9 @@ theorem isOpen_setOf_injOn_range [FiniteDimensional 𝕜 E] :
     IsOpen {x : (E →L[𝕜] F) × {P : E →L[𝕜] E // IsStarProjection P} |
       Set.InjOn x.1 ((x.2 : E →L[𝕜] E).range : Set E)} := by
   convert Units.isOpen.preimage (continuous_imageGram (𝕜 := 𝕜) (E := E) (F := F)) using 1
-  exact Set.ext fun x ↦ (isUnit_adjoint_comp_add_one_sub_iff_injOn x.1 x.2.2).symm
+  ext x
+  simp only [Set.mem_ofPred_eq, Set.mem_preimage, imageGram]
+  exact (isUnit_adjoint_comp_add_one_sub_iff_injOn x.1 x.2.2).symm
 
 /-- The orthogonal projection onto the image `L (range P)` depends continuously on the operator `L`
 and the star projection `P`, on the pairs where `L` is injective on the range of `P`. -/
@@ -473,14 +475,16 @@ theorem continuousOn_starProjection_range_comp [FiniteDimensional 𝕜 E] :
         (x.1 ∘L (x.2 : E →L[𝕜] E)).range.starProjection)
       {x | Set.InjOn x.1 ((x.2 : E →L[𝕜] E).range : Set E)} := by
   have hu {x : (E →L[𝕜] F) × {P : E →L[𝕜] E // IsStarProjection P}}
-      (hx : Set.InjOn x.1 ((x.2 : E →L[𝕜] E).range : Set E)) : IsUnit (imageGram x.1 x.2) :=
-    (isUnit_adjoint_comp_add_one_sub_iff_injOn x.1 x.2.2).2 hx
+      (hx : Set.InjOn x.1 ((x.2 : E →L[𝕜] E).range : Set E)) : IsUnit (imageGram x.1 x.2) := by
+    simpa only [imageGram] using (isUnit_adjoint_comp_add_one_sub_iff_injOn x.1 x.2.2).2 hx
   have hQ : Continuous fun x : (E →L[𝕜] F) × {P : E →L[𝕜] E // IsStarProjection P} ↦
       x.1 ∘L (x.2 : E →L[𝕜] E) :=
     continuous_comp_fst_snd.comp continuous_fst_val_snd
   refine ContinuousOn.congr (f := fun x ↦ (x.1 ∘L (x.2 : E →L[𝕜] E)) ∘L
       Ring.inverse (imageGram x.1 x.2) ∘L adjoint (x.1 ∘L (x.2 : E →L[𝕜] E)))
-    (fun x hx ↦ ?_) fun x hx ↦ starProjection_range_comp_eq x.1 x.2.2 (hu hx)
+    (fun x hx ↦ ?_) fun x hx ↦ by
+      simpa only [imageGram] using
+        starProjection_range_comp_eq x.1 x.2.2 (by simpa only [imageGram] using hu hx)
   -- The formula is continuous wherever the corrected Gram operator is invertible.
   have hi := NormedRing.inverse_continuousAt (hu hx).unit
   rw [(hu hx).unit_spec] at hi
