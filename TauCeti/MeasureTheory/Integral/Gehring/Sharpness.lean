@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Integral.NormRpow
 
 /-!
@@ -69,12 +70,6 @@ open scoped ENNReal NNReal
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
-/-- For `s ≥ 0`, the map `u ↦ u ^ (-s)` on `ℝ≥0∞` is antitone. -/
-private theorem rpow_neg_le_rpow_neg {u v : ℝ≥0∞} {s : ℝ} (hs : 0 ≤ s) (h : u ≤ v) :
-    v ^ (-s) ≤ u ^ (-s) := by
-  rw [ENNReal.rpow_neg, ENNReal.rpow_neg]
-  gcongr
-
 omit [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
 /-- The upper half of the reverse Hölder inequality for `‖x‖ ^ (-s)` on a ball `B(y, ρ)` with
 `‖y‖ ≥ 2ρ`, which stays away from the origin. -/
@@ -91,8 +86,8 @@ private theorem setLAverage_ball_enorm_rpow_neg_le_of_le_norm {s : ℝ} (hs : 0 
   -- Far from the origin the weight is at most `(L / 4) ^ (-s) = 4 ^ s L ^ (-s)`.
   have hpt : ∀ x ∈ ball y ρ, ‖x‖ₑ ^ (-s) ≤ ENNReal.ofReal ((L / 4) ^ (-s)) := fun x hx => by
     rw [← ENNReal.ofReal_rpow_of_pos (by positivity), ← ofReal_norm]
-    exact rpow_neg_le_rpow_neg hs (ENNReal.ofReal_le_ofReal
-      (by linarith [norm_sub_norm_le y x, mem_ball_iff_norm'.1 hx]))
+    exact ENNReal.rpow_le_rpow_of_nonpos (ENNReal.ofReal_le_ofReal
+      (by linarith [norm_sub_norm_le y x, mem_ball_iff_norm'.1 hx])) (neg_nonpos.2 hs)
   refine ((laverage_le_essSup _).trans (essSup_le_of_ae_le _
     ((ae_restrict_mem measurableSet_ball).mono hpt))).trans (ENNReal.ofReal_le_ofReal ?_)
   rw [div_eq_mul_inv, Real.mul_rpow hL.le (by norm_num), Real.inv_rpow (by norm_num),
@@ -208,8 +203,9 @@ theorem setLAverage_ball_enorm_rpow_neg_rpow_le {a q : ℝ} (ha : 0 ≤ a) (hq :
           laverage_mono_ae ((ae_restrict_mem measurableSet_ball).mono fun x hx => by
             dsimp only
             rw [← ENNReal.ofReal_rpow_of_pos hL, ← ofReal_norm]
-            exact rpow_neg_le_rpow_neg ha (ENNReal.ofReal_le_ofReal
-              (by linarith [norm_le_norm_add_norm_sub' x y, mem_ball_iff_norm.1 hx])))
+            exact ENNReal.rpow_le_rpow_of_nonpos (ENNReal.ofReal_le_ofReal
+              (by linarith [norm_le_norm_add_norm_sub' x y, mem_ball_iff_norm.1 hx]))
+              (neg_nonpos.2 ha))
   have hs : 0 ≤ a * q := mul_nonneg ha hq
   simp_rw [← ENNReal.rpow_mul, neg_mul]
   calc ⨍⁻ x in ball y ρ, ‖x‖ₑ ^ (-(a * q)) ∂μ
