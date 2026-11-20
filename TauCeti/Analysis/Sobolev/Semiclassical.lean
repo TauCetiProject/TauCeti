@@ -226,23 +226,24 @@ theorem exists_semiclassicalSobolevNorm_mul_le {k : ℕ} (hk : finrank ℝ E < 2
   rw [hEq, semiclassicalSobolevNorm_eq_comp_smul hf hh, semiclassicalSobolevNorm_eq_comp_smul hg hh]
   simpa only [semiclassicalSobolevNorm_one] using (hC _ _ hf' hg' hfm' hgm').2
 
-/-- **A derivative costs one factor of the scale.** For `f` of class `Cᵏ⁺¹` and `h ≥ 0`,
+/-- **A derivative costs one factor of the scale.** For `h ≥ 0`,
 `h ‖Df‖_{k,h} ≤ ‖f‖_{k+1,h}`: the operator `h D` is bounded, with norm at most one, from order
 `k + 1` to order `k`. -/
-theorem mul_semiclassicalSobolevNorm_fderiv_le {k : ℕ} {f : E → F} (hf : ContDiff ℝ (k + 1) f)
-    {h : ℝ} (hh : 0 ≤ h) :
+theorem mul_semiclassicalSobolevNorm_fderiv_le {k : ℕ} {f : E → F} {h : ℝ} (hh : 0 ≤ h) :
     h * semiclassicalSobolevNorm k h (fderiv ℝ f) ≤ semiclassicalSobolevNorm (k + 1) h f := by
-  -- The derivatives of `Df` have the norms of the derivatives of `f` of one order higher.
+  -- The derivatives of `Df` have the norms of the derivatives of `f` of one order higher: the
+  -- latter are the former followed by a linear isometry equivalence.
   have hD : ∀ i ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ i (fderiv ℝ f)) 2 volume =
-      lpNorm (iteratedFDeriv ℝ (i + 1) f) 2 volume := fun i hi ↦ by
-    have hi : i ≤ k := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
-    rw [← toReal_eLpNorm, ← toReal_eLpNorm]
-    congr 1
-    refine eLpNorm_congr_norm_ae
-      (((hf.fderiv_right (m := k) (by norm_cast)).continuous_iteratedFDeriv
-        (by exact_mod_cast hi)).aestronglyMeasurable)
-      ((hf.continuous_iteratedFDeriv (by exact_mod_cast Nat.succ_le_succ hi)).aestronglyMeasurable)
-      (.of_forall fun x ↦ norm_iteratedFDeriv_fderiv)
+      lpNorm (iteratedFDeriv ℝ (i + 1) f) 2 volume := fun i _ ↦ by
+    set L := (continuousMultilinearCurryRightEquiv' ℝ i E F).symm
+    have hcomp : iteratedFDeriv ℝ (i + 1) f = L ∘ iteratedFDeriv ℝ i (fderiv ℝ f) :=
+      funext fun _ ↦ iteratedFDeriv_succ_eq_comp_right
+    rw [hcomp]
+    by_cases hm : AEStronglyMeasurable (iteratedFDeriv ℝ i (fderiv ℝ f)) volume
+    · rw [← toReal_eLpNorm, ← toReal_eLpNorm, eLpNorm_congr_norm_ae (g := L ∘ _) hm
+        (L.continuous.comp_aestronglyMeasurable hm) (.of_forall fun x ↦ (L.norm_map _).symm)]
+    · rw [lpNorm_of_not_aestronglyMeasurable hm, lpNorm_of_not_aestronglyMeasurable (f := L ∘ _)
+        fun hL ↦ hm (L.isometry.isEmbedding.aestronglyMeasurable_comp_iff.1 hL)]
   unfold semiclassicalSobolevNorm
   rw [Finset.sum_range_succ' _ (k + 1)]
   have hsum : h * ∑ i ∈ Finset.range (k + 1),
