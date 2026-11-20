@@ -35,7 +35,7 @@ two notions agree with equivalence of categories.
   bicategory of quasicategories to `ho X ⥤ ho Y`, which sends `f` to `mapHomotopyCategory f.hom`.
 * `SSet.QCat.IsCategoricalEquivalence`: categorical equivalences of quasicategories, with
   `SSet.QCat.isCategoricalEquivalence_iff_exists_equivalence` identifying them with the
-  `1`-morphisms underlying equivalences in the bicategory. They contain the identities and are
+  `1`-morphisms underlying equivalences in the bicategory. They contain the isomorphisms and are
   closed under composition.
 * `SSet.QCat.IsCategoricalEquivalence.isEquivalence_mapHomotopyCategory`: a categorical
   equivalence induces an equivalence of homotopy categories.
@@ -129,6 +129,10 @@ lemma comp {f : X ⟶ Y} {g : Y ⟶ Z} (hf : IsCategoricalEquivalence f)
   obtain ⟨e', rfl⟩ := (isCategoricalEquivalence_iff_exists_equivalence g).1 hg
   exact (isCategoricalEquivalence_iff_exists_equivalence _).2
     ⟨e.trans e', Bicategory.Equivalence.trans_hom e e'⟩
+
+/-- An isomorphism of quasicategories is a categorical equivalence. -/
+lemma of_isIso (f : X ⟶ Y) [IsIso f] : IsCategoricalEquivalence f :=
+  ⟨inv f, ⟨eqToIso (IsIso.hom_inv_id f).symm⟩, ⟨eqToIso (IsIso.inv_hom_id f)⟩⟩
 
 /-- A categorical equivalence of quasicategories induces an equivalence of homotopy
 categories. -/
