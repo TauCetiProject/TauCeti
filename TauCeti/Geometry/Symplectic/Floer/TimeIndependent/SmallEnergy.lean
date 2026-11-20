@@ -23,8 +23,9 @@ Floer cylinders of `ε H`: maps `u : ℝ × ℝ → V` of period one in `t` solv
 over the strip `ℝ × [0, 1]` is at most `δ` satisfies `‖du‖ ≤ M` everywhere, for every
 `ε ∈ [0, 1]`
 (`exists_pos_forall_norm_fderiv_le_of_setLIntegral_floerEnergyDensity_const_mul_le`). This is a
-case of the same bound for any compact family of autonomous Hamiltonians depending jointly `C³` on
-the parameter (`exists_pos_forall_norm_fderiv_le_of_mem_of_setLIntegral_floerEnergyDensity_le`).
+case of the same bound for any compact family of Hamiltonians `H_t` of period one in `t` and almost
+complex structures `J_t(x)`, depending jointly `C³` and `C²` on the parameter
+(`exists_pos_forall_norm_fderiv_le_of_mem_of_setLIntegral_floerEnergyDensity_le`).
 For a single Hamiltonian, small energy over a band already bounds the derivative
 (`TauCeti.SymplecticForm.exists_pos_forall_norm_fderiv_le_of_setLIntegral_floerEnergyDensity_le`);
 the point here is that `δ` and `M` are uniform over the family. This is the absence of
@@ -56,8 +57,8 @@ invariant under a lattice `Λ ⊆ V`, the lift of a Hamiltonian on the flat toru
 ## Main results
 
 * `exists_pos_forall_norm_fderiv_le_of_mem_of_setLIntegral_floerEnergyDensity_le`:
-  Floer cylinders of a compact family of autonomous Hamiltonians, in a compact set and of small
-  energy, have uniformly bounded derivatives.
+  Floer cylinders of a compact family of time-periodic Hamiltonians and almost complex structures,
+  in a compact set and of small energy, have uniformly bounded derivatives.
 * `exists_pos_forall_norm_fderiv_le_of_setLIntegral_floerEnergyDensity_const_mul_le`:
   Floer cylinders of `ε H`, `ε ∈ [0, 1]`, in a compact set and of small energy have uniformly
   bounded derivatives.
@@ -84,15 +85,16 @@ namespace TauCeti.SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J : AlmostComplexStructure V} {H : V → ℝ}
 
-/-- The Floer energy of a translate `(s, t) ↦ u(s + s₀, t)` of a cylinder of period one, for an
-autonomous Hamiltonian `H`, over the window `(-1, 1) × (-1/2, 3/2)` is at most three times the
-energy of `u` over the strip `ℝ × [0, 1]`. -/
-private theorem lintegral_ball_floerEnergyDensity_comp_add_le {u : ℝ × ℝ → V}
-    (hper : ∀ s t, u (s, t + 1) = u (s, t)) (s₀ : ℝ) :
+/-- The Floer energy of a translate `(s, t) ↦ u(s + s₀, t)` of a cylinder of period one, for a
+Hamiltonian `H_t` of period one in `t`, over the window `(-1, 1) × (-1/2, 3/2)` is at most three
+times the energy of `u` over the strip `ℝ × [0, 1]`. -/
+private theorem lintegral_ball_floerEnergyDensity_comp_add_le {H : ℝ → V → ℝ}
+    (hHper : Function.Periodic H 1) {u : ℝ × ℝ → V} (hper : ∀ s t, u (s, t + 1) = u (s, t))
+    (s₀ : ℝ) :
     ∫⁻ w in ball ((0 : ℝ), (1 / 2 : ℝ)) 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
-        (fun _ ↦ H) (fun w ↦ u (w + (s₀, 0))) w) ≤
+        (fun w ↦ H w.2) (fun w ↦ u (w + (s₀, 0))) w) ≤
       3 * ∫⁻ z in univ ×ˢ Icc 0 1,
-        ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ ↦ H) u z) := by
+        ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) := by
   have hsub : ball ((0 : ℝ), (1 / 2 : ℝ)) 1 ⊆ univ ×ˢ Icc (-1) 2 := by
     intro z hz
     rw [mem_ball, Prod.dist_eq, max_lt_iff, Real.dist_eq, Real.dist_eq] at hz
@@ -104,52 +106,64 @@ private theorem lintegral_ball_floerEnergyDensity_comp_add_le {u : ℝ × ℝ �
     simp
   have hu1 : (fun w ↦ u (w + ((0 : ℝ), (1 : ℝ)))) = u :=
     funext fun ⟨s, t⟩ ↦ by simpa using hper s t
+  have hH1 : (fun w : ℝ × ℝ ↦ H (w + ((0 : ℝ), (1 : ℝ))).2) = fun w ↦ H w.2 :=
+    funext fun w ↦ by simpa using hHper w.2
   have hgper (s t : ℝ) : ENNReal.ofReal
-      (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ ↦ H) u (s, t + 1)) =
-      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ ↦ H) u (s, t)) := by
-    have h := ω.floerEnergyDensity_comp_add_right (fun _ _ ↦ 0) (fun _ ↦ H) u
+      (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s, t + 1)) =
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s, t)) := by
+    have h := ω.floerEnergyDensity_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u
       ((0 : ℝ), (1 : ℝ)) (s, t)
-    simp only [hu1, Prod.mk_add_mk, add_zero] at h
+    simp only [hu1, hH1, Prod.mk_add_mk, add_zero] at h
     rw [h]
-  have htr := ω.lintegral_floerEnergyDensity_comp_add_right (fun _ _ ↦ 0) (fun _ ↦ H) u (s₀, 0)
-    (univ ×ˢ Icc (-1) 2)
+  have htr := ω.lintegral_floerEnergyDensity_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u
+    (s₀, 0) (univ ×ˢ Icc (-1) 2)
   rw [hpre] at htr
-  exact (lintegral_mono_set hsub).trans
-    (htr.le.trans (setLIntegral_univ_prod_Icc_neg_one_two_le hgper))
+  refine (lintegral_mono_set hsub).trans (le_of_eq_of_le ?_
+    (htr.le.trans (setLIntegral_univ_prod_Icc_neg_one_two_le hgper)))
+  refine lintegral_congr fun w ↦ congrArg ENNReal.ofReal ?_
+  exact (ω.floerEnergyDensity_cylindrical_comp_add_right H u s₀ w).trans
+    (ω.floerEnergyDensity_comp_add_right _ _ u _ w).symm
 
-/-- A translate `(s, t) ↦ u(s + s₀, t)` of a Floer cylinder of an autonomous Hamiltonian `H` is
-again one. -/
-private theorem isComplexLinearMap_perturbedFDeriv_comp_add_right {u : ℝ × ℝ → V}
-    (hfl : ∀ z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
-      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun _ ↦ H) u z : ℝ × ℝ →ₗ[ℝ] V))
-    (v w : ℝ × ℝ) : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
-      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun _ ↦ H) (fun w ↦ u (w + v)) w :
+/-- A translate `(s, t) ↦ u(s + s₀, t)` of a Floer cylinder of a Hamiltonian `H_t` for an almost
+complex structure `J_t(x)` is again one. -/
+private theorem isComplexLinearMap_perturbedFDeriv_comp_add_right {H : ℝ → V → ℝ}
+    {J : ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V}
+    (hfl : ∀ z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z.2 (u z))
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (s₀ : ℝ) (w : ℝ × ℝ) : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J w.2 (u (w + (s₀, 0))))
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ u (w + (s₀, 0))) w :
         ℝ × ℝ →ₗ[ℝ] V) := by
-  rw [ω.perturbedFDeriv_comp_add_right (fun _ _ ↦ 0) (fun _ ↦ H) u v w]
+  have h := ω.perturbedFDeriv_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s₀, 0) w
+  simp only [Prod.snd_add, add_zero] at h
+  have h2 : (w + (s₀, (0 : ℝ))).2 = w.2 := by rw [Prod.snd_add, add_zero]
+  rw [h, ← h2]
   exact hfl _
 
 /-- The energy bound on the window `(-1, 1) × (-1/2, 3/2)` in the form that the compactness
-theorems take: if a Floer cylinder `u` of an autonomous Hamiltonian `H` of period one has energy
-at most `E` over the strip `ℝ × [0, 1]`, then the energy density of its translate
+theorems take: if a Floer cylinder `u` of period one, of a Hamiltonian `H_t` of period one in `t`
+for an almost complex structure `J_t(x)` tamed by `ω` on `ℝ × K`, has image in `K` and energy at
+most `E` over the strip `ℝ × [0, 1]`, then the energy density of its translate
 `(s, t) ↦ u(s + s₀, t)` is integrable on the window, with integral at most `3 E`. -/
-private theorem integrableOn_and_setIntegral_floerEnergyDensity_comp_add_le (hJ : ω.Tames J)
-    (hH : ContDiff ℝ 3 H) {u : ℝ × ℝ → V} {E : ℝ} (hu : ContDiff ℝ 3 u)
-    (hper : ∀ s t, u (s, t + 1) = u (s, t))
-    (hfl : ∀ z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
-      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun _ ↦ H) u z : ℝ × ℝ →ₗ[ℝ] V))
-    (hE0 : 0 ≤ E) (hE : ∫⁻ z in univ ×ˢ Icc 0 1,
-      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ ↦ H) u z) ≤
+private theorem integrableOn_and_setIntegral_floerEnergyDensity_comp_add_le {H : ℝ → V → ℝ}
+    {J : ℝ → V → AlmostComplexStructure V} {K : Set V} (hJ : ∀ t, ∀ x ∈ K, ω.Tames (J t x))
+    (hH : ContDiff ℝ 3 (Function.uncurry H)) (hHper : Function.Periodic H 1) {u : ℝ × ℝ → V}
+    {E : ℝ} (hu : ContDiff ℝ 3 u) (hper : ∀ s t, u (s, t + 1) = u (s, t))
+    (hfl : ∀ z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z.2 (u z))
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (huK : ∀ z, u z ∈ K) (hE0 : 0 ≤ E) (hE : ∫⁻ z in univ ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≤
         ENNReal.ofReal E) (s₀ : ℝ) :
-    IntegrableOn (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ ↦ H)
+    IntegrableOn (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2)
         (fun w ↦ u (w + (s₀, 0)))) (ball ((0 : ℝ), (1 / 2 : ℝ)) 1) ∧
       ∫ w in ball ((0 : ℝ), (1 / 2 : ℝ)) 1, ω.floerEnergyDensity (fun _ _ ↦ 0)
-        (fun _ ↦ H) (fun w ↦ u (w + (s₀, 0))) w ≤ 3 * E := by
+        (fun w ↦ H w.2) (fun w ↦ u (w + (s₀, 0))) w ≤ 3 * E := by
   refine ω.integrableOn_and_setIntegral_floerEnergyDensity_le isOpen_ball measurableSet_ball
     subset_rfl (((hu.comp (contDiff_id.add contDiff_const)).of_le (by norm_num)).contDiffOn)
-    contDiffOn_const ((hH.comp contDiff_snd).of_le (by norm_num)).contDiffOn
-    (fun w _ ↦ ω.floerEnergyDensity_nonneg hJ
+    contDiffOn_const ((contDiff_uncurry_cylindrical hH).of_le (by norm_num)).contDiffOn
+    (fun w _ ↦ ω.floerEnergyDensity_nonneg (hJ _ _ (huK _))
       (isComplexLinearMap_perturbedFDeriv_comp_add_right hfl _ w)) (by positivity) ?_
-  refine (lintegral_ball_floerEnergyDensity_comp_add_le hper _).trans ?_
+  refine (lintegral_ball_floerEnergyDensity_comp_add_le hHper hper _).trans ?_
   rw [ENNReal.ofReal_mul (by norm_num), ENNReal.ofReal_ofNat]
   gcongr
 
@@ -163,32 +177,40 @@ private theorem singleton_prod_Icc_subset_ball :
   exact ⟨by norm_num, by constructor <;> linarith⟩
 
 /-- **Floer cylinders of small energy for a compact family of Hamiltonians have bounded
-derivatives.** Let `J` be a constant almost complex structure tamed by `ω`, `Hs p` a family of
-autonomous Hamiltonians depending jointly `C³` on `(p, x)`, `C` a compact set of parameters and
-`K ⊆ V` compact. There are `δ > 0` and `M` with the following property, for every `p ∈ C`. Let `u`
-be a `C³` solution of the Floer equation `∂s u + J (∂t u - X_{Hs p}(u)) = 0` of `Hs p dt`, of
-period one in `t`, with image in `K` and Floer energy at most `δ` over the strip `ℝ × [0, 1]`.
-Then `‖du‖ ≤ M` everywhere. -/
+derivatives.** Let `Hs p` be a family of Hamiltonians of period one in `t`, depending jointly
+`C³` on `(p, t, x)`, and `Js p` a family of almost complex structures depending jointly `C²` on
+`(p, t, x)`. Let `C` be a compact set of parameters and `K ⊆ V` compact, with `Js p t x` tamed by
+`ω` for `p ∈ C` and `x ∈ K`. There are `δ > 0` and `M` with the following property, for every
+`p ∈ C`. Let `u` be a `C³` solution of the Floer equation
+`∂s u + (Js p)_t(u) (∂t u - X_{(Hs p)_t}(u)) = 0` of `(Hs p)_t dt`, of period one in `t`, with
+image in `K` and Floer energy at most `δ` over the strip `ℝ × [0, 1]`. Then `‖du‖ ≤ M`
+everywhere. -/
 theorem exists_pos_forall_norm_fderiv_le_of_mem_of_setLIntegral_floerEnergyDensity_le
-    {P : Type*} [NormedAddCommGroup P] [InnerProductSpace ℝ P] {Hs : P → V → ℝ} {C : Set P}
-    (hJ : ω.Tames J) (hHs : ContDiff ℝ 3 (Function.uncurry Hs)) (hC : IsCompact C) {K : Set V}
-    (hK : IsCompact K) :
+    {P : Type*} [NormedAddCommGroup P] [InnerProductSpace ℝ P] {Hs : P → ℝ → V → ℝ}
+    {Js : P → ℝ → V → AlmostComplexStructure V} {C : Set P} {K : Set V}
+    (hHs : ContDiff ℝ 3 (fun q : P × ℝ × V ↦ Hs q.1 q.2.1 q.2.2))
+    (hHper : ∀ p ∈ C, Function.Periodic (Hs p) 1)
+    (hJs : ContDiff ℝ 2
+      (fun q : P × ℝ × V ↦ (Js q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap))
+    (hC : IsCompact C) (hK : IsCompact K) (hJt : ∀ p ∈ C, ∀ t, ∀ x ∈ K, ω.Tames (Js p t x)) :
     ∃ δ > 0, ∃ M, ∀ ⦃p : P⦄ ⦃u : ℝ × ℝ → V⦄, p ∈ C → ContDiff ℝ 3 u →
       (∀ s t, u (s, t + 1) = u (s, t)) →
-      (∀ z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
-        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun _ ↦ Hs p) u z : ℝ × ℝ →ₗ[ℝ] V)) →
+      (∀ z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (Js p z.2 (u z))
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ Hs p w.2) u z : ℝ × ℝ →ₗ[ℝ] V)) →
       (∀ z, u z ∈ K) →
       ∫⁻ z in univ ×ˢ Icc 0 1,
-          ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ ↦ Hs p) u z) ≤
+          ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ Hs p w.2) u z) ≤
         ENNReal.ofReal δ →
       ∀ z, ‖fderiv ℝ u z‖ ≤ M := by
   set Ω : Set (ℝ × ℝ) := ball ((0 : ℝ), (1 / 2 : ℝ)) 1
+  have hπ : ContDiff ℝ ⊤ (fun q : P × ((ℝ × ℝ) × V) ↦ (q.1, q.2.1.2, q.2.2)) := by
+    fun_prop
   obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
-    (Ks := fun _ _ _ ↦ 0) (Kt := fun p _ ↦ Hs p) (J := fun _ _ _ ↦ J)
+    (Ks := fun _ _ _ ↦ 0) (Kt := fun p z ↦ Hs p z.2) (J := fun p z ↦ Js p z.2)
     (W := univ) (C := C) (D := closedBall ((0 : ℝ), (1 / 2 : ℝ)) 1) (K := K) isOpen_univ
-    contDiffOn_const (hHs.comp (contDiff_fst.prodMk (contDiff_snd.comp contDiff_snd))).contDiffOn
-    contDiffOn_const hC (isCompact_closedBall _ _) hK (subset_univ _)
-    fun _ _ _ _ _ _ ↦ hJ
+    contDiffOn_const (hHs.comp (hπ.of_le le_top)).contDiffOn
+    (hJs.comp (hπ.of_le le_top)).contDiffOn hC (isCompact_closedBall _ _) hK (subset_univ _)
+    fun p hp z _ x hx ↦ hJt p hp z.2 x hx
   refine ⟨δ / 4, by positivity, ?_⟩
   by_contra hM
   push Not at hM
@@ -204,10 +226,10 @@ theorem exists_pos_forall_norm_fderiv_le_of_mem_of_setLIntegral_floerEnergyDensi
   set v : ℕ → ℝ × ℝ → V := fun k w ↦ u k (w + ((z k).1, 0))
   have hvd (k : ℕ) (w : ℝ × ℝ) : fderiv ℝ (v k) w = fderiv ℝ (u k) (w + ((z k).1, 0)) :=
     fderiv_comp_add_right _
-  have hvfl (k : ℕ) := isComplexLinearMap_perturbedFDeriv_comp_add_right (hfl k) ((z k).1, 0)
-  have hint (k : ℕ) := integrableOn_and_setIntegral_floerEnergyDensity_comp_add_le hJ
-    (hHs.comp (contDiff_const.prodMk contDiff_id)) (hu k) (hper k) (hfl k) (by positivity) (hE k)
-    (z k).1
+  have hvfl (k : ℕ) := isComplexLinearMap_perturbedFDeriv_comp_add_right (hfl k) (z k).1
+  have hint (k : ℕ) := integrableOn_and_setIntegral_floerEnergyDensity_comp_add_le
+    (H := Hs (p k)) (hJt _ (hp k)) (hHs.comp ((contDiff_const (c := p k)).prodMk contDiff_id))
+    (hHper _ (hp k)) (hu k) (hper k) (hfl k) (huK k) (by positivity) (hE k) (z k).1
   obtain ⟨φ, -, Z, -, hφ, -, -, -, hcard, -, hbd, -⟩ :=
     hconv (Ω := Ω) (p := p) (u := v) isOpen_ball ball_subset_closedBall (fun k ↦ hp k)
       (fun k ↦ ((hu k).comp (contDiff_id.add contDiff_const)).contDiffOn)
@@ -236,8 +258,8 @@ derivatives.** Let `J` be a constant almost complex structure tamed by `ω`, `H`
 Hamiltonian and `K ⊆ V` compact. There are `δ > 0` and `M` with the following property, for every
 `ε ∈ [0, 1]`. Let `u` be a `C³` solution of the Floer equation `∂s u + J (∂t u - ε X_H(u)) = 0`
 of `ε H dt`, of period one in `t`, with image in `K` and Floer energy at most `δ` over the strip
-`ℝ × [0, 1]`. Then `‖du‖ ≤ M` everywhere. This is the case `Hs ε = ε H`, `C = [0, 1]` of
-`exists_pos_forall_norm_fderiv_le_of_mem_of_setLIntegral_floerEnergyDensity_le`. -/
+`ℝ × [0, 1]`. Then `‖du‖ ≤ M` everywhere. This is the case `Hs ε t = ε H`, `Js ε t = J`,
+`C = [0, 1]` of `exists_pos_forall_norm_fderiv_le_of_mem_of_setLIntegral_floerEnergyDensity_le`. -/
 theorem exists_pos_forall_norm_fderiv_le_of_setLIntegral_floerEnergyDensity_const_mul_le
     (hJ : ω.Tames J) (hH : ContDiff ℝ 3 H) {K : Set V} (hK : IsCompact K) :
     ∃ δ > 0, ∃ M, ∀ ⦃ε : ℝ⦄ ⦃u : ℝ × ℝ → V⦄, ε ∈ Icc (0 : ℝ) 1 → ContDiff ℝ 3 u →
@@ -250,7 +272,9 @@ theorem exists_pos_forall_norm_fderiv_le_of_setLIntegral_floerEnergyDensity_cons
         ENNReal.ofReal δ →
       ∀ z, ‖fderiv ℝ u z‖ ≤ M :=
   exists_pos_forall_norm_fderiv_le_of_mem_of_setLIntegral_floerEnergyDensity_le
-    (Hs := fun ε x ↦ ε * H x) hJ (contDiff_fst.mul (hH.comp contDiff_snd)) isCompact_Icc hK
+    (Hs := fun ε _ x ↦ ε * H x) (Js := fun _ _ _ ↦ J)
+    (contDiff_fst.mul (hH.comp (contDiff_snd.comp contDiff_snd))) (fun _ _ _ ↦ rfl)
+    contDiff_const isCompact_Icc hK fun _ _ _ _ _ ↦ hJ
 
 /-- The Hamiltonian vector field of `ε H` is `ε X_H`, so for `ε ≥ 0` bounds `a` on `‖dX_H‖` and
 `c` on `‖d²X_H‖` give the bounds `ε a` on `‖dX_{ε H}‖` and `ε c` on `‖d²X_{ε H}‖`. -/
