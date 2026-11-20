@@ -74,7 +74,8 @@ theorem isCompactOperator_of_equicontinuous [CompactSpace α] {T : E → α →�
     (hT : Equicontinuous fun f : V => (T f : α → F)) :
     IsCompactOperator T :=
   isCompact_univ.isCompactOperator_of_equicontinuousOn (ContinuousMap.id α)
-    (fun _ => mem_univ _) (Φ := fun f => T f) hV (fun _ _ _ => rfl) (fun x _ => hTV x)
+    (fun _ => mem_univ _) (Φ := fun f => T f) hV
+    (fun _ _ _ => by rw [ContinuousMap.id_apply]) (fun x _ => hTV x)
     (hT.equicontinuousOn _)
 
 end TauCeti

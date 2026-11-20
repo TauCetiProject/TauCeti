@@ -8,9 +8,9 @@ module
 public import TauCeti.RepresentationTheory.Compact.Averaging
 public import Mathlib.MeasureTheory.Function.ContinuousMapDense
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
-public import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
 public import TauCeti.RepresentationTheory.Compact.RegularRepresentation
 import TauCeti.RepresentationTheory.Continuous.Integrated.Basic
+import TauCeti.Topology.ContinuousMap.Bounded.ArzelaAscoli
 
 /-!
 # Convolution operators on `L²` of a compact group
@@ -83,8 +83,8 @@ presupposing that any exist.
 Compactness is read off the same kernel sections, with no separate uniform-continuity argument:
 the value `(k * f) x` is the `L²` pairing of `f` against the section at `x`, and the sections
 depend continuously on `x` *in the uniform norm*, so the images of the unit ball are equicontinuous
-by inspection. Arzelà-Ascoli (`BoundedContinuousFunction.arzela_ascoli`) then applies, in
-`G →ᵇ 𝕜`, to which `C(G, 𝕜)` is isometric because `G` is compact.
+by inspection. Arzelà-Ascoli in operator form (`TauCeti.isCompactOperator_of_equicontinuous`)
+then applies in `G →ᵇ 𝕜`, to which `C(G, 𝕜)` is isometric because `G` is compact.
 
 Mathlib's `convolution` (`Mathlib/Analysis/Convolution.lean`) is the convolution of two functions
 on an *additive* group against a bilinear pairing, and does not apply here: `G` is multiplicative,
@@ -605,21 +605,11 @@ private theorem norm_convolutionCLM_apply_sub_apply_le (k : C(G, 𝕜)) (f : Lp 
   rw [convolutionCLM_apply_apply', convolutionCLM_apply_apply', ← inner_sub_left]
   exact norm_inner_le_norm _ _
 
-/-- The image of the closed unit ball of `L²(G)` under convolution against `k`, carried by the
-isometry `ContinuousMap.isometryEquivBoundedOfCompact` into the bounded continuous functions on
-`G`, where Mathlib's Arzelà-Ascoli theorem lives. -/
-private noncomputable def convolutionUnitBallImage (k : C(G, 𝕜)) : Set (G →ᵇ 𝕜) :=
-  (fun f : Lp 𝕜 2 (haarProb G) =>
-      ContinuousMap.isometryEquivBoundedOfCompact G 𝕜 (convolutionCLM k f)) ''
-    Metric.closedBall 0 1
-
 /-- Convolutions of the closed unit ball take values in the closed ball of radius `‖k‖`. -/
-private theorem convolutionUnitBallImage_apply_mem_closedBall (k : C(G, 𝕜)) (F : G →ᵇ 𝕜) (x : G)
-    (hF : F ∈ convolutionUnitBallImage k) : F x ∈ Metric.closedBall (0 : 𝕜) ‖k‖ := by
-  obtain ⟨f, hf, rfl⟩ := hF
+private theorem convolutionCLM_apply_mem_closedBall (k : C(G, 𝕜)) {f : Lp 𝕜 2 (haarProb G)}
+    (hf : f ∈ Metric.closedBall 0 1) (x : G) :
+    convolutionCLM k f x ∈ Metric.closedBall (0 : 𝕜) ‖k‖ := by
   rw [Metric.mem_closedBall, dist_zero_right] at hf ⊢
-  rw [ContinuousMap.isometryEquivBoundedOfCompact_apply,
-    BoundedContinuousFunction.mkOfCompact_apply]
   refine ((convolutionCLM k f).norm_coe_le_norm x).trans ?_
   calc ‖convolutionCLM k f‖ ≤ ‖k‖ * ‖f‖ := norm_convolutionCLM_apply_le k f
     _ ≤ ‖k‖ * 1 := by gcongr
@@ -628,13 +618,14 @@ private theorem convolutionUnitBallImage_apply_mem_closedBall (k : C(G, 𝕜)) (
 /-- Convolutions of the closed unit ball form an equicontinuous family: the kernel sections depend
 continuously on the point in the *uniform* norm, and pairing them against a vector of norm at most
 one can only shrink the increment. -/
-private theorem equicontinuous_convolutionUnitBallImage (k : C(G, 𝕜)) :
-    Equicontinuous ((↑) : convolutionUnitBallImage k → G → 𝕜) := by
+private theorem equicontinuous_convolutionCLM_closedBall (k : C(G, 𝕜)) :
+    Equicontinuous fun f : Metric.closedBall (0 : Lp 𝕜 2 (haarProb G)) 1 =>
+      (convolutionCLM k f : G → 𝕜) := by
   intro x₀
   rw [Metric.equicontinuousAt_iff_right]
   intro ε hε
   filter_upwards [Metric.tendsto_nhds.1 ((convSection k).continuous.tendsto x₀) ε hε] with x hx
-  rintro ⟨-, f, hf, rfl⟩
+  rintro ⟨f, hf⟩
   rw [Metric.mem_closedBall, dist_zero_right] at hf
   rw [dist_eq_norm] at hx ⊢
   calc ‖convolutionCLM k f x₀ - convolutionCLM k f x‖
@@ -644,26 +635,19 @@ private theorem equicontinuous_convolutionUnitBallImage (k : C(G, 𝕜)) :
     _ = ‖convSection k x - convSection k x₀‖ := by rw [mul_one, norm_sub_rev]
     _ < ε := hx
 
-private theorem isCompact_closure_convolutionUnitBallImage (k : C(G, 𝕜)) :
-    IsCompact (closure (convolutionUnitBallImage k)) :=
-  BoundedContinuousFunction.arzela_ascoli _ (isCompact_closedBall (0 : 𝕜) ‖k‖) _
-    (convolutionUnitBallImage_apply_mem_closedBall k) (equicontinuous_convolutionUnitBallImage k)
-
 /-- **Convolution against a continuous kernel is a compact operator** from `L²(G)` to `C(G)`.
 
 The unit ball of `L²(G)` is carried to a uniformly bounded equicontinuous family of continuous
 functions, which Arzelà-Ascoli makes relatively compact for the uniform norm. -/
 theorem isCompactOperator_convolutionCLM (k : C(G, 𝕜)) :
     IsCompactOperator (convolutionCLM (G := G) k) := by
-  refine (isCompactOperator_iff_image_closedBall_subset_compact
-    (convolutionCLM (G := G) k).toLinearMap one_pos).2
-    ⟨(ContinuousMap.isometryEquivBoundedOfCompact G 𝕜).symm ''
-        closure (convolutionUnitBallImage k),
-      (isCompact_closure_convolutionUnitBallImage k).image
-        (ContinuousMap.isometryEquivBoundedOfCompact G 𝕜).symm.continuous, ?_⟩
-  rintro - ⟨f, hf, rfl⟩
-  exact ⟨_, subset_closure ⟨f, hf, rfl⟩,
-    (ContinuousMap.isometryEquivBoundedOfCompact G 𝕜).symm_apply_apply _⟩
+  let e := ContinuousMap.isometryEquivBoundedOfCompact G 𝕜
+  have h : IsCompactOperator fun f => e (convolutionCLM (G := G) k f) :=
+    isCompactOperator_of_equicontinuous (Metric.closedBall_mem_nhds 0 one_pos)
+      (fun x => ⟨_, isCompact_closedBall (0 : 𝕜) ‖k‖,
+        fun _ hf => convolutionCLM_apply_mem_closedBall k hf x⟩)
+      (equicontinuous_convolutionCLM_closedBall k)
+  simpa only [Function.comp_def, e.symm_apply_apply] using h.continuous_comp e.symm.continuous
 
 /-- **The convolution operator on `L²(G)` is compact.** It factors through the uniform norm of
 `C(G)`, where `isCompactOperator_convolutionCLM` already gives compactness, and reading a
