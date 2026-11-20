@@ -441,16 +441,16 @@ variable (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
   (hH : ContDiff ℝ 2 (Function.uncurry H)) {x : ℝ → V}
   (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
   {J : ℝ → V → AlmostComplexStructure V}
-  (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+  (hJc : Continuous fun t ↦ (J t (x t)).toLinearMap.toContinuousLinearMap)
   (hJx : ∀ t, ω.Compatible (J t (x t)))
 
-include hX hH hx hJ hJx in
+include hX hH hx hJc hJx in
 /-- **The linearized Floer operator at a nondegenerate orbit is bounded below on `W^{1,2}`.**
 Let `x` be an orbit of a jointly `C²` time-dependent Hamiltonian `H` whose suspended vector field is
 globally Lipschitz, with `x(0)` a nondegenerate fixed point of the time-one map, and let `J_t(y)`
-be a `C¹` family of almost complex structures that is `ω`-compatible along `x`. At the stationary
-cylinder `u(s, t) = x(t)`, the realization `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` of the
-linearized Floer operator, which is the translation-invariant operator
+be a family of almost complex structures that is continuous and `ω`-compatible along `x`. At the
+stationary cylinder `u(s, t) = x(t)`, the realization `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` of
+the linearized Floer operator, which is the translation-invariant operator
 `∂s + J_t(x(t)) (∂t - dX_{H_t}(x(t)))`, satisfies `‖ξ‖_{W^{1,2}} ≤ K ‖D_u ξ‖_{L²}` for a
 constant `K`. -/
 theorem exists_forall_norm_le_mul_norm_floerSobolevOperator_of_isNondegenerateFixedPt
@@ -461,14 +461,13 @@ theorem exists_forall_norm_le_mul_norm_floerSobolevOperator_of_isNondegenerateFi
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
   rw [floerSobolevOperator_def, floerJetCoeff_eq_stationaryJetCoeff ω J H hx,
     ← Floer.stationarySobolevOperator_def]
-  exact Floer.exists_forall_norm_le_mul_norm_stationarySobolevOperator hJx
-    (hJ.continuous.comp (continuous_id.prodMk hxc))
+  exact Floer.exists_forall_norm_le_mul_norm_stationarySobolevOperator hJx hJc
     (fun t ↦ ω.apply_fderiv_hamiltonianVectorField_add
       (hH.comp (contDiff_prodMk_right t)).contDiffAt)
     (ω.continuous_fderiv_hamiltonianVectorField_comp hH hxc)
     (ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH hx hnd)
 
-include hX hH hx hJ hJx in
+include hX hH hx hJc hJx in
 /-- **The linearized Floer operator at a nondegenerate orbit is injective on `W^{1,2}`.** Under the
 hypotheses of `exists_forall_norm_le_mul_norm_floerSobolevOperator_of_isNondegenerateFixedPt`,
 the realization of the linearized Floer operator at the stationary cylinder `u(s, t) = x(t)` has
@@ -478,7 +477,7 @@ theorem ker_floerSobolevOperator_eq_bot_of_isNondegenerateFixedPt
     (ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).ker = ⊥ := by
   obtain ⟨C, hC⟩ :=
-    exists_forall_norm_le_mul_norm_floerSobolevOperator_of_isNondegenerateFixedPt ω hX hH hx hJ
+    exists_forall_norm_le_mul_norm_floerSobolevOperator_of_isNondegenerateFixedPt ω hX hH hx hJc
       hJx hnd
   exact LinearMap.ker_eq_bot.2 (ContinuousLinearMap.antilipschitz_of_bound _ hC).injective
 
