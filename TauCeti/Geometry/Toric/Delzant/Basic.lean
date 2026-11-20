@@ -189,6 +189,16 @@ theorem isSmoothVertex_def {x : StrongDual ℝ V} :
       ∃ b : Module.Basis (activeSet (facetPairing i u) c x) ℤ N, ∀ j, b j = u j :=
   Iff.rfl
 
+/-- The basis of the lattice `N` formed by the normals of the facets active at a smooth vertex. -/
+def IsSmoothVertex.basis {x : StrongDual ℝ V} (hx : IsSmoothVertex i u c x) :
+    Module.Basis (activeSet (facetPairing i u) c x) ℤ N :=
+  Classical.choose (isSmoothVertex_def.1 hx)
+
+@[simp]
+theorem IsSmoothVertex.basis_apply {x : StrongDual ℝ V} (hx : IsSmoothVertex i u c x)
+    (j : activeSet (facetPairing i u) c x) : hx.basis j = u j :=
+  Classical.choose_spec (isSmoothVertex_def.1 hx) j
+
 /-- A point is a smooth vertex exactly when the active normals are linearly independent and
 generate the lattice. -/
 theorem isSmoothVertex_iff_linearIndepOn {x : StrongDual ℝ V} :

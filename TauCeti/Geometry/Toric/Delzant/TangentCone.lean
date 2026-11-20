@@ -53,7 +53,7 @@ def edgeBasis (hx : IsSmoothVertex i u c x) (hi : IsIntegralLattice i) :
     Module.Basis (activeSet (facetPairing i u) c x) ℝ (StrongDual ℝ V) := by
   classical
   letI := hi.finiteDimensional
-  exact (hi.isBaseChange.basis (Classical.choose (isSmoothVertex_def.1 hx))).dualBasis.map
+  exact (hi.isBaseChange.basis hx.basis).dualBasis.map
     LinearMap.toContinuousLinearMap
 
 /-- The edge coordinates of a covector are its values on the active normals. -/
@@ -66,7 +66,7 @@ theorem edgeBasis_repr (hx : IsSmoothVertex i u c x) (hi : IsIntegralLattice i)
   simp only [edgeBasis, Module.Basis.map_repr, LinearEquiv.trans_apply,
     LinearMap.coe_toContinuousLinearMap_symm, Module.Basis.dualBasis_repr,
     hi.isBaseChange.basis_apply, AddMonoidHom.coe_toIntLinearMap,
-    Classical.choose_spec (isSmoothVertex_def.1 hx) j, ContinuousLinearMap.coe_coe]
+    hx.basis_apply j, ContinuousLinearMap.coe_coe]
 
 /-- The covector with prescribed edge coordinates takes the prescribed values on the active
 normals. -/
