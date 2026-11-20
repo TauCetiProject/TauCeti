@@ -31,7 +31,10 @@ that formal sum by `σ` negates it
 When every fibre is a pair `{e, σ e}` with `σ e ≠ e`, reading functions as formal sums of sheets
 followed by the augmentation is a short exact sequence `0 ⟶ sign ⟶ R[p⁻¹ b] ⟶ R ⟶ 0` of local
 systems (`IsCoveringMap.shortExact_signPermutationShortComplex`). Its consequences for singular
-homology are in `TauCeti.AlgebraicTopology.Singular.Transfer.Sign`.
+homology are in `TauCeti.AlgebraicTopology.Singular.Transfer.Sign`. A continuous section `s`
+trivializes the sign local system, and through this trivialization reading functions as formal
+sums of sheets sends `r` to `r • s x - r • σ (s x)`
+(`IsCoveringMap.signLocalSystemIsoOfSection_inv_comp_signLocalSystemToPermutation`).
 
 ## Main definitions
 
@@ -51,6 +54,9 @@ homology are in `TauCeti.AlgebraicTopology.Singular.Transfer.Sign`.
   local system is multiplication by `2`.
 * `IsCoveringMap.shortExact_signPermutationShortComplex`: for a double cover,
   `0 ⟶ sign ⟶ R[p⁻¹ b] ⟶ R ⟶ 0` is short exact.
+* `IsCoveringMap.signLocalSystemIsoOfSection_inv_comp_signLocalSystemToPermutation`: through the
+  trivialization by a section `s`, formal sums of sheets are the difference of the sections `s`
+  and `σ ∘ s`.
 
 ## References
 
@@ -332,6 +338,55 @@ theorem shortExact_signPermutationShortComplex :
   refine Functor.isZero _ fun x ↦ ?_
   exact ((ShortComplex.exact_iff_isZero_homology _).1 (hS x).exact).of_iso
     (ShortComplex.mapHomologyIso _ ((evaluation _ (ModuleCat R)).obj x)).symm
+
+/-- **Formal sums of sheets through the trivialization by a section.** Let `s` be a continuous
+section of a double cover whose sheets are exchanged by `σ`, and `t = σ ∘ s` the section through
+the other sheets. Under the trivialization of the sign local system given by `s`, reading a
+function on a fibre as a formal sum of sheets sends `r` to `r • s x - r • t x`: it is the
+difference of the morphisms from the constant system given by the sections `s` and `t`, after
+identifying `ULift R` with `R`. -/
+theorem signLocalSystemIsoOfSection_inv_comp_signLocalSystemToPermutation
+    (s t : C(B, E)) (hs : ∀ b, s b ∈ p ⁻¹' {b}) (ht : ∀ b, t b ∈ p ⁻¹' {b})
+    (hst : ∀ b, t b = σ (s b)) :
+    (hp.signLocalSystemIsoOfSection hfix hfib s hs).inv ≫
+        hp.signLocalSystemToPermutation R hσ hfin =
+      (TauCeti.LocalCoefficientSystem.constantFunctor B).map
+          (ULift.moduleEquiv : ULift.{u} R ≃ₗ[R] R).toModuleIso.hom ≫
+        (hp.permutationLocalSystemSection R s hs - hp.permutationLocalSystemSection R t ht) := by
+  refine NatTrans.ext (funext fun x ↦ ModuleCat.hom_ext (LinearMap.ext fun r ↦
+    Finsupp.ext fun e ↦ ?_))
+  obtain ⟨r⟩ := r
+  -- The two sheets over `x`: the value of `s`, and its image `t x` under `σ`.
+  have hσs : (⟨t x.as, ht x.as⟩ : p ⁻¹' {x.as}) =
+      Function.fiberMap σ hσ x.as ⟨s x.as, hs x.as⟩ :=
+    Subtype.ext ((hst x.as).trans (Function.fiberMap_apply_coe σ hσ x.as ⟨s x.as, hs x.as⟩).symm)
+  have hne := Function.fiberMap_ne_self hfix hσ x.as ⟨s x.as, hs x.as⟩
+  rw [NatTrans.comp_app, NatTrans.comp_app, NatTrans.app_sub, permutationLocalSystemSection_app,
+    permutationLocalSystemSection_app]
+  -- Evaluate both components at `r` and at the sheet `e`: the left one reads the function
+  -- `triv⁻¹ r` at `e`, the right one is `r • s x - r • t x`, since the component of the
+  -- constant system at `x` is `ULift.moduleEquiv` itself.
+  have hR : ((((TauCeti.LocalCoefficientSystem.constantFunctor B).map
+      (ULift.moduleEquiv : ULift.{u} R ≃ₗ[R] R).toModuleIso.hom).app x ≫
+        (hp.permutationLocalSystemSingle R x ⟨s x.as, hs x.as⟩ -
+          hp.permutationLocalSystemSingle R x ⟨t x.as, ht x.as⟩)).hom (ULift.up r) :
+        p ⁻¹' {x.as} →₀ R) =
+      (hp.permutationLocalSystemSingle R x ⟨s x.as, hs x.as⟩).hom r -
+        (hp.permutationLocalSystemSingle R x ⟨t x.as, ht x.as⟩).hom r :=
+    (rfl)
+  rw [permutationLocalSystemSingle_hom_apply, permutationLocalSystemSingle_hom_apply] at hR
+  refine (hp.signLocalSystemToPermutationApp_apply R hσ hfin x _ e).trans
+    (Eq.trans ?_ ((congrArg (fun f : p ⁻¹' {x.as} →₀ R ↦ f e) hR).trans
+      (Finsupp.sub_apply _ _ e)).symm)
+  rw [hσs]
+  rcases hfib (s x.as) e (e.property.trans (hs x.as).symm) with he | he
+  · obtain rfl : e = ⟨s x.as, hs x.as⟩ := Subtype.ext he
+    refine (hp.signLocalSystemIsoOfSection_inv_app_apply hfix hfib s hs x r).trans ?_
+    rw [Finsupp.single_eq_same, Finsupp.single_eq_of_ne hne.symm, sub_zero]
+  · obtain rfl : e = Function.fiberMap σ hσ x.as ⟨s x.as, hs x.as⟩ :=
+      Subtype.ext (he.trans (Function.fiberMap_apply_coe σ hσ x.as ⟨s x.as, hs x.as⟩).symm)
+    refine (hp.signLocalSystemIsoOfSection_inv_app_apply_fiberMap hfix hfib s hs x r).trans ?_
+    rw [Finsupp.single_eq_same, Finsupp.single_eq_of_ne hne, zero_sub]
 
 end DoubleCover
 
