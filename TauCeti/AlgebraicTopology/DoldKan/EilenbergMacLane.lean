@@ -189,6 +189,7 @@ section DirectedUnion
 
 variable {ι : Type*} [Nonempty ι] {B : ModuleCat.{u} R} (N : ι → Submodule R B)
 
+open AlgebraicTopology.DoldKan in
 /-- The Dold–Kan model of `K(B, n)` is the union of the models of the members of a directed
 family of submodules exhausting `B`: every simplex comes from the model of some member. -/
 theorem exists_mem_range_simplicialEilenbergMacLane_map_app (n : ℕ) (hN : Directed (· ≤ ·) N)
@@ -217,18 +218,33 @@ theorem exists_mem_range_simplicialEilenbergMacLane_map_app (n : ℕ) (hN : Dire
   -- It suffices that the quotient by their supremum vanishes on every summand of the splitting
   -- `Γ₀.splitting` of the model, on which the map induced by `N i → B` is `(N i)[n] → B[n]`.
   rw [← Submodule.ker_mkQ (⨆ i, r i), LinearMap.ker_eq_top]
-  have h0 : (ModuleCat.ofHom (⨆ i, r i).mkQ :
-      ((simplicialEilenbergMacLane R n).obj B).obj Δ ⟶ ModuleCat.of R (_ ⧸ ⨆ i, r i)) = 0 := by
-    refine (AlgebraicTopology.DoldKan.Γ₀.splitting K).hom_ext' _ _ fun a ↦
-      ModuleCat.hom_ext (LinearMap.ext fun y ↦ ?_)
+  -- The model is by definition `single _ _ n ⋙ Idempotents.DoldKan.Γ`, and `Idempotents.DoldKan.Γ`
+  -- is defined as `Γ₀`: its simplices are those of `Γ₀.obj K`, and its maps are those of `Γ₀`.
+  have hmap (i : ι) : ((simplicialEilenbergMacLane R n).map (X := ModuleCat.of R (N i)) (Y := B)
+      (ModuleCat.ofHom (N i).subtype)).app Δ = (Γ₀.map ((single (ModuleCat.{u} R)
+        (ComplexShape.down ℕ) n).map (ModuleCat.ofHom (N i).subtype))).app Δ := rfl
+  have h0 : (ModuleCat.ofHom (⨆ i, r i).mkQ : (Γ₀.obj K).obj Δ ⟶ ModuleCat.of R (_ ⧸ ⨆ i, r i)) =
+      0 := by
+    refine (Γ₀.splitting K).hom_ext' _ _ fun a ↦ ModuleCat.hom_ext (LinearMap.ext fun y ↦ ?_)
     obtain ⟨i, y', rfl⟩ :=
       HomologicalComplex.exists_single_map_subtype_f_apply_eq (ComplexShape.down ℕ) N n hN htop _ y
-    -- Both sides are applications of composites in `ModuleCat`: on the left, the class modulo
-    -- `⨆ i, r i` of the image of `y` in the summand, and on the right, zero.
-    exact (Submodule.Quotient.mk_eq_zero _).2 (Submodule.mem_iSup_of_mem i ⟨_,
-      ConcreteCategory.congr_hom (AlgebraicTopology.DoldKan.Γ₀.map_app_on_summand
+    -- On the summand indexed by `a`, the map induced by `N i → B` is `(N i)[n] → B[n]`
+    -- (`Γ₀.map_app_on_summand`, transported along `hmap`).
+    have hy : ((simplicialEilenbergMacLane R n).map (X := ModuleCat.of R (N i)) (Y := B)
+        (ModuleCat.ofHom (N i).subtype)).app Δ (((Γ₀.splitting ((single (ModuleCat.{u} R)
+          (ComplexShape.down ℕ) n).obj (ModuleCat.of R (N i)))).cofan Δ).inj a y') =
+        ((Γ₀.splitting K).cofan Δ).inj a (((single (ModuleCat.{u} R) (ComplexShape.down ℕ) n).map
+          (ModuleCat.ofHom (N i).subtype)).f _ y') := by
+      rw [hmap]
+      exact ConcreteCategory.congr_hom (Γ₀.map_app_on_summand
         ((single (ModuleCat.{u} R) (ComplexShape.down ℕ) n).map (ModuleCat.ofHom (N i).subtype))
-        Δ a) y'⟩)
+          Δ a) y'
+    -- Composition in `ModuleCat` is composition of linear maps, so the goal says that the class
+    -- modulo `⨆ i, r i` of the image of `y` in the summand indexed by `a` vanishes.
+    change (⨆ i, r i).mkQ (((Γ₀.splitting K).cofan Δ).inj a (((single (ModuleCat.{u} R)
+      (ComplexShape.down ℕ) n).map (ModuleCat.ofHom (N i).subtype)).f _ y')) = 0
+    refine (Submodule.mkQ_apply _ _).trans ((Submodule.Quotient.mk_eq_zero _).2 ?_)
+    exact Submodule.mem_iSup_of_mem i (LinearMap.mem_range.2 ⟨_, hy⟩)
   exact congrArg ModuleCat.Hom.hom h0
 
 end DirectedUnion
