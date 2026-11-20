@@ -19,6 +19,7 @@ generator of an exponentially rescaled semigroup.
 ## Main declarations
 
 * `Real.tendsto_mul_exp_mul_nhds_zero`: `c e^{a u} → c` as `u → 0`.
+* `Real.le_of_forall_pos_le_exp_mul`: a bound `a ≤ e^{δ c} N` for all `δ > 0` gives `a ≤ N`.
 * `Real.tendsto_exp_mul_sub_one_div`: `(e^{a t} - 1) / t → a` as `t → 0`, `t ≠ 0`.
 * `Real.isBigO_exp_comp_sub_one`: if `f → 0` and `f = O(g)` along a filter, then
   `e^f - 1 = O(g)`.
@@ -36,6 +37,14 @@ theorem tendsto_mul_exp_mul_nhds_zero (c a : ℝ) :
     Tendsto (fun u => c * exp (a * u)) (𝓝 0) (𝓝 c) := by
   have h : Continuous fun u => c * exp (a * u) := by fun_prop
   simpa using h.tendsto 0
+
+/-- If `a ≤ e^{δ c} N` for every `δ > 0`, then `a ≤ N`: the limit `δ → 0` that removes a damping
+factor such as a Gaussian `e^{δ (z - θ)²}` from a norm bound. -/
+theorem le_of_forall_pos_le_exp_mul {a c N : ℝ} (h : ∀ δ > 0, a ≤ exp (δ * c) * N) : a ≤ N :=
+  ge_of_tendsto
+    ((tendsto_mul_exp_mul_nhds_zero N c).mono_left (nhdsWithin_le_nhds (s := Set.Ioi 0)))
+    (eventually_nhdsWithin_of_forall fun δ hδ =>
+      (h δ hδ).trans_eq (by rw [mul_comm N, mul_comm c]))
 
 /-- The difference quotient `(e^{a t} - 1) / t` of `t ↦ e^{a t}` at zero tends to `a` as
 `t → 0` with `t ≠ 0`. -/

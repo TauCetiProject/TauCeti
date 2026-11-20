@@ -257,7 +257,7 @@ theorem irreducibleMorphismMk_ne_zero_iff {f : jacobsonRadicalSubmodule k X Y} :
     irreducibleMorphismMk k X Y f ≠ 0 ↔ IsIrreducibleMorphism (f : X ⟶ Y) := by
   rw [ne_eq, irreducibleMorphismMk_eq_zero_iff,
     isIrreducibleMorphism_iff_mem_jacobsonRadical_and_notMem_jacobsonRadicalSq]
-  exact (and_iff_right (mem_jacobsonRadicalSubmodule.1 f.2)).symm
+  exact (and_iff_right (mem_jacobsonRadicalSubmodule.1 f.property)).symm
 
 /-- **The space of irreducible morphisms is nontrivial exactly when an irreducible morphism
 exists**, in a category with binary biproducts and between objects with local endomorphism rings.

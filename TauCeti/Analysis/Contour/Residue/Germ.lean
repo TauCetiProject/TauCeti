@@ -30,7 +30,7 @@ variable {a : ℂ}
 
 /-- The residue as a complex-linear functional on meromorphic germs. -/
 def residue (a : ℂ) : meromorphicGerms ℂ a →ₗ[ℂ] ℂ where
-  toFun φ := Germ.liftOn φ.1 (fun f ↦ Contour.residue f a)
+  toFun φ := Germ.liftOn φ.val (fun f ↦ Contour.residue f a)
     fun _ _ h ↦ Contour.residue_congr_nhdsNE h
   map_add' φ ψ := by
     obtain ⟨f, hf, rfl⟩ := exists_mk φ

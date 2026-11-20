@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Homology.HomotopyCategory.SpectralObject
 public import Mathlib.Algebra.Homology.SpectralObject.FirstPage
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.CategoryTheory.Subobject.Lattice
+public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
 public import TauCeti.Algebra.Homology.HomotopyCategory.Triangulated
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 
@@ -32,6 +33,10 @@ cohomology `H^{p+q}` of the mapping cone of `F_q ⟶ F_{q+1}`
 (`CochainComplex.spectralSequenceFirstPageXIso`). When this map is a monomorphism, for instance
 for a filtration, this is the cohomology `H^{p+q}(F_{q+1}/F_q)` of a graded piece
 (`CochainComplex.spectralSequenceFirstPageXIsoCokernel`).
+
+A natural transformation `α : F ⟶ G` induces a morphism of spectral objects
+(`CochainComplex.spectralObjectMap`), which only depends on `α` up to homotopies of its components
+commuting with the transition maps (`CochainComplex.spectralObjectMap_eq_of_homotopy`).
 
 ## Main definitions
 
@@ -64,6 +69,10 @@ for a filtration, this is the cohomology `H^{p+q}(F_{q+1}/F_q)` of a graded piec
   cones.
 * `CochainComplex.spectralObjectMap_hom_app_hIso`: on `H^n(f)`, `spectralObjectMap α` is the map
   in cohomology of the induced morphism of mapping cones.
+* `CochainComplex.triangulatedSpectralObjectMap_eq_of_homotopy`,
+  `CochainComplex.spectralObjectMap_eq_of_homotopy`: natural transformations whose components are
+  related by homotopies commuting with the transition maps induce the same morphism of spectral
+  objects.
 
 ## References
 
@@ -136,6 +145,22 @@ lemma triangulatedSpectralObjectMap_comp (α : F ⟶ G) (β : G ⟶ H) :
   simp [triangulatedSpectralObjectMap]
   rfl
 
+/-- **Compatible homotopies induce the same morphism of triangulated spectral objects.** If the
+components of two natural transformations `α β : F ⟶ G` are related by homotopies `h i` which
+commute with the transition maps of `F` and `G`, then `α` and `β` induce the same morphism of
+triangulated spectral objects: the maps of mapping cones they induce are homotopic
+(`CochainComplex.mappingCone.mapHomotopy`), hence equal in the homotopy category. -/
+lemma triangulatedSpectralObjectMap_eq_of_homotopy (α β : F ⟶ G)
+    (h : ∀ i, Homotopy (α.app i) (β.app i))
+    (hh : ∀ ⦃i j : ι⦄ (f : i ⟶ j) (p q : ℤ),
+      (F.map f).f p ≫ (h j).hom p q = (h i).hom p q ≫ (G.map f).f q) :
+    triangulatedSpectralObjectMap α = triangulatedSpectralObjectMap β := by
+  ext : 1
+  refine NatTrans.ext (funext fun D ↦ ?_)
+  obtain ⟨i, j, f, rfl⟩ := ComposableArrows.mk₁_surjective D
+  exact HomotopyCategory.eq_of_homotopy _ _
+    (mappingCone.mapHomotopy _ _ _ _ (α.naturality f) (β.naturality f) (h i) (h j) (hh f))
+
 end Triangulated
 
 section SpectralObject
@@ -206,6 +231,16 @@ lemma spectralObjectMap_comp (α : F ⟶ G) (β : G ⟶ H) :
   simp [spectralObjectMap]
   rfl
 
+/-- **Compatible homotopies induce the same morphism of spectral objects.** If the components of
+two natural transformations `α β : F ⟶ G` are related by homotopies `h i` which commute with the
+transition maps of `F` and `G`, then `α` and `β` induce the same morphism of spectral objects, and
+so the same morphism of spectral sequences. -/
+lemma spectralObjectMap_eq_of_homotopy (α β : F ⟶ G) (h : ∀ i, Homotopy (α.app i) (β.app i))
+    (hh : ∀ ⦃i j : ι⦄ (f : i ⟶ j) (p q : ℤ),
+      (F.map f).f p ≫ (h j).hom p q = (h i).hom p q ≫ (G.map f).f q) :
+    spectralObjectMap α = spectralObjectMap β := by
+  rw [spectralObjectMap, spectralObjectMap, triangulatedSpectralObjectMap_eq_of_homotopy α β h hh]
+
 /-- On `H^n(f)`, the morphism of spectral objects induced by `α` is the map in cohomology of the
 morphism of mapping cones of `F.map f` and `G.map f`. -/
 lemma spectralObjectMap_hom_app_hIso (α : F ⟶ G) {i j : ι} (f : i ⟶ j) (n : ℤ) :
@@ -245,14 +280,14 @@ lemma spectralObject_H_map_comp_spectralObjectHIsoCokernel_hom {i j i' j' : ι} 
     ((spectralObject F).H n).map φ ≫ (spectralObjectHIsoCokernel F g n).hom =
       (spectralObjectHIsoCokernel F f n).hom ≫ HomologicalComplex.homologyMap
         (cokernel.map (F.map f) (F.map g) (F.map (φ.app 0)) (F.map (φ.app 1))
-          (naturality' ((F.mapComposableArrows 1).map φ) 0 1)) n := by
+          (naturality' ((F.mapComposableArrows 1).map φ) 0 1).symm) n := by
   have w : F.map f ≫ F.map (φ.app 1) = F.map (φ.app 0) ≫ F.map g :=
     naturality' ((F.mapComposableArrows 1).map φ) 0 1
   -- The morphism of cokernel sequences induced by `φ`.
   let ψ : ShortComplex.cokernelSequence (F.map f) ⟶ ShortComplex.cokernelSequence (F.map g) :=
     { τ₁ := F.map (φ.app 0)
       τ₂ := F.map (φ.app 1)
-      τ₃ := cokernel.map _ _ _ _ w
+      τ₃ := cokernel.map _ _ _ _ w.symm
       comm₁₂ := w.symm
       comm₂₃ := (cokernel.π_desc _ _ _).symm }
   have e := congrArg (fun u ↦ HomologicalComplex.homologyMap u n)
@@ -330,12 +365,15 @@ lemma filtrationFunctor_map_comp_objIso_hom {a b : EInt} (f : a ⟶ b) :
   simp only [Category.comp_id, Category.id_comp]
   rfl
 
-/-- The maps `F_⊥ ⟶ F_a` of the functor of a filtration vanish, their source being zero. -/
-lemma filtrationFunctor_map_bot (a : EInt) :
-    (filtrationFunctor F hF).map (homOfLE (bot_le : (⊥ : EInt) ≤ a)) = 0 := by
-  refine IsZero.eq_of_src ?_ _ _
+/-- The object at `⊥` of the functor of a filtration is zero. -/
+lemma isZero_filtrationFunctor_obj_bot : IsZero ((filtrationFunctor F hF).obj ⊥) := by
   rw [filtrationFunctor_obj, filtrationEInt_bot]
   exact IsZero.of_iso (isZero_zero _) Subobject.botCoeIsoZero
+
+/-- The maps `F_⊥ ⟶ F_a` of the functor of a filtration vanish, their source being zero. -/
+lemma filtrationFunctor_map_bot (a : EInt) :
+    (filtrationFunctor F hF).map (homOfLE (bot_le : (⊥ : EInt) ≤ a)) = 0 :=
+  (isZero_filtrationFunctor_obj_bot F hF).eq_of_src _ _
 
 instance {a b : EInt} (f : a ⟶ b) : Mono ((filtrationFunctor F hF).map f) :=
   inferInstanceAs (Mono (Subobject.ofLE _ _ (monotone_filtrationEInt F hF (leOfHom f))))
@@ -378,6 +416,21 @@ lemma eqToHom_comp_filtrationFunctorArrow (q : ℤ) :
       (F q).arrow :=
   -- Both the comparison `eqToHom` and `filtrationFunctorObjIso` are identities by definition.
   (Category.id_comp _).trans (Category.id_comp _)
+
+/-- At an integer `n`, the inclusion of the piece of the functor of a filtration is the inclusion
+of the subcomplex `F n`. Not `@[simp]`: it would rewrite the left-hand side of
+`eqToHom_comp_filtrationFunctorArrow`. -/
+lemma filtrationFunctorArrow_coe (n : ℤ) :
+    filtrationFunctorArrow F hF n = eqToHom (filtrationFunctor_obj_coe F hF n) ≫ (F n).arrow := by
+  rw [← eqToHom_comp_filtrationFunctorArrow F hF n, eqToHom_trans_assoc, eqToHom_refl,
+    Category.id_comp]
+
+/-- The inclusion of the piece at `⊤` of the functor of a filtration is an isomorphism. -/
+instance isIso_filtrationFunctorArrow_top : IsIso (filtrationFunctorArrow F hF ⊤) := by
+  have : IsIso (filtrationEInt F ⊤).arrow := by
+    rw [filtrationEInt_top]
+    infer_instance
+  infer_instance
 
 /-- A morphism of complexes sending each piece of a filtration into the corresponding piece of
 another one does so for the extensions of the filtrations to `EInt`. -/
