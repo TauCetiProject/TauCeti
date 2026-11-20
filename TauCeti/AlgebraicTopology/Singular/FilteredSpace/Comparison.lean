@@ -27,6 +27,11 @@ their spectral sequences, abutments and filtrations of the abutments.
 * `TauCeti.chainFiltrationSpectralObjectIso`: the isomorphism of spectral objects induced by a
   natural transformation by quasi-isomorphisms.
 
+## Main results
+
+* `TauCeti.chainFiltrationSpectralObjectIso_hom_app_chainFiltrationAbutmentIso_hom`: on the
+  abutment, this isomorphism is the map in homology induced by the natural transformation.
+
 ## References
 
 * J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Cambridge University Press, 2001,
@@ -83,5 +88,22 @@ lemma chainFiltrationSpectralObjectIso_hom :
     (chainFiltrationSpectralObjectIso α hX).hom =
       CochainComplex.spectralObjectMap (chainFiltrationMap α hX hX (𝟙 Y) fun _ _ hx ↦ hx) :=
   (rfl)
+
+/-- **The comparison on the abutment.** Through the abutment isomorphisms
+`TauCeti.chainFiltrationAbutmentIso`, the isomorphism
+`TauCeti.chainFiltrationSpectralObjectIso α hX` is, on the abutment in degree `-n`, the map
+`Hₙ(F Y) ⟶ Hₙ(G Y)` induced by `α`. -/
+@[reassoc]
+lemma chainFiltrationSpectralObjectIso_hom_app_chainFiltrationAbutmentIso_hom (n : ℕ) :
+    ((chainFiltrationSpectralObjectIso α hX).hom.hom (-n)).app
+        (ComposableArrows.mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))) ≫
+        (chainFiltrationAbutmentIso G hX n).hom =
+      (chainFiltrationAbutmentIso F hX n).hom ≫ HomologicalComplex.homologyMap (α.app Y) n := by
+  rw [chainFiltrationSpectralObjectIso_hom]
+  -- The proof argument `fun _ _ hx ↦ hx` of `chainFiltrationMap` only typechecks after unfolding
+  -- `𝟙 Y`, which blocks `rw` with the general lemma, so it is applied as a term.
+  refine (spectralObjectMap_chainFiltrationMap_hom_app_chainFiltrationAbutmentIso_hom
+    α hX hX (𝟙 Y) (fun _ _ hx ↦ hx) n).trans ?_
+  rw [CategoryTheory.Functor.map_id, Category.id_comp]
 
 end TauCeti
