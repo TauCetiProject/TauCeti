@@ -85,8 +85,14 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 /-- The Leibniz remainder `∇ζ ⊗ v + v ⊗ ∇ζ + s D²ζ` at `x` of the weak Hessian of `ζ u`, for
 `v = ∇u(x)` and `s = u(x)` (`TauCeti.Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_mul`), where
 `a ⊗ b` is the rank-one map `w ↦ ⟪a, w⟫ b`. -/
-@[expose] noncomputable def leibnizRemainder (zeta : E → ℝ) (v : E) (s : ℝ) (x : E) : E →L[ℝ] E :=
+noncomputable def leibnizRemainder (zeta : E → ℝ) (v : E) (s : ℝ) (x : E) : E →L[ℝ] E :=
   (innerSL ℝ (∇ zeta x)).smulRight v + (innerSL ℝ v).smulRight (∇ zeta x) + s • fderiv ℝ (∇ zeta) x
+
+/-- The defining formula `∇ζ ⊗ v + v ⊗ ∇ζ + s D²ζ` of the Leibniz remainder. -/
+theorem leibnizRemainder_def (zeta : E → ℝ) (v : E) (s : ℝ) (x : E) :
+    leibnizRemainder zeta v s x = (innerSL ℝ (∇ zeta x)).smulRight v +
+      (innerSL ℝ v).smulRight (∇ zeta x) + s • fderiv ℝ (∇ zeta) x :=
+  (rfl)
 
 /-- The Leibniz remainder `∇ζ ⊗ v + v ⊗ ∇ζ + s D²ζ` is at most `2 ‖∇ζ‖ ‖v‖ + ‖D²ζ‖ |s|` in
 operator norm. -/
@@ -106,7 +112,7 @@ theorem leibnizRemainder_eq_zero_of_notMem_tsupport {zeta : E → ℝ} {x : E}
   rw [iteratedGradientChain_succ, iteratedGradientChain_zero] at hs1
   have h1 : ∇ zeta x = 0 := image_eq_zero_of_notMem_tsupport fun h => hx (hs0 h)
   have h2 : fderiv ℝ (∇ zeta) x = 0 := image_eq_zero_of_notMem_tsupport fun h => hx (hs1 h)
-  simp [leibnizRemainder, h1, h2]
+  simp [leibnizRemainder_def, h1, h2]
 
 end LeibnizRemainder
 
@@ -288,7 +294,7 @@ theorem exists_mem_wkp0Submodule_iteratedGradient_ae_eq {q : ENNReal} [Fact (1 �
     (value_ofExponentLEL_ae hqp 2 _).trans (value_restrictL_ae hU 2 u)
   filter_upwards [iteratedGradient_one_ae_eq_of_value_ae_eq_mul hzeta hwv, hHv, hGv, hVv]
     with x h1 h2 h3 h4
-  rw [h1, h2, h3, h4, leibnizRemainder]
+  rw [h1, h2, h3, h4, leibnizRemainder_def]
   abel
 
 /-- **The Leibniz remainder in `Lᵖ`.** For `u ∈ W^{2,p}(Ω)`, an open `U ⊆ Ω` and a smooth `ζ` with
