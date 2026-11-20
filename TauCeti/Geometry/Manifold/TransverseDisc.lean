@@ -160,8 +160,7 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
   refine ⟨F, fun z ↦ q'.symm (q' y + z), D ∘L F.subtypeL, hι0, hcont, hmem,
     hasStrictFDerivAt_comp_symm_add_subtypeL hn hq' he hyq' hye F, ?_,
     fun V hV ↦ (hreach V hV).mono fun w hw hws hwg ↦ hw ⟨hws, hwg⟩⟩
-  · refine ContinuousLinearMap.isInvertible_of_injective_of_finrank_eq
-      (P ∘L D ∘L F.subtypeL) hdimF ?_
+  · refine (ContinuousLinearMap.isInvertible_iff_injective_of_finrank_eq hdimF).2 ?_
     refine (injective_iff_map_eq_zero (P ∘L D ∘L F.subtypeL)).2 fun z hz ↦ Subtype.ext ?_
     have h0 := Submodule.disjoint_def.1 hπdisj _ (hA'F z z.property)
       (LinearMap.mem_ker.2 (by simpa [π, hDF] using hz))
