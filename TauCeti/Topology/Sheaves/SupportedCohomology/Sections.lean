@@ -172,7 +172,6 @@ def supportedSubmoduleSheafForgetIso :
     ObjectProperty.homMk (F.supportedSubmodulePresheafForgetIso S).inv,
     by ext; rfl, by ext; rfl⟩
 
-@[simp]
 lemma coe_supportedSubmoduleSheafForgetIso_hom_app_apply (W : (Opens X)ᵒᵖ)
     (s : F.supportedSubmodule S W.unop) :
     dsimp% only [sheafCompose_obj_obj, Opposite.op_unop, Functor.comp_obj, ModuleCat.forget₂_obj]
@@ -181,7 +180,6 @@ lemma coe_supportedSubmoduleSheafForgetIso_hom_app_apply (W : (Opens X)ᵒᵖ)
       ((F.supportedSubmoduleSheafForgetIso S).hom.hom.app W s) = s.1) :=
   (rfl)
 
-@[simp]
 lemma coe_supportedSubmoduleSheafForgetIso_inv_app_apply (W : (Opens X)ᵒᵖ)
     (s : supportedSections
       ((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F) S W.unop) :
