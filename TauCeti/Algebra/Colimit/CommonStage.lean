@@ -66,7 +66,7 @@ theorem exists_lift [Nonempty L] [∀ i, Nonempty (A i)] (hcover : ∀ x : L, �
   have : Nonempty ι := ⟨(hcover (Classical.arbitrary L)).choose⟩
   obtain ⟨i, g, hg⟩ := exists_lift_mem hφt (fun _ ↦ Set.univ) (fun _ _ _ _ _ ↦ trivial) S
     fun x _ ↦ (hcover x).imp fun _ ⟨a, ha⟩ ↦ ⟨a, trivial, ha⟩
-  exact ⟨i, g, fun x hx ↦ (hg x hx).2⟩
+  exact ⟨i, g, fun x hx ↦ (hg x hx).right⟩
 
 include hφt in
 /-- Two pairs of elements of stages `i` and `j` with the same images in the colimit become equal

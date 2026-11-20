@@ -54,7 +54,7 @@ theorem isIntegrallyClosedIn
   obtain ⟨j, g, hg⟩ := exists_lift_mem hφt (fun i ↦ (S i : Set (A i))) htS
     ((p.map T.subtype).support.image (p.map T.subtype).coeff) fun y hy ↦ by
       obtain ⟨n, -, rfl⟩ := Finset.mem_image.mp hy
-      simpa using hT _ (p.coeff n).2
+      simpa using hT _ (p.coeff n).property
   obtain ⟨i, b, rfl⟩ := hcover x
   obtain ⟨k, hjk, hik⟩ := directed_of (· ≤ ·) j i
   let f : S k →+* L := (φ k).comp (S k).subtype

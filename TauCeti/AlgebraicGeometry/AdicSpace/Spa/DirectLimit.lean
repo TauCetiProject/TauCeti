@@ -291,7 +291,7 @@ noncomputable def spaTateDirectLimitHomeomorph :
       htplus _ (fun c hc ↦ by
         rw [PairOfDefinition.ofIsPseudoUniformizer_ringOfDefinition] at hc
         obtain ⟨c, rfl⟩ := RingHom.mem_range.mp hc
-        obtain ⟨i, a, ha, hac⟩ := hL₀ c c.2
+        obtain ⟨i, a, ha, hac⟩ := hL₀ c c.property
         exact ⟨i, a, hA₀plus i ha, hac⟩)
       hϖ.isTopologicallyNilpotent (fun _ ha ↦ by
         rw [PairOfDefinition.mem_ofIsPseudoUniformizer_idealOfDefinition] at ha
