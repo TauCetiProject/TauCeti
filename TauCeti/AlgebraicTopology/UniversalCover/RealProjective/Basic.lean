@@ -22,13 +22,13 @@ This quotient cover is an input to the computation of `π₁(RPⁿ)`.  The cover
 `isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul` from Mathlib's quotient-covering
 API, due to Junyan Xu.  Finiteness of `ℤˣ` supplies proper discontinuity; the only additional
 input is that the antipodal action on the unit sphere is free.  The integer-unit sphere action is
-provided by `TauCeti.Analysis.Normed.Module.Ball.IntUnitsAction`.
+provided by `TauCeti.Analysis.Normed.Module.Ball.IntUnitsAction`, while nonemptiness and (for
+`1 ≤ n`) connectedness of the covering sphere `Sⁿ` are supplied by
+`TauCeti.instNonemptyEuclideanSphere` and `TauCeti.connectedSpace_euclideanSphere`.
 
 ## Main declarations
 
 * `TauCeti.RealProjectiveSpace`: real projective `n`-space as an antipodal quotient of `Sⁿ`.
-* `TauCeti.RealProjectiveSpace.instNonemptySphere`: the covering sphere `Sⁿ` is nonempty.
-  Its connectedness for `1 ≤ n` is supplied by `TauCeti.connectedSpace_euclideanSphere`.
 * `TauCeti.RealProjectiveSpace.instCompactSpace`: real projective space is compact.
 * `TauCeti.RealProjectiveSpace.inductionOn`, `TauCeti.RealProjectiveSpace.lift`, and
   `TauCeti.RealProjectiveSpace.lift_unique`: elimination principles for the antipodal quotient.
@@ -63,11 +63,6 @@ def RealProjectiveSpace (n : ℕ) : Type _ :=
 namespace RealProjectiveSpace
 
 variable (n : ℕ)
-
-/-- The unit sphere of `EuclideanSpace ℝ (Fin (n + 1))` is nonempty. -/
-instance instNonemptySphere :
-    Nonempty (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
-  (NormedSpace.sphere_nonempty.mpr zero_le_one).to_subtype
 
 /-- The quotient topology on real projective space. -/
 instance instTopologicalSpace : TopologicalSpace (RealProjectiveSpace n) :=
@@ -171,7 +166,7 @@ theorem continuous_mk : Continuous (mk n) :=
 
 /-- Real projective space is nonempty. -/
 instance instNonempty : Nonempty (RealProjectiveSpace n) :=
-  ⟨mk n (instNonemptySphere n).some⟩
+  ⟨mk n (Nonempty.some inferInstance)⟩
 
 /-- Zero-dimensional real projective space has exactly one point. -/
 instance instUniqueZero : Unique (RealProjectiveSpace 0) := by

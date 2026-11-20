@@ -11,6 +11,7 @@ public import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
+import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 /-!
 # Multiplication of vector-valued tempered distributions by matrix-valued functions
@@ -91,8 +92,8 @@ theorem mulLeftCLM_apply_apply (A : E → F →L[ℂ] G) (u : 𝓢'(E, F)) (φ :
     mulLeftCLM A u φ = ∑ k, Module.finBasis ℂ (F →L[ℂ] G) k
       (u (SchwartzMap.smulLeftCLM ℂ
         (LinearMap.toContinuousLinearMap ((Module.finBasis ℂ (F →L[ℂ] G)).coord k) ∘ A) φ)) := by
-  simp only [mulLeftCLM, sum_apply, ContinuousLinearMap.comp_apply, postcomp_apply_apply,
-    smulLeftCLM_apply_apply]
+  simp only [mulLeftCLM, sum_apply, ContinuousLinearMap.comp_apply,
+    PointwiseConvergenceCLM.postcomp_apply_apply, smulLeftCLM_apply_apply]
 
 /-- **The product with a decomposed function.** If `A x = ∑ i ∈ s, c i x • L i` for scalar
 functions `c i` of temperate growth and operators `L i`, then `A u` pairs with a test function
@@ -130,8 +131,8 @@ theorem mulLeftCLM_eq_sum {ι : Type*} (s : Finset ι) {c : ι → E → ℂ}
     mulLeftCLM A = ∑ i ∈ s, PointwiseConvergenceCLM.postcomp _ (L i) ∘L smulLeftCLM F (c i) := by
   ext u φ
   rw [mulLeftCLM_apply_apply_of_eq_sum s hc L hA]
-  simp only [sum_apply, ContinuousLinearMap.comp_apply, postcomp_apply_apply,
-    smulLeftCLM_apply_apply]
+  simp only [sum_apply, ContinuousLinearMap.comp_apply,
+    PointwiseConvergenceCLM.postcomp_apply_apply, smulLeftCLM_apply_apply]
 
 /-- **A single term.** Multiplication by `x ↦ c x • L` applies `L` to the values of `c u`. -/
 theorem mulLeftCLM_smul_const {c : E → ℂ} (hc : c.HasTemperateGrowth) (L : F →L[ℂ] G) :
@@ -156,7 +157,8 @@ theorem mulLeftCLM_smul_id {g : E → ℂ} (hg : g.HasTemperateGrowth) :
     mulLeftCLM (fun x ↦ g x • ContinuousLinearMap.id ℂ F) = smulLeftCLM F g := by
   rw [mulLeftCLM_smul_const hg]
   ext u φ
-  simp only [ContinuousLinearMap.comp_apply, postcomp_apply_apply, ContinuousLinearMap.id_apply]
+  simp only [ContinuousLinearMap.comp_apply, PointwiseConvergenceCLM.postcomp_apply_apply,
+    ContinuousLinearMap.id_apply]
 
 /-- **Additivity.** For `A` and `B` of temperate growth, `(A + B) u = A u + B u`. -/
 theorem mulLeftCLM_add {A B : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth)

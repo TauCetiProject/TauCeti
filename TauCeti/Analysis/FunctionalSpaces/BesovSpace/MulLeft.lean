@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
+import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 /-!
 # Multiplication by matrix-valued functions on Besov spaces
@@ -108,7 +109,8 @@ theorem toDistr_mulLeftCLM {A : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth)
   rw [TemperedDistribution.mulLeftCLM_apply_apply, ← toDistrCLM_apply, mulLeftCLM, sum_apply,
     map_sum, sum_apply]
   simp only [ContinuousLinearMap.comp_apply, toDistrCLM_apply, toDistr_postcomp,
-    toDistr_smulLeftCLM, postcomp_apply_apply, TemperedDistribution.smulLeftCLM_apply_apply]
+    toDistr_smulLeftCLM, PointwiseConvergenceCLM.postcomp_apply_apply,
+    TemperedDistribution.smulLeftCLM_apply_apply]
 
 end Matrix
 

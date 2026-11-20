@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
@@ -66,11 +67,14 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
 * `TauCeti.mdifferentiableAt_of_mvfderiv_apply_ne_zero`: a function whose `mvfderiv` is nonzero on
   some tangent vector is differentiable there.
 * `TauCeti.mfderiv_neg_eq_zero_iff`: `mfderiv I 𝓘(𝕜, F) (-g) x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
+* `TauCeti.exists_contMDiffAt_mvfderiv_eq_one`, `TauCeti.exists_contMDiffAt_mvfderiv_ne_zero`: any
+  nonzero tangent vector admits a scalar function `C^n` at the point whose differential sends it to
+  `1`.
 -/
 
 public section
 
-open scoped Manifold Topology
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -389,5 +393,30 @@ theorem mfderiv_apply_eq_zero_of_const_line {f : F → M} {z w : F}
     rfl
   · rw [mfderiv_zero_of_not_mdifferentiableAt hd]
     rfl
+
+/-- **Existence of a local `C^n` scalar function separating a nonzero tangent vector.** For any
+nonzero tangent vector `v` at `x` and any regularity `n : ℕ∞ω` (including smooth and analytic),
+there exists a scalar function `g : M → 𝕜` which is `C^n` at `x` with `dg_x(v) = 1`. No manifold
+smoothness, finite dimension, or boundaryless assumption is required: `g` is a continuous linear
+functional composed with the preferred extended chart at `x`. -/
+theorem exists_contMDiffAt_mvfderiv_eq_one [SeparatingDual 𝕜 E] {x : M} {v : TangentSpace I x}
+    (hv : v ≠ 0) (n : ℕ∞ω) :
+    ∃ g : M → 𝕜, ContMDiffAt I 𝓘(𝕜) n g x ∧ mvfderiv I g x v = 1 := by
+  -- `TangentSpace I x` is definitionally the model space `E`.
+  have hv' : @Ne E v 0 := hv
+  obtain ⟨ℓ, hℓ⟩ := SeparatingDual.exists_eq_one (R := 𝕜) hv'
+  refine ⟨ℓ ∘ extChartAt I x,
+    (ℓ.contDiff.contMDiff (n := n)).contMDiffAt.comp x contMDiffAt_extChartAt, ?_⟩
+  rw [ℓ.mvfderiv_comp_apply ((contMDiffAt_extChartAt (I := I) (n := 1)).mdifferentiableAt
+    one_ne_zero), mvfderiv_apply_of_eventuallyEq_extChartAt Filter.EventuallyEq.rfl]
+  exact hℓ
+
+/-- Any nonzero tangent vector `v` at `x` admits a scalar function `g : M → 𝕜` that is `C^n` at
+`x` with `dg_x(v) ≠ 0`. -/
+theorem exists_contMDiffAt_mvfderiv_ne_zero [SeparatingDual 𝕜 E] {x : M} {v : TangentSpace I x}
+    (hv : v ≠ 0) (n : ℕ∞ω) :
+    ∃ g : M → 𝕜, ContMDiffAt I 𝓘(𝕜) n g x ∧ mvfderiv I g x v ≠ 0 := by
+  obtain ⟨g, hg, hgv⟩ := exists_contMDiffAt_mvfderiv_eq_one (I := I) hv n
+  exact ⟨g, hg, hgv.symm ▸ one_ne_zero⟩
 
 end TauCeti

@@ -52,7 +52,9 @@ threshold works for all curves with image in a fixed compact set.
 * `TauCeti.fderivWithin_norm_fderivWithin_one_sq_apply_I_eq_zero`: the Neumann condition
   `∂ₜ ‖∂ₛu‖² = 0` on the real axis.
 * `TauCeti.pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_ball`: the
-  boundary mean-value inequality for `J`-holomorphic half-discs, with explicit constants.
+  boundary mean-value inequality for `J`-holomorphic half-discs, with explicit constants, at any
+  point `z` of the closed half-disc with `ball z ρ` inside the disc, which controls `∂ₛu` near the
+  edge and not only at its centre.
 * `exists_pos_forall_pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_ball`:
   the same with a smallness threshold that is uniform over curves with image in a compact set.
 
@@ -155,17 +157,21 @@ theorem fderivWithin_norm_fderivWithin_one_sq_apply_I_eq_zero {U : Set ℂ} (hU 
   simp [hsymm, hmix, inner_add_right, hJLx _ hξ _ hacc, hdJ]
 
 /-- **The boundary mean-value inequality for `J`-holomorphic half-discs.** Let `x₀` lie on the
-real axis, and let `u : ℂ → V` be `C³` on the half-disc `{0 ≤ im z} ∩ ball x₀ r`, up to its
+real axis, and let `u : ℂ → V` be `C³` on the half-disc `{0 ≤ im y} ∩ ball x₀ r`, up to its
 straight edge, with `∂ₛu` continuous on the closed half-disc, solving the Cauchy--Riemann equation
 `∂ₜu = J(u) ∂ₛu` and mapping the edge into a closed subspace `L`. Derivatives are taken within the
 closed upper half-plane. Suppose that `J` is `C²` along `u`, squares to `-1`, and `a`, `b`, `c`
 bound the norms of `J`, of its derivative and of its second derivative along `u`, and that at the
-boundary values `J(p)` maps `L` into `Lᗮ` for `p ∈ L` nearby. If the energy over the half-disc
-is small, `16 (4ac + 2b² + 8a²b²) ∫ ‖∂ₛu‖² < π`, then
+boundary values `J(p)` maps `L` into `Lᗮ` for `p ∈ L` nearby. If the energy over the half-disc is
+small, `16 (4ac + 2b² + 8a²b²) ∫ ‖∂ₛu‖² < π`, then every point `z` of the closed upper half-plane
+and every disc `ball z ρ` inside `ball x₀ r` satisfy
 
-`π r² ‖∂ₛu(x₀)‖² ≤ 16 ∫_{{0 ≤ im z} ∩ ball x₀ r} ‖∂ₛu‖²`. -/
-theorem pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_ball {x₀ : ℂ}
-    {r a b c : ℝ} (hx₀ : x₀.im = 0) (hr : 0 ≤ r) (hL : IsClosed (L : Set V))
+`π ρ² ‖∂ₛu(z)‖² ≤ 16 ∫_{{0 ≤ im y} ∩ ball x₀ r} ‖∂ₛu‖²`.
+
+In particular `π r² ‖∂ₛu(x₀)‖² ≤ 16 ∫_{{0 ≤ im y} ∩ ball x₀ r} ‖∂ₛu‖²` at the centre. -/
+theorem pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_ball
+    {x₀ z : ℂ} {r ρ a b c : ℝ} (hx₀ : x₀.im = 0) (hz : 0 ≤ z.im) (hρ : 0 ≤ ρ)
+    (hzρ : ball z ρ ⊆ ball x₀ r) (hL : IsClosed (L : Set V))
     (hu : ContDiffOn ℝ 3 u ({z | 0 ≤ z.im} ∩ ball x₀ r))
     (hu' : ContinuousOn (fun y ↦ fderivWithin ℝ u {z | 0 ≤ z.im} y 1)
       ({z | 0 ≤ z.im} ∩ closedBall x₀ r))
@@ -181,7 +187,7 @@ theorem pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_
     (hc : ∀ y ∈ {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, ‖iteratedFDeriv ℝ 2 J (u y)‖ ≤ c)
     (hsmall : 16 * (4 * a * c + 2 * b ^ 2 + 8 * a ^ 2 * b ^ 2) *
       ∫ y in {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, ‖fderivWithin ℝ u {z | 0 ≤ z.im} y 1‖ ^ 2 < π) :
-    π * r ^ 2 * ‖fderivWithin ℝ u {z | 0 ≤ z.im} x₀ 1‖ ^ 2 ≤
+    π * ρ ^ 2 * ‖fderivWithin ℝ u {z | 0 ≤ z.im} z 1‖ ^ 2 ≤
       16 * ∫ y in {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, ‖fderivWithin ℝ u {z | 0 ≤ z.im} y 1‖ ^ 2 := by
   set H : Set ℂ := {z | 0 ≤ z.im}
   set S := H ∩ ball x₀ r
@@ -196,8 +202,8 @@ theorem pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_
       ((isOpen_lt continuous_const continuous_im).mem_nhds hy0) fun z hz ↦ le_of_lt hz)
   refine pi_mul_sq_mul_le_sixteen_mul_setIntegral_inter_ball_of_neg_mul_sq_le_laplacian
     (w := fun y ↦ ‖fderivWithin ℝ u H y 1‖ ^ 2)
-    (A := 4 * a * c + 2 * b ^ 2 + 8 * a ^ 2 * b ^ 2) hx₀ hr ?_ (hu'.norm.pow 2)
-    (fun _ _ ↦ by positivity) (fun x hx hx0 ↦ ?_) (fun z hz hz0 ↦ ?_) hsmall
+    (A := 4 * a * c + 2 * b ^ 2 + 8 * a ^ 2 * b ^ 2) hx₀ ?_ (hu'.norm.pow 2)
+    (fun _ _ ↦ by positivity) (fun x hx hx0 ↦ ?_) (fun z hz hz0 ↦ ?_) hsmall hz hρ hzρ
   · exact (((hu.fderivWithin hS (by norm_num)).clm_apply
       (contDiffOn_const (c := (1 : ℂ)))).norm_sq ℝ).congr
       fun y hy ↦ by simp only [hHS y hy.2]
@@ -223,17 +229,19 @@ theorem pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_
 `J` be `C²` on an open set `W` containing a compact set `K`, with `J(x)² = -1` on `K`, and let
 `L` be a closed subspace such that `J(p)` maps `L` into `Lᗮ` for every `p ∈ L ∩ W`. There is an
 energy threshold `δ > 0` such that every solution `u` of `∂ₜu = J(u) ∂ₛu` on a half-disc
-`{0 ≤ im z} ∩ ball x₀ r` centred on the real axis that is `C³` up to the straight edge, has
+`{0 ≤ im y} ∩ ball x₀ r` centred on the real axis that is `C³` up to the straight edge, has
 `∂ₛu` continuous on the closed half-disc, maps the edge into `L` and the half-disc into `K`, and
 has energy `∫ ‖∂ₛu‖² < δ` over it, satisfies
-`π r² ‖∂ₛu(x₀)‖² ≤ 16 ∫_{{0 ≤ im z} ∩ ball x₀ r} ‖∂ₛu‖²`. Derivatives are taken within the closed
-upper half-plane. -/
+`π ρ² ‖∂ₛu(z)‖² ≤ 16 ∫_{{0 ≤ im y} ∩ ball x₀ r} ‖∂ₛu‖²` at every point `z` of the closed upper
+half-plane with `ball z ρ ⊆ ball x₀ r`, in particular at the centre `z = x₀` with `ρ = r`.
+Derivatives are taken within the closed upper half-plane. -/
 theorem
     exists_pos_forall_pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_ball
     {W K : Set V} (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
     (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v) (hL : IsClosed (L : Set V))
     (hJL : ∀ p ∈ (L : Set V) ∩ W, ∀ v ∈ L, ∀ w ∈ L, ⟪v, J p w⟫_ℝ = 0) :
-    ∃ δ > 0, ∀ ⦃u : ℂ → V⦄ ⦃x₀ : ℂ⦄ ⦃r : ℝ⦄, x₀.im = 0 → 0 ≤ r →
+    ∃ δ > 0, ∀ ⦃u : ℂ → V⦄ ⦃x₀ z : ℂ⦄ ⦃r ρ : ℝ⦄, x₀.im = 0 → 0 ≤ z.im → 0 ≤ ρ →
+      ball z ρ ⊆ ball x₀ r →
       ContDiffOn ℝ 3 u ({z | 0 ≤ z.im} ∩ ball x₀ r) →
       ContinuousOn (fun y ↦ fderivWithin ℝ u {z | 0 ≤ z.im} y 1)
         ({z | 0 ≤ z.im} ∩ closedBall x₀ r) →
@@ -242,19 +250,20 @@ theorem
       (∀ y ∈ ball x₀ r, y.im = 0 → u y ∈ L) →
       (∀ y ∈ {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, u y ∈ K) →
       ∫ y in {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r, ‖fderivWithin ℝ u {z | 0 ≤ z.im} y 1‖ ^ 2 < δ →
-      π * r ^ 2 * ‖fderivWithin ℝ u {z | 0 ≤ z.im} x₀ 1‖ ^ 2 ≤
+      π * ρ ^ 2 * ‖fderivWithin ℝ u {z | 0 ≤ z.im} z 1‖ ^ 2 ≤
         16 * ∫ y in {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r,
           ‖fderivWithin ℝ u {z | 0 ≤ z.im} y 1‖ ^ 2 := by
   -- One nonnegative bound `C` for `J` and its first two derivatives on `K`.
   obtain ⟨C, hC0, hC⟩ := hJ.exists_nonneg_bound_iteratedFDeriv_of_isOpen (n := 2) hW hK hKW
   set A := 4 * C * C + 2 * C ^ 2 + 8 * C ^ 2 * C ^ 2
   refine ⟨π / (16 * (A + 1)), by positivity,
-    fun u x₀ r hx₀ hr hu hu' hCR huL huK hE ↦ ?_⟩
+    fun u x₀ z r ρ hx₀ hz hρ hzρ hu hu' hCR huL huK hE ↦ ?_⟩
   have hI : 0 ≤ ∫ y in {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r,
       ‖fderivWithin ℝ u {z | 0 ≤ z.im} y 1‖ ^ 2 := by
     positivity
-  refine pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_ball hx₀ hr hL
-    hu hu' hCR huL (fun y hy hy0 ↦ ?_) (fun y hy ↦ hJ.contDiffAt (hW.mem_nhds (hKW (huK y hy))))
+  refine pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_ball
+    hx₀ hz hρ hzρ hL hu hu' hCR huL (fun y hy hy0 ↦ ?_)
+    (fun y hy ↦ hJ.contDiffAt (hW.mem_nhds (hKW (huK y hy))))
     (fun y hy ↦ hJsq _ (huK y hy))
     (fun y hy ↦ by simpa using hC 0 (by norm_num) _ (huK y hy))
     (fun y hy ↦ by simpa [norm_iteratedFDeriv_one] using hC 1 (by norm_num) _ (huK y hy))

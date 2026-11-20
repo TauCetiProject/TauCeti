@@ -17,9 +17,9 @@ public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 # Laplace-transform resolvents of strongly continuous semigroups
 
 This file develops the pointwise Bochner-integral resolvent for a C₀-semigroup with a
-growth bound, proves that it maps into the generator domain, and establishes the
-right-inverse identity and norm estimate. It also packages the resolvent as a function of
-the spectral parameter alone (`resolventFun`, extended by the junk value `0` below the
+growth bound, proves that it maps into the generator domain and commutes with the semigroup,
+and establishes the right-inverse identity and norm estimate. It also packages the resolvent as a
+function of the spectral parameter alone (`resolventFun`, extended by the junk value `0` below the
 growth exponent), the form in which it is differentiated in
 `TauCeti/Analysis/Semigroups/Resolvent/Deriv.lean`.
 
@@ -278,6 +278,18 @@ private theorem StronglyContinuousSemigroup.resolvent_generator_tendsto
           simpa using hcont.tendsto
         exact hexp_cont.mono_left nhdsWithin_le_nhds
       · exact S.tendsto_average_resolvent_integrand lambda x
+
+/-- **The resolvent commutes with the semigroup**: `R(λ) S(t) x = S(t) R(λ) x`. -/
+theorem StronglyContinuousSemigroup.resolvent_realOperator_comm
+    (S : StronglyContinuousSemigroup X) {ω M : ℝ} (hb : S.HasGrowthBound ω M)
+    (lambda : ℝ) (hlam : ω < lambda) (t : ℝ) (x : X) :
+    S.resolvent hb lambda hlam (S.realOperator t x) =
+      S.realOperator t (S.resolvent hb lambda hlam x) := by
+  rw [S.resolvent_apply, S.resolvent_apply, ← (S.realOperator t).integral_comp_comm
+    (S.integrableOn_resolvent_integrand hb lambda hlam x)]
+  congr 1 with s
+  rw [map_smul, S.realOperator_def, S.realOperator_def, ← S.map_add_apply, ← S.map_add_apply,
+    add_comm]
 
 /-- The resolvent maps all of `X` into the domain of the generator
 ([EN] Thm. II.1.10(i), [Linares] eq. 0.15). -/

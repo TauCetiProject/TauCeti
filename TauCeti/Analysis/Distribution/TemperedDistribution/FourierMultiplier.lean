@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Distribution.Support
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
+import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 /-!
 # Fourier multipliers on tempered distributions
@@ -158,6 +159,6 @@ theorem postcomp_fourierMultiplierCLM {G : Type*} [NormedAddCommGroup G] [Normed
     PointwiseConvergenceCLM.postcomp _ L (fourierMultiplierCLM F g u) =
       fourierMultiplierCLM G g (PointwiseConvergenceCLM.postcomp _ L u) := by
   ext φ
-  simp only [postcomp_apply_apply, fourierMultiplierCLM_apply_apply]
+  simp only [PointwiseConvergenceCLM.postcomp_apply_apply, fourierMultiplierCLM_apply_apply]
 
 end TemperedDistribution
