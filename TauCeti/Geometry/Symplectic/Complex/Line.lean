@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Analysis.Real.Sqrt
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.Complex.Basic
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
@@ -253,10 +254,8 @@ open scoped ComplexConjugate in
 /-- Transporting a structure along complex conjugation conjugates it: `v ↦ conj (J (conj v))`. -/
 theorem AlmostComplexStructure.transport_conjCLE_apply (J : AlmostComplexStructure ℂ) (v : ℂ) :
     J.transport conjCLE.toLinearEquiv v = conj (J (conj v)) := by
-  have hs : conjCLE.symm = conjCLE := by
-    rw [← conjLIE_toCLE, ← LinearIsometryEquiv.toContinuousLinearEquiv_symm, conjLIE_symm]
-  rw [AlmostComplexStructure.transport_apply, ContinuousLinearEquiv.coe_symm_toLinearEquiv, hs,
-    ContinuousLinearEquiv.coe_toLinearEquiv, conjCLE_apply, conjCLE_apply]
+  rw [AlmostComplexStructure.transport_apply, ContinuousLinearEquiv.coe_symm_toLinearEquiv,
+    conjCLE_symm, ContinuousLinearEquiv.coe_toLinearEquiv, conjCLE_apply, conjCLE_apply]
 
 open ContinuousLinearMap in
 open scoped RealInnerProductSpace in
