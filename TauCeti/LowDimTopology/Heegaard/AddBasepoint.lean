@@ -63,10 +63,8 @@ domain from `(x, i)` to itself the crescents and the remainder of `R₀` cancel 
 formula, while the lens contributes `2 n_L` to the Maslov index and `n_L` at the new basepoint.
 So the normalization under which the relative grading `μ(D) - 2 ∑ᵢ n_{zᵢ}(D)` is well defined
 passes to the new diagram, and its relative grading is
-`gr((x, i), (y, j)) = gr(x, y) + j - i`
-(`TauCeti.HeegaardRegionSystem.IsDomainBetween.coe_relativeGrading_addBasepoint`): the
-identification `CF̂_{b+1} ≅ CF̂_b ⊗ W` respects gradings when the two generators of `W` lie one
-apart.
+`gr((x, i), (y, j)) = gr(x, y) + j - i` modulo the periodic Maslov indices
+(`TauCeti.HeegaardRegionSystem.IsDomainBetween.coe_relativeGrading_addBasepoint`).
 
 ## Main definitions
 
@@ -733,20 +731,11 @@ def addBasepointPeriodicDomainsEquiv :
     obtain ⟨-, h2, hs⟩ := (H.mem_periodicDomains_addBasepoint_iff r₀).mp P.2
     ext (r | k)
     · rfl
-    · fin_cases k
-      · rfl
-      · simp only [Fin.reduceFinMk, Matrix.cons_val, Sum.elim_inr, Function.comp_apply]
-        omega
-      · simp [h2]
+    · fin_cases k <;> simp [h2, ← hs]
   map_add' c d := by
     ext (r | k)
     · rfl
-    · fin_cases k
-      · rfl
-      · simp only [Fin.reduceFinMk, Matrix.cons_val, Sum.elim_inr, AddSubgroup.coe_add,
-          Pi.add_apply, Prod.fst_add, Prod.snd_add]
-        ring
-      · simp
+    · fin_cases k <;> simp [sub_add_sub_comm]
 
 /-- The periodic domain attached to `(Q, a)` is `Q` extended by `a` on the `α`-crescent,
 `Q(r₀) - a` on the `β`-crescent and `0` on the lens. -/
@@ -773,7 +762,7 @@ theorem addBasepointPeriodicDomainsEquiv_symm_apply_snd
     ((H.addBasepointPeriodicDomainsEquiv r₀).symm P).2 = (P : Region ⊕ Fin 3 → ℤ) (Sum.inr 0) :=
   (rfl)
 
-/-- A nonnegative periodic domain `Q` of the original diagram extends to the nonnegative periodic
+/-- A periodic domain `Q` of the original diagram extends to the periodic
 domain of the diagram with an added basepoint with multiplicity `Q(r₀)` on the `α`-crescent and
 `0` on the `β`-crescent and the lens. -/
 private theorem sum_elim_mem_periodicDomains_addBasepoint {Q : Region → ℤ}
@@ -804,6 +793,7 @@ private theorem eq_zero_of_mem_periodicDomains_addBasepoint {P : Region ⊕ Fin 
 
 /-- Adding a basepoint preserves and reflects weak admissibility: the new periodic domains
 `a (C_α - C_β)` have coefficients of both signs when `a ≠ 0`. -/
+@[simp]
 theorem weaklyAdmissible_addBasepoint_iff :
     (H.addBasepoint r₀).WeaklyAdmissible ↔ H.WeaklyAdmissible := by
   rw [weaklyAdmissible_iff, weaklyAdmissible_iff]
@@ -850,11 +840,11 @@ theorem periodicMaslovIndices_addBasepoint (x : H.Generator) (i : Fin 2) :
   · rintro ⟨Q, hQ, rfl⟩
     refine ⟨_, H.sum_elim_mem_periodicDomains_addBasepoint r₀ hQ, ?_⟩
     rw [H.maslovIndex_addBasepoint_of_mem_periodicDomains r₀ χ x i
-      (H.sum_elim_mem_periodicDomains_addBasepoint r₀ hQ)]
-    rfl
+      (H.sum_elim_mem_periodicDomains_addBasepoint r₀ hQ), Sum.elim_comp_inl]
 
 /-- Adding a basepoint preserves and reflects weak admissibility at a generator, the condition
 of weak admissibility for the spin^c structure of that generator. -/
+@[simp]
 theorem weaklyAdmissibleAt_addBasepoint_iff (x : H.Generator) (i : Fin 2) :
     (H.addBasepoint r₀).WeaklyAdmissibleAt (addBasepointEuler χ r₀)
         (H.addBasepointGenerator r₀ x i) ↔ H.WeaklyAdmissibleAt χ x := by
@@ -870,10 +860,8 @@ theorem weaklyAdmissibleAt_addBasepoint_iff (x : H.Generator) (i : Fin 2) :
     exact H.eq_zero_of_mem_periodicDomains_addBasepoint r₀ hP hP₀
       (h _ ((H.mem_periodicDomains_addBasepoint_iff r₀).mp hP).1 hμ fun r => hP₀ (Sum.inl r))
 
-/-- Adding a basepoint preserves and reflects strong admissibility at a generator. A new periodic
-domain `Q + a (C_α - C_β)` has the Maslov index of `Q`, and its coefficients are those of `Q`
-together with `a`, `Q(r₀) - a` and `0`; when `Q = 0` and `a ≠ 0` one of `a` and `-a` is positive,
-which is more than half the index zero. -/
+/-- Adding a basepoint preserves and reflects strong admissibility at a generator. -/
+@[simp]
 theorem stronglyAdmissible_addBasepoint_iff (x : H.Generator) (i : Fin 2) :
     (H.addBasepoint r₀).StronglyAdmissible (addBasepointEuler χ r₀)
         (H.addBasepointGenerator r₀ x i) ↔ H.StronglyAdmissible χ x := by
@@ -888,26 +876,21 @@ theorem stronglyAdmissible_addBasepoint_iff (x : H.Generator) (i : Fin 2) :
     · exact ⟨r, by rwa [hμP] at hr⟩
     · rw [hμP] at hr
       -- Only the `α`-crescent can carry a coefficient above half the nonnegative index.
+      generalize H.maslovIndex χ x x Q = μ at hμ hr ⊢
       fin_cases k
       · exact ⟨r₀, hr⟩
-      · simp only [Fin.reduceFinMk, Matrix.cons_val, Sum.elim_inr, Int.cast_zero] at hr
-        linarith
-      · simp only [Fin.reduceFinMk, Matrix.cons_val, Sum.elim_inr, Int.cast_zero] at hr
-        linarith
+      all_goals simp at hr; linarith
   · intro h P hP hP0 hμ
     rw [H.maslovIndex_addBasepoint_of_mem_periodicDomains r₀ χ x i hP] at hμ ⊢
     by_cases hQ : P ∘ Sum.inl = 0
-    · obtain ⟨-, h2, hs⟩ := (H.mem_periodicDomains_addBasepoint_iff r₀).mp hP
-      have hr₀ : P (Sum.inl r₀) = 0 := congrFun hQ r₀
+    · -- A new periodic domain `a (C_α - C_β)` with `a ≠ 0` has a positive coefficient, which is
+      -- more than half its index zero: otherwise `-P` would be a nonnegative periodic domain
+      -- vanishing on the old regions, hence zero.
       rw [hQ, map_zero, zero_div]
       by_contra! hle
-      refine hP0 (funext fun r => ?_)
-      rcases r with r | k
-      · exact congrFun hQ r
-      · have h0 := hle (Sum.inr 0)
-        have h1 := hle (Sum.inr 1)
-        norm_cast at h0 h1
-        fin_cases k <;> simp <;> omega
+      refine hP0 (neg_eq_zero.mp (H.eq_zero_of_mem_periodicDomains_addBasepoint r₀ (neg_mem hP)
+        (fun r => ?_) (by rw [Pi.neg_comp, hQ, neg_zero])))
+      simpa using hle r
     · obtain ⟨r, hr⟩ := h _ ((H.mem_periodicDomains_addBasepoint_iff r₀).mp hP).1 hQ hμ
       exact ⟨Sum.inl r, hr⟩
 
@@ -921,9 +904,7 @@ variable [Fintype Point] [DecidableEq Region] [Fintype Region] [Fintype Basepoin
 /-- **The grading normalization survives adding a basepoint.** Suppose every domain `E` from a
 generator of the original diagram to itself has `μ(E) - 2 ∑ᵢ n_{zᵢ}(E)` among the periodic Maslov
 indices, the normalization under which its relative grading is well defined. Then so does every
-such domain of the diagram with an added basepoint: there the crescents and the remainder of `r₀`
-cancel, and the lens contributes `2 n_L` to the Maslov index and `n_L` to the multiplicity at the
-new basepoint. -/
+such domain of the diagram with an added basepoint. -/
 theorem maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_addBasepoint
     (hself : ∀ (x : H.Generator) (E : Region → ℤ), H.IsDomainBetween x x E →
       H.maslovIndex χ x x E - 2 * ∑ z, (E (H.basepoint z) : ℚ) ∈ H.periodicMaslovIndices χ x) :
@@ -939,6 +920,8 @@ theorem maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_addBasepoint
   have hs' : (E (Sum.inr 0) : ℚ) + E (Sum.inr 1) - E (Sum.inl r₀) - E (Sum.inr 2) = 0 := by
     exact_mod_cast hs.trans (sub_self _)
   rw [periodicMaslovIndices_addBasepoint, maslovIndex_addBasepoint]
+  -- The crescents and the remainder of `r₀` cancel, and the lens contributes `2 n_L` to the
+  -- Maslov index and `n_L` to the multiplicity at the new basepoint.
   convert hself x _ hE using 1
   simp only [addBasepoint_basepoint, Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr,
     Function.comp_apply, Finset.univ_unique, Finset.sum_singleton]
@@ -950,11 +933,11 @@ variable (hself : ∀ (x : H.Generator) (E : Region → ℤ), H.IsDomainBetween 
 
 include hself
 
-/-- **The relative grading after adding a basepoint**, modulo the periodic Maslov indices: when a
-domain joins `x` to `y`, the generators `(x, i)` and `(y, j)` of the diagram with an added
-basepoint have relative grading `gr(x, y) + j - i`. So the hat chain group of the new diagram is
-graded as the tensor product of that of the old one with the space `W` on the two new points,
-whose generators lie one apart. -/
+/-- **The relative grading after adding a basepoint**, modulo the periodic Maslov indices: when the
+original diagram satisfies the relative-grading normalization `hself` (`μ(E) - 2 ∑ᵢ n_{zᵢ}(E)` is a
+periodic Maslov index for every domain `E` from a generator to itself) and a domain joins `x` to
+`y`, the generators `(x, i)` and `(y, j)` of the diagram with an added basepoint have relative
+grading `gr(x, y) + j - i`. -/
 theorem IsDomainBetween.coe_relativeGrading_addBasepoint {x y : H.Generator} {D : Region → ℤ}
     (hD : H.IsDomainBetween x y D) (i j : Fin 2) :
     ((H.addBasepoint r₀).relativeGrading (addBasepointEuler χ r₀) (H.addBasepointGenerator r₀ x i)
@@ -977,8 +960,10 @@ theorem IsDomainBetween.coe_relativeGrading_addBasepoint {x y : H.Generator} {D 
   push_cast
   ring
 
-/-- **The relative grading after adding a basepoint**: when the periodic domains of the original
-diagram have Maslov index zero at `x` and a domain joins `x` to `y`, the generators `(x, i)` and
+/-- **The relative grading after adding a basepoint**: when the original diagram satisfies the
+relative-grading normalization `hself` (`μ(E) - 2 ∑ᵢ n_{zᵢ}(E)` is a periodic Maslov index for
+every domain `E` from a generator to itself), its periodic domains have Maslov index zero at `x`
+and a domain joins `x` to `y`, the generators `(x, i)` and
 `(y, j)` of the diagram with an added basepoint have relative grading `gr(x, y) + j - i`. -/
 theorem IsDomainBetween.relativeGrading_addBasepoint {x y : H.Generator} {D : Region → ℤ}
     (hP : ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0) (hD : H.IsDomainBetween x y D)
@@ -989,8 +974,9 @@ theorem IsDomainBetween.relativeGrading_addBasepoint {x y : H.Generator} {D : Re
   rwa [periodicMaslovIndices_eq_bot_iff.mpr hP, AddSubgroup.mem_bot, sub_eq_zero] at h
 
 /-- The two generators `(x, i)` and `(x, j)` of the diagram with an added basepoint have relative
-grading `j - i` when the periodic domains of the original diagram have Maslov index zero at `x`:
-the generators of the factor `W` lie one apart. -/
+grading `j - i` when the original diagram satisfies the relative-grading normalization `hself`
+(`μ(E) - 2 ∑ᵢ n_{zᵢ}(E)` is a periodic Maslov index for every domain `E` from a generator to
+itself) and its periodic domains have Maslov index zero at `x`. -/
 theorem relativeGrading_addBasepoint_self {x : H.Generator}
     (hP : ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0) (i j : Fin 2) :
     (H.addBasepoint r₀).relativeGrading (addBasepointEuler χ r₀) (H.addBasepointGenerator r₀ x i)
