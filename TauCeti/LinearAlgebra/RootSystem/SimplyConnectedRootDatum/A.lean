@@ -194,23 +194,23 @@ private lemma typeAPairing (p q : TypeAIndex n) :
 
 private lemma typeAPairRoot_self (p : TypeAIndex n) : typeAPairRoot p ⬝ᵥ typeAPairCoroot p = 2 := by
   rw [typeAPairing]
-  have h := p.2
+  have h := p.property
   split_ifs <;> simp_all
 
 private lemma typeAPairRoot_injective : Injective (typeAPairRoot (n := n)) := by
   intro p q hpq
   have h2 : typeAPairRoot q ⬝ᵥ typeAPairCoroot p = 2 := by rw [← hpq]; exact typeAPairRoot_self p
   rw [typeAPairing] at h2
-  have _ := p.2
-  have hq := q.2
+  have _ := p.property
+  have hq := q.property
   refine Subtype.ext (Prod.ext ?_ ?_) <;> (split_ifs at h2 <;> simp_all)
 
 private lemma typeAPairCoroot_injective : Injective (typeAPairCoroot (n := n)) := by
   intro p q hpq
   have h2 : typeAPairRoot p ⬝ᵥ typeAPairCoroot q = 2 := by rw [← hpq]; exact typeAPairRoot_self p
   rw [typeAPairing] at h2
-  have hp := p.2
-  have _ := q.2
+  have hp := p.property
+  have _ := q.property
   refine Subtype.ext (Prod.ext ?_ ?_) <;> (split_ifs at h2 <;> simp_all)
 
 /-- Reflection in the root indexed by `p`, as the transposition of the two entries of `p` acting on

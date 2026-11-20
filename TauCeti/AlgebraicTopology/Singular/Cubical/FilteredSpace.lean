@@ -32,11 +32,10 @@ of spectral sequences (`TauCeti.singularToCubicalSpectralSequenceMap`) is an iso
 object of every page, from the first page on
 (`TauCeti.isIso_singularToCubicalSpectralSequenceMap_hom_f`). So statements about the pages of
 the spectral sequence of a filtered space on simplicial chains, such as the description of its
-first page or its vanishing regions, transfer to cubical chains through these isomorphisms. Since
-the comparison map is a quasi-isomorphism on every space, it also identifies the spectral objects
-of the two filtrations (`TauCeti.singularCubicalSpectralObjectIso`), so the abutments and their
-filtrations correspond as well. Over the skeletal filtration of a Serre fibration this is the
-Serre spectral sequence on cubical chains.
+first page or its vanishing regions, transfer to cubical chains through these isomorphisms. The
+abutment is identified with the cubical homology `Hₙ(Y)` separately, and its filtration is not
+compared with the simplicial one here. Over the skeletal filtration of a Serre fibration this is
+the Serre spectral sequence on cubical chains.
 
 ## Main definitions
 
@@ -44,9 +43,6 @@ Serre spectral sequence on cubical chains.
   the normalized cubical chains of `Y` by those of the `X q`.
 * `TauCeti.singularToCubicalSpectralSequenceMap k hX`: the induced morphism of spectral
   sequences.
-* `TauCeti.singularCubicalSpectralObjectIso k hX`: the isomorphism of the spectral objects of the
-  simplicial and cubical filtrations; on the abutment it is the comparison map in homology
-  (`TauCeti.singularCubicalSpectralObjectIso_hom_app_chainFiltrationAbutmentIso_hom`).
 
 ## Main results
 
@@ -140,37 +136,5 @@ lemma singularCubicalSpectralSequencePageXIso_hom (r : ℤ) (hr : 2 ≤ r) (pq :
     (singularCubicalSpectralSequencePageXIso k hX r hr pq).hom =
       ((singularToCubicalSpectralSequenceMap k hX).hom r hr).f pq :=
   (rfl)
-
-/-- **Cubical and simplicial chains give the same spectral object of a filtered space.** The
-comparison `TauCeti.singularToCubical`, a quasi-isomorphism on every space, identifies the
-spectral objects of the filtrations of the simplicial and of the normalized cubical chains of `Y`
-by those of the `X q`. So it identifies their spectral sequences, abutments and filtrations of the
-abutments. -/
-def singularCubicalSpectralObjectIso :
-    CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-        (monotone_chainFiltration (singularChains k) hX)) ≅
-      CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-        (monotone_chainFiltration (normalizedCubicalChainComplex k) hX)) :=
-  chainFiltrationSpectralObjectIso (singularToCubical k) hX
-
-/-- The isomorphism `TauCeti.singularCubicalSpectralObjectIso` is the morphism of spectral objects
-induced by the comparison `TauCeti.singularToCubical`, as a morphism of filtered complexes. -/
-lemma singularCubicalSpectralObjectIso_hom :
-    (singularCubicalSpectralObjectIso k hX).hom =
-      CochainComplex.spectralObjectMap
-        (chainFiltrationMap (singularToCubical k) hX hX (𝟙 Y) fun _ _ hx ↦ hx) :=
-  chainFiltrationSpectralObjectIso_hom _ _
-
-/-- On the abutment in degree `-n`, through the abutment isomorphisms with simplicial and
-cubical homology, `TauCeti.singularCubicalSpectralObjectIso` is the map `Hₙ(Y) ⟶ H^□ₙ(Y)` induced by
-the comparison `TauCeti.singularToCubical`. -/
-@[reassoc (attr := simp)]
-lemma singularCubicalSpectralObjectIso_hom_app_chainFiltrationAbutmentIso_hom (n : ℕ) :
-    ((singularCubicalSpectralObjectIso k hX).hom.hom (-n)).app
-        (ComposableArrows.mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))) ≫
-        (chainFiltrationAbutmentIso (normalizedCubicalChainComplex k) hX n).hom =
-      (chainFiltrationAbutmentIso (singularChains k) hX n).hom ≫
-        HomologicalComplex.homologyMap ((singularToCubical k).app Y) n :=
-  chainFiltrationSpectralObjectIso_hom_app_chainFiltrationAbutmentIso_hom _ _ n
 
 end TauCeti

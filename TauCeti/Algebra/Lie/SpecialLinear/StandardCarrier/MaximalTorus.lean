@@ -118,7 +118,7 @@ def diagonalPoints (K : Type u) [CommRing K] : Subgroup (points r K) :=
 /-- A carrier point lies in `diagonalPoints` exactly when its ambient matrix is diagonal. -/
 @[simp]
 theorem mem_diagonalPoints_iff {K : Type u} [CommRing K] {g : points r K} :
-    g ∈ diagonalPoints r K ↔ g.1.1.IsDiag := by
+    g ∈ diagonalPoints r K ↔ g.val.val.IsDiag := by
   rw [diagonalPoints, Subgroup.mem_comap, mem_diagonalTorus_iff]
   rfl
 
@@ -158,7 +158,7 @@ theorem centralizer_range_weightTorusPoints_eq_diagonalPoints_of_weightChar_weig
     let d := weightTorusPoints r K s
     have hcomm : Commute d g :=
       Subgroup.mem_centralizer_iff.mp hg d ⟨s, rfl⟩
-    have hmatrix : Commute d.1.1 g.1.1 :=
+    have hmatrix : Commute d.val.val g.val.val :=
       (hcomm.map (points r K).subtype).map (Units.coeHom _)
     have hd : d = weightTorusPoints r K s := rfl
     rw [hd] at hmatrix

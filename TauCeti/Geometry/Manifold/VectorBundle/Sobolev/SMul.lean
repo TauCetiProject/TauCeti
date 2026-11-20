@@ -101,7 +101,7 @@ a continuous linear endomorphism of the Sobolev sections. -/
 def contDiffOnSMulL : C.sobolevSections μ p k →L[ℝ] C.sobolevSections μ p k :=
   ((SobolevData.mapL fun i ↦ Wkp.contDiffOnSMulL (hU i) (hK i) (hKU i) k (hψ i)).comp
     (C.sobolevSections μ p k).subtypeL).codRestrict (C.sobolevSections μ p k) fun w ↦ by
-      obtain ⟨s, hs⟩ := (C.mem_sobolevSections_iff μ p k).1 w.2
+      obtain ⟨s, hs⟩ := (C.mem_sobolevSections_iff μ p k).1 w.property
       obtain ⟨t, ht⟩ := hsec s
       refine (C.mem_sobolevSections_iff μ p k).2 ⟨t, fun i ↦ ?_⟩
       refine (C.chartValueL_ae_eq_smul μ p k (ψ := ψ i) (w := (w : C.SobolevData μ p k))

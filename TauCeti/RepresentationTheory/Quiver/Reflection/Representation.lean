@@ -576,8 +576,8 @@ theorem reflectionFunctor_map_app_self_apply
           (reflectionFunctor_obj i hi M)).trans (reflectRep_obj_self M hi)).symm ≫
         ((reflectionFunctor i hi).map η).app i ≫
         eqToHom ((congrArg (fun R : QuiverRep k (Reflect Q i) ↦ R.obj i)
-          (reflectionFunctor_obj i hi N)).trans (reflectRep_obj_self N hi))) f).1 e
-      = η.app e.1 (f.1 e) := by
+          (reflectionFunctor_obj i hi N)).trans (reflectRep_obj_self N hi))) f).val e
+      = η.app e.1 (f.val e) := by
   have hM : (congrArg (fun R : QuiverRep k (Reflect Q i) ↦ R.obj i)
       (reflectionFunctor_obj i hi M)).trans (reflectRep_obj_self M hi)
       = reflectRep_obj_self M hi := Subsingleton.elim _ _
@@ -586,7 +586,7 @@ theorem reflectionFunctor_map_app_self_apply
       = reflectRep_obj_self N hi := Subsingleton.elim _ _
   rw [hM, hN]
   exact congrArg (fun g : ModuleCat.of k (LinearMap.ker (incomingSum M i)) ⟶
-      ModuleCat.of k (LinearMap.ker (incomingSum N i)) ↦ (g f).1 e)
+      ModuleCat.of k (LinearMap.ker (incomingSum N i)) ↦ (g f).val e)
     (reflectionFunctor_map_app_self η hi)
 
 /-- Away from the reflected vertex, reflection leaves the components of a morphism unchanged. The

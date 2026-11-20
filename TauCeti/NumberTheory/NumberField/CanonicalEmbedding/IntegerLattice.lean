@@ -73,7 +73,7 @@ theorem one_le_successiveMin_integerLattice (i : Fin (finrank ℝ (mixedSpace K)
     have hz := (hvL 0).2
     rwa [ConvexBody.coe_closedBall, smul_unitClosedBall_of_nonneg ht,
       mem_closedBall_zero_iff] at hz
-  calc (1 : ℝ) ≤ house (α : K) := one_le_house_of_isIntegral α.2 hα0
+  calc (1 : ℝ) ≤ house (α : K) := one_le_house_of_isIntegral α.property hα0
     _ = ‖v 0‖ := by rw [← hα, norm_mixedEmbedding]
     _ ≤ ZLattice.successiveMin (mixedEmbedding.integerLattice K)
           (ConvexBody.closedBall (0 : mixedSpace K) 1 zero_le_one) i := hv0

@@ -54,7 +54,7 @@ theorem joinedIn_setOf_apply_eq_of_nonneg {a b : V} (hab : Q b = Q a) (ha : Q a 
   let D : ℝ → ℝ := fun t ↦ (1 - t) ^ 2 + t ^ 2 + (1 - t) * t * r
   have hD (t : unitInterval) : 0 < D t := by
     have h₁ : 0 ≤ (1 - (t : ℝ)) * t * r :=
-      mul_nonneg (mul_nonneg (sub_nonneg.mpr t.2.2) t.2.1) hr0
+      mul_nonneg (mul_nonneg (sub_nonneg.mpr t.property.2) t.property.1) hr0
     nlinarith [sq_nonneg (1 - 2 * (t : ℝ))]
   have hQD (t : ℝ) : Q ((1 - t) • b + t • a) = D t * Q a := by
     rw [QuadraticMap.map_add Q, polar_smul_left, polar_smul_right, QuadraticMap.map_smul,

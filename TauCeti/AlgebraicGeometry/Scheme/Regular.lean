@@ -190,7 +190,8 @@ theorem exists_algebraMap_stalk_eq_of_ord_nonneg_of_isNormalScheme {x : X} {f : 
     rwa [map_mul, map_mul]
   have hsa : (s : A) * a ∈ Ideal.span {b} := Ideal.mem_span_singleton'.mpr
     ⟨d, mul_comm d b ▸ IsFractionRing.injective A X.functionField hba.symm⟩
-  exact (hcomap ▸ s.2 : (s : A) ∉ P) (hle (TauCeti.Ideal.Quotient.mem_colon_singleton_mk.mpr hsa))
+  exact (hcomap ▸ s.property : (s : A) ∉ P) (hle (TauCeti.Ideal.Quotient.mem_colon_singleton_mk.mpr
+      hsa))
 
 /-- **Algebraic Hartogs' principle on normal Noetherian schemes.** A rational function with
 nonnegative order at every codimension-one point of a nonempty open `U` is regular on `U`. -/

@@ -28,7 +28,9 @@ into the piece `G n` of an increasing filtration of `L` induces a morphism of th
 compatibly with identities and composition, and hence, through `spectralObjectMap`, a morphism of
 their spectral sequences. On the first page, whose objects are the cohomology of graded pieces,
 that morphism is the map in cohomology of the induced morphisms of graded pieces
-(`CochainComplex.spectralSequenceFirstPageXIsoCokernel_hom_naturality`).
+(`CochainComplex.spectralSequenceFirstPageXIsoCokernel_hom_naturality`). On the abutment, through
+`CochainComplex.filtrationAbutmentIso`, it is the map in cohomology of `f`
+(`CochainComplex.spectralObjectMap_filtrationFunctorMap_hom_app_filtrationAbutmentIso_hom`).
 
 A natural transformation whose components are quasi-isomorphisms induces an isomorphism of
 spectral objects (`CochainComplex.isIso_spectralObjectMap`): on each `H^n(f)` it is the map in
@@ -49,6 +51,8 @@ cohomology of a morphism of mapping cones, which is a quasi-isomorphism by the f
 * `CochainComplex.spectralSequenceFirstPageXIsoCokernel_hom_naturality`:
   on the first page, the morphism of spectral sequences is the map in cohomology of the morphism
   of graded pieces.
+* `CochainComplex.spectralObjectMap_filtrationFunctorMap_hom_app_filtrationAbutmentIso_hom`: on
+  the abutment, the morphism of spectral objects is the map in cohomology of `f`.
 * `CochainComplex.filtrationFunctorMap_id`, `CochainComplex.filtrationFunctorMap_comp`:
   functoriality of `filtrationFunctorMap`.
 * `CochainComplex.quasiIso_filtrationFunctorMap_app`: a quasi-isomorphism of filtered complexes
@@ -71,13 +75,13 @@ lemma spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom (α : F ⟶ G) {i
     ((spectralObjectMap α).hom n).app (mk₁ f) ≫ (spectralObjectHIsoCokernel G f n).hom =
       (spectralObjectHIsoCokernel F f n).hom ≫
         HomologicalComplex.homologyMap
-          (cokernel.map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f)) n := by
+          (cokernel.map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f).symm) n := by
   -- The square of mapping cones and cokernels, from `mappingCone.map_descShortComplex`.
   have key₀ := mappingCone.map_descShortComplex (ShortComplex.cokernelSequence (F.map f))
     (ShortComplex.cokernelSequence (G.map f))
     { τ₁ := α.app i
       τ₂ := α.app j
-      τ₃ := cokernel.map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f)
+      τ₃ := cokernel.map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f).symm
       comm₁₂ := (α.naturality f).symm
       comm₂₃ := (cokernel.π_desc _ _ _).symm }
   have key := (HomologicalComplex.homologyMap_comp _ _ n).symm.trans
@@ -131,9 +135,9 @@ lemma filtrationFunctorMap_app_comp (f : K ⟶ L) (hf : ∀ n, (G n).Factors ((F
       (filtrationFunctorObjIso F hF a).hom ≫ (filtrationEInt F a).arrow ≫ f := by
   simp [filtrationFunctorMap]
 
-/-- **Naturality of the abutment.** Through `filtrationAbutmentIso`, the morphism of spectral
-objects induced by a morphism of filtered complexes `f` is, on the abutment, the map induced by
-`f` in cohomology. -/
+/-- **Naturality of the abutment.** Through `CochainComplex.filtrationAbutmentIso`, the morphism
+of spectral objects induced by a morphism of filtered complexes `f` is, on the abutment, the map
+induced by `f` in cohomology. -/
 @[reassoc (attr := simp)]
 lemma spectralObjectMap_filtrationFunctorMap_hom_app_filtrationAbutmentIso_hom (f : K ⟶ L)
     (hf : ∀ n, (G n).Factors ((F n).arrow ≫ f)) (n : ℤ) :
@@ -220,7 +224,7 @@ lemma spectralSequenceFirstPageXIsoCokernel_hom_naturality
         (spectralSequenceFirstPageXIsoCokernel G pq i₁ i₂ hi₁ hi₂ n hn).hom =
       (spectralSequenceFirstPageXIsoCokernel F pq i₁ i₂ hi₁ hi₂ n hn).hom ≫
         HomologicalComplex.homologyMap
-          (cokernel.map _ _ (α.app i₁) (α.app i₂) (α.naturality _)) n := by
+          (cokernel.map _ _ (α.app i₁) (α.app i₂) (α.naturality _).symm) n := by
   simp only [spectralSequenceMap_hom, spectralSequencePageMap_f,
     spectralSequenceFirstPageXIsoCokernel_eq, Iso.trans_hom]
   -- The degree of the recipe `coreE₂Cohomological` at `pq` is only definitionally

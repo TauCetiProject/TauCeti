@@ -8,11 +8,10 @@ module
 public import Mathlib.Algebra.Homology.DerivedCategory.Basic
 
 /-!
-# Mapping cones of squares with quasi-isomorphic vertical maps
+# Mapping cones of squares of quasi-isomorphisms
 
-A square of cochain complexes in an abelian category, from `φ₁ : K₁ ⟶ L₁` to `φ₂ : K₂ ⟶ L₂`,
-whose vertical maps `a : K₁ ⟶ K₂` and `b : L₁ ⟶ L₂` are quasi-isomorphisms and which commutes up
-to a homotopy, induces a quasi-isomorphism of mapping cones
+A square of quasi-isomorphisms of cochain complexes in an abelian category, commuting up to a
+homotopy, induces a quasi-isomorphism of mapping cones
 (`CochainComplex.mappingCone.quasiIso_mapOfHomotopy`); in particular so does a commutative square
 (`CochainComplex.mappingCone.quasiIso_map`). This is the five lemma for the morphism of
 distinguished triangles in the derived category induced by the square.
@@ -26,11 +25,10 @@ namespace CochainComplex.mappingCone
 
 variable {C : Type*} [Category* C] [Abelian C]
 
-/-- **Five lemma for mapping cones.** The map of mapping cones induced by a square that commutes
-up to a homotopy `H`, and whose vertical maps `a` and `b` are quasi-isomorphisms, is a
-quasi-isomorphism: in the derived category it is the third component of a morphism of
-distinguished triangles whose first two components, the images of `a` and `b`, are
-isomorphisms. -/
+/-- **Five lemma for mapping cones.** The map of mapping cones induced by a square of
+quasi-isomorphisms that commutes up to a homotopy `H` is a quasi-isomorphism: in the derived
+category it is the third component of a morphism of distinguished triangles whose first two
+components are isomorphisms. -/
 instance quasiIso_mapOfHomotopy {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} {φ₁ : K₁ ⟶ L₁}
     {φ₂ : K₂ ⟶ L₂} {a : K₁ ⟶ K₂} {b : L₁ ⟶ L₂} (H : Homotopy (φ₁ ≫ b) (a ≫ φ₂))
     [QuasiIso a] [QuasiIso b] : QuasiIso (mapOfHomotopy H) := by
@@ -49,8 +47,8 @@ instance quasiIso_mapOfHomotopy {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} {φ
       (HomotopyCategory.mappingCone_triangleh_distinguished φ₂))
     h₁ h₂
 
-/-- The map of mapping cones induced by a commutative square whose vertical maps `a` and `b` are
-quasi-isomorphisms is a quasi-isomorphism. -/
+/-- The map of mapping cones induced by a commutative square of quasi-isomorphisms is a
+quasi-isomorphism. -/
 instance quasiIso_map {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} (φ₁ : K₁ ⟶ L₁) (φ₂ : K₂ ⟶ L₂)
     (a : K₁ ⟶ K₂) (b : L₁ ⟶ L₂) (comm : φ₁ ≫ b = a ≫ φ₂) [QuasiIso a] [QuasiIso b] :
     QuasiIso (map φ₁ φ₂ a b comm) :=

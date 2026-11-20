@@ -164,7 +164,7 @@ theorem _root_.rootsOfUnity.eq_one_or_eq_negOneRootsOfUnity [NoZeroDivisors R]
     (ζ : rootsOfUnity 2 R) :
     ζ = 1 ∨ ζ = negOneRootsOfUnity := by
   have h : ((ζ : Rˣ) : R) ∈ ({1, -1} : Set R) :=
-    Units.val_set_image_rootsOfUnity_two (R := R) ▸ Set.mem_image_of_mem _ ζ.2
+    Units.val_set_image_rootsOfUnity_two (R := R) ▸ Set.mem_image_of_mem _ ζ.property
   rcases h with h | h
   · exact Or.inl (Subtype.ext (Units.ext h))
   · exact Or.inr (Subtype.ext (Units.ext h))
@@ -304,13 +304,13 @@ theorem rootsOfUnity_eq_bot_iff {M : Type*} [CommMonoid M] {p : ℕ} [Fact p.Pri
 `n`-th roots of unity, written additively. -/
 def torsionByUnitsEquivRootsOfUnity {M : Type*} [CommMonoid M] (n : ℕ) :
     Submodule.torsionBy ℤ (Additive Mˣ) (n : ℤ) ≃+ Additive (rootsOfUnity n M) where
-  toFun x := Additive.ofMul ⟨x.1.toMul, (mem_rootsOfUnity _ _).2 <| by
-    have hx := congrArg Additive.toMul ((Submodule.mem_torsionBy_iff _ _).1 x.2)
+  toFun x := Additive.ofMul ⟨x.val.toMul, (mem_rootsOfUnity _ _).2 <| by
+    have hx := congrArg Additive.toMul ((Submodule.mem_torsionBy_iff _ _).1 x.property)
     rwa [natCast_zsmul, toMul_nsmul, toMul_zero] at hx⟩
   invFun ζ := ⟨Additive.ofMul (ζ.toMul : Mˣ), (Submodule.mem_torsionBy_iff _ _).2 <|
     Additive.toMul.injective <| by
       rw [natCast_zsmul, toMul_nsmul, toMul_ofMul, toMul_zero]
-      exact (mem_rootsOfUnity _ _).1 ζ.toMul.2⟩
+      exact (mem_rootsOfUnity _ _).1 ζ.toMul.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl
@@ -318,7 +318,7 @@ def torsionByUnitsEquivRootsOfUnity {M : Type*} [CommMonoid M] (n : ℕ) :
 @[simp]
 theorem coe_torsionByUnitsEquivRootsOfUnity_apply {M : Type*} [CommMonoid M] (n : ℕ)
     (x : Submodule.torsionBy ℤ (Additive Mˣ) (n : ℤ)) :
-    ((torsionByUnitsEquivRootsOfUnity n x).toMul : Mˣ) = x.1.toMul :=
+    ((torsionByUnitsEquivRootsOfUnity n x).toMul : Mˣ) = x.val.toMul :=
   (rfl)
 
 @[simp]
@@ -385,7 +385,7 @@ theorem exists_rootsOfUnity_isPrimitiveRoot_of_dvd {M : Type*} [CommMonoid M] {k
     [NeZero k] (h : k ∣ m) [HasEnoughRootsOfUnity M k] :
     ∃ η : rootsOfUnity m M, IsPrimitiveRoot (η : Mˣ) k := by
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot M k
-  exact ⟨⟨hζ.toRootsOfUnity, rootsOfUnity_le_of_dvd h hζ.toRootsOfUnity.2⟩,
+  exact ⟨⟨hζ.toRootsOfUnity, rootsOfUnity_le_of_dvd h hζ.toRootsOfUnity.property⟩,
     IsPrimitiveRoot.coe_units_iff.mp (by simpa using hζ)⟩
 
 /-- The power transition at a nonzero order is the identity. -/

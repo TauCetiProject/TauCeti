@@ -40,7 +40,10 @@ The contraction and decomposition API follows the design proposed in
 ## Main definitions
 
 * `LaurentSeries.contract`: the exponent-congruence component of a Laurent series.
-* `TauCeti.LaurentSeries.Level`: the level-`d` Laurent field with base map `X ↦ X ^ d`.
+* `TauCeti.LaurentSeries.Level`: the level-`d` Laurent field with base map `X ↦ X ^ d` and scalar
+  tower `K → K⸨X⸩ → Level K d`.
+* `TauCeti.LaurentSeries.Level.algEquivLaurentSeries`: the `K`-algebra equivalence
+  `Level K d ≃ₐ[K] K⸨X⸩` in the level parameter.
 * `TauCeti.LaurentSeries.Level.powerBasis`: the power basis `1, u, ..., u ^ (d - 1)`.
 * `TauCeti.puiseuxField.level`: the actual level-`d` intermediate field in the Puiseux field.
 * `TauCeti.puiseuxField.levelPowerBasis`: its transported power basis.
@@ -529,8 +532,8 @@ theorem level_sup_level (K : Type*) [Field K] (n m : ℕ+) :
   simp only [Units.val_mul, Units.val_zpow_eq_zpow_val, Units.val_pow_eq_pow_val,
     Units.val_mk0] at hu
   rw [← hu, coe_levelPowerBasis_gen_pow K hLm, coe_levelPowerBasis_gen_pow K hLn]
-  exact mul_mem (zpow_mem (le_sup_right (a := level K n) (levelPowerBasis K m).gen.2) _)
-    (zpow_mem (le_sup_left (a := level K n) (levelPowerBasis K n).gen.2) _)
+  exact mul_mem (zpow_mem (le_sup_right (a := level K n) (levelPowerBasis K m).gen.property) _)
+    (zpow_mem (le_sup_left (a := level K n) (levelPowerBasis K n).gen.property) _)
 
 /-- The levels exhaust the Puiseux field. -/
 @[simp]

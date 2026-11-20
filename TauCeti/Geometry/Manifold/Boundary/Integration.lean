@@ -84,7 +84,7 @@ theorem tsupport_boundaryRestriction_subset (φ : RoughForm (𝓡∂ (n + 1)) M 
         (boundaryRestriction φ) ⊆
       Subtype.val ⁻¹' _root_.tsupport
         (α := (EuclideanSpace ℝ (Fin (n + 1))) [⋀^Fin j]→L[ℝ] F) φ :=
-  RoughForm.tsupport_mpullback_subset_preimage continuous_subtype_val φ
+  RoughForm.tsupport_mpullback_subset_preimage continuous_subtypeVal φ
 
 /-- Restriction of a compactly supported form to the closed boundary remains compactly supported. -/
 theorem isCompact_tsupport_boundaryRestriction

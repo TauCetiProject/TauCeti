@@ -358,7 +358,7 @@ theorem ContDiff.isBigO_iteratedFDeriv_smulRight {D : Type*} [NormedAddCommGroup
     (hfn : ∀ i ≤ n, iteratedFDeriv 𝕜 i f =O[l] ρ₁)
     (hgn : ∀ i ≤ n, iteratedFDeriv 𝕜 i g =O[l] ρ₂) :
     iteratedFDeriv 𝕜 n (fun y ↦ (f y).smulRight (g y)) =O[l] fun y ↦ ρ₁ y * ρ₂ y := by
-  simpa using (ContinuousLinearMap.smulRightL 𝕜 E G).isBigO_iteratedFDeriv_of_bilinear hf hg hn
+  simpa using (StrongDual.smulRightL 𝕜 E G).isBigO_iteratedFDeriv_of_bilinear hf hg hn
     hfn hgn
 
 open Asymptotics in

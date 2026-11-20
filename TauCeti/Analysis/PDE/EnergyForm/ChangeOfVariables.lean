@@ -508,7 +508,7 @@ theorem energyFormH1_compL_eq_setIntegral (hΦ : DifferentiableOn ℝ Φ U) (hin
   set w := W1p.compL Ψ hp hΨ hΦΨ.injOn hΨmaps hΨL hc₁ hΨdet (φ : W1p mu U 2)
   have hw : w ∈ w1p0Submodule mu V 2 :=
     W1p.compL_mem_w1p0Submodule_of_leftInvOn Ψ hp hΨ hΦΨ.injOn hΨmaps hΨL hc₁
-      hΨdet hΦ.continuousOn hmaps hΦΨ φ.2
+      hΨdet hΦ.continuousOn hmaps hΦΨ φ.property
   have hφ : W1p.compL Φ hp hΦ hinj hmaps hL hc₀ hdet w = φ :=
     W1p.compL_compL_of_leftInvOn Φ hp hΦ hinj hmaps hL hc₀ hdet hΨ hΦΨ.injOn
       hΨmaps hΨL hc₁ hΨdet hΨΦ (φ : W1p mu U 2)

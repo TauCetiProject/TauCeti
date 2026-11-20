@@ -74,6 +74,10 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `TauCeti.exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank`: fewer than `dim E` vectors
   have a common nonzero, and hence a common unit, orthogonal vector.
 * `TauCeti.ne_neg_of_inner_eq_zero`: a vector orthogonal to a nonzero vector `b` is not `-b`.
+* `TauCeti.norm_inner_le_norm_mul_infDist`: a vector `w` orthogonal to a subspace `P` satisfies
+  `‖⟪w, z⟫‖ ≤ ‖w‖ * infDist z P`.
+* `TauCeti.exists_mem_orthogonal_inner_ne_zero_of_not_le`: if `S` is not contained in `P`, some
+  vector orthogonal to `P` is not orthogonal to `S`.
 * `TauCeti.eventually_linearIndependent_starProjection_apply`,
   `TauCeti.eventually_linearIndependent_and_span_starProjection`: projected bases of a
   continuously varying family of subspaces stay linearly independent, and stay bases under a
@@ -227,7 +231,7 @@ theorem mul_norm_sq_le_norm_starProjection_sq_of_finrank_le [FiniteDimensional �
     refine (injective_iff_map_eq_zero T).mpr fun u hu => ?_
     have h0 : V.starProjection u = 0 := by
       simpa [T] using congrArg (Subtype.val : V → E) hu
-    have := hU u u.2
+    have := hU u u.property
     rw [h0, norm_zero, zero_pow two_ne_zero] at this
     have : ‖(u : E)‖ ^ 2 = 0 :=
       le_antisymm (nonpos_of_mul_nonpos_right this hk) (sq_nonneg _)
@@ -241,12 +245,12 @@ theorem mul_norm_sq_le_norm_starProjection_sq_of_finrank_le [FiniteDimensional �
     have : ⟪U.starProjection v, (w : E)⟫_𝕜 = ⟪v, v⟫_𝕜 := calc
       _ = ⟪v, U.starProjection w⟫_𝕜 := inner_starProjection_left_eq_right U v w
       _ = ⟪V.starProjection v, (w : E)⟫_𝕜 := by
-        rw [starProjection_eq_self_iff.mpr w.2, starProjection_eq_self_iff.mpr hv]
+        rw [starProjection_eq_self_iff.mpr w.property, starProjection_eq_self_iff.mpr hv]
       _ = ⟪v, v⟫_𝕜 := by rw [inner_starProjection_left_eq_right, hPw]
     have h := norm_inner_le_norm (𝕜 := 𝕜) (U.starProjection v) (w : E)
     rwa [this, inner_self_eq_norm_sq_to_K, norm_pow, RCLike.norm_ofReal, abs_norm] at h
   -- Combined with `k ‖w‖² ≤ ‖P_V w‖² = ‖v‖²`, this gives `k ‖v‖⁴ ≤ ‖P_U v‖² ‖v‖²`.
-  have hw' := hU w w.2
+  have hw' := hU w w.property
   rw [hPw] at hw'
   rcases (norm_nonneg v).eq_or_lt with hv0 | hv0
   · rw [← hv0, zero_pow two_ne_zero, mul_zero]
@@ -310,7 +314,7 @@ theorem rank_le_of_disjoint_orthogonal (h : Disjoint U Vᗮ) :
   have hxy' : V.starProjection x = V.starProjection y := by
     rw [starProjection_apply, starProjection_apply]
     exact congr_arg ((↑) : V → E) hxy
-  exact Subtype.ext <| (injOn_starProjection_iff_disjoint U V).2 h x.2 y.2 hxy'
+  exact Subtype.ext <| (injOn_starProjection_iff_disjoint U V).2 h x.property y.property hxy'
 
 /-- Compressing `(P_U - P_V)²` to `U` on the right gives `P_U - P_U P_V P_U`. -/
 theorem starProjection_sub_starProjection_sq_mul_starProjection :
@@ -350,7 +354,7 @@ theorem adjoint_subtype [FiniteDimensional 𝕜 E] :
   -- `starProjection`; the inner-product identity is then a projection property.
   change ⟪U.starProjection x, (y : E)⟫_𝕜 = ⟪x, (y : E)⟫_𝕜
   rw [U.inner_starProjection_left_eq_right,
-    U.starProjection_eq_self_iff.mpr y.2]
+    U.starProjection_eq_self_iff.mpr y.property]
 
 /-- The algebraic adjoint of the orthogonal projection `E → U` is the inclusion `U → E`.
 This is the elementary simplification rule for the adjoints of cross-projections and
@@ -446,6 +450,31 @@ theorem ne_neg_of_inner_eq_zero {a b : E} (hb : b ≠ 0) (hab : ⟪a, b⟫_𝕜 
   rw [inner_neg_left, neg_eq_zero, inner_self_eq_zero] at hab
   exact hb hab
 
+/-- A vector `w` orthogonal to a subspace `P` pairs with any vector `z` to at most `‖w‖` times the
+distance from `z` to `P`. -/
+theorem norm_inner_le_norm_mul_infDist {P : Submodule 𝕜 E} {w : E} (hw : w ∈ Pᗮ) (z : E) :
+    ‖⟪w, z⟫_𝕜‖ ≤ ‖w‖ * Metric.infDist z (P : Set E) := by
+  rcases eq_or_ne w 0 with rfl | hw0
+  · simp
+  have hpos : 0 < ‖w‖ := norm_pos_iff.mpr hw0
+  rw [← div_le_iff₀' hpos]
+  refine (Metric.le_infDist ⟨0, P.zero_mem⟩).mpr fun p hp ↦ ?_
+  rw [div_le_iff₀' hpos, dist_eq_norm]
+  calc ‖⟪w, z⟫_𝕜‖ = ‖⟪w, z - p⟫_𝕜‖ := by
+        rw [inner_sub_right, Submodule.inner_left_of_mem_orthogonal hp hw, sub_zero]
+    _ ≤ ‖w‖ * ‖z - p‖ := norm_inner_le_norm w (z - p)
+
+/-- If a subspace `S` is not contained in a subspace `P` admitting an orthogonal projection, some
+vector orthogonal to `P` has nonzero inner product with some vector of `S`. -/
+theorem exists_mem_orthogonal_inner_ne_zero_of_not_le {S P : Submodule 𝕜 E}
+    [P.HasOrthogonalProjection] (h : ¬ S ≤ P) : ∃ w ∈ Pᗮ, ∃ s ∈ S, ⟪w, s⟫_𝕜 ≠ 0 := by
+  rw [← P.orthogonal_orthogonal] at h
+  obtain ⟨s, hs, hsP⟩ := IsConcreteLE.not_le_iff_exists.mp h
+  rw [Submodule.mem_orthogonal] at hsP
+  push Not at hsP
+  obtain ⟨w, hw, hne⟩ := hsP
+  exact ⟨w, hw, s, hs, hne⟩
+
 section ProjectedBasis
 
 open Filter Module
@@ -481,9 +510,9 @@ theorem eventually_linearIndependent_and_span_starProjection
   have hk := finrank_eq_card_basis b
   obtain ⟨bL⟩ : Nonempty (Basis (Fin (finrank ℝ (L x₀))) ℝ (L x₀)) := ⟨finBasis ℝ _⟩
   have hK' := eventually_linearIndependent_starProjection_apply (b := fun i ↦ (b i : F)) hK
-    (b.linearIndependent.map' (K x₀).subtype (Submodule.ker_subtype _)) fun i ↦ (b i).2
+    (b.linearIndependent.map' (K x₀).subtype (Submodule.ker_subtype _)) fun i ↦ (b i).property
   have hL' := eventually_linearIndependent_starProjection_apply (b := fun i ↦ (bL i : F)) hL
-    (bL.linearIndependent.map' (L x₀).subtype (Submodule.ker_subtype _)) fun i ↦ (bL i).2
+    (bL.linearIndependent.map' (L x₀).subtype (Submodule.ker_subtype _)) fun i ↦ (bL i).property
   have h₀ := hdim.self_of_nhds
   filter_upwards [hK', hL', hdim] with x hliK hliL hx
   have hle (M : Submodule ℝ F) {κ : Type} (c : κ → F) :

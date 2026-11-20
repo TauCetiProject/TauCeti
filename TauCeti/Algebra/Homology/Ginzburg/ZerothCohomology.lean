@@ -213,7 +213,8 @@ noncomputable def preprojectiveEquivGinzburgTwoCohomologyZero :
     ⟨fun _ _ h => preprojectiveToGinzburgTwoCohomology_injective k Q (congrArg Subtype.val h),
       fun z => by
         obtain ⟨x, hx⟩ :=
-          (AlgHom.mem_range _).mp ((mem_range_preprojectiveToGinzburgTwoCohomology_iff k Q).mpr z.2)
+          (AlgHom.mem_range _).mp ((mem_range_preprojectiveToGinzburgTwoCohomology_iff k Q).mpr
+              z.property)
         exact ⟨x, Subtype.ext hx⟩⟩
 
 /-- The isomorphism `Π_k(Q) ≃ H⁰(Π₂(Q))` agrees with `TauCeti.preprojectiveToGinzburgTwoCohomology`
