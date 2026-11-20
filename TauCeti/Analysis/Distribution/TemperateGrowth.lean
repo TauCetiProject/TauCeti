@@ -53,9 +53,14 @@ in `TauCeti.Analysis.Sobolev.BesselPotential.ChangeOfVariables`.
 If `g ∘ f = id` and `g` has temperate growth, then `‖x‖` is
 bounded by a polynomial in `‖f x‖`, the growth condition of Mathlib's `SchwartzMap.compCLM`.
 
-A measure of temperate growth is finite on compact sets.
+A smooth map between arbitrary real normed spaces that is affine outside a compact set has
+uniformly bounded derivatives of every positive order and temperate growth. Its order-zero values
+need not be bounded. A measure of temperate growth is finite on compact sets.
 
 ## Main results
+
+* `ContDiff.exists_bound_iteratedFDeriv_pos_and_hasTemperateGrowth_of_eqOn_affine`:
+  smooth maps affine outside a compact set have bounded positive derivatives and temperate growth.
 
 * `Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le`: bounded derivatives give temperate
   growth.
@@ -89,6 +94,60 @@ A measure of temperate growth is finite on compact sets.
 public section
 
 open scoped ContDiff
+
+namespace ContDiff
+
+open Set Filter Topology
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- A smooth map affine outside a compact set has uniformly bounded derivatives of every positive
+order and temperate growth. The source and target may be arbitrary real normed spaces; no bound
+on the values of the map itself is asserted. -/
+theorem exists_bound_iteratedFDeriv_pos_and_hasTemperateGrowth_of_eqOn_affine
+    {f : E → F} (hf : ContDiff ℝ ∞ f)
+    {K : Set E} (hK : IsCompact K) (a : F) (L : E →L[ℝ] F)
+    (heq : EqOn f (fun x ↦ a + L x) Kᶜ) :
+    (∀ n : ℕ, 0 < n → ∃ C : ℝ, ∀ x, ‖iteratedFDeriv ℝ n f x‖ ≤ C) ∧
+      Function.HasTemperateGrowth f := by
+  have hA : ContDiff ℝ ∞ (fun x ↦ a + L x) := contDiff_const.add L.contDiff
+  have hs : HasCompactSupport (fun x ↦ f x - (a + L x)) := by
+    apply HasCompactSupport.of_support_subset_isCompact hK
+    intro x hx
+    by_contra hxK
+    exact hx (sub_eq_zero.mpr (heq hxK))
+  have htemp : Function.HasTemperateGrowth f := by
+    have h := (hs.hasTemperateGrowth (hf.sub hA)).add
+      ((Function.HasTemperateGrowth.const a).add L.hasTemperateGrowth)
+    convert h using 1
+    funext x
+    simp
+  have hd : HasCompactSupport (fun x ↦ fderiv ℝ f x - L) := by
+    convert hs.fderiv ℝ using 1
+    funext x
+    rw [fderiv_fun_sub (hf.differentiable (by simp) x) (hA.differentiable (by simp) x),
+      (L.hasFDerivAt.const_add a).fderiv]
+  have hdcd : ContDiff ℝ ∞ (fun x ↦ fderiv ℝ f x - L) :=
+    (hf.fderiv_right (by simp)).sub contDiff_const
+  refine ⟨?_, htemp⟩
+  intro n hn
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
+  obtain ⟨C, _, hC⟩ := hd.exists_bound_iteratedFDeriv hdcd m
+  refine ⟨C + ‖L‖, fun x ↦ ?_⟩
+  rw [← norm_iteratedFDeriv_fderiv]
+  have heqD : fderiv ℝ f = (fun x ↦ fderiv ℝ f x - L) + (fun _ ↦ L) := by
+    funext x
+    simp
+  rw [heqD, iteratedFDeriv_add (hdcd.of_le (by simp)) contDiff_const, Pi.add_apply]
+  apply (norm_add_le _ _).trans
+  exact add_le_add (hC m le_rfl x) (by
+    by_cases hm : m = 0
+    · subst m
+      simp
+    · simp [iteratedFDeriv_const_of_ne hm])
+
+end ContDiff
 
 namespace Function.HasTemperateGrowth
 
