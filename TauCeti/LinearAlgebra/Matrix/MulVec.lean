@@ -32,6 +32,9 @@ eigenvector of each of its powers.
 The `σ`-sesquilinear form `(σ ∘ x) ⬝ᵥ (Q *ᵥ y)` of a matrix `Q` scales by `σ c * c` along a
 line.
 
+Casting the entries of an integer matrix and of an integer vector into a ring commutes with both
+matrix-vector and vector-matrix multiplication.
+
 A matrix invariant under row and column reindexing sends vectors invariant under the column
 permutation to vectors invariant under the row map.
 
@@ -54,6 +57,8 @@ permutation to vectors invariant under the row map.
   coordinate lets the submatrix omitting the last column reproduce `A *ᵥ x`.
 * `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
 * `Matrix.star_mulVec_eq_map_star_mulVec`: `star (M *ᵥ v) = M.map star *ᵥ star v`.
+* `Matrix.map_intCast_mulVec` and `Matrix.map_intCast_vecMul`: casting integer entries commutes
+  with matrix-vector and vector-matrix multiplication.
 -/
 
 public section
@@ -140,6 +145,27 @@ theorem star_mulVec_eq_map_star_mulVec {R : Type*} [CommSemiring R] [StarRing R]
     (M : Matrix m n R) (v : n → R) : star (M *ᵥ v) = M.map star *ᵥ star v := by
   ext i
   simp [mulVec, dotProduct]
+
+section IntCast
+
+variable {R : Type*} [NonAssocRing R]
+
+/-- Casting an integer matrix and an integer vector entrywise commutes with matrix-vector
+multiplication. -/
+theorem map_intCast_mulVec (A : Matrix m n ℤ) (v : n → ℤ) :
+    A.map (Int.cast : ℤ → R) *ᵥ (fun j => (v j : R)) = fun i => ((A *ᵥ v) i : R) :=
+  -- `RingHom.map_mulVec` for `Int.castRingHom R`, whose coercion is `Int.cast`.
+  funext fun i => ((Int.castRingHom R).map_mulVec A v i).symm
+
+omit [Fintype n] in
+/-- Casting an integer vector and an integer matrix entrywise commutes with vector-matrix
+multiplication. -/
+theorem map_intCast_vecMul [Fintype m] (v : m → ℤ) (A : Matrix m n ℤ) :
+    (fun i => (v i : R)) ᵥ* A.map (Int.cast : ℤ → R) = fun j => ((v ᵥ* A) j : R) :=
+  -- `RingHom.map_vecMul` for `Int.castRingHom R`, whose coercion is `Int.cast`.
+  funext fun j => ((Int.castRingHom R).map_vecMul A v j).symm
+
+end IntCast
 
 section OrderedSemiring
 

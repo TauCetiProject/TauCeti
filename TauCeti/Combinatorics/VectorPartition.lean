@@ -13,6 +13,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.Tactic.FinCases
 import Mathlib.Topology.Order.Compact
+import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # Vector partition functions
@@ -50,7 +51,7 @@ polynomiality of unimodular vector partition functions (De Loera–Sturmfels) is
 
 ## Main results
 
-* `Matrix.coe_le_dotProduct_of_mem_vectorPartitions`: the coordinate bound by a positive height.
+* `Matrix.natCast_le_dotProduct_of_mem_vectorPartitions`: the coordinate bound by a positive height.
 * `Matrix.finite_vectorPartitions`, `Matrix.vectorPartitionCount_eq_card`: finiteness and
   enumeration under a positive height.
 * `Matrix.vectorPartitions_zero_eq_singleton_iff`, `Matrix.vectorPartitionCount_zero`: `0` has only
@@ -107,19 +108,22 @@ theorem vectorPartitionCount_def (A : Matrix κ ι ℤ) (b : κ → ℤ) :
 
 section Height
 
+/-- A coordinate of a nonnegative vector `x` is at most its dot product with a vector `w` whose
+entries are at least `1`. Both coordinate bounds by a positive height are instances. -/
+private theorem le_dotProduct_of_one_le {R : Type*} [Semiring R] [PartialOrder R]
+    [IsOrderedRing R] {w x : ι → R} (hw : ∀ k, 1 ≤ w k) (hx : 0 ≤ x) (j : ι) : x j ≤ w ⬝ᵥ x :=
+  (le_mul_of_one_le_left (hx j) (hw j)).trans <|
+    Finset.single_le_sum (f := fun k => w k * x k)
+      (fun k _ => mul_nonneg (zero_le_one.trans (hw k)) (hx k)) (Finset.mem_univ j)
+
 variable [Fintype κ] {A : Matrix κ ι ℤ} {h : κ → ℤ}
 
 /-- Under a positive height `h`, each coordinate of a vector partition of `b` is at most
 `h ⬝ᵥ b`. -/
-theorem coe_le_dotProduct_of_mem_vectorPartitions (hh : ∀ j, 0 < (h ᵥ* A) j) {b : κ → ℤ}
+theorem natCast_le_dotProduct_of_mem_vectorPartitions (hh : ∀ j, 0 < (h ᵥ* A) j) {b : κ → ℤ}
     {c : ι → ℕ} (hc : c ∈ A.vectorPartitions b) (j : ι) : (c j : ℤ) ≤ h ⬝ᵥ b := by
   rw [← mem_vectorPartitions.1 hc, dotProduct_mulVec]
-  have hle : ∀ k, (c k : ℤ) ≤ (h ᵥ* A) k * c k := fun k =>
-    le_mul_of_one_le_left (Int.natCast_nonneg _) (hh k)
-  calc (c j : ℤ) ≤ (h ᵥ* A) j * c j := hle j
-    _ ≤ (h ᵥ* A) ⬝ᵥ (fun k => (c k : ℤ)) :=
-      Finset.single_le_sum (f := fun k => (h ᵥ* A) k * c k)
-        (fun k _ => mul_nonneg (hh k).le (Int.natCast_nonneg _)) (Finset.mem_univ j)
+  exact le_dotProduct_of_one_le hh (x := fun k => (c k : ℤ)) (fun k => Int.natCast_nonneg _) j
 
 variable [DecidableEq ι]
 
@@ -135,7 +139,7 @@ def vectorPartitionsFinset (b : κ → ℤ) : Finset (ι → ℕ) :=
   simp only [vectorPartitionsFinset, Finset.coe_filter, Fintype.mem_piFinset, Finset.mem_range,
     Set.mem_ofPred_eq, and_iff_right_iff_imp]
   intro hc j
-  have := coe_le_dotProduct_of_mem_vectorPartitions hh hc j
+  have := natCast_le_dotProduct_of_mem_vectorPartitions hh hc j
   omega
 
 theorem mem_vectorPartitionsFinset (hh : ∀ j, 0 < (h ᵥ* A) j) {b : κ → ℤ} {c : ι → ℕ} :
@@ -193,10 +197,7 @@ when it is a vector partition of `b`. -/
 theorem natCast_mem_partitionPolyhedron_iff {A : Matrix κ ι ℤ} {b : κ → ℤ} {c : ι → ℕ} :
     (fun j => (c j : ℝ)) ∈ A.partitionPolyhedron (fun i => (b i : ℝ)) ↔
       c ∈ A.vectorPartitions b := by
-  have hcast : A.map (Int.cast : ℤ → ℝ) *ᵥ (fun j => ((c j : ℤ) : ℝ)) =
-      fun i => ((A *ᵥ fun j => (c j : ℤ)) i : ℝ) :=
-    -- `RingHom.map_mulVec` for `Int.castRingHom ℝ`, whose coercion is `Int.cast`.
-    funext fun i => ((Int.castRingHom ℝ).map_mulVec A _ i).symm
+  have hcast := map_intCast_mulVec (R := ℝ) A fun j => (c j : ℤ)
   simp only [Int.cast_natCast] at hcast
   simp only [mem_partitionPolyhedron, mem_vectorPartitions, hcast]
   refine ⟨fun ⟨_, h⟩ => funext fun i => by exact_mod_cast congrFun h i,
@@ -237,17 +238,8 @@ theorem le_dotProduct_of_mem_partitionPolyhedron [Fintype κ] {A : Matrix κ ι 
     (hh : ∀ j, 0 < (h ᵥ* A) j) {b : κ → ℝ} {x : ι → ℝ} (hx : x ∈ A.partitionPolyhedron b)
     (j : ι) : x j ≤ (fun k => (h k : ℝ)) ⬝ᵥ b := by
   obtain ⟨hx0, hxb⟩ := hx
-  have hvec : (fun k => (h k : ℝ)) ᵥ* A.map (Int.cast : ℤ → ℝ) = fun j => ((h ᵥ* A) j : ℝ) := by
-    funext j
-    -- `RingHom.map_vecMul` for `Int.castRingHom ℝ`, whose coercion is `Int.cast`.
-    exact ((Int.castRingHom ℝ).map_vecMul A h j).symm
-  have hle : ∀ k, x k ≤ ((h ᵥ* A) k : ℝ) * x k := fun k =>
-    le_mul_of_one_le_left (hx0 k) (by exact_mod_cast hh k)
-  rw [← hxb, dotProduct_mulVec, hvec]
-  calc x j ≤ ((h ᵥ* A) j : ℝ) * x j := hle j
-    _ ≤ (fun k => ((h ᵥ* A) k : ℝ)) ⬝ᵥ x :=
-      Finset.single_le_sum (f := fun k => ((h ᵥ* A) k : ℝ) * x k)
-        (fun k _ => mul_nonneg (by exact_mod_cast (hh k).le) (hx0 k)) (Finset.mem_univ j)
+  rw [← hxb, dotProduct_mulVec, map_intCast_vecMul]
+  exact le_dotProduct_of_one_le (fun k => by exact_mod_cast (hh k : 1 ≤ (h ᵥ* A) k)) hx0 j
 
 /-- Under a positive height every partition polyhedron is compact. -/
 theorem isCompact_partitionPolyhedron [Fintype κ] {A : Matrix κ ι ℤ} {h : κ → ℤ}

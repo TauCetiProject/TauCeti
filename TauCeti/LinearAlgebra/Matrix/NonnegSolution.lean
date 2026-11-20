@@ -8,8 +8,8 @@ module
 public import TauCeti.Geometry.Convex.Cone.Alternative
 public import Mathlib.LinearAlgebra.Matrix.Determinant.TotallyUnimodular
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
-import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
+import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.Rank
 
 /-!
@@ -43,8 +43,6 @@ system has an integer solution.
 
 * `Matrix.exists_pos_vecMul_iff`, `Matrix.exists_pos_vecMul_iff_forall_nonneg`: integer heights.
 * `Matrix.exists_nonneg_mulVec_eq_linearIndepOn`: basic solutions.
-* `Matrix.exists_det_submatrix_ne_zero_of_linearIndepOn`: independent columns of a matrix with
-  independent rows extend to a column basis.
 * `Matrix.exists_natCast_mulVec_eq_of_nonneg`: integral basic solutions.
 
 ## References
@@ -108,61 +106,19 @@ theorem exists_pos_vecMul_iff_forall_nonneg [Ring K] [LinearOrder K] [IsStrictOr
       ∀ x : ι → K, 0 ≤ x → A.map (Int.cast : ℤ → K) *ᵥ x = 0 → x = 0 := by
   constructor
   · rintro ⟨h, hh⟩ x hx hAx
-    -- `RingHom.map_vecMul` for `Int.castRingHom K`, whose coercion is `Int.cast`.
-    have hvec : (fun k => (h k : K)) ᵥ* A.map (Int.cast : ℤ → K) =
-        fun j => ((h ᵥ* A) j : K) := by
-      funext j
-      exact ((Int.castRingHom K).map_vecMul A h j).symm
     refine (TauCeti.dotProduct_eq_zero_iff_of_pos (c := fun j => ((h ᵥ* A) j : K))
       (fun j => by exact_mod_cast hh j) hx).1 ?_
-    rw [← hvec, ← dotProduct_mulVec, hAx, dotProduct_zero]
+    rw [← map_intCast_vecMul, ← dotProduct_mulVec, hAx, dotProduct_zero]
   · intro hA
     refine (exists_pos_vecMul_iff A).2 fun c hc => ?_
     have h0 := hA (fun j => ((c j : ℤ) : K)) (fun j => by positivity) <| by
-      funext i
-      -- `RingHom.map_mulVec` for `Int.castRingHom K`, whose coercion is `Int.cast`.
-      have := ((Int.castRingHom K).map_mulVec A (fun j => (c j : ℤ)) i).symm
-      rw [hc, Pi.zero_apply, map_zero] at this
-      exact this
+      rw [map_intCast_mulVec, hc]
+      ext
+      simp
     funext j
     simpa using congrFun h0 j
 
 end Height
-
-section ColumnBasis
-
-variable [Field K]
-
-omit [Fintype ι] in
-/-- **Column basis extension.** For a matrix with linearly independent rows over a field, every
-linearly independent set of columns extends to a column basis: an injection `e` of the rows into
-the columns whose range contains the set and whose square submatrix is invertible. -/
-theorem exists_det_submatrix_ne_zero_of_linearIndepOn [Finite ι] [Fintype κ] [DecidableEq κ]
-    {M : Matrix κ ι K} (hM : LinearIndependent K M.row) {s : Set ι}
-    (hs : LinearIndepOn K M.col s) :
-    ∃ e : κ → ι, Injective e ∧ s ⊆ Set.range e ∧ (M.submatrix id e).det ≠ 0 := by
-  classical
-  have := Fintype.ofFinite ι
-  -- The columns span, since the rows are independent.
-  have hspan : Submodule.span K (Set.range M.col) = ⊤ := by
-    apply Submodule.eq_top_of_finrank_eq
-    rw [← rank_eq_finrank_span_cols, hM.rank_matrix, Module.finrank_fintype_fun_eq_card]
-  -- Extend `s` to a set `B` of columns forming a basis; it has as many elements as there are rows.
-  obtain ⟨B, -, hsB, hBspan, hBli⟩ := exists_linearIndepOn_extension hs (Set.subset_univ s)
-  have hBtop : ⊤ ≤ Submodule.span K (Set.range fun j : B => M.col j) := by
-    rw [← Set.image_eq_range, ← hspan, Submodule.span_le, ← Set.image_univ]
-    exact hBspan
-  have hcard : Fintype.card κ = Fintype.card B := by
-    rw [← Module.finrank_fintype_fun_eq_card (R := K),
-      Module.finrank_eq_card_basis (Module.Basis.mk hBli hBtop)]
-  let e : κ ≃ B := Fintype.equivOfCardEq hcard
-  refine ⟨fun k => (e k : ι), Subtype.val_injective.comp e.injective,
-    fun j hj => ⟨e.symm ⟨j, hsB hj⟩, by simp⟩, ?_⟩
-  -- The columns of the square submatrix are the basis `B`.
-  exact ((isUnit_iff_isUnit_det _).1
-    (linearIndependent_col_iff_isUnit.1 (hBli.comp e e.injective))).ne_zero
-
-end ColumnBasis
 
 section Field
 
@@ -183,8 +139,7 @@ private theorem exists_mulVec_eq_zero_of_not_linearIndepOn [Fintype ι] (M : Mat
     rw [mulVec_eq_sum, ← hf, hs]
     simp only [op_smul_eq_smul, Set.indicator_apply, Finset.coe_filter, Finset.mem_univ,
       true_and, Set.mem_ofPred_eq, ite_smul, zero_smul, Finset.sum_ite, Finset.sum_const_zero,
-      add_zero]
-    rfl
+      add_zero, col_def]
   have hsupp : support ((support x).indicator f) ⊆ support x :=
     Set.support_indicator_subset
   have hj' : j ∈ support x := by simpa using hj
@@ -257,12 +212,8 @@ private theorem exists_natCast_mulVec_eq_of_forall_exists_intCast {A : Matrix κ
     rw [Pi.zero_apply, hn j, Int.cast_nonneg_iff] at this
     exact Int.toNat_of_nonneg this
   rw [hn0]
-  funext i
-  have hy' : (A.map (Int.cast : ℤ → K) *ᵥ fun j => (n j : K)) i = b i := by
-    rw [← funext hn]
-    exact congrFun hyb i
-  -- `RingHom.map_mulVec` for `Int.castRingHom K`, whose coercion is `Int.cast`.
-  exact Int.cast_injective (((Int.castRingHom K).map_mulVec A n i).trans hy')
+  rw [funext hn, map_intCast_mulVec] at hyb
+  exact funext fun i => Int.cast_injective (congrFun hyb i)
 
 /-- **Integral basic solutions.** Let `A` be an integer matrix with linearly independent rows all of
 whose maximal minors are `0`, `1` or `-1`. If an integer vector `b` is the image `A *ᵥ x` of a
@@ -279,33 +230,28 @@ theorem exists_natCast_mulVec_eq_of_nonneg [Fintype κ] [DecidableEq κ] (A : Ma
   obtain ⟨y, hy, hyx, -, hli⟩ := exists_nonneg_mulVec_eq_linearIndepOn (A.map Int.cast) hx
   have hrow : LinearIndependent K (A.map (Int.cast : ℤ → K)).row := by
     simpa using (linearIndependent_map_algebraMap_row_iff (S := K)).2 hA
-  obtain ⟨f, hf, hyf, hdetK⟩ := exists_det_submatrix_ne_zero_of_linearIndepOn hrow hli
+  obtain ⟨f, hyf, hdetK⟩ := exists_det_submatrix_ne_zero_of_linearIndepOn hrow hli
   -- The integer square submatrix `N` on the columns `f` has determinant `±1`.
   set N := A.submatrix id f
-  rw [submatrix_map] at hdetK
   have hdet : IsUnit N.det := by
-    have hne : N.det ≠ 0 := by
-      rw [← Int.cast_ne_zero (α := K), Int.cast_det]
-      exact hdetK
-    obtain ⟨s, hs⟩ : N.det ∈ Set.range SignType.cast := hunit f hf
+    -- `hdetK` is a minor of `A.map (Int.castRingHom K)`, whose coercion is `Int.cast`.
+    have hne : N.det ≠ 0 := det_submatrix_ne_zero_of_map (Int.castRingHom K) hdetK
+    obtain ⟨s, hs⟩ : N.det ∈ Set.range SignType.cast := hunit f f.injective
     rw [← hs] at hne ⊢
     rcases s with _ | _ | _
     · exact absurd rfl hne
     · simp
     · simp
+  rw [submatrix_map] at hdetK
   -- `y` vanishes off the columns `f`, so `y ∘ f` solves the square system: it is `N⁻¹ *ᵥ b`.
   have hyf' : ∀ j ∉ Set.range f, y j = 0 := fun j hj => by_contra fun hyj => hj (hyf hyj)
   have hNy : N.map (Int.cast : ℤ → K) *ᵥ (fun k => y (f k)) = fun i => (b i : K) := by
     rw [← hxb, ← hyx]
     funext i
-    exact (Fintype.sum_of_injective f hf _ _ (fun j hj => by simp [hyf' j hj]) fun k => rfl)
-  -- As above, `RingHom.map_mulVec` for `Int.castRingHom K` is read with `Int.cast`.
+    exact Fintype.sum_of_injective f f.injective _ _ (fun j hj => by simp [hyf' j hj]) fun k => rfl
   have hNz : N.map (Int.cast : ℤ → K) *ᵥ (fun k => ((N⁻¹ *ᵥ b) k : K)) =
       fun i => (b i : K) := by
-    funext i
-    have := ((Int.castRingHom K).map_mulVec N (N⁻¹ *ᵥ b) i).symm
-    rw [mulVec_mulVec, mul_nonsing_inv _ hdet, one_mulVec] at this
-    exact this
+    rw [map_intCast_mulVec, mulVec_mulVec, mul_nonsing_inv _ hdet, one_mulVec]
   have hint : ∀ j, ∃ n : ℤ, y j = n := fun j => by
     by_cases hj : j ∈ Set.range f
     · obtain ⟨k, rfl⟩ := hj
