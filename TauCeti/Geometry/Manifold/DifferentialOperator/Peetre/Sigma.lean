@@ -60,7 +60,7 @@ theorem sigmaOperator_pow_timeDerivation_apply_eq_zero_of_eventuallyEq
   sigmaOperator_apply_eq_zero_of_eventuallyEq (fun j g y hg ↦ by
     simpa using differentialOperators_apply_eq_of_eventuallyEq
       (SetLike.pow_mem_graded j (timeDerivation p).mem_differentialOperators_one)
-      BoundarylessManifold.isInteriorPoint (g := 0) hg) hf
+      (g := 0) hg) hf
 
 /-- On the disjoint union of countably many circles, the operator acting by `∂_t ^ j` on the
 `j`-th circle has finite order over every compact set `K`: for some `r`, its value at each point
