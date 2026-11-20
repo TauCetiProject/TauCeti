@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Derived.Restrict
-public import Mathlib.AlgebraicGeometry.Modules.Tilde
 
 import Mathlib.Algebra.CharP.Two
 import Mathlib.Algebra.Homology.DerivedCategory.FullyFaithful
 import Mathlib.Data.ZMod.Basic
 import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 
 /-!
 # Tests for derived restriction to open subschemes
@@ -34,22 +34,17 @@ variable [HasDerivedCategory.{w} (Spec (.of ℤ)).Modules]
 /-- Derived restriction to `U = D(2)` sends `(ℤ/2)~[0]` to zero: its support `{(2)}` misses `U`,
 since the sections of `(ℤ/2)~` over `D(2)` form the localization `(ℤ/2)[1/2] = 0`. -/
 example : IsZero
-    ((derivedRestrict ((Spec (.of ℤ)).basicOpen ((Scheme.ΓSpecIso (.of ℤ)).inv 2)).ι).obj
+    (((Spec (.of ℤ)).basicOpen ((Scheme.ΓSpecIso (.of ℤ)).inv 2)).ι.derivedRestrict.obj
       ((singleFunctor _ 0).obj ((tilde.functor (.of ℤ)).obj (.of _ (ZMod 2))))) := by
-  -- If `f` kills an `R`-module `M`, the sections of `M~` over `D(f)` form `M_f = 0`.
-  have key (R : CommRingCat.{0}) (M : ModuleCat.{0} R) (f : R) (hf : ∀ m : M, f • m = 0) :
-      Subsingleton Γ(tilde M, (PrimeSpectrum.basicOpen f : (Spec R).Opens)) :=
-    (IsLocalizedModule.subsingleton_iff (Submonoid.powers f)
-      (tilde.toOpen M (PrimeSpectrum.basicOpen f)).hom).2
-      fun m ↦ ⟨f, Submonoid.mem_powers f, hf m⟩
-  have := key (.of ℤ) (.of _ (ZMod 2)) 2 fun m ↦ by
-    rw [two_smul]; exact CharTwo.add_self_eq_zero (R := ZMod 2) m
+  have := subsingleton_tilde_basicOpen_of_smul_eq_zero (R := .of ℤ) (M := .of _ (ZMod 2)) 2
+    fun m ↦ by rw [two_smul]; exact CharTwo.add_self_eq_zero (R := ZMod 2) m
   rw [← basicOpen_eq_of_affine, ← Scheme.Opens.ι_image_top
     ((Spec (.of ℤ)).basicOpen ((Scheme.ΓSpecIso (.of ℤ)).inv 2))] at this
-  -- The sections of a restriction over `⊤` are, by definition, those over the image of `⊤`.
-  have : Subsingleton Γ((Scheme.Modules.restrictFunctor
-    ((Spec (.of ℤ)).basicOpen ((Scheme.ΓSpecIso (.of ℤ)).inv 2)).ι).obj
-      ((tilde.functor (.of ℤ)).obj (.of _ (ZMod 2))), ⊤) := this
+  -- Transport along the identification of the sections of the restriction over `⊤` with those
+  -- over the image of `⊤`.
+  have := @Equiv.subsingleton _ _ (Scheme.Modules.restrictAppIso
+    ((Spec (.of ℤ)).basicOpen ((Scheme.ΓSpecIso (.of ℤ)).inv 2)).ι
+    ((tilde.functor (.of ℤ)).obj (.of _ (ZMod 2))) ⊤).addCommGroupIsoToAddEquiv.toEquiv this
   exact ((singleFunctor _ 0).map_isZero
     (Scheme.Modules.isZero_of_subsingleton_sections_top _)).of_iso
     (((Scheme.Modules.restrictFunctor _).mapDerivedCategorySingleFunctor 0).app _)
@@ -64,7 +59,7 @@ example : ¬ IsZero ((singleFunctor (Spec (.of ℤ)).Modules 0).obj
 
 /-- Derived restriction to `U = D(2)` sends `𝒪_X[0]` to `𝒪_U[0]`. -/
 example : Nonempty
-    ((derivedRestrict ((Spec (.of ℤ)).basicOpen ((Scheme.ΓSpecIso (.of ℤ)).inv 2)).ι).obj
+    (((Spec (.of ℤ)).basicOpen ((Scheme.ΓSpecIso (.of ℤ)).inv 2)).ι.derivedRestrict.obj
       ((singleFunctor _ 0).obj (SheafOfModules.unit (Spec (.of ℤ)).ringCatSheaf)) ≅
     (singleFunctor _ 0).obj (SheafOfModules.unit
       ((Spec (.of ℤ)).basicOpen ((Scheme.ΓSpecIso (.of ℤ)).inv 2)).toScheme.ringCatSheaf)) :=
@@ -74,7 +69,7 @@ example : Nonempty
 /-- Derived restriction to the open `⊤` of a scheme is an equivalence. -/
 example (X : Scheme.{u}) [HasDerivedCategory.{w} X.Modules]
     [HasDerivedCategory.{w'} (⊤ : X.Opens).toScheme.Modules] :
-    (derivedRestrict (⊤ : X.Opens).ι).IsEquivalence :=
+    (⊤ : X.Opens).ι.derivedRestrict.IsEquivalence :=
   have : IsIso (⊤ : X.Opens).ι := X.topIso.isIso_hom
   inferInstance
 
