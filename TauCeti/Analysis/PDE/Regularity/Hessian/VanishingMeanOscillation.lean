@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.SmallMeanOscillation
-public import TauCeti.Analysis.Normed.Operator.Basic
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 import TauCeti.MeasureTheory.Function.BoundedMeanOscillation.Cutoff
 import Mathlib.Analysis.Convex.Integral
@@ -97,60 +96,6 @@ open scoped ENNReal NNReal InnerProductSpace Gradient ContDiff Matrix
 section Coefficient
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-- The operators which are elliptic with constant `λ` and bounded by `Λ`. -/
-private def ellipticCLMSet (lam Lam : ℝ) :
-    Set (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) :=
-  {M | (∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪ξ, M ξ⟫_ℝ) ∧ ∀ η ξ, |⟪η, M ξ⟫_ℝ| ≤ Lam * ‖η‖ * ‖ξ‖}
-
-omit [DecidableEq ι] in
-private theorem convex_ellipticCLMSet (lam Lam : ℝ) :
-    Convex ℝ (ellipticCLMSet (ι := ι) lam Lam) := by
-  intro M₁ h₁ M₂ h₂ s t hs ht hst
-  refine ⟨fun ξ => ?_, fun η ξ => ?_⟩
-  · have e₁ := mul_le_mul_of_nonneg_left (h₁.1 ξ) hs
-    have e₂ := mul_le_mul_of_nonneg_left (h₂.1 ξ) ht
-    have : lam * ‖ξ‖ ^ 2 = s * (lam * ‖ξ‖ ^ 2) + t * (lam * ‖ξ‖ ^ 2) := by
-      rw [← add_mul, hst, one_mul]
-    simp only [add_apply, smul_apply, inner_add_right,
-      real_inner_smul_right]
-    linarith
-  · have e₁ := mul_le_mul_of_nonneg_left (h₁.2 η ξ) hs
-    have e₂ := mul_le_mul_of_nonneg_left (h₂.2 η ξ) ht
-    simp only [add_apply, smul_apply, inner_add_right,
-      real_inner_smul_right]
-    calc |s * ⟪η, M₁ ξ⟫_ℝ + t * ⟪η, M₂ ξ⟫_ℝ| ≤ s * |⟪η, M₁ ξ⟫_ℝ| + t * |⟪η, M₂ ξ⟫_ℝ| := by
-          refine (abs_add_le _ _).trans ?_
-          rw [abs_mul, abs_mul, abs_of_nonneg hs, abs_of_nonneg ht]
-      _ ≤ (s + t) * (Lam * ‖η‖ * ‖ξ‖) := by linarith
-      _ = Lam * ‖η‖ * ‖ξ‖ := by rw [hst, one_mul]
-
-omit [DecidableEq ι] in
-private theorem isClosed_ellipticCLMSet (lam Lam : ℝ) :
-    IsClosed (ellipticCLMSet (ι := ι) lam Lam) := by
-  have hc : ∀ η ξ : EuclideanSpace ℝ ι, Continuous fun M :
-      EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι => ⟪η, M ξ⟫_ℝ := fun η ξ =>
-    continuous_const.inner (continuous_id.clm_apply continuous_const)
-  simp only [ellipticCLMSet, ofPred_and, ofPred_forall]
-  exact IsClosed.inter (isClosed_iInter fun ξ => isClosed_le continuous_const (hc ξ ξ))
-    (isClosed_iInter fun η => isClosed_iInter fun ξ =>
-      isClosed_le (continuous_abs.comp (hc η ξ)) continuous_const)
-
-/-- The operator of a matrix is elliptic with constant `λ` and bounded by `Λ` exactly when the
-matrix satisfies the pointwise conditions of `TauCeti.PDE.UniformlyEllipticOn`. -/
-private theorem toEuclideanCLM_mem_ellipticCLMSet_iff {lam Lam : ℝ} (A : Matrix ι ι ℝ) :
-    Matrix.toEuclideanCLM (𝕜 := ℝ) A ∈ ellipticCLMSet lam Lam ↔
-      (∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) ∧
-        ∀ η ξ : EuclideanSpace ℝ ι, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖ := by
-  simp only [ellipticCLMSet, mem_ofPred_eq, Matrix.inner_toEuclideanCLM,
-    Matrix.toQuadraticForm'_apply]
-
-private theorem uniformlyEllipticOn_of_forall_toEuclideanCLM_mem {X : Type*} {s : Set X}
-    {a : X → Matrix ι ι ℝ} {lam Lam : ℝ} (hlam : 0 < lam) (hle : lam ≤ Lam)
-    (h : ∀ x ∈ s, Matrix.toEuclideanCLM (𝕜 := ℝ) (a x) ∈ ellipticCLMSet lam Lam) :
-    UniformlyEllipticOn s a lam Lam :=
-  uniformlyEllipticOn_iff.2
-    ⟨hlam, hle, fun x hx => (toEuclideanCLM_mem_ellipticCLMSet_iff _).1 (h x hx)⟩
 
 /-- **Extension of a coefficient field from a ball.** Let `a` be uniformly elliptic with the
 constants `λ, Λ` on `B(x₀, 2 R)`, with VMO modulus `η(16 R) ≤ δ` as a function with values in the
@@ -396,35 +341,11 @@ private theorem exists_lpNorm_iteratedGradient_le_of_mem_wkp0Submodule (hp : 2 <
   rw [← toReal_eLpNorm, ← toReal_eLpNorm, ← ENNReal.coe_toReal, ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top hF.eLpNorm_ne_top) hkey
 
-omit [Fact (1 ≤ p)] in
-/-- Contracting an `Lᵖ` field of operators against a coefficient field with entries bounded by
-`Λ` gives an `Lᵖ` function, with `‖∑ᵢⱼ aᵢⱼ Tᵢⱼ‖ ≤ n² Λ ‖T‖`. -/
-private theorem memLp_contraction_and_lpNorm_le {μ : Measure (EuclideanSpace ℝ (Fin (n + 1)))}
-    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {Lam : ℝ}
-    (ha : AEStronglyMeasurable a μ) (haΛ : ∀ᵐ x ∂μ, ∀ i j, |a x i j| ≤ Lam)
-    {T : EuclideanSpace ℝ (Fin (n + 1)) →
-      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))} (hT : MemLp T p μ) :
-    MemLp (fun x => Matrix.contraction (a x) (T x)) p μ ∧
-      lpNorm (fun x => Matrix.contraction (a x) (T x)) p μ ≤
-        ((n + 1 : ℕ) : ℝ) ^ 2 * Lam * lpNorm T p μ := by
-  have hmeas : AEStronglyMeasurable (fun x => Matrix.contraction (a x) (T x)) μ := by
-    simp only [Matrix.contraction_apply]
-    refine Finset.aestronglyMeasurable_fun_sum _ fun i _ =>
-      Finset.aestronglyMeasurable_fun_sum _ fun j _ => ?_
-    exact ((continuous_id.matrix_elem i j).comp_aestronglyMeasurable ha).mul
-      (((ContinuousLinearMap.apply ℝ _ (EuclideanSpace.single i 1)).continuous
-        |>.comp_aestronglyMeasurable hT.aestronglyMeasurable).inner aestronglyMeasurable_const)
-  have hle : ∀ᵐ x ∂μ, ‖Matrix.contraction (a x) (T x)‖ ≤
-      ((n + 1 : ℕ) : ℝ) ^ 2 * Lam * ‖T x‖ := haΛ.mono fun x hx => by
-    rw [Real.norm_eq_abs]
-    exact Matrix.abs_contraction_le hx _
-  exact ⟨hT.of_le_mul hmeas hle, lpNorm_le_mul_lpNorm_of_ae_le_mul hmeas hT hle⟩
-
 /-- **The localized estimate for coefficients of small mean oscillation.** For `2 < p < ∞`, a
 coefficient field `a` of small mean oscillation at every scale, an open set `U ⊆ Ω` of finite
 measure, a smooth cutoff `ζ` with compact support in `U` and `‖∇ζ‖ ≤ M₁`, `‖D²ζ‖ ≤ M₂`, every
 `u ∈ W^{2,p}(Ω)` with `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` on `U` satisfies
-`‖ζ D²u‖ ≤ C ‖ζ f‖ + (C n² Λ + 1) (2 M₁ ‖∇u‖ + M₂ ‖u‖)` in `Lᵖ(U)`. -/
+`‖ζ D²u‖ ≤ C ‖ζ f‖ + (C (n + 1)² Λ + 1) (2 M₁ ‖∇u‖ + M₂ ‖u‖)` in `Lᵖ(U)`. -/
 private theorem exists_lpNorm_smul_iteratedGradient_le (hp : 2 < p) (hp_top : p ≠ ⊤)
     (lam Lam : ℝ) :
     ∃ C : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧

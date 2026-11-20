@@ -83,6 +83,10 @@ constants are parameters, not hidden existential data.
   the pairing of the matrix with the coordinates of two continuous linear functionals.
 * `TauCeti.PDE.mul_sq_mul_norm_sq_le_matrixBilinearForm_add`: the pointwise absorption
   estimate used in Caccioppoli inequalities.
+* `TauCeti.PDE.ellipticCLMSet`: the operators on Euclidean space which are elliptic with
+  given constants; `TauCeti.PDE.convex_ellipticCLMSet` and `TauCeti.PDE.isClosed_ellipticCLMSet`:
+  they form a closed convex set, which `TauCeti.PDE.toEuclideanCLM_mem_ellipticCLMSet_iff` and
+  `TauCeti.PDE.uniformlyEllipticOn_of_forall_toEuclideanCLM_mem` relate to uniform ellipticity.
 * `TauCeti.PDE.UniformlyEllipticOn.isCoercive_matrixBilinearForm`: pointwise coercivity of
   the bilinear form attached to a uniformly elliptic coefficient field.
 * `TauCeti.PDE.UniformlyEllipticOn.opNorm_matrixBilinearForm_le`: pointwise operator-norm
@@ -618,6 +622,71 @@ lemma uniformlyEllipticOn_iff :
             lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ) ∧
             ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (a x *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖ :=
   Iff.rfl
+
+section EllipticOperators
+
+open scoped InnerProductSpace
+
+/-- The operators on `EuclideanSpace ℝ n` which are elliptic with constant `λ` and bounded by
+`Λ`: `λ ‖ξ‖² ≤ ⟪ξ, M ξ⟫` and `|⟪η, M ξ⟫| ≤ Λ ‖η‖ ‖ξ‖` for all `η`, `ξ`. -/
+def ellipticCLMSet (lam Lam : ℝ) :
+    Set (EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n) :=
+  {M | (∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪ξ, M ξ⟫_ℝ) ∧ ∀ η ξ, |⟪η, M ξ⟫_ℝ| ≤ Lam * ‖η‖ * ‖ξ‖}
+
+omit [DecidableEq n] in
+/-- The elliptic operators with constants `λ, Λ` form a convex set. -/
+theorem convex_ellipticCLMSet (lam Lam : ℝ) :
+    Convex ℝ (ellipticCLMSet (n := n) lam Lam) := by
+  intro M₁ h₁ M₂ h₂ s t hs ht hst
+  refine ⟨fun ξ => ?_, fun η ξ => ?_⟩
+  · have e₁ := mul_le_mul_of_nonneg_left (h₁.1 ξ) hs
+    have e₂ := mul_le_mul_of_nonneg_left (h₂.1 ξ) ht
+    have : lam * ‖ξ‖ ^ 2 = s * (lam * ‖ξ‖ ^ 2) + t * (lam * ‖ξ‖ ^ 2) := by
+      rw [← add_mul, hst, one_mul]
+    simp only [_root_.add_apply, _root_.smul_apply, inner_add_right,
+      real_inner_smul_right]
+    linarith
+  · have e₁ := mul_le_mul_of_nonneg_left (h₁.2 η ξ) hs
+    have e₂ := mul_le_mul_of_nonneg_left (h₂.2 η ξ) ht
+    simp only [_root_.add_apply, _root_.smul_apply, inner_add_right,
+      real_inner_smul_right]
+    calc |s * ⟪η, M₁ ξ⟫_ℝ + t * ⟪η, M₂ ξ⟫_ℝ| ≤ s * |⟪η, M₁ ξ⟫_ℝ| + t * |⟪η, M₂ ξ⟫_ℝ| := by
+          refine (abs_add_le _ _).trans ?_
+          rw [abs_mul, abs_mul, abs_of_nonneg hs, abs_of_nonneg ht]
+      _ ≤ (s + t) * (Lam * ‖η‖ * ‖ξ‖) := by linarith
+      _ = Lam * ‖η‖ * ‖ξ‖ := by rw [hst, one_mul]
+
+omit [DecidableEq n] in
+/-- The elliptic operators with constants `λ, Λ` form a closed set. -/
+theorem isClosed_ellipticCLMSet (lam Lam : ℝ) :
+    IsClosed (ellipticCLMSet (n := n) lam Lam) := by
+  have hc : ∀ η ξ : EuclideanSpace ℝ n, Continuous fun M :
+      EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n => ⟪η, M ξ⟫_ℝ := fun η ξ =>
+    continuous_const.inner (continuous_id.clm_apply continuous_const)
+  simp only [ellipticCLMSet, Set.ofPred_and, Set.ofPred_forall]
+  exact IsClosed.inter (isClosed_iInter fun ξ => isClosed_le continuous_const (hc ξ ξ))
+    (isClosed_iInter fun η => isClosed_iInter fun ξ =>
+      isClosed_le (continuous_abs.comp (hc η ξ)) continuous_const)
+
+/-- The operator of a matrix is elliptic with constant `λ` and bounded by `Λ` exactly when the
+matrix satisfies the pointwise conditions of `TauCeti.PDE.UniformlyEllipticOn`. -/
+@[simp]
+theorem toEuclideanCLM_mem_ellipticCLMSet_iff {lam Lam : ℝ} (A : Matrix n n ℝ) :
+    toEuclideanCLM (𝕜 := ℝ) A ∈ ellipticCLMSet lam Lam ↔
+      (∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) ∧
+        ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖ := by
+  simp only [ellipticCLMSet, Set.mem_ofPred_eq, inner_toEuclideanCLM, toQuadraticForm'_apply]
+
+/-- A coefficient field whose operators are elliptic with constants `0 < λ ≤ Λ` at every point of
+`s` is uniformly elliptic on `s`. -/
+theorem uniformlyEllipticOn_of_forall_toEuclideanCLM_mem {s : Set X} {a : X → Matrix n n ℝ}
+    {lam Lam : ℝ} (hlam : 0 < lam) (hle : lam ≤ Lam)
+    (h : ∀ x ∈ s, toEuclideanCLM (𝕜 := ℝ) (a x) ∈ ellipticCLMSet lam Lam) :
+    UniformlyEllipticOn s a lam Lam :=
+  uniformlyEllipticOn_iff.2
+    ⟨hlam, hle, fun x hx => (toEuclideanCLM_mem_ellipticCLMSet_iff _).1 (h x hx)⟩
+
+end EllipticOperators
 
 namespace UniformlyEllipticOn
 
