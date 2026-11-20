@@ -116,13 +116,13 @@ omit [TopologicalSpace L] in
 include hφt ht hA₀ hφA₀ hϖ hϖ' in
 /-- Every element of a stage `Aᵢ` is mapped into `L₀` after multiplication by a power of `ϖ'`. -/
 private theorem exists_pow_mul_map_mem (i : ι) (a : A i) : ∃ n, (ϖ' : L) ^ n * φ i a ∈ L₀ := by
-  -- at a stage `j` above `i` and `i₀`, the powers of the image of `ϖ` times the image of `a`
-  -- tend to zero, so they eventually lie in the open subring `A₀ⱼ`
+  -- at a stage `j` above `i` and `i₀`, the topologically nilpotent image of `ϖ` absorbs the
+  -- image of `a` into the open subring `A₀ⱼ`
   obtain ⟨j, hij, hi₀j⟩ := directed_of (· ≤ ·) i i₀
-  have hlim := ((hϖ.isTopologicallyNilpotent.map (ht i₀ j hi₀j)).mul_const (t i j hij a))
-  rw [zero_mul] at hlim
-  obtain ⟨n, hn⟩ := (hlim.eventually ((hA₀ j).mem_nhds (A₀ j).zero_mem)).exists
+  obtain ⟨n, hn⟩ := exists_mul_pow_mem_of_isTopologicallyNilpotent
+    (hϖ.isTopologicallyNilpotent.map (ht i₀ j hi₀j)) (hA₀ j) (t i j hij a)
   refine ⟨n, ?_⟩
+  rw [mul_comm]
   simpa only [map_mul, map_pow, hφt, hϖ'] using hφA₀ j _ hn
 
 omit [TopologicalSpace L] in
@@ -183,7 +183,7 @@ theorem isRingOfIntegralElements_of_hasBasis [NonarchimedeanRing L]
     (fun x hx ↦ by
       obtain ⟨i, a, ha, rfl⟩ := hL₀ x hx
       exact hφplus i a (hA₀plus i ha))
-    (isOpen_subring_of_hasBasis h)
+    (by rw [← Subring.range_subtype L₀]; exact isOpen_range_algebraMap_of_hasBasis h)
   isIntegrallyClosedIn :=
     TauCeti.DirectLimit.isIntegrallyClosedIn hφt hcover hker Aplus htplus hφplus hLplus
   le_powerBoundedSubring x hx := by

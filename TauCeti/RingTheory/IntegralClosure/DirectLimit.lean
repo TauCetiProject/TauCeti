@@ -52,18 +52,16 @@ theorem isIntegrallyClosedIn
   refine Subring.isIntegrallyClosedIn_iff.mpr fun x ⟨p, hpm, hp⟩ ↦ ?_
   -- lift the coefficients of `p` into a common `Sⱼ` and `x` to a common stage `k ≥ j`
   obtain ⟨j, g, hg⟩ := exists_lift_mem hφt (fun i ↦ (S i : Set (A i))) htS
-    ((p.map T.subtype).support.image (p.map T.subtype).coeff) fun y hy ↦ by
-      obtain ⟨n, -, rfl⟩ := Finset.mem_image.mp hy
+    (p.map T.subtype).coeffs fun y hy ↦ by
+      obtain ⟨n, -, rfl⟩ := mem_coeffs_iff.mp hy
       simpa using hT _ (p.coeff n).property
   obtain ⟨i, b, rfl⟩ := hcover x
   obtain ⟨k, hjk, hik⟩ := directed_of (· ≤ ·) j i
   let f : S k →+* L := (φ k).comp (S k).subtype
   have hlifts : p.map T.subtype ∈ lifts f := by
-    refine (lifts_iff_coeff_lifts _).mpr fun n ↦ ?_
-    by_cases hn : n ∈ (p.map T.subtype).support
-    · obtain ⟨hgS, hgφ⟩ := hg _ (Finset.mem_image_of_mem _ hn)
-      exact ⟨⟨_, htS j k hjk _ hgS⟩, by simpa [f, hφt] using hgφ⟩
-    · exact ⟨0, by simp [f, notMem_support_iff.mp hn]⟩
+    refine (lifts_iff_coeffs_subset_range _).mpr fun y hy ↦ ?_
+    obtain ⟨hgS, hgφ⟩ := hg y hy
+    exact ⟨⟨_, htS j k hjk _ hgS⟩, by simpa [f, hφt] using hgφ⟩
   obtain ⟨q, hq, -, hqm⟩ := lifts_and_natDegree_eq_and_monic hlifts (hpm.map _)
   -- the lifted equation holds in `L`, hence at a later stage `m`
   have hroot : φ k ((q.eval₂ (S k).subtype (t i k hik b))) = φ k 0 := by

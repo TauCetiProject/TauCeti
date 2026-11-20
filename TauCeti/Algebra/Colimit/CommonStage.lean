@@ -49,11 +49,9 @@ theorem exists_lift_mem [Nonempty ι] [∀ i, Nonempty (A i)] (S : ∀ i, Set (A
     (hS : ∀ i j (h : i ≤ j), ∀ a ∈ S i, t i j h a ∈ S j) (X : Finset L)
     (hX : ∀ x ∈ X, ∃ i, ∃ a ∈ S i, φ i a = x) :
     ∃ i, ∃ g : L → A i, ∀ x ∈ X, g x ∈ S i ∧ φ i (g x) = x := by
-  have hdir : Directed (· ⊆ ·) fun i ↦ φ i '' S i := fun i j ↦ by
-    obtain ⟨k, hik, hjk⟩ := directed_of (· ≤ ·) i j
-    refine ⟨k, ?_, ?_⟩ <;> rintro _ ⟨a, ha, rfl⟩
-    · exact ⟨t i k hik a, hS i k hik a ha, hφt i k hik a⟩
-    · exact ⟨t j k hjk a, hS j k hjk a ha, hφt j k hjk a⟩
+  have hdir : Directed (· ⊆ ·) fun i ↦ φ i '' S i := directed_of_isDirected_le fun i j hij ↦ by
+    rintro _ ⟨a, ha, rfl⟩
+    exact ⟨t i j hij a, hS i j hij a ha, hφt i j hij a⟩
   obtain ⟨i, hi⟩ := hdir.exists_mem_subset_of_finset_subset_biUnion fun x hx ↦
     Set.mem_iUnion.mpr (hX x hx)
   exact ⟨i, Function.invFunOn (φ i) (S i), fun x hx ↦ Function.invFunOn_pos (hi hx)⟩
