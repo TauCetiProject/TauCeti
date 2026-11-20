@@ -7,10 +7,8 @@ module
 
 public import Mathlib.Topology.Homotopy.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Broken
-public import TauCeti.Topology.PathSpace.Moore.Lipschitz
 public import TauCeti.Topology.PathSpace.Moore.Sampling
-import TauCeti.Data.Fin.Basic
-import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.Topology.Algebra.Monoid.PartialProd
 
 /-!
 # Sliding the sampled vertices along a broken geodesic
@@ -37,7 +35,7 @@ first one repeated, it gives the iterate of `ι`; evaluated at the equally space
 samples. Along the linear interpolation between the two families of times, the consecutive times
 stay ordered and their gaps stay below the cut-offs: the gaps between vertex times are the edges
 of `q`, and the gaps between equally spaced times are the length divided by `m + 1`
-(`TauCeti.MooreFreeLoopSpace.combo_mem_cyclicDistanceCutTimes`). Since the broken geodesic is
+(`TauCeti.combo_mem_cyclicDistanceCutTimes`). Since the broken geodesic is
 `1`-Lipschitz, the interpolated samples lie in the distance cut all along.
 
 ## Main definitions
@@ -49,10 +47,8 @@ of `q`, and the gaps between equally spaced times are the length divided by `m +
 
 ## Main results
 
-* `TauCeti.Manifold.lipschitzWith_geodesicSegment`, `TauCeti.Manifold.lipschitzWith_brokenGeodesic`,
-  `TauCeti.Manifold.lipschitzWith_brokenGeodesicLoop`: broken geodesics are `1`-Lipschitz.
-* `TauCeti.Manifold.brokenGeodesic_apply_partialSum`,
-  `TauCeti.Manifold.brokenGeodesicLoop_apply_partialSum`: the vertex times.
+* `TauCeti.Manifold.sample_cyclicDistanceCutBrokenGeodesic_mem_cyclicDistanceCut`: the equally
+  spaced samples of a broken geodesic through a tuple of a distance cut lie in a distance cut.
 * `TauCeti.Manifold.homotopic_cyclicDistanceCutRepeatFirstIterate_sampleBrokenGeodesic`:
   `ιᵐ⁻¹ ∘ ⋯ ∘ ιⁿ ≃ evₘ₊₁ ∘ geoⁿ` as maps `𝓛ⁿM → 𝓛ᵐM`.
 
@@ -83,135 +79,11 @@ variable
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   [IsRiemannianManifold I M] {r : ℝ} (hr : ∀ q : M, IsNormalDomain I M q (ball 0 r))
 
-/-! ### Broken geodesics are `1`-Lipschitz -/
-
-section Lipschitz
-
-include hr
-
-/-- The geodesic segment is `1`-Lipschitz in its time: it travels at unit speed up to its length,
-and stops there. -/
-theorem lipschitzWith_geodesicSegment (p : {p : M × M // dist p.1 p.2 < r}) :
-    LipschitzWith 1 (geodesicSegment hr p) := by
-  refine LipschitzWith.of_dist_le_mul fun s t ↦ ?_
-  rw [← MoorePath.apply_min_length (geodesicSegment hr p) s,
-    ← MoorePath.apply_min_length (geodesicSegment hr p) t,
-    dist_geodesicSegment_apply hr p (min_le_right _ _) (min_le_right _ _), NNReal.coe_one, one_mul,
-    NNReal.dist_eq, NNReal.coe_min, NNReal.coe_min]
-  simpa using abs_min_sub_min_le_max (s : ℝ) (geodesicSegment hr p).length t
-    (geodesicSegment hr p).length
-
-/-- A broken geodesic is `1`-Lipschitz in its time. -/
-theorem lipschitzWith_brokenGeodesic (n : ℕ) (q : Fin (n + 1) → M)
-    (h : ∀ i : Fin n, dist (q i.castSucc) (q i.succ) < r) :
-    LipschitzWith 1 (brokenGeodesic hr n q h) := by
-  induction n with
-  | zero =>
-    rw [brokenGeodesic_zero]
-    exact MoorePath.lipschitzWith_refl _ _
-  | succ n ih =>
-    rw [brokenGeodesic_succ hr n q h (forall_dist_tail_lt h)]
-    exact MoorePath.lipschitzWith_trans _ (lipschitzWith_geodesicSegment hr _) (ih _ _)
-
-/-- A closed broken geodesic is `1`-Lipschitz in its time. -/
-theorem lipschitzWith_brokenGeodesicLoop (n : ℕ) (q : Fin (n + 1) → M)
-    (h : ∀ i, dist (q i) (q (i - 1)) < r) :
-    LipschitzWith 1 (brokenGeodesicLoop hr n q h).toMoorePath := by
-  rw [toMoorePath_brokenGeodesicLoop hr n q h (forall_dist_snoc_lt h)]
-  exact lipschitzWith_brokenGeodesic hr _ _ _
-
-end Lipschitz
-
-/-! ### The vertex times -/
-
-section Vertex
-
-/-- The distances between consecutive vertices of `q 0, …, q (n + 1)`, after the first one, are
-those of `q 1, …, q (n + 1)`. -/
-private theorem tail_nndist_castSucc_succ {n : ℕ} (q : Fin (n + 2) → M) :
-    Fin.tail (fun k : Fin (n + 1) ↦ nndist (q k.castSucc) (q k.succ)) =
-      fun k : Fin n ↦ nndist (Fin.tail q k.castSucc) (Fin.tail q k.succ) := by
-  funext k
-  simp only [Fin.tail, Fin.succ_castSucc]
-
-/-- The edges of `q 0, …, q n, q 0` are the cyclic edges of `q`. -/
-private theorem nndist_snoc_castSucc_succ {n : ℕ} (q : Fin (n + 1) → M) :
-    (fun k : Fin (n + 1) ↦ nndist ((Fin.snoc q (q 0) : Fin (n + 2) → M) k.castSucc)
-      ((Fin.snoc q (q 0) : Fin (n + 2) → M) k.succ)) = fun k ↦ nndist (q k) (q (k + 1)) :=
-  funext fun k ↦ by rw [Fin.snoc_castSucc, Fin.snoc_self_zero_succ]
-
-include hr
-
-/-- **The broken geodesic passes through its vertices at the partial sums of the distances:** it is
-at `q i` at the time `d(q 0, q 1) + ⋯ + d(q (i - 1), q i)`. -/
-theorem brokenGeodesic_apply_partialSum (n : ℕ) (q : Fin (n + 1) → M)
-    (h : ∀ i : Fin n, dist (q i.castSucc) (q i.succ) < r) (i : Fin (n + 1)) :
-    brokenGeodesic hr n q h
-      (Fin.partialSum (fun k : Fin n ↦ nndist (q k.castSucc) (q k.succ)) i) = q i := by
-  induction n with
-  | zero =>
-    rw [Fin.fin_one_eq_zero i, Fin.partialSum_zero, brokenGeodesic_zero, MoorePath.refl_apply]
-  | succ n ih =>
-    rw [brokenGeodesic_succ hr n q h (forall_dist_tail_lt h)]
-    refine Fin.cases ?_ (fun j ↦ ?_) i
-    · rw [Fin.partialSum_zero, ← MoorePath.source_def, MoorePath.source_trans,
-        source_geodesicSegment]
-      exact congrArg q Fin.castSucc_zero
-    · rw [Fin.partialSum_succ', tail_nndist_castSucc_succ,
-        ← length_geodesicSegment hr ⟨(q (Fin.castSucc 0), q (Fin.succ 0)), h 0⟩,
-        MoorePath.trans_apply_length_add]
-      exact ih (Fin.tail q) (forall_dist_tail_lt h) j
-
-/-- The length of a broken geodesic is the last partial sum of the distances between consecutive
-vertices: the broken geodesic reaches its last vertex at its length. -/
-theorem length_brokenGeodesic_eq_partialSum (n : ℕ) (q : Fin (n + 1) → M)
-    (h : ∀ i : Fin n, dist (q i.castSucc) (q i.succ) < r) :
-    (brokenGeodesic hr n q h).length =
-      Fin.partialSum (fun k : Fin n ↦ nndist (q k.castSucc) (q k.succ)) (Fin.last n) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [brokenGeodesic_succ hr n q h (forall_dist_tail_lt h), MoorePath.length_trans,
-      ih (Fin.tail q) (forall_dist_tail_lt h),
-      length_geodesicSegment, ← Fin.succ_last, Fin.partialSum_succ', tail_nndist_castSucc_succ]
-
-/-- **The closed broken geodesic passes through its vertices at the partial sums of the distances:**
-it is at `q i` at the time `d(q 0, q 1) + ⋯ + d(q (i - 1), q i)`. -/
-theorem brokenGeodesicLoop_apply_partialSum (n : ℕ) (q : Fin (n + 1) → M)
-    (h : ∀ i, dist (q i) (q (i - 1)) < r) (i : Fin (n + 1)) :
-    (brokenGeodesicLoop hr n q h).toMoorePath
-      (Fin.partialSum (fun k ↦ nndist (q k) (q (k + 1))) i.castSucc) = q i := by
-  rw [toMoorePath_brokenGeodesicLoop hr n q h (forall_dist_snoc_lt h),
-    ← nndist_snoc_castSucc_succ q,
-    brokenGeodesic_apply_partialSum, Fin.snoc_castSucc]
-
-/-- The length of the closed broken geodesic through `q 0, …, q n` is the last partial sum
-`d(q 0, q 1) + ⋯ + d(q (n - 1), q n) + d(q n, q 0)` of its cyclic edges. -/
-theorem length_brokenGeodesicLoop_eq_partialSum (n : ℕ) (q : Fin (n + 1) → M)
-    (h : ∀ i, dist (q i) (q (i - 1)) < r) :
-    (brokenGeodesicLoop hr n q h).length =
-      Fin.partialSum (fun k ↦ nndist (q k) (q (k + 1))) (Fin.last (n + 1)) := by
-  rw [← MooreFreeLoopSpace.length_toMoorePath,
-    toMoorePath_brokenGeodesicLoop hr n q h (forall_dist_snoc_lt h), ← nndist_snoc_castSucc_succ q,
-    length_brokenGeodesic_eq_partialSum]
-
-end Vertex
-
 /-! ### Sliding the samples inside a distance cut -/
 
 section Cut
 
 include hr
-
-/-- The length of the closed broken geodesic through a tuple of a distance cut is at most the sum of
-the cut-offs. -/
-theorem length_cyclicDistanceCutBrokenGeodesic_le {n : ℕ} {δ : Fin (n + 1) → ℝ}
-    (hδ : ∀ i, δ i < r) (q : cyclicDistanceCut (X := M) δ) :
-    ((cyclicDistanceCutBrokenGeodesic hr hδ q).length : ℝ) ≤ ∑ i, δ i := by
-  rw [cyclicDistanceCutBrokenGeodesic_apply, length_brokenGeodesicLoop, NNReal.coe_sum]
-  exact Finset.sum_le_sum fun i _ ↦ by
-    rw [coe_nndist]
-    exact mem_cyclicDistanceCut.1 q.2 i
 
 /-- The `m + 1` equally spaced samples of the closed broken geodesic through a tuple of the distance
 cut with cut-offs `δ` lie in the distance cut with cut-offs `δ'` when `∑ i, δ i ≤ (m + 1) * δ' j`
@@ -247,27 +119,72 @@ theorem coe_cyclicDistanceCutSampleBrokenGeodesic_apply {n : ℕ} {δ : Fin (n +
       (cyclicDistanceCutBrokenGeodesic hr hδ q).toMoorePath.sample (m + 1) :=
   (rfl)
 
-/-- The samples of the broken geodesic through `q` at the interpolated times
-`(1 - s) aⱼ + s bⱼ` of the slide lie in the distance cut. -/
+/-- The times of the slide at `s`: the convex combination `(1 - s) aⱼ + s bⱼ` of the time `aⱼ` at
+which the closed broken geodesic through `q` passes through the `j`-th vertex of
+`(q₀, …, q₀, q₁, …, qₙ)` and the equally spaced time `bⱼ = L j / (n + k + 1)` for its length `L`. -/
+private def slideTimes {n k : ℕ} {δ : Fin (n + 1) → ℝ} (hδ : ∀ i, δ i < r) (s : unitInterval)
+    (q : cyclicDistanceCut (X := M) δ) (j : Fin (n + k + 1)) : ℝ≥0 :=
+  unitInterval.toNNReal (unitInterval.symm s) *
+      Fin.partialSum (fun i ↦ nndist (q.1 i) (q.1 (i + 1))) (Fin.castSucc ⟨j - k, by omega⟩) +
+    unitInterval.toNNReal s * ((cyclicDistanceCutBrokenGeodesic hr hδ q).length *
+      ((j : ℕ) / (n + k + 1 : ℕ) : ℝ≥0))
+
+/-- At the start of the slide, the times are the vertex times. -/
+@[simp]
+private theorem slideTimes_zero {n k : ℕ} {δ : Fin (n + 1) → ℝ} (hδ : ∀ i, δ i < r)
+    (q : cyclicDistanceCut (X := M) δ) (j : Fin (n + k + 1)) :
+    slideTimes hr hδ 0 q j =
+      Fin.partialSum (fun i ↦ nndist (q.1 i) (q.1 (i + 1))) (Fin.castSucc ⟨j - k, by omega⟩) := by
+  simp [slideTimes]
+
+/-- At the end of the slide, the times are the equally spaced times. -/
+@[simp]
+private theorem slideTimes_one {n k : ℕ} {δ : Fin (n + 1) → ℝ} (hδ : ∀ i, δ i < r)
+    (q : cyclicDistanceCut (X := M) δ) (j : Fin (n + k + 1)) :
+    slideTimes hr hδ 1 q j =
+      (cyclicDistanceCutBrokenGeodesic hr hδ q).length * ((j : ℕ) / (n + k + 1 : ℕ) : ℝ≥0) := by
+  simp [slideTimes]
+
+/-- The times of the slide depend continuously on the slide time and on the tuple. -/
+private theorem continuous_slideTimes {n k : ℕ} {δ : Fin (n + 1) → ℝ} (hδ : ∀ i, δ i < r)
+    (j : Fin (n + k + 1)) :
+    Continuous fun x : unitInterval × cyclicDistanceCut (X := M) δ ↦
+      slideTimes hr hδ x.1 x.2 j := by
+  -- The vertex times are partial sums of continuous functions of the tuple.
+  have hpartial : Continuous fun q : cyclicDistanceCut (X := M) δ ↦
+      Fin.partialSum (fun l ↦ nndist (q.1 l) (q.1 (l + 1))) (Fin.castSucc ⟨j - k, by omega⟩) :=
+    Continuous.finPartialSum (fun _ ↦ ((continuous_apply _).comp continuous_subtype_val).nndist
+      ((continuous_apply _).comp continuous_subtype_val)) _
+  refine ((unitInterval.toNNReal_continuous.comp (unitInterval.continuous_symm.comp
+    continuous_fst)).mul (hpartial.comp continuous_snd)).add
+    ((unitInterval.toNNReal_continuous.comp continuous_fst).mul ?_)
+  exact (MooreFreeLoopSpace.continuous_length.comp
+    ((map_continuous (cyclicDistanceCutBrokenGeodesic hr hδ)).comp continuous_snd)).mul
+    continuous_const
+
+/-- The samples of the broken geodesic through `q` at the times of the slide lie in the distance
+cut. -/
 private theorem slide_mem_cyclicDistanceCut {n k : ℕ} {δ : Fin (n + 1) → ℝ}
-    {δ' : Fin (n + k + 1) → ℝ} (hδ : ∀ i, δ i < r) (hδδ' : ∀ i j, δ i ≤ δ' j)
+    {δ' : Fin (n + k + 1) → ℝ} (hδ : ∀ i, δ i < r)
+    (hδδ' : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j)
     (hm : ∀ j, ∑ i, δ i ≤ ((n + k + 1 : ℕ) : ℝ) * δ' j) (s : unitInterval)
     (q : cyclicDistanceCut (X := M) δ) :
-    (fun j : Fin (n + k + 1) ↦ (cyclicDistanceCutBrokenGeodesic hr hδ q).toMoorePath
-      (unitInterval.toNNReal (unitInterval.symm s) *
-          Fin.partialSum (fun i ↦ nndist (q.1 i) (q.1 (i + 1))) (Fin.castSucc ⟨j - k, by omega⟩) +
-        unitInterval.toNNReal s * ((cyclicDistanceCutBrokenGeodesic hr hδ q).length *
-          ((j : ℕ) / (n + k + 1 : ℕ) : ℝ≥0)))) ∈ cyclicDistanceCut δ' := by
+    (fun j ↦ (cyclicDistanceCutBrokenGeodesic hr hδ q).toMoorePath (slideTimes hr hδ s q j)) ∈
+      cyclicDistanceCut δ' := by
   have hL := length_cyclicDistanceCutBrokenGeodesic_le hr hδ q
-  rw [cyclicDistanceCutBrokenGeodesic_apply] at hL ⊢
-  refine MooreFreeLoopSpace.apply_mem_cyclicDistanceCut
-    (lipschitzWith_brokenGeodesicLoop hr _ _ _) (combo_mem_cyclicDistanceCutTimes ?_ ?_ s)
-  · rw [length_brokenGeodesicLoop_eq_partialSum]
+  have hvertex : (fun j : Fin (n + k + 1) ↦ Fin.partialSum (fun i ↦ nndist (q.1 i) (q.1 (i + 1)))
+      (Fin.castSucc ⟨j - k, by omega⟩)) ∈
+        cyclicDistanceCutTimes (cyclicDistanceCutBrokenGeodesic hr hδ q).length δ' := by
+    rw [cyclicDistanceCutBrokenGeodesic_apply, length_brokenGeodesicLoop_eq_partialSum]
     exact partialSum_mem_cyclicDistanceCutTimes hδδ' q.2
-  · exact mul_div_mem_cyclicDistanceCutTimes fun j ↦ hL.trans (hm j)
+  have hLip : LipschitzWith 1 (cyclicDistanceCutBrokenGeodesic hr hδ q).toMoorePath := by
+    rw [cyclicDistanceCutBrokenGeodesic_apply]
+    exact lipschitzWith_brokenGeodesicLoop hr _ _ _
+  exact MooreFreeLoopSpace.apply_mem_cyclicDistanceCut hLip (combo_mem_cyclicDistanceCutTimes
+    hvertex (mul_div_mem_cyclicDistanceCutTimes fun j ↦ hL.trans (hm j)) s)
 
-/-- **Sliding the sampled vertices along the broken geodesics.** For cut-offs `δ i < r` with every
-`δ i` at most every `δ' j` and `∑ i, δ i ≤ (n + k + 1) * δ' j`, the homotopy of maps from the
+/-- **Sliding the sampled vertices along the broken geodesics.** For cut-offs `δ i < r` with
+`δ (j - k) ≤ δ' j` and `∑ i, δ i ≤ (n + k + 1) * δ' j` for every `j`, the homotopy of maps from the
 distance cut with cut-offs `δ` to the one with cut-offs `δ'` from the iterate
 `ιⁿ⁺ᵏ⁻¹ ∘ ⋯ ∘ ιⁿ` repeating the first vertex `k` more times
 (`TauCeti.cyclicDistanceCutRepeatFirstIterate`) to the samples `evₙ₊ₖ₊₁ ∘ geoⁿ` of the broken
@@ -276,54 +193,34 @@ broken geodesic through `q` at the times `(1 - s) aⱼ + s bⱼ`, where `aⱼ` i
 passes through the `j`-th vertex of `(q₀, …, q₀, q₁, …, qₙ)` and `bⱼ = L j / (n + k + 1)` for its
 length `L`. -/
 def cyclicDistanceCutSampleBrokenGeodesicHomotopy {n k : ℕ} {δ : Fin (n + 1) → ℝ}
-    {δ' : Fin (n + k + 1) → ℝ} (hδ : ∀ i, δ i < r) (hδδ' : ∀ i j, δ i ≤ δ' j)
+    {δ' : Fin (n + k + 1) → ℝ} (hδ : ∀ i, δ i < r)
+    (hδδ' : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j)
     (hm : ∀ j, ∑ i, δ i ≤ ((n + k + 1 : ℕ) : ℝ) * δ' j) :
     (cyclicDistanceCutRepeatFirstIterate (X := M) k hδδ').Homotopy
       (cyclicDistanceCutSampleBrokenGeodesic hr hδ (n + k) hm) where
   toFun x := ⟨fun j ↦ (cyclicDistanceCutBrokenGeodesic hr hδ x.2).toMoorePath
-      (unitInterval.toNNReal (unitInterval.symm x.1) *
-          Fin.partialSum (fun i ↦ nndist (x.2.1 i) (x.2.1 (i + 1)))
-            (Fin.castSucc ⟨j - k, by omega⟩) +
-        unitInterval.toNNReal x.1 * ((cyclicDistanceCutBrokenGeodesic hr hδ x.2).length *
-          ((j : ℕ) / (n + k + 1 : ℕ) : ℝ≥0))),
-    slide_mem_cyclicDistanceCut hr hδ hδδ' hm x.1 x.2⟩
-  continuous_toFun := by
-    -- The vertex times are partial sums of continuous functions of the tuple.
-    have hpartial : ∀ i : Fin (n + 2), Continuous fun q : cyclicDistanceCut (X := M) δ ↦
-        Fin.partialSum (fun l ↦ nndist (q.1 l) (q.1 (l + 1))) i := fun i ↦ by
-      induction i using Fin.induction with
-      | zero => simp only [Fin.partialSum_zero]; exact continuous_const
-      | succ i ih =>
-        simp only [Fin.partialSum_succ]
-        exact ih.add (((continuous_apply _).comp continuous_subtype_val).nndist
-          ((continuous_apply _).comp continuous_subtype_val))
-    have hgeo : Continuous fun x : unitInterval × cyclicDistanceCut (X := M) δ ↦
-        cyclicDistanceCutBrokenGeodesic hr hδ x.2 :=
-      (map_continuous (cyclicDistanceCutBrokenGeodesic hr hδ)).comp continuous_snd
-    refine Continuous.subtype_mk (continuous_pi fun j ↦
-      (MooreFreeLoopSpace.continuous_toMoorePath.comp hgeo).moorePath_eval ?_) _
-    refine ((unitInterval.toNNReal_continuous.comp (unitInterval.continuous_symm.comp
-      continuous_fst)).mul ((hpartial _).comp continuous_snd)).add
-      ((unitInterval.toNNReal_continuous.comp continuous_fst).mul ?_)
-    exact (MooreFreeLoopSpace.continuous_length.comp hgeo).mul continuous_const
+      (slideTimes hr hδ x.1 x.2 j), slide_mem_cyclicDistanceCut hr hδ hδδ' hm x.1 x.2⟩
+  continuous_toFun := Continuous.subtype_mk (continuous_pi fun j ↦
+    (MooreFreeLoopSpace.continuous_toMoorePath.comp
+      ((map_continuous (cyclicDistanceCutBrokenGeodesic hr hδ)).comp continuous_snd)).moorePath_eval
+      (continuous_slideTimes hr hδ j)) _
   map_zero_left q := by
     ext j
-    simp only [unitInterval.symm_zero, unitInterval.toNNReal_one, unitInterval.toNNReal_zero,
-      one_mul, zero_mul, add_zero, cyclicDistanceCutBrokenGeodesic_apply,
+    simp only [slideTimes_zero, cyclicDistanceCutBrokenGeodesic_apply,
       brokenGeodesicLoop_apply_partialSum, coe_cyclicDistanceCutRepeatFirstIterate_apply]
   map_one_left q := by
     ext j
-    simp only [unitInterval.symm_one, unitInterval.toNNReal_one, unitInterval.toNNReal_zero,
-      one_mul, zero_mul, zero_add, coe_cyclicDistanceCutSampleBrokenGeodesic_apply,
+    simp only [slideTimes_one, coe_cyclicDistanceCutSampleBrokenGeodesic_apply,
       MoorePath.sample_apply, MooreFreeLoopSpace.length_toMoorePath]
 
-/-- **`ιⁿ⁺ᵏ⁻¹ ∘ ⋯ ∘ ιⁿ ≃ evₙ₊ₖ₊₁ ∘ geoⁿ`.** For cut-offs `δ i < r` with every `δ i` at most every
-`δ' j` and `∑ i, δ i ≤ (n + k + 1) * δ' j`, repeating the first vertex `k` more times and sampling
-the broken geodesics at `n + k + 1` equally spaced times are homotopic maps from the distance cut
-with cut-offs `δ` to the one with cut-offs `δ'`. -/
+/-- **`ιⁿ⁺ᵏ⁻¹ ∘ ⋯ ∘ ιⁿ ≃ evₙ₊ₖ₊₁ ∘ geoⁿ`.** For cut-offs `δ i < r` with `δ (j - k) ≤ δ' j` and
+`∑ i, δ i ≤ (n + k + 1) * δ' j` for every `j`, repeating the first vertex `k` more times and
+sampling the broken geodesics at `n + k + 1` equally spaced times are homotopic maps from the
+distance cut with cut-offs `δ` to the one with cut-offs `δ'`. -/
 theorem homotopic_cyclicDistanceCutRepeatFirstIterate_sampleBrokenGeodesic {n k : ℕ}
     {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + k + 1) → ℝ} (hδ : ∀ i, δ i < r)
-    (hδδ' : ∀ i j, δ i ≤ δ' j) (hm : ∀ j, ∑ i, δ i ≤ ((n + k + 1 : ℕ) : ℝ) * δ' j) :
+    (hδδ' : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j)
+    (hm : ∀ j, ∑ i, δ i ≤ ((n + k + 1 : ℕ) : ℝ) * δ' j) :
     (cyclicDistanceCutRepeatFirstIterate (X := M) k hδδ').Homotopic
       (cyclicDistanceCutSampleBrokenGeodesic hr hδ (n + k) hm) :=
   ⟨cyclicDistanceCutSampleBrokenGeodesicHomotopy hr hδ hδδ' hm⟩
