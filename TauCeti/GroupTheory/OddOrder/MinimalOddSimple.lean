@@ -11,6 +11,7 @@ public import Mathlib.GroupTheory.Solvable
 import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.GroupTheory.Index
 import TauCeti.GroupTheory.DerivedCentralQuotient
+import TauCeti.GroupTheory.Subgroup.Simple
 
 /-!
 # Minimal odd simple groups
@@ -28,13 +29,11 @@ solvable. Consequently three forms of the odd order theorem are equivalent, univ
 there is no finite minimal odd simple group, every finite group of odd order is solvable, and every
 finite nonabelian simple group has even order. The equivalence does not assume any of the three.
 
-The elementary properties of a minimal odd simple group `G` used later are those of a nonabelian
-simple group: its centre is trivial (`TauCeti.IsSimpleGroup.center_eq_bot_of_not_isMulCommutative`),
-it is perfect (`TauCeti.IsSimpleGroup.isPerfect_of_not_isMulCommutative`), and its maximal subgroups
-are self-normalizing (`IsSimpleGroup.normalizer_eq_self_of_isCoatom`), each applied to the fields
-`IsMinimalOddSimple.simple` and `IsMinimalOddSimple.nonabelian`. Every proper subgroup is solvable
-by the field `IsMinimalOddSimple.proper_solvable`, and lies in a maximal subgroup because the
-subgroup lattice of a finite group is coatomic.
+The elementary properties of a minimal odd simple group `G` used later are stated on the predicate:
+its centre is trivial, it is perfect, the centralizer of a nontrivial element is proper, its maximal
+subgroups are self-normalizing, and every proper subgroup lies in a maximal subgroup. The first
+four are those of a nonabelian simple group, and the last holds because `G` is finite. Every proper
+subgroup is solvable by the field `IsMinimalOddSimple.proper_solvable`.
 
 ## Main definitions
 
@@ -44,6 +43,11 @@ subgroup lattice of a finite group is coatomic.
 ## Main results
 
 * `TauCeti.IsMinimalOddSimple.not_isSolvable`: a minimal odd simple group is not solvable.
+* `TauCeti.IsMinimalOddSimple.center_eq_bot`, `TauCeti.IsMinimalOddSimple.commutator_eq_top`,
+  `TauCeti.IsMinimalOddSimple.centralizer_ne_top`,
+  `TauCeti.IsMinimalOddSimple.normalizer_eq_self_of_isCoatom` and
+  `TauCeti.IsMinimalOddSimple.exists_isCoatom_le`: the elementary properties of a minimal odd simple
+  group.
 * `TauCeti.exists_isMinimalOddSimple_quotient_of_not_isSolvable`: a nonsolvable group of odd order
   has a minimal odd simple section.
 * `TauCeti.not_isMinimalOddSimple_tfae`: the nonexistence of minimal odd simple groups, the
@@ -102,13 +106,42 @@ theorem of_mulEquiv {H : Type*} [Group H] (h : IsMinimalOddSimple H) (e : G ≃*
     IsMinimalOddSimple G where
   odd := Nat.card_congr e.toEquiv ▸ h.odd
   simple := have := h.simple; e.isSimpleGroup
-  nonabelian hG := h.nonabelian <| isMulCommutative_iff.mpr fun a b ↦
-    e.symm.injective <| by simp only [map_mul, mul_comm' (e.symm a)]
+  nonabelian hG := h.nonabelian (e.isMulCommutative.mp hG)
   proper_solvable K hK :=
     have := h.proper_solvable (K.map e.toMonoidHom) fun hK' ↦ hK <| by
       rw [← comap_map_eq_self_of_injective (f := e.toMonoidHom) e.injective K, hK', comap_top]
     Group.isSolvable_of_isSolvable_injective
       (f := (K.equivMapOfInjective e.toMonoidHom e.injective).toMonoidHom) (MulEquiv.injective _)
+
+/-- A minimal odd simple group has trivial centre. -/
+theorem center_eq_bot (h : IsMinimalOddSimple G) : center G = ⊥ :=
+  have := h.simple
+  IsSimpleGroup.center_eq_bot_of_not_isMulCommutative h.nonabelian
+
+/-- A minimal odd simple group is perfect: its commutator subgroup is the whole group. -/
+theorem commutator_eq_top (h : IsMinimalOddSimple G) : commutator G = ⊤ :=
+  have := h.simple
+  (IsSimpleGroup.isPerfect_of_not_isMulCommutative h.nonabelian).commutator_eq_top
+
+/-- In a minimal odd simple group, the centralizer of a nontrivial element is a proper
+subgroup. -/
+theorem centralizer_ne_top (h : IsMinimalOddSimple G) {x : G} (hx : x ≠ 1) :
+    centralizer {x} ≠ ⊤ := fun hc ↦ by
+  have hx' := centralizer_eq_top_iff_subset.mp hc (Set.mem_singleton x)
+  rw [SetLike.mem_coe, h.center_eq_bot, mem_bot] at hx'
+  exact hx hx'
+
+/-- Every maximal subgroup of a minimal odd simple group is its own normalizer. -/
+theorem normalizer_eq_self_of_isCoatom (h : IsMinimalOddSimple G) {M : Subgroup G}
+    (hM : IsCoatom M) : normalizer (M : Set G) = M :=
+  have := h.simple
+  _root_.IsSimpleGroup.normalizer_eq_self_of_isCoatom h.nonabelian hM
+
+/-- Every proper subgroup of a minimal odd simple group lies in a maximal subgroup. -/
+theorem exists_isCoatom_le (h : IsMinimalOddSimple G) {H : Subgroup G} (hH : H ≠ ⊤) :
+    ∃ M : Subgroup G, IsCoatom M ∧ H ≤ M :=
+  have := h.finite
+  (eq_top_or_exists_le_coatom H).resolve_left hH
 
 end IsMinimalOddSimple
 
