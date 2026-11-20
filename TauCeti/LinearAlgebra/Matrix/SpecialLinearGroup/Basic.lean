@@ -12,6 +12,8 @@ public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import TauCeti.GroupTheory.Index.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Data.ZMod.Units
+-- Non-public: the general linear version of `vecMul_eq_iff_eq_vecMul_inv` is used only in a proof.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
 
 /-!
 # Special linear groups: reduction, centers, and coordinate descriptions
@@ -183,11 +185,7 @@ theorem mem_range_map_iff {R S : Type*} [CommRing R] [CommRing S] {n : Type*} [F
 theorem vecMul_eq_iff_eq_vecMul_inv {R : Type*} [CommRing R] {n : Type*} [Fintype n]
     [DecidableEq n] (g : SpecialLinearGroup n R) (a y : n → R) :
     a ᵥ* (g : Matrix n n R) = y ↔ a = y ᵥ* ((g⁻¹ : SpecialLinearGroup n R) : Matrix n n R) := by
-  constructor
-  · rintro rfl
-    rw [vecMul_vecMul, ← coe_mul, mul_inv_cancel, coe_one, vecMul_one]
-  · rintro rfl
-    rw [vecMul_vecMul, ← coe_mul, inv_mul_cancel, coe_one, vecMul_one]
+  simpa [← map_inv] using GeneralLinearGroup.vecMul_eq_iff_eq_vecMul_inv (toGL g) a y
 
 /-- Right multiplication of row vectors by `g ∈ SL(n, R)` permutes `n → R`, so it does not change
 a sum over all row vectors when `R` is finite. -/

@@ -46,7 +46,6 @@ namespace AlgHom
 variable {O H : Type*} [CommRing O] [IsLocalRing O] [CommRing H] [Algebra O H]
 
 /-- The kernel of an `O`-algebra map to the residue field of `O` lies over the maximal ideal. -/
-@[simp]
 theorem under_ker_eq_maximalIdeal (χ : H →ₐ[O] ResidueField O) :
     (RingHom.ker χ).under O = maximalIdeal O := by
   ext x
