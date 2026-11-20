@@ -138,7 +138,7 @@ theorem exponent_discriminantGroup_dvd_level (L : IntegralLattice V) [L.IsNondeg
   induction a using Submodule.Quotient.induction_on with
   | H x =>
     rw [← Submodule.Quotient.mk_smul, discriminantGroup_mk_eq_zero_iff]
-    exact level_nsmul_mem_carrier x.2
+    exact level_nsmul_mem_carrier x.property
 
 /-- **The level divides twice the determinant.** -/
 theorem level_dvd_two_mul_determinant (L : IntegralLattice V) :
@@ -207,14 +207,14 @@ theorem level_dvd_iff_gramMatrix {ι : Type v} [Fintype ι] [DecidableEq ι] (b 
     (N : ℤ) :
     (L.level : ℤ) ∣ N ↔ ∃ M : Matrix ι ι ℤ, (∀ i, Even (M i i)) ∧
       M.map (Int.cast : ℤ → ℚ) = (N : ℚ) • ((L.gramMatrix b).map (Int.cast : ℤ → ℚ))⁻¹ := by
-  set f := (L.dualCarrierBasis b).extendOfIsLattice ℚ
+  set f := (L.dualCarrierBasis b).extendOfIsFullLattice ℚ
   -- The inverse Gram matrix is the Gram matrix of the dual basis.
   have hinv (i j : ι) : ((L.gramMatrix b).map (Int.cast : ℤ → ℚ))⁻¹ i j = L.form (f i) (f j) := by
     have h := congrFun (congrFun (L.toMatrix_dualCarrierBasis b) i) j
     simpa only [LinearMap.BilinForm.toMatrix_apply,
       algebraMap_int_eq, Int.coe_castRingHom] using h.symm
   rw [L.level_dvd_iff_of_dualCarrier_eq_span f (by
-    simpa only [f, L.extendOfIsLattice_dualCarrierBasis] using
+    simpa only [f, L.extendOfIsFullLattice_dualCarrierBasis] using
       L.dualCarrier_eq_span_dualBasis b) N]
   constructor
   · rintro ⟨hint, heven⟩
@@ -265,7 +265,7 @@ theorem IsEven.level_dvd_iff {L : IntegralLattice V} (hL : L.IsEven) (N : ℤ) :
   · intro h a
     induction a using Submodule.Quotient.induction_on with
     | H x =>
-      obtain ⟨k, hk⟩ := h x x.2
+      obtain ⟨k, hk⟩ := h x x.property
       rw [discriminantQuadraticMap_mk]
       refine AddCircle.zsmul_coe_eq_zero (c := k) ?_
       rw [norm_apply] at hk
@@ -316,7 +316,7 @@ theorem level_eq_one_iff (L : IntegralLattice V) [L.IsNondegenerate] :
   · intro h
     refine ⟨L.isEven_iff_forall_norm.mpr fun x ↦ ?_,
       L.isUnimodular_iff_dualCarrier_le.mpr fun x hx ↦ ?_⟩
-    · obtain ⟨k, hk⟩ := (L.level_dvd_iff 1).mp (by simp [h]) x (L.le_dualCarrier x.2)
+    · obtain ⟨k, hk⟩ := (L.level_dvd_iff 1).mp (by simp [h]) x (L.le_dualCarrier x.property)
       exact ⟨k, by simpa using hk⟩
     · simpa [h] using level_nsmul_mem_carrier hx
   · rintro ⟨he, hu⟩

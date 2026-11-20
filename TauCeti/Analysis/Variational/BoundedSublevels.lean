@@ -14,13 +14,15 @@ public import Mathlib.Algebra.Order.Group.Pointwise.Bounds
 `HasBoundedSublevelsOn E S` is the boundedness condition used to obtain compactness in the
 direct method: every sublevel of the ordered-valued energy `E`, relative to the admissible set `S`,
 is bounded. It is stable under restriction, increasing the energy, positive scaling, and
-addition of an energy bounded below. In a pseudometric space it is equivalent to boundedness
-of every admissible sequence whose energies are bounded above.
+addition of an energy bounded below. In a pseudometric space it is equivalent to boundedness of
+every admissible sequence whose energies are bounded above; in particular, admissible sequences
+with convergent energies are bounded.
 -/
 
 public section
 
 open Set Bornology Filter
+open scoped Topology
 
 namespace TauCeti
 
@@ -131,6 +133,14 @@ theorem isBounded_range [Preorder β] (h : HasBoundedSublevelsOn E S) {ι : Sort
     (hu : ∀ n, u n ∈ S) (hE : BddAbove (range (E ∘ u))) : IsBounded (range u) := by
   obtain ⟨b, hb⟩ := hE
   exact (h b).subset (range_subset_iff.2 fun n ↦ ⟨hu n, hb (mem_range_self n)⟩)
+
+/-- When `E` has bounded sublevels on `S`, any admissible sequence whose energies converge has
+bounded range. -/
+theorem isBounded_range_of_tendsto [Preorder β] [IsDirectedOrder β] [TopologicalSpace β]
+    [BoundedLENhdsClass β] (h : HasBoundedSublevelsOn E S) {u : ℕ → X} {r : β}
+    (hu : ∀ n, u n ∈ S) (hE : Tendsto (fun n ↦ E (u n)) atTop (𝓝 r)) :
+    IsBounded (range u) :=
+  h.isBounded_range hu hE.bddAbove_range
 
 /-- The minimizers of an energy with bounded sublevels form a bounded set. -/
 theorem isBounded_minimizers [Preorder β] (h : HasBoundedSublevelsOn E S) :

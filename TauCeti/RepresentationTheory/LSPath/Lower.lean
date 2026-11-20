@@ -307,8 +307,8 @@ private theorem exists_lower_toPLPath_eq_ofSegments_lowerList (π : LSPath P b l
   have hHdef : ∀ w, H w = (P.coroot' i (w • lam) : ℚ) := fun _ ↦ rfl
   set j₁ : ℕ := (j₁' : ℕ) with hj₁
   have hlen : D.length = π.length + 1 := length_dirDurations π
-  have hj₁lt : j₁ < D.length := by rw [hlen]; exact j₁'.2
-  set τ := (π.dir j₁').1 with hτ
+  have hj₁lt : j₁ < D.length := by rw [hlen]; exact j₁'.isLt
+  set τ := (π.dir j₁').val with hτ
   set d := π.duration j₁' with hd
   have hDj₁ : D[j₁] = (τ, d) := by rw [getElem_dirDurations]
   have hdpos : ∀ k (hk : k < D.length), 0 < D[k].2 := fun k hk ↦ by

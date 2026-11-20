@@ -36,8 +36,8 @@ theorem riesz_lemma_of_norm_lt_of_lt {c : 𝕜} (hc : 1 < ‖c‖) {R : ℝ} (hR
     ∃ x₀ ∈ G, ‖x₀‖ ≤ R ∧ ∀ y ∈ F, 1 ≤ ‖x₀ - y‖ := by
   obtain ⟨x, hxG, hxF⟩ := IsConcreteLE.exists_of_lt hFG
   obtain ⟨x₀, hx₀R, hx₀⟩ := riesz_lemma_of_norm_lt hc hR (F := F.comap G.subtype)
-    (hFc.preimage continuous_subtype_val) ⟨⟨x, hxG⟩, hxF⟩
-  exact ⟨x₀, x₀.2, hx₀R, fun y hy => hx₀ ⟨y, hFG.le hy⟩ hy⟩
+    (hFc.preimage continuous_subtypeVal) ⟨⟨x, hxG⟩, hxF⟩
+  exact ⟨x₀, x₀.property, hx₀R, fun y hy => hx₀ ⟨y, hFG.le hy⟩ hy⟩
 
 /-- **Riesz's lemma**, translated form: for a closed submodule `F`, a vector `x` and `r < 1`, some
 `y ∈ F` satisfies `r * ‖x - y‖ ≤ ‖x - y - z‖` for every `z ∈ F`, so `x - y` is almost as far from

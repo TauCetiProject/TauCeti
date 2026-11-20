@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
+import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 
 /-!
 # Plumbing pair-of-pants perturbation data along a neck

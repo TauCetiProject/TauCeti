@@ -65,7 +65,7 @@ open Classical in
 sequence in each earlier stage `i ≤ m` pushed forward to `X m` along `seqTransHom`. -/
 noncomputable def denseSeed (γ : ∀ n, X n →⋆ₙₐ[ℂ] X (n + 1)) (m : ℕ) : Finset (X m) :=
   (Finset.Iic m).attach.image fun i ↦
-    seqTransHom γ (Finset.mem_Iic.mp i.2) (TopologicalSpace.denseSeq (X i.1) (m - i.1))
+    seqTransHom γ (Finset.mem_Iic.mp i.property) (TopologicalSpace.denseSeq (X i.val) (m - i.val))
 
 /-- Membership characterization for `denseSeed γ m`. -/
 theorem mem_denseSeed_iff (γ : ∀ n, X n →⋆ₙₐ[ℂ] X (n + 1)) {m : ℕ} {x : X m} :

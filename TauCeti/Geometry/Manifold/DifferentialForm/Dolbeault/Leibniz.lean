@@ -158,16 +158,16 @@ omit hμ₁ hμ₂ in
 theorem delBar_wedgeWithType (μ : F₁ →L[ℂ] F₂ →L[ℂ] F₃) (p q r s : ℕ)
     (φ : J.typeForms (F := F₁) p q)
     (ψ : J.typeForms (F := F₂) r s) :
-    J.delBar (J.wedgeWithType μ p q r s φ ψ).1 =
+    J.delBar (J.wedgeWithType μ p q r s φ ψ).val =
       LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F₃ n)
         (by omega : (p + q) + 1 + (r + s) = (p + r) + (q + s) + 1)
         (SmoothForm.wedgeWith (μ.bilinearRestrictScalars ℝ)
-          (J.delBar φ.1) ψ.1) +
+          (J.delBar φ.val) ψ.val) +
       (-1 : ℝ) ^ (p + q) •
         LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F₃ n)
           (by omega : (p + q) + ((r + s) + 1) = (p + r) + (q + s) + 1)
           (SmoothForm.wedgeWith (μ.bilinearRestrictScalars ℝ)
-            φ.1 (J.delBar ψ.1)) := by
+            φ.val (J.delBar ψ.val)) := by
   rw [coe_wedgeWithType, delBar_cast,
     delBar_wedgeWith _ (fun _ _ _ ↦ by simp) (fun _ _ _ ↦ by simp)]
   simp only [map_add, map_smul, SmoothForm.cast_cast]

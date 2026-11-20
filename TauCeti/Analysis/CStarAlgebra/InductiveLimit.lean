@@ -204,7 +204,7 @@ private theorem norm_le_of_comp_eq {D : Type*} [NonUnitalCStarAlgebra D]
 private noncomputable def unionFun {D : Type*} [NonUnitalCStarAlgebra D]
     (ι : ∀ n, A n →⋆ₙₐ[ℂ] C) (ξ : ∀ n, A n →⋆ₙₐ[ℂ] D) (u : ↥(⋃ n, Set.range (ι n))) : D := by
   classical
-  exact ξ (Set.mem_iUnion.mp u.2).choose (Set.mem_iUnion.mp u.2).choose_spec.choose
+  exact ξ (Set.mem_iUnion.mp u.property).choose (Set.mem_iUnion.mp u.property).choose_spec.choose
 
 private theorem unionFun_apply {D : Type*} [NonUnitalCStarAlgebra D]
     (hι : IsSeqColimitCocone α ι) {ξ : ∀ n, A n →⋆ₙₐ[ℂ] D}
@@ -270,7 +270,7 @@ private theorem extendUnionFun_map₂ {D : Type*} [NonUnitalCStarAlgebra D]
     (hξ_op : ∀ n x y, ξ n (opA n x y) = opD (ξ n x) (ξ n y)) (x y : C) :
     hι.extendUnionFun ξ (opC x y) = opD (hι.extendUnionFun ξ x) (hι.extendUnionFun ξ y) := by
   let cont := hι.continuous_extendUnionFun hξ
-  refine hι.dense_iUnion_range.denseRange_val.induction_on₂
+  refine hι.dense_iUnion_range.denseRange_subtypeVal.induction_on₂
     (isClosed_eq (cont.comp hopC) (hopD.comp (cont.prodMap cont))) ?_ x y
   rintro ⟨_, ⟨_, ⟨n₁, rfl⟩, a₁, rfl⟩⟩ ⟨_, ⟨_, ⟨n₂, rfl⟩, a₂, rfl⟩⟩
   dsimp only
@@ -291,7 +291,7 @@ noncomputable def lift {D : Type*} [NonUnitalCStarAlgebra D] (hι : IsSeqColimit
     continuous_mul continuous_mul (fun n ↦ map_mul (ι n)) (fun n ↦ map_mul (ξ n))
   map_smul' c x :=
     let cont := hι.continuous_extendUnionFun hξ
-    hι.dense_iUnion_range.denseRange_val.induction_on x
+    hι.dense_iUnion_range.denseRange_subtypeVal.induction_on x
       (isClosed_eq (cont.comp (continuous_const_smul c)) ((continuous_const_smul c).comp cont)) <|
       by
         rintro ⟨_, ⟨_, ⟨n, rfl⟩, a, rfl⟩⟩
@@ -299,7 +299,7 @@ noncomputable def lift {D : Type*} [NonUnitalCStarAlgebra D] (hι : IsSeqColimit
         rw [← map_smul, hι.extendUnionFun_apply hξ, hι.extendUnionFun_apply hξ, map_smul]
   map_star' x :=
     let cont := hι.continuous_extendUnionFun hξ
-    hι.dense_iUnion_range.denseRange_val.induction_on x
+    hι.dense_iUnion_range.denseRange_subtypeVal.induction_on x
       (isClosed_eq (cont.comp continuous_star) (continuous_star.comp cont)) <| by
       rintro ⟨_, ⟨_, ⟨n, rfl⟩, a, rfl⟩⟩
       dsimp only
