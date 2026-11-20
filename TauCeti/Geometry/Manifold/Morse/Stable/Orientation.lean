@@ -59,6 +59,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   orientation of `M` is the same at a point and at the centre of the chart.
 * `map_orientationAt_eq_of_mem_linearBackwardTimes`: the same along the backward flow from a point
   of the unstable manifold.
+* `map_orientationAt_eq_of_mem_linearForwardTimes`: the same along the forward flow from a point
+  of the stable manifold.
 * `reindex_unstableFrameOrientation_eq_orientationAt_iff`: along the unstable manifold, the frame
   orientation agrees with `o` everywhere or nowhere.
 * `reindex_stableNormalOrientation_eq_orientationAt_iff`: the same along the stable manifold.
@@ -122,10 +124,8 @@ private theorem isOrientationPreservingAt_toChart_iff_of_tendsto
   have hpre' : IsPreconnected (insert x (γ '' Ici 0)) :=
     hpre.subset_closure (subset_insert _ _) (insert_subset hx subset_closure)
   refine IsPreconnected.isOrientationPreservingAt_iff hpre'
-    (fun z hz ↦ contMDiffAt_of_mem_maximalAtlas
-      (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) (hsub hz))
-    (fun z hz ↦ isInvertible_mfderiv_chart
-      (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) (hsub hz)) o O
+    (fun z hz ↦ contMDiffAt_of_mem_maximalAtlas φ.mem_maximalAtlas_one (hsub hz))
+    (fun z hz ↦ isInvertible_mfderiv_chart φ.mem_maximalAtlas_one (hsub hz)) o O
     (mem_insert_of_mem _ (mem_image_of_mem γ self_mem_Ici)) (mem_insert x _)
 
 /-- **Reading an orientation of `M` in a Morse chart along the flow.** Let `γ` be a curve that
@@ -225,6 +225,26 @@ theorem map_orientationAt_eq_of_mem_linearBackwardTimes (o : Manifold.Orientatio
       (tendsto_neg_atTop_atBot.comp (tendsto_atTop_add_const_left _ T tendsto_id)))
     eDy heDy eDx heDx
 
+/-- **Reading an orientation of `M` in a Morse chart along the forward flow.** Let `y` be a point
+of `W^s(x)` and `T` a time of linear forward flow from `y`. The derivatives of `φ ∘ Φ_T` at `y`
+and of `φ` at `x` carry the orientations of `o` at `y` and at `x` to the same orientation of the
+model space. -/
+theorem map_orientationAt_eq_of_mem_linearForwardTimes (o : Manifold.Orientation 𝓘(ℝ, E) M ι)
+    {y : M} (hy : y ∈ hX.flow.stableSet x) {T : ℝ} (hT : T ∈ hX.linearForwardTimes φ y)
+    (eDy : TangentSpace 𝓘(ℝ, E) y ≃L[ℝ] TangentSpace 𝓘(ℝ, E) ((φ.toChart ∘ hX.flow T) y))
+    (heDy : (eDy : TangentSpace 𝓘(ℝ, E) y →L[ℝ] _) =
+      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.toChart ∘ hX.flow T) y)
+    (eDx : TangentSpace 𝓘(ℝ, E) x ≃L[ℝ] TangentSpace 𝓘(ℝ, E) (φ.toChart x))
+    (heDx : (eDx : TangentSpace 𝓘(ℝ, E) x →L[ℝ] _) = mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart x) :
+    Orientation.map ι (eDy.toLinearEquiv : TangentSpace 𝓘(ℝ, E) y ≃ₗ[ℝ] E) (o.orientationAt y) =
+      Orientation.map ι (eDx.toLinearEquiv : TangentSpace 𝓘(ℝ, E) x ≃ₗ[ℝ] E)
+        (o.orientationAt x) :=
+  map_orientationAt_eq_of_tendsto o (γ := fun s ↦ hX.flow (s + T) y)
+    (hX.flow.continuous (by fun_prop) continuous_const) (by simp)
+    (fun s hs ↦ ((hX.mem_linearForwardTimes φ).1 (add_mem_linearForwardTimes hφ hT hs).1).1)
+    ((Flow.mem_stableSet.1 hy).comp (tendsto_atTop_add_const_right _ T tendsto_id))
+    eDy heDy eDx heDx
+
 /-- **The frame orientation along the unstable manifold.** At a point `y` of `W^u(x)`, the unstable
 frame of `X` and the normal coordinates of the stable manifold of `x` for `-X` form a short exact
 sequence `0 → V⁻ → T_y M → V⁺ → 0`. This is the orientation of `T_y M` that it induces from the
@@ -312,8 +332,7 @@ private theorem reindex_unstableFrameOrientation_eq_orientationAt_iff_self
   obtain ⟨T, hT⟩ := (hX.eventually_mem_linearBackwardTimes hφ hf hy).exists
   obtain ⟨eDy, heDy⟩ := isInvertible_mfderiv_toChart_comp_flow (hX := hX) (φ := φ)
     ((hX.mem_linearBackwardTimes φ).1 hT).1
-  obtain ⟨eDx, heDx⟩ := isInvertible_mfderiv_chart
-    (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.mem_source
+  obtain ⟨eDx, heDx⟩ := isInvertible_mfderiv_chart φ.mem_maximalAtlas_one φ.mem_source
   -- Read both tangent spaces in the model space `E`, through `φ ∘ Φ_{-T}` and `φ`. There the
   -- frame and the normal coordinates at `y` are positive multiples of those at `x`.
   refine reindex_ofExact_eq_orientationAt_iff_of_map_eq o eDy eDx
@@ -355,16 +374,11 @@ private theorem reindex_stableNormalOrientation_eq_orientationAt_iff_self
   obtain ⟨T, hT⟩ := (hX.eventually_mem_linearForwardTimes hφ hy).exists
   obtain ⟨eDy, heDy⟩ := isInvertible_mfderiv_toChart_comp_flow (hX := hX) (φ := φ)
     ((hX.mem_linearForwardTimes φ).1 hT).1
-  obtain ⟨eDx, heDx⟩ := isInvertible_mfderiv_chart
-    (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.mem_source
+  obtain ⟨eDx, heDx⟩ := isInvertible_mfderiv_chart φ.mem_maximalAtlas_one φ.mem_source
   -- Read both tangent spaces in the model space `E`, through `φ ∘ Φ_T` and `φ`. There the frame
   -- and the normal coordinates at `y` are positive multiples of those at `x`.
   refine reindex_ofExact_eq_orientationAt_iff_of_map_eq o eDy eDx
-    (map_orientationAt_eq_of_tendsto o (γ := fun s ↦ hX.flow (s + T) y)
-      (hX.flow.continuous (by fun_prop) continuous_const) (by simp)
-      (fun s hs ↦ ((hX.mem_linearForwardTimes φ).1 (add_mem_linearForwardTimes hφ hT hs).1).1)
-      ((Flow.mem_stableSet.1 hy).comp (tendsto_atTop_add_const_right _ T tendsto_id))
-      eDy heDy eDx heDx)
+    (map_orientationAt_eq_of_mem_linearForwardTimes hφ o hy hT eDy heDy eDx heDx)
     e _ _ _ _ _ _ op' op _ _ (Real.exp_pos (-T)) (Real.exp_pos T)
     (fun c ↦ ?_) (fun w ↦ ?_)
   · have hT' : T ∈ (hX.neg hf).linearBackwardTimes (φ.neg hx) y := by

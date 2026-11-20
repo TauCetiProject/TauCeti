@@ -233,8 +233,7 @@ theorem map_unstableFrame_eq_orientationAt_iff (hf : IsMorse 𝓘(ℝ, E) f) {p 
   obtain ⟨T, hT⟩ := (hX.eventually_mem_linearBackwardTimes hφ hf hy).exists
   obtain ⟨eDy, heDy⟩ := isInvertible_mfderiv_toChart_comp_flow (hX := hX) (φ := φ)
     ((hX.mem_linearBackwardTimes φ).1 hT).1
-  obtain ⟨eDp, heDp⟩ := isInvertible_mfderiv_chart
-    (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.mem_source
+  obtain ⟨eDp, heDp⟩ := isInvertible_mfderiv_chart φ.mem_maximalAtlas_one φ.mem_source
   let Ly : TangentSpace 𝓘(ℝ, E) y ≃ₗ[ℝ] E := eDy.toLinearEquiv
   let Lp : TangentSpace 𝓘(ℝ, E) p ≃ₗ[ℝ] E := eDp.toLinearEquiv
   -- Read both tangent spaces in the model space `E`, through `φ ∘ Φ_{-T}` and `φ`: there `oM`
