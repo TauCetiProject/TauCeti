@@ -43,6 +43,8 @@ Lusternik–Schnirelmann category.
   cohomology of `RPᴺ` when `2 = 0`.
 * `TauCeti.RealProjectiveSpace.finrank_singularCohomology_of_isUnit_two`: the ranks of the
   cohomology of `RPᴺ` when `2` is a unit.
+* `TauCeti.RealProjectiveSpace.subsingleton_singularCohomology_of_lt`: when `2 = 0` or `2` is a
+  unit, the cohomology of `RPᴺ` vanishes above degree `N`.
 * `TauCeti.RealProjectiveSpace.subsingleton_singularCohomology_of_isUnit_two`: when `2` is a unit,
   the cohomology of `RPᴺ` vanishes in every positive degree other than an odd `N`.
 * `TauCeti.RealProjectiveSpace.subsingleton_singularCohomology_of_lt`: the cohomology of `RPᴺ`
@@ -157,6 +159,13 @@ theorem finrank_singularCohomology_of_two_eq_zero [Nontrivial k] (h2 : (2 : k) =
       (isZero_singularHomology_of_lt (N := N) k (Nat.lt_of_not_le hd))
     exact finrank_zero_of_subsingleton
 
+/-- If `2 = 0` or `2` is a unit in `k`, then `Hᵈ(RPᴺ; k, M)` vanishes above degree `N`. -/
+theorem subsingleton_singularCohomology_of_lt (h2 : (2 : k) = 0 ∨ IsUnit (2 : k))
+    (M : ModuleCat.{0} k) {d : ℕ} (hd : N < d) :
+    Subsingleton ((TopCat.of (RealProjectiveSpace N)).singularCohomology (ModuleCat.of k k) k M
+      d) :=
+  subsingleton_singularCohomology_of_isZero h2 M (isZero_singularHomology_of_lt k hd)
+
 /-- If `2` is a unit in `k`, then `Hᵈ(RPᴺ; k, M)` vanishes in every positive degree `d`, except in
 degree `N` when `N` is odd. -/
 theorem subsingleton_singularCohomology_of_isUnit_two (h2 : IsUnit (2 : k)) (M : ModuleCat.{0} k)
@@ -179,14 +188,6 @@ theorem finrank_singularCohomology_of_isUnit_two [Nontrivial k] (h2 : IsUnit (2 
   · have := subsingleton_singularCohomology_of_isUnit_two (N := N) h2 (ModuleCat.of k k)
       (d := d) (fun h ↦ hd (.inl h)) fun h ↦ Nat.not_odd_iff_even.1 fun hN ↦ hd (.inr ⟨h, hN⟩)
     exact finrank_zero_of_subsingleton
-
-/-- **Cohomology of real projective space above its dimension.** If `2 = 0` or `2` is a unit in
-`k`, then `Hᵈ(RPᴺ; k, M)` vanishes for `d > N`. -/
-theorem subsingleton_singularCohomology_of_lt (h2 : (2 : k) = 0 ∨ IsUnit (2 : k))
-    (M : ModuleCat.{0} k) {d : ℕ} (hd : N < d) :
-    Subsingleton ((TopCat.of (RealProjectiveSpace N)).singularCohomology (ModuleCat.of k k) k M
-      d) :=
-  subsingleton_singularCohomology_of_isZero h2 M (isZero_singularHomology_of_lt k hd)
 
 /-- **The mod-two cup square on `H¹(RPᴺ)`.** For `N ≥ 2`, a class `w ∈ H¹(RPᴺ; 𝔽₂)` has
 `w ⌣ w = 0` only when `w = 0`. In particular the generator of `H¹(RPᴺ; 𝔽₂)` has nonzero square. -/

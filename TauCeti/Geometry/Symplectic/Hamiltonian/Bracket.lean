@@ -89,19 +89,19 @@ theorem mvfderiv_eval₂ (hσ : σ.IsClosed) (hX : σ.IsHamiltonianVectorField f
   have : IsManifold I (minSmoothness ℝ 2) M := IsManifold.of_le (n := ∞) (by simp)
   -- Extend `v` to a vector field `W` and evaluate `dσ(X, Y, W) = 0` by the invariant formula.
   -- The terms of `dσ(X, Y, W) = 0` that differentiate `σ` along the fields.
-  have hYW : (fun y ↦ σ.1 y ![Y y, W y]) = fun y ↦ mvfderiv I g y (W y) := by
+  have hYW : (fun y ↦ σ.val y ![Y y, W y]) = fun y ↦ mvfderiv I g y (W y) := by
     funext y; rw [← SmoothBundleForm.eval₂_apply, isHamiltonianVectorField_iff.1 hY y]
-  have hXW : (fun y ↦ σ.1 y ![X y, W y]) = fun y ↦ mvfderiv I f y (W y) := by
+  have hXW : (fun y ↦ σ.val y ![X y, W y]) = fun y ↦ mvfderiv I f y (W y) := by
     funext y; rw [← SmoothBundleForm.eval₂_apply, isHamiltonianVectorField_iff.1 hX y]
   have hgX : (fun y ↦ mvfderiv I g y (X y)) = fun y ↦ -SmoothBundleForm.eval₂ σ y (X y) (Y y) := by
     funext y; rw [← isHamiltonianVectorField_iff.1 hY y, SmoothBundleForm.eval₂_swap]
   have hfY : (fun y ↦ mvfderiv I f y (Y y)) = fun y ↦ SmoothBundleForm.eval₂ σ y (X y) (Y y) := by
     funext y; rw [← isHamiltonianVectorField_iff.1 hX y]
   -- The bracket terms of `dσ(X, Y, W) = 0`.
-  have hXWY : σ.1 x ![mlieBracket I X W x, Y x] = -mvfderiv I g x (mlieBracket I X W x) := by
+  have hXWY : σ.val x ![mlieBracket I X W x, Y x] = -mvfderiv I g x (mlieBracket I X W x) := by
     rw [← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_swap,
       isHamiltonianVectorField_iff.1 hY x]
-  have hYWX : σ.1 x ![mlieBracket I Y W x, X x] = -mvfderiv I f x (mlieBracket I Y W x) := by
+  have hYWX : σ.val x ![mlieBracket I Y W x, X x] = -mvfderiv I f x (mlieBracket I Y W x) := by
     rw [← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_swap,
       isHamiltonianVectorField_iff.1 hX x]
   have h := SmoothForm.mextDeriv_apply_two (φ := σ) hX' hY' hW
@@ -149,15 +149,15 @@ theorem isHamiltonianVectorField_mlieBracket (hσ : σ.IsClosed)
   -- `L_X σ = 0`, evaluated on `(Y, Z)` by the bracket formula.
   have hL := mlieDerivForm_apply_vectorField (V := X) (X := ![Y, Z]) (σ.mdifferentiableAt x)
     (fun i ↦ by fin_cases i <;> assumption)
-  have hL0 : mlieDerivForm X σ.1 x (fun i ↦ ![⇑Y, Z] i x) = 0 := by
+  have hL0 : mlieDerivForm X σ.val x (fun i ↦ ![⇑Y, Z] i x) = 0 := by
     rw [(mem_symplecticVectorFields_iff_mlieDerivForm_eq_zero hσ).1 hX]
     rfl
   -- `d(ι_Y σ) = 0`, evaluated on `(X, Z)` by the invariant formula.
   have hd := SmoothForm.mextDeriv_apply_one (φ := σ.interiorₗ Y) hXd hZ
-  have hd0 : mextDeriv (σ.interiorₗ Y).1 x ![X x, Z x] = 0 := by
+  have hd0 : mextDeriv (σ.interiorₗ Y).val x ![X x, Z x] = 0 := by
     rw [coe_interiorₗ, mem_symplecticVectorFields_iff.1 hY]
     rfl
-  have hfun : (fun y ↦ σ.1 y fun i ↦ ![⇑Y, Z] i y) = fun y ↦ σ.1 y ![Y y, Z y] := by
+  have hfun : (fun y ↦ σ.val y fun i ↦ ![⇑Y, Z] i y) = fun y ↦ σ.val y ![Y y, Z y] := by
     funext y
     congr 1
     funext i

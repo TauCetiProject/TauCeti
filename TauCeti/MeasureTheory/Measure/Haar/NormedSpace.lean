@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
@@ -43,7 +44,8 @@ homothety of ratio `r ≠ 0` pushes the measure forward to its multiple by `|r|�
 invertible affine map `x ↦ c + A x` pushes it to its multiple by `|det A|⁻¹`. Comparing the
 measure of the image of the closed unit ball under a linear endomorphism `f` with that of the
 closed ball of radius `‖f‖` bounds `|det f|` by `‖f‖` raised to the dimension; restricting scalars
-to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` field.
+to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` field, and applying this bound
+to a left inverse `g` of `f` bounds `‖det f‖` below by `(‖g‖ ^ n)⁻¹`.
 
 For a continuous linear equivalence `L` and a scale `t`, the rescaled coordinate
 `t⁻¹ • L (y - x)` turns integrals of functions of it into integrals over the target scaled by
@@ -54,6 +56,8 @@ gives a set of measure one.
 ## Main results
 
 * `MeasureTheory.Measure.addHaar_real_ball_of_pos`: the real measure of a positive-radius ball.
+* `MeasureTheory.Measure.addHaar_real_ball_div_addHaar_real_ball`: the ratio of the real measures
+  of two balls is the ratio of their radii raised to the dimension.
 * `MeasureTheory.Measure.addHaar_real_ball_rpow`: `μ (ball x r) ^ e = r ^ (n e) μ (ball 0 1) ^ e` in
   dimension `n`.
 * `MeasureTheory.Measure.finrank_div_mul_addHaar_real_ball`:
@@ -116,9 +120,18 @@ gives a set of measure one.
   `‖g‖²_{L^q(t)} |B(0, 1)|^{1 - 2/q} r^{n (1 - 2/q)}` in dimension `n`, `2 ≤ q`.
 * `ContinuousAffineMap.measurePreserving_of_abs_det_eq_one`: a continuous affine self-map whose
   linear part has `|det| = 1` preserves an additive Haar measure.
+* `LinearIsometryEquiv.measurePreserving_addHaar`, `LinearIsometryEquiv.map_addHaar`: a linear
+  isometry self-equivalence of a finite-dimensional real normed space preserves every additive Haar
+  measure.
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
 * `ContinuousLinearMap.norm_det_le_opNorm_pow`: `‖det f‖ ≤ ‖f‖ ^ n` in dimension `n` over an
   `RCLike` field.
+* `ContinuousLinearMap.inv_pow_le_norm_det_of_comp_eq_id`,
+  `ContinuousLinearMap.inv_pow_le_abs_det_of_comp_eq_id`: if `g ∘L f = id` and `‖g‖ ≤ L`, then
+  `(L ^ n)⁻¹ ≤ ‖det f‖`.
+* `DifferentiableAt.inv_pow_le_norm_det_fderiv_of_comp_eventuallyEq_id`,
+  `DifferentiableAt.inv_pow_le_abs_det_fderiv_of_comp_eventuallyEq_id`: the corresponding Jacobian
+  lower bound for maps satisfying `g ∘ f =ᶠ[𝓝 x] id`.
 * `TauCeti.integral_comp_rescale_eq`: integrals of functions of the rescaled coordinate are the
   target integrals scaled by `tⁿ / ρ`.
 * `TauCeti.addHaar_inv_measureReal_rpow_smul_eq_one`: rescaling a set `s` of positive finite
@@ -140,6 +153,16 @@ theorem addHaar_real_ball_of_pos
     mu.real (ball x r) = r ^ finrank ℝ E * mu.real (ball 0 1) := by
   rw [measureReal_def, mu.addHaar_ball_of_pos x hr, ENNReal.toReal_mul,
     ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
+
+/-- The ratio of the real measures of two balls of positive radii is the ratio of the radii raised
+to the dimension, whatever their centres. -/
+theorem addHaar_real_ball_div_addHaar_real_ball
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x y : E) {r s : ℝ} (hr : 0 < r) (hs : 0 < s) :
+    mu.real (ball y s) / mu.real (ball x r) = (s / r) ^ finrank ℝ E := by
+  rw [mu.addHaar_real_ball_of_pos y hs, mu.addHaar_real_ball_of_pos x hr,
+    mul_div_mul_right _ _ (Metric.measureReal_ball_pos mu 0 one_pos).ne', div_pow]
 
 /-- The square root of the real measure of a ball of radius `R` is `R ^ (n / 2)` times that of the
 unit ball, where `n` is the dimension. -/
@@ -658,7 +681,78 @@ theorem norm_det_le_opNorm_pow {𝕜 E : Type*} [RCLike 𝕜]
     ← finrank_mul_finrank ℝ 𝕜 E, pow_mul'] at h
   exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) finrank_pos.ne').1 h
 
+/-- If `g ∘L f = id` on a normed space over an `RCLike` field, then
+`1 ≤ ‖g‖ ^ finrank 𝕜 E * ‖det f‖`. No finite-dimensionality hypothesis is needed: in infinite
+dimension `finrank 𝕜 E = 0` and `det f = 1`. -/
+theorem one_le_opNorm_pow_mul_norm_det_of_comp_eq_id {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f g : E →L[𝕜] E}
+    (h : g.comp f = ContinuousLinearMap.id 𝕜 E) :
+    1 ≤ ‖g‖ ^ finrank 𝕜 E * ‖f.det‖ := by
+  by_cases hfd : FiniteDimensional 𝕜 E
+  · have hdet : g.det * f.det = 1 := by
+      rw [ContinuousLinearMap.det, ContinuousLinearMap.det, ← LinearMap.det_comp]
+      exact (congrArg ContinuousLinearMap.det h).trans LinearMap.det_id
+    calc (1 : ℝ) = ‖(1 : 𝕜)‖ := norm_one.symm
+      _ = ‖g.det‖ * ‖f.det‖ := by rw [← hdet, norm_mul]
+      _ ≤ ‖g‖ ^ finrank 𝕜 E * ‖f.det‖ :=
+        mul_le_mul_of_nonneg_right g.norm_det_le_opNorm_pow (norm_nonneg _)
+  · rw [Module.finrank_of_not_finite hfd, pow_zero, one_mul, ContinuousLinearMap.det,
+      LinearMap.det_eq_one_of_not_module_finite hfd, norm_one]
+
+/-- If `g ∘L f = id` on a normed space over an `RCLike` field and `‖g‖ ≤ L`, then
+`(L ^ finrank 𝕜 E)⁻¹ ≤ ‖det f‖`. -/
+theorem inv_pow_le_norm_det_of_comp_eq_id {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f g : E →L[𝕜] E}
+    (h : g.comp f = ContinuousLinearMap.id 𝕜 E) {L : ℝ} (hL : ‖g‖ ≤ L) :
+    (L ^ finrank 𝕜 E)⁻¹ ≤ ‖f.det‖ := by
+  have hL0 : 0 ≤ L := (norm_nonneg g).trans hL
+  have h1 : 1 ≤ L ^ finrank 𝕜 E * ‖f.det‖ :=
+    (one_le_opNorm_pow_mul_norm_det_of_comp_eq_id h).trans
+      (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg g) hL _) (norm_nonneg _))
+  have hpos : 0 < L ^ finrank 𝕜 E := by
+    rcases (pow_nonneg hL0 (finrank 𝕜 E)).eq_or_lt with hp | hp
+    · exfalso; linarith [hp ▸ h1]
+    · exact hp
+  exact (inv_le_iff_one_le_mul₀' hpos).2 h1
+
+/-- If `g ∘L f = id` on a real normed space, then `1 ≤ ‖g‖ ^ finrank ℝ E * |det f|`. -/
+theorem one_le_opNorm_pow_mul_abs_det_of_comp_eq_id {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f g : E →L[ℝ] E}
+    (h : g.comp f = ContinuousLinearMap.id ℝ E) :
+    1 ≤ ‖g‖ ^ finrank ℝ E * |f.det| := by
+  simpa only [Real.norm_eq_abs] using one_le_opNorm_pow_mul_norm_det_of_comp_eq_id h
+
+/-- If `g ∘L f = id` on a real normed space and `‖g‖ ≤ L`, then `(L ^ finrank ℝ E)⁻¹ ≤ |det f|`. -/
+theorem inv_pow_le_abs_det_of_comp_eq_id {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f g : E →L[ℝ] E}
+    (h : g.comp f = ContinuousLinearMap.id ℝ E) {L : ℝ} (hL : ‖g‖ ≤ L) :
+    (L ^ finrank ℝ E)⁻¹ ≤ |f.det| := by
+  simpa only [Real.norm_eq_abs] using inv_pow_le_norm_det_of_comp_eq_id h hL
+
 end ContinuousLinearMap
+
+/-- If `g ∘ f =ᶠ[𝓝 x] id` for maps differentiable at `x` and `f x` over an `RCLike` field, and
+`‖fderiv 𝕜 g (f x)‖ ≤ L`, then `(L ^ finrank 𝕜 E)⁻¹ ≤ ‖det (fderiv 𝕜 f x)‖`. -/
+theorem DifferentiableAt.inv_pow_le_norm_det_fderiv_of_comp_eventuallyEq_id {𝕜 E : Type*}
+    [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f g : E → E} {x : E} {L : ℝ}
+    (hf : DifferentiableAt 𝕜 f x) (hg : DifferentiableAt 𝕜 g (f x))
+    (hgf : g ∘ f =ᶠ[nhds x] id) (hL : ‖fderiv 𝕜 g (f x)‖ ≤ L) :
+    (L ^ finrank 𝕜 E)⁻¹ ≤ ‖(fderiv 𝕜 f x).det‖ := by
+  refine ContinuousLinearMap.inv_pow_le_norm_det_of_comp_eq_id ?_ hL
+  calc (fderiv 𝕜 g (f x)).comp (fderiv 𝕜 f x)
+      = fderiv 𝕜 (g ∘ f) x := (hg.hasFDerivAt.comp x hf.hasFDerivAt).fderiv.symm
+    _ = fderiv 𝕜 (fun y ↦ y) x := hgf.fderiv_eq
+    _ = ContinuousLinearMap.id 𝕜 E := fderiv_fun_id
+
+/-- If `g ∘ f =ᶠ[𝓝 x] id` for real-differentiable maps at `x` and `f x`, and
+`‖fderiv ℝ g (f x)‖ ≤ L`, then `(L ^ finrank ℝ E)⁻¹ ≤ |det (fderiv ℝ f x)|`. -/
+theorem DifferentiableAt.inv_pow_le_abs_det_fderiv_of_comp_eventuallyEq_id {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f g : E → E} {x : E} {L : ℝ}
+    (hf : DifferentiableAt ℝ f x) (hg : DifferentiableAt ℝ g (f x))
+    (hgf : g ∘ f =ᶠ[nhds x] id) (hL : ‖fderiv ℝ g (f x)‖ ≤ L) :
+    (L ^ finrank ℝ E)⁻¹ ≤ |(fderiv ℝ f x).det| := by
+  simpa only [Real.norm_eq_abs] using
+    hf.inv_pow_le_norm_det_fderiv_of_comp_eventuallyEq_id hg hgf hL
 
 namespace ContinuousAffineMap
 
@@ -682,6 +776,40 @@ theorem measurePreserving_of_abs_det_eq_one
     map_add_right_eq_self]
 
 end ContinuousAffineMap
+
+namespace LinearIsometryEquiv
+
+/-- Every linear isometry self-equivalence of a finite-dimensional real normed space preserves
+every additive Haar measure on that space. -/
+theorem measurePreserving_addHaar
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (f : E ≃ₗᵢ[ℝ] E) (μ : Measure E) [μ.IsAddHaarMeasure] :
+    MeasurePreserving f μ μ := by
+  have hle : ∀ g : E ≃ₗᵢ[ℝ] E, |g.toContinuousLinearMap.det| ≤ 1 := fun g ↦ by
+    have hnorm : ‖g.toContinuousLinearMap‖ ≤ 1 :=
+      g.toContinuousLinearMap.opNorm_le_bound zero_le_one fun x ↦ by simp
+    exact g.toContinuousLinearMap.abs_det_le_opNorm_pow.trans
+      (by simpa using pow_le_pow_left₀ (norm_nonneg _) hnorm _)
+  have hmul : |f.toContinuousLinearMap.det| * |f.symm.toContinuousLinearMap.det| = 1 := by
+    rw [← abs_mul, ContinuousLinearMap.det, ContinuousLinearMap.det, ← LinearMap.det_comp,
+      show (f.toContinuousLinearMap : E →ₗ[ℝ] E) ∘ₗ (f.symm.toContinuousLinearMap : E →ₗ[ℝ] E) =
+        LinearMap.id from LinearMap.ext fun x ↦ f.apply_symm_apply x,
+      LinearMap.det_id, abs_one]
+  have habs : |f.toContinuousLinearMap.det| = 1 := le_antisymm (hle f) (by
+    nlinarith [abs_nonneg f.toContinuousLinearMap.det,
+      abs_nonneg f.symm.toContinuousLinearMap.det, hle f.symm])
+  simpa using ContinuousAffineMap.measurePreserving_of_abs_det_eq_one μ
+    f.toContinuousLinearMap.toContinuousAffineMap (by simpa using habs)
+
+/-- Every linear isometry self-equivalence of a finite-dimensional real normed space pushes every
+additive Haar measure forward to itself. -/
+theorem map_addHaar
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (f : E ≃ₗᵢ[ℝ] E) (μ : Measure E) [μ.IsAddHaarMeasure] :
+    μ.map f = μ :=
+  (f.measurePreserving_addHaar μ).map_eq
+
+end LinearIsometryEquiv
 
 namespace MeasureTheory.Measure
 

@@ -150,7 +150,7 @@ def quotientPiAddEquiv (hU : IsOpen (U : Set G)) (htriv : ∀ (u : U) (a : A), u
         filter_upwards [hg] with x hx
         exact QuotientGroup.eq.mpr (by simpa only [inv_inv] using hx)
       exact hlc.comp φ)
-    (fun u g => by rw [mul_inv_rev, QuotientGroup.mk_mul_of_mem _ (U.inv_mem u.2), htriv])
+    (fun u g => by rw [mul_inv_rev, QuotientGroup.mk_mul_of_mem _ (U.inv_mem u.property), htriv])
   left_inv f := ext fun g => by
     rw [mk_apply]
     exact congrArg f (inv_inv g)
