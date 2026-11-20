@@ -40,7 +40,8 @@ which needs the error `F(w_R)` to be small. This file proves that it is.
   `‖X_{H_t}(w) - X_{H_t}(x)‖ ≤ L ‖ξ‖` (`TauCeti.SymplecticForm.norm_floerOperator_le`). So a map
   `C¹`-close to the stationary cylinder over `x` is an approximate solution.
 * **The pre-glued map.** It is `Cⁿ` where `x`, `u` and `v` are
-  (`TauCeti.Floer.contDiffAt_preglue`), and of period one in `t` when they are
+  (`TauCeti.Floer.contDiffAt_preglue`), differentiable where they are
+  (`TauCeti.Floer.differentiableAt_preglue`), and of period one in `t` when they are
   (`TauCeti.Floer.periodic_preglue`).
 * **Locality.** For `s < -1` the Floer operator of `w_R` is that of `u` at `(s + R, t)`, and for
   `s > 1` that of `v` at `(s - R, t)`
@@ -263,6 +264,24 @@ theorem contDiff_preglue {n : ℕ∞} (hx : ContDiff ℝ n x) (hu : ContDiff ℝ
     (hv : ContDiff ℝ n v) : ContDiff ℝ n (preglue x u v R) :=
   contDiff_iff_contDiffAt.2 fun _ ↦
     contDiffAt_preglue hx.contDiffAt hu.contDiffAt hv.contDiffAt
+
+/-- The pre-glued map is differentiable at `z = (s, t)` when `x` is differentiable at `t`, `u` at
+`z + (R, 0)` and `v` at `z - (R, 0)`. -/
+theorem differentiableAt_preglue (hx : DifferentiableAt ℝ x z.2)
+    (hu : DifferentiableAt ℝ u (z + (R, 0))) (hv : DifferentiableAt ℝ v (z - (R, 0))) :
+    DifferentiableAt ℝ (preglue x u v R) z := by
+  have hρ : Differentiable ℝ pregluingCutoff :=
+    (contDiff_pregluingCutoff (n := 1)).differentiable one_ne_zero
+  have hx' : DifferentiableAt ℝ (fun p : ℝ × ℝ ↦ x p.2) z := hx.comp z differentiableAt_snd
+  exact (hx'.add ((hρ.comp differentiable_fst).differentiableAt.smul
+    ((hu.comp z (differentiableAt_id.add_const _)).sub hx'))).add
+    ((hρ.comp differentiable_fst.neg).differentiableAt.smul
+      ((hv.comp z (differentiableAt_id.sub_const _)).sub hx'))
+
+/-- The pre-glued map of differentiable maps is differentiable. -/
+theorem differentiable_preglue (hx : Differentiable ℝ x) (hu : Differentiable ℝ u)
+    (hv : Differentiable ℝ v) : Differentiable ℝ (preglue x u v R) := fun _ ↦
+  differentiableAt_preglue (hx _) (hu _) (hv _)
 
 /-- The pre-glued map is within `‖u(s + R, t) - x(t)‖ + ‖v(s - R, t) - x(t)‖` of the loop `x`. -/
 theorem norm_preglue_sub_le :

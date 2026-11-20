@@ -38,7 +38,10 @@ Integrating by parts against this pairing gives the **formal adjoint**
   (`floerLinearizationAdjoint_eq_neg`), where `∂t J` is the `t`-derivative of `z ↦ J(z, u z)`.
   So `D^* η = 0` is a first-order real Cauchy–Riemann equation for `η` with leading coefficient
   `θ ↦ θ ∘ J`, which is again a complex structure, on the dual space, when `J` is one: this is the
-  equation on which unique continuation for cokernel elements acts.
+  equation on which unique continuation for cokernel elements acts. Two adjoints therefore differ
+  on `η` by at most `‖J - J₁‖ ‖∂t η‖ + ‖A - A₁‖ ‖η‖`, with `A = ∂t J - C`
+  (`norm_floerLinearizationAdjoint_sub_floerLinearizationAdjoint_le`), and translating the data,
+  the map and `η` translates the adjoint (`floerLinearizationAdjoint_comp_add_right`).
 * **Weights.** Multiplying `η` by a function `β(s)` gives `β D^* η - β' η`
   (`floerLinearizationAdjoint_smul_fst`), and in particular the weight `e^{δ s}` shifts the adjoint
   by `-δ` (`floerLinearizationAdjoint_exp_smul`). Since `D (e^{-δ s} ξ) = e^{-δ s} (D - δ) ξ`
@@ -168,6 +171,21 @@ theorem floerLinearizationAdjoint_congr_of_eventuallyEq (ω : SymplecticForm V)
   rw [floerLinearizationAdjoint_def, floerLinearizationAdjoint_def, h.fderiv_eq, hc.fderiv_eq,
     h.eq_of_nhds]
 
+/-- **Translation invariance of the formal adjoint.** Translating the data, the map and the
+covector field by `v` translates the formal adjoint by `v`, as for the linearized operator
+(`floerLinearization_comp_add_right`). -/
+theorem floerLinearizationAdjoint_comp_add_right (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V)
+    (η : ℝ × ℝ → V →L[ℝ] ℝ) (v z : ℝ × ℝ) :
+    ω.floerLinearizationAdjoint (fun w ↦ J (w + v)) (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v))
+        (fun w ↦ u (w + v)) (fun w ↦ η (w + v)) z =
+      ω.floerLinearizationAdjoint J Ks Kt u η (z + v) := by
+  simp only [floerLinearizationAdjoint_def, fderiv_comp_add_right,
+    fderiv_comp_add_right (f := fun w ↦ (η w).comp (J w (u w)))]
+  congr 2
+  ext y
+  simp only [floerLinearizationCoeff_apply, fderiv_comp_add_right]
+
 /-- The formal adjoint vanishes off the topological support of the covector field. -/
 theorem floerLinearizationAdjoint_of_notMem_tsupport (hz : z ∉ tsupport η) :
     ω.floerLinearizationAdjoint J Ks Kt u η z = 0 := by
@@ -189,6 +207,27 @@ theorem floerLinearizationAdjoint_eq_neg (hη : DifferentiableAt ℝ η z)
   rw [floerLinearizationAdjoint_def, fderiv_clm_comp hη hJu]
   simp only [add_apply, comp_apply, compL_apply, flip_apply, comp_sub]
   abel
+
+/-- **Comparing two formal adjoints.** At a point where `w ↦ J(w, u w)` and
+`w ↦ J₁(w, u₁ w)` are differentiable, the formal adjoints along two data sets differ on `η` by at
+most `‖J(z, u z) - J₁(z, u₁ z)‖ ‖∂t η‖ + ‖A(z) - A₁(z)‖ ‖η‖`, where `A = ∂t J - C` is the
+zeroth-order coefficient of the Cauchy–Riemann form `floerLinearizationAdjoint_eq_neg`. This is the
+adjoint counterpart of `norm_floerLinearization_sub_floerLinearization_le`. -/
+theorem norm_floerLinearizationAdjoint_sub_floerLinearizationAdjoint_le
+    {J₁ : ℝ × ℝ → V → V →L[ℝ] V} {Ks₁ Kt₁ : ℝ × ℝ → V → ℝ} {u₁ : ℝ × ℝ → V}
+    (hη : DifferentiableAt ℝ η z) (hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z)
+    (hJu₁ : DifferentiableAt ℝ (fun w ↦ J₁ w (u₁ w)) z) :
+    ‖ω.floerLinearizationAdjoint J Ks Kt u η z - ω.floerLinearizationAdjoint J₁ Ks₁ Kt₁ u₁ η z‖ ≤
+      ‖J z (u z) - J₁ z (u₁ z)‖ * ‖fderiv ℝ η z stdComplexLineImag‖ +
+        ‖(fderiv ℝ (fun w ↦ J w (u w)) z stdComplexLineImag -
+              ω.floerLinearizationCoeff J Ks Kt u z) -
+            (fderiv ℝ (fun w ↦ J₁ w (u₁ w)) z stdComplexLineImag -
+              ω.floerLinearizationCoeff J₁ Ks₁ Kt₁ u₁ z)‖ * ‖η z‖ := by
+  rw [floerLinearizationAdjoint_eq_neg hη hJu, floerLinearizationAdjoint_eq_neg hη hJu₁,
+    show ∀ a b c b' c' : V →L[ℝ] ℝ, -(a + b + c) - -(a + b' + c') = -((b - b') + (c - c')) by
+      intro a b c b' c'; abel, norm_neg, ← comp_sub, ← comp_sub]
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;>
+    exact (opNorm_comp_le _ _).trans_eq (mul_comm _ _)
 
 /-- **Multiplying by a function of `s`.** If `β` has derivative `β'` at `s`, the formal adjoint at
 `z = (s, t)` sends `β(s) η` to `β(s) D^* η - β' η`: the factor only differentiates in the `s`
@@ -254,6 +293,18 @@ theorem continuousAt_floerLinearizationAdjoint
   exact (((hη.continuousAt_fderiv one_ne_zero).clm_apply continuousAt_const).neg.sub
     ((hA.continuousAt_fderiv one_ne_zero).clm_apply continuousAt_const)).add
     (hη.continuousAt.clm_comp (ω.continuousAt_floerLinearizationCoeff hJ hKs hKt hu))
+
+/-- **Global continuity of the formal adjoint.** Let `u` be `C¹` and the covector field `η` be
+`C¹`, and let the coefficients `J` be `C¹` and the Hamiltonians `K_s`, `K_t` be `C²` at every point
+`(z, u z)`. Then the formal adjoint `D^* η` is continuous. This is the adjoint counterpart of
+`continuous_floerLinearization`. -/
+theorem continuous_floerLinearizationAdjoint
+    (hJ : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
+    (hη : ContDiff ℝ 1 η) : Continuous (ω.floerLinearizationAdjoint J Ks Kt u η) :=
+  continuous_iff_continuousAt.2 fun z ↦
+    continuousAt_floerLinearizationAdjoint (hJ z) (hKs z) (hKt z) hu.contDiffAt hη.contDiffAt
 
 /-- **Green's formula for compactly supported maps.** Let `ξ` be `C¹` with compact support, and
 let `u` and the covector field `η` be `C¹`, the coefficients `J` be `C¹` and the Hamiltonians
