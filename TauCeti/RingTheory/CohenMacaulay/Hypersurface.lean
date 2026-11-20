@@ -26,10 +26,10 @@ By the Auslander–Buchsbaum formula over `S`, together with `depth_S M = depth_
 
 * if `M` has projective dimension at most one over `S`, then `M` is maximal Cohen–Macaulay over
   `R`
-  (`ModuleCat.ringKrullDim_quotient_le_depth_of_hasProjectiveDimensionLE_restrictScalars_quotient`);
+  (`TauCeti.ringKrullDim_le_depth_of_hasProjectiveDimensionLE_restrictScalars_quotient`);
 * conversely, a maximal Cohen–Macaulay `R`-module of finite projective dimension over `S` has
   projective dimension at most one over `S`
-  (`ModuleCat.hasProjectiveDimensionLE_restrictScalars_quotient_of_ringKrullDim_quotient_le_depth`).
+  (`TauCeti.hasProjectiveDimensionLE_restrictScalars_quotient_of_ringKrullDim_le_depth`).
 
 Over a regular local ring every module has finite projective dimension, so the two conditions
 agree (`TauCeti.hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_le_depth` in
@@ -38,9 +38,9 @@ is `ModuleCat.depth_restrictScalars_of_surjective` from `TauCeti.RingTheory.Dept
 
 ## Main results
 
-* `ModuleCat.ringKrullDim_quotient_le_depth_of_hasProjectiveDimensionLE_restrictScalars_quotient`
+* `TauCeti.ringKrullDim_le_depth_of_hasProjectiveDimensionLE_restrictScalars_quotient`
   and
-  `ModuleCat.hasProjectiveDimensionLE_restrictScalars_quotient_of_ringKrullDim_quotient_le_depth`:
+  `TauCeti.hasProjectiveDimensionLE_restrictScalars_quotient_of_ringKrullDim_le_depth`:
   the two implications above, over a Cohen–Macaulay local ring `S`.
 
 ## References
@@ -53,21 +53,23 @@ is `ModuleCat.depth_restrictScalars_of_surjective` from `TauCeti.RingTheory.Dept
 public section
 
 open CategoryTheory IsLocalRing
+open ModuleCat (restrictScalars)
 
-universe u
+universe v u
 
-namespace ModuleCat
+namespace TauCeti
 
-variable {S : Type u} [CommRing S] {w : S} [IsLocalRing (S ⧸ Ideal.span {w})]
+variable {S : Type u} [CommRing S] [Small.{v} S] {w : S}
+  [_root_.IsLocalRing (S ⧸ Ideal.span {w})] [Small.{v} (S ⧸ Ideal.span {w})]
 
 section CohenMacaulay
 
-variable [IsLocalRing S] [IsNoetherianRing S]
+variable [_root_.IsLocalRing S] [IsNoetherianRing S]
 
 /-- The Auslander–Buchsbaum formula over `S` for a nonzero finitely generated `S/(w)`-module of
 finite projective dimension over `S`, written as `pd_S M + depth_R M = dim R + 1`. -/
 private theorem projectiveDimension_add_depth_eq (hS : Module.IsCohenMacaulay S S)
-    (hw : w ∈ nonZeroDivisors S) (M : ModuleCat.{u} (S ⧸ Ideal.span {w}))
+    (hw : w ∈ nonZeroDivisors S) (M : ModuleCat.{v} (S ⧸ Ideal.span {w}))
     [Module.Finite (S ⧸ Ideal.span {w}) M] [Nontrivial M]
     (hpd : projectiveDimension ((restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) ≠
       ⊤) :
@@ -85,18 +87,18 @@ private theorem projectiveDimension_add_depth_eq (hS : Module.IsCohenMacaulay S 
       (Ideal.span_singleton_eq_top.2 ((IsLocalRing.notMem_maximalIdeal).1 h))
   rw [ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_mem_nonZeroDivisors hw hwm,
     ← Module.supportDim_self_eq_ringKrullDim, ← hS.depth_eq,
-    ← depth_restrictScalars_of_surjective _ Ideal.Quotient.mk_surjective]
-  exact projectiveDimension_add_depth_eq_depth _ hpd
+    ← ModuleCat.depth_restrictScalars_of_surjective _ Ideal.Quotient.mk_surjective]
+  exact ModuleCat.projectiveDimension_add_depth_eq_depth _ hpd
 
 /-- **Modules of projective dimension at most one over `S` are maximal Cohen–Macaulay over
 `S/(w)`.** Let `S` be a Cohen–Macaulay Noetherian local ring and `w` a non-zero-divisor with
 `S/(w)` local. A finitely generated `S/(w)`-module of projective dimension at most one over `S`
 has depth at least `dim S/(w)`. -/
-theorem ringKrullDim_quotient_le_depth_of_hasProjectiveDimensionLE_restrictScalars_quotient
+theorem ringKrullDim_le_depth_of_hasProjectiveDimensionLE_restrictScalars_quotient
     (hS : Module.IsCohenMacaulay S S) (hw : w ∈ nonZeroDivisors S)
-    (M : ModuleCat.{u} (S ⧸ Ideal.span {w})) [Module.Finite (S ⧸ Ideal.span {w}) M]
-    (hM : HasProjectiveDimensionLE ((restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M)
-      1) :
+    (M : ModuleCat.{v} (S ⧸ Ideal.span {w})) [Module.Finite (S ⧸ Ideal.span {w}) M]
+    (hM : HasProjectiveDimensionLE
+      ((restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) 1) :
     ringKrullDim (S ⧸ Ideal.span {w}) ≤ IsLocalRing.depth M := by
   cases subsingleton_or_nontrivial M
   · rw [IsLocalRing.depth_eq_top_of_subsingleton, WithBot.coe_top]
@@ -113,9 +115,9 @@ dimension at most one.** Let `S` be a Cohen–Macaulay Noetherian local ring and
 non-zero-divisor with `S/(w)` local. A finitely generated `S/(w)`-module of depth at least
 `dim S/(w)` whose projective dimension over `S` is finite has projective dimension at most one
 over `S`. -/
-theorem hasProjectiveDimensionLE_restrictScalars_quotient_of_ringKrullDim_quotient_le_depth
+theorem hasProjectiveDimensionLE_restrictScalars_quotient_of_ringKrullDim_le_depth
     (hS : Module.IsCohenMacaulay S S) (hw : w ∈ nonZeroDivisors S)
-    (M : ModuleCat.{u} (S ⧸ Ideal.span {w})) [Module.Finite (S ⧸ Ideal.span {w}) M]
+    (M : ModuleCat.{v} (S ⧸ Ideal.span {w})) [Module.Finite (S ⧸ Ideal.span {w}) M]
     (hpd : projectiveDimension ((restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) ≠
       ⊤)
     (hM : ringKrullDim (S ⧸ Ideal.span {w}) ≤ IsLocalRing.depth M) :
@@ -142,4 +144,4 @@ theorem hasProjectiveDimensionLE_restrictScalars_quotient_of_ringKrullDim_quotie
 
 end CohenMacaulay
 
-end ModuleCat
+end TauCeti

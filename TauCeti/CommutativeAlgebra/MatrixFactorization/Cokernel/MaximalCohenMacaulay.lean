@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.GorensteinProjective.Hypersurface
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Resolution
-public import TauCeti.RingTheory.CohenMacaulay.Hypersurface
 public import TauCeti.RingTheory.RegularLocalRing.AuslanderBuchsbaum
 
 /-!
@@ -92,7 +91,7 @@ theorem ringKrullDim_quotient_le_depth_quotientCokernel {S : Type u} [CommRing S
     ringKrullDim (S ⧸ span {w}) ≤
       _root_.IsLocalRing.depth (cokernelFunctor.obj
         ((baseChangeFunctor (Ideal.Quotient.mk (span {w}))).obj X)).obj :=
-  ModuleCat.ringKrullDim_quotient_le_depth_of_hasProjectiveDimensionLE_restrictScalars_quotient
+  ringKrullDim_le_depth_of_hasProjectiveDimensionLE_restrictScalars_quotient
     hS hw _
     ((exists_quotientCokernel_iso_iff_hasProjectiveDimensionLE_of_isNoetherianRing hw _).1
       ⟨X, ⟨Iso.refl _⟩⟩)
