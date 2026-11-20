@@ -18,8 +18,9 @@ the increasing unions of closed radial regions
 ```
 
 Over a complete nontrivially valued field `C`, in an ambient disc `Spa (C⟨T / c⟩)` with `|c| ≥ R`,
-and with `|aⱼ|` decreasing to `r` and `|bⱼ|` increasing to `R`, these are the analytic open
-annulus `r < |T| < R` and the analytic open disc `|T| < R`: Berkovich's `B(r, R)` and `D(0, R)`.
+and with `|aⱼ| > r` decreasing to `r` and `|bⱼ| < R` increasing to `R`, these are the analytic
+open annulus `r < |T| < R` and the analytic open disc `|T| < R`: Berkovich's `B(r, R)` and
+`D(0, R)`.
 
 They are not the strict valuative loci `{v(a) < v(T) < v(b)}` and `{v(T) < v(b)}` at the
 endpoints. Ito's rank-two point `η(R)` satisfies `v(T) < R` yet lies in no closed disc of radius
@@ -61,9 +62,9 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A]
 /-! ### Open annuli -/
 
 /-- **The open annulus `𝔸°(A⁺, T, a, b)`** attached to families `a, b : ℕ → A` of inner and outer
-radius representatives: the union of the closed annuli `𝔸(A⁺, T, aⱼ, bⱼ)`. With `|aⱼ|`
-decreasing to `r` and `|bⱼ|` increasing to `R` over a complete nontrivially valued field, this is
-the analytic open annulus `r < |T| < R`. -/
+radius representatives: the union of the closed annuli `𝔸(A⁺, T, aⱼ, bⱼ)`. With `|aⱼ| > r`
+decreasing to `r` and `|bⱼ| < R` increasing to `R` over a complete nontrivially valued field, this
+is the analytic open annulus `r < |T| < R`. -/
 def openAnnulus (Aplus : Subring A) (T : A) (a b : ℕ → A) : Set (Spv A) :=
   ⋃ j, closedAnnulus Aplus T (a j) (b j)
 
@@ -157,8 +158,8 @@ theorem openAnnulus_zero_left (Aplus : Subring A) (a b : ℕ → A) :
 /-! ### Open discs -/
 
 /-- **The open disc `𝔻°(A⁺, T, b)`** attached to a family `b : ℕ → A` of radius
-representatives: the union of the closed discs `𝔻(A⁺, T, bⱼ)`. With `|bⱼ|` increasing to `R`
-over a complete nontrivially valued field, this is the analytic open disc `|T| < R`. -/
+representatives: the union of the closed discs `𝔻(A⁺, T, bⱼ)`. With `|bⱼ| < R` increasing to
+`R` over a complete nontrivially valued field, this is the analytic open disc `|T| < R`. -/
 def openDisc (Aplus : Subring A) (T : A) (b : ℕ → A) : Set (Spv A) :=
   ⋃ j, closedDisc Aplus T (b j)
 

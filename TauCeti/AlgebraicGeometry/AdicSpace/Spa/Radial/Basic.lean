@@ -173,8 +173,8 @@ theorem puncturedClosedDisc_subset_closedDisc (Aplus : Subring A) (T b : A) :
 
 /-- The punctured closed disc is the closed disc minus the support locus `{v | v(T) = 0}`. -/
 theorem puncturedClosedDisc_eq_diff (Aplus : Subring A) (T b : A) :
-    puncturedClosedDisc Aplus T b = closedDisc Aplus T b \ {v | v.toValuativeRel.vle T 0} :=
-  (rfl)
+    puncturedClosedDisc Aplus T b = closedDisc Aplus T b \ {v | v.toValuativeRel.vle T 0} := by
+  rw [puncturedClosedDisc_def, Set.sdiff_eq, Set.compl_ofPred]
 
 /-- **Pulling back a punctured closed disc.** For a continuous ring map `φ : A → B` carrying
 `A⁺` into `B⁺`, the points of `Spa (B, B⁺)` whose pullback lies in `𝔻^×(A⁺, T, b)` form
@@ -299,6 +299,15 @@ theorem iUnion_closedAnnulus_pow (Aplus : Subring A) (T b : A) {ϖ : A}
   let := v.toValuativeRel
   exact Set.mem_iUnion.mpr ⟨n, hspa, hn.vle, hTb, hT⟩
 
+/-- **A closed annulus with inner radius `0` is the punctured closed disc**: `v(0) ≤ v(T)` always
+holds. -/
+@[simp]
+theorem closedAnnulus_zero_middle (Aplus : Subring A) (T b : A) :
+    closedAnnulus Aplus T 0 b = puncturedClosedDisc Aplus T b := by
+  ext v
+  let := v.toValuativeRel
+  simp
+
 /-- The closed annulus with coordinate `0` is empty. -/
 @[simp]
 theorem closedAnnulus_zero_left (Aplus : Subring A) (a b : A) : closedAnnulus Aplus 0 a b = ∅ := by
@@ -318,7 +327,9 @@ theorem closedAnnulus_one_one_one (Aplus : Subring A) : closedAnnulus Aplus 1 1 
 strict inequality `v(a) < v(T)` already puts `T` outside the support
 (`not_vle_zero_of_mem_strictAnnulus`). This locus is not asserted to be open in `Spa (A, A⁺)`:
 radial regions called *open* in Berkovich's or rigid terminology are the unions of closed
-annuli of `TauCeti.ValuationSpectrum.openAnnulus`, which are in general smaller. -/
+annuli of `TauCeti.ValuationSpectrum.openAnnulus`. For radius families with `v(a) < v(aⱼ)` and
+`v(bⱼ) < v(b)` such a union lies in the strict annulus, and is in general a proper subset of it
+because of Ito's rank-two point `η(R)`. -/
 def strictAnnulus (Aplus : Subring A) (T a b : A) : Set (Spv A) :=
   spa Aplus ∩ {v | v.toValuativeRel.vlt a T ∧ v.toValuativeRel.vlt T b}
 
