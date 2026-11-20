@@ -65,6 +65,12 @@ theorem apply_coe_range (hp : IsIdempotentElem p) (w : p.range) : p w = w :=
   (LinearMap.IsIdempotentElem.mem_range_iff
     (ContinuousLinearMap.IsIdempotentElem.toLinearMap hp)).mp w.property
 
+/-- Restricting an idempotent to its range gives the inclusion of the range. -/
+@[simp]
+theorem comp_subtypeL (hp : IsIdempotentElem p) :
+    p ∘L p.range.subtypeL = p.range.subtypeL :=
+  ContinuousLinearMap.ext (apply_coe_range hp)
+
 variable [IsTopologicalAddGroup M]
 
 /-- The operator `p * p + (1 - p) * (1 - p)`, which intertwines an idempotent `p` with itself, is
