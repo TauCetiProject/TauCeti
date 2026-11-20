@@ -129,12 +129,25 @@ private theorem sum_coassoc_eval (φ : Module.Dual R H) (n : ConvolutionDual R H
     rw [← Finset.mul_sum, ← map_sum, ← Finset.mul_sum, sum_antipode_mul_eq_smul]
     simp only [mul_smul_comm, mul_one, map_smul, smul_eq_mul]
     ring
-  calc _ = _ := Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun k _ ↦ mul_comm _ _
-    _ = _ := hΘ
-    _ = _ := Finset.sum_congr rfl fun j _ ↦ key j
+  -- Swap the factors so the summand is `Θ` applied to `(h₁)₁ ⊗ (h₁)₂ ⊗ h₂`.
+  calc _ = ∑ j ∈ (ℛ R h).index, ∑ k ∈ (ℛ R ((ℛ R h).left j)).index,
+          n.ofConv (q * antipode R ((ℛ R ((ℛ R h).left j)).left k)) *
+            φ (p * (antipode R ((ℛ R ((ℛ R h).left j)).right k) * (ℛ R h).right j)) :=
+        Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun k _ ↦ mul_comm _ _
+    -- Coassociativity: rewrite `(h₁)₁ ⊗ (h₁)₂ ⊗ h₂` as `h₁ ⊗ (h₂)₁ ⊗ (h₂)₂` under `Θ`.
+    _ = ∑ j ∈ (ℛ R h).index, ∑ l ∈ (ℛ R ((ℛ R h).right j)).index,
+          n.ofConv (q * antipode R ((ℛ R h).left j)) *
+            φ (p * (antipode R ((ℛ R ((ℛ R h).right j)).left l) *
+              (ℛ R ((ℛ R h).right j)).right l)) := hΘ
+    -- The antipode law `∑ S((h₂)₁) (h₂)₂ = ε(h₂) 1` collapses the inner sum.
+    _ = ∑ j ∈ (ℛ R h).index,
+          counit (R := R) ((ℛ R h).right j) • (φ p * n (q * antipode R ((ℛ R h).left j))) :=
+        Finset.sum_congr rfl fun j _ ↦ key j
+    -- Pull the scalars inside `n ∘ (q * S ·)` by linearity.
     _ = φ p * n (q * antipode R (∑ j ∈ (ℛ R h).index,
           counit (R := R) ((ℛ R h).right j) • (ℛ R h).left j)) := by
       simp [Finset.mul_sum, map_sum, mul_left_comm]
+    -- The counit law `∑ ε(h₂) h₁ = h`.
     _ = _ := by rw [Coalgebra.sum_smul_counit]
 
 /-- The identity `∑ u ↼ S(h₃) ⊗ h₁ S(h₂) = (u ↼ S h) ⊗ 1` behind coinvariance of the projection. -/
@@ -172,21 +185,28 @@ private theorem coact_comp_act :
           TensorProduct.map (Comodule.coact (R := R) (C := H)) comul := by
   refine TensorProduct.ext' fun n h ↦ TensorProduct.tensor_eq_of_forall_tensorComponent_eq
     fun φ ↦ ?_
+  -- Pair both sides with `φ` in the `H` factor: the left side becomes `φ * (n ↼ h)` and,
+  -- after expanding `Δ h = ∑ h₁ ⊗ h₂`, the right side becomes `∑ (φ ∘ (· * h₂) * n) ↼ h₁`.
   rw [LinearMap.comp_apply, tensorComponent_coact]
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, TensorProduct.map_tmul]
   rw [← (ℛ R h).eq, TensorProduct.tmul_sum, map_sum, map_sum, map_sum]
   simp only [map_act_mul'_tensorTensorTensorComm, LinearMap.tensorComponent_map,
     tensorComponent_coact]
+  -- Evaluate at `x`, expanding the convolution on the left through `Δ x`.
   ext x
   rw [(ℛ R x).convMul_apply]
   simp only [ofConv_sum, LinearMap.sum_apply, LinearMap.comp_apply, LinearMap.flip_apply,
     TensorProduct.mk_apply, act_tmul_apply]
+  -- On the right, expand each convolution through the product representation of
+  -- `Δ (x S(h₁)) = ∑ x₁ S((h₁)₂) ⊗ x₂ S((h₁)₁)`, then sum over the `Δ x` index first.
   rw [Finset.sum_congr rfl fun j _ ↦
     ((ℛ R x).mul (ℛ R ((ℛ R h).left j)).antipode).convMul_apply _ _]
   simp only [Coalgebra.Repr.mul_index, Coalgebra.Repr.mul_left, Coalgebra.Repr.mul_right,
     Coalgebra.Repr.antipode_index, Coalgebra.Repr.antipode_left, Coalgebra.Repr.antipode_right,
     Finset.sum_product, LinearMap.comp_apply, LinearMap.mulRight_apply]
   rw [Finset.sum_comm]
+  -- For each summand `x₁ ⊗ x₂` of `Δ x`, the law reduces to the scalar identity
+  -- `sum_coassoc_eval` with `p = x₁` and `q = x₂`.
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   simpa only [mul_assoc] using (sum_coassoc_eval φ n _ _ h).symm
 
