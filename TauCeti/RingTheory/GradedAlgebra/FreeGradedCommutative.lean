@@ -27,13 +27,12 @@ commute up to the Koszul sign `x i * x j = (-1) ^ (deg i * deg j) • (x j * x i
 monomials `x_{i₁}^{f i₁} ⋯ x_{i_k}^{f i_k}`, `i₁ < ⋯ < i_k`, over the exponent vectors `f` (finitely
 supported, with `f i ≤ 1` when `deg i` is odd) form a basis of `A`.
 
-The main result is the universal property: over a field of characteristic different from `2`, an
-algebra map out of `ΛV` may send the generators to any elements of a graded-commutative algebra in
-the same degrees, and is determined by these images. The hypothesis on the characteristic is
-needed: over `𝔽₂`, where every Koszul sign is `1`, the polynomial ring `𝔽₂[e]` with `e` in degree
-`1` satisfies the definition on the generators `e` and `e²`, of degrees `1` and `2`, while no
-algebra map out of it sends `e` to `u` and `e²` to `v` in the graded-commutative algebra
-`𝔽₂[u, v]/(u²)`, `|u| = 1`, `|v| = 2`.
+The main result is the universal property: when `2` is invertible in `K`, an algebra map out of
+`ΛV` may send the generators to any elements of a graded-commutative algebra in the same degrees,
+and is determined by these images. The hypothesis on `2` is needed: over `𝔽₂`, where every Koszul
+sign is `1`, the polynomial ring `𝔽₂[e]` with `e` in degree `1` satisfies the definition on the
+generators `e` and `e²`, of degrees `1` and `2`, while no algebra map out of it sends `e` to `u`
+and `e²` to `v` in the graded-commutative algebra `𝔽₂[u, v]/(u²)`, `|u| = 1`, `|v| = 2`.
 
 ## Main definitions
 
@@ -302,14 +301,13 @@ end FreeGradedCommutative
 
 namespace IsFreeGradedCommutative
 
-variable {K : Type*} [Field K] [NeZero (2 : K)] {A : Type*} [Ring A] [Algebra K A]
+variable {K : Type*} [CommRing K] [Invertible (2 : K)] {A : Type*} [Ring A] [Algebra K A]
   {ι : Type*} [LinearOrder ι] {𝒜 : ℤ → Submodule K A} {x : ι → A} {deg : ι → ℕ}
 
-/-- Over a field of characteristic different from `2`, a generator of odd degree of a free
-graded-commutative algebra squares to zero. -/
+/-- When `2` is invertible in `K`, a generator of odd degree of a free graded-commutative algebra
+squares to zero. -/
 theorem mul_self_eq_zero (hx : IsFreeGradedCommutative 𝒜 x deg) {i : ι} (hi : Odd (deg i)) :
     x i * x i = 0 :=
-  letI := invertibleOfNonzero (two_ne_zero : (2 : K) ≠ 0)
   mul_self_eq_zero_of_negOnePow_odd (K := K) hi.natCast (hx.mul_comm i i)
 
 variable {B : Type*} [Ring B] [Algebra K B] {b : ι → B}
@@ -325,8 +323,7 @@ private theorem constr_generator_mul (hx : IsFreeGradedCommutative 𝒜 x deg)
   simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, L, Module.Basis.constr_basis]
   rw [basis_apply]
   by_cases h : Odd (deg i) ∧ f.1 i ≠ 0
-  · let := invertibleOfNonzero (two_ne_zero : (2 : K) ≠ 0)
-    rw [mul_standardMonomial_eq_zero hx.mul_comm (hx.mul_self_eq_zero h.1) h.2,
+  · rw [mul_standardMonomial_eq_zero hx.mul_comm (hx.mul_self_eq_zero h.1) h.2,
       mul_standardMonomial_eq_zero hb
         (mul_self_eq_zero_of_negOnePow_odd (K := K) h.1.natCast (hb i i)) h.2, map_zero]
   · have hg : ∀ j, Odd (deg j) → f.1 j + single i 1 j ≤ 1 := fun j hj => by
@@ -337,7 +334,7 @@ private theorem constr_generator_mul (hx : IsFreeGradedCommutative 𝒜 x deg)
       ← basis_apply hx ⟨f.1 + single i 1, hg⟩]
     simp only [Units.smul_def, map_zsmul, Module.Basis.constr_basis]
 
-omit [NeZero (2 : K)] in
+omit [Invertible (2 : K)] in
 private theorem constr_one (hx : IsFreeGradedCommutative 𝒜 x deg) (b : ι → B) :
     hx.basis.constr K (fun f => standardMonomial b f.1) 1 = 1 := by
   rw [← standardMonomial_zero x, ← basis_apply hx ⟨0, fun _ _ => zero_le_one⟩,
@@ -378,8 +375,8 @@ private theorem constr_mul (hx : IsFreeGradedCommutative 𝒜 x deg)
 
 /-- The algebra map out of a free graded-commutative algebra sending each generator `x i` to
 `b i`, for elements `b i` of any `K`-algebra which commute up to the Koszul sign of the degrees
-of the generators. Over a field of characteristic different from `2` no further relation is
-needed: the `b i` of odd degree square to zero automatically. -/
+of the generators. When `2` is invertible in `K` no further relation is needed: the `b i` of odd
+degree square to zero automatically. -/
 noncomputable def lift (hx : IsFreeGradedCommutative 𝒜 x deg) (b : ι → B)
     (hb : ∀ i j, b i * b j = ((deg i : ℤ) * deg j).negOnePow • (b j * b i)) : A →ₐ[K] B :=
   .ofLinearMap (hx.basis.constr K fun f => standardMonomial b f.1) (constr_one hx b)
@@ -407,9 +404,9 @@ theorem lift_standardMonomial (hx : IsFreeGradedCommutative 𝒜 x deg) (b : ι 
     hx.lift b hb (standardMonomial x f) = standardMonomial b f := by
   rw [map_standardMonomial, lift_comp_x]
 
-/-- The universal property of the free graded-commutative algebra `ΛV`: over a field of
-characteristic different from `2`, for a graded-commutative algebra `(B, ℬ)` and elements
-`b i ∈ ℬ (deg i)` there is a unique algebra map `ΛV → B` sending each generator `x i` to `b i`. -/
+/-- The universal property of the free graded-commutative algebra `ΛV`: when `2` is invertible in
+`K`, for a graded-commutative algebra `(B, ℬ)` and elements `b i ∈ ℬ (deg i)` there is a unique
+algebra map `ΛV → B` sending each generator `x i` to `b i`. -/
 theorem existsUnique_algHom (hx : IsFreeGradedCommutative 𝒜 x deg) (ℬ : ℤ → Submodule K B)
     (hB : ∀ {p q : ℤ} {a b : B}, a ∈ ℬ p → b ∈ ℬ q → a * b = (p * q).negOnePow • (b * a))
     (b : ι → B) (hb : ∀ i, b i ∈ ℬ (deg i)) : ∃! φ : A →ₐ[K] B, ∀ i, φ (x i) = b i :=
