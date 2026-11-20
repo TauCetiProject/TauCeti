@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.AdjoinRoot
 
 import TauCeti.RingTheory.Ideal.Operations
+import TauCeti.RingTheory.Ideal.Quotient.Coprime
 
 /-!
 # Complements on `AdjoinRoot`
@@ -192,16 +193,10 @@ theorem isUnit_root_X_pow_sub_C {n : ℕ} {a : R} (ha : IsUnit a) (hn : n ≠ 0)
 
 /-- **The units of `AdjoinRoot f`.** The class of `g` is a unit of `AdjoinRoot f` exactly when
 `f` and `g` are coprime, that is, when `g` is invertible modulo `f`. -/
-theorem isUnit_mk_iff_isCoprime {f g : R[X]} : IsUnit (mk f g) ↔ IsCoprime f g := by
-  refine ⟨fun h ↦ ?_, fun ⟨a, b, hab⟩ ↦ .of_mul_eq_one_right (mk f b) ?_⟩
-  · -- An inverse `mk f b` gives `f ∣ g * b - 1`, which is a Bézout relation for `f` and `g`.
-    obtain ⟨v, hv⟩ := h.exists_right_inv
-    obtain ⟨b, rfl⟩ := mk_surjective v
-    rw [← map_mul, ← map_one (mk f), mk_eq_mk] at hv
-    obtain ⟨c, hc⟩ := hv
-    exact ⟨-c, b, by linear_combination hc⟩
-  · rw [← map_mul, ← map_one (mk f), ← hab]
-    simp
+@[simp]
+theorem isUnit_mk_iff_isCoprime {f g : R[X]} : IsUnit (mk f g) ↔ IsCoprime f g :=
+  -- `mk f` is by definition the quotient map `R[X] →+* R[X] ⧸ span {f}`, as in `mk_surjective`.
+  Ideal.Quotient.isUnit_mk_iff.trans <| (Ideal.sup_eq_top_iff_isCoprime g f).trans isCoprime_comm
 
 /-- For any relator `g`, the remainder `p %ₘ g` has the same class as `p` in
 `AdjoinRoot g`. -/
