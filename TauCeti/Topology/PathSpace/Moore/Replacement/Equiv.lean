@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
+public import TauCeti.Topology.Homotopy.HomotopyEquiv
 public import TauCeti.Topology.PathSpace.Moore.Replacement.Basic
 
 /-!
@@ -16,6 +17,9 @@ Moore-path replacement is a **fibre homotopy equivalence** over `B`
 (`TauCeti.MooreReplacement.fiberHomotopyEquiv`), and so the fibre `F` of `p` over `b` is homotopy
 equivalent to the fibre `F'` of the replacement
 (`TauCeti.MooreReplacement.fiberHomotopyEquivFiber`).
+So a map of Hurewicz fibrations covering a map of the bases, which restricts to a homotopy
+equivalence of the fibres, induces a homotopy equivalence of the fibres of the replacements
+(`TauCeti.MooreReplacement.Fiber.squareMapHomotopyEquiv`).
 The fibre homotopy equivalence identifies each fibre of `p` with the corresponding fibre of the
 replacement, `f ↦ (f, const)`, compatibly with the projections to `B`.  The hypothesis is the
 homotopy lifting property with respect to `E'` itself, so the universe of test spaces is that of
@@ -36,6 +40,9 @@ Moore-path replacement of the inclusion `A → X`, up to a homeomorphism over `X
 ## Main results
 
 * `TauCeti.MooreReplacement.fiberHomotopyEquivFiber`: `F ≃ₕ F'` for a Hurewicz fibration.
+* `TauCeti.MooreReplacement.Fiber.squareMapHomotopyEquiv`: a map of Hurewicz fibrations that is a
+  homotopy equivalence on the fibres induces a homotopy equivalence `F'_p ≃ₕ F'_{p'}` of the fibres
+  of the replacements.
 * `TauCeti.MoorePath.isHurewiczFibration_target`: the endpoint evaluation is a Hurewicz fibration.
 
 ## References
@@ -187,6 +194,53 @@ theorem coe_fiberHomotopyEquivFiber_symm_apply {p : C(E, B)}
     Homeomorph.coe_toHomotopyEquiv]
   exact (FiberHomotopyEquiv.coe_fiber_symm_apply _ b _).trans
     (by rw [fiberHomotopyEquiv_invFun]; rfl)
+
+/-! ### Maps of fibres covering a map of the bases -/
+
+section SquareMap
+
+variable {E' : Type u} {B' : Type v} [TopologicalSpace E'] [TopologicalSpace B']
+
+/-- For Hurewicz fibrations `p` and `p'`, a commutative square `p' ∘ h = g ∘ p` whose top map `h`
+restricts to a homotopy equivalence `e` from the fibre of `p` over `b` to the fibre of `p'` over
+`b' = g b` induces a **homotopy equivalence of the fibres of the Moore-path replacements**, with
+forward map `Fiber.squareMap h g hsq hg`. -/
+def Fiber.squareMapHomotopyEquiv {p : C(E, B)} {p' : C(E', B')}
+    (hp : IsHurewiczFibration.{max u v} p) (hp' : IsHurewiczFibration.{max u v} p')
+    (h : C(E, E')) (g : C(B, B'))
+    (hsq : p'.comp h = g.comp p) {b : B} {b' : B'} (hg : g b = b')
+    (e : {x // p x = b} ≃ₕ {x // p' x = b'}) (he : ∀ x, (e x : E') = h x) :
+    Fiber p b ≃ₕ Fiber p' b' :=
+  ((fiberHomotopyEquivFiber hp b).symm.trans (e.trans (fiberHomotopyEquivFiber hp' b'))).ofHomotopic
+    (Fiber.squareMap h g hsq hg) <| by
+      -- On the fibre of `p` the map of fibres is the composite of `e` and the inclusion of the
+      -- fibre of `p'`: both send `x` to `(h x, const)`.
+      have hsq' : (Fiber.squareMap h g hsq hg).comp (fiberHomotopyEquivFiber hp b).toFun =
+          (fiberHomotopyEquivFiber hp' b').toFun.comp e.toFun := by
+        ext x : 1
+        have hi : fiberHomotopyEquivFiber hp b x = MooreLiftingFunction.fiberIncl p b x :=
+          Fiber.ext <| by
+            rw [val_fiberHomotopyEquivFiber_apply, MooreLiftingFunction.val_fiberIncl]
+        have hj : fiberHomotopyEquivFiber hp' b' (e x) =
+            MooreLiftingFunction.fiberIncl p' b' (e x) :=
+          Fiber.ext <| by
+            rw [val_fiberHomotopyEquivFiber_apply, MooreLiftingFunction.val_fiberIncl]
+        rw [ContinuousMap.comp_apply, ContinuousMap.comp_apply, hi, hj, Fiber.squareMap_fiberIncl]
+        exact congrArg _ (Subtype.ext (he x).symm)
+      have := (Homotopic.refl (Fiber.squareMap h g hsq hg)).comp
+        (fiberHomotopyEquivFiber hp b).right_inv
+      rw [ContinuousMap.comp_id, ← ContinuousMap.comp_assoc, hsq'] at this
+      exact this.symm
+
+@[simp]
+theorem Fiber.squareMapHomotopyEquiv_toFun {p : C(E, B)} {p' : C(E', B')}
+    (hp : IsHurewiczFibration.{max u v} p) (hp' : IsHurewiczFibration.{max u v} p') (h : C(E, E'))
+    (g : C(B, B')) (hsq : p'.comp h = g.comp p) {b : B} {b' : B'} (hg : g b = b')
+    (e : {x // p x = b} ≃ₕ {x // p' x = b'}) (he : ∀ x, (e x : E') = h x) :
+    (Fiber.squareMapHomotopyEquiv hp hp' h g hsq hg e he).toFun = Fiber.squareMap h g hsq hg :=
+  HomotopyEquiv.ofHomotopic_toFun _ _ _
+
+end SquareMap
 
 /-! ### The endpoint evaluation -/
 
