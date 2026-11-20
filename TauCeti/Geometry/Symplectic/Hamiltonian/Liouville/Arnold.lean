@@ -42,6 +42,8 @@ component of a level is compact, and every `X_{Fᵢ}` is complete when `F` is an
   of a regular point is discrete.
 * `TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowAction_apply_eq_iff`: two vectors act alike
   on `x` exactly when they differ by an element of its stabilizer.
+* `TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowStabilizer_hamiltonianFlowAction_apply`: the
+  points of an orbit have the same stabilizer.
 * `eval₂_mfderiv_hamiltonianFlowAction_of_mem_hamiltonianFlowStabilizer`, in the namespace
   `TauCeti.SmoothTwoForm.IsSymplectic`: the derivative of the action of an element of the
   stabilizer of `y` at `y` is a linear symplectic map of `T_y M`.
@@ -297,6 +299,18 @@ theorem hamiltonianFlowAction_apply_eq_iff {x : M} {v w : ι → ℝ} :
   letI := hσ.hamiltonianFlowAddAction hF hcomm hc
   (AddAction.injective_ofQuotientStabilizer (ι → ℝ) x).eq_iff
     (a := (v : (ι → ℝ) ⧸ AddAction.stabilizer (ι → ℝ) x)) (b := w) |>.trans QuotientAddGroup.eq
+
+/-- **Points of one orbit have the same stabilizer.** Since `ι → ℝ` is commutative, `v • x` and
+`x` have the same stabilizer: the Liouville tori carry a single period lattice. -/
+@[simp]
+theorem hamiltonianFlowStabilizer_hamiltonianFlowAction_apply (v : ι → ℝ) (x : M) :
+    hσ.hamiltonianFlowStabilizer hF hcomm hc ((hσ.hamiltonianFlowAction hF hcomm hc v).toMul x) =
+      hσ.hamiltonianFlowStabilizer hF hcomm hc x := by
+  ext w
+  rw [mem_hamiltonianFlowStabilizer, mem_hamiltonianFlowStabilizer,
+    ← hσ.hamiltonianFlowAction_add_apply hF hcomm hc, add_comm,
+    hσ.hamiltonianFlowAction_add_apply hF hcomm hc]
+  exact (hσ.hamiltonianFlowAction hF hcomm hc v).toMul.injective.eq_iff
 
 /-- **The linearized return map of a period is symplectic.** If `v` is a period of `y`, the action
 of `v` fixes `y`, and its derivative at `y` is a linear symplectic map of `T_y M`. -/
