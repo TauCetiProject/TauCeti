@@ -149,6 +149,12 @@ theorem nonempty_iff : Nonempty (RawCap γ) ↔ γ.Homotopic (Path.refl x) := by
   rw [← Path.joined_iff_homotopic]
   exact ⟨fun ⟨D⟩ => ⟨D.out⟩, fun ⟨D⟩ => ⟨Path.Homotopic.Quotient.mk D⟩⟩
 
+/-- **If the fundamental group at `x` is trivial, every loop at `x` has a raw cap.** This covers
+every simply connected space. -/
+instance [Subsingleton (FundamentalGroup X x)] : Nonempty (RawCap γ) :=
+  nonempty_iff.2 <| Quotient.exact <| congrArg FundamentalGroup.toPath <|
+    Subsingleton.elim (FundamentalGroup.fromPath ⟦γ⟧) (FundamentalGroup.fromPath ⟦Path.refl x⟧)
+
 /-- Gluing a sphere `a ∈ π₂(X, x)` at the centre of a disc: `a +ᵥ D` is `D` followed by the loop
 of loops at the constant loop corresponding to `a`. -/
 instance instAddAction : AddAction (Additive (π_ 2 X x)) (RawCap γ) where
@@ -328,7 +334,7 @@ def lift (φ : SphericalPeriodGroup ω c →+ A) (f : RawCap γ → A)
     SphericalCapClass ω c γ → A :=
   Quotient.lift (s := AddAction.orbitRel _ _) f fun D D' ⟨k, hk⟩ => by
     rw [← hk]
-    simp only [AddSubgroup.vadd_def, hf, AddMonoidHom.mem_ker.1 k.2, map_zero, zero_add]
+    simp only [AddSubgroup.vadd_def, hf, AddMonoidHom.mem_ker.1 k.property, map_zero, zero_add]
 
 @[simp]
 theorem lift_mk (φ : SphericalPeriodGroup ω c →+ A) (f : RawCap γ → A)

@@ -126,7 +126,8 @@ private def covectorLift (hx : I.IsInteriorPoint x) :
 
 private theorem covectorLift_apply_self (hx : I.IsInteriorPoint x)
     (ξ : TangentSpace I x →L[ℝ] ℝ) : covectorLift hx ξ x = 0 :=
-  mem_smoothVanishingIdeal_iff.mp ((exists_vanishingIdealDifferential_comp_eq_id hx).choose ξ).2
+  mem_smoothVanishingIdeal_iff.mp ((exists_vanishingIdealDifferential_comp_eq_id hx).choose
+      ξ).property
 
 private theorem mvfderiv_covectorLift (hx : I.IsInteriorPoint x)
     (ξ : TangentSpace I x →L[ℝ] ℝ) : mvfderiv I (covectorLift hx ξ) x = ξ := by
@@ -324,7 +325,7 @@ theorem smoothPrincipalSymbol_comp (hx : I.IsInteriorPoint x) {m k : ℕ}
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
     smoothPrincipalSymbol I hx
         ⟨(P : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) ∘ₗ (Q : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯),
-          comp_mem_differentialOperators P.2 Q.2⟩ ξ =
+          comp_mem_differentialOperators P.property Q.property⟩ ξ =
       smoothPrincipalSymbol I hx P ξ * smoothPrincipalSymbol I hx Q ξ := by
   obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x = ξ := ⟨_, mvfderiv_covectorLift hx ξ⟩
   -- The `(m + k)`-fold commutator of `P ∘ Q` with `f` is `(m + k).choose m` times the product of

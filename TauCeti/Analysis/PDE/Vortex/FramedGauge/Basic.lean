@@ -75,6 +75,22 @@ theorem mem_framedGaugeGroup (u : ℂ → Circle) :
     u ∈ framedGaugeGroup ↔
       ContDiff ℝ ∞ (fun z ↦ (u z : ℂ)) ∧ Tendsto u (cocompact ℂ) (𝓝 1) := Iff.rfl
 
+/-- A gauge of the smooth framed group composed with a translation is again in the smooth
+framed group. -/
+theorem comp_add_mem_framedGaugeGroup {u : ℂ → Circle} (hu : u ∈ framedGaugeGroup) (a : ℂ) :
+    (fun w ↦ u (w + a)) ∈ framedGaugeGroup := by
+  obtain ⟨hs, ht⟩ := (mem_framedGaugeGroup u).1 hu
+  exact (mem_framedGaugeGroup _).2 ⟨hs.comp (contDiff_id.add contDiff_const),
+    ht.comp (Homeomorph.addRight a).map_cocompact.le⟩
+
+/-- A gauge of the smooth framed group composed with multiplication by a nonzero constant, such
+as a rotation, is again in the smooth framed group. -/
+theorem comp_mul_mem_framedGaugeGroup {u : ℂ → Circle} (hu : u ∈ framedGaugeGroup) {c : ℂ}
+    (hc : c ≠ 0) : (fun w ↦ u (c * w)) ∈ framedGaugeGroup := by
+  obtain ⟨hs, ht⟩ := (mem_framedGaugeGroup u).1 hu
+  exact (mem_framedGaugeGroup _).2 ⟨hs.comp (contDiff_const.mul contDiff_id),
+    ht.comp (Filter.tendsto_cocompact_mul_left₀ hc)⟩
+
 /-- The real one-form `Im(u⁻¹ du)`. Multiplication by `i` recovers the imaginary connection
 increment; for a circle-valued map the inverse is complex conjugation. -/
 def gaugeForm (u : ℂ → Circle) (z : ℂ) : ℂ →L[ℝ] ℝ :=
@@ -544,6 +560,26 @@ theorem equation_gaugeTransform {u : ℂ → Circle}
   · ring
   · ring
 
+/-- Rotating the last two entries of a vector of `ℝ³` by a circle element preserves and reflects
+its vanishing. This is how gauge covariance of the complex defect is used. -/
+theorem circle_rotate_tail_eq_zero_iff (u : Circle) (v : EuclideanSpace ℝ (Fin 3)) :
+    !₂[v 0, (u : ℂ).re * v 1 - (u : ℂ).im * v 2, (u : ℂ).im * v 1 + (u : ℂ).re * v 2] = 0 ↔
+      v = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by ext i; fin_cases i <;> simp [h]⟩
+  have h₀ := congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 0) h
+  have h₁ := congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 1) h
+  have h₂ := congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 2) h
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+    Matrix.head_cons, Matrix.tail_cons, PiLp.zero_apply] at h₀ h₁ h₂
+  have hn := Circle.re_sq_add_im_sq u
+  ext i
+  have hi : i = 0 ∨ i = 1 ∨ i = 2 := by omega
+  rcases hi with rfl | rfl | rfl
+  all_goals simp only [PiLp.zero_apply]
+  · exact h₀
+  · linear_combination (u : ℂ).re * h₁ + (u : ℂ).im * h₂ - v 1 * hn
+  · linear_combination -(u : ℂ).im * h₁ + (u : ℂ).re * h₂ - v 2 * hn
+
 /-- A gauge transformation preserves the vortex equation in both directions. -/
 @[simp]
 theorem equation_gaugeTransform_eq_zero_iff {u : ℂ → Circle}
@@ -551,21 +587,7 @@ theorem equation_gaugeTransform_eq_zero_iff {u : ℂ → Circle}
     (hu : ContDiffAt ℝ 2 (fun w ↦ (u w : ℂ)) z)
     (hx : ∀ i, DifferentiableAt ℝ (fun w ↦ x w i) z) :
     equation (gaugeTransform u x) z = 0 ↔ equation x z = 0 := by
-  rw [equation_gaugeTransform hu hx]
-  refine ⟨fun h ↦ ?_, fun h ↦ by ext i; fin_cases i <;> simp [h]⟩
-  have h₀ := congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 0) h
-  have h₁ := congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 1) h
-  have h₂ := congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 2) h
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
-    Matrix.head_cons, Matrix.tail_cons, PiLp.zero_apply] at h₀ h₁ h₂
-  have hn := Circle.re_sq_add_im_sq (u z)
-  ext i
-  have hi : i = 0 ∨ i = 1 ∨ i = 2 := by omega
-  rcases hi with rfl | rfl | rfl
-  all_goals simp only [PiLp.zero_apply]
-  · exact h₀
-  · linear_combination (u z : ℂ).re * h₁ + (u z : ℂ).im * h₂ - equation x z 1 * hn
-  · linear_combination -(u z : ℂ).im * h₁ + (u z : ℂ).re * h₂ - equation x z 2 * hn
+  rw [equation_gaugeTransform hu hx, circle_rotate_tail_eq_zero_iff]
 
 /-- The section transforms by the charge-one representation, not its square. -/
 @[simp]
@@ -573,6 +595,28 @@ theorem sectionValue_gaugeTransform (u : ℂ → Circle)
     (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     sectionValue (gaugeTransform u x) z = (u z : ℂ) * sectionValue x z := by
   apply Complex.ext <;> simp [sectionValue_apply, gaugeTransform] <;> ring
+
+/-- If the section of `x` at `z` is `c` times the gauge `u`, then the gauge transformation by
+`u⁻¹` has the section `c` there. -/
+theorem sectionValue_gaugeTransform_inv_eq {u : ℂ → Circle} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    {z c : ℂ} (h : sectionValue x z = c * u z) :
+    sectionValue (gaugeTransform u⁻¹ x) z = c := by
+  rw [sectionValue_gaugeTransform, Pi.inv_apply, h, mul_left_comm, ← Circle.coe_mul,
+    inv_mul_cancel, Circle.coe_one, mul_one]
+
+/-- A gauge `u` with `α = |α| u` near `z`, where the section `α` of `x` is differentiable and
+nonzero, is differentiable at `z`: near `z` it is `α / |α|`. -/
+theorem differentiableAt_coe_of_sectionValue_eq_norm_mul {u : ℂ → Circle}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z)
+    (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) (hα : sectionValue x z ≠ 0)
+    (hphase : ∀ᶠ w in 𝓝 z, sectionValue x w = ‖sectionValue x w‖ * u w) :
+    DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z := by
+  have hs := differentiableAt_sectionValue hp hq
+  have hn : DifferentiableAt ℝ (fun w ↦ ((‖sectionValue x w‖ : ℝ) : ℂ)) z :=
+    ofRealCLM.differentiableAt.comp z (hs.norm ℝ hα)
+  refine (hs.fun_mul (hn.inv (by simpa using hα))).congr_of_eventuallyEq ?_
+  filter_upwards [hphase, hs.continuousAt.eventually_ne hα] with w hw hw0
+  rw [Pi.inv_apply, ← div_eq_mul_inv, eq_div_iff (by simpa using hw0), mul_comm, ← hw]
 
 /-- **A gauge relates two fields exactly when it matches their connections and sections.** The
 logarithmic derivative `Im (u⁻¹ du)` is the connection difference
@@ -615,6 +659,26 @@ theorem covariantDerivative_gaugeTransform {u : ℂ → Circle} {z : ℂ}
     fderiv_coe_eq_mul_gaugeForm, hg]
   ring
 
+/-- **Gauge covariance of the holomorphicity rows.** The complex defect `E₁ + i E₂` of the rows
+`∂bar_a α = 0` is multiplied by the gauge, like the section. Unlike
+`TauCeti.Vortex.equation_gaugeTransform`, this needs only a gauge differentiable at `z`. -/
+theorem equation_gaugeTransform_one_add_two_mul_I {u : ℂ → Circle} {z : ℂ}
+    (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
+    (equation (gaugeTransform u x) z 1 : ℂ) + (equation (gaugeTransform u x) z 2 : ℂ) * I =
+      (u z : ℂ) * ((equation x z 1 : ℂ) + (equation x z 2 : ℂ) * I) := by
+  have hr : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).re) z := reCLM.differentiableAt.comp z hu
+  have hi : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).im) z := imCLM.differentiableAt.comp z hu
+  have hp' : DifferentiableAt ℝ (fun w ↦ gaugeTransform u x w 2) z := by
+    simpa [gaugeTransform_apply] using (hr.fun_mul hp).fun_sub (hi.fun_mul hq)
+  have hq' : DifferentiableAt ℝ (fun w ↦ gaugeTransform u x w 3) z := by
+    simpa [gaugeTransform_apply] using (hi.fun_mul hp).fun_add (hr.fun_mul hq)
+  have h := covariantDerivative_one_add_I_mul_covariantDerivative_I hp' hq'
+  rw [covariantDerivative_gaugeTransform hu hp hq, covariantDerivative_gaugeTransform hu hp hq]
+    at h
+  linear_combination (-h + (u z : ℂ) * covariantDerivative_one_add_I_mul_covariantDerivative_I
+    hp hq) / 2
+
 /-- Curvature is unchanged by `C²` gauge transformations. -/
 @[simp]
 theorem curvature_gaugeTransform {u : ℂ → Circle}
@@ -648,7 +712,7 @@ theorem tendsto_sectionValue_gaugeTransform {u : ℂ → Circle}
     Tendsto (fun z ↦ sectionValue (gaugeTransform u x) z * phase z)
       (cocompact ℂ) (𝓝 1) := by
   have huc : Tendsto (fun z ↦ (u z : ℂ)) (cocompact ℂ) (𝓝 1) := by
-    have hc : Continuous (fun w : Circle ↦ (w : ℂ)) := continuous_subtype_val
+    have hc : Continuous (fun w : Circle ↦ (w : ℂ)) := continuous_subtypeVal
     simpa only [Function.comp_def, Circle.coe_one] using (hc.tendsto 1).comp hu
   simpa only [sectionValue_gaugeTransform, mul_assoc, one_mul] using huc.mul hx
 

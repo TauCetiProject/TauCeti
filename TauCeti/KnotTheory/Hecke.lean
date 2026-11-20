@@ -16,11 +16,12 @@ The normalized braid trace `MarkovBraid.heckeTrace` and its Markov invariance ar
 factor and skein relations. This file proves its characterization by the skein relation and
 normalization.
 
-After importing `TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace`, the canonical specialization
-is obtained by taking `τ = ocneanuTrace R q z` and
+After importing `TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Basic`, the canonical
+specialization is obtained by taking `τ = ocneanuTrace R q z` and
 `hτ = isMarkovTrace_ocneanuTrace z`. In this case the invariant is the braid-closure invariant
-Jones constructs from the Ocneanu trace. Its comparison with the HOMFLY invariant built from
-Jimbo representations is not made here. The skein relation itself needs only linearity of `τ`.
+Jones constructs from the Ocneanu trace; its comparison with the HOMFLY invariant built from
+Jimbo representations is proved in `TauCeti.KnotTheory.Hecke.Homfly`. The skein relation itself
+needs only linearity of `τ`.
 
 ## Main results
 

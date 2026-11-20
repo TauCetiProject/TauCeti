@@ -8,6 +8,7 @@ module
 public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
 public import TauCeti.ModelTheory.Infinitary.LanguageMap
 public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
+public import TauCeti.ModelTheory.Sublanguage
 
 /-!
 # Relational configurations along language maps
@@ -28,6 +29,11 @@ formula of `L` exactly onto those satisfying its translation. These are the fact
 counting the models of a sentence up to isomorphism, or finding perfect sets of non-isomorphic
 ones, independent of the presentation of the language; with `smallPresentationEquiv`, every
 countable relational language can be presented in universe `0`.
+
+For symbol sublanguages `symbSublang F R`, the reduct map along `symbSublangIncl F R` is
+surjective on configurations (`reductConfiguration_symbSublang_surjective`), and every measurable
+set in the product σ-algebra on `RelationalConfiguration L V` is the preimage of a measurable set
+in some countable relational symbol sublanguage (`exists_countable_sublanguage_of_measurableSet`).
 
 ## Main definitions
 
@@ -56,6 +62,11 @@ countable relational language can be presented in universe `0`.
 * `FirstOrder.Language.LEquiv.preimage_onConfiguration_modelsOf` and
   `FirstOrder.Language.LEquiv.image_onConfiguration_modelsOf`: transport carries the model class
   of a sentence exactly onto the model class of its translation.
+* `TauCeti.RelationalConfiguration.reductConfiguration_symbSublang_surjective`: the reduct map
+  along a symbol-sublanguage inclusion is surjective on configurations.
+* `TauCeti.RelationalConfiguration.exists_countable_sublanguage_of_measurableSet`: every measurable
+  set of configurations is the preimage of a measurable set in a countable relational symbol
+  sublanguage.
 -/
 
 public section
@@ -282,3 +293,78 @@ theorem image_onConfiguration_modelsOf {ι : Type uι} (φ : L.SentenceInf ι) :
 end LEquiv
 
 end FirstOrder.Language
+
+namespace TauCeti.RelationalConfiguration
+
+open FirstOrder FirstOrder.Language MeasureTheory Set
+
+variable {L : Language.{u, v}} {V : Type w}
+
+/-! ### Symbol-sublanguage reducts -/
+
+/-- Every symbol-sublanguage reduct map on relational configurations is surjective. -/
+theorem reductConfiguration_symbSublang_surjective
+    (F : Set (Σ n, L.Functions n)) (R : Set (Σ n, L.Relations n)) :
+    Function.Surjective ((symbSublangIncl F R).reductConfiguration (V := V)) := by
+  classical
+  intro c₀
+  let S : L.Structure (Option V) :=
+    { funMap := fun _ _ => none
+      RelMap := fun {n} r x =>
+        ∃ (y : Fin n → V) (hr : (⟨n, r⟩ : Σ k, L.Relations k) ∈ R),
+          Option.some ∘ y = x ∧ c₀.eval (atom ⟨r, hr⟩ y) = true }
+  refine ⟨(@ofStructure L (Option V) S).restrict Option.some, ext fun a => ?_⟩
+  induction a using Atom.induction_atom with
+  | h r x =>
+    have hiff : @Structure.RelMap L (Option V) S _ r.val (Option.some ∘ x) ↔
+        c₀.eval (atom r x) = true :=
+      ⟨fun ⟨y, _, hy, hc⟩ => by cases (Option.some_injective V).comp_left hy; exact hc,
+        fun hc => ⟨x, r.property, rfl, hc⟩⟩
+    simp [LHom.eval_reductConfiguration, @eval_ofStructure L (Option V) S, hiff]
+
+/-- Every set in the product σ-algebra on `RelationalConfiguration L V` is the preimage of a
+measurable set in a countable relational symbol sublanguage. -/
+theorem exists_countable_sublanguage_of_measurableSet
+    {D : Set (RelationalConfiguration L V)} (hD : MeasurableSet D) :
+    ∃ (R₀ : Set (Σ n, L.Relations n)), R₀.Countable ∧
+      ∃ D₀ : Set (RelationalConfiguration (symbSublang ∅ R₀) V),
+        MeasurableSet D₀ ∧ D = (symbSublangIncl ∅ R₀).reductConfiguration ⁻¹' D₀ := by
+  let m : MeasurableSpace (RelationalConfiguration L V) :=
+    { MeasurableSet' E :=
+        ∃ (R₀ : Set (Σ n, L.Relations n)), R₀.Countable ∧
+          ∃ E₀ : Set (RelationalConfiguration (symbSublang ∅ R₀) V),
+            MeasurableSet E₀ ∧ E = (symbSublangIncl ∅ R₀).reductConfiguration ⁻¹' E₀
+      measurableSet_empty := ⟨∅, countable_empty, ∅, .empty, rfl⟩
+      measurableSet_compl := fun E ⟨R₀, hR₀, E₀, hE₀, hEq⟩ =>
+        ⟨R₀, hR₀, E₀ᶜ, hE₀.compl, congrArg compl hEq⟩
+      measurableSet_iUnion := fun f hf => by
+        choose Rᵢ hRᵢ Eᵢ hEᵢ hEq using hf
+        let R₀ : Set (Σ n, L.Relations n) := ⋃ i : ℕ, Rᵢ i
+        let incl (i : ℕ) : symbSublang (L := L) ∅ (Rᵢ i) →ᴸ symbSublang ∅ R₀ :=
+          { onFunction := fun _ fn => ⟨fn.val, fn.property⟩
+            onRelation := fun _ r => ⟨r.val, mem_iUnion_of_mem i r.property⟩ }
+        have hcomp (i : ℕ) :
+            (symbSublangIncl (L := L) ∅ R₀).comp (incl i) = symbSublangIncl ∅ (Rᵢ i) :=
+          LHom.funext (funext fun _ => funext fun _ => by simp [incl])
+            (funext fun _ => funext fun _ => by simp [incl])
+        refine ⟨R₀, countable_iUnion hRᵢ,
+          ⋃ i : ℕ, (incl i).reductConfiguration ⁻¹' Eᵢ i,
+          .iUnion fun i => (incl i).measurable_reductConfiguration (hEᵢ i), ?_⟩
+        ext c
+        simp only [mem_iUnion, mem_preimage, hEq, ← hcomp, LHom.comp_reductConfiguration] }
+  have hmeas :
+      @Measurable (RelationalConfiguration L V) (RelationalConfiguration L V) m
+        instMeasurableSpace id := by
+    refine (@measurable_iff L V _ m id).2 fun a => ?_
+    induction a using Atom.induction_atom with
+    | h R x =>
+      intro s hs
+      let R₀ : Set (Σ n, L.Relations n) := {⟨_, R⟩}
+      let a₀ : Atom (symbSublang (L := L) ∅ R₀) V := atom ⟨R, rfl⟩ x
+      refine ⟨R₀, countable_singleton _,
+        {c₀ | c₀.eval a₀ ∈ s}, (measurable_eval a₀) hs, ?_⟩
+      ext c
+      simp [a₀]
+  exact hmeas hD
+
+end TauCeti.RelationalConfiguration
