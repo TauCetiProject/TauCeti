@@ -92,7 +92,7 @@ theorem IsMorse.exists_admissible_morseCharts [T2Space M] (hf : IsMorse I f) {c 
   refine ⟨min ε₁ (r ^ 2 / 2), lt_min hε₁ (by positivity), (min_le_left _ _).trans hε₁δ,
     fun y ⟨hy, hyε⟩ ↦ hband ⟨hy, Icc_subset_Icc ?_ ?_ hyε⟩, ψ, hdisj, fun p ↦
       ⟨(hψ p).1, (hψ p).2.1, (hψ p).2.2.1, fun v hv ↦ hrball (closedBall_subset_closedBall ?_ hv) p,
-        fun y hy ↦ p.2.2 ▸ (hψ p).2.2.2 y hy⟩⟩
+        fun y hy ↦ p.property.2 ▸ (hψ p).2.2.2 y hy⟩⟩
   · linarith [min_le_left ε₁ (r ^ 2 / 2)]
   · linarith [min_le_left ε₁ (r ^ 2 / 2)]
   · rw [Real.sqrt_le_left hr.le]

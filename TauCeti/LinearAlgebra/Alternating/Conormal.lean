@@ -262,7 +262,8 @@ theorem IsConormal.eq_or_eq_neg [Fintype ι] {o p : Module.Ray R (M [⋀^ι]→�
   obtain ⟨α, hα, rfl⟩ := ho.exists_eq_rayOfNeZero_conormalPullback
   obtain ⟨β, hβ, rfl⟩ := hp.exists_eq_rayOfNeZero_conormalPullback
   -- Descend to genuine orientations of the quotient, then pull their rays back.
-  rcases Orientation.eq_or_eq_neg (rayOfNeZero R α hα) (rayOfNeZero R β hβ) hk.symm
+  rcases Orientation.eq_or_eq_neg (rayOfNeZero R α hα) (rayOfNeZero R β hβ)
+    (Nat.card_eq_fintype_card.trans hk.symm)
     with he | he
   · exact Or.inl ((ray_eq_iff _ _).mpr (((ray_eq_iff hα hβ).mp he).map W.conormalPullback))
   · right

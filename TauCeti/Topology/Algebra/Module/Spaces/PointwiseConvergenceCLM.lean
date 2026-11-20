@@ -11,14 +11,32 @@ public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 # Basic facts on the topology of pointwise convergence
 
 Scalar multiplication on `E →SLₚₜ[σ] F` is jointly continuous whenever it is on `F`, since it is
-computed pointwise (`PointwiseConvergenceCLM.continuousSMul`). Passing from `E →SL[σ] F` to its
-pointwise-convergence copy is injective
+computed pointwise (`PointwiseConvergenceCLM.continuousSMul`). Post-composition evaluates as
+`postcomp E L f x = L (f x)` (`PointwiseConvergenceCLM.postcomp_apply_apply`). Passing from
+`E →SL[σ] F` to its pointwise-convergence copy is injective
 (`ContinuousLinearMap.toPointwiseConvergenceCLM_injective`).
+A map lies in the closure of a set of maps in this topology exactly when it is the pointwise limit
+along some filter of maps eventually in the set
+(`ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff`); since this topology need
+not be first countable, nets or filters cannot in general be replaced by sequences here.
 -/
 
 public section
 
+open Filter Topology
+
 namespace PointwiseConvergenceCLM
+
+/-- Evaluating `PointwiseConvergenceCLM.postcomp` on a map and a vector applies the outer map to
+the value. -/
+theorem postcomp_apply_apply {𝕜₁ 𝕜₂ 𝕜₃ E F G : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂]
+    [NormedField 𝕜₃] {σ : 𝕜₁ →+* 𝕜₂} {τ : 𝕜₂ →+* 𝕜₃} {ρ : 𝕜₁ →+* 𝕜₃} [RingHomCompTriple σ τ ρ]
+    [AddCommGroup E] [TopologicalSpace E] [AddCommGroup F] [TopologicalSpace F]
+    [IsTopologicalAddGroup F] [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+    [Module 𝕜₁ E] [Module 𝕜₂ F] [Module 𝕜₃ G] [ContinuousConstSMul 𝕜₂ F]
+    [ContinuousConstSMul 𝕜₃ G] (L : F →SL[τ] G) (f : E →SLₚₜ[σ] F) (x : E) :
+    postcomp E L f x = L (f x) :=
+  DFunLike.congr_fun (postcomp_apply E L f) x
 
 variable {𝕜₁ 𝕜₂ M E F : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂}
     [AddCommGroup E] [TopologicalSpace E] [Module 𝕜₁ E] [AddCommGroup F] [TopologicalSpace F]
@@ -42,3 +60,28 @@ theorem ContinuousLinearMap.toPointwiseConvergenceCLM_injective {𝕜₁ 𝕜₂
     [IsTopologicalAddGroup F] [Module 𝕜₂ F] [ContinuousConstSMul 𝕜₂ F] :
     Function.Injective (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F) :=
   fun _ _ h ↦ ContinuousLinearMap.ext fun v ↦ congrArg (fun T : E →SLₚₜ[σ] F ↦ T v) h
+
+/-- A map lies in the closure of a set `s` of maps for the topology of pointwise convergence
+exactly when it is the pointwise limit, along some nontrivial filter, of maps eventually in `s`. -/
+theorem ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff {𝕜₁ 𝕜₂ E F : Type*}
+    [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂} [AddCommGroup E] [TopologicalSpace E]
+    [Module 𝕜₁ E] [ContinuousSMul 𝕜₁ E] [AddCommGroup F] [TopologicalSpace F]
+    [IsTopologicalAddGroup F] [Module 𝕜₂ F] [ContinuousConstSMul 𝕜₂ F] {s : Set (E →SL[σ] F)}
+    {T : E →SL[σ] F} :
+    toPointwiseConvergenceCLM 𝕜₂ σ E F T ∈ closure (toPointwiseConvergenceCLM 𝕜₂ σ E F '' s) ↔
+      ∃ l : Filter (E →SL[σ] F), l.NeBot ∧ (∀ᶠ A in l, A ∈ s) ∧
+        ∀ x, Tendsto (fun A => A x) l (𝓝 (T x)) := by
+  set q := toPointwiseConvergenceCLM 𝕜₂ σ E F
+  constructor
+  · intro h
+    -- Pull the neighbourhood filter within `q '' s` back along the bijection `q`.
+    refine ⟨comap q (𝓝[q '' s] (q T)),
+      (mem_closure_iff_nhdsWithin_neBot.mp h).comap_of_surj fun p => ⟨p, rfl⟩,
+      mem_comap.mpr ⟨_, self_mem_nhdsWithin, ?_⟩, fun x => ?_⟩
+    · rintro A ⟨B, hB, hBA⟩
+      exact toPointwiseConvergenceCLM_injective hBA ▸ hB
+    · exact PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.mp
+        (tendsto_comap.mono_right nhdsWithin_le_nhds) x
+  · rintro ⟨l, hl, hs, hT⟩
+    exact mem_closure_of_tendsto (PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.mpr hT)
+      (hs.mono fun A hA => ⟨A, hA, rfl⟩)

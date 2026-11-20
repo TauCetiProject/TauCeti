@@ -372,12 +372,12 @@ lemma sections_ext_of_isAffineOpen {M : X.Modules} {V : X.Opens} {s t : Γ(M, V)
     (h : ∀ (U : X.Opens), IsAffineOpen U → ∀ hUV : U ≤ V,
       M.presheaf.map (homOfLE hUV).op s = M.presheaf.map (homOfLE hUV).op t) : s = t :=
   TopCat.Sheaf.eq_of_locally_eq' (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X)
-    (fun U : {U : X.affineOpens // U.1 ≤ V} ↦ U.1.1) V (fun U ↦ homOfLE U.2)
+    (fun U : {U : X.affineOpens // U.val ≤ V} ↦ U.val.val) V (fun U ↦ homOfLE U.property)
     (fun x hx ↦ by
       obtain ⟨_, ⟨U, hU, rfl⟩, hxU, hUV⟩ :=
-        X.isBasis_affineOpens.exists_subset_of_mem_open hx V.2
+        X.isBasis_affineOpens.exists_subset_of_mem_open hx V.is_open'
       exact TopologicalSpace.Opens.mem_iSup.2 ⟨⟨⟨U, hU⟩, hUV⟩, hxU⟩)
-    s t fun U ↦ h _ U.1.2 U.2
+    s t fun U ↦ h _ U.val.property U.property
 
 end AffineExt
 
@@ -429,9 +429,9 @@ lemma unitHomEquivTop_zero :
     M.unitHomEquivTop (0 : (show X.Modules from SheafOfModules.unit X.ringCatSheaf) ⟶ M) = 0 := by
   exact (unitHomEquivTop_apply M _).trans rfl
 
-@[simp]
 lemma unitHomEquivTop_symm_val_app (t : Γ(M, ⊤)) (U : X.Opens) (r : Γ(X, U)) :
-    (M.unitHomEquivTop.symm t).val.app (op U) r = r • M.presheaf.map U.leTop.op t :=
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    ((M.unitHomEquivTop.symm t).val.app (op U) r = r • M.presheaf.map U.leTop.op t) :=
   (rfl)
 
 /-- Composing a morphism `𝒪_X ⟶ M` with `p : M ⟶ N` applies `p` to the corresponding global

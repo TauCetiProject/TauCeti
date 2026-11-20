@@ -83,10 +83,7 @@ theorem extendPoint_ofConv_apply (H : Type v) [Semiring H] [_root_.HopfAlgebra R
 theorem extendPoint_self (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
     (g : points (H := H) (CommAlgCat.of R R)) :
     extendPoint H (CommAlgCat.of R R) g = g := by
-  apply WithConv.ofConv_injective
-  ext h
-  simpa only [Algebra.algebraMap_self, RingHom.id_apply] using
-    extendPoint_ofConv_apply H (CommAlgCat.of R R) g h
+  simp only [extendPoint, Algebra.ofId_self, AlgHom.mapValue_id, MonoidHom.id_apply]
 
 /-- Post-composition of an extended point is extension to the target algebra. -/
 theorem mapValue_extendPoint (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
@@ -190,10 +187,8 @@ algebra: every value-algebra morphism `φ : A ⟶ B` maps `S A` into `S B`, and 
     CommAlgCat.{w} R ⥤ GrpCat.{max v w} where
   obj A := GrpCat.of (S A)
   map {A B} φ := GrpCat.ofHom
-    (((AlgHom.mapValue (H := H) φ.hom).domRestrict (S A)).codRestrict (S B) fun g ↦ hS φ g.2)
-  map_id A := GrpCat.ext fun g ↦ Subtype.ext <| by
-    simp only [CommAlgCat.hom_id, AlgHom.mapValue_id]
-    rfl
+    (((AlgHom.mapValue (H := H) φ.hom).domRestrict (S A)).codRestrict (S B) fun g ↦ hS φ g.property)
+  map_id A := GrpCat.ext fun g ↦ Subtype.ext <| by simp
   map_comp φ ψ := GrpCat.ext fun g ↦ Subtype.ext <| by
     simp only [CommAlgCat.hom_comp, AlgHom.mapValue_comp]
     rfl
@@ -217,7 +212,7 @@ lemma subgroupFunctor_map
     {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
     (subgroupFunctor (H := H) S hS).map φ = GrpCat.ofHom
       (((AlgHom.mapValue (H := H) φ.hom).domRestrict (S A)).codRestrict (S B)
-        fun g ↦ hS φ g.2) :=
+        fun g ↦ hS φ g.property) :=
   rfl
 
 /-- The inclusion of a stable family of point subgroups into the functor of points is natural. -/
