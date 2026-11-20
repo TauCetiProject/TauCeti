@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.RingTheory.Jacobson.Ideal
 import Mathlib.Algebra.Polynomial.Div
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Values of polynomials on the Jacobson radical
@@ -32,7 +33,8 @@ theorem isUnit_eval_of_isUnit_coeff_zero_of_mem_jacobson {R : Type*} [CommRing R
   rw [← coeff_zero_eq_eval_zero, sub_zero, sub_eq_iff_eq_add] at hr
   obtain ⟨u, hu⟩ := hP
   -- `P(x) = x r + u = (x (r u⁻¹) + 1) u`, and `x (r u⁻¹) + 1` is a unit.
-  have := (Ring.mem_jacobson_iff.mp hx (r * ↑u⁻¹)).mul u.isUnit
-  rwa [add_one_mul, mul_assoc, mul_assoc, u.inv_mul, mul_one, hu, ← hr] at this
+  have h : P.eval x = (x * (r * ↑u⁻¹) + 1) * u := by
+    linear_combination hr - hu - x * r * u.inv_mul
+  exact h ▸ (Ring.mem_jacobson_iff.mp hx _).mul u.isUnit
 
 end Polynomial

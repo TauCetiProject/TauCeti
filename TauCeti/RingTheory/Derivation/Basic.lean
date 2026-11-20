@@ -46,7 +46,7 @@ unit, without factoring it.
 * `Derivation.iterate_smul_apply`: iterates of scalar multiples of a derivation.
 * `Derivation.exists_iterate_smul_eq_zero`: scalar multiples preserve local nilpotence.
 * `Derivation.leibniz_ringInverse`: the derivative of `Ring.inverse a`.
-* `Derivation.leibniz_inverse_factorial_mul_pow_succ`: the derivative of the divided power
+* `Derivation.leibniz_ringInverse_factorial_mul_pow_succ`: the derivative of the divided power
   `x ^ (j + 1) / (j + 1)!` when `D x = 1`.
 * `Derivation.squarefree_of_isUnit`: an element whose derivative is a unit is squarefree.
 -/
@@ -159,14 +159,18 @@ theorem leibniz_ringInverse (D : Derivation R A M) (a : A) :
 open scoped Nat in
 /-- If `D x = 1` and `(j + 1)!` is a unit, the derivative of the divided power
 `x ^ (j + 1) / (j + 1)!` is `x ^ j / j!`. -/
-theorem leibniz_inverse_factorial_mul_pow_succ (D : Derivation R A A) {x : A} (hx : D x = 1)
+theorem leibniz_ringInverse_factorial_mul_pow_succ (D : Derivation R A A) {x : A} (hx : D x = 1)
     {j : ℕ} (hj : IsUnit ((j + 1)! : A)) :
     D (Ring.inverse ((j + 1)! : A) * x ^ (j + 1)) = Ring.inverse (j ! : A) * x ^ j := by
   have hfac : ((j + 1)! : A) = (j + 1 : A) * j ! := by
     rw [Nat.factorial_succ, Nat.cast_mul, Nat.cast_succ]
   have hj₁ : IsUnit (j + 1 : A) := isUnit_of_mul_isUnit_left (hfac ▸ hj)
-  rw [leibniz, leibniz_ringInverse, map_natCast, leibniz_pow, hx, hfac, Ring.inverse_mul (.inl hj₁)]
-  simp [mul_assoc, Ring.inverse_mul_cancel_left _ _ hj₁]
+  -- The constant `(j + 1)!⁻¹` has derivative zero, and `D (x ^ (j + 1)) = (j + 1) x ^ j`.
+  calc D (Ring.inverse ((j + 1)! : A) * x ^ (j + 1))
+      = Ring.inverse ((j + 1)! : A) * ((j + 1 : A) * x ^ j) := by
+        simp [leibniz_ringInverse, leibniz_pow, hx, mul_comm]
+    _ = Ring.inverse (j ! : A) * x ^ j := by
+        rw [hfac, Ring.inverse_mul (.inl hj₁), mul_assoc, Ring.inverse_mul_cancel_left _ _ hj₁]
 
 end Ring
 

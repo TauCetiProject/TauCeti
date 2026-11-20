@@ -48,6 +48,8 @@ at most `n (n - 1)`, which depends only on `D` and `e`.
 
 ## Main results
 
+* `TauCeti.eval_katzPolynomial_eq_det`: for every `x`, `P(x)` is the determinant of the vectors
+  `∑_{j < n} (x ^ j / j!) c(i, j)` in the basis `b`.
 * `TauCeti.eval_katzPolynomial`: `P(x) = det (D^i c(b, x))_{i < n}` when `D` satisfies the
   Leibniz rule, `(n - 1)!` is a unit and `x′ = 1`.
 * `TauCeti.coeff_katzPolynomial_zero`, `TauCeti.natDegree_katzPolynomial_le`: `P(0) = 1` and
@@ -259,7 +261,7 @@ private theorem apply_sum_katzJetCoeff (hD : ∀ (r : R) (m : M), D (r • m) = 
   simp only [Nat.factorial_zero, Nat.cast_one, Ring.inverse_one, pow_zero, mul_one,
     Derivation.map_one_eq_zero, zero_smul, smul_zero, add_zero]
   refine sum_congr rfl fun j hj ↦ ?_
-  rw [Differential.deriv.leibniz_inverse_factorial_mul_pow_succ hx (isUnit_of_dvd_unit
+  rw [Differential.deriv.leibniz_ringInverse_factorial_mul_pow_succ hx (isUnit_of_dvd_unit
     (Nat.cast_dvd_cast (Nat.factorial_dvd_factorial (by simp at hj ⊢; omega))) hn)]
 
 /-- **The iterates of Katz's candidate.** If `D` satisfies the Leibniz rule, `(n - 1)!` is a unit
@@ -296,7 +298,7 @@ theorem katzPolynomial_def : katzPolynomial D b = (Matrix.of fun k i : Fin n ↦
 
 /-- The value at `x` of `katzPolynomial D b`, for any `x`, is the determinant of the vectors
 `∑_{j < n} (x ^ j / j!) c(i, j)` in the basis `b`. -/
-private theorem eval_katzPolynomial_eq_det (x : R) : (katzPolynomial D b).eval x =
+theorem eval_katzPolynomial_eq_det (x : R) : (katzPolynomial D b).eval x =
     b.det fun i : Fin n ↦ ∑ j ∈ range n, ((j ! : R)⁻¹ʳ * x ^ j) • katzJetCoeff D b i j := by
   rw [katzPolynomial, ← coe_evalRingHom, RingHom.map_det, Basis.det_apply]
   congr 1
@@ -386,8 +388,10 @@ omit [Differential R] in
 `katzPolynomial D b` at them generate the unit ideal. -/
 theorem span_eval_katzPolynomial_eq_top {N : ℕ} (hN : n * (n - 1) < N) {x : Fin N → R}
     (hx : Pairwise fun i j ↦ IsUnit (x i - x j)) :
-    Ideal.span (Set.range fun i ↦ (katzPolynomial D b).eval (x i)) = ⊤ :=
-  span_eval_eq_top_of_natDegree_lt _ ((natDegree_katzPolynomial_le D b).trans_lt hN) (by simp) hx
+    Ideal.span (Set.range fun i ↦ (katzPolynomial D b).eval (x i)) = ⊤ := by
+  rw [span_eval_eq_contentIdeal_of_natDegree_lt _ ((natDegree_katzPolynomial_le D b).trans_lt hN)
+    hx, Ideal.eq_top_iff_one, ← coeff_katzPolynomial_zero D b]
+  exact coeff_mem_contentIdeal _ 0
 
 /-- **Katz's cyclic-vector theorem, global form.** Suppose `D` satisfies the Leibniz rule,
 `(n - 1)!` is a unit, and `x₀, …, x_{N-1}` are `N > n (n - 1)` elements with `xᵢ′ = 1` whose
