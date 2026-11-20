@@ -109,7 +109,7 @@ theorem isComplement'_zpowers_e₁_iff {D : Subgroup KleinFour} :
       isComplement'_zpowers_e₁_zpowers (Or.inr rfl)]
 
 /-- `⟨e₂⟩` is a local complement of `⟨e₁⟩` in every Sylow `2`-subgroup of `KleinFour`. -/
-theorem isLocalComplement_zpowers_e₁_sylow (P : Sylow 2 KleinFour) :
+theorem isLocalComplement_zpowers_e₁_sylow {P : Sylow 2 KleinFour} :
     (zpowers e₁).IsLocalComplement (zpowers e₂) P := by
   -- The `2`-group `KleinFour` is its own unique Sylow `2`-subgroup.
   rw [P.maximal_isPGroup.eq_of_le (isPGroup_kleinFour.to_subgroup ⊤) le_top,
@@ -144,10 +144,15 @@ theorem transvection_apply (w : KleinFour) :
     transvection w = ofAdd ((toAdd w).1 + (toAdd w).2, (toAdd w).2) :=
   (rfl)
 
+-- High priority: these basis normal forms must fire before the coordinate expansion
+-- `transvection_apply`, so that `simp` keeps the named basis elements.
+@[simp high]
 theorem transvection_e₁ : transvection e₁ = e₁ := by decide
 
+@[simp high]
 theorem transvection_e₂ : transvection e₂ = e₁ * e₂ := by decide
 
+@[simp high]
 theorem transvection_e₁_mul_e₂ : transvection (e₁ * e₂) = e₂ := by decide
 
 theorem orderOf_transvection : orderOf transvection = 2 := by
@@ -209,7 +214,7 @@ theorem not_forall_exists_invariant_complement_of_eq :
   not_exists_invariant_complement_transvection <|
     h KleinFour (zpowers transvection) 2 (zpowers e₁) (isPGroup_kleinFour.to_subgroup _)
       isPGroup_zpowers_transvection (fun a _ => smul_mem_zpowers_e₁_of_transvection a) default
-      ⟨_, isLocalComplement_zpowers_e₁_sylow default⟩
+      ⟨_, isLocalComplement_zpowers_e₁_sylow⟩
 
 /-! ### The `A`-stability of `N` is needed -/
 
@@ -226,10 +231,15 @@ theorem rotation_apply (w : KleinFour) :
     rotation w = ofAdd ((toAdd w).2, (toAdd w).1 + (toAdd w).2) :=
   (rfl)
 
+-- High priority: these basis normal forms must fire before the coordinate expansion
+-- `rotation_apply`, so that `simp` keeps the named basis elements.
+@[simp high]
 theorem rotation_e₁ : rotation e₁ = e₂ := by decide
 
+@[simp high]
 theorem rotation_e₂ : rotation e₂ = e₁ * e₂ := by decide
 
+@[simp high]
 theorem rotation_e₁_mul_e₂ : rotation (e₁ * e₂) = e₁ := by decide
 
 theorem orderOf_rotation : orderOf rotation = 3 := by
@@ -273,6 +283,6 @@ theorem not_forall_exists_invariant_complement_of_not_stable :
       ∃ D : Subgroup W, N.IsComplement' D ∧ ∀ a : A, ∀ d ∈ D, a • d ∈ D := fun h =>
   not_exists_invariant_complement_rotation <|
     h KleinFour (zpowers rotation) 2 3 (zpowers e₁) (isPGroup_kleinFour.to_subgroup _)
-      isPGroup_zpowers_rotation (by decide) default ⟨_, isLocalComplement_zpowers_e₁_sylow default⟩
+      isPGroup_zpowers_rotation (by decide) default ⟨_, isLocalComplement_zpowers_e₁_sylow⟩
 
 end TauCeti.Examples.InvariantSharpness
