@@ -212,8 +212,8 @@ theorem exists_mem_differentialOperators_iff_apply_eq_zero_of_eventuallyEq [Comp
       ∀ (f : C^∞⟮I, M; ℝ⟯) (x : M), (f : M → ℝ) =ᶠ[𝓝 x] 0 → P f x = 0 := by
   constructor
   · rintro ⟨r, hP⟩ f x hf
-    simpa using TauCeti.differentialOperators_apply_eq_of_eventuallyEq hP
-      BoundarylessManifold.isInteriorPoint (g := 0) (by simpa using hf)
+    simpa using TauCeti.differentialOperators_apply_eq_of_eventuallyEq hP (g := 0)
+      (by simpa using hf)
   · intro hloc
     obtain ⟨r, hr⟩ := exists_apply_eq_zero_of_mem_smoothVanishingIdeal_pow
       (ContMDiffMap.coeFnLinearMap ∘ₗ P) isOpen_univ (fun f x _ ↦ hloc f x)
