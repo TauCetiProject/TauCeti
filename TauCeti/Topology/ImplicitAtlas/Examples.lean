@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.ImplicitAtlas.Basic
-public import Mathlib.Geometry.Manifold.ChartedSpace
+public import TauCeti.Topology.ImplicitAtlas.Smooth
 import Mathlib.Topology.Homeomorph.Lemmas
 
 /-!
@@ -18,7 +17,9 @@ for the virtual fundamental class.
 * **The manifold atlas** (`TauCeti.ImplicitAtlas.ofChartedSpace`). A Hausdorff space charted on
   `ℝⁿ` is an implicit atlas of virtual dimension `n` with an empty index set: the only thickening
   is `X_∅ = X`, it is regular everywhere, and its charts give the product model. In particular
-  the regular locus of an atlas is part of its data and may be all of `X`.
+  the regular locus of an atlas is part of its data and may be all of `X`. If `X` is a smooth
+  manifold, its smooth structure is a smooth enhancement of this atlas
+  (`TauCeti.ImplicitAtlas.isSmoothEnhancement_ofChartedSpace`).
 * **The atlas `s(x) = xᵐ` on a point** (`TauCeti.ImplicitAtlas.powAtlas`, Pardon, Example 2.3.2).
   The point `X = {0}` of virtual dimension `0`, with one index `α`, trivial group `Γ_α`, obstruction
   space `E_α = ℝ`, thickening `X_α = ℝ` and Kuranishi map `s_α(x) = xᵐ`, `m ≥ 1`. The regular locus
@@ -40,6 +41,7 @@ The thickenings of `powAtlas` are the subtypes `{x : ℝ // I = ∅ → x = 0}` 
 public section
 
 open Set Topology
+open scoped Manifold ContDiff
 
 namespace TauCeti.ImplicitAtlas
 
@@ -104,6 +106,37 @@ theorem regLocus_ofChartedSpace (I : Finset A) : (ofChartedSpace Γ E ρ n X).re
 theorem footprint_ofChartedSpace (I : Finset A) : (ofChartedSpace Γ E ρ n X).footprint I = univ :=
   eq_univ_of_forall fun y ↦ (ofChartedSpace Γ E ρ n X).mem_footprint.2
     ⟨⟨y, by simp⟩, mem_univ _, rfl⟩
+
+/-- The charts of `X` on the regular loci `X_I^reg = X` of the manifold atlas, those of `X` viewed
+as an open subset of itself. -/
+noncomputable instance (I : Finset A) :
+    ChartedSpace (EuclideanSpace ℝ (Fin n)) ((ofChartedSpace Γ E ρ n X).regLocus I) :=
+  inferInstanceAs (ChartedSpace (EuclideanSpace ℝ (Fin n)) (⊤ : TopologicalSpace.Opens X))
+
+/-- **The smooth structure of a smooth manifold is a smooth enhancement of its manifold atlas.**
+For an atlas with an empty index set, a smooth enhancement is exactly a smooth structure on `X`.
+-/
+theorem isSmoothEnhancement_ofChartedSpace [IsManifold (𝓡 n) ∞ X] :
+    (ofChartedSpace Γ E ρ n X).IsSmoothEnhancement fun _ ↦ n where
+  natCast_eq I _ := by simp [Finset.eq_empty_of_isEmpty I]
+  isManifold _ := inferInstanceAs (IsManifold (𝓡 n) ∞ (⊤ : TopologicalSpace.Opens X))
+  contMDiff_act _ _ := contMDiff_id
+  contMDiff_kuranishi _ α := (IsEmpty.false α.1).elim
+  exists_isLocalDiffeomorphAt I J _ x _ := by
+    have : IsEmpty ↥(J \ I) := ⟨fun α ↦ IsEmpty.false α.1⟩
+    -- With no extra obstruction, `y ↦ (y, s_(J \ I) y)` is the diffeomorphism `X ≃ X × 0`.
+    let Φ : Diffeomorph (𝓡 n) ((𝓡 n).prod 𝓘(ℝ, (α : ↥(J \ I)) → E α))
+        ((ofChartedSpace Γ E ρ n X).regLocus J)
+        ((ofChartedSpace Γ E ρ n X).regLocus I × ((α : ↥(J \ I)) → E α)) ∞ :=
+      { toFun y := (y, 0)
+        invFun := Prod.fst
+        left_inv _ := rfl
+        right_inv _ := Prod.ext rfl (Subsingleton.elim _ _)
+        contMDiff_toFun := contMDiff_id.prodMk contMDiff_const
+        contMDiff_invFun := contMDiff_fst }
+    refine ⟨id, Filter.Eventually.of_forall fun _ _ ↦ rfl, ?_⟩
+    convert Φ.isLocalDiffeomorph _ using 1
+    exact funext fun _ ↦ Prod.ext rfl (Subsingleton.elim _ _)
 
 end ChartedSpace
 
