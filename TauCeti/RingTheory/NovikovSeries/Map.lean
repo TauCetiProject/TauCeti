@@ -9,7 +9,7 @@ public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.Data.Finsupp.Basic
 public import TauCeti.GroupTheory.Coset.Fiber
-public import TauCeti.RingTheory.NovikovSeries.Basic
+public import TauCeti.RingTheory.NovikovSeries.Count.Basic
 
 /-!
 # Pushforward and restriction of Novikov series
@@ -26,9 +26,10 @@ by summing coefficients along the fibres of `φ`:
 `(map ρ φ hφ a).coeff h' = ∑ᶠ h ∈ φ ⁻¹' {h'}, ρ (a.coeff h)`.
 
 Since `φ` rescales periods, only finitely many nonzero coefficients of `a` lie in a fibre, and
-the result is again a Novikov series. No finiteness of the kernel of `φ` is needed. The
-pushforward is additive and satisfies the identity and composition laws, which include its
-naturality in the coefficient map. It extends the pushforward
+the result is again a Novikov series: the generating series `TauCeti.NovikovSeries.countSeries`
+of the family `h ↦ ρ (a.coeff h)` with classes `φ h`. No finiteness of the kernel of `φ` is
+needed. The pushforward is additive and satisfies the identity and composition laws, which
+include its naturality in the coefficient map. It extends the pushforward
 `Finsupp.mapDomain φ ∘ Finsupp.mapRange ρ` of the group ring, and sends series vanishing below
 the period cutoff `C` to series vanishing below `c * C`.
 
@@ -188,19 +189,15 @@ variable [AddMonoid R] [AddCommMonoid S] [AddCommMonoid T]
 under `ρ` of the coefficients at the exponents `h` with `φ h = h'`. -/
 def map (ρ : R →+ S) (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) :
     NovikovSeries R H N →+ NovikovSeries S H' N' where
-  toFun a :=
-    { coeff h' := ∑ᶠ h ∈ φ ⁻¹' {h'}, ρ (a.coeff h)
-      finite_lt C := by
-        obtain ⟨c, hc, hcφ⟩ := hφ
-        refine ((a.finite_lt (C / c)).image φ).subset ?_
-        rintro h' ⟨hh', hC⟩
-        obtain ⟨h, rfl : φ h = h', hh⟩ := exists_ne_zero_of_finsum_mem_ne_zero hh'
-        exact ⟨h, ⟨fun ha => hh (by rw [ha, map_zero]), (lt_div_iff₀' hc).2 (hcφ h ▸ hC)⟩, rfl⟩ }
+  toFun a := countSeries (N := N') φ (fun h => ρ (a.coeff h))
+    (finite_setOf_map_ne_zero_and_lt (e := id) ρ φ hφ a.finite_lt)
   map_zero' := by
     ext h'
+    rw [coeff_countSeries, coeff_zero]
     exact finsum_mem_eq_zero_of_forall_eq_zero fun h _ => by rw [coeff_zero, map_zero]
   map_add' a b := by
     ext h'
+    rw [coeff_add, coeff_countSeries, coeff_countSeries, coeff_countSeries]
     refine (finsum_mem_congr rfl fun h _ => map_add ρ _ _).trans (finsum_mem_add_distrib'
       ((a.finite_support_inter_preimage_singleton hφ h').subset fun h hh => ?_)
       ((b.finite_support_inter_preimage_singleton hφ h').subset fun h hh => ?_)) <;>
@@ -211,25 +208,24 @@ variable (ρ : R →+ S) (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c
 /-- The coefficient of a pushforward at `h'` is the sum of the images under `ρ` of the
 coefficients at the exponents in the fibre of `φ` over `h'`. -/
 theorem coeff_map (a : NovikovSeries R H N) (h' : H') :
-    (map ρ φ hφ a).coeff h' = ∑ᶠ h ∈ φ ⁻¹' {h'}, ρ (a.coeff h) := by
-  rfl
+    (map ρ φ hφ a).coeff h' = ∑ᶠ h ∈ φ ⁻¹' {h'}, ρ (a.coeff h) :=
+  coeff_countSeries h'
 
 /-- A coefficient of a pushforward is the sum over any finite set of exponents in the fibre
 containing the exponents of nonzero coefficient there. -/
 theorem coeff_map_eq_sum (a : NovikovSeries R H N) {h' : H'} (s : Finset H)
     (hs : a.support ∩ φ ⁻¹' {h'} ⊆ s) (hsφ : ∀ h ∈ s, φ h = h') :
     (map ρ φ hφ a).coeff h' = ∑ h ∈ s, ρ (a.coeff h) := by
-  rw [coeff_map]
-  exact finsum_mem_eq_sum_of_subset _
-    (fun h hh => hs ⟨mem_support.2 fun ha => hh.2 (by simp [ha]), hh.1⟩) hsφ
+  classical
+  rw [← Finset.filter_true_of_mem hsφ]
+  exact coeff_countSeries_eq_sum s fun h hh hρ =>
+    hs ⟨mem_support.2 fun ha => hρ (by rw [ha, map_zero]), hh⟩
 
 /-- Every exponent of nonzero coefficient of a pushforward is the image of an exponent of nonzero
 coefficient. -/
-theorem support_map_subset (a : NovikovSeries R H N) : (map ρ φ hφ a).support ⊆ φ '' a.support := by
-  intro h' hh'
-  rw [mem_support, coeff_map] at hh'
-  obtain ⟨h, hφh, hh⟩ := exists_ne_zero_of_finsum_mem_ne_zero hh'
-  exact ⟨h, mem_support.2 fun ha => hh (by rw [ha, map_zero]), hφh⟩
+theorem support_map_subset (a : NovikovSeries R H N) : (map ρ φ hφ a).support ⊆ φ '' a.support :=
+  support_countSeries_subset.trans <| image_mono fun _ hh =>
+    mem_support.2 fun ha => hh (by rw [ha, map_zero])
 
 /-- A pushforward has zero coefficient outside the range of the exponent homomorphism. -/
 theorem coeff_map_eq_zero_of_notMem_range (a : NovikovSeries R H N) {h' : H'}
