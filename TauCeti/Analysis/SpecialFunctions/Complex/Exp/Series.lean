@@ -48,15 +48,19 @@ noncomputable def expRemainderCoeff (n : ℕ) : ℂ := (((n + 1)! : ℂ))⁻¹ -
 theorem expRemainderCoeff_zero : expRemainderCoeff 0 = 0 := by
   simp [expRemainderCoeff]
 
+/-- Past the linear term, the remainder series agrees with the exponential series:
+`aₙ₊₁ = 1 / (n + 2)!`. -/
+@[simp]
+theorem expRemainderCoeff_succ (n : ℕ) : expRemainderCoeff (n + 1) = (((n + 2)! : ℂ))⁻¹ := by
+  simp [expRemainderCoeff]
+
 /-- The coefficients of the series of `exp z - 1 - z` are bounded by `‖aₙ‖ ≤ 1 / n!`. -/
 theorem norm_expRemainderCoeff_le (n : ℕ) : ‖expRemainderCoeff n‖ ≤ ((n ! : ℝ))⁻¹ := by
   rcases n with _ | n
   · simp
-  · have han : expRemainderCoeff (n + 1) = (((n + 1 + 1)! : ℂ))⁻¹ := by
-      simp [expRemainderCoeff]
-    rw [han, norm_inv, norm_natCast]
+  · rw [expRemainderCoeff_succ, norm_inv, norm_natCast]
     gcongr
-    exact Nat.le_succ n
+    omega
 
 /-- The series of the quadratic remainder of the exponential:
 `exp z - 1 - z = ∑ₙ aₙ z ^ (n + 1)`, with `aₙ = Complex.expRemainderCoeff n`. -/

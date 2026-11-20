@@ -155,7 +155,8 @@ with `h = ‖P‖² / (1 + ‖P‖²)` and `k = (h - 1) / 8 + 2 ‖P'‖² / (1 
 of `N(w)` is the residual of the reduced equation
 `Δw = (h exp (2w) - 1) / 8 + 2 ‖P'‖² / (1 + ‖P‖²)²`
 (`TauCeti.Vortex.coeFn_inclusionLp_reducedEquationMap`), so a zero of `N` is an
-almost-everywhere, possibly complex-valued, solution, and classical real solutions give zeros
+almost-everywhere, possibly complex-valued, solution, and the element of `H^(s+2)(ℂ)` of a
+classical real square-integrable solution is a zero
 (`TauCeti.Vortex.reducedEquationMap_eq_zero_of_laplacian_eq`). Here `h (exp (2w) - 1)` is
 computed as `(1 - (1 - h)) (exp (2w) - 1)`, since `1 - h`, unlike `h`, lies in `H^s(ℂ)`. -/
 def reducedEquationMap (hm : 0 < P.natDegree) (hs : 1 < s) (w : H^{s + 2}(ℂ)) : H^{s}(ℂ) :=
