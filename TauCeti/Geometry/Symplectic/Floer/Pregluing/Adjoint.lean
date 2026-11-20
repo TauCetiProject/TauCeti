@@ -275,15 +275,8 @@ theorem eventually_forall_norm_sub_le_preglue (ω : SymplecticForm V) {J : ℝ �
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
   obtain ⟨δ, hδ, hnear⟩ := exists_pos_forall_norm_adjointCoeff_sub_le ω hJ hH hxc hε
   obtain ⟨S, hmid⟩ := exists_forall_norm_prod_sub_le_preglue ω hx hu hv hux hdux hvx hdvx hδ
-  -- The pre-glued map is differentiable.
-  have hρ : Differentiable ℝ pregluingCutoff :=
-    (contDiff_pregluingCutoff (n := 1)).differentiable one_ne_zero
-  have hxd : Differentiable ℝ x := fun t ↦ (hx t).differentiableAt
-  have hwd (R : ℝ) : Differentiable ℝ (preglue x u v R) := by
-    rw [show preglue x u v R = fun z ↦ x z.2 + (pregluingCutoff z.1 • (u (z + (R, 0)) - x z.2) +
-        pregluingCutoff (-z.1) • (v (z - (R, 0)) - x z.2)) from
-      funext fun z ↦ by rw [← preglue_sub, add_sub_cancel]]
-    fun_prop
+  have hwd (R : ℝ) : Differentiable ℝ (preglue x u v R) :=
+    differentiable_preglue (fun t ↦ (hx t).differentiableAt) hu hv
   have hJd : Differentiable ℝ (uncurry J) := hJ.differentiable one_ne_zero
   -- Off the middle of the neck the pre-glued map is a translate near `z`; in it, use `hmid`.
   filter_upwards [eventually_ge_atTop (S + 1), eventually_ge_atTop (2 * S)] with R h₁ h₂
