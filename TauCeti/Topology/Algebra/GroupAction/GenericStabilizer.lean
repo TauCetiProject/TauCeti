@@ -56,9 +56,9 @@ the fixed-subspace calculation.
 
 public section
 
-namespace TauCeti
-
 open MulAction Set Topology
+
+namespace TauCeti
 
 variable {G X : Type*} [Group G] [MulAction G X]
 

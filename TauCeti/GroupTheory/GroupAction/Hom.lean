@@ -22,6 +22,8 @@ map whose value is a fixed point.
 For group actions, the stabilizer of the preimage of a set of values of an equivariant map is the
 stabilizer of the set; in particular the stabilizer of the image of a point is the stabilizer of
 the fibre through that point.
+Already for monoid actions, an injective map commuting with the actions sends exactly the fixed
+points into the fixed set; so an equivariant bijection carries the fixed set onto the fixed set.
 
 An equivariant map `X →[G] Y` sends each point to a point whose stabilizer contains the
 stabilizer of the first. Conversely, if every point of `X` has such a point in `Y`, an equivariant
@@ -36,6 +38,9 @@ stabilizer, and extend along the orbit.
   of values is the stabilizer of the set.
 * `TauCeti.MulAction.nonempty_mulActionHom_iff`: an equivariant map exists exactly when every
   stabilizer of `X` is contained in a stabilizer of `Y`.
+* `TauCeti.MulAction.apply_mem_fixedPoints_iff_of_injective`: an injective map commuting with the
+  actions detects fixed points.
+* `Equiv.image_fixedPoints`: an equivariant bijection carries the fixed set onto the fixed set.
 -/
 
 public section
@@ -112,6 +117,15 @@ theorem MulAction.stabilizer_apply_eq_stabilizer_preimage (f : F) (x : X) :
 
 end Stabilizer
 
+/-- An injective equivariant map sends a point into the fixed set exactly when the point lies in the
+fixed set. -/
+theorem MulAction.apply_mem_fixedPoints_iff_of_injective {M X Y : Type*} [Monoid M]
+    [MulAction M X] [MulAction M Y] {f : X → Y} (hf : ∀ (m : M) (x : X), f (m • x) = m • f x)
+    (hinj : Function.Injective f) {x : X} :
+    f x ∈ fixedPoints M Y ↔ x ∈ fixedPoints M X := by
+  simp only [mem_fixedPoints]
+  exact forall_congr' fun m ↦ by rw [← hf, hinj.eq_iff]
+
 /-- There is an equivariant map `X →[G] Y` exactly when the stabilizer of every point of `X` is
 contained in the stabilizer of some point of `Y`. -/
 theorem MulAction.nonempty_mulActionHom_iff :
@@ -140,3 +154,10 @@ theorem MulAction.nonempty_mulActionHom_iff :
   rw [hr_smul, hfix, mul_smul]
 
 end TauCeti
+
+/-- **An equivariant bijection carries the fixed set onto the fixed set.** -/
+theorem Equiv.image_fixedPoints {M X Y : Type*} [Monoid M] [MulAction M X] [MulAction M Y]
+    (e : X ≃ Y) (he : ∀ (m : M) (x : X), e (m • x) = m • e x) :
+    e '' fixedPoints M X = fixedPoints M Y :=
+  (e.eq_preimage_iff_image_eq _ _).1 <| Set.ext fun _ ↦
+    (TauCeti.MulAction.apply_mem_fixedPoints_iff_of_injective he e.injective).symm
