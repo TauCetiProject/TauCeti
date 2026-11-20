@@ -78,6 +78,9 @@ of an iterated weighted derivative as a factorial-scaled coefficient after subst
   `(e : R) * coeff (e * k) (u ^ (-k)) + coeff (e * k - 1) (u ^ (-k - 1) * u') = 0`.
 * `PowerSeries.X_pow_dvd_X_mul_derivative_sub`: `X * d⁄dX` preserves congruence modulo
   `X ^ (n + 1)`.
+* `PowerSeries.xLogDeriv`, `PowerSeries.toAdd_xLogDeriv`: `X` times the logarithmic derivative,
+  `u ↦ X * u' * u⁻¹`, as a homomorphism from the units of `R⟦X⟧` to the additive group of `R⟦X⟧`,
+  over any commutative ring.
 -/
 
 public section
@@ -251,6 +254,25 @@ theorem X_pow_dvd_X_mul_derivative_sub {a b : R⟦X⟧} {n : ℕ} (h : X ^ (n + 
     Nat.add_sub_cancel]
   push_cast
   ring
+
+/-- `X` times the logarithmic derivative, `u ↦ X * u' * u⁻¹`, turns products of units into
+sums. Unlike the logarithmic derivative over a `ℚ`-algebra it is defined over every commutative
+ring. -/
+noncomputable def xLogDeriv : R⟦X⟧ˣ →* Multiplicative R⟦X⟧ where
+  toFun u := Multiplicative.ofAdd (X * d⁄dX (u : R⟦X⟧) * ↑u⁻¹)
+  map_one' := by simp
+  map_mul' u v := by
+    rw [← ofAdd_add, Units.val_mul, mul_inv_rev, Units.val_mul, Derivation.leibniz, smul_eq_mul,
+      smul_eq_mul]
+    congr 1
+    linear_combination (X * d⁄dX (v : R⟦X⟧) * ↑v⁻¹) * u.mul_inv +
+      (X * d⁄dX (u : R⟦X⟧) * ↑u⁻¹) * v.mul_inv
+
+/-- The defining equation of `xLogDeriv`: `xLogDeriv u = X * u' * u⁻¹`. -/
+@[simp]
+theorem toAdd_xLogDeriv (u : R⟦X⟧ˣ) :
+    (xLogDeriv u).toAdd = X * d⁄dX (u : R⟦X⟧) * (↑u⁻¹ : R⟦X⟧) := by
+  simp only [xLogDeriv, MonoidHom.coe_mk, OneHom.coe_mk, toAdd_ofAdd]
 
 end CommRing
 

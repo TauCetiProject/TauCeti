@@ -30,17 +30,12 @@ division: once `e 1, …, e (r - 1)` are fixed, `e r` is the integer that remove
 `X ^ r` from the remaining quotient, because `(1 - X ^ r) ^ (-k) = 1 + k X ^ r` modulo
 `X ^ (r + 1)`.
 
-Taking `X` times the logarithmic derivative turns the product into the sum
-`X f' / f = ∑_{m ≥ 1} (∑_{d ∣ m} d e_d) X ^ m`. For `f = 1 - x X` the left side is
+Taking `X` times the logarithmic derivative (`PowerSeries.xLogDeriv`) turns the product into the
+sum `X f' / f = ∑_{m ≥ 1} (∑_{d ∣ m} d e_d) X ^ m`. For `f = 1 - x X` the left side is
 `-∑_{m ≥ 1} x ^ m X ^ m`, so Möbius inversion gives `m e_m = -∑_{d ∣ m} μ(d) x ^ (m / d)`. Since the
 recursion produces integers, this proves the necklace congruence: `m` divides
 `∑_{d ∣ m} μ(d) x ^ (m / d)` for every integer `x`. The resulting factorization of `1 - x X` is
 the cyclotomic identity of Metropolis and Rota.
-
-## Main definitions
-
-* `PowerSeries.xLogDeriv`: `X` times the logarithmic derivative, `u ↦ X * u' * u⁻¹`, as a
-  homomorphism from the units of `R⟦X⟧` to the additive group of `R⟦X⟧`, over any commutative ring.
 
 ## Main results
 
@@ -91,25 +86,6 @@ theorem eq_of_forall_X_pow_dvd_sub {a b : R⟦X⟧} (h : ∀ n : ℕ, X ^ (n + 1
   ext n
   rw [← sub_eq_zero, ← map_sub]
   exact X_pow_dvd_iff.1 (h n) n (Nat.lt_succ_self n)
-
-/-- `X` times the logarithmic derivative, `u ↦ X * u' * u⁻¹`, turns products of units into
-sums. Unlike the logarithmic derivative over a `ℚ`-algebra it is defined over every commutative
-ring. -/
-noncomputable def xLogDeriv : R⟦X⟧ˣ →* Multiplicative R⟦X⟧ where
-  toFun u := Multiplicative.ofAdd (X * d⁄dX (u : R⟦X⟧) * ↑u⁻¹)
-  map_one' := by simp
-  map_mul' u v := by
-    rw [← ofAdd_add, Units.val_mul, mul_inv_rev, Units.val_mul, Derivation.leibniz, smul_eq_mul,
-      smul_eq_mul]
-    congr 1
-    linear_combination (X * d⁄dX (v : R⟦X⟧) * ↑v⁻¹) * u.mul_inv +
-      (X * d⁄dX (u : R⟦X⟧) * ↑u⁻¹) * v.mul_inv
-
-/-- The defining equation of `xLogDeriv`: `xLogDeriv u = X * u' * u⁻¹`. -/
-@[simp]
-theorem toAdd_xLogDeriv (u : R⟦X⟧ˣ) :
-    (xLogDeriv u).toAdd = X * d⁄dX (u : R⟦X⟧) * (↑u⁻¹ : R⟦X⟧) := by
-  simp only [xLogDeriv, MonoidHom.coe_mk, OneHom.coe_mk, toAdd_ofAdd]
 
 /-- The constant coefficient of an integer power of a unit `u` of `R⟦X⟧` is the same power of
 the constant coefficient of `u`, as a unit of `R`. -/
