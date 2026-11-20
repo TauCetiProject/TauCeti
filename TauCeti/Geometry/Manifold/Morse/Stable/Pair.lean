@@ -281,7 +281,7 @@ theorem isClosed_unstableSet_inter_stableSet (h : IsMorseSmalePair hX₀ hX₁)
   obtain rfl : b = q := hbq.resolve_right fun hlt ↦ by omega
   exact hy'
 
-/-- **Finiteness of the rigid trajectories for a pair.** Let `(X₀, X₁)` be a Morse–Smale pair of
+/-- **Rigid intersections for a pair are finite.** Let `(X₀, X₁)` be a Morse–Smale pair of
 Morse–Smale pseudo-gradients. If the index of `p` for `f₀` is at most the index of `q` for `f₁`,
 then `W^u_{X₀}(p) ∩ W^s_{X₁}(q)` is finite. By `unstableSet_inter_stableSet_eq_empty` it is empty
 unless the indices are equal. Once continuation trajectories are identified with these

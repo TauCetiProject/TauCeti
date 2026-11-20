@@ -62,8 +62,6 @@ for a negative-gradient flow on a vector space. The intersection is read in the 
   intersection that is transverse at each of its points is a smooth manifold of dimension
   `ind a - ind b`.
 
-These four results allow the unstable manifold to be taken for one pseudo-gradient `X₀`, adapted
-to `f₀`, and the stable manifold for another, `X₁`, adapted to `f₁`, as for continuation maps.
 * `TauCeti.IsAdaptedPseudoGradient.manifoldMorseIndex_lt_of_mem_unstableSet_inter_stableSet`:
   along a transverse trajectory joining distinct critical points, the Morse index drops strictly.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`: the Morse–Smale condition, with
@@ -81,6 +79,14 @@ to `f₀`, and the stable manifold for another, `X₁`, adapted to `f₁`, as fo
   `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.of_manifoldMorseIndex_eq_zero_or_eq_finrank`: if at
   most one critical point has an index other than `0` and `n`, in particular if none has, every
   adapted pseudo-gradient is Morse–Smale.
+
+The chart, tangent-space, dimension and manifold results
+`exists_unstableSet_inter_stableSet_chart`, `span_mtangentConeAt_unstableSet_inter_stableSet`,
+`finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex` and
+`exists_unstableSet_inter_stableSet_isManifold` (in the namespace
+`TauCeti.IsAdaptedPseudoGradient`) allow the unstable manifold to be taken for one pseudo-gradient
+`X₀`, adapted to `f₀`, and the stable manifold for another, `X₁`, adapted to `f₁`, as for
+continuation maps.
 
 ## References
 
