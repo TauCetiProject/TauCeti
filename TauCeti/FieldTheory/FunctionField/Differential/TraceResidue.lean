@@ -100,7 +100,7 @@ theorem finite_support_traceResidue_coord (ω : ↥(weilDifferentialSpace k F))
     funext P
     exact (repartitionDualComponent_eq_traceResidue_coord hF hex (ht P) ω _).symm
   rw [heq]
-  exact finite_support_repartitionDualComponent_apply ω.2 a
+  exact finite_support_repartitionDualComponent_apply ω.property a
 
 /-- The residue theorem with residue-field traces: if `ω = z_P dt_P` at each place,
 then `∑_P Tr(res_{P,t_P}(z_P u)) = 0` for every function `u`. The summands have finite
@@ -113,7 +113,7 @@ theorem finsum_traceResidue_coord_eq_zero (ω : ↥(weilDifferentialSpace k F)) 
       ((weilDifferentialBasisOfSeparating hF hex (htr P)).coord () ω * u) = 0 := by
   let := weilDifferentialSpaceModule hF
   simp_rw [← repartitionDualComponent_eq_traceResidue_coord hF hex (ht _)]
-  exact finsum_repartitionDualComponent_eq_zero hF ω.2 u
+  exact finsum_repartitionDualComponent_eq_zero hF ω.property u
 
 end Family
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Archimedean
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Local
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Brauer.SumFormula
@@ -14,16 +15,17 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Global.Brauer.SumFormula
 
 For a number field `K`, two global classes in `H¹(K, E[m])` give local classes at every place.
 The finite-place terms are their local Tate pairings embedded in `ℚ/ℤ` by `k ↦ k/m`;
-the archimedean terms are the archimedean Brauer invariants of their Weil cup product.
-The sum of these terms is zero. The finite-place pairings have finite support, so the finite
-sum over all finite places is an honest sum, not the junk value of `finsum` on an infinitely
-supported function. The archimedean terms vanish at complex places but need not vanish at
-real places.
+the archimedean terms are the archimedean local Tate pairings embedded in `ℚ/ℤ` by `k ↦ k/m`
+(equivalently, the archimedean Brauer invariants of their Weil cup product).
+The sum of these terms is zero, both in `ℚ/ℤ` and directly in `ZMod m`
+(`WeierstrassCurve.finsum_localTateWeilPairing_add_sum_infiniteTateWeilPairing_eq_zero`).
+The finite-place pairings have finite support, so the finite sum over all finite places is an
+honest sum, not the junk value of `finsum` on an infinitely supported function. The archimedean
+terms vanish at complex places but need not vanish at real places.
 
 This is the reciprocity input for comparing global Selmer conditions with their orthogonals.
 It follows by localizing the Brauer class of the global Weil cup product and applying the
-Brauer sum formula. It does not assert orthogonality of local Kummer images or exactness of a
-global duality sequence.
+Brauer sum formula.
 
 ## References
 
@@ -58,6 +60,21 @@ theorem finiteInvAt_torsionWeilBrauerPairing (v : HeightOneSpectrum (𝓞 K))
   rw [finiteInvAt_apply, W.brBaseChange_torsionWeilBrauerPairing m hm τ]
   exact ((W⁄(v.adicCompletion K)).toRatAddCircle_localTateWeilPairing m _ _ _).symm
 
+omit [NumberField K] in
+/-- At an infinite place, the local invariant of the global Weil cup product is the archimedean
+local Tate pairing of its restrictions, embedded in `ℚ/ℤ` by `k ↦ k/m`. -/
+theorem infiniteInvAt_torsionWeilBrauerPairing (w : InfinitePlace K)
+    (τ' : SeparableClosure K →ₐ[K] SeparableClosure w.Completion) :
+    have := hm.neZero_natCast
+    infiniteInvAt K w (W.torsionWeilBrauerPairing m hm a b) =
+      ZMod.toRatAddCircle m
+        ((W⁄w.Completion).infiniteTateWeilPairing m
+          (W.torsionRes τ' m a) (W.torsionRes τ' m b)) := by
+  have := hm.neZero_natCast
+  rw [infiniteInvAt_apply, W.brBaseChange_torsionWeilBrauerPairing m hm τ']
+  exact ((W⁄w.Completion).toRatAddCircle_infiniteTateWeilPairing m
+    (by simpa using hm.map (algebraMap K w.Completion)) _ _).symm
+
 /-- The local Tate pairings of restrictions of two global classes vanish at all but finitely
 many finite places. -/
 theorem hasFiniteSupport_localTateWeilPairing_torsionRes
@@ -73,9 +90,9 @@ theorem hasFiniteSupport_localTateWeilPairing_torsionRes
   rw [Function.mem_support, W.finiteInvAt_torsionWeilBrauerPairing m hm a b v (τ v)]
   exact fun h ↦ hv (ZMod.toRatAddCircle_injective m (h.trans (map_zero _).symm))
 
-/-- **Global reciprocity for the Weil cup product.** The finite-place local Tate pairings of
-two global torsion-cohomology classes, embedded in `ℚ/ℤ` by `k ↦ k/m`, together with the
-archimedean Brauer invariants of their Weil cup product, sum to zero.
+/-- **Global reciprocity for the Weil cup product (`ℚ/ℤ` form).** The finite-place local Tate
+pairings of two global torsion-cohomology classes, embedded in `ℚ/ℤ` by `k ↦ k/m`, together with
+the archimedean Brauer invariants of their Weil cup product, sum to zero.
 The finite-place sum has finite support by
 `hasFiniteSupport_localTateWeilPairing_torsionRes`. All choices of embeddings of separable
 closures are allowed, independently at each place. -/
@@ -104,4 +121,30 @@ theorem finsum_toRatAddCircle_localTateWeilPairing_add_sum_infiniteInvMap_eq_zer
   intro w _
   rw [infiniteInvAt_apply, W.brBaseChange_torsionWeilBrauerPairing m hm (τ' w)]
 
+/-- **Global reciprocity for the Weil cup product (`ZMod m` form).** For two global classes in
+`H¹(K, E[m])`, the finite-place `ZMod m`-valued local Tate pairings and the infinite-place
+`ZMod m`-valued archimedean local Tate pairings sum to zero in `ZMod m`. -/
+theorem finsum_localTateWeilPairing_add_sum_infiniteTateWeilPairing_eq_zero
+    (τ : ∀ v : HeightOneSpectrum (𝓞 K),
+      SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    (τ' : ∀ w : InfinitePlace K, SeparableClosure K →ₐ[K] SeparableClosure w.Completion) :
+    have := hm.neZero_natCast
+    (∑ᶠ v : HeightOneSpectrum (𝓞 K),
+      (W⁄(v.adicCompletion K)).localTateWeilPairing m
+        (by simpa using hm.map (algebraMap K (v.adicCompletion K)))
+        (W.torsionRes (τ v) m a) (W.torsionRes (τ v) m b)) +
+      ∑ w : InfinitePlace K,
+        (W⁄w.Completion).infiniteTateWeilPairing m
+          (W.torsionRes (τ' w) m a) (W.torsionRes (τ' w) m b) = 0 := by
+  have := hm.neZero_natCast
+  apply ZMod.toRatAddCircle_injective m
+  rw [map_zero, map_add,
+    (ZMod.toRatAddCircle m).map_finsum
+      (W.hasFiniteSupport_localTateWeilPairing_torsionRes m hm a b τ),
+    map_sum]
+  convert W.finsum_toRatAddCircle_localTateWeilPairing_add_sum_infiniteInvMap_eq_zero
+    m hm a b τ τ' using 2
+  refine Finset.sum_congr rfl fun w _ ↦ ?_
+  exact (W⁄w.Completion).toRatAddCircle_infiniteTateWeilPairing m
+    (by simpa using hm.map (algebraMap K w.Completion)) _ _
 end WeierstrassCurve

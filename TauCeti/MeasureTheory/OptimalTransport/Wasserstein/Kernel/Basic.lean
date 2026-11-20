@@ -143,7 +143,7 @@ private theorem wassersteinEDist_map_comp_map_comp_le_eLpNorm (hp1 : 1 ≤ p) (h
     (lintegral_mono_ae (hκη.mono fun z hz ↦ ?_))
   -- pointwise, weak duality for the pair of kernel laws
   refine (ofReal_integral_add_integral_le_wassersteinEDist_add_rpow hp1 hp
-    (measurable_subtype_coe.comp hq₁) (measurable_subtype_coe.comp hq₂)
+    (measurable_subtypeVal.comp hq₁) (measurable_subtypeVal.comp hq₂)
     (fun y y' ↦ hfeas (q₁ y) (q₂ y')) (hf₁ _) (hf₂ _)).trans (ENNReal.rpow_le_rpow hz hr.le)
 
 /-- **The quantized estimate.** For quantizers `Q₁`, `Q₂` with values in a common finite set, the
@@ -176,13 +176,13 @@ private theorem wassersteinEDist_map_comp_map_comp_le (hp1 : 1 ≤ p) (hp : p �
   have he₁ : Measurable e₁ := measurable_eLpNorm_kernel κ hd₁.stronglyMeasurable
   have he₂ : Measurable e₂ := measurable_eLpNorm_kernel η hd₂.stronglyMeasurable
   -- the inclusion of `t` is an isometry, so it does not increase the distance
-  have hα : α.map (↑) = (κ ∘ₘ μ).map Q₁ := Measure.map_map measurable_subtype_coe hq₁
-  have hβ : β.map (↑) = (η ∘ₘ ν).map Q₂ := Measure.map_map measurable_subtype_coe hq₂
+  have hα : α.map (↑) = (κ ∘ₘ μ).map Q₁ := Measure.map_map measurable_subtypeVal hq₁
+  have hβ : β.map (↑) = (η ∘ₘ ν).map Q₂ := Measure.map_map measurable_subtypeVal hq₂
   have hincl : wassersteinEDist p ((κ ∘ₘ μ).map Q₁) ((η ∘ₘ ν).map Q₂) ≤
       wassersteinEDist p α β := by
     rw [← hα, ← hβ]
-    simpa using wassersteinEDist_map_le_mul measurable_edist measurable_subtype_coe
-      isometry_subtype_coe.lipschitzWith α β (p := p)
+    simpa using wassersteinEDist_map_le_mul measurable_edist measurable_subtypeVal
+      isometry_subtypeVal.lipschitzWith α β (p := p)
   -- on the finite subspace, strong duality compares the distance with the source coupling
   set G : X × X' → ℝ≥0∞ := fun z ↦ g z + (e₁ z.1 + e₂ z.2)
   have hGm : AEMeasurable G π :=

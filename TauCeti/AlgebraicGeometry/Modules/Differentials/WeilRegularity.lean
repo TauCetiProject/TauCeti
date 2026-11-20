@@ -128,7 +128,7 @@ theorem mem_range_rationalDifferential_iff_weilDifferentialOrder_nonneg
         Set.range (rationalDifferential k U) ↔
       ∀ (y : CodimensionOnePoint X) (hy : (y : X) ∈ U),
         letI := hDVR y hy
-        0 ≤ weilDifferentialOrder hF hk ω.2 hω (X.toPlace (k := k) (y : X)) := by
+        0 ≤ weilDifferentialOrder hF hk ω.property hω (X.toPlace (k := k) (y : X)) := by
   rw [mem_range_rationalDifferential_iff_codimensionOne k U hU]
   apply forall_congr'
   intro y
@@ -138,7 +138,7 @@ theorem mem_range_rationalDifferential_iff_weilDifferentialOrder_nonneg
   rw [mem_range_rationalDifferentialStalk_iff_mem_range_map]
   obtain ⟨z, hz⟩ := exists_span_D_eq_top_of_isInvertible (k := k) (y : X)
   exact (X.toPlace (k := k) (y : X)).mem_range_map_iff_weilDifferentialOrder_nonneg_of_span_D_eq_top
-    hF hk ht z.2 hz ω hω
+    hF hk ht z.property hz ω hω
 
 variable [IsLocallyNoetherian X]
 
@@ -154,7 +154,7 @@ theorem smul_D_mem_range_rationalDifferential_iff (U : X.Opens) [Nonempty U]
       f = 0 ∨ ∀ (y : CodimensionOnePoint X) (hy : (y : X) ∈ U),
         letI := hDVR y hy;
         -weilDifferentialOrder hF hk
-          (weilDifferentialOfSeparating hF ht).2
+          (weilDifferentialOfSeparating hF ht).property
           (coe_weilDifferentialOfSeparating_ne_zero hF ht) (X.toPlace (k := k) (y : X)) ≤
             X.ord f y := by
   let := weilDifferentialSpaceModule hF
@@ -178,7 +178,7 @@ theorem smul_D_mem_range_rationalDifferential_iff (U : X.Opens) [Nonempty U]
   intro hy
   let := hDVR y hy
   have hord := weilDifferentialOrder_repartitionDualMul hF hk
-    (weilDifferentialOfSeparating hF ht).2
+    (weilDifferentialOfSeparating hF ht).property
     (coe_weilDifferentialOfSeparating_ne_zero hF ht) (Units.mk0 f hf)
     (X.toPlace (k := k) (y : X))
   simp only [Units.val_mk0, CodimensionOnePoint.toPlace_ord] at hord

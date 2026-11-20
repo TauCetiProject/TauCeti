@@ -61,7 +61,7 @@ private def polyadSigma (c : κ) (P : Polyad3 C.skeleton) (hP : P ∈ C.polyads)
       PairColorPlacement3 φ :=
   ⟨⟨![P.c₀, P.c₁, P.c₂], fun i ↦ by fin_cases i; exacts [P.hc₀, P.hc₁, P.hc₂]⟩,
     ⟨fun p ↦
-      if p.1.2 = 1 then P.color₀₁ else if p.1.1 = 0 then P.color₀₂ else P.color₁₂,
+      if p.val.2 = 1 then P.color₀₁ else if p.val.1 = 0 then P.color₀₂ else P.color₁₂,
       fun i j l hij hjl ↦ by
         convert hP using 1
         fin_cases i <;> fin_cases j <;> fin_cases l <;> simp at hij hjl
@@ -130,7 +130,7 @@ theorem sum_relativeDensity_mul_card_support (H : Colored3Graph κ V)
     (hC : C.IsPolyadDecomposition) (c : κ) :
     ∑ P ∈ C.polyads, (H.relativeDensity c P : ℝ) * #P.support = 6 * #{s | H.color s = c} := by
   let q (x : {x : Fin 3 → V // Function.Injective x}) : Prop :=
-    H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c
+    H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c
   have hP (P : Polyad3 C.skeleton) :
       (H.relativeDensity c P : ℝ) * #P.support = #{x ∈ P.support | q x} := by
     rw [relativeDensity_def]
@@ -146,7 +146,7 @@ theorem sum_relativeDensity_mul_card_support (H : Colored3Graph κ V)
   have hcard : #{x | q x} = Nat.factorial 3 * #{s | H.color s = c} :=
     (card_equiv (Equiv.subtypeInjectiveEquivEmbedding _ _) fun x ↦ by
       rw [mem_filter_univ, mem_filter_univ]
-      -- By definition the equivalence sends `x` to the embedding `⟨x.1, x.2⟩` used in `q`.
+      -- By definition the equivalence sends `x` to the embedding `⟨x.val, x.property⟩` used in `q`.
       rfl).trans (Set.powersetCard.card_filter_ofFinEmb fun s ↦ H.color s = c)
   simp_rw [hP]
   rw [← Nat.cast_sum, ← card_biUnion fun P _ Q _ hPQ ↦ disjoint_filter_filter

@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Fintype.CardEmbedding
 public import Mathlib.Data.Set.PowersetCard
 import TauCeti.Data.Fintype.Card.Embedding
+import TauCeti.Data.Set.PowersetCard
 
 /-!
 # Embeddings with a prescribed image of a finite subset
@@ -18,11 +19,17 @@ This separates the choices on a prescribed subset from the unconstrained remaini
 as needed when bounding the number of copies affected by a hyperedge edit.
 
 When the whole source is mapped onto a prescribed subset, the count is exact: an `n`-element
-type maps onto a prescribed `n`-element finset in exactly `n!` ways. In particular every
-`n`-element subset of `β` is the image of exactly `n!` embeddings of `Fin n`. Consequently a
-count of labelled embeddings `Fin n ↪ β` through a condition on their images is `n!` times the
-count of the `n`-element subsets satisfying it, which converts labelled copy counts into counts
-of unordered subsets.
+type maps onto a prescribed `n`-element finset in exactly `n!` ways
+(`TauCeti.natCard_embedding_map_univ_eq_factorial`). Since every `n`-element subset of `β` is the
+image of exactly `n!` embeddings of `Fin n` (`Set.powersetCard.natCard_ofFinEmb_eq`), a count of
+labelled embeddings `Fin n ↪ β` through a condition on their images is `n!` times the count of the
+`n`-element subsets satisfying it (`Set.powersetCard.card_filter_ofFinEmb`), which converts
+labelled copy counts into counts of unordered subsets.
+
+When the source is `Fin r` itself, `Set.powersetCard.card_filter_ofFinEmb_eq` counts the `r!`
+injective `r`-tuples in a finite type with a prescribed unordered image `t`, and
+`Finset.card_filter_ofFinEmb_eq_sum_factorial` decomposes any unordered predicate count on a finite
+set of injective `r`-tuples by fiber multiplicity in `{1, …, r!}`.
 -/
 
 public section
@@ -80,13 +87,15 @@ end TauCeti
 
 namespace Set.powersetCard
 
-/-- Every `n`-element subset of `β` is the image of exactly `n!` embeddings of `Fin n`. -/
-theorem natCard_ofFinEmb_eq_factorial {β : Type*} {n : ℕ} (t : powersetCard β n) :
-    Nat.card {f : Fin n ↪ β // ofFinEmb n β f = t} = n.factorial := by
-  have h := TauCeti.natCard_embedding_map_univ_eq_factorial (α := Fin n) (t := t.val)
-    (by rw [card_eq, Fintype.card_fin])
-  rw [Fintype.card_fin] at h
-  simpa only [Subtype.ext_iff, val_ofFinEmb] using h
+/-- Among injective `r`-tuples in a finite type, `r!` have a prescribed `r`-element subset `t` as
+unordered image. -/
+theorem card_filter_ofFinEmb_eq {β : Type*} [Fintype β] [DecidableEq β] {r : ℕ}
+    (t : Set.powersetCard β r) :
+    Finset.card (Finset.univ.filter fun x : {x : Fin r → β // Function.Injective x} ↦
+      ofFinEmb r β ⟨x.val, x.property⟩ = t) = r.factorial := by
+  rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card, ← natCard_ofFinEmb_eq t]
+  exact Nat.card_congr ((Equiv.subtypeInjectiveEquivEmbedding (Fin r) β).subtypeEquiv fun _ ↦
+    Iff.rfl)
 
 /-- There are `n!` times as many embeddings of `Fin n` whose image satisfies a condition as there
 are `n`-element subsets satisfying it. -/
@@ -97,7 +106,7 @@ theorem card_filter_ofFinEmb {β : Type*} [Fintype β] {n : ℕ}
   rw [Finset.card_eq_sum_card_fiberwise (f := ofFinEmb n β) (t := {s | p s})
     fun f hf ↦ by simpa using hf, mul_comm]
   refine Finset.sum_const_nat fun s hs ↦ ?_
-  rw [← natCard_ofFinEmb_eq_factorial s, Nat.card_eq_fintype_card, Fintype.card_subtype]
+  rw [← natCard_ofFinEmb_eq s, Nat.card_eq_fintype_card, Fintype.card_subtype]
   congr 1
   ext f
   simp only [Finset.mem_filter, Finset.mem_univ, true_and, and_iff_right_iff_imp]
@@ -105,3 +114,63 @@ theorem card_filter_ofFinEmb {β : Type*} [Fintype β] {n : ℕ}
   simpa using hs
 
 end Set.powersetCard
+
+namespace Finset
+
+/-- Partitioning a finite set `W` of injective `r`-tuples by unordered `r`-subset `ofFinEmb`
+expresses the count of tuples in `W` satisfying an unordered predicate `P` as a weighted sum over
+the `r!` possible positive fiber multiplicities `1, …, r!`. -/
+theorem card_filter_ofFinEmb_eq_sum_factorial {β : Type*} [Fintype β] [DecidableEq β] {r : ℕ}
+    (W : Finset {x : Fin r → β // Function.Injective x})
+    (P : Set.powersetCard β r → Prop) [DecidablePred P] :
+    (W.filter fun x ↦ P (Set.powersetCard.ofFinEmb r β ⟨x.val, x.property⟩)).card =
+      ∑ k : Fin r.factorial, (k.val + 1) *
+        (univ.filter fun s : Set.powersetCard β r ↦
+          P s ∧ (W.filter fun x ↦ Set.powersetCard.ofFinEmb r β ⟨x.val, x.property⟩ = s).card =
+            k.val + 1).card := by
+  classical
+  have hlhs : (W.filter fun x ↦ P (Set.powersetCard.ofFinEmb r β ⟨x.val, x.property⟩)).card =
+      ∑ s : Set.powersetCard β r,
+        if P s then (W.filter fun x ↦ Set.powersetCard.ofFinEmb r β ⟨x.val, x.property⟩ = s).card
+        else 0 := by
+    rw [← sum_filter, card_eq_sum_card_fiberwise
+      (f := fun x : {x : Fin r → β // Function.Injective x} ↦
+        Set.powersetCard.ofFinEmb r β ⟨x.val, x.property⟩)
+      (t := univ.filter P) (fun x hx ↦ mem_filter.2 ⟨mem_univ _, (mem_filter.1 hx).2⟩)]
+    refine sum_congr rfl fun s hs ↦ congrArg card (ext fun x ↦ ?_)
+    simp only [mem_filter]
+    exact ⟨fun hx ↦ ⟨hx.1.1, hx.2⟩,
+      fun hx ↦ ⟨⟨hx.1, hx.2 ▸ (mem_filter.1 hs).2⟩, hx.2⟩⟩
+  have hrhs (k : Fin r.factorial) :
+      (k.val + 1) * (univ.filter fun s : Set.powersetCard β r ↦
+          P s ∧ (W.filter fun x ↦ Set.powersetCard.ofFinEmb r β ⟨x.val, x.property⟩ = s).card =
+            k.val + 1).card =
+        ∑ s : Set.powersetCard β r,
+          if P s ∧ (W.filter fun x ↦ Set.powersetCard.ofFinEmb r β ⟨x.val, x.property⟩ = s).card =
+            k.val + 1 then k.val + 1 else 0 := by
+    rw [← sum_filter, sum_const, Nat.nsmul_eq_mul, mul_comm]
+  rw [hlhs]
+  simp_rw [hrhs]
+  rw [sum_comm]
+  refine sum_congr rfl fun s _ ↦ ?_
+  set ms := (W.filter fun x ↦ Set.powersetCard.ofFinEmb r β ⟨x.val, x.property⟩ = s).card
+  have hms_le : ms ≤ r.factorial :=
+    (card_le_card (filter_subset_filter _ (subset_univ W))).trans_eq
+      (Set.powersetCard.card_filter_ofFinEmb_eq s)
+  by_cases hPs : P s
+  · rcases ms.eq_zero_or_pos with hm0 | hmpos
+    · simp [hPs, hm0]
+    · have hklt : ms - 1 < r.factorial := by omega
+      let k₀ : Fin r.factorial := ⟨ms - 1, hklt⟩
+      simp only [hPs, ↓reduceIte, true_and]
+      rw [sum_eq_single k₀]
+      · simp [k₀, Nat.sub_add_cancel hmpos]
+      · intro k _ hkne
+        simp only [ite_eq_right_iff]
+        intro hmk
+        exact absurd (Fin.ext (by dsimp [k₀]; omega)) hkne
+      · intro hk
+        exact absurd (mem_univ k₀) hk
+  · simp [hPs]
+
+end Finset
