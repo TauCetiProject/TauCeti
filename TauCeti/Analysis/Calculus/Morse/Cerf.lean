@@ -61,7 +61,7 @@ The remaining conditions of Cerf's theorem concern the third derivative along th
 degenerate Hessian. When it is nonzero, the degenerate critical point is isolated
 (`TauCeti.eventually_isNondegenerateCriticalPoint_of_fderiv_eq_zero`, in
 `TauCeti.Analysis.Calculus.Morse.Cerf.Isolated`). That it is nonzero for a generic family needs
-perturbations by quadratic functions as well and is not treated here.
+perturbations by quadratic and cubic polynomials as well and is not treated here.
 
 ## Main declarations
 
