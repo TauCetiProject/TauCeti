@@ -209,12 +209,16 @@ variable (map) (mapId : ∀ b : B₀, map (𝟙 b) ≅ 𝟭 (obj b))
   (mapComp : ∀ {b₀ b₁ b₂ : B₀} (f : b₀ ⟶ b₁) (g : b₁ ⟶ b₂) (fg : b₀ ⟶ b₂), f ≫ g = fg →
     (map fg ≅ map f ⋙ map g))
 
--- The three lemmas below are the coherence conditions of `mkCatPseudofunctor`. In them the
--- composite arrows of `B₀` appear in two forms that agree only propositionally (for instance
--- `(f ≫ g) ≫ h` and `f ≫ g ≫ h`), so they are stated for arbitrary composites, related by
--- `eqToHom`.
+-- The three lemmas below are the coherence conditions of `mkCatPseudofunctor`, and componentwise
+-- of other pseudofunctors out of `LocallyDiscrete B₀` built from such families of functors. In
+-- them the composite arrows of `B₀` appear in two forms that agree only propositionally (for
+-- instance `(f ≫ g) ≫ h` and `f ≫ g ≫ h`), so they are stated for arbitrary composites, related
+-- by `eqToHom`.
 
-private lemma mapComp_associativity_eqToHom
+/-- Associativity of composition isomorphisms `map fg ≅ map f ⋙ map g`, given at arbitrary
+factorizations, in the form of the associativity condition of a pseudofunctor: the two
+composites `fgh` and `fgh'` of `f`, `g` and `h` are related by `eqToHom`. -/
+lemma mapComp_associativity_eqToHom
     (associativity : ∀ {b₀ b₁ b₂ b₃ : B₀} (f : b₀ ⟶ b₁) (g : b₁ ⟶ b₂) (h : b₂ ⟶ b₃)
       (fg : b₀ ⟶ b₂) (gh : b₁ ⟶ b₃) (fgh : b₀ ⟶ b₃) (hfg : f ≫ g = fg) (hgh : g ≫ h = gh)
       (hfgh : fg ≫ h = fgh) (hfgh' : f ≫ gh = fgh) (x : obj b₀),
@@ -231,7 +235,9 @@ private lemma mapComp_associativity_eqToHom
   rw [← Category.assoc, associativity f g h fg gh fgh' hfg hgh hfgh hfgh' x]
   simp only [Category.assoc, Iso.hom_inv_id_app_assoc, Iso.hom_inv_id_app, eqToHom_refl]
 
-private lemma mapComp_left_unitality_eqToHom
+/-- Left unitality of composition isomorphisms `map fg ≅ map f ⋙ map g`, in the form of the left
+unitality condition of a pseudofunctor, for a composite `k` of `𝟙 b₀` and `f`. -/
+lemma mapComp_left_unitality_eqToHom
     (left_unitality : ∀ {b₀ b₁ : B₀} (f : b₀ ⟶ b₁) (hf : 𝟙 b₀ ≫ f = f) (x : obj b₀),
       (mapComp (𝟙 b₀) f f hf).hom.app x ≫ (map f).map ((mapId b₀).hom.app x) = 𝟙 _)
     {b₀ b₁ : B₀} (f k : b₀ ⟶ b₁) (hk : 𝟙 b₀ ≫ f = k) (x : obj b₀)
@@ -240,7 +246,9 @@ private lemma mapComp_left_unitality_eqToHom
   obtain rfl : k = f := hk.symm.trans (Category.id_comp f)
   rw [left_unitality, eqToHom_refl]
 
-private lemma mapComp_right_unitality_eqToHom
+/-- Right unitality of composition isomorphisms `map fg ≅ map f ⋙ map g`, in the form of the
+right unitality condition of a pseudofunctor, for a composite `k` of `f` and `𝟙 b₁`. -/
+lemma mapComp_right_unitality_eqToHom
     (right_unitality : ∀ {b₀ b₁ : B₀} (f : b₀ ⟶ b₁) (hf : f ≫ 𝟙 b₁ = f) (x : obj b₀),
       (mapComp f (𝟙 b₁) f hf).hom.app x ≫ (mapId b₁).hom.app ((map f).obj x) = 𝟙 _)
     {b₀ b₁ : B₀} (f k : b₀ ⟶ b₁) (hk : f ≫ 𝟙 b₁ = k) (x : obj b₀)
