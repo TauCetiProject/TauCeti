@@ -257,7 +257,7 @@ private theorem mem_of_forall_toIntervalLocalization_mul_pow_mem {a b : ℕ} (ha
     (Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)) x
   dsimp only at hx
   subst hx
-  obtain ⟨m, hm⟩ := s.2
+  obtain ⟨m, hm⟩ := s.property
   dsimp only at hm
   -- Write `x = y / (p [ϖ]) ^ m` and expand `y = ∑_{i ≤ m} [yᵢ] pⁱ + p ^ (m + 1) h`. Each term
   -- `[yᵢ] p ^ (i - m) [ϖ] ^ (-m)` is a monomial `e z₀ ^ j`, and the remainder `p h [ϖ] ^ (-m)`

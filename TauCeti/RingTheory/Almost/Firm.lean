@@ -451,7 +451,7 @@ theorem isAlmostIso_ihom_ev_app (N : ModuleCat.{u} V) :
   · apply Subtype.ext
     -- The source of `ev` is `m~ ⊗[V] Hom(m~, N)` as a `ModuleCat`, so `key` applies up to defeq.
     refine (Submodule.coe_smul _ x).trans ((key s x).trans ?_)
-    rw [LinearMap.mem_ker.mp x.2, map_zero, tmul_zero]
+    rw [LinearMap.mem_ker.mp x.property, map_zero, tmul_zero]
     rfl
   · induction y using Submodule.Quotient.induction_on with | _ n
     rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero]

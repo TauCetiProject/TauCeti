@@ -338,7 +338,7 @@ theorem indepFun_shift [CompleteSpace E] (hW : IsPreBrownian W P) (t₀ : ℝ≥
           ContinuousLinearMap.proj ⟨t₀, by simp⟩, by simp⟩
       | .inr ⟨u, _⟩ => ⟨{u}, ContinuousLinearMap.proj ⟨u, by simp⟩, by simp⟩)
     (fun t ↦ (hW.aemeasurable (t₀ + t)).sub (hW.aemeasurable t₀))
-    (fun u ↦ hW.aemeasurable u.1) fun t ⟨u, hu⟩ x y ↦ ?_
+    (fun u ↦ hW.aemeasurable u.val) fun t ⟨u, hu⟩ x y ↦ ?_
   simp_rw [inner_sub_right]
   rw [covariance_fun_sub_left (hW.memLp_two_inner_eval x _) (hW.memLp_two_inner_eval x _)
     (hW.memLp_two_inner_eval y _), hW.covariance_inner, hW.covariance_inner,

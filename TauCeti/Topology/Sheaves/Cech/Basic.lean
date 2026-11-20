@@ -162,7 +162,7 @@ private lemma quasiIso_cechAugmentation_prod_finset {ι : Type u} (U : ι → Op
         Functor.isoWhiskerRight (NatIso.op (prod.functorLeftComp _ _)) F.presheaf)).2
         (ih _ (leOfHom (prod.fst ≫ prod.snd)))
     · exact quasiIso_cechAugmentation_prod_of_hom W isTerminalTop _ _
-        (i₀ := ⟨b 0, Finset.mem_cons_of_mem (b 0).2⟩) (Pi.π _ 0)
+        (i₀ := ⟨b 0, Finset.mem_cons_of_mem (b 0).property⟩) (Pi.π _ 0)
     · exact (quasiIso_cechAugmentation_iff_of_iso _ _ _ e).2 (ih _ (leOfHom prod.snd))
 
 /-- **Flasque sheaves are acyclic for finite covers, restricted to an open.** Let `F` be a flasque

@@ -328,8 +328,8 @@ private lemma mulSupport_pp_exists_prod_eq (k : ℕ) (a : Fin 2 → ℕ)
   obtain ⟨La, hLa, Ra, hRa, h_prod_eq⟩ := h_prod_mem
   obtain ⟨SL_La, hSL_La⟩ := (mem_SLnZ_iff 2).mp hLa
   obtain ⟨SL_Ra, hSL_Ra⟩ := (mem_SLnZ_iff 2).mp hRa
-  obtain ⟨SL_i₀, hSL_i₀⟩ := (mem_SLnZ_iff 2).mp q.1.out.2
-  obtain ⟨SL_j₀, hSL_j₀⟩ := (mem_SLnZ_iff 2).mp q.2.out.2
+  obtain ⟨SL_i₀, hSL_i₀⟩ := (mem_SLnZ_iff 2).mp q.1.out.property
+  obtain ⟨SL_j₀, hSL_j₀⟩ := (mem_SLnZ_iff 2).mp q.2.out.property
   refine ⟨SL_i₀, SL_j₀, SL_La, SL_Ra, ?_⟩
   rw [hSL_i₀, hSL_j₀, hSL_La, hSL_Ra]
   exact h_prod_eq

@@ -108,7 +108,7 @@ theorem exists_smul_eq_of_under_eq [Finite G] [Algebra.IsInvariant A B G] (R R' 
     [R.IsPrime] [R'.IsPrime] (h : R.under A = R'.under A) : ∃ g : G, R' = g • R := by
   refine Algebra.IsInvariant.exists_smul_of_under_eq (FixedPoints.subring B G) B G R R' ?_
   ext d
-  obtain ⟨a, ha⟩ := Algebra.IsInvariant.isInvariant (A := A) (G := G) d.1 d.2
+  obtain ⟨a, ha⟩ := Algebra.IsInvariant.isInvariant (A := A) (G := G) d.val d.property
   have := congr(a ∈ $h)
   rw [under_def, under_def, mem_comap, mem_comap, ha] at this
   rw [under_def, under_def, mem_comap, mem_comap]
@@ -141,7 +141,7 @@ theorem primesOver_under_eq_singleton_of_le_stabilizer (hH : H ≤ stabilizer G 
   refine Set.eq_singleton_iff_unique_mem.2 ⟨⟨inferInstance, inferInstance⟩, ?_⟩
   rintro R ⟨_, hR⟩
   obtain ⟨h, rfl⟩ := exists_smul_eq_of_under_eq C H Q R hR.over
-  exact mem_stabilizer_iff.1 (hH h.2)
+  exact mem_stabilizer_iff.1 (hH h.property)
 
 end Fibres
 
@@ -320,10 +320,10 @@ theorem exists_comp_eq_of_comp_algebraMap_eq (f₁ f₂ : B →+* K)
       (algebraMap (FixedPoints.subring B G) B) =
       f₂.comp (algebraMap (FixedPoints.subring B G) B) := by
     ext d
-    obtain ⟨a, ha⟩ := Algebra.IsInvariant.isInvariant (A := A) (G := G) d.1 d.2
+    obtain ⟨a, ha⟩ := Algebra.IsInvariant.isInvariant (A := A) (G := G) d.val d.property
     have := congr($h a)
     simp only [RingHom.comp_apply, ha] at this
-    simpa [d.2 g⁻¹, Algebra.algebraMap_ofSubsemiring_apply] using this
+    simpa [d.property g⁻¹, Algebra.algebraMap_ofSubsemiring_apply] using this
   have hker : RingHom.ker (f₁.comp (MulSemiringAction.toRingHom G B g⁻¹)) = RingHom.ker f₂ := by
     rw [hg]
     ext b
@@ -365,7 +365,7 @@ theorem Algebra.smulCommClass_ker {G G' B B' : Type*} [Group G] [Group G'] [Comm
     SMulCommClass π.ker B B' :=
   ⟨fun k b y ↦ by
     rw [Subgroup.smul_def, Subgroup.smul_def, Algebra.smul_def, Algebra.smul_def, smul_mul', hπ,
-      (MonoidHom.mem_ker.mp k.2), one_smul]⟩
+      (MonoidHom.mem_ker.mp k.property), one_smul]⟩
 
 end TauCeti
 
@@ -468,7 +468,7 @@ fixed-point subalgebras. -/
 noncomputable def fixedPointsAlgHom (f : C →ₐ[B] C') (hf : ∀ (g : G) (c : C), f (g • c) = g • f c) :
     FixedPoints.subalgebra A C G →ₐ[A] FixedPoints.subalgebra A C' G :=
   ((f.restrictScalars A).comp (FixedPoints.subalgebra A C G).val).codRestrict _ fun x g ↦ by
-    simp [← hf, FixedPoints.mem_subalgebra.mp x.2 g]
+    simp [← hf, FixedPoints.mem_subalgebra.mp x.property g]
 
 @[simp]
 theorem coe_fixedPointsAlgHom_apply (f : C →ₐ[B] C') (hf : ∀ (g : G) (c : C), f (g • c) = g • f c)

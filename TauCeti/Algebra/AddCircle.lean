@@ -144,7 +144,7 @@ theorem intCast_floor_equivIco_add {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜
     [FloorRing 𝕜] (x y : AddCircle (1 : 𝕜)) :
     (⌊(equivIco 1 0 x : 𝕜) + equivIco 1 0 y⌋ : 𝕜) =
       equivIco 1 0 x + equivIco 1 0 y - equivIco 1 0 (x + y) := by
-  obtain ⟨hz₀, hz₁⟩ := (equivIco 1 0 (x + y)).2
+  obtain ⟨hz₀, hz₁⟩ := (equivIco 1 0 (x + y)).property
   -- The right-hand side maps to `0` in the circle, so it is an integer `k`, and the
   -- representative of `x + y` lying in `[0, 1)` forces `k` to be the floor.
   have hcoe :
@@ -153,8 +153,8 @@ theorem intCast_floor_equivIco_add {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜
     rw [coe_sub, coe_add, coe_equivIco, coe_equivIco, coe_equivIco, sub_self]
   obtain ⟨k, hk⟩ := (coe_eq_zero_iff (p := (1 : 𝕜))).1 hcoe
   rw [zsmul_one] at hk
-  have h0 := (equivIco 1 0 x).2
-  have h1 := (equivIco 1 0 y).2
+  have h0 := (equivIco 1 0 x).property
+  have h1 := (equivIco 1 0 y).property
   simp only [zero_add, Set.mem_Ico] at *
   rw [← hk, Int.floor_eq_iff.2 ⟨by linarith, by linarith⟩]
 

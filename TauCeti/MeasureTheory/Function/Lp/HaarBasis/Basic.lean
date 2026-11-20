@@ -411,7 +411,7 @@ theorem finrank_range_dyadicProj (N : ℕ) :
       (Finset.card_image_le.trans (by rw [Nat.card_Ico]; omega)))) ?_
   have hli : LinearIndependent 𝕜 fun i : Fin N =>
       (⟨(memLp_ofReal_haarFun 𝕜 p i).toLp (fun x => (haarFun i x : 𝕜)), _, by
-        rw [ContinuousLinearMap.coe_coe, dyadicProj_haarFun, ite_eq_left i.2]⟩ : R) :=
+        rw [ContinuousLinearMap.coe_coe, dyadicProj_haarFun, ite_eq_left i.isLt]⟩ : R) :=
     LinearIndependent.of_comp R.subtype (linearIndependent_haarFun_toLp N)
   simpa using hli.fintype_card_le_finrank
 

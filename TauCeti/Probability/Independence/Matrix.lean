@@ -50,7 +50,7 @@ theorem indepFun_updateCol_zero {Ω p n R : Type*}
     (by simp [Set.disjoint_left, S, T])
     (fun ij ↦ (Matrix.measurable_apply (i := ij.1) (j := ij.2)).comp_aemeasurable hX)).comp hf hg
   have hleft (ω : Ω) :
-      f (fun i : S ↦ X ω i.1.1 i.1.2) = (X ω).updateCol k 0 := by
+      f (fun i : S ↦ X ω i.val.1 i.val.2) = (X ω).updateCol k 0 := by
     ext i j
     by_cases h : j = k <;> simp [f, h]
   simpa only [Function.comp_def, hleft, g] using h

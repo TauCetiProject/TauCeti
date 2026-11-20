@@ -299,6 +299,8 @@ end Unital
 
 section UnitalDomain
 
+open scoped ComplexOrder
+
 variable [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
   {φ : A →ₗ[ℂ] B}
@@ -314,7 +316,7 @@ private theorem IsNPositive.inr {n : ℕ} (hφ : IsNPositive n φ) :
 theorem IsNPositive.star_map_mul_map_le (hφ : IsNPositive 2 φ) (a : A) :
     star (φ a) * φ a ≤ ‖φ 1‖ • φ (star a * a) := by
   have := hφ.inr.star_map_mul_map_le_of_unital a
-  rw [← Unitization.inr_le_inr_iff]
+  rw [← Unitization.inr_le_inr_iff ℂ]
   simpa [Unitization.norm_inr, Unitization.inr_smul] using this
 
 /-- A `2`-positive map with unital domain is bounded by `‖φ 1‖`. -/

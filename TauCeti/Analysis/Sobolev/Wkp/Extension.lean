@@ -154,12 +154,12 @@ theorem Wkp0.value_extendByZeroₗᵢ (hsub : Omega ≤ Omega') (k : ℕ)
     u (isClosed_eq ?_ ?_) ?_
   · simpa only [Function.comp_def, Wkp.valueL_apply] using
       (Wkp.valueL (mu := mu) (Omega := Omega') (p := p) k).continuous.comp
-      (continuous_subtype_val.comp (Wkp0.extendByZeroₗᵢ hsub k).continuous)
+      (continuous_subtypeVal.comp (Wkp0.extendByZeroₗᵢ hsub k).continuous)
   · simpa only [Function.comp_def, Wkp.valueL_apply] using
       (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.nullMeasurableSet
         (SetLike.coe_subset_coe.mpr hsub)).continuous.comp
           ((Wkp.valueL (mu := mu) (Omega := Omega) (p := p) k).continuous.comp
-            continuous_subtype_val)
+            continuous_subtypeVal)
   · intro phi
     have h := congrArg Sobolev1JetLp.value
       (Sobolev1JetLp.extendByZeroₗᵢ_ofTestFunctionₗ (mu := mu) (p := p) hsub phi)
@@ -179,12 +179,12 @@ theorem Wkp0.iteratedGradient_extendByZeroₗᵢ (hsub : Omega ≤ Omega') (k : 
     (k + 1)).induction_on u (isClosed_eq ?_ ?_) ?_
   · simp_rw [← Wkp.iteratedGradientL_apply]
     exact (Wkp.iteratedGradientL (mu := mu) (Omega := Omega') (p := p) k).continuous.comp
-      (continuous_subtype_val.comp (Wkp0.extendByZeroₗᵢ hsub (k + 1)).continuous)
+      (continuous_subtypeVal.comp (Wkp0.extendByZeroₗᵢ hsub (k + 1)).continuous)
   · simp_rw [← Wkp.iteratedGradientL_apply]
     exact (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.nullMeasurableSet
         (SetLike.coe_subset_coe.mpr hsub)).continuous.comp
           ((Wkp.iteratedGradientL (mu := mu) (Omega := Omega) (p := p) k).continuous.comp
-            continuous_subtype_val)
+            continuous_subtypeVal)
   · intro phi
     rw [Wkp0.extendByZeroₗᵢ_ofTestFunctionₗ]
     rw [Wkp0.coe_ofTestFunctionₗ, Wkp0.coe_ofTestFunctionₗ,

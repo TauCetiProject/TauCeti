@@ -229,8 +229,8 @@ private theorem IsSymm.exists_apply_self_ne_zero_and_not_isAlt_restrict_orthogon
   obtain ⟨u, w, huw⟩ : ∃ u w : B.orthogonal (K ∙ x), B u w ≠ 0 := by
     by_contra! h
     exact hne (LinearMap.ext fun u => LinearMap.ext fun w => by simpa using h u w)
-  have hxu : B x u = 0 := by simpa [orthogonal] using u.2
-  have hxw : B x w = 0 := by simpa [orthogonal] using w.2
+  have hxu : B x u = 0 := by simpa [orthogonal] using u.property
+  have hxw : B x w = 0 := by simpa [orthogonal] using w.property
   have huu : B u u = 0 := by simpa using halt u
   have hww : B w w = 0 := by simpa using halt w
   set z := x + u with hz

@@ -140,8 +140,8 @@ lemma coe_diskBoundaryInclusion_apply_down (n : ℕ) (s : TopCat.diskBoundary.{u
 /-- A point of the boundary sphere has norm `1` in the disk. -/
 @[simp]
 theorem norm_diskBoundaryInclusion {n : ℕ} (s : TopCat.diskBoundary.{u} n) :
-    ‖(TopCat.diskBoundaryInclusion n s).down.1‖ = 1 :=
-  mem_sphere_zero_iff_norm.1 s.down.2
+    ‖(TopCat.diskBoundaryInclusion n s).down.val‖ = 1 :=
+  mem_sphere_zero_iff_norm.1 s.down.property
 
 end TauCeti.TopCat
 
@@ -260,7 +260,7 @@ lemma mem_range_diskBoundaryInclusion_iff {n : ℕ} (z : TopCat.disk.{u} n) :
   rintro ⟨s, rfl⟩
   -- The boundary inclusion keeps the underlying point of the sphere.
   exact mem_sphere_zero_iff_norm.1
-    (s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).down.2
+    (s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).down.property
 
 /-- The centre `0` of the Euclidean disk `TopCat.disk n`. -/
 def diskCenter (n : ℕ) : TopCat.disk.{u} n :=
@@ -289,12 +289,12 @@ def diskContraction (n : ℕ) :
       ((p.2 : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
         EuclideanSpace ℝ (Fin n)),
       (convex_closedBall _ _).smul_mem_of_zero_mem (Metric.mem_closedBall_self zero_le_one)
-        (p.2 : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down.2
-        (unitInterval.symm p.1).2⟩ :
+        (p.2 : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down.property
+        (unitInterval.symm p.1).property⟩ :
       ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1))
   continuous_toFun := continuous_uliftUp.comp <| Continuous.subtype_mk
-    ((continuous_subtype_val.comp (unitInterval.continuous_symm.comp continuous_fst)).smul
-      (continuous_subtype_val.comp (continuous_uliftDown.comp continuous_snd))) _
+    ((continuous_subtypeVal.comp (unitInterval.continuous_symm.comp continuous_fst)).smul
+      (continuous_subtypeVal.comp (continuous_uliftDown.comp continuous_snd))) _
   map_zero_left _ := ULift.ext (Subtype.ext (by simp))
   map_one_left _ := ULift.ext (Subtype.ext (by simp))
 
@@ -362,7 +362,7 @@ lemma sq_diskBoundary_one_eq_one (s : TopCat.diskBoundary.{u} 1) :
   have h := EuclideanSpace.norm_sq_eq
     ((s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
       EuclideanSpace ℝ (Fin 1))
-  rw [mem_sphere_zero_iff_norm.1 s.down.2, Fin.sum_univ_one, Real.norm_eq_abs, sq_abs] at h
+  rw [mem_sphere_zero_iff_norm.1 s.down.property, Fin.sum_univ_one, Real.norm_eq_abs, sq_abs] at h
   simpa using h.symm
 
 /-- The boundary sphere of a disk of positive dimension is nonempty. -/
@@ -517,7 +517,7 @@ def cubeBoundaryPairHom {P : TopPair.{u}} {m : ℕ} (c : C(I^(Fin m), P.fst))
     cubeBoundaryPair.{u} m ⟶ P :=
   TopPair.ofHom (TopCat.ofHom (c.comp ⟨ULift.down, continuous_uliftDown⟩))
     (TopCat.ofHom (P.liftSnd ((c.comp ⟨ULift.down, continuous_uliftDown⟩).comp
-      ⟨Subtype.val, continuous_subtype_val⟩) fun z ↦ hc z.2))
+      ⟨Subtype.val, continuous_subtypeVal⟩) fun z ↦ hc z.property))
     (by ext z; exact TopPair.map_liftSnd _ _ z)
 
 @[simp]
@@ -543,10 +543,10 @@ def cubeBoundaryPairProdLeftIso (Y : TopCat.{u}) (m : ℕ) :
         (ContinuousMap.snd ⁻¹' Cube.boundary (Fin m)) where
   hom := TopPair.ofHom
     (TopCat.ofHom ((ContinuousMap.id _).prodMap ⟨ULift.down, continuous_uliftDown⟩))
-    (TopCat.ofHom ⟨fun x ↦ ⟨(x.1, x.2.1.down), x.2.2⟩, by fun_prop⟩) rfl
+    (TopCat.ofHom ⟨fun x ↦ ⟨(x.1, x.2.val.down), x.2.property⟩, by fun_prop⟩) rfl
   inv := TopPair.ofHom
     (TopCat.ofHom ((ContinuousMap.id _).prodMap ⟨ULift.up, continuous_uliftUp⟩))
-    (TopCat.ofHom ⟨fun x ↦ (x.1.1, ⟨ULift.up x.1.2, x.2⟩), by fun_prop⟩) rfl
+    (TopCat.ofHom ⟨fun x ↦ (x.val.1, ⟨ULift.up x.val.2, x.property⟩), by fun_prop⟩) rfl
   hom_inv_id := by ext : 2 <;> rfl
   inv_hom_id := by ext : 2 <;> rfl
 
@@ -629,7 +629,7 @@ lemma diskBoundaryPairToCube_fst_apply_down (z : (diskBoundaryPair.{u} n).fst) :
 variable {n} in
 /-- On the boundary sphere, `TauCeti.diskBoundaryPairToCube` is `TauCeti.diskHomeomorphCube`. -/
 lemma diskBoundaryPairToCube_snd_apply_down (s : (diskBoundaryPair.{u} n).snd) :
-    (TopPair.Hom.snd (diskBoundaryPairToCube.{u} n) s).1.down =
+    (TopPair.Hom.snd (diskBoundaryPairToCube.{u} n) s).val.down =
       diskHomeomorphCube n (TopCat.diskBoundaryInclusion n s) := by
   rw [diskBoundaryPairToCube]
   rfl

@@ -125,12 +125,12 @@ variable (F₀ F₁) in
 /-- The `L²` jet `(ξ, ∂s ξ, ∂t ξ)` of a test section, as a linear map into
 `L²(ℝ × [0, 1], V × V × V)`. -/
 def jetₗ : testSection F₀ F₁ →ₗ[ℝ] Lp (V × V × V) 2 stripMeasure where
-  toFun ξ := (memLp_jet ξ.2).toLp (jet (ξ : ℝ × ℝ → V))
+  toFun ξ := (memLp_jet ξ.property).toLp (jet (ξ : ℝ × ℝ → V))
   map_add' ξ η := by
     simp only [Submodule.coe_add, ← MemLp.toLp_add]
     exact MemLp.toLp_congr _ _ (Eventually.of_forall fun z ↦ by
-      rw [jet_add ((contDiff_one_of_mem_testSection ξ.2).differentiable one_ne_zero)
-        ((contDiff_one_of_mem_testSection η.2).differentiable one_ne_zero)])
+      rw [jet_add ((contDiff_one_of_mem_testSection ξ.property).differentiable one_ne_zero)
+        ((contDiff_one_of_mem_testSection η.property).differentiable one_ne_zero)])
   map_smul' c ξ := by
     simp only [SetLike.val_smul, RingHom.id_apply, ← MemLp.toLp_const_smul]
     exact MemLp.toLp_congr _ _ (Eventually.of_forall fun z ↦ by rw [jet_smul])
@@ -138,11 +138,11 @@ def jetₗ : testSection F₀ F₁ →ₗ[ℝ] Lp (V × V × V) 2 stripMeasure w
 /-- The `L²` jet of a test section is represented by its jet. -/
 theorem coeFn_jetₗ (ξ : testSection F₀ F₁) :
     jetₗ F₀ F₁ ξ =ᵐ[stripMeasure] jet (ξ : ℝ × ℝ → V) :=
-  MemLp.coeFn_toLp (memLp_jet ξ.2)
+  MemLp.coeFn_toLp (memLp_jet ξ.property)
 
 /-- The `L²` jet of a test section is the class of its jet. -/
 theorem jetₗ_apply (ξ : testSection F₀ F₁) :
-    jetₗ F₀ F₁ ξ = (memLp_jet ξ.2).toLp (jet (ξ : ℝ × ℝ → V)) :=
+    jetₗ F₀ F₁ ξ = (memLp_jet ξ.property).toLp (jet (ξ : ℝ × ℝ → V)) :=
   (rfl)
 
 /-- The jet of a test section does not depend on the boundary conditions it is considered
@@ -292,7 +292,7 @@ theorem comp_add_mem_testSection (hξ : ξ ∈ testSection F₀ F₁) (a : ℝ) 
 
 /-- The `L²` jet of the translate of a test section is the translate of its `L²` jet. -/
 theorem jetₗ_comp_add (ξ : testSection F₀ F₁) (a : ℝ) :
-    jetₗ F₀ F₁ ⟨_, comp_add_mem_testSection ξ.2 a⟩ = translateLp a (jetₗ F₀ F₁ ξ) := by
+    jetₗ F₀ F₁ ⟨_, comp_add_mem_testSection ξ.property a⟩ = translateLp a (jetₗ F₀ F₁ ξ) := by
   rw [translateLp_apply, jetₗ_apply, jetₗ_apply, Lp.toLp_compMeasurePreserving]
   exact MemLp.toLp_congr _ _ (Eventually.of_forall fun z ↦ jet_comp_add a z)
 
@@ -302,7 +302,7 @@ theorem translateLp_mem_H1 (a : ℝ) {x : Lp (V × V × V) 2 stripMeasure} (hx :
   refine H1_subset_of_isClosed (S := translateLp a ⁻¹' (H1 F₀ F₁ : Set _))
     (isClosed_H1.preimage (translateLp a).continuous) ?_ hx
   rintro _ ⟨ξ, rfl⟩
-  simpa [jetₗ_comp_add] using jetₗ_mem_H1 (⟨_, comp_add_mem_testSection ξ.2 a⟩ :
+  simpa [jetₗ_comp_add] using jetₗ_mem_H1 (⟨_, comp_add_mem_testSection ξ.property a⟩ :
     testSection F₀ F₁)
 
 variable (F₀ F₁) in
@@ -323,7 +323,7 @@ theorem coe_translate (a : ℝ) (x : H1 F₀ F₁) :
 
 /-- Translation of the jet of a test section is the jet of its translate. -/
 theorem translate_jetH1 (a : ℝ) (ξ : testSection F₀ F₁) :
-    translate F₀ F₁ a (jetH1 F₀ F₁ ξ) = jetH1 F₀ F₁ ⟨_, comp_add_mem_testSection ξ.2 a⟩ :=
+    translate F₀ F₁ a (jetH1 F₀ F₁ ξ) = jetH1 F₀ F₁ ⟨_, comp_add_mem_testSection ξ.property a⟩ :=
   Subtype.ext (jetₗ_comp_add ξ a).symm
 
 /-- Translation by `0` is the identity. -/
@@ -361,7 +361,7 @@ variable (F₀ F₁) in
 /-- The boundary values `(ξ (·, 0), ξ (·, 1))` of a test section, in `L²(ℝ, V) × L²(ℝ, V)`. -/
 def traceₗ : testSection F₀ F₁ →ₗ[ℝ] Lp V 2 (volume : Measure ℝ) × Lp V 2 (volume : Measure ℝ)
     where
-  toFun ξ := ((memLp_slice ξ.2 0).toLp _, (memLp_slice ξ.2 1).toLp _)
+  toFun ξ := ((memLp_slice ξ.property 0).toLp _, (memLp_slice ξ.property 1).toLp _)
   map_add' ξ η := by
     refine Prod.ext ?_ ?_ <;>
     · simp only [Submodule.coe_add, Prod.fst_add, Prod.snd_add, ← MemLp.toLp_add]
@@ -375,18 +375,18 @@ def traceₗ : testSection F₀ F₁ →ₗ[ℝ] Lp V 2 (volume : Measure ℝ) �
 /-- The boundary values of a test section are the classes of its restrictions to the boundary
 lines `ℝ × {0}` and `ℝ × {1}`. -/
 theorem traceₗ_apply (ξ : testSection F₀ F₁) :
-    traceₗ F₀ F₁ ξ = ((memLp_slice ξ.2 0).toLp _, (memLp_slice ξ.2 1).toLp _) :=
+    traceₗ F₀ F₁ ξ = ((memLp_slice ξ.property 0).toLp _, (memLp_slice ξ.property 1).toLp _) :=
   (rfl)
 
 /-- The first boundary value of a test section is represented by `s ↦ ξ (s, 0)`. -/
 theorem coeFn_traceₗ_fst (ξ : testSection F₀ F₁) :
     (traceₗ F₀ F₁ ξ).1 =ᵐ[volume] fun s ↦ (ξ : ℝ × ℝ → V) (s, 0) :=
-  MemLp.coeFn_toLp (memLp_slice ξ.2 0)
+  MemLp.coeFn_toLp (memLp_slice ξ.property 0)
 
 /-- The second boundary value of a test section is represented by `s ↦ ξ (s, 1)`. -/
 theorem coeFn_traceₗ_snd (ξ : testSection F₀ F₁) :
     (traceₗ F₀ F₁ ξ).2 =ᵐ[volume] fun s ↦ (ξ : ℝ × ℝ → V) (s, 1) :=
-  MemLp.coeFn_toLp (memLp_slice ξ.2 1)
+  MemLp.coeFn_toLp (memLp_slice ξ.property 1)
 
 end NormedSpace
 
@@ -420,9 +420,9 @@ theorem norm_sq_add_norm_sq_le_integral_jet (hξ : ContDiff ℝ 1 ξ) (s : ℝ) 
 `L²` by twice its `W^{1,2}` norm. -/
 theorem norm_traceₗ_le (ξ : testSection F₀ F₁) :
     ‖traceₗ F₀ F₁ ξ‖ ≤ 2 * ‖jetH1 F₀ F₁ ξ‖ := by
-  have hj := memLp_jet ξ.2
-  have h0 := memLp_slice ξ.2 0 (p := 2)
-  have h1 := memLp_slice ξ.2 1 (p := 2)
+  have hj := memLp_jet ξ.property
+  have h0 := memLp_slice ξ.property 0 (p := 2)
+  have h1 := memLp_slice ξ.property 1 (p := 2)
   have hμ := stripMeasure_eq_prod
   have hint : Integrable (fun z ↦ 4 * ‖jet (ξ : ℝ × ℝ → V) z‖ ^ 2) stripMeasure :=
     (hj.integrable_norm_pow two_ne_zero).const_mul 4
@@ -435,7 +435,7 @@ theorem norm_traceₗ_le (ξ : testSection F₀ F₁) :
     rw [integral_prod _ hint]
     exact integral_mono ((h0.integrable_norm_pow two_ne_zero).add
       (h1.integrable_norm_pow two_ne_zero)) hint.integral_prod_left
-      fun s ↦ norm_sq_add_norm_sq_le_integral_jet (contDiff_one_of_mem_testSection ξ.2) s
+      fun s ↦ norm_sq_add_norm_sq_le_integral_jet (contDiff_one_of_mem_testSection ξ.property) s
   have hle : ∀ a : ℝ, 0 ≤ a → a ^ 2 ≤ 4 * ‖jetH1 F₀ F₁ ξ‖ ^ 2 → a ≤ 2 * ‖jetH1 F₀ F₁ ξ‖ :=
     fun a ha h ↦ (pow_le_pow_iff_left₀ ha (by positivity) two_ne_zero).1 (by nlinarith)
   rw [traceₗ_apply, Prod.norm_def]
@@ -471,7 +471,7 @@ theorem ae_traceL_fst_mem (hF₀ : IsClosed (F₀ : Set V)) (x : H1 F₀ F₁) :
   rw [traceL_jetH1]
   filter_upwards [coeFn_traceₗ_fst ξ] with s hs
   rw [hs]
-  exact (mem_testSection_iff.1 ξ.2).2.1 s
+  exact (mem_testSection_iff.1 ξ.property).2.1 s
 
 /-- **Boundary condition at `t = 1`.** If `F₁` is closed, the trace on `ℝ × {1}` of every
 element of `H1 F₀ F₁` takes values in `F₁` almost everywhere. -/
@@ -483,7 +483,7 @@ theorem ae_traceL_snd_mem (hF₁ : IsClosed (F₁ : Set V)) (x : H1 F₀ F₁) :
   rw [traceL_jetH1]
   filter_upwards [coeFn_traceₗ_snd ξ] with s hs
   rw [hs]
-  exact (mem_testSection_iff.1 ξ.2).2.2.1 s
+  exact (mem_testSection_iff.1 ξ.property).2.2.1 s
 
 end Trace
 
@@ -581,10 +581,10 @@ private theorem inner_derivSL_add_inner_derivSL_jetH1 (ξ η : testSection F₀ 
   -- Integrate over each line `ℝ × {t}` first.
   rw [stripMeasure_eq_prod] at hint ⊢
   rw [integral_prod_symm _ hint]
-  obtain ⟨-, -, -, R, hR⟩ := mem_testSection_iff.1 ξ.2
+  obtain ⟨-, -, -, R, hR⟩ := mem_testSection_iff.1 ξ.property
   refine (integral_congr_ae (Eventually.of_forall fun t ↦ ?_)).trans (integral_zero _ ℝ)
-  exact integral_inner_fderiv_add_inner_fderiv_eq_zero (contDiff_one_of_mem_testSection ξ.2)
-    (contDiff_one_of_mem_testSection η.2) hR t
+  exact integral_inner_fderiv_add_inner_fderiv_eq_zero (contDiff_one_of_mem_testSection ξ.property)
+    (contDiff_one_of_mem_testSection η.property) hR t
 
 /-- **Green's formula in the `s` direction.** For `x`, `y ∈ H1 F₀ F₁`,
 `⟪∂s x, y⟫ + ⟪x, ∂s y⟫ = 0` in `L²`: the strip has no boundary in the `s` direction. -/
@@ -613,8 +613,8 @@ private theorem inner_derivTL_add_inner_derivTL_jetH1 (ξ η : testSection F₀ 
   filter_upwards [coeFn_traceₗ_fst ξ, coeFn_traceₗ_snd ξ, coeFn_traceₗ_fst η,
     coeFn_traceₗ_snd η] with s h₁ h₂ h₃ h₄
   rw [h₁, h₂, h₃, h₄]
-  exact integral_inner_fderiv_add_inner_fderiv (contDiff_one_of_mem_testSection ξ.2)
-    (contDiff_one_of_mem_testSection η.2) s
+  exact integral_inner_fderiv_add_inner_fderiv (contDiff_one_of_mem_testSection ξ.property)
+    (contDiff_one_of_mem_testSection η.property) s
 
 /-- **Green's formula in the `t` direction.** For `x`, `y ∈ H1 F₀ F₁`,
 `⟪∂t x, y⟫ + ⟪x, ∂t y⟫ = ⟪x(·, 1), y(·, 1)⟫ - ⟪x(·, 0), y(·, 0)⟫` in `L²`, the boundary values

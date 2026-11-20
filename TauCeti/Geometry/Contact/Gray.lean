@@ -127,13 +127,13 @@ Gray's equation `L_{Y_t} α_t + ∂_t α_t = μ_t α_t`
 rescales `α_t` by the exponential of its integral
 (`TauCeti.SmoothForm.mpullback_grayDiffeomorph_apply`). -/
 def grayRate (p : ℝ × M) : ℝ :=
-  (mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 p.2
+  (mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).val p.2
     ![(mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField p.2]
 
 /-- The Gray rate is the velocity of the slices evaluated on the Reeb field. -/
 theorem grayRate_def (t : ℝ) (x : M) :
     α.grayRate (t, x) =
-      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x
+      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).val x
         ![(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField x] :=
   (rfl)
 
@@ -148,7 +148,7 @@ include hc
 /-- The Gray vector field is horizontal: `α_t(Y_t) = 0` whenever the slice `α_t` is a contact
 form. -/
 theorem apply_grayVectorField (x : M) :
-    (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x
+    (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val x
       ![α.grayVectorField t x] = 0 :=
   hc.apply_contactMoserVectorField _ x
 
@@ -157,10 +157,10 @@ slice `α_t` is a contact form, a tangent vector is the value of the Gray vector
 exactly when it lies in `ker α_t` and `(ι_v dα_t + ∂_t α_t)|ker α_t = 0`. -/
 theorem eq_grayVectorField_iff {x : M} {v : TangentSpace I x} :
     v = α.grayVectorField t x ↔
-      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x ![v] = 0 ∧
+      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val x ![v] = 0 ∧
         ∀ w ∈ (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x,
-          mextDeriv (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x ![v, w] +
-            (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x ![w] =
+          mextDeriv (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val x ![v, w] +
+            (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).val x ![w] =
               0 :=
   hc.eq_contactMoserVectorField_iff
 
@@ -169,10 +169,10 @@ theorem eq_grayVectorField_iff {x : M} {v : TangentSpace I x} :
 a tangent vector. -/
 theorem mlieDerivForm_grayVectorField_add (x : M) (v : TangentSpace I x) :
     mlieDerivForm (α.grayVectorField t)
-        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x ![v] +
-      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x ![v] =
+        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val x ![v] +
+      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).val x ![v] =
         α.grayRate (t, x) *
-          (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x ![v] :=
+          (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val x ![v] :=
   hc.mlieDerivForm_contactMoserVectorField_add _ x v
 
 /-- **The Gray vector field vanishes where the contact hyperplane is stationary.** If the slice
@@ -188,12 +188,12 @@ theorem grayVectorField_eq_zero [I.Boundaryless] {x : M}
   -- The vector `w` stays in the hyperplane at all times, so `u ↦ α_u(w)` vanishes identically,
   -- and its derivative `(∂_t α_t)(w)` is zero.
   have hzero (u : ℝ) :
-      (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).1 x ![w] = 0 :=
+      (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).val x ![w] = 0 :=
     mem_kerDistribution.1 (by rw [hx u]; exact hw)
   have hd := (ContinuousAlternatingMap.apply ℝ E ℝ ![w]).hasFDerivAt.comp_hasDerivAt t
     (α.hasDerivAt_mpullback_prodMk_timeDeriv t x)
   have hfun : (⇑(ContinuousAlternatingMap.apply ℝ E ℝ ![w]) ∘ fun u ↦
-      (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).1 x) = fun _ ↦ 0 :=
+      (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).val x) = fun _ ↦ 0 :=
     funext fun u ↦ ContinuousAlternatingMap.apply_apply.trans (hzero u)
   rw [hfun] at hd
   -- `ContinuousAlternatingMap.apply_apply` evaluates the left side, read in the fibre
@@ -231,9 +231,9 @@ is the hypothesis of Moser's principle for families of forms, which turns it int
 the slices by the flow of the Gray vector field. -/
 private theorem mpullback_prodMk_mlieDerivForm_add_mlieDerivForm_grayVectorField (t : ℝ) :
     TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
-        (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1) +
-      mlieDerivForm (α.grayVectorField t) (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.1) =
-    fun y ↦ α.grayRate (t, y) • TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.1 y := by
+        (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.val) +
+      mlieDerivForm (α.grayVectorField t) (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.val) =
+    fun y ↦ α.grayRate (t, y) • TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.val y := by
   funext y
   ext v
   have hv : v = ![v 0] := funext fun i ↦ by fin_cases i; rfl
@@ -306,9 +306,9 @@ rescales the forms: `φ_{s,t}^* α_t = exp (∫ₛᵗ μ_u ∘ φ_{s,u} du) α_s
 theorem mpullback_grayPartialDiffeomorph_apply {s t : ℝ} {x : M}
     (hx : x ∈ (grayPartialDiffeomorph hc s t).source) :
     TauCeti.mpullback I I (grayPartialDiffeomorph hc s t)
-        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x =
+        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val x =
       Real.exp (∫ u in s..t, α.grayRate (u, grayPartialDiffeomorph hc s u x)) •
-        (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).1 x := by
+        (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).val x := by
   have h := mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smul_of_mem
     ((contMDiff_grayVectorField hc).of_le (by simp)) (contMDiff_grayRate hc).continuous
     (α.contMDiff.of_le (by simp))
@@ -365,8 +365,8 @@ theorem exists_partialDiffeomorph_mpullback_eq_smul {K : Set M}
     ∃ φ : PartialDiffeomorph I I M M ∞, K ⊆ φ.source ∧ K ⊆ φ.target ∧ (∀ x ∈ K, φ x = x) ∧
       ∀ x ∈ φ.source, ∃ g : ℝ, 0 < g ∧
         TauCeti.mpullback I I φ
-            (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x =
-          g • (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).1 x :=
+            (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val x =
+          g • (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).val x :=
   ⟨grayPartialDiffeomorph hc s t, fun x hx ↦ mem_grayPartialDiffeomorph_source hc (hK x hx) s t,
     fun x hx ↦ mem_grayPartialDiffeomorph_target hc (hK x hx) s t,
     fun x hx ↦ grayPartialDiffeomorph_apply_eq_self hc (hK x hx) s t,
@@ -433,9 +433,9 @@ theorem contMDiff_grayDiffeomorph :
 `φ_{s,t}^* α_t = exp (∫ₛᵗ μ_u ∘ φ_{s,u} du) α_s`, where `μ_u = (∂_t α_u)(R_{α_u})`. -/
 theorem mpullback_grayDiffeomorph_apply (s t : ℝ) (x : M) :
     (mpullback (grayDiffeomorph hc s t) (grayDiffeomorph hc s t).contMDiff
-        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α)).1 x =
+        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α)).val x =
       Real.exp (∫ u in s..t, α.grayRate (u, grayDiffeomorph hc s u x)) •
-        (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).1 x := by
+        (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).val x := by
   have h := mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smul
     ((contMDiff_grayVectorField hc).of_le (by simp))
     (isCompleteVectorField_timeDependentSuspensionField_grayVectorField hc)

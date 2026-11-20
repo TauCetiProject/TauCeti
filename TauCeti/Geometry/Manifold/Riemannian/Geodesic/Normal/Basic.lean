@@ -134,7 +134,7 @@ theorem mono (h : IsNormalDomain I M p U) (hVU : V ⊆ U) (hV : IsOpen V)
   starConvex := hstar
   subset_expDomain := hVU.trans h.subset_expDomain
   injOn := h.injOn.mono hVU
-  isLocalDiffeomorphOn w := h.isLocalDiffeomorphOn ⟨w, hVU w.2⟩
+  isLocalDiffeomorphOn w := h.isLocalDiffeomorphOn ⟨w, hVU w.property⟩
 
 /-- A tangent ball contained in a normal domain is itself a normal domain. -/
 theorem ball (h : IsNormalDomain I M p U) (hU : Metric.ball 0 r ⊆ U) (hr : 0 < r) :
@@ -220,7 +220,7 @@ theorem exists_isNormalDomain_ball (p : M) :
   exact ⟨r, hr, Metric.isOpen_ball, Metric.mem_ball_self hr,
     (convex_ball (0 : TangentSpace I p) r).starConvex (Metric.mem_ball_self hr),
     fun v hv => (hball hv).2.2, hinj.mono fun v hv => (hball hv).2.1,
-    fun v => (hball v.2).1⟩
+    fun v => (hball v.property).1⟩
 
 /-- **Radial geodesics in different directions separate.** If the tangent vectors `v` and
 `w` at `p` do not lie on a common ray, the radial geodesics from `p` with these initial

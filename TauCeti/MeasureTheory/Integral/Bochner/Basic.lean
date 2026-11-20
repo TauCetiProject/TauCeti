@@ -889,7 +889,7 @@ theorem integral_biUnion_finset₀ {X E ι : Type*} [MeasurableSpace X] [NormedA
     simp only [← Finset.mem_coe, Set.biUnion_eq_iUnion]
   rw [hcoe] at hf ⊢
   rw [integral_iUnion_ae (s := fun i : (↑s : Set ι) ↦ t (i : ι))
-    (fun i ↦ hm (i : ι) i.2) (hd.subtype _ _) hf]
+    (fun i ↦ hm (i : ι) i.property) (hd.subtype _ _) hf]
   exact Finset.tsum_subtype' s fun i ↦ ∫ x in t i, f x ∂μ
 
 open Polynomial in

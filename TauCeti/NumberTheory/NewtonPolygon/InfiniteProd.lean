@@ -85,7 +85,7 @@ theorem isFiniteFace_newtonPolygon_of_hasProd {ι : Type*} {a : ι → K} {W : I
   set F : IsEntire.subring K :=
     ∏' i, IsEntire.polynomialHom (1 - Polynomial.C (a i)⁻¹ * Polynomial.X)
   let P : Polynomial K := ∏ i ∈ s, (1 - Polynomial.C (a i)⁻¹ * Polynomial.X)
-  have hF_ent : (F : K⟦X⟧).IsEntire := IsEntire.mem_subring.mp F.2
+  have hF_ent : (F : K⟦X⟧).IsEntire := IsEntire.mem_subring.mp F.property
   have hF_ne : (F : K⟦X⟧) ≠ 0 := by
     intro h
     have h1 := constantCoeff_tprod_polynomialHom_one_sub_C_mul_X (fun i ↦ (a i)⁻¹)

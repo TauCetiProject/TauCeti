@@ -184,7 +184,7 @@ private theorem link_of_forall_lt
       simpa using hlw
     · -- The link of `σ` is the link of `σ \ {w}` in the link of `w`.
       have hτlink : σ.erase w ∈ link K {w} := mem_link_nonempty.mpr
-        ⟨nonempty_iff_ne_empty.mpr hτ, disjoint_singleton_right.mpr (notMem_erase w σ),
+        ⟨Finset.ne_empty_iff_nonempty.mp hτ, disjoint_singleton_right.mpr (notMem_erase w σ),
           by rwa [union_singleton, insert_erase hw]⟩
       have hpos : 0 < σ.card := card_pos.mpr ⟨w, hw⟩
       have hcard' : (σ.erase w).card ≤ m := by rw [card_erase_of_mem hw]; omega
