@@ -162,7 +162,8 @@ theorem _root_.ContinuousLinearMap.integral_bilinear_fderivWithin_sub_upperHalfA
   set Du := fderivWithin ℝ u H
   have hSHO : S ⊆ H ∩ O := fun z hz ↦ ⟨hz.1, hSO hz⟩
   have hDu : ContinuousOn Du S :=
-    (hu.continuousOn_fderivWithin_setOfPred_le_im hO (by norm_num)).mono hSHO
+    (hu.continuousOn_fderivWithin_of_inter (uniqueDiffOn_setOfPred_le_im _) hO
+      (by norm_num)).mono hSHO
   -- The one-form `B u (Du)`, built from one-sided derivatives.
   let ω : ℂ → ℂ [⋀^Fin 1]→L[ℝ] W := fun z ↦
     (ContinuousLinearMap.liouvilleFormCLM ((2 : ℝ) • B) (u z)).compContinuousLinearMap (Du z)

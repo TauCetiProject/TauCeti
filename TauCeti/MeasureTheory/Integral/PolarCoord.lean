@@ -60,7 +60,7 @@ theorem add_polarCoord_symm_mem_annulus (z₀ : ℂ) {a b : ℝ} (ha : 0 ≤ a)
     abs_of_nonneg (ha.trans hp.1)] using hp
 
 /-- The imaginary part of the translated inverse polar map. -/
-theorem im_add_polarCoord_symm (z₀ : ℂ) (p : ℝ × ℝ) :
+theorem add_polarCoord_symm_im (z₀ : ℂ) (p : ℝ × ℝ) :
     (z₀ + Complex.polarCoord.symm p).im = z₀.im + p.1 * Real.sin p.2 := by
   simp [Complex.polarCoord_symm_apply, -ofReal_sin]
 
@@ -222,11 +222,8 @@ includes both endpoints, whose contribution is null. -/
 theorem integral_comp_polarCoord_symm_Icc_zero_pi (f : ℂ → W) (z₀ : ℂ) {a b : ℝ} (ha : 0 ≤ a) :
     (∫ p in Icc (a, 0) (b, π), p.1 • f (z₀ + Complex.polarCoord.symm p)) =
       ∫ z in {z : ℂ | z₀.im ≤ z.im ∧ a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, f z := by
-  have hS : MeasurableSet {z : ℂ | z₀.im ≤ z.im ∧ a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
-    have hn : Continuous (fun z : ℂ ↦ ‖z - z₀‖) := by fun_prop
-    exact (isClosed_le continuous_const continuous_im).measurableSet.inter
-      ((isClosed_le continuous_const hn).measurableSet.inter
-        (isClosed_le hn continuous_const).measurableSet)
+  have hS : MeasurableSet {z : ℂ | z₀.im ≤ z.im ∧ a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} :=
+    (TauCeti.isClosed_upperHalfAnnulus z₀ a b).measurableSet
   have hang : Ioo (-π) π ∩ Icc 0 π =ᵐ[volume] Icc (0 : ℝ) π := by
     have : Ioo (-π) π ∩ Icc 0 π = Ico 0 π := by
       ext θ
@@ -242,7 +239,7 @@ theorem integral_comp_polarCoord_symm_Icc_zero_pi (f : ℂ → W) (z₀ : ℂ) {
   refine integral_comp_polarCoord_symm_prod f z₀ ha measurableSet_Icc hang hS
     fun r θ hr hθ ↦ ?_
   have him : z₀.im ≤ (z₀ + Complex.polarCoord.symm (r, θ)).im ↔ θ ∈ Icc 0 π := by
-    rw [TauCeti.im_add_polarCoord_symm, le_add_iff_nonneg_right, mul_nonneg_iff_of_pos_left hr]
+    rw [TauCeti.add_polarCoord_symm_im, le_add_iff_nonneg_right, mul_nonneg_iff_of_pos_left hr]
     refine ⟨fun h ↦ ⟨not_lt.1 fun hneg ↦ ?_, hθ.2.le⟩, fun h ↦
       Real.sin_nonneg_of_nonneg_of_le_pi h.1 h.2⟩
     exact (Real.sin_neg_of_neg_of_neg_pi_lt hneg hθ.1).not_ge h

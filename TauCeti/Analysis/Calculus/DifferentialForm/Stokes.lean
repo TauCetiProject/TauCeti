@@ -404,7 +404,7 @@ private theorem add_polarCoord_symm_interior_upperHalfAnnulus (z₀ : ℂ) {a b 
       ‖z₀ + Complex.polarCoord.symm p - z₀‖ < b := by
   obtain ⟨⟨hr₁, hr₂⟩, hθ₁, hθ₂⟩ := hp
   have hr : 0 < p.1 := ha.trans_lt hr₁
-  rw [im_add_polarCoord_symm, add_sub_cancel_left, Complex.norm_polarCoord_symm, abs_of_pos hr,
+  rw [add_polarCoord_symm_im, add_sub_cancel_left, Complex.norm_polarCoord_symm, abs_of_pos hr,
     lt_add_iff_pos_right]
   exact ⟨mul_pos hr (Real.sin_pos_of_pos_of_lt_pi hθ₁ hθ₂), hr₁, hr₂⟩
 

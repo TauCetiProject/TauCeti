@@ -33,8 +33,8 @@ which lets chart transitions of a manifold with corners compare the corners of t
   unique differentiability.
 * `TauCeti.setOfPred_le_im_mem_nhds`: a closed half-plane is a neighbourhood of each point of the
   open half-plane.
-* `ContDiffOn.continuousOn_fderivWithin_setOfPred_le_im`: the derivative within a closed
-  half-plane of a `C¹` map on its part in an open set is continuous up to the boundary line.
+* `ContDiffOn.continuousOn_fderivWithin_of_inter`: the derivative within a set of unique
+  differentiability `s` of a `C¹` map on `s ∩ O`, for `O` open, is continuous on `s ∩ O`.
 * `TauCeti.mem_tangentConeAt_setOf_im_eq`: a real direction is tangent to a horizontal line in `ℂ`.
 * `IsPreconnected.uniqueDiffOn`: a preconnected set of reals containing two distinct points is a
   set of unique differentiability.
@@ -70,6 +70,16 @@ theorem tangentConeAt_eq (L : Submodule 𝕜 E) (hL : IsClosed (L : Set E)) {x :
       (Eventually.of_forall fun c ↦ L.add_mem hx (L.smul_mem c hv))
 
 end Submodule
+
+/-- If `u` is `C¹` on the part `s ∩ O` of a set of unique differentiability `s` in an open set `O`,
+its derivative within `s` is continuous on `s ∩ O`. -/
+theorem ContDiffOn.continuousOn_fderivWithin_of_inter [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {u : E → F} {s O : Set E} {n : WithTop ℕ∞} (hu : ContDiffOn 𝕜 n u (s ∩ O))
+    (hs : UniqueDiffOn 𝕜 s) (hO : IsOpen O) (hn : 1 ≤ n) :
+    ContinuousOn (fderivWithin 𝕜 u s) (s ∩ O) :=
+  (hu.continuousOn_fderivWithin (hs.inter hO) hn).congr
+    fun _ hz ↦ (fderivWithin_inter (hO.mem_nhds hz.2)).symm
 
 variable [NontriviallyNormedField 𝕜] [AddCommGroup E] [Module 𝕜 E]
   [TopologicalSpace E] [ContinuousAdd E] [ContinuousSMul 𝕜 E]
@@ -119,15 +129,6 @@ half-plane `{z | a < z.im}`. -/
 theorem TauCeti.setOfPred_le_im_mem_nhds {a : ℝ} {w : ℂ} (hw : a < w.im) :
     {z : ℂ | a ≤ z.im} ∈ 𝓝 w :=
   mem_interior_iff_mem_nhds.mp (by rwa [Complex.interior_setOfPred_le_im])
-
-/-- If `u` is `C¹` on the part `{z | a ≤ z.im} ∩ O` of a closed half-plane in an open set `O`, its
-derivative within the half-plane is continuous there, up to the boundary line. -/
-theorem ContDiffOn.continuousOn_fderivWithin_setOfPred_le_im {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {u : ℂ → F} {a : ℝ} {O : Set ℂ} {n : WithTop ℕ∞}
-    (hu : ContDiffOn ℝ n u ({z | a ≤ z.im} ∩ O)) (hO : IsOpen O) (hn : 1 ≤ n) :
-    ContinuousOn (fderivWithin ℝ u {z : ℂ | a ≤ z.im}) ({z | a ≤ z.im} ∩ O) :=
-  (hu.continuousOn_fderivWithin ((TauCeti.uniqueDiffOn_setOfPred_le_im a).inter hO) hn).congr
-    fun _ hz ↦ (fderivWithin_inter (hO.mem_nhds hz.2)).symm
 
 /-- A real direction `v` is tangent to the horizontal line `{y : ℂ | y.im = c}` at each of its
 points. -/

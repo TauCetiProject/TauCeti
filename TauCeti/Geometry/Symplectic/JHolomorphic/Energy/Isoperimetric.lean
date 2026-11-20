@@ -215,14 +215,12 @@ theorem two_mul_mul_integral_norm_fderivWithin_one_sq_upperHalfAnnulus_le {u : �
   set S := {z : ℂ | 0 ≤ z.im ∧ a ≤ ‖z - x₀‖ ∧ ‖z - x₀‖ ≤ b}
   set H : Set ℂ := {z | 0 ≤ z.im}
   set Du := fderivWithin ℝ u H
-  have hSc : IsCompact S := by
-    refine (isCompact_setOf_le_norm_sub_le x₀ a b).of_isClosed_subset ?_ fun z hz ↦ hz.2
-    have hn : Continuous (fun z : ℂ ↦ ‖z - x₀‖) := by fun_prop
-    exact (isClosed_le continuous_const continuous_im).inter
-      ((isClosed_le continuous_const hn).inter (isClosed_le hn continuous_const))
+  have hSc : IsCompact S :=
+    (isCompact_setOf_le_norm_sub_le x₀ a b).of_isClosed_subset
+      (by simpa only [hx₀] using isClosed_upperHalfAnnulus x₀ a b) fun z hz ↦ hz.2
   have hDu : ContinuousOn Du S :=
-    (hu.continuousOn_fderivWithin_setOfPred_le_im hO (by norm_num)).mono fun z hz ↦
-      ⟨hz.1, hSO hz⟩
+    (hu.continuousOn_fderivWithin_of_inter (uniqueDiffOn_setOfPred_le_im _) hO
+      (by norm_num)).mono fun z hz ↦ ⟨hz.1, hSO hz⟩
   -- The taming bound compares the energy with the symplectic area.
   have hE : IntegrableOn (fun z ↦ c * ‖Du z 1‖ ^ 2) S :=
     (continuousOn_const.mul ((hDu.clm_apply continuousOn_const).norm.pow 2)).integrableOn_compact

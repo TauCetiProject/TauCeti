@@ -458,9 +458,7 @@ theorem integral_fderivWithin_apply_upperHalfAnnulus [FiniteDimensional ℝ V]
     rw [uIcc_of_le hab] at hs
     have him : (z₀ + ε * s).im = z₀.im := by simp
     refine hseg _ (hSO ⟨him.ge, ?_⟩) him
-    rw [add_sub_cancel_left, norm_mul, Complex.norm_real, Complex.norm_real, Real.norm_eq_abs,
-      Real.norm_eq_abs, hε, one_mul, abs_of_nonneg (ha.trans hs.1)]
-    exact hs
+    simpa [hε, abs_of_nonneg (ha.trans hs.1)] using hs
   have hright : ∫ r in a..b, B (u (z₀ + r)) (fderivWithin ℝ u H (z₀ + r) 1) = 0 := by
     simpa only [ofReal_one, one_mul] using hdiam 1 (by simp)
   have hleft : ∫ r in a..b, B (u (z₀ - r)) (fderivWithin ℝ u H (z₀ - r) 1) = 0 := by

@@ -166,11 +166,12 @@ private theorem abs_integral_apply_fderivWithin_circleMap_le (hg : ∀ v w, ω v
   set H : Set ℂ := {z | z₀.im ≤ z.im}
   set Du := fderivWithin ℝ u H
   have hDu : ContinuousOn Du (H ∩ O) :=
-    hu.continuousOn_fderivWithin_setOfPred_le_im hO (by norm_num)
+    hu.continuousOn_fderivWithin_of_inter (uniqueDiffOn_setOfPred_le_im _) hO
+      (by norm_num)
   have hmem (θ : ℝ) (hθ : θ ∈ Icc 0 π) : circleMap z₀ r θ ∈ H ∩ O :=
     ⟨(circleMap_mem_upperHalfAnnulus hr ⟨le_rfl, le_rfl⟩ hθ).1, hrO θ hθ⟩
   have hend (θ : ℝ) (hθ : θ ∈ Icc 0 π) (hs : Real.sin θ = 0) : u (circleMap z₀ r θ) ∈ L :=
-    huL _ (hrO θ hθ) (by rw [im_circleMap, hs, mul_zero, add_zero])
+    huL _ (hrO θ hθ) (by rw [circleMap_im, hs, mul_zero, add_zero])
   have hcm : Continuous fun θ ↦ circleMap z₀ r θ := continuous_circleMap z₀ r
   have hγ'c : ContinuousOn
       (fun θ ↦ Du (circleMap z₀ r θ) (circleMap 0 r θ * Complex.I)) (Icc 0 π) :=
@@ -182,7 +183,7 @@ private theorem abs_integral_apply_fderivWithin_circleMap_le (hg : ∀ v w, ω v
     rcases hr.eq_or_lt with rfl | hpos
     · simpa using hasDerivAt_const θ (u z₀)
     have hH : H ∈ nhds (circleMap z₀ r θ) := setOfPred_le_im_mem_nhds <| by
-      rw [im_circleMap, lt_add_iff_pos_right]
+      rw [circleMap_im, lt_add_iff_pos_right]
       exact mul_pos hpos (Real.sin_pos_of_pos_of_lt_pi hθ.1 hθ.2)
     have hdu : HasFDerivAt u (Du (circleMap z₀ r θ)) (circleMap z₀ r θ) := by
       rw [show Du (circleMap z₀ r θ) = fderiv ℝ u (circleMap z₀ r θ) from
