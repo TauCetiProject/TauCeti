@@ -68,6 +68,7 @@ A measure of temperate growth is finite on compact sets.
   bijection `φ` such that `φ` and `φ⁻¹` have temperate growth.
 * `Function.HasTemperateGrowth.exists_norm_le_of_leftInverse`: a polynomial lower bound for
   `‖f x‖` from a left inverse of temperate growth.
+* `LinearIsometryEquiv.hasTemperateGrowth`: a linear isometry equivalence has temperate growth.
 * `MeasureTheory.Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts`: a measure of temperate
   growth is finite on compact sets.
 -/
@@ -191,6 +192,12 @@ theorem abs {f : E → ℝ} (hf : f.HasTemperateGrowth) (h0 : ∀ x, f x ≠ 0) 
     simpa [abs_of_pos (this _)] using hf
 
 end Function.HasTemperateGrowth
+
+/-- A linear isometry equivalence has temperate growth. -/
+theorem LinearIsometryEquiv.hasTemperateGrowth {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] (A : E ≃ₗᵢ[ℝ] F) :
+    (A : E → F).HasTemperateGrowth :=
+  A.toContinuousLinearEquiv.hasTemperateGrowth
 
 /-- On a finite-dimensional space the determinant has temperate growth, being a polynomial in the
 matrix entries. -/
