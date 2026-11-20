@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.InnerProductSpace.Adjoint
+import TauCeti.Analysis.InnerProductSpace.PartialIsometry
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
 
 /-!
@@ -70,9 +71,9 @@ depends continuously, and over `ℝ` or `ℂ` real-smoothly, on `κ`.
   `A` is invertible exactly when `L` is injective on the range of `P`; `L` itself need not be
   injective.
 * `ContinuousLinearMap.isOpen_setOf_injOn_range`,
-  `ContinuousLinearMap.continuousOn_starProjection_range_comp`: the pairs `(L, P)` with `L`
-  injective on the range of `P` form an open set, on which the orthogonal projection onto
-  `L (range P)` depends continuously on `(L, P)`.
+  `ContinuousLinearMap.continuousOn_starProjection_range_comp`: when `E` is finite-dimensional, the
+  pairs `(L, P)` with `L` injective on the range of `P` form an open set, on which the orthogonal
+  projection onto `L (range P)` depends continuously on `(L, P)`.
 * `ContinuousLinearMap.comp_comp_adjoint_eq_starProjection_range_comp`: for an isometry `B`, this
   projection is `B P B†`.
 
@@ -564,8 +565,8 @@ private theorem continuous_imageGram :
       (continuous_const.sub continuous_snd)
   exact h.comp continuous_fst_val_snd
 
-/-- The pairs `(L, P)` of an operator and a star projection such that `L` is injective on the range
-of `P` form an open set. -/
+/-- For finite-dimensional `E`, the pairs `(L, P)` of an operator and a star projection such that
+`L` is injective on the range of `P` form an open set. -/
 theorem isOpen_setOf_injOn_range [FiniteDimensional 𝕜 E] :
     IsOpen {x : (E →L[𝕜] F) × {P : E →L[𝕜] E // IsStarProjection P} |
       Set.InjOn x.1 ((x.2 : E →L[𝕜] E).range : Set E)} := by
@@ -574,8 +575,9 @@ theorem isOpen_setOf_injOn_range [FiniteDimensional 𝕜 E] :
   simp only [Set.mem_ofPred_eq, Set.mem_preimage]
   exact (isUnit_imageGram_iff x.1 x.2.2).symm
 
-/-- The orthogonal projection onto the image `L (range P)` depends continuously on the operator `L`
-and the star projection `P`, on the pairs where `L` is injective on the range of `P`. -/
+/-- For finite-dimensional `E`, the orthogonal projection onto the image `L (range P)` depends
+continuously on the operator `L` and the star projection `P`, on the pairs where `L` is injective
+on the range of `P`. -/
 theorem continuousOn_starProjection_range_comp [FiniteDimensional 𝕜 E] :
     ContinuousOn (fun x : (E →L[𝕜] F) × {P : E →L[𝕜] E // IsStarProjection P} ↦
         (x.1 ∘L (x.2 : E →L[𝕜] E)).range.starProjection)
@@ -602,11 +604,14 @@ theorem comp_comp_adjoint_eq_starProjection_range_comp {B : E →L[𝕜] F} (hB 
     B ∘L P ∘L adjoint B = (B ∘L P).range.starProjection := by
   have hBB (X : E →L[𝕜] E) : (X ∘L adjoint B) ∘L B = X := by
     rw [comp_assoc, (isometry_iff_adjoint_comp_self B).1 hB, one_def, comp_id]
-  -- With `Q = B P`: `Q† Q = P B† B P = P`, so `Q† Q P Q† = P P B† = Q†` and `Q P Q† = B P B†`.
-  refine Eq.symm <| (starProjection_range_eq_comp_comp_adjoint (G := P) ?_).trans ?_ <;>
-    simp [adjoint_comp, hP.isSelfAdjoint.adjoint_eq, ← comp_assoc, hBB,
-      IsIdempotentElem.comp_self hP.isIdempotentElem,
+  -- `Q = B P` is a partial isometry, since `Q Q† Q = B P (B† B) P = B P`, and `Q Q† = B P B†`.
+  have hQ : (B ∘L P).IsPartialIsometry := by
+    simp [isPartialIsometry_iff, adjoint_comp, hP.isSelfAdjoint.adjoint_eq, ← comp_assoc, hBB,
       IsIdempotentElem.comp_comp_self hP.isIdempotentElem]
+  have h := hQ.comp_adjoint_eq_starProjection
+  simp only [hQ.isClosed_range.submodule_topologicalClosure_eq] at h
+  simpa [adjoint_comp, hP.isSelfAdjoint.adjoint_eq, ← comp_assoc,
+    IsIdempotentElem.comp_comp_self hP.isIdempotentElem] using h
 
 end ContinuousLinearMap
 
