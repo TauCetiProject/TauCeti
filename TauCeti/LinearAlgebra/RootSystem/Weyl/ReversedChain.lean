@@ -131,10 +131,10 @@ theorem bondGcd_reverseMul_longestElement :
     (conj_longestElement_mem_parabolic_wallIndices_iff lam)
   have hlen : D.length = C.length := length_reverseMul _ _ C
   have hbond (k : Fin D.length) :
-      P.reflectionBond b ((D k.castSucc).1 • -(longestElement P b • lam))
-          ((D k.succ).1 • -(longestElement P b • lam)) =
-        P.reflectionBond b ((C (k.cast hlen).rev.castSucc).1 • lam)
-          ((C (k.cast hlen).rev.succ).1 • lam) := by
+      P.reflectionBond b ((D k.castSucc).val • -(longestElement P b • lam))
+          ((D k.succ).val • -(longestElement P b • lam)) =
+        P.reflectionBond b ((C (k.cast hlen).rev.castSucc).val • lam)
+          ((C (k.cast hlen).rev.succ).val • lam) := by
     rw [reverseMul_castSucc, reverseMul_succ, reflectionBond_minimalCosetRep_mul_longestElement]
   refine Nat.dvd_antisymm (dvd_bondGcd_iff.mpr fun j ↦ ?_) (dvd_bondGcd_iff.mpr fun k ↦ ?_)
   · simpa only [hbond (j.rev.cast hlen.symm), Fin.cast_cast, Fin.cast_refl, id_eq, Fin.rev_rev]

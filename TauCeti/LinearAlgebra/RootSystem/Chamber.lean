@@ -39,6 +39,7 @@ Weyl-invariant.
 * `RootPairing.IsRegularWeight` is regularity of a weight: no coroot functional vanishes on it.
 * `RootPairing.dominantChamber` is the closed dominant chamber of a base.
 * `RootPairing.openDominantChamber` is its open counterpart.
+* `RootPairing.posCorootSum` is the sum of the positive coroot functionals evaluated at a weight.
 
 ## Main results
 
@@ -48,6 +49,8 @@ Weyl-invariant.
 * `RootPairing.mem_openDominantChamber_of_isRegularWeight` and
   `RootPairing.isRegularWeight_of_mem_openDominantChamber`: strict dominance is equivalent to
   regular dominance.
+* `RootPairing.posCorootSum_reflection`: a simple reflection shifts `posCorootSum` by minus twice
+  its simple coroot functional.
 * `RootPairing.exists_mem_dominantChamber_of_finite_weylGroup` and
   `RootPairing.exists_mem_dominantChamber`: every weight is Weyl-conjugate into the closed dominant
   chamber.
@@ -139,7 +142,7 @@ variable (b : P.Base)
 the pairing `P.toLinearMap x (P.coroot i)` on `b.support`. -/
 lemma forall_mem_support_coroot'_eq_zero_iff_toLinearMap_eq_zero (x : M) :
     (∀ i ∈ b.support, P.coroot' i x = 0) ↔ ∀ i : b.support, P.toLinearMap x (P.coroot i) = 0 :=
-  ⟨fun h i ↦ (P.toLinearMap.flip_apply _ _).symm.trans (h i.1 i.2),
+  ⟨fun h i ↦ (P.toLinearMap.flip_apply _ _).symm.trans (h i.val i.property),
     fun h i hi ↦ (P.toLinearMap.flip_apply _ _).trans (h ⟨i, hi⟩)⟩
 
 section Preorder
@@ -277,23 +280,27 @@ end Reflections
 
 section Finite
 
-variable [Finite ι] [CharZero R] [IsDomain R]
+variable [Finite ι] [CharZero R]
 
 /-- The sum of the coroot functionals indexed by the positive roots, evaluated at `x`. Up to the
-factor two this is the pairing of `x` with the Weyl vector on the coroot side; all that is used
-below is how it transforms under a simple reflection. -/
-private noncomputable def posCorootSum (x : M) : R :=
+factor two this is the pairing of `x` with the Weyl vector on the coroot side. -/
+noncomputable def posCorootSum (x : M) : R :=
   ∑ i ∈ posRootsFinset P b, P.coroot' i x
 
-variable [P.IsCrystallographic] [P.IsReduced]
+/-- Definitional expansion of `posCorootSum` as the sum over `posRootsFinset P b`. -/
+theorem posCorootSum_def (x : M) :
+    posCorootSum P b x = ∑ i ∈ posRootsFinset P b, P.coroot' i x :=
+  (rfl)
+
+variable [IsDomain R] [P.IsCrystallographic] [P.IsReduced]
 
 /-- A simple reflection changes `posCorootSum` by twice the value of its own simple coroot. The
 reflection permutes the positive roots other than its own simple root, and negates that one. -/
-private lemma posCorootSum_reflection {i : ι} (hi : i ∈ b.support) (x : M) :
+theorem posCorootSum_reflection {i : ι} (hi : i ∈ b.support) (x : M) :
     posCorootSum P b (P.reflection i x) = posCorootSum P b x - 2 * P.coroot' i x := by
   classical
   -- Work with the underlying sums rather than leaning on `posCorootSum` unfolding silently.
-  unfold posCorootSum
+  rw [posCorootSum_def, posCorootSum_def]
   have his : i ∈ posRootsFinset P b :=
     (mem_posRootsFinset P b i).mpr (support_subset_posRoots P b hi)
   -- Reflecting the argument reindexes the summand along `P.reflectionPerm i`.

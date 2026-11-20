@@ -315,7 +315,7 @@ noncomputable def toPLPathHom (hf : Function.Injective f) {F : b.support → Mod
 @[simp]
 theorem toPLPathHom_apply (hf : Function.Injective f) {F : b.support → Module.Dual 𝕜 V}
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) (π : LSPath P b lam) :
-    (toPLPathHom hlam hf hF π).1 = π.toPLPath 𝕜 f := (rfl)
+    (toPLPathHom hlam hf hF π).val = π.toPLPath 𝕜 f := (rfl)
 
 end FaithfulRealization
 
@@ -477,9 +477,9 @@ noncomputable def toPLPathComponentIso :
       (PLPath.mem_supp_connectedComponentMk_normalCrystalOn_iff _ _).mpr
         ((mem_range_toPLPath_iff_reflTransGen hlam f F hF).mp
           ⟨π, (toPLPathHom_apply hlam hf hF π).symm⟩)⟩)
-    ⟨fun _ _ h ↦ toPLPath_injective hlam hf.injOn hS (congrArg (fun x ↦ x.1.1) h), fun y ↦ by
+    ⟨fun _ _ h ↦ toPLPath_injective hlam hf.injOn hS (congrArg (fun x ↦ x.val.val) h), fun y ↦ by
       obtain ⟨π, hπ⟩ := (mem_range_toPLPath_iff_reflTransGen hlam f F hF).mpr
-        ((PLPath.mem_supp_connectedComponentMk_normalCrystalOn_iff _ y.1).mp y.2)
+        ((PLPath.mem_supp_connectedComponentMk_normalCrystalOn_iff _ y.val).mp y.property)
       exact ⟨π, Subtype.ext (Subtype.ext hπ)⟩⟩
   wt_toFun π := by
     rw [PLPath.normalCrystalComponent, NormalCrystal.component_eq_restrict,
@@ -493,13 +493,13 @@ noncomputable def toPLPathComponentIso :
 
 @[simp]
 theorem toPLPathComponentIso_apply (π : LSPath P b lam) :
-    (toPLPathComponentIso hlam hf hF hS π).1 = toPLPathHom hlam hf hF π := (rfl)
+    (toPLPathComponentIso hlam hf hF hS π).val = toPLPathHom hlam hf hF π := (rfl)
 
 @[simp]
 theorem toPLPathHom_toPLPathComponentIso_symm
     (y : (PLPath.normalCrystal hf hF).graph.connectedComponentMk
       ⟨PLPath.straight 𝕜 (f lam), isIntegralPath_straight hlam f F hF⟩) :
-    toPLPathHom hlam hf hF ((toPLPathComponentIso hlam hf hF hS).symm y) = y.1 := by
+    toPLPathHom hlam hf hF ((toPLPathComponentIso hlam hf hF hS).symm y) = y.val := by
   simpa only [toPLPathComponentIso_apply] using
     congrArg Subtype.val ((toPLPathComponentIso hlam hf hF hS).apply_symm_apply y)
 
@@ -507,7 +507,7 @@ theorem toPLPathHom_toPLPathComponentIso_symm
 theorem toPLPath_toPLPathComponentIso_symm
     (y : (PLPath.normalCrystal hf hF).graph.connectedComponentMk
       ⟨PLPath.straight 𝕜 (f lam), isIntegralPath_straight hlam f F hF⟩) :
-    ((toPLPathComponentIso hlam hf hF hS).symm y).toPLPath 𝕜 f = y.1.1 := by
+    ((toPLPathComponentIso hlam hf hF hS).symm y).toPLPath 𝕜 f = y.val.val := by
   simpa only [toPLPathHom_apply] using
     congrArg Subtype.val (toPLPathHom_toPLPathComponentIso_symm hlam hf hF hS y)
 

@@ -66,7 +66,7 @@ theorem crystal_f_centralTransport (i : b.support) (π : LSPath P b lam) :
   have hf₀ : Function.Injective f₀ := by
     simpa only [f₀, LinearMap.toAddMonoidHom_coe] using P.tensorProduct_mk_injective ℚ
   have hF₀ (x : X) : F₀ (f₀ x) = (P.coroot' i x : ℚ) := by simp [f₀, F₀, TensorProduct.mk_apply]
-  have hFχ : F₀ (f₀ χ) = 0 := by rw [hF₀ χ, hχ i i.2, Int.cast_zero]
+  have hFχ : F₀ (f₀ χ) = 0 := by rw [hF₀ χ, hχ i i.property, Int.cast_zero]
   have hS₀ (μ : X) : (Set.range fun w : P.weylGroup ↦ f₀ (w • μ)).Pairwise
       fun u v ↦ ¬ SameRay ℚ u v := by
     simpa only [f₀, LinearMap.toAddMonoidHom_coe] using

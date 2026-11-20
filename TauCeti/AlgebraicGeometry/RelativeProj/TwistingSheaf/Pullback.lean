@@ -149,7 +149,7 @@ theorem _root_.CategoryTheory.CommMon.π_app_relativeProjTwistingSheafMap_app_ch
   -- the chart component sends `bⁿ` to `(φ b)ⁿ`
   refine (congrArg (fun z ↦ res
     ((Proj.twistingSheaf (A.gradedSectionsGrading U.toOpens) n).presheaf.map _ z))
-    (Proj.twistingSheafMap_app_chartGenerator _ (hφ U.toOpens U.2) n hb _)).trans ?_
+    (Proj.twistingSheafMap_app_chartGenerator _ (hφ U.toOpens U.property) n hb _)).trans ?_
   -- and `(φ b)ⁿ` restricts to `(φ b)ⁿ`
   exact (Functor.map_comp_apply (Proj.twistingSheaf (A.gradedSectionsGrading U.toOpens) n).presheaf
     _ (homOfLE (Scheme.Hom.preimage_mono _ (i.le.trans hVA))).op _).symm.trans

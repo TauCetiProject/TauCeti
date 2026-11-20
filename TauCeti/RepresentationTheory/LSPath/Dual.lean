@@ -48,7 +48,7 @@ private noncomputable def dualAux {lam : M} (π : LSPath P b lam) :
     LSPath P b (-(longestElement P b • lam)) where
   length := π.length
   dir j := ⟨(weylCoxeterSystem P b).minimalCosetRep (P.wallIndices b (-(longestElement P b • lam)))
-      ((π.dir j.rev).1 * longestElement P b),
+      ((π.dir j.rev).val * longestElement P b),
     (weylCoxeterSystem P b).isMinimalCosetRep_minimalCosetRep _ _⟩
   time k := 1 - π.time k.rev
   time_zero := by simp [Fin.rev_zero, π.time_last]
@@ -58,10 +58,11 @@ private noncomputable def dualAux {lam : M} (π : LSPath P b lam) :
     have hinv {u : P.weylGroup} :=
       (P.isLongest_longestElement b).minimalCosetRep_mul_minimalCosetRep_mul
         (u := u) (conj_longestElement_mem_parabolic_wallIndices_iff lam)
-    have heq : (π.dir j.rev.castSucc).1 = (π.dir j.rev.succ).1 := by
-      rw [← hinv (π.dir j.rev.castSucc).2, ← hinv (π.dir j.rev.succ).2]
+    have heq : (π.dir j.rev.castSucc).val = (π.dir j.rev.succ).val := by
+      rw [← hinv (π.dir j.rev.castSucc).property, ← hinv (π.dir j.rev.succ).property]
       exact congrArg (fun u ↦ (weylCoxeterSystem P b).minimalCosetRep (P.wallIndices b lam)
-        (u * longestElement P b)) (by simpa [Fin.rev_succ, Fin.rev_castSucc] using congrArg (·.1) h)
+        (u * longestElement P b))
+        (by simpa [Fin.rev_succ, Fin.rev_castSucc] using congrArg (·.val) h)
     exact π.dir_succ_ne j.rev (Subtype.ext heq.symm)
   exists_isAChain j := by
     obtain ⟨C, hhead, hlast, hC⟩ := π.exists_isAChain j.rev
@@ -90,7 +91,7 @@ private theorem congr_dualAux_dualAux {lam : M} (π : LSPath P b lam) :
   refine ext' (by simp [dualAux]) (fun j ↦ ?_) (fun k ↦ ?_)
   · simp only [dir_congr, dualAux, Fin.rev_rev, hwall]
     exact ((P.isLongest_longestElement b).minimalCosetRep_mul_minimalCosetRep_mul
-      (conj_longestElement_mem_parabolic_wallIndices_iff lam) (π.dir j).2).symm
+      (conj_longestElement_mem_parabolic_wallIndices_iff lam) (π.dir j).property).symm
   · simp [time_congr, dualAux]; rfl
 
 /-- **Littelmann's dual Lakshmibai–Seshadri path** `LSPath P b λ ≃ LSPath P b (-(w₀ • λ))`,
@@ -109,9 +110,9 @@ theorem length_dual : (dual π).length = π.length := (rfl)
 /-- The `j`-th direction of `π^*` is the minimal coset representative of `τ_{l - j} w₀`. -/
 @[simp]
 theorem dir_dual (j : Fin ((dual π).length + 1)) :
-    ((dual π).dir j).1 = (weylCoxeterSystem P b).minimalCosetRep
+    ((dual π).dir j).val = (weylCoxeterSystem P b).minimalCosetRep
       (P.wallIndices b (-(longestElement P b • lam)))
-      ((π.dir (j.cast (by rw [length_dual])).rev).1 * longestElement P b) := (rfl)
+      ((π.dir (j.cast (by rw [length_dual])).rev).val * longestElement P b) := (rfl)
 
 /-- The `k`-th break of `π^*` is `1 - a_{l + 1 - k}`. -/
 @[simp]

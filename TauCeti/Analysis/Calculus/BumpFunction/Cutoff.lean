@@ -20,6 +20,7 @@ import TauCeti.Analysis.Calculus.Deriv.AffineProfile
 import TauCeti.Analysis.Calculus.FDeriv.RadialField
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Smooth cutoffs for compact subsets
@@ -38,7 +39,9 @@ at positions near a compact subset of `U`, with a function `C^k` on the whole pr
 (`ContDiffOn.exists_contDiff_eventually_eq_prod_univ`). On a set where the cutoff is one nearby the
 `Lᵖ` norm of the derivative of a function is at most that of its cut-off version
 (`TauCeti.eLpNorm_fderiv_restrict_le_of_subset_interior`). Locally finite sums of smooth
-functions are smooth (`contDiffAt_tsum_of_eventually_eq_zero`). A compactly supported `C¹`
+functions are smooth (`contDiffAt_tsum_of_eventually_eq_zero`); in particular the periodization
+`Σₙ f (x, t + n)` of a `C^k` map compactly supported in `E × (0, 1)` is a `C^k` map of period one
+in `t` (`TauCeti.exists_contDiff_periodic_eventuallyEq`). A compactly supported `C¹`
 function is bounded and Hölder continuous with every exponent at most one
 (`ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport`).
 
@@ -282,9 +285,9 @@ theorem _root_.CompactExhaustion.exists_contDiff_cutoff [NormedSpace ℝ E]
         HasCompactSupport ψ ∧
           tsupport ψ ⊆ (Subtype.val : Omega → E) '' interior (K (n + 1)) := by
   have hK : IsCompact ((Subtype.val : Omega → E) '' K n) :=
-    (K.isCompact n).image continuous_subtype_val
+    (K.isCompact n).image continuous_subtypeVal
   have hU : IsOpen ((Subtype.val : Omega → E) '' interior (K (n + 1))) :=
-    Omega.isOpen.isOpenMap_subtype_val _ isOpen_interior
+    Omega.isOpen.isOpenMap_subtypeVal _ isOpen_interior
   have hKU :
       (Subtype.val : Omega → E) '' K n ⊆ (Subtype.val : Omega → E) '' interior (K (n + 1)) :=
     image_mono (K.subset_interior_succ n)
@@ -388,14 +391,14 @@ theorem _root_.IsOpen.exists_contDiff_decomposition_cutoff [NormedSpace ℝ E]
   let V : ℕ → Set E := fun n => (Subtype.val : Omega → E) '' interior (K n)
   have hK0 : K 0 = ∅ := rfl
   have hL0 : L 0 = ∅ := by simp only [L, hK0, image_empty]
-  have hLcpt : ∀ n, IsCompact (L n) := fun n => (K.isCompact n).image continuous_subtype_val
-  have hVopen : ∀ n, IsOpen (V n) := fun n => hU.isOpenMap_subtype_val _ isOpen_interior
+  have hLcpt : ∀ n, IsCompact (L n) := fun n => (K.isCompact n).image continuous_subtypeVal
+  have hVopen : ∀ n, IsOpen (V n) := fun n => hU.isOpenMap_subtypeVal _ isOpen_interior
   have hVL : ∀ n, V n ⊆ L n := fun n => image_mono interior_subset
   have hLmono : Monotone L := fun m n hmn => image_mono (K.subset hmn)
   have hVmono : Monotone V := fun m n hmn => image_mono (interior_mono (K.subset hmn))
   have hVsub : ∀ n, V n ⊆ U := fun n => by
     rintro _ ⟨y, -, rfl⟩
-    exact y.2
+    exact y.property
   have hcover : ∀ x ∈ U, ∃ n, x ∈ V n := fun x hx => by
     obtain ⟨n, hn⟩ := K.exists_mem ⟨x, hx⟩
     exact ⟨n + 1, ⟨x, hx⟩, K.subset_interior_succ n hn, rfl⟩
@@ -435,6 +438,46 @@ theorem contDiffAt_tsum_of_eventually_eq_zero {𝕜 ι F : Type*} [NontriviallyN
     (hs : ∀ᶠ y in 𝓝 x, ∀ j ∉ s, g j y = 0) :
     ContDiffAt 𝕜 n (fun y => ∑' j, g j y) x :=
   (ContDiffAt.sum hg).congr_of_eventuallyEq (hs.mono fun _ hy => tsum_eq_sum hy)
+
+open Filter in
+/-- **Periodization in the last coordinate.** The periodization `Σₙ f (x, t + n)` of a `C^k` map
+`f` compactly supported in `E × (0, 1)` is a `C^k` map of period one in `t`, which vanishes for
+`x` outside a compact set and agrees with `f` near `E × (0, 1)`. -/
+theorem exists_contDiff_periodic_eventuallyEq [NormedSpace ℝ E] {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {k : WithTop ℕ∞} {f : E × ℝ → F} (hf : ContDiff ℝ k f)
+    (hc : HasCompactSupport f) (hU : tsupport f ⊆ univ ×ˢ Ioo 0 1) :
+    ∃ g : E × ℝ → F, ContDiff ℝ k g ∧ (∀ x t, g (x, t + 1) = g (x, t)) ∧
+      (∀ᶠ z in comap Prod.fst (cocompact E), g z = 0) ∧
+      ∀ z ∈ univ ×ˢ Ioo (0 : ℝ) 1, g =ᶠ[𝓝 z] f := by
+  set φ : ℤ → E × ℝ → F := fun n z ↦ f (z.1, z.2 + n)
+  have hh {n : ℤ} {z : E × ℝ} (hz : z.2 + n ∉ Ioo (0 : ℝ) 1) : φ n z = 0 :=
+    image_eq_zero_of_notMem_tsupport (x := (z.1, z.2 + n)) fun h ↦ hz (hU h).2
+  refine ⟨fun z ↦ ∑' n, φ n z, contDiff_iff_contDiffAt.2 fun z ↦ ?_, fun x t ↦ ?_, ?_, ?_⟩
+  · -- Near `z`, only the terms with `-z.2 - 1 < n < 2 - z.2` can be nonzero.
+    refine contDiffAt_tsum_of_eventually_eq_zero (Finset.Ioo ⌊-z.2 - 1⌋ ⌈2 - z.2⌉)
+      (fun n _ ↦ (hf.comp (contDiff_fst.prodMk (contDiff_snd.add contDiff_const))).contDiffAt) ?_
+    filter_upwards [continuous_snd.continuousAt.preimage_mem_nhds
+      (Ioo_mem_nhds (sub_one_lt z.2) (lt_add_one z.2))] with w hw n hn
+    refine hh fun h ↦ hn (Finset.mem_Ioo.2 ⟨Int.floor_lt.2 ?_, Int.lt_ceil.2 ?_⟩) <;>
+      simp only [mem_preimage, mem_Ioo] at hw h <;> linarith
+  · -- Shifting `t` by one shifts the summation index.
+    refine Eq.trans (tsum_congr fun n ↦ ?_) ((Equiv.addRight (1 : ℤ)).tsum_eq fun n ↦ φ n (x, t))
+    simp only [φ, Equiv.coe_addRight, Int.cast_add, Int.cast_one]
+    ring_nf
+  · -- Off the projection of the support of `f` to `E`, every term vanishes.
+    filter_upwards [preimage_mem_comap (hc.isCompact.image continuous_fst).compl_mem_cocompact]
+      with z hz
+    exact (tsum_congr fun n : ℤ ↦ image_eq_zero_of_notMem_tsupport (f := f)
+      (x := (z.1, z.2 + n)) fun h ↦ hz ⟨_, h, rfl⟩).trans tsum_zero
+  · -- On `E × (0, 1)` only the term `n = 0` survives.
+    intro z hz
+    filter_upwards [(isOpen_univ.prod isOpen_Ioo).mem_nhds hz] with w hw
+    refine (tsum_eq_single 0 fun n hn ↦ hh fun h ↦ hn ?_).trans (by simp [φ])
+    have h₁ : (-1 : ℝ) < n := by linarith [hw.2.2, h.1]
+    have h₂ : (n : ℝ) < 1 := by linarith [hw.2.1, h.2]
+    have h₁' : (-1 : ℤ) < n := by exact_mod_cast h₁
+    have h₂' : n < 1 := by exact_mod_cast h₂
+    omega
 
 /-- The radial profile `Real.smoothTransition ((R ^ 2 - ‖x - x₀‖ ^ 2) / (R ^ 2 - r ^ 2))` is a
 smooth function with values in `[0, 1]`, equal to one on `closedBall x₀ r` and with topological
@@ -662,53 +705,30 @@ theorem exists_forall_contDiff_plateau : ∃ C : ℝ, ∀ (c : ℝ) {r : ℝ}, 0
   obtain ⟨ψ, hψ, -, hψ1, hψt, hψd, -⟩ := hK c hr (lt_add_one r)
   have hψc : HasCompactSupport ψ := (isCompact_closedBall c _).of_isClosed_subset
     (isClosed_tsupport ψ) hψt
-  have hψ'cont : Continuous (deriv ψ) := hψ.continuous_deriv (by simp)
-  have hint : Integrable (fun s ↦ ψ s ^ 2) :=
-    Continuous.integrable_of_hasCompactSupport (hψ.continuous.pow 2)
-      (hψc.comp_left (g := fun x : ℝ ↦ x ^ 2) (by norm_num))
-  have hdint : Integrable (fun s ↦ deriv ψ s ^ 2) :=
-    Continuous.integrable_of_hasCompactSupport (hψ'cont.pow 2)
-      (hψc.deriv.comp_left (g := fun x : ℝ ↦ x ^ 2) (by norm_num))
-  have hA : volume (closedBall c (r + 1) \ ball c r) ≠ ⊤ :=
-    ((measure_mono sdiff_subset).trans_lt measure_closedBall_lt_top).ne
   refine ⟨ψ, hψ, hψt, ?_, ?_⟩
   · -- `ψ = 1` on `closedBall c r`.
-    calc 2 * r = ∫ s, (closedBall c r).indicator (fun _ ↦ (1 : ℝ)) s := by
-          rw [integral_indicator_const _ measurableSet_closedBall,
-            Real.volume_real_closedBall hr, smul_eq_mul, mul_one]
-      _ ≤ ∫ s, ψ s ^ 2 := by
-          refine integral_mono ((integrable_indicator_iff measurableSet_closedBall).2
-            (integrableOn_const measure_closedBall_lt_top.ne)) hint fun s ↦ ?_
-          by_cases hs : s ∈ closedBall c r
-          · simp [indicator_of_mem hs, hψ1 hs]
-          · simp [indicator_of_notMem hs, sq_nonneg]
-  · -- `ψ'` is bounded by `K` and vanishes off the annulus `closedBall c (r + 1) \ ball c r`.
-    have hd (s : ℝ) : deriv ψ s ^ 2 ≤
-        (closedBall c (r + 1) \ ball c r).indicator (fun _ ↦ K ^ 2) s := by
-      by_cases hs : s ∈ closedBall c (r + 1) \ ball c r
-      · have h := hψd s
-        rw [gradient_eq_deriv', Real.norm_eq_abs, add_sub_cancel_left, div_one] at h
-        rw [indicator_of_mem hs, ← sq_abs]
-        exact pow_le_pow_left₀ (abs_nonneg _) h 2
-      · rw [indicator_of_notMem hs]
-        suffices deriv ψ s = 0 by simp [this]
-        rcases not_and_or.1 hs with hs | hs
-        · exact notMem_support.1 fun h ↦ hs (hψt (support_deriv_subset h))
-        · have h1 : ψ =ᶠ[𝓝 s] fun _ ↦ 1 :=
-            Filter.eventually_of_mem (isOpen_ball.mem_nhds (not_not.1 hs)) fun t ht ↦
-              hψ1 (ball_subset_closedBall ht)
-          rw [h1.deriv_eq, deriv_const]
-    calc ∫ s, deriv ψ s ^ 2
-        ≤ ∫ s, (closedBall c (r + 1) \ ball c r).indicator (fun _ ↦ K ^ 2) s :=
-          integral_mono hdint ((integrable_indicator_iff
-            (measurableSet_closedBall.diff measurableSet_ball)).2 (integrableOn_const hA)) hd
-      _ = 2 * K ^ 2 := by
-          rw [integral_indicator_const _ (measurableSet_closedBall.diff measurableSet_ball),
-            measureReal_sdiff (ball_subset_closedBall.trans (closedBall_subset_closedBall
-              (by linarith))) measurableSet_ball measure_closedBall_lt_top.ne,
-            Real.volume_real_closedBall (by linarith), measureReal_def, Real.volume_ball,
-            ENNReal.toReal_ofReal (by positivity), smul_eq_mul]
-          ring
+    calc 2 * r = ∫ s in closedBall c r, ψ s ^ 2 := by
+          rw [setIntegral_congr_fun (g := fun _ ↦ 1) measurableSet_closedBall
+              fun s hs ↦ by simp [hψ1 hs],
+            setIntegral_const, Real.volume_real_closedBall hr, smul_eq_mul, mul_one]
+      _ ≤ ∫ s, ψ s ^ 2 := setIntegral_le_integral
+          ((hψ.pow 2).continuous.integrable_of_hasCompactSupport
+            (hψc.comp_left (g := fun x : ℝ ↦ x ^ 2) (by norm_num)))
+          (.of_forall fun _ ↦ sq_nonneg _)
+  · -- `ψ'` vanishes off the annulus `closedBall c (r + 1) \ ball c r`, where `|ψ'| ≤ K`.
+    have h0 (s : ℝ) (hs : s ∉ closedBall c (r + 1) \ ball c r) : deriv ψ s ^ 2 = 0 := by
+      rcases not_and_or.1 hs with hs | hs
+      · simp [notMem_support.1 fun h ↦ hs (hψt (support_deriv_subset h))]
+      · simp [(hψ1.eventuallyEq_of_mem (Filter.mem_of_superset
+          (isOpen_ball.mem_nhds (not_not.1 hs)) ball_subset_closedBall)).deriv_eq]
+    rw [← setIntegral_eq_integral_of_forall_compl_eq_zero h0]
+    refine (Real.le_norm_self _).trans ((norm_setIntegral_le_of_norm_le_const (C := K ^ 2)
+      ((measure_mono sdiff_subset).trans_lt measure_closedBall_lt_top) fun s _ ↦ ?_).trans_eq ?_)
+    · simpa [gradient_eq_deriv'] using pow_le_pow_left₀ (norm_nonneg _) (hψd s) 2
+    · rw [measureReal_sdiff (ball_subset_closedBall.trans (closedBall_subset_closedBall
+          (by linarith))) measurableSet_ball measure_closedBall_lt_top.ne,
+        Real.volume_real_closedBall (by linarith), Real.volume_real_ball hr]
+      ring
 
 open MeasureTheory Metric in
 /-- A function whose gradient is at most `K` on a closed ball and vanishes off it has
@@ -717,25 +737,10 @@ theorem setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall
     [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
     {mu : Measure E} [IsFiniteMeasureOnCompacts mu] {s : Set E} {ψ : E → ℝ} {x₀ : E} {R K : ℝ}
     (hψts : tsupport ψ ⊆ closedBall x₀ R) (hψg : ∀ x ∈ closedBall x₀ R, ‖∇ ψ x‖ ≤ K) :
-    ∫ x in s, ‖∇ ψ x‖ ^ 2 ∂mu ≤ K ^ 2 * mu.real (closedBall x₀ R) := by
-  have hmeasB : MeasurableSet (closedBall x₀ R) := measurableSet_closedBall
-  calc ∫ x in s, ‖∇ ψ x‖ ^ 2 ∂mu
-      ≤ ∫ x in s, (closedBall x₀ R).indicator (fun _ => K ^ 2) x ∂mu := by
-        refine integral_mono_of_nonneg (Filter.Eventually.of_forall fun x => by positivity)
-          ((integrableOn_const measure_closedBall_lt_top.ne).integrable_indicator
-            hmeasB).restrict
-          (Filter.Eventually.of_forall fun x => ?_)
-        by_cases hx : x ∈ closedBall x₀ R
-        · rw [indicator_of_mem hx]
-          exact pow_le_pow_left₀ (norm_nonneg _) (hψg x hx) 2
-        · have hfd : fderiv ℝ ψ x = 0 := Function.notMem_support.1 fun hx' =>
-            hx (hψts (support_fderiv_subset ℝ hx'))
-          simp [indicator_of_notMem hx, _root_.gradient, hfd]
-    _ ≤ K ^ 2 * mu.real (closedBall x₀ R) := by
-        rw [integral_indicator_const _ hmeasB, smul_eq_mul, mul_comm]
-        gcongr
-        rw [measureReal_restrict_apply hmeasB]
-        exact measureReal_mono inter_subset_left measure_closedBall_lt_top.ne
+    ∫ x in s, ‖∇ ψ x‖ ^ 2 ∂mu ≤ K ^ 2 * mu.real (closedBall x₀ R) :=
+  setIntegral_sq_le_of_support_subset_closedBall (ψ := fun x => ‖∇ ψ x‖)
+    (fun x hx => hψts (support_fderiv_subset ℝ fun hfd => hx (by simp [_root_.gradient, hfd])))
+    fun x hx => by simpa using hψg x hx
 
 section ScaledCutoff
 
