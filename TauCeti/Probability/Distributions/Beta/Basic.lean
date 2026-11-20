@@ -26,6 +26,7 @@ that the beta law is carried by `[0, 1]`, so every exponential moment exists.
 ## Main results
 
 * `TauCeti.Probability.betaPDFReal_nonneg` — nonnegativity of the density;
+* `TauCeti.Probability.betaPDF_nat_add_one_eq` — the factorial formula at positive integer shapes;
 * `TauCeti.Probability.integrable_betaMeasure_iff` and `TauCeti.Probability.integral_betaMeasure_eq`
   — integrability and
   integration against the beta law, transferred to the real density;
@@ -75,6 +76,18 @@ theorem betaPDFReal_nonneg {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) (x : ℝ)
       (Real.rpow_nonneg hx.1.le _))
       (Real.rpow_nonneg (sub_nonneg.mpr hx.2.le) _)
   · exact le_rfl
+
+/-- On the open unit interval, the beta density with shapes `a + 1` and `b + 1` is
+`(a + b + 1)! / (a! b!)` times `x ^ a * (1 - x) ^ b`. -/
+theorem betaPDF_nat_add_one_eq {a b : ℕ} {x : ℝ} (hx : x ∈ Ioo (0 : ℝ) 1) :
+    betaPDF ((a : ℝ) + 1) ((b : ℝ) + 1) x =
+      ENNReal.ofReal (((a + b + 1).factorial : ℝ) / (a.factorial * b.factorial) *
+        x ^ a * (1 - x) ^ b) := by
+  have hsum : (a : ℝ) + 1 + ((b : ℝ) + 1) = ((a + b + 1 : ℕ) : ℝ) + 1 := by
+    push_cast
+    ring
+  simp only [betaPDF_of_pos_lt_one hx.1 hx.2, beta, hsum, Real.Gamma_nat_eq_factorial,
+    one_div_div, add_sub_cancel_right, Real.rpow_natCast]
 
 /-- The beta law presented by its real-valued density. -/
 theorem betaMeasure_eq_withDensity_ofReal (α β : ℝ) :
