@@ -61,11 +61,11 @@ theorem exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spec
   obtain ⟨χ, hχa⟩ := WeakDual.CharacterSpace.mem_spectrum_iff_exists.1
     (StarSubalgebra.spectrum_eq (S := S) (a := x) ▸ spectrum.algebraMap_mem ℂ hz)
   have hχ_strong : WeakDual.toStrongDual (χ : WeakDual ℂ S) =
-      (WeakDual.CharacterSpace.toAlgHom χ).toContinuousLinearMap :=
+      (WeakDual.CharacterSpace.toAlgHom χ : S →ₙₐ[ℂ] ℂ).toStrongDual :=
     DFunLike.ext _ _ fun _ => by simp
   have hχ_state : (χ : WeakDual ℂ S) ∈ stateSpace S :=
     mem_stateSpace_iff_norm_eq_one_and_map_one.2
-      ⟨hχ_strong ▸ AlgHom.toContinuousLinearMap_norm _, by simp⟩
+      ⟨hχ_strong ▸ AlgHom.norm_toStrongDual_toNonUnitalAlgHom _, by simp⟩
   obtain ⟨ψ, hψ, hψ_ext⟩ := S.exists_mem_stateSpace_forall_apply_coe_eq hχ_state
   refine ⟨.mk₀ (WeakDual.toStrongDual ψ) fun _ => map_nonneg_of_mem_stateSpace hψ,
     (PositiveContinuousLinearMap.mk₀_apply _ _ 1).trans <|
@@ -216,13 +216,14 @@ private theorem nonneg_iff_forall_mem_stateSpace_unital {a : A} :
       (toStrongDual φ).map_smul_of_tower, map_sub]
     simp [hstar φ hφ]
   have him_nonneg : 0 ≤ (ℑ a : A) :=
-    nonneg_of_isSelfAdjoint_of_forall_mem_stateSpace (ℑ a).2 fun φ hφ => by simp [him_zero φ hφ]
+    nonneg_of_isSelfAdjoint_of_forall_mem_stateSpace (ℑ a).property fun φ hφ => by
+      simp [him_zero φ hφ]
   have him_nonpos : 0 ≤ -(ℑ a : A) :=
-    nonneg_of_isSelfAdjoint_of_forall_mem_stateSpace (ℑ a).2.neg fun φ hφ => by
+    nonneg_of_isSelfAdjoint_of_forall_mem_stateSpace (ℑ a).property.neg fun φ hφ => by
       rw [← toStrongDual_apply, map_neg, toStrongDual_apply, him_zero φ hφ, neg_zero]
   have him_eq : ℑ a = 0 := Subtype.ext <| le_antisymm (neg_nonneg.mp him_nonpos) him_nonneg
   have hre_nonneg : 0 ≤ (ℜ a : A) :=
-    nonneg_of_isSelfAdjoint_of_forall_mem_stateSpace (ℜ a).2 fun φ hφ => by
+    nonneg_of_isSelfAdjoint_of_forall_mem_stateSpace (ℜ a).property fun φ hφ => by
       have ha_eq : (ℜ a : A) = a := by simpa [him_eq] using realPart_add_I_smul_imaginaryPart a
       rw [ha_eq]
       exact h φ hφ
@@ -241,7 +242,7 @@ private theorem pullback_inr_mem_stateSpace_of_norm_eq {a : A} (ha : a ≠ 0) {�
     pullbackFunctional A (inrNonUnitalStarAlgHom ℂ A) ψ ∈ stateSpace A := by
   let φ := pullbackFunctional A (inrNonUnitalStarAlgHom ℂ A) ψ
   refine mem_stateSpace_iff.mpr
-    ⟨fun x hx => by simpa [φ] using map_nonneg_of_mem_stateSpace hψ hx.inr, le_antisymm ?_ ?_⟩
+    ⟨fun x hx => by simpa [φ] using map_nonneg_of_mem_stateSpace hψ (hx.inr ℂ), le_antisymm ?_ ?_⟩
   · refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x => ?_
     simpa [φ, Unitization.norm_inr] using norm_apply_le_of_mem_stateSpace hψ (x : A⁺¹)
   · have ha_pos : 0 < ‖a‖ := norm_pos_iff.mpr ha
@@ -264,7 +265,7 @@ theorem norm_le_of_forall_mem_stateSpace {a : A} [IsStarNormal a] {c : ℝ} (hc 
     (h : ∀ φ ∈ stateSpace A, ‖φ a‖ ≤ c) : ‖a‖ ≤ c := by
   rcases eq_or_ne a 0 with rfl | ha0
   · simpa using hc
-  · obtain ⟨z, hz, hrad⟩ := spectrum.exists_nnNorm_eq_spectralRadius (a : A⁺¹)
+  · obtain ⟨z, hz, hrad⟩ := spectrum.exists_eNorm_eq_spectralRadius (a : A⁺¹)
     rw [IsStarNormal.spectralRadius_eq_nnNorm (a : A⁺¹)] at hrad
     have hnorm : ‖z‖ = ‖a‖ := by
       simpa [Unitization.norm_inr] using congrArg ENNReal.toReal hrad
@@ -278,7 +279,7 @@ theorem norm_le_of_forall_mem_stateSpace {a : A} [IsStarNormal a] {c : ℝ} (hc 
 theorem nonneg_iff_forall_mem_stateSpace {a : A} :
     0 ≤ a ↔ ∀ φ ∈ stateSpace A, 0 ≤ φ a := by
   refine ⟨fun ha φ hφ => map_nonneg_of_mem_stateSpace hφ ha, fun h => ?_⟩
-  rw [← Unitization.inr_nonneg_iff, nonneg_iff_forall_mem_stateSpace_unital]
+  rw [← Unitization.inr_nonneg_iff ℂ, nonneg_iff_forall_mem_stateSpace_unital]
   intro ψ hψ
   let φ := pullbackFunctional A (inrNonUnitalStarAlgHom ℂ A) ψ
   rcases eq_or_ne (toStrongDual φ) 0 with h0 | hne
@@ -294,7 +295,7 @@ theorem nonneg_iff_forall_mem_stateSpace {a : A} :
     have hstate : c • φ ∈ stateSpace A := by
       refine mem_stateSpace_iff.mpr ⟨fun x hx => ?_, ?_⟩
       · rw [← toStrongDual_apply, map_smul, smul_apply, smul_eq_mul, toStrongDual_apply]
-        have hx0 : 0 ≤ φ x := by simpa [φ] using map_nonneg_of_mem_stateSpace hψ hx.inr
+        have hx0 : 0 ≤ φ x := by simpa [φ] using map_nonneg_of_mem_stateSpace hψ (hx.inr ℂ)
         exact mul_nonneg hc hx0
       · rw [map_smul, norm_smul, Complex.norm_real, Real.norm_of_nonneg (inv_nonneg.mpr hr.le),
           inv_mul_cancel₀ hr.ne']

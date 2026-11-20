@@ -49,6 +49,8 @@ among sets, and its degree is the supremum of their degrees.
   of membership.
 * `Set.turingReducible_empty_iff`: reducibility to the empty oracle characterizes computable sets.
 * `Set.union_turingReducible`: if two sets reduce to an oracle, so does their union.
+* `Function.turingEquivalent_oracle_preimage_unpair_graph`: graph coding, a total function is
+  Turing equivalent to the set of codes `Nat.pair x (g x)` of its graph.
 
 ## References
 
@@ -86,6 +88,12 @@ noncomputable def oracle (A : Set ℕ) : ℕ →. ℕ :=
 /-- The oracle of `A` answers `A.indicator 1 n` at `n`. -/
 @[simp]
 theorem oracle_apply (A : Set ℕ) (n : ℕ) : A.oracle n = Part.some (A.indicator 1 n) :=
+  (rfl)
+
+/-- The oracle of `A` is its characteristic function `A.indicator 1`, lifted to a partial
+function. -/
+theorem oracle_eq_indicator (A : Set ℕ) :
+    A.oracle = ((A.indicator 1 : ℕ → ℕ) : ℕ →. ℕ) :=
   (rfl)
 
 /-- A set's characteristic function is computable in its own oracle. -/
@@ -141,6 +149,34 @@ theorem union_turingReducible {A B : Set ℕ} {g : ℕ →. ℕ} (hA : TuringRed
   by_cases hnA : n ∈ A <;> by_cases hnB : n ∈ B <;> simp [Seq.seq, hnA, hnB]
 
 end Set
+
+namespace Function
+
+/-- **Graph coding.** A total function on the naturals is Turing equivalent to the set coding its
+graph by `Nat.pair`. So the degree of every total function is the degree of a set. -/
+theorem turingEquivalent_oracle_preimage_unpair_graph (g : ℕ → ℕ) :
+    (fun x => Part.some (g x)) ≡ᵀ (Nat.unpair ⁻¹' g.graph).oracle := by
+  classical
+  have hmem (n : ℕ) : n ∈ Nat.unpair ⁻¹' g.graph ↔ g n.unpair.1 = n.unpair.2 :=
+    Set.mem_preimage.trans mem_graph
+  constructor
+  · -- `g x` is the least `y` whose pair with `x` lies in the graph
+    have hzero : ComputableIn₂ {(Nat.unpair ⁻¹' g.graph).oracle}
+        fun x y => 1 - (Nat.unpair ⁻¹' g.graph).indicator 1 (Nat.pair x y) :=
+      ComputableIn.comp (f := fun p : ℕ × ℕ => p.1 - p.2) Primrec.nat_sub.computableIn₂ <|
+        (ComputableIn.const 1).pair
+          ((Set.computableIn_indicator _).comp Primrec₂.natPair.computableIn₂)
+    refine RecursiveIn.iff_nat.2 <| (ComputableIn₂.iff_nat.1 hzero).rfind.of_eq_tot fun x =>
+      Nat.mem_rfind.2 ⟨by simp [hmem], fun {y} hy => by simp [hmem, hy.ne']⟩
+  · apply ((Nat.unpair ⁻¹' g.graph).turingReducible_iff_computableIn_indicator _).2
+    have hg : ComputableIn {fun x => Part.some (g x)} g := RecursiveIn.oracle _ rfl
+    have h := (Primrec.ite Primrec.eq (Primrec.const 1) (Primrec.const 0)).computableIn.comp
+      ((hg.comp (Primrec.fst.comp Primrec.unpair).computableIn).pair
+        (Primrec.snd.comp Primrec.unpair).computableIn)
+    refine RecursiveIn.of_eq h fun n => ?_
+    by_cases hn : g n.unpair.1 = n.unpair.2 <;> simp [hmem, hn]
+
+end Function
 
 /-- A many-one reduction of sets of naturals gives a Turing reduction of their oracles: query the
 oracle of `B` at the image of the input. -/

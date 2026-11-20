@@ -212,7 +212,7 @@ theorem IsUnramified.exists_associated_algebraMap [IsUnramified K L] (a : 𝒪[L
   obtain ⟨r, hr⟩ := exists_algebraMap_veq_of_isUnramified (K := K) (L := L) (a : L)
   have hrle : r ≤ᵥ 1 := by
     rw [← ValuativeExtension.vle_iff_vle (B := L), map_one]
-    exact hr.1.trans ((valuation L).vle_one_iff.2 a.2)
+    exact hr.1.trans ((valuation L).vle_one_iff.2 a.property)
   refine ⟨⟨r, (valuation K).vle_one_iff.1 hrle⟩, ?_⟩
   exact associated_of_dvd_dvd (hintL.dvd_iff_le.2 ((valuation L).vle_iff_le.1 hr.2))
     (hintL.dvd_iff_le.2 ((valuation L).vle_iff_le.1 hr.1))

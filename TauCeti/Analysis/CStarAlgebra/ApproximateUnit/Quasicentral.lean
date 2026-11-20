@@ -187,7 +187,7 @@ private theorem exists_quasicentral_step (S : NonUnitalStarSubalgebra ℂ A) [Is
       ((tendsto_iff_norm_sub_tendsto_zero.mp (hl₀.tendsto_mul_left (p j))).eventually
         (ge_mem_nhds hδ)).and <| eventually_all.mpr fun i => by
         let pa : S :=
-          ⟨(p j : A) * f i, StarMemClass.mul_mem_right_of_mul_mem_left hmul (f i) (p j).2⟩
+          ⟨(p j : A) * f i, StarMemClass.mul_mem_right_of_mul_mem_left hmul (f i) (p j).property⟩
         exact (tendsto_iff_norm_sub_tendsto_zero.mp (hl₀.tendsto_mul_left pa)).eventually
           (ge_mem_nhds hδ)
   obtain ⟨w_new, hw_u₀, hw_G, hw_p⟩ := (hu₀_mem.and (hG_mem.and hp_mem)).exists
@@ -196,8 +196,8 @@ private theorem exists_quasicentral_step (S : NonUnitalStarSubalgebra ℂ A) [Is
         star ((w_new : A) * f i - f i * (w_new : A))‖ ≤ δ :=
     eventually_all.mpr fun i => by
       let sd : S := star ⟨(w_new : A) * f i - f i * (w_new : A),
-        sub_mem (StarMemClass.mul_mem_right_of_mul_mem_left hmul (f i) w_new.2)
-          (hmul (f i) _ w_new.2)⟩
+        sub_mem (StarMemClass.mul_mem_right_of_mul_mem_left hmul (f i) w_new.property)
+          (hmul (f i) _ w_new.property)⟩
       exact (tendsto_iff_norm_sub_tendsto_zero.mp
         ((CStarAlgebra.increasingApproximateUnit S).tendsto_mul_left sd)).eventually
         (ge_mem_nhds hδ)
@@ -372,34 +372,35 @@ theorem exists_seq_quasicentral_isIncreasingApproximateUnit [TopologicalSpace.Se
   let gSeq : ℕ → S := TopologicalSpace.denseSeq S
   let fSeq : ℕ → A := TopologicalSpace.denseSeq A
   let Elem := {e : S // 0 ≤ e ∧ ‖e‖ < 1}
-  let stepEx (n : ℕ) (x : Elem) := exists_quasicentral_approx S hmul x.2.1 x.2.2
+  let stepEx (n : ℕ) (x : Elem) := exists_quasicentral_approx S hmul x.property.1 x.property.2
     (fun i : Fin (n + 1) => fSeq i) (fun i : Fin (n + 1) => gSeq i)
     (Nat.one_div_pos_of_nat (n := n))
   let step (n : ℕ) (x : Elem) : Elem :=
-    ⟨(stepEx n x).choose, x.2.1.trans (stepEx n x).choose_spec.1, (stepEx n x).choose_spec.2.1⟩
-  have hstep_spec (n : ℕ) (x : Elem) : x.1 ≤ (step n x).1 ∧
-      (∀ k ≤ n, ‖(step n x).1 * gSeq k - gSeq k‖ < 1 / ((n : ℝ) + 1)) ∧
-      (∀ k ≤ n, ‖((step n x).1 : A) * fSeq k - fSeq k * ((step n x).1 : A)‖ <
+    ⟨(stepEx n x).choose, x.property.1.trans (stepEx n x).choose_spec.1,
+      (stepEx n x).choose_spec.2.1⟩
+  have hstep_spec (n : ℕ) (x : Elem) : x.val ≤ (step n x).val ∧
+      (∀ k ≤ n, ‖(step n x).val * gSeq k - gSeq k‖ < 1 / ((n : ℝ) + 1)) ∧
+      (∀ k ≤ n, ‖((step n x).val : A) * fSeq k - fSeq k * ((step n x).val : A)‖ <
         1 / ((n : ℝ) + 1)) := by
-    have hval : (step n x).1 = (stepEx n x).choose := rfl
+    have hval : (step n x).val = (stepEx n x).choose := rfl
     rw [hval]
     have h := (stepEx n x).choose_spec
     exact ⟨h.1, fun k hk => h.2.2.1 ⟨k, Nat.lt_succ_of_le hk⟩,
       fun k hk => h.2.2.2 ⟨k, Nat.lt_succ_of_le hk⟩⟩
   let recSeq : ℕ → Elem := Nat.rec ⟨0, le_rfl, by simp⟩ step
   have hrec_succ (n : ℕ) : recSeq (n + 1) = step n (recSeq n) := rfl
-  let u : ℕ → S := fun n => (recSeq (n + 1)).1
-  have hu_step (n : ℕ) : (recSeq n).1 ≤ u n ∧
+  let u : ℕ → S := fun n => (recSeq (n + 1)).val
+  have hu_step (n : ℕ) : (recSeq n).val ≤ u n ∧
       (∀ k ≤ n, ‖u n * gSeq k - gSeq k‖ < 1 / ((n : ℝ) + 1)) ∧
       (∀ k ≤ n, ‖(u n : A) * fSeq k - fSeq k * (u n : A)‖ < 1 / ((n : ℝ) + 1)) := by
-    have hu_eq : u n = (step n (recSeq n)).1 := congrArg Subtype.val (hrec_succ n)
+    have hu_eq : u n = (step n (recSeq n)).val := congrArg Subtype.val (hrec_succ n)
     rw [hu_eq]
     exact hstep_spec n (recSeq n)
   have hu_approx : (atTop.map u).IsIncreasingApproximateUnit := by
     refine Filter.IsIncreasingApproximateUnit.of_tendsto_mul_right_of_dense
       (TopologicalSpace.denseRange_denseSeq S) ?_
-      (eventually_map.mpr (.of_forall fun n => (recSeq (n + 1)).2.1))
-      (eventually_map.mpr (.of_forall fun n => (recSeq (n + 1)).2.2.le))
+      (eventually_map.mpr (.of_forall fun n => (recSeq (n + 1)).property.1))
+      (eventually_map.mpr (.of_forall fun n => (recSeq (n + 1)).property.2.le))
     rintro _ ⟨k, rfl⟩
     rw [tendsto_map'_iff, tendsto_iff_norm_sub_tendsto_zero]
     exact squeeze_zero' (.of_forall fun _ => norm_nonneg _)
@@ -407,7 +408,7 @@ theorem exists_seq_quasicentral_isIncreasingApproximateUnit [TopologicalSpace.Se
       tendsto_one_div_add_atTop_nhds_zero_nat
   have hu_comm (a : A) : Tendsto (fun n => (u n : A) * a - a * (u n : A)) atTop (𝓝 0) := by
     refine tendsto_map'_iff.mp <| TauCeti.tendsto_commutator_of_dense (C := 1)
-      (eventually_map.mpr (.of_forall fun n => by simpa using (recSeq (n + 1)).2.2.le))
+      (eventually_map.mpr (.of_forall fun n => by simpa using (recSeq (n + 1)).property.2.le))
       (TopologicalSpace.denseRange_denseSeq A) ?_ a
     rintro _ ⟨k, rfl⟩
     rw [tendsto_map'_iff, tendsto_iff_norm_sub_tendsto_zero]
@@ -416,7 +417,7 @@ theorem exists_seq_quasicentral_isIncreasingApproximateUnit [TopologicalSpace.Se
       (eventually_atTop.mpr ⟨k, fun n hn => ((hu_step n).2.2 k hn).le⟩)
       tendsto_one_div_add_atTop_nhds_zero_nat
   exact ⟨u, monotone_nat_of_le_succ fun n => (hu_step (n + 1)).1,
-    fun n => (recSeq (n + 1)).2.1, fun n => (recSeq (n + 1)).2.2, hu_approx, hu_comm⟩
+    fun n => (recSeq (n + 1)).property.1, fun n => (recSeq (n + 1)).property.2, hu_approx, hu_comm⟩
 
 end Arveson
 

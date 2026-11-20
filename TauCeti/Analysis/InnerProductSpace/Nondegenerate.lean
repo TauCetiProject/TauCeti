@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 import Mathlib.Analysis.InnerProductSpace.Dual
+import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
 # Nondegeneracy of the real inner product
@@ -39,6 +40,15 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 /-- The real inner product is a nondegenerate bilinear form. -/
 theorem nondegenerate_inner : (innerₗ E).Nondegenerate :=
   ⟨fun x hx ↦ inner_self_eq_zero.mp (hx x), fun y hy ↦ inner_self_eq_zero.mp (hy y)⟩
+
+/-- A nonzero scalar multiple of the real inner product is nondegenerate. -/
+theorem nondegenerate_toBilinForm_smul_innerSL {c : ℝ} (hc : c ≠ 0) :
+    (c • innerSL ℝ (E := E)).toBilinForm.Nondegenerate := by
+  have hform : (c • innerSL ℝ (E := E)).toBilinForm = c • innerₗ E := by
+    ext u v
+    simp [innerSL_apply_apply ℝ]
+  rw [hform]
+  exact (BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero hc)).2 nondegenerate_inner
 
 /-- In finite dimension the real inner product is a perfect pairing: `v ↦ ⟪v, ·⟫` is a bijection
 onto the dual. -/

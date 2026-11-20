@@ -344,13 +344,13 @@ theorem norm_resolventApprox_mul_self_sub_le {h : A} (hh : 0 ≤ h) (n : ℕ) :
 
 private theorem add_ne_zero_of_mem_spectrum_inr {h : A} (hh : 0 ≤ h) {c : ℝ} (hc : 0 < c)
     {t : ℝ} (ht : t ∈ spectrum ℝ (h : A⁺¹)) : t + c ≠ 0 := by
-  have : 0 ≤ t := spectrum_nonneg_of_nonneg (Unitization.inr_nonneg h hh) ht
+  have : 0 ≤ t := spectrum_nonneg_of_nonneg (Unitization.inr_nonneg ℂ h hh) ht
   positivity
 
 /-- In the unitization `A⁺¹`, `(h : A⁺¹) + c • 1` is invertible for `0 ≤ h` and `0 < c`. -/
 theorem isUnit_inr_add_smul_one {h : A} (hh : 0 ≤ h) {c : ℝ} (hc : 0 < c) :
     IsUnit ((h : A⁺¹) + c • (1 : A⁺¹)) := by
-  have hh' : 0 ≤ (h : A⁺¹) := Unitization.inr_nonneg h hh
+  have hh' : 0 ≤ (h : A⁺¹) := Unitization.inr_nonneg ℂ h hh
   have hcfc : cfc (fun t : ℝ => t + c) (h : A⁺¹) = (h : A⁺¹) + c • (1 : A⁺¹) := by
     rw [cfc_add_const c (fun t : ℝ => t) (h : A⁺¹) (by fun_prop) hh'.isSelfAdjoint,
       cfc_id' ℝ (h : A⁺¹) hh'.isSelfAdjoint, Algebra.algebraMap_eq_smul_one]
@@ -362,7 +362,7 @@ theorem isUnit_inr_add_smul_one {h : A} (hh : 0 ≤ h) {c : ℝ} (hc : 0 < c) :
 theorem inr_resolventApprox {h : A} (hh : 0 ≤ h) (n : ℕ) :
     ((resolventApprox h n : A) : A⁺¹) =
       (h : A⁺¹) * Ring.inverse ((h : A⁺¹) + ((n : ℝ) + 1)⁻¹ • (1 : A⁺¹)) := by
-  have hh' : 0 ≤ (h : A⁺¹) := Unitization.inr_nonneg h hh
+  have hh' : 0 ≤ (h : A⁺¹) := Unitization.inr_nonneg ℂ h hh
   have hne : ∀ t ∈ spectrum ℝ (h : A⁺¹), t + ((n : ℝ) + 1)⁻¹ ≠ 0 :=
     fun _ ht => add_ne_zero_of_mem_spectrum_inr hh (by positivity) ht
   have hcont : ContinuousOn (fun t : ℝ => (t + ((n : ℝ) + 1)⁻¹)⁻¹) (spectrum ℝ (h : A⁺¹)) :=
@@ -608,7 +608,6 @@ private theorem compressState_nonneg_and_mem_closedBall {B : Type*} [CStarAlgebr
   simpa [Complex.norm_real, Real.norm_of_nonneg (norm_nonneg _)] using
     (congrArg norm hnorm1).le.trans hle
 
-omit [PartialOrder A] [StarOrderedRing A] in
 private theorem exists_mem_stateSpace_compress_eq_norm_sq {u : A} (hu : IsSelfAdjoint u) (a : A) :
     ∃ ω ∈ stateSpace A⁺¹,
       ω ((1 - (u : A⁺¹)) * ((a * star a : A) : A⁺¹) * (1 - (u : A⁺¹))) =
@@ -678,7 +677,7 @@ private theorem tendsto_resolventApprox_mul_of_forall_positiveLinearMap_pos {h :
   let φ₀ : A →ₚ[ℂ] ℂ := .mk₀
     ((toStrongDual ψ₀).toLinearMap.comp (Unitization.inrHom ℂ ℂ A)) fun x hx =>
       isClosed_Ici.mem_of_mapClusterPt (heval (x : A⁺¹))
-        (.of_forall fun m => (hψ m).1 (x : A⁺¹) (Unitization.inr_nonneg x hx))
+        (.of_forall fun m => (hψ m).1 (x : A⁺¹) (Unitization.inr_nonneg ℂ x hx))
   have hφ₀_ne : φ₀ ≠ 0 := fun h0 => by
     have hge : ε ^ 2 ≤ ‖ψ₀ ((a * star a : A) : A⁺¹)‖ :=
       (isClosed_le continuous_const continuous_norm).mem_of_mapClusterPt
