@@ -91,8 +91,8 @@ end NativeBundle
 
 attribute [local instance] ChartedSpace.empty
 
-/-- An actual finite atlas of the trivial complex bundle over the empty complex manifold. -/
-def emptyAtlas (F : Type*) [NormedAddCommGroup F] [NormedSpace ℂ F] :
+/-- An actual finite atlas of a trivial normed bundle over the empty complex manifold. -/
+def emptyAtlas (F : Type*) [NormedAddCommGroup F] :
     FiniteBundleAtlas ℂ Empty F (Trivial Empty F) :=
   Classical.choice (FiniteBundleAtlas.nonempty (E := ℂ) (M := Empty) (F := F)
     (V := Trivial Empty F))
