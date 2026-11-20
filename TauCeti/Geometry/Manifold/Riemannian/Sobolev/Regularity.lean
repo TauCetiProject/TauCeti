@@ -57,10 +57,9 @@ transfers Euclidean interior regularity to `H¹(M)`:
   (`TauCeti.PDE.UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_contDiffOn`) needs no a priori
   continuity and no bound on the dimension. With the weak Poisson theory of
   `TauCeti.Geometry.Manifold.Riemannian.Poisson` this solves `Δ⁺u = f` with `u` smooth for every
-  smooth `f` of integral zero (`TauCeti.Manifold.SobolevH1.exists_neg_laplaceBeltrami_eq`). On a
-  closed four-manifold these are the scalar elliptic inputs of the global Coulomb gauge
-  `d*(a - 2 dξ) = 0`, `Δ⁺ξ = d*a / 2`, and of the gauge-fixing Laplacian `4 Δ⁺ + |ψ|²` of the
-  Seiberg–Witten equations.
+  smooth `f` of integral zero (`TauCeti.Manifold.SobolevH1.exists_neg_laplaceBeltrami_eq`). For
+  a smooth `1`-form `a` on a closed four-manifold, this is the scalar equation `Δ⁺ξ = d*a / 2` of
+  the global Coulomb gauge `d*(a - 2 dξ) = 0`.
 
 Local continuous or smooth representatives constructed in charts are glued to a global one by
 `TauCeti.exists_contMDiff_ae_eq_of_locally`, since the Riemannian volume charges every nonempty
@@ -942,14 +941,14 @@ private theorem ChartPDEData.exists_contDiffOn_ae_eq_of_dirichletForm_add_eq {p 
   -- `c` is bounded on `Ω`, since `ρ` is and `V` is continuous on the compact manifold `M`, so the
   -- mass term `c u` is square integrable.
   obtain ⟨CV, hCV⟩ := isCompact_univ.exists_bound_of_continuousOn hV.continuous.continuousOn
+  have hc_top : MemLp c ⊤ (volume.restrict (d.Ω : Set _)) :=
+    memLp_top_of_bound (hc.continuousOn.aestronglyMeasurable d.Ω.isOpen.measurableSet)
+      (d.M_ρ * CV) ((ae_restrict_mem d.Ω.isOpen.measurableSet).mono fun y hy ↦ by
+        rw [norm_mul]
+        exact mul_le_mul (d.hρ_max y hy) (hCV _ (mem_univ _)) (norm_nonneg _)
+          ((norm_nonneg _).trans (d.hρ_max y hy)))
   have hcu2 : MemLp (fun y ↦ c y * u y) 2 (volume.restrict (d.Ω : Set _)) :=
-    (Lp.memLp u).of_le_mul
-      ((hc.continuousOn.aestronglyMeasurable d.Ω.isOpen.measurableSet).mul
-        (Lp.memLp u).aestronglyMeasurable)
-      ((ae_restrict_mem d.Ω.isOpen.measurableSet).mono fun y hy ↦ by
-        rw [norm_mul, norm_mul]
-        exact mul_le_mul_of_nonneg_right (mul_le_mul (d.hρ_max y hy) (hCV _ (mem_univ _))
-          (norm_nonneg _) ((norm_nonneg _).trans (d.hρ_max y hy))) (norm_nonneg _))
+    hc_top.fun_mul (Lp.memLp u)
   have hG2 : MemLp (fun y ↦ F y - c y * u y) 2 (volume.restrict (d.Ω : Set _)) := hF2.sub hcu2
   -- Against test functions, `w ∘ ψ` solves `-div(a ∇(w ∘ ψ)) = F - c (w ∘ ψ)`.
   have hu_test : ∀ φ : 𝓓(d.Ω, ℝ),
@@ -975,36 +974,9 @@ private theorem ChartPDEData.exists_contDiffOn_ae_eq_of_dirichletForm_add_eq {p 
   -- The equation extends from test functions to `H¹₀(Ω)`, and the mass term moves to the left.
   have hu_H10 := PDE.forall_energyFormH1_restrictL_eq_setIntegral
     (le_rfl : d.Ω ≤ d.Ω) d.hcoeff hu_test hG2
-  have h_id : W1p.restrictL (le_rfl : d.Ω ≤ d.Ω) (d.T w) = d.T w :=
-    W1p.ext_value (Lp.ext (W1p.value_restrictL_ae le_rfl (d.T w)))
-  rw [h_id] at hu_H10
-  have hu_eq : ∀ v : W1p0 volume d.Ω 2,
-      PDE.energyFormH1 (chartMatrix (I := I) p) 0 c (d.T w) (v : W1p volume d.Ω 2) =
-        ∫ y in (d.Ω : Set _), F y * W1p.value (v : W1p volume d.Ω 2) y := fun v ↦ by
-    have hv2 := Lp.memLp (W1p.value (v : W1p volume d.Ω 2))
-    have h00 := PDE.energyFormH1_def (chartMatrix (I := I) p) 0 0 (d.T w) (v : W1p volume d.Ω 2)
-    have h0c := PDE.energyFormH1_def (chartMatrix (I := I) p) 0 c (d.T w) (v : W1p volume d.Ω 2)
-    have hint := integral_add (PDE.integrable_energyIntegrand_jetField d.hcoeff (d.T w)
-      (v : W1p volume d.Ω 2)) (hcu2.integrable_mul hv2)
-    have hint' := integral_add (hG2.integrable_mul hv2) (hcu2.integrable_mul hv2)
-    calc PDE.energyFormH1 (chartMatrix (I := I) p) 0 c (d.T w) (v : W1p volume d.Ω 2)
-        = ∫ y in (d.Ω : Set _), (PDE.energyIntegrand (chartMatrix (I := I) p y)
-            ((0 : EuclideanSpace ℝ (Fin (finrank ℝ E)) → EuclideanSpace ℝ (Fin (finrank ℝ E))) y)
-            ((0 : EuclideanSpace ℝ (Fin (finrank ℝ E)) → ℝ) y)
-            (PDE.jetField (d.T w) y) (PDE.jetField (v : W1p volume d.Ω 2) y) +
-              c y * u y * W1p.value (v : W1p volume d.Ω 2) y) :=
-          h0c.trans (integral_congr_ae (Filter.Eventually.of_forall fun y ↦ by
-            simp only [PDE.energyIntegrand_apply, PDE.massForm_apply, PDE.jetField_apply,
-              Pi.zero_apply, u]
-            ring))
-      _ = PDE.energyFormH1 (chartMatrix (I := I) p) 0 0 (d.T w) (v : W1p volume d.Ω 2) +
-            ∫ y in (d.Ω : Set _), c y * u y * W1p.value (v : W1p volume d.Ω 2) y :=
-          hint.trans (congrArg (· + _) h00.symm)
-      _ = ∫ y in (d.Ω : Set _), ((F y - c y * u y) * W1p.value (v : W1p volume d.Ω 2) y +
-            c y * u y * W1p.value (v : W1p volume d.Ω 2) y) :=
-          (congrArg (· + _) (hu_H10 v)).trans hint'.symm
-      _ = ∫ y in (d.Ω : Set _), F y * W1p.value (v : W1p volume d.Ω 2) y :=
-          integral_congr_ae (Filter.Eventually.of_forall fun y ↦ by ring)
+  rw [W1p.restrictL_self] at hu_H10
+  have hu_eq := PDE.energyFormH1_eq_setIntegral_of_principal_eq_sub d.hcoeff MemLp.zero hc_top
+    hF2 fun v ↦ (hu_H10 v).trans (by simp [u])
   exact d.hell.exists_contDiffOn_ae_eq_of_contDiffOn (contDiffOn_chartMatrix p d.hΩt)
     contDiff_zero_fun.contDiffOn hc
     (fun x hx ↦ (hF.exists_wkp_value_ae_eq hx).imp fun V hV ↦ ⟨hV.1, hV.2.2⟩) hu_eq
@@ -1045,7 +1017,7 @@ theorem exists_eq_ofSmooth_of_dirichletForm_add_eq {V f : M → ℝ} (hV : ContM
         (HasCompactSupport.of_compactSpace _)
     have hVw : ∫ x, V x * toLp w x * φ x ∂riemannianVolume I M =
         ∫ x, V x * U x * φ x ∂riemannianVolume I M :=
-      integral_congr_ae (hwu.mono fun x hx ↦ by beta_reduce; rw [hx]; rfl)
+      integral_congr_ae (hwu.mono fun x hx ↦ by simp only [U, ContMDiffMap.coeFn_mk, hx])
     rw [eq_sub_of_add_eq (hw φ), hVw, ← integral_sub (hint f hf.continuous)
       (hint (fun x ↦ V x * U x) (hV.continuous.mul hu.continuous))]
     exact integral_congr_ae (Filter.Eventually.of_forall fun x ↦ by ring)

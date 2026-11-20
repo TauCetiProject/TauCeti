@@ -175,7 +175,7 @@ theorem _root_.ContDiffOn.exists_wkp_value_ae_eq {f : E → ℝ} (hf : ContDiffO
   filter_upwards [value_restrictL_ofTestFunctionₗ_ae (mu := mu) (p := p) hVΩ k φ,
     ae_restrict_mem V.isOpen.measurableSet] with y hy hyV
   rw [hy]
-  change ψ y • f y = f y
+  simp only [φ, TestFunction.coe_mk]
   rw [(hψ1 y (Metric.ball_subset_closedBall hyV)).self_of_nhds, one_smul]
 
 /-- The closure in `W^{k,p}(U)` of the restrictions to `U` of test functions on `Ω`, as an
