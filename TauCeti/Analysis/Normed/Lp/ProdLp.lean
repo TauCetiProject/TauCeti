@@ -40,7 +40,9 @@ orthogonal block sum `f ⊕ g`. It is compatible with the algebraic operations o
 exactly when `f` and `g` are, so the spectrum of a block sum of endomorphisms is the union of
 their spectra, and its operator norm is the larger of the two operator norms. The
 projections onto the factors and the inclusions of the factors are contractions, and fixing one
-coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
+coordinate embeds the other factor isometrically into `WithLp p (α × β)`. A kernel on
+`WithLp p (X × Y)` consisting of the pairs whose components lie in the ranges of two injective
+linear maps is identified with the product of their sources.
 
 ## Main statements
 
@@ -69,6 +71,9 @@ coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
 * `ContinuousLinearMap.spectrum_withLpProdMap` — the spectrum of `f ⊕ g` is the union of the
   spectra of `f` and `g`.
 * `ContinuousLinearMap.norm_withLpProdMap` — `‖f ⊕ g‖ = max ‖f‖ ‖g‖`.
+* `ContinuousLinearMap.kerEquivProdOfInjective` — a kernel on `WithLp p (X × Y)` that is the
+  product of the ranges of two injective linear maps is equivalent to the product of their
+  sources.
 * `WithLp.norm_fstL_le_one`, `WithLp.norm_sndL_le_one`,
   `WithLp.norm_prodContinuousLinearEquiv_symm_comp_inl_le_one`,
   `WithLp.norm_prodContinuousLinearEquiv_symm_comp_inr_le_one` — the projections onto and the
@@ -497,6 +502,56 @@ theorem spectrum_withLpProdMap {R : Type*} [CommSemiring R] [Algebra R 𝕜] [Al
     not_and_or]
 
 end Normed
+
+section KerEquivProd
+
+variable {p : ℝ≥0∞} {R X Y Z M₁ M₂ : Type*} [Semiring R] [AddCommGroup X] [Module R X]
+  [TopologicalSpace X] [AddCommGroup Y] [Module R Y] [TopologicalSpace Y] [AddCommGroup Z]
+  [Module R Z] [TopologicalSpace Z] [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂]
+  [Module R M₂] (T : WithLp p (X × Y) →L[R] Z) {ι₁ : M₁ →ₗ[R] X} {ι₂ : M₂ →ₗ[R] Y}
+  (h₁ : Function.Injective ι₁) (h₂ : Function.Injective ι₂)
+  (hT : ∀ w, T w = 0 ↔ w.fst ∈ LinearMap.range ι₁ ∧ w.snd ∈ LinearMap.range ι₂)
+
+/-- The kernel of an operator on `WithLp p (X × Y)`, when it consists of the pairs whose components
+lie in the ranges of two injective linear maps, is linearly equivalent to the product of their
+sources. -/
+noncomputable def kerEquivProdOfInjective : T.ker ≃ₗ[R] M₁ × M₂ :=
+  (LinearEquiv.ofInjective ((WithLp.linearEquiv p R _).symm.toLinearMap ∘ₗ ι₁.prodMap ι₂)
+      ((WithLp.linearEquiv p R _).symm.injective.comp <| Prod.map_injective.mpr ⟨h₁, h₂⟩) ≪≫ₗ
+    LinearEquiv.ofEq _ _ (by
+      ext w
+      rw [LinearMap.mem_ker, coe_coe, hT]
+      constructor
+      · rintro ⟨⟨x, y⟩, rfl⟩
+        exact ⟨⟨x, rfl⟩, ⟨y, rfl⟩⟩
+      · rintro ⟨⟨x, hx⟩, ⟨y, hy⟩⟩
+        exact ⟨(x, y),
+          WithLp.ofLp_injective p <| Prod.ext (by simpa using hx) (by simpa using hy)⟩)).symm
+
+/-- `kerEquivProdOfInjective` sends a pair to the pair of its images under the two injections. -/
+@[simp]
+theorem coe_kerEquivProdOfInjective_symm_apply (q : M₁ × M₂) :
+    ((kerEquivProdOfInjective T h₁ h₂ hT).symm q : WithLp p (X × Y)) =
+      WithLp.toLp p (ι₁ q.1, ι₂ q.2) := by
+  simp [kerEquivProdOfInjective]
+
+/-- The first component of `kerEquivProdOfInjective w` is the preimage of the first component of
+`w` under the first injection. -/
+@[simp]
+theorem apply_kerEquivProdOfInjective_apply_fst (w : T.ker) :
+    ι₁ (kerEquivProdOfInjective T h₁ h₂ hT w).1 = (w : WithLp p (X × Y)).fst := by
+  obtain ⟨q, rfl⟩ := (kerEquivProdOfInjective T h₁ h₂ hT).symm.surjective w
+  simp
+
+/-- The second component of `kerEquivProdOfInjective w` is the preimage of the second component of
+`w` under the second injection. -/
+@[simp]
+theorem apply_kerEquivProdOfInjective_apply_snd (w : T.ker) :
+    ι₂ (kerEquivProdOfInjective T h₁ h₂ hT w).2 = (w : WithLp p (X × Y)).snd := by
+  obtain ⟨q, rfl⟩ := (kerEquivProdOfInjective T h₁ h₂ hT).symm.surjective w
+  simp
+
+end KerEquivProd
 
 end ContinuousLinearMap
 
