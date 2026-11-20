@@ -71,14 +71,14 @@ of an iterated weighted derivative as a factorial-scaled coefficient after subst
   `PowerSeries.nsmul_coeff_mul_succ_pow_succ_eq_coeff_pow_mul_derivative`:
   `e • coeff (e * (n + 1)) (v ^ (n + 1)) = coeff (e * (n + 1) - 1) (v ^ n * v')` for `e ≠ 0`, and
   its `X *`-shifted form for all `e`.
+* `PowerSeries.coeff_succ_pow_succ_eq_coeff_pow_mul_derivative`: the `e = 1` case
+  `coeff (n + 1) (v ^ (n + 1)) = coeff n (v ^ n * v')`.
 * `PowerSeries.coeff_X_mul_derivative`: the Euler operator `X d/dX` multiplies the `k`-th
   coefficient by `k`.
 * `PowerSeries.eq_of_X_mul_derivative_eq_mul`: with unique division by positive integers, a series
   with prescribed logarithmic derivative `X f' / f` is determined by its constant coefficient.
 * `PowerSeries.X_mul_derivative_mk_eq_mul_C_mul_X_iff`: `X f' = f · u X` for `f = ∑ γₖ Xᵏ` exactly
   when `(k + 1) γ_{k+1} = u γ_k`.
-* `PowerSeries.coeff_succ_pow_succ_eq_coeff_pow_mul_derivative`: the `e = 1` case
-  `coeff (n + 1) (v ^ (n + 1)) = coeff n (v ^ n * v')`.
 * `PowerSeries.mul_coeff_val_zpow_neg_add_coeff_val_zpow_neg_sub_one_mul_derivative_eq_zero`:
   for a unit `u : R⟦X⟧ˣ` over a commutative ring and `e, k ≥ 1`,
   `(e : R) * coeff (e * k) (u ^ (-k)) + coeff (e * k - 1) (u ^ (-k - 1) * u') = 0`.
@@ -181,9 +181,7 @@ theorem coeff_succ_pow_succ_eq_coeff_pow_mul_derivative (v : R⟦X⟧) (n : ℕ)
 
 /-- The Euler operator `X d/dX` multiplies the `k`-th coefficient by `k`. -/
 theorem coeff_X_mul_derivative (f : R⟦X⟧) (k : ℕ) : coeff k (X * d⁄dX f) = k * coeff k f := by
-  rcases k with _ | k
-  · simp
-  · rw [coeff_succ_X_mul, coeff_derivative, mul_comm, Nat.cast_succ]
+  simpa using coeff_X_pow_mul_iterate_derivative f 1 k
 
 /-- **Uniqueness of a series with prescribed logarithmic derivative.** Over a commutative
 semiring with unique division by positive integers, a power series `f` with `X f' = f P`, for a

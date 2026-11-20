@@ -301,6 +301,15 @@ theorem map_chernSeries {B : Type*} [CommSemiring B] (f : A →+* B) (c : Fin n 
   simp only [PowerSeries.coeff_map, coeff_chernSeries, Function.comp_apply]
   split_ifs <;> simp
 
+open PowerSeries in
+/-- Changing coefficients along a ring hom commutes with the Euler operator `t d/dt` applied to
+the total Chern series. -/
+private theorem map_X_mul_derivative_chernSeries {B : Type*} [CommSemiring B] (f : A →+* B)
+    (c : Fin n → A) :
+    PowerSeries.map f (PowerSeries.X * d⁄dX (chernSeries c)) =
+      PowerSeries.X * d⁄dX (chernSeries (f ∘ c)) := by
+  rw [map_mul, PowerSeries.map_X, ← PowerSeries.derivative_map, map_chernSeries]
+
 /-- **The splitting principle for the total Chern series**: if the Chern classes are the elementary
 symmetric functions of a multiset `s` of `n` Chern roots, the total Chern series is the generating
 function `∑ₖ eₖ(s) tᵏ = ∏_{x ∈ s} (1 + x t)` of these functions. -/
@@ -352,7 +361,7 @@ theorem X_mul_derivative_chernSeries (R : Type*) [CommRing R] [Algebra R A] (c :
       ext j
       simp [ψ]
     refine PowerSeries.map_injective ψ.toRingHom hψ ?_
-    rw [map_mul, map_mul, PowerSeries.map_X, ← PowerSeries.derivative_map, map_chernSeries]
+    rw [map_X_mul_derivative_chernSeries, map_mul, map_chernSeries]
     simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe] at hesymm ⊢
     rw [hesymm, X_mul_derivative_mk_esymm]
     congr 1
@@ -363,7 +372,7 @@ theorem X_mul_derivative_chernSeries (R : Type*) [CommRing R] [Algebra R A] (c :
     · simp [ψ, aeval_esymm_newtonMvPolynomial]
   -- Specialize the universal identity along `aeval c`.
   have h := congrArg (PowerSeries.map (aeval (R := R) c).toRingHom) huniv
-  rw [map_mul, map_mul, PowerSeries.map_X, ← PowerSeries.derivative_map, map_chernSeries] at h
+  rw [map_X_mul_derivative_chernSeries, map_mul, map_chernSeries] at h
   simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe] at h
   have hc : (aeval (R := R) c) ∘ MvPolynomial.X = c := funext fun j => aeval_X c j
   rw [hc] at h
@@ -424,6 +433,7 @@ theorem chernSeries_eq_chernSeries_mul_mk_neg_one_pow_mul [HasUniqueDiv A] (R : 
     (fun k => by rw [← mul_smul_comm, hγ, pow_succ]; ring) (by rw [h₁]; ring)
     fun k hk => (h k hk).symm
 
+open PowerSeries in
 /-- **The total Chern class of a virtual bundle whose Chern character is concentrated in degrees
 `0` and `2`, over `ℚ`.** Let `cK` and `cW` be the Chern classes of complex vector bundles `K` and
 `W` of ranks `n` and `m`, in a commutative `ℚ`-algebra. If the virtual bundle `I = K - W` has
@@ -443,20 +453,16 @@ theorem chernSeries_eq_chernSeries_mul_rescale_exp [Algebra ℚ A] {m : ℕ} (cK
   have hch (l : ℕ) {N : ℕ} (c : Fin N → A) : aeval c (chernCharacterPolynomial N l) =
       algebraMap ℚ A (l ! : ℚ)⁻¹ * aeval c (newtonMvPolynomial ℚ N l) := by
     rw [chernCharacterPolynomial_eq_C_mul_newtonMvPolynomial, map_mul, aeval_C]
-  have hexp : rescale x (exp A) = PowerSeries.mk fun k => x ^ k * algebraMap ℚ A (k ! : ℚ)⁻¹ := by
-    ext k
-    simp [PowerSeries.coeff_rescale, PowerSeries.coeff_exp]
-  rw [hexp]
-  refine chernSeries_eq_chernSeries_mul_mk ℚ cK cW (u := x) (by simp) (fun k => ?_) ?_
-    fun k hk => ?_
-  · -- `(k + 1) xᵏ⁺¹ / (k + 1)! = x xᵏ / k!`
-    rw [nsmul_eq_mul, ← map_natCast (algebraMap ℚ A), Nat.factorial_succ]
-    have : ((k + 1 : ℕ) : ℚ) * ((((k + 1) * k ! : ℕ)) : ℚ)⁻¹ = (k ! : ℚ)⁻¹ := by
-      have : (k ! : ℚ) ≠ 0 := by positivity
-      push_cast
-      field_simp
-    rw [mul_left_comm, ← map_mul, this, pow_succ]
+  -- `exp' = exp` makes the coefficients of `exp(x t)` satisfy the divided-power recursion.
+  have hd : PowerSeries.X * d⁄dX (rescale x (exp A)) =
+      rescale x (exp A) * (PowerSeries.C x * PowerSeries.X) := by
+    rw [PowerSeries.derivative_rescale, derivative_exp]
     ring
+  have hexp : rescale x (exp A) = PowerSeries.mk fun k => PowerSeries.coeff k (rescale x (exp A)) :=
+    PowerSeries.ext fun k => by rw [coeff_mk]
+  rw [hexp] at hd ⊢
+  refine chernSeries_eq_chernSeries_mul_mk ℚ cK cW (by simp)
+    (PowerSeries.X_mul_derivative_mk_eq_mul_C_mul_X_iff.1 hd) ?_ fun k hk => ?_
   · simpa [hch] using h₁
   · have hk' := h k hk
     rw [hch, hch] at hk'
