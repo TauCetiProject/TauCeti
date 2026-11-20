@@ -109,7 +109,7 @@ local notation "Iter" => PowerSeries.IsRestricted.subring (R := Inner) (c none)
 private noncomputable def restrictedOptionSeries (f : Flat) : PowerSeries Inner :=
   PowerSeries.mk fun n ↦
     ⟨PowerSeries.coeff n (optionEquivLeft σ R (f : MvPowerSeries (Option σ) R)),
-      isRestricted_coeff_optionEquivLeft Fact.out f.2 n⟩
+      isRestricted_coeff_optionEquivLeft Fact.out f.property n⟩
 
 private theorem coeff_restrictedOptionSeries (f : Flat) (n : ℕ) :
     (PowerSeries.coeff (R := Inner) n (restrictedOptionSeries f) : MvPowerSeries σ R) =
@@ -126,7 +126,7 @@ private theorem isRestricted_restrictedOptionSeries (f : Flat) :
   -- these are the only ones at which the weighted Gauss norm of the slice can reach `ε`
   have hbad :
       {t | ε / 2 ≤ ‖coeff t (f : MvPowerSeries (Option σ) R)‖ * t.prod (c · ^ ·)}.Finite := by
-    simpa [eventually_cofinite, not_lt] using f.2.eventually (gt_mem_nhds (half_pos hε))
+    simpa [eventually_cofinite, not_lt] using f.property.eventually (gt_mem_nhds (half_pos hε))
   rw [eventually_cofinite]
   refine (hbad.image fun t ↦ t none).subset fun n hn ↦ ?_
   by_contra hnn
@@ -154,7 +154,7 @@ private theorem isRestricted_optionEquivLeft_symm (g : Iter) :
   -- of `g` whose weighted norm reaches `ε`, and from one of the finitely many coefficients of
   -- that slice whose weighted norm, weighted again, reaches `ε`
   have hg : Tendsto (fun n ↦ ‖PowerSeries.coeff (R := Inner) n (g : PowerSeries Inner)‖ *
-      c none ^ n) cofinite (𝓝 0) := (PowerSeries.isRestricted_iff _ _).mp g.2
+      c none ^ n) cofinite (𝓝 0) := (PowerSeries.isRestricted_iff _ _).mp g.property
   have houter : {n | ε ≤ ‖PowerSeries.coeff (R := Inner) n (g : PowerSeries Inner)‖ *
       c none ^ n}.Finite := by
     simpa [eventually_cofinite, not_lt] using hg.eventually (gt_mem_nhds hε)
@@ -162,7 +162,7 @@ private theorem isRestricted_optionEquivLeft_symm (g : Iter) :
       (PowerSeries.coeff (R := Inner) n (g : PowerSeries Inner) : MvPowerSeries σ R)‖ *
         t.prod (fun i k ↦ c (some i) ^ k)}.Finite := by
     simpa [eventually_cofinite, not_lt] using
-      (PowerSeries.coeff n (g : PowerSeries Inner)).2.eventually
+      (PowerSeries.coeff n (g : PowerSeries Inner)).property.eventually
         (gt_mem_nhds (div_pos hε (hpos n)))
   rw [eventually_cofinite]
   refine (houter.biUnion fun n _ ↦ (hinner n).image fun t ↦ t.optionElim n).subset
@@ -298,7 +298,7 @@ theorem isRestricted_of_map_subtype_eq_optionEquivLeft {ρ r : ℝ} [Fact (0 < �
       (splitRadius_le hρr)⟩
   have h : (restrictedOptionEquiv fc : PowerSeries _) = F := PowerSeries.map_injective _
     Subtype.val_injective ((map_subtype_restrictedOptionEquiv fc).trans hF.symm)
-  exact h ▸ (restrictedOptionEquiv fc).2
+  exact h ▸ (restrictedOptionEquiv fc).property
 
 /-- The comparison sends the separated variable to the univariate variable. -/
 @[simp]

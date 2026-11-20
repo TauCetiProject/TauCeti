@@ -8,8 +8,10 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
+import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.W1p.Symmetry
+import TauCeti.Analysis.Sobolev.W1p.TangentialDerivative
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -28,6 +30,13 @@ slabs and the whole space.
 
 This is the model of global `H²` regularity: flattening the boundary of a `C²` domain turns the
 equation in each chart into one on a half-space with Lipschitz coefficients.
+
+The file also takes the first step of higher regularity up to the boundary. When the
+coefficients are smooth on a convex such domain, with Lipschitz first derivatives, and `f` has a
+weak derivative in `L²(Ω)` along a direction `τ` parallel to the hyperplane, the derivative
+`∂_τ u` again has zero boundary values and solves a Dirichlet problem with forcing in `L²(Ω)`, so
+the `H²` result applies to it: the third derivatives of `u` with at least one tangential direction
+lie in `L²(Ω)`.
 
 ## The argument
 
@@ -48,6 +57,12 @@ The proof is the classical one (Evans, §6.3.2, Theorem 4).
   derivative in the direction `ν`. Now `W - ∑ⱼ ⟪ν', a eⱼ⟫ ∂_{P eⱼ}u = ⟪ν', a ν'⟫ ∂_ν u`, and
   ellipticity gives `⟪ν', a ν'⟫ ≥ λ ‖ν'‖² > 0`. Multiplying by the Lipschitz function
   `⟪ν', a ν'⟫⁻¹` shows that `∂_ν ∂_ν u` exists in `L²(Ω)`.
+* **Tangential derivatives.** Since `u ∈ H²(Ω)`, the difference quotients of `u` along a tangential
+  `τ` converge to `∂_τ u` in `H¹(Ω)`, so `∂_τ u ∈ H¹₀(Ω)`
+  (`TauCeti.W1p.mem_w1p0Submodule_of_hasWeakLineDerivOn`). Differentiating the equation
+  (`TauCeti.PDE.energyFormH1_ofTestFunctionₗ_eq_setIntegral_of_hasWeakLineDerivOn`) shows that it
+  solves `-∂ᵢ(aⁱʲ ∂ⱼ(∂_τ u)) = ∂_τ f + ∑ᵢⱼ (∂ᵢ∂_τaⁱʲ ∂ⱼu + ∂_τaⁱʲ ∂ᵢ∂ⱼu)`, whose right side lies
+  in `L²(Ω)` because the first two derivatives of the coefficients are bounded on `Ω`.
 
 ## Main declarations
 
@@ -58,10 +73,20 @@ The proof is the classical one (Evans, §6.3.2, Theorem 4).
   lies in `W^{2,2}(Ω)`.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_halfSpace` and
   `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_of_halfSpace`: the case of a half-space.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_isWeakSolutionDirichlet_of_mapsTo`
+  and its half-space case
+  `UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_isWeakSolutionDirichlet_of_halfSpace`: a
+  tangential derivative of the solution lies in `H¹₀(Ω)` and solves a Dirichlet problem with
+  `L²` forcing.
+* `UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_hasWeakLineDerivOn_gradient_of_mapsTo` and
+  its half-space case
+  `UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_hasWeakLineDerivOn_gradient_of_halfSpace`,
+  both in `TauCeti.PDE`: the third derivatives of the solution with a tangential direction lie in
+  `L²(Ω)`.
 
 ## References
 
-* L. C. Evans, *Partial Differential Equations*, 2nd ed., §6.3.2, Theorem 4.
+* L. C. Evans, *Partial Differential Equations*, 2nd ed., §6.3.2, Theorems 4 and 5.
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
   Theorem 8.12.
 -/
@@ -71,7 +96,7 @@ public section
 noncomputable section
 
 open Filter InnerProductSpace MeasureTheory Set TopologicalSpace
-open scoped Distributions InnerProductSpace Matrix NNReal
+open scoped ContDiff Distributions InnerProductSpace Matrix NNReal
 
 namespace TauCeti
 
@@ -373,6 +398,194 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_of_halfSpace (hν : ν ≠ 0)
     ∃ U : Wkp mu Omega 2 2, Wkp.lowerOrder 1 U = (u : W1p mu Omega 2) :=
   ha.exists_lowerOrder_eq_of_mapsTo hν
     (fun _ hτ => TauCeti.mapsTo_add_smul_of_halfSpace hΩ hτ) hK hu
+
+omit [DecidableEq ι] in
+/-- The forcing term `g + ∑ᵢⱼ (∂ᵢ∂_τaⁱʲ ∂ⱼu + ∂_τaⁱʲ ∂ᵢ∂ⱼu)` of the equation differentiated along
+`τ` lies in `L²(Ω)` when the first two derivatives of the coefficients are bounded on `Ω`, given
+by the Lipschitz bounds on `a` and on the first derivatives of its entries. Here `∂ᵢ∂ⱼu` is
+`⟪∇(D j), eᵢ⟫` for given `D j ∈ H¹(Ω)`. -/
+private theorem memLp_add_sum_sum_fderiv_mul_inner_gradient
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
+    (hsmooth : ∀ i j, ContDiffOn ℝ ∞ (fun x => a x i j) Omega) {K' : ℝ≥0}
+    (hK' : ∀ i j, LipschitzOnWith K' (fun x => fderiv ℝ (fun y => a y i j) x) Omega)
+    (g : Lp ℝ 2 (mu.restrict Omega)) (u : W1p mu Omega 2) (D : ι → W1p mu Omega 2)
+    (τ : EuclideanSpace ℝ ι) :
+    MemLp (fun x => g x + ∑ i, ∑ j,
+      (fderiv ℝ (fun y => fderiv ℝ (fun z => a z i j) y τ) x (EuclideanSpace.basisFun ι ℝ i) *
+          ⟪W1p.gradient u x, EuclideanSpace.basisFun ι ℝ j⟫_ℝ +
+        fderiv ℝ (fun y => a y i j) x τ * ⟪W1p.gradient (D j) x, EuclideanSpace.basisFun ι ℝ i⟫_ℝ))
+      2 (mu.restrict Omega) := by
+  classical
+  set b := EuclideanSpace.basisFun ι ℝ
+  have hΩm : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
+  -- A coefficient continuous and bounded on `Ω` times an `L²(Ω)` function lies in `L²(Ω)`.
+  have hmul : ∀ {c h : EuclideanSpace ℝ ι → ℝ} (M : ℝ), ContinuousOn c Omega →
+      (∀ x ∈ Omega, ‖c x‖ ≤ M) → MemLp h 2 (mu.restrict Omega) →
+      MemLp (fun x => c x * h x) 2 (mu.restrict Omega) := fun M hc hcM hh =>
+    hh.of_le_mul ((hc.aestronglyMeasurable hΩm).mul hh.aestronglyMeasurable)
+      ((ae_restrict_mem hΩm).mono fun x hx => by
+        rw [norm_mul]
+        exact mul_le_mul_of_nonneg_right (hcM x hx) (norm_nonneg _))
+  -- The entries of `a` are `K`-Lipschitz on `Ω`, and their first derivatives `K'`-Lipschitz.
+  have hentry : ∀ i j, LipschitzOnWith K (fun x => a x i j) Omega := fun i j => by
+    simpa [b, matrixBilinearForm_apply, b.orthonormal.1 i, b.orthonormal.1 j] using
+      lipschitzOnWith_matrixBilinearForm_apply_apply hK (b i) (b j)
+  have hd1 : ∀ i j, ∀ x ∈ Omega, ‖fderiv ℝ (fun y => a y i j) x τ‖ ≤ K * ‖τ‖ :=
+    fun i j x hx => (ContinuousLinearMap.le_opNorm _ _).trans (mul_le_mul_of_nonneg_right
+      (norm_fderiv_le_of_lipschitzOn ℝ (Omega.isOpen.mem_nhds hx) (hentry i j))
+      (norm_nonneg τ))
+  have hd2 : ∀ i j, ∀ x ∈ Omega, ‖fderiv ℝ (fun y => fderiv ℝ (fun z => a z i j) y τ) x (b i)‖ ≤
+      ‖ContinuousLinearMap.apply ℝ ℝ τ‖₊ * K' := fun i j x hx => by
+    refine (ContinuousLinearMap.le_opNorm _ _).trans ?_
+    rw [b.orthonormal.1 i, mul_one]
+    exact norm_fderiv_le_of_lipschitzOn ℝ (Omega.isOpen.mem_nhds hx)
+      ((ContinuousLinearMap.apply ℝ ℝ τ).lipschitzWith.comp_lipschitzOnWith (hK' i j))
+  -- The derivatives of the coefficients are continuous on `Ω`.
+  have hc1 : ∀ i j, ContinuousOn (fun x => fderiv ℝ (fun y => a y i j) x τ) Omega := fun i j =>
+    ((hsmooth i j).continuousOn_fderiv_of_isOpen Omega.isOpen (by simp)).clm_apply
+      continuousOn_const
+  have hc2 : ∀ i j,
+      ContinuousOn (fun x => fderiv ℝ (fun y => fderiv ℝ (fun z => a z i j) y τ) x (b i))
+        Omega := fun i j =>
+    ((((hsmooth i j).fderiv_of_isOpen (m := ∞) Omega.isOpen (by simp)).clm_apply
+      contDiffOn_const).continuousOn_fderiv_of_isOpen Omega.isOpen (by simp)).clm_apply
+        continuousOn_const
+  refine (Lp.memLp g).add (memLp_finsetSum _ fun i _ => memLp_finsetSum _ fun j _ =>
+    (hmul _ (hc2 i j) (hd2 i j) ((Lp.memLp _).inner_const _)).add
+      (hmul _ (hc1 i j) (hd1 i j) ((Lp.memLp _).inner_const _)))
+
+/-- **The tangential derivative solves the differentiated Dirichlet problem.** Let `ν ≠ 0` and let
+`Ω` be convex and mapped into itself by every translation orthogonal to `ν`, as a half-space
+`{x | c < ⟪x, ν⟫}` or a slab is. Let `a` be uniformly elliptic and bounded on `Ω`, with entries
+smooth on `Ω`, `x ↦ a(x)` Lipschitz on `Ω` as a bilinear form and the first derivatives of its
+entries Lipschitz on `Ω`. Let `u ∈ H¹₀(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f`, and let `τ`
+be orthogonal to `ν`, a tangential direction, along which `f ∈ L²(Ω)` has a weak derivative in
+`L²(Ω)`. Then the weak derivative `∂_τ u` lies in `H¹₀(Ω)` and is itself a weak solution of a
+Dirichlet problem `-∂ᵢ(aⁱʲ ∂ⱼ(∂_τ u)) = F` for some `F ∈ L²(Ω)`. No regularity of `∂Ω` is
+assumed. -/
+theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_isWeakSolutionDirichlet_of_mapsTo
+    (hν : ν ≠ 0) (hΩc : Convex ℝ (Omega : Set (EuclideanSpace ℝ ι)))
+    (hΩ : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) Omega Omega)
+    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
+    (hsmooth : ∀ i j, ContDiffOn ℝ ∞ (fun x => a x i j) Omega) {K' : ℝ≥0}
+    (hK' : ∀ i j, LipschitzOnWith K' (fun x => fderiv ℝ (fun y => a y i j) x) Omega)
+    {f g : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2}
+    (hu : IsWeakSolutionDirichlet a 0 0 f u) {τ : EuclideanSpace ℝ ι} (hτ : ⟪τ, ν⟫_ℝ = 0)
+    (hf : HasWeakLineDerivOn mu Omega f g τ) :
+    ∃ (w : W1p0 mu Omega 2) (F : Lp ℝ 2 (mu.restrict Omega)),
+      HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2)) (W1p.value (w : W1p mu Omega 2))
+        τ ∧ IsWeakSolutionDirichlet a 0 0 F w := by
+  set b := EuclideanSpace.basisFun ι ℝ
+  have hΩm : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
+  -- `u ∈ H²(Ω)`, so its first derivatives lie in `H¹(Ω)`.
+  obtain ⟨U, hU⟩ := ha.exists_lowerOrder_eq_of_mapsTo hν hΩ hK hu
+  have hder : ∀ v, ∃ d : W1p mu Omega 2,
+      HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2)) (W1p.value d) v := fun v => by
+    obtain ⟨d, hd⟩ := Wkp.exists_hasWeakLineDerivOn_value 1 U v
+    rw [Wkp.value_succ, hU, Wkp.value_one, Wkp.value_one (u : W1p mu Omega 2)] at hd
+    exact ⟨d, hd⟩
+  choose D hD using fun j => hder (b j)
+  obtain ⟨d, hd⟩ := hder τ
+  -- The tangential derivative has zero boundary values.
+  have hmem : d ∈ w1p0Submodule mu Omega 2 :=
+    W1p.mem_w1p0Submodule_of_hasWeakLineDerivOn (by simp) hΩc (hΩ τ hτ) b u.property hD hd
+  -- The forcing term of the differentiated equation lies in `L²(Ω)`.
+  set Fn : EuclideanSpace ℝ ι → ℝ := fun x => g x + ∑ i, ∑ j,
+    (fderiv ℝ (fun y => fderiv ℝ (fun z => a z i j) y τ) x (b i) *
+        ⟪W1p.gradient (u : W1p mu Omega 2) x, b j⟫_ℝ +
+      fderiv ℝ (fun y => a y i j) x τ * ⟪W1p.gradient (D j) x, b i⟫_ℝ)
+  have hFn : MemLp Fn 2 (mu.restrict Omega) :=
+    memLp_add_sum_sum_fderiv_mul_inner_gradient hK hsmooth hK' g (u : W1p mu Omega 2) D τ
+  refine ⟨⟨d, hmem⟩, hFn.toLp Fn, hd, ?_⟩
+  -- Bounded coefficients make the energy form continuous, so testing against test functions
+  -- suffices.
+  have hcoeff := memLp_energyIntegrand_of_bounds (mu := mu) (Omega := Omega) (b := 0) (c := 0)
+    (beta := 0) (gamma := 0) ha.upper_nonneg
+    (ContinuousOn.aestronglyMeasurable (β := ι → ι → ℝ) (continuousOn_pi.2 fun i =>
+      continuousOn_pi.2 fun j => (hsmooth i j).continuousOn) hΩm)
+    aestronglyMeasurable_const aestronglyMeasurable_const
+    (fun x hx => ha.upper_bound hx) (fun _ _ => by simp) (fun _ _ => by simp)
+  refine (isWeakSolutionDirichlet_iff_forall_testFunction hcoeff _ _).2 fun φ => ?_
+  rw [energyFormH1_ofTestFunctionₗ_eq_setIntegral_of_hasWeakLineDerivOn hsmooth
+    hu.energyFormH1_ofTestFunctionₗ hd hD hf φ]
+  exact integral_congr_ae (hFn.coeFn_toLp.mono fun x hx => congrArg (· * φ x) hx.symm)
+
+/-- **The tangential derivative solves the differentiated Dirichlet problem on a half-space.** Let
+`Ω = {x | c < ⟪x, ν⟫}` with `ν ≠ 0`, let `a` be uniformly elliptic and bounded on `Ω`, with entries
+smooth on `Ω`, `x ↦ a(x)` Lipschitz on `Ω` as a bilinear form and the first derivatives of its
+entries Lipschitz on `Ω`, and let `u ∈ H¹₀(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f`. If `τ` is
+parallel to the boundary hyperplane and `f ∈ L²(Ω)` has a weak derivative in `L²(Ω)` along `τ`,
+then `∂_τ u ∈ H¹₀(Ω)` is a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼ(∂_τ u)) = F` for some `F ∈ L²(Ω)`. This is
+the half-space case of
+`TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_isWeakSolutionDirichlet_of_mapsTo`.
+-/
+theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_isWeakSolutionDirichlet_of_halfSpace
+    (hν : ν ≠ 0) (hΩ : ∀ x, x ∈ Omega ↔ c < ⟪x, ν⟫_ℝ)
+    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
+    (hsmooth : ∀ i j, ContDiffOn ℝ ∞ (fun x => a x i j) Omega) {K' : ℝ≥0}
+    (hK' : ∀ i j, LipschitzOnWith K' (fun x => fderiv ℝ (fun y => a y i j) x) Omega)
+    {f g : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2}
+    (hu : IsWeakSolutionDirichlet a 0 0 f u) {τ : EuclideanSpace ℝ ι} (hτ : ⟪τ, ν⟫_ℝ = 0)
+    (hf : HasWeakLineDerivOn mu Omega f g τ) :
+    ∃ (w : W1p0 mu Omega 2) (F : Lp ℝ 2 (mu.restrict Omega)),
+      HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2)) (W1p.value (w : W1p mu Omega 2))
+        τ ∧ IsWeakSolutionDirichlet a 0 0 F w :=
+  ha.exists_hasWeakLineDerivOn_and_isWeakSolutionDirichlet_of_mapsTo hν
+    (TauCeti.convex_of_halfSpace hΩ) (fun _ hτ => TauCeti.mapsTo_add_smul_of_halfSpace hΩ hτ) hK
+    hsmooth hK' hu hτ hf
+
+/-- **Third derivatives with a tangential direction.** Under the hypotheses of
+`TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_isWeakSolutionDirichlet_of_mapsTo`,
+the weak derivative `∂_τ u ∈ H¹₀(Ω)` of the solution along a tangential direction `τ` has second
+weak derivatives in `L²(Ω)` up to the boundary: for all `y` and `z`, `∂_y ∂_τ u = ⟪∇(∂_τ u), y⟫`
+has a weak derivative in the direction `z` that lies in `L²(Ω)`. These are the third derivatives
+of `u` with at least one tangential direction. -/
+theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_hasWeakLineDerivOn_gradient_of_mapsTo
+    (hν : ν ≠ 0) (hΩc : Convex ℝ (Omega : Set (EuclideanSpace ℝ ι)))
+    (hΩ : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) Omega Omega)
+    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
+    (hsmooth : ∀ i j, ContDiffOn ℝ ∞ (fun x => a x i j) Omega) {K' : ℝ≥0}
+    (hK' : ∀ i j, LipschitzOnWith K' (fun x => fderiv ℝ (fun y => a y i j) x) Omega)
+    {f g : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2}
+    (hu : IsWeakSolutionDirichlet a 0 0 f u) {τ : EuclideanSpace ℝ ι} (hτ : ⟪τ, ν⟫_ℝ = 0)
+    (hf : HasWeakLineDerivOn mu Omega f g τ) :
+    ∃ w : W1p0 mu Omega 2,
+      HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2)) (W1p.value (w : W1p mu Omega 2))
+        τ ∧ ∀ y z : EuclideanSpace ℝ ι, ∃ G : Lp ℝ 2 (mu.restrict Omega),
+          HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient (w : W1p mu Omega 2) x, y⟫_ℝ)
+            G z := by
+  obtain ⟨w, _F, hw, hwsol⟩ := ha.exists_hasWeakLineDerivOn_and_isWeakSolutionDirichlet_of_mapsTo
+    hν hΩc hΩ hK hsmooth hK' hu hτ hf
+  exact ⟨w, hw, fun y z => ha.exists_hasWeakLineDerivOn_gradient_of_mapsTo hν hΩ hK hwsol y z⟩
+
+/-- **Third derivatives with a tangential direction up to the boundary of a half-space.** Let
+`Ω = {x | c < ⟪x, ν⟫}` with `ν ≠ 0`, let `a` be uniformly elliptic and bounded on `Ω`, with entries
+smooth on `Ω`, `x ↦ a(x)` Lipschitz on `Ω` as a bilinear form and the first derivatives of its
+entries Lipschitz on `Ω`, and let `u ∈ H¹₀(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f`. If `τ` is
+parallel to the boundary hyperplane and `f ∈ L²(Ω)` has a weak derivative `g ∈ L²(Ω)` along `τ`,
+then `∂_τ u ∈ H¹₀(Ω)` and its second weak derivatives lie in `L²(Ω)`. This is the half-space
+case of `UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_hasWeakLineDerivOn_gradient_of_mapsTo`.
+-/
+theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_hasWeakLineDerivOn_gradient_of_halfSpace
+    (hν : ν ≠ 0) (hΩ : ∀ x, x ∈ Omega ↔ c < ⟪x, ν⟫_ℝ)
+    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
+    (hsmooth : ∀ i j, ContDiffOn ℝ ∞ (fun x => a x i j) Omega) {K' : ℝ≥0}
+    (hK' : ∀ i j, LipschitzOnWith K' (fun x => fderiv ℝ (fun y => a y i j) x) Omega)
+    {f g : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2}
+    (hu : IsWeakSolutionDirichlet a 0 0 f u) {τ : EuclideanSpace ℝ ι} (hτ : ⟪τ, ν⟫_ℝ = 0)
+    (hf : HasWeakLineDerivOn mu Omega f g τ) :
+    ∃ w : W1p0 mu Omega 2,
+      HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2)) (W1p.value (w : W1p mu Omega 2))
+        τ ∧ ∀ y z : EuclideanSpace ℝ ι, ∃ G : Lp ℝ 2 (mu.restrict Omega),
+          HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient (w : W1p mu Omega 2) x, y⟫_ℝ)
+            G z :=
+  ha.exists_hasWeakLineDerivOn_and_hasWeakLineDerivOn_gradient_of_mapsTo hν
+    (TauCeti.convex_of_halfSpace hΩ) (fun _ hτ => TauCeti.mapsTo_add_smul_of_halfSpace hΩ hτ) hK
+    hsmooth hK' hu hτ hf
 
 end PDE
 

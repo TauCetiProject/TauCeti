@@ -122,7 +122,7 @@ theorem dotAlternatization_prod_map_demazureOperator (ω : List b.support)
   | nil => simp
   | cons i ω ih =>
     rw [List.map_cons, List.prod_cons, mul_apply_eq_comp,
-      dotAlternatization_demazureOperator P b i.2, ih]
+      dotAlternatization_demazureOperator P b i.property, ih]
 
 /-- **Demazure's formula for the longest element**: for a reduced word `ω` of the longest element
 `w₀` (an element of which every simple reflection is a left descent),

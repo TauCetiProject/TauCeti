@@ -443,7 +443,8 @@ theorem starProjection_tangentSpace_range_eq {H : Type*} [NormedAddCommGroup H]
     (tangentSpace P (Set.range A)).toSubmodule.starProjection =
       A ∘L Ring.inverse (ContinuousLinearMap.adjoint A ∘L A) ∘L ContinuousLinearMap.adjoint A := by
   have := ContinuousLinearMap.hasOrthogonalProjection_range_of_isUnit_adjoint_comp hA
-  rw [← ContinuousLinearMap.starProjection_range_eq hA]
+  rw [← ContinuousLinearMap.gramLeftInverse_def A,
+    ← ContinuousLinearMap.starProjection_range_eq hA]
   simp_rw [tangentSpace_range_eq_range A hA]
 
 end ScoreOperators

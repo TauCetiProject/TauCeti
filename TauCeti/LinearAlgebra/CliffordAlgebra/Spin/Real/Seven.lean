@@ -284,13 +284,14 @@ theorem natCard_realSpinZeroSevenElementaryAbelian :
     Or.inr <| by rw [Pi.basisFun_apply, realCliffordForm_single_one_of_le (Nat.zero_le _)]
   -- The signed monomial `u • e_s` of a support `s` and a sign `u`.
   let F : spinSevenSupports × ℤˣ → realCliffordSpinGroup 0 7 := fun p ↦
-    (if p.2 = 1 then 1 else spinNegOne) * spinBasis p.1 (even_card_of_mem_spinSevenSupports p.1.2)
+    (if p.2 = 1 then 1 else spinNegOne) * spinBasis p.1 (even_card_of_mem_spinSevenSupports
+        p.1.property)
   have hF (p : spinSevenSupports × ℤˣ) :
       ((F p : realCliffordSpinGroup 0 7) : CliffordAlgebra (realCliffordForm 0 7)) =
         ((p.2 : ℤ) • basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7))) p.1) := by
     rcases Int.units_eq_one_or p.2 with h | h <;> simp [F, h, spinBasis, spinNegOne]
   let f : spinSevenSupports × ℤˣ → realSpinZeroSevenElementaryAbelian := fun p ↦
-    ⟨F p, mem_realSpinZeroSevenElementaryAbelian_iff.mpr ⟨p.1, p.1.2, by
+    ⟨F p, mem_realSpinZeroSevenElementaryAbelian_iff.mpr ⟨p.1, p.1.property, by
       rcases Int.units_eq_one_or p.2 with h | h <;> simp [hF, h]⟩⟩
   have hbij : Bijective f := by
     refine ⟨fun p q hpq ↦ ?_, fun g ↦ ?_⟩
@@ -303,7 +304,7 @@ theorem natCard_realSpinZeroSevenElementaryAbelian :
           exact h)))
       rw [Prod.mk.injEq] at this
       exact Prod.ext (Subtype.ext this.1) this.2
-    · obtain ⟨s, hs, hgs | hgs⟩ := mem_realSpinZeroSevenElementaryAbelian_iff.mp g.2
+    · obtain ⟨s, hs, hgs | hgs⟩ := mem_realSpinZeroSevenElementaryAbelian_iff.mp g.property
       · exact ⟨(⟨s, hs⟩, 1), Subtype.ext (Subtype.ext (by rw [hF, hgs]; simp))⟩
       · exact ⟨(⟨s, hs⟩, -1), Subtype.ext (Subtype.ext (by rw [hF, hgs]; simp))⟩
   rw [← Nat.card_congr (Equiv.ofBijective f hbij), Nat.card_prod, Nat.card_eq_fintype_card,
@@ -321,7 +322,7 @@ theorem exponent_realSpinZeroSevenElementaryAbelian :
   have hdvd : Monoid.exponent realSpinZeroSevenElementaryAbelian ∣ 2 :=
     Monoid.exponent_dvd_of_forall_pow_eq_one fun g ↦
       Subtype.ext <| by
-        rw [pow_two]; exact mul_self_eq_one_of_mem_realSpinZeroSevenElementaryAbelian g.2
+        rw [pow_two]; exact mul_self_eq_one_of_mem_realSpinZeroSevenElementaryAbelian g.property
   have hne : Monoid.exponent realSpinZeroSevenElementaryAbelian ≠ 1 := by
     rw [Ne, Monoid.exp_eq_one_iff]
     intro h
@@ -404,11 +405,11 @@ theorem not_realSpinSevenElementaryAbelian_le_range {ι : Type*} [Finite ι]
   -- Each element is the image of a point of the torus, which has order dividing `2`.
   have hpre (g : realSpinSevenElementaryAbelian) :
       ∃ x : AddSubgroup.torsionBy (∀ i, AddCircle (p i)) ((2 : ℕ) : ℤ),
-        f (Multiplicative.ofAdd x.1) = g := by
-    obtain ⟨x, hx⟩ := hle g.2
+        f (Multiplicative.ofAdd x.val) = g := by
+    obtain ⟨x, hx⟩ := hle g.property
     refine ⟨⟨x.toAdd, AddSubgroup.torsionBy.nsmul_iff.mpr ?_⟩, by rwa [ofAdd_toAdd]⟩
     have hx2 : f (x * x) = f 1 := by
-      rw [map_mul, hx, map_one, mul_self_eq_one_of_mem_realSpinSevenElementaryAbelian g.2]
+      rw [map_mul, hx, map_one, mul_self_eq_one_of_mem_realSpinSevenElementaryAbelian g.property]
     rw [two_nsmul, ← toAdd_mul, hf hx2, toAdd_one]
   choose φ hφ using hpre
   have hφinj : Injective φ := fun g h hgh ↦ Subtype.ext (by rw [← hφ g, ← hφ h, hgh])

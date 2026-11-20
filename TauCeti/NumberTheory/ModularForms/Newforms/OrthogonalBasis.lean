@@ -45,6 +45,8 @@ Hecke eigenvector in the new subspace has `a₁ ≠ 0`, so dividing by `a₁` ma
   newforms of nebentypus `χ` span `S_k(Γ₁(N))ⁿᵉʷ ⊓ S_k(N, χ)`.
 * `HeckeRing.GL2.Newform.span_range_toCuspForm_eq_cuspFormsNew`: the newforms span `S_k(Γ₁(N))ⁿᵉʷ`.
 * `HeckeRing.GL2.Newform.linearIndependent_toCuspForm`: the newforms are linearly independent.
+* `HeckeRing.GL2.Newform.finrank_cuspFormsNew`: the dimension of `S_k(Γ₁(N))ⁿᵉʷ` is the number of
+  newforms of level `N` and weight `k`.
 * `HeckeRing.GL2.Newform.finrank_cuspFormsNew_comap_cuspFormCharSpace`: the dimension of
   `S_k(N, χ)ⁿᵉʷ` is the number of newforms of nebentypus `χ`.
 
@@ -201,7 +203,7 @@ theorem span_image_toCuspForm_eq_cuspFormsNew_inf_cuspFormCharSpace (χ : (ZMod 
     have hbi : ((b i : cuspFormCharSpace k χ) : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈
         cuspFormsOld N k ⊓ cuspFormCharSpace k χ ⊔ cuspFormsNew N k ⊓ cuspFormCharSpace k χ := by
       rw [sup_cuspFormsOld_cuspFormsNew_inf_cuspFormCharSpace]
-      exact (b i).2
+      exact (b i).property
     obtain ⟨o, ho, n, hn, hon⟩ := Submodule.mem_sup.mp hbi
     exact ⟨⟨o, ho.2⟩, ⟨n, hn.2⟩, ho.1, hn.1, Subtype.ext hon⟩
   choose o n ho hn hon using hsplit
@@ -271,7 +273,7 @@ instance : Finite (Newform N k) :=
 private noncomputable def toCuspFormsNewCharSpace {χ : (ZMod N)ˣ →* ℂˣ}
     (f : {f : Newform N k // f.χ = χ}) :
     (cuspFormsNew N k).comap (cuspFormCharSpace k χ).subtype :=
-  ⟨⟨f.1.toCuspForm, by obtain ⟨f, rfl⟩ := f; exact f.mem_charSpace⟩, f.1.isNew⟩
+  ⟨⟨f.val.toCuspForm, by obtain ⟨f, rfl⟩ := f; exact f.mem_charSpace⟩, f.val.isNew⟩
 
 /-- The inclusion of `S_k(N, χ)ⁿᵉʷ` into `S_k(Γ₁(N))`. -/
 private noncomputable abbrev cuspFormsNewCharSpaceSubtype (χ : (ZMod N)ˣ →* ℂˣ) :
@@ -299,7 +301,7 @@ private theorem top_le_span_range_toCuspFormsNewCharSpace (χ : (ZMod N)ˣ →* 
     ext g
     simp [toCuspFormsNewCharSpace]
   rw [hrange, span_image_toCuspForm_eq_cuspFormsNew_inf_cuspFormCharSpace]
-  exact ⟨F.2, F.1.2⟩
+  exact ⟨F.property, F.val.property⟩
 
 variable (N k) in
 /-- **The newforms of nebentypus `χ`, as a basis of `S_k(N, χ)ⁿᵉʷ`** (Miyake, Theorem 4.6.13(2)).
@@ -314,8 +316,14 @@ noncomputable def basisCharSpace (χ : (ZMod N)ˣ →* ℂˣ) :
 @[simp]
 theorem coe_coe_basisCharSpace_apply (χ : (ZMod N)ˣ →* ℂˣ) (f : {f : Newform N k // f.χ = χ}) :
     ((basisCharSpace N k χ f : cuspFormCharSpace k χ) : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
-      f.1.toCuspForm := by
+      f.val.toCuspForm := by
   simp [basisCharSpace, toCuspFormsNewCharSpace]
+
+variable (N k) in
+/-- **The dimension of `S_k(Γ₁(N))ⁿᵉʷ` is the number of newforms of level `N` and weight `k`.** -/
+theorem finrank_cuspFormsNew :
+    Module.finrank ℂ (cuspFormsNew N k) = Nat.card (Newform N k) :=
+  Module.finrank_eq_nat_card_basis (basis N k)
 
 /-- **The dimension of `S_k(N, χ)ⁿᵉʷ` is the number of newforms of nebentypus `χ`.** -/
 theorem finrank_cuspFormsNew_comap_cuspFormCharSpace (χ : (ZMod N)ˣ →* ℂˣ) :
