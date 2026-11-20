@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Integral.MeanInequalities
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
@@ -269,27 +270,6 @@ theorem lintegral_mul_setLIntegral_rpow_le_of_le [SFinite μ] {f : α → ℝ≥
         rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg (by positivity)
           ENNReal.ofReal_ne_top), ENNReal.mul_rpow_of_nonneg _ _ hr0.le, ← ENNReal.rpow_mul,
           inv_mul_cancel₀ hr0.ne', ENNReal.rpow_one]
-
-/-- The region of `ℝ × α` above the graph of the height `c * t ^ γ` is measurable. -/
-theorem measurableSet_ofReal_mul_rpow_lt {f : α → ℝ≥0∞} (hf : Measurable f) (c γ : ℝ) :
-    MeasurableSet {z : ℝ × α | ENNReal.ofReal (c * z.1 ^ γ) < f z.2} :=
-  measurableSet_lt ((measurable_fst.pow_const γ).const_mul c).ennreal_ofReal
-    (hf.comp measurable_snd)
-
-/-- The region of `ℝ × α` up to the graph of the height `c * t ^ γ` is measurable. -/
-theorem measurableSet_le_ofReal_mul_rpow {f : α → ℝ≥0∞} (hf : Measurable f) (c γ : ℝ) :
-    MeasurableSet {z : ℝ × α | f z.2 ≤ ENNReal.ofReal (c * z.1 ^ γ)} :=
-  measurableSet_le (hf.comp measurable_snd)
-    ((measurable_fst.pow_const γ).const_mul c).ennreal_ofReal
-
-/-- A power weight `t ^ s` times a power of the truncated integrals `∫⁻ x in {x | R t x}, f x ^ pᵢ`
-is measurable in `t` when the truncating relation is jointly measurable. -/
-theorem measurable_ofReal_rpow_mul_setLIntegral_rpow [SFinite μ] {f : α → ℝ≥0∞}
-    {R : ℝ → α → Prop} (hR : MeasurableSet {z : ℝ × α | R z.1 z.2}) (hf : AEMeasurable f μ)
-    (s pᵢ r : ℝ) :
-    Measurable fun t : ℝ => ENNReal.ofReal (t ^ s) * (∫⁻ x in {x | R t x}, f x ^ pᵢ ∂μ) ^ r :=
-  (measurable_id.pow_const s).ennreal_ofReal.mul
-    ((measurable_setLIntegral_of_measurableSet hR (hf.pow_const pᵢ)).pow_const r)
 
 /-- **The endpoint estimate above a height.** Truncate `f` above the height `c * t ^ γ`, where the
 exponents are tied by `(s + 1) / γ = qᵢ (p - pᵢ) / pᵢ` with `pᵢ < p`. Then the `t ^ s`-weighted
