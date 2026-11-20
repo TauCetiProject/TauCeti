@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.ApproxProd
 public import TauCeti.NumberTheory.Height.NumberField
-public import TauCeti.NumberTheory.NumberField.InfinitePlace.Mult
 public import TauCeti.NumberTheory.NumberField.PlacesOver.Relative
 
 /-!
