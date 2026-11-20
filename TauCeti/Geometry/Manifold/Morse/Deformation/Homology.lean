@@ -363,7 +363,7 @@ theorem Icc_subset_and_isCompact_preimage_Icc (hf : Continuous f)
 `f⁻¹[a, b]` compact and every critical point of `f` in it on the level `c`. For
 `0 < ε ≤ min (c - a) (b - c)`, `Hₙ({f ≤ b}, {f ≤ a})` is identified with
 `Hₙ({f ≤ c + ε}, {f ≤ c - ε})` by `TauCeti.singularHomologySublevelPairIsoOfCriticalValue`
-(`TauCeti.singularHomologySublevelPairIsoSymmetricBand_eq`). -/
+(`TauCeti.singularHomologySublevelPairIsoSymmetricBand_def`). -/
 def singularHomologySublevelPairIsoSymmetricBand (hf : ContMDiff I 𝓘(ℝ) ∞ f) {c ε : ℝ}
     (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
     (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c)
@@ -378,7 +378,7 @@ def singularHomologySublevelPairIsoSymmetricBand (hf : ContMDiff I 𝓘(ℝ) ∞
 `TauCeti.singularHomologySublevelPairIsoOfCriticalValue` for the bands `f⁻¹[a, b]` and
 `f⁻¹[c - ε, c + ε]`, so its naturality lemma
 `TauCeti.singularHomologyMap_comp_singularHomologySublevelPairIsoOfCriticalValue_hom` applies. -/
-lemma singularHomologySublevelPairIsoSymmetricBand_eq (hf : ContMDiff I 𝓘(ℝ) ∞ f) {c ε : ℝ}
+lemma singularHomologySublevelPairIsoSymmetricBand_def (hf : ContMDiff I 𝓘(ℝ) ∞ f) {c ε : ℝ}
     (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
     (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c)
     (hε : 0 < ε) (hεδ : ε ≤ min (c - a) (b - c)) (R : A) (n : ℕ) :
