@@ -83,55 +83,6 @@ private theorem aestronglyMeasurable_comp_of_holderOnWith (hα : 0 < α)
     (ae_restrict_of_forall_mem Omega.isOpen.measurableSet fun x hx =>
       (continuous_of_continuous_matrixBilinearForm (hAs x hx).continuous).continuousAt)
 
-/-- A function Hölder on a bounded set is bounded there. -/
-private theorem exists_norm_le_of_holderOnWith {X F : Type*} [PseudoMetricSpace X]
-    [SeminormedAddCommGroup F] {C r : ℝ≥0} {g : X → F} {s : Set X} (hg : HolderOnWith C r g s)
-    (hs : Bornology.IsBounded s) : ∃ M, ∀ x ∈ s, ‖g x‖ ≤ M := by
-  have h : Bornology.IsBounded (g '' s) := by
-    rw [Metric.isBounded_iff_ediam_ne_top] at hs ⊢
-    exact ne_top_of_le_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top
-      (ENNReal.rpow_ne_top_of_nonneg r.coe_nonneg hs)) hg.ediam_image_le
-  obtain ⟨M, hM⟩ := h.exists_norm_le
-  exact ⟨M, fun x hx => hM _ (mem_image_of_mem g hx)⟩
-
-/-- The `L²` pairings of the restricted weak equation, written as integrals. -/
-private theorem eq_integral_sub_integral_inner_of_eq_inner_add_inner {X F : Type*}
-    [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    {G : X → F} {f : X → ℝ} (hG : MemLp (fun x => G x - 0) 2 μ) (hf : MemLp f 2 μ)
-    (w : Lp F 2 μ) (z : Lp ℝ 2 μ) {e : ℝ}
-    (h : e = ⟪hG.toLp (fun x => G x - 0), w⟫_ℝ + ⟪hf.toLp f, z⟫_ℝ) :
-    e = (∫ x, f x * z x ∂μ) - ∫ x, ⟪-G x, w x⟫_ℝ ∂μ := by
-  rw [h, L2.inner_def, L2.inner_def, sub_eq_add_neg, ← integral_neg, add_comm]
-  congr 1
-  · refine integral_congr_ae ?_
-    filter_upwards [hf.coeFn_toLp] with x hx
-    rw [hx, RCLike.inner_apply, conj_trivial, mul_comm]
-  · refine integral_congr_ae ?_
-    filter_upwards [hG.coeFn_toLp] with x hx
-    simp only [inner_neg_left, neg_neg]
-    rw [hx, sub_zero]
-
-/-- The weak equation `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G`, tested against test functions on `Ω`, holds on
-an open `B ⊆ Ω` against `H¹₀(B)` in the form used by De Giorgi's theorem, with the divergence
-datum `-G`. -/
-private theorem energyFormH1_restrictL_eq_setIntegral_sub_setIntegral_neg_inner
-    {B : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (hB : B ≤ Omega)
-    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (volume.restrict B))
-    {u : W1p volume Omega 2}
-    {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
-    {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
-    (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Omega 2 φ) =
-      (∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) +
-        ∫ x in Omega, f x * φ x)
-    (hG : MemLp (fun x => G x - 0) 2 (volume.restrict B)) (hf : MemLp f 2 (volume.restrict B))
-    (v : W1p0 volume B 2) :
-    energyFormH1 a 0 0 (W1p.restrictL hB u) (v : W1p volume B 2) =
-      (∫ x in B, f x * W1p.value (v : W1p volume B 2) x) -
-        ∫ x in B, ⟪-G x, W1p.gradient (v : W1p volume B 2) x⟫_ℝ :=
-  eq_integral_sub_integral_inner_of_eq_inner_add_inner hG hf _ _
-    (forall_energyFormH1_restrictL_eq_inner_add_inner hB ha hu hG hf v)
-
 variable {u : W1p volume Omega 2}
   {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
   {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {KG : ℝ≥0} {q : ℝ≥0∞}
@@ -188,22 +139,18 @@ private theorem exists_holderOnWith_preciseRepresentative_value (hα : 0 < α) (
       (fun _ _ => by simp) (gamma := 0) (fun _ _ => by simp)
   -- The datum `G` is bounded on the bounded set `B`.
   have hGB : HolderOnWith KG α G B := hG.mono hB
-  obtain ⟨MG, hMG⟩ := exists_norm_le_of_holderOnWith hGB hBb
-  have hGmeas : AEStronglyMeasurable G (volume.restrict B) :=
-    (hGB.continuousOn hα).aestronglyMeasurable B.isOpen.measurableSet
-  have hGbd : ∀ᵐ x ∂volume.restrict B, ‖G x‖ ≤ MG :=
-    ae_restrict_of_forall_mem B.isOpen.measurableSet hMG
-  have hG2 : MemLp (fun x => G x - 0) 2 (volume.restrict B) :=
-    MemLp.of_bound (by simpa only [sub_zero] using hGmeas) MG (by simpa only [sub_zero] using hGbd)
+  obtain ⟨MG, hMG⟩ := (hGB.isBounded_image hBb).exists_norm_le
+  have hGtop : MemLp G ⊤ (volume.restrict B) :=
+    memLp_top_of_bound ((hGB.continuousOn hα).aestronglyMeasurable B.isOpen.measurableSet) MG
+      (ae_restrict_of_forall_mem B.isOpen.measurableSet (forall_mem_image.1 hMG))
   have hfB : MemLp f q (volume.restrict B) := hf.mono_measure hrestr
-  have hf2 : MemLp f 2 (volume.restrict B) := hfB.mono_exponent hq2
-  have hw := energyFormH1_restrictL_eq_setIntegral_sub_setIntegral_neg_inner hB hint hu hG2 hf2
+  have hw := forall_energyFormH1_restrictL_eq_setIntegral_sub_setIntegral_neg_inner hB hint hu
+    (hGtop.mono_exponent le_top) (hfB.mono_exponent hq2)
   have hK : cthickening (R / 4) (thickening (R / 2) S) ⊆
       (B : Set (EuclideanSpace ℝ (Fin (n + 1)))) :=
     hBdef ▸ (cthickening_thickening_subset (by positivity) _ _).trans
       (cthickening_subset_thickening' hR (by linarith) S)
-  have hH := hDG hell hmeas (hfB.mono_exponent hrq.le)
-    (MemLp.of_bound hGmeas.neg MG (hGbd.mono fun x hx => by rwa [Pi.neg_apply, norm_neg])) hw
+  have hH := hDG hell hmeas (hfB.mono_exponent hrq.le) (hGtop.neg.mono_exponent le_top) hw
     (by positivity) hK
   refine ⟨γ, _, hγ, hH.congr fun x hx => ?_⟩
   exact preciseRepresentative_congr_ae_nhds
@@ -396,11 +343,11 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_forall_energyFormH
     hβ₁q hU (by positivity) (hUU.trans ((thickening_mono (by linarith) S).trans hRS))
     (h₀.mono hUU)
   -- The Lipschitz step: `ū` is `α`-Hölder on `S_{R/8}`.
-  obtain ⟨M₁, hM₁⟩ := exists_norm_le_of_holderOnWith
-    (h₀.mono (thickening_mono (by linarith) S)) hU
-  obtain ⟨M₂, hM₂⟩ := exists_norm_le_of_holderOnWith h₁ hU
+  obtain ⟨M₁, hM₁⟩ :=
+    ((h₀.mono (thickening_mono (by linarith) S)).isBounded_image hU).exists_norm_le
+  obtain ⟨M₂, hM₂⟩ := (h₁.isBounded_image hU).exists_norm_le
   obtain ⟨C₂, h₂⟩ := exists_holderOnWith_preciseRepresentative_value_of_forall_norm_le u
-    (by positivity) hUΩ hM₁ hM₂ hα1.le
+    (by positivity) hUΩ (forall_mem_image.1 hM₁) (forall_mem_image.1 hM₂) hα1.le
   -- Second Schauder pass, on `S`, with the exponent `β`.
   have hR8 : R / 4 / 2 = R / 8 := by ring
   rw [hR8] at h₂
