@@ -525,6 +525,49 @@ theorem eval_toSingleOracleCode (O : ℕ →. ℕ) (c : Nat.Partrec.Code) :
     rw [Nat.Partrec.Code.toSingleOracleCode, eval, Nat.Partrec.Code.eval, ihf, ihg]
   | rfind' cf ihf => rw [Nat.Partrec.Code.toSingleOracleCode, eval, Nat.Partrec.Code.eval, ihf]
 
+/-- Run `c` on the fixed input `x`, ignoring the input of the compiled program. -/
+def fixInput (c : Code) (x : ℕ) : Code :=
+  comp c (Nat.Partrec.Code.const x).toSingleOracleCode
+
+/-- Fixing an input is primitive recursive in the program and the input. -/
+theorem primrec₂_fixInput : Primrec₂ fixInput :=
+  primrec₂_comp.comp Primrec.fst <|
+    Nat.Partrec.Code.primrec_toSingleOracleCode.comp
+      (Nat.Partrec.Code.primrec_const.comp Primrec.snd)
+
+/-- The compiled program runs its source on the fixed input for every partial oracle. -/
+@[simp]
+theorem eval_fixInput (O : ℕ →. ℕ) (c : Code) (x y : ℕ) :
+    eval O (c.fixInput x) y = eval O c x := by
+  rw [fixInput, eval_comp, eval_toSingleOracleCode, Nat.Partrec.Code.eval_const]
+  exact Part.bind_some x (fun n => eval O c n)
+
+/-- The index of a program that runs `c` on the fixed input `x`, ignoring its own input. -/
+def haltingIndex (c : Code) (x : ℕ) : ℕ :=
+  encode (c.fixInput x)
+
+/-- Computing the index of a fixed-input program is primitive recursive. -/
+theorem primrec₂_haltingIndex : Primrec₂ haltingIndex :=
+  Primrec.encode.comp primrec₂_fixInput
+
+/-- The halting index retains both the program and its fixed input. -/
+@[simp]
+theorem haltingIndex_inj {c d : Code} {x y : ℕ} :
+    haltingIndex c x = haltingIndex d y ↔ c = d ∧ x = y := by
+  constructor
+  · intro h
+    rw [haltingIndex, haltingIndex, encode_inj, fixInput, fixInput, Code.comp.injEq] at h
+    exact ⟨h.1, Nat.Partrec.Code.const_inj
+      (Nat.Partrec.Code.toSingleOracleCode_injective h.2)⟩
+  · rintro ⟨rfl, rfl⟩
+    rfl
+
+/-- The decoded halting index runs the program on its fixed input in every oracle. -/
+@[simp]
+theorem eval_ofNat_haltingIndex (O : ℕ →. ℕ) (c : Code) (x y : ℕ) :
+    eval O (ofNat Code (c.haltingIndex x)) y = eval O c x := by
+  rw [haltingIndex, ofNat_encode, eval_fixInput]
+
 /-- Every partial recursive function is computed by one program relative to every oracle: the
 query-free program of an ordinary code computing it. -/
 theorem exists_forall_eval_eq_of_partrec {f : ℕ →. ℕ} (hf : Nat.Partrec f) :

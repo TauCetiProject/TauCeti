@@ -20,6 +20,10 @@ holds simultaneously for all partial oracles.
 The semantic closure under substitution is the indexed counterpart of
 `Nat.RecursiveIn.subst`. See R. I. Soare, *Recursively Enumerable Sets and Degrees*,
 Springer, 1987, Chapter III.1.
+
+The proof of primitive recursiveness uses Mathlib's `Primrec.nat_strong_rec`.
+The recursion table is analogous to the one in `Nat.Partrec.Code.primrec_recOn'`
+for ordinary programs.
 -/
 
 public section
@@ -91,8 +95,7 @@ private theorem primrec_lookup_subst (ctor : Code → Code → Code) (hctor : Pr
   have hg := list_getElem?.comp hl (Primrec.encode.comp (snd.comp snd))
   exact (option_bind hf (option_map (hg.comp fst) (hctor.comp (snd.comp fst) snd).to₂).to₂).to₂
 
-/-- Query substitution is primitive recursive in the source program and the query program.
-The recursion table is indexed by the source program's number. -/
+/-- Query substitution is primitive recursive jointly in the source and query programs. -/
 theorem primrec₂_subst : Primrec₂ subst := by
   let step (p : Code × List Code) : Option Code :=
     Code.casesOn (ofNat Code p.2.length) (some zero) (some succ) (some left) (some right) (some p.1)
