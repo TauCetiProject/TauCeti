@@ -18,9 +18,9 @@ for linear charts, with no finiteness or norm assumptions.
 The construction combines `LinearEquiv.piOptionEquivProd` with
 `TauCeti.piOptionEquivProdHomeomorph`.
 
-For Mathlib's `ContinuousLinearEquiv.sumPiEquivProdPi`, which splits a family indexed by `S ⊕ T`
-into its restrictions to `S` and to `T`, `ContinuousLinearEquiv.sumPiEquivProdPi_apply` and
-`ContinuousLinearEquiv.sumPiEquivProdPi_symm_apply` evaluate the equivalence and its inverse.
+For Mathlib's `ContinuousLinearEquiv.piCongrLeft` and `ContinuousLinearEquiv.sumPiEquivProdPi`,
+`@[simp]` lemmas evaluate the equivalences and their inverses and record reflexivity of
+`piCongrLeft`.
 
 `TauCeti.piSigmaConstContinuousLinearEquiv` regroups a family of tuples along a bijection of its
 sigma index. Its underlying homeomorphism is `TauCeti.piSigmaConstHomeomorph`, which is linear
@@ -31,7 +31,11 @@ public section
 
 namespace ContinuousLinearEquiv
 
-variable (R : Type*) [Semiring R] {ι : Type*} {M : Option ι → Type*}
+variable (R : Type*) [Semiring R]
+
+section OptionPi
+
+variable {ι : Type*} {M : Option ι → Type*}
   [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] [∀ i, TopologicalSpace (M i)]
 
 /-- Split a family indexed by `Option ι` into its distinguished coordinate and the rest. -/
@@ -56,6 +60,40 @@ def piOptionEquivProd : ((i : Option ι) → M i) ≃L[R] M none × ((i : ι) �
       | some j => q.2 j) := by
   funext i
   cases i <;> rfl
+
+end OptionPi
+
+section PiCongrLeft
+
+variable {ι ι' : Type*} (φ : ι → Type*) [∀ i, AddCommMonoid (φ i)] [∀ i, Module R (φ i)]
+  [∀ i, TopologicalSpace (φ i)]
+
+/-- Reindexing along the identity equivalence gives the identity continuous linear equivalence. -/
+@[simp] theorem piCongrLeft_refl :
+    piCongrLeft R φ (.refl ι) = .refl R ((i : ι) → φ i) := (rfl)
+
+/-- The inverse of `ContinuousLinearEquiv.piCongrLeft` precomposes with the index equivalence. -/
+@[simp] theorem piCongrLeft_symm_apply (e : ι' ≃ ι) (g : (i : ι) → φ i) (i' : ι') :
+    (piCongrLeft R φ e).symm g i' = g (e i') := (rfl)
+
+/-- Evaluating `ContinuousLinearEquiv.piCongrLeft` at an image index `e i'` returns the `i'`th
+coordinate. -/
+@[simp] theorem piCongrLeft_apply_apply (e : ι' ≃ ι) (f : (i' : ι') → φ (e i')) (i' : ι') :
+    piCongrLeft R φ e f (e i') = f i' :=
+  Equiv.piCongrLeft_apply_apply φ e f i'
+
+end PiCongrLeft
+
+section PiCongrLeftConst
+
+variable {ι ι' : Type*} (N : Type*) [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+
+/-- On a non-dependent family, `ContinuousLinearEquiv.piCongrLeft` precomposes with `e.symm`. -/
+@[simp] theorem piCongrLeft_const_apply (e : ι' ≃ ι) (f : ι' → N) (i : ι) :
+    piCongrLeft R (fun _ : ι ↦ N) e f i = f (e.symm i) := by
+  obtain ⟨i', rfl⟩ := e.surjective i; simp
+
+end PiCongrLeftConst
 
 section SumPi
 

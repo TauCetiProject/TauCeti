@@ -154,6 +154,20 @@ theorem range_stratum (n : ℕ) :
       cases hp
       exact ⟨⟨⟨x, rfl⟩, v⟩, rfl⟩
 
+/-- Including a single fibre into the reconstructed total space of a variable-rank atlas is
+inducing. -/
+theorem isInducing_mk (x : X) :
+    IsInducing (fun v : A.Fiber x ↦ (⟨x, v⟩ : TotalSpace Unit A.Fiber)) := by
+  rw [← A.totalSpaceHomeomorph.symm.isInducing.of_comp_iff]
+  have hcomp :
+      A.totalSpaceHomeomorph.symm ∘ (fun v : A.Fiber x ↦ (⟨x, v⟩ : TotalSpace Unit A.Fiber)) =
+        Sigma.mk (A.rank x) ∘
+          fun v : A.Fiber x ↦ (⟨⟨x, rfl⟩, v⟩ : (A.charts (A.rank x)).TotalSpace) :=
+    funext fun v ↦ A.totalSpaceHomeomorph_symm_apply ⟨x, v⟩
+  rw [hcomp]
+  exact IsEmbedding.sigmaMk.isInducing.comp
+    (FiberBundle.totalSpaceMk_isInducing (Fin (A.rank x) → 𝕜) (A.charts (A.rank x)).Fiber ⟨x, rfl⟩)
+
 section Continuity
 
 variable {Y : Type*} [TopologicalSpace Y] {b : Y → X}
