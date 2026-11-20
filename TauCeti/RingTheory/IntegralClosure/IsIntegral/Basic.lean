@@ -33,13 +33,13 @@ other.
   `P` after multiplication by a power of `r`.
 * `AlgHom.finite_of_adjoin_eq_top`: an `R`-algebra morphism `f : B →ₐ[R] A` is module-finite when
   `A` is generated as an `R`-algebra by a finite set of elements integral over `B` via `f`.
+* `IsIntegral.natCast_pow_mul_pow`: if `b x` is integral over `R` for a natural number
+  `b`, then so is `b ^ n x ^ j` for `j ≤ n`.
 * `TauCeti.isIntegral_trans_common`: if every element of `P` becomes integral over `R` once
   mapped into `L`, then an element of `L` integral over `P` is integral over `R`.
 * `TauCeti.dvd_of_isIntegral_div`: an element of a field extension of `A` that is a quotient of
   elements of `A` and is integral over `A` has its numerator divisible by its denominator, when
   `A` is integrally closed.
-* `TauCeti.isIntegral_natCast_pow_mul_pow`: if `b x` is integral over `R` for a natural number
-  `b`, then so is `b ^ n x ^ j` for `j ≤ n`.
 * `TauCeti.isIntegral_pow_card_mul_prod_sub`: an integral common denominator for a finite set
   clears the denominators of the product of differences from any one of its elements.
 * `TauCeti.isIntegral_rat_of_isIntegral_natCast_mul`: if `b x` is integral over `ℤ` for some
@@ -119,6 +119,17 @@ theorem AlgHom.finite_of_adjoin_eq_top {R B A : Type*} [CommRing R] [CommRing B]
   rw [← Algebra.top_toSubmodule, ← htop]
   exact fg_adjoin_of_finite hs hint
 
+/-- If `b x` is integral over `R` for a natural number `b`, then so is `b ^ n x ^ j` for
+`j ≤ n`. -/
+theorem IsIntegral.natCast_pow_mul_pow {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
+    {x : A} {b : ℕ} (hbx : IsIntegral R ((b : A) * x)) {j n : ℕ} (hj : j ≤ n) :
+    IsIntegral R ((b : A) ^ n * x ^ j) := by
+  -- Write `b ^ n x ^ j` as the natural-number multiple `b ^ l • (b x) ^ j`, using that the cast
+  -- of `b` commutes with `x`.
+  obtain ⟨l, rfl⟩ := Nat.exists_eq_add_of_le' hj
+  rw [pow_add, mul_assoc, ← (Nat.cast_commute b x).mul_pow, ← Nat.cast_pow, ← nsmul_eq_mul]
+  exact (hbx.pow j).smul _
+
 namespace TauCeti
 
 /-- If every element of `P` maps to an element of `L` integral over `R`, then every element of `L`
@@ -127,7 +138,8 @@ theorem isIntegral_trans_common {R P L : Type*} [CommRing R] [CommRing P]
     [CommRing L] [Algebra R L] [Algebra P L]
     (hP : ∀ x : P, IsIntegral R (algebraMap P L x)) {x : L}
     (hx : IsIntegral P x) : IsIntegral R x := by
-  -- Lift the monic equation of `x` over `P` to the integral closure of `R` in `L`.
+  -- Lift the monic equation of `x` over `P` to the integral closure of `R` in `L`, following the
+  -- proof of Mathlib's `IsIntegral.of_aeval_monic_of_isIntegral_coeff`.
   obtain ⟨p, hpm, hpx⟩ := hx
   obtain ⟨q, hqp, -, hqm⟩ := Polynomial.lifts_and_natDegree_eq_and_monic
     (f := algebraMap (integralClosure R L) L) (p := p.map (algebraMap P L))
@@ -153,17 +165,6 @@ theorem dvd_of_isIntegral_div
   obtain ⟨e, he⟩ := IsIntegrallyClosed.isIntegral_iff.mp ((isIntegral_algHom_iff f hf).mp (hw ▸ h))
   refine ⟨e, IsFractionRing.injective A (FractionRing A) ?_⟩
   rw [map_mul, he, mul_div_cancel₀ _ hdF]
-
-/-- If `b x` is integral over `R` for a natural number `b`, then so is `b ^ n x ^ j` for
-`j ≤ n`. -/
-theorem isIntegral_natCast_pow_mul_pow {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
-    {x : A} {b : ℕ} (hbx : IsIntegral R ((b : A) * x)) {j n : ℕ} (hj : j ≤ n) :
-    IsIntegral R ((b : A) ^ n * x ^ j) := by
-  -- Write `b ^ n x ^ j` as the natural-number multiple `b ^ l • (b x) ^ j`, using that the cast
-  -- of `b` commutes with `x`.
-  obtain ⟨l, rfl⟩ := Nat.exists_eq_add_of_le' hj
-  rw [pow_add, mul_assoc, ← (Nat.cast_commute b x).mul_pow, ← Nat.cast_pow, ← nsmul_eq_mul]
-  exact (hbx.pow j).smul _
 
 /-- If `l` and every `l x` for `x ∈ S` are integral over `R`, then
 `l ^ S.card * ∏ x ∈ S.erase a, (a - x)` is integral over `R` for every `a ∈ S`. -/
