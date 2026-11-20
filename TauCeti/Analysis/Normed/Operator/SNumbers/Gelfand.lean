@@ -36,6 +36,8 @@ nonzero.
   `cₙ(T)` by the norm of the restriction of `T` to it.
 * `ContinuousLinearMap.le_gelfandNumber_iff`: lower bounds for `cₙ(T)`.
 * `ContinuousLinearMap.gelfandNumber_comp_comp_le`: `cₙ(B T A) ≤ ‖B‖ cₙ(T) ‖A‖`.
+* `ContinuousLinearMap.gelfandNumber_linearIsometry_comp`: `cₙ(J T) = cₙ(T)` for every linear
+  isometry `J`.
 * `ContinuousLinearMap.gelfandNumber_id`: `cₙ(id_E) = 1` when `n` is below the rank of `E`.
 * `TauCeti.SNumbers.isStrictSNumberSequence_gelfand`: the Gelfand numbers form a strict
   s-number sequence.
@@ -177,6 +179,13 @@ theorem gelfandNumber_comp_comp_le (B : G →L[𝕜] H) (T : F →L[𝕜] G) (A 
       gcongr; exact (T ∘L M.1.subtypeL).le_opNNNorm ⟨A x, hx⟩
     _ ≤ ‖B‖₊ * (‖T ∘L M.1.subtypeL‖₊ * (‖A‖₊ * ‖x‖₊)) := by gcongr; exact A.le_opNNNorm _
     _ = ‖B‖₊ * ‖T ∘L M.1.subtypeL‖₊ * ‖A‖₊ * ‖x‖₊ := by ring
+
+/-- **Injectivity.** Postcomposing with a linear isometry leaves every Gelfand number unchanged:
+it preserves the norm of each restriction `T|_M`. -/
+theorem gelfandNumber_linearIsometry_comp (T : E →L[𝕜] F) (J : F →ₗᵢ[𝕜] G) (n : ℕ) :
+    (J.toContinuousLinearMap ∘L T).gelfandNumber n = T.gelfandNumber n := by
+  simp only [gelfandNumber_def, comp_assoc]
+  exact iInf_congr fun _ ↦ NNReal.eq J.norm_toContinuousLinearMap_comp
 
 /-- **Identity normalization.** If `n` is strictly below the rank of a normed space `E`, then
 `cₙ(id_E) = 1`: every subspace of codimension at most `n` is nonzero, so its inclusion has

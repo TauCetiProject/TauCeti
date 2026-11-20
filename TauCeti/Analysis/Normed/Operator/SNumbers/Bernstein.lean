@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Operator.SNumbers.Basic
+public import TauCeti.Analysis.Normed.Operator.SNumbers.Gelfand
 public import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
@@ -29,6 +29,10 @@ injective on `M`, so `A(M)` again has rank `n + 1`. An operator of rank at most 
 nonzero vector of every subspace of rank `n + 1`, and the identity has gain `1` on every nonzero
 subspace.
 
+Postcomposing with a linear isometry does not change any gain, so the Bernstein numbers are
+unchanged by it. They lie below the Gelfand numbers, since a subspace of rank `n + 1` meets every
+subspace of codimension at most `n` in a nonzero vector.
+
 The source spaces are normed, since the gain divides by the norm of the source vector; the
 target spaces may be seminormed.
 
@@ -40,6 +44,9 @@ target spaces may be seminormed.
 * `ContinuousLinearMap.bernsteinNumber_le_of_forall_rank_eq`: a nonzero vector with small gain in
   every subspace of rank `n + 1` bounds `bₙ(T)` from above.
 * `ContinuousLinearMap.bernsteinNumber_comp_comp_le`: `bₙ(B T A) ≤ ‖B‖ bₙ(T) ‖A‖`.
+* `ContinuousLinearMap.bernsteinNumber_linearIsometry_comp`: `bₙ(J T) = bₙ(T)` for every linear
+  isometry `J`.
+* `ContinuousLinearMap.bernsteinNumber_le_gelfandNumber`: `bₙ(T) ≤ cₙ(T)`.
 * `ContinuousLinearMap.bernsteinNumber_id`: `bₙ(id_E) = 1` when `n` is below the rank of `E`.
 * `TauCeti.SNumbers.isStrictSNumberSequence_bernstein`: the Bernstein numbers form a strict
   s-number sequence.
@@ -245,6 +252,29 @@ theorem bernsteinNumber_comp_comp_le (B : F →L[𝕜] G) (T : E →L[𝕜] F) (
     _ ≤ ‖A‖₊ * (‖B‖₊ * ‖T (A x)‖₊) :=
       mul_le_mul_right ((hd x x.2).trans (B.le_opNNNorm _)) _
     _ = ‖B‖₊ * ‖A‖₊ * ‖T (A x)‖₊ := by ring
+
+/-- **Injectivity.** Postcomposing with a linear isometry leaves every Bernstein number
+unchanged: it preserves the norm of every image vector. -/
+theorem bernsteinNumber_linearIsometry_comp (T : E →L[𝕜] F) (J : F →ₗᵢ[𝕜] G) (n : ℕ) :
+    (J.toContinuousLinearMap ∘L T).bernsteinNumber n = T.bernsteinNumber n := by
+  simp [bernsteinNumber_def]
+
+/-- **Bernstein numbers below Gelfand numbers.** `bₙ(T) ≤ cₙ(T)`: a subspace of rank `n + 1`
+meets every subspace of codimension at most `n` in a nonzero vector. -/
+theorem bernsteinNumber_le_gelfandNumber (T : E →L[𝕜] F) (n : ℕ) :
+    T.bernsteinNumber n ≤ T.gelfandNumber n := by
+  refine bernsteinNumber_le_iff.mpr fun M hM d hd ↦ le_gelfandNumber_iff.mpr fun N _ hN ↦ ?_
+  obtain ⟨x, hxM, hxN, hx0⟩ : ∃ x ∈ M, x ∈ N ∧ x ≠ 0 := by
+    by_contra! h
+    have hdisj : Disjoint M (LinearMap.ker N.mkQ) := by
+      rw [Submodule.ker_mkQ]
+      exact Submodule.disjoint_def.mpr h
+    have hle := (Submodule.lift_rank_le_of_disjoint_ker hdisj).trans
+      (Cardinal.lift_le.mpr ((LinearMap.rank_le_range N.mkQ).trans hN))
+    rw [hM, Cardinal.lift_id, Cardinal.lift_id] at hle
+    exact_mod_cast hle.not_gt (by exact_mod_cast n.lt_succ_self)
+  refine le_of_mul_le_mul_right ((hd x hxM).trans ?_) (nnNorm_pos.mpr hx0)
+  exact (T ∘L N.subtypeL).le_opNNNorm ⟨x, hxN⟩
 
 /-- **Identity normalization.** If `n` is strictly below the rank of `E`, then `bₙ(id_E) = 1`:
 the identity has gain `1` on every subspace of rank `n + 1`. -/
