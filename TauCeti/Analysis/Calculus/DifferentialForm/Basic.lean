@@ -23,7 +23,9 @@ using only within-set differentiability, with no second derivative or interior-d
 Its global form `ContinuousLinearMap.extDeriv_pullback` holds at each point where the form is
 differentiable, so pullback along a continuous linear map preserves closedness
 (`ContinuousLinearMap.extDeriv_pullback_eq_zero`), and it preserves regularity on the preimage of
-the domain (`TauCeti.contDiffOn_pullback_continuousLinearMap`).
+the domain (`TauCeti.contDiffOn_pullback_continuousLinearMap`) and at a point
+(`TauCeti.contDiffAt_pullback_continuousLinearMap`,
+`TauCeti.differentiableAt_pullback_continuousLinearMap`).
 `ContinuousLinearMap.extDerivWithin_compContinuousAlternatingMap` is the corresponding naturality
 in the coefficient space, and `TauCeti.extDerivWithin_smul_field` extends `extDerivWithin_smul` to
 scalars, such as `ℂ`, that act on the coefficients but not on the domain, and
@@ -300,6 +302,24 @@ theorem _root_.TauCeti.contDiffOn_pullback_continuousLinearMap {E' : Type*}
   have h := (ContinuousAlternatingMap.compContinuousLinearMapCLM (ι := Fin n) (F := F)
     A).contDiff.comp_contDiffOn (hω.comp A.contDiff.contDiffOn fun x (hx : x ∈ A ⁻¹' t) ↦ hx)
   exact h.congr fun x _ ↦ (ContinuousAlternatingMap.compContinuousLinearMapCLM_apply _ _).symm
+
+/-- Pulling a form that is `C^r` at `A x` back along a continuous linear map `A` gives a form that
+is `C^r` at `x`. -/
+theorem _root_.TauCeti.contDiffAt_pullback_continuousLinearMap {E' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {r : WithTop ℕ∞}
+    {ω : E' → E' [⋀^Fin n]→L[𝕜] F} (A : E →L[𝕜] E') {x : E} (hω : ContDiffAt 𝕜 r ω (A x)) :
+    ContDiffAt 𝕜 r (fun x ↦ (ω (A x)).compContinuousLinearMap A) x :=
+  (ContinuousAlternatingMap.compContinuousLinearMapCLM (ι := Fin n) (F := F)
+    A).contDiff.contDiffAt.comp x (hω.comp x A.contDiff.contDiffAt)
+
+/-- Pulling a form that is differentiable at `A x` back along a continuous linear map `A` gives a
+form that is differentiable at `x`. -/
+theorem _root_.TauCeti.differentiableAt_pullback_continuousLinearMap {E' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {ω : E' → E' [⋀^Fin n]→L[𝕜] F} (A : E →L[𝕜] E')
+    {x : E} (hω : DifferentiableAt 𝕜 ω (A x)) :
+    DifferentiableAt 𝕜 (fun x ↦ (ω (A x)).compContinuousLinearMap A) x :=
+  (ContinuousAlternatingMap.compContinuousLinearMapCLM (ι := Fin n) (F := F)
+    A).differentiableAt.comp x (hω.comp x A.differentiableAt)
 
 /-- Exterior differentiation commutes with a fixed continuous linear map of coefficients, for a
 form differentiable within the set. -/
