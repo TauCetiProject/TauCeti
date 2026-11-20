@@ -128,11 +128,7 @@ private theorem ofReal_rpow_mul_norm_fourier_smulLeftCLM_le (s : ℝ) (φ : 𝓢
       ∫⁻ y, ENNReal.ofReal
           (2 ^ (|s| / 2) * ((1 + ‖ξ - y‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ (ξ - y)‖)) *
         ENNReal.ofReal ((1 + ‖y‖ ^ 2) ^ (s / 2) * ‖𝓕 f y‖) := by
-  have hconv : 𝓕 (smulLeftCLM F (φ : E → ℂ) f) ξ = ∫ y, 𝓕 φ (ξ - y) • 𝓕 f y := by
-    rw [fourier_smulLeftCLM_apply,
-      ← integral_sub_left_eq_self (fun y ↦ 𝓕 φ (ξ - y) • 𝓕 f y) volume ξ]
-    simp only [sub_sub_cancel]
-  rw [hconv, ENNReal.ofReal_mul (by positivity), ofReal_norm]
+  rw [fourier_smulLeftCLM_apply_eq_integral_sub, ENNReal.ofReal_mul (by positivity), ofReal_norm]
   calc ENNReal.ofReal ((1 + ‖ξ‖ ^ 2) ^ (s / 2)) * ‖∫ y, 𝓕 φ (ξ - y) • 𝓕 f y‖ₑ
       ≤ ENNReal.ofReal ((1 + ‖ξ‖ ^ 2) ^ (s / 2)) * ∫⁻ y, ‖𝓕 φ (ξ - y) • 𝓕 f y‖ₑ := by
         gcongr

@@ -29,8 +29,9 @@ the starting point of Bernstein's inequalities.
 ## Main results
 
 * `TemperedDistribution.fourierMultiplierCLM_add`: Fourier multipliers are additive in the symbol.
-* `TemperedDistribution.lineDerivOp_fourierMultiplierCLM`: directional derivatives commute with
-  Fourier multipliers.
+* `TemperedDistribution.lineDerivOp_fourierMultiplierCLM`,
+  `TemperedDistribution.iteratedLineDerivOp_fourierMultiplierCLM`: directional derivatives and
+  their iterates commute with Fourier multipliers.
 * `TemperedDistribution.fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth`: the multiplier of
   a symbol without temperate growth is the junk value `0`.
 * `TemperedDistribution.fourierMultiplierCLM_eq_self_of_isVanishingOn`: a multiplier whose symbol
@@ -78,6 +79,16 @@ theorem lineDerivOp_fourierMultiplierCLM {g : E → ℂ} (hg : g.HasTemperateGro
   rw [lineDeriv_eq_fourierMultiplierCLM, lineDeriv_eq_fourierMultiplierCLM, map_smul,
     fourierMultiplierCLM_fourierMultiplierCLM_apply hg hinner,
     fourierMultiplierCLM_fourierMultiplierCLM_apply hinner hg, mul_comm g]
+
+/-- Iterated directional derivatives commute with Fourier multipliers of temperate growth. -/
+theorem iteratedLineDerivOp_fourierMultiplierCLM {g : E → ℂ} (hg : g.HasTemperateGrowth) {k : ℕ}
+    (m : Fin k → E) (u : 𝓢'(E, F)) :
+    ∂^{m} (fourierMultiplierCLM F g u) = fourierMultiplierCLM F g (∂^{m} u) := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [LineDeriv.iteratedLineDerivOp_succ_left, ih, lineDerivOp_fourierMultiplierCLM hg,
+      LineDeriv.iteratedLineDerivOp_succ_left]
 
 /-- **Differentiation does not enlarge the spectrum.** If the Fourier transform of `u` vanishes on
 `s`, so does that of `∂_m u`. -/
