@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Basic
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.FlatBoundary.Corrector
 public import TauCeti.Analysis.Calculus.FDeriv.Hyperplane
+import TauCeti.Analysis.Analytic.AffineHyperplane
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Normed.Module.Ball.Retraction
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
@@ -105,26 +106,6 @@ private abbrev reflectionL : E →L[ℝ] E := ((ℝ ∙ e₀)ᗮ.reflection : E 
 
 local notation "Rℓ" => (reflectionL (n := n))
 
-/-- A function differentiable at a point `p` of the hyperplane and vanishing on the hyperplane
-near `p` has zero derivative in the directions of the hyperplane. -/
-private theorem fderiv_apply_eq_zero_of_eq_zero {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] {U : Set E} (hU : IsOpen U) {f : E → G} {p : E} (hp : p ∈ U)
-    (hp0 : p 0 = 0) (hf : DifferentiableAt ℝ f p) (h0 : ∀ y ∈ U, y 0 = 0 → f y = 0) {τ : E}
-    (hτ : τ 0 = 0) : fderiv ℝ f p τ = 0 := by
-  have hline : HasDerivAt (fun t : ℝ ↦ f (p + t • τ)) (fderiv ℝ f p τ) 0 := by
-    have h1 : HasDerivAt (fun t : ℝ ↦ p + t • τ) τ 0 := by
-      simpa using ((hasDerivAt_id (0 : ℝ)).smul_const τ).const_add p
-    have h2 : HasFDerivAt f (fderiv ℝ f p) (p + (0 : ℝ) • τ) := by
-      simpa using hf.hasFDerivAt
-    exact h2.comp_hasDerivAt (0 : ℝ) h1
-  have hc : Continuous fun t : ℝ ↦ p + t • τ := by fun_prop
-  have hU' : ∀ᶠ t in 𝓝 (0 : ℝ), p + t • τ ∈ U :=
-    hc.continuousAt.preimage_mem_nhds (by simpa using hU.mem_nhds hp)
-  have hzero : (fun t : ℝ ↦ f (p + t • τ)) =ᶠ[𝓝 0] fun _ ↦ 0 := by
-    filter_upwards [hU'] with t ht
-    exact h0 _ ht (by simp [hp0, hτ])
-  exact hline.unique ((hasDerivAt_const (0 : ℝ) (0 : G)).congr_of_eventuallyEq hzero)
-
 /-- Splitting a vector into its tangential part and its component along `e₀`. -/
 private theorem exists_eq_add_smul (m : E) : ∃ (τ : E) (a : ℝ), τ 0 = 0 ∧ m = τ + a • e₀ :=
   ⟨m - m 0 • e₀, m 0, by simp, by abel⟩
@@ -145,7 +126,9 @@ private theorem fderiv_comp_reflection {U : Set E} (hU : IsOpen U) {u : E → �
     (fderiv ℝ u p).comp Rℓ = -fderiv ℝ u p := by
   ext m
   obtain ⟨τ, a, hτ, rfl⟩ := exists_eq_add_smul m
-  have h := fderiv_apply_eq_zero_of_eq_zero hU hp hp0 hd h0 hτ
+  have h := hd.fderiv_apply_eq_zero_of_eventually_eq_zero (ℓ := ℓ₀) (b := 0) (by simpa using hp0)
+    (Filter.eventually_of_mem (hU.mem_nhds hp) fun y hy h ↦ h0 y hy (by simpa using h))
+    (by simpa using hτ)
   rw [ContinuousLinearMap.comp_apply, reflection_add_smul hτ]
   simp [h]
 
@@ -180,8 +163,13 @@ private theorem neg_hessian_sub_apply_reflection {U : Set E} (hU : IsOpen U) {u 
     have hf : DifferentiableAt ℝ (fun z ↦ fderiv ℝ u z τ') p :=
       hd2.clm_apply (differentiableAt_const τ')
     have h0' : ∀ y ∈ U, y 0 = 0 → fderiv ℝ u y τ' = 0 := fun y hy hy0 ↦
-      fderiv_apply_eq_zero_of_eq_zero hU hy hy0 (hdu y hy) h0 hτ'
-    have := fderiv_apply_eq_zero_of_eq_zero hU hp hp0 hf h0' hτ
+      (hdu y hy).fderiv_apply_eq_zero_of_eventually_eq_zero (ℓ := ℓ₀) (b := 0)
+        (by simpa using hy0)
+        (Filter.eventually_of_mem (hU.mem_nhds hy) fun z hz h ↦ h0 z hz (by simpa using h))
+        (by simpa using hτ')
+    have := hf.fderiv_apply_eq_zero_of_eventually_eq_zero (ℓ := ℓ₀) (b := 0) (by simpa using hp0)
+      (Filter.eventually_of_mem (hU.mem_nhds hp) fun y hy h ↦ h0' y hy (by simpa using h))
+      (by simpa using hτ)
     rwa [fderiv_clm_apply hd2 (differentiableAt_const τ'), fderiv_const_apply,
       ContinuousLinearMap.comp_zero, zero_add, ContinuousLinearMap.flip_apply] at this
   -- Along the normal, the second derivative is the Laplacian.
