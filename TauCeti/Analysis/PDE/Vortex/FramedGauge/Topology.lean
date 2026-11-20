@@ -129,14 +129,14 @@ def toSubgroup : SobolevTopologicalGaugeGroup hs ≃* sobolevGaugeGroup hs := Mu
 (`SobolevTopologicalGaugeGroup.coeFn_toLp_inclusion_subOne`). -/
 def subOne (u : SobolevTopologicalGaugeGroup hs) : H^{s}(ℂ) :=
   (exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup
-    (toSubgroup hs u).2).choose_spec.2.toBesselPotentialSpace
+    (toSubgroup hs u).property).choose_spec.2.toBesselPotentialSpace
 
 /-- The `L²` function of `subOne u` is `u - 1`. -/
 theorem coeFn_toLp_inclusion_subOne (h : 0 ≤ s) (u : SobolevTopologicalGaugeGroup hs) :
     ⇑(inclusion h (subOne u)).toLp =ᵐ[volume]
       fun z ↦ ((toSubgroup hs u : ℂ → Circle) z : ℂ) - 1 := by
   obtain ⟨hae, -⟩ :=
-    (exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup (toSubgroup hs u).2).choose_spec
+    (exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup (toSubgroup hs u).property).choose_spec
   rw [subOne, toLp_inclusion_toBesselPotentialSpace h _ rfl]
   exact hae
 
@@ -151,7 +151,7 @@ theorem coeFn_toLp_inclusion_subOne_inv (h : 0 ≤ s) (u : SobolevTopologicalGau
 /-- A Sobolev gauge is continuous as a map into `ℂ`. -/
 theorem continuous_coe_toSubgroup (u : SobolevTopologicalGaugeGroup hs) :
     Continuous fun z ↦ ((toSubgroup hs u : ℂ → Circle) z : ℂ) :=
-  continuous_subtype_val.comp ((mem_sobolevGaugeGroup hs _).1 (toSubgroup hs u).2).1
+  continuous_subtypeVal.comp ((mem_sobolevGaugeGroup hs _).1 (toSubgroup hs u).property).1
 
 /-- A Sobolev gauge is determined by its element `u - 1` of `H^s(ℂ)`. -/
 theorem subOne_injective :

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
-public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongCurve.Piecewise
 import TauCeti.Analysis.Calculus.FDeriv.InitialPositivity
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.EndpointVariation
 
@@ -35,6 +35,16 @@ Combined with an endpoint correction in a chart, the exponential variation reali
 field `V` along `γ` on `[a, b]` as the variation field of a `C^n` variation whose left endpoint
 follows a prescribed curve `σ` with `σ 0 = γ a` and velocity `V a`, and whose right endpoint
 follows the geodesic `s ↦ exp_(γ b) (s • V b)`, which is fixed when `V b = 0`.
+For two fields `V, W` on adjacent intervals `[a, c]` and `[c, b]`, with `a < c ≤ b` and
+`V c = W c`, the two variation branches can be chosen with matching moving vertices at `c`,
+while the left endpoint follows `σ` near `0` and the right endpoint is fixed when `W b = 0`.
+The assembled family agrees with each branch on its closed interval. This realizes fields
+with a corner as piecewise curve variations for variational arguments.
+
+Every continuous piecewise `C^n` interval section also has an exponential realization on a
+common interval of variation parameters. A finite partition witnesses joint `C^n` regularity
+within each closed piece, and every nearby curve is piecewise `C^n`. The construction uses
+only the interval values of the section; any endpoint where the section vanishes is fixed.
 
 ## Main definitions and results
 
@@ -54,6 +64,11 @@ follows the geodesic `s ↦ exp_(γ b) (s • V b)`, which is fixed when `V b = 
   geodesics from a zero set of `ρ` enter `{ρ > 0}` on a common initial interval.
 * `TauCeti.Manifold.exists_contMDiffAt_variationField_eq`: every `C^n` field along a curve is the
   variation field of a `C^n` variation with a prescribed moving left endpoint.
+* `TauCeti.Manifold.exists_contMDiffAt_variationField_pair_eq`: two fields agreeing at their
+  join are realized by a piecewise family with regular branches and matching moving vertices.
+* `TauCeti.Manifold.PiecewiseContMDiffSectionAlong.exists_contMDiffOn_variationField_eq`:
+  a piecewise smooth interval section is realized on a finite partition, with a common
+  interval of variation parameters and its exact exponential endpoint values.
 
 ## References
 
@@ -116,7 +131,7 @@ theorem contMDiffAt_exponentialVariation {n : ℕ∞} {s t : ℝ}
     contDiff_fst.contMDiff.contMDiffAt.smul_totalSpace
       (hV.comp (s, t) contDiff_snd.contMDiff.contMDiffAt)
   have hexp : ContMDiffAt I.tangent I n
-      (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2)
+      (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.snd)
       (TotalSpace.mk' E (γ t) (s • V t)) :=
     (contMDiffOn_riemannianExp_tangentBundle.contMDiffAt
       (isOpen_setOfPred_mem_expDomain.mem_nhds hv)).of_le (by exact_mod_cast le_top)
@@ -177,8 +192,8 @@ theorem contMDiffOn_exponentialVariation {n : ℕ∞} {S : Set ℝ}
         (fun _ hz ↦ hz.1 : MapsTo Prod.snd
           {z : ℝ × ℝ | z.2 ∈ S ∧ z.1 • V z.2 ∈ expDomain I M (γ z.2)} S))
   have hexp : ContMDiffOn I.tangent I n
-      (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2)
-      {z | z.2 ∈ expDomain I M z.proj} :=
+      (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.snd)
+      {z | z.snd ∈ expDomain I M z.proj} :=
     contMDiffOn_riemannianExp_tangentBundle.of_le (by exact_mod_cast le_top)
   exact hexp.comp hinput fun _ hz ↦ hz.2
 
@@ -243,5 +258,118 @@ theorem exists_contMDiffAt_variationField_eq {n : ℕ∞} (hn : 1 ≤ n) {σ : �
     (by rw [variationField_exponentialVariation]; exact hvel)
   exact ⟨F, hF₀.trans (exponentialVariation_zero γ V), hF, hFa, hFb,
     fun t ht ↦ (hFV t ht).trans (variationField_exponentialVariation γ V t)⟩
+
+/-- Two fields `V, W` whose tangent-bundle lifts are `C^n`, `1 ≤ n`, on `Icc a c` and
+`Icc c b`, respectively, with `a < c ≤ b` and `V c = W c`, are realized by variation branches
+jointly `C^n` along `{0} × Icc a c` and `{0} × Icc c b`, with matching moving vertices.
+If `σ` is `C^n` at `0`, starts at `γ a` and has velocity `V a`, the left endpoint follows
+`σ s` for `s` near `0`. The assembled family ends at `exp_(γ b) (s • W b)`, so its terminal
+value is fixed when `W b = 0`. The central curves and both variation fields remain exact.
+The assembled family `F` agrees with the branches on `Icc a c` and `Icc c b`, respectively. -/
+theorem exists_contMDiffAt_variationField_pair_eq (W : ∀ t, TangentSpace I (γ t))
+    {n : ℕ∞} (hn : 1 ≤ n) {σ : ℝ → M} {a c b : ℝ} (hac : a < c) (hcb : c ≤ b)
+    (hV : ∀ t ∈ Icc a c, ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n
+      (fun t ↦ TotalSpace.mk' E (γ t) (V t)) t)
+    (hW : ∀ t ∈ Icc c b, ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n
+      (fun t ↦ TotalSpace.mk' E (γ t) (W t)) t)
+    (hσ : ContMDiffAt 𝓘(ℝ, ℝ) I n σ 0) (hbase : γ a = σ 0)
+    (hvel : curveVelocity I σ 0 = V a) (hjoin : V c = W c) :
+    ∃ F G₁ G₂ : ℝ → ℝ → M, F 0 = γ ∧ G₁ 0 = γ ∧ G₂ 0 = γ ∧
+      (∀ s, EqOn (F s) (G₁ s) (Icc a c)) ∧
+      (∀ s, EqOn (F s) (G₂ s) (Icc c b)) ∧
+      (∀ t ∈ Icc a c,
+        ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n (fun z : ℝ × ℝ ↦ G₁ z.1 z.2) (0, t)) ∧
+      (∀ t ∈ Icc c b,
+        ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n (fun z : ℝ × ℝ ↦ G₂ z.1 z.2) (0, t)) ∧
+      (∀ᶠ s in 𝓝 0, G₁ s a = σ s) ∧ (∀ s, G₁ s c = G₂ s c) ∧
+      (∀ s, G₂ s b = exponentialVariation I γ W s b) ∧
+      (∀ t ∈ Icc a c, variationField I G₁ t = V t) ∧
+      (∀ t ∈ Icc c b, variationField I G₂ t = W t) ∧
+      (∀ s, F s b = exponentialVariation I γ W s b) := by
+  obtain ⟨G₁, hG₁₀, hG₁, hG₁a, hG₁c, hG₁V⟩ :=
+    exists_contMDiffAt_variationField_eq γ V hn hac
+      (by simpa only [uIcc_of_le hac.le] using hV) hσ hbase hvel
+  rw [uIcc_of_le hac.le] at hG₁ hG₁V
+  have hmatch (s : ℝ) : G₁ s c = exponentialVariation I γ W s c := by
+    rw [hG₁c]
+    simp only [exponentialVariation_apply, hjoin]
+  let F : ℝ → ℝ → M := fun s t ↦ if t ≤ c then G₁ s t else exponentialVariation I γ W s t
+  have hF₂ (s : ℝ) : EqOn (F s) (exponentialVariation I γ W s) (Icc c b) := by
+    intro t ht
+    rcases ht.1.eq_or_lt with h | h
+    · subst t
+      simpa only [F, le_refl, ↓reduceIte] using hmatch s
+    · simp only [F, ite_eq_right (not_le.mpr h)]
+  refine ⟨F, G₁, exponentialVariation I γ W, ?_, hG₁₀, exponentialVariation_zero γ W,
+    ?_, hF₂, hG₁, fun t ht ↦ contMDiffAt_exponentialVariation_zero γ W (hW t ht),
+    hG₁a, hmatch, fun _ ↦ rfl, hG₁V, fun t _ ↦ variationField_exponentialVariation γ W t,
+    fun s ↦ hF₂ s ⟨hcb, le_rfl⟩⟩
+  · funext t
+    simp only [F, hG₁₀, exponentialVariation_zero, ite_self]
+  · intro s t ht
+    simp only [F, ite_eq_left ht.2]
+
+/-- Compactness gives a common variation interval on which all scaled field values lie in
+the domain of the exponential map. -/
+private theorem eventually_forall_smul_mem_expDomain {a b : ℝ}
+    (hV : ContinuousOn (fun t ↦ TotalSpace.mk' E (γ t) (V t)) (Icc a b)) :
+    ∀ᶠ s in 𝓝 (0 : ℝ), ∀ t ∈ Icc a b, s • V t ∈ expDomain I M (γ t) := by
+  have hscale : Continuous (fun z : ℝ × TangentBundle I M ↦
+      TotalSpace.mk' E z.2.proj (z.1 • z.2.snd)) :=
+    ((contMDiff_fst (I := 𝓘(ℝ, ℝ)) (J := I.tangent) (n := 0)).smul_totalSpace
+      (I := I) contMDiff_snd).continuous
+  have hinput : Continuous (fun z : ℝ × Icc a b ↦
+      TotalSpace.mk' E (γ z.2) (z.1 • V z.2)) :=
+    hscale.comp (continuous_fst.prodMk
+      ((hV.comp_continuous continuous_subtypeVal (fun t ↦ t.property)).comp continuous_snd))
+  have hopen : IsOpen {z : ℝ × Icc a b | z.1 • V z.2 ∈ expDomain I M (γ z.2)} :=
+    isOpen_setOfPred_mem_expDomain.preimage hinput
+  have hzero (t : Icc a b) : (0, t) ∈
+      {z : ℝ × Icc a b | z.1 • V z.2 ∈ expDomain I M (γ z.2)} := by simp
+  have h := isCompact_univ.eventually_forall_of_forall_eventually
+    (x₀ := (0 : ℝ)) (P := fun s (t : Icc a b) ↦ s • V t ∈ expDomain I M (γ t))
+    (fun (t : Icc a b) _ ↦ hopen.mem_nhds (hzero t))
+  filter_upwards [h] with s hs t ht
+  exact hs ⟨t, ht⟩ (mem_univ _)
+
+/-- Realize a continuous piecewise `C^n` interval section by exponential variation.
+There is a single positive parameter radius and a finite strict partition on whose closed
+pieces the variation is jointly `C^n` (within the piece, including its endpoints). Every
+nearby curve is piecewise `C^n`, the variation field is the given interval section, and the
+pointwise exponential formula fixes every endpoint at which that section vanishes.
+The partition is only a witness; no choice of extension changes the interval values. -/
+theorem PiecewiseContMDiffSectionAlong.exists_contMDiffOn_variationField_eq
+    {γ : ℝ → M} {n : ℕ∞} {a b : ℝ} {hγ : IsPiecewiseContMDiffOn I n γ a b}
+    (W : PiecewiseContMDiffSectionAlong (F := E) (V := TangentSpace I) hγ) :
+    ∃ (F : ℝ → ℝ → M) (ε : ℝ) (k : ℕ) (τ : Fin (k + 2) → ℝ),
+      0 < ε ∧ F 0 = γ ∧ τ 0 = a ∧ τ (Fin.last (k + 1)) = b ∧
+      (∀ i : Fin (k + 1), τ i.castSucc < τ i.succ) ∧
+      (∀ s (t : Icc a b), F s t = riemannianExp I M (γ t) (s • W.val t)) ∧
+      (∀ t : Icc a b, variationField I F t = W.val t) ∧
+      (∀ i : Fin (k + 1), ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n
+        (fun z : ℝ × ℝ ↦ F z.1 z.2)
+        (Metric.ball 0 ε ×ˢ Icc (τ i.castSucc) (τ i.succ))) ∧
+      ∀ s ∈ Metric.ball 0 ε, IsPiecewiseContMDiffOn I n (F s) a b := by
+  obtain ⟨U, hU, hUW⟩ := W.exists_extension
+  obtain ⟨ε, hε, hdom⟩ := Metric.eventually_nhds_iff.mp
+    (eventually_forall_smul_mem_expDomain γ U hU.continuousOn)
+  obtain ⟨k, τ, hτa, hτb, hτ, hpieces⟩ := hU.exists_partition
+  have hmono : Monotone τ := Fin.monotone_iff_le_succ.mpr (fun i ↦ (hτ i).le)
+  have hjoint (i : Fin (k + 1)) : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n
+      (fun z : ℝ × ℝ ↦ exponentialVariation I γ U z.1 z.2)
+      (Metric.ball 0 ε ×ˢ Icc (τ i.castSucc) (τ i.succ)) :=
+    (contMDiffOn_exponentialVariation γ U (hpieces i)).mono (fun z hz ↦
+      ⟨hz.2, hdom hz.1 z.2 ⟨hτa ▸ (hmono (Fin.zero_le _)).trans hz.2.1,
+          hτb ▸ hz.2.2.trans (hmono (Fin.le_last _))⟩⟩)
+  refine ⟨exponentialVariation I γ U, ε, k, τ, hε, exponentialVariation_zero γ U,
+    hτa, hτb, hτ, ?_, ?_, hjoint, ?_⟩
+  · intro s t
+    simp only [exponentialVariation_apply, hUW]
+  · intro t
+    rw [variationField_exponentialVariation, hUW]
+  · intro s hs
+    exact .of_partition τ hτa hτb hτ (fun i ↦
+      (hjoint i).comp (contDiff_prodMk_right s).contMDiff.contMDiffOn
+        (fun t ht ↦ ⟨hs, ht⟩))
 
 end TauCeti.Manifold

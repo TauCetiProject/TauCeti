@@ -360,7 +360,7 @@ theorem range_weightMomentMap (α : ι → StrongDual ℝ 𝔱) :
     exact (neg_smul (1 / 2 * (x.1 i ^ 2 + x.2 i ^ 2)) (α i)).symm
   · rintro ⟨c, rfl⟩
     refine ⟨(WithLp.toLp 2 fun i ↦ √(2 * c i), 0), Finset.sum_congr rfl fun i _ ↦ ?_⟩
-    have h : √(2 * (c i : ℝ)) ^ 2 = 2 * c i := Real.sq_sqrt (mul_nonneg zero_le_two (c i).2)
+    have h : √(2 * (c i : ℝ)) ^ 2 = 2 * c i := Real.sq_sqrt (mul_nonneg zero_le_two (c i).property)
     rw [← Nonneg.coe_smul, Pi.neg_apply, smul_neg, ← neg_smul]
     congr 1
     simp only [PiLp.zero_apply, h]

@@ -91,7 +91,7 @@ theorem normalClosure_le_iff_le_of_normal {K M : IntermediateField F E} [Normal 
   have hsplit : ((minpoly F y).map (algebraMap F M)).Splits := Normal.splits' y
   rw [← hsplit.image_rootSet_algebraMap (B := E)] at hroot
   obtain ⟨z, -, hz⟩ := hroot
-  exact hz ▸ z.2
+  exact hz ▸ z.property
 
 /-- The normal closure of a simple algebraic extension has finite degree. -/
 theorem finiteDimensional_normalClosure_adjoin_simple {x : E} (hx : IsIntegral F x) :
@@ -110,7 +110,7 @@ theorem normalClosure_adjoin_simple_eq_adjoin_rootSet {x : E} (hx : IsIntegral F
       Set.image_singleton, adjoin_simple_le_iff]
     refine subset_adjoin F _ ?_
     rw [← rootSetEquivAlgHomAdjoin_symm_apply F E hx f]
-    exact ((rootSetEquivAlgHomAdjoin F E hx).symm f).2
+    exact ((rootSetEquivAlgHomAdjoin F E hx).symm f).property
   · exact adjoin_le_iff.mpr fun y hy ↦
       (rootSetEquivAlgHomAdjoin F E hx ⟨y, hy⟩).fieldRange_le_normalClosure
         ⟨AdjoinSimple.gen F x, rootSetEquivAlgHomAdjoin_apply_gen F E hx ⟨y, hy⟩⟩
@@ -185,7 +185,7 @@ theorem isGalois_normalClosure_adjoin {S : Set E}
     (isSeparable_adjoin_iff_isSeparable F E).2 fun s hs ↦ (h s hs).1
   exact isGalois_normalClosure_of_splits fun x ↦ by
     rw [minpoly_eq]
-    exact splits_of_mem_adjoin F E (fun s hs ↦ ⟨hint s hs, (h s hs).2⟩) x.2
+    exact splits_of_mem_adjoin F E (fun s hs ↦ ⟨hint s hs, (h s hs).2⟩) x.property
 
 /-- When `minpoly F x` is separable and splits in `E`, the normal closure of `F⟮x⟯` in `E` is
 Galois over `F`. The ambient extension `E / F` need not be normal. -/

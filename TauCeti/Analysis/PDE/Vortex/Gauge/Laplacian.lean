@@ -8,8 +8,10 @@ module
 public import TauCeti.Analysis.PDE.Schrodinger.Stationary
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
+import TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple
 import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
 import TauCeti.Analysis.PDE.Vortex.Multiplier
+import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 
 /-!
 # The gauge Laplacian of a framed plane vortex field on the Sobolev scale
@@ -52,6 +54,12 @@ in `H^(j+2)(ℂ)`.
   weak solution of the Schrödinger equation
   (`TauCeti.exists_mem_realSobolevFunctions_two_integral_mul_neg_laplacian_add_mul_eq`) and the
   regularity above.
+* Classical solutions
+  (`TauCeti.Vortex.gaugeAdjoint_gaugeDirection_eq_of_integral_mul_eq`): a `C²` weak solution with
+  continuous `g` solves `d₀* d₀ u = g` at every point. A `C²` solution of `d₀* d₀ u = 0` tending to
+  zero at infinity vanishes, at any field
+  (`TauCeti.Vortex.eq_zero_of_gaugeAdjoint_gaugeDirection_eq_zero`), since `Δu = (p² + q²) u` gives
+  `u Δu ≥ 0` and the weak maximum principle applies.
 
 For `j = k - 1` this gives unique weak solvability of `d₀* d₀ u = g` with an `H^(k+1)(ℂ)`
 solution for every `g ∈ H^(k-1)(ℂ)`, at a continuous field `x₀` of `A_m^k`. This is the analytic
@@ -72,8 +80,8 @@ noncomputable section
 
 namespace TauCeti.Vortex
 
-open MeasureTheory TemperedDistribution Filter Metric
-open scoped Laplacian ContDiff
+open MeasureTheory TemperedDistribution Filter Metric Topology
+open scoped Laplacian ContDiff Distributions
 
 variable {f : ContDiffBump (0 : ℝ)} {m : ℕ} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
@@ -212,5 +220,49 @@ theorem exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection
   exact ⟨u, mem_realSobolevFunctions_of_integral_mul_gaugeAdjoint_gaugeDirection_eq hk hjk hx
     hcont (memLp_of_mem_realSobolevFunctions hu) hg fun φ hφ hc ↦ hweak φ (hφ.of_le (by simp)) hc,
     hweak⟩
+
+/-- **No nonzero decaying infinitesimal gauge transformation is Coulomb.** At any field `x`, a
+`C²` phase `u` tending to zero at infinity with `d₀* d₀ u = 0` vanishes: the equation reads
+`Δu = (p² + q²) u`, so `u Δu ≥ 0`. -/
+theorem eq_zero_of_gaugeAdjoint_gaugeDirection_eq_zero (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    {u : ℂ → ℝ} (hu : ContDiff ℝ 2 u) (hlim : Tendsto u (cocompact ℂ) (𝓝 0))
+    (h : ∀ z, gaugeAdjoint x (gaugeDirection x u) z = 0) : u = 0 := by
+  refine eq_zero_of_tendsto_cocompact_of_mul_laplacian_nonneg hu (fun z ↦ ?_) hlim
+  have hz := h z
+  rw [gaugeAdjoint_gaugeDirection x hu.contDiffAt] at hz
+  have hΔ : Δ u z = (x z 2 ^ 2 + x z 3 ^ 2) * u z := by linarith
+  rw [hΔ, show u z * ((x z 2 ^ 2 + x z 3 ^ 2) * u z) = (x z 2 ^ 2 + x z 3 ^ 2) * u z ^ 2 by ring]
+  positivity
+
+/-- **`C²` weak solutions of the gauge Laplacian are classical.** At a continuous field `x`, a `C²`
+phase `u` with `d₀* d₀ u = g` weakly, for a continuous `g`, satisfies `d₀* d₀ u = g` at every
+point. -/
+theorem gaugeAdjoint_gaugeDirection_eq_of_integral_mul_eq (hx : Continuous x) {u g : ℂ → ℝ}
+    (hu : ContDiff ℝ 2 u) (hg : Continuous g)
+    (hw : ∀ φ : ℂ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
+      ∫ z, u z * gaugeAdjoint x (gaugeDirection x φ) z = ∫ z, g z * φ z) (z : ℂ) :
+    gaugeAdjoint x (gaugeDirection x u) z = g z := by
+  set P : ℂ → ℝ := fun z ↦ x z 2 ^ 2 + x z 3 ^ 2
+  have hP : Continuous P := by
+    have : Continuous fun z ↦ x z 2 := by fun_prop
+    have : Continuous fun z ↦ x z 3 := by fun_prop
+    fun_prop
+  -- The weak equation says that the distributional Laplacian of `u` is `P u - g`.
+  have hΔ : Set.EqOn (Δ u) (fun z ↦ P z * u z - g z) (⊤ : TopologicalSpace.Opens ℂ) := by
+    refine hu.contDiffOn.eqOn_laplacian_of_forall_integral_laplacian_smul_eq (μ := volume)
+      ((hP.mul hu.continuous).sub hg).continuousOn fun φ ↦ ?_
+    have hφ2 : ContDiff ℝ 2 (φ : ℂ → ℝ) := φ.contDiff.of_le (by simp)
+    have hφc := φ.hasCompactSupport
+    have hint (a : ℂ → ℝ) (ha : Continuous a) : Integrable (fun z ↦ φ z * a z) volume :=
+      (φ.continuous.mul ha).integrable_of_hasCompactSupport hφc.mul_right
+    have hΔφ : Integrable (fun z ↦ Δ (φ : ℂ → ℝ) z * u z) volume :=
+      (hφ2.continuous_laplacian.mul hu.continuous).integrable_of_hasCompactSupport
+        hφc.laplacian.mul_right
+    have hweak := hw φ φ.contDiff hφc
+    rw [integral_mul_gaugeAdjoint_gaugeDirection hφ2] at hweak
+    simpa only [smul_eq_mul] using integral_mul_eq_integral_mul_sub_of_integral_mul_neg_add_mul_eq
+      hΔφ (hint _ (hP.mul hu.continuous)) (hint g hg) hweak
+  rw [gaugeAdjoint_gaugeDirection x hu.contDiffAt, hΔ (Set.mem_univ z)]
+  ring
 
 end TauCeti.Vortex

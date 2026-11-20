@@ -243,7 +243,7 @@ theorem toContinuousLinearMap_mem_invariants_linHom (f : ContIntertwiningMap π 
 /-- **The invariants of the Hom representation are the continuous intertwiners.** -/
 noncomputable def invariantsEquivContIntertwiningMap :
     (linHom π ρ).invariants ≃ₗ[𝕜] ContIntertwiningMap π ρ where
-  toFun T := ⟨(T : V →L[𝕜] W), (mem_linHom_invariants_iff_isIntertwining π ρ _).1 T.2⟩
+  toFun T := ⟨(T : V →L[𝕜] W), (mem_linHom_invariants_iff_isIntertwining π ρ _).1 T.property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   invFun f := ⟨f.toContinuousLinearMap, toContinuousLinearMap_mem_invariants_linHom π ρ f⟩

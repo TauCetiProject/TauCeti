@@ -171,31 +171,33 @@ end NonUnital
 
 section UnitalLeibniz
 
-variable {A σ : Type*} [NonAssocRing A] [SetLike σ A] {𝒜 : ℤ → σ}
-  [SetLike.GradedOne 𝒜] {d : A → A}
+variable {A ι σ : Type*} [NonAssocRing A] [Zero ι] [SetLike σ A] (𝒜 : ι → σ)
+  [SetLike.GradedOne 𝒜] {s : ι → ℤˣ} {d : A → A}
 
-/-- A function satisfying the graded Leibniz rule annihilates the unit: the rule for `1 * 1`
-reads `d 1 = d 1 + d 1`. Neither additivity nor a direct-sum decomposition is needed. -/
+/-- A function satisfying a graded Leibniz rule with arbitrary unit signs `s : ι → ℤˣ` annihilates
+the unit: the rule for `1 * 1` reads `d 1 = d 1 + s 0 • d 1`, hence `s 0 • d 1 = 0` and `d 1 = 0`.
+Neither additivity nor a direct-sum decomposition is needed. -/
 theorem map_one_eq_zero_of_leibniz
-    (hl : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + p.negOnePow • (a * d b)) :
+    (hl : ∀ {p : ι} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + s p • (a * d b)) :
     d 1 = 0 := by
   have key := hl (SetLike.one_mem_graded 𝒜) 1
-  simp only [mul_one, one_mul, Int.negOnePow_zero, one_smul] at key
-  exact left_eq_add.mp key
+  simp only [mul_one, one_mul] at key
+  exact (smul_eq_zero_iff_eq (s 0)).1 (left_eq_add.mp key)
 
 end UnitalLeibniz
 
 section AlgebraLeibniz
 
-variable {R A : Type*} [CommSemiring R] [Ring A] [Algebra R A] {𝒜 : ℤ → Submodule R A}
-  [SetLike.GradedOne 𝒜] {d : A →ₗ[R] A}
+variable {R A ι σ : Type*} [CommSemiring R] [Ring A] [Algebra R A] [Zero ι] [SetLike σ A]
+  (𝒜 : ι → σ) [SetLike.GradedOne 𝒜] {s : ι → ℤˣ} {d : A →ₗ[R] A}
 
-/-- A linear map satisfying the graded Leibniz rule annihilates the image of the ground semiring.
-Only the unit's degree-zero membership is needed from the grading. -/
+/-- A linear map satisfying a graded Leibniz rule with arbitrary unit signs `s : ι → ℤˣ`
+annihilates the image of the ground semiring. Only the unit's degree-zero membership is needed from
+the grading. -/
 theorem map_algebraMap_of_leibniz
-    (hl : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + p.negOnePow • (a * d b))
+    (hl : ∀ {p : ι} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + s p • (a * d b))
     (r : R) : d (algebraMap R A r) = 0 := by
-  rw [Algebra.algebraMap_eq_smul_one, map_smul, map_one_eq_zero_of_leibniz hl, smul_zero]
+  rw [Algebra.algebraMap_eq_smul_one, map_smul, map_one_eq_zero_of_leibniz 𝒜 hl, smul_zero]
 
 end AlgebraLeibniz
 
@@ -230,11 +232,11 @@ theorem toIsNonUnitalDGAlgebra (h : IsDGAlgebra 𝒜 d) : IsNonUnitalDGAlgebra �
 /-- The differential of a differential graded algebra annihilates the unit: the Leibniz rule for
 `1 * 1` reads `d 1 = d 1 + d 1`. -/
 theorem map_one_eq_zero (h : IsDGAlgebra 𝒜 d) : d 1 = 0 :=
-  map_one_eq_zero_of_leibniz h.leibniz
+  map_one_eq_zero_of_leibniz 𝒜 h.leibniz
 
 /-- The differential of a differential graded algebra annihilates the image of the ground ring. -/
 theorem map_algebraMap (h : IsDGAlgebra 𝒜 d) (r : R) : d (algebraMap R A r) = 0 :=
-  map_algebraMap_of_leibniz h.leibniz r
+  map_algebraMap_of_leibniz 𝒜 h.leibniz r
 
 /-- The negative of the differential of a differential graded algebra is again a differential. -/
 theorem neg (h : IsDGAlgebra 𝒜 d) : IsDGAlgebra 𝒜 (-d) where

@@ -405,11 +405,11 @@ from the `ω`-tame complex structures onto the Cayley ball of `J₀`. Its invers
 `C ↦ J₀ (1 + C)(1 - C)⁻¹`. -/
 def Compatible.cayleyEquiv (h₀ : ω.Compatible J₀) :
     {J : AlmostComplexStructure V // ω.Tames J} ≃ ω.cayleyBall J₀ where
-  toFun J := ⟨J₀.cayley J, h₀.cayley_mem_cayleyBall J.2⟩
-  invFun C := ⟨inverseCayley C.2, h₀.tames_inverseCayley C.2⟩
+  toFun J := ⟨J₀.cayley J, h₀.cayley_mem_cayleyBall J.property⟩
+  invFun C := ⟨inverseCayley C.property, h₀.tames_inverseCayley C.property⟩
   left_inv J := Subtype.ext <| AlmostComplexStructure.toLinearMap_injective <|
-    h₀.inverseCayley_cayley J.2
-  right_inv C := Subtype.ext <| h₀.cayley_inverseCayley C.2
+    h₀.inverseCayley_cayley J.property
+  right_inv C := Subtype.ext <| h₀.cayley_inverseCayley C.property
 
 /-- The Cayley equivalence is the Cayley transform. -/
 @[simp]
@@ -520,13 +520,13 @@ from the `ω`-compatible complex structures onto the compatible Cayley ball of `
 transform of `J₀`, this exhibits the compatible structures as a convex set in a linear chart. -/
 def Compatible.compatibleCayleyEquiv (h₀ : ω.Compatible J₀) :
     {J : AlmostComplexStructure V // ω.Compatible J} ≃ ω.compatibleCayleyBall J₀ where
-  toFun J := ⟨J₀.cayley J, (h₀.cayley_mem_compatibleCayleyBall_iff J.2.tames).mpr J.2⟩
-  invFun C := ⟨inverseCayley C.2.1,
-    (h₀.cayley_mem_compatibleCayleyBall_iff (h₀.tames_inverseCayley C.2.1)).mp
-      (by rw [h₀.cayley_inverseCayley]; exact C.2)⟩
+  toFun J := ⟨J₀.cayley J, (h₀.cayley_mem_compatibleCayleyBall_iff J.property.tames).mpr J.property⟩
+  invFun C := ⟨inverseCayley C.property.1,
+    (h₀.cayley_mem_compatibleCayleyBall_iff (h₀.tames_inverseCayley C.property.1)).mp
+      (by rw [h₀.cayley_inverseCayley]; exact C.property)⟩
   left_inv J := Subtype.ext <| AlmostComplexStructure.toLinearMap_injective <|
-    h₀.inverseCayley_cayley J.2.tames
-  right_inv C := Subtype.ext <| h₀.cayley_inverseCayley C.2.1
+    h₀.inverseCayley_cayley J.property.tames
+  right_inv C := Subtype.ext <| h₀.cayley_inverseCayley C.property.1
 
 /-- The compatible Cayley equivalence is the Cayley transform. -/
 @[simp]

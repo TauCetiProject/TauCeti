@@ -78,7 +78,7 @@ theorem isClosed_setOf_not_exists (P : Opens X → Prop) :
 its image in `X`. -/
 theorem exists_le_preimage_coe_eq (Ω : Opens X) {W : Set Ω} (hW : IsOpen W) :
     ∃ U : Opens X, U ≤ Ω ∧ ((↑) : Ω → X) ⁻¹' (U : Set X) = W :=
-  ⟨⟨(↑) '' W, Ω.isOpen.isOpenMap_subtype_val W hW⟩, Subtype.coe_image_subset _ _,
+  ⟨⟨(↑) '' W, Ω.isOpen.isOpenMap_subtypeVal W hW⟩, Subtype.coe_image_subset _ _,
     Set.preimage_image_eq W Subtype.val_injective⟩
 
 /-- In a locally compact regular space, every compact subset `K` of an open set `U` lies in an
@@ -117,22 +117,22 @@ theorem exists_finset_sup_le_of_isCompact (hB : Opens.IsBasis B) {K : Set X}
     ∃ s : Finset (Opens X), (∀ V ∈ s, V ∈ B) ∧ K ⊆ (s.sup id : Opens X) ∧ s.sup id ≤ U := by
   classical
   let C := {V : Opens X // V ∈ B ∧ V ≤ U}
-  obtain ⟨s, hs⟩ := hK.elim_finite_subcover (fun V : C ↦ (V.1 : Set X))
-    (fun V ↦ V.1.isOpen) (fun x hx ↦ by
+  obtain ⟨s, hs⟩ := hK.elim_finite_subcover (fun V : C ↦ (V.val : Set X))
+    (fun V ↦ V.val.isOpen) (fun x hx ↦ by
       obtain ⟨V, hV, hxV, hVU⟩ := Opens.isBasis_iff_nbhd.mp hB (hKU hx)
       exact Set.mem_iUnion.mpr ⟨⟨V, hV, hVU⟩, hxV⟩)
   refine ⟨s.image Subtype.val, ?_, ?_, ?_⟩
   · intro V hV
     obtain ⟨W, _, rfl⟩ := Finset.mem_image.mp hV
-    exact W.2.1
+    exact W.property.1
   · intro x hx
     obtain ⟨V, hVs, hxV⟩ := Set.mem_iUnion₂.mp (hs hx)
-    have hle : V.1 ≤ (s.image Subtype.val).sup id :=
+    have hle : V.val ≤ (s.image Subtype.val).sup id :=
       Finset.le_sup (f := id) (Finset.mem_image.mpr ⟨V, hVs, rfl⟩)
     exact hle hxV
   · exact Finset.sup_le fun V hV ↦ by
       obtain ⟨W, _, rfl⟩ := Finset.mem_image.mp hV
-      exact W.2.2
+      exact W.property.2
 
 end TopologicalSpace.Opens.IsBasis
 
