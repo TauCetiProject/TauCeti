@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.SetTheory.Cardinal.Finite
 public import Mathlib.Topology.Covering.Quotient
 
 /-!
@@ -55,8 +56,12 @@ Neither normality nor a separation axiom is needed.
   the quotient by the whole group is a covering map.
 * `IsQuotientCoveringMap.finite_fiber`: the quotient covering map of a finite group has finite
   fibres.
+* `IsQuotientCoveringMap.natCard_fiber`: every fibre of the quotient covering map has as many
+  points as the acting group.
 * `IsQuotientCoveringMap.image_smul_set`: the quotient covering map has the same image on a set
   and on its translates.
+* `IsQuotientCoveringMap.mapsTo_smul_preimage`: the preimage of a set under the quotient covering
+  map is invariant under the action.
 * `IsQuotientCoveringMap.of_smul_eq`: a quotient covering map for `G` is one for any group
   isomorphic to `G` acting compatibly.
 * `AddSubgroup.isAddQuotientCoveringMap_quotientMk`: the orbit projection for translation by a
@@ -138,6 +143,11 @@ theorem _root_.IsQuotientCoveringMap.image_smul_set (hq : IsQuotientCoveringMap 
     (s : Set E) : q '' (g • s) = q '' s := by
   rw [← Set.image_smul, Set.image_image]
   simp_rw [hq.map_smul]
+
+/-- The preimage of a set under the quotient covering map is invariant under the action. -/
+theorem _root_.IsQuotientCoveringMap.mapsTo_smul_preimage (hq : IsQuotientCoveringMap q G)
+    (s : Set X) (g : G) : Set.MapsTo (g • ·) (q ⁻¹' s) (q ⁻¹' s) :=
+  fun e he ↦ by rwa [Set.mem_preimage, hq.map_smul]
 
 /-- **Openness in a quotient covering map is detected on a single translate.** A subset `W` of the
 image of `U` is open as soon as the part of its preimage lying in `U` is open, because the whole
@@ -258,6 +268,13 @@ theorem _root_.IsQuotientCoveringMap.finite_fiber [Finite G] (hq : IsQuotientCov
     (x : X) : Finite ↥(q ⁻¹' {x}) := by
   obtain ⟨e, rfl⟩ := hq.surjective x
   exact Finite.of_equiv G (hq.fiberEquivGroup ⟨e, rfl⟩).symm
+
+/-- Every fibre of the quotient covering map has as many points as the acting group, each fibre
+being an orbit of the free action. -/
+theorem _root_.IsQuotientCoveringMap.natCard_fiber (hq : IsQuotientCoveringMap q G) (x : X) :
+    Nat.card ↥(q ⁻¹' {x}) = Nat.card G := by
+  obtain ⟨e, rfl⟩ := hq.surjective x
+  exact Nat.card_congr (hq.fiberEquivGroup ⟨e, rfl⟩)
 
 /-- **A quotient covering map stays one when the acting group is replaced by an isomorphic one
 acting compatibly.** If `e : G ≃* G'` and each `e g` acts on `E` as `g` does, then the orbits and
