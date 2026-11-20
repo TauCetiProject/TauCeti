@@ -96,6 +96,17 @@ lemma twistedHomologyCoefficientMap_neg {L K : LocalCoefficientSystem.{u, v, max
     ((twistedChainComplexFunctor.{u, v, w} R X).map_neg (f := η))).trans
       (HomologicalComplex.homologyMap_neg _ k)
 
+/-- The map on twisted homology induced by a sum of morphisms of local systems is the sum of the
+induced maps. -/
+@[simp]
+lemma twistedHomologyCoefficientMap_add {L K : LocalCoefficientSystem.{u, v, max v w} R X}
+    (η θ : L ⟶ K) (k : ℕ) :
+    twistedHomologyCoefficientMap (η + θ) k =
+      twistedHomologyCoefficientMap η k + twistedHomologyCoefficientMap θ k :=
+  (congrArg (HomologicalComplex.homologyMap · k)
+    ((twistedChainComplexFunctor.{u, v, w} R X).map_add (f := η) (g := θ))).trans
+      (HomologicalComplex.homologyMap_add _ _ k)
+
 /-- The map on twisted homology induced by a difference of morphisms of local systems is the
 difference of the induced maps. -/
 @[simp]
