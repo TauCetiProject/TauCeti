@@ -359,24 +359,20 @@ theorem exists_basis_iff_forall_weightRotation_eq_id_iff (h : Toric.IsIntegralLa
   have hA (ξ : 𝔱) (j : ι) : A ξ j = α j ξ := by simp [A]
   have hAinj : Function.Injective A := (injective_iff_map_eq_zero A).2 fun ξ hξ ↦
     eq_zero_of_forall_apply_eq_zero_of_weightRotation (fun ξ ↦ (heff ξ).1) fun j ↦ congrFun hξ j
+  -- The weights are real extensions of integral characters `m j`, since `2π i(N)` acts trivially.
+  obtain ⟨m, hm⟩ := Classical.axiomOfChoice <|
+    (forall_weightRotation_two_pi_smul_eq_id_iff h α).1 fun n ↦ (heff _).2 ⟨n, rfl⟩
   simp only [weightRotation_eq_id_iff] at heff
   have hAsurj : Function.Surjective A := by
     have hle := LinearMap.finrank_le_finrank_of_injective hAinj
     rw [Module.finrank_fintype_fun_eq_card] at hle
     exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
       (by rw [Module.finrank_fintype_fun_eq_card]; omega)).1 hAinj
-  -- The weights take integer values on the lattice, since `2π i(N)` acts trivially.
-  have hint (n : N) (j : ι) : ∃ k : ℤ, α j (i n) = k := by
-    obtain ⟨k, hk⟩ := (heff _).2 ⟨n, rfl⟩ j
-    rw [map_smul, smul_eq_mul] at hk
-    exact ⟨k, mul_left_cancel₀ (by positivity : (2 * π) ≠ 0) (by linear_combination -hk)⟩
-  choose a ha using hint
-  -- These integer values form a `ℤ`-linear map `N → ℤ^ι`.
-  let e : N →ₗ[ℤ] ι → ℤ := AddMonoidHom.toIntLinearMap
-    { toFun := a
-      map_zero' := funext fun j ↦ Int.cast_injective (α := ℝ) (by simp [← ha])
-      map_add' := fun n m ↦ funext fun j ↦ Int.cast_injective (α := ℝ) (by simp [← ha]) }
-  have he (n : N) (j : ι) : α j (i n) = e n j := by simp [e, ha]
+  -- These characters form a `ℤ`-linear map `N → ℤ^ι`.
+  let e : N →ₗ[ℤ] ι → ℤ := (AddMonoidHom.pi m).toIntLinearMap
+  have he (n : N) (j : ι) : α j (i n) = e n j := by
+    rw [← ContinuousLinearMap.coe_coe, ← hm, h.realCharacter_apply]
+    simp [e]
   -- It is injective because `A` and `i` are, and surjective because `A` is.
   have heinj : Function.Injective e := fun n m hnm ↦ h.injective <| hAinj <| funext fun j ↦ by
     rw [hA, hA, he, he, hnm]
