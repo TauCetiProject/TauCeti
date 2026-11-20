@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Group.Continuity
 public import Mathlib.Analysis.Normed.Ring.Basic
 public import TauCeti.Topology.ApproximateUnit
 public import TauCeti.Topology.MetricSpace.SimultaneousApproximation
+import Mathlib.Analysis.Normed.Ring.Lemmas
 
 /-!
 # Bounded approximate identities in normed rings
@@ -29,7 +30,9 @@ We prove:
   `C + D + C * D`. In the unitization, `1 - (e + f - f * e) = (1 - f) * (1 - e)`;
 * transfer under continuous multiplicative maps with dense range, provided the image of the
   approximate unit is eventually norm bounded. This allows a bounded approximate unit of a
-  dense subalgebra to serve in its completion.
+  dense subalgebra to serve in its completion;
+* `IsClosed.mem_of_tendsto_mul`: if a filter of contractions `e` in a closed set `s` is a
+  two-sided approximate unit for `x` and `e * x * e ∈ s` for all `e ∈ s`, then `x ∈ s`.
 
 ## References
 
@@ -261,3 +264,27 @@ theorem map_of_denseRange {l : Filter A} (hl : l.IsApproximateUnit) (f : F)
             simpa only [Function.comp_def] using (continuous_fst.tendsto (x, x)).comp (htarget x)) }
 
 end Filter.IsApproximateUnit
+
+namespace IsClosed
+
+variable {A : Type*} [NonUnitalSeminormedRing A]
+
+/-- If `x * e → x` and `e * x → x` along a proper filter of contractions `e` eventually in a closed
+set `s` with `e * x * e ∈ s` for all `e ∈ s`, then `x ∈ s`. -/
+theorem mem_of_tendsto_mul {s : Set A} {x : A} (hs : IsClosed s) {l : Filter A} [l.NeBot]
+    (hls : ∀ᶠ e in l, e ∈ s) (hnorm : ∀ᶠ e in l, ‖e‖ ≤ 1) (hmul : ∀ e ∈ s, e * x * e ∈ s)
+    (hr : Tendsto (x * ·) l (𝓝 x)) (hl : Tendsto (· * x) l (𝓝 x)) : x ∈ s := by
+  -- `e * x * e = (e * x - x) * e + (x * e - x) + x`, and `e` stays bounded.
+  have hbdd : IsBoundedUnder (· ≤ ·) l ((‖·‖) ∘ id) := isBoundedUnder_of_eventually_le hnorm
+  have h₁ : Tendsto (fun e ↦ (e * x - x) * e) l (𝓝 0) :=
+    (tendsto_sub_nhds_zero_iff.mpr hl).zero_mul_isBoundedUnder_le hbdd
+  have h₂ : Tendsto (fun e ↦ x * e - x) l (𝓝 0) := tendsto_sub_nhds_zero_iff.mpr hr
+  have hlim : Tendsto (fun e ↦ e * x * e) l (𝓝 x) := by
+    convert (h₁.add h₂).add_const x using 1
+    · ext e
+      simp only [sub_mul]
+      abel
+    · simp
+  exact hs.mem_of_tendsto hlim (hls.mono hmul)
+
+end IsClosed

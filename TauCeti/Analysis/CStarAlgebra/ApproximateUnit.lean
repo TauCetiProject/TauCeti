@@ -34,13 +34,10 @@ quotient by a closed two-sided ideal.
 `TauCeti.CStarAlgebra.norm_sub_mul_sq_le_of_star_mul_self_le` compares an element `y` with a
 dominating `b ≥ star y * y`: `‖y - y * e‖ ^ 2 ≤ 2 * ‖b - b * e‖` for a self-adjoint contraction
 `e`. Hence a right approximate unit for `b` is one for `y`,
-`TauCeti.CStarAlgebra.tendsto_mul_of_star_mul_self_le`, and taking adjoints along self-adjoint `e`
-turns `y * e → y` into `e * star y → star y`, `TauCeti.tendsto_mul_star_of_tendsto_mul`. Every
-closed star subalgebra carries an approximate unit of positive contractions,
-`NonUnitalStarSubalgebra.exists_approximateUnit`, and an element `x` with `e * x * e ∈ B` for all
-`e ∈ B` lies in `B` as soon as such an approximate unit is a two-sided unit for `x`,
-`NonUnitalStarSubalgebra.mem_of_tendsto_mul`. These facts show that closed two-sided ideals are
-self-adjoint and drive the theory of hereditary C⋆-subalgebras.
+`TauCeti.CStarAlgebra.tendsto_mul_of_star_mul_self_le`. Every closed star subalgebra carries an
+approximate unit of positive contractions, `NonUnitalStarSubalgebra.exists_approximateUnit`. These
+facts show that closed two-sided ideals are self-adjoint and drive the theory of hereditary
+C⋆-subalgebras.
 -/
 
 public section
@@ -122,16 +119,6 @@ theorem map {l : Filter A} (hl : l.IsIncreasingApproximateUnit) (f : F)
 end Map
 
 end Filter.IsIncreasingApproximateUnit
-
-namespace TauCeti
-
-/-- Along a filter of self-adjoint elements, `z * e → z` implies `e * star z → star z`. -/
-theorem tendsto_mul_star_of_tendsto_mul {R : Type*} [Mul R] [StarMul R] [TopologicalSpace R]
-    [ContinuousStar R] {l : Filter R} {z : R} (he : ∀ᶠ e in l, IsSelfAdjoint e)
-    (hz : Tendsto (z * ·) l (𝓝 z)) : Tendsto (· * star z) l (𝓝 (star z)) :=
-  hz.star.congr' (he.mono fun _ he ↦ by rw [star_mul, he.star_eq])
-
-end TauCeti
 
 namespace TauCeti.CStarAlgebra
 
@@ -233,24 +220,5 @@ theorem exists_approximateUnit {B : NonUnitalStarSubalgebra ℂ A} (hB : IsClose
       (continuous_subtype_val.tendsto _).comp (hl.tendsto_mul_left ⟨b, hb⟩)
   · simpa only [tendsto_map'_iff, Function.comp_def, NonUnitalStarSubalgebra.coe_mul] using
       (continuous_subtype_val.tendsto _).comp (hl.tendsto_mul_right ⟨b, hb⟩)
-
-omit [PartialOrder A] [StarOrderedRing A] in
-/-- If `x * e → x` and `e * x → x` along a proper filter of contractions `e ∈ B` with
-`e * x * e ∈ B`, then `x` lies in the closed star subalgebra `B`. -/
-theorem mem_of_tendsto_mul {B : NonUnitalStarSubalgebra ℂ A} {x : A} (hBc : IsClosed (B : Set A))
-    {l : Filter A} [l.NeBot] (hlB : ∀ᶠ e in l, e ∈ B) (hnorm : ∀ᶠ e in l, ‖e‖ ≤ 1)
-    (hmul : ∀ e ∈ B, e * x * e ∈ B) (hr : Tendsto (x * ·) l (𝓝 x)) (hl : Tendsto (· * x) l (𝓝 x)) :
-    x ∈ B := by
-  -- `e * x * e = (e * x - x) * e + (x * e - x) + x`, and `e` stays bounded.
-  have hbdd : IsBoundedUnder (· ≤ ·) l ((‖·‖) ∘ id) := isBoundedUnder_of_eventually_le hnorm
-  have h₁ : Tendsto (fun e ↦ (e * x - x) * e) l (𝓝 0) :=
-    (tendsto_sub_nhds_zero_iff.mpr hl).zero_mul_isBoundedUnder_le hbdd
-  have h₂ : Tendsto (fun e ↦ x * e - x) l (𝓝 0) := tendsto_sub_nhds_zero_iff.mpr hr
-  have hlim : Tendsto (fun e ↦ e * x * e) l (𝓝 x) := by
-    convert (h₁.add h₂).add_const x using 1
-    · ext e
-      noncomm_ring
-    · simp
-  exact hBc.mem_of_tendsto hlim (hlB.mono hmul)
 
 end NonUnitalStarSubalgebra
