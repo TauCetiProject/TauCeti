@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.Matrix.Mul
 
 /-!
-# Matrix products: positivity of powers and nonvanishing of factors
+# Matrix products: positivity of powers, nonvanishing of factors and opposite rings
 
 Over a strictly ordered semiring, once some power `A ^ k` with `k > 0` of an entrywise nonnegative
 square matrix `A` is strictly positive, every later power is strictly positive too: each row of `A`
@@ -27,6 +27,9 @@ Submatrices of an outer product `vecMulVec u v` are outer products of the reinde
 A scalar acting on the right factor of an outer product `vecMulVec (Pi.single i 1) v` may be pulled
 out to the left without any commutativity, since the left factor has entries `0` and `1` only.
 
+Transposing a product of rectangular matrices and passing to the opposite ring reverses the
+factors; transposition with `MulOpposite.op` and with `MulOpposite.unop` are mutually inverse.
+
 ## Main results
 
 * `Matrix.pow_apply_pos_of_le`: if `A` is entrywise nonnegative and `A ^ k` is strictly positive
@@ -44,6 +47,8 @@ out to the left without any commutativity, since the left factor has entries `0`
   (Pi.single i 1) v`, for any scalar action, unlike `Matrix.vecMulVec_smul`.
 * `Matrix.submatrix_vecMulVec`: a submatrix of an outer product is the outer product of the
   reindexed vectors.
+* `Matrix.transpose_mul_map_op`: transposing a product and passing to the opposite ring reverses
+  the factors, `(M * N)ᵀ.map op = Nᵀ.map op * Mᵀ.map op`, for rectangular `M` and `N`.
 -/
 
 public section
@@ -171,5 +176,32 @@ theorem submatrix_vecMulVec {α l m n o : Type*} [Mul α] (u : m → α) (v : n 
     (g : o → n) : (vecMulVec u v).submatrix f g = vecMulVec (u ∘ f) (v ∘ g) := by
   ext
   simp [vecMulVec_apply]
+
+section MulOpposite
+
+variable {α m n p : Type*}
+
+/-- Transposing a matrix and passing to the opposite ring, then transposing back and returning to
+the ring, gives the original matrix. -/
+@[simp]
+theorem transpose_map_op_transpose_map_unop (M : Matrix m n α) :
+    (Mᵀ.map MulOpposite.op)ᵀ.map MulOpposite.unop = M :=
+  rfl
+
+/-- Transposing a matrix over the opposite ring and returning to the ring, then transposing back
+and passing to the opposite ring, gives the original matrix. -/
+@[simp]
+theorem transpose_map_unop_transpose_map_op (M : Matrix m n αᵐᵒᵖ) :
+    (Mᵀ.map MulOpposite.unop)ᵀ.map MulOpposite.op = M :=
+  rfl
+
+/-- Transposing a product of matrices and passing to the opposite ring reverses the factors. -/
+theorem transpose_mul_map_op [Mul α] [AddCommMonoid α] [Fintype n] (M : Matrix m n α)
+    (N : Matrix n p α) :
+    (M * N)ᵀ.map MulOpposite.op = Nᵀ.map MulOpposite.op * Mᵀ.map MulOpposite.op := by
+  ext i j
+  simp [Matrix.mul_apply]
+
+end MulOpposite
 
 end Matrix
