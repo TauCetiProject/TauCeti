@@ -33,6 +33,9 @@ For partial diffeomorphisms `ψ`, `χ`, `φ` into normed spaces, such as charts,
 
 * `IsLocalDiffeomorphAt.finrank_eq`: a local diffeomorphism of nonzero regularity has source
   and target model spaces of equal dimension.
+* `IsLocalDiffeomorphAt.mfderivToContinuousLinearEquiv_symm_mfderiv_apply`,
+  `IsLocalDiffeomorphAt.mfderiv_mfderivToContinuousLinearEquiv_symm_apply`: the inverse of the
+  differential of a local diffeomorphism, `(df_x)⁻¹`, undoes `df_x` on either side.
 
 * `OpenPartialHomeomorph.mfderiv_symm_apply_mfderiv_apply`,
   `OpenPartialHomeomorph.mfderiv_apply_mfderiv_symm_apply`: where an open partial homeomorphism
@@ -84,6 +87,24 @@ theorem IsLocalDiffeomorphAt.finrank_eq {f : M → N} {x : M}
     Module.finrank 𝕜 E = Module.finrank 𝕜 F := by
   simpa only [TauCeti.finrank_tangentSpace] using
     (hf.mfderivToContinuousLinearEquiv hn).toLinearEquiv.finrank_eq
+
+/-- The inverse of the differential of a local diffeomorphism undoes the differential:
+`(df_x)⁻¹ (df_x v) = v`. -/
+@[simp]
+theorem IsLocalDiffeomorphAt.mfderivToContinuousLinearEquiv_symm_mfderiv_apply {f : M → N}
+    {x : M} (hf : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0) (v : TangentSpace I x) :
+    (hf.mfderivToContinuousLinearEquiv hn).symm (mfderiv I J f x v) = v := by
+  rw [← hf.mfderivToContinuousLinearEquiv_coe hn, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.symm_apply_apply]
+
+/-- The differential of a local diffeomorphism undoes the inverse of the differential:
+`df_x ((df_x)⁻¹ w) = w`. -/
+@[simp]
+theorem IsLocalDiffeomorphAt.mfderiv_mfderivToContinuousLinearEquiv_symm_apply {f : M → N}
+    {x : M} (hf : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0) (w : TangentSpace J (f x)) :
+    mfderiv I J f x ((hf.mfderivToContinuousLinearEquiv hn).symm w) = w := by
+  rw [← hf.mfderivToContinuousLinearEquiv_coe hn, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.apply_symm_apply]
 
 namespace OpenPartialHomeomorph
 
@@ -265,3 +286,18 @@ theorem fderiv_comp_symm_eq_comp (ψ : PartialDiffeomorph I 𝓘(𝕜, G'') M G'
 end Transition
 
 end PartialDiffeomorph
+
+/-- On the source of a partial diffeomorphism `Φ` agreeing with a local diffeomorphism `f`, the
+inverse of the differential of `f` is the differential of `Φ⁻¹`: `(df_x)⁻¹ = dΦ⁻¹_(f x)`. -/
+theorem IsLocalDiffeomorphAt.mfderivToContinuousLinearEquiv_symm_apply {f : M → N} {x : M}
+    (hf : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0) {Φ : PartialDiffeomorph I J M N n}
+    (hfΦ : Set.EqOn f Φ Φ.source) (hx : x ∈ Φ.source) (w : TangentSpace J (f x)) :
+    (hf.mfderivToContinuousLinearEquiv hn).symm w = mfderiv J I Φ.symm (f x) w := by
+  set u := (hf.mfderivToContinuousLinearEquiv hn).symm w
+  have hw : mfderiv I J f x u = w := hf.mfderiv_mfderivToContinuousLinearEquiv_symm_apply hn w
+  -- Near `x` the map `f` is `Φ`, so `df_x = dΦ_x`, and `dΦ⁻¹_(Φ x) ∘ dΦ_x` is the identity.
+  have hd : mfderiv I J f x = mfderiv I J Φ x :=
+    (eventuallyEq_of_mem (Φ.open_source.mem_nhds hx) hfΦ).mfderiv_eq
+  rw [← hw, hd]
+  exact (Φ.mfderiv_symm_apply_mfderiv_apply hn hx u).symm.trans
+    (congrArg (fun y : N ↦ (mfderiv J I Φ.symm y (mfderiv I J Φ x u) : E)) (hfΦ hx).symm)
