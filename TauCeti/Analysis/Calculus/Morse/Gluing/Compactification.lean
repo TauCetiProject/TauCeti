@@ -287,29 +287,6 @@ theorem exists_homeomorph_closure_splitGluingPairs :
         fun_prop }
   exact ⟨e, fun _ ↦ rfl, hF₀⟩
 
-omit hr₀ in
-/-- The closure of the paired local gluing space is compact, even when the stable and
-unstable ambient spaces are infinite dimensional. -/
-theorem isCompact_closure_splitGluingPairs :
-    IsCompact (closure (splitGluingPairs ε r₀ g k)) := by
-  rcases lt_or_ge 0 r₀ with hr₀ | hr₀
-  · obtain ⟨e, -, -⟩ :=
-      exists_homeomorph_closure_splitGluingPairs hg hgε hk hkε hε hr₀ hr₀₁ hK
-    exact isCompact_iff_compactSpace.mpr e.compactSpace
-  · -- If `r₀ ≤ 0` the entrance point has zero unstable coordinate, so there is at most one pair.
-    have hsub : splitGluingPairs ε r₀ g k ⊆
-        {(WithLp.toLp 2 (g 0, 0), splitPassage ε (WithLp.toLp 2 (g 0, 0)))} := by
-      intro p hp
-      obtain ⟨-, hb, hg', he, -⟩ := mem_splitGluingPairs.1 hp
-      have h0 : p.1.snd = 0 := by
-        simpa using hb.trans (mul_nonpos_of_nonpos_of_nonneg hr₀ hε.le)
-      have h1 : p.1 = WithLp.toLp 2 (g 0, 0) :=
-        WithLp.ofLp_injective 2 (Prod.ext (hg'.trans (congrArg g h0)) h0)
-      exact Prod.ext h1 (he.trans (by rw [h1]))
-    exact isCompact_singleton.of_isClosed_subset isClosed_closure
-      (closure_minimal hsub isClosed_singleton)
-
-
 end Single
 
 /-! ### Families of discs -/
@@ -376,6 +353,22 @@ theorem isCompact_closure_biUnion_splitGluingPairs [CompleteSpace Eᵤ]
     exact hcpt.of_isClosed_subset isClosed_closure
       (closure_minimal (hFD ▸ subset_union_left) hcpt.isClosed)
 
+/-- The closure of the paired local gluing space is compact, even when the stable and
+unstable ambient spaces are infinite dimensional. This is the case of a constant family in
+`isCompact_closure_biUnion_splitGluingPairs`. -/
+theorem isCompact_closure_splitGluingPairs [CompleteSpace Eᵤ]
+    (hg : LipschitzOnWith Kg g (closedBall 0 (r₀ * ε)))
+    (hgε : ∀ y ∈ closedBall 0 (r₀ * ε), ‖g y‖ = ε)
+    (hk : LipschitzOnWith Kk k (closedBall 0 (r₀ * ε)))
+    (hkε : ∀ x ∈ closedBall 0 (r₀ * ε), ‖k x‖ = ε)
+    (hε : 0 < ε) (hr₀₁ : r₀ ≤ 1) (hK : Kk * Kg * r₀ ^ 2 < 1) :
+    IsCompact (closure (splitGluingPairs ε r₀ g k)) := by
+  simpa only [biUnion_univ, iUnion_const] using
+    isCompact_closure_biUnion_splitGluingPairs (S := (univ : Set Unit))
+      (g := fun _ ↦ g) (k := fun _ ↦ k) (fun _ _ ↦ hg) (fun _ _ ↦ hgε) (fun _ _ ↦ hk)
+      (fun _ _ ↦ hkε) (fun _ _ ↦ continuousOn_const) (fun _ _ ↦ continuousOn_const) hε hr₀₁ hK
+      isCompact_univ
+
 /-- **The local compactified gluing space of a family of discs is `[0, r₀] × S`.** Let the
 families of discs `y ↦ (g p y, y)` and `x ↦ (x, k p x)` be Lipschitz with uniform constants and
 continuous in the parameter `p` of a compact set `S`, and suppose that any two distinct members of
@@ -432,16 +425,9 @@ theorem exists_homeomorph_closure_biUnion_splitGluingPairs [CompleteSpace Eᵤ]
     exact ⟨⟨q, hq⟩, rfl⟩
   have : CompactSpace (Icc 0 r₀ ×ˢ S : Set (ℝ × P)) :=
     isCompact_iff_compactSpace.1 (isCompact_Icc.prod hS)
-  -- A continuous bijection from a compact space to a Hausdorff space has a continuous inverse.
-  let fe := Equiv.ofBijective f ⟨hfinj, hfsurj⟩
-  let e : (Icc 0 r₀ ×ˢ S : Set (ℝ × P)) ≃ₜ
-      closure (⋃ p ∈ S, splitGluingPairs ε r₀ (g p) (k p)) :=
-    { toFun := f
-      invFun := fe.symm
-      left_inv := fe.left_inv
-      right_inv := fe.right_inv
-      continuous_toFun := hf
-      continuous_invFun := hf.continuous_symm_of_equiv_compact_to_t2 (f := fe) }
+  -- A continuous bijection from a compact space to a Hausdorff space is a homeomorphism.
+  let e := hf.homeoOfEquivCompactToT2 (f := Equiv.ofBijective f ⟨hfinj, hfsurj⟩)
+  -- Both `homeoOfEquivCompactToT2` and `Equiv.ofBijective` keep `f` as the forward map.
   have he (q : (Icc 0 r₀ ×ˢ S : Set (ℝ × P))) : (e q).val = F q := rfl
   refine ⟨e, fun x ↦ ?_, fun q hq ↦ ?_, fun p hp ↦ he _ ▸ hF₀ p hp⟩
   · rw [← e.apply_symm_apply x, he, hnorm _ (e.symm x).property, e.apply_symm_apply]
