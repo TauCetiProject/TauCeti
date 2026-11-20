@@ -63,7 +63,9 @@ sublevel `{f ≤ b}` is homeomorphic to the whole space (`TauCeti.sublevelHomeom
 (`TauCeti.coe_sublevelHomeomorphUniv_comp_sublevelInclusion`,
 `TauCeti.sublevelInclusion_comp_sublevelHomeomorphUniv`). This is the topological half
 of the deformation of sublevels across a band without critical points, where the motion is the
-flow of a vector field `X` with `df(X) = -1` on the band. The sublevels form the topological pair
+flow of a vector field `X` with `df(X) = -1` on the band. With its codomain restricted to the
+points of `{f ≤ b}` at which `f ≤ a`, `TauCeti.sublevelInclusion` is
+`TauCeti.sublevelInclusionHomeomorph`, a homeomorphism. The sublevels form the topological pair
 `TauCeti.sublevelPair f : ({f ≤ b}, {f ≤ a})`, whose relative homology measures the change in
 topology across the band. The band itself, relative to its lower level, is the pair
 `TauCeti.bandPair f : (f⁻¹[a, b], f⁻¹(a))`, which includes into the sublevel pair by
@@ -310,6 +312,35 @@ theorem range_sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β
     {a b : β} (hab : a ≤ b) :
     range (sublevelInclusion f a b hab) = ((↑) ⁻¹' {x | f x ≤ a} : Set {x | f x ≤ b}) :=
   range_inclusion (sublevel_mono f hab)
+
+/-- The inclusion of the sublevel `{f ≤ a}` onto the points of the sublevel `{f ≤ b}` at which
+`f ≤ a`, for `a ≤ b`, as a homeomorphism: `TauCeti.sublevelInclusion f a b hab` with its codomain
+restricted to its range. -/
+def sublevelInclusionHomeomorph {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X → β)
+    (a b : β) (hab : a ≤ b) : {x | f x ≤ a} ≃ₜ {y : {x | f x ≤ b} | f y ≤ a} where
+  toFun x := ⟨sublevelInclusion f a b hab x, x.property⟩
+  invFun y := ⟨y.val.val, y.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := (map_continuous _).subtype_mk _
+  continuous_invFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
+
+@[simp]
+theorem coe_sublevelInclusionHomeomorph_apply {X β : Type*} [TopologicalSpace X] [Preorder β]
+    (f : X → β) {a b : β} (hab : a ≤ b) (x : {x | f x ≤ a}) :
+    (sublevelInclusionHomeomorph f a b hab x : {x | f x ≤ b}) = sublevelInclusion f a b hab x :=
+  (rfl)
+
+theorem coe_coe_sublevelInclusionHomeomorph_apply {X β : Type*} [TopologicalSpace X]
+    [Preorder β] (f : X → β) {a b : β} (hab : a ≤ b) (x : {x | f x ≤ a}) :
+    ((sublevelInclusionHomeomorph f a b hab x : {x | f x ≤ b}) : X) = x := by
+  simp
+
+@[simp]
+theorem coe_sublevelInclusionHomeomorph_symm_apply {X β : Type*} [TopologicalSpace X]
+    [Preorder β] (f : X → β) {a b : β} (hab : a ≤ b) (y : {y : {x | f x ≤ b} | f y ≤ a}) :
+    ((sublevelInclusionHomeomorph f a b hab).symm y : X) = y :=
+  (rfl)
 
 /-- When `f` is bounded above by `b` everywhere on `X`, the sublevel `{f ≤ b}` is homeomorphic to
 `X` via `Subtype.val`. -/
