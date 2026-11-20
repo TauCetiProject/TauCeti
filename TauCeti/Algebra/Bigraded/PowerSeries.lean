@@ -128,6 +128,16 @@ theorem HasEulerPowerSeries.add {P Q : PowerSeries (LaurentPolynomial R)}
       simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_not] at hmem
       exact hn (by simp [hmem.1, hmem.2])
 
+/-- `HasEulerPowerSeries` is closed under multiplication by a constant. -/
+theorem HasEulerPowerSeries.C_mul {P : PowerSeries (LaurentPolynomial R)}
+    (hP : HasEulerPowerSeries P) (c : R) :
+    HasEulerPowerSeries (PowerSeries.C (LaurentPolynomial.C c) * P) where
+  coeff_eq_zero_of_neg n a ha := by
+    rw [PowerSeries.coeff_C_mul, coeff_C_mul, hP.coeff_eq_zero_of_neg n ha, mul_zero]
+  finite_support a :=
+    (hP.finite_support a).subset fun n hn h0 ↦ hn (by
+      rw [PowerSeries.coeff_C_mul, coeff_C_mul, h0, mul_zero])
+
 /-- Any bigraded formal power series vanishing strictly below the diagonal (`a < n`) has an
 Alexander-graded Euler formal power series: negative internal degrees satisfy `a < 0 ≤ n`, and
 internal degree `a ≥ 0` vanishes for all `n > a`. -/

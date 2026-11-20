@@ -69,6 +69,8 @@ In the namespace `TauCeti.GradedProjectiveResolution`:
 
 In the namespace `TauCeti`:
 
+* `hasEulerPowerSeries_bettiPoincarePowerSeriesMatrix`: the entries of the Betti Poincaré matrix of
+  minimal resolutions can be evaluated at `t = -1` coefficientwise in `q`.
 * `forall_isLinear_iff_diagonal_bettiPoincarePowerSeriesMatrix`: minimal resolutions of the
   members of a family are all linear exactly when the Betti Poincaré matrix has diagonal support.
 
@@ -324,6 +326,20 @@ theorem IsMinimal.bettiPoincarePowerSeries_shiftObj_one
           ((GradedModuleCat.shiftPowIso 𝒜 (j - 1)).app (S i).obj) n)).finrank_eq
 
 end GradedProjectiveResolution
+
+include he he₀ hne hbP hconc in
+/-- An entry of the Betti Poincaré matrix of a minimal resolution of a module vanishing in negative
+internal degrees, at a `Pᵢ` with `dᵢ = gdim(eᵢ • Sᵢ) ≠ 0`, has an Alexander-graded Euler power
+series: its specialization at `t = -1` is a formal power series in `q`. -/
+theorem hasEulerPowerSeries_bettiPoincarePowerSeriesMatrix {J : Type uJ}
+    {M : J → GradedModuleCat.{uA} 𝒜}
+    (r : ∀ j, GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (M j).grading)
+    [∀ j n, Module.Finite A ((r j).X n)] (i : I) (j : J) (hr : (r j).IsMinimal)
+    (hM : ∀ p < 0, (M j).grading.piece p = ⊥)
+    (hself : (S i).obj.smulGradedDimension (e i) ≠ 0) :
+    Bigraded.HasEulerPowerSeries (bettiPoincarePowerSeriesMatrix r bP i j) := by
+  rw [bettiPoincarePowerSeriesMatrix_apply]
+  exact hr.hasEulerPowerSeries_bettiPoincarePowerSeries S he he₀ hI hne bP hbP hconc hM i hself
 
 include he he₀ hne hbP hconc in
 /-- **Linearity of a family of minimal resolutions is diagonal support of the Betti Poincaré
