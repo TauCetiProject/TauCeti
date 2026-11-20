@@ -150,6 +150,17 @@ theorem integrableOn_norm_rpow_ball_iff [Nontrivial E] {s R : ℝ} (hR : 0 < R) 
     intervalIntegral.integrableOn_Ioo_rpow_iff hR]
   constructor <;> intro h <;> linarith
 
+/-- The radial profile of `‖x‖ ^ s` outside the closed ball of radius `R`, multiplied by the
+polar Jacobian `r ^ (d - 1)`, is the single power `r ^ (d - 1 + s)` for `r > R`. -/
+private theorem radial_indicator_rpow_eqOn {d : ℕ} (hd : 1 ≤ d) (s R : ℝ) :
+    EqOn (fun r : ℝ => r ^ (d - 1) • (Ioi R).indicator (fun r => r ^ s) r)
+      ((Ioi R).indicator fun r => r ^ ((d : ℝ) - 1 + s)) (Ioi 0) := by
+  intro r hr
+  by_cases h : R < r
+  · simp only [indicator_of_mem (show r ∈ Ioi R from h), smul_eq_mul]
+    rw [← Real.rpow_natCast, Nat.cast_sub hd, Nat.cast_one, ← Real.rpow_add hr]
+  · simp [h]
+
 /-- A norm power is integrable outside a positive-radius closed ball exactly below the
 negative dimension. This includes divergence at the logarithmic borderline. -/
 theorem integrableOn_norm_rpow_compl_closedBall_iff [Nontrivial E] {s R : ℝ} (hR : 0 < R) :
@@ -165,14 +176,8 @@ theorem integrableOn_norm_rpow_compl_closedBall_iff [Nontrivial E] {s R : ℝ} (
   have hrad := integrable_fun_norm_addHaar mu (f := f)
   rw [hnorm, integrable_indicator_iff isClosed_closedBall.measurableSet.compl] at hrad
   have heq : EqOn (fun r : ℝ => r ^ (d-1) • f r)
-      ((Ioi R).indicator (fun r => r ^ ((d : ℝ)-1+s))) (Ioi 0) := by
-    intro r hr
-    have hr0 : 0 < r := hr
-    by_cases h : R < r
-    · have hrmem : r ∈ Ioi R := h
-      simp only [f, indicator_of_mem hrmem, smul_eq_mul]
-      rw [← Real.rpow_natCast, Nat.cast_sub hd, Nat.cast_one, ← Real.rpow_add hr0]
-    · simp [f, h]
+      ((Ioi R).indicator (fun r => r ^ ((d : ℝ)-1+s))) (Ioi 0) :=
+    radial_indicator_rpow_eqOn hd s R
   have hsupp : Function.support ((Ioi R).indicator (fun r : ℝ => r ^ ((d : ℝ)-1+s))) ⊆ Ioi 0 :=
     (support_indicator_subset).trans (Ioi_subset_Ioi hR.le)
   rw [integrableOn_congr_fun heq measurableSet_Ioi,
@@ -201,10 +206,9 @@ theorem integral_norm_rpow_compl_closedBall {s : ℝ} (hs : s < -(Module.finrank
       (Module.finrank ℝ E : ℝ) * mu.real (ball (0 : E) 1) *
         (R ^ ((Module.finrank ℝ E : ℝ) + s) / -((Module.finrank ℝ E : ℝ) + s)) := by
   rcases subsingleton_or_nontrivial E with hE | hE
-  · have hempty : (closedBall (0 : E) R)ᶜ = ∅ := by
-      ext x
-      simp [Subsingleton.elim x 0, hR.le]
-    simp [hempty, Module.finrank_zero_of_subsingleton]
+  · rw [closedBall_eq_singleton_of_subsingleton hR.le, eq_of_nonempty_of_subsingleton {0} univ,
+      compl_univ]
+    simp [Module.finrank_zero_of_subsingleton]
   let d := Module.finrank ℝ E
   have hd : 1 ≤ d := Module.finrank_pos
   let f : ℝ → ℝ := (Ioi R).indicator fun r => r ^ s
@@ -214,12 +218,8 @@ theorem integral_norm_rpow_compl_closedBall {s : ℝ} (hs : s < -(Module.finrank
     funext x
     simp [f, Set.indicator, mem_closedBall, not_le]
   have heq : EqOn (fun r : ℝ => r ^ (d - 1) • f r)
-      ((Ioi R).indicator fun r => r ^ ((d : ℝ) - 1 + s)) (Ioi 0) := by
-    intro r hr
-    by_cases h : R < r
-    · simp only [f, indicator_of_mem (show r ∈ Ioi R from h), smul_eq_mul]
-      rw [← Real.rpow_natCast, Nat.cast_sub hd, Nat.cast_one, ← Real.rpow_add hr]
-    · simp [f, h]
+      ((Ioi R).indicator fun r => r ^ ((d : ℝ) - 1 + s)) (Ioi 0) :=
+    radial_indicator_rpow_eqOn hd s R
   have hradial : ∫ r in Ioi (0 : ℝ), r ^ (d - 1) • f r =
       -R ^ ((d : ℝ) + s) / ((d : ℝ) + s) := by
     rw [setIntegral_congr_fun measurableSet_Ioi heq, setIntegral_indicator measurableSet_Ioi,
@@ -561,16 +561,12 @@ theorem memLp_div_pow_compl_closedBall_iff {a : ℂ} (ha : a ≠ 0) {R : ℝ} (h
       simpa only [div_eq_mul_inv, ← mul_assoc, inv_mul_cancel₀ ha, one_mul] using hi
     · intro h
       simpa only [div_eq_mul_inv] using h.const_mul a
-  rw [hscale, ← integrable_norm_rpow_iff (by fun_prop) hp0 hp_top]
-  have heq : (fun z : ℂ => ‖(z^m)⁻¹‖ ^ p.toReal) =
-      (fun z => ‖z‖ ^ (-((m : ℝ)*p.toReal))) := by
+  have heq : (fun z : ℂ => ‖(z^m)⁻¹‖) = fun z => ‖z‖ ^ (-(m : ℝ)) := by
     funext z
-    rw [norm_inv, norm_pow, Real.inv_rpow (by positivity),
-      ← Real.rpow_natCast_mul (norm_nonneg z), Real.rpow_neg (norm_nonneg z)]
-  rw [heq]
-  simpa only [IntegrableOn, Complex.finrank_real_complex, Nat.cast_ofNat, neg_lt_neg_iff] using
-    (TauCeti.integrableOn_norm_rpow_compl_closedBall_iff (E := ℂ) (mu := volume)
-      (s := -((m : ℝ)*p.toReal)) hR)
+    rw [norm_inv, norm_pow, Real.rpow_neg (norm_nonneg z), Real.rpow_natCast]
+  rw [hscale, ← memLp_norm_iff (by fun_prop), heq,
+    memLp_norm_rpow_compl_closedBall_iff hR hp0 hp_top, Complex.finrank_real_complex,
+    Nat.cast_ofNat, neg_mul, neg_lt_neg_iff]
 
 /-- The translate of `memLp_div_pow_compl_closedBall_iff` to an arbitrary centre `c`. -/
 theorem memLp_div_sub_pow_compl_closedBall_iff {a : ℂ} (ha : a ≠ 0) (c : ℂ) {R : ℝ}
