@@ -105,8 +105,8 @@ lemma mem_ker_proj {x : ofTwoCocycle c} : x ∈ (proj c).ker ↔ ((ofProd c).sym
 /-- The kernel `0 × M` of the projection is an abelian ideal. -/
 instance : IsLieAbelian (proj c).ker where
   trivial a b := by
-    have ha := (mem_ker_proj c).1 a.2
-    have hb := (mem_ker_proj c).1 b.2
+    have ha := (mem_ker_proj c).1 a.property
+    have hb := (mem_ker_proj c).1 b.property
     refine Subtype.ext ((ofProd c).symm.injective ?_)
     simp [bracket_ofTwoCocycle, ha, hb]
 

@@ -542,7 +542,7 @@ theorem intersectionNumber_inv_mk_toInvertibleSheaf_nonneg_of_ne
       (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj 1)] :
     0 ≤ intersectionNumber k (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subschemeι
       (mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-        hX η'.2).toInvertibleSheaf)⁻¹ :=
+        hX η'.property).toInvertibleSheaf)⁻¹ :=
   intersectionNumber_inv_mk_toInvertibleSheaf_nonneg k _ _
     (isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular hX hne)
 

@@ -39,6 +39,9 @@ presheaves on the category of all schemes.
 * `CategoryTheory.PreOneHypercover.over` and
   `CategoryTheory.GrothendieckTopology.OneHypercover.over`: lift a (pre-)`1`-hypercover of
   `Y.left` in `C` to a (pre-)`1`-hypercover of `Y` in `Over X`.
+* `CategoryTheory.GrothendieckTopology.isLeftAdjoint_overPullback`: pullback of sheaves to the
+  over site `J.over U` is a left adjoint whenever pointwise right Kan extensions along
+  `(Over.forget U).op` exist.
 
 ## References
 
@@ -238,3 +241,15 @@ def GrothendieckTopology.OneHypercover.over {J : GrothendieckTopology C} {X : C}
     exact E.mem₁ i₁ i₂ q₁.left q₂.left congr($(hw).left)
 
 end CategoryTheory
+
+namespace CategoryTheory.GrothendieckTopology
+
+/-- Pullback of sheaves to the over site `J.over U` is a left adjoint whenever pointwise right Kan
+extensions along `(Over.forget U).op` exist. -/
+instance isLeftAdjoint_overPullback {C : Type*} [Category* C] (J : GrothendieckTopology C)
+    (A : Type*) [Category* A] (U : C)
+    [∀ F : (Over U)ᵒᵖ ⥤ A, (Over.forget U).op.HasPointwiseRightKanExtension F] :
+    (J.overPullback A U).IsLeftAdjoint :=
+  ((Over.forget U).sheafAdjunctionCocontinuous A (J.over U) J).isLeftAdjoint
+
+end CategoryTheory.GrothendieckTopology

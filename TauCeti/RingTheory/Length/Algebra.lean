@@ -82,7 +82,7 @@ theorem isFiniteLength_of_isSimpleModule [IsSimpleModule A M] : IsFiniteLength R
   have : Module.Finite R M := Module.Finite.trans A M
   have h𝔪 := isMaximal_annihilator_of_isSimpleModule (R := R) (A := A) (M := M)
   let 𝔪 := Module.annihilator R M
-  have ht : Module.IsTorsionBySet R M 𝔪 := fun x r ↦ Module.mem_annihilator.mp r.2 x
+  have ht : Module.IsTorsionBySet R M 𝔪 := fun x r ↦ Module.mem_annihilator.mp r.property x
   let := ht.module
   let : Field (R ⧸ 𝔪) := Ideal.Quotient.field 𝔪
   have : IsScalarTower R (R ⧸ 𝔪) M := ht.isScalarTower (S := R)

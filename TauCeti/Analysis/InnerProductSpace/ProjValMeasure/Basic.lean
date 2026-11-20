@@ -17,6 +17,7 @@ public import TauCeti.Analysis.InnerProductSpace.OperatorIdentities
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 public import TauCeti.MeasureTheory.Measure.DisjointUnion
+import TauCeti.Analysis.InnerProductSpace.Parallelogram
 
 /-!
 # Projection-valued measures
@@ -42,8 +43,10 @@ from the structure's laws.
 * `hasSum_proj_of_pairwise_disjoint`: unconditional strong countable additivity
   (`HasSum`) on a pairwise-disjoint measurable family; `tendsto_sum_proj_of_pairwise_disjoint`
   gives convergence of the natural-order partial sums.
-* `diag`, `diag_real_univ`, `diag_univ`: the finite diagonal scalar
-  measures carried by the structure, and their real/extended-real total masses.
+* `diag`, `diag_real_univ`, `diag_univ`, `enorm_sq_proj_apply`, `diag_zero`,
+  `diag_smul`, `diag_neg`, `diag_add_le`, `diag_proj`: the finite diagonal scalar
+  measures carried by the structure, their real/extended-real total masses, and
+  their behavior under vector operations and spectral projections.
 * `ext_of_diag`, `ext`, `ext_iff_diag`, `ext_iff`: extensionality from either
   data field.
 
@@ -274,6 +277,58 @@ theorem diag_univ (P : ProjValMeasure X H) (ξ : H) :
     _ = ENNReal.ofReal (‖ξ‖ ^ 2) := by rw [P.diag_real_univ]
     _ = ‖ξ‖ₑ ^ 2 := by
       rw [ENNReal.ofReal_pow (norm_nonneg ξ), ofReal_norm]
+
+/-- Squared extended norm of a spectral projection equals the diagonal mass
+of the corresponding measurable set. -/
+@[simp]
+theorem enorm_sq_proj_apply (P : ProjValMeasure X H) (B : Set X)
+    (hB : MeasurableSet B) (ξ : H) :
+    ‖P.proj B hB ξ‖ₑ ^ 2 = (P.diag ξ) B := by
+  have hfin : (P.diag ξ) B ≠ ⊤ :=
+    measure_ne_top (μ := P.diag ξ) (s := B)
+  calc
+    ‖P.proj B hB ξ‖ₑ ^ 2 = ENNReal.ofReal (‖P.proj B hB ξ‖ ^ 2) := by
+      rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+    _ = ENNReal.ofReal (((P.diag ξ) B).toReal) := by
+      rw [P.norm_sq_proj_apply B hB ξ]
+    _ = (P.diag ξ) B := ENNReal.ofReal_toReal hfin
+
+/-- The diagonal scalar measure of the zero vector is the zero measure. -/
+@[simp]
+theorem diag_zero (P : ProjValMeasure X H) : P.diag 0 = 0 := by
+  ext B hB
+  rw [← P.enorm_sq_proj_apply B hB 0]
+  simp
+
+/-- Scaling a vector by `c` scales its diagonal scalar measure by `‖c‖ₑ ^ 2`. -/
+theorem diag_smul (P : ProjValMeasure X H) (c : ℂ) (ξ : H) :
+    P.diag (c • ξ) = (‖c‖ₑ ^ 2) • P.diag ξ := by
+  ext B hB
+  rw [smul_apply, ← P.enorm_sq_proj_apply B hB (c • ξ), map_smul, eNorm_smul, mul_pow,
+    P.enorm_sq_proj_apply B hB ξ, smul_eq_mul]
+
+/-- Negating a vector leaves its diagonal scalar measure unchanged. -/
+@[simp]
+theorem diag_neg (P : ProjValMeasure X H) (ξ : H) : P.diag (-ξ) = P.diag ξ := by
+  simpa using P.diag_smul (-1 : ℂ) ξ
+
+/-- The diagonal scalar measure of a sum is bounded by twice the sum of the two diagonal
+measures. -/
+theorem diag_add_le (P : ProjValMeasure X H) (ξ η : H) :
+    P.diag (ξ + η) ≤ (2 : ℝ≥0∞) • P.diag ξ + (2 : ℝ≥0∞) • P.diag η := by
+  refine Measure.le_iff.2 fun B hB => ?_
+  simp only [add_apply, smul_apply, smul_eq_mul, ← P.enorm_sq_proj_apply B hB, map_add, ← mul_add]
+  exact le_self_add.trans_eq
+    (TauCeti.parallelogram_law_with_enorm ℂ (P.proj B hB ξ) (P.proj B hB η))
+
+/-- Applying a measurable-set projection restricts the diagonal scalar measure to that set. -/
+@[simp]
+theorem diag_proj (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSet B) (ξ : H) :
+    P.diag (P.proj B hB ξ) = (P.diag ξ).restrict B := by
+  ext C hC
+  rw [Measure.restrict_apply hC, ← P.enorm_sq_proj_apply C hC,
+    ← mul_apply_eq_comp, P.proj_inter C B hC hB,
+    P.enorm_sq_proj_apply (C ∩ B) (hC.inter hB) ξ]
 
 /-- For every measurable set `B`, `P(B)` is a contraction on vectors. -/
 lemma norm_proj_apply_le (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSet B)
