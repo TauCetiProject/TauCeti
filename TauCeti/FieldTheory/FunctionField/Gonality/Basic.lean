@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.Consequences.GenusZero
 public import TauCeti.FieldTheory.FunctionField.Consequences.WeierstrassGaps
 public import TauCeti.FieldTheory.FunctionField.Differential.CanonicalDivisor
 import Mathlib.FieldTheory.Relrank
+import TauCeti.FieldTheory.RatFunc.Automorphism
 
 /-!
 # The gonality of an algebraic function field
@@ -47,6 +48,8 @@ of genus two has gonality exactly two. Gonality one characterizes rational funct
   of a simple subfield, so isomorphic extensions have the same gonality.
 * `TauCeti.exists_transcendental_finrank_adjoin_le_degree_of_two_le_dim`: over an exact constant
   field, a divisor `D` with `ℓ(D) ≥ 2` gives a rational subfield of index at most `deg D`.
+* `TauCeti.exists_nonneg_and_degree_eq_finrank_and_two_le_dim`: the pole divisor of a
+  transcendental `x` is effective, of degree `[F : k(x)]`, with `ℓ ≥ 2`.
 * `TauCeti.gonality_eq_sInf_degree`: **the pencil description** of the gonality.
 * `TauCeti.Divisor.dim_sub_ofPoint_lt_of_degree_eq_gonality`: a divisor of least degree with
   `ℓ ≥ 2` is base-point-free.
@@ -164,15 +167,22 @@ theorem gonality_le_degree (hF : IsFunctionField k F) (hex : IsIntegrallyClosedI
   obtain ⟨x, hx, hle⟩ := exists_transcendental_finrank_adjoin_le_degree_of_two_le_dim hF hex hdim
   exact (Int.ofNat_le.mpr (gonality_le_finrank_adjoin hx)).trans hle
 
+/-- **A transcendental `x` gives an effective divisor of degree `[F : k(x)]` with `ℓ ≥ 2`**: the
+pole divisor `(x)_∞`, whose Riemann–Roch space contains `1` and `x`. No exactness of the constant
+field is needed. -/
+theorem exists_nonneg_and_degree_eq_finrank_and_two_le_dim (hF : IsFunctionField k F) {x : F}
+    (hx : Transcendental k x) : ∃ D : Divisor k F,
+      0 ≤ D ∧ Divisor.degree D = Module.finrank k⟮x⟯ F ∧ 2 ≤ Divisor.dim D :=
+  ⟨Divisor.poles hF (Units.mk0 x hx.ne_zero), Divisor.poles_nonneg hF _,
+    Divisor.degree_poles hF _ hx, by
+      simpa using le_dim_zsmul_poles hF (Units.mk0 x hx.ne_zero) hx (n := 2) (m := 1) (by norm_num)⟩
+
 /-- **The gonality is the degree of an effective divisor with `ℓ ≥ 2`**: the pole divisor of an
 element attaining the gonality. No exactness of the constant field is needed. -/
 theorem exists_nonneg_and_degree_eq_gonality_and_two_le_dim (hF : IsFunctionField k F) :
     ∃ D : Divisor k F, 0 ≤ D ∧ Divisor.degree D = gonality k F ∧ 2 ≤ Divisor.dim D := by
   obtain ⟨x, hx, hrank⟩ := exists_finrank_adjoin_eq_gonality hF
-  have hx0 := hx.ne_zero
-  refine ⟨Divisor.poles hF (Units.mk0 x hx0), Divisor.poles_nonneg hF _, ?_, ?_⟩
-  · rw [Divisor.degree_poles hF (Units.mk0 x hx0) hx, Units.val_mk0, hrank]
-  · simpa using le_dim_zsmul_poles hF (Units.mk0 x hx0) hx (n := 2) (m := 1) (by norm_num)
+  exact hrank ▸ exists_nonneg_and_degree_eq_finrank_and_two_le_dim hF hx
 
 /-- **The pencil description of the gonality** (Poonen, Appendix A): over an exact constant
 field, the gonality is the least degree of a divisor whose Riemann–Roch space has dimension at
@@ -229,8 +239,8 @@ theorem gonality_eq_one_iff : gonality k F = 1 ↔ Nonempty (F ≃ₐ[k] RatFunc
   refine ⟨fun h ↦ ?_, fun ⟨e⟩ ↦ e.gonality_eq.trans gonality_ratFunc⟩
   obtain ⟨x, hx, hrank⟩ := Nat.sInf_mem (Nat.nonempty_of_pos_sInf (h ▸ Nat.one_pos))
   have htop : k⟮x⟯ = ⊤ := IntermediateField.finrank_eq_one_iff_eq_top.mp (hrank.trans h)
-  exact ⟨((RatFunc.algEquivOfTranscendental x hx).trans
-    ((IntermediateField.equivOfEq htop).trans IntermediateField.topEquiv)).symm⟩
+  have : Algebra.Transcendental k F := ⟨x, hx⟩
+  exact ⟨(RatFunc.algEquivOfAdjoinEqTop htop).symm⟩
 
 /-- **A field of positive genus is not rational**: `k(t)` and its subfields have genus zero. -/
 theorem isEmpty_algEquiv_ratFunc_of_genus_ne_zero (hg : genus k F ≠ 0) :

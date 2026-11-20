@@ -105,17 +105,12 @@ and it needs no hypothesis on the characteristic. -/
 theorem IsHyperellipticFunctionField.exists_degree_eq_two_and_two_le_dim
     (hhyp : IsHyperellipticFunctionField k F) :
     ∃ A : Divisor k F, Divisor.degree A = 2 ∧ 2 ≤ Divisor.dim A := by
-  -- The pole divisor of an index-two generator `x` has degree `[F : k(x)]` by the product
-  -- formula, and its Riemann--Roch space contains the two independent functions `1` and `x`.
+  -- The pole divisor of an index-two generator `x` has degree `[F : k(x)] = 2` and `ℓ ≥ 2`.
   obtain ⟨x, hx, hrank, -⟩ := hhyp.exists_separable_finrank_adjoin_eq_two
   have _ : FiniteDimensional k⟮x⟯ F := Module.finite_of_finrank_pos (by omega)
   have hF : IsFunctionField k F := hx.isFunctionField_adjoin.finite_extension
-  have hx0 : x ≠ 0 := fun h ↦ hx (h ▸ isAlgebraic_zero)
-  refine ⟨Divisor.poles hF (Units.mk0 x hx0), ?_, ?_⟩
-  · rw [Divisor.degree_poles hF (Units.mk0 x hx0) hx, Units.val_mk0, hrank]
-    norm_num
-  · simpa using le_dim_zsmul_poles hF (Units.mk0 x hx0) hx (n := 1 + 1) (m := ((1 : ℕ) : ℤ))
-      (by omega)
+  exact (exists_nonneg_and_degree_eq_finrank_and_two_le_dim hF hx).imp fun D h ↦
+    ⟨by rw [h.2.1, hrank]; norm_num, h.2.2⟩
 
 /-! ### From a divisor of degree two to the index-two subfield -/
 
