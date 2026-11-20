@@ -46,7 +46,7 @@ theorem coe_decompose_eq_zero_of_mem_wordFiltration {k n : ℕ} (hkn : k < n)
   rw [wordFiltration_eq_iSup_pow] at hx
   induction hx using Submodule.iSup_induction' with
   | mem i y hy =>
-      exact DirectSum.decompose_of_mem_ne _ hy (i.2.trans_lt hkn).ne
+      exact DirectSum.decompose_of_mem_ne _ hy (i.property.trans_lt hkn).ne
   | zero => simp
   | add y z _ _ hy hz => simp [DirectSum.decompose_add, hy, hz]
 

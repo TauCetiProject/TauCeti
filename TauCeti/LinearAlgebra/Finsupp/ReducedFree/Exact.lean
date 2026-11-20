@@ -12,11 +12,11 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 /-!
 # Reduced free modules and collapsing a based subset
 
-A based map induces an injection or surjection on reduced free modules if it is injective or
-surjective, respectively. If its only identifications occur over the basepoint, its kernel is
-spanned by the generators of that fibre (`TauCeti.ReducedFreeModule.ker_map_eq_span`). Thus
-collapsing a based subset gives a short exact sequence of reduced free modules: the inclusion
-is injective, its image is the kernel of the collapse, and the collapse is surjective.
+If a based map makes identifications only over the basepoint, its kernel on reduced free modules
+is spanned by the generators of that fibre (`TauCeti.ReducedFreeModule.ker_map_eq_span`). Thus
+collapsing a based subset gives a short exact sequence of reduced free modules, and the quotient
+by that span is linearly equivalent to the reduced free module on the collapsed type
+(`TauCeti.ReducedFreeModule.quotientSpanEquiv`).
 
 This is the degreewise algebra behind the reduced free simplicial module sequence of a
 cofibration and its cofiber. No flatness assumption on the coefficient ring is needed.
@@ -38,31 +38,6 @@ universe u v w
 
 variable (R : Type*) [Ring R] {α : Type u} {β : Type v} {γ : Type w}
   {a : α} {b : β} {c : γ}
-
-/-- The image of an induced map is spanned by the generators of its set-theoretic image. -/
-lemma range_map (f : α → β) (hf : f a = b) :
-    LinearMap.range (map R f hf) = Submodule.span R (mk R '' Set.range f) := by
-  rw [← Submodule.map_top, ← span_range_mk R, Submodule.map_span]
-  congr 1
-  ext v
-  simp only [Set.mem_image, Set.mem_range]
-  aesop
-
-/-- A surjective based map induces a surjective map of reduced free modules. -/
-lemma map_surjective (f : α → β) (hf : f a = b) (hs : Surjective f) :
-    Surjective (map R f hf) := by
-  rw [← LinearMap.range_eq_top, range_map, hs.range_eq, Set.image_univ, span_range_mk]
-
-/-- An injective based map induces an injective map of reduced free modules. -/
-lemma map_injective (f : α → β) (hf : f a = b) (hi : Injective f) :
-    Injective (map R f hf) := by
-  let : Nonempty α := ⟨a⟩
-  have hleft := Function.leftInverse_invFun hi
-  have hb : Function.invFun f b = a := hf ▸ hleft a
-  have hcomp : (map R (Function.invFun f) hb).comp (map R f hf) = LinearMap.id := by
-    ext x
-    simp [hleft x]
-  exact Function.HasLeftInverse.injective ⟨_, fun v ↦ LinearMap.congr_fun hcomp v⟩
 
 /-- If a based map is injective away from its basepoint fibre, its reduced free kernel is
 spanned by the generators of that fibre. Surjectivity of the based map is not required. -/

@@ -87,7 +87,7 @@ theorem amenable_iSup_of_directed {ι : Type*} {H : ι → Subgroup G}
     hH.mono_comp _ fun _ _ => SetLike.coe_subset_coe.2
   obtain ⟨i, hi⟩ := hH'.exists_mem_subset_of_finset_subset_biUnion (s := s.image Subtype.val) <| by
     rw [Finset.coe_image, ← Subgroup.coe_iSup_of_directed hH]
-    exact Set.image_subset_iff.2 fun x _ => x.2
+    exact Set.image_subset_iff.2 fun x _ => x.property
   exact ⟨i, fun x hx => ⟨⟨x, hi (Finset.mem_image_of_mem _ hx)⟩, rfl⟩⟩
 
 /-- A topological group which is the supremum of a directed family of amenable subgroups is
@@ -100,9 +100,9 @@ theorem Amenable.of_directed_of_iSup_eq_top {ι : Type*} {H : ι → Subgroup G}
 
 /-- A topological group all of whose finitely generated subgroups are amenable is amenable. -/
 theorem Amenable.of_forall_fg (h : ∀ K : Subgroup G, K.FG → Amenable K) : Amenable G := by
-  have : ∀ K : {K : Subgroup G // K.FG}, Amenable K.1 := fun K => h K.1 K.2
+  have : ∀ K : {K : Subgroup G // K.FG}, Amenable K.val := fun K => h K.val K.property
   refine .of_forall_finset_subset_range
-    (fun K : {K : Subgroup G // K.FG} => ContinuousMonoidHom.subgroupSubtype K.1) fun s => ?_
+    (fun K : {K : Subgroup G // K.FG} => ContinuousMonoidHom.subgroupSubtype K.val) fun s => ?_
   refine ⟨⟨Subgroup.closure s, (Group.fg_iff_subgroup_fg _).1 inferInstance⟩, fun x hx => ?_⟩
   exact ⟨⟨x, Subgroup.subset_closure hx⟩, rfl⟩
 
