@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
+import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
 /-!
@@ -28,7 +29,6 @@ The converse, for a prime of ramification index and residue degree one, whose co
 
 ## Main results
 
-* `Padic.norm_le_one_of_isIntegral`: a `p`-adic number integral over `ℤ` has norm at most one.
 * `RingHom.exists_inertiaDeg_eq_one_of_padic`: an embedding of a number field into `ℚ_[p]` gives a
   prime of residue degree one over the prime of `𝓞 ℚ` above `p`.
 -/
@@ -36,12 +36,6 @@ The converse, for a prime of ramification index and residue degree one, whose co
 public section
 
 open NumberField IsDedekindDomain
-
-/-- A `p`-adic number integral over `ℤ` is a `p`-adic integer: its norm is at most one. -/
-theorem Padic.norm_le_one_of_isIntegral {p : ℕ} [Fact p.Prime] {x : ℚ_[p]}
-    (hx : IsIntegral ℤ x) : ‖x‖ ≤ 1 := by
-  obtain ⟨y, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp (hx.tower_top (A := ℤ_[p]))
-  exact PadicInt.norm_le_one y
 
 /-- **An embedding into `ℚ_[p]` gives a prime of residue degree one.** If a number field `K` embeds
 into `ℚ_[p]` and `𝔭` is the prime of `𝓞 ℚ` above `p`, then some prime of `𝓞 K` above `𝔭` has
