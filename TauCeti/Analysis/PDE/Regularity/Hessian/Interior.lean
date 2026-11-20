@@ -178,7 +178,7 @@ private theorem exists_lpNorm_iteratedGradient_ball_le_of_lt (hp : 1 < p)
     _ ≤ _ := by gcongr
 
 /-- Where the coefficients are bounded, the right side of `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` lies in `Lᵖ`. -/
-private theorem memLp_of_ae_sum_mul_inner_eq {Omega : Opens (EuclideanSpace ℝ (Fin n))}
+theorem memLp_of_ae_sum_mul_inner_eq {Omega : Opens (EuclideanSpace ℝ (Fin n))}
     {S : Set (EuclideanSpace ℝ (Fin n))} (hSm : MeasurableSet S) (hS : S ⊆ Omega)
     (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin n))) Omega p 2)
     {a : EuclideanSpace ℝ (Fin n) → Matrix (Fin n) (Fin n) ℝ} {Λ : ℝ}
