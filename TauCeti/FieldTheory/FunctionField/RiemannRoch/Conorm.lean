@@ -25,8 +25,10 @@ conorm (`TauCeti.mem_riemannRochSpace_algebraMap_iff_of_coeff_eq`). Multiples of
 are an example: a function `f` of `F` lies in `L(n (z)_∞)` exactly when its image lies in
 `L(n (z)_∞)` computed in `F'` (`TauCeti.mem_riemannRochSpace_nsmul_poles_map_iff`), with no
 conorm needed, because both pole divisors are read off from the orders of `z`. For `F' = F`
-this says that `L(n (z)_∞)` does not change when the constants `k` are enlarged to an algebraic
-extension inside `F` (`TauCeti.restrictScalars_riemannRochSpace_nsmul_poles`). For a
+enlarging the constants inside `F` leaves every Riemann–Roch space unchanged as a set along the
+conorm (`TauCeti.restrictScalars_riemannRochSpace_conorm`,
+`TauCeti.restrictScalars_riemannRochSpace_nsmul_poles`), rescaling dimensions by `[k' : k]`
+(`TauCeti.Divisor.dim_eq_finrank_mul_dim_conorm`). For a
 transcendental `x`, descending to the rational subfield `k(x)` shows that a function of `k(x)`
 lying in `L((x)_∞)` is a polynomial of degree at most one in `x`
 (`TauCeti.mem_span_pair_of_mem_adjoin`).
@@ -196,6 +198,46 @@ theorem riemannRochSpace_conorm_comap (hF' : IsFunctionField k' F')
   exact mem_riemannRochSpace_conorm_iff hF' D f
 
 end FiniteFibres
+
+/-- **Enlarging the base field inside `F` preserves `L(D)` as a set**: for an integral extension
+`k' / k` inside a field `F`, the Riemann–Roch space of the conorm `Con D` in `F / k'`, viewed as a
+`k`-subspace of `F`, is `L(D)`. -/
+@[simp]
+theorem restrictScalars_riemannRochSpace_conorm [Algebra k' F] [IsScalarTower k k' F]
+    (D : Divisor k F) :
+    (riemannRochSpace (Divisor.conorm k' F D)).restrictScalars k = riemannRochSpace D := by
+  ext f
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  rw [Submodule.restrictScalars_mem, mem_riemannRochSpace_iff_neg_le_ord hf,
+    mem_riemannRochSpace_iff_neg_le_ord hf]
+  constructor
+  · intro h P
+    set P' : Place k' F := Place.constantsEquiv k k' F P
+    have hP' : P'.restrict k F = P :=
+      (Place.restrict_eq_iff_integers_le k F P' P).2 fun x hx ↦ by
+        simpa [P', Place.integers_constantsEquiv] using hx
+    have hbound := h P'
+    rw [Divisor.coeff_conorm, hP'] at hbound
+    have hord := Place.ord_algebraMap_restrict k F P' f
+    rw [Algebra.algebraMap_self, RingHom.id_apply, hP'] at hord
+    have he : (0 : ℤ) < Place.ramificationIdx F P' := by
+      exact_mod_cast Place.ramificationIdx_pos F P'
+    nlinarith
+  · intro h P'
+    have hord := Place.ord_algebraMap_restrict k F P' f
+    rw [Algebra.algebraMap_self, RingHom.id_apply] at hord
+    rw [Divisor.coeff_conorm]
+    nlinarith [h (P'.restrict k F)]
+
+/-- **Riemann–Roch dimension under base-field enlargement inside `F`**: for an integral extension
+`k' / k` inside a field `F`, `ℓ_k(D) = [k' : k] · ℓ_{k'}(Con D)`, since both Riemann–Roch spaces
+have the same underlying subset of `F`. -/
+theorem Divisor.dim_eq_finrank_mul_dim_conorm [Algebra k' F] [IsScalarTower k k' F]
+    (D : Divisor k F) :
+    D.dim = Module.finrank k k' * (Divisor.conorm k' F D).dim := by
+  rw [Divisor.dim_def, ← restrictScalars_riemannRochSpace_conorm (k' := k') D, Divisor.dim_def]
+  exact (Module.finrank_mul_finrank k k' (riemannRochSpace (Divisor.conorm k' F D))).symm
 
 variable [FiniteDimensional F F']
 

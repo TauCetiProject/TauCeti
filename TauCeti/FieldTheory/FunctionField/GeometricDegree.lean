@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Minpoly.IsIntegrallyClosedIn
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.PrimitiveElement
 import TauCeti.FieldTheory.IntermediateField.LinearDisjoint
 import TauCeti.FieldTheory.IntermediateField.Map
 
@@ -31,7 +32,9 @@ degree identity `[k' : k] · deg (Con D) = [F' : F] · deg D` for the conorm int
 Linear disjointness is not automatic; it is what an inseparable constant field extension can
 destroy.  It does hold whenever `k' / k` is separable and `k` is the exact constant field of `F`;
 that is `TauCeti.linearDisjoint_fieldRange_of_isIntegrallyClosedIn`, from which the degree
-equality is derived here.
+equality is derived here.  It also holds for every simple algebraic constant field extension
+`k' = k(α)` over an exact constant field — in particular, for every prime-degree extension
+regardless of separability — because `minpoly F α = (minpoly k α).map (algebraMap k F)`.
 Mathlib's predicate `IntermediateField.LinearDisjoint` also supplies the degree equality, through
 `TauCeti.finrank_constantCompositum_eq_finrank_of_linearDisjoint`.
 
@@ -60,6 +63,9 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
   the image of `F` in `F'`.
 * `TauCeti.constantCompositum_eq_top_of_eq_top`: if `F' = F · k'`, then `F' = E · k'` for every
   intermediate field `E` of `F' / F`.
+* `TauCeti.restrictScalars_constantCompositum_eq`: the tower identity
+  `((F · L) · N).restrictScalars F = F · (N.restrictScalars k)` for intermediate fields
+  `k ⊆ L ⊆ N ⊆ k'`.
 * `TauCeti.constantCompositum_tower_eq_top`: if `F' = F · k'` and `F'' = F' · k''` in a compatible
   square of extensions, then `F'' = F · k''`.
 * `TauCeti.constantCompositum_eq_top_of_adjoin_eq_top`: `F'` is the compositum `F · k'` as soon
@@ -77,6 +83,10 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
   compositum `F · k'`.
 * `TauCeti.finrank_constantCompositum_eq_finrank_of_isSeparable`: that degree equality holds for a
   separable constant field extension over an exact constant field.
+* `TauCeti.finrank_constantCompositum_eq_finrank_of_adjoin_simple_eq_top` and
+  `TauCeti.finrank_constantCompositum_eq_finrank_of_finrank_prime`: the degree equality
+  `[F · k' : F] = [k' : k]` holds over an exact constant field `k ⊆ F` for every simple algebraic
+  extension `k' = k(α)`, and in particular for every prime-degree extension `k' / k`.
 * `TauCeti.linearDisjoint_fieldRange_of_isIntegrallyClosedIn` and
   `TauCeti.linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn`: the stronger
   linear-disjointness and persistence-of-linear-independence statements from which that degree
@@ -378,6 +388,34 @@ theorem constantCompositum_eq_top_of_adjoin_eq_top
 
 end CompositumOfFields
 
+section Tower
+
+variable [Field k] [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra F F']
+
+/-- **Tower identity for `constantCompositum`**: forming the constant compositum in two steps
+`(F · L) · N` gives the same subfield of `F'` as forming `F · N` directly after restricting `N`
+to an intermediate field over `k`. -/
+@[simp]
+theorem restrictScalars_constantCompositum_eq (L : IntermediateField k k')
+    (N : IntermediateField L k') :
+    (constantCompositum (constantCompositum F L F') N F').restrictScalars F =
+      constantCompositum F (N.restrictScalars k) F' := by
+  let FL := constantCompositum F L F'
+  have hFL : FL ≤ constantCompositum F (N.restrictScalars k) F' :=
+    (constantCompositum_le_iff F L F').2 fun c ↦ by
+      rw [IsScalarTower.algebraMap_apply L k' F']
+      exact algebraMap_mem_constantCompositum F (N.restrictScalars k) F' ⟨c.val, N.algebraMap_mem c⟩
+  refine le_antisymm ((IntermediateField.le_extendScalars_iff hFL _).1
+    ((constantCompositum_le_iff FL N F').2 fun c ↦ ?_))
+    ((constantCompositum_le_iff F (N.restrictScalars k) F').2 fun c ↦ ?_)
+  · rw [IntermediateField.mem_extendScalars, IsScalarTower.algebraMap_apply N k' F']
+    exact algebraMap_mem_constantCompositum F (N.restrictScalars k) F' ⟨c.val, c.property⟩
+  · rw [IntermediateField.mem_restrictScalars,
+      IsScalarTower.algebraMap_apply (N.restrictScalars k) k' F']
+    exact algebraMap_mem_constantCompositum FL N F' ⟨c.val, c.property⟩
+
+end Tower
+
 /-! ### The constants of the compositum over the original constants -/
 
 section ConstantCompositumAlgebra
@@ -519,6 +557,40 @@ theorem finrank_constantCompositum_eq_finrank_of_isSeparable (hex : IsIntegrally
     Module.finrank F (constantCompositum F k' F') = Module.finrank k k' :=
   finrank_constantCompositum_eq_finrank_of_linearDisjoint F k' F'
     (linearDisjoint_fieldRange_of_isIntegrallyClosedIn hex)
+
+open scoped IntermediateField in
+/-- **Adjoining a simple algebraic constant extension to an exact constant field preserves
+finrank**: if `k` is relatively algebraically closed in `F` and `k' = k⟮α⟯` for an element
+`α : k'` integral over `k` (with no separability hypothesis), then `[F · k' : F] = [k' : k]`. -/
+theorem finrank_constantCompositum_eq_finrank_of_adjoin_simple_eq_top
+    (hex : IsIntegrallyClosedIn k F) {α : k'} (hα_int : IsIntegral k α) (hα : k⟮α⟯ = ⊤) :
+    Module.finrank F (constantCompositum F k' F') = Module.finrank k k' := by
+  have hFα : constantCompositum F k' F' = F⟮algebraMap k' F' α⟯ := by
+    rw [constantCompositum_eq_adjoin_of_adjoin_eq_top F k' F' ({α} : Set k') hα,
+      Set.image_singleton]
+  have hkα : k⟮algebraMap k' F' α⟯ = (IsScalarTower.toAlgHom k k' F').fieldRange := by
+    rw [AlgHom.fieldRange_eq_map, ← hα, IntermediateField.adjoin_map, Set.image_singleton,
+      IsScalarTower.coe_toAlgHom']
+  calc Module.finrank F (constantCompositum F k' F')
+      = Module.finrank F F⟮algebraMap k' F' α⟯ := by rw [hFα]
+    _ = Module.finrank k k⟮algebraMap k' F' α⟯ :=
+        IntermediateField.finrank_adjoin_simple_eq_finrank_adjoin_simple_of_isIntegrallyClosedIn
+          hex (hα_int.map (IsScalarTower.toAlgHom k k' F'))
+    _ = Module.finrank k k' := by
+        rw [hkα]
+        exact
+          (AlgEquiv.ofInjectiveField (IsScalarTower.toAlgHom k k' F')).symm.toLinearEquiv.finrank_eq
+
+/-- **Adjoining a prime-degree constant extension to an exact constant field preserves finrank**:
+if `k` is relatively algebraically closed in `F` and `[k' : k]` is prime (with no separability or
+characteristic hypothesis), then `[F · k' : F] = [k' : k]`. -/
+theorem finrank_constantCompositum_eq_finrank_of_finrank_prime
+    (hex : IsIntegrallyClosedIn k F) (hp : (Module.finrank k k').Prime) :
+    Module.finrank F (constantCompositum F k' F') = Module.finrank k k' := by
+  have : FiniteDimensional k k' := Module.finite_of_finrank_pos hp.pos
+  obtain ⟨α, hα⟩ := Field.exists_adjoin_simple_eq_top_of_finrank_prime hp
+  exact finrank_constantCompositum_eq_finrank_of_adjoin_simple_eq_top F k' F' hex
+    (Algebra.IsIntegral.isIntegral α) hα
 
 end LinearDisjoint
 
