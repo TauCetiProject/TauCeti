@@ -27,6 +27,10 @@ multiples use `Continuous.smul_totalSpace`), and a function with
 closed support inside an open set multiplies a section continuous on that set into a globally
 continuous section (`ContinuousOn.smul_section_of_tsupport`). For global continuity of
 fibrewise sums along a varying base map from another space, use `Continuous.add_totalSpace`.
+Its coordinate step, also used for the smooth counterparts, is
+`Bundle.Trivialization.snd_apply_mk_op_eventuallyEq_and_eq`: near a point, a linear
+trivialization carries a fibrewise operation on sections along a map, such as the sum, to the
+corresponding operation on their coordinates.
 
 A linear trivialization reconstructs a section from arbitrary model coordinates by
 `Bundle.Trivialization.sectionFromCoordinates`, with the two coordinate inverse laws on its base
@@ -76,6 +80,24 @@ theorem continuousOn_section_iff {a : Set B} (ha : a ⊆ e.baseSet) :
       ContinuousOn (fun x ↦ (e ⟨x, s x⟩).2) a :=
   forall₂_congr fun _ hx ↦ e.continuousWithinAt_section_iff (ha hx)
 
+/-- Let `e` be a trivialization that is linear on the fibres and `b` a map continuous at `x₀`
+within `u`, with `b x₀` in the base set of `e`. For a fibrewise operation `op` that every linear
+map carries to `opF`, the `e`-coordinate of `op (s x) (t x)` is `opF` of the `e`-coordinates of
+`s x` and `t x`, both for `x` near `x₀` within `u` and at `x₀` itself. This is the coordinate step
+in the regularity of fibrewise sums and differences of sections along a map. -/
+theorem snd_apply_mk_op_eventuallyEq_and_eq (R : Type*) {X : Type*} [Semiring R] [AddCommMonoid F]
+    [Module R F] [∀ x, AddCommMonoid (E x)] [∀ x, Module R (E x)] [e.IsLinear R]
+    [TopologicalSpace X] {b : X → B} {s t : ∀ x, E (b x)} {u : Set X} {x₀ : X}
+    {op : ∀ y, E y → E y → E y} {opF : F → F → F}
+    (hop : ∀ y (g : E y → F), IsLinearMap R g → ∀ v w, g (op y v w) = opF (g v) (g w))
+    (hb : ContinuousWithinAt b u x₀) (hx₀ : b x₀ ∈ e.baseSet) :
+    (fun x ↦ (e ⟨b x, op (b x) (s x) (t x)⟩).2) =ᶠ[𝓝[u] x₀]
+        (fun x ↦ opF (e ⟨b x, s x⟩).2 (e ⟨b x, t x⟩).2) ∧
+      (e ⟨b x₀, op (b x₀) (s x₀) (t x₀)⟩).2 = opF (e ⟨b x₀, s x₀⟩).2 (e ⟨b x₀, t x₀⟩).2 := by
+  refine ⟨?_, hop _ _ (e.linear R hx₀) _ _⟩
+  filter_upwards [hb.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hx₀)] with x hx
+  exact hop _ _ (e.linear R hx) _ _
+
 end Bundle.Trivialization
 
 section MovingBase
@@ -97,12 +119,9 @@ theorem ContinuousWithinAt.add_totalSpace
     (ht : ContinuousWithinAt (fun y ↦ TotalSpace.mk' F (b y) (t y)) u y₀) :
     ContinuousWithinAt (fun y ↦ TotalSpace.mk' F (b y) (s y + t y)) u y₀ := by
   rw [FiberBundle.continuousWithinAt_totalSpace] at hs ht ⊢
-  let e := trivializationAt F E (b y₀)
-  have hy₀ : b y₀ ∈ e.baseSet := mem_baseSet_trivializationAt F E (b y₀)
-  refine ⟨hs.1, (hs.2.add ht.2).congr_of_eventuallyEq ?_
-    ((e.linear 𝕜 hy₀).map_add (s y₀) (t y₀))⟩
-  filter_upwards [hs.1.eventually (e.open_baseSet.mem_nhds hy₀)] with y hy
-  exact (e.linear 𝕜 hy).map_add (s y) (t y)
+  obtain ⟨h, h₀⟩ := (trivializationAt F E (b y₀)).snd_apply_mk_op_eventuallyEq_and_eq 𝕜
+    (s := s) (t := t) (fun _ _ hg ↦ hg.map_add) hs.1 (mem_baseSet_trivializationAt F E (b y₀))
+  exact ⟨hs.1, (hs.2.add ht.2).congr_of_eventuallyEq h h₀⟩
 
 variable (𝕜) in
 include 𝕜 in

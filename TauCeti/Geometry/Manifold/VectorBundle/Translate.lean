@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
-public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
+public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # Smooth fibrewise translation of vector bundles

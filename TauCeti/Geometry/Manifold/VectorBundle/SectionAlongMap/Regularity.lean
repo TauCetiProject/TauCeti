@@ -8,6 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 
+import TauCeti.Topology.VectorBundle.Section
+
 /-!
 # Regularity of sums and differences of sections along a map
 
@@ -30,8 +32,8 @@ applies to maps defined on the total space itself, which are sections along the 
 
 public section
 
-open Bundle Set Filter
-open scoped Manifold Topology
+open Bundle
+open scoped Manifold
 
 variable {𝕜 B X F EB HB EX HX : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
@@ -47,27 +49,6 @@ section AddCommMonoid
 variable [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
   {b : X → B} {s t : ∀ x, V (b x)} {u : Set X} {x₀ : X}
 
-variable (𝕜) in
-/-- The local-coordinate step shared by the `WithinAt` lemmas below. Let `e` be the
-trivialization at `b x₀`. Near `x₀` the base point `b x` stays in the base set of `e`, where `e`
-is linear on the fibres. So for a fibrewise operation `op` that linear maps carry to `opF`, the
-`e`-coordinate of `op (s x) (t x)` is `opF` of the `e`-coordinates of `s x` and `t x`, near `x₀`
-and at `x₀`. -/
-private theorem trivializationAt_op_sectionAlong {op : ∀ y, V y → V y → V y} {opF : F → F → F}
-    (hop : ∀ y (g : V y → F), IsLinearMap 𝕜 g → ∀ v w, g (op y v w) = opF (g v) (g w))
-    (hb : ContinuousWithinAt b u x₀) :
-    (fun x ↦ (trivializationAt F V (b x₀) ⟨b x, op (b x) (s x) (t x)⟩).2) =ᶠ[𝓝[u] x₀]
-        (fun x ↦ opF (trivializationAt F V (b x₀) ⟨b x, s x⟩).2
-          (trivializationAt F V (b x₀) ⟨b x, t x⟩).2) ∧
-      (trivializationAt F V (b x₀) ⟨b x₀, op (b x₀) (s x₀) (t x₀)⟩).2 =
-        opF (trivializationAt F V (b x₀) ⟨b x₀, s x₀⟩).2
-          (trivializationAt F V (b x₀) ⟨b x₀, t x₀⟩).2 := by
-  let e := trivializationAt F V (b x₀)
-  have hx₀ : b x₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' (b x₀)
-  refine ⟨?_, hop _ _ (e.linear 𝕜 hx₀) _ _⟩
-  filter_upwards [hb.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hx₀)] with x hx
-  exact hop _ _ (e.linear 𝕜 hx) _ _
-
 /-- The fibrewise sum of two `C^n` sections along the same map is `C^n` within a set at
 a point. -/
 theorem ContMDiffWithinAt.add_sectionAlong
@@ -76,8 +57,9 @@ theorem ContMDiffWithinAt.add_sectionAlong
     ContMDiffWithinAt IX (IB.prod 𝓘(𝕜, F)) n
       (fun x ↦ TotalSpace.mk' F (b x) (s x + t x)) u x₀ := by
   rw [contMDiffWithinAt_totalSpace_iff] at hs ht ⊢
-  obtain ⟨h, h₀⟩ := trivializationAt_op_sectionAlong 𝕜 (F := F) (s := s) (t := t)
-    (fun _ _ hg ↦ hg.map_add) hs.1.continuousWithinAt
+  obtain ⟨h, h₀⟩ := (trivializationAt F V (b x₀)).snd_apply_mk_op_eventuallyEq_and_eq 𝕜
+    (s := s) (t := t) (fun _ _ hg ↦ hg.map_add) hs.1.continuousWithinAt
+    (FiberBundle.mem_baseSet_trivializationAt' (b x₀))
   exact ⟨hs.1, (hs.2.add ht.2).congr_of_eventuallyEq h h₀⟩
 
 /-- The fibrewise sum of two `C^n` sections along the same map is `C^n` at a point. -/
@@ -161,8 +143,9 @@ theorem ContMDiffWithinAt.sub_sectionAlong
     ContMDiffWithinAt IX (IB.prod 𝓘(𝕜, F)) n
       (fun x ↦ TotalSpace.mk' F (b x) (s x - t x)) u x₀ := by
   rw [contMDiffWithinAt_totalSpace_iff] at hs ht ⊢
-  obtain ⟨h, h₀⟩ := trivializationAt_op_sectionAlong 𝕜 (F := F) (s := s) (t := t)
-    (fun _ _ hg ↦ hg.map_sub) hs.1.continuousWithinAt
+  obtain ⟨h, h₀⟩ := (trivializationAt F V (b x₀)).snd_apply_mk_op_eventuallyEq_and_eq 𝕜
+    (s := s) (t := t) (fun _ _ hg ↦ hg.map_sub) hs.1.continuousWithinAt
+    (FiberBundle.mem_baseSet_trivializationAt' (b x₀))
   exact ⟨hs.1, (hs.2.sub ht.2).congr_of_eventuallyEq h h₀⟩
 
 /-- The fibrewise difference of two `C^n` sections along the same map is `C^n` at a point. -/
@@ -196,8 +179,9 @@ theorem MDifferentiableWithinAt.sub_sectionAlong
     MDifferentiableWithinAt IX (IB.prod 𝓘(𝕜, F))
       (fun x ↦ TotalSpace.mk' F (b x) (s x - t x)) u x₀ := by
   rw [mdifferentiableWithinAt_totalSpace] at hs ht ⊢
-  obtain ⟨h, h₀⟩ := trivializationAt_op_sectionAlong 𝕜 (F := F) (s := s) (t := t)
-    (fun _ _ hg ↦ hg.map_sub) hs.1.continuousWithinAt
+  obtain ⟨h, h₀⟩ := (trivializationAt F V (b x₀)).snd_apply_mk_op_eventuallyEq_and_eq 𝕜
+    (s := s) (t := t) (fun _ _ hg ↦ hg.map_sub) hs.1.continuousWithinAt
+    (FiberBundle.mem_baseSet_trivializationAt' (b x₀))
   exact ⟨hs.1, (hs.2.sub ht.2).congr_of_eventuallyEq h h₀⟩
 
 /-- The difference of differentiable sections along the same base map is differentiable at a
