@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Cotangent.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.ReducedSpace
 public import TauCeti.Topology.FiberBundle.Separation
 
+import TauCeti.Geometry.Symplectic.Lagrangian.SymplecticTangent
+
 /-!
 # Cotangent bundle reduction at zero
 
@@ -44,8 +46,10 @@ stabilizer of `0 ∈ 𝔤*`, is all of `G`.
   Liouville form of `T*(Q ⧸ G)` back to the form whose pullback to `μ⁻¹(0)` is the restriction of
   the Liouville form of `T*Q`.
 * **A diffeomorphism.** Since the reduced form is nondegenerate, the descended map has injective
-  differential. Both sides have dimension `2 (dim Q - dim G)`, so it is a local diffeomorphism,
-  and being bijective it is a diffeomorphism.
+  differential (`TauCeti.SmoothTwoForm.IsNondegenerate.isNondegenerate_mpullback_iff`). Both sides
+  have dimension `2 (dim Q - dim G)`
+  (`TauCeti.CotangentBundle.finrank_quotientModelSpace_zeroLevel`), so it is a local
+  diffeomorphism, and being bijective it is a diffeomorphism.
 
 The reduced space carries the atlas of the Marsden–Weinstein–Meyer theorem, which is built from a
 proof `h` that `μ` is an equivariant moment map, a proof `hreg` that `0` is a regular value, the
@@ -68,6 +72,8 @@ The statements take these as arguments, as the Marsden–Weinstein–Meyer theor
   to the reduced symplectic form of `μ⁻¹(0) / G_0`.
 * `mpullback_quotientMk_mpullback_zeroReducedSpaceDiffeomorph_liouvilleForm`, in
   `TauCeti.CotangentBundle`: descent of the tautological forms.
+* `TauCeti.CotangentBundle.finrank_quotientModelSpace_zeroLevel`: the reduced space at zero has
+  dimension `2 (dim Q - dim G)`.
 
 ## References
 
@@ -160,6 +166,28 @@ private theorem bijective_zeroReducedSpaceMap : Bijective (zeroReducedSpaceMap h
 variable (hreg : ∀ z, momentMap IG G z = 0 → Surjective (h.differential z))
   (hn : finrank ℝ (E × (E →L[ℝ] ℝ)) - finrank ℝ (GroupLieAlgebra IG G) = n)
   (d : Lie.EmbeddedLieSubgroupData IG ((Lie.coadjointRepresentation ℝ IG G).stabilizer 0) F)
+
+include hreg hn d in
+/-- **The dimension of the reduced space at zero.** The reduced space `μ⁻¹(0) / G_0` of `T*Q`, with
+the atlas of the Marsden–Weinstein–Meyer theorem, has dimension `2 (dim Q - dim G)`, that of
+`T*(Q ⧸ G)`, as soon as the zero level is nonempty. This is the general formula
+`dim (μ⁻¹(c) / G_c) + dim 𝔤 + dim 𝔤_c = dim T*Q`
+(`finrank_quotientModelSpace_add_finrank_add_finrank_lieAnnihilator` in
+`TauCeti.SmoothTwoForm.IsEquivariantMomentMap`) at `c = 0`, where `𝔤_0 = 𝔤`. -/
+theorem finrank_quotientModelSpace_zeroLevel (z : h.levelSubMulAction 0) :
+    finrank ℝ (ProperSMul.QuotientModelSpace F (Fin n → ℝ)) = 2 * (finrank ℝ E - finrank ℝ EG) := by
+  have := properSMul (IG := IG) (G := G) (I := I) (M := Q)
+  have hred := h.finrank_quotientModelSpace_add_finrank_add_finrank_lieAnnihilator hreg hn d
+    isSymplectic_symplecticForm.isNondegenerate z
+  -- Every element of `𝔤` annihilates `0 ∈ 𝔤*`, so `𝔤_0 = 𝔤`.
+  have hann : finrank ℝ (lieAnnihilator ℝ (GroupLieAlgebra IG G)
+      (0 : Module.Dual ℝ (GroupLieAlgebra IG G))) = finrank ℝ EG := by
+    rw [(lieAnnihilator_eq_top_iff ℝ _).2 fun ξ ↦ lie_zero ξ]
+    exact LieSubalgebra.topEquiv.toLinearEquiv.finrank_eq
+  -- The Lie algebra `GroupLieAlgebra IG G` is by definition the tangent space `EG` at `1`.
+  have hG : finrank ℝ (GroupLieAlgebra IG G) = finrank ℝ EG := rfl
+  rw [hann, hG, finrank_prod, ContinuousLinearMap.dual_finrank_eq] at hred
+  omega
 
 /-- The descended reduction map is smooth, since the orbit projection onto the reduced space is a
 surjective submersion and the reduction map is smooth on the embedded zero level. -/
@@ -266,31 +294,14 @@ private theorem isLocalDiffeomorph_zeroReducedSpaceMap :
     hn d isSymplectic_symplecticForm mpullback_smul_symplecticForm
   have hΦη := mpullback_zeroReducedSpaceMap_symplecticForm (h := h) hreg hn d η hη
   intro x
-  have hinj : Injective (mfderiv 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ))
-      (𝓘(ℝ, ProperSMul.QuotientModelSpace EG E).prod
-        𝓘(ℝ, ProperSMul.QuotientModelSpace EG E →L[ℝ] ℝ)) (zeroReducedSpaceMap h) x) := by
-    refine (injective_iff_map_eq_zero _).2 fun v hv ↦
-      SmoothTwoForm.isNondegenerate_iff_separatingLeft.1 hηs.isNondegenerate x v fun w ↦ ?_
-    rw [← hΦη, SmoothForm.eval₂_mpullback, hv]
-    exact SmoothBundleForm.eval₂_zero_left _ _ _
-  -- Both sides have dimension `2 (dim Q - dim G)`.
-  have hdim : finrank ℝ (ProperSMul.QuotientModelSpace F (Fin n → ℝ)) =
-      finrank ℝ (ProperSMul.QuotientModelSpace EG E ×
-        (ProperSMul.QuotientModelSpace EG E →L[ℝ] ℝ)) := by
-    obtain ⟨z, -⟩ := Quotient.mk_surjective x
-    have hred := h.finrank_quotientModelSpace_add_finrank_add_finrank_lieAnnihilator hreg hn d
-      isSymplectic_symplecticForm.isNondegenerate z
-    have hann : finrank ℝ (lieAnnihilator ℝ (GroupLieAlgebra IG G)
-        (0 : Module.Dual ℝ (GroupLieAlgebra IG G))) =
-        finrank ℝ EG := by
-      rw [(lieAnnihilator_eq_top_iff ℝ _).2 fun ξ ↦ lie_zero ξ]
-      exact LieSubalgebra.topEquiv.toLinearEquiv.finrank_eq
-    have hG : finrank ℝ (GroupLieAlgebra IG G) = finrank ℝ EG := rfl
-    rw [hann, hG, finrank_prod, ContinuousLinearMap.dual_finrank_eq] at hred
-    rw [ProperSMul.finrank_quotientModelSpace_prod_dual]
-    omega
+  -- A map pulling a nondegenerate form back to a nondegenerate form has injective differential.
+  have hinj := ((isSymplectic_symplecticForm.isNondegenerate.isNondegenerate_mpullback_iff hΦ).1
+    (hΦη ▸ hηs.isNondegenerate)).2 x
+  obtain ⟨z, -⟩ := Quotient.mk_surjective x
   exact isLocalDiffeomorphAt_of_injective_mfderiv hΦ.contMDiffOn isOpen_univ (Set.mem_univ x)
-    BoundarylessManifold.isInteriorPoint (by simp) hinj hdim
+    BoundarylessManifold.isInteriorPoint (by simp) hinj
+    ((finrank_quotientModelSpace_zeroLevel hreg hn d z).trans
+      ProperSMul.finrank_quotientModelSpace_prod_dual.symm)
 
 variable (h) in
 /-- **Cotangent bundle reduction at zero.** For a free and proper smooth action of a Lie group `G`
