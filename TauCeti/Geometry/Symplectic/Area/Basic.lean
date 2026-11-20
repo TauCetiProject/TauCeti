@@ -451,26 +451,20 @@ theorem integral_fderivWithin_apply_upperHalfAnnulus [FiniteDimensional ℝ V]
         (hline.mono fun t ht ↦ L.sub_mem (huL _ ht (him t)) (huL z hzO hz))
     rw [hB, ← fderivWithin_inter (hO.mem_nhds hzO)]
     exact hLω _ (huL z hzO hz) _ hmem
-  have hdiam (s : ℝ) (hs : s ∈ [[a, b]]) (ε : ℝ) (hε : |ε| = 1) :
-      z₀ + ε * s ∈ O ∧ (z₀ + ε * s).im = z₀.im := by
+  have hdiam (ε : ℝ) (hε : |ε| = 1) :
+      ∫ r in a..b, B (u (z₀ + ε * r)) (fderivWithin ℝ u H (z₀ + ε * r) 1) = 0 := by
+    rw [← intervalIntegral.integral_zero (a := a) (b := b) (μ := volume) (E := ℝ)]
+    refine intervalIntegral.integral_congr fun s hs ↦ ?_
     rw [uIcc_of_le hab] at hs
     have him : (z₀ + ε * s).im = z₀.im := by simp
-    refine ⟨hSO ⟨him.ge, ?_⟩, him⟩
+    refine hseg _ (hSO ⟨him.ge, ?_⟩) him
     rw [add_sub_cancel_left, norm_mul, Complex.norm_real, Complex.norm_real, Real.norm_eq_abs,
       Real.norm_eq_abs, hε, one_mul, abs_of_nonneg (ha.trans hs.1)]
     exact hs
   have hright : ∫ r in a..b, B (u (z₀ + r)) (fderivWithin ℝ u H (z₀ + r) 1) = 0 := by
-    rw [← intervalIntegral.integral_zero (a := a) (b := b) (μ := volume) (E := ℝ)]
-    refine intervalIntegral.integral_congr fun s hs ↦ ?_
-    obtain ⟨h₁, h₂⟩ := hdiam s hs 1 (by simp)
-    simp only [ofReal_one, one_mul] at h₁ h₂
-    exact hseg _ h₁ h₂
+    simpa only [ofReal_one, one_mul] using hdiam 1 (by simp)
   have hleft : ∫ r in a..b, B (u (z₀ - r)) (fderivWithin ℝ u H (z₀ - r) 1) = 0 := by
-    rw [← intervalIntegral.integral_zero (a := a) (b := b) (μ := volume) (E := ℝ)]
-    refine intervalIntegral.integral_congr fun s hs ↦ ?_
-    obtain ⟨h₁, h₂⟩ := hdiam s hs (-1) (by simp)
-    simp only [ofReal_neg, ofReal_one, neg_one_mul, ← sub_eq_add_neg] at h₁ h₂
-    exact hseg _ h₁ h₂
+    simpa only [ofReal_neg, ofReal_one, neg_one_mul, ← sub_eq_add_neg] using hdiam (-1) (by simp)
   have hgreen := B.integral_bilinear_fderivWithin_sub_upperHalfAnnulus z₀ hO ha hab hSO hu
   rw [hright, hleft, add_zero, add_zero] at hgreen
   simp only [hskew, integral_const_mul] at hgreen

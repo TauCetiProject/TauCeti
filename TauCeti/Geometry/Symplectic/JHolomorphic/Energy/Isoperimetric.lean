@@ -37,9 +37,9 @@ solution that is `C²` up to the axis and maps it into a subspace on which the t
 vanishes, with derivatives taken within the closed upper half-plane and the boundary densities of
 the two half-circles in place of those of the circles
 (`TauCeti.SymplecticForm.two_mul_mul_integral_norm_fderivWithin_one_sq_upperHalfAnnulus_le`,
-with the half-circle angular bound `TauCeti.integral_norm_apply_circleMap_sq_le`). No reflection
-across the axis is used: the boundary half-circles are arcs with endpoints in the subspace, to
-which the isoperimetric inequality for such arcs applies.
+with the angular bound `TauCeti.integral_norm_apply_circleMap_sq_le` on the arc `[0, π]`). No
+reflection across the axis is used: the boundary half-circles are arcs with endpoints in the
+subspace, to which the isoperimetric inequality for such arcs applies.
 
 ## References
 
@@ -59,6 +59,39 @@ section Angular
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   {u : ℂ → V} {J : V → V →L[ℝ] V} {z₀ : ℂ} {M : ℝ}
 
+/-- The angular energy of the arc `θ ↦ z₀ + r e^{iθ}`, `α ≤ θ ≤ β`, measured by a family `D` of
+derivatives along it, is at most `(1 + M)² r²` times the arc integral of `‖D 1‖²`, when
+`D I = J(u) (D 1)` along it with `‖J(u)‖ ≤ M`. For `D` the derivative of `u`, or its derivative
+within a closed half-plane, this bounds boundary energies by the boundary densities of radial
+energy integrals. -/
+theorem integral_norm_apply_circleMap_sq_le {D : ℂ → ℂ →L[ℝ] V} {r α β : ℝ} (hr : 0 ≤ r)
+    (hαβ : α ≤ β) (hD : ContinuousOn (fun θ ↦ D (circleMap z₀ r θ)) (Icc α β))
+    (hCR : ∀ θ ∈ Icc α β,
+      D (circleMap z₀ r θ) I = J (u (circleMap z₀ r θ)) (D (circleMap z₀ r θ) 1))
+    (hJ : ∀ θ ∈ Icc α β, ‖J (u (circleMap z₀ r θ))‖ ≤ M) :
+    (∫ θ in α..β, ‖D (circleMap z₀ r θ) (circleMap 0 r θ * I)‖ ^ 2) ≤
+      (1 + M) ^ 2 * r ^ 2 * ∫ θ in α..β, ‖D (circleMap z₀ r θ) 1‖ ^ 2 := by
+  have hcont : ContinuousOn (fun θ ↦ ‖D (circleMap z₀ r θ) (circleMap 0 r θ * I)‖ ^ 2) (Icc α β) :=
+    (hD.clm_apply ((continuous_circleMap 0 r).mul continuous_const).continuousOn).norm.pow 2
+  have hbcont : ContinuousOn (fun θ ↦ ‖D (circleMap z₀ r θ) 1‖ ^ 2) (Icc α β) :=
+    (hD.clm_apply continuousOn_const).norm.pow 2
+  rw [← intervalIntegral.integral_const_mul]
+  apply intervalIntegral.integral_mono_on hαβ (hcont.intervalIntegrable_of_Icc hαβ)
+    ((hbcont.const_mul _).intervalIntegrable_of_Icc hαβ)
+  intro θ hθ
+  have hs : ‖D (circleMap z₀ r θ) (circleMap 0 r θ * I)‖ ≤
+      (1 + M) * r * ‖D (circleMap z₀ r θ) 1‖ := by
+    calc _ ≤ ‖D (circleMap z₀ r θ)‖ * ‖circleMap 0 r θ * I‖ := (D (circleMap z₀ r θ)).le_opNorm _
+      _ ≤ ((1 + M) * ‖D (circleMap z₀ r θ) 1‖) * r := by
+          rw [norm_mul, norm_I, mul_one, norm_circleMap_zero, abs_of_nonneg hr]
+          gcongr
+          exact (D (circleMap z₀ r θ)).norm_le_of_apply_I_eq (hCR θ hθ) (hJ θ hθ) le_rfl
+      _ = _ := by ring
+  calc
+    _ ≤ ((1 + M) * r * ‖D (circleMap z₀ r θ) 1‖) ^ 2 := by
+      gcongr
+    _ = _ := by ring
+
 /-- The angular energy of the loop `θ ↦ u (z₀ + r e^{iθ})` is at most `(1 + M)² r²` times the
 circle integral of `‖∂ₛu‖²`, for a solution of `∂ₜu = J(u) ∂ₛu` along the circle with
 `‖J(u)‖ ≤ M`. This converts the boundary-loop energies of the isoperimetric estimates into the
@@ -75,67 +108,13 @@ theorem integral_norm_deriv_comp_circleMap_sq_le {r : ℝ} (hr : 0 ≤ r)
     continuous_iff_continuousAt.mpr fun θ ↦
       (hu θ).continuousAt_fderiv (by norm_num) |>.comp
         (continuous_circleMap z₀ r).continuousAt
-  have hd (θ : ℝ) := ((hu θ).differentiableAt (by norm_num)).hasFDerivAt.comp_hasDerivAt θ
-    (hasDerivAt_circleMap z₀ r θ)
   have heq (θ : ℝ) : deriv (fun θ ↦ u (circleMap z₀ r θ)) θ =
-      fderiv ℝ u (circleMap z₀ r θ) (circleMap 0 r θ * I) := hd θ |>.deriv
-  have hcont : Continuous (fun θ ↦ ‖deriv (fun θ ↦ u (circleMap z₀ r θ)) θ‖ ^ 2) := by
-    simp_rw [heq]
-    exact (hdu.clm_apply ((continuous_circleMap 0 r).mul continuous_const)).norm.pow 2
-  have hbcont : Continuous (fun θ ↦ ‖fderiv ℝ u (circleMap z₀ r θ) 1‖ ^ 2) :=
-    (hdu.clm_apply continuous_const).norm.pow 2
-  rw [← intervalIntegral.integral_const_mul]
-  apply intervalIntegral.integral_mono_on (by linarith [Real.pi_pos])
-    (hcont.intervalIntegrable _ _) ((hbcont.const_mul _).intervalIntegrable _ _)
-  intro θ _
-  have hs : ‖deriv (fun θ ↦ u (circleMap z₀ r θ)) θ‖ ≤
-      (1 + M) * r * ‖fderiv ℝ u (circleMap z₀ r θ) 1‖ := by
-    rw [heq]
-    calc _ ≤ ‖fderiv ℝ u (circleMap z₀ r θ)‖ * ‖circleMap 0 r θ * I‖ :=
-          (fderiv ℝ u (circleMap z₀ r θ)).le_opNorm _
-      _ ≤ ((1 + M) * ‖fderiv ℝ u (circleMap z₀ r θ) 1‖) * r := by
-          rw [norm_mul, norm_I, mul_one, norm_circleMap_zero, abs_of_nonneg hr]
-          gcongr
-          exact (fderiv ℝ u (circleMap z₀ r θ)).norm_le_of_apply_I_eq (hCR θ) (hJ θ) le_rfl
-      _ = _ := by ring
-  calc
-    _ ≤ ((1 + M) * r * ‖fderiv ℝ u (circleMap z₀ r θ) 1‖) ^ 2 := by
-      gcongr
-    _ = _ := by ring
-
-/-- The angular energy of the half-circle `θ ↦ z₀ + r e^{iθ}`, `0 ≤ θ ≤ π`, measured by a family
-`D` of derivatives along it, is at most `(1 + M)² r²` times the half-circle integral of
-`‖D 1‖²`, when `D I = J(u) (D 1)` along it with `‖J(u)‖ ≤ M`. For `D` the derivative of `u`
-within a closed half-plane this bounds the boundary energies of a half-annulus by the boundary
-densities of radial energy integrals. -/
-theorem integral_norm_apply_circleMap_sq_le {D : ℂ → ℂ →L[ℝ] V} {r : ℝ} (hr : 0 ≤ r)
-    (hD : ContinuousOn (fun θ ↦ D (circleMap z₀ r θ)) (Icc 0 π))
-    (hCR : ∀ θ ∈ Icc 0 π,
-      D (circleMap z₀ r θ) I = J (u (circleMap z₀ r θ)) (D (circleMap z₀ r θ) 1))
-    (hJ : ∀ θ ∈ Icc 0 π, ‖J (u (circleMap z₀ r θ))‖ ≤ M) :
-    (∫ θ in 0..π, ‖D (circleMap z₀ r θ) (circleMap 0 r θ * I)‖ ^ 2) ≤
-      (1 + M) ^ 2 * r ^ 2 * ∫ θ in 0..π, ‖D (circleMap z₀ r θ) 1‖ ^ 2 := by
-  have hcont : ContinuousOn (fun θ ↦ ‖D (circleMap z₀ r θ) (circleMap 0 r θ * I)‖ ^ 2) (Icc 0 π) :=
-    (hD.clm_apply ((continuous_circleMap 0 r).mul continuous_const).continuousOn).norm.pow 2
-  have hbcont : ContinuousOn (fun θ ↦ ‖D (circleMap z₀ r θ) 1‖ ^ 2) (Icc 0 π) :=
-    (hD.clm_apply continuousOn_const).norm.pow 2
-  rw [← intervalIntegral.integral_const_mul]
-  apply intervalIntegral.integral_mono_on Real.pi_pos.le
-    (hcont.intervalIntegrable_of_Icc Real.pi_pos.le)
-    ((hbcont.const_mul _).intervalIntegrable_of_Icc Real.pi_pos.le)
-  intro θ hθ
-  have hs : ‖D (circleMap z₀ r θ) (circleMap 0 r θ * I)‖ ≤
-      (1 + M) * r * ‖D (circleMap z₀ r θ) 1‖ := by
-    calc _ ≤ ‖D (circleMap z₀ r θ)‖ * ‖circleMap 0 r θ * I‖ := (D (circleMap z₀ r θ)).le_opNorm _
-      _ ≤ ((1 + M) * ‖D (circleMap z₀ r θ) 1‖) * r := by
-          rw [norm_mul, norm_I, mul_one, norm_circleMap_zero, abs_of_nonneg hr]
-          gcongr
-          exact (D (circleMap z₀ r θ)).norm_le_of_apply_I_eq (hCR θ hθ) (hJ θ hθ) le_rfl
-      _ = _ := by ring
-  calc
-    _ ≤ ((1 + M) * r * ‖D (circleMap z₀ r θ) 1‖) ^ 2 := by
-      gcongr
-    _ = _ := by ring
+      fderiv ℝ u (circleMap z₀ r θ) (circleMap 0 r θ * I) :=
+    ((hu θ).differentiableAt (by norm_num)).hasFDerivAt.comp_hasDerivAt θ
+      (hasDerivAt_circleMap z₀ r θ) |>.deriv
+  simp_rw [heq]
+  exact integral_norm_apply_circleMap_sq_le hr (by linarith [Real.pi_pos]) hdu.continuousOn
+    (fun θ _ ↦ hCR θ) (fun θ _ ↦ hJ θ)
 
 end Angular
 
@@ -241,10 +220,9 @@ theorem two_mul_mul_integral_norm_fderivWithin_one_sq_upperHalfAnnulus_le {u : �
     have hn : Continuous (fun z : ℂ ↦ ‖z - x₀‖) := by fun_prop
     exact (isClosed_le continuous_const continuous_im).inter
       ((isClosed_le continuous_const hn).inter (isClosed_le hn continuous_const))
-  have hHO : UniqueDiffOn ℝ (H ∩ O) := (uniqueDiffOn_setOfPred_le_im _).inter hO
   have hDu : ContinuousOn Du S :=
-    ((hu.continuousOn_fderivWithin hHO (by norm_num)).congr fun z hz ↦
-      (fderivWithin_inter (hO.mem_nhds hz.2)).symm).mono fun z hz ↦ ⟨hz.1, hSO hz⟩
+    (hu.continuousOn_fderivWithin_setOfPred_le_im hO (by norm_num)).mono fun z hz ↦
+      ⟨hz.1, hSO hz⟩
   -- The taming bound compares the energy with the symplectic area.
   have hE : IntegrableOn (fun z ↦ c * ‖Du z 1‖ ^ 2) S :=
     (continuousOn_const.mul ((hDu.clm_apply continuousOn_const).norm.pow 2)).integrableOn_compact
@@ -262,16 +240,10 @@ theorem two_mul_mul_integral_norm_fderivWithin_one_sq_upperHalfAnnulus_le {u : �
   rw [hx₀] at hbound
   -- The boundary energies are bounded by the boundary densities.
   have hmem (r : ℝ) (hr : r ∈ Icc a b) (θ : ℝ) (hθ : θ ∈ Icc 0 π) : circleMap x₀ r θ ∈ S := by
-    have hr0 : 0 ≤ r := ha.trans hr.1
-    refine ⟨?_, ?_⟩
-    · have him : (circleMap x₀ r θ).im = r * Real.sin θ := by
-        simp [circleMap, Complex.exp_ofReal_mul_I_im, hx₀]
-      rw [him]
-      exact mul_nonneg hr0 (Real.sin_nonneg_of_nonneg_of_le_pi hθ.1 hθ.2)
-    · rw [circleMap_sub_center, norm_circleMap_zero, abs_of_nonneg hr0]
-      exact hr
+    simpa only [S, hx₀] using circleMap_mem_upperHalfAnnulus (z₀ := x₀) ha hr hθ
   have hdens (r : ℝ) (hr : r ∈ Icc a b) :=
     integral_norm_apply_circleMap_sq_le (u := u) (J := J) (M := M) (ha.trans hr.1)
+      Real.pi_pos.le
       (hDu.comp (continuous_circleMap x₀ r).continuousOn (hmem r hr))
       (fun θ hθ ↦ hCR _ (hmem r hr θ hθ)) (fun θ hθ ↦ hJ _ (hmem r hr θ hθ))
   have hb := hdens b ⟨hab, le_rfl⟩

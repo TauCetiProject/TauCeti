@@ -12,7 +12,7 @@ import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 import TauCeti.Analysis.Calculus.TangentCone.Basic
 
 /-!
-# Green's formula for bilinear pairings on rectangles and annuli
+# Green's formula for bilinear pairings on rectangles, annuli and half-annuli
 
 Let `u : ℝ × ℝ → V` be a `C²` map near a closed rectangle `R = [a₁, b₁] × [a₂, b₂]` and let `B` be
 a continuous bilinear map. Writing `∂s u` and `∂t u` for the derivatives of `u` in the directions
@@ -23,8 +23,11 @@ a continuous bilinear map. Writing `∂s u` and `∂t u` for the derivatives of 
 where the right-hand side is the integral over the positively oriented boundary of `R`, written
 out as four interval integrals. This is Green's theorem for the pullback along `u` of the one-form
 `x ↦ B x`, whose exterior derivative is the constant two-form `(v, w) ↦ B v w - B w v`.
-Both formulas below are `TauCeti.integral_extDeriv_prod_Icc` and
+The rectangle and annulus formulas below are `TauCeti.integral_extDeriv_prod_Icc` and
 `TauCeti.integral_extDeriv_annulus` applied to the pullback along `u` of the one-form `x ↦ B x`.
+The half-annulus formula is `TauCeti.integral_upperHalfAnnulus_eq_of_extDeriv_eq` applied to the
+one-form `B u (Du)` built from the derivative `Du` of `u` within the closed half-plane, which
+agrees with that pullback off the diameter.
 
 For a compactly supported map on the whole plane the boundary terms are absent and the integral
 vanishes (`TauCeti.integral_bilinear_fderiv_apply_comm`). With boundary, this is the formula that
@@ -157,11 +160,9 @@ theorem _root_.ContinuousLinearMap.integral_bilinear_fderivWithin_sub_upperHalfA
   set H : Set ℂ := {z | z₀.im ≤ z.im}
   set S : Set ℂ := {z : ℂ | z₀.im ≤ z.im ∧ a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
   set Du := fderivWithin ℝ u H
-  have hHO : UniqueDiffOn ℝ (H ∩ O) := (uniqueDiffOn_setOfPred_le_im _).inter hO
   have hSHO : S ⊆ H ∩ O := fun z hz ↦ ⟨hz.1, hSO hz⟩
   have hDu : ContinuousOn Du S :=
-    ((hu.continuousOn_fderivWithin hHO (by norm_num)).congr fun z hz ↦
-      (fderivWithin_inter (hO.mem_nhds hz.2)).symm).mono hSHO
+    (hu.continuousOn_fderivWithin_setOfPred_le_im hO (by norm_num)).mono hSHO
   -- The one-form `B u (Du)`, built from one-sided derivatives.
   let ω : ℂ → ℂ [⋀^Fin 1]→L[ℝ] W := fun z ↦
     (ContinuousLinearMap.liouvilleFormCLM ((2 : ℝ) • B) (u z)).compContinuousLinearMap (Du z)
@@ -182,8 +183,7 @@ theorem _root_.ContinuousLinearMap.integral_bilinear_fderivWithin_sub_upperHalfA
         extDeriv ω z ![1, I] = B (Du z 1) (Du z I) - B (Du z I) (Du z 1) := by
     have hzO : z ∈ O := hSO ⟨h₁.le, h₂.le, h₃.le⟩
     have hopen : IsOpen {w : ℂ | z₀.im < w.im} := isOpen_lt continuous_const continuous_im
-    have hH (w : ℂ) (hw : z₀.im < w.im) : H ∈ 𝓝 w :=
-      Filter.mem_of_superset (hopen.mem_nhds hw) fun y (hy : z₀.im < y.im) ↦ hy.le
+    have hH (w : ℂ) (hw : z₀.im < w.im) : H ∈ 𝓝 w := setOfPred_le_im_mem_nhds hw
     have hu2 : ContDiffAt ℝ 2 u z :=
       hu.contDiffAt (Filter.inter_mem (hH z h₁) (hO.mem_nhds hzO))
     have heq : ω =ᶠ[𝓝 z] bilinearPullbackOneForm B u := by

@@ -12,7 +12,6 @@ import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.MeasureTheory.Integral.Circle.LIntegral
 import TauCeti.Analysis.Calculus.TangentCone.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
-import TauCeti.MeasureTheory.Integral.PolarCoord
 
 /-!
 # The isoperimetric inequality in a symplectic vector space
@@ -167,15 +166,11 @@ private theorem abs_integral_apply_fderivWithin_circleMap_le (hg : ∀ v w, ω v
   set H : Set ℂ := {z | z₀.im ≤ z.im}
   set Du := fderivWithin ℝ u H
   have hDu : ContinuousOn Du (H ∩ O) :=
-    (hu.continuousOn_fderivWithin ((uniqueDiffOn_setOfPred_le_im _).inter hO)
-      (by norm_num)).congr fun z hz ↦ (fderivWithin_inter (hO.mem_nhds hz.2)).symm
-  have him (θ : ℝ) : (circleMap z₀ r θ).im = z₀.im + r * Real.sin θ := by
-    simp [circleMap, Complex.exp_ofReal_mul_I_im]
+    hu.continuousOn_fderivWithin_setOfPred_le_im hO (by norm_num)
   have hmem (θ : ℝ) (hθ : θ ∈ Icc 0 π) : circleMap z₀ r θ ∈ H ∩ O :=
-    ⟨(by simpa [him] using mul_nonneg hr (Real.sin_nonneg_of_nonneg_of_le_pi hθ.1 hθ.2) :
-      z₀.im ≤ (circleMap z₀ r θ).im), hrO θ hθ⟩
+    ⟨(circleMap_mem_upperHalfAnnulus hr ⟨le_rfl, le_rfl⟩ hθ).1, hrO θ hθ⟩
   have hend (θ : ℝ) (hθ : θ ∈ Icc 0 π) (hs : Real.sin θ = 0) : u (circleMap z₀ r θ) ∈ L :=
-    huL _ (hrO θ hθ) (by simp [him, hs])
+    huL _ (hrO θ hθ) (by rw [im_circleMap, hs, mul_zero, add_zero])
   have hcm : Continuous fun θ ↦ circleMap z₀ r θ := continuous_circleMap z₀ r
   have hγ'c : ContinuousOn
       (fun θ ↦ Du (circleMap z₀ r θ) (circleMap 0 r θ * Complex.I)) (Icc 0 π) :=
@@ -186,10 +181,9 @@ private theorem abs_integral_apply_fderivWithin_circleMap_le (hg : ∀ v w, ω v
       (Du (circleMap z₀ r θ) (circleMap 0 r θ * Complex.I)) θ := by
     rcases hr.eq_or_lt with rfl | hpos
     · simpa using hasDerivAt_const θ (u z₀)
-    have hH : H ∈ nhds (circleMap z₀ r θ) := by
-      refine Filter.mem_of_superset ((isOpen_lt continuous_const Complex.continuous_im).mem_nhds
-        ?_) fun y (hy : z₀.im < y.im) ↦ hy.le
-      simpa [him] using mul_pos hpos (Real.sin_pos_of_pos_of_lt_pi hθ.1 hθ.2)
+    have hH : H ∈ nhds (circleMap z₀ r θ) := setOfPred_le_im_mem_nhds <| by
+      rw [im_circleMap, lt_add_iff_pos_right]
+      exact mul_pos hpos (Real.sin_pos_of_pos_of_lt_pi hθ.1 hθ.2)
     have hdu : HasFDerivAt u (Du (circleMap z₀ r θ)) (circleMap z₀ r θ) := by
       rw [show Du (circleMap z₀ r θ) = fderiv ℝ u (circleMap z₀ r θ) from
         fderivWithin_of_mem_nhds hH]
@@ -223,11 +217,8 @@ theorem abs_integral_fderivWithin_apply_upperHalfAnnulus_le (hg : ∀ v w, ω v 
         ∫ θ in 0..π, ‖fderivWithin ℝ u {z | z₀.im ≤ z.im} (circleMap z₀ a θ)
           (circleMap 0 a θ * Complex.I)‖ ^ 2) := by
   -- The boundary half-circles lie in `O`.
-  have hrO (r : ℝ) (hr : r ∈ Icc a b) (θ : ℝ) (hθ : θ ∈ Icc 0 π) : circleMap z₀ r θ ∈ O := by
-    have hS := add_polarCoord_symm_mem_upperHalfAnnulus z₀ ha (p := (r, θ))
-      ⟨⟨hr.1, hθ.1⟩, hr.2, hθ.2⟩
-    rw [add_polarCoord_symm_eq_circleMap] at hS
-    exact hSO hS
+  have hrO (r : ℝ) (hr : r ∈ Icc a b) (θ : ℝ) (hθ : θ ∈ Icc 0 π) : circleMap z₀ r θ ∈ O :=
+    hSO (circleMap_mem_upperHalfAnnulus ha hr hθ)
   rw [ω.integral_fderivWithin_apply_upperHalfAnnulus z₀ hO ha hab hSO hu hLω huL, abs_mul,
     abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 1 / 2)]
   gcongr

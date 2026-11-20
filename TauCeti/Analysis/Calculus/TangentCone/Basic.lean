@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.TangentCone.Real
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
@@ -30,6 +31,10 @@ which lets chart transitions of a manifold with corners compare the corners of t
 * `TauCeti.uniqueDiffOn_pi_Ici`: a closed coordinate orthant is a set of unique differentiability.
 * `TauCeti.uniqueDiffOn_setOfPred_le_im`: a closed half-plane `{z : ℂ | a ≤ z.im}` is a set of
   unique differentiability.
+* `TauCeti.setOfPred_le_im_mem_nhds`: a closed half-plane is a neighbourhood of each point of the
+  open half-plane.
+* `ContDiffOn.continuousOn_fderivWithin_setOfPred_le_im`: the derivative within a closed
+  half-plane of a `C¹` map on its part in an open set is continuous up to the boundary line.
 * `TauCeti.mem_tangentConeAt_setOf_im_eq`: a real direction is tangent to a horizontal line in `ℂ`.
 * `IsPreconnected.uniqueDiffOn`: a preconnected set of reals containing two distinct points is a
   set of unique differentiability.
@@ -108,6 +113,21 @@ theorem TauCeti.uniqueDiffOn_pi_Ici {ι : Type*} (a : ι → ℝ) : UniqueDiffOn
 theorem TauCeti.uniqueDiffOn_setOfPred_le_im (a : ℝ) : UniqueDiffOn ℝ {z : ℂ | a ≤ z.im} :=
   uniqueDiffOn_convex (convex_halfSpace_im_ge a)
     ⟨Complex.I * (a + 1), by rw [Complex.interior_setOfPred_le_im]; simp⟩
+
+/-- A closed half-plane `{z : ℂ | a ≤ z.im}` is a neighbourhood of each point of the open
+half-plane `{z | a < z.im}`. -/
+theorem TauCeti.setOfPred_le_im_mem_nhds {a : ℝ} {w : ℂ} (hw : a < w.im) :
+    {z : ℂ | a ≤ z.im} ∈ 𝓝 w :=
+  mem_interior_iff_mem_nhds.mp (by rwa [Complex.interior_setOfPred_le_im])
+
+/-- If `u` is `C¹` on the part `{z | a ≤ z.im} ∩ O` of a closed half-plane in an open set `O`, its
+derivative within the half-plane is continuous there, up to the boundary line. -/
+theorem ContDiffOn.continuousOn_fderivWithin_setOfPred_le_im {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {u : ℂ → F} {a : ℝ} {O : Set ℂ} {n : WithTop ℕ∞}
+    (hu : ContDiffOn ℝ n u ({z | a ≤ z.im} ∩ O)) (hO : IsOpen O) (hn : 1 ≤ n) :
+    ContinuousOn (fderivWithin ℝ u {z : ℂ | a ≤ z.im}) ({z | a ≤ z.im} ∩ O) :=
+  (hu.continuousOn_fderivWithin ((TauCeti.uniqueDiffOn_setOfPred_le_im a).inter hO) hn).congr
+    fun _ hz ↦ (fderivWithin_inter (hO.mem_nhds hz.2)).symm
 
 /-- A real direction `v` is tangent to the horizontal line `{y : ℂ | y.im = c}` at each of its
 points. -/
