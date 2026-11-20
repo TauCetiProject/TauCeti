@@ -125,6 +125,7 @@ theorem abs_arg_div_comm (a b : ℂ) : |(a / b).arg| = |(b / a).arg| := by
 
 /-- A complex number has argument within `π / 2` of `π / 2`, that is, in `(0, π)`, exactly when
 it lies in the open upper half-plane. -/
+@[simp]
 theorem abs_arg_sub_pi_div_two_lt_iff {w : ℂ} : |w.arg - π / 2| < π / 2 ↔ 0 < w.im := by
   rw [abs_sub_lt_iff]
   refine ⟨fun h ↦ ?_, fun hw ↦ ?_⟩
