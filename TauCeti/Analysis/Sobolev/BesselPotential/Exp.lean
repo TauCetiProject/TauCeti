@@ -30,11 +30,13 @@ The two inputs are the addition law
 (`BesselPotentialSpace.expSubOne_add`), and the quadratic remainder estimate
 `‖(exp v - 1) - v‖_{H^s} ≤ C ‖v‖_{H^s} ^ 2` for `‖v‖_{H^s} ≤ 1`
 (`BesselPotentialSpace.exists_norm_expSubOne_sub_le`), which is the power-series action
-`TemperedDistribution.exists_hasSum_mul_pow` applied to the series of `exp z - 1 - z`.
+`TemperedDistribution.exists_hasSum_mul_pow` applied to the series of `exp z - 1 - z`
+(`Complex.hasSum_expRemainderCoeff`).
 
 Nonlinear equations on the Sobolev scale, such as the reduced vortex equation
 `Δw = (h exp (2w) - 1) / 8 + g`, contain such exponentials, and this is what makes them smooth
-maps between Bessel-potential spaces, to which the implicit function theorem applies.
+maps between Bessel-potential spaces, the setting of implicit-function-theorem arguments (which
+also need the invertibility of the derivative, not proved here).
 
 ## Main declarations
 
@@ -113,42 +115,16 @@ theorem expSubOne_add (hs : finrank ℝ E < 2 * s) (u v : H^{s}(E)) :
   rw [h₁, Pi.add_apply, h₂, Pi.add_apply, h₃, h₄, h₅, h₆, Pi.add_apply, Complex.exp_add]
   ring
 
-/-- The coefficients of the series `exp z - 1 - z = ∑ₙ aₙ z ^ (n + 1)`: `a₀ = 0` and
-`aₙ = 1 / (n + 1)!` for `n ≥ 1`. -/
-private def expSubOneSubCoeff (n : ℕ) : ℂ := (((n + 1)! : ℂ))⁻¹ - if n = 0 then 1 else 0
-
-private theorem expSubOneSubCoeff_zero : expSubOneSubCoeff 0 = 0 := by
-  simp [expSubOneSubCoeff]
-
-private theorem norm_expSubOneSubCoeff_le (n : ℕ) : ‖expSubOneSubCoeff n‖ ≤ ((n ! : ℝ))⁻¹ := by
-  rcases n with _ | n
-  · simp [expSubOneSubCoeff_zero]
-  · have han : expSubOneSubCoeff (n + 1) = (((n + 1 + 1)! : ℂ))⁻¹ := by
-      simp [expSubOneSubCoeff]
-    rw [han, norm_inv, Complex.norm_natCast]
-    gcongr
-    exact Nat.le_succ n
-
-private theorem hasSum_expSubOneSubCoeff (z : ℂ) :
-    HasSum (fun n ↦ expSubOneSubCoeff n * z ^ (n + 1)) (Complex.exp z - 1 - z) := by
-  have hite : HasSum (fun n : ℕ ↦ (if n = 0 then 1 else 0 : ℂ) * z ^ (n + 1)) z := by
-    convert hasSum_ite_eq 0 z using 1
-    ext n
-    split_ifs <;> simp_all
-  convert (Complex.hasSum_exp_sub_one z).sub hite using 1
-  ext n
-  simp only [expSubOneSubCoeff, sub_mul]
-
 /-- **The quadratic remainder of `exp - 1` on `H^s(E)`.** There is a constant `C` such that
 `‖(exp v - 1) - v‖_{H^s} ≤ C ‖v‖_{H^s} ^ 2` for `‖v‖_{H^s} ≤ 1`. -/
 theorem exists_norm_expSubOne_sub_le (hs : finrank ℝ E < 2 * s) :
     ∃ C, ∀ v : H^{s}(E), ‖v‖ ≤ 1 → ‖expSubOne hs v - v‖ ≤ C * ‖v‖ ^ 2 := by
   have h := nonneg_of_finrank_lt hs
   obtain ⟨C, hC, hser⟩ := exists_hasSum_mul_pow (E := E) hs
-  set a := expSubOneSubCoeff
+  set a := Complex.expRemainderCoeff
   have hsumC : Summable fun n ↦ ‖a n‖ * C ^ n :=
     (Real.summable_pow_div_factorial C).of_nonneg_of_le (fun n ↦ by positivity)
-      fun n ↦ by rw [div_eq_inv_mul]; gcongr; exact norm_expSubOneSubCoeff_le n
+      fun n ↦ by rw [div_eq_inv_mul]; gcongr; exact Complex.norm_expRemainderCoeff_le n
   refine ⟨∑' n, ‖a n‖ * C ^ n, fun v hv ↦ ?_⟩
   set r := ‖v‖
   have hr : 0 ≤ r := norm_nonneg _
@@ -158,7 +134,7 @@ theorem exists_norm_expSubOne_sub_le (hs : finrank ℝ E < 2 * s) :
   -- Since `a₀ = 0` and `r ≤ 1`, the majorant series is at most `r ∑ₙ |aₙ| Cⁿ`.
   have hterm (n : ℕ) : ‖a n‖ * (C * r) ^ n ≤ r * (‖a n‖ * C ^ n) := by
     rcases n with _ | n
-    · simp [a, expSubOneSubCoeff_zero]
+    · simp [a, Complex.expRemainderCoeff_zero]
     · rw [mul_pow, pow_succ r n]
       have : r ^ n ≤ 1 := pow_le_one₀ hr hv
       have h₀ : 0 ≤ ‖a (n + 1)‖ * C ^ (n + 1) := by positivity
@@ -175,7 +151,7 @@ theorem exists_norm_expSubOne_sub_le (hs : finrank ℝ E < 2 * s) :
     filter_upwards [hw, coeFn_toLp_inclusion_sub h (expSubOne hs v) v,
       coeFn_toLp_inclusion_expSubOne hs h v] with x hx h₁ h₂
     rw [h₁, Pi.sub_apply, h₂]
-    exact hx.unique (hasSum_expSubOneSubCoeff _)
+    exact hx.unique (Complex.hasSum_expRemainderCoeff _)
   rw [← hweq]
   calc ‖hws.toBesselPotentialSpace‖
       ≤ ‖hu.toBesselPotentialSpace‖ * ∑' n, ‖a n‖ * (C * ‖hu.toBesselPotentialSpace‖) ^ n := hwn

@@ -33,7 +33,8 @@ equation
 
 (`TauCeti.Vortex.reducedEquationMap`) is well defined and smooth. The coefficient `h` does not
 decay at infinity, but `1 - h = (1 + ‖P‖²)⁻¹` and `k` lie in every `H^s(ℂ)`
-(`Polynomial.inv_one_add_norm_eval_sq_mem_realSobolevFunctions`), and
+(`Polynomial.inv_one_add_norm_eval_sq_mem_realSobolevFunctions`,
+`TauCeti.Vortex.backgroundSource_mem_realSobolevFunctions`), and
 `h (exp (2w) - 1) = (exp (2w) - 1) - (1 - h)(exp (2w) - 1)` is built from the smooth exponential
 `BesselPotentialSpace.expSubOne` and the product `BesselPotentialSpace.mulCLM` of `H^s(ℂ)`.
 
@@ -42,26 +43,31 @@ derivative at `w` is the Schrödinger operator
 
 `DN(w) v = -Δv + h exp (2w) v / 4`
 
-(`TauCeti.Vortex.hasFDerivAt_reducedEquationMap`, `TauCeti.Vortex.reducedEquationDeriv`,
+(`TauCeti.Vortex.hasFDerivAt_reducedEquationMap`, `TauCeti.Vortex.fderiv_reducedEquationMap`,
+`TauCeti.Vortex.reducedEquationDeriv`,
 `TauCeti.Vortex.coeFn_inclusionLp_reducedEquationDeriv`). The `L²` function of `N(w)` is
-`-Δw + h (exp (2w) - 1) / 8 + k` (`TauCeti.Vortex.coeFn_inclusionLp_reducedEquationMap`), so the
-zeros of `N` are the solutions of the reduced equation: the element of `H^(s+2)(ℂ)` of a classical
+`-Δw + h (exp (2w) - 1) / 8 + k` (`TauCeti.Vortex.coeFn_inclusionLp_reducedEquationMap`), the
+residual of the reduced equation, so a zero of `N` is an almost-everywhere, possibly
+complex-valued, solution. Conversely, the element of `H^(s+2)(ℂ)` of a classical real
 square-integrable solution is a zero of `N`
 (`TauCeti.Vortex.reducedEquationMap_eq_zero_of_laplacian_eq`), and Taubes's solution gives one
 (`TauCeti.Vortex.exists_reducedEquationMap_eq_zero`).
 
-This is the nonlinear operator to which the implicit function theorem applies, to make the
-solution of the reduced equation depend smoothly on the divisor.
+This is the nonlinear operator for an implicit-function-theorem argument making the solution of
+the reduced equation depend smoothly on the divisor; that argument still needs the invertibility
+of the derivative `DN(w)`, which this file does not prove.
 
 ## Main definitions
 
 * `TauCeti.Vortex.sobolevBackgroundDefect`: the coefficient `1 - h = (1 + ‖P‖²)⁻¹` in `H^s(ℂ)`.
+* `TauCeti.Vortex.sobolevBackgroundSource`: the source `k` in `H^s(ℂ)`.
 * `TauCeti.Vortex.reducedEquationMap`: the map `N : H^(s+2)(ℂ) → H^s(ℂ)`.
 * `TauCeti.Vortex.reducedEquationDeriv`: its derivative `-Δ + h exp (2w) / 4` at `w`.
 
 ## Main results
 
-* `TauCeti.Vortex.hasFDerivAt_reducedEquationMap`: the derivative of `N`.
+* `TauCeti.Vortex.hasFDerivAt_reducedEquationMap`, `TauCeti.Vortex.fderiv_reducedEquationMap`:
+  the derivative of `N`.
 * `TauCeti.Vortex.contDiff_reducedEquationMap`: `N` is `C^∞`.
 * `TauCeti.Vortex.coeFn_inclusionLp_reducedEquationMap`: the `L²` function of `N(w)`.
 * `TauCeti.Vortex.reducedEquationMap_eq_zero_of_laplacian_eq`,
@@ -93,34 +99,10 @@ private theorem finrank_lt_two_mul (hs : 1 < s) : (finrank ℝ ℂ : ℝ) < 2 * 
   push_cast
   linarith
 
-/-- The coefficient `1 - h = (1 + ‖P‖²)⁻¹` lies in every real Bessel-potential space. -/
-private theorem inv_one_add_norm_eval_sq_mem (hm : 0 < P.natDegree) (s : ℝ) :
-    (fun z ↦ (1 + ‖P.eval z‖ ^ 2)⁻¹) ∈ realSobolevFunctions ℂ s 2 :=
-  realSobolevFunctions_mono (by norm_num) ENNReal.ofNat_ne_top (Nat.le_ceil s)
-    (Polynomial.inv_one_add_norm_eval_sq_mem_realSobolevFunctions hm ⌈s⌉₊)
-
-/-- The source `k = (h - 1) / 8 + g` lies in every real Bessel-potential space. -/
-private theorem backgroundSource_mem (hm : 0 < P.natDegree) (s : ℝ) :
-    backgroundSource (P.eval ·) ∈ realSobolevFunctions ℂ s 2 := by
-  have hk : backgroundSource (P.eval ·) = (-(8 : ℝ)⁻¹) • (fun z ↦ (1 + ‖P.eval z‖ ^ 2)⁻¹) +
-      (2 : ℝ) • fun z ↦ ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 := by
-    ext z
-    have hN : (1 + ‖P.eval z‖ ^ 2) ≠ 0 := by positivity
-    simp only [backgroundSource_def, backgroundWeight_def, Polynomial.deriv, Pi.add_apply,
-      Pi.smul_apply, smul_eq_mul]
-    field_simp
-    ring
-  rw [hk]
-  exact add_mem (Submodule.smul_mem _ _ (inv_one_add_norm_eval_sq_mem hm s))
-    (Submodule.smul_mem _ _ (realSobolevFunctions_mono (by norm_num) ENNReal.ofNat_ne_top
-      (Nat.le_ceil s)
-      (Polynomial.norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq_mem_realSobolevFunctions
-        P ⌈s⌉₊)))
-
 /-- The coefficient `1 - h = (1 + ‖P‖²)⁻¹` of the reduced vortex equation, with
 `h = TauCeti.Vortex.backgroundWeight (P.eval ·)`, as an element of `H^s(ℂ)`. -/
 def sobolevBackgroundDefect (hm : 0 < P.natDegree) (hs : 0 ≤ s) : H^{s}(ℂ) :=
-  ofRealSobolevFunction hs (inv_one_add_norm_eval_sq_mem hm s)
+  ofRealSobolevFunction hs (Polynomial.inv_one_add_norm_eval_sq_mem_realSobolevFunctions hm s)
 
 /-- The `L²` function of `sobolevBackgroundDefect hm hs` is `(1 + ‖P‖²)⁻¹`. -/
 theorem coeFn_inclusionLp_sobolevBackgroundDefect (hm : 0 < P.natDegree) (hs : 0 ≤ s) :
@@ -128,19 +110,54 @@ theorem coeFn_inclusionLp_sobolevBackgroundDefect (hm : 0 < P.natDegree) (hs : 0
       fun z ↦ (((1 + ‖P.eval z‖ ^ 2)⁻¹ : ℝ) : ℂ) :=
   coeFn_inclusionLp_ofRealSobolevFunction hs _
 
-/-- The source `k = (h - 1) / 8 + g` of the reduced vortex equation as an element of `H^s(ℂ)`. -/
-private def sobolevBackgroundSource (hm : 0 < P.natDegree) (hs : 0 ≤ s) : H^{s}(ℂ) :=
-  ofRealSobolevFunction hs (backgroundSource_mem hm s)
+/-- The source `k = (h - 1) / 8 + g` of the reduced vortex equation,
+`TauCeti.Vortex.backgroundSource (P.eval ·)`, as an element of `H^s(ℂ)`. -/
+def sobolevBackgroundSource (hm : 0 < P.natDegree) (hs : 0 ≤ s) : H^{s}(ℂ) :=
+  ofRealSobolevFunction hs (backgroundSource_mem_realSobolevFunctions hm s)
+
+/-- The `L²` function of `sobolevBackgroundSource hm hs` is
+`TauCeti.Vortex.backgroundSource (P.eval ·)`. -/
+theorem coeFn_inclusionLp_sobolevBackgroundSource (hm : 0 < P.natDegree) (hs : 0 ≤ s) :
+    ⇑(inclusionLp hs (sobolevBackgroundSource hm hs)) =ᵐ[(volume : Measure ℂ)]
+      fun z ↦ (backgroundSource (P.eval ·) z : ℂ) :=
+  coeFn_inclusionLp_ofRealSobolevFunction hs _
+
+/-- Multiplication by `h = 1 - (1 + ‖P‖²)⁻¹` on `H^s(ℂ)`: the `L²` function of
+`x - (1 + ‖P‖²)⁻¹ x` is `h x`. -/
+private theorem coeFn_inclusionLp_sub_mulCLM_sobolevBackgroundDefect (hm : 0 < P.natDegree)
+    (hs : 1 < s) (x : H^{s}(ℂ)) :
+    ⇑(inclusionLp (by linarith)
+        (x - mulCLM (finrank_lt_two_mul hs) (sobolevBackgroundDefect hm (by linarith)) x))
+      =ᵐ[(volume : Measure ℂ)]
+      fun z ↦ (backgroundWeight (P.eval ·) z : ℂ) * inclusionLp (by linarith) x z := by
+  have h0 : (0 : ℝ) ≤ s := by linarith
+  have hφx := coeFn_toLp_inclusion_mulCLM (finrank_lt_two_mul hs) h0
+    (sobolevBackgroundDefect hm h0) x
+  simp only [toLp_inclusion] at hφx
+  rw [map_sub]
+  filter_upwards [Lp.coeFn_sub (inclusionLp h0 x) (inclusionLp h0 (mulCLM (finrank_lt_two_mul hs)
+      (sobolevBackgroundDefect hm h0) x)), hφx,
+    coeFn_inclusionLp_sobolevBackgroundDefect hm h0] with z h₁ h₂ h₃
+  simp only [h₁, Pi.sub_apply, h₂, h₃]
+  have hN : (1 + (‖P.eval z‖ : ℂ) ^ 2) ≠ 0 := by exact_mod_cast (by positivity :
+      (1 + ‖P.eval z‖ ^ 2 : ℝ) ≠ 0)
+  simp only [backgroundWeight_def]
+  push_cast
+  field_simp
+  ring
 
 /-- **The reduced vortex equation on the Sobolev scale.** For a polynomial `P` of positive degree
 and `s > 1`, the map `N : H^(s+2)(ℂ) → H^s(ℂ)`,
 
 `N(w) = -Δw + h (exp (2w) - 1) / 8 + k`,
 
-with `h = ‖P‖² / (1 + ‖P‖²)` and `k = (h - 1) / 8 + 2 ‖P'‖² / (1 + ‖P‖²)²`. Its zeros are the
-solutions of the reduced equation `Δw = (h exp (2w) - 1) / 8 + 2 ‖P'‖² / (1 + ‖P‖²)²`
-(`TauCeti.Vortex.coeFn_inclusionLp_reducedEquationMap`). Here `h (exp (2w) - 1)` is computed as
-`(1 - (1 - h)) (exp (2w) - 1)`, since `1 - h`, unlike `h`, lies in `H^s(ℂ)`. -/
+with `h = ‖P‖² / (1 + ‖P‖²)` and `k = (h - 1) / 8 + 2 ‖P'‖² / (1 + ‖P‖²)²`. The `L²` function
+of `N(w)` is the residual of the reduced equation
+`Δw = (h exp (2w) - 1) / 8 + 2 ‖P'‖² / (1 + ‖P‖²)²`
+(`TauCeti.Vortex.coeFn_inclusionLp_reducedEquationMap`), so a zero of `N` is an
+almost-everywhere, possibly complex-valued, solution, and classical real solutions give zeros
+(`TauCeti.Vortex.reducedEquationMap_eq_zero_of_laplacian_eq`). Here `h (exp (2w) - 1)` is
+computed as `(1 - (1 - h)) (exp (2w) - 1)`, since `1 - h`, unlike `h`, lies in `H^s(ℂ)`. -/
 def reducedEquationMap (hm : 0 < P.natDegree) (hs : 1 < s) (w : H^{s + 2}(ℂ)) : H^{s}(ℂ) :=
   -laplacianCLM s w + (8⁻¹ : ℂ) • (ContinuousLinearMap.id ℂ H^{s}(ℂ) -
       mulCLM (finrank_lt_two_mul hs) (sobolevBackgroundDefect hm (by linarith)))
@@ -178,6 +195,12 @@ theorem hasFDerivAt_reducedEquationMap (hm : 0 < P.natDegree) (hs : 1 < s) (w : 
     _root_.smul_apply, ContinuousLinearMap.comp_apply, map_smul, smul_smul, A, ι]
   norm_num
 
+/-- The derivative of `TauCeti.Vortex.reducedEquationMap` at `w` is
+`TauCeti.Vortex.reducedEquationDeriv`. -/
+theorem fderiv_reducedEquationMap (hm : 0 < P.natDegree) (hs : 1 < s) (w : H^{s + 2}(ℂ)) :
+    fderiv ℂ (reducedEquationMap hm hs) w = reducedEquationDeriv hm hs w :=
+  (hasFDerivAt_reducedEquationMap hm hs w).fderiv
+
 /-- **The reduced vortex equation is a smooth map** `H^(s+2)(ℂ) → H^s(ℂ)`, `s > 1`: it is `C^∞`
 over `ℂ`. -/
 theorem contDiff_reducedEquationMap (hm : 0 < P.natDegree) (hs : 1 < s) :
@@ -188,6 +211,20 @@ theorem contDiff_reducedEquationMap (hm : 0 < P.natDegree) (hs : 1 < s) :
       (by linarith))).contDiff.comp ((contDiff_expSubOne hs').comp
         ((inclusion (by linarith)).contDiff.const_smul (2 : ℂ)))).const_smul _)).add
     contDiff_const
+
+/-- The `L²` function of `exp (2w) - 1` in `H^s(ℂ)`, for `w ∈ H^(s+2)(ℂ)`. -/
+private theorem coeFn_inclusionLp_expSubOne_two_smul (hs : 1 < s) (w : H^{s + 2}(ℂ)) :
+    ⇑(inclusionLp (by linarith)
+        (expSubOne (finrank_lt_two_mul hs) ((2 : ℂ) • inclusion (by linarith) w)))
+      =ᵐ[(volume : Measure ℂ)] fun z ↦ Complex.exp (2 * inclusionLp (by linarith) w z) - 1 := by
+  have h0 : (0 : ℝ) ≤ s := by linarith
+  have hι : s ≤ s + 2 := by linarith
+  have he := coeFn_toLp_inclusion_expSubOne (finrank_lt_two_mul hs) h0
+    ((2 : ℂ) • inclusion hι w)
+  simp only [toLp_inclusion] at he
+  filter_upwards [he, Lp.coeFn_smul (2 : ℂ) (inclusionLp h0 (inclusion hι w))] with z h₁ h₂
+  simp only [map_smul] at h₁
+  rw [h₁, h₂, Pi.smul_apply, smul_eq_mul, inclusionLp_inclusion]
 
 /-- The `L²` function of `TauCeti.Vortex.reducedEquationMap`: for `w ∈ H^(s+2)(ℂ)`, with `L²`
 function `w(z)`, the `L²` function of `N(w)` is `-Δw + h (exp (2w) - 1) / 8 + k`, where
@@ -203,37 +240,22 @@ theorem coeFn_inclusionLp_reducedEquationMap (hm : 0 < P.natDegree) (hs : 1 < s)
         (backgroundSource (P.eval ·) z : ℂ) := by
   have hs' := finrank_lt_two_mul hs
   have h0 : (0 : ℝ) ≤ s := by linarith
-  set ι : H^{s + 2}(ℂ) →L[ℂ] H^{s}(ℂ) := inclusion (by linarith)
-  set φ := sobolevBackgroundDefect hm h0
-  set e := expSubOne hs' ((2 : ℂ) • ι w)
-  have hι : inclusionLp h0 (ι w) = inclusionLp (by linarith) w := inclusionLp_inclusion _ h0 w
-  have he := coeFn_toLp_inclusion_expSubOne hs' h0 ((2 : ℂ) • ι w)
-  have hφe := coeFn_toLp_inclusion_mulCLM hs' h0 φ e
-  simp only [toLp_inclusion] at he hφe
+  have he := coeFn_inclusionLp_expSubOne_two_smul hs w
+  set e := expSubOne hs' ((2 : ℂ) • inclusion (by linarith) w)
   rw [reducedEquationMap]
-  simp only [_root_.sub_apply, ContinuousLinearMap.id_apply, map_add, map_neg,
-    map_smul, map_sub]
-  filter_upwards [Lp.coeFn_add (-inclusionLp h0 (laplacianCLM s w) + (8⁻¹ : ℂ) •
-      (inclusionLp h0 e - inclusionLp h0 (mulCLM hs' φ e)))
+  simp only [_root_.sub_apply, ContinuousLinearMap.id_apply, map_add, map_neg, map_smul]
+  filter_upwards [Lp.coeFn_add (-inclusionLp h0 (laplacianCLM s w) +
+      (8⁻¹ : ℂ) • inclusionLp h0 (e - mulCLM hs' (sobolevBackgroundDefect hm h0) e))
       (inclusionLp h0 (sobolevBackgroundSource hm h0)),
     Lp.coeFn_add (-inclusionLp h0 (laplacianCLM s w))
-      ((8⁻¹ : ℂ) • (inclusionLp h0 e - inclusionLp h0 (mulCLM hs' φ e))),
+      ((8⁻¹ : ℂ) • inclusionLp h0 (e - mulCLM hs' (sobolevBackgroundDefect hm h0) e)),
     Lp.coeFn_neg (inclusionLp h0 (laplacianCLM s w)),
-    Lp.coeFn_smul (8⁻¹ : ℂ) (inclusionLp h0 e - inclusionLp h0 (mulCLM hs' φ e)),
-    Lp.coeFn_sub (inclusionLp h0 e) (inclusionLp h0 (mulCLM hs' φ e)), he, hφe,
-    Lp.coeFn_smul (2 : ℂ) (inclusionLp h0 (ι w)), coeFn_inclusionLp_sobolevBackgroundDefect hm h0,
-    coeFn_inclusionLp_ofRealSobolevFunction h0 (backgroundSource_mem hm s)]
-    with z h₁ h₂ h₃ h₄ h₅ h₆ h₇ h₈ h₉ h₁₀
-  simp only [map_smul] at h₆ h₈
-  rw [h₁, Pi.add_apply, h₂, Pi.add_apply, h₃, Pi.neg_apply, h₄, Pi.smul_apply, h₅,
-    Pi.sub_apply, h₇, h₆, h₈, Pi.smul_apply, hι, h₉]
-  rw [show sobolevBackgroundSource hm h0 = ofRealSobolevFunction h0 (backgroundSource_mem hm s)
-    from rfl, h₁₀]
-  have hN : (1 + (‖P.eval z‖ : ℂ) ^ 2) ≠ 0 := by exact_mod_cast (by positivity :
-      (1 + ‖P.eval z‖ ^ 2 : ℝ) ≠ 0)
-  simp only [backgroundWeight_def, smul_eq_mul]
-  push_cast
-  field_simp
+    Lp.coeFn_smul (8⁻¹ : ℂ) (inclusionLp h0 (e - mulCLM hs' (sobolevBackgroundDefect hm h0) e)),
+    coeFn_inclusionLp_sub_mulCLM_sobolevBackgroundDefect hm hs e, he,
+    coeFn_inclusionLp_sobolevBackgroundSource hm h0] with z h₁ h₂ h₃ h₄ h₅ h₆ h₇
+  -- `simp` does not fire on the outermost sum, so it is split by `rw` first.
+  rw [h₁, Pi.add_apply]
+  simp only [h₂, h₃, h₄, h₅, h₆, h₇, Pi.add_apply, Pi.neg_apply, Pi.smul_apply, smul_eq_mul]
   ring
 
 /-- The `L²` function of `TauCeti.Vortex.reducedEquationDeriv`: for `w, v ∈ H^(s+2)(ℂ)`, with `L²`
@@ -247,38 +269,34 @@ theorem coeFn_inclusionLp_reducedEquationDeriv (hm : 0 < P.natDegree) (hs : 1 < 
           inclusionLp (by linarith) v z / 4 := by
   have hs' := finrank_lt_two_mul hs
   have h0 : (0 : ℝ) ≤ s := by linarith
+  have he := coeFn_inclusionLp_expSubOne_two_smul hs w
   set ι : H^{s + 2}(ℂ) →L[ℂ] H^{s}(ℂ) := inclusion (by linarith)
-  set φ := sobolevBackgroundDefect hm h0
   set e := expSubOne hs' ((2 : ℂ) • ι w)
   set X := ι v + mulCLM hs' e (ι v)
-  have hι (u : H^{s + 2}(ℂ)) : inclusionLp h0 (ι u) = inclusionLp (by linarith) u :=
-    inclusionLp_inclusion _ h0 u
-  have hX : inclusionLp h0 X = inclusionLp h0 (ι v) + inclusionLp h0 (mulCLM hs' e (ι v)) :=
-    map_add _ _ _
-  have he := coeFn_toLp_inclusion_expSubOne hs' h0 ((2 : ℂ) • ι w)
-  have hφX := coeFn_toLp_inclusion_mulCLM hs' h0 φ X
-  have heι := coeFn_toLp_inclusion_mulCLM hs' h0 e (ι v)
-  simp only [toLp_inclusion] at he hφX heι
+  -- The `L²` function of `X = (1 + (exp (2w) - 1)) v` is `exp (2w) v`.
+  have hX : ⇑(inclusionLp h0 X) =ᵐ[(volume : Measure ℂ)]
+      fun z ↦ Complex.exp (2 * inclusionLp (by linarith) w z) * inclusionLp (by linarith) v z := by
+    have heι := coeFn_toLp_inclusion_mulCLM hs' h0 e (ι v)
+    simp only [toLp_inclusion] at heι
+    rw [map_add]
+    filter_upwards [Lp.coeFn_add (inclusionLp h0 (ι v)) (inclusionLp h0 (mulCLM hs' e (ι v))), heι,
+      he] with z h₁ h₂ h₃
+    rw [h₁, Pi.add_apply, h₂, h₃, inclusionLp_inclusion]
+    ring
   have hD : reducedEquationDeriv hm hs w v =
-      -laplacianCLM s v + (4⁻¹ : ℂ) • (X - mulCLM hs' φ X) := rfl
+      -laplacianCLM s v + (4⁻¹ : ℂ) • (X - mulCLM hs' (sobolevBackgroundDefect hm h0) X) := by
+    simp only [reducedEquationDeriv, _root_.add_apply, _root_.neg_apply, _root_.smul_apply,
+      _root_.sub_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, X, e, ι]
   rw [hD]
-  simp only [map_add, map_neg, map_smul, map_sub]
+  simp only [map_add, map_neg, map_smul]
   filter_upwards [Lp.coeFn_add (-inclusionLp h0 (laplacianCLM s v))
-      ((4⁻¹ : ℂ) • (inclusionLp h0 X - inclusionLp h0 (mulCLM hs' φ X))),
+      ((4⁻¹ : ℂ) • inclusionLp h0 (X - mulCLM hs' (sobolevBackgroundDefect hm h0) X)),
     Lp.coeFn_neg (inclusionLp h0 (laplacianCLM s v)),
-    Lp.coeFn_smul (4⁻¹ : ℂ) (inclusionLp h0 X - inclusionLp h0 (mulCLM hs' φ X)),
-    Lp.coeFn_sub (inclusionLp h0 X) (inclusionLp h0 (mulCLM hs' φ X)), hφX,
-    Lp.coeFn_add (inclusionLp h0 (ι v)) (inclusionLp h0 (mulCLM hs' e (ι v))), heι, he,
-    Lp.coeFn_smul (2 : ℂ) (inclusionLp h0 (ι w)), coeFn_inclusionLp_sobolevBackgroundDefect hm h0]
-    with z h₁ h₂ h₃ h₄ h₅ h₆ h₇ h₈ h₉ h₁₀
-  simp only [map_smul] at h₈ h₉
-  rw [h₁, Pi.add_apply, h₂, Pi.neg_apply, h₃, Pi.smul_apply, h₄, Pi.sub_apply, h₅, h₁₀, hX, h₆,
-    Pi.add_apply, h₇, h₈, h₉, Pi.smul_apply, hι, hι]
-  have hN : (1 + (‖P.eval z‖ : ℂ) ^ 2) ≠ 0 := by exact_mod_cast (by positivity :
-      (1 + ‖P.eval z‖ ^ 2 : ℝ) ≠ 0)
-  simp only [backgroundWeight_def, smul_eq_mul]
-  push_cast
-  field_simp
+    Lp.coeFn_smul (4⁻¹ : ℂ) (inclusionLp h0 (X - mulCLM hs' (sobolevBackgroundDefect hm h0) X)),
+    coeFn_inclusionLp_sub_mulCLM_sobolevBackgroundDefect hm hs X, hX] with z h₁ h₂ h₃ h₄ h₅
+  -- `simp` does not fire on the outermost sum, so it is split by `rw` first.
+  rw [h₁, Pi.add_apply]
+  simp only [h₂, h₃, h₄, h₅, Pi.neg_apply, Pi.smul_apply, smul_eq_mul]
   ring
 
 /-- **Solutions of the reduced equation are zeros of `TauCeti.Vortex.reducedEquationMap`.** Let

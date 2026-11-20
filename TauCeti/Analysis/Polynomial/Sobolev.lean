@@ -36,7 +36,7 @@ In particular, for a nonconstant `P`, the defect `(1 + ‖P‖²)⁻¹` of the s
 `‖P‖² / (1 + ‖P‖²)` from `1` (`Polynomial.inv_one_add_norm_eval_sq_mem_realSobolevFunctions`) and,
 for every `P`, the density `‖P'‖² / (1 + ‖P‖²)²` of the pullback by `P` of the Fubini–Study area
 form (`Polynomial.norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq_mem_realSobolevFunctions`)
-lie in every `H^k(ℂ)`. These are the coefficients of Taubes's reduced vortex equation for the zero
+lie in every `H^s(ℂ)`. These are the coefficients of Taubes's reduced vortex equation for the zero
 divisor of `P`.
 
 ## References
@@ -181,28 +181,30 @@ theorem re_mem_realSobolevFunctions_of_add_two_le {n : ℕ} {A B : ℂ[X]}
     · have := natDegree_C_mul_le v (derivative B)
       omega
 
-/-- For a nonconstant complex polynomial `P`, the function `(1 + ‖P‖²)⁻¹` lies in `H^k(ℂ)` for
-every `k : ℕ`. -/
-theorem inv_one_add_norm_eval_sq_mem_realSobolevFunctions (hm : 0 < P.natDegree) (k : ℕ) :
-    (fun z ↦ (1 + ‖P.eval z‖ ^ 2)⁻¹) ∈ realSobolevFunctions ℂ k 2 := by
+/-- For a nonconstant complex polynomial `P`, the function `(1 + ‖P‖²)⁻¹` lies in `H^s(ℂ)` for
+every real `s`. -/
+theorem inv_one_add_norm_eval_sq_mem_realSobolevFunctions (hm : 0 < P.natDegree) (s : ℝ) :
+    (fun z ↦ (1 + ‖P.eval z‖ ^ 2)⁻¹) ∈ realSobolevFunctions ℂ s 2 := by
   have h := re_mem_realSobolevFunctions_of_add_two_le (P := P) (n := 1) (A := 1) (B := 1)
-    (by simp; omega) k
+    (by simp; omega) ⌈s⌉₊
+  refine realSobolevFunctions_mono (by norm_num) ENNReal.ofNat_ne_top (Nat.le_ceil s) ?_
   convert h using 2 with z
   simp only [eval_one, map_one, mul_one, pow_one, Complex.ofReal_re]
 
-/-- For every complex polynomial `P`, the function `‖P'‖² / (1 + ‖P‖²)²` lies in `H^k(ℂ)` for
-every `k : ℕ`. -/
+/-- For every complex polynomial `P`, the function `‖P'‖² / (1 + ‖P‖²)²` lies in `H^s(ℂ)` for
+every real `s`. -/
 theorem norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq_mem_realSobolevFunctions (P : ℂ[X])
-    (k : ℕ) :
+    (s : ℝ) :
     (fun z ↦ ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2) ∈
-      realSobolevFunctions ℂ k 2 := by
+      realSobolevFunctions ℂ s 2 := by
   rcases Nat.eq_zero_or_pos P.natDegree with h0 | hm
-  · convert (realSobolevFunctions ℂ k 2).zero_mem using 1
+  · convert (realSobolevFunctions ℂ s 2).zero_mem using 1
     ext z
     simp [derivative_of_natDegree_zero h0]
   have hdP := natDegree_derivative_le P
   have h := re_mem_realSobolevFunctions_of_add_two_le (P := P) (n := 2) (A := derivative P)
-    (B := derivative P) (by omega) k
+    (B := derivative P) (by omega) ⌈s⌉₊
+  refine realSobolevFunctions_mono (by norm_num) ENNReal.ofNat_ne_top (Nat.le_ceil s) ?_
   convert h using 2 with z
   simp only [Complex.conj_mul', ← Complex.ofReal_pow, ← Complex.ofReal_mul, Complex.ofReal_re]
   rw [div_eq_inv_mul, inv_pow]

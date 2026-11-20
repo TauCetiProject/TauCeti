@@ -143,6 +143,15 @@ theorem coeFn_inclusionLp_ofRealSobolevFunction {s : ℝ} {p : ℝ≥0∞} [Fact
     ⇑(inclusionLp hs (ofRealSobolevFunction hs hf)) =ᵐ[volume] fun x ↦ (f x : ℂ) :=
   ((mem_realSobolevFunctions_iff_exists_inclusionLp_ae_eq hs).1 hf).choose_spec
 
+/-- An element of `H^{s,p}(E)` whose `Lᵖ` function is almost everywhere `x ↦ (f x : ℂ)` is
+`ofRealSobolevFunction hs hf`. -/
+theorem eq_ofRealSobolevFunction_of_ae {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (hs : 0 ≤ s) {f : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s p) {w : H^{s, p}(E)}
+    (hw : ⇑(inclusionLp hs w) =ᵐ[volume] fun x ↦ (f x : ℂ)) :
+    w = ofRealSobolevFunction hs hf :=
+  inclusionLp_injective hs <| Lp.ext <|
+    hw.trans (coeFn_inclusionLp_ofRealSobolevFunction hs hf).symm
+
 /-- **Classical derivatives of real elements of `H^{s+1,p}`.** For `1 < p < ∞` and `s ≥ 0`, if the
 `Lᵖ` function of `u ∈ H^{s+1,p}(E)` is almost everywhere a real `C¹` function `f`, then the `Lᵖ`
 function of the derivative `∂_v u ∈ H^{s,p}(E)` is almost everywhere its classical derivative
